@@ -1570,7 +1570,7 @@ imm(FILE *file, const struct brw_isa_info *isa, enum brw_reg_type type,
       format(file, "0x%08xUV", brw_inst_imm_ud(devinfo, inst));
       break;
    case BRW_TYPE_VF:
-      format(file, "0x%"PRIx64"VF", brw_inst_bits(inst, 127, 96));
+      format(file, "0x%"PRIx64"VF", brw_eu_inst_bits(inst, 127, 96));
       pad(file, 48);
       format(file, "/* [%-gF, %-gF, %-gF, %-gF]VF */",
              brw_vf_to_float(brw_inst_imm_ud(devinfo, inst)),
@@ -1585,7 +1585,7 @@ imm(FILE *file, const struct brw_isa_info *isa, enum brw_reg_type type,
       /* The DIM instruction's src0 uses an F type but contains a
        * 64-bit immediate
        */
-      format(file, "0x%"PRIx64"F", brw_inst_bits(inst, 127, 96));
+      format(file, "0x%"PRIx64"F", brw_eu_inst_bits(inst, 127, 96));
       pad(file, 48);
       format(file, " /* %-gF */", brw_inst_imm_f(devinfo, inst));
       break;

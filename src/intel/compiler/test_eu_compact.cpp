@@ -99,7 +99,7 @@ clear_pad_bits(const struct brw_isa_info *isa, brw_eu_inst *inst)
        brw_inst_opcode(isa, inst) != BRW_OPCODE_SENDC &&
        brw_inst_src0_reg_file(devinfo, inst) != IMM &&
        brw_inst_src1_reg_file(devinfo, inst) != IMM) {
-      brw_inst_set_bits(inst, 127, 111, 0);
+      brw_eu_inst_set_bits(inst, 127, 111, 0);
    }
 }
 

@@ -932,32 +932,32 @@ set_control_index(const struct compaction_state *c,
    uint32_t uncompacted; /* 19b/IVB+; 21b/TGL+ */
 
    if (devinfo->ver >= 20) {
-      uncompacted = (brw_inst_bits(src, 95, 92) << 14) | /*  4b */
-                    (brw_inst_bits(src, 34, 34) << 13) | /*  1b */
-                    (brw_inst_bits(src, 32, 32) << 12) | /*  1b */
-                    (brw_inst_bits(src, 31, 31) << 11) | /*  1b */
-                    (brw_inst_bits(src, 28, 28) << 10) | /*  1b */
-                    (brw_inst_bits(src, 27, 26) <<  8) | /*  2b */
-                    (brw_inst_bits(src, 25, 24) <<  6) | /*  2b */
-                    (brw_inst_bits(src, 23, 21) <<  3) | /*  3b */
-                    (brw_inst_bits(src, 20, 18));        /*  3b */
+      uncompacted = (brw_eu_inst_bits(src, 95, 92) << 14) | /*  4b */
+                    (brw_eu_inst_bits(src, 34, 34) << 13) | /*  1b */
+                    (brw_eu_inst_bits(src, 32, 32) << 12) | /*  1b */
+                    (brw_eu_inst_bits(src, 31, 31) << 11) | /*  1b */
+                    (brw_eu_inst_bits(src, 28, 28) << 10) | /*  1b */
+                    (brw_eu_inst_bits(src, 27, 26) <<  8) | /*  2b */
+                    (brw_eu_inst_bits(src, 25, 24) <<  6) | /*  2b */
+                    (brw_eu_inst_bits(src, 23, 21) <<  3) | /*  3b */
+                    (brw_eu_inst_bits(src, 20, 18));        /*  3b */
    } else if (devinfo->ver >= 12) {
-      uncompacted = (brw_inst_bits(src, 95, 92) << 17) | /*  4b */
-                    (brw_inst_bits(src, 34, 34) << 16) | /*  1b */
-                    (brw_inst_bits(src, 33, 33) << 15) | /*  1b */
-                    (brw_inst_bits(src, 32, 32) << 14) | /*  1b */
-                    (brw_inst_bits(src, 31, 31) << 13) | /*  1b */
-                    (brw_inst_bits(src, 28, 28) << 12) | /*  1b */
-                    (brw_inst_bits(src, 27, 24) <<  8) | /*  4b */
-                    (brw_inst_bits(src, 23, 22) <<  6) | /*  2b */
-                    (brw_inst_bits(src, 21, 19) <<  3) | /*  3b */
-                    (brw_inst_bits(src, 18, 16));        /*  3b */
+      uncompacted = (brw_eu_inst_bits(src, 95, 92) << 17) | /*  4b */
+                    (brw_eu_inst_bits(src, 34, 34) << 16) | /*  1b */
+                    (brw_eu_inst_bits(src, 33, 33) << 15) | /*  1b */
+                    (brw_eu_inst_bits(src, 32, 32) << 14) | /*  1b */
+                    (brw_eu_inst_bits(src, 31, 31) << 13) | /*  1b */
+                    (brw_eu_inst_bits(src, 28, 28) << 12) | /*  1b */
+                    (brw_eu_inst_bits(src, 27, 24) <<  8) | /*  4b */
+                    (brw_eu_inst_bits(src, 23, 22) <<  6) | /*  2b */
+                    (brw_eu_inst_bits(src, 21, 19) <<  3) | /*  3b */
+                    (brw_eu_inst_bits(src, 18, 16));        /*  3b */
    } else {
-      uncompacted = (brw_inst_bits(src, 33, 31) << 16) | /*  3b */
-                    (brw_inst_bits(src, 23, 12) <<  4) | /* 12b */
-                    (brw_inst_bits(src, 10,  9) <<  2) | /*  2b */
-                    (brw_inst_bits(src, 34, 34) <<  1) | /*  1b */
-                    (brw_inst_bits(src,  8,  8));        /*  1b */
+      uncompacted = (brw_eu_inst_bits(src, 33, 31) << 16) | /*  3b */
+                    (brw_eu_inst_bits(src, 23, 12) <<  4) | /* 12b */
+                    (brw_eu_inst_bits(src, 10,  9) <<  2) | /*  2b */
+                    (brw_eu_inst_bits(src, 34, 34) <<  1) | /*  1b */
+                    (brw_eu_inst_bits(src,  8,  8));        /*  1b */
    }
 
    for (int i = 0; i < 32; i++) {
@@ -978,26 +978,26 @@ set_datatype_index(const struct compaction_state *c, brw_eu_compact_inst *dst,
    uint32_t uncompacted; /* 18b/G45+; 21b/BDW+; 20b/TGL+ */
 
    if (devinfo->ver >= 12) {
-      uncompacted = (brw_inst_bits(src, 91, 88) << 15) | /*  4b */
-                    (brw_inst_bits(src, 66, 66) << 14) | /*  1b */
-                    (brw_inst_bits(src, 50, 50) << 13) | /*  1b */
-                    (brw_inst_bits(src, 49, 48) << 11) | /*  2b */
-                    (brw_inst_bits(src, 47, 47) << 10) | /*  1b */
-                    (brw_inst_bits(src, 46, 46) <<  9) | /*  1b */
-                    (brw_inst_bits(src, 43, 40) <<  5) | /*  4b */
-                    (brw_inst_bits(src, 39, 36) <<  1) | /*  4b */
-                    (brw_inst_bits(src, 35, 35));        /*  1b */
+      uncompacted = (brw_eu_inst_bits(src, 91, 88) << 15) | /*  4b */
+                    (brw_eu_inst_bits(src, 66, 66) << 14) | /*  1b */
+                    (brw_eu_inst_bits(src, 50, 50) << 13) | /*  1b */
+                    (brw_eu_inst_bits(src, 49, 48) << 11) | /*  2b */
+                    (brw_eu_inst_bits(src, 47, 47) << 10) | /*  1b */
+                    (brw_eu_inst_bits(src, 46, 46) <<  9) | /*  1b */
+                    (brw_eu_inst_bits(src, 43, 40) <<  5) | /*  4b */
+                    (brw_eu_inst_bits(src, 39, 36) <<  1) | /*  4b */
+                    (brw_eu_inst_bits(src, 35, 35));        /*  1b */
 
       /* Src1.RegFile overlaps with the immediate, so ignore it if an immediate
        * is present
        */
       if (!is_immediate) {
-         uncompacted |= brw_inst_bits(src, 98, 98) << 19; /* 1b */
+         uncompacted |= brw_eu_inst_bits(src, 98, 98) << 19; /* 1b */
       }
    } else {
-      uncompacted = (brw_inst_bits(src, 63, 61) << 18) | /*  3b */
-                    (brw_inst_bits(src, 94, 89) << 12) | /*  6b */
-                    (brw_inst_bits(src, 46, 35));        /* 12b */
+      uncompacted = (brw_eu_inst_bits(src, 63, 61) << 18) | /*  3b */
+                    (brw_eu_inst_bits(src, 94, 89) << 12) | /*  6b */
+                    (brw_eu_inst_bits(src, 46, 35));        /* 12b */
    }
 
    for (int i = 0; i < 32; i++) {
@@ -1020,22 +1020,22 @@ set_subreg_index(const struct compaction_state *c, brw_eu_compact_inst *dst,
    uint16_t uncompacted; /* 15b/G45+; 12b/Xe2+ */
 
    if (devinfo->ver >= 20) {
-      uncompacted = (brw_inst_bits(src, 33, 33) << 0) |    /* 1b */
-                    (brw_inst_bits(src, 55, 51) << 1) |    /* 5b */
-                    (brw_inst_bits(src, 71, 67) << 6) |    /* 5b */
-                    (brw_inst_bits(src, 87, 87) << 11);    /* 1b */
+      uncompacted = (brw_eu_inst_bits(src, 33, 33) << 0) |    /* 1b */
+                    (brw_eu_inst_bits(src, 55, 51) << 1) |    /* 5b */
+                    (brw_eu_inst_bits(src, 71, 67) << 6) |    /* 5b */
+                    (brw_eu_inst_bits(src, 87, 87) << 11);    /* 1b */
    } else if (devinfo->ver >= 12) {
-      uncompacted = (brw_inst_bits(src, 55, 51) << 0) |    /* 5b */
-                    (brw_inst_bits(src, 71, 67) << 5);     /* 5b */
+      uncompacted = (brw_eu_inst_bits(src, 55, 51) << 0) |    /* 5b */
+                    (brw_eu_inst_bits(src, 71, 67) << 5);     /* 5b */
 
       if (!is_immediate)
-         uncompacted |= brw_inst_bits(src, 103, 99) << 10; /* 5b */
+         uncompacted |= brw_eu_inst_bits(src, 103, 99) << 10; /* 5b */
    } else {
-      uncompacted = (brw_inst_bits(src, 52, 48) << 0) |    /* 5b */
-                    (brw_inst_bits(src, 68, 64) << 5);     /* 5b */
+      uncompacted = (brw_eu_inst_bits(src, 52, 48) << 0) |    /* 5b */
+                    (brw_eu_inst_bits(src, 68, 64) << 5);     /* 5b */
 
       if (!is_immediate)
-         uncompacted |= brw_inst_bits(src, 100, 96) << 10; /* 5b */
+         uncompacted |= brw_eu_inst_bits(src, 100, 96) << 10; /* 5b */
    }
 
    for (int i = 0; i < table_len; i++) {
@@ -1060,15 +1060,15 @@ set_src0_index(const struct compaction_state *c, brw_eu_compact_inst *dst,
       table_len = (devinfo->ver >= 20 ? ARRAY_SIZE(xe2_src0_index_table) :
                    ARRAY_SIZE(gfx12_src0_index_table));
       uncompacted = (devinfo->ver >= 20 ? 0 :
-                     brw_inst_bits(src, 87, 87) << 11) | /*  1b */
-                    (brw_inst_bits(src, 86, 84) << 8) | /*  3b */
-                    (brw_inst_bits(src, 83, 81) << 5) | /*  3b */
-                    (brw_inst_bits(src, 80, 80) << 4) | /*  1b */
-                    (brw_inst_bits(src, 65, 64) << 2) | /*  2b */
-                    (brw_inst_bits(src, 45, 44));       /*  2b */
+                     brw_eu_inst_bits(src, 87, 87) << 11) | /*  1b */
+                    (brw_eu_inst_bits(src, 86, 84) << 8) | /*  3b */
+                    (brw_eu_inst_bits(src, 83, 81) << 5) | /*  3b */
+                    (brw_eu_inst_bits(src, 80, 80) << 4) | /*  1b */
+                    (brw_eu_inst_bits(src, 65, 64) << 2) | /*  2b */
+                    (brw_eu_inst_bits(src, 45, 44));       /*  2b */
    } else {
       table_len = ARRAY_SIZE(gfx8_src_index_table);
-      uncompacted = brw_inst_bits(src, 88, 77);         /* 12b */
+      uncompacted = brw_eu_inst_bits(src, 88, 77);         /* 12b */
    }
 
    for (int i = 0; i < table_len; i++) {
@@ -1101,22 +1101,22 @@ set_src1_index(const struct compaction_state *c, brw_eu_compact_inst *dst,
 
       if (devinfo->ver >= 20) {
          table_len = ARRAY_SIZE(xe2_src1_index_table);
-         uncompacted = (brw_inst_bits(src, 121, 120) << 14) | /*  2b */
-                       (brw_inst_bits(src, 118, 116) << 11) | /*  3b */
-                       (brw_inst_bits(src, 115, 113) <<  8) | /*  3b */
-                       (brw_inst_bits(src, 112, 112) <<  7) | /*  1b */
-                       (brw_inst_bits(src, 103,  99) <<  2) | /*  5b */
-                       (brw_inst_bits(src,  97,  96));        /*  2b */
+         uncompacted = (brw_eu_inst_bits(src, 121, 120) << 14) | /*  2b */
+                       (brw_eu_inst_bits(src, 118, 116) << 11) | /*  3b */
+                       (brw_eu_inst_bits(src, 115, 113) <<  8) | /*  3b */
+                       (brw_eu_inst_bits(src, 112, 112) <<  7) | /*  1b */
+                       (brw_eu_inst_bits(src, 103,  99) <<  2) | /*  5b */
+                       (brw_eu_inst_bits(src,  97,  96));        /*  2b */
       } else if (devinfo->ver >= 12) {
          table_len = ARRAY_SIZE(gfx12_src0_index_table);
-         uncompacted = (brw_inst_bits(src, 121, 120) << 10) | /*  2b */
-                       (brw_inst_bits(src, 119, 116) <<  6) | /*  4b */
-                       (brw_inst_bits(src, 115, 113) <<  3) | /*  3b */
-                       (brw_inst_bits(src, 112, 112) <<  2) | /*  1b */
-                       (brw_inst_bits(src,  97,  96));        /*  2b */
+         uncompacted = (brw_eu_inst_bits(src, 121, 120) << 10) | /*  2b */
+                       (brw_eu_inst_bits(src, 119, 116) <<  6) | /*  4b */
+                       (brw_eu_inst_bits(src, 115, 113) <<  3) | /*  3b */
+                       (brw_eu_inst_bits(src, 112, 112) <<  2) | /*  1b */
+                       (brw_eu_inst_bits(src,  97,  96));        /*  2b */
       } else {
          table_len = ARRAY_SIZE(gfx8_src_index_table);
-         uncompacted = brw_inst_bits(src, 120, 109);          /* 12b */
+         uncompacted = brw_eu_inst_bits(src, 120, 109);          /* 12b */
       }
 
       for (int i = 0; i < table_len; i++) {
@@ -1136,25 +1136,25 @@ set_3src_control_index(const struct intel_device_info *devinfo,
                        bool is_dpas)
 {
    if (devinfo->ver >= 20) {
-      assert(is_dpas || !brw_inst_bits(src, 49, 49));
+      assert(is_dpas || !brw_eu_inst_bits(src, 49, 49));
 
       const uint64_t uncompacted =        /* 34b/Xe2+ */
-         (brw_inst_bits(src, 95, 92) << 30) | /*  4b */
-         (brw_inst_bits(src, 90, 88) << 27) | /*  3b */
-         (brw_inst_bits(src, 82, 80) << 24) | /*  3b */
-         (brw_inst_bits(src, 50, 50) << 23) | /*  1b */
-         (brw_inst_bits(src, 49, 48) << 21) | /*  2b */
-         (brw_inst_bits(src, 42, 40) << 18) | /*  3b */
-         (brw_inst_bits(src, 39, 39) << 17) | /*  1b */
-         (brw_inst_bits(src, 38, 36) << 14) | /*  3b */
-         (brw_inst_bits(src, 34, 34) << 13) | /*  1b */
-         (brw_inst_bits(src, 32, 32) << 12) | /*  1b */
-         (brw_inst_bits(src, 31, 31) << 11) | /*  1b */
-         (brw_inst_bits(src, 28, 28) << 10) | /*  1b */
-         (brw_inst_bits(src, 27, 26) <<  8) | /*  2b */
-         (brw_inst_bits(src, 25, 24) <<  6) | /*  2b */
-         (brw_inst_bits(src, 23, 21) <<  3) | /*  3b */
-         (brw_inst_bits(src, 20, 18));        /*  3b */
+         (brw_eu_inst_bits(src, 95, 92) << 30) | /*  4b */
+         (brw_eu_inst_bits(src, 90, 88) << 27) | /*  3b */
+         (brw_eu_inst_bits(src, 82, 80) << 24) | /*  3b */
+         (brw_eu_inst_bits(src, 50, 50) << 23) | /*  1b */
+         (brw_eu_inst_bits(src, 49, 48) << 21) | /*  2b */
+         (brw_eu_inst_bits(src, 42, 40) << 18) | /*  3b */
+         (brw_eu_inst_bits(src, 39, 39) << 17) | /*  1b */
+         (brw_eu_inst_bits(src, 38, 36) << 14) | /*  3b */
+         (brw_eu_inst_bits(src, 34, 34) << 13) | /*  1b */
+         (brw_eu_inst_bits(src, 32, 32) << 12) | /*  1b */
+         (brw_eu_inst_bits(src, 31, 31) << 11) | /*  1b */
+         (brw_eu_inst_bits(src, 28, 28) << 10) | /*  1b */
+         (brw_eu_inst_bits(src, 27, 26) <<  8) | /*  2b */
+         (brw_eu_inst_bits(src, 25, 24) <<  6) | /*  2b */
+         (brw_eu_inst_bits(src, 23, 21) <<  3) | /*  3b */
+         (brw_eu_inst_bits(src, 20, 18));        /*  3b */
 
       /* The bits used to index the tables for 3src and 3src-dpas
        * are the same, so just need to pick the right one.
@@ -1171,24 +1171,24 @@ set_3src_control_index(const struct intel_device_info *devinfo,
       }
    } else if (devinfo->verx10 >= 125) {
       uint64_t uncompacted =             /* 37b/XeHP+ */
-         (brw_inst_bits(src, 95, 92) << 33) | /*  4b */
-         (brw_inst_bits(src, 90, 88) << 30) | /*  3b */
-         (brw_inst_bits(src, 82, 80) << 27) | /*  3b */
-         (brw_inst_bits(src, 50, 50) << 26) | /*  1b */
-         (brw_inst_bits(src, 49, 48) << 24) | /*  2b */
-         (brw_inst_bits(src, 42, 40) << 21) | /*  3b */
-         (brw_inst_bits(src, 39, 39) << 20) | /*  1b */
-         (brw_inst_bits(src, 38, 36) << 17) | /*  3b */
-         (brw_inst_bits(src, 34, 34) << 16) | /*  1b */
-         (brw_inst_bits(src, 33, 33) << 15) | /*  1b */
-         (brw_inst_bits(src, 32, 32) << 14) | /*  1b */
-         (brw_inst_bits(src, 31, 31) << 13) | /*  1b */
-         (brw_inst_bits(src, 28, 28) << 12) | /*  1b */
-         (brw_inst_bits(src, 27, 24) <<  8) | /*  4b */
-         (brw_inst_bits(src, 23, 23) <<  7) | /*  1b */
-         (brw_inst_bits(src, 22, 22) <<  6) | /*  1b */
-         (brw_inst_bits(src, 21, 19) <<  3) | /*  3b */
-         (brw_inst_bits(src, 18, 16));        /*  3b */
+         (brw_eu_inst_bits(src, 95, 92) << 33) | /*  4b */
+         (brw_eu_inst_bits(src, 90, 88) << 30) | /*  3b */
+         (brw_eu_inst_bits(src, 82, 80) << 27) | /*  3b */
+         (brw_eu_inst_bits(src, 50, 50) << 26) | /*  1b */
+         (brw_eu_inst_bits(src, 49, 48) << 24) | /*  2b */
+         (brw_eu_inst_bits(src, 42, 40) << 21) | /*  3b */
+         (brw_eu_inst_bits(src, 39, 39) << 20) | /*  1b */
+         (brw_eu_inst_bits(src, 38, 36) << 17) | /*  3b */
+         (brw_eu_inst_bits(src, 34, 34) << 16) | /*  1b */
+         (brw_eu_inst_bits(src, 33, 33) << 15) | /*  1b */
+         (brw_eu_inst_bits(src, 32, 32) << 14) | /*  1b */
+         (brw_eu_inst_bits(src, 31, 31) << 13) | /*  1b */
+         (brw_eu_inst_bits(src, 28, 28) << 12) | /*  1b */
+         (brw_eu_inst_bits(src, 27, 24) <<  8) | /*  4b */
+         (brw_eu_inst_bits(src, 23, 23) <<  7) | /*  1b */
+         (brw_eu_inst_bits(src, 22, 22) <<  6) | /*  1b */
+         (brw_eu_inst_bits(src, 21, 19) <<  3) | /*  3b */
+         (brw_eu_inst_bits(src, 18, 16));        /*  3b */
 
       for (unsigned i = 0; i < ARRAY_SIZE(xehp_3src_control_index_table); i++) {
          if (xehp_3src_control_index_table[i] == uncompacted) {
@@ -1198,24 +1198,24 @@ set_3src_control_index(const struct intel_device_info *devinfo,
       }
    } else if (devinfo->ver >= 12) {
       uint64_t uncompacted =             /* 36b/TGL+ */
-         (brw_inst_bits(src, 95, 92) << 32) | /*  4b */
-         (brw_inst_bits(src, 90, 88) << 29) | /*  3b */
-         (brw_inst_bits(src, 82, 80) << 26) | /*  3b */
-         (brw_inst_bits(src, 50, 50) << 25) | /*  1b */
-         (brw_inst_bits(src, 48, 48) << 24) | /*  1b */
-         (brw_inst_bits(src, 42, 40) << 21) | /*  3b */
-         (brw_inst_bits(src, 39, 39) << 20) | /*  1b */
-         (brw_inst_bits(src, 38, 36) << 17) | /*  3b */
-         (brw_inst_bits(src, 34, 34) << 16) | /*  1b */
-         (brw_inst_bits(src, 33, 33) << 15) | /*  1b */
-         (brw_inst_bits(src, 32, 32) << 14) | /*  1b */
-         (brw_inst_bits(src, 31, 31) << 13) | /*  1b */
-         (brw_inst_bits(src, 28, 28) << 12) | /*  1b */
-         (brw_inst_bits(src, 27, 24) <<  8) | /*  4b */
-         (brw_inst_bits(src, 23, 23) <<  7) | /*  1b */
-         (brw_inst_bits(src, 22, 22) <<  6) | /*  1b */
-         (brw_inst_bits(src, 21, 19) <<  3) | /*  3b */
-         (brw_inst_bits(src, 18, 16));        /*  3b */
+         (brw_eu_inst_bits(src, 95, 92) << 32) | /*  4b */
+         (brw_eu_inst_bits(src, 90, 88) << 29) | /*  3b */
+         (brw_eu_inst_bits(src, 82, 80) << 26) | /*  3b */
+         (brw_eu_inst_bits(src, 50, 50) << 25) | /*  1b */
+         (brw_eu_inst_bits(src, 48, 48) << 24) | /*  1b */
+         (brw_eu_inst_bits(src, 42, 40) << 21) | /*  3b */
+         (brw_eu_inst_bits(src, 39, 39) << 20) | /*  1b */
+         (brw_eu_inst_bits(src, 38, 36) << 17) | /*  3b */
+         (brw_eu_inst_bits(src, 34, 34) << 16) | /*  1b */
+         (brw_eu_inst_bits(src, 33, 33) << 15) | /*  1b */
+         (brw_eu_inst_bits(src, 32, 32) << 14) | /*  1b */
+         (brw_eu_inst_bits(src, 31, 31) << 13) | /*  1b */
+         (brw_eu_inst_bits(src, 28, 28) << 12) | /*  1b */
+         (brw_eu_inst_bits(src, 27, 24) <<  8) | /*  4b */
+         (brw_eu_inst_bits(src, 23, 23) <<  7) | /*  1b */
+         (brw_eu_inst_bits(src, 22, 22) <<  6) | /*  1b */
+         (brw_eu_inst_bits(src, 21, 19) <<  3) | /*  3b */
+         (brw_eu_inst_bits(src, 18, 16));        /*  3b */
 
       for (unsigned i = 0; i < ARRAY_SIZE(gfx12_3src_control_index_table); i++) {
          if (gfx12_3src_control_index_table[i] == uncompacted) {
@@ -1225,9 +1225,9 @@ set_3src_control_index(const struct intel_device_info *devinfo,
       }
    } else {
       uint32_t uncompacted = /* 26b/SKL+ */
-         (brw_inst_bits(src, 36, 35) << 24) |  /*  2b */
-         (brw_inst_bits(src, 34, 32) << 21) |  /*  3b */
-         (brw_inst_bits(src, 28,  8));         /* 21b */
+         (brw_eu_inst_bits(src, 36, 35) << 24) |  /*  2b */
+         (brw_eu_inst_bits(src, 34, 32) << 21) |  /*  3b */
+         (brw_eu_inst_bits(src, 28,  8));         /* 21b */
 
       for (unsigned i = 0; i < ARRAY_SIZE(gfx8_3src_control_index_table); i++) {
          if (gfx8_3src_control_index_table[i] == uncompacted) {
@@ -1247,21 +1247,21 @@ set_3src_source_index(const struct intel_device_info *devinfo,
 {
    if (devinfo->ver >= 12) {
       uint32_t uncompacted =               /* 21b/TGL+ */
-         (brw_inst_bits(src, 114, 114) << 20) | /*  1b */
-         (brw_inst_bits(src, 113, 112) << 18) | /*  2b */
-         (brw_inst_bits(src,  98,  98) << 17) | /*  1b */
-         (brw_inst_bits(src,  97,  96) << 15) | /*  2b */
-         (brw_inst_bits(src,  91,  91) << 14) | /*  1b */
-         (brw_inst_bits(src,  87,  86) << 12) | /*  2b */
-         (brw_inst_bits(src,  85,  84) << 10) | /*  2b */
-         (brw_inst_bits(src,  83,  83) <<  9) | /*  1b */
-         (brw_inst_bits(src,  66,  66) <<  8) | /*  1b */
-         (brw_inst_bits(src,  65,  64) <<  6) | /*  2b */
-         (brw_inst_bits(src,  47,  47) <<  5) | /*  1b */
-         (brw_inst_bits(src,  46,  46) <<  4) | /*  1b */
-         (brw_inst_bits(src,  45,  44) <<  2) | /*  2b */
-         (brw_inst_bits(src,  43,  43) <<  1) | /*  1b */
-         (brw_inst_bits(src,  35,  35));        /*  1b */
+         (brw_eu_inst_bits(src, 114, 114) << 20) | /*  1b */
+         (brw_eu_inst_bits(src, 113, 112) << 18) | /*  2b */
+         (brw_eu_inst_bits(src,  98,  98) << 17) | /*  1b */
+         (brw_eu_inst_bits(src,  97,  96) << 15) | /*  2b */
+         (brw_eu_inst_bits(src,  91,  91) << 14) | /*  1b */
+         (brw_eu_inst_bits(src,  87,  86) << 12) | /*  2b */
+         (brw_eu_inst_bits(src,  85,  84) << 10) | /*  2b */
+         (brw_eu_inst_bits(src,  83,  83) <<  9) | /*  1b */
+         (brw_eu_inst_bits(src,  66,  66) <<  8) | /*  1b */
+         (brw_eu_inst_bits(src,  65,  64) <<  6) | /*  2b */
+         (brw_eu_inst_bits(src,  47,  47) <<  5) | /*  1b */
+         (brw_eu_inst_bits(src,  46,  46) <<  4) | /*  1b */
+         (brw_eu_inst_bits(src,  45,  44) <<  2) | /*  2b */
+         (brw_eu_inst_bits(src,  43,  43) <<  1) | /*  1b */
+         (brw_eu_inst_bits(src,  35,  35));        /*  1b */
 
       /* In Xe2, the bits used to index the tables for 3src and 3src-dpas
        * are the same, so just need to pick the right one.
@@ -1285,14 +1285,14 @@ set_3src_source_index(const struct intel_device_info *devinfo,
       }
    } else {
       uint64_t uncompacted =    /* 49b/SKL+ */
-         (brw_inst_bits(src, 126, 125) << 47) |   /*  2b */
-         (brw_inst_bits(src, 105, 104) << 45) |   /*  2b */
-         (brw_inst_bits(src,  84,  84) << 44) |   /*  1b */
-         (brw_inst_bits(src,  83,  83) << 43) |   /*  1b */
-         (brw_inst_bits(src, 114, 107) << 35) |   /*  8b */
-         (brw_inst_bits(src,  93,  86) << 27) |   /*  8b */
-         (brw_inst_bits(src,  72,  65) << 19) |   /*  8b */
-         (brw_inst_bits(src,  55,  37));          /* 19b */
+         (brw_eu_inst_bits(src, 126, 125) << 47) |   /*  2b */
+         (brw_eu_inst_bits(src, 105, 104) << 45) |   /*  2b */
+         (brw_eu_inst_bits(src,  84,  84) << 44) |   /*  1b */
+         (brw_eu_inst_bits(src,  83,  83) << 43) |   /*  1b */
+         (brw_eu_inst_bits(src, 114, 107) << 35) |   /*  8b */
+         (brw_eu_inst_bits(src,  93,  86) << 27) |   /*  8b */
+         (brw_eu_inst_bits(src,  72,  65) << 19) |   /*  8b */
+         (brw_eu_inst_bits(src,  55,  37));          /* 19b */
 
       for (unsigned i = 0; i < ARRAY_SIZE(gfx8_3src_source_index_table); i++) {
          if (gfx8_3src_source_index_table[i] == uncompacted) {
@@ -1312,10 +1312,10 @@ set_3src_subreg_index(const struct intel_device_info *devinfo,
    assert(devinfo->ver >= 12);
 
    uint32_t uncompacted =               /* 20b/TGL+ */
-      (brw_inst_bits(src, 119, 115) << 15) | /*  5b */
-      (brw_inst_bits(src, 103,  99) << 10) | /*  5b */
-      (brw_inst_bits(src,  71,  67) <<  5) | /*  5b */
-      (brw_inst_bits(src,  55,  51));        /*  5b */
+      (brw_eu_inst_bits(src, 119, 115) << 15) | /*  5b */
+      (brw_eu_inst_bits(src, 103,  99) << 10) | /*  5b */
+      (brw_eu_inst_bits(src,  71,  67) <<  5) | /*  5b */
+      (brw_eu_inst_bits(src,  55,  51));        /*  5b */
 
    const uint32_t *table = devinfo->ver >= 20 ? xe2_3src_subreg_table :
                            gfx12_3src_subreg_table;
@@ -1354,13 +1354,13 @@ has_unmapped_bits(const struct brw_isa_info *isa, const brw_eu_inst *src)
     *  - UIP[31] (bit 95 on Gfx8)
     */
    if (devinfo->ver >= 12) {
-      assert(!brw_inst_bits(src, 7,  7));
+      assert(!brw_eu_inst_bits(src, 7,  7));
       return false;
    } else {
-      assert(!brw_inst_bits(src, 7,  7));
-      return brw_inst_bits(src, 95, 95) ||
-             brw_inst_bits(src, 47, 47) ||
-             brw_inst_bits(src, 11, 11);
+      assert(!brw_eu_inst_bits(src, 7,  7));
+      return brw_eu_inst_bits(src, 95, 95) ||
+             brw_eu_inst_bits(src, 47, 47) ||
+             brw_eu_inst_bits(src, 11, 11);
    }
 }
 
@@ -1373,15 +1373,15 @@ has_3src_unmapped_bits(const struct intel_device_info *devinfo,
     * bits currently.
     */
    if (devinfo->ver >= 20) {
-      assert(is_dpas || !brw_inst_bits(src, 49, 49));
-      assert(!brw_inst_bits(src, 33, 33));
-      assert(!brw_inst_bits(src, 7, 7));
+      assert(is_dpas || !brw_eu_inst_bits(src, 49, 49));
+      assert(!brw_eu_inst_bits(src, 33, 33));
+      assert(!brw_eu_inst_bits(src, 7, 7));
    } else if (devinfo->ver >= 12) {
-      assert(is_dpas || !brw_inst_bits(src, 49, 49));
-      assert(!brw_inst_bits(src, 7, 7));
+      assert(is_dpas || !brw_eu_inst_bits(src, 49, 49));
+      assert(!brw_eu_inst_bits(src, 7, 7));
    } else {
-      assert(!brw_inst_bits(src, 127, 127) &&
-             !brw_inst_bits(src, 7,  7));
+      assert(!brw_eu_inst_bits(src, 127, 127) &&
+             !brw_eu_inst_bits(src, 7,  7));
    }
 
    return false;
@@ -1806,32 +1806,32 @@ set_uncompacted_control(const struct compaction_state *c, brw_eu_inst *dst,
       c->control_index_table[brw_compact_inst_control_index(devinfo, src)];
 
    if (devinfo->ver >= 20) {
-      brw_inst_set_bits(dst, 95, 92, (uncompacted >> 14) & 0xf);
-      brw_inst_set_bits(dst, 34, 34, (uncompacted >> 13) & 0x1);
-      brw_inst_set_bits(dst, 32, 32, (uncompacted >> 12) & 0x1);
-      brw_inst_set_bits(dst, 31, 31, (uncompacted >> 11) & 0x1);
-      brw_inst_set_bits(dst, 28, 28, (uncompacted >> 10) & 0x1);
-      brw_inst_set_bits(dst, 27, 26, (uncompacted >>  8) & 0x3);
-      brw_inst_set_bits(dst, 25, 24, (uncompacted >>  6) & 0x3);
-      brw_inst_set_bits(dst, 23, 21, (uncompacted >>  3) & 0x7);
-      brw_inst_set_bits(dst, 20, 18, (uncompacted >>  0) & 0x7);
+      brw_eu_inst_set_bits(dst, 95, 92, (uncompacted >> 14) & 0xf);
+      brw_eu_inst_set_bits(dst, 34, 34, (uncompacted >> 13) & 0x1);
+      brw_eu_inst_set_bits(dst, 32, 32, (uncompacted >> 12) & 0x1);
+      brw_eu_inst_set_bits(dst, 31, 31, (uncompacted >> 11) & 0x1);
+      brw_eu_inst_set_bits(dst, 28, 28, (uncompacted >> 10) & 0x1);
+      brw_eu_inst_set_bits(dst, 27, 26, (uncompacted >>  8) & 0x3);
+      brw_eu_inst_set_bits(dst, 25, 24, (uncompacted >>  6) & 0x3);
+      brw_eu_inst_set_bits(dst, 23, 21, (uncompacted >>  3) & 0x7);
+      brw_eu_inst_set_bits(dst, 20, 18, (uncompacted >>  0) & 0x7);
    } else if (devinfo->ver >= 12) {
-      brw_inst_set_bits(dst, 95, 92, (uncompacted >> 17));
-      brw_inst_set_bits(dst, 34, 34, (uncompacted >> 16) & 0x1);
-      brw_inst_set_bits(dst, 33, 33, (uncompacted >> 15) & 0x1);
-      brw_inst_set_bits(dst, 32, 32, (uncompacted >> 14) & 0x1);
-      brw_inst_set_bits(dst, 31, 31, (uncompacted >> 13) & 0x1);
-      brw_inst_set_bits(dst, 28, 28, (uncompacted >> 12) & 0x1);
-      brw_inst_set_bits(dst, 27, 24, (uncompacted >>  8) & 0xf);
-      brw_inst_set_bits(dst, 23, 22, (uncompacted >>  6) & 0x3);
-      brw_inst_set_bits(dst, 21, 19, (uncompacted >>  3) & 0x7);
-      brw_inst_set_bits(dst, 18, 16, (uncompacted >>  0) & 0x7);
+      brw_eu_inst_set_bits(dst, 95, 92, (uncompacted >> 17));
+      brw_eu_inst_set_bits(dst, 34, 34, (uncompacted >> 16) & 0x1);
+      brw_eu_inst_set_bits(dst, 33, 33, (uncompacted >> 15) & 0x1);
+      brw_eu_inst_set_bits(dst, 32, 32, (uncompacted >> 14) & 0x1);
+      brw_eu_inst_set_bits(dst, 31, 31, (uncompacted >> 13) & 0x1);
+      brw_eu_inst_set_bits(dst, 28, 28, (uncompacted >> 12) & 0x1);
+      brw_eu_inst_set_bits(dst, 27, 24, (uncompacted >>  8) & 0xf);
+      brw_eu_inst_set_bits(dst, 23, 22, (uncompacted >>  6) & 0x3);
+      brw_eu_inst_set_bits(dst, 21, 19, (uncompacted >>  3) & 0x7);
+      brw_eu_inst_set_bits(dst, 18, 16, (uncompacted >>  0) & 0x7);
    } else {
-      brw_inst_set_bits(dst, 33, 31, (uncompacted >> 16));
-      brw_inst_set_bits(dst, 23, 12, (uncompacted >>  4) & 0xfff);
-      brw_inst_set_bits(dst, 10,  9, (uncompacted >>  2) & 0x3);
-      brw_inst_set_bits(dst, 34, 34, (uncompacted >>  1) & 0x1);
-      brw_inst_set_bits(dst,  8,  8, (uncompacted >>  0) & 0x1);
+      brw_eu_inst_set_bits(dst, 33, 31, (uncompacted >> 16));
+      brw_eu_inst_set_bits(dst, 23, 12, (uncompacted >>  4) & 0xfff);
+      brw_eu_inst_set_bits(dst, 10,  9, (uncompacted >>  2) & 0x3);
+      brw_eu_inst_set_bits(dst, 34, 34, (uncompacted >>  1) & 0x1);
+      brw_eu_inst_set_bits(dst,  8,  8, (uncompacted >>  0) & 0x1);
    }
 }
 
@@ -1844,20 +1844,20 @@ set_uncompacted_datatype(const struct compaction_state *c, brw_eu_inst *dst,
       c->datatype_table[brw_compact_inst_datatype_index(devinfo, src)];
 
    if (devinfo->ver >= 12) {
-      brw_inst_set_bits(dst, 98, 98, (uncompacted >> 19));
-      brw_inst_set_bits(dst, 91, 88, (uncompacted >> 15) & 0xf);
-      brw_inst_set_bits(dst, 66, 66, (uncompacted >> 14) & 0x1);
-      brw_inst_set_bits(dst, 50, 50, (uncompacted >> 13) & 0x1);
-      brw_inst_set_bits(dst, 49, 48, (uncompacted >> 11) & 0x3);
-      brw_inst_set_bits(dst, 47, 47, (uncompacted >> 10) & 0x1);
-      brw_inst_set_bits(dst, 46, 46, (uncompacted >>  9) & 0x1);
-      brw_inst_set_bits(dst, 43, 40, (uncompacted >>  5) & 0xf);
-      brw_inst_set_bits(dst, 39, 36, (uncompacted >>  1) & 0xf);
-      brw_inst_set_bits(dst, 35, 35, (uncompacted >>  0) & 0x1);
+      brw_eu_inst_set_bits(dst, 98, 98, (uncompacted >> 19));
+      brw_eu_inst_set_bits(dst, 91, 88, (uncompacted >> 15) & 0xf);
+      brw_eu_inst_set_bits(dst, 66, 66, (uncompacted >> 14) & 0x1);
+      brw_eu_inst_set_bits(dst, 50, 50, (uncompacted >> 13) & 0x1);
+      brw_eu_inst_set_bits(dst, 49, 48, (uncompacted >> 11) & 0x3);
+      brw_eu_inst_set_bits(dst, 47, 47, (uncompacted >> 10) & 0x1);
+      brw_eu_inst_set_bits(dst, 46, 46, (uncompacted >>  9) & 0x1);
+      brw_eu_inst_set_bits(dst, 43, 40, (uncompacted >>  5) & 0xf);
+      brw_eu_inst_set_bits(dst, 39, 36, (uncompacted >>  1) & 0xf);
+      brw_eu_inst_set_bits(dst, 35, 35, (uncompacted >>  0) & 0x1);
    } else {
-      brw_inst_set_bits(dst, 63, 61, (uncompacted >> 18));
-      brw_inst_set_bits(dst, 94, 89, (uncompacted >> 12) & 0x3f);
-      brw_inst_set_bits(dst, 46, 35, (uncompacted >>  0) & 0xfff);
+      brw_eu_inst_set_bits(dst, 63, 61, (uncompacted >> 18));
+      brw_eu_inst_set_bits(dst, 94, 89, (uncompacted >> 12) & 0x3f);
+      brw_eu_inst_set_bits(dst, 46, 35, (uncompacted >>  0) & 0xfff);
    }
 }
 
@@ -1870,18 +1870,18 @@ set_uncompacted_subreg(const struct compaction_state *c, brw_eu_inst *dst,
       c->subreg_table[brw_compact_inst_subreg_index(devinfo, src)];
 
    if (devinfo->ver >= 20) {
-      brw_inst_set_bits(dst, 33, 33, (uncompacted >> 0) & 0x1);
-      brw_inst_set_bits(dst, 55, 51, (uncompacted >> 1) & 0x1f);
-      brw_inst_set_bits(dst, 71, 67, (uncompacted >> 6) & 0x1f);
-      brw_inst_set_bits(dst, 87, 87, (uncompacted >> 11) & 0x1);
+      brw_eu_inst_set_bits(dst, 33, 33, (uncompacted >> 0) & 0x1);
+      brw_eu_inst_set_bits(dst, 55, 51, (uncompacted >> 1) & 0x1f);
+      brw_eu_inst_set_bits(dst, 71, 67, (uncompacted >> 6) & 0x1f);
+      brw_eu_inst_set_bits(dst, 87, 87, (uncompacted >> 11) & 0x1);
    } else if (devinfo->ver >= 12) {
-      brw_inst_set_bits(dst, 103, 99, (uncompacted >> 10));
-      brw_inst_set_bits(dst,  71, 67, (uncompacted >>  5) & 0x1f);
-      brw_inst_set_bits(dst,  55, 51, (uncompacted >>  0) & 0x1f);
+      brw_eu_inst_set_bits(dst, 103, 99, (uncompacted >> 10));
+      brw_eu_inst_set_bits(dst,  71, 67, (uncompacted >>  5) & 0x1f);
+      brw_eu_inst_set_bits(dst,  55, 51, (uncompacted >>  0) & 0x1f);
    } else {
-      brw_inst_set_bits(dst, 100, 96, (uncompacted >> 10));
-      brw_inst_set_bits(dst,  68, 64, (uncompacted >>  5) & 0x1f);
-      brw_inst_set_bits(dst,  52, 48, (uncompacted >>  0) & 0x1f);
+      brw_eu_inst_set_bits(dst, 100, 96, (uncompacted >> 10));
+      brw_eu_inst_set_bits(dst,  68, 64, (uncompacted >>  5) & 0x1f);
+      brw_eu_inst_set_bits(dst,  52, 48, (uncompacted >>  0) & 0x1f);
    }
 }
 
@@ -1895,14 +1895,14 @@ set_uncompacted_src0(const struct compaction_state *c, brw_eu_inst *dst,
 
    if (devinfo->ver >= 12) {
       if (devinfo->ver < 20)
-         brw_inst_set_bits(dst, 87, 87, (uncompacted >> 11) & 0x1);
-      brw_inst_set_bits(dst, 86, 84, (uncompacted >> 8) & 0x7);
-      brw_inst_set_bits(dst, 83, 81, (uncompacted >> 5) & 0x7);
-      brw_inst_set_bits(dst, 80, 80, (uncompacted >> 4) & 0x1);
-      brw_inst_set_bits(dst, 65, 64, (uncompacted >> 2) & 0x3);
-      brw_inst_set_bits(dst, 45, 44, (uncompacted >> 0) & 0x3);
+         brw_eu_inst_set_bits(dst, 87, 87, (uncompacted >> 11) & 0x1);
+      brw_eu_inst_set_bits(dst, 86, 84, (uncompacted >> 8) & 0x7);
+      brw_eu_inst_set_bits(dst, 83, 81, (uncompacted >> 5) & 0x7);
+      brw_eu_inst_set_bits(dst, 80, 80, (uncompacted >> 4) & 0x1);
+      brw_eu_inst_set_bits(dst, 65, 64, (uncompacted >> 2) & 0x3);
+      brw_eu_inst_set_bits(dst, 45, 44, (uncompacted >> 0) & 0x3);
    } else {
-      brw_inst_set_bits(dst, 88, 77, uncompacted);
+      brw_eu_inst_set_bits(dst, 88, 77, uncompacted);
    }
 }
 
@@ -1915,20 +1915,20 @@ set_uncompacted_src1(const struct compaction_state *c, brw_eu_inst *dst,
       c->src1_index_table[brw_compact_inst_src1_index(devinfo, src)];
 
    if (devinfo->ver >= 20) {
-      brw_inst_set_bits(dst, 121, 120, (uncompacted >> 14) & 0x3);
-      brw_inst_set_bits(dst, 118, 116, (uncompacted >> 11) & 0x7);
-      brw_inst_set_bits(dst, 115, 113, (uncompacted >>  8) & 0x7);
-      brw_inst_set_bits(dst, 112, 112, (uncompacted >>  7) & 0x1);
-      brw_inst_set_bits(dst, 103,  99, (uncompacted >>  2) & 0x1f);
-      brw_inst_set_bits(dst,  97,  96, (uncompacted >>  0) & 0x3);
+      brw_eu_inst_set_bits(dst, 121, 120, (uncompacted >> 14) & 0x3);
+      brw_eu_inst_set_bits(dst, 118, 116, (uncompacted >> 11) & 0x7);
+      brw_eu_inst_set_bits(dst, 115, 113, (uncompacted >>  8) & 0x7);
+      brw_eu_inst_set_bits(dst, 112, 112, (uncompacted >>  7) & 0x1);
+      brw_eu_inst_set_bits(dst, 103,  99, (uncompacted >>  2) & 0x1f);
+      brw_eu_inst_set_bits(dst,  97,  96, (uncompacted >>  0) & 0x3);
    } else if (devinfo->ver >= 12) {
-      brw_inst_set_bits(dst, 121, 120, (uncompacted >> 10));
-      brw_inst_set_bits(dst, 119, 116, (uncompacted >>  6) & 0xf);
-      brw_inst_set_bits(dst, 115, 113, (uncompacted >>  3) & 0x7);
-      brw_inst_set_bits(dst, 112, 112, (uncompacted >>  2) & 0x1);
-      brw_inst_set_bits(dst,  97,  96, (uncompacted >>  0) & 0x3);
+      brw_eu_inst_set_bits(dst, 121, 120, (uncompacted >> 10));
+      brw_eu_inst_set_bits(dst, 119, 116, (uncompacted >>  6) & 0xf);
+      brw_eu_inst_set_bits(dst, 115, 113, (uncompacted >>  3) & 0x7);
+      brw_eu_inst_set_bits(dst, 112, 112, (uncompacted >>  2) & 0x1);
+      brw_eu_inst_set_bits(dst,  97,  96, (uncompacted >>  0) & 0x3);
    } else {
-      brw_inst_set_bits(dst, 120, 109, uncompacted);
+      brw_eu_inst_set_bits(dst, 120, 109, uncompacted);
    }
 }
 
@@ -1944,76 +1944,76 @@ set_uncompacted_3src_control_index(const struct compaction_state *c,
       uint64_t uncompacted = is_dpas ? xe2_3src_dpas_control_index_table[compacted] :
                                        xe2_3src_control_index_table[compacted];
 
-      brw_inst_set_bits(dst, 95, 92, (uncompacted >> 30) & 0xf);
-      brw_inst_set_bits(dst, 90, 88, (uncompacted >> 27) & 0x7);
-      brw_inst_set_bits(dst, 82, 80, (uncompacted >> 24) & 0x7);
-      brw_inst_set_bits(dst, 50, 50, (uncompacted >> 23) & 0x1);
-      brw_inst_set_bits(dst, 49, 48, (uncompacted >> 21) & 0x3);
-      brw_inst_set_bits(dst, 42, 40, (uncompacted >> 18) & 0x7);
-      brw_inst_set_bits(dst, 39, 39, (uncompacted >> 17) & 0x1);
-      brw_inst_set_bits(dst, 38, 36, (uncompacted >> 14) & 0x7);
-      brw_inst_set_bits(dst, 34, 34, (uncompacted >> 13) & 0x1);
-      brw_inst_set_bits(dst, 32, 32, (uncompacted >> 12) & 0x1);
-      brw_inst_set_bits(dst, 31, 31, (uncompacted >> 11) & 0x1);
-      brw_inst_set_bits(dst, 28, 28, (uncompacted >> 10) & 0x1);
-      brw_inst_set_bits(dst, 27, 26, (uncompacted >>  8) & 0x3);
-      brw_inst_set_bits(dst, 25, 24, (uncompacted >>  6) & 0x3);
-      brw_inst_set_bits(dst, 23, 21, (uncompacted >>  3) & 0x7);
-      brw_inst_set_bits(dst, 20, 18, (uncompacted >>  0) & 0x7);
+      brw_eu_inst_set_bits(dst, 95, 92, (uncompacted >> 30) & 0xf);
+      brw_eu_inst_set_bits(dst, 90, 88, (uncompacted >> 27) & 0x7);
+      brw_eu_inst_set_bits(dst, 82, 80, (uncompacted >> 24) & 0x7);
+      brw_eu_inst_set_bits(dst, 50, 50, (uncompacted >> 23) & 0x1);
+      brw_eu_inst_set_bits(dst, 49, 48, (uncompacted >> 21) & 0x3);
+      brw_eu_inst_set_bits(dst, 42, 40, (uncompacted >> 18) & 0x7);
+      brw_eu_inst_set_bits(dst, 39, 39, (uncompacted >> 17) & 0x1);
+      brw_eu_inst_set_bits(dst, 38, 36, (uncompacted >> 14) & 0x7);
+      brw_eu_inst_set_bits(dst, 34, 34, (uncompacted >> 13) & 0x1);
+      brw_eu_inst_set_bits(dst, 32, 32, (uncompacted >> 12) & 0x1);
+      brw_eu_inst_set_bits(dst, 31, 31, (uncompacted >> 11) & 0x1);
+      brw_eu_inst_set_bits(dst, 28, 28, (uncompacted >> 10) & 0x1);
+      brw_eu_inst_set_bits(dst, 27, 26, (uncompacted >>  8) & 0x3);
+      brw_eu_inst_set_bits(dst, 25, 24, (uncompacted >>  6) & 0x3);
+      brw_eu_inst_set_bits(dst, 23, 21, (uncompacted >>  3) & 0x7);
+      brw_eu_inst_set_bits(dst, 20, 18, (uncompacted >>  0) & 0x7);
 
    } else if (devinfo->verx10 >= 125) {
       uint64_t compacted = brw_compact_inst_3src_control_index(devinfo, src);
       uint64_t uncompacted = xehp_3src_control_index_table[compacted];
 
-      brw_inst_set_bits(dst, 95, 92, (uncompacted >> 33));
-      brw_inst_set_bits(dst, 90, 88, (uncompacted >> 30) & 0x7);
-      brw_inst_set_bits(dst, 82, 80, (uncompacted >> 27) & 0x7);
-      brw_inst_set_bits(dst, 50, 50, (uncompacted >> 26) & 0x1);
-      brw_inst_set_bits(dst, 49, 48, (uncompacted >> 24) & 0x3);
-      brw_inst_set_bits(dst, 42, 40, (uncompacted >> 21) & 0x7);
-      brw_inst_set_bits(dst, 39, 39, (uncompacted >> 20) & 0x1);
-      brw_inst_set_bits(dst, 38, 36, (uncompacted >> 17) & 0x7);
-      brw_inst_set_bits(dst, 34, 34, (uncompacted >> 16) & 0x1);
-      brw_inst_set_bits(dst, 33, 33, (uncompacted >> 15) & 0x1);
-      brw_inst_set_bits(dst, 32, 32, (uncompacted >> 14) & 0x1);
-      brw_inst_set_bits(dst, 31, 31, (uncompacted >> 13) & 0x1);
-      brw_inst_set_bits(dst, 28, 28, (uncompacted >> 12) & 0x1);
-      brw_inst_set_bits(dst, 27, 24, (uncompacted >>  8) & 0xf);
-      brw_inst_set_bits(dst, 23, 23, (uncompacted >>  7) & 0x1);
-      brw_inst_set_bits(dst, 22, 22, (uncompacted >>  6) & 0x1);
-      brw_inst_set_bits(dst, 21, 19, (uncompacted >>  3) & 0x7);
-      brw_inst_set_bits(dst, 18, 16, (uncompacted >>  0) & 0x7);
+      brw_eu_inst_set_bits(dst, 95, 92, (uncompacted >> 33));
+      brw_eu_inst_set_bits(dst, 90, 88, (uncompacted >> 30) & 0x7);
+      brw_eu_inst_set_bits(dst, 82, 80, (uncompacted >> 27) & 0x7);
+      brw_eu_inst_set_bits(dst, 50, 50, (uncompacted >> 26) & 0x1);
+      brw_eu_inst_set_bits(dst, 49, 48, (uncompacted >> 24) & 0x3);
+      brw_eu_inst_set_bits(dst, 42, 40, (uncompacted >> 21) & 0x7);
+      brw_eu_inst_set_bits(dst, 39, 39, (uncompacted >> 20) & 0x1);
+      brw_eu_inst_set_bits(dst, 38, 36, (uncompacted >> 17) & 0x7);
+      brw_eu_inst_set_bits(dst, 34, 34, (uncompacted >> 16) & 0x1);
+      brw_eu_inst_set_bits(dst, 33, 33, (uncompacted >> 15) & 0x1);
+      brw_eu_inst_set_bits(dst, 32, 32, (uncompacted >> 14) & 0x1);
+      brw_eu_inst_set_bits(dst, 31, 31, (uncompacted >> 13) & 0x1);
+      brw_eu_inst_set_bits(dst, 28, 28, (uncompacted >> 12) & 0x1);
+      brw_eu_inst_set_bits(dst, 27, 24, (uncompacted >>  8) & 0xf);
+      brw_eu_inst_set_bits(dst, 23, 23, (uncompacted >>  7) & 0x1);
+      brw_eu_inst_set_bits(dst, 22, 22, (uncompacted >>  6) & 0x1);
+      brw_eu_inst_set_bits(dst, 21, 19, (uncompacted >>  3) & 0x7);
+      brw_eu_inst_set_bits(dst, 18, 16, (uncompacted >>  0) & 0x7);
 
    } else if (devinfo->ver >= 12) {
       uint64_t compacted = brw_compact_inst_3src_control_index(devinfo, src);
       uint64_t uncompacted = gfx12_3src_control_index_table[compacted];
 
-      brw_inst_set_bits(dst, 95, 92, (uncompacted >> 32));
-      brw_inst_set_bits(dst, 90, 88, (uncompacted >> 29) & 0x7);
-      brw_inst_set_bits(dst, 82, 80, (uncompacted >> 26) & 0x7);
-      brw_inst_set_bits(dst, 50, 50, (uncompacted >> 25) & 0x1);
-      brw_inst_set_bits(dst, 48, 48, (uncompacted >> 24) & 0x1);
-      brw_inst_set_bits(dst, 42, 40, (uncompacted >> 21) & 0x7);
-      brw_inst_set_bits(dst, 39, 39, (uncompacted >> 20) & 0x1);
-      brw_inst_set_bits(dst, 38, 36, (uncompacted >> 17) & 0x7);
-      brw_inst_set_bits(dst, 34, 34, (uncompacted >> 16) & 0x1);
-      brw_inst_set_bits(dst, 33, 33, (uncompacted >> 15) & 0x1);
-      brw_inst_set_bits(dst, 32, 32, (uncompacted >> 14) & 0x1);
-      brw_inst_set_bits(dst, 31, 31, (uncompacted >> 13) & 0x1);
-      brw_inst_set_bits(dst, 28, 28, (uncompacted >> 12) & 0x1);
-      brw_inst_set_bits(dst, 27, 24, (uncompacted >>  8) & 0xf);
-      brw_inst_set_bits(dst, 23, 23, (uncompacted >>  7) & 0x1);
-      brw_inst_set_bits(dst, 22, 22, (uncompacted >>  6) & 0x1);
-      brw_inst_set_bits(dst, 21, 19, (uncompacted >>  3) & 0x7);
-      brw_inst_set_bits(dst, 18, 16, (uncompacted >>  0) & 0x7);
+      brw_eu_inst_set_bits(dst, 95, 92, (uncompacted >> 32));
+      brw_eu_inst_set_bits(dst, 90, 88, (uncompacted >> 29) & 0x7);
+      brw_eu_inst_set_bits(dst, 82, 80, (uncompacted >> 26) & 0x7);
+      brw_eu_inst_set_bits(dst, 50, 50, (uncompacted >> 25) & 0x1);
+      brw_eu_inst_set_bits(dst, 48, 48, (uncompacted >> 24) & 0x1);
+      brw_eu_inst_set_bits(dst, 42, 40, (uncompacted >> 21) & 0x7);
+      brw_eu_inst_set_bits(dst, 39, 39, (uncompacted >> 20) & 0x1);
+      brw_eu_inst_set_bits(dst, 38, 36, (uncompacted >> 17) & 0x7);
+      brw_eu_inst_set_bits(dst, 34, 34, (uncompacted >> 16) & 0x1);
+      brw_eu_inst_set_bits(dst, 33, 33, (uncompacted >> 15) & 0x1);
+      brw_eu_inst_set_bits(dst, 32, 32, (uncompacted >> 14) & 0x1);
+      brw_eu_inst_set_bits(dst, 31, 31, (uncompacted >> 13) & 0x1);
+      brw_eu_inst_set_bits(dst, 28, 28, (uncompacted >> 12) & 0x1);
+      brw_eu_inst_set_bits(dst, 27, 24, (uncompacted >>  8) & 0xf);
+      brw_eu_inst_set_bits(dst, 23, 23, (uncompacted >>  7) & 0x1);
+      brw_eu_inst_set_bits(dst, 22, 22, (uncompacted >>  6) & 0x1);
+      brw_eu_inst_set_bits(dst, 21, 19, (uncompacted >>  3) & 0x7);
+      brw_eu_inst_set_bits(dst, 18, 16, (uncompacted >>  0) & 0x7);
    } else {
       uint32_t compacted = brw_compact_inst_3src_control_index(devinfo, src);
       uint32_t uncompacted = gfx8_3src_control_index_table[compacted];
 
-      brw_inst_set_bits(dst, 34, 32, (uncompacted >> 21) & 0x7);
-      brw_inst_set_bits(dst, 28,  8, (uncompacted >>  0) & 0x1fffff);
+      brw_eu_inst_set_bits(dst, 34, 32, (uncompacted >> 21) & 0x7);
+      brw_eu_inst_set_bits(dst, 28,  8, (uncompacted >>  0) & 0x1fffff);
 
-      brw_inst_set_bits(dst, 36, 35, (uncompacted >> 24) & 0x3);
+      brw_eu_inst_set_bits(dst, 36, 35, (uncompacted >> 24) & 0x3);
    }
 }
 
@@ -2032,33 +2032,33 @@ set_uncompacted_3src_source_index(const struct intel_device_info *devinfo,
                                   gfx12_3src_source_index_table;
       uint32_t uncompacted = three_src_source_index_table[compacted];
 
-      brw_inst_set_bits(dst, 114, 114, (uncompacted >> 20));
-      brw_inst_set_bits(dst, 113, 112, (uncompacted >> 18) & 0x3);
-      brw_inst_set_bits(dst,  98,  98, (uncompacted >> 17) & 0x1);
-      brw_inst_set_bits(dst,  97,  96, (uncompacted >> 15) & 0x3);
-      brw_inst_set_bits(dst,  91,  91, (uncompacted >> 14) & 0x1);
-      brw_inst_set_bits(dst,  87,  86, (uncompacted >> 12) & 0x3);
-      brw_inst_set_bits(dst,  85,  84, (uncompacted >> 10) & 0x3);
-      brw_inst_set_bits(dst,  83,  83, (uncompacted >>  9) & 0x1);
-      brw_inst_set_bits(dst,  66,  66, (uncompacted >>  8) & 0x1);
-      brw_inst_set_bits(dst,  65,  64, (uncompacted >>  6) & 0x3);
-      brw_inst_set_bits(dst,  47,  47, (uncompacted >>  5) & 0x1);
-      brw_inst_set_bits(dst,  46,  46, (uncompacted >>  4) & 0x1);
-      brw_inst_set_bits(dst,  45,  44, (uncompacted >>  2) & 0x3);
-      brw_inst_set_bits(dst,  43,  43, (uncompacted >>  1) & 0x1);
-      brw_inst_set_bits(dst,  35,  35, (uncompacted >>  0) & 0x1);
+      brw_eu_inst_set_bits(dst, 114, 114, (uncompacted >> 20));
+      brw_eu_inst_set_bits(dst, 113, 112, (uncompacted >> 18) & 0x3);
+      brw_eu_inst_set_bits(dst,  98,  98, (uncompacted >> 17) & 0x1);
+      brw_eu_inst_set_bits(dst,  97,  96, (uncompacted >> 15) & 0x3);
+      brw_eu_inst_set_bits(dst,  91,  91, (uncompacted >> 14) & 0x1);
+      brw_eu_inst_set_bits(dst,  87,  86, (uncompacted >> 12) & 0x3);
+      brw_eu_inst_set_bits(dst,  85,  84, (uncompacted >> 10) & 0x3);
+      brw_eu_inst_set_bits(dst,  83,  83, (uncompacted >>  9) & 0x1);
+      brw_eu_inst_set_bits(dst,  66,  66, (uncompacted >>  8) & 0x1);
+      brw_eu_inst_set_bits(dst,  65,  64, (uncompacted >>  6) & 0x3);
+      brw_eu_inst_set_bits(dst,  47,  47, (uncompacted >>  5) & 0x1);
+      brw_eu_inst_set_bits(dst,  46,  46, (uncompacted >>  4) & 0x1);
+      brw_eu_inst_set_bits(dst,  45,  44, (uncompacted >>  2) & 0x3);
+      brw_eu_inst_set_bits(dst,  43,  43, (uncompacted >>  1) & 0x1);
+      brw_eu_inst_set_bits(dst,  35,  35, (uncompacted >>  0) & 0x1);
    } else {
       uint64_t uncompacted = gfx8_3src_source_index_table[compacted];
 
-      brw_inst_set_bits(dst,  83,  83, (uncompacted >> 43) & 0x1);
-      brw_inst_set_bits(dst, 114, 107, (uncompacted >> 35) & 0xff);
-      brw_inst_set_bits(dst,  93,  86, (uncompacted >> 27) & 0xff);
-      brw_inst_set_bits(dst,  72,  65, (uncompacted >> 19) & 0xff);
-      brw_inst_set_bits(dst,  55,  37, (uncompacted >>  0) & 0x7ffff);
+      brw_eu_inst_set_bits(dst,  83,  83, (uncompacted >> 43) & 0x1);
+      brw_eu_inst_set_bits(dst, 114, 107, (uncompacted >> 35) & 0xff);
+      brw_eu_inst_set_bits(dst,  93,  86, (uncompacted >> 27) & 0xff);
+      brw_eu_inst_set_bits(dst,  72,  65, (uncompacted >> 19) & 0xff);
+      brw_eu_inst_set_bits(dst,  55,  37, (uncompacted >>  0) & 0x7ffff);
 
-      brw_inst_set_bits(dst, 126, 125, (uncompacted >> 47) & 0x3);
-      brw_inst_set_bits(dst, 105, 104, (uncompacted >> 45) & 0x3);
-      brw_inst_set_bits(dst,  84,  84, (uncompacted >> 44) & 0x1);
+      brw_eu_inst_set_bits(dst, 126, 125, (uncompacted >> 47) & 0x3);
+      brw_eu_inst_set_bits(dst, 105, 104, (uncompacted >> 45) & 0x3);
+      brw_eu_inst_set_bits(dst,  84,  84, (uncompacted >> 44) & 0x1);
    }
 }
 
@@ -2072,10 +2072,10 @@ set_uncompacted_3src_subreg_index(const struct intel_device_info *devinfo,
    uint32_t uncompacted = (devinfo->ver >= 20 ? xe2_3src_subreg_table[compacted]:
                            gfx12_3src_subreg_table[compacted]);
 
-   brw_inst_set_bits(dst, 119, 115, (uncompacted >> 15));
-   brw_inst_set_bits(dst, 103,  99, (uncompacted >> 10) & 0x1f);
-   brw_inst_set_bits(dst,  71,  67, (uncompacted >>  5) & 0x1f);
-   brw_inst_set_bits(dst,  55,  51, (uncompacted >>  0) & 0x1f);
+   brw_eu_inst_set_bits(dst, 119, 115, (uncompacted >> 15));
+   brw_eu_inst_set_bits(dst, 103,  99, (uncompacted >> 10) & 0x1f);
+   brw_eu_inst_set_bits(dst,  71,  67, (uncompacted >>  5) & 0x1f);
+   brw_eu_inst_set_bits(dst,  55,  51, (uncompacted >>  0) & 0x1f);
 }
 
 static void

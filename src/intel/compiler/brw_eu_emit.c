@@ -1631,7 +1631,7 @@ brw_send_indirect_split_message(struct brw_codegen *p,
 
       if (devinfo->ver >= 20 && sfid == GFX12_SFID_UGM) {
          const unsigned ex_mlen = brw_message_ex_desc_ex_mlen(devinfo, ex_desc_imm);
-         brw_inst_set_bits(send, 103, 99, ex_mlen / reg_unit(devinfo));
+         brw_eu_inst_set_bits(send, 103, 99, ex_mlen / reg_unit(devinfo));
       }
    }
 

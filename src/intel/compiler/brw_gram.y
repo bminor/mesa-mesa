@@ -895,7 +895,7 @@ sendinstruction:
 		brw_inst_set_exec_size(p->devinfo, brw_last_inst, $3);
 		brw_set_dest(p, brw_last_inst, $4);
 		brw_set_src0(p, brw_last_inst, $5);
-		brw_inst_set_bits(brw_last_inst, 127, 96, $6);
+		brw_eu_inst_set_bits(brw_last_inst, 127, 96, $6);
 		brw_inst_set_src1_file_type(p->devinfo, brw_last_inst,
 				            IMM,
 					    BRW_TYPE_UD);
@@ -913,7 +913,7 @@ sendinstruction:
 		brw_inst_set_exec_size(p->devinfo, brw_last_inst, $3);
 		brw_set_dest(p, brw_last_inst, $4);
 		brw_set_src0(p, brw_last_inst, $5);
-		brw_inst_set_bits(brw_last_inst, 127, 96, $7);
+		brw_eu_inst_set_bits(brw_last_inst, 127, 96, $7);
 		brw_inst_set_sfid(p->devinfo, brw_last_inst, $8);
 		brw_inst_set_eot(p->devinfo, brw_last_inst, $10.end_of_thread);
 		brw_inst_set_group(p->devinfo, brw_last_inst, $10.chan_offset);

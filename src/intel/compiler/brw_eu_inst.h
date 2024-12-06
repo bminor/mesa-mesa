@@ -47,11 +47,11 @@ typedef struct brw_eu_inst {
    uint64_t data[2];
 } brw_eu_inst;
 
-static inline uint64_t brw_inst_bits(const brw_eu_inst *inst,
-                                     unsigned high, unsigned low);
-static inline void brw_inst_set_bits(brw_eu_inst *inst,
-                                     unsigned high, unsigned low,
-                                     uint64_t value);
+static inline uint64_t brw_eu_inst_bits(const brw_eu_inst *inst,
+                                        unsigned high, unsigned low);
+static inline void brw_eu_inst_set_bits(brw_eu_inst *inst,
+                                        unsigned high, unsigned low,
+                                        uint64_t value);
 
 #define FC(name, hi9, lo9, hi12, lo12, assertions)            \
 static inline void                                            \
@@ -60,9 +60,9 @@ brw_inst_set_##name(const struct intel_device_info *devinfo,  \
 {                                                             \
    assert(assertions);                                        \
    if (devinfo->ver >= 12)                                    \
-      brw_inst_set_bits(inst, hi12, lo12, v);                 \
+      brw_eu_inst_set_bits(inst, hi12, lo12, v);              \
    else                                                       \
-      brw_inst_set_bits(inst, hi9, lo9, v);                   \
+      brw_eu_inst_set_bits(inst, hi9, lo9, v);                \
 }                                                             \
 static inline uint64_t                                        \
 brw_inst_##name(const struct intel_device_info *devinfo,      \
@@ -70,9 +70,9 @@ brw_inst_##name(const struct intel_device_info *devinfo,      \
 {                                                             \
    assert(assertions);                                        \
    if (devinfo->ver >= 12)                                    \
-      return brw_inst_bits(inst, hi12, lo12);                 \
+      return brw_eu_inst_bits(inst, hi12, lo12);              \
    else                                                       \
-      return brw_inst_bits(inst, hi9, lo9);                   \
+      return brw_eu_inst_bits(inst, hi9, lo9);                \
 }
 
 /* A simple macro for fields which stay in the same place on all generations,
@@ -89,22 +89,22 @@ brw_inst_##name(const struct intel_device_info *devinfo,      \
                        brw_eu_inst *inst, uint64_t v)              \
    {                                                               \
       if (devinfo->ver >= 20)                                      \
-         brw_inst_set_bits(inst, hi20, lo20, v);                   \
+         brw_eu_inst_set_bits(inst, hi20, lo20, v);                \
       else if (devinfo->ver >= 12)                                 \
-         brw_inst_set_bits(inst, hi12, lo12, v);                   \
+         brw_eu_inst_set_bits(inst, hi12, lo12, v);                \
       else                                                         \
-         brw_inst_set_bits(inst, hi9, lo9, v);                     \
+         brw_eu_inst_set_bits(inst, hi9, lo9, v);                  \
    }                                                               \
    static inline uint64_t                                          \
    brw_inst_##name(const struct intel_device_info *devinfo,        \
                    const brw_eu_inst *inst)                        \
    {                                                               \
       if (devinfo->ver >= 20)                                      \
-         return brw_inst_bits(inst, hi20, lo20);                   \
+         return brw_eu_inst_bits(inst, hi20, lo20);                \
       else if (devinfo->ver >= 12)                                 \
-         return brw_inst_bits(inst, hi12, lo12);                   \
+         return brw_eu_inst_bits(inst, hi12, lo12);                \
       else                                                         \
-         return brw_inst_bits(inst, hi9, lo9);                     \
+         return brw_eu_inst_bits(inst, hi9, lo9);                  \
    }
 
 #define FV20(name, hi9, lo9, hi12, lo12, hi20, lo20)               \
@@ -113,23 +113,23 @@ brw_inst_##name(const struct intel_device_info *devinfo,      \
                        brw_eu_inst *inst, uint64_t v)              \
    {                                                               \
       if (devinfo->ver >= 20)                                      \
-         brw_inst_set_bits(inst, hi20, lo20, v & 0x7);             \
+         brw_eu_inst_set_bits(inst, hi20, lo20, v & 0x7);          \
       else if (devinfo->ver >= 12)                                 \
-         brw_inst_set_bits(inst, hi12, lo12, v);                   \
+         brw_eu_inst_set_bits(inst, hi12, lo12, v);                \
       else                                                         \
-         brw_inst_set_bits(inst, hi9, lo9, v);                     \
+         brw_eu_inst_set_bits(inst, hi9, lo9, v);                  \
    }                                                               \
    static inline uint64_t                                          \
    brw_inst_##name(const struct intel_device_info *devinfo,        \
                    const brw_eu_inst *inst)                        \
    {                                                               \
       if (devinfo->ver >= 20)                                      \
-         return brw_inst_bits(inst, hi20, lo20) == 0x7 ? 0xF :     \
-                brw_inst_bits(inst, hi20, lo20);                   \
+         return brw_eu_inst_bits(inst, hi20, lo20) == 0x7 ? 0xF :  \
+                brw_eu_inst_bits(inst, hi20, lo20);                \
       else if (devinfo->ver >= 12)                                 \
-         return brw_inst_bits(inst, hi12, lo12);                   \
+         return brw_eu_inst_bits(inst, hi12, lo12);                \
       else                                                         \
-         return brw_inst_bits(inst, hi9, lo9);                     \
+         return brw_eu_inst_bits(inst, hi9, lo9);                  \
    }
 
 #define FD20(name, hi9, lo9, hi12, lo12, hi20, lo20, zero20)       \
@@ -138,28 +138,28 @@ brw_inst_##name(const struct intel_device_info *devinfo,      \
                        brw_eu_inst *inst, uint64_t v)              \
    {                                                               \
       if (devinfo->ver >= 20) {                                    \
-         brw_inst_set_bits(inst, hi20, lo20, v >> 1);              \
+         brw_eu_inst_set_bits(inst, hi20, lo20, v >> 1);           \
          if (zero20 == -1)                                         \
             assert((v & 1) == 0);                                  \
          else                                                      \
-            brw_inst_set_bits(inst, zero20, zero20, v & 1);        \
+            brw_eu_inst_set_bits(inst, zero20, zero20, v & 1);     \
       } else if (devinfo->ver >= 12)                               \
-         brw_inst_set_bits(inst, hi12, lo12, v);                   \
+         brw_eu_inst_set_bits(inst, hi12, lo12, v);                \
       else                                                         \
-         brw_inst_set_bits(inst, hi9, lo9, v);                     \
+         brw_eu_inst_set_bits(inst, hi9, lo9, v);                  \
    }                                                               \
    static inline uint64_t                                          \
    brw_inst_##name(const struct intel_device_info *devinfo,        \
                    const brw_eu_inst *inst)                        \
    {                                                               \
       if (devinfo->ver >= 20)                                      \
-         return (brw_inst_bits(inst, hi20, lo20) << 1) |           \
+         return (brw_eu_inst_bits(inst, hi20, lo20) << 1) |        \
                 (zero20 == -1 ? 0 :                                \
-                 brw_inst_bits(inst, zero20, zero20));             \
+                 brw_eu_inst_bits(inst, zero20, zero20));          \
       else if (devinfo->ver >= 12)                                 \
-         return brw_inst_bits(inst, hi12, lo12);                   \
+         return brw_eu_inst_bits(inst, hi12, lo12);                \
       else                                                         \
-         return brw_inst_bits(inst, hi9, lo9);                     \
+         return brw_eu_inst_bits(inst, hi9, lo9);                  \
    }
 
 /* Macro for fields that gained extra discontiguous MSBs in Gfx12 (specified
@@ -174,10 +174,10 @@ brw_inst_set_##name(const struct intel_device_info *devinfo,                  \
    if (devinfo->ver >= 12) {                                                  \
       const unsigned k = hi12 - lo12 + 1;                                     \
       if (hi12ex != -1 && lo12ex != -1)                                       \
-         brw_inst_set_bits(inst, hi12ex, lo12ex, value >> k);                 \
-      brw_inst_set_bits(inst, hi12, lo12, value & ((1ull << k) - 1));         \
+         brw_eu_inst_set_bits(inst, hi12ex, lo12ex, value >> k);              \
+      brw_eu_inst_set_bits(inst, hi12, lo12, value & ((1ull << k) - 1));      \
    } else {                                                                   \
-      brw_inst_set_bits(inst, hi9, lo9, value);                               \
+      brw_eu_inst_set_bits(inst, hi9, lo9, value);                            \
    }                                                                          \
 }                                                                             \
 static inline uint64_t                                                        \
@@ -188,10 +188,10 @@ brw_inst_##name(const struct intel_device_info *devinfo,                      \
    if (devinfo->ver >= 12) {                                                  \
       const unsigned k = hi12 - lo12 + 1;                                     \
       return (hi12ex == -1 || lo12ex == -1 ? 0 :                              \
-              brw_inst_bits(inst, hi12ex, lo12ex) << k) |                     \
-             brw_inst_bits(inst, hi12, lo12);                                 \
+              brw_eu_inst_bits(inst, hi12ex, lo12ex) << k) |                  \
+             brw_eu_inst_bits(inst, hi12, lo12);                              \
    } else {                                                                   \
-      return brw_inst_bits(inst, hi9, lo9);                                   \
+      return brw_eu_inst_bits(inst, hi9, lo9);                                \
    }                                                                          \
 }
 
@@ -255,13 +255,13 @@ brw_inst_set_##name(const struct intel_device_info *devinfo,                  \
          assert(file == FIXED_GRF || file == ARF);                            \
          value = file == FIXED_GRF ? 0 : 1;                                   \
       }                                                                       \
-      brw_inst_set_bits(inst, hi9, lo9, value);                               \
+      brw_eu_inst_set_bits(inst, hi9, lo9, value);                            \
    } else if (hi12 == lo12) {                                                 \
-      brw_inst_set_bits(inst, hi12, lo12, value);                             \
+      brw_eu_inst_set_bits(inst, hi12, lo12, value);                          \
    } else {                                                                   \
-      brw_inst_set_bits(inst, hi12, hi12, value >> 1);                        \
+      brw_eu_inst_set_bits(inst, hi12, hi12, value >> 1);                     \
       if ((value >> 1) == 0)                                                  \
-         brw_inst_set_bits(inst, lo12, lo12, value & 1);                      \
+         brw_eu_inst_set_bits(inst, lo12, lo12, value & 1);                   \
    }                                                                          \
 }                                                                             \
 static inline uint64_t                                                        \
@@ -276,17 +276,17 @@ brw_inst_##name(const struct intel_device_info *devinfo,                      \
    } args = { ._ = false, __VA_ARGS__ };                                      \
    uint64_t value;                                                            \
    if (devinfo->ver < 12) {                                                   \
-      value = brw_inst_bits(inst, hi9, lo9);                                  \
+      value = brw_eu_inst_bits(inst, hi9, lo9);                               \
       if (devinfo->ver == 11 && args.grf_or_imm)                              \
          return value ? IMM : FIXED_GRF;                                      \
       else if (devinfo->ver == 11 && args.grf_or_acc)                         \
          return value ? ARF : FIXED_GRF;                                      \
    } else if (hi12 == lo12) {                                                 \
-      value = brw_inst_bits(inst, hi12, lo12);                                \
+      value = brw_eu_inst_bits(inst, hi12, lo12);                             \
    } else {                                                                   \
-      value = (brw_inst_bits(inst, hi12, hi12) << 1) |                        \
-              (brw_inst_bits(inst, hi12, hi12) == 0 ?                         \
-               brw_inst_bits(inst, lo12, lo12) : 1);                          \
+      value = (brw_eu_inst_bits(inst, hi12, hi12) << 1) |                     \
+              (brw_eu_inst_bits(inst, hi12, hi12) == 0 ?                      \
+               brw_eu_inst_bits(inst, lo12, lo12) : 1);                       \
    }                                                                          \
    return hw_reg_file_to_brw_reg_file(value);                                 \
 }
@@ -304,7 +304,7 @@ brw_inst_set_##name(const struct intel_device_info *devinfo,  \
    if (devinfo->ver >= 12)                                    \
       assert(v == (const12));                                 \
    else                                                       \
-      brw_inst_set_bits(inst, hi9, lo9, v);                   \
+      brw_eu_inst_set_bits(inst, hi9, lo9, v);                \
 }                                                             \
 static inline uint64_t                                        \
 brw_inst_##name(const struct intel_device_info *devinfo,      \
@@ -313,7 +313,7 @@ brw_inst_##name(const struct intel_device_info *devinfo,      \
    if (devinfo->ver >= 12)                                    \
       return (const12);                                       \
    else                                                       \
-      return brw_inst_bits(inst, hi9, lo9);                   \
+      return brw_eu_inst_bits(inst, hi9, lo9);                \
 }
 
 FV20(src1_vstride,     /* 9+ */ 120, 117, /* 12+ */ 119, 116, /* 20+ */ 118, 116)
@@ -445,8 +445,8 @@ brw_inst_set_3src_a16_##srcN##_subreg_nr(const struct                       \
 {                                                                           \
    assert(devinfo->ver == 9);                                               \
    assert((value & ~0b11110) == 0);                                         \
-   brw_inst_set_bits(inst, src_base + 11, src_base + 9, value >> 2);        \
-   brw_inst_set_bits(inst, src_base + 20, src_base + 20, (value >> 1) & 1); \
+   brw_eu_inst_set_bits(inst, src_base + 11, src_base + 9, value >> 2);        \
+   brw_eu_inst_set_bits(inst, src_base + 20, src_base + 20, (value >> 1) & 1); \
 }                                                                           \
 static inline unsigned                                                      \
 brw_inst_3src_a16_##srcN##_subreg_nr(const struct                           \
@@ -454,8 +454,8 @@ brw_inst_3src_a16_##srcN##_subreg_nr(const struct                           \
                                      const brw_eu_inst *inst)               \
 {                                                                           \
    assert(devinfo->ver == 9);                                               \
-   return brw_inst_bits(inst, src_base + 11, src_base + 9) << 2 |           \
-          brw_inst_bits(inst, src_base + 20, src_base + 20) << 1;           \
+   return brw_eu_inst_bits(inst, src_base + 11, src_base + 9) << 2 |        \
+          brw_eu_inst_bits(inst, src_base + 20, src_base + 20) << 1;        \
 }
 
 F_3SRC_A16_SUBREG_NR(src0, 64)
@@ -569,9 +569,9 @@ brw_inst_3src_a1_src0_imm(ASSERTED const struct intel_device_info *devinfo,
 {
    assert(devinfo->ver >= 10);
    if (devinfo->ver >= 12)
-      return brw_inst_bits(insn, 79, 64);
+      return brw_eu_inst_bits(insn, 79, 64);
    else
-      return brw_inst_bits(insn, 82, 67);
+      return brw_eu_inst_bits(insn, 82, 67);
 }
 
 static inline uint16_t
@@ -580,9 +580,9 @@ brw_inst_3src_a1_src2_imm(ASSERTED const struct intel_device_info *devinfo,
 {
    assert(devinfo->ver >= 10);
    if (devinfo->ver >= 12)
-      return brw_inst_bits(insn, 127, 112);
+      return brw_eu_inst_bits(insn, 127, 112);
    else
-      return brw_inst_bits(insn, 124, 109);
+      return brw_eu_inst_bits(insn, 124, 109);
 }
 
 static inline void
@@ -591,9 +591,9 @@ brw_inst_set_3src_a1_src0_imm(ASSERTED const struct intel_device_info *devinfo,
 {
    assert(devinfo->ver >= 10);
    if (devinfo->ver >= 12)
-      brw_inst_set_bits(insn, 79, 64, value);
+      brw_eu_inst_set_bits(insn, 79, 64, value);
    else
-      brw_inst_set_bits(insn, 82, 67, value);
+      brw_eu_inst_set_bits(insn, 82, 67, value);
 }
 
 static inline void
@@ -602,9 +602,9 @@ brw_inst_set_3src_a1_src2_imm(ASSERTED const struct intel_device_info *devinfo,
 {
    assert(devinfo->ver >= 10);
    if (devinfo->ver >= 12)
-      brw_inst_set_bits(insn, 127, 112, value);
+      brw_eu_inst_set_bits(insn, 127, 112, value);
    else
-      brw_inst_set_bits(insn, 124, 109, value);
+      brw_eu_inst_set_bits(insn, 124, 109, value);
 }
 /** @} */
 
@@ -680,13 +680,13 @@ brw_inst_set_uip(const struct intel_device_info *devinfo,
    if (devinfo->ver >= 12)
       brw_inst_set_src1_is_imm(devinfo, inst, 1);
 
-   brw_inst_set_bits(inst, 95, 64, (uint32_t)value);
+   brw_eu_inst_set_bits(inst, 95, 64, (uint32_t)value);
 }
 
 static inline int32_t
 brw_inst_uip(const struct intel_device_info *devinfo, const brw_eu_inst *inst)
 {
-   return brw_inst_bits(inst, 95, 64);
+   return brw_eu_inst_bits(inst, 95, 64);
 }
 
 static inline void
@@ -696,13 +696,13 @@ brw_inst_set_jip(const struct intel_device_info *devinfo,
    if (devinfo->ver >= 12)
       brw_inst_set_src0_is_imm(devinfo, inst, 1);
 
-   brw_inst_set_bits(inst, 127, 96, (uint32_t)value);
+   brw_eu_inst_set_bits(inst, 127, 96, (uint32_t)value);
 }
 
 static inline int32_t
 brw_inst_jip(const struct intel_device_info *devinfo, const brw_eu_inst *inst)
 {
-   return brw_inst_bits(inst, 127, 96);
+   return brw_eu_inst_bits(inst, 127, 96);
 }
 /** @} */
 
@@ -749,13 +749,13 @@ brw_inst_set_send_desc(const struct intel_device_info *devinfo,
                        brw_eu_inst *inst, uint32_t value)
 {
    if (devinfo->ver >= 12) {
-      brw_inst_set_bits(inst, 123, 122, GET_BITS(value, 31, 30));
-      brw_inst_set_bits(inst, 71, 67, GET_BITS(value, 29, 25));
-      brw_inst_set_bits(inst, 55, 51, GET_BITS(value, 24, 20));
-      brw_inst_set_bits(inst, 121, 113, GET_BITS(value, 19, 11));
-      brw_inst_set_bits(inst, 91, 81, GET_BITS(value, 10, 0));
+      brw_eu_inst_set_bits(inst, 123, 122, GET_BITS(value, 31, 30));
+      brw_eu_inst_set_bits(inst, 71, 67, GET_BITS(value, 29, 25));
+      brw_eu_inst_set_bits(inst, 55, 51, GET_BITS(value, 24, 20));
+      brw_eu_inst_set_bits(inst, 121, 113, GET_BITS(value, 19, 11));
+      brw_eu_inst_set_bits(inst, 91, 81, GET_BITS(value, 10, 0));
    } else {
-      brw_inst_set_bits(inst, 126, 96, value);
+      brw_eu_inst_set_bits(inst, 126, 96, value);
       assert(value >> 31 == 0);
    }
 }
@@ -770,13 +770,13 @@ brw_inst_send_desc(const struct intel_device_info *devinfo,
                    const brw_eu_inst *inst)
 {
    if (devinfo->ver >= 12) {
-      return (brw_inst_bits(inst, 123, 122) << 30 |
-              brw_inst_bits(inst, 71, 67) << 25 |
-              brw_inst_bits(inst, 55, 51) << 20 |
-              brw_inst_bits(inst, 121, 113) << 11 |
-              brw_inst_bits(inst, 91, 81));
+      return (brw_eu_inst_bits(inst, 123, 122) << 30 |
+              brw_eu_inst_bits(inst, 71, 67) << 25 |
+              brw_eu_inst_bits(inst, 55, 51) << 20 |
+              brw_eu_inst_bits(inst, 121, 113) << 11 |
+              brw_eu_inst_bits(inst, 91, 81));
    } else {
-      return brw_inst_bits(inst, 126, 96);
+      return brw_eu_inst_bits(inst, 126, 96);
    }
 }
 
@@ -796,10 +796,10 @@ brw_inst_set_send_ex_desc(const struct intel_device_info *devinfo,
    assert(!gather || devinfo->ver >= 30);
 
    if (devinfo->ver >= 12) {
-      brw_inst_set_bits(inst, 127, 124, GET_BITS(value, 31, 28));
-      brw_inst_set_bits(inst, 97, 96, GET_BITS(value, 27, 26));
-      brw_inst_set_bits(inst, 65, 64, GET_BITS(value, 25, 24));
-      brw_inst_set_bits(inst, 47, 35, GET_BITS(value, 23, 11));
+       brw_eu_inst_set_bits(inst, 127, 124, GET_BITS(value, 31, 28));
+       brw_eu_inst_set_bits(inst, 97, 96, GET_BITS(value, 27, 26));
+       brw_eu_inst_set_bits(inst, 65, 64, GET_BITS(value, 25, 24));
+       brw_eu_inst_set_bits(inst, 47, 35, GET_BITS(value, 23, 11));
 
       /* SEND gather uses these bits for src0 subreg nr, so they
        * are not part of the ex_desc.
@@ -808,16 +808,16 @@ brw_inst_set_send_ex_desc(const struct intel_device_info *devinfo,
          assert(devinfo->ver >= 30);
          assert(GET_BITS(value, 10, 6) == 0);
       } else {
-         brw_inst_set_bits(inst, 103, 99, GET_BITS(value, 10, 6));
+         brw_eu_inst_set_bits(inst, 103, 99, GET_BITS(value, 10, 6));
       }
 
       assert(GET_BITS(value, 5, 0) == 0);
    } else {
       assert(devinfo->ver >= 9);
-      brw_inst_set_bits(inst, 94, 91, GET_BITS(value, 31, 28));
-      brw_inst_set_bits(inst, 88, 85, GET_BITS(value, 27, 24));
-      brw_inst_set_bits(inst, 83, 80, GET_BITS(value, 23, 20));
-      brw_inst_set_bits(inst, 67, 64, GET_BITS(value, 19, 16));
+      brw_eu_inst_set_bits(inst, 94, 91, GET_BITS(value, 31, 28));
+      brw_eu_inst_set_bits(inst, 88, 85, GET_BITS(value, 27, 24));
+      brw_eu_inst_set_bits(inst, 83, 80, GET_BITS(value, 23, 20));
+      brw_eu_inst_set_bits(inst, 67, 64, GET_BITS(value, 19, 16));
       assert(GET_BITS(value, 15, 0) == 0);
    }
 }
@@ -838,9 +838,9 @@ brw_inst_set_sends_ex_desc(const struct intel_device_info *devinfo,
    if (devinfo->ver >= 12) {
       brw_inst_set_send_ex_desc(devinfo, inst, value, gather);
    } else {
-      brw_inst_set_bits(inst, 95, 80, GET_BITS(value, 31, 16));
+      brw_eu_inst_set_bits(inst, 95, 80, GET_BITS(value, 31, 16));
       assert(GET_BITS(value, 15, 10) == 0);
-      brw_inst_set_bits(inst, 67, 64, GET_BITS(value, 9, 6));
+      brw_eu_inst_set_bits(inst, 67, 64, GET_BITS(value, 9, 6));
       assert(GET_BITS(value, 5, 0) == 0);
    }
 }
@@ -857,17 +857,17 @@ brw_inst_send_ex_desc(const struct intel_device_info *devinfo,
    assert(!gather || devinfo->ver >= 30);
 
    if (devinfo->ver >= 12) {
-      return (brw_inst_bits(inst, 127, 124) << 28 |
-              brw_inst_bits(inst, 97, 96) << 26 |
-              brw_inst_bits(inst, 65, 64) << 24 |
-              brw_inst_bits(inst, 47, 35) << 11 |
-              (!gather ? brw_inst_bits(inst, 103, 99) << 6 : 0));
+      return (brw_eu_inst_bits(inst, 127, 124) << 28 |
+              brw_eu_inst_bits(inst, 97, 96) << 26 |
+              brw_eu_inst_bits(inst, 65, 64) << 24 |
+              brw_eu_inst_bits(inst, 47, 35) << 11 |
+              (!gather ? brw_eu_inst_bits(inst, 103, 99) << 6 : 0));
    } else {
       assert(devinfo->ver >= 9);
-      return (brw_inst_bits(inst, 94, 91) << 28 |
-              brw_inst_bits(inst, 88, 85) << 24 |
-              brw_inst_bits(inst, 83, 80) << 20 |
-              brw_inst_bits(inst, 67, 64) << 16);
+      return (brw_eu_inst_bits(inst, 94, 91) << 28 |
+              brw_eu_inst_bits(inst, 88, 85) << 24 |
+              brw_eu_inst_bits(inst, 83, 80) << 20 |
+              brw_eu_inst_bits(inst, 67, 64) << 16);
    }
 }
 
@@ -884,8 +884,8 @@ brw_inst_sends_ex_desc(const struct intel_device_info *devinfo,
       return brw_inst_send_ex_desc(devinfo, inst, gather);
    } else {
       assert(!gather);
-      return (brw_inst_bits(inst, 95, 80) << 16 |
-              brw_inst_bits(inst, 67, 64) << 6);
+      return (brw_eu_inst_bits(inst, 95, 80) << 16 |
+              brw_eu_inst_bits(inst, 67, 64) << 6);
    }
 }
 
@@ -982,14 +982,14 @@ static inline int
 brw_inst_imm_d(const struct intel_device_info *devinfo, const brw_eu_inst *insn)
 {
    (void) devinfo;
-   return brw_inst_bits(insn, 127, 96);
+   return brw_eu_inst_bits(insn, 127, 96);
 }
 
 static inline unsigned
 brw_inst_imm_ud(const struct intel_device_info *devinfo, const brw_eu_inst *insn)
 {
    (void) devinfo;
-   return brw_inst_bits(insn, 127, 96);
+   return brw_eu_inst_bits(insn, 127, 96);
 }
 
 static inline uint64_t
@@ -997,10 +997,10 @@ brw_inst_imm_uq(const struct intel_device_info *devinfo,
                 const brw_eu_inst *insn)
 {
    if (devinfo->ver >= 12) {
-      return brw_inst_bits(insn, 95, 64) << 32 |
-             brw_inst_bits(insn, 127, 96);
+      return brw_eu_inst_bits(insn, 95, 64) << 32 |
+             brw_eu_inst_bits(insn, 127, 96);
    } else {
-      return brw_inst_bits(insn, 127, 64);
+      return brw_eu_inst_bits(insn, 127, 64);
    }
 }
 
@@ -1012,7 +1012,7 @@ brw_inst_imm_f(const struct intel_device_info *devinfo, const brw_eu_inst *insn)
       uint32_t u;
    } ft;
    (void) devinfo;
-   ft.u = brw_inst_bits(insn, 127, 96);
+   ft.u = brw_eu_inst_bits(insn, 127, 96);
    return ft.f;
 }
 
@@ -1032,7 +1032,7 @@ brw_inst_set_imm_d(const struct intel_device_info *devinfo,
                    brw_eu_inst *insn, int value)
 {
    (void) devinfo;
-   return brw_inst_set_bits(insn, 127, 96, value);
+   return brw_eu_inst_set_bits(insn, 127, 96, value);
 }
 
 static inline void
@@ -1040,7 +1040,7 @@ brw_inst_set_imm_ud(const struct intel_device_info *devinfo,
                     brw_eu_inst *insn, unsigned value)
 {
    (void) devinfo;
-   return brw_inst_set_bits(insn, 127, 96, value);
+   return brw_eu_inst_set_bits(insn, 127, 96, value);
 }
 
 static inline void
@@ -1053,7 +1053,7 @@ brw_inst_set_imm_f(const struct intel_device_info *devinfo,
    } ft;
    (void) devinfo;
    ft.f = value;
-   brw_inst_set_bits(insn, 127, 96, ft.u);
+   brw_eu_inst_set_bits(insn, 127, 96, ft.u);
 }
 
 static inline void
@@ -1068,10 +1068,10 @@ brw_inst_set_imm_df(const struct intel_device_info *devinfo,
    dt.d = value;
 
    if (devinfo->ver >= 12) {
-      brw_inst_set_bits(insn, 95, 64, dt.u >> 32);
-      brw_inst_set_bits(insn, 127, 96, dt.u & 0xFFFFFFFF);
+      brw_eu_inst_set_bits(insn, 95, 64, dt.u >> 32);
+      brw_eu_inst_set_bits(insn, 127, 96, dt.u & 0xFFFFFFFF);
    } else {
-      brw_inst_set_bits(insn, 127, 64, dt.u);
+      brw_eu_inst_set_bits(insn, 127, 64, dt.u);
    }
 }
 
@@ -1081,10 +1081,10 @@ brw_inst_set_imm_uq(const struct intel_device_info *devinfo,
 {
    (void) devinfo;
    if (devinfo->ver >= 12) {
-      brw_inst_set_bits(insn, 95, 64, value >> 32);
-      brw_inst_set_bits(insn, 127, 96, value & 0xFFFFFFFF);
+      brw_eu_inst_set_bits(insn, 95, 64, value >> 32);
+      brw_eu_inst_set_bits(insn, 127, 96, value & 0xFFFFFFFF);
    } else {
-      brw_inst_set_bits(insn, 127, 64, value);
+      brw_eu_inst_set_bits(insn, 127, 64, value);
    }
 }
 
@@ -1130,18 +1130,18 @@ brw_inst_set_##reg##_ia1_addr_imm(const struct                           \
 {                                                                        \
    if (devinfo->ver >= 20) {                                             \
       assert((value & ~0x7ff) == 0);                                     \
-      brw_inst_set_bits(inst, g20_high, g20_low, value >> 1);            \
+      brw_eu_inst_set_bits(inst, g20_high, g20_low, value >> 1);         \
       if (g20_zero == -1)                                                \
          assert((value & 1) == 0);                                       \
       else                                                               \
-         brw_inst_set_bits(inst, g20_zero, g20_zero, value & 1);         \
+         brw_eu_inst_set_bits(inst, g20_zero, g20_zero, value & 1);      \
    } else if (devinfo->ver >= 12) {                                      \
       assert((value & ~0x3ff) == 0);                                     \
-      brw_inst_set_bits(inst, g12_high, g12_low, value);                 \
+      brw_eu_inst_set_bits(inst, g12_high, g12_low, value);              \
    } else {                                                              \
       assert((value & ~0x3ff) == 0);                                     \
-      brw_inst_set_bits(inst, g9_high, g9_low, value & 0x1ff);           \
-      brw_inst_set_bits(inst, g9_nine, g9_nine, value >> 9);             \
+      brw_eu_inst_set_bits(inst, g9_high, g9_low, value & 0x1ff);        \
+      brw_eu_inst_set_bits(inst, g9_nine, g9_nine, value >> 9);          \
    }                                                                     \
 }                                                                        \
 static inline unsigned                                                   \
@@ -1149,14 +1149,14 @@ brw_inst_##reg##_ia1_addr_imm(const struct intel_device_info *devinfo,   \
                               const brw_eu_inst *inst)                   \
 {                                                                        \
    if (devinfo->ver >= 20) {                                             \
-      return brw_inst_bits(inst, g20_high, g20_low) << 1 |               \
+      return brw_eu_inst_bits(inst, g20_high, g20_low) << 1 |            \
              (g20_zero == -1 ? 0 :                                       \
-              brw_inst_bits(inst, g20_zero, g20_zero));                  \
+              brw_eu_inst_bits(inst, g20_zero, g20_zero));               \
    } else if (devinfo->ver >= 12) {                                      \
-      return brw_inst_bits(inst, g12_high, g12_low);                     \
+      return brw_eu_inst_bits(inst, g12_high, g12_low);                  \
    } else {                                                              \
-      return brw_inst_bits(inst, g9_high, g9_low) |                      \
-             (brw_inst_bits(inst, g9_nine, g9_nine) << 9);               \
+      return brw_eu_inst_bits(inst, g9_high, g9_low) |                   \
+             (brw_eu_inst_bits(inst, g9_nine, g9_nine) << 9);            \
    }                                                                     \
 }
 
@@ -1175,16 +1175,16 @@ brw_inst_set_##reg##_ia16_addr_imm(const struct                           \
    assert(devinfo->ver < 12);                                             \
    assert((value & ~0x3ff) == 0);                                         \
    assert(GET_BITS(value, 3, 0) == 0);                                    \
-   brw_inst_set_bits(inst, g9_high, g9_low, GET_BITS(value, 8, 4));       \
-   brw_inst_set_bits(inst, g9_nine, g9_nine, GET_BITS(value, 9, 9));      \
+   brw_eu_inst_set_bits(inst, g9_high, g9_low, GET_BITS(value, 8, 4));    \
+   brw_eu_inst_set_bits(inst, g9_nine, g9_nine, GET_BITS(value, 9, 9));   \
 }                                                                         \
 static inline unsigned                                                    \
 brw_inst_##reg##_ia16_addr_imm(const struct intel_device_info *devinfo,   \
                                const brw_eu_inst *inst)                   \
 {                                                                         \
    assert(devinfo->ver < 12);                                             \
-   return (brw_inst_bits(inst, g9_high, g9_low) << 4) |                   \
-          (brw_inst_bits(inst, g9_nine, g9_nine) << 9);                   \
+   return (brw_eu_inst_bits(inst, g9_high, g9_low) << 4) |                \
+          (brw_eu_inst_bits(inst, g9_nine, g9_nine) << 9);                \
 }
 
 /* AddrImm[9:0] for Align16 Indirect Addressing:
@@ -1203,7 +1203,7 @@ BRW_IA16_ADDR_IMM(send_dst,     62,  56,  52)
  * Bits indices range from 0..127; fields may not cross 64-bit boundaries.
  */
 static inline uint64_t
-brw_inst_bits(const brw_eu_inst *inst, unsigned high, unsigned low)
+brw_eu_inst_bits(const brw_eu_inst *inst, unsigned high, unsigned low)
 {
    assume(high < 128);
    assume(high >= low);
@@ -1225,7 +1225,7 @@ brw_inst_bits(const brw_eu_inst *inst, unsigned high, unsigned low)
  * Bits indices range from 0..127; fields may not cross 64-bit boundaries.
  */
 static inline void
-brw_inst_set_bits(brw_eu_inst *inst, unsigned high, unsigned low, uint64_t value)
+brw_eu_inst_set_bits(brw_eu_inst *inst, unsigned high, unsigned low, uint64_t value)
 {
    assume(high < 128);
    assume(high >= low);
