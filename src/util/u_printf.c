@@ -144,6 +144,10 @@ u_printf_impl(FILE *out, const char *buffer, size_t buffer_size,
    for (size_t buf_pos = 0; buf_pos < buffer_size;) {
       uint32_t fmt_idx = *(uint32_t*)&buffer[buf_pos];
 
+      /* Don't die on invalid printf buffers due to aborted shaders. */
+      if (fmt_idx == 0)
+         break;
+
       /* the idx is 1 based */
       assert(fmt_idx > 0);
       fmt_idx -= 1;
