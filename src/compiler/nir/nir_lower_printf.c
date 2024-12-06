@@ -31,10 +31,46 @@ static bool
 lower_printf_intrin(nir_builder *b, nir_intrinsic_instr *prntf, void *_options)
 {
    const nir_lower_printf_options *options = _options;
-   if (prntf->intrinsic != nir_intrinsic_printf)
+   if (prntf->intrinsic != nir_intrinsic_printf &&
+       prntf->intrinsic != nir_intrinsic_printf_abort)
       return false;
 
    b->cursor = nir_before_instr(&prntf->instr);
+
+   const unsigned ptr_bit_size =
+      options->ptr_bit_size != 0 ? options->ptr_bit_size : nir_get_ptr_bitsize(b->shader);
+
+   nir_def *buffer_addr;
+   if (options->buffer_address != 0) {
+      buffer_addr = nir_imm_intN_t(b, options->buffer_address, ptr_bit_size);
+   } else {
+      buffer_addr = nir_load_printf_buffer_address(b, ptr_bit_size);
+   }
+
+   /* For aborts, just write a nonzero value to the aborted? flag. The printf
+    * buffer layout looks like:
+    *
+    *    uint32_t size;
+    *    uint32_t aborted;
+    *    uint32_t data[];
+    */
+   if (prntf->intrinsic == nir_intrinsic_printf_abort) {
+      nir_store_global(b, nir_iadd_imm(b, buffer_addr, 4), 4, nir_imm_int(b, 1),
+                       nir_component_mask(1));
+
+      /* Halt is a jump instruction so can only appear at the end of a block.
+       * The abort might be in the middle of a block. So, wrap the halt and let
+       * control flow optimization clean up after us.
+       */
+      nir_push_if(b, nir_imm_true(b));
+      {
+         nir_jump(b, nir_jump_halt);
+      }
+      nir_pop_if(b, NULL);
+
+      nir_instr_remove(&prntf->instr);
+      return true;
+   }
 
    nir_def *fmt_str_id = prntf->src[0].ssa;
    if (options && options->use_printf_base_identifier) {
@@ -46,19 +82,9 @@ lower_printf_intrin(nir_builder *b, nir_intrinsic_instr *prntf, void *_options)
    nir_deref_instr *args = nir_src_as_deref(prntf->src[1]);
    assert(args->deref_type == nir_deref_type_var);
 
-   const unsigned ptr_bit_size = options->ptr_bit_size != 0 ?
-      options->ptr_bit_size : nir_get_ptr_bitsize(b->shader);
-
    /* Atomic add a buffer size counter to determine where to write.  If
     * overflowed, return -1, otherwise, store the arguments and return 0.
     */
-   nir_def *buffer_addr;
-   if (options->buffer_address != 0) {
-      buffer_addr = nir_imm_intN_t(b, options->buffer_address, ptr_bit_size);
-   } else {
-      buffer_addr = nir_load_printf_buffer_address(b, ptr_bit_size);
-   }
-
    nir_deref_instr *buffer =
       nir_build_deref_cast(b, buffer_addr, nir_var_mem_global,
                            glsl_array_type(glsl_uint8_t_type(), 0, 4), 0);
