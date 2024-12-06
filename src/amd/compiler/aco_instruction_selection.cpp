@@ -8232,13 +8232,19 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
          Temp local_ids[3];
 
          /* Thread IDs are packed in VGPR0, 10 bits per component. */
-         for (uint32_t i = 0; i < 3; i++) {
-            if (i == 0 && ctx->shader->info.workgroup_size[1] == 1 &&
-                ctx->shader->info.workgroup_size[2] == 1 &&
-                !ctx->shader->info.workgroup_size_variable) {
-               local_ids[i] = get_arg(ctx, ctx->args->local_invocation_ids);
-            } else if (i == 2 || (i == 1 && ctx->shader->info.workgroup_size[2] == 1 &&
-                                  !ctx->shader->info.workgroup_size_variable)) {
+         local_ids[0] = get_arg(ctx, ctx->args->local_invocation_ids);
+         if (ctx->shader->info.workgroup_size[1] > 1 || ctx->shader->info.workgroup_size[2] > 1 ||
+             ctx->shader->info.workgroup_size_variable) {
+            unsigned size_x = ctx->shader->info.workgroup_size_variable
+                                 ? 1024
+                                 : util_next_power_of_two(ctx->shader->info.workgroup_size[0]);
+            Temp mask = bld.copy(bld.def(s1), Operand::c32(size_x - 1));
+            local_ids[0] = bld.vop2(aco_opcode::v_and_b32, bld.def(v1), mask, local_ids[0]);
+         }
+
+         for (uint32_t i = 1; i < 3; i++) {
+            if (i == 2 || (i == 1 && ctx->shader->info.workgroup_size[2] == 1 &&
+                           !ctx->shader->info.workgroup_size_variable)) {
                local_ids[i] =
                   bld.vop2(aco_opcode::v_lshrrev_b32, bld.def(v1), Operand::c32(i * 10u),
                            get_arg(ctx, ctx->args->local_invocation_ids));
