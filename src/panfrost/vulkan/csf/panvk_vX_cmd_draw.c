@@ -404,7 +404,9 @@ prepare_blend(struct panvk_cmd_buffer *cmdbuf)
 
    panvk_per_arch(blend_emit_descs)(cmdbuf, bds);
 
-   cs_move64_to(b, cs_sr_reg64(b, 50), ptr.gpu | bd_count);
+   cs_update_vt_ctx(b)
+      cs_move64_to(b, cs_sr_reg64(b, 50), ptr.gpu | bd_count);
+
    return VK_SUCCESS;
 }
 
@@ -1200,22 +1202,36 @@ prepare_push_uniforms(struct panvk_cmd_buffer *cmdbuf)
 {
    struct cs_builder *b =
       panvk_get_cs_builder(cmdbuf, PANVK_SUBQUEUE_VERTEX_TILER);
+   const struct panvk_shader *vs = cmdbuf->state.gfx.vs.shader;
+   const struct panvk_shader *fs = get_fs(cmdbuf);
+   VkResult result;
 
-   if (gfx_state_dirty(cmdbuf, PUSH_UNIFORMS)) {
-      cmdbuf->state.gfx.push_uniforms = panvk_per_arch(
-         cmd_prepare_push_uniforms)(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS);
-      if (!cmdbuf->state.gfx.push_uniforms)
-         return VK_ERROR_OUT_OF_DEVICE_MEMORY;
-
-      uint32_t push_size =
-         SYSVALS_PUSH_CONST_BASE + sizeof(struct panvk_graphics_sysvals);
-      uint64_t fau_count = DIV_ROUND_UP(push_size, 8);
-      mali_ptr fau_ptr = cmdbuf->state.gfx.push_uniforms | (fau_count << 56);
+   if (gfx_state_dirty(cmdbuf, VS_PUSH_UNIFORMS)) {
+      result = panvk_per_arch(cmd_prepare_push_uniforms)(cmdbuf, vs);
+      if (result != VK_SUCCESS)
+         return result;
 
       cs_update_vt_ctx(b) {
-         cs_move64_to(b, cs_sr_reg64(b, 8), fau_ptr);
-         cs_move64_to(b, cs_sr_reg64(b, 12), fau_ptr);
+         cs_move64_to(b, cs_sr_reg64(b, 8),
+                      cmdbuf->state.gfx.vs.push_uniforms |
+                         ((uint64_t)vs->fau.total_count << 56));
       }
+   }
+
+   if (fs_user_dirty(cmdbuf) || gfx_state_dirty(cmdbuf, FS_PUSH_UNIFORMS)) {
+      mali_ptr fau_ptr = 0;
+
+      if (fs) {
+         result = panvk_per_arch(cmd_prepare_push_uniforms)(cmdbuf, fs);
+         if (result != VK_SUCCESS)
+            return result;
+
+         fau_ptr = cmdbuf->state.gfx.fs.push_uniforms |
+                   ((uint64_t)fs->fau.total_count << 56);
+      }
+
+      cs_update_vt_ctx(b)
+         cs_move64_to(b, cs_sr_reg64(b, 12), fau_ptr);
    }
 
    return VK_SUCCESS;
@@ -1535,6 +1551,10 @@ prepare_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
          return result;
    }
 
+   result = prepare_blend(cmdbuf);
+   if (result != VK_SUCCESS)
+      return result;
+
    panvk_per_arch(cmd_prepare_draw_sysvals)(cmdbuf, draw);
 
    result = prepare_push_uniforms(cmdbuf);
@@ -1569,10 +1589,6 @@ prepare_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
       set_tiler_idvs_flags(b, cmdbuf, draw);
 
       cs_move32_to(b, cs_sr_reg32(b, 48), varying_size);
-
-      result = prepare_blend(cmdbuf);
-      if (result != VK_SUCCESS)
-         return result;
 
       result = prepare_ds(cmdbuf);
       if (result != VK_SUCCESS)
@@ -1789,7 +1805,7 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
    assert(draw->indirect.draw_count == 1);
 
    /* Force a new push uniform block to be allocated */
-   gfx_state_set_dirty(cmdbuf, PUSH_UNIFORMS);
+   gfx_state_set_dirty(cmdbuf, VS_PUSH_UNIFORMS);
 
    result = prepare_draw(cmdbuf, draw);
    if (result != VK_SUCCESS)
@@ -1808,17 +1824,27 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
    /* Wait for the SR33-37 indirect buffer load. */
    cs_wait_slot(b, SB_ID(LS), false);
 
-   struct cs_index fau_block_addr = cs_scratch_reg64(b, 2);
-   cs_move64_to(b, fau_block_addr, cmdbuf->state.gfx.push_uniforms);
-   cs_store32(b, cs_sr_reg32(b, 36), fau_block_addr,
-              SYSVALS_PUSH_CONST_BASE +
-                 offsetof(struct panvk_graphics_sysvals, vs.first_vertex));
-   cs_store32(b, cs_sr_reg32(b, 37), fau_block_addr,
-              SYSVALS_PUSH_CONST_BASE +
-                 offsetof(struct panvk_graphics_sysvals, vs.base_instance));
+   if (shader_uses_sysval(vs, graphics, vs.first_vertex) ||
+       shader_uses_sysval(vs, graphics, vs.base_instance)) {
+      struct cs_index fau_block_addr = cs_scratch_reg64(b, 2);
+      cs_move64_to(b, fau_block_addr, cmdbuf->state.gfx.vs.push_uniforms);
 
-   /* Wait for the store using SR-37 as src to finish, so we can overwrite it. */
-   cs_wait_slot(b, SB_ID(LS), false);
+      if (shader_uses_sysval(vs, graphics, vs.first_vertex)) {
+         cs_store32(b, cs_sr_reg32(b, 36), fau_block_addr,
+                    shader_remapped_sysval_offset(
+                       vs, sysval_offset(graphics, vs.first_vertex)));
+      }
+
+      if (shader_uses_sysval(vs, graphics, vs.base_instance)) {
+         cs_store32(b, cs_sr_reg32(b, 37), fau_block_addr,
+                    shader_remapped_sysval_offset(
+                       vs, sysval_offset(graphics, vs.base_instance)));
+      }
+
+      /* Wait for the store using SR-37 as src to finish, so we can overwrite
+       * it. */
+      cs_wait_slot(b, SB_ID(LS), false);
+   }
 
    /* NIR expects zero-based instance ID, but even if it did have an intrinsic to
     * load the absolute instance ID, we'd want to keep it zero-based to work around

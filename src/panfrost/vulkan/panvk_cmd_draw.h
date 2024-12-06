@@ -87,7 +87,8 @@ enum panvk_cmd_graphics_dirty_state {
    PANVK_CMD_GRAPHICS_DIRTY_OQ,
    PANVK_CMD_GRAPHICS_DIRTY_DESC_STATE,
    PANVK_CMD_GRAPHICS_DIRTY_RENDER_STATE,
-   PANVK_CMD_GRAPHICS_DIRTY_PUSH_UNIFORMS,
+   PANVK_CMD_GRAPHICS_DIRTY_VS_PUSH_UNIFORMS,
+   PANVK_CMD_GRAPHICS_DIRTY_FS_PUSH_UNIFORMS,
    PANVK_CMD_GRAPHICS_DIRTY_STATE_COUNT,
 };
 
@@ -109,6 +110,7 @@ struct panvk_cmd_graphics_state {
    struct {
       const struct panvk_shader *shader;
       struct panvk_shader_desc_state desc;
+      mali_ptr push_uniforms;
       bool required;
 #if PAN_ARCH <= 7
       mali_ptr rsd;
@@ -118,6 +120,7 @@ struct panvk_cmd_graphics_state {
    struct {
       const struct panvk_shader *shader;
       struct panvk_shader_desc_state desc;
+      mali_ptr push_uniforms;
 #if PAN_ARCH <= 7
       mali_ptr attribs;
       mali_ptr attrib_bufs;
@@ -141,8 +144,6 @@ struct panvk_cmd_graphics_state {
    } cb;
 
    struct panvk_rendering_state render;
-
-   mali_ptr push_uniforms;
 
 #if PAN_ARCH <= 7
    mali_ptr vpd;
@@ -170,6 +171,18 @@ struct panvk_cmd_graphics_state {
 
 #define gfx_state_set_all_dirty(__cmdbuf)                                      \
    BITSET_ONES((__cmdbuf)->state.gfx.dirty)
+
+#define set_gfx_sysval(__cmdbuf, __dirty, __name, __val)                       \
+   do {                                                                        \
+      struct panvk_graphics_sysvals __new_sysval;                              \
+      __new_sysval.__name = __val;                                             \
+      if (memcmp(&(__cmdbuf)->state.gfx.sysvals.__name, &__new_sysval.__name,  \
+                 sizeof(__new_sysval.__name))) {                               \
+         (__cmdbuf)->state.gfx.sysvals.__name = __new_sysval.__name;           \
+         BITSET_SET_RANGE(__dirty, sysval_fau_start(graphics, __name),         \
+                          sysval_fau_end(graphics, __name));                   \
+      }                                                                        \
+   } while (0)
 
 static inline uint32_t
 panvk_select_tiler_hierarchy_mask(const struct panvk_physical_device *phys_dev,
@@ -278,11 +291,15 @@ cached_fs_required(ASSERTED const struct panvk_cmd_graphics_state *state,
    do {                                                                        \
       bool __set_fs_dirty =                                                    \
          (__cmdbuf)->state.gfx.fs.shader != get_fs(__cmdbuf);                  \
+      bool __set_fs_push_dirty =                                               \
+         __set_fs_dirty && gfx_state_dirty(__cmdbuf, FS_PUSH_UNIFORMS);        \
       vk_dynamic_graphics_state_clear_dirty(                                   \
          &(__cmdbuf)->vk.dynamic_graphics_state);                              \
       gfx_state_clear_all_dirty(__cmdbuf);                                     \
       if (__set_fs_dirty)                                                      \
          gfx_state_set_dirty(__cmdbuf, FS);                                    \
+      if (__set_fs_push_dirty)                                                 \
+         gfx_state_set_dirty(__cmdbuf, FS_PUSH_UNIFORMS);                      \
    } while (0)
 
 void

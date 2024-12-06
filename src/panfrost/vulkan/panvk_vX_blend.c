@@ -37,11 +37,9 @@ lower_load_blend_const(nir_builder *b, nir_instr *instr, UNUSED void *data)
 
    b->cursor = nir_before_instr(instr);
 
-   unsigned offset = offsetof(struct panvk_graphics_sysvals, blend.constants);
+   /* Blend constants are always passed through FAU words 0:3. */
    nir_def *blend_consts = nir_load_push_constant(
-      b, intr->def.num_components, intr->def.bit_size,
-      /* Push constants are placed first, and then come the sysvals. */
-      nir_imm_int(b, SYSVALS_PUSH_CONST_BASE + offset));
+      b, intr->def.num_components, intr->def.bit_size, nir_imm_int(b, 0));
 
    nir_def_rewrite_uses(&intr->def, blend_consts);
    return true;
@@ -412,7 +410,7 @@ panvk_per_arch(blend_emit_descs)(struct panvk_cmd_buffer *cmdbuf,
    }
 
    if (blend_info->shader_loads_blend_const)
-      gfx_state_set_dirty(cmdbuf, PUSH_UNIFORMS);
+      gfx_state_set_dirty(cmdbuf, FS_PUSH_UNIFORMS);
 
    return VK_SUCCESS;
 }

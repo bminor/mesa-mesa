@@ -64,15 +64,6 @@ prepare_driver_set(struct panvk_cmd_buffer *cmdbuf)
    return VK_SUCCESS;
 }
 
-static VkResult
-prepare_push_uniforms(struct panvk_cmd_buffer *cmdbuf)
-{
-   cmdbuf->state.compute.push_uniforms = panvk_per_arch(
-      cmd_prepare_push_uniforms)(cmdbuf, VK_PIPELINE_BIND_POINT_COMPUTE);
-   return cmdbuf->state.compute.push_uniforms ? VK_SUCCESS
-                                              : VK_ERROR_OUT_OF_DEVICE_MEMORY;
-}
-
 static void
 calculate_task_axis_and_increment(const struct panvk_shader *shader,
                                   struct panvk_physical_device *phys_dev,
@@ -238,7 +229,8 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
    if (result != VK_SUCCESS)
       return;
 
-   result = prepare_push_uniforms(cmdbuf);
+   result = panvk_per_arch(cmd_prepare_push_uniforms)(
+      cmdbuf, cmdbuf->state.compute.shader);
    if (result != VK_SUCCESS)
       return;
 
@@ -268,11 +260,8 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
          cs_move64_to(b, cs_sr_reg64(b, 0), cs_desc_state->res_table);
 
       if (compute_state_dirty(cmdbuf, PUSH_UNIFORMS)) {
-         uint32_t push_size =
-            SYSVALS_PUSH_CONST_BASE + sizeof(struct panvk_compute_sysvals);
-         uint64_t fau_count = DIV_ROUND_UP(push_size, 8);
-         mali_ptr fau_ptr =
-            cmdbuf->state.compute.push_uniforms | (fau_count << 56);
+         mali_ptr fau_ptr = cmdbuf->state.compute.push_uniforms |
+                            ((uint64_t)shader->fau.total_count << 56);
          cs_move64_to(b, cs_sr_reg64(b, 8), fau_ptr);
       }
 
@@ -294,11 +283,11 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
       }
       cs_move32_to(b, cs_sr_reg32(b, 33), wg_size.opaque[0]);
       cs_move32_to(b, cs_sr_reg32(b, 34),
-                   info->direct.wg_base.x * shader->local_size.x);
+                   info->wg_base.x * shader->local_size.x);
       cs_move32_to(b, cs_sr_reg32(b, 35),
-                   info->direct.wg_base.y * shader->local_size.y);
+                   info->wg_base.y * shader->local_size.y);
       cs_move32_to(b, cs_sr_reg32(b, 36),
-                   info->direct.wg_base.z * shader->local_size.z);
+                   info->wg_base.z * shader->local_size.z);
       if (indirect) {
          /* Load parameters from indirect buffer and update workgroup count
           * registers and sysvals */
@@ -309,10 +298,25 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
          cs_move64_to(b, cs_scratch_reg64(b, 0),
                       cmdbuf->state.compute.push_uniforms);
          cs_wait_slot(b, SB_ID(LS), false);
-         cs_store(b, cs_sr_reg_tuple(b, 37, 3), cs_scratch_reg64(b, 0),
-                  BITFIELD_MASK(3),
-                  SYSVALS_PUSH_CONST_BASE +
-                     offsetof(struct panvk_compute_sysvals, num_work_groups));
+
+         if (shader_uses_sysval(shader, compute, num_work_groups.x)) {
+            cs_store32(b, cs_sr_reg32(b, 37), cs_scratch_reg64(b, 0),
+                       shader_remapped_sysval_offset(
+                          shader, sysval_offset(compute, num_work_groups.x)));
+         }
+
+         if (shader_uses_sysval(shader, compute, num_work_groups.y)) {
+            cs_store32(b, cs_sr_reg32(b, 38), cs_scratch_reg64(b, 0),
+                       shader_remapped_sysval_offset(
+                          shader, sysval_offset(compute, num_work_groups.y)));
+         }
+
+         if (shader_uses_sysval(shader, compute, num_work_groups.z)) {
+            cs_store32(b, cs_sr_reg32(b, 39), cs_scratch_reg64(b, 0),
+                       shader_remapped_sysval_offset(
+                          shader, sysval_offset(compute, num_work_groups.z)));
+         }
+
          cs_wait_slot(b, SB_ID(LS), false);
       } else {
          cs_move32_to(b, cs_sr_reg32(b, 37), info->direct.wg_count.x);
@@ -385,10 +389,8 @@ panvk_per_arch(CmdDispatchBase)(VkCommandBuffer commandBuffer,
 {
    VK_FROM_HANDLE(panvk_cmd_buffer, cmdbuf, commandBuffer);
    struct panvk_dispatch_info info = {
-      .direct = {
-         .wg_base = {baseGroupX, baseGroupY, baseGroupZ},
-         .wg_count = {groupCountX, groupCountY, groupCountZ},
-      }
+      .wg_base = {baseGroupX, baseGroupY, baseGroupZ},
+      .direct.wg_count = {groupCountX, groupCountY, groupCountZ},
    };
    cmd_dispatch(cmdbuf, &info);
 }

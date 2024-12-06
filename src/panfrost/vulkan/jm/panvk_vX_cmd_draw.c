@@ -50,7 +50,6 @@ struct panvk_draw_data {
       mali_ptr rsd;
       mali_ptr varyings;
    } fs;
-   mali_ptr push_uniforms;
    mali_ptr varying_bufs;
    mali_ptr position;
    mali_ptr indices;
@@ -722,7 +721,7 @@ panvk_emit_vertex_dcd(struct panvk_cmd_buffer *cmdbuf,
       cfg.instance_size =
          draw->info.instance.count > 1 ? draw->padded_vertex_count : 1;
       cfg.uniform_buffers = vs_desc_state->tables[PANVK_BIFROST_DESC_TABLE_UBO];
-      cfg.push_uniforms = draw->push_uniforms;
+      cfg.push_uniforms = cmdbuf->state.gfx.vs.push_uniforms;
       cfg.textures = vs_desc_state->tables[PANVK_BIFROST_DESC_TABLE_TEXTURE];
       cfg.samplers = vs_desc_state->tables[PANVK_BIFROST_DESC_TABLE_SAMPLER];
    }
@@ -900,7 +899,7 @@ panvk_emit_tiler_dcd(struct panvk_cmd_buffer *cmdbuf,
       cfg.instance_size =
          draw->info.instance.count > 1 ? draw->padded_vertex_count : 1;
       cfg.uniform_buffers = fs_desc_state->tables[PANVK_BIFROST_DESC_TABLE_UBO];
-      cfg.push_uniforms = draw->push_uniforms;
+      cfg.push_uniforms = cmdbuf->state.gfx.fs.push_uniforms;
       cfg.textures = fs_desc_state->tables[PANVK_BIFROST_DESC_TABLE_TEXTURE];
       cfg.samplers = fs_desc_state->tables[PANVK_BIFROST_DESC_TABLE_SAMPLER];
 
@@ -1261,12 +1260,18 @@ panvk_cmd_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_data *draw)
 
       panvk_per_arch(cmd_prepare_draw_sysvals)(cmdbuf, &draw->info);
 
-      cmdbuf->state.gfx.push_uniforms = panvk_per_arch(
-         cmd_prepare_push_uniforms)(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS);
-      if (!cmdbuf->state.gfx.push_uniforms)
+      result = panvk_per_arch(cmd_prepare_push_uniforms)(
+         cmdbuf, cmdbuf->state.gfx.vs.shader);
+      if (result != VK_SUCCESS)
          return;
 
-      draw->push_uniforms = cmdbuf->state.gfx.push_uniforms;
+      if (fs) {
+         result = panvk_per_arch(cmd_prepare_push_uniforms)(
+            cmdbuf, cmdbuf->state.gfx.fs.shader);
+         if (result != VK_SUCCESS)
+            return;
+      }
+
       result = panvk_draw_prepare_tiler_context(cmdbuf, draw);
       if (result != VK_SUCCESS)
          return;

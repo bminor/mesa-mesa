@@ -44,10 +44,8 @@ panvk_per_arch(CmdDispatchBase)(VkCommandBuffer commandBuffer,
       return;
 
    struct panvk_dispatch_info info = {
-      .direct = {
-         .wg_base = {baseGroupX, baseGroupY, baseGroupZ},
-         .wg_count = {groupCountX, groupCountY, groupCountZ},
-      },
+      .wg_base = {baseGroupX, baseGroupY, baseGroupZ},
+      .direct.wg_count = {groupCountX, groupCountY, groupCountZ},
    };
    struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
    struct panvk_physical_device *phys_dev =
@@ -80,14 +78,10 @@ panvk_per_arch(CmdDispatchBase)(VkCommandBuffer commandBuffer,
 
    panvk_per_arch(cmd_prepare_dispatch_sysvals)(cmdbuf, &info);
 
-   if (compute_state_dirty(cmdbuf, PUSH_UNIFORMS)) {
-      cmdbuf->state.compute.push_uniforms = panvk_per_arch(
-         cmd_prepare_push_uniforms)(cmdbuf, VK_PIPELINE_BIND_POINT_COMPUTE);
-      if (!cmdbuf->state.compute.push_uniforms)
-         return;
-   }
-
-   mali_ptr push_uniforms = cmdbuf->state.compute.push_uniforms;
+   result = panvk_per_arch(cmd_prepare_push_uniforms)(
+      cmdbuf, cmdbuf->state.compute.shader);
+   if (result != VK_SUCCESS)
+      return;
 
    struct panfrost_ptr copy_desc_job = {0};
 
@@ -130,7 +124,7 @@ panvk_per_arch(CmdDispatchBase)(VkCommandBuffer commandBuffer,
          cs_desc_state->tables[PANVK_BIFROST_DESC_TABLE_IMG];
       cfg.thread_storage = tsd;
       cfg.uniform_buffers = cs_desc_state->tables[PANVK_BIFROST_DESC_TABLE_UBO];
-      cfg.push_uniforms = push_uniforms;
+      cfg.push_uniforms = cmdbuf->state.compute.push_uniforms;
       cfg.textures = cs_desc_state->tables[PANVK_BIFROST_DESC_TABLE_TEXTURE];
       cfg.samplers = cs_desc_state->tables[PANVK_BIFROST_DESC_TABLE_SAMPLER];
    }

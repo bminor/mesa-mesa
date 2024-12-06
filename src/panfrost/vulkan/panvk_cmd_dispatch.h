@@ -43,11 +43,24 @@ struct panvk_cmd_compute_state {
       compute_state_clear_all_dirty(__cmdbuf);                                 \
    } while (0)
 
+#define set_compute_sysval(__cmdbuf, __dirty, __name, __val)                   \
+   do {                                                                        \
+      struct panvk_compute_sysvals __new_sysval;                               \
+      __new_sysval.__name = (__val);                                           \
+      if (memcmp(&(__cmdbuf)->state.compute.sysvals.__name,                    \
+                 &__new_sysval.__name, sizeof(__new_sysval.__name))) {         \
+         (__cmdbuf)->state.compute.sysvals.__name = __new_sysval.__name;       \
+         BITSET_SET_RANGE(__dirty, sysval_fau_start(compute, __name),          \
+                          sysval_fau_start(compute, __name));                  \
+      }                                                                        \
+   } while (0)
+
 struct panvk_dispatch_info {
    struct {
-      struct {
-         uint32_t x, y, z;
-      } wg_base;
+      uint32_t x, y, z;
+   } wg_base;
+
+   struct {
       struct {
          uint32_t x, y, z;
       } wg_count;

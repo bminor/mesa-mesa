@@ -460,52 +460,164 @@ valhall_lower_get_ssbo_size(struct nir_builder *b,
 }
 
 static bool
-lower_load_push_consts(nir_builder *b, nir_intrinsic_instr *intr,
-                       UNUSED void *data)
+collect_push_constant(struct nir_builder *b, nir_intrinsic_instr *intr,
+                      void *data)
 {
    if (intr->intrinsic != nir_intrinsic_load_push_constant)
       return false;
 
-   unsigned base = nir_intrinsic_base(intr);
+   struct panvk_shader *shader = data;
+   uint32_t base = nir_intrinsic_base(intr);
+   bool is_sysval = base >= SYSVALS_PUSH_CONST_BASE;
+   uint32_t offset, size;
 
-   /* We always set the range to zero, to make sure no pass is using it after
-    * that point. */
-   nir_intrinsic_set_range(intr, 0);
+   /* Sysvals should have a constant offset. */
+   assert(!is_sysval || nir_src_is_const(intr->src[0]));
+
+   if (is_sysval)
+      base -= SYSVALS_PUSH_CONST_BASE;
+
+   /* If the offset is dynamic, we need to flag [base:base+range] as used, to
+    * allow global mem access. */
+   if (!nir_src_is_const(intr->src[0])) {
+      offset = base;
+      size = nir_intrinsic_range(intr);
+
+      /* Flag the push_consts sysval as needed if we have an indirect offset. */
+      if (b->shader->info.stage == MESA_SHADER_COMPUTE)
+         shader_use_sysval(shader, compute, push_consts);
+      else
+         shader_use_sysval(shader, graphics, push_consts);
+   } else {
+      offset = base + nir_src_as_uint(intr->src[0]);
+      size = (intr->def.bit_size / 8) * intr->def.num_components;
+   }
+
+   if (is_sysval)
+      shader_use_sysval_range(shader, offset, size);
+   else
+      shader_use_push_const_range(shader, offset, size);
+
+   return true;
+}
+
+static bool
+move_push_constant(struct nir_builder *b, nir_intrinsic_instr *intr, void *data)
+{
+   if (intr->intrinsic != nir_intrinsic_load_push_constant)
+      return false;
+
+   struct panvk_shader *shader = data;
+   unsigned base = nir_intrinsic_base(intr);
+   bool is_sysval = base >= SYSVALS_PUSH_CONST_BASE;
+
+   if (is_sysval)
+      base -= SYSVALS_PUSH_CONST_BASE;
+
+   /* Sysvals should have a constant offset. */
+   assert(!is_sysval || nir_src_is_const(intr->src[0]));
 
    b->cursor = nir_before_instr(&intr->instr);
 
-   /* Offset is constant, we just propagate base to the offset if it's not
-    * already zero. */
    if (nir_src_is_const(intr->src[0])) {
-      if (base == 0)
-         return true;
+      unsigned offset = base + nir_src_as_uint(intr->src[0]);
 
-      nir_src_rewrite(&intr->src[0],
-                      nir_imm_int(b, nir_src_as_uint(intr->src[0]) + base));
+      /* We place the sysvals first, and then comes the user push constants.
+       * We do that so we always have the blend constants at offset 0 for
+       * blend shaders. */
+      if (is_sysval)
+         offset = shader_remapped_sysval_offset(shader, offset);
+      else
+         offset = shader_remapped_push_const_offset(shader, offset);
+
+      nir_src_rewrite(&intr->src[0], nir_imm_int(b, offset));
+
+      /* We always set the range/base to zero, to make sure no pass is using it
+       * after that point. */
       nir_intrinsic_set_base(intr, 0);
-      return true;
+      nir_intrinsic_set_range(intr, 0);
+   } else {
+      /* We don't use load_sysval() on purpose, because it would set
+       * .base=SYSVALS_PUSH_CONST_BASE, and we're supposed to force a base of
+       * zero in this pass. */
+      unsigned push_const_buf_offset = shader_remapped_sysval_offset(
+         shader, b->shader->info.stage == MESA_SHADER_COMPUTE
+                    ? sysval_offset(compute, push_consts)
+                    : sysval_offset(graphics, push_consts));
+      nir_def *push_const_buf = nir_load_push_constant(
+         b, 1, 64, nir_imm_int(b, push_const_buf_offset));
+      unsigned push_const_offset =
+         shader_remapped_fau_offset(shader, push_consts, base);
+      nir_def *offset = nir_iadd_imm(b, intr->src[0].ssa, push_const_offset);
+      unsigned align = nir_combined_align(nir_intrinsic_align_mul(intr),
+                                          nir_intrinsic_align_offset(intr));
+
+      /* We assume an alignment of 64-bit max for packed push-constants. */
+      align = MIN2(align, FAU_WORD_SIZE);
+      nir_def *value =
+         nir_load_global(b, nir_iadd(b, push_const_buf, nir_u2u64(b, offset)),
+                         align, intr->def.num_components, intr->def.bit_size);
+
+      nir_def_replace(&intr->def, value);
    }
 
-   /* We don't use load_sysval() on purpose, because it would set
-    * .base=SYSVALS_PUSH_CONST_BASE, and we're supposed to force a base of
-    * zero in this pass. */
-   unsigned push_const_addr_offset =
-      SYSVALS_PUSH_CONST_BASE +
-      (b->shader->info.stage == MESA_SHADER_COMPUTE
-          ? offsetof(struct panvk_compute_sysvals, push_consts)
-          : offsetof(struct panvk_graphics_sysvals, push_consts));
-   nir_def *push_const_buf =
-      nir_load_push_constant(b, 1, 64, nir_imm_int(b, push_const_addr_offset));
-
-   nir_def *offset = nir_iadd_imm(b, intr->src[0].ssa, base);
-   unsigned align = nir_combined_align(nir_intrinsic_align_mul(intr),
-                                       nir_intrinsic_align_offset(intr));
-   nir_def *value =
-      nir_load_global(b, nir_iadd(b, push_const_buf, nir_u2u64(b, offset)),
-                      align, intr->def.num_components, intr->def.bit_size);
-
-   nir_def_replace(&intr->def, value);
    return true;
+}
+
+static void
+lower_load_push_consts(nir_shader *nir, struct panvk_shader *shader)
+{
+   /* Before we lower load_push_constant()s with a dynamic offset to global
+    * loads, we want to run a few optimization passes to get rid of offset
+    * calculation involving only constant values. */
+   bool progress = false;
+   do {
+      progress = false;
+      NIR_PASS(progress, nir, nir_copy_prop);
+      NIR_PASS(progress, nir, nir_opt_remove_phis);
+      NIR_PASS(progress, nir, nir_opt_dce);
+      NIR_PASS(progress, nir, nir_opt_dead_cf);
+      NIR_PASS(progress, nir, nir_opt_cse);
+      NIR_PASS(progress, nir, nir_opt_peephole_select, 64, false, true);
+      NIR_PASS(progress, nir, nir_opt_algebraic);
+      NIR_PASS(progress, nir, nir_opt_constant_folding);
+   } while (progress);
+
+   /* We always reserve the 4 blend constant words for fragment shaders,
+    * because we don't know the blend configuration at this point, and
+    * we might end up with a blend shader reading those blend constants. */
+   if (shader->vk.stage == MESA_SHADER_FRAGMENT) {
+      /* We rely on blend constants being placed first and covering 4 words. */
+      STATIC_ASSERT(
+         offsetof(struct panvk_graphics_sysvals, blend.constants) == 0 &&
+         sizeof(((struct panvk_graphics_sysvals *)NULL)->blend.constants) ==
+            16);
+
+      shader_use_sysval(shader, graphics, blend.constants);
+   }
+
+   progress = false;
+   NIR_PASS(progress, nir, nir_shader_intrinsics_pass, collect_push_constant,
+            nir_metadata_all, shader);
+
+   /* Some load_push_constant instructions might be eliminated after
+    * scalarization+dead-code-elimination. Since these pass happen in
+    * bifrost_compile(), we can't run the push_constant packing after the
+    * optimization took place, so let's just have our own FAU count instead
+    * of using info.push.count to make it consistent with the
+    * used_{sysvals,push_consts} bitmaps, even if it sometimes implies loading
+    * more than we really need. Doing that also takes into account the fact
+    * blend constants are never loaded from the fragment shader, but might be
+    * needed in the blend shader. */
+   shader->fau.sysval_count = BITSET_COUNT(shader->fau.used_sysvals);
+   shader->fau.total_count =
+      shader->fau.sysval_count + BITSET_COUNT(shader->fau.used_push_consts);
+
+   if (!progress)
+      return;
+
+   NIR_PASS(_, nir, nir_shader_intrinsics_pass, move_push_constant,
+            nir_metadata_control_flow, shader);
 }
 
 static void
@@ -632,24 +744,7 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
    NIR_PASS(_, nir, nir_shader_instructions_pass, panvk_lower_sysvals,
             nir_metadata_control_flow, NULL);
 
-   /* Before we lower load_push_constant()s with a dynamic offset to global
-    * loads, we want to run a few optimization passes to get rid of offset
-    * calculation involving only constant values. */
-   bool progress = false;
-   do {
-      progress = false;
-      NIR_PASS(progress, nir, nir_copy_prop);
-      NIR_PASS(progress, nir, nir_opt_remove_phis);
-      NIR_PASS(progress, nir, nir_opt_dce);
-      NIR_PASS(progress, nir, nir_opt_dead_cf);
-      NIR_PASS(progress, nir, nir_opt_cse);
-      NIR_PASS(progress, nir, nir_opt_peephole_select, 64, false, true);
-      NIR_PASS(progress, nir, nir_opt_algebraic);
-      NIR_PASS(progress, nir, nir_opt_constant_folding);
-   } while (progress);
-
-   NIR_PASS(_, nir, nir_shader_intrinsics_pass, lower_load_push_consts,
-            nir_metadata_control_flow, NULL);
+   lower_load_push_consts(nir, shader);
 }
 
 static VkResult
@@ -955,6 +1050,10 @@ panvk_compile_shader(struct panvk_device *dev,
 
    result = panvk_compile_nir(dev, nir, info->flags, &inputs, shader);
 
+   /* We need to update info.push.count because it's used to initialize the
+    * RSD in pan_shader_prepare_rsd(). */
+   shader->info.push.count = shader->fau.total_count * 2;
+
    if (result != VK_SUCCESS) {
       panvk_shader_destroy(&dev->vk, &shader->vk, pAllocator);
       return result;
@@ -1091,6 +1190,9 @@ panvk_deserialize_shader(struct vk_device *vk_dev, struct blob_reader *blob,
    struct pan_shader_info info;
    blob_copy_bytes(blob, &info, sizeof(info));
 
+   struct panvk_shader_fau_info fau;
+   blob_copy_bytes(blob, &fau, sizeof(fau));
+
    struct pan_compute_dim local_size;
    blob_copy_bytes(blob, &local_size, sizeof(local_size));
 
@@ -1105,6 +1207,7 @@ panvk_deserialize_shader(struct vk_device *vk_dev, struct blob_reader *blob,
       return panvk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
 
    shader->info = info;
+   shader->fau = fau;
    shader->local_size = local_size;
    shader->bin_size = bin_size;
 
@@ -1187,6 +1290,7 @@ panvk_shader_serialize(struct vk_device *vk_dev,
       return false;
 
    blob_write_bytes(blob, &shader->info, sizeof(shader->info));
+   blob_write_bytes(blob, &shader->fau, sizeof(shader->fau));
    blob_write_bytes(blob, &shader->local_size, sizeof(shader->local_size));
    blob_write_uint32(blob, shader->bin_size);
    blob_write_bytes(blob, shader->bin_ptr, shader->bin_size);
@@ -1546,18 +1650,21 @@ panvk_cmd_bind_shader(struct panvk_cmd_buffer *cmd, const gl_shader_stage stage,
       if (cmd->state.compute.shader != shader) {
          cmd->state.compute.shader = shader;
          compute_state_set_dirty(cmd, CS);
+         compute_state_set_dirty(cmd, PUSH_UNIFORMS);
       }
       break;
    case MESA_SHADER_VERTEX:
       if (cmd->state.gfx.vs.shader != shader) {
          cmd->state.gfx.vs.shader = shader;
          gfx_state_set_dirty(cmd, VS);
+         gfx_state_set_dirty(cmd, VS_PUSH_UNIFORMS);
       }
       break;
    case MESA_SHADER_FRAGMENT:
       if (cmd->state.gfx.fs.shader != shader) {
          cmd->state.gfx.fs.shader = shader;
          gfx_state_set_dirty(cmd, FS);
+         gfx_state_set_dirty(cmd, FS_PUSH_UNIFORMS);
       }
       break;
    default:
