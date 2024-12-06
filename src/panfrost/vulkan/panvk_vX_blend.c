@@ -38,10 +38,9 @@ lower_load_blend_const(nir_builder *b, nir_instr *instr, UNUSED void *data)
 
    unsigned offset = offsetof(struct panvk_graphics_sysvals, blend.constants);
    nir_def *blend_consts = nir_load_push_constant(
-      b, intr->def.num_components, intr->def.bit_size, nir_imm_int(b, 0),
+      b, intr->def.num_components, intr->def.bit_size,
       /* Push constants are placed first, and then come the sysvals. */
-      .base = offset + SYSVALS_PUSH_CONST_BASE,
-      .range = intr->def.num_components * intr->def.bit_size / 8);
+      nir_imm_int(b, SYSVALS_PUSH_CONST_BASE + offset));
 
    nir_def_rewrite_uses(&intr->def, blend_consts);
    return true;

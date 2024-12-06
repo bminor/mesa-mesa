@@ -83,8 +83,7 @@ static nir_def *
 get_layer_id(nir_builder *b)
 {
 #if PAN_ARCH <= 7
-   return nir_load_push_constant(b, 1, 32, nir_imm_int(b, 0), .base = 0,
-                                 .range = 4);
+   return nir_load_push_constant(b, 1, 32, nir_imm_int(b, 0));
 #else
    return nir_load_layer_id(b);
 #endif
