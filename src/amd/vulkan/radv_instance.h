@@ -72,6 +72,7 @@ struct radv_instance {
       bool vk_require_etc2;
       bool vk_require_astc;
       bool disable_dcc_mips;
+      bool disable_dcc_stores;
       char *app_layer;
       uint8_t override_graphics_shader_version;
       uint8_t override_compute_shader_version;
