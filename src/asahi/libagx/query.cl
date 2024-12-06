@@ -103,8 +103,7 @@ KERNEL(1)
 libagx_increment_cs_invocations(global uint *grid, global uint32_t *statistic,
                                 uint32_t local_size_threads)
 {
-   *statistic +=
-      libagx_cs_invocations(local_size_threads, grid[0], grid[1], grid[2]);
+   *statistic += local_size_threads * grid[0] * grid[1] * grid[2];
 }
 
 KERNEL(32)

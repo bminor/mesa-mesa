@@ -5306,10 +5306,9 @@ agx_launch_grid(struct pipe_context *pipe, const struct pipe_grid_info *info)
          libagx_increment_cs_invocations(batch, agx_1d(1), indirect, addr,
                                          agx_workgroup_threads(wg));
       } else {
-         agx_query_increment_cpu(
-            ctx, statistic,
-            libagx_cs_invocations(agx_workgroup_threads(wg), info->grid[0],
-                                  info->grid[1], info->grid[2]));
+         agx_query_increment_cpu(ctx, statistic,
+                                 agx_workgroup_threads(wg) * info->grid[0] *
+                                    info->grid[1] * info->grid[2]);
       }
    }
 
