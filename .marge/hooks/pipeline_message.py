@@ -320,10 +320,11 @@ async def process_problem_jobs(session, project_id, problem_jobs):
 async def main(pipeline_id: str, project_id: str = "176") -> str:
 
     message = ""
-    timeout = aiohttp.ClientTimeout(total=120)
-    logging.basicConfig(level=logging.INFO)
 
     try:
+        timeout = aiohttp.ClientTimeout(total=120)
+        logging.basicConfig(level=logging.INFO)
+
         async with aiohttp.ClientSession(timeout=timeout) as session:
             pipeline_status = await get_pipeline_status(
                 session, project_id, pipeline_id
