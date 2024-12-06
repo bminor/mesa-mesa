@@ -112,13 +112,15 @@ lower_printf_intrin(nir_builder *b, nir_intrinsic_instr *prntf, void *_options)
    unsigned buffer_size = (options && options->max_buffer_size) ? options->max_buffer_size : default_buffer_size;
    int max_valid_offset =
       buffer_size - args_size - fmt_str_id_size - counter_size;
-   nir_push_if(b, nir_ilt_imm(b, offset, max_valid_offset));
+   assert(max_valid_offset >= 0 && "printf buffer must be sufficiently large");
+
+   nir_push_if(b, nir_ult_imm(b, offset, max_valid_offset));
 
    nir_def *printf_succ_val = nir_imm_int(b, 0);
 
    /* Write the format string ID */
    nir_def *fmt_str_id_offset =
-      nir_i2iN(b, offset, ptr_bit_size);
+      nir_u2uN(b, offset, ptr_bit_size);
    nir_deref_instr *fmt_str_id_deref =
       nir_build_deref_array(b, buffer, fmt_str_id_offset);
    fmt_str_id_deref = nir_build_deref_cast(b, &fmt_str_id_deref->def,
@@ -135,7 +137,7 @@ lower_printf_intrin(nir_builder *b, nir_intrinsic_instr *prntf, void *_options)
 
       unsigned field_offset = glsl_get_struct_field_offset(args->type, i);
       nir_def *arg_offset =
-         nir_i2iN(b, nir_iadd_imm(b, offset, fmt_str_id_size + field_offset),
+         nir_u2uN(b, nir_iadd_imm(b, offset, fmt_str_id_size + field_offset),
                   ptr_bit_size);
       nir_deref_instr *dst_arg_deref =
          nir_build_deref_array(b, buffer, arg_offset);
@@ -239,8 +241,7 @@ nir_printf_fmt(nir_builder *b,
       nir_imm_int(b, b->shader->printf_info_count);
 
    nir_def *store_addr =
-      nir_iadd(b, buffer_addr, nir_i2iN(b, buffer_offset,
-                                           buffer_addr->bit_size));
+      nir_iadd(b, buffer_addr, nir_u2uN(b, buffer_offset, buffer_addr->bit_size));
    nir_store_global(b, store_addr, 4, identifier, 0x1);
 
    /* Arguments */
