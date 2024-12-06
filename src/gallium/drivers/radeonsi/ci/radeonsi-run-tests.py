@@ -299,10 +299,6 @@ logfile = open(os.path.join(output_folder, "{}-run-tests.log".format(gpu_name)),
 
 spin = itertools.cycle("-\\|/")
 
-shutil.copy(skips_list, output_folder)
-skips = os.path.join(output_folder, "skips.csv")
-
-
 def gfx_level_to_str(cl):
     supported = ["gfx6", "gfx7", "gfx8", "gfx9", "gfx10", "gfx10_3", "gfx11", "gfx12"]
     if 8 <= cl and cl < 8 + len(supported):
@@ -443,7 +439,7 @@ if args.piglit:
         "--jobs",
         str(args.jobs),
         "--skips",
-        skips,
+        skips_list,
         "--skips",
         os.path.join(path_above_mesa, "mesa", ".gitlab-ci", "gbm-skips.txt")
     ] + filters_args + flakes_args
@@ -518,7 +514,7 @@ if args.glcts:
         "--output",
         out,
         "--skips",
-        skips,
+        skips_list,
         "--jobs",
         str(args.jobs),
         "--timeout",
@@ -573,7 +569,7 @@ if args.escts:
         "--output",
         out,
         "--skips",
-        skips,
+        skips_list,
         "--jobs",
         str(args.jobs),
         "--timeout",
@@ -622,7 +618,7 @@ if args.deqp:
         )
         if os.path.exists(baseline):
             suite.write('baseline = "{}"\n'.format(baseline))
-        suite.write('skips = ["{}"]\n'.format(skips))
+        suite.write('skips = ["{}"]\n'.format(skips_list))
         suite.write("deqp_args = [\n")
         for a in deqp_args[1:-1]:
             suite.write('    "{}",\n'.format(a))
