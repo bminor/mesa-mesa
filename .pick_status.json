@@ -534,7 +534,7 @@
         "description": "intel/dev/xe: Fix size of eu_per_dss_mask",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "04bdbeec31161b5515f222d68433084e7dad92a7",
         "notes": null
