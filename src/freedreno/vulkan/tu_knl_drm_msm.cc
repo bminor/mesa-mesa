@@ -90,6 +90,17 @@ tu_drm_get_raytracing(const struct tu_physical_device *dev)
    return value;
 }
 
+static bool
+tu_drm_get_prr(const struct tu_physical_device *dev)
+{
+   uint64_t value;
+   int ret = tu_drm_get_param(dev->local_fd, MSM_PARAM_HAS_PRR, &value);
+   if (ret)
+      return false;
+
+   return value;
+}
+
 static int
 tu_drm_get_va_prop(const struct tu_physical_device *dev,
                    uint64_t *va_start, uint64_t *va_size)
@@ -329,9 +340,10 @@ msm_submitqueue_new(struct tu_device *dev,
    assert(priority >= 0 &&
           priority < dev->physical_device->submitqueue_priority_count);
    struct drm_msm_submitqueue req = {
-      .flags = dev->physical_device->info->chip >= 7 &&
-         dev->physical_device->has_preemption ?
-         MSM_SUBMITQUEUE_ALLOW_PREEMPT : 0,
+      .flags = type == TU_QUEUE_SPARSE ? MSM_SUBMITQUEUE_VM_BIND :
+            (dev->physical_device->info->chip >= 7 &&
+             dev->physical_device->has_preemption ?
+             MSM_SUBMITQUEUE_ALLOW_PREEMPT : 0),
       .prio = priority,
    };
 
@@ -557,6 +569,17 @@ tu_allocate_kernel_iova(struct tu_device *dev,
    return VK_SUCCESS;
 }
 
+/* Performs a VM_BIND mapping operation on the driver-internal VM_BIND queue
+ * from the BO memory to an iova range.  No in fences are provided, so the CPU
+ * may proceed with the operation immediately (and thus, unmap operations need
+ * to be held off until GPU access to them are done, or faults may occur).  An
+ * out fence is requested, so that all future queue submits will wait for the
+ * map to complete.
+ *
+ * Since all map/unmap operations happen in order, we don't need to track zombie
+ * VMAs between when they're unmapped from our perspective (but not unmapped
+ * by the kernel) and when they can be remapped, unlike the old set_iova path.
+ */
 static VkResult
 tu_map_vm_bind(struct tu_device *dev, uint32_t map_op, uint32_t map_op_flags,
                uint64_t iova, uint32_t gem_handle, uint64_t bo_offset,
@@ -1048,6 +1071,67 @@ msm_bo_finish(struct tu_device *dev, struct tu_bo *bo)
 }
 
 static VkResult
+msm_sparse_vma_init(struct tu_device *dev,
+                    struct vk_object_base *base,
+                    struct tu_sparse_vma *out_vma,
+                    uint64_t *out_iova,
+                    enum tu_sparse_vma_flags flags,
+                    uint64_t size, uint64_t client_iova)
+{
+   VkResult result;
+   enum tu_bo_alloc_flags bo_flags =
+      (flags & TU_SPARSE_VMA_REPLAYABLE) ? TU_BO_ALLOC_REPLAYABLE :
+      (enum tu_bo_alloc_flags)0;
+
+   out_vma->msm.size = size;
+
+   mtx_lock(&dev->vma_mutex);
+   result = tu_allocate_userspace_iova(dev, size, client_iova, bo_flags,
+                                       &out_vma->msm.iova);
+   mtx_unlock(&dev->vma_mutex);
+
+   if (result != VK_SUCCESS)
+      return result;
+
+   if (flags & TU_SPARSE_VMA_MAP_ZERO) {
+      result = tu_map_vm_bind(dev, MSM_VM_BIND_OP_MAP_NULL, 0,
+                              out_vma->msm.iova, 0, 0, size);
+   }
+
+   *out_iova = out_vma->msm.iova;
+
+   return result;
+}
+
+static void
+msm_sparse_vma_finish(struct tu_device *dev,
+                      struct tu_sparse_vma *vma)
+{
+   tu_map_vm_bind(dev, MSM_VM_BIND_OP_UNMAP, 0, vma->msm.iova, 0, 0,
+                  vma->msm.size);
+
+   mtx_lock(&dev->vma_mutex);
+   util_vma_heap_free(&dev->vma, vma->msm.iova, vma->msm.size);
+   mtx_unlock(&dev->vma_mutex);
+}
+
+static int
+compare_binds(const void *_a, const void *_b)
+{
+   const struct drm_msm_vm_bind_op *a =
+      (const struct drm_msm_vm_bind_op *)_a;
+   const struct drm_msm_vm_bind_op *b =
+      (const struct drm_msm_vm_bind_op *)_b;
+
+   if (a->iova < b->iova)
+      return -1;
+   else if (a->iova > b->iova)
+      return 1;
+   else
+      return 0;
+}
+
+static VkResult
 msm_queue_submit(struct tu_queue *queue, void *_submit,
                  struct vk_sync_wait *waits, uint32_t wait_count,
                  struct vk_sync_signal *signals, uint32_t signal_count,
@@ -1057,8 +1141,8 @@ msm_queue_submit(struct tu_queue *queue, void *_submit,
    int ret;
    struct tu_msm_queue_submit *submit =
       (struct tu_msm_queue_submit *)_submit;
+
    struct drm_msm_syncobj *in_syncobjs, *out_syncobjs;
-   struct drm_msm_gem_submit req;
    uint64_t gpu_offset = 0;
    uint32_t entry_count =
       util_dynarray_num_elements(&submit->commands, struct drm_msm_gem_submit_cmd);
@@ -1067,8 +1151,7 @@ msm_queue_submit(struct tu_queue *queue, void *_submit,
    struct tu_perfetto_clocks clocks;
    uint64_t start_ts = tu_perfetto_begin_submit();
 #endif
-
-   uint32_t flags = MSM_PIPE_3D0;
+   uint32_t fence = 0;
 
    /* Allocate without wait timeline semaphores */
    in_syncobjs = (struct drm_msm_syncobj *) vk_zalloc(
@@ -1112,88 +1195,213 @@ msm_queue_submit(struct tu_queue *queue, void *_submit,
       };
    }
 
-   if (wait_count)
-      flags |= MSM_SUBMIT_SYNCOBJ_IN;
+   if (queue->type == TU_QUEUE_SPARSE) {
+      unsigned nr_ops = util_dynarray_num_elements(&submit->binds,
+                                                   struct drm_msm_vm_bind_op);
 
-   if (signal_count)
-      flags |= MSM_SUBMIT_SYNCOBJ_OUT;
+      uint32_t flags = 0;
 
-   if (has_vm_bind) {
+      /* The kernel needs to pre-allocate page table memory for bind
+       * operations. It tries to estimate how much memory is needed, but if
+       * the iova ranges to map aren't contiguous (i.e. if the end of one
+       * mapping does not equal the start of the next) then it can
+       * overestimate. Due to how we have to swizzle sparse image mappings, we
+       * may map contiguous iova ranges from neighboring sparse tiles with
+       * bind_op's that aren't next to each other in the ops array, resulting
+       * in no mappings being contiguous and the kernel wildly overestimating
+       * the memory required for page tables. Sort the entries to make sure
+       * that neighboring mappings are next to each other.
+       */
+      qsort(submit->binds.data, nr_ops, sizeof(struct drm_msm_vm_bind_op),
+            compare_binds);
+
       u_rwlock_rdlock(&queue->device->vm_bind_fence_lock);
 
       if (queue->device->vm_bind_fence_fd != -1)
-         flags |= MSM_SUBMIT_FENCE_FD_IN;
-   } else {
-      mtx_lock(&queue->device->bo_mutex);
+         flags |= MSM_VM_BIND_FENCE_FD_IN;
 
-      /* MSM_SUBMIT_NO_IMPLICIT skips having the scheduler wait on the
-       * previous dma fences attached to the BO (such as from the window
-       * system server's command queue) before submitting the job. Our fence
-       * will always get attached to the BO, because it gets used for
-       * synchronization for the shrinker.
-       *
-       * If the flag is not set, then the kernel falls back to checking each
-       * BO's MSM_SUBMIT_NO_IMPLICIT flag for its implicit sync handling.
-       *
-       * As of kernel 6.0, the core wsi code will be generating appropriate
-       * syncobj export-and-waits/signal-and-imports for implict syncing (on
-       * implicit sync WSI backends) and not allocating any
-       * wsi_memory_allocate_info->implicit_sync BOs from the driver. However,
-       * on older kernels with that flag set, we have to submit without
-       * NO_IMPLICIT set to do have the kernel do pre-submit waits on whatever
-       * the last fence was.
-       */
-      if (queue->device->implicit_sync_bo_count == 0)
-         flags |= MSM_SUBMIT_NO_IMPLICIT;
+      struct drm_msm_vm_bind req = {
+         .flags = flags,
+         .nr_ops = nr_ops,
+         .fence_fd = queue->device->vm_bind_fence_fd,
+         .queue_id = queue->msm_queue_id,
+         .in_syncobjs = (uint64_t)(uintptr_t)in_syncobjs,
+         .out_syncobjs = (uint64_t)(uintptr_t)out_syncobjs,
+         .nr_in_syncobjs = wait_count,
+         .nr_out_syncobjs = signal_count,
+         .syncobj_stride = sizeof(struct drm_msm_syncobj),
+         .op_stride = sizeof(struct drm_msm_vm_bind_op),
+      };
 
-      /* drm_msm_gem_submit_cmd requires index of bo which could change at any
-       * time when bo_mutex is not locked. So we update the index here under the
-       * lock.
+      /* If there's a single op, then it's inlined into the request struct
+       * instead of being provided as a pointer.
        */
-      util_dynarray_foreach (&submit->commands, struct drm_msm_gem_submit_cmd,
-                             cmd) {
-         unsigned i = cmd -
-            util_dynarray_element(&submit->commands,
-                                  struct drm_msm_gem_submit_cmd, 0);
-         struct tu_bo **bo = util_dynarray_element(&submit->command_bos,
-                                                   struct tu_bo *, i);
-         cmd->submit_idx = (*bo)->submit_bo_list_idx;
+      if (req.nr_ops == 1) {
+         memcpy(&req.op, submit->binds.data, sizeof(req.op));
+      } else {
+         req.ops = (uint64_t)(uintptr_t)submit->binds.data;
       }
-   }
 
-   req = (struct drm_msm_gem_submit) {
-      .flags = flags,
-      .nr_bos = entry_count ? queue->device->submit_bo_count : 0,
-      .nr_cmds = entry_count,
-      .bos = (uint64_t)(uintptr_t) queue->device->submit_bo_list,
-      .cmds = (uint64_t)(uintptr_t)submit->commands.data,
-      .fence_fd = queue->device->vm_bind_fence_fd,
-      .queueid = queue->msm_queue_id,
-      .in_syncobjs = (uint64_t)(uintptr_t)in_syncobjs,
-      .out_syncobjs = (uint64_t)(uintptr_t)out_syncobjs,
-      .nr_in_syncobjs = wait_count,
-      .nr_out_syncobjs = signal_count,
-      .syncobj_stride = sizeof(struct drm_msm_syncobj),
-   };
+      {
+         MESA_TRACE_SCOPE("DRM_MSM_VM_BIND");
+         ret = drmCommandWriteRead(queue->device->fd,
+                                 DRM_MSM_VM_BIND,
+                                 &req, sizeof(req));
+      }
+      int errno_ = errno;
 
-   {
-      MESA_TRACE_SCOPE("DRM_MSM_GEM_SUBMIT");
-      ret = drmCommandWriteRead(queue->device->fd,
-                              DRM_MSM_GEM_SUBMIT,
-                              &req, sizeof(req));
-   }
-
-   if (has_vm_bind)
       u_rwlock_rdunlock(&queue->device->vm_bind_fence_lock);
-   else
-      mtx_unlock(&queue->device->bo_mutex);
+
+      if (ret) {
+         assert(errno_ != EINVAL);
+         if (errno == ENOMEM) {
+            MESA_TRACE_SCOPE("DRM_MSM_VM_BIND OOM path");
+
+            perf_debug(queue->device,
+                       "Falling back for sparse binding due to kernel OOM");
+
+            /* The kernel ran out of memory allocating memory for the bind
+             * objects. Wait for the syncobjs manually, so that the kernel can
+             * complete each command and free its associated
+             * memory immediately, and then submit one map at a time.
+             */
+            result = vk_sync_wait_many(&queue->device->vk,
+                                       wait_count, waits,
+                                       VK_SYNC_WAIT_COMPLETE, INT64_MAX);
+            if (result != VK_SUCCESS) {
+               result = vk_device_set_lost(&queue->device->vk,
+                                           "vk_sync_wait_many failed");
+               goto fail_submit;
+            }
+
+            uint32_t flags = 0;
+
+            u_rwlock_rdlock(&queue->device->vm_bind_fence_lock);
+
+            if (queue->device->vm_bind_fence_fd != -1)
+               flags |= MSM_VM_BIND_FENCE_FD_IN;
+
+            util_dynarray_foreach (&submit->binds, struct drm_msm_vm_bind_op,
+                                   op) {
+               bool last =
+                  op == util_dynarray_top_ptr(&submit->binds,
+                                              struct drm_msm_vm_bind_op);
+               struct drm_msm_vm_bind req = {
+                  .flags = flags,
+                  .nr_ops = 1,
+                  .fence_fd = queue->device->vm_bind_fence_fd,
+                  .queue_id = queue->msm_queue_id,
+                  .out_syncobjs = (uint64_t)(uintptr_t)out_syncobjs,
+                  .nr_out_syncobjs = last ? signal_count : 0,
+                  .syncobj_stride = sizeof(struct drm_msm_syncobj),
+                  .op_stride = sizeof(struct drm_msm_vm_bind_op),
+                  .op = *op,
+               };
+
+               {
+                  MESA_TRACE_SCOPE("DRM_MSM_VM_BIND");
+                  ret = drmCommandWriteRead(queue->device->fd,
+                                          DRM_MSM_VM_BIND,
+                                          &req, sizeof(req));
+               }
+
+               if (ret)
+                  break;
+            }
+
+            u_rwlock_rdunlock(&queue->device->vm_bind_fence_lock);
+         }
+      }
+   } else {
+      uint32_t flags = MSM_PIPE_3D0;
+
+      if (wait_count)
+         flags |= MSM_SUBMIT_SYNCOBJ_IN;
+
+      if (signal_count)
+         flags |= MSM_SUBMIT_SYNCOBJ_OUT;
+
+      if (has_vm_bind) {
+         u_rwlock_rdlock(&queue->device->vm_bind_fence_lock);
+
+         if (queue->device->vm_bind_fence_fd != -1)
+            flags |= MSM_SUBMIT_FENCE_FD_IN;
+      } else {
+         mtx_lock(&queue->device->bo_mutex);
+
+         /* MSM_SUBMIT_NO_IMPLICIT skips having the scheduler wait on the
+          * previous dma fences attached to the BO (such as from the window
+          * system server's command queue) before submitting the job. Our
+          * fence will always get attached to the BO, because it gets used for
+          * synchronization for the shrinker.
+          *
+          * If the flag is not set, then the kernel falls back to checking
+          * each BO's MSM_SUBMIT_NO_IMPLICIT flag for its implicit sync
+          * handling.
+          *
+          * As of kernel 6.0, the core wsi code will be generating appropriate
+          * syncobj export-and-waits/signal-and-imports for implict syncing
+          * (on implicit sync WSI backends) and not allocating any
+          * wsi_memory_allocate_info->implicit_sync BOs from the driver.
+          * However, on older kernels with that flag set, we have to submit
+          * without NO_IMPLICIT set to do have the kernel do pre-submit waits
+          * on whatever the last fence was.
+          */
+         if (queue->device->implicit_sync_bo_count == 0)
+            flags |= MSM_SUBMIT_NO_IMPLICIT;
+
+         /* drm_msm_gem_submit_cmd requires index of bo which could change at
+          * any time when bo_mutex is not locked. So we update the index here
+          * under the lock.
+          */
+         util_dynarray_foreach (&submit->commands, struct drm_msm_gem_submit_cmd,
+                                cmd) {
+            unsigned i = cmd -
+               util_dynarray_element(&submit->commands,
+                                     struct drm_msm_gem_submit_cmd, 0);
+            struct tu_bo **bo = util_dynarray_element(&submit->command_bos,
+                                                      struct tu_bo *, i);
+            cmd->submit_idx = (*bo)->submit_bo_list_idx;
+         }
+      }
+
+      struct drm_msm_gem_submit req = {
+         .flags = flags,
+         .nr_bos = entry_count ? queue->device->submit_bo_count : 0,
+         .nr_cmds = entry_count,
+         .bos = (uint64_t)(uintptr_t) queue->device->submit_bo_list,
+         .cmds = (uint64_t)(uintptr_t)submit->commands.data,
+         .fence_fd = queue->device->vm_bind_fence_fd,
+         .queueid = queue->msm_queue_id,
+         .in_syncobjs = (uint64_t)(uintptr_t)in_syncobjs,
+         .out_syncobjs = (uint64_t)(uintptr_t)out_syncobjs,
+         .nr_in_syncobjs = wait_count,
+         .nr_out_syncobjs = signal_count,
+         .syncobj_stride = sizeof(struct drm_msm_syncobj),
+      };
+
+      {
+         MESA_TRACE_SCOPE("DRM_MSM_GEM_SUBMIT");
+         ret = drmCommandWriteRead(queue->device->fd,
+                                 DRM_MSM_GEM_SUBMIT,
+                                 &req, sizeof(req));
+      }
+
+      if (has_vm_bind)
+         u_rwlock_rdunlock(&queue->device->vm_bind_fence_lock);
+      else
+         mtx_unlock(&queue->device->bo_mutex);
+
+      fence = req.fence;
+   }
 
    if (ret) {
       result = vk_device_set_lost(&queue->device->vk, "submit failed: %m");
       goto fail_submit;
    }
 
-   p_atomic_set(&queue->fence, req.fence);
+   if (queue->type != TU_QUEUE_SPARSE)
+      p_atomic_set(&queue->fence, fence);
 
 #if HAVE_PERFETTO
    clocks = tu_perfetto_end_submit(queue, queue->device->submit_count,
@@ -1234,8 +1442,11 @@ static const struct tu_knl msm_knl_funcs = {
       .submit_create = msm_submit_create,
       .submit_finish = msm_submit_finish,
       .submit_add_entries = msm_submit_add_entries,
+      .submit_add_bind = msm_submit_add_bind,
       .queue_submit = msm_queue_submit,
       .queue_wait_fence = msm_queue_wait_fence,
+      .sparse_vma_init = msm_sparse_vma_init,
+      .sparse_vma_finish = msm_sparse_vma_finish,
 };
 
 VkResult
@@ -1275,6 +1486,7 @@ tu_knl_drm_msm_load(struct tu_instance *instance,
    device->local_fd = fd;
 
    device->has_vm_bind = tu_try_enable_vm_bind(fd) == 0;
+   device->has_sparse = device->has_vm_bind;
 
    if (tu_drm_get_gpu_id(device, &device->dev_id.gpu_id)) {
       result = vk_startup_errorf(instance, VK_ERROR_INITIALIZATION_FAILED,
@@ -1304,6 +1516,7 @@ tu_knl_drm_msm_load(struct tu_instance *instance,
    device->has_set_iova = !tu_drm_get_va_prop(device, &device->va_start,
                                               &device->va_size);
    device->has_raytracing = tu_drm_get_raytracing(device);
+   device->has_sparse_prr = tu_drm_get_prr(device);
 
    device->has_preemption = tu_drm_has_preemption(device);
 

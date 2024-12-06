@@ -356,9 +356,10 @@ virtio_submitqueue_new(struct tu_device *dev,
           priority < dev->physical_device->submitqueue_priority_count);
 
    struct drm_msm_submitqueue req = {
-      .flags = dev->physical_device->info->chip >= 7 &&
-         dev->physical_device->has_preemption ?
-         MSM_SUBMITQUEUE_ALLOW_PREEMPT : 0,
+      .flags = type == TU_QUEUE_SPARSE ? MSM_SUBMITQUEUE_VM_BIND :
+         (dev->physical_device->info->chip >= 7 &&
+          dev->physical_device->has_preemption ?
+          MSM_SUBMITQUEUE_ALLOW_PREEMPT : 0),
       .prio = priority,
    };
 

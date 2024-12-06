@@ -28,6 +28,7 @@ struct tu_msm_queue_submit
 {
    struct util_dynarray commands;
    struct util_dynarray command_bos;
+   struct util_dynarray binds;
 };
 
 void *msm_submit_create(struct tu_device *device);
@@ -35,6 +36,11 @@ void msm_submit_finish(struct tu_device *device, void *_submit);
 void msm_submit_add_entries(struct tu_device *device, void *_submit,
                             struct tu_cs_entry *entries,
                             unsigned num_entries);
+void msm_submit_add_bind(struct tu_device *device,
+                         void *_submit,
+                         struct tu_sparse_vma *vma, uint64_t vma_offset,
+                         struct tu_bo *bo, uint64_t bo_offset,
+                         uint64_t size);
 
 static inline void
 get_abs_timeout(struct drm_msm_timespec *tv, uint64_t ns)
