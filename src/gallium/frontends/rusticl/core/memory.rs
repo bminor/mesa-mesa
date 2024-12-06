@@ -1030,8 +1030,9 @@ impl MemBase {
         self.mem_type == CL_MEM_OBJECT_BUFFER
     }
 
-    pub fn has_same_parent(&self, other: &Self) -> bool {
-        ptr::eq(self.get_parent(), other.get_parent())
+    /// Checks if the backing memory is actually the same memory object.
+    pub fn backing_memory_eq(&self, other: &Self) -> bool {
+        self.alloc.backing_resource_eq(&other.alloc)
     }
 
     // this is kinda bogus, because that won't work with system SVM, but the spec wants us to

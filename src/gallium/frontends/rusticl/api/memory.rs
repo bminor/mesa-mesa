@@ -1165,7 +1165,7 @@ fn enqueue_copy_buffer(
     // and the source and destination regions overlap or if src_buffer and dst_buffer are different
     // sub-buffers of the same associated buffer object and they overlap. The regions overlap if
     // src_offset ≤ dst_offset ≤ src_offset + size - 1 or if dst_offset ≤ src_offset ≤ dst_offset + size - 1.
-    if src.has_same_parent(&dst) {
+    if src.backing_memory_eq(&dst) {
         let src_offset = src_offset + src.offset();
         let dst_offset = dst_offset + dst.offset();
 
@@ -1520,7 +1520,7 @@ fn enqueue_copy_buffer_rect(
     // CL_MEM_COPY_OVERLAP if src_buffer and dst_buffer are the same buffer or sub-buffer object and
     // the source and destination regions overlap or if src_buffer and dst_buffer are different
     // sub-buffers of the same associated buffer object and they overlap.
-    if src.has_same_parent(&dst)
+    if src.backing_memory_eq(&dst)
         && check_copy_overlap(
             &src_ori,
             src.offset(),
