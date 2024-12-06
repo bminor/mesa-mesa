@@ -29,7 +29,7 @@
 using namespace brw;
 
 bool
-brw_fs_lower_pack(fs_visitor &s)
+brw_lower_pack(fs_visitor &s)
 {
    bool progress = false;
 

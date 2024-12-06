@@ -1342,7 +1342,7 @@ namespace {
 }
 
 bool
-brw_fs_lower_scoreboard(fs_visitor &s)
+brw_lower_scoreboard(fs_visitor &s)
 {
    if (s.devinfo->ver >= 12) {
       const ordered_address *jps = ordered_inst_addresses(&s);

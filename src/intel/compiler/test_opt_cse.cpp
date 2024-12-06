@@ -90,7 +90,7 @@ cse(fs_visitor *v)
       v->cfg->dump();
    }
 
-   bool ret = brw_fs_opt_cse_defs(*v);
+   bool ret = brw_opt_cse_defs(*v);
 
    if (print) {
       fprintf(stderr, "\n= After =\n");

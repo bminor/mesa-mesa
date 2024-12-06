@@ -54,7 +54,7 @@ brw_lower_scalar_fp64_MAD(fs_visitor &s)
  * or VARYING_PULL_CONSTANT_LOAD instructions which load values into VGRFs.
  */
 bool
-brw_fs_lower_constant_loads(fs_visitor &s)
+brw_lower_constant_loads(fs_visitor &s)
 {
    unsigned index, pull_index;
    bool progress = false;
@@ -121,7 +121,7 @@ brw_fs_lower_constant_loads(fs_visitor &s)
 }
 
 bool
-brw_fs_lower_load_payload(fs_visitor &s)
+brw_lower_load_payload(fs_visitor &s)
 {
    bool progress = false;
 
@@ -177,7 +177,7 @@ brw_fs_lower_load_payload(fs_visitor &s)
  * Or, for unsigned ==/!= comparisons, simply change the types.
  */
 bool
-brw_fs_lower_csel(fs_visitor &s)
+brw_lower_csel(fs_visitor &s)
 {
    const intel_device_info *devinfo = s.devinfo;
    bool progress = false;
@@ -253,7 +253,7 @@ brw_fs_lower_csel(fs_visitor &s)
 }
 
 bool
-brw_fs_lower_sub_sat(fs_visitor &s)
+brw_lower_sub_sat(fs_visitor &s)
 {
    bool progress = false;
 
@@ -353,7 +353,7 @@ brw_fs_lower_sub_sat(fs_visitor &s)
  * component layout.
  */
 bool
-brw_fs_lower_barycentrics(fs_visitor &s)
+brw_lower_barycentrics(fs_visitor &s)
 {
    const intel_device_info *devinfo = s.devinfo;
 
@@ -446,7 +446,7 @@ lower_derivative(fs_visitor &s, bblock_t *block, fs_inst *inst,
  * them efficiently (i.e. XeHP).
  */
 bool
-brw_fs_lower_derivatives(fs_visitor &s)
+brw_lower_derivatives(fs_visitor &s)
 {
    bool progress = false;
 
@@ -478,7 +478,7 @@ brw_fs_lower_derivatives(fs_visitor &s)
 }
 
 bool
-brw_fs_lower_find_live_channel(fs_visitor &s)
+brw_lower_find_live_channel(fs_visitor &s)
 {
    bool progress = false;
 
@@ -583,7 +583,7 @@ brw_fs_lower_find_live_channel(fs_visitor &s)
  * just adds a new vgrf for the second payload and copies it over.
  */
 bool
-brw_fs_lower_sends_overlapping_payload(fs_visitor &s)
+brw_lower_sends_overlapping_payload(fs_visitor &s)
 {
    bool progress = false;
 
@@ -629,7 +629,7 @@ brw_fs_lower_sends_overlapping_payload(fs_visitor &s)
  * ARF NULL is not allowed.  Fix that up by allocating a temporary GRF.
  */
 bool
-brw_fs_lower_3src_null_dest(fs_visitor &s)
+brw_lower_3src_null_dest(fs_visitor &s)
 {
    bool progress = false;
 
@@ -664,7 +664,7 @@ unsupported_64bit_type(const intel_device_info *devinfo,
  * - Splitting 64-bit MOV/SEL into 2x32-bit where needed
  */
 bool
-brw_fs_lower_alu_restrictions(fs_visitor &s)
+brw_lower_alu_restrictions(fs_visitor &s)
 {
    const intel_device_info *devinfo = s.devinfo;
    bool progress = false;
@@ -736,8 +736,8 @@ brw_fs_lower_alu_restrictions(fs_visitor &s)
 }
 
 static void
-brw_fs_lower_vgrf_to_fixed_grf(const struct intel_device_info *devinfo, fs_inst *inst,
-                               brw_reg *reg, bool compressed)
+brw_lower_vgrf_to_fixed_grf(const struct intel_device_info *devinfo, fs_inst *inst,
+                            brw_reg *reg, bool compressed)
 {
    if (reg->file != VGRF)
       return;
@@ -796,7 +796,7 @@ brw_fs_lower_vgrf_to_fixed_grf(const struct intel_device_info *devinfo, fs_inst 
 }
 
 void
-brw_fs_lower_vgrfs_to_fixed_grfs(fs_visitor &s)
+brw_lower_vgrfs_to_fixed_grfs(fs_visitor &s)
 {
    assert(s.grf_used || !"Must be called after register allocation");
 
@@ -818,9 +818,9 @@ brw_fs_lower_vgrfs_to_fixed_grfs(fs_visitor &s)
       const bool compressed =
            inst->dst.component_size(inst->exec_size) > REG_SIZE;
 
-      brw_fs_lower_vgrf_to_fixed_grf(s.devinfo, inst, &inst->dst, compressed);
+      brw_lower_vgrf_to_fixed_grf(s.devinfo, inst, &inst->dst, compressed);
       for (int i = 0; i < inst->sources; i++) {
-         brw_fs_lower_vgrf_to_fixed_grf(s.devinfo, inst, &inst->src[i], compressed);
+         brw_lower_vgrf_to_fixed_grf(s.devinfo, inst, &inst->src[i], compressed);
       }
    }
 
@@ -829,7 +829,7 @@ brw_fs_lower_vgrfs_to_fixed_grfs(fs_visitor &s)
 }
 
 bool
-brw_fs_lower_load_subgroup_invocation(fs_visitor &s)
+brw_lower_load_subgroup_invocation(fs_visitor &s)
 {
    bool progress = false;
 
@@ -868,7 +868,7 @@ brw_fs_lower_load_subgroup_invocation(fs_visitor &s)
 }
 
 bool
-brw_fs_lower_indirect_mov(fs_visitor &s)
+brw_lower_indirect_mov(fs_visitor &s)
 {
    bool progress = false;
 

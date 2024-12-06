@@ -139,7 +139,7 @@ factor_uint32(uint32_t x, unsigned *result_a, unsigned *result_b)
 }
 
 static void
-brw_fs_lower_mul_dword_inst(fs_visitor &s, fs_inst *inst, bblock_t *block)
+brw_lower_mul_dword_inst(fs_visitor &s, fs_inst *inst, bblock_t *block)
 {
    const intel_device_info *devinfo = s.devinfo;
    const fs_builder ibld(&s, block, inst);
@@ -301,7 +301,7 @@ brw_fs_lower_mul_dword_inst(fs_visitor &s, fs_inst *inst, bblock_t *block)
 }
 
 static void
-brw_fs_lower_mul_qword_inst(fs_visitor &s, fs_inst *inst, bblock_t *block)
+brw_lower_mul_qword_inst(fs_visitor &s, fs_inst *inst, bblock_t *block)
 {
    const intel_device_info *devinfo = s.devinfo;
    const fs_builder ibld(&s, block, inst);
@@ -370,7 +370,7 @@ brw_fs_lower_mul_qword_inst(fs_visitor &s, fs_inst *inst, bblock_t *block)
 }
 
 static void
-brw_fs_lower_mulh_inst(fs_visitor &s, fs_inst *inst, bblock_t *block)
+brw_lower_mulh_inst(fs_visitor &s, fs_inst *inst, bblock_t *block)
 {
    const intel_device_info *devinfo = s.devinfo;
    const fs_builder ibld(&s, block, inst);
@@ -388,7 +388,7 @@ brw_fs_lower_mulh_inst(fs_visitor &s, fs_inst *inst, bblock_t *block)
       lower_src_modifiers(&s, block, inst, 1);
 
    /* Should have been lowered to 8-wide. */
-   assert(inst->exec_size <= brw_fs_get_lowered_simd_width(&s, inst));
+   assert(inst->exec_size <= brw_get_lowered_simd_width(&s, inst));
    const unsigned acc_width = reg_unit(devinfo) * 8;
    const brw_reg acc = suboffset(retype(brw_acc_reg(inst->exec_size), inst->dst.type),
                                 inst->group % acc_width);
@@ -414,7 +414,7 @@ brw_fs_lower_mulh_inst(fs_visitor &s, fs_inst *inst, bblock_t *block)
 }
 
 bool
-brw_fs_lower_integer_multiplication(fs_visitor &s)
+brw_lower_integer_multiplication(fs_visitor &s)
 {
    const intel_device_info *devinfo = s.devinfo;
    bool progress = false;
@@ -433,7 +433,7 @@ brw_fs_lower_integer_multiplication(fs_visitor &s)
               inst->src[0].type == BRW_TYPE_UQ) &&
              (inst->src[1].type == BRW_TYPE_Q ||
               inst->src[1].type == BRW_TYPE_UQ)) {
-            brw_fs_lower_mul_qword_inst(s, inst, block);
+            brw_lower_mul_qword_inst(s, inst, block);
             inst->remove(block);
             progress = true;
          } else if (!inst->dst.is_accumulator() &&
@@ -441,12 +441,12 @@ brw_fs_lower_integer_multiplication(fs_visitor &s)
                      inst->dst.type == BRW_TYPE_UD) &&
                     (!devinfo->has_integer_dword_mul ||
                      devinfo->verx10 >= 125)) {
-            brw_fs_lower_mul_dword_inst(s, inst, block);
+            brw_lower_mul_dword_inst(s, inst, block);
             inst->remove(block);
             progress = true;
          }
       } else if (inst->opcode == SHADER_OPCODE_MULH) {
-         brw_fs_lower_mulh_inst(s, inst, block);
+         brw_lower_mulh_inst(s, inst, block);
          inst->remove(block);
          progress = true;
       }

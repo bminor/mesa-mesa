@@ -1440,7 +1440,7 @@ brw_allocate_registers(fs_visitor &s, bool allow_spilling)
    uint32_t best_register_pressure = UINT32_MAX;
    enum instruction_scheduler_mode best_sched = SCHEDULE_NONE;
 
-   brw_fs_opt_compact_virtual_grfs(s);
+   brw_opt_compact_virtual_grfs(s);
 
    if (s.needs_register_pressure)
       s.shader_stats.max_register_pressure = brw_compute_max_register_pressure(s);
@@ -1538,7 +1538,7 @@ brw_allocate_registers(fs_visitor &s, bool allow_spilling)
 
    s.debug_optimizer(nir, "post_ra_alloc", 96, pass_num++);
 
-   brw_fs_opt_bank_conflicts(s);
+   brw_opt_bank_conflicts(s);
 
    s.debug_optimizer(nir, "bank_conflict", 96, pass_num++);
 
@@ -1554,7 +1554,7 @@ brw_allocate_registers(fs_visitor &s, bool allow_spilling)
     * TODO: Change the passes above, then move this lowering to be part of
     * assign_regs.
     */
-   brw_fs_lower_vgrfs_to_fixed_grfs(s);
+   brw_lower_vgrfs_to_fixed_grfs(s);
 
    s.debug_optimizer(nir, "lowered_vgrfs_to_fixed_grfs", 96, pass_num++);
 
@@ -1586,7 +1586,7 @@ brw_allocate_registers(fs_visitor &s, bool allow_spilling)
    if (s.failed)
       return;
 
-   brw_fs_lower_scoreboard(s);
+   brw_lower_scoreboard(s);
 
    s.debug_optimizer(nir, "scoreboard", 96, pass_num++);
 }

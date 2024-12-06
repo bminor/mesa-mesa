@@ -1342,7 +1342,7 @@ opt_copy_propagation_local(const brw_compiler *compiler, linear_ctx *lin_ctx,
 
       if (constant_progress) {
          commute_immediates(inst);
-         brw_constant_fold_instruction(compiler->devinfo, inst);
+         brw_opt_constant_fold_instruction(compiler->devinfo, inst);
          progress = true;
       }
 
@@ -1415,7 +1415,7 @@ opt_copy_propagation_local(const brw_compiler *compiler, linear_ctx *lin_ctx,
 }
 
 bool
-brw_fs_opt_copy_propagation(fs_visitor &s)
+brw_opt_copy_propagation(fs_visitor &s)
 {
    bool progress = false;
    void *copy_prop_ctx = ralloc_context(NULL);
@@ -1808,7 +1808,7 @@ find_value_for_offset(fs_inst *def, const brw_reg &src, unsigned src_size)
 }
 
 bool
-brw_fs_opt_copy_propagation_defs(fs_visitor &s)
+brw_opt_copy_propagation_defs(fs_visitor &s)
 {
    const brw::def_analysis &defs = s.def_analysis.require();
    unsigned *uses_deleted = new unsigned[defs.count()]();
@@ -1880,7 +1880,7 @@ brw_fs_opt_copy_propagation_defs(fs_visitor &s)
 
       if (constant_progress) {
          commute_immediates(inst);
-         brw_constant_fold_instruction(s.compiler->devinfo, inst);
+         brw_opt_constant_fold_instruction(s.compiler->devinfo, inst);
       }
    }
 

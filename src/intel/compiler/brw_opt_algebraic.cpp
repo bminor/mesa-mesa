@@ -135,7 +135,7 @@ fold_multiplicands_of_MAD(fs_inst *inst)
 }
 
 bool
-brw_constant_fold_instruction(const intel_device_info *devinfo, fs_inst *inst)
+brw_opt_constant_fold_instruction(const intel_device_info *devinfo, fs_inst *inst)
 {
    bool progress = false;
 
@@ -200,7 +200,7 @@ brw_constant_fold_instruction(const intel_device_info *devinfo, fs_inst *inst)
          fold_multiplicands_of_MAD(inst);
          assert(inst->opcode == BRW_OPCODE_ADD);
 
-         ASSERTED bool folded = brw_constant_fold_instruction(devinfo, inst);
+         ASSERTED bool folded = brw_opt_constant_fold_instruction(devinfo, inst);
          assert(folded);
 
          progress = true;
@@ -320,13 +320,13 @@ brw_constant_fold_instruction(const intel_device_info *devinfo, fs_inst *inst)
 }
 
 bool
-brw_fs_opt_algebraic(fs_visitor &s)
+brw_opt_algebraic(fs_visitor &s)
 {
    const intel_device_info *devinfo = s.devinfo;
    bool progress = false;
 
    foreach_block_and_inst_safe(block, fs_inst, inst, s.cfg) {
-      if (brw_constant_fold_instruction(devinfo, inst)) {
+      if (brw_opt_constant_fold_instruction(devinfo, inst)) {
          progress = true;
          continue;
       }
@@ -483,9 +483,7 @@ brw_fs_opt_algebraic(fs_visitor &s)
                }
             }
          }
-
          break;
-
       case BRW_OPCODE_OR:
          if (inst->src[0].equals(inst->src[1]) || inst->src[1].is_zero()) {
             /* On Gfx8+, the OR instruction can have a source modifier that
@@ -664,7 +662,6 @@ brw_fs_opt_algebraic(fs_visitor &s)
             progress = true;
          }
          break;
-
       case SHADER_OPCODE_BROADCAST:
          if (is_uniform(inst->src[0])) {
             inst->opcode = BRW_OPCODE_MOV;

@@ -242,7 +242,7 @@ is_half_float_src_dst(const fs_inst *inst)
  * original execution size.
  */
 unsigned
-brw_fs_get_lowered_simd_width(const fs_visitor *shader, const fs_inst *inst)
+brw_get_lowered_simd_width(const fs_visitor *shader, const fs_inst *inst)
 {
    const struct brw_compiler *compiler = shader->compiler;
    const struct intel_device_info *devinfo = compiler->devinfo;
@@ -644,12 +644,12 @@ emit_zip(const fs_builder &lbld_before, const fs_builder &lbld_after,
 }
 
 bool
-brw_fs_lower_simd_width(fs_visitor &s)
+brw_lower_simd_width(fs_visitor &s)
 {
    bool progress = false;
 
    foreach_block_and_inst_safe(block, fs_inst, inst, s.cfg) {
-      const unsigned lower_width = brw_fs_get_lowered_simd_width(&s, inst);
+      const unsigned lower_width = brw_get_lowered_simd_width(&s, inst);
 
       /* No splitting required */
       if (lower_width == inst->exec_size)

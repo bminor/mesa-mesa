@@ -190,7 +190,7 @@ opt_saturate_propagation_local(fs_visitor &s, bblock_t *block)
 }
 
 bool
-brw_fs_opt_saturate_propagation(fs_visitor &s)
+brw_opt_saturate_propagation(fs_visitor &s)
 {
    bool progress = false;
 

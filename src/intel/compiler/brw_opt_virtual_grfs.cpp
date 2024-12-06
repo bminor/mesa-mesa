@@ -22,13 +22,13 @@ using namespace brw;
  * elimination and coalescing.
  */
 bool
-brw_fs_opt_split_virtual_grfs(fs_visitor &s)
+brw_opt_split_virtual_grfs(fs_visitor &s)
 {
    /* Compact the register file so we eliminate dead vgrfs.  This
     * only defines split points for live registers, so if we have
     * too large dead registers they will hit assertions later.
     */
-   brw_fs_opt_compact_virtual_grfs(s);
+   brw_opt_compact_virtual_grfs(s);
 
    unsigned num_vars = s.alloc.count;
 
@@ -221,7 +221,7 @@ cleanup:
  * overhead.
  */
 bool
-brw_fs_opt_compact_virtual_grfs(fs_visitor &s)
+brw_opt_compact_virtual_grfs(fs_visitor &s)
 {
    bool progress = false;
    int *remap_table = new int[s.alloc.count];

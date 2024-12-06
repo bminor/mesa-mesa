@@ -1289,7 +1289,7 @@ parcel_out_registers(const intel_device_info *devinfo,
 }
 
 bool
-brw_fs_opt_combine_constants(fs_visitor &s)
+brw_opt_combine_constants(fs_visitor &s)
 {
    const intel_device_info *devinfo = s.devinfo;
    void *const_ctx = ralloc_context(NULL);

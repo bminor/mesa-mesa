@@ -648,7 +648,7 @@ brw_emit_repclear_shader(fs_visitor &s)
 
    s.first_non_payload_grf = s.payload().num_regs;
 
-   brw_fs_lower_scoreboard(s);
+   brw_lower_scoreboard(s);
 }
 
 /**
@@ -1493,7 +1493,7 @@ run_fs(fs_visitor &s, bool allow_spilling, bool do_rep_send)
 
       brw_calculate_cfg(s);
 
-      brw_fs_optimize(s);
+      brw_optimize(s);
 
       s.assign_curb_setup();
 
@@ -1502,13 +1502,13 @@ run_fs(fs_visitor &s, bool allow_spilling, bool do_rep_send)
 
       brw_assign_urb_setup(s);
 
-      brw_fs_lower_3src_null_dest(s);
-      brw_fs_workaround_memory_fence_before_eot(s);
-      brw_fs_workaround_emit_dummy_mov_instruction(s);
+      brw_lower_3src_null_dest(s);
+      brw_workaround_memory_fence_before_eot(s);
+      brw_workaround_emit_dummy_mov_instruction(s);
 
       brw_allocate_registers(s, allow_spilling);
 
-      brw_fs_workaround_source_arf_before_eot(s);
+      brw_workaround_source_arf_before_eot(s);
    }
 
    return !s.failed;

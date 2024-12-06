@@ -887,7 +887,7 @@ namespace {
 }
 
 bool
-brw_fs_opt_bank_conflicts(fs_visitor &s)
+brw_opt_bank_conflicts(fs_visitor &s)
 {
    assert(s.grf_used || !"Must be called after register allocation");
 

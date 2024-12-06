@@ -803,7 +803,7 @@ namespace {
 }
 
 bool
-brw_fs_lower_regioning(fs_visitor &s)
+brw_lower_regioning(fs_visitor &s)
 {
    bool progress = false;
 

@@ -398,7 +398,7 @@ remap_sources(fs_visitor &s, const brw::def_analysis &defs,
 }
 
 bool
-brw_fs_opt_cse_defs(fs_visitor &s)
+brw_opt_cse_defs(fs_visitor &s)
 {
    const intel_device_info *devinfo = s.devinfo;
    const idom_tree &idom = s.idom_analysis.require();

@@ -97,7 +97,7 @@ lower_scoreboard(fs_visitor *v)
       v->cfg->dump();
    }
 
-   brw_fs_lower_scoreboard(*v);
+   brw_lower_scoreboard(*v);
 
    if (print) {
       fprintf(stderr, "\n= After =\n");

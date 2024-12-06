@@ -14,7 +14,7 @@ using namespace brw;
  * Make sure this happens by introducing a dummy mov instruction.
  */
 bool
-brw_fs_workaround_emit_dummy_mov_instruction(fs_visitor &s)
+brw_workaround_emit_dummy_mov_instruction(fs_visitor &s)
 {
    if (!intel_needs_workaround(s.devinfo, 14015360517))
       return false;
@@ -82,7 +82,7 @@ needs_dummy_fence(const intel_device_info *devinfo, fs_inst *inst)
  *                We probably need a better criteria in needs_dummy_fence().
  */
 bool
-brw_fs_workaround_memory_fence_before_eot(fs_visitor &s)
+brw_workaround_memory_fence_before_eot(fs_visitor &s)
 {
    bool progress = false;
    bool has_ugm_write_or_atomic = false;
@@ -156,7 +156,7 @@ find_halt_control_flow_region_start(const fs_visitor *v)
  * all channels of the program are disabled.
  */
 bool
-brw_fs_workaround_nomask_control_flow(fs_visitor &s)
+brw_workaround_nomask_control_flow(fs_visitor &s)
 {
    if (s.devinfo->ver != 12)
       return false;
@@ -299,7 +299,7 @@ bytes_bitmask_to_words(unsigned b)
  * accessed inside the next blocks, but this still should be good enough.
  */
 bool
-brw_fs_workaround_source_arf_before_eot(fs_visitor &s)
+brw_workaround_source_arf_before_eot(fs_visitor &s)
 {
    bool progress = false;
 

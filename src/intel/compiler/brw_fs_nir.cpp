@@ -616,8 +616,8 @@ optimize_extract_to_float(nir_to_brw_state &ntb, const fs_builder &bld,
     *       are not supported on Src0 and Src1 except for broadcast of a
     *       scalar."
     *
-    * This restriction is enfored in brw_fs_lower_regioning.  There is no
-    * reason to generate an optimized instruction that brw_fs_lower_regioning
+    * This restriction is enfored in brw_lower_regioning.  There is no
+    * reason to generate an optimized instruction that brw_lower_regioning
     * will have to break up later.
     */
    if (devinfo->verx10 >= 125 && element != 0 && !is_uniform(op0))

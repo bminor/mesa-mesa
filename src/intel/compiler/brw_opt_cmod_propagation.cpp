@@ -558,7 +558,7 @@ opt_cmod_propagation_local(const intel_device_info *devinfo, bblock_t *block)
 }
 
 bool
-brw_fs_opt_cmod_propagation(fs_visitor &s)
+brw_opt_cmod_propagation(fs_visitor &s)
 {
    bool progress = false;
 

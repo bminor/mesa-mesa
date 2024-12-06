@@ -614,7 +614,7 @@ static inline void brw_fs_validate(const fs_visitor &s) {}
 
 void brw_calculate_cfg(fs_visitor &s);
 
-void brw_fs_optimize(fs_visitor &s);
+void brw_optimize(fs_visitor &s);
 
 instruction_scheduler *brw_prepare_scheduler(fs_visitor &s, void *mem_ctx);
 void brw_schedule_instructions_pre_ra(fs_visitor &s, instruction_scheduler *sched,
@@ -625,55 +625,55 @@ void brw_allocate_registers(fs_visitor &s, bool allow_spilling);
 bool brw_assign_regs(fs_visitor &s, bool allow_spilling, bool spill_all);
 void brw_assign_regs_trivial(fs_visitor &s);
 
-bool brw_fs_lower_3src_null_dest(fs_visitor &s);
-bool brw_fs_lower_alu_restrictions(fs_visitor &s);
-bool brw_fs_lower_barycentrics(fs_visitor &s);
-bool brw_fs_lower_constant_loads(fs_visitor &s);
-bool brw_fs_lower_derivatives(fs_visitor &s);
-bool brw_fs_lower_dpas(fs_visitor &s);
-bool brw_fs_lower_find_live_channel(fs_visitor &s);
-bool brw_fs_lower_integer_multiplication(fs_visitor &s);
-bool brw_fs_lower_load_subgroup_invocation(fs_visitor &s);
-bool brw_fs_lower_indirect_mov(fs_visitor &s);
-bool brw_fs_lower_logical_sends(fs_visitor &s);
-bool brw_fs_lower_pack(fs_visitor &s);
-bool brw_fs_lower_load_payload(fs_visitor &s);
-bool brw_fs_lower_regioning(fs_visitor &s);
+bool brw_lower_3src_null_dest(fs_visitor &s);
+bool brw_lower_alu_restrictions(fs_visitor &s);
+bool brw_lower_barycentrics(fs_visitor &s);
+bool brw_lower_constant_loads(fs_visitor &s);
+bool brw_lower_csel(fs_visitor &s);
+bool brw_lower_derivatives(fs_visitor &s);
+bool brw_lower_dpas(fs_visitor &s);
+bool brw_lower_find_live_channel(fs_visitor &s);
+bool brw_lower_indirect_mov(fs_visitor &s);
+bool brw_lower_integer_multiplication(fs_visitor &s);
+bool brw_lower_load_payload(fs_visitor &s);
+bool brw_lower_load_subgroup_invocation(fs_visitor &s);
+bool brw_lower_logical_sends(fs_visitor &s);
+bool brw_lower_pack(fs_visitor &s);
+bool brw_lower_regioning(fs_visitor &s);
 bool brw_lower_scalar_fp64_MAD(fs_visitor &s);
-bool brw_fs_lower_scoreboard(fs_visitor &s);
-bool brw_fs_lower_sends_overlapping_payload(fs_visitor &s);
-bool brw_fs_lower_simd_width(fs_visitor &s);
-bool brw_fs_lower_csel(fs_visitor &s);
-bool brw_fs_lower_sub_sat(fs_visitor &s);
-bool brw_fs_lower_subgroup_ops(fs_visitor &s);
-bool brw_fs_lower_uniform_pull_constant_loads(fs_visitor &s);
-void brw_fs_lower_vgrfs_to_fixed_grfs(fs_visitor &s);
+bool brw_lower_scoreboard(fs_visitor &s);
+bool brw_lower_sends_overlapping_payload(fs_visitor &s);
+bool brw_lower_simd_width(fs_visitor &s);
+bool brw_lower_sub_sat(fs_visitor &s);
+bool brw_lower_subgroup_ops(fs_visitor &s);
+bool brw_lower_uniform_pull_constant_loads(fs_visitor &s);
+void brw_lower_vgrfs_to_fixed_grfs(fs_visitor &s);
 
-bool brw_constant_fold_instruction(const intel_device_info *devinfo, fs_inst *inst);
-bool brw_fs_opt_algebraic(fs_visitor &s);
-bool brw_fs_opt_bank_conflicts(fs_visitor &s);
-bool brw_fs_opt_cmod_propagation(fs_visitor &s);
-bool brw_fs_opt_combine_constants(fs_visitor &s);
-bool brw_fs_opt_compact_virtual_grfs(fs_visitor &s);
-bool brw_fs_opt_copy_propagation(fs_visitor &s);
-bool brw_fs_opt_copy_propagation_defs(fs_visitor &s);
-bool brw_fs_opt_cse_defs(fs_visitor &s);
-bool brw_fs_opt_dead_code_eliminate(fs_visitor &s);
-bool brw_fs_opt_eliminate_find_live_channel(fs_visitor &s);
-bool brw_fs_opt_register_coalesce(fs_visitor &s);
-bool brw_fs_opt_remove_extra_rounding_modes(fs_visitor &s);
-bool brw_fs_opt_remove_redundant_halts(fs_visitor &s);
-bool brw_fs_opt_saturate_propagation(fs_visitor &s);
-bool brw_fs_opt_split_sends(fs_visitor &s);
-bool brw_fs_opt_split_virtual_grfs(fs_visitor &s);
-bool brw_fs_opt_zero_samples(fs_visitor &s);
+bool brw_opt_algebraic(fs_visitor &s);
+bool brw_opt_bank_conflicts(fs_visitor &s);
+bool brw_opt_cmod_propagation(fs_visitor &s);
+bool brw_opt_combine_constants(fs_visitor &s);
 bool brw_opt_combine_convergent_txf(fs_visitor &s);
+bool brw_opt_compact_virtual_grfs(fs_visitor &s);
+bool brw_opt_constant_fold_instruction(const intel_device_info *devinfo, fs_inst *inst);
+bool brw_opt_copy_propagation(fs_visitor &s);
+bool brw_opt_copy_propagation_defs(fs_visitor &s);
+bool brw_opt_cse_defs(fs_visitor &s);
+bool brw_opt_dead_code_eliminate(fs_visitor &s);
+bool brw_opt_eliminate_find_live_channel(fs_visitor &s);
+bool brw_opt_register_coalesce(fs_visitor &s);
+bool brw_opt_remove_extra_rounding_modes(fs_visitor &s);
+bool brw_opt_remove_redundant_halts(fs_visitor &s);
+bool brw_opt_saturate_propagation(fs_visitor &s);
+bool brw_opt_split_sends(fs_visitor &s);
+bool brw_opt_split_virtual_grfs(fs_visitor &s);
+bool brw_opt_zero_samples(fs_visitor &s);
 
-bool brw_fs_workaround_emit_dummy_mov_instruction(fs_visitor &s);
-bool brw_fs_workaround_memory_fence_before_eot(fs_visitor &s);
-bool brw_fs_workaround_source_arf_before_eot(fs_visitor &s);
-bool brw_fs_workaround_nomask_control_flow(fs_visitor &s);
+bool brw_workaround_emit_dummy_mov_instruction(fs_visitor &s);
+bool brw_workaround_memory_fence_before_eot(fs_visitor &s);
+bool brw_workaround_nomask_control_flow(fs_visitor &s);
+bool brw_workaround_source_arf_before_eot(fs_visitor &s);
 
 /* Helpers. */
-unsigned brw_fs_get_lowered_simd_width(const fs_visitor *shader,
-                                       const fs_inst *inst);
+unsigned brw_get_lowered_simd_width(const fs_visitor *shader,
+                                    const fs_inst *inst);

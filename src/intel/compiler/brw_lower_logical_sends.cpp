@@ -2388,7 +2388,7 @@ lower_get_buffer_size(const fs_builder &bld, fs_inst *inst)
 }
 
 bool
-brw_fs_lower_logical_sends(fs_visitor &s)
+brw_lower_logical_sends(fs_visitor &s)
 {
    const intel_device_info *devinfo = s.devinfo;
    bool progress = false;
@@ -2515,7 +2515,7 @@ brw_fs_lower_logical_sends(fs_visitor &s)
  * source operand for all 8 or 16 of its channels.
  */
 bool
-brw_fs_lower_uniform_pull_constant_loads(fs_visitor &s)
+brw_lower_uniform_pull_constant_loads(fs_visitor &s)
 {
    const intel_device_info *devinfo = s.devinfo;
    bool progress = false;

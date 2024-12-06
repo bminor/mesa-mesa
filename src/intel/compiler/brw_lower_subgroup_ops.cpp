@@ -647,7 +647,7 @@ brw_lower_read_from_channel(fs_visitor &s, bblock_t *block, fs_inst *inst)
 }
 
 bool
-brw_fs_lower_subgroup_ops(fs_visitor &s)
+brw_lower_subgroup_ops(fs_visitor &s)
 {
    bool progress = false;
 

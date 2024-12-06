@@ -107,7 +107,7 @@ copy_propagation(fs_visitor *v)
       v->cfg->dump();
    }
 
-   bool ret = brw_fs_opt_copy_propagation(*v);
+   bool ret = brw_opt_copy_propagation(*v);
 
    if (print) {
       fprintf(stderr, "\n= After =\n");

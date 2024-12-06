@@ -226,7 +226,7 @@ would_violate_eot_restriction(const brw::simple_allocator &alloc,
 }
 
 bool
-brw_fs_opt_register_coalesce(fs_visitor &s)
+brw_opt_register_coalesce(fs_visitor &s)
 {
    const intel_device_info *devinfo = s.devinfo;
 
