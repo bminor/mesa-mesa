@@ -693,9 +693,8 @@ impl MemBase {
     // this is kinda bogus, because that won't work with system SVM, but the spec wants us to
     // implement this.
     pub fn is_svm(&self) -> bool {
-        let mem = self.get_parent();
-        self.context.find_svm_alloc(mem.host_ptr).is_some()
-            && bit_check(mem.flags, CL_MEM_USE_HOST_PTR)
+        self.context.find_svm_alloc(self.host_ptr).is_some()
+            && bit_check(self.flags, CL_MEM_USE_HOST_PTR)
     }
 
     pub fn get_res_of_dev(&self, dev: &Device) -> CLResult<&Arc<PipeResource>> {
