@@ -25,6 +25,7 @@
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdio.h>
+#include "simple_mtx.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,6 +37,12 @@ typedef struct u_printf_info {
    unsigned string_size;
    char *strings;
 } u_printf_info;
+
+struct u_printf_ctx {
+   simple_mtx_t lock;
+   void *bo;
+   uint32_t *map;
+};
 
 const char *util_printf_prev_tok(const char *str);
 
@@ -54,6 +61,59 @@ void u_printf(FILE *out, const char *buffer, size_t buffer_size,
 
 void u_printf_ptr(FILE *out, const char *buffer, size_t buffer_size,
                   const u_printf_info **info, unsigned info_size);
+
+static inline void
+u_printf_init(struct u_printf_ctx *ctx, void *bo, uint32_t *map)
+{
+   ctx->bo = bo;
+   ctx->map = map;
+   simple_mtx_init(&ctx->lock, mtx_plain);
+
+   /* Initialize the buffer head to point to just after the size + abort word */
+   map[0] = 8;
+
+   /* Initially there is no abort */
+   map[1] = 0;
+}
+
+static inline void
+u_printf_destroy(struct u_printf_ctx *ctx)
+{
+   simple_mtx_destroy(&ctx->lock);
+}
+
+static inline void
+u_printf_with_ctx(FILE *out, struct u_printf_ctx *ctx,
+                  const u_printf_info *info, unsigned info_size)
+{
+   /* If the printf buffer is empty, early-exit without taking the lock. The
+    * speeds up the happy path and makes this function reasonable to call even
+    * in release builds.
+    */
+   if (ctx->map[0] == 8)
+      return;
+
+   simple_mtx_lock(&ctx->lock);
+   u_printf(out, (char *)(ctx->map + 2), ctx->map[0] - 8, info, info_size);
+
+   /* Reset */
+   ctx->map[0] = 8;
+   simple_mtx_unlock(&ctx->lock);
+}
+
+/*
+ * Flush the printf buffer and return whether there was an abort. This is
+ * intended to be called periodically to handle aborts in a timely manner.
+ */
+static inline bool
+u_printf_check_abort(FILE *out, struct u_printf_ctx *ctx,
+                     const u_printf_info *info, unsigned info_size)
+{
+   u_printf_with_ctx(out, ctx, info, info_size);
+
+   /* Check the aborted flag */
+   return (ctx->map[1] != 0);
+}
 
 #ifdef __cplusplus
 }
