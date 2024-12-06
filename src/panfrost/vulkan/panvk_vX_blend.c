@@ -15,6 +15,7 @@
 #include "pan_shader.h"
 
 #include "panvk_blend.h"
+#include "panvk_cmd_buffer.h"
 #include "panvk_device.h"
 #include "panvk_shader.h"
 
@@ -297,16 +298,20 @@ blend_needs_shader(const struct pan_blend_state *state, unsigned rt_idx,
 }
 
 VkResult
-panvk_per_arch(blend_emit_descs)(struct panvk_device *dev,
-                                 const struct vk_dynamic_graphics_state *dyns,
-                                 const VkFormat *color_attachment_formats,
-                                 const uint8_t *color_attachment_samples,
-                                 const struct pan_shader_info *fs_info,
-                                 mali_ptr fs_code,
-                                 struct mali_blend_packed *bds,
-                                 struct panvk_blend_info *blend_info)
+panvk_per_arch(blend_emit_descs)(struct panvk_cmd_buffer *cmdbuf,
+                                 struct mali_blend_packed *bds)
 {
+   struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
+   const struct vk_dynamic_graphics_state *dyns =
+      &cmdbuf->vk.dynamic_graphics_state;
    const struct vk_color_blend_state *cb = &dyns->cb;
+   const struct panvk_shader *fs = cmdbuf->state.gfx.fs.shader;
+   const struct pan_shader_info *fs_info = fs ? &fs->info : NULL;
+   mali_ptr fs_code = panvk_shader_get_dev_addr(fs);
+   const struct panvk_rendering_state *render = &cmdbuf->state.gfx.render;
+   const VkFormat *color_attachment_formats = render->color_attachments.fmts;
+   const uint8_t *color_attachment_samples = render->color_attachments.samples;
+   struct panvk_blend_info *blend_info = &cmdbuf->state.gfx.cb.info;
    struct pan_blend_state bs = {
       .alpha_to_one = dyns->ms.alpha_to_one_enable,
       .logicop_enable = cb->logic_op_enable,
@@ -405,6 +410,9 @@ panvk_per_arch(blend_emit_descs)(struct panvk_device *dev,
       emit_blend_desc(fs_info, fs_code, &bs, i, blend_shaders[i],
                       ff_blend_constant, &bds[i]);
    }
+
+   if (blend_info->shader_loads_blend_const)
+      gfx_state_set_dirty(cmdbuf, PUSH_UNIFORMS);
 
    return VK_SUCCESS;
 }

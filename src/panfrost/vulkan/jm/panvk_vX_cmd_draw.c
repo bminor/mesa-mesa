@@ -215,7 +215,6 @@ panvk_draw_prepare_fs_rsd(struct panvk_cmd_buffer *cmdbuf,
       return VK_SUCCESS;
    }
 
-   struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
    const struct vk_dynamic_graphics_state *dyns =
       &cmdbuf->vk.dynamic_graphics_state;
    const struct vk_rasterization_state *rs = &dyns->rs;
@@ -236,15 +235,12 @@ panvk_draw_prepare_fs_rsd(struct panvk_cmd_buffer *cmdbuf,
 
    struct mali_renderer_state_packed *rsd = ptr.cpu;
    struct mali_blend_packed *bds = ptr.cpu + pan_size(RENDERER_STATE);
-   struct panvk_blend_info binfo = {0};
+   struct panvk_blend_info *binfo = &cmdbuf->state.gfx.cb.info;
 
    mali_ptr fs_code = panvk_shader_get_dev_addr(fs);
 
    if (fs_info != NULL) {
-      panvk_per_arch(blend_emit_descs)(
-         dev, dyns, cmdbuf->state.gfx.render.color_attachments.fmts,
-         cmdbuf->state.gfx.render.color_attachments.samples, fs_info, fs_code,
-         bds, &binfo);
+      panvk_per_arch(blend_emit_descs)(cmdbuf, bds);
    } else {
       for (unsigned i = 0; i < bd_count; i++) {
          pan_pack(&bds[i], BLEND, cfg) {
@@ -260,7 +256,7 @@ panvk_draw_prepare_fs_rsd(struct panvk_cmd_buffer *cmdbuf,
       if (fs) {
          pan_shader_prepare_rsd(fs_info, fs_code, &cfg);
 
-         if (binfo.shader_loads_blend_const) {
+         if (binfo->shader_loads_blend_const) {
             /* Preload the blend constant if the blend shader depends on it. */
             cfg.preload.uniform_count =
                MAX2(cfg.preload.uniform_count,
@@ -274,7 +270,7 @@ panvk_draw_prepare_fs_rsd(struct panvk_cmd_buffer *cmdbuf,
                            MESA_VK_RP_ATTACHMENT_ANY_COLOR_BITS;
          cfg.properties.allow_forward_pixel_to_kill =
             fs_info->fs.can_fpk && !(rt_mask & ~rt_written) &&
-            !alpha_to_coverage && !binfo.any_dest_read;
+            !alpha_to_coverage && !binfo->any_dest_read;
 
          bool writes_zs = writes_z || writes_s;
          bool zs_always_passes = ds_test_always_passes(cmdbuf);

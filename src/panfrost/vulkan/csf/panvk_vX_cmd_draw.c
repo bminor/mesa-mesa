@@ -389,17 +389,12 @@ prepare_blend(struct panvk_cmd_buffer *cmdbuf)
    if (!dirty)
       return VK_SUCCESS;
 
-   struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
    const struct vk_dynamic_graphics_state *dyns =
       &cmdbuf->vk.dynamic_graphics_state;
    const struct vk_color_blend_state *cb = &dyns->cb;
    unsigned bd_count = MAX2(cb->attachment_count, 1);
    struct cs_builder *b =
       panvk_get_cs_builder(cmdbuf, PANVK_SUBQUEUE_VERTEX_TILER);
-   const struct panvk_shader *fs = cmdbuf->state.gfx.fs.shader;
-   const struct pan_shader_info *fs_info = fs ? &fs->info : NULL;
-   mali_ptr fs_code = panvk_shader_get_dev_addr(fs);
-   const struct panvk_rendering_state *render = &cmdbuf->state.gfx.render;
    struct panfrost_ptr ptr =
       panvk_cmd_alloc_desc_array(cmdbuf, bd_count, BLEND);
    struct mali_blend_packed *bds = ptr.cpu;
@@ -407,9 +402,7 @@ prepare_blend(struct panvk_cmd_buffer *cmdbuf)
    if (bd_count && !ptr.gpu)
       return VK_ERROR_OUT_OF_DEVICE_MEMORY;
 
-   panvk_per_arch(blend_emit_descs)(dev, dyns, render->color_attachments.fmts,
-                                    render->color_attachments.samples, fs_info,
-                                    fs_code, bds, &cmdbuf->state.gfx.cb.info);
+   panvk_per_arch(blend_emit_descs)(cmdbuf, bds);
 
    cs_move64_to(b, cs_sr_reg64(b, 50), ptr.gpu | bd_count);
    return VK_SUCCESS;
