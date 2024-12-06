@@ -400,10 +400,6 @@ get_int_bld(struct lp_build_nir_context *bld_base,
    }
 }
 
-
-unsigned
-lp_nir_aos_swizzle(struct lp_build_nir_context *bld_base, unsigned chan);
-
 LLVMAtomicRMWBinOp
 lp_translate_atomic_op(nir_atomic_op op);
 
