@@ -811,18 +811,7 @@ fn create_image_with_properties(
         return Err(CL_INVALID_PROPERTY);
     }
 
-    Ok(MemBase::new_image(
-        c,
-        parent,
-        desc.image_type,
-        flags,
-        format,
-        desc,
-        elem_size,
-        host_ptr,
-        props,
-    )?
-    .into_cl())
+    Ok(MemBase::new_image(c, parent, flags, format, desc, elem_size, host_ptr, props)?.into_cl())
 }
 
 #[cl_entrypoint(clCreateImage)]

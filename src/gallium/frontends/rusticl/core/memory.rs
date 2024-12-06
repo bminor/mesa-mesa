@@ -470,7 +470,6 @@ impl MemBase {
     pub fn new_image(
         context: Arc<Context>,
         parent: Option<Mem>,
-        mem_type: cl_mem_object_type,
         flags: cl_mem_flags,
         image_format: &cl_image_format,
         mut image_desc: cl_image_desc,
@@ -536,7 +535,7 @@ impl MemBase {
                 base: CLObjectBase::new(RusticlTypes::Image),
                 context: context,
                 parent: parent,
-                mem_type: mem_type,
+                mem_type: image_desc.image_type,
                 flags: flags,
                 size: image_desc.pixels() * image_format.pixel_size().unwrap() as usize,
                 host_ptr: host_ptr,
