@@ -1,6 +1,6 @@
 /* -*- c++ -*- */
 /*
- * Copyright © 2010-2015 Intel Corporation
+ * Copyright © 2010-2016 Intel Corporation
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -24,8 +24,20 @@
 
 #pragma once
 
-#include "brw_ir.h"
+#include <assert.h>
 #include "brw_ir_allocator.h"
+#include "brw_reg.h"
+#include "compiler/glsl/list.h"
+
+#define MAX_SAMPLER_MESSAGE_SIZE 11
+
+/* The sampler can return a vec5 when sampling with sparse residency. In
+ * SIMD32, each component takes up 4 GRFs, so we need to allow up to size-20
+ * VGRFs to hold the result.
+ */
+#define MAX_VGRF_SIZE(devinfo) ((devinfo)->ver >= 20 ? 40 : 20)
+
+struct bblock_t;
 
 struct fs_inst : public exec_node {
 private:

@@ -27,8 +27,8 @@
 
 #pragma once
 
+#include "brw_inst.h"
 #include "brw_ir_analysis.h"
-#include "brw_ir_fs.h"
 #include "util/bitset.h"
 
 struct cfg_t;

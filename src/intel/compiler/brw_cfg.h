@@ -31,9 +31,8 @@ struct bblock_t;
 
 #ifdef __cplusplus
 
-#include "brw_ir.h"
+#include "brw_inst.h"
 #include "brw_ir_analysis.h"
-#include "brw_ir_fs.h"
 
 struct bblock_t;
 
