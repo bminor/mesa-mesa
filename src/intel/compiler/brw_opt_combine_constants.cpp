@@ -763,7 +763,7 @@ brw_combine_constants(struct value *candidates, unsigned num_candidates)
  *
  * \sa box_instruction
  */
-struct fs_inst_box {
+struct brw_inst_box {
    brw_inst *inst;
    unsigned ip;
    bblock_t *block;
@@ -847,7 +847,7 @@ struct table {
    struct imm *imm;
    int len;
 
-   struct fs_inst_box *boxes;
+   struct brw_inst_box *boxes;
    unsigned num_boxes;
    unsigned size_boxes;
 };
@@ -885,14 +885,14 @@ box_instruction(struct table *table, void *mem_ctx, brw_inst *inst,
 
    if (table->num_boxes == table->size_boxes) {
       table->size_boxes *= 2;
-      table->boxes = reralloc(mem_ctx, table->boxes, fs_inst_box,
+      table->boxes = reralloc(mem_ctx, table->boxes, brw_inst_box,
                               table->size_boxes);
    }
 
    assert(table->num_boxes < table->size_boxes);
 
    const unsigned idx = table->num_boxes++;
-   fs_inst_box *ib =  &table->boxes[idx];
+   brw_inst_box *ib =  &table->boxes[idx];
 
    ib->inst = inst;
    ib->block = block;
@@ -1297,18 +1297,18 @@ brw_opt_combine_constants(fs_visitor &s)
    struct table table;
 
    /* For each of the dynamic arrays in the table, allocate about a page of
-    * memory.  On LP64 systems, this gives 126 value objects 169 fs_inst_box
+    * memory.  On LP64 systems, this gives 126 value objects 169 brw_inst_box
     * objects.  Even larger shaders that have been obverved rarely need more
     * than 20 or 30 values.  Most smaller shaders, which is most shaders, need
-    * at most a couple dozen fs_inst_box.
+    * at most a couple dozen brw_inst_box.
     */
    table.size = (4096 - (5 * sizeof(void *))) / sizeof(struct value);
    table.num_values = 0;
    table.values = ralloc_array(const_ctx, struct value, table.size);
 
-   table.size_boxes = (4096 - (5 * sizeof(void *))) / sizeof(struct fs_inst_box);
+   table.size_boxes = (4096 - (5 * sizeof(void *))) / sizeof(struct brw_inst_box);
    table.num_boxes = 0;
-   table.boxes = ralloc_array(const_ctx, fs_inst_box, table.size_boxes);
+   table.boxes = ralloc_array(const_ctx, brw_inst_box, table.size_boxes);
 
    const brw::idom_tree &idom = s.idom_analysis.require();
    unsigned ip = -1;
@@ -1452,7 +1452,7 @@ brw_opt_combine_constants(fs_visitor &s)
 
       for (unsigned j = first_user; j < last_user; j++) {
          const unsigned idx = table.values[result->user_map[j].index].instr_index;
-         fs_inst_box *const ib = &table.boxes[idx];
+         brw_inst_box *const ib = &table.boxes[idx];
 
          const unsigned src = table.values[result->user_map[j].index].src;
 
