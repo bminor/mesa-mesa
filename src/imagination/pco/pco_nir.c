@@ -33,6 +33,8 @@ static const nir_shader_compiler_options nir_options = {
 
    .has_fused_comp_and_csel = true,
 
+   .instance_id_includes_base_index = true,
+
    .lower_fdiv = true,
    .lower_fquantize2f16 = true,
    .lower_layer_fs_input_to_sysval = true,

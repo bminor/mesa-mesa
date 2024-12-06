@@ -482,6 +482,27 @@ static pco_instr *trans_load_ubo(trans_ctx *tctx,
 }
 
 /**
+ * \brief Translates a NIR vs load system value intrinsic into PCO.
+ *
+ * \param[in,out] tctx Translation context.
+ * \param[in] intr System value intrinsic.
+ * \param[in] dest Instruction destination.
+ * \return The translated PCO instruction.
+ */
+static pco_instr *
+trans_load_sysval_vs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
+{
+   gl_system_value sys_val = nir_system_value_from_intrinsic(intr->intrinsic);
+   const pco_range *range = &tctx->shader->data.common.sys_vals[sys_val];
+
+   unsigned chans = pco_ref_get_chans(dest);
+   assert(chans == range->count);
+
+   pco_ref src = pco_ref_hwreg_vec(range->start, PCO_REG_CLASS_VTXIN, chans);
+   return pco_mov(&tctx->b, dest, src, .rpt = chans);
+}
+
+/**
  * \brief Translates a NIR intrinsic instruction into PCO.
  *
  * \param[in,out] tctx Translation context.
@@ -521,6 +542,14 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
 
    case nir_intrinsic_load_ubo:
       instr = trans_load_ubo(tctx, intr, dest, src[1]);
+      break;
+
+   case nir_intrinsic_load_vertex_id:
+   case nir_intrinsic_load_instance_id:
+   case nir_intrinsic_load_base_instance:
+   case nir_intrinsic_load_base_vertex:
+   case nir_intrinsic_load_draw_id:
+      instr = trans_load_sysval_vs(tctx, intr, dest);
       break;
 
    default:
