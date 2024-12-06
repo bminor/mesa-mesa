@@ -81,7 +81,24 @@ test_model(void *buf, size_t buf_size, std::string cache_dir, unsigned tolerance
                }
                break;
             }
-            default: {
+            case kTfLiteInt8: {
+               int8_t *cpu = ((int8_t**)cpu_output)[i];
+               int8_t *npu = ((int8_t**)npu_output)[i];
+               if (abs(cpu[j] - npu[j]) > tolerance) {
+                  std::cout << "CPU: ";
+                  for (int k = 0; k < std::min(int(output_sizes[i]), 24); k++)
+                     std::cout << std::setfill('0') << std::setw(2) << std::hex << int(cpu[k]) << " ";
+                  std::cout << "\n";
+                  std::cout << "NPU: ";
+                  for (int k = 0; k < std::min(int(output_sizes[i]), 24); k++)
+                     std::cout << std::setfill('0') << std::setw(2) << std::hex << int(npu[k]) << " ";
+                  std::cout << "\n";
+
+                  FAIL() << "Output at " << j << " from the NPU (" << std::setfill('0') << std::setw(2) << std::hex << int(npu[j]) << ") doesn't match that from the CPU (" << std::setfill('0') << std::setw(2) << std::hex << int(cpu[j]) << ").";
+               }
+               break;
+            }
+            case kTfLiteUInt8: {
                uint8_t *cpu = ((uint8_t**)cpu_output)[i];
                uint8_t *npu = ((uint8_t**)npu_output)[i];
                if (abs(cpu[j] - npu[j]) > tolerance) {
@@ -98,6 +115,8 @@ test_model(void *buf, size_t buf_size, std::string cache_dir, unsigned tolerance
                }
                break;
             }
+            default:
+               assert(!"Unsupported data type for output tensor");
          }
       }
    }
