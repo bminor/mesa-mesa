@@ -21,8 +21,8 @@
  * IN THE SOFTWARE.
  */
 
+#include "brw_analysis.h"
 #include "brw_fs.h"
-#include "brw_fs_live_variables.h"
 #include "brw_cfg.h"
 
 using namespace brw;

@@ -27,7 +27,7 @@
 
 #include "brw_eu.h"
 #include "brw_fs.h"
-#include "brw_fs_live_variables.h"
+#include "brw_analysis.h"
 #include "brw_cfg.h"
 #include <new>
 
