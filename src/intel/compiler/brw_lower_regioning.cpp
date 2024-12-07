@@ -809,7 +809,8 @@ brw_lower_regioning(fs_visitor &s)
       progress |= lower_instruction(&s, block, inst);
 
    if (progress)
-      s.invalidate_analysis(DEPENDENCY_INSTRUCTIONS | DEPENDENCY_VARIABLES);
+      s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTIONS |
+                            BRW_DEPENDENCY_VARIABLES);
 
    return progress;
 }

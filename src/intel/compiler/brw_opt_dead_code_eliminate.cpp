@@ -177,7 +177,7 @@ brw_opt_dead_code_eliminate(fs_visitor &s)
    ralloc_free(flag_live);
 
    if (progress)
-      s.invalidate_analysis(DEPENDENCY_INSTRUCTIONS);
+      s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTIONS);
 
    return progress;
 }

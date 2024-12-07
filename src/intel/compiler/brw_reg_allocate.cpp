@@ -1303,7 +1303,8 @@ brw_reg_alloc::assign_regs(bool allow_spilling, bool spill_all)
    }
 
    if (spilled)
-      fs->invalidate_analysis(DEPENDENCY_INSTRUCTIONS | DEPENDENCY_VARIABLES);
+      fs->invalidate_analysis(BRW_DEPENDENCY_INSTRUCTIONS |
+                              BRW_DEPENDENCY_VARIABLES);
 
    /* Get the chosen virtual registers for each node, and map virtual
     * regs in the register classes back down to real hardware reg

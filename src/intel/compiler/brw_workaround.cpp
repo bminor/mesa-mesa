@@ -34,7 +34,8 @@ brw_workaround_emit_dummy_mov_instruction(fs_visitor &s)
       brw_builder(&s, s.cfg->first_block(), (brw_inst *)first_inst).exec_all().group(8, 0);
    ubld.MOV(ubld.null_reg_ud(), brw_imm_ud(0u));
 
-   s.invalidate_analysis(DEPENDENCY_INSTRUCTIONS | DEPENDENCY_VARIABLES);
+   s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTIONS |
+                         BRW_DEPENDENCY_VARIABLES);
    return true;
 }
 
@@ -118,8 +119,8 @@ brw_workaround_memory_fence_before_eot(fs_visitor &s)
    }
 
    if (progress) {
-      s.invalidate_analysis(DEPENDENCY_INSTRUCTIONS |
-                            DEPENDENCY_VARIABLES);
+      s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTIONS |
+                            BRW_DEPENDENCY_VARIABLES);
    }
 
    return progress;
@@ -267,7 +268,8 @@ brw_workaround_nomask_control_flow(fs_visitor &s)
    }
 
    if (progress)
-      s.invalidate_analysis(DEPENDENCY_INSTRUCTIONS | DEPENDENCY_VARIABLES);
+      s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTIONS |
+                            BRW_DEPENDENCY_VARIABLES);
 
    return progress;
 }
@@ -354,7 +356,7 @@ brw_workaround_source_arf_before_eot(fs_visitor &s)
       }
 
       progress = true;
-      s.invalidate_analysis(DEPENDENCY_INSTRUCTIONS);
+      s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTIONS);
    }
 
    return progress;

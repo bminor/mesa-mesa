@@ -297,7 +297,7 @@ brw_lower_dpas(fs_visitor &v)
    }
 
    if (progress)
-      v.invalidate_analysis(DEPENDENCY_INSTRUCTIONS);
+      v.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTIONS);
 
    return progress;
 }

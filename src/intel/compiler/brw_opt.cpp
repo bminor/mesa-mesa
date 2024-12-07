@@ -287,7 +287,7 @@ brw_opt_zero_samples(fs_visitor &s)
    }
 
    if (progress)
-      s.invalidate_analysis(DEPENDENCY_INSTRUCTION_DETAIL);
+      s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTION_DETAIL);
 
    return progress;
 }
@@ -374,7 +374,8 @@ brw_opt_split_sends(fs_visitor &s)
    }
 
    if (progress)
-      s.invalidate_analysis(DEPENDENCY_INSTRUCTIONS | DEPENDENCY_VARIABLES);
+      s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTIONS |
+                            BRW_DEPENDENCY_VARIABLES);
 
    return progress;
 }
@@ -427,7 +428,7 @@ brw_opt_remove_redundant_halts(fs_visitor &s)
    }
 
    if (progress)
-      s.invalidate_analysis(DEPENDENCY_INSTRUCTIONS);
+      s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTIONS);
 
    return progress;
 }
@@ -518,7 +519,7 @@ brw_opt_eliminate_find_live_channel(fs_visitor &s)
 
 out:
    if (progress)
-      s.invalidate_analysis(DEPENDENCY_INSTRUCTION_DETAIL);
+      s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTION_DETAIL);
 
    return progress;
 }
@@ -567,7 +568,7 @@ brw_opt_remove_extra_rounding_modes(fs_visitor &s)
    }
 
    if (progress)
-      s.invalidate_analysis(DEPENDENCY_INSTRUCTIONS);
+      s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTIONS);
 
    return progress;
 }
@@ -643,8 +644,8 @@ brw_opt_send_to_send_gather(fs_visitor &s)
    }
 
    if (progress)
-      s.invalidate_analysis(DEPENDENCY_INSTRUCTION_DETAIL |
-                            DEPENDENCY_INSTRUCTION_DATA_FLOW);
+      s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTION_DETAIL |
+                            BRW_DEPENDENCY_INSTRUCTION_DATA_FLOW);
 
    return progress;
 }
@@ -744,8 +745,8 @@ brw_opt_send_gather_to_send(fs_visitor &s)
    }
 
    if (progress) {
-      s.invalidate_analysis(DEPENDENCY_INSTRUCTION_DETAIL |
-                            DEPENDENCY_INSTRUCTION_DATA_FLOW);
+      s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTION_DETAIL |
+                            BRW_DEPENDENCY_INSTRUCTION_DATA_FLOW);
    }
 
    return progress;

@@ -569,7 +569,7 @@ brw_opt_cmod_propagation(fs_visitor &s)
    if (progress) {
       s.cfg->adjust_block_ips();
 
-      s.invalidate_analysis(DEPENDENCY_INSTRUCTIONS);
+      s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTIONS);
    }
 
    return progress;

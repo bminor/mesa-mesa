@@ -197,7 +197,8 @@ brw_opt_split_virtual_grfs(fs_visitor &s)
          }
       }
    }
-   s.invalidate_analysis(DEPENDENCY_INSTRUCTION_DETAIL | DEPENDENCY_VARIABLES);
+   s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTION_DETAIL |
+                         BRW_DEPENDENCY_VARIABLES);
 
    progress = true;
 
@@ -249,7 +250,8 @@ brw_opt_compact_virtual_grfs(fs_visitor &s)
       } else {
          remap_table[i] = new_index;
          s.alloc.sizes[new_index] = s.alloc.sizes[i];
-         s.invalidate_analysis(DEPENDENCY_INSTRUCTION_DETAIL | DEPENDENCY_VARIABLES);
+         s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTION_DETAIL |
+                               BRW_DEPENDENCY_VARIABLES);
          ++new_index;
       }
    }

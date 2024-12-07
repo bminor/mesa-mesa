@@ -2511,7 +2511,8 @@ brw_lower_logical_sends(fs_visitor &s)
    }
 
    if (progress)
-      s.invalidate_analysis(DEPENDENCY_INSTRUCTIONS | DEPENDENCY_VARIABLES);
+      s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTIONS |
+                            BRW_DEPENDENCY_VARIABLES);
 
    return progress;
 }
@@ -2587,7 +2588,8 @@ brw_lower_uniform_pull_constant_loads(fs_visitor &s)
                                        surface : surface_handle);
          inst->src[2] = payload;
 
-         s.invalidate_analysis(DEPENDENCY_INSTRUCTIONS | DEPENDENCY_VARIABLES);
+         s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTIONS |
+                               BRW_DEPENDENCY_VARIABLES);
       } else {
          const brw_builder ubld = brw_builder(&s, block, inst).exec_all();
          brw_reg header = brw_builder(&s, 8).exec_all().vgrf(BRW_TYPE_UD);
@@ -2613,7 +2615,8 @@ brw_lower_uniform_pull_constant_loads(fs_visitor &s)
          inst->src[2] = header;
          inst->src[3] = brw_reg(); /* unused for reads */
 
-         s.invalidate_analysis(DEPENDENCY_INSTRUCTIONS | DEPENDENCY_VARIABLES);
+         s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTIONS |
+                               BRW_DEPENDENCY_VARIABLES);
       }
 
       progress = true;
@@ -2700,7 +2703,7 @@ brw_lower_send_descriptors(fs_visitor &s)
       }
 
       progress = true;
-      s.invalidate_analysis(DEPENDENCY_INSTRUCTIONS | DEPENDENCY_VARIABLES);
+      s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTIONS | BRW_DEPENDENCY_VARIABLES);
    }
 
    return progress;

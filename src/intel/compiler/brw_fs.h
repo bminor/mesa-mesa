@@ -196,7 +196,7 @@ public:
    void calculate_payload_ranges(bool allow_spilling,
                                  unsigned payload_node_count,
                                  int *payload_last_use_ip) const;
-   void invalidate_analysis(brw::analysis_dependency_class c);
+   void invalidate_analysis(brw_analysis_dependency_class c);
 
    void vfail(const char *msg, va_list args);
    void fail(const char *msg, ...);

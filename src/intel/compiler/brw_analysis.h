@@ -11,77 +11,75 @@
 
 struct fs_visitor;
 
-namespace brw {
+/**
+ * Bitset of state categories that can influence the result of IR analysis
+ * passes.
+ */
+enum brw_analysis_dependency_class {
    /**
-    * Bitset of state categories that can influence the result of IR analysis
-    * passes.
+    * The analysis doesn't depend on the IR, its result is effectively a
+    * constant during the compilation.
     */
-   enum analysis_dependency_class {
-      /**
-       * The analysis doesn't depend on the IR, its result is effectively a
-       * constant during the compilation.
-       */
-      DEPENDENCY_NOTHING = 0,
-      /**
-       * The analysis depends on the set of instructions in the program and
-       * their naming.  Note that because instructions are named sequentially
-       * by IP this implies a dependency on the control flow edges between
-       * instructions.  This will be signaled whenever instructions are
-       * inserted, removed or reordered in the program.
-       */
-      DEPENDENCY_INSTRUCTION_IDENTITY = 0x1,
-      /**
-       * The analysis is sensitive to the detailed semantics of instructions
-       * in the program, where "detailed" means any change in the instruction
-       * data structures other than the linked-list pointers (which are
-       * already covered by DEPENDENCY_INSTRUCTION_IDENTITY).  E.g. changing
-       * the negate or abs flags of an instruction source would signal this
-       * flag alone because it would preserve all other instruction dependency
-       * classes.
-       */
-      DEPENDENCY_INSTRUCTION_DETAIL = 0x2,
-      /**
-       * The analysis depends on the set of data flow edges between
-       * instructions.  This will be signaled whenever the dataflow relation
-       * between instructions has potentially changed, e.g. when the VGRF
-       * index of an instruction source or destination changes (in which case
-       * it will appear in combination with DEPENDENCY_INSTRUCTION_DETAIL), or
-       * when data-dependent instructions are reordered (in which case it will
-       * appear in combination with DEPENDENCY_INSTRUCTION_IDENTITY).
-       */
-      DEPENDENCY_INSTRUCTION_DATA_FLOW = 0x4,
-      /**
-       * The analysis depends on all instruction dependency classes.  These
-       * will typically be signaled simultaneously when inserting or removing
-       * instructions in the program (or if you're feeling too lazy to read
-       * through your optimization pass to figure out which of the instruction
-       * dependency classes above it invalidates).
-       */
-      DEPENDENCY_INSTRUCTIONS = 0x7,
-      /**
-       * The analysis depends on the set of VGRFs in the program and their
-       * naming.  This will be signaled when VGRFs are allocated or released.
-       */
-      DEPENDENCY_VARIABLES = 0x8,
-      /**
-       * The analysis depends on the set of basic blocks in the program, their
-       * control flow edges and naming.
-       */
-      DEPENDENCY_BLOCKS = 0x10,
-      /**
-       * The analysis depends on the program being literally the same (good
-       * luck...), any change in the input invalidates previous analysis
-       * computations.
-       */
-      DEPENDENCY_EVERYTHING = ~0
-   };
+   BRW_DEPENDENCY_NOTHING = 0,
+   /**
+    * The analysis depends on the set of instructions in the program and
+    * their naming.  Note that because instructions are named sequentially
+    * by IP this implies a dependency on the control flow edges between
+    * instructions.  This will be signaled whenever instructions are
+    * inserted, removed or reordered in the program.
+    */
+   BRW_DEPENDENCY_INSTRUCTION_IDENTITY = 0x1,
+   /**
+    * The analysis is sensitive to the detailed semantics of instructions
+    * in the program, where "detailed" means any change in the instruction
+    * data structures other than the linked-list pointers (which are
+    * already covered by DEPENDENCY_INSTRUCTION_IDENTITY).  E.g. changing
+    * the negate or abs flags of an instruction source would signal this
+    * flag alone because it would preserve all other instruction dependency
+    * classes.
+    */
+   BRW_DEPENDENCY_INSTRUCTION_DETAIL = 0x2,
+   /**
+    * The analysis depends on the set of data flow edges between
+    * instructions.  This will be signaled whenever the dataflow relation
+    * between instructions has potentially changed, e.g. when the VGRF
+    * index of an instruction source or destination changes (in which case
+    * it will appear in combination with DEPENDENCY_INSTRUCTION_DETAIL), or
+    * when data-dependent instructions are reordered (in which case it will
+    * appear in combination with DEPENDENCY_INSTRUCTION_IDENTITY).
+    */
+   BRW_DEPENDENCY_INSTRUCTION_DATA_FLOW = 0x4,
+   /**
+    * The analysis depends on all instruction dependency classes.  These
+    * will typically be signaled simultaneously when inserting or removing
+    * instructions in the program (or if you're feeling too lazy to read
+    * through your optimization pass to figure out which of the instruction
+    * dependency classes above it invalidates).
+    */
+   BRW_DEPENDENCY_INSTRUCTIONS = 0x7,
+   /**
+    * The analysis depends on the set of VGRFs in the program and their
+    * naming.  This will be signaled when VGRFs are allocated or released.
+    */
+   BRW_DEPENDENCY_VARIABLES = 0x8,
+   /**
+    * The analysis depends on the set of basic blocks in the program, their
+    * control flow edges and naming.
+    */
+   BRW_DEPENDENCY_BLOCKS = 0x10,
+   /**
+    * The analysis depends on the program being literally the same (good
+    * luck...), any change in the input invalidates previous analysis
+    * computations.
+    */
+   BRW_DEPENDENCY_EVERYTHING = ~0
+};
 
-   inline analysis_dependency_class
-   operator|(analysis_dependency_class x, analysis_dependency_class y)
-   {
-      return static_cast<analysis_dependency_class>(
-         static_cast<unsigned>(x) | static_cast<unsigned>(y));
-   }
+inline brw_analysis_dependency_class
+operator|(brw_analysis_dependency_class x, brw_analysis_dependency_class y)
+{
+   return static_cast<brw_analysis_dependency_class>(
+      static_cast<unsigned>(x) | static_cast<unsigned>(y));
 }
 
 /**
@@ -162,7 +160,7 @@ public:
     * have to be discarded.
     */
    void
-   invalidate(brw::analysis_dependency_class c)
+   invalidate(brw_analysis_dependency_class c)
    {
       if (p && (c & p->dependency_class())) {
          delete p;
@@ -190,10 +188,10 @@ namespace brw {
          return true;
       }
 
-      analysis_dependency_class
+      brw_analysis_dependency_class
       dependency_class() const
       {
-         return DEPENDENCY_BLOCKS;
+         return BRW_DEPENDENCY_BLOCKS;
       }
 
       const bblock_t *
@@ -243,12 +241,12 @@ namespace brw {
       register_pressure(const fs_visitor *v);
       ~register_pressure();
 
-      analysis_dependency_class
+      brw_analysis_dependency_class
       dependency_class() const
       {
-         return (DEPENDENCY_INSTRUCTION_IDENTITY |
-                 DEPENDENCY_INSTRUCTION_DATA_FLOW |
-                 DEPENDENCY_VARIABLES);
+         return (BRW_DEPENDENCY_INSTRUCTION_IDENTITY |
+                 BRW_DEPENDENCY_INSTRUCTION_DATA_FLOW |
+                 BRW_DEPENDENCY_VARIABLES);
       }
 
       bool
@@ -292,13 +290,13 @@ namespace brw {
 
       void print_stats(const fs_visitor *) const;
 
-      analysis_dependency_class
+      brw_analysis_dependency_class
       dependency_class() const
       {
-         return DEPENDENCY_INSTRUCTION_IDENTITY |
-                DEPENDENCY_INSTRUCTION_DATA_FLOW |
-                DEPENDENCY_VARIABLES |
-                DEPENDENCY_BLOCKS;
+         return BRW_DEPENDENCY_INSTRUCTION_IDENTITY |
+                BRW_DEPENDENCY_INSTRUCTION_DATA_FLOW |
+                BRW_DEPENDENCY_VARIABLES |
+                BRW_DEPENDENCY_BLOCKS;
       }
 
       bool validate(const fs_visitor *) const;
@@ -360,12 +358,12 @@ namespace brw {
 
       bool validate(const fs_visitor *s) const;
 
-      analysis_dependency_class
+      brw_analysis_dependency_class
       dependency_class() const
       {
-         return (DEPENDENCY_INSTRUCTION_IDENTITY |
-                 DEPENDENCY_INSTRUCTION_DATA_FLOW |
-                 DEPENDENCY_VARIABLES);
+         return (BRW_DEPENDENCY_INSTRUCTION_IDENTITY |
+                 BRW_DEPENDENCY_INSTRUCTION_DATA_FLOW |
+                 BRW_DEPENDENCY_VARIABLES);
       }
 
       bool vars_interfere(int a, int b) const;
@@ -429,11 +427,11 @@ namespace brw {
       performance(const fs_visitor *v);
       ~performance();
 
-      analysis_dependency_class
+      brw_analysis_dependency_class
       dependency_class() const
       {
-         return (DEPENDENCY_INSTRUCTIONS |
-                 DEPENDENCY_BLOCKS);
+         return (BRW_DEPENDENCY_INSTRUCTIONS |
+                 BRW_DEPENDENCY_BLOCKS);
       }
 
       bool

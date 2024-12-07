@@ -377,7 +377,7 @@ brw_opt_register_coalesce(fs_visitor &s)
 
       s.cfg->adjust_block_ips();
 
-      s.invalidate_analysis(DEPENDENCY_INSTRUCTIONS);
+      s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTIONS);
    }
 
    delete[] src_var;

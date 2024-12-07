@@ -1839,7 +1839,7 @@ brw_schedule_instructions_pre_ra(fs_visitor &s, brw_instruction_scheduler *sched
 
    sched->run(mode);
 
-   s.invalidate_analysis(DEPENDENCY_INSTRUCTIONS);
+   s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTIONS);
 }
 
 void
@@ -1856,5 +1856,5 @@ brw_schedule_instructions_post_ra(fs_visitor &s)
 
    ralloc_free(mem_ctx);
 
-   s.invalidate_analysis(DEPENDENCY_INSTRUCTIONS);
+   s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTIONS);
 }

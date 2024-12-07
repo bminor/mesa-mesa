@@ -314,7 +314,7 @@ fs_visitor::assign_curb_setup()
          i += num_regs;
       }
 
-      invalidate_analysis(DEPENDENCY_INSTRUCTIONS);
+      invalidate_analysis(BRW_DEPENDENCY_INSTRUCTIONS);
    }
 
    /* Map the offsets in the UNIFORM file to fixed HW regs. */
@@ -392,7 +392,7 @@ fs_visitor::assign_curb_setup()
          }
       }
 
-      invalidate_analysis(DEPENDENCY_INSTRUCTIONS);
+      invalidate_analysis(BRW_DEPENDENCY_INSTRUCTIONS);
    }
 
    /* This may be updated in assign_urb_setup or assign_vs_urb_setup. */
@@ -514,7 +514,7 @@ brw_fb_write_msg_control(const brw_inst *inst,
 }
 
 void
-fs_visitor::invalidate_analysis(brw::analysis_dependency_class c)
+fs_visitor::invalidate_analysis(brw_analysis_dependency_class c)
 {
    live_analysis.invalidate(c);
    regpressure_analysis.invalidate(c);
@@ -695,7 +695,7 @@ brw_allocate_registers(fs_visitor &s, bool allow_spilling)
 
       /* Reset back to the original order before trying the next mode */
       restore_instruction_order(s.cfg, orig_order);
-      s.invalidate_analysis(DEPENDENCY_INSTRUCTIONS);
+      s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTIONS);
    }
 
    ralloc_free(scheduler_ctx);
