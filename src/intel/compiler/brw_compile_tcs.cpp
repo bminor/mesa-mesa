@@ -154,7 +154,7 @@ run_tcs(fs_visitor &s)
       bld.IF(BRW_PREDICATE_NORMAL);
    }
 
-   nir_to_brw(&s);
+   brw_from_nir(&s);
 
    if (fix_dispatch_mask) {
       bld.emit(BRW_OPCODE_ENDIF);

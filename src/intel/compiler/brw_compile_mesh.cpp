@@ -368,7 +368,7 @@ run_task_mesh(fs_visitor &s, bool allow_spilling)
 
    s.payload_ = new task_mesh_thread_payload(s);
 
-   nir_to_brw(&s);
+   brw_from_nir(&s);
 
    if (s.failed)
       return false;

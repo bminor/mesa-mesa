@@ -110,7 +110,7 @@ run_gs(fs_visitor &s)
       }
    }
 
-   nir_to_brw(&s);
+   brw_from_nir(&s);
 
    brw_emit_gs_thread_end(s);
 

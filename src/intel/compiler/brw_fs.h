@@ -466,7 +466,7 @@ void brw_compute_urb_setup_index(struct brw_wm_prog_data *wm_prog_data);
 int brw_get_subgroup_id_param_index(const intel_device_info *devinfo,
                                     const brw_stage_prog_data *prog_data);
 
-void nir_to_brw(fs_visitor *s);
+void brw_from_nir(fs_visitor *s);
 
 void brw_shader_phase_update(fs_visitor &s, enum brw_shader_phase phase);
 

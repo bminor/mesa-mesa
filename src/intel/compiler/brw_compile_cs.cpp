@@ -75,7 +75,7 @@ run_cs(fs_visitor &s, bool allow_spilling)
                suboffset(retype(brw_vec1_grf(0, 0), BRW_TYPE_UW), 1));
    }
 
-   nir_to_brw(&s);
+   brw_from_nir(&s);
 
    if (s.failed)
       return false;

@@ -1503,7 +1503,7 @@ run_fs(fs_visitor &s, bool allow_spilling, bool do_rep_send)
       if (nir->info.writes_memory)
          wm_prog_data->has_side_effects = true;
 
-      nir_to_brw(&s);
+      brw_from_nir(&s);
 
       if (s.failed)
 	 return false;

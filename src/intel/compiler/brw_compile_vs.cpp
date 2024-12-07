@@ -37,7 +37,7 @@ run_vs(fs_visitor &s)
 
    s.payload_ = new vs_thread_payload(s);
 
-   nir_to_brw(&s);
+   brw_from_nir(&s);
 
    if (s.failed)
       return false;
