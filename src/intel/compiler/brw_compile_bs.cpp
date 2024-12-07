@@ -36,7 +36,7 @@ run_bs(fs_visitor &s, bool allow_spilling)
 {
    assert(s.stage >= MESA_SHADER_RAYGEN && s.stage <= MESA_SHADER_CALLABLE);
 
-   s.payload_ = new bs_thread_payload(s);
+   s.payload_ = new brw_bs_thread_payload(s);
 
    brw_from_nir(&s);
 

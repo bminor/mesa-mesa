@@ -64,7 +64,7 @@ run_cs(fs_visitor &s, bool allow_spilling)
    assert(gl_shader_stage_is_compute(s.stage));
    const brw_builder bld = brw_builder(&s).at_end();
 
-   s.payload_ = new cs_thread_payload(s);
+   s.payload_ = new brw_cs_thread_payload(s);
 
    if (s.devinfo->platform == INTEL_PLATFORM_HSW && s.prog_data->total_shared > 0) {
       /* Move SLM index from g0.0[27:24] to sr0.1[11:8] */

@@ -187,7 +187,7 @@ brw_emit_interpolation_setup(fs_visitor &s)
 
    const struct brw_wm_prog_key *wm_key = (brw_wm_prog_key*) s.key;
    struct brw_wm_prog_data *wm_prog_data = brw_wm_prog_data(s.prog_data);
-   fs_thread_payload &payload = s.fs_payload();
+   brw_fs_thread_payload &payload = s.fs_payload();
 
    brw_reg int_sample_offset_x, int_sample_offset_y; /* Used on Gen12HP+ */
    brw_reg int_sample_offset_xy; /* Used on Gen8+ */
@@ -1459,7 +1459,7 @@ run_fs(fs_visitor &s, bool allow_spilling, bool do_rep_send)
 
    assert(s.stage == MESA_SHADER_FRAGMENT);
 
-   s.payload_ = new fs_thread_payload(s, s.source_depth_to_render_target);
+   s.payload_ = new brw_fs_thread_payload(s, s.source_depth_to_render_target);
 
    if (nir->info.ray_queries > 0)
       s.limit_dispatch_width(16, "SIMD32 not supported with ray queries.\n");

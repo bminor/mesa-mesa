@@ -283,7 +283,7 @@ static void
 lower_fb_write_logical_send(const brw_builder &bld, brw_inst *inst,
                             const struct brw_wm_prog_data *prog_data,
                             const brw_wm_prog_key *key,
-                            const fs_thread_payload &fs_payload)
+                            const brw_fs_thread_payload &fs_payload)
 {
    assert(inst->src[FB_WRITE_LOGICAL_SRC_COMPONENTS].file == IMM);
    assert(inst->src[FB_WRITE_LOGICAL_SRC_NULL_RT].file == IMM);

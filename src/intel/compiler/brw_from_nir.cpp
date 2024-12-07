@@ -2163,7 +2163,7 @@ emit_pixel_interpolater_alu_at_offset(const brw_builder &bld,
    const intel_device_info *devinfo = shader->devinfo;
    assert(devinfo->ver >= 11);
 
-   const fs_thread_payload &payload = shader->fs_payload();
+   const brw_fs_thread_payload &payload = shader->fs_payload();
    const struct brw_wm_prog_data *wm_prog_data =
       brw_wm_prog_data(shader->prog_data);
 
@@ -2293,7 +2293,7 @@ emit_pixel_interpolater_alu_at_sample(const brw_builder &bld,
                                       const brw_reg &idx,
                                       glsl_interp_mode interpolation)
 {
-   const fs_thread_payload &payload = bld.shader->fs_payload();
+   const brw_fs_thread_payload &payload = bld.shader->fs_payload();
    const struct brw_wm_prog_data *wm_prog_data =
       brw_wm_prog_data(bld.shader->prog_data);
    const brw_builder ubld = bld.exec_all().group(16, 0);
@@ -4635,7 +4635,7 @@ brw_from_nir_emit_cs_intrinsic(nir_to_brw_state &ntb,
       break;
 
    case nir_intrinsic_load_inline_data_intel: {
-      const cs_thread_payload &payload = s.cs_payload();
+      const brw_cs_thread_payload &payload = s.cs_payload();
       unsigned inline_stride = brw_type_size_bytes(dest.type);
       for (unsigned c = 0; c < instr->def.num_components; c++) {
          xbld.MOV(offset(dest, xbld, c),
@@ -4773,7 +4773,7 @@ brw_from_nir_emit_bs_intrinsic(nir_to_brw_state &ntb,
    fs_visitor &s = ntb.s;
 
    assert(brw_shader_stage_is_bindless(s.stage));
-   const bs_thread_payload &payload = s.bs_payload();
+   const brw_bs_thread_payload &payload = s.bs_payload();
 
    brw_reg dest;
    if (nir_intrinsic_infos[instr->intrinsic].has_dest)
@@ -5621,7 +5621,7 @@ brw_from_nir_emit_task_mesh_intrinsic(nir_to_brw_state &ntb, const brw_builder &
    fs_visitor &s = ntb.s;
 
    assert(s.stage == MESA_SHADER_MESH || s.stage == MESA_SHADER_TASK);
-   const task_mesh_thread_payload &payload = s.task_mesh_payload();
+   const brw_task_mesh_thread_payload &payload = s.task_mesh_payload();
 
    brw_reg dest;
    if (nir_intrinsic_infos[instr->intrinsic].has_dest)
@@ -5668,7 +5668,7 @@ brw_from_nir_emit_task_intrinsic(nir_to_brw_state &ntb,
    fs_visitor &s = ntb.s;
 
    assert(s.stage == MESA_SHADER_TASK);
-   const task_mesh_thread_payload &payload = s.task_mesh_payload();
+   const brw_task_mesh_thread_payload &payload = s.task_mesh_payload();
 
    switch (instr->intrinsic) {
    case nir_intrinsic_store_output:
@@ -5695,7 +5695,7 @@ brw_from_nir_emit_mesh_intrinsic(nir_to_brw_state &ntb,
    fs_visitor &s = ntb.s;
 
    assert(s.stage == MESA_SHADER_MESH);
-   const task_mesh_thread_payload &payload = s.task_mesh_payload();
+   const brw_task_mesh_thread_payload &payload = s.task_mesh_payload();
 
    switch (instr->intrinsic) {
    case nir_intrinsic_store_per_primitive_output:

@@ -32,7 +32,7 @@ run_tes(fs_visitor &s)
 {
    assert(s.stage == MESA_SHADER_TESS_EVAL);
 
-   s.payload_ = new tes_thread_payload(s);
+   s.payload_ = new brw_tes_thread_payload(s);
 
    brw_from_nir(&s);
 

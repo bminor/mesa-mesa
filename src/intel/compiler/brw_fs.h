@@ -33,12 +33,9 @@
 #include "brw_inst.h"
 #include "compiler/nir/nir.h"
 #include "brw_analysis.h"
-
-struct fs_visitor;
+#include "brw_thread_payload.h"
 
 #define UBO_START ((1 << 16) - 4)
-
-class brw_builder;
 
 struct brw_shader_stats {
    const char *scheduler_mode;
@@ -47,103 +44,6 @@ struct brw_shader_stats {
    unsigned fill_count;
    unsigned max_register_pressure;
    unsigned non_ssa_registers_after_nir;
-};
-
-/** Register numbers for thread payload fields. */
-struct thread_payload {
-   /** The number of thread payload registers the hardware will supply. */
-   uint8_t num_regs;
-
-   virtual ~thread_payload() = default;
-
-protected:
-   thread_payload() : num_regs() {}
-};
-
-struct vs_thread_payload : public thread_payload {
-   vs_thread_payload(const fs_visitor &v);
-
-   brw_reg urb_handles;
-};
-
-struct tcs_thread_payload : public thread_payload {
-   tcs_thread_payload(const fs_visitor &v);
-
-   brw_reg patch_urb_output;
-   brw_reg primitive_id;
-   brw_reg icp_handle_start;
-};
-
-struct tes_thread_payload : public thread_payload {
-   tes_thread_payload(const fs_visitor &v);
-
-   brw_reg patch_urb_input;
-   brw_reg primitive_id;
-   brw_reg coords[3];
-   brw_reg urb_output;
-};
-
-struct gs_thread_payload : public thread_payload {
-   gs_thread_payload(fs_visitor &v);
-
-   brw_reg urb_handles;
-   brw_reg primitive_id;
-   brw_reg instance_id;
-   brw_reg icp_handle_start;
-};
-
-struct fs_thread_payload : public thread_payload {
-   fs_thread_payload(const fs_visitor &v,
-                     bool &source_depth_to_render_target);
-
-   uint8_t subspan_coord_reg[2];
-   uint8_t source_depth_reg[2];
-   uint8_t source_w_reg[2];
-   uint8_t aa_dest_stencil_reg[2];
-   uint8_t sample_pos_reg[2];
-   uint8_t sample_mask_in_reg[2];
-   uint8_t barycentric_coord_reg[INTEL_BARYCENTRIC_MODE_COUNT][2];
-
-   uint8_t depth_w_coef_reg;
-   uint8_t pc_bary_coef_reg;
-   uint8_t npc_bary_coef_reg;
-   uint8_t sample_offsets_reg;
-};
-
-struct cs_thread_payload : public thread_payload {
-   cs_thread_payload(const fs_visitor &v);
-
-   void load_subgroup_id(const brw_builder &bld, brw_reg &dest) const;
-
-   brw_reg local_invocation_id[3];
-
-   brw_reg inline_parameter;
-
-protected:
-   brw_reg subgroup_id_;
-};
-
-struct task_mesh_thread_payload : public cs_thread_payload {
-   task_mesh_thread_payload(fs_visitor &v);
-
-   brw_reg extended_parameter_0;
-   brw_reg local_index;
-
-   brw_reg urb_output;
-
-   /* URB to read Task memory inputs. Only valid for MESH stage. */
-   brw_reg task_urb_input;
-};
-
-struct bs_thread_payload : public thread_payload {
-   bs_thread_payload(const fs_visitor &v);
-
-   brw_reg inline_parameter;
-
-   brw_reg global_arg_ptr;
-   brw_reg local_arg_ptr;
-
-   void load_shader_type(const brw_builder &bld, brw_reg &dest) const;
 };
 
 enum brw_shader_phase {
@@ -263,56 +163,31 @@ public:
    bool failed;
    char *fail_msg;
 
-   thread_payload *payload_;
+   /* Use the vs_payload(), fs_payload(), etc. to access the right payload. */
+   brw_thread_payload *payload_;
 
-   thread_payload &payload() {
-      return *this->payload_;
+#define DEFINE_PAYLOAD_ACCESSOR(TYPE, NAME, ASSERTION)   \
+   TYPE &NAME() {                                        \
+      assert(ASSERTION);                                 \
+      return *static_cast<TYPE *>(this->payload_);       \
+   }                                                     \
+   const TYPE &NAME() const {                            \
+      assert(ASSERTION);                                 \
+      return *static_cast<const TYPE *>(this->payload_); \
    }
 
-   vs_thread_payload &vs_payload() {
-      assert(stage == MESA_SHADER_VERTEX);
-      return *static_cast<vs_thread_payload *>(this->payload_);
-   }
-
-   tcs_thread_payload &tcs_payload() {
-      assert(stage == MESA_SHADER_TESS_CTRL);
-      return *static_cast<tcs_thread_payload *>(this->payload_);
-   }
-
-   tes_thread_payload &tes_payload() {
-      assert(stage == MESA_SHADER_TESS_EVAL);
-      return *static_cast<tes_thread_payload *>(this->payload_);
-   }
-
-   gs_thread_payload &gs_payload() {
-      assert(stage == MESA_SHADER_GEOMETRY);
-      return *static_cast<gs_thread_payload *>(this->payload_);
-   }
-
-   fs_thread_payload &fs_payload() {
-      assert(stage == MESA_SHADER_FRAGMENT);
-      return *static_cast<fs_thread_payload *>(this->payload_);
-   };
-
-   const fs_thread_payload &fs_payload() const {
-      assert(stage == MESA_SHADER_FRAGMENT);
-      return *static_cast<const fs_thread_payload *>(this->payload_);
-   };
-
-   cs_thread_payload &cs_payload() {
-      assert(gl_shader_stage_uses_workgroup(stage));
-      return *static_cast<cs_thread_payload *>(this->payload_);
-   }
-
-   task_mesh_thread_payload &task_mesh_payload() {
-      assert(stage == MESA_SHADER_TASK || stage == MESA_SHADER_MESH);
-      return *static_cast<task_mesh_thread_payload *>(this->payload_);
-   }
-
-   bs_thread_payload &bs_payload() {
-      assert(stage >= MESA_SHADER_RAYGEN && stage <= MESA_SHADER_CALLABLE);
-      return *static_cast<bs_thread_payload *>(this->payload_);
-   }
+   DEFINE_PAYLOAD_ACCESSOR(brw_thread_payload,     payload,     true);
+   DEFINE_PAYLOAD_ACCESSOR(brw_vs_thread_payload,  vs_payload,  stage == MESA_SHADER_VERTEX);
+   DEFINE_PAYLOAD_ACCESSOR(brw_tcs_thread_payload, tcs_payload, stage == MESA_SHADER_TESS_CTRL);
+   DEFINE_PAYLOAD_ACCESSOR(brw_tes_thread_payload, tes_payload, stage == MESA_SHADER_TESS_EVAL);
+   DEFINE_PAYLOAD_ACCESSOR(brw_gs_thread_payload,  gs_payload,  stage == MESA_SHADER_GEOMETRY);
+   DEFINE_PAYLOAD_ACCESSOR(brw_fs_thread_payload,  fs_payload,  stage == MESA_SHADER_FRAGMENT);
+   DEFINE_PAYLOAD_ACCESSOR(brw_cs_thread_payload,  cs_payload,
+                           gl_shader_stage_uses_workgroup(stage));
+   DEFINE_PAYLOAD_ACCESSOR(brw_task_mesh_thread_payload, task_mesh_payload,
+                           stage == MESA_SHADER_TASK || stage == MESA_SHADER_MESH);
+   DEFINE_PAYLOAD_ACCESSOR(brw_bs_thread_payload, bs_payload,
+                           stage >= MESA_SHADER_RAYGEN && stage <= MESA_SHADER_CALLABLE);
 
    bool source_depth_to_render_target;
 

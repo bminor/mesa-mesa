@@ -33,7 +33,7 @@ run_vs(fs_visitor &s)
 {
    assert(s.stage == MESA_SHADER_VERTEX);
 
-   s.payload_ = new vs_thread_payload(s);
+   s.payload_ = new brw_vs_thread_payload(s);
 
    brw_from_nir(&s);
 
