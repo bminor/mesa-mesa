@@ -61,7 +61,6 @@ libintel_compiler_brw_files = files(
   'brw_inst.cpp',
   'brw_inst.h',
   'brw_ir_allocator.h',
-  'brw_ir_analysis.h',
   'brw_isa_info.h',
   'brw_lower.cpp',
   'brw_lower_dpas.cpp',
