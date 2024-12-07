@@ -59,6 +59,11 @@ struct vk_meta_copy_image_properties {
       } color;
 
       struct {
+         /* Format to use for a specific image plane. */
+         VkFormat view_format;
+      } plane[3];
+
+      struct {
          struct {
             /* Format to use for the image view of a depth aspect.
              * Format must not be compressed and be in the RGB/sRGB colorspace.

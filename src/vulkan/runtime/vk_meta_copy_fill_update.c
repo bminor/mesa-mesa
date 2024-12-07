@@ -54,6 +54,9 @@ struct vk_meta_copy_image_view {
          VkFormat format;
       } color;
       struct {
+         VkFormat format;
+      } plane;
+      struct {
          struct {
             VkFormat format;
             nir_component_mask_t component_mask;
@@ -278,6 +281,11 @@ copy_img_view_format_for_aspect(const struct vk_meta_copy_image_view *info,
    case VK_IMAGE_ASPECT_COLOR_BIT:
       return info->color.format;
 
+   case VK_IMAGE_ASPECT_PLANE_0_BIT:
+   case VK_IMAGE_ASPECT_PLANE_1_BIT:
+   case VK_IMAGE_ASPECT_PLANE_2_BIT:
+      return info->plane.format;
+
    case VK_IMAGE_ASPECT_DEPTH_BIT:
       return info->depth.format;
 
@@ -345,7 +353,13 @@ get_gfx_copy_pipeline(
       .layout = layout,
    };
 
-   if (aspects & VK_IMAGE_ASPECT_COLOR_BIT) {
+   /* Since copies happen one plane at a time, multiplanar copies can be
+    * handled like color copies.
+    */
+   if (aspects &
+       (VK_IMAGE_ASPECT_COLOR_BIT |
+        VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT |
+        VK_IMAGE_ASPECT_PLANE_2_BIT)) {
       VkFormat fmt =
          copy_img_view_format_for_aspect(view, aspects);
 
@@ -441,6 +455,13 @@ copy_create_src_image_view(struct vk_command_buffer *cmd,
 
    VkFormat format = copy_img_view_format_for_aspect(view_info, aspect);
 
+   /* For multiplane, we only want the aspect for the plane rather than the
+    * set of aspects for the full image.
+    */
+   VkImageAspectFlags view_aspects =
+      aspect & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT) ?
+      vk_format_aspects(format) : aspect;
+
    VkImageViewCreateInfo info = {
       .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
       .pNext = &usage,
@@ -449,7 +470,7 @@ copy_create_src_image_view(struct vk_command_buffer *cmd,
       .viewType = view_info->type,
       .format = format,
       .subresourceRange = {
-         .aspectMask = vk_format_aspects(format),
+         .aspectMask = view_aspects,
          .baseMipLevel = subres->mipLevel,
          .levelCount = 1,
          .baseArrayLayer = 0,
@@ -488,7 +509,13 @@ copy_create_dst_image_view(struct vk_command_buffer *cmd,
 {
    uint32_t layer_count, base_layer;
    VkFormat format = copy_img_view_format_for_aspect(view_info, aspect);
-   VkImageAspectFlags fmt_aspects = vk_format_aspects(format);
+
+   /* For multiplane, we only want the aspect for the plane rather than the
+    * set of aspects for the full image.
+    */
+   VkImageAspectFlags view_aspects =
+      aspect & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT) ?
+      vk_format_aspects(format) : aspect;
    const VkImageViewUsageCreateInfo usage = {
       .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO,
       .usage = bind_point == VK_PIPELINE_BIND_POINT_COMPUTE
@@ -517,7 +544,7 @@ copy_create_dst_image_view(struct vk_command_buffer *cmd,
                      : vk_image_storage_view_type(img),
       .format = format,
       .subresourceRange = {
-         .aspectMask = fmt_aspects,
+         .aspectMask = view_aspects,
          .baseMipLevel = subres->mipLevel,
          .levelCount = 1,
          .baseArrayLayer = base_layer,
@@ -689,6 +716,9 @@ tex_deref(nir_builder *b, const struct vk_meta_copy_image_view *view,
    const char *tex_name;
    switch (aspect) {
    case VK_IMAGE_ASPECT_COLOR_BIT:
+   case VK_IMAGE_ASPECT_PLANE_0_BIT:
+   case VK_IMAGE_ASPECT_PLANE_1_BIT:
+   case VK_IMAGE_ASPECT_PLANE_2_BIT:
       tex_name = "color_tex";
       break;
    case VK_IMAGE_ASPECT_DEPTH_BIT:
@@ -731,6 +761,9 @@ img_deref(nir_builder *b, const struct vk_meta_copy_image_view *view,
    const char *img_name;
    switch (aspect) {
    case VK_IMAGE_ASPECT_COLOR_BIT:
+   case VK_IMAGE_ASPECT_PLANE_0_BIT:
+   case VK_IMAGE_ASPECT_PLANE_1_BIT:
+   case VK_IMAGE_ASPECT_PLANE_2_BIT:
       img_name = "color_img";
       break;
    case VK_IMAGE_ASPECT_DEPTH_BIT:
@@ -1277,9 +1310,10 @@ img_copy_view_info(VkImageViewType view_type, VkImageAspectFlags aspects,
       .type = view_type,
    };
 
-   /* We only support color/depth/stencil aspects. */
-   assert(aspects & (VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_DEPTH_BIT |
-                     VK_IMAGE_ASPECT_STENCIL_BIT));
+   assert(aspects &
+          (VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_DEPTH_BIT |
+           VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_PLANE_0_BIT |
+           VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT));
 
    if (aspects & VK_IMAGE_ASPECT_COLOR_BIT) {
       /* Color aspect can't be combined with other aspects. */
@@ -1289,6 +1323,26 @@ img_copy_view_info(VkImageViewType view_type, VkImageAspectFlags aspects,
       return view;
    }
 
+   if (aspects &
+       (VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT |
+        VK_IMAGE_ASPECT_PLANE_2_BIT)) {
+      switch (aspects) {
+      case VK_IMAGE_ASPECT_PLANE_0_BIT:
+         view.plane.format = img_props->plane[0].view_format;
+         break;
+      case VK_IMAGE_ASPECT_PLANE_1_BIT:
+         view.plane.format = img_props->plane[1].view_format;
+         break;
+      case VK_IMAGE_ASPECT_PLANE_2_BIT:
+         view.plane.format = img_props->plane[2].view_format;
+         break;
+      default:
+         unreachable("invalid ycbcr aspect");
+      }
+
+      assert(format_is_supported(view.color.format));
+      return view;
+   }
 
    view.depth.format = img_props->depth.view_format;
    view.depth.component_mask = img_props->depth.component_mask;
@@ -1878,6 +1932,10 @@ copy_image_prepare_compute_desc_set(
       if (unlikely(result != VK_SUCCESS))
          return result;
 
+      if (region->srcSubresource.aspectMask !=
+          region->dstSubresource.aspectMask)
+         aspect = region->dstSubresource.aspectMask;
+
       result = copy_create_dst_image_view(
          cmd, meta, dst_img, &key->dst.view, aspect, &region->dstOffset,
          &region->extent, &region->dstSubresource,
@@ -1995,6 +2053,83 @@ copy_image_prepare_gfx_push_const(struct vk_command_buffer *cmd,
    return VK_SUCCESS;
 }
 
+static bool
+valid_multiplane_aspect_mask(VkImageAspectFlags aspect)
+{
+   switch (aspect) {
+   case VK_IMAGE_ASPECT_PLANE_0_BIT:
+   case VK_IMAGE_ASPECT_PLANE_1_BIT:
+   case VK_IMAGE_ASPECT_PLANE_2_BIT:
+      return true;
+   default:
+      return false;
+   }
+}
+
+static bool
+aspect_masks_valid(struct vk_image *src_img, struct vk_image *dst_img,
+                   const VkImageCopy2 *region)
+{
+   const struct vk_format_ycbcr_info *src_ycbcr_info =
+      vk_format_get_ycbcr_info(src_img->format);
+   const struct vk_format_ycbcr_info *dst_ycbcr_info =
+      vk_format_get_ycbcr_info(dst_img->format);
+
+   /* From the Vulkan 1.4.303 spec, vkCmdCopyImage:
+    *
+    *    VUID-vkCmdCopyImage-srcImage-01551
+    *
+    *    "If neither srcImage nor dstImage has a multi-planar image format
+    *    then for each element of pRegions, srcSubresource.aspectMask and
+    *    dstSubresource.aspectMask must match"
+    */
+   if (!src_ycbcr_info && !dst_ycbcr_info)
+      return region->srcSubresource.aspectMask ==
+         region->dstSubresource.aspectMask;
+
+   /*    VUID-vkCmdCopyImage-srcImage-08713
+    *
+    *    "If srcImage has a multi-planar image format, then for each element
+    *    of pRegions, srcSubresource.aspectMask must be a single valid
+    *    multi-planar aspect mask bit"
+    */
+   if (src_ycbcr_info &&
+       !valid_multiplane_aspect_mask(region->srcSubresource.aspectMask))
+      return false;
+
+   /*    VUID-vkCmdCopyImage-dstImage-08714
+    *
+    *    "If dstImage has a multi-planar image format, then for each element
+    *    of pRegions, dstSubresource.aspectMask must be a single valid
+    *    multi-planar aspect mask bit"
+    */
+   if (dst_ycbcr_info &&
+       !valid_multiplane_aspect_mask(region->dstSubresource.aspectMask))
+      return false;
+
+   /*    VUID-vkCmdCopyImage-srcImage-01556
+    *
+    *    "If srcImage has a multi-planar image format and the dstImage does
+    *    not have a multi-planar image format, then for each element of
+    *    pRegions, dstSubresource.aspectMask must be VK_IMAGE_ASPECT_COLOR_BIT"
+    */
+   if (src_ycbcr_info && !dst_ycbcr_info &&
+       region->dstSubresource.aspectMask != VK_IMAGE_ASPECT_COLOR_BIT)
+      return false;
+
+   /*    VUID-vkCmdCopyImage-dstImage-01557
+    *
+    *    "If dstImage has a multi-planar image format and the srcImage does
+    *    not have a multi-planar image format, then for each element of
+    *    pRegions, srcSubresource.aspectMask must be VK_IMAGE_ASPECT_COLOR_BIT"
+    */
+   if (!src_ycbcr_info && dst_ycbcr_info &&
+       region->srcSubresource.aspectMask != VK_IMAGE_ASPECT_COLOR_BIT)
+      return false;
+
+   return true;
+}
+
 static void
 copy_image_region_gfx(struct vk_command_buffer *cmd,
                       struct vk_meta_device *meta, struct vk_image *src_img,
@@ -2016,8 +2151,7 @@ copy_image_region_gfx(struct vk_command_buffer *cmd,
          ? VK_IMAGE_VIEW_TYPE_1D_ARRAY
          : (VkImageViewType)-1;
 
-   assert(region->srcSubresource.aspectMask ==
-          region->dstSubresource.aspectMask);
+   assert(aspect_masks_valid(src_img, dst_img, region));
 
    struct vk_meta_copy_image_key key = {
       .key_type = VK_META_OBJECT_KEY_COPY_IMAGE_GFX,
@@ -2076,8 +2210,7 @@ copy_image_region_compute(struct vk_command_buffer *cmd,
    const struct vk_device_dispatch_table *disp = &dev->dispatch_table;
    VkImageViewType dst_view_type = vk_image_storage_view_type(dst_img);
 
-   assert(region->srcSubresource.aspectMask ==
-          region->dstSubresource.aspectMask);
+   assert(aspect_masks_valid(src_img, dst_img, region));
 
    struct vk_meta_copy_image_key key = {
       .key_type = VK_META_OBJECT_KEY_COPY_IMAGE_CS,
