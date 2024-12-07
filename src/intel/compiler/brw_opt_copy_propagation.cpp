@@ -268,7 +268,7 @@ class fs_copy_prop_dataflow
 {
 public:
    fs_copy_prop_dataflow(linear_ctx *lin_ctx, cfg_t *cfg,
-                         const fs_live_variables &live,
+                         const brw_live_variables &live,
                          struct acp *out_acp);
 
    void setup_initial_values();
@@ -277,7 +277,7 @@ public:
    void dump_block_data() const UNUSED;
 
    cfg_t *cfg;
-   const fs_live_variables &live;
+   const brw_live_variables &live;
 
    acp_entry **acp;
    int num_acp;
@@ -288,7 +288,7 @@ public:
 } /* anonymous namespace */
 
 fs_copy_prop_dataflow::fs_copy_prop_dataflow(linear_ctx *lin_ctx, cfg_t *cfg,
-                                             const fs_live_variables &live,
+                                             const brw_live_variables &live,
                                              struct acp *out_acp)
    : cfg(cfg), live(live)
 {
@@ -1424,7 +1424,7 @@ brw_opt_copy_propagation(fs_visitor &s)
    linear_ctx *lin_ctx = linear_context(copy_prop_ctx);
    struct acp *out_acp = new (lin_ctx) acp[s.cfg->num_blocks];
 
-   const fs_live_variables &live = s.live_analysis.require();
+   const brw_live_variables &live = s.live_analysis.require();
 
    /* First, walk through each block doing local copy propagation and getting
     * the set of copies available at the end of the block.
@@ -1812,7 +1812,7 @@ find_value_for_offset(brw_inst *def, const brw_reg &src, unsigned src_size)
 bool
 brw_opt_copy_propagation_defs(fs_visitor &s)
 {
-   const brw::def_analysis &defs = s.def_analysis.require();
+   const brw_def_analysis &defs = s.def_analysis.require();
    unsigned *uses_deleted = new unsigned[defs.count()]();
    bool progress = false;
 

@@ -313,7 +313,7 @@ private:
    fs_visitor *fs;
    const intel_device_info *devinfo;
    const brw_compiler *compiler;
-   const fs_live_variables &live;
+   const brw_live_variables &live;
    int live_instr_count;
 
    set *spill_insts;

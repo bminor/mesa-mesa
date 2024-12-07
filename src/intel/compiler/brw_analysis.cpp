@@ -17,7 +17,7 @@ using namespace brw;
  * (less than 1000 nodes) that this algorithm is significantly faster than
  * others like Lengauer-Tarjan.
  */
-idom_tree::idom_tree(const fs_visitor *s) :
+brw_idom_tree::brw_idom_tree(const fs_visitor *s) :
    num_parents(s->cfg->num_blocks),
    parents(new bblock_t *[num_parents]())
 {
@@ -48,13 +48,13 @@ idom_tree::idom_tree(const fs_visitor *s) :
    } while (changed);
 }
 
-idom_tree::~idom_tree()
+brw_idom_tree::~brw_idom_tree()
 {
    delete[] parents;
 }
 
 bblock_t *
-idom_tree::intersect(bblock_t *b1, bblock_t *b2) const
+brw_idom_tree::intersect(bblock_t *b1, bblock_t *b2) const
 {
    /* Note, the comparisons here are the opposite of what the paper says
     * because we index blocks from beginning -> end (i.e. reverse post-order)
@@ -71,7 +71,7 @@ idom_tree::intersect(bblock_t *b1, bblock_t *b2) const
 }
 
 void
-idom_tree::dump(FILE *file) const
+brw_idom_tree::dump(FILE *file) const
 {
    fprintf(file, "digraph DominanceTree {\n");
    for (unsigned i = 0; i < num_parents; i++)
@@ -79,9 +79,9 @@ idom_tree::dump(FILE *file) const
    fprintf(file, "}\n");
 }
 
-register_pressure::register_pressure(const fs_visitor *v)
+brw_register_pressure::brw_register_pressure(const fs_visitor *v)
 {
-   const fs_live_variables &live = v->live_analysis.require();
+   const brw_live_variables &live = v->live_analysis.require();
    const unsigned num_instructions = v->cfg->num_blocks ?
       v->cfg->blocks[v->cfg->num_blocks - 1]->end_ip + 1 : 0;
 
@@ -105,7 +105,7 @@ register_pressure::register_pressure(const fs_visitor *v)
    delete[] payload_last_use_ip;
 }
 
-register_pressure::~register_pressure()
+brw_register_pressure::~brw_register_pressure()
 {
    delete[] regs_live_at_ip;
 }

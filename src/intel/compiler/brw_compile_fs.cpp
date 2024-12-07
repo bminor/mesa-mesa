@@ -1609,7 +1609,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
          prog_data->base.grf_used = MAX2(prog_data->base.grf_used,
                                          v8->grf_used);
 
-         const performance &perf = v8->performance_analysis.require();
+         const brw_performance &perf = v8->performance_analysis.require();
          throughput = MAX2(throughput, perf.throughput);
          has_spilled = v8->spilled_any_registers;
          allow_spilling = false;
@@ -1765,7 +1765,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
             prog_data->base.grf_used = MAX2(prog_data->base.grf_used,
                                             v16->grf_used);
 
-            const performance &perf = v16->performance_analysis.require();
+            const brw_performance &perf = v16->performance_analysis.require();
             throughput = MAX2(throughput, perf.throughput);
             has_spilled = v16->spilled_any_registers;
             allow_spilling = false;
@@ -1795,7 +1795,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
                                 "SIMD32 shader failed to compile: %s\n",
                                 v32->fail_msg);
          } else {
-            const performance &perf = v32->performance_analysis.require();
+            const brw_performance &perf = v32->performance_analysis.require();
 
             if (!INTEL_DEBUG(DEBUG_DO32) && throughput >= perf.throughput) {
                brw_shader_perf_log(compiler, params->base.log_data,

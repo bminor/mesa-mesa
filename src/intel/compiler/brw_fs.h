@@ -232,11 +232,11 @@ public:
 
    struct brw_stage_prog_data *prog_data;
 
-   brw_analysis<brw::fs_live_variables, fs_visitor> live_analysis;
-   brw_analysis<brw::register_pressure, fs_visitor> regpressure_analysis;
-   brw_analysis<brw::performance, fs_visitor> performance_analysis;
-   brw_analysis<brw::idom_tree, fs_visitor> idom_analysis;
-   brw_analysis<brw::def_analysis, fs_visitor> def_analysis;
+   brw_analysis<brw_live_variables, fs_visitor> live_analysis;
+   brw_analysis<brw_register_pressure, fs_visitor> regpressure_analysis;
+   brw_analysis<brw_performance, fs_visitor> performance_analysis;
+   brw_analysis<brw_idom_tree, fs_visitor> idom_analysis;
+   brw_analysis<brw_def_analysis, fs_visitor> def_analysis;
 
    /** Number of uniform variable components visited. */
    unsigned uniforms;
@@ -348,7 +348,7 @@ void brw_print_instructions(const fs_visitor &s, FILE *file = stderr);
 
 void brw_print_instruction(const fs_visitor &s, const brw_inst *inst,
                            FILE *file = stderr,
-                           const brw::def_analysis *defs = nullptr);
+                           const brw_def_analysis *defs = nullptr);
 
 void brw_print_swsb(FILE *f, const struct intel_device_info *devinfo, const tgl_swsb swsb);
 

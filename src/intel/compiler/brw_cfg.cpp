@@ -617,7 +617,7 @@ sort_links(util_dynarray *scratch, exec_list *list)
 void
 cfg_t::dump(FILE *file)
 {
-   const idom_tree *idom = (s ? &s->idom_analysis.require() : NULL);
+   const brw_idom_tree *idom = (s ? &s->idom_analysis.require() : NULL);
 
    /* Temporary storage to sort the lists of blocks.  This normalizes the
     * output, making it possible to use it for certain tests.

@@ -20,7 +20,7 @@ public:
    void enable_debug(const char *shader_name);
    int generate_code(const cfg_t *cfg, int dispatch_width,
                      struct brw_shader_stats shader_stats,
-                     const brw::performance &perf,
+                     const brw_performance &perf,
                      struct brw_compile_stats *stats,
                      unsigned max_polygons = 0);
    void add_const_data(void *data, unsigned size);

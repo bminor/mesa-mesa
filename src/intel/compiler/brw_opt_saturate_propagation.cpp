@@ -104,7 +104,7 @@ opt_saturate_propagation_local(fs_visitor &s, bblock_t *block)
           inst->src[0].abs)
          continue;
 
-      const brw::def_analysis &defs = s.def_analysis.require();
+      const brw_def_analysis &defs = s.def_analysis.require();
       brw_inst *def = defs.get(inst->src[0]);
 
       if (def != NULL) {
@@ -135,7 +135,7 @@ opt_saturate_propagation_local(fs_visitor &s, bblock_t *block)
             continue;
       }
 
-      const fs_live_variables &live = s.live_analysis.require();
+      const brw_live_variables &live = s.live_analysis.require();
       int src_var = live.var_from_reg(inst->src[0]);
       int src_end_ip = live.end[src_var];
 

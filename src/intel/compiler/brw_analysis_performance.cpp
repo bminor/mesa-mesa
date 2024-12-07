@@ -25,8 +25,6 @@
 #include "brw_fs.h"
 #include "brw_cfg.h"
 
-using namespace brw;
-
 namespace {
    /**
     * Enumeration representing the various asynchronous units that can run
@@ -998,7 +996,7 @@ namespace {
     * Estimate the performance of the specified shader.
     */
    void
-   calculate_performance(performance &p, const fs_visitor *s,
+   calculate_performance(brw_performance &p, const fs_visitor *s,
                          unsigned dispatch_width)
    {
       /* XXX - Note that the previous version of this code used worst-case
@@ -1064,13 +1062,13 @@ namespace {
    }
 }
 
-brw::performance::performance(const fs_visitor *v) :
+brw_performance::brw_performance(const fs_visitor *v) :
    block_latency(new unsigned[v->cfg->num_blocks])
 {
    calculate_performance(*this, v, v->dispatch_width);
 }
 
-brw::performance::~performance()
+brw_performance::~brw_performance()
 {
    delete[] block_latency;
 }

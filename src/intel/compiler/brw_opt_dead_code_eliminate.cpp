@@ -103,7 +103,7 @@ brw_opt_dead_code_eliminate(fs_visitor &s)
 
    bool progress = false;
 
-   const fs_live_variables &live_vars = s.live_analysis.require();
+   const brw_live_variables &live_vars = s.live_analysis.require();
    int num_vars = live_vars.num_vars;
    BITSET_WORD *live = rzalloc_array(NULL, BITSET_WORD, BITSET_WORDS(num_vars));
    BITSET_WORD *flag_live = rzalloc_array(NULL, BITSET_WORD, 1);

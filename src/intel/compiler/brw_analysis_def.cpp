@@ -35,21 +35,19 @@
  * Def analysis requires the dominator tree, but not liveness information.
  */
 
-using namespace brw;
-
 static brw_inst *const UNSEEN = (brw_inst *) (uintptr_t) 1;
 
 void
-def_analysis::mark_invalid(int nr)
+brw_def_analysis::mark_invalid(int nr)
 {
    def_blocks[nr] = NULL;
    def_insts[nr] = NULL;
 }
 
 void
-def_analysis::update_for_reads(const idom_tree &idom,
-                               bblock_t *block,
-                               brw_inst *inst)
+brw_def_analysis::update_for_reads(const brw_idom_tree &idom,
+                                   bblock_t *block,
+                                   brw_inst *inst)
 {
    /* We don't track accumulator use for def analysis, so if an instruction
     * implicitly reads the accumulator, we don't consider it to produce a def.
@@ -96,16 +94,16 @@ def_analysis::update_for_reads(const idom_tree &idom,
 }
 
 bool
-def_analysis::fully_defines(const fs_visitor *v, brw_inst *inst)
+brw_def_analysis::fully_defines(const fs_visitor *v, brw_inst *inst)
 {
    return v->alloc.sizes[inst->dst.nr] * REG_SIZE == inst->size_written &&
           !inst->is_partial_write();
 }
 
 void
-def_analysis::update_for_write(const fs_visitor *v,
-                               bblock_t *block,
-                               brw_inst *inst)
+brw_def_analysis::update_for_write(const fs_visitor *v,
+                                   bblock_t *block,
+                                   brw_inst *inst)
 {
    const int nr = inst->dst.nr;
 
@@ -126,9 +124,9 @@ def_analysis::update_for_write(const fs_visitor *v,
    }
 }
 
-def_analysis::def_analysis(const fs_visitor *v)
+brw_def_analysis::brw_def_analysis(const fs_visitor *v)
 {
-   const idom_tree &idom = v->idom_analysis.require();
+   const brw_idom_tree &idom = v->idom_analysis.require();
 
    def_count = v->alloc.count;
 
@@ -176,7 +174,7 @@ def_analysis::def_analysis(const fs_visitor *v)
    } while (iterate);
 }
 
-def_analysis::~def_analysis()
+brw_def_analysis::~brw_def_analysis()
 {
    delete[] def_insts;
    delete[] def_blocks;
@@ -184,7 +182,7 @@ def_analysis::~def_analysis()
 }
 
 bool
-def_analysis::validate(const fs_visitor *v) const
+brw_def_analysis::validate(const fs_visitor *v) const
 {
    for (unsigned i = 0; i < def_count; i++) {
       assert(!def_insts[i] == !def_blocks[i]);
@@ -194,7 +192,7 @@ def_analysis::validate(const fs_visitor *v) const
 }
 
 unsigned
-def_analysis::ssa_count() const
+brw_def_analysis::ssa_count() const
 {
    unsigned defs = 0;
 
@@ -207,7 +205,7 @@ def_analysis::ssa_count() const
 }
 
 void
-def_analysis::print_stats(const fs_visitor *v) const
+brw_def_analysis::print_stats(const fs_visitor *v) const
 {
    const unsigned defs = ssa_count();
 

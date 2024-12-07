@@ -169,7 +169,7 @@ brw_workaround_nomask_control_flow(fs_visitor &s)
    unsigned depth = 0;
    bool progress = false;
 
-   const fs_live_variables &live_vars = s.live_analysis.require();
+   const brw_live_variables &live_vars = s.live_analysis.require();
 
    /* Scan the program backwards in order to be able to easily determine
     * whether the flag register is live at any point.

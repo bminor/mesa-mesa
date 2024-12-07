@@ -25,13 +25,13 @@ dest_comps_for_txf(const fs_visitor &s, const brw_inst *txf)
 }
 
 static bool
-is_def(const def_analysis &defs, const brw_reg &r)
+is_def(const brw_def_analysis &defs, const brw_reg &r)
 {
    return r.file == IMM || r.file == BAD_FILE || defs.get(r) != NULL;
 }
 
 static bool
-is_uniform_def(const def_analysis &defs, const brw_reg &r)
+is_uniform_def(const brw_def_analysis &defs, const brw_reg &r)
 {
    return is_def(defs, r) && is_uniform(r);
 }
@@ -42,7 +42,7 @@ is_uniform_def(const def_analysis &defs, const brw_reg &r)
  * with matching source modifiers and regions).
  */
 static bool
-sources_match(ASSERTED const def_analysis &defs,
+sources_match(ASSERTED const brw_def_analysis &defs,
               const brw_inst *a, const brw_inst *b, enum tex_logical_srcs src)
 {
    assert(is_def(defs, a->src[src]));
@@ -82,7 +82,7 @@ sources_match(ASSERTED const def_analysis &defs,
 bool
 brw_opt_combine_convergent_txf(fs_visitor &s)
 {
-   const def_analysis &defs = s.def_analysis.require();
+   const brw_def_analysis &defs = s.def_analysis.require();
 
    const unsigned min_simd = 8 * reg_unit(s.devinfo);
    const unsigned max_simd = 16 * reg_unit(s.devinfo);

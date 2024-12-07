@@ -28,8 +28,6 @@
 #include "brw_fs.h"
 #include "brw_analysis.h"
 
-using namespace brw;
-
 #define MAX_INSTRUCTION (1 << 30)
 
 /** @file
@@ -53,8 +51,8 @@ using namespace brw;
  */
 
 void
-fs_live_variables::setup_one_read(struct block_data *bd,
-                                  int ip, const brw_reg &reg)
+brw_live_variables::setup_one_read(struct block_data *bd,
+                                   int ip, const brw_reg &reg)
 {
    int var = var_from_reg(reg);
    assert(var < num_vars);
@@ -71,8 +69,8 @@ fs_live_variables::setup_one_read(struct block_data *bd,
 }
 
 void
-fs_live_variables::setup_one_write(struct block_data *bd, brw_inst *inst,
-                                   int ip, const brw_reg &reg)
+brw_live_variables::setup_one_write(struct block_data *bd, brw_inst *inst,
+                                    int ip, const brw_reg &reg)
 {
    int var = var_from_reg(reg);
    assert(var < num_vars);
@@ -101,7 +99,7 @@ fs_live_variables::setup_one_write(struct block_data *bd, brw_inst *inst,
  * These are tracked at the per-component level, rather than whole VGRFs.
  */
 void
-fs_live_variables::setup_def_use()
+brw_live_variables::setup_def_use()
 {
    int ip = 0;
 
@@ -152,7 +150,7 @@ fs_live_variables::setup_def_use()
  * a pass.
  */
 void
-fs_live_variables::compute_live_variables()
+brw_live_variables::compute_live_variables()
 {
    bool cont = true;
 
@@ -228,7 +226,7 @@ fs_live_variables::compute_live_variables()
  * new information calculated from control flow.
  */
 void
-fs_live_variables::compute_start_end()
+brw_live_variables::compute_start_end()
 {
    foreach_block (block, cfg) {
       struct block_data *bd = &block_data[block->num];
@@ -246,7 +244,7 @@ fs_live_variables::compute_start_end()
    }
 }
 
-fs_live_variables::fs_live_variables(const fs_visitor *s)
+brw_live_variables::brw_live_variables(const fs_visitor *s)
    : devinfo(s->devinfo), cfg(s->cfg)
 {
    mem_ctx = ralloc_context(NULL);
@@ -310,13 +308,13 @@ fs_live_variables::fs_live_variables(const fs_visitor *s)
    }
 }
 
-fs_live_variables::~fs_live_variables()
+brw_live_variables::~brw_live_variables()
 {
    ralloc_free(mem_ctx);
 }
 
 static bool
-check_register_live_range(const fs_live_variables *live, int ip,
+check_register_live_range(const brw_live_variables *live, int ip,
                           const brw_reg &reg, unsigned n)
 {
    const unsigned var = live->var_from_reg(reg);
@@ -334,7 +332,7 @@ check_register_live_range(const fs_live_variables *live, int ip,
 }
 
 bool
-fs_live_variables::validate(const fs_visitor *s) const
+brw_live_variables::validate(const fs_visitor *s) const
 {
    int ip = 0;
 
@@ -357,14 +355,14 @@ fs_live_variables::validate(const fs_visitor *s) const
 }
 
 bool
-fs_live_variables::vars_interfere(int a, int b) const
+brw_live_variables::vars_interfere(int a, int b) const
 {
    return !(end[b] <= start[a] ||
             end[a] <= start[b]);
 }
 
 bool
-fs_live_variables::vgrfs_interfere(int a, int b) const
+brw_live_variables::vgrfs_interfere(int a, int b) const
 {
    return !(vgrf_end[a] <= vgrf_start[b] ||
             vgrf_end[b] <= vgrf_start[a]);

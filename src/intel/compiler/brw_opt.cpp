@@ -23,7 +23,7 @@ brw_optimize(fs_visitor &s)
 
    /* Track how much non-SSA at this point. */
    {
-      const brw::def_analysis &defs = s.def_analysis.require();
+      const brw_def_analysis &defs = s.def_analysis.require();
       s.shader_stats.non_ssa_registers_after_nir =
          defs.count() - defs.ssa_count();
    }

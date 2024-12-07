@@ -23,7 +23,7 @@
 using namespace brw;
 
 static bool
-opt_address_reg_load_local(fs_visitor &s, bblock_t *block, const brw::def_analysis &defs)
+opt_address_reg_load_local(fs_visitor &s, bblock_t *block, const brw_def_analysis &defs)
 {
    bool progress = false;
 
@@ -58,7 +58,7 @@ bool
 brw_opt_address_reg_load(fs_visitor &s)
 {
    bool progress = false;
-   const brw::def_analysis &defs = s.def_analysis.require();
+   const brw_def_analysis &defs = s.def_analysis.require();
 
    foreach_block(block, s.cfg) {
       foreach_inst_in_block_safe(brw_inst, inst, block) {

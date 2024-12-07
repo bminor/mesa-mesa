@@ -557,7 +557,7 @@ fs_visitor::debug_optimizer(const nir_shader *nir,
 static uint32_t
 brw_compute_max_register_pressure(fs_visitor &s)
 {
-   const register_pressure &rp = s.regpressure_analysis.require();
+   const brw_register_pressure &rp = s.regpressure_analysis.require();
    uint32_t ip = 0, max_pressure = 0;
    foreach_block_and_inst(block, brw_inst, inst, s.cfg) {
       max_pressure = MAX2(max_pressure, rp.regs_live_at_ip[ip]);

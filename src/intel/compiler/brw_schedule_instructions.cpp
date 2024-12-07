@@ -822,7 +822,7 @@ brw_instruction_scheduler::count_reads_remaining(const brw_inst *inst)
 void
 brw_instruction_scheduler::setup_liveness(cfg_t *cfg)
 {
-   const fs_live_variables &live = s->live_analysis.require();
+   const brw_live_variables &live = s->live_analysis.require();
 
    /* First, compute liveness on a per-GRF level using the in/out sets from
     * liveness calculation.
