@@ -67,7 +67,7 @@ struct brw_compiler {
        * block sizes used, indexed by register size.
        */
       struct ra_class *classes[REG_CLASS_COUNT];
-   } fs_reg_set;
+   } reg_set;
 
    void (*shader_debug_log)(void *, unsigned *id, const char *str, ...) PRINTFLIKE(3, 4);
    void (*shader_perf_log)(void *, unsigned *id, const char *str, ...) PRINTFLIKE(3, 4);
