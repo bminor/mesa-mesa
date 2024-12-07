@@ -220,7 +220,7 @@ fs_visitor::emit_urb_writes(const brw_reg &gs_vertex_count)
          srcs[URB_LOGICAL_SRC_COMPONENTS] = brw_imm_ud(length);
          abld.LOAD_PAYLOAD(srcs[URB_LOGICAL_SRC_DATA], sources, length, 0);
 
-         fs_inst *inst = abld.emit(SHADER_OPCODE_URB_WRITE_LOGICAL, reg_undef,
+         brw_inst *inst = abld.emit(SHADER_OPCODE_URB_WRITE_LOGICAL, reg_undef,
                                    srcs, ARRAY_SIZE(srcs));
 
          /* For Wa_1805992985 one needs additional write in the end. */
@@ -267,7 +267,7 @@ fs_visitor::emit_urb_writes(const brw_reg &gs_vertex_count)
       srcs[URB_LOGICAL_SRC_DATA] = payload;
       srcs[URB_LOGICAL_SRC_COMPONENTS] = brw_imm_ud(1);
 
-      fs_inst *inst = bld.emit(SHADER_OPCODE_URB_WRITE_LOGICAL, reg_undef,
+      brw_inst *inst = bld.emit(SHADER_OPCODE_URB_WRITE_LOGICAL, reg_undef,
                                srcs, ARRAY_SIZE(srcs));
       inst->eot = true;
       inst->offset = 1;
@@ -319,7 +319,7 @@ fs_visitor::emit_urb_writes(const brw_reg &gs_vertex_count)
       srcs[URB_LOGICAL_SRC_DATA] = payload;
       srcs[URB_LOGICAL_SRC_COMPONENTS] = brw_imm_ud(4);
 
-      fs_inst *inst = bld.exec_all().emit(SHADER_OPCODE_URB_WRITE_LOGICAL,
+      brw_inst *inst = bld.exec_all().emit(SHADER_OPCODE_URB_WRITE_LOGICAL,
                                           reg_undef, srcs, ARRAY_SIZE(srcs));
       inst->eot = true;
       inst->offset = 0;
@@ -359,7 +359,7 @@ fs_visitor::emit_cs_terminate()
       brw_reg(),      /* payload2 */
    };
 
-   fs_inst *send = ubld.emit(SHADER_OPCODE_SEND, reg_undef, srcs, 4);
+   brw_inst *send = ubld.emit(SHADER_OPCODE_SEND, reg_undef, srcs, 4);
 
    /* On Alchemist and later, send an EOT message to the message gateway to
     * terminate a compute shader.  For older GPUs, send to the thread spawner.

@@ -36,7 +36,7 @@ namespace {
     *  using raw move."
     */
    bool
-   is_byte_raw_mov(const fs_inst *inst)
+   is_byte_raw_mov(const brw_inst *inst)
    {
       return brw_type_size_bytes(inst->dst.type) == 1 &&
              inst->opcode == BRW_OPCODE_MOV &&
@@ -51,7 +51,7 @@ namespace {
     * instruction affected by a regioning restriction.
     */
    unsigned
-   required_src_byte_stride(const intel_device_info *devinfo, const fs_inst *inst,
+   required_src_byte_stride(const intel_device_info *devinfo, const brw_inst *inst,
                             unsigned i)
    {
       if (has_dst_aligned_region_restriction(devinfo, inst)) {
@@ -78,7 +78,7 @@ namespace {
     * of an instruction affected by a regioning restriction.
     */
    unsigned
-   required_src_byte_offset(const intel_device_info *devinfo, const fs_inst *inst,
+   required_src_byte_offset(const intel_device_info *devinfo, const brw_inst *inst,
                             unsigned i)
    {
       if (has_dst_aligned_region_restriction(devinfo, inst)) {
@@ -145,7 +145,7 @@ namespace {
     * that requires it to have some particular alignment.
     */
    unsigned
-   required_dst_byte_stride(const fs_inst *inst)
+   required_dst_byte_stride(const brw_inst *inst)
    {
       if (inst->dst.is_accumulator()) {
          /* If the destination is an accumulator, insist that we leave the
@@ -201,7 +201,7 @@ namespace {
     * the sources.
     */
    unsigned
-   required_dst_byte_offset(const intel_device_info *devinfo, const fs_inst *inst)
+   required_dst_byte_offset(const intel_device_info *devinfo, const brw_inst *inst)
    {
       for (unsigned i = 0; i < inst->sources; i++) {
          if (!is_uniform(inst->src[i]) && !inst->is_control_source(i))
@@ -218,7 +218,7 @@ namespace {
     * the specified platform.
     */
    brw_reg_type
-   required_exec_type(const intel_device_info *devinfo, const fs_inst *inst)
+   required_exec_type(const intel_device_info *devinfo, const brw_inst *inst)
    {
       const brw_reg_type t = get_exec_type(inst);
       const bool has_64bit = brw_type_is_float(t) ?
@@ -294,7 +294,7 @@ namespace {
     * specified for the i-th source region.
     */
    bool
-   has_invalid_src_region(const intel_device_info *devinfo, const fs_inst *inst,
+   has_invalid_src_region(const intel_device_info *devinfo, const brw_inst *inst,
                           unsigned i)
    {
       /* Wa_22016140776:
@@ -331,7 +331,7 @@ namespace {
     */
    bool
    has_invalid_dst_region(const intel_device_info *devinfo,
-                          const fs_inst *inst)
+                          const brw_inst *inst)
    {
       if (is_send(inst)) {
          return false;
@@ -356,7 +356,7 @@ namespace {
     * source or destination modifiers into separate MOV instructions.
     */
    unsigned
-   has_invalid_exec_type(const intel_device_info *devinfo, const fs_inst *inst)
+   has_invalid_exec_type(const intel_device_info *devinfo, const brw_inst *inst)
    {
       if (required_exec_type(devinfo, inst) != get_exec_type(inst)) {
          switch (inst->opcode) {
@@ -384,7 +384,7 @@ namespace {
     */
    bool
    has_invalid_src_conversion(const intel_device_info *devinfo,
-                              const fs_inst *inst)
+                              const brw_inst *inst)
    {
       /* Scalar byte to float conversion is not allowed on DG2+ */
       return devinfo->verx10 >= 125 &&
@@ -400,7 +400,7 @@ namespace {
     */
    bool
    has_invalid_src_modifiers(const intel_device_info *devinfo,
-                             const fs_inst *inst, unsigned i)
+                             const brw_inst *inst, unsigned i)
    {
       return (!inst->can_do_source_mods(devinfo) &&
               (inst->src[i].negate || inst->src[i].abs)) ||
@@ -415,7 +415,7 @@ namespace {
     * specified for the destination.
     */
    bool
-   has_invalid_conversion(const intel_device_info *devinfo, const fs_inst *inst)
+   has_invalid_conversion(const intel_device_info *devinfo, const brw_inst *inst)
    {
       switch (inst->opcode) {
       case BRW_OPCODE_MOV:
@@ -436,7 +436,7 @@ namespace {
     * Return whether the instruction has unsupported destination modifiers.
     */
    bool
-   has_invalid_dst_modifiers(const intel_device_info *devinfo, const fs_inst *inst)
+   has_invalid_dst_modifiers(const intel_device_info *devinfo, const brw_inst *inst)
    {
       return (has_invalid_exec_type(devinfo, inst) &&
               (inst->saturate || inst->conditional_mod)) ||
@@ -449,7 +449,7 @@ namespace {
     * the comparison result.
     */
    bool
-   has_inconsistent_cmod(const fs_inst *inst)
+   has_inconsistent_cmod(const brw_inst *inst)
    {
       return inst->opcode == BRW_OPCODE_SEL ||
              inst->opcode == BRW_OPCODE_CSEL ||
@@ -458,7 +458,7 @@ namespace {
    }
 
    bool
-   lower_instruction(fs_visitor *v, bblock_t *block, fs_inst *inst);
+   lower_instruction(fs_visitor *v, bblock_t *block, brw_inst *inst);
 }
 
 /**
@@ -468,7 +468,7 @@ namespace {
  * MOV instruction prior to the original instruction.
  */
 bool
-brw_lower_src_modifiers(fs_visitor &s, bblock_t *block, fs_inst *inst, unsigned i)
+brw_lower_src_modifiers(fs_visitor &s, bblock_t *block, brw_inst *inst, unsigned i)
 {
    assert(inst->components_read(i) == 1);
    assert(s.devinfo->has_integer_dword_mul ||
@@ -495,7 +495,7 @@ namespace {
     * instruction.
     */
    bool
-   lower_dst_modifiers(fs_visitor *v, bblock_t *block, fs_inst *inst)
+   lower_dst_modifiers(fs_visitor *v, bblock_t *block, brw_inst *inst)
    {
       const brw_builder ibld(v, block, inst);
       const brw_reg_type type = get_exec_type(inst);
@@ -513,7 +513,7 @@ namespace {
       tmp = horiz_stride(tmp, stride);
 
       /* Emit a MOV taking care of all the destination modifiers. */
-      fs_inst *mov = ibld.at(block, inst->next).MOV(inst->dst, tmp);
+      brw_inst *mov = ibld.at(block, inst->next).MOV(inst->dst, tmp);
       mov->saturate = inst->saturate;
       if (!has_inconsistent_cmod(inst))
          mov->conditional_mod = inst->conditional_mod;
@@ -544,7 +544,7 @@ namespace {
     * copies into a temporary with the same channel layout as the destination.
     */
    bool
-   lower_src_region(fs_visitor *v, bblock_t *block, fs_inst *inst, unsigned i)
+   lower_src_region(fs_visitor *v, bblock_t *block, brw_inst *inst, unsigned i)
    {
       assert(inst->components_read(i) == 1);
       const intel_device_info *devinfo = v->devinfo;
@@ -578,7 +578,7 @@ namespace {
       raw_src.abs = false;
 
       for (unsigned j = 0; j < n; j++) {
-	fs_inst *jnst = ibld.MOV(subscript(tmp, raw_type, j),
+	brw_inst *jnst = ibld.MOV(subscript(tmp, raw_type, j),
 				 subscript(raw_src, raw_type, j));
 	if (has_subdword_integer_region_restriction(devinfo, jnst)) {
            /* The copy isn't guaranteed to comply with all subdword integer
@@ -606,7 +606,7 @@ namespace {
     * sources.
     */
    bool
-   lower_dst_region(fs_visitor *v, bblock_t *block, fs_inst *inst)
+   lower_dst_region(fs_visitor *v, bblock_t *block, brw_inst *inst)
    {
       /* We cannot replace the result of an integer multiply which writes the
        * accumulator because MUL+MACH pairs act on the accumulator as a 66-bit
@@ -647,7 +647,7 @@ namespace {
          }
 
          for (unsigned j = 0; j < n; j++) {
-            fs_inst *jnst = ibld.at(block, inst->next).MOV(subscript(inst->dst, raw_type, j),
+            brw_inst *jnst = ibld.at(block, inst->next).MOV(subscript(inst->dst, raw_type, j),
                                                            subscript(tmp, raw_type, j));
             if (has_subdword_integer_region_restriction(v->devinfo, jnst)) {
                /* The copy isn't guaranteed to comply with all subdword integer
@@ -681,7 +681,7 @@ namespace {
     * where the execution type of an instruction is unsupported.
     */
    bool
-   lower_exec_type(fs_visitor *v, bblock_t *block, fs_inst *inst)
+   lower_exec_type(fs_visitor *v, bblock_t *block, brw_inst *inst)
    {
       assert(inst->dst.type == get_exec_type(inst));
       const unsigned mask = has_invalid_exec_type(v->devinfo, inst);
@@ -694,7 +694,7 @@ namespace {
       tmp = horiz_stride(tmp, inst->dst.stride);
 
       for (unsigned j = 0; j < n; j++) {
-         fs_inst sub_inst = *inst;
+         brw_inst sub_inst = *inst;
 
          for (unsigned i = 0; i < inst->sources; i++) {
             if (mask & (1u << i)) {
@@ -709,7 +709,7 @@ namespace {
          assert(!sub_inst.flags_written(v->devinfo) && !sub_inst.saturate);
          ibld.emit(sub_inst);
 
-         fs_inst *mov = ibld.MOV(subscript(inst->dst, raw_type, j),
+         brw_inst *mov = ibld.MOV(subscript(inst->dst, raw_type, j),
                                  subscript(tmp, raw_type, j));
          if (inst->opcode != BRW_OPCODE_SEL) {
             mov->predicate = inst->predicate;
@@ -731,7 +731,7 @@ namespace {
     * the general lowering in lower_src_modifiers or lower_src_region.
     */
    void
-   lower_src_conversion(fs_visitor *v, bblock_t *block, fs_inst *inst)
+   lower_src_conversion(fs_visitor *v, bblock_t *block, brw_inst *inst)
    {
       const intel_device_info *devinfo = v->devinfo;
       const brw_builder ibld = brw_builder(v, block, inst).scalar_group();
@@ -740,7 +740,7 @@ namespace {
       assert(is_uniform(inst->src[0]));
 
       brw_reg tmp = ibld.vgrf(brw_type_with_size(inst->src[0].type, 32));
-      fs_inst *mov = ibld.MOV(tmp, inst->src[0]);
+      brw_inst *mov = ibld.MOV(tmp, inst->src[0]);
 
       inst->src[0] = component(tmp, 0);
 
@@ -760,7 +760,7 @@ namespace {
     * instruction.
     */
    bool
-   lower_instruction(fs_visitor *v, bblock_t *block, fs_inst *inst)
+   lower_instruction(fs_visitor *v, bblock_t *block, brw_inst *inst)
    {
       const intel_device_info *devinfo = v->devinfo;
       bool progress = false;
@@ -805,7 +805,7 @@ brw_lower_regioning(fs_visitor &s)
 {
    bool progress = false;
 
-   foreach_block_and_inst_safe(block, fs_inst, inst, s.cfg)
+   foreach_block_and_inst_safe(block, brw_inst, inst, s.cfg)
       progress |= lower_instruction(&s, block, inst);
 
    if (progress)

@@ -29,7 +29,7 @@
  * Usage:
  *
  *    const def_analysis &defs = s.def_analysis.require();
- *    fs_inst *def = defs.get(inst->src[i]); // returns NULL if non-SSA
+ *    brw_inst *def = defs.get(inst->src[i]); // returns NULL if non-SSA
  *    bblock_t *block = defs.get_block(inst->src[i]); // block containing def
  *
  * Def analysis requires the dominator tree, but not liveness information.
@@ -37,7 +37,7 @@
 
 using namespace brw;
 
-static fs_inst *const UNSEEN = (fs_inst *) (uintptr_t) 1;
+static brw_inst *const UNSEEN = (brw_inst *) (uintptr_t) 1;
 
 void
 def_analysis::mark_invalid(int nr)
@@ -49,7 +49,7 @@ def_analysis::mark_invalid(int nr)
 void
 def_analysis::update_for_reads(const idom_tree &idom,
                                bblock_t *block,
-                               fs_inst *inst)
+                               brw_inst *inst)
 {
    /* We don't track accumulator use for def analysis, so if an instruction
     * implicitly reads the accumulator, we don't consider it to produce a def.
@@ -96,7 +96,7 @@ def_analysis::update_for_reads(const idom_tree &idom,
 }
 
 bool
-def_analysis::fully_defines(const fs_visitor *v, fs_inst *inst)
+def_analysis::fully_defines(const fs_visitor *v, brw_inst *inst)
 {
    return v->alloc.sizes[inst->dst.nr] * REG_SIZE == inst->size_written &&
           !inst->is_partial_write();
@@ -105,7 +105,7 @@ def_analysis::fully_defines(const fs_visitor *v, fs_inst *inst)
 void
 def_analysis::update_for_write(const fs_visitor *v,
                                bblock_t *block,
-                               fs_inst *inst)
+                               brw_inst *inst)
 {
    const int nr = inst->dst.nr;
 
@@ -132,14 +132,14 @@ def_analysis::def_analysis(const fs_visitor *v)
 
    def_count = v->alloc.count;
 
-   def_insts      = new fs_inst*[def_count]();
+   def_insts      = new brw_inst*[def_count]();
    def_blocks     = new bblock_t*[def_count]();
    def_use_counts = new uint32_t[def_count]();
 
    for (unsigned i = 0; i < def_count; i++)
       def_insts[i] = UNSEEN;
 
-   foreach_block_and_inst(block, fs_inst, inst, v->cfg) {
+   foreach_block_and_inst(block, brw_inst, inst, v->cfg) {
       if (inst->opcode != SHADER_OPCODE_UNDEF) {
          update_for_reads(idom, block, inst);
          update_for_write(v, block, inst);
@@ -155,7 +155,7 @@ def_analysis::def_analysis(const fs_visitor *v)
          if (def_insts[d] == UNSEEN)
             def_insts[d] = NULL;
 
-         fs_inst *def = def_insts[d];
+         brw_inst *def = def_insts[d];
          if (!def)
             continue;
 

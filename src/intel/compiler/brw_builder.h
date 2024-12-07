@@ -58,7 +58,7 @@ public:
     * execution controls and debug annotation are initialized from the
     * instruction passed as argument.
     */
-   brw_builder(fs_visitor *shader, bblock_t *block, fs_inst *inst) :
+   brw_builder(fs_visitor *shader, bblock_t *block, brw_inst *inst) :
       shader(shader), block(block), cursor(inst),
       _dispatch_width(inst->exec_size),
       _group(inst->group),
@@ -255,54 +255,54 @@ public:
    /**
     * Insert an instruction into the program.
     */
-   fs_inst *
-   emit(const fs_inst &inst) const
+   brw_inst *
+   emit(const brw_inst &inst) const
    {
-      return emit(new(shader->mem_ctx) fs_inst(inst));
+      return emit(new(shader->mem_ctx) brw_inst(inst));
    }
 
    /**
     * Create and insert a nullary control instruction into the program.
     */
-   fs_inst *
+   brw_inst *
    emit(enum opcode opcode) const
    {
-      return emit(fs_inst(opcode, dispatch_width()));
+      return emit(brw_inst(opcode, dispatch_width()));
    }
 
    /**
     * Create and insert a nullary instruction into the program.
     */
-   fs_inst *
+   brw_inst *
    emit(enum opcode opcode, const brw_reg &dst) const
    {
-      return emit(fs_inst(opcode, dispatch_width(), dst));
+      return emit(brw_inst(opcode, dispatch_width(), dst));
    }
 
    /**
     * Create and insert a unary instruction into the program.
     */
-   fs_inst *
+   brw_inst *
    emit(enum opcode opcode, const brw_reg &dst, const brw_reg &src0) const
    {
-      return emit(fs_inst(opcode, dispatch_width(), dst, src0));
+      return emit(brw_inst(opcode, dispatch_width(), dst, src0));
    }
 
    /**
     * Create and insert a binary instruction into the program.
     */
-   fs_inst *
+   brw_inst *
    emit(enum opcode opcode, const brw_reg &dst, const brw_reg &src0,
         const brw_reg &src1) const
    {
-      return emit(fs_inst(opcode, dispatch_width(), dst,
+      return emit(brw_inst(opcode, dispatch_width(), dst,
                               src0, src1));
    }
 
    /**
     * Create and insert a ternary instruction into the program.
     */
-   fs_inst *
+   brw_inst *
    emit(enum opcode opcode, const brw_reg &dst, const brw_reg &src0,
         const brw_reg &src1, const brw_reg &src2) const
    {
@@ -311,13 +311,13 @@ public:
       case BRW_OPCODE_BFI2:
       case BRW_OPCODE_MAD:
       case BRW_OPCODE_LRP:
-         return emit(fs_inst(opcode, dispatch_width(), dst,
+         return emit(brw_inst(opcode, dispatch_width(), dst,
                                  fix_3src_operand(src0),
                                  fix_3src_operand(src1),
                                  fix_3src_operand(src2)));
 
       default:
-         return emit(fs_inst(opcode, dispatch_width(), dst,
+         return emit(brw_inst(opcode, dispatch_width(), dst,
                                  src0, src1, src2));
       }
    }
@@ -326,7 +326,7 @@ public:
     * Create and insert an instruction with a variable number of sources
     * into the program.
     */
-   fs_inst *
+   brw_inst *
    emit(enum opcode opcode, const brw_reg &dst, const brw_reg srcs[],
         unsigned n) const
    {
@@ -336,15 +336,15 @@ public:
       if (n == 3) {
          return emit(opcode, dst, srcs[0], srcs[1], srcs[2]);
       } else {
-         return emit(fs_inst(opcode, dispatch_width(), dst, srcs, n));
+         return emit(brw_inst(opcode, dispatch_width(), dst, srcs, n));
       }
    }
 
    /**
     * Insert a preallocated instruction into the program.
     */
-   fs_inst *
-   emit(fs_inst *inst) const
+   brw_inst *
+   emit(brw_inst *inst) const
    {
       assert(inst->exec_size <= 32);
       assert(inst->exec_size == dispatch_width() ||
@@ -357,7 +357,7 @@ public:
 #endif
 
       if (block)
-         static_cast<fs_inst *>(cursor)->insert_before(block, inst);
+         static_cast<brw_inst *>(cursor)->insert_before(block, inst);
       else
          cursor->insert_before(inst);
 
@@ -370,7 +370,7 @@ public:
     *
     * Generally useful to get the minimum or maximum of two values.
     */
-   fs_inst *
+   brw_inst *
    emit_minmax(const brw_reg &dst, const brw_reg &src0,
                const brw_reg &src1, brw_conditional_mod mod) const
    {
@@ -428,11 +428,11 @@ public:
       return brw_reg(dst);
    }
 
-   fs_inst *
-   emit_undef_for_dst(const fs_inst *old_inst) const
+   brw_inst *
+   emit_undef_for_dst(const brw_inst *old_inst) const
    {
       assert(old_inst->dst.file == VGRF);
-      fs_inst *inst = emit(SHADER_OPCODE_UNDEF,
+      brw_inst *inst = emit(SHADER_OPCODE_UNDEF,
                                retype(old_inst->dst, BRW_TYPE_UD));
       inst->size_written = old_inst->size_written;
 
@@ -444,7 +444,7 @@ public:
     * @{
     */
 #define _ALU1(prefix, op)                                \
-   fs_inst *                                          \
+   brw_inst *                                          \
    op(const brw_reg &dst, const brw_reg &src0) const    \
    {                                                  \
       assert(_dispatch_width == 1 ||                  \
@@ -453,38 +453,38 @@ public:
       return emit(prefix##op, dst, src0);             \
    }                                                  \
    brw_reg                                             \
-   op(const brw_reg &src0, fs_inst **out = NULL) const \
+   op(const brw_reg &src0, brw_inst **out = NULL) const \
    {                                                  \
-      fs_inst *inst = op(vgrf(src0.type), src0);      \
+      brw_inst *inst = op(vgrf(src0.type), src0);      \
       if (out) *out = inst;                           \
       return inst->dst;                               \
    }
 #define ALU1(op) _ALU1(BRW_OPCODE_, op)
 #define VIRT1(op) _ALU1(SHADER_OPCODE_, op)
 
-   fs_inst *
+   brw_inst *
    alu2(opcode op, const brw_reg &dst, const brw_reg &src0, const brw_reg &src1) const
    {
       return emit(op, dst, src0, src1);
    }
    brw_reg
-   alu2(opcode op, const brw_reg &src0, const brw_reg &src1, fs_inst **out = NULL) const
+   alu2(opcode op, const brw_reg &src0, const brw_reg &src1, brw_inst **out = NULL) const
    {
       enum brw_reg_type inferred_dst_type =
          brw_type_larger_of(src0.type, src1.type);
-      fs_inst *inst = alu2(op, vgrf(inferred_dst_type), src0, src1);
+      brw_inst *inst = alu2(op, vgrf(inferred_dst_type), src0, src1);
       if (out) *out = inst;
       return inst->dst;
    }
 
 #define _ALU2(prefix, op)                                                    \
-   fs_inst *                                                              \
+   brw_inst *                                                              \
    op(const brw_reg &dst, const brw_reg &src0, const brw_reg &src1) const    \
    {                                                                      \
       return alu2(prefix##op, dst, src0, src1);                           \
    }                                                                      \
    brw_reg                                                                 \
-   op(const brw_reg &src0, const brw_reg &src1, fs_inst **out = NULL) const \
+   op(const brw_reg &src0, const brw_reg &src1, brw_inst **out = NULL) const \
    {                                                                      \
       return alu2(prefix##op, src0, src1, out);                           \
    }
@@ -492,16 +492,16 @@ public:
 #define VIRT2(op) _ALU2(SHADER_OPCODE_, op)
 
 #define ALU2_ACC(op)                                                    \
-   fs_inst *                                                     \
+   brw_inst *                                                     \
    op(const brw_reg &dst, const brw_reg &src0, const brw_reg &src1) const \
    {                                                                 \
-      fs_inst *inst = emit(BRW_OPCODE_##op, dst, src0, src1);    \
+      brw_inst *inst = emit(BRW_OPCODE_##op, dst, src0, src1);    \
       inst->writes_accumulator = true;                               \
       return inst;                                                   \
    }
 
 #define ALU3(op)                                                        \
-   fs_inst *                                                     \
+   brw_inst *                                                     \
    op(const brw_reg &dst, const brw_reg &src0, const brw_reg &src1,  \
       const brw_reg &src2) const                                     \
    {                                                                 \
@@ -509,12 +509,12 @@ public:
    }                                                                 \
    brw_reg                                                           \
    op(const brw_reg &src0, const brw_reg &src1, const brw_reg &src2, \
-      fs_inst **out = NULL) const                                    \
+      brw_inst **out = NULL) const                                    \
    {                                                                 \
       enum brw_reg_type inferred_dst_type =                          \
          brw_type_larger_of(brw_type_larger_of(src0.type, src1.type),\
                             src2.type);                              \
-      fs_inst *inst = op(vgrf(inferred_dst_type), src0, src1, src2); \
+      brw_inst *inst = op(vgrf(inferred_dst_type), src0, src1, src2); \
       if (out) *out = inst;                                          \
       return inst->dst;                                              \
    }
@@ -580,14 +580,14 @@ public:
 #undef _ALU1
    /** @} */
 
-   fs_inst *
+   brw_inst *
    ADD(const brw_reg &dst, const brw_reg &src0, const brw_reg &src1) const
    {
       return alu2(BRW_OPCODE_ADD, dst, src0, src1);
    }
 
    brw_reg
-   ADD(const brw_reg &src0, const brw_reg &src1, fs_inst **out = NULL) const
+   ADD(const brw_reg &src0, const brw_reg &src1, brw_inst **out = NULL) const
    {
       if (src1.file == IMM && src1.ud == 0 && !out)
          return src0;
@@ -600,7 +600,7 @@ public:
     * of the comparison, while the upper bits are undefined, and updates
     * the flag register with the packed 16 bits of the result.
     */
-   fs_inst *
+   brw_inst *
    CMP(const brw_reg &dst, const brw_reg &src0, const brw_reg &src1,
        brw_conditional_mod condition) const
    {
@@ -626,7 +626,7 @@ public:
    /**
     * CMPN: Behaves like CMP, but produces true if src1 is NaN.
     */
-   fs_inst *
+   brw_inst *
    CMPN(const brw_reg &dst, const brw_reg &src0, const brw_reg &src1,
         brw_conditional_mod condition) const
    {
@@ -652,7 +652,7 @@ public:
    /**
     * Gfx4 predicated IF.
     */
-   fs_inst *
+   brw_inst *
    IF(brw_predicate predicate) const
    {
       return set_predicate(predicate, emit(BRW_OPCODE_IF));
@@ -661,7 +661,7 @@ public:
    /**
     * CSEL: dst = src2 <op> 0.0f ? src0 : src1
     */
-   fs_inst *
+   brw_inst *
    CSEL(const brw_reg &dst, const brw_reg &src0, const brw_reg &src1,
         const brw_reg &src2, brw_conditional_mod condition) const
    {
@@ -676,7 +676,7 @@ public:
    /**
     * Emit a linear interpolation instruction.
     */
-   fs_inst *
+   brw_inst *
    LRP(const brw_reg &dst, const brw_reg &x, const brw_reg &y,
        const brw_reg &a) const
    {
@@ -702,11 +702,11 @@ public:
    /**
     * Collect a number of registers in a contiguous range of registers.
     */
-   fs_inst *
+   brw_inst *
    LOAD_PAYLOAD(const brw_reg &dst, const brw_reg *src,
                 unsigned sources, unsigned header_size) const
    {
-      fs_inst *inst = emit(SHADER_OPCODE_LOAD_PAYLOAD, dst, src, sources);
+      brw_inst *inst = emit(SHADER_OPCODE_LOAD_PAYLOAD, dst, src, sources);
       inst->header_size = header_size;
       inst->size_written = header_size * REG_SIZE;
       for (unsigned i = header_size; i < sources; i++) {
@@ -717,32 +717,32 @@ public:
       return inst;
    }
 
-   fs_inst *
+   brw_inst *
    VEC(const brw_reg &dst, const brw_reg *src, unsigned sources) const
    {
       return sources == 1 ? MOV(dst, src[0])
                           : LOAD_PAYLOAD(dst, src, sources, 0);
    }
 
-   fs_inst *
+   brw_inst *
    SYNC(enum tgl_sync_function sync) const
    {
       return emit(BRW_OPCODE_SYNC, null_reg_ud(), brw_imm_ud(sync));
    }
 
-   fs_inst *
+   brw_inst *
    UNDEF(const brw_reg &dst) const
    {
       assert(dst.file == VGRF);
       assert(dst.offset % REG_SIZE == 0);
-      fs_inst *inst = emit(SHADER_OPCODE_UNDEF,
+      brw_inst *inst = emit(SHADER_OPCODE_UNDEF,
                                retype(dst, BRW_TYPE_UD));
       inst->size_written = shader->alloc.sizes[dst.nr] * REG_SIZE - dst.offset;
 
       return inst;
    }
 
-   fs_inst *
+   brw_inst *
    DPAS(const brw_reg &dst, const brw_reg &src0, const brw_reg &src1, const brw_reg &src2,
         unsigned sdepth, unsigned rcount) const
    {
@@ -750,7 +750,7 @@ public:
       assert(sdepth == 8);
       assert(rcount == 1 || rcount == 2 || rcount == 4 || rcount == 8);
 
-      fs_inst *inst = emit(BRW_OPCODE_DPAS, dst, src0, src1, src2);
+      brw_inst *inst = emit(BRW_OPCODE_DPAS, dst, src0, src1, src2);
       inst->sdepth = sdepth;
       inst->rcount = rcount;
 
@@ -794,7 +794,7 @@ public:
       srcs[PULL_VARYING_CONSTANT_SRC_OFFSET]         = total_offset;
       srcs[PULL_VARYING_CONSTANT_SRC_ALIGNMENT]      = brw_imm_ud(alignment);
 
-      fs_inst *inst = emit(FS_OPCODE_VARYING_PULL_CONSTANT_LOAD_LOGICAL,
+      brw_inst *inst = emit(FS_OPCODE_VARYING_PULL_CONSTANT_LOAD_LOGICAL,
                            vec4_result, srcs, PULL_VARYING_CONSTANT_SRCS);
       inst->size_written = 4 * vec4_result.component_size(inst->exec_size);
 
@@ -850,12 +850,12 @@ public:
 
    fs_visitor *shader;
 
-   fs_inst *BREAK()    { return emit(BRW_OPCODE_BREAK); }
-   fs_inst *DO()       { return emit(BRW_OPCODE_DO); }
-   fs_inst *ENDIF()    { return emit(BRW_OPCODE_ENDIF); }
-   fs_inst *NOP()      { return emit(BRW_OPCODE_NOP); }
-   fs_inst *WHILE()    { return emit(BRW_OPCODE_WHILE); }
-   fs_inst *CONTINUE() { return emit(BRW_OPCODE_CONTINUE); }
+   brw_inst *BREAK()    { return emit(BRW_OPCODE_BREAK); }
+   brw_inst *DO()       { return emit(BRW_OPCODE_DO); }
+   brw_inst *ENDIF()    { return emit(BRW_OPCODE_ENDIF); }
+   brw_inst *NOP()      { return emit(BRW_OPCODE_NOP); }
+   brw_inst *WHILE()    { return emit(BRW_OPCODE_WHILE); }
+   brw_inst *CONTINUE() { return emit(BRW_OPCODE_CONTINUE); }
 
    bool has_writemask_all() const {
       return force_writemask_all;
@@ -961,7 +961,7 @@ offset(const brw_reg &reg, const brw_builder &bld, unsigned delta)
 }
 
 brw_reg brw_sample_mask_reg(const brw_builder &bld);
-void brw_emit_predicate_on_sample_mask(const brw_builder &bld, fs_inst *inst);
+void brw_emit_predicate_on_sample_mask(const brw_builder &bld, brw_inst *inst);
 
 brw_reg
 brw_fetch_payload_reg(const brw_builder &bld, uint8_t regs[2],

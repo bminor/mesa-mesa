@@ -10,7 +10,7 @@
 using namespace brw;
 
 static unsigned
-dest_comps_for_txf(const fs_visitor &s, const fs_inst *txf)
+dest_comps_for_txf(const fs_visitor &s, const brw_inst *txf)
 {
    if (!txf)
       return 0;
@@ -43,7 +43,7 @@ is_uniform_def(const def_analysis &defs, const brw_reg &r)
  */
 static bool
 sources_match(ASSERTED const def_analysis &defs,
-              const fs_inst *a, const fs_inst *b, enum tex_logical_srcs src)
+              const brw_inst *a, const brw_inst *b, enum tex_logical_srcs src)
 {
    assert(is_def(defs, a->src[src]));
    assert(is_def(defs, b->src[src]));
@@ -92,10 +92,10 @@ brw_opt_combine_convergent_txf(fs_visitor &s)
 
    foreach_block(block, s.cfg) {
       /* Gather a list of convergent TXFs to the same surface in this block */
-      fs_inst *txfs[32] = {};
+      brw_inst *txfs[32] = {};
       unsigned count = 0;
 
-      foreach_inst_in_block(fs_inst, inst, block) {
+      foreach_inst_in_block(brw_inst, inst, block) {
          if (inst->opcode != SHADER_OPCODE_TXF_LOGICAL)
             continue;
 
@@ -196,7 +196,7 @@ brw_opt_combine_convergent_txf(fs_visitor &s)
 
          /* Emit the new divergent TXF */
          brw_reg div = ubld.vgrf(BRW_TYPE_UD, new_dest_comps);
-         fs_inst *div_txf =
+         brw_inst *div_txf =
             ubld.emit(SHADER_OPCODE_TXF_LOGICAL, div, srcs,
                       TEX_LOGICAL_NUM_SRCS);
 
@@ -207,7 +207,7 @@ brw_opt_combine_convergent_txf(fs_visitor &s)
          div_txf->size_written = new_dest_comps * per_component_regs * grf_size;
 
          for (unsigned i = 0; i < width; i++) {
-            fs_inst *txf = txfs[curr+i];
+            brw_inst *txf = txfs[curr+i];
             if (!txf)
                break;
 

@@ -33,7 +33,7 @@ brw_lower_scalar_fp64_MAD(fs_visitor &s)
    if (devinfo->ver != 9)
       return false;
 
-   foreach_block_and_inst_safe(block, fs_inst, inst, s.cfg) {
+   foreach_block_and_inst_safe(block, brw_inst, inst, s.cfg) {
       if (inst->opcode == BRW_OPCODE_MAD &&
           inst->dst.type == BRW_TYPE_DF) {
          for (unsigned i = 0; i < 3; i++) {
@@ -54,7 +54,7 @@ brw_lower_load_payload(fs_visitor &s)
 {
    bool progress = false;
 
-   foreach_block_and_inst_safe (block, fs_inst, inst, s.cfg) {
+   foreach_block_and_inst_safe (block, brw_inst, inst, s.cfg) {
       if (inst->opcode != SHADER_OPCODE_LOAD_PAYLOAD)
          continue;
 
@@ -111,7 +111,7 @@ brw_lower_csel(fs_visitor &s)
    const intel_device_info *devinfo = s.devinfo;
    bool progress = false;
 
-   foreach_block_and_inst_safe(block, fs_inst, inst, s.cfg) {
+   foreach_block_and_inst_safe(block, brw_inst, inst, s.cfg) {
       if (inst->opcode != BRW_OPCODE_CSEL)
          continue;
 
@@ -186,7 +186,7 @@ brw_lower_sub_sat(fs_visitor &s)
 {
    bool progress = false;
 
-   foreach_block_and_inst_safe(block, fs_inst, inst, s.cfg) {
+   foreach_block_and_inst_safe(block, brw_inst, inst, s.cfg) {
       const brw_builder ibld(&s, block, inst);
 
       if (inst->opcode == SHADER_OPCODE_USUB_SAT ||
@@ -224,14 +224,14 @@ brw_lower_sub_sat(fs_visitor &s)
                                 inst->src[1].type);
 
             ibld.MOV(acc, inst->src[1]);
-            fs_inst *add = ibld.ADD(inst->dst, acc, inst->src[0]);
+            brw_inst *add = ibld.ADD(inst->dst, acc, inst->src[0]);
             add->saturate = true;
             add->src[0].negate = true;
          } else if (inst->opcode == SHADER_OPCODE_ISUB_SAT) {
             /* tmp = src1 >> 1;
              * dst = add.sat(add.sat(src0, -tmp), -(src1 - tmp));
              */
-            fs_inst *add;
+            brw_inst *add;
 
             brw_reg tmp = ibld.vgrf(inst->src[0].type);
             ibld.SHR(tmp, inst->src[1], brw_imm_d(1));
@@ -247,7 +247,7 @@ brw_lower_sub_sat(fs_visitor &s)
             ibld.CMP(ibld.null_reg_d(), inst->src[0], inst->src[1],
                      BRW_CONDITIONAL_G);
 
-            fs_inst *add = ibld.ADD(inst->dst, inst->src[0], inst->src[1]);
+            brw_inst *add = ibld.ADD(inst->dst, inst->src[0], inst->src[1]);
             add->src[1].negate = !add->src[1].negate;
 
             ibld.SEL(inst->dst, inst->dst, brw_imm_ud(0))
@@ -291,7 +291,7 @@ brw_lower_barycentrics(fs_visitor &s)
 
    bool progress = false;
 
-   foreach_block_and_inst_safe(block, fs_inst, inst, s.cfg) {
+   foreach_block_and_inst_safe(block, brw_inst, inst, s.cfg) {
       if (inst->exec_size < 16)
          continue;
 
@@ -322,7 +322,7 @@ brw_lower_barycentrics(fs_visitor &s)
 
          for (unsigned i = 0; i < 2; i++) {
             for (unsigned g = 0; g < inst->exec_size / 8; g++) {
-               fs_inst *mov = ibld.at(block, inst->next).group(8, g)
+               brw_inst *mov = ibld.at(block, inst->next).group(8, g)
                                   .MOV(horiz_offset(offset(inst->dst, ibld, i),
                                                     8 * g),
                                        offset(tmp, ubld, 2 * g + i));
@@ -352,7 +352,7 @@ brw_lower_barycentrics(fs_visitor &s)
  * swizzles of the source, specified as \p swz0 and \p swz1.
  */
 static bool
-lower_derivative(fs_visitor &s, bblock_t *block, fs_inst *inst,
+lower_derivative(fs_visitor &s, bblock_t *block, brw_inst *inst,
                  unsigned swz0, unsigned swz1)
 {
    const brw_builder ubld = brw_builder(&s, block, inst).exec_all();
@@ -382,7 +382,7 @@ brw_lower_derivatives(fs_visitor &s)
    if (s.devinfo->verx10 < 125)
       return false;
 
-   foreach_block_and_inst(block, fs_inst, inst, s.cfg) {
+   foreach_block_and_inst(block, brw_inst, inst, s.cfg) {
       if (inst->opcode == FS_OPCODE_DDX_COARSE)
          progress |= lower_derivative(s, block, inst,
                                       BRW_SWIZZLE_XXXX, BRW_SWIZZLE_YYYY);
@@ -418,7 +418,7 @@ brw_lower_find_live_channel(fs_visitor &s)
       s.stage == MESA_SHADER_FRAGMENT &&
       brw_wm_prog_data(s.prog_data)->uses_vmask;
 
-   foreach_block_and_inst_safe(block, fs_inst, inst, s.cfg) {
+   foreach_block_and_inst_safe(block, brw_inst, inst, s.cfg) {
       if (inst->opcode != SHADER_OPCODE_FIND_LIVE_CHANNEL &&
           inst->opcode != SHADER_OPCODE_FIND_LAST_LIVE_CHANNEL &&
           inst->opcode != SHADER_OPCODE_LOAD_LIVE_CHANNELS)
@@ -516,7 +516,7 @@ brw_lower_sends_overlapping_payload(fs_visitor &s)
 {
    bool progress = false;
 
-   foreach_block_and_inst_safe (block, fs_inst, inst, s.cfg) {
+   foreach_block_and_inst_safe (block, brw_inst, inst, s.cfg) {
       if (inst->opcode == SHADER_OPCODE_SEND && inst->ex_mlen > 0 &&
           regions_overlap(inst->src[2], inst->mlen * REG_SIZE,
                           inst->src[3], inst->ex_mlen * REG_SIZE)) {
@@ -562,7 +562,7 @@ brw_lower_3src_null_dest(fs_visitor &s)
 {
    bool progress = false;
 
-   foreach_block_and_inst_safe (block, fs_inst, inst, s.cfg) {
+   foreach_block_and_inst_safe (block, brw_inst, inst, s.cfg) {
       if (inst->is_3src(s.compiler) && inst->dst.is_null()) {
          inst->dst = brw_vgrf(s.alloc.allocate(s.dispatch_width / 8),
                               inst->dst.type);
@@ -598,7 +598,7 @@ brw_lower_alu_restrictions(fs_visitor &s)
    const intel_device_info *devinfo = s.devinfo;
    bool progress = false;
 
-   foreach_block_and_inst_safe(block, fs_inst, inst, s.cfg) {
+   foreach_block_and_inst_safe(block, brw_inst, inst, s.cfg) {
       switch (inst->opcode) {
       case BRW_OPCODE_MOV:
          if (unsupported_64bit_type(devinfo, inst->dst.type)) {
@@ -665,7 +665,7 @@ brw_lower_alu_restrictions(fs_visitor &s)
 }
 
 static void
-brw_lower_vgrf_to_fixed_grf(const struct intel_device_info *devinfo, fs_inst *inst,
+brw_lower_vgrf_to_fixed_grf(const struct intel_device_info *devinfo, brw_inst *inst,
                             brw_reg *reg, bool compressed)
 {
    if (reg->file != VGRF)
@@ -729,7 +729,7 @@ brw_lower_vgrfs_to_fixed_grfs(fs_visitor &s)
 {
    assert(s.grf_used || !"Must be called after register allocation");
 
-   foreach_block_and_inst(block, fs_inst, inst, s.cfg) {
+   foreach_block_and_inst(block, brw_inst, inst, s.cfg) {
       /* If the instruction writes to more than one register, it needs to be
        * explicitly marked as compressed on Gen <= 5.  On Gen >= 6 the
        * hardware figures out by itself what the right compression mode is,
@@ -774,7 +774,7 @@ brw_s0(enum brw_reg_type type, unsigned subnr)
 }
 
 static bool
-brw_lower_send_gather_inst(fs_visitor &s, bblock_t *block, fs_inst *inst)
+brw_lower_send_gather_inst(fs_visitor &s, bblock_t *block, brw_inst *inst)
 {
    const intel_device_info *devinfo = s.devinfo;
    assert(devinfo->ver >= 30);
@@ -831,7 +831,7 @@ brw_lower_send_gather(fs_visitor &s)
 
    bool progress = false;
 
-   foreach_block_and_inst(block, fs_inst, inst, s.cfg) {
+   foreach_block_and_inst(block, brw_inst, inst, s.cfg) {
       if (inst->opcode == SHADER_OPCODE_SEND_GATHER)
          progress |= brw_lower_send_gather_inst(s, block, inst);
    }
@@ -848,7 +848,7 @@ brw_lower_load_subgroup_invocation(fs_visitor &s)
 {
    bool progress = false;
 
-   foreach_block_and_inst_safe(block, fs_inst, inst, s.cfg) {
+   foreach_block_and_inst_safe(block, brw_inst, inst, s.cfg) {
       if (inst->opcode != SHADER_OPCODE_LOAD_SUBGROUP_INVOCATION)
          continue;
 
@@ -890,7 +890,7 @@ brw_lower_indirect_mov(fs_visitor &s)
    if (s.devinfo->ver < 20)
       return progress;
 
-   foreach_block_and_inst_safe(block, fs_inst, inst, s.cfg) {
+   foreach_block_and_inst_safe(block, brw_inst, inst, s.cfg) {
       if (inst->opcode == SHADER_OPCODE_MOV_INDIRECT) {
          if (brw_type_size_bytes(inst->src[0].type) > 1 &&
              brw_type_size_bytes(inst->dst.type) > 1) {

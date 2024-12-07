@@ -64,7 +64,7 @@ class schedule_node : public exec_node
 public:
    void set_latency(const struct brw_isa_info *isa);
 
-   fs_inst *inst;
+   brw_inst *inst;
    schedule_node_child *children;
    int children_count;
    int children_cap;
@@ -597,16 +597,16 @@ public:
    void update_children(schedule_node *chosen);
 
    void calculate_deps();
-   bool is_compressed(const fs_inst *inst);
+   bool is_compressed(const brw_inst *inst);
    bool register_needs_barrier(const brw_reg &reg);
    bool address_register_interfere(const schedule_node *n);
    schedule_node *choose_instruction_to_schedule();
-   int calculate_issue_time(const fs_inst *inst);
+   int calculate_issue_time(const brw_inst *inst);
 
-   void count_reads_remaining(const fs_inst *inst);
+   void count_reads_remaining(const brw_inst *inst);
    void setup_liveness(cfg_t *cfg);
-   void update_register_pressure(const fs_inst *inst);
-   int get_register_pressure_benefit(const fs_inst *inst);
+   void update_register_pressure(const brw_inst *inst);
+   int get_register_pressure_benefit(const brw_inst *inst);
    void clear_last_grf_write();
 
    void schedule_instructions();
@@ -717,7 +717,7 @@ brw_instruction_scheduler::brw_instruction_scheduler(void *mem_ctx, const fs_vis
    const struct brw_isa_info *isa = &s->compiler->isa;
 
    schedule_node *n = nodes;
-   foreach_block_and_inst(block, fs_inst, inst, s->cfg) {
+   foreach_block_and_inst(block, brw_inst, inst, s->cfg) {
       n->inst = inst;
 
       if (!post_reg_alloc)
@@ -789,7 +789,7 @@ brw_instruction_scheduler::brw_instruction_scheduler(void *mem_ctx, const fs_vis
 }
 
 static bool
-is_src_duplicate(const fs_inst *inst, int src)
+is_src_duplicate(const brw_inst *inst, int src)
 {
    for (int i = 0; i < src; i++)
      if (inst->src[i].equals(inst->src[src]))
@@ -799,7 +799,7 @@ is_src_duplicate(const fs_inst *inst, int src)
 }
 
 void
-brw_instruction_scheduler::count_reads_remaining(const fs_inst *inst)
+brw_instruction_scheduler::count_reads_remaining(const brw_inst *inst)
 {
    assert(reads_remaining);
 
@@ -880,7 +880,7 @@ brw_instruction_scheduler::setup_liveness(cfg_t *cfg)
 }
 
 void
-brw_instruction_scheduler::update_register_pressure(const fs_inst *inst)
+brw_instruction_scheduler::update_register_pressure(const brw_inst *inst)
 {
    assert(reads_remaining);
 
@@ -903,7 +903,7 @@ brw_instruction_scheduler::update_register_pressure(const fs_inst *inst)
 }
 
 int
-brw_instruction_scheduler::get_register_pressure_benefit(const fs_inst *inst)
+brw_instruction_scheduler::get_register_pressure_benefit(const brw_inst *inst)
 {
    int benefit = 0;
    const int block_idx = current.block->num;
@@ -1081,7 +1081,7 @@ brw_instruction_scheduler::add_address_dep(schedule_node *before, schedule_node 
 }
 
 static bool
-is_scheduling_barrier(const fs_inst *inst)
+is_scheduling_barrier(const brw_inst *inst)
 {
    return inst->opcode == SHADER_OPCODE_HALT_TARGET ||
           inst->is_control_flow() ||
@@ -1089,7 +1089,7 @@ is_scheduling_barrier(const fs_inst *inst)
 }
 
 static bool
-has_cross_lane_access(const fs_inst *inst)
+has_cross_lane_access(const brw_inst *inst)
 {
    /* FINISHME:
     *
@@ -1178,7 +1178,7 @@ void
 brw_instruction_scheduler::add_cross_lane_deps(schedule_node *n)
 {
    for (schedule_node *prev = n - 1; prev >= current.start; prev--) {
-      if (has_cross_lane_access((fs_inst*)prev->inst))
+      if (has_cross_lane_access((brw_inst*)prev->inst))
          add_dep(prev, n, 0);
    }
 }
@@ -1187,7 +1187,7 @@ brw_instruction_scheduler::add_cross_lane_deps(schedule_node *n)
  * actually writes 2 MRFs.
  */
 bool
-brw_instruction_scheduler::is_compressed(const fs_inst *inst)
+brw_instruction_scheduler::is_compressed(const brw_inst *inst)
 {
    return inst->exec_size == 16;
 }
@@ -1208,7 +1208,7 @@ brw_instruction_scheduler::clear_last_grf_write()
 {
    if (!post_reg_alloc) {
       for (schedule_node *n = current.start; n < current.end; n++) {
-         fs_inst *inst = (fs_inst *)n->inst;
+         brw_inst *inst = n->inst;
 
          if (inst->dst.file == VGRF) {
             /* Don't bother being careful with regs_written(), quicker to just clear 2 cachelines. */
@@ -1289,7 +1289,7 @@ brw_instruction_scheduler::calculate_deps()
        * (like the accumulator, flag, etc...).
        */
       for (schedule_node *n = current.start; n < current.end; n++) {
-         fs_inst *inst = (fs_inst *)n->inst;
+         brw_inst *inst = n->inst;
 
          /* Pre pass going over instruction using the register flag as a
           * source.
@@ -1316,7 +1316,7 @@ brw_instruction_scheduler::calculate_deps()
    }
 
    for (schedule_node *n = current.start; n < current.end; n++) {
-      fs_inst *inst = (fs_inst *)n->inst;
+      brw_inst *inst = n->inst;
 
       if (is_scheduling_barrier(inst))
          add_barrier_deps(n);
@@ -1427,7 +1427,7 @@ brw_instruction_scheduler::calculate_deps()
    memset(last_address_write, 0, sizeof(last_address_write));
 
    for (schedule_node *n = current.end - 1; n >= current.start; n--) {
-      fs_inst *inst = (fs_inst *)n->inst;
+      brw_inst *inst = n->inst;
 
       /* write-after-read deps. */
       for (int i = 0; i < inst->sources; i++) {
@@ -1657,7 +1657,7 @@ brw_instruction_scheduler::choose_instruction_to_schedule()
 }
 
 int
-brw_instruction_scheduler::calculate_issue_time(const fs_inst *inst)
+brw_instruction_scheduler::calculate_issue_time(const brw_inst *inst)
 {
    const struct brw_isa_info *isa = &s->compiler->isa;
    const unsigned overhead = s->grf_used && has_bank_conflict(isa, inst) ?

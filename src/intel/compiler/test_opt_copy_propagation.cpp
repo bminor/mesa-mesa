@@ -76,12 +76,12 @@ copy_propagation_test::~copy_propagation_test()
    ctx = NULL;
 }
 
-static fs_inst *
+static brw_inst *
 instruction(bblock_t *block, int num)
 {
-   fs_inst *inst = (fs_inst *)block->start();
+   brw_inst *inst = (brw_inst *)block->start();
    for (int i = 0; i < num; i++) {
-      inst = (fs_inst *)inst->next;
+      inst = (brw_inst *)inst->next;
    }
    return inst;
 }
@@ -135,12 +135,12 @@ TEST_F(copy_propagation_test, basic)
    EXPECT_EQ(0, block0->start_ip);
    EXPECT_EQ(1, block0->end_ip);
 
-   fs_inst *mov = instruction(block0, 0);
+   brw_inst *mov = instruction(block0, 0);
    EXPECT_EQ(BRW_OPCODE_MOV, mov->opcode);
    EXPECT_TRUE(mov->dst.equals(vgrf0));
    EXPECT_TRUE(mov->src[0].equals(vgrf2));
 
-   fs_inst *add = instruction(block0, 1);
+   brw_inst *add = instruction(block0, 1);
    EXPECT_EQ(BRW_OPCODE_ADD, add->opcode);
    EXPECT_TRUE(add->dst.equals(vgrf1));
    EXPECT_TRUE(add->src[0].equals(vgrf2));
@@ -181,8 +181,8 @@ TEST_F(copy_propagation_test, maxmax_sat_imm)
    };
 
    for (unsigned i = 0; i < sizeof(test) / sizeof(test[0]); i++) {
-      fs_inst *mov = set_saturate(true, bld.MOV(vgrf0, vgrf1));
-      fs_inst *sel = set_condmod(test[i].conditional_mod,
+      brw_inst *mov = set_saturate(true, bld.MOV(vgrf0, vgrf1));
+      brw_inst *sel = set_condmod(test[i].conditional_mod,
                                  bld.SEL(vgrf2, vgrf0,
                                          brw_imm_f(test[i].immediate)));
 
@@ -249,12 +249,12 @@ TEST_F(copy_propagation_test, mixed_integer_sign)
    EXPECT_EQ(0, block0->start_ip);
    EXPECT_EQ(1, block0->end_ip);
 
-   fs_inst *mov = instruction(block0, 0);
+   brw_inst *mov = instruction(block0, 0);
    EXPECT_EQ(BRW_OPCODE_MOV, mov->opcode);
    EXPECT_TRUE(mov->dst.equals(vgrf1));
    EXPECT_TRUE(mov->src[0].equals(vgrf0));
 
-   fs_inst *bfe = instruction(block0, 1);
+   brw_inst *bfe = instruction(block0, 1);
    EXPECT_EQ(BRW_OPCODE_BFE, bfe->opcode);
    EXPECT_TRUE(bfe->dst.equals(vgrf2));
    EXPECT_TRUE(bfe->src[0].equals(vgrf3));
@@ -292,12 +292,12 @@ TEST_F(copy_propagation_test, mixed_integer_sign_with_vector_imm)
    EXPECT_EQ(0, block0->start_ip);
    EXPECT_EQ(1, block0->end_ip);
 
-   fs_inst *mov = instruction(block0, 0);
+   brw_inst *mov = instruction(block0, 0);
    EXPECT_EQ(BRW_OPCODE_MOV, mov->opcode);
    EXPECT_TRUE(mov->dst.equals(vgrf0));
    EXPECT_TRUE(mov->src[0].file == IMM);
 
-   fs_inst *add = instruction(block0, 1);
+   brw_inst *add = instruction(block0, 1);
    EXPECT_EQ(BRW_OPCODE_ADD, add->opcode);
    EXPECT_TRUE(add->dst.equals(vgrf1));
    EXPECT_TRUE(add->src[0].equals(vgrf2));

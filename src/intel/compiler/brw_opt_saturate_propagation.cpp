@@ -45,7 +45,7 @@ using namespace brw;
  */
 
 static bool
-propagate_sat(fs_inst *inst, fs_inst *scan_inst)
+propagate_sat(brw_inst *inst, brw_inst *scan_inst)
 {
    if (scan_inst->dst.type != inst->dst.type) {
       scan_inst->dst.type = inst->dst.type;
@@ -93,7 +93,7 @@ opt_saturate_propagation_local(fs_visitor &s, bblock_t *block)
    bool progress = false;
    int ip = block->end_ip + 1;
 
-   foreach_inst_in_block_reverse(fs_inst, inst, block) {
+   foreach_inst_in_block_reverse(brw_inst, inst, block) {
       ip--;
 
       if (inst->opcode != BRW_OPCODE_MOV ||
@@ -105,7 +105,7 @@ opt_saturate_propagation_local(fs_visitor &s, bblock_t *block)
          continue;
 
       const brw::def_analysis &defs = s.def_analysis.require();
-      fs_inst *def = defs.get(inst->src[0]);
+      brw_inst *def = defs.get(inst->src[0]);
 
       if (def != NULL) {
          if (def->exec_size != inst->exec_size)
@@ -140,7 +140,7 @@ opt_saturate_propagation_local(fs_visitor &s, bblock_t *block)
       int src_end_ip = live.end[src_var];
 
       bool interfered = false;
-      foreach_inst_in_block_reverse_starting_from(fs_inst, scan_inst, inst) {
+      foreach_inst_in_block_reverse_starting_from(brw_inst, scan_inst, inst) {
          if (scan_inst->exec_size == inst->exec_size &&
              regions_overlap(scan_inst->dst, scan_inst->size_written,
                              inst->src[0], inst->size_read(s.devinfo, 0))) {

@@ -47,7 +47,7 @@
 using namespace brw;
 
 static bool
-is_nop_mov(const fs_inst *inst)
+is_nop_mov(const brw_inst *inst)
 {
    if (inst->opcode == SHADER_OPCODE_LOAD_PAYLOAD) {
       brw_reg dst = inst->dst;
@@ -68,7 +68,7 @@ is_nop_mov(const fs_inst *inst)
 }
 
 static bool
-is_coalesce_candidate(const fs_visitor *v, const fs_inst *inst)
+is_coalesce_candidate(const fs_visitor *v, const brw_inst *inst)
 {
    if ((inst->opcode != BRW_OPCODE_MOV &&
         inst->opcode != SHADER_OPCODE_LOAD_PAYLOAD) ||
@@ -99,7 +99,7 @@ is_coalesce_candidate(const fs_visitor *v, const fs_inst *inst)
 static bool
 can_coalesce_vars(const intel_device_info *devinfo,
                   const fs_live_variables &live, const cfg_t *cfg,
-                  const bblock_t *block, const fs_inst *inst,
+                  const bblock_t *block, const brw_inst *inst,
                   int dst_var, int src_var)
 {
    if (!live.vars_interfere(src_var, dst_var))
@@ -129,7 +129,7 @@ can_coalesce_vars(const intel_device_info *devinfo,
 
       bool seen_src_write = false;
       bool seen_copy = false;
-      foreach_inst_in_block(fs_inst, scan_inst, scan_block) {
+      foreach_inst_in_block(brw_inst, scan_inst, scan_block) {
          scan_ip++;
 
          /* Ignore anything before the intersection of the live ranges */
@@ -199,7 +199,7 @@ would_violate_eot_restriction(const brw::simple_allocator &alloc,
                               unsigned dst_reg, unsigned src_reg)
 {
    if (alloc.sizes[dst_reg] > alloc.sizes[src_reg]) {
-      foreach_inst_in_block_reverse(fs_inst, send, cfg->last_block()) {
+      foreach_inst_in_block_reverse(brw_inst, send, cfg->last_block()) {
          if (send->opcode != SHADER_OPCODE_SEND || !send->eot)
             continue;
 
@@ -236,11 +236,11 @@ brw_opt_register_coalesce(fs_visitor &s)
    int channels_remaining = 0;
    unsigned src_reg = ~0u, dst_reg = ~0u;
    int *dst_reg_offset = new int[MAX_VGRF_SIZE(devinfo)];
-   fs_inst **mov = new fs_inst *[MAX_VGRF_SIZE(devinfo)];
+   brw_inst **mov = new brw_inst *[MAX_VGRF_SIZE(devinfo)];
    int *dst_var = new int[MAX_VGRF_SIZE(devinfo)];
    int *src_var = new int[MAX_VGRF_SIZE(devinfo)];
 
-   foreach_block_and_inst(block, fs_inst, inst, s.cfg) {
+   foreach_block_and_inst(block, brw_inst, inst, s.cfg) {
       if (!is_coalesce_candidate(&s, inst))
          continue;
 
@@ -341,7 +341,7 @@ brw_opt_register_coalesce(fs_visitor &s)
          }
       }
 
-      foreach_block_and_inst(block, fs_inst, scan_inst, s.cfg) {
+      foreach_block_and_inst(block, brw_inst, scan_inst, s.cfg) {
          if (scan_inst->dst.file == VGRF &&
              scan_inst->dst.nr == src_reg) {
             scan_inst->dst.nr = dst_reg;
@@ -369,7 +369,7 @@ brw_opt_register_coalesce(fs_visitor &s)
    }
 
    if (progress) {
-      foreach_block_and_inst_safe (block, fs_inst, inst, s.cfg) {
+      foreach_block_and_inst_safe (block, brw_inst, inst, s.cfg) {
          if (inst->opcode == BRW_OPCODE_NOP) {
             inst->remove(block, true);
          }

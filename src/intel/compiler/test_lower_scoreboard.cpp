@@ -77,12 +77,12 @@ scoreboard_test::~scoreboard_test()
    ctx = NULL;
 }
 
-static fs_inst *
+static brw_inst *
 instruction(bblock_t *block, int num)
 {
-   fs_inst *inst = (fs_inst *)block->start();
+   brw_inst *inst = (brw_inst *)block->start();
    for (int i = 0; i < num; i++) {
-      inst = (fs_inst *)inst->next;
+      inst = (brw_inst *)inst->next;
    }
    return inst;
 }
@@ -105,11 +105,11 @@ lower_scoreboard(fs_visitor *v)
    }
 }
 
-fs_inst *
+brw_inst *
 emit_SEND(const brw_builder &bld, const brw_reg &dst,
           const brw_reg &desc, const brw_reg &payload)
 {
-   fs_inst *inst = bld.emit(SHADER_OPCODE_SEND, dst, desc, desc, payload);
+   brw_inst *inst = bld.emit(SHADER_OPCODE_SEND, dst, desc, desc, payload);
    inst->mlen = 1;
    return inst;
 }
@@ -265,7 +265,7 @@ TEST_F(scoreboard_test, RAW_outoforder_outoforder)
 
    EXPECT_EQ(instruction(block0, 0)->sched, tgl_swsb_sbid(TGL_SBID_SET, 0));
 
-   fs_inst *sync = instruction(block0, 1);
+   brw_inst *sync = instruction(block0, 1);
    EXPECT_EQ(sync->opcode, BRW_OPCODE_SYNC);
    EXPECT_EQ(sync->sched, tgl_swsb_sbid(TGL_SBID_DST, 0));
 
@@ -375,7 +375,7 @@ TEST_F(scoreboard_test, WAR_outoforder_outoforder)
 
    EXPECT_EQ(instruction(block0, 0)->sched, tgl_swsb_sbid(TGL_SBID_SET, 0));
 
-   fs_inst *sync = instruction(block0, 1);
+   brw_inst *sync = instruction(block0, 1);
    EXPECT_EQ(sync->opcode, BRW_OPCODE_SYNC);
    EXPECT_EQ(sync->sched, tgl_swsb_sbid(TGL_SBID_SRC, 0));
 
@@ -490,7 +490,7 @@ TEST_F(scoreboard_test, WAW_outoforder_outoforder)
 
    EXPECT_EQ(instruction(block0, 0)->sched, tgl_swsb_sbid(TGL_SBID_SET, 0));
 
-   fs_inst *sync = instruction(block0, 1);
+   brw_inst *sync = instruction(block0, 1);
    EXPECT_EQ(sync->opcode, BRW_OPCODE_SYNC);
    EXPECT_EQ(sync->sched, tgl_swsb_sbid(TGL_SBID_DST, 0));
 
@@ -518,12 +518,12 @@ TEST_F(scoreboard_test, loop1)
    lower_scoreboard(v);
 
    bblock_t *body = v->cfg->blocks[2];
-   fs_inst *add = instruction(body, 0);
+   brw_inst *add = instruction(body, 0);
    EXPECT_EQ(add->opcode, BRW_OPCODE_ADD);
    EXPECT_EQ(add->sched, regdist(TGL_PIPE_FLOAT, 1));
 
    bblock_t *last_block = v->cfg->blocks[3];
-   fs_inst *mul = instruction(last_block, 0);
+   brw_inst *mul = instruction(last_block, 0);
    EXPECT_EQ(mul->opcode, BRW_OPCODE_MUL);
    EXPECT_EQ(mul->sched, regdist(TGL_PIPE_FLOAT, 1));
 }
@@ -553,12 +553,12 @@ TEST_F(scoreboard_test, loop2)
    /* Now the write in ADD has the tightest RegDist for both ADD and MUL. */
 
    bblock_t *body = v->cfg->blocks[2];
-   fs_inst *add = instruction(body, 0);
+   brw_inst *add = instruction(body, 0);
    EXPECT_EQ(add->opcode, BRW_OPCODE_ADD);
    EXPECT_EQ(add->sched, regdist(TGL_PIPE_FLOAT, 2));
 
    bblock_t *last_block = v->cfg->blocks[3];
-   fs_inst *mul = instruction(last_block, 0);
+   brw_inst *mul = instruction(last_block, 0);
    EXPECT_EQ(mul->opcode, BRW_OPCODE_MUL);
    EXPECT_EQ(mul->sched, regdist(TGL_PIPE_FLOAT, 2));
 }
@@ -589,12 +589,12 @@ TEST_F(scoreboard_test, loop3)
    lower_scoreboard(v);
 
    bblock_t *body = v->cfg->blocks[2];
-   fs_inst *add = instruction(body, 4);
+   brw_inst *add = instruction(body, 4);
    EXPECT_EQ(add->opcode, BRW_OPCODE_ADD);
    EXPECT_EQ(add->sched, regdist(TGL_PIPE_FLOAT, 5));
 
    bblock_t *last_block = v->cfg->blocks[3];
-   fs_inst *mul = instruction(last_block, 0);
+   brw_inst *mul = instruction(last_block, 0);
    EXPECT_EQ(mul->opcode, BRW_OPCODE_MUL);
    EXPECT_EQ(mul->sched, regdist(TGL_PIPE_FLOAT, 1));
 }
@@ -619,12 +619,12 @@ TEST_F(scoreboard_test, conditional1)
    lower_scoreboard(v);
 
    bblock_t *body = v->cfg->blocks[1];
-   fs_inst *add = instruction(body, 0);
+   brw_inst *add = instruction(body, 0);
    EXPECT_EQ(add->opcode, BRW_OPCODE_ADD);
    EXPECT_EQ(add->sched, regdist(TGL_PIPE_FLOAT, 2));
 
    bblock_t *last_block = v->cfg->blocks[2];
-   fs_inst *mul = instruction(last_block, 1);
+   brw_inst *mul = instruction(last_block, 1);
    EXPECT_EQ(mul->opcode, BRW_OPCODE_MUL);
    EXPECT_EQ(mul->sched, regdist(TGL_PIPE_FLOAT, 2));
 }
@@ -651,12 +651,12 @@ TEST_F(scoreboard_test, conditional2)
    lower_scoreboard(v);
 
    bblock_t *body = v->cfg->blocks[1];
-   fs_inst *add = instruction(body, 0);
+   brw_inst *add = instruction(body, 0);
    EXPECT_EQ(add->opcode, BRW_OPCODE_ADD);
    EXPECT_EQ(add->sched, regdist(TGL_PIPE_FLOAT, 5));
 
    bblock_t *last_block = v->cfg->blocks[2];
-   fs_inst *mul = instruction(last_block, 1);
+   brw_inst *mul = instruction(last_block, 1);
    EXPECT_EQ(mul->opcode, BRW_OPCODE_MUL);
    EXPECT_EQ(mul->sched, regdist(TGL_PIPE_FLOAT, 2));
 }
@@ -683,12 +683,12 @@ TEST_F(scoreboard_test, conditional3)
    lower_scoreboard(v);
 
    bblock_t *body = v->cfg->blocks[1];
-   fs_inst *add = instruction(body, 3);
+   brw_inst *add = instruction(body, 3);
    EXPECT_EQ(add->opcode, BRW_OPCODE_ADD);
    EXPECT_EQ(add->sched, regdist(TGL_PIPE_FLOAT, 5));
 
    bblock_t *last_block = v->cfg->blocks[2];
-   fs_inst *mul = instruction(last_block, 1);
+   brw_inst *mul = instruction(last_block, 1);
    EXPECT_EQ(mul->opcode, BRW_OPCODE_MUL);
    EXPECT_EQ(mul->sched, regdist(TGL_PIPE_FLOAT, 2));
 }
@@ -715,12 +715,12 @@ TEST_F(scoreboard_test, conditional4)
    lower_scoreboard(v);
 
    bblock_t *body = v->cfg->blocks[1];
-   fs_inst *add = instruction(body, 0);
+   brw_inst *add = instruction(body, 0);
    EXPECT_EQ(add->opcode, BRW_OPCODE_ADD);
    EXPECT_EQ(add->sched, regdist(TGL_PIPE_FLOAT, 2));
 
    bblock_t *last_block = v->cfg->blocks[2];
-   fs_inst *mul = instruction(last_block, 1);
+   brw_inst *mul = instruction(last_block, 1);
    EXPECT_EQ(mul->opcode, BRW_OPCODE_MUL);
    EXPECT_EQ(mul->sched, regdist(TGL_PIPE_FLOAT, 3));
 }
@@ -747,17 +747,17 @@ TEST_F(scoreboard_test, conditional5)
    lower_scoreboard(v);
 
    bblock_t *then_body = v->cfg->blocks[1];
-   fs_inst *add = instruction(then_body, 0);
+   brw_inst *add = instruction(then_body, 0);
    EXPECT_EQ(add->opcode, BRW_OPCODE_ADD);
    EXPECT_EQ(add->sched, regdist(TGL_PIPE_FLOAT, 2));
 
    bblock_t *else_body = v->cfg->blocks[2];
-   fs_inst *rol = instruction(else_body, 0);
+   brw_inst *rol = instruction(else_body, 0);
    EXPECT_EQ(rol->opcode, BRW_OPCODE_ROL);
    EXPECT_EQ(rol->sched, regdist(TGL_PIPE_FLOAT, 2));
 
    bblock_t *last_block = v->cfg->blocks[3];
-   fs_inst *mul = instruction(last_block, 1);
+   brw_inst *mul = instruction(last_block, 1);
    EXPECT_EQ(mul->opcode, BRW_OPCODE_MUL);
    EXPECT_EQ(mul->sched, regdist(TGL_PIPE_FLOAT, 2));
 }
@@ -791,17 +791,17 @@ TEST_F(scoreboard_test, conditional6)
    lower_scoreboard(v);
 
    bblock_t *then_body = v->cfg->blocks[1];
-   fs_inst *add = instruction(then_body, 3);
+   brw_inst *add = instruction(then_body, 3);
    EXPECT_EQ(add->opcode, BRW_OPCODE_ADD);
    EXPECT_EQ(add->sched, regdist(TGL_PIPE_FLOAT, 5));
 
    bblock_t *else_body = v->cfg->blocks[2];
-   fs_inst *rol = instruction(else_body, 4);
+   brw_inst *rol = instruction(else_body, 4);
    EXPECT_EQ(rol->opcode, BRW_OPCODE_ROL);
    EXPECT_EQ(rol->sched, regdist(TGL_PIPE_FLOAT, 6));
 
    bblock_t *last_block = v->cfg->blocks[3];
-   fs_inst *mul = instruction(last_block, 1);
+   brw_inst *mul = instruction(last_block, 1);
    EXPECT_EQ(mul->opcode, BRW_OPCODE_MUL);
    EXPECT_EQ(mul->sched, regdist(TGL_PIPE_FLOAT, 2));
 }
@@ -835,17 +835,17 @@ TEST_F(scoreboard_test, conditional7)
    lower_scoreboard(v);
 
    bblock_t *then_body = v->cfg->blocks[1];
-   fs_inst *add = instruction(then_body, 0);
+   brw_inst *add = instruction(then_body, 0);
    EXPECT_EQ(add->opcode, BRW_OPCODE_ADD);
    EXPECT_EQ(add->sched, regdist(TGL_PIPE_FLOAT, 2));
 
    bblock_t *else_body = v->cfg->blocks[2];
-   fs_inst *rol = instruction(else_body, 0);
+   brw_inst *rol = instruction(else_body, 0);
    EXPECT_EQ(rol->opcode, BRW_OPCODE_ROL);
    EXPECT_EQ(rol->sched, regdist(TGL_PIPE_FLOAT, 2));
 
    bblock_t *last_block = v->cfg->blocks[3];
-   fs_inst *mul = instruction(last_block, 1);
+   brw_inst *mul = instruction(last_block, 1);
    EXPECT_EQ(mul->opcode, BRW_OPCODE_MUL);
    EXPECT_EQ(mul->sched, regdist(TGL_PIPE_FLOAT, 6));
 }
@@ -877,7 +877,7 @@ TEST_F(scoreboard_test, conditional8)
    lower_scoreboard(v);
 
    bblock_t *then_body = v->cfg->blocks[1];
-   fs_inst *add = instruction(then_body, 0);
+   brw_inst *add = instruction(then_body, 0);
    EXPECT_EQ(add->opcode, BRW_OPCODE_ADD);
    EXPECT_EQ(add->sched, regdist(TGL_PIPE_FLOAT, 7));
 
@@ -885,12 +885,12 @@ TEST_F(scoreboard_test, conditional8)
     * physical CFG edge between the then-block and the else-block.
     */
    bblock_t *else_body = v->cfg->blocks[2];
-   fs_inst *rol = instruction(else_body, 0);
+   brw_inst *rol = instruction(else_body, 0);
    EXPECT_EQ(rol->opcode, BRW_OPCODE_ROL);
    EXPECT_EQ(rol->sched, regdist(TGL_PIPE_FLOAT, 2));
 
    bblock_t *last_block = v->cfg->blocks[3];
-   fs_inst *mul = instruction(last_block, 1);
+   brw_inst *mul = instruction(last_block, 1);
    EXPECT_EQ(mul->opcode, BRW_OPCODE_MUL);
    EXPECT_EQ(mul->sched, regdist(TGL_PIPE_FLOAT, 2));
 }
@@ -1144,7 +1144,7 @@ TEST_F(scoreboard_test, gfx200_cannot_embed_outoforder_src_dependency_in_send_eo
 
    EXPECT_EQ(instruction(block0, 0)->sched, tgl_swsb_sbid(TGL_SBID_SET, 0));
 
-   fs_inst *sync = instruction(block0, 1);
+   brw_inst *sync = instruction(block0, 1);
    EXPECT_EQ(sync->opcode, BRW_OPCODE_SYNC);
    EXPECT_EQ(sync->sched, tgl_swsb_sbid(TGL_SBID_SRC, 0));
 
@@ -1175,7 +1175,7 @@ TEST_F(scoreboard_test, gfx200_cannot_embed_outoforder_dst_dependency_in_send_eo
 
    EXPECT_EQ(instruction(block0, 0)->sched, tgl_swsb_sbid(TGL_SBID_SET, 0));
 
-   fs_inst *sync = instruction(block0, 1);
+   brw_inst *sync = instruction(block0, 1);
    EXPECT_EQ(sync->opcode, BRW_OPCODE_SYNC);
    EXPECT_EQ(sync->sched, tgl_swsb_sbid(TGL_SBID_DST, 0));
 

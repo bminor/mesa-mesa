@@ -52,12 +52,12 @@ using namespace brw;
 
 static bool
 cmod_propagate_cmp_to_add(const intel_device_info *devinfo, bblock_t *block,
-                          fs_inst *inst)
+                          brw_inst *inst)
 {
    bool read_flag = false;
    const unsigned flags_written = inst->flags_written(devinfo);
 
-   foreach_inst_in_block_reverse_starting_from(fs_inst, scan_inst, inst) {
+   foreach_inst_in_block_reverse_starting_from(brw_inst, scan_inst, inst) {
       if (scan_inst->opcode == BRW_OPCODE_ADD &&
           !scan_inst->predicate &&
           scan_inst->dst.is_contiguous() &&
@@ -169,7 +169,7 @@ cmod_propagate_cmp_to_add(const intel_device_info *devinfo, bblock_t *block,
  */
 static bool
 cmod_propagate_not(const intel_device_info *devinfo, bblock_t *block,
-                   fs_inst *inst)
+                   brw_inst *inst)
 {
    const enum brw_conditional_mod cond = brw_negate_cmod(inst->conditional_mod);
    bool read_flag = false;
@@ -178,7 +178,7 @@ cmod_propagate_not(const intel_device_info *devinfo, bblock_t *block,
    if (cond != BRW_CONDITIONAL_Z && cond != BRW_CONDITIONAL_NZ)
       return false;
 
-   foreach_inst_in_block_reverse_starting_from(fs_inst, scan_inst, inst) {
+   foreach_inst_in_block_reverse_starting_from(brw_inst, scan_inst, inst) {
       if (regions_overlap(scan_inst->dst, scan_inst->size_written,
                           inst->src[0], inst->size_read(devinfo, 0))) {
          if (scan_inst->opcode != BRW_OPCODE_OR &&
@@ -229,7 +229,7 @@ opt_cmod_propagation_local(const intel_device_info *devinfo, bblock_t *block)
    bool progress = false;
    UNUSED int ip = block->end_ip + 1;
 
-   foreach_inst_in_block_reverse_safe(fs_inst, inst, block) {
+   foreach_inst_in_block_reverse_safe(brw_inst, inst, block) {
       ip--;
 
       if ((inst->opcode != BRW_OPCODE_AND &&
@@ -286,7 +286,7 @@ opt_cmod_propagation_local(const intel_device_info *devinfo, bblock_t *block)
 
       bool read_flag = false;
       const unsigned flags_written = inst->flags_written(devinfo);
-      foreach_inst_in_block_reverse_starting_from(fs_inst, scan_inst, inst) {
+      foreach_inst_in_block_reverse_starting_from(brw_inst, scan_inst, inst) {
          if (regions_overlap(scan_inst->dst, scan_inst->size_written,
                              inst->src[0], inst->size_read(devinfo, 0))) {
             /* If the scan instruction writes a different flag register than

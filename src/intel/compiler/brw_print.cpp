@@ -31,7 +31,7 @@ brw_print_instructions(const fs_visitor &s, FILE *file)
          }
          fprintf(file, "\n");
 
-         foreach_inst_in_block(fs_inst, inst, block) {
+         foreach_inst_in_block(brw_inst, inst, block) {
             if (inst->is_control_flow_end())
                cf_count -= 1;
 
@@ -60,11 +60,11 @@ brw_print_instructions(const fs_visitor &s, FILE *file)
       if (rp)
          fprintf(file, "Maximum %3d registers live at once.\n", max_pressure);
    } else if (s.cfg && exec_list_is_empty(&s.instructions)) {
-      foreach_block_and_inst(block, fs_inst, inst, s.cfg) {
+      foreach_block_and_inst(block, brw_inst, inst, s.cfg) {
          brw_print_instruction(s, inst, file);
       }
    } else {
-      foreach_in_list(fs_inst, inst, &s.instructions) {
+      foreach_in_list(brw_inst, inst, &s.instructions) {
          brw_print_instruction(s, inst, file);
       }
    }
@@ -308,7 +308,7 @@ brw_instruction_name(const struct brw_isa_info *isa, enum opcode op)
  * we only printed a label, and the actual source value still needs printing.
  */
 static bool
-print_memory_logical_source(FILE *file, const fs_inst *inst, unsigned i)
+print_memory_logical_source(FILE *file, const brw_inst *inst, unsigned i)
 {
    if (inst->is_control_source(i)) {
       assert(inst->src[i].file == IMM && inst->src[i].type == BRW_TYPE_UD);
@@ -374,7 +374,7 @@ print_memory_logical_source(FILE *file, const fs_inst *inst, unsigned i)
 }
 
 void
-brw_print_instruction(const fs_visitor &s, const fs_inst *inst, FILE *file, const brw::def_analysis *defs)
+brw_print_instruction(const fs_visitor &s, const brw_inst *inst, FILE *file, const brw::def_analysis *defs)
 {
    if (inst->predicate) {
       fprintf(file, "(%cf%d.%d) ",

@@ -511,7 +511,7 @@ namespace {
    {
       partitioning p(BRW_MAX_GRF);
 
-      foreach_block_and_inst(block, fs_inst, inst, v->cfg) {
+      foreach_block_and_inst(block, brw_inst, inst, v->cfg) {
          if (is_grf(inst->dst))
             p.require_contiguous(reg_of(inst->dst), regs_written(inst));
 
@@ -552,7 +552,7 @@ namespace {
        */
       constrained[p.atom_of_reg(127)] = true;
 
-      foreach_block_and_inst(block, fs_inst, inst, v->cfg) {
+      foreach_block_and_inst(block, brw_inst, inst, v->cfg) {
          /* Assume that anything referenced via fixed GRFs is baked into the
           * hardware's fixed-function logic and may be unsafe to move around.
           * Also take into account the source GRF restrictions of EOT
@@ -578,7 +578,7 @@ namespace {
     */
    bool
    is_conflict_optimized_out(const intel_device_info *devinfo,
-                             const fs_inst *inst)
+                             const brw_inst *inst)
    {
       return
          (is_grf(inst->src[0]) && (reg_of(inst->src[0]) == reg_of(inst->src[1]) ||
@@ -618,7 +618,7 @@ namespace {
        */
       unsigned block_scale = 1;
 
-      foreach_block_and_inst(block, fs_inst, inst, v->cfg) {
+      foreach_block_and_inst(block, brw_inst, inst, v->cfg) {
          if (inst->opcode == BRW_OPCODE_DO) {
             block_scale *= 10;
 
@@ -903,7 +903,7 @@ brw_opt_bank_conflicts(fs_visitor &s)
       optimize_reg_permutation(p, constrained, conflicts,
                                identity_reg_permutation(p));
 
-   foreach_block_and_inst(block, fs_inst, inst, s.cfg) {
+   foreach_block_and_inst(block, brw_inst, inst, s.cfg) {
       inst->dst = transform(p, map, inst->dst);
 
       for (int i = 0; i < inst->sources; i++)
@@ -922,7 +922,7 @@ brw_opt_bank_conflicts(fs_visitor &s)
  * we don't know which bank each VGRF is going to end up aligned to.
  */
 bool
-has_bank_conflict(const struct brw_isa_info *isa, const fs_inst *inst)
+has_bank_conflict(const struct brw_isa_info *isa, const brw_inst *inst)
 {
    return is_3src(isa, inst->opcode) &&
           is_grf(inst->src[1]) && is_grf(inst->src[2]) &&

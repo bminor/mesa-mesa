@@ -36,7 +36,7 @@
 using namespace brw;
 
 struct remap_entry {
-   fs_inst *inst;
+   brw_inst *inst;
    bblock_t *block;
    enum brw_reg_type type;
    unsigned nr;
@@ -45,7 +45,7 @@ struct remap_entry {
 };
 
 static bool
-is_expression(const fs_visitor *v, const fs_inst *const inst)
+is_expression(const fs_visitor *v, const brw_inst *const inst)
 {
    switch (inst->opcode) {
    case BRW_OPCODE_MOV:
@@ -144,7 +144,7 @@ is_expression(const fs_visitor *v, const fs_inst *const inst)
  * True if the instruction should only be CSE'd within their local block.
  */
 bool
-local_only(const fs_inst *inst)
+local_only(const brw_inst *inst)
 {
    switch (inst->opcode) {
    case SHADER_OPCODE_FIND_LIVE_CHANNEL:
@@ -172,7 +172,7 @@ local_only(const fs_inst *inst)
 }
 
 static bool
-operands_match(const fs_inst *a, const fs_inst *b, bool *negate)
+operands_match(const brw_inst *a, const brw_inst *b, bool *negate)
 {
    brw_reg *xs = a->src;
    brw_reg *ys = b->src;
@@ -235,7 +235,7 @@ operands_match(const fs_inst *a, const fs_inst *b, bool *negate)
 }
 
 static bool
-instructions_match(fs_inst *a, fs_inst *b, bool *negate)
+instructions_match(brw_inst *a, brw_inst *b, bool *negate)
 {
    return a->opcode == b->opcode &&
           a->exec_size == b->exec_size &&
@@ -281,7 +281,7 @@ hash_reg(uint32_t hash, const brw_reg &r)
 static uint32_t
 hash_inst(const void *v)
 {
-   const fs_inst *inst = static_cast<const fs_inst *>(v);
+   const brw_inst *inst = static_cast<const brw_inst *>(v);
    uint32_t hash = 0;
 
    /* Skip dst - that would make nothing ever match */
@@ -359,12 +359,12 @@ static bool
 cmp_func(const void *data1, const void *data2)
 {
    bool negate;
-   return instructions_match((fs_inst *) data1, (fs_inst *) data2, &negate);
+   return instructions_match((brw_inst *) data1, (brw_inst *) data2, &negate);
 }
 
 static bool
 remap_sources(fs_visitor &s, const brw::def_analysis &defs,
-              fs_inst *inst, struct remap_entry *remap_table)
+              brw_inst *inst, struct remap_entry *remap_table)
 {
    bool progress = false;
 
@@ -409,10 +409,10 @@ brw_opt_cse_defs(fs_visitor &s)
    struct set *set = _mesa_set_create(NULL, NULL, cmp_func);
 
    foreach_block(block, s.cfg) {
-      fs_inst *last_flag_write = NULL;
-      fs_inst *last = NULL;
+      brw_inst *last_flag_write = NULL;
+      brw_inst *last = NULL;
 
-      foreach_inst_in_block_safe(fs_inst, inst, block) {
+      foreach_inst_in_block_safe(brw_inst, inst, block) {
          if (need_remaps)
             progress |= remap_sources(s, defs, inst, remap_table);
 
@@ -448,7 +448,7 @@ brw_opt_cse_defs(fs_visitor &s)
             struct set_entry *e =
                _mesa_set_search_or_add_pre_hashed(set, hash, inst, NULL);
             if (!e) goto out; /* out of memory error */
-            fs_inst *match = (fs_inst *) e->key;
+            brw_inst *match = (brw_inst *) e->key;
 
             /* If there was no match, move on */
             if (match == inst)

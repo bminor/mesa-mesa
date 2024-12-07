@@ -9,7 +9,7 @@
 using namespace brw;
 
 static bool
-is_mixed_float_with_fp32_dst(const fs_inst *inst)
+is_mixed_float_with_fp32_dst(const brw_inst *inst)
 {
    if (inst->dst.type != BRW_TYPE_F)
       return false;
@@ -23,7 +23,7 @@ is_mixed_float_with_fp32_dst(const fs_inst *inst)
 }
 
 static bool
-is_mixed_float_with_packed_fp16_dst(const fs_inst *inst)
+is_mixed_float_with_packed_fp16_dst(const brw_inst *inst)
 {
    if (inst->dst.type != BRW_TYPE_HF || inst->dst.stride != 1)
       return false;
@@ -52,7 +52,7 @@ is_mixed_float_with_packed_fp16_dst(const fs_inst *inst)
  */
 static unsigned
 get_fpu_lowered_simd_width(const fs_visitor *shader,
-                           const fs_inst *inst)
+                           const brw_inst *inst)
 {
    const struct brw_compiler *compiler = shader->compiler;
    const struct intel_device_info *devinfo = compiler->devinfo;
@@ -159,7 +159,7 @@ get_fpu_lowered_simd_width(const fs_visitor *shader,
  */
 static unsigned
 get_sampler_lowered_simd_width(const struct intel_device_info *devinfo,
-                               const fs_inst *inst)
+                               const brw_inst *inst)
 {
    /* If we have a min_lod parameter on anything other than a simple sample
     * message, it will push it over 5 arguments and we have to fall back to
@@ -222,7 +222,7 @@ get_sampler_lowered_simd_width(const struct intel_device_info *devinfo,
 }
 
 static bool
-is_half_float_src_dst(const fs_inst *inst)
+is_half_float_src_dst(const brw_inst *inst)
 {
    if (inst->dst.type == BRW_TYPE_HF)
       return true;
@@ -242,7 +242,7 @@ is_half_float_src_dst(const fs_inst *inst)
  * original execution size.
  */
 unsigned
-brw_get_lowered_simd_width(const fs_visitor *shader, const fs_inst *inst)
+brw_get_lowered_simd_width(const fs_visitor *shader, const brw_inst *inst)
 {
    const struct brw_compiler *compiler = shader->compiler;
    const struct intel_device_info *devinfo = compiler->devinfo;
@@ -470,7 +470,7 @@ brw_get_lowered_simd_width(const fs_visitor *shader, const fs_inst *inst)
  * of the lowered instruction.
  */
 static inline bool
-needs_src_copy(const brw_builder &lbld, const fs_inst *inst, unsigned i)
+needs_src_copy(const brw_builder &lbld, const brw_inst *inst, unsigned i)
 {
    /* The indirectly indexed register stays the same even if we split the
     * instruction.
@@ -492,7 +492,7 @@ needs_src_copy(const brw_builder &lbld, const fs_inst *inst, unsigned i)
  * it as result in packed form.
  */
 static brw_reg
-emit_unzip(const brw_builder &lbld, fs_inst *inst, unsigned i)
+emit_unzip(const brw_builder &lbld, brw_inst *inst, unsigned i)
 {
    assert(lbld.group() >= inst->group);
 
@@ -537,7 +537,7 @@ emit_unzip(const brw_builder &lbld, fs_inst *inst, unsigned i)
  * destination region.
  */
 static inline bool
-needs_dst_copy(const brw_builder &lbld, const fs_inst *inst)
+needs_dst_copy(const brw_builder &lbld, const brw_inst *inst)
 {
    if (inst->dst.is_null())
       return false;
@@ -581,7 +581,7 @@ needs_dst_copy(const brw_builder &lbld, const fs_inst *inst)
  */
 static brw_reg
 emit_zip(const brw_builder &lbld_before, const brw_builder &lbld_after,
-         fs_inst *inst)
+         brw_inst *inst)
 {
    assert(lbld_before.dispatch_width() == lbld_after.dispatch_width());
    assert(lbld_before.group() == lbld_after.group());
@@ -650,7 +650,7 @@ brw_lower_simd_width(fs_visitor &s)
 {
    bool progress = false;
 
-   foreach_block_and_inst_safe(block, fs_inst, inst, s.cfg) {
+   foreach_block_and_inst_safe(block, brw_inst, inst, s.cfg) {
       const unsigned lower_width = brw_get_lowered_simd_width(&s, inst);
 
       /* No splitting required */
@@ -729,7 +729,7 @@ brw_lower_simd_width(fs_visitor &s)
           * If the EOT flag was set throw it away except for the last
           * instruction to avoid killing the thread prematurely.
           */
-         fs_inst split_inst = *inst;
+         brw_inst split_inst = *inst;
          split_inst.exec_size = lower_width;
          split_inst.eot = inst->eot && i == int(n - 1);
 

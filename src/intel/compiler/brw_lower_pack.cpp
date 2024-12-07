@@ -33,7 +33,7 @@ brw_lower_pack(fs_visitor &s)
 {
    bool progress = false;
 
-   foreach_block_and_inst_safe(block, fs_inst, inst, s.cfg) {
+   foreach_block_and_inst_safe(block, brw_inst, inst, s.cfg) {
       if (inst->opcode != FS_OPCODE_PACK &&
           inst->opcode != FS_OPCODE_PACK_HALF_2x16_SPLIT)
          continue;

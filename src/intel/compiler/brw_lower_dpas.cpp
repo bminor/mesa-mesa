@@ -9,7 +9,7 @@
 using namespace brw;
 
 static void
-f16_using_mac(const brw_builder &bld, fs_inst *inst)
+f16_using_mac(const brw_builder &bld, brw_inst *inst)
 {
    /* We only intend to support configurations where the destination and
     * accumulator have the same type.
@@ -115,7 +115,7 @@ f16_using_mac(const brw_builder &bld, fs_inst *inst)
 }
 
 static void
-int8_using_dp4a(const brw_builder &bld, fs_inst *inst)
+int8_using_dp4a(const brw_builder &bld, brw_inst *inst)
 {
    /* We only intend to support configurations where the destination and
     * accumulator have the same type.
@@ -162,7 +162,7 @@ int8_using_dp4a(const brw_builder &bld, fs_inst *inst)
 }
 
 static void
-int8_using_mul_add(const brw_builder &bld, fs_inst *inst)
+int8_using_mul_add(const brw_builder &bld, brw_inst *inst)
 {
    /* We only intend to support configurations where the destination and
     * accumulator have the same type.
@@ -275,7 +275,7 @@ brw_lower_dpas(fs_visitor &v)
 {
    bool progress = false;
 
-   foreach_block_and_inst_safe(block, fs_inst, inst, v.cfg) {
+   foreach_block_and_inst_safe(block, brw_inst, inst, v.cfg) {
       if (inst->opcode != BRW_OPCODE_DPAS)
          continue;
 

@@ -106,7 +106,7 @@ bblock_t::is_successor_of(const bblock_t *block,
 }
 
 static bool
-ends_block(const fs_inst *inst)
+ends_block(const brw_inst *inst)
 {
    enum opcode op = inst->opcode;
 
@@ -119,7 +119,7 @@ ends_block(const fs_inst *inst)
 }
 
 static bool
-starts_block(const fs_inst *inst)
+starts_block(const brw_inst *inst)
 {
    enum opcode op = inst->opcode;
 
@@ -160,7 +160,7 @@ bblock_t::dump(FILE *file) const
    const fs_visitor *s = this->cfg->s;
 
    int ip = this->start_ip;
-   foreach_inst_in_block(fs_inst, inst, this) {
+   foreach_inst_in_block(brw_inst, inst, this) {
       fprintf(file, "%5d: ", ip);
       brw_print_instruction(*s, inst, file);
       ip++;
@@ -210,7 +210,7 @@ cfg_t::cfg_t(const fs_visitor *s, exec_list *instructions) :
 
    set_next_block(&cur, entry, ip);
 
-   foreach_in_list_safe(fs_inst, inst, instructions) {
+   foreach_in_list_safe(brw_inst, inst, instructions) {
       /* set_next_block wants the post-incremented ip */
       ip++;
 
@@ -808,7 +808,7 @@ cfg_t::validate(const char *stage_abbrev)
          }
       }
 
-      fs_inst *first_inst = block->start();
+      brw_inst *first_inst = block->start();
       if (first_inst->opcode == BRW_OPCODE_DO) {
          /* DO instructions both begin and end a block, so the DO instruction
           * must be the only instruction in the block.

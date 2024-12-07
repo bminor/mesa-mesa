@@ -90,10 +90,10 @@ struct bblock_t {
    void combine_with(bblock_t *that);
    void dump(FILE *file = stderr) const;
 
-   fs_inst *start();
-   const fs_inst *start() const;
-   fs_inst *end();
-   const fs_inst *end() const;
+   brw_inst *start();
+   const brw_inst *start() const;
+   brw_inst *end();
+   const brw_inst *end() const;
 
    bblock_t *next();
    const bblock_t *next() const;
@@ -103,8 +103,8 @@ struct bblock_t {
    bool starts_with_control_flow() const;
    bool ends_with_control_flow() const;
 
-   fs_inst *first_non_control_flow_inst();
-   fs_inst *last_non_control_flow_inst();
+   brw_inst *first_non_control_flow_inst();
+   brw_inst *last_non_control_flow_inst();
 
 private:
    /**
@@ -140,28 +140,28 @@ public:
    int num;
 };
 
-static inline fs_inst *
+static inline brw_inst *
 bblock_start(struct bblock_t *block)
 {
-   return (fs_inst *)exec_list_get_head(&block->instructions);
+   return (brw_inst *)exec_list_get_head(&block->instructions);
 }
 
-static inline const fs_inst *
+static inline const brw_inst *
 bblock_start_const(const struct bblock_t *block)
 {
-   return (const fs_inst *)exec_list_get_head_const(&block->instructions);
+   return (const brw_inst *)exec_list_get_head_const(&block->instructions);
 }
 
-static inline fs_inst *
+static inline brw_inst *
 bblock_end(struct bblock_t *block)
 {
-   return (fs_inst *)exec_list_get_tail(&block->instructions);
+   return (brw_inst *)exec_list_get_tail(&block->instructions);
 }
 
-static inline const fs_inst *
+static inline const brw_inst *
 bblock_end_const(const struct bblock_t *block)
 {
-   return (const fs_inst *)exec_list_get_tail_const(&block->instructions);
+   return (const brw_inst *)exec_list_get_tail_const(&block->instructions);
 }
 
 static inline struct bblock_t *
@@ -218,51 +218,51 @@ bblock_ends_with_control_flow(const struct bblock_t *block)
           op == BRW_OPCODE_CONTINUE;
 }
 
-static inline fs_inst *
+static inline brw_inst *
 bblock_first_non_control_flow_inst(struct bblock_t *block)
 {
-   fs_inst *inst = bblock_start(block);
+   brw_inst *inst = bblock_start(block);
    if (bblock_starts_with_control_flow(block))
 #ifdef __cplusplus
-      inst = (fs_inst *)inst->next;
+      inst = (brw_inst *)inst->next;
 #else
-      inst = (fs_inst *)inst->link.next;
+      inst = (brw_inst *)inst->link.next;
 #endif
    return inst;
 }
 
-static inline fs_inst *
+static inline brw_inst *
 bblock_last_non_control_flow_inst(struct bblock_t *block)
 {
-   fs_inst *inst = bblock_end(block);
+   brw_inst *inst = bblock_end(block);
    if (bblock_ends_with_control_flow(block))
 #ifdef __cplusplus
-      inst = (fs_inst *)inst->prev;
+      inst = (brw_inst *)inst->prev;
 #else
-      inst = (fs_inst *)inst->link.prev;
+      inst = (brw_inst *)inst->link.prev;
 #endif
    return inst;
 }
 
-inline fs_inst *
+inline brw_inst *
 bblock_t::start()
 {
    return bblock_start(this);
 }
 
-inline const fs_inst *
+inline const brw_inst *
 bblock_t::start() const
 {
    return bblock_start_const(this);
 }
 
-inline fs_inst *
+inline brw_inst *
 bblock_t::end()
 {
    return bblock_end(this);
 }
 
-inline const fs_inst *
+inline const brw_inst *
 bblock_t::end() const
 {
    return bblock_end_const(this);
@@ -304,13 +304,13 @@ bblock_t::ends_with_control_flow() const
    return bblock_ends_with_control_flow(this);
 }
 
-inline fs_inst *
+inline brw_inst *
 bblock_t::first_non_control_flow_inst()
 {
    return bblock_first_non_control_flow_inst(this);
 }
 
-inline fs_inst *
+inline brw_inst *
 bblock_t::last_non_control_flow_inst()
 {
    return bblock_last_non_control_flow_inst(this);

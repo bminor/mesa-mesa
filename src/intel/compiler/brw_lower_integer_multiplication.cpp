@@ -139,7 +139,7 @@ factor_uint32(uint32_t x, unsigned *result_a, unsigned *result_b)
 }
 
 static void
-brw_lower_mul_dword_inst(fs_visitor &s, fs_inst *inst, bblock_t *block)
+brw_lower_mul_dword_inst(fs_visitor &s, brw_inst *inst, bblock_t *block)
 {
    const intel_device_info *devinfo = s.devinfo;
    const brw_builder ibld(&s, block, inst);
@@ -301,7 +301,7 @@ brw_lower_mul_dword_inst(fs_visitor &s, fs_inst *inst, bblock_t *block)
 }
 
 static void
-brw_lower_mul_qword_inst(fs_visitor &s, fs_inst *inst, bblock_t *block)
+brw_lower_mul_qword_inst(fs_visitor &s, brw_inst *inst, bblock_t *block)
 {
    const intel_device_info *devinfo = s.devinfo;
    const brw_builder ibld(&s, block, inst);
@@ -334,7 +334,7 @@ brw_lower_mul_qword_inst(fs_visitor &s, fs_inst *inst, bblock_t *block)
       brw_reg acc = suboffset(retype(brw_acc_reg(inst->exec_size), BRW_TYPE_UD),
                              inst->group % acc_width);
 
-      fs_inst *mul = ibld.MUL(acc,
+      brw_inst *mul = ibld.MUL(acc,
                             subscript(inst->src[0], BRW_TYPE_UD, 0),
                             subscript(inst->src[1], BRW_TYPE_UW, 0));
       mul->writes_accumulator = true;
@@ -370,7 +370,7 @@ brw_lower_mul_qword_inst(fs_visitor &s, fs_inst *inst, bblock_t *block)
 }
 
 static void
-brw_lower_mulh_inst(fs_visitor &s, fs_inst *inst, bblock_t *block)
+brw_lower_mulh_inst(fs_visitor &s, brw_inst *inst, bblock_t *block)
 {
    const intel_device_info *devinfo = s.devinfo;
    const brw_builder ibld(&s, block, inst);
@@ -392,7 +392,7 @@ brw_lower_mulh_inst(fs_visitor &s, fs_inst *inst, bblock_t *block)
    const unsigned acc_width = reg_unit(devinfo) * 8;
    const brw_reg acc = suboffset(retype(brw_acc_reg(inst->exec_size), inst->dst.type),
                                 inst->group % acc_width);
-   fs_inst *mul = ibld.MUL(acc, inst->src[0], inst->src[1]);
+   brw_inst *mul = ibld.MUL(acc, inst->src[0], inst->src[1]);
    ibld.MACH(inst->dst, inst->src[0], inst->src[1]);
 
    /* Until Gfx8, integer multiplies read 32-bits from one source,
@@ -419,7 +419,7 @@ brw_lower_integer_multiplication(fs_visitor &s)
    const intel_device_info *devinfo = s.devinfo;
    bool progress = false;
 
-   foreach_block_and_inst_safe(block, fs_inst, inst, s.cfg) {
+   foreach_block_and_inst_safe(block, brw_inst, inst, s.cfg) {
       if (inst->opcode == BRW_OPCODE_MUL) {
          /* If the instruction is already in a form that does not need lowering,
           * return early.

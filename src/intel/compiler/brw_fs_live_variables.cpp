@@ -71,7 +71,7 @@ fs_live_variables::setup_one_read(struct block_data *bd,
 }
 
 void
-fs_live_variables::setup_one_write(struct block_data *bd, fs_inst *inst,
+fs_live_variables::setup_one_write(struct block_data *bd, brw_inst *inst,
                                    int ip, const brw_reg &reg)
 {
    int var = var_from_reg(reg);
@@ -112,7 +112,7 @@ fs_live_variables::setup_def_use()
 
       struct block_data *bd = &block_data[block->num];
 
-      foreach_inst_in_block(fs_inst, inst, block) {
+      foreach_inst_in_block(brw_inst, inst, block) {
          /* Set use[] for this instruction */
          for (unsigned int i = 0; i < inst->sources; i++) {
             brw_reg reg = inst->src[i];
@@ -338,7 +338,7 @@ fs_live_variables::validate(const fs_visitor *s) const
 {
    int ip = 0;
 
-   foreach_block_and_inst(block, fs_inst, inst, s->cfg) {
+   foreach_block_and_inst(block, brw_inst, inst, s->cfg) {
       for (unsigned i = 0; i < inst->sources; i++) {
          if (inst->src[i].file == VGRF &&
              !check_register_live_range(this, ip,

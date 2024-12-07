@@ -152,7 +152,7 @@ brw_sample_mask_reg(const brw_builder &bld)
  * Predicate the specified instruction on the sample mask.
  */
 void
-brw_emit_predicate_on_sample_mask(const brw_builder &bld, fs_inst *inst)
+brw_emit_predicate_on_sample_mask(const brw_builder &bld, brw_inst *inst)
 {
    assert(bld.shader->stage == MESA_SHADER_FRAGMENT &&
           bld.group() == inst->group &&
@@ -248,9 +248,9 @@ brw_check_dynamic_msaa_flag(const brw_builder &bld,
                         const struct brw_wm_prog_data *wm_prog_data,
                         enum intel_msaa_flags flag)
 {
-   fs_inst *inst = bld.AND(bld.null_reg_ud(),
-                           brw_dynamic_msaa_flags(wm_prog_data),
-                           brw_imm_ud(flag));
+   brw_inst *inst = bld.AND(bld.null_reg_ud(),
+                            brw_dynamic_msaa_flags(wm_prog_data),
+                            brw_imm_ud(flag));
    inst->conditional_mod = BRW_CONDITIONAL_NZ;
 }
 

@@ -20,7 +20,7 @@
 
 using namespace brw;
 
-static fs_inst *
+static brw_inst *
 brw_emit_single_fb_write(fs_visitor &s, const brw_builder &bld,
                          brw_reg color0, brw_reg color1,
                          brw_reg src0_alpha, unsigned components,
@@ -47,7 +47,7 @@ brw_emit_single_fb_write(fs_visitor &s, const brw_builder &bld,
    if (s.nir->info.outputs_written & BITFIELD64_BIT(FRAG_RESULT_STENCIL))
       sources[FB_WRITE_LOGICAL_SRC_SRC_STENCIL] = s.frag_stencil;
 
-   fs_inst *write = bld.emit(FS_OPCODE_FB_WRITE_LOGICAL, brw_reg(),
+   brw_inst *write = bld.emit(FS_OPCODE_FB_WRITE_LOGICAL, brw_reg(),
                              sources, ARRAY_SIZE(sources));
 
    if (prog_data->uses_kill) {
@@ -62,7 +62,7 @@ static void
 brw_do_emit_fb_writes(fs_visitor &s, int nr_color_regions, bool replicate_alpha)
 {
    const brw_builder bld = brw_builder(&s).at_end();
-   fs_inst *inst = NULL;
+   brw_inst *inst = NULL;
 
    for (int target = 0; target < nr_color_regions; target++) {
       /* Skip over outputs that weren't written. */
@@ -378,9 +378,9 @@ brw_emit_interpolation_setup(fs_visitor &s)
                   int_pixel_offset_y);
 
          if (wm_prog_data->coarse_pixel_dispatch != INTEL_NEVER) {
-            fs_inst *addx = dbld.ADD(int_pixel_x, int_pixel_x,
+            brw_inst *addx = dbld.ADD(int_pixel_x, int_pixel_x,
                                      horiz_stride(half_int_pixel_offset_x, 0));
-            fs_inst *addy = dbld.ADD(int_pixel_y, int_pixel_y,
+            brw_inst *addy = dbld.ADD(int_pixel_y, int_pixel_y,
                                      horiz_stride(half_int_pixel_offset_y, 0));
             if (wm_prog_data->coarse_pixel_dispatch != INTEL_ALWAYS) {
                addx->predicate = BRW_PREDICATE_NORMAL;
@@ -608,7 +608,7 @@ static void
 brw_emit_repclear_shader(fs_visitor &s)
 {
    brw_wm_prog_key *key = (brw_wm_prog_key*) s.key;
-   fs_inst *write = NULL;
+   brw_inst *write = NULL;
 
    assert(s.devinfo->ver < 20);
    assert(s.uniforms == 0);
@@ -1284,7 +1284,7 @@ brw_assign_urb_setup(fs_visitor &s)
    /* Offset all the urb_setup[] index by the actual position of the
     * setup regs, now that the location of the constants has been chosen.
     */
-   foreach_block_and_inst(block, fs_inst, inst, s.cfg) {
+   foreach_block_and_inst(block, brw_inst, inst, s.cfg) {
       for (int i = 0; i < inst->sources; i++) {
          if (inst->src[i].file == ATTR) {
             /* ATTR brw_reg::nr in the FS is in units of logical scalar

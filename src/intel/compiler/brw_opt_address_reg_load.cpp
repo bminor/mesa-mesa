@@ -27,11 +27,11 @@ opt_address_reg_load_local(fs_visitor &s, bblock_t *block, const brw::def_analys
 {
    bool progress = false;
 
-   foreach_inst_in_block_safe(fs_inst, inst, block) {
+   foreach_inst_in_block_safe(brw_inst, inst, block) {
       if (!inst->dst.is_address() || inst->opcode != BRW_OPCODE_MOV)
          continue;
 
-      fs_inst *src_inst = defs.get(inst->src[0]);
+      brw_inst *src_inst = defs.get(inst->src[0]);
       if (src_inst == NULL)
          continue;
 
@@ -61,7 +61,7 @@ brw_opt_address_reg_load(fs_visitor &s)
    const brw::def_analysis &defs = s.def_analysis.require();
 
    foreach_block(block, s.cfg) {
-      foreach_inst_in_block_safe(fs_inst, inst, block) {
+      foreach_inst_in_block_safe(brw_inst, inst, block) {
          progress = opt_address_reg_load_local(s, block, defs) || progress;
       }
    }

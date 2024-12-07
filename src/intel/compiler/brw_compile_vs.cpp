@@ -25,7 +25,7 @@ brw_assign_vs_urb_setup(fs_visitor &s)
    assert(vs_prog_data->base.urb_read_length <= 15);
 
    /* Rewrite all ATTR file references to the hw grf that they land in. */
-   foreach_block_and_inst(block, fs_inst, inst, s.cfg) {
+   foreach_block_and_inst(block, brw_inst, inst, s.cfg) {
       s.convert_attr_sources_to_hw_regs(inst);
    }
 }

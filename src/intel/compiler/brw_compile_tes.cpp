@@ -22,7 +22,7 @@ brw_assign_tes_urb_setup(fs_visitor &s)
    s.first_non_payload_grf += 8 * vue_prog_data->urb_read_length;
 
    /* Rewrite all ATTR file references to HW_REGs. */
-   foreach_block_and_inst(block, fs_inst, inst, s.cfg) {
+   foreach_block_and_inst(block, brw_inst, inst, s.cfg) {
       s.convert_attr_sources_to_hw_regs(inst);
    }
 }

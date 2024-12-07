@@ -207,7 +207,7 @@ brw_optimize(fs_visitor &s)
 }
 
 static unsigned
-load_payload_sources_read_for_size(fs_inst *lp, unsigned size_read)
+load_payload_sources_read_for_size(brw_inst *lp, unsigned size_read)
 {
    assert(lp->opcode == SHADER_OPCODE_LOAD_PAYLOAD);
    assert(size_read >= lp->header_size * REG_SIZE);
@@ -236,7 +236,7 @@ brw_opt_zero_samples(fs_visitor &s)
 {
    bool progress = false;
 
-   foreach_block_and_inst(block, fs_inst, send, s.cfg) {
+   foreach_block_and_inst(block, brw_inst, send, s.cfg) {
       if (send->opcode != SHADER_OPCODE_SEND ||
           send->sfid != BRW_SFID_SAMPLER)
          continue;
@@ -253,7 +253,7 @@ brw_opt_zero_samples(fs_visitor &s)
       if (send->ex_mlen > 0)
          continue;
 
-      fs_inst *lp = (fs_inst *) send->prev;
+      brw_inst *lp = (brw_inst *) send->prev;
 
       if (lp->is_head_sentinel() || lp->opcode != SHADER_OPCODE_LOAD_PAYLOAD)
          continue;
@@ -313,14 +313,14 @@ brw_opt_split_sends(fs_visitor &s)
 {
    bool progress = false;
 
-   foreach_block_and_inst(block, fs_inst, send, s.cfg) {
+   foreach_block_and_inst(block, brw_inst, send, s.cfg) {
       if (send->opcode != SHADER_OPCODE_SEND ||
           send->mlen <= reg_unit(s.devinfo) || send->ex_mlen > 0 ||
           send->src[2].file != VGRF)
          continue;
 
       /* Currently don't split sends that reuse a previously used payload. */
-      fs_inst *lp = (fs_inst *) send->prev;
+      brw_inst *lp = (brw_inst *) send->prev;
 
       if (lp->is_head_sentinel() || lp->opcode != SHADER_OPCODE_LOAD_PAYLOAD)
          continue;
@@ -354,8 +354,8 @@ brw_opt_split_sends(fs_visitor &s)
          continue;
 
       const brw_builder ibld(&s, block, lp);
-      fs_inst *lp1 = ibld.LOAD_PAYLOAD(lp->dst, &lp->src[0], mid, lp->header_size);
-      fs_inst *lp2 = ibld.LOAD_PAYLOAD(lp->dst, &lp->src[mid], end - mid, 0);
+      brw_inst *lp1 = ibld.LOAD_PAYLOAD(lp->dst, &lp->src[0], mid, lp->header_size);
+      brw_inst *lp2 = ibld.LOAD_PAYLOAD(lp->dst, &lp->src[mid], end - mid, 0);
 
       assert(lp1->size_written % REG_SIZE == 0);
       assert(lp2->size_written % REG_SIZE == 0);
@@ -394,9 +394,9 @@ brw_opt_remove_redundant_halts(fs_visitor &s)
    bool progress = false;
 
    unsigned halt_count = 0;
-   fs_inst *halt_target = NULL;
+   brw_inst *halt_target = NULL;
    bblock_t *halt_target_block = NULL;
-   foreach_block_and_inst(block, fs_inst, inst, s.cfg) {
+   foreach_block_and_inst(block, brw_inst, inst, s.cfg) {
       if (inst->opcode == BRW_OPCODE_HALT)
          halt_count++;
 
@@ -413,9 +413,9 @@ brw_opt_remove_redundant_halts(fs_visitor &s)
    }
 
    /* Delete any HALTs immediately before the halt target. */
-   for (fs_inst *prev = (fs_inst *) halt_target->prev;
+   for (brw_inst *prev = (brw_inst *) halt_target->prev;
         !prev->is_head_sentinel() && prev->opcode == BRW_OPCODE_HALT;
-        prev = (fs_inst *) halt_target->prev) {
+        prev = (brw_inst *) halt_target->prev) {
       prev->remove(halt_target_block);
       halt_count--;
       progress = true;
@@ -452,7 +452,7 @@ brw_opt_eliminate_find_live_channel(fs_visitor &s)
       return false;
    }
 
-   foreach_block_and_inst_safe(block, fs_inst, inst, s.cfg) {
+   foreach_block_and_inst_safe(block, brw_inst, inst, s.cfg) {
       switch (inst->opcode) {
       case BRW_OPCODE_IF:
       case BRW_OPCODE_DO:
@@ -491,7 +491,7 @@ brw_opt_eliminate_find_live_channel(fs_visitor &s)
              * and opt_algebraic by trivially cleaning up both together.
              */
             assert(!inst->next->is_tail_sentinel());
-            fs_inst *bcast = (fs_inst *) inst->next;
+            brw_inst *bcast = (brw_inst *) inst->next;
 
             /* Ignore stride when comparing */
             if (bcast->opcode == SHADER_OPCODE_BROADCAST &&
@@ -552,7 +552,7 @@ brw_opt_remove_extra_rounding_modes(fs_visitor &s)
    foreach_block (block, s.cfg) {
       brw_rnd_mode prev_mode = base_mode;
 
-      foreach_inst_in_block_safe (fs_inst, inst, block) {
+      foreach_inst_in_block_safe (brw_inst, inst, block) {
          if (inst->opcode == SHADER_OPCODE_RND_MODE) {
             assert(inst->src[0].file == IMM);
             const brw_rnd_mode mode = (brw_rnd_mode) inst->src[0].d;
@@ -585,7 +585,7 @@ brw_opt_send_to_send_gather(fs_visitor &s)
 
    unsigned count = 0;
 
-   foreach_block_and_inst_safe(block, fs_inst, inst, s.cfg) {
+   foreach_block_and_inst_safe(block, brw_inst, inst, s.cfg) {
       if (inst->opcode != SHADER_OPCODE_SEND)
          continue;
 
@@ -664,7 +664,7 @@ brw_opt_send_gather_to_send(fs_visitor &s)
    const unsigned unit = reg_unit(devinfo);
    assert(unit == 2);
 
-   foreach_block_and_inst_safe(block, fs_inst, inst, s.cfg) {
+   foreach_block_and_inst_safe(block, brw_inst, inst, s.cfg) {
       if (inst->opcode != SHADER_OPCODE_SEND_GATHER)
          continue;
 

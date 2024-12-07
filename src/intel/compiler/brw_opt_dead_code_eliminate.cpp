@@ -40,7 +40,7 @@ using namespace brw;
  * Is it safe to eliminate the instruction?
  */
 static bool
-can_eliminate(const intel_device_info *devinfo, const fs_inst *inst,
+can_eliminate(const intel_device_info *devinfo, const brw_inst *inst,
               BITSET_WORD *flag_live)
 {
     return !inst->is_control_flow() &&
@@ -53,7 +53,7 @@ can_eliminate(const intel_device_info *devinfo, const fs_inst *inst,
  * Is it safe to omit the write, making the destination ARF null?
  */
 static bool
-can_omit_write(const fs_inst *inst)
+can_omit_write(const brw_inst *inst)
 {
    switch (inst->opcode) {
    case SHADER_OPCODE_MEMORY_ATOMIC_LOGICAL:
@@ -72,7 +72,7 @@ can_omit_write(const fs_inst *inst)
 
 static bool
 can_eliminate_conditional_mod(const intel_device_info *devinfo,
-                              const fs_inst *inst, BITSET_WORD *flag_live)
+                              const brw_inst *inst, BITSET_WORD *flag_live)
 {
    /* CMP, CMPN, and CSEL must have a conditional modifier because the
     * modifier determines what the instruction does. SEL with a conditional
@@ -114,7 +114,7 @@ brw_opt_dead_code_eliminate(fs_visitor &s)
       memcpy(flag_live, live_vars.block_data[block->num].flag_liveout,
              sizeof(BITSET_WORD));
 
-      foreach_inst_in_block_reverse_safe(fs_inst, inst, block) {
+      foreach_inst_in_block_reverse_safe(brw_inst, inst, block) {
          if (inst->dst.file == VGRF) {
             const unsigned var = live_vars.var_from_reg(inst->dst);
             bool result_live = false;

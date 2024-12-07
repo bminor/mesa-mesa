@@ -39,29 +39,29 @@
 
 struct bblock_t;
 
-struct fs_inst : public exec_node {
+struct brw_inst : public exec_node {
 private:
-   fs_inst &operator=(const fs_inst &);
+   brw_inst &operator=(const brw_inst &);
 
    void init(enum opcode opcode, uint8_t exec_width, const brw_reg &dst,
              const brw_reg *src, unsigned sources);
 
 public:
-   DECLARE_RALLOC_CXX_OPERATORS(fs_inst)
+   DECLARE_RALLOC_CXX_OPERATORS(brw_inst)
 
-   fs_inst();
-   fs_inst(enum opcode opcode, uint8_t exec_size);
-   fs_inst(enum opcode opcode, uint8_t exec_size, const brw_reg &dst);
-   fs_inst(enum opcode opcode, uint8_t exec_size, const brw_reg &dst,
+   brw_inst();
+   brw_inst(enum opcode opcode, uint8_t exec_size);
+   brw_inst(enum opcode opcode, uint8_t exec_size, const brw_reg &dst);
+   brw_inst(enum opcode opcode, uint8_t exec_size, const brw_reg &dst,
            const brw_reg &src0);
-   fs_inst(enum opcode opcode, uint8_t exec_size, const brw_reg &dst,
+   brw_inst(enum opcode opcode, uint8_t exec_size, const brw_reg &dst,
            const brw_reg &src0, const brw_reg &src1);
-   fs_inst(enum opcode opcode, uint8_t exec_size, const brw_reg &dst,
+   brw_inst(enum opcode opcode, uint8_t exec_size, const brw_reg &dst,
            const brw_reg &src0, const brw_reg &src1, const brw_reg &src2);
-   fs_inst(enum opcode opcode, uint8_t exec_size, const brw_reg &dst,
+   brw_inst(enum opcode opcode, uint8_t exec_size, const brw_reg &dst,
            const brw_reg src[], unsigned sources);
-   fs_inst(const fs_inst &that);
-   ~fs_inst();
+   brw_inst(const brw_inst &that);
+   ~brw_inst();
 
    void resize_sources(uint8_t num_sources);
 
@@ -93,8 +93,8 @@ public:
    bool uses_indirect_addressing() const;
 
    void remove(bblock_t *block, bool defer_later_block_ip_updates = false);
-   void insert_after(bblock_t *block, fs_inst *inst);
-   void insert_before(bblock_t *block, fs_inst *inst);
+   void insert_after(bblock_t *block, brw_inst *inst);
+   void insert_before(bblock_t *block, brw_inst *inst);
 
    /**
     * True if the instruction has side effects other than writing to
@@ -246,9 +246,9 @@ public:
  * Make the execution of \p inst dependent on the evaluation of a possibly
  * inverted predicate.
  */
-static inline fs_inst *
+static inline brw_inst *
 set_predicate_inv(enum brw_predicate pred, bool inverse,
-                  fs_inst *inst)
+                  brw_inst *inst)
 {
    inst->predicate = pred;
    inst->predicate_inverse = inverse;
@@ -258,8 +258,8 @@ set_predicate_inv(enum brw_predicate pred, bool inverse,
 /**
  * Make the execution of \p inst dependent on the evaluation of a predicate.
  */
-static inline fs_inst *
-set_predicate(enum brw_predicate pred, fs_inst *inst)
+static inline brw_inst *
+set_predicate(enum brw_predicate pred, brw_inst *inst)
 {
    return set_predicate_inv(pred, false, inst);
 }
@@ -268,8 +268,8 @@ set_predicate(enum brw_predicate pred, fs_inst *inst)
  * Write the result of evaluating the condition given by \p mod to a flag
  * register.
  */
-static inline fs_inst *
-set_condmod(enum brw_conditional_mod mod, fs_inst *inst)
+static inline brw_inst *
+set_condmod(enum brw_conditional_mod mod, brw_inst *inst)
 {
    inst->conditional_mod = mod;
    return inst;
@@ -279,8 +279,8 @@ set_condmod(enum brw_conditional_mod mod, fs_inst *inst)
  * Clamp the result of \p inst to the saturation range of its destination
  * datatype.
  */
-static inline fs_inst *
-set_saturate(bool saturate, fs_inst *inst)
+static inline brw_inst *
+set_saturate(bool saturate, brw_inst *inst)
 {
    inst->saturate = saturate;
    return inst;
@@ -293,7 +293,7 @@ set_saturate(bool saturate, fs_inst *inst)
  * UNIFORM and IMM files and 32B for all other files.
  */
 inline unsigned
-regs_written(const fs_inst *inst)
+regs_written(const brw_inst *inst)
 {
    assert(inst->dst.file != UNIFORM && inst->dst.file != IMM);
    return DIV_ROUND_UP(reg_offset(inst->dst) % REG_SIZE +
@@ -309,7 +309,7 @@ regs_written(const fs_inst *inst)
  * UNIFORM files and 32B for all other files.
  */
 inline unsigned
-regs_read(const struct intel_device_info *devinfo, const fs_inst *inst, unsigned i)
+regs_read(const struct intel_device_info *devinfo, const brw_inst *inst, unsigned i)
 {
    if (inst->src[i].file == IMM)
       return 1;
@@ -322,7 +322,7 @@ regs_read(const struct intel_device_info *devinfo, const fs_inst *inst, unsigned
 }
 
 static inline enum brw_reg_type
-get_exec_type(const fs_inst *inst)
+get_exec_type(const brw_inst *inst)
 {
    brw_reg_type exec_type = BRW_TYPE_B;
 
@@ -368,13 +368,13 @@ get_exec_type(const fs_inst *inst)
 }
 
 static inline unsigned
-get_exec_type_size(const fs_inst *inst)
+get_exec_type_size(const brw_inst *inst)
 {
    return brw_type_size_bytes(get_exec_type(inst));
 }
 
 static inline bool
-is_send(const fs_inst *inst)
+is_send(const brw_inst *inst)
 {
    return inst->mlen || inst->is_send_from_grf();
 }
@@ -384,7 +384,7 @@ is_send(const fs_inst *inst)
  * assumed to complete in-order.
  */
 static inline bool
-is_unordered(const intel_device_info *devinfo, const fs_inst *inst)
+is_unordered(const intel_device_info *devinfo, const brw_inst *inst)
 {
    return is_send(inst) || (devinfo->ver < 20 && inst->is_math()) ||
           inst->opcode == BRW_OPCODE_DPAS ||
@@ -408,7 +408,7 @@ is_unordered(const intel_device_info *devinfo, const fs_inst *inst)
  */
 static inline bool
 has_dst_aligned_region_restriction(const intel_device_info *devinfo,
-                                   const fs_inst *inst,
+                                   const brw_inst *inst,
                                    brw_reg_type dst_type)
 {
    const brw_reg_type exec_type = get_exec_type(inst);
@@ -436,7 +436,7 @@ has_dst_aligned_region_restriction(const intel_device_info *devinfo,
 
 static inline bool
 has_dst_aligned_region_restriction(const intel_device_info *devinfo,
-                                   const fs_inst *inst)
+                                   const brw_inst *inst)
 {
    return has_dst_aligned_region_restriction(devinfo, inst, inst->dst.type);
 }
@@ -449,7 +449,7 @@ has_dst_aligned_region_restriction(const intel_device_info *devinfo,
  */
 static inline bool
 has_subdword_integer_region_restriction(const intel_device_info *devinfo,
-                                        const fs_inst *inst,
+                                        const brw_inst *inst,
                                         const brw_reg *srcs, unsigned num_srcs)
 {
    if (devinfo->ver >= 20 &&
@@ -473,7 +473,7 @@ has_subdword_integer_region_restriction(const intel_device_info *devinfo,
 
 static inline bool
 has_subdword_integer_region_restriction(const intel_device_info *devinfo,
-                                        const fs_inst *inst)
+                                        const brw_inst *inst)
 {
    return has_subdword_integer_region_restriction(devinfo, inst,
                                                   inst->src, inst->sources);
@@ -490,7 +490,7 @@ has_subdword_integer_region_restriction(const intel_device_info *devinfo,
  */
 inline bool
 is_copy_payload(const struct intel_device_info *devinfo,
-                brw_reg_file file, const fs_inst *inst)
+                brw_reg_file file, const brw_inst *inst)
 {
    if (inst->opcode != SHADER_OPCODE_LOAD_PAYLOAD ||
        inst->is_partial_write() || inst->saturate ||
@@ -520,7 +520,7 @@ is_copy_payload(const struct intel_device_info *devinfo,
  */
 inline bool
 is_identity_payload(const struct intel_device_info *devinfo,
-                    brw_reg_file file, const fs_inst *inst)
+                    brw_reg_file file, const brw_inst *inst)
 {
    if (is_copy_payload(devinfo, file, inst)) {
       brw_reg reg = inst->src[0];
@@ -551,7 +551,7 @@ is_identity_payload(const struct intel_device_info *devinfo,
  */
 inline bool
 is_multi_copy_payload(const struct intel_device_info *devinfo,
-                      const fs_inst *inst)
+                      const brw_inst *inst)
 {
    if (is_copy_payload(devinfo, VGRF, inst)) {
       for (unsigned i = 0; i < inst->sources; i++) {
@@ -577,7 +577,7 @@ is_multi_copy_payload(const struct intel_device_info *devinfo,
  */
 inline bool
 is_coalescing_payload(const struct intel_device_info *devinfo,
-                      const brw::simple_allocator &alloc, const fs_inst *inst)
+                      const brw::simple_allocator &alloc, const brw_inst *inst)
 {
    return is_identity_payload(devinfo, VGRF, inst) &&
           inst->src[0].offset == 0 &&
@@ -585,14 +585,14 @@ is_coalescing_payload(const struct intel_device_info *devinfo,
 }
 
 bool
-has_bank_conflict(const struct brw_isa_info *isa, const fs_inst *inst);
+has_bank_conflict(const struct brw_isa_info *isa, const brw_inst *inst);
 
 /* Return the subset of flag registers that an instruction could
  * potentially read or write based on the execution controls and flag
  * subregister number of the instruction.
  */
 static inline unsigned
-brw_fs_flag_mask(const fs_inst *inst, unsigned width)
+brw_fs_flag_mask(const brw_inst *inst, unsigned width)
 {
    assert(util_is_power_of_two_nonzero(width));
    const unsigned start = (inst->flag_subreg * 16 + inst->group) &

@@ -74,7 +74,7 @@ namespace brw {
       def_analysis(const fs_visitor *v);
       ~def_analysis();
 
-      fs_inst *
+      brw_inst *
       get(const brw_reg &reg) const
       {
          return reg.file == VGRF && reg.nr < def_count ?
@@ -113,11 +113,11 @@ namespace brw {
 
    private:
       void mark_invalid(int);
-      bool fully_defines(const fs_visitor *v, fs_inst *);
-      void update_for_reads(const idom_tree &idom, bblock_t *block, fs_inst *);
-      void update_for_write(const fs_visitor *v, bblock_t *block, fs_inst *);
+      bool fully_defines(const fs_visitor *v, brw_inst *);
+      void update_for_reads(const idom_tree &idom, bblock_t *block, brw_inst *);
+      void update_for_write(const fs_visitor *v, bblock_t *block, brw_inst *);
 
-      fs_inst **def_insts;
+      brw_inst **def_insts;
       bblock_t **def_blocks;
       uint32_t *def_use_counts;
       unsigned def_count;
@@ -296,7 +296,7 @@ public:
    void import_uniforms(fs_visitor *v);
 
    void assign_curb_setup();
-   void convert_attr_sources_to_hw_regs(fs_inst *inst);
+   void convert_attr_sources_to_hw_regs(brw_inst *inst);
    void calculate_payload_ranges(bool allow_spilling,
                                  unsigned payload_node_count,
                                  int *payload_last_use_ip) const;
@@ -322,7 +322,7 @@ public:
    /** ralloc context for temporary data used during compile */
    void *mem_ctx;
 
-   /** List of fs_inst. */
+   /** List of brw_inst. */
    exec_list instructions;
 
    cfg_t *cfg;
@@ -447,7 +447,7 @@ public:
 
 void brw_print_instructions(const fs_visitor &s, FILE *file = stderr);
 
-void brw_print_instruction(const fs_visitor &s, const fs_inst *inst,
+void brw_print_instruction(const fs_visitor &s, const brw_inst *inst,
                            FILE *file = stderr,
                            const brw::def_analysis *defs = nullptr);
 
@@ -474,7 +474,7 @@ brw_dynamic_msaa_flags(const struct brw_wm_prog_data *wm_prog_data)
 enum intel_barycentric_mode brw_barycentric_mode(const struct brw_wm_prog_key *key,
                                                  nir_intrinsic_instr *intr);
 
-uint32_t brw_fb_write_msg_control(const fs_inst *inst,
+uint32_t brw_fb_write_msg_control(const brw_inst *inst,
                                   const struct brw_wm_prog_data *prog_data);
 
 void brw_compute_urb_setup_index(struct brw_wm_prog_data *wm_prog_data);
@@ -536,7 +536,7 @@ bool brw_lower_send_descriptors(fs_visitor &s);
 bool brw_lower_send_gather(fs_visitor &s);
 bool brw_lower_sends_overlapping_payload(fs_visitor &s);
 bool brw_lower_simd_width(fs_visitor &s);
-bool brw_lower_src_modifiers(fs_visitor &s, bblock_t *block, fs_inst *inst, unsigned i);
+bool brw_lower_src_modifiers(fs_visitor &s, bblock_t *block, brw_inst *inst, unsigned i);
 bool brw_lower_sub_sat(fs_visitor &s);
 bool brw_lower_subgroup_ops(fs_visitor &s);
 bool brw_lower_uniform_pull_constant_loads(fs_visitor &s);
@@ -549,7 +549,7 @@ bool brw_opt_cmod_propagation(fs_visitor &s);
 bool brw_opt_combine_constants(fs_visitor &s);
 bool brw_opt_combine_convergent_txf(fs_visitor &s);
 bool brw_opt_compact_virtual_grfs(fs_visitor &s);
-bool brw_opt_constant_fold_instruction(const intel_device_info *devinfo, fs_inst *inst);
+bool brw_opt_constant_fold_instruction(const intel_device_info *devinfo, brw_inst *inst);
 bool brw_opt_copy_propagation(fs_visitor &s);
 bool brw_opt_copy_propagation_defs(fs_visitor &s);
 bool brw_opt_cse_defs(fs_visitor &s);
@@ -572,4 +572,4 @@ bool brw_workaround_source_arf_before_eot(fs_visitor &s);
 
 /* Helpers. */
 unsigned brw_get_lowered_simd_width(const fs_visitor *shader,
-                                    const fs_inst *inst);
+                                    const brw_inst *inst);

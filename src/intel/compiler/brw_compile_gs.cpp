@@ -43,7 +43,7 @@ brw_emit_gs_thread_end(fs_visitor &s)
    }
 
    const brw_builder abld = brw_builder(&s).at_end().annotate("thread end");
-   fs_inst *inst;
+   brw_inst *inst;
 
    if (gs_prog_data->static_vertex_count != -1) {
       /* Try and tag the last URB write with EOT instead of emitting a whole
@@ -79,7 +79,7 @@ brw_assign_gs_urb_setup(fs_visitor &s)
    s.first_non_payload_grf +=
       8 * vue_prog_data->urb_read_length * s.nir->info.gs.vertices_in;
 
-   foreach_block_and_inst(block, fs_inst, inst, s.cfg) {
+   foreach_block_and_inst(block, brw_inst, inst, s.cfg) {
       /* Rewrite all ATTR file references to GRFs. */
       s.convert_attr_sources_to_hw_regs(inst);
    }

@@ -157,7 +157,7 @@ brw_barycentric_mode(const struct brw_wm_prog_key *key,
 bool
 fs_visitor::mark_last_urb_write_with_eot()
 {
-   foreach_in_list_reverse(fs_inst, prev, &this->instructions) {
+   foreach_in_list_reverse(brw_inst, prev, &this->instructions) {
       if (prev->opcode == SHADER_OPCODE_URB_WRITE_LOGICAL) {
          prev->eot = true;
 
@@ -243,7 +243,7 @@ fs_visitor::assign_curb_setup()
 
          brw_reg dest = retype(brw_vec8_grf(payload().num_regs + i, 0),
                               BRW_TYPE_UD);
-         fs_inst *send = ubld.emit(SHADER_OPCODE_SEND, dest, srcs, 4);
+         brw_inst *send = ubld.emit(SHADER_OPCODE_SEND, dest, srcs, 4);
 
          send->sfid = GFX12_SFID_UGM;
          uint32_t desc = lsc_msg_desc(devinfo, LSC_OP_LOAD,
@@ -272,7 +272,7 @@ fs_visitor::assign_curb_setup()
    }
 
    /* Map the offsets in the UNIFORM file to fixed HW regs. */
-   foreach_block_and_inst(block, fs_inst, inst, cfg) {
+   foreach_block_and_inst(block, brw_inst, inst, cfg) {
       for (unsigned int i = 0; i < inst->sources; i++) {
 	 if (inst->src[i].file == UNIFORM) {
             int uniform_nr = inst->src[i].nr + inst->src[i].offset / 4;
@@ -378,7 +378,7 @@ brw_compute_urb_setup_index(struct brw_wm_prog_data *wm_prog_data)
 }
 
 void
-fs_visitor::convert_attr_sources_to_hw_regs(fs_inst *inst)
+fs_visitor::convert_attr_sources_to_hw_regs(brw_inst *inst)
 {
    for (int i = 0; i < inst->sources; i++) {
       if (inst->src[i].file == ATTR) {
@@ -437,7 +437,7 @@ brw_get_subgroup_id_param_index(const intel_device_info *devinfo,
 }
 
 uint32_t
-brw_fb_write_msg_control(const fs_inst *inst,
+brw_fb_write_msg_control(const brw_inst *inst,
                          const struct brw_wm_prog_data *prog_data)
 {
    uint32_t mctl;
@@ -544,25 +544,25 @@ brw_compute_max_register_pressure(fs_visitor &s)
 {
    const register_pressure &rp = s.regpressure_analysis.require();
    uint32_t ip = 0, max_pressure = 0;
-   foreach_block_and_inst(block, fs_inst, inst, s.cfg) {
+   foreach_block_and_inst(block, brw_inst, inst, s.cfg) {
       max_pressure = MAX2(max_pressure, rp.regs_live_at_ip[ip]);
       ip++;
    }
    return max_pressure;
 }
 
-static fs_inst **
+static brw_inst **
 save_instruction_order(const struct cfg_t *cfg)
 {
    /* Before we schedule anything, stash off the instruction order as an array
-    * of fs_inst *.  This way, we can reset it between scheduling passes to
+    * of brw_inst *.  This way, we can reset it between scheduling passes to
     * prevent dependencies between the different scheduling modes.
     */
    int num_insts = cfg->last_block()->end_ip + 1;
-   fs_inst **inst_arr = new fs_inst * [num_insts];
+   brw_inst **inst_arr = new brw_inst * [num_insts];
 
    int ip = 0;
-   foreach_block_and_inst(block, fs_inst, inst, cfg) {
+   foreach_block_and_inst(block, brw_inst, inst, cfg) {
       assert(ip >= block->start_ip && ip <= block->end_ip);
       inst_arr[ip++] = inst;
    }
@@ -572,7 +572,7 @@ save_instruction_order(const struct cfg_t *cfg)
 }
 
 static void
-restore_instruction_order(struct cfg_t *cfg, fs_inst **inst_arr)
+restore_instruction_order(struct cfg_t *cfg, brw_inst **inst_arr)
 {
    ASSERTED int num_insts = cfg->last_block()->end_ip + 1;
 
@@ -629,11 +629,11 @@ brw_allocate_registers(fs_visitor &s, bool allow_spilling)
    bool spill_all = allow_spilling && INTEL_DEBUG(DEBUG_SPILL_FS);
 
    /* Before we schedule anything, stash off the instruction order as an array
-    * of fs_inst *.  This way, we can reset it between scheduling passes to
+    * of brw_inst *.  This way, we can reset it between scheduling passes to
     * prevent dependencies between the different scheduling modes.
     */
-   fs_inst **orig_order = save_instruction_order(s.cfg);
-   fs_inst **best_pressure_order = NULL;
+   brw_inst **orig_order = save_instruction_order(s.cfg);
+   brw_inst **best_pressure_order = NULL;
 
    void *scheduler_ctx = ralloc_context(NULL);
    brw_instruction_scheduler *sched = brw_prepare_scheduler(s, scheduler_ctx);

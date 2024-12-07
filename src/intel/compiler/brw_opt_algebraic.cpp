@@ -89,7 +89,7 @@ brw_imm_for_type(uint64_t value, enum brw_reg_type type)
  * Converts a MAD to an ADD by folding the multiplicand sources.
  */
 static void
-fold_multiplicands_of_MAD(fs_inst *inst)
+fold_multiplicands_of_MAD(brw_inst *inst)
 {
    assert(inst->opcode == BRW_OPCODE_MAD);
    assert (inst->src[1].file == IMM &&
@@ -135,7 +135,7 @@ fold_multiplicands_of_MAD(fs_inst *inst)
 }
 
 bool
-brw_opt_constant_fold_instruction(const intel_device_info *devinfo, fs_inst *inst)
+brw_opt_constant_fold_instruction(const intel_device_info *devinfo, brw_inst *inst)
 {
    bool progress = false;
 
@@ -325,7 +325,7 @@ brw_opt_algebraic(fs_visitor &s)
    const intel_device_info *devinfo = s.devinfo;
    bool progress = false;
 
-   foreach_block_and_inst_safe(block, fs_inst, inst, s.cfg) {
+   foreach_block_and_inst_safe(block, brw_inst, inst, s.cfg) {
       if (brw_opt_constant_fold_instruction(devinfo, inst)) {
          progress = true;
          continue;

@@ -338,7 +338,7 @@ brw_emit_urb_fence(fs_visitor &s)
 {
    const brw_builder bld1 = brw_builder(&s).at_end().exec_all().group(1, 0);
    brw_reg dst = bld1.vgrf(BRW_TYPE_UD);
-   fs_inst *fence = bld1.emit(SHADER_OPCODE_MEMORY_FENCE, dst,
+   brw_inst *fence = bld1.emit(SHADER_OPCODE_MEMORY_FENCE, dst,
                               brw_vec8_grf(0, 0),
                               brw_imm_ud(true),
                               brw_imm_ud(0));

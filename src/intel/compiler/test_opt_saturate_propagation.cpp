@@ -77,12 +77,12 @@ saturate_propagation_test::~saturate_propagation_test()
 }
 
 
-static fs_inst *
+static brw_inst *
 instruction(bblock_t *block, int num)
 {
-   fs_inst *inst = (fs_inst *)block->start();
+   brw_inst *inst = (brw_inst *)block->start();
    for (int i = 0; i < num; i++) {
-      inst = (fs_inst *)inst->next;
+      inst = (brw_inst *)inst->next;
    }
    return inst;
 }
@@ -395,7 +395,7 @@ TEST_F(saturate_propagation_test, mad_imm_float_neg_mov_sat)
    /* The builder for MAD tries to be helpful and not put immediates as direct
     * sources. We want to test specifically that case.
     */
-   fs_inst *mad = bld.MAD(dst0, src2, src2, src2);
+   brw_inst *mad = bld.MAD(dst0, src2, src2, src2);
    mad->src[0] = brw_imm_f(1.0f);
    mad->src[1] = brw_imm_f(-2.0f);
    dst0.negate = true;

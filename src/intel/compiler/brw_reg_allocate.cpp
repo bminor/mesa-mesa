@@ -61,7 +61,7 @@ brw_assign_regs_trivial(fs_visitor &s)
    }
    s.grf_used = hw_reg_mapping[s.alloc.count];
 
-   foreach_block_and_inst(block, fs_inst, inst, s.cfg) {
+   foreach_block_and_inst(block, brw_inst, inst, s.cfg) {
       assign_reg(devinfo, hw_reg_mapping, &inst->dst);
       for (i = 0; i < inst->sources; i++) {
          assign_reg(devinfo, hw_reg_mapping, &inst->src[i]);
@@ -165,7 +165,7 @@ void fs_visitor::calculate_payload_ranges(bool allow_spilling,
       payload_last_use_ip[i] = -1;
 
    int ip = 0;
-   foreach_block_and_inst(block, fs_inst, inst, cfg) {
+   foreach_block_and_inst(block, brw_inst, inst, cfg) {
       switch (inst->opcode) {
       case BRW_OPCODE_DO:
          loop_depth++;
@@ -286,7 +286,7 @@ public:
 private:
    void setup_live_interference(unsigned node,
                                 int node_start_ip, int node_end_ip);
-   void setup_inst_interference(const fs_inst *inst);
+   void setup_inst_interference(const brw_inst *inst);
 
    void build_interference_graph(bool allow_spilling);
 
@@ -426,7 +426,7 @@ brw_reg_alloc::setup_live_interference(unsigned node,
  * GRF sources and the destination.
  */
 static bool
-brw_inst_has_source_and_destination_hazard(const fs_inst *inst)
+brw_inst_has_source_and_destination_hazard(const brw_inst *inst)
 {
    switch (inst->opcode) {
    case FS_OPCODE_PACK_HALF_2x16_SPLIT:
@@ -519,7 +519,7 @@ brw_inst_has_source_and_destination_hazard(const fs_inst *inst)
 }
 
 void
-brw_reg_alloc::setup_inst_interference(const fs_inst *inst)
+brw_reg_alloc::setup_inst_interference(const brw_inst *inst)
 {
    /* Certain instructions can't safely use the same register for their
     * sources and destination.  Add interference.
@@ -674,7 +674,7 @@ brw_reg_alloc::build_interference_graph(bool allow_spilling)
 
    /* Add interference based on the instructions in which a register is used.
     */
-   foreach_block_and_inst(block, fs_inst, inst, fs->cfg)
+   foreach_block_and_inst(block, brw_inst, inst, fs->cfg)
       setup_inst_interference(inst);
 }
 
@@ -682,7 +682,7 @@ brw_reg
 brw_reg_alloc::build_single_offset(const brw_builder &bld, uint32_t spill_offset, int ip)
 {
    brw_reg offset = retype(alloc_spill_reg(1, ip), BRW_TYPE_UD);
-   fs_inst *inst = bld.MOV(offset, brw_imm_ud(spill_offset));
+   brw_inst *inst = bld.MOV(offset, brw_imm_ud(spill_offset));
    _mesa_set_add(spill_insts, inst);
    return offset;
 }
@@ -697,7 +697,7 @@ brw_reg_alloc::build_ex_desc(const brw_builder &bld, unsigned reg_size, bool uns
     */
    brw_reg ex_desc = bld.vaddr(BRW_TYPE_UD,
                                BRW_ADDRESS_SUBREG_INDIRECT_SPILL_DESC);
-   fs_inst *inst = bld.exec_all().group(1, 0).AND(
+   brw_inst *inst = bld.exec_all().group(1, 0).AND(
       ex_desc,
       retype(brw_vec1_grf(0, 5), BRW_TYPE_UD),
       brw_imm_ud(INTEL_MASK(31, 10)));
@@ -734,7 +734,7 @@ brw_reg_alloc::build_lane_offsets(const brw_builder &bld, uint32_t spill_offset,
    const unsigned reg_count = ubld.dispatch_width() / 8;
 
    brw_reg offset = retype(alloc_spill_reg(reg_count, ip), BRW_TYPE_UD);
-   fs_inst *inst;
+   brw_inst *inst;
 
    /* Build an offset per lane in SIMD8 */
    inst = ubld.group(8, 0).MOV(retype(offset, BRW_TYPE_UW),
@@ -788,7 +788,7 @@ brw_reg_alloc::build_legacy_scratch_header(const brw_builder &bld,
    brw_reg header = retype(alloc_spill_reg(1, ip), BRW_TYPE_UD);
    ra_add_node_interference(g, first_vgrf_node + header.nr, first_payload_node);
 
-   fs_inst *inst =
+   brw_inst *inst =
       ubld8.emit(SHADER_OPCODE_SCRATCH_HEADER, header, brw_ud8_grf(0, 0));
    _mesa_set_add(spill_insts, inst);
 
@@ -813,7 +813,7 @@ brw_reg_alloc::emit_unspill(const brw_builder &bld,
    for (unsigned i = 0; i < DIV_ROUND_UP(count, reg_size); i++) {
       ++stats->fill_count;
 
-      fs_inst *unspill_inst;
+      brw_inst *unspill_inst;
       if (devinfo->verx10 >= 125) {
          /* LSC is limited to SIMD16 (SIMD32 on Xe2) load/store but we can
           * load more using transpose messages.
@@ -912,7 +912,7 @@ brw_reg_alloc::emit_spill(const brw_builder &bld,
    for (unsigned i = 0; i < DIV_ROUND_UP(count, reg_size); i++) {
       ++stats->spill_count;
 
-      fs_inst *spill_inst;
+      brw_inst *spill_inst;
       if (devinfo->verx10 >= 125) {
          brw_reg offset = build_lane_offsets(bld, spill_offset, ip);
 
@@ -995,7 +995,7 @@ brw_reg_alloc::set_spill_costs()
     * spill/unspill we'll have to do, and guess that the insides of
     * loops run 10 times.
     */
-   foreach_block_and_inst(block, fs_inst, inst, fs->cfg) {
+   foreach_block_and_inst(block, brw_inst, inst, fs->cfg) {
       for (unsigned int i = 0; i < inst->sources; i++) {
 	 if (inst->src[i].file == VGRF)
             spill_costs[inst->src[i].nr] += regs_read(devinfo, inst, i) * block_scale;
@@ -1137,7 +1137,7 @@ brw_reg_alloc::spill_reg(unsigned spill_reg)
     * could just spill/unspill the GRF being accessed.
     */
    int ip = 0;
-   foreach_block_and_inst (block, fs_inst, inst, fs->cfg) {
+   foreach_block_and_inst (block, brw_inst, inst, fs->cfg) {
       const brw_builder ibld = brw_builder(fs, block, inst);
       exec_node *before = inst->prev;
       exec_node *after = inst->next;
@@ -1243,8 +1243,8 @@ brw_reg_alloc::spill_reg(unsigned spill_reg)
                     subset_spill_offset, regs_written(inst), ip);
       }
 
-      for (fs_inst *inst = (fs_inst *)before->next;
-           inst != after; inst = (fs_inst *)inst->next)
+      for (brw_inst *inst = (brw_inst *)before->next;
+           inst != after; inst = (brw_inst *)inst->next)
          setup_inst_interference(inst);
 
       /* We don't advance the ip for scratch read/write instructions
@@ -1320,7 +1320,7 @@ brw_reg_alloc::assign_regs(bool allow_spilling, bool spill_all)
                                                            reg_unit(devinfo)));
    }
 
-   foreach_block_and_inst(block, fs_inst, inst, fs->cfg) {
+   foreach_block_and_inst(block, brw_inst, inst, fs->cfg) {
       assign_reg(devinfo, hw_reg_mapping, &inst->dst);
       for (int i = 0; i < inst->sources; i++) {
          assign_reg(devinfo, hw_reg_mapping, &inst->src[i]);

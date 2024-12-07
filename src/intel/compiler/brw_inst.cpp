@@ -10,10 +10,10 @@
 #include "brw_isa_info.h"
 
 static void
-initialize_sources(fs_inst *inst, const brw_reg src[], uint8_t num_sources);
+initialize_sources(brw_inst *inst, const brw_reg src[], uint8_t num_sources);
 
 void
-fs_inst::init(enum opcode opcode, uint8_t exec_size, const brw_reg &dst,
+brw_inst::init(enum opcode opcode, uint8_t exec_size, const brw_reg &dst,
               const brw_reg *src, unsigned sources)
 {
    memset((void*)this, 0, sizeof(*this));
@@ -53,62 +53,62 @@ fs_inst::init(enum opcode opcode, uint8_t exec_size, const brw_reg &dst,
    this->writes_accumulator = false;
 }
 
-fs_inst::fs_inst()
+brw_inst::brw_inst()
 {
    init(BRW_OPCODE_NOP, 8, dst, NULL, 0);
 }
 
-fs_inst::fs_inst(enum opcode opcode, uint8_t exec_size)
+brw_inst::brw_inst(enum opcode opcode, uint8_t exec_size)
 {
    init(opcode, exec_size, reg_undef, NULL, 0);
 }
 
-fs_inst::fs_inst(enum opcode opcode, uint8_t exec_size, const brw_reg &dst)
+brw_inst::brw_inst(enum opcode opcode, uint8_t exec_size, const brw_reg &dst)
 {
    init(opcode, exec_size, dst, NULL, 0);
 }
 
-fs_inst::fs_inst(enum opcode opcode, uint8_t exec_size, const brw_reg &dst,
+brw_inst::brw_inst(enum opcode opcode, uint8_t exec_size, const brw_reg &dst,
                  const brw_reg &src0)
 {
    const brw_reg src[1] = { src0 };
    init(opcode, exec_size, dst, src, 1);
 }
 
-fs_inst::fs_inst(enum opcode opcode, uint8_t exec_size, const brw_reg &dst,
+brw_inst::brw_inst(enum opcode opcode, uint8_t exec_size, const brw_reg &dst,
                  const brw_reg &src0, const brw_reg &src1)
 {
    const brw_reg src[2] = { src0, src1 };
    init(opcode, exec_size, dst, src, 2);
 }
 
-fs_inst::fs_inst(enum opcode opcode, uint8_t exec_size, const brw_reg &dst,
+brw_inst::brw_inst(enum opcode opcode, uint8_t exec_size, const brw_reg &dst,
                  const brw_reg &src0, const brw_reg &src1, const brw_reg &src2)
 {
    const brw_reg src[3] = { src0, src1, src2 };
    init(opcode, exec_size, dst, src, 3);
 }
 
-fs_inst::fs_inst(enum opcode opcode, uint8_t exec_width, const brw_reg &dst,
+brw_inst::brw_inst(enum opcode opcode, uint8_t exec_width, const brw_reg &dst,
                  const brw_reg src[], unsigned sources)
 {
    init(opcode, exec_width, dst, src, sources);
 }
 
-fs_inst::fs_inst(const fs_inst &that)
+brw_inst::brw_inst(const brw_inst &that)
 {
    memcpy((void*)this, &that, sizeof(that));
    initialize_sources(this, that.src, that.sources);
 }
 
-fs_inst::~fs_inst()
+brw_inst::~brw_inst()
 {
    if (this->src != this->builtin_src)
       delete[] this->src;
 }
 
 static void
-initialize_sources(fs_inst *inst, const brw_reg src[], uint8_t num_sources)
+initialize_sources(brw_inst *inst, const brw_reg src[], uint8_t num_sources)
 {
    if (num_sources > ARRAY_SIZE(inst->builtin_src))
       inst->src = new brw_reg[num_sources];
@@ -122,7 +122,7 @@ initialize_sources(fs_inst *inst, const brw_reg src[], uint8_t num_sources)
 }
 
 void
-fs_inst::resize_sources(uint8_t num_sources)
+brw_inst::resize_sources(uint8_t num_sources)
 {
    if (this->sources == num_sources)
       return;
@@ -166,7 +166,7 @@ fs_inst::resize_sources(uint8_t num_sources)
 }
 
 bool
-fs_inst::is_send_from_grf() const
+brw_inst::is_send_from_grf() const
 {
    switch (opcode) {
    case SHADER_OPCODE_SEND:
@@ -186,7 +186,7 @@ fs_inst::is_send_from_grf() const
 }
 
 bool
-fs_inst::is_control_source(unsigned arg) const
+brw_inst::is_control_source(unsigned arg) const
 {
    switch (opcode) {
    case FS_OPCODE_UNIFORM_PULL_CONSTANT_LOAD:
@@ -230,7 +230,7 @@ fs_inst::is_control_source(unsigned arg) const
 }
 
 bool
-fs_inst::is_payload(unsigned arg) const
+brw_inst::is_payload(unsigned arg) const
 {
    switch (opcode) {
    case FS_OPCODE_INTERPOLATE_AT_PER_SLOT_OFFSET:
@@ -253,7 +253,7 @@ fs_inst::is_payload(unsigned arg) const
 }
 
 bool
-fs_inst::can_do_source_mods(const struct intel_device_info *devinfo) const
+brw_inst::can_do_source_mods(const struct intel_device_info *devinfo) const
 {
    if (is_send_from_grf())
       return false;
@@ -313,7 +313,7 @@ fs_inst::can_do_source_mods(const struct intel_device_info *devinfo) const
 }
 
 bool
-fs_inst::can_do_cmod() const
+brw_inst::can_do_cmod() const
 {
    switch (opcode) {
    case BRW_OPCODE_ADD:
@@ -370,7 +370,7 @@ fs_inst::can_do_cmod() const
 }
 
 bool
-fs_inst::can_change_types() const
+brw_inst::can_change_types() const
 {
    return dst.type == src[0].type &&
           !src[0].abs && !src[0].negate && !saturate && src[0].file != ATTR &&
@@ -391,7 +391,7 @@ fs_inst::can_change_types() const
  * it.
  */
 bool
-fs_inst::is_partial_write() const
+brw_inst::is_partial_write() const
 {
    if (this->predicate && !this->predicate_trivial &&
        this->opcode != BRW_OPCODE_SEL)
@@ -407,7 +407,7 @@ fs_inst::is_partial_write() const
 }
 
 unsigned
-fs_inst::components_read(unsigned i) const
+brw_inst::components_read(unsigned i) const
 {
    /* Return zero if the source is not present. */
    if (src[i].file == BAD_FILE)
@@ -512,7 +512,7 @@ fs_inst::components_read(unsigned i) const
 }
 
 unsigned
-fs_inst::size_read(const struct intel_device_info *devinfo, int arg) const
+brw_inst::size_read(const struct intel_device_info *devinfo, int arg) const
 {
    switch (opcode) {
    case SHADER_OPCODE_SEND:
@@ -637,7 +637,7 @@ namespace {
 }
 
 unsigned
-fs_inst::flags_read(const intel_device_info *devinfo) const
+brw_inst::flags_read(const intel_device_info *devinfo) const
 {
    if (devinfo->ver < 20 && (predicate == BRW_PREDICATE_ALIGN1_ANYV ||
                              predicate == BRW_PREDICATE_ALIGN1_ALLV)) {
@@ -658,7 +658,7 @@ fs_inst::flags_read(const intel_device_info *devinfo) const
 }
 
 unsigned
-fs_inst::flags_written(const intel_device_info *devinfo) const
+brw_inst::flags_written(const intel_device_info *devinfo) const
 {
    if (conditional_mod && (opcode != BRW_OPCODE_SEL &&
                            opcode != BRW_OPCODE_CSEL &&
@@ -677,7 +677,7 @@ fs_inst::flags_written(const intel_device_info *devinfo) const
 }
 
 bool
-fs_inst::has_sampler_residency() const
+brw_inst::has_sampler_residency() const
 {
    switch (opcode) {
    case SHADER_OPCODE_TEX_LOGICAL:
@@ -704,7 +704,7 @@ fs_inst::has_sampler_residency() const
 
 /* \sa inst_is_raw_move in brw_eu_validate. */
 bool
-fs_inst::is_raw_move() const
+brw_inst::is_raw_move() const
 {
    if (opcode != BRW_OPCODE_MOV)
       return false;
@@ -726,7 +726,7 @@ fs_inst::is_raw_move() const
 }
 
 bool
-fs_inst::uses_address_register_implicitly() const
+brw_inst::uses_address_register_implicitly() const
 {
    switch (opcode) {
    case SHADER_OPCODE_BROADCAST:
@@ -739,7 +739,7 @@ fs_inst::uses_address_register_implicitly() const
 }
 
 bool
-fs_inst::is_commutative() const
+brw_inst::is_commutative() const
 {
    switch (opcode) {
    case BRW_OPCODE_AND:
@@ -770,13 +770,13 @@ fs_inst::is_commutative() const
 }
 
 bool
-fs_inst::is_3src(const struct brw_compiler *compiler) const
+brw_inst::is_3src(const struct brw_compiler *compiler) const
 {
    return ::is_3src(&compiler->isa, opcode);
 }
 
 bool
-fs_inst::is_math() const
+brw_inst::is_math() const
 {
    return (opcode == SHADER_OPCODE_RCP ||
            opcode == SHADER_OPCODE_RSQ ||
@@ -791,7 +791,7 @@ fs_inst::is_math() const
 }
 
 bool
-fs_inst::is_control_flow_begin() const
+brw_inst::is_control_flow_begin() const
 {
    switch (opcode) {
    case BRW_OPCODE_DO:
@@ -804,7 +804,7 @@ fs_inst::is_control_flow_begin() const
 }
 
 bool
-fs_inst::is_control_flow_end() const
+brw_inst::is_control_flow_end() const
 {
    switch (opcode) {
    case BRW_OPCODE_ELSE:
@@ -817,7 +817,7 @@ fs_inst::is_control_flow_end() const
 }
 
 bool
-fs_inst::is_control_flow() const
+brw_inst::is_control_flow() const
 {
    switch (opcode) {
    case BRW_OPCODE_DO:
@@ -834,7 +834,7 @@ fs_inst::is_control_flow() const
 }
 
 bool
-fs_inst::uses_indirect_addressing() const
+brw_inst::uses_indirect_addressing() const
 {
    switch (opcode) {
    case SHADER_OPCODE_BROADCAST:
@@ -847,7 +847,7 @@ fs_inst::uses_indirect_addressing() const
 }
 
 bool
-fs_inst::can_do_saturate() const
+brw_inst::can_do_saturate() const
 {
    switch (opcode) {
    case BRW_OPCODE_ADD:
@@ -891,7 +891,7 @@ fs_inst::can_do_saturate() const
 }
 
 bool
-fs_inst::reads_accumulator_implicitly() const
+brw_inst::reads_accumulator_implicitly() const
 {
    switch (opcode) {
    case BRW_OPCODE_MAC:
@@ -903,14 +903,14 @@ fs_inst::reads_accumulator_implicitly() const
 }
 
 bool
-fs_inst::writes_accumulator_implicitly(const struct intel_device_info *devinfo) const
+brw_inst::writes_accumulator_implicitly(const struct intel_device_info *devinfo) const
 {
    return writes_accumulator ||
           (eot && intel_needs_workaround(devinfo, 14010017096));
 }
 
 bool
-fs_inst::has_side_effects() const
+brw_inst::has_side_effects() const
 {
    switch (opcode) {
    case SHADER_OPCODE_SEND:
@@ -938,7 +938,7 @@ fs_inst::has_side_effects() const
 }
 
 bool
-fs_inst::is_volatile() const
+brw_inst::is_volatile() const
 {
    return opcode == SHADER_OPCODE_MEMORY_LOAD_LOGICAL ||
           ((opcode == SHADER_OPCODE_SEND ||
@@ -947,7 +947,7 @@ fs_inst::is_volatile() const
 
 #ifndef NDEBUG
 static bool
-inst_is_in_block(const bblock_t *block, const fs_inst *inst)
+inst_is_in_block(const bblock_t *block, const brw_inst *inst)
 {
    const exec_node *n = inst;
 
@@ -974,7 +974,7 @@ adjust_later_block_ips(bblock_t *start_block, int ip_adjustment)
 }
 
 void
-fs_inst::insert_after(bblock_t *block, fs_inst *inst)
+brw_inst::insert_after(bblock_t *block, brw_inst *inst)
 {
    assert(this != inst);
    assert(block->end_ip_delta == 0);
@@ -990,7 +990,7 @@ fs_inst::insert_after(bblock_t *block, fs_inst *inst)
 }
 
 void
-fs_inst::insert_before(bblock_t *block, fs_inst *inst)
+brw_inst::insert_before(bblock_t *block, brw_inst *inst)
 {
    assert(this != inst);
    assert(block->end_ip_delta == 0);
@@ -1006,7 +1006,7 @@ fs_inst::insert_before(bblock_t *block, fs_inst *inst)
 }
 
 void
-fs_inst::remove(bblock_t *block, bool defer_later_block_ip_updates)
+brw_inst::remove(bblock_t *block, bool defer_later_block_ip_updates)
 {
    assert(inst_is_in_block(block, this) || !"Instruction not in block");
 

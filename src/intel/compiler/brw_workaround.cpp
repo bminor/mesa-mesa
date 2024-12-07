@@ -19,7 +19,7 @@ brw_workaround_emit_dummy_mov_instruction(fs_visitor &s)
    if (!intel_needs_workaround(s.devinfo, 14015360517))
       return false;
 
-   fs_inst *first_inst =
+   brw_inst *first_inst =
       s.cfg->first_block()->start();
 
    /* We can skip the WA if first instruction is marked with
@@ -31,7 +31,7 @@ brw_workaround_emit_dummy_mov_instruction(fs_visitor &s)
 
    /* Insert dummy mov as first instruction. */
    const brw_builder ubld =
-      brw_builder(&s, s.cfg->first_block(), (fs_inst *)first_inst).exec_all().group(8, 0);
+      brw_builder(&s, s.cfg->first_block(), (brw_inst *)first_inst).exec_all().group(8, 0);
    ubld.MOV(ubld.null_reg_ud(), brw_imm_ud(0u));
 
    s.invalidate_analysis(DEPENDENCY_INSTRUCTIONS | DEPENDENCY_VARIABLES);
@@ -39,7 +39,7 @@ brw_workaround_emit_dummy_mov_instruction(fs_visitor &s)
 }
 
 static bool
-needs_dummy_fence(const intel_device_info *devinfo, fs_inst *inst)
+needs_dummy_fence(const intel_device_info *devinfo, brw_inst *inst)
 {
    /* This workaround is about making sure that any instruction writing
     * through UGM has completed before we hit EOT.
@@ -90,7 +90,7 @@ brw_workaround_memory_fence_before_eot(fs_visitor &s)
    if (!intel_needs_workaround(s.devinfo, 22013689345))
       return false;
 
-   foreach_block_and_inst_safe (block, fs_inst, inst, s.cfg) {
+   foreach_block_and_inst_safe (block, brw_inst, inst, s.cfg) {
       if (!inst->eot) {
          if (needs_dummy_fence(s.devinfo, inst))
             has_ugm_write_or_atomic = true;
@@ -104,7 +104,7 @@ brw_workaround_memory_fence_before_eot(fs_visitor &s)
       const brw_builder ubld = ibld.exec_all().group(1, 0);
 
       brw_reg dst = ubld.vgrf(BRW_TYPE_UD);
-      fs_inst *dummy_fence = ubld.emit(SHADER_OPCODE_MEMORY_FENCE,
+      brw_inst *dummy_fence = ubld.emit(SHADER_OPCODE_MEMORY_FENCE,
                                        dst, brw_vec8_grf(0, 0),
                                        /* commit enable */ brw_imm_ud(1),
                                        /* bti */ brw_imm_ud(0));
@@ -131,10 +131,10 @@ brw_workaround_memory_fence_before_eot(fs_visitor &s)
  * find_halt_control_flow_region_end(), the region of divergence extends until
  * the only SHADER_OPCODE_HALT_TARGET in the program.
  */
-static const fs_inst *
+static const brw_inst *
 find_halt_control_flow_region_start(const fs_visitor *v)
 {
-   foreach_block_and_inst(block, fs_inst, inst, v->cfg) {
+   foreach_block_and_inst(block, brw_inst, inst, v->cfg) {
       if (inst->opcode == BRW_OPCODE_HALT ||
           inst->opcode == SHADER_OPCODE_HALT_TARGET)
          return inst;
@@ -164,7 +164,7 @@ brw_workaround_nomask_control_flow(fs_visitor &s)
    const brw_predicate pred = s.dispatch_width > 16 ? BRW_PREDICATE_ALIGN1_ANY32H :
                               s.dispatch_width > 8 ? BRW_PREDICATE_ALIGN1_ANY16H :
                               BRW_PREDICATE_ALIGN1_ANY8H;
-   const fs_inst *halt_start = find_halt_control_flow_region_start(&s);
+   const brw_inst *halt_start = find_halt_control_flow_region_start(&s);
    unsigned depth = 0;
    bool progress = false;
 
@@ -178,7 +178,7 @@ brw_workaround_nomask_control_flow(fs_visitor &s)
                                                .flag_liveout[0];
       STATIC_ASSERT(ARRAY_SIZE(live_vars.block_data[0].flag_liveout) == 1);
 
-      foreach_inst_in_block_reverse_safe(fs_inst, inst, block) {
+      foreach_inst_in_block_reverse_safe(brw_inst, inst, block) {
          if (!inst->predicate && inst->exec_size >= 8)
             flag_liveout &= ~inst->flags_written(s.devinfo);
 
@@ -311,7 +311,7 @@ brw_workaround_source_arf_before_eot(fs_visitor &s)
    foreach_block(block, s.cfg) {
       unsigned flags_unread_in_block = 0;
 
-      foreach_inst_in_block(fs_inst, inst, block) {
+      foreach_inst_in_block(brw_inst, inst, block) {
          /* Instruction can read and write to the same flag, so the order is important */
          flags_unread_in_block &= ~bytes_bitmask_to_words(inst->flags_read(s.devinfo));
          flags_unread_in_block |= bytes_bitmask_to_words(inst->flags_written(s.devinfo));
@@ -333,7 +333,7 @@ brw_workaround_source_arf_before_eot(fs_visitor &s)
    if (flags_unread) {
       int eot_count = 0;
 
-      foreach_block_and_inst_safe(block, fs_inst, inst, s.cfg)
+      foreach_block_and_inst_safe(block, brw_inst, inst, s.cfg)
       {
          if (!inst->eot)
             continue;

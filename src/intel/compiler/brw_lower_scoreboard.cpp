@@ -72,7 +72,7 @@ namespace {
     * instruction (e.g. when TGL_PIPE_NONE is specified in tgl_swsb).
     */
    tgl_pipe
-   inferred_sync_pipe(const struct intel_device_info *devinfo, const fs_inst *inst)
+   inferred_sync_pipe(const struct intel_device_info *devinfo, const brw_inst *inst)
    {
       if (devinfo->verx10 >= 125) {
          bool has_int_src = false, has_long_src = false;
@@ -115,7 +115,7 @@ namespace {
     * RegDist synchronization mechanism.
     */
    tgl_pipe
-   inferred_exec_pipe(const struct intel_device_info *devinfo, const fs_inst *inst)
+   inferred_exec_pipe(const struct intel_device_info *devinfo, const brw_inst *inst)
    {
       const brw_reg_type t = get_exec_type(inst);
       const bool is_dword_multiply = !brw_type_is_float(t) &&
@@ -178,7 +178,7 @@ namespace {
     * instruction.
     */
    unsigned
-   ordered_unit(const struct intel_device_info *devinfo, const fs_inst *inst,
+   ordered_unit(const struct intel_device_info *devinfo, const brw_inst *inst,
                 unsigned p)
    {
       switch (inst->opcode) {
@@ -278,7 +278,7 @@ namespace {
       ordered_address jp(TGL_PIPE_ALL, 0);
       unsigned ip = 0;
 
-      foreach_block_and_inst(block, fs_inst, inst, shader->cfg) {
+      foreach_block_and_inst(block, brw_inst, inst, shader->cfg) {
          jps[ip] = jp;
          for (unsigned p = 0; p < IDX(TGL_PIPE_ALL); p++)
             jp.jp[p] += ordered_unit(shader->devinfo, inst, p);
@@ -648,7 +648,7 @@ namespace {
     */
    dependency
    dependency_for_write(const struct intel_device_info *devinfo,
-                        const fs_inst *inst, dependency dep)
+                        const brw_inst *inst, dependency dep)
    {
       if (!is_unordered(devinfo, inst) &&
           is_single_pipe(dep.jp, inferred_exec_pipe(devinfo, inst)))
@@ -966,7 +966,7 @@ namespace {
     */
    tgl_sbid_mode
    baked_unordered_dependency_mode(const struct intel_device_info *devinfo,
-                                   const fs_inst *inst,
+                                   const brw_inst *inst,
                                    const dependency_list &deps,
                                    const ordered_address &jp)
    {
@@ -997,7 +997,7 @@ namespace {
     */
    bool
    baked_ordered_dependency_mode(const struct intel_device_info *devinfo,
-                                 const fs_inst *inst,
+                                 const brw_inst *inst,
                                  const dependency_list &deps,
                                  const ordered_address &jp)
    {
@@ -1043,7 +1043,7 @@ namespace {
     */
    void
    update_inst_scoreboard(const fs_visitor *shader, const ordered_address *jps,
-                          const fs_inst *inst, unsigned ip, scoreboard &sb)
+                          const brw_inst *inst, unsigned ip, scoreboard &sb)
    {
       const bool exec_all = inst->force_writemask_all;
       const struct intel_device_info *devinfo = shader->devinfo;
@@ -1106,7 +1106,7 @@ namespace {
       scoreboard *sbs = new scoreboard[shader->cfg->num_blocks];
       unsigned ip = 0;
 
-      foreach_block_and_inst(block, fs_inst, inst, shader->cfg)
+      foreach_block_and_inst(block, brw_inst, inst, shader->cfg)
          update_inst_scoreboard(shader, jps, inst, ip++, sbs[block->num]);
 
       return sbs;
@@ -1145,7 +1145,7 @@ namespace {
                      delta[p] = jps[child_link->block->start_ip].jp[p]
                         - jps[block->end_ip].jp[p]
                         - ordered_unit(shader->devinfo,
-                                       static_cast<const fs_inst *>(block->end()), p);
+                                       static_cast<const brw_inst *>(block->end()), p);
 
                   in_sb = merge(eq, in_sb, transport(sb, delta));
                }
@@ -1177,7 +1177,7 @@ namespace {
       dependency_list *deps = new dependency_list[num_instructions(shader)];
       unsigned ip = 0;
 
-      foreach_block_and_inst(block, fs_inst, inst, shader->cfg) {
+      foreach_block_and_inst(block, brw_inst, inst, shader->cfg) {
          const bool exec_all = inst->force_writemask_all;
          const tgl_pipe p = inferred_exec_pipe(devinfo, inst);
          scoreboard &sb = sbs[block->num];
@@ -1295,7 +1295,7 @@ namespace {
       const struct intel_device_info *devinfo = shader->devinfo;
       unsigned ip = 0;
 
-      foreach_block_and_inst_safe(block, fs_inst, inst, shader->cfg) {
+      foreach_block_and_inst_safe(block, brw_inst, inst, shader->cfg) {
          const bool exec_all = inst->force_writemask_all;
          const bool ordered_mode =
             baked_ordered_dependency_mode(devinfo, inst, deps[ip], jps[ip]);
@@ -1324,7 +1324,7 @@ namespace {
                    */
                   const brw_builder ibld = brw_builder(shader, block, inst)
                                            .exec_all().group(1, 0);
-                  fs_inst *sync = ibld.SYNC(TGL_SYNC_NOP);
+                  brw_inst *sync = ibld.SYNC(TGL_SYNC_NOP);
                   sync->sched.sbid = dep.id;
                   sync->sched.mode = dep.unordered;
                   assert(!(sync->sched.mode & TGL_SBID_SET));
@@ -1347,7 +1347,7 @@ namespace {
                 */
                const brw_builder ibld = brw_builder(shader, block, inst)
                                         .exec_all().group(1, 0);
-               fs_inst *sync = ibld.SYNC(TGL_SYNC_NOP);
+               brw_inst *sync = ibld.SYNC(TGL_SYNC_NOP);
                sync->sched = ordered_dependency_swsb(deps[ip], jps[ip], true);
                break;
             }

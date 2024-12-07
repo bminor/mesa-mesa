@@ -53,7 +53,7 @@ brw_opt_split_virtual_grfs(fs_visitor &s)
     * register size.
     */
    const unsigned reg_inc = reg_unit(s.devinfo);
-   foreach_block_and_inst(block, fs_inst, inst, s.cfg) {
+   foreach_block_and_inst(block, brw_inst, inst, s.cfg) {
       if (inst->dst.file == VGRF) {
          unsigned reg = vgrf_to_reg[inst->dst.nr];
          for (unsigned j = reg_inc; j < s.alloc.sizes[inst->dst.nr]; j += reg_inc)
@@ -69,7 +69,7 @@ brw_opt_split_virtual_grfs(fs_visitor &s)
       }
    }
 
-   foreach_block_and_inst(block, fs_inst, inst, s.cfg) {
+   foreach_block_and_inst(block, brw_inst, inst, s.cfg) {
       /* We fix up undef instructions later */
       if (inst->opcode == SHADER_OPCODE_UNDEF) {
          assert(inst->dst.file == VGRF);
@@ -141,7 +141,7 @@ brw_opt_split_virtual_grfs(fs_visitor &s)
       goto cleanup;
    }
 
-   foreach_block_and_inst_safe(block, fs_inst, inst, s.cfg) {
+   foreach_block_and_inst_safe(block, brw_inst, inst, s.cfg) {
       if (inst->opcode == SHADER_OPCODE_UNDEF) {
          assert(inst->dst.file == VGRF);
          if (vgrf_has_split[inst->dst.nr]) {
@@ -151,7 +151,7 @@ brw_opt_split_virtual_grfs(fs_visitor &s)
             unsigned size_written = 0;
             while (size_written < inst->size_written) {
                reg = vgrf_to_reg[inst->dst.nr] + reg_offset + size_written / REG_SIZE;
-               fs_inst *undef =
+               brw_inst *undef =
                   ibld.UNDEF(
                      byte_offset(brw_vgrf(new_virtual_grf[reg], inst->dst.type),
                                  new_reg_offset[reg] * REG_SIZE));
@@ -228,7 +228,7 @@ brw_opt_compact_virtual_grfs(fs_visitor &s)
    memset(remap_table, -1, s.alloc.count * sizeof(int));
 
    /* Mark which virtual GRFs are used. */
-   foreach_block_and_inst(block, const fs_inst, inst, s.cfg) {
+   foreach_block_and_inst(block, const brw_inst, inst, s.cfg) {
       if (inst->dst.file == VGRF)
          remap_table[inst->dst.nr] = 0;
 
@@ -257,7 +257,7 @@ brw_opt_compact_virtual_grfs(fs_visitor &s)
    s.alloc.count = new_index;
 
    /* Patch all the instructions to use the newly renumbered registers */
-   foreach_block_and_inst(block, fs_inst, inst, s.cfg) {
+   foreach_block_and_inst(block, brw_inst, inst, s.cfg) {
       if (inst->dst.file == VGRF)
          inst->dst.nr = remap_table[inst->dst.nr];
 
