@@ -461,31 +461,29 @@ namespace {
    lower_instruction(fs_visitor *v, bblock_t *block, fs_inst *inst);
 }
 
-namespace brw {
-   /**
-    * Remove any modifiers from the \p i-th source region of the instruction,
-    * including negate, abs and any implicit type conversion to the execution
-    * type.  Instead any source modifiers will be implemented as a separate
-    * MOV instruction prior to the original instruction.
-    */
-   bool
-   lower_src_modifiers(fs_visitor *v, bblock_t *block, fs_inst *inst, unsigned i)
-   {
-      assert(inst->components_read(i) == 1);
-      assert(v->devinfo->has_integer_dword_mul ||
-             inst->opcode != BRW_OPCODE_MUL ||
-             brw_type_is_float(get_exec_type(inst)) ||
-             MIN2(brw_type_size_bytes(inst->src[0].type), brw_type_size_bytes(inst->src[1].type)) >= 4 ||
-             brw_type_size_bytes(inst->src[i].type) == get_exec_type_size(inst));
+/**
+ * Remove any modifiers from the \p i-th source region of the instruction,
+ * including negate, abs and any implicit type conversion to the execution
+ * type.  Instead any source modifiers will be implemented as a separate
+ * MOV instruction prior to the original instruction.
+ */
+bool
+brw_lower_src_modifiers(fs_visitor &s, bblock_t *block, fs_inst *inst, unsigned i)
+{
+   assert(inst->components_read(i) == 1);
+   assert(s.devinfo->has_integer_dword_mul ||
+          inst->opcode != BRW_OPCODE_MUL ||
+          brw_type_is_float(get_exec_type(inst)) ||
+          MIN2(brw_type_size_bytes(inst->src[0].type), brw_type_size_bytes(inst->src[1].type)) >= 4 ||
+          brw_type_size_bytes(inst->src[i].type) == get_exec_type_size(inst));
 
-      const brw_builder ibld(v, block, inst);
-      const brw_reg tmp = ibld.vgrf(get_exec_type(inst));
+   const brw_builder ibld(&s, block, inst);
+   const brw_reg tmp = ibld.vgrf(get_exec_type(inst));
 
-      lower_instruction(v, block, ibld.MOV(tmp, inst->src[i]));
-      inst->src[i] = tmp;
+   lower_instruction(&s, block, ibld.MOV(tmp, inst->src[i]));
+   inst->src[i] = tmp;
 
-      return true;
-   }
+   return true;
 }
 
 namespace {
@@ -789,7 +787,7 @@ namespace {
 
       for (unsigned i = 0; i < inst->sources; i++) {
          if (has_invalid_src_modifiers(devinfo, inst, i))
-            progress |= lower_src_modifiers(v, block, inst, i);
+            progress |= brw_lower_src_modifiers(*v, block, inst, i);
 
          if (has_invalid_src_region(devinfo, inst, i))
             progress |= lower_src_region(v, block, inst, i);

@@ -481,9 +481,6 @@ namespace brw {
    {
       return brw_uniform_reg(wm_prog_data->msaa_flags_param, BRW_TYPE_UD);
    }
-
-   bool
-   lower_src_modifiers(fs_visitor *v, bblock_t *block, fs_inst *inst, unsigned i);
 }
 
 enum intel_barycentric_mode brw_barycentric_mode(const struct brw_wm_prog_key *key,
@@ -540,6 +537,7 @@ bool brw_lower_scoreboard(fs_visitor &s);
 bool brw_lower_send_descriptors(fs_visitor &s);
 bool brw_lower_sends_overlapping_payload(fs_visitor &s);
 bool brw_lower_simd_width(fs_visitor &s);
+bool brw_lower_src_modifiers(fs_visitor &s, bblock_t *block, fs_inst *inst, unsigned i);
 bool brw_lower_sub_sat(fs_visitor &s);
 bool brw_lower_subgroup_ops(fs_visitor &s);
 bool brw_lower_uniform_pull_constant_loads(fs_visitor &s);

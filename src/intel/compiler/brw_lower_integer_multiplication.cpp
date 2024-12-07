@@ -247,7 +247,7 @@ brw_lower_mul_dword_inst(fs_visitor &s, fs_inst *inst, bblock_t *block)
 
          if (inst->src[1].abs || (inst->src[1].negate &&
                                   source_mods_unsupported))
-            lower_src_modifiers(&s, block, inst, 1);
+            brw_lower_src_modifiers(s, block, inst, 1);
 
          if (inst->src[1].file == IMM) {
             unsigned a;
@@ -385,7 +385,7 @@ brw_lower_mulh_inst(fs_visitor &s, fs_inst *inst, bblock_t *block)
     *      mach (8) r5.0<1>:d r2.0<8;8,1>:d r3.0<8;8,1>:d"
     */
    if (inst->src[1].negate || inst->src[1].abs)
-      lower_src_modifiers(&s, block, inst, 1);
+      brw_lower_src_modifiers(s, block, inst, 1);
 
    /* Should have been lowered to 8-wide. */
    assert(inst->exec_size <= brw_get_lowered_simd_width(&s, inst));
