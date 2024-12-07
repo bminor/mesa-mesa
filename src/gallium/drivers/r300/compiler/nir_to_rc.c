@@ -2345,6 +2345,8 @@ nir_to_rc(struct nir_shader *s, struct pipe_screen *screen,
    }
    NIR_PASS_V(s, r300_nir_opt_algebraic_late);
    NIR_PASS_V(s, nir_opt_dce);
+   NIR_PASS_V(s, nir_opt_shrink_vectors, false);
+   NIR_PASS_V(s, nir_opt_dce);
 
    nir_move_options move_all = nir_move_const_undef | nir_move_load_ubo | nir_move_load_input |
                                nir_move_comparisons | nir_move_copies | nir_move_load_ssbo;
