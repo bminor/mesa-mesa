@@ -508,9 +508,19 @@ void brw_calculate_cfg(fs_visitor &s);
 
 void brw_optimize(fs_visitor &s);
 
-instruction_scheduler *brw_prepare_scheduler(fs_visitor &s, void *mem_ctx);
-void brw_schedule_instructions_pre_ra(fs_visitor &s, instruction_scheduler *sched,
-                                      instruction_scheduler_mode mode);
+enum brw_instruction_scheduler_mode {
+   BRW_SCHEDULE_PRE,
+   BRW_SCHEDULE_PRE_NON_LIFO,
+   BRW_SCHEDULE_PRE_LIFO,
+   BRW_SCHEDULE_POST,
+   BRW_SCHEDULE_NONE,
+};
+
+class brw_instruction_scheduler;
+
+brw_instruction_scheduler *brw_prepare_scheduler(fs_visitor &s, void *mem_ctx);
+void brw_schedule_instructions_pre_ra(fs_visitor &s, brw_instruction_scheduler *sched,
+                                      brw_instruction_scheduler_mode mode);
 void brw_schedule_instructions_post_ra(fs_visitor &s);
 
 void brw_allocate_registers(fs_visitor &s, bool allow_spilling);

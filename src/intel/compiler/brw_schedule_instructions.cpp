@@ -578,9 +578,9 @@ schedule_node::set_latency(const struct brw_isa_info *isa)
    }
 }
 
-class instruction_scheduler {
+class brw_instruction_scheduler {
 public:
-   instruction_scheduler(void *mem_ctx, const fs_visitor *s, int grf_count, int hw_reg_count,
+   brw_instruction_scheduler(void *mem_ctx, const fs_visitor *s, int grf_count, int hw_reg_count,
                          int block_count, bool post_reg_alloc);
 
    void add_barrier_deps(schedule_node *n);
@@ -610,7 +610,7 @@ public:
    void clear_last_grf_write();
 
    void schedule_instructions();
-   void run(instruction_scheduler_mode mode);
+   void run(brw_instruction_scheduler_mode mode);
 
    int grf_index(const brw_reg &reg);
 
@@ -653,7 +653,7 @@ public:
 
    unsigned hw_reg_count;
    int reg_pressure;
-   instruction_scheduler_mode mode;
+   brw_instruction_scheduler_mode mode;
 
    /*
     * The register pressure at the beginning of each basic block.
@@ -698,7 +698,7 @@ public:
    int *hw_reads_remaining;
 };
 
-instruction_scheduler::instruction_scheduler(void *mem_ctx, const fs_visitor *s,
+brw_instruction_scheduler::brw_instruction_scheduler(void *mem_ctx, const fs_visitor *s,
                                              int grf_count, int hw_reg_count,
                                              int block_count, bool post_reg_alloc)
    : s(s)
@@ -738,7 +738,7 @@ instruction_scheduler::instruction_scheduler(void *mem_ctx, const fs_visitor *s,
    current.available.make_empty();
 
    this->hw_reg_count = hw_reg_count;
-   this->mode = SCHEDULE_NONE;
+   this->mode = BRW_SCHEDULE_NONE;
    this->reg_pressure = 0;
 
    if (!post_reg_alloc) {
@@ -799,7 +799,7 @@ is_src_duplicate(const fs_inst *inst, int src)
 }
 
 void
-instruction_scheduler::count_reads_remaining(const fs_inst *inst)
+brw_instruction_scheduler::count_reads_remaining(const fs_inst *inst)
 {
    assert(reads_remaining);
 
@@ -820,7 +820,7 @@ instruction_scheduler::count_reads_remaining(const fs_inst *inst)
 }
 
 void
-instruction_scheduler::setup_liveness(cfg_t *cfg)
+brw_instruction_scheduler::setup_liveness(cfg_t *cfg)
 {
    const fs_live_variables &live = s->live_analysis.require();
 
@@ -880,7 +880,7 @@ instruction_scheduler::setup_liveness(cfg_t *cfg)
 }
 
 void
-instruction_scheduler::update_register_pressure(const fs_inst *inst)
+brw_instruction_scheduler::update_register_pressure(const fs_inst *inst)
 {
    assert(reads_remaining);
 
@@ -903,7 +903,7 @@ instruction_scheduler::update_register_pressure(const fs_inst *inst)
 }
 
 int
-instruction_scheduler::get_register_pressure_benefit(const fs_inst *inst)
+brw_instruction_scheduler::get_register_pressure_benefit(const fs_inst *inst)
 {
    int benefit = 0;
    const int block_idx = current.block->num;
@@ -939,7 +939,7 @@ instruction_scheduler::get_register_pressure_benefit(const fs_inst *inst)
 }
 
 void
-instruction_scheduler::set_current_block(bblock_t *block)
+brw_instruction_scheduler::set_current_block(bblock_t *block)
 {
    current.block = block;
    current.start = nodes + block->start_ip;
@@ -952,7 +952,7 @@ instruction_scheduler::set_current_block(bblock_t *block)
 
 /** Computation of the delay member of each node. */
 void
-instruction_scheduler::compute_delays()
+brw_instruction_scheduler::compute_delays()
 {
    for (schedule_node *n = current.end - 1; n >= current.start; n--) {
       if (!n->children_count) {
@@ -978,7 +978,7 @@ instruction_scheduler::compute_delays()
 }
 
 void
-instruction_scheduler::compute_exits()
+brw_instruction_scheduler::compute_exits()
 {
    /* Calculate a lower bound of the scheduling time of each node in the
     * graph.  This is analogous to the node's critical path but calculated
@@ -1015,7 +1015,7 @@ instruction_scheduler::compute_exits()
  * schedule it @latency cycles after @before, but no guarantees there.
  */
 void
-instruction_scheduler::add_dep(schedule_node *before, schedule_node *after,
+brw_instruction_scheduler::add_dep(schedule_node *before, schedule_node *after,
                                int latency)
 {
    if (!before || !after)
@@ -1054,7 +1054,7 @@ instruction_scheduler::add_dep(schedule_node *before, schedule_node *after,
 }
 
 void
-instruction_scheduler::add_dep(schedule_node *before, schedule_node *after)
+brw_instruction_scheduler::add_dep(schedule_node *before, schedule_node *after)
 {
    if (!before)
       return;
@@ -1063,7 +1063,7 @@ instruction_scheduler::add_dep(schedule_node *before, schedule_node *after)
 }
 
 void
-instruction_scheduler::add_address_dep(schedule_node *before, schedule_node *after)
+brw_instruction_scheduler::add_address_dep(schedule_node *before, schedule_node *after)
 {
    assert(before && after);
 
@@ -1119,7 +1119,7 @@ has_cross_lane_access(const fs_inst *inst)
  * Some register access need dependencies on other instructions.
  */
 bool
-instruction_scheduler::register_needs_barrier(const brw_reg &reg)
+brw_instruction_scheduler::register_needs_barrier(const brw_reg &reg)
 {
    if (reg.file != ARF || reg.is_null())
       return false;
@@ -1154,7 +1154,7 @@ instruction_scheduler::register_needs_barrier(const brw_reg &reg)
  * the deps to do so.
  */
 void
-instruction_scheduler::add_barrier_deps(schedule_node *n)
+brw_instruction_scheduler::add_barrier_deps(schedule_node *n)
 {
    for (schedule_node *prev = n - 1; prev >= current.start; prev--) {
       add_dep(prev, n, 0);
@@ -1175,7 +1175,7 @@ instruction_scheduler::add_barrier_deps(schedule_node *n)
  * later instructions accessing uninitialized data.
  */
 void
-instruction_scheduler::add_cross_lane_deps(schedule_node *n)
+brw_instruction_scheduler::add_cross_lane_deps(schedule_node *n)
 {
    for (schedule_node *prev = n - 1; prev >= current.start; prev--) {
       if (has_cross_lane_access((fs_inst*)prev->inst))
@@ -1187,7 +1187,7 @@ instruction_scheduler::add_cross_lane_deps(schedule_node *n)
  * actually writes 2 MRFs.
  */
 bool
-instruction_scheduler::is_compressed(const fs_inst *inst)
+brw_instruction_scheduler::is_compressed(const fs_inst *inst)
 {
    return inst->exec_size == 16;
 }
@@ -1204,7 +1204,7 @@ instruction_scheduler::is_compressed(const fs_inst *inst)
  * with instructions.
  */
 void
-instruction_scheduler::clear_last_grf_write()
+brw_instruction_scheduler::clear_last_grf_write()
 {
    if (!post_reg_alloc) {
       for (schedule_node *n = current.start; n < current.end; n++) {
@@ -1223,7 +1223,7 @@ instruction_scheduler::clear_last_grf_write()
 }
 
 int
-instruction_scheduler::grf_index(const brw_reg &reg)
+brw_instruction_scheduler::grf_index(const brw_reg &reg)
 {
    if (post_reg_alloc)
       return reg.nr;
@@ -1231,7 +1231,7 @@ instruction_scheduler::grf_index(const brw_reg &reg)
 }
 
 void
-instruction_scheduler::calculate_deps()
+brw_instruction_scheduler::calculate_deps()
 {
    /* Pre-register-allocation, this tracks the last write per VGRF offset.
     * After register allocation, reg_offsets are gone and we track individual
@@ -1514,7 +1514,7 @@ instruction_scheduler::calculate_deps()
 }
 
 bool
-instruction_scheduler::address_register_interfere(const schedule_node *n)
+brw_instruction_scheduler::address_register_interfere(const schedule_node *n)
 {
    if (n->inst->uses_address_register_implicitly()) {
       for (unsigned i = 0; i < ARRAY_SIZE(current.address_register); i++)
@@ -1547,11 +1547,11 @@ instruction_scheduler::address_register_interfere(const schedule_node *n)
 }
 
 schedule_node *
-instruction_scheduler::choose_instruction_to_schedule()
+brw_instruction_scheduler::choose_instruction_to_schedule()
 {
    schedule_node *chosen = NULL;
 
-   if (mode == SCHEDULE_PRE || mode == SCHEDULE_POST) {
+   if (mode == BRW_SCHEDULE_PRE || mode == BRW_SCHEDULE_POST) {
       int chosen_time = 0;
 
       /* Of the instructions ready to execute or the closest to being ready,
@@ -1606,7 +1606,7 @@ instruction_scheduler::choose_instruction_to_schedule()
             continue;
          }
 
-         if (mode == SCHEDULE_PRE_LIFO) {
+         if (mode == BRW_SCHEDULE_PRE_LIFO) {
             /* Prefer instructions that recently became available for
              * scheduling.  These are the things that are most likely to
              * (eventually) make a variable dead and reduce register pressure.
@@ -1657,7 +1657,7 @@ instruction_scheduler::choose_instruction_to_schedule()
 }
 
 int
-instruction_scheduler::calculate_issue_time(const fs_inst *inst)
+brw_instruction_scheduler::calculate_issue_time(const fs_inst *inst)
 {
    const struct brw_isa_info *isa = &s->compiler->isa;
    const unsigned overhead = s->grf_used && has_bank_conflict(isa, inst) ?
@@ -1669,7 +1669,7 @@ instruction_scheduler::calculate_issue_time(const fs_inst *inst)
 }
 
 void
-instruction_scheduler::schedule(schedule_node *chosen)
+brw_instruction_scheduler::schedule(schedule_node *chosen)
 {
    assert(current.scheduled < current.len);
    current.scheduled++;
@@ -1698,7 +1698,7 @@ instruction_scheduler::schedule(schedule_node *chosen)
 }
 
 void
-instruction_scheduler::update_children(schedule_node *chosen)
+brw_instruction_scheduler::update_children(schedule_node *chosen)
 {
    if (chosen->address_read_count > 0) {
       for (unsigned i = 0; i < chosen->inst->sources; i++) {
@@ -1752,7 +1752,7 @@ instruction_scheduler::update_children(schedule_node *chosen)
 }
 
 void
-instruction_scheduler::schedule_instructions()
+brw_instruction_scheduler::schedule_instructions()
 {
    if (!post_reg_alloc)
       reg_pressure = reg_pressure_in[current.block->num];
@@ -1786,7 +1786,7 @@ instruction_scheduler::schedule_instructions()
 }
 
 void
-instruction_scheduler::run(instruction_scheduler_mode mode)
+brw_instruction_scheduler::run(brw_instruction_scheduler_mode mode)
 {
    this->mode = mode;
 
@@ -1820,21 +1820,21 @@ instruction_scheduler::run(instruction_scheduler_mode mode)
    }
 }
 
-instruction_scheduler *
+brw_instruction_scheduler *
 brw_prepare_scheduler(fs_visitor &s, void *mem_ctx)
 {
    const int grf_count = s.alloc.count;
 
-   instruction_scheduler *empty = rzalloc(mem_ctx, instruction_scheduler);
-   return new (empty) instruction_scheduler(mem_ctx, &s, grf_count, s.first_non_payload_grf,
-                                            s.cfg->num_blocks, /* post_reg_alloc */ false);
+   brw_instruction_scheduler *empty = rzalloc(mem_ctx, brw_instruction_scheduler);
+   return new (empty) brw_instruction_scheduler(mem_ctx, &s, grf_count, s.first_non_payload_grf,
+                                                s.cfg->num_blocks, /* post_reg_alloc */ false);
 }
 
 void
-brw_schedule_instructions_pre_ra(fs_visitor &s, instruction_scheduler *sched,
-                                 instruction_scheduler_mode mode)
+brw_schedule_instructions_pre_ra(fs_visitor &s, brw_instruction_scheduler *sched,
+                                 brw_instruction_scheduler_mode mode)
 {
-   if (mode == SCHEDULE_NONE)
+   if (mode == BRW_SCHEDULE_NONE)
       return;
 
    sched->run(mode);
@@ -1850,9 +1850,9 @@ brw_schedule_instructions_post_ra(fs_visitor &s)
 
    void *mem_ctx = ralloc_context(NULL);
 
-   instruction_scheduler sched(mem_ctx, &s, grf_count, s.first_non_payload_grf,
-                               s.cfg->num_blocks, post_reg_alloc);
-   sched.run(SCHEDULE_POST);
+   brw_instruction_scheduler sched(mem_ctx, &s, grf_count, s.first_non_payload_grf,
+                                   s.cfg->num_blocks, post_reg_alloc);
+   sched.run(BRW_SCHEDULE_POST);
 
    ralloc_free(mem_ctx);
 

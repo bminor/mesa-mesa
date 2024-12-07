@@ -1317,23 +1317,23 @@ brw_allocate_registers(fs_visitor &s, bool allow_spilling)
    const nir_shader *nir = s.nir;
    bool allocated;
 
-   static const enum instruction_scheduler_mode pre_modes[] = {
-      SCHEDULE_PRE,
-      SCHEDULE_PRE_NON_LIFO,
-      SCHEDULE_NONE,
-      SCHEDULE_PRE_LIFO,
+   static const enum brw_instruction_scheduler_mode pre_modes[] = {
+      BRW_SCHEDULE_PRE,
+      BRW_SCHEDULE_PRE_NON_LIFO,
+      BRW_SCHEDULE_NONE,
+      BRW_SCHEDULE_PRE_LIFO,
    };
 
    static const char *scheduler_mode_name[] = {
-      [SCHEDULE_PRE] = "top-down",
-      [SCHEDULE_PRE_NON_LIFO] = "non-lifo",
-      [SCHEDULE_PRE_LIFO] = "lifo",
-      [SCHEDULE_POST] = "post",
-      [SCHEDULE_NONE] = "none",
+      [BRW_SCHEDULE_PRE] = "top-down",
+      [BRW_SCHEDULE_PRE_NON_LIFO] = "non-lifo",
+      [BRW_SCHEDULE_PRE_LIFO] = "lifo",
+      [BRW_SCHEDULE_POST] = "post",
+      [BRW_SCHEDULE_NONE] = "none",
    };
 
    uint32_t best_register_pressure = UINT32_MAX;
-   enum instruction_scheduler_mode best_sched = SCHEDULE_NONE;
+   enum brw_instruction_scheduler_mode best_sched = BRW_SCHEDULE_NONE;
 
    brw_opt_compact_virtual_grfs(s);
 
@@ -1352,14 +1352,14 @@ brw_allocate_registers(fs_visitor &s, bool allow_spilling)
    fs_inst **best_pressure_order = NULL;
 
    void *scheduler_ctx = ralloc_context(NULL);
-   instruction_scheduler *sched = brw_prepare_scheduler(s, scheduler_ctx);
+   brw_instruction_scheduler *sched = brw_prepare_scheduler(s, scheduler_ctx);
 
    /* Try each scheduling heuristic to see if it can successfully register
     * allocate without spilling.  They should be ordered by decreasing
     * performance but increasing likelihood of allocating.
     */
    for (unsigned i = 0; i < ARRAY_SIZE(pre_modes); i++) {
-      enum instruction_scheduler_mode sched_mode = pre_modes[i];
+      enum brw_instruction_scheduler_mode sched_mode = pre_modes[i];
 
       brw_schedule_instructions_pre_ra(s, sched, sched_mode);
       s.shader_stats.scheduler_mode = scheduler_mode_name[sched_mode];
