@@ -13,7 +13,7 @@
 using namespace brw;
 
 void
-brw_print_instructions_to_file(const fs_visitor &s, FILE *file)
+brw_print_instructions(const fs_visitor &s, FILE *file)
 {
    if (s.cfg && s.grf_used == 0) {
       const brw::def_analysis &defs = s.def_analysis.require();
@@ -67,23 +67,6 @@ brw_print_instructions_to_file(const fs_visitor &s, FILE *file)
       foreach_in_list(fs_inst, inst, &s.instructions) {
          brw_print_instruction(s, inst, file);
       }
-   }
-}
-
-void
-brw_print_instructions(const fs_visitor &s, const char *name)
-{
-   FILE *file = stderr;
-   if (name && __normal_user()) {
-      file = fopen(name, "w");
-      if (!file)
-         file = stderr;
-   }
-
-   brw_print_instructions_to_file(s, file);
-
-   if (file != stderr) {
-      fclose(file);
    }
 }
 
@@ -384,7 +367,7 @@ print_memory_logical_source(FILE *file, const fs_inst *inst, unsigned i)
 }
 
 void
-brw_print_instruction_to_file(const fs_visitor &s, const fs_inst *inst, FILE *file, const brw::def_analysis *defs)
+brw_print_instruction(const fs_visitor &s, const fs_inst *inst, FILE *file, const brw::def_analysis *defs)
 {
    if (inst->predicate) {
       fprintf(file, "(%cf%d.%d) ",

@@ -464,14 +464,11 @@ public:
                         int iteration, int pass_num) const;
 };
 
-void brw_print_instruction_to_file(const fs_visitor &s, const fs_inst *inst, FILE *file, const brw::def_analysis *defs);
-void brw_print_instructions_to_file(const fs_visitor &s, FILE *file);
+void brw_print_instructions(const fs_visitor &s, FILE *file = stderr);
 
-/* Convenience functions based on the above. */
-inline void brw_print_instruction(const fs_visitor &s, const fs_inst *inst, FILE *file = stderr, const brw::def_analysis *defs = nullptr) {
-   brw_print_instruction_to_file(s, inst, file, defs);
-}
-void brw_print_instructions(const fs_visitor &s, const char *name = nullptr);
+void brw_print_instruction(const fs_visitor &s, const fs_inst *inst,
+                           FILE *file = stderr,
+                           const brw::def_analysis *defs = nullptr);
 
 void brw_print_swsb(FILE *f, const struct intel_device_info *devinfo, const tgl_swsb swsb);
 

@@ -1272,7 +1272,7 @@ brw_assign_regs(fs_visitor &s, bool allow_spilling, bool spill_all)
    bool success = alloc.assign_regs(allow_spilling, spill_all);
    if (!success && allow_spilling) {
       s.fail("no register to spill:\n");
-      brw_print_instructions(s, NULL);
+      brw_print_instructions(s);
    }
    return success;
 }

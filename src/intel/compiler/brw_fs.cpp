@@ -1382,7 +1382,19 @@ fs_visitor::debug_optimizer(const nir_shader *nir,
                       iteration, pass_num, pass_name);
    if (ret == -1)
       return;
-   brw_print_instructions(*this, filename);
+
+   FILE *file = stderr;
+   if (__normal_user()) {
+      file = fopen(filename, "w");
+      if (!file)
+         file = stderr;
+   }
+
+   brw_print_instructions(*this, file);
+
+   if (file != stderr)
+      fclose(file);
+
    free(filename);
 }
 
