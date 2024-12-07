@@ -2335,3 +2335,124 @@ brw_nir_uses_inline_data(nir_shader *shader)
 
    return false;
 }
+
+/**
+ * Move load_interpolated_input with simple (payload-based) barycentric modes
+ * to the top of the program so we don't emit multiple PLNs for the same input.
+ *
+ * This works around CSE not being able to handle non-dominating cases
+ * such as:
+ *
+ *    if (...) {
+ *       interpolate input
+ *    } else {
+ *       interpolate the same exact input
+ *    }
+ *
+ * This should be replaced by global value numbering someday.
+ */
+bool
+brw_nir_move_interpolation_to_top(nir_shader *nir)
+{
+   bool progress = false;
+
+   nir_foreach_function_impl(impl, nir) {
+      nir_block *top = nir_start_block(impl);
+      nir_cursor cursor = nir_before_instr(nir_block_first_instr(top));
+      bool impl_progress = false;
+
+      for (nir_block *block = nir_block_cf_tree_next(top);
+           block != NULL;
+           block = nir_block_cf_tree_next(block)) {
+
+         nir_foreach_instr_safe(instr, block) {
+            if (instr->type != nir_instr_type_intrinsic)
+               continue;
+
+            nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
+            if (intrin->intrinsic != nir_intrinsic_load_interpolated_input)
+               continue;
+            nir_intrinsic_instr *bary_intrinsic =
+               nir_instr_as_intrinsic(intrin->src[0].ssa->parent_instr);
+            nir_intrinsic_op op = bary_intrinsic->intrinsic;
+
+            /* Leave interpolateAtSample/Offset() where they are. */
+            if (op == nir_intrinsic_load_barycentric_at_sample ||
+                op == nir_intrinsic_load_barycentric_at_offset)
+               continue;
+
+            nir_instr *move[3] = {
+               &bary_intrinsic->instr,
+               intrin->src[1].ssa->parent_instr,
+               instr
+            };
+
+            for (unsigned i = 0; i < ARRAY_SIZE(move); i++) {
+               if (move[i]->block != top) {
+                  nir_instr_move(cursor, move[i]);
+                  impl_progress = true;
+               }
+            }
+         }
+      }
+
+      progress = progress || impl_progress;
+
+      nir_metadata_preserve(impl, impl_progress ? nir_metadata_control_flow
+                                                : nir_metadata_all);
+   }
+
+   return progress;
+}
+
+static bool
+filter_simd(const nir_instr *instr, UNUSED const void *options)
+{
+   if (instr->type != nir_instr_type_intrinsic)
+      return false;
+
+   switch (nir_instr_as_intrinsic(instr)->intrinsic) {
+   case nir_intrinsic_load_simd_width_intel:
+   case nir_intrinsic_load_subgroup_id:
+      return true;
+
+   default:
+      return false;
+   }
+}
+
+static nir_def *
+lower_simd(nir_builder *b, nir_instr *instr, void *options)
+{
+   uintptr_t simd_width = (uintptr_t)options;
+
+   switch (nir_instr_as_intrinsic(instr)->intrinsic) {
+   case nir_intrinsic_load_simd_width_intel:
+      return nir_imm_int(b, simd_width);
+
+   case nir_intrinsic_load_subgroup_id:
+      /* If the whole workgroup fits in one thread, we can lower subgroup_id
+       * to a constant zero.
+       */
+      if (!b->shader->info.workgroup_size_variable) {
+         unsigned local_workgroup_size = b->shader->info.workgroup_size[0] *
+                                         b->shader->info.workgroup_size[1] *
+                                         b->shader->info.workgroup_size[2];
+         if (local_workgroup_size <= simd_width)
+            return nir_imm_int(b, 0);
+      }
+      return NULL;
+
+   default:
+      return NULL;
+   }
+}
+
+bool
+brw_nir_lower_simd(nir_shader *nir, unsigned dispatch_width)
+{
+   return nir_shader_lower_instructions(nir, filter_simd, lower_simd,
+                                 (void *)(uintptr_t)dispatch_width);
+}
+
+
