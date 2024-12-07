@@ -133,7 +133,7 @@ brw_builder::shuffle_from_32bit_read(const brw_reg &dst,
 brw_reg
 brw_sample_mask_reg(const brw_builder &bld)
 {
-   const fs_visitor &s = *bld.shader;
+   const brw_shader &s = *bld.shader;
 
    if (s.stage != MESA_SHADER_FRAGMENT) {
       return brw_imm_ud(0xffffffff);
@@ -158,7 +158,7 @@ brw_emit_predicate_on_sample_mask(const brw_builder &bld, brw_inst *inst)
           bld.group() == inst->group &&
           bld.dispatch_width() == inst->exec_size);
 
-   const fs_visitor &s = *bld.shader;
+   const brw_shader &s = *bld.shader;
    const brw_reg sample_mask = brw_sample_mask_reg(bld);
    const unsigned subreg = sample_mask_flag_subreg(s);
 

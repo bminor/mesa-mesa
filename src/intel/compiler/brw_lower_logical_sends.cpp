@@ -1303,7 +1303,7 @@ emit_predicate_on_vector_mask(const brw_builder &bld, brw_inst *inst)
 
    const brw_builder ubld = bld.exec_all().group(1, 0);
 
-   const fs_visitor &s = *bld.shader;
+   const brw_shader &s = *bld.shader;
    const brw_reg vector_mask = ubld.vgrf(BRW_TYPE_UW);
    ubld.UNDEF(vector_mask);
    ubld.emit(SHADER_OPCODE_READ_ARCH_REG, vector_mask, retype(brw_sr0_reg(3),
@@ -2308,7 +2308,7 @@ lower_trace_ray_logical_send(const brw_builder &bld, brw_inst *inst)
        * optimization. This occurs in many Vulkan CTS tests.
        *
        * Many places in the late compiler, including but not limited to an
-       * assertion in fs_visitor::assign_curb_setup, assume that all uses of a
+       * assertion in brw_shader::assign_curb_setup, assume that all uses of a
        * UNIFORM will be uniform (i.e., <0,1,0>). The clever SIMD2
        * optimization violates that assumption.
        */
@@ -2512,7 +2512,7 @@ lower_hdc_memory_fence_and_interlock(const brw_builder &bld, brw_inst *inst)
 }
 
 bool
-brw_lower_logical_sends(fs_visitor &s)
+brw_lower_logical_sends(brw_shader &s)
 {
    const intel_device_info *devinfo = s.devinfo;
    bool progress = false;
@@ -2648,7 +2648,7 @@ brw_lower_logical_sends(fs_visitor &s)
  * source operand for all 8 or 16 of its channels.
  */
 bool
-brw_lower_uniform_pull_constant_loads(fs_visitor &s)
+brw_lower_uniform_pull_constant_loads(brw_shader &s)
 {
    const intel_device_info *devinfo = s.devinfo;
    bool progress = false;
@@ -2740,7 +2740,7 @@ brw_lower_uniform_pull_constant_loads(fs_visitor &s)
 }
 
 bool
-brw_lower_send_descriptors(fs_visitor &s)
+brw_lower_send_descriptors(brw_shader &s)
 {
    const intel_device_info *devinfo = s.devinfo;
    bool progress = false;

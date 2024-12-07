@@ -27,7 +27,7 @@ struct FSCombineConstantsTest : public ::testing::Test {
       nir_shader *nir =
          nir_shader_create(mem_ctx, MESA_SHADER_COMPUTE, NULL, NULL);
 
-      shader = new fs_visitor(&compiler, &params, NULL,
+      shader = new brw_shader(&compiler, &params, NULL,
                               &prog_data.base, nir, 8, false, false);
    }
 
@@ -44,9 +44,9 @@ struct FSCombineConstantsTest : public ::testing::Test {
    struct brw_wm_prog_data prog_data;
    struct gl_shader_program *shader_prog;
 
-   fs_visitor *shader;
+   brw_shader *shader;
 
-   bool opt_combine_constants(fs_visitor *s) {
+   bool opt_combine_constants(brw_shader *s) {
       const bool print = getenv("TEST_DEBUG");
 
       if (print) {
@@ -66,7 +66,7 @@ struct FSCombineConstantsTest : public ::testing::Test {
 };
 
 static brw_builder
-make_builder(fs_visitor *s)
+make_builder(brw_shader *s)
 {
    return brw_builder(s, s->dispatch_width).at_end();
 }

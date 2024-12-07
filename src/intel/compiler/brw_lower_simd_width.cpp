@@ -49,7 +49,7 @@ is_mixed_float_with_packed_fp16_dst(const brw_inst *inst)
  * excessively restrictive.
  */
 static unsigned
-get_fpu_lowered_simd_width(const fs_visitor *shader,
+get_fpu_lowered_simd_width(const brw_shader *shader,
                            const brw_inst *inst)
 {
    const struct brw_compiler *compiler = shader->compiler;
@@ -236,11 +236,11 @@ is_half_float_src_dst(const brw_inst *inst)
 /**
  * Get the closest native SIMD width supported by the hardware for instruction
  * \p inst.  The instruction will be left untouched by
- * fs_visitor::lower_simd_width() if the returned value is equal to the
+ * brw_shader::lower_simd_width() if the returned value is equal to the
  * original execution size.
  */
 unsigned
-brw_get_lowered_simd_width(const fs_visitor *shader, const brw_inst *inst)
+brw_get_lowered_simd_width(const brw_shader *shader, const brw_inst *inst)
 {
    const struct brw_compiler *compiler = shader->compiler;
    const struct intel_device_info *devinfo = compiler->devinfo;
@@ -644,7 +644,7 @@ emit_zip(const brw_builder &lbld_before, const brw_builder &lbld_after,
 }
 
 bool
-brw_lower_simd_width(fs_visitor &s)
+brw_lower_simd_width(brw_shader &s)
 {
    bool progress = false;
 

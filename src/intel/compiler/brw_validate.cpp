@@ -95,7 +95,7 @@ is_ud_imm(const brw_reg &reg)
 }
 
 static void
-validate_memory_logical(const fs_visitor &s, const brw_inst *inst)
+validate_memory_logical(const brw_shader &s, const brw_inst *inst)
 {
    const intel_device_info *devinfo = s.devinfo;
 
@@ -200,7 +200,7 @@ brw_shader_phase_to_string(enum brw_shader_phase phase)
 }
 
 static void
-brw_validate_instruction_phase(const fs_visitor &s, brw_inst *inst)
+brw_validate_instruction_phase(const brw_shader &s, brw_inst *inst)
 {
    enum brw_shader_phase invalid_from = BRW_SHADER_PHASE_INVALID;
 
@@ -271,7 +271,7 @@ brw_validate_instruction_phase(const fs_visitor &s, brw_inst *inst)
 }
 
 void
-brw_validate(const fs_visitor &s)
+brw_validate(const brw_shader &s)
 {
    const intel_device_info *devinfo = s.devinfo;
 

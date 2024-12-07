@@ -248,7 +248,7 @@ opt_cmod_propagation_local(const intel_device_info *devinfo, bblock_t *block)
          continue;
 
       /* Only an AND.NZ can be propagated.  Many AND.Z instructions are
-       * generated (for ir_unop_not in fs_visitor::emit_bool_to_cond_code).
+       * generated (for ir_unop_not in brw_shader::emit_bool_to_cond_code).
        * Propagating those would require inverting the condition on the CMP.
        * This changes both the flag value and the register destination of the
        * CMP.  That result may be used elsewhere, so we can't change its value
@@ -556,7 +556,7 @@ opt_cmod_propagation_local(const intel_device_info *devinfo, bblock_t *block)
 }
 
 bool
-brw_opt_cmod_propagation(fs_visitor &s)
+brw_opt_cmod_propagation(brw_shader &s)
 {
    bool progress = false;
 

@@ -9,7 +9,7 @@
 #include "brw_inst.h"
 #include "util/bitset.h"
 
-struct fs_visitor;
+struct brw_shader;
 
 /**
  * Bitset of state categories that can influence the result of IR analysis
@@ -177,11 +177,11 @@ private:
  * Immediate dominator tree analysis of a shader.
  */
 struct brw_idom_tree {
-   brw_idom_tree(const fs_visitor *s);
+   brw_idom_tree(const brw_shader *s);
    ~brw_idom_tree();
 
    bool
-   validate(const fs_visitor *) const
+   validate(const brw_shader *) const
    {
       /* FINISHME */
       return true;
@@ -237,7 +237,7 @@ private:
  * are live at any point of the program in GRF units.
  */
 struct brw_register_pressure {
-   brw_register_pressure(const fs_visitor *v);
+   brw_register_pressure(const brw_shader *v);
    ~brw_register_pressure();
 
    brw_analysis_dependency_class
@@ -249,7 +249,7 @@ struct brw_register_pressure {
    }
 
    bool
-   validate(const fs_visitor *) const
+   validate(const brw_shader *) const
    {
       /* FINISHME */
       return true;
@@ -260,7 +260,7 @@ struct brw_register_pressure {
 
 class brw_def_analysis {
 public:
-   brw_def_analysis(const fs_visitor *v);
+   brw_def_analysis(const brw_shader *v);
    ~brw_def_analysis();
 
    brw_inst *
@@ -287,7 +287,7 @@ public:
    unsigned count() const { return def_count; }
    unsigned ssa_count() const;
 
-   void print_stats(const fs_visitor *) const;
+   void print_stats(const brw_shader *) const;
 
    brw_analysis_dependency_class
    dependency_class() const
@@ -298,13 +298,13 @@ public:
              BRW_DEPENDENCY_BLOCKS;
    }
 
-   bool validate(const fs_visitor *) const;
+   bool validate(const brw_shader *) const;
 
 private:
    void mark_invalid(int);
-   bool fully_defines(const fs_visitor *v, brw_inst *);
+   bool fully_defines(const brw_shader *v, brw_inst *);
    void update_for_reads(const brw_idom_tree &idom, bblock_t *block, brw_inst *);
-   void update_for_write(const fs_visitor *v, bblock_t *block, brw_inst *);
+   void update_for_write(const brw_shader *v, bblock_t *block, brw_inst *);
 
    brw_inst **def_insts;
    bblock_t **def_blocks;
@@ -352,10 +352,10 @@ public:
       BITSET_WORD flag_liveout[1];
    };
 
-   brw_live_variables(const fs_visitor *s);
+   brw_live_variables(const brw_shader *s);
    ~brw_live_variables();
 
-   bool validate(const fs_visitor *s) const;
+   bool validate(const brw_shader *s) const;
 
    brw_analysis_dependency_class
    dependency_class() const
@@ -423,7 +423,7 @@ protected:
  * analysis.
  */
 struct brw_performance {
-   brw_performance(const fs_visitor *v);
+   brw_performance(const brw_shader *v);
    ~brw_performance();
 
    brw_analysis_dependency_class
@@ -434,7 +434,7 @@ struct brw_performance {
    }
 
    bool
-   validate(const fs_visitor *) const
+   validate(const brw_shader *) const
    {
       return true;
    }

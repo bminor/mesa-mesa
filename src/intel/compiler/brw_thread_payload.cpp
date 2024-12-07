@@ -24,7 +24,7 @@
 #include "brw_shader.h"
 #include "brw_builder.h"
 
-brw_vs_thread_payload::brw_vs_thread_payload(const fs_visitor &v)
+brw_vs_thread_payload::brw_vs_thread_payload(const brw_shader &v)
 {
    unsigned r = 0;
 
@@ -38,7 +38,7 @@ brw_vs_thread_payload::brw_vs_thread_payload(const fs_visitor &v)
    num_regs = r;
 }
 
-brw_tcs_thread_payload::brw_tcs_thread_payload(const fs_visitor &v)
+brw_tcs_thread_payload::brw_tcs_thread_payload(const brw_shader &v)
 {
    struct brw_vue_prog_data *vue_prog_data = brw_vue_prog_data(v.prog_data);
    struct brw_tcs_prog_data *tcs_prog_data = brw_tcs_prog_data(v.prog_data);
@@ -76,7 +76,7 @@ brw_tcs_thread_payload::brw_tcs_thread_payload(const fs_visitor &v)
    }
 }
 
-brw_tes_thread_payload::brw_tes_thread_payload(const fs_visitor &v)
+brw_tes_thread_payload::brw_tes_thread_payload(const brw_shader &v)
 {
    unsigned r = 0;
 
@@ -98,7 +98,7 @@ brw_tes_thread_payload::brw_tes_thread_payload(const fs_visitor &v)
    num_regs = r;
 }
 
-brw_gs_thread_payload::brw_gs_thread_payload(fs_visitor &v)
+brw_gs_thread_payload::brw_gs_thread_payload(brw_shader &v)
 {
    struct brw_vue_prog_data *vue_prog_data = brw_vue_prog_data(v.prog_data);
    struct brw_gs_prog_data *gs_prog_data = brw_gs_prog_data(v.prog_data);
@@ -155,7 +155,7 @@ brw_gs_thread_payload::brw_gs_thread_payload(fs_visitor &v)
 
 static inline void
 setup_fs_payload_gfx20(brw_fs_thread_payload &payload,
-                       const fs_visitor &v,
+                       const brw_shader &v,
                        bool &source_depth_to_render_target)
 {
    struct brw_wm_prog_data *prog_data = brw_wm_prog_data(v.prog_data);
@@ -244,7 +244,7 @@ setup_fs_payload_gfx20(brw_fs_thread_payload &payload,
 
 static inline void
 setup_fs_payload_gfx9(brw_fs_thread_payload &payload,
-                      const fs_visitor &v,
+                      const brw_shader &v,
                       bool &source_depth_to_render_target)
 {
    struct brw_wm_prog_data *prog_data = brw_wm_prog_data(v.prog_data);
@@ -332,7 +332,7 @@ setup_fs_payload_gfx9(brw_fs_thread_payload &payload,
    }
 }
 
-brw_fs_thread_payload::brw_fs_thread_payload(const fs_visitor &v,
+brw_fs_thread_payload::brw_fs_thread_payload(const brw_shader &v,
                                      bool &source_depth_to_render_target)
   : subspan_coord_reg(),
     source_depth_reg(),
@@ -352,7 +352,7 @@ brw_fs_thread_payload::brw_fs_thread_payload(const fs_visitor &v,
       setup_fs_payload_gfx9(*this, v, source_depth_to_render_target);
 }
 
-brw_cs_thread_payload::brw_cs_thread_payload(const fs_visitor &v)
+brw_cs_thread_payload::brw_cs_thread_payload(const brw_shader &v)
 {
    struct brw_cs_prog_data *prog_data = brw_cs_prog_data(v.prog_data);
 
@@ -411,7 +411,7 @@ brw_cs_thread_payload::load_subgroup_id(const brw_builder &bld,
    }
 }
 
-brw_task_mesh_thread_payload::brw_task_mesh_thread_payload(fs_visitor &v)
+brw_task_mesh_thread_payload::brw_task_mesh_thread_payload(brw_shader &v)
    : brw_cs_thread_payload(v)
 {
    /* Task and Mesh Shader Payloads (SIMD8 and SIMD16)
@@ -475,7 +475,7 @@ brw_task_mesh_thread_payload::brw_task_mesh_thread_payload(fs_visitor &v)
    num_regs = r;
 }
 
-brw_bs_thread_payload::brw_bs_thread_payload(const fs_visitor &v)
+brw_bs_thread_payload::brw_bs_thread_payload(const brw_shader &v)
 {
    struct brw_bs_prog_data *prog_data = brw_bs_prog_data(v.prog_data);
 

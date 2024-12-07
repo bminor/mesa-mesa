@@ -21,7 +21,7 @@
  */
 
 static bool
-opt_address_reg_load_local(fs_visitor &s, bblock_t *block, const brw_def_analysis &defs)
+opt_address_reg_load_local(brw_shader &s, bblock_t *block, const brw_def_analysis &defs)
 {
    bool progress = false;
 
@@ -53,7 +53,7 @@ opt_address_reg_load_local(fs_visitor &s, bblock_t *block, const brw_def_analysi
 }
 
 bool
-brw_opt_address_reg_load(fs_visitor &s)
+brw_opt_address_reg_load(brw_shader &s)
 {
    bool progress = false;
    const brw_def_analysis &defs = s.def_analysis.require();

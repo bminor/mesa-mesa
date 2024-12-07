@@ -287,7 +287,7 @@ brw_nir_lower_mesh_primitive_count(nir_shader *nir)
 }
 
 static void
-brw_emit_urb_fence(fs_visitor &s)
+brw_emit_urb_fence(brw_shader &s)
 {
    const brw_builder bld1 = brw_builder(&s).at_end().exec_all().group(1, 0);
    brw_reg dst = bld1.vgrf(BRW_TYPE_UD);
@@ -314,7 +314,7 @@ brw_emit_urb_fence(fs_visitor &s)
 }
 
 static bool
-run_task_mesh(fs_visitor &s, bool allow_spilling)
+run_task_mesh(brw_shader &s, bool allow_spilling)
 {
    assert(s.stage == MESA_SHADER_TASK ||
           s.stage == MESA_SHADER_MESH);
@@ -393,7 +393,7 @@ brw_compile_task(const struct brw_compiler *compiler,
       .required_width = brw_required_dispatch_width(&nir->info),
    };
 
-   std::unique_ptr<fs_visitor> v[3];
+   std::unique_ptr<brw_shader> v[3];
 
    for (unsigned i = 0; i < 3; i++) {
       const unsigned simd = devinfo->ver >= 30 ? 2 - i : i;
@@ -411,7 +411,7 @@ brw_compile_task(const struct brw_compiler *compiler,
       brw_postprocess_nir(shader, compiler, debug_enabled,
                           key->base.robust_flags);
 
-      v[simd] = std::make_unique<fs_visitor>(compiler, &params->base,
+      v[simd] = std::make_unique<brw_shader>(compiler, &params->base,
                                              &key->base,
                                              &prog_data->base.base,
                                              shader, dispatch_width,
@@ -446,7 +446,7 @@ brw_compile_task(const struct brw_compiler *compiler,
       return NULL;
    }
 
-   fs_visitor *selected = v[selected_simd].get();
+   brw_shader *selected = v[selected_simd].get();
    prog_data->base.prog_mask = 1 << selected_simd;
    prog_data->base.base.grf_used = MAX2(prog_data->base.base.grf_used,
                                         selected->grf_used);
@@ -1704,7 +1704,7 @@ brw_compile_mesh(const struct brw_compiler *compiler,
       .required_width = brw_required_dispatch_width(&nir->info),
    };
 
-   std::unique_ptr<fs_visitor> v[3];
+   std::unique_ptr<brw_shader> v[3];
 
    for (unsigned i = 0; i < 3; i++) {
       const unsigned simd = devinfo->ver >= 30 ? 2 - i : i;
@@ -1734,7 +1734,7 @@ brw_compile_mesh(const struct brw_compiler *compiler,
       brw_postprocess_nir(shader, compiler, debug_enabled,
                           key->base.robust_flags);
 
-      v[simd] = std::make_unique<fs_visitor>(compiler, &params->base,
+      v[simd] = std::make_unique<brw_shader>(compiler, &params->base,
                                              &key->base,
                                              &prog_data->base.base,
                                              shader, dispatch_width,
@@ -1769,7 +1769,7 @@ brw_compile_mesh(const struct brw_compiler *compiler,
       return NULL;
    }
 
-   fs_visitor *selected = v[selected_simd].get();
+   brw_shader *selected = v[selected_simd].get();
    prog_data->base.prog_mask = 1 << selected_simd;
    prog_data->base.base.grf_used = MAX2(prog_data->base.base.grf_used,
                                         selected->grf_used);

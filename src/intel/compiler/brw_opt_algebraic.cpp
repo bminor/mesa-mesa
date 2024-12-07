@@ -318,7 +318,7 @@ brw_opt_constant_fold_instruction(const intel_device_info *devinfo, brw_inst *in
 }
 
 bool
-brw_opt_algebraic(fs_visitor &s)
+brw_opt_algebraic(brw_shader &s)
 {
    const intel_device_info *devinfo = s.devinfo;
    bool progress = false;

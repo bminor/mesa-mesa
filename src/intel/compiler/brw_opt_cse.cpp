@@ -43,7 +43,7 @@ struct remap_entry {
 };
 
 static bool
-is_expression(const fs_visitor *v, const brw_inst *const inst)
+is_expression(const brw_shader *v, const brw_inst *const inst)
 {
    switch (inst->opcode) {
    case BRW_OPCODE_MOV:
@@ -359,7 +359,7 @@ cmp_func(const void *data1, const void *data2)
 }
 
 static bool
-remap_sources(fs_visitor &s, const brw_def_analysis &defs,
+remap_sources(brw_shader &s, const brw_def_analysis &defs,
               brw_inst *inst, struct remap_entry *remap_table)
 {
    bool progress = false;
@@ -392,7 +392,7 @@ remap_sources(fs_visitor &s, const brw_def_analysis &defs,
 }
 
 bool
-brw_opt_cse_defs(fs_visitor &s)
+brw_opt_cse_defs(brw_shader &s)
 {
    const intel_device_info *devinfo = s.devinfo;
    const brw_idom_tree &idom = s.idom_analysis.require();

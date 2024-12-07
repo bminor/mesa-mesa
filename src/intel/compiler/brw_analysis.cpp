@@ -15,7 +15,7 @@
  * (less than 1000 nodes) that this algorithm is significantly faster than
  * others like Lengauer-Tarjan.
  */
-brw_idom_tree::brw_idom_tree(const fs_visitor *s) :
+brw_idom_tree::brw_idom_tree(const brw_shader *s) :
    num_parents(s->cfg->num_blocks),
    parents(new bblock_t *[num_parents]())
 {
@@ -77,7 +77,7 @@ brw_idom_tree::dump(FILE *file) const
    fprintf(file, "}\n");
 }
 
-brw_register_pressure::brw_register_pressure(const fs_visitor *v)
+brw_register_pressure::brw_register_pressure(const brw_shader *v)
 {
    const brw_live_variables &live = v->live_analysis.require();
    const unsigned num_instructions = v->cfg->num_blocks ?

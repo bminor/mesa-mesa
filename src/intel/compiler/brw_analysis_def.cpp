@@ -94,14 +94,14 @@ brw_def_analysis::update_for_reads(const brw_idom_tree &idom,
 }
 
 bool
-brw_def_analysis::fully_defines(const fs_visitor *v, brw_inst *inst)
+brw_def_analysis::fully_defines(const brw_shader *v, brw_inst *inst)
 {
    return v->alloc.sizes[inst->dst.nr] * REG_SIZE == inst->size_written &&
           !inst->is_partial_write();
 }
 
 void
-brw_def_analysis::update_for_write(const fs_visitor *v,
+brw_def_analysis::update_for_write(const brw_shader *v,
                                    bblock_t *block,
                                    brw_inst *inst)
 {
@@ -124,7 +124,7 @@ brw_def_analysis::update_for_write(const fs_visitor *v,
    }
 }
 
-brw_def_analysis::brw_def_analysis(const fs_visitor *v)
+brw_def_analysis::brw_def_analysis(const brw_shader *v)
 {
    const brw_idom_tree &idom = v->idom_analysis.require();
 
@@ -182,7 +182,7 @@ brw_def_analysis::~brw_def_analysis()
 }
 
 bool
-brw_def_analysis::validate(const fs_visitor *v) const
+brw_def_analysis::validate(const brw_shader *v) const
 {
    for (unsigned i = 0; i < def_count; i++) {
       assert(!def_insts[i] == !def_blocks[i]);
@@ -205,7 +205,7 @@ brw_def_analysis::ssa_count() const
 }
 
 void
-brw_def_analysis::print_stats(const fs_visitor *v) const
+brw_def_analysis::print_stats(const brw_shader *v) const
 {
    const unsigned defs = ssa_count();
 

@@ -71,7 +71,7 @@ struct bblock_link {
    enum bblock_link_kind kind;
 };
 
-struct fs_visitor;
+struct brw_shader;
 struct cfg_t;
 
 struct bblock_t {
@@ -318,7 +318,7 @@ bblock_t::last_non_control_flow_inst()
 struct cfg_t {
    DECLARE_RALLOC_CXX_OPERATORS(cfg_t)
 
-   cfg_t(const fs_visitor *s, exec_list *instructions);
+   cfg_t(const brw_shader *s, exec_list *instructions);
    ~cfg_t();
 
    void remove_block(bblock_t *block);
@@ -346,7 +346,7 @@ struct cfg_t {
     */
    inline void adjust_block_ips();
 
-   const struct fs_visitor *s;
+   const struct brw_shader *s;
    void *mem_ctx;
 
    /** Ordered list (by ip) of basic blocks */

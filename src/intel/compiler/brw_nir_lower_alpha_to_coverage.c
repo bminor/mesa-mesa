@@ -112,7 +112,7 @@ brw_nir_lower_alpha_to_coverage(nir_shader *shader,
          assert(block->cf_node.parent == &impl->cf_node);
          assert(nir_cf_node_is_last(&block->cf_node));
 
-         /* See store_output in fs_visitor::nir_emit_fs_intrinsic */
+         /* See store_output in brw_shader::nir_emit_fs_intrinsic */
          const unsigned store_offset = nir_src_as_uint(intrin->src[1]);
          const unsigned driver_location = nir_intrinsic_base(intrin) +
             SET_FIELD(store_offset, BRW_NIR_FRAG_OUTPUT_LOCATION);

@@ -59,15 +59,10 @@ enum brw_shader_phase {
    BRW_SHADER_PHASE_INVALID,
 };
 
-/**
- * The fragment shader front-end.
- *
- * Translates either GLSL IR or Mesa IR (for ARB_fragment_program) into FS IR.
- */
-struct fs_visitor
+struct brw_shader
 {
 public:
-   fs_visitor(const struct brw_compiler *compiler,
+   brw_shader(const struct brw_compiler *compiler,
               const struct brw_compile_params *params,
               const brw_base_prog_key *key,
               struct brw_stage_prog_data *prog_data,
@@ -75,7 +70,7 @@ public:
               unsigned dispatch_width,
               bool needs_register_pressure,
               bool debug_enabled);
-   fs_visitor(const struct brw_compiler *compiler,
+   brw_shader(const struct brw_compiler *compiler,
               const struct brw_compile_params *params,
               const brw_wm_prog_key *key,
               struct brw_wm_prog_data *prog_data,
@@ -85,9 +80,9 @@ public:
               bool needs_register_pressure,
               bool debug_enabled);
    void init();
-   ~fs_visitor();
+   ~brw_shader();
 
-   void import_uniforms(fs_visitor *v);
+   void import_uniforms(brw_shader *v);
 
    void assign_curb_setup();
    void convert_attr_sources_to_hw_regs(brw_inst *inst);
@@ -139,11 +134,11 @@ public:
 
    struct brw_stage_prog_data *prog_data;
 
-   brw_analysis<brw_live_variables, fs_visitor> live_analysis;
-   brw_analysis<brw_register_pressure, fs_visitor> regpressure_analysis;
-   brw_analysis<brw_performance, fs_visitor> performance_analysis;
-   brw_analysis<brw_idom_tree, fs_visitor> idom_analysis;
-   brw_analysis<brw_def_analysis, fs_visitor> def_analysis;
+   brw_analysis<brw_live_variables, brw_shader> live_analysis;
+   brw_analysis<brw_register_pressure, brw_shader> regpressure_analysis;
+   brw_analysis<brw_performance, brw_shader> performance_analysis;
+   brw_analysis<brw_idom_tree, brw_shader> idom_analysis;
+   brw_analysis<brw_def_analysis, brw_shader> def_analysis;
 
    /** Number of uniform variable components visited. */
    unsigned uniforms;
@@ -226,9 +221,9 @@ public:
                         int iteration, int pass_num) const;
 };
 
-void brw_print_instructions(const fs_visitor &s, FILE *file = stderr);
+void brw_print_instructions(const brw_shader &s, FILE *file = stderr);
 
-void brw_print_instruction(const fs_visitor &s, const brw_inst *inst,
+void brw_print_instruction(const brw_shader &s, const brw_inst *inst,
                            FILE *file = stderr,
                            const brw_def_analysis *defs = nullptr);
 
@@ -240,7 +235,7 @@ void brw_print_swsb(FILE *f, const struct intel_device_info *devinfo, const tgl_
  * dispatch mode.
  */
 static inline unsigned
-sample_mask_flag_subreg(const fs_visitor &s)
+sample_mask_flag_subreg(const brw_shader &s)
 {
    assert(s.stage == MESA_SHADER_FRAGMENT);
    return 2;
@@ -263,19 +258,19 @@ void brw_compute_urb_setup_index(struct brw_wm_prog_data *wm_prog_data);
 int brw_get_subgroup_id_param_index(const intel_device_info *devinfo,
                                     const brw_stage_prog_data *prog_data);
 
-void brw_from_nir(fs_visitor *s);
+void brw_from_nir(brw_shader *s);
 
-void brw_shader_phase_update(fs_visitor &s, enum brw_shader_phase phase);
+void brw_shader_phase_update(brw_shader &s, enum brw_shader_phase phase);
 
 #ifndef NDEBUG
-void brw_validate(const fs_visitor &s);
+void brw_validate(const brw_shader &s);
 #else
-static inline void brw_validate(const fs_visitor &s) {}
+static inline void brw_validate(const brw_shader &s) {}
 #endif
 
-void brw_calculate_cfg(fs_visitor &s);
+void brw_calculate_cfg(brw_shader &s);
 
-void brw_optimize(fs_visitor &s);
+void brw_optimize(brw_shader &s);
 
 enum brw_instruction_scheduler_mode {
    BRW_SCHEDULE_PRE,
@@ -287,73 +282,73 @@ enum brw_instruction_scheduler_mode {
 
 class brw_instruction_scheduler;
 
-brw_instruction_scheduler *brw_prepare_scheduler(fs_visitor &s, void *mem_ctx);
-void brw_schedule_instructions_pre_ra(fs_visitor &s, brw_instruction_scheduler *sched,
+brw_instruction_scheduler *brw_prepare_scheduler(brw_shader &s, void *mem_ctx);
+void brw_schedule_instructions_pre_ra(brw_shader &s, brw_instruction_scheduler *sched,
                                       brw_instruction_scheduler_mode mode);
-void brw_schedule_instructions_post_ra(fs_visitor &s);
+void brw_schedule_instructions_post_ra(brw_shader &s);
 
-void brw_allocate_registers(fs_visitor &s, bool allow_spilling);
-bool brw_assign_regs(fs_visitor &s, bool allow_spilling, bool spill_all);
-void brw_assign_regs_trivial(fs_visitor &s);
+void brw_allocate_registers(brw_shader &s, bool allow_spilling);
+bool brw_assign_regs(brw_shader &s, bool allow_spilling, bool spill_all);
+void brw_assign_regs_trivial(brw_shader &s);
 
-bool brw_lower_3src_null_dest(fs_visitor &s);
-bool brw_lower_alu_restrictions(fs_visitor &s);
-bool brw_lower_barycentrics(fs_visitor &s);
-bool brw_lower_constant_loads(fs_visitor &s);
-bool brw_lower_csel(fs_visitor &s);
-bool brw_lower_derivatives(fs_visitor &s);
-bool brw_lower_dpas(fs_visitor &s);
-bool brw_lower_find_live_channel(fs_visitor &s);
-bool brw_lower_indirect_mov(fs_visitor &s);
-bool brw_lower_integer_multiplication(fs_visitor &s);
-bool brw_lower_load_payload(fs_visitor &s);
-bool brw_lower_load_subgroup_invocation(fs_visitor &s);
-bool brw_lower_logical_sends(fs_visitor &s);
-bool brw_lower_pack(fs_visitor &s);
-bool brw_lower_regioning(fs_visitor &s);
-bool brw_lower_scalar_fp64_MAD(fs_visitor &s);
-bool brw_lower_scoreboard(fs_visitor &s);
-bool brw_lower_send_descriptors(fs_visitor &s);
-bool brw_lower_send_gather(fs_visitor &s);
-bool brw_lower_sends_overlapping_payload(fs_visitor &s);
-bool brw_lower_simd_width(fs_visitor &s);
-bool brw_lower_src_modifiers(fs_visitor &s, bblock_t *block, brw_inst *inst, unsigned i);
-bool brw_lower_sub_sat(fs_visitor &s);
-bool brw_lower_subgroup_ops(fs_visitor &s);
-bool brw_lower_uniform_pull_constant_loads(fs_visitor &s);
-void brw_lower_vgrfs_to_fixed_grfs(fs_visitor &s);
+bool brw_lower_3src_null_dest(brw_shader &s);
+bool brw_lower_alu_restrictions(brw_shader &s);
+bool brw_lower_barycentrics(brw_shader &s);
+bool brw_lower_constant_loads(brw_shader &s);
+bool brw_lower_csel(brw_shader &s);
+bool brw_lower_derivatives(brw_shader &s);
+bool brw_lower_dpas(brw_shader &s);
+bool brw_lower_find_live_channel(brw_shader &s);
+bool brw_lower_indirect_mov(brw_shader &s);
+bool brw_lower_integer_multiplication(brw_shader &s);
+bool brw_lower_load_payload(brw_shader &s);
+bool brw_lower_load_subgroup_invocation(brw_shader &s);
+bool brw_lower_logical_sends(brw_shader &s);
+bool brw_lower_pack(brw_shader &s);
+bool brw_lower_regioning(brw_shader &s);
+bool brw_lower_scalar_fp64_MAD(brw_shader &s);
+bool brw_lower_scoreboard(brw_shader &s);
+bool brw_lower_send_descriptors(brw_shader &s);
+bool brw_lower_send_gather(brw_shader &s);
+bool brw_lower_sends_overlapping_payload(brw_shader &s);
+bool brw_lower_simd_width(brw_shader &s);
+bool brw_lower_src_modifiers(brw_shader &s, bblock_t *block, brw_inst *inst, unsigned i);
+bool brw_lower_sub_sat(brw_shader &s);
+bool brw_lower_subgroup_ops(brw_shader &s);
+bool brw_lower_uniform_pull_constant_loads(brw_shader &s);
+void brw_lower_vgrfs_to_fixed_grfs(brw_shader &s);
 
-bool brw_opt_address_reg_load(fs_visitor &s);
-bool brw_opt_algebraic(fs_visitor &s);
-bool brw_opt_bank_conflicts(fs_visitor &s);
-bool brw_opt_cmod_propagation(fs_visitor &s);
-bool brw_opt_combine_constants(fs_visitor &s);
-bool brw_opt_combine_convergent_txf(fs_visitor &s);
-bool brw_opt_compact_virtual_grfs(fs_visitor &s);
+bool brw_opt_address_reg_load(brw_shader &s);
+bool brw_opt_algebraic(brw_shader &s);
+bool brw_opt_bank_conflicts(brw_shader &s);
+bool brw_opt_cmod_propagation(brw_shader &s);
+bool brw_opt_combine_constants(brw_shader &s);
+bool brw_opt_combine_convergent_txf(brw_shader &s);
+bool brw_opt_compact_virtual_grfs(brw_shader &s);
 bool brw_opt_constant_fold_instruction(const intel_device_info *devinfo, brw_inst *inst);
-bool brw_opt_copy_propagation(fs_visitor &s);
-bool brw_opt_copy_propagation_defs(fs_visitor &s);
-bool brw_opt_cse_defs(fs_visitor &s);
-bool brw_opt_dead_code_eliminate(fs_visitor &s);
-bool brw_opt_eliminate_find_live_channel(fs_visitor &s);
-bool brw_opt_register_coalesce(fs_visitor &s);
-bool brw_opt_remove_extra_rounding_modes(fs_visitor &s);
-bool brw_opt_remove_redundant_halts(fs_visitor &s);
-bool brw_opt_saturate_propagation(fs_visitor &s);
-bool brw_opt_send_gather_to_send(fs_visitor &s);
-bool brw_opt_send_to_send_gather(fs_visitor &s);
-bool brw_opt_split_sends(fs_visitor &s);
-bool brw_opt_split_virtual_grfs(fs_visitor &s);
-bool brw_opt_zero_samples(fs_visitor &s);
+bool brw_opt_copy_propagation(brw_shader &s);
+bool brw_opt_copy_propagation_defs(brw_shader &s);
+bool brw_opt_cse_defs(brw_shader &s);
+bool brw_opt_dead_code_eliminate(brw_shader &s);
+bool brw_opt_eliminate_find_live_channel(brw_shader &s);
+bool brw_opt_register_coalesce(brw_shader &s);
+bool brw_opt_remove_extra_rounding_modes(brw_shader &s);
+bool brw_opt_remove_redundant_halts(brw_shader &s);
+bool brw_opt_saturate_propagation(brw_shader &s);
+bool brw_opt_send_gather_to_send(brw_shader &s);
+bool brw_opt_send_to_send_gather(brw_shader &s);
+bool brw_opt_split_sends(brw_shader &s);
+bool brw_opt_split_virtual_grfs(brw_shader &s);
+bool brw_opt_zero_samples(brw_shader &s);
 
-bool brw_workaround_emit_dummy_mov_instruction(fs_visitor &s);
-bool brw_workaround_memory_fence_before_eot(fs_visitor &s);
-bool brw_workaround_nomask_control_flow(fs_visitor &s);
-bool brw_workaround_source_arf_before_eot(fs_visitor &s);
+bool brw_workaround_emit_dummy_mov_instruction(brw_shader &s);
+bool brw_workaround_memory_fence_before_eot(brw_shader &s);
+bool brw_workaround_nomask_control_flow(brw_shader &s);
+bool brw_workaround_source_arf_before_eot(brw_shader &s);
 
 /* Helpers. */
-unsigned brw_get_lowered_simd_width(const fs_visitor *shader,
+unsigned brw_get_lowered_simd_width(const brw_shader *shader,
                                     const brw_inst *inst);
 
-brw_reg brw_allocate_vgrf(fs_visitor &s, brw_reg_type type, unsigned count);
-brw_reg brw_allocate_vgrf_units(fs_visitor &s, unsigned units_of_REGSIZE);
+brw_reg brw_allocate_vgrf(brw_shader &s, brw_reg_type type, unsigned count);
+brw_reg brw_allocate_vgrf_units(brw_shader &s, unsigned units_of_REGSIZE);

@@ -137,7 +137,7 @@ factor_uint32(uint32_t x, unsigned *result_a, unsigned *result_b)
 }
 
 static void
-brw_lower_mul_dword_inst(fs_visitor &s, brw_inst *inst, bblock_t *block)
+brw_lower_mul_dword_inst(brw_shader &s, brw_inst *inst, bblock_t *block)
 {
    const intel_device_info *devinfo = s.devinfo;
    const brw_builder ibld(&s, block, inst);
@@ -298,7 +298,7 @@ brw_lower_mul_dword_inst(fs_visitor &s, brw_inst *inst, bblock_t *block)
 }
 
 static void
-brw_lower_mul_qword_inst(fs_visitor &s, brw_inst *inst, bblock_t *block)
+brw_lower_mul_qword_inst(brw_shader &s, brw_inst *inst, bblock_t *block)
 {
    const intel_device_info *devinfo = s.devinfo;
    const brw_builder ibld(&s, block, inst);
@@ -367,7 +367,7 @@ brw_lower_mul_qword_inst(fs_visitor &s, brw_inst *inst, bblock_t *block)
 }
 
 static void
-brw_lower_mulh_inst(fs_visitor &s, brw_inst *inst, bblock_t *block)
+brw_lower_mulh_inst(brw_shader &s, brw_inst *inst, bblock_t *block)
 {
    const intel_device_info *devinfo = s.devinfo;
    const brw_builder ibld(&s, block, inst);
@@ -411,7 +411,7 @@ brw_lower_mulh_inst(fs_visitor &s, brw_inst *inst, bblock_t *block)
 }
 
 bool
-brw_lower_integer_multiplication(fs_visitor &s)
+brw_lower_integer_multiplication(brw_shader &s)
 {
    const intel_device_info *devinfo = s.devinfo;
    bool progress = false;

@@ -23,7 +23,7 @@
  * clear is_scalar "just in case."
  */
 bool
-brw_lower_scalar_fp64_MAD(fs_visitor &s)
+brw_lower_scalar_fp64_MAD(brw_shader &s)
 {
    const intel_device_info *devinfo = s.devinfo;
    bool progress = false;
@@ -48,7 +48,7 @@ brw_lower_scalar_fp64_MAD(fs_visitor &s)
 }
 
 bool
-brw_lower_load_payload(fs_visitor &s)
+brw_lower_load_payload(brw_shader &s)
 {
    bool progress = false;
 
@@ -104,7 +104,7 @@ brw_lower_load_payload(fs_visitor &s)
  * Or, for unsigned ==/!= comparisons, simply change the types.
  */
 bool
-brw_lower_csel(fs_visitor &s)
+brw_lower_csel(brw_shader &s)
 {
    const intel_device_info *devinfo = s.devinfo;
    bool progress = false;
@@ -180,7 +180,7 @@ brw_lower_csel(fs_visitor &s)
 }
 
 bool
-brw_lower_sub_sat(fs_visitor &s)
+brw_lower_sub_sat(brw_shader &s)
 {
    bool progress = false;
 
@@ -281,7 +281,7 @@ brw_lower_sub_sat(fs_visitor &s)
  * component layout.
  */
 bool
-brw_lower_barycentrics(fs_visitor &s)
+brw_lower_barycentrics(brw_shader &s)
 {
    const intel_device_info *devinfo = s.devinfo;
 
@@ -352,7 +352,7 @@ brw_lower_barycentrics(fs_visitor &s)
  * swizzles of the source, specified as \p swz0 and \p swz1.
  */
 static bool
-lower_derivative(fs_visitor &s, bblock_t *block, brw_inst *inst,
+lower_derivative(brw_shader &s, bblock_t *block, brw_inst *inst,
                  unsigned swz0, unsigned swz1)
 {
    const brw_builder ubld = brw_builder(&s, block, inst).exec_all();
@@ -375,7 +375,7 @@ lower_derivative(fs_visitor &s, bblock_t *block, brw_inst *inst,
  * them efficiently (i.e. XeHP).
  */
 bool
-brw_lower_derivatives(fs_visitor &s)
+brw_lower_derivatives(brw_shader &s)
 {
    bool progress = false;
 
@@ -408,7 +408,7 @@ brw_lower_derivatives(fs_visitor &s)
 }
 
 bool
-brw_lower_find_live_channel(fs_visitor &s)
+brw_lower_find_live_channel(brw_shader &s)
 {
    bool progress = false;
 
@@ -514,7 +514,7 @@ brw_lower_find_live_channel(fs_visitor &s)
  * just adds a new vgrf for the second payload and copies it over.
  */
 bool
-brw_lower_sends_overlapping_payload(fs_visitor &s)
+brw_lower_sends_overlapping_payload(brw_shader &s)
 {
    bool progress = false;
 
@@ -560,7 +560,7 @@ brw_lower_sends_overlapping_payload(fs_visitor &s)
  * ARF NULL is not allowed.  Fix that up by allocating a temporary GRF.
  */
 bool
-brw_lower_3src_null_dest(fs_visitor &s)
+brw_lower_3src_null_dest(brw_shader &s)
 {
    bool progress = false;
 
@@ -595,7 +595,7 @@ unsupported_64bit_type(const intel_device_info *devinfo,
  * - Splitting 64-bit MOV/SEL into 2x32-bit where needed
  */
 bool
-brw_lower_alu_restrictions(fs_visitor &s)
+brw_lower_alu_restrictions(brw_shader &s)
 {
    const intel_device_info *devinfo = s.devinfo;
    bool progress = false;
@@ -727,7 +727,7 @@ brw_lower_vgrf_to_fixed_grf(const struct intel_device_info *devinfo, brw_inst *i
 }
 
 void
-brw_lower_vgrfs_to_fixed_grfs(fs_visitor &s)
+brw_lower_vgrfs_to_fixed_grfs(brw_shader &s)
 {
    assert(s.grf_used || !"Must be called after register allocation");
 
@@ -776,7 +776,7 @@ brw_s0(enum brw_reg_type type, unsigned subnr)
 }
 
 static bool
-brw_lower_send_gather_inst(fs_visitor &s, bblock_t *block, brw_inst *inst)
+brw_lower_send_gather_inst(brw_shader &s, bblock_t *block, brw_inst *inst)
 {
    const intel_device_info *devinfo = s.devinfo;
    assert(devinfo->ver >= 30);
@@ -826,7 +826,7 @@ brw_lower_send_gather_inst(fs_visitor &s, bblock_t *block, brw_inst *inst)
 }
 
 bool
-brw_lower_send_gather(fs_visitor &s)
+brw_lower_send_gather(brw_shader &s)
 {
    assert(s.devinfo->ver >= 30);
    assert(s.grf_used || !"Must be called after register allocation");
@@ -846,7 +846,7 @@ brw_lower_send_gather(fs_visitor &s)
 }
 
 bool
-brw_lower_load_subgroup_invocation(fs_visitor &s)
+brw_lower_load_subgroup_invocation(brw_shader &s)
 {
    bool progress = false;
 
@@ -886,7 +886,7 @@ brw_lower_load_subgroup_invocation(fs_visitor &s)
 }
 
 bool
-brw_lower_indirect_mov(fs_visitor &s)
+brw_lower_indirect_mov(brw_shader &s)
 {
    bool progress = false;
 

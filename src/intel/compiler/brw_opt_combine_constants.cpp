@@ -1183,7 +1183,7 @@ struct register_allocation {
 };
 
 static brw_reg
-allocate_slots(fs_visitor &s,
+allocate_slots(brw_shader &s,
                struct register_allocation *regs, unsigned num_regs,
                unsigned bytes, unsigned align_bytes)
 {
@@ -1242,7 +1242,7 @@ deallocate_slots(const struct intel_device_info *devinfo,
 }
 
 static void
-parcel_out_registers(fs_visitor &s,
+parcel_out_registers(brw_shader &s,
                      struct imm *imm, unsigned len, const bblock_t *cur_block,
                      struct register_allocation *regs, unsigned num_regs)
 {
@@ -1284,7 +1284,7 @@ parcel_out_registers(fs_visitor &s,
 }
 
 bool
-brw_opt_combine_constants(fs_visitor &s)
+brw_opt_combine_constants(brw_shader &s)
 {
    const intel_device_info *devinfo = s.devinfo;
    void *const_ctx = ralloc_context(NULL);
@@ -1772,7 +1772,7 @@ brw_opt_combine_constants(fs_visitor &s)
 
    if (rebuild_cfg) {
       /* When the CFG is initially built, the instructions are removed from
-       * the list of instructions stored in fs_visitor -- the same exec_node
+       * the list of instructions stored in brw_shader -- the same exec_node
        * is used for membership in that list and in a block list.  So we need
        * to pull them back before rebuilding the CFG.
        */

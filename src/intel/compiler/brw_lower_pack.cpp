@@ -27,7 +27,7 @@
 #include "brw_builder.h"
 
 bool
-brw_lower_pack(fs_visitor &s)
+brw_lower_pack(brw_shader &s)
 {
    bool progress = false;
 

@@ -42,7 +42,7 @@ get_patch_count_threshold(int input_control_points)
 }
 
 static void
-brw_set_tcs_invocation_id(fs_visitor &s)
+brw_set_tcs_invocation_id(brw_shader &s)
 {
    const struct intel_device_info *devinfo = s.devinfo;
    struct brw_tcs_prog_data *tcs_prog_data = brw_tcs_prog_data(s.prog_data);
@@ -88,7 +88,7 @@ brw_set_tcs_invocation_id(fs_visitor &s)
 }
 
 static void
-brw_emit_tcs_thread_end(fs_visitor &s)
+brw_emit_tcs_thread_end(brw_shader &s)
 {
    /* Try and tag the last URB write with EOT instead of emitting a whole
     * separate write just to finish the thread.  There isn't guaranteed to
@@ -115,7 +115,7 @@ brw_emit_tcs_thread_end(fs_visitor &s)
 }
 
 static void
-brw_assign_tcs_urb_setup(fs_visitor &s)
+brw_assign_tcs_urb_setup(brw_shader &s)
 {
    assert(s.stage == MESA_SHADER_TESS_CTRL);
 
@@ -126,7 +126,7 @@ brw_assign_tcs_urb_setup(fs_visitor &s)
 }
 
 static bool
-run_tcs(fs_visitor &s)
+run_tcs(brw_shader &s)
 {
    assert(s.stage == MESA_SHADER_TESS_CTRL);
 
@@ -274,9 +274,9 @@ brw_compile_tcs(const struct brw_compiler *compiler,
       brw_print_vue_map(stderr, &vue_prog_data->vue_map, MESA_SHADER_TESS_CTRL);
    }
 
-   fs_visitor v(compiler, &params->base, &key->base,
-                &prog_data->base.base, nir, dispatch_width,
-                params->base.stats != NULL, debug_enabled);
+    brw_shader v(compiler, &params->base, &key->base,
+                 &prog_data->base.base, nir, dispatch_width,
+                 params->base.stats != NULL, debug_enabled);
    if (!run_tcs(v)) {
       params->base.error_str =
          ralloc_strdup(params->base.mem_ctx, v.fail_msg);

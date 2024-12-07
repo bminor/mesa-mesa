@@ -8,7 +8,7 @@
 #include "brw_builder.h"
 
 static unsigned
-dest_comps_for_txf(const fs_visitor &s, const brw_inst *txf)
+dest_comps_for_txf(const brw_shader &s, const brw_inst *txf)
 {
    if (!txf)
       return 0;
@@ -78,7 +78,7 @@ sources_match(ASSERTED const brw_def_analysis &defs,
  * lower register pressure.
  */
 bool
-brw_opt_combine_convergent_txf(fs_visitor &s)
+brw_opt_combine_convergent_txf(brw_shader &s)
 {
    const brw_def_analysis &defs = s.def_analysis.require();
 

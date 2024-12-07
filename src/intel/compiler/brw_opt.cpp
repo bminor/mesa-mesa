@@ -10,7 +10,7 @@
 #include "dev/intel_debug.h"
 
 void
-brw_optimize(fs_visitor &s)
+brw_optimize(brw_shader &s)
 {
    const nir_shader *nir = s.nir;
 
@@ -230,7 +230,7 @@ load_payload_sources_read_for_size(brw_inst *lp, unsigned size_read)
  */
 
 bool
-brw_opt_zero_samples(fs_visitor &s)
+brw_opt_zero_samples(brw_shader &s)
 {
    bool progress = false;
 
@@ -307,7 +307,7 @@ brw_opt_zero_samples(fs_visitor &s)
  * payload concatenation altogether.
  */
 bool
-brw_opt_split_sends(fs_visitor &s)
+brw_opt_split_sends(brw_shader &s)
 {
    bool progress = false;
 
@@ -388,7 +388,7 @@ brw_opt_split_sends(fs_visitor &s)
  * halt-target
  */
 bool
-brw_opt_remove_redundant_halts(fs_visitor &s)
+brw_opt_remove_redundant_halts(brw_shader &s)
 {
    bool progress = false;
 
@@ -437,7 +437,7 @@ brw_opt_remove_redundant_halts(fs_visitor &s)
  * analysis.
  */
 bool
-brw_opt_eliminate_find_live_channel(fs_visitor &s)
+brw_opt_eliminate_find_live_channel(brw_shader &s)
 {
    bool progress = false;
    unsigned depth = 0;
@@ -531,7 +531,7 @@ out:
  * mode once is enough for the full vector/matrix
  */
 bool
-brw_opt_remove_extra_rounding_modes(fs_visitor &s)
+brw_opt_remove_extra_rounding_modes(brw_shader &s)
 {
    bool progress = false;
    unsigned execution_mode = s.nir->info.float_controls_execution_mode;
@@ -572,7 +572,7 @@ brw_opt_remove_extra_rounding_modes(fs_visitor &s)
 }
 
 bool
-brw_opt_send_to_send_gather(fs_visitor &s)
+brw_opt_send_to_send_gather(brw_shader &s)
 {
    const intel_device_info *devinfo = s.devinfo;
    bool progress = false;
@@ -653,7 +653,7 @@ brw_opt_send_to_send_gather(fs_visitor &s)
  * having to write the ARF scalar register.
  */
 bool
-brw_opt_send_gather_to_send(fs_visitor &s)
+brw_opt_send_gather_to_send(brw_shader &s)
 {
    const intel_device_info *devinfo = s.devinfo;
    bool progress = false;

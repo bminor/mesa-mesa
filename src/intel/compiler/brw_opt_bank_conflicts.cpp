@@ -507,7 +507,7 @@ namespace {
     * the program.
     */
    partitioning
-   shader_reg_partitioning(const fs_visitor *v)
+   shader_reg_partitioning(const brw_shader *v)
    {
       partitioning p(BRW_MAX_GRF);
 
@@ -530,7 +530,7 @@ namespace {
     * original location to avoid violating hardware or software assumptions.
     */
    bool *
-   shader_reg_constraints(const fs_visitor *v, const partitioning &p)
+   shader_reg_constraints(const brw_shader *v, const partitioning &p)
    {
       bool *constrained = new bool[p.num_atoms()]();
 
@@ -607,7 +607,7 @@ namespace {
     *           helpful than not optimizing at all.
     */
    weight_vector_type *
-   shader_conflict_weight_matrix(const fs_visitor *v, const partitioning &p)
+   shader_conflict_weight_matrix(const brw_shader *v, const partitioning &p)
    {
       weight_vector_type *conflicts = new weight_vector_type[p.num_atoms()];
       for (unsigned r = 0; r < p.num_atoms(); r++)
@@ -887,7 +887,7 @@ namespace {
 }
 
 bool
-brw_opt_bank_conflicts(fs_visitor &s)
+brw_opt_bank_conflicts(brw_shader &s)
 {
    assert(s.grf_used || !"Must be called after register allocation");
 

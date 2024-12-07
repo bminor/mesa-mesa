@@ -11,7 +11,7 @@
 #include "util/half_float.h"
 
 void
-brw_print_instructions(const fs_visitor &s, FILE *file)
+brw_print_instructions(const brw_shader &s, FILE *file)
 {
    if (s.cfg && s.grf_used == 0) {
       const brw_def_analysis &defs = s.def_analysis.require();
@@ -372,7 +372,7 @@ print_memory_logical_source(FILE *file, const brw_inst *inst, unsigned i)
 }
 
 void
-brw_print_instruction(const fs_visitor &s, const brw_inst *inst, FILE *file, const brw_def_analysis *defs)
+brw_print_instruction(const brw_shader &s, const brw_inst *inst, FILE *file, const brw_def_analysis *defs)
 {
    if (inst->predicate) {
       fprintf(file, "(%cf%d.%d) ",

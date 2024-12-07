@@ -21,13 +21,6 @@
  * IN THE SOFTWARE.
  */
 
-/** @file
- *
- * This file drives the GLSL IR -> LIR translation, contains the
- * optimizations on the LIR, and drives the generation of native code
- * from the LIR.
- */
-
 #include "brw_analysis.h"
 #include "brw_eu.h"
 #include "brw_shader.h"
@@ -45,7 +38,7 @@
 #include "util/u_math.h"
 
 void
-fs_visitor::emit_urb_writes(const brw_reg &gs_vertex_count)
+brw_shader::emit_urb_writes(const brw_reg &gs_vertex_count)
 {
    int slot, urb_offset, length;
    int starting_urb_offset = 0;
@@ -335,7 +328,7 @@ fs_visitor::emit_urb_writes(const brw_reg &gs_vertex_count)
 }
 
 void
-fs_visitor::emit_cs_terminate()
+brw_shader::emit_cs_terminate()
 {
    const brw_builder ubld = brw_builder(this).at_end().exec_all();
 
@@ -378,7 +371,7 @@ fs_visitor::emit_cs_terminate()
    send->eot = true;
 }
 
-fs_visitor::fs_visitor(const struct brw_compiler *compiler,
+brw_shader::brw_shader(const struct brw_compiler *compiler,
                        const struct brw_compile_params *params,
                        const brw_base_prog_key *key,
                        struct brw_stage_prog_data *prog_data,
@@ -402,7 +395,7 @@ fs_visitor::fs_visitor(const struct brw_compiler *compiler,
    init();
 }
 
-fs_visitor::fs_visitor(const struct brw_compiler *compiler,
+brw_shader::brw_shader(const struct brw_compiler *compiler,
                        const struct brw_compile_params *params,
                        const brw_wm_prog_key *key,
                        struct brw_wm_prog_data *prog_data,
@@ -431,7 +424,7 @@ fs_visitor::fs_visitor(const struct brw_compiler *compiler,
 }
 
 void
-fs_visitor::init()
+brw_shader::init()
 {
    this->max_dispatch_width = 32;
 
@@ -462,13 +455,13 @@ fs_visitor::init()
    this->gs.control_data_header_size_bits = 0;
 }
 
-fs_visitor::~fs_visitor()
+brw_shader::~brw_shader()
 {
    delete this->payload_;
 }
 
 void
-fs_visitor::vfail(const char *format, va_list va)
+brw_shader::vfail(const char *format, va_list va)
 {
    char *msg;
 
@@ -489,7 +482,7 @@ fs_visitor::vfail(const char *format, va_list va)
 }
 
 void
-fs_visitor::fail(const char *format, ...)
+brw_shader::fail(const char *format, ...)
 {
    va_list va;
 
@@ -510,7 +503,7 @@ fs_visitor::fail(const char *format, ...)
  * this just calls fail().
  */
 void
-fs_visitor::limit_dispatch_width(unsigned n, const char *msg)
+brw_shader::limit_dispatch_width(unsigned n, const char *msg)
 {
    if (dispatch_width > n) {
       fail("%s", msg);
@@ -526,7 +519,7 @@ fs_visitor::limit_dispatch_width(unsigned n, const char *msg)
  * This brings in those uniform definitions
  */
 void
-fs_visitor::import_uniforms(fs_visitor *v)
+brw_shader::import_uniforms(brw_shader *v)
 {
    this->uniforms = v->uniforms;
 }
@@ -577,7 +570,7 @@ brw_barycentric_mode(const struct brw_wm_prog_key *key,
  * Return true if successful or false if a separate EOT write is needed.
  */
 bool
-fs_visitor::mark_last_urb_write_with_eot()
+brw_shader::mark_last_urb_write_with_eot()
 {
    foreach_in_list_reverse(brw_inst, prev, &this->instructions) {
       if (prev->opcode == SHADER_OPCODE_URB_WRITE_LOGICAL) {
@@ -606,7 +599,7 @@ round_components_to_whole_registers(const intel_device_info *devinfo,
 }
 
 void
-fs_visitor::assign_curb_setup()
+brw_shader::assign_curb_setup()
 {
    unsigned uniform_push_length =
       round_components_to_whole_registers(devinfo, prog_data->nr_params);
@@ -845,7 +838,7 @@ brw_compute_urb_setup_index(struct brw_wm_prog_data *wm_prog_data)
 }
 
 void
-fs_visitor::convert_attr_sources_to_hw_regs(brw_inst *inst)
+brw_shader::convert_attr_sources_to_hw_regs(brw_inst *inst)
 {
    for (int i = 0; i < inst->sources; i++) {
       if (inst->src[i].file == ATTR) {
@@ -935,7 +928,7 @@ brw_fb_write_msg_control(const brw_inst *inst,
 }
 
 void
-fs_visitor::invalidate_analysis(brw_analysis_dependency_class c)
+brw_shader::invalidate_analysis(brw_analysis_dependency_class c)
 {
    live_analysis.invalidate(c);
    regpressure_analysis.invalidate(c);
@@ -945,7 +938,7 @@ fs_visitor::invalidate_analysis(brw_analysis_dependency_class c)
 }
 
 void
-fs_visitor::debug_optimizer(const nir_shader *nir,
+brw_shader::debug_optimizer(const nir_shader *nir,
                             const char *pass_name,
                             int iteration, int pass_num) const
 {
@@ -976,7 +969,7 @@ fs_visitor::debug_optimizer(const nir_shader *nir,
 }
 
 static uint32_t
-brw_compute_max_register_pressure(fs_visitor &s)
+brw_compute_max_register_pressure(brw_shader &s)
 {
    const brw_register_pressure &rp = s.regpressure_analysis.require();
    uint32_t ip = 0, max_pressure = 0;
@@ -1031,7 +1024,7 @@ brw_get_scratch_size(int size)
 }
 
 void
-brw_allocate_registers(fs_visitor &s, bool allow_spilling)
+brw_allocate_registers(brw_shader &s, bool allow_spilling)
 {
    const struct intel_device_info *devinfo = s.devinfo;
    const nir_shader *nir = s.nir;
@@ -1249,7 +1242,7 @@ brw_cs_get_dispatch_info(const struct intel_device_info *devinfo,
 }
 
 void
-brw_shader_phase_update(fs_visitor &s, enum brw_shader_phase phase)
+brw_shader_phase_update(brw_shader &s, enum brw_shader_phase phase)
 {
    assert(phase == s.phase + 1);
    s.phase = phase;
@@ -1262,7 +1255,7 @@ bool brw_should_print_shader(const nir_shader *shader, uint64_t debug_flag)
 }
 
 static unsigned
-brw_allocate_vgrf_number(fs_visitor &s, unsigned size_in_REGSIZE_units)
+brw_allocate_vgrf_number(brw_shader &s, unsigned size_in_REGSIZE_units)
 {
    assert(size_in_REGSIZE_units > 0);
 
@@ -1279,7 +1272,7 @@ brw_allocate_vgrf_number(fs_visitor &s, unsigned size_in_REGSIZE_units)
 }
 
 brw_reg
-brw_allocate_vgrf(fs_visitor &s, brw_reg_type type, unsigned count)
+brw_allocate_vgrf(brw_shader &s, brw_reg_type type, unsigned count)
 {
    const unsigned unit = reg_unit(s.devinfo);
    const unsigned size = DIV_ROUND_UP(count * brw_type_size_bytes(type),
@@ -1288,7 +1281,7 @@ brw_allocate_vgrf(fs_visitor &s, brw_reg_type type, unsigned count)
 }
 
 brw_reg
-brw_allocate_vgrf_units(fs_visitor &s, unsigned units_of_REGSIZE)
+brw_allocate_vgrf_units(brw_shader &s, unsigned units_of_REGSIZE)
 {
    return brw_vgrf(brw_allocate_vgrf_number(s, units_of_REGSIZE), BRW_TYPE_UD);
 }

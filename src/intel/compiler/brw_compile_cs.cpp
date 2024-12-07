@@ -59,7 +59,7 @@ cs_fill_push_const_info(const struct intel_device_info *devinfo,
 }
 
 static bool
-run_cs(fs_visitor &s, bool allow_spilling)
+run_cs(brw_shader &s, bool allow_spilling)
 {
    assert(gl_shader_stage_is_compute(s.stage));
    const brw_builder bld = brw_builder(&s).at_end();
@@ -164,7 +164,7 @@ brw_compile_cs(const struct brw_compiler *compiler,
 
    prog_data->uses_sampler = brw_nir_uses_sampler(params->base.nir);
 
-   std::unique_ptr<fs_visitor> v[3];
+   std::unique_ptr<brw_shader> v[3];
 
    for (unsigned i = 0; i < 3; i++) {
       const unsigned simd = devinfo->ver >= 30 ? 2 - i : i;
@@ -187,7 +187,7 @@ brw_compile_cs(const struct brw_compiler *compiler,
       brw_postprocess_nir(shader, compiler, debug_enabled,
                           key->base.robust_flags);
 
-      v[simd] = std::make_unique<fs_visitor>(compiler, &params->base,
+      v[simd] = std::make_unique<brw_shader>(compiler, &params->base,
                                              &key->base,
                                              &prog_data->base,
                                              shader, dispatch_width,

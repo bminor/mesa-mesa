@@ -1251,7 +1251,7 @@ is_multi_copy_payload(const struct intel_device_info *devinfo,
  * instruction.
  */
 bool
-is_coalescing_payload(const fs_visitor &s, const brw_inst *inst)
+is_coalescing_payload(const brw_shader &s, const brw_inst *inst)
 {
    return is_identity_payload(s.devinfo, VGRF, inst) &&
           inst->src[0].offset == 0 &&

@@ -260,7 +260,7 @@ namespace {
     * Return the number of instructions in the program.
     */
    unsigned
-   num_instructions(const fs_visitor *shader)
+   num_instructions(const brw_shader *shader)
    {
       return shader->cfg->blocks[shader->cfg->num_blocks - 1]->end_ip + 1;
    }
@@ -270,7 +270,7 @@ namespace {
     * instruction of the shader for subsequent constant-time look-up.
     */
    ordered_address *
-   ordered_inst_addresses(const fs_visitor *shader)
+   ordered_inst_addresses(const brw_shader *shader)
    {
       ordered_address *jps = new ordered_address[num_instructions(shader)];
       ordered_address jp(TGL_PIPE_ALL, 0);
@@ -1040,7 +1040,7 @@ namespace {
     * instruction \p inst.
     */
    void
-   update_inst_scoreboard(const fs_visitor *shader, const ordered_address *jps,
+   update_inst_scoreboard(const brw_shader *shader, const ordered_address *jps,
                           const brw_inst *inst, unsigned ip, scoreboard &sb)
    {
       const bool exec_all = inst->force_writemask_all;
@@ -1098,7 +1098,7 @@ namespace {
     * program.
     */
    scoreboard *
-   gather_block_scoreboards(const fs_visitor *shader,
+   gather_block_scoreboards(const brw_shader *shader,
                             const ordered_address *jps)
    {
       scoreboard *sbs = new scoreboard[shader->cfg->num_blocks];
@@ -1118,7 +1118,7 @@ namespace {
     * of each block, and returns it as an array of scoreboard objects.
     */
    scoreboard *
-   propagate_block_scoreboards(const fs_visitor *shader,
+   propagate_block_scoreboards(const brw_shader *shader,
                                const ordered_address *jps,
                                equivalence_relation &eq)
    {
@@ -1165,7 +1165,7 @@ namespace {
     * shader based on the result of global dependency analysis.
     */
    dependency_list *
-   gather_inst_dependencies(const fs_visitor *shader,
+   gather_inst_dependencies(const brw_shader *shader,
                             const ordered_address *jps)
    {
       const struct intel_device_info *devinfo = shader->devinfo;
@@ -1242,7 +1242,7 @@ namespace {
     * instruction of the shader.
     */
    dependency_list *
-   allocate_inst_dependencies(const fs_visitor *shader,
+   allocate_inst_dependencies(const brw_shader *shader,
                               const dependency_list *deps0)
    {
       /* XXX - Use bin-packing algorithm to assign hardware SBIDs optimally in
@@ -1286,7 +1286,7 @@ namespace {
     * represented directly by annotating existing instructions.
     */
    void
-   emit_inst_dependencies(fs_visitor *shader,
+   emit_inst_dependencies(brw_shader *shader,
                           const ordered_address *jps,
                           const dependency_list *deps)
    {
@@ -1360,7 +1360,7 @@ namespace {
 }
 
 bool
-brw_lower_scoreboard(fs_visitor &s)
+brw_lower_scoreboard(brw_shader &s)
 {
    if (s.devinfo->ver >= 12) {
       const ordered_address *jps = ordered_inst_addresses(&s);

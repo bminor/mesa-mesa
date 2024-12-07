@@ -7,7 +7,7 @@
 
 #include "brw_reg.h"
 
-struct fs_visitor;
+struct brw_shader;
 class brw_builder;
 
 struct brw_thread_payload {
@@ -21,13 +21,13 @@ protected:
 };
 
 struct brw_vs_thread_payload : public brw_thread_payload {
-   brw_vs_thread_payload(const fs_visitor &v);
+   brw_vs_thread_payload(const brw_shader &v);
 
    brw_reg urb_handles;
 };
 
 struct brw_tcs_thread_payload : public brw_thread_payload {
-   brw_tcs_thread_payload(const fs_visitor &v);
+   brw_tcs_thread_payload(const brw_shader &v);
 
    brw_reg patch_urb_output;
    brw_reg primitive_id;
@@ -35,7 +35,7 @@ struct brw_tcs_thread_payload : public brw_thread_payload {
 };
 
 struct brw_tes_thread_payload : public brw_thread_payload {
-   brw_tes_thread_payload(const fs_visitor &v);
+   brw_tes_thread_payload(const brw_shader &v);
 
    brw_reg patch_urb_input;
    brw_reg primitive_id;
@@ -44,7 +44,7 @@ struct brw_tes_thread_payload : public brw_thread_payload {
 };
 
 struct brw_gs_thread_payload : public brw_thread_payload {
-   brw_gs_thread_payload(fs_visitor &v);
+   brw_gs_thread_payload(brw_shader &v);
 
    brw_reg urb_handles;
    brw_reg primitive_id;
@@ -53,7 +53,7 @@ struct brw_gs_thread_payload : public brw_thread_payload {
 };
 
 struct brw_fs_thread_payload : public brw_thread_payload {
-   brw_fs_thread_payload(const fs_visitor &v,
+   brw_fs_thread_payload(const brw_shader &v,
                      bool &source_depth_to_render_target);
 
    uint8_t subspan_coord_reg[2];
@@ -71,7 +71,7 @@ struct brw_fs_thread_payload : public brw_thread_payload {
 };
 
 struct brw_cs_thread_payload : public brw_thread_payload {
-   brw_cs_thread_payload(const fs_visitor &v);
+   brw_cs_thread_payload(const brw_shader &v);
 
    void load_subgroup_id(const brw_builder &bld, brw_reg &dest) const;
 
@@ -84,7 +84,7 @@ protected:
 };
 
 struct brw_task_mesh_thread_payload : public brw_cs_thread_payload {
-   brw_task_mesh_thread_payload(fs_visitor &v);
+   brw_task_mesh_thread_payload(brw_shader &v);
 
    brw_reg extended_parameter_0;
    brw_reg local_index;
@@ -96,7 +96,7 @@ struct brw_task_mesh_thread_payload : public brw_cs_thread_payload {
 };
 
 struct brw_bs_thread_payload : public brw_thread_payload {
-   brw_bs_thread_payload(const fs_visitor &v);
+   brw_bs_thread_payload(const brw_shader &v);
 
    brw_reg inline_parameter;
 

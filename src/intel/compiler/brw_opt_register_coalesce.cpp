@@ -66,7 +66,7 @@ is_nop_mov(const brw_inst *inst)
 }
 
 static bool
-is_coalesce_candidate(const fs_visitor *v, const brw_inst *inst)
+is_coalesce_candidate(const brw_shader *v, const brw_inst *inst)
 {
    if ((inst->opcode != BRW_OPCODE_MOV &&
         inst->opcode != SHADER_OPCODE_LOAD_PAYLOAD) ||
@@ -192,7 +192,7 @@ can_coalesce_vars(const intel_device_info *devinfo,
  * SEND instruction's payload to more than would fit in g112-g127.
  */
 static bool
-would_violate_eot_restriction(fs_visitor &s,
+would_violate_eot_restriction(brw_shader &s,
                               const cfg_t *cfg,
                               unsigned dst_reg, unsigned src_reg)
 {
@@ -224,7 +224,7 @@ would_violate_eot_restriction(fs_visitor &s,
 }
 
 bool
-brw_opt_register_coalesce(fs_visitor &s)
+brw_opt_register_coalesce(brw_shader &s)
 {
    const intel_device_info *devinfo = s.devinfo;
 

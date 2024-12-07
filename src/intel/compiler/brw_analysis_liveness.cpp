@@ -244,7 +244,7 @@ brw_live_variables::compute_start_end()
    }
 }
 
-brw_live_variables::brw_live_variables(const fs_visitor *s)
+brw_live_variables::brw_live_variables(const brw_shader *s)
    : devinfo(s->devinfo), cfg(s->cfg)
 {
    mem_ctx = ralloc_context(NULL);
@@ -332,7 +332,7 @@ check_register_live_range(const brw_live_variables *live, int ip,
 }
 
 bool
-brw_live_variables::validate(const fs_visitor *s) const
+brw_live_variables::validate(const brw_shader *s) const
 {
    int ip = 0;
 

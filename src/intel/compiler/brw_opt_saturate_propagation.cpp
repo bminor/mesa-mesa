@@ -86,7 +86,7 @@ propagate_sat(brw_inst *inst, brw_inst *scan_inst)
 }
 
 static bool
-opt_saturate_propagation_local(fs_visitor &s, bblock_t *block)
+opt_saturate_propagation_local(brw_shader &s, bblock_t *block)
 {
    bool progress = false;
    int ip = block->end_ip + 1;
@@ -188,7 +188,7 @@ opt_saturate_propagation_local(fs_visitor &s, bblock_t *block)
 }
 
 bool
-brw_opt_saturate_propagation(fs_visitor &s)
+brw_opt_saturate_propagation(brw_shader &s)
 {
    bool progress = false;
 

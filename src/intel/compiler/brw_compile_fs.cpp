@@ -19,7 +19,7 @@
 #include <memory>
 
 static brw_inst *
-brw_emit_single_fb_write(fs_visitor &s, const brw_builder &bld,
+brw_emit_single_fb_write(brw_shader &s, const brw_builder &bld,
                          brw_reg color0, brw_reg color1,
                          brw_reg src0_alpha,
                          unsigned target, unsigned components,
@@ -56,7 +56,7 @@ brw_emit_single_fb_write(fs_visitor &s, const brw_builder &bld,
 }
 
 static void
-brw_do_emit_fb_writes(fs_visitor &s, int nr_color_regions, bool replicate_alpha)
+brw_do_emit_fb_writes(brw_shader &s, int nr_color_regions, bool replicate_alpha)
 {
    const brw_builder bld = brw_builder(&s).at_end();
    brw_inst *inst = NULL;
@@ -111,7 +111,7 @@ brw_do_emit_fb_writes(fs_visitor &s, int nr_color_regions, bool replicate_alpha)
 }
 
 static void
-brw_emit_fb_writes(fs_visitor &s)
+brw_emit_fb_writes(brw_shader &s)
 {
    const struct intel_device_info *devinfo = s.devinfo;
    assert(s.stage == MESA_SHADER_FRAGMENT);
@@ -176,7 +176,7 @@ brw_emit_fb_writes(fs_visitor &s)
 
 /** Emits the interpolation for the varying inputs. */
 static void
-brw_emit_interpolation_setup(fs_visitor &s)
+brw_emit_interpolation_setup(brw_shader &s)
 {
    const struct intel_device_info *devinfo = s.devinfo;
    const brw_builder bld = brw_builder(&s).at_end();
@@ -600,7 +600,7 @@ brw_emit_interpolation_setup(fs_visitor &s)
  * instructions to FS_OPCODE_REP_FB_WRITE.
  */
 static void
-brw_emit_repclear_shader(fs_visitor &s)
+brw_emit_repclear_shader(brw_shader &s)
 {
    brw_wm_prog_key *key = (brw_wm_prog_key*) s.key;
    brw_inst *write = NULL;
@@ -1266,7 +1266,7 @@ gfx9_ps_header_only_workaround(struct brw_wm_prog_data *wm_prog_data)
 }
 
 static void
-brw_assign_urb_setup(fs_visitor &s)
+brw_assign_urb_setup(brw_shader &s)
 {
    assert(s.stage == MESA_SHADER_FRAGMENT);
 
@@ -1449,7 +1449,7 @@ brw_assign_urb_setup(fs_visitor &s)
 }
 
 static bool
-run_fs(fs_visitor &s, bool allow_spilling, bool do_rep_send)
+run_fs(brw_shader &s, bool allow_spilling, bool do_rep_send)
 {
    const struct intel_device_info *devinfo = s.devinfo;
    struct brw_wm_prog_data *wm_prog_data = brw_wm_prog_data(s.prog_data);
@@ -1580,14 +1580,14 @@ brw_compile_fs(const struct brw_compiler *compiler,
    assert(reqd_dispatch_width == SUBGROUP_SIZE_VARYING ||
           reqd_dispatch_width == SUBGROUP_SIZE_REQUIRE_16);
 
-   std::unique_ptr<fs_visitor> v8, v16, v32, vmulti;
+   std::unique_ptr<brw_shader> v8, v16, v32, vmulti;
    cfg_t *simd8_cfg = NULL, *simd16_cfg = NULL, *simd32_cfg = NULL,
       *multi_cfg = NULL;
    float throughput = 0;
    bool has_spilled = false;
 
    if (devinfo->ver < 20) {
-      v8 = std::make_unique<fs_visitor>(compiler, &params->base, key,
+      v8 = std::make_unique<brw_shader>(compiler, &params->base, key,
                                         prog_data, nir, 8, 1,
                                         params->base.stats != NULL,
                                         debug_enabled);
@@ -1621,14 +1621,14 @@ brw_compile_fs(const struct brw_compiler *compiler,
 
    if (devinfo->ver >= 30) {
       unsigned max_dispatch_width = reqd_dispatch_width ? reqd_dispatch_width : 32;
-      fs_visitor *vbase = NULL;
+      brw_shader *vbase = NULL;
 
       if (params->max_polygons >= 2 && !key->coarse_pixel) {
          if (params->max_polygons >= 4 && max_dispatch_width >= 32 &&
              4 * prog_data->num_varying_inputs <= MAX_VARYING &&
              INTEL_SIMD(FS, 4X8)) {
             /* Try a quad-SIMD8 compile */
-            vmulti = std::make_unique<fs_visitor>(compiler, &params->base, key,
+            vmulti = std::make_unique<brw_shader>(compiler, &params->base, key,
                                                   prog_data, nir, 32, 4,
                                                   params->base.stats != NULL,
                                                   debug_enabled);
@@ -1649,7 +1649,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
              2 * prog_data->num_varying_inputs <= MAX_VARYING &&
              INTEL_SIMD(FS, 2X16)) {
             /* Try a dual-SIMD16 compile */
-            vmulti = std::make_unique<fs_visitor>(compiler, &params->base, key,
+            vmulti = std::make_unique<brw_shader>(compiler, &params->base, key,
                                                   prog_data, nir, 32, 2,
                                                   params->base.stats != NULL,
                                                   debug_enabled);
@@ -1670,7 +1670,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
              2 * prog_data->num_varying_inputs <= MAX_VARYING &&
              INTEL_SIMD(FS, 2X8)) {
             /* Try a dual-SIMD8 compile */
-            vmulti = std::make_unique<fs_visitor>(compiler, &params->base, key,
+            vmulti = std::make_unique<brw_shader>(compiler, &params->base, key,
                                                   prog_data, nir, 16, 2,
                                                   params->base.stats != NULL,
                                                   debug_enabled);
@@ -1692,7 +1692,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
           INTEL_SIMD(FS, 32) &&
           !prog_data->base.ray_queries) {
          /* Try a SIMD32 compile */
-         v32 = std::make_unique<fs_visitor>(compiler, &params->base, key,
+         v32 = std::make_unique<brw_shader>(compiler, &params->base, key,
                                             prog_data, nir, 32, 1,
                                             params->base.stats != NULL,
                                             debug_enabled);
@@ -1717,7 +1717,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
 
       if (!vbase && INTEL_SIMD(FS, 16)) {
          /* Try a SIMD16 compile */
-         v16 = std::make_unique<fs_visitor>(compiler, &params->base, key,
+         v16 = std::make_unique<brw_shader>(compiler, &params->base, key,
                                             prog_data, nir, 16, 1,
                                             params->base.stats != NULL,
                                             debug_enabled);
@@ -1741,7 +1741,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
            INTEL_SIMD(FS, 16)) ||
           reqd_dispatch_width == SUBGROUP_SIZE_REQUIRE_16) {
          /* Try a SIMD16 compile */
-         v16 = std::make_unique<fs_visitor>(compiler, &params->base, key,
+         v16 = std::make_unique<brw_shader>(compiler, &params->base, key,
                                             prog_data, nir, 16, 1,
                                             params->base.stats != NULL,
                                             debug_enabled);
@@ -1775,7 +1775,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
           reqd_dispatch_width == SUBGROUP_SIZE_VARYING &&
           !simd16_failed && INTEL_SIMD(FS, 32)) {
          /* Try a SIMD32 compile */
-         v32 = std::make_unique<fs_visitor>(compiler, &params->base, key,
+         v32 = std::make_unique<brw_shader>(compiler, &params->base, key,
                                             prog_data, nir, 32, 1,
                                             params->base.stats != NULL,
                                             debug_enabled);
@@ -1810,7 +1810,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
       if (devinfo->ver >= 12 && !has_spilled &&
           params->max_polygons >= 2 && !key->coarse_pixel &&
           reqd_dispatch_width == SUBGROUP_SIZE_VARYING) {
-         fs_visitor *vbase = v8 ? v8.get() : v16 ? v16.get() : v32.get();
+         brw_shader *vbase = v8 ? v8.get() : v16 ? v16.get() : v32.get();
          assert(vbase);
 
          if (devinfo->ver >= 20 &&
@@ -1819,7 +1819,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
              4 * prog_data->num_varying_inputs <= MAX_VARYING &&
              INTEL_SIMD(FS, 4X8)) {
             /* Try a quad-SIMD8 compile */
-            vmulti = std::make_unique<fs_visitor>(compiler, &params->base, key,
+            vmulti = std::make_unique<brw_shader>(compiler, &params->base, key,
                                                   prog_data, nir, 32, 4,
                                                   params->base.stats != NULL,
                                                   debug_enabled);
@@ -1839,7 +1839,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
              2 * prog_data->num_varying_inputs <= MAX_VARYING &&
              INTEL_SIMD(FS, 2X16)) {
             /* Try a dual-SIMD16 compile */
-            vmulti = std::make_unique<fs_visitor>(compiler, &params->base, key,
+            vmulti = std::make_unique<brw_shader>(compiler, &params->base, key,
                                                   prog_data, nir, 32, 2,
                                                   params->base.stats != NULL,
                                                   debug_enabled);
@@ -1858,7 +1858,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
              2 * prog_data->num_varying_inputs <= MAX_VARYING &&
              INTEL_SIMD(FS, 2X8)) {
             /* Try a dual-SIMD8 compile */
-            vmulti = std::make_unique<fs_visitor>(compiler, &params->base, key,
+            vmulti = std::make_unique<brw_shader>(compiler, &params->base, key,
                                                   prog_data, nir, 16, 2,
                                                   params->base.stats != NULL,
                                                   debug_enabled);

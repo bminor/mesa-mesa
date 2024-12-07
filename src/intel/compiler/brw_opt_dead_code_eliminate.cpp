@@ -95,7 +95,7 @@ can_eliminate_conditional_mod(const intel_device_info *devinfo,
 }
 
 bool
-brw_opt_dead_code_eliminate(fs_visitor &s)
+brw_opt_dead_code_eliminate(brw_shader &s)
 {
    const intel_device_info *devinfo = s.devinfo;
 

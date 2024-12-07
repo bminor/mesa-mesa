@@ -155,7 +155,7 @@ bblock_t::combine_with(bblock_t *that)
 void
 bblock_t::dump(FILE *file) const
 {
-   const fs_visitor *s = this->cfg->s;
+   const brw_shader *s = this->cfg->s;
 
    int ip = this->start_ip;
    foreach_inst_in_block(brw_inst, inst, this) {
@@ -187,7 +187,7 @@ bblock_t::unlink_list(exec_list *list)
    }
 }
 
-cfg_t::cfg_t(const fs_visitor *s, exec_list *instructions) :
+cfg_t::cfg_t(const brw_shader *s, exec_list *instructions) :
    s(s)
 {
    mem_ctx = ralloc_context(NULL);
@@ -663,7 +663,7 @@ cfg_t::dump_cfg()
 }
 
 void
-brw_calculate_cfg(fs_visitor &s)
+brw_calculate_cfg(brw_shader &s)
 {
    if (s.cfg)
       return;

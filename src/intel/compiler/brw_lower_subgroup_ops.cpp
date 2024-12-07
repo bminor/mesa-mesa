@@ -249,7 +249,7 @@ brw_emit_scan(const brw_builder &bld, enum opcode opcode, const brw_reg &tmp,
 }
 
 static bool
-brw_lower_reduce(fs_visitor &s, bblock_t *block, brw_inst *inst)
+brw_lower_reduce(brw_shader &s, bblock_t *block, brw_inst *inst)
 {
    const brw_builder bld(&s, block, inst);
 
@@ -301,7 +301,7 @@ brw_lower_reduce(fs_visitor &s, bblock_t *block, brw_inst *inst)
 }
 
 static bool
-brw_lower_scan(fs_visitor &s, bblock_t *block, brw_inst *inst)
+brw_lower_scan(brw_shader &s, bblock_t *block, brw_inst *inst)
 {
    const brw_builder bld(&s, block, inst);
 
@@ -486,7 +486,7 @@ brw_lower_quad_vote_gfx20(const brw_builder &bld, enum opcode opcode, brw_reg ds
 }
 
 static bool
-brw_lower_vote(fs_visitor &s, bblock_t *block, brw_inst *inst)
+brw_lower_vote(brw_shader &s, bblock_t *block, brw_inst *inst)
 {
    const brw_builder bld(&s, block, inst);
 
@@ -516,7 +516,7 @@ brw_lower_vote(fs_visitor &s, bblock_t *block, brw_inst *inst)
 }
 
 static bool
-brw_lower_ballot(fs_visitor &s, bblock_t *block, brw_inst *inst)
+brw_lower_ballot(brw_shader &s, bblock_t *block, brw_inst *inst)
 {
    const brw_builder bld(&s, block, inst);
 
@@ -546,7 +546,7 @@ brw_lower_ballot(fs_visitor &s, bblock_t *block, brw_inst *inst)
 }
 
 static bool
-brw_lower_quad_swap(fs_visitor &s, bblock_t *block, brw_inst *inst)
+brw_lower_quad_swap(brw_shader &s, bblock_t *block, brw_inst *inst)
 {
    const brw_builder bld(&s, block, inst);
 
@@ -602,7 +602,7 @@ brw_lower_quad_swap(fs_visitor &s, bblock_t *block, brw_inst *inst)
 }
 
 static bool
-brw_lower_read_from_live_channel(fs_visitor &s, bblock_t *block, brw_inst *inst)
+brw_lower_read_from_live_channel(brw_shader &s, bblock_t *block, brw_inst *inst)
 {
    const brw_builder bld(&s, block, inst);
 
@@ -618,7 +618,7 @@ brw_lower_read_from_live_channel(fs_visitor &s, bblock_t *block, brw_inst *inst)
 }
 
 static bool
-brw_lower_read_from_channel(fs_visitor &s, bblock_t *block, brw_inst *inst)
+brw_lower_read_from_channel(brw_shader &s, bblock_t *block, brw_inst *inst)
 {
    const brw_builder bld(&s, block, inst);
 
@@ -651,7 +651,7 @@ brw_lower_read_from_channel(fs_visitor &s, bblock_t *block, brw_inst *inst)
 }
 
 bool
-brw_lower_subgroup_ops(fs_visitor &s)
+brw_lower_subgroup_ops(brw_shader &s)
 {
    bool progress = false;
 

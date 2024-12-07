@@ -20,7 +20,7 @@
  * elimination and coalescing.
  */
 bool
-brw_opt_split_virtual_grfs(fs_visitor &s)
+brw_opt_split_virtual_grfs(brw_shader &s)
 {
    /* Compact the register file so we eliminate dead vgrfs.  This
     * only defines split points for live registers, so if we have
@@ -220,7 +220,7 @@ cleanup:
  * overhead.
  */
 bool
-brw_opt_compact_virtual_grfs(fs_visitor &s)
+brw_opt_compact_virtual_grfs(brw_shader &s)
 {
    bool progress = false;
    int *remap_table = new int[s.alloc.count];

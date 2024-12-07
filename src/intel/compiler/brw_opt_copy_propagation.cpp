@@ -657,7 +657,7 @@ instruction_requires_packed_data(brw_inst *inst)
 }
 
 static bool
-try_copy_propagate(fs_visitor &s, brw_inst *inst,
+try_copy_propagate(brw_shader &s, brw_inst *inst,
                    acp_entry *entry, int arg,
                    uint8_t max_polygons)
 {
@@ -1371,7 +1371,7 @@ commute_immediates(brw_inst *inst)
  * list.
  */
 static bool
-opt_copy_propagation_local(fs_visitor &s, linear_ctx *lin_ctx,
+opt_copy_propagation_local(brw_shader &s, linear_ctx *lin_ctx,
                            bblock_t *block, struct acp &acp,
                            uint8_t max_polygons)
 {
@@ -1477,7 +1477,7 @@ opt_copy_propagation_local(fs_visitor &s, linear_ctx *lin_ctx,
 }
 
 bool
-brw_opt_copy_propagation(fs_visitor &s)
+brw_opt_copy_propagation(brw_shader &s)
 {
    bool progress = false;
    void *copy_prop_ctx = ralloc_context(NULL);
@@ -1546,7 +1546,7 @@ brw_opt_copy_propagation(fs_visitor &s)
 }
 
 static bool
-try_copy_propagate_def(fs_visitor &s,
+try_copy_propagate_def(brw_shader &s,
                        brw_inst *def, const brw_reg &val,
                        brw_inst *inst, int arg,
                        uint8_t max_polygons)
@@ -1849,7 +1849,7 @@ find_value_for_offset(brw_inst *def, const brw_reg &src, unsigned src_size)
 }
 
 bool
-brw_opt_copy_propagation_defs(fs_visitor &s)
+brw_opt_copy_propagation_defs(brw_shader &s)
 {
    const brw_def_analysis &defs = s.def_analysis.require();
    unsigned *uses_deleted = new unsigned[defs.count()]();

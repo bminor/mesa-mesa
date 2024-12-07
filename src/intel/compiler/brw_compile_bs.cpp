@@ -32,7 +32,7 @@ brw_bsr(const struct intel_device_info *devinfo,
 }
 
 static bool
-run_bs(fs_visitor &s, bool allow_spilling)
+run_bs(brw_shader &s, bool allow_spilling)
 {
    assert(s.stage >= MESA_SHADER_RAYGEN && s.stage <= MESA_SHADER_CALLABLE);
 
@@ -95,7 +95,7 @@ compile_single_bs(const struct brw_compiler *compiler,
       .required_width = compiler->devinfo->ver >= 20 ? 16u : 8u,
    };
 
-   std::unique_ptr<fs_visitor> v[2];
+   std::unique_ptr<brw_shader> v[2];
 
    for (unsigned simd = 0; simd < ARRAY_SIZE(v); simd++) {
       if (!brw_simd_should_compile(simd_state, simd))
@@ -106,7 +106,7 @@ compile_single_bs(const struct brw_compiler *compiler,
       if (dispatch_width == 8 && compiler->devinfo->ver >= 20)
          continue;
 
-      v[simd] = std::make_unique<fs_visitor>(compiler, &params->base,
+      v[simd] = std::make_unique<brw_shader>(compiler, &params->base,
                                              &key->base,
                                              &prog_data->base, shader,
                                              dispatch_width,
@@ -138,7 +138,7 @@ compile_single_bs(const struct brw_compiler *compiler,
    }
 
    assert(selected_simd < int(ARRAY_SIZE(v)));
-   fs_visitor *selected = v[selected_simd].get();
+   brw_shader *selected = v[selected_simd].get();
    assert(selected);
 
    const unsigned dispatch_width = selected->dispatch_width;

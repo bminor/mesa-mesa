@@ -583,7 +583,7 @@ schedule_node::set_latency(const struct brw_isa_info *isa)
 
 class brw_instruction_scheduler {
 public:
-   brw_instruction_scheduler(void *mem_ctx, const fs_visitor *s, int grf_count, int hw_reg_count,
+   brw_instruction_scheduler(void *mem_ctx, const brw_shader *s, int grf_count, int hw_reg_count,
                          int block_count, bool post_reg_alloc);
 
    void add_barrier_deps(schedule_node *n);
@@ -646,7 +646,7 @@ public:
 
    bool post_reg_alloc;
    int grf_count;
-   const fs_visitor *s;
+   const brw_shader *s;
 
    /**
     * Last instruction to have written the grf (or a channel in the grf, for the
@@ -701,7 +701,7 @@ public:
    int *hw_reads_remaining;
 };
 
-brw_instruction_scheduler::brw_instruction_scheduler(void *mem_ctx, const fs_visitor *s,
+brw_instruction_scheduler::brw_instruction_scheduler(void *mem_ctx, const brw_shader *s,
                                              int grf_count, int hw_reg_count,
                                              int block_count, bool post_reg_alloc)
    : s(s)
@@ -1824,7 +1824,7 @@ brw_instruction_scheduler::run(brw_instruction_scheduler_mode mode)
 }
 
 brw_instruction_scheduler *
-brw_prepare_scheduler(fs_visitor &s, void *mem_ctx)
+brw_prepare_scheduler(brw_shader &s, void *mem_ctx)
 {
    const int grf_count = s.alloc.count;
 
@@ -1834,7 +1834,7 @@ brw_prepare_scheduler(fs_visitor &s, void *mem_ctx)
 }
 
 void
-brw_schedule_instructions_pre_ra(fs_visitor &s, brw_instruction_scheduler *sched,
+brw_schedule_instructions_pre_ra(brw_shader &s, brw_instruction_scheduler *sched,
                                  brw_instruction_scheduler_mode mode)
 {
    if (mode == BRW_SCHEDULE_NONE)
@@ -1846,7 +1846,7 @@ brw_schedule_instructions_pre_ra(fs_visitor &s, brw_instruction_scheduler *sched
 }
 
 void
-brw_schedule_instructions_post_ra(fs_visitor &s)
+brw_schedule_instructions_post_ra(brw_shader &s)
 {
    const bool post_reg_alloc = true;
    const int grf_count = reg_unit(s.devinfo) * s.grf_used;
