@@ -249,7 +249,7 @@ brw_check_dynamic_msaa_flag(const brw_builder &bld,
                         enum intel_msaa_flags flag)
 {
    fs_inst *inst = bld.AND(bld.null_reg_ud(),
-                           brw::dynamic_msaa_flags(wm_prog_data),
+                           brw_dynamic_msaa_flags(wm_prog_data),
                            brw_imm_ud(flag));
    inst->conditional_mod = BRW_CONDITIONAL_NZ;
 }

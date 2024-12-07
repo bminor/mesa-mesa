@@ -476,7 +476,7 @@ lower_fb_write_logical_send(const brw_builder &bld, fs_inst *inst,
       STATIC_ASSERT(INTEL_MSAA_FLAG_COARSE_RT_WRITES == (1 << 18));
       const brw_builder &ubld = bld.exec_all().group(8, 0);
       desc = ubld.vgrf(BRW_TYPE_UD);
-      ubld.AND(desc, dynamic_msaa_flags(prog_data),
+      ubld.AND(desc, brw_dynamic_msaa_flags(prog_data),
                brw_imm_ud(INTEL_MSAA_FLAG_COARSE_RT_WRITES));
       desc = component(desc, 0);
    }
@@ -2124,7 +2124,7 @@ lower_interpolator_logical_send(const brw_builder &bld, fs_inst *inst,
       brw_reg orig_desc = desc;
       const brw_builder &ubld = bld.exec_all().group(8, 0);
       desc = ubld.vgrf(BRW_TYPE_UD);
-      ubld.AND(desc, dynamic_msaa_flags(wm_prog_data),
+      ubld.AND(desc, brw_dynamic_msaa_flags(wm_prog_data),
                brw_imm_ud(INTEL_MSAA_FLAG_COARSE_PI_MSG));
 
       /* And, if it's AT_OFFSET, we might have a non-trivial descriptor */
