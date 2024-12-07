@@ -4,6 +4,7 @@
  */
 
 #include "brw_fs.h"
+#include "brw_generator.h"
 #include "brw_eu.h"
 #include "brw_nir.h"
 #include "brw_private.h"

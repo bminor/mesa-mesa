@@ -55,6 +55,7 @@ libintel_compiler_brw_files = files(
   'brw_fs_thread_payload.cpp',
   'brw_fs_visitor.cpp',
   'brw_generator.cpp',
+  'brw_generator.h',
   'brw_ir.h',
   'brw_ir_allocator.h',
   'brw_ir_analysis.h',

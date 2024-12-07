@@ -30,6 +30,7 @@
 #include "brw_eu.h"
 #include "brw_disasm_info.h"
 #include "brw_fs.h"
+#include "brw_generator.h"
 #include "brw_cfg.h"
 #include "dev/intel_debug.h"
 #include "util/mesa-sha1.h"

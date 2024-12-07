@@ -26,6 +26,7 @@
 #include "brw_compiler.h"
 #include "brw_fs.h"
 #include "brw_fs_builder.h"
+#include "brw_generator.h"
 #include "brw_nir.h"
 #include "brw_private.h"
 #include "compiler/nir/nir_builder.h"
