@@ -34,7 +34,7 @@
         "description": "egl/wayland: only supply LINEAR modifier when supported",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4c065158927d7bacc5eb1e4f2491b1db93f1dc12",
         "notes": null
