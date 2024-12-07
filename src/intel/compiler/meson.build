@@ -22,6 +22,7 @@ intel_nir_files = files(
 
 libintel_compiler_brw_files = files(
   'brw_analysis.h',
+  'brw_analysis.cpp',
   'brw_analysis_def.cpp',
   'brw_analysis_liveness.cpp',
   'brw_analysis_performance.cpp',

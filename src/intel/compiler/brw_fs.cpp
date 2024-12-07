@@ -513,37 +513,6 @@ brw_fb_write_msg_control(const brw_inst *inst,
    return mctl;
 }
 
-brw::register_pressure::register_pressure(const fs_visitor *v)
-{
-   const fs_live_variables &live = v->live_analysis.require();
-   const unsigned num_instructions = v->cfg->num_blocks ?
-      v->cfg->blocks[v->cfg->num_blocks - 1]->end_ip + 1 : 0;
-
-   regs_live_at_ip = new unsigned[num_instructions]();
-
-   for (unsigned reg = 0; reg < v->alloc.count; reg++) {
-      for (int ip = live.vgrf_start[reg]; ip <= live.vgrf_end[reg]; ip++)
-         regs_live_at_ip[ip] += v->alloc.sizes[reg];
-   }
-
-   const unsigned payload_count = v->first_non_payload_grf;
-
-   int *payload_last_use_ip = new int[payload_count];
-   v->calculate_payload_ranges(true, payload_count, payload_last_use_ip);
-
-   for (unsigned reg = 0; reg < payload_count; reg++) {
-      for (int ip = 0; ip < payload_last_use_ip[reg]; ip++)
-         ++regs_live_at_ip[ip];
-   }
-
-   delete[] payload_last_use_ip;
-}
-
-brw::register_pressure::~register_pressure()
-{
-   delete[] regs_live_at_ip;
-}
-
 void
 fs_visitor::invalidate_analysis(brw::analysis_dependency_class c)
 {
