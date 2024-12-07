@@ -17,16 +17,16 @@
 
 #include <stdio.h>
 
-/** Base/common SPIR-V to NIR options. */
-static const struct spirv_to_nir_options pco_base_spirv_options = {
+/** SPIR-V to NIR options. */
+static const struct spirv_to_nir_options spirv_options = {
    .environment = NIR_SPIRV_VULKAN,
 
    .min_ubo_alignment = PVR_UNIFORM_BUFFER_OFFSET_ALIGNMENT,
    .min_ssbo_alignment = PVR_STORAGE_BUFFER_OFFSET_ALIGNMENT,
 };
 
-/** Base/common NIR options. */
-static const nir_shader_compiler_options pco_base_nir_options = {
+/** NIR options. */
+static const nir_shader_compiler_options nir_options = {
    .fuse_ffma32 = true,
 
    .has_fused_comp_and_csel = true,
@@ -38,33 +38,24 @@ static const nir_shader_compiler_options pco_base_nir_options = {
 };
 
 /**
- * \brief Sets up device/core-specific SPIR-V to NIR options.
+ * \brief Returns the SPIR-V to NIR options.
  *
- * \param[in] dev_info Device info.
- * \param[out] spirv_options SPIR-V to NIR options.
+ * \return The SPIR-V to NIR options.
  */
-void pco_setup_spirv_options(const struct pvr_device_info *dev_info,
-                             struct spirv_to_nir_options *spirv_options)
+const struct spirv_to_nir_options *pco_spirv_options(void)
 {
-   memcpy(spirv_options, &pco_base_spirv_options, sizeof(*spirv_options));
-
-   /* TODO: Device/core-dependent options. */
-   puts("finishme: pco_setup_spirv_options");
+   return &spirv_options;
 }
 
 /**
- * \brief Sets up device/core-specific NIR options.
+ * \brief Returns the NIR options for a PCO compiler
+ * context.
  *
- * \param[in] dev_info Device info.
- * \param[out] nir_options NIR options.
+ * \return The NIR options.
  */
-void pco_setup_nir_options(const struct pvr_device_info *dev_info,
-                           nir_shader_compiler_options *nir_options)
+const nir_shader_compiler_options *pco_nir_options(void)
 {
-   memcpy(nir_options, &pco_base_nir_options, sizeof(*nir_options));
-
-   /* TODO: Device/core-dependent options. */
-   puts("finishme: pco_setup_nir_options");
+   return &nir_options;
 }
 
 /**

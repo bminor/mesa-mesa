@@ -27,8 +27,10 @@ typedef struct _pco_ctx pco_ctx;
 typedef struct _pco_data pco_data;
 
 pco_ctx *pco_ctx_create(const struct pvr_device_info *dev_info, void *mem_ctx);
-const struct spirv_to_nir_options *pco_spirv_options(pco_ctx *ctx);
-const nir_shader_compiler_options *pco_nir_options(pco_ctx *ctx);
+void pco_ctx_update_dev_info(pco_ctx *ctx,
+                             const struct pvr_device_info *dev_info);
+const struct spirv_to_nir_options *pco_spirv_options(void);
+const nir_shader_compiler_options *pco_nir_options(void);
 
 void pco_preprocess_nir(pco_ctx *ctx, nir_shader *nir);
 void pco_link_nir(pco_ctx *ctx, nir_shader *producer, nir_shader *consumer);

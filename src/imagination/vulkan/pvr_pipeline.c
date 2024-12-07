@@ -2090,9 +2090,6 @@ pvr_graphics_pipeline_compile(struct pvr_device *const device,
       &gfx_pipeline->shader_state.fragment;
 
    pco_ctx *pco_ctx = device->pdevice->pco_ctx;
-   const struct spirv_to_nir_options *spirv_options =
-      pco_spirv_options(pco_ctx);
-   const nir_shader_compiler_options *nir_options = pco_nir_options(pco_ctx);
 
    nir_shader *producer = NULL;
    nir_shader *consumer = NULL;
@@ -2119,8 +2116,8 @@ pvr_graphics_pipeline_compile(struct pvr_device *const device,
          vk_pipeline_shader_stage_to_nir(&device->vk,
                                          gfx_pipeline->base.pipeline_flags,
                                          &pCreateInfo->pStages[stage_index],
-                                         spirv_options,
-                                         nir_options,
+                                         pco_spirv_options(),
+                                         pco_nir_options(),
                                          shader_mem_ctx,
                                          &nir_shaders[stage]);
       if (result != VK_SUCCESS)

@@ -51,9 +51,6 @@ pco_ctx *pco_ctx_create(const struct pvr_device_info *dev_info, void *mem_ctx)
    nir_process_debug_variable();
 #endif /* NDEBUG */
 
-   pco_setup_spirv_options(dev_info, &ctx->spirv_options);
-   pco_setup_nir_options(dev_info, &ctx->nir_options);
-
    glsl_type_singleton_init_or_ref();
    ralloc_set_destructor(ctx, pco_ctx_destructor);
 
@@ -61,27 +58,15 @@ pco_ctx *pco_ctx_create(const struct pvr_device_info *dev_info, void *mem_ctx)
 }
 
 /**
- * \brief Returns the device/core-specific SPIR-V to NIR options for a PCO
- * compiler context.
+ * \brief Updates the device info for a PCO compiler context.
  *
- * \param[in] ctx PCO compiler context.
- * \return The device/core-specific SPIR-V to NIR options.
+ * \param[in,out] ctx PCO compiler context.
+ * \param[in] dev_info Device info.
  */
-const struct spirv_to_nir_options *pco_spirv_options(pco_ctx *ctx)
+void pco_ctx_update_dev_info(pco_ctx *ctx,
+                             const struct pvr_device_info *dev_info)
 {
-   return &ctx->spirv_options;
-}
-
-/**
- * \brief Returns the device/core-specific NIR options for a PCO compiler
- * context.
- *
- * \param[in] ctx PCO compiler context.
- * \return The device/core-specific NIR options.
- */
-const nir_shader_compiler_options *pco_nir_options(pco_ctx *ctx)
-{
-   return &ctx->nir_options;
+   ctx->dev_info = dev_info;
 }
 
 /**
