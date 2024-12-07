@@ -104,6 +104,7 @@ libintel_compiler_brw_files = files(
   'brw_print.cpp',
   'brw_prim.h',
   'brw_private.h',
+  'brw_reg.cpp',
   'brw_reg.h',
   'brw_reg_type.c',
   'brw_reg_type.h',

@@ -412,56 +412,6 @@ fs_inst::can_change_types() const
             !src[1].abs && !src[1].negate && src[1].file != ATTR));
 }
 
-bool
-brw_reg::equals(const brw_reg &r) const
-{
-   return brw_regs_equal(this, &r);
-}
-
-bool
-brw_reg::negative_equals(const brw_reg &r) const
-{
-   return brw_regs_negative_equal(this, &r);
-}
-
-bool
-brw_reg::is_contiguous() const
-{
-   switch (file) {
-   case ARF:
-   case FIXED_GRF:
-      return hstride == BRW_HORIZONTAL_STRIDE_1 &&
-             vstride == width + hstride;
-   case VGRF:
-   case ATTR:
-      return stride == 1;
-   case UNIFORM:
-   case IMM:
-   case BAD_FILE:
-      return true;
-   }
-
-   unreachable("Invalid register file");
-}
-
-unsigned
-brw_reg::component_size(unsigned width) const
-{
-   if (file == ARF || file == FIXED_GRF) {
-      const unsigned w = MIN2(width, 1u << this->width);
-      const unsigned h = width >> this->width;
-      const unsigned vs = vstride ? 1 << (vstride - 1) : 0;
-      const unsigned hs = hstride ? 1 << (hstride - 1) : 0;
-      assert(w > 0);
-      /* Note this rounds up to next horizontal stride to be consistent with
-       * the VGRF case below.
-       */
-      return ((MAX2(1, h) - 1) * vs + MAX2(w * hs, 1)) * brw_type_size_bytes(type);
-   } else {
-      return MAX2(width * stride, 1) * brw_type_size_bytes(type);
-   }
-}
-
 void
 fs_visitor::vfail(const char *format, va_list va)
 {
