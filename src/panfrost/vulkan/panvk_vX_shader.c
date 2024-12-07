@@ -89,9 +89,6 @@ panvk_lower_sysvals(nir_builder *b, nir_instr *instr, void *data)
    case nir_intrinsic_load_base_instance:
       val = load_sysval(b, graphics, bit_size, vs.base_instance);
       break;
-   case nir_intrinsic_load_blend_const_color_rgba:
-      val = load_sysval(b, graphics, bit_size, blend.constants);
-      break;
    case nir_intrinsic_load_noperspective_varyings_pan:
       /* TODO: use a VS epilog specialized on constant noperspective_varyings
        * with VK_EXT_graphics_pipeline_libraries and VK_EXT_shader_object */
