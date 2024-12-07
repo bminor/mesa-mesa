@@ -413,4 +413,7 @@ pvr_get_packed_bvnc(const struct pvr_device_info *dev_info)
 
 int pvr_device_info_init(struct pvr_device_info *info, uint64_t bvnc);
 
+bool pvr_device_info_init_public_name(struct pvr_device_info *info,
+                                      const char *public_name);
+
 #endif /* PVR_DEVICE_INFO_H */

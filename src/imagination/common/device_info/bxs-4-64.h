@@ -125,4 +125,15 @@ static const struct pvr_device_quirks pvr_device_quirks_36_53_104_796 = {
    .has_brn70165 = true,
 };
 
+static const struct pvr_device_info pvr_device_info_36_53_104_796 = {
+   .ident = pvr_device_ident_36_V_104_796,
+   .ident.b = 36,
+   .ident.v = 53,
+   .ident.n = 104,
+   .ident.c = 796,
+   .features = pvr_device_features_36_V_104_796,
+   .enhancements = pvr_device_enhancements_36_53_104_796,
+   .quirks = pvr_device_quirks_36_53_104_796,
+};
+
 #endif /* BXS_4_64_H */

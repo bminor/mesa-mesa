@@ -127,4 +127,15 @@ static const struct pvr_device_quirks pvr_device_quirks_4_40_2_51 = {
    .has_brn70165 = true,
 };
 
+static const struct pvr_device_info pvr_device_info_4_40_2_51 = {
+   .ident = pvr_device_ident_4_V_2_51,
+   .ident.b = 4,
+   .ident.v = 40,
+   .ident.n = 2,
+   .ident.c = 51,
+   .features = pvr_device_features_4_V_2_51,
+   .enhancements = pvr_device_enhancements_4_40_2_51,
+   .quirks = pvr_device_quirks_4_40_2_51,
+};
+
 #endif /* GX6250_H */

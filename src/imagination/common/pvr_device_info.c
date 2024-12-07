@@ -27,12 +27,21 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <string.h>
 
 #include "pvr_device_info.h"
 
 #include "device_info/gx6250.h"
 #include "device_info/axe-1-16m.h"
 #include "device_info/bxs-4-64.h"
+
+#include "util/u_string.h"
+
+static const struct pvr_device_info *device_infos[] = {
+   &pvr_device_info_33_15_11_3,
+   &pvr_device_info_36_53_104_796,
+   &pvr_device_info_4_40_2_51,
+};
 
 /**
  * Initialize PowerVR device information.
@@ -49,8 +58,8 @@ int pvr_device_info_init(struct pvr_device_info *info, uint64_t bvnc)
    case PVR_BVNC_PACK(_b, _v, _n, _c):                                        \
       info->ident = pvr_device_ident_##_b##_V_##_n##_##_c;                    \
       info->ident.b = _b;                                                     \
-      info->ident.n = _n;                                                     \
       info->ident.v = _v;                                                     \
+      info->ident.n = _n;                                                     \
       info->ident.c = _c;                                                     \
       info->features = pvr_device_features_##_b##_V_##_n##_##_c;              \
       info->enhancements = pvr_device_enhancements_##_b##_##_v##_##_n##_##_c; \
@@ -68,4 +77,25 @@ int pvr_device_info_init(struct pvr_device_info *info, uint64_t bvnc)
    assert(!"Unsupported Device");
 
    return -ENODEV;
+}
+
+/**
+ * Initialize PowerVR device information from a public name.
+ *
+ * \param info Device info structure to initialize.
+ * \param public_name Device public name.
+ * \return True if successful.
+ */
+bool pvr_device_info_init_public_name(struct pvr_device_info *info,
+                                      const char *public_name)
+{
+   for (unsigned d = 0; d < ARRAY_SIZE(device_infos); ++d) {
+      if (strcasecmp(public_name, device_infos[d]->ident.public_name))
+         continue;
+
+      memcpy(info, device_infos[d], sizeof(*info));
+      return true;
+   }
+
+   return false;
 }

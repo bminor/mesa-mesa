@@ -110,4 +110,15 @@ static const struct pvr_device_quirks pvr_device_quirks_33_15_11_3 = {
    .has_brn70165 = true,
 };
 
+static const struct pvr_device_info pvr_device_info_33_15_11_3 = {
+   .ident = pvr_device_ident_33_V_11_3,
+   .ident.b = 33,
+   .ident.v = 15,
+   .ident.n = 11,
+   .ident.c = 3,
+   .features = pvr_device_features_33_V_11_3,
+   .enhancements = pvr_device_enhancements_33_15_11_3,
+   .quirks = pvr_device_quirks_33_15_11_3,
+};
+
 #endif /* AXE_1_16M_H */
