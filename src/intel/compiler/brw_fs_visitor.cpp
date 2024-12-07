@@ -383,7 +383,7 @@ fs_visitor::fs_visitor(const struct brw_compiler *compiler,
      mem_ctx(params->mem_ctx),
      cfg(NULL), stage(shader->info.stage),
      debug_enabled(debug_enabled),
-     key(key), gs_compile(NULL), prog_data(prog_data),
+     key(key), prog_data(prog_data),
      live_analysis(this), regpressure_analysis(this),
      performance_analysis(this), idom_analysis(this), def_analysis(this),
      needs_register_pressure(needs_register_pressure),
@@ -407,40 +407,12 @@ fs_visitor::fs_visitor(const struct brw_compiler *compiler,
      mem_ctx(params->mem_ctx),
      cfg(NULL), stage(shader->info.stage),
      debug_enabled(debug_enabled),
-     key(&key->base), gs_compile(NULL), prog_data(&prog_data->base),
+     key(&key->base), prog_data(&prog_data->base),
      live_analysis(this), regpressure_analysis(this),
      performance_analysis(this), idom_analysis(this), def_analysis(this),
      needs_register_pressure(needs_register_pressure),
      dispatch_width(dispatch_width),
      max_polygons(max_polygons),
-     api_subgroup_size(brw_nir_api_subgroup_size(shader, dispatch_width))
-{
-   init();
-   assert(api_subgroup_size == 0 ||
-          api_subgroup_size == 8 ||
-          api_subgroup_size == 16 ||
-          api_subgroup_size == 32);
-}
-
-fs_visitor::fs_visitor(const struct brw_compiler *compiler,
-                       const struct brw_compile_params *params,
-                       struct brw_gs_compile *c,
-                       struct brw_gs_prog_data *prog_data,
-                       const nir_shader *shader,
-                       bool needs_register_pressure,
-                       bool debug_enabled)
-   : compiler(compiler), log_data(params->log_data),
-     devinfo(compiler->devinfo), nir(shader),
-     mem_ctx(params->mem_ctx),
-     cfg(NULL), stage(shader->info.stage),
-     debug_enabled(debug_enabled),
-     key(&c->key.base), gs_compile(c),
-     prog_data(&prog_data->base.base),
-     live_analysis(this), regpressure_analysis(this),
-     performance_analysis(this), idom_analysis(this), def_analysis(this),
-     needs_register_pressure(needs_register_pressure),
-     dispatch_width(compiler->devinfo->ver >= 20 ? 16 : 8),
-     max_polygons(0),
      api_subgroup_size(brw_nir_api_subgroup_size(shader, dispatch_width))
 {
    init();
@@ -473,6 +445,9 @@ fs_visitor::init()
    this->phase = BRW_SHADER_PHASE_INITIAL;
 
    this->next_address_register_nr = 1;
+
+   this->gs.control_data_bits_per_vertex = 0;
+   this->gs.control_data_header_size_bits = 0;
 }
 
 fs_visitor::~fs_visitor()

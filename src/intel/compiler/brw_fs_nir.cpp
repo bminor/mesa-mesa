@@ -2354,7 +2354,7 @@ emit_gs_end_primitive(nir_to_brw_state &ntb, const nir_src &vertex_count_nir_src
 
    struct brw_gs_prog_data *gs_prog_data = brw_gs_prog_data(s.prog_data);
 
-   if (s.gs_compile->control_data_header_size_bits == 0)
+   if (s.gs.control_data_header_size_bits == 0)
       return;
 
    /* We can only do EndPrimitive() functionality when the control data
@@ -2367,7 +2367,7 @@ emit_gs_end_primitive(nir_to_brw_state &ntb, const nir_src &vertex_count_nir_src
    }
 
    /* Cut bits use one bit per vertex. */
-   assert(s.gs_compile->control_data_bits_per_vertex == 1);
+   assert(s.gs.control_data_bits_per_vertex == 1);
 
    brw_reg vertex_count = get_nir_src(ntb, vertex_count_nir_src);
    vertex_count.type = BRW_TYPE_UD;
@@ -2449,7 +2449,7 @@ fs_visitor::gs_urb_per_slot_dword_index(const brw_reg &vertex_count)
     */
    brw_reg prev_count = abld.ADD(vertex_count, brw_imm_ud(0xffffffffu));
    unsigned log2_bits_per_vertex =
-      util_last_bit(gs_compile->control_data_bits_per_vertex);
+      util_last_bit(gs.control_data_bits_per_vertex);
    return abld.SHR(prev_count, brw_imm_ud(6u - log2_bits_per_vertex));
 }
 
@@ -2477,7 +2477,7 @@ fs_visitor::gs_urb_channel_mask(const brw_reg &dword_index)
     * Similarly, if the control data header is <= 32 bits, there is only one
     * DWord, so we can skip channel masks.
     */
-   if (gs_compile->control_data_header_size_bits <= 32)
+   if (gs.control_data_header_size_bits <= 32)
       return channel_mask;
 
    const brw_builder bld = brw_builder(this).at_end();
@@ -2495,7 +2495,7 @@ void
 fs_visitor::emit_gs_control_data_bits(const brw_reg &vertex_count)
 {
    assert(stage == MESA_SHADER_GEOMETRY);
-   assert(gs_compile->control_data_bits_per_vertex != 0);
+   assert(gs.control_data_bits_per_vertex != 0);
 
    const struct brw_gs_prog_data *gs_prog_data = brw_gs_prog_data(prog_data);
 
@@ -2509,7 +2509,7 @@ fs_visitor::emit_gs_control_data_bits(const brw_reg &vertex_count)
    const unsigned max_control_data_header_size_bits =
       devinfo->ver >= 20 ? 32 : 128;
 
-   if (gs_compile->control_data_header_size_bits > max_control_data_header_size_bits) {
+   if (gs.control_data_header_size_bits > max_control_data_header_size_bits) {
       /* Convert dword_index to bytes on Xe2+ since LSC can do operate on byte
        * offset granularity.
        */
@@ -2564,7 +2564,7 @@ set_gs_stream_control_data_bits(nir_to_brw_state &ntb, const brw_reg &vertex_cou
     */
 
    /* Stream mode uses 2 bits per vertex */
-   assert(s.gs_compile->control_data_bits_per_vertex == 2);
+   assert(s.gs.control_data_bits_per_vertex == 2);
 
    /* Must be a valid stream */
    assert(stream_id < 4); /* MAX_VERTEX_STREAMS */
@@ -2625,7 +2625,7 @@ emit_gs_vertex(nir_to_brw_state &ntb, const nir_src &vertex_count_nir_src,
     * control data bits associated with the (vertex_count - 1)th vertex are
     * correct.
     */
-   if (s.gs_compile->control_data_header_size_bits > 32) {
+   if (s.gs.control_data_header_size_bits > 32) {
       const brw_builder abld =
          ntb.bld.annotate("emit vertex: emit control data bits");
 
@@ -2652,7 +2652,7 @@ emit_gs_vertex(nir_to_brw_state &ntb, const nir_src &vertex_count_nir_src,
        */
       brw_inst *inst =
          abld.AND(ntb.bld.null_reg_d(), vertex_count,
-                  brw_imm_ud(32u / s.gs_compile->control_data_bits_per_vertex - 1u));
+                  brw_imm_ud(32u / s.gs.control_data_bits_per_vertex - 1u));
       inst->conditional_mod = BRW_CONDITIONAL_Z;
 
       abld.IF(BRW_PREDICATE_NORMAL);
@@ -2682,7 +2682,7 @@ emit_gs_vertex(nir_to_brw_state &ntb, const nir_src &vertex_count_nir_src,
     * unless we have disabled control data bits completely (which we do
     * do for MESA_PRIM_POINTS outputs that don't use streams).
     */
-   if (s.gs_compile->control_data_header_size_bits > 0 &&
+   if (s.gs.control_data_header_size_bits > 0 &&
        gs_prog_data->control_data_format ==
           GFX7_GS_CONTROL_DATA_FORMAT_GSCTL_SID) {
       set_gs_stream_control_data_bits(ntb, vertex_count, stream_id);

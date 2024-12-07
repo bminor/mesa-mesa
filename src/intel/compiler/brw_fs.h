@@ -126,18 +126,6 @@ namespace brw {
 
 #define UBO_START ((1 << 16) - 4)
 
-/**
- * Scratch data used when compiling a GLSL geometry shader.
- */
-struct brw_gs_compile
-{
-   struct brw_gs_prog_key key;
-   struct intel_vue_map input_vue_map;
-
-   unsigned control_data_bits_per_vertex;
-   unsigned control_data_header_size_bits;
-};
-
 class brw_builder;
 
 struct brw_shader_stats {
@@ -283,13 +271,6 @@ public:
               unsigned num_polygons,
               bool needs_register_pressure,
               bool debug_enabled);
-   fs_visitor(const struct brw_compiler *compiler,
-              const struct brw_compile_params *params,
-              struct brw_gs_compile *gs_compile,
-              struct brw_gs_prog_data *prog_data,
-              const nir_shader *shader,
-              bool needs_register_pressure,
-              bool debug_enabled);
    void init();
    ~fs_visitor();
 
@@ -333,8 +314,6 @@ public:
    brw::simple_allocator alloc;
 
    const brw_base_prog_key *const key;
-
-   struct brw_gs_compile *gs_compile;
 
    struct brw_stage_prog_data *prog_data;
 
@@ -424,6 +403,11 @@ public:
    brw_reg final_gs_vertex_count;
    brw_reg control_data_bits;
    brw_reg invocation_id;
+
+   struct {
+      unsigned control_data_bits_per_vertex;
+      unsigned control_data_header_size_bits;
+   } gs;
 
    unsigned grf_used;
    bool spilled_any_registers;
