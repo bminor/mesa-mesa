@@ -14,6 +14,65 @@ struct fs_visitor;
 
 namespace brw {
    /**
+    * Immediate dominator tree analysis of a shader.
+    */
+   struct idom_tree {
+      idom_tree(const fs_visitor *s);
+      ~idom_tree();
+
+      bool
+      validate(const fs_visitor *) const
+      {
+         /* FINISHME */
+         return true;
+      }
+
+      analysis_dependency_class
+      dependency_class() const
+      {
+         return DEPENDENCY_BLOCKS;
+      }
+
+      const bblock_t *
+      parent(const bblock_t *b) const
+      {
+         assert(unsigned(b->num) < num_parents);
+         return parents[b->num];
+      }
+
+      bblock_t *
+      parent(bblock_t *b) const
+      {
+         assert(unsigned(b->num) < num_parents);
+         return parents[b->num];
+      }
+
+      bblock_t *
+      intersect(bblock_t *b1, bblock_t *b2) const;
+
+      /**
+       * Returns true if block `a` dominates block `b`.
+       */
+      bool
+      dominates(const bblock_t *a, const bblock_t *b) const
+      {
+         while (a != b) {
+            if (b->num == 0)
+               return false;
+
+            b = parent(b);
+         }
+         return true;
+      }
+
+      void dump(FILE *file = stderr) const;
+
+   private:
+      unsigned num_parents;
+      bblock_t **parents;
+   };
+
+   /**
     * Register pressure analysis of a shader.  Estimates how many registers
     * are live at any point of the program in GRF units.
     */
