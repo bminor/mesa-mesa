@@ -458,7 +458,7 @@ brw_inst_has_source_and_destination_hazard(const fs_inst *inst)
       case BRW_SWIZZLE_ZWZW:
          /* These can be implemented as a single Align1 region on all
           * platforms, so there's never a hazard between source and
-          * destination.  C.f. fs_generator::generate_quad_swizzle().
+          * destination.  C.f. brw_generator::generate_quad_swizzle().
           */
          return false;
       default:

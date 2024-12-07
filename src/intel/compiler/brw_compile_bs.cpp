@@ -67,7 +67,7 @@ compile_single_bs(const struct brw_compiler *compiler,
                   const struct brw_bs_prog_key *key,
                   struct brw_bs_prog_data *prog_data,
                   nir_shader *shader,
-                  fs_generator *g,
+                  brw_generator *g,
                   struct brw_compile_stats *stats,
                   int *prog_offset)
 {
@@ -167,7 +167,7 @@ brw_compile_bs(const struct brw_compiler *compiler,
    prog_data->max_stack_size = 0;
    prog_data->num_resume_shaders = num_resume_shaders;
 
-   fs_generator g(compiler, &params->base, &prog_data->base,
+   brw_generator g(compiler, &params->base, &prog_data->base,
                   shader->info.stage);
    if (unlikely(debug_enabled)) {
       char *name = ralloc_asprintf(params->base.mem_ctx,

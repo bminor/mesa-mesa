@@ -91,7 +91,7 @@ normalize_brw_reg_for_encoding(brw_reg *reg)
    return brw_reg;
 }
 
-fs_generator::fs_generator(const struct brw_compiler *compiler,
+brw_generator::brw_generator(const struct brw_compiler *compiler,
                            const struct brw_compile_params *params,
                            struct brw_stage_prog_data *prog_data,
                            gl_shader_stage stage)
@@ -106,7 +106,7 @@ fs_generator::fs_generator(const struct brw_compiler *compiler,
    brw_init_codegen(&compiler->isa, p, mem_ctx);
 }
 
-fs_generator::~fs_generator()
+brw_generator::~brw_generator()
 {
 }
 
@@ -123,7 +123,7 @@ public:
 };
 
 bool
-fs_generator::patch_halt_jumps()
+brw_generator::patch_halt_jumps()
 {
    if (this->discard_halt_patches.is_empty())
       return false;
@@ -161,7 +161,7 @@ fs_generator::patch_halt_jumps()
 }
 
 void
-fs_generator::generate_send(fs_inst *inst,
+brw_generator::generate_send(fs_inst *inst,
                             struct brw_reg dst,
                             struct brw_reg desc,
                             struct brw_reg ex_desc,
@@ -186,7 +186,7 @@ fs_generator::generate_send(fs_inst *inst,
 }
 
 void
-fs_generator::generate_mov_indirect(fs_inst *inst,
+brw_generator::generate_mov_indirect(fs_inst *inst,
                                     struct brw_reg dst,
                                     struct brw_reg reg,
                                     struct brw_reg indirect_byte_offset)
@@ -317,7 +317,7 @@ fs_generator::generate_mov_indirect(fs_inst *inst,
 }
 
 void
-fs_generator::generate_shuffle(fs_inst *inst,
+brw_generator::generate_shuffle(fs_inst *inst,
                                struct brw_reg dst,
                                struct brw_reg src,
                                struct brw_reg idx)
@@ -447,7 +447,7 @@ fs_generator::generate_shuffle(fs_inst *inst,
 }
 
 void
-fs_generator::generate_quad_swizzle(const fs_inst *inst,
+brw_generator::generate_quad_swizzle(const fs_inst *inst,
                                     struct brw_reg dst, struct brw_reg src,
                                     unsigned swiz)
 {
@@ -517,7 +517,7 @@ fs_generator::generate_quad_swizzle(const fs_inst *inst,
 }
 
 void
-fs_generator::generate_barrier(fs_inst *, struct brw_reg src)
+brw_generator::generate_barrier(fs_inst *, struct brw_reg src)
 {
    brw_barrier(p, src);
    if (devinfo->ver >= 12) {
@@ -557,7 +557,7 @@ fs_generator::generate_barrier(fs_inst *, struct brw_reg src)
  * appropriate swizzling.
  */
 void
-fs_generator::generate_ddx(const fs_inst *inst,
+brw_generator::generate_ddx(const fs_inst *inst,
                            struct brw_reg dst, struct brw_reg src)
 {
    unsigned vstride, width;
@@ -590,7 +590,7 @@ fs_generator::generate_ddx(const fs_inst *inst,
  * left.
  */
 void
-fs_generator::generate_ddy(const fs_inst *inst,
+brw_generator::generate_ddy(const fs_inst *inst,
                            struct brw_reg dst, struct brw_reg src)
 {
    const uint32_t type_size = brw_type_size_bytes(src.type);
@@ -643,7 +643,7 @@ fs_generator::generate_ddy(const fs_inst *inst,
 }
 
 void
-fs_generator::generate_halt(fs_inst *)
+brw_generator::generate_halt(fs_inst *)
 {
    /* This HALT will be patched up at FB write time to point UIP at the end of
     * the program, and at brw_uip_jip() JIP will be set to the end of the
@@ -692,7 +692,7 @@ fs_generator::generate_halt(fs_inst *)
  * information required by either set of opcodes.
  */
 void
-fs_generator::generate_scratch_header(fs_inst *inst,
+brw_generator::generate_scratch_header(fs_inst *inst,
                                       struct brw_reg dst,
                                       struct brw_reg src)
 {
@@ -726,7 +726,7 @@ fs_generator::generate_scratch_header(fs_inst *inst,
 }
 
 void
-fs_generator::enable_debug(const char *shader_name)
+brw_generator::enable_debug(const char *shader_name)
 {
    debug_flag = true;
    this->shader_name = shader_name;
@@ -746,7 +746,7 @@ translate_systolic_depth(unsigned d)
 }
 
 int
-fs_generator::generate_code(const cfg_t *cfg, int dispatch_width,
+brw_generator::generate_code(const cfg_t *cfg, int dispatch_width,
                             struct brw_shader_stats shader_stats,
                             const brw::performance &perf,
                             struct brw_compile_stats *stats,
@@ -1496,7 +1496,7 @@ fs_generator::generate_code(const cfg_t *cfg, int dispatch_width,
 }
 
 void
-fs_generator::add_const_data(void *data, unsigned size)
+brw_generator::add_const_data(void *data, unsigned size)
 {
    assert(prog_data->const_data_size == 0);
    if (size > 0) {
@@ -1506,7 +1506,7 @@ fs_generator::add_const_data(void *data, unsigned size)
 }
 
 void
-fs_generator::add_resume_sbt(unsigned num_resume_shaders, uint64_t *sbt)
+brw_generator::add_resume_sbt(unsigned num_resume_shaders, uint64_t *sbt)
 {
    assert(brw_shader_stage_is_bindless(stage));
    struct brw_bs_prog_data *bs_prog_data = brw_bs_prog_data(prog_data);
@@ -1524,7 +1524,7 @@ fs_generator::add_resume_sbt(unsigned num_resume_shaders, uint64_t *sbt)
 }
 
 const unsigned *
-fs_generator::get_assembly()
+brw_generator::get_assembly()
 {
    prog_data->relocs = brw_get_shader_relocs(p, &prog_data->num_relocs);
 

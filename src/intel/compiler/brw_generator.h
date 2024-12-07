@@ -7,19 +7,15 @@
 
 #include "brw_fs.h"
 
-/**
- * The fragment shader code generator.
- *
- * Translates FS IR to actual i965 assembly code.
- */
-class fs_generator
+/* Translates BRW IR to actual EU assembly code. */
+class brw_generator
 {
 public:
-   fs_generator(const struct brw_compiler *compiler,
+   brw_generator(const struct brw_compiler *compiler,
                 const struct brw_compile_params *params,
                 struct brw_stage_prog_data *prog_data,
                 gl_shader_stage stage);
-   ~fs_generator();
+   ~brw_generator();
 
    void enable_debug(const char *shader_name);
    int generate_code(const cfg_t *cfg, int dispatch_width,

@@ -1753,7 +1753,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
    if (params->use_rep_send)
       simd8_cfg = NULL;
 
-   fs_generator g(compiler, &params->base, &prog_data->base,
+   brw_generator g(compiler, &params->base, &prog_data->base,
                   MESA_SHADER_FRAGMENT);
 
    if (unlikely(debug_enabled)) {

@@ -425,7 +425,7 @@ brw_compile_task(const struct brw_compiler *compiler,
       brw_print_tue_map(stderr, &prog_data->map);
    }
 
-   fs_generator g(compiler, &params->base, &prog_data->base.base,
+   brw_generator g(compiler, &params->base, &prog_data->base.base,
                   MESA_SHADER_TASK);
    if (unlikely(debug_enabled)) {
       g.enable_debug(ralloc_asprintf(params->base.mem_ctx,
@@ -1738,7 +1738,7 @@ brw_compile_mesh(const struct brw_compiler *compiler,
       brw_print_mue_map(stderr, &prog_data->map, nir);
    }
 
-   fs_generator g(compiler, &params->base, &prog_data->base.base,
+   brw_generator g(compiler, &params->base, &prog_data->base.base,
                   MESA_SHADER_MESH);
    if (unlikely(debug_enabled)) {
       g.enable_debug(ralloc_asprintf(params->base.mem_ctx,

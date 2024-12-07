@@ -865,7 +865,7 @@ namespace brw {
    private:
       /**
        * Workaround for negation of UD registers.  See comment in
-       * fs_generator::generate_code() for more details.
+       * brw_generator::generate_code() for more details.
        */
       brw_reg
       fix_unsigned_negate(const brw_reg &src) const

@@ -731,7 +731,7 @@ try_copy_propagate(const brw_compiler *compiler, fs_inst *inst,
    /* we can't generally copy-propagate UD negations because we
     * can end up accessing the resulting values as signed integers
     * instead. See also resolve_ud_negate() and comment in
-    * fs_generator::generate_code.
+    * brw_generator::generate_code.
     */
    if (entry->src.type == BRW_TYPE_UD &&
        entry->src.negate)

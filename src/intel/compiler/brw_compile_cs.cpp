@@ -228,7 +228,7 @@ brw_compile_cs(const struct brw_compiler *compiler,
    if (!nir->info.workgroup_size_variable)
       prog_data->prog_mask = 1 << selected_simd;
 
-   fs_generator g(compiler, &params->base, &prog_data->base,
+   brw_generator g(compiler, &params->base, &prog_data->base,
                   MESA_SHADER_COMPUTE);
    if (unlikely(debug_enabled)) {
       char *name = ralloc_asprintf(params->base.mem_ctx,

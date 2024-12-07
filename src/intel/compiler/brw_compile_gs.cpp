@@ -359,7 +359,7 @@ brw_compile_gs(const struct brw_compiler *compiler,
       prog_data->base.base.dispatch_grf_start_reg =
          v.payload().num_regs / reg_unit(compiler->devinfo);
 
-      fs_generator g(compiler, &params->base,
+      brw_generator g(compiler, &params->base,
                      &prog_data->base.base, MESA_SHADER_GEOMETRY);
       if (unlikely(debug_enabled)) {
          const char *label =
