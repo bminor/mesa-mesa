@@ -954,3 +954,19 @@ offset(const brw_reg &reg, const brw_builder &bld, unsigned delta)
     */
    return offset(reg, bld.dispatch_width(), delta);
 }
+
+brw_reg brw_sample_mask_reg(const brw_builder &bld);
+void brw_emit_predicate_on_sample_mask(const brw_builder &bld, fs_inst *inst);
+
+brw_reg
+brw_fetch_payload_reg(const brw_builder &bld, uint8_t regs[2],
+                      brw_reg_type type = BRW_TYPE_F,
+                      unsigned n = 1);
+
+brw_reg
+brw_fetch_barycentric_reg(const brw_builder &bld, uint8_t regs[2]);
+
+void
+brw_check_dynamic_msaa_flag(const brw_builder &bld,
+                            const struct brw_wm_prog_data *wm_prog_data,
+                            enum intel_msaa_flags flag);

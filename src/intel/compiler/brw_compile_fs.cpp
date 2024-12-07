@@ -30,7 +30,7 @@ brw_emit_single_fb_write(fs_visitor &s, const brw_builder &bld,
    struct brw_wm_prog_data *prog_data = brw_wm_prog_data(s.prog_data);
 
    /* Hand over gl_FragDepth or the payload depth. */
-   const brw_reg dst_depth = fetch_payload_reg(bld, s.fs_payload().dest_depth_reg);
+   const brw_reg dst_depth = brw_fetch_payload_reg(bld, s.fs_payload().dest_depth_reg);
 
    brw_reg sources[FB_WRITE_LOGICAL_NUM_SRCS];
    sources[FB_WRITE_LOGICAL_SRC_COLOR0]     = color0;
@@ -308,8 +308,8 @@ brw_emit_interpolation_setup(fs_visitor &s)
       const brw_builder dbld =
          abld.exec_all().group(MIN2(16, s.dispatch_width) * 2, 0);
 
-      check_dynamic_msaa_flag(dbld, wm_prog_data,
-                              INTEL_MSAA_FLAG_COARSE_RT_WRITES);
+      brw_check_dynamic_msaa_flag(dbld, wm_prog_data,
+                                  INTEL_MSAA_FLAG_COARSE_RT_WRITES);
 
       int_pixel_offset_x = dbld.vgrf(BRW_TYPE_UW);
       set_predicate(BRW_PREDICATE_NORMAL,
@@ -473,7 +473,7 @@ brw_emit_interpolation_setup(fs_visitor &s)
    }
 
    if (wm_prog_data->uses_src_depth)
-      s.pixel_z = fetch_payload_reg(bld, payload.source_depth_reg);
+      s.pixel_z = brw_fetch_payload_reg(bld, payload.source_depth_reg);
 
    if (wm_prog_data->uses_depth_w_coefficients ||
        wm_prog_data->uses_src_depth) {
@@ -503,7 +503,7 @@ brw_emit_interpolation_setup(fs_visitor &s)
 
    if (wm_prog_data->uses_src_w) {
       abld = bld.annotate("compute pos.w");
-      s.pixel_w = fetch_payload_reg(abld, payload.source_w_reg);
+      s.pixel_w = brw_fetch_payload_reg(abld, payload.source_w_reg);
       s.wpos_w = bld.vgrf(BRW_TYPE_F);
       abld.emit(SHADER_OPCODE_RCP, s.wpos_w, s.pixel_w);
    }
@@ -544,8 +544,8 @@ brw_emit_interpolation_setup(fs_visitor &s)
          assert(barys[0] && sample_barys[0]);
 
          if (!loaded_flag) {
-            check_dynamic_msaa_flag(ubld, wm_prog_data,
-                                    INTEL_MSAA_FLAG_PERSAMPLE_INTERP);
+            brw_check_dynamic_msaa_flag(ubld, wm_prog_data,
+                                        INTEL_MSAA_FLAG_PERSAMPLE_INTERP);
          }
 
          for (unsigned j = 0; j < s.dispatch_width / 8; j++) {
@@ -558,7 +558,7 @@ brw_emit_interpolation_setup(fs_visitor &s)
    }
 
    for (int i = 0; i < INTEL_BARYCENTRIC_MODE_COUNT; ++i) {
-      s.delta_xy[i] = fetch_barycentric_reg(
+      s.delta_xy[i] = brw_fetch_barycentric_reg(
          bld, payload.barycentric_coord_reg[i]);
    }
 
