@@ -94,9 +94,4 @@ lp_build_opt_nir(struct nir_shader *nir)
          NIR_PASS_V(nir, nir_opt_cse);
       }
    } while (progress);
-
-   if (nir_lower_bool_to_int32(nir)) {
-      NIR_PASS_V(nir, nir_copy_prop);
-      NIR_PASS_V(nir, nir_opt_dce);
-   }
 }
