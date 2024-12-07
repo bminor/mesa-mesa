@@ -32,7 +32,6 @@
 #include "brw_compiler.h"
 #include "brw_inst.h"
 #include "brw_ir_allocator.h"
-#include "brw_ir_performance.h"
 #include "compiler/nir/nir.h"
 #include "brw_analysis.h"
 
