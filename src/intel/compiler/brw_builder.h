@@ -798,7 +798,7 @@ public:
                            vec4_result, srcs, PULL_VARYING_CONSTANT_SRCS);
       inst->size_written = 4 * vec4_result.component_size(inst->exec_size);
 
-      shuffle_from_32bit_read(*this, dst, vec4_result, 0, components);
+      shuffle_from_32bit_read(dst, vec4_result, 0, components);
    }
 
    brw_reg
@@ -907,6 +907,11 @@ private:
       MOV(expanded, src);
       return expanded;
    }
+
+   void shuffle_from_32bit_read(const brw_reg &dst,
+                                const brw_reg &src,
+                                uint32_t first_component,
+                                uint32_t components) const;
 
    bblock_t *block;
    exec_node *cursor;

@@ -486,12 +486,6 @@ namespace brw {
    lower_src_modifiers(fs_visitor *v, bblock_t *block, fs_inst *inst, unsigned i);
 }
 
-void shuffle_from_32bit_read(const brw_builder &bld,
-                             const brw_reg &dst,
-                             const brw_reg &src,
-                             uint32_t first_component,
-                             uint32_t components);
-
 enum intel_barycentric_mode brw_barycentric_mode(const struct brw_wm_prog_key *key,
                                                  nir_intrinsic_instr *intr);
 
