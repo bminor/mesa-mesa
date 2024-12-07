@@ -24,7 +24,7 @@
         "description": "egl/wayland: fallback to implicit modifiers if advertised by compositor",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4c065158927d7bacc5eb1e4f2491b1db93f1dc12",
         "notes": null

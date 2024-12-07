@@ -1010,6 +1010,7 @@ create_dri_image(struct dri2_egl_surface *dri2_surf,
    uint64_t *modifiers;
    unsigned int num_modifiers;
    struct u_vector *modifiers_present;
+   bool implicit_mod_supported;
 
    assert(visual_idx != -1);
 
@@ -1047,6 +1048,26 @@ create_dri_image(struct dri2_egl_surface *dri2_surf,
    } else {
       modifiers = u_vector_tail(modifiers_present);
       num_modifiers = u_vector_length(modifiers_present);
+   }
+
+   if (!dri2_dpy->dri_screen_render_gpu->base.screen->resource_create_with_modifiers &&
+       dri2_dpy->wl_dmabuf) {
+      /* We don't support explicit modifiers, check if the compositor supports
+       * implicit modifiers. */
+      implicit_mod_supported = false;
+      for (unsigned int i = 0; i < num_modifiers; i++) {
+         if (modifiers[i] == DRM_FORMAT_MOD_INVALID) {
+            implicit_mod_supported = true;
+            break;
+         }
+      }
+
+      if (!implicit_mod_supported) {
+         return;
+      }
+
+      num_modifiers = 0;
+      modifiers = NULL;
    }
 
    /* For the purposes of this function, an INVALID modifier on
