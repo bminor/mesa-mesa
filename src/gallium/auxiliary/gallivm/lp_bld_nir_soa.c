@@ -89,6 +89,8 @@ struct lp_build_nir_soa_context
    LLVMValueRef resources_ptr;
    LLVMTypeRef thread_data_type;
    LLVMValueRef thread_data_ptr;
+   LLVMValueRef null_qword_ptr;
+   LLVMValueRef noop_store_ptr;
 
    LLVMValueRef ssbo_ptr;
 
@@ -1153,24 +1155,15 @@ static void emit_load_ubo(struct lp_build_nir_soa_context *bld,
          break;
       default: break;
       }
+
       for (unsigned c = 0; c < nc; c++) {
          LLVMValueRef chan_offset = LLVMBuildAdd(builder, offset, lp_build_const_int32(gallivm, c), "");
+         LLVMValueRef in_range = lp_offset_in_range(bld, chan_offset, num_consts);
+         LLVMValueRef ptr = LLVMBuildGEP2(builder, bld_broad->elem_type, consts_ptr, &chan_offset, 1, "");
+         LLVMValueRef null_ptr = LLVMBuildBitCast(builder, bld->null_qword_ptr, LLVMTypeOf(ptr), "");
+         ptr = LLVMBuildSelect(builder, in_range, ptr, null_ptr, "");
 
-         LLVMValueRef scalar;
-         /* If loading outside the UBO, we need to skip the load and read 0 instead. */
-         LLVMValueRef zero = lp_build_zero_bits(gallivm, bit_size, false);
-         LLVMValueRef res_store = lp_build_alloca(gallivm, LLVMTypeOf(zero), "");
-         LLVMBuildStore(builder, zero, res_store);
-
-         struct lp_build_if_state ifthen;
-         lp_build_if(&ifthen, gallivm, lp_offset_in_range(bld, chan_offset, num_consts));
-         LLVMBuildStore(builder, lp_build_pointer_get2(builder, bld_broad->elem_type,
-                                                       consts_ptr, chan_offset), res_store);
-         lp_build_endif(&ifthen);
-
-         scalar = LLVMBuildLoad2(builder, LLVMTypeOf(zero), res_store, "");
-
-         result[c] = lp_build_broadcast_scalar(load_bld, scalar);
+         result[c] = LLVMBuildLoad2(builder, load_bld->elem_type, ptr, "");
       }
    } else {
       LLVMValueRef overflow_mask;
@@ -1321,16 +1314,12 @@ static void emit_load_mem(struct lp_build_nir_soa_context *bld,
          LLVMValueRef scalar;
          /* If loading outside the SSBO, we need to skip the load and read 0 instead. */
          if (ssbo_limit) {
-            LLVMValueRef zero = lp_build_zero_bits(gallivm, bit_size, false);
-            LLVMValueRef res_store = lp_build_alloca(gallivm, LLVMTypeOf(zero), "");
-            LLVMBuildStore(builder, zero, res_store);
+            LLVMValueRef in_range = lp_offset_in_range(bld, chan_offset, ssbo_limit);
+            LLVMValueRef ptr = LLVMBuildGEP2(builder, load_bld->elem_type, mem_ptr, &chan_offset, 1, "");
+            LLVMValueRef null_ptr = LLVMBuildBitCast(builder, bld->null_qword_ptr, LLVMTypeOf(ptr), "");
+            ptr = LLVMBuildSelect(builder, in_range, ptr, null_ptr, "");
 
-            struct lp_build_if_state ifthen;
-            lp_build_if(&ifthen, gallivm, lp_offset_in_range(bld, chan_offset, ssbo_limit));
-            LLVMBuildStore(builder, lp_build_pointer_get2(builder, load_bld->elem_type, mem_ptr, chan_offset), res_store);
-            lp_build_endif(&ifthen);
-
-            scalar = LLVMBuildLoad2(builder, LLVMTypeOf(zero), res_store, "");
+            scalar = LLVMBuildLoad2(builder, load_bld->elem_type, ptr, "");
          } else {
             scalar = lp_build_pointer_get2(builder, load_bld->elem_type, mem_ptr, chan_offset);
          }
@@ -1414,12 +1403,20 @@ static void emit_store_mem(struct lp_build_nir_soa_context *bld,
 
    offset = lp_build_shr_imm(uint_bld, offset, shift_val);
 
+   LLVMValueRef exec_mask = mask_vec(bld);
+   LLVMValueRef cond = LLVMBuildICmp(gallivm->builder, LLVMIntNE, exec_mask, bld->uint_bld.zero, "");
+
    /* If the address is uniform, then just store the value from the first
     * channel instead of making LLVM unroll the invocation loop.  Note that we
     * don't use first_active_uniform(), since we aren't guaranteed that there is
     * actually an active invocation.
     */
    if (index_and_offset_are_uniform && invocation_0_must_be_active(bld)) {
+      cond = LLVMBuildBitCast(builder, cond, LLVMIntTypeInContext(gallivm->context, bld->base.type.length), "exec_bitmask");
+      cond = LLVMBuildZExt(builder, cond, bld->int_bld.elem_type, "");
+
+      LLVMValueRef any_active = LLVMBuildICmp(builder, LLVMIntNE, cond, lp_build_const_int32(gallivm, 0), "any_active");
+
       LLVMValueRef ssbo_limit;
       LLVMValueRef mem_ptr = mem_access_base_pointer(bld, store_bld, bit_size, payload, index,
                                                      lp_build_const_int32(gallivm, 0), &ssbo_limit);
@@ -1440,10 +1437,11 @@ static void emit_store_mem(struct lp_build_nir_soa_context *bld,
 
          /* If storing outside the SSBO, we need to skip the store instead. */
          if (ssbo_limit) {
-            struct lp_build_if_state ifthen;
-            lp_build_if(&ifthen, gallivm, lp_offset_in_range(bld, chan_offset, ssbo_limit));
-            lp_build_pointer_set(builder, mem_ptr, chan_offset, value_ptr);
-            lp_build_endif(&ifthen);
+            LLVMValueRef valid_store = LLVMBuildAnd(builder, lp_offset_in_range(bld, chan_offset, ssbo_limit), any_active, "");
+            LLVMValueRef ptr = LLVMBuildGEP2(builder, store_bld->elem_type, mem_ptr, &chan_offset, 1, "");
+            LLVMValueRef noop_ptr = LLVMBuildBitCast(builder, bld->noop_store_ptr, LLVMTypeOf(ptr), "");
+            ptr = LLVMBuildSelect(builder, valid_store, ptr, noop_ptr, "");
+            LLVMBuildStore(builder, value_ptr, ptr);
          } else {
             lp_build_pointer_set(builder, mem_ptr, chan_offset, value_ptr);
          }
@@ -1451,8 +1449,6 @@ static void emit_store_mem(struct lp_build_nir_soa_context *bld,
       return;
    }
 
-   LLVMValueRef exec_mask = mask_vec(bld);
-   LLVMValueRef cond = LLVMBuildICmp(gallivm->builder, LLVMIntNE, exec_mask, uint_bld->zero, "");
    for (unsigned i = 0; i < uint_bld->type.length; i++) {
       LLVMValueRef counter = lp_build_const_int32(gallivm, i);
       LLVMValueRef loop_cond = LLVMBuildExtractElement(gallivm->builder, cond, counter, "");
@@ -5896,6 +5892,9 @@ void lp_build_nir_soa_func(struct gallivm_state *gallivm,
       } else
          bld.call_context_ptr = params->call_context_ptr;
    }
+
+   bld.null_qword_ptr = lp_build_alloca(gallivm, bld.uint64_bld.elem_type, "null_qword_ptr");
+   bld.noop_store_ptr = lp_build_alloca_undef(gallivm, bld.uint64_bld.elem_type, "noop_store_ptr");
 
    emit_prologue(&bld);
 
