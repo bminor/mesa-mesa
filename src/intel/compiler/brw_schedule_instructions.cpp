@@ -1256,7 +1256,7 @@ brw_instruction_scheduler::calculate_deps()
       /* Address registers have virtual identifier, allowing us to identify
        * what instructions needs the values written to the register. The
        * address register is written/read in pairs of instructions (enforced
-       * by the brw_fs_validate.cpp).
+       * by the brw_validate.cpp).
        *
        * To allow scheduling of SEND messages, out of order, without the
        * address register tracking generating serialized dependency between

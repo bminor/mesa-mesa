@@ -362,10 +362,6 @@ namespace {
        *            allocated to hold the result of the instruction (and the
        *            scratch write header).
        */
-      /* FINISHME - The shader's dispatch width probably belongs in
-       *            backend_shader (or some nonexistent fs_shader class?)
-       *            rather than in the visitor class.
-       */
       return s->dispatch_width / 8;
    }
 }

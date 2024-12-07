@@ -1098,7 +1098,7 @@ try_constant_propagate_value(const intel_device_info *devinfo,
           *    When multiplying a DW and any lower precision integer, the
           *    DW operand must on src0.
           *
-          * So it would have been invalid. However, brw_fs_combine_constants
+          * So it would have been invalid. However, brw_opt_combine_constants
           * will now "fix" the constant.
           */
          if (inst->opcode == BRW_OPCODE_MUL &&

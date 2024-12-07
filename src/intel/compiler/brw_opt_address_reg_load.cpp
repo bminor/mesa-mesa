@@ -8,7 +8,7 @@
 #include "brw_cfg.h"
 #include "brw_eu.h"
 
-/** @file brw_fs_opt_address_reg_load.cpp
+/** @file
  *
  * Turn this sequence :
  *

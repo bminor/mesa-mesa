@@ -1888,7 +1888,7 @@ instruction_restrictions(const struct brw_isa_info *isa,
        *
        * The same text also appears for OR, NOT, and XOR instructions.
        *
-       * Per the comment around nir_op_imod in brw_fs_nir.cpp, we have
+       * Per the comment around nir_op_imod in brw_from_nir.cpp, we have
        * determined this to not be true. The only conditions that seem
        * absolutely sketchy are O, R, and U.  Some OpenGL shaders from Doom
        * 2016 have been observed to generate and.g and operate correctly.

@@ -847,7 +847,7 @@ brw_shader::convert_attr_sources_to_hw_regs(brw_inst *inst)
                    prog_data->curb_read_length +
                    inst->src[i].offset / REG_SIZE;
 
-         /* As explained at brw_reg_from_fs_reg, From the Haswell PRM:
+         /* As explained at brw_lower_vgrf_to_fixed_grf, From the Haswell PRM:
           *
           * VertStride must be used to cross GRF register boundaries. This
           * rule implies that elements within a 'Width' cannot cross GRF

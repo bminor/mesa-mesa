@@ -2149,7 +2149,7 @@ lower_interpolator_logical_send(const brw_builder &bld, brw_inst *inst,
       const brw_builder &ubld = bld.exec_all().group(8, 0);
       desc = ubld.vgrf(BRW_TYPE_UD);
 
-      /* The predicate should have been built in brw_fs_nir.cpp when emitting
+      /* The predicate should have been built in brw_from_nir.cpp when emitting
        * NIR code. This guarantees that we do not have incorrect interactions
        * with the flag register holding the predication result.
        */
@@ -2272,7 +2272,7 @@ static void
 lower_trace_ray_logical_send(const brw_builder &bld, brw_inst *inst)
 {
    const intel_device_info *devinfo = bld.shader->devinfo;
-   /* The emit_uniformize() in brw_fs_nir.cpp will generate an horizontal
+   /* The emit_uniformize() in brw_from_nir.cpp will generate an horizontal
     * stride of 0. Below we're doing a MOV() in SIMD2. Since we can't use UQ/Q
     * types in on Gfx12.5, we need to tweak the stride with a value of 1 dword
     * so that the MOV operates on 2 components rather than twice the same
@@ -2370,7 +2370,7 @@ lower_get_buffer_size(const brw_builder &bld, brw_inst *inst)
 {
    const intel_device_info *devinfo = bld.shader->devinfo;
    /* Since we can only execute this instruction on uniform bti/surface
-    * handles, brw_fs_nir.cpp should already have limited this to SIMD8.
+    * handles, brw_from_nir.cpp should already have limited this to SIMD8.
     */
    assert(inst->exec_size == (devinfo->ver < 20 ? 8 : 16));
 
