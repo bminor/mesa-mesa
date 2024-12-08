@@ -627,7 +627,8 @@ nir_precomp_print_target_binary_map(FILE *fp_c, FILE *fp_h, const char *prefix, 
 }
 
 static inline nir_shader *
-nir_precompiled_build_variant(const nir_function *libfunc, unsigned variant,
+nir_precompiled_build_variant(const nir_function *libfunc,
+                              gl_shader_stage stage, unsigned variant,
                               const nir_shader_compiler_options *opts,
                               const struct nir_precomp_opts *precomp_opt,
                               nir_def *(*load_arg)(nir_builder *b,
@@ -641,11 +642,11 @@ nir_precompiled_build_variant(const nir_function *libfunc, unsigned variant,
 
    nir_builder b;
    if (has_variants) {
-      b = nir_builder_init_simple_shader(MESA_SHADER_COMPUTE, opts,
+      b = nir_builder_init_simple_shader(stage, opts,
                                          "%s variant %u", libfunc->name,
                                          variant);
    } else {
-      b = nir_builder_init_simple_shader(MESA_SHADER_COMPUTE, opts, "%s",
+      b = nir_builder_init_simple_shader(stage, opts, "%s",
                                          libfunc->name);
    }
 

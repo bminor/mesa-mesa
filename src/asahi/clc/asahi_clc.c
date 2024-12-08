@@ -293,7 +293,8 @@ main(int argc, char **argv)
 
       for (unsigned v = 0; v < nr_vars; ++v) {
          nir_shader *s = nir_precompiled_build_variant(
-            libfunc, v, &agx_nir_options, &opt, load_kernel_input);
+            libfunc, MESA_SHADER_COMPUTE, v, &agx_nir_options, &opt,
+            load_kernel_input);
 
          nir_link_shader_functions(s, nir);
          NIR_PASS(_, s, nir_inline_functions);

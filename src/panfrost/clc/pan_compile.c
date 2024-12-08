@@ -334,8 +334,8 @@ main(int argc, const char **argv)
 
       for (unsigned v = 0; v < nr_vars; ++v) {
          nir_shader *s = nir_precompiled_build_variant(
-            libfunc, v, get_compiler_options(target_arch), &opt,
-            load_kernel_input);
+            libfunc, MESA_SHADER_COMPUTE, v, get_compiler_options(target_arch),
+            &opt, load_kernel_input);
 
          unsigned gpu_prod_id = (target_arch & 0xf) << 12;
 
