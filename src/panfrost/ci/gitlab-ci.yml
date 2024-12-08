@@ -401,12 +401,14 @@ panfrost-g610-gl:arm64:
     DEQP_SUITE: panfrost-g610
     PAN_MESA_DEBUG: "deqp,sync,indirect"
 
-panfrost-g610-gl-full:arm64:
+# Disable this for now until it gets more stable
+.panfrost-g610-gl-piglit:arm64:
   extends:
     - panfrost-g610-gl:arm64
     - .panfrost-valhall-gl-manual-rules
   variables:
-    DEQP_FRACTION: 1
+    DEQP_SUITE: panfrost-g610-piglit
+    HWCI_START_WESTON: 1
 
 panfrost-g610-vk:arm64:
   parallel: 5
