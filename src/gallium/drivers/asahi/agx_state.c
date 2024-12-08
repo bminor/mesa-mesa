@@ -48,6 +48,7 @@
 #include "util/u_inlines.h"
 #include "util/u_math.h"
 #include "util/u_memory.h"
+#include "util/u_prim.h"
 #include "util/u_transfer.h"
 #include "util/u_upload_mgr.h"
 #include "agx_bg_eot.h"
@@ -3890,19 +3891,41 @@ agx_ia_update(struct agx_batch *batch, const struct pipe_draw_info *info,
    uint64_t ia_vertices = agx_get_query_address(
       batch, ctx->pipeline_statistics[PIPE_STAT_QUERY_IA_VERTICES]);
 
+   uint64_t ia_primitives = agx_get_query_address(
+      batch, ctx->pipeline_statistics[PIPE_STAT_QUERY_IA_PRIMITIVES]);
+
    uint64_t vs_invocations = agx_get_query_address(
       batch, ctx->pipeline_statistics[PIPE_STAT_QUERY_VS_INVOCATIONS]);
+
+   uint64_t c_prims = agx_get_query_address(
+      batch, ctx->pipeline_statistics[PIPE_STAT_QUERY_C_PRIMITIVES]);
+
+   uint64_t c_invs = agx_get_query_address(
+      batch, ctx->pipeline_statistics[PIPE_STAT_QUERY_C_INVOCATIONS]);
+
+   /* With a geometry shader, clipper counters are written by the pre-GS kernel
+    * since they depend on the output on the geometry shader. Without a geometry
+    * shader, they are written along with IA.
+    *
+    * TODO: Broken tessellation interaction, but nobody cares.
+    */
+   if (ctx->stage[PIPE_SHADER_GEOMETRY].shader) {
+      c_prims = 0;
+      c_invs = 0;
+   }
 
    if (info->primitive_restart) {
       perf_debug(dev, "Input assembly counters with primitive restart");
 
-      libagx_increment_ia_restart(batch, agx_1d(1024), ia_vertices,
-                                  vs_invocations, draw, ib, ib_range_el,
-                                  info->restart_index, info->index_size);
+      libagx_increment_ia_restart(
+         batch, agx_1d(1024), ia_vertices, ia_primitives, vs_invocations,
+         c_prims, c_invs, draw, ib, ib_range_el, info->restart_index,
+         info->index_size, info->mode);
    } else {
       perf_debug(dev, "Input assembly counters");
 
-      libagx_increment_ia(batch, agx_1d(1), ia_vertices, vs_invocations, draw);
+      libagx_increment_ia(batch, agx_1d(1), ia_vertices, ia_primitives,
+                          vs_invocations, c_prims, c_invs, draw, info->mode);
    }
 }
 
@@ -4266,14 +4289,6 @@ agx_needs_passthrough_gs(struct agx_context *ctx,
    /* Edge flags are emulated with a geometry shader */
    if (has_edgeflags(ctx, info->mode)) {
       perf_debug_ctx(ctx, "Using passthrough GS due to edge flags");
-      return true;
-   }
-
-   /* Various pipeline statistics are implemented in the pre-GS shader. */
-   if (ctx->pipeline_statistics[PIPE_STAT_QUERY_IA_PRIMITIVES] ||
-       ctx->pipeline_statistics[PIPE_STAT_QUERY_C_PRIMITIVES] ||
-       ctx->pipeline_statistics[PIPE_STAT_QUERY_C_INVOCATIONS]) {
-      perf_debug_ctx(ctx, "Using passthrough GS due to pipeline statistics");
       return true;
    }
 
@@ -4870,7 +4885,11 @@ agx_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
 
    if (ctx->active_queries && !ctx->active_draw_without_restart &&
        (ctx->pipeline_statistics[PIPE_STAT_QUERY_IA_VERTICES] ||
-        ctx->pipeline_statistics[PIPE_STAT_QUERY_VS_INVOCATIONS])) {
+        ctx->pipeline_statistics[PIPE_STAT_QUERY_IA_PRIMITIVES] ||
+        ctx->pipeline_statistics[PIPE_STAT_QUERY_VS_INVOCATIONS] ||
+        ((ctx->pipeline_statistics[PIPE_STAT_QUERY_C_PRIMITIVES] ||
+          ctx->pipeline_statistics[PIPE_STAT_QUERY_C_INVOCATIONS]) &&
+         !ctx->stage[PIPE_SHADER_GEOMETRY].shader))) {
 
       uint64_t ptr;
       if (indirect) {

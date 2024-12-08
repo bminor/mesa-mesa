@@ -1077,15 +1077,6 @@ agx_nir_create_pre_gs(struct lower_gs_state *state, const nir_shader *libagx,
       }
    }
 
-   /* The geometry shader receives a number of input primitives. The driver
-    * should disable this counter when tessellation is active TODO and count
-    * patches separately.
-    */
-   add_counter(
-      b,
-      nir_load_stat_query_address_agx(b, .base = PIPE_STAT_QUERY_IA_PRIMITIVES),
-      unrolled_in_prims);
-
    /* The geometry shader is invoked once per primitive (after unrolling
     * primitive restart). From the spec:
     *

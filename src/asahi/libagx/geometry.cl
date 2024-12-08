@@ -318,31 +318,40 @@ libagx_load_index_buffer(constant struct agx_ia_state *p, uint id,
 }
 
 static void
-increment_ia_counters(global uint32_t *ia_vertices,
-                      global uint32_t *vs_invocations, uint count)
+increment_counters(global uint32_t *a, global uint32_t *b, global uint32_t *c,
+                   uint count)
 {
-   if (ia_vertices) {
-      *ia_vertices += count;
-   }
+   global uint32_t *ptr[] = {a, b, c};
 
-   if (vs_invocations) {
-      *vs_invocations += count;
+   for (uint i = 0; i < 3; ++i) {
+      if (ptr[i]) {
+         *(ptr[i]) += count;
+      }
    }
 }
 
 KERNEL(1)
 libagx_increment_ia(global uint32_t *ia_vertices,
-                    global uint32_t *vs_invocations, constant uint32_t *draw)
+                    global uint32_t *ia_primitives,
+                    global uint32_t *vs_invocations, global uint32_t *c_prims,
+                    global uint32_t *c_invs, constant uint32_t *draw,
+                    enum mesa_prim prim)
 {
-   increment_ia_counters(ia_vertices, vs_invocations, draw[0] * draw[1]);
+   increment_counters(ia_vertices, vs_invocations, NULL, draw[0] * draw[1]);
+
+   uint prims = u_decomposed_prims_for_vertices(prim, draw[0]) * draw[1];
+   increment_counters(ia_primitives, c_prims, c_invs, prims);
 }
 
 KERNEL(1024)
 libagx_increment_ia_restart(global uint32_t *ia_vertices,
+                            global uint32_t *ia_primitives,
                             global uint32_t *vs_invocations,
+                            global uint32_t *c_prims, global uint32_t *c_invs,
                             constant uint32_t *draw, uint64_t index_buffer,
                             uint32_t index_buffer_range_el,
-                            uint32_t restart_index, uint32_t index_size_B)
+                            uint32_t restart_index, uint32_t index_size_B,
+                            enum mesa_prim prim)
 {
    uint tid = get_global_id(0);
    unsigned count = draw[0];
@@ -368,7 +377,30 @@ libagx_increment_ia_restart(global uint32_t *ia_vertices,
 
    /* Elect a single thread from the workgroup to increment the counters */
    if (tid == 0) {
-      increment_ia_counters(ia_vertices, vs_invocations, scratch * draw[1]);
+      increment_counters(ia_vertices, vs_invocations, NULL, scratch * draw[1]);
+   }
+
+   /* TODO: We should vectorize this */
+   if ((ia_primitives || c_prims || c_invs) && tid == 0) {
+      uint accum = 0;
+      int last_restart = -1;
+      for (uint i = 0; i < count; ++i) {
+         uint index = load_index(index_buffer, index_buffer_range_el, start + i,
+                                 index_size_B);
+
+         if (index == restart_index) {
+            accum +=
+               u_decomposed_prims_for_vertices(prim, i - last_restart - 1);
+            last_restart = i;
+         }
+      }
+
+      {
+         accum +=
+            u_decomposed_prims_for_vertices(prim, count - last_restart - 1);
+      }
+
+      increment_counters(ia_primitives, c_prims, c_invs, accum * draw[1]);
    }
 }
 

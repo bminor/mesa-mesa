@@ -39,6 +39,7 @@
 #include "util/format/u_formats.h"
 #include "util/macros.h"
 #include "util/ralloc.h"
+#include "util/u_prim.h"
 #include "vulkan/vulkan_core.h"
 #include "layout.h"
 #include "libagx_dgc.h"
@@ -3108,23 +3109,6 @@ hk_handle_passthrough_gs(struct hk_cmd_buffer *cmd, struct agx_draw draw)
    uint32_t xfb_outputs = last_sw->info.xfb_info.output_count;
    bool needs_gs = xfb_outputs;
 
-   /* Various pipeline statistics are implemented in the pre-GS shader. TODO:
-    * This could easily be optimized.
-    */
-   VkQueryPipelineStatisticFlagBits ia_statistics[] = {
-      VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_PRIMITIVES_BIT,
-      VK_QUERY_PIPELINE_STATISTIC_CLIPPING_PRIMITIVES_BIT,
-      VK_QUERY_PIPELINE_STATISTIC_CLIPPING_INVOCATIONS_BIT,
-   };
-
-   bool ia_stats = false;
-
-   for (unsigned i = 0; i < ARRAY_SIZE(ia_statistics); ++i) {
-      ia_stats |= hk_pipeline_stat_addr(cmd, ia_statistics[i]) != 0;
-   }
-
-   needs_gs |= ia_stats;
-
    /* If we already have a matching GS configuration, we're done */
    if ((gs != NULL) == needs_gs)
       return;
@@ -3157,8 +3141,7 @@ hk_handle_passthrough_gs(struct hk_cmd_buffer *cmd, struct agx_draw draw)
    }
 
    struct hk_device *dev = hk_cmd_buffer_device(cmd);
-   perf_debug(dev, "Binding passthrough GS for%s%s\n",
-              xfb_outputs ? " XFB" : "", ia_stats ? " statistics" : "");
+   perf_debug(dev, "Binding passthrough GS for%s\n", xfb_outputs ? " XFB" : "");
 
    gs = hk_meta_shader(dev, hk_nir_passthrough_gs, key, key_size);
    gs->is_passthrough = true;
@@ -3337,7 +3320,8 @@ hk_set_view_index(struct hk_cmd_buffer *cmd, uint32_t view_idx)
 
 static void
 hk_ia_update(struct hk_cmd_buffer *cmd, struct hk_cs *cs, struct agx_draw draw,
-             uint64_t ia_vertices, uint64_t vs_invocations)
+             uint64_t ia_vertices, uint64_t ia_prims, uint64_t vs_invocations,
+             uint64_t c_prims, uint64_t c_inv)
 {
    /* XXX: stream link needed? */
    struct hk_device *dev = hk_cmd_buffer_device(cmd);
@@ -3351,15 +3335,33 @@ hk_ia_update(struct hk_cmd_buffer *cmd, struct hk_cs *cs, struct agx_draw draw,
       draw_ptr = hk_pool_upload(cmd, &desc, sizeof(desc), 4);
    }
 
+   struct vk_dynamic_graphics_state *dyn = &cmd->vk.dynamic_graphics_state;
+   enum mesa_prim prim = vk_conv_topology(dyn->ia.primitive_topology);
+
+   bool geom = cmd->state.gfx.shaders[MESA_SHADER_GEOMETRY];
+   bool tess = cmd->state.gfx.shaders[MESA_SHADER_TESS_EVAL];
+
+   /* Clipper counters depend on geom/tess outputs and must be written with the
+    * geom/tess output. They are updated as IA counters only when geom/tess is
+    * not used.
+    *
+    * TODO: Tessellation clipper counters not actually wired up, pending CTS.
+    */
+   if (geom || tess) {
+      c_prims = 0;
+      c_inv = 0;
+   }
+
    if (draw.restart) {
       uint32_t index_size_B = agx_index_size_to_B(draw.index_size);
 
-      libagx_increment_ia_restart(cs, agx_1d(1024), ia_vertices, vs_invocations,
-                                  draw_ptr, draw.index_buffer,
-                                  agx_draw_index_range_el(draw),
-                                  cmd->state.gfx.index.restart, index_size_B);
+      libagx_increment_ia_restart(
+         cs, agx_1d(1024), ia_vertices, ia_prims, vs_invocations, c_prims,
+         c_inv, draw_ptr, draw.index_buffer, agx_draw_index_range_el(draw),
+         cmd->state.gfx.index.restart, index_size_B, prim);
    } else {
-      libagx_increment_ia(cs, agx_1d(1), ia_vertices, vs_invocations, draw_ptr);
+      libagx_increment_ia(cs, agx_1d(1), ia_vertices, ia_prims, vs_invocations,
+                          c_prims, c_inv, draw_ptr, prim);
    }
 }
 
@@ -3380,10 +3382,20 @@ hk_draw(struct hk_cmd_buffer *cmd, uint16_t draw_id, struct agx_draw draw_)
    uint64_t stat_ia_verts = hk_pipeline_stat_addr(
       cmd, VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_VERTICES_BIT);
 
+   uint64_t stat_ia_prims = hk_pipeline_stat_addr(
+      cmd, VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_PRIMITIVES_BIT);
+
    uint64_t stat_vs_inv = hk_pipeline_stat_addr(
       cmd, VK_QUERY_PIPELINE_STATISTIC_VERTEX_SHADER_INVOCATIONS_BIT);
 
-   bool ia_stats = stat_ia_verts || stat_vs_inv;
+   uint64_t stat_c_inv = hk_pipeline_stat_addr(
+      cmd, VK_QUERY_PIPELINE_STATISTIC_CLIPPING_INVOCATIONS_BIT);
+
+   uint64_t stat_c_prims = hk_pipeline_stat_addr(
+      cmd, VK_QUERY_PIPELINE_STATISTIC_CLIPPING_PRIMITIVES_BIT);
+
+   bool ia_stats = stat_ia_verts || stat_ia_prims || stat_vs_inv ||
+                   stat_c_inv || stat_c_prims;
    struct hk_device *dev = hk_cmd_buffer_device(cmd);
 
    hk_foreach_view(cmd) {
@@ -3423,7 +3435,8 @@ hk_draw(struct hk_cmd_buffer *cmd, uint16_t draw_id, struct agx_draw draw_)
       }
 
       if (ia_stats) {
-         hk_ia_update(cmd, ccs, draw, stat_ia_verts, stat_vs_inv);
+         hk_ia_update(cmd, ccs, draw, stat_ia_verts, stat_ia_prims, stat_vs_inv,
+                      stat_c_inv, stat_c_prims);
       }
 
       if (tess) {
