@@ -4,6 +4,7 @@
  */
 
 #include "pipe/p_state.h"
+#include "util/macros.h"
 #include "util/u_inlines.h"
 
 #include "etnaviv_context.h"
@@ -185,6 +186,119 @@ map_resource(struct pipe_resource *resource)
    return etna_bo_map(etna_buffer_resource(resource)->bo);
 }
 
+static void
+calc_quant_params(float min, float max, float *out_scale, uint8_t *out_zero_point)
+{
+   if (max < min)
+      SWAP(max, min);
+
+   float diff = max - MIN2(min, 0.0);
+   *out_scale = diff / 255.0f;
+   *out_zero_point = round(-(min / *out_scale));
+}
+
+static void
+calc_quantization(struct etna_ml_subgraph *subgraph, const struct pipe_ml_operation *poperation,
+                  struct etna_operation *operation, float *out_scale, uint8_t *out_zero_point)
+{
+   const struct pipe_tensor *weight_tensor = poperation->conv.weight_tensor;
+   void *map = map_resource(operation->weight_tensor);
+   unsigned input_channels = operation->input_channels;
+
+   if (poperation->conv.depthwise)
+      input_channels = 1;
+
+   uint8_t (*weights)[operation->weight_width][operation->weight_height][input_channels] = map;
+
+   float max = .0, min = FLT_MAX;
+   for (unsigned oc = 0; oc < operation->output_channels; oc++) {
+      for (unsigned w = 0; w < operation->weight_width; w++) {
+         for (unsigned h = 0; h < operation->weight_height; h++) {
+            for (unsigned ic = 0; ic < input_channels; ic++) {
+               float dequant;
+               if (operation->weight_signed) {
+                  int8_t val = weights[oc][w][h][ic];
+                  dequant = weight_tensor->scales[oc] * (val - weight_tensor->zero_points[oc]);
+               } else {
+                  uint8_t val = weights[oc][w][h][ic];
+                  dequant = weight_tensor->scales[oc] * (val - weight_tensor->zero_points[oc]);
+               }
+               max = MAX2(max, dequant);
+               min = MIN2(min, dequant);
+            }
+         }
+      }
+   }
+
+   calc_quant_params(min, max, out_scale, out_zero_point);
+}
+
+static void
+requantize_weights(struct etna_ml_subgraph *subgraph,
+                   const struct pipe_ml_operation *poperation,
+                   struct etna_operation *operation)
+{
+   const struct pipe_tensor *weight_tensor = poperation->conv.weight_tensor;
+   struct pipe_context *context = subgraph->base.context;
+   void *input = map_resource(operation->weight_tensor);
+   unsigned input_channels = operation->input_channels;
+
+   if (poperation->conv.depthwise)
+      input_channels = 1;
+
+   unsigned new_size = operation->output_channels * operation->weight_width * operation->weight_height * input_channels;
+   struct pipe_resource *output_res = etna_ml_create_resource(context, new_size);
+   void *output = map_resource(output_res);
+   uint8_t (*map_in)[operation->weight_width][operation->weight_height][input_channels] = input;
+   uint8_t (*map_out)[operation->weight_width][operation->weight_height][input_channels] = output;
+
+   for (unsigned oc = 0; oc < operation->output_channels; oc++) {
+      for (unsigned w = 0; w < operation->weight_width; w++) {
+         for (unsigned h = 0; h < operation->weight_height; h++) {
+            for (unsigned ic = 0; ic < input_channels; ic++) {
+               if (operation->weight_signed) {
+                  int8_t val = map_in[oc][w][h][ic];
+                  double dequantized = weight_tensor->scales[oc] * (val - weight_tensor->zero_points[oc]);
+                  int8_t requantized = round(dequantized / operation->weight_scale);
+                  map_out[oc][w][h][ic] = requantized + operation->weight_zero_point - 0x80;
+               } else {
+                  uint8_t val = map_in[oc][w][h][ic];
+                  double dequantized = weight_tensor->scales[oc] * (val - weight_tensor->zero_points[oc]);
+                  uint8_t requantized = round(dequantized / operation->weight_scale);
+                  map_out[oc][w][h][ic] = requantized + operation->weight_zero_point;
+               }
+            }
+         }
+      }
+   }
+
+   pipe_resource_reference(&operation->weight_tensor, NULL);
+   operation->weight_tensor = output_res;
+}
+
+static void
+requantize_bias(struct etna_ml_subgraph *subgraph,
+                const struct pipe_ml_operation *poperation,
+                struct etna_operation *operation)
+{
+   const struct pipe_tensor *bias_tensor = poperation->conv.bias_tensor;
+   struct pipe_context *context = subgraph->base.context;
+   uint32_t *input = map_resource(operation->bias_tensor);
+   unsigned new_size = operation->output_channels * sizeof(*input);
+   struct pipe_resource *output_res = etna_ml_create_resource(context, new_size);
+   uint32_t *output = map_resource(output_res);
+   float bias_scale = operation->weight_scale * operation->input_scale;
+
+   for (unsigned oc = 0; oc < operation->output_channels; oc++) {
+      int32_t quantized = input[oc];
+      double dequantized = bias_tensor->scales[oc] * quantized;
+      int32_t requantized = round(dequantized / bias_scale);
+      output[oc] = requantized;
+   }
+
+   pipe_resource_reference(&operation->bias_tensor, NULL);
+   operation->bias_tensor = output_res;
+}
 
 static void
 pointwise_to_2x2(struct etna_ml_subgraph *subgraph, struct etna_operation *operation)
@@ -495,12 +609,15 @@ etna_ml_lower_convolution(struct etna_ml_subgraph *subgraph,
       pointwise_to_2x2(subgraph, operation);
 
    if (operation->depthwise) {
-      if (nn_core_version < 8 && (operation->output_channels > 1 || operation->stride > 1)) {
-         if (operation->input_width < 8 && operation->input_width > 2)
-            operation->pooling_first_pixel = false;
-         expand_depthwise(subgraph, operation);
-      } else if (operation->output_channels > 1)
+      if (nn_core_version < 8) {
+         if (operation->output_channels > 1 || operation->stride > 1) {
+            if (operation->input_width < 8 && operation->input_width > 2)
+               operation->pooling_first_pixel = false;
+            expand_depthwise(subgraph, operation);
+         }
+      } else if (operation->output_channels > 1) {
          reorder_for_hw_depthwise(subgraph, operation);
+      }
    }
 
    if (operation->stride > 1 && !operation->pooling_first_pixel)
@@ -511,11 +628,31 @@ etna_ml_lower_convolution(struct etna_ml_subgraph *subgraph,
    operation->input_tensor_sizes[0] = operation->input_width *
                                       operation->input_height *
                                       operation->input_channels;
-   ML_DBG("%dx%dx%d\n", operation->input_width, operation->input_height, operation->input_channels);
 
    operation->output_tensor_sizes[0] = operation->output_width *
                                        operation->output_height *
                                        operation->output_channels;
+
+   if (poperation->conv.weight_tensor->scales) {
+      float scale;
+      uint8_t zero_point;
+
+      assert(poperation->conv.weight_tensor->zero_points);
+
+      ML_DBG("\nWARNING: The weights in this model are quantized using a per-channel scheme.\n"
+             "The hardware doesn't support it natively, so it will be workarounded by requantizing\n"
+             "on the fly, with a loss of accuracy. It is recommended to quantize the model with the\n"
+             "per-tensor scheme. See https://ai.google.dev/edge/litert/models/quantization_spec.\n\n");
+
+      calc_quantization(subgraph, poperation, operation, &scale, &zero_point);
+      operation->weight_scale = scale;
+      operation->weight_zero_point = zero_point;
+      requantize_weights(subgraph, poperation, operation);
+      requantize_bias(subgraph, poperation, operation);
+
+      if (nn_core_version >= 8 && poperation->conv.depthwise)
+         operation->input_channels = 1;
+   }
 }
 
 static float
