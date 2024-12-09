@@ -534,7 +534,7 @@
         "description": "aco/ra: don't write to exec/ttmp with mulk/addk/cmovk",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e06773281b3ff7fff86a50e3d2ec4a58b3e035cb",
         "notes": null
