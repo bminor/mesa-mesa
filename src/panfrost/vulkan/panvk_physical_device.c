@@ -77,10 +77,10 @@ create_kmod_dev(struct panvk_physical_device *device,
 
    if (!getenv("PAN_I_WANT_A_BROKEN_VULKAN_DRIVER")) {
       close(fd);
-      return panvk_errorf(
-         instance, VK_ERROR_INCOMPATIBLE_DRIVER,
-         "WARNING: panvk is not a conformant vulkan implementation, "
-         "pass PAN_I_WANT_A_BROKEN_VULKAN_DRIVER=1 if you know what you're doing.");
+      return panvk_errorf(instance, VK_ERROR_INCOMPATIBLE_DRIVER,
+                          "WARNING: panvk is not well-tested, pass "
+                          "PAN_I_WANT_A_BROKEN_VULKAN_DRIVER=1 "
+                          "if you know what you're doing.");
    }
 
    if (instance->debug_flags & PANVK_DEBUG_STARTUP)
