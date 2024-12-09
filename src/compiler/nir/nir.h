@@ -6762,6 +6762,7 @@ void nir_loop_analyze_impl(nir_function_impl *impl,
                            nir_variable_mode indirect_mask,
                            bool force_unroll_sampler_indirect);
 
+/* This requires both nir_metadata_live_defs and nir_metadata_instr_index. */
 bool nir_defs_interfere(nir_def *a, nir_def *b);
 
 bool nir_repair_ssa_impl(nir_function_impl *impl);
