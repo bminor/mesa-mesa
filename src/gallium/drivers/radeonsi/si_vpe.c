@@ -104,15 +104,20 @@ si_vpe_log(void* log_ctx, const char* fmt, ...)
 }
 
 static void
+si_vpe_log_silent(void* log_ctx, const char* fmt, ...)
+{
+}
+
+static void
 si_vpe_populate_debug_options(struct vpe_debug_options* debug)
 {
    /* Enable debug options here if needed */
 }
 
 static void
-si_vpe_populate_callback_modules(struct vpe_callback_funcs* funcs)
+si_vpe_populate_callback_modules(struct vpe_callback_funcs* funcs, uint8_t log_level)
 {
-   funcs->log     = si_vpe_log;
+   funcs->log     = log_level ? si_vpe_log : si_vpe_log_silent;
    funcs->zalloc  = si_vpe_zalloc;
    funcs->free    = si_vpe_free;
 }
@@ -197,7 +202,7 @@ si_vpe_populate_init_data(struct si_context *sctx, struct vpe_init_data* params,
 
    memset(&params->debug, 0, sizeof(struct vpe_debug_options));
    si_vpe_populate_debug_options(&params->debug);
-   si_vpe_populate_callback_modules(&params->funcs);
+   si_vpe_populate_callback_modules(&params->funcs, log_level);
 
    SIVPE_DBG(log_level, "Get family: %d\n", sctx->family);
    SIVPE_DBG(log_level, "Get gfx_level: %d\n", sctx->gfx_level);
@@ -914,7 +919,7 @@ si_vpe_processor_is_process_supported(struct pipe_video_codec *codec,
 
    result = vpe_check_support(vpe_handle, build_param, &bufs_required);
    if (VPE_STATUS_OK != result) {
-      SIVPE_ERR("Check support failed with result: %d\n", result);
+      SIVPE_WARN(vpeproc->log_level, "Check support failed with result: %d\n", result);
       return 1;
    }
 
