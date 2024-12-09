@@ -204,7 +204,6 @@ struct wsi_wl_swapchain {
    uint32_t num_drm_modifiers;
    const uint64_t *drm_modifiers;
 
-   VkPresentModeKHR present_mode;
    bool legacy_fifo_ready;
    bool next_present_force_wait_barrier;
 
