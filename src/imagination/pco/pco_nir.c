@@ -23,6 +23,7 @@ static const struct spirv_to_nir_options spirv_options = {
 
    .ubo_addr_format = nir_address_format_vec2_index_32bit_offset,
    .ssbo_addr_format = nir_address_format_vec2_index_32bit_offset,
+   .push_const_addr_format = nir_address_format_32bit_offset,
 
    .min_ubo_alignment = PVR_UNIFORM_BUFFER_OFFSET_ALIGNMENT,
    .min_ssbo_alignment = PVR_STORAGE_BUFFER_OFFSET_ALIGNMENT,
@@ -248,6 +249,12 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
             nir_lower_explicit_io,
             nir_var_mem_ubo | nir_var_mem_ssbo,
             nir_address_format_vec2_index_32bit_offset);
+
+   NIR_PASS(_,
+            nir,
+            nir_lower_explicit_io,
+            nir_var_mem_push_const,
+            spirv_options.push_const_addr_format);
 
    NIR_PASS(_, nir, pco_nir_lower_vk, &data->common);
 

@@ -580,6 +580,14 @@ static VkResult pvr_pds_descriptor_program_create_and_upload(
       goto err_free_static_consts;
    }
 
+   if (data->common.push_consts.range.count > 0) {
+      program.buffers[program.buffer_count++] = (struct pvr_pds_buffer){
+         .type = PVR_BUFFER_TYPE_PUSH_CONSTS,
+         .size_in_dwords = data->common.push_consts.range.count,
+         .destination = data->common.push_consts.range.start,
+      };
+   }
+
    pds_info->entries_size_in_bytes = const_entries_size_in_bytes;
 
    pvr_pds_generate_descriptor_upload_program(&program, NULL, pds_info);
@@ -2003,6 +2011,32 @@ static void pvr_setup_descriptors(pco_data *data,
          };
       }
    }
+
+   if (data->common.push_consts.used > 0) {
+      unsigned count = data->common.push_consts.used;
+
+      if (count == ~0U) {
+         count = 0;
+         for (unsigned u = 0; u < layout->push_range_count; ++u) {
+            VkPushConstantRange *range = &layout->push_ranges[u];
+            if (!(mesa_to_vk_shader_stage(stage) & range->stageFlags))
+               continue;
+
+            count = MAX2(count, range->offset + range->size);
+         }
+
+         assert(!(count % 4));
+         count = count / 4;
+      }
+
+      data->common.push_consts.range = (pco_range){
+         .start = data->common.shareds,
+         .count = count,
+      };
+
+      data->common.shareds += count;
+   }
+
    assert(data->common.shareds < 256);
 }
 
@@ -2098,6 +2132,9 @@ static void pvr_postprocess_shader_data(pco_data *data,
    pvr_setup_descriptors(data, nir, layout);
 
    /* TODO: common things, like large constants being put into shareds. */
+
+   assert(data->common.shareds < 256);
+   assert(data->common.coeffs < 256);
 }
 
 /* Compiles and uploads shaders and PDS programs. */

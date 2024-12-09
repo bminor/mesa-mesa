@@ -457,6 +457,42 @@ static unsigned fetch_resource_base_reg_packed(const pco_common_data *common,
 
    return fetch_resource_base_reg(common, desc_set, binding, elem, is_img_smp);
 }
+
+static pco_instr *trans_load_push_constant(trans_ctx *tctx,
+                                           nir_intrinsic_instr *intr,
+                                           pco_ref dest,
+                                           pco_ref src)
+{
+   const pco_common_data *common = &tctx->shader->data.common;
+
+   unsigned chans = pco_ref_get_chans(dest);
+   ASSERTED unsigned bits = pco_ref_get_bits(dest);
+   assert(bits == 32);
+
+   assert(common->push_consts.range.count > 0);
+
+   if (nir_src_is_const(intr->src[0])) {
+      unsigned offset = nir_src_as_uint(intr->src[0]);
+      assert(offset < common->push_consts.range.count);
+
+      unsigned reg_index = common->push_consts.range.start + offset;
+
+      src = pco_ref_hwreg_vec(reg_index, PCO_REG_CLASS_SHARED, chans);
+      return pco_mov(&tctx->b, dest, src, .rpt = chans);
+   }
+
+   /* Use the dynamic offset to set up the index register. */
+   pco_ref idx_reg = pco_ref_hwreg_idx(0, 0, PCO_REG_CLASS_INDEX);
+   pco_mov(&tctx->b, idx_reg, src);
+
+   pco_ref idx_src = pco_ref_hwreg_idx_vec(0,
+                                           common->push_consts.range.start,
+                                           PCO_REG_CLASS_SHARED,
+                                           chans);
+
+   return pco_mov(&tctx->b, dest, idx_src, .rpt = chans);
+}
+
 static pco_instr *trans_load_buffer(trans_ctx *tctx,
                                     nir_intrinsic_instr *intr,
                                     pco_ref dest,
@@ -887,6 +923,10 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
          instr = trans_store_output_fs(tctx, intr, src[0]);
       else
          UNREACHABLE("Unsupported stage for \"nir_intrinsic_store_output\".");
+      break;
+
+   case nir_intrinsic_load_push_constant:
+      instr = trans_load_push_constant(tctx, intr, dest, src[0]);
       break;
 
    case nir_intrinsic_load_ubo:

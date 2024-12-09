@@ -113,6 +113,13 @@ typedef struct _pco_descriptor_set_data {
    bool used; /** Whether the descriptor set is used by the shader. */
 } pco_descriptor_set_data;
 
+/** PCO push constant data. */
+typedef struct _pco_push_const_data {
+   pco_range range; /** Push constant range. */
+
+   unsigned used;
+} pco_push_const_data;
+
 /** PCO common data. */
 typedef struct _pco_common_data {
    /** System value mappings. */
@@ -120,6 +127,9 @@ typedef struct _pco_common_data {
 
    /** Descriptor set data. */
    pco_descriptor_set_data desc_sets[PVR_MAX_DESCRIPTOR_SETS];
+
+   /** Push constant data. */
+   pco_push_const_data push_consts;
 
    unsigned temps; /** Number of allocated temp registers. */
    unsigned vtxins; /** Number of allocated vertex input registers. */

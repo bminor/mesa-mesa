@@ -1517,7 +1517,12 @@ void pvr_pds_generate_descriptor_upload_program(
 
    pvr_init_pds_const_map_entry_write_state(info, &entry_write_state);
 
-   assert(!input_program->buffer_count);
+   /* 1 DOUTD per compile time buffer: */
+   for (unsigned int index = 0; index < input_program->buffer_count; index++) {
+      num_consts32++;
+      num_consts64++;
+      total_dma_count++;
+   }
 
    /* DOUTU for the secondary update program requires a 64-bit constant. */
    if (input_program->secondary_program_present)
@@ -1556,6 +1561,42 @@ void pvr_pds_generate_descriptor_upload_program(
                                               next_const64,
                                               descriptor_set->size_in_dwords,
                                               descriptor_set->destination));
+
+      next_const64++;
+      next_const32++;
+   }
+
+   for (unsigned int index = 0; index < input_program->buffer_count; index++) {
+      struct pvr_pds_buffer *buffer = &input_program->buffers[index];
+
+      bool last_dma = (++running_dma_count == total_dma_count);
+      bool halt = last_dma && !input_program->secondary_program_present;
+
+      switch (buffer->type) {
+      case PVR_BUFFER_TYPE_PUSH_CONSTS: {
+         struct pvr_const_map_entry_special_buffer *special_buffer_entry;
+
+         special_buffer_entry =
+            pvr_prepare_next_pds_const_map_entry(&entry_write_state,
+                                                 sizeof(*special_buffer_entry));
+         special_buffer_entry->type =
+            PVR_PDS_CONST_MAP_ENTRY_TYPE_SPECIAL_BUFFER;
+         special_buffer_entry->buffer_type = buffer->type;
+         break;
+      }
+      }
+
+      entry_write_state.entry->const_offset = next_const64 * 2;
+
+      PVR_PDS_MODE_TOGGLE(code_section,
+                          instruction,
+                          pvr_encode_burst_cs(&entry_write_state,
+                                              last_dma,
+                                              halt,
+                                              next_const32,
+                                              next_const64,
+                                              buffer->size_in_dwords,
+                                              buffer->destination));
 
       next_const64++;
       next_const32++;

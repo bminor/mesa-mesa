@@ -690,6 +690,13 @@ struct pvr_cmd_buffer_draw_state {
    bool draw_indexed;
 };
 
+struct pvr_push_constants {
+   uint8_t data[PVR_MAX_PUSH_CONSTANTS_SIZE];
+   unsigned bytes_updated;
+   pvr_dev_addr_t dev_addr;
+   bool dirty;
+};
+
 struct pvr_cmd_buffer_state {
    /* Pipeline binding. */
    const struct pvr_graphics_pipeline *gfx_pipeline;
@@ -712,17 +719,6 @@ struct pvr_cmd_buffer_state {
       VkIndexType type;
    } index_buffer_binding;
 
-   struct {
-      uint8_t data[PVR_MAX_PUSH_CONSTANTS_SIZE];
-      VkShaderStageFlags dirty_stages;
-      /* Indicates if the whole push constants buffer was uploaded. This avoids
-       * having to upload the same stuff twice when the push constant range
-       * covers both gfx and compute.
-       */
-      bool uploaded;
-      pvr_dev_addr_t dev_addr;
-   } push_constants;
-
    /* Array size of barriers_needed is based on number of sync pipeline
     * stages.
     */
@@ -730,6 +726,8 @@ struct pvr_cmd_buffer_state {
 
    struct pvr_descriptor_state gfx_desc_state;
    struct pvr_descriptor_state compute_desc_state;
+
+   struct pvr_push_constants push_consts[PVR_STAGE_ALLOCATION_COUNT];
 
    VkFormat depth_format;
 
