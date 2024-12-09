@@ -1710,9 +1710,8 @@ static void pvr_alloc_vs_varyings(pco_data *data, nir_shader *nir)
    assert(!vars_mask);
 
    const gl_varying_slot last_slots[] = {
-      VARYING_SLOT_PSIZ,
-      VARYING_SLOT_VIEWPORT,
-      VARYING_SLOT_LAYER,
+      VARYING_SLOT_PSIZ,       VARYING_SLOT_VIEWPORT,   VARYING_SLOT_LAYER,
+      VARYING_SLOT_CLIP_DIST0, VARYING_SLOT_CLIP_DIST1,
    };
 
    for (unsigned u = 0; u < ARRAY_SIZE(last_slots); ++u) {

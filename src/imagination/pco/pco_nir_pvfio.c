@@ -1343,3 +1343,155 @@ bool pco_nir_lower_fs_intrinsics(nir_shader *shader)
 
    return nir_shader_lower_instructions(shader, is_fs_intr, lower_fs_intr, NULL);
 }
+
+bool pco_nir_lower_clip_cull_vars(nir_shader *shader)
+{
+   if (shader->info.internal)
+      return false;
+
+   unsigned clip_cull_comps = shader->info.clip_distance_array_size +
+                              shader->info.cull_distance_array_size;
+   if (!clip_cull_comps)
+      return false;
+
+   /* Remove the old variables. */
+   const gl_varying_slot clip_cull_locations[] = {
+      VARYING_SLOT_CLIP_DIST0,
+      VARYING_SLOT_CLIP_DIST1,
+   };
+
+   nir_variable *var;
+   for (unsigned u = 0; u < ARRAY_SIZE(clip_cull_locations); ++u) {
+      gl_varying_slot location = clip_cull_locations[u];
+      while ((var = nir_find_variable_with_location(shader,
+                                                    nir_var_shader_out,
+                                                    location))) {
+         exec_node_remove(&var->node);
+      }
+   }
+
+   /* Create new variables. */
+   nir_create_variable_with_location(shader,
+                                     nir_var_shader_out,
+                                     VARYING_SLOT_CLIP_DIST0,
+                                     glsl_vec_type(MIN2(clip_cull_comps, 4)));
+
+   if (clip_cull_comps > 4) {
+      nir_create_variable_with_location(shader,
+                                        nir_var_shader_out,
+                                        VARYING_SLOT_CLIP_DIST1,
+                                        glsl_vec_type(clip_cull_comps - 4));
+   }
+
+   nir_metadata_invalidate(shader);
+
+   return true;
+}
+
+static bool
+clone_clip_cull_stores(nir_builder *b, nir_intrinsic_instr *intr, void *data)
+{
+   if (intr->intrinsic != nir_intrinsic_store_deref)
+      return false;
+
+   nir_deref_instr *deref = nir_src_as_deref(intr->src[0]);
+   if (deref->deref_type != nir_deref_type_array)
+      return false;
+
+   nir_variable *var = nir_deref_instr_get_variable(deref);
+   if (var->data.location != VARYING_SLOT_CLIP_DIST0 &&
+       var->data.location != VARYING_SLOT_CLIP_DIST1)
+      return false;
+
+   b->cursor = nir_after_instr(&intr->instr);
+
+   unsigned var_index = var->data.location - VARYING_SLOT_CLIP_DIST0;
+   nir_def *index =
+      nir_iadd_imm(b, deref->arr.index.ssa, var->data.location_frac);
+   index = nir_iadd_imm(b, index, var_index * 4);
+
+   nir_variable *clone_var = data;
+   nir_store_array_var(b, clone_var, index, intr->src[1].ssa, 1);
+
+   return true;
+}
+
+static bool is_clip_cull_load(const nir_instr *instr,
+                              UNUSED const void *cb_data)
+{
+   if (instr->type != nir_instr_type_intrinsic)
+      return false;
+
+   nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
+   if (intr->intrinsic != nir_intrinsic_load_deref)
+      return false;
+
+   nir_deref_instr *deref = nir_src_as_deref(intr->src[0]);
+   if (deref->deref_type != nir_deref_type_array)
+      return false;
+
+   nir_variable *var = nir_deref_instr_get_variable(deref);
+
+   return var->data.location == VARYING_SLOT_CLIP_DIST0 ||
+          var->data.location == VARYING_SLOT_CLIP_DIST1;
+}
+
+static nir_def *
+swap_clip_cull_load(nir_builder *b, nir_instr *instr, void *cb_data)
+{
+   nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
+   nir_deref_instr *deref = nir_src_as_deref(intr->src[0]);
+   nir_variable *var = nir_deref_instr_get_variable(deref);
+
+   unsigned var_index = var->data.location - VARYING_SLOT_CLIP_DIST0;
+   nir_def *index =
+      nir_iadd_imm(b, deref->arr.index.ssa, var->data.location_frac);
+   index = nir_iadd_imm(b, index, var_index * 4);
+
+   nir_variable *clone_var = cb_data;
+   return nir_load_array_var(b, clone_var, index);
+}
+
+bool pco_nir_link_clip_cull_vars(nir_shader *producer, nir_shader *consumer)
+{
+   if (producer->info.stage != MESA_SHADER_VERTEX ||
+       consumer->info.stage != MESA_SHADER_FRAGMENT) {
+      return false;
+   }
+
+   unsigned clip_cull_comps = consumer->info.clip_distance_array_size +
+                              consumer->info.cull_distance_array_size;
+   /* Skip if clip/cull comps aren't actually consumed. */
+   if (!clip_cull_comps)
+      return false;
+
+   const glsl_type *clone_var_type =
+      glsl_array_type(glsl_float_type(), clip_cull_comps, 0);
+
+   /* Find unused varying slot to use and create the variables. */
+   gl_varying_slot clone_slot = VARYING_SLOT_VAR0;
+   nir_foreach_shader_out_variable (var, producer) {
+      clone_slot = MAX2(clone_slot, var->data.location + 1);
+   }
+   assert(clone_slot < VARYING_SLOT_MAX);
+
+   nir_variable *clone_var =
+      nir_variable_create(producer, nir_var_shader_out, clone_var_type, NULL);
+   clone_var->data.location = clone_slot;
+
+   nir_shader_intrinsics_pass(producer,
+                              clone_clip_cull_stores,
+                              nir_metadata_block_index | nir_metadata_dominance,
+                              clone_var);
+
+   clone_var =
+      nir_variable_create(consumer, nir_var_shader_in, clone_var_type, NULL);
+   clone_var->data.location = clone_slot;
+
+   nir_shader_lower_instructions(consumer,
+                                 is_clip_cull_load,
+                                 swap_clip_cull_load,
+                                 clone_var);
+
+   return true;
+}

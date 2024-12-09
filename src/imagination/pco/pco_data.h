@@ -43,6 +43,9 @@ typedef struct _pco_vs_data {
    /** Varyings/output mappings. */
    pco_range varyings[VARYING_SLOT_MAX];
 
+   unsigned clip_count;
+   unsigned cull_count;
+
    unsigned f32_smooth; /** Number of F32 linear varyings. */
    unsigned f32_flat; /** Number of F32 flat varyings. */
    unsigned f32_npc; /** Number of F32 NPC varyings. */

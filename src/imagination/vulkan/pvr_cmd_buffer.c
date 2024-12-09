@@ -4353,6 +4353,10 @@ static void pvr_setup_output_select(struct pvr_cmd_buffer *const cmd_buffer)
 
    const bool has_layer = varyings[VARYING_SLOT_LAYER].count > 0;
 
+   const unsigned clip_count = vs_data->vs.clip_count;
+   const unsigned cull_count = vs_data->vs.cull_count;
+   const unsigned clip_cull = clip_count + cull_count;
+
    pvr_csb_pack (&output_selects, TA_OUTPUT_SEL, state) {
       state.rhw_pres = fs_data->fs.uses.w;
       state.tsp_unclamped_z_pres = fs_data->fs.uses.z;
@@ -4361,6 +4365,24 @@ static void pvr_setup_output_select(struct pvr_cmd_buffer *const cmd_buffer)
       state.psprite_size_pres = has_point_size;
       state.vpt_tgt_pres = has_viewport;
       state.render_tgt_pres = has_layer;
+
+      state.plane0 = clip_cull > 0;
+      state.plane1 = clip_cull > 1;
+      state.plane2 = clip_cull > 2;
+      state.plane3 = clip_cull > 3;
+      state.plane4 = clip_cull > 4;
+      state.plane5 = clip_cull > 5;
+      state.plane6 = clip_cull > 6;
+      state.plane7 = clip_cull > 7;
+
+      state.cullplane0 = (clip_cull > 0) && (clip_count < 1);
+      state.cullplane1 = (clip_cull > 1) && (clip_count < 2);
+      state.cullplane2 = (clip_cull > 2) && (clip_count < 3);
+      state.cullplane3 = (clip_cull > 3) && (clip_count < 4);
+      state.cullplane4 = (clip_cull > 4) && (clip_count < 5);
+      state.cullplane5 = (clip_cull > 5) && (clip_count < 6);
+      state.cullplane6 = (clip_cull > 6) && (clip_count < 7);
+      state.cullplane7 = (clip_cull > 7) && (clip_count < 8);
    }
 
    if (ppp_state->output_selects != output_selects) {

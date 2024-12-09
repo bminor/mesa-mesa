@@ -246,6 +246,20 @@ static void gather_fs_data(nir_shader *nir, pco_data *data)
 }
 
 /**
+ * \brief Gathers vertex shader data.
+ *
+ * \param[in] nir NIR shader.
+ * \param[in,out] data Shader data.
+ */
+static void gather_vs_data(nir_shader *nir, pco_data *data)
+{
+   pco_vs_data *vs_data = &data->vs;
+
+   vs_data->clip_count = nir->info.clip_distance_array_size;
+   vs_data->cull_count = nir->info.cull_distance_array_size;
+}
+
+/**
  * \brief Gathers compute shader data.
  *
  * \param[in] nir NIR shader.
@@ -350,7 +364,7 @@ static void gather_data(nir_shader *nir, pco_data *data)
       return gather_fs_data(nir, data);
 
    case MESA_SHADER_VERTEX:
-      return;
+      return gather_vs_data(nir, data);
 
    case MESA_SHADER_COMPUTE:
       return gather_cs_data(nir, data);
@@ -552,7 +566,7 @@ void pco_preprocess_nir(pco_ctx *ctx, nir_shader *nir)
  */
 void pco_link_nir(pco_ctx *ctx, nir_shader *producer, nir_shader *consumer)
 {
-   /* TODO: clip/cull */
+   pco_nir_link_clip_cull_vars(producer, consumer);
 
    nir_lower_io_array_vars_to_elements(producer, consumer);
    nir_validate_shader(producer, "after nir_lower_io_array_vars_to_elements");
@@ -738,6 +752,9 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
             nir,
             nir_io_add_const_offset_to_base,
             nir_var_shader_in | nir_var_shader_out);
+
+   if (nir->info.stage == MESA_SHADER_VERTEX)
+      NIR_PASS(_, nir, pco_nir_lower_clip_cull_vars);
 
    NIR_PASS(_, nir, pco_nir_lower_variables, true, true);
 

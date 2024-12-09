@@ -242,8 +242,8 @@ static void pvr_physical_device_get_supported_features(
       .shaderSampledImageArrayDynamicIndexing = false,
       .shaderStorageBufferArrayDynamicIndexing = false,
       .shaderStorageImageArrayDynamicIndexing = false,
-      .shaderClipDistance = false,
-      .shaderCullDistance = false,
+      .shaderClipDistance = true,
+      .shaderCullDistance = true,
       .shaderFloat64 = false,
       .shaderInt64 = false,
       .shaderInt16 = false,
@@ -479,10 +479,9 @@ static bool pvr_physical_device_get_properties(
       .timestampComputeAndGraphics = false,
       .timestampPeriod = 0.0f,
 
-      /* Requires shaderClipDistance */
-      .maxClipDistances = 0U,
-      .maxCullDistances = 0U,
-      .maxCombinedClipAndCullDistances = 0U,
+      .maxClipDistances = PVR_MAX_USER_PLANES,
+      .maxCullDistances = PVR_MAX_USER_PLANES,
+      .maxCombinedClipAndCullDistances = PVR_MAX_USER_PLANES,
 
       .discreteQueuePriorities = 2U,
 
