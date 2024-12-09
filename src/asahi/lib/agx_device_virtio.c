@@ -171,8 +171,8 @@ agx_virtio_bo_bind_object(struct agx_device *dev, struct agx_bo *bo,
    int ret = vdrm_send_req(dev->vdrm, &req.hdr, true);
    if (ret || rsp->ret) {
       fprintf(stderr,
-              "ASAHI_CCMD_GEM_BIND_OBJECT bind failed: %d:%d (handle=%d)\n", ret, rsp->ret,
-              bo->handle);
+              "ASAHI_CCMD_GEM_BIND_OBJECT bind failed: %d:%d (handle=%d)\n",
+              ret, rsp->ret, bo->handle);
    }
 
    if (!rsp->ret)
@@ -280,8 +280,8 @@ agx_virtio_submit(struct agx_device *dev, struct drm_asahi_submit *submit,
             (struct drm_asahi_cmd_compute *)(uintptr_t)commands[i].cmd_buffer;
          req_len += sizeof(struct drm_asahi_command) +
                     sizeof(struct drm_asahi_cmd_compute);
-         req_len += compute->attachment_count *
-                    sizeof(struct drm_asahi_attachment);
+         req_len +=
+            compute->attachment_count * sizeof(struct drm_asahi_attachment);
 
          if (compute->extensions) {
             assert(*(uint32_t *)(uintptr_t)compute->extensions ==

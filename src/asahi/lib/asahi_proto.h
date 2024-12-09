@@ -7,7 +7,7 @@
 #ifndef ASAHI_PROTO_H_
 #define ASAHI_PROTO_H_
 
-#define ASAHI_PROTO_UNSTABLE_UABI_VERSION		1
+#define ASAHI_PROTO_UNSTABLE_UABI_VERSION 1
 
 /**
  * Defines the layout of shmem buffer used for host->guest communication.
@@ -42,10 +42,10 @@ enum asahi_ccmd {
    ASAHI_CCMD_GEM_BIND_OBJECT,
 };
 
-#define ASAHI_CCMD(_cmd, _len)                                                           \
-   (struct vdrm_ccmd_req)                                                                \
-   {                                                                                     \
-      .cmd = ASAHI_CCMD_##_cmd, .len = (_len),                                           \
+#define ASAHI_CCMD(_cmd, _len)                                                 \
+   (struct vdrm_ccmd_req)                                                      \
+   {                                                                           \
+      .cmd = ASAHI_CCMD_##_cmd, .len = (_len),                                 \
    }
 
 /*
