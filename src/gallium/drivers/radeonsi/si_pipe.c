@@ -1201,10 +1201,22 @@ static struct pipe_screen *radeonsi_screen_create_impl(struct radeon_winsys *ws,
    sscreen->use_aco = true;
 #endif
 
-   if (sscreen->use_aco && !aco_is_gpu_supported(&sscreen->info)) {
+   bool support_aco = aco_is_gpu_supported(&sscreen->info);
+   if (sscreen->use_aco && !support_aco) {
       fprintf(stderr, "radeonsi: ACO does not support this chip yet\n");
       FREE(sscreen);
       return NULL;
+   }
+
+   if (!sscreen->use_aco && support_aco) {
+      const char *shader_blake = debug_get_option("AMD_FORCE_SHADER_USE_ACO", NULL);
+      if (shader_blake) {
+         sscreen->force_shader_use_aco =
+            _mesa_blake3_from_printed_string(sscreen->use_aco_shader_blake, shader_blake);
+
+         if (!sscreen->force_shader_use_aco)
+            fprintf(stderr, "radeonsi: invalid AMD_SHADER_FORCE_ACO value\n");
+      }
    }
 
    if ((sscreen->debug_flags & DBG(TMZ)) &&

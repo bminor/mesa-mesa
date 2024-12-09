@@ -531,6 +531,10 @@ struct si_screen {
    bool always_allow_dcc_stores;
    bool use_aco;
 
+   /* Force a single shader to use ACO, debug usage. */
+   bool force_shader_use_aco;
+   blake3_hash use_aco_shader_blake;
+
    struct {
 #define OPT_BOOL(name, dflt, description) bool name : 1;
 #define OPT_INT(name, dflt, description) int name;

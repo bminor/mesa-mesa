@@ -509,8 +509,17 @@ void si_nir_scan_shader(struct si_screen *sscreen, const struct nir_shader *nir,
 {
    memset(info, 0, sizeof(*info));
    info->base = nir->info;
+
+   bool force_use_aco = false;
+   if (sscreen->force_shader_use_aco) {
+      if (!memcmp(sscreen->use_aco_shader_blake, info->base.source_blake3,
+                  sizeof(sscreen->use_aco_shader_blake))) {
+         force_use_aco = true;
+      }
+   }
+
    info->base.use_aco_amd = aco_is_gpu_supported(&sscreen->info) &&
-                            (sscreen->use_aco || nir->info.use_aco_amd) &&
+                            (sscreen->use_aco || nir->info.use_aco_amd || force_use_aco) &&
                             sscreen->info.has_image_opcodes;
 
    /* Get options from shader profiles. */
