@@ -75,14 +75,6 @@ create_kmod_dev(struct panvk_physical_device *device,
 
    drmFreeVersion(version);
 
-   if (!getenv("PAN_I_WANT_A_BROKEN_VULKAN_DRIVER")) {
-      close(fd);
-      return panvk_errorf(instance, VK_ERROR_INCOMPATIBLE_DRIVER,
-                          "WARNING: panvk is not well-tested, pass "
-                          "PAN_I_WANT_A_BROKEN_VULKAN_DRIVER=1 "
-                          "if you know what you're doing.");
-   }
-
    if (instance->debug_flags & PANVK_DEBUG_STARTUP)
       vk_logi(VK_LOG_NO_OBJS(instance), "Found compatible device '%s'.", path);
 
@@ -876,6 +868,15 @@ panvk_physical_device_init(struct panvk_physical_device *device,
    switch (arch) {
    case 6:
    case 7:
+      if (!getenv("PAN_I_WANT_A_BROKEN_VULKAN_DRIVER")) {
+         result = panvk_errorf(instance, VK_ERROR_INCOMPATIBLE_DRIVER,
+                               "WARNING: panvk is not well-tested on v%d, "
+                               "pass PAN_I_WANT_A_BROKEN_VULKAN_DRIVER=1 "
+                               "if you know what you're doing.", arch);
+         goto fail;
+      }
+      break;
+
    case 10:
       break;
 
