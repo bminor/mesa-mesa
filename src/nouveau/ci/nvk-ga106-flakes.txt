@@ -6,6 +6,7 @@ dEQP-VK.dynamic_rendering.primary_cmd_buff.suballocation.multisample_resolve.lay
 dEQP-VK.dynamic_rendering.primary_cmd_buff.suballocation.multisample_resolve.layers_3.r16g16b16a16_sint.samples_8_resolve_level_4
 dEQP-VK.dynamic_rendering.primary_cmd_buff.suballocation.multisample_resolve.r32g32b32a32_sint.samples_8_resolve_level_4
 
+dEQP-VK.image.host_image_copy.large_images.image_to_memory_r32_sfloat_4096_4096
 dEQP-VK.image.host_image_copy.large_images.image_to_memory_r8g8b8a8_unorm_4096_4096
 dEQP-VK.image.host_image_copy.optimal.image_to_image_copy.shader_read_only_optimal.stencil_read_only_optimal.51x63x1_1.64.r8g8b8a8_unorm
 dEQP-VK.image.host_image_copy.optimal.image_to_image_copy.transfer_src_optimal.general.32x32x1_2.64.r16_sfloat

@@ -4,3 +4,7 @@ dEQP-VK.pipeline.shader_object_linked_binary.pipeline_cache.robustness2.storage,
 dEQP-VK.pipeline.shader_object_linked_spirv.pipeline_cache.robustness2.storage,Fail
 dEQP-VK.pipeline.shader_object_unlinked_binary.pipeline_cache.robustness2.storage,Fail
 dEQP-VK.pipeline.shader_object_unlinked_spirv.pipeline_cache.robustness2.storage,Fail
+
+# VK 1.4 regression, should be fixed in the next vkcts uprev
+dEQP-VK.api.version_check.version,Fail
+dEQP-VK.info.device_properties,Fail
