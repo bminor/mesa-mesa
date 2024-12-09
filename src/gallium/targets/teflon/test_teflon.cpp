@@ -87,14 +87,14 @@ test_model(void *buf, size_t buf_size, std::string cache_dir, unsigned tolerance
                if (abs(cpu[j] - npu[j]) > tolerance) {
                   std::cout << "CPU: ";
                   for (int k = 0; k < std::min(int(output_sizes[i]), 24); k++)
-                     std::cout << std::setfill('0') << std::setw(2) << std::hex << int(cpu[k]) << " ";
+                     std::cout << std::setfill('0') << std::setw(2) << std::hex << int(cpu[k] & 0xff) << " ";
                   std::cout << "\n";
                   std::cout << "NPU: ";
                   for (int k = 0; k < std::min(int(output_sizes[i]), 24); k++)
-                     std::cout << std::setfill('0') << std::setw(2) << std::hex << int(npu[k]) << " ";
+                     std::cout << std::setfill('0') << std::setw(2) << std::hex << int(npu[k] & 0xff) << " ";
                   std::cout << "\n";
 
-                  FAIL() << "Output at " << j << " from the NPU (" << std::setfill('0') << std::setw(2) << std::hex << int(npu[j]) << ") doesn't match that from the CPU (" << std::setfill('0') << std::setw(2) << std::hex << int(cpu[j]) << ").";
+                  FAIL() << "Output at " << j << " from the NPU (" << std::setfill('0') << std::setw(2) << std::hex << int(npu[j] & 0xff) << ") doesn't match that from the CPU (" << std::setfill('0') << std::setw(2) << std::hex << int(cpu[j] & 0xff) << ").";
                }
                break;
             }
