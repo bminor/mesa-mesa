@@ -794,7 +794,7 @@
         "description": "vl/vl_winsys: Add missing include for function declaration",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2548471ca1b33b76303b4967cdf103cee6c26744",
         "notes": null
