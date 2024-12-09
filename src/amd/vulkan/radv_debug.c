@@ -20,6 +20,7 @@
 #include "util/os_time.h"
 #include "ac_debug.h"
 #include "ac_descriptors.h"
+#include "git_sha1.h"
 #include "radv_buffer.h"
 #include "radv_debug.h"
 #include "radv_descriptor_set.h"
@@ -799,6 +800,7 @@ radv_dump_device_name(const struct radv_device *device, FILE *f)
    if (uname(&uname_data) == 0)
       snprintf(kernel_version, sizeof(kernel_version), " / %s", uname_data.release);
 
+   fprintf(f, "Mesa version: " PACKAGE_VERSION MESA_GIT_SHA1 "\n");
    fprintf(f, "Device name: %s (DRM %i.%i.%i%s)\n\n", pdev->marketing_name, gpu_info->drm_major, gpu_info->drm_minor,
            gpu_info->drm_patchlevel, kernel_version);
 #endif
