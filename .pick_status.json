@@ -454,7 +454,7 @@
         "description": "ir3/isa: fix cat3-alt immed src",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1c6c200c0d79329174d19ae694d11f762819eeba",
         "notes": null
