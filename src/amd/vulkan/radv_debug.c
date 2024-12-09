@@ -790,17 +790,12 @@ radv_dump_app_info(const struct radv_device *device, FILE *f)
 static void
 radv_dump_device_name(const struct radv_device *device, FILE *f)
 {
+#ifndef _WIN32
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const struct radeon_info *gpu_info = &pdev->info;
-#ifndef _WIN32
    char kernel_version[128] = {0};
    struct utsname uname_data;
-#endif
 
-#ifdef _WIN32
-   fprintf(f, "Device name: %s (DRM %i.%i.%i)\n\n", pdev->marketing_name, gpu_info->drm_major, gpu_info->drm_minor,
-           gpu_info->drm_patchlevel);
-#else
    if (uname(&uname_data) == 0)
       snprintf(kernel_version, sizeof(kernel_version), " / %s", uname_data.release);
 
