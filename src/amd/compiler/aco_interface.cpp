@@ -466,6 +466,7 @@ aco_is_gpu_supported(const struct radeon_info* info)
    case GFX10_3:
    case GFX11:
    case GFX11_5:
+   case GFX12:
       return true;
    default:
       return false;
