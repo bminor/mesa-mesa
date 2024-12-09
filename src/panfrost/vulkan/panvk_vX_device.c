@@ -21,6 +21,7 @@
 #include "panvk_instance.h"
 #include "panvk_macros.h"
 #include "panvk_physical_device.h"
+#include "panvk_precomp_cache.h"
 #include "panvk_priv_bo.h"
 #include "panvk_queue.h"
 #include "panvk_utrace.h"
@@ -152,6 +153,23 @@ static void
 panvk_meta_cleanup(struct panvk_device *device)
 {
    vk_meta_device_finish(&device->vk, &device->meta);
+}
+
+static VkResult
+panvk_precomp_init(struct panvk_device *device)
+{
+   device->precomp_cache = panvk_per_arch(precomp_cache_init)(device);
+
+   if (device->precomp_cache == NULL)
+      return VK_ERROR_OUT_OF_HOST_MEMORY;
+
+   return VK_SUCCESS;
+}
+
+static void
+panvk_precomp_cleanup(struct panvk_device *device)
+{
+   panvk_per_arch(precomp_cache_cleanup)(device->precomp_cache);
 }
 
 /* Always reserve the lower 32MB. */
@@ -326,9 +344,14 @@ panvk_per_arch(create_device)(struct panvk_physical_device *physical_device,
 
    vk_device_set_drm_fd(&device->vk, device->kmod.dev->fd);
 
-   result = panvk_meta_init(device);
+
+   result = panvk_precomp_init(device);
    if (result != VK_SUCCESS)
       goto err_free_priv_bos;
+
+   result = panvk_meta_init(device);
+   if (result != VK_SUCCESS)
+      goto err_free_precomp;
 
    for (unsigned i = 0; i < pCreateInfo->queueCreateInfoCount; i++) {
       const VkDeviceQueueCreateInfo *queue_create =
@@ -378,6 +401,8 @@ err_finish_queues:
 
    panvk_meta_cleanup(device);
 
+err_free_precomp:
+   panvk_precomp_cleanup(device);
 err_free_priv_bos:
    panvk_priv_bo_unref(device->tiler_oom.handlers_bo);
    panvk_priv_bo_unref(device->sample_positions);
@@ -414,6 +439,7 @@ panvk_per_arch(destroy_device)(struct panvk_device *device,
          vk_free(&device->vk.alloc, device->queues[i]);
    }
 
+   panvk_precomp_cleanup(device);
    panvk_meta_cleanup(device);
    panvk_priv_bo_unref(device->tiler_oom.handlers_bo);
    panvk_priv_bo_unref(device->tiler_heap);

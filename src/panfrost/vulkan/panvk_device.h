@@ -27,6 +27,8 @@
 
 #define PANVK_MAX_QUEUE_FAMILIES 1
 
+struct panvk_precomp_cache;
+
 struct panvk_device {
    struct vk_device vk;
 
@@ -62,6 +64,8 @@ struct panvk_device {
 
    struct panvk_queue *queues[PANVK_MAX_QUEUE_FAMILIES];
    int queue_count[PANVK_MAX_QUEUE_FAMILIES];
+
+   struct panvk_precomp_cache *precomp_cache;
 
    struct {
       struct u_trace_context utctx;
