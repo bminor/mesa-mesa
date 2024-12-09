@@ -1,3 +1,4 @@
+KHR-GL46.explicit_uniform_location.uniform-loc-implicit-in-some-stages3
 KHR-GL46.geometry_shader.primitive_counter.lines_to_line_strip
 KHR-GL46.geometry_shader.primitive_counter.lines_to_line_strip_rp
 KHR-GL46.geometry_shader.primitive_counter.points_to_line_strip
@@ -6,6 +7,7 @@ KHR-GL46.geometry_shader.primitive_counter.triangles_to_line_strip
 KHR-GL46.geometry_shader.primitive_counter.triangles_to_line_strip_rp
 KHR-GL46.gl_spirv.spirv_glsl_to_spirv_specialization_constants_test
 KHR-GL46.layout_location.usampler_buffer
+dEQP-GLES3.functional.fbo.multiview.samples_1
 dEQP-GLES3.functional.fbo.multiview.samples_2
 dEQP-GLES3.functional.fbo.multiview.samples_4
 dEQP-GLES31.functional.copy_image.mixed.viewclass_64_bits_mixed.rg32ui_signed_r11_eac.cubemap_to_cubemap
@@ -49,6 +51,7 @@ spec@arb_shader_image_load_store@shader-mem-barrier@Vertex shader/'coherent' qua
 spec@arb_shader_image_load_store@shader-mem-barrier@Vertex shader/'coherent' qualifier memory barrier test/modulus=64
 spec@arb_shader_image_load_store@shader-mem-barrier@Vertex shader/'volatile' qualifier memory barrier test/modulus=16
 spec@arb_shader_image_load_store@shader-mem-barrier@Vertex shader/'volatile' qualifier memory barrier test/modulus=64
+spec@arb_texture_rg@texture-rg
 spec@arb_timer_query@timestamp-get
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_yuyv
 spec@ext_transform_feedback@discard-bitmap
