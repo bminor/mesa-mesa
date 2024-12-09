@@ -1884,10 +1884,12 @@ genX(graphics_pipeline_emit)(struct anv_graphics_pipeline *pipeline,
        geom_or_tess_prim_id_used(pipeline));
 
    anv_pipeline_emit(pipeline, partial.vfg, GENX(3DSTATE_VFG), vfg) {
-      /* If 3DSTATE_TE: TE Enable == 1 then RR_STRICT else RR_FREE*/
+      /* Gfx12.5: If 3DSTATE_TE: TE Enable == 1 then RR_STRICT else RR_FREE */
       vfg.DistributionMode =
-         anv_pipeline_has_stage(pipeline, MESA_SHADER_TESS_EVAL) ? RR_STRICT :
-         RR_FREE;
+#if GFX_VER < 20
+         !anv_pipeline_has_stage(pipeline, MESA_SHADER_TESS_EVAL) ? RR_FREE :
+#endif
+         RR_STRICT;
       vfg.DistributionGranularity = needs_instance_granularity ?
          InstanceLevelGranularity : BatchLevelGranularity;
 #if INTEL_WA_14014851047_GFX_VER
