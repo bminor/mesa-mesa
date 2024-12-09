@@ -564,6 +564,7 @@ VkResult pvr_CreateRenderPass2(VkDevice _device,
 {
    struct pvr_render_pass_attachment *attachments;
    PVR_FROM_HANDLE(pvr_device, device, _device);
+   const struct pvr_device_info *dev_info = &device->pdevice->dev_info;
    struct pvr_render_subpass *subpasses;
    const VkAllocationCallbacks *alloc;
    size_t subpass_attachment_count;
@@ -636,10 +637,17 @@ VkResult pvr_CreateRenderPass2(VkDevice _device,
       attachment->vk_format = desc->format;
       attachment->sample_count = desc->samples;
       attachment->initial_layout = desc->initialLayout;
+      attachment->index = i;
+
+      /* On cores without gs_rta_support, PBE resolves might depend on writes
+       * that occur within the deferred RTA clears that happen after the PBE has
+       * written. Since the driver doesn't know at renderpass creation whether
+       * RTA clears are needed, PBE resolves can't be used.
+       */
       attachment->is_pbe_downscalable =
+         PVR_HAS_FEATURE(dev_info, gs_rta_support) &&
          pvr_format_is_pbe_downscalable(&device->pdevice->dev_info,
                                         attachment->vk_format);
-      attachment->index = i;
 
       if (attachment->sample_count > pass->max_sample_count)
          pass->max_sample_count = attachment->sample_count;
