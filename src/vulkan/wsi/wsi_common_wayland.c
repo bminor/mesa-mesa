@@ -210,6 +210,10 @@ struct wsi_wl_swapchain {
    struct {
       mtx_t lock; /* protects all members */
       uint64_t max_completed;
+      uint64_t max_forward_progress_present_id;
+      uint64_t max_present_id;
+      uint64_t prev_max_present_id;
+
       struct wl_list outstanding_list;
       struct u_cnd_monotonic list_advanced;
       struct wl_event_queue *queue;
@@ -1958,6 +1962,13 @@ dispatch_present_id_queue(struct wsi_swapchain *wsi_chain, struct timespec *end_
    return VK_SUCCESS;
 }
 
+static bool
+wsi_wl_swapchain_present_id_completes_in_finite_time_locked(struct wsi_wl_swapchain *chain,
+                                                            uint64_t present_id)
+{
+   return present_id <= chain->present_ids.max_forward_progress_present_id;
+}
+
 static VkResult
 wsi_wl_swapchain_wait_for_present(struct wsi_swapchain *wsi_chain,
                                   uint64_t present_id,
@@ -1992,9 +2003,30 @@ wsi_wl_swapchain_wait_for_present(struct wsi_swapchain *wsi_chain,
     * The queue depth in WL WSI is just one frame due to frame callback in FIFO mode,
     * so from the time a frame has completed render to when it should be considered presented
     * will not exceed 100ms except in contrived edge cases. */
+
+   /* For FIFO without commit-timing we have a similar concern, but only when waiting on the last presented ID that is pending.
+    * It is possible the last presentation is held back due to being occluded, but this scenario is very rare
+    * in practice. An application blocking on the last presentation implies zero CPU and GPU overlap,
+    * and is likely only going to happen at swapchain destruction or similar. */
+
    uint64_t assumed_success_at = UINT64_MAX;
-   if (!chain->present_ids.wp_presentation)
+   if (!chain->present_ids.wp_presentation) {
       assumed_success_at = os_time_get_absolute_timeout(100 * 1000 * 1000);
+   } else {
+      err = mtx_lock(&chain->present_ids.lock);
+      if (err != thrd_success)
+         return VK_ERROR_OUT_OF_DATE_KHR;
+
+      /* If we're waiting for the very last commit made for whatever reason,
+       * we're not necessarily guaranteed forward progress until a subsequent commit is made.
+       * Add a timeout post GPU rendering completion to unblock any waiter in reasonable time. */
+      if (!wsi_wl_swapchain_present_id_completes_in_finite_time_locked(chain, present_id)) {
+         /* The queue depth could be larger, so just make a heuristic decision here to bump the timeout. */
+         uint32_t num_pending_cycles = wl_list_length(&chain->present_ids.outstanding_list) + 1;
+         assumed_success_at = os_time_get_absolute_timeout(100ull * 1000 * 1000 * num_pending_cycles);
+      }
+      mtx_unlock(&chain->present_ids.lock);
+   }
 
    /* If app timeout is beyond the deadline we set for reply,
     * always treat the timeout as successful. */
@@ -2012,9 +2044,29 @@ wsi_wl_swapchain_wait_for_present(struct wsi_swapchain *wsi_chain,
       if (completed)
          return VK_SUCCESS;
 
+retry:
       ret = dispatch_present_id_queue(wsi_chain, &end_time);
-      if (ret == VK_TIMEOUT)
+      if (ret == VK_TIMEOUT) {
+         if (timeout_result == VK_SUCCESS && chain->fifo && chain->present_ids.wp_presentation) {
+            /* If there have been subsequent commits since when we made the decision to add a timeout,
+             * we can drop that timeout condition and rely on forward progress instead. */
+            err = mtx_lock(&chain->present_ids.lock);
+            if (err != thrd_success)
+               return VK_ERROR_OUT_OF_DATE_KHR;
+
+            if (wsi_wl_swapchain_present_id_completes_in_finite_time_locked(chain, present_id)) {
+               timespec_from_nsec(&end_time, atimeout);
+               timeout_result = VK_TIMEOUT;
+            }
+            mtx_unlock(&chain->present_ids.lock);
+
+            /* Retry the wait, but now without any workaround. */
+            if (timeout_result == VK_TIMEOUT)
+               goto retry;
+         }
          return timeout_result;
+      }
+
       if (ret != VK_SUCCESS)
          return ret;
    }
@@ -2479,6 +2531,20 @@ wsi_wl_swapchain_queue_present(struct wsi_swapchain *wsi_chain,
          wl_callback_add_listener(id->frame, &pres_frame_listener, id);
       }
 
+      chain->present_ids.prev_max_present_id = chain->present_ids.max_present_id;
+      if (present_id > chain->present_ids.max_present_id)
+         chain->present_ids.max_present_id = present_id;
+
+      if (timestamped || !present_id) {
+         /* In this case there is at least one commit that will replace the previous present in finite time. */
+         chain->present_ids.max_forward_progress_present_id = chain->present_ids.max_present_id;
+      } else if (chain->present_ids.prev_max_present_id > chain->present_ids.max_forward_progress_present_id) {
+         /* The previous commit will complete in finite time now.
+          * We need to keep track of this since it's possible for application to signal e.g. 2, 4, 6, 8, but wait for 7.
+          * A naive presentID - 1 is not correct. */
+         chain->present_ids.max_forward_progress_present_id = chain->present_ids.prev_max_present_id;
+      }
+
       wl_list_insert(&chain->present_ids.outstanding_list, &id->link);
       mtx_unlock(&chain->present_ids.lock);
    }
@@ -2525,8 +2591,8 @@ wsi_wl_swapchain_queue_present(struct wsi_swapchain *wsi_chain,
        *   A compositor that exposes FIFO and not commit-timing would likely not exhibit indefinite blocking behavior,
        *   i.e. it may not have special considerations to hold back frame callbacks for occluded surfaces.
        * - Occluded surfaces may run un-throttled. This is objectively better than blocking indefinitely (frame callback)
-       *   as the indefinite blocking breaks forward progress guarantees,
-       *   but un-throttled is clearly worse for power consumption.
+       *   as it breaks forward progress guarantees, but worse for power consumption.
+       *   We add a pragmatic workaround to deal with this scenario similar to frame-callback based present wait.
        *   A compositor that exposes FIFO and not commit-timing would likely do throttling on its own,
        *   either to refresh rate or some fixed value. */
 
