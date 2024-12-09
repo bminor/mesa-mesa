@@ -8171,10 +8171,12 @@ iris_upload_dirty_render_state(struct iris_context *ice,
 #if GFX_VERx10 >= 125
    if (dirty & IRIS_DIRTY_VFG) {
       iris_emit_cmd(batch, GENX(3DSTATE_VFG), vfg) {
-         /* If 3DSTATE_TE: TE Enable == 1 then RR_STRICT else RR_FREE*/
+         /* Gfx12.5: If 3DSTATE_TE: TE Enable == 1 then RR_STRICT else RR_FREE */
          vfg.DistributionMode =
-            ice->shaders.prog[MESA_SHADER_TESS_EVAL] != NULL ? RR_STRICT :
-                                                               RR_FREE;
+#if GFX_VER < 20
+            ice->shaders.prog[MESA_SHADER_TESS_EVAL] == NULL ? RR_FREE :
+#endif
+                                                               RR_STRICT;
          if (intel_needs_workaround(batch->screen->devinfo, 14019166699) &&
              program_uses_primitive_id)
             vfg.DistributionGranularity = InstanceLevelGranularity;
