@@ -2374,7 +2374,6 @@ wsi_wl_swapchain_queue_present(struct wsi_swapchain *wsi_chain,
    struct wsi_wl_swapchain *chain = (struct wsi_wl_swapchain *)wsi_chain;
    bool timestamped = false;
    bool queue_dispatched = false;
-   bool need_legacy_throttling = true;
    uint64_t flow_id = chain->images[image_index].flow_id;
 
    MESA_TRACE_FUNC_FLOW(&flow_id);
@@ -2466,11 +2465,8 @@ wsi_wl_swapchain_queue_present(struct wsi_swapchain *wsi_chain,
 
       mtx_lock(&chain->present_ids.lock);
 
-      if (mode_fifo && chain->fifo && chain->commit_timer) {
+      if (mode_fifo && chain->fifo && chain->commit_timer)
          timestamped = set_timestamp(chain, &id->target_time, &id->correction);
-         if (timestamped || !chain->present_ids.valid_refresh_nsec)
-            need_legacy_throttling = false;
-      }
 
       if (chain->present_ids.wp_presentation) {
          id->feedback = wp_presentation_feedback(chain->present_ids.wp_presentation,
@@ -2489,7 +2485,8 @@ wsi_wl_swapchain_queue_present(struct wsi_swapchain *wsi_chain,
 
    chain->images[image_index].busy = true;
 
-   if (mode_fifo && need_legacy_throttling) {
+   if (mode_fifo && !chain->fifo) {
+      /* If we don't have FIFO protocol, we must fall back to legacy mechanism for throttling. */
       chain->frame = wl_surface_frame(wsi_wl_surface->surface);
       wl_callback_add_listener(chain->frame, &frame_listener, chain);
       chain->legacy_fifo_ready = false;
@@ -2515,6 +2512,24 @@ wsi_wl_swapchain_queue_present(struct wsi_swapchain *wsi_chain,
        * receives presented feedback and the FIFO one blocks further
        * updates until the next refresh.
        */
+
+      /* If the compositor supports FIFO, but not commit-timing, skip this.
+       * In this scenario, we have to consider best-effort implementation instead.
+       *
+       * We have to make the assumption that presentation events come through eventually.
+       * The FIFO protocol allows clearing the FIFO barrier earlier for forward progress guarantee purposes,
+       * and there's nothing stopping a compositor from signalling a presentation complete for an occluded surface.
+       * There are potential hazards with this approach,
+       * but none of these are worse than the code paths before FIFO was introduced:
+       * - Calling WaitPresentKHR on the last presented ID on a surface that starts occluded may hang until not occluded.
+       *   A compositor that exposes FIFO and not commit-timing would likely not exhibit indefinite blocking behavior,
+       *   i.e. it may not have special considerations to hold back frame callbacks for occluded surfaces.
+       * - Occluded surfaces may run un-throttled. This is objectively better than blocking indefinitely (frame callback)
+       *   as the indefinite blocking breaks forward progress guarantees,
+       *   but un-throttled is clearly worse for power consumption.
+       *   A compositor that exposes FIFO and not commit-timing would likely do throttling on its own,
+       *   either to refresh rate or some fixed value. */
+
       if (timestamped) {
          wl_surface_commit(wsi_wl_surface->surface);
          /* Once we're in a steady state, we'd only need one of these
