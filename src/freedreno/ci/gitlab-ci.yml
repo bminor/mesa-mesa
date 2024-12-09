@@ -119,8 +119,10 @@ a618-gl-full:
   extends:
     - a618-gl
     - .collabora-freedreno-manual-rules
+  timeout: 65m
   variables:
     DEQP_FRACTION: 1
+    JOB_TIMEOUT: 60
 
 # Run dEQP EGL window system tests separately with the window systems available.
 # X11 takes over the screen, wayland is run headless.
