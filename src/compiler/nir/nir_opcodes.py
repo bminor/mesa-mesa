@@ -872,6 +872,9 @@ opcode("ushr", 0, tuint, [0, 0], [tuint, tuint32], False, "",
        "src0 >> (src1 & (sizeof(src0) * 8 - 1))",
        description = "Unsigned right-shift." + shift_note)
 
+opcode("udiv_aligned_4", 0, tuint, [0], [tuint], False, "",
+       "src0 >> 2", description = "Divide a multiple of 4 by 4")
+
 opcode("urol", 0, tuint, [0, 0], [tuint, tuint32], False, "", """
    uint32_t rotate_mask = sizeof(src0) * 8 - 1;
    dst = (src0 << (src1 & rotate_mask)) |

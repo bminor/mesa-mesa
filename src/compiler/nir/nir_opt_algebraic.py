@@ -2539,6 +2539,11 @@ optimizations.extend([
    # rule converts everyone else to imul:
    (('amul', a, b), ('imul', a, b), '!options->has_imul24 && !options->has_amul'),
 
+   # udiv_aligned_4 assumes the source is a multiple of 4 specifically to enable
+   # this identity. Usually this transform would require masking.
+   (('amul', ('udiv_aligned_4', a), 4), a),
+   (('imul', ('udiv_aligned_4', a), 4), a),
+
    (('umul24', a, b),
     ('imul', ('iand', a, 0xffffff), ('iand', b, 0xffffff)),
     '!options->has_umul24'),
@@ -3300,6 +3305,10 @@ late_optimizations = [
 
    # combine imul and iadd to imad
    (('iadd@32', ('imul(is_only_used_by_iadd)', a, b), c), ('imad', a, b, c), 'options->has_imad32'),
+
+   # Drivers do not actually implement udiv_aligned_4, it is just used to
+   # optimize scratch lowering.
+   (('udiv_aligned_4', a), ('ushr', a, 2)),
 ]
 
 # re-combine inexact mul+add to ffma. Do this before fsub so that a * b - c
