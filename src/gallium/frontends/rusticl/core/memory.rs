@@ -489,6 +489,10 @@ impl Allocation {
         host_ptr as _
     }
 
+    fn is_user_alloc_for_dev(&self, dev: &Device) -> CLResult<bool> {
+        Ok(self.get_res_of_dev(dev)?.is_user())
+    }
+
     fn offset(&self) -> usize {
         match self {
             Allocation::Resource(res) => res.offset,
@@ -1061,10 +1065,9 @@ impl MemBase {
     }
 
     fn is_pure_user_memory(&self, d: &Device) -> CLResult<bool> {
-        let r = self.get_res_of_dev(d)?;
         // 1Dbuffer objects are weird. The parent memory object can be a host_ptr thing, but we are
         // not allowed to actually return a pointer based on the host_ptr when mapping.
-        Ok(r.is_user() && !self.host_ptr().is_null())
+        Ok(self.alloc.is_user_alloc_for_dev(d)? && !self.host_ptr().is_null())
     }
 
     fn map<T>(
