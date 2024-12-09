@@ -242,14 +242,14 @@ fill_tensor(struct teflon_delegate *delegate, TfLiteContext *tf_context, struct 
    }
 
    switch(tf_tensor.type) {
-      case kTfLiteUInt8:
-      case kTfLiteUInt16:
-      case kTfLiteUInt32:
-      case kTfLiteUInt64:
-         tensor->is_signed = false;
+      case kTfLiteInt8:
+      case kTfLiteInt16:
+      case kTfLiteInt32:
+      case kTfLiteInt64:
+         tensor->is_signed = true;
          break;
       default:
-         tensor->is_signed = true;
+         tensor->is_signed = false;
    }
 }
 
@@ -440,10 +440,10 @@ partition_invoke(TfLiteContext *tf_context, TfLiteNode *node)
       TfLiteTensor tf_tensor = tf_context->tensors[tsubgraph->input_tensors[i]];
 
       buffers[i] = tf_tensor.data.data;
-      is_signed[i] = !(tf_tensor.type == kTfLiteUInt8 ||
-                       tf_tensor.type == kTfLiteUInt16 ||
-                       tf_tensor.type == kTfLiteUInt32 ||
-                       tf_tensor.type == kTfLiteUInt64);
+      is_signed[i] = tf_tensor.type == kTfLiteInt8 ||
+                     tf_tensor.type == kTfLiteInt16 ||
+                     tf_tensor.type == kTfLiteInt32 ||
+                     tf_tensor.type == kTfLiteInt64;
    }
    context->ml_subgraph_invoke(context, subgraph, tsubgraph->input_count, tsubgraph->input_tensors, buffers, is_signed);
    free(buffers);
@@ -455,10 +455,10 @@ partition_invoke(TfLiteContext *tf_context, TfLiteNode *node)
       TfLiteTensor tf_tensor = tf_context->tensors[tsubgraph->output_tensors[i]];
 
       buffers[i] = tf_tensor.data.data;
-      is_signed[i] = !(tf_tensor.type == kTfLiteUInt8 ||
-                       tf_tensor.type == kTfLiteUInt16 ||
-                       tf_tensor.type == kTfLiteUInt32 ||
-                       tf_tensor.type == kTfLiteUInt64);
+      is_signed[i] = tf_tensor.type == kTfLiteInt8 ||
+                     tf_tensor.type == kTfLiteInt16 ||
+                     tf_tensor.type == kTfLiteInt32 ||
+                     tf_tensor.type == kTfLiteInt64;
    }
    context->ml_subgraph_read_output(context, subgraph, tsubgraph->output_count, tsubgraph->output_tensors, buffers, is_signed);
    free(buffers);
