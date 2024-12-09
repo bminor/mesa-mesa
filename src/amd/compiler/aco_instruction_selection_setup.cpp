@@ -357,7 +357,7 @@ init_context(isel_context* ctx, nir_shader* shader)
    ctx->ub_config.min_subgroup_size = ctx->program->wave_size;
    ctx->ub_config.max_subgroup_size = ctx->program->wave_size;
    ctx->ub_config.max_workgroup_invocations = 2048;
-   ctx->ub_config.max_workgroup_count[0] = 65535;
+   ctx->ub_config.max_workgroup_count[0] = 4294967295;
    ctx->ub_config.max_workgroup_count[1] = 65535;
    ctx->ub_config.max_workgroup_count[2] = 65535;
    ctx->ub_config.max_workgroup_size[0] = 2048;
