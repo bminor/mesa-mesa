@@ -1084,7 +1084,7 @@
         "description": "util/idalloc: Fix util_idalloc_foreach() build issue",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0589dfe4e2a12f463df79f48b9b2ca5e1eb57eba",
         "notes": null
