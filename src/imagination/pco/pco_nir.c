@@ -265,6 +265,9 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
             nir_io_add_const_offset_to_base,
             nir_var_shader_in | nir_var_shader_out);
 
+   NIR_PASS(_, nir, nir_lower_tex, &(nir_lower_tex_options){});
+   NIR_PASS(_, nir, pco_nir_lower_tex, &data->common);
+
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       NIR_PASS(_, nir, pco_nir_pfo, &data->fs);
    } else if (nir->info.stage == MESA_SHADER_VERTEX) {

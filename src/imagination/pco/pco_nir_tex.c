@@ -1,0 +1,568 @@
+/*
+ * Copyright © 2025 Imagination Technologies Ltd.
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+/**
+ * \file pco_nir_tex.c
+ *
+ * \brief PCO NIR texture/sampler lowering passes.
+ */
+
+#include "hwdef/rogue_hw_defs.h"
+#include "nir.h"
+#include "nir_builder.h"
+#include "nir_builtin_builder.h"
+#include "pco.h"
+#include "pco_builder.h"
+#include "pco_internal.h"
+#include "util/macros.h"
+
+#include <assert.h>
+#include <stdbool.h>
+#include <stdio.h>
+
+/* State word unpacking helpers. */
+#define STATE_UNPACK(b, state_word, word, start_bit, num_bits) \
+   nir_ubitfield_extract_imm(b, state_word[word], start_bit, num_bits)
+
+#define STATE_UNPACK_ADD(b, state_word, word, start_bit, num_bits, val) \
+   nir_iadd_imm(b, STATE_UNPACK(b, state_word, word, start_bit, num_bits), val)
+
+#define STATE_UNPACK_SHIFT(b, state_word, word, start_bit, num_bits, val) \
+   nir_ishl(b,                                                            \
+            nir_imm_int(b, val),                                          \
+            STATE_UNPACK(b, state_word, word, start_bit, num_bits))
+
+static inline nir_def *get_src_def(nir_tex_instr *tex,
+                                   nir_tex_src_type src_type)
+{
+   int src_idx = nir_tex_instr_src_index(tex, src_type);
+   return src_idx >= 0 ? tex->src[src_idx].src.ssa : NULL;
+}
+
+/**
+ * \brief Lowers a basic texture query (no sampling required).
+ *
+ * \param[in] b NIR builder.
+ * \param[in] tex NIR texture instruction.
+ * \param[in] tex_desc_set Texture descriptor set.
+ * \param[in] tex_binding Texture binding.
+ * \param[in] common Shader common data.
+ * \return The replacement/lowered def.
+ */
+static nir_def *lower_tex_query_basic(nir_builder *b,
+                                      nir_tex_instr *tex,
+                                      unsigned tex_desc_set,
+                                      unsigned tex_binding,
+                                      pco_common_data *common)
+{
+   /* Load texture state words. */
+   nir_def *tex_state = nir_load_tex_state_pco(b,
+                                               ROGUE_NUM_TEXSTATE_DWORDS,
+                                               .desc_set = tex_desc_set,
+                                               .binding = tex_binding);
+
+   nir_def *tex_state_word[] = {
+      [0] = nir_channel(b, tex_state, 0),
+      [1] = nir_channel(b, tex_state, 1),
+      [2] = nir_channel(b, tex_state, 2),
+      [3] = nir_channel(b, tex_state, 3),
+   };
+
+   switch (tex->op) {
+   case nir_texop_query_levels:
+      return STATE_UNPACK(b, tex_state_word, 2, 0, 4);
+
+   case nir_texop_texture_samples:
+      return STATE_UNPACK_SHIFT(b, tex_state_word, 1, 30, 2, 1);
+
+   case nir_texop_txs: {
+      unsigned num_comps = tex->def.num_components;
+      if (tex->is_array)
+         --num_comps;
+
+      nir_def *size_comps[] = {
+         [0] = STATE_UNPACK_ADD(b, tex_state_word, 1, 2, 14, 1),
+         [1] = STATE_UNPACK_ADD(b, tex_state_word, 1, 16, 14, 1),
+         [2] = STATE_UNPACK_ADD(b, tex_state_word, 2, 4, 11, 1),
+      };
+
+      nir_def *base_level = STATE_UNPACK(b, tex_state_word, 3, 28, 4);
+      nir_def *lod = get_src_def(tex, nir_tex_src_lod);
+      assert(lod);
+      lod = nir_iadd(b, lod, base_level);
+
+      for (unsigned c = 0; c < num_comps; ++c)
+         size_comps[c] = nir_umax_imm(b, nir_ushr(b, size_comps[c], lod), 1);
+
+      if (tex->sampler_dim == GLSL_SAMPLER_DIM_1D && tex->is_array)
+         size_comps[1] = size_comps[2];
+
+      return nir_vec(b, size_comps, tex->def.num_components);
+   }
+
+   default:
+      break;
+   }
+
+   UNREACHABLE("");
+}
+
+static inline enum pco_dim to_pco_dim(enum glsl_sampler_dim dim)
+{
+   switch (dim) {
+   case GLSL_SAMPLER_DIM_1D:
+   case GLSL_SAMPLER_DIM_BUF:
+      return PCO_DIM_1D;
+
+   case GLSL_SAMPLER_DIM_2D:
+   case GLSL_SAMPLER_DIM_MS:
+   case GLSL_SAMPLER_DIM_SUBPASS:
+   case GLSL_SAMPLER_DIM_SUBPASS_MS:
+      return PCO_DIM_2D;
+
+   case GLSL_SAMPLER_DIM_3D:
+   case GLSL_SAMPLER_DIM_CUBE:
+      return PCO_DIM_3D;
+
+   /* case GLSL_SAMPLER_DIM_RECT: */
+   /* case GLSL_SAMPLER_DIM_EXTERNAL: */
+   default:
+      break;
+   }
+
+   UNREACHABLE("");
+}
+
+static nir_def *
+lower_tex_query_lod(nir_builder *b, nir_def *coords, nir_def *smp_coeffs)
+{
+   nir_def *lod_dval_post_clamp =
+      nir_channel(b, smp_coeffs, ROGUE_SMP_COEFF_LOD_DVAL_POST_CLAMP);
+   nir_def *lod_dval_pre_clamp =
+      nir_channel(b, smp_coeffs, ROGUE_SMP_COEFF_LOD_DVAL_PRE_CLAMP);
+   nir_def *tfrac_post_clamp =
+      nir_channel(b, smp_coeffs, ROGUE_SMP_COEFF_TFRAC_POST_CLAMP);
+   nir_def *tfrac_pre_clamp =
+      nir_channel(b, smp_coeffs, ROGUE_SMP_COEFF_TFRAC_PRE_CLAMP);
+
+   /* Unpack. */
+   lod_dval_post_clamp = nir_fmul_imm(b, lod_dval_post_clamp, 255.0f);
+   lod_dval_pre_clamp = nir_fmul_imm(b, lod_dval_pre_clamp, 255.0f);
+
+   tfrac_post_clamp = nir_fmul_imm(b, tfrac_post_clamp, 255.0f);
+   tfrac_pre_clamp = nir_fmul_imm(b, tfrac_pre_clamp, 255.0f);
+
+   /* Scale. */
+   tfrac_post_clamp = nir_fdiv_imm(b, tfrac_post_clamp, 256.0f);
+   tfrac_pre_clamp = nir_fdiv_imm(b, tfrac_pre_clamp, 256.0f);
+
+   /* Calculate coord deltas. */
+   nir_def *coord_deltas = nir_imm_int(b, 0);
+   for (unsigned c = 0; c < coords->num_components; ++c) {
+      nir_def *coord = nir_channel(b, coords, c);
+      coord_deltas = nir_fadd(b,
+                              coord_deltas,
+                              nir_fadd(b,
+                                       nir_fabs(b, nir_ddx(b, coord)),
+                                       nir_fabs(b, nir_ddy(b, coord))));
+   }
+
+   nir_def *lod_comps[2] = {
+      [0] = nir_fadd(b, lod_dval_post_clamp, tfrac_post_clamp),
+      [1] = nir_fadd(
+         b,
+         nir_fadd_imm(b, tfrac_pre_clamp, -128.0f),
+         nir_fcsel(b, coord_deltas, lod_dval_pre_clamp, nir_imm_float(b, 0.0f))),
+   };
+
+   return nir_vec(b, lod_comps, ARRAY_SIZE(lod_comps));
+}
+
+static inline unsigned process_coords(nir_builder *b,
+                                      bool is_array,
+                                      bool is_query_lod,
+                                      bool coords_are_float,
+                                      nir_def *coords,
+                                      nir_def **float_coords,
+                                      nir_def **int_coords,
+                                      nir_def **float_array_index,
+                                      nir_def **int_array_index)
+{
+   unsigned num_comps = coords->num_components;
+
+   *float_coords = coords_are_float ? coords : nir_i2f32(b, coords);
+   *int_coords = !coords_are_float ? coords : nir_f2i32(b, coords);
+   *float_array_index = NULL;
+   *int_array_index = NULL;
+
+   if (!is_array || is_query_lod)
+      return num_comps;
+
+   *float_array_index = nir_channel(b, *float_coords, num_comps - 1);
+   *int_array_index = nir_channel(b, *int_coords, num_comps - 1);
+
+   *float_coords = nir_trim_vector(b, *float_coords, num_comps - 1);
+   *int_coords = nir_trim_vector(b, *int_coords, num_comps - 1);
+
+   return num_comps - 1;
+}
+
+static inline bool tex_src_is_float(nir_tex_instr *tex,
+                                    nir_tex_src_type src_type)
+{
+   int src_idx = nir_tex_instr_src_index(tex, src_type);
+   assert(src_idx >= 0);
+   return nir_tex_instr_src_type(tex, src_idx) == nir_type_float;
+}
+
+/* 40-bit address, shifted right by two: */
+static inline void unpack_base_addr(nir_builder *b,
+                                    nir_def *tex_state_word[static 4],
+                                    nir_def **base_addr_lo,
+                                    nir_def **base_addr_hi)
+{
+   *base_addr_lo = nir_imm_int(b, 0);
+
+   /* addr_lo[17..2] */
+   nir_def *lo_17_2 = STATE_UNPACK(b, tex_state_word, 2, 16, 16);
+   *base_addr_lo = nir_bitfield_insert_imm(b, *base_addr_lo, lo_17_2, 2, 16);
+
+   /* addr_lo[31..18] */
+   nir_def *lo_31_18 = STATE_UNPACK(b, tex_state_word, 3, 0, 14);
+   *base_addr_lo = nir_bitfield_insert_imm(b, *base_addr_lo, lo_31_18, 18, 14);
+
+   /* addr_hi[7..0] */
+   *base_addr_hi = STATE_UNPACK(b, tex_state_word, 3, 14, 8);
+}
+
+/**
+ * \brief Lowers a texture instruction.
+ *
+ * \param[in] b NIR builder.
+ * \param[in] instr NIR instruction.
+ * \param[in] cb_data User callback data.
+ * \return The replacement/lowered def.
+ */
+static nir_def *lower_tex(nir_builder *b, nir_instr *instr, void *cb_data)
+{
+   nir_tex_instr *tex = nir_instr_as_tex(instr);
+   pco_common_data *common = cb_data;
+
+   unsigned tex_desc_set;
+   unsigned tex_binding;
+   pco_unpack_desc(tex->texture_index, &tex_desc_set, &tex_binding);
+
+   unsigned smp_desc_set;
+   unsigned smp_binding;
+   pco_unpack_desc(tex->sampler_index, &smp_desc_set, &smp_binding);
+
+   bool hw_array_support = false;
+   bool hw_int_support = false;
+
+   b->cursor = nir_before_instr(instr);
+
+   if (nir_tex_instr_is_query(tex) && tex->op != nir_texop_lod)
+      return lower_tex_query_basic(b, tex, tex_desc_set, tex_binding, common);
+
+   nir_def *tex_state = nir_load_tex_state_pco(b,
+                                               ROGUE_NUM_TEXSTATE_DWORDS,
+                                               .desc_set = tex_desc_set,
+                                               .binding = tex_binding);
+
+   nir_def *smp_state = nir_load_smp_state_pco(b,
+                                               ROGUE_NUM_TEXSTATE_DWORDS,
+                                               .desc_set = smp_desc_set,
+                                               .binding = smp_binding);
+
+   /* Process tex sources, build up the smp flags and data words. */
+   BITSET_DECLARE(tex_src_set, nir_num_tex_src_types) = { 0 };
+   nir_def *tex_srcs[nir_num_tex_src_types];
+   nir_def *smp_data_comps[NIR_MAX_VEC_COMPONENTS];
+   unsigned smp_data_comp_count = 0;
+   pco_smp_flags smp_flags = {
+      .dim = to_pco_dim(tex->sampler_dim),
+      .lod_mode = PCO_LOD_MODE_NORMAL,
+   };
+
+   for (unsigned s = 0; s < nir_num_tex_src_types; ++s)
+      if ((tex_srcs[s] = get_src_def(tex, s)) != NULL)
+         BITSET_SET(tex_src_set, s);
+
+   nir_def *float_coords;
+   nir_def *int_coords;
+   nir_def *float_array_index;
+   nir_def *int_array_index;
+   unsigned num_coord_comps =
+      process_coords(b,
+                     tex->is_array,
+                     tex->op == nir_texop_lod,
+                     tex_src_is_float(tex, nir_tex_src_coord),
+                     tex_srcs[nir_tex_src_coord],
+                     &float_coords,
+                     &int_coords,
+                     &float_array_index,
+                     &int_array_index);
+
+   bool use_int_coords = !tex_src_is_float(tex, nir_tex_src_coord) &&
+                         hw_int_support;
+
+   assert(BITSET_TEST(tex_src_set, nir_tex_src_coord));
+   if (BITSET_TEST(tex_src_set, nir_tex_src_coord)) {
+      for (unsigned c = 0; c < num_coord_comps; ++c) {
+         smp_data_comps[smp_data_comp_count++] =
+            nir_channel(b, use_int_coords ? int_coords : float_coords, c);
+      }
+
+      BITSET_CLEAR(tex_src_set, nir_tex_src_coord);
+   }
+
+   nir_def *proj = NULL;
+   if (BITSET_TEST(tex_src_set, nir_tex_src_projector)) {
+      assert(tex_src_is_float(tex, nir_tex_src_projector));
+      proj = tex_srcs[nir_tex_src_projector];
+      smp_data_comps[smp_data_comp_count++] =
+         use_int_coords ? nir_f2i32(b, proj) : proj;
+
+      smp_flags.proj = true;
+      BITSET_CLEAR(tex_src_set, nir_tex_src_projector);
+   }
+
+   if (hw_array_support && int_array_index) {
+      smp_data_comps[smp_data_comp_count++] =
+         use_int_coords ? int_array_index : float_array_index;
+
+      smp_flags.array = true;
+   }
+
+   assert((BITSET_TEST(tex_src_set, nir_tex_src_bias) +
+           BITSET_TEST(tex_src_set, nir_tex_src_lod) +
+           BITSET_TEST(tex_src_set, nir_tex_src_ddx)) < 2);
+
+   bool lod_set = false;
+   if (BITSET_TEST(tex_src_set, nir_tex_src_bias)) {
+      nir_def *lod = tex_srcs[nir_tex_src_bias];
+
+      if (!tex_src_is_float(tex, nir_tex_src_bias))
+         lod = nir_i2f32(b, lod);
+
+      smp_data_comps[smp_data_comp_count++] = lod;
+
+      smp_flags.pplod = true;
+      smp_flags.lod_mode = PCO_LOD_MODE_BIAS;
+
+      lod_set = true;
+      BITSET_CLEAR(tex_src_set, nir_tex_src_bias);
+   } else if (BITSET_TEST(tex_src_set, nir_tex_src_lod)) {
+      nir_def *lod = tex_srcs[nir_tex_src_lod];
+
+      if (!tex_src_is_float(tex, nir_tex_src_lod))
+         lod = nir_i2f32(b, lod);
+
+      smp_data_comps[smp_data_comp_count++] = lod;
+
+      smp_flags.pplod = true;
+      smp_flags.lod_mode = PCO_LOD_MODE_REPLACE;
+
+      lod_set = true;
+      BITSET_CLEAR(tex_src_set, nir_tex_src_lod);
+   } else if (BITSET_TEST(tex_src_set, nir_tex_src_ddx)) {
+      assert(BITSET_TEST(tex_src_set, nir_tex_src_ddy));
+      assert(tex_src_is_float(tex, nir_tex_src_ddx) &&
+             tex_src_is_float(tex, nir_tex_src_ddy));
+
+      nir_def *ddx = tex_srcs[nir_tex_src_ddx];
+      nir_def *ddy = tex_srcs[nir_tex_src_ddy];
+
+      for (unsigned c = 0; c < ddx->num_components; ++c) {
+         smp_data_comps[smp_data_comp_count++] = nir_channel(b, ddx, c);
+         smp_data_comps[smp_data_comp_count++] = nir_channel(b, ddy, c);
+      }
+
+      smp_flags.lod_mode = PCO_LOD_MODE_GRADIENTS;
+
+      lod_set = true;
+      BITSET_CLEAR(tex_src_set, nir_tex_src_ddx);
+      BITSET_CLEAR(tex_src_set, nir_tex_src_ddy);
+   }
+
+   if (!hw_array_support && int_array_index) {
+      /* Set a per-pixel lod bias of 0 if none has been set yet. */
+      if (!lod_set) {
+         smp_data_comps[smp_data_comp_count++] = nir_imm_int(b, 0);
+         smp_flags.pplod = true;
+         smp_flags.lod_mode = PCO_LOD_MODE_BIAS;
+         lod_set = true;
+      }
+
+      nir_def *tex_state_word[] = {
+         [0] = nir_channel(b, tex_state, 0),
+         [1] = nir_channel(b, tex_state, 1),
+         [2] = nir_channel(b, tex_state, 2),
+         [3] = nir_channel(b, tex_state, 3),
+      };
+
+      nir_def *base_addr_lo;
+      nir_def *base_addr_hi;
+      unpack_base_addr(b, tex_state_word, &base_addr_lo, &base_addr_hi);
+
+      nir_def *array_index = int_array_index;
+      assert(array_index);
+
+      nir_def *array_max = STATE_UNPACK(b, tex_state_word, 2, 4, 11);
+      array_index = nir_uclamp(b, array_index, nir_imm_int(b, 0), array_max);
+
+      nir_def *tex_meta = nir_load_tex_meta_pco(b,
+                                                PCO_IMAGE_META_COUNT,
+                                                .desc_set = tex_desc_set,
+                                                .binding = tex_binding);
+
+      nir_def *array_stride =
+         nir_channel(b, tex_meta, PCO_IMAGE_META_LAYER_SIZE);
+
+      nir_def *array_offset = nir_imul(b, array_index, array_stride);
+
+      nir_def *addr =
+         nir_uadd64_32(b, base_addr_lo, base_addr_hi, array_offset);
+
+      smp_data_comps[smp_data_comp_count++] = nir_channel(b, addr, 0);
+      smp_data_comps[smp_data_comp_count++] = nir_channel(b, addr, 1);
+
+      smp_flags.tao = true;
+   }
+
+   if (BITSET_TEST(tex_src_set, nir_tex_src_offset) ||
+       BITSET_TEST(tex_src_set, nir_tex_src_ms_index)) {
+      nir_def *lookup = nir_imm_int(b, 0);
+
+      if (BITSET_TEST(tex_src_set, nir_tex_src_offset)) {
+         nir_def *offset = tex_srcs[nir_tex_src_offset];
+         const unsigned packed_offset_start[] = { 0, 6, 12 };
+         const unsigned packed_offset_size[] = { 6, 6, 4 };
+
+         for (unsigned c = 0; c < offset->num_components; ++c) {
+            lookup = nir_bitfield_insert(b,
+                                         lookup,
+                                         nir_channel(b, offset, c),
+                                         nir_imm_int(b, packed_offset_start[c]),
+                                         nir_imm_int(b, packed_offset_size[c]));
+         }
+
+         smp_flags.soo = true;
+         BITSET_CLEAR(tex_src_set, nir_tex_src_offset);
+      }
+
+      if (BITSET_TEST(tex_src_set, nir_tex_src_ms_index)) {
+         lookup = nir_bitfield_insert(b,
+                                      lookup,
+                                      tex_srcs[nir_tex_src_ms_index],
+                                      nir_imm_int(b, 16),
+                                      nir_imm_int(b, 3));
+
+         smp_flags.sno = true;
+         BITSET_CLEAR(tex_src_set, nir_tex_src_ms_index);
+      }
+
+      smp_data_comps[smp_data_comp_count++] = lookup;
+   }
+
+   /* Shadow comparator. */
+   nir_def *comparator = NULL;
+   if (BITSET_TEST(tex_src_set, nir_tex_src_comparator)) {
+      comparator = tex_srcs[nir_tex_src_comparator];
+
+      if (proj)
+         comparator = nir_fdiv(b, comparator, proj);
+
+      BITSET_CLEAR(tex_src_set, nir_tex_src_comparator);
+   }
+
+   assert(BITSET_IS_EMPTY(tex_src_set));
+
+   /* Pad out the rest of the data words. */
+   assert(smp_data_comp_count <= NIR_MAX_VEC_COMPONENTS);
+   for (unsigned c = smp_data_comp_count; c < ARRAY_SIZE(smp_data_comps); ++c)
+      smp_data_comps[c] = nir_imm_int(b, 0);
+
+   nir_def *smp_data = nir_vec(b, smp_data_comps, ARRAY_SIZE(smp_data_comps));
+
+   nir_def *result;
+   switch (tex->op) {
+   case nir_texop_lod:
+      result = nir_smp_coeffs_pco(b,
+                                  smp_data,
+                                  tex_state,
+                                  smp_state,
+                                  .smp_flags_pco = smp_flags._,
+                                  .range = smp_data_comp_count);
+
+      result = lower_tex_query_lod(b, float_coords, result);
+      break;
+
+   case nir_texop_txf:
+   case nir_texop_txf_ms:
+      smp_flags.nncoords = true;
+      FALLTHROUGH;
+
+   case nir_texop_tex:
+   case nir_texop_txb:
+   case nir_texop_txd:
+   case nir_texop_txl:
+      smp_flags.integer = use_int_coords;
+      smp_flags.fcnorm = nir_alu_type_get_base_type(tex->dest_type) ==
+                         nir_type_float;
+
+      result = nir_smp_pco(b,
+                           tex->def.num_components,
+                           smp_data,
+                           tex_state,
+                           smp_state,
+                           .smp_flags_pco = smp_flags._,
+                           .range = smp_data_comp_count);
+      break;
+
+   default:
+      UNREACHABLE("");
+   }
+
+   if (tex->is_shadow) {
+      assert(result->num_components == 1);
+
+      nir_def *compare_op =
+         nir_load_smp_meta_pco(b,
+                               1,
+                               .desc_set = smp_desc_set,
+                               .binding = smp_binding,
+                               .component = PCO_SAMPLER_META_COMPARE_OP);
+
+      result = nir_alphatst_pco(b, result, comparator, compare_op);
+   }
+
+   return result;
+}
+
+/**
+ * \brief Filters texture instructions.
+ *
+ * \param[in] instr NIR instruction.
+ * \param[in] cb_data User callback data.
+ * \return True if the instruction matches the filter.
+ */
+static bool is_tex(const nir_instr *instr, UNUSED const void *cb_data)
+{
+   return instr->type == nir_instr_type_tex;
+}
+
+/**
+ * \brief Texture lowering pass.
+ *
+ * \param[in,out] shader NIR shader.
+ * \param[in] common Shader common data.
+ * \return True if the pass made progress.
+ */
+bool pco_nir_lower_tex(nir_shader *shader, pco_common_data *common)
+{
+   return nir_shader_lower_instructions(shader, is_tex, lower_tex, common);
+}

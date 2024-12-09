@@ -105,6 +105,8 @@
 /* Number of TEXSTATE_SAMPLER state words that need setting up. */
 #define ROGUE_NUM_TEXSTATE_SAMPLER_WORDS 2U
 
+#define ROGUE_NUM_TEXSTATE_DWORDS 4U
+
 /* 12 dwords reserved for shared register management. The first dword is the
  * number of shared register blocks to reload. Should be a multiple of 4 dwords,
  * size in bytes.
@@ -172,5 +174,18 @@ enum {
    ROGUE_USC_COEFFICIENT_SET_PAD,
    ROGUE_USC_COEFFICIENT_SET_SIZE,
 };
+
+enum {
+   ROGUE_SMP_COEFF_UFRAC = 0,
+   ROGUE_SMP_COEFF_VFRAC,
+   ROGUE_SMP_COEFF_SFRAC,
+   ROGUE_SMP_COEFF_LOD_DVAL_POST_CLAMP,
+   ROGUE_SMP_COEFF_LOD_DVAL_PRE_CLAMP,
+   ROGUE_SMP_COEFF_TFRAC_POST_CLAMP,
+   ROGUE_SMP_COEFF_TFRAC_PRE_CLAMP,
+   ROGUE_SMP_COEFF_COUNT,
+};
+
+#define ROGUE_SMP_MAX_DATA_WORDS 18U
 
 #endif /* ROGUE_HW_DEFS_H */

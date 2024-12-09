@@ -171,7 +171,11 @@ OM_SIGNPOS = op_mod_enum('signpos', [
    'mtb',
    'ftb',
 ])
-OM_DIM = op_mod('dim', BaseType.uint)
+OM_DIM = op_mod_enum('dim', [
+   '1d',
+   '2d',
+   '3d',
+])
 OM_PROJ = op_mod('proj', BaseType.bool)
 OM_FCNORM = op_mod('fcnorm', BaseType.bool)
 OM_NNCOORDS = op_mod('nncoords', BaseType.bool)
@@ -179,22 +183,24 @@ OM_LOD_MODE = op_mod_enum('lod_mode', [
    ('normal', ''),
    ('bias', 'bias'),
    ('replace', 'replace'),
-   ('gradient', 'gradient'),
+   ('gradients', 'gradients'),
 ])
 OM_PPLOD = op_mod('pplod', BaseType.bool)
 OM_TAO = op_mod('tao', BaseType.bool)
 OM_SOO = op_mod('soo', BaseType.bool)
 OM_SNO = op_mod('sno', BaseType.bool)
-OM_WRT = op_mod('wrt', BaseType.bool)
 OM_SB_MODE = op_mod_enum('sb_mode', [
    ('none', ''),
-   ('data', 'data'),
-   ('info', 'info'),
+   ('rawdata', 'rawdata'),
+   ('coeffs', 'coeffs'),
    ('both', 'both'),
 ])
 OM_ARRAY = op_mod('array', BaseType.bool)
 OM_INTEGER = op_mod('integer', BaseType.bool)
-OM_SCHEDSWAP = op_mod('schedswap', BaseType.bool)
+OM_SCHEDSWAP = op_mod_enum('schedswap', [
+   ('none', ''),
+   ('swap', 'schedswap'),
+])
 OM_F16 = op_mod('f16', BaseType.bool)
 OM_TILED = op_mod('tiled', BaseType.bool)
 OM_FREEP = op_mod('freep', BaseType.bool)
@@ -268,9 +274,9 @@ OM_ITR_MODE = op_mod_enum('itr_mode', [
    'centroid',
 ])
 OM_SCHED = op_mod_enum('sched', [
-   'none',
-   'swap',
-   'wdf',
+   ('none', ''),
+   ('swap', 'schedswap'),
+   ('wdf', 'schedwdf'),
 ])
 OM_ATOM = op_mod('atom', BaseType.bool, unset=True)
 OM_OLCHK = op_mod('olchk', BaseType.bool, unset=True)
@@ -363,6 +369,13 @@ O_LD = hw_op('ld', OM_ALU_RPT1 + [OM_MCU_CACHE_MODE_LD], 1, 3)
 O_ST = hw_direct_op('st', [OM_MCU_CACHE_MODE_ST], 0, 6)
 O_ATOMIC = hw_op('atomic', [OM_OLCHK, OM_EXEC_CND, OM_END, OM_ATOM_OP], 1, 2)
 
+O_SMP = hw_op('smp', OM_ALU_RPT1 + [OM_DIM, OM_PROJ, OM_FCNORM, OM_NNCOORDS,
+                                    OM_LOD_MODE, OM_PPLOD, OM_TAO, OM_SOO,
+                                    OM_SNO, OM_SB_MODE, OM_MCU_CACHE_MODE_LD,
+                                    OM_ARRAY, OM_INTEGER, OM_SCHEDSWAP, OM_F16], 1, 6)
+
+O_ALPHATST = hw_op('alphatst', OM_ALU_RPT1, 1, 4)
+
 ## Bitwise.
 O_MOVI32 = hw_op('movi32', OM_ALU, 1, 1)
 
@@ -406,6 +419,7 @@ O_SCMP = hw_op('scmp', OM_ALU + [OM_TST_OP_MAIN], 1, 2, [], [[RM_ABS, RM_NEG], [
 O_BCMP = hw_op('bcmp', OM_ALU + [OM_TST_OP_MAIN, OM_TST_TYPE_MAIN], 1, 2, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
 O_BCSEL = hw_op('bcsel', OM_ALU, 1, 3, [], [[], [RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
 O_CSEL = hw_op('csel', OM_ALU + [OM_TST_OP_MAIN, OM_TST_TYPE_MAIN], 1, 3, [], [[], [RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
+O_PSEL = hw_op('psel', OM_ALU, 1, 3)
 O_PSEL_TRIG = hw_op('psel_trig', OM_ALU, 1, 3)
 O_FSIGN = hw_op('fsign', OM_ALU, 1, 1)
 O_ISIGN = hw_op('isign', OM_ALU, 1, 1)

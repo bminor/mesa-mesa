@@ -1522,6 +1522,28 @@ static inline bool pco_should_print_binary(pco_shader *shader)
    return true;
 }
 
+/* Interface with NIR. */
+typedef union PACKED _pco_smp_flags {
+   struct PACKED {
+      unsigned dim : 2;
+      bool proj : 1;
+      bool fcnorm : 1;
+      bool nncoords : 1;
+      enum pco_lod_mode lod_mode : 2;
+      bool pplod : 1;
+      bool tao : 1;
+      bool soo : 1;
+      bool sno : 1;
+      bool array : 1;
+      bool integer : 1;
+      unsigned pad : 3;
+   };
+
+   uint16_t _;
+} pco_smp_flags;
+static_assert(sizeof(pco_smp_flags) == sizeof(uint16_t),
+              "sizeof(pco_smp_flags) != sizeof(uint16_t)");
+
 /* PCO IR passes. */
 bool pco_const_imms(pco_shader *shader);
 bool pco_bool(pco_shader *shader);
@@ -1534,6 +1556,7 @@ bool pco_legalize(pco_shader *shader);
 bool pco_nir_compute_instance_check(nir_shader *shader);
 bool pco_nir_lower_algebraic(nir_shader *shader);
 bool pco_nir_lower_algebraic_late(nir_shader *shader);
+bool pco_nir_lower_tex(nir_shader *shader, pco_common_data *common);
 bool pco_nir_lower_vk(nir_shader *shader, pco_common_data *common);
 bool pco_nir_pfo(nir_shader *shader, pco_fs_data *fs);
 bool pco_nir_point_size(nir_shader *shader);

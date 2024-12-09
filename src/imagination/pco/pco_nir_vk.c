@@ -62,6 +62,45 @@ static nir_def *lower_load_vulkan_descriptor(nir_builder *b,
    return nir_imm_ivec3(b, desc_set_binding, elem, 0);
 }
 
+static void lower_tex_deref_to_binding(nir_tex_instr *tex,
+                                       unsigned deref_index,
+                                       pco_common_data *common)
+{
+   nir_tex_src *deref_src = &tex->src[deref_index];
+   nir_deref_instr *deref =
+      nir_instr_as_deref(deref_src->src.ssa->parent_instr);
+
+   assert(deref->deref_type == nir_deref_type_var);
+
+   /* TODO: array support */
+
+   unsigned desc_set = deref->var->data.descriptor_set;
+   unsigned binding = deref->var->data.binding;
+
+   set_resource_used(common, desc_set, binding);
+
+   uint32_t desc_set_binding = pco_pack_desc(desc_set, binding);
+   if (deref_src->src_type == nir_tex_src_texture_deref)
+      tex->texture_index = desc_set_binding;
+   else
+      tex->sampler_index = desc_set_binding;
+
+   nir_tex_instr_remove_src(tex, deref_index);
+}
+
+static inline void lower_tex_derefs(nir_tex_instr *tex, pco_common_data *common)
+{
+   int deref_index;
+
+   deref_index = nir_tex_instr_src_index(tex, nir_tex_src_texture_deref);
+   if (deref_index >= 0)
+      lower_tex_deref_to_binding(tex, deref_index, common);
+
+   deref_index = nir_tex_instr_src_index(tex, nir_tex_src_sampler_deref);
+   if (deref_index >= 0)
+      lower_tex_deref_to_binding(tex, deref_index, common);
+}
+
 /**
  * \brief Lowers a Vulkan-related instruction.
  *
@@ -73,11 +112,26 @@ static nir_def *lower_load_vulkan_descriptor(nir_builder *b,
 static nir_def *lower_vk(nir_builder *b, nir_instr *instr, void *cb_data)
 {
    pco_common_data *common = cb_data;
-   nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
 
-   switch (intr->intrinsic) {
-   case nir_intrinsic_load_vulkan_descriptor:
-      return lower_load_vulkan_descriptor(b, intr, common);
+   switch (instr->type) {
+   case nir_instr_type_intrinsic: {
+      nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
+      switch (intr->intrinsic) {
+      case nir_intrinsic_load_vulkan_descriptor:
+         return lower_load_vulkan_descriptor(b, intr, common);
+
+      default:
+         break;
+      }
+
+      break;
+   }
+
+   case nir_instr_type_tex: {
+      nir_tex_instr *tex = nir_instr_as_tex(instr);
+      lower_tex_derefs(tex, common);
+      return NIR_LOWER_INSTR_PROGRESS;
+   }
 
    default:
       break;
@@ -95,13 +149,29 @@ static nir_def *lower_vk(nir_builder *b, nir_instr *instr, void *cb_data)
  */
 static bool is_vk(const nir_instr *instr, UNUSED const void *cb_data)
 {
-   if (instr->type != nir_instr_type_intrinsic)
-      return false;
+   switch (instr->type) {
+   case nir_instr_type_intrinsic: {
+      nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
+      switch (intr->intrinsic) {
+      case nir_intrinsic_load_vulkan_descriptor:
+         return true;
 
-   nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
-   switch (intr->intrinsic) {
-   case nir_intrinsic_load_vulkan_descriptor:
-      return true;
+      default:
+         break;
+      }
+
+      break;
+   }
+
+   case nir_instr_type_tex: {
+      nir_tex_instr *tex = nir_instr_as_tex(instr);
+      if (nir_tex_instr_src_index(tex, nir_tex_src_texture_deref) >= 0 ||
+          nir_tex_instr_src_index(tex, nir_tex_src_sampler_deref) >= 0) {
+         return true;
+      }
+
+      FALLTHROUGH;
+   }
 
    default:
       break;

@@ -74,6 +74,26 @@ typedef struct _pco_cs_data {
    unsigned workgroup_size[3]; /** Workgroup size. */
 } pco_cs_data;
 
+/** PCO image descriptor metadata. */
+enum pco_image_meta {
+   PCO_IMAGE_META_LAYER_SIZE,
+   PCO_IMAGE_META_RSVD0,
+   PCO_IMAGE_META_RSVD1,
+   PCO_IMAGE_META_RSVD2,
+
+   PCO_IMAGE_META_COUNT,
+};
+
+/** PCO sampler descriptor metadata. */
+enum pco_sampler_meta {
+   PCO_SAMPLER_META_COMPARE_OP,
+   PCO_SAMPLER_META_RSVD0,
+   PCO_SAMPLER_META_RSVD1,
+   PCO_SAMPLER_META_RSVD2,
+
+   PCO_SAMPLER_META_COUNT,
+};
+
 /** PCO descriptor binding data. */
 typedef struct _pco_binding_data {
    pco_range range; /** Descriptor location range. */

@@ -2681,3 +2681,26 @@ intrinsic("enqueue_node_payloads", src_comp=[-1])
 
 # Returns true if it has been called for every payload.
 intrinsic("finalize_incoming_node_payload", src_comp=[-1], dest_comp=1)
+
+# Loads the texture/sampler state words for a given descriptor.
+intrinsic("load_tex_state_pco", dest_comp=0, indices=[DESC_SET, BINDING, COMPONENT], flags=[CAN_ELIMINATE, CAN_REORDER], bit_sizes=[32])
+intrinsic("load_smp_state_pco", dest_comp=0, indices=[DESC_SET, BINDING, COMPONENT], flags=[CAN_ELIMINATE, CAN_REORDER], bit_sizes=[32])
+
+# Loads the texture/sampler metadata for a given descriptor.
+intrinsic("load_tex_meta_pco", dest_comp=0, indices=[DESC_SET, BINDING, COMPONENT], flags=[CAN_ELIMINATE, CAN_REORDER], bit_sizes=[32])
+intrinsic("load_smp_meta_pco", dest_comp=0, indices=[DESC_SET, BINDING, COMPONENT], flags=[CAN_ELIMINATE, CAN_REORDER], bit_sizes=[32])
+
+index("uint16_t", "smp_flags_pco")
+
+# smp_pco(data, tex_state, smp_state)
+# Performs a standard sampling operation with the given data and state words.
+# Outputs between 1-4 comps.
+intrinsic("smp_pco", src_comp=[16, 4, 4], dest_comp=0, indices=[SMP_FLAGS_PCO, RANGE], bit_sizes=[32])
+
+# smp_coeffs_pco(data, tex_state, smp_state)
+# Returns the calculated sampling coefficients for the given data and state words.
+intrinsic("smp_coeffs_pco", src_comp=[16, 4, 4], dest_comp=8, indices=[SMP_FLAGS_PCO, RANGE], bit_sizes=[32])
+
+# alphatst_pco(data, comparator, comparison op)
+# Performs an alpha test on the given parameters, returning float 0/1 depending on the comparison result.
+intrinsic("alphatst_pco", src_comp=[1, 1, 1], dest_comp=1, flags=[CAN_ELIMINATE, CAN_REORDER], bit_sizes=[32])

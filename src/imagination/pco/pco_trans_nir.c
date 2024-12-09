@@ -423,13 +423,11 @@ trans_store_output_fs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref src)
 }
 
 static unsigned fetch_resource_base_reg(const pco_common_data *common,
-                                        uint32_t packed_desc,
-                                        unsigned elem)
+                                        unsigned desc_set,
+                                        unsigned binding,
+                                        unsigned elem,
+                                        bool *is_img_smp)
 {
-   unsigned desc_set;
-   unsigned binding;
-   pco_unpack_desc(packed_desc, &desc_set, &binding);
-
    assert(desc_set < ARRAY_SIZE(common->desc_sets));
    const pco_descriptor_set_data *desc_set_data = &common->desc_sets[desc_set];
    assert(desc_set_data->used);
@@ -438,14 +436,27 @@ static unsigned fetch_resource_base_reg(const pco_common_data *common,
    const pco_binding_data *binding_data = &desc_set_data->bindings[binding];
    assert(binding_data->used);
 
+   if (is_img_smp)
+      *is_img_smp = binding_data->is_img_smp;
+
    unsigned reg_offset = elem * binding_data->range.stride;
    assert(reg_offset < binding_data->range.count);
 
    unsigned reg_index = binding_data->range.start + reg_offset;
-
    return reg_index;
 }
 
+static unsigned fetch_resource_base_reg_packed(const pco_common_data *common,
+                                               uint32_t packed_desc,
+                                               unsigned elem,
+                                               bool *is_img_smp)
+{
+   unsigned desc_set;
+   unsigned binding;
+   pco_unpack_desc(packed_desc, &desc_set, &binding);
+
+   return fetch_resource_base_reg(common, desc_set, binding, elem, is_img_smp);
+}
 static pco_instr *trans_load_buffer(trans_ctx *tctx,
                                     nir_intrinsic_instr *intr,
                                     pco_ref dest,
@@ -459,7 +470,8 @@ static pco_instr *trans_load_buffer(trans_ctx *tctx,
 
    uint32_t packed_desc = nir_src_comp_as_uint(intr->src[0], 0);
    unsigned elem = nir_src_comp_as_uint(intr->src[0], 1);
-   unsigned sh_index = fetch_resource_base_reg(common, packed_desc, elem);
+   unsigned sh_index =
+      fetch_resource_base_reg_packed(common, packed_desc, elem, NULL);
 
    pco_ref base_addr[2];
    pco_ref_hwreg_addr_comps(sh_index, PCO_REG_CLASS_SHARED, base_addr);
@@ -498,7 +510,8 @@ static pco_instr *trans_store_buffer(trans_ctx *tctx,
 
    uint32_t packed_desc = nir_src_comp_as_uint(intr->src[1], 0);
    unsigned elem = nir_src_comp_as_uint(intr->src[1], 1);
-   unsigned sh_index = fetch_resource_base_reg(common, packed_desc, elem);
+   unsigned sh_index =
+      fetch_resource_base_reg_packed(common, packed_desc, elem, NULL);
 
    pco_ref base_addr[2];
    pco_ref_hwreg_addr_comps(sh_index, PCO_REG_CLASS_SHARED, base_addr);
@@ -593,7 +606,8 @@ static pco_instr *trans_atomic_buffer(trans_ctx *tctx,
 
    uint32_t packed_desc = nir_src_comp_as_uint(intr->src[0], 0);
    unsigned elem = nir_src_comp_as_uint(intr->src[0], 1);
-   unsigned sh_index = fetch_resource_base_reg(common, packed_desc, elem);
+   unsigned sh_index =
+      fetch_resource_base_reg_packed(common, packed_desc, elem, NULL);
 
    pco_ref base_addr[2];
    pco_ref_hwreg_addr_comps(sh_index, PCO_REG_CLASS_SHARED, base_addr);
@@ -681,6 +695,162 @@ trans_load_sysval(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
    return pco_mov(&tctx->b, dest, src, .rpt = chans);
 }
 
+static bool desc_set_binding_is_comb_img_smp(unsigned desc_set,
+                                             unsigned binding,
+                                             const pco_common_data *common)
+{
+   const pco_descriptor_set_data *desc_set_data = &common->desc_sets[desc_set];
+   assert(desc_set_data->used);
+   assert(desc_set_data->bindings && binding < desc_set_data->binding_count);
+
+   const pco_binding_data *binding_data = &desc_set_data->bindings[binding];
+   assert(binding_data->used);
+
+   return binding_data->is_img_smp;
+}
+
+static pco_instr *lower_load_tex_smp_state(trans_ctx *tctx,
+                                           nir_intrinsic_instr *intr,
+                                           pco_ref dest,
+                                           bool smp)
+{
+   unsigned desc_set = nir_intrinsic_desc_set(intr);
+   unsigned binding = nir_intrinsic_binding(intr);
+   unsigned start_comp = nir_intrinsic_component(intr);
+   unsigned chans = pco_ref_get_chans(dest);
+   assert(start_comp + chans <= ROGUE_NUM_TEXSTATE_DWORDS);
+
+   /* TODO: array support. */
+   const pco_common_data *common = &tctx->shader->data.common;
+   bool is_img_smp;
+   unsigned sh_index =
+      fetch_resource_base_reg(common, desc_set, binding, 0, &is_img_smp);
+   pco_ref state_words =
+      pco_ref_hwreg_vec(sh_index, PCO_REG_CLASS_SHARED, chans);
+
+   /* Sampler state comes after image state and metadata in combined image
+    * samplers.
+    */
+   if (smp && is_img_smp) {
+      state_words = pco_ref_offset(state_words, ROGUE_NUM_TEXSTATE_DWORDS);
+      state_words = pco_ref_offset(state_words, PCO_IMAGE_META_COUNT);
+   }
+
+   state_words = pco_ref_offset(state_words, start_comp);
+
+   return pco_mov(&tctx->b, dest, state_words, .rpt = chans);
+}
+
+static pco_instr *lower_load_tex_smp_meta(trans_ctx *tctx,
+                                          nir_intrinsic_instr *intr,
+                                          pco_ref dest,
+                                          bool smp)
+{
+   unsigned desc_set = nir_intrinsic_desc_set(intr);
+   unsigned binding = nir_intrinsic_binding(intr);
+   unsigned start_comp = nir_intrinsic_component(intr);
+   unsigned chans = pco_ref_get_chans(dest);
+
+   /* TODO: array support. */
+   const pco_common_data *common = &tctx->shader->data.common;
+   bool is_img_smp;
+   unsigned sh_index =
+      fetch_resource_base_reg(common, desc_set, binding, 0, &is_img_smp);
+   pco_ref state_words =
+      pco_ref_hwreg_vec(sh_index, PCO_REG_CLASS_SHARED, chans);
+
+   assert(start_comp + chans <=
+          (smp ? PCO_SAMPLER_META_COUNT : PCO_IMAGE_META_COUNT));
+
+   state_words = pco_ref_offset(state_words, ROGUE_NUM_TEXSTATE_DWORDS);
+
+   if (smp && is_img_smp) {
+      state_words = pco_ref_offset(state_words, PCO_IMAGE_META_COUNT);
+      state_words = pco_ref_offset(state_words, ROGUE_NUM_TEXSTATE_DWORDS);
+   }
+
+   state_words = pco_ref_offset(state_words, start_comp);
+
+   return pco_mov(&tctx->b, dest, state_words, .rpt = chans);
+}
+
+static pco_instr *lower_smp(trans_ctx *tctx,
+                            nir_intrinsic_instr *intr,
+                            pco_ref *dest,
+                            pco_ref data,
+                            pco_ref tex_state,
+                            pco_ref smp_state)
+{
+   pco_smp_flags smp_flags = { ._ = nir_intrinsic_smp_flags_pco(intr) };
+   unsigned data_comps = nir_intrinsic_range(intr);
+
+   data = pco_ref_chans(data, data_comps);
+
+   unsigned chans = pco_ref_get_chans(*dest);
+   enum pco_sb_mode sb_mode = PCO_SB_MODE_NONE;
+   switch (intr->intrinsic) {
+   case nir_intrinsic_smp_coeffs_pco:
+      /* Shrink the destination to its actual size. */
+      *dest = pco_ref_chans(*dest, ROGUE_SMP_COEFF_COUNT);
+      chans = 1; /* Chans must be 1 for coeff mode. */
+
+      sb_mode = PCO_SB_MODE_COEFFS;
+      break;
+
+   case nir_intrinsic_smp_pco:
+      /* Destination and chans should be correct. */
+      break;
+
+   default:
+      UNREACHABLE("");
+   }
+
+   pco_ref shared_lod = pco_ref_null();
+
+   pco_instr *smp = pco_smp(&tctx->b,
+                            *dest,
+                            pco_ref_drc(PCO_DRC_0),
+                            tex_state,
+                            data,
+                            smp_state,
+                            shared_lod,
+                            pco_ref_imm8(chans),
+                            .dim = smp_flags.dim,
+                            .proj = smp_flags.proj,
+                            .fcnorm = smp_flags.fcnorm,
+                            .nncoords = smp_flags.nncoords,
+                            .lod_mode = smp_flags.lod_mode,
+                            .pplod = smp_flags.pplod,
+                            .tao = smp_flags.tao,
+                            .soo = smp_flags.soo,
+                            .sno = smp_flags.sno,
+                            .sb_mode = sb_mode,
+                            .array = smp_flags.array,
+                            .integer = smp_flags.integer);
+
+   return smp;
+}
+
+static pco_instr *lower_alphatst(trans_ctx *tctx,
+                                 pco_ref dest,
+                                 pco_ref src0,
+                                 pco_ref src1,
+                                 pco_ref src2)
+{
+   pco_alphatst(&tctx->b,
+                pco_ref_pred(PCO_PRED_P0),
+                pco_ref_drc(PCO_DRC_0),
+                src0,
+                src1,
+                src2);
+
+   return pco_psel(&tctx->b,
+                   dest,
+                   pco_ref_pred(PCO_PRED_P0),
+                   pco_fone,
+                   pco_zero);
+}
+
 /**
  * \brief Translates a NIR intrinsic instruction into PCO.
  *
@@ -760,6 +930,32 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
       instr = intr->intrinsic == nir_intrinsic_ddy_fine
                  ? pco_fdsyf(&tctx->b, dest, src[0])
                  : pco_fdsy(&tctx->b, dest, src[0]);
+      break;
+
+   /* Texture-related intrinsics. */
+   case nir_intrinsic_load_tex_state_pco:
+      instr = lower_load_tex_smp_state(tctx, intr, dest, false);
+      break;
+
+   case nir_intrinsic_load_smp_state_pco:
+      instr = lower_load_tex_smp_state(tctx, intr, dest, true);
+      break;
+
+   case nir_intrinsic_load_tex_meta_pco:
+      instr = lower_load_tex_smp_meta(tctx, intr, dest, false);
+      break;
+
+   case nir_intrinsic_load_smp_meta_pco:
+      instr = lower_load_tex_smp_meta(tctx, intr, dest, true);
+      break;
+
+   case nir_intrinsic_smp_coeffs_pco:
+   case nir_intrinsic_smp_pco:
+      instr = lower_smp(tctx, intr, &dest, src[0], src[1], src[2]);
+      break;
+
+   case nir_intrinsic_alphatst_pco:
+      instr = lower_alphatst(tctx, dest, src[0], src[1], src[2]);
       break;
 
    default:

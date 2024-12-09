@@ -1820,8 +1820,8 @@ F_SBMODE = field_enum_type(
 name='sbmode', num_bits=2,
 elems=[
    ('none', 0b00),
-   ('data', 0b01),
-   ('info', 0b10),
+   ('rawdata', 0b01),
+   ('coeffs', 0b10),
    ('both', 0b11),
 ])
 

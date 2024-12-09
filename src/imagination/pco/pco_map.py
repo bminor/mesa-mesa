@@ -310,6 +310,31 @@ enum_map(OM_FRED_PART.t, F_RED_PART, [
    ('b', 'b'),
 ])
 
+enum_map(OM_DIM.t, F_DMN, [
+   ('1d', '1d'),
+   ('2d', '2d'),
+   ('3d', '3d'),
+])
+
+enum_map(OM_LOD_MODE.t, F_LODM, [
+   ('normal', 'normal'),
+   ('bias', 'bias'),
+   ('replace', 'replace'),
+   ('gradients', 'gradients'),
+])
+
+enum_map(OM_SB_MODE.t, F_SBMODE, [
+   ('none', 'none'),
+   ('rawdata', 'rawdata'),
+   ('coeffs', 'coeffs'),
+   ('both', 'both'),
+])
+
+enum_map(OM_SCHEDSWAP.t, F_SCHED_CTRL, [
+   ('none', 'none'),
+   ('swap', 'swap'),
+])
+
 class OpRef(object):
    def __init__(self, ref_type, index, mods):
       self.type = ref_type
@@ -1320,6 +1345,75 @@ encode_map(O_ATOMIC,
    op_ref_maps=[('backend', [['s0', 's1', 's2', 's3', 's4', 's5']], ['drc', ['s0', 's1', 's2', 's3', 's4', 's5']])]
 )
 
+encode_map(O_SMP,
+   encodings=[
+      (I_SMP_EXTAB, [
+         ('fcnorm', OM_FCNORM),
+         ('drc', ('pco_ref_get_drc', SRC(0))),
+         ('dmn', OM_DIM),
+         ('chan', ('pco_ref_get_imm', SRC(5))),
+         ('lodm', OM_LOD_MODE),
+         ('pplod', OM_PPLOD),
+         ('proj', OM_PROJ),
+         ('sbmode', OM_SB_MODE),
+         ('nncoords', OM_NNCOORDS),
+         ('sno', OM_SNO),
+         ('soo', OM_SOO),
+         ('tao', OM_TAO),
+         ('f16', OM_F16),
+         ('swap', OM_SCHEDSWAP),
+         ('cachemode_ld', OM_MCU_CACHE_MODE_LD)
+      ]),
+      (I_SMP_EXTA, [
+         ('fcnorm', OM_FCNORM),
+         ('drc', ('pco_ref_get_drc', SRC(0))),
+         ('dmn', OM_DIM),
+         ('chan', ('pco_ref_get_imm', SRC(5))),
+         ('lodm', OM_LOD_MODE),
+         ('pplod', OM_PPLOD),
+         ('proj', OM_PROJ),
+         ('sbmode', OM_SB_MODE),
+         ('nncoords', OM_NNCOORDS),
+         ('sno', OM_SNO),
+         ('soo', OM_SOO),
+         ('tao', OM_TAO)
+      ], [
+         (OM_F16, '== false'),
+         (OM_SCHEDSWAP, '== PCO_SCHEDSWAP_NONE'),
+         (OM_MCU_CACHE_MODE_LD, '== PCO_CACHEMODE_LD_NORMAL')
+      ]),
+      (I_SMP_BRIEF, [
+         ('fcnorm', OM_FCNORM),
+         ('drc', ('pco_ref_get_drc', SRC(0))),
+         ('dmn', OM_DIM),
+         ('chan', ('pco_ref_get_imm', SRC(5))),
+         ('lodm', OM_LOD_MODE)
+      ], [
+         (OM_F16, '== false'),
+         (OM_SCHEDSWAP, '== PCO_SCHEDSWAP_NONE'),
+         (OM_MCU_CACHE_MODE_LD, '== PCO_CACHEMODE_LD_NORMAL'),
+         (OM_PPLOD, '== false'),
+         (OM_PROJ, '== false'),
+         (OM_SB_MODE, '== PCO_SB_MODE_NONE'),
+         (OM_NNCOORDS, '== false'),
+         (OM_SNO, '== false'),
+         (OM_SOO, '== false'),
+         (OM_TAO, '== false')
+      ])
+   ],
+   op_ref_maps=[('backend', ['s4'], ['drc', 's0', 's1', 's2', ['s3', '_'], 'imm'])]
+)
+
+encode_map(O_ALPHATST,
+   encodings=[
+      (I_VISTEST_ATST, [
+         ('pwen', ('!pco_ref_is_null', DEST(0))),
+         ('ifb', True)
+      ])
+   ],
+   op_ref_maps=[('backend', [['p0', '_']], ['drc', 's0', 's1', 's2'])]
+)
+
 encode_map(O_BBYP0BM,
    encodings=[
       (I_PHASE0_SRC, [
@@ -2088,6 +2182,38 @@ group_map(O_CSEL,
    ]
 )
 
+group_map(O_PSEL,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'p0_p1_p2'),
+      ('olchk', OM_OLCHK),
+      ('w1p', False),
+      ('w0p', True),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', OM_RPT)
+   ]),
+   enc_ops=[
+      ('0', O_IMADD64, ['ft0', 'fte'], ['pco_zero', 'pco_zero', 'pco_zero', 'is0', SRC(0)]),
+      ('1', O_MBYP, ['ft1'], [SRC(1)]),
+      ('2_tst', O_TST, ['ftt', '_'], ['is1', '_'], [(OM_TST_OP_MAIN, 'zero'), (OM_TST_TYPE_MAIN, 'u32'), (OM_PHASE2END, True)]),
+      ('2_mov', O_MOVC, [DEST(0), '_'], ['ftt', SRC(2), 'is4', '_', '_'])
+   ],
+   srcs=[
+      ('s[0]', ('0', SRC(0)), 's0'),
+      ('s[1]', ('0', SRC(1)), 's1'),
+      ('s[2]', ('0', SRC(2)), 's2'),
+      ('s[3]', ('1', SRC(0)), 's3'),
+      ('s[4]', ('2_mov', SRC(1)), 'fte'),
+   ],
+   iss=[
+      ('is[0]', 's4'),
+      ('is[1]', 'ft0'),
+      ('is[4]', 'ft1'),
+   ],
+   dests=[('w[0]', ('2_mov', DEST(0)), 'w0')]
+)
+
 group_map(O_PSEL_TRIG,
    hdr=(I_IGRP_HDR_MAIN, [
       ('oporg', 'p0_p1_p2'),
@@ -2532,6 +2658,46 @@ group_map(O_ATOMIC,
    srcs=[
       ('s[0]', ('backend', SRC(1)), 's0'),
       ('s[3]', ('backend', DEST(0)), 's3')
+   ]
+)
+
+group_map(O_SMP,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'be'),
+      ('olchk', OM_OLCHK),
+      ('w1p', False),
+      ('w0p', False),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', False),
+      ('rpt', 1)
+   ]),
+   enc_ops=[('backend', O_SMP)],
+   srcs=[
+      ('s[0]', ('backend', SRC(1)), 's0'),
+      ('s[1]', ('backend', SRC(2)), 's1'),
+      ('s[2]', ('backend', SRC(3)), 's2'),
+      ('s[3]', ('backend', SRC(4)), 's3'),
+      ('s[4]', ('backend', DEST(0)), 's4')
+   ]
+)
+
+group_map(O_ALPHATST,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'be'),
+      ('olchk', OM_OLCHK),
+      ('w1p', False),
+      ('w0p', False),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', 1)
+   ]),
+   enc_ops=[('backend', O_ALPHATST)],
+   srcs=[
+      ('s[0]', ('backend', SRC(1)), 's0'),
+      ('s[1]', ('backend', SRC(2)), 's1'),
+      ('s[2]', ('backend', SRC(3)), 's2'),
    ]
 )
 
