@@ -114,7 +114,7 @@
         "description": "anv:Fix memory grow calculation overflow issue",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8d813a90d62de6e2539d8ced9174480f95663328",
         "notes": null
