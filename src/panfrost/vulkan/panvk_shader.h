@@ -285,6 +285,7 @@ struct panvk_shader {
 
    const void *bin_ptr;
    uint32_t bin_size;
+   bool own_bin;
 
    struct panvk_priv_mem code_mem;
 
@@ -372,5 +373,10 @@ VkResult panvk_per_arch(create_internal_shader)(
    struct panvk_device *dev, nir_shader *nir,
    struct panfrost_compile_inputs *compiler_inputs,
    struct panvk_internal_shader **shader_out);
+
+VkResult panvk_per_arch(create_shader_from_binary)(
+   struct panvk_device *dev, const struct pan_shader_info *info,
+   struct pan_compute_dim local_size, const void *bin_ptr, size_t bin_size,
+   struct panvk_shader **shader_out);
 
 #endif
