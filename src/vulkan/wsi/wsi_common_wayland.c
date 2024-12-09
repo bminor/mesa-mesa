@@ -3012,7 +3012,7 @@ wsi_wl_surface_create_swapchain(VkIcdSurfaceBase *icd_surface,
       chain->fifo = wp_fifo_manager_v1_get_fifo(dpy->fifo_manager,
                                                 chain->wsi_wl_surface->surface);
    }
-   if (dpy->commit_timing_manager) {
+   if (dpy->commit_timing_manager && chain->present_ids.wp_presentation) {
       chain->commit_timer = wp_commit_timing_manager_v1_get_timer(dpy->commit_timing_manager,
                                                                   chain->wsi_wl_surface->surface);
    }
