@@ -85,6 +85,9 @@ brw_fs_optimize(fs_visitor &s)
    progress = false;
    pass_num = 0;
 
+   if (OPT(brw_opt_combine_convergent_txf))
+      OPT(brw_fs_opt_copy_propagation_defs);
+
    if (OPT(brw_fs_lower_pack)) {
       OPT(brw_fs_opt_register_coalesce);
       OPT(brw_fs_opt_dead_code_eliminate);
@@ -552,4 +555,3 @@ brw_fs_opt_remove_extra_rounding_modes(fs_visitor &s)
 
    return progress;
 }
-

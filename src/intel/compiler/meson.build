@@ -99,6 +99,7 @@ libintel_compiler_brw_files = files(
   'brw_nir_rt.h',
   'brw_nir_rt.c',
   'brw_nir_rt_builder.h',
+  'brw_opt_txf_combiner.cpp',
   'brw_packed_float.c',
   'brw_print.cpp',
   'brw_prim.h',
