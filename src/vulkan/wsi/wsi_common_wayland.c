@@ -206,6 +206,7 @@ struct wsi_wl_swapchain {
 
    VkPresentModeKHR present_mode;
    bool legacy_fifo_ready;
+   bool next_present_force_wait_barrier;
 
    struct {
       mtx_t lock; /* protects all members */
@@ -2550,6 +2551,23 @@ wsi_wl_swapchain_queue_present(struct wsi_swapchain *wsi_chain,
           */
          wp_fifo_v1_wait_barrier(chain->fifo);
       }
+
+      /* If the next frame transitions into MAILBOX mode make sure it observes the wait barrier.
+       * When using timestamps, we already emit a dummy commit with the wait barrier anyway. */
+      chain->next_present_force_wait_barrier = !timestamped;
+   } else if (chain->fifo && chain->next_present_force_wait_barrier) {
+      /* If we're using EXT_swapchain_maintenance1 to transition from FIFO to something non-FIFO
+       * the previous frame's FIFO must persist for a refresh cycle, i.e. it cannot be replaced by a MAILBOX presentation.
+       * From 1.4.303 spec:
+       * "Transition from VK_PRESENT_MODE_FIFO_KHR or VK_PRESENT_MODE_FIFO_RELAXED_KHR or VK_PRESENT_MODE_FIFO_LATEST_READY_EXT to
+       * VK_PRESENT_MODE_IMMEDIATE_KHR or VK_PRESENT_MODE_MAILBOX_KHR:
+       * If the FIFO queue is empty, presentation is done according to the behavior of the new mode.
+       * If there are present operations in the FIFO queue,
+       * once the last present operation is performed based on the respective vertical blanking period,
+       * the current and subsequent updates are applied according to the new mode"
+       * Ensure we have used a wait barrier if the previous commit did not do that already. */
+      wp_fifo_v1_wait_barrier(chain->fifo);
+      chain->next_present_force_wait_barrier = false;
    }
    wl_surface_commit(wsi_wl_surface->surface);
    wl_display_flush(wsi_wl_surface->display->wl_display);
