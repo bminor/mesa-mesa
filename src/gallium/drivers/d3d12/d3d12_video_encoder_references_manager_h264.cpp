@@ -297,6 +297,7 @@ d3d12_video_encoder_references_manager_h264::begin_frame(D3D12_VIDEO_ENCODER_PIC
    m_CurrentFrameReferencesData.ReferenceTextures.pResources.resize(h264Pic->dpb_size);
    m_CurrentFrameReferencesData.ReferenceTextures.pSubresources.resize(h264Pic->dpb_size);
    m_CurrentFrameReferencesData.pReferenceFramesReconPictureDescriptors.resize(h264Pic->dpb_size);
+   m_CurrentFrameReferencesData.ReconstructedPicTexture = { NULL, 0u };
    for (uint8_t i = 0; i < h264Pic->dpb_size; i++) {
       //
       // Set entry DPB members

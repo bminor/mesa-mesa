@@ -270,6 +270,7 @@ d3d12_video_encoder_references_manager_hevc::begin_frame(D3D12_VIDEO_ENCODER_PIC
    m_CurrentFrameReferencesData.ReferenceTextures.pResources.resize(hevcPic->dpb_size);
    m_CurrentFrameReferencesData.ReferenceTextures.pSubresources.resize(hevcPic->dpb_size);
    m_CurrentFrameReferencesData.pReferenceFramesReconPictureDescriptors.resize(hevcPic->dpb_size);
+   m_CurrentFrameReferencesData.ReconstructedPicTexture = { NULL, 0u };
    for (uint8_t i = 0; i < hevcPic->dpb_size; i++) {
       //
       // Set entry DPB members
