@@ -158,7 +158,7 @@ static const struct vk_instance_extension_table pvr_instance_extensions = {
    .KHR_get_surface_capabilities2 = PVR_USE_WSI_PLATFORM,
    .KHR_surface = PVR_USE_WSI_PLATFORM,
 #ifndef VK_USE_PLATFORM_WIN32_KHR
-   .EXT_headless_surface = PVR_USE_WSI_PLATFORM,
+   .EXT_headless_surface = PVR_USE_WSI_PLATFORM && false,
 #endif
    .EXT_debug_report = true,
    .EXT_debug_utils = true,
@@ -170,35 +170,30 @@ static void pvr_physical_device_get_supported_extensions(
    *extensions = (struct vk_device_extension_table){
       .KHR_bind_memory2 = true,
       .KHR_copy_commands2 = true,
-      /* TODO: enable this extension when the conformance tests get
-       * updated to version 1.3.6.0, the current version does not
-       * include the imagination driver ID, which will make a dEQP
-       * test fail
-       */
-      .KHR_driver_properties = false,
+      .KHR_driver_properties = true,
       .KHR_external_fence = true,
       .KHR_external_fence_fd = true,
       .KHR_external_memory = true,
       .KHR_external_memory_fd = true,
-      .KHR_format_feature_flags2 = true,
+      .KHR_format_feature_flags2 = false,
       .KHR_external_semaphore = PVR_USE_WSI_PLATFORM,
       .KHR_external_semaphore_fd = PVR_USE_WSI_PLATFORM,
       .KHR_get_memory_requirements2 = true,
       .KHR_image_format_list = true,
-      .KHR_index_type_uint8 = true,
+      .KHR_index_type_uint8 = false,
       .KHR_present_id2 = PVR_USE_WSI_PLATFORM,
       .KHR_present_wait2 = PVR_USE_WSI_PLATFORM,
-      .KHR_shader_expect_assume = true,
+      .KHR_shader_expect_assume = false,
       .KHR_swapchain = PVR_USE_WSI_PLATFORM,
       .KHR_timeline_semaphore = true,
       .KHR_uniform_buffer_standard_layout = true,
       .EXT_external_memory_dma_buf = true,
       .EXT_host_query_reset = true,
-      .EXT_index_type_uint8 = true,
+      .EXT_index_type_uint8 = false,
       .EXT_memory_budget = true,
       .EXT_private_data = true,
       .EXT_scalar_block_layout = true,
-      .EXT_texel_buffer_alignment = true,
+      .EXT_texel_buffer_alignment = false,
       .EXT_tooling_info = true,
    };
 }
@@ -210,22 +205,22 @@ static void pvr_physical_device_get_supported_features(
    *features = (struct vk_features){
       /* Vulkan 1.0 */
       .robustBufferAccess = true,
-      .fullDrawIndexUint32 = true,
-      .imageCubeArray = true,
+      .fullDrawIndexUint32 = false,
+      .imageCubeArray = false,
       .independentBlend = false,
       .geometryShader = false,
       .tessellationShader = false,
-      .sampleRateShading = true,
+      .sampleRateShading = false,
       .dualSrcBlend = false,
       .logicOp = false,
-      .multiDrawIndirect = true,
-      .drawIndirectFirstInstance = true,
-      .depthClamp = true,
-      .depthBiasClamp = true,
+      .multiDrawIndirect = false,
+      .drawIndirectFirstInstance = false,
+      .depthClamp = false,
+      .depthBiasClamp = false,
       .fillModeNonSolid = false,
       .depthBounds = false,
-      .wideLines = true,
-      .largePoints = true,
+      .wideLines = false,
+      .largePoints = false,
       .alphaToOne = false,
       .multiViewport = false,
       .samplerAnisotropy = false,
@@ -234,23 +229,23 @@ static void pvr_physical_device_get_supported_features(
       .textureCompressionBC = false,
       .occlusionQueryPrecise = false,
       .pipelineStatisticsQuery = false,
-      .vertexPipelineStoresAndAtomics = true,
-      .fragmentStoresAndAtomics = true,
+      .vertexPipelineStoresAndAtomics = false,
+      .fragmentStoresAndAtomics = false,
       .shaderTessellationAndGeometryPointSize = false,
       .shaderImageGatherExtended = false,
-      .shaderStorageImageExtendedFormats = true,
+      .shaderStorageImageExtendedFormats = false,
       .shaderStorageImageMultisample = false,
-      .shaderStorageImageReadWithoutFormat = true,
+      .shaderStorageImageReadWithoutFormat = false,
       .shaderStorageImageWriteWithoutFormat = false,
-      .shaderUniformBufferArrayDynamicIndexing = true,
-      .shaderSampledImageArrayDynamicIndexing = true,
-      .shaderStorageBufferArrayDynamicIndexing = true,
-      .shaderStorageImageArrayDynamicIndexing = true,
+      .shaderUniformBufferArrayDynamicIndexing = false,
+      .shaderSampledImageArrayDynamicIndexing = false,
+      .shaderStorageBufferArrayDynamicIndexing = false,
+      .shaderStorageImageArrayDynamicIndexing = false,
       .shaderClipDistance = false,
       .shaderCullDistance = false,
       .shaderFloat64 = false,
-      .shaderInt64 = true,
-      .shaderInt16 = true,
+      .shaderInt64 = false,
+      .shaderInt16 = false,
       .shaderResourceResidency = false,
       .shaderResourceMinLod = false,
       .sparseBinding = false,
@@ -287,7 +282,7 @@ static void pvr_physical_device_get_supported_features(
       .texelBufferAlignment = true,
 
       /* VK_KHR_shader_expect_assume */
-      .shaderExpectAssume = true,
+      .shaderExpectAssume = false,
    };
 }
 
@@ -324,74 +319,11 @@ static bool pvr_physical_device_init_pipeline_cache_uuid(
    return true;
 }
 
-struct pvr_descriptor_limits {
-   uint32_t max_per_stage_resources;
-   uint32_t max_per_stage_samplers;
-   uint32_t max_per_stage_uniform_buffers;
-   uint32_t max_per_stage_storage_buffers;
-   uint32_t max_per_stage_sampled_images;
-   uint32_t max_per_stage_storage_images;
-   uint32_t max_per_stage_input_attachments;
-};
-
-static const struct pvr_descriptor_limits *
-pvr_get_physical_device_descriptor_limits(
-   const struct pvr_device_info *dev_info,
-   const struct pvr_device_runtime_info *dev_runtime_info)
-{
-   enum pvr_descriptor_cs_level {
-      /* clang-format off */
-      CS4096, /* 6XT and some XE cores with large CS. */
-      CS2560, /* Mid range Rogue XE cores. */
-      CS2048, /* Low end Rogue XE cores. */
-      CS1536, /* Ultra-low-end 9XEP. */
-      CS680,  /* lower limits for older devices. */
-      CS408,  /* 7XE. */
-      /* clang-format on */
-   };
-
-   static const struct pvr_descriptor_limits descriptor_limits[] = {
-      [CS4096] = { 1160U, 256U, 192U, 144U, 256U, 256U, 8U, },
-      [CS2560] = {  648U, 128U, 128U, 128U, 128U, 128U, 8U, },
-      [CS2048] = {  584U, 128U,  96U,  64U, 128U, 128U, 8U, },
-      [CS1536] = {  456U,  64U,  96U,  64U, 128U,  64U, 8U, },
-      [CS680]  = {  224U,  32U,  64U,  36U,  48U,   8U, 8U, },
-      [CS408]  = {  128U,  16U,  40U,  28U,  16U,   8U, 8U, },
-   };
-
-   const uint32_t common_size =
-      pvr_calc_fscommon_size_and_tiles_in_flight(dev_info,
-                                                 dev_runtime_info,
-                                                 UINT32_MAX,
-                                                 1);
-   enum pvr_descriptor_cs_level cs_level;
-
-   if (common_size >= 2048) {
-      cs_level = CS2048;
-   } else if (common_size >= 1526) {
-      cs_level = CS1536;
-   } else if (common_size >= 680) {
-      cs_level = CS680;
-   } else if (common_size >= 408) {
-      cs_level = CS408;
-   } else {
-      mesa_loge("This core appears to have a very limited amount of shared "
-                "register space and may not meet the Vulkan spec limits.");
-      abort();
-   }
-
-   return &descriptor_limits[cs_level];
-}
-
 static bool pvr_physical_device_get_properties(
    const struct pvr_physical_device *const pdevice,
    struct vk_properties *const properties)
 {
    const struct pvr_device_info *const dev_info = &pdevice->dev_info;
-   const struct pvr_device_runtime_info *const dev_runtime_info =
-      &pdevice->dev_runtime_info;
-   const struct pvr_descriptor_limits *descriptor_limits =
-      pvr_get_physical_device_descriptor_limits(dev_info, dev_runtime_info);
 
    /* Default value based on the minimum value found in all existing cores. */
    const uint32_t max_multisample =
@@ -404,14 +336,14 @@ static bool pvr_physical_device_get_properties(
    const uint32_t uvs_pba_entries =
       PVR_GET_FEATURE_VALUE(dev_info, uvs_pba_entries, 160);
 
-   const uint32_t sub_pixel_precision =
+   UNUSED const uint32_t sub_pixel_precision =
       PVR_HAS_FEATURE(dev_info, simple_internal_parameter_format) ? 4U : 8U;
 
-   const uint32_t max_render_size = rogue_get_render_size_max(dev_info);
+   UNUSED const uint32_t max_render_size = rogue_get_render_size_max(dev_info);
 
-   const uint32_t max_sample_bits = ((max_multisample << 1) - 1);
+   UNUSED const uint32_t max_sample_bits = ((max_multisample << 1) - 1);
 
-   const uint32_t max_user_vertex_components =
+   UNUSED const uint32_t max_user_vertex_components =
       ((uvs_banks <= 8U) && (uvs_pba_entries == 160U)) ? 64U : 128U;
 
    /* The workgroup invocations are limited by the case where we have a compute
@@ -435,7 +367,7 @@ static bool pvr_physical_device_get_properties(
    const uint32_t max_instances_per_pds_task =
       PVR_GET_FEATURE_VALUE(dev_info, max_instances_per_pds_task, 32U);
 
-   const uint32_t max_compute_work_group_invocations =
+   UNUSED const uint32_t max_compute_work_group_invocations =
       (usc_slots * max_instances_per_pds_task >= 512U) ? 512U : 384U;
 
    bool ret;
@@ -449,103 +381,99 @@ static bool pvr_physical_device_get_properties(
       .deviceType = VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU,
       /* deviceName and pipelineCacheUUID are filled below .*/
 
-      .maxImageDimension1D = max_render_size,
-      .maxImageDimension2D = max_render_size,
-      .maxImageDimension3D = PVR_MAX_TEXTURE_EXTENT_Z,
-      .maxImageDimensionCube = max_render_size,
-      .maxImageArrayLayers = PVR_MAX_ARRAY_LAYERS,
+      .maxImageDimension1D = 4096U,
+      .maxImageDimension2D = 4096U,
+      .maxImageDimension3D = 256U,
+      .maxImageDimensionCube = 4096U,
+      .maxImageArrayLayers = 256U,
       .maxTexelBufferElements = 64U * 1024U,
-      .maxUniformBufferRange = 128U * 1024U * 1024U,
+      .maxUniformBufferRange = 16U * 1024U,
       .maxStorageBufferRange = 128U * 1024U * 1024U,
-      .maxPushConstantsSize = PVR_MAX_PUSH_CONSTANTS_SIZE,
-      .maxMemoryAllocationCount = UINT32_MAX,
-      .maxSamplerAllocationCount = UINT32_MAX,
+      .maxPushConstantsSize = 128U,
+      .maxMemoryAllocationCount = 4096U,
+      .maxSamplerAllocationCount = 4000U,
       .bufferImageGranularity = 1U,
-      .sparseAddressSpaceSize = 256ULL * 1024ULL * 1024ULL * 1024ULL,
-      /* Maximum number of descriptor sets that can be bound simultaneously. */
-      .maxBoundDescriptorSets = PVR_MAX_DESCRIPTOR_SETS,
-      .maxPerStageResources = descriptor_limits->max_per_stage_resources,
-      .maxPerStageDescriptorSamplers =
-         descriptor_limits->max_per_stage_samplers,
-      .maxPerStageDescriptorUniformBuffers =
-         descriptor_limits->max_per_stage_uniform_buffers,
-      .maxPerStageDescriptorStorageBuffers =
-         descriptor_limits->max_per_stage_storage_buffers,
-      .maxPerStageDescriptorSampledImages =
-         descriptor_limits->max_per_stage_sampled_images,
-      .maxPerStageDescriptorStorageImages =
-         descriptor_limits->max_per_stage_storage_images,
-      .maxPerStageDescriptorInputAttachments =
-         descriptor_limits->max_per_stage_input_attachments,
-      .maxDescriptorSetSamplers = 256U,
-      .maxDescriptorSetUniformBuffers = 256U,
-      .maxDescriptorSetUniformBuffersDynamic =
-         PVR_MAX_DESCRIPTOR_SET_UNIFORM_DYNAMIC_BUFFERS,
-      .maxDescriptorSetStorageBuffers = 256U,
-      .maxDescriptorSetStorageBuffersDynamic =
-         PVR_MAX_DESCRIPTOR_SET_STORAGE_DYNAMIC_BUFFERS,
-      .maxDescriptorSetSampledImages = 256U,
-      .maxDescriptorSetStorageImages = 256U,
-      .maxDescriptorSetInputAttachments = 256U,
+      .sparseAddressSpaceSize = 0U, /* Requires sparseBinding */
+      .maxBoundDescriptorSets = 4U,
+      .maxPerStageDescriptorSamplers = 16,
+      .maxPerStageDescriptorUniformBuffers = 12,
+      .maxPerStageDescriptorStorageBuffers = 4,
+      .maxPerStageDescriptorSampledImages = 16,
+      .maxPerStageDescriptorStorageImages = 4,
+      .maxPerStageDescriptorInputAttachments = 4,
+      .maxPerStageResources = 44,
+      .maxDescriptorSetSamplers = 3U * 16U,
+      .maxDescriptorSetUniformBuffers = 3U * 12U,
+      .maxDescriptorSetUniformBuffersDynamic = 8U,
+      .maxDescriptorSetStorageBuffers = 3U * 4U,
+      .maxDescriptorSetStorageBuffersDynamic = 4U,
+      .maxDescriptorSetSampledImages = 3U * 16U,
+      .maxDescriptorSetStorageImages = 3U * 4U,
+      .maxDescriptorSetInputAttachments = 4U,
 
       /* Vertex Shader Limits */
-      .maxVertexInputAttributes = PVR_MAX_VERTEX_INPUT_BINDINGS,
-      .maxVertexInputBindings = PVR_MAX_VERTEX_INPUT_BINDINGS,
-      .maxVertexInputAttributeOffset = 0xFFFF,
-      .maxVertexInputBindingStride = 1024U * 1024U * 1024U * 2U,
-      .maxVertexOutputComponents = max_user_vertex_components,
+      .maxVertexInputAttributes = 16U,
+      .maxVertexInputBindings = 16U,
+      .maxVertexInputAttributeOffset = 2048U - 1U,
+      .maxVertexInputBindingStride = 2048U,
+      .maxVertexOutputComponents = 64U,
 
       /* Tessellation Limits */
-      .maxTessellationGenerationLevel = 0,
-      .maxTessellationPatchSize = 0,
-      .maxTessellationControlPerVertexInputComponents = 0,
-      .maxTessellationControlPerVertexOutputComponents = 0,
-      .maxTessellationControlPerPatchOutputComponents = 0,
-      .maxTessellationControlTotalOutputComponents = 0,
-      .maxTessellationEvaluationInputComponents = 0,
-      .maxTessellationEvaluationOutputComponents = 0,
+      /* Requires tessellationShader */
+      .maxTessellationGenerationLevel = 0U,
+      .maxTessellationPatchSize = 0U,
+      .maxTessellationControlPerVertexInputComponents = 0U,
+      .maxTessellationControlPerVertexOutputComponents = 0U,
+      .maxTessellationControlPerPatchOutputComponents = 0U,
+      .maxTessellationControlTotalOutputComponents = 0U,
+      .maxTessellationEvaluationInputComponents = 0U,
+      .maxTessellationEvaluationOutputComponents = 0U,
 
       /* Geometry Shader Limits */
-      .maxGeometryShaderInvocations = 0,
-      .maxGeometryInputComponents = 0,
-      .maxGeometryOutputComponents = 0,
-      .maxGeometryOutputVertices = 0,
-      .maxGeometryTotalOutputComponents = 0,
+      /* Requires geometryShader */
+      .maxGeometryShaderInvocations = 0U,
+      .maxGeometryInputComponents = 0U,
+      .maxGeometryOutputComponents = 0U,
+      .maxGeometryOutputVertices = 0U,
+      .maxGeometryTotalOutputComponents = 0U,
 
       /* Fragment Shader Limits */
-      .maxFragmentInputComponents = max_user_vertex_components,
-      .maxFragmentOutputAttachments = PVR_MAX_COLOR_ATTACHMENTS,
-      .maxFragmentDualSrcAttachments = 0,
-      .maxFragmentCombinedOutputResources =
-         descriptor_limits->max_per_stage_storage_buffers +
-         descriptor_limits->max_per_stage_storage_images +
-         PVR_MAX_COLOR_ATTACHMENTS,
+      .maxFragmentInputComponents = 64U,
+      .maxFragmentOutputAttachments = 4U,
+      .maxFragmentDualSrcAttachments = 0U, /* Requires dualSrcBlend */
+      .maxFragmentCombinedOutputResources = 4U,
 
       /* Compute Shader Limits */
       .maxComputeSharedMemorySize = 16U * 1024U,
-      .maxComputeWorkGroupCount = { 64U * 1024U, 64U * 1024U, 64U * 1024U },
-      .maxComputeWorkGroupInvocations = max_compute_work_group_invocations,
-      .maxComputeWorkGroupSize = { max_compute_work_group_invocations,
-                                   max_compute_work_group_invocations,
-                                   64U },
+      .maxComputeWorkGroupCount = {
+         [0] = (64U * 1024U) - 1,
+         [1] = (64U * 1024U) - 1,
+         [2] = (64U * 1024U) - 1,
+      },
+      .maxComputeWorkGroupInvocations = 128U,
+      .maxComputeWorkGroupSize = {
+        [0] = 128U,
+        [1] = 128U,
+        [2] = 64U,
+      },
 
       /* Rasterization Limits */
-      .subPixelPrecisionBits = sub_pixel_precision,
+      .subPixelPrecisionBits = 4U,
       .subTexelPrecisionBits = 8U,
       .mipmapPrecisionBits = 8U,
 
-      .maxDrawIndexedIndexValue = UINT32_MAX,
-      .maxDrawIndirectCount = 2U * 1024U * 1024U * 1024U,
+      .maxDrawIndexedIndexValue = (1U << 24) - 1U, /* Requires fullDrawIndexUint32 */
+      .maxDrawIndirectCount = 1U, /* Requires multiDrawIndirect */
       .maxSamplerLodBias = 16.0f,
-      .maxSamplerAnisotropy = 1.0f,
-      .maxViewports = PVR_MAX_VIEWPORTS,
+      .maxSamplerAnisotropy = 1.0f, /* Requires samplerAnisotropy */
+      .maxViewports = 1U, /* Requires multiViewport */
 
-      .maxViewportDimensions[0] = max_render_size,
-      .maxViewportDimensions[1] = max_render_size,
-      .viewportBoundsRange[0] = -(int32_t)(2U * max_render_size),
-      .viewportBoundsRange[1] = 2U * max_render_size,
+      .maxViewportDimensions[0] = 4096U,
+      .maxViewportDimensions[1] = 4096U,
+      .viewportBoundsRange[0] = -8192.0f,
+      .viewportBoundsRange[1] = 8191.0f,
 
-      .viewportSubPixelBits = 0,
+      .viewportSubPixelBits = 0U,
       .minMemoryMapAlignment = pdevice->ws->page_size,
       .minTexelBufferOffsetAlignment = PVR_TEXEL_BUFFER_OFFSET_ALIGNMENT,
       .minUniformBufferOffsetAlignment = PVR_UNIFORM_BUFFER_OFFSET_ALIGNMENT,
@@ -553,26 +481,30 @@ static bool pvr_physical_device_get_properties(
 
       .minTexelOffset = -8,
       .maxTexelOffset = 7U,
-      .minTexelGatherOffset = -8,
-      .maxTexelGatherOffset = 7,
-      .minInterpolationOffset = -0.5,
-      .maxInterpolationOffset = 0.5,
-      .subPixelInterpolationOffsetBits = 4U,
 
-      .maxFramebufferWidth = max_render_size,
-      .maxFramebufferHeight = max_render_size,
-      .maxFramebufferLayers = PVR_MAX_FRAMEBUFFER_LAYERS,
+      /* Requires shaderImageGatherExtended */
+      .minTexelGatherOffset = 0,
+      .maxTexelGatherOffset = 0U,
 
-      .framebufferColorSampleCounts = max_sample_bits,
-      .framebufferDepthSampleCounts = max_sample_bits,
-      .framebufferStencilSampleCounts = max_sample_bits,
-      .framebufferNoAttachmentsSampleCounts = max_sample_bits,
-      .maxColorAttachments = PVR_MAX_COLOR_ATTACHMENTS,
-      .sampledImageColorSampleCounts = max_sample_bits,
-      .sampledImageIntegerSampleCounts = max_sample_bits,
-      .sampledImageDepthSampleCounts = max_sample_bits,
-      .sampledImageStencilSampleCounts = max_sample_bits,
-      .storageImageSampleCounts = max_sample_bits,
+      /* Requires sampleRateShading */
+      .minInterpolationOffset = 0.0f,
+      .maxInterpolationOffset = 0.0f,
+      .subPixelInterpolationOffsetBits = 0U,
+
+      .maxFramebufferWidth = 4096U,
+      .maxFramebufferHeight = 4096U,
+      .maxFramebufferLayers = 256U,
+
+      .framebufferColorSampleCounts = VK_SAMPLE_COUNT_1_BIT | VK_SAMPLE_COUNT_4_BIT,
+      .framebufferDepthSampleCounts = VK_SAMPLE_COUNT_1_BIT | VK_SAMPLE_COUNT_4_BIT,
+      .framebufferStencilSampleCounts = VK_SAMPLE_COUNT_1_BIT | VK_SAMPLE_COUNT_4_BIT,
+      .framebufferNoAttachmentsSampleCounts = VK_SAMPLE_COUNT_1_BIT | VK_SAMPLE_COUNT_4_BIT,
+      .maxColorAttachments = 4U,
+      .sampledImageColorSampleCounts = VK_SAMPLE_COUNT_1_BIT | VK_SAMPLE_COUNT_4_BIT,
+      .sampledImageIntegerSampleCounts = VK_SAMPLE_COUNT_1_BIT | VK_SAMPLE_COUNT_4_BIT,
+      .sampledImageDepthSampleCounts = VK_SAMPLE_COUNT_1_BIT | VK_SAMPLE_COUNT_4_BIT,
+      .sampledImageStencilSampleCounts = VK_SAMPLE_COUNT_1_BIT | VK_SAMPLE_COUNT_4_BIT,
+      .storageImageSampleCounts = VK_SAMPLE_COUNT_1_BIT, /* Requires shaderStorageImageMultisample */
       .maxSampleMaskWords = 1U,
       .timestampComputeAndGraphics = false,
       .timestampPeriod = 0.0f,
@@ -583,16 +515,21 @@ static bool pvr_physical_device_get_properties(
       .maxCombinedClipAndCullDistances = 0U,
 
       .discreteQueuePriorities = 2U,
+
+      /* Requires largePoints */
       .pointSizeRange[0] = 1.0f,
-      .pointSizeRange[1] = 511.0f,
-      .pointSizeGranularity = 0.0625f,
-      .lineWidthRange[0] = 1.0f / 16.0f,
-      .lineWidthRange[1] = 16.0f,
-      .lineWidthGranularity = 1.0f / 16.0f,
+      .pointSizeRange[1] = 1.0f,
+      .pointSizeGranularity = 0.0f,
+
+      /* Requires wideLines */
+      .lineWidthRange[0] = 1.0f,
+      .lineWidthRange[1] = 1.0f,
+      .lineWidthGranularity = 0.0f,
+
       .strictLines = false,
       .standardSampleLocations = true,
-      .optimalBufferCopyOffsetAlignment = 4U,
-      .optimalBufferCopyRowPitchAlignment = 4U,
+      .optimalBufferCopyOffsetAlignment = PVR_STORAGE_BUFFER_OFFSET_ALIGNMENT,
+      .optimalBufferCopyRowPitchAlignment = PVR_STORAGE_BUFFER_OFFSET_ALIGNMENT,
       .nonCoherentAtomSize = 1U,
 
       /* Vulkan 1.2 / VK_KHR_driver_properties */
@@ -610,9 +547,9 @@ static bool pvr_physical_device_get_properties(
       .maxTimelineSemaphoreValueDifference = UINT64_MAX,
 
       /* Vulkan 1.3 / VK_EXT_texel_buffer_alignment */
-      .storageTexelBufferOffsetAlignmentBytes = 16,
+      .storageTexelBufferOffsetAlignmentBytes = PVR_TEXEL_BUFFER_OFFSET_ALIGNMENT,
       .storageTexelBufferOffsetSingleTexelAlignment = true,
-      .uniformTexelBufferOffsetAlignmentBytes = 16,
+      .uniformTexelBufferOffsetAlignmentBytes = PVR_TEXEL_BUFFER_OFFSET_ALIGNMENT,
       .uniformTexelBufferOffsetSingleTexelAlignment = false,
    };
 
