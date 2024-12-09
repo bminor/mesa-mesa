@@ -2730,6 +2730,21 @@ radv_graphics_shaders_compile(struct radv_device *device, struct vk_pipeline_cac
    /* Optimize varyings on lowered shader I/O (more efficient than optimizing I/O derefs). */
    radv_graphics_shaders_link_varyings(stages);
 
+   /* Optimize constant clip/cull distance after linking to operate on scalar io in the last
+    * pre raster stage.
+    */
+   radv_foreach_stage(i, active_nir_stages & (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT))
+   {
+      if (stages[i].key.optimisations_disabled)
+         continue;
+
+      int64_t stage_start = os_time_get_nano();
+
+      NIR_PASS(_, stages[i].nir, nir_opt_clip_cull_const);
+
+      stages[i].feedback.duration += os_time_get_nano() - stage_start;
+   }
+
    radv_fill_shader_info(device, RADV_PIPELINE_GRAPHICS, gfx_state, stages, active_nir_stages);
 
    radv_declare_pipeline_args(device, stages, gfx_state, active_nir_stages);
