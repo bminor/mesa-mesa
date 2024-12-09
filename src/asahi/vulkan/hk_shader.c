@@ -1126,6 +1126,16 @@ hk_compile_shader(struct hk_device *dev, struct vk_shader_compile_info *info,
    } else if (sw_stage == MESA_SHADER_VERTEX ||
               sw_stage == MESA_SHADER_TESS_EVAL) {
 
+      VkShaderStageFlags next_stage = info->next_stage_mask;
+
+      /* Transform feedback is layered on top of geometry shaders. If there is
+       * not a geometry shader in the pipeline, we will compile a geometry
+       * shader for the purpose. Update the next_stage mask accordingly.
+       */
+      if (nir->xfb_info != NULL) {
+         next_stage |= VK_SHADER_STAGE_GEOMETRY_BIT;
+      }
+
       if (sw_stage == MESA_SHADER_VERTEX) {
          assert(
             !(nir->info.inputs_read & BITFIELD64_MASK(VERT_ATTRIB_GENERIC0)) &&
@@ -1138,8 +1148,17 @@ hk_compile_shader(struct hk_device *dev, struct vk_shader_compile_info *info,
       NIR_PASS(_, nir, nir_io_add_const_offset_to_base,
                nir_var_shader_in | nir_var_shader_out);
 
-      /* TODO: Optimize single variant when we know nextStage */
       for (enum hk_vs_variant v = 0; v < HK_VS_VARIANTS; ++v) {
+         /* Only compile the software variant if we might use this shader with
+          * geometry/tessellation. We need to compile the hardware variant
+          * unconditionally to handle the VS -> null FS case, which does not
+          * require setting the FRAGMENT bit.
+          */
+         if (v == HK_VS_VARIANT_SW &&
+             !(next_stage & (VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT |
+                             VK_SHADER_STAGE_GEOMETRY_BIT)))
+            continue;
+
          struct hk_shader *shader = &obj->variants[v];
          bool hw = v == HK_VS_VARIANT_HW;
          bool last = (v + 1) == HK_VS_VARIANTS;
