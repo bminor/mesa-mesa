@@ -774,7 +774,7 @@
         "description": "radv/video: set max slice counts to 1 for h264/5 encode",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null

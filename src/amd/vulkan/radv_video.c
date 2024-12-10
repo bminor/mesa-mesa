@@ -711,7 +711,7 @@ radv_GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice, cons
       ext->flags = VK_VIDEO_ENCODE_H264_CAPABILITY_HRD_COMPLIANCE_BIT_KHR |
                    VK_VIDEO_ENCODE_H264_CAPABILITY_PER_PICTURE_TYPE_MIN_MAX_QP_BIT_KHR;
       ext->maxLevelIdc = cap ? cap->max_level : 0;
-      ext->maxSliceCount = 128;
+      ext->maxSliceCount = 1;
       ext->maxPPictureL0ReferenceCount = 1;
       ext->maxBPictureL0ReferenceCount = 0;
       ext->maxL1ReferenceCount = 0;
@@ -757,7 +757,7 @@ radv_GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice, cons
       pCapabilities->maxActiveReferencePictures = NUM_H2645_REFS;
       ext->flags = VK_VIDEO_ENCODE_H265_CAPABILITY_PER_PICTURE_TYPE_MIN_MAX_QP_BIT_KHR;
       ext->maxLevelIdc = cap ? cap->max_level : 0;
-      ext->maxSliceSegmentCount = 128;
+      ext->maxSliceSegmentCount = 1;
       ext->maxTiles.width = 1;
       ext->maxTiles.height = 1;
       ext->ctbSizes = VK_VIDEO_ENCODE_H265_CTB_SIZE_64_BIT_KHR;
