@@ -555,6 +555,8 @@ d3d12_video_nalu_writer_h264::write_sei_nalu(H264_SEI_MESSAGE               sei_
       assert(false);
    }
 
+   sei_payload_bitstream.set_start_code_prevention(true);
+
    switch (sei_message.payload_type)
    {
       case H264_SEI_SCALABILITY_INFO:
@@ -617,8 +619,6 @@ d3d12_video_nalu_writer_h264::write_sei_nalu(H264_SEI_MESSAGE               sei_
       debug_printf("nalu.create_bitstream(2 * sizeof(H264_SEI_MESSAGE)) failed.\n");
       assert(false);
    }
-
-   rbsp.set_start_code_prevention(true);
 
    //
    // Write payload_type to bitstream
