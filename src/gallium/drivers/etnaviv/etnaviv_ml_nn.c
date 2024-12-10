@@ -995,7 +995,9 @@ create_nn_config(struct etna_ml_subgraph *subgraph, const struct etna_operation 
          map->unused7_2 = nn_core_version == 8;
          map->unused7_3 = nn_core_version == 8;
 
-      } else if (operation->stride == 2 && weight_width > 2 && (input_width < 5 || (operation->depthwise && (weight_width == 5 || input_width == 5)))) {
+      } else if (operation->stride == 2 &&
+                 weight_width > 2 && weight_width <= input_width &&
+                 (input_width < 5 || (operation->depthwise && (weight_width == 5 || input_width == 5)))) {
 
          if ((input_width <= 5 && weight_width < 5) ||
             (input_width > 5 && weight_width >= 5)) {
