@@ -737,12 +737,6 @@ radv_device_init_accel_struct_build_state(struct radv_device *device)
    device->meta_state.accel_struct_build.radix_sort = vk_create_radix_sort_u64(
       radv_device_to_handle(device), &device->meta_state.alloc, device->meta_state.cache, radix_sort_config);
 
-   result = vk_meta_device_init(&device->vk, &device->meta_state.device);
-   if (result != VK_SUCCESS)
-      goto exit;
-
-   device->meta_state.device.pipeline_cache = device->meta_state.cache;
-
    device->vk.as_build_ops = &build_ops;
    device->vk.write_buffer_cp = radv_write_buffer_cp;
    device->vk.flush_buffer_write_cp = radv_flush_buffer_write_cp;

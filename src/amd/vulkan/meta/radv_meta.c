@@ -447,6 +447,12 @@ radv_device_init_meta(struct radv_device *device)
    bool loaded_cache = radv_load_meta_pipeline(device);
    bool on_demand = !loaded_cache;
 
+   result = vk_meta_device_init(&device->vk, &device->meta_state.device);
+   if (result != VK_SUCCESS)
+      return result;
+
+   device->meta_state.device.pipeline_cache = device->meta_state.cache;
+
    mtx_init(&device->meta_state.mtx, mtx_plain);
 
    result = radv_device_init_meta_clear_state(device, on_demand);
