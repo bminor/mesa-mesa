@@ -356,9 +356,13 @@
     B2C_KERNEL_CMDLINE_EXTRAS: 'b2c.swap=16g'
     # FIXME: drop the hangcheck part when we move to linux 6.11+ as hang
     # recovery should be more stable
-    B2C_SESSION_REBOOT_REGEX: 'Sahara Open\r?$|hangcheck detected'
+    B2C_SESSION_REBOOT_REGEX: 'hangcheck detected'
     B2C_TIMEOUT_FIRST_CONSOLE_ACTIVITY_SECONDS: 30
     B2C_TIMEOUT_FIRST_CONSOLE_ACTIVITY_RETRIES: 3
+    B2C_TIMEOUT_BOOT_WD_SECONDS: 20
+    B2C_TIMEOUT_BOOT_WD_RETRIES: 5
+    B2C_BOOT_WD_START_REGEX: 'VB: RWDeviceState: Succeed using devinfo!'  # A line repeated during firmware boot
+    B2C_BOOT_WD_STOP_REGEX: 'CPU features: detected:'                     # A line repeated during Linux boot
     GPU_VERSION: freedreno-a750
   tags:
     - farm:$RUNNER_FARM_LOCATION
