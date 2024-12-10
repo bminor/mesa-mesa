@@ -1048,8 +1048,12 @@ impl MemBase {
             && bit_check(self.flags, CL_MEM_USE_HOST_PTR)
     }
 
-    pub fn get_res_of_dev(&self, dev: &Device) -> CLResult<&Arc<PipeResource>> {
-        self.alloc.get_res_of_dev(dev)
+    pub fn get_res_for_access(
+        &self,
+        ctx: &QueueContext,
+        rw: RWFlags,
+    ) -> CLResult<&Arc<PipeResource>> {
+        self.alloc.get_res_for_access(ctx, rw)
     }
 
     /// Returns the parent memory object or None if self isn't a sub allocated memory object.
@@ -1174,8 +1178,8 @@ impl Buffer {
     ) -> CLResult<()> {
         let src_offset = self.apply_offset(src_offset)?;
         let dst_offset = dst.apply_offset(dst_offset)?;
-        let src_res = self.get_res_of_dev(ctx.dev)?;
-        let dst_res = dst.get_res_of_dev(ctx.dev)?;
+        let src_res = self.get_res_for_access(ctx, RWFlags::RD)?;
+        let dst_res = dst.get_res_for_access(ctx, RWFlags::WR)?;
 
         let bx = create_pipe_box(
             [src_offset, 0, 0].into(),
@@ -1257,7 +1261,7 @@ impl Buffer {
         size: usize,
     ) -> CLResult<()> {
         let offset = self.apply_offset(offset)?;
-        let res = self.get_res_of_dev(ctx.dev)?;
+        let res = self.get_res_for_access(ctx, RWFlags::WR)?;
         ctx.clear_buffer(
             res,
             pattern,
@@ -1344,15 +1348,23 @@ impl Buffer {
     }
 
     pub fn sync_map(&self, ctx: &QueueContext, ptr: MutMemoryPtr) -> CLResult<()> {
-        // no need to update
-        if self.is_pure_user_memory(ctx.dev)? {
-            return Ok(());
-        }
-
         let maps = self.maps.lock().unwrap();
         let Some(mapping) = maps.find_alloc_precise(ptr.as_ptr() as usize) else {
             return Err(CL_INVALID_VALUE);
         };
+
+        // in this case we only need to migrate to the device if the data is located on a device not
+        // having a userptr allocation.
+        if self.is_pure_user_memory(ctx.dev)? {
+            let rw = if mapping.writes {
+                RWFlags::RW
+            } else {
+                RWFlags::RD
+            };
+
+            let _ = self.get_res_for_access(ctx, rw)?;
+            return Ok(());
+        }
 
         self.read(ctx, mapping.offset, ptr, mapping.size())
     }
@@ -1390,7 +1402,7 @@ impl Buffer {
         rw: RWFlags,
     ) -> CLResult<PipeTransfer<'a>> {
         let offset = self.apply_offset(offset)?;
-        let r = self.get_res_of_dev(ctx.dev)?;
+        let r = self.get_res_for_access(ctx, rw)?;
 
         ctx.buffer_map(
             r,
@@ -1422,7 +1434,7 @@ impl Buffer {
     ) -> CLResult<()> {
         let ptr = ptr.as_ptr();
         let offset = self.apply_offset(offset)?;
-        let r = self.get_res_of_dev(ctx.dev)?;
+        let r = self.get_res_for_access(ctx, RWFlags::WR)?;
 
         perf_warning!("clEnqueueWriteBuffer and clEnqueueUnmapMemObject might stall the GPU");
 
@@ -1538,8 +1550,8 @@ impl Image {
         dst_origin: CLVec<usize>,
         region: &CLVec<usize>,
     ) -> CLResult<()> {
-        let src_res = self.get_res_of_dev(ctx.dev)?;
-        let dst_res = dst.get_res_of_dev(ctx.dev)?;
+        let src_res = self.get_res_for_access(ctx, RWFlags::RD)?;
+        let dst_res = dst.get_res_for_access(ctx, RWFlags::WR)?;
 
         // We just want to use sw_copy if mem objects have different types or if copy can have
         // custom strides (image2d from buff/images)
@@ -1629,7 +1641,7 @@ impl Image {
         origin: &CLVec<usize>,
         region: &CLVec<usize>,
     ) -> CLResult<()> {
-        let res = self.get_res_of_dev(ctx.dev)?;
+        let res = self.get_res_for_access(ctx, RWFlags::WR)?;
 
         // make sure we allocate multiples of 4 bytes so drivers don't read out of bounds or
         // unaligned.
@@ -1798,15 +1810,23 @@ impl Image {
     }
 
     pub fn sync_map(&self, ctx: &QueueContext, ptr: MutMemoryPtr) -> CLResult<()> {
-        // no need to update
-        if self.is_pure_user_memory(ctx.dev)? {
-            return Ok(());
-        }
-
         let maps = self.maps.lock().unwrap();
         let Some(mapping) = maps.find_alloc_precise(ptr.as_ptr() as usize) else {
             return Err(CL_INVALID_VALUE);
         };
+
+        // in this case we only need to migrate to the device if the data is located on a device not
+        // having a userptr allocation.
+        if self.is_pure_user_memory(ctx.dev)? {
+            let rw = if mapping.writes {
+                RWFlags::RW
+            } else {
+                RWFlags::RD
+            };
+
+            let _ = self.get_res_for_access(ctx, rw)?;
+            return Ok(());
+        }
 
         let row_pitch = self.image_desc.row_pitch()? as usize;
         let slice_pitch = self.image_desc.slice_pitch();
@@ -1861,7 +1881,7 @@ impl Image {
         bx: &pipe_box,
         rw: RWFlags,
     ) -> CLResult<PipeTransfer<'a>> {
-        let r = self.get_res_of_dev(ctx.dev)?;
+        let r = self.get_res_for_access(ctx, rw)?;
         ctx.texture_map(r, bx, rw).ok_or(CL_OUT_OF_RESOURCES)
     }
 
@@ -1915,7 +1935,7 @@ impl Image {
                 pixel_size,
             );
         } else {
-            let res = self.get_res_of_dev(ctx.dev)?;
+            let res = self.get_res_for_access(ctx, RWFlags::WR)?;
             let bx = create_pipe_box(*dst_origin, *region, self.mem_type)?;
 
             if self.mem_type == CL_MEM_OBJECT_IMAGE1D_ARRAY {
@@ -1945,7 +1965,7 @@ impl Image {
     }
 
     pub fn sampler_view<'c>(&self, ctx: &'c QueueContext) -> CLResult<PipeSamplerView<'c, '_>> {
-        let res = self.get_res_of_dev(ctx.dev)?;
+        let res = self.get_res_for_access(ctx, RWFlags::RD)?;
 
         let template = if res.is_buffer() && self.mem_type == CL_MEM_OBJECT_IMAGE2D {
             res.pipe_sampler_view_template_2d_buffer(self.pipe_format, &self.buffer_2d_info()?)
@@ -1960,9 +1980,10 @@ impl Image {
         PipeSamplerView::new(ctx, res, &template).ok_or(CL_OUT_OF_HOST_MEMORY)
     }
 
-    pub fn image_view(&self, dev: &Device, read_write: bool) -> CLResult<PipeImageView> {
-        let res = self.get_res_of_dev(dev)?;
+    pub fn image_view(&self, ctx: &QueueContext, read_write: bool) -> CLResult<PipeImageView> {
+        let rw = if read_write { RWFlags::RW } else { RWFlags::WR };
 
+        let res = self.get_res_for_access(ctx, rw)?;
         if res.is_buffer() && self.mem_type == CL_MEM_OBJECT_IMAGE2D {
             Ok(res.pipe_image_view_2d_buffer(
                 self.pipe_format,

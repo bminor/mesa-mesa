@@ -1430,16 +1430,24 @@ impl Kernel {
                             KernelArgValue::Constant(c) => input.extend_from_slice(c),
                             KernelArgValue::Buffer(buffer) => {
                                 let buffer = &buffer_arcs[&(buffer.as_ptr() as usize)];
-                                let res = buffer.get_res_of_dev(q.device)?;
+                                let rw = if api_arg.spirv.address_qualifier
+                                    == clc_kernel_arg_address_qualifier::CLC_KERNEL_ARG_ADDRESS_CONSTANT
+                                {
+                                    RWFlags::RD
+                                } else {
+                                    RWFlags::RW
+                                };
+
+                                let res = buffer.get_res_for_access(ctx, rw)?;
                                 add_global(q, &mut input, &mut resource_info, res, buffer.offset());
                             }
                             KernelArgValue::Image(image) => {
                                 let image = &image_arcs[&(image.as_ptr() as usize)];
                                 let (formats, orders) = if api_arg.kind == KernelArgType::Image {
-                                    iviews.push(image.image_view(q.device, false)?);
+                                    iviews.push(image.image_view(ctx, false)?);
                                     (&mut img_formats, &mut img_orders)
                                 } else if api_arg.kind == KernelArgType::RWImage {
-                                    iviews.push(image.image_view(q.device, true)?);
+                                    iviews.push(image.image_view(ctx, true)?);
                                     (&mut img_formats, &mut img_orders)
                                 } else {
                                     sviews.push(image.sampler_view(ctx)?);
