@@ -184,14 +184,14 @@ etna_ml_find_consumer(const struct pipe_ml_operation *poperations,
 static bool
 needs_transpose(const struct pipe_ml_operation *poperations,
                 unsigned count,
-                const struct pipe_ml_operation *poperation)
+                const struct pipe_tensor *tensor)
 {
    const struct pipe_ml_operation *producer;
 
-   if (poperation->input_tensors[0]->dims[3] == 1)
+   if (tensor->dims[3] == 1)
       return false;
 
-   producer = etna_ml_find_producer(poperations, count, poperation->input_tensors[0]->index);
+   producer = etna_ml_find_producer(poperations, count, tensor->index);
    if (!producer)
       return true;
 
@@ -201,15 +201,14 @@ needs_transpose(const struct pipe_ml_operation *poperations,
 static bool
 needs_detranspose(const struct pipe_ml_operation *poperations,
                   unsigned count,
-                  const struct pipe_ml_operation *poperation)
+                  const struct pipe_tensor *tensor)
 {
    const struct pipe_ml_operation *consumer;
 
-   if (poperation->output_tensors[0]->dims[3] == 1)
+   if (tensor->dims[3] == 1)
       return false;
 
-   /* TODO: Support multiple consumers */
-   consumer = etna_ml_find_consumer(poperations, count, poperation->output_tensors[0]->index);
+   consumer = etna_ml_find_consumer(poperations, count, tensor->index);
    if (!consumer)
       return true;
 
@@ -274,77 +273,68 @@ lower_operations(struct etna_ml_subgraph *subgraph,
 {
    for (unsigned i = 0; i < count; i++) {
       const struct pipe_ml_operation *poperation = &poperations[i];
+      struct etna_operation *operation = calloc(1, sizeof(*operation));
+      assert(poperation->input_count <= MAX_TENSORS);
+      unsigned input_tensors[MAX_TENSORS] = {};
+
+      for (int i = 0; i < poperation->input_count; i++) {
+         input_tensors[i] = poperation->input_tensors[i]->index;
+
+         if (poperation->type == PIPE_ML_OPERATION_TYPE_FULLY_CONNECTED)
+            continue;
+
+         if (poperation->input_tensors[i]->resource != NULL)
+            continue;
+
+         if (needs_transpose(poperations, count, poperation->input_tensors[i])) {
+            ML_DBG("Adding transpose.\n");
+            struct etna_operation *transpose = calloc(1, sizeof(*transpose));
+            etna_ml_lower_transpose(subgraph, poperation->input_tensors[i], transpose);
+            transpose->input_tensors[0] = input_tensors[i];
+            transpose->output_tensors[0] = etna_ml_allocate_tensor(subgraph);
+            input_tensors[i] = transpose->output_tensors[0];
+            list_addtail(&transpose->link, etna_operations);
+         }
+      }
 
       switch(poperation->type) {
          case PIPE_ML_OPERATION_TYPE_CONVOLUTION: {
-            unsigned input_tensor = poperation->input_tensors[0]->index;
-
-            if (needs_transpose(poperations, count, poperation)) {
-               ML_DBG("Adding transpose for convolution operation.\n");
-               struct etna_operation *operation = calloc(1, sizeof(*operation));
-               etna_ml_lower_transpose(subgraph, poperation->input_tensors[0], operation, &input_tensor);
-               list_addtail(&operation->link, etna_operations);
-            }
-
             if (needs_reshuffle(subgraph, poperation)) {
                ML_DBG("Adding reshuffle for convolution operation.\n");
-               struct etna_operation *operation = calloc(1, sizeof(*operation));
-               unsigned temp = 0;
-               etna_ml_lower_reshuffle(subgraph, poperation, operation, &temp);
-               operation->input_tensors[0] = input_tensor;
-               input_tensor = temp;
-               list_addtail(&operation->link, etna_operations);
+               struct etna_operation *reshuffle = calloc(1, sizeof(*reshuffle));
+               etna_ml_lower_reshuffle(subgraph, poperation, reshuffle);
+               reshuffle->input_tensors[0] = input_tensors[0];
+               reshuffle->output_tensors[0] = etna_ml_allocate_tensor(subgraph);
+               input_tensors[0] = reshuffle->output_tensors[0];
+               list_addtail(&reshuffle->link, etna_operations);
             }
 
             ML_DBG("Adding convolution.\n");
-            struct etna_operation *operation = calloc(1, sizeof(*operation));
             etna_ml_lower_convolution(subgraph, poperation, operation);
-            operation->input_tensors[0] = input_tensor;
+            operation->input_tensors[0] = input_tensors[0];
+            operation->output_tensors[0] = poperation->output_tensors[0]->index;
+            input_tensors[0] = operation->output_tensors[0];
             list_addtail(&operation->link, etna_operations);
 
-            if (needs_detranspose(poperations, count, poperation)) {
-               ML_DBG("Adding detranspose for convolution operation.\n");
-               struct etna_operation *detranspose = calloc(1, sizeof(*operation));
-               etna_ml_lower_detranspose(subgraph, operation, detranspose);
-               operation->output_tensors[0] = detranspose->input_tensors[0];
-               list_addtail(&detranspose->link, etna_operations);
-            }
             break;
          }
          case PIPE_ML_OPERATION_TYPE_ADD: {
-            struct etna_operation *operation = calloc(1, sizeof(*operation));
             etna_ml_lower_add(subgraph, poperation, operation);
+            operation->input_tensors[0] = input_tensors[0];
+            operation->input_tensors[1] = input_tensors[1];
+            operation->output_tensors[0] = poperation->output_tensors[0]->index;
             list_addtail(&operation->link, etna_operations);
 
-            if (needs_detranspose(poperations, count, poperation)) {
-               struct etna_operation *detranspose = calloc(1, sizeof(*operation));
-               etna_ml_lower_detranspose(subgraph, operation, detranspose);
-               operation->output_tensors[0] = detranspose->input_tensors[0];
-               list_addtail(&detranspose->link, etna_operations);
-            }
             break;
          }
          case PIPE_ML_OPERATION_TYPE_CONCATENATION: {
-            bool do_transpose = needs_transpose(poperations, count, poperation);
-
-            struct etna_operation *operation = calloc(1, sizeof(*operation));
             operation->type = ETNA_JOB_TYPE_CONCAT;
             assert(poperation->input_count <= MAX_TENSORS);
-            unsigned input_size = 0;
             for (int i = 0; i < poperation->input_count; i++) {
-               unsigned input_tensor = poperation->input_tensors[i]->index;
-
-               if (do_transpose) {
-                  struct etna_operation *operation = calloc(1, sizeof(*operation));
-                  etna_ml_lower_transpose(subgraph, poperation->input_tensors[i], operation, &input_tensor);
-                  list_addtail(&operation->link, etna_operations);
-               }
-
-               operation->input_tensors[i] = input_tensor;
+               operation->input_tensors[i] = input_tensors[i];
                operation->input_tensor_sizes[i] = poperation->input_tensors[i]->dims[1] *
                                                   poperation->input_tensors[i]->dims[2] *
                                                   poperation->input_tensors[i]->dims[3];
-               input_size += input_size;
             }
             operation->input_count = poperation->input_count;
 
@@ -358,17 +348,9 @@ lower_operations(struct etna_ml_subgraph *subgraph,
 
             list_addtail(&operation->link, etna_operations);
 
-            if (needs_detranspose(poperations, count, poperation)) {
-               struct etna_operation *detranspose = calloc(1, sizeof(*operation));
-               etna_ml_lower_detranspose(subgraph, operation, detranspose);
-               operation->output_tensors[0] = detranspose->input_tensors[0];
-               list_addtail(&detranspose->link, etna_operations);
-            }
-
             break;
          }
          case PIPE_ML_OPERATION_TYPE_SPLIT: {
-            struct etna_operation *operation = calloc(1, sizeof(*operation));
             operation->type = ETNA_JOB_TYPE_SPLIT;
 
             operation->input_tensors[0] = poperation->input_tensors[1]->index;
@@ -390,37 +372,33 @@ lower_operations(struct etna_ml_subgraph *subgraph,
             break;
          }
          case PIPE_ML_OPERATION_TYPE_PAD: {
-            unsigned input_tensor = poperation->input_tensors[0]->index;
-
-            if (needs_transpose(poperations, count, poperation)) {
-               struct etna_operation *operation = calloc(1, sizeof(*operation));
-               etna_ml_lower_transpose(subgraph, poperation->input_tensors[0], operation, &input_tensor);
-               list_addtail(&operation->link, etna_operations);
-            }
-
             ML_DBG("Adding pad operation.\n");
-            struct etna_operation *operation = calloc(1, sizeof(*operation));
             etna_ml_lower_pad(subgraph, poperation, operation);
-            operation->input_tensors[0] = input_tensor;
+            operation->input_tensors[0] = input_tensors[0];
+            operation->output_tensors[0] = poperation->output_tensors[0]->index;
             list_addtail(&operation->link, etna_operations);
-
-            if (needs_detranspose(poperations, count, poperation)) {
-               struct etna_operation *detranspose = calloc(1, sizeof(*operation));
-               etna_ml_lower_detranspose(subgraph, operation, detranspose);
-               operation->output_tensors[0] = detranspose->input_tensors[0];
-               list_addtail(&detranspose->link, etna_operations);
-            }
-
             break;
          }
          case PIPE_ML_OPERATION_TYPE_FULLY_CONNECTED: {
-            struct etna_operation *operation = calloc(1, sizeof(*operation));
             etna_ml_lower_fully_connected(subgraph, poperation, operation);
+            operation->input_tensors[0] = input_tensors[0];
+            operation->output_tensors[0] = poperation->output_tensors[0]->index;
             list_addtail(&operation->link, etna_operations);
             break;
          }
          default:
             unreachable("Unsupported ML operation type");
+      }
+
+      if (poperation->type != PIPE_ML_OPERATION_TYPE_FULLY_CONNECTED &&
+          needs_detranspose(poperations, count, poperation->output_tensors[0])) {
+         ML_DBG("Adding detranspose.\n");
+         struct etna_operation *detranspose = calloc(1, sizeof(*detranspose));
+         etna_ml_lower_detranspose(subgraph, poperation->output_tensors[0], detranspose);
+         operation->output_tensors[0] = etna_ml_allocate_tensor(subgraph);
+         detranspose->input_tensors[0] = operation->output_tensors[0];
+         detranspose->output_tensors[0] = poperation->output_tensors[0]->index;
+         list_addtail(&detranspose->link, etna_operations);
       }
    }
 

@@ -8,19 +8,17 @@
 void
 etna_ml_lower_transpose(struct etna_ml_subgraph *subgraph,
                         const struct pipe_tensor *input_tensor,
-                        struct etna_operation *operation,
-                        unsigned *output_tensor);
+                        struct etna_operation *operation);
 
 void
 etna_ml_lower_detranspose(struct etna_ml_subgraph *subgraph,
-                          struct etna_operation *convolution,
+                          const struct pipe_tensor *output_tensor,
                           struct etna_operation *operation);
 
 void
 etna_ml_lower_reshuffle(struct etna_ml_subgraph *subgraph,
                         const struct pipe_ml_operation *first_operation,
-                        struct etna_operation *operation,
-                        unsigned *output_tensor);
+                        struct etna_operation *operation);
 
 void
 etna_ml_lower_pad(struct etna_ml_subgraph *subgraph,
