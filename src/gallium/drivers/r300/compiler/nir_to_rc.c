@@ -84,7 +84,6 @@ struct ntr_compile {
    bool precise;
 
    unsigned num_temps;
-   unsigned first_non_array_temp;
 
    /* Mappings from driver_location to TGSI input/output number.
     *
@@ -229,7 +228,7 @@ struct ntr_live_reg_state {
 static void
 ntr_allocate_regs_unoptimized(struct ntr_compile *c, nir_function_impl *impl)
 {
-   for (int i = c->first_non_array_temp; i < c->num_temps; i++)
+   for (int i = 0; i < c->num_temps; i++)
       ureg_DECL_temporary(c->ureg);
 }
 
@@ -579,38 +578,21 @@ ntr_setup_registers(struct ntr_compile *c)
 {
    assert(c->num_temps == 0);
 
-   nir_foreach_reg_decl_safe (nir_reg, nir_shader_get_entrypoint(c->s)) {
-      /* Permanently allocate all the array regs at the start. */
-      unsigned num_array_elems = nir_intrinsic_num_array_elems(nir_reg);
-      unsigned index = nir_reg->def.index;
-
-      if (num_array_elems != 0) {
-         struct ureg_dst decl = ureg_DECL_array_temporary(c->ureg, num_array_elems, true);
-         c->reg_temp[index] = decl;
-         assert(c->num_temps == decl.Index);
-         c->num_temps += num_array_elems;
-      }
-   }
-   c->first_non_array_temp = c->num_temps;
-
    /* After that, allocate non-array regs in our virtual space that we'll
     * register-allocate before ureg emit.
     */
    nir_foreach_reg_decl_safe (nir_reg, nir_shader_get_entrypoint(c->s)) {
-      unsigned num_array_elems = nir_intrinsic_num_array_elems(nir_reg);
+      assert(nir_intrinsic_num_array_elems(nir_reg) == 0);
       unsigned num_components = nir_intrinsic_num_components(nir_reg);
       unsigned index = nir_reg->def.index;
 
-      /* We already handled arrays */
-      if (num_array_elems == 0) {
-         struct ureg_dst decl;
-         uint32_t write_mask = BITFIELD_MASK(num_components);
+      struct ureg_dst decl;
+      uint32_t write_mask = BITFIELD_MASK(num_components);
 
-         if (!ntr_try_store_reg_in_tgsi_output(c, &decl, nir_reg)) {
-            decl = ureg_writemask(ntr_temp(c), write_mask);
-         }
-         c->reg_temp[index] = decl;
+      if (!ntr_try_store_reg_in_tgsi_output(c, &decl, nir_reg)) {
+         decl = ureg_writemask(ntr_temp(c), write_mask);
       }
+      c->reg_temp[index] = decl;
    }
 }
 
