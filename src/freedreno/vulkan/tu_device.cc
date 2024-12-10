@@ -2542,7 +2542,7 @@ tu_CreateDevice(VkPhysicalDevice physicalDevice,
       tu_memory_trace_init(device);
 
    /* kgsl is not a drm device: */
-   if (!is_kgsl(physical_device->instance))
+   if (!is_kgsl(physical_device->instance) && (device->fd >= 0))
       vk_device_set_drm_fd(&device->vk, device->fd);
 
    struct tu6_global *global = NULL;

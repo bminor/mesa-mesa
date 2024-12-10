@@ -200,9 +200,7 @@ tu_timeline_sync_init(struct vk_device *vk_device,
    struct tu_timeline_sync *sync = to_tu_timeline_sync(vk_sync);
    uint32_t flags = 0;
 
-   assert(device->fd >= 0);
-
-   int err = drmSyncobjCreate(device->fd, flags, &sync->syncobj);
+   int err = vk_device->sync->create(vk_device->sync, flags, &sync->syncobj);
 
    if (err < 0) {
         return vk_error(device, VK_ERROR_DEVICE_LOST);
@@ -218,11 +216,9 @@ static void
 tu_timeline_sync_finish(struct vk_device *vk_device,
                    struct vk_sync *vk_sync)
 {
-   struct tu_device *dev = container_of(vk_device, struct tu_device, vk);
    struct tu_timeline_sync *sync = to_tu_timeline_sync(vk_sync);
 
-   assert(dev->fd >= 0);
-   ASSERTED int err = drmSyncobjDestroy(dev->fd, sync->syncobj);
+   ASSERTED int err = vk_device->sync->destroy(vk_device->sync, sync->syncobj);
    assert(err == 0);
 }
 
@@ -233,7 +229,7 @@ tu_timeline_sync_reset(struct vk_device *vk_device,
    struct tu_device *dev = container_of(vk_device, struct tu_device, vk);
    struct tu_timeline_sync *sync = to_tu_timeline_sync(vk_sync);
 
-   int err = drmSyncobjReset(dev->fd, &sync->syncobj, 1);
+   int err = vk_device->sync->reset(vk_device->sync, &sync->syncobj, 1);
    if (err) {
       return vk_errorf(dev, VK_ERROR_UNKNOWN,
                        "DRM_IOCTL_SYNCOBJ_RESET failed: %m");
@@ -250,13 +246,14 @@ drm_syncobj_wait(struct tu_device *device,
                  uint64_t timeout_nsec, bool wait_all)
 {
    MESA_TRACE_FUNC();
+   struct util_sync_provider *sync = device->vk.sync;
    uint32_t syncobj_wait_flags = DRM_SYNCOBJ_WAIT_FLAGS_WAIT_FOR_SUBMIT;
    if (wait_all) syncobj_wait_flags |= DRM_SYNCOBJ_WAIT_FLAGS_WAIT_ALL;
 
    /* syncobj absolute timeouts are signed.  clamp OS_TIMEOUT_INFINITE down. */
    timeout_nsec = MIN2(timeout_nsec, (uint64_t)INT64_MAX);
 
-   int err = drmSyncobjWait(device->fd, handles,
+   int err = sync->wait(sync, handles,
                             count_handles, timeout_nsec,
                             syncobj_wait_flags,
                             NULL /* first_signaled */);
@@ -366,6 +363,9 @@ tu_timeline_sync_wait(struct vk_device *vk_device,
    return ret;
 }
 
+/* Emulated timeline support on top of binary sync drm syncobjs, see
+ * https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/14105
+ */
 const struct vk_sync_type tu_timeline_sync_type = {
    .size = sizeof(struct tu_timeline_sync),
    .features = (enum vk_sync_features)(

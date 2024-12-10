@@ -184,10 +184,14 @@ virtio_device_init(struct tu_device *dev)
    struct tu_instance *instance = dev->physical_device->instance;
    int fd;
 
-   fd = open(dev->physical_device->fd_path, O_RDWR | O_CLOEXEC);
-   if (fd < 0) {
-      return vk_startup_errorf(instance, VK_ERROR_INITIALIZATION_FAILED,
-                               "failed to open device %s", dev->physical_device->fd_path);
+   if (strlen(dev->physical_device->fd_path) == 0) {
+      fd = -1;
+   } else {
+      fd = open(dev->physical_device->fd_path, O_RDWR | O_CLOEXEC);
+      if (fd < 0) {
+         return vk_startup_errorf(instance, VK_ERROR_INITIALIZATION_FAILED,
+                                 "failed to open device %s", dev->physical_device->fd_path);
+      }
    }
 
    struct tu_virtio_device *vdev = (struct tu_virtio_device *)
@@ -211,6 +215,9 @@ virtio_device_init(struct tu_device *dev)
    query_faults(dev, &dev->fault_count);
 
    set_debuginfo(dev);
+
+   if (fd < 0)
+      dev->vk.sync = vdrm_vpipe_get_sync(vdev->vdrm);
 
    return VK_SUCCESS;
 }
@@ -856,6 +863,13 @@ out_unlock:
    return result;
 }
 
+static int
+virtio_bo_export_dmabuf(struct tu_device *dev, struct tu_bo *bo)
+{
+   MESA_TRACE_FUNC();
+   return vdrm_bo_export_dmabuf(dev->vdev->vdrm, bo->gem_handle);
+}
+
 static VkResult
 virtio_bo_map(struct tu_device *dev, struct tu_bo *bo, void *placed_addr)
 {
@@ -1141,7 +1155,7 @@ static const struct tu_knl virtio_knl_funcs = {
       .submitqueue_close = virtio_submitqueue_close,
       .bo_init = virtio_bo_init,
       .bo_init_dmabuf = virtio_bo_init_dmabuf,
-      .bo_export_dmabuf = tu_drm_export_dmabuf,
+      .bo_export_dmabuf = virtio_bo_export_dmabuf,
       .bo_map = virtio_bo_map,
       .bo_allow_dump = virtio_bo_allow_dump,
       .bo_finish = tu_drm_bo_finish,
@@ -1166,7 +1180,11 @@ tu_knl_drm_virtio_load(struct tu_instance *instance,
    if (debug_get_bool_option("TU_NO_VIRTIO", false))
       return VK_ERROR_INCOMPATIBLE_DRIVER;
 
-   if (drmGetCap(fd, DRM_CAP_SYNCOBJ, &val) || !val) {
+   /* Note: in vtest case, where we don't open a device fd directly, we
+    * can't do drm ioctls directly.  But we can assume that the server
+    * side supports syncobjs.
+    */
+   if ((fd >= 0) && (drmGetCap(fd, DRM_CAP_SYNCOBJ, &val) || !val)) {
       return vk_startup_errorf(instance, VK_ERROR_INCOMPATIBLE_DRIVER,
                                "kernel driver for device %s does not support DRM_CAP_SYNC_OBJ",
                                version->name);
@@ -1198,6 +1216,15 @@ tu_knl_drm_virtio_load(struct tu_instance *instance,
    uint32_t bank_swizzle_levels = tu_drm_get_ubwc_swizzle(vdrm);
    enum fdl_macrotile_mode macrotile_mode = tu_drm_get_macrotile_mode(vdrm);
    uint64_t uche_trap_base = tu_drm_get_uche_trap_base(vdrm);
+
+   /* If using vtest, vtest provides it's own sync provider.  Otherwise this
+    * returns NULL and we fall back to using the syncobj ioctls directly:
+    */
+   struct util_sync_provider *sync = vdrm_vpipe_get_sync(vdrm);
+   if (!sync)
+      sync = util_sync_provider_drm(fd);
+   struct vk_sync_type syncobj_type = vk_drm_syncobj_get_type_from_provider(sync);
+   sync->finalize(sync);
 
    bool has_raytracing = tu_drm_get_raytracing(vdrm);
 
@@ -1277,7 +1304,8 @@ tu_knl_drm_virtio_load(struct tu_instance *instance,
 
    device->has_raytracing = has_raytracing;
 
-   device->syncobj_type = vk_drm_syncobj_get_type(fd);
+   device->syncobj_type = syncobj_type;
+
    /* we don't support DRM_CAP_SYNCOBJ_TIMELINE, but drm-shim does */
    if (!(device->syncobj_type.features & VK_SYNC_FEATURE_TIMELINE))
       device->timeline_type = vk_sync_timeline_get_type(&tu_timeline_sync_type);
