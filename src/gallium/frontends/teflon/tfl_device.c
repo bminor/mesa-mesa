@@ -674,11 +674,6 @@ PrepareDelegate(TfLiteContext *context, TfLiteDelegate *delegate)
                 params->axis != -1)
                supported = false;
 
-            unsigned input_channels = context->tensors[node->inputs->data[0]].dims->data[3];
-            for (unsigned i = 1; i < node->inputs->size; i++)
-               if (input_channels != context->tensors[node->inputs->data[i]].dims->data[3])
-                  supported = false;
-
             break;
          }
          case kTfLiteBuiltinSplit: {
