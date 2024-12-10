@@ -16,7 +16,6 @@
 #include "radeon_program_alu.h"
 #include "radeon_program_tex.h"
 #include "radeon_remove_constants.h"
-#include "radeon_rename_regs.h"
 #include "radeon_variable.h"
 
 static void
@@ -175,7 +174,6 @@ r3xx_compile_fragment_program(struct r300_fragment_program_compiler *c)
       {"native rewrite",          1,   !is_r500,        rc_local_transform,             native_rewrite_r300},
       {"deadcode",                1,   opt,             rc_dataflow_deadcode,           NULL},
       {"convert rgb<->alpha",     1,   opt,             rc_convert_rgb_alpha,           NULL},
-      {"register rename",         1,   !is_r500 || opt, rc_rename_regs,                 NULL},
       {"dataflow optimize",       1,   opt,             rc_optimize,                    NULL},
       {"inline literals",         1,   is_r500 && opt,  rc_inline_literals,             NULL},
       {"dataflow swizzles",       1,   1,               rc_dataflow_swizzles,           NULL},
