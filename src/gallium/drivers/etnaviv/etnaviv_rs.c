@@ -906,6 +906,23 @@ manual:
 }
 
 void
+etna_align_box_for_rs(const struct etna_context *ctx,
+                      const struct etna_resource *rsc,
+                      struct pipe_box *box)
+{
+   unsigned w_align, h_align;
+
+   etna_get_rs_alignment_mask(ctx, rsc->layout, &w_align, &h_align);
+
+   box->width += box->x & w_align;
+   box->x = box->x & ~w_align;
+   box->width = align(box->width, (ETNA_RS_WIDTH_MASK + 1));
+   box->height += box->y & h_align;
+   box->y = box->y & ~h_align;
+   box->height = align(box->height, ETNA_RS_HEIGHT_MASK + 1);
+}
+
+void
 etna_clear_blit_rs_init(struct pipe_context *pctx)
 {
    struct etna_context *ctx = etna_context(pctx);

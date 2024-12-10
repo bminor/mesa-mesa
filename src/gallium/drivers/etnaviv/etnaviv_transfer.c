@@ -29,6 +29,7 @@
 #include "etnaviv_context.h"
 #include "etnaviv_debug.h"
 #include "etnaviv_etc2.h"
+#include "etnaviv_rs.h"
 #include "etnaviv_screen.h"
 
 #include "pipe/p_defines.h"
@@ -297,22 +298,7 @@ etna_transfer_map(struct pipe_context *pctx, struct pipe_resource *prsc,
          /* Need to align the transfer region to satisfy RS restrictions, as we
           * really want to hit the RS blit path here.
           */
-         unsigned w_align, h_align;
-
-         if (rsc->layout & ETNA_LAYOUT_BIT_SUPER) {
-            w_align = 64;
-            h_align = 64 * ctx->screen->specs.pixel_pipes;
-         } else {
-            w_align = ETNA_RS_WIDTH_MASK + 1;
-            h_align = ETNA_RS_HEIGHT_MASK + 1;
-         }
-
-         ptrans->box.width += ptrans->box.x & (w_align - 1);
-         ptrans->box.x = ptrans->box.x & ~(w_align - 1);
-         ptrans->box.width = align(ptrans->box.width, (ETNA_RS_WIDTH_MASK + 1));
-         ptrans->box.height += ptrans->box.y & (h_align - 1);
-         ptrans->box.y = ptrans->box.y & ~(h_align - 1);
-         ptrans->box.height = align(ptrans->box.height, ETNA_RS_HEIGHT_MASK + 1);
+         etna_align_box_for_rs(ctx, rsc, &ptrans->box);
       }
 
       if ((usage & PIPE_MAP_READ) || !(usage & ETNA_PIPE_MAP_DISCARD_LEVEL))
