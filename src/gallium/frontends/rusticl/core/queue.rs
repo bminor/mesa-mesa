@@ -26,7 +26,7 @@ use std::thread::JoinHandle;
 pub struct QueueContext {
     // need to use ManuallyDrop so we can recycle the context without cloning
     ctx: ManuallyDrop<PipeContext>,
-    dev: &'static Device,
+    pub dev: &'static Device,
     use_stream: bool,
 }
 
