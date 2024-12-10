@@ -71,26 +71,22 @@ brw_constant_fold_instruction(const intel_device_info *devinfo, fs_inst *inst)
 
    switch (inst->opcode) {
    case BRW_OPCODE_ADD:
-      if (inst->src[1].file != IMM)
+      if (inst->src[0].file != IMM || inst->src[1].file != IMM)
          break;
 
-      if (brw_type_is_int(inst->src[1].type) &&
-          inst->src[1].is_zero()) {
-         inst->opcode = BRW_OPCODE_MOV;
-         inst->resize_sources(1);
-         progress = true;
-         break;
-      }
+      if (brw_type_is_int(inst->src[0].type)) {
+         const uint64_t src0 = src_as_uint(inst->src[0]);
+         const uint64_t src1 = src_as_uint(inst->src[1]);
 
-      if (inst->src[0].file == IMM) {
+         inst->src[0] = brw_imm_for_type(src0 + src1, inst->dst.type);
+      } else {
          assert(inst->src[0].type == BRW_TYPE_F);
-         inst->opcode = BRW_OPCODE_MOV;
          inst->src[0].f += inst->src[1].f;
-         inst->resize_sources(1);
-         progress = true;
-         break;
       }
 
+      inst->opcode = BRW_OPCODE_MOV;
+      inst->resize_sources(1);
+      progress = true;
       break;
 
 
@@ -242,6 +238,18 @@ brw_fs_opt_algebraic(fs_visitor &s)
 
    foreach_block_and_inst_safe(block, fs_inst, inst, s.cfg) {
       switch (inst->opcode) {
+      case BRW_OPCODE_ADD:
+         if (brw_constant_fold_instruction(devinfo, inst)) {
+            progress = true;
+         } else if (brw_type_is_int(inst->src[1].type) &&
+                    inst->src[1].is_zero()) {
+            inst->opcode = BRW_OPCODE_MOV;
+            inst->resize_sources(1);
+            progress = true;
+         }
+
+         break;
+
       case BRW_OPCODE_MOV:
          if ((inst->conditional_mod == BRW_CONDITIONAL_Z ||
               inst->conditional_mod == BRW_CONDITIONAL_NZ) &&
@@ -277,7 +285,6 @@ brw_fs_opt_algebraic(fs_visitor &s)
          break;
 
       case BRW_OPCODE_MUL:
-      case BRW_OPCODE_ADD:
       case BRW_OPCODE_AND:
          if (brw_constant_fold_instruction(devinfo, inst))
             progress = true;
