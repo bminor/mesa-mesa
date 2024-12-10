@@ -4166,6 +4166,30 @@ relocate_slot(struct linkage_info *linkage, struct scalar_slot *slot,
          }
 
          nir_io_semantics sem = nir_intrinsic_io_semantics(intr);
+         unsigned bit_size = nir_intrinsic_infos[intr->intrinsic].has_dest ?
+                                intr->def.bit_size : intr->src[0].ssa->bit_size;
+
+         /* Set all types to float to facilitate full IO vectorization.
+          * This is skipped only if mediump is not lowered to 16 bits.
+          *
+          * Set nir_io_mediump_is_32bit if you never lower mediump IO to 16
+          * bits, which sets nir_io_semantics::mediump_precision = 0 during
+          * nir_lower_io.
+          *
+          * Set nir_shader_compiler_options::lower_mediump_io if you want to
+          * lower mediump to 16 bits in the GLSL linker before this pass.
+          */
+         if (bit_size != 32 || !sem.medium_precision) {
+            nir_alu_type type = nir_intrinsic_has_src_type(intr) ?
+                                   nir_intrinsic_src_type(intr) :
+                                   nir_intrinsic_dest_type(intr);
+            type = nir_alu_type_get_type_size(type) | nir_type_float;
+
+            if (nir_intrinsic_has_src_type(intr))
+               nir_intrinsic_set_src_type(intr, type);
+            else
+               nir_intrinsic_set_dest_type(intr, type);
+         }
 
          /* When relocating a back color store, don't change it to a front
           * color as that would be incorrect. Keep it as back color and only
@@ -4181,12 +4205,6 @@ relocate_slot(struct linkage_info *linkage, struct scalar_slot *slot,
          }
 
 #if PRINT_RELOCATE_SLOT
-         unsigned bit_size =
-            (intr->intrinsic == nir_intrinsic_load_input ||
-             intr->intrinsic == nir_intrinsic_load_input_vertex ||
-             intr->intrinsic == nir_intrinsic_load_interpolated_input)
-            ? intr->def.bit_size : intr->src[0].ssa->bit_size;
-
          assert(bit_size == 16 || bit_size == 32);
 
          fprintf(stderr, "--- relocating: %s.%c%s%s -> %s.%c%s%s FS_VEC4_TYPE_%s\n",
