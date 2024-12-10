@@ -844,7 +844,7 @@
         "description": "ir3/isa: fix conflict between stib.b and stsc",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "11b2c54a9a44c164a55ddb3de127e8fc19a065a6",
         "notes": null
