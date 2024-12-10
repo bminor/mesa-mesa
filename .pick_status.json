@@ -474,7 +474,7 @@
         "description": "brw/algebraic: Fix MUL constant folding",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2cc1575a31d2483e71c473d19618ddbd1ea9e1a4",
         "notes": null
