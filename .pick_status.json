@@ -524,7 +524,7 @@
         "description": "aco/ra: disallow s_cmpk with scc operand",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2d6b0a4177b529be4867130dd67a1c6cf4109ac6",
         "notes": null
