@@ -514,7 +514,7 @@
         "description": "aco/ra: don't write to scc/ttmp with s_fmac",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4bd229ac50f21621fc57cfbf9a4f81d6618ca6cc",
         "notes": null

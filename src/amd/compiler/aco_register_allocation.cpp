@@ -2092,7 +2092,14 @@ operand_can_use_reg(amd_gfx_level gfx_level, aco_ptr<Instruction>& instr, unsign
               gfx_level >= GFX10); /* sdata can be vcc */
    case Format::MUBUF:
    case Format::MTBUF: return idx != 2 || gfx_level < GFX12 || reg != scc;
-   case Format::SOPK: return idx != 0 || reg != scc;
+   case Format::SOPK:
+      if (idx == 0 && reg == scc)
+         return false;
+      FALLTHROUGH;
+   case Format::SOP2:
+   case Format::SOP1:
+      return get_op_fixed_to_def(instr.get()) != (int)idx ||
+             is_sgpr_writable_without_side_effects(gfx_level, reg);
    default:
       // TODO: there are more instructions with restrictions on registers
       return true;
