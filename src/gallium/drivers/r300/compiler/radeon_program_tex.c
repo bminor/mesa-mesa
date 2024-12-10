@@ -267,35 +267,24 @@ radeonTransformTEX(struct radeon_compiler *c, struct rc_instruction *inst, void 
 
    /* Cannot write texture to output registers or with saturate (all chips),
     * or with masks (non-r500). */
-   if (inst->U.I.Opcode != RC_OPCODE_KIL &&
-       (inst->U.I.DstReg.File != RC_FILE_TEMPORARY || inst->U.I.SaturateMode ||
-        (!c->is_r500 && inst->U.I.DstReg.WriteMask != RC_MASK_XYZW))) {
-      struct rc_instruction *inst_mov = rc_insert_new_instruction(c, inst);
+   if (inst->U.I.Opcode != RC_OPCODE_KIL) {
+      /* We should not be getting saturates on TEX, but assert just to be sure. */
+      assert(!inst->U.I.SaturateMode);
 
-      inst_mov->U.I.Opcode = RC_OPCODE_MOV;
-      inst_mov->U.I.SaturateMode = inst->U.I.SaturateMode;
-      inst_mov->U.I.DstReg = inst->U.I.DstReg;
-      inst_mov->U.I.SrcReg[0].File = RC_FILE_TEMPORARY;
-      inst_mov->U.I.SrcReg[0].Index = rc_find_free_temporary(c);
+      if (inst->U.I.DstReg.File != RC_FILE_TEMPORARY || inst->U.I.SaturateMode ||
+          (!c->is_r500 && inst->U.I.DstReg.WriteMask != RC_MASK_XYZW)) {
+         struct rc_instruction *inst_mov = rc_insert_new_instruction(c, inst);
 
-      inst->U.I.SaturateMode = 0;
-      inst->U.I.DstReg.File = RC_FILE_TEMPORARY;
-      inst->U.I.DstReg.Index = inst_mov->U.I.SrcReg[0].Index;
-      inst->U.I.DstReg.WriteMask = RC_MASK_XYZW;
-   }
+         inst_mov->U.I.Opcode = RC_OPCODE_MOV;
+         inst_mov->U.I.SaturateMode = inst->U.I.SaturateMode;
+         inst_mov->U.I.DstReg = inst->U.I.DstReg;
+         inst_mov->U.I.SrcReg[0].File = RC_FILE_TEMPORARY;
+         inst_mov->U.I.SrcReg[0].Index = rc_find_free_temporary(c);
 
-   /* Cannot read texture coordinate from constants file */
-   if (inst->U.I.SrcReg[0].File != RC_FILE_TEMPORARY && inst->U.I.SrcReg[0].File != RC_FILE_INPUT) {
-      struct rc_instruction *inst_mov = rc_insert_new_instruction(c, inst->Prev);
-
-      inst_mov->U.I.Opcode = RC_OPCODE_MOV;
-      inst_mov->U.I.DstReg.File = RC_FILE_TEMPORARY;
-      inst_mov->U.I.DstReg.Index = rc_find_free_temporary(c);
-      inst_mov->U.I.SrcReg[0] = inst->U.I.SrcReg[0];
-
-      reset_srcreg(&inst->U.I.SrcReg[0]);
-      inst->U.I.SrcReg[0].File = RC_FILE_TEMPORARY;
-      inst->U.I.SrcReg[0].Index = inst_mov->U.I.DstReg.Index;
+         inst->U.I.DstReg.File = RC_FILE_TEMPORARY;
+         inst->U.I.DstReg.Index = inst_mov->U.I.SrcReg[0].Index;
+         inst->U.I.DstReg.WriteMask = RC_MASK_XYZW;
+      }
    }
 
    return 1;
