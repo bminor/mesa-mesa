@@ -195,9 +195,6 @@ ac_nir_mem_vectorize_callback(unsigned align_mul, unsigned align_offset, unsigne
 unsigned ac_get_spi_shader_z_format(bool writes_z, bool writes_stencil, bool writes_samplemask,
                                     bool writes_mrt0_alpha)
 {
-   /* If writes_mrt0_alpha is true, one other flag must be true too. */
-   assert(!writes_mrt0_alpha || writes_z || writes_stencil || writes_samplemask);
-
    if (writes_z || writes_mrt0_alpha) {
       /* Z needs 32 bits. */
       if (writes_samplemask || writes_mrt0_alpha)
