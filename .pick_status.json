@@ -314,7 +314,7 @@
         "description": "pan/cs: fix broken allocation-failure check",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3b82448f4751fdad028ab74669768aef7f188994",
         "notes": null
