@@ -2661,16 +2661,14 @@ dEQP-VK.api.device_init.create_device_global_priority_query_khr.basic,Fail
 # CmdDrawIndirect not supported yet
 dEQP-VK.api.command_buffers.many_indirect_draws_on_secondary,Crash
 
-# vk.getPhysicalDeviceImageFormatProperties(physicalDevice, format, type, tiling, usage, flags, &properties): VK_ERROR_FORMAT_NOT_SUPPORTED
-dEQP-VK.texture.explicit_lod.2d.formats.b4g4r4a4_unorm_pack16_linear,Fail
-dEQP-VK.texture.explicit_lod.2d.formats.b4g4r4a4_unorm_pack16_nearest,Fail
-
 # Missing optimalTilingFeatures VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT|VK_FORMAT_FEATURE_BLIT_SRC_BIT|VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT|VK_FORMAT_FEATURE_TRANSFER_SRC_BIT|VK_FORMAT_FEATURE_TRANSFER_DST_BIT
 dEQP-VK.api.info.format_properties.b4g4r4a4_unorm_pack16,Fail
 
 dEQP-VK.device_group.afr,Fail
+dEQP-VK.device_group.afr_dedicated,Fail
 dEQP-VK.device_group.afr_sys,Fail
 dEQP-VK.device_group.sfr,Fail
+dEQP-VK.device_group.sfr_dedicated,Fail
 dEQP-VK.device_group.sfr_sys,Fail
 
 dEQP-VK.draw.renderpass.indexed_draw.draw_indexed_triangle_list_offset_negative_large_with_alloc_offset,Fail
@@ -2714,6 +2712,10 @@ dEQP-VK.memory.pipeline_barrier.host_write_index_buffer.1048576,Fail
 dEQP-VK.memory.pipeline_barrier.host_write_index_buffer.65536,Fail
 dEQP-VK.memory.pipeline_barrier.host_write_index_buffer.8192,Fail
 
+# src/panfrost/compiler/bi_packer.c:1116: bi_pack_fma_imul_v4i8: Assertion `replicate0 < 8' failed
+dEQP-VK.spirv_assembly.instruction.compute.mul_extended.unsigned_8bit,Crash
+dEQP-VK.spirv_assembly.instruction.compute.mul_extended.signed_8bit,Crash
+
 dEQP-VK.spirv_assembly.instruction.graphics.cross_stage.basic_type.no_perspective,Fail
 dEQP-VK.spirv_assembly.instruction.graphics.cross_stage.interface_blocks.no_perspective,Fail
 
@@ -2733,8 +2735,6 @@ dEQP-VK.wsi.xcb.swapchain.simulate_oom.exclusive_nonzero_queues,Crash
 dEQP-VK.wsi.xcb.swapchain.simulate_oom.image_array_layers,Crash
 dEQP-VK.wsi.xcb.swapchain.simulate_oom.image_extent,Crash
 dEQP-VK.wsi.xcb.swapchain.simulate_oom.image_format,Crash
-dEQP-VK.wsi.xcb.swapchain.simulate_oom.image_sharing_mode,Crash
-dEQP-VK.wsi.xcb.swapchain.simulate_oom.image_swapchain_create_info,Crash
 dEQP-VK.wsi.xcb.swapchain.simulate_oom.image_usage,Crash
 dEQP-VK.wsi.xcb.swapchain.simulate_oom.min_image_count,Crash
 dEQP-VK.wsi.xcb.swapchain.simulate_oom.pre_transform,Crash
@@ -2745,7 +2745,6 @@ dEQP-VK.wsi.xlib.swapchain.simulate_oom.exclusive_nonzero_queues,Crash
 dEQP-VK.wsi.xlib.swapchain.simulate_oom.image_array_layers,Crash
 dEQP-VK.wsi.xlib.swapchain.simulate_oom.image_extent,Crash
 dEQP-VK.wsi.xlib.swapchain.simulate_oom.image_format,Crash
-dEQP-VK.wsi.xlib.swapchain.simulate_oom.image_sharing_mode,Crash
 dEQP-VK.wsi.xlib.swapchain.simulate_oom.image_swapchain_create_info,Crash
 dEQP-VK.wsi.xlib.swapchain.simulate_oom.image_usage,Crash
 dEQP-VK.wsi.xlib.swapchain.simulate_oom.min_image_count,Crash
@@ -2908,6 +2907,3 @@ dEQP-VK.draw.dynamic_rendering.partial_secondary_cmd_buff.linear_interpolation.o
 dEQP-VK.draw.dynamic_rendering.partial_secondary_cmd_buff.linear_interpolation.offset_max_4_samples,Fail
 dEQP-VK.draw.dynamic_rendering.partial_secondary_cmd_buff.linear_interpolation.offset_min_1_sample,Fail
 dEQP-VK.draw.dynamic_rendering.partial_secondary_cmd_buff.linear_interpolation.offset_min_4_samples,Fail
-
-# Job timeout
-dEQP-VK.graphicsfuzz.spv-composites,Crash

@@ -110,6 +110,11 @@ dEQP-VK.compute.pipeline.zero_initialize_workgroup_memory.max_workgroup_memory.6
 dEQP-VK.compute.pipeline.zero_initialize_workgroup_memory.types.f32mat3x3
 dEQP-VK.compute.pipeline.zero_initialize_workgroup_memory.types.f32mat4x4
 
+# Job timeout
+dEQP-VK.graphicsfuzz.spv-composites
+dEQP-VK.rasterization.rasterization_order_attachment_access.depth.samples_4.multi_draw_barriers
+dEQP-VK.rasterization.rasterization_order_attachment_access.stencil.samples_1.multi_draw_barriers
+
 # Slow tests (>= 30s)
 dEQP-VK.api.object_management.multithreaded_shared_resources.device_group
 dEQP-VK.ssbo.phys.layout.2_level_array.std140.row_major_mat4
