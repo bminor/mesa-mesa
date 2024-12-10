@@ -10,7 +10,6 @@ use crate::core::util::*;
 use libc_rust_gen::{close, dlsym};
 use rusticl_opencl_gen::*;
 
-use mesa_rust::pipe::context::*;
 use mesa_rust::pipe::fence::*;
 use mesa_rust::pipe::resource::*;
 use mesa_rust::pipe::screen::*;
@@ -455,7 +454,7 @@ pub fn create_shadow_slice(
     Ok(slice)
 }
 
-pub fn copy_cube_to_slice(q: &Arc<Queue>, ctx: &PipeContext, mem_objects: &[Mem]) -> CLResult<()> {
+pub fn copy_cube_to_slice(ctx: &QueueContext, mem_objects: &[Mem]) -> CLResult<()> {
     for mem in mem_objects {
         let Mem::Image(image) = mem else {
             continue;
@@ -474,7 +473,7 @@ pub fn copy_cube_to_slice(q: &Arc<Queue>, ctx: &PipeContext, mem_objects: &[Mem]
         let region = CLVec::<usize>::new([width, height, 1]);
         let src_bx = create_pipe_box(src_origin, region, CL_MEM_OBJECT_IMAGE2D_ARRAY)?;
 
-        let cl_res = image.get_res_of_dev(q.device)?;
+        let cl_res = image.get_res_of_dev(ctx.dev)?;
         let gl_res = gl_obj.shadow_map.as_ref().unwrap().get(cl_res).unwrap();
 
         ctx.resource_copy_region(gl_res.as_ref(), cl_res.as_ref(), &dst_offset, &src_bx);
@@ -483,7 +482,7 @@ pub fn copy_cube_to_slice(q: &Arc<Queue>, ctx: &PipeContext, mem_objects: &[Mem]
     Ok(())
 }
 
-pub fn copy_slice_to_cube(q: &Arc<Queue>, ctx: &PipeContext, mem_objects: &[Mem]) -> CLResult<()> {
+pub fn copy_slice_to_cube(ctx: &QueueContext, mem_objects: &[Mem]) -> CLResult<()> {
     for mem in mem_objects {
         let Mem::Image(image) = mem else {
             continue;
@@ -502,7 +501,7 @@ pub fn copy_slice_to_cube(q: &Arc<Queue>, ctx: &PipeContext, mem_objects: &[Mem]
         let region = CLVec::<usize>::new([width, height, 1]);
         let src_bx = create_pipe_box(src_origin, region, CL_MEM_OBJECT_IMAGE2D_ARRAY)?;
 
-        let cl_res = image.get_res_of_dev(q.device)?;
+        let cl_res = image.get_res_of_dev(ctx.dev)?;
         let gl_res = gl_obj.shadow_map.as_ref().unwrap().get(cl_res).unwrap();
 
         ctx.resource_copy_region(cl_res.as_ref(), gl_res.as_ref(), &dst_offset, &src_bx);

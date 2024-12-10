@@ -154,10 +154,10 @@ impl Mem {
         }
     }
 
-    pub fn sync_unmap(&self, q: &Queue, ctx: &PipeContext, ptr: MutMemoryPtr) -> CLResult<()> {
+    pub fn sync_unmap(&self, ctx: &QueueContext, ptr: MutMemoryPtr) -> CLResult<()> {
         match self {
-            Self::Buffer(b) => b.sync_unmap(q, ctx, ptr),
-            Self::Image(i) => i.sync_unmap(q, ctx, ptr),
+            Self::Buffer(b) => b.sync_unmap(ctx, ptr),
+            Self::Image(i) => i.sync_unmap(ctx, ptr),
         }
     }
 
@@ -781,8 +781,7 @@ impl Buffer {
     pub fn copy_rect(
         &self,
         dst: &Self,
-        q: &Queue,
-        ctx: &PipeContext,
+        ctx: &QueueContext,
         region: &CLVec<usize>,
         src_origin: &CLVec<usize>,
         src_row_pitch: usize,
@@ -793,11 +792,11 @@ impl Buffer {
     ) -> CLResult<()> {
         let (offset, size) =
             CLVec::calc_offset_size(src_origin, region, [1, src_row_pitch, src_slice_pitch]);
-        let tx_src = self.tx(q, ctx, offset, size, RWFlags::RD)?;
+        let tx_src = self.tx(ctx, offset, size, RWFlags::RD)?;
 
         let (offset, size) =
             CLVec::calc_offset_size(dst_origin, region, [1, dst_row_pitch, dst_slice_pitch]);
-        let tx_dst = dst.tx(q, ctx, offset, size, RWFlags::WR)?;
+        let tx_dst = dst.tx(ctx, offset, size, RWFlags::WR)?;
 
         perf_warning!("clEnqueueCopyBufferRect stalls the GPU");
 
@@ -820,8 +819,7 @@ impl Buffer {
 
     pub fn copy_to_buffer(
         &self,
-        q: &Queue,
-        ctx: &PipeContext,
+        ctx: &QueueContext,
         dst: &Buffer,
         src_offset: usize,
         dst_offset: usize,
@@ -829,8 +827,8 @@ impl Buffer {
     ) -> CLResult<()> {
         let src_offset = self.apply_offset(src_offset)?;
         let dst_offset = dst.apply_offset(dst_offset)?;
-        let src_res = self.get_res_of_dev(q.device)?;
-        let dst_res = dst.get_res_of_dev(q.device)?;
+        let src_res = self.get_res_of_dev(ctx.dev)?;
+        let dst_res = dst.get_res_of_dev(ctx.dev)?;
 
         let bx = create_pipe_box(
             [src_offset, 0, 0].into(),
@@ -849,8 +847,7 @@ impl Buffer {
 
     pub fn copy_to_image(
         &self,
-        q: &Queue,
-        ctx: &PipeContext,
+        ctx: &QueueContext,
         dst: &Image,
         src_offset: usize,
         dst_origin: CLVec<usize>,
@@ -860,7 +857,7 @@ impl Buffer {
         let bpp = dst.image_format.pixel_size().unwrap().into();
         let src_pitch = [bpp, bpp * region[0], bpp * region[0] * region[1]];
         let size = CLVec::calc_size(region, src_pitch);
-        let tx_src = self.tx(q, ctx, src_offset, size, RWFlags::RD)?;
+        let tx_src = self.tx(ctx, src_offset, size, RWFlags::RD)?;
 
         // If image is created from a buffer, use image's slice and row pitch instead
         let tx_dst;
@@ -873,10 +870,9 @@ impl Buffer {
             ];
 
             let (offset, size) = CLVec::calc_offset_size(dst_origin, region, dst_pitch);
-            tx_dst = buffer.tx(q, ctx, offset, size, RWFlags::WR)?;
+            tx_dst = buffer.tx(ctx, offset, size, RWFlags::WR)?;
         } else {
             tx_dst = dst.tx_image(
-                q,
                 ctx,
                 &create_pipe_box(dst_origin, *region, dst.mem_type)?,
                 RWFlags::WR,
@@ -908,14 +904,13 @@ impl Buffer {
 
     pub fn fill(
         &self,
-        q: &Queue,
-        ctx: &PipeContext,
+        ctx: &QueueContext,
         pattern: &[u8],
         offset: usize,
         size: usize,
     ) -> CLResult<()> {
         let offset = self.apply_offset(offset)?;
-        let res = self.get_res_of_dev(q.device)?;
+        let res = self.get_res_of_dev(ctx.dev)?;
         ctx.clear_buffer(
             res,
             pattern,
@@ -945,14 +940,13 @@ impl Buffer {
 
     pub fn read(
         &self,
-        q: &Queue,
-        ctx: &PipeContext,
+        ctx: &QueueContext,
         offset: usize,
         ptr: MutMemoryPtr,
         size: usize,
     ) -> CLResult<()> {
         let ptr = ptr.as_ptr();
-        let tx = self.tx(q, ctx, offset, size, RWFlags::RD)?;
+        let tx = self.tx(ctx, offset, size, RWFlags::RD)?;
 
         perf_warning!("clEnqueueReadBuffer and clEnqueueMapBuffer stall the GPU");
 
@@ -966,8 +960,7 @@ impl Buffer {
     pub fn read_rect(
         &self,
         dst: MutMemoryPtr,
-        q: &Queue,
-        ctx: &PipeContext,
+        ctx: &QueueContext,
         region: &CLVec<usize>,
         src_origin: &CLVec<usize>,
         src_row_pitch: usize,
@@ -979,7 +972,7 @@ impl Buffer {
         let dst = dst.as_ptr();
         let (offset, size) =
             CLVec::calc_offset_size(src_origin, region, [1, src_row_pitch, src_slice_pitch]);
-        let tx = self.tx(q, ctx, offset, size, RWFlags::RD)?;
+        let tx = self.tx(ctx, offset, size, RWFlags::RD)?;
 
         perf_warning!("clEnqueueReadBufferRect stalls the GPU");
 
@@ -999,9 +992,9 @@ impl Buffer {
         Ok(())
     }
 
-    pub fn sync_map(&self, q: &Queue, ctx: &PipeContext, ptr: MutMemoryPtr) -> CLResult<()> {
+    pub fn sync_map(&self, ctx: &QueueContext, ptr: MutMemoryPtr) -> CLResult<()> {
         // no need to update
-        if self.is_pure_user_memory(q.device)? {
+        if self.is_pure_user_memory(ctx.dev)? {
             return Ok(());
         }
 
@@ -1010,12 +1003,12 @@ impl Buffer {
             return Err(CL_INVALID_VALUE);
         };
 
-        self.read(q, ctx, mapping.offset, ptr, mapping.size())
+        self.read(ctx, mapping.offset, ptr, mapping.size())
     }
 
-    pub fn sync_unmap(&self, q: &Queue, ctx: &PipeContext, ptr: MutMemoryPtr) -> CLResult<()> {
+    pub fn sync_unmap(&self, ctx: &QueueContext, ptr: MutMemoryPtr) -> CLResult<()> {
         // no need to update
-        if self.is_pure_user_memory(q.device)? {
+        if self.is_pure_user_memory(ctx.dev)? {
             return Ok(());
         }
 
@@ -1025,7 +1018,7 @@ impl Buffer {
                 let mapping = entry.get();
 
                 if mapping.writes {
-                    self.write(q, ctx, mapping.offset, ptr.into(), mapping.size())?;
+                    self.write(ctx, mapping.offset, ptr.into(), mapping.size())?;
                 }
 
                 // only remove if the mapping wasn't reused in the meantime
@@ -1040,14 +1033,13 @@ impl Buffer {
 
     fn tx<'a>(
         &self,
-        q: &Queue,
-        ctx: &'a PipeContext,
+        ctx: &'a QueueContext,
         offset: usize,
         size: usize,
         rw: RWFlags,
     ) -> CLResult<PipeTransfer<'a>> {
         let offset = self.apply_offset(offset)?;
-        let r = self.get_res_of_dev(q.device)?;
+        let r = self.get_res_of_dev(ctx.dev)?;
 
         ctx.buffer_map(
             r,
@@ -1072,15 +1064,14 @@ impl Buffer {
 
     pub fn write(
         &self,
-        q: &Queue,
-        ctx: &PipeContext,
+        ctx: &QueueContext,
         offset: usize,
         ptr: ConstMemoryPtr,
         size: usize,
     ) -> CLResult<()> {
         let ptr = ptr.as_ptr();
         let offset = self.apply_offset(offset)?;
-        let r = self.get_res_of_dev(q.device)?;
+        let r = self.get_res_of_dev(ctx.dev)?;
 
         perf_warning!("clEnqueueWriteBuffer and clEnqueueUnmapMemObject might stall the GPU");
 
@@ -1096,8 +1087,7 @@ impl Buffer {
     pub fn write_rect(
         &self,
         src: ConstMemoryPtr,
-        q: &Queue,
-        ctx: &PipeContext,
+        ctx: &QueueContext,
         region: &CLVec<usize>,
         src_origin: &CLVec<usize>,
         src_row_pitch: usize,
@@ -1109,7 +1099,7 @@ impl Buffer {
         let src = src.as_ptr();
         let (offset, size) =
             CLVec::calc_offset_size(dst_origin, region, [1, dst_row_pitch, dst_slice_pitch]);
-        let tx = self.tx(q, ctx, offset, size, RWFlags::WR)?;
+        let tx = self.tx(ctx, offset, size, RWFlags::WR)?;
 
         perf_warning!("clEnqueueWriteBufferRect stalls the GPU");
 
@@ -1133,8 +1123,7 @@ impl Buffer {
 impl Image {
     pub fn copy_to_buffer(
         &self,
-        q: &Queue,
-        ctx: &PipeContext,
+        ctx: &QueueContext,
         dst: &Buffer,
         src_origin: CLVec<usize>,
         dst_offset: usize,
@@ -1152,10 +1141,9 @@ impl Image {
                 self.image_desc.slice_pitch(),
             ];
             let (offset, size) = CLVec::calc_offset_size(src_origin, region, src_pitch);
-            tx_src = buffer.tx(q, ctx, offset, size, RWFlags::RD)?;
+            tx_src = buffer.tx(ctx, offset, size, RWFlags::RD)?;
         } else {
             tx_src = self.tx_image(
-                q,
                 ctx,
                 &create_pipe_box(src_origin, *region, self.mem_type)?,
                 RWFlags::RD,
@@ -1168,7 +1156,7 @@ impl Image {
 
         let dst_origin: CLVec<usize> = [dst_offset, 0, 0].into();
         let (offset, size) = CLVec::calc_offset_size(dst_origin, region, dst_pitch);
-        let tx_dst = dst.tx(q, ctx, offset, size, RWFlags::WR)?;
+        let tx_dst = dst.tx(ctx, offset, size, RWFlags::WR)?;
 
         // Those pitch values cannot have 0 value in its coordinates
         debug_assert!(src_pitch[0] != 0 && src_pitch[1] != 0 && src_pitch[2] != 0);
@@ -1193,8 +1181,7 @@ impl Image {
 
     pub fn copy_to_image(
         &self,
-        q: &Queue,
-        ctx: &PipeContext,
+        ctx: &QueueContext,
         dst: &Image,
         src_origin: CLVec<usize>,
         dst_origin: CLVec<usize>,
@@ -1202,8 +1189,8 @@ impl Image {
     ) -> CLResult<()> {
         let src_parent = self.get_parent();
         let dst_parent = dst.get_parent();
-        let src_res = src_parent.get_res_of_dev(q.device)?;
-        let dst_res = dst_parent.get_res_of_dev(q.device)?;
+        let src_res = src_parent.get_res_of_dev(ctx.dev)?;
+        let dst_res = dst_parent.get_res_of_dev(ctx.dev)?;
 
         // We just want to use sw_copy if mem objects have different types or if copy can have
         // custom strides (image2d from buff/images)
@@ -1222,10 +1209,9 @@ impl Image {
                 ];
 
                 let (offset, size) = CLVec::calc_offset_size(src_origin, region, src_pitch);
-                tx_src = buffer.tx(q, ctx, offset, size, RWFlags::RD)?;
+                tx_src = buffer.tx(ctx, offset, size, RWFlags::RD)?;
             } else {
                 tx_src = self.tx_image(
-                    q,
                     ctx,
                     &create_pipe_box(src_origin, *region, src_parent.mem_type)?,
                     RWFlags::RD,
@@ -1243,10 +1229,9 @@ impl Image {
                 ];
 
                 let (offset, size) = CLVec::calc_offset_size(dst_origin, region, dst_pitch);
-                tx_dst = buffer.tx(q, ctx, offset, size, RWFlags::WR)?;
+                tx_dst = buffer.tx(ctx, offset, size, RWFlags::WR)?;
             } else {
                 tx_dst = dst.tx_image(
-                    q,
                     ctx,
                     &create_pipe_box(dst_origin, *region, dst_parent.mem_type)?,
                     RWFlags::WR,
@@ -1290,13 +1275,12 @@ impl Image {
 
     pub fn fill(
         &self,
-        q: &Queue,
-        ctx: &PipeContext,
+        ctx: &QueueContext,
         pattern: [u32; 4],
         origin: &CLVec<usize>,
         region: &CLVec<usize>,
     ) -> CLResult<()> {
-        let res = self.get_res_of_dev(q.device)?;
+        let res = self.get_res_of_dev(ctx.dev)?;
 
         // make sure we allocate multiples of 4 bytes so drivers don't read out of bounds or
         // unaligned.
@@ -1416,8 +1400,7 @@ impl Image {
     pub fn read(
         &self,
         dst: MutMemoryPtr,
-        q: &Queue,
-        ctx: &PipeContext,
+        ctx: &QueueContext,
         region: &CLVec<usize>,
         src_origin: &CLVec<usize>,
         dst_row_pitch: usize,
@@ -1439,10 +1422,10 @@ impl Image {
                 [pixel_size.into(), src_row_pitch, src_slice_pitch],
             );
 
-            tx = buffer.tx(q, ctx, offset, size, RWFlags::RD)?;
+            tx = buffer.tx(ctx, offset, size, RWFlags::RD)?;
         } else {
             let bx = create_pipe_box(*src_origin, *region, self.mem_type)?;
-            tx = self.tx_image(q, ctx, &bx, RWFlags::RD)?;
+            tx = self.tx_image(ctx, &bx, RWFlags::RD)?;
             src_row_pitch = tx.row_pitch() as usize;
             src_slice_pitch = tx.slice_pitch();
         };
@@ -1465,9 +1448,9 @@ impl Image {
         Ok(())
     }
 
-    pub fn sync_map(&self, q: &Queue, ctx: &PipeContext, ptr: MutMemoryPtr) -> CLResult<()> {
+    pub fn sync_map(&self, ctx: &QueueContext, ptr: MutMemoryPtr) -> CLResult<()> {
         // no need to update
-        if self.is_pure_user_memory(q.device)? {
+        if self.is_pure_user_memory(ctx.dev)? {
             return Ok(());
         }
 
@@ -1481,7 +1464,6 @@ impl Image {
 
         self.read(
             ptr,
-            q,
             ctx,
             &mapping.region,
             &mapping.origin,
@@ -1490,9 +1472,9 @@ impl Image {
         )
     }
 
-    pub fn sync_unmap(&self, q: &Queue, ctx: &PipeContext, ptr: MutMemoryPtr) -> CLResult<()> {
+    pub fn sync_unmap(&self, ctx: &QueueContext, ptr: MutMemoryPtr) -> CLResult<()> {
         // no need to update
-        if self.is_pure_user_memory(q.device)? {
+        if self.is_pure_user_memory(ctx.dev)? {
             return Ok(());
         }
 
@@ -1506,7 +1488,6 @@ impl Image {
                 if mapping.writes {
                     self.write(
                         ptr.into(),
-                        q,
                         ctx,
                         &mapping.region,
                         row_pitch,
@@ -1527,12 +1508,11 @@ impl Image {
 
     fn tx_image<'a>(
         &self,
-        q: &Queue,
-        ctx: &'a PipeContext,
+        ctx: &'a QueueContext,
         bx: &pipe_box,
         rw: RWFlags,
     ) -> CLResult<PipeTransfer<'a>> {
-        let r = self.get_res_of_dev(q.device)?;
+        let r = self.get_res_of_dev(ctx.dev)?;
         ctx.texture_map(r, bx, rw).ok_or(CL_OUT_OF_RESOURCES)
     }
 
@@ -1551,8 +1531,7 @@ impl Image {
     pub fn write(
         &self,
         src: ConstMemoryPtr,
-        q: &Queue,
-        ctx: &PipeContext,
+        ctx: &QueueContext,
         region: &CLVec<usize>,
         src_row_pitch: usize,
         mut src_slice_pitch: usize,
@@ -1572,7 +1551,7 @@ impl Image {
                 region,
                 [pixel_size.into(), dst_row_pitch, dst_slice_pitch],
             );
-            let tx = buffer.tx(q, ctx, offset, size, RWFlags::WR)?;
+            let tx = buffer.tx(ctx, offset, size, RWFlags::WR)?;
 
             sw_copy(
                 src,
@@ -1587,7 +1566,7 @@ impl Image {
                 pixel_size,
             );
         } else {
-            let res = self.get_res_of_dev(q.device)?;
+            let res = self.get_res_of_dev(ctx.dev)?;
             let bx = create_pipe_box(*dst_origin, *region, self.mem_type)?;
 
             if self.mem_type == CL_MEM_OBJECT_IMAGE1D_ARRAY {

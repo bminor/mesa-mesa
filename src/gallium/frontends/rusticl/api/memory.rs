@@ -1076,7 +1076,7 @@ fn enqueue_read_buffer(
         evs,
         event,
         block,
-        Box::new(move |q, ctx| b.read(q, ctx, offset, ptr, cb)),
+        Box::new(move |_, ctx| b.read(ctx, offset, ptr, cb)),
     )
 
     // TODO
@@ -1125,7 +1125,7 @@ fn enqueue_write_buffer(
         evs,
         event,
         block,
-        Box::new(move |q, ctx| b.write(q, ctx, offset, ptr, cb)),
+        Box::new(move |_, ctx| b.write(ctx, offset, ptr, cb)),
     )
 
     // TODO
@@ -1182,7 +1182,7 @@ fn enqueue_copy_buffer(
         evs,
         event,
         false,
-        Box::new(move |q, ctx| src.copy_to_buffer(q, ctx, &dst, src_offset, dst_offset, size)),
+        Box::new(move |_, ctx| src.copy_to_buffer(ctx, &dst, src_offset, dst_offset, size)),
     )
 
     // TODO
@@ -1290,10 +1290,9 @@ fn enqueue_read_buffer_rect(
         evs,
         event,
         block,
-        Box::new(move |q, ctx| {
+        Box::new(move |_, ctx| {
             buf.read_rect(
                 ptr,
-                q,
                 ctx,
                 &r,
                 &buf_ori,
@@ -1409,10 +1408,9 @@ fn enqueue_write_buffer_rect(
         evs,
         event,
         block,
-        Box::new(move |q, ctx| {
+        Box::new(move |_, ctx| {
             buf.write_rect(
                 ptr,
-                q,
                 ctx,
                 &r,
                 &host_ori,
@@ -1548,10 +1546,9 @@ fn enqueue_copy_buffer_rect(
         evs,
         event,
         false,
-        Box::new(move |q, ctx| {
+        Box::new(move |_, ctx| {
             src.copy_rect(
                 &dst,
-                q,
                 ctx,
                 &r,
                 &src_ori,
@@ -1614,7 +1611,7 @@ fn enqueue_fill_buffer(
         evs,
         event,
         false,
-        Box::new(move |q, ctx| b.fill(q, ctx, &pattern, offset, size)),
+        Box::new(move |_, ctx| b.fill(ctx, &pattern, offset, size)),
     )
 
     // TODO
@@ -1659,9 +1656,9 @@ fn enqueue_map_buffer(
         evs,
         event,
         block,
-        Box::new(move |q, ctx| {
+        Box::new(move |_, ctx| {
             if map_flags != CL_MAP_WRITE_INVALIDATE_REGION.into() {
-                b.sync_map(q, ctx, ptr)
+                b.sync_map(ctx, ptr)
             } else {
                 Ok(())
             }
@@ -1752,7 +1749,7 @@ fn enqueue_read_image(
         evs,
         event,
         block,
-        Box::new(move |q, ctx| i.read(ptr, q, ctx, &r, &o, row_pitch, slice_pitch)),
+        Box::new(move |_, ctx| i.read(ptr, ctx, &r, &o, row_pitch, slice_pitch)),
     )
 
     //• CL_INVALID_IMAGE_SIZE if image dimensions (image width, height, specified or compute row and/or slice pitch) for image are not supported by device associated with queue.
@@ -1836,7 +1833,7 @@ fn enqueue_write_image(
         evs,
         event,
         block,
-        Box::new(move |q, ctx| i.write(ptr, q, ctx, &r, row_pitch, slice_pitch, &o)),
+        Box::new(move |_, ctx| i.write(ptr, ctx, &r, row_pitch, slice_pitch, &o)),
     )
 
     //• CL_INVALID_IMAGE_SIZE if image dimensions (image width, height, specified or compute row and/or slice pitch) for image are not supported by device associated with queue.
@@ -1903,8 +1900,8 @@ fn enqueue_copy_image(
         evs,
         event,
         false,
-        Box::new(move |q, ctx| {
-            src_image.copy_to_image(q, ctx, &dst_image, src_origin, dst_origin, &region)
+        Box::new(move |_, ctx| {
+            src_image.copy_to_image(ctx, &dst_image, src_origin, dst_origin, &region)
         }),
     )
 
@@ -1972,7 +1969,7 @@ fn enqueue_fill_image(
         evs,
         event,
         false,
-        Box::new(move |q, ctx| i.fill(q, ctx, fill_color, &origin, &region)),
+        Box::new(move |_, ctx| i.fill(ctx, fill_color, &origin, &region)),
     )
 
     //• CL_INVALID_IMAGE_SIZE if image dimensions (image width, height, specified or compute row and/or slice pitch) for image are not supported by device associated with queue.
@@ -2028,7 +2025,7 @@ fn enqueue_copy_buffer_to_image(
         evs,
         event,
         false,
-        Box::new(move |q, ctx| src.copy_to_image(q, ctx, &dst, src_offset, dst_origin, &region)),
+        Box::new(move |_, ctx| src.copy_to_image(ctx, &dst, src_offset, dst_origin, &region)),
     )
 
     //• CL_INVALID_MEM_OBJECT if src_buffer is not a valid buffer object or dst_image is not a valid image object or if dst_image is a 1D image buffer object created from src_buffer.
@@ -2089,7 +2086,7 @@ fn enqueue_copy_image_to_buffer(
         evs,
         event,
         false,
-        Box::new(move |q, ctx| src.copy_to_buffer(q, ctx, &dst, src_origin, dst_offset, &region)),
+        Box::new(move |_, ctx| src.copy_to_buffer(ctx, &dst, src_origin, dst_offset, &region)),
     )
 
     //• CL_INVALID_MEM_OBJECT if src_image is not a valid image object or dst_buffer is not a valid buffer object or if src_image is a 1D image buffer object created from dst_buffer.
@@ -2173,9 +2170,9 @@ fn enqueue_map_image(
         evs,
         event,
         block,
-        Box::new(move |q, ctx| {
+        Box::new(move |_, ctx| {
             if map_flags != CL_MAP_WRITE_INVALIDATE_REGION.into() {
-                i.sync_map(q, ctx, ptr)
+                i.sync_map(ctx, ptr)
             } else {
                 Ok(())
             }
@@ -2244,9 +2241,9 @@ fn enqueue_unmap_mem_object(
         evs,
         event,
         false,
-        Box::new(move |q, ctx| {
+        Box::new(move |_, ctx| {
             if needs_sync {
-                m.sync_unmap(q, ctx, mapped_ptr)
+                m.sync_unmap(ctx, mapped_ptr)
             } else {
                 Ok(())
             }
@@ -3178,7 +3175,7 @@ fn enqueue_acquire_gl_objects(
         evs,
         event,
         false,
-        Box::new(move |q, ctx| copy_cube_to_slice(q, ctx, &objs)),
+        Box::new(move |_, ctx| copy_cube_to_slice(ctx, &objs)),
     )
 }
 
@@ -3212,6 +3209,6 @@ fn enqueue_release_gl_objects(
         evs,
         event,
         false,
-        Box::new(move |q, ctx| copy_slice_to_cube(q, ctx, &objs)),
+        Box::new(move |_, ctx| copy_slice_to_cube(ctx, &objs)),
     )
 }
