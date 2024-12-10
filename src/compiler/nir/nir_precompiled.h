@@ -617,9 +617,9 @@ nir_precompiled_build_variant(const nir_function *libfunc, unsigned variant,
 
 static inline void
 nir_precomp_print_blob(FILE *fp, const char *arr_name, const char *suffix,
-                       uint32_t variant, const uint32_t *data, size_t len)
+                       uint32_t variant, const uint32_t *data, size_t len, bool is_static)
 {
-   fprintf(fp, "const uint32_t %s_%u_%s[%zu] = {", arr_name, variant, suffix,
+   fprintf(fp, "%sconst uint32_t %s_%u_%s[%zu] = {", is_static ? "static " : "", arr_name, variant, suffix,
            DIV_ROUND_UP(len, 4));
    for (unsigned i = 0; i < (len / 4); i++) {
       if (i % 4 == 0)
@@ -651,7 +651,7 @@ nir_precomp_print_nir(FILE *fp_c, FILE *fp_h, const nir_shader *nir,
    nir_serialize(&blob, nir, true /* strip */);
 
    nir_precomp_print_blob(fp_c, name, suffix, 0, (const uint32_t *)blob.data,
-                          blob.size);
+                          blob.size, false);
 
    fprintf(fp_h, "extern const uint32_t %s_0_%s[%zu];\n", name, suffix,
            DIV_ROUND_UP(blob.size, 4));

@@ -189,7 +189,7 @@ print_shader(FILE *fp, const char *name, const char *suffix, uint32_t variant,
    memcpy(mem, &info, sizeof(info));
    memcpy((uint8_t *)mem + sizeof(info), p->binary, p->info.binary_size);
 
-   nir_precomp_print_blob(fp, name, suffix, variant, mem, sz_B);
+   nir_precomp_print_blob(fp, name, suffix, variant, mem, sz_B, true);
    free(mem);
 }
 
