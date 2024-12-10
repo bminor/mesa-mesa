@@ -979,7 +979,12 @@ gather_shader_info_fs(const struct radv_device *device, const nir_shader *nir,
 
    info->ps.has_epilog = gfx_state->ps.has_epilog && info->ps.colors_written;
 
-   if (!info->ps.has_epilog) {
+   const bool export_alpha_and_mrtz =
+      (info->ps.color0_written & 0x8) && (info->ps.writes_z || info->ps.writes_stencil || info->ps.writes_sample_mask);
+
+   if (info->ps.has_epilog) {
+      info->ps.exports_mrtz_via_epilog = gfx_state->ps.exports_mrtz_via_epilog && export_alpha_and_mrtz;
+   } else {
       info->ps.mrt0_is_dual_src = gfx_state->ps.epilog.mrt0_is_dual_src;
       info->ps.spi_shader_col_format = gfx_state->ps.epilog.spi_shader_col_format;
 
@@ -988,12 +993,6 @@ gather_shader_info_fs(const struct radv_device *device, const nir_shader *nir,
 
       info->ps.cb_shader_mask = ac_get_cb_shader_mask(info->ps.spi_shader_col_format);
    }
-
-   const bool export_alpha_and_mrtz =
-      (info->ps.color0_written & 0x8) && (info->ps.writes_z || info->ps.writes_stencil || info->ps.writes_sample_mask);
-
-   info->ps.exports_mrtz_via_epilog =
-      info->ps.has_epilog && gfx_state->ps.exports_mrtz_via_epilog && export_alpha_and_mrtz;
 
    if (!info->ps.exports_mrtz_via_epilog) {
       info->ps.writes_mrt0_alpha = gfx_state->ms.alpha_to_coverage_via_mrtz && export_alpha_and_mrtz;
