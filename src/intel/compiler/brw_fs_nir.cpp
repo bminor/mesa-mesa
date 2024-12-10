@@ -6980,17 +6980,16 @@ fs_nir_emit_memory_access(nir_to_brw_state &ntb,
       if (devinfo->verx10 >= 125) {
          srcs[MEMORY_LOGICAL_BINDING_TYPE] = brw_imm_ud(LSC_ADDR_SURFTYPE_SS);
 
-         const fs_builder ubld = bld.exec_all().group(1, 0);
-         brw_reg bind = component(ubld.vgrf(BRW_TYPE_UD), 0);
-         ubld.AND(bind, retype(brw_vec1_grf(0, 5), BRW_TYPE_UD),
-                        brw_imm_ud(INTEL_MASK(31, 10)));
+         const fs_builder ubld = bld.exec_all().group(8 * reg_unit(devinfo), 0);
+         brw_reg bind = ubld.AND(retype(brw_vec1_grf(0, 5), BRW_TYPE_UD),
+                                 brw_imm_ud(INTEL_MASK(31, 10)));
          if (devinfo->ver >= 20)
-            bind = component(ubld.SHR(bind, brw_imm_ud(4)), 0);
+            bind = ubld.SHR(bind, brw_imm_ud(4));
 
          /* load_scratch / store_scratch cannot be is_scalar yet. */
          assert(xbld.dispatch_width() == bld.dispatch_width());
 
-         srcs[MEMORY_LOGICAL_BINDING] = bind;
+         srcs[MEMORY_LOGICAL_BINDING] = component(bind, 0);
          srcs[MEMORY_LOGICAL_ADDRESS] =
             swizzle_nir_scratch_addr(ntb, bld, addr, false);
       } else {
