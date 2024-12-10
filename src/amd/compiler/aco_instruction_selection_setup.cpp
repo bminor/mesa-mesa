@@ -360,9 +360,9 @@ init_context(isel_context* ctx, nir_shader* shader)
    ctx->ub_config.max_workgroup_count[0] = 4294967295;
    ctx->ub_config.max_workgroup_count[1] = 65535;
    ctx->ub_config.max_workgroup_count[2] = 65535;
-   ctx->ub_config.max_workgroup_size[0] = 2048;
-   ctx->ub_config.max_workgroup_size[1] = 2048;
-   ctx->ub_config.max_workgroup_size[2] = 2048;
+   ctx->ub_config.max_workgroup_size[0] = 1024;
+   ctx->ub_config.max_workgroup_size[1] = 1024;
+   ctx->ub_config.max_workgroup_size[2] = 1024;
 
    ac_nir_opt_shared_append(shader);
 
