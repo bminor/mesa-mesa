@@ -274,13 +274,6 @@ struct radv_meta_state {
    } fast_clear_flush;
 
    struct {
-      VkPipelineLayout fill_p_layout;
-      VkPipelineLayout copy_p_layout;
-      VkPipeline fill_pipeline;
-      VkPipeline copy_pipeline;
-   } buffer;
-
-   struct {
       VkDescriptorSetLayout ds_layout;
       VkPipelineLayout p_layout;
       VkPipeline occlusion_query_pipeline;
