@@ -488,8 +488,10 @@ cs_reserve_instrs(struct cs_builder *b, uint32_t num_instrs)
       /* Allocation failure, from now on, all new instructions will be
        * discarded.
        */
-      if (unlikely(!b->cur_chunk.buffer.cpu))
+      if (unlikely(!newbuf.cpu)) {
+         b->invalid = true;
          return false;
+      }
 
       uint64_t *ptr = b->cur_chunk.buffer.cpu + (b->cur_chunk.pos++);
 
