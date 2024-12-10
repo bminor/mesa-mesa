@@ -72,6 +72,7 @@ fs_inst::init(enum opcode opcode, uint8_t exec_size, const brw_reg &dst,
    /* This will be the case for almost all instructions. */
    switch (dst.file) {
    case VGRF:
+   case ADDRESS:
    case ARF:
    case FIXED_GRF:
    case ATTR:
@@ -675,6 +676,7 @@ fs_inst::size_read(const struct intel_device_info *devinfo, int arg) const
    case IMM:
       return components_read(arg) * brw_type_size_bytes(src[arg].type);
    case BAD_FILE:
+   case ADDRESS:
    case ARF:
    case FIXED_GRF:
    case VGRF:

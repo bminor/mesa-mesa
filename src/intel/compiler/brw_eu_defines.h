@@ -783,6 +783,7 @@ enum ENUM_PACKED brw_reg_file {
    FIXED_GRF,
    IMM,
 
+   ADDRESS,
    VGRF,
    ATTR,
    UNIFORM, /* prog_data->params[reg] */

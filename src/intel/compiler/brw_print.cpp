@@ -433,20 +433,19 @@ brw_print_instruction(const fs_visitor &s, const fs_inst *inst, FILE *file, cons
    case ATTR:
       fprintf(file, "***attr%d***", inst->dst.nr);
       break;
+   case ADDRESS:
+      fprintf(file, "a0.%d", inst->dst.subnr);
+      break;
    case ARF:
       switch (inst->dst.nr & 0xF0) {
       case BRW_ARF_NULL:
          fprintf(file, "null");
-         break;
-      case BRW_ARF_ADDRESS:
-         fprintf(file, "a0.%d", inst->dst.subnr);
          break;
       case BRW_ARF_ACCUMULATOR:
          if (inst->dst.subnr == 0)
             fprintf(file, "acc%d", inst->dst.nr & 0x0F);
          else
             fprintf(file, "acc%d.%d", inst->dst.nr & 0x0F, inst->dst.subnr);
-
          break;
       case BRW_ARF_FLAG:
          fprintf(file, "f%d.%d", inst->dst.nr & 0xf, inst->dst.subnr);
@@ -497,6 +496,9 @@ brw_print_instruction(const fs_visitor &s, const fs_inst *inst, FILE *file, cons
          break;
       case FIXED_GRF:
          fprintf(file, "g%d", inst->src[i].nr);
+         break;
+      case ADDRESS:
+         fprintf(file, "a0.%d", inst->src[i].subnr);
          break;
       case ATTR:
          fprintf(file, "attr%d", inst->src[i].nr);
@@ -557,9 +559,6 @@ brw_print_instruction(const fs_visitor &s, const fs_inst *inst, FILE *file, cons
          switch (inst->src[i].nr & 0xF0) {
          case BRW_ARF_NULL:
             fprintf(file, "null");
-            break;
-         case BRW_ARF_ADDRESS:
-            fprintf(file, "a0.%d", inst->src[i].subnr);
             break;
          case BRW_ARF_ACCUMULATOR:
             if (inst->src[i].subnr == 0)
@@ -670,4 +669,3 @@ brw_print_swsb(FILE *f, const struct intel_device_info *devinfo, const tgl_swsb 
                swsb.mode & TGL_SBID_DST ? ".dst" : ".src"));
    }
 }
-

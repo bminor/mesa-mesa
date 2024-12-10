@@ -70,6 +70,7 @@ normalize_brw_reg_for_encoding(brw_reg *reg)
    struct brw_reg brw_reg;
 
    switch (reg->file) {
+   case ADDRESS:
    case ARF:
    case FIXED_GRF:
    case IMM:
