@@ -238,7 +238,7 @@ def api_special_implementation_vkBindImageMemory2(api, cgen):
 
     cgen.stmt("auto apiHandle = mReconstruction.createApiInfo()")
     cgen.stmt("auto apiInfo = mReconstruction.getApiInfo(apiHandle)")
-    cgen.stmt("mReconstruction.setApiTrace(apiInfo, OP_%s, snapshotTraceBegin, snapshotTraceBytes)" % api.name)
+    cgen.stmt("mReconstruction.setApiTrace(apiInfo, snapshotTraceBegin, snapshotTraceBytes)")
     cgen.line("// Note: the implementation does not work with bindInfoCount > 1");
     cgen.beginFor("uint32_t i = 0", "i < bindInfoCount", "++i")
     cgen.stmt("%s boxed_%s = unboxed_to_boxed_non_dispatchable_%s(pBindInfos[i].image)"
@@ -361,7 +361,7 @@ def emit_impl(typeInfo, api, cgen):
 
             cgen.stmt("auto apiHandle = mReconstruction.createApiInfo()")
             cgen.stmt("auto apiInfo = mReconstruction.getApiInfo(apiHandle)")
-            cgen.stmt("mReconstruction.setApiTrace(apiInfo, OP_%s, snapshotTraceBegin, snapshotTraceBytes)" % api.name)
+            cgen.stmt("mReconstruction.setApiTrace(apiInfo, snapshotTraceBegin, snapshotTraceBytes)")
             if lenAccessGuard is not None:
                 cgen.beginIf(lenAccessGuard)
             cgen.stmt(f"mReconstruction.forEachHandleAddApi((const uint64_t*){boxed_access}, {lenExpr}, apiHandle, {get_target_state(api, p)})")
@@ -393,7 +393,7 @@ def emit_impl(typeInfo, api, cgen):
             cgen.stmt("mReconstruction.addHandles((const uint64_t*)(&handle), 1)");
             cgen.stmt("auto apiHandle = mReconstruction.createApiInfo()")
             cgen.stmt("auto apiInfo = mReconstruction.getApiInfo(apiHandle)")
-            cgen.stmt("mReconstruction.setApiTrace(apiInfo, OP_%s, snapshotTraceBegin, snapshotTraceBytes)" % api.name)
+            cgen.stmt("mReconstruction.setApiTrace(apiInfo, snapshotTraceBegin, snapshotTraceBytes)")
             if api.name in specialCaseDependencyExtractors:
                 specialCaseDependencyExtractors[api.name](p, None, None, api, cgen)
             cgen.stmt(f"mReconstruction.forEachHandleAddApi((const uint64_t*)(&handle), 1, apiHandle, {get_target_state(api, p)})")
@@ -404,7 +404,7 @@ def emit_impl(typeInfo, api, cgen):
             cgen.line("// %s modify" % p.paramName)
             cgen.stmt("auto apiHandle = mReconstruction.createApiInfo()")
             cgen.stmt("auto apiInfo = mReconstruction.getApiInfo(apiHandle)")
-            cgen.stmt("mReconstruction.setApiTrace(apiInfo, OP_%s, snapshotTraceBegin, snapshotTraceBytes)" % api.name)
+            cgen.stmt("mReconstruction.setApiTrace(apiInfo, snapshotTraceBegin, snapshotTraceBytes)")
             if lenAccessGuard is not None:
                 cgen.beginIf(lenAccessGuard)
             cgen.beginFor("uint32_t i = 0", "i < %s" % lenExpr, "++i")

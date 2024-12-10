@@ -460,13 +460,9 @@ def emit_seqno_incr(api, cgen):
     cgen.stmt("if (m_queueSubmitWithCommandsEnabled) seqnoPtr->fetch_add(1, std::memory_order_seq_cst)")
 
 def emit_snapshot(typeInfo, api, cgen):
-
-    cgen.stmt("%s->setReadPos((uintptr_t)(*readStreamPtrPtr) - (uintptr_t)snapshotTraceBegin)" % READ_STREAM)
-    cgen.stmt("size_t snapshotTraceBytes = %s->endTrace()" % READ_STREAM)
-
     additionalParams = [ \
-        makeVulkanTypeSimple(True, "uint8_t", 1, "snapshotTraceBegin"),
-        makeVulkanTypeSimple(False, "size_t", 0, "snapshotTraceBytes"),
+        makeVulkanTypeSimple(True, "uint8_t", 1, "packet"),
+        makeVulkanTypeSimple(False, "size_t", 0, "packetLen"),
         makeVulkanTypeSimple(False, "android::base::BumpPool", 1, "&m_pool"),
     ]
 
@@ -840,6 +836,7 @@ size_t VkDecoder::Impl::decode(void* buf, size_t len, IOStream* ioStream,
         self.cgen.line("while (end - ptr >= 8)")
         self.cgen.beginBlock() # while loop
 
+        self.cgen.stmt("const uint8_t* packet = (const uint8_t *)ptr")
         self.cgen.stmt("uint32_t opcode = *(uint32_t *)ptr")
         self.cgen.stmt("uint32_t packetLen = *(uint32_t *)(ptr + 4)")
         self.cgen.line("""
@@ -857,7 +854,6 @@ size_t VkDecoder::Impl::decode(void* buf, size_t len, IOStream* ioStream,
         self.cgen.stmt("VulkanMemReadingStream* %s = readStream()" % READ_STREAM)
         self.cgen.stmt("%s->setBuf((uint8_t*)(ptr + 8))" % READ_STREAM)
         self.cgen.stmt("uint8_t* readStreamPtr = %s->getBuf(); uint8_t** readStreamPtrPtr = &readStreamPtr" % READ_STREAM)
-        self.cgen.stmt("uint8_t* snapshotTraceBegin = %s->beginTrace()" % READ_STREAM)
         self.cgen.stmt("%s->setHandleMapping(&m_boxedHandleUnwrapMapping)" % READ_STREAM)
         self.cgen.line("""
         std::unique_ptr<EventHangMetadata::HangAnnotations> executionData =
