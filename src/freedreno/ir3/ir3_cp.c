@@ -242,9 +242,10 @@ try_swap_two_srcs(struct ir3_instruction *instr, unsigned n, unsigned new_flags,
  * possible to swap the 1st and 2nd sources.
  */
 static bool
-try_swap_mad_two_srcs(struct ir3_instruction *instr, unsigned new_flags)
+try_swap_cat3_two_srcs(struct ir3_instruction *instr, unsigned n,
+                       unsigned new_flags)
 {
-   if (!is_mad(instr->opc))
+   if (!(is_mad(instr->opc) && n == 1))
       return false;
 
    /* If we've already tried, nothing more to gain.. we will only
@@ -269,7 +270,7 @@ try_swap_mad_two_srcs(struct ir3_instruction *instr, unsigned new_flags)
    if (!(new_flags & (IR3_REG_CONST | IR3_REG_SHARED)))
       return false;
 
-   return try_swap_two_srcs(instr, 1, new_flags, 0);
+   return try_swap_two_srcs(instr, n, new_flags, 0);
 }
 
 /**
@@ -307,7 +308,7 @@ reg_cp(struct ir3_cp_ctx *ctx, struct ir3_instruction *instr,
          reg->def->instr->use_count++;
 
          return true;
-      } else if (n == 1 && try_swap_mad_two_srcs(instr, new_flags)) {
+      } else if (try_swap_cat3_two_srcs(instr, n, new_flags)) {
          return true;
       }
    } else if ((is_same_type_mov(src) || is_const_mov(src)) &&
@@ -334,7 +335,7 @@ reg_cp(struct ir3_cp_ctx *ctx, struct ir3_instruction *instr,
           * src prior to multiply) can swap their first two srcs if
           * src[0] is !CONST and src[1] is CONST:
           */
-         if ((n == 1) && try_swap_mad_two_srcs(instr, new_flags)) {
+         if (try_swap_cat3_two_srcs(instr, n, new_flags)) {
             return true;
          } else {
             return false;
