@@ -1672,9 +1672,10 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
    unsigned old_size = panfrost_bo_size(prsrc->bo);
    unsigned ratio = 100 * new_size / old_size;
 
-   if (ratio > screen->max_afbc_packing_ratio)
+   if (ratio > screen->max_afbc_packing_ratio) {
+      panfrost_bo_unreference(metadata_bo);
       return;
-
+   }
    perf_debug(ctx, "%i%%: %i KB -> %i KB\n", ratio, old_size / 1024,
               new_size / 1024);
 

@@ -34,7 +34,7 @@
         "description": "panfrost: fix potential memory leak",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5a928f7563af8ed18617210b95208ea63c157e2f",
         "notes": null
