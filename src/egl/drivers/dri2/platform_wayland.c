@@ -283,15 +283,15 @@ wl_buffer_release(void *data, struct wl_buffer *buffer)
    int i;
 
    for (i = 0; i < ARRAY_SIZE(dri2_surf->color_buffers); ++i)
-      if (dri2_surf->color_buffers[i].wl_buffer == buffer)
+      if (dri2_surf->color_buffers[i].wayland_buffer.buffer == buffer)
          break;
 
    assert(i < ARRAY_SIZE(dri2_surf->color_buffers));
 
    if (dri2_surf->color_buffers[i].wl_release) {
-      wl_buffer_destroy(buffer);
+      loader_wayland_buffer_destroy(&dri2_surf->color_buffers[i].wayland_buffer);
       dri2_surf->color_buffers[i].wl_release = false;
-      dri2_surf->color_buffers[i].wl_buffer = NULL;
+      dri2_surf->color_buffers[i].wayland_buffer.buffer = NULL;
       dri2_surf->color_buffers[i].age = 0;
    }
 
@@ -851,8 +851,8 @@ dri2_wl_destroy_surface(_EGLDisplay *disp, _EGLSurface *surf)
    driDestroyDrawable(dri2_surf->dri_drawable);
 
    for (int i = 0; i < ARRAY_SIZE(dri2_surf->color_buffers); i++) {
-      if (dri2_surf->color_buffers[i].wl_buffer)
-         wl_buffer_destroy(dri2_surf->color_buffers[i].wl_buffer);
+      if (dri2_surf->color_buffers[i].wayland_buffer.buffer)
+         wl_buffer_destroy(dri2_surf->color_buffers[i].wayland_buffer.buffer);
       if (dri2_surf->color_buffers[i].dri_image)
          dri2_destroy_image(dri2_surf->color_buffers[i].dri_image);
       if (dri2_surf->color_buffers[i].linear_copy)
@@ -904,12 +904,11 @@ static void
 dri2_wl_release_buffers(struct dri2_egl_surface *dri2_surf)
 {
    for (int i = 0; i < ARRAY_SIZE(dri2_surf->color_buffers); i++) {
-      if (dri2_surf->color_buffers[i].wl_buffer) {
+      if (dri2_surf->color_buffers[i].wayland_buffer.buffer) {
          if (dri2_surf->color_buffers[i].locked) {
             dri2_surf->color_buffers[i].wl_release = true;
          } else {
-            wl_buffer_destroy(dri2_surf->color_buffers[i].wl_buffer);
-            dri2_surf->color_buffers[i].wl_buffer = NULL;
+            loader_wayland_buffer_destroy(&dri2_surf->color_buffers[i].wayland_buffer);
          }
       }
       if (dri2_surf->color_buffers[i].dri_image)
@@ -1410,14 +1409,14 @@ update_buffers(struct dri2_egl_surface *dri2_surf)
     * fast we let the unneeded buffer sit around for a short while. */
    for (int i = 0; i < ARRAY_SIZE(dri2_surf->color_buffers); i++) {
       if (!dri2_surf->color_buffers[i].locked &&
-          dri2_surf->color_buffers[i].wl_buffer &&
+          dri2_surf->color_buffers[i].wayland_buffer.buffer &&
           dri2_surf->color_buffers[i].age > BUFFER_TRIM_AGE_HYSTERESIS) {
-         wl_buffer_destroy(dri2_surf->color_buffers[i].wl_buffer);
+         wl_buffer_destroy(dri2_surf->color_buffers[i].wayland_buffer.buffer);
          dri2_destroy_image(dri2_surf->color_buffers[i].dri_image);
          if (dri2_dpy->fd_render_gpu != dri2_dpy->fd_display_gpu)
             dri2_destroy_image(
                dri2_surf->color_buffers[i].linear_copy);
-         dri2_surf->color_buffers[i].wl_buffer = NULL;
+         dri2_surf->color_buffers[i].wayland_buffer.buffer = NULL;
          dri2_surf->color_buffers[i].dri_image = NULL;
          dri2_surf->color_buffers[i].linear_copy = NULL;
          dri2_surf->color_buffers[i].age = 0;
@@ -1705,28 +1704,30 @@ dri2_wl_swap_buffers_with_damage(_EGLDisplay *disp, _EGLSurface *draw,
    dri2_surf->current = dri2_surf->back;
    dri2_surf->back = NULL;
 
-   if (!dri2_surf->current->wl_buffer) {
+   if (!dri2_surf->current->wayland_buffer.buffer) {
       struct dri_image *image;
+      struct wl_buffer *buffer;
 
       if (dri2_dpy->fd_render_gpu != dri2_dpy->fd_display_gpu)
          image = dri2_surf->current->linear_copy;
       else
          image = dri2_surf->current->dri_image;
 
-      dri2_surf->current->wl_buffer =
-         create_wl_buffer(dri2_dpy, dri2_surf, image);
-
-      if (dri2_surf->current->wl_buffer == NULL)
+      buffer = create_wl_buffer(dri2_dpy, dri2_surf, image);
+      if (buffer == NULL)
          return _eglError(EGL_BAD_ALLOC, "dri2_swap_buffers");
+      loader_wayland_wrap_buffer(&dri2_surf->current->wayland_buffer, buffer);
 
       dri2_surf->current->wl_release = false;
 
-      wl_buffer_add_listener(dri2_surf->current->wl_buffer, &wl_buffer_listener,
+      wl_buffer_add_listener(dri2_surf->current->wayland_buffer.buffer,
+                             &wl_buffer_listener,
                              dri2_surf);
    }
 
    wl_surface_attach(dri2_surf->wl_surface_wrapper,
-                     dri2_surf->current->wl_buffer, dri2_surf->dx,
+                     dri2_surf->current->wayland_buffer.buffer,
+                     dri2_surf->dx,
                      dri2_surf->dy);
 
    dri2_surf->wl_win->attached_width = dri2_surf->base.Width;
@@ -2466,17 +2467,18 @@ swrast_update_buffers(struct dri2_egl_surface *dri2_surf)
       for (int i = 0; i < ARRAY_SIZE(dri2_surf->color_buffers); i++) {
          if (!dri2_surf->color_buffers[i].locked) {
             dri2_surf->back = &dri2_surf->color_buffers[i];
-            if (dri2_surf->back->wl_buffer)
+            if (dri2_surf->back->wayland_buffer.buffer)
                break;
 
             if (!dri2_wl_swrast_allocate_buffer(
                    dri2_surf, dri2_surf->format, dri2_surf->base.Width,
                    dri2_surf->base.Height, &dri2_surf->back->data,
-                   &dri2_surf->back->data_size, &dri2_surf->back->wl_buffer)) {
+                   &dri2_surf->back->data_size,
+                   &dri2_surf->back->wayland_buffer.buffer)) {
                _eglError(EGL_BAD_ALLOC, "failed to allocate color buffer");
                return -1;
             }
-            wl_buffer_add_listener(dri2_surf->back->wl_buffer,
+            wl_buffer_add_listener(dri2_surf->back->wayland_buffer.buffer,
                                    &wl_buffer_listener, dri2_surf);
             break;
          }
@@ -2501,12 +2503,11 @@ swrast_update_buffers(struct dri2_egl_surface *dri2_surf)
     * fast we let the unneeded buffer sit around for a short while. */
    for (int i = 0; i < ARRAY_SIZE(dri2_surf->color_buffers); i++) {
       if (!dri2_surf->color_buffers[i].locked &&
-          dri2_surf->color_buffers[i].wl_buffer &&
+          dri2_surf->color_buffers[i].wayland_buffer.buffer &&
           dri2_surf->color_buffers[i].age > BUFFER_TRIM_AGE_HYSTERESIS) {
-         wl_buffer_destroy(dri2_surf->color_buffers[i].wl_buffer);
+         loader_wayland_buffer_destroy(&dri2_surf->color_buffers[i].wayland_buffer);
          munmap(dri2_surf->color_buffers[i].data,
                 dri2_surf->color_buffers[i].data_size);
-         dri2_surf->color_buffers[i].wl_buffer = NULL;
          dri2_surf->color_buffers[i].data = NULL;
          dri2_surf->color_buffers[i].age = 0;
       }
@@ -2744,7 +2745,7 @@ dri2_wl_swrast_swap_buffers_with_damage(_EGLDisplay *disp, _EGLSurface *draw,
    if (dri2_wl_surface_throttle(dri2_surf))
       wl_surface_attach(dri2_surf->wl_surface_wrapper,
          /* 'back' here will be promoted to 'current' */
-         dri2_surf->back->wl_buffer, dri2_surf->dx,
+         dri2_surf->back->wayland_buffer.buffer, dri2_surf->dx,
          dri2_surf->dy);
 
    /* If the compositor doesn't support damage_buffer, we deliberately

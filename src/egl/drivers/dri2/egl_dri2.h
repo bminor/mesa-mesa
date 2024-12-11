@@ -47,6 +47,8 @@
 #endif
 
 #ifdef HAVE_WAYLAND_PLATFORM
+#include "loader_wayland_helper.h"
+
 /* forward declarations to avoid pulling wayland headers everywhere */
 struct wl_egl_window;
 struct wl_event_queue;
@@ -342,7 +344,7 @@ struct dri2_egl_surface {
 #if defined(HAVE_WAYLAND_PLATFORM) || defined(HAVE_DRM_PLATFORM)
    struct {
 #ifdef HAVE_WAYLAND_PLATFORM
-      struct wl_buffer *wl_buffer;
+      struct loader_wayland_buffer wayland_buffer;
       bool wl_release;
       struct dri_image *dri_image;
       /* for is_different_gpu case. NULL else */
