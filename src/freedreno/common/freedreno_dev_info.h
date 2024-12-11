@@ -203,6 +203,9 @@ struct fd_dev_info {
        */
       bool prede_nop_quirk;
 
+      /* Whether the sad instruction (iadd3) is supported. */
+      bool has_sad;
+
       struct {
          uint32_t PC_POWER_CNTL;
          uint32_t TPL1_DBG_ECO_CNTL;

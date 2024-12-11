@@ -300,6 +300,7 @@ ir3_compiler_create(struct fd_device *dev, const struct fd_dev_id *dev_id,
 
    /* Set up nir shader compiler options, using device-specific overrides of our base settings. */
    compiler->nir_options = ir3_base_options;
+   compiler->nir_options.has_iadd3 = dev_info->a6xx.has_sad;
 
    if (compiler->gen >= 6) {
       compiler->nir_options.vectorize_io = true,
