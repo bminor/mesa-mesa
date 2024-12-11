@@ -19,7 +19,8 @@ static bool
 is_r8g8(const struct fdl_layout *layout)
 {
    return layout->cpp == 2 &&
-          util_format_get_nr_components(layout->format) == 2;
+          util_format_get_nr_components(layout->format) == 2 &&
+          !layout->is_mutable;
 }
 
 void
