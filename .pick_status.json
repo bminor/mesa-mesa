@@ -414,7 +414,7 @@
         "description": "r600: fix a constant buffer memory leak for u_blitter",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3d6e44fd2a1a2790263fcd6d24a1cc606fed0de9",
         "notes": null
