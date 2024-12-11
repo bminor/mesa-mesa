@@ -222,7 +222,6 @@ radv_physical_device_init_cache_key(struct radv_physical_device *pdev)
    key->emulate_rt = !!(instance->perftest_flags & RADV_PERFTEST_EMULATE_RT);
    key->ge_wave32 = pdev->ge_wave_size == 32;
    key->invariant_geom = !!(instance->debug_flags & RADV_DEBUG_INVARIANT_GEOM);
-   key->lower_discard_to_demote = !!(instance->debug_flags & RADV_DEBUG_DISCARD_TO_DEMOTE);
    key->no_fmask = !!(instance->debug_flags & RADV_DEBUG_NO_FMASK);
    key->no_ngg_gs = !!(instance->debug_flags & RADV_DEBUG_NO_NGG_GS);
    key->no_rt = !!(instance->debug_flags & RADV_DEBUG_NO_RT);

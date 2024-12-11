@@ -53,7 +53,6 @@ struct radv_physical_device_cache_key {
    uint32_t emulate_rt : 1;
    uint32_t ge_wave32 : 1;
    uint32_t invariant_geom : 1;
-   uint32_t lower_discard_to_demote : 1;
    uint32_t no_fmask : 1;
    uint32_t no_ngg_gs : 1;
    uint32_t no_rt : 1;
