@@ -714,7 +714,7 @@
         "description": "brw: don't read past the end of old_src buffer in resize_sources()",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d9e737212d5e9a8d61a50592234aa35c2ab530d7",
         "notes": null
