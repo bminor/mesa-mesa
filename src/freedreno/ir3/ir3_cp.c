@@ -240,12 +240,16 @@ try_swap_two_srcs(struct ir3_instruction *instr, unsigned n, unsigned new_flags,
  * Handles the special case of the 2nd src (n == 1) to "normal" mad
  * instructions, which cannot reference a constant.  See if it is
  * possible to swap the 1st and 2nd sources.
+ * The same case is handled for sad but since it's 3-src commutative, we can
+ * also try to swap the 2nd src with the 3rd. In addition, we can try to swap
+ * either the 1st or 3rd srcs with the 2nd which may be useful since only the
+ * 2nd src supports (neg).
  */
 static bool
 try_swap_cat3_two_srcs(struct ir3_instruction *instr, unsigned n,
                        unsigned new_flags)
 {
-   if (!(is_mad(instr->opc) && n == 1))
+   if (!(is_mad(instr->opc) && n == 1) && !is_sad(instr->opc))
       return false;
 
    /* If we've already tried, nothing more to gain.. we will only
@@ -267,10 +271,23 @@ try_swap_cat3_two_srcs(struct ir3_instruction *instr, unsigned n,
    /* If the reason we couldn't fold without swapping is something
     * other than const source, then swapping won't help:
     */
-   if (!(new_flags & (IR3_REG_CONST | IR3_REG_SHARED)))
+   if (!(new_flags & (IR3_REG_CONST | IR3_REG_SHARED | IR3_REG_SNEG)))
       return false;
 
-   return try_swap_two_srcs(instr, n, new_flags, 0);
+   if (n == 1) {
+      /* Both mad and sad support swapping srcs 2 and 1. */
+      if (try_swap_two_srcs(instr, n, new_flags, 0)) {
+         return true;
+      }
+
+      /* sad also supports swapping srcs 2 and 3. */
+      if (is_sad(instr->opc) && try_swap_two_srcs(instr, n, new_flags, 2)) {
+         return true;
+      }
+   }
+
+   /* sad also supports swapping srcs 1 or 3 with 2. */
+   return is_sad(instr->opc) && try_swap_two_srcs(instr, n, new_flags, 1);
 }
 
 /**
