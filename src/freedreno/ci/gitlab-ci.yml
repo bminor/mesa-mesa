@@ -299,7 +299,7 @@ a630-gles-asan-full:
 a630-vk:
   extends:
     - .a630-test
-    - .baremetal-deqp-test-freedreno-vk
+    - .baremetal-deqp-test
     - .google-turnip-rules
   variables:
     DEQP_SUITE: freedreno-a630-vk
@@ -322,7 +322,7 @@ a630-vk-full:
 a630-vk-asan:
   extends:
     - .a630-test
-    - .baremetal-deqp-test-freedreno-vk
+    - .baremetal-deqp-test
     - .baremetal-arm64-asan-test
     - .google-turnip-rules
   variables:

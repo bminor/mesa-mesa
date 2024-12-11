@@ -53,6 +53,9 @@ prefix = "spill-"
 fraction = 5
 tests_per_group = 1000
 [deqp.env]
+# Increase the hangcheck timer for our spilling tests which bump up against
+# the .5s default.
+FREEDRENO_HANGCHECK_MS = "2000"
 IR3_SHADER_DEBUG = "spillall"
 
 # dynamic rendering testing using emulated renderpass
