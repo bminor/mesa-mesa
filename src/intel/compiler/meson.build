@@ -161,7 +161,7 @@ idep_intel_compiler_brw = declare_dependency(
 )
 
 # For now this tool is only going to be used by Anv
-if get_option('intel-clc') == 'system'
+if get_option('intel-clc') == 'system' or get_option('precomp-compiler') == 'system'
   prog_intel_clc = find_program('intel_clc', native : true)
   dep_prog_intel_clc = []
 elif with_intel_clc
@@ -185,7 +185,7 @@ elif with_intel_clc
     # Most commonly this happens when doing a cross compile from an x86_64 build
     # machine to an x86 host
     native : not meson.can_run_host_binaries(),
-    install : get_option('install-intel-clc'),
+    install : get_option('install-intel-clc') or get_option('install-precomp-compiler'),
   )
   dep_prog_intel_clc = [prog_intel_clc]
 endif

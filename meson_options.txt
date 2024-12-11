@@ -760,3 +760,20 @@ option(
   value : false,
   description : 'Install the mesa-clc compiler (if needed for cross builds).'
 )
+
+option(
+  'precomp-compiler',
+  type : 'combo',
+  value : 'auto',
+  choices : [
+    'enabled', 'system', 'auto'
+  ],
+  description : 'Build drivers internal shader compilers or use a system version'
+)
+
+option(
+  'install-precomp-compiler',
+  type : 'boolean',
+  value : false,
+  description : 'Install the drivers internal shader compilers (if needed for cross builds).'
+)
