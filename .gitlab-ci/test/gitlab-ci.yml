@@ -59,9 +59,7 @@ yaml-toml-shell-py-test:
     - section_start shellcheck "shellcheck"
     - .gitlab-ci/run-shellcheck.sh
     - section_end shellcheck
-    - uncollapsed_section_switch pytest "pytest"
     - .gitlab-ci/run-pytest.sh
-    - section_end
   rules:
     - !reference [.disable-farm-mr-rules, rules]
     - !reference [.never-post-merge-rules, rules]

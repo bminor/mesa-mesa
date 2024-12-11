@@ -19,8 +19,6 @@ fi
 
 source "${SCRIPTS_DIR}/setup-test-env.sh"
 
-section_start pytest_setup "Setting up pytest environment"
-
 if [ -z "${CI_PROJECT_DIR:-}" ]; then
     CI_PROJECT_DIR="$(dirname "${0}")/../"
 fi
@@ -30,21 +28,21 @@ if [ -z "${CI_JOB_TIMEOUT:-}" ]; then
     export CI_JOB_TIMEOUT=3600
 fi
 
-if [ -z "${MESA_PYTEST_VENV:-}" ]; then
+# If running outside of the debian/x86_64_pyutils container,
+# run in a virtual environment for isolation
+# e.g. USE_VENV=true ./.gitlab-ci/run-pytest.sh
+if [ "${USE_VENV:-}" == true ]; then
+    echo "Setting up virtual environment for local testing."
     MESA_PYTEST_VENV="${CI_PROJECT_DIR}/.venv-pytest"
+    python3 -m venv "${MESA_PYTEST_VENV}"
+    source "${MESA_PYTEST_VENV}"/bin/activate
+    python3 -m pip install --break-system-packages -r "${CI_PROJECT_DIR}/bin/ci/test/requirements.txt"
 fi
-
-# Use this script in a python virtualenv for isolation
-python3 -m venv "${MESA_PYTEST_VENV}"
-. "${MESA_PYTEST_VENV}"/bin/activate
-
-python3 -m pip install --break-system-packages -r "${CI_PROJECT_DIR}/bin/ci/requirements.txt"
-python3 -m pip install --break-system-packages -r "${CI_PROJECT_DIR}/bin/ci/test/requirements.txt"
 
 LIB_TEST_DIR=${CI_PROJECT_DIR}/.gitlab-ci/tests
 SCRIPT_TEST_DIR=${CI_PROJECT_DIR}/bin/ci
 
-uncollapsed_section_switch pytest "Running pytest"
+uncollapsed_section_start pytest "Running pytest"
 
 PYTHONPATH="${LIB_TEST_DIR}:${SCRIPT_TEST_DIR}:${PYTHONPATH:-}" python3 -m \
     pytest "${LIB_TEST_DIR}" "${SCRIPT_TEST_DIR}" \
