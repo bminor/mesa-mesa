@@ -7,14 +7,27 @@
 # shellcheck disable=SC1091 # The relative paths in this file only become valid at runtime.
 # shellcheck disable=SC2086 # quoting PYTEST_VERBOSE makes us pass an empty path
 
-. "${SCRIPTS_DIR}/setup-test-env.sh"
+set -eu
+
+if [ -z "${SCRIPTS_DIR:-}" ]; then
+    SCRIPTS_DIR="$(dirname "${0}")"
+fi
+
+if [ -z "${CI_JOB_STARTED_AT:-}" ]; then
+    CI_JOB_STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ) # isoformat
+fi
+
+source "${SCRIPTS_DIR}/setup-test-env.sh"
 
 section_start pytest_setup "Setting up pytest environment"
 
-set -exu
-
 if [ -z "${CI_PROJECT_DIR:-}" ]; then
     CI_PROJECT_DIR="$(dirname "${0}")/../"
+fi
+
+if [ -z "${CI_JOB_TIMEOUT:-}" ]; then
+    # Export this default value, 1 hour in seconds, to test the lava job submitter
+    export CI_JOB_TIMEOUT=3600
 fi
 
 if [ -z "${MESA_PYTEST_VENV:-}" ]; then
