@@ -806,6 +806,22 @@ namespace brw {
 
          assert(is_uniform(index));
 
+         /* A broadcast will always be at the full dispatch width even if the
+          * use of the broadcast result is smaller. If the source is_scalar,
+          * it may be allocated at less than the full dispatch width (e.g.,
+          * allocated at SIMD8 with SIMD32 dispatch). The input may or may
+          * not be stride=0. If it is not, the generated broadcast
+          *
+          *    broadcast(32) dst, value<1>, index<0>
+          *
+          * is invalid because it may read out of bounds from value.
+          *
+          * To account for this, modify the stride of an is_scalar input to be
+          * zero.
+          */
+         if (value.is_scalar)
+            value = component(value, 0);
+
          /* Ensure that the source of a broadcast is always register aligned.
           * See brw_broadcast() non-scalar case for more details.
           */
