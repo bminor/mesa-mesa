@@ -29,6 +29,8 @@ DELAYED_DECODER_DELETE_DICT_ENTRIES = [
     "vkDestroyShaderModule",
 ]
 
+SNAPSHOT_API_CALL_INFO_VARNAME = "snapshotApiCallInfo"
+
 global_state_prefix = "m_state->on_"
 
 decoder_decl_preamble = """
@@ -77,7 +79,8 @@ public:
              m_boxedHandleUnwrapAndDeleteMapping(m_state),
              m_boxedHandleUnwrapAndDeletePreserveBoxedMapping(m_state),
              m_prevSeqno(std::nullopt),
-             m_queueSubmitWithCommandsEnabled(m_state->getFeatures().VulkanQueueSubmitWithCommands.enabled) {}
+             m_queueSubmitWithCommandsEnabled(m_state->getFeatures().VulkanQueueSubmitWithCommands.enabled),
+             m_snapshotsEnabled(m_state->snapshotsEnabled()) {}
     %s* stream() { return &m_vkStream; }
     VulkanMemReadingStream* readStream() { return &m_vkMemReadingStream; }
 
@@ -103,6 +106,7 @@ private:
     BoxedHandleUnwrapAndDeletePreserveBoxedMapping m_boxedHandleUnwrapAndDeletePreserveBoxedMapping;
     std::optional<uint32_t> m_prevSeqno;
     bool m_queueSubmitWithCommandsEnabled = false;
+    const bool m_snapshotsEnabled = false;
 };
 
 VkDecoder::VkDecoder() :
@@ -358,7 +362,7 @@ def emit_global_state_wrapped_call(api, cgen, context):
         print("Error: Cannot generate a global state wrapped call that is also a delayed delete (yet)");
         raise
 
-    customParams = ["&m_pool"] + list(map(lambda p: p.paramName, api.parameters))
+    customParams = ["&m_pool", SNAPSHOT_API_CALL_INFO_VARNAME] + list(map(lambda p: p.paramName, api.parameters))
     if context:
         customParams += ["context"]
     cgen.vkApiCall(api, customPrefix=global_state_prefix, \
@@ -461,9 +465,10 @@ def emit_seqno_incr(api, cgen):
 
 def emit_snapshot(typeInfo, api, cgen):
     additionalParams = [ \
+        makeVulkanTypeSimple(False, "android::base::BumpPool", 1, "&m_pool"),
+        makeVulkanTypeSimple(True, "VkSnapshotApiCallInfo", 1, SNAPSHOT_API_CALL_INFO_VARNAME),
         makeVulkanTypeSimple(True, "uint8_t", 1, "packet"),
         makeVulkanTypeSimple(False, "size_t", 0, "packetLen"),
-        makeVulkanTypeSimple(False, "android::base::BumpPool", 1, "&m_pool"),
     ]
 
     retTypeName = api.getRetTypeExpr()
@@ -487,7 +492,7 @@ def emit_snapshot(typeInfo, api, cgen):
         api.withCustomReturnType(makeVulkanTypeSimple(False, "void", 0, "void")). \
             withCustomParameters(customParams)
 
-    cgen.beginIf("m_state->snapshotsEnabled()")
+    cgen.beginIf("m_snapshotsEnabled")
     cgen.vkApiCall(apiForSnapshot, customPrefix="m_state->snapshot()->")
     cgen.endIf()
 
@@ -913,6 +918,13 @@ size_t VkDecoder::Impl::decode(void* buf, size_t len, IOStream* ioStream,
         """)
 
         self.cgen.line("""
+        VkSnapshotApiCallInfo* %s = nullptr;
+        if (m_snapshotsEnabled) {
+            %s = m_state->snapshot()->createApiCallInfo();
+        }
+        """ % (SNAPSHOT_API_CALL_INFO_VARNAME, SNAPSHOT_API_CALL_INFO_VARNAME))
+
+        self.cgen.line("""
         gfx_logger.recordCommandExecution();
         """)
 
@@ -957,6 +969,12 @@ size_t VkDecoder::Impl::decode(void* buf, size_t len, IOStream* ioStream,
         self.cgen.endBlock()
 
         self.cgen.endBlock() # switch stmt
+
+        self.cgen.line("""
+        if (m_snapshotsEnabled) {
+            m_state->snapshot()->destroyApiCallInfoIfUnused(%s);
+        }
+        """ % (SNAPSHOT_API_CALL_INFO_VARNAME))
 
         self.cgen.stmt("ptr += packetLen")
         self.cgen.stmt("vkStream->clearPool()")

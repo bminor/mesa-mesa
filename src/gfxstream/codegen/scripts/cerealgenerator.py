@@ -485,6 +485,7 @@ using DlSymFunc = void* (void*, const char*);
 
         decoderSnapshotHeaderIncludes = f"""
 #include <memory>
+#include "VkSnapshotApiCall.h"
 #include "{self.utilsHeaderDirPrefix}/GfxApiLogger.h"
 #include "{self.baseLibDirPrefix}/HealthMonitor.h"
 #include "goldfish_vk_private_defs.h"
