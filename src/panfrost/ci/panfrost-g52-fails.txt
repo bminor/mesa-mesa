@@ -2661,9 +2661,6 @@ dEQP-VK.api.device_init.create_device_global_priority_query_khr.basic,Fail
 # CmdDrawIndirect not supported yet
 dEQP-VK.api.command_buffers.many_indirect_draws_on_secondary,Crash
 
-# Missing optimalTilingFeatures VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT|VK_FORMAT_FEATURE_BLIT_SRC_BIT|VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT|VK_FORMAT_FEATURE_TRANSFER_SRC_BIT|VK_FORMAT_FEATURE_TRANSFER_DST_BIT
-dEQP-VK.api.info.format_properties.b4g4r4a4_unorm_pack16,Fail
-
 dEQP-VK.device_group.afr,Fail
 dEQP-VK.device_group.afr_dedicated,Fail
 dEQP-VK.device_group.afr_sys,Fail
@@ -2745,7 +2742,6 @@ dEQP-VK.wsi.xlib.swapchain.simulate_oom.exclusive_nonzero_queues,Crash
 dEQP-VK.wsi.xlib.swapchain.simulate_oom.image_array_layers,Crash
 dEQP-VK.wsi.xlib.swapchain.simulate_oom.image_extent,Crash
 dEQP-VK.wsi.xlib.swapchain.simulate_oom.image_format,Crash
-dEQP-VK.wsi.xlib.swapchain.simulate_oom.image_swapchain_create_info,Crash
 dEQP-VK.wsi.xlib.swapchain.simulate_oom.image_usage,Crash
 dEQP-VK.wsi.xlib.swapchain.simulate_oom.min_image_count,Crash
 dEQP-VK.wsi.xlib.swapchain.simulate_oom.pre_transform,Crash
@@ -2756,8 +2752,6 @@ dEQP-VK.wsi.wayland.swapchain.simulate_oom.exclusive_nonzero_queues,Crash
 dEQP-VK.wsi.wayland.swapchain.simulate_oom.image_array_layers,Crash
 dEQP-VK.wsi.wayland.swapchain.simulate_oom.image_extent,Crash
 dEQP-VK.wsi.wayland.swapchain.simulate_oom.image_format,Crash
-dEQP-VK.wsi.wayland.swapchain.simulate_oom.image_sharing_mode,Crash
-dEQP-VK.wsi.wayland.swapchain.simulate_oom.image_swapchain_create_info,Crash
 dEQP-VK.wsi.wayland.swapchain.simulate_oom.image_usage,Crash
 dEQP-VK.wsi.wayland.swapchain.simulate_oom.min_image_count,Crash
 dEQP-VK.wsi.wayland.swapchain.simulate_oom.pre_transform,Crash
@@ -2907,3 +2901,6 @@ dEQP-VK.draw.dynamic_rendering.partial_secondary_cmd_buff.linear_interpolation.o
 dEQP-VK.draw.dynamic_rendering.partial_secondary_cmd_buff.linear_interpolation.offset_max_4_samples,Fail
 dEQP-VK.draw.dynamic_rendering.partial_secondary_cmd_buff.linear_interpolation.offset_min_1_sample,Fail
 dEQP-VK.draw.dynamic_rendering.partial_secondary_cmd_buff.linear_interpolation.offset_min_4_samples,Fail
+
+dEQP-VK.rasterization.rasterization_order_attachment_access.depth.samples_1.multi_draw_barriers,Crash
+dEQP-VK.rasterization.rasterization_order_attachment_access.stencil.samples_1.multi_draw_barriers,Crash
