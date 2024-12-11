@@ -242,8 +242,6 @@ try_swap_mad_two_srcs(struct ir3_instruction *instr, unsigned new_flags)
    if (!(new_flags & (IR3_REG_CONST | IR3_REG_SHARED)))
       return false;
 
-   instr->cat3.swapped = true;
-
    /* NOTE: pre-swap first two src's before valid_flags(),
     * which might try to dereference the n'th src:
     */
@@ -258,7 +256,10 @@ try_swap_mad_two_srcs(struct ir3_instruction *instr, unsigned new_flags)
    if (!valid_swap) {
       /* put things back the way they were: */
       swap(instr->srcs[0], instr->srcs[1]);
-   } /* otherwise leave things swapped */
+   } else {
+      /* otherwise leave things swapped */
+      instr->cat3.swapped = true;
+   }
 
    return valid_swap;
 }
