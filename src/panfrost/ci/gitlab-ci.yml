@@ -347,17 +347,14 @@ panfrost-g52-vk:arm64:
     HWCI_START_WESTON: 1
 
 panfrost-g52-vk-full:arm64:
-  # Only allow one runner as we don't have many VIM3 around.
-  parallel: null
+  parallel: 4
   extends:
     - panfrost-g52-vk:arm64
     - .panfrost-vk-manual-rules
-  # A full run takes around 4 hours and a half locally on a VIM3 that is thermal throttling.
-  # We assume worst case scenario (throttling + new faults)
-  timeout: 5h
+  timeout: 3h
   variables:
     DEQP_SUITE: panfrost-g52-vk-full
-    JOB_TIMEOUT: 300
+    JOB_TIMEOUT: 185
 
 panfrost-g52-piglit-gles2:arm64:
   extends:
