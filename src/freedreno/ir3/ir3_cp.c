@@ -209,6 +209,33 @@ unuse(struct ir3_instruction *instr)
    }
 }
 
+/* Try to swap src n of instr using new_flags with src swap_n. */
+static bool
+try_swap_two_srcs(struct ir3_instruction *instr, unsigned n, unsigned new_flags,
+                  unsigned swap_n)
+{
+   /* NOTE: pre-swap first two src's before valid_flags(),
+    * which might try to dereference the n'th src:
+    */
+   swap(instr->srcs[swap_n], instr->srcs[n]);
+
+   bool valid_swap =
+      /* can we propagate mov if we move 2nd src to first? */
+      ir3_valid_flags(instr, swap_n, new_flags) &&
+      /* and does first src fit in second slot? */
+      ir3_valid_flags(instr, n, instr->srcs[n]->flags);
+
+   if (!valid_swap) {
+      /* put things back the way they were: */
+      swap(instr->srcs[0], instr->srcs[1]);
+   } else {
+      /* otherwise leave things swapped */
+      instr->cat3.swapped = true;
+   }
+
+   return valid_swap;
+}
+
 /**
  * Handles the special case of the 2nd src (n == 1) to "normal" mad
  * instructions, which cannot reference a constant.  See if it is
@@ -242,26 +269,7 @@ try_swap_mad_two_srcs(struct ir3_instruction *instr, unsigned new_flags)
    if (!(new_flags & (IR3_REG_CONST | IR3_REG_SHARED)))
       return false;
 
-   /* NOTE: pre-swap first two src's before valid_flags(),
-    * which might try to dereference the n'th src:
-    */
-   swap(instr->srcs[0], instr->srcs[1]);
-
-   bool valid_swap =
-      /* can we propagate mov if we move 2nd src to first? */
-      ir3_valid_flags(instr, 0, new_flags) &&
-      /* and does first src fit in second slot? */
-      ir3_valid_flags(instr, 1, instr->srcs[1]->flags);
-
-   if (!valid_swap) {
-      /* put things back the way they were: */
-      swap(instr->srcs[0], instr->srcs[1]);
-   } else {
-      /* otherwise leave things swapped */
-      instr->cat3.swapped = true;
-   }
-
-   return valid_swap;
+   return try_swap_two_srcs(instr, 1, new_flags, 0);
 }
 
 /**
