@@ -154,7 +154,7 @@
         "description": "radv: fix disabling DCC for stores with drirc",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e3d1f27b31816ce9e8fddfe9c669059893cd8934",
         "notes": null
