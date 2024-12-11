@@ -163,7 +163,6 @@ struct wsi_wl_image {
    int shm_fd;
    void *shm_ptr;
    unsigned shm_size;
-   uint64_t flow_id;
 
    struct wp_linux_drm_syncobj_timeline_v1 *wl_syncobj_timeline[WSI_ES_COUNT];
 };
@@ -2658,7 +2657,7 @@ wsi_wl_swapchain_acquire_next_image_explicit(struct wsi_swapchain *wsi_chain,
    STACK_ARRAY_FINISH(images);
 
    if (result == VK_SUCCESS) {
-      chain->images[*image_index].flow_id = id;
+      loader_wayland_buffer_set_flow(&chain->images[*image_index].wayland_buffer, id);
       if (chain->suboptimal)
          result = VK_SUBOPTIMAL_KHR;
    }
@@ -2704,7 +2703,7 @@ wsi_wl_swapchain_acquire_next_image_implicit(struct wsi_swapchain *wsi_chain,
             /* We found a non-busy image */
             *image_index = i;
             chain->images[i].busy = true;
-            chain->images[i].flow_id = id;
+            loader_wayland_buffer_set_flow(&chain->images[i].wayland_buffer, id);
             return (chain->suboptimal ? VK_SUBOPTIMAL_KHR : VK_SUCCESS);
          }
       }
@@ -2951,7 +2950,7 @@ wsi_wl_swapchain_queue_present(struct wsi_swapchain *wsi_chain,
    struct wsi_wl_swapchain *chain = (struct wsi_wl_swapchain *)wsi_chain;
    bool timestamped = false;
    bool queue_dispatched = false;
-   uint64_t flow_id = chain->images[image_index].flow_id;
+   uint64_t flow_id = chain->images[image_index].wayland_buffer.flow_id;
 
    MESA_TRACE_FUNC_FLOW(&flow_id);
 

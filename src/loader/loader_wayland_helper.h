@@ -29,6 +29,7 @@
 struct loader_wayland_buffer {
    struct wl_buffer *buffer;
    uint32_t id;
+   uint64_t flow_id;
 };
 
 #ifndef HAVE_WL_DISPATCH_QUEUE_TIMEOUT
@@ -55,5 +56,8 @@ loader_wayland_wrap_buffer(struct loader_wayland_buffer *lwb,
 
 void
 loader_wayland_buffer_destroy(struct loader_wayland_buffer *lwb);
+
+void
+loader_wayland_buffer_set_flow(struct loader_wayland_buffer *lwb, uint64_t flow_id);
 
 #endif
