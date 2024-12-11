@@ -63,29 +63,30 @@ public:
     Impl() { }
 
     void save(android::base::Stream* stream) {
+        std::lock_guard<std::mutex> lock(mReconstructionMutex);
         mReconstruction.save(stream);
     }
 
-    void load(android::base::Stream* stream, GfxApiLogger& gfx_logger,
-              HealthMonitor<>* healthMonitor) {
+    void load(android::base::Stream* stream, GfxApiLogger& gfx_logger, HealthMonitor<>* healthMonitor) {
+        std::lock_guard<std::mutex> lock(mReconstructionMutex);
         mReconstruction.load(stream, gfx_logger, healthMonitor);
     }
 
     VkSnapshotApiCallInfo* createApiCallInfo() {
-        android::base::AutoLock lock(mLock);
+        std::lock_guard<std::mutex> lock(mReconstructionMutex);
         return mReconstruction.createApiCallInfo();
     }
 
     void destroyApiCallInfoIfUnused(VkSnapshotApiCallInfo* info) {
-        android::base::AutoLock lock(mLock);
+        std::lock_guard<std::mutex> lock(mReconstructionMutex);
         return mReconstruction.destroyApiCallInfoIfUnused(info);
     }
 """
 
 decoder_snapshot_impl_postamble = """
 private:
-    android::base::Lock mLock;
-    VkReconstruction mReconstruction;
+    std::mutex mReconstructionMutex;
+    VkReconstruction mReconstruction GUARDED_BY(mReconstructionMutex);
 };
 
 VkDecoderSnapshot::VkDecoderSnapshot() :
@@ -95,8 +96,7 @@ void VkDecoderSnapshot::save(android::base::Stream* stream) {
     mImpl->save(stream);
 }
 
-void VkDecoderSnapshot::load(android::base::Stream* stream, GfxApiLogger& gfx_logger,
-                             HealthMonitor<>* healthMonitor) {
+void VkDecoderSnapshot::load(android::base::Stream* stream, GfxApiLogger& gfx_logger, HealthMonitor<>* healthMonitor) {
     mImpl->load(stream, gfx_logger, healthMonitor);
 }
 
@@ -230,11 +230,6 @@ apiSequences = {
     "vkAllocateMemory" : ["vkAllocateMemory", "vkMapMemoryIntoAddressSpaceGOOGLE"]
 }
 
-apiCrreateExtraHandles = [
-    "vkCreateDevice",
-    "vkCreateDescriptorPool",
-]
-
 @dataclass(frozen=True)
 class VkObjectState:
     vk_object : str
@@ -251,7 +246,7 @@ def api_special_implementation_vkBindImageMemory2(api, cgen):
     parentType = "VkDeviceMemory"
     childObj = "boxed_%s" % childType
     parentObj = "boxed_%s" % parentType
-    cgen.stmt("android::base::AutoLock lock(mLock)")
+    cgen.stmt("std::lock_guard<std::mutex> lock(mReconstructionMutex)")
     cgen.beginFor("uint32_t i = 0", "i < bindInfoCount", "++i")
     cgen.stmt("%s boxed_%s = unboxed_to_boxed_non_dispatchable_%s(pBindInfos[i].image)"
               % (childType, childType, childType))
@@ -368,11 +363,8 @@ def emit_impl(typeInfo, api, cgen):
                 boxed_access = "&boxed_%s" % p.typeName
             if p.pointerIndirectionLevels > 0:
                 cgen.stmt("if (!%s) return" % access)
-            isCreateExtraHandleApi = api.name in apiCrreateExtraHandles
-            if isCreateExtraHandleApi:
-                cgen.stmt("mLock.tryLock()");
-            else:
-                cgen.stmt("android::base::AutoLock lock(mLock)")
+
+            cgen.stmt("std::lock_guard<std::mutex> lock(mReconstructionMutex)")
             cgen.line("// %s create" % p.paramName)
             if p.isCreatedBy(api):
                 cgen.stmt("mReconstruction.addHandles((const uint64_t*)%s, %s)" % (boxed_access, lenExpr));
@@ -394,11 +386,9 @@ def emit_impl(typeInfo, api, cgen):
                 cgen.stmt("mReconstruction.setCreatedHandlesForApi(apiCallHandle, (const uint64_t*)%s, %s)" % (boxed_access, lenExpr))
             if lenAccessGuard is not None:
                 cgen.endIf()
-            if isCreateExtraHandleApi:
-                cgen.stmt("mLock.unlock()")
 
         if p.isDestroyedBy(api):
-            cgen.stmt("android::base::AutoLock lock(mLock)")
+            cgen.stmt("std::lock_guard<std::mutex> lock(mReconstructionMutex)")
             cgen.line("// %s destroy" % p.paramName)
             if lenAccessGuard is not None:
                 cgen.beginIf(lenAccessGuard)
@@ -408,7 +398,7 @@ def emit_impl(typeInfo, api, cgen):
                 cgen.endIf()
 
         if is_action_operation(api, p):
-            cgen.stmt("android::base::AutoLock lock(mLock)")
+            cgen.stmt("std::lock_guard<std::mutex> lock(mReconstructionMutex)")
             cgen.line("// %s action" % p.paramName)
             cgen.stmt("VkDecoderGlobalState* m_state = VkDecoderGlobalState::get()")
             cgen.beginIf("m_state->batchedDescriptorSetUpdateEnabled()")
@@ -424,7 +414,7 @@ def emit_impl(typeInfo, api, cgen):
             cgen.stmt("mReconstruction.setCreatedHandlesForApi(apiCallHandle, (const uint64_t*)(&handle), 1)")
 
         elif is_modify_operation(api, p) or is_clear_modifier_operation(api, p):
-            cgen.stmt("android::base::AutoLock lock(mLock)")
+            cgen.stmt("std::lock_guard<std::mutex> lock(mReconstructionMutex)")
             cgen.line("// %s modify" % p.paramName)
             cgen.stmt("auto apiCallHandle = apiCallInfo->handle")
             cgen.stmt("mReconstruction.setApiTrace(apiCallInfo, apiCallPacket, apiCallPacketSize)")
