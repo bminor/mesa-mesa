@@ -426,8 +426,11 @@ etna_try_blt_blit(struct pipe_context *pctx,
       return false;
 
    /* BLT does not support upscaling */
-   if ((src_xscale < dst_xscale) || (src_yscale < dst_yscale))
+   if ((src_xscale < dst_xscale) || (src_yscale < dst_yscale)) {
+      DBG("upscaling requested: source %dx%d destination %dx%d",
+          src_xscale, src_yscale, dst_xscale, dst_yscale);
       return false;
+   }
 
    if (src_xscale > dst_xscale)
       downsample_x = true;
@@ -460,8 +463,12 @@ etna_try_blt_blit(struct pipe_context *pctx,
     *  - set sRGB bits correctly
     *  - avoid trying to convert between float/int formats?
     */
-   if (blit_info->src.format != blit_info->dst.format)
+   if (blit_info->src.format != blit_info->dst.format) {
+      DBG("non matching formats: %s vs %s",
+          util_format_short_name(blit_info->src.format),
+          util_format_short_name(blit_info->dst.format));
       return false;
+   }
 
    /* try to find a exact format match first */
    uint32_t format = translate_blt_format(blit_info->dst.format);
@@ -470,8 +477,10 @@ etna_try_blt_blit(struct pipe_context *pctx,
     */
    if (format == ETNA_NO_MATCH && !downsample_x && !downsample_y)
       format = etna_compatible_blt_format(blit_info->dst.format);
-   if (format == ETNA_NO_MATCH)
+   if (format == ETNA_NO_MATCH) {
+      DBG("format not supported: %s", util_format_short_name(blit_info->dst.format));
       return false;
+   }
 
    if (blit_info->scissor_enable ||
        blit_info->swizzle_enable ||
