@@ -67,7 +67,7 @@ test_model(void *buf, size_t buf_size, std::string cache_dir, unsigned tolerance
             case kTfLiteFloat32: {
                float *cpu = ((float**)cpu_output)[i];
                float *npu = ((float**)npu_output)[i];
-               if (abs(cpu[j] - npu[j]) > tolerance) {
+               if (abs(cpu[j] - npu[j]) > tolerance / 33.0) {
                   std::cout << "CPU: ";
                   for (int k = 0; k < std::min(int(output_sizes[i]), 24); k++)
                      std::cout << std::setfill('0') << std::setw(6) << cpu[k] << " ";
