@@ -57,7 +57,6 @@ zink-anv-adl-full:
     - .zink-anv-manual-rules
   variables:
     DEQP_SUITE: zink-anv-adl-full
-    JOB_TIMEOUT: 105
     HWCI_START_WESTON: 1
   timeout: 2h
   parallel: 2
@@ -82,7 +81,6 @@ zink-anv-tgl-full:
     - .zink-anv-manual-rules
   variables:
     DEQP_SUITE: zink-anv-tgl-full
-    JOB_TIMEOUT: 105
     HWCI_START_WESTON: 1
   timeout: 1h 45m
   parallel: 3

@@ -29,7 +29,6 @@ radv-stoney-angle-full:
   parallel: 2
   variables:
     DEQP_SUITE: radv-stoney-angle-full
-    JOB_TIMEOUT: 60
 
 radeonsi-stoney-gl:
   extends:
@@ -149,7 +148,6 @@ radeonsi-raven-va-full:
     - radeonsi-raven-va
     - .radeonsi-vaapi-manual-rules
   variables:
-    JOB_TIMEOUT: 60
     GTEST_FRACTION: null
 
 ############### VKCTS tests ###############

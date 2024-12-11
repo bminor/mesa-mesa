@@ -262,7 +262,6 @@ panfrost-t760-gles:arm32:
     - .panfrost-test
     - .lava-rk3288-veyron-jaq:arm32
   variables:
-    JOB_TIMEOUT: 60
 
 panfrost-t760-traces:arm32:
   extends:
@@ -354,7 +353,6 @@ panfrost-g52-vk-full:arm64:
   timeout: 3h
   variables:
     DEQP_SUITE: panfrost-g52-vk-full
-    JOB_TIMEOUT: 185
 
 panfrost-g52-piglit-gles2:arm64:
   extends:
@@ -430,4 +428,3 @@ panfrost-g610-vk-full:arm64:
   timeout: 1h 35m
   variables:
     DEQP_SUITE: panfrost-g610-vk-full
-    JOB_TIMEOUT: 90

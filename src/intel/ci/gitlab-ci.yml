@@ -16,7 +16,6 @@ anv-jsl-full:
     - .anv-manual-rules
   variables:
     DEQP_SUITE: anv-jsl-full
-    JOB_TIMEOUT: 115
   parallel: 4
   timeout: 2h
 
@@ -36,7 +35,6 @@ anv-adl-full:
     - .anv-manual-rules
   variables:
     DEQP_SUITE: anv-adl-full
-    JOB_TIMEOUT: 90
   timeout: 1h 40m
   parallel: 5
 
@@ -55,7 +53,6 @@ anv-tgl-full:
     - .anv-manual-rules
   variables:
     DEQP_SUITE: anv-tgl-full
-    JOB_TIMEOUT: 90
   timeout: 100m
   parallel: 4
 
@@ -94,7 +91,6 @@ anv-jsl-angle-full:
     - .intel-manual-rules
   variables:
     DEQP_SUITE: anv-jsl-angle-full
-    JOB_TIMEOUT: 60
   parallel: 2
 
 anv-adl-angle:
@@ -113,7 +109,6 @@ anv-adl-angle-full:
     - .intel-manual-rules
   variables:
     DEQP_SUITE: anv-adl-angle-full
-    JOB_TIMEOUT: 60
   timeout: 30m
 
 anv-tgl-angle:
@@ -131,7 +126,6 @@ anv-tgl-angle-full:
     - .intel-manual-rules
   variables:
     DEQP_SUITE: anv-tgl-angle-full
-    JOB_TIMEOUT: 60
 
 iris-apl-deqp:
   extends:

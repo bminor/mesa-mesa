@@ -103,7 +103,6 @@ a618-vk-full:
     # ran into OOM with VK-GL-CTS 1.2.8.0 at 6
     FDO_CI_CONCURRENT: 4
     DEQP_SUITE: freedreno-a618-vk-full
-    JOB_TIMEOUT: 115
     DEQP_FRACTION: 1
 
 a618-gl:
@@ -123,7 +122,6 @@ a618-gl-full:
   timeout: 65m
   variables:
     DEQP_FRACTION: 1
-    JOB_TIMEOUT: 60
 
 # Run dEQP EGL window system tests separately with the window systems available.
 # X11 takes over the screen, wayland is run headless.
@@ -173,7 +171,6 @@ a618-piglit-full:
     DEQP_SUITE: freedreno-a618-piglit-full
     FLAKES_CHANNEL: "#freedreno-ci"
     HWCI_START_WESTON: 1
-    JOB_TIMEOUT: 60
 
 a618-piglit-cl:
   extends:
@@ -261,7 +258,6 @@ a660-vk-full:
   timeout: 1h
   variables:
     DEQP_SUITE: freedreno-a660-vk-full
-    JOB_TIMEOUT: 55
 
 # X11 takes over the screen, wayland is run headless.
 a630-gl:

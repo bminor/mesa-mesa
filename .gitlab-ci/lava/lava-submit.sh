@@ -69,7 +69,7 @@ PYTHONPATH=artifacts/ artifacts/lava/lava_job_submitter.py \
 	--farm "${FARM}" \
 	--device-type "${DEVICE_TYPE}" \
 	--boot-method "${BOOT_METHOD}" \
-	--job-timeout-min ${JOB_TIMEOUT:-30} \
+	--job-timeout-min $((CI_JOB_TIMEOUT/60 - 5)) \
 	--dump-yaml \
 	--pipeline-info "$CI_JOB_NAME: $CI_PIPELINE_URL on $CI_COMMIT_REF_NAME ${CI_NODE_INDEX}/${CI_NODE_TOTAL}" \
 	--rootfs-url "${ROOTFS_URL}" \
