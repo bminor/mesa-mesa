@@ -624,6 +624,32 @@ tu_image_update_layout(struct tu_device *device, struct tu_image *image,
 }
 TU_GENX(tu_image_update_layout);
 
+/* Return true if all formats in the format list can support UBWC.
+ */
+static bool
+format_list_ubwc_possible(struct tu_device *dev,
+                          const VkImageFormatListCreateInfo *fmt_list,
+                          const VkImageCreateInfo *create_info)
+{
+   /* If there is no format list, we may have to assume that a
+    * UBWC-incompatible format may be used.
+    * TODO: limit based on compatiblity class
+    */
+   if (!fmt_list || !fmt_list->viewFormatCount)
+      return false;
+
+   for (uint32_t i = 0; i < fmt_list->viewFormatCount; i++) {
+      if (!ubwc_possible(dev, fmt_list->pViewFormats[i],
+                         create_info->imageType, create_info->usage,
+                         create_info->usage, dev->physical_device->info,
+                         create_info->samples, create_info->mipLevels,
+                         dev->use_z24uint_s8uint))
+         return false;
+   }
+
+   return true;
+}
+
 static VkResult
 tu_image_init(struct tu_device *device, struct tu_image *image,
               const VkImageCreateInfo *pCreateInfo)
@@ -677,7 +703,6 @@ tu_image_init(struct tu_device *device, struct tu_image *image,
                       pCreateInfo->mipLevels, device->use_z24uint_s8uint))
       image->ubwc_enabled = false;
 
-   bool fmt_list_has_swaps = false;
    /* Mutable images can be reinterpreted as any other compatible format.
     * This is a problem with UBWC (compression for different formats is different),
     * but also tiling ("swap" affects how tiled formats are stored in memory)
@@ -688,49 +713,66 @@ tu_image_init(struct tu_device *device, struct tu_image *image,
     * - if the fmt_list contains only formats which are swapped, but compatible
     *   with each other (B8G8R8A8_UNORM and B8G8R8A8_UINT for example), then
     *   tiling is still possible
-    * - figure out which UBWC compressions are compatible to keep it enabled
     */
    if ((pCreateInfo->flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) &&
        !vk_format_is_depth_or_stencil(image->vk.format)) {
       const VkImageFormatListCreateInfo *fmt_list =
          vk_find_struct_const(pCreateInfo->pNext, IMAGE_FORMAT_LIST_CREATE_INFO);
-      fmt_list_has_swaps = format_list_has_swaps(fmt_list);
       if (!tu6_mutable_format_list_ubwc_compatible(device->physical_device->info,
                                                    fmt_list)) {
          bool mutable_ubwc_fc = device->physical_device->info->a7xx.ubwc_all_formats_compatible;
-         if (image->ubwc_enabled && !mutable_ubwc_fc) {
-            if (fmt_list && fmt_list->viewFormatCount == 2) {
+
+         /* NV12 uses a special compression scheme for the Y channel which
+          * doesn't support reinterpretation. We have to fall back to linear
+          * always.
+          */
+         if (pCreateInfo->format == VK_FORMAT_G8_B8R8_2PLANE_420_UNORM) {
+            if (image->ubwc_enabled) {
                perf_debug(
                   device,
-                  "Disabling UBWC on %dx%d %s resource due to mutable formats "
-                  "(fmt list %s, %s)",
-                  image->vk.extent.width, image->vk.extent.height,
-                  util_format_name(vk_format_to_pipe_format(image->vk.format)),
-                  util_format_name(vk_format_to_pipe_format(fmt_list->pViewFormats[0])),
-                  util_format_name(vk_format_to_pipe_format(fmt_list->pViewFormats[1])));
-            } else {
-               perf_debug(
-                  device,
-                  "Disabling UBWC on %dx%d %s resource due to mutable formats "
+                  "Disabling UBWC and tiling on %dx%d %s resource due to mutable formats "
                   "(fmt list %s)",
                   image->vk.extent.width, image->vk.extent.height,
                   util_format_name(vk_format_to_pipe_format(image->vk.format)),
                   fmt_list ? "present" : "missing");
             }
             image->ubwc_enabled = false;
-         }
-
-         bool r8g8_r16 = format_list_reinterprets_r8g8_r16(vk_format_to_pipe_format(image->vk.format), fmt_list);
-
-         /* A750+ TODO: Correctly handle swaps when copying mutable images.
-          * We should be able to support UBWC for mutable images with swaps.
-          */
-         if ((r8g8_r16 && !mutable_ubwc_fc) || fmt_list_has_swaps) {
-            image->ubwc_enabled = false;
             image->force_linear_tile = true;
-         }
+         } else if (!mutable_ubwc_fc) {
+            if (image->ubwc_enabled) {
+               if (fmt_list && fmt_list->viewFormatCount == 2) {
+                  perf_debug(
+                     device,
+                     "Disabling UBWC on %dx%d %s resource due to mutable formats "
+                     "(fmt list %s, %s)",
+                     image->vk.extent.width, image->vk.extent.height,
+                     util_format_name(vk_format_to_pipe_format(image->vk.format)),
+                     util_format_name(vk_format_to_pipe_format(fmt_list->pViewFormats[0])),
+                     util_format_name(vk_format_to_pipe_format(fmt_list->pViewFormats[1])));
+               } else {
+                  perf_debug(
+                     device,
+                     "Disabling UBWC on %dx%d %s resource due to mutable formats "
+                     "(fmt list %s)",
+                     image->vk.extent.width, image->vk.extent.height,
+                     util_format_name(vk_format_to_pipe_format(image->vk.format)),
+                     fmt_list ? "present" : "missing");
+               }
+               image->ubwc_enabled = false;
+            }
 
-         image->is_mutable = image->ubwc_enabled && mutable_ubwc_fc;
+            bool r8g8_r16 = format_list_reinterprets_r8g8_r16(vk_format_to_pipe_format(image->vk.format), fmt_list);
+            bool fmt_list_has_swaps = format_list_has_swaps(fmt_list);
+
+            if (r8g8_r16 || fmt_list_has_swaps) {
+               image->ubwc_enabled = false;
+               image->force_linear_tile = true;
+            }
+         } else {
+            image->is_mutable = true;
+            if (!format_list_ubwc_possible(device, fmt_list, pCreateInfo))
+               image->ubwc_enabled = false;
+         }
       }
    }
 
