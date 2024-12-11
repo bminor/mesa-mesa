@@ -564,7 +564,8 @@ emit_blit_dst(struct fd_ringbuffer *ring, struct pipe_resource *prsc,
    enum a6xx_tile_mode tile =
          (enum a6xx_tile_mode)fd_resource_tile_mode(prsc, level);
    enum a3xx_color_swap swap =
-         fd6_color_swap(pfmt, (enum a6xx_tile_mode)dst->layout.tile_mode);
+         fd6_color_swap(pfmt, (enum a6xx_tile_mode)dst->layout.tile_mode,
+                        false);
    uint32_t pitch = fd_resource_pitch(dst, level);
    bool ubwc_enabled = fd_resource_ubwc_enabled(dst, level);
    unsigned off = fd_resource_offset(dst, level, layer);
@@ -603,11 +604,11 @@ emit_blit_src(struct fd_ringbuffer *ring, const struct pipe_blit_info *info,
 {
    struct fd_resource *src = fd_resource(info->src.resource);
    enum a6xx_format sfmt =
-      fd6_texture_format(info->src.format, (enum a6xx_tile_mode)src->layout.tile_mode);
+      fd6_texture_format(info->src.format, (enum a6xx_tile_mode)src->layout.tile_mode, false);
    enum a6xx_tile_mode stile =
       (enum a6xx_tile_mode)fd_resource_tile_mode(info->src.resource, info->src.level);
    enum a3xx_color_swap sswap =
-      fd6_texture_swap(info->src.format, (enum a6xx_tile_mode)src->layout.tile_mode);
+      fd6_texture_swap(info->src.format, (enum a6xx_tile_mode)src->layout.tile_mode, false);
    uint32_t pitch = fd_resource_pitch(src, info->src.level);
    bool subwc_enabled = fd_resource_ubwc_enabled(src, info->src.level);
    unsigned soff = fd_resource_offset(src, info->src.level, layer);

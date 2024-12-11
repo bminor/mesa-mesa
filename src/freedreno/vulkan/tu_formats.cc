@@ -44,11 +44,12 @@ tu6_format_color_supported(enum pipe_format format)
 }
 
 struct tu_native_format
-tu6_format_color(enum pipe_format format, enum a6xx_tile_mode tile_mode)
+tu6_format_color(enum pipe_format format, enum a6xx_tile_mode tile_mode,
+                 bool is_mutable)
 {
    struct tu_native_format fmt = {
       .fmt = fd6_color_format(format, tile_mode),
-      .swap = fd6_color_swap(format, tile_mode),
+      .swap = fd6_color_swap(format, tile_mode, is_mutable),
    };
    assert(fmt.fmt != FMT6_NONE);
    return fmt;
@@ -57,15 +58,16 @@ tu6_format_color(enum pipe_format format, enum a6xx_tile_mode tile_mode)
 static bool
 tu6_format_texture_supported(enum pipe_format format)
 {
-   return fd6_texture_format(format, TILE6_LINEAR) != FMT6_NONE;
+   return fd6_texture_format(format, TILE6_LINEAR, false) != FMT6_NONE;
 }
 
 struct tu_native_format
-tu6_format_texture(enum pipe_format format, enum a6xx_tile_mode tile_mode)
+tu6_format_texture(enum pipe_format format, enum a6xx_tile_mode tile_mode,
+                   bool is_mutable)
 {
    struct tu_native_format fmt = {
-      .fmt = fd6_texture_format(format, tile_mode),
-      .swap = fd6_texture_swap(format, tile_mode),
+      .fmt = fd6_texture_format(format, tile_mode, is_mutable),
+      .swap = fd6_texture_swap(format, tile_mode, is_mutable),
    };
    assert(fmt.fmt != FMT6_NONE);
    return fmt;
@@ -765,7 +767,7 @@ tu_GetPhysicalDeviceImageFormatProperties2(
           * format, we'd hit the force_linear_tile fallback.
           */
          (fd6_color_swap(vk_format_to_pipe_format(base_info->format),
-                                                  TILE6_LINEAR) == WZYX &&
+                                                  TILE6_LINEAR, false) == WZYX &&
          !ubwc_possible(NULL, base_info->format, base_info->type,
                         (base_info->usage & ~VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT),
                         (base_info->usage & ~VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT),

@@ -468,7 +468,7 @@ format_list_has_swaps(const VkImageFormatListCreateInfo *fmt_list)
       enum pipe_format format =
          vk_format_to_pipe_format(fmt_list->pViewFormats[i]);
 
-      if (tu6_format_texture(format, TILE6_LINEAR).swap)
+      if (tu6_format_texture(format, TILE6_LINEAR, false).swap)
          return true;
    }
    return false;
@@ -660,7 +660,7 @@ tu_image_init(struct tu_device *device, struct tu_image *image,
     */
    if ((pCreateInfo->usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT) &&
        fd6_color_swap(vk_format_to_pipe_format(image->vk.format),
-                                               TILE6_LINEAR) != WZYX)
+                                               TILE6_LINEAR, false) != WZYX)
       image->force_linear_tile = true;
 
    /* Some kind of HW limitation. */

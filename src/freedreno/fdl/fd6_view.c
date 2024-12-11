@@ -192,9 +192,9 @@ fdl6_view_init(struct fdl6_view *view, const struct fdl_layout **layouts,
    uint32_t layer_size = fdl_layer_stride(layout, args->base_miplevel);
 
    enum a6xx_format texture_format =
-      fd6_texture_format(args->format, layout->tile_mode);
+      fd6_texture_format(args->format, layout->tile_mode, layout->is_mutable);
    enum a3xx_color_swap swap =
-      fd6_texture_swap(args->format, layout->tile_mode);
+      fd6_texture_swap(args->format, layout->tile_mode, layout->is_mutable);
    enum a6xx_tile_mode tile_mode = fdl_tile_mode(layout, args->base_miplevel);
 
    bool ubwc_enabled = fdl_ubwc_enabled(layout, args->base_miplevel);
@@ -362,7 +362,7 @@ fdl6_view_init(struct fdl6_view *view, const struct fdl_layout **layouts,
       return;
 
    enum a3xx_color_swap color_swap =
-      fd6_color_swap(args->format, layout->tile_mode);
+      fd6_color_swap(args->format, layout->tile_mode, layout->is_mutable);
    enum a6xx_format blit_format = color_format;
 
    if (is_d24s8)
@@ -450,8 +450,8 @@ fdl6_buffer_view_init(uint32_t *descriptor, enum pipe_format format,
 
    descriptor[0] =
       A6XX_TEX_CONST_0_TILE_MODE(TILE6_LINEAR) |
-      A6XX_TEX_CONST_0_SWAP(fd6_texture_swap(format, TILE6_LINEAR)) |
-      A6XX_TEX_CONST_0_FMT(fd6_texture_format(format, TILE6_LINEAR)) |
+      A6XX_TEX_CONST_0_SWAP(fd6_texture_swap(format, TILE6_LINEAR, false)) |
+      A6XX_TEX_CONST_0_FMT(fd6_texture_format(format, TILE6_LINEAR, false)) |
       A6XX_TEX_CONST_0_MIPLVLS(0) | fdl6_texswiz(&args, false) |
       COND(util_format_is_srgb(format), A6XX_TEX_CONST_0_SRGB);
    descriptor[1] = A6XX_TEX_CONST_1_WIDTH(elements & ((1 << 15) - 1)) |

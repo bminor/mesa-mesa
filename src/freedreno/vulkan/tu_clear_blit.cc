@@ -72,9 +72,9 @@ format_to_ifmt(enum pipe_format format)
 
 template <chip CHIP>
 static struct tu_native_format
-blit_format_texture(enum pipe_format format, enum a6xx_tile_mode tile_mode, bool gmem)
+blit_format_texture(enum pipe_format format, enum a6xx_tile_mode tile_mode, bool is_mutable, bool gmem)
 {
-   struct tu_native_format fmt = tu6_format_texture(format, tile_mode);
+   struct tu_native_format fmt = tu6_format_texture(format, tile_mode, is_mutable);
 
    switch (format) {
    case PIPE_FORMAT_Z24X8_UNORM:
@@ -100,7 +100,7 @@ blit_format_texture(enum pipe_format format, enum a6xx_tile_mode tile_mode, bool
 static struct tu_native_format
 blit_format_color(enum pipe_format format, enum a6xx_tile_mode tile_mode)
 {
-   struct tu_native_format fmt = tu6_format_color(format, tile_mode);
+   struct tu_native_format fmt = tu6_format_color(format, tile_mode, false);
 
    switch (format) {
    case PIPE_FORMAT_Z24X8_UNORM:
@@ -337,7 +337,7 @@ r2d_src_buffer(struct tu_cmd_buffer *cmd,
                uint32_t width, uint32_t height,
                enum pipe_format dst_format)
 {
-   struct tu_native_format fmt = blit_format_texture<CHIP>(format, TILE6_LINEAR, false);
+   struct tu_native_format fmt = blit_format_texture<CHIP>(format, TILE6_LINEAR, false, false);
    enum a6xx_format color_format = fmt.fmt;
    fixup_src_format(&format, dst_format, &color_format);
 
@@ -370,7 +370,7 @@ r2d_src_buffer_unaligned(struct tu_cmd_buffer *cmd,
    static_assert(CHIP >= A7XX);
 
    struct tu_native_format fmt =
-      blit_format_texture<CHIP>(format, TILE6_LINEAR, false);
+      blit_format_texture<CHIP>(format, TILE6_LINEAR, false, false);
    enum a6xx_format color_format = fmt.fmt;
    fixup_src_format(&format, dst_format, &color_format);
 
@@ -1185,7 +1185,7 @@ r3d_src_buffer(struct tu_cmd_buffer *cmd,
 {
    uint32_t desc[A6XX_TEX_CONST_DWORDS];
 
-   struct tu_native_format fmt = blit_format_texture<CHIP>(format, TILE6_LINEAR, false);
+   struct tu_native_format fmt = blit_format_texture<CHIP>(format, TILE6_LINEAR, false, false);
    enum a6xx_format color_format = fmt.fmt;
    fixup_src_format(&format, dst_format, &color_format);
 
@@ -1330,7 +1330,7 @@ r3d_src_gmem(struct tu_cmd_buffer *cmd,
    uint32_t desc[A6XX_TEX_CONST_DWORDS];
    memcpy(desc, iview->view.descriptor, sizeof(desc));
 
-   enum a6xx_format fmt = blit_format_texture<CHIP>(format, TILE6_LINEAR, true).fmt;
+   enum a6xx_format fmt = blit_format_texture<CHIP>(format, TILE6_LINEAR, false, true).fmt;
    fixup_src_format(&format, dst_format, &fmt);
 
    /* patch the format so that depth/stencil get the right format and swizzle */
@@ -2778,10 +2778,10 @@ tu_CopyImageToMemoryEXT(VkDevice _device,
 
 template <chip CHIP>
 static bool
-is_swapped_format(enum pipe_format format)
+is_swapped_format(enum pipe_format format, bool is_mutable)
 {
-   struct tu_native_format linear = blit_format_texture<CHIP>(format, TILE6_LINEAR, false);
-   struct tu_native_format tiled = blit_format_texture<CHIP>(format, TILE6_3, false);
+   struct tu_native_format linear = blit_format_texture<CHIP>(format, TILE6_LINEAR, is_mutable, false);
+   struct tu_native_format tiled = blit_format_texture<CHIP>(format, TILE6_3, is_mutable, false);
    return linear.fmt != tiled.fmt || linear.swap != tiled.swap;
 }
 
@@ -2868,15 +2868,17 @@ tu_copy_image_to_image(struct tu_cmd_buffer *cmd,
        * due to the different tile layout.
        */
       use_staging_blit = true;
-   } else if (is_swapped_format<CHIP>(src_format) ||
-              is_swapped_format<CHIP>(dst_format)) {
+   } else if (is_swapped_format<CHIP>(src_format,
+                                      src_image->layout[0].is_mutable) ||
+              is_swapped_format<CHIP>(dst_format,
+                                      src_image->layout[0].is_mutable)) {
       /* If either format has a non-identity swap, then we can't copy
        * to/from it.
        */
       use_staging_blit = true;
-   } else if (!src_image->layout[0].ubwc) {
+   } else if (!src_image->layout[0].ubwc || src_image->layout[0].is_mutable) {
       format = dst_format;
-   } else if (!dst_image->layout[0].ubwc) {
+   } else if (!dst_image->layout[0].ubwc || src_image->layout[0].is_mutable) {
       format = src_format;
    } else {
       /* Both formats use UBWC and so neither can be reinterpreted.
@@ -4848,7 +4850,7 @@ store_cp_blit(struct tu_cmd_buffer *cmd,
       r2d_dst<CHIP>(cs, &iview->view, layer, src_format);
    }
 
-   enum a6xx_format fmt = blit_format_texture<CHIP>(src_format, TILE6_2, true).fmt;
+   enum a6xx_format fmt = blit_format_texture<CHIP>(src_format, TILE6_2, false, true).fmt;
    fixup_src_format(&src_format, dst_format, &fmt);
 
    tu_cs_emit_regs(cs,
