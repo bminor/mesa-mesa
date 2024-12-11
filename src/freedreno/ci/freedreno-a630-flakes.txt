@@ -343,3 +343,8 @@ KHR-GL46.draw_indirect.basic-mode-drawArrays-lines_adjacency
 
 # first noticed 2024-10-22
 KHR-GL46.sample_variables.mask.rgba32f.samples_4.mask_5
+
+# Appeared after decreasing the fraction
+dEQP-VK.synchronization2.op.single_queue.timeline_semaphore.write_copy_image_read_copy_image_to_buffer.image_128x128_r8_unorm
+asan-dEQP-VK.graphicsfuzz.cov-function-infinite-loop-always-return
+gmem-dEQP-VK.synchronization2.op.single_queue.binary_semaphore.write_ssbo_tess_control_read_ubo_compute_indirect.buffer_16384_specialized_access_flag
