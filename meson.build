@@ -830,8 +830,11 @@ else
   with_drivers_clc = false
 endif
 
-with_driver_using_cl = with_gallium_iris or with_intel_vk or \
-                       with_gallium_asahi or with_asahi_vk
+with_driver_using_cl = [
+  with_gallium_iris, with_intel_vk,
+  with_gallium_asahi, with_asahi_vk,
+  with_gallium_panfrost, with_panfrost_vk,
+].contains(true)
 
 if get_option('mesa-clc') == 'system'
   prog_mesa_clc = find_program('mesa_clc', native : true)
