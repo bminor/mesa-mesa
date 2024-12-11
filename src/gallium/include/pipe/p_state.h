@@ -1178,10 +1178,21 @@ struct pipe_ml_operation
           * Top padding.
           */
          unsigned before_y;
+
          /**
           * Bottom padding.
           */
          unsigned after_y;
+
+         /**
+          * Channel before padding.
+          */
+         unsigned before_z;
+
+         /**
+          * Channel after padding.
+          */
+         unsigned after_z;
       } pad;
 
       struct {

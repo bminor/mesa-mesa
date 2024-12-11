@@ -169,6 +169,8 @@ fill_operation(struct teflon_delegate *delegate, TfLiteContext *tf_context, TfLi
          operation->pad.after_x = paddings[3];
          operation->pad.before_y = paddings[4];
          operation->pad.after_y = paddings[5];
+         operation->pad.before_z = paddings[6];
+         operation->pad.after_z = paddings[7];
          break;
       }
       case kTfLiteBuiltinFullyConnected: {
@@ -698,15 +700,27 @@ PrepareDelegate(TfLiteContext *context, TfLiteDelegate *delegate)
             break;
          }
          case kTfLiteBuiltinPad: {
-            uint32_t *padding = context->tensors[node->inputs->data[1]].data.data;
-            supported = padding[0] == 0 &&
-                        padding[1] == 0 &&
-                        padding[2] == 1 &&
-                        padding[3] == 1 &&
-                        padding[4] == 1 &&
-                        padding[5] == 1 &&
-                        padding[6] == 0 &&
-                        padding[7] == 0;
+            // Values tensor for non-zero padding not yet implemented
+            if (node->inputs->size == 2) {
+               TfLiteTensor *padding_tensor = &context->tensors[node->inputs->data[1]];
+               if (padding_tensor->type == kTfLiteInt32) {
+                  int32_t *paddings = padding_tensor->data.data;
+                  if (padding_tensor->dims->size == 2 &&
+                      padding_tensor->dims->data[0] == 4 &&
+                      padding_tensor->dims->data[1] == 2) {
+                     if (paddings[0] == 0 &&
+                         paddings[1] == 0 &&
+                         paddings[2] >= 0 && paddings[2] <= 2 &&
+                         paddings[3] >= 0 && paddings[3] <= 2 &&
+                         paddings[4] >= 0 && paddings[4] <= 2 &&
+                         paddings[5] >= 0 && paddings[5] <= 2 &&
+                         paddings[6] >= 0 && paddings[6] <= 2 &&
+                         paddings[7] >= 0 && paddings[7] <= 2) {
+                        supported = true;
+                     }
+                  }
+               }
+            }
             break;
          }
          case kTfLiteBuiltinFullyConnected: {
