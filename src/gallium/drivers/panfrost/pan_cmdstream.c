@@ -3338,7 +3338,7 @@ panfrost_afbc_pack(struct panfrost_batch *batch, struct panfrost_resource *src,
       .dst_stride = dst_slice->afbc.stride,
    };
 
-   panfrost_batch_write_rsrc(batch, src, PIPE_SHADER_COMPUTE);
+   panfrost_batch_read_rsrc(batch, src, PIPE_SHADER_COMPUTE);
    panfrost_batch_write_bo(batch, dst, PIPE_SHADER_COMPUTE);
    panfrost_batch_add_bo(batch, metadata, PIPE_SHADER_COMPUTE);
 

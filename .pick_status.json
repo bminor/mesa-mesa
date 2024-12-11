@@ -44,7 +44,7 @@
         "description": "panfrost: fix read/write resource confusion in afbc_pack",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "bc55d150a915d5b2e91cd6ee11af4992d18fcf4f",
         "notes": null
