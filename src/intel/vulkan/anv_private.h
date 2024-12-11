@@ -1843,12 +1843,15 @@ enum bvh_dump_type {
    BVH_IR_AS
 };
 
-struct bvh_dump_struct {
+struct anv_bvh_dump {
    struct anv_bo *bo;
    uint32_t bvh_id;
    uint64_t dump_size;
    VkGeometryTypeKHR geometry_type;
    enum bvh_dump_type dump_type;
+
+   /* Link in the anv_device.bvh_dumps list */
+   struct list_head link;
 };
 
 struct anv_device_astc_emu {
@@ -1886,6 +1889,9 @@ struct anv_device {
 
     /** List of anv_image objects with a private binding for implicit CCS */
     struct list_head                            image_private_objects;
+
+    /** List of anv_bvh_dump objects that get dumped on cmd buf completion */
+    struct list_head                            bvh_dumps;
 
     /** Memory pool for batch buffers */
     struct anv_bo_pool                          batch_bo_pool;
@@ -2290,6 +2296,8 @@ VkResult anv_device_print_init(struct anv_device *device);
 void anv_device_print_fini(struct anv_device *device);
 void anv_device_print_shader_prints(struct anv_device *device);
 
+void anv_dump_bvh_to_files(struct anv_device *device);
+
 VkResult anv_queue_init(struct anv_device *device, struct anv_queue *queue,
                         const VkDeviceQueueCreateInfo *pCreateInfo,
                         uint32_t index_in_family);
@@ -2317,6 +2325,12 @@ anv_queue_post_submit(struct anv_queue *queue, VkResult submit_result)
 
    if (INTEL_DEBUG(DEBUG_SHADER_PRINT))
       anv_device_print_shader_prints(queue->device);
+
+#if ANV_SUPPORT_RT && !ANV_SUPPORT_RT_GRL
+   /* The recorded bvh is dumped to files upon command buffer completion */
+   if (INTEL_DEBUG(DEBUG_BVH_ANY))
+      anv_dump_bvh_to_files(queue->device);
+#endif
 
    return result;
 }

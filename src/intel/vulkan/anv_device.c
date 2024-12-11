@@ -479,6 +479,7 @@ VkResult anv_CreateDevice(
 
    list_inithead(&device->memory_objects);
    list_inithead(&device->image_private_objects);
+   list_inithead(&device->bvh_dumps);
 
    if (pthread_mutex_init(&device->mutex, NULL) != 0) {
       result = vk_error(device, VK_ERROR_INITIALIZATION_FAILED);
