@@ -5212,11 +5212,15 @@ struct anv_kernel {
 };
 
 struct anv_format_plane {
+   /* Main format */
    enum isl_format isl_format:16;
-   struct isl_swizzle swizzle;
+   /* Vertex buffer format */
+   enum isl_format vbo_format:16;
 
    /* What aspect is associated to this plane */
-   VkImageAspectFlags aspect;
+   VkImageAspectFlags aspect:16;
+
+   struct isl_swizzle swizzle;
 };
 
 enum anv_format_flag {
@@ -5308,6 +5312,13 @@ anv_get_isl_format(const struct anv_physical_device *device, VkFormat vk_format,
                    VkImageAspectFlags aspect, VkImageTiling tiling)
 {
    return anv_get_format_aspect(device, vk_format, aspect, tiling).isl_format;
+}
+
+static inline enum isl_format
+anv_get_vbo_format(const struct anv_physical_device *device, VkFormat vk_format,
+                   VkImageAspectFlags aspect, VkImageTiling tiling)
+{
+   return anv_get_format_aspect(device, vk_format, aspect, tiling).vbo_format;
 }
 
 bool anv_format_supports_ccs_e(const struct anv_physical_device *device,

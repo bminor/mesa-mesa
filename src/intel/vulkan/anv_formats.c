@@ -51,7 +51,22 @@
 #define swiz_fmt1(__vk_fmt, __hw_fmt, __swizzle) \
    [VK_ENUM_OFFSET(__vk_fmt)] = { \
       .planes = { \
-         { .isl_format = __hw_fmt, .swizzle = __swizzle, \
+         { .isl_format = __hw_fmt, \
+           .vbo_format = __hw_fmt, \
+           .swizzle = __swizzle, \
+           .aspect = VK_IMAGE_ASPECT_COLOR_BIT, \
+         }, \
+      }, \
+      .vk_format = __vk_fmt, \
+      .n_planes = 1, \
+   }
+
+#define fmtvb(__vk_fmt, __hw_fmt) \
+   [VK_ENUM_OFFSET(__vk_fmt)] = { \
+      .planes = { \
+         { .isl_format = ISL_FORMAT_UNSUPPORTED, \
+           .vbo_format = __hw_fmt, \
+           .swizzle = RGBA, \
            .aspect = VK_IMAGE_ASPECT_COLOR_BIT, \
          }, \
       }, \
@@ -77,7 +92,9 @@
 #define d_fmt(__vk_fmt, __hw_fmt) \
    [VK_ENUM_OFFSET(__vk_fmt)] = { \
       .planes = { \
-         { .isl_format = __hw_fmt, .swizzle = RGBA, \
+         { .isl_format = __hw_fmt, \
+           .vbo_format = __hw_fmt, \
+           .swizzle = RGBA, \
            .aspect = VK_IMAGE_ASPECT_DEPTH_BIT, \
          }, \
       }, \
@@ -88,7 +105,9 @@
 #define s_fmt(__vk_fmt, __hw_fmt) \
    [VK_ENUM_OFFSET(__vk_fmt)] = { \
       .planes = { \
-         { .isl_format = __hw_fmt, .swizzle = RGBA, \
+         { .isl_format = __hw_fmt, \
+           .vbo_format = __hw_fmt, \
+           .swizzle = RGBA, \
            .aspect = VK_IMAGE_ASPECT_STENCIL_BIT, \
          }, \
       }, \
@@ -99,7 +118,9 @@
 #define ds_fmt2(__vk_fmt, __fmt1, __fmt2) \
    [VK_ENUM_OFFSET(__vk_fmt)] = { \
       .planes = { \
-         { .isl_format = __fmt1, .swizzle = RGBA, \
+         { .isl_format = __fmt1, \
+           .vbo_format = __fmt1, \
+           .swizzle = RGBA, \
            .aspect = VK_IMAGE_ASPECT_DEPTH_BIT, \
          }, \
          { .isl_format = __fmt2, .swizzle = RGBA, \
@@ -113,13 +134,17 @@
 #define fmt_unsupported(__vk_fmt) \
    [VK_ENUM_OFFSET(__vk_fmt)] = { \
       .planes = { \
-         { .isl_format = ISL_FORMAT_UNSUPPORTED, }, \
+         { \
+            .isl_format = ISL_FORMAT_UNSUPPORTED, \
+            .vbo_format = ISL_FORMAT_UNSUPPORTED, \
+         }, \
       }, \
       .vk_format = VK_FORMAT_UNDEFINED, \
    }
 
 #define ycbcr_plane(__plane, __hw_fmt, __swizzle) \
    { .isl_format = __hw_fmt, \
+     .vbo_format = __hw_fmt, \
      .swizzle = __swizzle, \
      .aspect = VK_IMAGE_ASPECT_PLANE_ ## __plane ## _BIT, \
    }
@@ -238,18 +263,18 @@ static const struct anv_format main_formats[] = {
    fmt1(VK_FORMAT_R32G32B32A32_UINT,                 ISL_FORMAT_R32G32B32A32_UINT),
    fmt1(VK_FORMAT_R32G32B32A32_SINT,                 ISL_FORMAT_R32G32B32A32_SINT),
    fmt1(VK_FORMAT_R32G32B32A32_SFLOAT,               ISL_FORMAT_R32G32B32A32_FLOAT),
-   fmt1(VK_FORMAT_R64_UINT,                          ISL_FORMAT_R64_PASSTHRU),
-   fmt1(VK_FORMAT_R64_SINT,                          ISL_FORMAT_R64_PASSTHRU),
-   fmt1(VK_FORMAT_R64_SFLOAT,                        ISL_FORMAT_R64_PASSTHRU),
-   fmt1(VK_FORMAT_R64G64_UINT,                       ISL_FORMAT_R64G64_PASSTHRU),
-   fmt1(VK_FORMAT_R64G64_SINT,                       ISL_FORMAT_R64G64_PASSTHRU),
-   fmt1(VK_FORMAT_R64G64_SFLOAT,                     ISL_FORMAT_R64G64_PASSTHRU),
-   fmt1(VK_FORMAT_R64G64B64_UINT,                    ISL_FORMAT_R64G64B64_PASSTHRU),
-   fmt1(VK_FORMAT_R64G64B64_SINT,                    ISL_FORMAT_R64G64B64_PASSTHRU),
-   fmt1(VK_FORMAT_R64G64B64_SFLOAT,                  ISL_FORMAT_R64G64B64_PASSTHRU),
-   fmt1(VK_FORMAT_R64G64B64A64_UINT,                 ISL_FORMAT_R64G64B64A64_PASSTHRU),
-   fmt1(VK_FORMAT_R64G64B64A64_SINT,                 ISL_FORMAT_R64G64B64A64_PASSTHRU),
-   fmt1(VK_FORMAT_R64G64B64A64_SFLOAT,               ISL_FORMAT_R64G64B64A64_PASSTHRU),
+   fmtvb(VK_FORMAT_R64_UINT,                         ISL_FORMAT_R64_PASSTHRU),
+   fmtvb(VK_FORMAT_R64_SINT,                         ISL_FORMAT_R64_PASSTHRU),
+   fmtvb(VK_FORMAT_R64_SFLOAT,                       ISL_FORMAT_R64_PASSTHRU),
+   fmtvb(VK_FORMAT_R64G64_UINT,                      ISL_FORMAT_R64G64_PASSTHRU),
+   fmtvb(VK_FORMAT_R64G64_SINT,                      ISL_FORMAT_R64G64_PASSTHRU),
+   fmtvb(VK_FORMAT_R64G64_SFLOAT,                    ISL_FORMAT_R64G64_PASSTHRU),
+   fmtvb(VK_FORMAT_R64G64B64_UINT,                   ISL_FORMAT_R64G64B64_PASSTHRU),
+   fmtvb(VK_FORMAT_R64G64B64_SINT,                   ISL_FORMAT_R64G64B64_PASSTHRU),
+   fmtvb(VK_FORMAT_R64G64B64_SFLOAT,                 ISL_FORMAT_R64G64B64_PASSTHRU),
+   fmtvb(VK_FORMAT_R64G64B64A64_UINT,                ISL_FORMAT_R64G64B64A64_PASSTHRU),
+   fmtvb(VK_FORMAT_R64G64B64A64_SINT,                ISL_FORMAT_R64G64B64A64_PASSTHRU),
+   fmtvb(VK_FORMAT_R64G64B64A64_SFLOAT,              ISL_FORMAT_R64G64B64A64_PASSTHRU),
    fmt1(VK_FORMAT_B10G11R11_UFLOAT_PACK32,           ISL_FORMAT_R11G11B10_FLOAT),
    fmt1(VK_FORMAT_E5B9G9R9_UFLOAT_PACK32,            ISL_FORMAT_R9G9B9E5_SHAREDEXP),
 
@@ -907,11 +932,6 @@ get_buffer_format_features2(const struct intel_device_info *devinfo,
    if (anv_format == NULL)
       return 0;
 
-   const enum isl_format isl_format = anv_format->planes[0].isl_format;
-
-   if (isl_format == ISL_FORMAT_UNSUPPORTED)
-      return 0;
-
    if (anv_format->n_planes > 1)
       return 0;
 
@@ -922,48 +942,55 @@ get_buffer_format_features2(const struct intel_device_info *devinfo,
    if (vk_format_is_depth_or_stencil(vk_format))
       return 0;
 
-   if (isl_format_supports_sampling(devinfo, isl_format) &&
-       !isl_format_is_compressed(isl_format))
-      flags |= VK_FORMAT_FEATURE_2_UNIFORM_TEXEL_BUFFER_BIT;
+   const enum isl_format img_format = anv_format->planes[0].isl_format;
+   const enum isl_format vbo_format = anv_format->planes[0].vbo_format;
 
-   if (isl_format_supports_vertex_fetch(devinfo, isl_format))
-      flags |= VK_FORMAT_FEATURE_2_VERTEX_BUFFER_BIT;
+   if (img_format != ISL_FORMAT_UNSUPPORTED) {
+      if (isl_format_supports_sampling(devinfo, img_format) &&
+          !isl_format_is_compressed(img_format))
+         flags |= VK_FORMAT_FEATURE_2_UNIFORM_TEXEL_BUFFER_BIT;
 
-   if (isl_is_storage_image_format(devinfo, isl_format))
-      flags |= VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT;
+      if (isl_is_storage_image_format(devinfo, img_format))
+         flags |= VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT;
 
-   if (isl_format == ISL_FORMAT_R32_SINT || isl_format == ISL_FORMAT_R32_UINT)
-      flags |= VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_ATOMIC_BIT;
+      if (img_format == ISL_FORMAT_R32_SINT || img_format == ISL_FORMAT_R32_UINT)
+         flags |= VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_ATOMIC_BIT;
 
-   if (isl_format_supports_typed_reads(devinfo, isl_format))
-      flags |= VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT;
-   if (isl_format_supports_typed_writes(devinfo, isl_format))
-      flags |= VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT;
+      if (isl_format_supports_typed_reads(devinfo, img_format))
+         flags |= VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT;
+      if (isl_format_supports_typed_writes(devinfo, img_format))
+         flags |= VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT;
 
-   if (devinfo->has_ray_tracing) {
+      if (devinfo->has_ray_tracing) {
 #if ANV_SUPPORT_RT_GRL
-      switch (vk_format) {
-      case VK_FORMAT_R32G32_SFLOAT:
-      case VK_FORMAT_R32G32B32_SFLOAT:
-      case VK_FORMAT_R16G16_SFLOAT:
-      case VK_FORMAT_R16G16B16A16_SFLOAT:
-      case VK_FORMAT_R16G16_SNORM:
-      case VK_FORMAT_R16G16B16A16_SNORM:
-      case VK_FORMAT_R16G16B16A16_UNORM:
-      case VK_FORMAT_R16G16_UNORM:
-      case VK_FORMAT_R8G8B8A8_UNORM:
-      case VK_FORMAT_R8G8_UNORM:
-      case VK_FORMAT_R8G8B8A8_SNORM:
-      case VK_FORMAT_R8G8_SNORM:
-         flags |= VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR;
+         switch (vk_format) {
+         case VK_FORMAT_R32G32_SFLOAT:
+         case VK_FORMAT_R32G32B32_SFLOAT:
+         case VK_FORMAT_R16G16_SFLOAT:
+         case VK_FORMAT_R16G16B16A16_SFLOAT:
+         case VK_FORMAT_R16G16_SNORM:
+         case VK_FORMAT_R16G16B16A16_SNORM:
+         case VK_FORMAT_R16G16B16A16_UNORM:
+         case VK_FORMAT_R16G16_UNORM:
+         case VK_FORMAT_R8G8B8A8_UNORM:
+         case VK_FORMAT_R8G8_UNORM:
+         case VK_FORMAT_R8G8B8A8_SNORM:
+         case VK_FORMAT_R8G8_SNORM:
+            flags |= VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR;
          break;
-      default:
-         break;
-      }
+         default:
+            break;
+         }
 #else
-      if (vk_acceleration_struct_vtx_format_supported(vk_format))
-         flags |= VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR;
+         if (vk_acceleration_struct_vtx_format_supported(vk_format))
+            flags |= VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR;
 #endif
+      }
+   }
+
+   if (vbo_format != ISL_FORMAT_UNSUPPORTED) {
+      if (isl_format_supports_vertex_fetch(devinfo, vbo_format))
+         flags |= VK_FORMAT_FEATURE_2_VERTEX_BUFFER_BIT;
    }
 
    return flags;

@@ -213,7 +213,7 @@ emit_ves_vf_instancing(struct anv_batch *batch,
    }
 
    u_foreach_bit(a, vi->attributes_valid) {
-      enum isl_format format = anv_get_isl_format(device->physical,
+      enum isl_format format = anv_get_vbo_format(device->physical,
                                                   vi->attributes[a].format,
                                                   VK_IMAGE_ASPECT_COLOR_BIT,
                                                   VK_IMAGE_TILING_LINEAR);
