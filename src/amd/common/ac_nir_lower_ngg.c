@@ -2097,6 +2097,7 @@ ngg_build_streamout_buffer_info(nir_builder *b,
                   nir_store_var(b, result_ring[i],
                                 nir_global_atomic_amd(b, 64, xfb_state_address, atomic_src, xfb_voffset,
                                                       .atomic_op = nir_atomic_op_ordered_add_gfx12_amd), 0x1);
+                  ac_nir_sleep(b, 24);
                }
 
                nir_variable *buffer_offset_per_lane_var =
@@ -2117,6 +2118,7 @@ ngg_build_streamout_buffer_info(nir_builder *b,
                      nir_def *oldest_result = nir_load_var(b, result_ring[read_index]);
                      nir_def *loaded_ordered_id = nir_unpack_64_2x32_split_x(b, oldest_result);
                      nir_def *loaded_dwords_written = nir_unpack_64_2x32_split_y(b, oldest_result);
+                     nir_def *exit = nir_ieq(b, loaded_ordered_id, ordered_id);
 
                      /* Debug: Write the vec4 into a shader log ring buffer. */
 #if 0
@@ -2125,10 +2127,7 @@ ngg_build_streamout_buffer_info(nir_builder *b,
                                                             loaded_dwords_written));
 #endif
 
-                     /* This results in better code than using ballot with LLVM. */
-                     loaded_ordered_id = nir_read_invocation(b, loaded_ordered_id, nir_imm_int(b, 0));
-
-                     nir_if *if_break = nir_push_if(b, nir_ieq(b, loaded_ordered_id, ordered_id));
+                     nir_if *if_break = nir_push_if(b, nir_vote_any(b, 1, exit));
                      {
                         nir_store_var(b, buffer_offset_per_lane_var, loaded_dwords_written, 0x1);
                         nir_jump(b, nir_jump_break);
