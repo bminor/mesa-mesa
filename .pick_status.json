@@ -104,7 +104,7 @@
         "description": "pan/texture: Only use plane_chroma_2p for chroma planes",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "144f9324a3747748191513c0a1a596171f193a82",
         "notes": null
