@@ -1130,11 +1130,31 @@ panvk_DestroyDevice(VkDevice _device, const VkAllocationCallbacks *pAllocator)
 }
 
 static bool
+unsupported_yuv_format(enum pipe_format pfmt)
+{
+   switch (pfmt) {
+   /* 3-plane YUV 444 and 16-bit 3-plane YUV are not supported natively by
+    * the HW.
+    */
+   case PIPE_FORMAT_Y8_U8_V8_444_UNORM:
+   case PIPE_FORMAT_Y16_U16_V16_420_UNORM:
+   case PIPE_FORMAT_Y16_U16_V16_422_UNORM:
+   case PIPE_FORMAT_Y16_U16_V16_444_UNORM:
+      return true;
+   default:
+      return false;
+   }
+}
+
+static bool
 format_is_supported(struct panvk_physical_device *physical_device,
                     const struct panfrost_format fmt,
                     enum pipe_format pfmt)
 {
    if (pfmt == PIPE_FORMAT_NONE)
+      return false;
+
+   if (unsupported_yuv_format(pfmt))
       return false;
 
    /* If the format ID is zero, it's not supported. */
