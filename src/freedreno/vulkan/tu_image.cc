@@ -255,7 +255,6 @@ tu_image_view_init(struct tu_device *device,
    args.level_count = vk_image_subresource_level_count(&image->vk, range);
    args.min_lod_clamp = iview->vk.min_lod;
    args.format = tu_format_for_aspect(format, aspect_mask);
-   args.ubwc_fc_mutable = image->ubwc_fc_mutable;
    vk_component_mapping_to_pipe_swizzle(pCreateInfo->components, args.swiz);
    if (conversion) {
       unsigned char conversion_swiz[4], create_swiz[4];
@@ -548,6 +547,7 @@ tu_image_update_layout(struct tu_device *device, struct tu_image *image,
                        image->vk.mip_levels,
                        image->vk.array_layers,
                        image->vk.image_type == VK_IMAGE_TYPE_3D,
+                       image->is_mutable,
                        plane_layouts ? &plane_layout : NULL)) {
          assert(plane_layouts); /* can only fail with explicit layout */
          return vk_error(device, VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT);
@@ -730,7 +730,7 @@ tu_image_init(struct tu_device *device, struct tu_image *image,
             image->force_linear_tile = true;
          }
 
-         image->ubwc_fc_mutable = image->ubwc_enabled && mutable_ubwc_fc;
+         image->is_mutable = image->ubwc_enabled && mutable_ubwc_fc;
       }
    }
 

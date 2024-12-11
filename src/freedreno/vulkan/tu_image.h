@@ -49,7 +49,7 @@ struct tu_image
 
    bool ubwc_enabled;
    bool force_linear_tile;
-   bool ubwc_fc_mutable;
+   bool is_mutable;
 };
 VK_DEFINE_NONDISP_HANDLE_CASTS(tu_image, vk.base, VkImage, VK_OBJECT_TYPE_IMAGE)
 
