@@ -144,7 +144,7 @@
         "description": "panfrost: Re-emit texture descriptor if the data size has changed",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "bc55d150a915d5b2e91cd6ee11af4992d18fcf4f",
         "notes": null
