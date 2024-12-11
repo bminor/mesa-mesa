@@ -3,7 +3,7 @@
 deqp = "/deqp-vk/external/vulkancts/modules/vulkan/deqp-vk"
 caselists = ["/deqp-vk/mustpass/vk-main.txt"]
 skips = ["install/freedreno-a6xx-skips.txt"]
-fraction = 1000
+fraction = 400
 renderer_check = "Turnip Adreno .* 630"
 prefix = "asan-"
 tests_per_group = 500
