@@ -218,6 +218,13 @@ fill_operation(struct teflon_delegate *delegate, TfLiteContext *tf_context, TfLi
       operation->fcon.bias_tensor = &tensors[node->inputs->data[2]];
       break;
    }
+   case kTfLiteBuiltinReshape: {
+      int32_t *shape = tf_context->tensors[node->inputs->data[1]].data.data;
+
+      operation->type = PIPE_ML_OPERATION_TYPE_RESHAPE;
+      memcpy(operation->reshape.shape, shape, 4 * sizeof(*operation->reshape.shape));
+      break;
+   }
    default:
       return false;
    }
@@ -347,6 +354,9 @@ dump_graph(struct pipe_tensor *tensors, unsigned tensor_count, struct pipe_ml_op
          break;
       case PIPE_ML_OPERATION_TYPE_FULLY_CONNECTED:
          teflon_debug("%-6s ", "FCON");
+         break;
+      case PIPE_ML_OPERATION_TYPE_RESHAPE:
+         teflon_debug("%-6s ", "RESHAPE");
          break;
       }
 

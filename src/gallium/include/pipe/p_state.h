@@ -1048,6 +1048,7 @@ enum pipe_ml_operation_type {
    PIPE_ML_OPERATION_TYPE_SPLIT,
    PIPE_ML_OPERATION_TYPE_PAD,
    PIPE_ML_OPERATION_TYPE_FULLY_CONNECTED,
+   PIPE_ML_OPERATION_TYPE_RESHAPE,
 };
 
 /**
@@ -1204,6 +1205,13 @@ struct pipe_ml_operation
           */
          int axis;
       } split;
+
+      struct {
+         /**
+          * Shape of the output tensor.
+          */
+         unsigned shape[4];
+      } reshape;
    };
 };
 
