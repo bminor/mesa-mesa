@@ -89,7 +89,7 @@ a618-vk:
     DEQP_SUITE: freedreno-a618-vk
     FLAKES_CHANNEL: "#freedreno-ci"
     MESA_VK_IGNORE_CONFORMANCE_WARNING: 1
-    DEQP_FRACTION: 4
+    DEQP_FRACTION: 2
 
 a618-vk-full:
   extends:
@@ -104,6 +104,7 @@ a618-vk-full:
     FDO_CI_CONCURRENT: 4
     DEQP_SUITE: freedreno-a618-vk-full
     JOB_TIMEOUT: 180
+    DEQP_FRACTION: 1
 
 a618-gl:
   extends:
