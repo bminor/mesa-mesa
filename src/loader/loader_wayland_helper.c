@@ -163,3 +163,19 @@ loader_wayland_dispatch(struct wl_display *wl_display,
                                             queue,
                                             &remaining_timeout);
 }
+
+void
+loader_wayland_wrap_buffer(struct loader_wayland_buffer *lwb,
+                           struct wl_buffer *wl_buffer)
+{
+   lwb->buffer = wl_buffer;
+   lwb->id = wl_proxy_get_id((struct wl_proxy *)wl_buffer);
+}
+
+void
+loader_wayland_buffer_destroy(struct loader_wayland_buffer *lwb)
+{
+   wl_buffer_destroy(lwb->buffer);
+   lwb->buffer = NULL;
+   lwb->id = 0;
+}

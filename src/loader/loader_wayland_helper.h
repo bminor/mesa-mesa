@@ -26,6 +26,11 @@
 #include <util/timespec.h>
 #include <wayland-client.h>
 
+struct loader_wayland_buffer {
+   struct wl_buffer *buffer;
+   uint32_t id;
+};
+
 #ifndef HAVE_WL_DISPATCH_QUEUE_TIMEOUT
 int
 wl_display_dispatch_queue_timeout(struct wl_display *display,
@@ -43,5 +48,12 @@ int
 loader_wayland_dispatch(struct wl_display *display,
                         struct wl_event_queue *queue,
                         struct timespec *end_time);
+
+void
+loader_wayland_wrap_buffer(struct loader_wayland_buffer *lwb,
+                           struct wl_buffer *wl_buffer);
+
+void
+loader_wayland_buffer_destroy(struct loader_wayland_buffer *lwb);
 
 #endif
