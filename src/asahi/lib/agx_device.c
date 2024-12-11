@@ -233,6 +233,7 @@ agx_bo_import(struct agx_device *dev, int fd)
    dev->max_handle = MAX2(dev->max_handle, gem_handle);
 
    if (!bo->size) {
+      bo->dev = dev;
       bo->size = lseek(fd, 0, SEEK_END);
       bo->align = dev->params.vm_page_size;
 
@@ -297,6 +298,8 @@ agx_bo_import(struct agx_device *dev, int fd)
          agx_bo_reference(bo);
    }
    pthread_mutex_unlock(&dev->bo_map_lock);
+
+   assert(bo->dev != NULL && "post-condition");
 
    if (dev->debug & AGX_DBG_TRACE) {
       agx_bo_map(bo);
