@@ -1617,7 +1617,7 @@ chain_branches(asm_context& ctx, std::vector<uint32_t>& out, branch_info& branch
    }
    const unsigned block_offset = insert_at + code.size();
 
-   branch_instr = bld.sopp(aco_opcode::s_branch, target);
+   branch_instr = bld.sopp(aco_opcode::s_branch, 0);
    emit_sopp_instruction(ctx, code, branch_instr, true);
    insert_code(ctx, out, insert_at, code.size(), code.data());
 
