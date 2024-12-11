@@ -785,7 +785,6 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
    bool has_shader_image_float_minmax = pdev->info.gfx_level != GFX8 && pdev->info.gfx_level != GFX9 &&
                                         pdev->info.gfx_level != GFX11 && pdev->info.gfx_level != GFX11_5;
    bool has_fragment_shader_interlock = radv_has_pops(pdev);
-   const bool is_zink = instance->vk.app_info.engine_name && !strcmp(instance->vk.app_info.engine_name, "mesa zink");
 
    *features = (struct vk_features){
       /* Vulkan 1.0 */
@@ -806,11 +805,7 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
       .depthBounds = true,
       .wideLines = true,
       .largePoints = true,
-      /* FIXME: alpha-to-one is performed before alpha-to-coverage but it should be after.
-       * This is currently broken on RADV and the fixes aren't trivial to backport. Let's disable it
-       * for everything except Zink because it's a requirement and no application seems affected.
-       */
-      .alphaToOne = is_zink,
+      .alphaToOne = true,
       .multiViewport = true,
       .samplerAnisotropy = true,
       .textureCompressionETC2 = pdev->info.has_etc_support || pdev->emulate_etc2,
@@ -1194,7 +1189,7 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
       .extendedDynamicState3SampleLocationsEnable = pdev->info.gfx_level < GFX10,
       .extendedDynamicState3LineRasterizationMode = true,
       .extendedDynamicState3ExtraPrimitiveOverestimationSize = false,
-      .extendedDynamicState3AlphaToOneEnable = is_zink && !pdev->use_llvm,
+      .extendedDynamicState3AlphaToOneEnable = !pdev->use_llvm,
       .extendedDynamicState3RasterizationStream = false,
       .extendedDynamicState3ColorBlendAdvanced = false,
       .extendedDynamicState3ViewportWScalingEnable = false,
