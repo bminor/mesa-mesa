@@ -52,11 +52,13 @@ yaml-toml-shell-py-test:
     - uncollapsed_section_start tomllint "tomllint"
     - echo "If your change looks right but this script rejects it, contact @eric (GitLab) / eric_engestrom (IRC)."
     - python3 bin/toml_lint.py
-    - uncollapsed_section_switch yamllint "yamllint"
+    - section_end tomllint
+    - section_start yamllint "yamllint"
     - .gitlab-ci/run-yamllint.sh
-    - uncollapsed_section_switch shellcheck "shellcheck"
+    - section_end yamllint
+    - section_start shellcheck "shellcheck"
     - .gitlab-ci/run-shellcheck.sh
-    - section_end
+    - section_end shellcheck
     - uncollapsed_section_switch pytest "pytest"
     - .gitlab-ci/run-pytest.sh
     - section_end
