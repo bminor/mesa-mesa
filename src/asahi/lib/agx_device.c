@@ -113,7 +113,7 @@ agx_bo_bind(struct agx_device *dev, struct agx_bo *bo, uint64_t addr,
    struct drm_asahi_gem_bind gem_bind = {
       .op = unbind ? ASAHI_BIND_OP_UNBIND : ASAHI_BIND_OP_BIND,
       .flags = flags,
-      .handle = bo->handle,
+      .handle = bo ? bo->handle : 0,
       .vm_id = dev->vm_id,
       .offset = offset_B,
       .range = size_B,
