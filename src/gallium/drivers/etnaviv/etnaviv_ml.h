@@ -122,6 +122,13 @@ struct etna_operation {
    uint8_t addition_offset;
 
    struct pipe_resource *bias_tensor;
+
+   unsigned pad_before_x;
+   unsigned pad_after_x;
+   unsigned pad_before_y;
+   unsigned pad_after_y;
+   unsigned pad_before_z;
+   unsigned pad_after_z;
 };
 
 #define ML_DBG(fmt, ...)                                  \

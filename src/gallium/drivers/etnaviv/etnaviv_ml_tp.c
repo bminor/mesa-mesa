@@ -12,6 +12,7 @@
 #include "etnaviv_ml.h"
 #include "etnaviv_ml_tp.h"
 
+#define DIMS3(w, h, c) (input_width == w && input_height == h && input_channels == c)
 #define FIELD(field, bits) uint32_t field : bits;
 
 struct etna_tp_params {
@@ -545,21 +546,25 @@ static void
 split_pad(struct etna_ml_subgraph *subgraph, const struct etna_operation *operation,
           unsigned tp_core, unsigned tp_cores_used, unsigned *in_dims, unsigned *out_dims)
 {
-   unsigned remaining_in_size;
+   unsigned remaining_out_size, remaining_in_size;
    unsigned dim_to_split = 2;
 
    remaining_in_size = in_dims[dim_to_split];
+   remaining_out_size = out_dims[dim_to_split];
 
    for (unsigned i = 0; i <= tp_core; i++) {
-      unsigned size = DIV_ROUND_UP(remaining_in_size, (tp_cores_used - i));
+      unsigned in_size = DIV_ROUND_UP(remaining_in_size, (tp_cores_used - i));
+      unsigned out_size = DIV_ROUND_UP(remaining_out_size, (tp_cores_used - i));
 
       if (i < tp_cores_used - 1) {
-         in_dims[dim_to_split] = size;
+         in_dims[dim_to_split] = in_size;
          remaining_in_size -= in_dims[dim_to_split];
       } else
          in_dims[dim_to_split] = remaining_in_size;
 
-      out_dims[dim_to_split] = size;
+      out_dims[dim_to_split] = out_size;
+
+      remaining_out_size -= out_size;
    }
 }
 
@@ -575,12 +580,28 @@ create_pad_config(struct etna_ml_subgraph *subgraph, const struct etna_operation
    unsigned output_width = operation->output_width;
    unsigned output_height = operation->output_height;
    unsigned output_channels = operation->output_channels;
+   unsigned pad_before_x = operation->pad_before_x;
+   unsigned pad_after_x = operation->pad_after_x;
+   unsigned pad_before_y = operation->pad_before_y;
+   unsigned pad_after_y = operation->pad_after_y;
+   unsigned pad_before_z = operation->pad_before_z;
+   unsigned pad_after_z = operation->pad_after_z;
    unsigned in_dims[3];
    unsigned out_dims[3];
    struct etna_ml_tensor *input = etna_ml_get_tensor(subgraph, operation->input_tensors[0]);
 
-   SWAP(input_width, input_height);
-   SWAP(output_width, output_height);
+   if (input->exp_layout == ETNA_ML_LAYOUT_NHWC &&
+       input->act_layout == ETNA_ML_LAYOUT_NCHW) {
+      SWAP(input_width, input_height);
+      SWAP(output_width, output_height);
+      SWAP(pad_before_x, pad_before_y);
+      SWAP(pad_after_x, pad_after_y);
+   } else {
+      SWAP(input_width, input_channels);
+      SWAP(output_width, output_channels);
+      SWAP(pad_before_x, pad_before_z);
+      SWAP(pad_after_x, pad_after_z);
+   }
 
    etna_bo_cpu_prep(bo, DRM_ETNA_PREP_WRITE);
 
@@ -605,11 +626,19 @@ create_pad_config(struct etna_ml_subgraph *subgraph, const struct etna_operation
    map->in_image_stride = input_width;
    map->in_image_slice = input_width * input_height;
 
-   map->in_window_x_start = 0xffff;
-   map->in_window_y_start = 0xffff;
+   map->in_window_x_start = 0x0 - pad_before_x;
+   map->in_window_y_start = 0x0 - pad_before_y;
+   map->in_window_x_end = input_width - 1 + pad_after_x;
+   map->in_window_y_end = input_height - 1 + pad_after_y;
 
-   map->in_window_x_end = in_dims[0];
-   map->in_window_y_end = in_dims[1];
+   if (tp_cores_used > 1) {
+      if (pad_before_z)
+         map->in_window_z_start_overfetch = tp_core == 0;
+
+      if (pad_after_z)
+         map->in_window_z_end_overfetch = tp_core == tp_cores_used - 1;
+   }
+
    map->in_tile_x_size = out_dims[0];
    map->in_tile_x_inc = out_dims[0];
    map->in_tile_y_size = out_dims[1];
@@ -639,8 +668,13 @@ create_pad_config(struct etna_ml_subgraph *subgraph, const struct etna_operation
       split_pad(subgraph, operation, i, tp_cores_used, in_dims, out_dims);
 
       in_offset = map->in_image_slice * in_dims[2];
-      out_offset = out_dims[2];
-      out_offset *= map->in_tile_x_size * map->in_tile_y_size;
+
+      out_offset = map->in_tile_x_size * map->in_tile_y_size;
+
+      if (i == 0)
+         out_offset *= in_dims[2] + pad_before_z;
+      else
+         out_offset *= in_dims[2];
 
       map->in_image_base_address += in_offset;
       map->out_image_base_address += out_offset;
@@ -820,6 +854,13 @@ etna_ml_lower_pad(struct etna_ml_subgraph *subgraph,
    operation->output_tensor_sizes[0] = operation->output_width *
                                        operation->output_height *
                                        operation->output_channels;
+
+   operation->pad_before_x = pad->pad.before_x;
+   operation->pad_after_x = pad->pad.after_x;
+   operation->pad_before_y = pad->pad.before_y;
+   operation->pad_after_y = pad->pad.after_y;
+   operation->pad_before_z = pad->pad.before_z;
+   operation->pad_after_z = pad->pad.after_z;
 }
 
 void
@@ -866,6 +907,9 @@ etna_ml_compile_operation_tp(struct etna_ml_subgraph *subgraph,
    case ETNA_ML_TP_PAD: {
       unsigned tp_cores_used = etna_ml_get_core_info(ctx)->tp_core_count;
 
+      if (operation->input_width == 1)
+         tp_cores_used = 1;
+
       ML_DBG("pad: input_width %d tp_cores_used %d\n", operation->input_width, tp_cores_used);
       for (unsigned i = 0; i < tp_cores_used; i++) {
          instruction->configs[i] = create_pad_config(subgraph, operation, i, tp_cores_used);
@@ -898,7 +942,8 @@ etna_ml_emit_operation_tp(struct etna_ml_subgraph *subgraph,
       etna_set_state(stream, VIVS_GL_OCB_REMAP_END, 0x0);
       etna_set_state(stream, VIVS_GL_TP_CONFIG, 0x0);
 
-      if (operation->tp_type == ETNA_ML_TP_PAD) {
+      if (more_than_one_tp_job &&
+          operation->tp_type == ETNA_ML_TP_PAD) {
          etna_set_state(stream, VIVS_GL_UNK03950, j < tp_core_count - 1 ? 0x8 : 0x0);
       } else {
          etna_set_state(stream, VIVS_GL_UNK03950, 0x0);
