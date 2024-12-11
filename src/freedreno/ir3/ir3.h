@@ -1699,7 +1699,7 @@ ir3_cat2_absneg(opc_t opc)
 
 /* map cat3 instructions to valid abs/neg flags: */
 static inline unsigned
-ir3_cat3_absneg(opc_t opc)
+ir3_cat3_absneg(opc_t opc, unsigned src_n)
 {
    switch (opc) {
    case OPC_MAD_F16:
@@ -1707,6 +1707,10 @@ ir3_cat3_absneg(opc_t opc)
    case OPC_SEL_F16:
    case OPC_SEL_F32:
       return IR3_REG_FNEG;
+
+   case OPC_SAD_S16:
+   case OPC_SAD_S32:
+      return src_n == 1 ? IR3_REG_SNEG : 0;
 
    case OPC_MAD_U16:
    case OPC_MADSH_U16:
@@ -1716,8 +1720,6 @@ ir3_cat3_absneg(opc_t opc)
    case OPC_MAD_S24:
    case OPC_SEL_S16:
    case OPC_SEL_S32:
-   case OPC_SAD_S16:
-   case OPC_SAD_S32:
       /* neg *may* work on 3rd src.. */
 
    case OPC_SEL_B16:

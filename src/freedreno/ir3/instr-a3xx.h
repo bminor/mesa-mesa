@@ -642,6 +642,18 @@ is_madsh(opc_t opc)
 }
 
 static inline bool
+is_sad(opc_t opc)
+{
+   switch (opc) {
+   case OPC_SAD_S16:
+   case OPC_SAD_S32:
+      return true;
+   default:
+      return false;
+   }
+}
+
+static inline bool
 is_local_atomic(opc_t opc)
 {
    switch (opc) {

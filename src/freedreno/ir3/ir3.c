@@ -1301,7 +1301,7 @@ ir3_valid_flags(struct ir3_instruction *instr, unsigned n, unsigned flags)
       break;
    case 3:
       valid_flags =
-         ir3_cat3_absneg(instr->opc) | IR3_REG_RELATIV | IR3_REG_SHARED;
+         ir3_cat3_absneg(instr->opc, n) | IR3_REG_RELATIV | IR3_REG_SHARED;
 
       switch (instr->opc) {
       case OPC_SHRM:
