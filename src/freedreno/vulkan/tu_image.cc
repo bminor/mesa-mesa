@@ -506,12 +506,11 @@ tu_image_update_layout(struct tu_device *device, struct tu_image *image,
       image->ubwc_enabled = true;
    }
 
-   /* Non-UBWC tiled R8G8 is probably buggy since media formats are always
-    * either linear or UBWC. There is no simple test to reproduce the bug.
-    * However it was observed in the wild leading to an unrecoverable hang
-    * on a650/a660.
+   /* R8G8 images have a special tiled layout which we don't implement yet in
+    * fdl6_memcpy, fall back to linear.
     */
-   if (has_r8g8 && tile_mode == TILE6_3 && !image->ubwc_enabled) {
+   if (has_r8g8 && tile_mode == TILE6_3 &&
+       (image->vk.usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT)) {
       tile_mode = TILE6_LINEAR;
    }
 
