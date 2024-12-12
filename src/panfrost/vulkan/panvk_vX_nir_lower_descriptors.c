@@ -630,6 +630,15 @@ load_img_size(nir_builder *b, nir_deref_instr *deref, enum glsl_sampler_dim dim,
       nir_def *tex_sz = load_resource_deref_desc(
          b, deref, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 18, 3, 16, ctx);
 
+#if PAN_ARCH <= 7
+      if (is_array && dim == GLSL_SAMPLER_DIM_CUBE)
+         tex_sz =
+            nir_vector_insert_imm(b, tex_sz,
+                                     nir_udiv_imm(b, nir_channel(b, tex_sz, 2),
+                                                     6),
+                                     2);
+#endif
+
       if (is_array && dim == GLSL_SAMPLER_DIM_1D)
          tex_sz =
             nir_vec2(b, nir_channel(b, tex_sz, 0), nir_channel(b, tex_sz, 2));
