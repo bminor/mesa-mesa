@@ -216,6 +216,7 @@ radv_physical_device_init_cache_key(struct radv_physical_device *pdev)
    key->split_fma = !!(instance->debug_flags & RADV_DEBUG_SPLIT_FMA);
    key->ssbo_non_uniform = instance->drirc.ssbo_non_uniform;
    key->tex_non_uniform = instance->drirc.tex_non_uniform;
+   key->lower_terminate_to_discard = instance->drirc.lower_terminate_to_discard;
    key->use_llvm = pdev->use_llvm;
    key->use_ngg = pdev->use_ngg;
    key->use_ngg_culling = pdev->use_ngg_culling;
