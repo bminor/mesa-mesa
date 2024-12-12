@@ -3680,69 +3680,6 @@ combine_not_xor(opt_ctx& ctx, aco_ptr<Instruction>& instr)
    return true;
 }
 
-bool
-combine_minmax(opt_ctx& ctx, aco_ptr<Instruction>& instr, aco_opcode opposite, aco_opcode op3src,
-               aco_opcode minmax)
-{
-   /* TODO: this can handle SDWA min/max instructions by using opsel */
-
-   /* min(min(a, b), c) -> min3(a, b, c)
-    * max(max(a, b), c) -> max3(a, b, c)
-    * gfx11: min(-min(a, b), c) -> maxmin(-a, -b, c)
-    * gfx11: max(-max(a, b), c) -> minmax(-a, -b, c)
-    */
-   for (unsigned swap = 0; swap < 2; swap++) {
-      Operand operands[3];
-      bool clamp, precise;
-      bitarray8 opsel = 0, neg = 0, abs = 0;
-      uint8_t omod = 0;
-      bool inbetween_neg;
-      if (match_op3_for_vop3(ctx, instr->opcode, instr->opcode, instr.get(), swap, "120", operands,
-                             neg, abs, opsel, &clamp, &omod, &inbetween_neg, NULL, NULL,
-                             &precise) &&
-          (!inbetween_neg ||
-           (minmax != aco_opcode::num_opcodes && ctx.program->gfx_level >= GFX11))) {
-         ctx.uses[instr->operands[swap].tempId()]--;
-         if (inbetween_neg) {
-            neg[0] = !neg[0];
-            neg[1] = !neg[1];
-            create_vop3_for_op3(ctx, minmax, instr, operands, neg, abs, opsel, clamp, omod);
-         } else {
-            create_vop3_for_op3(ctx, op3src, instr, operands, neg, abs, opsel, clamp, omod);
-         }
-         return true;
-      }
-   }
-
-   /* min(-max(a, b), c) -> min3(-a, -b, c)
-    * max(-min(a, b), c) -> max3(-a, -b, c)
-    * gfx11: min(max(a, b), c) -> maxmin(a, b, c)
-    * gfx11: max(min(a, b), c) -> minmax(a, b, c)
-    */
-   for (unsigned swap = 0; swap < 2; swap++) {
-      Operand operands[3];
-      bool clamp, precise;
-      bitarray8 opsel = 0, neg = 0, abs = 0;
-      uint8_t omod = 0;
-      bool inbetween_neg;
-      if (match_op3_for_vop3(ctx, instr->opcode, opposite, instr.get(), swap, "120", operands, neg,
-                             abs, opsel, &clamp, &omod, &inbetween_neg, NULL, NULL, &precise) &&
-          (inbetween_neg ||
-           (minmax != aco_opcode::num_opcodes && ctx.program->gfx_level >= GFX11))) {
-         ctx.uses[instr->operands[swap].tempId()]--;
-         if (inbetween_neg) {
-            neg[0] = !neg[0];
-            neg[1] = !neg[1];
-            create_vop3_for_op3(ctx, op3src, instr, operands, neg, abs, opsel, clamp, omod);
-         } else {
-            create_vop3_for_op3(ctx, minmax, instr, operands, neg, abs, opsel, clamp, omod);
-         }
-         return true;
-      }
-   }
-   return false;
-}
-
 /* s_not_b32(s_and_b32(a, b)) -> s_nand_b32(a, b)
  * s_not_b32(s_or_b32(a, b)) -> s_nor_b32(a, b)
  * s_not_b32(s_xor_b32(a, b)) -> s_xnor_b32(a, b)
@@ -5072,11 +5009,7 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       if (get_minmax_info(instr->opcode, &min, &max, &min3, &max3, &med3, &minmax,
                           &some_gfx9_only) &&
           (!some_gfx9_only || ctx.program->gfx_level >= GFX9)) {
-         if (combine_minmax(ctx, instr, instr->opcode == min ? max : min,
-                            instr->opcode == min ? min3 : max3, minmax)) {
-         } else {
-            combine_clamp(ctx, instr, min, max, med3);
-         }
+         combine_clamp(ctx, instr, min, max, med3);
       }
    }
 
@@ -5123,6 +5056,54 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       add_opt(s_mul_f32, s_fmac_f32, 0x3, "120", create_fma_cb);
    } else if (info.opcode == aco_opcode::s_add_f16) {
       add_opt(s_mul_f16, s_fmac_f16, 0x3, "120", create_fma_cb);
+   } else if (info.opcode == aco_opcode::v_max_f32) {
+      add_opt(v_max_f32, v_max3_f32, 0x3, "120", nullptr, true);
+      if (ctx.program->gfx_level >= GFX11)
+         add_opt(v_min_f32, v_minmax_f32, 0x3, "120", nullptr, true);
+   } else if (info.opcode == aco_opcode::v_min_f32) {
+      add_opt(v_min_f32, v_min3_f32, 0x3, "120", nullptr, true);
+      if (ctx.program->gfx_level >= GFX11)
+         add_opt(v_max_f32, v_maxmin_f32, 0x3, "120", nullptr, true);
+   } else if (info.opcode == aco_opcode::v_max_u32) {
+      add_opt(v_max_u32, v_max3_u32, 0x3, "120", nullptr, true);
+      if (ctx.program->gfx_level >= GFX11)
+         add_opt(v_min_u32, v_minmax_u32, 0x3, "120", nullptr, true);
+   } else if (info.opcode == aco_opcode::v_min_u32) {
+      add_opt(v_min_u32, v_min3_u32, 0x3, "120", nullptr, true);
+      if (ctx.program->gfx_level >= GFX11)
+         add_opt(v_max_u32, v_maxmin_u32, 0x3, "120", nullptr, true);
+   } else if (info.opcode == aco_opcode::v_max_i32) {
+      add_opt(v_max_i32, v_max3_i32, 0x3, "120", nullptr, true);
+      if (ctx.program->gfx_level >= GFX11)
+         add_opt(v_min_i32, v_minmax_i32, 0x3, "120", nullptr, true);
+   } else if (info.opcode == aco_opcode::v_min_i32) {
+      add_opt(v_min_i32, v_min3_i32, 0x3, "120", nullptr, true);
+      if (ctx.program->gfx_level >= GFX11)
+         add_opt(v_max_i32, v_maxmin_i32, 0x3, "120", nullptr, true);
+   } else if (info.opcode == aco_opcode::v_max_f16 && ctx.program->gfx_level >= GFX9) {
+      add_opt(v_max_f16, v_max3_f16, 0x3, "120", nullptr, true);
+      if (ctx.program->gfx_level >= GFX11)
+         add_opt(v_min_f16, v_minmax_f16, 0x3, "120", nullptr, true);
+   } else if (info.opcode == aco_opcode::v_min_f16 && ctx.program->gfx_level >= GFX9) {
+      add_opt(v_min_f16, v_min3_f16, 0x3, "120", nullptr, true);
+      if (ctx.program->gfx_level >= GFX11)
+         add_opt(v_max_f16, v_maxmin_f16, 0x3, "120", nullptr, true);
+   } else if (info.opcode == aco_opcode::v_max_u16 && ctx.program->gfx_level >= GFX9) {
+      add_opt(v_max_u16, v_max3_u16, 0x3, "120", nullptr, true);
+   } else if (info.opcode == aco_opcode::v_min_u16 && ctx.program->gfx_level >= GFX9) {
+      add_opt(v_min_u16, v_min3_u16, 0x3, "120", nullptr, true);
+   } else if (info.opcode == aco_opcode::v_max_i16 && ctx.program->gfx_level >= GFX9) {
+      add_opt(v_max_i16, v_max3_i16, 0x3, "120", nullptr, true);
+   } else if (info.opcode == aco_opcode::v_min_i16 && ctx.program->gfx_level >= GFX9) {
+      add_opt(v_min_i16, v_min3_i16, 0x3, "120", nullptr, true);
+   } else if (info.opcode == aco_opcode::v_max_u16_e64) {
+      add_opt(v_max_u16_e64, v_max3_u16, 0x3, "120", nullptr, true);
+   } else if (info.opcode == aco_opcode::v_min_u16_e64) {
+      add_opt(v_min_u16_e64, v_min3_u16, 0x3, "120", nullptr, true);
+   } else if (info.opcode == aco_opcode::v_max_i16_e64) {
+      add_opt(v_max_i16_e64, v_max3_i16, 0x3, "120", nullptr, true);
+   } else if (info.opcode == aco_opcode::v_min_i16_e64) {
+      add_opt(v_min_i16_e64, v_min3_i16, 0x3, "120", nullptr, true);
    }
 
    if (match_and_apply_patterns(ctx, info, patterns)) {

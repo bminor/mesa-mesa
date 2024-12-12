@@ -1869,10 +1869,9 @@ BEGIN_TEST(optimize.apply_sgpr_swap_opsel)
 END_TEST
 
 BEGIN_TEST(optimize.max3_opsel)
-   /* TODO make these work before GFX11 using SDWA. */
-   for (unsigned i = GFX11; i <= GFX11; i++) {
+   for (unsigned i = GFX9; i <= GFX11; i++) {
       //>> v1: %a:v[0], v1: %b:v[1], v2b: %c:v[2][0:16] = p_startpgm
-      if (!setup_cs("v1  v1 v2b", GFX11))
+      if (!setup_cs("v1  v1 v2b", (amd_gfx_level)i))
          continue;
 
       Temp a = inputs[0];
