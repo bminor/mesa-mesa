@@ -1320,6 +1320,85 @@ prepare_ds(struct panvk_cmd_buffer *cmdbuf)
    return VK_SUCCESS;
 }
 
+static VkResult
+wrap_prev_oq(struct panvk_cmd_buffer *cmdbuf)
+{
+   uint64_t last_syncobj = cmdbuf->state.gfx.render.oq.last;
+
+   if (!last_syncobj)
+      return VK_SUCCESS;
+
+   uint64_t prev_oq_node = cmdbuf->state.gfx.render.oq.chain;
+   struct panfrost_ptr new_oq_node = panvk_cmd_alloc_dev_mem(
+      cmdbuf, desc, sizeof(struct panvk_cs_occlusion_query), 8);
+
+   if (!new_oq_node.gpu)
+      return VK_ERROR_OUT_OF_DEVICE_MEMORY;
+
+   cmdbuf->state.gfx.render.oq.chain = new_oq_node.gpu;
+
+   struct panvk_cs_occlusion_query *oq = new_oq_node.cpu;
+
+   *oq = (struct panvk_cs_occlusion_query){
+      .syncobj = last_syncobj,
+      .next = prev_oq_node,
+   };
+
+   /* If we already had an OQ in the chain, we don't need to initialize the
+    * oq_chain field in the subqueue ctx. */
+   if (prev_oq_node)
+      return VK_SUCCESS;
+
+   /* If we're a secondary cmdbuf inside a render pass, we let the primary
+    * cmdbuf link the OQ chain. */
+   if (cmdbuf->flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)
+      return VK_SUCCESS;
+
+   struct cs_builder *b = panvk_get_cs_builder(cmdbuf, PANVK_SUBQUEUE_FRAGMENT);
+   struct cs_index oq_node_reg = cs_scratch_reg64(b, 0);
+
+   cs_move64_to(b, oq_node_reg, new_oq_node.gpu);
+
+   /* If we're resuming, we need to link with the previous oq_chain, if any. */
+   if (cmdbuf->state.gfx.render.flags & VK_RENDERING_RESUMING_BIT) {
+      struct cs_index prev_oq_node_reg = cs_scratch_reg64(b, 2);
+
+      cs_load64_to(
+         b, prev_oq_node_reg, cs_subqueue_ctx_reg(b),
+         offsetof(struct panvk_cs_subqueue_context, render.oq_chain));
+      cs_wait_slot(b, SB_ID(LS), false);
+      cs_store64(b, prev_oq_node_reg, oq_node_reg,
+                 offsetof(struct panvk_cs_occlusion_query, next));
+      cs_wait_slot(b, SB_ID(LS), false);
+   }
+
+   cs_store64(b, oq_node_reg, cs_subqueue_ctx_reg(b),
+              offsetof(struct panvk_cs_subqueue_context, render.oq_chain));
+   cs_wait_slot(b, SB_ID(LS), false);
+   return VK_SUCCESS;
+}
+
+static VkResult
+prepare_oq(struct panvk_cmd_buffer *cmdbuf)
+{
+   if (!gfx_state_dirty(cmdbuf, OQ) ||
+       cmdbuf->state.gfx.occlusion_query.syncobj ==
+          cmdbuf->state.gfx.render.oq.last)
+      return VK_SUCCESS;
+
+   VkResult result = wrap_prev_oq(cmdbuf);
+   if (result)
+      return result;
+
+   struct cs_builder *b =
+      panvk_get_cs_builder(cmdbuf, PANVK_SUBQUEUE_VERTEX_TILER);
+   cs_move64_to(b, cs_sr_reg64(b, 46), cmdbuf->state.gfx.occlusion_query.ptr);
+
+   cmdbuf->state.gfx.render.oq.last =
+      cmdbuf->state.gfx.occlusion_query.syncobj;
+   return VK_SUCCESS;
+}
+
 static void
 prepare_dcd(struct panvk_cmd_buffer *cmdbuf)
 {
@@ -1596,13 +1675,13 @@ prepare_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
       if (result != VK_SUCCESS)
          return result;
 
+      result = prepare_oq(cmdbuf);
+      if (result != VK_SUCCESS)
+         return result;
+
       prepare_dcd(cmdbuf);
       prepare_vp(cmdbuf);
       prepare_tiler_primitive_size(cmdbuf);
-
-      if (gfx_state_dirty(cmdbuf, OQ))
-         cs_move64_to(b, cs_sr_reg64(b, 46),
-                      cmdbuf->state.gfx.occlusion_query.ptr);
    }
 
    clear_dirty_after_draw(cmdbuf);
@@ -1700,19 +1779,21 @@ panvk_cmd_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
    cs_req_res(b, 0);
 }
 
-void
+VkResult
 panvk_per_arch(cmd_prepare_exec_cmd_for_draws)(
    struct panvk_cmd_buffer *primary,
    struct panvk_cmd_buffer *secondary)
 {
-   VkResult result;
+   if (!(secondary->flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT))
+      return VK_SUCCESS;
 
-   if ((secondary->flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) &&
-       !inherits_render_ctx(primary)) {
-      result = get_render_ctx(primary);
+   if (!inherits_render_ctx(primary)) {
+      VkResult result  = get_render_ctx(primary);
       if (result != VK_SUCCESS)
-         return;
+         return result;
    }
+
+   return prepare_oq(primary);
 }
 
 VKAPI_ATTR void VKAPI_CALL
@@ -2012,7 +2093,6 @@ panvk_per_arch(CmdBeginRendering)(VkCommandBuffer commandBuffer,
 
    if (!resuming)
       panvk_per_arch(cmd_preload_render_area_border)(cmdbuf, pRenderingInfo);
-
 }
 
 static void
@@ -2160,6 +2240,7 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
       &cmdbuf->state.cs[PANVK_SUBQUEUE_FRAGMENT].tracing;
    struct pan_fb_info *fbinfo = &cmdbuf->state.gfx.render.fb.info;
    struct cs_builder *b = panvk_get_cs_builder(cmdbuf, PANVK_SUBQUEUE_FRAGMENT);
+   bool has_oq_chain = cmdbuf->state.gfx.render.oq.chain != 0;
 
    /* Reserve a scoreboard for the fragment job. */
    panvk_per_arch(cs_pick_iter_sb)(cmdbuf, PANVK_SUBQUEUE_FRAGMENT);
@@ -2262,6 +2343,7 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
    struct cs_index iter_sb = cs_scratch_reg32(b, 2);
    struct cs_index cmp_scratch = cs_scratch_reg32(b, 3);
    struct cs_index add_val = cs_scratch_reg64(b, 4);
+   struct cs_index add_val_lo = cs_scratch_reg32(b, 4);
    struct cs_index ringbuf_sync_addr = cs_scratch_reg64(b, 6);
    struct cs_index release_sz = cs_scratch_reg32(b, 8);
 
@@ -2270,6 +2352,10 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
    struct cs_index completed_bottom = cs_scratch_reg64(b, 12);
    struct cs_index cur_tiler = cs_sr_reg64(b, 38);
    struct cs_index tiler_count = cs_sr_reg32(b, 47);
+   struct cs_index oq_chain = cs_scratch_reg64(b, 10);
+   struct cs_index oq_chain_lo = cs_scratch_reg32(b, 10);
+   struct cs_index oq_chain_hi = cs_scratch_reg32(b, 11);
+   struct cs_index oq_syncobj = cs_scratch_reg64(b, 12);
 
    cs_move64_to(b, add_val, 1);
    cs_load_to(b, cs_scratch_reg_tuple(b, 0, 3), cs_subqueue_ctx_reg(b),
@@ -2313,6 +2399,39 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
       if (free_render_descs) {                                                 \
          cs_sync32_add(b, true, MALI_CS_SYNC_SCOPE_CSG, release_sz,            \
                        ringbuf_sync_addr, async);                              \
+      }                                                                        \
+      if (has_oq_chain) {                                                      \
+         struct cs_index flush_id = oq_chain_lo;                               \
+         cs_move32_to(b, flush_id, 0);                                         \
+         cs_flush_caches(b, MALI_CS_FLUSH_MODE_CLEAN,                          \
+                         MALI_CS_FLUSH_MODE_CLEAN, false, flush_id,            \
+                         cs_defer(SB_WAIT_ITER(x), SB_ID(DEFERRED_FLUSH)));    \
+         cs_load64_to(                                                         \
+            b, oq_chain, cs_subqueue_ctx_reg(b),                               \
+            offsetof(struct panvk_cs_subqueue_context, render.oq_chain));      \
+         cs_wait_slot(b, SB_ID(LS), false);                                    \
+         /* We use oq_syncobj as a placeholder to reset the oq_chain. */       \
+         cs_move64_to(b, oq_syncobj, 0);                                       \
+         cs_store64(                                                           \
+            b, oq_syncobj, cs_subqueue_ctx_reg(b),                             \
+            offsetof(struct panvk_cs_subqueue_context, render.oq_chain));      \
+         cs_wait_slot(b, SB_ID(LS), false);                                    \
+         cs_while(b, MALI_CS_CONDITION_ALWAYS, cs_undef()) {                   \
+            cs_load64_to(b, oq_syncobj, oq_chain,                              \
+                         offsetof(struct panvk_cs_occlusion_query, syncobj));  \
+            cs_wait_slot(b, SB_ID(LS), false);                                 \
+            cs_load64_to(b, oq_chain, oq_chain,                                \
+                         offsetof(struct panvk_cs_occlusion_query, next));     \
+            cs_wait_slot(b, SB_ID(LS), false);                                 \
+            cs_sync32_set(                                                     \
+               b, true, MALI_CS_SYNC_SCOPE_CSG, add_val_lo, oq_syncobj,        \
+               cs_defer(SB_MASK(DEFERRED_FLUSH), SB_ID(DEFERRED_SYNC)));       \
+            cs_if(b, MALI_CS_CONDITION_NEQUAL, oq_chain_lo)                    \
+               cs_continue(b);                                                 \
+            cs_if(b, MALI_CS_CONDITION_NEQUAL, oq_chain_hi)                    \
+               cs_continue(b);                                                 \
+            cs_break(b);                                                       \
+         }                                                                     \
       }                                                                        \
       cs_sync64_add(b, true, MALI_CS_SYNC_SCOPE_CSG, add_val, sync_addr,       \
                     async);                                                    \
@@ -2372,6 +2491,7 @@ panvk_per_arch(CmdEndRendering)(VkCommandBuffer commandBuffer)
 {
    VK_FROM_HANDLE(panvk_cmd_buffer, cmdbuf, commandBuffer);
    bool suspending = cmdbuf->state.gfx.render.flags & VK_RENDERING_SUSPENDING_BIT;
+   VkResult result;
 
    if (!suspending) {
       struct pan_fb_info *fbinfo = &cmdbuf->state.gfx.render.fb.info;
@@ -2380,7 +2500,16 @@ panvk_per_arch(CmdEndRendering)(VkCommandBuffer commandBuffer)
          clear |= fbinfo->rts[i].clear;
 
       if (clear && !inherits_render_ctx(cmdbuf)) {
-         VkResult result = get_fb_descs(cmdbuf);
+         result = get_fb_descs(cmdbuf);
+         if (result != VK_SUCCESS)
+            return;
+      }
+
+      /* Flush the last occlusion query before ending the render pass if
+       * this query has ended while we were inside the render pass. */
+      if (cmdbuf->state.gfx.render.oq.last !=
+          cmdbuf->state.gfx.occlusion_query.syncobj) {
+         result = wrap_prev_oq(cmdbuf);
          if (result != VK_SUCCESS)
             return;
       }
@@ -2400,6 +2529,7 @@ panvk_per_arch(CmdEndRendering)(VkCommandBuffer commandBuffer)
 
    memset(&cmdbuf->state.gfx.render.fbds, 0,
           sizeof(cmdbuf->state.gfx.render.fbds));
+   memset(&cmdbuf->state.gfx.render.oq, 0, sizeof(cmdbuf->state.gfx.render.oq));
    cmdbuf->state.gfx.render.tiler = 0;
 
    /* If we're not suspending, we need to resolve attachments. */

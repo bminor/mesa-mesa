@@ -45,6 +45,45 @@
  */
 
 static void
+reset_oq_batch(struct cs_builder *b, struct cs_index addr,
+               struct cs_index zero_regs, uint32_t query_count)
+{
+   const uint32_t regs_per_query = 2;
+   const uint32_t queries_per_batch = zero_regs.size / regs_per_query;
+   uint32_t remaining_queries = query_count;
+
+   assert(zero_regs.size > 2 && ALIGN_POT(zero_regs.size, 2) == zero_regs.size);
+
+   if (query_count > queries_per_batch * 4) {
+      struct cs_index counter = cs_reg32(b, zero_regs.reg + zero_regs.size - 1);
+      struct cs_index new_zero_regs =
+         cs_reg_tuple(b, zero_regs.reg, zero_regs.size - 2);
+      const uint32_t adjusted_queries_per_batch =
+         new_zero_regs.size / regs_per_query;
+      uint32_t full_batches = query_count / adjusted_queries_per_batch;
+
+      cs_move32_to(b, counter, full_batches);
+      cs_while(b, MALI_CS_CONDITION_GREATER, counter) {
+         cs_store(b, new_zero_regs, addr, BITFIELD_MASK(new_zero_regs.size), 0);
+         cs_add64(b, addr, addr, new_zero_regs.size * sizeof(uint32_t));
+         cs_add32(b, counter, counter, -1);
+      }
+
+      remaining_queries =
+         query_count - (full_batches * adjusted_queries_per_batch);
+   }
+
+   for (uint32_t i = 0; i < remaining_queries; i += queries_per_batch) {
+      struct cs_index new_zero_regs = cs_reg_tuple(
+         b, zero_regs.reg,
+         MIN2(remaining_queries - i, queries_per_batch) * regs_per_query);
+
+      cs_store(b, new_zero_regs, addr, BITFIELD_MASK(new_zero_regs.size),
+               i * sizeof(uint32_t));
+   }
+}
+
+static void
 panvk_cmd_reset_occlusion_queries(struct panvk_cmd_buffer *cmd,
                                   struct panvk_query_pool *pool,
                                   uint32_t first_query, uint32_t query_count)
@@ -54,19 +93,35 @@ panvk_cmd_reset_occlusion_queries(struct panvk_cmd_buffer *cmd,
    /* Wait on deferred sync to ensure all prior query operations have
     * completed
     */
-   cs_wait_slots(b, SB_MASK(DEFERRED_SYNC), false);
+   cs_wait_slot(b, SB_ID(DEFERRED_SYNC), false);
 
-   struct cs_index addr = cs_scratch_reg64(b, 0);
-   struct cs_index zero32 = cs_scratch_reg32(b, 2);
-   cs_move32_to(b, zero32, 0);
+   struct cs_index addr = cs_scratch_reg64(b, 16);
+   struct cs_index zero_regs = cs_scratch_reg_tuple(b, 0, 16);
 
-   /* Mark all query syncobj as not available */
-   for (uint32_t query = first_query; query < first_query + query_count;
-        query++) {
-      cs_move64_to(b, addr, panvk_query_available_dev_addr(pool, query));
-      cs_sync32_set(b, true, MALI_CS_SYNC_SCOPE_CSG, zero32, addr,
-                    cs_defer(SB_IMM_MASK, SB_ID(DEFERRED_SYNC)));
-   }
+   for (uint32_t i = 0; i < zero_regs.size; i += 2)
+      cs_move64_to(b, cs_scratch_reg64(b, i), 0);
+
+   /* Zero all query syncobj so it reports non-available. We don't use
+    * cs_sync32_set() because no-one is waiting on this syncobj with
+    * cs_sync32_wait(). The only reason we use a syncobj is so we can
+    * defer the signalling in the issue_fragmnent_jobs() path. */
+   cs_move64_to(b, addr, panvk_query_available_dev_addr(pool, first_query));
+   reset_oq_batch(b, addr, zero_regs, query_count);
+
+   cs_move64_to(b, addr, panvk_query_report_dev_addr(pool, first_query));
+   reset_oq_batch(b, addr, zero_regs, query_count);
+
+   /* reset_oq_batch() only does the stores, we need to flush those explicitly
+    * here. */
+   cs_wait_slot(b, SB_ID(LS), false);
+
+   /* We flush the caches to make the new value visible to the CPU. */
+   struct cs_index flush_id = cs_scratch_reg32(b, 0);
+
+   cs_flush_caches(b, MALI_CS_FLUSH_MODE_CLEAN, MALI_CS_FLUSH_MODE_CLEAN, false,
+                   flush_id,
+                   cs_defer(SB_IMM_MASK, SB_ID(IMM_FLUSH)));
+   cs_wait_slot(b, SB_ID(IMM_FLUSH), false);
 }
 
 static void
@@ -77,6 +132,8 @@ panvk_cmd_begin_occlusion_query(struct panvk_cmd_buffer *cmd,
    uint64_t report_addr = panvk_query_report_dev_addr(pool, query);
 
    cmd->state.gfx.occlusion_query.ptr = report_addr;
+   cmd->state.gfx.occlusion_query.syncobj =
+      panvk_query_available_dev_addr(pool, query);
    cmd->state.gfx.occlusion_query.mode = flags & VK_QUERY_CONTROL_PRECISE_BIT
                                             ? MALI_OCCLUSION_MODE_COUNTER
                                             : MALI_OCCLUSION_MODE_PREDICATE;
@@ -102,32 +159,77 @@ static void
 panvk_cmd_end_occlusion_query(struct panvk_cmd_buffer *cmd,
                               struct panvk_query_pool *pool, uint32_t query)
 {
-   /* Ensure all RUN_FRAGMENT are encoded before this */
-   panvk_per_arch(cmd_flush_draws)(cmd);
+   uint64_t syncobj_addr = panvk_query_available_dev_addr(pool, query);
+
    cmd->state.gfx.occlusion_query.ptr = 0;
+   cmd->state.gfx.occlusion_query.syncobj = 0;
    cmd->state.gfx.occlusion_query.mode = MALI_OCCLUSION_MODE_DISABLED;
    gfx_state_set_dirty(cmd, OQ);
 
-   struct cs_builder *b = panvk_get_cs_builder(cmd, PANVK_SUBQUEUE_FRAGMENT);
+   /* If the render pass is active, we let EndRendering take care of the
+    * occlusion query end when the fragment job is issued. */
+   if (cmd->state.gfx.render.oq.last == syncobj_addr)
+      return;
 
-   struct cs_index flush_id = cs_scratch_reg32(b, 0);
-   cs_move32_to(b, flush_id, 0);
+   struct cs_builder *b = panvk_get_cs_builder(cmd, PANVK_SUBQUEUE_FRAGMENT);
+   struct cs_index oq_syncobj = cs_scratch_reg64(b, 0);
+   struct cs_index val = cs_scratch_reg32(b, 2);
 
    /* OQ accumulates sample counts to the report which is on a cached memory.
     * Wait for the accumulation and flush the caches.
     */
+   cs_move32_to(b, val, 0);
    cs_flush_caches(b, MALI_CS_FLUSH_MODE_CLEAN, MALI_CS_FLUSH_MODE_CLEAN, false,
-                   flush_id,
-                   cs_defer(SB_ALL_ITERS_MASK, SB_ID(DEFERRED_FLUSH)));
+                   val, cs_defer(SB_ALL_ITERS_MASK, SB_ID(DEFERRED_FLUSH)));
 
-   struct cs_index sync_addr = cs_scratch_reg64(b, 0);
-   struct cs_index seqno = cs_scratch_reg32(b, 2);
-   cs_move32_to(b, seqno, 1);
-
-   /* We wait on any previous flush, and defer on sync */
-   cs_move64_to(b, sync_addr, panvk_query_available_dev_addr(pool, query));
-   cs_sync32_set(b, true, MALI_CS_SYNC_SCOPE_CSG, seqno, sync_addr,
+   /* Signal the query syncobj after the flush is effective. */
+   cs_move32_to(b, val, 1);
+   cs_move64_to(b, oq_syncobj, panvk_query_available_dev_addr(pool, query));
+   cs_sync32_set(b, true, MALI_CS_SYNC_SCOPE_CSG, val, oq_syncobj,
                  cs_defer(SB_MASK(DEFERRED_FLUSH), SB_ID(DEFERRED_SYNC)));
+}
+
+static void
+copy_oq_result_batch(struct cs_builder *b,
+                     VkQueryResultFlags flags,
+                     struct cs_index dst_addr,
+                     VkDeviceSize dst_stride,
+                     struct cs_index res_addr,
+                     struct cs_index avail_addr,
+                     struct cs_index scratch_regs,
+                     uint32_t query_count)
+{
+   uint32_t res_size = (flags & VK_QUERY_RESULT_64_BIT) ? 2 : 1;
+   uint32_t regs_per_copy =
+      res_size + ((flags & VK_QUERY_RESULT_WITH_AVAILABILITY_BIT) ? 1 : 0);
+
+   assert(query_count <= scratch_regs.size / regs_per_copy);
+
+   for (uint32_t i = 0; i < query_count; i++) {
+      struct cs_index res =
+         cs_reg_tuple(b, scratch_regs.reg + (i * regs_per_copy), res_size);
+      struct cs_index avail = cs_reg32(b, res.reg + res_size);
+
+      cs_load_to(b, res, res_addr, BITFIELD_MASK(res.size),
+                 i * sizeof(uint64_t));
+
+      if (flags & VK_QUERY_RESULT_WITH_AVAILABILITY_BIT)
+         cs_load32_to(b, avail, avail_addr, i * sizeof(struct panvk_cs_sync32));
+   }
+
+   /* Flush the loads. */
+   cs_wait_slot(b, SB_ID(LS), false);
+
+   for (uint32_t i = 0; i < query_count; i++) {
+      struct cs_index store_src =
+         cs_reg_tuple(b, scratch_regs.reg + (i * regs_per_copy), regs_per_copy);
+
+      cs_store(b, store_src, dst_addr, BITFIELD_MASK(regs_per_copy),
+               i * dst_stride);
+   }
+
+   /* Flush the stores. */
+   cs_wait_slot(b, SB_ID(LS), false);
 }
 
 static void
@@ -138,63 +240,63 @@ panvk_copy_occlusion_query_results(struct panvk_cmd_buffer *cmd,
                                    VkDeviceSize stride,
                                    VkQueryResultFlags flags)
 {
-   unsigned result_stride =
-      flags & VK_QUERY_RESULT_64_BIT ? sizeof(uint64_t) : sizeof(uint32_t);
-
    struct cs_builder *b = panvk_get_cs_builder(cmd, PANVK_SUBQUEUE_FRAGMENT);
-   struct cs_index scratch_addr0 = cs_scratch_reg64(b, 0);
-   struct cs_index scratch_addr1 = cs_scratch_reg64(b, 2);
-   struct cs_index scratch_val0 = cs_scratch_reg32(b, 4);
-   struct cs_index available = cs_scratch_reg32(b, 5);
-   struct cs_index write_results = cs_scratch_reg32(b, 6);
-   struct cs_index scratch_val2 = cs_scratch_reg64(b, 8);
 
-   for (uint32_t query = first_query; query < first_query + query_count;
-        query++) {
-      cs_move64_to(b, scratch_addr0,
-                   panvk_query_available_dev_addr(pool, query));
+   /* Wait for occlusion query syncobjs to be signalled. */
+   if (flags & VK_QUERY_RESULT_WAIT_BIT)
+      cs_wait_slot(b, SB_ID(DEFERRED_SYNC), false);
 
-      if (flags & VK_QUERY_RESULT_WAIT_BIT) {
-         cs_move32_to(b, scratch_val0, 0);
+   uint32_t res_size = (flags & VK_QUERY_RESULT_64_BIT) ? 2 : 1;
+   uint32_t regs_per_copy =
+      res_size + ((flags & VK_QUERY_RESULT_WITH_AVAILABILITY_BIT) ? 1 : 0);
 
-         /* Wait on the sync object of the current query */
-         cs_sync32_wait(b, false, MALI_CS_CONDITION_GREATER, scratch_val0,
-                        scratch_addr0);
+   struct cs_index dst_addr = cs_scratch_reg64(b, 16);
+   struct cs_index res_addr = cs_scratch_reg64(b, 14);
+   struct cs_index avail_addr = cs_scratch_reg64(b, 12);
+   struct cs_index counter = cs_scratch_reg32(b, 11);
+   struct cs_index scratch_regs = cs_scratch_reg_tuple(b, 0, 11);
+   uint32_t queries_per_batch = scratch_regs.size / regs_per_copy;
 
-         /* After the wait, all subqueues are available */
-         cs_move32_to(b, available, 1);
-      } else {
-         cs_move64_to(b, scratch_addr0,
-                      panvk_query_available_dev_addr(pool, query));
-         cs_load32_to(b, available, scratch_addr0, 0);
-         cs_wait_slot(b, SB_ID(LS), false);
+   /* Store offset is a 16-bit signed integer, so we might be limited by the
+    * stride here. */
+   queries_per_batch = MIN2(((1u << 15) / stride) + 1, queries_per_batch);
+
+   /* Stop unrolling the loop when it takes more than 2 steps to copy the
+    * queries. */
+   if (query_count > 2 * queries_per_batch) {
+      uint32_t copied_query_count =
+         query_count - (query_count % queries_per_batch);
+
+      cs_move32_to(b, counter, copied_query_count);
+      cs_move64_to(b, dst_addr, dst_buffer_addr);
+      cs_move64_to(b, res_addr, panvk_query_report_dev_addr(pool, first_query));
+      cs_move64_to(b, avail_addr,
+                   panvk_query_available_dev_addr(pool, first_query));
+      cs_while(b, MALI_CS_CONDITION_GREATER, counter) {
+         copy_oq_result_batch(b, flags, dst_addr, stride, res_addr, avail_addr,
+                              scratch_regs, queries_per_batch);
+
+         cs_add32(b, counter, counter, -queries_per_batch);
+         cs_add64(b, dst_addr, dst_addr, queries_per_batch * stride);
+         cs_add64(b, res_addr, res_addr, queries_per_batch * sizeof(uint64_t));
+         cs_add64(b, avail_addr, avail_addr,
+                  queries_per_batch * sizeof(uint64_t));
       }
 
-      cs_add32(b, write_results, available,
-               (flags & VK_QUERY_RESULT_PARTIAL_BIT) != 0);
+      dst_buffer_addr += stride * copied_query_count;
+      first_query += copied_query_count;
+      query_count -= copied_query_count;
+   }
 
-      assert(pool->vk.query_type == VK_QUERY_TYPE_OCCLUSION);
-
-      cs_if(b, MALI_CS_CONDITION_GREATER, write_results) {
-         cs_move64_to(b, scratch_addr0,
-                      panvk_query_report_dev_addr(pool, query));
-         cs_move64_to(b, scratch_addr1, dst_buffer_addr + query * stride);
-
-         if (flags & VK_QUERY_RESULT_64_BIT) {
-            cs_load64_to(b, scratch_val2, scratch_addr0, 0);
-            cs_wait_slot(b, SB_ID(LS), false);
-            cs_store64(b, scratch_val2, scratch_addr1, 0);
-         } else {
-            cs_load32_to(b, scratch_val0, scratch_addr0, 0);
-            cs_wait_slot(b, SB_ID(LS), false);
-            cs_store32(b, scratch_val0, scratch_addr1, 0);
-         }
-
-         if (flags & VK_QUERY_RESULT_WITH_AVAILABILITY_BIT)
-            cs_store32(b, available, scratch_addr1, result_stride);
-
-         cs_wait_slot(b, SB_ID(LS), false);
-      }
+   for (uint32_t i = 0; i < query_count; i += queries_per_batch) {
+      cs_move64_to(b, dst_addr, dst_buffer_addr + (i * stride));
+      cs_move64_to(b, res_addr,
+                   panvk_query_report_dev_addr(pool, i + first_query));
+      cs_move64_to(b, avail_addr,
+                   panvk_query_available_dev_addr(pool, i + first_query));
+      copy_oq_result_batch(b, flags, dst_addr, stride, res_addr, avail_addr,
+                           scratch_regs,
+                           MIN2(queries_per_batch, query_count - i));
    }
 }
 

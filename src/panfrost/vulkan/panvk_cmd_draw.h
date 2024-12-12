@@ -76,6 +76,16 @@ struct panvk_rendering_state {
    /* When a secondary command buffer has to flush draws, it disturbs the
     * inherited context, and the primary command buffer needs to know. */
    bool invalidate_inherited_ctx;
+
+   struct {
+      /* != 0 if the render pass contains one or more occlusion queries to
+       * signal. */
+      uint64_t chain;
+
+      /* Point to the syncobj of the last occlusion query that was passed
+       * to a draw. */
+      uint64_t last;
+   } oq;
 #endif
 };
 
