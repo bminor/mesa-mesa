@@ -203,3 +203,30 @@ loader_wayland_buffer_set_flow(struct loader_wayland_buffer *lwb, uint64_t flow_
 {
   lwb->flow_id = flow_id;
 }
+
+bool
+loader_wayland_wrap_surface(struct loader_wayland_surface *lws,
+                            struct wl_surface *wl_surface,
+                            struct wl_event_queue *queue)
+{
+   lws->surface = wl_surface;
+   lws->wrapper = wl_proxy_create_wrapper(wl_surface);
+   if (!lws->wrapper)
+      return false;
+
+   lws->id = wl_proxy_get_id((struct wl_proxy *)wl_surface);
+   wl_proxy_set_queue((struct wl_proxy *)lws->wrapper, queue);
+
+   return true;
+}
+
+void
+loader_wayland_surface_destroy(struct loader_wayland_surface *lws)
+{
+   if (!lws->wrapper)
+      return;
+
+   wl_proxy_wrapper_destroy(lws->wrapper);
+   lws->surface = NULL;
+   lws->id = 0;
+}

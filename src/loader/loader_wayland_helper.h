@@ -33,6 +33,12 @@ struct loader_wayland_buffer {
    char *name;
 };
 
+struct loader_wayland_surface {
+   struct wl_surface *surface;
+   struct wl_surface *wrapper;
+   uint32_t id;
+};
+
 #ifndef HAVE_WL_DISPATCH_QUEUE_TIMEOUT
 int
 wl_display_dispatch_queue_timeout(struct wl_display *display,
@@ -60,5 +66,13 @@ loader_wayland_buffer_destroy(struct loader_wayland_buffer *lwb);
 
 void
 loader_wayland_buffer_set_flow(struct loader_wayland_buffer *lwb, uint64_t flow_id);
+
+bool
+loader_wayland_wrap_surface(struct loader_wayland_surface *lws,
+                            struct wl_surface *wl_surface,
+                            struct wl_event_queue *queue);
+
+void
+loader_wayland_surface_destroy(struct loader_wayland_surface *lws);
 
 #endif

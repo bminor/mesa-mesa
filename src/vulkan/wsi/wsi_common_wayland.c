@@ -179,7 +179,7 @@ struct wsi_wl_surface {
    unsigned int chain_count;
 
    struct wsi_wl_swapchain *chain;
-   struct wl_surface *surface;
+   struct loader_wayland_surface wayland_surface;
    struct wsi_wl_display *display;
 
    /* This has no functional use, and is here only for perfetto */
@@ -1148,7 +1148,8 @@ wsi_wl_surface_add_color_refcount(struct wsi_wl_surface *wsi_surface)
    wsi_surface->color.color_surface_refcount++;
    if (wsi_surface->color.color_surface_refcount == 1) {
       wsi_surface->color.color_surface =
-         wp_color_manager_v1_get_surface(wsi_surface->display->color_manager, wsi_surface->surface);
+         wp_color_manager_v1_get_surface(wsi_surface->display->color_manager,
+					 wsi_surface->wayland_surface.wrapper);
    }
 }
 
@@ -2024,8 +2025,7 @@ wsi_wl_surface_destroy(VkIcdSurfaceBase *icd_surface, VkInstance _instance,
    if (wsi_wl_surface->color.color_surface)
       wp_color_management_surface_v1_destroy(wsi_wl_surface->color.color_surface);
 
-   if (wsi_wl_surface->surface)
-      wl_proxy_wrapper_destroy(wsi_wl_surface->surface);
+   loader_wayland_surface_destroy(&wsi_wl_surface->wayland_surface);
 
    if (wsi_wl_surface->display)
       wsi_wl_display_destroy(wsi_wl_surface->display);
@@ -2224,7 +2224,7 @@ static VkResult wsi_wl_surface_bind_to_dmabuf_feedback(struct wsi_wl_surface *ws
 {
    wsi_wl_surface->wl_dmabuf_feedback =
       zwp_linux_dmabuf_v1_get_surface_feedback(wsi_wl_surface->display->wl_dmabuf,
-                                               wsi_wl_surface->surface);
+                                               wsi_wl_surface->wayland_surface.wrapper);
 
    zwp_linux_dmabuf_feedback_v1_add_listener(wsi_wl_surface->wl_dmabuf_feedback,
                                              &surface_dmabuf_feedback_listener,
@@ -2252,7 +2252,7 @@ wsi_wl_surface_analytics_init(struct wsi_wl_surface *wsi_wl_surface,
    uint64_t wl_id;
    char *track_name;
 
-   wl_id = wl_proxy_get_id((struct wl_proxy *) wsi_wl_surface->surface);
+   wl_id = wsi_wl_surface->wayland_surface.id;
    track_name = vk_asprintf(pAllocator, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT,
                             "wl%" PRIu64 " presentation", wl_id);
    wsi_wl_surface->analytics.presentation_track_id = util_perfetto_new_track(track_name);
@@ -2281,13 +2281,12 @@ static VkResult wsi_wl_surface_init(struct wsi_wl_surface *wsi_wl_surface,
    if (result != VK_SUCCESS)
       goto fail;
 
-   wsi_wl_surface->surface = wl_proxy_create_wrapper(wsi_wl_surface->base.surface);
-   if (!wsi_wl_surface->surface) {
+   if (!loader_wayland_wrap_surface(&wsi_wl_surface->wayland_surface,
+                                    wsi_wl_surface->base.surface,
+                                    wsi_wl_surface->display->queue)) {
       result = VK_ERROR_OUT_OF_HOST_MEMORY;
       goto fail;
    }
-   wl_proxy_set_queue((struct wl_proxy *) wsi_wl_surface->surface,
-                      wsi_wl_surface->display->queue);
 
    /* Bind wsi_wl_surface to dma-buf feedback. */
    if (wsi_wl_surface->display->wl_dmabuf &&
@@ -2304,7 +2303,7 @@ static VkResult wsi_wl_surface_init(struct wsi_wl_surface *wsi_wl_surface,
    if (wsi_wl_use_explicit_sync(wsi_wl_surface->display, wsi_device)) {
       wsi_wl_surface->wl_syncobj_surface =
          wp_linux_drm_syncobj_manager_v1_get_surface(wsi_wl_surface->display->wl_syncobj,
-                                                     wsi_wl_surface->surface);
+                                                     wsi_wl_surface->wayland_surface.wrapper);
 
       if (!wsi_wl_surface->wl_syncobj_surface)
          goto fail;
@@ -2315,8 +2314,7 @@ static VkResult wsi_wl_surface_init(struct wsi_wl_surface *wsi_wl_surface,
    return VK_SUCCESS;
 
 fail:
-   if (wsi_wl_surface->surface)
-      wl_proxy_wrapper_destroy(wsi_wl_surface->surface);
+   loader_wayland_surface_destroy(&wsi_wl_surface->wayland_surface);
 
    if (wsi_wl_surface->display)
       wsi_wl_display_destroy(wsi_wl_surface->display);
@@ -2998,27 +2996,29 @@ wsi_wl_swapchain_queue_present(struct wsi_swapchain *wsi_chain,
    }
 
    assert(image_index < chain->base.image_count);
-   wl_surface_attach(wsi_wl_surface->surface,
+   wl_surface_attach(wsi_wl_surface->wayland_surface.wrapper,
                      chain->images[image_index].wayland_buffer.buffer, 0, 0);
 
-   if (wl_surface_get_version(wsi_wl_surface->surface) >= WL_SURFACE_DAMAGE_BUFFER_SINCE_VERSION) {
+   if (wl_surface_get_version(wsi_wl_surface->wayland_surface.wrapper) >= WL_SURFACE_DAMAGE_BUFFER_SINCE_VERSION) {
       if (damage && damage->pRectangles && damage->rectangleCount > 0) {
          for (unsigned i = 0; i < damage->rectangleCount; i++) {
             const VkRectLayerKHR *rect = &damage->pRectangles[i];
             assert(rect->layer == 0);
-            wl_surface_damage_buffer(wsi_wl_surface->surface,
+            wl_surface_damage_buffer(wsi_wl_surface->wayland_surface.wrapper,
                                      rect->offset.x, rect->offset.y,
                                      rect->extent.width, rect->extent.height);
          }
       } else {
-         wl_surface_damage_buffer(wsi_wl_surface->surface, 0, 0, INT32_MAX, INT32_MAX);
+         wl_surface_damage_buffer(wsi_wl_surface->wayland_surface.wrapper,
+				  0, 0, INT32_MAX, INT32_MAX);
       }
    } else {
       /* If the compositor doesn't support damage_buffer, we deliberately
        * ignore the damage region and post maximum damage, because
        * we are unaware how to map the damage region from the buffer local
        * coordinate space to the surface local coordinate space */
-      wl_surface_damage(wsi_wl_surface->surface, 0, 0, INT32_MAX, INT32_MAX);
+      wl_surface_damage(wsi_wl_surface->wayland_surface.wrapper,
+			0, 0, INT32_MAX, INT32_MAX);
    }
 
    if (present_id > 0 || (mode_fifo && chain->commit_timer) ||
@@ -3044,7 +3044,7 @@ wsi_wl_swapchain_queue_present(struct wsi_swapchain *wsi_chain,
 
       if (!chain->present_ids.frame_fallback) {
          id->feedback = wp_presentation_feedback(chain->present_ids.wp_presentation,
-                                                 chain->wsi_wl_surface->surface);
+                                                 chain->wsi_wl_surface->wayland_surface.wrapper);
          wp_presentation_feedback_add_listener(id->feedback,
                                                &pres_feedback_listener,
                                                id);
@@ -3076,7 +3076,7 @@ wsi_wl_swapchain_queue_present(struct wsi_swapchain *wsi_chain,
 
    if (mode_fifo && !chain->fifo) {
       /* If we don't have FIFO protocol, we must fall back to legacy mechanism for throttling. */
-      chain->frame = wl_surface_frame(wsi_wl_surface->surface);
+      chain->frame = wl_surface_frame(wsi_wl_surface->wayland_surface.wrapper);
       wl_callback_add_listener(chain->frame, &frame_listener, chain);
       chain->legacy_fifo_ready = false;
    } else {
@@ -3120,7 +3120,7 @@ wsi_wl_swapchain_queue_present(struct wsi_swapchain *wsi_chain,
        *   either to refresh rate or some fixed value. */
 
       if (timestamped) {
-         wl_surface_commit(wsi_wl_surface->surface);
+         wl_surface_commit(wsi_wl_surface->wayland_surface.wrapper);
          /* Once we're in a steady state, we'd only need one of these
           * barrier waits. However, the first time we use a timestamp
           * we need both of our content updates to wait. The first
@@ -3157,7 +3157,7 @@ wsi_wl_swapchain_queue_present(struct wsi_swapchain *wsi_chain,
       wp_fifo_v1_wait_barrier(chain->fifo);
       chain->next_present_force_wait_barrier = false;
    }
-   wl_surface_commit(wsi_wl_surface->surface);
+   wl_surface_commit(wsi_wl_surface->wayland_surface.wrapper);
    wl_display_flush(wsi_wl_surface->display->wl_display);
 
    if (!queue_dispatched && wsi_chain->image_info.explicit_sync) {
@@ -3500,7 +3500,7 @@ wsi_wl_surface_create_swapchain(VkIcdSurfaceBase *icd_surface,
    if (present_mode == VK_PRESENT_MODE_IMMEDIATE_KHR) {
       chain->tearing_control =
          wp_tearing_control_manager_v1_get_tearing_control(wsi_wl_surface->display->tearing_control_manager,
-                                                           wsi_wl_surface->surface);
+                                                           wsi_wl_surface->wayland_surface.wrapper);
       if (!chain->tearing_control) {
          result = VK_ERROR_OUT_OF_HOST_MEMORY;
          goto fail;
@@ -3615,7 +3615,7 @@ wsi_wl_surface_create_swapchain(VkIcdSurfaceBase *icd_surface,
    char *queue_name = vk_asprintf(pAllocator,
                                   VK_SYSTEM_ALLOCATION_SCOPE_OBJECT,
                                   "mesa vk surface %d swapchain %d queue",
-                                  wl_proxy_get_id((struct wl_proxy *) wsi_wl_surface->surface),
+                                  wsi_wl_surface->wayland_surface.id,
                                   wsi_wl_surface->chain_count++);
    chain->present_ids.queue =
       wl_display_create_queue_with_name(chain->wsi_wl_surface->display->wl_display,
@@ -3643,11 +3643,11 @@ wsi_wl_surface_create_swapchain(VkIcdSurfaceBase *icd_surface,
    struct wsi_wl_display *dpy = chain->wsi_wl_surface->display;
    if (dpy->fifo_manager) {
       chain->fifo = wp_fifo_manager_v1_get_fifo(dpy->fifo_manager,
-                                                chain->wsi_wl_surface->surface);
+                                                chain->wsi_wl_surface->wayland_surface.wrapper);
    }
    if (dpy->commit_timing_manager && !chain->present_ids.frame_fallback) {
       chain->commit_timer = wp_commit_timing_manager_v1_get_timer(dpy->commit_timing_manager,
-                                                                  chain->wsi_wl_surface->surface);
+                                                                  chain->wsi_wl_surface->wayland_surface.wrapper);
    }
 
    for (uint32_t i = 0; i < chain->base.image_count; i++) {
