@@ -872,7 +872,7 @@ cs_branch_label(struct cs_builder *b, struct cs_label *label,
       cs_emit(b, BRANCH, I) {
          I.offset = offset;
          I.condition = cond;
-         I.value = cs_src32(b, val);
+         I.value = cond != MALI_CS_CONDITION_ALWAYS ? cs_src32(b, val) : 0;
       }
    }
 }
