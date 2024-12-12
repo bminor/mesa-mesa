@@ -92,9 +92,11 @@ vl_video_buffer_plane_order(enum pipe_format format)
    case PIPE_FORMAT_UYVY:
    case PIPE_FORMAT_P010:
    case PIPE_FORMAT_P016:
+   case PIPE_FORMAT_Y8_400_UNORM:
       return const_resource_plane_order_YUV;
 
    default:
+      assert(0);
       return NULL;
    }
 }
@@ -323,7 +325,6 @@ vl_video_buffer_sampler_view_components(struct pipe_video_buffer *buffer)
             goto error;
       }
    }
-   assert(component == VL_NUM_COMPONENTS);
 
    return buf->sampler_view_components;
 
