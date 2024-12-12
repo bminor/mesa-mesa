@@ -129,6 +129,14 @@ panvk_lower_sysvals(nir_builder *b, nir_instr *instr, void *data)
       break;
 #endif
 
+   case nir_intrinsic_load_draw_id:
+      /* TODO: We only implement single-draw direct and indirect draws, so this
+       * is sufficient. We'll revisit this when we get around to implementing
+       * multidraw. */
+      assert(b->shader->info.stage == MESA_SHADER_VERTEX);
+      val = nir_imm_int(b, 0);
+      break;
+
    default:
       return false;
    }
