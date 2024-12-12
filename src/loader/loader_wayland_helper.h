@@ -30,6 +30,7 @@ struct loader_wayland_buffer {
    struct wl_buffer *buffer;
    uint32_t id;
    uint64_t flow_id;
+   char *name;
 };
 
 #ifndef HAVE_WL_DISPATCH_QUEUE_TIMEOUT

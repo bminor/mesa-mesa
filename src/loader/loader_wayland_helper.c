@@ -22,6 +22,8 @@
 
 #include <poll.h>
 #include <errno.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "util/perf/cpu_trace.h"
 
@@ -164,6 +166,17 @@ loader_wayland_dispatch(struct wl_display *wl_display,
                                             &remaining_timeout);
 }
 
+static char *
+stringify_wayland_id(uint32_t id)
+{
+   char *out;
+
+   if (asprintf(&out, "wl%d", id) < 0)
+      return strdup("Wayland buffer");
+
+   return out;
+}
+
 void
 loader_wayland_wrap_buffer(struct loader_wayland_buffer *lwb,
                            struct wl_buffer *wl_buffer)
@@ -171,6 +184,7 @@ loader_wayland_wrap_buffer(struct loader_wayland_buffer *lwb,
    lwb->buffer = wl_buffer;
    lwb->id = wl_proxy_get_id((struct wl_proxy *)wl_buffer);
    lwb->flow_id = 0;
+   lwb->name = stringify_wayland_id(lwb->id);
 }
 
 void
@@ -180,6 +194,8 @@ loader_wayland_buffer_destroy(struct loader_wayland_buffer *lwb)
    lwb->buffer = NULL;
    lwb->id = 0;
    lwb->flow_id = 0;
+   free(lwb->name);
+   lwb->name = NULL;
 }
 
 void

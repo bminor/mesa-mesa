@@ -290,17 +290,6 @@ find_format(struct u_vector *formats, VkFormat format)
    return NULL;
 }
 
-static char *
-stringify_wayland_id(uint32_t id)
-{
-   char *out;
-
-   if (asprintf(&out, "wl%d", id) < 0)
-      return NULL;
-
-   return out;
-}
-
 /* Given a time base and a refresh period, find the next
  * time past 'from' that is an even multiple of the period
  * past the base.
@@ -2375,10 +2364,10 @@ struct wsi_wl_present_id {
    struct wl_callback *frame;
    uint64_t present_id;
    uint64_t flow_id;
+   struct loader_wayland_buffer *buffer;
    uint64_t submission_time;
    const VkAllocationCallbacks *alloc;
    struct wsi_wl_swapchain *chain;
-   int buffer_id;
    uint64_t target_time;
    uint64_t correction;
    struct wl_list link;
@@ -2748,29 +2737,24 @@ trace_present(const struct wsi_wl_present_id *id,
 {
    struct wsi_wl_swapchain *chain = id->chain;
    struct wsi_wl_surface *surface = chain->wsi_wl_surface;
-   char *buffer_name;
 
    MESA_TRACE_SET_COUNTER(surface->analytics.latency_str,
                           (presentation_time - id->submission_time) / 1000000.0);
 
    /* Close the previous image display interval first, if there is one. */
    if (surface->analytics.presenting && util_perfetto_is_tracing_enabled()) {
-      buffer_name = stringify_wayland_id(surface->analytics.presenting);
-      MESA_TRACE_TIMESTAMP_END(buffer_name ? buffer_name : "Wayland buffer",
+      MESA_TRACE_TIMESTAMP_END(id->buffer->name,
                                surface->analytics.presentation_track_id,
                                chain->wsi_wl_surface->display->presentation_clock_id, presentation_time);
-      free(buffer_name);
    }
 
-   surface->analytics.presenting = id->buffer_id;
+   surface->analytics.presenting = id->buffer->id;
 
    if (util_perfetto_is_tracing_enabled()) {
-      buffer_name = stringify_wayland_id(id->buffer_id);
-      MESA_TRACE_TIMESTAMP_BEGIN(buffer_name ? buffer_name : "Wayland buffer",
+      MESA_TRACE_TIMESTAMP_BEGIN(id->buffer->name,
                                  surface->analytics.presentation_track_id,
                                  id->flow_id,
                                  chain->wsi_wl_surface->display->presentation_clock_id, presentation_time);
-      free(buffer_name);
    }
 }
 
@@ -3045,8 +3029,11 @@ wsi_wl_swapchain_queue_present(struct wsi_swapchain *wsi_chain,
       id->chain = chain;
       id->present_id = present_id;
       id->alloc = chain->wsi_wl_surface->display->wsi_wl->alloc;
-      id->flow_id = flow_id;
-      id->buffer_id = chain->images[image_index].wayland_buffer.id;
+      id->buffer = &chain->images[image_index].wayland_buffer;
+      /* The buffer can be reused for another flow before the feedback event
+       * arrives, so we need a copy.
+       */
+      id->flow_id = id->buffer->flow_id;
 
       id->submission_time = os_time_get_nano();
 
