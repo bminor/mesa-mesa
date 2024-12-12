@@ -833,8 +833,7 @@ void gfx9_get_gs_info(struct si_shader_selector *es, struct si_shader_selector *
 {
    unsigned gs_num_invocations = MAX2(gs->info.base.gs.invocations, 1);
    unsigned input_prim = gs->info.base.gs.input_primitive;
-   bool uses_adjacency =
-      input_prim >= MESA_PRIM_LINES_ADJACENCY && input_prim <= MESA_PRIM_TRIANGLE_STRIP_ADJACENCY;
+   bool uses_adjacency = mesa_prim_has_adjacency((enum mesa_prim)input_prim);
 
    /* All these are in dwords: */
    /* We can't allow using the whole LDS, because GS waves compete with
