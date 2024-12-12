@@ -473,7 +473,6 @@ vlVaGetImage(VADriverContextP ctx, VASurfaceID surface, int x, int y,
    VAImage *vaimage;
    struct pipe_resource *view_resources[VL_NUM_COMPONENTS];
    enum pipe_format format;
-   bool convert = false;
    uint8_t *data[3];
    unsigned pitches[3], i, j;
 
@@ -520,29 +519,9 @@ vlVaGetImage(VADriverContextP ctx, VASurfaceID surface, int x, int y,
    }
 
    format = VaFourccToPipeFormat(vaimage->format.fourcc);
-   if (format == PIPE_FORMAT_NONE) {
-      mtx_unlock(&drv->mutex);
-      return VA_STATUS_ERROR_OPERATION_FAILED;
-   }
-
-
    if (format != surf->buffer->buffer_format) {
-      /* support NV12 to YV12 and IYUV conversion now only */
-      if ((format == PIPE_FORMAT_YV12 &&
-         surf->buffer->buffer_format == PIPE_FORMAT_NV12) ||
-         (format == PIPE_FORMAT_IYUV &&
-         surf->buffer->buffer_format == PIPE_FORMAT_NV12))
-         convert = true;
-      else if (format == PIPE_FORMAT_NV12 &&
-         (surf->buffer->buffer_format == PIPE_FORMAT_P010 ||
-          surf->buffer->buffer_format == PIPE_FORMAT_P016)) {
-         mtx_unlock(&drv->mutex);
-         return VA_STATUS_ERROR_OPERATION_FAILED;
-      }
-      else {
-         mtx_unlock(&drv->mutex);
-         return VA_STATUS_ERROR_OPERATION_FAILED;
-      }
+      mtx_unlock(&drv->mutex);
+      return VA_STATUS_ERROR_INVALID_IMAGE_FORMAT;
    }
 
    memset(view_resources, 0, sizeof(view_resources));
@@ -551,16 +530,6 @@ vlVaGetImage(VADriverContextP ctx, VASurfaceID surface, int x, int y,
    for (i = 0; i < MIN2(vaimage->num_planes, 3); i++) {
       data[i] = ((uint8_t*)img_buf->data) + vaimage->offsets[i];
       pitches[i] = vaimage->pitches[i];
-   }
-   if (vaimage->format.fourcc == VA_FOURCC('I','4','2','0')) {
-      void *tmp_d;
-      unsigned tmp_p;
-      tmp_d  = data[1];
-      data[1] = data[2];
-      data[2] = tmp_d;
-      tmp_p = pitches[1];
-      pitches[1] = pitches[2];
-      pitches[2] = tmp_p;
    }
 
    for (i = 0; i < vaimage->num_planes; i++) {
@@ -586,17 +555,10 @@ vlVaGetImage(VADriverContextP ctx, VASurfaceID surface, int x, int y,
             mtx_unlock(&drv->mutex);
             return VA_STATUS_ERROR_OPERATION_FAILED;
          }
-
-         if (i == 1 && convert) {
-            u_copy_nv12_to_yv12((void *const *)data, pitches, i, j,
-               transfer->stride, view_resources[i]->array_size,
-               map, box.width, box.height);
-         } else {
-            util_copy_rect((uint8_t*)(data[i] + pitches[i] * j),
-               view_resources[i]->format,
-               pitches[i] * view_resources[i]->array_size, 0, 0,
-               box.width, box.height, map, transfer->stride, 0, 0);
-         }
+         util_copy_rect((uint8_t*)(data[i] + pitches[i] * j),
+            view_resources[i]->format,
+            pitches[i] * view_resources[i]->array_size, 0, 0,
+            box.width, box.height, map, transfer->stride, 0, 0);
          pipe_texture_unmap(drv->pipe, transfer);
       }
    }
@@ -651,33 +613,9 @@ vlVaPutImage(VADriverContextP ctx, VASurfaceID surface, VAImageID image,
    }
 
    format = VaFourccToPipeFormat(vaimage->format.fourcc);
-
-   if (format == PIPE_FORMAT_NONE) {
+   if (format != surf->buffer->buffer_format) {
       mtx_unlock(&drv->mutex);
-      return VA_STATUS_ERROR_OPERATION_FAILED;
-   }
-
-   if ((format != surf->buffer->buffer_format) &&
-         ((format != PIPE_FORMAT_YV12) || (surf->buffer->buffer_format != PIPE_FORMAT_NV12)) &&
-         ((format != PIPE_FORMAT_IYUV) || (surf->buffer->buffer_format != PIPE_FORMAT_NV12))) {
-      struct pipe_video_buffer *tmp_buf;
-
-      surf->templat.buffer_format = format;
-      if (format == PIPE_FORMAT_YUYV || format == PIPE_FORMAT_UYVY ||
-          format == PIPE_FORMAT_B8G8R8A8_UNORM || format == PIPE_FORMAT_B8G8R8X8_UNORM ||
-          format == PIPE_FORMAT_R8G8B8A8_UNORM || format == PIPE_FORMAT_R8G8B8X8_UNORM ||
-          format == PIPE_FORMAT_B10G10R10A2_UNORM || format == PIPE_FORMAT_B10G10R10X2_UNORM ||
-          format == PIPE_FORMAT_R10G10B10A2_UNORM || format == PIPE_FORMAT_R10G10B10X2_UNORM)
-         surf->templat.interlaced = false;
-      tmp_buf = drv->pipe->create_video_buffer(drv->pipe, &surf->templat);
-
-      if (!tmp_buf) {
-         mtx_unlock(&drv->mutex);
-         return VA_STATUS_ERROR_ALLOCATION_FAILED;
-      }
-
-      surf->buffer->destroy(surf->buffer);
-      surf->buffer = tmp_buf;
+      return VA_STATUS_ERROR_INVALID_IMAGE_FORMAT;
    }
 
    memset(view_resources, 0, sizeof(view_resources));
@@ -686,16 +624,6 @@ vlVaPutImage(VADriverContextP ctx, VASurfaceID surface, VAImageID image,
    for (i = 0; i < MIN2(vaimage->num_planes, 3); i++) {
       data[i] = ((uint8_t*)img_buf->data) + vaimage->offsets[i];
       pitches[i] = vaimage->pitches[i];
-   }
-   if (vaimage->format.fourcc == VA_FOURCC('I','4','2','0')) {
-      void *tmp_d;
-      unsigned tmp_p;
-      tmp_d  = data[1];
-      data[1] = data[2];
-      data[2] = tmp_d;
-      tmp_p = pitches[1];
-      pitches[1] = pitches[2];
-      pitches[2] = tmp_p;
    }
 
    for (i = 0; i < vaimage->num_planes; ++i) {
@@ -709,34 +637,10 @@ vlVaPutImage(VADriverContextP ctx, VASurfaceID surface, VAImageID image,
       for (j = 0; j < tex->array_size; ++j) {
          struct pipe_box dst_box;
          u_box_3d(0, 0, j, width, height, 1, &dst_box);
-
-         if (((format == PIPE_FORMAT_YV12) || (format == PIPE_FORMAT_IYUV))
-             && (surf->buffer->buffer_format == PIPE_FORMAT_NV12)
-             && i == 1) {
-            struct pipe_transfer *transfer = NULL;
-            uint8_t *map = NULL;
-
-            map = drv->pipe->texture_map(drv->pipe,
-                                          tex,
-                                          0,
-                                          PIPE_MAP_WRITE |
-                                          PIPE_MAP_DISCARD_RANGE,
-                                          &dst_box, &transfer);
-            if (map == NULL) {
-               mtx_unlock(&drv->mutex);
-               return VA_STATUS_ERROR_OPERATION_FAILED;
-            }
-
-            u_copy_nv12_from_yv12((const void * const*) data, pitches, i, j,
-                                  transfer->stride, tex->array_size,
-                                  map, dst_box.width, dst_box.height);
-            pipe_texture_unmap(drv->pipe, transfer);
-         } else {
-            drv->pipe->texture_subdata(drv->pipe, tex, 0,
-                                       PIPE_MAP_WRITE, &dst_box,
-                                       data[i] + pitches[i] * j,
-                                       pitches[i] * view_resources[i]->array_size, 0);
-         }
+         drv->pipe->texture_subdata(drv->pipe, tex, 0,
+                                    PIPE_MAP_WRITE, &dst_box,
+                                    data[i] + pitches[i] * j,
+                                    pitches[i] * view_resources[i]->array_size, 0);
       }
    }
    drv->pipe->flush(drv->pipe, NULL, 0);
