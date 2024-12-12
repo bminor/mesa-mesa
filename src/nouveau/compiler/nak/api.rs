@@ -15,6 +15,7 @@ use std::env;
 use std::ffi::{CStr, CString};
 use std::fmt::Write;
 use std::os::raw::c_void;
+use std::panic;
 use std::sync::OnceLock;
 
 #[repr(u8)]
@@ -376,8 +377,7 @@ macro_rules! pass {
     };
 }
 
-#[no_mangle]
-pub extern "C" fn nak_compile_shader(
+fn nak_compile_shader_internal(
     nir: *mut nir_shader,
     dump_asm: bool,
     nak: *const nak_compiler,
@@ -440,4 +440,18 @@ pub extern "C" fn nak_compile_shader(
     let bin =
         Box::new(ShaderBin::new(sm.as_ref(), &s.info, fs_key, code, &asm));
     Box::into_raw(bin) as *mut nak_shader_bin
+}
+
+#[no_mangle]
+pub extern "C" fn nak_compile_shader(
+    nir: *mut nir_shader,
+    dump_asm: bool,
+    nak: *const nak_compiler,
+    robust2_modes: nir_variable_mode,
+    fs_key: *const nak_fs_key,
+) -> *mut nak_shader_bin {
+    panic::catch_unwind(|| {
+        nak_compile_shader_internal(nir, dump_asm, nak, robust2_modes, fs_key)
+    })
+    .unwrap_or(std::ptr::null_mut())
 }

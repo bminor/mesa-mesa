@@ -557,6 +557,10 @@ nvk_compile_nir_with_nak(struct nvk_physical_device *pdev,
       robust2_modes |= nir_var_mem_ssbo;
 
    shader->nak = nak_compile_shader(nir, dump_asm, pdev->nak, robust2_modes, fs_key);
+
+   if (!shader->nak)
+      return vk_errorf(pdev, VK_ERROR_UNKNOWN, "Internal compiler error in NAK");
+
    shader->info = shader->nak->info;
    shader->code_ptr = shader->nak->code;
    shader->code_size = shader->nak->code_size;
