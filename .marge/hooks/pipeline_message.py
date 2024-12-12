@@ -281,7 +281,7 @@ async def process_single_job(session, project_id, job):
     if log_error_message:
         return f"{message}: {log_error_message}<br>"
 
-    return message
+    return f"{message}<br>"
 
 
 async def process_job_with_limit(session, project_id, job):
