@@ -282,6 +282,7 @@ get_features(const struct panvk_physical_device *device,
       .shaderStorageImageArrayDynamicIndexing = true,
       .shaderInt16 = true,
       .shaderInt64 = true,
+      .drawIndirectFirstInstance = true,
 
       /* Vulkan 1.1 */
       .storageBuffer16BitAccess = true,
