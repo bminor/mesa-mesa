@@ -2736,11 +2736,14 @@ trace_present(const struct wsi_wl_present_id *id,
    struct wsi_wl_swapchain *chain = id->chain;
    struct wsi_wl_surface *surface = chain->wsi_wl_surface;
 
+   if (!util_perfetto_is_tracing_enabled())
+      return;
+
    MESA_TRACE_SET_COUNTER(surface->analytics.latency_str,
                           (presentation_time - id->submission_time) / 1000000.0);
 
    /* Close the previous image display interval first, if there is one. */
-   if (surface->analytics.presenting && util_perfetto_is_tracing_enabled()) {
+   if (surface->analytics.presenting) {
       MESA_TRACE_TIMESTAMP_END(id->buffer->name,
                                surface->analytics.presentation_track_id,
                                chain->wsi_wl_surface->display->presentation_clock_id, presentation_time);
@@ -2748,12 +2751,10 @@ trace_present(const struct wsi_wl_present_id *id,
 
    surface->analytics.presenting = id->buffer->id;
 
-   if (util_perfetto_is_tracing_enabled()) {
-      MESA_TRACE_TIMESTAMP_BEGIN(id->buffer->name,
-                                 surface->analytics.presentation_track_id,
-                                 id->flow_id,
-                                 chain->wsi_wl_surface->display->presentation_clock_id, presentation_time);
-   }
+   MESA_TRACE_TIMESTAMP_BEGIN(id->buffer->name,
+                              surface->analytics.presentation_track_id,
+                              id->flow_id,
+                              chain->wsi_wl_surface->display->presentation_clock_id, presentation_time);
 }
 
 static void
