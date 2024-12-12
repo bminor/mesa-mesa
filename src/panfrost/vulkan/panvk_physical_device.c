@@ -672,13 +672,8 @@ get_device_properties(const struct panvk_instance *instance,
       /* Vulkan 1.1 properties */
       /* XXX: 1.1 support */
       .subgroupSize = 8,
-      .subgroupSupportedStages = VK_SHADER_STAGE_ALL,
-      .subgroupSupportedOperations =
-         VK_SUBGROUP_FEATURE_ARITHMETIC_BIT | VK_SUBGROUP_FEATURE_BALLOT_BIT |
-         VK_SUBGROUP_FEATURE_BASIC_BIT | VK_SUBGROUP_FEATURE_CLUSTERED_BIT |
-         VK_SUBGROUP_FEATURE_QUAD_BIT | VK_SUBGROUP_FEATURE_SHUFFLE_BIT |
-         VK_SUBGROUP_FEATURE_SHUFFLE_RELATIVE_BIT |
-         VK_SUBGROUP_FEATURE_VOTE_BIT,
+      .subgroupSupportedStages = 0,
+      .subgroupSupportedOperations = 0,
       .subgroupQuadOperationsInAllStages = false,
       .pointClippingBehavior = VK_POINT_CLIPPING_BEHAVIOR_ALL_CLIP_PLANES,
       .maxMultiviewViewCount = arch >= 10 ? 8 : 0,
