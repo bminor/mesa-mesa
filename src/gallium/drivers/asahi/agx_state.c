@@ -4242,10 +4242,7 @@ agx_needs_passthrough_gs(struct agx_context *ctx,
    /* Rendering adjacency requires a GS, add a passthrough since we don't have
     * one.
     */
-   if (info->mode == MESA_PRIM_LINES_ADJACENCY ||
-       info->mode == MESA_PRIM_TRIANGLES_ADJACENCY ||
-       info->mode == MESA_PRIM_TRIANGLE_STRIP_ADJACENCY ||
-       info->mode == MESA_PRIM_LINE_STRIP_ADJACENCY) {
+   if (mesa_prim_has_adjacency(info->mode)) {
       perf_debug_ctx(ctx, "Using passthrough GS due to adjacency primitives");
       return true;
    }
