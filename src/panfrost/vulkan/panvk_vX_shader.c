@@ -895,6 +895,10 @@ panvk_compile_shader(struct panvk_device *dev,
       .view_mask = (state && state->rp) ? state->rp->view_mask : 0,
    };
 
+   if (info->stage == MESA_SHADER_FRAGMENT && state != NULL &&
+       state->ms != NULL && state->ms->sample_shading_enable)
+      nir->info.fs.uses_sample_shading = true;
+
    panvk_lower_nir(dev, nir, info->set_layout_count, info->set_layouts,
                    info->robustness, &inputs, shader);
 
@@ -911,10 +915,6 @@ panvk_compile_shader(struct panvk_device *dev,
       panvk_shader_destroy(&dev->vk, &shader->vk, pAllocator);
       return result;
    }
-
-   if (info->stage == MESA_SHADER_FRAGMENT && state != NULL &&
-       state->ms != NULL && state->ms->sample_shading_enable)
-      shader->info.fs.sample_shading = true;
 
    *shader_out = &shader->vk;
 
