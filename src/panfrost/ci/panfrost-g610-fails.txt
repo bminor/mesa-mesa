@@ -443,11 +443,11 @@ dEQP-VK.dynamic_rendering.primary_cmd_buff.random.seed4_multiview,Crash
 dEQP-VK.dynamic_rendering.primary_cmd_buff.random.seed40_multiview,Crash
 dEQP-VK.dynamic_rendering.primary_cmd_buff.random.seed41_multiview,Crash
 dEQP-VK.dynamic_rendering.primary_cmd_buff.random.seed42_multiview,Crash
-dEQP-VK.dynamic_rendering.primary_cmd_buff.random.seed43_multiview,Timeout
+dEQP-VK.dynamic_rendering.primary_cmd_buff.random.seed43_multiview,Crash
 dEQP-VK.dynamic_rendering.primary_cmd_buff.random.seed44_multiview,Crash
 dEQP-VK.dynamic_rendering.primary_cmd_buff.random.seed45_multiview,Crash
 dEQP-VK.dynamic_rendering.primary_cmd_buff.random.seed46_multiview,Crash
-dEQP-VK.dynamic_rendering.primary_cmd_buff.random.seed47_multiview,Timeout
+dEQP-VK.dynamic_rendering.primary_cmd_buff.random.seed47_multiview,Crash
 dEQP-VK.dynamic_rendering.primary_cmd_buff.random.seed48_multiview,Crash
 dEQP-VK.dynamic_rendering.primary_cmd_buff.random.seed49_multiview,Crash
 dEQP-VK.dynamic_rendering.primary_cmd_buff.random.seed5_multiview,Crash
