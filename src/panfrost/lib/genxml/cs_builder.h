@@ -1983,7 +1983,7 @@ cs_trace_run_idvs(struct cs_builder *b, const struct cs_tracing_ctx *ctx,
       cs_store32(b, draw_id, tracebuf_addr,
                  cs_trace_field_offset(run_idvs, draw_id));
 
-   for (unsigned i = 0; i < 48; i++)
+   for (unsigned i = 0; i < 48; i += 16)
       cs_store(b, cs_reg_tuple(b, i, 16), tracebuf_addr, BITFIELD_MASK(16),
                cs_trace_field_offset(run_idvs, sr[i]));
    cs_store(b, cs_reg_tuple(b, 48, 13), tracebuf_addr, BITFIELD_MASK(13),
@@ -2019,7 +2019,7 @@ cs_trace_run_compute(struct cs_builder *b, const struct cs_tracing_ctx *ctx,
    cs_run_compute(b, task_increment, task_axis, progress_inc, res_sel);
    cs_store64(b, data, tracebuf_addr, cs_trace_field_offset(run_compute, ip));
 
-   for (unsigned i = 0; i < 32; i++)
+   for (unsigned i = 0; i < 32; i += 16)
       cs_store(b, cs_reg_tuple(b, i, 16), tracebuf_addr, BITFIELD_MASK(16),
                cs_trace_field_offset(run_compute, sr[i]));
    cs_store(b, cs_reg_tuple(b, 32, 8), tracebuf_addr, BITFIELD_MASK(8),
@@ -2051,7 +2051,7 @@ cs_trace_run_compute_indirect(struct cs_builder *b,
    cs_run_compute_indirect(b, wg_per_task, progress_inc, res_sel);
    cs_store64(b, data, tracebuf_addr, cs_trace_field_offset(run_compute, ip));
 
-   for (unsigned i = 0; i < 32; i++)
+   for (unsigned i = 0; i < 32; i += 16)
       cs_store(b, cs_reg_tuple(b, i, 16), tracebuf_addr, BITFIELD_MASK(16),
                cs_trace_field_offset(run_compute, sr[i]));
    cs_store(b, cs_reg_tuple(b, 32, 8), tracebuf_addr, BITFIELD_MASK(8),
