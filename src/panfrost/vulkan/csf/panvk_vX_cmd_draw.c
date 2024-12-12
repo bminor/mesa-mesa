@@ -233,7 +233,7 @@ prepare_sysvals(struct panvk_cmd_buffer *cmdbuf)
 
    if (gfx_state_dirty(cmdbuf, RENDER_STATE)) {
       sysvals->fs.multisampled = fbinfo->nr_samples > 1;
-      cmdbuf->state.gfx.push_uniforms = 0;
+      gfx_state_set_dirty(cmdbuf, PUSH_UNIFORMS);
    }
 
    if (dyn_gfx_state_dirty(cmdbuf, CB_BLEND_CONSTANTS)) {
