@@ -2954,6 +2954,10 @@ static void handle_reset_query_pool(struct vk_cmd_queue_entry *cmd,
 {
    struct vk_cmd_reset_query_pool *qcmd = &cmd->u.reset_query_pool;
    LVP_FROM_HANDLE(lvp_query_pool, pool, qcmd->query_pool);
+
+   if (pool->base_type >= PIPE_QUERY_TYPES)
+      return;
+
    for (unsigned i = qcmd->first_query; i < qcmd->first_query + qcmd->query_count; i++) {
       if (pool->queries[i]) {
          state->pctx->destroy_query(state->pctx, pool->queries[i]);
