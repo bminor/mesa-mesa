@@ -464,6 +464,15 @@ bi_copy_component(bi_builder *b, nir_intrinsic_instr *instr, bi_index tmp)
 static void
 bi_emit_load_attr(bi_builder *b, nir_intrinsic_instr *instr)
 {
+   bi_index vertex_id =
+      instr->intrinsic == nir_intrinsic_load_attribute_pan ?
+         bi_src_index(&instr->src[0]) :
+         bi_vertex_id(b);
+   bi_index instance_id =
+      instr->intrinsic == nir_intrinsic_load_attribute_pan ?
+         bi_src_index(&instr->src[1]) :
+         bi_instance_id(b);
+
    /* Disregard the signedness of an integer, since loading 32-bits into a
     * 32-bit register should be bit exact so should not incur any clamping.
     *
@@ -487,7 +496,7 @@ bi_emit_load_attr(bi_builder *b, nir_intrinsic_instr *instr)
    bi_instr *I;
 
    if (immediate) {
-      I = bi_ld_attr_imm_to(b, dest, bi_vertex_id(b), bi_instance_id(b), regfmt,
+      I = bi_ld_attr_imm_to(b, dest, vertex_id, instance_id, regfmt,
                             vecsize, pan_res_handle_get_index(imm_index));
 
       if (b->shader->arch >= 9)
@@ -500,8 +509,7 @@ bi_emit_load_attr(bi_builder *b, nir_intrinsic_instr *instr)
       else if (base != 0)
          idx = bi_iadd_u32(b, idx, bi_imm_u32(base), false);
 
-      I = bi_ld_attr_to(b, dest, bi_vertex_id(b), bi_instance_id(b), idx,
-                        regfmt, vecsize);
+      I = bi_ld_attr_to(b, dest, vertex_id, instance_id, idx, regfmt, vecsize);
    }
 
    bi_copy_component(b, instr, dest);
@@ -1746,6 +1754,11 @@ bi_emit_intrinsic(bi_builder *b, nir_intrinsic_instr *instr)
    case nir_intrinsic_load_barycentric_at_offset:
       /* handled later via load_vary */
       break;
+   case nir_intrinsic_load_attribute_pan:
+      assert(stage == MESA_SHADER_VERTEX);
+      bi_emit_load_attr(b, instr);
+      break;
+
    case nir_intrinsic_load_interpolated_input:
    case nir_intrinsic_load_input:
       if (b->shader->inputs->is_blend)
