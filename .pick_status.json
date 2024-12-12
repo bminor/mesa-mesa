@@ -834,7 +834,7 @@
         "description": "blorp: use 2D dimension for 1D tiled images",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "31eeb72e45be6ef943df0b60f3cd7a646fa7b349",
         "notes": null
