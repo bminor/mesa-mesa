@@ -1601,7 +1601,7 @@ prepare_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
       prepare_tiler_primitive_size(cmdbuf);
 
       if (gfx_state_dirty(cmdbuf, OQ))
-         cs_move64_to(b, cs_reg64(b, 46),
+         cs_move64_to(b, cs_sr_reg64(b, 46),
                       cmdbuf->state.gfx.occlusion_query.ptr);
    }
 
