@@ -763,6 +763,7 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
    case nir_intrinsic_load_line_coord:
    case nir_intrinsic_load_frag_coord:
    case nir_intrinsic_load_frag_coord_zw:
+   case nir_intrinsic_load_frag_coord_zw_pan:
    case nir_intrinsic_load_frag_coord_unscaled_ir3:
    case nir_intrinsic_load_pixel_coord:
    case nir_intrinsic_load_fully_covered:

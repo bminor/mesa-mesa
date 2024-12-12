@@ -1504,6 +1504,11 @@ store("raw_output_pan", [], [IO_SEMANTICS, BASE])
 store("combined_output_pan", [1, 1, 1, 4], [IO_SEMANTICS, COMPONENT, SRC_TYPE, DEST_TYPE])
 load("raw_output_pan", [1], [IO_SEMANTICS], [CAN_ELIMINATE, CAN_REORDER])
 
+# Like the frag_coord_zw intrinsic, but takes a barycentric. This is needed for
+# noperspective lowering.
+# src[] = { barycoord }
+intrinsic("load_frag_coord_zw_pan", [2], dest_comp=1, indices=[COMPONENT], flags=[CAN_ELIMINATE, CAN_REORDER], bit_sizes=[32])
+
 # Loads the sampler paramaters <min_lod, max_lod, lod_bias>
 # src[] = { sampler_index }
 load("sampler_lod_parameters_pan", [1], flags=[CAN_ELIMINATE, CAN_REORDER])

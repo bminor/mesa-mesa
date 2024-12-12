@@ -1654,11 +1654,21 @@ bi_emit_atomic_i32_to(bi_builder *b, bi_index dst, bi_index addr, bi_index arg,
 }
 
 static void
-bi_emit_load_frag_coord_zw(bi_builder *b, bi_index dst, unsigned channel)
+bi_emit_load_frag_coord_zw_pan(bi_builder *b, nir_intrinsic_instr *instr)
 {
+   bi_index dst = bi_def_index(&instr->def);
+   unsigned channel = nir_intrinsic_component(instr);
+   nir_intrinsic_instr *bary = nir_src_as_intrinsic(instr->src[0]);
+
+   enum bi_sample sample = bi_interp_for_intrinsic(bary->intrinsic);
+   bi_index src0 = bi_varying_src0_for_barycentric(b, bary);
+
+   /* .explicit is not supported with frag_z */
+   if (channel == 2)
+      assert(sample != BI_SAMPLE_EXPLICIT);
+
    bi_ld_var_special_to(
-      b, dst, bi_zero(), BI_REGISTER_FORMAT_F32, BI_SAMPLE_CENTER,
-      BI_UPDATE_CLOBBER,
+      b, dst, src0, BI_REGISTER_FORMAT_F32, sample, BI_UPDATE_CLOBBER,
       (channel == 2) ? BI_VARYING_NAME_FRAG_Z : BI_VARYING_NAME_FRAG_W,
       BI_VECSIZE_NONE);
 }
@@ -1904,8 +1914,8 @@ bi_emit_intrinsic(bi_builder *b, nir_intrinsic_instr *instr)
       bi_mov_i32_to(b, dst, bi_preload(b, 59));
       break;
 
-   case nir_intrinsic_load_frag_coord_zw:
-      bi_emit_load_frag_coord_zw(b, dst, nir_intrinsic_component(instr));
+   case nir_intrinsic_load_frag_coord_zw_pan:
+      bi_emit_load_frag_coord_zw_pan(b, instr);
       break;
 
    case nir_intrinsic_load_converted_output_pan:
@@ -5334,6 +5344,7 @@ bifrost_preprocess_nir(nir_shader *nir, unsigned gpu_id)
    NIR_PASS(_, nir, nir_lower_var_copies);
    NIR_PASS(_, nir, nir_lower_alu);
    NIR_PASS(_, nir, nir_lower_frag_coord_to_pixel_coord);
+   NIR_PASS(_, nir, pan_nir_lower_frag_coord_zw);
 }
 
 static bi_context *
