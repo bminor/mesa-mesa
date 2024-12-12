@@ -384,6 +384,12 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
          is_divergent = true;
       }
       break;
+   case nir_intrinsic_load_attribute_pan:
+      assert(stage == MESA_SHADER_VERTEX);
+      is_divergent = src_divergent(instr->src[0], state) ||
+                     src_divergent(instr->src[1], state) ||
+                     src_divergent(instr->src[2], state);
+      break;
    case nir_intrinsic_load_per_vertex_input:
       is_divergent = src_divergent(instr->src[0], state) ||
                      src_divergent(instr->src[1], state);

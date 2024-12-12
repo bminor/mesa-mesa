@@ -1476,6 +1476,12 @@ intrinsic("prefetch_sam_ir3", [1, 1], flags=[CAN_REORDER])
 intrinsic("prefetch_tex_ir3", [1], flags=[CAN_REORDER])
 intrinsic("prefetch_ubo_ir3", [1], flags=[CAN_REORDER])
 
+# Panfrost-specific intrinsic for loading vertex attributes. Takes explicit
+# vertex and instance IDs which we need in order to implement vertex attribute
+# divisor with non-zero base instance on v9+.
+# src[] = { vertex_id, instance_id, offset }
+load("attribute_pan", [1, 1, 1], [BASE, COMPONENT, DEST_TYPE, IO_SEMANTICS], [CAN_ELIMINATE, CAN_REORDER])
+
 # Intrinsics used by the Midgard/Bifrost blend pipeline. These are defined
 # within a blend shader to read/write the raw value from the tile buffer,
 # without applying any format conversion in the process. If the shader needs

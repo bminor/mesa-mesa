@@ -2870,6 +2870,7 @@ nir_get_io_offset_src_number(const nir_intrinsic_instr *instr)
    case nir_intrinsic_store_per_vertex_output:
    case nir_intrinsic_store_per_view_output:
    case nir_intrinsic_store_per_primitive_output:
+   case nir_intrinsic_load_attribute_pan:
       return 2;
    default:
       return -1;

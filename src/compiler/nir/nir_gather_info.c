@@ -543,6 +543,7 @@ gather_intrinsic_info(nir_intrinsic_instr *instr, nir_shader *shader,
    case nir_intrinsic_load_input_vertex:
    case nir_intrinsic_load_interpolated_input:
    case nir_intrinsic_load_per_primitive_input:
+   case nir_intrinsic_load_attribute_pan:
       if (shader->info.stage == MESA_SHADER_TESS_EVAL &&
           instr->intrinsic == nir_intrinsic_load_input &&
           !is_patch_special) {
