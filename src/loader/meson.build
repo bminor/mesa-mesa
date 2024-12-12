@@ -34,6 +34,7 @@ if with_platform_wayland
   libloader_wayland_helper = static_library(
     'loader_wayland_helper',
     'loader_wayland_helper.c',
+    wp_files['presentation-time'],
     gnu_symbol_visibility : 'hidden',
     include_directories : [inc_include, inc_src, inc_gallium],
     dependencies : [

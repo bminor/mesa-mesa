@@ -25,18 +25,40 @@
 
 #include <util/timespec.h>
 #include <wayland-client.h>
+#include "presentation-time-client-protocol.h"
+#include "util/list.h"
+
+struct loader_wayland_presentation_feedback_data;
 
 struct loader_wayland_buffer {
    struct wl_buffer *buffer;
    uint32_t id;
    uint64_t flow_id;
+   uint64_t acquisition_time;
    char *name;
+};
+
+struct loader_wayland_surface_analytics {
+   char *latency_str;
+   uint64_t presenting;
+   uint64_t presentation_track_id;
 };
 
 struct loader_wayland_surface {
    struct wl_surface *surface;
    struct wl_surface *wrapper;
    uint32_t id;
+   struct loader_wayland_surface_analytics analytics;
+};
+
+struct loader_wayland_presentation {
+   struct wp_presentation *presentation;
+   clockid_t clock_id;
+   struct loader_wayland_surface *wayland_surface;
+   void (*presented_callback)(void *data, uint64_t pres_time, uint32_t refresh);
+   void (*discarded_callback)(void *data);
+   void (*teardown_callback)(void *data);
+   struct list_head outstanding_list;
 };
 
 #ifndef HAVE_WL_DISPATCH_QUEUE_TIMEOUT
@@ -74,5 +96,23 @@ loader_wayland_wrap_surface(struct loader_wayland_surface *lws,
 
 void
 loader_wayland_surface_destroy(struct loader_wayland_surface *lws);
+
+void
+loader_wayland_wrap_presentation(struct loader_wayland_presentation *lwp,
+                                 struct wp_presentation *wp_presentation,
+                                 struct wl_event_queue *queue,
+                                 clockid_t presentation_clock_id,
+                                 struct loader_wayland_surface *lws,
+                                 void (*presented_callback)(void *data, uint64_t pres_time, uint32_t refresh),
+                                 void (*discarded_callback)(void *data),
+                                 void (*teardown_callback)(void *data));
+
+void
+loader_wayland_presentation_destroy(struct loader_wayland_presentation *lwp);
+
+void
+loader_wayland_presentation_feedback(struct loader_wayland_presentation *pres,
+                                     struct loader_wayland_buffer *lwb,
+                                     void *callback_data);
 
 #endif

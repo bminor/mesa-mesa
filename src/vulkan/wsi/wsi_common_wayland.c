@@ -182,13 +182,6 @@ struct wsi_wl_surface {
    struct loader_wayland_surface wayland_surface;
    struct wsi_wl_display *display;
 
-   /* This has no functional use, and is here only for perfetto */
-   struct {
-      char *latency_str;
-      uint64_t presenting;
-      uint64_t presentation_track_id;
-   } analytics;
-
    struct zwp_linux_dmabuf_feedback_v1 *wl_dmabuf_feedback;
    struct dmabuf_feedback dmabuf_feedback, pending_dmabuf_feedback;
 
@@ -238,10 +231,10 @@ struct wsi_wl_swapchain {
       uint64_t prev_max_present_id;
       uint64_t outstanding_count;
 
-      struct wl_list outstanding_list;
+      struct wl_list fallback_frame_list;
       struct u_cnd_monotonic list_advanced;
       struct wl_event_queue *queue;
-      struct wp_presentation *wp_presentation;
+      struct loader_wayland_presentation wayland_presentation;
       /* Fallback when wp_presentation is not supported */
       struct wl_surface *surface;
       bool dispatch_in_progress;
@@ -1996,15 +1989,6 @@ wsi_wl_surface_get_present_rectangles(VkIcdSurfaceBase *surface,
    return vk_outarray_status(&out);
 }
 
-static void
-wsi_wl_surface_analytics_fini(struct wsi_wl_surface *wsi_wl_surface,
-                              const VkAllocationCallbacks *parent_pAllocator,
-                              const VkAllocationCallbacks *pAllocator)
-{
-   vk_free2(parent_pAllocator, pAllocator,
-            wsi_wl_surface->analytics.latency_str);
-}
-
 void
 wsi_wl_surface_destroy(VkIcdSurfaceBase *icd_surface, VkInstance _instance,
                        const VkAllocationCallbacks *pAllocator)
@@ -2029,8 +2013,6 @@ wsi_wl_surface_destroy(VkIcdSurfaceBase *icd_surface, VkInstance _instance,
 
    if (wsi_wl_surface->display)
       wsi_wl_display_destroy(wsi_wl_surface->display);
-
-   wsi_wl_surface_analytics_fini(wsi_wl_surface, &instance->alloc, pAllocator);
 
    vk_free2(&instance->alloc, pAllocator, wsi_wl_surface);
 }
@@ -2245,25 +2227,6 @@ fail:
    return VK_ERROR_OUT_OF_HOST_MEMORY;
 }
 
-static void
-wsi_wl_surface_analytics_init(struct wsi_wl_surface *wsi_wl_surface,
-                              const VkAllocationCallbacks *pAllocator)
-{
-   uint64_t wl_id;
-   char *track_name;
-
-   wl_id = wsi_wl_surface->wayland_surface.id;
-   track_name = vk_asprintf(pAllocator, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT,
-                            "wl%" PRIu64 " presentation", wl_id);
-   wsi_wl_surface->analytics.presentation_track_id = util_perfetto_new_track(track_name);
-   vk_free(pAllocator, track_name);
-
-   wsi_wl_surface->analytics.latency_str =
-      vk_asprintf(pAllocator,
-                  VK_SYSTEM_ALLOCATION_SCOPE_OBJECT,
-                  "wl%" PRIu64 " latency", wl_id);
-}
-
 static VkResult wsi_wl_surface_init(struct wsi_wl_surface *wsi_wl_surface,
                                     struct wsi_device *wsi_device,
                                     const VkAllocationCallbacks *pAllocator)
@@ -2309,8 +2272,6 @@ static VkResult wsi_wl_surface_init(struct wsi_wl_surface *wsi_wl_surface,
          goto fail;
    }
 
-   wsi_wl_surface_analytics_init(wsi_wl_surface, pAllocator);
-
    return VK_SUCCESS;
 
 fail:
@@ -2353,7 +2314,6 @@ wsi_CreateWaylandSurfaceKHR(VkInstance _instance,
 }
 
 struct wsi_wl_present_id {
-   struct wp_presentation_feedback *feedback;
    /* Fallback when wp_presentation is not supported.
     * Using frame callback is not the intended way to achieve
     * this, but it is the best effort alternative when the proper interface is
@@ -2362,7 +2322,6 @@ struct wsi_wl_present_id {
    struct wl_callback *frame;
    uint64_t present_id;
    uint64_t flow_id;
-   struct loader_wayland_buffer *buffer;
    uint64_t submission_time;
    const VkAllocationCallbacks *alloc;
    struct wsi_wl_swapchain *chain;
@@ -2709,13 +2668,6 @@ wsi_wl_swapchain_acquire_next_image_implicit(struct wsi_swapchain *wsi_chain,
 }
 
 static void
-presentation_handle_sync_output(void *data,
-                                struct wp_presentation_feedback *feedback,
-                                struct wl_output *output)
-{
-}
-
-static void
 wsi_wl_presentation_update_present_id(struct wsi_wl_present_id *id)
 {
    mtx_lock(&id->chain->present_ids.lock);
@@ -2724,61 +2676,18 @@ wsi_wl_presentation_update_present_id(struct wsi_wl_present_id *id)
       id->chain->present_ids.max_completed = id->present_id;
 
    id->chain->present_ids.display_time_correction -= id->correction;
-   wl_list_remove(&id->link);
    mtx_unlock(&id->chain->present_ids.lock);
    vk_free(id->alloc, id);
 }
 
 static void
-trace_present(const struct wsi_wl_present_id *id,
-              uint64_t presentation_time)
-{
-   struct wsi_wl_swapchain *chain = id->chain;
-   struct wsi_wl_surface *surface = chain->wsi_wl_surface;
-
-   if (!util_perfetto_is_tracing_enabled())
-      return;
-
-   MESA_TRACE_SET_COUNTER(surface->analytics.latency_str,
-                          (presentation_time - id->submission_time) / 1000000.0);
-
-   /* Close the previous image display interval first, if there is one. */
-   if (surface->analytics.presenting) {
-      MESA_TRACE_TIMESTAMP_END(id->buffer->name,
-                               surface->analytics.presentation_track_id,
-                               chain->wsi_wl_surface->display->presentation_clock_id, presentation_time);
-   }
-
-   surface->analytics.presenting = id->buffer->id;
-
-   MESA_TRACE_TIMESTAMP_BEGIN(id->buffer->name,
-                              surface->analytics.presentation_track_id,
-                              id->flow_id,
-                              chain->wsi_wl_surface->display->presentation_clock_id, presentation_time);
-}
-
-static void
 presentation_handle_presented(void *data,
-                              struct wp_presentation_feedback *feedback,
-                              uint32_t tv_sec_hi, uint32_t tv_sec_lo,
-                              uint32_t tv_nsec, uint32_t refresh,
-                              uint32_t seq_hi, uint32_t seq_lo,
-                              uint32_t flags)
+                              uint64_t presentation_time,
+                              uint32_t refresh)
 {
    struct wsi_wl_present_id *id = data;
-   struct timespec presentation_ts;
-   uint64_t presentation_time;
-
-   MESA_TRACE_FUNC_FLOW(&id->flow_id);
-
    struct wsi_wl_swapchain *chain = id->chain;
    uint64_t target_time = id->target_time;
-
-
-   presentation_ts.tv_sec = ((uint64_t)tv_sec_hi << 32) + tv_sec_lo;
-   presentation_ts.tv_nsec = tv_nsec;
-   presentation_time = timespec_to_nsec(&presentation_ts);
-   trace_present(id, presentation_time);
 
    mtx_lock(&chain->present_ids.lock);
    chain->present_ids.refresh_nsec = refresh;
@@ -2798,16 +2707,12 @@ presentation_handle_presented(void *data,
    mtx_unlock(&chain->present_ids.lock);
 
    wsi_wl_presentation_update_present_id(id);
-   wp_presentation_feedback_destroy(feedback);
 }
 
 static void
-presentation_handle_discarded(void *data,
-                              struct wp_presentation_feedback *feedback)
+presentation_handle_discarded(void *data)
 {
    struct wsi_wl_present_id *id = data;
-
-   MESA_TRACE_FUNC_FLOW(&id->flow_id);
    struct wsi_wl_swapchain *chain = id->chain;
 
    mtx_lock(&chain->present_ids.lock);
@@ -2821,20 +2726,26 @@ presentation_handle_discarded(void *data,
    mtx_unlock(&chain->present_ids.lock);
 
    wsi_wl_presentation_update_present_id(id);
-   wp_presentation_feedback_destroy(feedback);
 }
 
-static const struct wp_presentation_feedback_listener
-      pres_feedback_listener = {
-   presentation_handle_sync_output,
-   presentation_handle_presented,
-   presentation_handle_discarded,
-};
+static void
+presentation_handle_teardown(void *data)
+{
+   struct wsi_wl_present_id *id = data;
+
+   vk_free(id->alloc, id);
+}
 
 static void
 presentation_frame_handle_done(void *data, struct wl_callback *callback, uint32_t serial)
 {
    struct wsi_wl_present_id *id = data;
+   struct wsi_wl_swapchain *chain = id->chain;
+
+   mtx_lock(&chain->present_ids.lock);
+   wl_list_remove(&id->link);
+   mtx_unlock(&chain->present_ids.lock);
+
    wsi_wl_presentation_update_present_id(id);
    wl_callback_destroy(callback);
 }
@@ -3030,13 +2941,6 @@ wsi_wl_swapchain_queue_present(struct wsi_swapchain *wsi_chain,
       id->chain = chain;
       id->present_id = present_id;
       id->alloc = chain->wsi_wl_surface->display->wsi_wl->alloc;
-      id->buffer = &chain->images[image_index].wayland_buffer;
-      /* The buffer can be reused for another flow before the feedback event
-       * arrives, so we need a copy.
-       */
-      id->flow_id = id->buffer->flow_id;
-
-      id->submission_time = os_time_get_nano();
 
       mtx_lock(&chain->present_ids.lock);
 
@@ -3044,14 +2948,13 @@ wsi_wl_swapchain_queue_present(struct wsi_swapchain *wsi_chain,
          timestamped = set_timestamp(chain, &id->target_time, &id->correction);
 
       if (!chain->present_ids.frame_fallback) {
-         id->feedback = wp_presentation_feedback(chain->present_ids.wp_presentation,
-                                                 chain->wsi_wl_surface->wayland_surface.wrapper);
-         wp_presentation_feedback_add_listener(id->feedback,
-                                               &pres_feedback_listener,
-                                               id);
+         loader_wayland_presentation_feedback(&chain->present_ids.wayland_presentation,
+                                              &chain->images[image_index].wayland_buffer,
+                                              id);
       } else {
          id->frame = wl_surface_frame(chain->present_ids.surface);
          wl_callback_add_listener(id->frame, &pres_frame_listener, id);
+         wl_list_insert(&chain->present_ids.fallback_frame_list, &id->link);
       }
 
       chain->present_ids.prev_max_present_id = chain->present_ids.max_present_id;
@@ -3069,7 +2972,6 @@ wsi_wl_swapchain_queue_present(struct wsi_swapchain *wsi_chain,
       }
 
       chain->present_ids.outstanding_count++;
-      wl_list_insert(&chain->present_ids.outstanding_list, &id->link);
       mtx_unlock(&chain->present_ids.lock);
    }
 
@@ -3359,17 +3261,14 @@ wsi_wl_swapchain_chain_free(struct wsi_wl_swapchain *chain,
     * Waiting for the swapchain fence is enough.
     * Just clean up anything user did not wait for. */
    struct wsi_wl_present_id *id, *tmp;
-   wl_list_for_each_safe(id, tmp, &chain->present_ids.outstanding_list, link) {
-      if (id->feedback)
-         wp_presentation_feedback_destroy(id->feedback);
-      if (id->frame)
-         wl_callback_destroy(id->frame);
+   wl_list_for_each_safe(id, tmp, &chain->present_ids.fallback_frame_list, link) {
+      wl_callback_destroy(id->frame);
       wl_list_remove(&id->link);
       vk_free(id->alloc, id);
    }
 
-   if (chain->present_ids.wp_presentation)
-      wl_proxy_wrapper_destroy(chain->present_ids.wp_presentation);
+   loader_wayland_presentation_destroy(&chain->present_ids.wayland_presentation);
+
    if (chain->present_ids.surface)
       wl_proxy_wrapper_destroy(chain->present_ids.surface);
    u_cnd_monotonic_destroy(&chain->present_ids.list_advanced);
@@ -3437,7 +3336,7 @@ wsi_wl_surface_create_swapchain(VkIcdSurfaceBase *icd_surface,
    if (chain == NULL)
       return VK_ERROR_OUT_OF_HOST_MEMORY;
 
-   wl_list_init(&chain->present_ids.outstanding_list);
+   wl_list_init(&chain->present_ids.fallback_frame_list);
 
    /* We are taking ownership of the wsi_wl_surface, so remove ownership from
     * oldSwapchain. If the surface is currently owned by a swapchain that is
@@ -3625,10 +3524,14 @@ wsi_wl_surface_create_swapchain(VkIcdSurfaceBase *icd_surface,
 
    if (chain->wsi_wl_surface->display->wp_presentation_notwrapped) {
       chain->present_ids.frame_fallback = false;
-      chain->present_ids.wp_presentation =
-            wl_proxy_create_wrapper(chain->wsi_wl_surface->display->wp_presentation_notwrapped);
-      wl_proxy_set_queue((struct wl_proxy *) chain->present_ids.wp_presentation,
-                         chain->present_ids.queue);
+      loader_wayland_wrap_presentation(&chain->present_ids.wayland_presentation,
+                                       chain->wsi_wl_surface->display->wp_presentation_notwrapped,
+                                       chain->present_ids.queue,
+                                       chain->wsi_wl_surface->display->presentation_clock_id,
+                                       &chain->wsi_wl_surface->wayland_surface,
+                                       presentation_handle_presented,
+                                       presentation_handle_discarded,
+                                       presentation_handle_teardown);
    } else {
       /* Fallback to frame callbacks when presentation protocol is not available.
        * We already have a proxy for the surface, but need another since
