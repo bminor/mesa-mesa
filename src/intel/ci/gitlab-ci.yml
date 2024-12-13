@@ -8,7 +8,6 @@ anv-jsl:
   variables:
     DEQP_SUITE: anv-jsl
     VK_DRIVER: intel
-    DEQP_FRACTION: 2
   parallel: 5
 
 # We don't enable a full run of anv-jsl nightly because it's about 8 hours of
