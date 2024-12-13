@@ -330,7 +330,7 @@ panvk_per_arch(cmd_prepare_push_descs)(struct panvk_cmd_buffer *cmdbuf,
 
       if (!(used_set_mask & BITFIELD_BIT(i)) || !push_set ||
           desc_state->sets[i] != push_set || push_set->descs.dev ||
-	  !BITSET_TEST(desc_state->dirty_push_sets, i))
+          !BITSET_TEST(desc_state->dirty_push_sets, i))
          continue;
 
       struct panfrost_ptr ptr = panvk_cmd_alloc_dev_mem(
