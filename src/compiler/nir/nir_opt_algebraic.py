@@ -890,6 +890,12 @@ optimizations.extend([
    (('fmin', ('fmin', ('fmin', a, b), c), a), ('fmin', ('fmin', a, b), c)),
    (('umin', ('umin', ('umin', a, b), c), a), ('umin', ('umin', a, b), c)),
    (('imin', ('imin', ('imin', a, b), c), a), ('imin', ('imin', a, b), c)),
+   (('fmin', ('fmax', 'a(is_finite)', b), a), ('fmul', 1.0, a)),
+   (('fmax', ('fmin', 'a(is_finite)', b), a), ('fmul', 1.0, a)),
+   (('umin', ('umax', a, b), a), a),
+   (('umax', ('umin', a, b), a), a),
+   (('imin', ('imax', a, b), a), a),
+   (('imax', ('imin', a, b), a), a),
 ])
 
 for N in [8, 16, 32, 64]:
