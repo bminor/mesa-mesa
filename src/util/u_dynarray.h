@@ -200,6 +200,7 @@ util_dynarray_append_dynarray(struct util_dynarray *buf,
 }
 
 #define util_dynarray_append(buf, type, v) do {type __v = (v); memcpy(util_dynarray_grow_bytes((buf), 1, sizeof(type)), &__v, sizeof(type));} while(0)
+#define util_dynarray_append_array(buf, type, v, count) do {memcpy(util_dynarray_grow_bytes((buf), count, sizeof(type)), v, sizeof(type) * count);} while(0)
 /* Returns a pointer to the space of the first new element (in case of growth) or NULL on failure. */
 #define util_dynarray_resize(buf, type, nelts) util_dynarray_resize_bytes(buf, (nelts), sizeof(type))
 #define util_dynarray_grow(buf, type, ngrow) util_dynarray_grow_bytes(buf, (ngrow), sizeof(type))
