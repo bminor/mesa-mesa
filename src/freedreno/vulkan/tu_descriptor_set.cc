@@ -72,13 +72,6 @@ descriptor_size(struct tu_device *dev,
    }
 }
 
-static bool
-is_dynamic(VkDescriptorType type)
-{
-   return type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC ||
-          type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-}
-
 static uint32_t
 mutable_descriptor_size(struct tu_device *dev,
                         const VkMutableDescriptorTypeListEXT *list)
@@ -260,7 +253,7 @@ tu_CreateDescriptorSetLayout(
 
       uint32_t size =
          ALIGN_POT(set_layout->binding[b].array_size * set_layout->binding[b].size, 4 * A6XX_TEX_CONST_DWORDS);
-      if (is_dynamic(binding->descriptorType)) {
+      if (vk_descriptor_type_is_dynamic(binding->descriptorType)) {
          dynamic_offset_size += size;
       } else {
          set_layout->size += size;
@@ -352,7 +345,7 @@ tu_GetDescriptorSetLayoutSupport(
 
       uint64_t descriptor_sz;
 
-      if (is_dynamic(binding->descriptorType)) {
+      if (vk_descriptor_type_is_dynamic(binding->descriptorType)) {
          descriptor_sz = 0;
       } else if (binding->descriptorType == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
          const VkMutableDescriptorTypeListEXT *list =
