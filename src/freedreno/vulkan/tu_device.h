@@ -344,9 +344,9 @@ struct tu_device
    struct util_vma_heap vma;
 
    /* bo list for submits: */
-   struct drm_msm_gem_submit_bo *bo_list;
+   struct drm_msm_gem_submit_bo *submit_bo_list;
    /* map bo handles to bo list index: */
-   uint32_t bo_count, bo_list_size;
+   uint32_t submit_bo_count, submit_bo_list_size;
    mtx_t bo_mutex;
    /* protects imported BOs creation/freeing */
    struct u_rwlock dma_bo_lock;

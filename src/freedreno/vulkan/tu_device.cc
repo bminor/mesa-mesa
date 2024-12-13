@@ -2718,7 +2718,7 @@ fail_empty_shaders:
 fail_global_bo_map:
    TU_RMV(resource_destroy, device, device->global_bo);
    tu_bo_finish(device, device->global_bo);
-   vk_free(&device->vk.alloc, device->bo_list);
+   vk_free(&device->vk.alloc, device->submit_bo_list);
 fail_global_bo:
    ir3_compiler_destroy(device->compiler);
    util_sparse_array_finish(&device->bo_map);
@@ -2822,7 +2822,7 @@ tu_DestroyDevice(VkDevice _device, const VkAllocationCallbacks *pAllocator)
 
    pthread_cond_destroy(&device->timeline_cond);
    _mesa_hash_table_destroy(device->bo_sizes, NULL);
-   vk_free(&device->vk.alloc, device->bo_list);
+   vk_free(&device->vk.alloc, device->submit_bo_list);
    vk_device_finish(&device->vk);
    vk_free(&device->vk.alloc, device);
 }

@@ -542,27 +542,27 @@ tu_bo_init(struct tu_device *dev,
    name = tu_debug_bos_add(dev, size, name);
 
    mtx_lock(&dev->bo_mutex);
-   uint32_t idx = dev->bo_count++;
+   uint32_t idx = dev->submit_bo_count++;
 
    /* grow the bo list if needed */
-   if (idx >= dev->bo_list_size) {
+   if (idx >= dev->submit_bo_list_size) {
       uint32_t new_len = idx + 64;
       struct drm_msm_gem_submit_bo *new_ptr = (struct drm_msm_gem_submit_bo *)
-         vk_realloc(&dev->vk.alloc, dev->bo_list, new_len * sizeof(*dev->bo_list),
+         vk_realloc(&dev->vk.alloc, dev->submit_bo_list, new_len * sizeof(*dev->submit_bo_list),
                     8, VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
       if (!new_ptr) {
-         dev->bo_count--;
+         dev->submit_bo_count--;
          mtx_unlock(&dev->bo_mutex);
          vdrm_bo_close(dev->vdev->vdrm, bo->gem_handle);
          return VK_ERROR_OUT_OF_HOST_MEMORY;
       }
 
-      dev->bo_list = new_ptr;
-      dev->bo_list_size = new_len;
+      dev->submit_bo_list = new_ptr;
+      dev->submit_bo_list_size = new_len;
    }
 
    bool dump = flags & TU_BO_ALLOC_ALLOW_DUMP;
-   dev->bo_list[idx] = (struct drm_msm_gem_submit_bo) {
+   dev->submit_bo_list[idx] = (struct drm_msm_gem_submit_bo) {
       .flags = MSM_SUBMIT_BO_READ | MSM_SUBMIT_BO_WRITE |
                COND(dump, MSM_SUBMIT_BO_DUMP),
       .handle = bo->res_id,
@@ -576,7 +576,7 @@ tu_bo_init(struct tu_device *dev,
       .iova = iova,
       .name = name,
       .refcnt = 1,
-      .bo_list_idx = idx,
+      .submit_bo_list_idx = idx,
       .base = base,
    };
 
@@ -816,7 +816,7 @@ static void
 virtio_bo_allow_dump(struct tu_device *dev, struct tu_bo *bo)
 {
    mtx_lock(&dev->bo_mutex);
-   dev->bo_list[bo->bo_list_idx].flags |= MSM_SUBMIT_BO_DUMP;
+   dev->submit_bo_list[bo->submit_bo_list_idx].flags |= MSM_SUBMIT_BO_DUMP;
    mtx_unlock(&dev->bo_mutex);
 }
 
@@ -906,7 +906,7 @@ virtio_queue_submit(struct tu_queue *queue, void *_submit,
 
    uint32_t entry_count =
       util_dynarray_num_elements(&submit->commands, struct drm_msm_gem_submit_cmd);
-   unsigned nr_bos = entry_count ? queue->device->bo_count : 0;
+   unsigned nr_bos = entry_count ? queue->device->submit_bo_count : 0;
    unsigned bos_len = nr_bos * sizeof(struct drm_msm_gem_submit_bo);
    unsigned cmd_len = entry_count * sizeof(struct drm_msm_gem_submit_cmd);
    unsigned req_len = sizeof(struct msm_ccmd_gem_submit_req) + bos_len + cmd_len;
@@ -977,7 +977,7 @@ virtio_queue_submit(struct tu_queue *queue, void *_submit,
                                struct drm_msm_gem_submit_cmd, 0);
       struct tu_bo **bo = util_dynarray_element(&submit->command_bos,
                                                 struct tu_bo *, i);
-      cmd->submit_idx = (*bo)->bo_list_idx;
+      cmd->submit_idx = (*bo)->submit_bo_list_idx;
    }
 
    req = (struct msm_ccmd_gem_submit_req *)vk_alloc(
@@ -1000,7 +1000,7 @@ virtio_queue_submit(struct tu_queue *queue, void *_submit,
     */
    req->fence    = queue->fence;
 
-   memcpy(req->payload, queue->device->bo_list, bos_len);
+   memcpy(req->payload, queue->device->submit_bo_list, bos_len);
    memcpy(req->payload + bos_len, submit->commands.data, cmd_len);
 
    params = (struct vdrm_execbuf_params) {

@@ -79,11 +79,11 @@ tu_drm_bo_finish(struct tu_device *dev, struct tu_bo *bo)
    tu_debug_bos_del(dev, bo);
 
    mtx_lock(&dev->bo_mutex);
-   dev->bo_count--;
-   dev->bo_list[bo->bo_list_idx] = dev->bo_list[dev->bo_count];
+   dev->submit_bo_count--;
+   dev->submit_bo_list[bo->submit_bo_list_idx] = dev->submit_bo_list[dev->submit_bo_count];
 
-   struct tu_bo* exchanging_bo = tu_device_lookup_bo(dev, dev->bo_list[bo->bo_list_idx].handle);
-   exchanging_bo->bo_list_idx = bo->bo_list_idx;
+   struct tu_bo* exchanging_bo = tu_device_lookup_bo(dev, dev->submit_bo_list[bo->submit_bo_list_idx].handle);
+   exchanging_bo->submit_bo_list_idx = bo->submit_bo_list_idx;
 
    if (bo->implicit_sync)
       dev->implicit_sync_bo_count--;
@@ -165,7 +165,7 @@ msm_submit_add_entries(struct tu_device *device, void *_submit,
 
    for (unsigned i = 0; i < num_entries; i++) {
       cmds[i].type = MSM_SUBMIT_CMD_BUF;
-      cmds[i].submit_idx = entries[i].bo->bo_list_idx;
+      cmds[i].submit_idx = entries[i].bo->submit_bo_list_idx;
       cmds[i].submit_offset = entries[i].offset;
       cmds[i].size = entries[i].size;
       cmds[i].pad = 0;

@@ -496,16 +496,16 @@ tu_bo_init(struct tu_device *dev,
    name = tu_debug_bos_add(dev, size, name);
 
    mtx_lock(&dev->bo_mutex);
-   uint32_t idx = dev->bo_count++;
+   uint32_t idx = dev->submit_bo_count++;
 
    /* grow the bo list if needed */
-   if (idx >= dev->bo_list_size) {
+   if (idx >= dev->submit_bo_list_size) {
       uint32_t new_len = idx + 64;
       struct drm_msm_gem_submit_bo *new_ptr = (struct drm_msm_gem_submit_bo *)
-         vk_realloc(&dev->vk.alloc, dev->bo_list, new_len * sizeof(*dev->bo_list),
+         vk_realloc(&dev->vk.alloc, dev->submit_bo_list, new_len * sizeof(*dev->submit_bo_list),
                     8, VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
       if (!new_ptr) {
-         dev->bo_count--;
+         dev->submit_bo_count--;
          mtx_unlock(&dev->bo_mutex);
          if (dev->physical_device->has_set_iova)
             util_vma_heap_free(&dev->vma, iova, size);
@@ -513,12 +513,12 @@ tu_bo_init(struct tu_device *dev,
          return VK_ERROR_OUT_OF_HOST_MEMORY;
       }
 
-      dev->bo_list = new_ptr;
-      dev->bo_list_size = new_len;
+      dev->submit_bo_list = new_ptr;
+      dev->submit_bo_list_size = new_len;
    }
 
    bool dump = flags & TU_BO_ALLOC_ALLOW_DUMP;
-   dev->bo_list[idx] = (struct drm_msm_gem_submit_bo) {
+   dev->submit_bo_list[idx] = (struct drm_msm_gem_submit_bo) {
       .flags = MSM_SUBMIT_BO_READ | MSM_SUBMIT_BO_WRITE |
                COND(dump, MSM_SUBMIT_BO_DUMP),
       .handle = gem_handle,
@@ -531,7 +531,7 @@ tu_bo_init(struct tu_device *dev,
       .iova = iova,
       .name = name,
       .refcnt = 1,
-      .bo_list_idx = idx,
+      .submit_bo_list_idx = idx,
       .base = base,
    };
 
@@ -743,7 +743,7 @@ static void
 msm_bo_allow_dump(struct tu_device *dev, struct tu_bo *bo)
 {
    mtx_lock(&dev->bo_mutex);
-   dev->bo_list[bo->bo_list_idx].flags |= MSM_SUBMIT_BO_DUMP;
+   dev->submit_bo_list[bo->submit_bo_list_idx].flags |= MSM_SUBMIT_BO_DUMP;
    mtx_unlock(&dev->bo_mutex);
 }
 
@@ -872,14 +872,14 @@ msm_queue_submit(struct tu_queue *queue, void *_submit,
                                struct drm_msm_gem_submit_cmd, 0);
       struct tu_bo **bo = util_dynarray_element(&submit->command_bos,
                                                 struct tu_bo *, i);
-      cmd->submit_idx = (*bo)->bo_list_idx;
+      cmd->submit_idx = (*bo)->submit_bo_list_idx;
    }
 
    req = (struct drm_msm_gem_submit) {
       .flags = flags,
-      .nr_bos = entry_count ? queue->device->bo_count : 0,
+      .nr_bos = entry_count ? queue->device->submit_bo_count : 0,
       .nr_cmds = entry_count,
-      .bos = (uint64_t)(uintptr_t) queue->device->bo_list,
+      .bos = (uint64_t)(uintptr_t) queue->device->submit_bo_list,
       .cmds = (uint64_t)(uintptr_t)submit->commands.data,
       .queueid = queue->msm_queue_id,
       .in_syncobjs = (uint64_t)(uintptr_t)in_syncobjs,
@@ -905,8 +905,8 @@ msm_queue_submit(struct tu_queue *queue, void *_submit,
       fd_rd_output_write_section(rd_output, RD_CHIP_ID, &device->physical_device->dev_id.chip_id, 8);
       fd_rd_output_write_section(rd_output, RD_CMD, "tu-dump", 8);
 
-      for (unsigned i = 0; i < device->bo_count; i++) {
-         struct drm_msm_gem_submit_bo bo = device->bo_list[i];
+      for (unsigned i = 0; i < device->submit_bo_count; i++) {
+         struct drm_msm_gem_submit_bo bo = device->submit_bo_list[i];
          struct tu_bo *tu_bo = tu_device_lookup_bo(device, bo.handle);
          uint64_t iova = bo.presumed;
 
@@ -920,7 +920,7 @@ msm_queue_submit(struct tu_queue *queue, void *_submit,
 
       util_dynarray_foreach (&submit->commands, struct drm_msm_gem_submit_cmd,
                              cmd) {
-         uint64_t iova = device->bo_list[cmd->submit_idx].presumed + cmd->submit_offset;
+         uint64_t iova = device->submit_bo_list[cmd->submit_idx].presumed + cmd->submit_offset;
          uint32_t size = cmd->size >> 2;
          uint32_t buf[3] = { iova, size, iova >> 32 };
          fd_rd_output_write_section(rd_output, RD_CMDSTREAM_ADDR, buf, 12);

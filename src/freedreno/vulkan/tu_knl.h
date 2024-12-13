@@ -57,7 +57,7 @@ struct tu_bo {
    const char *name; /* pointer to device->bo_sizes's entry's name */
    int32_t refcnt;
 
-   uint32_t bo_list_idx;
+   uint32_t submit_bo_list_idx;
 
 #ifdef TU_HAS_KGSL
    /* We have to store fd returned by ion_fd_data
