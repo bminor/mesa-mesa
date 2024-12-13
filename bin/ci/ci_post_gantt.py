@@ -10,6 +10,7 @@
 import argparse
 import gitlab
 import re
+import logging as log
 import os
 import pytz
 import traceback
@@ -100,7 +101,7 @@ def gitlab_post_reply_to_note(gl, event, reply_message):
         return reply
 
     except gitlab.exceptions.GitlabError as e:
-        print(f"Failed to post a reply to '{event.note['body']}': {e}")
+        log.error(f"Failed to post a reply to '{event.note['body']}': {e}")
         return None
 
 
@@ -121,6 +122,7 @@ def parse_args() -> None:
 
 if __name__ == "__main__":
     args = parse_args()
+    log.basicConfig(level=log.INFO)
 
     token = read_token(args.token)
 
@@ -129,7 +131,7 @@ if __name__ == "__main__":
     user = gl.users.get(MARGE_USER_ID)
     last_event_at = args.since if args.since else read_last_event_date_from_file()
 
-    print(f"Retrieving Marge messages since {pretty_time(last_event_at)}\n")
+    log.info(f"Retrieving Marge messages since {pretty_time(last_event_at)}\n")
 
     # the "after" only considers the "2023-10-24" part, it doesn't consider the time
     events = user.events.list(
@@ -154,24 +156,24 @@ if __name__ == "__main__":
         match = re.search(r"https://[^ ]+", event.note["body"])
         if match:
             try:
-                print("Found message:", event.note["body"])
+                log.info(f"Found message: {event.note['body']}")
                 pipeline_url = match.group(0)[:-1]
                 pipeline, _ = get_gitlab_pipeline_from_url(gl, pipeline_url)
-                print("Generating gantt chart...")
+                log.info("Generating gantt chart...")
                 fig = generate_gantt_chart(pipeline)
                 file_name = "Gantt.html"
                 fig.write_html(file_name)
-                print("Uploading gantt file...")
+                log.info("Uploading gantt file...")
                 file_url = gitlab_upload_file_get_url(gl, event.project_id, file_name)
-                print("Posting reply ...\n")
+                log.info("Posting reply ...")
                 message = compose_message(file_name, file_url)
                 gitlab_post_reply_to_note(gl, event, message)
             except Exception as e:
-                print(f"Failed to generate gantt chart, not posting reply.{e}")
+                log.info(f"Failed to generate gantt chart, not posting reply.{e}")
                 traceback.print_exc()
 
         if not args.since:
-            print(
+            log.info(
                 f"Updating last event date to {pretty_time(last_event_at)} on {LAST_MARGE_EVENT_FILE}\n"
             )
             with open(LAST_MARGE_EVENT_FILE, "w") as f:
