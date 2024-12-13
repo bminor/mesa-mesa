@@ -1417,6 +1417,33 @@ for op in [
       ((op[0] + '16', a, b), vector_cmp(op[2], op[1], 'abcdefghijklmnop'), 'options->lower_vector_cmp'),
    ])
 
+# D3D Boolean emulation
+for s in [8, 16, 32, 64]:
+   cond = 'true'
+   if s == 64:
+       cond = '!(options->lower_int64_options & nir_lower_conv64)'
+
+   optimizations.extend([
+      (('bcsel@{}'.format(s), a, -1, 0), ('ineg', ('b2i', 'a@1')), cond),
+      (('bcsel@{}'.format(s), a, 0, -1), ('ineg', ('b2i', ('inot', a))), cond),
+      (('bcsel@{}'.format(s), a, 1, 0), ('b2i', 'a@1'), cond),
+      (('bcsel@{}'.format(s), a, 0, 1), ('b2i', ('inot', a)), cond),
+   ])
+
+optimizations.extend([
+   (('iand', ('ineg', ('b2i', 'a@1')), ('ineg', ('b2i', 'b@1'))),
+    ('ineg', ('b2i', ('iand', a, b)))),
+   (('ior', ('ineg', ('b2i','a@1')), ('ineg', ('b2i', 'b@1'))),
+    ('ineg', ('b2i', ('ior', a, b)))),
+   (('ieq', ('ineg', ('b2i', 'a@1')), -1), a),
+   (('ine', ('ineg', ('b2i', 'a@1')), -1), ('inot', a)),
+   (('ige', ('ineg', ('b2i', 'a@1')), 0), ('inot', a)),
+   (('ilt', ('ineg', ('b2i', 'a@1')), 0), a),
+   (('ult', 0, ('ineg', ('b2i', 'a@1'))), a),
+   (('iand', ('ineg', ('b2i', a)), 1.0), ('b2f', a)),
+   (('iand', ('ineg', ('b2i', a)), 1),   ('b2i', a)),
+])
+
 optimizations.extend([
    (('feq', ('seq', a, b), 1.0), ('feq', a, b)),
    (('feq', ('sne', a, b), 1.0), ('fneu', a, b)),
@@ -1680,23 +1707,6 @@ optimizations.extend([
 
    (('bcsel', a, b, b), b),
    (('~fcsel', a, b, b), b),
-
-   # D3D Boolean emulation
-   (('bcsel', a, -1, 0), ('ineg', ('b2i', 'a@1'))),
-   (('bcsel', a, 0, -1), ('ineg', ('b2i', ('inot', a)))),
-   (('bcsel', a, 1, 0), ('b2i', 'a@1')),
-   (('bcsel', a, 0, 1), ('b2i', ('inot', a))),
-   (('iand', ('ineg', ('b2i', 'a@1')), ('ineg', ('b2i', 'b@1'))),
-    ('ineg', ('b2i', ('iand', a, b)))),
-   (('ior', ('ineg', ('b2i','a@1')), ('ineg', ('b2i', 'b@1'))),
-    ('ineg', ('b2i', ('ior', a, b)))),
-   (('ieq', ('ineg', ('b2i', 'a@1')), -1), a),
-   (('ine', ('ineg', ('b2i', 'a@1')), -1), ('inot', a)),
-   (('ige', ('ineg', ('b2i', 'a@1')), 0), ('inot', a)),
-   (('ilt', ('ineg', ('b2i', 'a@1')), 0), a),
-   (('ult', 0, ('ineg', ('b2i', 'a@1'))), a),
-   (('iand', ('ineg', ('b2i', a)), 1.0), ('b2f', a)),
-   (('iand', ('ineg', ('b2i', a)), 1),   ('b2i', a)),
 
    # With D3D booleans, imax is AND and umax is OR
    (('imax', ('ineg', ('b2i', 'a@1')), ('ineg', ('b2i', 'b@1'))),
