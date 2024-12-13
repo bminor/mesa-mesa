@@ -582,6 +582,8 @@ tu_bo_init(struct tu_device *dev,
 
    mtx_unlock(&dev->bo_mutex);
 
+   tu_dump_bo_init(dev, bo);
+
    return VK_SUCCESS;
 }
 

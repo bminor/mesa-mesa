@@ -347,6 +347,8 @@ struct tu_device
    struct drm_msm_gem_submit_bo *submit_bo_list;
    /* map bo handles to bo list index: */
    uint32_t submit_bo_count, submit_bo_list_size;
+   /* bo list for dumping: */
+   struct util_dynarray dump_bo_list;
    mtx_t bo_mutex;
    /* protects imported BOs creation/freeing */
    struct u_rwlock dma_bo_lock;
@@ -580,5 +582,11 @@ void
 tu_debug_bos_del(struct tu_device *dev, struct tu_bo *bo);
 void
 tu_debug_bos_print_stats(struct tu_device *dev);
+
+void
+tu_dump_bo_init(struct tu_device *dev, struct tu_bo *bo);
+void
+tu_dump_bo_del(struct tu_device *dev, struct tu_bo *bo);
+
 
 #endif /* TU_DEVICE_H */

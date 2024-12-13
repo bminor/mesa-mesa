@@ -51,12 +51,27 @@ tu_get_submitqueue_priority(const struct tu_physical_device *pdevice,
    return priority;
 }
 
+static void
+submit_add_entries(struct tu_device *dev, void *submit,
+                   struct util_dynarray *dump_cmds,
+                   struct tu_cs_entry *entries, unsigned num_entries)
+{
+   tu_submit_add_entries(dev, submit, entries, num_entries);
+   if (FD_RD_DUMP(ENABLE)) {
+      util_dynarray_append_array(dump_cmds, struct tu_cs_entry, entries,
+                                 num_entries);
+   }
+}
+
 static VkResult
 queue_submit(struct vk_queue *_queue, struct vk_queue_submit *vk_submit)
 {
    struct tu_queue *queue = list_entry(_queue, struct tu_queue, vk);
    struct tu_device *device = queue->device;
    bool u_trace_enabled = u_trace_should_process(&queue->device->trace_context);
+   struct util_dynarray dump_cmds;
+
+   util_dynarray_init(&dump_cmds, NULL);
 
    uint32_t perf_pass_index =
       device->perfcntrs_pass_cs_entries ? vk_submit->perf_pass_index : ~0;
@@ -102,27 +117,70 @@ queue_submit(struct vk_queue *_queue, struct vk_queue_submit *vk_submit)
          struct tu_cs_entry *perf_cs_entry =
             &cmd_buffer->device->perfcntrs_pass_cs_entries[perf_pass_index];
 
-         tu_submit_add_entries(device, submit, perf_cs_entry, 1);
+         submit_add_entries(device, submit, &dump_cmds, perf_cs_entry, 1);
       }
 
-      tu_submit_add_entries(device, submit, cs->entries,
-                            cs->entry_count);
+      submit_add_entries(device, submit, &dump_cmds, cs->entries,
+                         cs->entry_count);
 
       if (u_trace_submission_data &&
           u_trace_submission_data->cmd_trace_data[i].timestamp_copy_cs) {
          struct tu_cs_entry *trace_cs_entry =
             &u_trace_submission_data->cmd_trace_data[i]
                 .timestamp_copy_cs->entries[0];
-         tu_submit_add_entries(device, submit, trace_cs_entry, 1);
+         submit_add_entries(device, submit, &dump_cmds, trace_cs_entry, 1);
       }
    }
 
    if (tu_autotune_submit_requires_fence(cmd_buffers, cmdbuf_count)) {
       struct tu_cs *autotune_cs = tu_autotune_on_submit(
          device, &device->autotune, cmd_buffers, cmdbuf_count);
-      tu_submit_add_entries(device, submit, autotune_cs->entries,
-                            autotune_cs->entry_count);
+      submit_add_entries(device, submit, &dump_cmds, autotune_cs->entries,
+                         autotune_cs->entry_count);
    }
+
+   if (cmdbuf_count && FD_RD_DUMP(ENABLE) &&
+       fd_rd_output_begin(&queue->device->rd_output,
+                          queue->device->submit_count)) {
+      struct tu_device *device = queue->device;
+      struct fd_rd_output *rd_output = &device->rd_output;
+
+      if (FD_RD_DUMP(FULL)) {
+         VkResult result = tu_queue_wait_fence(queue, queue->fence, ~0);
+         if (result != VK_SUCCESS) {
+            mesa_loge("FD_RD_DUMP_FULL: wait on previous submission for device %u and queue %d failed: %u",
+                      device->device_idx, queue->msm_queue_id, 0);
+         }
+      }
+
+      fd_rd_output_write_section(rd_output, RD_CHIP_ID, &device->physical_device->dev_id.chip_id, 8);
+      fd_rd_output_write_section(rd_output, RD_CMD, "tu-dump", 8);
+
+      mtx_lock(&device->bo_mutex);
+      util_dynarray_foreach (&device->dump_bo_list, struct tu_bo *, bo_ptr) {
+         struct tu_bo *bo = *bo_ptr;
+         uint64_t iova = bo->iova;
+
+         uint32_t buf[3] = { iova, bo->size, iova >> 32 };
+         fd_rd_output_write_section(rd_output, RD_GPUADDR, buf, 12);
+         if (bo->dump || FD_RD_DUMP(FULL)) {
+            tu_bo_map(device, bo, NULL); /* note: this would need locking to be safe */
+            fd_rd_output_write_section(rd_output, RD_BUFFER_CONTENTS, bo->map, bo->size);
+         }
+      }
+      mtx_unlock(&device->bo_mutex);
+
+      util_dynarray_foreach (&dump_cmds, struct tu_cs_entry, cmd) {
+         uint64_t iova = cmd->bo->iova + cmd->offset;
+         uint32_t size = cmd->size >> 2;
+         uint32_t buf[3] = { iova, size, iova >> 32 };
+         fd_rd_output_write_section(rd_output, RD_CMDSTREAM_ADDR, buf, 12);
+      }
+
+      fd_rd_output_end(rd_output);
+   }
+
+   util_dynarray_fini(&dump_cmds);
 
    result =
       tu_queue_submit(queue, submit, vk_submit->waits, vk_submit->wait_count,

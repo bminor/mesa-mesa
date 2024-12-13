@@ -261,9 +261,9 @@ kgsl_bo_init(struct tu_device *dev,
        * and the CPU mapping must stay fixed for the lifetime of the BO.
        */
       bo->never_unmap = true;
-
    }
 
+   tu_dump_bo_init(dev, bo);
 
    *out_bo = bo;
 
@@ -320,6 +320,8 @@ kgsl_bo_init_dmabuf(struct tu_device *dev,
       .refcnt = 1,
       .shared_fd = os_dupfd_cloexec(fd),
    };
+
+   tu_dump_bo_init(dev, bo);
 
    *out_bo = bo;
 
@@ -380,6 +382,7 @@ kgsl_bo_finish(struct tu_device *dev, struct tu_bo *bo)
 
    TU_RMV(bo_destroy, dev, bo);
    tu_debug_bos_del(dev, bo);
+   tu_dump_bo_del(dev, bo);
 
    struct kgsl_gpumem_free_id req = {
       .id = bo->gem_handle

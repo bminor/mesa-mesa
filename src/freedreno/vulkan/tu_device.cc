@@ -2719,6 +2719,7 @@ fail_global_bo_map:
    TU_RMV(resource_destroy, device, device->global_bo);
    tu_bo_finish(device, device->global_bo);
    vk_free(&device->vk.alloc, device->submit_bo_list);
+   util_dynarray_fini(&device->dump_bo_list);
 fail_global_bo:
    ir3_compiler_destroy(device->compiler);
    util_sparse_array_finish(&device->bo_map);
@@ -2823,6 +2824,7 @@ tu_DestroyDevice(VkDevice _device, const VkAllocationCallbacks *pAllocator)
    pthread_cond_destroy(&device->timeline_cond);
    _mesa_hash_table_destroy(device->bo_sizes, NULL);
    vk_free(&device->vk.alloc, device->submit_bo_list);
+   util_dynarray_fini(&device->dump_bo_list);
    vk_device_finish(&device->vk);
    vk_free(&device->vk.alloc, device);
 }
@@ -3424,6 +3426,36 @@ tu_debug_bos_print_stats(struct tu_device *dev)
    util_dynarray_fini(&dyn);
 
    mtx_unlock(&dev->bo_mutex);
+}
+
+void
+tu_dump_bo_init(struct tu_device *dev, struct tu_bo *bo)
+{
+   bo->dump_bo_list_idx = ~0;
+
+   if (!FD_RD_DUMP(ENABLE))
+      return;
+
+   mtx_lock(&dev->bo_mutex);
+   uint32_t idx =
+      util_dynarray_num_elements(&dev->dump_bo_list, struct tu_bo *);
+   bo->dump_bo_list_idx = idx;
+   util_dynarray_append(&dev->dump_bo_list, struct tu_bo *, bo);
+   mtx_unlock(&dev->bo_mutex);
+}
+
+void
+tu_dump_bo_del(struct tu_device *dev, struct tu_bo *bo)
+{
+   if (bo->dump_bo_list_idx != ~0) {
+      mtx_lock(&dev->bo_mutex);
+      struct tu_bo *exchanging_bo =
+         util_dynarray_pop(&dev->dump_bo_list, struct tu_bo *);
+      *util_dynarray_element(&dev->dump_bo_list, struct tu_bo *,
+                             bo->dump_bo_list_idx) = exchanging_bo;
+      exchanging_bo->dump_bo_list_idx = bo->dump_bo_list_idx;
+      mtx_unlock(&dev->bo_mutex);
+   }
 }
 
 void

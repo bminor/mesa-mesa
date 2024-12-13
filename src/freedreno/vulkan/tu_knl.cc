@@ -53,6 +53,8 @@ tu_bo_init_new_explicit_iova(struct tu_device *dev,
                              (*out_bo)->iova, (*out_bo)->size,
                              VK_DEVICE_ADDRESS_BINDING_TYPE_BIND_EXT);
 
+   (*out_bo)->dump = flags & TU_BO_ALLOC_ALLOW_DUMP;
+
    return VK_SUCCESS;
 }
 
@@ -73,7 +75,7 @@ tu_bo_init_dmabuf(struct tu_device *dev,
     */
    if (dev->physical_device->has_cached_non_coherent_memory)
       (*bo)->cached_non_coherent = true;
-   
+
    return VK_SUCCESS;
 }
 
@@ -208,6 +210,8 @@ if (!(DETECT_ARCH_AARCH64 || DETECT_ARCH_X86 || DETECT_ARCH_X86_64))
 void tu_bo_allow_dump(struct tu_device *dev, struct tu_bo *bo)
 {
    dev->instance->knl->bo_allow_dump(dev, bo);
+
+   p_atomic_set(&bo->dump, true);
 }
 
 void

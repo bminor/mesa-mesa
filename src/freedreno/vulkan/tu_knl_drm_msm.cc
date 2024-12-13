@@ -537,6 +537,8 @@ tu_bo_init(struct tu_device *dev,
 
    mtx_unlock(&dev->bo_mutex);
 
+   tu_dump_bo_init(dev, bo);
+
    TU_RMV(bo_allocate, dev, bo);
 
    return VK_SUCCESS;
@@ -798,7 +800,6 @@ msm_queue_submit(struct tu_queue *queue, void *_submit,
       (struct tu_msm_queue_submit *)_submit;
    struct drm_msm_gem_submit_syncobj *in_syncobjs, *out_syncobjs;
    struct drm_msm_gem_submit req;
-   uint32_t submit_idx = queue->device->submit_count;
    uint64_t gpu_offset = 0;
    uint32_t entry_count =
       util_dynarray_num_elements(&submit->commands, struct drm_msm_gem_submit_cmd);
@@ -888,46 +889,6 @@ msm_queue_submit(struct tu_queue *queue, void *_submit,
       .nr_out_syncobjs = signal_count,
       .syncobj_stride = sizeof(struct drm_msm_gem_submit_syncobj),
    };
-
-   if (req.nr_cmds && FD_RD_DUMP(ENABLE) &&
-       fd_rd_output_begin(&queue->device->rd_output, submit_idx)) {
-      struct tu_device *device = queue->device;
-      struct fd_rd_output *rd_output = &device->rd_output;
-
-      if (FD_RD_DUMP(FULL)) {
-         VkResult result = tu_wait_fence(device, queue->msm_queue_id, queue->fence, ~0);
-         if (result != VK_SUCCESS) {
-            mesa_loge("FD_RD_DUMP_FULL: wait on previous submission for device %u and queue %d failed: %u",
-                      device->device_idx, queue->msm_queue_id, 0);
-         }
-      }
-
-      fd_rd_output_write_section(rd_output, RD_CHIP_ID, &device->physical_device->dev_id.chip_id, 8);
-      fd_rd_output_write_section(rd_output, RD_CMD, "tu-dump", 8);
-
-      for (unsigned i = 0; i < device->submit_bo_count; i++) {
-         struct drm_msm_gem_submit_bo bo = device->submit_bo_list[i];
-         struct tu_bo *tu_bo = tu_device_lookup_bo(device, bo.handle);
-         uint64_t iova = bo.presumed;
-
-         uint32_t buf[3] = { iova, tu_bo->size, iova >> 32 };
-         fd_rd_output_write_section(rd_output, RD_GPUADDR, buf, 12);
-         if (bo.flags & MSM_SUBMIT_BO_DUMP || FD_RD_DUMP(FULL)) {
-            tu_bo_map(device, tu_bo, NULL); /* note: this would need locking to be safe */
-            fd_rd_output_write_section(rd_output, RD_BUFFER_CONTENTS, tu_bo->map, tu_bo->size);
-         }
-      }
-
-      util_dynarray_foreach (&submit->commands, struct drm_msm_gem_submit_cmd,
-                             cmd) {
-         uint64_t iova = device->submit_bo_list[cmd->submit_idx].presumed + cmd->submit_offset;
-         uint32_t size = cmd->size >> 2;
-         uint32_t buf[3] = { iova, size, iova >> 32 };
-         fd_rd_output_write_section(rd_output, RD_CMDSTREAM_ADDR, buf, 12);
-      }
-
-      fd_rd_output_end(rd_output);
-   }
 
    ret = drmCommandWriteRead(queue->device->fd,
                              DRM_MSM_GEM_SUBMIT,

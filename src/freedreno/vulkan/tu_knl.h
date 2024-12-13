@@ -58,6 +58,7 @@ struct tu_bo {
    int32_t refcnt;
 
    uint32_t submit_bo_list_idx;
+   uint32_t dump_bo_list_idx;
 
 #ifdef TU_HAS_KGSL
    /* We have to store fd returned by ion_fd_data
@@ -70,6 +71,8 @@ struct tu_bo {
    bool implicit_sync : 1;
    bool never_unmap : 1;
    bool cached_non_coherent : 1;
+
+   bool dump;
 
    /* Pointer to the vk_object_base associated with the BO
     * for the purposes of VK_EXT_device_address_binding_report
