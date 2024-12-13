@@ -26,7 +26,7 @@ impl<T> Properties<T> {
                 while *p != T::default() {
                     // Property lists are expected to be small, so no point in using HashSet or
                     // sorting.
-                    if res.props.contains(&*p) {
+                    if res.get(&*p).is_some() {
                         return None;
                     }
 
@@ -43,6 +43,14 @@ impl<T> Properties<T> {
         }
 
         Some(res)
+    }
+
+    /// Returns the value for the given `key` if existent.
+    pub fn get(&self, key: &T) -> Option<&T>
+    where
+        T: PartialEq,
+    {
+        self.iter().find_map(|(k, v)| (k == key).then_some(v))
     }
 
     /// Returns true when there is no property available.
