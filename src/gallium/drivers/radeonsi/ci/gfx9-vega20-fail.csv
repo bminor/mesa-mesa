@@ -59,11 +59,6 @@ KHR-GL46.direct_state_access.framebuffers_texture_attachment,Fail
 KHR-GL46.direct_state_access.framebuffers_texture_layer_attachment,Fail
 KHR-GL46.geometry_shader.rendering.rendering.triangles_with_adjacency_input_line_strip_output_triangle_strip_adjacency_drawcall,Fail
 KHR-GL46.geometry_shader.rendering.rendering.triangles_with_adjacency_input_triangle_strip_output_triangle_strip_adjacency_drawcall,Fail
-KHR-GL46.sparse_texture2_tests.SparseTexture2Lookup,Fail
-KHR-GL46.sparse_texture2_tests.StandardPageSizesTestCase,Fail
-KHR-GL46.sparse_texture2_tests.UncommittedRegionsAccess,Fail
-KHR-GL46.sparse_texture_clamp_tests.SparseTextureClampLookupColor,Fail
-KHR-GL46.sparse_texture_clamp_tests.SparseTextureClampLookupResidency,Fail
 KHR-GL46.shader_image_load_store.basic-allTargets-atomic,Fail
 # AMD_DEBUG=nodcc fixes this
 KHR-GL46.texture_view.view_classes,Fail
