@@ -547,7 +547,7 @@ get_relative_ms(uint64_t abs_timeout_ns)
 /* safe_ioctl is not enough as restarted waits would not adjust the timeout
  * which could lead to waiting substantially longer than requested
  */
-static int
+static VkResult
 wait_timestamp_safe(int fd,
                     unsigned int context_id,
                     unsigned int timestamp,
@@ -566,20 +566,15 @@ wait_timestamp_safe(int fd,
          int timeout_ms = get_relative_ms(abs_timeout_ns);
 
          /* update timeout to consider time that has passed since the start */
-         if (timeout_ms == 0) {
-            errno = ETIME;
-            return -1;
-         }
+         if (timeout_ms == 0)
+            return VK_TIMEOUT;
 
          wait.timeout = timeout_ms;
-      } else if (ret == -1 && errno == ETIMEDOUT) {
-         /* The kernel returns ETIMEDOUT if the timeout is reached, but
-          * we want to return ETIME instead.
-          */
-         errno = ETIME;
-         return -1;
+      } else if (ret == -1) {
+         assert(errno == ETIMEDOUT);
+         return VK_TIMEOUT;
       } else {
-         return ret;
+         return VK_SUCCESS;
       }
    }
 }
@@ -629,14 +624,8 @@ kgsl_syncobj_wait(struct tu_device *device,
       return VK_TIMEOUT;
 
    case KGSL_SYNCOBJ_STATE_TS: {
-      int ret = wait_timestamp_safe(device->fd, s->queue->msm_queue_id,
-                                    s->timestamp, abs_timeout_ns);
-      if (ret) {
-         assert(errno == ETIME);
-         return VK_TIMEOUT;
-      } else {
-         return VK_SUCCESS;
-      }
+      return wait_timestamp_safe(device->fd, s->queue->msm_queue_id,
+                                 s->timestamp, abs_timeout_ns);
    }
 
    case KGSL_SYNCOBJ_STATE_FD: {
@@ -733,14 +722,8 @@ kgsl_syncobj_wait_any(struct tu_device* device, struct kgsl_syncobj **syncobjs, 
    }
 
    if (u_vector_length(&poll_fds) == 0) {
-      int ret = wait_timestamp_safe(device->fd, queue->msm_queue_id,
-                                    lowest_timestamp, MIN2(abs_timeout_ns, INT64_MAX));
-      if (ret) {
-         assert(errno == ETIME);
-         result = VK_TIMEOUT;
-      } else {
-         result = VK_SUCCESS;
-      }
+      result = wait_timestamp_safe(device->fd, queue->msm_queue_id,
+                                   lowest_timestamp, MIN2(abs_timeout_ns, INT64_MAX));
    } else {
       int ret, i;
 
