@@ -326,11 +326,14 @@ brw_fs_opt_algebraic(fs_visitor &s)
    bool progress = false;
 
    foreach_block_and_inst_safe(block, fs_inst, inst, s.cfg) {
+      if (brw_constant_fold_instruction(devinfo, inst)) {
+         progress = true;
+         continue;
+      }
+
       switch (inst->opcode) {
       case BRW_OPCODE_ADD:
-         if (brw_constant_fold_instruction(devinfo, inst)) {
-            progress = true;
-         } else if (brw_type_is_int(inst->src[1].type) &&
+         if (brw_type_is_int(inst->src[1].type) &&
                     inst->src[1].is_zero()) {
             inst->opcode = BRW_OPCODE_MOV;
             inst->resize_sources(1);
@@ -347,10 +350,8 @@ brw_fs_opt_algebraic(fs_visitor &s)
          /* If there is more than one immediate value, fold the values and
           * convert the instruction to either ADD or MOV.
           */
-         if (num_imm == 3) {
-            ASSERTED bool folded = brw_constant_fold_instruction(devinfo, inst);
-            assert(folded);
-         } else if (num_imm == 2) {
+         assert(num_imm < 3);
+         if (num_imm == 2) {
             uint64_t sum = 0;
             brw_reg src;
 
@@ -429,16 +430,8 @@ brw_fs_opt_algebraic(fs_visitor &s)
          }
          break;
 
-      case BRW_OPCODE_AND:
-         if (brw_constant_fold_instruction(devinfo, inst))
-            progress = true;
-
-         break;
-
       case BRW_OPCODE_MUL:
-         if (brw_constant_fold_instruction(devinfo, inst)) {
-            progress = true;
-         } else if (brw_type_is_int(inst->src[0].type)){
+         if (brw_type_is_int(inst->src[0].type)){
             /* From the BDW PRM, Vol 2a, "mul - Multiply":
              *
              *    "When multiplying integer datatypes, if src0 is DW and src1
@@ -494,10 +487,7 @@ brw_fs_opt_algebraic(fs_visitor &s)
          break;
 
       case BRW_OPCODE_OR:
-         if (brw_constant_fold_instruction(devinfo, inst)) {
-            progress = true;
-         } else if (inst->src[0].equals(inst->src[1]) ||
-                    inst->src[1].is_zero()) {
+         if (inst->src[0].equals(inst->src[1]) || inst->src[1].is_zero()) {
             /* On Gfx8+, the OR instruction can have a source modifier that
              * performs logical not on the operand.  Cases of 'OR r0, ~r1, 0'
              * or 'OR r0, ~r1, ~r1' should become a NOT instead of a MOV.
@@ -649,11 +639,6 @@ brw_fs_opt_algebraic(fs_visitor &s)
          }
          break;
       case BRW_OPCODE_MAD:
-         if (brw_constant_fold_instruction(devinfo, inst)) {
-            progress = true;
-            break;
-         }
-
          if (inst->src[1].file == IMM &&
              inst->src[2].file == IMM &&
              !brw_type_is_vector_imm(inst->src[1].type) &&
@@ -678,10 +663,6 @@ brw_fs_opt_algebraic(fs_visitor &s)
             inst->resize_sources(2);
             progress = true;
          }
-         break;
-      case BRW_OPCODE_SHL:
-         if (brw_constant_fold_instruction(devinfo, inst))
-            progress = true;
          break;
 
       case SHADER_OPCODE_BROADCAST:
