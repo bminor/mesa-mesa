@@ -50,19 +50,6 @@ descriptor_bo_map(struct v3dv_device *device,
       array_index * binding_layout->plane_stride * bo_size;
 }
 
-static bool
-descriptor_type_is_dynamic(VkDescriptorType type)
-{
-   switch (type) {
-   case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
-   case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
-      return true;
-      break;
-   default:
-      return false;
-   }
-}
-
 /*
  * Tries to get a real descriptor using a descriptor map index from the
  * descriptor_state + pipeline_layout.
@@ -92,7 +79,7 @@ v3dv_descriptor_map_get_descriptor(struct v3dv_descriptor_state *descriptor_stat
    uint32_t array_index = map->array_index[index];
    assert(array_index < binding_layout->array_size);
 
-   if (descriptor_type_is_dynamic(binding_layout->type)) {
+   if (vk_descriptor_type_is_dynamic(binding_layout->type)) {
       uint32_t dynamic_offset_index =
          pipeline_layout->set[set_number].dynamic_offset_start +
          binding_layout->dynamic_offset_index + array_index;
