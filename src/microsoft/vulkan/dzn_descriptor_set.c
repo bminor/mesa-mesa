@@ -1767,14 +1767,8 @@ dzn_descriptor_pool_create(struct dzn_device *device,
       uint32_t num_desc = pCreateInfo->pPoolSizes[p].descriptorCount;
 
       if (device->bindless) {
-         switch (type) {
-         case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
-         case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
-            break;
-         default:
+         if (!vk_descriptor_type_is_dynamic(type))
             pool->desc_count[0] += num_desc;
-            break;
-         }
       } else {
          switch (type) {
          case VK_DESCRIPTOR_TYPE_SAMPLER:
@@ -2274,8 +2268,7 @@ dzn_descriptor_set_copy(struct dzn_device *device,
          MIN2(dzn_descriptor_set_remaining_descs_in_binding(src_set->layout, &src_ptr),
               dzn_descriptor_set_remaining_descs_in_binding(dst_set->layout, &dst_ptr));
 
-      if (src_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC ||
-          src_type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC) {
+      if (vk_descriptor_type_is_dynamic(src_type)) {
          uint32_t src_idx =
             dzn_descriptor_set_ptr_get_buffer_idx(src_set->layout, &src_ptr);
          uint32_t dst_idx =
