@@ -2078,10 +2078,14 @@ static void si_shader_ps(struct si_screen *sscreen, struct si_shader *shader)
           !G_0286CC_LINEAR_CENTER_ENA(input_ena) || !G_0286CC_LINEAR_CENTROID_ENA(input_ena));
 
    /* DB_SHADER_CONTROL */
-   shader->ps.db_shader_control = S_02880C_Z_EXPORT_ENABLE(shader->ps.writes_z) |
-                                  S_02880C_STENCIL_TEST_VAL_EXPORT_ENABLE(shader->ps.writes_stencil) |
-                                  S_02880C_MASK_EXPORT_ENABLE(shader->ps.writes_samplemask) |
-                                  S_02880C_KILL_ENABLE(si_shader_uses_discard(shader));
+   shader->ps.db_shader_control =
+      S_02880C_Z_EXPORT_ENABLE(shader->ps.writes_z) |
+      S_02880C_STENCIL_TEST_VAL_EXPORT_ENABLE(shader->ps.writes_stencil) |
+      S_02880C_MASK_EXPORT_ENABLE(shader->ps.writes_samplemask) |
+      S_02880C_COVERAGE_TO_MASK_ENABLE(sscreen->info.gfx_level <= GFX10_3 &&
+                                       shader->key.ps.part.epilog.alpha_to_coverage_via_mrtz) |
+      S_02880C_KILL_ENABLE(si_shader_uses_discard(shader));
+
    if (sscreen->info.gfx_level >= GFX12)
       shader->ps.pa_sc_hisz_control = S_028BBC_ROUND(2); /* required minimum value */
 
@@ -2610,8 +2614,9 @@ void si_ps_key_update_framebuffer_blend_dsa_rasterizer(struct si_context *sctx)
 
    key->ps.part.epilog.alpha_to_one = sel->info.colors_written & 0x1 && blend->alpha_to_one &&
                                       rs->multisample_enable;
+   /* GFX11+ always exports alpha for alpha-to-coverage via mrtz. */
    key->ps.part.epilog.alpha_to_coverage_via_mrtz =
-      sctx->gfx_level >= GFX11 && alpha_to_coverage &&
+      alpha_to_coverage && (sctx->gfx_level >= GFX11 || key->ps.part.epilog.alpha_to_one) &&
       ((sel->info.writes_z && !key->ps.part.epilog.kill_z) ||
        (sel->info.writes_stencil && !key->ps.part.epilog.kill_stencil) ||
        (sel->info.writes_samplemask && !key->ps.part.epilog.kill_samplemask) ||
