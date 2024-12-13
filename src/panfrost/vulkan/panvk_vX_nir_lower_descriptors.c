@@ -187,9 +187,7 @@ shader_desc_idx(uint32_t set, uint32_t binding, VkDescriptorType subdesc_type,
    /* On Valhall, all non-dynamic descriptors are accessed directly through
     * their set. The vertex attribute table always comes first, so we always
     * offset user sets by one if we're dealing with a vertex shader. */
-   if (PAN_ARCH >= 9 &&
-       bind_layout->type != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC &&
-       bind_layout->type != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)
+   if (PAN_ARCH >= 9 && !vk_descriptor_type_is_dynamic(bind_layout->type))
       return pan_res_handle(set + 1, bind_layout->desc_idx + subdesc_idx);
 
    /* On Bifrost, the SSBO descriptors are read directly from the set. */
@@ -911,9 +909,7 @@ record_binding(struct lower_desc_ctx *ctx, unsigned set, unsigned binding,
 
    /* On valhall, we only record dynamic bindings, others are accessed directly
     * from the set. */
-   if (PAN_ARCH >= 9 &&
-       binding_layout->type != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC &&
-       binding_layout->type != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC)
+   if (PAN_ARCH >= 9 && !vk_descriptor_type_is_dynamic(binding_layout->type))
       return;
 
    /* SSBOs are accessed directly from the sets, no need to record accesses

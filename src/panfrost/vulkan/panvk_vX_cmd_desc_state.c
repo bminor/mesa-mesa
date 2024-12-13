@@ -47,8 +47,7 @@ cmd_desc_state_bind_sets(struct panvk_descriptor_state *desc_state,
       for (unsigned b = 0; b < set->layout->binding_count; b++) {
          VkDescriptorType type = set->layout->bindings[b].type;
 
-         if (type != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC &&
-             type != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)
+         if (!vk_descriptor_type_is_dynamic(type))
             continue;
 
          unsigned dyn_buf_idx = set->layout->bindings[b].desc_idx;
