@@ -62,7 +62,7 @@ enum color_range_type {
     COLOR_RANGE_FULL,
     COLOR_RANGE_LIMITED_8BPC,
     COLOR_RANGE_LIMITED_10BPC,
-    COLOR_RANGE_LIMITED_16BPC
+    COLOR_RANGE_LIMITED_16BPC,
 };
 
 enum color_transfer_func {
@@ -73,7 +73,7 @@ enum color_transfer_func {
     TRANSFER_FUNC_PQ2084,
     TRANSFER_FUNC_LINEAR,
     TRANSFER_FUNC_NORMALIZED_PQ,
-    TRANSFER_FUNC_HLG
+    TRANSFER_FUNC_HLG,
 };
 
 enum dither_option {
@@ -129,7 +129,7 @@ enum transfer_func_type {
     TF_TYPE_PREDEFINED,
     TF_TYPE_DISTRIBUTED_POINTS,
     TF_TYPE_BYPASS,
-    TF_TYPE_HWPWL
+    TF_TYPE_HWPWL,
 };
 
 enum cm_type {

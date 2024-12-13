@@ -38,7 +38,7 @@ extern "C" {
 
 enum gamut_adjust_type {
     GAMUT_ADJUST_TYPE_BYPASS = 0,
-    GAMUT_ADJUST_TYPE_SW /* use adjustments */
+    GAMUT_ADJUST_TYPE_SW, /* use adjustments */
 };
 
 struct gamut_remap_matrix {
@@ -59,7 +59,7 @@ enum lb_memory_config {
     /* Only applicable in 4:2:0 mode, enable all 3 pieces of memory and the
      * last piece of chroma memory used for the luma storage
      */
-    LB_MEMORY_CONFIG_3 = 3
+    LB_MEMORY_CONFIG_3 = 3,
 };
 
 struct scaling_ratios {

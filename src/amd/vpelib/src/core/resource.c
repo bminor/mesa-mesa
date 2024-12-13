@@ -327,17 +327,18 @@ void vpe_pipe_reset(struct vpe_priv *vpe_priv)
 
 void vpe_pipe_reclaim(struct vpe_priv *vpe_priv, struct vpe_cmd_info *cmd_info)
 {
-    int              i, j;
+    int              pipe_idx, input_idx;
     struct pipe_ctx *pipe_ctx;
 
-    for (i = 0; i < vpe_priv->num_pipe; i++) {
-        pipe_ctx = &vpe_priv->pipe_ctx[i];
+    for (pipe_idx = 0; pipe_idx < vpe_priv->num_pipe; pipe_idx++) {
+        pipe_ctx = &vpe_priv->pipe_ctx[pipe_idx];
         if (pipe_ctx->owner != PIPE_CTX_NO_OWNER) {
-            for (j = 0; j < cmd_info->num_inputs; j++)
-                if (pipe_ctx->owner == cmd_info->inputs[j].stream_idx)
+            for (input_idx = 0; input_idx < cmd_info->num_inputs; input_idx++)
+                if ((pipe_ctx->owner == cmd_info->inputs[input_idx].stream_idx) &&
+                    (pipe_idx == input_idx)) // Check if stream is being used again in same pipe
                     break;
 
-            if (j == cmd_info->num_inputs) {
+            if (input_idx == cmd_info->num_inputs) {
                 // that stream no longer exists
                 pipe_ctx->is_top_pipe  = true;
                 pipe_ctx->owner        = PIPE_CTX_NO_OWNER;

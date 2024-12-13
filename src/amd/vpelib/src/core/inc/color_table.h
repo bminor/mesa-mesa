@@ -38,7 +38,7 @@ extern "C" {
 
 enum table_type {
     type_pq_table,
-    type_de_pq_table
+    type_de_pq_table,
 };
 
 bool vpe_color_is_table_init(enum table_type type);

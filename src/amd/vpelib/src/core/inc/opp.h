@@ -38,7 +38,7 @@ enum clamping_range {
     CLAMPING_LIMITED_RANGE_10BPC, /* 10 bpc: Clamping 4  to 3FB */
     CLAMPING_LIMITED_RANGE_12BPC, /* 12 bpc: Clamping 10 to FEF */
     /* Use programmable clampping value on FMT_CLAMP_COMPONENT_R/G/B. */
-    CLAMPING_LIMITED_RANGE_PROGRAMMABLE
+    CLAMPING_LIMITED_RANGE_PROGRAMMABLE,
 };
 
 struct clamping_and_pixel_encoding_params {

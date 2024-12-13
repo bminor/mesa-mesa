@@ -34,7 +34,7 @@ extern "C" {
 
 enum test3d_type {
     lut3d_identity = 0,
-    lut3d_sce
+    lut3d_sce,
 };
 
 bool build_test_shaper_sdr(struct transfer_func *shaper);

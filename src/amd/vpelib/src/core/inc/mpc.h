@@ -64,13 +64,13 @@ enum mpcc_blend_mode {
     MPCC_BLEND_MODE_BYPASS,                // Direct digital bypass
     MPCC_BLEND_MODE_TOP_LAYER_PASSTHROUGH, // Top layer pass-through
     MPCC_BLEND_MODE_TOP_LAYER_ONLY,        // Top layer bleneded with background color
-    MPCC_BLEND_MODE_TOP_BOT_BLENDING       // Top and bottom blending
+    MPCC_BLEND_MODE_TOP_BOT_BLENDING,      // Top and bottom blending
 };
 
 enum mpcc_alpha_blend_mode {
     MPCC_ALPHA_BLEND_MODE_PER_PIXEL_ALPHA,
     MPCC_ALPHA_BLEND_MODE_PER_PIXEL_ALPHA_COMBINED_GLOBAL_GAIN,
-    MPCC_ALPHA_BLEND_MODE_GLOBAL_ALPHA
+    MPCC_ALPHA_BLEND_MODE_GLOBAL_ALPHA,
 };
 
 /*

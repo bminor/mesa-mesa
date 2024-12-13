@@ -133,7 +133,7 @@ enum hw_point_position {
     /* hw point lays left from left (smaller) sw point */
     HW_POINT_POSITION_LEFT,
     /* hw point lays stays from right (bigger) sw point */
-    HW_POINT_POSITION_RIGHT
+    HW_POINT_POSITION_RIGHT,
 };
 
 struct gamma_point {
@@ -191,7 +191,7 @@ struct tetrahedral_params {
 enum vpe_lut_mode {
     LUT_BYPASS,
     LUT_RAM_A,
-    LUT_RAM_B
+    LUT_RAM_B,
 };
 
 #ifdef __cplusplus
