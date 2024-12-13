@@ -52,6 +52,10 @@ typedef struct
    uint8_t stream;
    /* Bitmask of components used: 4 bits per slot, 1 bit per component. */
    uint8_t components_mask : 4;
+   /* Bitmask of components that are used as varying, 1 bit per component. */
+   uint8_t as_varying_mask : 4;
+   /* Bitmask of components that are used as sysval, 1 bit per component. */
+   uint8_t as_sysval_mask : 4;
 } ac_nir_prerast_per_output_info;
 
 typedef struct

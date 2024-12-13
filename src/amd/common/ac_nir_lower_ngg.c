@@ -636,7 +636,7 @@ emit_ngg_nogs_prim_export(nir_builder *b, lower_ngg_nogs_state *s, nir_def *arg)
          nir_def *prim_id = nir_load_primitive_id(b);
          nir_def *undef = nir_undef(b, 1, 32);
          ac_nir_prerast_out out = {
-            .infos = {{.components_mask = 1}},
+            .infos = {{.components_mask = 1, .as_varying_mask = 1}},
             .outputs = {{prim_id, undef, undef, undef}}
          };
 
@@ -690,7 +690,7 @@ emit_ngg_nogs_prim_id_store_per_prim_to_attr_ring(nir_builder *b, lower_ngg_nogs
 
    const uint8_t offset = s->options->vs_output_param_offset[VARYING_SLOT_PRIMITIVE_ID];
    ac_nir_prerast_out out = {
-      .infos = {{.components_mask = 1}},
+      .infos = {{.components_mask = 1, .as_varying_mask = 1}},
       .outputs = {{nir_load_primitive_id(b), NULL, NULL, NULL}}
    };
 
@@ -716,6 +716,7 @@ emit_store_ngg_nogs_es_primitive_id(nir_builder *b, lower_ngg_nogs_state *s)
    }
 
    s->out.outputs[VARYING_SLOT_PRIMITIVE_ID][0] = prim_id;
+   s->out.infos[VARYING_SLOT_PRIMITIVE_ID].as_varying_mask |= 1;
 
    /* Update outputs_written to reflect that the pass added a new output. */
    b->shader->info.outputs_written |= VARYING_BIT_PRIMITIVE_ID;
@@ -2517,7 +2518,7 @@ export_pos0_wait_attr_ring(nir_builder *b, nir_if *if_es_thread, nir_def *output
    /* Create phi for the position output values. */
    ac_nir_prerast_out out = {
       .outputs = {{outputs[VARYING_SLOT_POS][0], outputs[VARYING_SLOT_POS][1], outputs[VARYING_SLOT_POS][2], outputs[VARYING_SLOT_POS][3]}},
-      .infos = {{.components_mask = 0xf}},
+      .infos = {{.components_mask = 0xf, .as_sysval_mask = 0xf}},
    };
 
    b->cursor = nir_after_cf_list(&b->impl->body);
@@ -3844,6 +3845,11 @@ update_ms_output_info(const nir_io_semantics io_sem,
    for (unsigned base_off = base_off_start; base_off < num_slots; ++base_off) {
       ac_nir_prerast_per_output_info *info = &s->out.infos[io_sem.location + base_off];
       info->components_mask |= components_mask;
+
+      if (!io_sem.no_sysval_output)
+         info->as_sysval_mask |= components_mask;
+      if (!io_sem.no_varying)
+         info->as_varying_mask |= components_mask;
    }
 }
 
@@ -4521,8 +4527,11 @@ emit_ms_primitive(nir_builder *b, nir_def *index, nir_def *row, bool exports, bo
    ms_emit_arrayed_outputs(b, index, per_primitive_outputs, s);
 
    /* Insert layer output store if the pipeline uses multiview but the API shader doesn't write it. */
-   if (s->insert_layer_output)
+   if (s->insert_layer_output) {
       s->out.outputs[VARYING_SLOT_LAYER][0] = nir_load_view_index(b);
+      s->out.infos[VARYING_SLOT_LAYER].as_sysval_mask |= 1;
+      s->out.infos[VARYING_SLOT_LAYER].as_varying_mask |= 1;
+   }
 
    if (exports) {
       const uint64_t outputs_mask = per_primitive_outputs & MS_PRIM_ARG_EXP_MASK;

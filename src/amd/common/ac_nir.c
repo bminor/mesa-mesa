@@ -287,6 +287,11 @@ void ac_nir_gather_prerast_store_output_info(nir_builder *b, nir_intrinsic_instr
       info->stream |= stream << (c * 2);
       info->components_mask |= BITFIELD_BIT(c);
 
+      if (!io_sem.no_varying)
+         info->as_varying_mask |= BITFIELD_BIT(c);
+      if (!io_sem.no_sysval_output)
+         info->as_sysval_mask |= BITFIELD_BIT(c);
+
       nir_def *store_component = nir_channel(b, intrin->src[0].ssa, i);
 
       if (non_dedicated_16bit) {
@@ -1026,6 +1031,7 @@ ac_nir_lower_legacy_vs(nir_shader *nir,
        * or MS).
        */
       out.outputs[VARYING_SLOT_PRIMITIVE_ID][0] = nir_load_primitive_id(&b);
+      out.infos[VARYING_SLOT_PRIMITIVE_ID].as_varying_mask = 0x1;
 
       /* Update outputs_written to reflect that the pass added a new output. */
       nir->info.outputs_written |= BITFIELD64_BIT(VARYING_SLOT_PRIMITIVE_ID);
