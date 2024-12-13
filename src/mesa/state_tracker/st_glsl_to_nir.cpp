@@ -327,7 +327,6 @@ st_glsl_to_nir_post_opts(struct st_context *st, struct gl_program *prog,
       NIR_PASS(_, nir, gl_nir_lower_atomics, shader_program, true);
 
    NIR_PASS(_, nir, nir_opt_intrinsics);
-   NIR_PASS(_, nir, nir_opt_fragdepth);
 
    /* Lower 64-bit ops. */
    if (nir->options->lower_int64_options ||
