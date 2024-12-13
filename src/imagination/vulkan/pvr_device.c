@@ -285,39 +285,6 @@ static void pvr_physical_device_get_supported_features(
    };
 }
 
-static bool pvr_physical_device_init_pipeline_cache_uuid(
-   const struct pvr_device_info *const dev_info,
-   uint8_t pipeline_cache_uuid_out[const static VK_UUID_SIZE])
-{
-   struct mesa_sha1 sha1_ctx;
-   unsigned build_id_len;
-   uint8_t sha1[20];
-   uint64_t bvnc;
-
-   const struct build_id_note *note =
-      build_id_find_nhdr_for_addr(pvr_physical_device_init_pipeline_cache_uuid);
-   if (!note) {
-      mesa_loge("Failed to find build-id");
-      return false;
-   }
-
-   build_id_len = build_id_length(note);
-   if (build_id_len < 20) {
-      mesa_loge("Build-id too short. It needs to be a SHA");
-      return false;
-   }
-
-   bvnc = pvr_get_packed_bvnc(dev_info);
-
-   _mesa_sha1_init(&sha1_ctx);
-   _mesa_sha1_update(&sha1_ctx, build_id_data(note), build_id_len);
-   _mesa_sha1_update(&sha1_ctx, &bvnc, sizeof(bvnc));
-   _mesa_sha1_final(&sha1_ctx, sha1);
-   memcpy(pipeline_cache_uuid_out, sha1, VK_UUID_SIZE);
-
-   return true;
-}
-
 static bool pvr_physical_device_get_properties(
    const struct pvr_physical_device *const pdevice,
    struct vk_properties *const properties)
@@ -368,8 +335,6 @@ static bool pvr_physical_device_get_properties(
 
    UNUSED const uint32_t max_compute_work_group_invocations =
       (usc_slots * max_instances_per_pds_task >= 512U) ? 512U : 384U;
-
-   bool ret;
 
    *properties = (struct vk_properties){
       /* Vulkan 1.0 */
@@ -557,12 +522,6 @@ static bool pvr_physical_device_get_properties(
             dev_info->ident.series_name,
             dev_info->ident.public_name);
 
-   ret = pvr_physical_device_init_pipeline_cache_uuid(
-      dev_info,
-      properties->pipelineCacheUUID);
-   if (!ret)
-      return false;
-
    return true;
 }
 
@@ -646,6 +605,64 @@ static uint64_t pvr_compute_heap_size(void)
       available_ram = total_ram * 3U / 4U;
 
    return available_ram;
+}
+
+static void
+pvr_get_device_uuid(const struct pvr_device_info *dev_info,
+                    uint8_t uuid_out[const static SHA1_DIGEST_LENGTH])
+{
+   uint64_t bvnc = pvr_get_packed_bvnc(dev_info);
+   static const char *device_str = "pvr";
+   struct mesa_sha1 sha1_ctx;
+
+   _mesa_sha1_init(&sha1_ctx);
+   _mesa_sha1_update(&sha1_ctx, device_str, strlen(device_str));
+   _mesa_sha1_update(&sha1_ctx, &bvnc, sizeof(bvnc));
+   _mesa_sha1_final(&sha1_ctx, uuid_out);
+}
+
+static void
+pvr_get_cache_uuid(const struct pvr_physical_device *const pdevice,
+                   uint8_t uuid_out[const static SHA1_DIGEST_LENGTH])
+{
+   const struct pvr_instance *instance = pdevice->instance;
+   static const char *cache_str = "cache";
+   struct mesa_sha1 sha1_ctx;
+
+   _mesa_sha1_init(&sha1_ctx);
+   _mesa_sha1_update(&sha1_ctx, cache_str, strlen(cache_str));
+   _mesa_sha1_update(&sha1_ctx,
+                     pdevice->device_uuid,
+                     sizeof(pdevice->device_uuid));
+   _mesa_sha1_update(&sha1_ctx,
+                     instance->driver_build_sha,
+                     sizeof(instance->driver_build_sha));
+   _mesa_sha1_final(&sha1_ctx, uuid_out);
+}
+
+static void
+pvr_physical_device_setup_uuids(struct pvr_physical_device *const pdevice)
+{
+   const struct pvr_instance *instance = pdevice->instance;
+
+   pvr_get_device_uuid(&pdevice->dev_info, pdevice->device_uuid);
+   pvr_get_cache_uuid(pdevice, pdevice->cache_uuid);
+
+   memcpy(pdevice->vk.properties.driverUUID,
+          instance->driver_build_sha,
+          sizeof(pdevice->vk.properties.driverUUID));
+
+   memcpy(pdevice->vk.properties.deviceUUID,
+          pdevice->device_uuid,
+          sizeof(pdevice->vk.properties.deviceUUID));
+
+   memcpy(pdevice->vk.properties.pipelineCacheUUID,
+          pdevice->cache_uuid,
+          sizeof(pdevice->vk.properties.pipelineCacheUUID));
+
+   memcpy(pdevice->vk.properties.shaderBinaryUUID,
+          pdevice->cache_uuid,
+          sizeof(pdevice->vk.properties.shaderBinaryUUID));
 }
 
 static VkResult pvr_physical_device_init(struct pvr_physical_device *pdevice,
@@ -736,6 +753,8 @@ static VkResult pvr_physical_device_init(struct pvr_physical_device *pdevice,
                                     &dispatch_table);
    if (result != VK_SUCCESS)
       goto err_pvr_winsys_destroy;
+
+   pvr_physical_device_setup_uuids(pdevice);
 
    pdevice->vk.supported_sync_types = ws->sync_types;
 
@@ -1009,6 +1028,29 @@ out:
    return result;
 }
 
+static bool
+pvr_get_driver_build_sha(uint8_t sha_out[const static SHA1_DIGEST_LENGTH])
+{
+   const struct build_id_note *note;
+   unsigned build_id_len;
+
+   note = build_id_find_nhdr_for_addr(pvr_get_driver_build_sha);
+   if (!note) {
+      mesa_loge("Failed to find build-id.");
+      return false;
+   }
+
+   build_id_len = build_id_length(note);
+   if (build_id_len < SHA1_DIGEST_LENGTH) {
+      mesa_loge("Build-id too short. It needs to be a SHA.");
+      return false;
+   }
+
+   memcpy(sha_out, build_id_data(note), SHA1_DIGEST_LENGTH);
+
+   return true;
+}
+
 VkResult pvr_CreateInstance(const VkInstanceCreateInfo *pCreateInfo,
                             const VkAllocationCallbacks *pAllocator,
                             VkInstance *pInstance)
@@ -1042,10 +1084,8 @@ VkResult pvr_CreateInstance(const VkInstanceCreateInfo *pCreateInfo,
                              &dispatch_table,
                              pCreateInfo,
                              pAllocator);
-   if (result != VK_SUCCESS) {
-      vk_free(pAllocator, instance);
-      return result;
-   }
+   if (result != VK_SUCCESS)
+      goto err_free_instance;
 
    pvr_process_debug_variable();
 
@@ -1056,9 +1096,20 @@ VkResult pvr_CreateInstance(const VkInstanceCreateInfo *pCreateInfo,
 
    VG(VALGRIND_CREATE_MEMPOOL(instance, 0, false));
 
+   if (!pvr_get_driver_build_sha(instance->driver_build_sha)) {
+      result = vk_errorf(NULL,
+                         VK_ERROR_INITIALIZATION_FAILED,
+                         "Failed to get driver build sha.");
+      goto err_free_instance;
+   }
+
    *pInstance = pvr_instance_to_handle(instance);
 
    return VK_SUCCESS;
+
+err_free_instance:
+   vk_free(pAllocator, instance);
+   return result;
 }
 
 static uint32_t pvr_get_simultaneous_num_allocs(

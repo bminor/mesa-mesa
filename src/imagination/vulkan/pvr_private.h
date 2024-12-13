@@ -59,6 +59,7 @@
 #include "util/format/u_format.h"
 #include "util/log.h"
 #include "util/macros.h"
+#include "util/mesa-sha1.h"
 #include "util/simple_mtx.h"
 #include "util/u_dynarray.h"
 #include "util/u_math.h"
@@ -113,12 +114,17 @@ struct pvr_physical_device {
 
    struct rogue_compiler *compiler;
    pco_ctx *pco_ctx;
+
+   uint8_t device_uuid[SHA1_DIGEST_LENGTH];
+   uint8_t cache_uuid[SHA1_DIGEST_LENGTH];
 };
 
 struct pvr_instance {
    struct vk_instance vk;
 
    uint32_t active_device_count;
+
+   uint8_t driver_build_sha[SHA1_DIGEST_LENGTH];
 };
 
 struct pvr_queue {
