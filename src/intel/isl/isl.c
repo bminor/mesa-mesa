@@ -429,6 +429,69 @@ isl_device_init(struct isl_device *dev,
 }
 
 /**
+ * @brief Query the supported tilings by the device.
+ *
+ * This function always returns non-zero as ISL_TILING_LINEAR_BIT is always
+ * supported.
+ */
+isl_tiling_flags_t
+isl_device_get_supported_tilings(const struct isl_device *dev)
+{
+   isl_tiling_flags_t flags;
+
+   if (ISL_GFX_VERX10(dev) >= 200) {
+      flags =
+         ISL_TILING_LINEAR_BIT |
+         ISL_TILING_X_BIT |
+         ISL_TILING_4_BIT |
+         ISL_TILING_64_XE2_BIT;
+   } else if (ISL_GFX_VERX10(dev) >= 125) {
+      flags =
+         ISL_TILING_LINEAR_BIT |
+         ISL_TILING_X_BIT |
+         ISL_TILING_4_BIT |
+         ISL_TILING_64_BIT;
+   } else if (ISL_GFX_VER(dev) >= 12) {
+      flags =
+         ISL_TILING_LINEAR_BIT |
+         ISL_TILING_X_BIT |
+         ISL_TILING_Y0_BIT |
+         ISL_TILING_ICL_Yf_BIT |
+         ISL_TILING_ICL_Ys_BIT;
+   } else if (ISL_GFX_VER(dev) >= 11) {
+      flags =
+         ISL_TILING_LINEAR_BIT |
+         ISL_TILING_X_BIT |
+         ISL_TILING_W_BIT |
+         ISL_TILING_Y0_BIT |
+         ISL_TILING_ICL_Yf_BIT |
+         ISL_TILING_ICL_Ys_BIT;
+   } else if (ISL_GFX_VER(dev) >= 9) {
+      flags =
+         ISL_TILING_LINEAR_BIT |
+         ISL_TILING_X_BIT |
+         ISL_TILING_W_BIT |
+         ISL_TILING_Y0_BIT |
+         ISL_TILING_SKL_Yf_BIT |
+         ISL_TILING_SKL_Ys_BIT;
+   } else if (ISL_GFX_VER(dev) >= 6) {
+      flags =
+         ISL_TILING_LINEAR_BIT |
+         ISL_TILING_X_BIT |
+         ISL_TILING_W_BIT |
+         ISL_TILING_Y0_BIT;
+   } else {
+      /* Gfx4-5 only support linear, X, and Y-tiling. */
+      flags =
+         ISL_TILING_LINEAR_BIT |
+         ISL_TILING_X_BIT |
+         ISL_TILING_Y0_BIT;
+   }
+
+   return flags;
+}
+
+/**
  * @brief Query the set of multisamples supported by the device.
  *
  * This function always returns non-zero, as ISL_SAMPLE_COUNT_1_BIT is always

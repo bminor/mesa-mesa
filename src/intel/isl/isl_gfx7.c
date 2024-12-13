@@ -198,32 +198,8 @@ isl_gfx6_filter_tiling(const struct isl_device *dev,
 
    /* Clear flags unsupported on this hardware */
    assert(ISL_GFX_VERX10(dev) < 125);
-   if (ISL_GFX_VER(dev) >= 12) {
-      *flags &= ISL_TILING_LINEAR_BIT |
-                ISL_TILING_X_BIT |
-                ISL_TILING_Y0_BIT |
-                ISL_TILING_ICL_Yf_BIT |
-                ISL_TILING_ICL_Ys_BIT;
-   } else if (ISL_GFX_VER(dev) >= 11) {
-      *flags &= ISL_TILING_LINEAR_BIT |
-                ISL_TILING_X_BIT |
-                ISL_TILING_W_BIT |
-                ISL_TILING_Y0_BIT |
-                ISL_TILING_ICL_Yf_BIT |
-                ISL_TILING_ICL_Ys_BIT;
-   } else if (ISL_GFX_VER(dev) >= 9) {
-      *flags &= ISL_TILING_LINEAR_BIT |
-                ISL_TILING_X_BIT |
-                ISL_TILING_W_BIT |
-                ISL_TILING_Y0_BIT |
-                ISL_TILING_SKL_Yf_BIT |
-                ISL_TILING_SKL_Ys_BIT;
-   } else {
-      *flags &= ISL_TILING_LINEAR_BIT |
-                ISL_TILING_X_BIT |
-                ISL_TILING_W_BIT |
-                ISL_TILING_Y0_BIT;
-   }
+
+   *flags &= isl_device_get_supported_tilings(dev);
 
    /* TODO: Investigate Yf failures (~5000 VK CTS failures at the time of this
     *       writing).

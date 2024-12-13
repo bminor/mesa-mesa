@@ -42,8 +42,7 @@ isl_gfx4_filter_tiling(const struct isl_device *dev,
                        const struct isl_surf_init_info *restrict info,
                        isl_tiling_flags_t *flags)
 {
-   /* Gfx4-5 only support linear, X, and Y-tiling. */
-   *flags &= (ISL_TILING_LINEAR_BIT | ISL_TILING_X_BIT | ISL_TILING_Y0_BIT);
+   *flags &= isl_device_get_supported_tilings(dev);;
 
    if (isl_surf_usage_is_depth_or_stencil(info->usage)) {
       assert(!ISL_DEV_USE_SEPARATE_STENCIL(dev));

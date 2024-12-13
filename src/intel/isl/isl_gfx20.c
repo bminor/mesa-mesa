@@ -44,10 +44,7 @@ isl_gfx20_filter_tiling(const struct isl_device *dev,
    /* Clear flags unsupported on this hardware */
    assert(ISL_GFX_VERX10(dev) >= 200);
 
-   *flags &= ISL_TILING_LINEAR_BIT |
-             ISL_TILING_X_BIT |
-             ISL_TILING_4_BIT |
-             ISL_TILING_64_XE2_BIT;
+   *flags &= isl_device_get_supported_tilings(dev);
 
    if (isl_surf_usage_is_depth_or_stencil(info->usage)) {
       *flags &= ISL_TILING_4_BIT | ISL_TILING_64_XE2_BIT;
