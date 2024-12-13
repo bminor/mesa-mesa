@@ -27,9 +27,10 @@ struct ir3_validate_ctx {
 };
 
 static void
-validate_error(struct ir3_validate_ctx *ctx, const char *condstr)
+validate_error(struct ir3_validate_ctx *ctx, const char *condstr,
+               const char *file, unsigned line)
 {
-   fprintf(stderr, "validation fail: %s\n", condstr);
+   fprintf(stderr, "validation fail at %s:%u: %s\n", file, line, condstr);
    if (ctx->current_instr) {
       fprintf(stderr, "  -> for instruction: ");
       ir3_print_instr(ctx->current_instr);
@@ -42,7 +43,7 @@ validate_error(struct ir3_validate_ctx *ctx, const char *condstr)
 #define validate_assert(ctx, cond)                                             \
    do {                                                                        \
       if (!(cond)) {                                                           \
-         validate_error(ctx, #cond);                                           \
+         validate_error(ctx, #cond, __FILE__, __LINE__);                       \
       }                                                                        \
    } while (0)
 
