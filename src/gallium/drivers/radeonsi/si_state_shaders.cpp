@@ -2698,23 +2698,27 @@ void si_ps_key_update_framebuffer_blend_dsa_rasterizer(struct si_context *sctx)
       !sel->info.base.writes_memory &&
       !key->ps.part.epilog.spi_shader_col_format;
 
-   /* Eliminate shader code computing output values that are unused.
-    * This enables dead code elimination between shader parts.
-    * Check if any output is eliminated.
-    *
-    * Dual source blending never has color buffer 1 enabled, so ignore it.
-    *
-    * On gfx11, pixel shaders that write memory should be compiled with an inlined epilog,
-    * so that the compiler can see s_endpgm and deallocates VGPRs before memory stores return.
-    */
+   /* Compile PS monolithically if it eliminates code or improves performance. */
    if (sel->info.colors_written_4bit &
+       /* Dual source blending never has color buffer 1 enabled, so ignore it. */
        (blend->dual_src_blend ? 0xffffff0f : 0xffffffff) &
-       ~(sctx->framebuffer.colorbuf_enabled_4bit & blend->cb_target_enabled_4bit))
+       ~(sctx->framebuffer.colorbuf_enabled_4bit & blend->cb_target_enabled_4bit)) {
+      /* Eliminate shader code computing the color outputs that have missing color buffer
+       * attachments or are disabled by colormask.
+       */
       key->ps.opt.prefer_mono = 1;
-   else if (sctx->gfx_level >= GFX11 && sel->info.base.writes_memory)
+   } else if (sctx->gfx_level >= GFX11 && sel->info.base.writes_memory) {
+      /* On gfx11, pixel shaders that write memory should be compiled with an inlined epilog,
+       * so that the compiler can see s_endpgm and deallocates VGPRs before memory stores return.
+       */
       key->ps.opt.prefer_mono = 1;
-   else
+   } else if (key->ps.part.epilog.kill_z || key->ps.part.epilog.kill_stencil ||
+              key->ps.part.epilog.kill_samplemask) {
+      /* Eliminate shader code computing the Z/S/samplemask outputs. */
+      key->ps.opt.prefer_mono = 1;
+   } else {
       key->ps.opt.prefer_mono = 0;
+   }
 
    /* Update shaders only if the key changed. */
    if (memcmp(&key->ps.part.epilog, &old_epilog, sizeof(old_epilog)) ||
