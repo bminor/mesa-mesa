@@ -181,9 +181,7 @@ lower_vulkan_resource_index(struct tu_device *dev, nir_builder *b,
 
    shader->active_desc_sets |= 1u << set;
 
-   switch (binding_layout->type) {
-   case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
-   case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC: {
+   if (vk_descriptor_type_is_dynamic(binding_layout->type)) {
       int offset = 0;
       for (unsigned i = 0; i < set; i++) {
          if (shader->dynamic_descriptor_sizes[i] >= 0) {
@@ -217,12 +215,8 @@ lower_vulkan_resource_index(struct tu_device *dev, nir_builder *b,
       }
       assert(dev->physical_device->reserved_set_idx >= 0);
       set = dev->physical_device->reserved_set_idx;
-      break;
-   }
-   default:
+   } else
       base = nir_imm_int(b, binding_layout->offset / (4 * A6XX_TEX_CONST_DWORDS));
-      break;
-   }
 
    unsigned stride = binding_layout->size / (4 * A6XX_TEX_CONST_DWORDS);
    assert(util_is_power_of_two_nonzero(stride));

@@ -2960,8 +2960,7 @@ tu_bind_descriptor_sets(struct tu_cmd_buffer *cmd,
       for (unsigned j = 0; j < set->layout->binding_count; j++) {
          struct tu_descriptor_set_binding_layout *binding =
             &set->layout->binding[j];
-         if (binding->type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC ||
-             binding->type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC) {
+         if (vk_descriptor_type_is_dynamic(binding->type)) {
             for (unsigned k = 0; k < binding->array_size; k++, dyn_idx++) {
                assert(dyn_idx < info->dynamicOffsetCount);
                uint32_t offset = info->pDynamicOffsets[dyn_idx];
