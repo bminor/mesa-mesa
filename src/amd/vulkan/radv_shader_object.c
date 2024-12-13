@@ -150,36 +150,7 @@ radv_shader_object_init_graphics(struct radv_shader_object *shader_obj, struct r
    struct radv_shader *shader = NULL;
    struct radv_shader_binary *binary = NULL;
 
-   VkShaderStageFlags next_stages = pCreateInfo->nextStage;
-   if (!next_stages) {
-      /* When next stage is 0, gather all valid next stages. */
-      switch (pCreateInfo->stage) {
-      case VK_SHADER_STAGE_VERTEX_BIT:
-         next_stages |=
-            VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-         break;
-      case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
-         next_stages |= VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-         break;
-      case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
-         next_stages |= VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-         break;
-      case VK_SHADER_STAGE_GEOMETRY_BIT:
-      case VK_SHADER_STAGE_MESH_BIT_EXT:
-         next_stages |= VK_SHADER_STAGE_FRAGMENT_BIT;
-         break;
-      case VK_SHADER_STAGE_TASK_BIT_EXT:
-         next_stages |= VK_SHADER_STAGE_MESH_BIT_EXT;
-         break;
-      case VK_SHADER_STAGE_FRAGMENT_BIT:
-      case VK_SHADER_STAGE_COMPUTE_BIT:
-         break;
-      default:
-         unreachable("Invalid shader stage");
-      }
-   }
-
-   if (!next_stages) {
+   if (!pCreateInfo->nextStage) {
       struct radv_shader *shaders[MESA_VULKAN_SHADER_STAGES] = {NULL};
       struct radv_shader_binary *binaries[MESA_VULKAN_SHADER_STAGES] = {NULL};
 
@@ -194,7 +165,7 @@ radv_shader_object_init_graphics(struct radv_shader_object *shader_obj, struct r
       shader_obj->shader = shader;
       shader_obj->binary = binary;
    } else {
-      radv_foreach_stage(next_stage, next_stages)
+      radv_foreach_stage(next_stage, pCreateInfo->nextStage)
       {
          struct radv_shader *shaders[MESA_VULKAN_SHADER_STAGES] = {NULL};
          struct radv_shader_binary *binaries[MESA_VULKAN_SHADER_STAGES] = {NULL};
