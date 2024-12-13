@@ -538,7 +538,7 @@ ac_nir_export_parameters(nir_builder *b,
       uint32_t write_mask = 0;
       for (int i = 0; i < 4; i++) {
          if (out->outputs[slot][i])
-            write_mask |= BITFIELD_BIT(i);
+            write_mask |= (out->infos[slot].as_varying_mask & BITFIELD_BIT(i));
       }
 
       /* no one set this output slot, we can skip the param export */
