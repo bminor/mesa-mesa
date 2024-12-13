@@ -63,6 +63,7 @@
 #include "pvr_winsys.h"
 #include "rogue/rogue.h"
 #include "util/build_id.h"
+#include "util/disk_cache.h"
 #include "util/log.h"
 #include "util/macros.h"
 #include "util/mesa-sha1.h"
@@ -544,6 +545,38 @@ pvr_EnumerateInstanceExtensionProperties(const char *pLayerName,
                                                      pProperties);
 }
 
+static bool pvr_physical_device_setup_pipeline_cache(
+   struct pvr_physical_device *const pdevice)
+{
+#ifdef ENABLE_SHADER_CACHE
+   const struct pvr_instance *instance = pdevice->instance;
+   char device_id[SHA1_DIGEST_LENGTH * 2 + 1];
+   char driver_id[SHA1_DIGEST_LENGTH * 2 + 1];
+
+   _mesa_sha1_format(device_id, pdevice->device_uuid);
+   _mesa_sha1_format(driver_id, instance->driver_build_sha);
+
+   pdevice->vk.disk_cache = disk_cache_create(device_id, driver_id, 0U);
+   return !!pdevice->vk.disk_cache;
+#else
+   return true;
+#endif /* ENABLE_SHADER_CACHE */
+}
+
+static void pvr_physical_device_free_pipeline_cache(
+   struct pvr_physical_device *const pdevice)
+{
+#ifdef ENABLE_SHADER_CACHE
+   if (!pdevice->vk.disk_cache)
+      return;
+
+   disk_cache_destroy(pdevice->vk.disk_cache);
+   pdevice->vk.disk_cache = NULL;
+#else
+   assert(pdevice->vk.disk_cache);
+#endif /* ENABLE_SHADER_CACHE */
+}
+
 static void pvr_physical_device_destroy(struct vk_physical_device *vk_pdevice)
 {
    struct pvr_physical_device *pdevice =
@@ -562,6 +595,8 @@ static void pvr_physical_device_destroy(struct vk_physical_device *vk_pdevice)
       ralloc_free(pdevice->compiler);
 
    pvr_wsi_finish(pdevice);
+
+   pvr_physical_device_free_pipeline_cache(pdevice);
 
    if (pdevice->ws)
       pvr_winsys_destroy(pdevice->ws);
@@ -756,6 +791,13 @@ static VkResult pvr_physical_device_init(struct pvr_physical_device *pdevice,
 
    pvr_physical_device_setup_uuids(pdevice);
 
+   if (!pvr_physical_device_setup_pipeline_cache(pdevice)) {
+      result = vk_errorf(NULL,
+                         VK_ERROR_INITIALIZATION_FAILED,
+                         "Failed to get driver build sha.");
+      goto err_vk_physical_device_finish;
+   }
+
    pdevice->vk.supported_sync_types = ws->sync_types;
 
    /* Setup available memory heaps and types */
@@ -773,7 +815,7 @@ static VkResult pvr_physical_device_init(struct pvr_physical_device *pdevice,
    result = pvr_wsi_init(pdevice);
    if (result != VK_SUCCESS) {
       vk_error(instance, result);
-      goto err_vk_physical_device_finish;
+      goto err_free_pipeline_cache;
    }
 
    pdevice->compiler = rogue_compiler_create(&pdevice->dev_info);
@@ -797,6 +839,9 @@ static VkResult pvr_physical_device_init(struct pvr_physical_device *pdevice,
 
 err_wsi_finish:
    pvr_wsi_finish(pdevice);
+
+err_free_pipeline_cache:
+   pvr_physical_device_free_pipeline_cache(pdevice);
 
 err_vk_physical_device_finish:
    vk_physical_device_finish(&pdevice->vk);
