@@ -342,6 +342,8 @@ panvk_per_arch(cmd_prepare_push_descs)(struct panvk_cmd_buffer *cmdbuf,
       memcpy(ptr.cpu, push_set->descs.host,
              push_set->desc_count * PANVK_DESCRIPTOR_SIZE);
       push_set->descs.dev = ptr.gpu;
+
+      BITSET_CLEAR(desc_state->dirty_push_sets, i);
    }
 
    return VK_SUCCESS;

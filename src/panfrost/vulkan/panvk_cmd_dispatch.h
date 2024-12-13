@@ -41,7 +41,6 @@ struct panvk_cmd_compute_state {
 #define clear_dirty_after_dispatch(__cmdbuf)                                   \
    do {                                                                        \
       compute_state_clear_all_dirty(__cmdbuf);                                 \
-      desc_state_clear_all_dirty(&(__cmdbuf)->state.compute.desc_state);       \
    } while (0)
 
 #endif

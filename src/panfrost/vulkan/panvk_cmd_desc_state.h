@@ -55,12 +55,6 @@ struct panvk_descriptor_state {
    uint32_t dyn_buf_offsets[MAX_SETS][MAX_DYNAMIC_BUFFERS];
 };
 
-static inline void
-desc_state_clear_all_dirty(struct panvk_descriptor_state *desc_state)
-{
-   BITSET_ZERO(desc_state->dirty_push_sets);
-}
-
 #if PAN_ARCH <= 7
 VkResult panvk_per_arch(cmd_prepare_dyn_ssbos)(
    struct panvk_cmd_buffer *cmdbuf,

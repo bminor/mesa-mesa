@@ -275,7 +275,6 @@ cached_fs_required(ASSERTED const struct panvk_cmd_graphics_state *state,
       vk_dynamic_graphics_state_clear_dirty(                                   \
          &(__cmdbuf)->vk.dynamic_graphics_state);                              \
       gfx_state_clear_all_dirty(__cmdbuf);                                     \
-      desc_state_clear_all_dirty(&(__cmdbuf)->state.gfx.desc_state);           \
       if (__set_fs_dirty)                                                      \
          gfx_state_set_dirty(__cmdbuf, FS);                                    \
    } while (0)
