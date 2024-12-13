@@ -169,6 +169,7 @@ radv_get_conformance_version(const struct radv_physical_device *pdev)
       case CHIP_VERDE:
       case CHIP_OLAND:
       case CHIP_BONAIRE:
+      case CHIP_HAWAII:
          conformance_version = (VkConformanceVersion){
             .major = 1,
             .minor = 3,
