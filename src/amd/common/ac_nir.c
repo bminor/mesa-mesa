@@ -521,9 +521,7 @@ ac_nir_export_parameters(nir_builder *b,
                          const uint8_t *param_offsets,
                          uint64_t outputs_written,
                          uint16_t outputs_written_16bit,
-                         nir_def *(*outputs)[4],
-                         nir_def *(*outputs_16bit_lo)[4],
-                         nir_def *(*outputs_16bit_hi)[4])
+                         ac_nir_prerast_out *out)
 {
    uint32_t exported_params = 0;
 
@@ -534,7 +532,7 @@ ac_nir_export_parameters(nir_builder *b,
 
       uint32_t write_mask = 0;
       for (int i = 0; i < 4; i++) {
-         if (outputs[slot][i])
+         if (out->outputs[slot][i])
             write_mask |= BITFIELD_BIT(i);
       }
 
@@ -550,7 +548,7 @@ ac_nir_export_parameters(nir_builder *b,
          continue;
 
       nir_export_amd(
-         b, get_export_output(b, outputs[slot]),
+         b, get_export_output(b, out->outputs[slot]),
          .base = V_008DFC_SQ_EXP_PARAM + offset,
          .write_mask = write_mask);
       exported_params |= BITFIELD_BIT(offset);
@@ -563,7 +561,7 @@ ac_nir_export_parameters(nir_builder *b,
 
       uint32_t write_mask = 0;
       for (int i = 0; i < 4; i++) {
-         if (outputs_16bit_lo[slot][i] || outputs_16bit_hi[slot][i])
+         if (out->outputs_16bit_lo[slot][i] || out->outputs_16bit_hi[slot][i])
             write_mask |= BITFIELD_BIT(i);
       }
 
@@ -581,8 +579,8 @@ ac_nir_export_parameters(nir_builder *b,
       nir_def *vec[4];
       nir_def *undef = nir_undef(b, 1, 16);
       for (int i = 0; i < 4; i++) {
-         nir_def *lo = outputs_16bit_lo[slot][i] ? outputs_16bit_lo[slot][i] : undef;
-         nir_def *hi = outputs_16bit_hi[slot][i] ? outputs_16bit_hi[slot][i] : undef;
+         nir_def *lo = out->outputs_16bit_lo[slot][i] ? out->outputs_16bit_lo[slot][i] : undef;
+         nir_def *hi = out->outputs_16bit_hi[slot][i] ? out->outputs_16bit_hi[slot][i] : undef;
          vec[i] = nir_pack_32_2x16_split(b, lo, hi);
       }
 
@@ -887,9 +885,7 @@ ac_nir_create_gs_copy_shader(const nir_shader *gs_nir,
             ac_nir_export_parameters(&b, param_offsets,
                                      b.shader->info.outputs_written,
                                      b.shader->info.outputs_written_16bit,
-                                     out.outputs,
-                                     out.outputs_16bit_lo,
-                                     out.outputs_16bit_hi);
+                                     &out);
          }
       }
 
@@ -976,9 +972,7 @@ ac_nir_lower_legacy_vs(nir_shader *nir,
       ac_nir_export_parameters(&b, param_offsets,
                                nir->info.outputs_written,
                                nir->info.outputs_written_16bit,
-                               out.outputs,
-                               out.outputs_16bit_lo,
-                               out.outputs_16bit_hi);
+                               &out);
    }
 
    nir_metadata_preserve(impl, preserved);

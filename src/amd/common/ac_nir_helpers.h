@@ -107,9 +107,7 @@ ac_nir_export_parameters(nir_builder *b,
                          const uint8_t *param_offsets,
                          uint64_t outputs_written,
                          uint16_t outputs_written_16bit,
-                         nir_def *(*outputs)[4],
-                         nir_def *(*outputs_16bit_lo)[4],
-                         nir_def *(*outputs_16bit_hi)[4]);
+                         ac_nir_prerast_out *out);
 
 nir_def *
 ac_nir_calc_io_off(nir_builder *b,

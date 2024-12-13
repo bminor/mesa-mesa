@@ -635,9 +635,12 @@ emit_ngg_nogs_prim_export(nir_builder *b, lower_ngg_nogs_state *s, nir_def *arg)
          const uint8_t offset = s->options->vs_output_param_offset[VARYING_SLOT_PRIMITIVE_ID];
          nir_def *prim_id = nir_load_primitive_id(b);
          nir_def *undef = nir_undef(b, 1, 32);
-         nir_def *param_components[4] = { prim_id, undef, undef, undef };
+         ac_nir_prerast_out out = {
+            .infos = {{.components_mask = 1}},
+            .outputs = {{prim_id, undef, undef, undef}}
+         };
 
-         ac_nir_export_parameters(b, &offset, 1, 0, &param_components, NULL, NULL);
+         ac_nir_export_parameters(b, &offset, 1, 0, &out);
       }
    }
    nir_pop_if(b, if_gs_thread);
@@ -2691,8 +2694,7 @@ nogs_export_vertex_params(nir_builder *b, nir_function_impl *impl,
       ac_nir_export_parameters(b, s->options->vs_output_param_offset,
                                  b->shader->info.outputs_written,
                                  b->shader->info.outputs_written_16bit,
-                                 s->out.outputs, s->out.outputs_16bit_lo,
-                                 s->out.outputs_16bit_hi);
+                                 &s->out);
    }
 }
 
@@ -3382,8 +3384,7 @@ ngg_gs_export_vertices(nir_builder *b, nir_def *max_num_out_vtx, nir_def *tid_in
          ac_nir_export_parameters(b, s->options->vs_output_param_offset,
                                   b->shader->info.outputs_written,
                                   b->shader->info.outputs_written_16bit,
-                                  s->out.outputs, s->out.outputs_16bit_lo,
-                                  s->out.outputs_16bit_hi);
+                                  &s->out);
       }
    }
 
@@ -4635,8 +4636,7 @@ emit_ms_vertex(nir_builder *b, nir_def *index, nir_def *row, bool exports, bool 
        * (On GFX11 they are already stored in the attribute ring.)
        */
       if (s->has_param_exports && s->gfx_level == GFX10_3) {
-         ac_nir_export_parameters(b, s->vs_output_param_offset, per_vertex_outputs, 0, s->out.outputs,
-                                  NULL, NULL);
+         ac_nir_export_parameters(b, s->vs_output_param_offset, per_vertex_outputs, 0, &s->out);
       }
 
       /* GFX11+: also store special outputs to the attribute ring so PS can load them. */
@@ -4672,8 +4672,7 @@ emit_ms_primitive(nir_builder *b, nir_def *index, nir_def *row, bool exports, bo
        * (On GFX11 they are already stored in the attribute ring.)
        */
       if (s->has_param_exports && s->gfx_level == GFX10_3) {
-         ac_nir_export_parameters(b, s->vs_output_param_offset, per_primitive_outputs, 0,
-                                  s->out.outputs, NULL, NULL);
+         ac_nir_export_parameters(b, s->vs_output_param_offset, per_primitive_outputs, 0, &s->out);
       }
 
       /* GFX11+: also store special outputs to the attribute ring so PS can load them. */
