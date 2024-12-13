@@ -2170,6 +2170,10 @@ isl_choose_miptail_start_level(const struct isl_device *dev,
    if (ISL_GFX_VER(dev) == 12 && isl_format_is_yuv(info->format))
       return 15;
 
+   /* Software detiling is not implemented for miptails. */
+   if (info->usage & ISL_SURF_USAGE_SOFTWARE_DETILING)
+      return 15;
+
    if (intel_needs_workaround(dev->info, 22015614752) &&
        (info->usage & ISL_SURF_USAGE_MULTI_ENGINE_PAR_BIT) &&
        _isl_surf_info_supports_ccs(dev, info->format, info->usage)) {
