@@ -384,6 +384,19 @@ vk_index_to_restart(VkIndexType type)
    }
 }
 
+static inline bool
+vk_descriptor_type_is_dynamic(VkDescriptorType type)
+{
+   switch (type) {
+   case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
+   case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
+      return true;
+
+   default:
+      return false;
+   }
+}
+
 #ifdef __cplusplus
 }
 #endif
