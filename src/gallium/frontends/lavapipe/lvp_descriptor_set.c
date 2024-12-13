@@ -128,8 +128,7 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_CreateDescriptorSetLayout(
       set_layout->binding[b].uniform_block_offset = 0;
       set_layout->binding[b].uniform_block_size = 0;
 
-      if (binding->descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC ||
-          binding->descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC) {
+      if (vk_descriptor_type_is_dynamic(binding->descriptorType)) {
          set_layout->binding[b].dynamic_index = dynamic_offset_count;
          dynamic_offset_count += binding->descriptorCount;
       }

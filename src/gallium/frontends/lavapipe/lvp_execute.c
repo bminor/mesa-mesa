@@ -1238,8 +1238,7 @@ apply_dynamic_offsets(struct lvp_descriptor_set **out_set, const uint32_t *offse
 
    for (uint32_t i = 0; i < set->layout->binding_count; i++) {
       const struct lvp_descriptor_set_binding_layout *binding = &set->layout->binding[i];
-      if (binding->type != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC &&
-          binding->type != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)
+      if (!vk_descriptor_type_is_dynamic(binding->type))
          continue;
 
       struct lp_descriptor *desc = set->map;
