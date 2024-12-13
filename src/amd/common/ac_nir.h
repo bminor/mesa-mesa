@@ -286,9 +286,11 @@ typedef struct {
    /* OpenGL only */
    bool clamp_color;
    bool alpha_to_one;
-   bool kill_samplemask;
    enum compare_func alpha_func;
    unsigned broadcast_last_cbuf;
+   bool kill_z;
+   bool kill_stencil;
+   bool kill_samplemask;
 
    /* Vulkan only */
    unsigned enable_mrt_output_nan_fixup;

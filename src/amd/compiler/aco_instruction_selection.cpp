@@ -13540,9 +13540,9 @@ select_ps_epilog(Program* program, void* pinfo, ac_shader_config* config,
       emit_clamp_alpha_test(&ctx, einfo, colors[i], i);
    }
 
-   bool has_mrtz_depth = einfo->depth.used;
-   bool has_mrtz_stencil = einfo->stencil.used;
-   bool has_mrtz_samplemask = einfo->samplemask.used;
+   bool has_mrtz_depth = einfo->depth.used && !einfo->kill_depth;
+   bool has_mrtz_stencil = einfo->stencil.used && !einfo->kill_stencil;
+   bool has_mrtz_samplemask = einfo->samplemask.used && !einfo->kill_samplemask;
    bool has_mrtz_export =
       has_mrtz_depth || has_mrtz_stencil || has_mrtz_samplemask || has_mrtz_alpha;
    if (has_mrtz_export) {

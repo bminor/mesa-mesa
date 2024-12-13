@@ -686,6 +686,8 @@ struct si_ps_epilog_bits {
    unsigned clamp_color : 1;
    unsigned dual_src_blend_swizzle : 1;      /* gfx11+ */
    unsigned rbplus_depth_only_opt:1;
+   unsigned kill_z:1;
+   unsigned kill_stencil:1;
    unsigned kill_samplemask:1;
 };
 
@@ -1015,6 +1017,8 @@ struct si_shader {
          unsigned num_interp;
          unsigned spi_gs_out_config_ps;
          unsigned pa_sc_hisz_control;
+         bool writes_z;
+         bool writes_stencil;
          bool writes_samplemask;
       } ps;
    };

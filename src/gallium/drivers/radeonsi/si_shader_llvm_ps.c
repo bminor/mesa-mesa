@@ -693,22 +693,23 @@ void si_llvm_build_ps_epilog(struct si_shader_context *ctx, union si_shader_part
 
       si_llvm_build_clamp_alpha_test(ctx, color[write_i], write_i);
    }
+   bool writes_z = key->ps_epilog.writes_z && !key->ps_epilog.states.kill_z;
+   bool writes_stencil = key->ps_epilog.writes_stencil && !key->ps_epilog.states.kill_stencil;
+   bool writes_samplemask = key->ps_epilog.writes_samplemask && !key->ps_epilog.states.kill_samplemask;
 
    LLVMValueRef mrtz_alpha =
       key->ps_epilog.states.alpha_to_coverage_via_mrtz ? color[0][3] : NULL;
+   assert(writes_z || writes_stencil || writes_samplemask || !mrtz_alpha);
 
    /* Prepare the mrtz export. */
-   if (key->ps_epilog.writes_z ||
-       key->ps_epilog.writes_stencil ||
-       key->ps_epilog.writes_samplemask ||
-       mrtz_alpha) {
+   if (writes_z || writes_stencil || writes_samplemask || mrtz_alpha) {
       LLVMValueRef depth = NULL, stencil = NULL, samplemask = NULL;
 
-      if (key->ps_epilog.writes_z)
+      if (writes_z)
          depth = ac_get_arg(&ctx->ac, depth_arg);
-      if (key->ps_epilog.writes_stencil)
+      if (writes_stencil)
          stencil = ac_get_arg(&ctx->ac, stencil_arg);
-      if (key->ps_epilog.writes_samplemask)
+      if (writes_samplemask)
          samplemask = ac_get_arg(&ctx->ac, samplemask_arg);
 
       ac_export_mrt_z(&ctx->ac, depth, stencil, samplemask, mrtz_alpha, false,

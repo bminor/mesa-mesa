@@ -816,7 +816,9 @@ bool si_llvm_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *
 
    if (sel->stage == MESA_SHADER_FRAGMENT) {
       exports_color_null = sel->info.colors_written;
-      exports_mrtz = sel->info.writes_z || sel->info.writes_stencil || shader->ps.writes_samplemask;
+      exports_mrtz = shader->ps.writes_z || shader->ps.writes_stencil ||
+                     shader->ps.writes_samplemask ||
+                     shader->key.ps.part.epilog.alpha_to_coverage_via_mrtz;
       if (!exports_mrtz && !exports_color_null)
          exports_color_null = si_shader_uses_discard(shader) || sscreen->info.gfx_level < GFX10;
    }
@@ -901,8 +903,9 @@ bool si_llvm_build_shader_part(struct si_screen *sscreen, gl_shader_stage stage,
          shader.key.ps.part.epilog = key->ps_epilog.states;
          wave32 = key->ps_epilog.wave32;
          exports_color_null = key->ps_epilog.colors_written;
-         exports_mrtz = key->ps_epilog.writes_z || key->ps_epilog.writes_stencil ||
-                        key->ps_epilog.writes_samplemask;
+         exports_mrtz = (key->ps_epilog.writes_z && !key->ps_epilog.states.kill_z) ||
+                        (key->ps_epilog.writes_stencil && !key->ps_epilog.states.kill_stencil) ||
+                        (key->ps_epilog.writes_samplemask && !key->ps_epilog.states.kill_samplemask);
          if (!exports_mrtz && !exports_color_null)
             exports_color_null = key->ps_epilog.uses_discard || sscreen->info.gfx_level < GFX10;
       }

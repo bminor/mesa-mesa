@@ -215,11 +215,13 @@ gather_ps_store_output(nir_builder *b, nir_intrinsic_instr *intrin, lower_ps_sta
       switch (slot) {
       case FRAG_RESULT_DEPTH:
          assert(comp == 0);
-         s->depth = chan;
+         if (!s->options->kill_z)
+            s->depth = chan;
          break;
       case FRAG_RESULT_STENCIL:
          assert(comp == 0);
-         s->stencil = chan;
+         if (!s->options->kill_stencil)
+            s->stencil = chan;
          break;
       case FRAG_RESULT_SAMPLE_MASK:
          assert(comp == 0);

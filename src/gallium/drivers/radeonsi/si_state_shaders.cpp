@@ -2078,8 +2078,8 @@ static void si_shader_ps(struct si_screen *sscreen, struct si_shader *shader)
           !G_0286CC_LINEAR_CENTER_ENA(input_ena) || !G_0286CC_LINEAR_CENTROID_ENA(input_ena));
 
    /* DB_SHADER_CONTROL */
-   shader->ps.db_shader_control = S_02880C_Z_EXPORT_ENABLE(info->writes_z) |
-                                  S_02880C_STENCIL_TEST_VAL_EXPORT_ENABLE(info->writes_stencil) |
+   shader->ps.db_shader_control = S_02880C_Z_EXPORT_ENABLE(shader->ps.writes_z) |
+                                  S_02880C_STENCIL_TEST_VAL_EXPORT_ENABLE(shader->ps.writes_stencil) |
                                   S_02880C_MASK_EXPORT_ENABLE(shader->ps.writes_samplemask) |
                                   S_02880C_KILL_ENABLE(si_shader_uses_discard(shader));
    if (sscreen->info.gfx_level >= GFX12)
@@ -2170,7 +2170,8 @@ static void si_shader_ps(struct si_screen *sscreen, struct si_shader *shader)
    shader->ps.spi_ps_input_addr = shader->config.spi_ps_input_addr;
    shader->ps.num_interp = si_get_ps_num_interp(shader);
    shader->ps.spi_shader_z_format =
-      ac_get_spi_shader_z_format(info->writes_z, info->writes_stencil, shader->ps.writes_samplemask,
+      ac_get_spi_shader_z_format(shader->ps.writes_z, shader->ps.writes_stencil,
+                                 shader->ps.writes_samplemask,
                                  shader->key.ps.part.epilog.alpha_to_coverage_via_mrtz);
 
    /* Ensure that some export memory is always allocated, for two reasons:
@@ -2190,7 +2191,7 @@ static void si_shader_ps(struct si_screen *sscreen, struct si_shader *shader)
     *
     * RB+ depth-only rendering requires SPI_SHADER_32_R.
     */
-   bool has_mrtz = info->writes_z || info->writes_stencil || shader->ps.writes_samplemask;
+   bool has_mrtz = shader->ps.spi_shader_z_format != V_028710_SPI_SHADER_ZERO;
 
    if (!shader->ps.spi_shader_col_format) {
       if (shader->key.ps.part.epilog.rbplus_depth_only_opt) {
@@ -2572,7 +2573,7 @@ void si_ps_key_update_framebuffer(struct si_context *sctx)
    }
 }
 
-void si_ps_key_update_framebuffer_blend_rasterizer(struct si_context *sctx)
+void si_ps_key_update_framebuffer_blend_dsa_rasterizer(struct si_context *sctx)
 {
    struct si_shader_selector *sel = sctx->shader.ps.cso;
    if (!sel)
@@ -2580,6 +2581,7 @@ void si_ps_key_update_framebuffer_blend_rasterizer(struct si_context *sctx)
 
    union si_shader_key *key = &sctx->shader.ps.key;
    struct si_state_blend *blend = sctx->queued.named.blend;
+   struct si_state_dsa *dsa = sctx->queued.named.dsa;
    struct si_state_rasterizer *rs = sctx->queued.named.rasterizer;
    bool alpha_to_coverage = blend->alpha_to_coverage && rs->multisample_enable &&
                             sctx->framebuffer.nr_samples >= 2;
@@ -2594,10 +2596,10 @@ void si_ps_key_update_framebuffer_blend_rasterizer(struct si_context *sctx)
    memcpy(&old_key, &key->ps, sizeof(old_key));
 #endif
 
-   key->ps.part.epilog.alpha_to_one = blend->alpha_to_one && rs->multisample_enable;
-   key->ps.part.epilog.alpha_to_coverage_via_mrtz =
-      sctx->gfx_level >= GFX11 && alpha_to_coverage &&
-      (sel->info.writes_z || sel->info.writes_stencil || sel->info.writes_samplemask);
+   key->ps.part.epilog.kill_z = sel->info.writes_z &&
+                                (!sctx->framebuffer.state.zsbuf || !dsa->depth_enabled);
+   key->ps.part.epilog.kill_stencil = sel->info.writes_stencil &&
+                                      (!sctx->framebuffer.has_stencil || !dsa->stencil_enabled);
 
    /* Remove the gl_SampleMask fragment shader output if MSAA is disabled.
     * This is required for correctness and it's also an optimization.
@@ -2605,6 +2607,13 @@ void si_ps_key_update_framebuffer_blend_rasterizer(struct si_context *sctx)
    key->ps.part.epilog.kill_samplemask = sel->info.writes_samplemask &&
                                          (sctx->framebuffer.nr_samples <= 1 ||
                                           !rs->multisample_enable);
+
+   key->ps.part.epilog.alpha_to_one = blend->alpha_to_one && rs->multisample_enable;
+   key->ps.part.epilog.alpha_to_coverage_via_mrtz =
+      sctx->gfx_level >= GFX11 && alpha_to_coverage &&
+      ((sel->info.writes_z && !key->ps.part.epilog.kill_z) ||
+       (sel->info.writes_stencil && !key->ps.part.epilog.kill_stencil) ||
+       (sel->info.writes_samplemask && !key->ps.part.epilog.kill_samplemask));
 
    /* If alpha-to-coverage isn't exported via MRTZ, set that we need to export alpha
     * through MRT0.
@@ -3975,7 +3984,7 @@ static void si_bind_ps_shader(struct pipe_context *ctx, void *state)
    si_update_ps_colorbuf0_slot(sctx);
 
    si_ps_key_update_framebuffer(sctx);
-   si_ps_key_update_framebuffer_blend_rasterizer(sctx);
+   si_ps_key_update_framebuffer_blend_dsa_rasterizer(sctx);
    si_ps_key_update_rasterizer(sctx);
    si_ps_key_update_dsa(sctx);
    si_ps_key_update_sample_shading(sctx);

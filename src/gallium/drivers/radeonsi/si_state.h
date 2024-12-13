@@ -685,7 +685,7 @@ unsigned si_get_num_vertices_per_output_prim(struct si_shader *shader);
 bool si_update_ngg(struct si_context *sctx);
 void si_vs_ps_key_update_rast_prim_smooth_stipple(struct si_context *sctx);
 void si_ps_key_update_framebuffer(struct si_context *sctx);
-void si_ps_key_update_framebuffer_blend_rasterizer(struct si_context *sctx);
+void si_ps_key_update_framebuffer_blend_dsa_rasterizer(struct si_context *sctx);
 void si_ps_key_update_rasterizer(struct si_context *sctx);
 void si_ps_key_update_dsa(struct si_context *sctx);
 void si_ps_key_update_sample_shading(struct si_context *sctx);

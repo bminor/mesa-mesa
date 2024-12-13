@@ -783,7 +783,7 @@ static void si_bind_blend_state(struct pipe_context *ctx, void *state)
        old_blend->dual_src_blend != blend->dual_src_blend ||
        old_blend->blend_enable_4bit != blend->blend_enable_4bit ||
        old_blend->need_src_alpha_4bit != blend->need_src_alpha_4bit)
-      si_ps_key_update_framebuffer_blend_rasterizer(sctx);
+      si_ps_key_update_framebuffer_blend_dsa_rasterizer(sctx);
 
    if (old_blend->cb_target_enabled_4bit != blend->cb_target_enabled_4bit ||
        old_blend->alpha_to_coverage != blend->alpha_to_coverage)
@@ -1344,7 +1344,7 @@ static void si_bind_rs_state(struct pipe_context *ctx, void *state)
       si_mark_atom_dirty(sctx, &sctx->atoms.s.dpbb_state);
 
    if (old_rs->multisample_enable != rs->multisample_enable)
-      si_ps_key_update_framebuffer_blend_rasterizer(sctx);
+      si_ps_key_update_framebuffer_blend_dsa_rasterizer(sctx);
 
    if (old_rs->flatshade != rs->flatshade ||
        old_rs->clamp_fragment_color != rs->clamp_fragment_color)
@@ -1540,7 +1540,8 @@ static void *si_create_dsa_state(struct pipe_context *ctx,
       dsa->alpha_func = PIPE_FUNC_ALWAYS;
    }
 
-   dsa->depth_enabled = state->depth_enabled;
+   dsa->depth_enabled = state->depth_enabled &&
+                        (state->depth_writemask || state->depth_func != PIPE_FUNC_ALWAYS);
    dsa->depth_write_enabled = state->depth_enabled && state->depth_writemask;
    dsa->stencil_enabled = state->stencil[0].enabled;
    dsa->stencil_write_enabled =
@@ -1711,6 +1712,12 @@ static void si_bind_dsa_state(struct pipe_context *ctx, void *state)
    if (old_dsa->alpha_func != dsa->alpha_func) {
       si_ps_key_update_dsa(sctx);
       si_update_ps_inputs_read_or_disabled(sctx);
+      sctx->do_update_shaders = true;
+   }
+
+   if (old_dsa->depth_enabled != dsa->depth_enabled ||
+       old_dsa->stencil_enabled != dsa->stencil_enabled) {
+      si_ps_key_update_framebuffer_blend_dsa_rasterizer(sctx);
       sctx->do_update_shaders = true;
    }
 
@@ -2781,7 +2788,7 @@ static void si_set_framebuffer_state(struct pipe_context *ctx,
    }
 
    si_ps_key_update_framebuffer(sctx);
-   si_ps_key_update_framebuffer_blend_rasterizer(sctx);
+   si_ps_key_update_framebuffer_blend_dsa_rasterizer(sctx);
    si_ps_key_update_framebuffer_rasterizer_sample_shading(sctx);
    si_vs_ps_key_update_rast_prim_smooth_stipple(sctx);
    si_update_ps_inputs_read_or_disabled(sctx);
