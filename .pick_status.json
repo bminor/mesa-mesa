@@ -234,7 +234,7 @@
         "description": "Revert \"radv: fix creating unlinked shaders with ESO when nextStage is 0\"",
         "nominated": true,
         "nomination_type": 3,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d4ccae739ba905e0bd42951791222f70949653c8",
         "notes": null
