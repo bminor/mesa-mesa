@@ -2505,8 +2505,7 @@ anv_descriptor_set_write_buffer(struct anv_device *device,
                             .stride_B = 1);
    }
 
-   if (type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC ||
-       type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)
+   if (vk_descriptor_type_is_dynamic(type))
       return;
 
    if (data & ANV_DESCRIPTOR_BUFFER_VIEW) {
