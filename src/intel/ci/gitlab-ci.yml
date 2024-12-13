@@ -47,7 +47,6 @@ anv-tgl:
     - .anv-test
   variables:
     DEQP_SUITE: anv-tgl
-    DEQP_FRACTION: 5 # temporarily drop network load
     VK_DRIVER: intel
   parallel: 5  # 5 - 5 # -1 for zink, but it's disabled now
 
@@ -58,7 +57,6 @@ anv-tgl:
     - .anv-manual-rules
   variables:
     DEQP_SUITE: anv-tgl-full
-    DEQP_FRACTION: 1
     JOB_TIMEOUT: 90
   timeout: 100m
   parallel: 4
