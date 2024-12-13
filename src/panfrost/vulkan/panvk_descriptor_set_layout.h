@@ -13,6 +13,7 @@
 #include <stdint.h>
 
 #include "vk_descriptor_set_layout.h"
+#include "vk_util.h"
 
 #include "util/mesa-blake3.h"
 
