@@ -2648,14 +2648,16 @@ export_pos0_wait_attr_ring(nir_builder *b, nir_if *if_es_thread, nir_def *output
    /* Export just the pos0 output. */
    nir_if *if_export_empty_pos = nir_push_if(b, if_es_thread->condition.ssa);
    {
-      nir_def *pos_output_array[VARYING_SLOT_MAX][4] = {0};
-      memcpy(pos_output_array[VARYING_SLOT_POS], pos_output.chan, sizeof(pos_output.chan));
+      ac_nir_prerast_out out = {
+         .outputs = {{pos_output.chan[0], pos_output.chan[1], pos_output.chan[2], pos_output.chan[3]}},
+         .infos = {{.components_mask = 0xf}},
+      };
 
       ac_nir_export_position(b, options->gfx_level,
                              options->clip_cull_dist_mask,
                              !options->has_param_exports,
                              options->force_vrs, true,
-                             VARYING_BIT_POS, pos_output_array, NULL);
+                             VARYING_BIT_POS, &out, NULL);
    }
    nir_pop_if(b, if_export_empty_pos);
 }
@@ -2916,7 +2918,7 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
                           options->clip_cull_dist_mask,
                           !options->has_param_exports,
                           options->force_vrs, !wait_attr_ring,
-                          export_outputs, state.out.outputs, NULL);
+                          export_outputs, &state.out, NULL);
 
    nogs_export_vertex_params(b, impl, if_es_thread, num_es_threads, &state);
 
@@ -3359,7 +3361,7 @@ ngg_gs_export_vertices(nir_builder *b, nir_def *max_num_out_vtx, nir_def *tid_in
                           s->options->clip_cull_dist_mask,
                           !s->options->has_param_exports,
                           s->options->force_vrs, !wait_attr_ring,
-                          export_outputs, s->out.outputs, NULL);
+                          export_outputs, &s->out, NULL);
 
    nir_pop_if(b, if_vtx_export_thread);
 
@@ -4628,7 +4630,7 @@ emit_ms_vertex(nir_builder *b, nir_def *index, nir_def *row, bool exports, bool 
    if (exports) {
       ac_nir_export_position(b, s->gfx_level, s->clipdist_enable_mask,
                              !s->has_param_exports, false, true,
-                             s->per_vertex_outputs | VARYING_BIT_POS, s->out.outputs, row);
+                             s->per_vertex_outputs | VARYING_BIT_POS, &s->out, row);
    }
 
    if (parameters) {

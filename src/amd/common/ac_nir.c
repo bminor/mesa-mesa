@@ -367,7 +367,7 @@ ac_nir_export_position(nir_builder *b,
                        bool force_vrs,
                        bool done,
                        uint64_t outputs_written,
-                       nir_def *(*outputs)[4],
+                       ac_nir_prerast_out *out,
                        nir_def *row)
 {
    nir_intrinsic_instr *exp[4];
@@ -379,7 +379,7 @@ ac_nir_export_position(nir_builder *b,
       * Setting valid_mask=1 prevents it and has no other effect.
       */
       const unsigned pos_flags = gfx_level == GFX10 ? AC_EXP_FLAG_VALID_MASK : 0;
-      nir_def *pos = get_pos0_output(b, outputs[VARYING_SLOT_POS]);
+      nir_def *pos = get_pos0_output(b, out->outputs[VARYING_SLOT_POS]);
 
       exp[exp_num] = export(b, pos, row, V_008DFC_SQ_EXP_POS + exp_num, pos_flags, 0xf);
       exp_num++;
@@ -395,15 +395,15 @@ ac_nir_export_position(nir_builder *b,
       VARYING_BIT_PRIMITIVE_SHADING_RATE;
 
    /* clear output mask if no one written */
-   if (!outputs[VARYING_SLOT_PSIZ][0])
+   if (!out->outputs[VARYING_SLOT_PSIZ][0])
       outputs_written &= ~VARYING_BIT_PSIZ;
-   if (!outputs[VARYING_SLOT_EDGE][0])
+   if (!out->outputs[VARYING_SLOT_EDGE][0])
       outputs_written &= ~VARYING_BIT_EDGE;
-   if (!outputs[VARYING_SLOT_PRIMITIVE_SHADING_RATE][0])
+   if (!out->outputs[VARYING_SLOT_PRIMITIVE_SHADING_RATE][0])
       outputs_written &= ~VARYING_BIT_PRIMITIVE_SHADING_RATE;
-   if (!outputs[VARYING_SLOT_LAYER][0])
+   if (!out->outputs[VARYING_SLOT_LAYER][0])
       outputs_written &= ~VARYING_BIT_LAYER;
-   if (!outputs[VARYING_SLOT_VIEWPORT][0])
+   if (!out->outputs[VARYING_SLOT_VIEWPORT][0])
       outputs_written &= ~VARYING_BIT_VIEWPORT;
 
    if ((outputs_written & mask) || force_vrs) {
@@ -412,21 +412,21 @@ ac_nir_export_position(nir_builder *b,
       unsigned write_mask = 0;
 
       if (outputs_written & VARYING_BIT_PSIZ) {
-         vec[0] = outputs[VARYING_SLOT_PSIZ][0];
+         vec[0] = out->outputs[VARYING_SLOT_PSIZ][0];
          write_mask |= BITFIELD_BIT(0);
       }
 
       if (outputs_written & VARYING_BIT_EDGE) {
-         vec[1] = nir_umin(b, outputs[VARYING_SLOT_EDGE][0], nir_imm_int(b, 1));
+         vec[1] = nir_umin(b, out->outputs[VARYING_SLOT_EDGE][0], nir_imm_int(b, 1));
          write_mask |= BITFIELD_BIT(1);
       }
 
       nir_def *rates = NULL;
       if (outputs_written & VARYING_BIT_PRIMITIVE_SHADING_RATE) {
-         rates = outputs[VARYING_SLOT_PRIMITIVE_SHADING_RATE][0];
+         rates = out->outputs[VARYING_SLOT_PRIMITIVE_SHADING_RATE][0];
       } else if (force_vrs) {
          /* If Pos.W != 1 (typical for non-GUI elements), use coarse shading. */
-         nir_def *pos_w = outputs[VARYING_SLOT_POS][3];
+         nir_def *pos_w = out->outputs[VARYING_SLOT_POS][3];
          pos_w = pos_w ? nir_u2u32(b, pos_w) : nir_imm_float(b, 1.0);
          nir_def *cond = nir_fneu_imm(b, pos_w, 1);
          rates = nir_bcsel(b, cond, nir_load_force_vrs_rates_amd(b), nir_imm_int(b, 0));
@@ -438,18 +438,18 @@ ac_nir_export_position(nir_builder *b,
       }
 
       if (outputs_written & VARYING_BIT_LAYER) {
-         vec[2] = outputs[VARYING_SLOT_LAYER][0];
+         vec[2] = out->outputs[VARYING_SLOT_LAYER][0];
          write_mask |= BITFIELD_BIT(2);
       }
 
       if (outputs_written & VARYING_BIT_VIEWPORT) {
          if (gfx_level >= GFX9) {
             /* GFX9 has the layer in [10:0] and the viewport index in [19:16]. */
-            nir_def *v = nir_ishl_imm(b, outputs[VARYING_SLOT_VIEWPORT][0], 16);
+            nir_def *v = nir_ishl_imm(b, out->outputs[VARYING_SLOT_VIEWPORT][0], 16);
             vec[2] = nir_ior(b, vec[2], v);
             write_mask |= BITFIELD_BIT(2);
          } else {
-            vec[3] = outputs[VARYING_SLOT_VIEWPORT][0];
+            vec[3] = out->outputs[VARYING_SLOT_VIEWPORT][0];
             write_mask |= BITFIELD_BIT(3);
          }
       }
@@ -464,7 +464,7 @@ ac_nir_export_position(nir_builder *b,
       if ((outputs_written & (VARYING_BIT_CLIP_DIST0 << i)) &&
           (clip_cull_mask & BITFIELD_RANGE(i * 4, 4))) {
          exp[exp_num] = export(
-            b, get_export_output(b, outputs[VARYING_SLOT_CLIP_DIST0 + i]), row,
+            b, get_export_output(b, out->outputs[VARYING_SLOT_CLIP_DIST0 + i]), row,
             V_008DFC_SQ_EXP_POS + exp_num + exp_pos_offset, 0,
             (clip_cull_mask >> (i * 4)) & 0xf);
          exp_num++;
@@ -472,7 +472,7 @@ ac_nir_export_position(nir_builder *b,
    }
 
    if (outputs_written & VARYING_BIT_CLIP_VERTEX) {
-      nir_def *vtx = get_export_output(b, outputs[VARYING_SLOT_CLIP_VERTEX]);
+      nir_def *vtx = get_export_output(b, out->outputs[VARYING_SLOT_CLIP_VERTEX]);
 
       /* Clip distance for clip vertex to each user clip plane. */
       nir_def *clip_dist[8] = {0};
@@ -879,7 +879,7 @@ ac_nir_create_gs_copy_shader(const nir_shader *gs_nir,
             export_outputs &= ~VARYING_BIT_LAYER;
 
          ac_nir_export_position(&b, gfx_level, clip_cull_mask, !has_param_exports,
-                                force_vrs, true, export_outputs, out.outputs, NULL);
+                                force_vrs, true, export_outputs, &out, NULL);
 
          if (has_param_exports) {
             ac_nir_export_parameters(&b, param_offsets,
@@ -966,7 +966,7 @@ ac_nir_lower_legacy_vs(nir_shader *nir,
       export_outputs &= ~VARYING_BIT_LAYER;
 
    ac_nir_export_position(&b, gfx_level, clip_cull_mask, !has_param_exports,
-                          force_vrs, true, export_outputs, out.outputs, NULL);
+                          force_vrs, true, export_outputs, &out, NULL);
 
    if (has_param_exports) {
       ac_nir_export_parameters(&b, param_offsets,
