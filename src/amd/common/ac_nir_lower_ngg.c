@@ -191,18 +191,13 @@ typedef struct
    nir_variable *primitive_count_var;
    nir_variable *vertex_count_var;
 
+   ac_nir_prerast_out out;
+
    /* True if the lowering needs to insert the layer output. */
    bool insert_layer_output;
    /* True if cull flags are used */
    bool uses_cull_flags;
 
-   struct {
-      /* Bitmask of components used: 4 bits per slot, 1 bit per component. */
-      uint32_t components_mask;
-   } output_info[VARYING_SLOT_MAX];
-
-   /* Used by outputs export. */
-   nir_def *outputs[VARYING_SLOT_MAX][4];
    uint32_t clipdist_enable_mask;
    const uint8_t *vs_output_param_offset;
    bool has_param_exports;
@@ -3961,7 +3956,9 @@ update_ms_output_info_slot(lower_ngg_ms_state *s,
                            uint32_t components_mask)
 {
    while (components_mask) {
-      s->output_info[slot + base_off].components_mask |= components_mask & 0xF;
+      ac_nir_prerast_per_output_info *info = &s->out.infos[slot + base_off];
+      const uint8_t mask = components_mask & 0xF;
+      info->components_mask |= mask;
 
       components_mask >>= 4;
       base_off++;
@@ -4306,7 +4303,7 @@ ms_emit_arrayed_outputs(nir_builder *b,
       /* Should not occur here, handled separately. */
       assert(slot != VARYING_SLOT_PRIMITIVE_COUNT && slot != VARYING_SLOT_PRIMITIVE_INDICES);
 
-      unsigned component_mask = s->output_info[slot].components_mask;
+      unsigned component_mask = s->out.infos[slot].components_mask;
 
       while (component_mask) {
          int start_comp = 0, num_components = 1;
@@ -4317,7 +4314,7 @@ ms_emit_arrayed_outputs(nir_builder *b,
                                    num_components, 32, s);
 
          for (int i = 0; i < num_components; i++)
-            s->outputs[slot][start_comp + i] = nir_channel(b, load, i);
+            s->out.outputs[slot][start_comp + i] = nir_channel(b, load, i);
       }
    }
 }
@@ -4499,8 +4496,8 @@ ms_emit_attribute_ring_output_stores(nir_builder *b, const uint64_t outputs_mask
       nir_def *store_val = nir_undef(b, 4, 32);
       unsigned store_val_components = 0;
       for (unsigned c = 0; c < 4; ++c) {
-         if (s->outputs[slot][c]) {
-            store_val = nir_vector_insert_imm(b, store_val, s->outputs[slot][c], c);
+         if (s->out.outputs[slot][c]) {
+            store_val = nir_vector_insert_imm(b, store_val, s->out.outputs[slot][c], c);
             store_val_components = c + 1;
          }
       }
@@ -4575,17 +4572,17 @@ ms_prim_exp_arg_ch2(nir_builder *b, uint64_t outputs_mask, lower_ngg_ms_state *s
 
       if (outputs_mask & VARYING_BIT_LAYER) {
          nir_def *layer =
-            nir_ishl_imm(b, s->outputs[VARYING_SLOT_LAYER][0], s->gfx_level >= GFX11 ? 0 : 17);
+            nir_ishl_imm(b, s->out.outputs[VARYING_SLOT_LAYER][0], s->gfx_level >= GFX11 ? 0 : 17);
          prim_exp_arg_ch2 = nir_ior(b, prim_exp_arg_ch2, layer);
       }
 
       if (outputs_mask & VARYING_BIT_VIEWPORT) {
-         nir_def *view = nir_ishl_imm(b, s->outputs[VARYING_SLOT_VIEWPORT][0], 20);
+         nir_def *view = nir_ishl_imm(b, s->out.outputs[VARYING_SLOT_VIEWPORT][0], 20);
          prim_exp_arg_ch2 = nir_ior(b, prim_exp_arg_ch2, view);
       }
 
       if (outputs_mask & VARYING_BIT_PRIMITIVE_SHADING_RATE) {
-         nir_def *rate = s->outputs[VARYING_SLOT_PRIMITIVE_SHADING_RATE][0];
+         nir_def *rate = s->out.outputs[VARYING_SLOT_PRIMITIVE_SHADING_RATE][0];
          prim_exp_arg_ch2 = nir_ior(b, prim_exp_arg_ch2, rate);
       }
    }
@@ -4641,7 +4638,7 @@ emit_ms_vertex(nir_builder *b, nir_def *index, nir_def *row, bool exports, bool 
    if (exports) {
       ac_nir_export_position(b, s->gfx_level, s->clipdist_enable_mask,
                              !s->has_param_exports, false, true,
-                             s->per_vertex_outputs | VARYING_BIT_POS, s->outputs, row);
+                             s->per_vertex_outputs | VARYING_BIT_POS, s->out.outputs, row);
    }
 
    if (parameters) {
@@ -4649,7 +4646,7 @@ emit_ms_vertex(nir_builder *b, nir_def *index, nir_def *row, bool exports, bool 
        * (On GFX11 they are already stored in the attribute ring.)
        */
       if (s->has_param_exports && s->gfx_level == GFX10_3) {
-         ac_nir_export_parameters(b, s->vs_output_param_offset, per_vertex_outputs, 0, s->outputs,
+         ac_nir_export_parameters(b, s->vs_output_param_offset, per_vertex_outputs, 0, s->out.outputs,
                                   NULL, NULL);
       }
 
@@ -4667,7 +4664,7 @@ emit_ms_primitive(nir_builder *b, nir_def *index, nir_def *row, bool exports, bo
 
    /* Insert layer output store if the pipeline uses multiview but the API shader doesn't write it. */
    if (s->insert_layer_output)
-      s->outputs[VARYING_SLOT_LAYER][0] = nir_load_view_index(b);
+      s->out.outputs[VARYING_SLOT_LAYER][0] = nir_load_view_index(b);
 
    if (exports) {
       const uint64_t outputs_mask = per_primitive_outputs & MS_PRIM_ARG_EXP_MASK;
@@ -4687,7 +4684,7 @@ emit_ms_primitive(nir_builder *b, nir_def *index, nir_def *row, bool exports, bo
        */
       if (s->has_param_exports && s->gfx_level == GFX10_3) {
          ac_nir_export_parameters(b, s->vs_output_param_offset, per_primitive_outputs, 0,
-                                  s->outputs, NULL, NULL);
+                                  s->out.outputs, NULL, NULL);
       }
 
       /* GFX11+: also store special outputs to the attribute ring so PS can load them. */
