@@ -4469,16 +4469,12 @@ fs_nir_emit_fs_intrinsic(nir_to_brw_state &ntb,
             interpolation);
 
       } else {
-         brw_reg msg_data;
-         if (nir_src_is_const(instr->src[0])) {
-            msg_data = brw_imm_ud(nir_src_as_uint(instr->src[0]) << 4);
-         } else {
-            const brw_reg sample_src = retype(get_nir_src(ntb, instr->src[0]),
-                                             BRW_TYPE_UD);
-            const brw_reg sample_id = bld.emit_uniformize(sample_src);
-            msg_data = component(bld.group(8, 0).vgrf(BRW_TYPE_UD), 0);
-            bld.exec_all().group(1, 0).SHL(msg_data, sample_id, brw_imm_ud(4u));
-         }
+         const brw_reg sample_src = retype(get_nir_src(ntb, instr->src[0]),
+                                           BRW_TYPE_UD);
+         const brw_reg sample_id = bld.emit_uniformize(sample_src);
+         const brw_reg msg_data = component(bld.group(8, 0).vgrf(BRW_TYPE_UD), 0);
+
+         bld.exec_all().group(1, 0).SHL(msg_data, sample_id, brw_imm_ud(4u));
 
          brw_reg flag_reg;
          struct brw_wm_prog_key *wm_prog_key = (struct brw_wm_prog_key *) s.key;
@@ -5764,12 +5760,11 @@ fs_nir_emit_intrinsic(nir_to_brw_state &ntb,
       ntb.ssa_bind_infos[instr->def.index].binding =
          nir_intrinsic_binding(instr);
 
-      brw_reg src = get_nir_src(ntb, instr->src[1]);
-      if (!src.is_scalar) {
-         xbld.MOV(retype(dest, BRW_TYPE_UD), bld.emit_uniformize(src));
-      } else {
-         ntb.ssa_values[instr->def.index] = src;
-      }
+      dest = retype(dest, BRW_TYPE_UD);
+      ntb.ssa_values[instr->def.index] = dest;
+
+      xbld.MOV(dest,
+               bld.emit_uniformize(get_nir_src(ntb, instr->src[1])));
       break;
    }
 
@@ -7082,9 +7077,6 @@ fs_nir_emit_memory_access(nir_to_brw_state &ntb,
       srcs[MEMORY_LOGICAL_FLAGS] =
          brw_imm_ud(MEMORY_FLAG_TRANSPOSE | srcs[MEMORY_LOGICAL_FLAGS].ud);
       srcs[MEMORY_LOGICAL_ADDRESS] =
-         instr->intrinsic == nir_intrinsic_load_global_constant_uniform_block_intel &&
-         srcs[MEMORY_LOGICAL_ADDRESS].is_scalar ?
-         srcs[MEMORY_LOGICAL_ADDRESS] :
          bld.emit_uniformize(srcs[MEMORY_LOGICAL_ADDRESS]);
 
       const fs_builder ubld = bld.exec_all().group(1, 0);
@@ -7263,45 +7255,31 @@ fs_nir_emit_texture(nir_to_brw_state &ntb,
       case nir_tex_src_texture_offset: {
          assert(srcs[TEX_LOGICAL_SRC_SURFACE].file == BAD_FILE);
          /* Emit code to evaluate the actual indexing expression */
-         if (instr->texture_index == 0 && is_resource_src(nir_src))
-            srcs[TEX_LOGICAL_SRC_SURFACE] = get_resource_nir_src(ntb, nir_src);
-         if (srcs[TEX_LOGICAL_SRC_SURFACE].file == BAD_FILE) {
-            srcs[TEX_LOGICAL_SRC_SURFACE] =
-               bld.emit_uniformize(bld.ADD(retype(src, BRW_TYPE_UD),
-                                           brw_imm_ud(instr->texture_index)));
-         }
+         srcs[TEX_LOGICAL_SRC_SURFACE] =
+            bld.emit_uniformize(bld.ADD(retype(src, BRW_TYPE_UD),
+                                        brw_imm_ud(instr->texture_index)));
          assert(srcs[TEX_LOGICAL_SRC_SURFACE].file != BAD_FILE);
          break;
       }
 
       case nir_tex_src_sampler_offset: {
          /* Emit code to evaluate the actual indexing expression */
-         if (instr->sampler_index == 0 && is_resource_src(nir_src))
-            srcs[TEX_LOGICAL_SRC_SAMPLER] = get_resource_nir_src(ntb, nir_src);
-         if (srcs[TEX_LOGICAL_SRC_SAMPLER].file == BAD_FILE) {
-            srcs[TEX_LOGICAL_SRC_SAMPLER] =
-               bld.emit_uniformize(bld.ADD(retype(src, BRW_TYPE_UD),
-                                           brw_imm_ud(instr->sampler_index)));
-         }
+         srcs[TEX_LOGICAL_SRC_SAMPLER] =
+            bld.emit_uniformize(bld.ADD(retype(src, BRW_TYPE_UD),
+                                        brw_imm_ud(instr->sampler_index)));
          break;
       }
 
       case nir_tex_src_texture_handle:
          assert(nir_tex_instr_src_index(instr, nir_tex_src_texture_offset) == -1);
          srcs[TEX_LOGICAL_SRC_SURFACE] = brw_reg();
-         if (is_resource_src(nir_src))
-            srcs[TEX_LOGICAL_SRC_SURFACE_HANDLE] = get_resource_nir_src(ntb, nir_src);
-         if (srcs[TEX_LOGICAL_SRC_SURFACE_HANDLE].file == BAD_FILE)
-            srcs[TEX_LOGICAL_SRC_SURFACE_HANDLE] = bld.emit_uniformize(src);
+         srcs[TEX_LOGICAL_SRC_SURFACE_HANDLE] = bld.emit_uniformize(src);
          break;
 
       case nir_tex_src_sampler_handle:
          assert(nir_tex_instr_src_index(instr, nir_tex_src_sampler_offset) == -1);
          srcs[TEX_LOGICAL_SRC_SAMPLER] = brw_reg();
-         if (is_resource_src(nir_src))
-            srcs[TEX_LOGICAL_SRC_SAMPLER_HANDLE] = get_resource_nir_src(ntb, nir_src);
-         if (srcs[TEX_LOGICAL_SRC_SAMPLER_HANDLE].file == BAD_FILE)
-            srcs[TEX_LOGICAL_SRC_SAMPLER_HANDLE] = bld.emit_uniformize(src);
+         srcs[TEX_LOGICAL_SRC_SAMPLER_HANDLE] = bld.emit_uniformize(src);
          break;
 
       case nir_tex_src_ms_mcs_intel:
