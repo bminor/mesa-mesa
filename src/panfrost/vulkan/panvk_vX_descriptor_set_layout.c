@@ -85,7 +85,7 @@ panvk_per_arch(CreateDescriptorSetLayout)(
    VK_MULTIALLOC_DECL(&ma, struct panvk_descriptor_set_layout, layout, 1);
    VK_MULTIALLOC_DECL(&ma, struct panvk_descriptor_set_binding_layout,
                       binding_layouts, num_bindings);
-   VK_MULTIALLOC_DECL(&ma, struct mali_sampler_packed, samplers,
+   VK_MULTIALLOC_DECL(&ma, struct panvk_sampler *, samplers,
                       immutable_sampler_count);
 
    if (!vk_descriptor_set_layout_multizalloc(&device->vk, &ma)) {
@@ -126,7 +126,7 @@ panvk_per_arch(CreateDescriptorSetLayout)(
          for (uint32_t j = 0; j < binding->descriptorCount; j++) {
             VK_FROM_HANDLE(panvk_sampler, sampler,
                            binding->pImmutableSamplers[j]);
-            binding_layout->immutable_samplers[j] = sampler->desc;
+            binding_layout->immutable_samplers[j] = sampler;
          }
       }
 

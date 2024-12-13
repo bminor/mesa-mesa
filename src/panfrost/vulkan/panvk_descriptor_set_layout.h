@@ -37,7 +37,7 @@ struct panvk_descriptor_set_binding_layout {
    VkDescriptorBindingFlags flags;
    unsigned desc_count;
    unsigned desc_idx;
-   struct mali_sampler_packed *immutable_samplers;
+   struct panvk_sampler **immutable_samplers;
 };
 
 struct panvk_descriptor_set_layout {

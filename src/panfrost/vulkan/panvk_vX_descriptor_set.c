@@ -69,7 +69,7 @@ write_sampler_desc(struct panvk_descriptor_set *set,
    const struct mali_sampler_packed *sampler_desc;
 
    if (binding_layout->immutable_samplers) {
-      sampler_desc = &binding_layout->immutable_samplers[elem];
+      sampler_desc = &binding_layout->immutable_samplers[elem]->desc;
    } else {
       struct panvk_sampler *sampler = panvk_sampler_from_handle(
          pImageInfo ? pImageInfo->sampler : VK_NULL_HANDLE);
@@ -303,7 +303,7 @@ desc_set_write_immutable_samplers(struct panvk_descriptor_set *set,
          array_size = variable_count;
 
       for (uint32_t j = 0; j < array_size; j++) {
-         write_desc(set, b, j, &layout->bindings[b].immutable_samplers[j],
+         write_desc(set, b, j, &layout->bindings[b].immutable_samplers[j]->desc,
                     VK_DESCRIPTOR_TYPE_SAMPLER);
       }
    }
