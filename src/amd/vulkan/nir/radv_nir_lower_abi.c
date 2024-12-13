@@ -355,6 +355,9 @@ lower_abi_instr(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
          replacement = nir_imm_int(b, s->gfx_state->ms.rasterization_samples);
       }
       break;
+   case nir_intrinsic_load_layer_id:
+      replacement = ac_nir_unpack_arg(b, &s->args->ac, s->args->ac.ancillary, 16, s->gfx_level >= GFX12 ? 14 : 13);
+      break;
    case nir_intrinsic_load_provoking_vtx_in_prim_amd: {
       if (s->gfx_state->dynamic_provoking_vtx_mode) {
          replacement = GET_SGPR_FIELD_NIR(s->args->ngg_state, NGG_STATE_PROVOKING_VTX);

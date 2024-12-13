@@ -65,6 +65,7 @@ get_nir_options_for_stage(struct radv_physical_device *pdev, gl_shader_stage sta
    options->lower_doubles_options = nir_lower_drcp | nir_lower_dsqrt | nir_lower_drsq | nir_lower_ddiv;
    options->io_options |= nir_io_mediump_is_32bit;
    options->varying_expression_max_cost = ac_nir_varying_expression_max_cost;
+   options->lower_layer_fs_input_to_sysval = true;
 }
 
 void
@@ -431,7 +432,7 @@ radv_shader_spirv_to_nir(struct radv_device *device, const struct radv_shader_st
          NIR_PASS(_, nir, nir_lower_input_attachments,
                   &(nir_input_attachment_options){
                      .use_fragcoord_sysval = true,
-                     .use_layer_id_sysval = false,
+                     .use_layer_id_sysval = true,
                   });
 
       nir_remove_dead_variables_options dead_vars_opts = {
@@ -3520,7 +3521,8 @@ radv_compute_spi_ps_input(const struct radv_physical_device *pdev, const struct 
       }
    }
 
-   if (info->ps.reads_sample_id || info->ps.reads_frag_shading_rate || info->ps.reads_sample_mask_in) {
+   if (info->ps.reads_sample_id || info->ps.reads_frag_shading_rate || info->ps.reads_sample_mask_in ||
+       info->ps.layer_input) {
       spi_ps_input |= S_0286CC_ANCILLARY_ENA(1);
    }
 
