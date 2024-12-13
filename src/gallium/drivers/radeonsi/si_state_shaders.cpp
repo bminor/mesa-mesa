@@ -2583,8 +2583,8 @@ void si_ps_key_update_framebuffer_blend_dsa_rasterizer(struct si_context *sctx)
    struct si_state_blend *blend = sctx->queued.named.blend;
    struct si_state_dsa *dsa = sctx->queued.named.dsa;
    struct si_state_rasterizer *rs = sctx->queued.named.rasterizer;
-   bool alpha_to_coverage = blend->alpha_to_coverage && rs->multisample_enable &&
-                            sctx->framebuffer.nr_samples >= 2;
+   bool alpha_to_coverage = sel->info.colors_written & 0x1 && blend->alpha_to_coverage &&
+                            rs->multisample_enable && sctx->framebuffer.nr_samples >= 2;
    unsigned need_src_alpha_4bit = blend->need_src_alpha_4bit;
 
    /* Old key data for comparison. */
@@ -2608,12 +2608,16 @@ void si_ps_key_update_framebuffer_blend_dsa_rasterizer(struct si_context *sctx)
                                          (sctx->framebuffer.nr_samples <= 1 ||
                                           !rs->multisample_enable);
 
-   key->ps.part.epilog.alpha_to_one = blend->alpha_to_one && rs->multisample_enable;
+   key->ps.part.epilog.alpha_to_one = sel->info.colors_written & 0x1 && blend->alpha_to_one &&
+                                      rs->multisample_enable;
    key->ps.part.epilog.alpha_to_coverage_via_mrtz =
       sctx->gfx_level >= GFX11 && alpha_to_coverage &&
       ((sel->info.writes_z && !key->ps.part.epilog.kill_z) ||
        (sel->info.writes_stencil && !key->ps.part.epilog.kill_stencil) ||
-       (sel->info.writes_samplemask && !key->ps.part.epilog.kill_samplemask));
+       (sel->info.writes_samplemask && !key->ps.part.epilog.kill_samplemask) ||
+       /* If both alpha-to-coverage and alpha-to-one are enabled, alpha for alpha-to-coverage must
+        * be exported from mrtz because mrt0.a must contain 1.0 for alpha-to-one. */
+       key->ps.part.epilog.alpha_to_one);
 
    /* If alpha-to-coverage isn't exported via MRTZ, set that we need to export alpha
     * through MRT0.

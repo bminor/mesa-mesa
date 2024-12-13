@@ -679,6 +679,7 @@ void si_llvm_build_ps_epilog(struct si_shader_context *ctx, union si_shader_part
 
    /* Prepare color. */
    unsigned colors_written = key->ps_epilog.colors_written;
+   LLVMValueRef mrtz_alpha = NULL;
 
    while (colors_written) {
       int write_i = u_bit_scan(&colors_written);
@@ -691,15 +692,14 @@ void si_llvm_build_ps_epilog(struct si_shader_context *ctx, union si_shader_part
       for (i = 0; i < 4; i++)
          color[write_i][i] = ac_llvm_extract_elem(&ctx->ac, arg, i);
 
+      if (key->ps_epilog.states.alpha_to_coverage_via_mrtz && write_i == 0)
+         mrtz_alpha = color[0][3];
+
       si_llvm_build_clamp_alpha_test(ctx, color[write_i], write_i);
    }
    bool writes_z = key->ps_epilog.writes_z && !key->ps_epilog.states.kill_z;
    bool writes_stencil = key->ps_epilog.writes_stencil && !key->ps_epilog.states.kill_stencil;
    bool writes_samplemask = key->ps_epilog.writes_samplemask && !key->ps_epilog.states.kill_samplemask;
-
-   LLVMValueRef mrtz_alpha =
-      key->ps_epilog.states.alpha_to_coverage_via_mrtz ? color[0][3] : NULL;
-   assert(writes_z || writes_stencil || writes_samplemask || !mrtz_alpha);
 
    /* Prepare the mrtz export. */
    if (writes_z || writes_stencil || writes_samplemask || mrtz_alpha) {

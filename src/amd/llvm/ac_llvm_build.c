@@ -3724,7 +3724,7 @@ void ac_export_mrt_z(struct ac_llvm_context *ctx, LLVMValueRef depth, LLVMValueR
    unsigned format = ac_get_spi_shader_z_format(depth != NULL, stencil != NULL, samplemask != NULL,
                                                 mrt0_alpha != NULL);
 
-   assert(depth || stencil || samplemask);
+   assert(depth || stencil || samplemask || mrt0_alpha);
 
    memset(args, 0, sizeof(*args));
 
