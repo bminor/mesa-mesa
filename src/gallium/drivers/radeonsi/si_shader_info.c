@@ -279,6 +279,13 @@ static void scan_io_usage(const nir_shader *nir, struct si_shader_info *info,
          }
       }
    }
+
+   if (nir->info.stage == MESA_SHADER_FRAGMENT && !is_input && semantic == FRAG_RESULT_DEPTH) {
+      if (nir_def_is_frag_coord_z(intr->src[0].ssa))
+         info->output_z_equals_input_z = true;
+      else
+         info->output_z_is_not_input_z = true;
+   }
 }
 
 static bool is_bindless_handle_indirect(nir_instr *src)
@@ -649,6 +656,7 @@ void si_nir_scan_shader(struct si_screen *sscreen, const struct nir_shader *nir,
    }
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
+      info->output_z_equals_input_z &= !info->output_z_is_not_input_z;
       info->allow_flat_shading = !(info->uses_persp_center || info->uses_persp_centroid ||
                                    info->uses_persp_sample || info->uses_linear_center ||
                                    info->uses_linear_centroid || info->uses_linear_sample ||

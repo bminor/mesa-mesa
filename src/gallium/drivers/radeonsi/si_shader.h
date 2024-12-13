@@ -517,6 +517,9 @@ struct si_shader_info {
    bool reads_samplemask;   /**< does fragment shader read sample mask? */
    bool reads_tess_factors; /**< If TES reads TESSINNER or TESSOUTER */
    bool writes_z;           /**< does fragment shader write Z value? */
+   /* We need both because both can be present in different conditional blocks. */
+   bool output_z_equals_input_z; /**< gl_FragDepth == gl_FragCoord.z for any write */
+   bool output_z_is_not_input_z; /**< gl_FragDepth != gl_FragCoord.z for any write */
    bool writes_stencil;     /**< does fragment shader write stencil value? */
    bool writes_samplemask;  /**< does fragment shader write sample mask? */
    bool writes_edgeflag;    /**< vertex shader outputs edgeflag */

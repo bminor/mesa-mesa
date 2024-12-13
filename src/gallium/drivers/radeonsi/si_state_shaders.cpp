@@ -2601,7 +2601,8 @@ void si_ps_key_update_framebuffer_blend_dsa_rasterizer(struct si_context *sctx)
 #endif
 
    key->ps.part.epilog.kill_z = sel->info.writes_z &&
-                                (!sctx->framebuffer.state.zsbuf || !dsa->depth_enabled);
+                                (!sctx->framebuffer.state.zsbuf || !dsa->depth_enabled ||
+                                 (sel->info.output_z_equals_input_z && !rs->multisample_enable));
    key->ps.part.epilog.kill_stencil = sel->info.writes_stencil &&
                                       (!sctx->framebuffer.has_stencil || !dsa->stencil_enabled);
 
