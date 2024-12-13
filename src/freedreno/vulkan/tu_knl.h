@@ -101,8 +101,6 @@ struct tu_knl {
                            void *metadata, uint32_t metadata_size);
    int (*bo_get_metadata)(struct tu_device *dev, struct tu_bo *bo,
                           void *metadata, uint32_t metadata_size);
-   VkResult (*device_wait_u_trace)(struct tu_device *dev,
-                                   struct tu_u_trace_syncobj *syncobj);
    void *(*submit_create)(struct tu_device *device);
    void (*submit_finish)(struct tu_device *device, void *_submit);
    void (*submit_add_entries)(struct tu_device *device, void *_submit,
@@ -112,6 +110,8 @@ struct tu_knl {
                             struct vk_sync_wait *waits, uint32_t wait_count,
                             struct vk_sync_signal *signals, uint32_t signal_count,
                             struct tu_u_trace_submission_data *u_trace_submission_data);
+   VkResult (*queue_wait_fence)(struct tu_queue *queue, uint32_t fence,
+                                uint64_t timeout_ns);
 
    const struct vk_device_entrypoint_table *device_entrypoints;
 };
@@ -260,5 +260,9 @@ tu_queue_submit(struct tu_queue *queue, void *submit,
                 struct vk_sync_wait *waits, uint32_t wait_count,
                 struct vk_sync_signal *signals, uint32_t signal_count,
                 struct tu_u_trace_submission_data *u_trace_submission_data);
+
+VkResult
+tu_queue_wait_fence(struct tu_queue *queue, uint32_t fence,
+                    uint64_t timeout_ns);
 
 #endif /* TU_DRM_H */

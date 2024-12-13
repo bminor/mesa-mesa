@@ -27,12 +27,6 @@
 #include "tu_rmv.h"
 #include "redump.h"
 
-struct tu_u_trace_syncobj
-{
-   uint32_t msm_queue_id;
-   uint32_t fence;
-};
-
 static int
 tu_drm_get_param(int fd, uint32_t param, uint64_t *value)
 {
@@ -325,6 +319,14 @@ tu_wait_fence(struct tu_device *dev,
    }
 
    return VK_SUCCESS;
+}
+
+VkResult
+msm_queue_wait_fence(struct tu_queue *queue, uint32_t fence,
+                     uint64_t timeout_ns)
+{
+   return tu_wait_fence(queue->device, queue->msm_queue_id, fence,
+                        timeout_ns);
 }
 
 static VkResult
@@ -947,12 +949,6 @@ msm_queue_submit(struct tu_queue *queue, void *_submit,
 
    if (u_trace_submission_data) {
       u_trace_submission_data->gpu_ts_offset = gpu_offset;
-      /* We have to allocate it here since it is different between drm/kgsl */
-      u_trace_submission_data->syncobj = (struct tu_u_trace_syncobj *)
-         vk_alloc(&queue->device->vk.alloc, sizeof(struct tu_u_trace_syncobj),
-               8, VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
-      u_trace_submission_data->syncobj->fence = req.fence;
-      u_trace_submission_data->syncobj->msm_queue_id = queue->msm_queue_id;
    }
 
    for (uint32_t i = 0; i < wait_count; i++) {
@@ -992,12 +988,6 @@ fail_in_syncobjs:
    return result;
 }
 
-static VkResult
-msm_device_wait_u_trace(struct tu_device *dev, struct tu_u_trace_syncobj *syncobj)
-{
-   return tu_wait_fence(dev, syncobj->msm_queue_id, syncobj->fence, 1000000000);
-}
-
 static const struct tu_knl msm_knl_funcs = {
       .name = "msm",
 
@@ -1016,11 +1006,11 @@ static const struct tu_knl msm_knl_funcs = {
       .bo_finish = tu_drm_bo_finish,
       .bo_set_metadata = msm_bo_set_metadata,
       .bo_get_metadata = msm_bo_get_metadata,
-      .device_wait_u_trace = msm_device_wait_u_trace,
       .submit_create = msm_submit_create,
       .submit_finish = msm_submit_finish,
       .submit_add_entries = msm_submit_add_entries,
       .queue_submit = msm_queue_submit,
+      .queue_wait_fence = msm_queue_wait_fence,
 };
 
 VkResult

@@ -542,10 +542,12 @@ struct tu_u_trace_cmd_data
 struct tu_u_trace_submission_data
 {
    uint32_t submission_id;
+
    /* We have to know when timestamps are available,
-    * this sync object indicates it.
+    * this queue and fence indicates it.
     */
-   struct tu_u_trace_syncobj *syncobj;
+   struct tu_queue *queue;
+   uint32_t fence;
 
    uint32_t cmd_buffer_count;
    uint32_t last_buffer_with_tracepoints;

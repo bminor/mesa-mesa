@@ -255,9 +255,11 @@ tu_device_get_suspend_count(struct tu_device *dev,
 }
 
 VkResult
-tu_device_wait_u_trace(struct tu_device *dev, struct tu_u_trace_syncobj *syncobj)
+tu_queue_wait_fence(struct tu_queue *queue, uint32_t fence,
+                    uint64_t timeout_ns)
 {
-   return dev->instance->knl->device_wait_u_trace(dev, syncobj);
+   return queue->device->instance->knl->queue_wait_fence(queue, fence,
+                                                         timeout_ns);
 }
 
 VkResult

@@ -138,6 +138,8 @@ queue_submit(struct vk_queue *_queue, struct vk_queue_submit *vk_submit)
 
    if (u_trace_submission_data) {
       u_trace_submission_data->submission_id = device->submit_count;
+      u_trace_submission_data->queue = queue;
+      u_trace_submission_data->fence = queue->fence;
 
       for (uint32_t i = 0; i < u_trace_submission_data->cmd_buffer_count; i++) {
          bool free_data = i == u_trace_submission_data->last_buffer_with_tracepoints;

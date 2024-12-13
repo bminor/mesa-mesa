@@ -443,12 +443,6 @@ struct kgsl_syncobj
    int fd;
 };
 
-struct tu_u_trace_syncobj
-{
-   uint32_t msm_queue_id;
-   uint32_t timestamp;
-};
-
 static void
 kgsl_syncobj_init(struct kgsl_syncobj *s, bool signaled)
 {
@@ -577,6 +571,16 @@ wait_timestamp_safe(int fd,
          return VK_SUCCESS;
       }
    }
+}
+
+VkResult
+kgsl_queue_wait_fence(struct tu_queue *queue, uint32_t fence,
+                      uint64_t timeout_ns)
+{
+   uint64_t abs_timeout_ns = os_time_get_nano() + timeout_ns;
+
+   return wait_timestamp_safe(queue->device->fd, queue->msm_queue_id,
+                              fence, abs_timeout_ns);
 }
 
 static VkResult
@@ -1280,12 +1284,6 @@ kgsl_queue_submit(struct tu_queue *queue, void *_submit,
       struct tu_u_trace_submission_data *submission_data =
          u_trace_submission_data;
       submission_data->gpu_ts_offset = gpu_offset;
-      /* We have to allocate it here since it is different between drm/kgsl */
-      submission_data->syncobj = (struct tu_u_trace_syncobj *)
-         vk_alloc(&queue->device->vk.alloc, sizeof(struct tu_u_trace_syncobj),
-               8, VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
-         submission_data->syncobj->timestamp = req.timestamp;
-         submission_data->syncobj->msm_queue_id = queue->msm_queue_id;
    }
 
 fail_submit:
@@ -1297,25 +1295,6 @@ fail_submit:
    }
 
    return result;
-}
-
-static VkResult
-kgsl_device_wait_u_trace(struct tu_device *dev, struct tu_u_trace_syncobj *syncobj)
-{
-   struct kgsl_device_waittimestamp_ctxtid req = {
-      .context_id = syncobj->msm_queue_id,
-      .timestamp = syncobj->timestamp,
-      .timeout = 5000, // 5s
-   };
-
-   int ret = safe_ioctl(dev->fd, IOCTL_KGSL_DEVICE_WAITTIMESTAMP_CTXTID, &req);
-
-   if (ret) {
-      assert(errno == ETIME);
-      return VK_TIMEOUT;
-   }
-
-   return VK_SUCCESS;
 }
 
 static VkResult
@@ -1387,11 +1366,11 @@ static const struct tu_knl kgsl_knl_funcs = {
       .bo_map = kgsl_bo_map,
       .bo_allow_dump = kgsl_bo_allow_dump,
       .bo_finish = kgsl_bo_finish,
-      .device_wait_u_trace = kgsl_device_wait_u_trace,
       .submit_create = kgsl_submit_create,
       .submit_finish = kgsl_submit_finish,
       .submit_add_entries = kgsl_submit_add_entries,
       .queue_submit = kgsl_queue_submit,
+      .queue_wait_fence = kgsl_queue_wait_fence,
 };
 
 VkResult

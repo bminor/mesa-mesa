@@ -45,11 +45,6 @@ struct tu_userspace_fence_cmds {
    struct tu_userspace_fence_cmd cmds[64];
 };
 
-struct tu_u_trace_syncobj {
-   uint32_t msm_queue_id;
-   uint32_t fence;
-};
-
 struct tu_virtio_device {
    struct vdrm_device *vdrm;
    struct msm_shmem *shmem;
@@ -405,6 +400,14 @@ out:
    if (!ret) return VK_SUCCESS;
    if (ret == -ETIMEDOUT) return VK_TIMEOUT;
    return VK_ERROR_UNKNOWN;
+}
+
+VkResult
+virtio_queue_wait_fence(struct tu_queue *queue, uint32_t fence,
+                        uint64_t timeout_ns)
+{
+   return tu_wait_fence(queue->device, queue->msm_queue_id, fence,
+                        timeout_ns);
 }
 
 static VkResult
@@ -1025,12 +1028,6 @@ virtio_queue_submit(struct tu_queue *queue, void *_submit,
 
    if (u_trace_submission_data) {
       u_trace_submission_data->gpu_ts_offset = gpu_offset;
-      /* We have to allocate it here since it is different between drm/kgsl */
-      u_trace_submission_data->syncobj = (struct tu_u_trace_syncobj *)
-         vk_alloc(&queue->device->vk.alloc, sizeof(struct tu_u_trace_syncobj),
-               8, VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
-      u_trace_submission_data->syncobj->fence = req->fence;
-      u_trace_submission_data->syncobj->msm_queue_id = queue->msm_queue_id;
    }
 
    for (uint32_t i = 0; i < wait_count; i++) {
@@ -1072,12 +1069,6 @@ fail_in_syncobjs:
    return result;
 }
 
-static VkResult
-virtio_device_wait_u_trace(struct tu_device *dev, struct tu_u_trace_syncobj *syncobj)
-{
-   return tu_wait_fence(dev, syncobj->msm_queue_id, syncobj->fence, 1000000000);
-}
-
 static const struct tu_knl virtio_knl_funcs = {
       .name = "virtgpu",
 
@@ -1094,11 +1085,11 @@ static const struct tu_knl virtio_knl_funcs = {
       .bo_map = virtio_bo_map,
       .bo_allow_dump = virtio_bo_allow_dump,
       .bo_finish = tu_drm_bo_finish,
-      .device_wait_u_trace = virtio_device_wait_u_trace,
       .submit_create = msm_submit_create,
       .submit_finish = msm_submit_finish,
       .submit_add_entries = msm_submit_add_entries,
       .queue_submit = virtio_queue_submit,
+      .queue_wait_fence = virtio_queue_wait_fence,
 };
 
 VkResult
