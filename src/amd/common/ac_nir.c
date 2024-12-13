@@ -400,15 +400,15 @@ ac_nir_export_position(nir_builder *b,
       VARYING_BIT_PRIMITIVE_SHADING_RATE;
 
    /* clear output mask if no one written */
-   if (!out->outputs[VARYING_SLOT_PSIZ][0])
+   if (!out->outputs[VARYING_SLOT_PSIZ][0] || !out->infos[VARYING_SLOT_PSIZ].as_sysval_mask)
       outputs_written &= ~VARYING_BIT_PSIZ;
-   if (!out->outputs[VARYING_SLOT_EDGE][0])
+   if (!out->outputs[VARYING_SLOT_EDGE][0] || !out->infos[VARYING_SLOT_EDGE].as_sysval_mask)
       outputs_written &= ~VARYING_BIT_EDGE;
-   if (!out->outputs[VARYING_SLOT_PRIMITIVE_SHADING_RATE][0])
+   if (!out->outputs[VARYING_SLOT_PRIMITIVE_SHADING_RATE][0] || !out->infos[VARYING_SLOT_PRIMITIVE_SHADING_RATE].as_sysval_mask)
       outputs_written &= ~VARYING_BIT_PRIMITIVE_SHADING_RATE;
-   if (!out->outputs[VARYING_SLOT_LAYER][0])
+   if (!out->outputs[VARYING_SLOT_LAYER][0] || !out->infos[VARYING_SLOT_LAYER].as_sysval_mask)
       outputs_written &= ~VARYING_BIT_LAYER;
-   if (!out->outputs[VARYING_SLOT_VIEWPORT][0])
+   if (!out->outputs[VARYING_SLOT_VIEWPORT][0] || !out->infos[VARYING_SLOT_VIEWPORT].as_sysval_mask)
       outputs_written &= ~VARYING_BIT_VIEWPORT;
 
    if ((outputs_written & mask) || force_vrs) {
