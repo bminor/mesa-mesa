@@ -564,7 +564,7 @@
         "description": "r300: disable microtiling for scanout buffers",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f424ef18010751aae1e70ebda363ada0bed82bda",
         "notes": null
