@@ -29,7 +29,6 @@ anv-adl:
   variables:
     DEQP_SUITE: anv-adl
     VK_DRIVER: intel
-    DEQP_FRACTION: 2
   timeout: 30m
   parallel: 4
 
