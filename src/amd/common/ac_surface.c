@@ -3205,7 +3205,6 @@ static bool gfx12_compute_surface(struct ac_addrlib *addrlib, const struct radeo
                                   struct radeon_surf *surf)
 {
    bool compressed = surf->blk_w == 4 && surf->blk_h == 4;
-   bool is_color_surface = !(surf->flags & RADEON_SURF_Z_OR_SBUFFER);
    bool stencil_only = (surf->flags & RADEON_SURF_SBUFFER) && !(surf->flags & RADEON_SURF_ZBUFFER);
    ADDR3_COMPUTE_SURFACE_INFO_INPUT AddrSurfInfoIn = {0};
 
@@ -3220,13 +3219,11 @@ static bool gfx12_compute_surface(struct ac_addrlib *addrlib, const struct radeo
          AddrSurfInfoIn.bpp = surf->bpe * 8;
    }
 
-   AddrSurfInfoIn.flags.color = is_color_surface && !(surf->flags & RADEON_SURF_NO_RENDER_TARGET);
-   AddrSurfInfoIn.flags.depth = (surf->flags & RADEON_SURF_ZBUFFER) != 0;
+   AddrSurfInfoIn.flags.depth = !!(surf->flags & RADEON_SURF_ZBUFFER);
    AddrSurfInfoIn.flags.stencil = stencil_only;
-   AddrSurfInfoIn.flags.texture = !(surf->flags & RADEON_SURF_NO_TEXTURE);
-   AddrSurfInfoIn.flags.unordered = !(surf->flags & RADEON_SURF_NO_TEXTURE);
    AddrSurfInfoIn.flags.blockCompressed = compressed;
    AddrSurfInfoIn.flags.isVrsImage = !!(surf->flags & RADEON_SURF_VRS_RATE);
+   AddrSurfInfoIn.flags.standardPrt = !!(surf->flags & RADEON_SURF_PRT);
 
    if (config->is_3d)
       AddrSurfInfoIn.resourceType = ADDR_RSRC_TEX_3D;
@@ -3254,11 +3251,6 @@ static bool gfx12_compute_surface(struct ac_addrlib *addrlib, const struct radeo
       AddrSurfInfoIn.swizzleMode = ac_get_modifier_swizzle_mode(info->gfx_level, surf->modifier);
    } else if (surf->flags & RADEON_SURF_IMPORTED) {
       AddrSurfInfoIn.swizzleMode = surf->u.gfx9.swizzle_mode;
-   } else if (surf->flags & RADEON_SURF_PRT) {
-      if (config->is_3d)
-         AddrSurfInfoIn.swizzleMode = ADDR3_64KB_3D;
-      else
-         AddrSurfInfoIn.swizzleMode = ADDR3_64KB_2D;
    } else if (mode == RADEON_SURF_MODE_LINEAR_ALIGNED) {
       assert(config->info.samples <= 1 && !(surf->flags & RADEON_SURF_Z_OR_SBUFFER));
       AddrSurfInfoIn.swizzleMode = ADDR3_LINEAR;

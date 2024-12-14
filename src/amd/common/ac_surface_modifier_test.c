@@ -221,8 +221,6 @@ static void gfx12_generate_hash(struct ac_addrlib *ac_addrlib,
    ADDR3_COMPUTE_SURFACE_ADDRFROMCOORD_INPUT input = {0};
    input.size = sizeof(input);
    input.swizzleMode = surf->u.gfx9.swizzle_mode;
-   input.flags.color = 1;
-   input.flags.texture = 1;
    input.resourceType = ADDR_RSRC_TEX_2D;
    input.bpp = util_format_get_blocksizebits(entry->format);
    input.unAlignedDims.width = entry->w;
