@@ -4849,6 +4849,7 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
    } else if (info.opcode == aco_opcode::v_add_u32 && !info.clamp) {
       assert(ctx.program->gfx_level >= GFX9);
       add_opt(v_bcnt_u32_b32, v_bcnt_u32_b32, 0x3, "102", remove_const_cb<0>, true);
+      add_opt(v_mad_u32_u16, v_mad_u32_u16, 0x3, "1203", remove_const_cb<0>, true);
       add_opt(v_mul_u32_u24, v_mad_u32_u24, 0x3, "120", nullptr, true);
       add_opt(v_mul_i32_i24, v_mad_i32_i24, 0x3, "120", nullptr, true);
       add_opt(v_xor_b32, v_xad_u32, 0x3, "120", nullptr, true);
