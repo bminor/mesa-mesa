@@ -48,8 +48,6 @@ def pretty_time(time_str: str) -> str:
 
 def compose_message(file_name: str, attachment_url: str) -> str:
     return f"""
-Here is the Gantt chart for the referred pipeline, I hope it helps 😄 (tip: click on the "Pan" button on the top right bar):
-
 [{file_name}]({attachment_url})
 
 <details>
@@ -149,7 +147,7 @@ def main(
                 pipeline, _ = get_gitlab_pipeline_from_url(gl, pipeline_url)
                 log.info("Generating gantt chart...")
                 fig = generate_gantt_chart(pipeline)
-                file_name = "Gantt.html"
+                file_name = f"{str(pipeline.id)}-Gantt.html"
                 fig.write_html(file_name)
                 log.info("Uploading gantt file...")
                 file_url = gitlab_upload_file_get_url(gl, event.project_id, file_name)
