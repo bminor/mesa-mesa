@@ -23,8 +23,6 @@ from gitlab.base import RESTObject
 from gitlab.v4.objects import Project, ProjectPipeline
 from gitlab_common import GITLAB_URL, get_gitlab_pipeline_from_url, read_token
 
-MARGE_USER_ID = 9716  # Marge
-
 LAST_MARGE_EVENT_FILE = os.path.expanduser("~/.config/last_marge_event")
 
 
@@ -106,14 +104,14 @@ def gitlab_post_reply_to_note(gl: Gitlab, event: RESTObject, reply_message: str)
         return None
 
 
-def main(token: str | None, since: str | None):
+def main(token: str | None, since: str | None, marge_user_id: int = 9716):
     log.basicConfig(level=log.INFO)
 
     token = read_token(token)
 
     gl = gitlab.Gitlab(url=GITLAB_URL, private_token=token, retry_transient_errors=True)
 
-    user = gl.users.get(MARGE_USER_ID)
+    user = gl.users.get(marge_user_id)
     last_event_at = since if since else read_last_event_date_from_file()
 
     log.info(f"Retrieving Marge messages since {pretty_time(last_event_at)}\n")
@@ -182,5 +180,12 @@ if __name__ == "__main__":
         default=None,
         help="consider only events after this date (ISO format), otherwise it's read from ~/.config/last_marge_event",
     )
+    parser.add_argument(
+        "--marge-user-id",
+        metavar="marge_user_id",
+        type=int,
+        default=9716,  # default https://gitlab.freedesktop.org/users/marge-bot/activity
+        help="GitLab user ID for marge-bot, defaults to 9716",
+    )
     args = parser.parse_args()
-    main(args.token, args.since)
+    main(args.token, args.since, args.marge_user_id)
