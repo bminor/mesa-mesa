@@ -3951,21 +3951,6 @@ ms_arrayed_output_base_addr(nir_builder *b,
 }
 
 static void
-update_ms_output_info_slot(lower_ngg_ms_state *s,
-                           unsigned slot, unsigned base_off,
-                           uint32_t components_mask)
-{
-   while (components_mask) {
-      ac_nir_prerast_per_output_info *info = &s->out.infos[slot + base_off];
-      const uint8_t mask = components_mask & 0xF;
-      info->components_mask |= mask;
-
-      components_mask >>= 4;
-      base_off++;
-   }
-}
-
-static void
 update_ms_output_info(const nir_io_semantics io_sem,
                       const nir_src *base_offset_src,
                       const uint32_t write_mask,
@@ -3974,17 +3959,21 @@ update_ms_output_info(const nir_io_semantics io_sem,
                       const ms_out_part *out,
                       lower_ngg_ms_state *s)
 {
-   uint32_t write_mask_32 = util_widen_mask(write_mask, DIV_ROUND_UP(bit_size, 32));
-   uint32_t components_mask = write_mask_32 << component_offset;
+   const uint32_t components_mask = write_mask << component_offset;
 
-   if (nir_src_is_const(*base_offset_src)) {
-      /* Simply mark the components of the current slot as used. */
-      unsigned base_off = nir_src_as_uint(*base_offset_src);
-      update_ms_output_info_slot(s, io_sem.location, base_off, components_mask);
-   } else {
-      /* Indirect offset: mark the components of all slots as used. */
-      for (unsigned base_off = 0; base_off < io_sem.num_slots; ++base_off)
-         update_ms_output_info_slot(s, io_sem.location, base_off, components_mask);
+   /* 64-bit outputs should have already been lowered to 32-bit. */
+   assert(bit_size <= 32);
+   assert(components_mask <= 0xf);
+
+   /* When the base offset is constant, only mark the components of the current slot as used.
+    * Otherwise, mark the components of all possibly affected slots as used.
+    */
+   const unsigned base_off_start = nir_src_is_const(*base_offset_src) ? nir_src_as_uint(*base_offset_src) : 0;
+   const unsigned num_slots = nir_src_is_const(*base_offset_src) ? 1 : io_sem.num_slots;
+
+   for (unsigned base_off = base_off_start; base_off < num_slots; ++base_off) {
+      ac_nir_prerast_per_output_info *info = &s->out.infos[io_sem.location + base_off];
+      info->components_mask |= components_mask;
    }
 }
 
