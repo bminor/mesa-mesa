@@ -713,8 +713,12 @@ static bool r300_is_format_supported(struct pipe_screen* screen,
         format != PIPE_FORMAT_R16G16B16X16_SNORM &&
         /* ATI1N is r5xx-only. */
         (is_r500 || !is_ati1n) &&
-        /* ATI2N is supported on r4xx-r5xx. */
-        (is_r400 || is_r500 || !is_ati2n) &&
+        /* ATI2N is supported on r4xx-r5xx. However state tracker can't handle
+	 * fallbacks for ATI1N only, so if we enable ATI2N, we will crash for ATI1N.
+	 * Therefore disable both on r400 for now. Additionally, some online source
+	 * claim r300 can also do ATI2N.
+	 */
+        (is_r500 || !is_ati2n) &&
         r300_is_sampler_format_supported(format)) {
         retval |= PIPE_BIND_SAMPLER_VIEW;
     }

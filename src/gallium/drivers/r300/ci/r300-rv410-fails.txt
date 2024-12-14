@@ -526,7 +526,7 @@ spec@!opengl 1.1@depthstencil-default_fb-readpixels-float-and-ushort samples=2,F
 spec@!opengl 1.1@depthstencil-default_fb-readpixels-float-and-ushort samples=4,Fail
 spec@!opengl 1.1@depthstencil-default_fb-readpixels-float-and-ushort samples=6,Fail
 spec@!opengl 1.1@draw-pixel-with-texture,Fail
-spec@!opengl 1.1@getteximage-formats,Crash
+spec@!opengl 1.1@getteximage-formats,Fail
 spec@!opengl 1.1@getteximage-simple,Fail
 spec@!opengl 1.1@gl-1.1-drawarrays-vertex-count 100000 varray gl_line_loop,Fail
 spec@!opengl 1.1@gl-1.1-drawarrays-vertex-count 100000 varray gl_polygon,Fail
@@ -545,9 +545,8 @@ spec@!opengl 1.1@linestipple@Line loop,Fail
 spec@!opengl 1.1@linestipple@Line strip,Fail
 spec@!opengl 1.1@linestipple@Restarting lines within a single Begin-End block,Fail
 spec@!opengl 1.1@read-front samples=6,Fail
-spec@!opengl 1.1@sized-texture-format-channels,Crash
 spec@!opengl 1.1@texgen,Fail
-spec@!opengl 1.1@texsubimage,Crash
+spec@!opengl 1.1@texsubimage,Fail
 spec@!opengl 1.1@texwrap formats bordercolor,Fail
 spec@!opengl 1.1@texwrap formats bordercolor-swizzled,Fail
 spec@!opengl 1.1@texwrap formats bordercolor-swizzled@GL_RGB12- swizzled- border color only,Fail
@@ -614,10 +613,6 @@ spec@arb_framebuffer_object@fbo-luminance-alpha,Fail
 spec@arb_framebuffer_object@fbo-mipmap-copypix,Fail
 spec@arb_framebuffer_object@same-attachment-tex2d-depth_stencil,Fail
 
-spec@arb_internalformat_query2@all internalformat_<x>_size pname checks,Crash
-spec@arb_internalformat_query2@all internalformat_<x>_type pname checks,Crash
-spec@arb_internalformat_query2@max dimensions related pname checks,Crash
-
 spec@arb_occlusion_query@occlusion_query_meta_fragments,Fail
 spec@arb_occlusion_query@occlusion_query_meta_no_fragments,Fail
 spec@arb_occlusion_query@occlusion_query_meta_save,Fail
@@ -626,7 +621,6 @@ spec@arb_occlusion_query@occlusion_query_order,Fail
 spec@arb_pixel_buffer_object@cubemap npot pbo,Fail
 spec@arb_pixel_buffer_object@fbo-pbo-readpixels-small,Fail
 spec@arb_pixel_buffer_object@pbo-getteximage,Fail
-spec@arb_pixel_buffer_object@texsubimage pbo,Crash
 
 spec@arb_point_sprite@arb_point_sprite-mipmap,Fail
 
@@ -753,30 +747,14 @@ spec@ext_framebuffer_object@fbo-alphatest-formats@GL_RGBA12,Fail
 spec@ext_framebuffer_object@fbo-alphatest-formats@GL_RGBA16,Fail
 spec@ext_framebuffer_object@fbo-depth-sample-compare,Fail
 spec@ext_framebuffer_object@fbo-fragcoord2,Fail
-spec@ext_framebuffer_object@getteximage-formats init-by-clear-and-render,Crash
-spec@ext_framebuffer_object@getteximage-formats init-by-rendering,Crash
+spec@ext_framebuffer_object@getteximage-formats init-by-clear-and-render,Fail
+spec@ext_framebuffer_object@getteximage-formats init-by-rendering,Fail
 
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-export,Fail
 
 spec@ext_occlusion_query_boolean@any-samples,Fail
 
 spec@ext_packed_depth_stencil@depth_stencil texture,Fail
-
-spec@ext_texture_compression_latc@fbo-generatemipmap-formats,Crash
-spec@ext_texture_compression_latc@fbo-generatemipmap-formats-signed,Crash
-spec@ext_texture_compression_latc@texwrap formats,Crash
-spec@ext_texture_compression_latc@texwrap formats bordercolor,Crash
-spec@ext_texture_compression_latc@texwrap formats bordercolor-swizzled,Crash
-
-spec@ext_texture_compression_rgtc@compressedteximage gl_compressed_red_rgtc1_ext,Crash
-spec@ext_texture_compression_rgtc@compressedteximage gl_compressed_signed_red_rgtc1_ext,Crash
-spec@ext_texture_compression_rgtc@fbo-generatemipmap-formats,Crash
-spec@ext_texture_compression_rgtc@fbo-generatemipmap-formats-signed,Crash
-spec@ext_texture_compression_rgtc@rgtc-teximage-01,Crash
-spec@ext_texture_compression_rgtc@rgtc-teximage-02,Fail
-spec@ext_texture_compression_rgtc@texwrap formats,Crash
-spec@ext_texture_compression_rgtc@texwrap formats bordercolor,Crash
-spec@ext_texture_compression_rgtc@texwrap formats bordercolor-swizzled,Crash
 
 spec@ext_texture_compression_s3tc@s3tc-errors,Fail
 spec@ext_texture_compression_s3tc@s3tc-errors_gles2,Fail
