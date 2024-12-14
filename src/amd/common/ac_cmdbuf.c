@@ -728,8 +728,20 @@ gfx12_init_graphics_preamble_state(const struct ac_preamble_state *state,
    ac_pm4_set_reg(pm4, R_030A00_PA_SU_LINE_STIPPLE_VALUE, 0);
    ac_pm4_set_reg(pm4, R_030A04_PA_SC_LINE_STIPPLE_STATE, 0);
 
-   ac_pm4_set_reg(pm4, R_031128_SPI_GRP_LAUNCH_GUARANTEE_ENABLE, 0x8A4D);
-   ac_pm4_set_reg(pm4, R_03112C_SPI_GRP_LAUNCH_GUARANTEE_CTRL, 0x1123);
+   ac_pm4_set_reg(pm4, R_031128_SPI_GRP_LAUNCH_GUARANTEE_ENABLE,
+                  S_031128_ENABLE(1) |
+                  S_031128_GS_ASSIST_EN(1) |
+                  S_031128_MRT_ASSIST_EN(1) |
+                  S_031128_GFX_NUM_LOCK_WGP(2) |
+                  S_031128_CS_NUM_LOCK_WGP(2) |
+                  S_031128_LOCK_PERIOD(1) |
+                  S_031128_LOCK_MAINT_COUNT(1));
+   ac_pm4_set_reg(pm4, R_03112C_SPI_GRP_LAUNCH_GUARANTEE_CTRL,
+                  S_03112C_NUM_MRT_THRESHOLD(3) |
+                  S_03112C_GFX_PENDING_THRESHOLD(4) |
+                  S_03112C_PRIORITY_LOST_THRESHOLD(4) |
+                  S_03112C_ALLOC_SUCCESS_THRESHOLD(4) |
+                  S_03112C_CS_WAVE_THRESHOLD_HIGH(8));
 
    uint64_t rb_mask = BITFIELD64_MASK(info->max_render_backends);
 
