@@ -5588,8 +5588,6 @@ visit_block(struct lp_build_nir_soa_context *bld, nir_block *block)
 static bool
 lp_should_flatten_cf_list(struct exec_list *cf_list)
 {
-   if (exec_list_is_empty(cf_list))
-      return true;
    if (!exec_list_is_singular(cf_list))
       return false;
 
@@ -5604,18 +5602,13 @@ visit_if(struct lp_build_nir_soa_context *bld, nir_if *if_stmt)
    LLVMValueRef cond = get_src(bld, &if_stmt->condition, 0);
 
    bool flatten_then = lp_should_flatten_cf_list(&if_stmt->then_list);
+   bool flatten_else = lp_should_flatten_cf_list(&if_stmt->else_list);
 
    if_cond(bld, cond, flatten_then);
    visit_cf_list(bld, &if_stmt->then_list);
-
-   if (!exec_list_is_empty(&if_stmt->else_list)) {
-      bool flatten_else = lp_should_flatten_cf_list(&if_stmt->else_list);
-      else_stmt(bld, flatten_then, flatten_else);
-      visit_cf_list(bld, &if_stmt->else_list);
-      endif_stmt(bld, flatten_else);
-   } else {
-      endif_stmt(bld, flatten_then);
-   }
+   else_stmt(bld, flatten_then, flatten_else);
+   visit_cf_list(bld, &if_stmt->else_list);
+   endif_stmt(bld, flatten_else);
 }
 
 static void
