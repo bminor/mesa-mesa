@@ -4817,6 +4817,8 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       add_opt(s_lshl_b32, s_lshl4_add_u32, 0x3, "102", remove_const_cb<4>);
    } else if (info.opcode == aco_opcode::v_lshlrev_b32 && ctx.program->gfx_level >= GFX9) {
       add_opt(v_add_u32, v_add_lshl_u32, 0x2, "120", nullptr, true);
+      add_opt(s_add_u32, v_add_lshl_u32, 0x2, "120", nullptr, true);
+      add_opt(s_add_i32, v_add_lshl_u32, 0x2, "120", nullptr, true);
    }
 
    if (match_and_apply_patterns(ctx, info, patterns)) {
