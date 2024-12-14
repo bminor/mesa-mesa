@@ -1487,9 +1487,9 @@ gfx10_get_ngg_info(const struct radv_device *device, struct radv_shader_info *es
    unsigned gsprim_lds_size = 0;
 
    /* All these are per subgroup: */
-   const unsigned min_esverts = gfx_level >= GFX11 ? 3 : /* gfx11 requires at least 1 primitive per TG */
-                                   gfx_level >= GFX10_3 ? 29
-                                                        : 24;
+   const unsigned min_esverts = gfx_level >= GFX11 ? max_verts_per_prim /* gfx11 requires at least 1 primitive per TG */
+                                : gfx_level >= GFX10_3 ? 29
+                                                       : (24 - 1 + max_verts_per_prim);
    bool max_vert_out_per_gs_instance = false;
    unsigned max_esverts_base = 128;
    unsigned max_gsprims_base = 128; /* default prim group size clamp */
