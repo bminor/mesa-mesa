@@ -259,7 +259,7 @@ load_memory(nir_builder *b, unsigned bindless_base, unsigned nr_samples,
 
    return nir_bindless_image_load(
       b, comps, bit_size, image, coords, sample, lod, .image_dim = dim,
-      .image_array = true, .format = format, .access = ACCESS_IN_BOUNDS_AGX);
+      .image_array = true, .format = format, .access = ACCESS_IN_BOUNDS);
 }
 
 static nir_def *

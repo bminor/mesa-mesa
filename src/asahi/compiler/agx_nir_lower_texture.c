@@ -572,7 +572,7 @@ lower_1d_image(nir_builder *b, nir_intrinsic_instr *intr)
 static bool
 lower_image_load_robustness(nir_builder *b, nir_intrinsic_instr *intr)
 {
-   if (nir_intrinsic_access(intr) & ACCESS_IN_BOUNDS_AGX)
+   if (nir_intrinsic_access(intr) & ACCESS_IN_BOUNDS)
       return false;
 
    /* We only need to worry about array-like loads */
