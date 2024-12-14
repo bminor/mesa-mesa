@@ -104,7 +104,9 @@ def gitlab_post_reply_to_note(gl: Gitlab, event: RESTObject, reply_message: str)
         return None
 
 
-def main(token: str | None, since: str | None, marge_user_id: int = 9716):
+def main(
+    token: str | None, since: str | None, marge_user_id: int = 9716, project_ids: list[int] = [176]
+):
     log.basicConfig(level=log.INFO)
 
     token = read_token(token)
@@ -129,6 +131,8 @@ def main(token: str | None, since: str | None, marge_user_id: int = 9716):
     ).replace(tzinfo=pytz.UTC)
 
     for event in events:
+        if event.project_id not in project_ids:
+            continue
         created_at_date = datetime.fromisoformat(
             event.created_at.replace("Z", "+00:00")
         ).replace(tzinfo=pytz.UTC)
@@ -187,5 +191,13 @@ if __name__ == "__main__":
         default=9716,  # default https://gitlab.freedesktop.org/users/marge-bot/activity
         help="GitLab user ID for marge-bot, defaults to 9716",
     )
+    parser.add_argument(
+        "--project-id",
+        metavar="project_id",
+        type=int,
+        nargs="+",
+        default=[176],  # default is the mesa/mesa project id
+        help="GitLab project id(s) to analyze. Defaults to 176 i.e. mesa/mesa.",
+    )
     args = parser.parse_args()
-    main(args.token, args.since, args.marge_user_id)
+    main(args.token, args.since, args.marge_user_id, args.project_id)
