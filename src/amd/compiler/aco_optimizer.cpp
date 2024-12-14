@@ -4583,6 +4583,15 @@ remove_const_cb(opt_ctx& ctx, alu_opt_info& info)
    return true;
 }
 
+template <unsigned idx, uint32_t constant>
+bool
+insert_const_cb(opt_ctx& ctx, alu_opt_info& info)
+{
+   assert(idx <= info.operands.size());
+   info.operands.insert(info.operands.begin() + idx, {Operand::c32(constant)});
+   return true;
+}
+
 template <combine_instr_callback func1, combine_instr_callback func2>
 bool
 and_cb(opt_ctx& ctx, alu_opt_info& info)
@@ -4703,14 +4712,6 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
    }
 
    if (instr->isSDWA()) {
-   } else if (instr->opcode == aco_opcode::v_or_b32 && ctx.program->gfx_level >= GFX9) {
-      if (combine_three_valu_op(ctx, instr, aco_opcode::s_or_b32, aco_opcode::v_or3_b32, "012",
-                                1 | 2)) {
-      } else if (combine_three_valu_op(ctx, instr, aco_opcode::v_or_b32, aco_opcode::v_or3_b32,
-                                       "012", 1 | 2)) {
-      } else if (combine_add_or_then_and_lshl(ctx, instr)) {
-      } else if (combine_v_andor_not(ctx, instr)) {
-      }
    } else if (instr->opcode == aco_opcode::v_xor_b32 && ctx.program->gfx_level >= GFX10) {
       if (combine_three_valu_op(ctx, instr, aco_opcode::v_xor_b32, aco_opcode::v_xor3_b32, "012",
                                 1 | 2)) {
@@ -4955,6 +4956,17 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
          add_opt(v_mul_lo_u16, v_pk_mad_u16, 0x3, "120");
       else
          add_opt(v_mul_lo_u16_e64, v_pk_mad_u16, 0x3, "120");
+   } else if (info.opcode == aco_opcode::v_or_b32) {
+      add_opt(v_not_b32, v_bfi_b32, 0x3, "10", insert_const_cb<2, UINT32_MAX>, true);
+      add_opt(s_not_b32, v_bfi_b32, 0x3, "10", insert_const_cb<2, UINT32_MAX>, true);
+      if (ctx.program->gfx_level >= GFX9) {
+         add_opt(v_or_b32, v_or3_b32, 0x3, "012", nullptr, true);
+         add_opt(s_or_b32, v_or3_b32, 0x3, "012", nullptr, true);
+         add_opt(v_lshlrev_b32, v_lshl_or_b32, 0x3, "210", nullptr, true);
+         add_opt(s_lshl_b32, v_lshl_or_b32, 0x3, "120", nullptr, true);
+         add_opt(v_and_b32, v_and_or_b32, 0x3, "120", nullptr, true);
+         add_opt(s_and_b32, v_and_or_b32, 0x3, "120", nullptr, true);
+      }
    }
 
    if (match_and_apply_patterns(ctx, info, patterns)) {
