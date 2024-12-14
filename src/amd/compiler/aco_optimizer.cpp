@@ -4788,14 +4788,6 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       }
    } else if (instr->opcode == aco_opcode::v_not_b32 && ctx.program->gfx_level >= GFX10) {
       combine_not_xor(ctx, instr);
-   } else if (instr->opcode == aco_opcode::v_add_u16 && !instr->valu().clamp) {
-      combine_three_valu_op(
-         ctx, instr, aco_opcode::v_mul_lo_u16,
-         ctx.program->gfx_level == GFX8 ? aco_opcode::v_mad_legacy_u16 : aco_opcode::v_mad_u16,
-         "120", 1 | 2);
-   } else if (instr->opcode == aco_opcode::v_add_u16_e64 && !instr->valu().clamp) {
-      combine_three_valu_op(ctx, instr, aco_opcode::v_mul_lo_u16_e64, aco_opcode::v_mad_u16, "120",
-                            1 | 2);
    } else if (instr->opcode == aco_opcode::v_add_u32 && !instr->usesModifiers()) {
       if (combine_add_sub_b2i(ctx, instr, aco_opcode::v_addc_co_u32, 1 | 2)) {
       } else if (combine_add_bcnt(ctx, instr)) {
@@ -5008,6 +5000,13 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       /* v_mul_f32(a, v_cndmask_b32(0, 1.0, cond)) -> v_cndmask_b32(0, a, cond) */
       add_opt(v_cndmask_b32, v_cndmask_b32, 0x3, "1032",
               and_cb<check_const_cb<0, 0>, remove_const_cb<0x3f800000>>, true);
+   } else if (info.opcode == aco_opcode::v_add_u16 && !info.clamp) {
+      if (ctx.program->gfx_level < GFX9)
+         add_opt(v_mul_lo_u16, v_mad_legacy_u16, 0x3, "120");
+      else
+         add_opt(v_mul_lo_u16, v_mad_u16, 0x3, "120");
+   } else if (info.opcode == aco_opcode::v_add_u16_e64 && !info.clamp) {
+      add_opt(v_mul_lo_u16_e64, v_mad_u16, 0x3, "120");
    }
 
    if (match_and_apply_patterns(ctx, info, patterns)) {
