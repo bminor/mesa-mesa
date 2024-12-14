@@ -179,6 +179,16 @@ lower_load_ubo(nir_builder *b, nir_intrinsic_instr *intrin, void *data_cb)
    return true;
 }
 
+static void
+lower_push_constant(nir_builder *b, nir_intrinsic_instr *intrin, void *data_cb)
+{
+   nir_def *load = nir_load_ubo(b, intrin->def.num_components, intrin->def.bit_size,
+                                nir_imm_int(b, 0), intrin->src[0].ssa,
+                                .range = nir_intrinsic_range(intrin));
+   nir_def_rewrite_uses(&intrin->def, load);
+   nir_instr_remove(&intrin->instr);
+}
+
 static bool
 lower_vri_instr(struct nir_builder *b, nir_instr *instr, void *data_cb)
 {
@@ -231,6 +241,10 @@ lower_vri_instr(struct nir_builder *b, nir_instr *instr, void *data_cb)
       case nir_intrinsic_image_deref_size:
       case nir_intrinsic_image_deref_samples:
          lower_image_intrinsic(b, intrin, data_cb);
+         return true;
+      
+      case nir_intrinsic_load_push_constant:
+         lower_push_constant(b, intrin, data_cb);
          return true;
 
       default:
