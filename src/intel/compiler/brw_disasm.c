@@ -31,7 +31,7 @@
 #include "brw_disasm_info.h"
 #include "brw_eu_defines.h"
 #include "brw_eu.h"
-#include "brw_inst.h"
+#include "brw_eu_inst.h"
 #include "brw_isa_info.h"
 #include "brw_reg.h"
 #include "util/half_float.h"

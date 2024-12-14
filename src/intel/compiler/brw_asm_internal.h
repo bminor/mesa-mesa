@@ -14,7 +14,7 @@
 #include "compiler/brw_reg.h"
 #include "compiler/brw_reg_type.h"
 #include "compiler/brw_eu_defines.h"
-#include "compiler/brw_inst.h"
+#include "compiler/brw_eu_inst.h"
 #include "compiler/brw_eu.h"
 #include "dev/intel_device_info.h"
 #include "util/list.h"
