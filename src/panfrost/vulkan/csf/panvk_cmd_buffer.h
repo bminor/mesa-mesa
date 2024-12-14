@@ -180,11 +180,13 @@ enum panvk_cs_regs {
    PANVK_CS_REG_SUBQUEUE_CTX_END = 91,
 };
 
+#define CS_REG_SCRATCH_COUNT                                                   \
+   (PANVK_CS_REG_SCRATCH_END - PANVK_CS_REG_SCRATCH_START + 1)
+
 static inline struct cs_index
 cs_scratch_reg_tuple(struct cs_builder *b, unsigned start, unsigned count)
 {
-   assert(PANVK_CS_REG_SCRATCH_START + start + count - 1 <=
-          PANVK_CS_REG_SCRATCH_END);
+   assert(start + count <= CS_REG_SCRATCH_COUNT);
    return cs_reg_tuple(b, PANVK_CS_REG_SCRATCH_START + start, count);
 }
 
