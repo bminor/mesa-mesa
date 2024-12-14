@@ -166,7 +166,7 @@ lvp_compile_ray_tracing_stages(struct lvp_pipeline *pipeline,
    uint32_t i = 0;
    for (; i < create_info->stageCount; i++) {
       nir_shader *nir;
-      result = lvp_spirv_to_nir(pipeline, create_info->pStages + i, &nir);
+      result = lvp_spirv_to_nir(pipeline, create_info->pNext, create_info->pStages + i, &nir);
       if (result != VK_SUCCESS)
          return result;
 

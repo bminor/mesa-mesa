@@ -804,8 +804,8 @@ void
 queue_thread_noop(void *data, void *gdata, int thread_index);
 
 VkResult
-lvp_spirv_to_nir(struct lvp_pipeline *pipeline, const VkPipelineShaderStageCreateInfo *sinfo,
-                 nir_shader **out_nir);
+lvp_spirv_to_nir(struct lvp_pipeline *pipeline, const void *pipeline_pNext,
+                 const VkPipelineShaderStageCreateInfo *sinfo, nir_shader **out_nir);
 
 void
 lvp_shader_init(struct lvp_shader *shader, nir_shader *nir);
