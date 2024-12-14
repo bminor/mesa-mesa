@@ -138,7 +138,9 @@ def main(
             continue
         last_event_at = event.created_at
 
-        match = re.search(r"https://[^ ]+", event.note["body"])
+        escaped_gitlab_url = re.escape(GITLAB_URL)
+        match = re.search(rf"{escaped_gitlab_url}/[^\s<]+", event.note["body"])
+
         if match:
             try:
                 log.info(f"Found message: {event.note['body']}")
