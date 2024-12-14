@@ -106,31 +106,15 @@ def gitlab_post_reply_to_note(gl: Gitlab, event: RESTObject, reply_message: str)
         return None
 
 
-def parse_args() -> None:
-    parser = argparse.ArgumentParser(description="Monitor rejected pipelines by Marge.")
-    parser.add_argument(
-        "--token",
-        metavar="token",
-        help="force GitLab token, otherwise it's read from ~/.config/gitlab-token",
-    )
-    parser.add_argument(
-        "--since",
-        metavar="since",
-        help="consider only events after this date (ISO format), otherwise it's read from ~/.config/last_marge_event",
-    )
-    return parser.parse_args()
-
-
-if __name__ == "__main__":
-    args = parse_args()
+def main(token: str | None, since: str | None):
     log.basicConfig(level=log.INFO)
 
-    token = read_token(args.token)
+    token = read_token(token)
 
     gl = gitlab.Gitlab(url=GITLAB_URL, private_token=token, retry_transient_errors=True)
 
     user = gl.users.get(MARGE_USER_ID)
-    last_event_at = args.since if args.since else read_last_event_date_from_file()
+    last_event_at = since if since else read_last_event_date_from_file()
 
     log.info(f"Retrieving Marge messages since {pretty_time(last_event_at)}\n")
 
@@ -174,9 +158,29 @@ if __name__ == "__main__":
                 log.info(f"Failed to generate gantt chart, not posting reply.{e}")
                 traceback.print_exc()
 
-        if not args.since:
+        if not since:
             log.info(
                 f"Updating last event date to {pretty_time(last_event_at)} on {LAST_MARGE_EVENT_FILE}\n"
             )
             with open(LAST_MARGE_EVENT_FILE, "w") as f:
                 f.write(last_event_at)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Monitor rejected pipelines by Marge.")
+    parser.add_argument(
+        "--token",
+        metavar="token",
+        type=str,
+        default=None,
+        help="force GitLab token, otherwise it's read from ~/.config/gitlab-token",
+    )
+    parser.add_argument(
+        "--since",
+        metavar="since",
+        type=str,
+        default=None,
+        help="consider only events after this date (ISO format), otherwise it's read from ~/.config/last_marge_event",
+    )
+    args = parser.parse_args()
+    main(args.token, args.since)

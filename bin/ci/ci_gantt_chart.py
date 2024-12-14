@@ -132,7 +132,26 @@ def generate_gantt_chart(pipeline: ProjectPipeline):
     return fig
 
 
-def parse_args() -> argparse.Namespace:
+def main(
+    token: str | None,
+    pipeline_url: str,
+    output: str | None,
+):
+    token = read_token(token)
+    gl = gitlab.Gitlab(url=GITLAB_URL, private_token=token, retry_transient_errors=True)
+
+    pipeline, _ = get_gitlab_pipeline_from_url(gl, pipeline_url)
+    fig = generate_gantt_chart(pipeline)
+    if output and "htm" in output:
+        fig.write_html(output)
+    elif output:
+        fig.update_layout(width=1000)
+        fig.write_image(output)
+    else:
+        fig.show()
+
+
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Generate the Gantt chart from a given pipeline."
     )
@@ -141,29 +160,12 @@ def parse_args() -> argparse.Namespace:
         "-o",
         "--output",
         type=str,
-        help="Output file name. Use html ou image suffixes to choose the format.",
+        help="Output file name. Use html or image suffixes to choose the format.",
     )
     parser.add_argument(
         "--token",
         metavar="token",
         help="force GitLab token, otherwise it's read from ~/.config/gitlab-token",
     )
-    return parser.parse_args()
-
-
-if __name__ == "__main__":
-    args = parse_args()
-
-    token = read_token(args.token)
-
-    gl = gitlab.Gitlab(url=GITLAB_URL, private_token=token, retry_transient_errors=True)
-
-    pipeline, _ = get_gitlab_pipeline_from_url(gl, args.pipeline_url)
-    fig = generate_gantt_chart(pipeline)
-    if args.output and "htm" in args.output:
-        fig.write_html(args.output)
-    elif args.output:
-        fig.update_layout(width=1000)
-        fig.write_image(args.output)
-    else:
-        fig.show()
+    args = parser.parse_args()
+    main(args.token, args.pipeline_url, args.output)
