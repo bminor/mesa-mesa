@@ -224,6 +224,9 @@ isl_lower_storage_image_format(const struct intel_device_info *devinfo,
    case ISL_FORMAT_R8_SNORM:
       return (devinfo->ver >= 11 ? format : ISL_FORMAT_R8_UINT);
 
+   case ISL_FORMAT_R64_PASSTHRU:
+      return ISL_FORMAT_R32G32_UINT;
+
    default:
       assert(!"Unknown image format");
       return ISL_FORMAT_UNSUPPORTED;
