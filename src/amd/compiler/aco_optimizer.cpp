@@ -72,7 +72,6 @@ enum Label {
    label_clamp = 1ull << 36,
    label_insert = 1ull << 38,
    label_f2f16 = 1ull << 39,
-   label_b2f = 1ull << 40,
    label_b2i = 1ull << 41,
 };
 
@@ -83,8 +82,8 @@ static constexpr uint64_t input_mod_labels =
    label_abs_fp16 | label_abs_fp32_64 | label_neg_fp16 | label_neg_fp32_64;
 
 static constexpr uint64_t temp_labels = label_temp | label_uniform_bool | label_scc_invert |
-                                        label_b2f | label_b2i | input_mod_labels |
-                                        label_fcanonicalize_fp32_64 | label_fcanonicalize_fp16;
+                                        label_b2i | input_mod_labels | label_fcanonicalize_fp32_64 |
+                                        label_fcanonicalize_fp16;
 
 static constexpr uint64_t val_labels = label_constant | label_combined_instr;
 
@@ -248,14 +247,6 @@ struct ssa_info {
    }
 
    bool is_f2f16() { return label & label_f2f16; }
-
-   void set_b2f(Temp b2f_val)
-   {
-      add_label(label_b2f);
-      temp = b2f_val;
-   }
-
-   bool is_b2f() { return label & label_b2f; }
 
    void set_uniform_bitwise() { add_label(label_uniform_bitwise); }
 
@@ -2902,9 +2893,7 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       break;
    }
    case aco_opcode::v_cndmask_b32:
-      if (instr->operands[0].constantEquals(0) && instr->operands[1].constantEquals(0x3f800000u))
-         ctx.info[instr->definitions[0].tempId()].set_b2f(instr->operands[2].getTemp());
-      else if (instr->operands[0].constantEquals(0) && instr->operands[1].constantEquals(1))
+      if (instr->operands[0].constantEquals(0) && instr->operands[1].constantEquals(1))
          ctx.info[instr->definitions[0].tempId()].set_b2i(instr->operands[2].getTemp());
 
       break;
@@ -4638,6 +4627,39 @@ create_med3_cb(opt_ctx& ctx, alu_opt_info& info)
 }
 
 bool
+check_constant(opt_ctx& ctx, alu_opt_info& info, unsigned idx, uint32_t expected)
+{
+   assert(idx < info.operands.size());
+   aco_type type = {aco_base_type_uint, 1, 32}; /* maybe param in the future, if needed. */
+   uint64_t constant;
+   return op_info_get_constant(ctx, info.operands[idx], type, &constant) && constant == expected;
+}
+
+template <unsigned idx, uint32_t expected>
+bool
+check_const_cb(opt_ctx& ctx, alu_opt_info& info)
+{
+   return check_constant(ctx, info, idx, expected);
+}
+
+template <uint32_t expected>
+bool
+remove_const_cb(opt_ctx& ctx, alu_opt_info& info)
+{
+   if (!check_constant(ctx, info, info.operands.size() - 1, expected))
+      return false;
+   info.operands.pop_back();
+   return true;
+}
+
+template <combine_instr_callback func1, combine_instr_callback func2>
+bool
+and_cb(opt_ctx& ctx, alu_opt_info& info)
+{
+   return func1(ctx, info) && func2(ctx, info);
+}
+
+bool
 is_mul(Instruction* instr)
 {
    switch (instr->opcode) {
@@ -4749,32 +4771,6 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
    }
 
    if (instr->isSDWA()) {
-      /* v_mul_f32(v_cndmask_b32(0, 1.0, cond), a) -> v_cndmask_b32(0, a, cond) */
-   } else if (((instr->opcode == aco_opcode::v_mul_f32 && !instr->definitions[0].isNaNPreserve() &&
-                !instr->definitions[0].isInfPreserve()) ||
-               (instr->opcode == aco_opcode::v_mul_legacy_f32 &&
-                !instr->definitions[0].isSZPreserve())) &&
-              !instr->usesModifiers() && !ctx.fp_mode.must_flush_denorms32) {
-      for (unsigned i = 0; i < 2; i++) {
-         if (instr->operands[i].isTemp() && ctx.info[instr->operands[i].tempId()].is_b2f() &&
-             ctx.uses[instr->operands[i].tempId()] == 1 && instr->operands[!i].isTemp() &&
-             instr->operands[!i].getTemp().type() == RegType::vgpr) {
-            ctx.uses[instr->operands[i].tempId()]--;
-            ctx.uses[ctx.info[instr->operands[i].tempId()].temp.id()]++;
-
-            aco_ptr<Instruction> new_instr{
-               create_instruction(aco_opcode::v_cndmask_b32, Format::VOP2, 3, 1)};
-            new_instr->operands[0] = Operand::zero();
-            new_instr->operands[1] = instr->operands[!i];
-            new_instr->operands[2] = Operand(ctx.info[instr->operands[i].tempId()].temp);
-            new_instr->definitions[0] = instr->definitions[0];
-            new_instr->pass_flags = instr->pass_flags;
-            instr = std::move(new_instr);
-            ctx.info[instr->definitions[0].tempId()].label = 0;
-            ctx.info[instr->definitions[0].tempId()].parent_instr = instr.get();
-            return;
-         }
-      }
    } else if (instr->opcode == aco_opcode::v_or_b32 && ctx.program->gfx_level >= GFX9) {
       if (combine_three_valu_op(ctx, instr, aco_opcode::s_or_b32, aco_opcode::v_or3_b32, "012",
                                 1 | 2)) {
@@ -5005,6 +5001,13 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
    } else if (info.opcode == aco_opcode::v_min_i16_e64) {
       add_opt(v_min_i16_e64, v_min3_i16, 0x3, "120", nullptr, true);
       add_opt(v_max_i16_e64, v_med3_i16, 0x3, "012", create_med3_cb<true>, true);
+   } else if (((info.opcode == aco_opcode::v_mul_f32 && !info.defs[0].isNaNPreserve() &&
+                !info.defs[0].isInfPreserve()) ||
+               (info.opcode == aco_opcode::v_mul_legacy_f32 && !info.defs[0].isSZPreserve())) &&
+              !info.clamp && !info.omod && !ctx.fp_mode.must_flush_denorms32) {
+      /* v_mul_f32(a, v_cndmask_b32(0, 1.0, cond)) -> v_cndmask_b32(0, a, cond) */
+      add_opt(v_cndmask_b32, v_cndmask_b32, 0x3, "1032",
+              and_cb<check_const_cb<0, 0>, remove_const_cb<0x3f800000>>, true);
    }
 
    if (match_and_apply_patterns(ctx, info, patterns)) {

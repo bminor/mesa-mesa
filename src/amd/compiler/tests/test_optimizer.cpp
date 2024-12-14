@@ -2185,3 +2185,17 @@ BEGIN_TEST(optimizer.fp64_clamp)
 
    finish_opt_test();
 END_TEST
+
+BEGIN_TEST(optimizer.mul_b2f)
+   //>> v1: %a:v[0], s2: %b:s[0-1] = p_startpgm
+   if (!setup_cs("v1 s2", GFX11))
+      return;
+
+   //>> v1: %res0 = v_cndmask_b32 0, %a, %b
+   //! p_unit_test 0, %res0
+   Temp cond = bld.vop2_e64(aco_opcode::v_cndmask_b32, bld.def(v1), Operand::c32(0),
+                            Operand::c32(0x3F800000), inputs[1]);
+   writeout(0, bld.vop2(aco_opcode::v_mul_f32, bld.def(v1), inputs[0], cond));
+
+   finish_opt_test();
+END_TEST
