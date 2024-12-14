@@ -680,39 +680,21 @@ emit_ngg_nogs_prim_id_store_shared(nir_builder *b, lower_ngg_nogs_state *s)
  * optimize attribute ring access.
  */
 static void
-emit_ngg_nogs_prim_id_store_per_prim_gfx11(nir_builder *b, lower_ngg_nogs_state *s)
+emit_ngg_nogs_prim_id_store_per_prim_to_attr_ring(nir_builder *b, lower_ngg_nogs_state *s)
 {
-   assert( s->options->gfx_level >= GFX11);
-
-   const uint8_t offset = s->options->vs_output_param_offset[VARYING_SLOT_PRIMITIVE_ID];
+   assert(s->options->gfx_level >= GFX11);
 
    nir_def *is_gs_thread = nir_load_var(b, s->gs_exported_var);
-   nir_def *prim_id = nir_load_primitive_id(b);
-   nir_def *undef = nir_undef(b, 1, 32);
-   nir_def *param_components[4] = { prim_id, undef, undef, undef };
-
-   /* Emit this outside of CF to allow CSE to pick it up. */
-   nir_def *vindex = nir_load_local_invocation_index(b);
-
-   /* Align the number of active invocations to 8 for optimal attribute ring access pattern,
-    * see export_vertex_params_gfx11 for full explanation.
-    */
    nir_def *highest_gs_thread = nir_ufind_msb(b, nir_ballot(b, 1, s->options->wave_size, is_gs_thread));
    nir_def *max_num_gs_threads = nir_iadd_imm_nuw(b, highest_gs_thread, 1);
-   nir_def *num_gs_attr_ring_threads = nir_iand_imm(b, nir_iadd_imm(b, max_num_gs_threads, 7), ~7);
 
-   nir_if *if_store_gs_attr_ring = nir_push_if(b, nir_is_subgroup_invocation_lt_amd(b, num_gs_attr_ring_threads));
-   {
-      nir_def *attr_rsrc = nir_load_ring_attr_amd(b);
-      nir_def *attr_offset = nir_load_ring_attr_offset_amd(b);
-      nir_def *voffset = nir_imm_int(b, 0);
+   const uint8_t offset = s->options->vs_output_param_offset[VARYING_SLOT_PRIMITIVE_ID];
+   ac_nir_prerast_out out = {
+      .infos = {{.components_mask = 1}},
+      .outputs = {{nir_load_primitive_id(b), NULL, NULL, NULL}}
+   };
 
-      nir_store_buffer_amd(b, nir_vec(b, param_components, 4), attr_rsrc, voffset, attr_offset, vindex,
-                           .base = offset * 16,
-                           .memory_modes = nir_var_shader_out,
-                           .access = ACCESS_COHERENT | ACCESS_IS_SWIZZLED_AMD);
-   }
-   nir_pop_if(b, if_store_gs_attr_ring);
+   ac_nir_store_parameters_to_attr_ring(b, &offset, 1, 0, &out, NULL, max_num_gs_threads);
 }
 
 static void
@@ -2723,7 +2705,7 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
       nir_barrier(b, .execution_scope = SCOPE_WORKGROUP, .memory_scope = SCOPE_WORKGROUP,
                             .memory_semantics = NIR_MEMORY_ACQ_REL, .memory_modes = nir_var_mem_shared);
    } else if (options->export_primitive_id_per_prim && options->gfx_level >= GFX11) {
-      emit_ngg_nogs_prim_id_store_per_prim_gfx11(b, &state);
+      emit_ngg_nogs_prim_id_store_per_prim_to_attr_ring(b, &state);
    }
 
    nir_def *es_thread =
