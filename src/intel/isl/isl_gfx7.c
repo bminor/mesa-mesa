@@ -201,6 +201,9 @@ isl_gfx6_filter_tiling(const struct isl_device *dev,
 
    *flags &= isl_device_get_supported_tilings(dev);
 
+   if (info->usage & ISL_SURF_USAGE_SOFTWARE_DETILING)
+      *flags &= (1 << dev->shader_tiling) | ISL_TILING_LINEAR_BIT;
+
    /* TODO: Investigate Yf failures (~5000 VK CTS failures at the time of this
     *       writing).
     */

@@ -46,6 +46,9 @@ isl_gfx20_filter_tiling(const struct isl_device *dev,
 
    *flags &= isl_device_get_supported_tilings(dev);
 
+   if (info->usage & ISL_SURF_USAGE_SOFTWARE_DETILING)
+      *flags &= (1 << dev->shader_tiling) | ISL_TILING_LINEAR_BIT;
+
    if (isl_surf_usage_is_depth_or_stencil(info->usage)) {
       *flags &= ISL_TILING_4_BIT | ISL_TILING_64_XE2_BIT;
 

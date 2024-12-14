@@ -1292,6 +1292,13 @@ struct isl_device {
    bool has_bit6_swizzling;
 
    /**
+    * Tiling use for software detiling in shaders
+    *
+    * Used to implement image 64bits atomic
+    */
+   enum isl_tiling shader_tiling;
+
+   /**
     * Describes the layout of a RENDER_SURFACE_STATE structure for the
     * current gen.
     */

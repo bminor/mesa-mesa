@@ -42,7 +42,10 @@ isl_gfx4_filter_tiling(const struct isl_device *dev,
                        const struct isl_surf_init_info *restrict info,
                        isl_tiling_flags_t *flags)
 {
-   *flags &= isl_device_get_supported_tilings(dev);;
+   *flags &= isl_device_get_supported_tilings(dev);
+
+   if (info->usage & ISL_SURF_USAGE_SOFTWARE_DETILING)
+      *flags &= (1 << dev->shader_tiling) | ISL_TILING_LINEAR_BIT;
 
    if (isl_surf_usage_is_depth_or_stencil(info->usage)) {
       assert(!ISL_DEV_USE_SEPARATE_STENCIL(dev));

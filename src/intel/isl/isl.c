@@ -426,6 +426,19 @@ isl_device_init(struct isl_device *dev,
    dev->emit_depth_stencil_hiz_s = isl_emit_depth_stencil_hiz_s_get_func(dev);
    dev->null_fill_state_s = isl_null_fill_state_s_get_func(dev);
    dev->emit_cpb_control_s = isl_emit_cpb_control_s_get_func(dev);
+
+   isl_tiling_flags_t supported_tilings = isl_device_get_supported_tilings(dev);
+#define CHOOSE(__tiling)                          \
+   if ((1u << __tiling) & supported_tilings) {    \
+      dev->shader_tiling = __tiling;              \
+      break;                                      \
+   }
+   do {
+      CHOOSE(ISL_TILING_4);
+      CHOOSE(ISL_TILING_Y0);
+      unreachable("Cannot find shader tiling");
+   } while (0);
+#undef CHOOSE
 }
 
 /**
