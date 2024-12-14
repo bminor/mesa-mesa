@@ -3038,14 +3038,6 @@ original_temp_id(opt_ctx& ctx, Temp tmp)
       return tmp.id();
 }
 
-Operand
-copy_operand(opt_ctx& ctx, Operand op)
-{
-   if (op.isTemp())
-      ctx.uses[op.tempId()]++;
-   return op;
-}
-
 Instruction*
 follow_operand(opt_ctx& ctx, Operand op, bool ignore_uses = false)
 {
@@ -3691,43 +3683,6 @@ combine_salu_n2(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       case aco_opcode::s_or_b64: instr->opcode = aco_opcode::s_orn2_b64; break;
       default: break;
       }
-
-      return true;
-   }
-   return false;
-}
-
-/* s_add_{i32,u32}(a, s_lshl_b32(b, <n>)) -> s_lshl<n>_add_u32(a, b) */
-bool
-combine_salu_lshl_add(opt_ctx& ctx, aco_ptr<Instruction>& instr)
-{
-   if (instr->opcode == aco_opcode::s_add_i32 && ctx.uses[instr->definitions[1].tempId()])
-      return false;
-
-   for (unsigned i = 0; i < 2; i++) {
-      Instruction* op2_instr = follow_operand(ctx, instr->operands[i], true);
-      if (!op2_instr || op2_instr->opcode != aco_opcode::s_lshl_b32 ||
-          ctx.uses[op2_instr->definitions[1].tempId()])
-         continue;
-      if (!op2_instr->operands[1].isConstant())
-         continue;
-
-      uint32_t shift = op2_instr->operands[1].constantValue();
-      if (shift < 1 || shift > 4)
-         continue;
-
-      if (instr->operands[!i].isLiteral() && op2_instr->operands[0].isLiteral() &&
-          instr->operands[!i].constantValue() != op2_instr->operands[0].constantValue())
-         continue;
-
-      instr->operands[1] = instr->operands[!i];
-      instr->operands[0] = copy_operand(ctx, op2_instr->operands[0]);
-      decrease_and_dce(ctx, op2_instr->definitions[0].getTemp());
-      ctx.info[instr->definitions[0].tempId()].label = 0;
-
-      instr->opcode = std::array<aco_opcode, 4>{
-         aco_opcode::s_lshl1_add_u32, aco_opcode::s_lshl2_add_u32, aco_opcode::s_lshl3_add_u32,
-         aco_opcode::s_lshl4_add_u32}[shift - 1];
 
       return true;
    }
@@ -4642,9 +4597,6 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
    } else if (instr->opcode == aco_opcode::v_lshlrev_b32 && ctx.program->gfx_level >= GFX9) {
       combine_three_valu_op(ctx, instr, aco_opcode::v_add_u32, aco_opcode::v_add_lshl_u32, "120",
                             2);
-   } else if ((instr->opcode == aco_opcode::s_add_u32 || instr->opcode == aco_opcode::s_add_i32) &&
-              ctx.program->gfx_level >= GFX9) {
-      combine_salu_lshl_add(ctx, instr);
    } else if (instr->opcode == aco_opcode::s_not_b32 || instr->opcode == aco_opcode::s_not_b64) {
       if (!combine_salu_not_bitwise(ctx, instr))
          combine_inverse_comparison(ctx, instr);
@@ -4859,6 +4811,13 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       add_opt(s_add_i32, v_add3_u32, 0x3, "012", nullptr, true);
       add_opt(v_lshlrev_b32, v_lshl_add_u32, 0x3, "210", nullptr, true);
       add_opt(s_lshl_b32, v_lshl_add_u32, 0x3, "120", nullptr, true);
+   } else if ((info.opcode == aco_opcode::s_add_u32 ||
+               (info.opcode == aco_opcode::s_add_i32 && !ctx.uses[info.defs[1].tempId()])) &&
+              ctx.program->gfx_level >= GFX9) {
+      add_opt(s_lshl_b32, s_lshl1_add_u32, 0x3, "102", remove_const_cb<1>);
+      add_opt(s_lshl_b32, s_lshl2_add_u32, 0x3, "102", remove_const_cb<2>);
+      add_opt(s_lshl_b32, s_lshl3_add_u32, 0x3, "102", remove_const_cb<3>);
+      add_opt(s_lshl_b32, s_lshl4_add_u32, 0x3, "102", remove_const_cb<4>);
    }
 
    if (match_and_apply_patterns(ctx, info, patterns)) {
