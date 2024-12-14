@@ -8,11 +8,16 @@
 
 
 import argparse
+from datetime import datetime, timedelta, timezone
+from typing import Dict, List
+
 import gitlab
 import plotly.express as px
-from gitlab_common import pretty_duration
-from datetime import datetime, timedelta
-from gitlab_common import read_token, GITLAB_URL, get_gitlab_pipeline_from_url
+import plotly.graph_objs as go
+from gitlab import Gitlab, base
+from gitlab.v4.objects import ProjectPipeline
+from gitlab_common import (GITLAB_URL, get_gitlab_pipeline_from_url,
+                           pretty_duration, read_token)
 
 
 def calculate_queued_at(job):
@@ -35,12 +40,14 @@ def calculate_time_difference(time1, time2):
     return pretty_duration(diff.seconds)
 
 
-def create_task_name(job):
+def create_task_name(job) -> str:
     status_color = {"success": "green", "failed": "red"}.get(job.status, "grey")
     return f"{job.name}\t(<span style='color: {status_color}'>{job.status}</span>,<a href='{job.web_url}'>{job.id}</a>)"
 
 
-def add_gantt_bar(job, tasks):
+def add_gantt_bar(
+    job: base.RESTObject, tasks: List[Dict[str, str | datetime | timedelta]]
+) -> None:
     queued_at = calculate_queued_at(job)
     task_name = create_task_name(job)
 
@@ -73,12 +80,12 @@ def add_gantt_bar(job, tasks):
     )
 
 
-def generate_gantt_chart(pipeline):
+def generate_gantt_chart(pipeline: ProjectPipeline):
     if pipeline.yaml_errors:
         raise ValueError("Pipeline YAML errors detected")
 
     # Convert the data into a list of dictionaries for plotly
-    tasks = []
+    tasks: List[Dict[str, str | datetime | timedelta]] = []
 
     for job in pipeline.jobs.list(all=True, include_retried=True):
         add_gantt_bar(job, tasks)
@@ -94,7 +101,7 @@ def generate_gantt_chart(pipeline):
     )
 
     # Create a Gantt chart
-    fig = px.timeline(
+    fig: go.Figure = px.timeline(
         tasks,
         x_start="Start",
         x_end="Finish",
@@ -125,7 +132,7 @@ def generate_gantt_chart(pipeline):
     return fig
 
 
-def parse_args() -> None:
+def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Generate the Gantt chart from a given pipeline."
     )
