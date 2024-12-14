@@ -156,23 +156,25 @@ lp_bld_llvm_sampler_soa_emit_fetch_texel(const struct lp_build_sampler_soa *base
       LLVMTypeRef out_residency_type = lp_build_vec_type(gallivm, lp_int_type(params->type));
 
       LLVMValueRef out_data[5];
-      for (uint32_t i = 0; i < ARRAY_SIZE(out_data) - 1; i++) {
-         out_data[i] = lp_build_alloca(gallivm, out_data_type, "");
-      }
-      out_data[ARRAY_SIZE(out_data) - 1] = lp_build_alloca(gallivm, out_residency_type, "");
-
-      struct lp_type uint_type = lp_uint_type(params->type);
-      LLVMValueRef uint_zero = lp_build_const_int_vec(gallivm, uint_type, 0);
-
-      LLVMValueRef bitmask = LLVMBuildICmp(builder, LLVMIntNE, params->exec_mask, uint_zero, "exec_bitvec");
-
-      LLVMTypeRef bitmask_type = LLVMIntTypeInContext(gallivm->context, uint_type.length);
-      bitmask = LLVMBuildBitCast(builder, bitmask, bitmask_type, "exec_bitmask");
-
-      LLVMValueRef any_active = LLVMBuildICmp(builder, LLVMIntNE, bitmask, LLVMConstInt(bitmask_type, 0, false), "any_active");
-
       struct lp_build_if_state if_state;
-      lp_build_if(&if_state, gallivm, any_active);
+      if (!params->exec_mask_nz) {
+         for (uint32_t i = 0; i < ARRAY_SIZE(out_data) - 1; i++) {
+            out_data[i] = lp_build_alloca(gallivm, out_data_type, "");
+         }
+         out_data[ARRAY_SIZE(out_data) - 1] = lp_build_alloca(gallivm, out_residency_type, "");
+
+         struct lp_type uint_type = lp_uint_type(params->type);
+         LLVMValueRef uint_zero = lp_build_const_int_vec(gallivm, uint_type, 0);
+
+         LLVMValueRef bitmask = LLVMBuildICmp(builder, LLVMIntNE, params->exec_mask, uint_zero, "exec_bitvec");
+
+         LLVMTypeRef bitmask_type = LLVMIntTypeInContext(gallivm->context, uint_type.length);
+         bitmask = LLVMBuildBitCast(builder, bitmask, bitmask_type, "exec_bitmask");
+
+         LLVMValueRef any_active = LLVMBuildICmp(builder, LLVMIntNE, bitmask, LLVMConstInt(bitmask_type, 0, false), "any_active");
+
+         lp_build_if(&if_state, gallivm, any_active);
+      }
 
       enum lp_sampler_op_type op_type = (params->sample_key & LP_SAMPLER_OP_TYPE_MASK) >> LP_SAMPLER_OP_TYPE_SHIFT;
       uint32_t functions_offset = op_type == LP_SAMPLER_OP_FETCH ? offsetof(struct lp_texture_functions, fetch_functions)
@@ -265,15 +267,18 @@ lp_bld_llvm_sampler_soa_emit_fetch_texel(const struct lp_build_sampler_soa *base
          if (params->type.length != lp_native_vector_width / 32)
             params->texel[i] = truncate_to_type_width(gallivm, params->texel[i], params->type);
 
-         LLVMBuildStore(builder, params->texel[i], out_data[i]);
+         if (!params->exec_mask_nz)
+            LLVMBuildStore(builder, params->texel[i], out_data[i]);
       }
 
-      lp_build_endif(&if_state);
+      if (!params->exec_mask_nz) {
+         lp_build_endif(&if_state);
 
-      for (unsigned i = 0; i < ARRAY_SIZE(out_data) - 1; i++)
-         params->texel[i] = LLVMBuildLoad2(builder, out_data_type, out_data[i], "");
-      params->texel[ARRAY_SIZE(out_data) - 1] =
-         LLVMBuildLoad2(builder, out_residency_type, out_data[ARRAY_SIZE(out_data) - 1], "");
+         for (unsigned i = 0; i < ARRAY_SIZE(out_data) - 1; i++)
+            params->texel[i] = LLVMBuildLoad2(builder, out_data_type, out_data[i], "");
+         params->texel[ARRAY_SIZE(out_data) - 1] =
+            LLVMBuildLoad2(builder, out_residency_type, out_data[ARRAY_SIZE(out_data) - 1], "");
+      }
 
       return;
    }
@@ -330,22 +335,24 @@ lp_bld_llvm_sampler_soa_emit_size_query(const struct lp_build_sampler_soa *base,
       LLVMTypeRef out_data_type = lp_build_vec_type(gallivm, params->int_type);
 
       LLVMValueRef out_data[4];
-      for (uint32_t i = 0; i < 4; i++) {
-         out_data[i] = lp_build_alloca(gallivm, out_data_type, "");
-      }
-
-      struct lp_type uint_type = lp_uint_type(params->int_type);
-      LLVMValueRef uint_zero = lp_build_const_int_vec(gallivm, uint_type, 0);
-
-      LLVMValueRef bitmask = LLVMBuildICmp(builder, LLVMIntNE, params->exec_mask, uint_zero, "exec_bitvec");
-
-      LLVMTypeRef bitmask_type = LLVMIntTypeInContext(gallivm->context, uint_type.length);
-      bitmask = LLVMBuildBitCast(builder, bitmask, bitmask_type, "exec_bitmask");
-
-      LLVMValueRef any_active = LLVMBuildICmp(builder, LLVMIntNE, bitmask, LLVMConstInt(bitmask_type, 0, false), "any_active");
-
       struct lp_build_if_state if_state;
-      lp_build_if(&if_state, gallivm, any_active);
+      if (!params->exec_mask_nz) {
+         for (uint32_t i = 0; i < 4; i++) {
+            out_data[i] = lp_build_alloca(gallivm, out_data_type, "");
+         }
+
+         struct lp_type uint_type = lp_uint_type(params->int_type);
+         LLVMValueRef uint_zero = lp_build_const_int_vec(gallivm, uint_type, 0);
+
+         LLVMValueRef bitmask = LLVMBuildICmp(builder, LLVMIntNE, params->exec_mask, uint_zero, "exec_bitvec");
+
+         LLVMTypeRef bitmask_type = LLVMIntTypeInContext(gallivm->context, uint_type.length);
+         bitmask = LLVMBuildBitCast(builder, bitmask, bitmask_type, "exec_bitmask");
+
+         LLVMValueRef any_active = LLVMBuildICmp(builder, LLVMIntNE, bitmask, LLVMConstInt(bitmask_type, 0, false), "any_active");
+
+         lp_build_if(&if_state, gallivm, any_active);
+      }
 
       uint32_t functions_offset = params->samples_only ? offsetof(struct lp_texture_functions, samples_function)
                                                        : offsetof(struct lp_texture_functions, size_function);
@@ -380,13 +387,16 @@ lp_bld_llvm_sampler_soa_emit_size_query(const struct lp_build_sampler_soa *base,
          if (params->int_type.length != lp_native_vector_width / 32)
             params->sizes_out[i] = truncate_to_type_width(gallivm, params->sizes_out[i], params->int_type);
 
-         LLVMBuildStore(builder, params->sizes_out[i], out_data[i]);
+         if (!params->exec_mask_nz)
+            LLVMBuildStore(builder, params->sizes_out[i], out_data[i]);
       }
 
-      lp_build_endif(&if_state);
+      if (!params->exec_mask_nz) {
+         lp_build_endif(&if_state);
 
-      for (unsigned i = 0; i < 4; i++)
-         params->sizes_out[i] = LLVMBuildLoad2(gallivm->builder, out_data_type, out_data[i], "");
+         for (unsigned i = 0; i < 4; i++)
+            params->sizes_out[i] = LLVMBuildLoad2(gallivm->builder, out_data_type, out_data[i], "");
+      }
 
       return;
    }
@@ -438,23 +448,25 @@ lp_bld_llvm_image_soa_emit_op(const struct lp_build_image_soa *base,
       LLVMTypeRef out_residency_type = lp_build_vec_type(gallivm, lp_int_type(texel_type));
 
       LLVMValueRef out_data[5];
-      for (uint32_t i = 0; i < ARRAY_SIZE(out_data) - 1; i++) {
-         out_data[i] = lp_build_alloca(gallivm, out_data_type, "");
-      }
-      out_data[ARRAY_SIZE(out_data) - 1] = lp_build_alloca(gallivm, out_residency_type, "");
-
-      struct lp_type uint_type = lp_uint_type(params->type);
-      LLVMValueRef uint_zero = lp_build_const_int_vec(gallivm, uint_type, 0);
-
-      LLVMValueRef bitmask = LLVMBuildICmp(builder, LLVMIntNE, params->exec_mask, uint_zero, "exec_bitvec");
-
-      LLVMTypeRef bitmask_type = LLVMIntTypeInContext(gallivm->context, uint_type.length);
-      bitmask = LLVMBuildBitCast(builder, bitmask, bitmask_type, "exec_bitmask");
-
-      LLVMValueRef any_active = LLVMBuildICmp(builder, LLVMIntNE, bitmask, LLVMConstInt(bitmask_type, 0, false), "any_active");
-
       struct lp_build_if_state if_state;
-      lp_build_if(&if_state, gallivm, any_active);
+      if (!params->exec_mask_nz) {
+         for (uint32_t i = 0; i < ARRAY_SIZE(out_data) - 1; i++) {
+            out_data[i] = lp_build_alloca(gallivm, out_data_type, "");
+         }
+         out_data[ARRAY_SIZE(out_data) - 1] = lp_build_alloca(gallivm, out_residency_type, "");
+
+         struct lp_type uint_type = lp_uint_type(params->type);
+         LLVMValueRef uint_zero = lp_build_const_int_vec(gallivm, uint_type, 0);
+
+         LLVMValueRef bitmask = LLVMBuildICmp(builder, LLVMIntNE, params->exec_mask, uint_zero, "exec_bitvec");
+
+         LLVMTypeRef bitmask_type = LLVMIntTypeInContext(gallivm->context, uint_type.length);
+         bitmask = LLVMBuildBitCast(builder, bitmask, bitmask_type, "exec_bitmask");
+
+         LLVMValueRef any_active = LLVMBuildICmp(builder, LLVMIntNE, bitmask, LLVMConstInt(bitmask_type, 0, false), "any_active");
+
+         lp_build_if(&if_state, gallivm, any_active);
+      }
 
       LLVMValueRef image_base_ptr = load_texture_functions_ptr(
          gallivm, params->resource, offsetof(struct lp_descriptor, functions),
@@ -521,22 +533,25 @@ lp_bld_llvm_image_soa_emit_op(const struct lp_build_image_soa *base,
       if (params->img_op != LP_IMG_STORE) {
          uint32_t channel_count = params->img_op == LP_IMG_LOAD_SPARSE ? 5 : 4;
          for (unsigned i = 0; i < channel_count; i++) {
-            LLVMValueRef channel = LLVMBuildExtractValue(builder, result, i, "");
+            params->outdata[i] = LLVMBuildExtractValue(builder, result, i, "");
             if (params->type.length != lp_native_vector_width / 32)
-               channel = truncate_to_type_width(gallivm, channel, params->type);
+               params->outdata[i] = truncate_to_type_width(gallivm, params->outdata[i], params->type);
 
-            LLVMBuildStore(builder, channel, out_data[i]);
+            if (!params->exec_mask_nz)
+               LLVMBuildStore(builder, params->outdata[i], out_data[i]);
          }
       }
 
-      lp_build_endif(&if_state);
+      if (!params->exec_mask_nz) {
+         lp_build_endif(&if_state);
 
-      if (params->img_op != LP_IMG_STORE) {
-         for (unsigned i = 0; i < ARRAY_SIZE(out_data) - 1; i++) {
-            params->outdata[i] = LLVMBuildLoad2(builder, out_data_type, out_data[i], "");
+         if (params->img_op != LP_IMG_STORE) {
+            for (unsigned i = 0; i < ARRAY_SIZE(out_data) - 1; i++) {
+               params->outdata[i] = LLVMBuildLoad2(builder, out_data_type, out_data[i], "");
+            }
+            params->outdata[ARRAY_SIZE(out_data) - 1] =
+               LLVMBuildLoad2(builder, out_residency_type, out_data[ARRAY_SIZE(out_data) - 1], "");
          }
-         params->outdata[ARRAY_SIZE(out_data) - 1] =
-            LLVMBuildLoad2(builder, out_residency_type, out_data[ARRAY_SIZE(out_data) - 1], "");
       }
 
       return;

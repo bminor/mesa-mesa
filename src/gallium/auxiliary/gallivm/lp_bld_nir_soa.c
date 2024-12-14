@@ -351,6 +351,15 @@ mask_vec_with_helpers(struct lp_build_nir_soa_context *bld)
 }
 
 static bool
+lp_exec_mask_is_nz(struct lp_build_nir_soa_context *bld)
+{
+   if (bld->shader->info.stage == MESA_SHADER_FRAGMENT && bld->shader->info.fs.uses_discard)
+      return false;
+
+   return !bld->exec_mask.has_mask;
+}
+
+static bool
 invocation_0_must_be_active(struct lp_build_nir_soa_context *bld)
 {
    /* Fragment shaders may dispatch with invocation 0 inactive.  All other
@@ -1653,6 +1662,7 @@ static void emit_image_op(struct lp_build_nir_soa_context *bld,
    params->thread_data_type = bld->thread_data_type;
    params->thread_data_ptr = bld->thread_data_ptr;
    params->exec_mask = mask_vec(bld);
+   params->exec_mask_nz = lp_exec_mask_is_nz(bld);
 
    bld->image->emit_op(bld->image,
                        bld->base.gallivm,
@@ -1721,6 +1731,7 @@ static void emit_tex(struct lp_build_nir_soa_context *bld,
    params->thread_data_type = bld->thread_data_type;
    params->thread_data_ptr = bld->thread_data_ptr;
    params->exec_mask = mask_vec(bld);
+   params->exec_mask_nz = lp_exec_mask_is_nz(bld);
 
    if (params->texture_index_offset && bld->shader->info.stage != MESA_SHADER_FRAGMENT) {
       /* this is horrible but this can be dynamic */
@@ -1793,6 +1804,7 @@ static void emit_tex_size(struct lp_build_nir_soa_context *bld,
                                                             lp_build_const_int32(bld->base.gallivm, 0), "");
 
    params->exec_mask = mask_vec(bld);
+   params->exec_mask_nz = lp_exec_mask_is_nz(bld);
 
    bld->sampler->emit_size_query(bld->sampler,
                                  bld->base.gallivm,

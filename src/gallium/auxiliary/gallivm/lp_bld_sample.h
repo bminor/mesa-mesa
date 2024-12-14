@@ -124,6 +124,7 @@ struct lp_sampler_params
    LLVMValueRef texture_resource;
    LLVMValueRef sampler_resource;
    LLVMValueRef exec_mask;
+   bool exec_mask_nz;
 };
 
 /* Parameters used to handle sampler_size instructions */
@@ -144,6 +145,7 @@ struct lp_sampler_size_query_params
 
    LLVMValueRef resource;
    LLVMValueRef exec_mask;
+   bool exec_mask_nz;
    enum pipe_format format;
 };
 
@@ -163,6 +165,7 @@ struct lp_img_params
    unsigned target;
    LLVMAtomicRMWBinOp op;
    LLVMValueRef exec_mask;
+   bool exec_mask_nz;
    LLVMTypeRef resources_type;
    LLVMValueRef resources_ptr;
    LLVMTypeRef thread_data_type;
