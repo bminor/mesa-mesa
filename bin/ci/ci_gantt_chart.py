@@ -11,7 +11,6 @@ import argparse
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List
 
-import gitlab
 import plotly.express as px
 import plotly.graph_objs as go
 from gitlab import Gitlab, base
@@ -159,7 +158,7 @@ def main(
     ci_timeout: float = 60,
 ):
     token = read_token(token)
-    gl = gitlab.Gitlab(url=GITLAB_URL, private_token=token, retry_transient_errors=True)
+    gl = Gitlab(url=GITLAB_URL, private_token=token, retry_transient_errors=True)
 
     pipeline, _ = get_gitlab_pipeline_from_url(gl, pipeline_url)
     fig: go.Figure = generate_gantt_chart(pipeline, ci_timeout)

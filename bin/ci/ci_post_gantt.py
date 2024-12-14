@@ -23,6 +23,11 @@ from gitlab.base import RESTObject
 from gitlab.v4.objects import Project, ProjectPipeline
 from gitlab_common import GITLAB_URL, get_gitlab_pipeline_from_url, read_token
 
+
+class MockGanttExit(Exception):
+    pass
+
+
 LAST_MARGE_EVENT_FILE = os.path.expanduser("~/.config/last_marge_event")
 
 
@@ -110,10 +115,8 @@ def main(
     ci_timeout: float = 60,
 ):
     log.basicConfig(level=log.INFO)
-
     token = read_token(token)
-
-    gl = gitlab.Gitlab(url=GITLAB_URL, private_token=token, retry_transient_errors=True)
+    gl = Gitlab(url=GITLAB_URL, private_token=token, retry_transient_errors=True)
 
     user = gl.users.get(marge_user_id)
     last_event_at = since if since else read_last_event_date_from_file()
@@ -160,6 +163,8 @@ def main(
                 log.info("Posting reply ...")
                 message = compose_message(file_name, file_url)
                 gitlab_post_reply_to_note(gl, event, message)
+            except MockGanttExit:
+                pass  # Allow tests to exit early without printing a traceback
             except Exception as e:
                 log.info(f"Failed to generate gantt chart, not posting reply.{e}")
                 traceback.print_exc()
