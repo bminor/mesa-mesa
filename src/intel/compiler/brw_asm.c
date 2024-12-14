@@ -30,9 +30,9 @@ i965_postprocess_labels()
    LIST_FOR_EACH_ENTRY(tlabel, &target_labels, link) {
       LIST_FOR_EACH_ENTRY_SAFE(ilabel, s, &instr_labels, link) {
          if (!strcmp(tlabel->name, ilabel->name)) {
-            brw_inst *inst = store + ilabel->offset;
+            brw_eu_inst *inst = store + ilabel->offset;
 
-            int relative_offset = (tlabel->offset - ilabel->offset) / sizeof(brw_inst);
+            int relative_offset = (tlabel->offset - ilabel->offset) / sizeof(brw_eu_inst);
             relative_offset *= to_bytes_scale;
 
             unsigned opcode = brw_inst_opcode(p->isa, inst);
@@ -143,7 +143,7 @@ brw_assemble(void *mem_ctx, const struct intel_device_info *devinfo,
       /* Adjust bin size to account for compacted instructions. */
       int compacted = 0;
       for (int i = 0; i < result.inst_count; i++) {
-         const brw_inst *inst = result.bin + i;
+         const brw_eu_inst *inst = result.bin + i;
          if (brw_inst_cmpt_control(devinfo, inst))
             compacted++;
       }

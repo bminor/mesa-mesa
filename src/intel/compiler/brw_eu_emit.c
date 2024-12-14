@@ -36,7 +36,7 @@
 #include "util/ralloc.h"
 
 void
-brw_set_dest(struct brw_codegen *p, brw_inst *inst, struct brw_reg dest)
+brw_set_dest(struct brw_codegen *p, brw_eu_inst *inst, struct brw_reg dest)
 {
    const struct intel_device_info *devinfo = p->devinfo;
 
@@ -128,7 +128,7 @@ brw_set_dest(struct brw_codegen *p, brw_inst *inst, struct brw_reg dest)
 }
 
 void
-brw_set_src0(struct brw_codegen *p, brw_inst *inst, struct brw_reg reg)
+brw_set_src0(struct brw_codegen *p, brw_eu_inst *inst, struct brw_reg reg)
 {
    const struct intel_device_info *devinfo = p->devinfo;
 
@@ -253,7 +253,7 @@ brw_set_src0(struct brw_codegen *p, brw_inst *inst, struct brw_reg reg)
 
 
 void
-brw_set_src1(struct brw_codegen *p, brw_inst *inst, struct brw_reg reg)
+brw_set_src1(struct brw_codegen *p, brw_eu_inst *inst, struct brw_reg reg)
 {
    const struct intel_device_info *devinfo = p->devinfo;
 
@@ -349,7 +349,7 @@ brw_set_src1(struct brw_codegen *p, brw_inst *inst, struct brw_reg reg)
  * message instruction.
  */
 void
-brw_set_desc_ex(struct brw_codegen *p, brw_inst *inst,
+brw_set_desc_ex(struct brw_codegen *p, brw_eu_inst *inst,
                 unsigned desc, unsigned ex_desc)
 {
    const struct intel_device_info *devinfo = p->devinfo;
@@ -365,7 +365,7 @@ brw_set_desc_ex(struct brw_codegen *p, brw_inst *inst,
 
 static void
 brw_inst_set_state(const struct brw_isa_info *isa,
-                   brw_inst *insn,
+                   brw_eu_inst *insn,
                    const struct brw_insn_state *state)
 {
    const struct intel_device_info *devinfo = isa->devinfo;
@@ -393,18 +393,18 @@ brw_inst_set_state(const struct brw_isa_info *isa,
       brw_inst_set_acc_wr_control(devinfo, insn, state->acc_wr_control);
 }
 
-static brw_inst *
+static brw_eu_inst *
 brw_append_insns(struct brw_codegen *p, unsigned nr_insn, unsigned alignment)
 {
-   assert(util_is_power_of_two_or_zero(sizeof(brw_inst)));
+   assert(util_is_power_of_two_or_zero(sizeof(brw_eu_inst)));
    assert(util_is_power_of_two_or_zero(alignment));
-   const unsigned align_insn = MAX2(alignment / sizeof(brw_inst), 1);
+   const unsigned align_insn = MAX2(alignment / sizeof(brw_eu_inst), 1);
    const unsigned start_insn = ALIGN(p->nr_insn, align_insn);
    const unsigned new_nr_insn = start_insn + nr_insn;
 
    if (p->store_size < new_nr_insn) {
-      p->store_size = util_next_power_of_two(new_nr_insn * sizeof(brw_inst));
-      p->store = reralloc(p->mem_ctx, p->store, brw_inst, p->store_size);
+      p->store_size = util_next_power_of_two(new_nr_insn * sizeof(brw_eu_inst));
+      p->store = reralloc(p->mem_ctx, p->store, brw_eu_inst, p->store_size);
    }
 
    /* Memset any padding due to alignment to 0.  We don't want to be hashing
@@ -412,12 +412,12 @@ brw_append_insns(struct brw_codegen *p, unsigned nr_insn, unsigned alignment)
     */
    if (p->nr_insn < start_insn) {
       memset(&p->store[p->nr_insn], 0,
-             (start_insn - p->nr_insn) * sizeof(brw_inst));
+             (start_insn - p->nr_insn) * sizeof(brw_eu_inst));
    }
 
-   assert(p->next_insn_offset == p->nr_insn * sizeof(brw_inst));
+   assert(p->next_insn_offset == p->nr_insn * sizeof(brw_eu_inst));
    p->nr_insn = new_nr_insn;
-   p->next_insn_offset = new_nr_insn * sizeof(brw_inst);
+   p->next_insn_offset = new_nr_insn * sizeof(brw_eu_inst);
 
    return &p->store[start_insn];
 }
@@ -432,22 +432,22 @@ int
 brw_append_data(struct brw_codegen *p, void *data,
                 unsigned size, unsigned alignment)
 {
-   unsigned nr_insn = DIV_ROUND_UP(size, sizeof(brw_inst));
+   unsigned nr_insn = DIV_ROUND_UP(size, sizeof(brw_eu_inst));
    void *dst = brw_append_insns(p, nr_insn, alignment);
    memcpy(dst, data, size);
 
    /* If it's not a whole number of instructions, memset the end */
-   if (size < nr_insn * sizeof(brw_inst))
-      memset(dst + size, 0, nr_insn * sizeof(brw_inst) - size);
+   if (size < nr_insn * sizeof(brw_eu_inst))
+      memset(dst + size, 0, nr_insn * sizeof(brw_eu_inst) - size);
 
    return dst - (void *)p->store;
 }
 
 #define next_insn brw_next_insn
-brw_inst *
+brw_eu_inst *
 brw_next_insn(struct brw_codegen *p, unsigned opcode)
 {
-   brw_inst *insn = brw_append_insns(p, 1, sizeof(brw_inst));
+   brw_eu_inst *insn = brw_append_insns(p, 1, sizeof(brw_eu_inst));
 
    memset(insn, 0, sizeof(*insn));
    brw_inst_set_opcode(p->isa, insn, opcode);
@@ -477,17 +477,17 @@ brw_add_reloc(struct brw_codegen *p, uint32_t id,
    };
 }
 
-static brw_inst *
+static brw_eu_inst *
 brw_alu1(struct brw_codegen *p, unsigned opcode,
          struct brw_reg dest, struct brw_reg src)
 {
-   brw_inst *insn = next_insn(p, opcode);
+   brw_eu_inst *insn = next_insn(p, opcode);
    brw_set_dest(p, insn, dest);
    brw_set_src0(p, insn, src);
    return insn;
 }
 
-static brw_inst *
+static brw_eu_inst *
 brw_alu2(struct brw_codegen *p, unsigned opcode,
          struct brw_reg dest, struct brw_reg src0, struct brw_reg src1)
 {
@@ -497,7 +497,7 @@ brw_alu2(struct brw_codegen *p, unsigned opcode,
    assert(src1.file != IMM ||
           brw_type_size_bytes(src1.type) <= 4);
 
-   brw_inst *insn = next_insn(p, opcode);
+   brw_eu_inst *insn = next_insn(p, opcode);
    brw_set_dest(p, insn, dest);
    brw_set_src0(p, insn, src0);
    brw_set_src1(p, insn, src1);
@@ -545,12 +545,12 @@ to_3src_align1_hstride(enum brw_horizontal_stride hstride)
    }
 }
 
-static brw_inst *
+static brw_eu_inst *
 brw_alu3(struct brw_codegen *p, unsigned opcode, struct brw_reg dest,
          struct brw_reg src0, struct brw_reg src1, struct brw_reg src2)
 {
    const struct intel_device_info *devinfo = p->devinfo;
-   brw_inst *inst = next_insn(p, opcode);
+   brw_eu_inst *inst = next_insn(p, opcode);
 
    assert(dest.nr < XE2_MAX_GRF);
 
@@ -740,13 +740,13 @@ brw_alu3(struct brw_codegen *p, unsigned opcode, struct brw_reg dest,
    return inst;
 }
 
-static brw_inst *
+static brw_eu_inst *
 brw_dpas_three_src(struct brw_codegen *p, enum opcode opcode,
                    enum gfx12_systolic_depth sdepth, unsigned rcount, struct brw_reg dest,
                    struct brw_reg src0, struct brw_reg src1, struct brw_reg src2)
 {
    const struct intel_device_info *devinfo = p->devinfo;
-   brw_inst *inst = next_insn(p, opcode);
+   brw_eu_inst *inst = next_insn(p, opcode);
 
    assert(dest.file == FIXED_GRF);
    brw_inst_set_dpas_3src_dst_reg_file(devinfo, inst,
@@ -799,7 +799,7 @@ brw_dpas_three_src(struct brw_codegen *p, enum opcode opcode,
  * Convenience routines.
  */
 #define ALU1(OP)					\
-brw_inst *brw_##OP(struct brw_codegen *p,		\
+brw_eu_inst *brw_##OP(struct brw_codegen *p,		\
 	      struct brw_reg dest,			\
 	      struct brw_reg src0)   			\
 {							\
@@ -807,7 +807,7 @@ brw_inst *brw_##OP(struct brw_codegen *p,		\
 }
 
 #define ALU2(OP)					\
-brw_inst *brw_##OP(struct brw_codegen *p,		\
+brw_eu_inst *brw_##OP(struct brw_codegen *p,		\
 	      struct brw_reg dest,			\
 	      struct brw_reg src0,			\
 	      struct brw_reg src1)   			\
@@ -816,7 +816,7 @@ brw_inst *brw_##OP(struct brw_codegen *p,		\
 }
 
 #define ALU3(OP)					\
-brw_inst *brw_##OP(struct brw_codegen *p,		\
+brw_eu_inst *brw_##OP(struct brw_codegen *p,		\
 	      struct brw_reg dest,			\
 	      struct brw_reg src0,			\
 	      struct brw_reg src1,			\
@@ -834,7 +834,7 @@ brw_inst *brw_##OP(struct brw_codegen *p,		\
 }
 
 #define ALU3F(OP)                                               \
-brw_inst *brw_##OP(struct brw_codegen *p,         \
+brw_eu_inst *brw_##OP(struct brw_codegen *p,         \
                                  struct brw_reg dest,           \
                                  struct brw_reg src0,           \
                                  struct brw_reg src1,           \
@@ -901,7 +901,7 @@ ALU2(SUBB)
 ALU3(ADD3)
 ALU1(MOV)
 
-brw_inst *
+brw_eu_inst *
 brw_ADD(struct brw_codegen *p, struct brw_reg dest,
         struct brw_reg src0, struct brw_reg src1)
 {
@@ -923,7 +923,7 @@ brw_ADD(struct brw_codegen *p, struct brw_reg dest,
    return brw_alu2(p, BRW_OPCODE_ADD, dest, src0, src1);
 }
 
-brw_inst *
+brw_eu_inst *
 brw_AVG(struct brw_codegen *p, struct brw_reg dest,
         struct brw_reg src0, struct brw_reg src1)
 {
@@ -944,7 +944,7 @@ brw_AVG(struct brw_codegen *p, struct brw_reg dest,
    return brw_alu2(p, BRW_OPCODE_AVG, dest, src0, src1);
 }
 
-brw_inst *
+brw_eu_inst *
 brw_MUL(struct brw_codegen *p, struct brw_reg dest,
         struct brw_reg src0, struct brw_reg src1)
 {
@@ -978,7 +978,7 @@ brw_MUL(struct brw_codegen *p, struct brw_reg dest,
    return brw_alu2(p, BRW_OPCODE_MUL, dest, src0, src1);
 }
 
-brw_inst *
+brw_eu_inst *
 brw_LINE(struct brw_codegen *p, struct brw_reg dest,
          struct brw_reg src0, struct brw_reg src1)
 {
@@ -988,7 +988,7 @@ brw_LINE(struct brw_codegen *p, struct brw_reg dest,
    return brw_alu2(p, BRW_OPCODE_LINE, dest, src0, src1);
 }
 
-brw_inst *
+brw_eu_inst *
 brw_PLN(struct brw_codegen *p, struct brw_reg dest,
         struct brw_reg src0, struct brw_reg src1)
 {
@@ -1001,7 +1001,7 @@ brw_PLN(struct brw_codegen *p, struct brw_reg dest,
    return brw_alu2(p, BRW_OPCODE_PLN, dest, src0, src1);
 }
 
-brw_inst *
+brw_eu_inst *
 brw_DPAS(struct brw_codegen *p, enum gfx12_systolic_depth sdepth,
          unsigned rcount, struct brw_reg dest, struct brw_reg src0,
          struct brw_reg src1, struct brw_reg src2)
@@ -1012,14 +1012,14 @@ brw_DPAS(struct brw_codegen *p, enum gfx12_systolic_depth sdepth,
 
 void brw_NOP(struct brw_codegen *p)
 {
-   brw_inst *insn = next_insn(p, BRW_OPCODE_NOP);
+   brw_eu_inst *insn = next_insn(p, BRW_OPCODE_NOP);
    memset(insn, 0, sizeof(*insn));
    brw_inst_set_opcode(p->isa, insn, BRW_OPCODE_NOP);
 }
 
 void brw_SYNC(struct brw_codegen *p, enum tgl_sync_function func)
 {
-   brw_inst *insn = next_insn(p, BRW_OPCODE_SYNC);
+   brw_eu_inst *insn = next_insn(p, BRW_OPCODE_SYNC);
    brw_inst_set_cond_modifier(p->devinfo, insn, func);
 }
 
@@ -1027,13 +1027,13 @@ void brw_SYNC(struct brw_codegen *p, enum tgl_sync_function func)
  * Comparisons, if/else/endif
  */
 
-brw_inst *
+brw_eu_inst *
 brw_JMPI(struct brw_codegen *p, struct brw_reg index,
          unsigned predicate_control)
 {
    const struct intel_device_info *devinfo = p->devinfo;
    struct brw_reg ip = brw_ip_reg();
-   brw_inst *inst = brw_alu2(p, BRW_OPCODE_JMPI, ip, ip, index);
+   brw_eu_inst *inst = brw_alu2(p, BRW_OPCODE_JMPI, ip, ip, index);
 
    brw_inst_set_exec_size(devinfo, inst, BRW_EXECUTE_1);
    brw_inst_set_qtr_control(devinfo, inst, BRW_COMPRESSION_NONE);
@@ -1044,7 +1044,7 @@ brw_JMPI(struct brw_codegen *p, struct brw_reg index,
 }
 
 static void
-push_if_stack(struct brw_codegen *p, brw_inst *inst)
+push_if_stack(struct brw_codegen *p, brw_eu_inst *inst)
 {
    p->if_stack[p->if_stack_depth] = inst - p->store;
 
@@ -1056,7 +1056,7 @@ push_if_stack(struct brw_codegen *p, brw_inst *inst)
    }
 }
 
-static brw_inst *
+static brw_eu_inst *
 pop_if_stack(struct brw_codegen *p)
 {
    p->if_stack_depth--;
@@ -1064,7 +1064,7 @@ pop_if_stack(struct brw_codegen *p)
 }
 
 static void
-push_loop_stack(struct brw_codegen *p, brw_inst *inst)
+push_loop_stack(struct brw_codegen *p, brw_eu_inst *inst)
 {
    if (p->loop_stack_array_size <= (p->loop_stack_depth + 1)) {
       p->loop_stack_array_size *= 2;
@@ -1076,7 +1076,7 @@ push_loop_stack(struct brw_codegen *p, brw_inst *inst)
    p->loop_stack_depth++;
 }
 
-static brw_inst *
+static brw_eu_inst *
 get_inner_do_insn(struct brw_codegen *p)
 {
    return &p->store[p->loop_stack[p->loop_stack_depth - 1]];
@@ -1095,11 +1095,11 @@ get_inner_do_insn(struct brw_codegen *p)
  * When the matching 'endif' instruction is reached, the flags are
  * popped off.  If the stack is now empty, normal execution resumes.
  */
-brw_inst *
+brw_eu_inst *
 brw_IF(struct brw_codegen *p, unsigned execute_size)
 {
    const struct intel_device_info *devinfo = p->devinfo;
-   brw_inst *insn;
+   brw_eu_inst *insn;
 
    insn = next_insn(p, BRW_OPCODE_IF);
 
@@ -1125,7 +1125,7 @@ brw_IF(struct brw_codegen *p, unsigned execute_size)
  */
 static void
 patch_IF_ELSE(struct brw_codegen *p,
-              brw_inst *if_inst, brw_inst *else_inst, brw_inst *endif_inst)
+              brw_eu_inst *if_inst, brw_eu_inst *else_inst, brw_eu_inst *endif_inst)
 {
    const struct intel_device_info *devinfo = p->devinfo;
 
@@ -1179,7 +1179,7 @@ void
 brw_ELSE(struct brw_codegen *p)
 {
    const struct intel_device_info *devinfo = p->devinfo;
-   brw_inst *insn;
+   brw_eu_inst *insn;
 
    insn = next_insn(p, BRW_OPCODE_ELSE);
 
@@ -1199,10 +1199,10 @@ void
 brw_ENDIF(struct brw_codegen *p)
 {
    const struct intel_device_info *devinfo = p->devinfo;
-   brw_inst *insn = NULL;
-   brw_inst *else_inst = NULL;
-   brw_inst *if_inst = NULL;
-   brw_inst *tmp;
+   brw_eu_inst *insn = NULL;
+   brw_eu_inst *else_inst = NULL;
+   brw_eu_inst *if_inst = NULL;
+   brw_eu_inst *tmp;
 
    assert(p->if_stack_depth > 0);
 
@@ -1244,11 +1244,11 @@ brw_ENDIF(struct brw_codegen *p)
    patch_IF_ELSE(p, if_inst, else_inst, insn);
 }
 
-brw_inst *
+brw_eu_inst *
 brw_BREAK(struct brw_codegen *p)
 {
    const struct intel_device_info *devinfo = p->devinfo;
-   brw_inst *insn;
+   brw_eu_inst *insn;
 
    insn = next_insn(p, BRW_OPCODE_BREAK);
    brw_set_dest(p, insn, retype(brw_null_reg(), BRW_TYPE_D));
@@ -1259,11 +1259,11 @@ brw_BREAK(struct brw_codegen *p)
    return insn;
 }
 
-brw_inst *
+brw_eu_inst *
 brw_CONT(struct brw_codegen *p)
 {
    const struct intel_device_info *devinfo = p->devinfo;
-   brw_inst *insn;
+   brw_eu_inst *insn;
 
    insn = next_insn(p, BRW_OPCODE_CONTINUE);
    brw_set_dest(p, insn, brw_ip_reg());
@@ -1274,11 +1274,11 @@ brw_CONT(struct brw_codegen *p)
    return insn;
 }
 
-brw_inst *
+brw_eu_inst *
 brw_HALT(struct brw_codegen *p)
 {
    const struct intel_device_info *devinfo = p->devinfo;
-   brw_inst *insn;
+   brw_eu_inst *insn;
 
    insn = next_insn(p, BRW_OPCODE_HALT);
    brw_set_dest(p, insn, retype(brw_null_reg(), BRW_TYPE_D));
@@ -1303,18 +1303,18 @@ brw_HALT(struct brw_codegen *p)
  * For gfx6, there's no more mask stack, so no need for DO.  WHILE
  * just points back to the first instruction of the loop.
  */
-brw_inst *
+brw_eu_inst *
 brw_DO(struct brw_codegen *p, unsigned execute_size)
 {
    push_loop_stack(p, &p->store[p->nr_insn]);
    return &p->store[p->nr_insn];
 }
 
-brw_inst *
+brw_eu_inst *
 brw_WHILE(struct brw_codegen *p)
 {
    const struct intel_device_info *devinfo = p->devinfo;
-   brw_inst *insn, *do_insn;
+   brw_eu_inst *insn, *do_insn;
    unsigned br = brw_jump_scale(devinfo);
 
    insn = next_insn(p, BRW_OPCODE_WHILE);
@@ -1341,7 +1341,7 @@ void brw_CMP(struct brw_codegen *p,
 	     struct brw_reg src1)
 {
    const struct intel_device_info *devinfo = p->devinfo;
-   brw_inst *insn = next_insn(p, BRW_OPCODE_CMP);
+   brw_eu_inst *insn = next_insn(p, BRW_OPCODE_CMP);
 
    brw_inst_set_cond_modifier(devinfo, insn, conditional);
    brw_set_dest(p, insn, dest);
@@ -1356,7 +1356,7 @@ void brw_CMPN(struct brw_codegen *p,
               struct brw_reg src1)
 {
    const struct intel_device_info *devinfo = p->devinfo;
-   brw_inst *insn = next_insn(p, BRW_OPCODE_CMPN);
+   brw_eu_inst *insn = next_insn(p, BRW_OPCODE_CMPN);
 
    brw_inst_set_cond_modifier(devinfo, insn, conditional);
    brw_set_dest(p, insn, dest);
@@ -1375,7 +1375,7 @@ void gfx6_math(struct brw_codegen *p,
 	       struct brw_reg src1)
 {
    const struct intel_device_info *devinfo = p->devinfo;
-   brw_inst *insn = next_insn(p, BRW_OPCODE_MATH);
+   brw_eu_inst *insn = next_insn(p, BRW_OPCODE_MATH);
 
    assert(dest.file == FIXED_GRF);
 
@@ -1439,7 +1439,7 @@ brw_send_indirect_message(struct brw_codegen *p,
                           bool eot)
 {
    const struct intel_device_info *devinfo = p->devinfo;
-   struct brw_inst *send;
+   struct brw_eu_inst *send;
 
    dst = retype(dst, BRW_TYPE_UW);
 
@@ -1499,7 +1499,7 @@ brw_send_indirect_split_message(struct brw_codegen *p,
                                 bool eot)
 {
    const struct intel_device_info *devinfo = p->devinfo;
-   struct brw_inst *send;
+   struct brw_eu_inst *send;
 
    dst = retype(dst, BRW_TYPE_UW);
 
@@ -1651,7 +1651,7 @@ brw_send_indirect_split_message(struct brw_codegen *p,
 
 static bool
 while_jumps_before_offset(const struct intel_device_info *devinfo,
-                          brw_inst *insn, int while_offset, int start_offset)
+                          brw_eu_inst *insn, int while_offset, int start_offset)
 {
    int scale = 16 / brw_jump_scale(devinfo);
    int jip = brw_inst_jip(devinfo, insn);
@@ -1672,7 +1672,7 @@ brw_find_next_block_end(struct brw_codegen *p, int start_offset)
    for (offset = next_offset(devinfo, store, start_offset);
         offset < p->next_insn_offset;
         offset = next_offset(devinfo, store, offset)) {
-      brw_inst *insn = store + offset;
+      brw_eu_inst *insn = store + offset;
 
       switch (brw_inst_opcode(p->isa, insn)) {
       case BRW_OPCODE_IF:
@@ -1720,7 +1720,7 @@ brw_find_loop_end(struct brw_codegen *p, int start_offset)
    for (offset = next_offset(devinfo, store, start_offset);
         offset < p->next_insn_offset;
         offset = next_offset(devinfo, store, offset)) {
-      brw_inst *insn = store + offset;
+      brw_eu_inst *insn = store + offset;
 
       if (brw_inst_opcode(p->isa, insn) == BRW_OPCODE_WHILE) {
 	 if (while_jumps_before_offset(devinfo, insn, offset, start_offset))
@@ -1744,7 +1744,7 @@ brw_set_uip_jip(struct brw_codegen *p, int start_offset)
    void *store = p->store;
 
    for (offset = start_offset; offset < p->next_insn_offset; offset += 16) {
-      brw_inst *insn = store + offset;
+      brw_eu_inst *insn = store + offset;
       assert(brw_inst_cmpt_control(devinfo, insn) == 0);
 
       switch (brw_inst_opcode(p->isa, insn)) {
@@ -1809,7 +1809,7 @@ brw_set_uip_jip(struct brw_codegen *p, int start_offset)
 
 static void
 brw_set_memory_fence_message(struct brw_codegen *p,
-                             struct brw_inst *insn,
+                             struct brw_eu_inst *insn,
                              enum brw_message_target sfid,
                              bool commit_enable,
                              unsigned bti)
@@ -1841,7 +1841,7 @@ brw_set_memory_fence_message(struct brw_codegen *p,
 
 static void
 gfx12_set_memory_fence_message(struct brw_codegen *p,
-                               struct brw_inst *insn,
+                               struct brw_eu_inst *insn,
                                enum brw_message_target sfid,
                                uint32_t desc)
 {
@@ -1908,7 +1908,7 @@ brw_memory_fence(struct brw_codegen *p,
    /* Set dst as destination for dependency tracking, the MEMORY_FENCE
     * message doesn't write anything back.
     */
-   struct brw_inst *insn = next_insn(p, send_op);
+   struct brw_eu_inst *insn = next_insn(p, send_op);
    brw_inst_set_mask_control(devinfo, insn, BRW_MASK_DISABLE);
    brw_inst_set_exec_size(devinfo, insn, BRW_EXECUTE_1);
    brw_set_dest(p, insn, dst);
@@ -2055,7 +2055,7 @@ void
 brw_barrier(struct brw_codegen *p, struct brw_reg src)
 {
    const struct intel_device_info *devinfo = p->devinfo;
-   struct brw_inst *inst;
+   struct brw_eu_inst *inst;
 
    brw_push_insn_state(p);
    brw_set_default_access_mode(p, BRW_ALIGN_1);
@@ -2082,7 +2082,7 @@ void
 brw_WAIT(struct brw_codegen *p)
 {
    const struct intel_device_info *devinfo = p->devinfo;
-   struct brw_inst *insn;
+   struct brw_eu_inst *insn;
 
    struct brw_reg src = brw_notification_reg();
 
@@ -2112,14 +2112,14 @@ brw_float_controls_mode(struct brw_codegen *p,
     */
    brw_set_default_swsb(p, tgl_swsb_regdist(1));
 
-   brw_inst *inst = brw_AND(p, brw_cr0_reg(0), brw_cr0_reg(0),
+   brw_eu_inst *inst = brw_AND(p, brw_cr0_reg(0), brw_cr0_reg(0),
                             brw_imm_ud(~mask));
    brw_inst_set_exec_size(p->devinfo, inst, BRW_EXECUTE_1);
    if (p->devinfo->ver < 12)
       brw_inst_set_thread_control(p->devinfo, inst, BRW_THREAD_SWITCH);
 
    if (mode) {
-      brw_inst *inst_or = brw_OR(p, brw_cr0_reg(0), brw_cr0_reg(0),
+      brw_eu_inst *inst_or = brw_OR(p, brw_cr0_reg(0), brw_cr0_reg(0),
                                  brw_imm_ud(mode));
       brw_inst_set_exec_size(p->devinfo, inst_or, BRW_EXECUTE_1);
       if (p->devinfo->ver < 12)
@@ -2132,7 +2132,7 @@ brw_float_controls_mode(struct brw_codegen *p,
 
 void
 brw_update_reloc_imm(const struct brw_isa_info *isa,
-                     brw_inst *inst,
+                     brw_eu_inst *inst,
                      uint32_t value)
 {
    const struct intel_device_info *devinfo = isa->devinfo;

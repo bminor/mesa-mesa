@@ -188,7 +188,7 @@ void brw_set_default_access_mode( struct brw_codegen *p, unsigned access_mode )
  */
 void
 brw_inst_set_group(const struct intel_device_info *devinfo,
-                   brw_inst *inst, unsigned group)
+                   brw_eu_inst *inst, unsigned group)
 {
    if (devinfo->ver >= 20) {
       assert(group % 8 == 0 && group < 32);
@@ -258,7 +258,7 @@ brw_init_codegen(const struct brw_isa_info *isa,
     * until out of memory.
     */
    p->store_size = 1024;
-   p->store = rzalloc_array(mem_ctx, brw_inst, p->store_size);
+   p->store = rzalloc_array(mem_ctx, brw_eu_inst, p->store_size);
    p->nr_insn = 0;
    p->current = p->stack;
    memset(p->current, 0, sizeof(p->current[0]));
@@ -363,12 +363,12 @@ bool brw_try_override_assembly(struct brw_codegen *p, int start_offset,
       return false;
    }
 
-   p->nr_insn -= (p->next_insn_offset - start_offset) / sizeof(brw_inst);
-   p->nr_insn += sb.st_size / sizeof(brw_inst);
+   p->nr_insn -= (p->next_insn_offset - start_offset) / sizeof(brw_eu_inst);
+   p->nr_insn += sb.st_size / sizeof(brw_eu_inst);
 
    p->next_insn_offset = start_offset + sb.st_size;
-   p->store_size = (start_offset + sb.st_size) / sizeof(brw_inst);
-   p->store = (brw_inst *)reralloc_size(p->mem_ctx, p->store, p->next_insn_offset);
+   p->store_size = (start_offset + sb.st_size) / sizeof(brw_eu_inst);
+   p->store = (brw_eu_inst *)reralloc_size(p->mem_ctx, p->store, p->next_insn_offset);
    assert(p->store);
 
    ssize_t ret = read(fd, (char *)p->store + start_offset, sb.st_size);
@@ -442,11 +442,11 @@ brw_label_assembly(const struct brw_isa_info *isa,
 
    struct brw_label *root_label = NULL;
 
-   int to_bytes_scale = sizeof(brw_inst) / brw_jump_scale(devinfo);
+   int to_bytes_scale = sizeof(brw_eu_inst) / brw_jump_scale(devinfo);
 
    for (int offset = start; offset < end;) {
-      const brw_inst *inst = (const brw_inst *) ((const char *) assembly + offset);
-      brw_inst uncompacted;
+      const brw_eu_inst *inst = (const brw_eu_inst *) ((const char *) assembly + offset);
+      brw_eu_inst uncompacted;
 
       bool is_compact = brw_inst_cmpt_control(devinfo, inst);
 
@@ -471,7 +471,7 @@ brw_label_assembly(const struct brw_isa_info *isa,
       if (is_compact) {
          offset += sizeof(brw_compact_inst);
       } else {
-         offset += sizeof(brw_inst);
+         offset += sizeof(brw_eu_inst);
       }
    }
 
@@ -501,8 +501,8 @@ brw_disassemble(const struct brw_isa_info *isa,
    bool dump_hex = INTEL_DEBUG(DEBUG_HEX);
 
    for (int offset = start; offset < end;) {
-      const brw_inst *insn = (const brw_inst *)((char *)assembly + offset);
-      brw_inst uncompacted;
+      const brw_eu_inst *insn = (const brw_eu_inst *)((char *)assembly + offset);
+      brw_eu_inst uncompacted;
 
       if (root_label != NULL) {
         const struct brw_label *label = brw_find_label(root_label, offset);
@@ -553,7 +553,7 @@ brw_disassemble(const struct brw_isa_info *isa,
       if (compacted) {
          offset += sizeof(brw_compact_inst);
       } else {
-         offset += sizeof(brw_inst);
+         offset += sizeof(brw_eu_inst);
       }
    }
 }
@@ -704,7 +704,7 @@ brw_opcode_desc_from_hw(const struct brw_isa_info *isa, unsigned hw)
 
 unsigned
 brw_num_sources_from_inst(const struct brw_isa_info *isa,
-                          const brw_inst *inst)
+                          const brw_eu_inst *inst)
 {
    const struct intel_device_info *devinfo = isa->devinfo;
    const struct opcode_desc *desc =

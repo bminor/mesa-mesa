@@ -3150,7 +3150,7 @@ TEST_P(validation_test, dpas_sub_byte_precision)
                                                   : BRW_EXECUTE_8);
 
    for (unsigned i = 0; i < ARRAY_SIZE(test_vectors); i++) {
-      brw_inst *inst =
+      brw_eu_inst *inst =
          brw_DPAS(p,
                   BRW_SYSTOLIC_DEPTH_8,
                   8,
@@ -3698,7 +3698,7 @@ TEST_P(validation_test, scalar_register_restrictions)
          break;
       case BRW_OPCODE_SEND:
       case BRW_OPCODE_SENDC: {
-         brw_inst *send = brw_next_insn(p, tests[i].opcode);
+         brw_eu_inst *send = brw_next_insn(p, tests[i].opcode);
          brw_set_dest(p, send, t.dst);
          brw_set_src0(p, send, t.src0);
          brw_set_src1(p, send, t.src1);

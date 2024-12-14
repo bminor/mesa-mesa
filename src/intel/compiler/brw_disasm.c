@@ -869,7 +869,7 @@ reg(FILE *file, unsigned _reg_file, unsigned _reg_nr)
 }
 
 static int
-dest(FILE *file, const struct brw_isa_info *isa, const brw_inst *inst)
+dest(FILE *file, const struct brw_isa_info *isa, const brw_eu_inst *inst)
 {
    const struct intel_device_info *devinfo = isa->devinfo;
    enum brw_reg_type type = brw_inst_dst_type(devinfo, inst);
@@ -951,7 +951,7 @@ dest(FILE *file, const struct brw_isa_info *isa, const brw_inst *inst)
 
 static int
 dest_3src(FILE *file, const struct intel_device_info *devinfo,
-          const brw_inst *inst)
+          const brw_eu_inst *inst)
 {
    bool is_align1 = brw_inst_3src_access_mode(devinfo, inst) == BRW_ALIGN_1;
    int err = 0;
@@ -997,7 +997,7 @@ dest_3src(FILE *file, const struct intel_device_info *devinfo,
 
 static int
 dest_dpas_3src(FILE *file, const struct intel_device_info *devinfo,
-               const brw_inst *inst)
+               const brw_eu_inst *inst)
 {
    uint32_t reg_file = brw_inst_dpas_3src_dst_reg_file(devinfo, inst);
 
@@ -1243,7 +1243,7 @@ implied_width(enum brw_vertical_stride _vert_stride,
 
 static int
 src0_3src(FILE *file, const struct intel_device_info *devinfo,
-          const brw_inst *inst)
+          const brw_eu_inst *inst)
 {
    int err = 0;
    unsigned reg_nr, subreg_nr;
@@ -1322,7 +1322,7 @@ src0_3src(FILE *file, const struct intel_device_info *devinfo,
 
 static int
 src1_3src(FILE *file, const struct intel_device_info *devinfo,
-          const brw_inst *inst)
+          const brw_eu_inst *inst)
 {
    int err = 0;
    unsigned reg_nr, subreg_nr;
@@ -1388,7 +1388,7 @@ src1_3src(FILE *file, const struct intel_device_info *devinfo,
 
 static int
 src2_3src(FILE *file, const struct intel_device_info *devinfo,
-          const brw_inst *inst)
+          const brw_eu_inst *inst)
 {
    int err = 0;
    unsigned reg_nr, subreg_nr;
@@ -1471,7 +1471,7 @@ src2_3src(FILE *file, const struct intel_device_info *devinfo,
 
 static int
 src0_dpas_3src(FILE *file, const struct intel_device_info *devinfo,
-               const brw_inst *inst)
+               const brw_eu_inst *inst)
 {
    uint32_t reg_file = brw_inst_dpas_3src_src0_reg_file(devinfo, inst);
 
@@ -1495,7 +1495,7 @@ src0_dpas_3src(FILE *file, const struct intel_device_info *devinfo,
 
 static int
 src1_dpas_3src(FILE *file, const struct intel_device_info *devinfo,
-               const brw_inst *inst)
+               const brw_eu_inst *inst)
 {
    uint32_t reg_file = brw_inst_dpas_3src_src1_reg_file(devinfo, inst);
 
@@ -1519,7 +1519,7 @@ src1_dpas_3src(FILE *file, const struct intel_device_info *devinfo,
 
 static int
 src2_dpas_3src(FILE *file, const struct intel_device_info *devinfo,
-               const brw_inst *inst)
+               const brw_eu_inst *inst)
 {
    uint32_t reg_file = brw_inst_dpas_3src_src2_reg_file(devinfo, inst);
 
@@ -1543,7 +1543,7 @@ src2_dpas_3src(FILE *file, const struct intel_device_info *devinfo,
 
 static int
 imm(FILE *file, const struct brw_isa_info *isa, enum brw_reg_type type,
-    const brw_inst *inst)
+    const brw_eu_inst *inst)
 {
    const struct intel_device_info *devinfo = isa->devinfo;
 
@@ -1661,7 +1661,7 @@ src_send_desc_ia(FILE *file,
 }
 
 static int
-src0(FILE *file, const struct brw_isa_info *isa, const brw_inst *inst)
+src0(FILE *file, const struct brw_isa_info *isa, const brw_eu_inst *inst)
 {
    const struct intel_device_info *devinfo = isa->devinfo;
 
@@ -1746,7 +1746,7 @@ src0(FILE *file, const struct brw_isa_info *isa, const brw_inst *inst)
 }
 
 static int
-src1(FILE *file, const struct brw_isa_info *isa, const brw_inst *inst)
+src1(FILE *file, const struct brw_isa_info *isa, const brw_eu_inst *inst)
 {
    const struct intel_device_info *devinfo = isa->devinfo;
 
@@ -1811,7 +1811,7 @@ src1(FILE *file, const struct brw_isa_info *isa, const brw_inst *inst)
 
 static int
 qtr_ctrl(FILE *file, const struct intel_device_info *devinfo,
-         const brw_inst *inst)
+         const brw_eu_inst *inst)
 {
    int qtr_ctl = brw_inst_qtr_control(devinfo, inst);
    int exec_size = 1 << brw_inst_exec_size(devinfo, inst);
@@ -1846,7 +1846,7 @@ qtr_ctrl(FILE *file, const struct intel_device_info *devinfo,
 
 static bool
 inst_has_type(const struct brw_isa_info *isa,
-              const brw_inst *inst,
+              const brw_eu_inst *inst,
               enum brw_reg_type type)
 {
    const struct intel_device_info *devinfo = isa->devinfo;
@@ -1871,7 +1871,7 @@ inst_has_type(const struct brw_isa_info *isa,
 }
 
 static int
-swsb(FILE *file, const struct brw_isa_info *isa, const brw_inst *inst)
+swsb(FILE *file, const struct brw_isa_info *isa, const brw_eu_inst *inst)
 {
    const struct intel_device_info *devinfo = isa->devinfo;
    const enum opcode opcode = brw_inst_opcode(isa, inst);
@@ -1903,7 +1903,7 @@ static __attribute__((__unused__)) int
 brw_disassemble_imm(const struct brw_isa_info *isa,
                     uint32_t dw3, uint32_t dw2, uint32_t dw1, uint32_t dw0)
 {
-   brw_inst inst;
+   brw_eu_inst inst;
    inst.data[0] = (((uint64_t) dw1) << 32) | ((uint64_t) dw0);
    inst.data[1] = (((uint64_t) dw3) << 32) | ((uint64_t) dw2);
    return brw_disassemble_inst(stderr, isa, &inst, false, 0, NULL);
@@ -1916,7 +1916,7 @@ write_label(FILE *file, const struct intel_device_info *devinfo,
             int offset, int jump)
 {
    if (root_label != NULL) {
-      int to_bytes_scale = sizeof(brw_inst) / brw_jump_scale(devinfo);
+      int to_bytes_scale = sizeof(brw_eu_inst) / brw_jump_scale(devinfo);
       const struct brw_label *label =
          brw_find_label(root_label, offset + jump * to_bytes_scale);
       if (label != NULL) {
@@ -1971,7 +1971,7 @@ brw_sfid_is_lsc(unsigned sfid)
 
 int
 brw_disassemble_inst(FILE *file, const struct brw_isa_info *isa,
-                     const brw_inst *inst, bool is_compacted,
+                     const brw_eu_inst *inst, bool is_compacted,
                      int offset, const struct brw_label *root_label)
 {
    const struct intel_device_info *devinfo = isa->devinfo;
@@ -2614,7 +2614,7 @@ brw_disassemble_find_end(const struct brw_isa_info *isa,
 
    /* This loop exits when send-with-EOT or when opcode is 0 */
    while (true) {
-      const brw_inst *insn = assembly + offset;
+      const brw_eu_inst *insn = assembly + offset;
 
       if (brw_inst_cmpt_control(devinfo, insn)) {
          offset += 8;

@@ -53,7 +53,7 @@ enum brw_hw_instr_format {
 };
 
 typedef struct brw_hw_decoded_inst {
-   const brw_inst *raw;
+   const brw_eu_inst *raw;
 
    enum brw_hw_instr_format format;
 
@@ -381,7 +381,7 @@ send_restrictions(const struct brw_isa_info *isa,
 
 static bool
 is_unsupported_inst(const struct brw_isa_info *isa,
-                    const brw_inst *inst)
+                    const brw_eu_inst *inst)
 {
    return brw_inst_opcode(isa, inst) == BRW_OPCODE_ILLEGAL;
 }
@@ -2434,7 +2434,7 @@ VSTRIDE_3SRC(unsigned vstride)
 static struct string
 brw_hw_decode_inst(const struct brw_isa_info *isa,
                    brw_hw_decoded_inst *inst,
-                   const brw_inst *raw)
+                   const brw_eu_inst *raw)
 {
    const struct intel_device_info *devinfo = isa->devinfo;
    struct string error_msg = { .str = NULL, .len = 0 };
@@ -2771,7 +2771,7 @@ brw_hw_decode_inst(const struct brw_isa_info *isa,
 
 bool
 brw_validate_instruction(const struct brw_isa_info *isa,
-                         const brw_inst *inst, int offset,
+                         const brw_eu_inst *inst, int offset,
                          unsigned inst_size,
                          struct disasm_info *disasm)
 {
@@ -2830,11 +2830,11 @@ brw_validate_instructions(const struct brw_isa_info *isa,
    bool valid = true;
 
    for (int src_offset = start_offset; src_offset < end_offset;) {
-      const brw_inst *inst = assembly + src_offset;
+      const brw_eu_inst *inst = assembly + src_offset;
       bool is_compact = brw_inst_cmpt_control(devinfo, inst);
       unsigned inst_size = is_compact ? sizeof(brw_compact_inst)
-                                      : sizeof(brw_inst);
-      brw_inst uncompacted;
+                                      : sizeof(brw_eu_inst);
+      brw_eu_inst uncompacted;
 
       if (is_compact) {
          brw_compact_inst *compacted = (void *)inst;

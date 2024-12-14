@@ -139,14 +139,14 @@ fs_generator::patch_halt_jumps()
     * included GPU hangs and sparkly rendering on the piglit discard
     * tests.
     */
-   brw_inst *last_halt = brw_HALT(p);
+   brw_eu_inst *last_halt = brw_HALT(p);
    brw_inst_set_uip(p->devinfo, last_halt, 1 * scale);
    brw_inst_set_jip(p->devinfo, last_halt, 1 * scale);
 
    int ip = p->nr_insn;
 
    foreach_in_list(ip_record, patch_ip, &discard_halt_patches) {
-      brw_inst *patch = &p->store[patch_ip->ip];
+      brw_eu_inst *patch = &p->store[patch_ip->ip];
 
       assert(brw_inst_opcode(p->isa, patch) == BRW_OPCODE_HALT);
       /* HALT takes a half-instruction distance from the pre-incremented IP. */
@@ -241,7 +241,7 @@ fs_generator::generate_mov_indirect(fs_inst *inst,
        */
       const bool use_dep_ctrl = !inst->predicate &&
                                 inst->exec_size == dispatch_width;
-      brw_inst *insn;
+      brw_eu_inst *insn;
 
       /* The destination stride of an instruction (in bytes) must be greater
        * than or equal to the size of the rest of the instruction.  Since the
@@ -418,7 +418,7 @@ fs_generator::generate_shuffle(fs_inst *inst,
           */
          const bool use_dep_ctrl = !inst->predicate &&
                                    lower_width == dispatch_width;
-         brw_inst *insn;
+         brw_eu_inst *insn;
 
          /* Due to a hardware bug some platforms (particularly Gfx11+) seem
           * to require the address components of all channels to be valid
@@ -507,7 +507,7 @@ fs_generator::generate_quad_swizzle(const fs_inst *inst,
          brw_set_default_exec_size(p, cvt(inst->exec_size / 4) - 1);
 
          for (unsigned c = 0; c < 4; c++) {
-            brw_inst *insn = brw_MOV(
+            brw_eu_inst *insn = brw_MOV(
                p, stride(suboffset(dst, c),
                          4 * inst->dst.stride, 1, 4 * inst->dst.stride),
                stride(suboffset(src, BRW_GET_SWZ(swiz, c)), 4, 1, 0));
@@ -712,7 +712,7 @@ fs_generator::generate_scratch_header(fs_inst *inst,
 
    dst.type = BRW_TYPE_UD;
 
-   brw_inst *insn = brw_MOV(p, dst, brw_imm_ud(0));
+   brw_eu_inst *insn = brw_MOV(p, dst, brw_imm_ud(0));
    if (devinfo->ver >= 12)
       brw_set_default_swsb(p, tgl_swsb_null());
    else
@@ -1372,7 +1372,7 @@ fs_generator::generate_code(const cfg_t *cfg, int dispatch_width,
                 !"conditional_mod, no_dd_check, or no_dd_clear set for IR "
                  "emitting more than 1 instruction");
 
-         brw_inst *last = &p->store[last_insn_offset / 16];
+         brw_eu_inst *last = &p->store[last_insn_offset / 16];
 
          if (inst->conditional_mod)
             brw_inst_set_cond_modifier(p->devinfo, last, inst->conditional_mod);
@@ -1424,7 +1424,7 @@ fs_generator::generate_code(const cfg_t *cfg, int dispatch_width,
    char sha1buf[41];
 
    if (unlikely(debug_flag || dump_shader_bin)) {
-      _mesa_sha1_compute(p->store + start_offset / sizeof(brw_inst),
+      _mesa_sha1_compute(p->store + start_offset / sizeof(brw_eu_inst),
                          after_size, sha1);
       _mesa_sha1_format(sha1buf, sha1);
    }

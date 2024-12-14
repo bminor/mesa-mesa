@@ -350,7 +350,7 @@ add_label(struct brw_codegen *p, const char* label_name, enum instr_label_type t
 	struct instoption instoption;
 	struct msgdesc msgdesc;
 	struct tgl_swsb depinfo;
-	brw_inst *instruction;
+	brw_eu_inst *instruction;
 }
 
 %token ABS
