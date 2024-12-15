@@ -8668,7 +8668,7 @@ iris_upload_render_state(struct iris_context *ice,
 
    uint32_t count = (sc) ? sc->count : 0;
    count *= draw->instance_count ? draw->instance_count : 1;
-   trace_intel_end_draw(&batch->trace, count);
+   trace_intel_end_draw(&batch->trace, count, 0, 0);
 }
 
 static void
@@ -8769,7 +8769,7 @@ iris_upload_indirect_render_state(struct iris_context *ice,
 
    uint32_t count = (sc) ? sc->count : 0;
    count *= draw->instance_count ? draw->instance_count : 1;
-   trace_intel_end_draw(&batch->trace, count);
+   trace_intel_end_draw(&batch->trace, count, 0, 0);
 #else
    unreachable("Unsupported path");
 #endif /* GFX_VERx10 >= 125 */
@@ -8955,7 +8955,7 @@ iris_upload_indirect_shader_render_state(struct iris_context *ice,
 
    uint32_t count = (sc) ? sc->count : 0;
    count *= draw->instance_count ? draw->instance_count : 1;
-   trace_intel_end_draw(&batch->trace, count);
+   trace_intel_end_draw(&batch->trace, count, 0, 0);
 }
 
 static void
@@ -9129,7 +9129,7 @@ iris_upload_compute_walker(struct iris_context *ice,
       }
    }
 
-   trace_intel_end_compute(&batch->trace, grid->grid[0], grid->grid[1], grid->grid[2]);
+   trace_intel_end_compute(&batch->trace, grid->grid[0], grid->grid[1], grid->grid[2], 0);
 }
 
 #else /* #if GFX_VERx10 >= 125 */
@@ -9279,7 +9279,7 @@ iris_upload_gpgpu_walker(struct iris_context *ice,
 
    iris_emit_cmd(batch, GENX(MEDIA_STATE_FLUSH), msf);
 
-   trace_intel_end_compute(&batch->trace, grid->grid[0], grid->grid[1], grid->grid[2]);
+   trace_intel_end_compute(&batch->trace, grid->grid[0], grid->grid[1], grid->grid[2], 0);
 }
 
 #endif /* #if GFX_VERx10 >= 125 */
