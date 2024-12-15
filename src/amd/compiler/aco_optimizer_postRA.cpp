@@ -867,6 +867,8 @@ try_insert_saveexec_out_of_loop(pr_opt_ctx& ctx, Block* block, Definition saved_
 
    /* Check if exec is written, or the copy's dst overwritten in the loop header. */
    for (unsigned i = 0; i < saveexec_pos; i++) {
+      if (!block->instructions[i])
+         continue;
       if (block->instructions[i]->writes_exec())
          return false;
       if (instr_overwrites(block->instructions[i].get(), saved_exec.physReg(), saved_exec.size()))
@@ -904,6 +906,19 @@ try_insert_saveexec_out_of_loop(pr_opt_ctx& ctx, Block* block, Definition saved_
    } while (cont->linear_preds.size() == 1 && (cont = &ctx.program->blocks[cont->linear_preds[0]]));
 
    return false;
+}
+
+void
+fixup_reg_writes(pr_opt_ctx& ctx, unsigned start)
+{
+   const unsigned current_idx = ctx.current_instr_idx;
+   for (unsigned i = start; i < current_idx; i++) {
+      ctx.current_instr_idx = i;
+      if (ctx.current_block->instructions[i])
+         save_reg_writes(ctx, ctx.current_block->instructions[i]);
+   }
+
+   ctx.current_instr_idx = current_idx;
 }
 
 bool
@@ -1145,8 +1160,11 @@ try_optimize_branching_sequence(pr_opt_ctx& ctx, aco_ptr<Instruction>& exec_copy
        */
       if (ctx.current_block->kind & block_kind_loop_header) {
          if (try_insert_saveexec_out_of_loop(ctx, ctx.current_block, exec_copy_def,
-                                             exec_val_idx.instr))
+                                             exec_val_idx.instr)) {
+            /* We inserted something after the last phi, so fixup indices from the start. */
+            fixup_reg_writes(ctx, 0);
             return true;
+         }
       }
       Instruction* copy = create_instruction(aco_opcode::p_parallelcopy, Format::PSEUDO, 1, 1);
       copy->definitions[0] = exec_copy_def;
@@ -1155,14 +1173,7 @@ try_optimize_branching_sequence(pr_opt_ctx& ctx, aco_ptr<Instruction>& exec_copy
       ctx.current_block->instructions.emplace(it, copy);
 
       /* Fixup indices after inserting an instruction. */
-      const unsigned current_idx = ctx.current_instr_idx;
-      for (unsigned i = exec_val_idx.instr; i < current_idx; i++) {
-         ctx.current_instr_idx = i;
-         if (ctx.current_block->instructions[i])
-            save_reg_writes(ctx, ctx.current_block->instructions[i]);
-      }
-
-      ctx.current_instr_idx = current_idx;
+      fixup_reg_writes(ctx, exec_val_idx.instr);
       return true;
    }
 
