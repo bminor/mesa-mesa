@@ -139,6 +139,31 @@ panvk_lower_sysvals(nir_builder *b, nir_instr *instr, void *data)
    return true;
 }
 
+static bool
+panvk_lower_load_vs_input(nir_builder *b, nir_intrinsic_instr *intrin,
+                           UNUSED void *data)
+{
+   if (intrin->intrinsic != nir_intrinsic_load_input)
+      return false;
+
+   b->cursor = nir_before_instr(&intrin->instr);
+   nir_def *ld_attr = nir_load_attribute_pan(
+      b, intrin->def.num_components, intrin->def.bit_size,
+      b->shader->options->vertex_id_zero_based ?
+         nir_load_vertex_id_zero_base(b) :
+         nir_load_vertex_id(b),
+      PAN_ARCH >= 9 ?
+         nir_iadd(b, nir_load_instance_id(b), nir_load_base_instance(b)) :
+         nir_load_instance_id(b),
+      nir_get_io_offset_src(intrin)->ssa,
+      .base = nir_intrinsic_base(intrin),
+      .component = nir_intrinsic_component(intrin),
+      .dest_type = nir_intrinsic_dest_type(intrin));
+   nir_def_replace(&intrin->def, ld_attr);
+
+   return true;
+}
+
 #if PAN_ARCH <= 7
 static bool
 lower_gl_pos_layer_writes(nir_builder *b, nir_instr *instr, void *data)
@@ -554,6 +579,10 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
    }
 
    pan_shader_preprocess(nir, compile_input->gpu_id);
+
+   if (stage == MESA_SHADER_VERTEX)
+      NIR_PASS(_, nir, nir_shader_intrinsics_pass, panvk_lower_load_vs_input,
+               nir_metadata_control_flow, NULL);
 
    /* since valhall, panvk_per_arch(nir_lower_descriptors) separates the
     * driver set and the user sets, and does not need pan_lower_image_index

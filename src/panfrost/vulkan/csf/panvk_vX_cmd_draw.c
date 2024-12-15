@@ -223,7 +223,8 @@ prepare_fs_driver_set(struct panvk_cmd_buffer *cmdbuf)
 #define MIN_DEPTH_CLIP_RANGE 37.7E-06f
 
 static void
-prepare_sysvals(struct panvk_cmd_buffer *cmdbuf)
+prepare_sysvals(struct panvk_cmd_buffer *cmdbuf,
+                const struct panvk_draw_info *draw)
 {
    struct panvk_graphics_sysvals *sysvals = &cmdbuf->state.gfx.sysvals;
    struct vk_color_blend_state *cb = &cmdbuf->vk.dynamic_graphics_state.cb;
@@ -302,6 +303,15 @@ prepare_sysvals(struct panvk_cmd_buffer *cmdbuf)
          /* Bump offset off-center if necessary, to not go out of range */
          sysvals->viewport.offset.z = CLAMP(z_offset, 0.0f, 1.0f);
       }
+      gfx_state_set_dirty(cmdbuf, PUSH_UNIFORMS);
+   }
+
+   if (draw->vertex.base != sysvals->vs.first_vertex ||
+       draw->vertex.base != sysvals->vs.base_vertex ||
+       draw->instance.base != sysvals->vs.base_instance) {
+      sysvals->vs.first_vertex = draw->vertex.base;
+      sysvals->vs.base_vertex = draw->vertex.base;
+      sysvals->vs.base_instance = draw->instance.base;
       gfx_state_set_dirty(cmdbuf, PUSH_UNIFORMS);
    }
 }
@@ -1654,7 +1664,7 @@ prepare_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
          return result;
    }
 
-   prepare_sysvals(cmdbuf);
+   prepare_sysvals(cmdbuf, draw);
 
    result = prepare_push_uniforms(cmdbuf);
    if (result != VK_SUCCESS)
@@ -1755,7 +1765,11 @@ panvk_cmd_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
       cs_move32_to(b, cs_sr_reg32(b, 34), draw->instance.count);
       cs_move32_to(b, cs_sr_reg32(b, 35), draw->index.offset);
       cs_move32_to(b, cs_sr_reg32(b, 36), draw->vertex.base);
-      cs_move32_to(b, cs_sr_reg32(b, 37), draw->instance.base);
+      /* NIR expects zero-based instance ID, but even if it did have an intrinsic to
+       * load the absolute instance ID, we'd want to keep it zero-based to work around
+       * Mali's limitation on non-zero firstInstance when a instance divisor is used.
+       */
+      cs_move32_to(b, cs_sr_reg32(b, 37), 0);
    }
 
    struct mali_primitive_flags_packed flags_override =
@@ -1891,6 +1905,9 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
    /* MultiDrawIndirect (.maxDrawIndirectCount) needs additional changes. */
    assert(draw->indirect.draw_count == 1);
 
+   /* Force a new push uniform block to be allocated */
+   gfx_state_set_dirty(cmdbuf, PUSH_UNIFORMS);
+
    result = prepare_draw(cmdbuf, draw);
    if (result != VK_SUCCESS)
       return;
@@ -1907,11 +1924,30 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
       cs_load_to(b, cs_sr_reg_tuple(b, 33, 5), draw_params_addr, reg_mask, 0);
    }
 
-   struct mali_primitive_flags_packed flags_override =
-      get_tiler_flags_override(draw);
-
    /* Wait for the SR33-37 indirect buffer load. */
    cs_wait_slot(b, SB_ID(LS), false);
+
+   struct cs_index fau_block_addr = cs_scratch_reg64(b, 2);
+   cs_move64_to(b, fau_block_addr, cmdbuf->state.gfx.push_uniforms);
+   cs_store32(b, cs_sr_reg32(b, 36), fau_block_addr,
+              256 + offsetof(struct panvk_graphics_sysvals, vs.first_vertex));
+   cs_store32(b, cs_sr_reg32(b, 36), fau_block_addr,
+              256 + offsetof(struct panvk_graphics_sysvals, vs.base_vertex));
+   cs_store32(b, cs_sr_reg32(b, 37), fau_block_addr,
+              256 + offsetof(struct panvk_graphics_sysvals, vs.base_instance));
+
+   /* Wait for the store using SR-37 as src to finish, so we can overwrite it. */
+   cs_wait_slot(b, SB_ID(LS), false);
+
+   /* NIR expects zero-based instance ID, but even if it did have an intrinsic to
+    * load the absolute instance ID, we'd want to keep it zero-based to work around
+    * Mali's limitation on non-zero firstInstance when a instance divisor is used.
+    */
+   cs_update_vt_ctx(b)
+      cs_move32_to(b, cs_sr_reg32(b, 37), 0);
+
+   struct mali_primitive_flags_packed flags_override =
+      get_tiler_flags_override(draw);
 
    cs_req_res(b, CS_IDVS_RES);
    cs_trace_run_idvs(b, tracing_ctx, cs_scratch_reg_tuple(b, 0, 4),
