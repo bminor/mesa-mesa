@@ -150,6 +150,8 @@ PROC int ac_drm_va_range_alloc(ac_drm_device *dev, enum amdgpu_gpu_va_range va_r
                                uint64_t *va_base_allocated, amdgpu_va_handle *va_range_handle,
                                uint64_t flags) TAIL;
 PROC int ac_drm_va_range_free(amdgpu_va_handle va_range_handle) TAIL;
+PROC int ac_drm_va_range_query(ac_drm_device *dev, enum amdgpu_gpu_va_range type, uint64_t *start,
+                               uint64_t *end) TAIL;
 PROC int ac_drm_create_userqueue(ac_drm_device *dev, uint32_t ip_type, uint32_t doorbell_handle,
                                  uint32_t doorbell_offset, uint64_t queue_va, uint64_t queue_size,
                                  uint64_t wptr_va, uint64_t rptr_va, void *mqd_in, uint32_t flags,

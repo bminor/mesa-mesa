@@ -66,6 +66,7 @@ enum radeon_bo_flag
   RADEON_FLAG_WINSYS_SLAB_BACKING = (1 << 11), /* only used by the winsys */
   RADEON_FLAG_GFX12_ALLOW_DCC = (1 << 12), /* allow DCC, VRAM only */
   RADEON_FLAG_CLEAR_VRAM = (1 << 13),
+  RADEON_FLAG_NO_VMA = (1 << 14), /* frontend assigns addresses */
 };
 
 static inline void
@@ -508,6 +509,33 @@ struct radeon_winsys {
     * are passed 1:1.
     */
    enum radeon_bo_flag (*buffer_get_flags)(struct pb_buffer_lean *buf);
+
+   /**
+    * Query the valid virtual memory range of the device for use with alloc_vm.
+    */
+   void (*va_range)(struct radeon_winsys *rws, uint64_t *start, uint64_t *end);
+
+   /**
+    * Reserves a virtual memory range for use through buffer_assign_vma. Start and size must be
+    * within the limits of va_range otherwise this function will return NULL.
+    */
+   struct pipe_vm_allocation *(*alloc_vm)(struct radeon_winsys *rws, uint64_t start, uint64_t size);
+
+   /**
+    * Frees a virtual memory range reservation.
+    */
+   void (*free_vm)(struct radeon_winsys *rws, struct pipe_vm_allocation *alloc);
+
+   /**
+    * Assigns the given address to buf.
+    *
+    * \param buf        The buffer the address gets assigned to. This buffer must have been created
+    *                   with the RADEON_FLAG_NO_VMA flag.
+    * \param address    Address to be assigned. Needs to be within a range previously reserved
+    *                   through alloc_vm or 0.
+    */
+   bool (*buffer_assign_vma)(struct radeon_winsys *rws, struct pb_buffer_lean *buf,
+                             uint64_t address);
 
    /**************************************************************************
     * Command submission.

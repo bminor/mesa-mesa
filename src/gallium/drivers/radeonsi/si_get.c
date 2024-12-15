@@ -1345,4 +1345,7 @@ void si_init_screen_caps(struct si_screen *sscreen)
     *    KHR-GL46.texture_lod_bias.texture_lod_bias_all
     */
    caps->max_texture_lod_bias = 16;
+
+   if (sscreen->ws->va_range)
+      sscreen->ws->va_range(sscreen->ws, &caps->min_vma, &caps->max_vma);
 }

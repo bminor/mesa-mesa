@@ -994,6 +994,12 @@ int ac_drm_va_range_free(amdgpu_va_handle va_range_handle)
    return amdgpu_va_range_free(va_range_handle);
 }
 
+int ac_drm_va_range_query(ac_drm_device *dev, enum amdgpu_gpu_va_range type, uint64_t *start,
+                          uint64_t *end)
+{
+   return amdgpu_va_range_query(dev->adev, type, start, end);
+}
+
 int ac_drm_create_userqueue(ac_drm_device *dev, uint32_t ip_type, uint32_t doorbell_handle,
                             uint32_t doorbell_offset, uint64_t queue_va, uint64_t queue_size,
                             uint64_t wptr_va, uint64_t rptr_va, void *mqd_in, uint32_t flags, uint32_t *queue_id)
