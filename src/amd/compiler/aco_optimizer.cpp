@@ -3460,123 +3460,6 @@ combine_inverse_comparison(opt_ctx& ctx, aco_ptr<Instruction>& instr)
    return true;
 }
 
-/* op1(op2(1, 2), 0) if swap = false
- * op1(0, op2(1, 2)) if swap = true */
-bool
-match_op3_for_vop3(opt_ctx& ctx, aco_opcode op1, aco_opcode op2, Instruction* op1_instr, bool swap,
-                   const char* shuffle_str, Operand operands[3], bitarray8& neg, bitarray8& abs,
-                   bitarray8& opsel, bool* op1_clamp, uint8_t* op1_omod, bool* inbetween_neg,
-                   bool* inbetween_abs, bool* inbetween_opsel, bool* precise)
-{
-   /* checks */
-   if (op1_instr->opcode != op1)
-      return false;
-
-   Instruction* op2_instr = follow_operand(ctx, op1_instr->operands[swap]);
-   if (!op2_instr || op2_instr->opcode != op2)
-      return false;
-
-   VALU_instruction* op1_valu = op1_instr->isVALU() ? &op1_instr->valu() : NULL;
-   VALU_instruction* op2_valu = op2_instr->isVALU() ? &op2_instr->valu() : NULL;
-
-   if (op1_instr->isSDWA() || op2_instr->isSDWA())
-      return false;
-   if (op1_instr->isDPP() || op2_instr->isDPP())
-      return false;
-
-   /* don't support inbetween clamp/omod */
-   if (op2_valu && (op2_valu->clamp || op2_valu->omod))
-      return false;
-
-   /* get operands and modifiers and check inbetween modifiers */
-   *op1_clamp = op1_valu ? (bool)op1_valu->clamp : false;
-   *op1_omod = op1_valu ? (unsigned)op1_valu->omod : 0u;
-
-   if (inbetween_neg)
-      *inbetween_neg = op1_valu ? op1_valu->neg[swap] : false;
-   else if (op1_valu && op1_valu->neg[swap])
-      return false;
-
-   if (inbetween_abs)
-      *inbetween_abs = op1_valu ? op1_valu->abs[swap] : false;
-   else if (op1_valu && op1_valu->abs[swap])
-      return false;
-
-   if (inbetween_opsel)
-      *inbetween_opsel = op1_valu ? op1_valu->opsel[swap] : false;
-   else if (op1_valu && op1_valu->opsel[swap])
-      return false;
-
-   *precise = op1_instr->definitions[0].isPrecise() || op2_instr->definitions[0].isPrecise();
-
-   int shuffle[3];
-   shuffle[shuffle_str[0] - '0'] = 0;
-   shuffle[shuffle_str[1] - '0'] = 1;
-   shuffle[shuffle_str[2] - '0'] = 2;
-
-   operands[shuffle[0]] = op1_instr->operands[!swap];
-   neg[shuffle[0]] = op1_valu ? op1_valu->neg[!swap] : false;
-   abs[shuffle[0]] = op1_valu ? op1_valu->abs[!swap] : false;
-   opsel[shuffle[0]] = op1_valu ? op1_valu->opsel[!swap] : false;
-
-   for (unsigned i = 0; i < 2; i++) {
-      operands[shuffle[i + 1]] = op2_instr->operands[i];
-      neg[shuffle[i + 1]] = op2_valu ? op2_valu->neg[i] : false;
-      abs[shuffle[i + 1]] = op2_valu ? op2_valu->abs[i] : false;
-      opsel[shuffle[i + 1]] = op2_valu ? op2_valu->opsel[i] : false;
-   }
-
-   /* check operands */
-   if (!check_vop3_operands(ctx, 3, operands))
-      return false;
-
-   return true;
-}
-
-void
-create_vop3_for_op3(opt_ctx& ctx, aco_opcode opcode, aco_ptr<Instruction>& instr,
-                    Operand operands[3], uint8_t neg, uint8_t abs, uint8_t opsel, bool clamp,
-                    unsigned omod)
-{
-   Instruction* new_instr = create_instruction(opcode, Format::VOP3, 3, 1);
-   new_instr->valu().neg = neg;
-   new_instr->valu().abs = abs;
-   new_instr->valu().clamp = clamp;
-   new_instr->valu().omod = omod;
-   new_instr->valu().opsel = opsel;
-   new_instr->operands[0] = operands[0];
-   new_instr->operands[1] = operands[1];
-   new_instr->operands[2] = operands[2];
-   new_instr->definitions[0] = instr->definitions[0];
-   new_instr->pass_flags = instr->pass_flags;
-   ctx.info[instr->definitions[0].tempId()].label = 0;
-   ctx.info[instr->definitions[0].tempId()].parent_instr = new_instr;
-
-   instr.reset(new_instr);
-}
-
-bool
-combine_three_valu_op(opt_ctx& ctx, aco_ptr<Instruction>& instr, aco_opcode op2, aco_opcode new_op,
-                      const char* shuffle, uint8_t ops)
-{
-   for (unsigned swap = 0; swap < 2; swap++) {
-      if (!((1 << swap) & ops))
-         continue;
-
-      Operand operands[3];
-      bool clamp, precise;
-      bitarray8 neg = 0, abs = 0, opsel = 0;
-      uint8_t omod = 0;
-      if (match_op3_for_vop3(ctx, instr->opcode, op2, instr.get(), swap, shuffle, operands, neg,
-                             abs, opsel, &clamp, &omod, NULL, NULL, NULL, &precise)) {
-         ctx.uses[instr->operands[swap].tempId()]--;
-         create_vop3_for_op3(ctx, new_op, instr, operands, neg, abs, opsel, clamp, omod);
-         return true;
-      }
-   }
-   return false;
-}
-
 /* v_not(v_xor(a, b)) -> v_xnor(a, b) */
 bool
 combine_not_xor(opt_ctx& ctx, aco_ptr<Instruction>& instr)
@@ -3774,36 +3657,6 @@ combine_add_sub_b2i(opt_ctx& ctx, aco_ptr<Instruction>& instr, aco_opcode new_op
          instr = std::move(new_instr);
          ctx.info[instr->definitions[0].tempId()].parent_instr = instr.get();
          ctx.info[instr->definitions[1].tempId()].parent_instr = instr.get();
-         return true;
-      }
-   }
-
-   return false;
-}
-
-bool
-combine_add_bcnt(opt_ctx& ctx, aco_ptr<Instruction>& instr)
-{
-   if (instr->usesModifiers())
-      return false;
-
-   for (unsigned i = 0; i < 2; i++) {
-      Instruction* op_instr = follow_operand(ctx, instr->operands[i]);
-      if (op_instr && op_instr->opcode == aco_opcode::v_bcnt_u32_b32 &&
-          !op_instr->usesModifiers() && op_instr->operands[0].isTemp() &&
-          op_instr->operands[0].getTemp().type() == RegType::vgpr &&
-          op_instr->operands[1].constantEquals(0)) {
-         aco_ptr<Instruction> new_instr{
-            create_instruction(aco_opcode::v_bcnt_u32_b32, Format::VOP3, 2, 1)};
-         ctx.uses[instr->operands[i].tempId()]--;
-         new_instr->operands[0] = op_instr->operands[0];
-         new_instr->operands[1] = instr->operands[!i];
-         new_instr->definitions[0] = instr->definitions[0];
-         new_instr->pass_flags = instr->pass_flags;
-         instr = std::move(new_instr);
-         ctx.info[instr->definitions[0].tempId()].label = 0;
-         ctx.info[instr->definitions[0].tempId()].parent_instr = instr.get();
-
          return true;
       }
    }
@@ -4366,6 +4219,57 @@ create_med3_cb(opt_ctx& ctx, alu_opt_info& info)
    return false;
 }
 
+template <unsigned bits>
+bool
+shift_to_mad_cb(opt_ctx& ctx, alu_opt_info& info)
+{
+   aco_type type = {aco_base_type_uint, 1, 32};
+   uint64_t constant = 0;
+   if (!op_info_get_constant(ctx, info.operands[1], type, &constant))
+      return false;
+
+   info.operands[1] = {Operand::c32(1u << (constant % bits))};
+   return true;
+}
+
+bool
+check_mul_u24_cb(opt_ctx& ctx, alu_opt_info& info)
+{
+   aco_type type = {aco_base_type_uint, 1, 32};
+   for (unsigned i = 0; i < 2; i++) {
+      uint64_t constant = 0;
+      if (op_info_get_constant(ctx, info.operands[i], type, &constant)) {
+         if (constant > 0xff'ffffu)
+            return false;
+      } else if (!info.operands[i].op.is24bit() && !info.operands[i].op.is16bit()) {
+         return false;
+      }
+   }
+
+   return true;
+}
+
+bool
+add_lm_def_cb(opt_ctx& ctx, alu_opt_info& info)
+{
+   info.defs.push_back(Definition(ctx.program->allocateTmp(ctx.program->lane_mask)));
+   /* Make sure the uses vector is large enough and the number of
+    * uses properly initialized to 0.
+    */
+   ctx.uses.push_back(0);
+   ctx.info.push_back(ssa_info{});
+   return true;
+}
+
+bool
+pop_def_cb(opt_ctx& ctx, alu_opt_info& info)
+{
+   assert(ctx.uses[info.defs.back().tempId()] == 0);
+   assert(info.defs.size() >= 2);
+   info.defs.pop_back();
+   return true;
+}
+
 bool
 check_constant(opt_ctx& ctx, alu_opt_info& info, unsigned idx, uint32_t expected)
 {
@@ -4523,20 +4427,6 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
    if (instr->isSDWA()) {
    } else if (instr->opcode == aco_opcode::v_not_b32 && ctx.program->gfx_level >= GFX10) {
       combine_not_xor(ctx, instr);
-   } else if (instr->opcode == aco_opcode::v_add_u32 && !instr->usesModifiers()) {
-      combine_add_sub_b2i(ctx, instr, aco_opcode::v_addc_co_u32, 1 | 2);
-   } else if ((instr->opcode == aco_opcode::v_add_co_u32 ||
-               instr->opcode == aco_opcode::v_add_co_u32_e64) &&
-              !instr->usesModifiers()) {
-      bool carry_out = ctx.uses[instr->definitions[1].tempId()] > 0;
-      if (combine_add_sub_b2i(ctx, instr, aco_opcode::v_addc_co_u32, 1 | 2)) {
-      } else if (!carry_out && combine_add_bcnt(ctx, instr)) {
-      } else if (!carry_out && combine_three_valu_op(ctx, instr, aco_opcode::v_mul_u32_u24,
-                                                     aco_opcode::v_mad_u32_u24, "120", 1 | 2)) {
-      } else if (!carry_out && combine_three_valu_op(ctx, instr, aco_opcode::v_mul_i32_i24,
-                                                     aco_opcode::v_mad_i32_i24, "120", 1 | 2)) {
-      } else if (!carry_out && combine_add_lshl(ctx, instr, false)) {
-      }
    } else if (instr->opcode == aco_opcode::v_sub_u32 || instr->opcode == aco_opcode::v_sub_co_u32 ||
               instr->opcode == aco_opcode::v_sub_co_u32_e64) {
       bool carry_out =
@@ -4760,6 +4650,25 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       add_opt(s_add_i32, v_add3_u32, 0x3, "012", nullptr, true);
       add_opt(v_lshlrev_b32, v_lshl_add_u32, 0x3, "210", nullptr, true);
       add_opt(s_lshl_b32, v_lshl_add_u32, 0x3, "120", nullptr, true);
+      /* v_add_u32(a, v_cndmask_b32(0, 1, cond)) -> v_addc_co_u32(a, 0, cond) */
+      add_opt(v_cndmask_b32, v_addc_co_u32, 0x3, "0132",
+              and_cb<and_cb<check_const_cb<1, 0>, remove_const_cb<1>>, add_lm_def_cb>, true);
+   } else if ((info.opcode == aco_opcode::v_add_co_u32 ||
+               info.opcode == aco_opcode::v_add_co_u32_e64) &&
+              !info.clamp) {
+      /* v_add_co_u32(a, v_cndmask_b32(0, 1, cond)) -> v_addc_co_u32(a, 0, cond) */
+      add_opt(v_cndmask_b32, v_addc_co_u32, 0x3, "0132",
+              and_cb<check_const_cb<1, 0>, remove_const_cb<1>>);
+      if (ctx.uses[info.defs[1].tempId()] == 0) {
+         add_opt(v_bcnt_u32_b32, v_bcnt_u32_b32, 0x3, "102",
+                 and_cb<remove_const_cb<0>, pop_def_cb>);
+         add_opt(v_mul_u32_u24, v_mad_u32_u24, 0x3, "120", pop_def_cb);
+         add_opt(v_mul_i32_i24, v_mad_i32_i24, 0x3, "120", pop_def_cb);
+         add_opt(v_lshlrev_b32, v_mad_u32_u24, 0x3, "210",
+                 and_cb<and_cb<shift_to_mad_cb<32>, check_mul_u24_cb>, pop_def_cb>);
+         add_opt(s_lshl_b32, v_mad_u32_u24, 0x3, "120",
+                 and_cb<and_cb<shift_to_mad_cb<32>, check_mul_u24_cb>, pop_def_cb>);
+      }
    } else if ((info.opcode == aco_opcode::s_add_u32 ||
                (info.opcode == aco_opcode::s_add_i32 && !ctx.uses[info.defs[1].tempId()])) &&
               ctx.program->gfx_level >= GFX9) {

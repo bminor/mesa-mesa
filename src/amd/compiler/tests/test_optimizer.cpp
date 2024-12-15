@@ -363,9 +363,7 @@ BEGIN_TEST(optimize.bcnt)
       bcnt = bld.vop3(aco_opcode::v_bcnt_u32_b32, bld.def(v1), Operand(inputs[0]), Operand::zero());
       writeout(2, bld.vadd32(bld.def(v1), bcnt, Operand::c32(42u)));
 
-      //~gfx8! v1: %bnct3 = v_bcnt_u32_b32 %b, 0
-      //~gfx8! v1: %res3, s2: %_ = v_add_co_u32 %bcnt3, %a
-      //~gfx(9|10)! v1: %res3 = v_bcnt_u32_b32 %b, %a
+      //! v1: %res3 = v_bcnt_u32_b32 %b, %a
       //! p_unit_test 3, %res3
       bcnt = bld.vop3(aco_opcode::v_bcnt_u32_b32, bld.def(v1), Operand(inputs[1]), Operand::zero());
       writeout(3, bld.vadd32(bld.def(v1), bcnt, Operand(inputs[0])));
