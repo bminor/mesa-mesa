@@ -9,10 +9,12 @@ use mesa_rust_util::has_required_feature;
 use mesa_rust_util::ptr::ThreadSafeCPtr;
 
 use std::ffi::CStr;
+use std::num::NonZeroU64;
 use std::os::raw::c_schar;
 use std::os::raw::c_uchar;
 use std::os::raw::c_void;
 use std::ptr;
+use std::ptr::NonNull;
 use std::sync::Arc;
 
 #[derive(PartialEq)]
@@ -39,6 +41,21 @@ impl ResourceType {
                 tmpl.bind |= PIPE_BIND_LINEAR;
             }
             Self::Normal => {}
+        }
+    }
+}
+
+pub struct ScreenVMAllocation<'a> {
+    screen: &'a PipeScreen,
+    alloc: NonNull<pipe_vm_allocation>,
+}
+
+impl Drop for ScreenVMAllocation<'_> {
+    fn drop(&mut self) {
+        if let Some(free_vm) = self.screen.screen().free_vm {
+            unsafe {
+                free_vm(self.screen.screen.as_ptr(), self.alloc.as_ptr());
+            }
         }
     }
 }
@@ -77,6 +94,23 @@ impl PipeScreen {
             },
             self,
         )
+    }
+
+    pub fn alloc_vm(&self, start: NonZeroU64, size: NonZeroU64) -> Option<ScreenVMAllocation> {
+        let alloc =
+            unsafe { self.screen().alloc_vm?(self.screen.as_ptr(), start.get(), size.get()) };
+        Some(ScreenVMAllocation {
+            screen: self,
+            alloc: NonNull::new(alloc)?,
+        })
+    }
+
+    pub fn resource_assign_vma(&self, res: &PipeResource, address: u64) -> bool {
+        if let Some(resource_assign_vma) = self.screen().resource_assign_vma {
+            unsafe { resource_assign_vma(self.screen.as_ptr(), res.pipe(), address) }
+        } else {
+            false
+        }
     }
 
     fn resource_create(&self, tmpl: &pipe_resource) -> Option<PipeResource> {
@@ -354,6 +388,12 @@ impl PipeScreen {
 
     pub fn is_fixed_address_supported(&self) -> bool {
         self.screen().resource_get_address.is_some()
+    }
+
+    pub fn is_vm_supported(&self) -> bool {
+        self.screen().resource_assign_vma.is_some()
+            && self.screen().alloc_vm.is_some()
+            && self.screen().free_vm.is_some()
     }
 
     pub fn nir_shader_compiler_options(
