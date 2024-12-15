@@ -411,6 +411,8 @@ enum bo_alloc_flags {
    BO_ALLOC_CPU_VISIBLE = (1<<9),
    /* BO content is compressed. */
    BO_ALLOC_COMPRESSED = (1<<10),
+   /* Do not allocate or bind a vma */
+   BO_ALLOC_NO_VMA = (1<<11),
 };
 
 /**
@@ -429,7 +431,7 @@ struct iris_bo *iris_bo_alloc(struct iris_bufmgr *bufmgr,
 
 struct iris_bo *
 iris_bo_create_userptr(struct iris_bufmgr *bufmgr, const char *name,
-                       void *ptr, size_t size,
+                       void *ptr, size_t size, unsigned flags,
                        enum iris_memory_zone memzone);
 
 /** Takes a reference on a buffer object */
@@ -695,6 +697,10 @@ struct intel_bind_timeline *iris_bufmgr_get_bind_timeline(struct iris_bufmgr *bu
 bool iris_bufmgr_compute_engine_supported(struct iris_bufmgr *bufmgr);
 uint64_t iris_bufmgr_get_dummy_aux_address(struct iris_bufmgr *bufmgr);
 struct iris_bo *iris_bufmgr_get_mem_fence_bo(struct iris_bufmgr *bufmgr);
+
+bool iris_bufmgr_alloc_heap(struct iris_bufmgr *bufmgr, uint64_t start, uint64_t size);
+void iris_bufmgr_free_heap(struct iris_bufmgr *bufmgr, uint64_t start, uint64_t size);
+bool iris_bufmgr_assign_vma(struct iris_bufmgr *bufmgr, struct iris_bo *bo, uint64_t address);
 
 enum iris_madvice {
    IRIS_MADVICE_WILL_NEED = 0,

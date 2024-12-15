@@ -491,6 +491,13 @@ iris_init_screen_caps(struct iris_screen *screen)
 
    caps->max_texture_anisotropy = 16.0f;
    caps->max_texture_lod_bias = 15.0f;
+
+   caps->min_vma = IRIS_MEMZONE_OTHER_START;
+   /* Exclude addresses which would need to be converted to their canonical form.
+    * The easy way to go about this is to take the highest address and simply
+    * shift it right by one, so the highest valid address bit gets unset.
+    */
+   caps->max_vma = intel_48b_address(UINT64_MAX) >> 1;
 }
 
 static uint64_t
