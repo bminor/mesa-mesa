@@ -64,14 +64,12 @@ to_panvk_physical_device(struct vk_physical_device *phys_dev)
 }
 
 static inline uint32_t
-panvk_get_vk_version(unsigned arch)
+panvk_get_vk_version()
 {
    const uint32_t version_override = vk_get_version_override();
    if (version_override)
       return version_override;
-   if (arch < 10)
-      return VK_MAKE_API_VERSION(0, 1, 0, VK_HEADER_VERSION);
-   return VK_MAKE_API_VERSION(0, 1, 1, VK_HEADER_VERSION);
+   return VK_MAKE_API_VERSION(0, 1, 0, VK_HEADER_VERSION);
 }
 
 VkResult panvk_physical_device_init(struct panvk_physical_device *device,
