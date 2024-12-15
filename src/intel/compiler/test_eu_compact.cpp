@@ -57,7 +57,7 @@ get_compact_params_name(const testing::TestParamInfo<CompactParams> p)
 static bool
 test_compact_instruction(struct brw_codegen *p, brw_eu_inst src)
 {
-   brw_compact_inst dst;
+   brw_eu_compact_inst dst;
    memset(&dst, 0xd0, sizeof(dst));
 
    if (brw_try_compact_instruction(p->isa, &dst, &src)) {
@@ -69,7 +69,7 @@ test_compact_instruction(struct brw_codegen *p, brw_eu_inst src)
 	 return false;
       }
    } else {
-      brw_compact_inst unchanged;
+      brw_eu_compact_inst unchanged;
       memset(&unchanged, 0xd0, sizeof(unchanged));
       /* It's not supposed to change dst unless it compacted. */
       if (memcmp(&unchanged, &dst, sizeof(dst))) {

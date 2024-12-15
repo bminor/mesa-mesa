@@ -1572,9 +1572,9 @@ enum brw_conditional_mod brw_swap_cmod(enum brw_conditional_mod cmod);
 void brw_compact_instructions(struct brw_codegen *p, int start_offset,
                               struct disasm_info *disasm);
 void brw_uncompact_instruction(const struct brw_isa_info *isa,
-                               brw_eu_inst *dst, brw_compact_inst *src);
+                               brw_eu_inst *dst, brw_eu_compact_inst *src);
 bool brw_try_compact_instruction(const struct brw_isa_info *isa,
-                                 brw_compact_inst *dst, const brw_eu_inst *src);
+                                 brw_eu_compact_inst *dst, const brw_eu_inst *src);
 
 void brw_debug_compact_uncompact(const struct brw_isa_info *isa,
                                  brw_eu_inst *orig, brw_eu_inst *uncompacted);

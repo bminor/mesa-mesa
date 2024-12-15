@@ -2832,12 +2832,12 @@ brw_validate_instructions(const struct brw_isa_info *isa,
    for (int src_offset = start_offset; src_offset < end_offset;) {
       const brw_eu_inst *inst = assembly + src_offset;
       bool is_compact = brw_inst_cmpt_control(devinfo, inst);
-      unsigned inst_size = is_compact ? sizeof(brw_compact_inst)
+      unsigned inst_size = is_compact ? sizeof(brw_eu_compact_inst)
                                       : sizeof(brw_eu_inst);
       brw_eu_inst uncompacted;
 
       if (is_compact) {
-         brw_compact_inst *compacted = (void *)inst;
+         brw_eu_compact_inst *compacted = (void *)inst;
          brw_uncompact_instruction(isa, &uncompacted, compacted);
          inst = &uncompacted;
       }

@@ -451,7 +451,7 @@ brw_label_assembly(const struct brw_isa_info *isa,
       bool is_compact = brw_inst_cmpt_control(devinfo, inst);
 
       if (is_compact) {
-         brw_compact_inst *compacted = (brw_compact_inst *)inst;
+         brw_eu_compact_inst *compacted = (brw_eu_compact_inst *)inst;
          brw_uncompact_instruction(isa, &uncompacted, compacted);
          inst = &uncompacted;
       }
@@ -469,7 +469,7 @@ brw_label_assembly(const struct brw_isa_info *isa,
       }
 
       if (is_compact) {
-         offset += sizeof(brw_compact_inst);
+         offset += sizeof(brw_eu_compact_inst);
       } else {
          offset += sizeof(brw_eu_inst);
       }
@@ -516,7 +516,7 @@ brw_disassemble(const struct brw_isa_info *isa,
          fprintf(out, "0x%08x: ", offset);
 
       if (compacted) {
-         brw_compact_inst *compacted = (brw_compact_inst *)insn;
+         brw_eu_compact_inst *compacted = (brw_eu_compact_inst *)insn;
          if (dump_hex) {
             unsigned char * insn_ptr = ((unsigned char *)&insn[0]);
             const unsigned int blank_spaces = 24;
@@ -551,7 +551,7 @@ brw_disassemble(const struct brw_isa_info *isa,
       brw_disassemble_inst(out, isa, insn, compacted, offset, root_label);
 
       if (compacted) {
-         offset += sizeof(brw_compact_inst);
+         offset += sizeof(brw_eu_compact_inst);
       } else {
          offset += sizeof(brw_eu_inst);
       }

@@ -1253,7 +1253,7 @@ brw_inst_set_bits(brw_eu_inst *inst, unsigned high, unsigned low, uint64_t value
 
 typedef struct {
    uint64_t data;
-} brw_compact_inst;
+} brw_eu_compact_inst;
 
 /**
  * Fetch a set of contiguous bits from the compacted instruction.
@@ -1261,7 +1261,7 @@ typedef struct {
  * Bits indices range from 0..63.
  */
 static inline unsigned
-brw_compact_inst_bits(const brw_compact_inst *inst, unsigned high, unsigned low)
+brw_compact_inst_bits(const brw_eu_compact_inst *inst, unsigned high, unsigned low)
 {
    assume(high < 64);
    assume(high >= low);
@@ -1276,7 +1276,7 @@ brw_compact_inst_bits(const brw_compact_inst *inst, unsigned high, unsigned low)
  * Bits indices range from 0..63.
  */
 static inline void
-brw_compact_inst_set_bits(brw_compact_inst *inst, unsigned high, unsigned low,
+brw_compact_inst_set_bits(brw_eu_compact_inst *inst, unsigned high, unsigned low,
                           uint64_t value)
 {
    assume(high < 64);
@@ -1293,7 +1293,7 @@ brw_compact_inst_set_bits(brw_compact_inst *inst, unsigned high, unsigned low,
 static inline void                                                 \
 brw_compact_inst_set_##name(const struct                           \
                             intel_device_info *devinfo,            \
-                            brw_compact_inst *inst, unsigned v)    \
+                            brw_eu_compact_inst *inst, unsigned v) \
 {                                                                  \
    assert(assertions);                                             \
    if (devinfo->ver >= 12)                                         \
@@ -1303,7 +1303,7 @@ brw_compact_inst_set_##name(const struct                           \
 }                                                                  \
 static inline unsigned                                             \
 brw_compact_inst_##name(const struct intel_device_info *devinfo,   \
-                        const brw_compact_inst *inst)              \
+                        const brw_eu_compact_inst *inst)           \
 {                                                                  \
    assert(assertions);                                             \
    if (devinfo->ver >= 12)                                         \
@@ -1324,7 +1324,7 @@ brw_compact_inst_##name(const struct intel_device_info *devinfo,   \
 static inline void                                                 \
 brw_compact_inst_set_##name(const struct                           \
                             intel_device_info *devinfo,            \
-                            brw_compact_inst *inst, unsigned v)    \
+                            brw_eu_compact_inst *inst, unsigned v) \
 {                                                                  \
    if (devinfo->ver >= 20)                                         \
       brw_compact_inst_set_bits(inst, hi20, lo20, v);              \
@@ -1335,7 +1335,7 @@ brw_compact_inst_set_##name(const struct                           \
 }                                                                  \
 static inline unsigned                                             \
 brw_compact_inst_##name(const struct intel_device_info *devinfo,   \
-                        const brw_compact_inst *inst)              \
+                        const brw_eu_compact_inst *inst)           \
 {                                                                  \
    if (devinfo->ver >= 20)                                         \
       return brw_compact_inst_bits(inst, hi20, lo20);              \
@@ -1353,7 +1353,7 @@ brw_compact_inst_##name(const struct intel_device_info *devinfo,   \
    static inline void                                                   \
 brw_compact_inst_set_##name(const struct                                \
                             intel_device_info *devinfo,                 \
-                            brw_compact_inst *inst, unsigned v)         \
+                            brw_eu_compact_inst *inst, unsigned v)      \
 {                                                                       \
    if (devinfo->ver >= 20) {                                            \
       const unsigned k = hi20 - lo20 + 1;                               \
@@ -1367,7 +1367,7 @@ brw_compact_inst_set_##name(const struct                                \
 }                                                                       \
 static inline unsigned                                                  \
 brw_compact_inst_##name(const struct intel_device_info *devinfo,        \
-                        const brw_compact_inst *inst)                   \
+                        const brw_eu_compact_inst *inst)                \
 {                                                                       \
    if (devinfo->ver >= 20) {                                            \
       const unsigned k = hi20 - lo20 + 1;                               \
@@ -1397,7 +1397,7 @@ F(hw_opcode,         /* 9+ */  6,  0, /* 12+ */  6,  0) /* Same location as brw_
 
 static inline unsigned
 brw_compact_inst_imm(const struct intel_device_info *devinfo,
-                     const brw_compact_inst *inst)
+                     const brw_eu_compact_inst *inst)
 {
    if (devinfo->ver >= 12) {
       return brw_compact_inst_bits(inst, 63, 52);

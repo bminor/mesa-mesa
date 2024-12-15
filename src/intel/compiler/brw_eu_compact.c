@@ -926,7 +926,7 @@ static void compaction_state_init(struct compaction_state *c,
 
 static bool
 set_control_index(const struct compaction_state *c,
-                  brw_compact_inst *dst, const brw_eu_inst *src)
+                  brw_eu_compact_inst *dst, const brw_eu_inst *src)
 {
    const struct intel_device_info *devinfo = c->isa->devinfo;
    uint32_t uncompacted; /* 19b/IVB+; 21b/TGL+ */
@@ -971,7 +971,7 @@ set_control_index(const struct compaction_state *c,
 }
 
 static bool
-set_datatype_index(const struct compaction_state *c, brw_compact_inst *dst,
+set_datatype_index(const struct compaction_state *c, brw_eu_compact_inst *dst,
                    const brw_eu_inst *src, bool is_immediate)
 {
    const struct intel_device_info *devinfo = c->isa->devinfo;
@@ -1011,7 +1011,7 @@ set_datatype_index(const struct compaction_state *c, brw_compact_inst *dst,
 }
 
 static bool
-set_subreg_index(const struct compaction_state *c, brw_compact_inst *dst,
+set_subreg_index(const struct compaction_state *c, brw_eu_compact_inst *dst,
                  const brw_eu_inst *src, bool is_immediate)
 {
    const struct intel_device_info *devinfo = c->isa->devinfo;
@@ -1049,7 +1049,7 @@ set_subreg_index(const struct compaction_state *c, brw_compact_inst *dst,
 }
 
 static bool
-set_src0_index(const struct compaction_state *c, brw_compact_inst *dst,
+set_src0_index(const struct compaction_state *c, brw_eu_compact_inst *dst,
                const brw_eu_inst *src)
 {
    const struct intel_device_info *devinfo = c->isa->devinfo;
@@ -1082,7 +1082,7 @@ set_src0_index(const struct compaction_state *c, brw_compact_inst *dst,
 }
 
 static bool
-set_src1_index(const struct compaction_state *c, brw_compact_inst *dst,
+set_src1_index(const struct compaction_state *c, brw_eu_compact_inst *dst,
                const brw_eu_inst *src, bool is_immediate, unsigned imm)
 {
    const struct intel_device_info *devinfo = c->isa->devinfo;
@@ -1132,7 +1132,7 @@ set_src1_index(const struct compaction_state *c, brw_compact_inst *dst,
 
 static bool
 set_3src_control_index(const struct intel_device_info *devinfo,
-                       brw_compact_inst *dst, const brw_eu_inst *src,
+                       brw_eu_compact_inst *dst, const brw_eu_inst *src,
                        bool is_dpas)
 {
    if (devinfo->ver >= 20) {
@@ -1242,7 +1242,7 @@ set_3src_control_index(const struct intel_device_info *devinfo,
 
 static bool
 set_3src_source_index(const struct intel_device_info *devinfo,
-                      brw_compact_inst *dst, const brw_eu_inst *src,
+                      brw_eu_compact_inst *dst, const brw_eu_inst *src,
                       bool is_dpas)
 {
    if (devinfo->ver >= 12) {
@@ -1307,7 +1307,7 @@ set_3src_source_index(const struct intel_device_info *devinfo,
 
 static bool
 set_3src_subreg_index(const struct intel_device_info *devinfo,
-                      brw_compact_inst *dst, const brw_eu_inst *src)
+                      brw_eu_compact_inst *dst, const brw_eu_inst *src)
 {
    assert(devinfo->ver >= 12);
 
@@ -1389,7 +1389,7 @@ has_3src_unmapped_bits(const struct intel_device_info *devinfo,
 
 static bool
 brw_try_compact_3src_instruction(const struct brw_isa_info *isa,
-                                 brw_compact_inst *dst, const brw_eu_inst *src)
+                                 brw_eu_compact_inst *dst, const brw_eu_inst *src)
 {
    const struct intel_device_info *devinfo = isa->devinfo;
 
@@ -1698,10 +1698,10 @@ precompact(const struct brw_isa_info *isa, brw_eu_inst inst)
  */
 static bool
 try_compact_instruction(const struct compaction_state *c,
-                        brw_compact_inst *dst, const brw_eu_inst *src)
+                        brw_eu_compact_inst *dst, const brw_eu_inst *src)
 {
    const struct intel_device_info *devinfo = c->isa->devinfo;
-   brw_compact_inst temp;
+   brw_eu_compact_inst temp;
 
    assert(brw_inst_cmpt_control(devinfo, src) == 0);
 
@@ -1790,7 +1790,7 @@ try_compact_instruction(const struct compaction_state *c,
 
 bool
 brw_try_compact_instruction(const struct brw_isa_info *isa,
-                            brw_compact_inst *dst, const brw_eu_inst *src)
+                            brw_eu_compact_inst *dst, const brw_eu_inst *src)
 {
    struct compaction_state c;
    compaction_state_init(&c, isa);
@@ -1799,7 +1799,7 @@ brw_try_compact_instruction(const struct brw_isa_info *isa,
 
 static void
 set_uncompacted_control(const struct compaction_state *c, brw_eu_inst *dst,
-                        brw_compact_inst *src)
+                        brw_eu_compact_inst *src)
 {
    const struct intel_device_info *devinfo = c->isa->devinfo;
    uint32_t uncompacted =
@@ -1837,7 +1837,7 @@ set_uncompacted_control(const struct compaction_state *c, brw_eu_inst *dst,
 
 static void
 set_uncompacted_datatype(const struct compaction_state *c, brw_eu_inst *dst,
-                         brw_compact_inst *src)
+                         brw_eu_compact_inst *src)
 {
    const struct intel_device_info *devinfo = c->isa->devinfo;
    uint32_t uncompacted =
@@ -1863,7 +1863,7 @@ set_uncompacted_datatype(const struct compaction_state *c, brw_eu_inst *dst,
 
 static void
 set_uncompacted_subreg(const struct compaction_state *c, brw_eu_inst *dst,
-                       brw_compact_inst *src)
+                       brw_eu_compact_inst *src)
 {
    const struct intel_device_info *devinfo = c->isa->devinfo;
    uint16_t uncompacted =
@@ -1887,7 +1887,7 @@ set_uncompacted_subreg(const struct compaction_state *c, brw_eu_inst *dst,
 
 static void
 set_uncompacted_src0(const struct compaction_state *c, brw_eu_inst *dst,
-                     brw_compact_inst *src)
+                     brw_eu_compact_inst *src)
 {
    const struct intel_device_info *devinfo = c->isa->devinfo;
    uint32_t compacted = brw_compact_inst_src0_index(devinfo, src);
@@ -1908,7 +1908,7 @@ set_uncompacted_src0(const struct compaction_state *c, brw_eu_inst *dst,
 
 static void
 set_uncompacted_src1(const struct compaction_state *c, brw_eu_inst *dst,
-                     brw_compact_inst *src)
+                     brw_eu_compact_inst *src)
 {
    const struct intel_device_info *devinfo = c->isa->devinfo;
    uint16_t uncompacted =
@@ -1934,7 +1934,7 @@ set_uncompacted_src1(const struct compaction_state *c, brw_eu_inst *dst,
 
 static void
 set_uncompacted_3src_control_index(const struct compaction_state *c,
-                                   brw_eu_inst *dst, brw_compact_inst *src,
+                                   brw_eu_inst *dst, brw_eu_compact_inst *src,
                                    bool is_dpas)
 {
    const struct intel_device_info *devinfo = c->isa->devinfo;
@@ -2019,7 +2019,7 @@ set_uncompacted_3src_control_index(const struct compaction_state *c,
 
 static void
 set_uncompacted_3src_source_index(const struct intel_device_info *devinfo,
-                                  brw_eu_inst *dst, brw_compact_inst *src,
+                                  brw_eu_inst *dst, brw_eu_compact_inst *src,
                                   bool is_dpas)
 {
    uint32_t compacted = brw_compact_inst_3src_source_index(devinfo, src);
@@ -2064,7 +2064,7 @@ set_uncompacted_3src_source_index(const struct intel_device_info *devinfo,
 
 static void
 set_uncompacted_3src_subreg_index(const struct intel_device_info *devinfo,
-                                  brw_eu_inst *dst, brw_compact_inst *src)
+                                  brw_eu_inst *dst, brw_eu_compact_inst *src)
 {
    assert(devinfo->ver >= 12);
 
@@ -2080,7 +2080,7 @@ set_uncompacted_3src_subreg_index(const struct intel_device_info *devinfo,
 
 static void
 brw_uncompact_3src_instruction(const struct compaction_state *c,
-                               brw_eu_inst *dst, brw_compact_inst *src, bool is_dpas)
+                               brw_eu_inst *dst, brw_eu_compact_inst *src, bool is_dpas)
 {
    const struct intel_device_info *devinfo = c->isa->devinfo;
 
@@ -2127,7 +2127,7 @@ brw_uncompact_3src_instruction(const struct compaction_state *c,
 
 static void
 uncompact_instruction(const struct compaction_state *c, brw_eu_inst *dst,
-                      brw_compact_inst *src)
+                      brw_eu_compact_inst *src)
 {
    const struct intel_device_info *devinfo = c->isa->devinfo;
    memset(dst, 0, sizeof(*dst));
@@ -2184,7 +2184,7 @@ uncompact_instruction(const struct compaction_state *c, brw_eu_inst *dst,
 
 void
 brw_uncompact_instruction(const struct brw_isa_info *isa,
-                          brw_eu_inst *dst, brw_compact_inst *src)
+                          brw_eu_inst *dst, brw_eu_compact_inst *src)
 {
    struct compaction_state c;
    compaction_state_init(&c, isa);
@@ -2349,7 +2349,7 @@ brw_compact_instructions(struct brw_codegen *p, int start_offset,
     * (in 16-byte units) before compaction.
     */
    unsigned num_old_ip =
-      (p->next_insn_offset - start_offset) / sizeof(brw_compact_inst) + 1;
+      (p->next_insn_offset - start_offset) / sizeof(brw_eu_compact_inst) + 1;
    int *old_ip = calloc(1, sizeof(*old_ip) * num_old_ip);
 
    struct compaction_state c;
@@ -2362,7 +2362,7 @@ brw_compact_instructions(struct brw_codegen *p, int start_offset,
       brw_eu_inst *src = store + src_offset;
       void *dst = store + offset;
 
-      old_ip[offset / sizeof(brw_compact_inst)] = src_offset / sizeof(brw_eu_inst);
+      old_ip[offset / sizeof(brw_eu_compact_inst)] = src_offset / sizeof(brw_eu_inst);
       compacted_counts[src_offset / sizeof(brw_eu_inst)] = compacted_count;
 
       brw_eu_inst inst = precompact(p->isa, *src);
@@ -2381,7 +2381,7 @@ brw_compact_instructions(struct brw_codegen *p, int start_offset,
             }
          }
 
-         offset += sizeof(brw_compact_inst);
+         offset += sizeof(brw_eu_compact_inst);
       } else {
          /* If we didn't compact this instruction, we need to move it down into
           * place.
@@ -2396,7 +2396,7 @@ brw_compact_instructions(struct brw_codegen *p, int start_offset,
    /* Add an entry for the ending offset of the program. This greatly
     * simplifies the linked list walk at the end of the function.
     */
-   old_ip[offset / sizeof(brw_compact_inst)] =
+   old_ip[offset / sizeof(brw_eu_compact_inst)] =
       (p->next_insn_offset - start_offset) / sizeof(brw_eu_inst);
 
    /* Fix up control flow offsets. */
@@ -2404,7 +2404,7 @@ brw_compact_instructions(struct brw_codegen *p, int start_offset,
    for (offset = 0; offset < p->next_insn_offset - start_offset;
         offset = next_offset(devinfo, store, offset)) {
       brw_eu_inst *insn = store + offset;
-      int this_old_ip = old_ip[offset / sizeof(brw_compact_inst)];
+      int this_old_ip = old_ip[offset / sizeof(brw_eu_compact_inst)];
       int this_compacted_count = compacted_counts[this_old_ip];
 
       switch (brw_inst_opcode(p->isa, insn)) {
@@ -2421,12 +2421,12 @@ brw_compact_instructions(struct brw_codegen *p, int start_offset,
          if (brw_inst_cmpt_control(devinfo, insn)) {
             brw_eu_inst uncompacted;
             uncompact_instruction(&c, &uncompacted,
-                                  (brw_compact_inst *)insn);
+                                  (brw_eu_compact_inst *)insn);
 
             update_uip_jip(p->isa, &uncompacted, this_old_ip,
                            compacted_counts);
 
-            bool ret = try_compact_instruction(&c, (brw_compact_inst *)insn,
+            bool ret = try_compact_instruction(&c, (brw_eu_compact_inst *)insn,
                                                &uncompacted);
             assert(ret); (void)ret;
          } else {
@@ -2466,13 +2466,13 @@ brw_compact_instructions(struct brw_codegen *p, int start_offset,
     * alignment padding, so that the next compression pass (for the FS 8/16
     * compile passes) parses correctly.
     */
-   if (p->next_insn_offset & sizeof(brw_compact_inst)) {
-      brw_compact_inst *align = store + offset;
+   if (p->next_insn_offset & sizeof(brw_eu_compact_inst)) {
+      brw_eu_compact_inst *align = store + offset;
       memset(align, 0, sizeof(*align));
       brw_compact_inst_set_hw_opcode(
          devinfo, align, brw_opcode_encode(p->isa, BRW_OPCODE_NOP));
       brw_compact_inst_set_cmpt_control(devinfo, align, true);
-      p->next_insn_offset += sizeof(brw_compact_inst);
+      p->next_insn_offset += sizeof(brw_eu_compact_inst);
    }
    p->nr_insn = p->next_insn_offset / sizeof(brw_eu_inst);
 
@@ -2490,9 +2490,9 @@ brw_compact_instructions(struct brw_codegen *p, int start_offset,
       int offset = 0;
 
       foreach_list_typed(struct inst_group, group, link, &disasm->group_list) {
-         while (start_offset + old_ip[offset / sizeof(brw_compact_inst)] *
+         while (start_offset + old_ip[offset / sizeof(brw_eu_compact_inst)] *
                 sizeof(brw_eu_inst) != group->offset) {
-            assert(start_offset + old_ip[offset / sizeof(brw_compact_inst)] *
+            assert(start_offset + old_ip[offset / sizeof(brw_eu_compact_inst)] *
                    sizeof(brw_eu_inst) < group->offset);
             offset = next_offset(devinfo, store, offset);
          }
