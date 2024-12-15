@@ -28,3 +28,7 @@ spec@glsl-1.10@execution@fs-frontfacing-ternary-vec4-neg-1.0-1.0
 spec@glsl-1.20@execution@glsl-fs-frontfacing-not
 
 spec@nv_texture_env_combine4@nv_texture_env_combine4-combine
+
+# uprev Piglit in Mesa
+spec@glsl-1.10@execution@built-in-functions@fs-op-div-mat2-mat2
+

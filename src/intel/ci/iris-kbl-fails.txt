@@ -126,3 +126,8 @@ spec@!opengl 1.1@line-smooth-stipple,Fail
 # fails after Debian bookworm update
 spec@arb_viewport_array@display-list,Fail
 
+# Uprev Piglit in Mesa
+spec@arb_framebuffer_object@execution@msaa-alpha-to-coverage_alpha-to-one,Fail
+spec@arb_framebuffer_object@execution@msaa-alpha-to-coverage_alpha-to-one_write-z,Fail
+spec@arb_framebuffer_object@execution@msaa-alpha-to-coverage,Fail
+

@@ -249,6 +249,9 @@ spec@arb_uniform_buffer_object@execution@shared-array-struct-array-struct,Fail
 spec@arb_uniform_buffer_object@execution@std140-array-struct-array-struct,Fail
 
 # uprev Piglit in Mesa
+spec@arb_framebuffer_object@execution@msaa-alpha-to-coverage_alpha-to-one,Fail
+spec@arb_framebuffer_object@execution@msaa-alpha-to-coverage_alpha-to-one_write-z,Fail
+spec@arb_framebuffer_object@execution@msaa-alpha-to-one,Fail
 spec@glsl-1.40@uniform_buffer@two-stages,Fail
 spec@glsl-1.30@execution@fs-uint-to-float-of-extract-int16,Fail
 spec@glsl-1.30@execution@fs-uint-to-float-of-extract-int8,Fail
