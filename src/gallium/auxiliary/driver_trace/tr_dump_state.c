@@ -1298,3 +1298,19 @@ void trace_dump_pipe_vpp_desc(const struct pipe_vpp_desc *process_properties)
    trace_dump_member(ptr, process_properties, src_surface_fence);
    trace_dump_struct_end();
 }
+
+void trace_dump_vm_allocation(struct pipe_vm_allocation *alloc)
+{
+   if (!trace_dumping_enabled_locked())
+      return;
+
+   if (!alloc) {
+      trace_dump_null();
+      return;
+   }
+
+   trace_dump_struct_begin("pipe_vma_allocation");
+   trace_dump_member(uint, alloc, start);
+   trace_dump_member(uint, alloc, size);
+   trace_dump_struct_end();
+}

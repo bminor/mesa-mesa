@@ -184,6 +184,9 @@ u_init_pipe_screen_caps(struct pipe_screen *pscreen, int accel)
    caps->performance_monitor =
       pscreen->get_driver_query_info && pscreen->get_driver_query_group_info &&
       pscreen->get_driver_query_group_info(pscreen, 0, NULL) != 0;
+
+   caps->min_vma =
+   caps->max_vma = 0;
 }
 
 uint64_t u_default_get_timestamp(UNUSED struct pipe_screen *screen)

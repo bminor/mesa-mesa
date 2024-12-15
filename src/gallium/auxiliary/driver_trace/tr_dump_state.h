@@ -119,4 +119,6 @@ void trace_dump_image_view(const struct pipe_image_view *view);
 void trace_dump_memory_info(const struct pipe_memory_info *state);
 
 void trace_dump_winsys_handle(const struct winsys_handle *whandle);
+
+void trace_dump_vm_allocation(struct pipe_vm_allocation *alloc);
 #endif /* TR_STATE_H */
