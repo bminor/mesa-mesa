@@ -631,6 +631,9 @@ ac_nir_store_parameters_to_attr_ring(nir_builder *b,
       if (offset > AC_EXP_PARAM_OFFSET_31)
          continue;
 
+      if (!out->infos[slot].as_varying_mask)
+         continue;
+
       if (exported_params & BITFIELD_BIT(offset))
          continue;
 
@@ -651,6 +654,10 @@ ac_nir_store_parameters_to_attr_ring(nir_builder *b,
       const unsigned offset = param_offsets[VARYING_SLOT_VAR0_16BIT + i];
 
       if (offset > AC_EXP_PARAM_OFFSET_31)
+         continue;
+
+      if (!out->infos_16bit_lo[i].as_varying_mask &&
+          !out->infos_16bit_hi[i].as_varying_mask)
          continue;
 
       if (exported_params & BITFIELD_BIT(offset))
