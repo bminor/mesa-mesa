@@ -4530,7 +4530,6 @@ emit_ms_primitive(nir_builder *b, nir_def *index, nir_def *row, bool exports, bo
    if (s->insert_layer_output) {
       s->out.outputs[VARYING_SLOT_LAYER][0] = nir_load_view_index(b);
       s->out.infos[VARYING_SLOT_LAYER].as_sysval_mask |= 1;
-      s->out.infos[VARYING_SLOT_LAYER].as_varying_mask |= 1;
    }
 
    if (exports) {
