@@ -905,7 +905,12 @@ ac_nir_create_gs_copy_shader(const nir_shader *gs_nir,
          memcpy(&out.types_16bit_hi, output_info->types_16bit_hi, sizeof(out.types_16bit_hi));
 
       u_foreach_bit64 (i, gs_nir->info.outputs_written) {
-         u_foreach_bit (j, output_info->usage_mask[i]) {
+         const uint8_t usage_mask = output_info->varying_mask[i] | output_info->sysval_mask[i];
+         out.infos[i].components_mask = usage_mask;
+         out.infos[i].as_varying_mask = output_info->varying_mask[i];
+         out.infos[i].as_sysval_mask = output_info->sysval_mask[i];
+
+         u_foreach_bit (j, usage_mask) {
             if (((output_info->streams[i] >> (j * 2)) & 0x3) != stream)
                continue;
 
@@ -927,10 +932,18 @@ ac_nir_create_gs_copy_shader(const nir_shader *gs_nir,
       }
 
       u_foreach_bit (i, gs_nir->info.outputs_written_16bit) {
+         out.infos_16bit_lo[i].components_mask = output_info->varying_mask_16bit_lo[i];
+         out.infos_16bit_lo[i].as_varying_mask = output_info->varying_mask_16bit_lo[i];
+         out.infos_16bit_hi[i].components_mask = output_info->varying_mask_16bit_hi[i];
+         out.infos_16bit_hi[i].as_varying_mask = output_info->varying_mask_16bit_hi[i];
+
          for (unsigned j = 0; j < 4; j++) {
-            bool has_lo_16bit = (output_info->usage_mask_16bit_lo[i] & (1 << j)) &&
+            out.infos[i].as_varying_mask = output_info->varying_mask[i];
+            out.infos[i].as_sysval_mask = output_info->sysval_mask[i];
+
+            bool has_lo_16bit = (output_info->varying_mask_16bit_lo[i] & (1 << j)) &&
                ((output_info->streams_16bit_lo[i] >> (j * 2)) & 0x3) == stream;
-            bool has_hi_16bit = (output_info->usage_mask_16bit_hi[i] & (1 << j)) &&
+            bool has_hi_16bit = (output_info->varying_mask_16bit_hi[i] & (1 << j)) &&
                ((output_info->streams_16bit_hi[i] >> (j * 2)) & 0x3) == stream;
             if (!has_lo_16bit && !has_hi_16bit)
                continue;
@@ -1260,7 +1273,9 @@ lower_legacy_gs_emit_vertex_with_counter(nir_builder *b, nir_intrinsic_instr *in
          /* Next vertex emit need a new value, reset all outputs. */
          s->outputs[i][j] = NULL;
 
-         if (!(s->info->usage_mask[i] & (1 << j)) ||
+         const uint8_t usage_mask = s->info->varying_mask[i] | s->info->sysval_mask[i];
+
+         if (!(usage_mask & (1 << j)) ||
              ((s->info->streams[i] >> (j * 2)) & 0x3) != stream)
             continue;
 
@@ -1293,9 +1308,9 @@ lower_legacy_gs_emit_vertex_with_counter(nir_builder *b, nir_intrinsic_instr *in
          s->outputs_16bit_lo[i][j] = NULL;
          s->outputs_16bit_hi[i][j] = NULL;
 
-         bool has_lo_16bit = (s->info->usage_mask_16bit_lo[i] & (1 << j)) &&
+         bool has_lo_16bit = (s->info->varying_mask_16bit_lo[i] & (1 << j)) &&
             ((s->info->streams_16bit_lo[i] >> (j * 2)) & 0x3) == stream;
-         bool has_hi_16bit = (s->info->usage_mask_16bit_hi[i] & (1 << j)) &&
+         bool has_hi_16bit = (s->info->varying_mask_16bit_hi[i] & (1 << j)) &&
             ((s->info->streams_16bit_hi[i] >> (j * 2)) & 0x3) == stream;
          if (!has_lo_16bit && !has_hi_16bit)
             continue;

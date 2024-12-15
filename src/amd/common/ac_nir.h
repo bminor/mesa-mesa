@@ -204,9 +204,11 @@ typedef struct ac_nir_gs_output_info {
    const uint8_t *streams_16bit_lo;
    const uint8_t *streams_16bit_hi;
 
-   const uint8_t *usage_mask;
-   const uint8_t *usage_mask_16bit_lo;
-   const uint8_t *usage_mask_16bit_hi;
+   const uint8_t *varying_mask;
+   const uint8_t *varying_mask_16bit_lo;
+   const uint8_t *varying_mask_16bit_hi;
+
+   const uint8_t *sysval_mask;
 
    /* type for each 16bit slot component */
    nir_alu_type (*types_16bit_lo)[4];

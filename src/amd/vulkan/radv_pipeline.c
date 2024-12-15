@@ -455,7 +455,8 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
       } else {
          ac_nir_gs_output_info gs_out_info = {
             .streams = stage->info.gs.output_streams,
-            .usage_mask = stage->info.gs.output_usage_mask,
+            .sysval_mask = stage->info.gs.output_usage_mask,
+            .varying_mask = stage->info.gs.output_usage_mask,
          };
          NIR_PASS_V(stage->nir, ac_nir_lower_legacy_gs, false, false, &gs_out_info);
       }

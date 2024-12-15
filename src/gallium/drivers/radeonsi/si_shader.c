@@ -2834,9 +2834,10 @@ si_init_gs_output_info(struct si_shader_info *info, struct si_gs_output_info *ou
    ac_info->streams_16bit_lo = out_info->streams_16bit_lo;
    ac_info->streams_16bit_hi = out_info->streams_16bit_hi;
 
-   ac_info->usage_mask = out_info->usage_mask;
-   ac_info->usage_mask_16bit_lo = out_info->usage_mask_16bit_lo;
-   ac_info->usage_mask_16bit_hi = out_info->usage_mask_16bit_hi;
+   ac_info->sysval_mask = out_info->usage_mask;
+   ac_info->varying_mask = out_info->usage_mask;
+   ac_info->varying_mask_16bit_lo = out_info->usage_mask_16bit_lo;
+   ac_info->varying_mask_16bit_hi = out_info->usage_mask_16bit_hi;
 
    /* TODO: construct 16bit slot per component store type. */
    ac_info->types_16bit_lo = ac_info->types_16bit_hi = NULL;

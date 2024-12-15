@@ -2241,7 +2241,8 @@ radv_create_gs_copy_shader(struct radv_device *device, struct vk_pipeline_cache 
    const struct radv_shader_info *gs_info = &gs_stage->info;
    ac_nir_gs_output_info output_info = {
       .streams = gs_info->gs.output_streams,
-      .usage_mask = gs_info->gs.output_usage_mask,
+      .sysval_mask = gs_info->gs.output_usage_mask,
+      .varying_mask = gs_info->gs.output_usage_mask,
    };
    nir_shader *nir = ac_nir_create_gs_copy_shader(
       gs_stage->nir, pdev->info.gfx_level, gs_info->outinfo.clip_dist_mask | gs_info->outinfo.cull_dist_mask,
