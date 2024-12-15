@@ -462,7 +462,7 @@ midgard_preprocess_nir(nir_shader *nir, unsigned gpu_id)
    };
 
    NIR_PASS(_, nir, nir_lower_tex, &lower_tex_options);
-   NIR_PASS(_, nir, nir_lower_image_atomics_to_global);
+   NIR_PASS(_, nir, nir_lower_image_atomics_to_global, NULL, NULL);
 
    /* TEX_GRAD fails to apply sampler descriptor settings on some
     * implementations, requiring a lowering.
