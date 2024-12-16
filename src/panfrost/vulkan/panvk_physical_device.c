@@ -213,6 +213,7 @@ get_device_extensions(const struct panvk_physical_device *device,
       .KHR_shader_float16_int8 = true,
       .KHR_shader_non_semantic_info = true,
       .KHR_shader_relaxed_extended_instruction = true,
+      .KHR_shader_subgroup_rotate = true,
       .KHR_storage_buffer_storage_class = true,
 #ifdef PANVK_USE_WSI_PLATFORM
       .KHR_swapchain = true,
@@ -345,7 +346,7 @@ get_features(const struct panvk_physical_device *device,
       .vulkanMemoryModelAvailabilityVisibilityChains = false,
       .shaderOutputViewportIndex = false,
       .shaderOutputLayer = false,
-      .subgroupBroadcastDynamicId = false,
+      .subgroupBroadcastDynamicId = true,
 
       /* Vulkan 1.3 */
       .robustImageAccess = true,
@@ -363,6 +364,10 @@ get_features(const struct panvk_physical_device *device,
       .dynamicRendering = true,
       .shaderIntegerDotProduct = false,
       .maintenance4 = false,
+
+      /* Vulkan 1.4 */
+      .shaderSubgroupRotate = true,
+      .shaderSubgroupRotateClustered = true,
 
       /* VK_EXT_graphics_pipeline_library */
       .graphicsPipelineLibrary = true,
@@ -672,9 +677,29 @@ get_device_properties(const struct panvk_instance *instance,
 
       /* Vulkan 1.1 properties */
       /* XXX: 1.1 support */
-      .subgroupSize = 8,
-      .subgroupSupportedStages = 0,
-      .subgroupSupportedOperations = 0,
+      .subgroupSize = pan_subgroup_size(arch),
+      /* We only support VS, FS, and CS.
+       *
+       * The HW may spawn VS invocations for non-existing indices, which could
+       * be observed through subgroup ops (though the user can observe them
+       * through infinte loops anyway), so subgroup ops can't be supported in
+       * VS.
+       *
+       * In FS, voting and potentially other subgroup ops are currently broken,
+       * so we don't report support for this stage either.
+       */
+      .subgroupSupportedStages = VK_SHADER_STAGE_COMPUTE_BIT,
+      .subgroupSupportedOperations =
+         VK_SUBGROUP_FEATURE_BASIC_BIT |
+         VK_SUBGROUP_FEATURE_VOTE_BIT |
+         VK_SUBGROUP_FEATURE_ARITHMETIC_BIT |
+         VK_SUBGROUP_FEATURE_BALLOT_BIT |
+         VK_SUBGROUP_FEATURE_SHUFFLE_BIT |
+         VK_SUBGROUP_FEATURE_SHUFFLE_RELATIVE_BIT |
+         VK_SUBGROUP_FEATURE_CLUSTERED_BIT |
+         VK_SUBGROUP_FEATURE_QUAD_BIT |
+         VK_SUBGROUP_FEATURE_ROTATE_BIT |
+         VK_SUBGROUP_FEATURE_ROTATE_CLUSTERED_BIT,
       .subgroupQuadOperationsInAllStages = false,
       .pointClippingBehavior = VK_POINT_CLIPPING_BEHAVIOR_ALL_CLIP_PLANES,
       .maxMultiviewViewCount = arch >= 10 ? 8 : 0,
