@@ -55,7 +55,7 @@ pub struct TestShaderBuilder<'a> {
 }
 
 impl<'a> TestShaderBuilder<'a> {
-    pub fn new(sm: &'a dyn ShaderModel) -> TestShaderBuilder {
+    pub fn new(sm: &'a dyn ShaderModel) -> Self {
         let mut alloc = SSAValueAllocator::new();
         let mut label_alloc = LabelAllocator::new();
         let mut b = SSAInstrBuilder::new(sm, &mut alloc);
