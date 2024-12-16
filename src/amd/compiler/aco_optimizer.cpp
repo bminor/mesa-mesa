@@ -3469,46 +3469,6 @@ combine_salu_not_bitwise(opt_ctx& ctx, aco_ptr<Instruction>& instr)
    return true;
 }
 
-/* s_and_b32(a, s_not_b32(b)) -> s_andn2_b32(a, b)
- * s_or_b32(a, s_not_b32(b)) -> s_orn2_b32(a, b)
- * s_and_b64(a, s_not_b64(b)) -> s_andn2_b64(a, b)
- * s_or_b64(a, s_not_b64(b)) -> s_orn2_b64(a, b) */
-bool
-combine_salu_n2(opt_ctx& ctx, aco_ptr<Instruction>& instr)
-{
-   if (instr->definitions[0].isTemp() && ctx.info[instr->definitions[0].tempId()].is_uniform_bool())
-      return false;
-
-   for (unsigned i = 0; i < 2; i++) {
-      Instruction* op2_instr = follow_operand(ctx, instr->operands[i]);
-      if (!op2_instr || (op2_instr->opcode != aco_opcode::s_not_b32 &&
-                         op2_instr->opcode != aco_opcode::s_not_b64))
-         continue;
-      if (ctx.uses[op2_instr->definitions[1].tempId()])
-         continue;
-
-      if (instr->operands[!i].isLiteral() && op2_instr->operands[0].isLiteral() &&
-          instr->operands[!i].constantValue() != op2_instr->operands[0].constantValue())
-         continue;
-
-      ctx.uses[instr->operands[i].tempId()]--;
-      instr->operands[0] = instr->operands[!i];
-      instr->operands[1] = op2_instr->operands[0];
-      ctx.info[instr->definitions[0].tempId()].label = 0;
-
-      switch (instr->opcode) {
-      case aco_opcode::s_and_b32: instr->opcode = aco_opcode::s_andn2_b32; break;
-      case aco_opcode::s_or_b32: instr->opcode = aco_opcode::s_orn2_b32; break;
-      case aco_opcode::s_and_b64: instr->opcode = aco_opcode::s_andn2_b64; break;
-      case aco_opcode::s_or_b64: instr->opcode = aco_opcode::s_orn2_b64; break;
-      default: break;
-      }
-
-      return true;
-   }
-   return false;
-}
-
 /* s_abs_i32(s_sub_[iu]32(a, b)) -> s_absdiff_i32(a, b)
  * s_abs_i32(s_add_[iu]32(a, #b)) -> s_absdiff_i32(a, -b)
  */
@@ -4267,15 +4227,11 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       return;
    }
 
-   if (instr->isSDWA()) {
-   } else if (instr->opcode == aco_opcode::v_not_b32 && ctx.program->gfx_level >= GFX10) {
+   if (instr->opcode == aco_opcode::v_not_b32 && ctx.program->gfx_level >= GFX10) {
       combine_not_xor(ctx, instr);
    } else if (instr->opcode == aco_opcode::s_not_b32 || instr->opcode == aco_opcode::s_not_b64) {
       if (!combine_salu_not_bitwise(ctx, instr))
          combine_inverse_comparison(ctx, instr);
-   } else if (instr->opcode == aco_opcode::s_and_b32 || instr->opcode == aco_opcode::s_or_b32 ||
-              instr->opcode == aco_opcode::s_and_b64 || instr->opcode == aco_opcode::s_or_b64) {
-      combine_salu_n2(ctx, instr);
    } else if (instr->opcode == aco_opcode::s_abs_i32) {
       combine_sabsdiff(ctx, instr);
    }
@@ -4536,6 +4492,18 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
    } else if (info.opcode == aco_opcode::v_and_b32) {
       add_opt(v_not_b32, v_bfi_b32, 0x3, "10", insert_const_cb<1, 0>, true);
       add_opt(s_not_b32, v_bfi_b32, 0x3, "10", insert_const_cb<1, 0>, true);
+   } else if (info.opcode == aco_opcode::s_and_b32) {
+      add_opt(s_not_b32, s_andn2_b32, 0x3, "01");
+   } else if (info.opcode == aco_opcode::s_and_b64) {
+      add_opt(s_not_b64, s_andn2_b64, 0x3, "01");
+   } else if (info.opcode == aco_opcode::s_or_b32) {
+      add_opt(s_not_b32, s_orn2_b32, 0x3, "01");
+   } else if (info.opcode == aco_opcode::s_or_b64) {
+      add_opt(s_not_b64, s_orn2_b64, 0x3, "01");
+   } else if (info.opcode == aco_opcode::s_xor_b32) {
+      add_opt(s_not_b32, s_xnor_b32, 0x3, "01");
+   } else if (info.opcode == aco_opcode::s_xor_b64) {
+      add_opt(s_not_b64, s_xnor_b64, 0x3, "01");
    }
 
    if (match_and_apply_patterns(ctx, info, patterns)) {
