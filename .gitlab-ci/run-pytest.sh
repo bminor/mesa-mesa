@@ -54,3 +54,9 @@ PYTHONPATH="${LIB_TEST_DIR}:${SCRIPT_TEST_DIR}:${PYTHONPATH:-}" python3 -m \
 	    ${PYTEST_VERBOSE:-}
 
 section_end pytest
+
+section_start flake8 "flake8"
+flake8 \
+--config "${CI_PROJECT_DIR}/.gitlab-ci/.flake8" \
+"${LIB_TEST_DIR}" "${SCRIPT_TEST_DIR}"
+section_end flake8
