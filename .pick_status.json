@@ -1,5 +1,425 @@
 [
     {
+        "sha": "0943f616d183835d4de56ad63feae340a5681cc4",
+        "description": "radv: report same buffer aligment for DGC preprocessed buffer",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "336e2c90ceee4c1749ee586a76ed778090135867",
+        "description": "docs: add new panvk features",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9a8e291d45b022daffaaefb51631d66c10a4bb28",
+        "description": "panvk: make vk-version helper internal to source",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "42bfbe1a946585bd07c99c9a10d3e74fa27364a3",
+        "description": "panvk: back out of vk 1.1 support",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "a6e03ce4282327fd102720e9b9e9b8abd92b8520",
+        "notes": null
+    },
+    {
+        "sha": "da18cd9f9a0fdf65f4354efa4a4d23c6e3535031",
+        "description": "softpipe/ci: Convert softpipe-asan-gles31 to a deqp-runner suite",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "309dc3c43f657b5bf6eeb12da3a1b5fcfdbf7703",
+        "description": "etnaviv/ci: Convert to deqp-runner suites",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b30323d77d544992638040420f1d4f723d7864c2",
+        "description": "lavapipe/ci: Convert lavapipe-vk-asan to a deqp-runner suite",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fd191067737dadbaea7b1de735973b8914e7112c",
+        "description": "broadcom/compiler: fix fp16 conversion operations",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "214121e9b0082ac1bbc90b6fea9f8951d697719d",
+        "notes": null
+    },
+    {
+        "sha": "8ffdf5a2ab12755527d10a8e79b998fa3e0eb656",
+        "description": "broadcom/compiler: ensure offset source exists",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "15dfcd0db3c7b7105e9f462f8382ed3aacb0c662",
+        "description": "v3dv: ensure there is always a perfmon and counter",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "13581b73808cfcfbb91398c06c6e76fe3c9498d6",
+        "description": "v3dv: free pointers on multisync error",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f6766ccadbc900dbe5e49db51fd39f3a3d416182",
+        "description": "v3dv: fix BO allocation",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "2adea940f1fc155032923cd84fc1cbb51459d0d5",
+        "notes": null
+    },
+    {
+        "sha": "cb9650d1a2197c14c69aff48afe2e03ac5f6e0ad",
+        "description": "v3dv: remove unused assignments",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c5c11481dd21384be4d7631e032fa4ad97adb4ae",
+        "description": "panvk: only validate the push-sets that we update",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "79e514637851e70b9c257bbcf99d8b23e46fea53",
+        "notes": null
+    },
+    {
+        "sha": "9531f6375f60d2868084cd795426cd0b6142f11d",
+        "description": "panvk: fixup bad indent",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "22ff26a0be7ddddeabcb6a00c654976fe353c1a9",
+        "description": "amd/vpelib: fix coverity defects",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "54c4accdb1fd2ffcb89a219ddd25d53e1325f705",
+        "description": "amd/vpelib: Add system event logging",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fe58bb70e6b859f84ce46494522707012bf432da",
+        "description": "amd/vpelib: 420 and 422 Output Single Segment cositing support",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b06ee9074dfa4ea6087f7a4aa623d943b1dd897f",
+        "description": "amd/vpelib: fixed file headers for Palamida scan",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4ef45d8d4e318f011ecc3cfc661e45352e59cc67",
+        "description": "amd/vpelib: Move bg color",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3943ed81994ae47325812b0200e3f1fded765620",
+        "description": "ac/lower_ngg: improve streamout code generation for gfx12/ACO to match LLVM",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d38efee8ef51d3b2b578814f6ce9338688735271",
+        "description": "aco: enable gfx12 support for radeonsi",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "129e37bab6e011cd8e78a8139a34f04212b424ad",
+        "description": "nir: do not generate b2i64 when driver want to lower it",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "12ea316a0500d3e2f494b9b162d64c4d8b8e406b",
+        "description": "radeonsi: add AMD_FORCE_SHADER_USE_ACO for debug",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "679c4501846391539061e53fbb6573daf407f8ba",
+        "description": "util/blake3: add _mesa_blake3_from_printed_string",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0fd99353a68abe10317a04358c83a76057a75950",
+        "description": "radeonsi: disable use_gfx12_xfb_intrinsic when use ACO",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b14cc344155c969dc3ffefd0d1aa9bf387bd4216",
+        "description": "ac/surf: add more modifiers to gfx12 supported list",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b3a218d4445c69a8c48d3170b701883ad4a2c263",
+        "description": "ac/surface/tests: support all block sizes",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "93dfe504f29e28dabb7b434369a79364176d16b1",
+        "description": "intel/brw: Add SHADER_OPCODE_READ_FROM_CHANNEL and LIVE_CHANNEL",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4d04396531a25986b444d064434d6a9272c70d8b",
+        "description": "ir3/validate: print file/line info",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d325de316d4ec2637c127c3c1f10cdfe907b60dc",
+        "description": "intel/brw: Add some tests for new Xe2 register regioning restrictions",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f308be16a0fad3a1f2cb841b7e590502b5893858",
+        "description": "intel/brw: Add validation for some Xe2 register regioning restrictions",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6a5a31631236029a43874ef98569414bc3c1e138",
+        "description": "intel/brw: Extract format enum in EU validation code",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "57b703cec3f5e82252510ff20252d103e4960393",
+        "description": "intel/brw: Skip some regioning EU validation for Vx1 and VxH modes",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d85d6ad2a553a5842db27e4d321ad3de18504ec7",
+        "description": "iris: Tune the BO cache's bucket sizes",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "0b6693a3a14029c31db2ee8576baa78fc914b9e5",
+        "notes": null
+    },
+    {
+        "sha": "0f46c53b0ceae4c074110c8e2d9a3c485ea90c39",
+        "description": "anv: Use vfg distribution mode = RR_STRICT for Xe2+",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "260f3b4444a288fee56cc3be4e76ed9f34553865",
+        "description": "iris: Use vfg distribution mode = RR_STRICT for Xe2+",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3bddf77f61994fc5cff1a2990213dee91aaec8ad",
+        "description": "ci: separate python tests and artifacts",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "90cb87e9188e3f74e8186bd47ed6627bcc92afe0",
+        "description": "ci: yaml-toml-shell-test: use pyutils container",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b6435207ab8afcdb4798115598a46a6dca8ce33e",
+        "description": "ci: python-test rename artifacts",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "dca63101828bd623d9c4eff3a486312326535424",
+        "description": "ci: debian/x86_64_pyutils remove redundant rules",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c7366985e5c162c2a76e2f159a564aa0c38ecbd0",
+        "description": "r600: fix a constant buffer memory leak for u_blitter",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "3d6e44fd2a1a2790263fcd6d24a1cc606fed0de9",
+        "notes": null
+    },
+    {
         "sha": "4ec3f6a0db9da78297fbce9161019d42f1c11103",
         "description": "frontends/va: Stop converting formats in Put/GetImage",
         "nominated": false,
