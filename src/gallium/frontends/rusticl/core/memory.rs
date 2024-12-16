@@ -398,11 +398,17 @@ pub struct SubAllocation {
     offset: usize,
 }
 
+pub struct SvmAllocation {
+    alloc: Arc<Allocation>,
+    offset: usize,
+}
+
 /// Abstraction over the memory allocation. It might be a real GPU backing storage or simply a sub
 /// allocation over an existing memory object.
-enum Allocation {
+pub enum Allocation {
     Resource(ResourceAllocation),
     SubAlloc(SubAllocation),
+    Svm(SvmAllocation),
 }
 
 // TODO: - Once it's used for more stuff might make sense to split it into an Image and Buffer
@@ -455,6 +461,14 @@ impl Allocation {
         })
     }
 
+    fn new_svm(alloc: Arc<Allocation>, offset: usize) -> Self {
+        Self::Svm(SvmAllocation {
+            // we precalculate the entire offset here.
+            offset: alloc.offset() + offset,
+            alloc: alloc,
+        })
+    }
+
     /// Returns true if the backing storage of the two objects is equal.
     fn backing_resource_eq(&self, other: &Self) -> bool {
         ptr::eq(self.get_real_resource(), other.get_real_resource())
@@ -465,24 +479,26 @@ impl Allocation {
         match self {
             Allocation::SubAlloc(sub) => sub.mem.alloc.get_real_resource(),
             Allocation::Resource(res) => res,
+            Allocation::Svm(svm) => svm.alloc.get_real_resource(),
         }
     }
 
     /// Returns the resource associated with `dev` without any data migration.
-    fn get_res_of_dev(&self, dev: &Device) -> CLResult<&Arc<PipeResource>> {
-        self.get_real_resource()
-            .res
-            .get(dev)
-            .ok_or(CL_OUT_OF_HOST_MEMORY)
+    fn get_res_of_dev(&self, dev: &Device) -> Option<&Arc<PipeResource>> {
+        self.get_real_resource().res.get(dev)
     }
 
     /// Returns the resource associated with `ctx.dev` and transparently migrate the data.
-    fn get_res_for_access(&self, ctx: &QueueContext, rw: RWFlags) -> CLResult<&Arc<PipeResource>> {
+    pub fn get_res_for_access(
+        &self,
+        ctx: &QueueContext,
+        rw: RWFlags,
+    ) -> CLResult<&Arc<PipeResource>> {
         self.get_real_resource().get_res_for_access(ctx, rw)
     }
 
     /// Migrates the content to the host. Fails if there is no host ptr.
-    pub fn _migrate_to_hostptr(&self, ctx: &QueueContext, rw: RWFlags) -> CLResult<()> {
+    pub fn migrate_to_hostptr(&self, ctx: &QueueContext, rw: RWFlags) -> CLResult<()> {
         self.get_real_resource().migrate_to_hostptr(ctx, rw)
     }
 
@@ -497,14 +513,20 @@ impl Allocation {
         host_ptr as _
     }
 
-    fn is_user_alloc_for_dev(&self, dev: &Device) -> CLResult<bool> {
-        Ok(self.get_res_of_dev(dev)?.is_user())
+    fn is_user_alloc_for_dev(&self, dev: &Device) -> bool {
+        if let Some(res) = self.get_res_of_dev(dev) {
+            res.is_user()
+        } else {
+            // for SVM allocations there might not even be a real resource
+            dev.system_svm_supported()
+        }
     }
 
     fn offset(&self) -> usize {
         match self {
             Allocation::Resource(res) => res.offset,
             Allocation::SubAlloc(sub) => sub.offset,
+            Allocation::Svm(svm) => svm.offset,
         }
     }
 }
@@ -773,24 +795,47 @@ impl MemBase {
             .copied()
             == Some(CL_TRUE.into());
 
-        let res_type = if bit_check(flags, CL_MEM_ALLOC_HOST_PTR) {
-            ResourceType::Staging
+        // if it's a SVM host ptr, we just use the already allocated resource if it exists, because
+        // this is actually mandated by the spec. The size requirement will be checked inside the
+        // API layer.
+        //
+        // From the OpenCL spec:
+        //   If clCreateBuffer or clCreateBufferWithProperties is called with a pointer returned
+        //   clSVMAlloc as its host_ptr argument, and CL_MEM_USE_HOST_PTR is set in its flags
+        //   argument, clCreateBuffer or clCreateBufferWithProperties will succeed and return
+        //   valid non-zero buffer object as long as the size argument is no larger than the size
+        //   argument passed in the original clSVMAlloc call. The new buffer object returned has the
+        //   shared memory as the underlying storage.
+        let svm = bit_check(flags, CL_MEM_USE_HOST_PTR)
+            .then(|| context.get_svm_alloc(host_ptr as usize))
+            .flatten();
+
+        let alloc = if let Some((svm_ptr, ref svm_alloc)) = svm {
+            // SAFETY: svm_ptr is the base of the allocation host_ptr points into.
+            let offset = unsafe { host_ptr.byte_offset_from(svm_ptr) } as usize;
+            Allocation::new_svm(Arc::clone(svm_alloc), offset)
         } else {
-            ResourceType::Normal
+            let res_type = if bit_check(flags, CL_MEM_ALLOC_HOST_PTR) {
+                ResourceType::Staging
+            } else {
+                ResourceType::Normal
+            };
+
+            let buffer = context.create_buffer(
+                size,
+                host_ptr,
+                bit_check(flags, CL_MEM_COPY_HOST_PTR),
+                bda,
+                res_type,
+            )?;
+
+            // We can only keep the host_ptr when `CL_MEM_USE_HOST_PTR` is set.
+            if !bit_check(flags, CL_MEM_USE_HOST_PTR) {
+                host_ptr = ptr::null_mut()
+            }
+
+            Allocation::new(buffer, 0, host_ptr)
         };
-
-        let buffer = context.create_buffer(
-            size,
-            host_ptr,
-            bit_check(flags, CL_MEM_COPY_HOST_PTR),
-            bda,
-            res_type,
-        )?;
-
-        // We can only keep the host_ptr when `CL_MEM_USE_HOST_PTR` is set.
-        if !bit_check(flags, CL_MEM_USE_HOST_PTR) {
-            host_ptr = ptr::null_mut()
-        }
 
         let addresses = bda.then(|| {
             context
@@ -798,14 +843,23 @@ impl MemBase {
                 .iter()
                 .filter(|dev| dev.bda_supported())
                 .map(|&dev| {
-                    let address = buffer[dev].resource_get_address();
+                    // If the buffer is backed by an SVM allocation, we need to use its address.
+                    let address = if let Some((address, _)) = svm {
+                        NonZeroU64::new(address as usize as u64)
+                    } else if let Some(res) = alloc.get_res_of_dev(dev) {
+                        res.resource_get_address()
+                    } else {
+                        // if there is no resource, it's a system SVM allocation
+                        assert!(dev.system_svm_supported());
+                        NonZeroU64::new(alloc.host_ptr() as u64)
+                    };
+
                     Some((dev, address?))
                 })
                 .collect::<Option<_>>()
                 .unwrap()
         });
 
-        let alloc = Allocation::new(buffer, 0, host_ptr);
         let buffer = Arc::new(Buffer {
             base: Self {
                 base: CLObjectBase::new(RusticlTypes::Buffer),
@@ -1102,6 +1156,9 @@ impl MemBase {
         match &self.alloc {
             Allocation::SubAlloc(sub) => Some(&sub.mem),
             Allocation::Resource(_) => None,
+            // In theory the SVM allocation is the parent, but that's not a memory object on the API
+            // level.
+            Allocation::Svm(_) => None,
         }
     }
 
@@ -1109,10 +1166,10 @@ impl MemBase {
         self.alloc.host_ptr()
     }
 
-    fn is_pure_user_memory(&self, d: &Device) -> CLResult<bool> {
+    fn is_pure_user_memory(&self, d: &Device) -> bool {
         // 1Dbuffer objects are weird. The parent memory object can be a host_ptr thing, but we are
         // not allowed to actually return a pointer based on the host_ptr when mapping.
-        Ok(self.alloc.is_user_alloc_for_dev(d)? && !self.host_ptr().is_null())
+        self.alloc.is_user_alloc_for_dev(d) && !self.host_ptr().is_null()
     }
 
     fn map<T>(
@@ -1430,7 +1487,7 @@ impl Buffer {
 
         // in this case we only need to migrate to the device if the data is located on a device not
         // having a userptr allocation.
-        if self.is_pure_user_memory(ctx.dev)? {
+        if self.is_pure_user_memory(ctx.dev) {
             let rw = if mapping.writes {
                 RWFlags::RW
             } else {
@@ -1446,7 +1503,7 @@ impl Buffer {
 
     pub fn sync_unmap(&self, ctx: &QueueContext, ptr: MutMemoryPtr) -> CLResult<()> {
         // no need to update
-        if self.is_pure_user_memory(ctx.dev)? {
+        if self.is_pure_user_memory(ctx.dev) {
             return Ok(());
         }
 
@@ -1904,7 +1961,7 @@ impl Image {
 
         // in this case we only need to migrate to the device if the data is located on a device not
         // having a userptr allocation.
-        if self.is_pure_user_memory(ctx.dev)? {
+        if self.is_pure_user_memory(ctx.dev) {
             let rw = if mapping.writes {
                 RWFlags::RW
             } else {
@@ -1930,7 +1987,7 @@ impl Image {
 
     pub fn sync_unmap(&self, ctx: &QueueContext, ptr: MutMemoryPtr) -> CLResult<()> {
         // no need to update
-        if self.is_pure_user_memory(ctx.dev)? {
+        if self.is_pure_user_memory(ctx.dev) {
             return Ok(());
         }
 

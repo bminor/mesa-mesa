@@ -554,7 +554,7 @@ fn set_kernel_exec_info(
     // CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM if no devices in the context associated with kernel
     // support SVM.
     let check_svm_support = || {
-        if devs.iter().all(|dev| !dev.svm_supported()) {
+        if devs.iter().all(|dev| !dev.api_svm_supported()) {
             Err(CL_INVALID_OPERATION)
         } else {
             Ok(())
@@ -577,16 +577,36 @@ fn set_kernel_exec_info(
         CL_KERNEL_EXEC_INFO_SVM_PTRS | CL_KERNEL_EXEC_INFO_SVM_PTRS_ARM => {
             check_svm_support()?;
 
+            // reuse the existing container so we avoid reallocations
+            let mut svms = k.svms.lock().unwrap();
+
             // To specify that no SVM allocations will be accessed by a kernel other than those set
             // as kernel arguments, specify an empty set by passing param_value_size equal to zero
             // and param_value equal to NULL.
-            if !param_value.is_null() || param_value_size != 0 {
-                let _ = unsafe {
+            if param_value_size == 0 && param_value.is_null() {
+                svms.clear();
+            } else {
+                let pointers = unsafe {
                     cl_slice::from_raw_parts_bytes_len::<*const c_void>(
                         param_value,
                         param_value_size,
                     )?
                 };
+
+                // We need to clear _after_ the error checking above. We could just assign a new
+                // container, however we also want to reuse the allocations.
+                svms.clear();
+                pointers
+                    .iter()
+                    // Each of the pointers can be the pointer returned by clSVMAlloc or can be a
+                    // pointer to the middle of an SVM allocation. It is sufficient to specify one
+                    // pointer for each SVM allocation.
+                    //
+                    // So we'll simply fetch the base and store that one.
+                    .filter_map(|&handle| k.prog.context.find_svm_alloc(handle as usize))
+                    .for_each(|(base, _)| {
+                        svms.insert(base as usize);
+                    });
             }
         }
         CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM
@@ -600,14 +620,19 @@ fn set_kernel_exec_info(
             if val.len() != 1 {
                 return Err(CL_INVALID_VALUE);
             }
+
+            // CL_INVALID_OPERATION if param_name is CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM and
+            // param_value is CL_TRUE but no devices in context associated with kernel support
+            // fine-grain system SVM allocations.
+            if val[0] == CL_TRUE && devs.iter().all(|dev| !dev.system_svm_supported()) {
+                return Err(CL_INVALID_OPERATION);
+            }
         }
         // CL_INVALID_VALUE if param_name is not valid
         _ => return Err(CL_INVALID_VALUE),
     }
 
     Ok(())
-
-    // CL_INVALID_OPERATION if param_name is CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM and param_value is CL_TRUE but no devices in context associated with kernel support fine-grain system SVM allocations.
 }
 
 #[cl_entrypoint(clEnqueueNDRangeKernel)]

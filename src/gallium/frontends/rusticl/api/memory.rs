@@ -21,7 +21,7 @@ use rusticl_proc_macros::cl_info_entrypoint;
 
 use std::cmp;
 use std::cmp::Ordering;
-use std::mem::{self, MaybeUninit};
+use std::mem;
 use std::num::NonZeroU64;
 use std::os::raw::c_void;
 use std::ptr;
@@ -297,13 +297,13 @@ fn create_buffer_with_properties(
 
     // or if CL_MEM_USE_HOST_PTR is set in flags and host_ptr is a pointer returned by clSVMAlloc
     // and size is greater than the size passed to clSVMAlloc.
-    if let Some((svm_ptr, svm_layout)) = c.find_svm_alloc(host_ptr as usize) {
+    if let Some((svm_ptr, alloc_size)) = c.find_svm_alloc(host_ptr as usize) {
         // SAFETY: they are part of the same allocation, and because host_ptr >= svm_ptr we can cast
         // to usize.
         let diff = unsafe { host_ptr.byte_offset_from(svm_ptr) } as usize;
 
         // technically we don't have to account for the offset, but it's almost for free.
-        if size > svm_layout - diff {
+        if size > alloc_size - diff {
             return Err(CL_INVALID_BUFFER_SIZE);
         }
     }
@@ -2376,13 +2376,16 @@ pub fn svm_alloc(
         return Err(CL_INVALID_VALUE);
     }
 
-    let alignment = if alignment != 0 {
-        alignment as usize
-    } else {
-        // When alignment is 0, the size of the largest supported type is used.
-        // In the case of the full profile, that's `long16`.
-        mem::size_of::<[u64; 16]>()
-    };
+    // When alignment is 0, the size of the largest supported type is used.
+    // In the case of the full profile, that's `long16`.
+    let alignment = NonZeroU64::new(alignment.into())
+        .unwrap_or(NonZeroU64::new(mem::size_of::<[u64; 16]>() as u64).unwrap());
+
+    // size is 0 or > CL_DEVICE_MAX_MEM_ALLOC_SIZE value for any device in context.
+    let size = NonZeroU64::new(size as u64).ok_or(CL_INVALID_VALUE)?;
+    if size.get() > c.max_mem_alloc() {
+        return Err(CL_INVALID_VALUE);
+    }
 
     c.alloc_svm_ptr(size, alignment)
 
@@ -2422,7 +2425,7 @@ fn enqueue_svm_free_impl(
     }
 
     // CL_INVALID_OPERATION if the device associated with command queue does not support SVM.
-    if !q.device.svm_supported() {
+    if !q.device.api_svm_supported() {
         return Err(CL_INVALID_OPERATION);
     }
 
@@ -2529,36 +2532,25 @@ fn enqueue_svm_memcpy_impl(
     let block = check_cl_bool(blocking_copy).ok_or(CL_INVALID_VALUE)?;
 
     // CL_INVALID_OPERATION if the device associated with command queue does not support SVM.
-    if !q.device.svm_supported() {
+    if !q.device.api_svm_supported() {
         return Err(CL_INVALID_OPERATION);
     }
 
+    // CL_INVALID_VALUE if dst_ptr or src_ptr is NULL.
+    if src_ptr.is_null() || dst_ptr.is_null() {
+        return Err(CL_INVALID_VALUE);
+    }
+
+    let src_ptr = src_ptr as usize;
+    let dst_ptr = dst_ptr as usize;
+
     // CL_MEM_COPY_OVERLAP if the values specified for dst_ptr, src_ptr and size result in an
     // overlapping copy.
-    let dst_ptr_addr = dst_ptr as usize;
-    let src_ptr_addr = src_ptr as usize;
-    if (src_ptr_addr <= dst_ptr_addr && dst_ptr_addr < src_ptr_addr + size)
-        || (dst_ptr_addr <= src_ptr_addr && src_ptr_addr < dst_ptr_addr + size)
+    if (src_ptr <= dst_ptr && dst_ptr < src_ptr + size)
+        || (dst_ptr <= src_ptr && src_ptr < dst_ptr + size)
     {
         return Err(CL_MEM_COPY_OVERLAP);
     }
-
-    // CAST: We have no idea about the type or initialization status of these bytes.
-    // MaybeUninit<u8> is the safe bet.
-    let src_ptr = src_ptr.cast::<MaybeUninit<u8>>();
-
-    // CAST: We have no idea about the type or initialization status of these bytes.
-    // MaybeUninit<u8> is the safe bet.
-    let dst_ptr = dst_ptr.cast::<MaybeUninit<u8>>();
-
-    // SAFETY: It is up to the application to ensure the memory is valid to read for `size` bytes
-    // and that it doesn't modify it until the command has completed.
-    let src = unsafe { cl_slice::from_raw_parts(src_ptr, size)? };
-
-    // SAFETY: We've ensured there's no aliasing between src and dst. It is up to the application
-    // to ensure the memory is valid to read and write for `size` bytes and that it doesn't modify
-    // or read from it until the command has completed.
-    let dst = unsafe { cl_slice::from_raw_parts_mut(dst_ptr, size)? };
 
     create_and_queue(
         q,
@@ -2566,10 +2558,7 @@ fn enqueue_svm_memcpy_impl(
         evs,
         event,
         block,
-        Box::new(move |_, _| {
-            dst.copy_from_slice(src);
-            Ok(())
-        }),
+        Box::new(move |q, ctx| q.context.copy_svm(ctx, src_ptr, dst_ptr, size)),
     )
 }
 
@@ -2636,8 +2625,18 @@ fn enqueue_svm_mem_fill_impl(
     let evs = event_list_from_cl(&q, num_events_in_wait_list, event_wait_list)?;
 
     // CL_INVALID_OPERATION if the device associated with command queue does not support SVM.
-    if !q.device.svm_supported() {
+    if !q.device.api_svm_supported() {
         return Err(CL_INVALID_OPERATION);
+    }
+
+    // CL_INVALID_VALUE if svm_ptr is NULL.
+    if svm_ptr.is_null() {
+        return Err(CL_INVALID_VALUE);
+    }
+
+    // CL_INVALID_VALUE if svm_ptr is not aligned to pattern_size bytes.
+    if !is_aligned_to(svm_ptr, pattern_size) {
+        return Err(CL_INVALID_VALUE);
     }
 
     // CL_INVALID_VALUE if pattern is NULL [...]
@@ -2701,35 +2700,9 @@ fn enqueue_svm_mem_fill_impl(
             // `pattern_size` bytes and properly initialized.
             // Creating a bitwise copy can't create memory safety issues, since `Pattern` is `Copy`.
             let pattern = unsafe { pattern_ptr.read_unaligned() };
+            let svm_ptr = svm_ptr as usize;
 
-            // CAST: Same as with `pattern`, we don't know the exact type of `svm_ptr`, but we do
-            // know it's fine if we choose the same type here. The application might reasonably
-            // give us uninitialized memory though, so cast to a `MaybeUninit<Pattern>`, which has
-            // the same layout as `Pattern`.
-            let svm_ptr = svm_ptr.cast::<MaybeUninit<Pattern>>();
-
-            // SAFETY: It is the calling application's responsibility to ensure that `svm_ptr` is
-            // valid for reads and writes up to `size` bytes.
-            // Since `pattern_size == mem::size_of::<Pattern>()` and `MaybeUninit<Pattern>` has the
-            // same layout as `Pattern`, we know that
-            // `size / pattern_size * mem::size_of<MaybeUninit<Pattern>>` equals `size`.
-            //
-            // Since we're creating a `&[MaybeUninit<Pattern>]` the initialization status does not
-            // matter.
-            //
-            // From here on out we only access the referenced memory though this slice. In
-            // particular, since we've made a copy of `pattern`, it doesn't matter if the memory
-            // region referenced by `pattern` aliases the one referenced by this slice. It is up to
-            // the application not to access it at all until this command has been completed.
-            let svm_slice = unsafe { cl_slice::from_raw_parts_mut(svm_ptr, size / pattern_size)? };
-
-            Box::new(move |_, _| {
-                for x in svm_slice {
-                    x.write(pattern);
-                }
-
-                Ok(())
-            })
+            Box::new(move |q, ctx| q.context.clear_svm(ctx, svm_ptr, size, pattern.0))
         }};
     }
 
@@ -2817,7 +2790,7 @@ fn enqueue_svm_map_impl(
     let block = check_cl_bool(blocking_map).ok_or(CL_INVALID_VALUE)?;
 
     // CL_INVALID_OPERATION if the device associated with command queue does not support SVM.
-    if !q.device.svm_supported() {
+    if !q.device.api_svm_supported() {
         return Err(CL_INVALID_OPERATION);
     }
 
@@ -2834,7 +2807,15 @@ fn enqueue_svm_map_impl(
     // ... or if values specified in map_flags are not valid.
     validate_map_flags_common(flags)?;
 
-    create_and_queue(q, cmd_type, evs, event, block, Box::new(|_, _| Ok(())))
+    let svm_ptr = svm_ptr as usize;
+    create_and_queue(
+        q,
+        cmd_type,
+        evs,
+        event,
+        block,
+        Box::new(move |q, ctx| q.context.copy_svm_to_host(ctx, svm_ptr, flags)),
+    )
 }
 
 #[cl_entrypoint(clEnqueueSVMMap)]
@@ -2897,7 +2878,7 @@ fn enqueue_svm_unmap_impl(
     let evs = event_list_from_cl(&q, num_events_in_wait_list, event_wait_list)?;
 
     // CL_INVALID_OPERATION if the device associated with command queue does not support SVM.
-    if !q.device.svm_supported() {
+    if !q.device.api_svm_supported() {
         return Err(CL_INVALID_OPERATION);
     }
 
@@ -2906,7 +2887,15 @@ fn enqueue_svm_unmap_impl(
         return Err(CL_INVALID_VALUE);
     }
 
-    create_and_queue(q, cmd_type, evs, event, false, Box::new(|_, _| Ok(())))
+    create_and_queue(
+        q,
+        cmd_type,
+        evs,
+        event,
+        false,
+        // TODO: we _could_ migrate the content somewhere, but it's really pointless to do
+        Box::new(move |_, _| Ok(())),
+    )
 }
 
 #[cl_entrypoint(clEnqueueSVMUnmap)]
@@ -2960,7 +2949,7 @@ fn enqueue_svm_migrate_mem(
     let evs = event_list_from_cl(&q, num_events_in_wait_list, event_wait_list)?;
 
     // CL_INVALID_OPERATION if the device associated with command queue does not support SVM.
-    if !q.device.svm_supported() {
+    if !q.device.api_svm_supported() {
         return Err(CL_INVALID_OPERATION);
     }
 
@@ -3010,9 +2999,9 @@ fn enqueue_svm_migrate_mem(
         evs,
         event,
         false,
-        Box::new(move |_, ctx| {
-            ctx.svm_migrate(&svm_pointers, &sizes, to_device, content_undefined);
-            Ok(())
+        Box::new(move |q, ctx| {
+            q.context
+                .migrate_svm(ctx, svm_pointers, sizes, to_device, content_undefined)
         }),
     )
 }

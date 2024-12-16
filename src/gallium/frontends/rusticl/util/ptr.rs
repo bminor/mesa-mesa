@@ -1,6 +1,9 @@
 use std::{
     alloc::Layout,
-    collections::{btree_map::Entry, BTreeMap},
+    collections::{
+        btree_map::{Entry, Values, ValuesMut},
+        BTreeMap,
+    },
     hash::{Hash, Hasher},
     mem,
     ops::{Add, Deref},
@@ -175,6 +178,14 @@ impl<P, T: AllocSize<P>> TrackedPointers<P, T> {
             ptrs: BTreeMap::new(),
         }
     }
+
+    pub fn values(&self) -> Values<'_, P, T> {
+        self.ptrs.values()
+    }
+
+    pub fn values_mut(&mut self) -> ValuesMut<'_, P, T> {
+        self.ptrs.values_mut()
+    }
 }
 
 impl<P, T: AllocSize<P>> TrackedPointers<P, T>
@@ -191,6 +202,18 @@ where
 
     pub fn find_alloc(&self, ptr: P) -> Option<(P, &T)> {
         if let Some((&base, val)) = self.ptrs.range(..=ptr).next_back() {
+            let size = val.size();
+            // we check if ptr is within [base..base+size)
+            // means we can check if ptr - (base + size) < 0
+            if ptr < (base + size) {
+                return Some((base, val));
+            }
+        }
+        None
+    }
+
+    pub fn find_alloc_mut(&mut self, ptr: P) -> Option<(P, &mut T)> {
+        if let Some((&base, val)) = self.ptrs.range_mut(..=ptr).next_back() {
             let size = val.size();
             // we check if ptr is within [base..base+size)
             // means we can check if ptr - (base + size) < 0

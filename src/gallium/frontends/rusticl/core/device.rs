@@ -27,6 +27,7 @@ use std::convert::TryInto;
 use std::env;
 use std::ffi::CStr;
 use std::mem::transmute;
+use std::num::NonZeroU64;
 use std::os::raw::*;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -104,6 +105,13 @@ pub trait HelperContextWrapper {
     where
         F: Fn(&HelperContext);
 
+    fn buffer_map(
+        &self,
+        res: &PipeResource,
+        offset: i32,
+        size: i32,
+        rw: RWFlags,
+    ) -> Option<PipeTransfer>;
     fn create_compute_state(&self, nir: &NirShader, static_local_mem: u32) -> *mut c_void;
     fn delete_compute_state(&self, cso: *mut c_void);
     fn compute_state_info(&self, state: *mut c_void) -> pipe_compute_state_object_info;
@@ -163,6 +171,16 @@ impl HelperContextWrapper for HelperContext<'_> {
     {
         func(self);
         self.lock.flush()
+    }
+
+    fn buffer_map(
+        &self,
+        res: &PipeResource,
+        offset: i32,
+        size: i32,
+        rw: RWFlags,
+    ) -> Option<PipeTransfer> {
+        self.lock.buffer_map(res, offset, size, rw)
     }
 
     fn create_compute_state(&self, nir: &NirShader, static_local_mem: u32) -> *mut c_void {
@@ -1157,8 +1175,31 @@ impl Device {
             && (subgroup_sizes == 1 || (subgroup_sizes > 1 && self.shareable_shaders()))
     }
 
-    pub fn svm_supported(&self) -> bool {
+    pub fn system_svm_supported(&self) -> bool {
         self.screen.caps().system_svm
+    }
+
+    pub fn svm_supported(&self) -> bool {
+        if cfg!(not(target_pointer_width = "64")) {
+            return false;
+        }
+
+        self.system_svm_supported() || self.screen().is_vm_supported()
+    }
+
+    /// Checks if the device supports SVM _and_ that we were able to initialize SVM support on a
+    /// platform level.
+    pub fn api_svm_supported(&self) -> bool {
+        self.system_svm_supported()
+            || (self.screen().is_vm_supported() && Platform::get().vm.is_some())
+    }
+
+    // returns (start, end)
+    pub fn vm_alloc_range(&self) -> Option<(NonZeroU64, NonZeroU64)> {
+        let min = self.screen.caps().min_vma;
+        let max = self.screen.caps().max_vma;
+
+        Some((NonZeroU64::new(min)?, NonZeroU64::new(max)?))
     }
 
     pub fn unified_memory(&self) -> bool {

@@ -524,6 +524,7 @@ pub struct Kernel {
     pub name: String,
     values: Mutex<Vec<Option<KernelArgValue>>>,
     pub bdas: Mutex<Vec<cl_mem_device_address_ext>>,
+    pub svms: Mutex<HashSet<usize>>,
     builds: HashMap<&'static Device, Arc<NirKernelBuilds>>,
     pub kernel_info: Arc<KernelInfo>,
 }
@@ -1246,6 +1247,7 @@ impl Kernel {
             name: name,
             values: Mutex::new(values),
             bdas: Mutex::new(Vec::new()),
+            svms: Mutex::new(HashSet::new()),
             builds: builds,
             kernel_info: kernel_info,
         })
@@ -1323,6 +1325,7 @@ impl Kernel {
         let arg_values = self.arg_values().clone();
         let nir_kernel_builds = Arc::clone(&self.builds[q.device]);
         let mut bdas = self.bdas.lock().unwrap().clone();
+        let svms = self.svms.lock().unwrap().clone();
 
         let mut buffer_arcs = HashMap::new();
         let mut image_arcs = HashMap::new();
@@ -1442,6 +1445,12 @@ impl Kernel {
                 printf_buf = Some(buf);
             }
 
+            // translate SVM pointers to their base first
+            let mut svms: HashSet<_> = svms
+                .into_iter()
+                .filter_map(|svm_pointer| Some(q.context.find_svm_alloc(svm_pointer)?.0 as usize))
+                .collect();
+
             for arg in &nir_kernel_build.compiled_args {
                 let is_opaque = if let CompiledKernelArgType::APIArg(idx) = arg.kind {
                     kernel_info.args[idx].kind.is_opaque()
@@ -1485,6 +1494,9 @@ impl Kernel {
                                     if let Some(address) = buffer.dev_address(ctx.dev) {
                                         let _ = buffer.get_res_for_access(ctx, rw)?;
                                         bdas.push(address.get());
+                                    } else if buffer.is_svm() {
+                                        let _ = buffer.get_res_for_access(ctx, rw)?;
+                                        svms.insert(buffer.host_ptr() as usize);
                                     }
                                 } else {
                                     let res = buffer.get_res_for_access(ctx, rw)?;
@@ -1498,6 +1510,11 @@ impl Kernel {
                                 }
                             }
                             &KernelArgValue::SVM(handle) => {
+                                // get the base address so we deduplicate properly
+                                if let Some((base, _)) = q.context.find_svm_alloc(handle) {
+                                    svms.insert(base as usize);
+                                }
+
                                 if !api_arg.dead {
                                     add_pointer(q, &mut input, handle as u64);
                                 }
@@ -1603,10 +1620,20 @@ impl Kernel {
                 .filter_map(|address| q.context.find_bda_alloc(q.device, address))
                 .collect::<HashSet<_>>();
 
-            let bdas: Vec<_> = bdas
+            let mut bdas: Vec<_> = bdas
                 .iter()
                 .map(|buffer| Ok(buffer.get_res_for_access(ctx, RWFlags::RW)?.deref()))
                 .collect::<CLResult<_>>()?;
+
+            let svms_new = svms
+                .into_iter()
+                .filter_map(|svm| q.context.copy_svm_to_dev(ctx, svm).transpose())
+                .collect::<CLResult<Vec<_>>>()?;
+
+            // uhhh
+            for svm in &svms_new {
+                bdas.push(svm);
+            }
 
             // subtract the shader local_size as we only request something on top of that.
             variable_local_size -= static_local_size;
@@ -1819,7 +1846,7 @@ impl Kernel {
     }
 
     pub fn has_svm_devs(&self) -> bool {
-        self.prog.devs.iter().any(|dev| dev.svm_supported())
+        self.prog.devs.iter().any(|dev| dev.api_svm_supported())
     }
 
     pub fn subgroup_sizes(&self, dev: &Device) -> impl ExactSizeIterator<Item = usize> {
@@ -1876,6 +1903,7 @@ impl Clone for Kernel {
             name: self.name.clone(),
             values: Mutex::new(self.arg_values().clone()),
             bdas: Mutex::new(self.bdas.lock().unwrap().clone()),
+            svms: Mutex::new(self.svms.lock().unwrap().clone()),
             builds: self.builds.clone(),
             kernel_info: Arc::clone(&self.kernel_info),
         }

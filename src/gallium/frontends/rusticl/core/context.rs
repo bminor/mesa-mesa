@@ -1,13 +1,15 @@
 use crate::api::icd::*;
 use crate::api::types::DeleteContextCB;
-use crate::api::util::checked_compare;
+use crate::api::util::bit_check;
 use crate::core::device::*;
 use crate::core::format::*;
 use crate::core::gl::*;
 use crate::core::memory::*;
+use crate::core::queue::*;
 use crate::core::util::*;
 use crate::impl_cl_type_trait;
 
+use mesa_rust::pipe::context::RWFlags;
 use mesa_rust::pipe::resource::*;
 use mesa_rust::pipe::screen::ResourceType;
 use mesa_rust_gen::*;
@@ -19,14 +21,20 @@ use rusticl_opencl_gen::*;
 
 use std::alloc;
 use std::alloc::Layout;
-use std::cmp::Ordering;
+use std::cmp;
 use std::collections::HashMap;
 use std::convert::TryInto;
+use std::ffi::c_int;
 use std::mem;
+use std::num::NonZeroU64;
 use std::os::raw::c_void;
+use std::ptr;
+use std::slice;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::Weak;
+
+use super::platform::Platform;
 
 struct TrackedBDAAlloc {
     buffer: Weak<Buffer>,
@@ -39,6 +47,53 @@ impl AllocSize<cl_mem_device_address_ext> for TrackedBDAAlloc {
     }
 }
 
+struct SVMAlloc {
+    layout: Layout,
+    vma: Option<NonZeroU64>,
+    alloc: Arc<Allocation>,
+}
+
+impl SVMAlloc {
+    pub fn size(&self) -> usize {
+        self.layout.size()
+    }
+}
+
+impl Drop for SVMAlloc {
+    fn drop(&mut self) {
+        if let Some(vma) = self.vma {
+            let address = vma.get() as usize as *mut c_void;
+            unsafe {
+                debug_assert_eq!(0, munmap(address, self.size()));
+            }
+
+            Platform::get()
+                .vm
+                .as_ref()
+                .unwrap()
+                .lock()
+                .unwrap()
+                .free(vma, NonZeroU64::new(self.size() as u64).unwrap());
+        } else {
+            // SAFETY: we make sure that svm_pointer is a valid allocation and reuse the same layout
+            // from the allocation
+            unsafe {
+                alloc::dealloc(self.alloc.host_ptr().cast(), self.layout);
+            }
+        }
+    }
+}
+
+impl AllocSize<usize> for SVMAlloc {
+    fn size(&self) -> usize {
+        SVMAlloc::size(self)
+    }
+}
+
+struct SVMContext {
+    svm_ptrs: TrackedPointers<usize, SVMAlloc>,
+}
+
 pub struct Context {
     pub base: CLObjectBase<CL_INVALID_CONTEXT>,
     pub devs: Vec<&'static Device>,
@@ -48,7 +103,7 @@ pub struct Context {
     bda_ptrs: Mutex<
         HashMap<&'static Device, TrackedPointers<cl_mem_device_address_ext, TrackedBDAAlloc>>,
     >,
-    svm_ptrs: Mutex<TrackedPointers<usize, Layout>>,
+    svm: Mutex<SVMContext>,
     pub gl_ctx_manager: Option<GLCtxManager>,
 }
 
@@ -66,7 +121,9 @@ impl Context {
             properties: properties,
             dtors: Mutex::new(Vec::new()),
             bda_ptrs: Mutex::new(HashMap::new()),
-            svm_ptrs: Mutex::new(TrackedPointers::new()),
+            svm: Mutex::new(SVMContext {
+                svm_ptrs: TrackedPointers::new(),
+            }),
             gl_ctx_manager: gl_ctx_manager,
         })
     }
@@ -207,13 +264,21 @@ impl Context {
     }
 
     pub fn has_svm_devs(&self) -> bool {
-        self.devs.iter().any(|dev| dev.svm_supported())
+        self.devs.iter().any(|dev| dev.api_svm_supported())
     }
 
-    pub fn alloc_svm_ptr(&self, size: usize, alignment: usize) -> CLResult<*mut c_void> {
+    pub fn alloc_svm_ptr(
+        &self,
+        size: NonZeroU64,
+        mut alignment: NonZeroU64,
+    ) -> CLResult<*mut c_void> {
+        // TODO: choose better alignment in regards to huge pages
+        alignment = cmp::max(alignment, NonZeroU64::new(0x1000).unwrap());
+
         // clSVMAlloc will fail if alignment is not a power of two.
         // `from_size_align()` verifies this condition is met.
-        let layout = Layout::from_size_align(size, alignment).or(Err(CL_INVALID_VALUE))?;
+        let layout = Layout::from_size_align(size.get() as usize, alignment.get() as usize)
+            .or(Err(CL_INVALID_VALUE))?;
 
         // clSVMAlloc will fail if size is 0 or > CL_DEVICE_MAX_MEM_ALLOC_SIZE value
         // for any device in context.
@@ -222,38 +287,252 @@ impl Context {
         // `from_size_align()` ensures that the allocation will fit in host memory,
         // the maximum allocation may be smaller due to limitations from gallium or
         // devices.
-        let size_aligned = layout.pad_to_align().size();
-        if size == 0 || checked_compare(size_aligned, Ordering::Greater, self.max_mem_alloc()) {
-            return Err(CL_INVALID_VALUE);
-        }
+        // let size_aligned = layout.pad_to_align().size();
 
-        // SAFETY: `size` is verified to be non-zero and the returned pointer is not
-        // expected to point to initialized memory.
-        let ptr = unsafe { alloc::alloc(layout) };
+        // allocate a vma if one of the devices doesn't support system SVM
+        let vma = if let Some(vm) = &Platform::get().vm {
+            Some(
+                vm.lock()
+                    .unwrap()
+                    .alloc(size, alignment)
+                    .ok_or(CL_OUT_OF_RESOURCES)?,
+            )
+        } else {
+            None
+        };
+
+        let ptr: *mut c_void = if let Some(vma) = &vma {
+            let res = unsafe {
+                mmap(
+                    vma.get() as usize as *mut c_void,
+                    size.get() as usize,
+                    (PROT_READ | PROT_WRITE) as c_int,
+                    // MAP_FIXED_NOREPLACE needs 4.17
+                    (MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED_NOREPLACE | MAP_NORESERVE) as c_int,
+                    -1,
+                    0,
+                )
+            };
+
+            // mmap returns MAP_FAILED on error which is -1
+            if res as usize == usize::MAX {
+                return Err(CL_OUT_OF_HOST_MEMORY);
+            }
+
+            res.cast()
+        } else {
+            unsafe { alloc::alloc(layout) }.cast()
+        };
 
         if ptr.is_null() {
-            Err(CL_OUT_OF_HOST_MEMORY)
-        } else {
-            Ok(ptr.cast())
+            return Err(CL_OUT_OF_HOST_MEMORY);
         }
+
+        let address = ptr as u64;
+        let mut buffers = HashMap::new();
+        for &dev in &self.devs {
+            let size: u32 = size.get().try_into().map_err(|_| CL_OUT_OF_HOST_MEMORY)?;
+
+            // For system SVM devices we simply create a userptr resource.
+            let res = if dev.system_svm_supported() {
+                dev.screen()
+                    .resource_create_buffer_from_user(size, ptr, PIPE_BIND_GLOBAL, 0)
+            } else {
+                dev.screen().resource_create_buffer(
+                    size,
+                    ResourceType::Normal,
+                    PIPE_BIND_GLOBAL,
+                    PIPE_RESOURCE_FLAG_FRONTEND_VM,
+                )
+            };
+
+            let res = res.ok_or(CL_OUT_OF_RESOURCES)?;
+            if !dev.system_svm_supported() {
+                if !dev.screen().resource_assign_vma(&res, address) {
+                    return Err(CL_OUT_OF_RESOURCES);
+                }
+            }
+
+            buffers.insert(dev, Arc::new(res));
+        }
+
+        self.svm.lock().unwrap().svm_ptrs.insert(
+            ptr as usize,
+            SVMAlloc {
+                layout: layout,
+                vma,
+                alloc: Arc::new(Allocation::new(buffers, 0, ptr)),
+            },
+        );
+
+        Ok(ptr)
     }
 
-    pub fn find_svm_alloc(&self, ptr: usize) -> Option<(*const c_void, usize)> {
-        self.svm_ptrs
+    pub fn copy_svm_to_dev(
+        &self,
+        ctx: &QueueContext,
+        ptr: usize,
+    ) -> CLResult<Option<Arc<PipeResource>>> {
+        let svm = self.svm.lock().unwrap();
+
+        let Some(alloc) = svm.svm_ptrs.find_alloc_precise(ptr) else {
+            return Ok(None);
+        };
+
+        Ok(Some(Arc::clone(
+            alloc.alloc.get_res_for_access(ctx, RWFlags::RW)?,
+        )))
+    }
+
+    pub fn copy_svm_to_host(
+        &self,
+        ctx: &QueueContext,
+        svm_ptr: usize,
+        flags: cl_map_flags,
+    ) -> CLResult<()> {
+        // no need to copy
+        if bit_check(flags, CL_MAP_WRITE_INVALIDATE_REGION) {
+            return Ok(());
+        }
+
+        let svm = self.svm.lock().unwrap();
+        let Some((_, alloc)) = svm.svm_ptrs.find_alloc(svm_ptr) else {
+            return Ok(());
+        };
+
+        alloc.alloc.migrate_to_hostptr(ctx, RWFlags::RW)
+    }
+
+    pub fn copy_svm(
+        &self,
+        ctx: &QueueContext,
+        src_addr: usize,
+        dst_addr: usize,
+        size: usize,
+    ) -> CLResult<()> {
+        let svm = self.svm.lock().unwrap();
+        let src = svm.svm_ptrs.find_alloc(src_addr);
+        let dst = svm.svm_ptrs.find_alloc(dst_addr);
+
+        #[allow(clippy::collapsible_else_if)]
+        if let Some((src_base, src_alloc)) = src {
+            let src_res = src_alloc.alloc.get_res_for_access(ctx, RWFlags::RD)?;
+            let src_offset = src_addr - src_base;
+
+            if let Some((dst_base, dst_alloc)) = dst {
+                let dst_res = dst_alloc.alloc.get_res_for_access(ctx, RWFlags::WR)?;
+                let dst_offset = dst_addr - dst_base;
+
+                ctx.resource_copy_buffer(
+                    src_res,
+                    src_offset as i32,
+                    dst_res,
+                    dst_offset as u32,
+                    size as i32,
+                );
+            } else {
+                let map = ctx
+                    .buffer_map(src_res, src_offset as i32, size as i32, RWFlags::RD)
+                    .ok_or(CL_OUT_OF_HOST_MEMORY)?;
+                unsafe {
+                    ptr::copy_nonoverlapping(map.ptr(), dst_addr as *mut c_void, size);
+                }
+            }
+        } else {
+            if let Some((dst_base, dst_alloc)) = dst {
+                let dst_res = dst_alloc.alloc.get_res_for_access(ctx, RWFlags::WR)?;
+                let dst_offset = dst_addr - dst_base;
+
+                ctx.buffer_subdata(
+                    dst_res,
+                    dst_offset as u32,
+                    src_addr as *const c_void,
+                    size as u32,
+                );
+            } else {
+                unsafe {
+                    ptr::copy(src_addr as *const c_void, dst_addr as *mut c_void, size);
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn clear_svm<const T: usize>(
+        &self,
+        ctx: &QueueContext,
+        svm_ptr: usize,
+        size: usize,
+        pattern: [u8; T],
+    ) -> CLResult<()> {
+        let svm = self.svm.lock().unwrap();
+
+        if let Some((base, alloc)) = svm.svm_ptrs.find_alloc(svm_ptr) {
+            let res = alloc.alloc.get_res_for_access(ctx, RWFlags::WR)?;
+            let offset = svm_ptr - base;
+            ctx.clear_buffer(res, &pattern, offset as u32, size as u32);
+        } else {
+            let slice = unsafe {
+                slice::from_raw_parts_mut(svm_ptr as *mut _, size / mem::size_of_val(&pattern))
+            };
+
+            slice.fill(pattern);
+        }
+
+        Ok(())
+    }
+
+    pub fn migrate_svm(
+        &self,
+        ctx: &QueueContext,
+        pointers: Vec<usize>,
+        sizes: Vec<usize>,
+        to_device: bool,
+        content_undefined: bool,
+    ) -> CLResult<()> {
+        let svm = self.svm.lock().unwrap();
+
+        if ctx.dev.system_svm_supported() {
+            ctx.svm_migrate(&pointers, &sizes, to_device, content_undefined);
+        } else {
+            for ptr in pointers {
+                let Some((_, alloc)) = svm.svm_ptrs.find_alloc(ptr) else {
+                    continue;
+                };
+
+                // we assume it's only read, so it remains valid on the host until future commands
+                // have different needs.
+                if to_device {
+                    alloc.alloc.get_res_for_access(ctx, RWFlags::RD)?;
+                } else {
+                    alloc.alloc.migrate_to_hostptr(ctx, RWFlags::RD)?;
+                }
+            }
+        }
+        Ok(())
+    }
+
+    pub fn get_svm_alloc(&self, ptr: usize) -> Option<(*mut c_void, Arc<Allocation>)> {
+        self.svm
             .lock()
             .unwrap()
+            .svm_ptrs
             .find_alloc(ptr)
-            .map(|(ptr, layout)| (ptr as *const c_void, layout.size()))
+            .map(|(base, alloc)| (base as *mut c_void, Arc::clone(&alloc.alloc)))
+    }
+
+    pub fn find_svm_alloc(&self, ptr: usize) -> Option<(*mut c_void, usize)> {
+        self.svm
+            .lock()
+            .unwrap()
+            .svm_ptrs
+            .find_alloc(ptr)
+            .map(|(ptr, alloc)| (ptr as _, alloc.size()))
     }
 
     pub fn remove_svm_ptr(&self, ptr: usize) {
-        if let Some(layout) = self.svm_ptrs.lock().unwrap().remove(ptr) {
-            // SAFETY: we make sure that svm_pointer is a valid allocation and reuse the same layout
-            // from the allocation
-            unsafe {
-                alloc::dealloc(ptr as *mut u8, layout);
-            }
-        }
+        self.svm.lock().unwrap().svm_ptrs.remove(ptr);
     }
 
     pub fn add_bda_ptr(&self, buffer: &Arc<Buffer>) {

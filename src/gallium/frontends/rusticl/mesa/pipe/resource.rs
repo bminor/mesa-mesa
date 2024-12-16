@@ -282,7 +282,18 @@ impl PipeResource {
 
 impl Drop for PipeResource {
     fn drop(&mut self) {
-        unsafe { pipe_resource_reference(&mut self.pipe.as_ptr(), ptr::null_mut()) }
+        unsafe {
+            let pipe = self.pipe.as_ref();
+            let screen = pipe.screen.as_ref().unwrap();
+
+            if pipe.flags & PIPE_RESOURCE_FLAG_FRONTEND_VM != 0 {
+                if let Some(resource_assign_vma) = screen.resource_assign_vma {
+                    resource_assign_vma(pipe.screen, self.pipe(), 0);
+                }
+            }
+
+            pipe_resource_reference(&mut self.pipe.as_ptr(), ptr::null_mut());
+        }
     }
 }
 

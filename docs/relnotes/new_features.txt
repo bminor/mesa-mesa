@@ -28,3 +28,4 @@ VK_EXT_texel_buffer_alignment on panvk
 cl_khr_kernel_clock on freedreno, iris, llvmpipe, nvc0, panfrost, radeonsi and zink with llvm-19 or newer
 GL_KHR_texture_compression_astc_hdr on panfrost and asahi
 cl_ext_buffer_device_address on llvmpipe and zink
+Completed OpenCL 2.0 coarse grain buffer SVM support
