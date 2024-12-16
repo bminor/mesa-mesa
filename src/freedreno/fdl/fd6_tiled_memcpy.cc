@@ -205,7 +205,7 @@ fdl6_get_bank_mask(const struct fdl_layout *layout, unsigned miplevel,
    /* For some reason, for cpp=1 (or R8G8 media formats) the alignment
     * required is doubled.
     */
-   unsigned offset = cpp == 1 ? 1 : 0;
+   unsigned offset = (fdl6_is_r8g8_layout(layout) || layout->cpp == 1) ? 1 : 0;
    uint32_t macrotile_width, macrotile_height;
    fdl6_get_ubwc_macrotile_size(layout, &macrotile_width, &macrotile_height);
    uint32_t macrotile_stride =
@@ -270,7 +270,7 @@ get_block_offset(uint32_t x, uint32_t y, unsigned macrotile_stride,
 #endif
 
 static void
-get_block_size(unsigned cpp, uint32_t *block_width,
+get_block_size(unsigned cpp, bool r8g8, uint32_t *block_width,
                uint32_t *block_height)
 {
    switch (cpp) {
@@ -279,8 +279,13 @@ get_block_size(unsigned cpp, uint32_t *block_width,
       *block_height = 8;
       break;
    case 2:
-      *block_width = 32;
-      *block_height = 4;
+      if (r8g8) {
+         *block_width = 16;
+         *block_height = 8;
+      } else {
+         *block_width = 32;
+         *block_height = 4;
+      }
       break;
    case 4:
       *block_width = 16;
@@ -313,7 +318,7 @@ fdl6_get_ubwc_macrotile_size(const struct fdl_layout *layout,
                              uint32_t *macrotile_height)
 {
    uint32_t block_width, block_height;
-   get_block_size(layout->cpp, &block_width, &block_height);
+   get_block_size(layout->cpp, fdl6_is_r8g8_layout(layout), &block_width, &block_height);
    *macrotile_width = block_width * 4;
    *macrotile_height = block_height * 4;
 }
@@ -333,7 +338,7 @@ memcpy_small(uint32_t x_start, uint32_t y_start,
              uint32_t bank_mask, uint32_t bank_shift)
 {
    unsigned block_width, block_height;
-   get_block_size(cpp, &block_width, &block_height);
+   get_block_size(cpp, false, &block_width, &block_height);
    const uint32_t block_size = 256;
 
    uint32_t x_mask = (get_pixel_offset(~0u, 0)) & (block_size / cpp - 1);
@@ -774,7 +779,7 @@ memcpy_large(uint32_t x_start, uint32_t y_start,
              uint32_t bank_mask, uint32_t bank_shift)
 {
    unsigned block_width, block_height;
-   get_block_size(cpp, &block_width, &block_height);
+   get_block_size(cpp, false, &block_width, &block_height);
 
    /* The region to copy is divided into 9 parts:
     *
@@ -886,7 +891,7 @@ fdl6_memcpy_linear_to_tiled(uint32_t x_start, uint32_t y_start,
 {
    unsigned block_width, block_height;
    uint32_t cpp = dst_layout->cpp;
-   get_block_size(cpp, &block_width, &block_height);
+   get_block_size(cpp, false, &block_width, &block_height);
    uint32_t macrotile_stride =
       fdl_pitch(dst_layout, dst_miplevel) / (4 * block_width * dst_layout->cpp);
    uint32_t bank_mask = get_bank_mask(dst_layout, dst_miplevel, config);
@@ -951,7 +956,7 @@ fdl6_memcpy_tiled_to_linear(uint32_t x_start, uint32_t y_start,
 {
    unsigned block_width, block_height;
    unsigned cpp = src_layout->cpp;
-   get_block_size(cpp, &block_width, &block_height);
+   get_block_size(cpp, false, &block_width, &block_height);
    uint32_t macrotile_stride =
       fdl_pitch(src_layout, src_miplevel) / (4 * block_width * src_layout->cpp);
    uint32_t bank_mask = get_bank_mask(src_layout, src_miplevel, config);
