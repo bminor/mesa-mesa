@@ -202,7 +202,7 @@ mir_estimate_pressure(compiler_context *ctx)
    mir_foreach_block(ctx, _block) {
       midgard_block *block = (midgard_block *)_block;
       uint16_t *live =
-         mem_dup(block->base.live_out, ctx->temp_count * sizeof(uint16_t));
+         mem_dup(block->live_out, ctx->temp_count * sizeof(uint16_t));
 
       mir_foreach_instr_in_block_rev(block, ins) {
          unsigned count = mir_count_live(live, ctx->temp_count);

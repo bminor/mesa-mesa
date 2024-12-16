@@ -68,32 +68,6 @@ pan_to_bytemask(unsigned bytes, unsigned mask)
    }
 }
 
-void
-pan_block_add_successor(pan_block *block, pan_block *successor)
-{
-   assert(block);
-   assert(successor);
-
-   /* Cull impossible edges */
-   if (block->unconditional_jumps)
-      return;
-
-   for (unsigned i = 0; i < ARRAY_SIZE(block->successors); ++i) {
-      if (block->successors[i]) {
-         if (block->successors[i] == successor)
-            return;
-         else
-            continue;
-      }
-
-      block->successors[i] = successor;
-      _mesa_set_add(successor->predecessors, block);
-      return;
-   }
-
-   unreachable("Too many successors");
-}
-
 /* Could optimize with a better data structure if anyone cares, TODO: profile */
 
 unsigned

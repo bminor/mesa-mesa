@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+#include "panfrost/util/pan_ir.h"
 #include "compiler.h"
 
 /* Routines for liveness analysis. Liveness is tracked per byte per node. Per
@@ -73,9 +74,9 @@ mir_liveness_ins_update(uint16_t *live, const midgard_instruction *ins,
 /* live_out[s] = sum { p in succ[s] } ( live_in[p] ) */
 
 static void
-liveness_block_live_out(pan_block *blk, unsigned temp_count)
+liveness_block_live_out(midgard_block *blk, unsigned temp_count)
 {
-   pan_foreach_successor(blk, succ) {
+   mir_foreach_successor(blk, succ) {
       for (unsigned i = 0; i < temp_count; ++i)
          blk->live_out[i] |= succ->live_in[i];
    }
@@ -86,7 +87,7 @@ liveness_block_live_out(pan_block *blk, unsigned temp_count)
  * returns whether progress was made. */
 
 static bool
-liveness_block_update(pan_block *blk, unsigned temp_count)
+liveness_block_update(midgard_block *blk, unsigned temp_count)
 {
    bool progress = false;
 
@@ -95,7 +96,7 @@ liveness_block_update(pan_block *blk, unsigned temp_count)
    uint16_t *live = ralloc_array(blk, uint16_t, temp_count);
    memcpy(live, blk->live_out, temp_count * sizeof(uint16_t));
 
-   pan_foreach_instr_in_block_rev(blk, ins)
+   mir_foreach_instr_in_block_rev(blk, ins)
       mir_liveness_ins_update(live, (midgard_instruction *)ins, temp_count);
 
    /* To figure out progress, diff live_in */
@@ -112,10 +113,10 @@ liveness_block_update(pan_block *blk, unsigned temp_count)
 /* Once liveness data is no longer valid, call this */
 
 static void
-mir_free_liveness(struct list_head *blocks)
+mir_free_liveness(compiler_context *ctx)
 {
-   list_for_each_entry(pan_block, block, blocks, link)
-   {
+   mir_foreach_block(ctx, _block) {
+      midgard_block *block = (midgard_block *)_block;
       if (block->live_in)
          ralloc_free(block->live_in);
 
@@ -142,7 +143,7 @@ mir_compute_liveness(compiler_context *ctx)
 
    mir_compute_temp_count(ctx);
 
-   /* Set of pan_block */
+   /* Set of midgard_block */
    struct set *work_list =
       _mesa_set_create(NULL, _mesa_hash_pointer, _mesa_key_pointer_equal);
 
@@ -151,10 +152,10 @@ mir_compute_liveness(compiler_context *ctx)
 
    /* Free any previous liveness, and allocate */
 
-   mir_free_liveness(&ctx->blocks);
+   mir_free_liveness(ctx);
 
-   list_for_each_entry(pan_block, block, &ctx->blocks, link)
-   {
+   mir_foreach_block(ctx, _block) {
+      midgard_block *block = (midgard_block *)_block;
       block->live_in = rzalloc_array(block, uint16_t, ctx->temp_count);
       block->live_out = rzalloc_array(block, uint16_t, ctx->temp_count);
    }
@@ -162,13 +163,13 @@ mir_compute_liveness(compiler_context *ctx)
    /* Initialize the work list with the exit block */
    struct set_entry *cur;
 
-   cur = _mesa_set_add(work_list, pan_exit_block(&ctx->blocks));
+   cur = _mesa_set_add(work_list, mir_exit_block(&ctx->blocks));
 
    /* Iterate the work list */
 
    do {
       /* Pop off a block */
-      pan_block *blk = (struct pan_block *)cur->key;
+      midgard_block *blk = (struct midgard_block *)cur->key;
       _mesa_set_remove(work_list, cur);
 
       /* Update its liveness information */
@@ -177,7 +178,7 @@ mir_compute_liveness(compiler_context *ctx)
       /* If we made progress, we need to process the predecessors */
 
       if (progress || !_mesa_set_search(visited, blk)) {
-         pan_foreach_predecessor(blk, pred)
+         mir_foreach_predecessor(blk, pred)
             _mesa_set_add(work_list, pred);
       }
 
@@ -198,7 +199,7 @@ mir_invalidate_liveness(compiler_context *ctx)
    if (!(ctx->metadata & MIDGARD_METADATA_LIVENESS))
       return;
 
-   mir_free_liveness(&ctx->blocks);
+   mir_free_liveness(ctx);
 
    /* It's now invalid regardless */
    ctx->metadata &= ~MIDGARD_METADATA_LIVENESS;
@@ -212,7 +213,7 @@ mir_is_live_after(compiler_context *ctx, const midgard_block *block,
 
    /* Check whether we're live in the successors */
 
-   if (mir_liveness_get(block->base.live_out, src, ctx->temp_count))
+   if (mir_liveness_get(block->live_out, src, ctx->temp_count))
       return true;
 
    /* Check the rest of the block for liveness */

@@ -355,7 +355,7 @@ mir_print_instruction(const midgard_instruction *ins)
 void
 mir_print_block(const midgard_block *block)
 {
-   printf("block%u: {\n", block->base.name);
+   printf("block%u: {\n", block->name);
 
    if (block->scheduled) {
       mir_foreach_bundle_in_block(block, bundle) {
@@ -372,15 +372,15 @@ mir_print_block(const midgard_block *block)
 
    printf("}");
 
-   if (block->base.successors[0]) {
+   if (block->successors[0]) {
       printf(" -> ");
-      pan_foreach_successor((&block->base), succ)
+      mir_foreach_successor(block, succ)
          printf(" block%u ", succ->name);
    }
 
    printf(" from { ");
    mir_foreach_predecessor(block, pred)
-      printf("block%u ", pred->base.name);
+      printf("block%u ", pred->name);
    printf("}");
 
    printf("\n\n");

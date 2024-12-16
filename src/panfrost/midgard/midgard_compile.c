@@ -70,10 +70,10 @@ create_empty_block(compiler_context *ctx)
 {
    midgard_block *blk = rzalloc(ctx, midgard_block);
 
-   blk->base.predecessors =
+   blk->predecessors =
       _mesa_set_create(blk, _mesa_hash_pointer, _mesa_key_pointer_equal);
 
-   blk->base.name = ctx->block_source_count++;
+   blk->name = ctx->block_source_count++;
 
    return blk;
 }
@@ -84,9 +84,9 @@ schedule_barrier(compiler_context *ctx)
    midgard_block *temp = ctx->after_block;
    ctx->after_block = create_empty_block(ctx);
    ctx->block_count++;
-   list_addtail(&ctx->after_block->base.link, &ctx->blocks);
-   list_inithead(&ctx->after_block->base.instructions);
-   pan_block_add_successor(&ctx->current_block->base, &ctx->after_block->base);
+   list_addtail(&ctx->after_block->link, &ctx->blocks);
+   list_inithead(&ctx->after_block->instructions);
+   mir_block_add_successor(ctx->current_block, ctx->after_block);
    ctx->current_block = ctx->after_block;
    ctx->after_block = temp;
 }
@@ -274,9 +274,9 @@ midgard_nir_lower_global_load_instr(nir_builder *b, nir_intrinsic_instr *intr,
 static bool
 midgard_nir_lower_global_load(nir_shader *shader)
 {
-   return nir_shader_intrinsics_pass(
-      shader, midgard_nir_lower_global_load_instr,
-      nir_metadata_control_flow, NULL);
+   return nir_shader_intrinsics_pass(shader,
+                                     midgard_nir_lower_global_load_instr,
+                                     nir_metadata_control_flow, NULL);
 }
 
 static bool
@@ -367,7 +367,7 @@ mem_access_size_align_cb(nir_intrinsic_op intrin, uint8_t bytes,
 static uint8_t
 lower_vec816_alu(const nir_instr *instr, const void *cb_data)
 {
-  return 4;
+   return 4;
 }
 
 static bool
@@ -2473,7 +2473,7 @@ inline_alu_constants(compiler_context *ctx, midgard_block *block)
              * possible.
              */
             midgard_instruction *first = list_first_entry(
-               &block->base.instructions, midgard_instruction, link);
+               &block->instructions, midgard_instruction, link);
 
             if (alu == first) {
                mir_insert_instruction_before(ctx, alu, &ins);
@@ -2738,13 +2738,13 @@ emit_block_init(compiler_context *ctx)
    if (!this_block)
       this_block = create_empty_block(ctx);
 
-   list_addtail(&this_block->base.link, &ctx->blocks);
+   list_addtail(&this_block->link, &ctx->blocks);
 
    this_block->scheduled = false;
    ++ctx->block_count;
 
    /* Set up current block */
-   list_inithead(&this_block->base.instructions);
+   list_inithead(&this_block->instructions);
    ctx->current_block = this_block;
 
    return this_block;
@@ -2811,11 +2811,11 @@ emit_if(struct compiler_context *ctx, nir_if *nif)
 
    ctx->after_block = create_empty_block(ctx);
 
-   pan_block_add_successor(&before_block->base, &then_block->base);
-   pan_block_add_successor(&before_block->base, &else_block->base);
+   mir_block_add_successor(before_block, then_block);
+   mir_block_add_successor(before_block, else_block);
 
-   pan_block_add_successor(&end_then_block->base, &ctx->after_block->base);
-   pan_block_add_successor(&end_else_block->base, &ctx->after_block->base);
+   mir_block_add_successor(end_then_block, ctx->after_block);
+   mir_block_add_successor(end_else_block, ctx->after_block);
 }
 
 static void
@@ -2841,8 +2841,8 @@ emit_loop(struct compiler_context *ctx, nir_loop *nloop)
    emit_mir_instruction(ctx, &br_back);
 
    /* Mark down that branch in the graph. */
-   pan_block_add_successor(&start_block->base, &loop_block->base);
-   pan_block_add_successor(&ctx->current_block->base, &loop_block->base);
+   mir_block_add_successor(start_block, loop_block);
+   mir_block_add_successor(ctx->current_block, loop_block);
 
    /* Find the index of the block about to follow us (note: we don't add
     * one; blocks are 0-indexed so we get a fencepost problem) */
@@ -2874,7 +2874,7 @@ emit_loop(struct compiler_context *ctx, nir_loop *nloop)
          ins->branch.target_type = TARGET_GOTO;
          ins->branch.target_block = break_block_idx;
 
-         pan_block_add_successor(_block, &ctx->after_block->base);
+         mir_block_add_successor((midgard_block *)_block, ctx->after_block);
       }
    }
 
@@ -2891,7 +2891,8 @@ emit_cf_list(struct compiler_context *ctx, struct exec_list *list)
 {
    midgard_block *start_block = NULL;
 
-   foreach_list_typed(nir_cf_node, node, node, list) {
+   foreach_list_typed(nir_cf_node, node, node, list)
+   {
       switch (node->type) {
       case nir_cf_node_block: {
          midgard_block *block = emit_block(ctx, nir_cf_node_as_block(node));
@@ -2957,8 +2958,8 @@ mir_add_writeout_loops(compiler_context *ctx)
             continue;
 
          unsigned popped = br->branch.target_block;
-         pan_block_add_successor(&(mir_get_block(ctx, popped - 1)->base),
-                                 &ctx->current_block->base);
+         mir_block_add_successor(mir_get_block(ctx, popped - 1),
+                                 ctx->current_block);
          br->branch.target_block = emit_fragment_epilogue(ctx, rt, s);
          br->branch.target_type = TARGET_GOTO;
 
@@ -2977,8 +2978,8 @@ mir_add_writeout_loops(compiler_context *ctx)
             uncond.branch.target_block = popped;
             uncond.branch.target_type = TARGET_GOTO;
             emit_mir_instruction(ctx, &uncond);
-            pan_block_add_successor(&ctx->current_block->base,
-                                    &(mir_get_block(ctx, popped)->base));
+            mir_block_add_successor(ctx->current_block,
+                                    mir_get_block(ctx, popped));
             schedule_barrier(ctx);
          } else {
             /* We're last, so we can terminate here */
@@ -3113,7 +3114,8 @@ midgard_compile_shader_nir(nir_shader *nir,
    int bundle_idx = 0;
    mir_foreach_block(ctx, _block) {
       midgard_block *block = (midgard_block *)_block;
-      util_dynarray_foreach(&block->bundles, midgard_bundle, bundle) {
+      util_dynarray_foreach(&block->bundles, midgard_bundle, bundle)
+      {
          source_order_bundles[bundle_idx++] = bundle;
       }
    }

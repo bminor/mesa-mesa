@@ -84,8 +84,8 @@ mir_block_terminates_helpers(midgard_block *block)
       return false;
 
    /* Can't terminate if a successor needs helpers */
-   pan_foreach_successor((&block->base), succ) {
-      if (((midgard_block *)succ)->helpers_in)
+   mir_foreach_successor(block, succ) {
+      if (succ->helpers_in)
          return false;
    }
 
@@ -123,13 +123,13 @@ mir_analyze_helper_terminate(compiler_context *ctx)
 
    while ((cur = _mesa_set_next_entry(worklist, NULL)) != NULL) {
       /* Pop off a block requiring helpers */
-      pan_block *blk = (struct pan_block *)cur->key;
+      midgard_block *blk = (struct midgard_block *)cur->key;
       _mesa_set_remove(worklist, cur);
 
       /* Its predecessors also require helpers */
-      pan_foreach_predecessor(blk, pred) {
+      mir_foreach_predecessor(blk, pred) {
          if (!_mesa_set_search(visited, pred)) {
-            ((midgard_block *)pred)->helpers_in = true;
+            pred->helpers_in = true;
             _mesa_set_add(worklist, pred);
          }
       }
@@ -161,11 +161,10 @@ mir_analyze_helper_terminate(compiler_context *ctx)
 }
 
 static bool
-mir_helper_block_update(BITSET_WORD *deps, pan_block *_block,
+mir_helper_block_update(BITSET_WORD *deps, midgard_block *block,
                         unsigned temp_count)
 {
    bool progress = false;
-   midgard_block *block = (midgard_block *)_block;
 
    mir_foreach_instr_in_block_rev(block, ins) {
       /* Ensure we write to a helper dependency */
@@ -219,16 +218,16 @@ mir_analyze_helper_requirements(compiler_context *ctx)
       _mesa_set_create(NULL, _mesa_hash_pointer, _mesa_key_pointer_equal);
 
    struct set_entry *cur =
-      _mesa_set_add(work_list, pan_exit_block(&ctx->blocks));
+      _mesa_set_add(work_list, mir_exit_block(&ctx->blocks));
 
    do {
-      pan_block *blk = (struct pan_block *)cur->key;
+      midgard_block *blk = (struct midgard_block *)cur->key;
       _mesa_set_remove(work_list, cur);
 
       bool progress = mir_helper_block_update(deps, blk, temp_count);
 
       if (progress || !_mesa_set_search(visited, blk)) {
-         pan_foreach_predecessor(blk, pred)
+         mir_foreach_predecessor(blk, pred)
             _mesa_set_add(work_list, pred);
       }
 

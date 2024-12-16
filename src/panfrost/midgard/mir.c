@@ -26,6 +26,32 @@
 #include "midgard_ops.h"
 
 void
+mir_block_add_successor(midgard_block *block, midgard_block *successor)
+{
+   assert(block);
+   assert(successor);
+
+   /* Cull impossible edges */
+   if (block->unconditional_jumps)
+      return;
+
+   for (unsigned i = 0; i < ARRAY_SIZE(block->successors); ++i) {
+      if (block->successors[i]) {
+         if (block->successors[i] == successor)
+            return;
+         else
+            continue;
+      }
+
+      block->successors[i] = successor;
+      _mesa_set_add(successor->predecessors, block);
+      return;
+   }
+
+   unreachable("Too many successors");
+}
+
+void
 mir_rewrite_index_src_single(midgard_instruction *ins, unsigned old,
                              unsigned new)
 {

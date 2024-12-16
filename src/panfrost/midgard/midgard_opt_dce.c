@@ -73,7 +73,7 @@ midgard_opt_dead_code_eliminate_block(compiler_context *ctx,
    bool progress = false;
 
    uint16_t *live =
-      mem_dup(block->base.live_out, ctx->temp_count * sizeof(uint16_t));
+      mem_dup(block->live_out, ctx->temp_count * sizeof(uint16_t));
 
    mir_foreach_instr_in_block_rev(block, ins) {
       if (can_cull_mask(ctx, ins)) {

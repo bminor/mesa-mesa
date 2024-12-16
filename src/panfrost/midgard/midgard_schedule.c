@@ -285,7 +285,7 @@ bytes_for_instruction(midgard_instruction *ains)
 static midgard_instruction **
 flatten_mir(midgard_block *block, unsigned *len)
 {
-   *len = list_length(&block->base.instructions);
+   *len = list_length(&block->instructions);
 
    if (!(*len))
       return NULL;
@@ -1524,7 +1524,7 @@ schedule_block(compiler_context *ctx, midgard_block *block)
    }
 
    mir_foreach_instr_in_block_scheduled_rev(block, ins) {
-      list_add(&ins->link, &block->base.instructions);
+      list_add(&ins->link, &block->instructions);
    }
 
    free(instructions); /* Allocated by flatten_mir() */
@@ -1569,7 +1569,7 @@ mir_lower_blend_input(compiler_context *ctx)
    mir_foreach_block(ctx, _blk) {
       midgard_block *blk = (midgard_block *)_blk;
 
-      if (list_is_empty(&blk->base.instructions))
+      if (list_is_empty(&blk->instructions))
          continue;
 
       midgard_instruction *I = mir_last_in_block(blk);
