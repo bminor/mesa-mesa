@@ -317,6 +317,7 @@ void si_set_tracked_regs_to_clear_state(struct si_context *ctx)
    ctx->tracked_regs.reg_value[SI_TRACKED_SPI_PS_INPUT_ENA] = 0;
    ctx->tracked_regs.reg_value[SI_TRACKED_SPI_PS_INPUT_ADDR] = 0;
 
+   ctx->tracked_regs.reg_value[SI_TRACKED_DB_RENDER_OVERRIDE] = 0;
    ctx->tracked_regs.reg_value[SI_TRACKED_DB_EQAA] = 0;
    ctx->tracked_regs.reg_value[SI_TRACKED_DB_RENDER_OVERRIDE2] = 0;
    ctx->tracked_regs.reg_value[SI_TRACKED_DB_SHADER_CONTROL] = 0;

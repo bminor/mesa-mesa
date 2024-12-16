@@ -1553,6 +1553,12 @@ static void *si_create_dsa_state(struct pipe_context *ctx,
                                   S_028090_TESTMASK_BF(state->stencil[1].valuemask);
       dsa->db_stencil_write_mask = S_028094_WRITEMASK(state->stencil[0].writemask) |
                                    S_028094_WRITEMASK_BF(state->stencil[1].writemask);
+
+      bool force_s_valid = state->stencil[0].zpass_op != state->stencil[0].zfail_op ||
+                           (state->stencil[1].enabled &&
+                            state->stencil[1].zpass_op != state->stencil[1].zfail_op);
+      dsa->db_render_override = S_02800C_FORCE_STENCIL_READ(1) |
+                                S_02800C_FORCE_STENCIL_VALID(force_s_valid);
    }
 
    bool zfunc_is_ordered =
@@ -1588,6 +1594,8 @@ static void si_pm4_emit_dsa(struct si_context *sctx, unsigned index)
    if (sctx->gfx_level >= GFX12) {
       radeon_begin(&sctx->gfx_cs);
       gfx12_begin_context_regs();
+      gfx12_opt_set_context_reg(R_02800C_DB_RENDER_OVERRIDE, SI_TRACKED_DB_RENDER_OVERRIDE,
+                                state->db_render_override);
       gfx12_opt_set_context_reg(R_028070_DB_DEPTH_CONTROL, SI_TRACKED_DB_DEPTH_CONTROL,
                                 state->db_depth_control);
       if (state->stencil_enabled) {

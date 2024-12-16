@@ -131,6 +131,7 @@ struct si_state_dsa {
    unsigned spi_shader_user_data_ps_alpha_ref;
    unsigned db_stencil_read_mask;
    unsigned db_stencil_write_mask;
+   unsigned db_render_override;     /* only gfx12 */
 
    /* 0 = without stencil buffer, 1 = when both Z and S buffers are present */
    struct si_dsa_order_invariance order_invariance[2];
@@ -315,6 +316,7 @@ enum si_tracked_reg
    SI_TRACKED_SPI_PS_INPUT_ENA,
    SI_TRACKED_SPI_PS_INPUT_ADDR,
 
+   SI_TRACKED_DB_RENDER_OVERRIDE,
    SI_TRACKED_DB_EQAA,
    SI_TRACKED_DB_RENDER_OVERRIDE2,
    SI_TRACKED_DB_SHADER_CONTROL,

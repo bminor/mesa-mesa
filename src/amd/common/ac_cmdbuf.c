@@ -605,7 +605,6 @@ gfx12_init_graphics_preamble_state(const struct ac_preamble_state *state,
    ac_pm4_set_reg(pm4, R_00B4D4_SPI_SHADER_USER_ACCUM_LSHS_3, 0);
 
    /* Context registers */
-   ac_pm4_set_reg(pm4, R_02800C_DB_RENDER_OVERRIDE, S_02800C_FORCE_STENCIL_READ(1));
    ac_pm4_set_reg(pm4, R_028040_DB_GL1_INTERFACE_CONTROL, 0);
    ac_pm4_set_reg(pm4, R_028048_DB_MEM_TEMPORAL,
                   S_028048_Z_TEMPORAL_READ(zs_read_temporal_hint) |
