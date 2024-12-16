@@ -555,6 +555,7 @@ static void handle_env_var_force_family(struct radeon_info *info)
          get_radeon_info(info, &ac_fake_hw_db[i]);
          info->name = "NOOP";
          info->family_overridden = true;
+         info->chip_rev = 1;
          return;
       }
    }

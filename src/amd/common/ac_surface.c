@@ -3035,7 +3035,7 @@ static bool gfx12_compute_hiz_his_info(struct ac_addrlib *addrlib, const struct 
 {
    assert(surf_in->flags.depth != surf_in->flags.stencil);
 
-   if (surf->flags & RADEON_SURF_NO_HTILE || (info->gfx_level == GFX12 && info->chip_rev <= 1))
+   if (surf->flags & RADEON_SURF_NO_HTILE || (info->gfx_level == GFX12 && info->chip_rev == 0))
       return true;
 
    ADDR3_COMPUTE_SURFACE_INFO_OUTPUT out = {0};
@@ -3109,7 +3109,11 @@ static bool gfx12_compute_miptree(struct ac_addrlib *addrlib, const struct radeo
       surf->surf_alignment_log2 = MAX2(surf->surf_alignment_log2, util_logbase2(out.baseAlign));
       surf->surf_size = surf->u.gfx9.zs.stencil_offset + out.surfSize;
 
-      return gfx12_compute_hiz_his_info(addrlib, info, surf, &surf->u.gfx9.zs.his, in);
+      if (info->chip_rev >= 2 &&
+          !gfx12_compute_hiz_his_info(addrlib, info, surf, &surf->u.gfx9.zs.his, in))
+         return false;
+
+      return true;
    }
 
    surf->u.gfx9.surf_slice_size = out.sliceSize;
