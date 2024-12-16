@@ -585,6 +585,7 @@ anv_get_image_format_features2(const struct anv_physical_device *physical_device
                                VkFormat vk_format,
                                const struct anv_format *anv_format,
                                VkImageTiling vk_tiling,
+                               bool is_sparse,
                                const struct isl_drm_modifier_info *isl_mod_info)
 {
    const struct intel_device_info *devinfo = &physical_device->info;
@@ -1011,6 +1012,7 @@ get_drm_format_modifier_properties_list(const struct anv_physical_device *physic
       VkFormatFeatureFlags2 features2 =
          anv_get_image_format_features2(physical_device, vk_format, anv_format,
                                         VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT,
+                                        false /* is_sparse */,
                                         isl_mod_info);
       VkFormatFeatureFlags features = vk_format_features2_to_features(features2);
       if (!features)
@@ -1046,6 +1048,7 @@ get_drm_format_modifier_properties_list_2(const struct anv_physical_device *phys
       VkFormatFeatureFlags2 features2 =
          anv_get_image_format_features2(physical_device, vk_format, anv_format,
                                         VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT,
+                                        false /* is_sparse */,
                                         isl_mod_info);
       if (!features2)
          continue;
@@ -1078,11 +1081,11 @@ void anv_GetPhysicalDeviceFormatProperties2(
 
    VkFormatFeatureFlags2 linear2, optimal2, buffer2;
    linear2 = anv_get_image_format_features2(physical_device, vk_format,
-                                            anv_format,
-                                            VK_IMAGE_TILING_LINEAR, NULL);
+                                            anv_format, VK_IMAGE_TILING_LINEAR,
+                                            false /* is_sparse */, NULL);
    optimal2 = anv_get_image_format_features2(physical_device, vk_format,
-                                             anv_format,
-                                             VK_IMAGE_TILING_OPTIMAL, NULL);
+                                             anv_format, VK_IMAGE_TILING_OPTIMAL,
+                                             false /* is_sparse */, NULL);
    buffer2 = get_buffer_format_features2(devinfo, vk_format, anv_format);
 
    pFormatProperties->formatProperties = (VkFormatProperties) {
@@ -1292,6 +1295,7 @@ anv_formats_gather_format_features(
                   anv_get_image_format_features2(physical_device,
                                                  possible_anv_format->vk_format,
                                                  possible_anv_format, tiling,
+                                                 false /* is_sparse */,
                                                  isl_mod_info);
                all_formats_feature_flags |= view_format_features;
             }
@@ -1310,7 +1314,8 @@ anv_formats_gather_format_features(
          VkFormatFeatureFlags2 view_format_features =
             anv_get_image_format_features2(physical_device,
                                            vk_view_format, anv_view_format,
-                                           tiling, isl_mod_info);
+                                           tiling, false /* is_sparse */,
+                                           isl_mod_info);
          all_formats_feature_flags |= view_format_features;
       }
    }
@@ -1373,6 +1378,7 @@ static VkResult
 anv_get_image_format_properties(
    struct anv_physical_device *physical_device,
    const VkPhysicalDeviceImageFormatInfo2 *info,
+   bool is_sparse,
    VkImageFormatProperties2 *props)
 {
    VkFormatFeatureFlags2 format_feature_flags;
@@ -1537,6 +1543,7 @@ anv_get_image_format_properties(
    format_feature_flags = anv_get_image_format_features2(physical_device,
                                                          info->format, format,
                                                          info->tiling,
+                                                         is_sparse,
                                                          isl_mod_info);
 
    if (!anv_format_supports_usage(format_feature_flags, info->usage)) {
@@ -1946,6 +1953,7 @@ VkResult anv_GetPhysicalDeviceImageFormatProperties2(
 
    return anv_get_image_format_properties(physical_device,
                                           pImageFormatInfo,
+                                          false /* is_sparse */,
                                           pImageFormatProperties);
 }
 
@@ -1982,7 +1990,8 @@ void anv_GetPhysicalDeviceSparseImageFormatProperties2(
    };
    VkImageFormatProperties2 img_props = {};
    if (anv_get_image_format_properties(physical_device,
-                                       &img_info, &img_props) != VK_SUCCESS)
+                                       &img_info, true /* is_sparse */,
+                                       &img_props) != VK_SUCCESS)
       return;
 
    if ((pFormatInfo->samples &
