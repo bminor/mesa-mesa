@@ -840,3 +840,10 @@ option(
   ],
   description : 'Allows the fallback mechanism if the dependency is not available on the system, or too old.'
 )
+
+option(
+  'virtgpu_kumquat',
+  type : 'boolean',
+  value : false,
+  description : 'Build virtgpu_kumquat (only useful with gfxstream currently)'
+)

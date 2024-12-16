@@ -1,7 +1,7 @@
 # Copyright 2022 Android Open Source Project
 # SPDX-License-Identifier: MIT
 
-if with_kumquat
+if with_virtgpu_kumquat
   files_libplatform_virtgpu_kumquat = files(
     'VirtGpuKumquatDevice.cpp',
     'VirtGpuKumquatBlobMapping.cpp',
@@ -17,7 +17,7 @@ libplatform_virtgpu_kumquat = static_library(
    files_libplatform_virtgpu_kumquat,
    cpp_args: gfxstream_guest_args,
    include_directories: [inc_platform_virtgpu, inc_src, inc_gfxstream_vulkan_mapper,
-                         inc_vulkan_util, inc_include],
-   link_with: [libgfxstream_vulkan_mapper],
-   dependencies: [idep_vulkan_util_headers, virtgpu_kumquat_dep],
+                         inc_vulkan_util, inc_include, inc_virtgpu_kumquat_ffi],
+   link_with: [libgfxstream_vulkan_mapper, libvirtgpu_kumquat_ffi],
+   dependencies: [idep_vulkan_util_headers],
 )

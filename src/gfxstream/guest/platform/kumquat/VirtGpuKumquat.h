@@ -8,12 +8,7 @@
 #include "GfxStreamVulkanMapper.h"
 #include "VirtGpu.h"
 
-// Blueprint and Meson builds place things differently
-#if defined(ANDROID)
 #include "virtgpu_kumquat_ffi.h"
-#else
-#include "virtgpu_kumquat/virtgpu_kumquat_ffi.h"
-#endif
 
 class VirtGpuKumquatResource : public std::enable_shared_from_this<VirtGpuKumquatResource>,
                                public VirtGpuResource {
