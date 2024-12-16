@@ -674,7 +674,7 @@
         "description": "glx: Guard some of the bind_extensions() code with the same conditions as `glx_screen`s `frontend_screen` member.",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "34dea2b38eb336e0414d60b168b9209e029a8cad",
         "notes": null
