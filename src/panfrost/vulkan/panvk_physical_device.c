@@ -415,6 +415,15 @@ get_features(const struct panvk_physical_device *device,
    };
 }
 
+static uint32_t
+get_vk_version()
+{
+   const uint32_t version_override = vk_get_version_override();
+   if (version_override)
+      return version_override;
+   return VK_MAKE_API_VERSION(0, 1, 0, VK_HEADER_VERSION);
+}
+
 static void
 get_device_properties(const struct panvk_instance *instance,
                       const struct panvk_physical_device *device,
@@ -433,7 +442,7 @@ get_device_properties(const struct panvk_instance *instance,
    assert(arch > 8 || device->kmod.props.max_threads_per_wg <= 1024);
 
    *properties = (struct vk_properties){
-      .apiVersion = panvk_get_vk_version(),
+      .apiVersion = get_vk_version(),
       .driverVersion = vk_get_driver_version(),
       .vendorID = ARM_VENDOR_ID,
 
