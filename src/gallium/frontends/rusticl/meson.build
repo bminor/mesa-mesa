@@ -101,7 +101,6 @@ rusticl_gen_args = [
 
 rusticl_bindgen_args = [
   '--no-convert-floats',
-  '--use-array-pointers-in-arguments',
   '--default-enum-style', 'rust',
   '--with-derive-partialeq',
   '--with-derive-eq',
@@ -260,6 +259,10 @@ rusticl_mesa_bindings = rust.bindgen(
   ],
   args : [
     rusticl_bindgen_args,
+
+    # we want that for mesa
+    '--use-array-pointers-in-arguments',
+
     # mesa utils
     '--allowlist-function',     'blob_.*',
     '--allowlist-function',     'disk_cache_.*',
