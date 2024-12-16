@@ -494,7 +494,7 @@ etna_reset_gpu_state(struct etna_context *ctx)
    }
    if (screen->info->halti >= 5) { /* Only on HALTI5+ */
       etna_set_state(stream, VIVS_NTE_DESCRIPTOR_CONTROL,
-                     VIVS_NTE_DESCRIPTOR_CONTROL_ENABLE);
+                     COND(!DBG_ENABLED(ETNA_DBG_NO_TEXDESC), VIVS_NTE_DESCRIPTOR_CONTROL_ENABLE));
       etna_set_state(stream, VIVS_FE_HALTI5_UNK007D8, 0x00000002);
       etna_set_state(stream, VIVS_PS_SAMPLER_BASE, 0x00000000);
       etna_set_state(stream, VIVS_VS_SAMPLER_BASE, 0x00000020);
@@ -512,7 +512,7 @@ etna_reset_gpu_state(struct etna_context *ctx)
       etna_set_state(stream, VIVS_RS_SINGLE_BUFFER, COND(screen->specs.single_buffer, VIVS_RS_SINGLE_BUFFER_ENABLE));
    }
 
-   if (screen->info->halti >= 5) {
+   if (screen->info->halti >= 5 && !DBG_ENABLED(ETNA_DBG_NO_TEXDESC)) {
       /* TXDESC cache flush - do this once at the beginning, as texture
        * descriptors are only written by the CPU once, then patched by the kernel
        * before command stream submission. It does not need flushing if the
