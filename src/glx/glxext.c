@@ -1078,6 +1078,13 @@ __glXInitialize(Display * dpy)
    glx_driver |= GLX_DRIVER_SW;
 #endif
 
+#if defined(GLX_USE_APPLEGL) && !defined(GLX_USE_APPLE)
+   if (!applegl_create_display(dpyPriv)) {
+      free(dpyPriv);
+      return NULL;
+   }
+#endif
+
    if (!AllocAndFetchScreenConfigs(dpy, dpyPriv, glx_driver, !env)) {
       Bool fail = True;
 #if defined(GLX_DIRECT_RENDERING) && (!defined(GLX_USE_APPLEGL) || defined(GLX_USE_APPLE))

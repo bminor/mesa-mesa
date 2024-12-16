@@ -664,7 +664,7 @@
         "description": "glx: Add back in `applegl_create_display()` so the OpenGL.framework, on MacOS, pointer get setup.",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4e8740370adaad5f8992c13262e1dfc66274d838",
         "notes": null
