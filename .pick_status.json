@@ -414,7 +414,7 @@
         "description": "ci/b2c: run the machine registration check before the test container",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6f9614c1872191f318638425a79049248bd10d4d",
         "notes": null
