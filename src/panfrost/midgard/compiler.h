@@ -38,7 +38,6 @@
 
 #include "compiler/glsl_types.h"
 #include "compiler/nir/nir.h"
-#include "panfrost/util/lcra.h"
 #include "panfrost/util/pan_ir.h"
 
 /* Forward declare */
