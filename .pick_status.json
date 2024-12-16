@@ -84,7 +84,7 @@
         "description": "anv: Always create anv_async_submit in init_copy_video_queue_state()",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "86813c60a49899544239574d0da3de1de9d9088d",
         "notes": null
