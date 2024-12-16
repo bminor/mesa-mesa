@@ -5872,6 +5872,14 @@ brw_from_nir_emit_intrinsic(nir_to_brw_state &ntb,
          slm_fence = modes & nir_var_mem_shared;
          tgm_fence = modes & nir_var_image;
          urb_fence = modes & (nir_var_shader_out | nir_var_mem_task_payload);
+
+         /* When image accesses have been lowered to global intrinsics and a
+          * typed fence is requested, we also need to include the untyped
+          * global memory fence.
+          */
+         if (tgm_fence && s.nir->info.use_lowered_image_to_global)
+            ugm_fence = true;
+
          if (nir_intrinsic_memory_scope(instr) != SCOPE_NONE)
             opcode = SHADER_OPCODE_MEMORY_FENCE;
          break;
