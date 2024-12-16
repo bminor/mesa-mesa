@@ -95,6 +95,8 @@ lower(nir_builder *b, nir_intrinsic_instr *intr, void *data)
                                  .atomic_op = atomic_op);
    }
 
+   b->shader->info.use_lowered_image_to_global = true;
+
    /* Replace the image atomic with the global atomic. Remove the image
     * explicitly because it has side effects so is not DCE'd.
     */
