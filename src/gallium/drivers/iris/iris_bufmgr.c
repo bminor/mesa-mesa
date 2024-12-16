@@ -242,6 +242,7 @@ struct iris_bufmgr {
    struct iris_border_color_pool border_color_pool;
 
    struct iris_bo *dummy_aux_bo;
+   struct iris_bo *mem_fence_bo;
 };
 
 static simple_mtx_t global_bufmgr_list_mutex = SIMPLE_MTX_INITIALIZER;
@@ -1835,6 +1836,7 @@ static void
 iris_bufmgr_destroy(struct iris_bufmgr *bufmgr)
 {
    iris_bo_unreference(bufmgr->dummy_aux_bo);
+   iris_bo_unreference(bufmgr->mem_fence_bo);
 
    iris_destroy_border_color_pool(&bufmgr->border_color_pool);
 
@@ -2469,12 +2471,28 @@ iris_bufmgr_create(struct intel_device_info *devinfo, int fd, bool bo_reuse)
       bufmgr->dummy_aux_bo = iris_bo_alloc(bufmgr, "dummy_aux", 4096, 4096,
                                            IRIS_MEMZONE_OTHER, BO_ALLOC_PLAIN);
          if (!bufmgr->dummy_aux_bo)
-            goto error_dummy_aux;
+            goto error_alloc_bo;
+   }
+
+   /* Programming note from MI_MEM_FENCE specification:
+    *
+    *    Software must ensure STATE_SYSTEM_MEM_FENCE_ADDRESS command is
+    *    programmed prior to programming this command.
+    *
+    * HAS 1607240579 then provides the size information: 4K
+    */
+   if (devinfo->verx10 >= 200) {
+      bufmgr->mem_fence_bo = iris_bo_alloc(bufmgr, "mem_fence", 4096, 4096,
+                                           IRIS_MEMZONE_OTHER, BO_ALLOC_SMEM);
+         if (!bufmgr->dummy_aux_bo)
+            goto error_alloc_bo;
    }
 
    return bufmgr;
 
-error_dummy_aux:
+error_alloc_bo:
+   iris_bo_unreference(bufmgr->dummy_aux_bo);
+   iris_bo_unreference(bufmgr->mem_fence_bo);
    iris_destroy_border_color_pool(&bufmgr->border_color_pool);
    intel_aux_map_finish(bufmgr->aux_map_ctx);
    _mesa_hash_table_destroy(bufmgr->handle_table, NULL);
@@ -2668,4 +2686,10 @@ uint64_t
 iris_bufmgr_get_dummy_aux_address(struct iris_bufmgr *bufmgr)
 {
    return bufmgr->dummy_aux_bo ? bufmgr->dummy_aux_bo->address : 0;
+}
+
+struct iris_bo *
+iris_bufmgr_get_mem_fence_bo(struct iris_bufmgr *bufmgr)
+{
+   return bufmgr->mem_fence_bo;
 }
