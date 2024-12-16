@@ -201,6 +201,7 @@ iris-jsl-deqp:
     - .iris-test
   variables:
     DEQP_SUITE: iris-jsl
+    GPU_VERSION: iris-jsl
     DEQP_FRACTION: 8
   parallel: 2
 

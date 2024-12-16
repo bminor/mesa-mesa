@@ -203,7 +203,7 @@
     DEVICE_TYPE: acer-cb317-1h-c3z6-dedede
     FARM: collabora
     FDO_CI_CONCURRENT: 3
-    GPU_VERSION: iris-jsl
+    GPU_VERSION: anv-jsl
     HWCI_KERNEL_MODULES: i915
     RUNNER_TAG: mesa-ci-x86-64-lava-acer-cb317-1h-c3z6-dedede
 
