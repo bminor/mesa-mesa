@@ -2574,7 +2574,7 @@
         "description": "radeonsi/vpe: add destroy_fence function",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 3,
         "main_sha": null,
         "because_sha": null,
         "notes": null
