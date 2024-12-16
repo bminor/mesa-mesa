@@ -1932,6 +1932,7 @@ struct anv_device {
     struct anv_address                          workaround_address;
 
     struct anv_bo *                             dummy_aux_bo;
+    struct anv_bo *                             mem_fence_bo;
 
     /**
      * Workarounds for game bugs.

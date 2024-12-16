@@ -708,9 +708,24 @@ VkResult anv_CreateDevice(
                                    0 /* explicit_address */,
                                    &device->dummy_aux_bo);
       if (result != VK_SUCCESS)
-         goto fail_workaround_bo;
+         goto fail_alloc_device_bo;
 
       device->isl_dev.dummy_aux_address = device->dummy_aux_bo->offset;
+   }
+
+   /* Programming note from MI_MEM_FENCE specification:
+    *
+    *    Software must ensure STATE_SYSTEM_MEM_FENCE_ADDRESS command is
+    *    programmed prior to programming this command.
+    *
+    * HAS 1607240579 then provides the size information: 4K
+    */
+   if (device->info->verx10 >= 200) {
+      result = anv_device_alloc_bo(device, "mem_fence", 4096,
+                                   ANV_BO_ALLOC_NO_LOCAL_MEM, 0,
+                                   &device->mem_fence_bo);
+      if (result != VK_SUCCESS)
+         goto fail_alloc_device_bo;
    }
 
    struct anv_address wa_addr = (struct anv_address) {
@@ -762,7 +777,7 @@ VkResult anv_CreateDevice(
                                    0 /* explicit_address */,
                                    &device->ray_query_bo[0]);
       if (result != VK_SUCCESS)
-         goto fail_dummy_aux_bo;
+         goto fail_alloc_device_bo;
 
       /* We need a separate ray query bo for CCS engine with Wa_14022863161. */
       if (intel_needs_workaround(device->isl_dev.info, 14022863161) &&
@@ -1039,10 +1054,11 @@ VkResult anv_CreateDevice(
       if (device->ray_query_bo[i])
          anv_device_release_bo(device, device->ray_query_bo[i]);
    }
- fail_dummy_aux_bo:
+ fail_alloc_device_bo:
+   if (device->mem_fence_bo)
+      anv_device_release_bo(device, device->mem_fence_bo);
    if (device->dummy_aux_bo)
       anv_device_release_bo(device, device->dummy_aux_bo);
- fail_workaround_bo:
    anv_device_release_bo(device, device->workaround_bo);
  fail_surface_aux_map_pool:
    if (device->info->has_aux_map) {
@@ -1195,6 +1211,8 @@ void anv_DestroyDevice(
    anv_device_release_bo(device, device->workaround_bo);
    if (device->dummy_aux_bo)
       anv_device_release_bo(device, device->dummy_aux_bo);
+   if (device->mem_fence_bo)
+      anv_device_release_bo(device, device->mem_fence_bo);
    anv_device_release_bo(device, device->trivial_batch_bo);
 
    if (device->info->has_aux_map) {

@@ -183,6 +183,17 @@ genX(emit_slice_hashing_state)(struct anv_device *device,
 }
 
 static void
+state_system_mem_fence_address_emit(struct anv_device *device, struct anv_batch *batch)
+{
+#if GFX_VERx10 >= 200
+   struct anv_address addr = { .bo = device->mem_fence_bo };
+   anv_batch_emit(batch, GENX(STATE_SYSTEM_MEM_FENCE_ADDRESS), mem_fence_addr) {
+      mem_fence_addr.SystemMemoryFenceAddress = addr;
+   }
+#endif
+}
+
+static void
 init_common_queue_state(struct anv_queue *queue, struct anv_batch *batch)
 {
    UNUSED struct anv_device *device = queue->device;
@@ -356,6 +367,8 @@ init_common_queue_state(struct anv_queue *queue, struct anv_batch *batch)
       }
    }
 #endif
+
+   state_system_mem_fence_address_emit(device, batch);
 }
 
 #if GFX_VER >= 20
@@ -839,6 +852,8 @@ init_copy_video_queue_state(struct anv_queue *queue)
 #else
    assert(!queue->device->info->has_aux_map);
 #endif
+
+   state_system_mem_fence_address_emit(device, batch);
 
    if (batch->start != batch->next) {
       anv_batch_emit(batch, GENX(MI_BATCH_BUFFER_END), bbe);
