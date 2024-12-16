@@ -693,11 +693,6 @@ si_vpe_processor_destroy(struct pipe_video_codec *codec)
    unsigned int i;
    assert(codec);
 
-   if (vpeproc->process_fence) {
-      SIVPE_INFO(vpeproc->log_level, "Wait fence\n");
-      vpeproc->ws->fence_wait(vpeproc->ws, vpeproc->process_fence, PIPE_DEFAULT_DECODER_FEEDBACK_TIMEOUT_NS);
-   }
-
    if (vpeproc->vpe_build_bufs)
       si_vpe_free_buffer(vpeproc->vpe_build_bufs);
 
@@ -1015,16 +1010,10 @@ si_vpe_processor_end_frame(struct pipe_video_codec *codec,
                            struct pipe_picture_desc *picture)
 {
    struct vpe_video_processor *vpeproc = (struct vpe_video_processor *)codec;
-   struct pipe_fence_handle *process_fence = NULL;
    assert(codec);
 
-   vpeproc->ws->cs_flush(&vpeproc->cs, picture->flush_flags, &process_fence);
+   vpeproc->ws->cs_flush(&vpeproc->cs, picture->flush_flags, picture->fence);
    next_buffer(vpeproc);
-
-   if (picture->fence && process_fence)
-      *picture->fence = process_fence;
-   else
-      SIVPE_WARN(vpeproc->log_level, "Fence may have problem!\n");
 
    return 0;
 }
@@ -1048,6 +1037,15 @@ static int si_vpe_processor_fence_wait(struct pipe_video_codec *codec,
       return 0;
    }
    return 1;
+}
+
+static void si_vpe_processor_destroy_fence(struct pipe_video_codec *codec,
+                                           struct pipe_fence_handle *fence)
+{
+   struct vpe_video_processor *vpeproc = (struct vpe_video_processor *)codec;
+   assert(codec);
+
+   vpeproc->ws->fence_reference(vpeproc->ws, &fence, NULL);
 }
 
 struct pipe_video_codec*
@@ -1081,13 +1079,13 @@ si_vpe_create_processor(struct pipe_context *context, const struct pipe_video_co
    vpeproc->base.end_frame = si_vpe_processor_end_frame;
    vpeproc->base.flush = si_vpe_processor_flush;
    vpeproc->base.fence_wait = si_vpe_processor_fence_wait;
+   vpeproc->base.destroy_fence = si_vpe_processor_destroy_fence;
 
    vpeproc->ver_major = sctx->screen->info.ip[AMD_IP_VPE].ver_major;
    vpeproc->ver_minor = sctx->screen->info.ip[AMD_IP_VPE].ver_minor;
 
    vpeproc->screen = context->screen;
    vpeproc->ws = ws;
-   vpeproc->process_fence = NULL;
 
    init_data = &vpeproc->vpe_data;
    if (VPE_STATUS_OK != si_vpe_populate_init_data(sctx, init_data, vpeproc->log_level)){
