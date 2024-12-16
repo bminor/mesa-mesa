@@ -369,19 +369,6 @@ pan_exit_block(struct list_head *blocks)
    return last;
 }
 
-typedef void (*pan_liveness_update)(uint16_t *, void *, unsigned max);
-
-void pan_liveness_gen(uint16_t *live, unsigned node, unsigned max,
-                      uint16_t mask);
-void pan_liveness_kill(uint16_t *live, unsigned node, unsigned max,
-                       uint16_t mask);
-bool pan_liveness_get(uint16_t *live, unsigned node, uint16_t max);
-
-void pan_compute_liveness(struct list_head *blocks, unsigned temp_count,
-                          pan_liveness_update callback);
-
-void pan_free_liveness(struct list_head *blocks);
-
 uint16_t pan_to_bytemask(unsigned bytes, unsigned mask);
 
 void pan_block_add_successor(pan_block *block, pan_block *successor);
