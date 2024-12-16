@@ -1274,22 +1274,25 @@ panvk_cmd_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_data *draw)
          return;
    }
 
+   panvk_per_arch(cmd_prepare_draw_sysvals)(cmdbuf, &draw->info);
+
+   /* Viewport emission requires up-to-date {scale,offset}.z for min/max Z,
+    * so we need to call it after calling cmd_prepare_draw_sysvals(), but
+    * viewports are the same for all layers, so we only emit when layer_id=0.
+    */
+   result = panvk_draw_prepare_viewport(cmdbuf, draw);
+   if (result != VK_SUCCESS)
+      return;
+
    for (uint32_t i = 0; i < layer_count; i++) {
       draw->info.layer_id = i;
       result = panvk_draw_prepare_varyings(cmdbuf, draw);
       if (result != VK_SUCCESS)
          return;
 
-      panvk_per_arch(cmd_prepare_draw_sysvals)(cmdbuf, &draw->info);
-
-      /* Viewport emission requires up-to-date {scale,offset}.z for min/max Z,
-       * so we need to call it after calling cmd_prepare_draw_sysvals(), but
-       * viewports are the same for all layers, so we only emit when layer_id=0.
-       */
-      if (i == 0) {
-         result = panvk_draw_prepare_viewport(cmdbuf, draw);
-         if (result != VK_SUCCESS)
-            return;
+      if (i > 0) {
+         cmdbuf->state.gfx.sysvals.layer_id = i;
+         gfx_state_set_dirty(cmdbuf, FS_PUSH_UNIFORMS);
       }
 
       result = panvk_per_arch(cmd_prepare_push_uniforms)(
