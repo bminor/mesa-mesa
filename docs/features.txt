@@ -428,7 +428,7 @@ we DO NOT WANT implementations of these extensions for Mesa.
 
 Vulkan 1.0 -- all DONE: anv, dzn, lvp, nvk, panvk, radv, tu, v3dv, vn
 
-Vulkan 1.1 -- all DONE: anv, lvp, nvk, radv, tu, vn
+Vulkan 1.1 -- all DONE: anv, lvp, nvk, panvk/v10+, radv, tu, vn
 
   VK_KHR_16bit_storage                                  DONE (anv, dzn, hasvk, lvp, nvk, panvk, radv, tu/a650+, v3dv, vn)
   VK_KHR_bind_memory2                                   DONE (anv, dzn, hasvk, lvp, nvk, panvk, pvr, radv, tu, v3dv, vn)
