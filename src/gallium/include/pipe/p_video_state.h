@@ -1792,6 +1792,8 @@ struct pipe_av1_picture_desc
          uint32_t mono_chrome:1;
          uint32_t ref_frame_mvs:1;
          uint32_t film_grain_params_present:1;
+         uint32_t subsampling_x:1;
+         uint32_t subsampling_y:1;
       } seq_info_fields;
 
       uint32_t current_frame_id;
