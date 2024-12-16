@@ -168,7 +168,16 @@ radv_shader_object_init_graphics(struct radv_shader_object *shader_obj, struct r
       shader_obj->shader = shader;
       shader_obj->binary = binary;
    } else {
-      radv_foreach_stage(next_stage, pCreateInfo->nextStage)
+      VkShaderStageFlags next_stages = pCreateInfo->nextStage;
+
+      /* The last VGT stage can always be used with rasterization enabled and a null fragment shader
+       * (ie. depth-only rendering). Because we don't want to have two variants for NONE and
+       * FRAGMENT, let's compile only one variant that works for both.
+       */
+      if (stage == MESA_SHADER_VERTEX || stage == MESA_SHADER_TESS_EVAL || stage == MESA_SHADER_GEOMETRY)
+         next_stages |= VK_SHADER_STAGE_FRAGMENT_BIT;
+
+      radv_foreach_stage(next_stage, next_stages)
       {
          struct radv_shader *shaders[MESA_VULKAN_SHADER_STAGES] = {NULL};
          struct radv_shader_binary *binaries[MESA_VULKAN_SHADER_STAGES] = {NULL};
