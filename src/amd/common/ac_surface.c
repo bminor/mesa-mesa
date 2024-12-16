@@ -538,41 +538,37 @@ bool ac_get_supported_modifiers(const struct radeon_info *info,
        *
        * Only declare 64K modifiers for now.
        */
-      uint64_t mod_64K_2D = AMD_FMT_MOD |
-                            AMD_FMT_MOD_SET(TILE_VERSION, AMD_FMT_MOD_TILE_VER_GFX12) |
-                            AMD_FMT_MOD_SET(TILE, AMD_FMT_MOD_TILE_GFX12_64K_2D);
+      uint64_t mod_gfx12 = AMD_FMT_MOD |
+                           AMD_FMT_MOD_SET(TILE_VERSION, AMD_FMT_MOD_TILE_VER_GFX12);
+
+      uint64_t mod_256K_2D = mod_gfx12 | AMD_FMT_MOD_SET(TILE, AMD_FMT_MOD_TILE_GFX12_256K_2D);
+      uint64_t mod_64K_2D = mod_gfx12 | AMD_FMT_MOD_SET(TILE, AMD_FMT_MOD_TILE_GFX12_64K_2D);
+      uint64_t mod_4K_2D = mod_gfx12 | AMD_FMT_MOD_SET(TILE, AMD_FMT_MOD_TILE_GFX12_4K_2D);
+      uint64_t mod_256B_2D = mod_gfx12 | AMD_FMT_MOD_SET(TILE, AMD_FMT_MOD_TILE_GFX12_256B_2D);
 
       /* This is identical to GFX12_64K_2D, but expressed in terms of VER_GFX11. */
       uint64_t mod_64K_2D_as_gfx11 = AMD_FMT_MOD |
                                      AMD_FMT_MOD_SET(TILE_VERSION, AMD_FMT_MOD_TILE_VER_GFX11) |
                                      AMD_FMT_MOD_SET(TILE, AMD_FMT_MOD_TILE_GFX9_64K_D);
 
-      /* Expose both 128B and 64B compressed blocks. */
+      /* Expose both all compressed blocks. */
+      uint64_t dcc_256B = AMD_FMT_MOD_SET(DCC, 1) |
+                          AMD_FMT_MOD_SET(DCC_MAX_COMPRESSED_BLOCK, AMD_FMT_MOD_DCC_BLOCK_256B);
       uint64_t dcc_128B = AMD_FMT_MOD_SET(DCC, 1) |
                           AMD_FMT_MOD_SET(DCC_MAX_COMPRESSED_BLOCK, AMD_FMT_MOD_DCC_BLOCK_128B);
       uint64_t dcc_64B = AMD_FMT_MOD_SET(DCC, 1) |
                          AMD_FMT_MOD_SET(DCC_MAX_COMPRESSED_BLOCK, AMD_FMT_MOD_DCC_BLOCK_64B);
 
-      uint64_t mod_256B_2D = AMD_FMT_MOD |
-                             AMD_FMT_MOD_SET(TILE_VERSION, AMD_FMT_MOD_TILE_VER_GFX12) |
-                             AMD_FMT_MOD_SET(TILE, AMD_FMT_MOD_TILE_GFX12_256B_2D);
-
-      uint64_t mod_4K_2D = AMD_FMT_MOD |
-                           AMD_FMT_MOD_SET(TILE_VERSION, AMD_FMT_MOD_TILE_VER_GFX12) |
-                           AMD_FMT_MOD_SET(TILE, AMD_FMT_MOD_TILE_GFX12_4K_2D);
-
-      uint64_t mod_256K_2D = AMD_FMT_MOD |
-                             AMD_FMT_MOD_SET(TILE_VERSION, AMD_FMT_MOD_TILE_VER_GFX12) |
-                             AMD_FMT_MOD_SET(TILE, AMD_FMT_MOD_TILE_GFX12_256K_2D);
-
       /* Modifiers must be sorted from best to worst. */
+      ADD_MOD(mod_64K_2D | dcc_256B)      /* 64K with DCC and 256B compressed blocks */
       ADD_MOD(mod_64K_2D | dcc_128B)      /* 64K with DCC and 128B compressed blocks */
       ADD_MOD(mod_64K_2D | dcc_64B)       /* 64K with DCC and 64B compressed blocks */
+      ADD_MOD(mod_256K_2D | dcc_256B)     /* OpenGL exported modifier */
+      ADD_MOD(mod_4K_2D | dcc_256B)       /* OpenGL exported modifier */
+      ADD_MOD(mod_256B_2D | dcc_256B)     /* OpenGL exported modifier */
+      /* Without DCC is last. */
       ADD_MOD(mod_64K_2D)                 /* 64K without DCC */
       ADD_MOD(mod_64K_2D_as_gfx11)        /* the same as above, but for gfx11 interop */
-      ADD_MOD(mod_256K_2D | dcc_128B)     /* OpenGL exported modifier */
-      ADD_MOD(mod_4K_2D | dcc_128B)       /* OpenGL exported modifier */
-      ADD_MOD(mod_256B_2D | dcc_128B)     /* OpenGL exported modifier */
       ADD_MOD(mod_256B_2D)
       ADD_MOD(DRM_FORMAT_MOD_LINEAR)
       break;
@@ -3315,7 +3311,7 @@ static bool gfx12_compute_surface(struct ac_addrlib *addrlib, const struct radeo
       } else if (!(surf->flags & RADEON_SURF_Z_OR_SBUFFER) &&
                  /* Don't change the DCC settings for imported buffers - they might differ. */
                  !(surf->flags & RADEON_SURF_IMPORTED)) {
-         surf->u.gfx9.color.dcc.max_compressed_block_size = V_028C78_MAX_BLOCK_SIZE_128B;
+         surf->u.gfx9.color.dcc.max_compressed_block_size = V_028C78_MAX_BLOCK_SIZE_256B;
       }
    }
 
