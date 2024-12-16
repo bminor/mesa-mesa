@@ -265,10 +265,10 @@ anv_image_view_init(struct anv_device *device,
          anv_aspect_to_plane(iview->vk.aspects, 1UL << iaspect_bit);
 
       VkFormat view_format = iview->vk.view_format;
-      if (anv_is_format_emulated(device->physical, view_format)) {
+      if (anv_is_compressed_format_emulated(device->physical, view_format)) {
          assert(image->emu_plane_format != VK_FORMAT_UNDEFINED);
          view_format =
-            anv_get_emulation_format(device->physical, view_format);
+            anv_get_compressed_format_emulation(device->physical, view_format);
       }
       const struct anv_format_plane format = anv_get_format_plane(
             device->physical, view_format, vplane, image->vk.tiling);

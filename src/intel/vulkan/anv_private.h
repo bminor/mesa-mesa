@@ -5323,7 +5323,8 @@ extern VkFormat
 vk_format_from_android(unsigned android_format, unsigned android_usage);
 
 static inline VkFormat
-anv_get_emulation_format(const struct anv_physical_device *pdevice, VkFormat format)
+anv_get_compressed_format_emulation(const struct anv_physical_device *pdevice,
+                                    VkFormat format)
 {
    if (pdevice->flush_astc_ldr_void_extent_denorms) {
       const struct util_format_description *desc =
@@ -5340,9 +5341,11 @@ anv_get_emulation_format(const struct anv_physical_device *pdevice, VkFormat for
 }
 
 static inline bool
-anv_is_format_emulated(const struct anv_physical_device *pdevice, VkFormat format)
+anv_is_compressed_format_emulated(const struct anv_physical_device *pdevice,
+                                  VkFormat format)
 {
-   return anv_get_emulation_format(pdevice, format) != VK_FORMAT_UNDEFINED;
+   return anv_get_compressed_format_emulation(pdevice,
+                                              format) != VK_FORMAT_UNDEFINED;
 }
 
 static inline struct isl_swizzle

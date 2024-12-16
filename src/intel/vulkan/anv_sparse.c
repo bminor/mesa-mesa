@@ -1526,7 +1526,7 @@ anv_sparse_image_check_support(struct anv_physical_device *pdevice,
     * formats due to the additional image plane. It would make the
     * implementation extremely complicated.
     */
-   if (anv_is_format_emulated(pdevice, vk_format))
+   if (anv_is_compressed_format_emulated(pdevice, vk_format))
       return VK_ERROR_FORMAT_NOT_SUPPORTED;
 
    /* While the spec itself says linear is not supported (see above), deqp-vk

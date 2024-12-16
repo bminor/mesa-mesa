@@ -1688,13 +1688,13 @@ anv_image_init(struct anv_device *device, struct anv_image *image,
    image->disjoint = image->n_planes > 1 &&
                      (pCreateInfo->flags & VK_IMAGE_CREATE_DISJOINT_BIT);
 
-   if (anv_is_format_emulated(device->physical, pCreateInfo->format)) {
+   if (anv_is_compressed_format_emulated(device->physical, pCreateInfo->format)) {
       assert(image->n_planes == 1 &&
              vk_format_is_compressed(image->vk.format));
       assert(!(image->vk.create_flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT));
 
-      image->emu_plane_format =
-         anv_get_emulation_format(device->physical, image->vk.format);
+      image->emu_plane_format = anv_get_compressed_format_emulation(
+         device->physical, image->vk.format);
 
       /* for fetching the raw copmressed data and storing the decompressed
        * data
