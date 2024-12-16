@@ -447,6 +447,9 @@ make_compiler_temp(compiler_context *ctx)
    return (ctx->func->impl->ssa_alloc + ctx->temp_alloc++) << 1;
 }
 
+/* IR indexing */
+#define PAN_IS_REG (1)
+
 static inline unsigned
 make_compiler_temp_reg(compiler_context *ctx)
 {

@@ -373,12 +373,6 @@ uint16_t pan_to_bytemask(unsigned bytes, unsigned mask);
 
 void pan_block_add_successor(pan_block *block, pan_block *successor);
 
-/* IR indexing */
-#define PAN_IS_REG (1)
-
-/* IR printing helpers */
-void pan_print_alu_type(nir_alu_type t, FILE *fp);
-
 /* NIR passes to do some backend-specific lowering */
 
 #define PAN_WRITEOUT_C 1
