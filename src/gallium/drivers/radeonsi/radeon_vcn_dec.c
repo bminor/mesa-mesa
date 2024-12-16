@@ -2401,6 +2401,30 @@ static void radeon_dec_begin_frame(struct pipe_video_codec *decoder,
 
    assert(decoder);
 
+   switch (dec->stream_type) {
+   case RDECODE_CODEC_VP9: {
+      struct pipe_vp9_picture_desc *pic = (struct pipe_vp9_picture_desc *)picture;
+      /* Only 10 bit is supported for Profile 2 */
+      if (pic->picture_parameter.bit_depth > 10) {
+         dec->error = true;
+         return;
+      }
+      break;
+   }
+   case RDECODE_CODEC_AV1: {
+      struct pipe_av1_picture_desc *pic = (struct pipe_av1_picture_desc *)picture;
+      /* Only 4:2:0 is supported for Profile 2 */
+      if (!pic->picture_parameter.seq_info_fields.subsampling_x ||
+          !pic->picture_parameter.seq_info_fields.subsampling_y) {
+         dec->error = true;
+         return;
+      }
+      break;
+   }
+   default:
+      break;
+   }
+
    frame = ++dec->frame_number;
    if (dec->stream_type != RDECODE_CODEC_VP9 && dec->stream_type != RDECODE_CODEC_AV1
                                              && dec->stream_type != RDECODE_CODEC_H264_PERF)
