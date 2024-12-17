@@ -1233,7 +1233,10 @@ emit_streamout(nir_builder *b, unsigned stream, nir_xfb_info *info, ac_nir_prera
       so_write_offset[i] = offset;
    }
 
-   nir_def *undef = nir_undef(b, 1, 32);
+   nir_def *zero = nir_imm_int(b, 0);
+   unsigned num_values = 0, store_offset = 0, store_buffer_index = 0;
+   nir_def *values[4];
+
    for (unsigned i = 0; i < info->output_count; i++) {
       const nir_xfb_output_info *output = info->outputs + i;
       if (stream != info->buffer_to_stream[output->buffer])
@@ -1243,35 +1246,50 @@ emit_streamout(nir_builder *b, unsigned stream, nir_xfb_info *info, ac_nir_prera
       nir_def **output_data =
          get_output_and_type(out, output->location, output->high_16bits, &output_type);
 
-      nir_def *vec[4] = {undef, undef, undef, undef};
-      uint8_t mask = 0;
-      u_foreach_bit(j, output->component_mask) {
-         nir_def *data = output_data[j];
+      u_foreach_bit(out_comp, output->component_mask) {
+         if (!output_data[out_comp])
+            continue;
 
-         if (data) {
-            if (data->bit_size < 32) {
-               /* we need output type to convert non-32bit output to 32bit */
-               assert(output_type);
+         nir_def *data = output_data[out_comp];
 
-               nir_alu_type base_type = nir_alu_type_get_base_type(output_type[j]);
-               data = nir_convert_to_bit_size(b, data, base_type, 32);
-            }
+         if (data->bit_size < 32) {
+            /* Convert the 16-bit output to 32 bits. */
+            assert(output_type);
 
-            unsigned comp = j - output->component_offset;
-            vec[comp] = data;
-            mask |= 1 << comp;
+            nir_alu_type base_type = nir_alu_type_get_base_type(output_type[out_comp]);
+            data = nir_convert_to_bit_size(b, data, base_type, 32);
          }
+
+         assert(out_comp >= output->component_offset);
+         const unsigned store_comp = out_comp - output->component_offset;
+         const unsigned store_comp_offset = output->offset + store_comp * 4;
+         const bool has_hole = store_offset + num_values * 4 != store_comp_offset;
+
+         /* Flush the gathered components to memory as a vec4 store or less if there is a hole. */
+         if (num_values && (num_values == 4 || store_buffer_index != output->buffer || has_hole)) {
+            nir_store_buffer_amd(b, nir_vec(b, values, num_values), so_buffers[store_buffer_index],
+                                 so_write_offset[store_buffer_index], zero, zero,
+                                 .base = store_offset,
+                                 .access = ACCESS_NON_TEMPORAL);
+            num_values = 0;
+         }
+
+         /* Initialize the buffer index and offset if we are beginning a new vec4 store. */
+         if (num_values == 0) {
+            store_buffer_index = output->buffer;
+            store_offset = store_comp_offset;
+         }
+
+         values[num_values++] = data;
       }
+   }
 
-      if (!mask)
-         continue;
-
-      unsigned buffer = output->buffer;
-      nir_def *data = nir_vec(b, vec, util_last_bit(mask));
-      nir_def *zero = nir_imm_int(b, 0);
-      nir_store_buffer_amd(b, data, so_buffers[buffer], so_write_offset[buffer], zero, zero,
-                           .base = output->offset, .write_mask = mask,
-                           .access = ACCESS_COHERENT | ACCESS_NON_TEMPORAL);
+   if (num_values) {
+      /* Flush the remaining components to memory (as an up to vec4 store) */
+      nir_store_buffer_amd(b, nir_vec(b, values, num_values), so_buffers[store_buffer_index],
+                           so_write_offset[store_buffer_index], zero, zero,
+                           .base = store_offset,
+                           .access = ACCESS_NON_TEMPORAL);
    }
 
    nir_pop_if(b, NULL);
