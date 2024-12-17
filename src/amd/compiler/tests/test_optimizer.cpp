@@ -2199,3 +2199,123 @@ BEGIN_TEST(optimizer.mul_b2f)
 
    finish_opt_test();
 END_TEST
+
+BEGIN_TEST(optimizer.pk_fma)
+   for (unsigned i = GFX9; i <= GFX11; i++) {
+      if (i == GFX10_3)
+         continue;
+      //>> v1: %a:v[0],  v1: %b:v[1],  v1: %c:v[2],  s1: %d:s[0],  s1: %e:s[1] = p_startpgm
+      if (!setup_cs("v1 v1 v1 s1 s1", (amd_gfx_level)i))
+         continue;
+
+      Temp a = inputs[0];
+      Temp b = inputs[1];
+      Temp c = inputs[2];
+      Temp d = inputs[3];
+      Temp e = inputs[4];
+
+      //! v1: %res0 = v_pk_fma_f16 %a, %b, %c
+      //! p_unit_test 0, %res0
+      Builder::Result mul = bld.vop3p(aco_opcode::v_pk_mul_f16, bld.def(v1), a, b, 0x0, 0x3);
+      Builder::Result add = bld.vop3p(aco_opcode::v_pk_add_f16, bld.def(v1), mul, c, 0x0, 0x3);
+      writeout(0, add);
+
+      //! v1: %res1 = v_pk_fma_f16 %a.yx, %b, %c.xx
+      //! p_unit_test 1, %res1
+      mul = bld.vop3p(aco_opcode::v_pk_mul_f16, bld.def(v1), a, b, 0x1, 0x2);
+      add = bld.vop3p(aco_opcode::v_pk_add_f16, bld.def(v1), mul, c, 0x0, 0x1);
+      writeout(1, add);
+
+      //! v1: %res2 = v_pk_fma_f16 %a.xx*[-1,1], %b.yy, %3.xx
+      //! p_unit_test 2, %res2
+      mul = bld.vop3p(aco_opcode::v_pk_mul_f16, bld.def(v1), a, b, 0x1, 0x2);
+      add = bld.vop3p(aco_opcode::v_pk_add_f16, bld.def(v1), mul, c, 0x1, 0x1);
+      add->valu().neg_lo[0] = true;
+      writeout(2, add);
+
+      //! v1: (precise)%mul3 = v_pk_mul_f16 %a, %b
+      //! v1: %res3 = v_pk_add_f16 %mul3, %c
+      //! p_unit_test 3, %res3
+      mul = bld.precise().vop3p(aco_opcode::v_pk_mul_f16, bld.def(v1), a, b, 0x0, 0x3);
+      add = bld.vop3p(aco_opcode::v_pk_add_f16, bld.def(v1), mul, c, 0x0, 0x3);
+      writeout(3, add);
+
+      //! v1: %mul4 = v_pk_mul_f16 %a, %b
+      //! v1: (precise)%res4 = v_pk_add_f16 %mul4, %c
+      //! p_unit_test 4, %res4
+      mul = bld.vop3p(aco_opcode::v_pk_mul_f16, bld.def(v1), a, b, 0x0, 0x3);
+      add = bld.precise().vop3p(aco_opcode::v_pk_add_f16, bld.def(v1), mul, c, 0x0, 0x3);
+      writeout(4, add);
+
+      //~gfx9! s1: %const5 = p_parallelcopy 0x4800
+      //~gfx9! v1: (precise)%res5 = v_pk_fma_f16 %a, %const5.xx, %c
+      //~gfx(10|11)! v1: (precise)%res5 = v_pk_fma_f16 %a, 0x4800.xx, %c
+      //! p_unit_test 5, %res5
+      Temp constant = bld.copy(bld.def(s1), Operand::c32(0x4800));
+      mul = bld.vop3p(aco_opcode::v_pk_mul_f16, bld.def(v1), a, constant, 0x0, 0x1);
+      add = bld.precise().vop3p(aco_opcode::v_pk_add_f16, bld.def(v1), mul, c, 0x0, 0x3);
+      writeout(5, add);
+
+      //~gfx9! s1: %const6 = p_parallelcopy 0x48404800
+      //~gfx9! v1: %mul6 = v_pk_mul_f16 %a, %const6
+      //~gfx(10|11)! v1: %mul6 = v_pk_mul_f16 %a, 0x48404800
+      //! v1: (precise)%res6 = v_pk_add_f16 %mul6, %c
+      //! p_unit_test 6, %res6
+      constant = bld.copy(bld.def(s1), Operand::c32(0x48404800));
+      mul = bld.vop3p(aco_opcode::v_pk_mul_f16, bld.def(v1), a, constant, 0x0, 0x3);
+      add = bld.precise().vop3p(aco_opcode::v_pk_add_f16, bld.def(v1), mul, c, 0x0, 0x3);
+      writeout(6, add);
+
+      //~gfx9! s1: %const7 = p_parallelcopy 0x4840
+      //~gfx9! s1: %const72 = p_parallelcopy 0x5000
+      //~gfx9! v1: %mul7 = v_pk_mul_f16 %a, %const7.xx
+      //~gfx9! v1: %res7 = v_pk_add_f16 %mul7, %const72.xx
+      //~gfx(10|11)! v1: %res7 = v_pk_fma_f16 %a, 0x50004840.xx, 0x50004840.yy
+      //! p_unit_test 7, %res7
+      constant = bld.copy(bld.def(s1), Operand::c32(0x4840));
+      Temp constant2 = bld.copy(bld.def(s1), Operand::c32(0x5000));
+      mul = bld.vop3p(aco_opcode::v_pk_mul_f16, bld.def(v1), a, constant, 0x0, 0x1);
+      add = bld.vop3p(aco_opcode::v_pk_add_f16, bld.def(v1), mul, constant2, 0x0, 0x1);
+      writeout(7, add);
+
+      //! v1: %res8 = v_pk_fma_f16 %a.yy, %b.xx, %c
+      //! p_unit_test 8, %res8
+      Temp extract = bld.pseudo(aco_opcode::p_extract_vector, bld.def(v2b), a, Operand::c32(1));
+      mul = bld.vop2(aco_opcode::v_mul_f16, bld.def(v2b), extract, b);
+      add = bld.vop3p(aco_opcode::v_pk_add_f16, bld.def(v1), mul, c, 0x0, 0x2);
+      writeout(8, add);
+
+      //! v1: %res9 = v_pk_fma_f16 %d.yy, -%b.xx, %c
+      //! p_unit_test 9, %res9
+      extract = bld.pseudo(aco_opcode::p_extract, bld.def(s1), bld.def(s1, scc), d, Operand::c32(1),
+                           Operand::c32(16u), Operand::c32(false));
+      mul = bld.vop2_e64(aco_opcode::v_mul_f16, bld.def(v2b), extract, b);
+      add = bld.vop3p(aco_opcode::v_pk_add_f16, bld.def(v1), mul, c, 0x0, 0x2);
+      mul->valu().neg[1] = true;
+      writeout(9, add);
+
+      //! v2b: %mul10 = v_mul_f16 %e, |%b|
+      //! v1: %res10 = v_pk_add_f16 %mul10.xx, %c
+      //! p_unit_test 10, %res10
+      mul = bld.vop2_e64(aco_opcode::v_mul_f16, bld.def(v2b), e, b);
+      add = bld.vop3p(aco_opcode::v_pk_add_f16, bld.def(v1), mul, c, 0x0, 0x2);
+      mul->valu().abs[1] = true;
+      writeout(10, add);
+
+      //! v2b: %res11 = v_fma_f16 %a, %b, %e
+      //! p_unit_test 11, %res11
+      mul = bld.vop3p(aco_opcode::v_pk_mul_f16, bld.def(v1), a, b, 0x0, 0x3);
+      add = bld.vop2(aco_opcode::v_add_f16, bld.def(v2b), e, mul);
+      writeout(11, add);
+
+      //! v2b: %res12 = v_fma_f16 hi(%a), -%b, %e
+      //! p_unit_test 12, %res12
+      mul = bld.vop3p(aco_opcode::v_pk_mul_f16, bld.def(v1), a, b, 0x0, 0x1);
+      extract = bld.pseudo(aco_opcode::p_extract_vector, bld.def(v2b), mul, Operand::c32(1));
+      add = bld.vop2(aco_opcode::v_add_f16, bld.def(v2b), e, extract);
+      mul->valu().neg_hi[1] = true;
+      writeout(12, add);
+
+      finish_opt_test();
+   }
+END_TEST
