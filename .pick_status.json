@@ -1,5 +1,245 @@
 [
     {
+        "sha": "da4e2af010c2dd8e8668f0b62ae74383cb45dff0",
+        "description": "anv, drirc: Add workaround to speed up Spiderman reg allocation",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6e59778e5d49293ed6c60f74e2e462d87f0f7af7",
+        "description": "radv: fix capturing RT pipelines that return VK_OPERATION_DEFERRED_KHR for RGP",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f0797c60e501962cccdadc8766659147557b3258",
+        "description": "ci: uprev vkd3d-proton to c965c1351fd6915a65bb7f647319536252a24a93",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e8d1b13f5e414da7ee26262654b071f78b70be88",
+        "description": "docs: remove leftover mention of meson dri3 option",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5d6d67a4d136301c7fd336f18dec37a65005a5d1",
+        "description": "docs/android: improve documentation about building llvmpipe for Android",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "99ae03b2ae6bc385d9d22cf7fff1eec2cecd08a3",
+        "description": "docs/android: update docs/android.rst after libgallium_dri updates",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e03e1adcf00b7b8cca0c919690e15a71afa07f88",
+        "description": "llvmpipe/ci: Actually enable ASan testing for llvmpipe-deqp-asan",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "04b154b847e20e47e3001045845381c016ee12e1",
+        "description": "ci/deqp: Add a DEQP_FORCE_ASAN option",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ab3356e7187be70b97345ea92dc17e5569097e92",
+        "description": "ci/deqp: Simplify conditional arguments",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fb2779e51101e5e7677808f73630b28dd34e5866",
+        "description": "llvmpipe/ci: Move Piglit timeout inside the suite",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ee72c8a177fd0218edbed564398ce4df0d191598",
+        "description": "ci/deqp: Remove non-suite support",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0223f0f54d1082a3510afc62f09fab64b62153b0",
+        "description": "radv: fix missing variants for the last VGT stage with shader object",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5ad025b675ac8acd51d722372eed95580e533997",
+        "description": "radv/ci: fix expected list of failures for TAHITI",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "dda03a21d67d8f5a7bd756a9893f52b66c7fb602",
+        "notes": null
+    },
+    {
+        "sha": "78f60e773c26e35a81653cd7b9a56b7a9c0a9155",
+        "description": "turnip/ci: Enable ASan leak detection in a630-vk-asan",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0615b92c23936253dee71504f73b2c18af83e3b5",
+        "description": "radv/ci: Use deqp-vk-main in Raven and Stoney RADV jobs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1b55f101055e2c07c34219e9b3352cf61da95bdf",
+        "description": "anv/bvh: Dump BVH synchronously upon command buffer completion",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c695043e814ea8e9778241bdb346203ca2e0e9f0",
+        "description": "nir/opt_algebraic: optimize min(max(a, b), a)",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cdecbee9225f98a5529a55964f1f9758c4f893b5",
+        "description": "radeonsi/gfx12: adjust HiZ/HiS logic",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e3cef02c24553d181d2de9ff79aa2a0b090fb65f",
+        "description": "radeonsi/gfx12: set DB_RENDER_OVERRIDE based on stencil state",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8328e575125ff056310d9db81ea09b12187ab222",
+        "description": "ac/surface/gfx12: enable DCC 256B compressed blocks and reorder modifiers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e6345e2fd3fa267a244d26a807a75f98d9701ee0",
+        "description": "ac: update SPI_GRP_LAUNCH_GUARANTEE_* register values for gfx12",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0e6d32777f6a37b64ee9ab4df1d85c0c148c6a35",
+        "description": "nir/opt_remove_phis: rematerialize equal alu",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c0a095347697aa6031a910cb501c01f34526567b",
+        "description": "llvmpipe: PointCoord is offset when multisampling is enabled",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "dda03a21d67d8f5a7bd756a9893f52b66c7fb602",
+        "description": "Revert \"radv: fix creating unlinked shaders with ESO when nextStage is 0\"",
+        "nominated": true,
+        "nomination_type": 3,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "d4ccae739ba905e0bd42951791222f70949653c8",
+        "notes": null
+    },
+    {
         "sha": "0943f616d183835d4de56ad63feae340a5681cc4",
         "description": "radv: report same buffer aligment for DGC preprocessed buffer",
         "nominated": true,
