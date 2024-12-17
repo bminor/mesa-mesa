@@ -399,6 +399,7 @@ begin_transform_feedback(struct gl_context *ctx, GLenum mode, bool no_error)
    FLUSH_VERTICES(ctx, 0, 0);
 
    obj->Active = GL_TRUE;
+   obj->Mode = mode;
    ctx->TransformFeedback.Mode = mode;
 
    compute_transform_feedback_buffer_sizes(obj);
@@ -1291,6 +1292,7 @@ resume_transform_feedback(struct gl_context *ctx,
 {
    FLUSH_VERTICES(ctx, 0, 0);
 
+   ctx->TransformFeedback.Mode = obj->Mode;
    obj->Paused = GL_FALSE;
 
    unsigned offsets[PIPE_MAX_SO_BUFFERS];
