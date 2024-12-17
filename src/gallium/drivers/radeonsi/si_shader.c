@@ -1594,13 +1594,15 @@ static void si_dump_shader_key(const struct si_shader *shader, FILE *f)
    if ((stage == MESA_SHADER_GEOMETRY || stage == MESA_SHADER_TESS_EVAL ||
         stage == MESA_SHADER_VERTEX) &&
        !key->ge.as_es && !key->ge.as_ls) {
-      fprintf(f, "  opt.kill_outputs = 0x%" PRIx64 "\n", key->ge.opt.kill_outputs);
-      fprintf(f, "  opt.kill_pointsize = 0x%x\n", key->ge.opt.kill_pointsize);
-      fprintf(f, "  opt.kill_layer = 0x%x\n", key->ge.opt.kill_layer);
-      fprintf(f, "  opt.kill_clip_distances = 0x%x\n", key->ge.opt.kill_clip_distances);
-      fprintf(f, "  opt.ngg_culling = 0x%x\n", key->ge.opt.ngg_culling);
-      fprintf(f, "  opt.remove_streamout = 0x%x\n", key->ge.opt.remove_streamout);
       fprintf(f, "  mono.remove_streamout = 0x%x\n", key->ge.mono.remove_streamout);
+      fprintf(f, "  opt.kill_outputs = 0x%" PRIx64 "\n", key->ge.opt.kill_outputs);
+      fprintf(f, "  opt.kill_clip_distances = 0x%x\n", key->ge.opt.kill_clip_distances);
+      fprintf(f, "  opt.kill_pointsize = %u\n", key->ge.opt.kill_pointsize);
+      fprintf(f, "  opt.kill_layer = %u\n", key->ge.opt.kill_layer);
+      fprintf(f, "  opt.remove_streamout = %u\n", key->ge.opt.remove_streamout);
+      fprintf(f, "  opt.ngg_culling = 0x%x\n", key->ge.opt.ngg_culling);
+      fprintf(f, "  opt.ngg_vs_streamout_num_verts_per_prim = %u\n",
+              key->ge.opt.ngg_vs_streamout_num_verts_per_prim);
    }
 
    if (stage <= MESA_SHADER_GEOMETRY)

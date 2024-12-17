@@ -787,6 +787,7 @@ struct si_streamout_target {
 
 struct si_streamout {
    enum mesa_prim output_prim;
+   uint8_t num_verts_per_prim;
    bool begin_emitted;
 
    unsigned enabled_mask;

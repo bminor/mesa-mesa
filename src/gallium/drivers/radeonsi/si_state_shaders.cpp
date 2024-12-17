@@ -1369,6 +1369,15 @@ unsigned si_get_input_prim(const struct si_shader_selector *gs, const union si_s
    if (key->ge.opt.ngg_culling & SI_NGG_CULL_VS_LINES)
       return MESA_PRIM_LINES;
 
+   switch (key->ge.opt.ngg_vs_streamout_num_verts_per_prim) {
+   case 3:
+      return MESA_PRIM_TRIANGLES;
+   case 2:
+      return MESA_PRIM_LINES;
+   case 1:
+      return MESA_PRIM_POINTS;
+   }
+
    if (return_unknown)
       return MESA_PRIM_UNKNOWN;
    else
@@ -2525,8 +2534,21 @@ static void si_get_vs_key_outputs(struct si_context *sctx, struct si_shader_sele
    key->ge.opt.ngg_culling = sctx->ngg_culling;
    key->ge.mono.u.vs_export_prim_id = vs->stage != MESA_SHADER_GEOMETRY &&
                                       sctx->shader.ps.cso && sctx->shader.ps.cso->info.uses_primid;
-   key->ge.opt.remove_streamout = vs->info.enabled_streamout_buffer_mask &&
-                                  !sctx->streamout.enabled_mask;
+
+   if (vs->info.enabled_streamout_buffer_mask) {
+      if (sctx->streamout.enabled_mask) {
+         key->ge.opt.remove_streamout = 0;
+         key->ge.opt.ngg_vs_streamout_num_verts_per_prim =
+            sctx->gfx_level >= GFX11 ? sctx->streamout.num_verts_per_prim : 0;
+      } else {
+         key->ge.opt.remove_streamout = 1;
+         key->ge.opt.ngg_vs_streamout_num_verts_per_prim = 0;
+      }
+   } else {
+      key->ge.opt.remove_streamout = 0;
+      key->ge.opt.ngg_vs_streamout_num_verts_per_prim = 0;
+   }
+
    if (sctx->gfx_level >= GFX12)
       key->ge.mono.remove_streamout = key->ge.opt.remove_streamout;
 }
@@ -2538,6 +2560,7 @@ static void si_clear_vs_key_outputs(struct si_context *sctx, struct si_shader_se
    key->ge.opt.kill_outputs = 0;
    key->ge.opt.remove_streamout = 0;
    key->ge.opt.ngg_culling = 0;
+   key->ge.opt.ngg_vs_streamout_num_verts_per_prim = 0;
    key->ge.mono.u.vs_export_prim_id = 0;
    key->ge.mono.remove_streamout = 0;
 }

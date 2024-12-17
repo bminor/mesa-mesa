@@ -218,6 +218,8 @@ static void si_set_streamout_targets(struct pipe_context *ctx, unsigned num_targ
       sctx->do_update_shaders = true; /* to keep/remove streamout shader code as an optimization */
 
    sctx->streamout.output_prim = output_prim;
+   sctx->streamout.num_verts_per_prim = output_prim == MESA_PRIM_UNKNOWN ?
+                                           0 : mesa_vertices_per_prim(output_prim);
    sctx->streamout.num_targets = num_targets;
    sctx->streamout.enabled_mask = enabled_mask;
    sctx->streamout.append_bitmask = append_bitmask;

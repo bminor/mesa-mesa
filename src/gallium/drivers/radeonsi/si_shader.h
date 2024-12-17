@@ -780,6 +780,12 @@ struct si_shader_key_ge {
       /* For NGG VS and TES. */
       unsigned ngg_culling : 11; /* SI_NGG_CULL_* */
 
+      /* If NGG VS streamout knows the number of vertices per primitive at compile time,
+       * it can put stores for all vertices in the same VMEM clause, instead of storing
+       * vertices for the 2nd and 3rd vertex conditionally because the primitive type is
+       * unknown.
+       */
+      unsigned ngg_vs_streamout_num_verts_per_prim : 2;
 
       /* For shaders where monolithic variants have better code.
        *
