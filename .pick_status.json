@@ -4134,7 +4134,7 @@
         "description": "radeonsi: fix unigine heaven crash when use aco on gfx8/9",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 3,
         "main_sha": null,
         "because_sha": "ae9331694ba25dd87b7726d03bbd6d02b1ad5b30",
         "notes": null
