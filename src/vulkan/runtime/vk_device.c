@@ -201,6 +201,27 @@ vk_device_init(struct vk_device *device,
       }
    }
 
+   if (device->enabled_extensions.KHR_calibrated_timestamps ||
+       device->enabled_extensions.EXT_calibrated_timestamps) {
+      /* sorted by preference */
+      const VkTimeDomainKHR calibrate_domains[] = {
+         VK_TIME_DOMAIN_CLOCK_MONOTONIC_RAW_KHR,
+         VK_TIME_DOMAIN_CLOCK_MONOTONIC_KHR,
+      };
+      for (uint32_t i = 0; i < ARRAY_SIZE(calibrate_domains); i++) {
+         const VkTimeDomainKHR domain = calibrate_domains[i];
+         uint64_t ts;
+         if (vk_device_get_timestamp(NULL, domain, &ts) == VK_SUCCESS) {
+            device->calibrate_time_domain = domain;
+            break;
+         }
+      }
+
+      assert(device->calibrate_time_domain != VK_TIME_DOMAIN_DEVICE_KHR);
+      device->device_time_domain_period =
+         (uint64_t)ceilf(device->physical->properties.timestampPeriod);
+   }
+
    return VK_SUCCESS;
 }
 
@@ -598,6 +619,46 @@ vk_device_get_timestamp(struct vk_device *device, VkTimeDomainKHR domain,
 fail:
 #endif /* _WIN32 */
    return VK_ERROR_FEATURE_NOT_PRESENT;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL
+vk_common_GetCalibratedTimestampsKHR(
+   VkDevice _device, uint32_t timestampCount,
+   const VkCalibratedTimestampInfoKHR *pTimestampInfos, uint64_t *pTimestamps,
+   uint64_t *pMaxDeviation)
+{
+   VK_FROM_HANDLE(vk_device, device, _device);
+   uint64_t begin, end;
+   VkResult result;
+
+   /* collect timestamps as tight as possible */
+   result =
+      vk_device_get_timestamp(device, device->calibrate_time_domain, &begin);
+   for (uint32_t i = 0; i < timestampCount; i++) {
+      const VkTimeDomainKHR domain = pTimestampInfos[i].timeDomain;
+      if (domain == device->calibrate_time_domain)
+         pTimestamps[i] = begin;
+      else
+         result |= vk_device_get_timestamp(device, domain, &pTimestamps[i]);
+   }
+   result |=
+      vk_device_get_timestamp(device, device->calibrate_time_domain, &end);
+
+   if (result != VK_SUCCESS)
+      return VK_ERROR_OUT_OF_HOST_MEMORY;
+
+   uint64_t max_clock_period = 0;
+   for (uint32_t i = 0; i < timestampCount; i++) {
+      const VkTimeDomainKHR domain = pTimestampInfos[i].timeDomain;
+      const uint64_t period = domain == VK_TIME_DOMAIN_DEVICE_KHR
+         ? device->device_time_domain_period
+         : domain != device->calibrate_time_domain ? 1 : 0;
+      max_clock_period = MAX2(max_clock_period, period);
+   }
+
+   *pMaxDeviation = vk_time_max_deviation(begin, end, max_clock_period);
+
+   return VK_SUCCESS;
 }
 
 #ifndef _WIN32
