@@ -2580,10 +2580,6 @@ nogs_export_vertex_params(nir_builder *b, nir_function_impl *impl,
 
    if (s->options->gfx_level >= GFX11) {
       /* Export varyings for GFX11+ */
-
-      b->cursor = nir_after_cf_node(&if_es_thread->cf_node);
-      create_output_phis(b, b->shader->info.outputs_written, b->shader->info.outputs_written_16bit, &s->out);
-
       b->cursor = nir_after_impl(impl);
       if (!num_es_threads)
          num_es_threads = nir_load_merged_wave_info_amd(b);
@@ -2812,7 +2808,27 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
    if (wait_attr_ring)
       export_outputs &= ~VARYING_BIT_POS;
 
-   b->cursor = nir_after_cf_list(&if_es_thread->then_list);
+   bool phis_created = false;
+
+   /* Add position exports.
+    *
+    * If streamout is enabled, export positions after streamout. This increases streamout performance
+    * for up to 4 vec4 xfb outputs on GFX12 because the streamout code doesn't have go through
+    * the export allocation bottleneck. Adding more xfb outputs starts to be limited by the memory
+    * bandwidth.
+    */
+   nir_if *if_pos_exports = NULL;
+   if (state.streamout_enabled) {
+      b->cursor = nir_after_cf_node(&if_es_thread->cf_node);
+      create_output_phis(b, b->shader->info.outputs_written, b->shader->info.outputs_written_16bit,
+                         &state.out);
+      phis_created = true;
+
+      b->cursor = nir_after_impl(impl);
+      if_pos_exports = nir_push_if(b, es_thread);
+   } else {
+      b->cursor = nir_after_cf_list(&if_es_thread->then_list);
+   }
 
    ac_nir_export_position(b, options->gfx_level,
                           options->clip_cull_dist_mask,
@@ -2820,6 +2836,16 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
                           options->force_vrs, !wait_attr_ring,
                           export_outputs, &state.out, NULL);
 
+   if (if_pos_exports)
+      nir_pop_if(b, if_pos_exports);
+
+   if (options->has_param_exports && options->gfx_level >= GFX11 && !phis_created) {
+      b->cursor = nir_after_cf_node(&if_es_thread->cf_node);
+      create_output_phis(b, b->shader->info.outputs_written, b->shader->info.outputs_written_16bit,
+                         &state.out);
+   }
+
+   b->cursor = nir_after_cf_list(&if_es_thread->then_list);
    nogs_export_vertex_params(b, impl, if_es_thread, num_es_threads, &state);
 
    if (wait_attr_ring)
