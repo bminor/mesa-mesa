@@ -815,7 +815,8 @@ nvk_get_device_properties(const struct nvk_instance *instance,
       .storageImageSampleCounts = sample_counts,
       .maxSampleMaskWords = 1,
       .timestampComputeAndGraphics = true,
-      .timestampPeriod = 1,
+      /* FIXME: Is timestamp period actually 1? */
+      .timestampPeriod = 1.0f,
       .maxClipDistances = 8,
       .maxCullDistances = 8,
       .maxCombinedClipAndCullDistances = 8,
@@ -1619,32 +1620,6 @@ nvk_GetPhysicalDeviceQueueFamilyProperties2(
       }
    }
 }
-
-static const VkTimeDomainKHR nvk_time_domains[] = {
-   VK_TIME_DOMAIN_DEVICE_KHR,
-   VK_TIME_DOMAIN_CLOCK_MONOTONIC_KHR,
-#ifdef CLOCK_MONOTONIC_RAW
-   VK_TIME_DOMAIN_CLOCK_MONOTONIC_RAW_KHR,
-#endif
-};
-
-VKAPI_ATTR VkResult VKAPI_CALL
-nvk_GetPhysicalDeviceCalibrateableTimeDomainsKHR(
-   VkPhysicalDevice physicalDevice,
-   uint32_t *pTimeDomainCount,
-   VkTimeDomainKHR *pTimeDomains)
-{
-   VK_OUTARRAY_MAKE_TYPED(VkTimeDomainKHR, out, pTimeDomains, pTimeDomainCount);
-
-   for (int d = 0; d < ARRAY_SIZE(nvk_time_domains); d++) {
-      vk_outarray_append_typed(VkTimeDomainKHR, &out, i) {
-         *i = nvk_time_domains[d];
-      }
-   }
-
-   return vk_outarray_status(&out);
-}
-
 
 VKAPI_ATTR void VKAPI_CALL
 nvk_GetPhysicalDeviceMultisamplePropertiesEXT(
