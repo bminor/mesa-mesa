@@ -2295,6 +2295,10 @@ ngg_build_streamout_vertex(nir_builder *b, nir_xfb_info *info,
       vtx_buffer_offsets[buffer] = nir_iadd(b, buffer_offsets[buffer], offset);
    }
 
+   nir_def *zero = nir_imm_int(b, 0);
+   unsigned num_values = 0, store_offset = 0, store_buffer_index = 0;
+   nir_def *values[4];
+
    for (unsigned i = 0; i < info->output_count; i++) {
       nir_xfb_output_info *out = info->outputs + i;
       if (!out->component_mask || info->buffer_to_stream[out->buffer] != stream)
@@ -2324,43 +2328,61 @@ ngg_build_streamout_vertex(nir_builder *b, nir_xfb_info *info,
       nir_def *out_data =
          nir_load_shared(b, count, 32, vtx_lds_addr, .base = offset);
 
-      /* Up-scaling 16bit outputs to 32bit.
-       *
-       * OpenGL ES will put 16bit medium precision varyings to VARYING_SLOT_VAR0_16BIT.
-       * We need to up-scaling them to 32bit when streamout to buffer.
-       *
-       * Vulkan does not allow 8/16bit varyings to be streamout.
-       */
-      if (out->location >= VARYING_SLOT_VAR0_16BIT) {
-         unsigned index = out->location - VARYING_SLOT_VAR0_16BIT;
-         nir_def *values[4];
+      for (unsigned comp = 0; comp < count; comp++) {
+         nir_def *data = nir_channel(b, out_data, comp);
 
-         for (int j = 0; j < count; j++) {
-            unsigned c = out->component_offset + j;
-            nir_def *v = nir_channel(b, out_data, j);
+         /* Convert 16-bit outputs to 32-bit.
+          *
+          * OpenGL ES will put 16-bit medium precision varyings to VARYING_SLOT_VAR0_16BIT.
+          * We need to convert them to 32-bit for streamout.
+          *
+          * Vulkan does not allow 8/16bit varyings for streamout.
+          */
+         if (out->location >= VARYING_SLOT_VAR0_16BIT) {
+            unsigned index = out->location - VARYING_SLOT_VAR0_16BIT;
+            unsigned c = out->component_offset + comp;
+            nir_def *v;
             nir_alu_type t;
 
             if (out->high_16bits) {
-               v = nir_unpack_32_2x16_split_y(b, v);
+               v = nir_unpack_32_2x16_split_y(b, data);
                t = pr_out->types_16bit_hi[index][c];
             } else {
-               v = nir_unpack_32_2x16_split_x(b, v);
+               v = nir_unpack_32_2x16_split_x(b, data);
                t = pr_out->types_16bit_lo[index][c];
             }
 
             t = nir_alu_type_get_base_type(t);
-            values[j] = nir_convert_to_bit_size(b, v, t, 32);
+            data = nir_convert_to_bit_size(b, v, t, 32);
          }
 
-         out_data = nir_vec(b, values, count);
-      }
+         const unsigned store_comp_offset = out->offset + comp * 4;
+         const bool has_hole = store_offset + num_values * 4 != store_comp_offset;
 
-      nir_def *zero = nir_imm_int(b, 0);
-      nir_store_buffer_amd(b, out_data, so_buffer[out->buffer],
-                           vtx_buffer_offsets[out->buffer],
-                           zero, zero,
-                           .base = out->offset,
-                           .memory_modes = nir_var_mem_ssbo,
+         /* Flush the gathered components to memory as a vec4 store or less if there is a hole. */
+         if (num_values && (num_values == 4 || store_buffer_index != out->buffer || has_hole)) {
+            nir_store_buffer_amd(b, nir_vec(b, values, num_values), so_buffer[store_buffer_index],
+                                 vtx_buffer_offsets[store_buffer_index], zero, zero,
+                                 .base = store_offset,
+                                 .access = ACCESS_NON_TEMPORAL);
+            num_values = 0;
+         }
+
+         /* Initialize the buffer index and offset if we are beginning a new vec4 store. */
+         if (num_values == 0) {
+            store_buffer_index = out->buffer;
+            store_offset = store_comp_offset;
+         }
+
+         values[num_values++] = data;
+      }
+   }
+
+   if (num_values) {
+      /* Flush the remaining components to memory (as an up to vec4 store) */
+      nir_store_buffer_amd(b, nir_vec(b, values, num_values), so_buffer[store_buffer_index],
+                           vtx_buffer_offsets[store_buffer_index], zero, zero,
+                           .base = store_offset,
                            .access = ACCESS_NON_TEMPORAL);
    }
 }
