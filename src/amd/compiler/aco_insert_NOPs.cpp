@@ -1531,19 +1531,25 @@ handle_instruction_gfx11(State& state, NOP_ctx_gfx11& ctx, aco_ptr<Instruction>&
        */
       if (instr->isVALU() || instr->isSALU()) {
          unsigned expiry_count = instr->isSALU() ? 10 : 11;
+         uint16_t imm = 0xffff;
+
          for (Operand& op : instr->operands) {
-            if (sa_sdst == 0)
-               break;
+            if (op.physReg() >= m0)
+               continue;
 
             for (unsigned i = 0; i < op.size(); i++) {
                PhysReg reg = op.physReg().advance(i * 4);
-               if (reg <= m0 && ctx.sgpr_read_by_valu_then_wr_by_salu.get(reg) < expiry_count) {
-                  bld.sopp(aco_opcode::s_waitcnt_depctr, 0xfffe);
+               if (ctx.sgpr_read_by_valu_then_wr_by_salu.get(reg) < expiry_count) {
+                  imm &= 0xfffe;
                   sa_sdst = 0;
-                  break;
                }
+               if (instr->isVALU())
+                  ctx.sgpr_read_by_valu.set(reg / 2);
             }
          }
+
+         if (imm != 0xffff)
+            bld.sopp(aco_opcode::s_waitcnt_depctr, imm);
       }
 
       if (sa_sdst == 0)
@@ -1551,19 +1557,12 @@ handle_instruction_gfx11(State& state, NOP_ctx_gfx11& ctx, aco_ptr<Instruction>&
       else if (instr->isSALU() && !instr->isSOPP())
          ctx.sgpr_read_by_valu_then_wr_by_salu.inc();
 
-      if (instr->isVALU()) {
-         for (const Operand& op : instr->operands) {
-            for (unsigned i = 0; i < DIV_ROUND_UP(op.size(), 2); i++) {
-               unsigned reg = (op.physReg() / 2) + i;
-               if (reg < ctx.sgpr_read_by_valu.size())
-                  ctx.sgpr_read_by_valu.set(reg);
-            }
-         }
-      } else if (instr->isSALU() && !instr->definitions.empty()) {
-         for (unsigned i = 0; i < instr->definitions[0].size(); i++) {
-            PhysReg def_reg = instr->definitions[0].physReg().advance(i * 4);
-            if ((def_reg / 2) < ctx.sgpr_read_by_valu.size() && ctx.sgpr_read_by_valu[def_reg / 2])
-               ctx.sgpr_read_by_valu_then_wr_by_salu.set(def_reg);
+      if (instr->isSALU() && !instr->definitions.empty()) {
+         assert(instr->definitions[0].size() <= 2);
+         PhysReg reg = instr->definitions[0].physReg();
+         if (reg < m0 && ctx.sgpr_read_by_valu[reg / 2]) {
+            for (unsigned i = 0; i < instr->definitions[0].size(); i++)
+               ctx.sgpr_read_by_valu_then_wr_by_salu.set(reg.advance(i * 4));
          }
       }
    }
