@@ -2,7 +2,7 @@
 exclude = .venv*,
 
 # PEP 8 Style Guide limits line length to 79 characters
-max-line-length = 167
+max-line-length = 159
 
 ignore =
     # continuation line under-indented for hanging indent

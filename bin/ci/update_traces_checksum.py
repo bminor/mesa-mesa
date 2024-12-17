@@ -96,7 +96,11 @@ def gather_results(
                         continue
 
                     if "label" in target['traces'][trace][dev_name]:
-                        print(f'{dev_name}: {trace}: please verify that label {Fore.BLUE}{target["traces"][trace][dev_name]["label"]}{Style.RESET_ALL} is still valid')
+                        print(
+                            f"{dev_name}: {trace}: please verify that label "
+                            f"{Fore.BLUE}{target['traces'][trace][dev_name]['label']}{Style.RESET_ALL} "
+                            "is still valid"
+                             )
 
                     print(Fore.GREEN + f'{dev_name}: {trace}: checksum updated' + Style.RESET_ALL)
                     target['traces'][trace][dev_name]['checksum'] = checksum
