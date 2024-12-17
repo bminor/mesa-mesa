@@ -784,7 +784,7 @@
         "description": "brw/emit: Fix BROADCAST when value is uniform and index is immediate",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c74511f5dc239eefb8604294c6c1e57b3a394111",
         "notes": null
