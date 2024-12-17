@@ -104,8 +104,7 @@ $ADB shell "mkdir ${AOSP_RESULTS}; cd ${AOSP_RESULTS}/..; ./deqp-runner \
     --testlog-to-xml /deqp-tools/testlog-to-xml \
     --fraction-start ${CI_NODE_INDEX:-1} \
     --fraction $(( CI_NODE_TOTAL * ${DEQP_FRACTION:-1})) \
-    --jobs ${FDO_CI_CONCURRENT:-4} \
-    $DEQP_RUNNER_OPTIONS"
+    --jobs ${FDO_CI_CONCURRENT:-4}"
 
 EXIT_CODE=$?
 set -e

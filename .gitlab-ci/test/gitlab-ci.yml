@@ -239,8 +239,8 @@ yaml-toml-shell-py-test:
 # ARM32/64 testing of bare-metal boards attached to an x86 gitlab-runner system, using an asan mesa build
 .baremetal-arm32-asan-test:
   variables:
-    DEQP_RUNNER_OPTIONS: "--env LD_PRELOAD=libasan.so.8:/install/lib/libdlclose-skip.so"
     S3_ARTIFACT_NAME: mesa-arm32-asan-debugoptimized
+    DEQP_FORCE_ASAN: 1
   needs:
     - debian/baremetal_arm32_test
     - job: debian-arm32-asan
@@ -249,8 +249,8 @@ yaml-toml-shell-py-test:
 
 .baremetal-arm64-asan-test:
   variables:
-    DEQP_RUNNER_OPTIONS: "--env LD_PRELOAD=libasan.so.8:/install/lib/libdlclose-skip.so"
     S3_ARTIFACT_NAME: mesa-arm64-asan-debugoptimized
+    DEQP_FORCE_ASAN: 1
   needs:
     - debian/baremetal_arm64_test
     - job: debian-arm64-asan

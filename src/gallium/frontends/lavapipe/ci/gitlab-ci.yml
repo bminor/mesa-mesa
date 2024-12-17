@@ -29,9 +29,7 @@ lavapipe-full:
   variables:
     DEQP_SUITE: lvp-asan
     GPU_VERSION: lvp-asan
-    # Skip dlclose so that we get good backtraces of the leaks.
-    # Don't batch the tests into caselists while we're leaky.
-    DEQP_RUNNER_OPTIONS: "--env LD_PRELOAD=libasan.so.8:libdlclose-skip.so"
+    DEQP_FORCE_ASAN: 1
   needs:
     - debian/x86_64_test-vk
     - debian-testing-asan

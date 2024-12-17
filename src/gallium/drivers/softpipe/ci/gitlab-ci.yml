@@ -18,7 +18,7 @@ softpipe-asan-gles31:
     DEQP_SUITE: softpipe-asan
     GPU_VERSION: softpipe-asan
     DEQP_FRACTION: 10
-    DEQP_RUNNER_OPTIONS: "--env LD_PRELOAD=libasan.so.8"
+    DEQP_FORCE_ASAN: 1
   extends: .softpipe-deqp-test
   needs:
     - debian/x86_64_test-gl
