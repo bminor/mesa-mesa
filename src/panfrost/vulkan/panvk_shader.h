@@ -57,10 +57,6 @@ struct panvk_graphics_sysvals {
       uint32_t noperspective_varyings;
    } vs;
 
-   struct {
-      uint32_t multisampled;
-   } fs;
-
 #if PAN_ARCH <= 7
    /* gl_Layer on Bifrost is a bit of hack. We have to issue one draw per
     * layer, and filter primitives at the VS level.

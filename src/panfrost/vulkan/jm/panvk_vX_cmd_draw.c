@@ -96,7 +96,6 @@ panvk_cmd_prepare_draw_sysvals(struct panvk_cmd_buffer *cmdbuf,
    struct panvk_shader_desc_state *fs_desc_state = &cmdbuf->state.gfx.fs.desc;
    struct panvk_graphics_sysvals *sysvals = &cmdbuf->state.gfx.sysvals;
    struct vk_color_blend_state *cb = &cmdbuf->vk.dynamic_graphics_state.cb;
-   struct pan_fb_info *fbinfo = &cmdbuf->state.gfx.render.fb.info;
 
    unsigned base_vertex = draw->index_size ? draw->vertex_offset : 0;
    uint32_t noperspective_varyings = fs ? fs->info.varyings.noperspective : 0;
@@ -104,14 +103,12 @@ panvk_cmd_prepare_draw_sysvals(struct panvk_cmd_buffer *cmdbuf,
        sysvals->vs.base_vertex != base_vertex ||
        sysvals->vs.base_instance != draw->first_instance ||
        sysvals->layer_id != draw->layer_id ||
-       sysvals->fs.multisampled != (fbinfo->nr_samples > 1) ||
        sysvals->vs.noperspective_varyings != noperspective_varyings) {
       sysvals->vs.first_vertex = draw->offset_start;
       sysvals->vs.base_vertex = base_vertex;
       sysvals->vs.base_instance = draw->first_instance;
       sysvals->vs.noperspective_varyings = noperspective_varyings;
       sysvals->layer_id = draw->layer_id;
-      sysvals->fs.multisampled = fbinfo->nr_samples > 1;
 
       gfx_state_set_dirty(cmdbuf, PUSH_UNIFORMS);
    }

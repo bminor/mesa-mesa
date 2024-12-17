@@ -116,10 +116,6 @@ panvk_lower_sysvals(nir_builder *b, nir_instr *instr, void *data)
       val = load_sysval_from_push_const(b, SYSVAL(graphics, blend.constants),
                                         bit_size, num_comps);
       break;
-   case nir_intrinsic_load_multisampled_pan:
-      val = load_sysval_from_push_const(b, SYSVAL(graphics, fs.multisampled),
-                                        bit_size, num_comps);
-      break;
    case nir_intrinsic_load_noperspective_varyings_pan:
       /* TODO: use a VS epilog specialized on constant noperspective_varyings
        * with VK_EXT_graphics_pipeline_libraries and VK_EXT_shader_object */
