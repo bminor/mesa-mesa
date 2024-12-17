@@ -803,6 +803,14 @@ init_dispatch_tables(struct radv_device *device, struct radv_physical_device *pd
 }
 
 static VkResult
+get_timestamp(struct vk_device *_device, uint64_t *timestamp)
+{
+   struct radv_device *device = container_of(_device, struct radv_device, vk);
+   *timestamp = device->ws->query_value(device->ws, RADEON_TIMESTAMP);
+   return VK_SUCCESS;
+}
+
+static VkResult
 capture_trace(VkQueue _queue)
 {
    VK_FROM_HANDLE(radv_queue, queue, _queue);
@@ -1147,6 +1155,7 @@ radv_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCr
       return result;
    }
 
+   device->vk.get_timestamp = get_timestamp;
    device->vk.capture_trace = capture_trace;
 
    device->vk.command_buffer_ops = &radv_cmd_buffer_ops;
@@ -1742,62 +1751,6 @@ radv_GetMemoryFdPropertiesKHR(VkDevice _device, VkExternalMemoryHandleTypeFlagBi
        */
       return vk_error(device, VK_ERROR_INVALID_EXTERNAL_HANDLE);
    }
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL
-radv_GetCalibratedTimestampsKHR(VkDevice _device, uint32_t timestampCount,
-                                const VkCalibratedTimestampInfoKHR *pTimestampInfos, uint64_t *pTimestamps,
-                                uint64_t *pMaxDeviation)
-{
-#ifndef _WIN32
-   VK_FROM_HANDLE(radv_device, device, _device);
-   const struct radv_physical_device *pdev = radv_device_physical(device);
-   uint32_t clock_crystal_freq = pdev->info.clock_crystal_freq;
-   int d;
-   uint64_t begin, end;
-   uint64_t max_clock_period = 0;
-
-#ifdef CLOCK_MONOTONIC_RAW
-   begin = vk_clock_gettime(CLOCK_MONOTONIC_RAW);
-#else
-   begin = vk_clock_gettime(CLOCK_MONOTONIC);
-#endif
-
-   for (d = 0; d < timestampCount; d++) {
-      switch (pTimestampInfos[d].timeDomain) {
-      case VK_TIME_DOMAIN_DEVICE_KHR:
-         pTimestamps[d] = device->ws->query_value(device->ws, RADEON_TIMESTAMP);
-         uint64_t device_period = DIV_ROUND_UP(1000000, clock_crystal_freq);
-         max_clock_period = MAX2(max_clock_period, device_period);
-         break;
-      case VK_TIME_DOMAIN_CLOCK_MONOTONIC_KHR:
-         pTimestamps[d] = vk_clock_gettime(CLOCK_MONOTONIC);
-         max_clock_period = MAX2(max_clock_period, 1);
-         break;
-
-#ifdef CLOCK_MONOTONIC_RAW
-      case VK_TIME_DOMAIN_CLOCK_MONOTONIC_RAW_KHR:
-         pTimestamps[d] = begin;
-         break;
-#endif
-      default:
-         pTimestamps[d] = 0;
-         break;
-      }
-   }
-
-#ifdef CLOCK_MONOTONIC_RAW
-   end = vk_clock_gettime(CLOCK_MONOTONIC_RAW);
-#else
-   end = vk_clock_gettime(CLOCK_MONOTONIC);
-#endif
-
-   *pMaxDeviation = vk_time_max_deviation(begin, end, max_clock_period);
-
-   return VK_SUCCESS;
-#else
-   return VK_ERROR_FEATURE_NOT_PRESENT;
-#endif
 }
 
 bool

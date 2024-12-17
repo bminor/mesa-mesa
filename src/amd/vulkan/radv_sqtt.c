@@ -761,8 +761,8 @@ radv_get_calibrated_timestamps(struct radv_device *device, uint64_t *cpu_timesta
                                                                .timeDomain = VK_TIME_DOMAIN_DEVICE_KHR,
                                                             }};
 
-   result =
-      radv_GetCalibratedTimestampsKHR(radv_device_to_handle(device), 2, timestamp_infos, timestamps, &max_deviation);
+   result = device->vk.dispatch_table.GetCalibratedTimestampsKHR(radv_device_to_handle(device), 2, timestamp_infos,
+                                                                 timestamps, &max_deviation);
    if (result != VK_SUCCESS)
       return result;
 
