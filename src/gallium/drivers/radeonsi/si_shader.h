@@ -475,10 +475,12 @@ struct si_shader_info {
    uint8_t output_usagemask[PIPE_MAX_SHADER_OUTPUTS];
    uint8_t output_streams[PIPE_MAX_SHADER_OUTPUTS];
    uint8_t output_type[PIPE_MAX_SHADER_OUTPUTS]; /* enum nir_alu_type */
+   uint8_t output_xfb_writemask[PIPE_MAX_SHADER_OUTPUTS];
 
+   uint8_t num_streamout_components;
    uint8_t num_vs_inputs;
    uint8_t num_vbos_in_user_sgprs;
-   uint8_t num_stream_output_components[4];
+   uint8_t num_stream_output_components[4]; /* for GS streams, not streamout */
    uint16_t enabled_streamout_buffer_mask;
 
    uint64_t inputs_read; /* "get_unique_index" bits */

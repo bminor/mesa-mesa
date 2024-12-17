@@ -1621,10 +1621,34 @@ static void gfx10_shader_ngg(struct si_screen *sscreen, struct si_shader *shader
 
    if (sscreen->info.gfx_level >= GFX12) {
       unsigned num_params = si_shader_num_alloc_param_exports(shader);
+      unsigned wave_limit_per_se = 0x3ff;
+
+      /* This tuning adds up to 50% streamout performance. */
+      if (si_shader_uses_streamout(shader)) {
+         unsigned num_streamout_vec4s = DIV_ROUND_UP(shader->selector->info.num_streamout_components, 4);
+
+         /* TODO: Tested on a pre-production chip. Re-test on the final chip. */
+         if (num_streamout_vec4s <= 4)
+            wave_limit_per_se = 48;
+         else if (num_streamout_vec4s <= 5)
+            wave_limit_per_se = 24;
+         else if (num_streamout_vec4s <= 6)
+            wave_limit_per_se = 20;
+         else if (num_streamout_vec4s <= 8)
+            wave_limit_per_se = 18;
+         else if (num_streamout_vec4s <= 11)
+            wave_limit_per_se = 17;
+         else if (num_streamout_vec4s <= 12)
+            wave_limit_per_se = 16;
+         else if (num_streamout_vec4s <= 15)
+            wave_limit_per_se = 15;
+         else
+            wave_limit_per_se = 14;
+      }
 
       shader->ngg.spi_shader_pgm_rsrc4_gs = S_00B220_SPI_SHADER_LATE_ALLOC_GS(127) |
                                             S_00B220_GLG_FORCE_DISABLE(1) |
-                                            S_00B220_WAVE_LIMIT(0x3ff) |
+                                            S_00B220_WAVE_LIMIT(wave_limit_per_se) |
                                             S_00B220_INST_PREF_SIZE(si_get_shader_prefetch_size(shader));
       shader->ngg.spi_vs_out_config = S_00B0C4_VS_EXPORT_COUNT(MAX2(num_params, 1) - 1) |
                                       S_00B0C4_NO_PC_EXPORT(num_params == 0);
