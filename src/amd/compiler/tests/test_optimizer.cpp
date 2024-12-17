@@ -1625,9 +1625,12 @@ BEGIN_TEST(optimize.vop3p_constants)
          //;                     0x42420000, 0x42424242, 0x4242c242, 0x4242ffff, 0x7ffefffe,
          //;                     0x80300030, 0xbeefdead, 0xc2424242, 0xdeadbeef, 0xfffe0000,
          //;                     0xfffe7ffe, 0xffff0030, 0xffff3c00, 0xffff4242, 0xc242c242,
-         //;                     0x80308030, 0xdeaddead, 0xbeefbeef, 0x7ffe7ffe]
+         //;                     0x80308030, 0xdeaddead, 0xbeefbeef, 0x7ffe7ffe, 0x0000c242,
+         //;                     0x0000beef, 0x0000dead, ]
          //; if opcode == 'v_pk_add_u16':
-         //;    allowed_literals.extend([0x00003c00, 0x3c000000, 0x3c003c00, 0x3c00bc00, 0xbc003c00, 0xbc00bc00])
+         //;    allowed_literals.extend([0x00003c00, 0x3c000000, 0x3c003c00, 0x3c00bc00,
+         //;                             0xbc003c00, 0xbc00bc00, 0x0000bc00, 0x00008030,
+         //;                             0x00007ffe])
          //; else:
          //;    allowed_literals.extend([0x00003f80, 0x3f800000, 0x3f803f80])
          //;
