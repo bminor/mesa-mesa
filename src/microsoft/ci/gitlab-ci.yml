@@ -47,3 +47,10 @@ test-dozen-deqp:
       - results/
     reports:
       junit: results/junit.xml
+
+test-dozen-deqp-full:
+  extends:
+    - test-dozen-deqp
+    - .dozen-manual-rules
+  variables:
+    DEQP_FRACTION: 1
