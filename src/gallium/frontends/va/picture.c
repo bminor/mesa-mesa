@@ -1151,6 +1151,11 @@ vlVaEndPicture(VADriverContextP ctx, VAContextID context_id)
       return VA_STATUS_SUCCESS;
    }
 
+   if (context->needs_begin_frame) {
+      mtx_unlock(&drv->mutex);
+      return VA_STATUS_ERROR_OPERATION_FAILED;
+   }
+
    out_target = &context->target;
    apply_av1_fg = vlVaQueryApplyFilmGrainAV1(context, &output_id, &out_target);
 
