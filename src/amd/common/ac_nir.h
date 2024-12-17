@@ -54,6 +54,9 @@ typedef unsigned (*ac_nir_map_io_driver_location)(unsigned semantic);
 struct nir_builder;
 typedef struct nir_builder nir_builder;
 
+struct nir_xfb_info;
+typedef struct nir_xfb_info nir_xfb_info;
+
 /* Executed by ac_nir_cull when the current primitive is accepted. */
 typedef void (*ac_nir_cull_accepted)(nir_builder *b, void *state);
 
@@ -81,6 +84,8 @@ bool ac_nir_lower_intrinsics_to_args(nir_shader *shader, const enum amd_gfx_leve
                                      bool has_ls_vgpr_init_bug, const enum ac_hw_stage hw_stage,
                                      unsigned wave_size, unsigned workgroup_size,
                                      const struct ac_shader_args *ac_args);
+
+nir_xfb_info *ac_nir_get_sorted_xfb_info(const nir_shader *nir);
 
 bool ac_nir_optimize_outputs(nir_shader *nir, bool sprite_tex_disallowed,
                              int8_t slot_remap[NUM_TOTAL_VARYING_SLOTS],

@@ -1153,6 +1153,36 @@ ac_nir_lower_indirect_derefs(nir_shader *shader,
    return progress;
 }
 
+static int
+sort_xfb(const void *_a, const void *_b)
+{
+   const nir_xfb_output_info *a = (const nir_xfb_output_info *)_a;
+   const nir_xfb_output_info *b = (const nir_xfb_output_info *)_b;
+
+   if (a->buffer != b->buffer)
+      return a->buffer > b->buffer ? 1 : -1;
+
+   assert(a->offset != b->offset);
+   return a->offset > b->offset ? 1 : -1;
+}
+
+/* Return XFB info sorted by buffer and offset, so that we can generate vec4
+ * stores by iterating over outputs only once.
+ */
+nir_xfb_info *
+ac_nir_get_sorted_xfb_info(const nir_shader *nir)
+{
+   if (!nir->xfb_info)
+      return NULL;
+
+   unsigned xfb_info_size = nir_xfb_info_size(nir->xfb_info->output_count);
+   nir_xfb_info *info = rzalloc_size(nir, xfb_info_size);
+
+   memcpy(info, nir->xfb_info, xfb_info_size);
+   qsort(info->outputs, info->output_count, sizeof(info->outputs[0]), sort_xfb);
+   return info;
+}
+
 static nir_def **
 get_output_and_type(ac_nir_prerast_out *out, unsigned slot, bool high_16bits,
                     nir_alu_type **types)
@@ -1270,7 +1300,7 @@ ac_nir_create_gs_copy_shader(const nir_shader *gs_nir,
 
    nir_def *gsvs_ring = nir_load_ring_gsvs_amd(&b);
 
-   nir_xfb_info *info = gs_nir->xfb_info;
+   nir_xfb_info *info = ac_nir_get_sorted_xfb_info(gs_nir);
    nir_def *stream_id = NULL;
    if (!disable_streamout && info)
       stream_id = nir_ubfe_imm(&b, nir_load_streamout_config_amd(&b), 24, 2);
@@ -1439,7 +1469,7 @@ ac_nir_lower_legacy_vs(nir_shader *nir,
    }
 
    if (!disable_streamout && nir->xfb_info) {
-      emit_streamout(&b, 0, nir->xfb_info, &out);
+      emit_streamout(&b, 0, ac_nir_get_sorted_xfb_info(nir), &out);
       preserved = nir_metadata_none;
    }
 

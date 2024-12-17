@@ -1841,7 +1841,7 @@ ngg_nogs_store_edgeflag_to_lds(nir_builder *b, lower_ngg_nogs_state *s)
 static void
 ngg_nogs_store_xfb_outputs_to_lds(nir_builder *b, lower_ngg_nogs_state *s)
 {
-   nir_xfb_info *info = b->shader->xfb_info;
+   nir_xfb_info *info = ac_nir_get_sorted_xfb_info(b->shader);
 
    uint64_t xfb_outputs = 0;
    unsigned xfb_outputs_16bit = 0;
@@ -2368,7 +2368,7 @@ ngg_build_streamout_vertex(nir_builder *b, nir_xfb_info *info,
 static void
 ngg_nogs_build_streamout(nir_builder *b, lower_ngg_nogs_state *s)
 {
-   nir_xfb_info *info = b->shader->xfb_info;
+   nir_xfb_info *info = ac_nir_get_sorted_xfb_info(b->shader);
 
    nir_def *lds_scratch_base = nir_load_lds_ngg_scratch_base_amd(b);
 
@@ -3421,7 +3421,7 @@ ngg_gs_cull_primitive(nir_builder *b, nir_def *tid_in_tg, nir_def *max_vtxcnt,
 static void
 ngg_gs_build_streamout(nir_builder *b, lower_ngg_gs_state *s)
 {
-   nir_xfb_info *info = b->shader->xfb_info;
+   nir_xfb_info *info = ac_nir_get_sorted_xfb_info(b->shader);
 
    nir_def *tid_in_tg = nir_load_local_invocation_index(b);
    nir_def *max_vtxcnt = nir_load_workgroup_num_input_vertices_amd(b);
