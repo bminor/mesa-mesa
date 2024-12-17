@@ -264,6 +264,7 @@ struct NOP_ctx_gfx11 {
 
    /* VALUReadSGPRHazard */
    std::bitset<m0.reg() / 2> sgpr_read_by_valu; /* SGPR pairs, excluding null, exec, m0 and scc */
+   std::bitset<m0.reg()> sgpr_read_by_valu_then_wr_by_valu;
    RegCounterMap<11> sgpr_read_by_valu_then_wr_by_salu;
 
    void join(const NOP_ctx_gfx11& other)
@@ -281,6 +282,7 @@ struct NOP_ctx_gfx11 {
          other.sgpr_read_by_valu_as_lanemask_then_wr_by_salu;
       vgpr_written_by_wmma |= other.vgpr_written_by_wmma;
       sgpr_read_by_valu |= other.sgpr_read_by_valu;
+      sgpr_read_by_valu_then_wr_by_valu |= other.sgpr_read_by_valu_then_wr_by_valu;
       sgpr_read_by_valu_then_wr_by_salu.join_min(other.sgpr_read_by_valu_then_wr_by_salu);
    }
 
@@ -1405,7 +1407,8 @@ handle_instruction_gfx11(State& state, NOP_ctx_gfx11& ctx, aco_ptr<Instruction>&
       ctx.has_Vcmpx = false;
    }
 
-   unsigned va_vdst = parse_depctr_wait(instr.get()).va_vdst;
+   depctr_wait wait = parse_depctr_wait(instr.get());
+   unsigned va_vdst = wait.va_vdst;
    unsigned vm_vsrc = 7;
    unsigned sa_sdst = 1;
 
@@ -1543,8 +1546,19 @@ handle_instruction_gfx11(State& state, NOP_ctx_gfx11& ctx, aco_ptr<Instruction>&
                   imm &= 0xfffe;
                   sa_sdst = 0;
                }
-               if (instr->isVALU())
+               if (instr->isVALU()) {
                   ctx.sgpr_read_by_valu.set(reg / 2);
+
+                  /* s_wait_alu on va_sdst (if non-VCC SGPR) or va_vcc (if VCC SGPR) */
+                  if (ctx.sgpr_read_by_valu_then_wr_by_valu[reg]) {
+                     bool is_vcc = reg == vcc || reg == vcc_hi;
+                     imm &= is_vcc ? 0xfffd : 0xf1ff;
+                     if (is_vcc)
+                        wait.va_vcc = 0;
+                     else
+                        wait.va_sdst = 0;
+                  }
+               }
             }
          }
 
@@ -1557,8 +1571,24 @@ handle_instruction_gfx11(State& state, NOP_ctx_gfx11& ctx, aco_ptr<Instruction>&
       else if (instr->isSALU() && !instr->isSOPP())
          ctx.sgpr_read_by_valu_then_wr_by_salu.inc();
 
-      if (instr->isSALU() && !instr->definitions.empty()) {
-         assert(instr->definitions[0].size() <= 2);
+      if (wait.va_sdst == 0) {
+         std::bitset<m0.reg()> old = ctx.sgpr_read_by_valu_then_wr_by_valu;
+         ctx.sgpr_read_by_valu_then_wr_by_valu.reset();
+         ctx.sgpr_read_by_valu_then_wr_by_valu[vcc] = old[vcc];
+         ctx.sgpr_read_by_valu_then_wr_by_valu[vcc_hi] = old[vcc_hi];
+      }
+      if (wait.va_vcc == 0) {
+         ctx.sgpr_read_by_valu_then_wr_by_valu[vcc] = false;
+         ctx.sgpr_read_by_valu_then_wr_by_valu[vcc_hi] = false;
+      }
+
+      if (instr->isVALU() && !instr->definitions.empty()) {
+         PhysReg reg = instr->definitions[0].physReg();
+         if (reg < m0 && ctx.sgpr_read_by_valu[reg / 2]) {
+            for (unsigned i = 0; i < instr->definitions[0].size(); i++)
+               ctx.sgpr_read_by_valu_then_wr_by_valu.set(reg + i);
+         }
+      } else if (instr->isSALU() && !instr->definitions.empty()) {
          PhysReg reg = instr->definitions[0].physReg();
          if (reg < m0 && ctx.sgpr_read_by_valu[reg / 2]) {
             for (unsigned i = 0; i < instr->definitions[0].size(); i++)
@@ -1727,6 +1757,16 @@ resolve_all_gfx11(State& state, NOP_ctx_gfx11& ctx,
          waitcnt_depctr &= 0xfffe;
 
       ctx.sgpr_read_by_valu_then_wr_by_salu.reset();
+      if (ctx.sgpr_read_by_valu_then_wr_by_valu[vcc] ||
+          ctx.sgpr_read_by_valu_then_wr_by_valu[vcc_hi]) {
+         waitcnt_depctr &= 0xfffd;
+         ctx.sgpr_read_by_valu_then_wr_by_valu[vcc] = false;
+         ctx.sgpr_read_by_valu_then_wr_by_valu[vcc_hi] = false;
+      }
+      if (ctx.sgpr_read_by_valu_then_wr_by_valu.any()) {
+         waitcnt_depctr &= 0xf1ff;
+         ctx.sgpr_read_by_valu_then_wr_by_valu.reset();
+      }
    }
 
    /* LdsDirectVMEMHazard */
