@@ -124,7 +124,7 @@
         "description": "radv/ci: fix expected list of failures for TAHITI",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "dda03a21d67d8f5a7bd756a9893f52b66c7fb602",
         "notes": null
