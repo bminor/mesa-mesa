@@ -2282,17 +2282,18 @@ static void
 ngg_build_streamout_vertex(nir_builder *b, nir_xfb_info *info,
                            unsigned stream, nir_def *so_buffer[4],
                            nir_def *buffer_offsets[4],
-                           nir_def *vtx_buffer_idx, nir_def *vtx_lds_addr,
+                           unsigned vertex_index, nir_def *vtx_lds_addr,
                            ac_nir_prerast_out *pr_out,
                            bool skip_primitive_id)
 {
-   nir_def *vtx_buffer_offsets[4];
-   for (unsigned buffer = 0; buffer < 4; buffer++) {
-      if (!(info->buffers_written & BITFIELD_BIT(buffer)))
-         continue;
+   unsigned vertex_offset[NIR_MAX_XFB_BUFFERS] = {0};
 
-      nir_def *offset = nir_imul_imm(b, vtx_buffer_idx, info->buffers[buffer].stride);
-      vtx_buffer_offsets[buffer] = nir_iadd(b, buffer_offsets[buffer], offset);
+   u_foreach_bit(buffer, info->buffers_written) {
+      /* We use imm_offset for the vertex offset within a primitive, and GFX11 only supports
+       * 12-bit unsigned imm_offset. (GFX12 supports 24-bit signed imm_offset)
+       */
+      assert(info->buffers[buffer].stride * 3 < 4096);
+      vertex_offset[buffer] = vertex_index * info->buffers[buffer].stride;
    }
 
    nir_def *zero = nir_imm_int(b, 0);
@@ -2362,8 +2363,8 @@ ngg_build_streamout_vertex(nir_builder *b, nir_xfb_info *info,
          /* Flush the gathered components to memory as a vec4 store or less if there is a hole. */
          if (num_values && (num_values == 4 || store_buffer_index != out->buffer || has_hole)) {
             nir_store_buffer_amd(b, nir_vec(b, values, num_values), so_buffer[store_buffer_index],
-                                 vtx_buffer_offsets[store_buffer_index], zero, zero,
-                                 .base = store_offset,
+                                 buffer_offsets[store_buffer_index], zero, zero,
+                                 .base = vertex_offset[store_buffer_index] + store_offset,
                                  .access = ACCESS_NON_TEMPORAL);
             num_values = 0;
          }
@@ -2381,8 +2382,8 @@ ngg_build_streamout_vertex(nir_builder *b, nir_xfb_info *info,
    if (num_values) {
       /* Flush the remaining components to memory (as an up to vec4 store) */
       nir_store_buffer_amd(b, nir_vec(b, values, num_values), so_buffer[store_buffer_index],
-                           vtx_buffer_offsets[store_buffer_index], zero, zero,
-                           .base = store_offset,
+                           buffer_offsets[store_buffer_index], zero, zero,
+                           .base = vertex_offset[store_buffer_index] + store_offset,
                            .access = ACCESS_NON_TEMPORAL);
    }
 }
@@ -2412,7 +2413,13 @@ ngg_nogs_build_streamout(nir_builder *b, lower_ngg_nogs_state *s)
    {
       unsigned vtx_lds_stride = (b->shader->num_outputs * 4 + 1) * 4;
       nir_def *num_vert_per_prim = nir_load_num_vertices_per_primitive_amd(b);
-      nir_def *vtx_buffer_idx = nir_imul(b, tid_in_tg, num_vert_per_prim);
+      nir_def *first_vertex_idx = nir_imul(b, tid_in_tg, num_vert_per_prim);
+
+      u_foreach_bit(buffer, info->buffers_written) {
+         buffer_offsets[buffer] = nir_iadd(b, buffer_offsets[buffer],
+                                           nir_imul_imm(b, first_vertex_idx,
+                                                        info->buffers[buffer].stride));
+      }
 
       for (unsigned i = 0; i < s->options->num_vertices_per_primitive; i++) {
          nir_if *if_valid_vertex =
@@ -2420,8 +2427,7 @@ ngg_nogs_build_streamout(nir_builder *b, lower_ngg_nogs_state *s)
          {
             nir_def *vtx_lds_idx = nir_load_var(b, s->gs_vtx_indices_vars[i]);
             nir_def *vtx_lds_addr = pervertex_lds_addr(b, vtx_lds_idx, vtx_lds_stride);
-            ngg_build_streamout_vertex(b, info, 0, so_buffer, buffer_offsets,
-                                       nir_iadd_imm(b, vtx_buffer_idx, i),
+            ngg_build_streamout_vertex(b, info, 0, so_buffer, buffer_offsets, i,
                                        vtx_lds_addr, &s->out, s->skip_primitive_id);
          }
          nir_pop_if(b, if_valid_vertex);
@@ -3514,8 +3520,15 @@ ngg_gs_build_streamout(nir_builder *b, lower_ngg_gs_state *s)
       nir_if *if_emit = nir_push_if(b, nir_iand(b, can_emit, prim_live[stream]));
       {
          /* Get streamout buffer vertex index for the first vertex of this primitive. */
-         nir_def *vtx_buffer_idx =
+         nir_def *first_vertex_idx =
             nir_imul_imm(b, export_seq[stream], s->num_vertices_per_primitive);
+         nir_def *stream_buffer_offsets[NIR_MAX_XFB_BUFFERS];
+
+         u_foreach_bit(buffer, info->buffers_written) {
+            stream_buffer_offsets[buffer] = nir_iadd(b, buffer_offsets[buffer],
+                                                     nir_imul_imm(b, first_vertex_idx,
+                                                                  info->buffers[buffer].stride));
+         }
 
          /* Get all vertices' lds address of this primitive. */
          nir_def *exported_vtx_lds_addr[3];
@@ -3526,8 +3539,7 @@ ngg_gs_build_streamout(nir_builder *b, lower_ngg_gs_state *s)
          /* Write all vertices of this primitive to streamout buffer. */
          for (unsigned i = 0; i < s->num_vertices_per_primitive; i++) {
             ngg_build_streamout_vertex(b, info, stream, so_buffer,
-                                       buffer_offsets,
-                                       nir_iadd_imm(b, vtx_buffer_idx, i),
+                                       stream_buffer_offsets, i,
                                        exported_vtx_lds_addr[i],
                                        &s->out, false);
          }
