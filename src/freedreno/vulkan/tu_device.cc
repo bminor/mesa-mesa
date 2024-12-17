@@ -2322,6 +2322,14 @@ tu_init_cmdbuf_start_a725_quirk(struct tu_device *device)
    return VK_SUCCESS;
 }
 
+static VkResult
+tu_device_get_timestamp(struct vk_device *vk_device, uint64_t *timestamp)
+{
+   struct tu_device *dev = container_of(vk_device, struct tu_device, vk);
+   const int ret = tu_device_get_gpu_timestamp(dev, timestamp);
+   return ret == 0 ? VK_SUCCESS : VK_ERROR_UNKNOWN;
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL
 tu_CreateDevice(VkPhysicalDevice physicalDevice,
                 const VkDeviceCreateInfo *pCreateInfo,
@@ -2403,6 +2411,7 @@ tu_CreateDevice(VkPhysicalDevice physicalDevice,
 
    device->vk.command_buffer_ops = &tu_cmd_buffer_ops;
    device->vk.check_status = tu_device_check_status;
+   device->vk.get_timestamp = tu_device_get_timestamp;
 
    mtx_init(&device->bo_mutex, mtx_plain);
    mtx_init(&device->pipeline_mutex, mtx_plain);
@@ -3508,83 +3517,4 @@ tu_CmdEndDebugUtilsLabelEXT(VkCommandBuffer _commandBuffer)
    }
 
    vk_common_CmdEndDebugUtilsLabelEXT(_commandBuffer);
-}
-
-static inline clockid_t
-tu_get_default_cpu_clock_id(void)
-{
-#ifdef CLOCK_MONOTONIC_RAW
-   return CLOCK_MONOTONIC_RAW;
-#else
-   return CLOCK_MONOTONIC;
-#endif
-}
-
-VkResult tu_GetCalibratedTimestampsKHR(
-   VkDevice                                     _device,
-   uint32_t                                     timestampCount,
-   const VkCalibratedTimestampInfoKHR           *pTimestampInfos,
-   uint64_t                                     *pTimestamps,
-   uint64_t                                     *pMaxDeviation)
-{
-   VK_FROM_HANDLE(tu_device, device, _device);
-   const uint64_t device_period = DIV_ROUND_UP(1000000000, ALWAYS_ON_FREQUENCY);
-   uint32_t d;
-   uint64_t begin, end;
-   uint64_t max_clock_period = 0;
-
-   begin = vk_clock_gettime(tu_get_default_cpu_clock_id());
-
-   for (d = 0; d < timestampCount; d++) {
-      switch (pTimestampInfos[d].timeDomain) {
-      case VK_TIME_DOMAIN_DEVICE_KHR:
-         tu_device_get_gpu_timestamp(device, &pTimestamps[d]);
-         max_clock_period = MAX2(max_clock_period, device_period);
-         break;
-      case VK_TIME_DOMAIN_CLOCK_MONOTONIC_KHR:
-         pTimestamps[d] = vk_clock_gettime(CLOCK_MONOTONIC);
-         max_clock_period = MAX2(max_clock_period, 1);
-         break;
-
-#ifdef CLOCK_MONOTONIC_RAW
-      case VK_TIME_DOMAIN_CLOCK_MONOTONIC_RAW_KHR:
-         pTimestamps[d] = begin;
-         break;
-#endif
-      default:
-         pTimestamps[d] = 0;
-         break;
-      }
-   }
-
-   end = vk_clock_gettime(tu_get_default_cpu_clock_id());
-
-   *pMaxDeviation = vk_time_max_deviation(begin, end, max_clock_period);
-
-   return VK_SUCCESS;
-}
-
-static const VkTimeDomainKHR tu_time_domains[] = {
-   VK_TIME_DOMAIN_DEVICE_KHR,
-   VK_TIME_DOMAIN_CLOCK_MONOTONIC_KHR,
-#ifdef CLOCK_MONOTONIC_RAW
-   VK_TIME_DOMAIN_CLOCK_MONOTONIC_RAW_KHR,
-#endif
-};
-
-VkResult tu_GetPhysicalDeviceCalibrateableTimeDomainsKHR(
-   VkPhysicalDevice                             physicalDevice,
-   uint32_t                                     *pTimeDomainCount,
-   VkTimeDomainKHR                              *pTimeDomains)
-{
-   int d;
-   VK_OUTARRAY_MAKE_TYPED(VkTimeDomainKHR, out, pTimeDomains, pTimeDomainCount);
-
-   for (d = 0; d < ARRAY_SIZE(tu_time_domains); d++) {
-      vk_outarray_append_typed(VkTimeDomainKHR, &out, i) {
-         *i = tu_time_domains[d];
-      }
-   }
-
-   return vk_outarray_status(&out);
 }
