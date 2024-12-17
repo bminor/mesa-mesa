@@ -142,41 +142,52 @@ static void si_set_streamout_targets(struct pipe_context *ctx, unsigned num_targ
       if (sctx->gfx_level >= GFX12) {
          bool first_target = util_bitcount(enabled_mask) == 1;
 
-         /* The first enabled streamout target will contain the ordered ID/offset buffer for all
-          * targets.
+         /* The first enabled streamout target allocates the ordered ID/offset buffer for all
+          * targets. The other targets only hold the reference to the buffer because they need
+          * it for glDrawTransformFeedbackStream if stream != 0.
           */
-         if (first_target && !append_bitmask) {
-            /* The layout is:
-             *    struct {
-             *       struct {
-             *          uint32_t ordered_id; // equal for all buffers
-             *          uint32_t dwords_written;
-             *       } buffer[4];
-             *    };
-             *
-             * The buffer must be initialized to 0 and the address must be aligned to 64
-             * because it's faster when the atomic doesn't straddle a 64B block boundary.
-             */
-            unsigned alloc_size = 32;
-            unsigned alignment = 64;
-
-            si_resource_reference(&t->buf_filled_size, NULL);
-            u_suballocator_alloc(&sctx->allocator_zeroed_memory, alloc_size, alignment,
-                                 &t->buf_filled_size_offset,
-                                 (struct pipe_resource **)&t->buf_filled_size);
-
-            /* Offset to dwords_written of the first enabled streamout buffer. */
-            t->buf_filled_size_draw_count_offset = t->buf_filled_size_offset + i * 8 + 4;
-         }
-
          if (first_target) {
+            /* If not appending, we need to reset the buffer. */
+            if (!append_bitmask) {
+               /* The layout is:
+                *    struct {
+                *       struct {
+                *          uint32_t ordered_id; // equal for all buffers
+                *          uint32_t dwords_written; // it's actually in bytes
+                *       } buffer[4];
+                *    };
+                *
+                * The buffer must be initialized to 0 and the address must be aligned to 64
+                * because it's faster when the atomic doesn't straddle a 64B block boundary.
+                */
+               unsigned alloc_size = 32;
+               unsigned alignment = 64;
+
+               si_resource_reference(&t->buf_filled_size, NULL);
+               u_suballocator_alloc(&sctx->allocator_zeroed_memory, alloc_size, alignment,
+                                    &t->buf_filled_size_offset,
+                                    (struct pipe_resource **)&t->buf_filled_size);
+            }
+
+            /* Bind the buffer to the shader for global_atomic_ordered_add_b64. */
             struct pipe_shader_buffer sbuf;
             sbuf.buffer = &t->buf_filled_size->b.b;
             sbuf.buffer_offset = t->buf_filled_size_offset;
             sbuf.buffer_size = 32; /* unused, the shader only uses the low 32 bits of the address */
 
             si_set_internal_shader_buffer(sctx, SI_STREAMOUT_STATE_BUF, &sbuf);
+         } else {
+            /* All other streamout targets use the same buffer as the first one. */
+            struct si_streamout_target *first = sctx->streamout.targets[ffs(enabled_mask) - 1];
+
+            assert(first != t);
+            assert(first->buf_filled_size);
+            si_resource_reference(&t->buf_filled_size, first->buf_filled_size);
+            t->buf_filled_size_offset = first->buf_filled_size_offset;
          }
+
+         /* Offset to dwords_written of the streamout buffer. */
+         t->buf_filled_size_draw_count_offset = t->buf_filled_size_offset + i * 8 + 4;
       } else {
          /* GFX6-11 */
          if (!t->buf_filled_size) {

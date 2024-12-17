@@ -780,7 +780,7 @@ struct si_streamout_target {
    struct si_resource *buf_filled_size;
    unsigned buf_filled_size_offset;
    unsigned buf_filled_size_draw_count_offset;
-   bool buf_filled_size_valid;
+   bool buf_filled_size_valid; /* only for legacy streamout */
 
    unsigned stride;
 };
