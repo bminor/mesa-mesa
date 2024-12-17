@@ -6938,6 +6938,10 @@ spirv_to_nir(const uint32_t *words, size_t word_count,
    words = vtn_foreach_instruction(b, words, word_end,
                                    vtn_handle_preamble_instruction);
 
+   if (b->shader->info.subgroup_size == SUBGROUP_SIZE_UNIFORM &&
+       b->enabled_capabilities.GroupNonUniform)
+      b->shader->info.subgroup_size = SUBGROUP_SIZE_API_CONSTANT;
+
    /* DirectXShaderCompiler and glslang/shaderc both create OpKill from HLSL's
     * discard/clip, which uses demote semantics. DirectXShaderCompiler will use
     * demote if the extension is enabled, so we disable this workaround in that

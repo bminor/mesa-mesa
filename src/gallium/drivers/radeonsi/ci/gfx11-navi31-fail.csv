@@ -32,7 +32,6 @@ spec@khr_texture_compression_astc@sliced-3d-miptree-gles srgb-fp@sRGB decode ful
 GTF-GL46.gtf30.GL3Tests.fragment_coord_conventions.fragment_coord_conventions_multisample,Fail
 GTF-GL46.gtf32.GL3Tests.fragment_coord_conventions.fragment_coord_conventions_32_multisample,Fail
 KHR-GL46.shaders.uniform_block.random.nested_structs_instance_arrays.0,Fail
-KHR-Single-GL46.subgroups.builtin_var.compute.subgroupsize_compute,Fail
 ## Fail because GFX10+ removed MS texture support (see si_get_sparse_texture_virtual_page_size)
 KHR-GL46.sparse_texture2_tests.SparseTexture2Allocation_texture_2d_multisample_array_r11f_g11f_b10f,Fail
 KHR-GL46.sparse_texture2_tests.SparseTexture2Allocation_texture_2d_multisample_array_r16,Fail
