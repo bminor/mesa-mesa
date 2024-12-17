@@ -460,7 +460,7 @@ begin_transform_feedback(struct gl_context *ctx, GLenum mode, bool no_error)
 
    /* Start writing at the beginning of each target. */
    cso_set_stream_outputs(ctx->cso_context, obj->num_targets,
-                          obj->targets, offsets);
+                          obj->targets, offsets, mode);
    _mesa_update_valid_to_render_state(ctx);
 }
 
@@ -488,7 +488,7 @@ end_transform_feedback(struct gl_context *ctx,
    unsigned i;
    FLUSH_VERTICES(ctx, 0, 0);
 
-   cso_set_stream_outputs(ctx->cso_context, 0, NULL, NULL);
+   cso_set_stream_outputs(ctx->cso_context, 0, NULL, NULL, 0);
 
    /* The next call to glDrawTransformFeedbackStream should use the vertex
     * count from the last call to glEndTransformFeedback.
@@ -1249,7 +1249,7 @@ pause_transform_feedback(struct gl_context *ctx,
 {
    FLUSH_VERTICES(ctx, 0, 0);
 
-   cso_set_stream_outputs(ctx->cso_context, 0, NULL, NULL);
+   cso_set_stream_outputs(ctx->cso_context, 0, NULL, NULL, 0);
 
    obj->Paused = GL_TRUE;
    _mesa_update_valid_to_render_state(ctx);
@@ -1302,7 +1302,7 @@ resume_transform_feedback(struct gl_context *ctx,
       offsets[i] = (unsigned)-1;
 
    cso_set_stream_outputs(ctx->cso_context, obj->num_targets,
-                          obj->targets, offsets);
+                          obj->targets, offsets, obj->Mode);
    _mesa_update_valid_to_render_state(ctx);
 }
 

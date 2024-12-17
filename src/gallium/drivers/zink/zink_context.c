@@ -4345,7 +4345,8 @@ static void
 zink_set_stream_output_targets(struct pipe_context *pctx,
                                unsigned num_targets,
                                struct pipe_stream_output_target **targets,
-                               const unsigned *offsets)
+                               const unsigned *offsets,
+                               enum mesa_prim output_prim)
 {
    struct zink_context *ctx = zink_context(pctx);
 

@@ -268,7 +268,7 @@ st_pbo_draw(struct st_context *st, const struct st_pbo_addresses *addr,
    cso_set_rasterizer(cso, &st->pbo.raster);
 
    /* Disable stream output */
-   cso_set_stream_outputs(cso, 0, NULL, 0);
+   cso_set_stream_outputs(cso, 0, NULL, 0, 0);
 
    if (addr->depth == 1) {
       cso_draw_arrays(cso, MESA_PRIM_TRIANGLE_STRIP, 0, 4);

@@ -723,7 +723,8 @@ etna_vertex_elements_state_bind(struct pipe_context *pctx, void *ve)
 static void
 etna_set_stream_output_targets(struct pipe_context *pctx,
       unsigned num_targets, struct pipe_stream_output_target **targets,
-      const unsigned *offsets)
+      const unsigned *offsets,
+      enum mesa_prim output_prim)
 {
    /* stub */
 }

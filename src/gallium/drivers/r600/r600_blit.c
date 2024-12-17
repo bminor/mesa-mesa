@@ -51,7 +51,8 @@ static void r600_blitter_begin(struct pipe_context *ctx, enum r600_blitter_op op
 	util_blitter_save_tessctrl_shader(rctx->blitter, rctx->tcs_shader);
 	util_blitter_save_tesseval_shader(rctx->blitter, rctx->tes_shader);
 	util_blitter_save_so_targets(rctx->blitter, rctx->b.streamout.num_targets,
-				     (struct pipe_stream_output_target**)rctx->b.streamout.targets);
+				     (struct pipe_stream_output_target**)rctx->b.streamout.targets,
+                                     MESA_PRIM_UNKNOWN);
 	util_blitter_save_rasterizer(rctx->blitter, rctx->rasterizer_state.cso);
 
 	if (op & R600_SAVE_FRAGMENT_STATE) {

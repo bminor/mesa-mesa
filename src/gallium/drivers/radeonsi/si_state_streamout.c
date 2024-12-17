@@ -58,7 +58,8 @@ void si_streamout_buffers_dirty(struct si_context *sctx)
 
 static void si_set_streamout_targets(struct pipe_context *ctx, unsigned num_targets,
                                      struct pipe_stream_output_target **targets,
-                                     const unsigned *offsets)
+                                     const unsigned *offsets,
+                                     enum mesa_prim output_prim)
 {
    struct si_context *sctx = (struct si_context *)ctx;
    unsigned old_num_targets = sctx->streamout.num_targets;
@@ -216,6 +217,7 @@ static void si_set_streamout_targets(struct pipe_context *ctx, unsigned num_targ
    if (!!sctx->streamout.enabled_mask != !!enabled_mask)
       sctx->do_update_shaders = true; /* to keep/remove streamout shader code as an optimization */
 
+   sctx->streamout.output_prim = output_prim;
    sctx->streamout.num_targets = num_targets;
    sctx->streamout.enabled_mask = enabled_mask;
    sctx->streamout.append_bitmask = append_bitmask;

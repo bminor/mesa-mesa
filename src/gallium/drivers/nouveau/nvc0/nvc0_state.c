@@ -1146,7 +1146,8 @@ static void
 nvc0_set_transform_feedback_targets(struct pipe_context *pipe,
                                     unsigned num_targets,
                                     struct pipe_stream_output_target **targets,
-                                    const unsigned *offsets)
+                                    const unsigned *offsets,
+                                    enum mesa_prim output_prim)
 {
    struct nvc0_context *nvc0 = nvc0_context(pipe);
    unsigned i;

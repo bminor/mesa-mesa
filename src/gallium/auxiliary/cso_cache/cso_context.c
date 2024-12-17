@@ -91,9 +91,11 @@ struct cso_context_priv {
    int max_sampler_seen;
 
    unsigned nr_so_targets;
+   enum mesa_prim so_output_prim;
    struct pipe_stream_output_target *so_targets[PIPE_MAX_SO_BUFFERS];
 
    unsigned nr_so_targets_saved;
+   enum mesa_prim so_output_prim_saved;
    struct pipe_stream_output_target *so_targets_saved[PIPE_MAX_SO_BUFFERS];
 
    /** Current and saved state.
@@ -451,7 +453,7 @@ cso_unbind_context(struct cso_context *cso)
       ctx->base.pipe->bind_vertex_elements_state(ctx->base.pipe, NULL);
 
       if (ctx->has_streamout)
-         ctx->base.pipe->set_stream_output_targets(ctx->base.pipe, 0, NULL, NULL);
+         ctx->base.pipe->set_stream_output_targets(ctx->base.pipe, 0, NULL, NULL, 0);
 
       struct pipe_framebuffer_state fb = {0};
       ctx->base.pipe->set_framebuffer_state(ctx->base.pipe, &fb);
@@ -1547,7 +1549,8 @@ void
 cso_set_stream_outputs(struct cso_context *cso,
                        unsigned num_targets,
                        struct pipe_stream_output_target **targets,
-                       const unsigned *offsets)
+                       const unsigned *offsets,
+                       enum mesa_prim output_prim)
 {
    struct cso_context_priv *ctx = (struct cso_context_priv *)cso;
    struct pipe_context *pipe = ctx->base.pipe;
@@ -1573,8 +1576,9 @@ cso_set_stream_outputs(struct cso_context *cso,
    }
 
    pipe->set_stream_output_targets(pipe, num_targets, targets,
-                                   offsets);
+                                   offsets, output_prim);
    ctx->nr_so_targets = num_targets;
+   ctx->so_output_prim = output_prim;
 }
 
 
@@ -1586,6 +1590,7 @@ cso_save_stream_outputs(struct cso_context_priv *ctx)
    }
 
    ctx->nr_so_targets_saved = ctx->nr_so_targets;
+   ctx->so_output_prim_saved = ctx->so_output_prim;
 
    for (unsigned i = 0; i < ctx->nr_so_targets; i++) {
       assert(!ctx->so_targets_saved[i]);
@@ -1624,10 +1629,12 @@ cso_restore_stream_outputs(struct cso_context_priv *ctx)
    }
 
    pipe->set_stream_output_targets(pipe, ctx->nr_so_targets_saved,
-                                   ctx->so_targets, offset);
+                                   ctx->so_targets, offset,
+                                   ctx->so_output_prim_saved);
 
    ctx->nr_so_targets = ctx->nr_so_targets_saved;
    ctx->nr_so_targets_saved = 0;
+   ctx->so_output_prim = ctx->so_output_prim_saved;
 }
 
 

@@ -262,7 +262,7 @@ setup_render_state(struct gl_context *ctx,
    st->util_velems.count = 3;
    cso_set_vertex_elements(cso, &st->util_velems);
 
-   cso_set_stream_outputs(st->cso_context, 0, NULL, NULL);
+   cso_set_stream_outputs(st->cso_context, 0, NULL, NULL, 0);
 }
 
 

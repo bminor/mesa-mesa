@@ -2198,7 +2198,8 @@ tc_add_set_vertex_buffers_call(struct pipe_context *_pipe, unsigned count)
 
 struct tc_stream_outputs {
    struct tc_call_base base;
-   unsigned count;
+   uint8_t count;
+   uint8_t output_prim;
    struct pipe_stream_output_target *targets[PIPE_MAX_SO_BUFFERS];
    unsigned offsets[PIPE_MAX_SO_BUFFERS];
 };
@@ -2209,7 +2210,8 @@ tc_call_set_stream_output_targets(struct pipe_context *pipe, void *call)
    struct tc_stream_outputs *p = to_call(call, tc_stream_outputs);
    unsigned count = p->count;
 
-   pipe->set_stream_output_targets(pipe, count, p->targets, p->offsets);
+   pipe->set_stream_output_targets(pipe, count, p->targets, p->offsets,
+                                   p->output_prim);
    for (unsigned i = 0; i < count; i++)
       tc_drop_so_target_reference(p->targets[i]);
 
@@ -2220,7 +2222,8 @@ static void
 tc_set_stream_output_targets(struct pipe_context *_pipe,
                              unsigned count,
                              struct pipe_stream_output_target **tgs,
-                             const unsigned *offsets)
+                             const unsigned *offsets,
+                             enum mesa_prim output_prim)
 {
    struct threaded_context *tc = threaded_context(_pipe);
    struct tc_stream_outputs *p =
@@ -2238,6 +2241,7 @@ tc_set_stream_output_targets(struct pipe_context *_pipe,
       }
    }
    p->count = count;
+   p->output_prim = output_prim;
    memcpy(p->offsets, offsets, count * sizeof(unsigned));
 
    tc_unbind_buffers(&tc->streamout_buffers[count], PIPE_MAX_SO_BUFFERS - count);

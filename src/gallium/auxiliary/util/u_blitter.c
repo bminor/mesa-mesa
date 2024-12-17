@@ -681,7 +681,8 @@ void util_blitter_restore_vertex_states(struct blitter_context *blitter)
          offsets[i] = (unsigned)-1;
       pipe->set_stream_output_targets(pipe,
                                       ctx->base.saved_num_so_targets,
-                                      ctx->base.saved_so_targets, offsets);
+                                      ctx->base.saved_so_targets, offsets,
+                                      ctx->base.saved_so_output_prim);
 
       for (i = 0; i < ctx->base.saved_num_so_targets; i++)
          pipe_so_target_reference(&ctx->base.saved_so_targets[i], NULL);
@@ -1391,7 +1392,7 @@ static void blitter_set_common_draw_rect_state(struct blitter_context_priv *ctx,
       pipe->bind_tes_state(pipe, NULL);
    }
    if (ctx->has_stream_out)
-      pipe->set_stream_output_targets(pipe, 0, NULL, NULL);
+      pipe->set_stream_output_targets(pipe, 0, NULL, NULL, 0);
 }
 
 static void blitter_draw(struct blitter_context_priv *ctx,
@@ -2661,7 +2662,7 @@ void util_blitter_clear_buffer(struct blitter_context *blitter,
    pipe->bind_rasterizer_state(pipe, ctx->rs_discard_state);
 
    so_target = pipe->create_stream_output_target(pipe, dst, offset, size);
-   pipe->set_stream_output_targets(pipe, 1, &so_target, offsets);
+   pipe->set_stream_output_targets(pipe, 1, &so_target, offsets, MESA_PRIM_POINTS);
 
    util_draw_arrays(pipe, MESA_PRIM_POINTS, 0, size / 4);
 

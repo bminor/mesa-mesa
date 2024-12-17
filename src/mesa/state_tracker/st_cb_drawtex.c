@@ -273,7 +273,7 @@ st_DrawTex(struct gl_context *ctx, GLfloat x, GLfloat y, GLfloat z,
    velems.count = numAttribs;
 
    cso_set_vertex_elements(cso, &velems);
-   cso_set_stream_outputs(cso, 0, NULL, NULL);
+   cso_set_stream_outputs(cso, 0, NULL, NULL, 0);
 
    /* viewport state: viewport matching window dims */
    {

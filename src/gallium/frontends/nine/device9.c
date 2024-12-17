@@ -3339,11 +3339,11 @@ NineDevice9_ProcessVertices( struct NineDevice9 *This,
     draw.max_index = VertexCount - 1;
 
 
-    pipe_sw->set_stream_output_targets(pipe_sw, 1, &target, offsets);
+    pipe_sw->set_stream_output_targets(pipe_sw, 1, &target, offsets, draw.mode);
 
     pipe_sw->draw_vbo(pipe_sw, &draw, 0, NULL, &sc, 1);
 
-    pipe_sw->set_stream_output_targets(pipe_sw, 0, NULL, 0);
+    pipe_sw->set_stream_output_targets(pipe_sw, 0, NULL, NULL, 0);
     pipe_sw->stream_output_target_destroy(pipe_sw, target);
 
     u_box_1d(0, VertexCount * so.stride[0] * 4, &box);

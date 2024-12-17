@@ -1560,7 +1560,8 @@ static void
 d3d12_set_stream_output_targets(struct pipe_context *pctx,
                                 unsigned num_targets,
                                 struct pipe_stream_output_target **targets,
-                                const unsigned *offsets)
+                                const unsigned *offsets,
+                                enum mesa_prim output_prim)
 {
    struct d3d12_context *ctx = d3d12_context(pctx);
 
@@ -1981,7 +1982,8 @@ d3d12_clear_render_target(struct pipe_context *pctx,
       util_blitter_save_fragment_constant_buffer_slot(ctx->blitter, ctx->cbufs[PIPE_SHADER_FRAGMENT]);
       util_blitter_save_vertex_buffers(ctx->blitter, ctx->vbs, ctx->num_vbs);
       util_blitter_save_sample_mask(ctx->blitter, ctx->gfx_pipeline_state.sample_mask, 0);
-      util_blitter_save_so_targets(ctx->blitter, ctx->gfx_pipeline_state.num_so_targets, ctx->so_targets);
+      util_blitter_save_so_targets(ctx->blitter, ctx->gfx_pipeline_state.num_so_targets, ctx->so_targets,
+                                   MESA_PRIM_UNKNOWN);
 
       union pipe_color_union local_color;
       memcpy(&local_color, color, sizeof(local_color));

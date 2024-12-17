@@ -3390,7 +3390,7 @@ static void handle_begin_transform_feedback(struct vk_cmd_queue_entry *cmd,
                        &offsets[i]);
    }
    state->pctx->set_stream_output_targets(state->pctx, state->num_so_targets,
-                                          state->so_targets, offsets);
+                                          state->so_targets, offsets, MESA_PRIM_UNKNOWN);
 }
 
 static void handle_end_transform_feedback(struct vk_cmd_queue_entry *cmd,
@@ -3413,7 +3413,7 @@ static void handle_end_transform_feedback(struct vk_cmd_queue_entry *cmd,
                            &offset);
       }
    }
-   state->pctx->set_stream_output_targets(state->pctx, 0, NULL, NULL);
+   state->pctx->set_stream_output_targets(state->pctx, 0, NULL, NULL, 0);
 }
 
 static void handle_draw_indirect_byte_count(struct vk_cmd_queue_entry *cmd,

@@ -894,7 +894,8 @@ static void
 panfrost_set_stream_output_targets(struct pipe_context *pctx,
                                    unsigned num_targets,
                                    struct pipe_stream_output_target **targets,
-                                   const unsigned *offsets)
+                                   const unsigned *offsets,
+                                   enum mesa_prim output_prim)
 {
    struct panfrost_context *ctx = pan_context(pctx);
    struct panfrost_streamout *so = &ctx->streamout;

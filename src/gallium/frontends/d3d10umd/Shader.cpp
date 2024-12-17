@@ -968,7 +968,7 @@ SoSetTargets(D3D10DDI_HDEVICE hDevice,                                     // IN
    }
 
    pipe->set_stream_output_targets(pipe, SOTargets, pDevice->so_targets,
-                                   pOffsets);
+                                   pOffsets, MESA_PRIM_UNKNOWN);
 }
 
 

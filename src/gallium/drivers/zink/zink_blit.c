@@ -511,7 +511,7 @@ zink_blit_begin(struct zink_context *ctx, enum zink_blit_flags flags)
    util_blitter_save_tesseval_shader(ctx->blitter, ctx->gfx_stages[MESA_SHADER_TESS_EVAL]);
    util_blitter_save_geometry_shader(ctx->blitter, ctx->gfx_stages[MESA_SHADER_GEOMETRY]);
    util_blitter_save_rasterizer(ctx->blitter, ctx->rast_state);
-   util_blitter_save_so_targets(ctx->blitter, ctx->num_so_targets, ctx->so_targets);
+   util_blitter_save_so_targets(ctx->blitter, ctx->num_so_targets, ctx->so_targets, MESA_PRIM_UNKNOWN);
 
    if (flags & ZINK_BLIT_SAVE_FS_CONST_BUF)
       util_blitter_save_fragment_constant_buffer_slot(ctx->blitter, ctx->ubos[MESA_SHADER_FRAGMENT]);
