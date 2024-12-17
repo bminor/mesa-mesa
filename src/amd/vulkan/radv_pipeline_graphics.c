@@ -1736,9 +1736,8 @@ radv_generate_ps_epilog_key(const struct radv_device *device, const struct radv_
       key.color_map[1] = 1;
    }
 
-   if (state->alpha_to_coverage_via_mrtz)
-      z_format = ac_get_spi_shader_z_format(state->export_depth, state->export_stencil, state->export_sample_mask,
-                                            state->alpha_to_coverage_via_mrtz);
+   z_format = ac_get_spi_shader_z_format(state->export_depth, state->export_stencil, state->export_sample_mask,
+                                         state->alpha_to_coverage_via_mrtz);
 
    key.spi_shader_col_format = col_format;
    key.color_is_int8 = pdev->info.gfx_level < GFX8 ? is_int8 : 0;

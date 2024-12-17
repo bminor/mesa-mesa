@@ -1945,14 +1945,6 @@ radv_emit_ps_epilog_state(struct radv_cmd_buffer *cmd_buffer, struct radv_shader
    if (cmd_buffer->state.emitted_ps_epilog == ps_epilog)
       return;
 
-   if (ps_epilog->spi_shader_z_format) {
-      if (pdev->info.gfx_level >= GFX12) {
-         radeon_set_context_reg(cmd_buffer->cs, R_028650_SPI_SHADER_Z_FORMAT, ps_epilog->spi_shader_z_format);
-      } else {
-         radeon_set_context_reg(cmd_buffer->cs, R_028710_SPI_SHADER_Z_FORMAT, ps_epilog->spi_shader_z_format);
-      }
-   }
-
    assert(ps_shader->config.num_shared_vgprs == 0);
    if (G_00B848_VGPRS(ps_epilog->rsrc1) > G_00B848_VGPRS(ps_shader->config.rsrc1)) {
       uint32_t rsrc1 = ps_shader->config.rsrc1;
@@ -2632,8 +2624,6 @@ radv_emit_fragment_shader(struct radv_cmd_buffer *cmd_buffer)
       radeon_opt_set_context_reg(cmd_buffer, R_028640_SPI_PS_IN_CONTROL, RADV_TRACKED_SPI_PS_IN_CONTROL,
                                  ps->info.regs.ps.spi_ps_in_control);
 
-      radeon_set_context_reg(cmd_buffer->cs, R_028650_SPI_SHADER_Z_FORMAT, ps->info.regs.ps.spi_shader_z_format);
-
       radeon_set_context_reg(cmd_buffer->cs, R_028BBC_PA_SC_HISZ_CONTROL, ps->info.regs.ps.pa_sc_hisz_control);
    } else {
       radeon_opt_set_context_reg2(cmd_buffer, R_0286CC_SPI_PS_INPUT_ENA, RADV_TRACKED_SPI_PS_INPUT_ENA,
@@ -2643,9 +2633,6 @@ radv_emit_fragment_shader(struct radv_cmd_buffer *cmd_buffer)
          radeon_opt_set_context_reg(cmd_buffer, R_0286D8_SPI_PS_IN_CONTROL, RADV_TRACKED_SPI_PS_IN_CONTROL,
                                     ps->info.regs.ps.spi_ps_in_control);
       }
-
-      radeon_opt_set_context_reg(cmd_buffer, R_028710_SPI_SHADER_Z_FORMAT, RADV_TRACKED_SPI_SHADER_Z_FORMAT,
-                                 ps->info.regs.ps.spi_shader_z_format);
 
       if (pdev->info.gfx_level >= GFX9 && pdev->info.gfx_level < GFX11)
          radeon_opt_set_context_reg(cmd_buffer, R_028C40_PA_SC_SHADER_CONTROL, RADV_TRACKED_PA_SC_SHADER_CONTROL,
@@ -7805,10 +7792,12 @@ radv_bind_color_output_state(struct radv_cmd_buffer *cmd_buffer, const struct ra
 {
    const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   uint32_t col_format = 0, cb_shader_mask = 0;
+   uint32_t col_format = 0, z_format = 0, cb_shader_mask = 0;
 
    if (ps) {
       col_format = ps_epilog ? ps_epilog->spi_shader_col_format : ps->info.ps.spi_shader_col_format;
+      z_format = ps_epilog && ps->info.ps.exports_mrtz_via_epilog ? ps_epilog->spi_shader_z_format
+                                                                  : ps->info.regs.ps.spi_shader_z_format;
       cb_shader_mask = ps_epilog ? ps_epilog->cb_shader_mask : ps->info.ps.cb_shader_mask;
    }
 
@@ -7829,8 +7818,9 @@ radv_bind_color_output_state(struct radv_cmd_buffer *cmd_buffer, const struct ra
          cmd_buffer->state.dirty |= RADV_CMD_DIRTY_RBPLUS;
    }
 
-   if (cmd_buffer->state.cb_shader_mask != cb_shader_mask) {
+   if (cmd_buffer->state.cb_shader_mask != cb_shader_mask || cmd_buffer->state.spi_shader_z_format != z_format) {
       cmd_buffer->state.cb_shader_mask = cb_shader_mask;
+      cmd_buffer->state.spi_shader_z_format = z_format;
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_COLOR_OUTPUT;
    }
 }
@@ -10634,10 +10624,14 @@ radv_emit_color_output_state(struct radv_cmd_buffer *cmd_buffer)
 
    if (pdev->info.gfx_level >= GFX12) {
       radeon_set_context_reg(cmd_buffer->cs, R_028854_CB_SHADER_MASK, cmd_buffer->state.cb_shader_mask);
-      radeon_set_context_reg(cmd_buffer->cs, R_028654_SPI_SHADER_COL_FORMAT, col_format_compacted);
+      radeon_set_context_reg_seq(cmd_buffer->cs, R_028650_SPI_SHADER_Z_FORMAT, 2);
+      radeon_emit(cmd_buffer->cs, cmd_buffer->state.spi_shader_z_format);
+      radeon_emit(cmd_buffer->cs, col_format_compacted); /* SPI_SHADER_COL_FORMAT */
    } else {
       radeon_set_context_reg(cmd_buffer->cs, R_02823C_CB_SHADER_MASK, cmd_buffer->state.cb_shader_mask);
-      radeon_set_context_reg(cmd_buffer->cs, R_028714_SPI_SHADER_COL_FORMAT, col_format_compacted);
+      radeon_set_context_reg_seq(cmd_buffer->cs, R_028710_SPI_SHADER_Z_FORMAT, 2);
+      radeon_emit(cmd_buffer->cs, cmd_buffer->state.spi_shader_z_format);
+      radeon_emit(cmd_buffer->cs, col_format_compacted); /* SPI_SHADER_COL_FORMAT */
    }
 
    cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_COLOR_OUTPUT;
@@ -13738,6 +13732,7 @@ radv_reset_pipeline_state(struct radv_cmd_buffer *cmd_buffer, VkPipelineBindPoin
          cmd_buffer->state.last_vgt_shader = NULL;
          cmd_buffer->state.emitted_vs_prolog = NULL;
          cmd_buffer->state.spi_shader_col_format = 0;
+         cmd_buffer->state.spi_shader_z_format = 0;
          cmd_buffer->state.cb_shader_mask = 0;
          cmd_buffer->state.ms.sample_shading_enable = false;
          cmd_buffer->state.ms.min_sample_shading = 1.0f;

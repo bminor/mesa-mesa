@@ -459,6 +459,7 @@ struct radv_cmd_state {
    unsigned tess_lds_size;
 
    unsigned spi_shader_col_format;
+   unsigned spi_shader_z_format;
    unsigned cb_shader_mask;
 
    struct radv_multisample_state ms;
