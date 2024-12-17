@@ -89,6 +89,12 @@ for arch in \
                 --libdir=/usr/local/lib/${arch}
     make install
     make distclean
+
+    unset CC
+    unset CC
+    unset CXX
+    unset LD
+    unset RANLIB
 done
 
 cd ..
