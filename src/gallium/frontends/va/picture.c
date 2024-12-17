@@ -979,6 +979,11 @@ vlVaRenderPicture(VADriverContextP ctx, VAContextID context_id, VABufferID *buff
       return VA_STATUS_ERROR_INVALID_CONTEXT;
    }
 
+   if (!context->target_id) {
+      mtx_unlock(&drv->mutex);
+      return VA_STATUS_ERROR_OPERATION_FAILED;
+   }
+
    /* Always process VAProtectedSliceDataBufferType first because it changes the state */
    for (i = 0; i < num_buffers; ++i) {
       vlVaBuffer *buf = handle_table_get(drv->htab, buffers[i]);
@@ -1127,6 +1132,14 @@ vlVaEndPicture(VADriverContextP ctx, VAContextID context_id)
       return VA_STATUS_ERROR_INVALID_CONTEXT;
    }
 
+   if (!context->target_id) {
+      mtx_unlock(&drv->mutex);
+      return VA_STATUS_ERROR_OPERATION_FAILED;
+   }
+
+   output_id = context->target_id;
+   context->target_id = 0;
+
    if (!context->decoder) {
       if (context->templat.profile != PIPE_VIDEO_PROFILE_UNKNOWN) {
          mtx_unlock(&drv->mutex);
@@ -1138,7 +1151,6 @@ vlVaEndPicture(VADriverContextP ctx, VAContextID context_id)
       return VA_STATUS_SUCCESS;
    }
 
-   output_id = context->target_id;
    out_target = &context->target;
    apply_av1_fg = vlVaQueryApplyFilmGrainAV1(context, &output_id, &out_target);
 
