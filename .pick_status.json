@@ -2144,7 +2144,7 @@
         "description": "nak: Fix 8-bit selection for vectors",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9e84e9e44b111a6afe8a346fb0bb74f9c597af61",
         "notes": null
