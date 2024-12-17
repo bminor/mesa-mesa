@@ -38,8 +38,9 @@ findmnt -n tmpfs ${SHADER_CACHE_HOME} || findmnt -n tmpfs ${SHADER_CACHE_DIR} ||
     mount -t tmpfs -o nosuid,nodev,size=2G,mode=1755 tmpfs ${SHADER_CACHE_DIR}
 }
 
+BASELINE=""
 if [ -e "$INSTALL/$GPU_VERSION-fails.txt" ]; then
-    DEQP_RUNNER_OPTIONS="$DEQP_RUNNER_OPTIONS --baseline $INSTALL/$GPU_VERSION-fails.txt"
+    BASELINE="--baseline $INSTALL/$GPU_VERSION-fails.txt"
 fi
 
 # Default to an empty known flakes file if it doesn't exist.
@@ -76,10 +77,6 @@ fi
 
 if [ -n "$USE_ANGLE" ]; then
     DEQP_SKIPS="$DEQP_SKIPS $INSTALL/angle-skips.txt"
-fi
-
-if [ -n "${DEQP_RUNNER_MAX_FAILS:-}" ]; then
-    DEQP_RUNNER_OPTIONS="$DEQP_RUNNER_OPTIONS --max-fails ${DEQP_RUNNER_MAX_FAILS}"
 fi
 
 # Set the path to VK validation layer settings (in case it ends up getting loaded)
@@ -136,6 +133,8 @@ deqp-runner \
     --fraction-start ${CI_NODE_INDEX:-1} \
     --fraction $((CI_NODE_TOTAL * ${DEQP_FRACTION:-1})) \
     --jobs ${FDO_CI_CONCURRENT:-4} \
+    $BASELINE \
+    ${DEQP_RUNNER_MAX_FAILS:+--max-fails "$DEQP_RUNNER_MAX_FAILS"} \
     $DEQP_RUNNER_OPTIONS; DEQP_EXITCODE=$?
 
 { set +x; } 2>/dev/null
