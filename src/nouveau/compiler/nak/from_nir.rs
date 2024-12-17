@@ -590,10 +590,9 @@ impl<'a> ShaderFromNir<'a> {
                                 let sc = dc * 2 + w;
                                 if sc < srcs.len() {
                                     let (ssa, byte) = srcs[sc];
-                                    let w_u8 = u8::try_from(w).unwrap();
                                     psrc[w] = ssa.into();
-                                    psel[w * 2 + 0] = (w_u8 * 4) + byte;
-                                    psel[w * 2 + 1] = (w_u8 * 4) + byte + 1;
+                                    psel[w * 2 + 0] = (w as u8 * 4) + byte;
+                                    psel[w * 2 + 1] = (w as u8 * 4) + byte + 1;
                                 }
                             }
                             comps.push(b.prmt(psrc[0], psrc[1], psel)[0]);
