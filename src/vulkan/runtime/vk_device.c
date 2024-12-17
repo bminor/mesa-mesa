@@ -35,6 +35,7 @@
 #include "util/hash_table.h"
 #include "util/perf/cpu_trace.h"
 #include "util/ralloc.h"
+#include "util/timespec.h"
 
 static enum vk_device_timeline_mode
 get_timeline_mode(struct vk_physical_device *physical_device)
@@ -553,6 +554,50 @@ vk_common_DeviceWaitIdle(VkDevice _device)
    }
 
    return VK_SUCCESS;
+}
+
+VkResult
+vk_device_get_timestamp(struct vk_device *device, VkTimeDomainKHR domain,
+                        uint64_t *timestamp)
+{
+   if (domain == VK_TIME_DOMAIN_DEVICE_KHR) {
+      assert(device && device->get_timestamp);
+      return device->get_timestamp(device, timestamp);
+   }
+
+   /* device is not used for host time domains */
+#ifndef _WIN32
+   clockid_t clockid;
+   struct timespec ts;
+
+   switch (domain) {
+   case VK_TIME_DOMAIN_CLOCK_MONOTONIC_KHR:
+      clockid = CLOCK_MONOTONIC;
+      break;
+   case VK_TIME_DOMAIN_CLOCK_MONOTONIC_RAW_KHR:
+      /* The "RAW" clocks on Linux are called "FAST" on FreeBSD */
+#if defined(CLOCK_MONOTONIC_RAW)
+      clockid = CLOCK_MONOTONIC_RAW;
+      break;
+#elif defined(CLOCK_MONOTONIC_FAST)
+      clockid = CLOCK_MONOTONIC_FAST;
+      break;
+#else
+      FALLTHROUGH;
+#endif
+   default:
+      goto fail;
+   }
+
+   if (clock_gettime(clockid, &ts) < 0)
+      goto fail;
+
+   *timestamp = (uint64_t)ts.tv_sec * NSEC_PER_SEC + ts.tv_nsec;
+   return VK_SUCCESS;
+
+fail:
+#endif /* _WIN32 */
+   return VK_ERROR_FEATURE_NOT_PRESENT;
 }
 
 #ifndef _WIN32

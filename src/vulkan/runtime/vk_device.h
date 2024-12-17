@@ -204,6 +204,9 @@ struct vk_device {
     */
    VkResult (*check_status)(struct vk_device *device);
 
+   /* Get the device timestamp in the VK_TIME_DOMAIN_DEVICE_KHR domain */
+   VkResult (*get_timestamp)(struct vk_device *device, uint64_t *timestamp);
+
    /** Creates a vk_sync that wraps a memory object
     *
     * This is always a one-shot object so it need not track any additional
@@ -411,6 +414,10 @@ vk_device_check_status(struct vk_device *device)
 
    return result;
 }
+
+VkResult
+vk_device_get_timestamp(struct vk_device *device, VkTimeDomainKHR domain,
+                        uint64_t *timestamp);
 
 #ifndef _WIN32
 
