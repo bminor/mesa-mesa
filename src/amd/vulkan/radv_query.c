@@ -2257,9 +2257,7 @@ radv_CmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPoo
    const struct radv_instance *instance = radv_physical_device_instance(pdev);
    struct radeon_cmdbuf *cs = cmd_buffer->cs;
    uint64_t va = radv_buffer_get_va(pool->bo);
-   uint64_t dest_va = radv_buffer_get_va(dst_buffer->bo);
    size_t dst_size = radv_query_result_size(pool, flags);
-   dest_va += dst_buffer->offset + dstOffset;
 
    if (!queryCount)
       return;
@@ -2289,7 +2287,7 @@ radv_CmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPoo
          if (flags & VK_QUERY_RESULT_WAIT_BIT) {
             uint64_t enabled_rb_mask = pdev->info.enabled_rb_mask;
             uint32_t rb_avail_offset = 16 * util_last_bit64(enabled_rb_mask) - 4;
-            for (unsigned i = 0; i < queryCount; ++i, dest_va += stride) {
+            for (unsigned i = 0; i < queryCount; ++i) {
                unsigned query = firstQuery + i;
                uint64_t src_va = va + query * pool->stride + rb_avail_offset;
 
@@ -2311,7 +2309,7 @@ radv_CmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPoo
             radv_get_pipelinestat_query_offset(VK_QUERY_PIPELINE_STATISTIC_TASK_SHADER_INVOCATIONS_BIT_EXT);
          const unsigned pipelinestat_block_size = radv_get_pipelinestat_query_size(device);
 
-         for (unsigned i = 0; i < queryCount; ++i, dest_va += stride) {
+         for (unsigned i = 0; i < queryCount; ++i) {
             unsigned query = firstQuery + i;
 
             radeon_check_space(device->ws, cs, 7);
@@ -2344,7 +2342,7 @@ radv_CmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPoo
    case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_BOTTOM_LEVEL_POINTERS_KHR:
    case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SIZE_KHR:
       if (flags & VK_QUERY_RESULT_WAIT_BIT) {
-         for (unsigned i = 0; i < queryCount; ++i, dest_va += stride) {
+         for (unsigned i = 0; i < queryCount; ++i) {
             unsigned query = firstQuery + i;
             uint64_t local_src_va = va + query * pool->stride;
 
@@ -2409,7 +2407,7 @@ radv_CmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPoo
    case VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT:
       if (pdev->info.gfx_level >= GFX11) {
          if (flags & VK_QUERY_RESULT_WAIT_BIT) {
-            for (unsigned i = 0; i < queryCount; ++i, dest_va += stride) {
+            for (unsigned i = 0; i < queryCount; ++i) {
                unsigned query = firstQuery + i;
 
                radeon_check_space(device->ws, cs, 7);
