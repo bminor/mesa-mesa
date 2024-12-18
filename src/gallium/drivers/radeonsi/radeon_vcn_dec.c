@@ -2342,12 +2342,13 @@ static void radeon_dec_destroy(struct pipe_video_codec *decoder)
    }
 
    if (dec->stream_type != RDECODE_CODEC_JPEG) {
+      struct pipe_fence_handle *fence = NULL;
       map_msg_fb_it_probs_buf(dec);
       rvcn_dec_message_destroy(dec);
       send_msg_buf(dec);
-      flush(dec, 0, &dec->destroy_fence);
-      dec->ws->fence_wait(dec->ws, dec->destroy_fence, PIPE_DEFAULT_DECODER_FEEDBACK_TIMEOUT_NS);
-      dec->ws->fence_reference(dec->ws, &dec->destroy_fence, NULL);
+      flush(dec, 0, &fence);
+      dec->ws->fence_wait(dec->ws, fence, PIPE_DEFAULT_DECODER_FEEDBACK_TIMEOUT_NS);
+      dec->ws->fence_reference(dec->ws, &fence, NULL);
    }
 
    dec->ws->cs_destroy(&dec->cs);
