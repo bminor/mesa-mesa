@@ -308,10 +308,8 @@ prepare_sysvals(struct panvk_cmd_buffer *cmdbuf,
    }
 
    if (draw->vertex.base != sysvals->vs.first_vertex ||
-       draw->vertex.base != sysvals->vs.base_vertex ||
        draw->instance.base != sysvals->vs.base_instance) {
       sysvals->vs.first_vertex = draw->vertex.base;
-      sysvals->vs.base_vertex = draw->vertex.base;
       sysvals->vs.base_instance = draw->instance.base;
       gfx_state_set_dirty(cmdbuf, PUSH_UNIFORMS);
    }
@@ -1934,9 +1932,6 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
    cs_store32(b, cs_sr_reg32(b, 36), fau_block_addr,
               SYSVALS_PUSH_CONST_BASE +
                  offsetof(struct panvk_graphics_sysvals, vs.first_vertex));
-   cs_store32(b, cs_sr_reg32(b, 36), fau_block_addr,
-              SYSVALS_PUSH_CONST_BASE +
-                 offsetof(struct panvk_graphics_sysvals, vs.base_vertex));
    cs_store32(b, cs_sr_reg32(b, 37), fau_block_addr,
               SYSVALS_PUSH_CONST_BASE +
                  offsetof(struct panvk_graphics_sysvals, vs.base_instance));

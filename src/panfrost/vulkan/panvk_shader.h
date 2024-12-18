@@ -64,7 +64,6 @@ struct panvk_graphics_sysvals {
 
    struct {
       uint32_t first_vertex;
-      uint32_t base_vertex;
       uint32_t base_instance;
       uint32_t noperspective_varyings;
    } vs;

@@ -86,9 +86,6 @@ panvk_lower_sysvals(nir_builder *b, nir_instr *instr, void *data)
    case nir_intrinsic_load_first_vertex:
       val = load_sysval(b, graphics, bit_size, vs.first_vertex);
       break;
-   case nir_intrinsic_load_base_vertex:
-      val = load_sysval(b, graphics, bit_size, vs.base_vertex);
-      break;
    case nir_intrinsic_load_base_instance:
       val = load_sysval(b, graphics, bit_size, vs.base_instance);
       break;
