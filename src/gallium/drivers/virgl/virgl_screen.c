@@ -439,7 +439,7 @@ virgl_get_shader_param(struct pipe_screen *screen,
       case PIPE_SHADER_CAP_SUBROUTINES:
          return 1;
       case PIPE_SHADER_CAP_MAX_TEXTURE_SAMPLERS:
-         return MIN2(vscreen->caps.caps.v2.max_shader_sampler_views,
+         return MIN2(vscreen->caps.caps.v2.max_texture_samplers,
                      PIPE_MAX_SHADER_SAMPLER_VIEWS);
       case PIPE_SHADER_CAP_INTEGERS:
          return vscreen->caps.caps.v1.glsl_level >= 130;
