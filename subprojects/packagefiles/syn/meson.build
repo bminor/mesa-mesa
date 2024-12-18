@@ -16,6 +16,8 @@ rust_args = [
   '--cfg', 'feature="clone-impls"',
   '--cfg', 'feature="proc-macro"',
   '--cfg', 'feature="quote"',
+  '--cfg', 'feature="full"',
+  '--cfg', 'feature="visit-mut"',
 ]
 if rc.version().version_compare('< 1.36')
   rust_args += ['--cfg', 'syn_omit_await_from_token_macro']
