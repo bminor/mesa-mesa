@@ -1352,6 +1352,7 @@ prepare_dcd(struct panvk_cmd_buffer *cmdbuf)
          cfg.cull_back_face = (rs->cull_mode & VK_CULL_MODE_BACK_BIT) != 0;
 
          cfg.multisample_enable = dyns->ms.rasterization_samples > 1;
+         cfg.alpha_to_coverage = alpha_to_coverage;
       }
 
       cs_update_vt_ctx(b)
