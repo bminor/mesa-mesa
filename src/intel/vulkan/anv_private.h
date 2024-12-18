@@ -1340,6 +1340,8 @@ struct anv_queue {
       uint32_t                               exec_queue_id; /* Xe */
    };
 
+   uint32_t                                  bind_queue_id; /* Xe */
+
    /** Context/Engine id which executes companion RCS command buffer */
    uint32_t                                  companion_rcs_id;
 
