@@ -21,7 +21,8 @@ from ci_gantt_chart import generate_gantt_chart
 from gitlab import Gitlab
 from gitlab.base import RESTObject
 from gitlab.v4.objects import Project, ProjectPipeline
-from gitlab_common import GITLAB_URL, get_gitlab_pipeline_from_url, read_token
+from gitlab_common import (GITLAB_URL, get_gitlab_pipeline_from_url,
+                           get_token_from_default_dir, read_token)
 
 
 class MockGanttExit(Exception):
@@ -115,6 +116,9 @@ def main(
     ci_timeout: float = 60,
 ):
     log.basicConfig(level=log.INFO)
+    if token is None:
+        token = get_token_from_default_dir()
+
     token = read_token(token)
     gl = Gitlab(url=GITLAB_URL, private_token=token, retry_transient_errors=True)
 

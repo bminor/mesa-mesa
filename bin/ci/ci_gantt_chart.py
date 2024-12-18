@@ -16,7 +16,8 @@ import plotly.graph_objs as go
 from gitlab import Gitlab, base
 from gitlab.v4.objects import ProjectPipeline
 from gitlab_common import (GITLAB_URL, get_gitlab_pipeline_from_url,
-                           pretty_duration, read_token)
+                           get_token_from_default_dir, pretty_duration,
+                           read_token)
 
 
 def calculate_queued_at(job) -> datetime:
@@ -157,6 +158,9 @@ def main(
     output: str | None,
     ci_timeout: float = 60,
 ):
+    if token is None:
+        token = get_token_from_default_dir()
+
     token = read_token(token)
     gl = Gitlab(url=GITLAB_URL, private_token=token, retry_transient_errors=True)
 
