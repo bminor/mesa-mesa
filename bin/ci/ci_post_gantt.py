@@ -103,7 +103,11 @@ def gitlab_post_reply_to_note(gl: Gitlab, event: RESTObject, reply_message: str)
 
 
 def main(
-    token: str | None, since: str | None, marge_user_id: int = 9716, project_ids: list[int] = [176]
+    token: str | None,
+    since: str | None,
+    marge_user_id: int = 9716,
+    project_ids: list[int] = [176],
+    ci_timeout: float = 60,
 ):
     log.basicConfig(level=log.INFO)
 
@@ -148,7 +152,7 @@ def main(
                 pipeline: ProjectPipeline
                 pipeline, _ = get_gitlab_pipeline_from_url(gl, pipeline_url)
                 log.info("Generating gantt chart...")
-                fig = generate_gantt_chart(pipeline)
+                fig = generate_gantt_chart(pipeline, ci_timeout)
                 file_name = f"{str(pipeline.id)}-Gantt.html"
                 fig.write_html(file_name)
                 log.info("Uploading gantt file...")
@@ -199,5 +203,12 @@ if __name__ == "__main__":
         default=[176],  # default is the mesa/mesa project id
         help="GitLab project id(s) to analyze. Defaults to 176 i.e. mesa/mesa.",
     )
+    parser.add_argument(
+        "--ci-timeout",
+        metavar="ci_timeout",
+        type=float,
+        default=60,
+        help="Time that marge-bot will wait for ci to finish. Defaults to one hour.",
+    )
     args = parser.parse_args()
-    main(args.token, args.since, args.marge_user_id, args.project_id)
+    main(args.token, args.since, args.marge_user_id, args.project_id, args.ci_timeout)

@@ -87,6 +87,10 @@ def add_gantt_bar(
             }
         )
 
+
+def generate_gantt_chart(
+    pipeline: ProjectPipeline, ci_timeout: float = 60
+) -> go.Figure:
     if pipeline.yaml_errors:
         raise ValueError("Pipeline YAML errors detected")
 
@@ -132,11 +136,11 @@ def add_gantt_bar(
 
     # Add a deadline line to the chart
     created_at = datetime.fromisoformat(pipeline.created_at.replace("Z", "+00:00"))
-    timeout_at = created_at + timedelta(hours=1)
+    timeout_at = created_at + timedelta(minutes=ci_timeout)
     fig.add_vrect(
         x0=timeout_at,
         x1=timeout_at,
-        annotation_text="1h Timeout",
+        annotation_text=f"{int(ci_timeout)} min Timeout",
         fillcolor="gray",
         line_width=2,
         line_color="gray",
@@ -152,12 +156,13 @@ def main(
     token: str | None,
     pipeline_url: str,
     output: str | None,
+    ci_timeout: float = 60,
 ):
     token = read_token(token)
     gl = gitlab.Gitlab(url=GITLAB_URL, private_token=token, retry_transient_errors=True)
 
     pipeline, _ = get_gitlab_pipeline_from_url(gl, pipeline_url)
-    fig = generate_gantt_chart(pipeline)
+    fig: go.Figure = generate_gantt_chart(pipeline, ci_timeout)
     if output and "htm" in output:
         fig.write_html(output)
     elif output:
@@ -183,5 +188,12 @@ if __name__ == "__main__":
         metavar="token",
         help="force GitLab token, otherwise it's read from ~/.config/gitlab-token",
     )
+    parser.add_argument(
+        "--ci-timeout",
+        metavar="ci_timeout",
+        type=float,
+        default=60,
+        help="Time that marge-bot will wait for ci to finish. Defaults to one hour.",
+    )
     args = parser.parse_args()
-    main(args.token, args.pipeline_url, args.output)
+    main(args.token, args.pipeline_url, args.output, args.ci_timeout)
