@@ -138,7 +138,7 @@ private:
                               unsigned align_offset,
                               unsigned bit_size,
                               unsigned num_components,
-                              unsigned hole_size,
+                              int64_t hole_size,
                               nir_intrinsic_instr *low,
                               nir_intrinsic_instr *high,
                               void *cb_data);
@@ -1371,12 +1371,12 @@ Converter::memVectorizeCb(unsigned align_mul,
                           unsigned align_offset,
                           unsigned bit_size,
                           unsigned num_components,
-                          unsigned hole_size,
+                          int64_t hole_size,
                           nir_intrinsic_instr *low,
                           nir_intrinsic_instr *high,
                           void *cb_data)
 {
-   if (hole_size)
+   if (hole_size > 0)
       return false;
 
    /*

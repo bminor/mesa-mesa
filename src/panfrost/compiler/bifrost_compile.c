@@ -4809,11 +4809,11 @@ mem_access_size_align_cb(nir_intrinsic_op intrin, uint8_t bytes,
 
 static bool
 mem_vectorize_cb(unsigned align_mul, unsigned align_offset, unsigned bit_size,
-                 unsigned num_components, unsigned hole_size,
+                 unsigned num_components, int64_t hole_size,
                  nir_intrinsic_instr *low, nir_intrinsic_instr *high,
                  void *data)
 {
-   if (hole_size)
+   if (hole_size > 0)
       return false;
 
    /* Must be aligned to the size of the load */

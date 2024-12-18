@@ -163,10 +163,10 @@ ir3_nir_should_scalarize_mem(const nir_instr *instr, const void *data)
 static bool
 ir3_nir_should_vectorize_mem(unsigned align_mul, unsigned align_offset,
                              unsigned bit_size, unsigned num_components,
-                             unsigned hole_size, nir_intrinsic_instr *low,
+                             int64_t hole_size, nir_intrinsic_instr *low,
                              nir_intrinsic_instr *high, void *data)
 {
-   if (hole_size || !nir_num_components_valid(num_components))
+   if (hole_size > 0 || !nir_num_components_valid(num_components))
       return false;
 
    struct ir3_compiler *compiler = data;

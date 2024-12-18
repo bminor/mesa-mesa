@@ -799,7 +799,7 @@ nak_nir_remove_barriers(nir_shader *nir)
 static bool
 nak_mem_vectorize_cb(unsigned align_mul, unsigned align_offset,
                      unsigned bit_size, unsigned num_components,
-                     unsigned hole_size, nir_intrinsic_instr *low,
+                     int64_t hole_size, nir_intrinsic_instr *low,
                      nir_intrinsic_instr *high, void *cb_data)
 {
    /*
@@ -808,7 +808,7 @@ nak_mem_vectorize_cb(unsigned align_mul, unsigned align_offset,
     */
    assert(util_is_power_of_two_nonzero(align_mul));
 
-   if (hole_size)
+   if (hole_size > 0)
       return false;
 
    unsigned max_bytes = 128u / 8u;

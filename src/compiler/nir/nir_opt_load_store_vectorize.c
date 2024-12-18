@@ -669,8 +669,7 @@ new_bitsize_acceptable(struct vectorize_ctx *ctx, unsigned new_bit_size,
 
    unsigned low_size = low->intrin->num_components * get_bit_size(low) / 8;
    /* The hole size can be less than 0 if low and high instructions overlap. */
-   unsigned hole_size =
-      MAX2(high->offset_signed - (low->offset_signed + low_size), 0);
+   int64_t hole_size = high->offset_signed - (low->offset_signed + low_size);
 
    if (!ctx->options->callback(low->align_mul,
                                low->align_offset,
