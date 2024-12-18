@@ -2266,8 +2266,6 @@ lower_trace_ray_logical_send(const fs_builder &bld, fs_inst *inst)
     * so that the MOV operates on 2 components rather than twice the same
     * component.
     */
-   brw_reg globals_addr = retype(inst->src[RT_LOGICAL_SRC_GLOBALS], BRW_TYPE_UD);
-   globals_addr.stride = 1;
    const brw_reg bvh_level =
       inst->src[RT_LOGICAL_SRC_BVH_LEVEL].file == IMM ?
       inst->src[RT_LOGICAL_SRC_BVH_LEVEL] :
@@ -2287,7 +2285,27 @@ lower_trace_ray_logical_send(const fs_builder &bld, fs_inst *inst)
    const fs_builder ubld = bld.exec_all();
    brw_reg header = ubld.vgrf(BRW_TYPE_UD);
    ubld.MOV(header, brw_imm_ud(0));
-   ubld.group(2, 0).MOV(header, globals_addr);
+
+   const brw_reg globals_addr = inst->src[RT_LOGICAL_SRC_GLOBALS];
+   if (globals_addr.file != UNIFORM) {
+      brw_reg addr_ud = retype(globals_addr, BRW_TYPE_UD);
+      addr_ud.stride = 1;
+      ubld.group(2, 0).MOV(header, addr_ud);
+   } else {
+      /* If the globals address comes from a uniform, do not do the SIMD2
+       * optimization. This occurs in many Vulkan CTS tests.
+       *
+       * Many places in the late compiler, including but not limited to an
+       * assertion in fs_visitor::assign_curb_setup, assume that all uses of a
+       * UNIFORM will be uniform (i.e., <0,1,0>). The clever SIMD2
+       * optimization violates that assumption.
+       */
+      ubld.group(1, 0).MOV(byte_offset(header, 0),
+                           subscript(globals_addr, BRW_TYPE_UD, 0));
+      ubld.group(1, 0).MOV(byte_offset(header, 4),
+                           subscript(globals_addr, BRW_TYPE_UD, 1));
+   }
+
    if (synchronous)
       ubld.group(1, 0).MOV(byte_offset(header, 16), brw_imm_ud(synchronous));
 
