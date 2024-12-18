@@ -94,7 +94,6 @@ bool si_is_multi_part_shader(struct si_shader *shader);
 bool si_is_merged_shader(struct si_shader *shader);
 void si_add_arg_checked(struct ac_shader_args *args, enum ac_arg_regfile file, unsigned registers,
                         enum ac_arg_type type, struct ac_arg *arg, unsigned idx);
-void si_init_shader_args(struct si_shader *shader, struct si_shader_args *args);
 unsigned si_get_max_workgroup_size(const struct si_shader *shader);
 bool si_need_ps_prolog(const union si_shader_part_key *key);
 void si_get_ps_prolog_key(struct si_shader *shader, union si_shader_part_key *key);

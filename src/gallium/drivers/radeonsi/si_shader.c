@@ -341,7 +341,7 @@ void si_add_arg_checked(struct ac_shader_args *args, enum ac_arg_regfile file, u
    ac_add_arg(args, file, registers, type, arg);
 }
 
-void si_init_shader_args(struct si_shader *shader, struct si_shader_args *args)
+static void si_init_shader_args(struct si_shader *shader, struct si_shader_args *args)
 {
    unsigned i, num_returns, num_return_sgprs;
    unsigned num_prolog_vgprs = 0;
