@@ -72,9 +72,6 @@ panvk_per_arch(CreateQueryPool)(VkDevice _device,
          vk_query_pool_destroy(&device->vk, pAllocator, &pool->vk);
          return vk_error(device, VK_ERROR_OUT_OF_DEVICE_MEMORY);
       }
-
-      memset(panvk_priv_mem_host_addr(pool->available_mem), 0,
-             sizeof(struct panvk_query_available_obj));
    }
 
    *pQueryPool = panvk_query_pool_to_handle(pool);
