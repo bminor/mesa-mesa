@@ -9,6 +9,8 @@
 
 set -eu
 
+PYTHON_BIN="python3.11"
+
 if [ -z "${SCRIPTS_DIR:-}" ]; then
     SCRIPTS_DIR="$(dirname "${0}")"
 fi
@@ -34,9 +36,9 @@ fi
 if [ "${USE_VENV:-}" == true ]; then
     echo "Setting up virtual environment for local testing."
     MESA_PYTEST_VENV="${CI_PROJECT_DIR}/.venv-pytest"
-    python3 -m venv "${MESA_PYTEST_VENV}"
+    ${PYTHON_BIN} -m venv "${MESA_PYTEST_VENV}"
     source "${MESA_PYTEST_VENV}"/bin/activate
-    python3 -m pip install --break-system-packages -r "${CI_PROJECT_DIR}/bin/ci/test/requirements.txt"
+    ${PYTHON_BIN} -m pip install --break-system-packages -r "${CI_PROJECT_DIR}/bin/ci/test/requirements.txt"
 fi
 
 LIB_TEST_DIR=${CI_PROJECT_DIR}/.gitlab-ci/tests
@@ -44,7 +46,7 @@ SCRIPT_TEST_DIR=${CI_PROJECT_DIR}/bin/ci
 
 uncollapsed_section_start pytest "Running pytest"
 
-PYTHONPATH="${LIB_TEST_DIR}:${SCRIPT_TEST_DIR}:${PYTHONPATH:-}" python3 -m \
+PYTHONPATH="${LIB_TEST_DIR}:${SCRIPT_TEST_DIR}:${PYTHONPATH:-}" ${PYTHON_BIN} -m \
     pytest "${LIB_TEST_DIR}" "${SCRIPT_TEST_DIR}" \
             -W ignore::DeprecationWarning \
             --junitxml=artifacts/ci_scripts_report.xml \
@@ -54,7 +56,7 @@ PYTHONPATH="${LIB_TEST_DIR}:${SCRIPT_TEST_DIR}:${PYTHONPATH:-}" python3 -m \
 section_end pytest
 
 section_start flake8 "flake8"
-flake8 \
+${PYTHON_BIN} -m flake8 \
 --config "${CI_PROJECT_DIR}/.gitlab-ci/.flake8" \
 "${LIB_TEST_DIR}" "${SCRIPT_TEST_DIR}"
 section_end flake8
