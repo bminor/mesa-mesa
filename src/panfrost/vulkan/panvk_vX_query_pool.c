@@ -48,30 +48,29 @@ panvk_per_arch(CreateQueryPool)(VkDevice _device,
    pool->reports_per_query = reports_per_query;
    pool->query_stride = reports_per_query * sizeof(struct panvk_query_report);
 
-   if (pool->vk.query_count > 0) {
-      struct panvk_pool_alloc_info alloc_info = {
-         .size = pool->reports_per_query * sizeof(struct panvk_query_report) *
-                 pool->vk.query_count,
-         .alignment = sizeof(struct panvk_query_report),
-      };
-      pool->mem = panvk_pool_alloc_mem(&device->mempools.rw, alloc_info);
-      if (!pool->mem.bo) {
-         vk_query_pool_destroy(&device->vk, pAllocator, &pool->vk);
-         return vk_error(device, VK_ERROR_OUT_OF_DEVICE_MEMORY);
-      }
+   assert(pool->vk.query_count > 0);
 
-      struct panvk_pool_alloc_info syncobjs_alloc_info = {
-         .size =
-            sizeof(struct panvk_query_available_obj) * pool->vk.query_count,
-         .alignment = 64,
-      };
-      pool->available_mem =
-         panvk_pool_alloc_mem(&device->mempools.rw_nc, syncobjs_alloc_info);
-      if (!pool->available_mem.bo) {
-         panvk_pool_free_mem(&pool->mem);
-         vk_query_pool_destroy(&device->vk, pAllocator, &pool->vk);
-         return vk_error(device, VK_ERROR_OUT_OF_DEVICE_MEMORY);
-      }
+   struct panvk_pool_alloc_info alloc_info = {
+      .size = pool->reports_per_query * sizeof(struct panvk_query_report) *
+              pool->vk.query_count,
+      .alignment = sizeof(struct panvk_query_report),
+   };
+   pool->mem = panvk_pool_alloc_mem(&device->mempools.rw, alloc_info);
+   if (!pool->mem.bo) {
+      vk_query_pool_destroy(&device->vk, pAllocator, &pool->vk);
+      return vk_error(device, VK_ERROR_OUT_OF_DEVICE_MEMORY);
+   }
+
+   struct panvk_pool_alloc_info syncobjs_alloc_info = {
+      .size = sizeof(struct panvk_query_available_obj) * pool->vk.query_count,
+      .alignment = 64,
+   };
+   pool->available_mem =
+      panvk_pool_alloc_mem(&device->mempools.rw_nc, syncobjs_alloc_info);
+   if (!pool->available_mem.bo) {
+      panvk_pool_free_mem(&pool->mem);
+      vk_query_pool_destroy(&device->vk, pAllocator, &pool->vk);
+      return vk_error(device, VK_ERROR_OUT_OF_DEVICE_MEMORY);
    }
 
    *pQueryPool = panvk_query_pool_to_handle(pool);
