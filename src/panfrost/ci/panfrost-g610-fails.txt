@@ -252,12 +252,6 @@ dEQP-VK.glsl.texture_functions.textureprojoffset.mirrored_repeat.usampler3d_bias
 dEQP-VK.glsl.texture_functions.textureprojoffset.mirrored_repeat.usampler3d_fragment,Fail
 dEQP-VK.glsl.texture_functions.textureprojoffset.mirrored_repeat.usampler3d_vertex,Fail
 
-# Seems to be caused by an off-by-0.5 in the position. Also passes if we change
-# the line shape mode to rectangular. This needs further investigation
-dEQP-VK.pipeline.fast_linked_library.multisample.alpha_to_coverage.samples_4.alpha_invisible_check_depth,Fail
-dEQP-VK.pipeline.fast_linked_library.multisample.alpha_to_coverage.samples_4.alpha_invisible,Fail
-dEQP-VK.pipeline.fast_linked_library.multisample.alpha_to_coverage.samples_4.alpha_translucent,Fail
-
 
 # uprev Piglit in Mesa
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-refcount-multithread,Crash
@@ -346,19 +340,9 @@ dEQP-VK.glsl.limits.near_max.fragment_input.components_123,Fail
 dEQP-VK.glsl.limits.near_max.fragment_input.components_124,Fail
 
 dEQP-VK.pipeline.monolithic.max_varyings.test_vertex_io_between_vertex_fragment,Fail
-dEQP-VK.pipeline.monolithic.multisample.alpha_to_coverage.samples_4.alpha_invisible,Fail
-dEQP-VK.pipeline.monolithic.multisample.alpha_to_coverage.samples_4.alpha_invisible_check_depth,Fail
-dEQP-VK.pipeline.monolithic.multisample.alpha_to_coverage.samples_4.alpha_translucent,Fail
-dEQP-VK.pipeline.monolithic.multisample.alpha_to_coverage_no_color_attachment.samples_4.alpha_opaque,Fail
-dEQP-VK.pipeline.monolithic.multisample.alpha_to_coverage_unused_attachment.samples_4.alpha_invisible,Fail
 dEQP-VK.pipeline.monolithic.multisample_shader_builtin.write_sample_mask.1_samples,Fail
 
 dEQP-VK.pipeline.pipeline_library.max_varyings.test_vertex_io_between_vertex_fragment,Fail
-dEQP-VK.pipeline.pipeline_library.multisample.alpha_to_coverage.samples_4.alpha_invisible,Fail
-dEQP-VK.pipeline.pipeline_library.multisample.alpha_to_coverage.samples_4.alpha_invisible_check_depth,Fail
-dEQP-VK.pipeline.pipeline_library.multisample.alpha_to_coverage.samples_4.alpha_translucent,Fail
-dEQP-VK.pipeline.pipeline_library.multisample.alpha_to_coverage_no_color_attachment.samples_4.alpha_opaque,Fail
-dEQP-VK.pipeline.pipeline_library.multisample.alpha_to_coverage_unused_attachment.samples_4.alpha_invisible,Fail
 
 dEQP-VK.pipeline.pipeline_library.multisample_shader_builtin.write_sample_mask.1_samples,Fail
 
@@ -372,8 +356,6 @@ dEQP-VK.spirv_assembly.instruction.graphics.opquantize.too_small_frag,Fail
 dEQP-VK.spirv_assembly.instruction.graphics.opquantize.too_small_vert,Fail
 
 dEQP-VK.pipeline.fast_linked_library.max_varyings.test_vertex_io_between_vertex_fragment,Fail
-dEQP-VK.pipeline.fast_linked_library.multisample.alpha_to_coverage_no_color_attachment.samples_4.alpha_opaque,Fail
-dEQP-VK.pipeline.fast_linked_library.multisample.alpha_to_coverage_unused_attachment.samples_4.alpha_invisible,Fail
 
 dEQP-VK.pipeline.fast_linked_library.multisample_shader_builtin.write_sample_mask.1_samples,Fail
 
