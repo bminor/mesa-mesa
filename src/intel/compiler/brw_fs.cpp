@@ -1577,15 +1577,17 @@ brw_allocate_registers(fs_visitor &s, bool allow_spilling)
    if (s.failed)
       return;
 
-   s.debug_optimizer(nir, "post_ra_alloc", 96, 0);
+   int pass_num = 0;
+
+   s.debug_optimizer(nir, "post_ra_alloc", 96, pass_num++);
 
    brw_fs_opt_bank_conflicts(s);
 
-   s.debug_optimizer(nir, "bank_conflict", 96, 1);
+   s.debug_optimizer(nir, "bank_conflict", 96, pass_num++);
 
    brw_schedule_instructions_post_ra(s);
 
-   s.debug_optimizer(nir, "post_ra_alloc_scheduling", 96, 2);
+   s.debug_optimizer(nir, "post_ra_alloc_scheduling", 96, pass_num++);
 
    /* Lowering VGRF to FIXED_GRF is currently done as a separate pass instead
     * of part of assign_regs since both bank conflicts optimization and post
@@ -1597,7 +1599,7 @@ brw_allocate_registers(fs_visitor &s, bool allow_spilling)
     */
    brw_fs_lower_vgrfs_to_fixed_grfs(s);
 
-   s.debug_optimizer(nir, "lowered_vgrfs_to_fixed_grfs", 96, 3);
+   s.debug_optimizer(nir, "lowered_vgrfs_to_fixed_grfs", 96, pass_num++);
 
    brw_shader_phase_update(s, BRW_SHADER_PHASE_AFTER_REGALLOC);
 
@@ -1629,7 +1631,7 @@ brw_allocate_registers(fs_visitor &s, bool allow_spilling)
 
    brw_fs_lower_scoreboard(s);
 
-   s.debug_optimizer(nir, "scoreboard", 96, 4);
+   s.debug_optimizer(nir, "scoreboard", 96, pass_num++);
 }
 
 /**
