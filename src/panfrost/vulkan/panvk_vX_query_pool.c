@@ -102,10 +102,6 @@ panvk_per_arch(ResetQueryPool)(VkDevice device, VkQueryPool queryPool,
    struct panvk_query_available_obj *available =
       panvk_query_available_host_addr(pool, firstQuery);
    memset(available, 0, queryCount * sizeof(*available));
-
-   struct panvk_query_report *reports =
-      panvk_query_report_host_addr(pool, firstQuery);
-   memset(reports, 0, queryCount * pool->reports_per_query * sizeof(*reports));
 }
 
 static bool

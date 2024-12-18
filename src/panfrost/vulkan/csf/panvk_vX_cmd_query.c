@@ -25,13 +25,11 @@ panvk_cmd_reset_occlusion_queries(struct panvk_cmd_buffer *cmd,
 {
    struct cs_builder *b = panvk_get_cs_builder(cmd, PANVK_SUBQUEUE_FRAGMENT);
 
-   /* Ensure any deferred sync or flush are completed */
-   cs_wait_slots(b, SB_MASK(DEFERRED_SYNC) | SB_MASK(DEFERRED_FLUSH), false);
+   /* Ensure any deferred sync is completed */
+   cs_wait_slots(b, SB_MASK(DEFERRED_SYNC), false);
 
    struct cs_index addr = cs_scratch_reg64(b, 0);
-   struct cs_index zero64 = cs_scratch_reg64(b, 2);
-   struct cs_index zero32 = cs_scratch_reg32(b, 4);
-   cs_move64_to(b, zero64, 0);
+   struct cs_index zero32 = cs_scratch_reg32(b, 2);
    cs_move32_to(b, zero32, 0);
 
    /* Mark all query syncobj as not available */
@@ -41,24 +39,6 @@ panvk_cmd_reset_occlusion_queries(struct panvk_cmd_buffer *cmd,
       cs_sync32_set(b, true, MALI_CS_SYNC_SCOPE_SYSTEM, zero32, addr,
                     cs_defer(SB_IMM_MASK, SB_ID(DEFERRED_SYNC)));
    }
-
-   /* Now that everything is not available, we now clear the reports */
-   for (uint32_t i = first_query; i < first_query + query_count; i++) {
-      cs_move64_to(b, addr, panvk_query_report_dev_addr(pool, i));
-      cs_store64(b, zero64, addr, 0);
-   }
-
-   cs_wait_slot(b, SB_ID(LS), false);
-
-   /* Finally flushes the cache to ensure everything is visible in memory */
-   struct cs_index flush_id = cs_scratch_reg32(b, 0);
-   cs_move32_to(b, flush_id, 0);
-
-   /* We wait on the previous sync and flush/invalidate caches depending if
-    * the subqueue is participating in the write */
-   cs_flush_caches(b, MALI_CS_FLUSH_MODE_CLEAN, MALI_CS_FLUSH_MODE_CLEAN, false,
-                   flush_id,
-                   cs_defer(SB_MASK(DEFERRED_SYNC), SB_ID(DEFERRED_FLUSH)));
 }
 
 static void
