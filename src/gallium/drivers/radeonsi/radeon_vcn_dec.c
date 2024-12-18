@@ -2347,7 +2347,7 @@ static void radeon_dec_destroy(struct pipe_video_codec *decoder)
       rvcn_dec_message_destroy(dec);
       send_msg_buf(dec);
       flush(dec, 0, &fence);
-      dec->ws->fence_wait(dec->ws, fence, PIPE_DEFAULT_DECODER_FEEDBACK_TIMEOUT_NS);
+      dec->ws->fence_wait(dec->ws, fence, OS_TIMEOUT_INFINITE);
       dec->ws->fence_reference(dec->ws, &fence, NULL);
    }
 
