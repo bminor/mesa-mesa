@@ -168,15 +168,6 @@ panvk_copy_occlusion_query_results(struct panvk_cmd_buffer *cmd,
          cs_wait_slot(b, SB_ID(LS), false);
       }
    }
-
-   struct cs_index flush_id = cs_scratch_reg32(b, 0);
-   cs_move32_to(b, flush_id, 0);
-
-   /* Finally flush the cache to ensure everything is visible to
-    * everyone */
-   cs_flush_caches(b, MALI_CS_FLUSH_MODE_CLEAN, MALI_CS_FLUSH_MODE_CLEAN, false,
-                   flush_id, cs_defer(SB_IMM_MASK, SB_ID(IMM_FLUSH)));
-   cs_wait_slot(b, SB_ID(IMM_FLUSH), false);
 }
 
 VKAPI_ATTR void VKAPI_CALL
