@@ -1,5 +1,795 @@
 [
     {
+        "sha": "d5f88190fd82fdc7b666a7b02209d0bf337dcfd0",
+        "description": "turnip/ci: Update expectations",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2cbc93e4dfc684d49dd7edca28df7f0c94086b51",
+        "description": "ci/windows: Update expectations",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "435017700dfa87ba19c15b9bf7c78c1d6ac02200",
+        "description": "ci/windows: Add a manual full job",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6076b8a49c5eb056f23c67f7fa54645be78291f4",
+        "description": "ci/windows: Bump the number of tests per group",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d99b9d5937137fb0f054fadaebd91f55b612ed18",
+        "description": "nak: Fix two warnings of elided_named_lifetimes",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5a653004390a0704f353d9b24aeeaa55a5267e41",
+        "description": "nvk: Fix uninitialized var warnings in host_copy",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "6c5420cd30a97096ecb6854c70b923bf990915c6",
+        "notes": null
+    },
+    {
+        "sha": "8e8097245f6dc8f63893fd9a21bfc62a643ef43e",
+        "description": "iris: Emit STATE_SYSTEM_MEM_FENCE_ADDRESS",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "86813c60a49899544239574d0da3de1de9d9088d",
+        "notes": null
+    },
+    {
+        "sha": "2bd3df75e58931eaad5b57d00e5fd0cbca42375f",
+        "description": "anv: Emit STATE_SYSTEM_MEM_FENCE_ADDRESS",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "86813c60a49899544239574d0da3de1de9d9088d",
+        "notes": null
+    },
+    {
+        "sha": "b8f93bfd38c31cb5e6debee2e5f4f5efeb342994",
+        "description": "anv: Always create anv_async_submit in init_copy_video_queue_state()",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "86813c60a49899544239574d0da3de1de9d9088d",
+        "notes": null
+    },
+    {
+        "sha": "edb33b47ab89b07fe9712e8296bd90d2cc08c259",
+        "description": "intel/genxml/xe2: Add STATE_SYSTEM_MEM_FENCE_ADDRESS instruction",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "86813c60a49899544239574d0da3de1de9d9088d",
+        "notes": null
+    },
+    {
+        "sha": "9e8824371bf066fc3bfda5ff9da2cae04b2b24dd",
+        "description": "tu: Re-enable tiled non-ubwc R8G8 images",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c0404da1e5bc6ab13e73ff78f8fe49082f3ffbab",
+        "description": "freedreno/fdl: Make tiled r8g8 images have 4k alignment",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6615cbfeaf0b02ca8234b56bcde600716f42bfbc",
+        "description": "tu: Make userspace RD dump generic",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a8b2f453463bb2a2be8afec7ca3c99f60fb07df7",
+        "description": "util/dynarray: Add macro for appending an array",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2b428e6b3a9562d0a9e4c4fd061d19b2f9ea0b0f",
+        "description": "tu: Rename bo_list to submit_bo_list",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f97998ff17c1d2b0acb45e5e35b18c7446ae4844",
+        "description": "tu/knl: Move u_trace fence handling to generic code",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0e7a91595f65354d64b2ea5cc73ad55eec9697f9",
+        "description": "tu/kgsl: Make wait_timestamp_safe() return VkResult",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "84d6eedd5e8fae3190259a3c23385f48596dc148",
+        "description": "tu: Refactor the submit path",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d8c9856e7598c1fb6a08038f230b98edcb561fc0",
+        "description": "tu: Move queue-related code to a new file",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6115cf93b0a60e7f5f0c606dee68cffce4eae77f",
+        "description": "radeonsi: Update minimum supported encode size for VCN5",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ffdbc3bbef2326c64e55b0e6994bd062d61a5e86",
+        "description": "drirc/anv: force_vk_vendor=-1 for Bellwright",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "75ef006b6d368939444fea6a51831c0cc1d5ad8f",
+        "description": "pan/ci: update t860 ci xfails",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "385301db2f646faa18cf4125f177897b182f0137",
+        "description": "panfrost: try to survive start-up alloc fails",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c8a6709cbc99b4ac53887bd23b8688838ea65aa7",
+        "description": "panfrost: handle errors allocating csf oom-handler",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "56abe1e472fe5364bfff2be0796396c35c91edf5",
+        "description": "panfrost: handle pool-allocation errors",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "09cd92e283fa7704467ac094f228eaada2d46fe3",
+        "description": "panfrost: propagate cs_builder error instead of asserting",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a06c1eb88fe1f00799e691c848889d8877c1fb7a",
+        "description": "panfrost: handle NULL-batches",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e3f2bc7963748096f7b4018cffe058a73081a760",
+        "description": "panfrost: handle mmap failures",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "054fbe5e4e26c7026187f17bce921a445eaba989",
+        "description": "panfrost: report errors from panfrost_bo_mmap",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d5f4f918f37491fd9fd944230dd047575a53b24b",
+        "description": "panfrost: clean up mmap-diagnostics",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3006c2a7b616bba76d46e6f5efd5335803727c56",
+        "description": "pan/cs: Fix cs_builder allocation failure robustness",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "0e6aaab00ae58a03a279d88d587b1a4721c1c2b9",
+        "notes": null
+    },
+    {
+        "sha": "41a2b8666618a951ced3d6852c966d7ee82eb993",
+        "description": "pan/cs: fix broken allocation-failure check",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "3b82448f4751fdad028ab74669768aef7f188994",
+        "notes": null
+    },
+    {
+        "sha": "2abd85bbc09d8e8e122e5badea3ae14a91c8b035",
+        "description": "v3d: make v3d_flush_resource reallocate non-shareable resources",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "734ba8d7858071e0719d0bcee5ef16a53596aff5",
+        "description": "etnaviv: add debug switch to disable texture descriptor usage",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "66512cd897fe6c4eeff250699a0785d694a7a3d7",
+        "description": "etnaviv: Update headers from rnndb",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4a1dd45850df5a9e4cc4fa7858786f4cb9204836",
+        "description": "st/mesa: document ARB_texture_float quirk",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4d8a508510b488646329866ac3274e5f0113a1ed",
+        "description": "ac/nir: call nir_gather_tcs_info only once for RADV",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8c2f9f0665d03b0fd0042354eb79cc069a77736b",
+        "description": "radv: switch to the new TCS LDS/offchip size computation",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "823e9e846ef3bbc8f86beb686ecbd68e683701b1",
+        "description": "radeonsi: switch to the new TCS LDS/offchip size computation",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d3dcf73cbd1e46ade004d23ae56d3abb1f7afa31",
+        "description": "radeonsi: remove unused parameter tcs_vgpr_only_inputs from si_get_nir_shader",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3056bf1cb1e9380d63ab69f794a810d3a1632b54",
+        "description": "ac/nir: add new helpers for computing the TCS LDS/offchip size accurately",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "85c20def945a897f8009cdf73900dd36c4b67e29",
+        "description": "ac,radv,radeonsi: enable TCS input reads from VGPRs for all compatible loads",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "99a03dc9d5783846e9e0e9d23ad1d58c871a8cb3",
+        "description": "ac/nir: allow a TCS input to be available from both VGPRs and LDS",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b49eab68a8676cf2c10aa27907b38991f61bd4f5",
+        "description": "ac/nir: use s_sendmsg(HS_TESSFACTOR) to optimize writing tess factors for gfx11",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f4eebb373c20ba124450d0d034720145a91b84aa",
+        "description": "ac/nir: reserve the first LDS vec4 for the HS tf0/1 group vote in TCS",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fd5779c198be06166d1166adc86c419231c5a120",
+        "description": "Revert \"panvk: disable imageCubeArray on bifrost\"",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "7d2c61c266f61e3a002345bf4a61cc9363cdffd4",
+        "notes": null
+    },
+    {
+        "sha": "3c40aba8b6c9b3eba0c903b0e7ecdc68bef794ef",
+        "description": "panvk: fix image size for cube-arrays on bifrost",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f5763e80f4f203d88e476813a45622369bd5ea68",
+        "description": "panvk: fix sample position when sample shading is disabled",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "60146cc57c79e147ee9c61039e0954554dee89fa",
+        "notes": null
+    },
+    {
+        "sha": "9c6f64e59900ee587a3872ed63b8b855806d9133",
+        "description": "panvk: set uses_sample_shading NIR flag when sample shading is forced",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "60146cc57c79e147ee9c61039e0954554dee89fa",
+        "notes": null
+    },
+    {
+        "sha": "61d9c47944511f8bd50f0c4367e0213c3dba8db1",
+        "description": "ci/lava: Use CI_JOB_TIMEOUT instead of separate variable",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d5b96309e7e694c0a30dedd2bf75c7ecf416afde",
+        "description": "panvk: enable drawIndirectFirstInstance",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "963e9feb8a8c6ea241058458144cabb73e7061c7",
+        "description": "panvk: enable shaderDrawParameters",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9b3bc9def2dcfb2e723171558978c46bd820c091",
+        "description": "panvk: lower drawid to zero",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1570f0172e02aa660bb0b2619d67c1cff52b3914",
+        "description": "panvk: Fix base_{instance,vertex} handling",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c7c04e13e34d9d7e47c52a3dd86139bc3df82be7",
+        "description": "pan/bi: handle load_attribute_pan",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f4fcfa80164530ad852bfd9e088274a05c9ddbe8",
+        "description": "pan,nir: introduce load_attribute_pan",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ed5a6c1a458d3263ba900aa94d691a39e54cadca",
+        "description": "panvk/csf: use gfx_state_set_dirty instead of touching state directly",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "90f6c64067d05d9b7149e365a77d7fc6382cfce7",
+        "description": "panvk: order KHR extension enables alphabetically",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "948653019bbdfe38bf3b7937a9f976f7527b8dab",
+        "description": "pan/util: sort files in meson.build",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2e1c87c1ca6dc78e2bef3363ea6c2ee6180f4140",
+        "description": "radv: add few more query helpers for copying results",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5b53f6deaabb08fed2bfd98639275749aff94a0d",
+        "description": "radv: remove dead code in radv_CmdCopyQueryPoolResults()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ebe9dc49b7d49148ff0a2ff758d9559a8c2e1bff",
+        "description": "radv: reorganize query code by adding separate begin/end helpers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3d1dd22bb4417eae4141783d6ed157b178c3eca0",
+        "description": "anv/ci: Update expectations",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "526ec3e7ddecec3eea3c2570117762d853fd8813",
+        "description": "anv/ci: Remove fails that are in .gitlab-ci/all-skips.txt",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f42d670ea6d3b0418118b8e74cd6b499dbcf4489",
+        "description": "anv/ci: Re-enable TGL and JSL manual jobs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "eb7fb2e91964314d396cfc4c464ea3445ea9a2fb",
+        "description": "anv/ci: Bump the number of tests per group for TGL",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "629b19a59f746ec5a452ae3fe1120b4943020189",
+        "description": "anv/ci: Bump the number of tests per group for JSL",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e68f9bb8566b77b84ebc8645c5030414a9344cae",
+        "description": "anv/ci: Bump the number of tests per group for ADL",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e7e9ceceb3f0ca89b59b42a026d3985e14f53292",
+        "description": "anv/ci: Fix GPU_VERSION configuration for anv-jsl and anv-jsl-full",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "576a87a5904765ef3cfd41f9d780d3cf026f15fc",
+        "description": "panvk: add u_trace perfetto support",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7c61e2346dfc32519c43062360771dc3b604103d",
+        "description": "panvk: improve C++ compat for perfetto",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3096cf2a5ddd851cf60c835e013377ccbce0e3eb",
+        "description": "panvk/csf: flush and process trace events for all cmdbufs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e9d2a3c2c685ef2d58edd476185bf0d9c5ccbf90",
+        "description": "panvk/csf: flush and process trace events for one-time cmdbufs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b9631adb0e733cfaaafa48564382fcfd910ba609",
+        "description": "panvk/csf: add vk_sync to panvk_queue",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "39824d70b877d7d604bf96ed6cb445bf36ad2926",
+        "description": "panvk/csf: add u_trace to panvk_cmd_buffer",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "06cc6e82cf8b227b798c13b40a4cc42dc361e7da",
+        "description": "panvk/csf: add CS_REG_SCRATCH_COUNT",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "76faa6f3f34dbac0a7f417743aeb7ccecec0770d",
+        "description": "panvk: define cmdbuf begin/end tracepoints",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d340ed6726ecced59a5b866249f4c9299c87b7ac",
+        "description": "panvk: add u_trace_context to panvk_device",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b4d472cd67a8850c21b321c4c32c57f50fe6ebe0",
+        "description": "brw/emit: Fix BROADCAST when value is uniform and index is immediate",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "c74511f5dc239eefb8604294c6c1e57b3a394111",
+        "notes": null
+    },
+    {
         "sha": "da4e2af010c2dd8e8668f0b62ae74383cb45dff0",
         "description": "anv, drirc: Add workaround to speed up Spiderman reg allocation",
         "nominated": false,
