@@ -47,7 +47,14 @@ nggc_bool_setting(nir_builder *b, unsigned mask, lower_abi_state *s)
 static nir_def *
 shader_query_bool_setting(nir_builder *b, unsigned mask, lower_abi_state *s)
 {
-   nir_def *settings = GET_SGPR_FIELD_NIR(s->args->ngg_state, NGG_STATE_QUERY);
+   nir_def *settings;
+
+   if (b->shader->info.stage == MESA_SHADER_TASK) {
+      settings = ac_nir_load_arg(b, &s->args->ac, s->args->task_state);
+   } else {
+      settings = GET_SGPR_FIELD_NIR(s->args->ngg_state, NGG_STATE_QUERY);
+   }
+
    return nir_test_mask(b, settings, mask);
 }
 
