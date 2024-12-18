@@ -32,8 +32,8 @@ radv_suspend_queries(struct radv_meta_saved_state *state, struct radv_cmd_buffer
 
    /* Pipeline statistics queries. */
    if (cmd_buffer->state.active_pipeline_queries > 0) {
-      state->active_pipeline_gds_queries = cmd_buffer->state.active_pipeline_gds_queries;
-      cmd_buffer->state.active_pipeline_gds_queries = 0;
+      state->active_emulated_pipeline_queries = cmd_buffer->state.active_emulated_pipeline_queries;
+      cmd_buffer->state.active_emulated_pipeline_queries = 0;
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_SHADER_QUERY;
    }
 
@@ -51,16 +51,16 @@ radv_suspend_queries(struct radv_meta_saved_state *state, struct radv_cmd_buffer
    }
 
    /* Primitives generated queries (NGG). */
-   if (cmd_buffer->state.active_prims_gen_gds_queries) {
-      state->active_prims_gen_gds_queries = cmd_buffer->state.active_prims_gen_gds_queries;
-      cmd_buffer->state.active_prims_gen_gds_queries = 0;
+   if (cmd_buffer->state.active_emulated_prims_gen_queries) {
+      state->active_emulated_prims_gen_queries = cmd_buffer->state.active_emulated_prims_gen_queries;
+      cmd_buffer->state.active_emulated_prims_gen_queries = 0;
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_SHADER_QUERY;
    }
 
    /* Transform feedback queries (NGG). */
-   if (cmd_buffer->state.active_prims_xfb_gds_queries) {
-      state->active_prims_xfb_gds_queries = cmd_buffer->state.active_prims_xfb_gds_queries;
-      cmd_buffer->state.active_prims_xfb_gds_queries = 0;
+   if (cmd_buffer->state.active_emulated_prims_xfb_queries) {
+      state->active_emulated_prims_xfb_queries = cmd_buffer->state.active_emulated_prims_xfb_queries;
+      cmd_buffer->state.active_emulated_prims_xfb_queries = 0;
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_SHADER_QUERY;
    }
 }
@@ -77,7 +77,7 @@ radv_resume_queries(const struct radv_meta_saved_state *state, struct radv_cmd_b
 
    /* Pipeline statistics queries. */
    if (cmd_buffer->state.active_pipeline_queries > 0) {
-      cmd_buffer->state.active_pipeline_gds_queries = state->active_pipeline_gds_queries;
+      cmd_buffer->state.active_emulated_pipeline_queries = state->active_emulated_pipeline_queries;
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_SHADER_QUERY;
    }
 
@@ -94,14 +94,14 @@ radv_resume_queries(const struct radv_meta_saved_state *state, struct radv_cmd_b
    }
 
    /* Primitives generated queries (NGG). */
-   if (state->active_prims_gen_gds_queries) {
-      cmd_buffer->state.active_prims_gen_gds_queries = state->active_prims_gen_gds_queries;
+   if (state->active_emulated_prims_gen_queries) {
+      cmd_buffer->state.active_emulated_prims_gen_queries = state->active_emulated_prims_gen_queries;
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_SHADER_QUERY;
    }
 
    /* Transform feedback queries (NGG). */
-   if (state->active_prims_xfb_gds_queries) {
-      cmd_buffer->state.active_prims_xfb_gds_queries = state->active_prims_xfb_gds_queries;
+   if (state->active_emulated_prims_xfb_queries) {
+      cmd_buffer->state.active_emulated_prims_xfb_queries = state->active_emulated_prims_xfb_queries;
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_SHADER_QUERY;
    }
 }
@@ -117,8 +117,8 @@ radv_meta_save(struct radv_meta_saved_state *state, struct radv_cmd_buffer *cmd_
 
    state->flags = flags;
    state->active_occlusion_queries = 0;
-   state->active_prims_gen_gds_queries = 0;
-   state->active_prims_xfb_gds_queries = 0;
+   state->active_emulated_prims_gen_queries = 0;
+   state->active_emulated_prims_xfb_queries = 0;
 
    if (state->flags & RADV_META_SAVE_GRAPHICS_PIPELINE) {
       assert(!(state->flags & RADV_META_SAVE_COMPUTE_PIPELINE));

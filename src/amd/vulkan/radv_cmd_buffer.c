@@ -10408,16 +10408,16 @@ radv_get_ngg_state_query(struct radv_cmd_buffer *cmd_buffer)
     * queries or if it's a secondary command buffer that inherits the number of generated
     * primitives.
     */
-   if (cmd_buffer->state.active_pipeline_gds_queries ||
+   if (cmd_buffer->state.active_emulated_pipeline_queries ||
        (cmd_buffer->state.inherited_pipeline_statistics & VK_QUERY_PIPELINE_STATISTIC_GEOMETRY_SHADER_PRIMITIVES_BIT) ||
        (pdev->emulate_mesh_shader_queries && (cmd_buffer->state.inherited_pipeline_statistics &
                                               VK_QUERY_PIPELINE_STATISTIC_MESH_SHADER_INVOCATIONS_BIT_EXT)))
       shader_query_state |= radv_shader_query_pipeline_stat;
 
-   if (cmd_buffer->state.active_prims_gen_gds_queries)
+   if (cmd_buffer->state.active_emulated_prims_gen_queries)
       shader_query_state |= radv_shader_query_prim_gen;
 
-   if (cmd_buffer->state.active_prims_xfb_gds_queries && radv_is_streamout_enabled(cmd_buffer))
+   if (cmd_buffer->state.active_emulated_prims_xfb_queries && radv_is_streamout_enabled(cmd_buffer))
       shader_query_state |= radv_shader_query_prim_xfb | radv_shader_query_prim_gen;
 
    return shader_query_state;
