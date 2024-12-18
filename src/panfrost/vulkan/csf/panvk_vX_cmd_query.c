@@ -18,6 +18,32 @@
 #include "panvk_macros.h"
 #include "panvk_query_pool.h"
 
+/* At the API level, a query consists of a status and a result.  Both are
+ * uninitialized initially.  There are these query operations:
+ *
+ *  - Reset op sets the status to unavailable and leaves the result undefined.
+ *  - Begin/End pair or Write op sets the status to available and the result
+ *    to the final query value.  Because of VK_QUERY_RESULT_PARTIAL_BIT, the
+ *    result must hold valid intermediate query values while the query is
+ *    active.
+ *  - Copy op copies the result and optionally the status to a buffer.
+ *
+ * All query operations define execution dependencies among themselves when
+ * they reference the same queries.  The only exception is the Copy op when
+ * VK_QUERY_RESULT_WAIT_BIT is not set.
+ *
+ * We use a panvk_cs_sync32 to store the status of a query:
+ *
+ *  - Reset op waits on all prior query operations affecting the query before
+ *    setting the seqno to 0 synchronously.
+ *  - Begin op does not access the seqno.
+ *  - End or Write op sets the seqno to 1 asynchronously.
+ *  - Copy op waits on the seqno only when VK_QUERY_RESULT_WAIT_BIT is set.
+ *
+ * Because Reset op acts as a full barrier, End or Write op knows the seqno is
+ * 0 and does not need to wait.
+ */
+
 static void
 panvk_cmd_reset_occlusion_queries(struct panvk_cmd_buffer *cmd,
                                   struct panvk_query_pool *pool,
@@ -25,7 +51,9 @@ panvk_cmd_reset_occlusion_queries(struct panvk_cmd_buffer *cmd,
 {
    struct cs_builder *b = panvk_get_cs_builder(cmd, PANVK_SUBQUEUE_FRAGMENT);
 
-   /* Ensure any deferred sync is completed */
+   /* Wait on deferred sync to ensure all prior query operations have
+    * completed
+    */
    cs_wait_slots(b, SB_MASK(DEFERRED_SYNC), false);
 
    struct cs_index addr = cs_scratch_reg64(b, 0);
