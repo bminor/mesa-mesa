@@ -98,7 +98,8 @@ fdl6_tile_alignment(struct fdl_layout *layout, uint32_t *heightalign)
     * looser alignment requirements, however the validity of alignment is
     * heavily undertested and the "officially" supported alignment is 4096b.
     */
-   if (layout->ubwc || util_format_is_depth_or_stencil(layout->format))
+   if (layout->ubwc || util_format_is_depth_or_stencil(layout->format) ||
+       is_r8g8(layout))
       layout->base_align = 4096;
    else if (layout->cpp == 1)
       layout->base_align = 64;
