@@ -80,21 +80,17 @@ panvk_cmd_end_occlusion_query(struct panvk_cmd_buffer *cmd,
    cmd->state.gfx.occlusion_query.mode = MALI_OCCLUSION_MODE_DISABLED;
    gfx_state_set_dirty(cmd, OQ);
 
-   /* Flush the cache to ensure everything is visible in memory */
    struct cs_builder *b = panvk_get_cs_builder(cmd, PANVK_SUBQUEUE_FRAGMENT);
-
-   /* Ensure any iters, deferred sync or flush are completed */
-   cs_wait_slots(
-      b, SB_ALL_ITERS_MASK | SB_MASK(DEFERRED_SYNC) | SB_MASK(DEFERRED_FLUSH),
-      false);
 
    struct cs_index flush_id = cs_scratch_reg32(b, 0);
    cs_move32_to(b, flush_id, 0);
 
-   /* We wait on the previous sync and flush caches */
+   /* OQ accumulates sample counts to the report which is on a cached memory.
+    * Wait for the accumulation and flush the caches.
+    */
    cs_flush_caches(b, MALI_CS_FLUSH_MODE_CLEAN, MALI_CS_FLUSH_MODE_CLEAN, false,
                    flush_id,
-                   cs_defer(SB_MASK(DEFERRED_SYNC), SB_ID(DEFERRED_FLUSH)));
+                   cs_defer(SB_ALL_ITERS_MASK, SB_ID(DEFERRED_FLUSH)));
 
    struct cs_index sync_addr = cs_scratch_reg64(b, 0);
    struct cs_index seqno = cs_scratch_reg32(b, 2);
