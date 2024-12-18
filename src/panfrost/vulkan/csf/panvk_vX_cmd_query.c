@@ -62,9 +62,6 @@ panvk_cmd_begin_occlusion_query(struct panvk_cmd_buffer *cmd,
     */
    struct cs_builder *b = panvk_get_cs_builder(cmd, PANVK_SUBQUEUE_FRAGMENT);
 
-   /* Ensure deferred sync is completed */
-   cs_wait_slot(b, SB_ID(DEFERRED_SYNC), false);
-
    struct cs_index report_addr_gpu = cs_scratch_reg64(b, 0);
    struct cs_index clear_value = cs_scratch_reg64(b, 2);
    cs_move64_to(b, report_addr_gpu, report_addr);
