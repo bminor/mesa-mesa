@@ -1548,7 +1548,21 @@ static int amdgpu_cs_submit_ib_userq(struct amdgpu_userq *userq,
       .num_bo_write_handles = num_shared_buf_write,
    };
 
+#if DETECT_CC_GCC && (DETECT_ARCH_X86 || DETECT_ARCH_X86_64)
+   asm volatile ("mfence" : : : "memory");
+#endif
+   /* Writing to *userq->wptr_bo_map is writing into mqd data. Before writing wptr into mqd
+    * data, need to ensure that new packets added to user queue ring buffer are updated to.
+    * memory. To ensure memory is updated, mfence is used.
+    */
    *userq->wptr_bo_map = userq->next_wptr;
+   /* Ringing the doorbell will have gpu execute new packets that were added in user queue
+    * ring buffer. Before ringing the doorbell needed to ensure that mqd data is updated to
+    * memory. To ensure memory is updated, mfence is used.
+    */
+#if DETECT_CC_GCC && (DETECT_ARCH_X86 || DETECT_ARCH_X86_64)
+   asm volatile ("mfence" : : : "memory");
+#endif
    userq->doorbell_bo_map[AMDGPU_USERQ_DOORBELL_INDEX] = userq->next_wptr;
    r = ac_drm_userq_signal(aws->dev, &userq_signal_data);
 
