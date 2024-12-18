@@ -1315,7 +1315,7 @@ pan_preload_emit_tiler_job(struct pan_fb_preload_cache *cache, struct pan_pool *
    }
 
    pan_section_pack(job.cpu, TILER_JOB, PRIMITIVE_SIZE, cfg) {
-      cfg.constant = 1.0f;
+      cfg.fixed_sized = 1.0f;
    }
 
    void *invoc = pan_section_ptr(job.cpu, TILER_JOB, INVOCATION);

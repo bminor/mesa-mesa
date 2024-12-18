@@ -863,7 +863,7 @@ panvk_emit_tiler_primitive_size(struct panvk_cmd_buffer *cmdbuf,
       if (writes_point_size) {
          cfg.size_array = draw->psiz;
       } else {
-         cfg.constant = draw->line_width;
+         cfg.fixed_sized = draw->line_width;
       }
    }
 }
