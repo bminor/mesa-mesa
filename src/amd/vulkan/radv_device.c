@@ -855,7 +855,7 @@ radv_device_init_cache_key(struct radv_device *device)
    key->trap_excp_flags = device->trap_handler_shader && instance->trap_excp_flags;
    key->disable_trunc_coord = device->disable_trunc_coord;
    key->image_2d_view_of_3d = device->vk.enabled_features.image2DViewOf3D && pdev->info.gfx_level == GFX9;
-   key->mesh_shader_queries = device->vk.enabled_features.meshShaderQueries;
+   key->mesh_shader_queries = device->vk.enabled_features.meshShaderQueries && pdev->emulate_mesh_shader_queries;
    key->primitives_generated_query = radv_uses_primitives_generated_query(device);
 
    /* The Vulkan spec says:
