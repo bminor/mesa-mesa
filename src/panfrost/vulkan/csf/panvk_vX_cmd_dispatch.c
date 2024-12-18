@@ -65,49 +65,6 @@ prepare_driver_set(struct panvk_cmd_buffer *cmdbuf)
    return VK_SUCCESS;
 }
 
-static void
-calculate_task_axis_and_increment(const struct panvk_shader *shader,
-                                  struct panvk_physical_device *phys_dev,
-                                  unsigned *task_axis, unsigned *task_increment)
-{
-   /* Pick the task_axis and task_increment to maximize thread
-    * utilization. */
-   unsigned threads_per_wg =
-      shader->local_size.x * shader->local_size.y * shader->local_size.z;
-   unsigned max_thread_cnt = panfrost_compute_max_thread_count(
-      &phys_dev->kmod.props, shader->info.work_reg_count);
-   unsigned threads_per_task = threads_per_wg;
-   unsigned local_size[3] = {
-      shader->local_size.x,
-      shader->local_size.y,
-      shader->local_size.z,
-   };
-
-   for (unsigned i = 0; i < 3; i++) {
-      if (threads_per_task * local_size[i] >= max_thread_cnt) {
-         /* We reached out thread limit, stop at the current axis and
-          * calculate the increment so it doesn't exceed the per-core
-          * thread capacity.
-          */
-         *task_increment = max_thread_cnt / threads_per_task;
-         break;
-      } else if (*task_axis == MALI_TASK_AXIS_Z) {
-         /* We reached the Z axis, and there's still room to stuff more
-          * threads. Pick the current axis grid size as our increment
-          * as there's no point using something bigger.
-          */
-         *task_increment = local_size[i];
-         break;
-      }
-
-      threads_per_task *= local_size[i];
-      (*task_axis)++;
-   }
-
-   assert(*task_axis <= MALI_TASK_AXIS_Z);
-   assert(*task_increment > 0);
-}
-
 static unsigned
 calculate_workgroups_per_task(const struct panvk_shader *shader,
                               struct panvk_physical_device *phys_dev)
@@ -357,8 +314,8 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
    } else {
       unsigned task_axis = MALI_TASK_AXIS_X;
       unsigned task_increment = 0;
-      calculate_task_axis_and_increment(shader, phys_dev, &task_axis,
-                                        &task_increment);
+      panvk_per_arch(calculate_task_axis_and_increment)(
+         shader, phys_dev, &task_axis, &task_increment);
       cs_trace_run_compute(b, tracing_ctx, cs_scratch_reg_tuple(b, 0, 4),
                            task_increment, task_axis, false,
                            cs_shader_res_sel(0, 0, 0, 0));
