@@ -20,17 +20,12 @@ from gitlab_common import (GITLAB_URL, get_gitlab_pipeline_from_url,
                            pretty_duration, read_token)
 
 
-def calculate_queued_at(job):
-    # we can have queued_duration without started_at when a job is canceled
-    if not job.queued_duration or not job.started_at:
-        return None
+def calculate_queued_at(job) -> datetime:
     started_at = job.started_at.replace("Z", "+00:00")
     return datetime.fromisoformat(started_at) - timedelta(seconds=job.queued_duration)
 
 
-def calculate_time_difference(time1, time2):
-    if not time1 or not time2:
-        return None
+def calculate_time_difference(time1, time2) -> str:
     if type(time1) is str:
         time1 = datetime.fromisoformat(time1.replace("Z", "+00:00"))
     if type(time2) is str:
@@ -69,18 +64,29 @@ def add_gantt_bar(
             "Phase": "Queued",
         }
     )
-    tasks.append(
-        {
-            "Job": task_name,
-            "Start": job.started_at,
-            "Finish": job.finished_at,
-            "Duration": calculate_time_difference(job.started_at, job.finished_at),
-            "Phase": "Running",
-        }
-    )
 
+    if job.finished_at:
+        tasks.append(
+            {
+                "Job": task_name,
+                "Start": job.started_at,
+                "Finish": job.finished_at,
+                "Duration": calculate_time_difference(job.started_at, job.finished_at),
+                "Phase": "Time spent running",
+            }
+        )
+    else:
+        current_time = datetime.now(timezone.utc).isoformat()
+        tasks.append(
+            {
+                "Job": task_name,
+                "Start": job.started_at,
+                "Finish": current_time,
+                "Duration": calculate_time_difference(job.started_at, current_time),
+                "Phase": "In-Progress",
+            }
+        )
 
-def generate_gantt_chart(pipeline: ProjectPipeline):
     if pipeline.yaml_errors:
         raise ValueError("Pipeline YAML errors detected")
 
@@ -88,6 +94,9 @@ def generate_gantt_chart(pipeline: ProjectPipeline):
     tasks: List[Dict[str, str | datetime | timedelta]] = []
 
     for job in pipeline.jobs.list(all=True, include_retried=True):
+        # we can have queued_duration without started_at when a job is canceled
+        if not job.queued_duration or not job.started_at:
+            continue
         add_gantt_bar(job, tasks)
 
     # Make it easier to see retried jobs
@@ -101,6 +110,7 @@ def generate_gantt_chart(pipeline: ProjectPipeline):
     )
 
     # Create a Gantt chart
+    default_colors = px.colors.qualitative.Plotly
     fig: go.Figure = px.timeline(
         tasks,
         x_start="Start",
@@ -109,6 +119,12 @@ def generate_gantt_chart(pipeline: ProjectPipeline):
         color="Phase",
         title=title,
         hover_data=["Duration"],
+        color_discrete_map={
+            "In-Progress": default_colors[3],  # purple
+            "Waiting dependencies": default_colors[0],  # blue
+            "Queued": default_colors[1],  # red
+            "Time spent running": default_colors[2],  # green
+        },
     )
 
     # Calculate the height dynamically
