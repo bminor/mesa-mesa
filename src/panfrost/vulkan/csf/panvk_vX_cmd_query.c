@@ -113,10 +113,7 @@ panvk_copy_occlusion_query_results(struct panvk_cmd_buffer *cmd,
    unsigned result_stride =
       flags & VK_QUERY_RESULT_64_BIT ? sizeof(uint64_t) : sizeof(uint32_t);
 
-   /* First wait for deferred sync or flush to be completed */
    struct cs_builder *b = panvk_get_cs_builder(cmd, PANVK_SUBQUEUE_FRAGMENT);
-   cs_wait_slots(b, SB_MASK(DEFERRED_SYNC) | SB_MASK(DEFERRED_FLUSH), false);
-
    struct cs_index scratch_addr0 = cs_scratch_reg64(b, 0);
    struct cs_index scratch_addr1 = cs_scratch_reg64(b, 2);
    struct cs_index scratch_val0 = cs_scratch_reg32(b, 4);
