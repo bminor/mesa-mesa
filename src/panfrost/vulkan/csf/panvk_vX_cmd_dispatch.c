@@ -20,6 +20,7 @@
 #include "panvk_cmd_push_constant.h"
 #include "panvk_device.h"
 #include "panvk_entrypoints.h"
+#include "panvk_macros.h"
 #include "panvk_meta.h"
 #include "panvk_physical_device.h"
 
@@ -128,28 +129,18 @@ calculate_workgroups_per_task(const struct panvk_shader *shader,
    return wg_per_task;
 }
 
-static void
-cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
+uint64_t
+panvk_per_arch(cmd_dispatch_prepare_tls)(struct panvk_cmd_buffer *cmdbuf,
+                                         const struct panvk_shader *shader,
+                                         const struct pan_compute_dim *dim,
+                                         bool indirect)
 {
-   const struct panvk_shader *shader = cmdbuf->state.compute.shader;
-   VkResult result;
-
-   /* If there's no compute shader, we can skip the dispatch. */
-   if (!panvk_priv_mem_dev_addr(shader->spd))
-      return;
-
    struct panvk_physical_device *phys_dev =
       to_panvk_physical_device(cmdbuf->vk.base.device->physical);
-   struct panvk_descriptor_state *desc_state =
-      &cmdbuf->state.compute.desc_state;
-   struct panvk_shader_desc_state *cs_desc_state =
-      &cmdbuf->state.compute.cs.desc;
-   const struct cs_tracing_ctx *tracing_ctx =
-      &cmdbuf->state.cs[PANVK_SUBQUEUE_COMPUTE].tracing;
 
    struct panfrost_ptr tsd = panvk_cmd_alloc_desc(cmdbuf, LOCAL_STORAGE);
    if (!tsd.gpu)
-      return;
+      return tsd.gpu;
 
    struct pan_tls_info tlsinfo = {
       .tls.size = shader->info.tls_size,
@@ -158,8 +149,6 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
    unsigned core_id_range;
    unsigned core_count =
       panfrost_query_core_count(&phys_dev->kmod.props, &core_id_range);
-
-   bool indirect = info->indirect.buffer_dev_addr != 0;
 
    /* Only used for indirect dispatch */
    unsigned wg_per_task = 0;
@@ -180,13 +169,7 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
          /* TODO: Similar to what we are doing for indirect this should change
           * to calculate the maximum number of workgroups we can execute
           * concurrently. */
-         struct pan_compute_dim dim = {
-            info->direct.wg_count.x,
-            info->direct.wg_count.y,
-            info->direct.wg_count.z,
-         };
-
-         tlsinfo.wls.instances = pan_wls_instances(&dim);
+         tlsinfo.wls.instances = pan_wls_instances(dim);
       }
 
       /* TODO: Clamp WLS instance to some maximum WLS budget. */
@@ -201,7 +184,7 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
       tlsinfo.wls.ptr =
          panvk_cmd_alloc_dev_mem(cmdbuf, tls, wls_total_size, 4096).gpu;
       if (!tlsinfo.wls.ptr)
-         return;
+         return 0;
    }
 
    cmdbuf->state.tls.info.tls.size =
@@ -210,10 +193,49 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
    if (!cmdbuf->state.tls.desc.gpu) {
       cmdbuf->state.tls.desc = panvk_cmd_alloc_desc(cmdbuf, LOCAL_STORAGE);
       if (!cmdbuf->state.tls.desc.gpu)
-         return;
+         return 0;
    }
 
    GENX(pan_emit_tls)(&tlsinfo, tsd.cpu);
+
+   return tsd.gpu;
+}
+
+static void
+cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
+{
+   const struct panvk_shader *shader = cmdbuf->state.compute.shader;
+   VkResult result;
+
+   /* If there's no compute shader, we can skip the dispatch. */
+   if (!panvk_priv_mem_dev_addr(shader->spd))
+      return;
+
+   struct panvk_physical_device *phys_dev =
+      to_panvk_physical_device(cmdbuf->vk.base.device->physical);
+   struct panvk_descriptor_state *desc_state =
+      &cmdbuf->state.compute.desc_state;
+   struct panvk_shader_desc_state *cs_desc_state =
+      &cmdbuf->state.compute.cs.desc;
+   const struct cs_tracing_ctx *tracing_ctx =
+      &cmdbuf->state.cs[PANVK_SUBQUEUE_COMPUTE].tracing;
+
+   struct pan_compute_dim dim = {
+      info->direct.wg_count.x,
+      info->direct.wg_count.y,
+      info->direct.wg_count.z,
+   };
+   bool indirect = info->indirect.buffer_dev_addr != 0;
+
+   uint64_t tsd =
+      panvk_per_arch(cmd_dispatch_prepare_tls)(cmdbuf, shader, &dim, indirect);
+   if (!tsd)
+      return;
+
+   /* Only used for indirect dispatch */
+   unsigned wg_per_task = 0;
+   if (indirect)
+      wg_per_task = calculate_workgroups_per_task(shader, phys_dev);
 
    if (compute_state_dirty(cmdbuf, DESC_STATE) ||
        compute_state_dirty(cmdbuf, CS)) {
@@ -245,11 +267,11 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
    struct cs_builder *b = panvk_get_cs_builder(cmdbuf, PANVK_SUBQUEUE_COMPUTE);
 
    /* Copy the global TLS pointer to the per-job TSD. */
-   if (tlsinfo.tls.size) {
+   if (shader->info.tls_size) {
       cs_move64_to(b, cs_scratch_reg64(b, 0), cmdbuf->state.tls.desc.gpu);
       cs_load64_to(b, cs_scratch_reg64(b, 2), cs_scratch_reg64(b, 0), 8);
       cs_wait_slot(b, SB_ID(LS), false);
-      cs_move64_to(b, cs_scratch_reg64(b, 0), tsd.gpu);
+      cs_move64_to(b, cs_scratch_reg64(b, 0), tsd);
       cs_store64(b, cs_scratch_reg64(b, 2), cs_scratch_reg64(b, 0), 8);
       cs_wait_slot(b, SB_ID(LS), false);
    }
@@ -269,7 +291,7 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
          cs_move64_to(b, cs_sr_reg64(b, 16),
                       panvk_priv_mem_dev_addr(shader->spd));
 
-      cs_move64_to(b, cs_sr_reg64(b, 24), tsd.gpu);
+      cs_move64_to(b, cs_sr_reg64(b, 24), tsd);
 
       /* Global attribute offset */
       cs_move32_to(b, cs_sr_reg32(b, 32), 0);
