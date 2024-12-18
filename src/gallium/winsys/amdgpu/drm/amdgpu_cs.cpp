@@ -1548,9 +1548,8 @@ static int amdgpu_cs_submit_ib_userq(struct amdgpu_userq *userq,
       .num_bo_write_handles = num_shared_buf_write,
    };
 
+   userq->doorbell_bo_map[AMDGPU_USERQ_DOORBELL_INDEX] = *userq->wptr_bo_map;
    r = ac_drm_userq_signal(aws->dev, &userq_signal_data);
-   if (!r)
-      userq->doorbell_bo_map[AMDGPU_USERQ_DOORBELL_INDEX] = *userq->wptr_bo_map;
 
    *seq_no = userq->user_fence_seq_num;
    simple_mtx_unlock(&userq->lock);
