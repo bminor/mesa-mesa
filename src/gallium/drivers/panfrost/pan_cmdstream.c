@@ -1561,6 +1561,10 @@ panfrost_emit_shared_memory(struct panfrost_batch *batch,
    if (ss->info.tls_size) {
       struct panfrost_bo *bo = panfrost_batch_get_scratchpad(
          batch, ss->info.tls_size, dev->thread_tls_alloc, dev->core_id_range);
+
+      if (!bo)
+         return 0;
+
       info.tls.ptr = bo->ptr.gpu;
    }
 
@@ -2638,11 +2642,14 @@ panfrost_emit_varying_descriptor(struct panfrost_batch *batch,
 static struct pan_tls_info
 get_tls_info(struct panfrost_device *dev, struct panfrost_batch *batch)
 {
-   struct panfrost_bo *tls_bo =
-      batch->stack_size ? panfrost_batch_get_scratchpad(
-                             batch, batch->stack_size, dev->thread_tls_alloc,
-                             dev->core_id_range)
-                        : NULL;
+   struct panfrost_bo *tls_bo = NULL;
+   if (batch->stack_size) {
+      tls_bo = panfrost_batch_get_scratchpad(batch, batch->stack_size,
+                                             dev->thread_tls_alloc,
+                                             dev->core_id_range);
+      if (!tls_bo)
+         mesa_loge("failed to allocate scratch-pad memory for stack");
+   }
 
    return (struct pan_tls_info) {
       .tls =
