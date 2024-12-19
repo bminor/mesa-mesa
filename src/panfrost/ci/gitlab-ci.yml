@@ -343,7 +343,7 @@ panfrost-g52-vk:arm64:
     PAN_I_WANT_A_BROKEN_VULKAN_DRIVER: 1
     PANVK_DEBUG: "no_known_warn,sync"
     DEQP_SUITE: panfrost-g52-vk
-    DEQP_FRACTION: 32
+    DEQP_FRACTION: 16
     HWCI_START_WESTON: 1
 
 panfrost-g52-vk-full:arm64:
@@ -351,7 +351,7 @@ panfrost-g52-vk-full:arm64:
   extends:
     - panfrost-g52-vk:arm64
     - .panfrost-vk-manual-rules
-  timeout: 3h
+  timeout: 1h 30m
   variables:
     DEQP_FRACTION: 1
 
