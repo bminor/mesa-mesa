@@ -252,6 +252,7 @@ struct wsi_wl_swapchain {
       uint64_t displayed_time;
       bool valid_refresh_nsec;
       unsigned int refresh_nsec;
+      bool frame_fallback;
    } present_ids;
 
    struct {
@@ -2532,7 +2533,7 @@ wsi_wl_swapchain_wait_for_present(struct wsi_swapchain *wsi_chain,
     * and is likely only going to happen at swapchain destruction or similar. */
 
    uint64_t assumed_success_at = UINT64_MAX;
-   if (!chain->present_ids.wp_presentation) {
+   if (chain->present_ids.frame_fallback) {
       assumed_success_at = os_time_get_absolute_timeout(100 * 1000 * 1000);
    } else {
       err = mtx_lock(&chain->present_ids.lock);
@@ -2569,7 +2570,7 @@ wsi_wl_swapchain_wait_for_present(struct wsi_swapchain *wsi_chain,
 retry:
       ret = dispatch_present_id_queue(wsi_chain, &end_time);
       if (ret == VK_TIMEOUT) {
-         if (timeout_result == VK_SUCCESS && chain->fifo && chain->present_ids.wp_presentation) {
+         if (timeout_result == VK_SUCCESS && chain->fifo && !chain->present_ids.frame_fallback) {
             /* If there have been subsequent commits since when we made the decision to add a timeout,
              * we can drop that timeout condition and rely on forward progress instead. */
             err = mtx_lock(&chain->present_ids.lock);
@@ -3053,7 +3054,7 @@ wsi_wl_swapchain_queue_present(struct wsi_swapchain *wsi_chain,
       if (mode_fifo && chain->fifo && chain->commit_timer)
          timestamped = set_timestamp(chain, &id->target_time, &id->correction);
 
-      if (chain->present_ids.wp_presentation) {
+      if (!chain->present_ids.frame_fallback) {
          id->feedback = wp_presentation_feedback(chain->present_ids.wp_presentation,
                                                  chain->wsi_wl_surface->surface);
          wp_presentation_feedback_add_listener(id->feedback,
@@ -3630,6 +3631,7 @@ wsi_wl_surface_create_swapchain(VkIcdSurfaceBase *icd_surface,
    vk_free(pAllocator, queue_name);
 
    if (chain->wsi_wl_surface->display->wp_presentation_notwrapped) {
+      chain->present_ids.frame_fallback = false;
       chain->present_ids.wp_presentation =
             wl_proxy_create_wrapper(chain->wsi_wl_surface->display->wp_presentation_notwrapped);
       wl_proxy_set_queue((struct wl_proxy *) chain->present_ids.wp_presentation,
@@ -3639,6 +3641,7 @@ wsi_wl_surface_create_swapchain(VkIcdSurfaceBase *icd_surface,
        * We already have a proxy for the surface, but need another since
        * presentID is pumped through a different queue to not disrupt
        * QueuePresentKHR frame callback's queue. */
+      chain->present_ids.frame_fallback = true;
       chain->present_ids.surface = wl_proxy_create_wrapper(wsi_wl_surface->base.surface);
       wl_proxy_set_queue((struct wl_proxy *) chain->present_ids.surface,
                          chain->present_ids.queue);
@@ -3650,7 +3653,7 @@ wsi_wl_surface_create_swapchain(VkIcdSurfaceBase *icd_surface,
       chain->fifo = wp_fifo_manager_v1_get_fifo(dpy->fifo_manager,
                                                 chain->wsi_wl_surface->surface);
    }
-   if (dpy->commit_timing_manager && chain->present_ids.wp_presentation) {
+   if (dpy->commit_timing_manager && !chain->present_ids.frame_fallback) {
       chain->commit_timer = wp_commit_timing_manager_v1_get_timer(dpy->commit_timing_manager,
                                                                   chain->wsi_wl_surface->surface);
    }
