@@ -5301,6 +5301,14 @@ nir_opt_varyings(nir_shader *producer, nir_shader *consumer, bool spirv,
    free_linkage(linkage);
    FREE(linkage);
 
+   /* Compaction moves CLIP_DIST and CULL_DIST outputs to VARn if the next
+    * shader is not FS. Clear those fields in shader_info.
+    */
+   if (consumer->info.stage <= MESA_SHADER_GEOMETRY) {
+      producer->info.clip_distance_array_size = 0;
+      producer->info.cull_distance_array_size = 0;
+   }
+
    if (progress & nir_progress_producer)
       nir_validate_shader(producer, "nir_opt_varyings");
    if (progress & nir_progress_consumer)
