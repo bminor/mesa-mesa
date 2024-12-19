@@ -281,11 +281,6 @@ struct radv_meta_state {
 
    struct vk_texcompress_astc_state *astc_decode;
 
-   struct {
-      VkDescriptorSetLayout ds_layout;
-      VkPipelineLayout p_layout;
-   } dgc_prepare;
-
    struct vk_meta_device device;
 };
 

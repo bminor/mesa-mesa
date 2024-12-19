@@ -503,12 +503,6 @@ radv_device_init_meta(struct radv_device *device)
    if (result != VK_SUCCESS)
       return result;
 
-   if (device->vk.enabled_features.deviceGeneratedCommands) {
-      result = radv_device_init_dgc_prepare_state(device, on_demand);
-      if (result != VK_SUCCESS)
-         return result;
-   }
-
    if (device->vk.enabled_extensions.KHR_acceleration_structure) {
       if (device->vk.enabled_features.nullDescriptor) {
          result = radv_device_init_null_accel_struct(device);
@@ -536,7 +530,6 @@ radv_device_init_meta(struct radv_device *device)
 void
 radv_device_finish_meta(struct radv_device *device)
 {
-   radv_device_finish_dgc_prepare_state(device);
    radv_device_finish_meta_etc_decode_state(device);
    radv_device_finish_meta_astc_decode_state(device);
    radv_device_finish_accel_struct_build_state(device);
