@@ -1,5 +1,165 @@
 [
     {
+        "sha": "adfd7486c2916472860111bf37f79056cf4d43eb",
+        "description": "iris: Check that mem_fence_bo was created",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "8e8097245f6dc8f63893fd9a21bfc62a643ef43e",
+        "notes": null
+    },
+    {
+        "sha": "4bcb92d35b80f4bd9f220b9a0051d50322a55aff",
+        "description": "nvk: use vk_descriptor_type_is_dynamic",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "dc5ac13959ccdbee7d34958db894996fe3b1f9f4",
+        "description": "dozen: use vk_descriptor_type_is_dynamic",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "97dec34a89fbe710a18b2a4e29227b9b89eb6c79",
+        "description": "hasvk: use vk_descriptor_type_is_dynamic",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e17abeca44f1d67571c50c17dcb63ad3cc5e4120",
+        "description": "anv: use vk_descriptor_type_is_dynamic",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4de0e11b92d7dea954db42e7d84439ba709d4627",
+        "description": "lavapipe: use vk_descriptor_type_is_dynamic",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3df7eda3a85d50a2bda9709956a1e4d126caf0ae",
+        "description": "panvk: use vk_descriptor_type_is_dynamic",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6877ff7d9b0e245d81c25e21f36bc7d110ae85c6",
+        "description": "pvr: use vk_descriptor_type_is_dynamic",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8628f31f49ae10f549124c0167553b9695634c95",
+        "description": "turnip: use vk_descriptor_type_is_dynamic",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "57dc5bb31fed3896dd3769fc0b3e317054e84d48",
+        "description": "asahi: use vk_descriptor_type_is_dynamic",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3b94bd03c2f56a6b218966ecdcf3ab78b30ebae2",
+        "description": "radv: use vk_descriptor_type_is_dynamic",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d188856ffd2a504b8cfcfcd6a2f12ed750b01202",
+        "description": "panvk: use vk_descriptor_type_is_dynamic",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ea88898b04701c1837ac259110b708bf542c993a",
+        "description": "dozen: use vk_descriptor_type_is_dynamic",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "65e62a4c964e4b9f837363461812d945d4ac3247",
+        "description": "turnip: use vk_descriptor_type_is_dynamic",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "528ad300e62635766873c5b3e592c069d2d8dee5",
+        "description": "v3dv: use vk_descriptor_type_is_dynamic",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d6047f3c3326c7fd8a742f735648facafa9f3ca8",
+        "description": "vulkan: add vk_descriptor_type_is_dynamic helper",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "42b29837c9ba29fa4303f10bc4dd0c86f5aa11c0",
         "description": "panvk: drop fragmentStoresAndAtomics support for now",
         "nominated": false,
