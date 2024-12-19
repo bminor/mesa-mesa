@@ -59,19 +59,6 @@ build_dcc_retile_compute_shader(struct radv_device *dev, struct radeon_surf *sur
    return b.shader;
 }
 
-void
-radv_device_finish_meta_dcc_retile_state(struct radv_device *device)
-{
-   struct radv_meta_state *state = &device->meta_state;
-
-   for (unsigned i = 0; i < ARRAY_SIZE(state->dcc_retile.pipeline); i++) {
-      radv_DestroyPipeline(radv_device_to_handle(device), state->dcc_retile.pipeline[i], &state->alloc);
-   }
-   radv_DestroyPipelineLayout(radv_device_to_handle(device), state->dcc_retile.p_layout, &state->alloc);
-   device->vk.dispatch_table.DestroyDescriptorSetLayout(radv_device_to_handle(device), state->dcc_retile.ds_layout,
-                                                        &state->alloc);
-}
-
 /*
  * This take a surface, but the only things used are:
  * - BPE
@@ -81,72 +68,75 @@ radv_device_finish_meta_dcc_retile_state(struct radv_device *device)
  * BPE is always 4 at the moment and the rest is derived from the tilemode.
  */
 static VkResult
-create_pipeline(struct radv_device *device, struct radeon_surf *surf)
+get_pipeline(struct radv_device *device, struct radv_image *image, VkPipeline *pipeline_out,
+             VkPipelineLayout *layout_out)
 {
-   VkResult result = VK_SUCCESS;
+   const unsigned swizzle_mode = image->planes[0].surface.u.gfx9.swizzle_mode;
+   char key_data[64];
+   VkResult result;
 
-   if (!device->meta_state.dcc_retile.ds_layout) {
-      const VkDescriptorSetLayoutBinding bindings[] = {
-         {
-            .binding = 0,
-            .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,
-            .descriptorCount = 1,
-            .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-         },
-         {
-            .binding = 1,
-            .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,
-            .descriptorCount = 1,
-            .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-         },
+   snprintf(key_data, sizeof(key_data), "radv-dcc-retile-%d", swizzle_mode);
 
-      };
-
-      result = radv_meta_create_descriptor_set_layout(device, 2, bindings, &device->meta_state.dcc_retile.ds_layout);
-      if (result != VK_SUCCESS)
-         return result;
-   }
-
-   if (!device->meta_state.dcc_retile.p_layout) {
-      const VkPushConstantRange pc_range = {
+   const VkDescriptorSetLayoutBinding bindings[] = {
+      {
+         .binding = 0,
+         .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,
+         .descriptorCount = 1,
          .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-         .size = 16,
-      };
+      },
+      {
+         .binding = 1,
+         .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,
+         .descriptorCount = 1,
+         .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+      },
 
-      result = radv_meta_create_pipeline_layout(device, &device->meta_state.dcc_retile.ds_layout, 1, &pc_range,
-                                                &device->meta_state.dcc_retile.p_layout);
-      if (result != VK_SUCCESS)
-         return result;
+   };
+
+   const VkDescriptorSetLayoutCreateInfo desc_info = {
+      .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+      .flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT,
+      .bindingCount = 2,
+      .pBindings = bindings,
+   };
+
+   const VkPushConstantRange pc_range = {
+      .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+      .size = 16,
+   };
+
+   result = vk_meta_get_pipeline_layout(&device->vk, &device->meta_state.device, &desc_info, &pc_range, key_data,
+                                        strlen(key_data), layout_out);
+   if (result != VK_SUCCESS)
+      return result;
+
+   VkPipeline pipeline_from_cache = vk_meta_lookup_pipeline(&device->meta_state.device, key_data, strlen(key_data));
+   if (pipeline_from_cache != VK_NULL_HANDLE) {
+      *pipeline_out = pipeline_from_cache;
+      return VK_SUCCESS;
    }
 
-   nir_shader *cs = build_dcc_retile_compute_shader(device, surf);
+   nir_shader *cs = build_dcc_retile_compute_shader(device, &image->planes[0].surface);
 
-   result = radv_meta_create_compute_pipeline(device, cs, device->meta_state.dcc_retile.p_layout,
-                                              &device->meta_state.dcc_retile.pipeline[surf->u.gfx9.swizzle_mode]);
+   const VkPipelineShaderStageCreateInfo stage_info = {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+      .stage = VK_SHADER_STAGE_COMPUTE_BIT,
+      .module = vk_shader_module_handle_from_nir(cs),
+      .pName = "main",
+      .pSpecializationInfo = NULL,
+   };
+
+   const VkComputePipelineCreateInfo pipeline_info = {
+      .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
+      .stage = stage_info,
+      .flags = 0,
+      .layout = *layout_out,
+   };
+
+   result = vk_meta_create_compute_pipeline(&device->vk, &device->meta_state.device, &pipeline_info, key_data,
+                                            strlen(key_data), pipeline_out);
 
    ralloc_free(cs);
-   return result;
-}
-
-static VkResult
-get_pipeline(struct radv_device *device, struct radv_image *image, VkPipeline *pipeline_out)
-{
-   struct radv_meta_state *state = &device->meta_state;
-   VkResult result = VK_SUCCESS;
-
-   const unsigned swizzle_mode = image->planes[0].surface.u.gfx9.swizzle_mode;
-
-   mtx_lock(&state->mtx);
-   if (!state->dcc_retile.pipeline[swizzle_mode]) {
-      result = create_pipeline(device, &image->planes[0].surface);
-      if (result != VK_SUCCESS)
-         goto fail;
-   }
-
-   *pipeline_out = state->dcc_retile.pipeline[swizzle_mode];
-
-fail:
-   mtx_unlock(&state->mtx);
    return result;
 }
 
@@ -156,6 +146,7 @@ radv_retile_dcc(struct radv_cmd_buffer *cmd_buffer, struct radv_image *image)
    struct radv_meta_saved_state saved_state;
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    struct radv_buffer buffer;
+   VkPipelineLayout layout;
    VkPipeline pipeline;
    VkResult result;
 
@@ -164,7 +155,7 @@ radv_retile_dcc(struct radv_cmd_buffer *cmd_buffer, struct radv_image *image)
 
    struct radv_cmd_state *state = &cmd_buffer->state;
 
-   result = get_pipeline(device, image, &pipeline);
+   result = get_pipeline(device, image, &pipeline, &layout);
    if (result != VK_SUCCESS) {
       vk_command_buffer_set_error(&cmd_buffer->vk, result);
       return;
@@ -201,8 +192,7 @@ radv_retile_dcc(struct radv_cmd_buffer *cmd_buffer, struct radv_image *image)
    for (unsigned i = 0; i < 2; ++i)
       view_handles[i] = radv_buffer_view_to_handle(&views[i]);
 
-   radv_meta_push_descriptor_set(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, device->meta_state.dcc_retile.p_layout, 0,
-                                 2,
+   radv_meta_push_descriptor_set(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, layout, 0, 2,
                                  (VkWriteDescriptorSet[]){
                                     {
                                        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
@@ -234,8 +224,8 @@ radv_retile_dcc(struct radv_cmd_buffer *cmd_buffer, struct radv_image *image)
       image->planes[0].surface.u.gfx9.color.display_dcc_pitch_max + 1,
       image->planes[0].surface.u.gfx9.color.display_dcc_height,
    };
-   vk_common_CmdPushConstants(radv_cmd_buffer_to_handle(cmd_buffer), device->meta_state.dcc_retile.p_layout,
-                              VK_SHADER_STAGE_COMPUTE_BIT, 0, 16, constants);
+   vk_common_CmdPushConstants(radv_cmd_buffer_to_handle(cmd_buffer), layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, 16,
+                              constants);
 
    radv_unaligned_dispatch(cmd_buffer, dcc_width, dcc_height, 1);
 

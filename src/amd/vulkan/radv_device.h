@@ -275,12 +275,6 @@ struct radv_meta_state {
    } query;
 
    struct {
-      VkDescriptorSetLayout ds_layout;
-      VkPipelineLayout p_layout;
-      VkPipeline pipeline[32];
-   } dcc_retile;
-
-   struct {
       VkPipelineLayout encode_p_layout;
       VkPipeline encode_pipeline;
       VkPipeline encode_compact_pipeline;

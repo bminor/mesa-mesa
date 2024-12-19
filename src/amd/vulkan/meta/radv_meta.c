@@ -550,7 +550,6 @@ radv_device_finish_meta(struct radv_device *device)
    radv_device_finish_meta_fast_clear_flush_state(device);
    radv_device_finish_meta_resolve_compute_state(device);
    radv_device_finish_meta_resolve_fragment_state(device);
-   radv_device_finish_meta_dcc_retile_state(device);
 
    radv_store_meta_pipeline(device);
    vk_common_DestroyPipelineCache(radv_device_to_handle(device), device->meta_state.cache, NULL);
