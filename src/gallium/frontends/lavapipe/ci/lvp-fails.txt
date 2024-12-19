@@ -865,3 +865,7 @@ nir-stress=dEQP-VK.dynamic_rendering.primary_cmd_buff.suballocation.unused_attac
 # New fails in 1.3.10.0
 dEQP-VK.ray_query.builtin.instancecustomindex.frag.aabbs,Crash
 dEQP-VK.ray_query.builtin.objecttoworld.frag.aabbs,Crash
+
+dEQP-VK.ray_query.builtin.objectraydirection.frag.aabbs,Crash
+dEQP-VK.ray_query.builtin.primitiveid.frag.aabbs,Crash
+dEQP-VK.ray_query.builtin.worldtoobject.frag.aabbs,Crash
