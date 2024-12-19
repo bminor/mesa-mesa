@@ -245,19 +245,6 @@ fail:
    return result;
 }
 
-static void
-finish_meta_clear_dcc_comp_to_single_state(struct radv_device *device)
-{
-   struct radv_meta_state *state = &device->meta_state;
-
-   for (uint32_t i = 0; i < 2; i++) {
-      radv_DestroyPipeline(radv_device_to_handle(device), state->clear_dcc_comp_to_single_pipeline[i], &state->alloc);
-   }
-   radv_DestroyPipelineLayout(radv_device_to_handle(device), state->clear_dcc_comp_to_single_p_layout, &state->alloc);
-   device->vk.dispatch_table.DestroyDescriptorSetLayout(radv_device_to_handle(device),
-                                                        state->clear_dcc_comp_to_single_ds_layout, &state->alloc);
-}
-
 void
 radv_device_finish_meta_clear_state(struct radv_device *device)
 {
@@ -290,8 +277,6 @@ radv_device_finish_meta_clear_state(struct radv_device *device)
    radv_DestroyPipelineLayout(radv_device_to_handle(device), state->clear_color_p_layout, &state->alloc);
    radv_DestroyPipelineLayout(radv_device_to_handle(device), state->clear_depth_p_layout, &state->alloc);
    radv_DestroyPipelineLayout(radv_device_to_handle(device), state->clear_depth_unrestricted_p_layout, &state->alloc);
-
-   finish_meta_clear_dcc_comp_to_single_state(device);
 }
 
 static void
@@ -981,60 +966,6 @@ build_clear_dcc_comp_to_single_shader(struct radv_device *dev, bool is_msaa)
    return b.shader;
 }
 
-static VkResult
-create_dcc_comp_to_single_pipeline(struct radv_device *device, bool is_msaa, VkPipeline *pipeline)
-{
-   struct radv_meta_state *state = &device->meta_state;
-   VkResult result;
-
-   if (!state->clear_dcc_comp_to_single_ds_layout) {
-      const VkDescriptorSetLayoutBinding binding = {
-         .binding = 0,
-         .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-         .descriptorCount = 1,
-         .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-      };
-
-      result = radv_meta_create_descriptor_set_layout(device, 1, &binding, &state->clear_dcc_comp_to_single_ds_layout);
-      if (result != VK_SUCCESS)
-         return result;
-   }
-
-   if (!state->clear_dcc_comp_to_single_p_layout) {
-      const VkPushConstantRange pc_range = {
-         .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-         .size = 24,
-      };
-
-      result = radv_meta_create_pipeline_layout(device, &state->clear_dcc_comp_to_single_ds_layout, 1, &pc_range,
-                                                &state->clear_dcc_comp_to_single_p_layout);
-      if (result != VK_SUCCESS)
-         return result;
-   }
-
-   nir_shader *cs = build_clear_dcc_comp_to_single_shader(device, is_msaa);
-
-   result = radv_meta_create_compute_pipeline(device, cs, state->clear_dcc_comp_to_single_p_layout, pipeline);
-
-   ralloc_free(cs);
-   return result;
-}
-
-static VkResult
-init_meta_clear_dcc_comp_to_single_state(struct radv_device *device)
-{
-   struct radv_meta_state *state = &device->meta_state;
-   VkResult result;
-
-   for (uint32_t i = 0; i < 2; i++) {
-      result = create_dcc_comp_to_single_pipeline(device, !!i, &state->clear_dcc_comp_to_single_pipeline[i]);
-      if (result != VK_SUCCESS)
-         return result;
-   }
-
-   return result;
-}
-
 VkResult
 radv_device_init_meta_clear_state(struct radv_device *device, bool on_demand)
 {
@@ -1043,10 +974,6 @@ radv_device_init_meta_clear_state(struct radv_device *device, bool on_demand)
 
    if (on_demand)
       return VK_SUCCESS;
-
-   res = init_meta_clear_dcc_comp_to_single_state(device);
-   if (res != VK_SUCCESS)
-      return res;
 
    for (uint32_t i = 0; i < ARRAY_SIZE(state->color_clear); ++i) {
       uint32_t samples = 1 << i;
@@ -1209,22 +1136,65 @@ radv_clear_dcc(struct radv_cmd_buffer *cmd_buffer, struct radv_image *image, con
 }
 
 static VkResult
-get_clear_dcc_comp_to_single_pipeline(struct radv_device *device, bool is_msaa, VkPipeline *pipeline_out)
+get_clear_dcc_comp_to_single_pipeline(struct radv_device *device, bool is_msaa, VkPipeline *pipeline_out,
+                                      VkPipelineLayout *layout_out)
 {
-   struct radv_meta_state *state = &device->meta_state;
-   VkResult result = VK_SUCCESS;
+   char key_data[64];
+   VkResult result;
 
-   mtx_lock(&state->mtx);
-   if (!state->clear_dcc_comp_to_single_pipeline[is_msaa]) {
-      result = create_dcc_comp_to_single_pipeline(device, is_msaa, &state->clear_dcc_comp_to_single_pipeline[is_msaa]);
-      if (result != VK_SUCCESS)
-         goto fail;
+   snprintf(key_data, sizeof(key_data), "radv-clear-dcc-comp-to-single-%d", is_msaa);
+
+   const VkDescriptorSetLayoutBinding binding = {
+      .binding = 0,
+      .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+      .descriptorCount = 1,
+      .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+   };
+
+   const VkDescriptorSetLayoutCreateInfo desc_info = {
+      .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+      .flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT,
+      .bindingCount = 1,
+      .pBindings = &binding,
+   };
+
+   const VkPushConstantRange pc_range = {
+      .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+      .size = 24,
+   };
+
+   result = vk_meta_get_pipeline_layout(&device->vk, &device->meta_state.device, &desc_info, &pc_range, key_data,
+                                        strlen(key_data), layout_out);
+   if (result != VK_SUCCESS)
+      return result;
+
+   VkPipeline pipeline_from_cache = vk_meta_lookup_pipeline(&device->meta_state.device, key_data, strlen(key_data));
+   if (pipeline_from_cache != VK_NULL_HANDLE) {
+      *pipeline_out = pipeline_from_cache;
+      return VK_SUCCESS;
    }
 
-   *pipeline_out = state->clear_dcc_comp_to_single_pipeline[is_msaa];
+   nir_shader *cs = build_clear_dcc_comp_to_single_shader(device, is_msaa);
 
-fail:
-   mtx_unlock(&state->mtx);
+   const VkPipelineShaderStageCreateInfo stage_info = {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+      .stage = VK_SHADER_STAGE_COMPUTE_BIT,
+      .module = vk_shader_module_handle_from_nir(cs),
+      .pName = "main",
+      .pSpecializationInfo = NULL,
+   };
+
+   const VkComputePipelineCreateInfo pipeline_info = {
+      .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
+      .stage = stage_info,
+      .flags = 0,
+      .layout = *layout_out,
+   };
+
+   result = vk_meta_create_compute_pipeline(&device->vk, &device->meta_state.device, &pipeline_info, key_data,
+                                            strlen(key_data), pipeline_out);
+
+   ralloc_free(cs);
    return result;
 }
 
@@ -1238,6 +1208,7 @@ radv_clear_dcc_comp_to_single(struct radv_cmd_buffer *cmd_buffer, struct radv_im
    struct radv_meta_saved_state saved_state;
    bool is_msaa = image->vk.samples > 1;
    struct radv_image_view iview;
+   VkPipelineLayout layout;
    VkPipeline pipeline;
    VkResult result;
    VkFormat format;
@@ -1262,7 +1233,7 @@ radv_clear_dcc_comp_to_single(struct radv_cmd_buffer *cmd_buffer, struct radv_im
       unreachable("Unsupported number of bytes per pixel");
    }
 
-   result = get_clear_dcc_comp_to_single_pipeline(device, is_msaa, &pipeline);
+   result = get_clear_dcc_comp_to_single_pipeline(device, is_msaa, &pipeline, &layout);
    if (result != VK_SUCCESS) {
       vk_command_buffer_set_error(&cmd_buffer->vk, result);
       return 0;
@@ -1297,8 +1268,7 @@ radv_clear_dcc_comp_to_single(struct radv_cmd_buffer *cmd_buffer, struct radv_im
                            },
                            &(struct radv_image_view_extra_create_info){.disable_compression = true});
 
-      radv_meta_push_descriptor_set(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-                                    device->meta_state.clear_dcc_comp_to_single_p_layout, 0, 1,
+      radv_meta_push_descriptor_set(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, layout, 0, 1,
                                     (VkWriteDescriptorSet[]){{.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                                                               .dstBinding = 0,
                                                               .dstArrayElement = 0,
@@ -1324,9 +1294,8 @@ radv_clear_dcc_comp_to_single(struct radv_cmd_buffer *cmd_buffer, struct radv_im
          color_values[3],
       };
 
-      vk_common_CmdPushConstants(radv_cmd_buffer_to_handle(cmd_buffer),
-                                 device->meta_state.clear_dcc_comp_to_single_p_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0,
-                                 24, constants);
+      vk_common_CmdPushConstants(radv_cmd_buffer_to_handle(cmd_buffer), layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, 24,
+                                 constants);
 
       radv_unaligned_dispatch(cmd_buffer, dcc_width, dcc_height, layer_count);
 
