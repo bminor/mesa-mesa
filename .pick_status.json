@@ -34,7 +34,7 @@
         "description": "gbm: fix get_back_bo() failure with gbm_surface and implicit modifiers",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "105fcb9cfdb4fc28de99f9647ed3d370393058f0",
         "notes": null
