@@ -4,7 +4,7 @@
         "description": "iris: Check that mem_fence_bo was created",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8e8097245f6dc8f63893fd9a21bfc62a643ef43e",
         "notes": null

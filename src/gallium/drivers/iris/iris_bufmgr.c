@@ -2484,8 +2484,8 @@ iris_bufmgr_create(struct intel_device_info *devinfo, int fd, bool bo_reuse)
    if (devinfo->verx10 >= 200) {
       bufmgr->mem_fence_bo = iris_bo_alloc(bufmgr, "mem_fence", 4096, 4096,
                                            IRIS_MEMZONE_OTHER, BO_ALLOC_SMEM);
-         if (!bufmgr->dummy_aux_bo)
-            goto error_alloc_bo;
+      if (!bufmgr->mem_fence_bo)
+         goto error_alloc_bo;
    }
 
    return bufmgr;
