@@ -282,12 +282,6 @@ struct radv_meta_state {
    struct {
       VkDescriptorSetLayout ds_layout;
       VkPipelineLayout p_layout;
-      VkPipeline pipeline[MAX_SAMPLES_LOG2];
-   } fmask_expand;
-
-   struct {
-      VkDescriptorSetLayout ds_layout;
-      VkPipelineLayout p_layout;
       VkPipeline pipeline[32];
    } dcc_retile;
 

@@ -496,10 +496,6 @@ radv_device_init_meta(struct radv_device *device)
       return result;
 
    if (pdev->use_fmask) {
-      result = radv_device_init_meta_fmask_expand_state(device, on_demand);
-      if (result != VK_SUCCESS)
-         return result;
-
       result = radv_device_init_meta_fmask_copy_state(device, on_demand);
       if (result != VK_SUCCESS)
          return result;
@@ -560,7 +556,6 @@ radv_device_finish_meta(struct radv_device *device)
    radv_device_finish_meta_fast_clear_flush_state(device);
    radv_device_finish_meta_resolve_compute_state(device);
    radv_device_finish_meta_resolve_fragment_state(device);
-   radv_device_finish_meta_fmask_expand_state(device);
    radv_device_finish_meta_dcc_retile_state(device);
    radv_device_finish_meta_fmask_copy_state(device);
 
