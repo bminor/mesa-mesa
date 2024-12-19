@@ -11,7 +11,7 @@ else
     include_directories : [inc_include, inc_src],
     c_args : [pre_args, no_override_init_args],
     link_args : [ld_args_build_id],
-    dependencies : [idep_mesaclc, dep_llvm, dep_spirv_tools, idep_nir, idep_mesautil],
+    dependencies : [idep_vtn, idep_nir, idep_mesautil],
     # If we can run host binaries directly, just build asahi_clc for the host.
     # Most commonly this happens when doing a cross compile from an x86_64 build
     # machine to an x86 host
