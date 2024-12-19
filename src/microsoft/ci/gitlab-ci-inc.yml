@@ -17,6 +17,7 @@
 # rules duplication manually
 .windows-build-rules:
   rules:
+    - !reference [.scheduled_pipeline-rules, rules]
     - !reference [.test, rules]
     - !reference [.microsoft-farm-rules, rules]
     - !reference [.zink-common-rules, rules]
