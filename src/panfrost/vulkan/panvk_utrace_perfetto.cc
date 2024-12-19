@@ -274,10 +274,8 @@ panvk_utrace_perfetto_init(struct panvk_device *dev, uint32_t queue_count)
 
    /* check for timestamp support */
    if (!props->gpu_can_query_timestamp || !props->timestamp_frequency ||
-       !get_gpu_time_ns(dev)) {
-      mesa_logw("disable perfetto because gpu timestamp is missing");
+       !get_gpu_time_ns(dev))
       return;
-   }
 
    utp->gpu_clock_id = get_gpu_clock_id();
    utp->device_id = (uintptr_t)dev;
