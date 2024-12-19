@@ -1167,9 +1167,17 @@ radv_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCr
    /* With update after bind we can't attach bo's to the command buffer
     * from the descriptor set anymore, so we have to use a global BO list.
     */
-   device->use_global_bo_list =
-      (instance->perftest_flags & RADV_PERFTEST_BO_LIST) || device->vk.enabled_features.bufferDeviceAddress ||
-      device->vk.enabled_features.descriptorIndexing || device->vk.enabled_extensions.EXT_descriptor_indexing;
+   device->use_global_bo_list = (instance->perftest_flags & RADV_PERFTEST_BO_LIST) ||
+                                device->vk.enabled_features.bufferDeviceAddress ||
+                                device->vk.enabled_features.descriptorIndexing ||
+                                device->vk.enabled_features.descriptorBindingUniformBufferUpdateAfterBind ||
+                                device->vk.enabled_features.descriptorBindingSampledImageUpdateAfterBind ||
+                                device->vk.enabled_features.descriptorBindingStorageImageUpdateAfterBind ||
+                                device->vk.enabled_features.descriptorBindingStorageBufferUpdateAfterBind ||
+                                device->vk.enabled_features.descriptorBindingUniformTexelBufferUpdateAfterBind ||
+                                device->vk.enabled_features.descriptorBindingStorageTexelBufferUpdateAfterBind ||
+                                device->vk.enabled_features.descriptorBindingUpdateUnusedWhilePending ||
+                                device->vk.enabled_features.descriptorBindingPartiallyBound;
 
    radv_init_shader_arenas(device);
 
