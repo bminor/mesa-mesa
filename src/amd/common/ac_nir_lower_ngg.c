@@ -2118,7 +2118,7 @@ ngg_build_streamout_buffer_info(nir_builder *b,
                      nir_def *oldest_result = nir_load_var(b, result_ring[read_index]);
                      nir_def *loaded_ordered_id = nir_unpack_64_2x32_split_x(b, oldest_result);
                      nir_def *loaded_dwords_written = nir_unpack_64_2x32_split_y(b, oldest_result);
-                     nir_def *exit = nir_ieq(b, loaded_ordered_id, ordered_id);
+                     nir_store_var(b, buffer_offset_per_lane_var, loaded_dwords_written, 0x1);
 
                      /* Debug: Write the vec4 into a shader log ring buffer. */
 #if 0
@@ -2127,13 +2127,16 @@ ngg_build_streamout_buffer_info(nir_builder *b,
                                                             loaded_dwords_written));
 #endif
 
-                     nir_if *if_break = nir_push_if(b, nir_vote_any(b, 1, exit));
-                     {
-                        nir_store_var(b, buffer_offset_per_lane_var, loaded_dwords_written, 0x1);
-                        nir_jump(b, nir_jump_break);
-                     }
-                     nir_pop_if(b, if_break);
+                     nir_def *continue_if = nir_ieq(b, loaded_ordered_id, ordered_id);
+                     continue_if = nir_inot(b, nir_vote_any(b, 1, continue_if));
+                     nir_push_if(b, continue_if);
                   }
+                  nir_jump(b, nir_jump_continue);
+
+                  for (unsigned i = 0; i < NUM_ATOMICS_IN_FLIGHT; i++) {
+                     nir_pop_if(b, NULL);
+                  }
+                  nir_jump(b, nir_jump_break);
                }
                nir_pop_loop(b, loop);
 
