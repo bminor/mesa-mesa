@@ -1,5 +1,235 @@
 [
     {
+        "sha": "42b29837c9ba29fa4303f10bc4dd0c86f5aa11c0",
+        "description": "panvk: drop fragmentStoresAndAtomics support for now",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "605c173fbd871b3e75951468765024dcf6763538",
+        "notes": null
+    },
+    {
+        "sha": "3f90d8dfd2033a98308a1293381b83d0259a8dee",
+        "description": "panvk/csf: fix alpha-to-coverage",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "447075eeeef8a9fd91f42ae869fd2e0246513356",
+        "notes": null
+    },
+    {
+        "sha": "da555982b3e1a369bf7bb8a69554af8036d0f4ad",
+        "description": "egl/wayland: fallback to implicit modifiers if advertised by compositor",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "4c065158927d7bacc5eb1e4f2491b1db93f1dc12",
+        "notes": null
+    },
+    {
+        "sha": "d795b4712cbadea2d6eff5c81a7dd7aa9c78b4e1",
+        "description": "egl/wayland: only supply LINEAR modifier when supported",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "4c065158927d7bacc5eb1e4f2491b1db93f1dc12",
+        "notes": null
+    },
+    {
+        "sha": "655ac4fff6808266a0733576bb82e48b927135e6",
+        "description": "dri: don't fetch X11 modifiers if we don't support them",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "4c065158927d7bacc5eb1e4f2491b1db93f1dc12",
+        "notes": null
+    },
+    {
+        "sha": "d981f66df835a4fbe270192b1946b6bcffed63f3",
+        "description": "ci/windows: Always include windows-msvc in scheduled pipelines",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "435017700dfa87ba19c15b9bf7c78c1d6ac02200",
+        "notes": null
+    },
+    {
+        "sha": "3ea6ed8780a32509f1800c1195c5488fe182d3d9",
+        "description": "radeonsi/vcn: Enable write combine for decode",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cdf2106609bd0f1c83aac8006350a161c140a889",
+        "description": "radeonsi/uvd: Align bitstream buffer to 128 when resizing",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f1235d13bd33f227345e97ebd88f4a4704eac622",
+        "description": "radeonsi/vcn: Align bitstream buffer to 128 when resizing",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0b3e7ec36ffa6bb8ce625bb4ae0bf126c59d348e",
+        "description": "radv/nir: simplify lowering of query intrinsics",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a7d32be1dd18a1606c9ac3e94b47ba9cd9c2e014",
+        "description": "radv: rename GDS queries to emulated queries",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "db5d57e95ead8ef525e5dd4fef6d59d16a4c4f77",
+        "description": "radv: fix getting the number of vertices per prim for the last VGT stage",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "393921490639290e630cd06927f461d408640a7e",
+        "description": "radv/nir: fix checking if task shader invocations query is enabled",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "91cdee8a38c1516b57cf758d25173f005adb3994",
+        "description": "radv: only enable emulated mesh/task shader queries on GFX10.3",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "30825140d0483799269600739b489973509d28f0",
+        "description": "panfrost: Re-emit texture descriptor if the data size has changed",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "bc55d150a915d5b2e91cd6ee11af4992d18fcf4f",
+        "notes": null
+    },
+    {
+        "sha": "8609f49d059abc6e02f826e7a4ec7050dccdf09f",
+        "description": "radeonsi: fix unigine heaven crash when use aco on gfx8/9",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "ae9331694ba25dd87b7726d03bbd6d02b1ad5b30",
+        "notes": null
+    },
+    {
+        "sha": "5bb1b384096c4efa6c03d192fcc6c0bd265482b4",
+        "description": "anv: remove unnecessary driconf entries for anv_enable_buffer_comp",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e8a81ba98edd7638cb4a63a8cd2c52f07fe89cf7",
+        "description": "anv: allow compressed buffers types on vkd3d titles",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "247d11d635d2999f2f508e2cb14e91cfc2d0ae9c",
+        "description": "tu: Allow UBWC with images with swapped formats.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "113cb94343c29ab426f6e18661570fc4e16e1f05",
+        "description": "freedreno/fdl, tu: Allow swaps with mutable tiled images",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c8782f3ac7bf024a118d3277cec349de8f05311f",
+        "description": "freedreno/fdl: Don't enable r8g8 special case for mutable images",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ca91844fc74e8a8293612162c0ab2f5ba05dd86f",
+        "description": "freedreno/fdl, tu: Make mutable part of the image layout",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ef4c752b6e6120d8f58b228d7189cdf1de547637",
+        "description": "freedreno/fdl: Fix 3d mipmapping height alignment",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "d5f88190fd82fdc7b666a7b02209d0bf337dcfd0",
         "description": "turnip/ci: Update expectations",
         "nominated": false,
