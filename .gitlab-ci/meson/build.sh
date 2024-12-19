@@ -15,6 +15,13 @@ comma_separated() {
   echo "$*"
 }
 
+no_werror() {
+  # shellcheck disable=SC2048
+  for i in $*; do
+    echo "-D${i}:werror=false "
+  done
+}
+
 CROSS_FILE=/cross_file-"$CROSS".txt
 
 export PATH=$PATH:$PWD/.gitlab-ci/build
@@ -132,9 +139,12 @@ else
     MAX_LD=${FDO_CI_CONCURRENT:-4}
 fi
 
+# these are built as Meson subprojects; we want to use Meson's
+# --force-fallback-for to ensure that we build the subprojects from their wrap
+# files, and we also want to disable Werror on those, since we do not control
+# these projects and making them warning-free is not our goal.
 # shellcheck disable=2206
-force_fallback_for=(
-  # FIXME: explain what these are needed for
+meson_subprojects=(
   perfetto
   syn
   paste
@@ -150,10 +160,12 @@ force_fallback_for=(
 section_switch meson-configure "meson: configure"
 
 rm -rf _build
+# shellcheck disable=SC2046
 meson setup _build \
       --native-file=native.file \
       --wrap-mode=nofallback \
-      --force-fallback-for "$(comma_separated "${force_fallback_for[@]}")" \
+      --force-fallback-for "$(comma_separated "${meson_subprojects[@]}")" \
+      $(no_werror "${meson_subprojects[@]}") \
       ${CROSS+--cross "$CROSS_FILE"} \
       -D prefix=$PWD/install \
       -D libdir=lib \
