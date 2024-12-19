@@ -85,6 +85,7 @@ brw_opt_combine_convergent_txf(fs_visitor &s)
    const def_analysis &defs = s.def_analysis.require();
 
    const unsigned min_simd = 8 * reg_unit(s.devinfo);
+   const unsigned max_simd = 16 * reg_unit(s.devinfo);
    const unsigned grf_size = REG_SIZE * reg_unit(s.devinfo);
 
    bool progress = false;
@@ -148,8 +149,8 @@ brw_opt_combine_convergent_txf(fs_visitor &s)
          continue;
 
       /* Emit divergent TXFs and replace the original ones with MOVs */
-      for (unsigned curr = 0; curr < count; curr += 32) {
-         const unsigned lanes = CLAMP(count - curr, min_simd, 32);
+      for (unsigned curr = 0; curr < count; curr += max_simd) {
+         const unsigned lanes = CLAMP(count - curr, min_simd, max_simd);
          const unsigned width = util_next_power_of_two(lanes);
          const fs_builder ubld =
             fs_builder(&s).at(block, txfs[curr]).exec_all().group(width, 0);
