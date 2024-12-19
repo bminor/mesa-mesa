@@ -210,6 +210,19 @@ uif(uint32_t ui)
    return as_float(ui);
 }
 
+#define CL_FLT_EPSILON 1.1920928955078125e-7f
+
+/* OpenCL C lacks roundf and llroundf, we can emulate it */
+static inline float roundf(float x)
+{
+   return trunc(x + copysign(0.5f - 0.25f * CL_FLT_EPSILON, x));
+}
+
+static inline long long llroundf(float x)
+{
+   return roundf(x);
+}
+
 static inline uint16_t
 _mesa_float_to_half(float f)
 {

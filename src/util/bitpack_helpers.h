@@ -119,7 +119,6 @@ util_bitpack_float_nonzero(float v)
    return util_bitpack_float(v);
 }
 
-#ifndef __OPENCL_VERSION__
 ALWAYS_INLINE static uint64_t
 util_bitpack_sfixed(float v, uint32_t start, uint32_t end,
                     uint32_t fract_bits)
@@ -211,6 +210,5 @@ util_bitpack_ufixed_nonzero(float v, uint32_t start, uint32_t end,
    assert(v != 0.0f);
    return util_bitpack_ufixed(v, start, end, fract_bits);
 }
-#endif
 
 #endif /* UTIL_BITPACK_HELPERS_H */
