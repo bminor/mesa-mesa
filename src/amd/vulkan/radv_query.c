@@ -28,10 +28,11 @@
 
 #define TIMESTAMP_NOT_READY UINT64_MAX
 
-static void radv_query_shader(struct radv_cmd_buffer *cmd_buffer, VkPipeline *pipeline, struct radeon_winsys_bo *src_bo,
-                              struct radeon_winsys_bo *dst_bo, uint64_t src_offset, uint64_t dst_offset,
-                              uint32_t src_stride, uint32_t dst_stride, size_t dst_size, uint32_t count, uint32_t flags,
-                              uint32_t pipeline_stats_mask, uint32_t avail_offset, bool uses_emulated_queries);
+static void radv_query_shader(struct radv_cmd_buffer *cmd_buffer, VkQueryType query_type,
+                              struct radeon_winsys_bo *src_bo, struct radeon_winsys_bo *dst_bo, uint64_t src_offset,
+                              uint64_t dst_offset, uint32_t src_stride, uint32_t dst_stride, size_t dst_size,
+                              uint32_t count, uint32_t flags, uint32_t pipeline_stats_mask, uint32_t avail_offset,
+                              bool uses_emulated_queries);
 
 static void
 gfx10_copy_shader_query(struct radeon_cmdbuf *cs, uint32_t offset, uint64_t va)
@@ -384,9 +385,8 @@ radv_copy_occlusion_query_result(struct radv_cmd_buffer *cmd_buffer, struct radv
       }
    }
 
-   radv_query_shader(cmd_buffer, &device->meta_state.query.occlusion_query_pipeline, pool->bo, dst_bo,
-                     first_query * pool->stride, dst_offset, pool->stride, stride, dst_size, query_count, flags, 0, 0,
-                     false);
+   radv_query_shader(cmd_buffer, VK_QUERY_TYPE_OCCLUSION, pool->bo, dst_bo, first_query * pool->stride, dst_offset,
+                     pool->stride, stride, dst_size, query_count, flags, 0, 0, false);
 }
 
 /**
@@ -804,10 +804,9 @@ radv_copy_pipeline_stat_query_result(struct radv_cmd_buffer *cmd_buffer, struct 
       }
    }
 
-   radv_query_shader(cmd_buffer, &device->meta_state.query.pipeline_statistics_query_pipeline, pool->bo, dst_bo,
-                     first_query * pool->stride, dst_offset, pool->stride, stride, dst_size, query_count, flags,
-                     pool->vk.pipeline_statistics, pool->availability_offset + 4 * first_query,
-                     pool->uses_emulated_queries);
+   radv_query_shader(cmd_buffer, VK_QUERY_TYPE_PIPELINE_STATISTICS, pool->bo, dst_bo, first_query * pool->stride,
+                     dst_offset, pool->stride, stride, dst_size, query_count, flags, pool->vk.pipeline_statistics,
+                     pool->availability_offset + 4 * first_query, pool->uses_emulated_queries);
 }
 
 /**
@@ -1046,7 +1045,7 @@ radv_copy_tfb_query_result(struct radv_cmd_buffer *cmd_buffer, struct radv_query
       }
    }
 
-   radv_query_shader(cmd_buffer, &device->meta_state.query.tfb_query_pipeline, pool->bo, dst_bo,
+   radv_query_shader(cmd_buffer, VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT, pool->bo, dst_bo,
                      first_query * pool->stride, dst_offset, pool->stride, stride, dst_size, query_count, flags, 0, 0,
                      false);
 }
@@ -1180,9 +1179,8 @@ radv_copy_timestamp_query_result(struct radv_cmd_buffer *cmd_buffer, struct radv
       }
    }
 
-   radv_query_shader(cmd_buffer, &device->meta_state.query.timestamp_query_pipeline, pool->bo, dst_bo,
-                     first_query * pool->stride, dst_offset, pool->stride, stride, dst_size, query_count, flags, 0, 0,
-                     false);
+   radv_query_shader(cmd_buffer, VK_QUERY_TYPE_TIMESTAMP, pool->bo, dst_bo, first_query * pool->stride, dst_offset,
+                     pool->stride, stride, dst_size, query_count, flags, 0, 0, false);
 }
 
 /**
@@ -1462,8 +1460,8 @@ radv_copy_pg_query_result(struct radv_cmd_buffer *cmd_buffer, struct radv_query_
       }
    }
 
-   radv_query_shader(cmd_buffer, &device->meta_state.query.pg_query_pipeline, pool->bo, dst_bo,
-                     first_query * pool->stride, dst_offset, pool->stride, stride, dst_size, query_count, flags, 0, 0,
+   radv_query_shader(cmd_buffer, VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT, pool->bo, dst_bo, first_query * pool->stride,
+                     dst_offset, pool->stride, stride, dst_size, query_count, flags, 0, 0,
                      pool->uses_emulated_queries && pdev->info.gfx_level < GFX11);
 }
 
@@ -1672,9 +1670,9 @@ radv_copy_ms_prim_query_result(struct radv_cmd_buffer *cmd_buffer, struct radv_q
          }
       }
 
-      radv_query_shader(cmd_buffer, &device->meta_state.query.pipeline_statistics_query_pipeline, pool->bo, dst_bo,
-                        first_query * pool->stride, dst_offset, pool->stride, stride, dst_size, query_count, flags,
-                        1 << 13, pool->availability_offset + 4 * first_query, false);
+      radv_query_shader(cmd_buffer, VK_QUERY_TYPE_PIPELINE_STATISTICS, pool->bo, dst_bo, first_query * pool->stride,
+                        dst_offset, pool->stride, stride, dst_size, query_count, flags, 1 << 13,
+                        pool->availability_offset + 4 * first_query, false);
    } else {
       if (flags & VK_QUERY_RESULT_WAIT_BIT) {
          for (unsigned i = 0; i < query_count; i++) {
@@ -1689,111 +1687,166 @@ radv_copy_ms_prim_query_result(struct radv_cmd_buffer *cmd_buffer, struct radv_q
          }
       }
 
-      radv_query_shader(cmd_buffer, &device->meta_state.query.ms_prim_gen_query_pipeline, pool->bo, dst_bo,
+      radv_query_shader(cmd_buffer, VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT, pool->bo, dst_bo,
                         first_query * pool->stride, dst_offset, pool->stride, stride, dst_size, query_count, flags, 0,
                         0, false);
    }
 }
 
 static VkResult
-radv_device_init_meta_query_state_internal(struct radv_device *device)
+create_layout(struct radv_device *device)
 {
-   const struct radv_physical_device *pdev = radv_device_physical(device);
-   VkResult result;
-   nir_shader *occlusion_cs = NULL;
-   nir_shader *pipeline_statistics_cs = NULL;
-   nir_shader *tfb_cs = NULL;
-   nir_shader *timestamp_cs = NULL;
-   nir_shader *pg_cs = NULL;
-   nir_shader *ms_prim_gen_cs = NULL;
+   VkResult result = VK_SUCCESS;
 
-   mtx_lock(&device->meta_state.mtx);
-   if (device->meta_state.query.pipeline_statistics_query_pipeline) {
-      mtx_unlock(&device->meta_state.mtx);
-      return VK_SUCCESS;
+   if (!device->meta_state.query.ds_layout) {
+      const VkDescriptorSetLayoutBinding bindings[] = {
+         {.binding = 0,
+          .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+          .descriptorCount = 1,
+          .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT},
+         {
+            .binding = 1,
+            .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+            .descriptorCount = 1,
+            .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+         },
+      };
+
+      result = radv_meta_create_descriptor_set_layout(device, 2, bindings, &device->meta_state.query.ds_layout);
+      if (result != VK_SUCCESS)
+         return result;
    }
-   occlusion_cs = build_occlusion_query_shader(device);
-   pipeline_statistics_cs = build_pipeline_statistics_query_shader(device);
-   tfb_cs = build_tfb_query_shader(device);
-   timestamp_cs = build_timestamp_query_shader(device);
-   pg_cs = build_pg_query_shader(device);
 
-   if (pdev->emulate_mesh_shader_queries)
-      ms_prim_gen_cs = build_ms_prim_gen_query_shader(device);
-
-   const VkDescriptorSetLayoutBinding bindings[] = {
-      {.binding = 0,
-       .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-       .descriptorCount = 1,
-       .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT},
-      {
-         .binding = 1,
-         .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-         .descriptorCount = 1,
+   if (!device->meta_state.query.p_layout) {
+      const VkPushConstantRange pc_range = {
          .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-      },
-   };
+         .size = 20,
+      };
 
-   result = radv_meta_create_descriptor_set_layout(device, 2, bindings, &device->meta_state.query.ds_layout);
-   if (result != VK_SUCCESS)
-      goto fail;
-
-   const VkPushConstantRange pc_range = {
-      .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-      .size = 20,
-   };
-
-   result = radv_meta_create_pipeline_layout(device, &device->meta_state.query.ds_layout, 1, &pc_range,
-                                             &device->meta_state.query.p_layout);
-   if (result != VK_SUCCESS)
-      goto fail;
-
-   result = radv_meta_create_compute_pipeline(device, occlusion_cs, device->meta_state.query.p_layout,
-                                              &device->meta_state.query.occlusion_query_pipeline);
-   if (result != VK_SUCCESS)
-      goto fail;
-
-   result = radv_meta_create_compute_pipeline(device, pipeline_statistics_cs, device->meta_state.query.p_layout,
-                                              &device->meta_state.query.pipeline_statistics_query_pipeline);
-   if (result != VK_SUCCESS)
-      goto fail;
-
-   result = radv_meta_create_compute_pipeline(device, tfb_cs, device->meta_state.query.p_layout,
-                                              &device->meta_state.query.tfb_query_pipeline);
-   if (result != VK_SUCCESS)
-      goto fail;
-
-   result = radv_meta_create_compute_pipeline(device, timestamp_cs, device->meta_state.query.p_layout,
-                                              &device->meta_state.query.timestamp_query_pipeline);
-   if (result != VK_SUCCESS)
-      goto fail;
-
-   result = radv_meta_create_compute_pipeline(device, pg_cs, device->meta_state.query.p_layout,
-                                              &device->meta_state.query.pg_query_pipeline);
-
-   if (pdev->emulate_mesh_shader_queries) {
-      result = radv_meta_create_compute_pipeline(device, ms_prim_gen_cs, device->meta_state.query.p_layout,
-                                                 &device->meta_state.query.ms_prim_gen_query_pipeline);
+      result = radv_meta_create_pipeline_layout(device, &device->meta_state.query.ds_layout, 1, &pc_range,
+                                                &device->meta_state.query.p_layout);
    }
+
+   return result;
+}
+
+static VkResult
+create_pipeline(struct radv_device *device, VkQueryType query_type, VkPipeline *pipeline)
+{
+   nir_shader *cs;
+   VkResult result;
+
+   result = create_layout(device);
+   if (result != VK_SUCCESS)
+      return result;
+
+   switch (query_type) {
+   case VK_QUERY_TYPE_OCCLUSION:
+      cs = build_occlusion_query_shader(device);
+      break;
+   case VK_QUERY_TYPE_PIPELINE_STATISTICS:
+      cs = build_pipeline_statistics_query_shader(device);
+      break;
+   case VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT:
+      cs = build_tfb_query_shader(device);
+      break;
+   case VK_QUERY_TYPE_TIMESTAMP:
+      cs = build_timestamp_query_shader(device);
+      break;
+   case VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT:
+      cs = build_pg_query_shader(device);
+      break;
+   case VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT:
+      cs = build_ms_prim_gen_query_shader(device);
+      break;
+   default:
+      unreachable("invalid query type");
+   }
+
+   result = radv_meta_create_compute_pipeline(device, cs, device->meta_state.query.p_layout, pipeline);
+
+   ralloc_free(cs);
+   return result;
+}
+
+static VkResult
+get_pipeline(struct radv_device *device, VkQueryType query_type, VkPipeline *pipeline_out)
+{
+   struct radv_meta_state *state = &device->meta_state;
+   VkResult result = VK_SUCCESS;
+   VkPipeline *pipeline;
+
+   mtx_lock(&state->mtx);
+
+   switch (query_type) {
+   case VK_QUERY_TYPE_OCCLUSION:
+      pipeline = &device->meta_state.query.occlusion_query_pipeline;
+      break;
+   case VK_QUERY_TYPE_PIPELINE_STATISTICS:
+      pipeline = &device->meta_state.query.pipeline_statistics_query_pipeline;
+      break;
+   case VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT:
+      pipeline = &device->meta_state.query.tfb_query_pipeline;
+      break;
+   case VK_QUERY_TYPE_TIMESTAMP:
+      pipeline = &device->meta_state.query.timestamp_query_pipeline;
+      break;
+   case VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT:
+      pipeline = &device->meta_state.query.pg_query_pipeline;
+      break;
+   case VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT:
+      pipeline = &device->meta_state.query.ms_prim_gen_query_pipeline;
+      break;
+   default:
+      unreachable("invalid query type");
+   }
+
+   if (!*pipeline) {
+      result = create_pipeline(device, query_type, pipeline);
+      if (result != VK_SUCCESS)
+         goto fail;
+   }
+
+   *pipeline_out = *pipeline;
 
 fail:
-   ralloc_free(occlusion_cs);
-   ralloc_free(pipeline_statistics_cs);
-   ralloc_free(tfb_cs);
-   ralloc_free(pg_cs);
-   ralloc_free(ms_prim_gen_cs);
-   ralloc_free(timestamp_cs);
-   mtx_unlock(&device->meta_state.mtx);
+   mtx_unlock(&state->mtx);
    return result;
 }
 
 VkResult
 radv_device_init_meta_query_state(struct radv_device *device, bool on_demand)
 {
+   VkResult result;
+
    if (on_demand)
       return VK_SUCCESS;
 
-   return radv_device_init_meta_query_state_internal(device);
+   result = create_pipeline(device, VK_QUERY_TYPE_OCCLUSION, &device->meta_state.query.occlusion_query_pipeline);
+   if (result != VK_SUCCESS)
+      return result;
+
+   result = create_pipeline(device, VK_QUERY_TYPE_PIPELINE_STATISTICS,
+                            &device->meta_state.query.pipeline_statistics_query_pipeline);
+   if (result != VK_SUCCESS)
+      return result;
+
+   result = create_pipeline(device, VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT,
+                            &device->meta_state.query.tfb_query_pipeline);
+   if (result != VK_SUCCESS)
+      return result;
+
+   result = create_pipeline(device, VK_QUERY_TYPE_TIMESTAMP, &device->meta_state.query.timestamp_query_pipeline);
+   if (result != VK_SUCCESS)
+      return result;
+
+   result =
+      create_pipeline(device, VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT, &device->meta_state.query.pg_query_pipeline);
+   if (result != VK_SUCCESS)
+      return result;
+
+   return create_pipeline(device, VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT,
+                          &device->meta_state.query.ms_prim_gen_query_pipeline);
 }
 
 void
@@ -1818,7 +1871,7 @@ radv_device_finish_meta_query_state(struct radv_device *device)
 }
 
 static void
-radv_query_shader(struct radv_cmd_buffer *cmd_buffer, VkPipeline *pipeline, struct radeon_winsys_bo *src_bo,
+radv_query_shader(struct radv_cmd_buffer *cmd_buffer, VkQueryType query_type, struct radeon_winsys_bo *src_bo,
                   struct radeon_winsys_bo *dst_bo, uint64_t src_offset, uint64_t dst_offset, uint32_t src_stride,
                   uint32_t dst_stride, size_t dst_size, uint32_t count, uint32_t flags, uint32_t pipeline_stats_mask,
                   uint32_t avail_offset, bool uses_emulated_queries)
@@ -1826,13 +1879,13 @@ radv_query_shader(struct radv_cmd_buffer *cmd_buffer, VkPipeline *pipeline, stru
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    struct radv_meta_saved_state saved_state;
    struct radv_buffer src_buffer, dst_buffer;
+   VkPipeline pipeline;
+   VkResult result;
 
-   if (!*pipeline) {
-      VkResult ret = radv_device_init_meta_query_state_internal(device);
-      if (ret != VK_SUCCESS) {
-         vk_command_buffer_set_error(&cmd_buffer->vk, ret);
-         return;
-      }
+   result = get_pipeline(device, query_type, &pipeline);
+   if (result != VK_SUCCESS) {
+      vk_command_buffer_set_error(&cmd_buffer->vk, result);
+      return;
    }
 
    /* VK_EXT_conditional_rendering says that copy commands should not be
@@ -1848,7 +1901,7 @@ radv_query_shader(struct radv_cmd_buffer *cmd_buffer, VkPipeline *pipeline, stru
    radv_buffer_init(&src_buffer, device, src_bo, src_buffer_size, src_offset);
    radv_buffer_init(&dst_buffer, device, dst_bo, dst_buffer_size, dst_offset);
 
-   radv_CmdBindPipeline(radv_cmd_buffer_to_handle(cmd_buffer), VK_PIPELINE_BIND_POINT_COMPUTE, *pipeline);
+   radv_CmdBindPipeline(radv_cmd_buffer_to_handle(cmd_buffer), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 
    radv_meta_push_descriptor_set(
       cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, device->meta_state.query.p_layout, 0, 2,
