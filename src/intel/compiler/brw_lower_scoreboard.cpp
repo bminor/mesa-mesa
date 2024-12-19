@@ -961,6 +961,8 @@ namespace {
          return find_unordered_dependency(deps, TGL_SBID_SET, exec_all);
       else if (has_ordered && is_unordered(devinfo, inst))
          return TGL_SBID_NULL;
+      else if (is_send(inst) && devinfo->ver >= 20)
+         return TGL_SBID_NULL;
       else if (find_unordered_dependency(deps, TGL_SBID_DST, exec_all) &&
                (!has_ordered || ordered_pipe == inferred_sync_pipe(devinfo, inst)))
          return find_unordered_dependency(deps, TGL_SBID_DST, exec_all);

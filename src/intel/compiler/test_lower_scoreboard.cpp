@@ -1075,3 +1075,110 @@ TEST_F(scoreboard_test, gitlab_issue_11069)
    EXPECT_EQ(instruction(block0, 0)->sched, tgl_swsb_null());
    EXPECT_EQ(instruction(block0, 1)->sched, regdist(TGL_PIPE_FLOAT, 1));
 }
+
+TEST_F(scoreboard_test, gfx120_can_embed_outoforder_src_dependency_in_send_eot) {
+   brw_reg a = brw_ud8_grf(1, 0);
+   brw_reg b = brw_ud8_grf(2, 0);
+   brw_reg x = brw_ud8_grf(3, 0);
+   brw_reg desc = brw_ud8_grf(4, 0);
+
+   emit_SEND(bld, a, desc, x);
+   emit_SEND(bld, b, desc, x)->eot = true;
+
+   brw_calculate_cfg(*v);
+   bblock_t *block0 = v->cfg->blocks[0];
+   ASSERT_EQ(0, block0->start_ip);
+   ASSERT_EQ(1, block0->end_ip);
+
+   lower_scoreboard(v);
+   ASSERT_EQ(0, block0->start_ip);
+   ASSERT_EQ(1, block0->end_ip);
+
+   EXPECT_EQ(instruction(block0, 0)->sched, tgl_swsb_sbid(TGL_SBID_SET, 0));
+   EXPECT_EQ(instruction(block0, 1)->sched, tgl_swsb_sbid(TGL_SBID_SRC, 0));
+}
+
+TEST_F(scoreboard_test, gfx120_can_embed_outoforder_dst_dependency_in_send_eot) {
+   brw_reg a = brw_ud8_grf(1, 0);
+   brw_reg b = brw_ud8_grf(2, 0);
+   brw_reg x = brw_ud8_grf(3, 0);
+   brw_reg desc = brw_ud8_grf(4, 0);
+
+   emit_SEND(bld, x, desc, a);
+   emit_SEND(bld, b, desc, x)->eot = true;
+
+   brw_calculate_cfg(*v);
+   bblock_t *block0 = v->cfg->blocks[0];
+   ASSERT_EQ(0, block0->start_ip);
+   ASSERT_EQ(1, block0->end_ip);
+
+   lower_scoreboard(v);
+   ASSERT_EQ(0, block0->start_ip);
+   ASSERT_EQ(1, block0->end_ip);
+
+   EXPECT_EQ(instruction(block0, 0)->sched, tgl_swsb_sbid(TGL_SBID_SET, 0));
+   EXPECT_EQ(instruction(block0, 1)->sched, tgl_swsb_sbid(TGL_SBID_DST, 0));
+}
+
+TEST_F(scoreboard_test, gfx200_cannot_embed_outoforder_src_dependency_in_send_eot) {
+   devinfo->ver = 20;
+   devinfo->verx10 = 200;
+   brw_init_isa_info(&compiler->isa, devinfo);
+
+   brw_reg a = brw_ud8_grf(1, 0);
+   brw_reg b = brw_ud8_grf(2, 0);
+   brw_reg x = brw_ud8_grf(3, 0);
+   brw_reg desc = brw_ud8_grf(4, 0);
+
+   emit_SEND(bld, a, desc, x);
+   emit_SEND(bld, b, desc, x)->eot = true;
+
+   brw_calculate_cfg(*v);
+   bblock_t *block0 = v->cfg->blocks[0];
+   ASSERT_EQ(0, block0->start_ip);
+   ASSERT_EQ(1, block0->end_ip);
+
+   lower_scoreboard(v);
+   ASSERT_EQ(0, block0->start_ip);
+   ASSERT_EQ(2, block0->end_ip);
+
+   EXPECT_EQ(instruction(block0, 0)->sched, tgl_swsb_sbid(TGL_SBID_SET, 0));
+
+   fs_inst *sync = instruction(block0, 1);
+   EXPECT_EQ(sync->opcode, BRW_OPCODE_SYNC);
+   EXPECT_EQ(sync->sched, tgl_swsb_sbid(TGL_SBID_SRC, 0));
+
+   EXPECT_EQ(instruction(block0, 2)->sched, tgl_swsb_null());
+}
+
+TEST_F(scoreboard_test, gfx200_cannot_embed_outoforder_dst_dependency_in_send_eot) {
+   devinfo->ver = 20;
+   devinfo->verx10 = 200;
+   brw_init_isa_info(&compiler->isa, devinfo);
+
+   brw_reg a = brw_ud8_grf(1, 0);
+   brw_reg b = brw_ud8_grf(2, 0);
+   brw_reg x = brw_ud8_grf(3, 0);
+   brw_reg desc = brw_ud8_grf(4, 0);
+
+   emit_SEND(bld, x, desc, a);
+   emit_SEND(bld, b, desc, x)->eot = true;
+
+   brw_calculate_cfg(*v);
+   bblock_t *block0 = v->cfg->blocks[0];
+   ASSERT_EQ(0, block0->start_ip);
+   ASSERT_EQ(1, block0->end_ip);
+
+   lower_scoreboard(v);
+   ASSERT_EQ(0, block0->start_ip);
+   ASSERT_EQ(2, block0->end_ip);
+
+   EXPECT_EQ(instruction(block0, 0)->sched, tgl_swsb_sbid(TGL_SBID_SET, 0));
+
+   fs_inst *sync = instruction(block0, 1);
+   EXPECT_EQ(sync->opcode, BRW_OPCODE_SYNC);
+   EXPECT_EQ(sync->sched, tgl_swsb_sbid(TGL_SBID_DST, 0));
+
+   EXPECT_EQ(instruction(block0, 2)->sched, tgl_swsb_null());
+}
+
