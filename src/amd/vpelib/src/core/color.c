@@ -43,8 +43,9 @@ static void color_check_output_cm_update(
     struct vpe_priv *vpe_priv, const struct vpe_color_space *vcs, bool geometric_update);
 
 static bool color_update_input_cs(struct vpe_priv *vpe_priv, enum color_space in_cs,
-    const struct vpe_color_adjust *adjustments, struct vpe_csc_matrix *input_cs,
-    struct vpe_color_adjust *stream_clr_adjustments, struct fixed31_32 *matrix_scaling_factor);
+    struct vpe_color_adjust *adjustments, struct vpe_csc_matrix *input_cs,
+    struct vpe_color_adjust *stream_clr_adjustments, struct fixed31_32 *matrix_scaling_factor,
+    const struct vpe_surface_info *surface_info);
 
 static bool is_ycbcr(enum color_space in_cs);
 
@@ -232,8 +233,9 @@ static enum color_space color_get_icsc_cs(enum color_space ics)
 
 // return true is bypass can be done
 static bool color_update_input_cs(struct vpe_priv *vpe_priv, enum color_space in_cs,
-    const struct vpe_color_adjust *adjustments, struct vpe_csc_matrix *input_cs,
-    struct vpe_color_adjust *stream_clr_adjustments, struct fixed31_32 *matrix_scaling_factor)
+    struct vpe_color_adjust *adjustments, struct vpe_csc_matrix *input_cs,
+    struct vpe_color_adjust *stream_clr_adjustments, struct fixed31_32 *matrix_scaling_factor,
+    const struct vpe_surface_info *surface_info)     /**< Color range. Full vs. Studio */
 {
     int  i, j;
     bool use_adjustments = false;
@@ -259,8 +261,9 @@ static bool color_update_input_cs(struct vpe_priv *vpe_priv, enum color_space in
     if (use_adjustments && is_ycbcr(in_cs)) { // shader supports only yuv input for color
                                               // adjustments
         vpe_log("Apply color adjustments (contrast, saturation, hue, brightness)");
+
         if (!vpe_color_calculate_input_cs(
-                vpe_priv, in_cs, adjustments, input_cs, matrix_scaling_factor))
+                vpe_priv, in_cs, adjustments, input_cs, matrix_scaling_factor, surface_info))
             return false;
         *stream_clr_adjustments = *adjustments;
     }
@@ -675,7 +678,8 @@ enum vpe_status vpe_color_update_color_space_and_tf(
             if (stream_ctx->dirty_bits.color_space) {
                 if (!color_update_input_cs(vpe_priv, stream_ctx->cs,
                     &stream_ctx->stream.color_adj, stream_ctx->input_cs,
-                    &stream_ctx->color_adjustments, &new_matrix_scaling_factor)) {
+                    &stream_ctx->color_adjustments, &new_matrix_scaling_factor,
+                    &stream_ctx->stream.surface_info)) {
                     vpe_log("err: input cs not being programmed!");
                 }
                 else {

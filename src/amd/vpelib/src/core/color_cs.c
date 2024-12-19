@@ -130,7 +130,7 @@ static int get_hw_value_from_sw_value(int swVal, int swMin, int swMax, int hwMin
 static void color_adjustments_to_fixed_point(const struct vpe_color_adjustments *vpe_adjust,
     bool               icsc, // input csc or output csc
     struct fixed31_32 *grph_cont, struct fixed31_32 *grph_sat, struct fixed31_32 *grph_bright,
-    struct fixed31_32 *sin_grph_hue, struct fixed31_32 *cos_grph_hue)
+    struct fixed31_32 *sin_grph_hue, struct fixed31_32 *cos_grph_hue, int32_t bright_norm_factor)
 {
     /* Hue adjustment could be negative. -45 ~ +45 */
     struct fixed31_32 hue;
@@ -142,7 +142,6 @@ static void color_adjustments_to_fixed_point(const struct vpe_color_adjustments 
     const int         hw_contrast_max = 200;
     const int         hw_bright_min   = -1000;
     const int         hw_bright_max   = 1000;
-    const int         hw_bright_cap   = 500;
     int               hw_val          = 0;
 
     if (icsc) {
@@ -155,15 +154,8 @@ static void color_adjustments_to_fixed_point(const struct vpe_color_adjustments 
 
         hw_val = get_hw_value_from_sw_value(vpe_adjust->brightness.current, vpe_adjust->brightness.min,
             vpe_adjust->brightness.max, hw_bright_min, hw_bright_max);
-        if (hw_val > hw_bright_cap) { // to avoid image saturation, cap the brigthness to 0.5
-            hw_val = hw_bright_cap;
-        }
 
-        if (hw_val < -hw_bright_cap) {
-            hw_val = -hw_bright_cap;
-        }
-
-        *grph_bright = vpe_fixpt_from_fraction(hw_val, 2550); //shader normalizes this value to the pixel range
+        *grph_bright = vpe_fixpt_from_fraction(hw_val, (long long) bright_norm_factor); //shader normalizes this value to the pixel range
 
         *grph_cont = vpe_fixpt_from_fraction(
             get_hw_value_from_sw_value(vpe_adjust->contrast.current, vpe_adjust->contrast.min,
@@ -233,9 +225,9 @@ static void calculate_rgb_matrix_legacy(
     struct fixed31_32 grph_bright;
     struct fixed31_32 sin_grph_hue;
     struct fixed31_32 cos_grph_hue;
-
+    const  int32_t    bright_norm_factor = 1;
     color_adjustments_to_fixed_point(
-        vpe_adjust, true, &grph_cont, &grph_sat, &grph_bright, &sin_grph_hue, &cos_grph_hue);
+        vpe_adjust, true, &grph_cont, &grph_sat, &grph_bright, &sin_grph_hue, &cos_grph_hue, bright_norm_factor);
 
     /* COEF_1_1 = GrphCont * (LumaR + GrphSat * (Cos(GrphHue) * K1 +*/
     /* Sin(GrphHue) * K2))*/
@@ -396,9 +388,9 @@ static void calculate_rgb_limited_range_matrix_legacy(
     struct fixed31_32 grph_bright;
     struct fixed31_32 sin_grph_hue;
     struct fixed31_32 cos_grph_hue;
-
+    const  int32_t    bright_norm_factor = 1;
     color_adjustments_to_fixed_point(
-        vpe_adjust, true, &grph_cont, &grph_sat, &grph_bright, &sin_grph_hue, &cos_grph_hue);
+        vpe_adjust, true, &grph_cont, &grph_sat, &grph_bright, &sin_grph_hue, &cos_grph_hue, bright_norm_factor);
 
     /* COEF_1_1 = GrphCont * (LumaR + GrphSat * (Cos(GrphHue) * K1 +*/
     /* Sin(GrphHue) * K2))*/
@@ -591,7 +583,8 @@ static bool vpe_scale_csc_matrix(struct fixed31_32 *matrix, unsigned int matrixL
 }
 
 static void calculate_yuv_matrix(struct vpe_color_adjustments *vpe_adjust,
-    enum color_space color_space, struct vpe_csc_matrix *input_cs, struct fixed31_32 *yuv_matrix)
+    enum color_space color_space, struct vpe_csc_matrix *input_cs, struct fixed31_32 *yuv_matrix,
+    int32_t bright_norm_factor)
 {
     struct fixed31_32 initialMatrix[12];
     uint32_t          i = 0;
@@ -624,7 +617,7 @@ static void calculate_yuv_matrix(struct vpe_color_adjustments *vpe_adjust,
     }
 
     color_adjustments_to_fixed_point(
-        vpe_adjust, ovl, &grph_cont, &grph_sat, &grph_bright, &sin_grph_hue, &cos_grph_hue);
+        vpe_adjust, ovl, &grph_cont, &grph_sat, &grph_bright, &sin_grph_hue, &cos_grph_hue, bright_norm_factor);
 
     multiplier  = vpe_fixpt_mul(grph_cont, grph_sat); // contSat
 
@@ -708,14 +701,36 @@ static void convert_float_matrix(uint16_t *matrix, struct fixed31_32 *flt, uint3
 
 bool vpe_color_calculate_input_cs(struct vpe_priv *vpe_priv, enum color_space in_cs,
     const struct vpe_color_adjust *vpe_blt_adjust, struct vpe_csc_matrix *input_cs,
-    struct fixed31_32 *matrix_scaling_factor)
+    struct fixed31_32 *matrix_scaling_factor, const struct vpe_surface_info *surface_info)
 {
     struct fixed31_32 fixed_csc_matrix[12];
 
-    struct vpe_color_adjustments vpe_adjust = {0};
+    struct vpe_color_adjustments vpe_adjust    = {0};
+    struct vpe_color_adjust      vpe_in_adjust = {0};
+    int32_t                      bright_norm_factor = 1;
+    const int32_t                bright_norm_factor_8bit  = 2550;  // 255*10 
+    const int32_t                bright_norm_factor_10bit = 10230; // 1023*10
+
+    if ( (surface_info == 0) || (vpe_blt_adjust == 0) || (input_cs == 0) || (matrix_scaling_factor == 0) ) {
+        vpe_log("Invalid input parameters");
+        return false;
+    }
+    vpe_in_adjust = *vpe_blt_adjust;
+    if ( (surface_info->cs.range == VPE_COLOR_RANGE_STUDIO)) { // brightness adjustment to match shader
+        if (vpe_is_8bit(surface_info->format)) {
+            vpe_in_adjust.brightness *= 1.16f; // 255/235 - scaling factor, applies only to the brightness
+            bright_norm_factor = bright_norm_factor_8bit;
+        }
+        else {
+            if (vpe_is_10bit(surface_info->format)) {
+                vpe_in_adjust.brightness *= 1.066f; // 1023/(1023 - 64) - scaling factor, applies only to the brightness
+                bright_norm_factor = bright_norm_factor_10bit;
+            }
+        }
+    }
 
     if (vpe_blt_adjust) {
-        translate_blt_to_internal_adjustments(vpe_blt_adjust, &vpe_adjust);
+        translate_blt_to_internal_adjustments(&vpe_in_adjust, &vpe_adjust);
     }
 
     switch (in_cs) {
@@ -732,7 +747,7 @@ bool vpe_color_calculate_input_cs(struct vpe_priv *vpe_priv, enum color_space in
     case COLOR_SPACE_YCBCR601_LIMITED:
     case COLOR_SPACE_YCBCR709_LIMITED:
     case COLOR_SPACE_2020_YCBCR:
-        calculate_yuv_matrix(&vpe_adjust, in_cs, input_cs, fixed_csc_matrix);
+        calculate_yuv_matrix(&vpe_adjust, in_cs, input_cs, fixed_csc_matrix, bright_norm_factor);
         if (vpe_priv->scale_yuv_matrix) { // in case the coefficitents are too large
             // they are scaled down to fit the n integer bits, m
             // fractional bits (for now 2.19)

@@ -46,7 +46,7 @@ struct vpe_color_adjustments {
 
 bool vpe_color_calculate_input_cs(struct vpe_priv *vpe_priv, enum color_space in_cs,
     const struct vpe_color_adjust *vpe_adjust, struct vpe_csc_matrix *input_cs,
-    struct fixed31_32 *matrix_scaling_factor);
+    struct fixed31_32 *matrix_scaling_factor, const struct vpe_surface_info *surface_info);
 
 bool vpe_color_different_color_adjusts(
     const struct vpe_color_adjust *new_vpe_adjusts, struct vpe_color_adjust *crt_vpe_adjusts);
