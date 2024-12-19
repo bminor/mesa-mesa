@@ -246,17 +246,6 @@ fail:
 }
 
 static void
-finish_meta_clear_htile_mask_state(struct radv_device *device)
-{
-   struct radv_meta_state *state = &device->meta_state;
-
-   radv_DestroyPipeline(radv_device_to_handle(device), state->clear_htile_mask_pipeline, &state->alloc);
-   radv_DestroyPipelineLayout(radv_device_to_handle(device), state->clear_htile_mask_p_layout, &state->alloc);
-   device->vk.dispatch_table.DestroyDescriptorSetLayout(radv_device_to_handle(device),
-                                                        state->clear_htile_mask_ds_layout, &state->alloc);
-}
-
-static void
 finish_meta_clear_dcc_comp_to_single_state(struct radv_device *device)
 {
    struct radv_meta_state *state = &device->meta_state;
@@ -302,7 +291,6 @@ radv_device_finish_meta_clear_state(struct radv_device *device)
    radv_DestroyPipelineLayout(radv_device_to_handle(device), state->clear_depth_p_layout, &state->alloc);
    radv_DestroyPipelineLayout(radv_device_to_handle(device), state->clear_depth_unrestricted_p_layout, &state->alloc);
 
-   finish_meta_clear_htile_mask_state(device);
    finish_meta_clear_dcc_comp_to_single_state(device);
 }
 
@@ -653,9 +641,9 @@ build_clear_htile_mask_shader(struct radv_device *dev)
 }
 
 static VkResult
-create_clear_htile_mask_pipeline(struct radv_device *device)
+get_clear_htile_mask_pipeline(struct radv_device *device, VkPipeline *pipeline_out, VkPipelineLayout *layout_out)
 {
-   struct radv_meta_state *state = &device->meta_state;
+   const char *key_data = "radv-clear-htile-mask";
    VkResult result;
 
    const VkDescriptorSetLayoutBinding binding = {
@@ -665,46 +653,50 @@ create_clear_htile_mask_pipeline(struct radv_device *device)
       .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
    };
 
-   result = radv_meta_create_descriptor_set_layout(device, 1, &binding, &state->clear_htile_mask_ds_layout);
-   if (result != VK_SUCCESS)
-      return result;
+   const VkDescriptorSetLayoutCreateInfo desc_info = {
+      .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+      .flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT,
+      .bindingCount = 1,
+      .pBindings = &binding,
+   };
 
    const VkPushConstantRange pc_range = {
       .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
       .size = 8,
    };
 
-   result = radv_meta_create_pipeline_layout(device, &state->clear_htile_mask_ds_layout, 1, &pc_range,
-                                             &state->clear_htile_mask_p_layout);
+   result = vk_meta_get_pipeline_layout(&device->vk, &device->meta_state.device, &desc_info, &pc_range, key_data,
+                                        strlen(key_data), layout_out);
    if (result != VK_SUCCESS)
       return result;
 
-   nir_shader *cs = build_clear_htile_mask_shader(device);
-
-   result = radv_meta_create_compute_pipeline(device, cs, state->clear_htile_mask_p_layout,
-                                              &state->clear_htile_mask_pipeline);
-
-   ralloc_free(cs);
-   return result;
-}
-
-static VkResult
-get_clear_htile_mask_pipeline(struct radv_device *device, VkPipeline *pipeline_out)
-{
-   struct radv_meta_state *state = &device->meta_state;
-   VkResult result = VK_SUCCESS;
-
-   mtx_lock(&state->mtx);
-   if (!state->clear_htile_mask_pipeline) {
-      result = create_clear_htile_mask_pipeline(device);
-      if (result != VK_SUCCESS)
-         goto fail;
+   VkPipeline pipeline_from_cache = vk_meta_lookup_pipeline(&device->meta_state.device, key_data, strlen(key_data));
+   if (pipeline_from_cache != VK_NULL_HANDLE) {
+      *pipeline_out = pipeline_from_cache;
+      return VK_SUCCESS;
    }
 
-   *pipeline_out = state->clear_htile_mask_pipeline;
+   nir_shader *cs = build_clear_htile_mask_shader(device);
 
-fail:
-   mtx_unlock(&state->mtx);
+   const VkPipelineShaderStageCreateInfo stage_info = {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+      .stage = VK_SHADER_STAGE_COMPUTE_BIT,
+      .module = vk_shader_module_handle_from_nir(cs),
+      .pName = "main",
+      .pSpecializationInfo = NULL,
+   };
+
+   const VkComputePipelineCreateInfo pipeline_info = {
+      .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
+      .stage = stage_info,
+      .flags = 0,
+      .layout = *layout_out,
+   };
+
+   result = vk_meta_create_compute_pipeline(&device->vk, &device->meta_state.device, &pipeline_info, key_data,
+                                            strlen(key_data), pipeline_out);
+
+   ralloc_free(cs);
    return result;
 }
 
@@ -713,14 +705,14 @@ clear_htile_mask(struct radv_cmd_buffer *cmd_buffer, const struct radv_image *im
                  uint64_t offset, uint64_t size, uint32_t htile_value, uint32_t htile_mask)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   struct radv_meta_state *state = &device->meta_state;
    uint64_t block_count = DIV_ROUND_UP(size, 1024);
    struct radv_meta_saved_state saved_state;
    struct radv_buffer dst_buffer;
+   VkPipelineLayout layout;
    VkPipeline pipeline;
    VkResult result;
 
-   result = get_clear_htile_mask_pipeline(device, &pipeline);
+   result = get_clear_htile_mask_pipeline(device, &pipeline, &layout);
    if (result != VK_SUCCESS) {
       vk_command_buffer_set_error(&cmd_buffer->vk, result);
       return 0;
@@ -734,7 +726,7 @@ clear_htile_mask(struct radv_cmd_buffer *cmd_buffer, const struct radv_image *im
    radv_CmdBindPipeline(radv_cmd_buffer_to_handle(cmd_buffer), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 
    radv_meta_push_descriptor_set(
-      cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, state->clear_htile_mask_p_layout, 0, 1,
+      cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, layout, 0, 1,
       (VkWriteDescriptorSet[]){
          {.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
           .dstBinding = 0,
@@ -749,8 +741,8 @@ clear_htile_mask(struct radv_cmd_buffer *cmd_buffer, const struct radv_image *im
       ~htile_mask,
    };
 
-   vk_common_CmdPushConstants(radv_cmd_buffer_to_handle(cmd_buffer), state->clear_htile_mask_p_layout,
-                              VK_SHADER_STAGE_COMPUTE_BIT, 0, 8, constants);
+   vk_common_CmdPushConstants(radv_cmd_buffer_to_handle(cmd_buffer), layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, 8,
+                              constants);
 
    vk_common_CmdDispatch(radv_cmd_buffer_to_handle(cmd_buffer), block_count, 1, 1);
 
@@ -1053,10 +1045,6 @@ radv_device_init_meta_clear_state(struct radv_device *device, bool on_demand)
       return VK_SUCCESS;
 
    res = init_meta_clear_dcc_comp_to_single_state(device);
-   if (res != VK_SUCCESS)
-      return res;
-
-   res = create_clear_htile_mask_pipeline(device);
    if (res != VK_SUCCESS)
       return res;
 

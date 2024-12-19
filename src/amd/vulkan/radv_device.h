@@ -110,11 +110,6 @@ struct radv_meta_state {
    VkPipelineLayout clear_depth_p_layout;
    VkPipelineLayout clear_depth_unrestricted_p_layout;
 
-   /* Optimized compute fast HTILE clear for stencil or depth only. */
-   VkPipeline clear_htile_mask_pipeline;
-   VkPipelineLayout clear_htile_mask_p_layout;
-   VkDescriptorSetLayout clear_htile_mask_ds_layout;
-
    /* Clear DCC with comp-to-single. */
    VkPipeline clear_dcc_comp_to_single_pipeline[2]; /* 0: 1x, 1: 2x/4x/8x */
    VkPipelineLayout clear_dcc_comp_to_single_p_layout;
