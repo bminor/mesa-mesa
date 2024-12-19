@@ -2635,6 +2635,25 @@ panfrost_emit_varying_descriptor(struct panfrost_batch *batch,
 }
 #endif
 
+static struct pan_tls_info
+get_tls_info(struct panfrost_device *dev, struct panfrost_batch *batch)
+{
+   struct panfrost_bo *tls_bo =
+      batch->stack_size ? panfrost_batch_get_scratchpad(
+                             batch, batch->stack_size, dev->thread_tls_alloc,
+                             dev->core_id_range)
+                        : NULL;
+
+   return (struct pan_tls_info) {
+      .tls =
+         {
+            .ptr = tls_bo ? tls_bo->ptr.gpu : 0,
+            .size = batch->stack_size,
+         },
+   };
+}
+
+
 static void
 emit_tls(struct panfrost_batch *batch)
 {
@@ -2644,18 +2663,7 @@ emit_tls(struct panfrost_batch *batch)
    if (PAN_ARCH <= 5 && batch->framebuffer.gpu)
       return;
 
-   struct panfrost_bo *tls_bo =
-      batch->stack_size ? panfrost_batch_get_scratchpad(
-                             batch, batch->stack_size, dev->thread_tls_alloc,
-                             dev->core_id_range)
-                        : NULL;
-   struct pan_tls_info tls = {
-      .tls =
-         {
-            .ptr = tls_bo ? tls_bo->ptr.gpu : 0,
-            .size = batch->stack_size,
-         },
-   };
+   struct pan_tls_info tls = get_tls_info(dev, batch);
 
    assert(batch->tls.cpu);
    GENX(pan_emit_tls)(&tls, batch->tls.cpu);
@@ -2665,18 +2673,8 @@ static void
 emit_fbd(struct panfrost_batch *batch, struct pan_fb_info *fb)
 {
    struct panfrost_device *dev = pan_device(batch->ctx->base.screen);
-   struct panfrost_bo *tls_bo =
-      batch->stack_size ? panfrost_batch_get_scratchpad(
-                             batch, batch->stack_size, dev->thread_tls_alloc,
-                             dev->core_id_range)
-                        : NULL;
-   struct pan_tls_info tls = {
-      .tls =
-         {
-            .ptr = tls_bo ? tls_bo->ptr.gpu : 0,
-            .size = batch->stack_size,
-         },
-   };
+
+   struct pan_tls_info tls = get_tls_info(dev, batch);
 
 #if PAN_ARCH >= 6
    fb->sample_positions =
