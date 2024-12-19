@@ -1574,6 +1574,9 @@ panfrost_emit_shared_memory(struct panfrost_batch *batch,
 
       struct panfrost_bo *bo = panfrost_batch_get_shared_memory(batch, size, 1);
 
+      if (!bo)
+         return 0;
+
       info.wls.ptr = bo->ptr.gpu;
    }
 
@@ -4001,6 +4004,12 @@ batch_get_polygon_list(struct panfrost_batch *batch)
       batch->polygon_list_bo = panfrost_batch_create_bo(
          batch, size, init_polygon_list ? 0 : PAN_BO_INVISIBLE,
          PIPE_SHADER_VERTEX, "Polygon list");
+
+      if (!batch->polygon_list_bo) {
+         mesa_loge("failed to allocate memory for polygon-list");
+         return 0;
+      }
+
       batch->tiler_ctx.midgard.polygon_list = batch->polygon_list_bo->ptr.gpu;
       panfrost_batch_add_bo(batch, batch->polygon_list_bo,
                             PIPE_SHADER_FRAGMENT);
@@ -4035,8 +4044,9 @@ init_polygon_list(struct panfrost_batch *batch)
 {
 #if PAN_ARCH <= 5
    uint64_t polygon_list = batch_get_polygon_list(batch);
-   pan_jc_initialize_tiler(&batch->pool.base, &batch->jm.jobs.vtc_jc,
-                           polygon_list);
+   if (polygon_list)
+      pan_jc_initialize_tiler(&batch->pool.base, &batch->jm.jobs.vtc_jc,
+                              polygon_list);
 #endif
 }
 
