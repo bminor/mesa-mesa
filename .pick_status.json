@@ -694,7 +694,7 @@
         "description": "ir3,freedreno: remove binning outputs after vs ucp lowering",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "24b422dc3ec47b0a98a876acffeca258729a83e8",
         "notes": null
