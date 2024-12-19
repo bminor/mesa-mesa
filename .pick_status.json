@@ -2044,7 +2044,7 @@
         "description": "intel/decoder: Avoid duplicate symbols when expat is not available",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0669210ef4274bb68aaa92402ed633290edd60d7",
         "notes": null
