@@ -2144,14 +2144,9 @@ ngg_build_streamout_buffer_info(nir_builder *b,
             nir_def *offset[4] = {undef, undef, undef, undef};
 
             for (unsigned buffer = 0; buffer < 4; buffer++) {
-               if (info->buffers_written & BITFIELD_BIT(buffer)) {
-                  if (!buffer) {
-                     offset[buffer] = buffer_offset_per_lane;
-                  } else {
-                     offset[buffer] = nir_quad_swizzle_amd(b, buffer_offset_per_lane,
-                                                           .swizzle_mask = BITFIELD_BIT(buffer));
-                  }
-               }
+               if (info->buffers_written & BITFIELD_BIT(buffer))
+                  offset[buffer] = nir_read_invocation(b, buffer_offset_per_lane,
+                                                       nir_imm_int(b, buffer));
             }
             buffer_offsets = nir_vec(b, offset, 4);
          }
