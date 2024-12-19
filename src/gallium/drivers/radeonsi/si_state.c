@@ -2171,6 +2171,10 @@ static bool si_is_sampler_format_supported(struct pipe_screen *screen, enum pipe
         desc->channel[first_non_void].type == UTIL_FORMAT_TYPE_FIXED))
       return false;
 
+   /* Luminace-alpha formats fail tests on Tahiti. */
+   if (sscreen->info.gfx_level == GFX6 && util_format_is_luminance_alpha(format))
+      return false;
+
    /* This format fails on Gfx8/Carrizo´. */
    if (sscreen->info.family == CHIP_CARRIZO && format == PIPE_FORMAT_A8R8_UNORM)
       return false;
