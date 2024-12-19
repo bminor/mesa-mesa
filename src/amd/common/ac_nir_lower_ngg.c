@@ -1969,6 +1969,18 @@ write_values_to_lanes(nir_builder *b, nir_def **values, unsigned lane_mask)
    return lanes;
 }
 
+static nir_def *
+read_values_from_4_lanes(nir_builder *b, nir_def *values, unsigned lane_mask)
+{
+   nir_def *undef = nir_undef(b, 1, 32);
+   nir_def *per_lane[4] = {undef, undef, undef, undef};
+
+   u_foreach_bit(i, lane_mask) {
+      per_lane[i] = nir_read_invocation(b, values, nir_imm_int(b, i));
+   }
+   return nir_vec(b, per_lane, 4);
+}
+
 static void
 ngg_build_streamout_buffer_info(nir_builder *b,
                                 nir_xfb_info *info,
@@ -2082,6 +2094,9 @@ ngg_build_streamout_buffer_info(nir_builder *b,
                buffer_offset_per_lane =
                   nir_ordered_add_loop_gfx12_amd(b, xfb_state_address, xfb_voffset, ordered_id,
                                                  atomic_src);
+
+               /* Move the buffer offsets from the 4 lanes to lane 0. */
+               buffer_offsets = read_values_from_4_lanes(b, buffer_offset_per_lane, info->buffers_written);
             } else {
                /* The NIR version of the above using nir_atomic_op_ordered_add_gfx12_amd. */
                enum { NUM_ATOMICS_IN_FLIGHT = 6 };
@@ -2100,8 +2115,8 @@ ngg_build_streamout_buffer_info(nir_builder *b,
                   ac_nir_sleep(b, 24);
                }
 
-               nir_variable *buffer_offset_per_lane_var =
-                  nir_local_variable_create(b->impl, glsl_uint_type(), "buffer_offset_per_lane");
+               nir_variable *buffer_offsets_var =
+                  nir_local_variable_create(b->impl, glsl_vec4_type(), "buffer_offset_per_lane");
 
                nir_loop *loop = nir_push_loop(b);
                {
@@ -2117,11 +2132,10 @@ ngg_build_streamout_buffer_info(nir_builder *b,
                      /* Break if the oldest atomic succeeded in incrementing the offsets. */
                      nir_def *oldest_result = nir_load_var(b, result_ring[read_index]);
                      nir_def *loaded_ordered_id = nir_unpack_64_2x32_split_x(b, oldest_result);
-                     nir_def *loaded_dwords_written = nir_unpack_64_2x32_split_y(b, oldest_result);
-                     nir_store_var(b, buffer_offset_per_lane_var, loaded_dwords_written, 0x1);
 
                      /* Debug: Write the vec4 into a shader log ring buffer. */
 #if 0
+                     nir_def *loaded_dwords_written = nir_unpack_64_2x32_split_y(b, oldest_result);
                      ac_nir_store_debug_log_amd(b, nir_vec4(b, nir_u2u32(b, xfb_state_address),
                                                             ordered_id, loaded_ordered_id,
                                                             loaded_dwords_written));
@@ -2134,24 +2148,21 @@ ngg_build_streamout_buffer_info(nir_builder *b,
                   nir_jump(b, nir_jump_continue);
 
                   for (unsigned i = 0; i < NUM_ATOMICS_IN_FLIGHT; i++) {
+                     int read_index = NUM_ATOMICS_IN_FLIGHT - 1 - i;
+                     nir_push_else(b, NULL);
+                     {
+                        nir_def *result = nir_load_var(b, result_ring[read_index]);
+                        buffer_offset_per_lane = nir_unpack_64_2x32_split_y(b, result);
+                        buffer_offsets = read_values_from_4_lanes(b, buffer_offset_per_lane, info->buffers_written);
+                        nir_store_var(b, buffer_offsets_var, buffer_offsets, info->buffers_written);
+                     }
                      nir_pop_if(b, NULL);
                   }
                   nir_jump(b, nir_jump_break);
                }
                nir_pop_loop(b, loop);
-
-               buffer_offset_per_lane = nir_load_var(b, buffer_offset_per_lane_var);
+               buffer_offsets = nir_load_var(b, buffer_offsets_var);
             }
-
-            /* Move the buffer offsets from the 4 lanes to lane 0. */
-            nir_def *offset[4] = {undef, undef, undef, undef};
-
-            for (unsigned buffer = 0; buffer < 4; buffer++) {
-               if (info->buffers_written & BITFIELD_BIT(buffer))
-                  offset[buffer] = nir_read_invocation(b, buffer_offset_per_lane,
-                                                       nir_imm_int(b, buffer));
-            }
-            buffer_offsets = nir_vec(b, offset, 4);
          }
          nir_pop_if(b, if_4lanes);
          buffer_offsets = nir_if_phi(b, buffer_offsets, nir_undef(b, 4, 32));
