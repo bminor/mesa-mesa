@@ -317,7 +317,6 @@ void si_set_tracked_regs_to_clear_state(struct si_context *ctx)
    ctx->tracked_regs.reg_value[SI_TRACKED_SPI_PS_INPUT_ENA] = 0;
    ctx->tracked_regs.reg_value[SI_TRACKED_SPI_PS_INPUT_ADDR] = 0;
 
-   ctx->tracked_regs.reg_value[SI_TRACKED_DB_RENDER_OVERRIDE] = 0;
    ctx->tracked_regs.reg_value[SI_TRACKED_DB_EQAA] = 0;
    ctx->tracked_regs.reg_value[SI_TRACKED_DB_RENDER_OVERRIDE2] = 0;
    ctx->tracked_regs.reg_value[SI_TRACKED_DB_SHADER_CONTROL] = 0;
@@ -368,7 +367,11 @@ void si_set_tracked_regs_to_clear_state(struct si_context *ctx)
    ctx->tracked_regs.reg_value[SI_TRACKED_VGT_GS_VERT_ITEMSIZE_2] = 0;
    ctx->tracked_regs.reg_value[SI_TRACKED_VGT_GS_VERT_ITEMSIZE_3] = 0;
 
-   ctx->tracked_regs.reg_value[SI_TRACKED_SPI_VS_OUT_CONFIG] = 0;
+   if (ctx->gfx_level >= GFX12)
+      ctx->tracked_regs.reg_value[SI_TRACKED_DB_RENDER_OVERRIDE] = 0;
+   else
+      ctx->tracked_regs.reg_value[SI_TRACKED_SPI_VS_OUT_CONFIG] = 0;
+
    ctx->tracked_regs.reg_value[SI_TRACKED_VGT_PRIMITIVEID_EN] = 0;
    ctx->tracked_regs.reg_value[SI_TRACKED_CB_DCC_CONTROL] = 0;
 
