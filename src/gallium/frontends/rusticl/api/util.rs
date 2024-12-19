@@ -51,7 +51,7 @@ pub struct CLInfoValue<'a> {
     param_value_size_ret: Option<&'a mut MaybeUninit<usize>>,
 }
 
-impl<'a> CLInfoValue<'a> {
+impl CLInfoValue<'_> {
     /// # Safety
     /// `param_value` and `param_value_size_ret` need to be valid memory allocations or null.
     /// If `param_value` is not null it needs to point to an allocation of at least

@@ -45,7 +45,7 @@ pub struct CLCHeader<'a> {
     pub source: &'a CString,
 }
 
-impl<'a> Debug for CLCHeader<'a> {
+impl Debug for CLCHeader<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let name = self.name.to_string_lossy();
         let source = self.source.to_string_lossy();

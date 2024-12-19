@@ -117,7 +117,7 @@ pub struct HelperContext<'a> {
     lock: MutexGuard<'a, PipeContext>,
 }
 
-impl<'a> HelperContext<'a> {
+impl HelperContext<'_> {
     pub fn resource_copy_region(
         &self,
         src: &PipeResource,
@@ -151,7 +151,7 @@ impl<'a> HelperContext<'a> {
     }
 }
 
-impl<'a> HelperContextWrapper for HelperContext<'a> {
+impl HelperContextWrapper for HelperContext<'_> {
     fn exec<F>(&self, func: F) -> PipeFence
     where
         F: Fn(&HelperContext),

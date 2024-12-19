@@ -117,7 +117,7 @@ pub struct DiskCacheEntry<'a> {
     data: &'a mut [u8],
 }
 
-impl<'a> Deref for DiskCacheEntry<'a> {
+impl Deref for DiskCacheEntry<'_> {
     type Target = [u8];
 
     fn deref(&self) -> &Self::Target {
@@ -125,7 +125,7 @@ impl<'a> Deref for DiskCacheEntry<'a> {
     }
 }
 
-impl<'a> Drop for DiskCacheEntry<'a> {
+impl Drop for DiskCacheEntry<'_> {
     fn drop(&mut self) {
         unsafe {
             free(self.data.as_mut_ptr().cast());

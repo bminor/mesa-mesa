@@ -16,7 +16,7 @@ pub struct PipeTransfer<'a> {
 // SAFETY: Transfers are safe to send between threads
 unsafe impl Send for PipeTransfer<'_> {}
 
-impl<'a> Drop for PipeTransfer<'a> {
+impl Drop for PipeTransfer<'_> {
     fn drop(&mut self) {
         if self.is_buffer {
             self.ctx.buffer_unmap(self.pipe);
