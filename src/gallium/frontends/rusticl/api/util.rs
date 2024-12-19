@@ -96,7 +96,7 @@ impl CLInfoValue<'_> {
     ///
     /// Type specific details:
     ///  - Compatible with C arrays are `T` (if only one element is to be returned), `Vec<T>` or `&[T]`
-    /// types.
+    ///    types.
     ///  - Compatible with C strings are all basic Rust string types.
     ///  - `bool`s are automatically converted to `cl_bool`.
     ///  - For queries which can return no data, `Option<T>` can be used.
@@ -205,6 +205,7 @@ impl CLInfoValue<'_> {
 ///  1. To ask the implementation of how much data will be returned. The application uses this
 ///     to allocate enough memory to be passed into the next call.
 ///  2. To actually execute the query.
+///
 /// This trait abstracts this pattern properly away to make it easier to implement it.
 ///
 /// [CLInfoValue] contains helper functions to read and write data behind opaque buffers, the
