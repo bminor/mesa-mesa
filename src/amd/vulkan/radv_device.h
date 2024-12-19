@@ -248,10 +248,6 @@ struct radv_meta_state {
       VkPipeline decompress_pipeline[MAX_SAMPLES_LOG2];
    } depth_decomp;
 
-   VkDescriptorSetLayout expand_depth_stencil_compute_ds_layout;
-   VkPipelineLayout expand_depth_stencil_compute_p_layout;
-   VkPipeline expand_depth_stencil_compute_pipeline;
-
    struct {
       VkPipelineLayout p_layout;
       VkPipeline cmask_eliminate_pipeline;

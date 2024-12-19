@@ -51,46 +51,6 @@ build_expand_depth_stencil_compute_shader(struct radv_device *dev)
 }
 
 static VkResult
-create_pipeline_cs(struct radv_device *device, VkPipeline *pipeline)
-{
-   VkResult result = VK_SUCCESS;
-
-   const VkDescriptorSetLayoutBinding bindings[] = {
-      {
-         .binding = 0,
-         .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-         .descriptorCount = 1,
-         .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-      },
-      {
-         .binding = 1,
-         .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-         .descriptorCount = 1,
-         .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-      },
-
-   };
-
-   result = radv_meta_create_descriptor_set_layout(device, 2, bindings,
-                                                   &device->meta_state.expand_depth_stencil_compute_ds_layout);
-   if (result != VK_SUCCESS)
-       return result;
-
-   result = radv_meta_create_pipeline_layout(device, &device->meta_state.expand_depth_stencil_compute_ds_layout, 0,
-                                             NULL, &device->meta_state.expand_depth_stencil_compute_p_layout);
-   if (result != VK_SUCCESS)
-       return result;
-
-   nir_shader *cs = build_expand_depth_stencil_compute_shader(device);
-
-   result =
-      radv_meta_create_compute_pipeline(device, cs, device->meta_state.expand_depth_stencil_compute_p_layout, pipeline);
-
-   ralloc_free(cs);
-   return result;
-}
-
-static VkResult
 create_pipeline_gfx(struct radv_device *device, uint32_t samples, VkPipelineLayout layout, VkPipeline *pipeline)
 {
    VkResult result;
@@ -227,12 +187,6 @@ radv_device_finish_meta_depth_decomp_state(struct radv_device *device)
    for (uint32_t i = 0; i < ARRAY_SIZE(state->depth_decomp.decompress_pipeline); ++i) {
       radv_DestroyPipeline(radv_device_to_handle(device), state->depth_decomp.decompress_pipeline[i], &state->alloc);
    }
-
-   radv_DestroyPipeline(radv_device_to_handle(device), state->expand_depth_stencil_compute_pipeline, &state->alloc);
-   radv_DestroyPipelineLayout(radv_device_to_handle(device), state->expand_depth_stencil_compute_p_layout,
-                              &state->alloc);
-   device->vk.dispatch_table.DestroyDescriptorSetLayout(radv_device_to_handle(device),
-                                                        state->expand_depth_stencil_compute_ds_layout, &state->alloc);
 }
 
 VkResult
@@ -253,7 +207,7 @@ radv_device_init_meta_depth_decomp_state(struct radv_device *device, bool on_dem
          return res;
    }
 
-   return create_pipeline_cs(device, &state->expand_depth_stencil_compute_pipeline);
+   return res;
 }
 
 static VkResult
@@ -405,22 +359,66 @@ radv_process_depth_stencil(struct radv_cmd_buffer *cmd_buffer, struct radv_image
 }
 
 static VkResult
-get_pipeline_cs(struct radv_device *device, VkPipeline *pipeline_out)
+get_pipeline_cs(struct radv_device *device, VkPipeline *pipeline_out, VkPipelineLayout *layout_out)
 {
-   struct radv_meta_state *state = &device->meta_state;
-   VkResult result = VK_SUCCESS;
+   const char *key_data = "radv-htile-expand-cs";
+   VkResult result;
 
-   mtx_lock(&state->mtx);
-   if (!state->expand_depth_stencil_compute_pipeline) {
-      result = create_pipeline_cs(device, &state->expand_depth_stencil_compute_pipeline);
-      if (result != VK_SUCCESS)
-         goto fail;
+   const VkDescriptorSetLayoutBinding bindings[] = {
+      {
+         .binding = 0,
+         .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+         .descriptorCount = 1,
+         .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+      },
+      {
+         .binding = 1,
+         .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+         .descriptorCount = 1,
+         .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+      },
+
+   };
+
+   const VkDescriptorSetLayoutCreateInfo desc_info = {
+      .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+      .flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT,
+      .bindingCount = 2,
+      .pBindings = bindings,
+   };
+
+   result = vk_meta_get_pipeline_layout(&device->vk, &device->meta_state.device, &desc_info, NULL, key_data,
+                                        strlen(key_data), layout_out);
+   if (result != VK_SUCCESS)
+      return result;
+
+   VkPipeline pipeline_from_cache = vk_meta_lookup_pipeline(&device->meta_state.device, key_data, strlen(key_data));
+   if (pipeline_from_cache != VK_NULL_HANDLE) {
+      *pipeline_out = pipeline_from_cache;
+      return VK_SUCCESS;
    }
 
-   *pipeline_out = state->expand_depth_stencil_compute_pipeline;
+   nir_shader *cs = build_expand_depth_stencil_compute_shader(device);
 
-fail:
-   mtx_unlock(&state->mtx);
+   const VkPipelineShaderStageCreateInfo stage_info = {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+      .stage = VK_SHADER_STAGE_COMPUTE_BIT,
+      .module = vk_shader_module_handle_from_nir(cs),
+      .pName = "main",
+      .pSpecializationInfo = NULL,
+   };
+
+   const VkComputePipelineCreateInfo pipeline_info = {
+      .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
+      .stage = stage_info,
+      .flags = 0,
+      .layout = *layout_out,
+   };
+
+   result = vk_meta_create_compute_pipeline(&device->vk, &device->meta_state.device, &pipeline_info, key_data,
+                                            strlen(key_data), pipeline_out);
+
+   ralloc_free(cs);
    return result;
 }
 
@@ -432,12 +430,13 @@ radv_expand_depth_stencil_compute(struct radv_cmd_buffer *cmd_buffer, struct rad
    struct radv_meta_saved_state saved_state;
    struct radv_image_view load_iview = {0};
    struct radv_image_view store_iview = {0};
+   VkPipelineLayout layout;
    VkPipeline pipeline;
    VkResult result;
 
    assert(radv_image_is_tc_compat_htile(image));
 
-   result = get_pipeline_cs(device, &pipeline);
+   result = get_pipeline_cs(device, &pipeline, &layout);
    if (result != VK_SUCCESS) {
       vk_command_buffer_set_error(&cmd_buffer->vk, result);
       return;
@@ -486,7 +485,7 @@ radv_expand_depth_stencil_compute(struct radv_cmd_buffer *cmd_buffer, struct rad
                               &(struct radv_image_view_extra_create_info){.disable_compression = true});
 
          radv_meta_push_descriptor_set(
-            cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, device->meta_state.expand_depth_stencil_compute_p_layout, 0, 2,
+            cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, layout, 0, 2,
             (VkWriteDescriptorSet[]){{.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                                       .dstBinding = 0,
                                       .dstArrayElement = 0,
