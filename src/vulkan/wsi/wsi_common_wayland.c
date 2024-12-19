@@ -237,6 +237,7 @@ struct wsi_wl_swapchain {
       uint64_t max_forward_progress_present_id;
       uint64_t max_present_id;
       uint64_t prev_max_present_id;
+      uint64_t outstanding_count;
 
       struct wl_list outstanding_list;
       struct u_cnd_monotonic list_advanced;
@@ -2545,7 +2546,7 @@ wsi_wl_swapchain_wait_for_present(struct wsi_swapchain *wsi_chain,
        * Add a timeout post GPU rendering completion to unblock any waiter in reasonable time. */
       if (!wsi_wl_swapchain_present_id_completes_in_finite_time_locked(chain, present_id)) {
          /* The queue depth could be larger, so just make a heuristic decision here to bump the timeout. */
-         uint32_t num_pending_cycles = wl_list_length(&chain->present_ids.outstanding_list) + 1;
+         uint32_t num_pending_cycles = chain->present_ids.outstanding_count + 1;
          assumed_success_at = os_time_get_absolute_timeout(100ull * 1000 * 1000 * num_pending_cycles);
       }
       mtx_unlock(&chain->present_ids.lock);
@@ -2732,6 +2733,7 @@ static void
 wsi_wl_presentation_update_present_id(struct wsi_wl_present_id *id)
 {
    mtx_lock(&id->chain->present_ids.lock);
+   id->chain->present_ids.outstanding_count--;
    if (id->present_id > id->chain->present_ids.max_completed)
       id->chain->present_ids.max_completed = id->present_id;
 
@@ -3079,6 +3081,7 @@ wsi_wl_swapchain_queue_present(struct wsi_swapchain *wsi_chain,
          chain->present_ids.max_forward_progress_present_id = chain->present_ids.prev_max_present_id;
       }
 
+      chain->present_ids.outstanding_count++;
       wl_list_insert(&chain->present_ids.outstanding_list, &id->link);
       mtx_unlock(&chain->present_ids.lock);
    }
