@@ -2340,7 +2340,7 @@ lower_to_hw_instr(Program* program)
                   handle_operands(copy_operations, &ctx, program->gfx_level, pi);
                break;
             }
-            case aco_opcode::p_exit_early_if: {
+            case aco_opcode::p_exit_early_if_not: {
                /* don't bother with an early exit near the end of the program */
                if ((block->instructions.size() - 1 - instr_idx) <= 5 &&
                    block->instructions.back()->opcode == aco_opcode::s_endpgm) {
@@ -2910,7 +2910,7 @@ lower_to_hw_instr(Program* program)
       block->instructions = std::move(ctx.instructions);
    }
 
-   /* If block with p_end_with_regs is not the last block (i.e. p_exit_early_if may append exit
+   /* If block with p_end_with_regs is not the last block (i.e. p_exit_early_if_not may append exit
     * block at last), create an exit block for it to branch to.
     */
    int last_block_index = program->blocks.size() - 1;

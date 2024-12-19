@@ -390,7 +390,7 @@ insn("p_end_wqm")
 insn("p_discard_if")
 insn("p_demote_to_helper")
 insn("p_is_helper")
-insn("p_exit_early_if")
+insn("p_exit_early_if_not")
 
 # simulates proper bpermute behavior using v_readlane_b32
 # definitions: result VGPR, temp EXEC, clobbered VCC

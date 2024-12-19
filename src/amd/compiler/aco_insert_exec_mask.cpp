@@ -69,7 +69,7 @@ needs_exact(aco_ptr<Instruction>& instr)
    } else if (instr->isFlatLike()) {
       return instr->flatlike().disable_wqm;
    } else {
-      /* Require Exact for p_jump_to_epilog because if p_exit_early_if is
+      /* Require Exact for p_jump_to_epilog because if p_exit_early_if_not is
        * emitted inside the same block, the main FS will always jump to the PS
        * epilog without considering the exec mask.
        */
@@ -467,7 +467,7 @@ process_instructions(exec_ctx& ctx, Block* block, std::vector<aco_ptr<Instructio
             exit_cond = andn2->definitions[1].getTemp();
          }
 
-         instr->opcode = aco_opcode::p_exit_early_if;
+         instr->opcode = aco_opcode::p_exit_early_if_not;
          instr->operands[0] = bld.scc(exit_cond);
          assert(!ctx.handle_wqm || (info.exec[0].type & mask_type_wqm) == 0);
 
@@ -524,7 +524,7 @@ process_instructions(exec_ctx& ctx, Block* block, std::vector<aco_ptr<Instructio
          }
 
          /* End shader if global mask is zero. */
-         instr->opcode = aco_opcode::p_exit_early_if;
+         instr->opcode = aco_opcode::p_exit_early_if_not;
          instr->operands[0] = bld.scc(exit_cond.getTemp());
          bld.insert(std::move(instr));
 
