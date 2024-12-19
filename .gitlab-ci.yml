@@ -68,6 +68,9 @@ variables:
           rm download-git-cache.sh
           set +o xtrace
   S3_JWT_FILE: /s3_jwt
+  S3_JWT_FILE_SCRIPT: |-
+      echo -n '${S3_JWT}' > '${S3_JWT_FILE}' &&
+      unset CI_JOB_JWT S3_JWT  # Unsetting vulnerable env variables
   S3_HOST: s3.freedesktop.org
   # This bucket is used to fetch the kernel image
   S3_KERNEL_BUCKET: mesa-rootfs
@@ -112,9 +115,8 @@ default:
     - >
       export SCRIPTS_DIR=$(mktemp -d) &&
       curl -L -s --retry 4 -f --retry-all-errors --retry-delay 60 -O --output-dir "${SCRIPTS_DIR}" "${CI_PROJECT_URL}/-/raw/${CI_COMMIT_SHA}/.gitlab-ci/setup-test-env.sh" &&
-      . ${SCRIPTS_DIR}/setup-test-env.sh &&
-      echo -n "${S3_JWT}" > "${S3_JWT_FILE}" &&
-      unset CI_JOB_JWT S3_JWT  # Unsetting vulnerable env variables
+      . ${SCRIPTS_DIR}/setup-test-env.sh
+    - eval "$S3_JWT_FILE_SCRIPT"
 
   after_script:
     # Work around https://gitlab.com/gitlab-org/gitlab/-/issues/20338

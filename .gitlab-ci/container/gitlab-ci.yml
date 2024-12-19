@@ -57,7 +57,7 @@
     - .incorporate-templates-commit
   variables:
     FDO_REPO_SUFFIX: $CI_JOB_NAME
-    FDO_DISTRIBUTION_EXEC: 'bash .gitlab-ci/container/${CI_JOB_NAME}.sh'
+    FDO_DISTRIBUTION_EXEC: 'bash .gitlab-ci/container/container_job_trampoline.sh "${CI_JOB_NAME}"'
     # no need to pull the whole repo to build the container image
     GIT_STRATEGY: none
 
