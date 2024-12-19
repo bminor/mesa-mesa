@@ -1586,7 +1586,7 @@ panfrost_should_linear_convert(struct panfrost_context *ctx,
    }
 }
 
-struct panfrost_bo *
+static struct panfrost_bo *
 panfrost_get_afbc_superblock_sizes(struct panfrost_context *ctx,
                                    struct panfrost_resource *rsrc,
                                    unsigned first_level, unsigned last_level,
