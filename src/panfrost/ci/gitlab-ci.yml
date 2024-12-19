@@ -343,6 +343,7 @@ panfrost-g52-vk:arm64:
     PAN_I_WANT_A_BROKEN_VULKAN_DRIVER: 1
     PANVK_DEBUG: "no_known_warn,sync"
     DEQP_SUITE: panfrost-g52-vk
+    DEQP_FRACTION: 32
     HWCI_START_WESTON: 1
 
 panfrost-g52-vk-full:arm64:
@@ -352,7 +353,7 @@ panfrost-g52-vk-full:arm64:
     - .panfrost-vk-manual-rules
   timeout: 3h
   variables:
-    DEQP_SUITE: panfrost-g52-vk-full
+    DEQP_FRACTION: 1
 
 panfrost-g52-piglit-gles2:arm64:
   extends:
@@ -418,6 +419,7 @@ panfrost-g610-vk:arm64:
     PAN_I_WANT_A_BROKEN_VULKAN_DRIVER: 1
     PANVK_DEBUG: "no_known_warn,sync,cs"
     DEQP_SUITE: panfrost-g610-vk
+    DEQP_FRACTION: 4
     HWCI_START_WESTON: 1
     LAVA_TAGS: at-least-8gb
 
@@ -427,4 +429,4 @@ panfrost-g610-vk-full:arm64:
     - .panfrost-vk-manual-rules
   timeout: 1h 35m
   variables:
-    DEQP_SUITE: panfrost-g610-vk-full
+    DEQP_FRACTION: 1
