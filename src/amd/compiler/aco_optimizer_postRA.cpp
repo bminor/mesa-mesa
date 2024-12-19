@@ -950,15 +950,22 @@ try_optimize_branching_sequence(pr_opt_ctx& ctx, aco_ptr<Instruction>& exec_copy
    const aco_opcode s_and =
       ctx.program->lane_mask == s2 ? aco_opcode::s_and_b64 : aco_opcode::s_and_b32;
 
+   const aco_opcode s_andn2 =
+      ctx.program->lane_mask == s2 ? aco_opcode::s_andn2_b64 : aco_opcode::s_andn2_b32;
+
    if (exec_copy->opcode != and_saveexec && exec_copy->opcode != aco_opcode::p_parallelcopy &&
-       (exec_copy->opcode != s_and || exec_copy->operands[1].physReg() != exec))
+       (exec_copy->opcode != s_and || exec_copy->operands[1].physReg() != exec) &&
+       (exec_copy->opcode != s_andn2 || exec_copy->operands[0].physReg() != exec))
       return false;
+
+   const bool negate = exec_copy->opcode == s_andn2;
+   const Operand& exec_copy_op = exec_copy->operands[negate];
 
    /* The SCC def of s_and/s_and_saveexec must be unused. */
    if (exec_copy->opcode != aco_opcode::p_parallelcopy && !exec_copy->definitions[1].isKill())
       return false;
 
-   Idx exec_val_idx = last_writer_idx(ctx, exec_copy->operands[0]);
+   Idx exec_val_idx = last_writer_idx(ctx, exec_copy_op);
    if (!exec_val_idx.found() || exec_val_idx.block != ctx.current_block->index)
       return false;
 
@@ -975,9 +982,14 @@ try_optimize_branching_sequence(pr_opt_ctx& ctx, aco_ptr<Instruction>& exec_copy
 
    const bool vcmpx_exec_only = ctx.program->gfx_level >= GFX10;
 
+   if (negate && !exec_val->isVOPC())
+      return false;
+
    /* Check if a suitable v_cmpx opcode exists. */
    const aco_opcode v_cmpx_op =
-      exec_val->isVOPC() ? get_vcmpx(exec_val->opcode) : aco_opcode::num_opcodes;
+      exec_val->isVOPC()
+         ? (negate ? get_vcmpx(get_vcmp_inverse(exec_val->opcode)) : get_vcmpx(exec_val->opcode))
+         : aco_opcode::num_opcodes;
    const bool vopc = v_cmpx_op != aco_opcode::num_opcodes;
 
    /* V_CMPX+DPP returns 0 with reads from disabled lanes, unlike V_CMP+DPP (RDNA3 ISA doc, 7.7) */
@@ -991,10 +1003,14 @@ try_optimize_branching_sequence(pr_opt_ctx& ctx, aco_ptr<Instruction>& exec_copy
    const Definition exec_wr_def = exec_val->definitions[0];
    const Definition exec_copy_def = exec_copy->definitions[0];
 
+   /* If we need to negate, the instruction has to be otherwise unused. */
+   if (negate && ctx.uses[exec_copy_op.tempId()] != 1)
+      return false;
+
    /* The copy can be removed when it kills its operand.
     * v_cmpx also writes the original destination pre GFX10.
     */
-   const bool can_remove_copy = exec_copy->operands[0].isKill() || (vopc && !vcmpx_exec_only);
+   const bool can_remove_copy = exec_copy_op.isKill() || (vopc && !vcmpx_exec_only);
 
    /* Always allow reassigning when the value is written by (usable) VOPC.
     * Note, VOPC implicitly contains "& exec" because it yields zero on inactive lanes.
@@ -1031,7 +1047,7 @@ try_optimize_branching_sequence(pr_opt_ctx& ctx, aco_ptr<Instruction>& exec_copy
          return false;
 
       unsigned prev_wr_idx = ctx.current_instr_idx;
-      if (exec_copy->operands[0].physReg() == exec_copy_def.physReg()) {
+      if (exec_copy_op.physReg() == exec_copy_def.physReg()) {
          /* We'd overwrite the saved original exec */
          if (vopc && !vcmpx_exec_only)
             return false;
@@ -1093,13 +1109,13 @@ try_optimize_branching_sequence(pr_opt_ctx& ctx, aco_ptr<Instruction>& exec_copy
    }
    for (unsigned i = 0; i < ctx.program->lane_mask.size(); i++)
       ctx.instr_idx_by_regs[ctx.current_block->index][exec + i] =
-         ctx.instr_idx_by_regs[ctx.current_block->index][exec_copy->operands[0].physReg() + i];
+         ctx.instr_idx_by_regs[ctx.current_block->index][exec_copy_op.physReg() + i];
 
    /* If there are other instructions (besides p_logical_end) between
     * writing the value and copying it to exec, reassign uses
     * of the old definition.
     */
-   Temp exec_temp = exec_copy->operands[0].getTemp();
+   Temp exec_temp = exec_copy_op.getTemp();
    for (unsigned i = exec_val_idx.instr + 1; i < ctx.current_instr_idx; i++) {
       if (ctx.current_block->instructions[i]) {
          for (Operand& op : ctx.current_block->instructions[i]->operands) {
