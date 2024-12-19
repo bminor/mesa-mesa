@@ -1605,10 +1605,12 @@ panfrost_get_afbc_superblock_sizes(struct panfrost_context *ctx,
       metadata_size += sz;
    }
 
+   bo = panfrost_bo_create(dev, metadata_size, 0, "AFBC superblock sizes");
+   if (!bo)
+      return NULL;
+
    panfrost_flush_batches_accessing_rsrc(ctx, rsrc, "AFBC before size flush");
    batch = panfrost_get_fresh_batch_for_fbo(ctx, "AFBC superblock sizes");
-   bo = panfrost_bo_create(dev, metadata_size, 0, "AFBC superblock sizes");
-   assert(bo);
 
    for (int level = first_level; level <= last_level; ++level) {
       unsigned offset = out_offsets[level - first_level];
@@ -1648,6 +1650,12 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
 
    metadata_bo = panfrost_get_afbc_superblock_sizes(ctx, prsrc, 0, last_level,
                                                     metadata_offsets);
+
+   if (!metadata_bo) {
+      mesa_loge("panfrost_pack_afbc: failed to get afbc superblock sizes");
+      return;
+   }
+
    panfrost_bo_wait(metadata_bo, INT64_MAX, false);
 
    for (unsigned level = 0; level <= last_level; ++level) {
@@ -1713,7 +1721,13 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
 
    struct panfrost_bo *dst =
       panfrost_bo_create(dev, new_size, 0, "AFBC compact texture");
-   assert(dst);
+
+   if (!dst) {
+      mesa_loge("panfrost_pack_afbc: failed to get afbc superblock sizes");
+      panfrost_bo_unreference(metadata_bo);
+      return;
+   }
+
    struct panfrost_batch *batch =
       panfrost_get_fresh_batch_for_fbo(ctx, "AFBC compaction");
 
