@@ -54,4 +54,26 @@ panlib_copy_query_result(uint64_t pool_addr, global uint32_t *available_addr,
       vk_write_query(dst, 1, flags, available);
    }
 }
+
+KERNEL(1)
+panlib_clear_query_result(uint64_t pool_addr, global uint32_t *available_addr,
+                          uint32_t query_stride, uint32_t first_query,
+                          uint32_t query_count, uint32_t report_count,
+                          uint32_t availaible_value)
+{
+   uint32_t i = cl_global_id.x;
+
+   if (i >= query_count)
+      return;
+
+   uint32_t query = first_query + i;
+   global uint64_t *report_addr =
+      (global uint64_t *)(pool_addr + ((uint64_t)query * query_stride));
+
+   available_addr[query] = availaible_value;
+
+   for (uint32_t i = 0; i < report_count; i++)
+      report_addr[i] = 0;
+}
+
 #endif
