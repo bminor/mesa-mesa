@@ -19,4 +19,6 @@ CONTAINER_CI_JOB_NAME="$1"
 eval "$S3_JWT_FILE_SCRIPT"
 unset S3_JWT_FILE_SCRIPT
 
+trap 'rm -f ${S3_JWT_FILE}' EXIT INT TERM
+
 bash ".gitlab-ci/container/${CONTAINER_CI_JOB_NAME}.sh"
