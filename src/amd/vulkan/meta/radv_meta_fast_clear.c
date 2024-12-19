@@ -54,9 +54,10 @@ build_dcc_decompress_compute_shader(struct radv_device *dev)
 }
 
 static VkResult
-create_dcc_compress_compute(struct radv_device *device)
+get_dcc_decompress_compute_pipeline(struct radv_device *device, VkPipeline *pipeline_out, VkPipelineLayout *layout_out)
 {
-   VkResult result = VK_SUCCESS;
+   const char *key_data = "radv-dcc-decompress-cs";
+   VkResult result;
 
    const VkDescriptorSetLayoutBinding bindings[] = {
       {
@@ -73,43 +74,45 @@ create_dcc_compress_compute(struct radv_device *device)
       },
    };
 
-   result = radv_meta_create_descriptor_set_layout(
-      device, 2, bindings, &device->meta_state.fast_clear_flush.dcc_decompress_compute_ds_layout);
+   const VkDescriptorSetLayoutCreateInfo desc_info = {
+      .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+      .flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT,
+      .bindingCount = 2,
+      .pBindings = bindings,
+   };
+
+   result = vk_meta_get_pipeline_layout(&device->vk, &device->meta_state.device, &desc_info, NULL, key_data,
+                                        strlen(key_data), layout_out);
    if (result != VK_SUCCESS)
       return result;
 
-   result =
-      radv_meta_create_pipeline_layout(device, &device->meta_state.fast_clear_flush.dcc_decompress_compute_ds_layout, 0,
-                                       NULL, &device->meta_state.fast_clear_flush.dcc_decompress_compute_p_layout);
-   if (result != VK_SUCCESS)
-      return result;
+   VkPipeline pipeline_from_cache = vk_meta_lookup_pipeline(&device->meta_state.device, key_data, strlen(key_data));
+   if (pipeline_from_cache != VK_NULL_HANDLE) {
+      *pipeline_out = pipeline_from_cache;
+      return VK_SUCCESS;
+   }
 
    nir_shader *cs = build_dcc_decompress_compute_shader(device);
 
-   result =
-      radv_meta_create_compute_pipeline(device, cs, device->meta_state.fast_clear_flush.dcc_decompress_compute_p_layout,
-                                        &device->meta_state.fast_clear_flush.dcc_decompress_compute_pipeline);
+   const VkPipelineShaderStageCreateInfo stage_info = {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+      .stage = VK_SHADER_STAGE_COMPUTE_BIT,
+      .module = vk_shader_module_handle_from_nir(cs),
+      .pName = "main",
+      .pSpecializationInfo = NULL,
+   };
+
+   const VkComputePipelineCreateInfo pipeline_info = {
+      .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
+      .stage = stage_info,
+      .flags = 0,
+      .layout = *layout_out,
+   };
+
+   result = vk_meta_create_compute_pipeline(&device->vk, &device->meta_state.device, &pipeline_info, key_data,
+                                            strlen(key_data), pipeline_out);
+
    ralloc_free(cs);
-   return result;
-}
-
-static VkResult
-get_dcc_decompress_compute_pipeline(struct radv_device *device, VkPipeline *pipeline_out)
-{
-   struct radv_meta_state *state = &device->meta_state;
-   VkResult result = VK_SUCCESS;
-
-   mtx_lock(&state->mtx);
-   if (!state->fast_clear_flush.dcc_decompress_compute_pipeline) {
-      result = create_dcc_compress_compute(device);
-      if (result != VK_SUCCESS)
-         goto fail;
-   }
-
-   *pipeline_out = state->fast_clear_flush.dcc_decompress_compute_pipeline;
-
-fail:
-   mtx_unlock(&state->mtx);
    return result;
 }
 
@@ -347,13 +350,6 @@ radv_device_finish_meta_fast_clear_flush_state(struct radv_device *device)
                         &state->alloc);
    radv_DestroyPipeline(radv_device_to_handle(device), state->fast_clear_flush.cmask_eliminate_pipeline, &state->alloc);
    radv_DestroyPipelineLayout(radv_device_to_handle(device), state->fast_clear_flush.p_layout, &state->alloc);
-
-   radv_DestroyPipeline(radv_device_to_handle(device), state->fast_clear_flush.dcc_decompress_compute_pipeline,
-                        &state->alloc);
-   radv_DestroyPipelineLayout(radv_device_to_handle(device), state->fast_clear_flush.dcc_decompress_compute_p_layout,
-                              &state->alloc);
-   device->vk.dispatch_table.DestroyDescriptorSetLayout(
-      radv_device_to_handle(device), state->fast_clear_flush.dcc_decompress_compute_ds_layout, &state->alloc);
 }
 
 static VkResult
@@ -375,10 +371,6 @@ radv_device_init_meta_fast_clear_flush_state_internal(struct radv_device *device
 
    VkShaderModule vs_module_h = vk_shader_module_handle_from_nir(vs_module);
    res = create_pipeline(device, vs_module_h, device->meta_state.fast_clear_flush.p_layout);
-   if (res != VK_SUCCESS)
-      goto cleanup;
-
-   res = create_dcc_compress_compute(device);
    if (res != VK_SUCCESS)
       goto cleanup;
 
@@ -646,10 +638,11 @@ radv_decompress_dcc_compute(struct radv_cmd_buffer *cmd_buffer, struct radv_imag
    struct radv_meta_saved_state saved_state;
    struct radv_image_view load_iview = {0};
    struct radv_image_view store_iview = {0};
+   VkPipelineLayout layout;
    VkPipeline pipeline;
    VkResult result;
 
-   result = get_dcc_decompress_compute_pipeline(device, &pipeline);
+   result = get_dcc_decompress_compute_pipeline(device, &pipeline, &layout);
    if (result != VK_SUCCESS) {
       vk_command_buffer_set_error(&cmd_buffer->vk, result);
       return;
@@ -701,8 +694,7 @@ radv_decompress_dcc_compute(struct radv_cmd_buffer *cmd_buffer, struct radv_imag
                               &(struct radv_image_view_extra_create_info){.disable_compression = true});
 
          radv_meta_push_descriptor_set(
-            cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-            device->meta_state.fast_clear_flush.dcc_decompress_compute_p_layout, 0, 2,
+            cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, layout, 0, 2,
             (VkWriteDescriptorSet[]){{.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                                       .dstBinding = 0,
                                       .dstArrayElement = 0,
