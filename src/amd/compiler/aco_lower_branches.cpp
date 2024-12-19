@@ -78,7 +78,9 @@ can_remove_branch(branch_ctx& ctx, Block& block, Pseudo_branch_instruction* bran
              * an empty exec mask.
              */
             if (instr->opcode == aco_opcode::s_cbranch_scc0 ||
-                instr->opcode == aco_opcode::s_cbranch_scc1) {
+                instr->opcode == aco_opcode::s_cbranch_scc1 ||
+                instr->opcode == aco_opcode::s_cbranch_execz ||
+                instr->opcode == aco_opcode::s_cbranch_execnz) {
                bool is_break_continue =
                   ctx.program->blocks[i].kind & (block_kind_break | block_kind_continue);
                bool discard_early_exit =

@@ -2427,8 +2427,11 @@ lower_to_hw_instr(Program* program)
                   bld.reset(&ctx.instructions);
                }
 
-               assert(instr->operands[0].physReg() == scc);
-               bld.sopp(aco_opcode::s_cbranch_scc0, discard_block->index);
+               assert(instr->operands[0].physReg() == scc || instr->operands[0].physReg() == exec);
+               if (instr->operands[0].physReg() == scc)
+                  bld.sopp(aco_opcode::s_cbranch_scc0, discard_block->index);
+               else
+                  bld.sopp(aco_opcode::s_cbranch_execz, discard_block->index);
 
                discard_block->linear_preds.push_back(block->index);
                block->linear_succs.push_back(discard_block->index);
