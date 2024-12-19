@@ -6,7 +6,7 @@ lavapipe:
     DEQP_SUITE: lvp
     GPU_VERSION: lvp
     MESA_VK_IGNORE_CONFORMANCE_WARNING: 1
-    DEQP_FRACTION: 18
+    DEQP_FRACTION: 9
   stage: software-renderer
   extends:
     - .deqp-test
