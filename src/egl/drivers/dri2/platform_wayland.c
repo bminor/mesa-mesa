@@ -42,6 +42,7 @@
 #include <vulkan/vulkan_wayland.h>
 
 #include "util/anon_file.h"
+#include "util/perf/cpu_trace.h"
 #include "util/u_vector.h"
 #include "util/format/u_formats.h"
 #include "main/glconfig.h"
@@ -762,6 +763,15 @@ dri2_wl_create_window_surface(_EGLDisplay *disp, _EGLConfig *conf,
       goto cleanup_dpy_wrapper;
    }
 
+   if (dri2_dpy->wp_presentation) {
+      loader_wayland_wrap_presentation(&dri2_surf->wayland_presentation,
+                                       dri2_dpy->wp_presentation,
+                                       dri2_surf->wl_queue,
+                                       dri2_dpy->presentation_clock_id,
+                                       &dri2_surf->wayland_surface,
+                                       NULL, NULL, NULL);
+   }
+
    if (dri2_dpy->wl_dmabuf &&
        zwp_linux_dmabuf_v1_get_version(dri2_dpy->wl_dmabuf) >=
           ZWP_LINUX_DMABUF_V1_GET_SURFACE_FEEDBACK_SINCE_VERSION) {
@@ -873,6 +883,8 @@ dri2_wl_destroy_surface(_EGLDisplay *disp, _EGLSurface *surf)
       dri2_surf->wl_win->resize_callback = NULL;
       dri2_surf->wl_win->destroy_window_callback = NULL;
    }
+
+   loader_wayland_presentation_destroy(&dri2_surf->wayland_presentation);
 
    loader_wayland_surface_destroy(&dri2_surf->wayland_surface);
    wl_proxy_wrapper_destroy(dri2_surf->wl_dpy_wrapper);
@@ -1182,7 +1194,8 @@ wait_for_free_buffer(struct dri2_egl_display *dri2_dpy,
 }
 
 static int
-get_back_bo(struct dri2_egl_surface *dri2_surf)
+get_back_bo(struct dri2_egl_surface *dri2_surf,
+            struct mesa_trace_flow *flow)
 {
    struct dri2_egl_display *dri2_dpy =
       dri2_egl_display(dri2_surf->base.Resource.Display);
@@ -1190,6 +1203,8 @@ get_back_bo(struct dri2_egl_surface *dri2_surf)
    int visual_idx;
    unsigned int pipe_format;
    unsigned int linear_pipe_format;
+
+   MESA_TRACE_FUNC_FLOW(flow);
 
    visual_idx = dri2_wl_visual_idx_from_fourcc(dri2_surf->format);
    assert(visual_idx != -1);
@@ -1355,6 +1370,7 @@ get_back_bo(struct dri2_egl_surface *dri2_surf)
    if (dri2_surf->back->dri_image == NULL)
       return -1;
 
+   loader_wayland_buffer_set_flow(&dri2_surf->back->wayland_buffer, flow);
    dri2_surf->back->locked = true;
 
    return 0;
@@ -1385,10 +1401,13 @@ back_bo_to_dri_buffer(struct dri2_egl_surface *dri2_surf, __DRIbuffer *buffer)
 #define BUFFER_TRIM_AGE_HYSTERESIS 20
 
 static int
-update_buffers(struct dri2_egl_surface *dri2_surf)
+update_buffers(struct dri2_egl_surface *dri2_surf,
+               struct mesa_trace_flow *flow)
 {
    struct dri2_egl_display *dri2_dpy =
       dri2_egl_display(dri2_surf->base.Resource.Display);
+
+   MESA_TRACE_FUNC_FLOW(flow);
 
    if (dri2_surf->wl_win &&
        (dri2_surf->base.Width != dri2_surf->wl_win->width ||
@@ -1406,7 +1425,7 @@ update_buffers(struct dri2_egl_surface *dri2_surf)
       dri2_surf->received_dmabuf_feedback = false;
    }
 
-   if (get_back_bo(dri2_surf) < 0) {
+   if (get_back_bo(dri2_surf, flow) < 0) {
       _eglError(EGL_BAD_ALLOC, "failed to allocate color buffer");
       return -1;
    }
@@ -1436,12 +1455,15 @@ update_buffers(struct dri2_egl_surface *dri2_surf)
 }
 
 static int
-update_buffers_if_needed(struct dri2_egl_surface *dri2_surf)
+update_buffers_if_needed(struct dri2_egl_surface *dri2_surf,
+                         struct mesa_trace_flow *flow)
 {
+   MESA_TRACE_FUNC_FLOW(flow);
+
    if (dri2_surf->back != NULL)
       return 0;
 
-   return update_buffers(dri2_surf);
+   return update_buffers(dri2_surf, flow);
 }
 
 static int
@@ -1450,8 +1472,11 @@ image_get_buffers(struct dri_drawable *driDrawable, unsigned int format,
                   struct __DRIimageList *buffers)
 {
    struct dri2_egl_surface *dri2_surf = loaderPrivate;
+   struct mesa_trace_flow flow = {0};
 
-   if (update_buffers_if_needed(dri2_surf) < 0)
+   MESA_TRACE_FUNC_FLOW(&flow);
+
+   if (update_buffers_if_needed(dri2_surf, &flow) < 0)
       return 0;
 
    buffers->image_mask = __DRI_IMAGE_BUFFER_BACK;
@@ -1683,9 +1708,15 @@ dri2_wl_swap_buffers_with_damage(_EGLDisplay *disp, _EGLSurface *draw,
 {
    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
    struct dri2_egl_surface *dri2_surf = dri2_egl_surface(draw);
+   struct mesa_trace_flow flow = { 0 };
 
    if (!dri2_surf->wl_win)
       return _eglError(EGL_BAD_NATIVE_WINDOW, "dri2_swap_buffers");
+
+   if (dri2_surf->back)
+      flow = dri2_surf->back->wayland_buffer.flow;
+
+   MESA_TRACE_FUNC_FLOW(&flow);
 
    /* Flush (and finish glthread) before:
     *   - update_buffers_if_needed because the unmarshalling thread
@@ -1709,7 +1740,7 @@ dri2_wl_swap_buffers_with_damage(_EGLDisplay *disp, _EGLSurface *draw,
 
    /* Make sure we have a back buffer in case we're swapping without ever
     * rendering. */
-   if (update_buffers_if_needed(dri2_surf) < 0)
+   if (update_buffers_if_needed(dri2_surf, &flow) < 0)
       return _eglError(EGL_BAD_ALLOC, "dri2_swap_buffers");
 
    if (draw->SwapInterval > 0) {
@@ -1742,6 +1773,8 @@ dri2_wl_swap_buffers_with_damage(_EGLDisplay *disp, _EGLSurface *draw,
       wl_buffer_add_listener(dri2_surf->current->wayland_buffer.buffer,
                              &wl_buffer_listener,
                              dri2_surf);
+
+      loader_wayland_buffer_set_flow(&dri2_surf->current->wayland_buffer, &flow);
    }
 
    wl_surface_attach(dri2_surf->wayland_surface.wrapper,
@@ -1774,6 +1807,10 @@ dri2_wl_swap_buffers_with_damage(_EGLDisplay *disp, _EGLSurface *draw,
       dri_flush_drawable(dri_drawable);
    }
 
+   loader_wayland_presentation_feedback(&dri2_surf->wayland_presentation,
+                                        &dri2_surf->current->wayland_buffer,
+                                        NULL);
+
    wl_surface_commit(dri2_surf->wayland_surface.wrapper);
 
    /* If we're not waiting for a frame callback then we'll at least throttle
@@ -1795,8 +1832,11 @@ static EGLint
 dri2_wl_query_buffer_age(_EGLDisplay *disp, _EGLSurface *surface)
 {
    struct dri2_egl_surface *dri2_surf = dri2_egl_surface(surface);
+   struct mesa_trace_flow flow = { 0 };
 
-   if (update_buffers_if_needed(dri2_surf) < 0) {
+   MESA_TRACE_FUNC_FLOW(&flow);
+
+   if (update_buffers_if_needed(dri2_surf, &flow) < 0) {
       _eglError(EGL_BAD_ALLOC, "dri2_query_buffer_age");
       return -1;
    }
@@ -2107,6 +2147,18 @@ static const struct zwp_linux_dmabuf_feedback_v1_listener
 };
 
 static void
+presentation_handle_clock_id(void* data, struct wp_presentation *wp_presentation, uint32_t clk_id)
+{
+   struct dri2_egl_display *dri2_dpy = data;
+
+   dri2_dpy->presentation_clock_id = clk_id;
+}
+
+static const struct wp_presentation_listener presentation_listener = {
+   presentation_handle_clock_id,
+};
+
+static void
 registry_handle_global_drm(void *data, struct wl_registry *registry,
                            uint32_t name, const char *interface,
                            uint32_t version)
@@ -2123,6 +2175,11 @@ registry_handle_global_drm(void *data, struct wl_registry *registry,
          MIN2(version, ZWP_LINUX_DMABUF_V1_GET_DEFAULT_FEEDBACK_SINCE_VERSION));
       zwp_linux_dmabuf_v1_add_listener(dri2_dpy->wl_dmabuf, &dmabuf_listener,
                                        dri2_dpy);
+   } else if (strcmp(interface, wp_presentation_interface.name) == 0) {
+      dri2_dpy->wp_presentation =
+         wl_registry_bind(registry, name, &wp_presentation_interface, 1);
+      wp_presentation_add_listener(dri2_dpy->wp_presentation,
+                                   &presentation_listener, dri2_dpy);
    }
 }
 
@@ -2867,7 +2924,13 @@ registry_handle_global_kopper(void *data, struct wl_registry *registry,
                ZWP_LINUX_DMABUF_V1_GET_DEFAULT_FEEDBACK_SINCE_VERSION));
       zwp_linux_dmabuf_v1_add_listener(dri2_dpy->wl_dmabuf, &dmabuf_listener,
                                        dri2_dpy);
+   } else if (strcmp(interface, wp_presentation_interface.name) == 0) {
+      dri2_dpy->wp_presentation =
+         wl_registry_bind(registry, name, &wp_presentation_interface, 1);
+      wp_presentation_add_listener(dri2_dpy->wp_presentation,
+                                   &presentation_listener, dri2_dpy);
    }
+
 }
 
 static const struct wl_registry_listener registry_listener_kopper = {
@@ -2885,7 +2948,13 @@ registry_handle_global_swrast(void *data, struct wl_registry *registry,
    if (strcmp(interface, wl_shm_interface.name) == 0) {
       dri2_dpy->wl_shm = wl_registry_bind(registry, name, &wl_shm_interface, 1);
       wl_shm_add_listener(dri2_dpy->wl_shm, &shm_listener, dri2_dpy);
+   } else if (strcmp(interface, wp_presentation_interface.name) == 0) {
+      dri2_dpy->wp_presentation =
+         wl_registry_bind(registry, name, &wp_presentation_interface, 1);
+      wp_presentation_add_listener(dri2_dpy->wp_presentation,
+                                   &presentation_listener, dri2_dpy);
    }
+
 }
 
 static const struct wl_registry_listener registry_listener_swrast = {
@@ -3132,6 +3201,8 @@ void
 dri2_teardown_wayland(struct dri2_egl_display *dri2_dpy)
 {
    dri2_wl_formats_fini(&dri2_dpy->formats);
+   if (dri2_dpy->wp_presentation)
+      wp_presentation_destroy(dri2_dpy->wp_presentation);
    if (dri2_dpy->wl_drm)
       wl_drm_destroy(dri2_dpy->wl_drm);
    if (dri2_dpy->wl_dmabuf)
