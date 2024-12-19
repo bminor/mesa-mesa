@@ -441,36 +441,36 @@ process_instructions(exec_ctx& ctx, Block* block, std::vector<aco_ptr<Instructio
             info.exec[1].type &= ~mask_type_global;
          }
 
-         Temp cond, exit_cond;
+         Temp cond;
          if (instr->operands[0].isConstant()) {
             assert(instr->operands[0].constantValue() == -1u);
             /* save condition and set exec to zero */
-            exit_cond = bld.tmp(s1);
-            cond =
-               bld.sop1(Builder::s_and_saveexec, bld.def(bld.lm), bld.scc(Definition(exit_cond)),
-                        Definition(exec, bld.lm), Operand::zero(), Operand(exec, bld.lm));
+            cond = bld.sop1(Builder::s_and_saveexec, bld.def(bld.lm), bld.def(s1, scc),
+                            Definition(exec, bld.lm), Operand::zero(), Operand(exec, bld.lm));
          } else {
             cond = instr->operands[0].getTemp();
             /* discard from current exec */
-            exit_cond = bld.sop2(Builder::s_andn2, Definition(exec, bld.lm), bld.def(s1, scc),
-                                 current_exec, cond)
-                           .def(1)
-                           .getTemp();
+            bld.sop2(Builder::s_andn2, Definition(exec, bld.lm), bld.def(s1, scc), current_exec,
+                     cond);
          }
 
-         /* discard from inner to outer exec mask on stack */
-         int num = info.exec.size() - 2;
-         for (int i = num; i >= 0; i--) {
-            Instruction* andn2 =
-               bld.sop2(Builder::s_andn2, bld.def(bld.lm), bld.def(s1, scc), info.exec[i].op, cond);
-            info.exec[i].op = Operand(andn2->definitions[0].getTemp());
-            exit_cond = andn2->definitions[1].getTemp();
+         if (info.exec.size() == 1) {
+            instr->operands[0] = Operand(exec, bld.lm);
+         } else {
+            /* discard from inner to outer exec mask on stack */
+            int num = info.exec.size() - 2;
+            Temp exit_cond;
+            for (int i = num; i >= 0; i--) {
+               Instruction* andn2 = bld.sop2(Builder::s_andn2, bld.def(bld.lm), bld.def(s1, scc),
+                                             info.exec[i].op, cond);
+               info.exec[i].op = Operand(andn2->definitions[0].getTemp());
+               exit_cond = andn2->definitions[1].getTemp();
+            }
+            instr->operands[0] = bld.scc(exit_cond);
          }
 
          instr->opcode = aco_opcode::p_exit_early_if_not;
-         instr->operands[0] = bld.scc(exit_cond);
          assert(!ctx.handle_wqm || (info.exec[0].type & mask_type_wqm) == 0);
-
       } else if (instr->opcode == aco_opcode::p_is_helper) {
          Definition dst = instr->definitions[0];
          assert(dst.size() == bld.lm.size());
@@ -511,21 +511,18 @@ process_instructions(exec_ctx& ctx, Block* block, std::vector<aco_ptr<Instructio
          Definition def = state == Exact ? Definition(exec, bld.lm) : bld.def(bld.lm);
          Operand src = instr->operands[0].isConstant() ? Operand(exec, bld.lm) : instr->operands[0];
 
-         Definition exit_cond =
-            bld.sop2(Builder::s_andn2, def, bld.def(s1, scc), info.exec[0].op, src).def(1);
+         bld.sop2(Builder::s_andn2, def, bld.def(s1, scc), info.exec[0].op, src);
          info.exec[0].op = def.isTemp() ? Operand(def.getTemp()) : Operand(exec, bld.lm);
 
          /* Update global WQM mask and store in exec. */
          if (state == WQM) {
             assert(info.exec.size() > 1);
-            exit_cond =
-               bld.sop1(Builder::s_wqm, Definition(exec, bld.lm), bld.def(s1, scc), def.getTemp())
-                  .def(1);
+            bld.sop1(Builder::s_wqm, Definition(exec, bld.lm), bld.def(s1, scc), def.getTemp());
          }
 
          /* End shader if global mask is zero. */
          instr->opcode = aco_opcode::p_exit_early_if_not;
-         instr->operands[0] = bld.scc(exit_cond.getTemp());
+         instr->operands[0] = Operand(exec, bld.lm);
          bld.insert(std::move(instr));
 
          /* Update all other exec masks. */
