@@ -1815,14 +1815,11 @@ panfrost_ptr_unmap(struct pipe_context *pctx, struct pipe_transfer *transfer)
             if (panfrost_should_linear_convert(ctx, prsrc, transfer)) {
                panfrost_resource_setup(screen, prsrc, DRM_FORMAT_MOD_LINEAR,
                                        prsrc->image.layout.format);
-               if (prsrc->image.layout.data_size > panfrost_bo_size(bo)) {
-                  const char *label = bo->label;
-                  panfrost_bo_unreference(bo);
-                  bo = prsrc->bo = panfrost_bo_create(
-                     dev, prsrc->image.layout.data_size, 0, label);
-                  prsrc->image.data.base = prsrc->bo->ptr.gpu;
-                  assert(bo);
-               }
+
+               /* converting the resource from tiled to linear and back
+                * shouldn't increase memory usage...
+                */
+               assert(prsrc->image.layout.data_size <= panfrost_bo_size(bo));
 
                util_copy_rect(
                   bo->ptr.cpu + prsrc->image.layout.slices[0].offset,
