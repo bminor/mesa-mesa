@@ -63,6 +63,9 @@ struct panvk_graphics_sysvals {
    } blend;
 
    struct {
+#if PAN_ARCH <= 7
+      int32_t raw_vertex_offset;
+#endif
       int32_t first_vertex;
       int32_t base_instance;
       uint32_t noperspective_varyings;

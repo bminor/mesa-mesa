@@ -100,6 +100,9 @@ panvk_lower_sysvals(nir_builder *b, nir_instr *instr, void *data)
       break;
 
 #if PAN_ARCH <= 7
+   case nir_intrinsic_load_raw_vertex_offset_pan:
+      val = load_sysval(b, graphics, bit_size, vs.raw_vertex_offset);
+      break;
    case nir_intrinsic_load_layer_id:
       assert(b->shader->info.stage == MESA_SHADER_FRAGMENT);
       val = load_sysval(b, graphics, bit_size, layer_id);
@@ -135,8 +138,8 @@ panvk_lower_load_vs_input(nir_builder *b, nir_intrinsic_instr *intrin,
    b->cursor = nir_before_instr(&intrin->instr);
    nir_def *ld_attr = nir_load_attribute_pan(
       b, intrin->def.num_components, intrin->def.bit_size,
-      b->shader->options->vertex_id_zero_based ?
-         nir_load_vertex_id_zero_base(b) :
+      PAN_ARCH <= 7 ?
+         nir_load_raw_vertex_id_pan(b) :
          nir_load_vertex_id(b),
       PAN_ARCH >= 9 ?
          nir_iadd(b, nir_load_instance_id(b), nir_load_base_instance(b)) :

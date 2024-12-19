@@ -377,6 +377,7 @@ midgard_preprocess_nir(nir_shader *nir, unsigned gpu_id)
    NIR_PASS(_, nir, nir_lower_vars_to_ssa);
 
    if (nir->info.stage == MESA_SHADER_VERTEX) {
+      NIR_PASS(_, nir, pan_nir_lower_vertex_id);
       NIR_PASS(_, nir, nir_lower_viewport_transform);
       NIR_PASS(_, nir, nir_lower_point_size, 1.0, 0.0);
    }
@@ -1537,7 +1538,7 @@ static unsigned
 vertex_builtin_arg(nir_intrinsic_op op)
 {
    switch (op) {
-   case nir_intrinsic_load_vertex_id_zero_base:
+   case nir_intrinsic_load_raw_vertex_id_pan:
       return PAN_VERTEX_ID;
    case nir_intrinsic_load_instance_id:
       return PAN_INSTANCE_ID;
@@ -1951,7 +1952,9 @@ emit_intrinsic(compiler_context *ctx, nir_intrinsic_instr *instr)
       emit_compute_builtin(ctx, instr);
       break;
 
-   case nir_intrinsic_load_vertex_id_zero_base:
+   case nir_intrinsic_load_raw_vertex_id_pan:
+      ctx->info->midgard.vs.reads_raw_vertex_id = true;
+      FALLTHROUGH;
    case nir_intrinsic_load_instance_id:
       emit_vertex_builtin(ctx, instr);
       break;

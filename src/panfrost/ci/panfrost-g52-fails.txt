@@ -2833,13 +2833,3 @@ dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.inverted_depth_ranges.nodepthcla
 
 dEQP-VK.rasterization.rasterization_order_attachment_access.depth.samples_1.multi_draw_barriers,Crash
 dEQP-VK.rasterization.rasterization_order_attachment_access.stencil.samples_1.multi_draw_barriers,Crash
-
-# new with KHR_shader_draw_parameters
-dEQP-VK.draw.dynamic_rendering.complete_secondary_cmd_buff.shader_draw_parameters.base_instance.draw_indexed,Fail
-dEQP-VK.draw.dynamic_rendering.complete_secondary_cmd_buff.shader_draw_parameters.base_vertex.draw_indexed,Fail
-dEQP-VK.draw.dynamic_rendering.partial_secondary_cmd_buff.shader_draw_parameters.base_instance.draw_indexed,Fail
-dEQP-VK.draw.dynamic_rendering.partial_secondary_cmd_buff.shader_draw_parameters.base_vertex.draw_indexed,Fail
-dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.shader_draw_parameters.base_instance.draw_indexed,Fail
-dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.shader_draw_parameters.base_vertex.draw_indexed,Fail
-dEQP-VK.draw.renderpass.shader_draw_parameters.base_instance.draw_indexed,Fail
-dEQP-VK.draw.renderpass.shader_draw_parameters.base_vertex.draw_indexed,Fail

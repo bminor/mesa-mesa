@@ -179,6 +179,11 @@ struct bifrost_shader_info {
 
 struct midgard_shader_info {
    unsigned first_tag;
+   union {
+      struct {
+         bool reads_raw_vertex_id;
+      } vs;
+   };
 };
 
 struct pan_shader_info {
@@ -386,6 +391,8 @@ void pan_print_alu_type(nir_alu_type t, FILE *fp);
 
 bool pan_nir_lower_zs_store(nir_shader *nir);
 bool pan_nir_lower_store_component(nir_shader *shader);
+
+bool pan_nir_lower_vertex_id(nir_shader *shader);
 
 bool pan_nir_lower_image_ms(nir_shader *shader);
 

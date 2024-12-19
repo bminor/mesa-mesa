@@ -17,6 +17,7 @@ libpanfrost_util_files = files(
   'pan_lower_noperspective.c',
   'pan_lower_sample_position.c',
   'pan_lower_store_component.c',
+  'pan_lower_vertex_id.c',
   'pan_lower_writeout.c',
   'pan_lower_xfb.c',
 )

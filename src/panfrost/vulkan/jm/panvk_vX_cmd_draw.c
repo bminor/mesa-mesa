@@ -97,12 +97,16 @@ panvk_cmd_prepare_draw_sysvals(struct panvk_cmd_buffer *cmdbuf,
    struct panvk_graphics_sysvals *sysvals = &cmdbuf->state.gfx.sysvals;
    struct vk_color_blend_state *cb = &cmdbuf->vk.dynamic_graphics_state.cb;
 
+   int32_t first_vertex =
+      draw->index_size ? draw->vertex_offset : draw->first_vertex;
    uint32_t noperspective_varyings = fs ? fs->info.varyings.noperspective : 0;
-   if (sysvals->vs.first_vertex != draw->offset_start ||
+   if (sysvals->vs.raw_vertex_offset != draw->offset_start ||
+       sysvals->vs.first_vertex != first_vertex ||
        sysvals->vs.base_instance != draw->first_instance ||
        sysvals->layer_id != draw->layer_id ||
        sysvals->vs.noperspective_varyings != noperspective_varyings) {
-      sysvals->vs.first_vertex = draw->offset_start;
+      sysvals->vs.raw_vertex_offset = draw->offset_start;
+      sysvals->vs.first_vertex = first_vertex;
       sysvals->vs.base_instance = draw->first_instance;
       sysvals->vs.noperspective_varyings = noperspective_varyings;
       sysvals->layer_id = draw->layer_id;

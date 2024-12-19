@@ -1968,10 +1968,12 @@ bi_emit_intrinsic(bi_builder *b, nir_intrinsic_instr *instr)
     * the new flow on Valhall so this is lowered in NIR.
     */
    case nir_intrinsic_load_vertex_id:
-   case nir_intrinsic_load_vertex_id_zero_base:
-      assert(b->shader->malloc_idvs ==
-             (instr->intrinsic == nir_intrinsic_load_vertex_id));
+      assert(b->shader->malloc_idvs);
+      bi_mov_i32_to(b, dst, bi_vertex_id(b));
+      break;
 
+   case nir_intrinsic_load_raw_vertex_id_pan:
+      assert(!b->shader->malloc_idvs);
       bi_mov_i32_to(b, dst, bi_vertex_id(b));
       break;
 
@@ -5173,6 +5175,9 @@ bifrost_preprocess_nir(nir_shader *nir, unsigned gpu_id)
    NIR_PASS(_, nir, nir_lower_vars_to_ssa);
 
    if (nir->info.stage == MESA_SHADER_VERTEX) {
+      if (pan_arch(gpu_id) <= 7)
+         NIR_PASS(_, nir, pan_nir_lower_vertex_id);
+
       NIR_PASS(_, nir, nir_lower_viewport_transform);
       NIR_PASS(_, nir, nir_lower_point_size, 1.0, 0.0);
 
