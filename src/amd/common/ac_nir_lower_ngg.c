@@ -3262,6 +3262,9 @@ ngg_gs_export_vertices(nir_builder *b, nir_def *max_num_out_vtx, nir_def *tid_in
                                               b->shader->info.outputs_written,
                                               b->shader->info.outputs_written_16bit,
                                               &s->out, tid_in_tg, max_num_out_vtx);
+
+         if (wait_attr_ring)
+            export_pos0_wait_attr_ring(b, if_vtx_export_thread, s->out.outputs, s->options);
       } else {
          b->cursor = nir_after_cf_list(&if_vtx_export_thread->then_list);
          ac_nir_export_parameters(b, s->options->vs_output_param_offset,
@@ -3270,9 +3273,6 @@ ngg_gs_export_vertices(nir_builder *b, nir_def *max_num_out_vtx, nir_def *tid_in
                                   &s->out);
       }
    }
-
-   if (wait_attr_ring)
-      export_pos0_wait_attr_ring(b, if_vtx_export_thread, s->out.outputs, s->options);
 }
 
 static void
