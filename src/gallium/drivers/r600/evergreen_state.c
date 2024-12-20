@@ -4601,7 +4601,10 @@ void evergreen_init_state_functions(struct r600_context *rctx)
  * uint32_t perpatch_output_offset
  * and the same constbuf is bound to LS/HS/VS(ES).
  */
-void evergreen_setup_tess_constants(struct r600_context *rctx, const struct pipe_draw_info *info, unsigned *num_patches)
+void evergreen_setup_tess_constants(struct r600_context *rctx,
+				    const struct pipe_draw_info *info,
+				    unsigned *num_patches,
+				    const bool vertexid)
 {
 	struct r600_pipe_shader_selector *tcs = rctx->tcs_shader ? rctx->tcs_shader : rctx->tes_shader;
 	struct r600_pipe_shader_selector *ls = rctx->vs_shader;
@@ -4621,8 +4624,16 @@ void evergreen_setup_tess_constants(struct r600_context *rctx, const struct pipe
 
 	if (!rctx->tes_shader) {
 		rctx->lds_alloc = 0;
-		rctx->b.b.set_constant_buffer(&rctx->b.b, PIPE_SHADER_VERTEX,
-					      R600_LDS_INFO_CONST_BUFFER, false, NULL);
+
+		if (unlikely(vertexid))
+			rctx->b.b.set_constant_buffer(&rctx->b.b, PIPE_SHADER_VERTEX,
+						      R600_LDS_INFO_CONST_BUFFER, false,
+						      &rctx->lds_constbuf_pipe);
+		else
+			rctx->b.b.set_constant_buffer(&rctx->b.b, PIPE_SHADER_VERTEX,
+						      R600_LDS_INFO_CONST_BUFFER, false,
+						      NULL);
+
 		rctx->b.b.set_constant_buffer(&rctx->b.b, PIPE_SHADER_TESS_CTRL,
 					      R600_LDS_INFO_CONST_BUFFER, false, NULL);
 		rctx->b.b.set_constant_buffer(&rctx->b.b, PIPE_SHADER_TESS_EVAL,

@@ -2289,8 +2289,27 @@ static void r600_draw_vbo(struct pipe_context *ctx, const struct pipe_draw_info 
 		r600_mark_atom_dirty(rctx, &rctx->cb_misc_state.atom);
 	}
 
-	if (rctx->b.gfx_level >= EVERGREEN)
-		evergreen_setup_tess_constants(rctx, info, &num_patches);
+	if (rctx->b.gfx_level >= EVERGREEN) {
+		const bool vertexid = rctx->vs_shader->current->shader.vs_vertexid;
+
+		if (unlikely(indirect && vertexid)) {
+			const uint32_t indirect_offset =
+				indirect->offset + (info->index_size ?
+						    3 * sizeof(uint32_t) :
+						    2 * sizeof(uint32_t));
+			uint8_t *indirect_data =
+				r600_buffer_map_sync_with_rings(&rctx->b,
+								(struct r600_resource *)indirect->buffer,
+								PIPE_MAP_READ);
+
+			rctx->lds_constant_buffer.vertexid_base =
+				*(uint32_t *)(indirect_data + indirect_offset);
+		} else {
+			rctx->lds_constant_buffer.vertexid_base = 0;
+		}
+
+		evergreen_setup_tess_constants(rctx, info, &num_patches, vertexid);
+	}
 
 	/* Emit states. */
 	r600_need_cs_space(rctx, has_user_indices ? 5 : 0, true, util_bitcount(atomic_used_mask));

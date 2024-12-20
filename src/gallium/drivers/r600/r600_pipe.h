@@ -473,6 +473,10 @@ struct r600_lds_constant_buffer {
 	uint32_t output_vertex_size;
 	uint32_t output_patch0_offset;
 	uint32_t perpatch_output_offset;
+
+	/* Processed by the vertex shader */
+	uint32_t vertexid_base;
+	uint32_t pad[3];
 };
 
 struct r600_context {
@@ -792,7 +796,8 @@ void evergreen_dma_copy_buffer(struct r600_context *rctx,
 			       uint64_t size);
 void evergreen_setup_tess_constants(struct r600_context *rctx,
 				    const struct pipe_draw_info *info,
-				    unsigned *num_patches);
+				    unsigned *num_patches,
+				    const bool vertexid);
 uint32_t evergreen_get_ls_hs_config(struct r600_context *rctx,
 				    const struct pipe_draw_info *info,
 				    unsigned num_patches);

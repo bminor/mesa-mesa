@@ -168,6 +168,7 @@ void
 VertexShader::do_get_shader_info(r600_shader *sh_info)
 {
    sh_info->processor_type = PIPE_SHADER_VERTEX;
+   sh_info->vs_vertexid = m_vertex_id != nullptr;
    m_export_stage->get_shader_info(sh_info);
 }
 
@@ -439,7 +440,10 @@ VertexShader::do_scan_instruction(nir_instr *instr)
       break;
    }
    case nir_intrinsic_load_vertex_id:
+   case nir_intrinsic_load_vertex_id_zero_base:
       m_sv_values.set(es_vertexid);
+      break;
+   case nir_intrinsic_load_first_vertex:
       break;
    case nir_intrinsic_load_instance_id:
       m_sv_values.set(es_instanceid);
@@ -517,6 +521,7 @@ VertexShader::process_stage_intrinsic(nir_intrinsic_instr *intr)
 {
    switch (intr->intrinsic) {
    case nir_intrinsic_load_vertex_id:
+   case nir_intrinsic_load_vertex_id_zero_base:
       return emit_simple_mov(intr->def, 0, m_vertex_id);
    case nir_intrinsic_load_instance_id:
       return emit_simple_mov(intr->def, 0, m_instance_id);

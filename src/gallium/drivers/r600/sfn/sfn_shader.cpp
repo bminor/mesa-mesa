@@ -905,6 +905,10 @@ Shader::process_intrinsic(nir_intrinsic_instr *intr)
       return emit_load_tcs_param_base(intr, 0);
    case nir_intrinsic_load_tcs_out_param_base_r600:
       return emit_load_tcs_param_base(intr, 16);
+   case nir_intrinsic_load_first_vertex:
+      return emit_get_lds_info_uint(intr,
+                                    offsetof(struct r600_lds_constant_buffer,
+                                             vertexid_base));
    case nir_intrinsic_barrier:
       return emit_barrier(intr);
    case nir_intrinsic_shared_atomic:
@@ -1488,6 +1492,26 @@ Shader::emit_load_tcs_param_base(nir_intrinsic_instr *instr, int offset)
                                    fmt_32_32_32_32);
 
    fetch->set_fetch_flag(LoadFromBuffer::srf_mode);
+   emit_instruction(fetch);
+
+   return true;
+}
+
+bool
+Shader::emit_get_lds_info_uint(nir_intrinsic_instr *instr, int offset)
+{
+   auto src = value_factory().temp_register();
+   emit_instruction(
+      new AluInstr(op1_mov, src, value_factory().zero(), AluInstr::last_write));
+
+   auto dest = value_factory().dest_vec4(instr->def, pin_group);
+   auto fetch = new LoadFromBuffer(dest,
+                                   {0, 7, 7, 7},
+                                   src,
+                                   offset,
+                                   R600_LDS_INFO_CONST_BUFFER,
+                                   nullptr,
+                                   fmt_32_float);
    emit_instruction(fetch);
 
    return true;

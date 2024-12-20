@@ -765,9 +765,6 @@ spec@arb_compute_shader@local-id-explosion,Fail
 spec@arb_depth_buffer_float@fbo-clear-formats stencil,Fail
 spec@arb_depth_buffer_float@fbo-clear-formats stencil@GL_DEPTH32F_STENCIL8,Fail
 
-spec@arb_draw_indirect@gl_vertexid used with gldrawarraysindirect,Fail
-spec@arb_draw_indirect@gl_vertexid used with gldrawelementsindirect,Fail
-
 # "Testing level 3
 # Probe at (0,8)
 #   Expected: 219
@@ -782,7 +779,6 @@ spec@arb_gpu_shader5@execution@built-in-functions@fs-interpolateatsample-array-o
 spec@arb_gpu_shader5@execution@built-in-functions@fs-interpolateatsample-block-array,Fail
 
 spec@arb_multi_draw_indirect@arb_draw_elements_base_vertex-multidrawelements -indirect,Fail
-spec@arb_multi_draw_indirect@gl-3.0-multidrawarrays-vertexid -indirect,Fail
 
 spec@arb_program_interface_query@arb_program_interface_query-getprogramresourceindex,Fail
 spec@arb_program_interface_query@arb_program_interface_query-getprogramresourceindex@'vs_input2[1][0]' on GL_PROGRAM_INPUT,Fail
