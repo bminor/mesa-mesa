@@ -4603,7 +4603,6 @@ void evergreen_init_state_functions(struct r600_context *rctx)
  */
 void evergreen_setup_tess_constants(struct r600_context *rctx, const struct pipe_draw_info *info, unsigned *num_patches)
 {
-	struct pipe_constant_buffer constbuf = {0};
 	struct r600_pipe_shader_selector *tcs = rctx->tcs_shader ? rctx->tcs_shader : rctx->tes_shader;
 	struct r600_pipe_shader_selector *ls = rctx->vs_shader;
 	unsigned num_tcs_input_cp = rctx->patch_vertices;
@@ -4614,7 +4613,6 @@ void evergreen_setup_tess_constants(struct r600_context *rctx, const struct pipe
 	unsigned input_vertex_size, output_vertex_size;
 	unsigned input_patch_size, pervertex_output_patch_size, output_patch_size;
 	unsigned output_patch0_offset, perpatch_output_offset, lds_size;
-	uint32_t values[8];
 	unsigned num_waves;
 	unsigned num_pipes = rctx->screen->b.info.r600_max_quad_pipes;
 	unsigned wave_divisor = (16 * num_pipes);
@@ -4664,15 +4662,15 @@ void evergreen_setup_tess_constants(struct r600_context *rctx, const struct pipe
 
 	lds_size = output_patch0_offset + output_patch_size * *num_patches;
 
-	values[0] = input_patch_size;
-	values[1] = input_vertex_size;
-	values[2] = num_tcs_input_cp;
-	values[3] = num_tcs_output_cp;
+	rctx->lds_constant_buffer.input_patch_size = input_patch_size;
+	rctx->lds_constant_buffer.input_vertex_size = input_vertex_size;
+	rctx->lds_constant_buffer.num_tcs_input_cp = num_tcs_input_cp;
+	rctx->lds_constant_buffer.num_tcs_output_cp = num_tcs_output_cp;
 
-	values[4] = output_patch_size;
-	values[5] = output_vertex_size;
-	values[6] = output_patch0_offset;
-	values[7] = perpatch_output_offset;
+	rctx->lds_constant_buffer.output_patch_size = output_patch_size;
+	rctx->lds_constant_buffer.output_vertex_size = output_vertex_size;
+	rctx->lds_constant_buffer.output_patch0_offset = output_patch0_offset;
+	rctx->lds_constant_buffer.perpatch_output_offset = perpatch_output_offset;
 
 	/* docs say HS_NUM_WAVES - CEIL((LS_HS_CONFIG.NUM_PATCHES *
 	   LS_HS_CONFIG.HS_NUM_OUTPUT_CP) / (NUM_GOOD_PIPES * 16)) */
@@ -4684,15 +4682,15 @@ void evergreen_setup_tess_constants(struct r600_context *rctx, const struct pipe
 	rctx->last_tcs = tcs;
 	rctx->last_num_tcs_input_cp = num_tcs_input_cp;
 
-	constbuf.user_buffer = values;
-	constbuf.buffer_size = 8 * 4;
-
 	rctx->b.b.set_constant_buffer(&rctx->b.b, PIPE_SHADER_VERTEX,
-				      R600_LDS_INFO_CONST_BUFFER, false, &constbuf);
+				      R600_LDS_INFO_CONST_BUFFER, false,
+				      &rctx->lds_constbuf_pipe);
 	rctx->b.b.set_constant_buffer(&rctx->b.b, PIPE_SHADER_TESS_CTRL,
-				      R600_LDS_INFO_CONST_BUFFER, false, &constbuf);
+				      R600_LDS_INFO_CONST_BUFFER, false,
+				      &rctx->lds_constbuf_pipe);
 	rctx->b.b.set_constant_buffer(&rctx->b.b, PIPE_SHADER_TESS_EVAL,
-				      R600_LDS_INFO_CONST_BUFFER, true, &constbuf);
+				      R600_LDS_INFO_CONST_BUFFER, true,
+				      &rctx->lds_constbuf_pipe);
 }
 
 uint32_t evergreen_get_ls_hs_config(struct r600_context *rctx,

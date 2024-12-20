@@ -218,6 +218,9 @@ static struct pipe_context *r600_create_context(struct pipe_screen *screen,
 						     TGSI_INTERPOLATE_CONSTANT);
 	rctx->b.b.bind_fs_state(&rctx->b.b, rctx->dummy_pixel_shader);
 
+	rctx->lds_constbuf_pipe.user_buffer = &rctx->lds_constant_buffer;
+	rctx->lds_constbuf_pipe.buffer_size = sizeof(struct r600_lds_constant_buffer);
+
 	return &rctx->b.b;
 
 fail:

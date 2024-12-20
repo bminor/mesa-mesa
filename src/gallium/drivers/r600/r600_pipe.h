@@ -464,6 +464,17 @@ struct r600_scratch_buffer {
 	unsigned				item_size;
 };
 
+struct r600_lds_constant_buffer {
+	uint32_t input_patch_size;
+	uint32_t input_vertex_size;
+	uint32_t num_tcs_input_cp;
+	uint32_t num_tcs_output_cp;
+	uint32_t output_patch_size;
+	uint32_t output_vertex_size;
+	uint32_t output_patch0_offset;
+	uint32_t perpatch_output_offset;
+};
+
 struct r600_context {
 	struct r600_common_context	b;
 	struct r600_screen		*screen;
@@ -578,6 +589,8 @@ struct r600_context {
 	struct r600_pipe_shader_selector *last_tcs;
 	unsigned last_num_tcs_input_cp;
 	unsigned lds_alloc;
+	struct r600_lds_constant_buffer lds_constant_buffer;
+	struct pipe_constant_buffer lds_constbuf_pipe;
 
 	struct r600_scratch_buffer scratch_buffers[MAX2(R600_NUM_HW_STAGES, EG_NUM_HW_STAGES)];
 
