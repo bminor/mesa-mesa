@@ -3252,26 +3252,30 @@ ngg_gs_export_vertices(nir_builder *b, nir_def *max_num_out_vtx, nir_def *tid_in
                           s->options->force_vrs, !wait_attr_ring,
                           export_outputs, &s->out, NULL);
 
+   if (s->options->has_param_exports && s->options->gfx_level < GFX11) {
+      /* Emit vertex parameter exports.
+       * Only the vertex export threads should do this.
+       */
+      ac_nir_export_parameters(b, s->options->vs_output_param_offset,
+                               b->shader->info.outputs_written,
+                               b->shader->info.outputs_written_16bit,
+                               &s->out);
+   }
+
    nir_pop_if(b, if_vtx_export_thread);
 
-   if (s->options->has_param_exports) {
-      if (s->options->gfx_level >= GFX11) {
-         create_output_phis(b, b->shader->info.outputs_written, b->shader->info.outputs_written_16bit, &s->out);
+   if (s->options->has_param_exports && s->options->gfx_level >= GFX11) {
+      /* Store vertex parameters to attribute ring.
+       * For optimal attribute ring access, this should happen in top level CF.
+       */
+      create_output_phis(b, b->shader->info.outputs_written, b->shader->info.outputs_written_16bit, &s->out);
+      ac_nir_store_parameters_to_attr_ring(b, s->options->vs_output_param_offset,
+                                           b->shader->info.outputs_written,
+                                           b->shader->info.outputs_written_16bit,
+                                           &s->out, tid_in_tg, max_num_out_vtx);
 
-         ac_nir_store_parameters_to_attr_ring(b, s->options->vs_output_param_offset,
-                                              b->shader->info.outputs_written,
-                                              b->shader->info.outputs_written_16bit,
-                                              &s->out, tid_in_tg, max_num_out_vtx);
-
-         if (wait_attr_ring)
-            export_pos0_wait_attr_ring(b, if_vtx_export_thread, s->out.outputs, s->options);
-      } else {
-         b->cursor = nir_after_cf_list(&if_vtx_export_thread->then_list);
-         ac_nir_export_parameters(b, s->options->vs_output_param_offset,
-                                  b->shader->info.outputs_written,
-                                  b->shader->info.outputs_written_16bit,
-                                  &s->out);
-      }
+      if (wait_attr_ring)
+         export_pos0_wait_attr_ring(b, if_vtx_export_thread, s->out.outputs, s->options);
    }
 }
 
