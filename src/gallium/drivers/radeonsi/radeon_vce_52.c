@@ -75,19 +75,21 @@ static void get_pic_control_param(struct rvce_encoder *enc, struct pipe_h264_enc
       enc->enc_pic.pc.enc_crop_right_offset = pic->seq.enc_frame_crop_right_offset;
       enc->enc_pic.pc.enc_crop_top_offset = pic->seq.enc_frame_crop_top_offset;
       enc->enc_pic.pc.enc_crop_bottom_offset = pic->seq.enc_frame_crop_bottom_offset;
-   } else {
-      enc->enc_pic.pc.enc_crop_right_offset = (align(enc->base.width, 16) - enc->base.width) >> 1;
-      enc->enc_pic.pc.enc_crop_bottom_offset =
-         (align(enc->base.height, 16) - enc->base.height) >> 1;
    }
    enc->enc_pic.pc.enc_num_mbs_per_slice = encNumMBsPerSlice;
-   enc->enc_pic.pc.enc_b_pic_pattern = MAX2(enc->base.max_references, 1) - 1;
-   enc->enc_pic.pc.enc_number_of_reference_frames = MIN2(enc->base.max_references, 1);
-   enc->enc_pic.pc.enc_max_num_ref_frames = enc->base.max_references + 1;
-   enc->enc_pic.pc.enc_num_default_active_ref_l0 = 0x00000001;
-   enc->enc_pic.pc.enc_num_default_active_ref_l1 = 0x00000001;
+   enc->enc_pic.pc.enc_number_of_reference_frames = 1;
+   enc->enc_pic.pc.enc_max_num_ref_frames = pic->seq.max_num_ref_frames;
+   enc->enc_pic.pc.enc_num_default_active_ref_l0 = pic->pic_ctrl.num_ref_idx_l0_default_active_minus1 + 1;
+   enc->enc_pic.pc.enc_num_default_active_ref_l1 = pic->pic_ctrl.num_ref_idx_l1_default_active_minus1 + 1;
+   enc->enc_pic.pc.enc_use_constrained_intra_pred = pic->pic_ctrl.constrained_intra_pred_flag;
    enc->enc_pic.pc.enc_cabac_enable = pic->pic_ctrl.enc_cabac_enable;
-   enc->enc_pic.pc.enc_constraint_set_flags = 0x00000040;
+   enc->enc_pic.pc.enc_cabac_idc = pic->pic_ctrl.enc_cabac_init_idc;
+   enc->enc_pic.pc.enc_constraint_set_flags = pic->seq.enc_constraint_set_flags << 2;
+   enc->enc_pic.pc.enc_loop_filter_disable = !!pic->dbk.disable_deblocking_filter_idc;
+   enc->enc_pic.pc.enc_lf_beta_offset = pic->dbk.beta_offset_div2;
+   enc->enc_pic.pc.enc_lf_alpha_c0_offset = pic->dbk.alpha_c0_offset_div2;
+   enc->enc_pic.pc.enc_pic_order_cnt_type = pic->seq.pic_order_cnt_type;
+   enc->enc_pic.pc.log2_max_pic_order_cnt_lsb_minus4 = pic->seq.log2_max_pic_order_cnt_lsb_minus4;
 }
 
 static void get_task_info_param(struct rvce_encoder *enc)
@@ -107,12 +109,21 @@ static void get_config_ext_param(struct rvce_encoder *enc)
 
 static void get_vui_param(struct rvce_encoder *enc, struct pipe_h264_enc_picture_desc *pic)
 {
+   pipe_h264_enc_hrd_params *hrd_params = NULL;
+
+   if (pic->seq.vui_flags.nal_hrd_parameters_present_flag)
+      hrd_params = &pic->seq.nal_hrd_parameters;
+   else if (pic->seq.vui_flags.vcl_hrd_parameters_present_flag)
+      hrd_params = &pic->seq.vcl_hrd_parameters;
+
    enc->enc_pic.enable_vui = pic->seq.vui_parameters_present_flag;
    enc->enc_pic.vui.aspect_ratio_info_present_flag =
       pic->seq.vui_flags.aspect_ratio_info_present_flag;
    enc->enc_pic.vui.aspect_ratio_idc = pic->seq.aspect_ratio_idc;
    enc->enc_pic.vui.sar_width = pic->seq.sar_width;
    enc->enc_pic.vui.sar_height = pic->seq.sar_height;
+   enc->enc_pic.vui.overscan_info_present_flag = pic->seq.vui_flags.overscan_info_present_flag;
+   enc->enc_pic.vui.overscan_Approp_flag = pic->seq.vui_flags.overscan_appropriate_flag;
    enc->enc_pic.vui.video_signal_type_present_flag =
       pic->seq.vui_flags.video_signal_type_present_flag;
    enc->enc_pic.vui.video_format = pic->seq.video_format;
@@ -127,22 +138,30 @@ static void get_vui_param(struct rvce_encoder *enc, struct pipe_h264_enc_picture
    enc->enc_pic.vui.chroma_loc_top = pic->seq.chroma_sample_loc_type_top_field;
    enc->enc_pic.vui.chroma_loc_bottom = pic->seq.chroma_sample_loc_type_bottom_field;
    enc->enc_pic.vui.timing_info_present_flag = pic->seq.vui_flags.timing_info_present_flag;
-   enc->enc_pic.vui.num_units_in_tick = pic->rate_ctrl[0].frame_rate_den;
-   enc->enc_pic.vui.time_scale = pic->rate_ctrl[0].frame_rate_num * 2;
-   enc->enc_pic.vui.fixed_frame_rate_flag = 0x00000001;
-   enc->enc_pic.vui.bit_rate_scale = 0x00000004;
-   enc->enc_pic.vui.cpb_size_scale = 0x00000006;
-   enc->enc_pic.vui.initial_cpb_removal_delay_length_minus1 = 0x00000017;
-   enc->enc_pic.vui.cpb_removal_delay_length_minus1 = 0x00000017;
-   enc->enc_pic.vui.dpb_output_delay_length_minus1 = 0x00000017;
-   enc->enc_pic.vui.time_offset_length = 0x00000018;
+   enc->enc_pic.vui.num_units_in_tick = pic->seq.num_units_in_tick;
+   enc->enc_pic.vui.time_scale = pic->seq.time_scale;
+   enc->enc_pic.vui.fixed_frame_rate_flag = pic->seq.vui_flags.fixed_frame_rate_flag;
+   enc->enc_pic.vui.low_delay_hrd_flag = pic->seq.vui_flags.low_delay_hrd_flag;
+   if (hrd_params) {
+      enc->enc_pic.vui.bit_rate_scale = hrd_params->bit_rate_scale;
+      enc->enc_pic.vui.cpb_size_scale = hrd_params->cpb_size_scale;
+      enc->enc_pic.vui.initial_cpb_removal_delay_length_minus1 =
+         hrd_params->initial_cpb_removal_delay_length_minus1;
+      enc->enc_pic.vui.cpb_removal_delay_length_minus1 = hrd_params->cpb_removal_delay_length_minus1;
+      enc->enc_pic.vui.dpb_output_delay_length_minus1 = hrd_params->dpb_output_delay_length_minus1;
+      enc->enc_pic.vui.time_offset_length = hrd_params->time_offset_length;
+      enc->enc_pic.vui.bit_rate_value_minus = hrd_params->bit_rate_value_minus1[0];
+      enc->enc_pic.vui.cpb_size_value_minus = hrd_params->bit_rate_value_minus1[0];
+      enc->enc_pic.vui.cbr_flag = hrd_params->cbr_flag[0];
+   }
+   enc->enc_pic.vui.bitstream_restriction_present_flag = pic->seq.vui_flags.bitstream_restriction_flag;
    enc->enc_pic.vui.motion_vectors_over_pic_boundaries_flag = 0x00000001;
    enc->enc_pic.vui.max_bytes_per_pic_denom = 0x00000002;
    enc->enc_pic.vui.max_bits_per_mb_denom = 0x00000001;
    enc->enc_pic.vui.log2_max_mv_length_hori = 0x00000010;
    enc->enc_pic.vui.log2_max_mv_length_vert = 0x00000010;
-   enc->enc_pic.vui.num_reorder_frames = 0x00000003;
-   enc->enc_pic.vui.max_dec_frame_buffering = 0x00000003;
+   enc->enc_pic.vui.num_reorder_frames = pic->seq.max_num_reorder_frames;
+   enc->enc_pic.vui.max_dec_frame_buffering = pic->seq.max_dec_frame_buffering;
 }
 
 static void get_param(struct rvce_encoder *enc, struct pipe_h264_enc_picture_desc *pic)
@@ -176,7 +195,7 @@ static void create(struct rvce_encoder *enc)
 
    RVCE_BEGIN(0x01000001); // create cmd
    RVCE_CS(enc->enc_pic.ec.enc_use_circular_buffer);
-   RVCE_CS(u_get_h264_profile_idc(enc->base.profile)); // encProfile
+   RVCE_CS(enc->pic.seq.profile_idc); // encProfile
    RVCE_CS(enc->pic.seq.level_idc);                    // encLevel
    RVCE_CS(enc->enc_pic.ec.enc_pic_struct_restriction);
    RVCE_CS(enc->base.width);  // encImageWidth
@@ -440,8 +459,7 @@ static void config(struct rvce_encoder *enc)
    enc->config_extension(enc);
    enc->motion_estimation(enc);
    enc->rdo(enc);
-   if (enc->use_vui)
-      enc->vui(enc);
+   enc->vui(enc);
    enc->pic_control(enc);
 }
 

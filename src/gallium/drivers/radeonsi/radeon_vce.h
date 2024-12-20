@@ -394,7 +394,6 @@ struct rvce_encoder {
    unsigned bs_idx;
 
    bool use_vm;
-   bool use_vui;
    bool dual_pipe;
 };
 
