@@ -282,9 +282,6 @@ void radv_cmd_buffer_resolve_rendering_fs(struct radv_cmd_buffer *cmd_buffer, st
 void radv_depth_stencil_resolve_rendering_fs(struct radv_cmd_buffer *cmd_buffer, VkImageAspectFlags aspects,
                                              VkResolveModeFlagBits resolve_mode);
 
-VkResult radv_meta_create_compute_pipeline(struct radv_device *device, nir_shader *nir,
-                                           VkPipelineLayout pipeline_layout, VkPipeline *pipeline);
-
 VkResult radv_meta_create_pipeline_layout(struct radv_device *device, VkDescriptorSetLayout *set_layout,
                                           uint32_t num_pc_ranges, const VkPushConstantRange *pc_ranges,
                                           VkPipelineLayout *pipeline_layout);
