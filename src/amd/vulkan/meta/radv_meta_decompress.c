@@ -116,9 +116,16 @@ create_pipeline_gfx(struct radv_device *device, uint32_t samples, VkPipelineLayo
       .stencilAttachmentFormat = VK_FORMAT_D32_SFLOAT_S8_UINT,
    };
 
+   const VkGraphicsPipelineCreateInfoRADV radv_info = {
+      .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO_RADV,
+      .pNext = &rendering_create_info,
+      .depth_compress_disable = true,
+      .stencil_compress_disable = true,
+   };
+
    const VkGraphicsPipelineCreateInfo pipeline_create_info = {
       .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-      .pNext = &rendering_create_info,
+      .pNext = &radv_info,
       .stageCount = 2,
       .pStages =
          (VkPipelineShaderStageCreateInfo[]){
@@ -203,13 +210,8 @@ create_pipeline_gfx(struct radv_device *device, uint32_t samples, VkPipelineLayo
       .subpass = 0,
    };
 
-   struct radv_graphics_pipeline_create_info extra = {
-      .depth_compress_disable = true,
-      .stencil_compress_disable = true,
-   };
-
-   result = radv_graphics_pipeline_create(device_h, device->meta_state.cache, &pipeline_create_info, &extra,
-                                          &device->meta_state.alloc, pipeline);
+   result = radv_CreateGraphicsPipelines(device_h, device->meta_state.cache, 1, &pipeline_create_info,
+                                         &device->meta_state.alloc, pipeline);
 
    ralloc_free(fs_module);
    ralloc_free(vs_module);

@@ -20,6 +20,20 @@
 #include "vk_graphics_state.h"
 #include "vk_meta.h"
 
+#define VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO_RADV (VkStructureType)2000290001
+
+#define VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO_RADV_cast VkGraphicsPipelineCreateInfoRADV
+
+typedef struct VkGraphicsPipelineCreateInfoRADV {
+   VkStructureType sType;
+   const void *pNext;
+   VkBool32 db_depth_clear;
+   VkBool32 db_stencil_clear;
+   VkBool32 depth_compress_disable;
+   VkBool32 stencil_compress_disable;
+   uint32_t custom_blend_mode;
+} VkGraphicsPipelineCreateInfoRADV;
+
 struct radv_sample_locations_state {
    VkSampleCountFlagBits per_pixel;
    VkExtent2D grid_size;
@@ -620,19 +634,6 @@ uint32_t radv_get_vgt_gs_out(struct radv_shader **shaders, uint32_t primitive_to
 
 bool radv_needs_null_export_workaround(const struct radv_device *device, const struct radv_shader *ps,
                                        unsigned custom_blend_mode);
-
-struct radv_graphics_pipeline_create_info {
-   bool db_depth_clear;
-   bool db_stencil_clear;
-   bool depth_compress_disable;
-   bool stencil_compress_disable;
-   uint32_t custom_blend_mode;
-};
-
-VkResult radv_graphics_pipeline_create(VkDevice device, VkPipelineCache cache,
-                                       const VkGraphicsPipelineCreateInfo *pCreateInfo,
-                                       const struct radv_graphics_pipeline_create_info *extra,
-                                       const VkAllocationCallbacks *alloc, VkPipeline *pPipeline);
 
 void radv_destroy_graphics_pipeline(struct radv_device *device, struct radv_graphics_pipeline *pipeline);
 

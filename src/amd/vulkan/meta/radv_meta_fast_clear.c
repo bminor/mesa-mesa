@@ -175,109 +175,122 @@ create_pipeline(struct radv_device *device, VkShaderModule vs_module_h, VkPipeli
       .pColorAttachmentFormats = &color_format,
    };
 
-   result = radv_graphics_pipeline_create(device_h, device->meta_state.cache,
-                                          &(VkGraphicsPipelineCreateInfo){
-                                             .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-                                             .pNext = &rendering_create_info,
-                                             .stageCount = 2,
-                                             .pStages = stages,
+   const VkGraphicsPipelineCreateInfoRADV radv_eliminate_fast_clear_info = {
+      .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO_RADV,
+      .pNext = &rendering_create_info,
+      .custom_blend_mode = V_028808_CB_ELIMINATE_FAST_CLEAR,
+   };
 
-                                             .pVertexInputState = &vi_state,
-                                             .pInputAssemblyState = &ia_state,
+   result = radv_CreateGraphicsPipelines(device_h, device->meta_state.cache, 1,
+                                         &(VkGraphicsPipelineCreateInfo){
+                                            .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+                                            .pNext = &radv_eliminate_fast_clear_info,
+                                            .stageCount = 2,
+                                            .pStages = stages,
 
-                                             .pViewportState =
-                                                &(VkPipelineViewportStateCreateInfo){
-                                                   .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
-                                                   .viewportCount = 1,
-                                                   .scissorCount = 1,
-                                                },
-                                             .pRasterizationState = &rs_state,
-                                             .pMultisampleState =
-                                                &(VkPipelineMultisampleStateCreateInfo){
-                                                   .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
-                                                   .rasterizationSamples = 1,
-                                                   .sampleShadingEnable = false,
-                                                   .pSampleMask = NULL,
-                                                   .alphaToCoverageEnable = false,
-                                                   .alphaToOneEnable = false,
-                                                },
-                                             .pColorBlendState = &blend_state,
-                                             .pDynamicState =
-                                                &(VkPipelineDynamicStateCreateInfo){
-                                                   .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
-                                                   .dynamicStateCount = 2,
-                                                   .pDynamicStates =
-                                                      (VkDynamicState[]){
-                                                         VK_DYNAMIC_STATE_VIEWPORT,
-                                                         VK_DYNAMIC_STATE_SCISSOR,
-                                                      },
-                                                },
-                                             .layout = layout,
-                                             .renderPass = VK_NULL_HANDLE,
-                                             .subpass = 0,
-                                          },
-                                          &(struct radv_graphics_pipeline_create_info){
-                                             .custom_blend_mode = V_028808_CB_ELIMINATE_FAST_CLEAR,
-                                          },
-                                          &device->meta_state.alloc,
-                                          &device->meta_state.fast_clear_flush.cmask_eliminate_pipeline);
+                                            .pVertexInputState = &vi_state,
+                                            .pInputAssemblyState = &ia_state,
+
+                                            .pViewportState =
+                                               &(VkPipelineViewportStateCreateInfo){
+                                                  .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
+                                                  .viewportCount = 1,
+                                                  .scissorCount = 1,
+                                               },
+                                            .pRasterizationState = &rs_state,
+                                            .pMultisampleState =
+                                               &(VkPipelineMultisampleStateCreateInfo){
+                                                  .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
+                                                  .rasterizationSamples = 1,
+                                                  .sampleShadingEnable = false,
+                                                  .pSampleMask = NULL,
+                                                  .alphaToCoverageEnable = false,
+                                                  .alphaToOneEnable = false,
+                                               },
+                                            .pColorBlendState = &blend_state,
+                                            .pDynamicState =
+                                               &(VkPipelineDynamicStateCreateInfo){
+                                                  .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
+                                                  .dynamicStateCount = 2,
+                                                  .pDynamicStates =
+                                                     (VkDynamicState[]){
+                                                        VK_DYNAMIC_STATE_VIEWPORT,
+                                                        VK_DYNAMIC_STATE_SCISSOR,
+                                                     },
+                                               },
+                                            .layout = layout,
+                                            .renderPass = VK_NULL_HANDLE,
+                                            .subpass = 0,
+                                         },
+                                         &device->meta_state.alloc,
+                                         &device->meta_state.fast_clear_flush.cmask_eliminate_pipeline);
    if (result != VK_SUCCESS)
       goto cleanup;
 
-   result = radv_graphics_pipeline_create(device_h, device->meta_state.cache,
-                                          &(VkGraphicsPipelineCreateInfo){
-                                             .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-                                             .pNext = &rendering_create_info,
-                                             .stageCount = 2,
-                                             .pStages = stages,
+   const VkGraphicsPipelineCreateInfoRADV radv_fmask_decompress_info = {
+      .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO_RADV,
+      .pNext = &rendering_create_info,
+      .custom_blend_mode = V_028808_CB_FMASK_DECOMPRESS,
+   };
 
-                                             .pVertexInputState = &vi_state,
-                                             .pInputAssemblyState = &ia_state,
+   result = radv_CreateGraphicsPipelines(device_h, device->meta_state.cache, 1,
+                                         &(VkGraphicsPipelineCreateInfo){
+                                            .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+                                            .pNext = &radv_fmask_decompress_info,
+                                            .stageCount = 2,
+                                            .pStages = stages,
 
-                                             .pViewportState =
-                                                &(VkPipelineViewportStateCreateInfo){
-                                                   .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
-                                                   .viewportCount = 1,
-                                                   .scissorCount = 1,
-                                                },
-                                             .pRasterizationState = &rs_state,
-                                             .pMultisampleState =
-                                                &(VkPipelineMultisampleStateCreateInfo){
-                                                   .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
-                                                   .rasterizationSamples = 1,
-                                                   .sampleShadingEnable = false,
-                                                   .pSampleMask = NULL,
-                                                   .alphaToCoverageEnable = false,
-                                                   .alphaToOneEnable = false,
-                                                },
-                                             .pColorBlendState = &blend_state,
-                                             .pDynamicState =
-                                                &(VkPipelineDynamicStateCreateInfo){
-                                                   .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
-                                                   .dynamicStateCount = 2,
-                                                   .pDynamicStates =
-                                                      (VkDynamicState[]){
-                                                         VK_DYNAMIC_STATE_VIEWPORT,
-                                                         VK_DYNAMIC_STATE_SCISSOR,
-                                                      },
-                                                },
-                                             .layout = layout,
-                                             .renderPass = VK_NULL_HANDLE,
-                                             .subpass = 0,
-                                          },
-                                          &(struct radv_graphics_pipeline_create_info){
-                                             .custom_blend_mode = V_028808_CB_FMASK_DECOMPRESS,
-                                          },
-                                          &device->meta_state.alloc,
-                                          &device->meta_state.fast_clear_flush.fmask_decompress_pipeline);
+                                            .pVertexInputState = &vi_state,
+                                            .pInputAssemblyState = &ia_state,
+
+                                            .pViewportState =
+                                               &(VkPipelineViewportStateCreateInfo){
+                                                  .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
+                                                  .viewportCount = 1,
+                                                  .scissorCount = 1,
+                                               },
+                                            .pRasterizationState = &rs_state,
+                                            .pMultisampleState =
+                                               &(VkPipelineMultisampleStateCreateInfo){
+                                                  .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
+                                                  .rasterizationSamples = 1,
+                                                  .sampleShadingEnable = false,
+                                                  .pSampleMask = NULL,
+                                                  .alphaToCoverageEnable = false,
+                                                  .alphaToOneEnable = false,
+                                               },
+                                            .pColorBlendState = &blend_state,
+                                            .pDynamicState =
+                                               &(VkPipelineDynamicStateCreateInfo){
+                                                  .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
+                                                  .dynamicStateCount = 2,
+                                                  .pDynamicStates =
+                                                     (VkDynamicState[]){
+                                                        VK_DYNAMIC_STATE_VIEWPORT,
+                                                        VK_DYNAMIC_STATE_SCISSOR,
+                                                     },
+                                               },
+                                            .layout = layout,
+                                            .renderPass = VK_NULL_HANDLE,
+                                            .subpass = 0,
+                                         },
+                                         &device->meta_state.alloc,
+                                         &device->meta_state.fast_clear_flush.fmask_decompress_pipeline);
    if (result != VK_SUCCESS)
       goto cleanup;
 
-   result = radv_graphics_pipeline_create(
-      device_h, device->meta_state.cache,
+   const VkGraphicsPipelineCreateInfoRADV radv_dcc_decompress_info = {
+      .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO_RADV,
+      .pNext = &rendering_create_info,
+      .custom_blend_mode =
+         pdev->info.gfx_level >= GFX11 ? V_028808_CB_DCC_DECOMPRESS_GFX11 : V_028808_CB_DCC_DECOMPRESS_GFX8,
+   };
+
+   result = radv_CreateGraphicsPipelines(
+      device_h, device->meta_state.cache, 1,
       &(VkGraphicsPipelineCreateInfo){
          .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-         .pNext = &rendering_create_info,
+         .pNext = &radv_dcc_decompress_info,
          .stageCount = 2,
          .pStages = stages,
 
@@ -314,10 +327,6 @@ create_pipeline(struct radv_device *device, VkShaderModule vs_module_h, VkPipeli
          .layout = layout,
          .renderPass = VK_NULL_HANDLE,
          .subpass = 0,
-      },
-      &(struct radv_graphics_pipeline_create_info){
-         .custom_blend_mode =
-            pdev->info.gfx_level >= GFX11 ? V_028808_CB_DCC_DECOMPRESS_GFX11 : V_028808_CB_DCC_DECOMPRESS_GFX8,
       },
       &device->meta_state.alloc, &device->meta_state.fast_clear_flush.dcc_decompress_pipeline);
    if (result != VK_SUCCESS)

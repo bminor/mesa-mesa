@@ -3275,17 +3275,16 @@ radv_pipeline_init_vgt_gs_out(struct radv_graphics_pipeline *pipeline, const str
 }
 
 static void
-radv_pipeline_init_extra(struct radv_graphics_pipeline *pipeline,
-                         const struct radv_graphics_pipeline_create_info *extra,
+radv_pipeline_init_extra(struct radv_graphics_pipeline *pipeline, const VkGraphicsPipelineCreateInfoRADV *radv_info,
                          const struct vk_graphics_pipeline_state *state)
 {
-   pipeline->custom_blend_mode = extra->custom_blend_mode;
+   pipeline->custom_blend_mode = radv_info->custom_blend_mode;
 
    if (radv_pipeline_has_ds_attachments(state->rp)) {
-      pipeline->db_render_control |= S_028000_DEPTH_CLEAR_ENABLE(extra->db_depth_clear);
-      pipeline->db_render_control |= S_028000_STENCIL_CLEAR_ENABLE(extra->db_stencil_clear);
-      pipeline->db_render_control |= S_028000_DEPTH_COMPRESS_DISABLE(extra->depth_compress_disable);
-      pipeline->db_render_control |= S_028000_STENCIL_COMPRESS_DISABLE(extra->stencil_compress_disable);
+      pipeline->db_render_control |= S_028000_DEPTH_CLEAR_ENABLE(radv_info->db_depth_clear);
+      pipeline->db_render_control |= S_028000_STENCIL_CLEAR_ENABLE(radv_info->db_stencil_clear);
+      pipeline->db_render_control |= S_028000_DEPTH_COMPRESS_DISABLE(radv_info->depth_compress_disable);
+      pipeline->db_render_control |= S_028000_STENCIL_COMPRESS_DISABLE(radv_info->stencil_compress_disable);
    }
 }
 
@@ -3365,8 +3364,7 @@ radv_graphics_pipeline_import_binaries(struct radv_device *device, struct radv_g
 
 static VkResult
 radv_graphics_pipeline_init(struct radv_graphics_pipeline *pipeline, struct radv_device *device,
-                            struct vk_pipeline_cache *cache, const VkGraphicsPipelineCreateInfo *pCreateInfo,
-                            const struct radv_graphics_pipeline_create_info *extra)
+                            struct vk_pipeline_cache *cache, const VkGraphicsPipelineCreateInfo *pCreateInfo)
 {
    bool fast_linking_enabled = radv_is_fast_linking_enabled(pCreateInfo);
    struct radv_graphics_pipeline_state gfx_state;
@@ -3436,17 +3434,18 @@ radv_graphics_pipeline_init(struct radv_graphics_pipeline *pipeline, struct radv
    pipeline->base.push_constant_size = gfx_state.layout.push_constant_size;
    pipeline->base.dynamic_offset_count = gfx_state.layout.dynamic_offset_count;
 
-   if (extra) {
-      radv_pipeline_init_extra(pipeline, extra, &gfx_state.vk);
+   const VkGraphicsPipelineCreateInfoRADV *radv_info =
+      vk_find_struct_const(pCreateInfo->pNext, GRAPHICS_PIPELINE_CREATE_INFO_RADV);
+   if (radv_info) {
+      radv_pipeline_init_extra(pipeline, radv_info, &gfx_state.vk);
    }
 
    radv_graphics_pipeline_state_finish(device, &gfx_state);
    return result;
 }
 
-VkResult
+static VkResult
 radv_graphics_pipeline_create(VkDevice _device, VkPipelineCache _cache, const VkGraphicsPipelineCreateInfo *pCreateInfo,
-                              const struct radv_graphics_pipeline_create_info *extra,
                               const VkAllocationCallbacks *pAllocator, VkPipeline *pPipeline)
 {
    VK_FROM_HANDLE(radv_device, device, _device);
@@ -3462,7 +3461,7 @@ radv_graphics_pipeline_create(VkDevice _device, VkPipelineCache _cache, const Vk
    pipeline->base.create_flags = vk_graphics_pipeline_create_flags(pCreateInfo);
    pipeline->base.is_internal = _cache == device->meta_state.cache;
 
-   result = radv_graphics_pipeline_init(pipeline, device, cache, pCreateInfo, extra);
+   result = radv_graphics_pipeline_init(pipeline, device, cache, pCreateInfo);
    if (result != VK_SUCCESS) {
       radv_pipeline_destroy(device, &pipeline->base, pAllocator);
       return result;
@@ -3613,7 +3612,7 @@ radv_CreateGraphicsPipelines(VkDevice _device, VkPipelineCache pipelineCache, ui
       if (create_flags & VK_PIPELINE_CREATE_2_LIBRARY_BIT_KHR) {
          r = radv_graphics_lib_pipeline_create(_device, pipelineCache, &pCreateInfos[i], pAllocator, &pPipelines[i]);
       } else {
-         r = radv_graphics_pipeline_create(_device, pipelineCache, &pCreateInfos[i], NULL, pAllocator, &pPipelines[i]);
+         r = radv_graphics_pipeline_create(_device, pipelineCache, &pCreateInfos[i], pAllocator, &pPipelines[i]);
       }
       if (r != VK_SUCCESS) {
          result = r;

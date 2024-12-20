@@ -50,11 +50,17 @@ create_pipeline(struct radv_device *device, VkFormat format, VkPipeline *pipelin
       .pColorAttachmentFormats = color_formats,
    };
 
-   result = radv_graphics_pipeline_create(
-      device_h, device->meta_state.cache,
+   const VkGraphicsPipelineCreateInfoRADV radv_info = {
+      .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO_RADV,
+      .pNext = &rendering_create_info,
+      .custom_blend_mode = V_028808_CB_RESOLVE,
+   };
+
+   result = radv_CreateGraphicsPipelines(
+      device_h, device->meta_state.cache, 1,
       &(VkGraphicsPipelineCreateInfo){
          .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-         .pNext = &rendering_create_info,
+         .pNext = &radv_info,
          .stageCount = 2,
          .pStages =
             (VkPipelineShaderStageCreateInfo[]){
@@ -136,9 +142,6 @@ create_pipeline(struct radv_device *device, VkFormat format, VkPipeline *pipelin
          .layout = device->meta_state.resolve.p_layout,
          .renderPass = VK_NULL_HANDLE,
          .subpass = 0,
-      },
-      &(struct radv_graphics_pipeline_create_info){
-         .custom_blend_mode = V_028808_CB_RESOLVE,
       },
       &device->meta_state.alloc, pipeline);
 
