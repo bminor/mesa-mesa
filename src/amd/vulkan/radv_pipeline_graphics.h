@@ -18,6 +18,7 @@
 #include "radv_shader.h"
 
 #include "vk_graphics_state.h"
+#include "vk_meta.h"
 
 struct radv_sample_locations_state {
    VkSampleCountFlagBits per_pixel;
@@ -237,6 +238,8 @@ radv_translate_prim(unsigned topology)
       return V_008958_DI_PT_TRISTRIP_ADJ;
    case VK_PRIMITIVE_TOPOLOGY_PATCH_LIST:
       return V_008958_DI_PT_PATCH;
+   case VK_PRIMITIVE_TOPOLOGY_META_RECT_LIST_MESA:
+      return V_008958_DI_PT_RECTLIST;
    default:
       unreachable("unhandled primitive type");
    }
@@ -613,7 +616,7 @@ struct radv_vgt_shader_key {
 struct radv_vgt_shader_key radv_get_vgt_shader_key(const struct radv_device *device, struct radv_shader **shaders,
                                                    const struct radv_shader *gs_copy_shader);
 
-uint32_t radv_get_vgt_gs_out(struct radv_shader **shaders, uint32_t primitive_topology);
+uint32_t radv_get_vgt_gs_out(struct radv_shader **shaders, uint32_t primitive_topology, bool is_ngg);
 
 bool radv_needs_null_export_workaround(const struct radv_device *device, const struct radv_shader *ps,
                                        unsigned custom_blend_mode);

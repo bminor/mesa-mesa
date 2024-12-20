@@ -3241,7 +3241,7 @@ radv_pipeline_init_shader_stages_state(const struct radv_device *device, struct 
 }
 
 uint32_t
-radv_get_vgt_gs_out(struct radv_shader **shaders, uint32_t primitive_topology)
+radv_get_vgt_gs_out(struct radv_shader **shaders, uint32_t primitive_topology, bool is_ngg)
 {
    uint32_t gs_out;
 
@@ -3256,7 +3256,7 @@ radv_get_vgt_gs_out(struct radv_shader **shaders, uint32_t primitive_topology)
    } else if (shaders[MESA_SHADER_MESH]) {
       gs_out = radv_conv_gl_prim_to_gs_out(shaders[MESA_SHADER_MESH]->info.ms.output_prim);
    } else {
-      gs_out = radv_conv_prim_to_gs_out(primitive_topology, false);
+      gs_out = radv_conv_prim_to_gs_out(primitive_topology, is_ngg);
    }
 
    return gs_out;
@@ -3265,12 +3265,13 @@ radv_get_vgt_gs_out(struct radv_shader **shaders, uint32_t primitive_topology)
 static uint32_t
 radv_pipeline_init_vgt_gs_out(struct radv_graphics_pipeline *pipeline, const struct vk_graphics_pipeline_state *state)
 {
+   const bool is_ngg = pipeline->base.shaders[pipeline->last_vgt_api_stage]->info.is_ngg;
    uint32_t primitive_topology = 0;
 
    if (pipeline->last_vgt_api_stage == MESA_SHADER_VERTEX)
       primitive_topology = radv_translate_prim(state->ia->primitive_topology);
 
-   return radv_get_vgt_gs_out(pipeline->base.shaders, primitive_topology);
+   return radv_get_vgt_gs_out(pipeline->base.shaders, primitive_topology, is_ngg);
 }
 
 static void
