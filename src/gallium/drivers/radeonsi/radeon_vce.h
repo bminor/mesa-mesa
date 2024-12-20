@@ -36,16 +36,6 @@ struct si_screen;
 typedef void (*rvce_get_buffer)(struct pipe_resource *resource, struct pb_buffer_lean **handle,
                                 struct radeon_surf **surface);
 
-/* Coded picture buffer slot */
-struct rvce_cpb_slot {
-   struct list_head list;
-
-   unsigned index;
-   enum pipe_h2645_enc_picture_type picture_type;
-   unsigned frame_num;
-   unsigned pic_order_cnt;
-};
-
 struct rvce_rate_control {
    uint32_t rc_method;
    uint32_t target_bitrate;
@@ -239,25 +229,28 @@ struct rvce_enc_operation {
    uint32_t num_ref_idx_active_override_flag;
    uint32_t num_ref_idx_l0_active_minus1;
    uint32_t num_ref_idx_l1_active_minus1;
-   uint32_t enc_ref_list_modification_op;
-   uint32_t enc_ref_list_modification_num;
-   uint32_t enc_decoded_picture_marking_op;
-   uint32_t enc_decoded_picture_marking_num;
-   uint32_t enc_decoded_picture_marking_idx;
-   uint32_t enc_decoded_ref_base_picture_marking_op;
-   uint32_t enc_decoded_ref_base_picture_marking_num;
+   uint32_t enc_ref_list_modification_op[4];
+   uint32_t enc_ref_list_modification_num[4];
+   uint32_t enc_decoded_picture_marking_op[4];
+   uint32_t enc_decoded_picture_marking_num[4];
+   uint32_t enc_decoded_picture_marking_idx[4];
+   uint32_t enc_decoded_ref_base_picture_marking_op[4];
+   uint32_t enc_decoded_ref_base_picture_marking_num[4];
+   uint32_t l0_dpb_idx;
    uint32_t l0_picture_structure;
    uint32_t l0_enc_pic_type;
    uint32_t l0_frame_number;
    uint32_t l0_picture_order_count;
    uint32_t l0_luma_offset;
    uint32_t l0_chroma_offset;
+   uint32_t l1_dpb_idx;
    uint32_t l1_picture_structure;
    uint32_t l1_enc_pic_type;
    uint32_t l1_frame_number;
    uint32_t l1_picture_order_count;
    uint32_t l1_luma_offset;
    uint32_t l1_chroma_offset;
+   uint32_t cur_dpb_idx;
    uint32_t enc_reconstructed_luma_offset;
    uint32_t enc_reconstructed_chroma_offset;
    ;
@@ -332,17 +325,11 @@ struct rvce_h264_enc_pic {
    unsigned gop_cnt;
    unsigned gop_size;
    unsigned pic_order_cnt;
-   unsigned ref_idx_l0;
-   unsigned ref_idx_l1;
    unsigned addrmode_arraymode_disrdo_distwoinstants;
 
    bool not_referenced;
    bool is_idr;
-   bool has_ref_pic_list;
    bool enable_vui;
-   unsigned int ref_pic_list_0[32];
-   unsigned int ref_pic_list_1[32];
-   unsigned int frame_idx[32];
 };
 
 /* VCE encoder representation */
@@ -381,12 +368,10 @@ struct rvce_encoder {
    struct pb_buffer_lean *bs_handle;
    unsigned bs_size;
 
-   struct rvce_cpb_slot *cpb_array;
-   struct list_head cpb_slots;
-   unsigned cpb_num;
+   unsigned dpb_slots;
 
    struct rvid_buffer *fb;
-   struct rvid_buffer cpb;
+   struct rvid_buffer dpb;
    struct pipe_h264_enc_picture_desc pic;
    struct rvce_h264_enc_pic enc_pic;
 
@@ -398,10 +383,7 @@ struct rvce_encoder {
 };
 
 /* CPB handling functions */
-struct rvce_cpb_slot *si_current_slot(struct rvce_encoder *enc);
-struct rvce_cpb_slot *si_l0_slot(struct rvce_encoder *enc);
-struct rvce_cpb_slot *si_l1_slot(struct rvce_encoder *enc);
-void si_vce_frame_offset(struct rvce_encoder *enc, struct rvce_cpb_slot *slot, signed *luma_offset,
+void si_vce_frame_offset(struct rvce_encoder *enc, unsigned slot, signed *luma_offset,
                          signed *chroma_offset);
 
 struct pipe_video_codec *si_vce_create_encoder(struct pipe_context *context,

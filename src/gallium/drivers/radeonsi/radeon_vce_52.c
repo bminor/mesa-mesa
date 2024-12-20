@@ -16,6 +16,11 @@
 
 #include <stdio.h>
 
+#define REF_LIST_MODIFICATION_OP_END                  0
+#define REF_LIST_MODIFICATION_OP_SHORT_TERM_SUBTRACT  1
+#define REF_LIST_MODIFICATION_OP_LONG_TERM            2
+#define REF_LIST_MODIFICATION_OP_VIEW_ADD             3
+
 static void get_rate_control_param(struct rvce_encoder *enc, struct pipe_h264_enc_picture_desc *pic)
 {
    enc->enc_pic.rc.rc_method = pic->rate_ctrl[0].rate_ctrl_method;
@@ -166,6 +171,8 @@ static void get_vui_param(struct rvce_encoder *enc, struct pipe_h264_enc_picture
 
 static void get_param(struct rvce_encoder *enc, struct pipe_h264_enc_picture_desc *pic)
 {
+   int i;
+
    get_rate_control_param(enc, pic);
    get_motion_estimation_param(enc, pic);
    get_pic_control_param(enc, pic);
@@ -176,16 +183,104 @@ static void get_param(struct rvce_encoder *enc, struct pipe_h264_enc_picture_des
 
    enc->enc_pic.picture_type = pic->picture_type;
    enc->enc_pic.frame_num = pic->frame_num;
-   enc->enc_pic.frame_num_cnt = pic->frame_num_cnt;
+   enc->enc_pic.frame_num_cnt = pic->frame_num_cnt - 1;
    enc->enc_pic.p_remain = pic->p_remain;
    enc->enc_pic.i_remain = pic->i_remain;
    enc->enc_pic.gop_cnt = pic->gop_cnt;
    enc->enc_pic.pic_order_cnt = pic->pic_order_cnt;
-   enc->enc_pic.ref_idx_l0 = pic->ref_idx_l0_list[0];
-   enc->enc_pic.ref_idx_l1 = pic->ref_idx_l1_list[0];
    enc->enc_pic.not_referenced = pic->not_referenced;
    enc->enc_pic.addrmode_arraymode_disrdo_distwoinstants = 0x01000201;
    enc->enc_pic.is_idr = (pic->picture_type == PIPE_H2645_ENC_PICTURE_TYPE_IDR);
+   enc->enc_pic.eo.enc_idr_pic_id = pic->idr_pic_id;
+
+   enc->enc_pic.eo.insert_headers = 0;
+   enc->enc_pic.eo.insert_aud = 0;
+   util_dynarray_foreach(&pic->raw_headers, struct pipe_enc_raw_header, header) {
+      switch (header->type) {
+      case PIPE_H264_NAL_SPS:
+         enc->enc_pic.eo.insert_headers |= 0x01;
+         break;
+      case PIPE_H264_NAL_PPS:
+         enc->enc_pic.eo.insert_headers |= 0x10;
+         break;
+      case PIPE_H264_NAL_AUD:
+         enc->enc_pic.eo.insert_aud = 1;
+         break;
+      default:
+         break;
+      }
+   }
+
+   enc->enc_pic.eo.num_ref_idx_active_override_flag = pic->slice.num_ref_idx_active_override_flag;
+   enc->enc_pic.eo.num_ref_idx_l0_active_minus1 = pic->slice.num_ref_idx_l0_active_minus1;
+   enc->enc_pic.eo.num_ref_idx_l1_active_minus1 = pic->slice.num_ref_idx_l1_active_minus1;
+
+   i = 0;
+   if (pic->slice.ref_pic_list_modification_flag_l0) {
+      for (; i < MIN2(4, pic->slice.num_ref_list0_mod_operations); i++) {
+         struct pipe_h264_ref_list_mod_entry *entry = &pic->slice.ref_list0_mod_operations[i];
+         switch (entry->modification_of_pic_nums_idc) {
+         case 0:
+            enc->enc_pic.eo.enc_ref_list_modification_op[i] = REF_LIST_MODIFICATION_OP_SHORT_TERM_SUBTRACT;
+            enc->enc_pic.eo.enc_ref_list_modification_num[i] = entry->abs_diff_pic_num_minus1;
+            break;
+         case 2:
+            enc->enc_pic.eo.enc_ref_list_modification_op[i] = REF_LIST_MODIFICATION_OP_LONG_TERM;
+            enc->enc_pic.eo.enc_ref_list_modification_num[i] = entry->long_term_pic_num;
+            break;
+         case 5:
+            enc->enc_pic.eo.enc_ref_list_modification_op[i] = REF_LIST_MODIFICATION_OP_VIEW_ADD;
+            enc->enc_pic.eo.enc_ref_list_modification_num[i] = entry->abs_diff_pic_num_minus1;
+            break;
+         default:
+         case 3:
+            enc->enc_pic.eo.enc_ref_list_modification_op[i] = REF_LIST_MODIFICATION_OP_END;
+            break;
+         }
+      }
+   }
+   if (i < 4)
+      enc->enc_pic.eo.enc_ref_list_modification_op[i] = REF_LIST_MODIFICATION_OP_END;
+
+   i = 0;
+   if (pic->pic_ctrl.nal_unit_type == PIPE_H264_NAL_IDR_SLICE) {
+      enc->enc_pic.eo.enc_decoded_picture_marking_op[i++] = pic->slice.long_term_reference_flag ? 6 : 0;
+   } else if (pic->slice.adaptive_ref_pic_marking_mode_flag) {
+      for (; i < MIN2(4, pic->slice.num_ref_pic_marking_operations); i++) {
+         struct pipe_h264_ref_pic_marking_entry *entry = &pic->slice.ref_pic_marking_operations[i];
+         enc->enc_pic.eo.enc_decoded_picture_marking_op[i] = entry->memory_management_control_operation;
+         switch (entry->memory_management_control_operation) {
+         case 1:
+            enc->enc_pic.eo.enc_decoded_picture_marking_num[i] = entry->difference_of_pic_nums_minus1;
+            break;
+         case 2:
+            enc->enc_pic.eo.enc_decoded_picture_marking_num[i] = entry->long_term_pic_num;
+            break;
+         case 3:
+            enc->enc_pic.eo.enc_decoded_picture_marking_num[i] = entry->difference_of_pic_nums_minus1;
+            enc->enc_pic.eo.enc_decoded_picture_marking_idx[i] = entry->long_term_frame_idx;
+            break;
+         case 4:
+            enc->enc_pic.eo.enc_decoded_picture_marking_idx[i] = entry->max_long_term_frame_idx_plus1;
+            break;
+         case 6:
+            enc->enc_pic.eo.enc_decoded_picture_marking_idx[i] = entry->long_term_frame_idx;
+            break;
+         default:
+            break;
+         }
+      }
+   }
+   if (i < 4)
+      enc->enc_pic.eo.enc_decoded_picture_marking_op[i] = 0;
+
+   enc->enc_pic.eo.cur_dpb_idx = pic->dpb_curr_pic;
+
+   enc->enc_pic.eo.l0_dpb_idx = pic->ref_list0[0];
+
+   enc->enc_pic.eo.l1_dpb_idx = PIPE_H2645_LIST_REF_INVALID_ENTRY;
+   enc->enc_pic.eo.l1_luma_offset = 0xffffffff;
+   enc->enc_pic.eo.l1_chroma_offset = 0xffffffff;
 }
 
 static void create(struct rvce_encoder *enc)
@@ -230,7 +325,7 @@ static void encode(struct rvce_encoder *enc)
    enc->task_info(enc, 0x00000003, 0, 0, bs_idx);
 
    RVCE_BEGIN(0x05000001);                                      // context buffer
-   RVCE_READWRITE(enc->cpb.res->buf, enc->cpb.res->domains, 0); // encodeContextAddressHi/Lo
+   RVCE_READWRITE(enc->dpb.res->buf, enc->dpb.res->domains, 0); // encodeContextAddressHi/Lo
    RVCE_END();
 
    bs_offset = -(signed)(bs_idx * enc->bs_size);
@@ -253,7 +348,7 @@ static void encode(struct rvce_encoder *enc)
    }
 
    RVCE_BEGIN(0x03000001);                       // encode
-   RVCE_CS(enc->enc_pic.frame_num ? 0x0 : 0x11); // insertHeaders
+   RVCE_CS(enc->enc_pic.eo.insert_headers);
    RVCE_CS(enc->enc_pic.eo.picture_structure);
    RVCE_CS(enc->bs_size); // allowedMaxBitstreamSize
    RVCE_CS(enc->enc_pic.eo.force_refresh_map);
@@ -287,11 +382,6 @@ static void encode(struct rvce_encoder *enc)
    RVCE_CS(enc->enc_pic.eo.enc_input_pic_tile_config);
    RVCE_CS(enc->enc_pic.picture_type);                                    // encPicType
    RVCE_CS(enc->enc_pic.picture_type == PIPE_H2645_ENC_PICTURE_TYPE_IDR); // encIdrFlag
-   if ((enc->enc_pic.picture_type == PIPE_H2645_ENC_PICTURE_TYPE_IDR) &&
-       (enc->enc_pic.eo.enc_idr_pic_id != 0))
-      enc->enc_pic.eo.enc_idr_pic_id = enc->enc_pic.idr_pic_id - 1;
-   else
-      enc->enc_pic.eo.enc_idr_pic_id = 0x00000000;
    RVCE_CS(enc->enc_pic.eo.enc_idr_pic_id);
    RVCE_CS(enc->enc_pic.eo.enc_mgs_key_pic);
    RVCE_CS(!enc->enc_pic.not_referenced);
@@ -300,56 +390,37 @@ static void encode(struct rvce_encoder *enc)
    RVCE_CS(enc->enc_pic.eo.num_ref_idx_l0_active_minus1);
    RVCE_CS(enc->enc_pic.eo.num_ref_idx_l1_active_minus1);
 
-   i = enc->enc_pic.frame_num - enc->enc_pic.ref_idx_l0;
-   if (i > 1 && enc->enc_pic.picture_type == PIPE_H2645_ENC_PICTURE_TYPE_P) {
-      enc->enc_pic.eo.enc_ref_list_modification_op = 0x00000001;
-      enc->enc_pic.eo.enc_ref_list_modification_num = i - 1;
-      RVCE_CS(enc->enc_pic.eo.enc_ref_list_modification_op);
-      RVCE_CS(enc->enc_pic.eo.enc_ref_list_modification_num);
-   } else {
-      enc->enc_pic.eo.enc_ref_list_modification_op = 0x00000000;
-      enc->enc_pic.eo.enc_ref_list_modification_num = 0x00000000;
-      RVCE_CS(enc->enc_pic.eo.enc_ref_list_modification_op);
-      RVCE_CS(enc->enc_pic.eo.enc_ref_list_modification_num);
+   for (i = 0; i < 4; ++i) {
+      RVCE_CS(enc->enc_pic.eo.enc_ref_list_modification_op[i]);
+      RVCE_CS(enc->enc_pic.eo.enc_ref_list_modification_num[i]);
    }
 
-   for (i = 0; i < 3; ++i) {
-      enc->enc_pic.eo.enc_ref_list_modification_op = 0x00000000;
-      enc->enc_pic.eo.enc_ref_list_modification_num = 0x00000000;
-      RVCE_CS(enc->enc_pic.eo.enc_ref_list_modification_op);
-      RVCE_CS(enc->enc_pic.eo.enc_ref_list_modification_num);
-   }
    for (i = 0; i < 4; ++i) {
-      RVCE_CS(enc->enc_pic.eo.enc_decoded_picture_marking_op);
-      RVCE_CS(enc->enc_pic.eo.enc_decoded_picture_marking_num);
-      RVCE_CS(enc->enc_pic.eo.enc_decoded_picture_marking_idx);
-      RVCE_CS(enc->enc_pic.eo.enc_decoded_ref_base_picture_marking_op);
-      RVCE_CS(enc->enc_pic.eo.enc_decoded_ref_base_picture_marking_num);
+      RVCE_CS(enc->enc_pic.eo.enc_decoded_picture_marking_op[i]);
+      RVCE_CS(enc->enc_pic.eo.enc_decoded_picture_marking_num[i]);
+      RVCE_CS(enc->enc_pic.eo.enc_decoded_picture_marking_idx[i]);
+   }
+
+   for (i = 0; i < 4; ++i) {
+      RVCE_CS(enc->enc_pic.eo.enc_decoded_ref_base_picture_marking_op[i]);
+      RVCE_CS(enc->enc_pic.eo.enc_decoded_ref_base_picture_marking_num[i]);
    }
 
    // encReferencePictureL0[0]
-   RVCE_CS(0x00000000); // pictureStructure
-   if (enc->enc_pic.picture_type == PIPE_H2645_ENC_PICTURE_TYPE_P ||
-       enc->enc_pic.picture_type == PIPE_H2645_ENC_PICTURE_TYPE_B) {
-      struct rvce_cpb_slot *l0 = si_l0_slot(enc);
-      si_vce_frame_offset(enc, l0, &luma_offset, &chroma_offset);
-      RVCE_CS(l0->picture_type);
-      RVCE_CS(l0->frame_num);
-      RVCE_CS(l0->pic_order_cnt);
-      RVCE_CS(luma_offset);
-      RVCE_CS(chroma_offset);
+   if (enc->enc_pic.eo.l0_dpb_idx != PIPE_H2645_LIST_REF_INVALID_ENTRY) {
+      si_vce_frame_offset(enc, enc->enc_pic.eo.l0_dpb_idx, &luma_offset, &chroma_offset);
+      enc->enc_pic.eo.l0_luma_offset = luma_offset;
+      enc->enc_pic.eo.l0_chroma_offset = chroma_offset;
    } else {
-      enc->enc_pic.eo.l0_enc_pic_type = 0x00000000;
-      enc->enc_pic.eo.l0_frame_number = 0x00000000;
-      enc->enc_pic.eo.l0_picture_order_count = 0x00000000;
       enc->enc_pic.eo.l0_luma_offset = 0xffffffff;
       enc->enc_pic.eo.l0_chroma_offset = 0xffffffff;
-      RVCE_CS(enc->enc_pic.eo.l0_enc_pic_type);
-      RVCE_CS(enc->enc_pic.eo.l0_frame_number);
-      RVCE_CS(enc->enc_pic.eo.l0_picture_order_count);
-      RVCE_CS(enc->enc_pic.eo.l0_luma_offset);
-      RVCE_CS(enc->enc_pic.eo.l0_chroma_offset);
    }
+   RVCE_CS(0x00000000); // pictureStructure
+   RVCE_CS(enc->enc_pic.eo.l0_enc_pic_type);
+   RVCE_CS(enc->enc_pic.eo.l0_frame_number);
+   RVCE_CS(enc->enc_pic.eo.l0_picture_order_count);
+   RVCE_CS(enc->enc_pic.eo.l0_luma_offset);
+   RVCE_CS(enc->enc_pic.eo.l0_chroma_offset);
 
    // encReferencePictureL0[1]
    enc->enc_pic.eo.l0_picture_structure = 0x00000000;
@@ -367,28 +438,13 @@ static void encode(struct rvce_encoder *enc)
 
    // encReferencePictureL1[0]
    RVCE_CS(0x00000000); // pictureStructure
-   if (enc->enc_pic.picture_type == PIPE_H2645_ENC_PICTURE_TYPE_B) {
-      struct rvce_cpb_slot *l1 = si_l1_slot(enc);
-      si_vce_frame_offset(enc, l1, &luma_offset, &chroma_offset);
-      RVCE_CS(l1->picture_type);
-      RVCE_CS(l1->frame_num);
-      RVCE_CS(l1->pic_order_cnt);
-      RVCE_CS(luma_offset);
-      RVCE_CS(chroma_offset);
-   } else {
-      enc->enc_pic.eo.l1_enc_pic_type = 0x00000000;
-      enc->enc_pic.eo.l1_frame_number = 0x00000000;
-      enc->enc_pic.eo.l1_picture_order_count = 0x00000000;
-      enc->enc_pic.eo.l1_luma_offset = 0xffffffff;
-      enc->enc_pic.eo.l1_chroma_offset = 0xffffffff;
-      RVCE_CS(enc->enc_pic.eo.l1_enc_pic_type);
-      RVCE_CS(enc->enc_pic.eo.l1_frame_number);
-      RVCE_CS(enc->enc_pic.eo.l1_picture_order_count);
-      RVCE_CS(enc->enc_pic.eo.l1_luma_offset);
-      RVCE_CS(enc->enc_pic.eo.l1_chroma_offset);
-   }
+   RVCE_CS(enc->enc_pic.eo.l1_enc_pic_type);
+   RVCE_CS(enc->enc_pic.eo.l1_frame_number);
+   RVCE_CS(enc->enc_pic.eo.l1_picture_order_count);
+   RVCE_CS(enc->enc_pic.eo.l1_luma_offset);
+   RVCE_CS(enc->enc_pic.eo.l1_chroma_offset);
 
-   si_vce_frame_offset(enc, si_current_slot(enc), &luma_offset, &chroma_offset);
+   si_vce_frame_offset(enc, enc->enc_pic.eo.cur_dpb_idx, &luma_offset, &chroma_offset);
    RVCE_CS(luma_offset);
    RVCE_CS(chroma_offset);
    RVCE_CS(enc->enc_pic.eo.enc_coloc_buffer_offset);
@@ -396,7 +452,7 @@ static void encode(struct rvce_encoder *enc)
    RVCE_CS(enc->enc_pic.eo.enc_reconstructed_ref_base_picture_chroma_offset);
    RVCE_CS(enc->enc_pic.eo.enc_reference_ref_base_picture_luma_offset);
    RVCE_CS(enc->enc_pic.eo.enc_reference_ref_base_picture_chroma_offset);
-   RVCE_CS(enc->enc_pic.frame_num_cnt - 1);
+   RVCE_CS(enc->enc_pic.frame_num_cnt);
    RVCE_CS(enc->enc_pic.frame_num);
    RVCE_CS(enc->enc_pic.pic_order_cnt);
    RVCE_CS(enc->enc_pic.i_remain);
