@@ -9,6 +9,7 @@ from pipeline_message import (
     get_trace_failures,
     main,
     process_problem_jobs,
+    search_job_log_for_errors,
     sort_failed_tests_by_status,
     unexpected_improvements,
 )
@@ -160,3 +161,56 @@ async def test_get_trace_failures_no_response(
 
     expected_log_message = f"No response from: https://mesa.pages.freedesktop.org/-/{namespace}/-/jobs/{job_id}/artifacts/results/summary/problems.html"
     assert any(expected_log_message in record.message for record in caplog.records)
+
+
+@pytest.mark.asyncio
+@patch("pipeline_message.get_job_log", new_callable=AsyncMock)
+async def test_search_job_log_for_errors(mock_get_job_log):
+    session = AsyncMock()
+    project_id = "176"
+    job = {"id": 12345}
+
+    job_log = r"""
+error_msg: something useful
+error aborting
+error_msg      : None
+error_type     : None
+[0Ksection_end:1734694783:job_data
+[0K
+[0m11:39:43.438: [1mFinished executing LAVA job in the attempt #3 [0m
+[0Ksection_end:1734694783:lava_submit
+[0K
+[0;31m[01:54] ERROR: lava_submit: ret code: 1 [0m
+
+[0;31m[01:54] ERROR: unknown-section: ret code: 1 [0m
+section_end:1734694783:step_script
+[0Ksection_start:1734694783:after_script
+[0K[0K[36;1mRunning after_script[0;m[0;m
+[32;1mRunning after script...[0;m
+[32;1m$ curl -L --retry 4 -f --retry-all-errors --retry-delay 60 -s "https://" | tar --warning=no-timestamp --zstd -x[0;m
+zstd: /*stdin*\: unexpected end of file # noqa: W605
+tar: Child returned status 1
+tar: Error is not recoverable: exiting now
+section_end:1734695025:after_script
+[0K[0;33mWARNING: after_script failed, but job will continue unaffected: exit code 1[0;m
+section_start:1734695025:upload_artifacts_on_failure
+[0K[0K[36;1mUploading artifacts for failed job[0;m[0;m
+[32;1mUploading artifacts...[0;m
+results/: found 11 matching artifact files and directories[0;m
+Uploading artifacts as "archive" to coordinator... 201 Created[0;m  id[0;m=68509685 responseStatus[0;m=201 Created token[0;m=glcbt-64
+[32;1mUploading artifacts...[0;m
+[0;33mWARNING: results/junit.xml: no matching files. Ensure that the artifact path is relative to the working directory (/builds/mesa/mesa)[0;m
+[31;1mERROR: No files to upload                         [0;m
+section_end:1734695027:upload_artifacts_on_failure
+[0Ksection_start:1734695027:cleanup_file_variables
+[0K[0K[36;1mCleaning up project directory and file based variables[0;m[0;m
+section_end:1734695027:cleanup_file_variables
+[0K[31;1mERROR: Job failed: exit code 1
+[0;m
+[0;m
+    """
+
+    mock_get_job_log.return_value = job_log
+
+    error_message = await search_job_log_for_errors(session, project_id, job)
+    assert "something useful" in error_message
