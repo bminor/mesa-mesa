@@ -47,7 +47,7 @@ struct panvk_draw_info {
    unsigned first_instance;
    unsigned instance_count;
    int vertex_offset;
-   unsigned offset_start;
+   int offset_start;
    uint32_t layer_id;
    struct mali_invocation_packed invocation;
    struct {
@@ -1423,6 +1423,14 @@ panvk_per_arch(CmdDraw)(VkCommandBuffer commandBuffer, uint32_t vertexCount,
    if (instanceCount == 0 || vertexCount == 0)
       return;
 
+   /* gl_BaseVertexARB is a signed integer, and it should expose the value of
+    * firstVertex in a non-indexed draw. */
+   assert(firstVertex < INT32_MAX);
+
+   /* gl_BaseInstance is a signed integer, and it should expose the value of
+    * firstInstnace. */
+   assert(firstInstance < INT32_MAX);
+
    struct panvk_draw_info draw = {
       .first_vertex = firstVertex,
       .vertex_count = vertexCount,
@@ -1497,6 +1505,10 @@ panvk_per_arch(CmdDrawIndexed)(VkCommandBuffer commandBuffer,
 
    if (instanceCount == 0 || indexCount == 0)
       return;
+
+   /* gl_BaseInstance is a signed integer, and it should expose the value of
+    * firstInstnace. */
+   assert(firstInstance < INT32_MAX);
 
    const struct vk_input_assembly_state *ia =
       &cmdbuf->vk.dynamic_graphics_state.ia;

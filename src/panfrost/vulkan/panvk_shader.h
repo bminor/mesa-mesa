@@ -63,8 +63,8 @@ struct panvk_graphics_sysvals {
    } blend;
 
    struct {
-      uint32_t first_vertex;
-      uint32_t base_instance;
+      int32_t first_vertex;
+      int32_t base_instance;
       uint32_t noperspective_varyings;
    } vs;
 

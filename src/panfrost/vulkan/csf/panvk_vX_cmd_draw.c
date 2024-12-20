@@ -49,12 +49,12 @@ struct panvk_draw_info {
    } index;
 
    struct {
-      uint32_t base;
+      int32_t base;
       uint32_t count;
    } vertex;
 
    struct {
-      uint32_t base;
+      int32_t base;
       uint32_t count;
    } instance;
 
@@ -1836,6 +1836,14 @@ panvk_per_arch(CmdDraw)(VkCommandBuffer commandBuffer, uint32_t vertexCount,
    if (instanceCount == 0 || vertexCount == 0)
       return;
 
+   /* gl_BaseVertexARB is a signed integer, and it should expose the value of
+    * firstVertex in a non-indexed draw. */
+   assert(firstVertex < INT32_MAX);
+
+   /* gl_BaseInstance is a signed integer, and it should expose the value of
+    * firstInstnace. */
+   assert(firstInstance < INT32_MAX);
+
    struct panvk_draw_info draw = {
       .vertex.base = firstVertex,
       .vertex.count = vertexCount,
@@ -1857,10 +1865,14 @@ panvk_per_arch(CmdDrawIndexed)(VkCommandBuffer commandBuffer,
    if (instanceCount == 0 || indexCount == 0)
       return;
 
+   /* gl_BaseInstance is a signed integer, and it should expose the value of
+    * firstInstnace. */
+   assert(firstInstance < INT32_MAX);
+
    struct panvk_draw_info draw = {
       .index.size = cmdbuf->state.gfx.ib.index_size,
       .index.offset = firstIndex,
-      .vertex.base = (uint32_t)vertexOffset,
+      .vertex.base = vertexOffset,
       .vertex.count = indexCount,
       .instance.count = instanceCount,
       .instance.base = firstInstance,
