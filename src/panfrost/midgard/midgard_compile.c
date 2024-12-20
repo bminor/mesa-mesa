@@ -351,25 +351,6 @@ mem_access_size_align_cb(nir_intrinsic_op intrin, uint8_t bytes,
 
    unsigned num_comps = MIN2(bytes / (bit_size / 8), 4);
 
-   /* Push constants require 32-bit loads. */
-   if (intrin == nir_intrinsic_load_push_constant) {
-      if (align_mul >= 4) {
-         /* If align_mul is bigger than 4 we can use align_offset to find
-          * the exact number of words we need to read.
-          */
-         num_comps = DIV_ROUND_UP((align_offset % 4) + bytes, 4);
-      } else {
-         /* If bytes is aligned on 32-bit, the access might still cross one
-          * word at the beginning, and one word at the end. If bytes is not
-          * aligned on 32-bit, the extra two words should cover for both the
-          * size and offset mis-alignment.
-          */
-         num_comps = (bytes / 4) + 2;
-      }
-
-      bit_size = MIN2(bit_size, 32);
-   }
-
    return (nir_mem_access_size_align){
       .num_components = num_comps,
       .bit_size = bit_size,
@@ -424,7 +405,7 @@ midgard_preprocess_nir(nir_shader *nir, unsigned gpu_id)
     * the support, so limit it to compute */
    if (gl_shader_stage_is_compute(nir->info.stage)) {
       nir_lower_mem_access_bit_sizes_options mem_size_options = {
-         .modes = nir_var_mem_ubo | nir_var_mem_push_const | nir_var_mem_ssbo |
+         .modes = nir_var_mem_ubo | nir_var_mem_ssbo |
                   nir_var_mem_constant | nir_var_mem_task_payload |
                   nir_var_shader_temp | nir_var_function_temp |
                   nir_var_mem_global | nir_var_mem_shared,
