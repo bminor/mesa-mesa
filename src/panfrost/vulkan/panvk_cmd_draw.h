@@ -228,6 +228,12 @@ fs_required(const struct panvk_cmd_graphics_state *state,
    if (dyn_state->ms.alpha_to_coverage_enable)
       return true;
 
+   /* If the sample mask is updated, we need to run the fragment shader,
+    * otherwise the fixed-function depth/stencil results will apply to all
+    * samples. */
+   if (fs_info->outputs_written & BITFIELD64_BIT(FRAG_RESULT_SAMPLE_MASK))
+      return true;
+
    /* If depth is written and not implied we need to execute.
     * TODO: Predicate on Z/S writes being enabled */
    return (fs_info->fs.writes_depth || fs_info->fs.writes_stencil);
