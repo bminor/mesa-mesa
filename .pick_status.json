@@ -454,7 +454,7 @@
         "description": "gallium/winsys/nouveau: Don't mark the api PUBLIC",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "821f4c8d99a3068758db834a5c219082a9609b3c",
         "notes": null
