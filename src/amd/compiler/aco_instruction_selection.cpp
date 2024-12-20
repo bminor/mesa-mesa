@@ -8962,8 +8962,12 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
       if (instr->intrinsic == nir_intrinsic_demote_if) {
          Temp src = get_ssa_temp(ctx, instr->src[0].ssa);
          assert(src.regClass() == bld.lm);
-         cond =
-            bld.sop2(Builder::s_and, bld.def(bld.lm), bld.def(s1, scc), src, Operand(exec, bld.lm));
+         if (in_exec_divergent_or_in_loop(ctx)) {
+            cond = bld.sop2(Builder::s_and, bld.def(bld.lm), bld.def(s1, scc), src,
+                            Operand(exec, bld.lm));
+         } else {
+            cond = Operand(src);
+         }
       }
 
       bld.pseudo(aco_opcode::p_demote_to_helper, cond);
@@ -8989,8 +8993,12 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
       if (instr->intrinsic == nir_intrinsic_terminate_if) {
          Temp src = get_ssa_temp(ctx, instr->src[0].ssa);
          assert(src.regClass() == bld.lm);
-         cond =
-            bld.sop2(Builder::s_and, bld.def(bld.lm), bld.def(s1, scc), src, Operand(exec, bld.lm));
+         if (in_exec_divergent_or_in_loop(ctx)) {
+            cond = bld.sop2(Builder::s_and, bld.def(bld.lm), bld.def(s1, scc), src,
+                            Operand(exec, bld.lm));
+         } else {
+            cond = Operand(src);
+         }
 
          ctx->cf_info.had_divergent_discard |= nir_src_is_divergent(&instr->src[0]);
       }
