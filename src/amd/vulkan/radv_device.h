@@ -142,18 +142,6 @@ struct radv_meta_state {
    } blit2d[MAX_SAMPLES_LOG2];
 
    struct {
-      VkPipelineLayout img_p_layout;
-      VkDescriptorSetLayout img_ds_layout;
-      VkPipeline pipeline[MAX_SAMPLES_LOG2];
-      VkPipeline pipeline_3d;
-   } cleari;
-   struct {
-      VkPipelineLayout img_p_layout;
-      VkDescriptorSetLayout img_ds_layout;
-      VkPipeline pipeline;
-   } cleari_r32g32b32;
-
-   struct {
       VkPipelineLayout p_layout;
       VkPipeline pipeline[NUM_META_FS_KEYS];
    } resolve;

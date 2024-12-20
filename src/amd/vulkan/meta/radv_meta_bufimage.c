@@ -639,112 +639,69 @@ build_nir_cleari_compute_shader(struct radv_device *dev, bool is_3d, int samples
 }
 
 static VkResult
-create_cleari_layout(struct radv_device *device)
+get_cleari_pipeline(struct radv_device *device, const struct radv_image *image, VkPipeline *pipeline_out,
+                    VkPipelineLayout *layout_out)
 {
-   VkResult result = VK_SUCCESS;
-
-   if (!device->meta_state.cleari.img_ds_layout) {
-      const VkDescriptorSetLayoutBinding binding = {
-         .binding = 0,
-         .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-         .descriptorCount = 1,
-         .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-      };
-
-      result = radv_meta_create_descriptor_set_layout(device, 1, &binding, &device->meta_state.cleari.img_ds_layout);
-      if (result != VK_SUCCESS)
-         return result;
-   }
-
-   if (!device->meta_state.cleari.img_p_layout) {
-      const VkPushConstantRange pc_range = {
-         .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-         .size = 20,
-      };
-
-      result = radv_meta_create_pipeline_layout(device, &device->meta_state.cleari.img_ds_layout, 1, &pc_range,
-                                                &device->meta_state.cleari.img_p_layout);
-   }
-
-   return result;
-}
-
-static VkResult
-create_cleari_pipeline(struct radv_device *device, bool is_3d, int samples, VkPipeline *pipeline)
-{
-   VkResult result;
-
-   result = create_cleari_layout(device);
-   if (result != VK_SUCCESS)
-      return result;
-
-   nir_shader *cs = build_nir_cleari_compute_shader(device, is_3d, samples);
-
-   result = radv_meta_create_compute_pipeline(device, cs, device->meta_state.cleari.img_p_layout, pipeline);
-   ralloc_free(cs);
-   return result;
-}
-
-static VkResult
-get_cleari_pipeline(struct radv_device *device, const struct radv_image *image, VkPipeline *pipeline_out)
-{
-   struct radv_meta_state *state = &device->meta_state;
    const bool is_3d = image->vk.image_type == VK_IMAGE_TYPE_3D;
    const uint32_t samples = image->vk.samples;
    const uint32_t samples_log2 = ffs(samples) - 1;
-   VkResult result = VK_SUCCESS;
-   VkPipeline *pipeline;
-
-   mtx_lock(&state->mtx);
-
-   if (is_3d) {
-      pipeline = &state->cleari.pipeline_3d;
-   } else {
-      pipeline = &state->cleari.pipeline[samples_log2];
-   }
-
-   if (!*pipeline) {
-      result = create_cleari_pipeline(device, is_3d, samples, pipeline);
-      if (result != VK_SUCCESS)
-         goto fail;
-   }
-
-   *pipeline_out = *pipeline;
-
-fail:
-   mtx_unlock(&state->mtx);
-   return result;
-}
-
-static VkResult
-radv_device_init_meta_cleari_state(struct radv_device *device)
-{
+   char key_data[64];
    VkResult result;
 
-   for (uint32_t i = 0; i < MAX_SAMPLES_LOG2; i++) {
-      uint32_t samples = 1 << i;
-      result = create_cleari_pipeline(device, false, samples, &device->meta_state.cleari.pipeline[i]);
-      if (result != VK_SUCCESS)
-         return result;
+   snprintf(key_data, sizeof(key_data), "radv-cleari-%d-%d", is_3d, samples_log2);
+
+   const VkDescriptorSetLayoutBinding binding = {
+      .binding = 0,
+      .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+      .descriptorCount = 1,
+      .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+   };
+
+   const VkDescriptorSetLayoutCreateInfo desc_info = {
+      .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+      .flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT,
+      .bindingCount = 1,
+      .pBindings = &binding,
+   };
+
+   const VkPushConstantRange pc_range = {
+      .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+      .size = 20,
+   };
+
+   result = vk_meta_get_pipeline_layout(&device->vk, &device->meta_state.device, &desc_info, &pc_range, key_data,
+                                        strlen(key_data), layout_out);
+   if (result != VK_SUCCESS)
+      return result;
+
+   VkPipeline pipeline_from_cache = vk_meta_lookup_pipeline(&device->meta_state.device, key_data, strlen(key_data));
+   if (pipeline_from_cache != VK_NULL_HANDLE) {
+      *pipeline_out = pipeline_from_cache;
+      return VK_SUCCESS;
    }
 
-   return create_cleari_pipeline(device, true, 1, &device->meta_state.cleari.pipeline_3d);
-}
+   nir_shader *cs = build_nir_cleari_compute_shader(device, is_3d, samples);
 
-static void
-radv_device_finish_meta_cleari_state(struct radv_device *device)
-{
-   struct radv_meta_state *state = &device->meta_state;
+   const VkPipelineShaderStageCreateInfo stage_info = {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+      .stage = VK_SHADER_STAGE_COMPUTE_BIT,
+      .module = vk_shader_module_handle_from_nir(cs),
+      .pName = "main",
+      .pSpecializationInfo = NULL,
+   };
 
-   radv_DestroyPipelineLayout(radv_device_to_handle(device), state->cleari.img_p_layout, &state->alloc);
-   device->vk.dispatch_table.DestroyDescriptorSetLayout(radv_device_to_handle(device), state->cleari.img_ds_layout,
-                                                        &state->alloc);
+   const VkComputePipelineCreateInfo pipeline_info = {
+      .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
+      .stage = stage_info,
+      .flags = 0,
+      .layout = *layout_out,
+   };
 
-   for (uint32_t i = 0; i < MAX_SAMPLES_LOG2; ++i) {
-      radv_DestroyPipeline(radv_device_to_handle(device), state->cleari.pipeline[i], &state->alloc);
-   }
+   result = vk_meta_create_compute_pipeline(&device->vk, &device->meta_state.device, &pipeline_info, key_data,
+                                            strlen(key_data), pipeline_out);
 
-   radv_DestroyPipeline(radv_device_to_handle(device), state->cleari.pipeline_3d, &state->alloc);
+   ralloc_free(cs);
+   return result;
 }
 
 /* Special path for clearing R32G32B32 images using a compute shader. */
@@ -783,116 +740,63 @@ build_nir_cleari_r32g32b32_compute_shader(struct radv_device *dev)
 }
 
 static VkResult
-create_cleari_r32g32b32_layout(struct radv_device *device)
+get_cleari_r32g32b32_pipeline(struct radv_device *device, VkPipeline *pipeline_out, VkPipelineLayout *layout_out)
 {
-   VkResult result = VK_SUCCESS;
-
-   if (!device->meta_state.cleari_r32g32b32.img_ds_layout) {
-      const VkDescriptorSetLayoutBinding binding = {
-         .binding = 0,
-         .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,
-         .descriptorCount = 1,
-         .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-      };
-
-      result = radv_meta_create_descriptor_set_layout(device, 1, &binding,
-                                                      &device->meta_state.cleari_r32g32b32.img_ds_layout);
-      if (result != VK_SUCCESS)
-         return result;
-   }
-
-   if (!device->meta_state.cleari_r32g32b32.img_p_layout) {
-      const VkPushConstantRange pc_range = {
-         .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-         .size = 16,
-      };
-
-      result = radv_meta_create_pipeline_layout(device, &device->meta_state.cleari_r32g32b32.img_ds_layout, 1,
-                                                &pc_range, &device->meta_state.cleari_r32g32b32.img_p_layout);
-   }
-
-   return result;
-}
-
-static VkResult
-create_cleari_r32g32b32_pipeline(struct radv_device *device, VkPipeline *pipeline)
-{
+   const char *key_data = "radv-cleari-r32g32b32";
    VkResult result;
 
-   result = create_cleari_r32g32b32_layout(device);
+   const VkDescriptorSetLayoutBinding binding = {
+      .binding = 0,
+      .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,
+      .descriptorCount = 1,
+      .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+   };
+
+   const VkDescriptorSetLayoutCreateInfo desc_info = {
+      .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+      .flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT,
+      .bindingCount = 1,
+      .pBindings = &binding,
+   };
+
+   const VkPushConstantRange pc_range = {
+      .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+      .size = 16,
+   };
+
+   result = vk_meta_get_pipeline_layout(&device->vk, &device->meta_state.device, &desc_info, &pc_range, key_data,
+                                        strlen(key_data), layout_out);
    if (result != VK_SUCCESS)
       return result;
+
+   VkPipeline pipeline_from_cache = vk_meta_lookup_pipeline(&device->meta_state.device, key_data, strlen(key_data));
+   if (pipeline_from_cache != VK_NULL_HANDLE) {
+      *pipeline_out = pipeline_from_cache;
+      return VK_SUCCESS;
+   }
 
    nir_shader *cs = build_nir_cleari_r32g32b32_compute_shader(device);
 
-   result = radv_meta_create_compute_pipeline(device, cs, device->meta_state.cleari_r32g32b32.img_p_layout, pipeline);
+   const VkPipelineShaderStageCreateInfo stage_info = {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+      .stage = VK_SHADER_STAGE_COMPUTE_BIT,
+      .module = vk_shader_module_handle_from_nir(cs),
+      .pName = "main",
+      .pSpecializationInfo = NULL,
+   };
+
+   const VkComputePipelineCreateInfo pipeline_info = {
+      .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
+      .stage = stage_info,
+      .flags = 0,
+      .layout = *layout_out,
+   };
+
+   result = vk_meta_create_compute_pipeline(&device->vk, &device->meta_state.device, &pipeline_info, key_data,
+                                            strlen(key_data), pipeline_out);
 
    ralloc_free(cs);
    return result;
-}
-
-static VkResult
-get_cleari_r32g32b32_pipeline(struct radv_device *device, VkPipeline *pipeline_out)
-{
-   struct radv_meta_state *state = &device->meta_state;
-   VkResult result = VK_SUCCESS;
-
-   mtx_lock(&state->mtx);
-
-   if (!state->cleari_r32g32b32.pipeline) {
-      result = create_cleari_r32g32b32_pipeline(device, &state->cleari_r32g32b32.pipeline);
-      if (result != VK_SUCCESS)
-         goto fail;
-   }
-
-   *pipeline_out = state->cleari_r32g32b32.pipeline;
-
-fail:
-   mtx_unlock(&state->mtx);
-   return result;
-}
-
-static VkResult
-radv_device_init_meta_cleari_r32g32b32_state(struct radv_device *device)
-{
-   return create_cleari_r32g32b32_pipeline(device, &device->meta_state.cleari_r32g32b32.pipeline);
-}
-
-static void
-radv_device_finish_meta_cleari_r32g32b32_state(struct radv_device *device)
-{
-   struct radv_meta_state *state = &device->meta_state;
-
-   radv_DestroyPipelineLayout(radv_device_to_handle(device), state->cleari_r32g32b32.img_p_layout, &state->alloc);
-   device->vk.dispatch_table.DestroyDescriptorSetLayout(radv_device_to_handle(device),
-                                                        state->cleari_r32g32b32.img_ds_layout, &state->alloc);
-   radv_DestroyPipeline(radv_device_to_handle(device), state->cleari_r32g32b32.pipeline, &state->alloc);
-}
-
-void
-radv_device_finish_meta_bufimage_state(struct radv_device *device)
-{
-   radv_device_finish_meta_cleari_state(device);
-   radv_device_finish_meta_cleari_r32g32b32_state(device);
-}
-
-VkResult
-radv_device_init_meta_bufimage_state(struct radv_device *device, bool on_demand)
-{
-   VkResult result;
-
-   if (on_demand)
-      return VK_SUCCESS;
-
-   result = radv_device_init_meta_cleari_state(device);
-   if (result != VK_SUCCESS)
-      return result;
-
-   result = radv_device_init_meta_cleari_r32g32b32_state(device);
-   if (result != VK_SUCCESS)
-      return result;
-
-   return VK_SUCCESS;
 }
 
 static void
@@ -1451,34 +1355,18 @@ radv_meta_image_to_image_cs(struct radv_cmd_buffer *cmd_buffer, struct radv_meta
 }
 
 static void
-cleari_r32g32b32_bind_descriptors(struct radv_cmd_buffer *cmd_buffer, struct radv_buffer_view *view)
-{
-   struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-
-   radv_meta_push_descriptor_set(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-                                 device->meta_state.cleari_r32g32b32.img_p_layout, 0, 1,
-                                 (VkWriteDescriptorSet[]){{
-                                    .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-                                    .dstBinding = 0,
-                                    .dstArrayElement = 0,
-                                    .descriptorCount = 1,
-                                    .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,
-                                    .pTexelBufferView = (VkBufferView[]){radv_buffer_view_to_handle(view)},
-                                 }});
-}
-
-static void
 radv_meta_clear_image_cs_r32g32b32(struct radv_cmd_buffer *cmd_buffer, struct radv_meta_blit2d_surf *dst,
                                    const VkClearColorValue *clear_color)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    struct radv_buffer_view dst_view;
+   VkPipelineLayout layout;
    VkPipeline pipeline;
    unsigned stride;
    VkBuffer buffer;
    VkResult result;
 
-   result = get_cleari_r32g32b32_pipeline(device, &pipeline);
+   result = get_cleari_r32g32b32_pipeline(device, &pipeline, &layout);
    if (result != VK_SUCCESS) {
       vk_command_buffer_set_error(&cmd_buffer->vk, result);
       return;
@@ -1491,7 +1379,16 @@ radv_meta_clear_image_cs_r32g32b32(struct radv_cmd_buffer *cmd_buffer, struct ra
    create_buffer_from_image(cmd_buffer, dst, VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT, &buffer);
 
    create_bview_for_r32g32b32(cmd_buffer, radv_buffer_from_handle(buffer), 0, dst->format, &dst_view);
-   cleari_r32g32b32_bind_descriptors(cmd_buffer, &dst_view);
+
+   radv_meta_push_descriptor_set(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, layout, 0, 1,
+                                 (VkWriteDescriptorSet[]){{
+                                    .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                                    .dstBinding = 0,
+                                    .dstArrayElement = 0,
+                                    .descriptorCount = 1,
+                                    .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,
+                                    .pTexelBufferView = (VkBufferView[]){radv_buffer_view_to_handle(&dst_view)},
+                                 }});
 
    radv_CmdBindPipeline(radv_cmd_buffer_to_handle(cmd_buffer), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 
@@ -1504,8 +1401,8 @@ radv_meta_clear_image_cs_r32g32b32(struct radv_cmd_buffer *cmd_buffer, struct ra
       stride,
    };
 
-   vk_common_CmdPushConstants(radv_cmd_buffer_to_handle(cmd_buffer), device->meta_state.cleari_r32g32b32.img_p_layout,
-                              VK_SHADER_STAGE_COMPUTE_BIT, 0, 16, push_constants);
+   vk_common_CmdPushConstants(radv_cmd_buffer_to_handle(cmd_buffer), layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, 16,
+                              push_constants);
 
    radv_unaligned_dispatch(cmd_buffer, dst->image->vk.extent.width, dst->image->vk.extent.height, 1);
 
@@ -1513,13 +1410,31 @@ radv_meta_clear_image_cs_r32g32b32(struct radv_cmd_buffer *cmd_buffer, struct ra
    radv_DestroyBuffer(radv_device_to_handle(device), buffer, NULL);
 }
 
-static void
-cleari_bind_descriptors(struct radv_cmd_buffer *cmd_buffer, struct radv_image_view *dst_iview)
+void
+radv_meta_clear_image_cs(struct radv_cmd_buffer *cmd_buffer, struct radv_meta_blit2d_surf *dst,
+                         const VkClearColorValue *clear_color)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   struct radv_image_view dst_iview;
+   VkPipelineLayout layout;
+   VkPipeline pipeline;
+   VkResult result;
 
-   radv_meta_push_descriptor_set(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, device->meta_state.cleari.img_p_layout, 0,
-                                 1,
+   if (dst->format == VK_FORMAT_R32G32B32_UINT || dst->format == VK_FORMAT_R32G32B32_SINT ||
+       dst->format == VK_FORMAT_R32G32B32_SFLOAT) {
+      radv_meta_clear_image_cs_r32g32b32(cmd_buffer, dst, clear_color);
+      return;
+   }
+
+   result = get_cleari_pipeline(device, dst->image, &pipeline, &layout);
+   if (result != VK_SUCCESS) {
+      vk_command_buffer_set_error(&cmd_buffer->vk, result);
+      return;
+   }
+
+   create_iview(cmd_buffer, dst, &dst_iview, VK_FORMAT_UNDEFINED, dst->aspect_mask);
+
+   radv_meta_push_descriptor_set(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, layout, 0, 1,
                                  (VkWriteDescriptorSet[]){
                                     {.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                                      .dstBinding = 0,
@@ -1530,36 +1445,11 @@ cleari_bind_descriptors(struct radv_cmd_buffer *cmd_buffer, struct radv_image_vi
                                         (VkDescriptorImageInfo[]){
                                            {
                                               .sampler = VK_NULL_HANDLE,
-                                              .imageView = radv_image_view_to_handle(dst_iview),
+                                              .imageView = radv_image_view_to_handle(&dst_iview),
                                               .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
                                            },
                                         }},
                                  });
-}
-
-void
-radv_meta_clear_image_cs(struct radv_cmd_buffer *cmd_buffer, struct radv_meta_blit2d_surf *dst,
-                         const VkClearColorValue *clear_color)
-{
-   struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   struct radv_image_view dst_iview;
-   VkPipeline pipeline;
-   VkResult result;
-
-   if (dst->format == VK_FORMAT_R32G32B32_UINT || dst->format == VK_FORMAT_R32G32B32_SINT ||
-       dst->format == VK_FORMAT_R32G32B32_SFLOAT) {
-      radv_meta_clear_image_cs_r32g32b32(cmd_buffer, dst, clear_color);
-      return;
-   }
-
-   result = get_cleari_pipeline(device, dst->image, &pipeline);
-   if (result != VK_SUCCESS) {
-      vk_command_buffer_set_error(&cmd_buffer->vk, result);
-      return;
-   }
-
-   create_iview(cmd_buffer, dst, &dst_iview, VK_FORMAT_UNDEFINED, dst->aspect_mask);
-   cleari_bind_descriptors(cmd_buffer, &dst_iview);
 
    radv_CmdBindPipeline(radv_cmd_buffer_to_handle(cmd_buffer), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 
@@ -1567,8 +1457,8 @@ radv_meta_clear_image_cs(struct radv_cmd_buffer *cmd_buffer, struct radv_meta_bl
       clear_color->uint32[0], clear_color->uint32[1], clear_color->uint32[2], clear_color->uint32[3], dst->layer,
    };
 
-   vk_common_CmdPushConstants(radv_cmd_buffer_to_handle(cmd_buffer), device->meta_state.cleari.img_p_layout,
-                              VK_SHADER_STAGE_COMPUTE_BIT, 0, 20, push_constants);
+   vk_common_CmdPushConstants(radv_cmd_buffer_to_handle(cmd_buffer), layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, 20,
+                              push_constants);
 
    radv_unaligned_dispatch(cmd_buffer, dst->image->vk.extent.width, dst->image->vk.extent.height, 1);
 
