@@ -3934,7 +3934,7 @@
         "description": "r600: index_bias should be forced to zero for all indirect draw calls",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0cae8d372e644a1d89ec5685781435159ee2d285",
         "notes": null
