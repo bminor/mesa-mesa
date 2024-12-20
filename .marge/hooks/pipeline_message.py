@@ -219,7 +219,7 @@ async def search_job_log_for_errors(session, project_id, job):
     ignore_list = [
         "aborting",
         "error_msg      : None",
-        "error_type     : None",
+        "error_type",
         "exit code",
         "exit status",
         "exiting now",

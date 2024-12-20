@@ -174,7 +174,7 @@ async def test_search_job_log_for_errors(mock_get_job_log):
 error_msg: something useful
 error aborting
 error_msg      : None
-error_type     : None
+error_type     : Job
 [0Ksection_end:1734694783:job_data
 [0K
 [0m11:39:43.438: [1mFinished executing LAVA job in the attempt #3 [0m
