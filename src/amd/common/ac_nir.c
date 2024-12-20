@@ -592,6 +592,83 @@ ac_nir_export_parameters(nir_builder *b,
    }
 }
 
+void
+ac_nir_store_parameters_to_attr_ring(nir_builder *b,
+                                     const uint8_t *param_offsets,
+                                     const uint64_t outputs_written,
+                                     const uint16_t outputs_written_16bit,
+                                     ac_nir_prerast_out *out,
+                                     nir_def *export_tid, nir_def *num_export_threads)
+{
+   nir_def *attr_rsrc = nir_load_ring_attr_amd(b);
+
+   /* We should always store full vec4s in groups of 8 lanes for the best performance even if
+    * some of them are garbage or have unused components, so align the number of export threads
+    * to 8.
+    */
+   num_export_threads = nir_iand_imm(b, nir_iadd_imm(b, num_export_threads, 7), ~7);
+
+   if (!export_tid)
+      nir_push_if(b, nir_is_subgroup_invocation_lt_amd(b, num_export_threads));
+   else
+      nir_push_if(b, nir_ult(b, export_tid, num_export_threads));
+
+   nir_def *attr_offset = nir_load_ring_attr_offset_amd(b);
+   nir_def *vindex = nir_load_local_invocation_index(b);
+   nir_def *voffset = nir_imm_int(b, 0);
+   nir_def *undef = nir_undef(b, 1, 32);
+
+   uint32_t exported_params = 0;
+
+   u_foreach_bit64 (slot, outputs_written) {
+      const unsigned offset = param_offsets[slot];
+
+      if (offset > AC_EXP_PARAM_OFFSET_31)
+         continue;
+
+      if (exported_params & BITFIELD_BIT(offset))
+         continue;
+
+      nir_def *comp[4];
+      for (unsigned j = 0; j < 4; j++) {
+         comp[j] = out->outputs[slot][j] ? out->outputs[slot][j] : undef;
+      }
+
+      nir_store_buffer_amd(b, nir_vec(b, comp, 4), attr_rsrc, voffset, attr_offset, vindex,
+                           .base = offset * 16,
+                           .memory_modes = nir_var_shader_out,
+                           .access = ACCESS_COHERENT | ACCESS_IS_SWIZZLED_AMD);
+
+      exported_params |= BITFIELD_BIT(offset);
+   }
+
+   u_foreach_bit (i, outputs_written_16bit) {
+      const unsigned offset = param_offsets[VARYING_SLOT_VAR0_16BIT + i];
+
+      if (offset > AC_EXP_PARAM_OFFSET_31)
+         continue;
+
+      if (exported_params & BITFIELD_BIT(offset))
+         continue;
+
+      nir_def *comp[4];
+      for (unsigned j = 0; j < 4; j++) {
+         nir_def *lo = out->outputs_16bit_lo[i][j] ? out->outputs_16bit_lo[i][j] : undef;
+         nir_def *hi = out->outputs_16bit_hi[i][j] ? out->outputs_16bit_hi[i][j] : undef;
+         comp[j] = nir_pack_32_2x16_split(b, lo, hi);
+      }
+
+      nir_store_buffer_amd(b, nir_vec(b, comp, 4), attr_rsrc, voffset, attr_offset, vindex,
+                           .base = offset * 16,
+                           .memory_modes = nir_var_shader_out,
+                           .access = ACCESS_COHERENT | ACCESS_IS_SWIZZLED_AMD);
+
+      exported_params |= BITFIELD_BIT(offset);
+   }
+
+   nir_pop_if(b, NULL);
+}
+
 unsigned
 ac_nir_map_io_location(unsigned location,
                        uint64_t mask,

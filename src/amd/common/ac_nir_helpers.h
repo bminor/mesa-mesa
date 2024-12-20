@@ -109,6 +109,14 @@ ac_nir_export_parameters(nir_builder *b,
                          uint16_t outputs_written_16bit,
                          ac_nir_prerast_out *out);
 
+void
+ac_nir_store_parameters_to_attr_ring(nir_builder *b,
+                                     const uint8_t *param_offsets,
+                                     const uint64_t outputs_written,
+                                     const uint16_t outputs_written_16bit,
+                                     ac_nir_prerast_out *out,
+                                     nir_def *export_tid, nir_def *num_export_threads);
+
 nir_def *
 ac_nir_calc_io_off(nir_builder *b,
                              nir_intrinsic_instr *intrin,
