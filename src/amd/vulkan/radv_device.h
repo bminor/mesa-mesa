@@ -149,29 +149,6 @@ struct radv_meta_state {
    struct {
       VkDescriptorSetLayout ds_layout;
       VkPipelineLayout p_layout;
-      struct {
-         VkPipeline pipeline;
-         VkPipeline i_pipeline;
-         VkPipeline srgb_pipeline;
-      } rc[MAX_SAMPLES_LOG2];
-
-      VkPipeline depth_zero_pipeline;
-      struct {
-         VkPipeline average_pipeline;
-         VkPipeline max_pipeline;
-         VkPipeline min_pipeline;
-      } depth[MAX_SAMPLES_LOG2];
-
-      VkPipeline stencil_zero_pipeline;
-      struct {
-         VkPipeline max_pipeline;
-         VkPipeline min_pipeline;
-      } stencil[MAX_SAMPLES_LOG2];
-   } resolve_compute;
-
-   struct {
-      VkDescriptorSetLayout ds_layout;
-      VkPipelineLayout p_layout;
 
       struct {
          VkPipeline pipeline[NUM_META_FS_KEYS];
