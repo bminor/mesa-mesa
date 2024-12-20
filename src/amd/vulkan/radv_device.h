@@ -144,17 +144,6 @@ struct radv_meta_state {
    struct {
       VkPipelineLayout img_p_layout;
       VkDescriptorSetLayout img_ds_layout;
-      VkPipeline pipeline;
-      VkPipeline pipeline_3d;
-   } btoi;
-   struct {
-      VkPipelineLayout img_p_layout;
-      VkDescriptorSetLayout img_ds_layout;
-      VkPipeline pipeline;
-   } btoi_r32g32b32;
-   struct {
-      VkPipelineLayout img_p_layout;
-      VkDescriptorSetLayout img_ds_layout;
       VkPipeline pipeline[MAX_SAMPLES_LOG2];
       VkPipeline pipeline_2d_3d;
       VkPipeline pipeline_3d_2d;
