@@ -223,15 +223,11 @@ panfrost_shader_get(struct pipe_screen *pscreen,
 }
 
 static void
-panfrost_build_key(struct panfrost_context *ctx,
-                   struct panfrost_shader_key *key,
-                   struct panfrost_uncompiled_shader *uncompiled)
+panfrost_build_fs_key(struct panfrost_context *ctx,
+                      struct panfrost_fs_key *key,
+                      struct panfrost_uncompiled_shader *uncompiled)
 {
    const nir_shader *nir = uncompiled->nir;
-
-   /* We don't currently have vertex shader variants */
-   if (nir->info.stage != MESA_SHADER_FRAGMENT)
-      return;
 
    struct panfrost_device *dev = pan_device(ctx->base.screen);
    struct pipe_framebuffer_state *fb = &ctx->pipe_framebuffer;
@@ -240,20 +236,20 @@ panfrost_build_key(struct panfrost_context *ctx,
 
    /* gl_FragColor lowering needs the number of colour buffers */
    if (uncompiled->fragcolor_lowered) {
-      key->fs.nr_cbufs_for_fragcolor = fb->nr_cbufs;
+      key->nr_cbufs_for_fragcolor = fb->nr_cbufs;
    }
 
    /* Point sprite lowering needed on Bifrost and newer */
    if (dev->arch >= 6 && rast && ctx->active_prim == MESA_PRIM_POINTS) {
-      key->fs.sprite_coord_enable = rast->sprite_coord_enable;
+      key->sprite_coord_enable = rast->sprite_coord_enable;
    }
 
    /* User clip plane lowering needed everywhere */
    if (rast) {
-      key->fs.clip_plane_enable = rast->clip_plane_enable;
+      key->clip_plane_enable = rast->clip_plane_enable;
 
       if (u_reduced_prim(ctx->active_prim) == MESA_PRIM_LINES)
-         key->fs.line_smooth = rast->line_smooth;
+         key->line_smooth = rast->line_smooth;
    }
 
    if (dev->arch <= 5) {
@@ -266,15 +262,27 @@ panfrost_build_key(struct panfrost_context *ctx,
          if (panfrost_blendable_formats_v6[fmt].internal)
             fmt = PIPE_FORMAT_NONE;
 
-         key->fs.rt_formats[i] = fmt;
+         key->rt_formats[i] = fmt;
       }
    }
 
    /* Funny desktop GL varying lowering on Valhall */
    if (dev->arch >= 9) {
       assert(vs != NULL && "too early");
-      key->fs.fixed_varying_mask = vs->fixed_varying_mask;
+      key->fixed_varying_mask = vs->fixed_varying_mask;
    }
+}
+
+static void
+panfrost_build_key(struct panfrost_context *ctx,
+                   struct panfrost_shader_key *key,
+                   struct panfrost_uncompiled_shader *uncompiled)
+{
+   const nir_shader *nir = uncompiled->nir;
+
+   /* We don't currently have vertex shader variants */
+   if (nir->info.stage == MESA_SHADER_FRAGMENT)
+      panfrost_build_fs_key(ctx, &key->fs, uncompiled);
 }
 
 static struct panfrost_compiled_shader *
