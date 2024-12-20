@@ -573,7 +573,7 @@ create_color_pipeline(struct radv_device *device, enum blit2d_src_type src_type,
       .pInputAssemblyState =
          &(VkPipelineInputAssemblyStateCreateInfo){
             .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-            .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
+            .topology = VK_PRIMITIVE_TOPOLOGY_META_RECT_LIST_MESA,
             .primitiveRestartEnable = false,
          },
       .pViewportState =
@@ -626,10 +626,8 @@ create_color_pipeline(struct radv_device *device, enum blit2d_src_type src_type,
       .subpass = 0,
    };
 
-   const struct radv_graphics_pipeline_create_info radv_pipeline_info = {.use_rectlist = true};
-
-   result = radv_graphics_pipeline_create(radv_device_to_handle(device), device->meta_state.cache, &vk_pipeline_info,
-                                          &radv_pipeline_info, &device->meta_state.alloc, pipeline);
+   result = radv_CreateGraphicsPipelines(radv_device_to_handle(device), device->meta_state.cache, 1, &vk_pipeline_info,
+                                         &device->meta_state.alloc, pipeline);
 
    ralloc_free(vs);
    ralloc_free(fs);
@@ -724,7 +722,7 @@ create_depth_only_pipeline(struct radv_device *device, enum blit2d_src_type src_
       .pInputAssemblyState =
          &(VkPipelineInputAssemblyStateCreateInfo){
             .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-            .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
+            .topology = VK_PRIMITIVE_TOPOLOGY_META_RECT_LIST_MESA,
             .primitiveRestartEnable = false,
          },
       .pViewportState =
@@ -802,10 +800,8 @@ create_depth_only_pipeline(struct radv_device *device, enum blit2d_src_type src_
       .subpass = 0,
    };
 
-   const struct radv_graphics_pipeline_create_info radv_pipeline_info = {.use_rectlist = true};
-
-   result = radv_graphics_pipeline_create(radv_device_to_handle(device), device->meta_state.cache, &vk_pipeline_info,
-                                          &radv_pipeline_info, &device->meta_state.alloc, pipeline);
+   result = radv_CreateGraphicsPipelines(radv_device_to_handle(device), device->meta_state.cache, 1, &vk_pipeline_info,
+                                         &device->meta_state.alloc, pipeline);
 
    ralloc_free(vs);
    ralloc_free(fs);
@@ -900,7 +896,7 @@ create_stencil_only_pipeline(struct radv_device *device, enum blit2d_src_type sr
       .pInputAssemblyState =
          &(VkPipelineInputAssemblyStateCreateInfo){
             .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-            .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
+            .topology = VK_PRIMITIVE_TOPOLOGY_META_RECT_LIST_MESA,
             .primitiveRestartEnable = false,
          },
       .pViewportState =
@@ -973,11 +969,9 @@ create_stencil_only_pipeline(struct radv_device *device, enum blit2d_src_type sr
       .subpass = 0,
    };
 
-   const struct radv_graphics_pipeline_create_info radv_pipeline_info = {.use_rectlist = true};
-
-   result = radv_graphics_pipeline_create(radv_device_to_handle(device), device->meta_state.cache, &vk_pipeline_info,
-                                          &radv_pipeline_info, &device->meta_state.alloc,
-                                          &device->meta_state.blit2d[log2_samples].stencil_only_pipeline[src_type]);
+   result = radv_CreateGraphicsPipelines(radv_device_to_handle(device), device->meta_state.cache, 1, &vk_pipeline_info,
+                                         &device->meta_state.alloc,
+                                         &device->meta_state.blit2d[log2_samples].stencil_only_pipeline[src_type]);
 
    ralloc_free(vs);
    ralloc_free(fs);

@@ -622,7 +622,6 @@ bool radv_needs_null_export_workaround(const struct radv_device *device, const s
                                        unsigned custom_blend_mode);
 
 struct radv_graphics_pipeline_create_info {
-   bool use_rectlist;
    bool db_depth_clear;
    bool db_stencil_clear;
    bool depth_compress_disable;

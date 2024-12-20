@@ -144,7 +144,7 @@ create_pipeline_gfx(struct radv_device *device, uint32_t samples, VkPipelineLayo
       .pInputAssemblyState =
          &(VkPipelineInputAssemblyStateCreateInfo){
             .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-            .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
+            .topology = VK_PRIMITIVE_TOPOLOGY_META_RECT_LIST_MESA,
             .primitiveRestartEnable = false,
          },
       .pViewportState =
@@ -204,7 +204,6 @@ create_pipeline_gfx(struct radv_device *device, uint32_t samples, VkPipelineLayo
    };
 
    struct radv_graphics_pipeline_create_info extra = {
-      .use_rectlist = true,
       .depth_compress_disable = true,
       .stencil_compress_disable = true,
    };

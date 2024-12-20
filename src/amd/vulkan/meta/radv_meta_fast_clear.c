@@ -145,7 +145,7 @@ create_pipeline(struct radv_device *device, VkShaderModule vs_module_h, VkPipeli
 
    const VkPipelineInputAssemblyStateCreateInfo ia_state = {
       .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-      .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
+      .topology = VK_PRIMITIVE_TOPOLOGY_META_RECT_LIST_MESA,
       .primitiveRestartEnable = false,
    };
 
@@ -217,7 +217,6 @@ create_pipeline(struct radv_device *device, VkShaderModule vs_module_h, VkPipeli
                                              .subpass = 0,
                                           },
                                           &(struct radv_graphics_pipeline_create_info){
-                                             .use_rectlist = true,
                                              .custom_blend_mode = V_028808_CB_ELIMINATE_FAST_CLEAR,
                                           },
                                           &device->meta_state.alloc,
@@ -267,7 +266,6 @@ create_pipeline(struct radv_device *device, VkShaderModule vs_module_h, VkPipeli
                                              .subpass = 0,
                                           },
                                           &(struct radv_graphics_pipeline_create_info){
-                                             .use_rectlist = true,
                                              .custom_blend_mode = V_028808_CB_FMASK_DECOMPRESS,
                                           },
                                           &device->meta_state.alloc,
@@ -318,7 +316,6 @@ create_pipeline(struct radv_device *device, VkShaderModule vs_module_h, VkPipeli
          .subpass = 0,
       },
       &(struct radv_graphics_pipeline_create_info){
-         .use_rectlist = true,
          .custom_blend_mode =
             pdev->info.gfx_level >= GFX11 ? V_028808_CB_DCC_DECOMPRESS_GFX11 : V_028808_CB_DCC_DECOMPRESS_GFX8,
       },

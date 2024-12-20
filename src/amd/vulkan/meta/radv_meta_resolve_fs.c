@@ -131,7 +131,7 @@ create_resolve_pipeline(struct radv_device *device, int samples_log2, VkFormat f
       .pInputAssemblyState =
          &(VkPipelineInputAssemblyStateCreateInfo){
             .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-            .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
+            .topology = VK_PRIMITIVE_TOPOLOGY_META_RECT_LIST_MESA,
             .primitiveRestartEnable = false,
          },
       .pViewportState =
@@ -183,10 +183,8 @@ create_resolve_pipeline(struct radv_device *device, int samples_log2, VkFormat f
       .subpass = 0,
    };
 
-   const struct radv_graphics_pipeline_create_info radv_pipeline_info = {.use_rectlist = true};
-
-   result = radv_graphics_pipeline_create(radv_device_to_handle(device), device->meta_state.cache, &vk_pipeline_info,
-                                          &radv_pipeline_info, &device->meta_state.alloc, pipeline);
+   result = radv_CreateGraphicsPipelines(radv_device_to_handle(device), device->meta_state.cache, 1, &vk_pipeline_info,
+                                         &device->meta_state.alloc, pipeline);
    ralloc_free(vs);
    ralloc_free(fs);
    return result;
@@ -382,7 +380,7 @@ create_depth_stencil_resolve_pipeline(struct radv_device *device, int samples_lo
       .pInputAssemblyState =
          &(VkPipelineInputAssemblyStateCreateInfo){
             .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-            .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
+            .topology = VK_PRIMITIVE_TOPOLOGY_META_RECT_LIST_MESA,
             .primitiveRestartEnable = false,
          },
       .pViewportState =
@@ -435,10 +433,8 @@ create_depth_stencil_resolve_pipeline(struct radv_device *device, int samples_lo
       .subpass = 0,
    };
 
-   const struct radv_graphics_pipeline_create_info radv_pipeline_info = {.use_rectlist = true};
-
-   result = radv_graphics_pipeline_create(radv_device_to_handle(device), device->meta_state.cache, &vk_pipeline_info,
-                                          &radv_pipeline_info, &device->meta_state.alloc, pipeline);
+   result = radv_CreateGraphicsPipelines(radv_device_to_handle(device), device->meta_state.cache, 1, &vk_pipeline_info,
+                                         &device->meta_state.alloc, pipeline);
 
    ralloc_free(vs);
    ralloc_free(fs);

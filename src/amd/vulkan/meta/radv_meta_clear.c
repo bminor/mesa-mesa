@@ -91,7 +91,7 @@ create_pipeline(struct radv_device *device, uint32_t samples, struct nir_shader 
                                              .pInputAssemblyState =
                                                 &(VkPipelineInputAssemblyStateCreateInfo){
                                                    .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-                                                   .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
+                                                   .topology = VK_PRIMITIVE_TOPOLOGY_META_RECT_LIST_MESA,
                                                    .primitiveRestartEnable = false,
                                                 },
                                              .pViewportState =
@@ -209,9 +209,8 @@ create_color_pipeline(struct radv_device *device, uint32_t samples, uint32_t fra
       .pColorAttachmentFormats = att_formats,
    };
 
-   struct radv_graphics_pipeline_create_info extra = {
-      .use_rectlist = true,
-   };
+   struct radv_graphics_pipeline_create_info extra = {0};
+
    result = create_pipeline(device, samples, vs_nir, fs_nir, &vi_state, &ds_state, &cb_state, &rendering_create_info,
                             device->meta_state.clear_color_p_layout, &extra, &device->meta_state.alloc, pipeline);
 
@@ -482,9 +481,7 @@ create_depthstencil_pipeline(struct radv_device *device, VkImageAspectFlags aspe
       .stencilAttachmentFormat = (aspects & VK_IMAGE_ASPECT_STENCIL_BIT) ? VK_FORMAT_S8_UINT : VK_FORMAT_UNDEFINED,
    };
 
-   struct radv_graphics_pipeline_create_info extra = {
-      .use_rectlist = true,
-   };
+   struct radv_graphics_pipeline_create_info extra = {0};
 
    if (aspects & VK_IMAGE_ASPECT_DEPTH_BIT) {
       extra.db_depth_clear = index == DEPTH_CLEAR_SLOW ? false : true;

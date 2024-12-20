@@ -3281,13 +3281,6 @@ radv_pipeline_init_extra(struct radv_graphics_pipeline *pipeline,
 {
    pipeline->custom_blend_mode = extra->custom_blend_mode;
 
-   if (extra->use_rectlist) {
-      struct radv_dynamic_state *dynamic = &pipeline->dynamic_state;
-      dynamic->vk.ia.primitive_topology = V_008958_DI_PT_RECTLIST;
-
-      pipeline->rast_prim = radv_conv_prim_to_gs_out(dynamic->vk.ia.primitive_topology, pipeline->is_ngg);
-   }
-
    if (radv_pipeline_has_ds_attachments(state->rp)) {
       pipeline->db_render_control |= S_028000_DEPTH_CLEAR_ENABLE(extra->db_depth_clear);
       pipeline->db_render_control |= S_028000_STENCIL_CLEAR_ENABLE(extra->db_stencil_clear);
