@@ -234,7 +234,7 @@
         "description": "etnaviv: isa: Support src2 for texld",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "abe5bd35d0bcd10ff08c4dd0239ab1fbeea3db49",
         "notes": null
