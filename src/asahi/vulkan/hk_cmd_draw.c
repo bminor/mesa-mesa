@@ -1625,7 +1625,6 @@ hk_flush_shaders(struct hk_cmd_buffer *cmd)
    if (IS_SHADER_DIRTY(GEOMETRY)) {
       struct hk_api_shader *gs = gfx->shaders[MESA_SHADER_GEOMETRY];
 
-      cmd->state.gfx.dirty |= HK_DIRTY_INDEX;
       desc->root.draw.api_gs = gs && !gs->is_passthrough;
    }
 
@@ -2110,19 +2109,26 @@ translate_ppp_vertex(unsigned vtx)
 static void
 hk_flush_index(struct hk_cmd_buffer *cmd, struct hk_cs *cs)
 {
-   uint8_t *out = cs->current;
-   agx_push(out, VDM_STATE, cfg) {
-      cfg.restart_index_present = true;
-   }
+   uint32_t index = cmd->state.gfx.shaders[MESA_SHADER_GEOMETRY]
+                       ? BITFIELD_MASK(32)
+                       : cmd->state.gfx.index.restart;
 
-   agx_push(out, VDM_STATE_RESTART_INDEX, cfg) {
-      if (cmd->state.gfx.shaders[MESA_SHADER_GEOMETRY])
-         cfg.value = BITFIELD_MASK(32);
-      else
-         cfg.value = cmd->state.gfx.index.restart;
-   }
+   /* VDM State updates are relatively expensive, so only emit them when the
+    * restart index changes. This is simpler than accurate dirty tracking.
+    */
+   if (cs->restart_index != index) {
+      uint8_t *out = cs->current;
+      agx_push(out, VDM_STATE, cfg) {
+         cfg.restart_index_present = true;
+      }
 
-   cs->current = out;
+      agx_push(out, VDM_STATE_RESTART_INDEX, cfg) {
+         cfg.value = index;
+      }
+
+      cs->current = out;
+      cs->restart_index = index;
+   }
 }
 
 /*
@@ -2476,10 +2482,9 @@ hk_flush_dynamic_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
    struct hk_shader *hw_vs = hk_bound_hw_vs(gfx);
    struct hk_shader *sw_vs = hk_bound_sw_vs(gfx);
 
-   if (!vk_dynamic_graphics_state_any_dirty(dyn) &&
-       !(gfx->dirty & ~HK_DIRTY_INDEX) && !gfx->descriptors.root_dirty &&
-       !gfx->shaders_dirty && !sw_vs->b.info.uses_draw_id &&
-       !sw_vs->b.info.uses_base_param &&
+   if (!vk_dynamic_graphics_state_any_dirty(dyn) && !gfx->dirty &&
+       !gfx->descriptors.root_dirty && !gfx->shaders_dirty &&
+       !sw_vs->b.info.uses_draw_id && !sw_vs->b.info.uses_base_param &&
        !(gfx->linked[MESA_SHADER_VERTEX] &&
          gfx->linked[MESA_SHADER_VERTEX]->b.uses_base_param))
       return;
@@ -3235,8 +3240,7 @@ hk_flush_gfx_state(struct hk_cmd_buffer *cmd, uint32_t draw_id,
    if (desc->push_dirty)
       hk_cmd_buffer_flush_push_descriptors(cmd, desc);
 
-   if ((gfx->dirty & HK_DIRTY_INDEX) &&
-       (draw.restart || gfx->shaders[MESA_SHADER_GEOMETRY]))
+   if (draw.restart || gfx->shaders[MESA_SHADER_GEOMETRY])
       hk_flush_index(cmd, cs);
 
    hk_flush_dynamic_state(cmd, cs, draw_id, draw);
@@ -3260,8 +3264,6 @@ hk_CmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer, VkBuffer _buffer,
    /* TODO: check if necessary, blob does this */
    cmd->state.gfx.index.buffer.range =
       align(cmd->state.gfx.index.buffer.range, 4);
-
-   cmd->state.gfx.dirty |= HK_DIRTY_INDEX;
 }
 
 void

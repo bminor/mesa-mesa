@@ -204,11 +204,10 @@ struct hk_index_buffer_state {
  * shaders_dirty.
  */
 enum hk_dirty {
-   HK_DIRTY_INDEX = BITFIELD_BIT(0),
-   HK_DIRTY_VB = BITFIELD_BIT(1),
-   HK_DIRTY_OCCLUSION = BITFIELD_BIT(2),
-   HK_DIRTY_PROVOKING = BITFIELD_BIT(3),
-   HK_DIRTY_VARYINGS = BITFIELD_BIT(4),
+   HK_DIRTY_VB = BITFIELD_BIT(0),
+   HK_DIRTY_OCCLUSION = BITFIELD_BIT(1),
+   HK_DIRTY_PROVOKING = BITFIELD_BIT(2),
+   HK_DIRTY_VARYINGS = BITFIELD_BIT(3),
 };
 
 struct hk_graphics_state {
@@ -393,6 +392,13 @@ struct hk_cs {
    uint32_t ppp_multisamplectl;
 
    struct hk_render_registers cr;
+
+   /* Active restart index if one is set. Zero if there is no restart index set
+    * yet, since Vulkan does not allow zero restart indices (unlike OpenGL).
+    * This is used in place of dirty tracking, because dirty tracking
+    * restart indices is complicated and just checking the saved value is cheap.
+    */
+   uint32_t restart_index;
 };
 
 static inline uint64_t
