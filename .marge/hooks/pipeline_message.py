@@ -221,6 +221,8 @@ async def search_job_log_for_errors(session, project_id, job):
         "building c",
         "error_msg      : None",
         "error_type",
+        "error generated",
+        "errors generated",
         "exit code",
         "exit status",
         "exiting now",

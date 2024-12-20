@@ -172,6 +172,8 @@ async def test_search_job_log_for_errors(mock_get_job_log):
 
     job_log = r"""
 error_msg: something useful
+1 error generated
+3 errors generated.
 -- Looking for strerror_r - found
 -- Looking for strerror_s - not found
 [49/176] Building CXX object lib/Support/CMakeFiles/LLVMSupport.dir/ErrorHandling.cpp.o
