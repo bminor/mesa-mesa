@@ -169,7 +169,7 @@ SPDX-License-Identifier: MIT
 		<map name="SRC1_RGROUP">src->src[1].rgroup</map>
 		<map name="SRC1_AMODE">src->src[1].amode</map>
 		<map name="SRC2">&amp;src->src[2]</map>
-		<map name="SRC2_USE">rc->src[2].use</map>
+		<map name="SRC2_USE">src->src[2].use</map>
 		<map name="SRC2_REG">src->src[2].reg</map>
 		<map name="SRC2_RGROUP">src->src[2].rgroup</map>
 		<map name="SRC2_AMODE">src->src[2].amode</map>
