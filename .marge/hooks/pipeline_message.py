@@ -218,6 +218,7 @@ async def search_job_log_for_errors(session, project_id, job):
     # forget to add a comma after each entry
     ignore_list = [
         "aborting",
+        "building c",
         "error_msg      : None",
         "error_type",
         "exit code",
@@ -225,9 +226,12 @@ async def search_job_log_for_errors(session, project_id, job):
         "exiting now",
         "job failed",
         "no files to upload",
+        "performing test",
         "ret code",
         "retry",
         "retry-all-errors",
+        "strerror_",
+        "success",
         "unknown-section",
     ]
     job_log = await get_job_log(session, project_id, job["id"])

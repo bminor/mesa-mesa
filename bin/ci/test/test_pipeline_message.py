@@ -172,6 +172,13 @@ async def test_search_job_log_for_errors(mock_get_job_log):
 
     job_log = r"""
 error_msg: something useful
+-- Looking for strerror_r - found
+-- Looking for strerror_s - not found
+[49/176] Building CXX object lib/Support/CMakeFiles/LLVMSupport.dir/ErrorHandling.cpp.o
+[127/2034] Building C object lib/Support/CMakeFiles/LLVMSupport.dir/regerror.c.o
+-- Performing Test HAS_WERROR_GLOBAL_CTORS
+-- Performing Test C_SUPPORTS_WERROR_UNGUARDED_AVAILABILITY_NEW - Success
+-- Performing Test LLVM_LIBSTDCXX_SOFT_ERROR
 error aborting
 error_msg      : None
 error_type     : Job
