@@ -180,6 +180,7 @@ struct compiled_framebuffer_state {
    uint32_t PE_DEPTH_STRIDE;
    uint32_t PE_HDEPTH_CONTROL;
    uint32_t PE_DEPTH_NORMALIZE;
+   float depth_mrd;
    struct etna_reloc PE_COLOR_ADDR;
    struct etna_reloc PE_PIPE_COLOR_ADDR[ETNA_MAX_PIXELPIPES];
    uint32_t PE_COLOR_STRIDE;

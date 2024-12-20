@@ -352,6 +352,8 @@ etna_set_framebuffer_state(struct pipe_context *pctx,
       if (depth_bits == 16)
          target_16bpp = true;
 
+      cs->depth_mrd = util_get_depth_format_mrd(util_format_description(zsbuf->base.format));
+
       cs->PE_DEPTH_CONFIG =
          depth_format |
          COND(depth_supertiled, VIVS_PE_DEPTH_CONFIG_SUPER_TILED) |
@@ -397,6 +399,7 @@ etna_set_framebuffer_state(struct pipe_context *pctx,
 
       nr_samples_depth = zsbuf->base.texture->nr_samples;
    } else {
+      cs->depth_mrd = 0.0f;
       cs->PE_DEPTH_CONFIG = VIVS_PE_DEPTH_CONFIG_DEPTH_MODE_NONE;
       cs->PE_DEPTH_ADDR.bo = NULL;
       cs->PE_DEPTH_STRIDE = 0;
