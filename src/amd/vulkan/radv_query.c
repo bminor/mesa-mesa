@@ -1694,51 +1694,81 @@ radv_copy_ms_prim_query_result(struct radv_cmd_buffer *cmd_buffer, struct radv_q
 }
 
 static VkResult
-create_layout(struct radv_device *device)
+create_layout(struct radv_device *device, VkPipelineLayout *layout_out)
 {
-   VkResult result = VK_SUCCESS;
+   const char *key_data = "radv-query-layout";
 
-   if (!device->meta_state.query.ds_layout) {
-      const VkDescriptorSetLayoutBinding bindings[] = {
-         {.binding = 0,
-          .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-          .descriptorCount = 1,
-          .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT},
-         {
-            .binding = 1,
-            .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-            .descriptorCount = 1,
-            .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-         },
-      };
-
-      result = radv_meta_create_descriptor_set_layout(device, 2, bindings, &device->meta_state.query.ds_layout);
-      if (result != VK_SUCCESS)
-         return result;
-   }
-
-   if (!device->meta_state.query.p_layout) {
-      const VkPushConstantRange pc_range = {
+   const VkDescriptorSetLayoutBinding bindings[] = {
+      {.binding = 0,
+       .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+       .descriptorCount = 1,
+       .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT},
+      {
+         .binding = 1,
+         .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+         .descriptorCount = 1,
          .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-         .size = 20,
-      };
+      },
+   };
 
-      result = radv_meta_create_pipeline_layout(device, &device->meta_state.query.ds_layout, 1, &pc_range,
-                                                &device->meta_state.query.p_layout);
-   }
+   const VkDescriptorSetLayoutCreateInfo desc_info = {
+      .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+      .flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT,
+      .bindingCount = 2,
+      .pBindings = bindings,
+   };
 
-   return result;
+   const VkPushConstantRange pc_range = {
+      .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+      .size = 20,
+   };
+
+   return vk_meta_get_pipeline_layout(&device->vk, &device->meta_state.device, &desc_info, &pc_range, key_data,
+                                      strlen(key_data), layout_out);
 }
 
 static VkResult
-create_pipeline(struct radv_device *device, VkQueryType query_type, VkPipeline *pipeline)
+get_pipeline(struct radv_device *device, VkQueryType query_type, VkPipeline *pipeline_out, VkPipelineLayout *layout_out)
 {
-   nir_shader *cs;
+   char *query_name;
+   char key_data[64];
    VkResult result;
+   nir_shader *cs;
 
-   result = create_layout(device);
+   result = create_layout(device, layout_out);
    if (result != VK_SUCCESS)
       return result;
+
+   switch (query_type) {
+   case VK_QUERY_TYPE_OCCLUSION:
+      query_name = "occlusion";
+      break;
+   case VK_QUERY_TYPE_PIPELINE_STATISTICS:
+      query_name = "pipeline-stats";
+      break;
+   case VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT:
+      query_name = "tfb";
+      break;
+   case VK_QUERY_TYPE_TIMESTAMP:
+      query_name = "timestamp";
+      break;
+   case VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT:
+      query_name = "pg";
+      break;
+   case VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT:
+      query_name = "ms-prim-gen";
+      break;
+   default:
+      unreachable("invalid query type");
+   }
+
+   snprintf(key_data, sizeof(key_data), "radv-query-%s", query_name);
+
+   VkPipeline pipeline_from_cache = vk_meta_lookup_pipeline(&device->meta_state.device, key_data, strlen(key_data));
+   if (pipeline_from_cache != VK_NULL_HANDLE) {
+      *pipeline_out = pipeline_from_cache;
+      return VK_SUCCESS;
+   }
 
    switch (query_type) {
    case VK_QUERY_TYPE_OCCLUSION:
@@ -1763,111 +1793,26 @@ create_pipeline(struct radv_device *device, VkQueryType query_type, VkPipeline *
       unreachable("invalid query type");
    }
 
-   result = radv_meta_create_compute_pipeline(device, cs, device->meta_state.query.p_layout, pipeline);
+   const VkPipelineShaderStageCreateInfo stage_info = {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+      .stage = VK_SHADER_STAGE_COMPUTE_BIT,
+      .module = vk_shader_module_handle_from_nir(cs),
+      .pName = "main",
+      .pSpecializationInfo = NULL,
+   };
+
+   const VkComputePipelineCreateInfo pipeline_info = {
+      .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
+      .stage = stage_info,
+      .flags = 0,
+      .layout = *layout_out,
+   };
+
+   result = vk_meta_create_compute_pipeline(&device->vk, &device->meta_state.device, &pipeline_info, key_data,
+                                            strlen(key_data), pipeline_out);
 
    ralloc_free(cs);
    return result;
-}
-
-static VkResult
-get_pipeline(struct radv_device *device, VkQueryType query_type, VkPipeline *pipeline_out)
-{
-   struct radv_meta_state *state = &device->meta_state;
-   VkResult result = VK_SUCCESS;
-   VkPipeline *pipeline;
-
-   mtx_lock(&state->mtx);
-
-   switch (query_type) {
-   case VK_QUERY_TYPE_OCCLUSION:
-      pipeline = &device->meta_state.query.occlusion_query_pipeline;
-      break;
-   case VK_QUERY_TYPE_PIPELINE_STATISTICS:
-      pipeline = &device->meta_state.query.pipeline_statistics_query_pipeline;
-      break;
-   case VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT:
-      pipeline = &device->meta_state.query.tfb_query_pipeline;
-      break;
-   case VK_QUERY_TYPE_TIMESTAMP:
-      pipeline = &device->meta_state.query.timestamp_query_pipeline;
-      break;
-   case VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT:
-      pipeline = &device->meta_state.query.pg_query_pipeline;
-      break;
-   case VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT:
-      pipeline = &device->meta_state.query.ms_prim_gen_query_pipeline;
-      break;
-   default:
-      unreachable("invalid query type");
-   }
-
-   if (!*pipeline) {
-      result = create_pipeline(device, query_type, pipeline);
-      if (result != VK_SUCCESS)
-         goto fail;
-   }
-
-   *pipeline_out = *pipeline;
-
-fail:
-   mtx_unlock(&state->mtx);
-   return result;
-}
-
-VkResult
-radv_device_init_meta_query_state(struct radv_device *device, bool on_demand)
-{
-   VkResult result;
-
-   if (on_demand)
-      return VK_SUCCESS;
-
-   result = create_pipeline(device, VK_QUERY_TYPE_OCCLUSION, &device->meta_state.query.occlusion_query_pipeline);
-   if (result != VK_SUCCESS)
-      return result;
-
-   result = create_pipeline(device, VK_QUERY_TYPE_PIPELINE_STATISTICS,
-                            &device->meta_state.query.pipeline_statistics_query_pipeline);
-   if (result != VK_SUCCESS)
-      return result;
-
-   result = create_pipeline(device, VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT,
-                            &device->meta_state.query.tfb_query_pipeline);
-   if (result != VK_SUCCESS)
-      return result;
-
-   result = create_pipeline(device, VK_QUERY_TYPE_TIMESTAMP, &device->meta_state.query.timestamp_query_pipeline);
-   if (result != VK_SUCCESS)
-      return result;
-
-   result =
-      create_pipeline(device, VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT, &device->meta_state.query.pg_query_pipeline);
-   if (result != VK_SUCCESS)
-      return result;
-
-   return create_pipeline(device, VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT,
-                          &device->meta_state.query.ms_prim_gen_query_pipeline);
-}
-
-void
-radv_device_finish_meta_query_state(struct radv_device *device)
-{
-   radv_DestroyPipeline(radv_device_to_handle(device), device->meta_state.query.tfb_query_pipeline,
-                        &device->meta_state.alloc);
-   radv_DestroyPipeline(radv_device_to_handle(device), device->meta_state.query.pipeline_statistics_query_pipeline,
-                        &device->meta_state.alloc);
-   radv_DestroyPipeline(radv_device_to_handle(device), device->meta_state.query.occlusion_query_pipeline,
-                        &device->meta_state.alloc);
-   radv_DestroyPipeline(radv_device_to_handle(device), device->meta_state.query.timestamp_query_pipeline,
-                        &device->meta_state.alloc);
-   radv_DestroyPipeline(radv_device_to_handle(device), device->meta_state.query.pg_query_pipeline,
-                        &device->meta_state.alloc);
-   radv_DestroyPipeline(radv_device_to_handle(device), device->meta_state.query.ms_prim_gen_query_pipeline,
-                        &device->meta_state.alloc);
-   radv_DestroyPipelineLayout(radv_device_to_handle(device), device->meta_state.query.p_layout,
-                              &device->meta_state.alloc);
-   device->vk.dispatch_table.DestroyDescriptorSetLayout(radv_device_to_handle(device),
-                                                        device->meta_state.query.ds_layout, &device->meta_state.alloc);
 }
 
 static void
@@ -1879,10 +1824,11 @@ radv_query_shader(struct radv_cmd_buffer *cmd_buffer, VkQueryType query_type, st
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    struct radv_meta_saved_state saved_state;
    struct radv_buffer src_buffer, dst_buffer;
+   VkPipelineLayout layout;
    VkPipeline pipeline;
    VkResult result;
 
-   result = get_pipeline(device, query_type, &pipeline);
+   result = get_pipeline(device, query_type, &pipeline, &layout);
    if (result != VK_SUCCESS) {
       vk_command_buffer_set_error(&cmd_buffer->vk, result);
       return;
@@ -1904,7 +1850,7 @@ radv_query_shader(struct radv_cmd_buffer *cmd_buffer, VkQueryType query_type, st
    radv_CmdBindPipeline(radv_cmd_buffer_to_handle(cmd_buffer), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 
    radv_meta_push_descriptor_set(
-      cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, device->meta_state.query.p_layout, 0, 2,
+      cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, layout, 0, 2,
       (VkWriteDescriptorSet[]){{.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                                 .dstBinding = 0,
                                 .dstArrayElement = 0,
@@ -1936,8 +1882,8 @@ radv_query_shader(struct radv_cmd_buffer *cmd_buffer, VkQueryType query_type, st
       uint32_t uses_emulated_queries;
    } push_constants = {flags, dst_stride, pipeline_stats_mask, avail_offset, uses_emulated_queries};
 
-   vk_common_CmdPushConstants(radv_cmd_buffer_to_handle(cmd_buffer), device->meta_state.query.p_layout,
-                              VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push_constants), &push_constants);
+   vk_common_CmdPushConstants(radv_cmd_buffer_to_handle(cmd_buffer), layout, VK_SHADER_STAGE_COMPUTE_BIT, 0,
+                              sizeof(push_constants), &push_constants);
 
    cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_INV_L2 | RADV_CMD_FLAG_INV_VCACHE;
 
