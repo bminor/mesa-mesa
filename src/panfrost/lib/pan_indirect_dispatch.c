@@ -36,8 +36,7 @@
 #define get_input_field(b, name)                                               \
    nir_load_push_constant(                                                     \
       b, 1, sizeof(((struct pan_indirect_dispatch_info *)0)->name) * 8,        \
-      nir_imm_int(b, 0),                                                       \
-      .base = offsetof(struct pan_indirect_dispatch_info, name))
+      nir_imm_int(b, offsetof(struct pan_indirect_dispatch_info, name)))
 
 static void
 pan_indirect_dispatch_init(struct pan_indirect_dispatch_meta *meta)
