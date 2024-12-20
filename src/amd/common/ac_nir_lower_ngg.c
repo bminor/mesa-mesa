@@ -3381,23 +3381,15 @@ ngg_gs_export_vertices(nir_builder *b, nir_def *max_num_out_vtx, nir_def *tid_in
    nir_pop_if(b, if_vtx_export_thread);
 
    if (s->options->has_param_exports) {
-      b->cursor = nir_after_cf_list(&if_vtx_export_thread->then_list);
-
       if (s->options->gfx_level >= GFX11) {
-         vs_output outputs[64];
-         unsigned num_outputs = gather_vs_outputs(b, outputs,
-                                                  s->options->vs_output_param_offset,
-                                                  s->out.outputs, s->out.outputs_16bit_lo,
-                                                  s->out.outputs_16bit_hi);
+         create_output_phis(b, b->shader->info.outputs_written & ~VARYING_BIT_POS, b->shader->info.outputs_written_16bit, &s->out);
 
-         if (num_outputs) {
-            b->cursor = nir_after_impl(s->impl);
-            create_vertex_param_phis(b, num_outputs, outputs);
-
-            export_vertex_params_gfx11(b, tid_in_tg, max_num_out_vtx, num_outputs, outputs,
-                                       s->options->vs_output_param_offset);
-         }
+         ac_nir_store_parameters_to_attr_ring(b, s->options->vs_output_param_offset,
+                                              b->shader->info.outputs_written,
+                                              b->shader->info.outputs_written_16bit,
+                                              &s->out, tid_in_tg, max_num_out_vtx);
       } else {
+         b->cursor = nir_after_cf_list(&if_vtx_export_thread->then_list);
          ac_nir_export_parameters(b, s->options->vs_output_param_offset,
                                   b->shader->info.outputs_written,
                                   b->shader->info.outputs_written_16bit,
