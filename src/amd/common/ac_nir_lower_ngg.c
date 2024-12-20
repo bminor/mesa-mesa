@@ -2649,16 +2649,10 @@ export_pos0_wait_attr_ring(nir_builder *b, nir_if *if_es_thread, nir_def *output
    b->cursor = nir_after_cf_node(&if_es_thread->cf_node);
 
    /* Create phi for the position output values. */
-   vs_output pos_output = {
-      .slot = VARYING_SLOT_POS,
-      .chan = {
-         outputs[VARYING_SLOT_POS][0],
-         outputs[VARYING_SLOT_POS][1],
-         outputs[VARYING_SLOT_POS][2],
-         outputs[VARYING_SLOT_POS][3],
-      },
+   ac_nir_prerast_out out = {
+      .outputs = {{outputs[VARYING_SLOT_POS][0], outputs[VARYING_SLOT_POS][1], outputs[VARYING_SLOT_POS][2], outputs[VARYING_SLOT_POS][3]}},
+      .infos = {{.components_mask = 0xf}},
    };
-   create_vertex_param_phis(b, 1, &pos_output);
 
    b->cursor = nir_after_cf_list(&b->impl->body);
 
@@ -2671,11 +2665,6 @@ export_pos0_wait_attr_ring(nir_builder *b, nir_if *if_es_thread, nir_def *output
    /* Export just the pos0 output. */
    nir_if *if_export_empty_pos = nir_push_if(b, if_es_thread->condition.ssa);
    {
-      ac_nir_prerast_out out = {
-         .outputs = {{pos_output.chan[0], pos_output.chan[1], pos_output.chan[2], pos_output.chan[3]}},
-         .infos = {{.components_mask = 0xf}},
-      };
-
       ac_nir_export_position(b, options->gfx_level,
                              options->clip_cull_dist_mask,
                              !options->has_param_exports,
@@ -2684,6 +2673,7 @@ export_pos0_wait_attr_ring(nir_builder *b, nir_if *if_es_thread, nir_def *output
    }
    nir_pop_if(b, if_export_empty_pos);
 }
+
 
 static void
 nogs_export_vertex_params(nir_builder *b, nir_function_impl *impl,
@@ -2697,7 +2687,7 @@ nogs_export_vertex_params(nir_builder *b, nir_function_impl *impl,
       /* Export varyings for GFX11+ */
 
       b->cursor = nir_after_cf_node(&if_es_thread->cf_node);
-      create_output_phis(b, b->shader->info.outputs_written & ~VARYING_BIT_POS, b->shader->info.outputs_written_16bit, &s->out);
+      create_output_phis(b, b->shader->info.outputs_written, b->shader->info.outputs_written_16bit, &s->out);
 
       b->cursor = nir_after_impl(impl);
       if (!num_es_threads)
@@ -3382,7 +3372,7 @@ ngg_gs_export_vertices(nir_builder *b, nir_def *max_num_out_vtx, nir_def *tid_in
 
    if (s->options->has_param_exports) {
       if (s->options->gfx_level >= GFX11) {
-         create_output_phis(b, b->shader->info.outputs_written & ~VARYING_BIT_POS, b->shader->info.outputs_written_16bit, &s->out);
+         create_output_phis(b, b->shader->info.outputs_written, b->shader->info.outputs_written_16bit, &s->out);
 
          ac_nir_store_parameters_to_attr_ring(b, s->options->vs_output_param_offset,
                                               b->shader->info.outputs_written,
