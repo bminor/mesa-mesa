@@ -583,12 +583,6 @@ KHR-GL46.sparse_texture2_tests.SparseTexture2Lookup,Fail
 spec@arb_shader_storage_buffer_object@max-ssbo-size@fs,Crash
 spec@arb_shader_storage_buffer_object@max-ssbo-size@vs,Crash
 
-glx@glx-buffer-age vblank_mode=0,Fail
-glx@glx-multithread-clearbuffer,Fail
-glx@glx-multithread-shader-compile,Fail
-glx@glx-pixmap-life,Fail
-glx@glx-query-drawable-glxpbuffer-glx_height,Fail
-glx@glx_ext_import_context@free context,Fail
 KHR-GL46.sparse_texture2_tests.SparseTexture2Commitment_texture_2d_multisample_array_rg8i,Fail
 KHR-GL46.sparse_texture2_tests.SparseTexture2Commitment_texture_2d_multisample_array_rg16i,Fail
 KHR-GL46.sparse_texture2_tests.SparseTexture2Commitment_texture_2d_multisample_array_rgba16f,Fail
@@ -642,7 +636,6 @@ KHR-GL46.sparse_texture2_tests.SparseTexture2Commitment_texture_2d_multisample_a
 KHR-GL46.sparse_texture2_tests.SparseTexture2Commitment_texture_2d_multisample_rgba8i,Fail
 KHR-GL46.sparse_texture2_tests.SparseTexture2Commitment_texture_2d_multisample_rgba16,Fail
 KHR-GL46.sparse_texture2_tests.SparseTexture2Commitment_texture_2d_multisample_array_rgba32i,Fail
-KHR-GL46.shader_viewport_layer_array.ShaderViewportIndexTestCase,Fail
 KHR-GL46.sparse_texture2_tests.SparseTexture2Commitment_texture_2d_multisample_rgba32i,Fail
 KHR-GL46.sparse_texture2_tests.SparseTexture2Commitment_texture_2d_multisample_array_r8_snorm,Fail
 KHR-GL46.sparse_texture2_tests.SparseTexture2Commitment_texture_2d_multisample_array_rgb10_a2,Fail
@@ -671,7 +664,6 @@ dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_out_of_bounds_mag,Fail
 dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_out_of_bounds_mag_reverse_src_dst_x,Fail
 dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_out_of_bounds_min_reverse_src_x,Fail
 dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_out_of_bounds_mag_reverse_dst_y,Fail
-dEQP-GLES3.functional.fbo.multiview.samples_1,Fail
 dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_out_of_bounds_min_reverse_src_dst_x,Fail
 dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_out_of_bounds_min_reverse_src_y,Fail
 dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_out_of_bounds_min_reverse_dst_y,Fail
@@ -679,3 +671,9 @@ dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_out_of_bounds_mag_revers
 dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_out_of_bounds_mag_reverse_src_dst_y,Fail
 dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_out_of_bounds_min_reverse_src_dst_y,Fail
 dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_out_of_bounds_mag_reverse_dst_x,Fail
+
+dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_out_of_bounds_min,Fail
+glx@glx_arb_sync_control@swapbuffersmsc-return,Fail
+glx@glx_arb_sync_control@swapbuffersmsc-divisor-zero,Fail
+glx@glx_arb_sync_control@swapbuffersmsc-return swap_interval 0,Fail
+glx@glx_arb_sync_control@swapbuffersmsc-return swap_interval 1,Fail
