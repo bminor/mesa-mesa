@@ -1602,6 +1602,24 @@ nir_def_rewrite_uses_src(nir_def *def, nir_src new_src)
    nir_def_rewrite_uses(def, new_src.ssa);
 }
 
+bool
+nir_instr_is_before(nir_instr *first, nir_instr *second)
+{
+   if (first->block != second->block)
+      return false;
+
+   /* Search backwards looking for "first" */
+   while (second != nir_block_first_instr(second->block)) {
+      second = nir_instr_prev(second);
+      assert(second);
+
+      if (first == second)
+         return true;
+   }
+
+   return false;
+}
+
 static bool
 is_instr_between(nir_instr *start, nir_instr *end, nir_instr *between)
 {

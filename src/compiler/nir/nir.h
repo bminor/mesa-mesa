@@ -5098,6 +5098,9 @@ void nir_instr_clear_src(nir_instr *instr, nir_src *src);
 
 void nir_instr_move_src(nir_instr *dest_instr, nir_src *dest, nir_src *src);
 
+/** Returns true if first comes before second in a block. */
+bool nir_instr_is_before(nir_instr *first, nir_instr *second);
+
 void nir_def_init(nir_instr *instr, nir_def *def,
                   unsigned num_components, unsigned bit_size);
 static inline void
