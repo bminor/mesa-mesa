@@ -239,6 +239,7 @@ enum
    DBG_TMZ,
    DBG_SQTT,
    DBG_USE_ACO,
+   DBG_USE_LLVM,
 
    DBG_COUNT
 };
