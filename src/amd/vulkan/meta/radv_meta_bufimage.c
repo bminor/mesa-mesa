@@ -410,146 +410,77 @@ build_nir_itoi_compute_shader(struct radv_device *dev, bool src_3d, bool dst_3d,
 }
 
 static VkResult
-create_itoi_layout(struct radv_device *device)
-{
-   VkResult result = VK_SUCCESS;
-
-   if (!device->meta_state.itoi.img_ds_layout) {
-      const VkDescriptorSetLayoutBinding bindings[] = {
-         {
-            .binding = 0,
-            .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-            .descriptorCount = 1,
-            .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-         },
-         {
-            .binding = 1,
-            .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-            .descriptorCount = 1,
-            .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-         },
-      };
-
-      result = radv_meta_create_descriptor_set_layout(device, 2, bindings, &device->meta_state.itoi.img_ds_layout);
-      if (result != VK_SUCCESS)
-         return result;
-   }
-
-   if (!device->meta_state.itoi.img_p_layout) {
-      const VkPushConstantRange pc_range = {
-         .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-         .size = 24,
-      };
-
-      result = radv_meta_create_pipeline_layout(device, &device->meta_state.itoi.img_ds_layout, 1, &pc_range,
-                                                &device->meta_state.itoi.img_p_layout);
-   }
-
-   return result;
-}
-
-static VkResult
-create_itoi_pipeline(struct radv_device *device, bool src_3d, bool dst_3d, int samples, VkPipeline *pipeline)
-{
-   struct radv_meta_state *state = &device->meta_state;
-   VkResult result;
-
-   result = create_itoi_layout(device);
-   if (result != VK_SUCCESS)
-      return result;
-
-   nir_shader *cs = build_nir_itoi_compute_shader(device, src_3d, dst_3d, samples);
-
-   result = radv_meta_create_compute_pipeline(device, cs, state->itoi.img_p_layout, pipeline);
-   ralloc_free(cs);
-   return result;
-}
-
-static VkResult
 get_itoi_pipeline(struct radv_device *device, const struct radv_image *src_image, const struct radv_image *dst_image,
-                  int samples, VkPipeline *pipeline_out)
+                  int samples, VkPipeline *pipeline_out, VkPipelineLayout *layout_out)
 {
-   struct radv_meta_state *state = &device->meta_state;
    const bool src_3d = src_image->vk.image_type == VK_IMAGE_TYPE_3D;
    const bool dst_3d = dst_image->vk.image_type == VK_IMAGE_TYPE_3D;
    const uint32_t samples_log2 = ffs(samples) - 1;
-   VkResult result = VK_SUCCESS;
-   VkPipeline *pipeline;
-
-   mtx_lock(&state->mtx);
-
-   if (src_3d && dst_3d)
-      pipeline = &device->meta_state.itoi.pipeline_3d_3d;
-   else if (src_3d)
-      pipeline = &device->meta_state.itoi.pipeline_3d_2d;
-   else if (dst_3d)
-      pipeline = &device->meta_state.itoi.pipeline_2d_3d;
-   else
-      pipeline = &state->itoi.pipeline[samples_log2];
-
-   if (!*pipeline) {
-      result = create_itoi_pipeline(device, src_3d, dst_3d, samples, pipeline);
-      if (result != VK_SUCCESS)
-         goto fail;
-   }
-
-   *pipeline_out = *pipeline;
-
-fail:
-   mtx_unlock(&state->mtx);
-   return result;
-}
-
-/* image to image - don't write use image accessors */
-static VkResult
-radv_device_init_meta_itoi_state(struct radv_device *device)
-{
    VkResult result;
+   char key_data[64];
 
-   for (uint32_t i = 0; i < MAX_SAMPLES_LOG2; i++) {
-      uint32_t samples = 1 << i;
-      result = create_itoi_pipeline(device, false, false, samples, &device->meta_state.itoi.pipeline[i]);
-      if (result != VK_SUCCESS)
-         return result;
+   snprintf(key_data, sizeof(key_data), "radv-itoi-%d-%d-%d", src_3d, dst_3d, samples_log2);
+
+   const VkDescriptorSetLayoutBinding bindings[] = {
+      {
+         .binding = 0,
+         .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+         .descriptorCount = 1,
+         .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+      },
+      {
+         .binding = 1,
+         .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+         .descriptorCount = 1,
+         .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+      },
+   };
+
+   const VkDescriptorSetLayoutCreateInfo desc_info = {
+      .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+      .flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT,
+      .bindingCount = 2,
+      .pBindings = bindings,
+   };
+
+   const VkPushConstantRange pc_range = {
+      .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+      .size = 24,
+   };
+
+   result = vk_meta_get_pipeline_layout(&device->vk, &device->meta_state.device, &desc_info, &pc_range, key_data,
+                                        strlen(key_data), layout_out);
+   if (result != VK_SUCCESS)
+      return result;
+
+   VkPipeline pipeline_from_cache = vk_meta_lookup_pipeline(&device->meta_state.device, key_data, strlen(key_data));
+   if (pipeline_from_cache != VK_NULL_HANDLE) {
+      *pipeline_out = pipeline_from_cache;
+      return VK_SUCCESS;
    }
 
-   for (uint32_t src_3d = 0; src_3d < 2; src_3d++) {
-      for (uint32_t dst_3d = 0; dst_3d < 2; dst_3d++) {
-         VkPipeline *pipeline;
-         if (src_3d && dst_3d)
-            pipeline = &device->meta_state.itoi.pipeline_3d_3d;
-         else if (src_3d)
-            pipeline = &device->meta_state.itoi.pipeline_3d_2d;
-         else if (dst_3d)
-            pipeline = &device->meta_state.itoi.pipeline_2d_3d;
-         else
-            continue;
+   nir_shader *cs = build_nir_itoi_compute_shader(device, src_3d, dst_3d, samples);
 
-         result = create_itoi_pipeline(device, src_3d, dst_3d, 1, pipeline);
-         if (result != VK_SUCCESS)
-            return result;
-      }
-   }
+   const VkPipelineShaderStageCreateInfo stage_info = {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+      .stage = VK_SHADER_STAGE_COMPUTE_BIT,
+      .module = vk_shader_module_handle_from_nir(cs),
+      .pName = "main",
+      .pSpecializationInfo = NULL,
+   };
 
+   const VkComputePipelineCreateInfo pipeline_info = {
+      .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
+      .stage = stage_info,
+      .flags = 0,
+      .layout = *layout_out,
+   };
+
+   result = vk_meta_create_compute_pipeline(&device->vk, &device->meta_state.device, &pipeline_info, key_data,
+                                            strlen(key_data), pipeline_out);
+
+   ralloc_free(cs);
    return result;
-}
-
-static void
-radv_device_finish_meta_itoi_state(struct radv_device *device)
-{
-   struct radv_meta_state *state = &device->meta_state;
-
-   radv_DestroyPipelineLayout(radv_device_to_handle(device), state->itoi.img_p_layout, &state->alloc);
-   device->vk.dispatch_table.DestroyDescriptorSetLayout(radv_device_to_handle(device), state->itoi.img_ds_layout,
-                                                        &state->alloc);
-
-   for (uint32_t i = 0; i < MAX_SAMPLES_LOG2; ++i) {
-      radv_DestroyPipeline(radv_device_to_handle(device), state->itoi.pipeline[i], &state->alloc);
-   }
-
-   radv_DestroyPipeline(radv_device_to_handle(device), state->itoi.pipeline_2d_3d, &state->alloc);
-   radv_DestroyPipeline(radv_device_to_handle(device), state->itoi.pipeline_3d_2d, &state->alloc);
-   radv_DestroyPipeline(radv_device_to_handle(device), state->itoi.pipeline_3d_3d, &state->alloc);
 }
 
 static nir_shader *
@@ -602,99 +533,72 @@ build_nir_itoi_r32g32b32_compute_shader(struct radv_device *dev)
    return b.shader;
 }
 
-/* Image to image - special path for R32G32B32 */
 static VkResult
-create_itoi_r32g32b32_layout(struct radv_device *device)
+get_itoi_r32g32b32_pipeline(struct radv_device *device, VkPipeline *pipeline_out, VkPipelineLayout *layout_out)
 {
-   VkResult result = VK_SUCCESS;
-
-   if (!device->meta_state.itoi_r32g32b32.img_ds_layout) {
-      const VkDescriptorSetLayoutBinding bindings[] = {
-         {
-            .binding = 0,
-            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,
-            .descriptorCount = 1,
-            .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-         },
-         {
-            .binding = 1,
-            .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,
-            .descriptorCount = 1,
-            .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-         },
-      };
-
-      result =
-         radv_meta_create_descriptor_set_layout(device, 2, bindings, &device->meta_state.itoi_r32g32b32.img_ds_layout);
-      if (result != VK_SUCCESS)
-         return result;
-   }
-
-   if (!device->meta_state.itoi_r32g32b32.img_p_layout) {
-      const VkPushConstantRange pc_range = {
-         .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-         .size = 24,
-      };
-
-      result = radv_meta_create_pipeline_layout(device, &device->meta_state.itoi_r32g32b32.img_ds_layout, 1, &pc_range,
-                                                &device->meta_state.itoi_r32g32b32.img_p_layout);
-   }
-
-   return result;
-}
-
-static VkResult
-create_itoi_r32g32b32_pipeline(struct radv_device *device, VkPipeline *pipeline)
-{
+   const char *key_data = "radv-itoi-r32g32b32";
    VkResult result;
 
-   result = create_itoi_r32g32b32_layout(device);
+   const VkDescriptorSetLayoutBinding bindings[] = {
+      {
+         .binding = 0,
+         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,
+         .descriptorCount = 1,
+         .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+      },
+      {
+         .binding = 1,
+         .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,
+         .descriptorCount = 1,
+         .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+      },
+   };
+
+   const VkDescriptorSetLayoutCreateInfo desc_info = {
+      .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+      .flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT,
+      .bindingCount = 2,
+      .pBindings = bindings,
+   };
+
+   const VkPushConstantRange pc_range = {
+      .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+      .size = 24,
+   };
+
+   result = vk_meta_get_pipeline_layout(&device->vk, &device->meta_state.device, &desc_info, &pc_range, key_data,
+                                        strlen(key_data), layout_out);
    if (result != VK_SUCCESS)
       return result;
 
+   VkPipeline pipeline_from_cache = vk_meta_lookup_pipeline(&device->meta_state.device, key_data, strlen(key_data));
+   if (pipeline_from_cache != VK_NULL_HANDLE) {
+      *pipeline_out = pipeline_from_cache;
+      return VK_SUCCESS;
+   }
+
    nir_shader *cs = build_nir_itoi_r32g32b32_compute_shader(device);
 
-   result = radv_meta_create_compute_pipeline(device, cs, device->meta_state.itoi_r32g32b32.img_p_layout, pipeline);
+   const VkPipelineShaderStageCreateInfo stage_info = {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+      .stage = VK_SHADER_STAGE_COMPUTE_BIT,
+      .module = vk_shader_module_handle_from_nir(cs),
+      .pName = "main",
+      .pSpecializationInfo = NULL,
+   };
+
+   const VkComputePipelineCreateInfo pipeline_info = {
+      .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
+      .stage = stage_info,
+      .flags = 0,
+      .layout = *layout_out,
+   };
+
+   result = vk_meta_create_compute_pipeline(&device->vk, &device->meta_state.device, &pipeline_info, key_data,
+                                            strlen(key_data), pipeline_out);
 
    ralloc_free(cs);
    return result;
-}
-
-static VkResult
-get_itoi_r32g32b32_pipeline(struct radv_device *device, VkPipeline *pipeline_out)
-{
-   struct radv_meta_state *state = &device->meta_state;
-   VkResult result = VK_SUCCESS;
-
-   mtx_lock(&state->mtx);
-   if (!state->itoi_r32g32b32.pipeline) {
-      result = create_itoi_r32g32b32_pipeline(device, &state->itoi_r32g32b32.pipeline);
-      if (result != VK_SUCCESS)
-         goto fail;
-   }
-
-   *pipeline_out = state->itoi_r32g32b32.pipeline;
-
-fail:
-   mtx_unlock(&state->mtx);
-   return result;
-}
-
-static VkResult
-radv_device_init_meta_itoi_r32g32b32_state(struct radv_device *device)
-{
-   return create_itoi_r32g32b32_pipeline(device, &device->meta_state.itoi_r32g32b32.pipeline);
-}
-
-static void
-radv_device_finish_meta_itoi_r32g32b32_state(struct radv_device *device)
-{
-   struct radv_meta_state *state = &device->meta_state;
-
-   radv_DestroyPipelineLayout(radv_device_to_handle(device), state->itoi_r32g32b32.img_p_layout, &state->alloc);
-   device->vk.dispatch_table.DestroyDescriptorSetLayout(radv_device_to_handle(device),
-                                                        state->itoi_r32g32b32.img_ds_layout, &state->alloc);
-   radv_DestroyPipeline(radv_device_to_handle(device), state->itoi_r32g32b32.pipeline, &state->alloc);
 }
 
 static nir_shader *
@@ -968,8 +872,6 @@ radv_device_finish_meta_cleari_r32g32b32_state(struct radv_device *device)
 void
 radv_device_finish_meta_bufimage_state(struct radv_device *device)
 {
-   radv_device_finish_meta_itoi_state(device);
-   radv_device_finish_meta_itoi_r32g32b32_state(device);
    radv_device_finish_meta_cleari_state(device);
    radv_device_finish_meta_cleari_r32g32b32_state(device);
 }
@@ -981,14 +883,6 @@ radv_device_init_meta_bufimage_state(struct radv_device *device, bool on_demand)
 
    if (on_demand)
       return VK_SUCCESS;
-
-   result = radv_device_init_meta_itoi_state(device);
-   if (result != VK_SUCCESS)
-      return result;
-
-   result = radv_device_init_meta_itoi_r32g32b32_state(device);
-   if (result != VK_SUCCESS)
-      return result;
 
    result = radv_device_init_meta_cleari_state(device);
    if (result != VK_SUCCESS)
@@ -1398,32 +1292,6 @@ radv_meta_buffer_to_image_cs(struct radv_cmd_buffer *cmd_buffer, struct radv_met
 }
 
 static void
-itoi_r32g32b32_bind_descriptors(struct radv_cmd_buffer *cmd_buffer, struct radv_buffer_view *src,
-                                struct radv_buffer_view *dst)
-{
-   struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-
-   radv_meta_push_descriptor_set(
-      cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, device->meta_state.itoi_r32g32b32.img_p_layout, 0, 2,
-      (VkWriteDescriptorSet[]){{
-                                  .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-                                  .dstBinding = 0,
-                                  .dstArrayElement = 0,
-                                  .descriptorCount = 1,
-                                  .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,
-                                  .pTexelBufferView = (VkBufferView[]){radv_buffer_view_to_handle(src)},
-                               },
-                               {
-                                  .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-                                  .dstBinding = 1,
-                                  .dstArrayElement = 0,
-                                  .descriptorCount = 1,
-                                  .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,
-                                  .pTexelBufferView = (VkBufferView[]){radv_buffer_view_to_handle(dst)},
-                               }});
-}
-
-static void
 radv_meta_image_to_image_cs_r32g32b32(struct radv_cmd_buffer *cmd_buffer, struct radv_meta_blit2d_surf *src,
                                       struct radv_meta_blit2d_surf *dst, struct radv_meta_blit2d_rect *rect)
 {
@@ -1432,10 +1300,11 @@ radv_meta_image_to_image_cs_r32g32b32(struct radv_cmd_buffer *cmd_buffer, struct
    unsigned src_offset = 0, dst_offset = 0;
    unsigned src_stride, dst_stride;
    VkBuffer src_buffer, dst_buffer;
+   VkPipelineLayout layout;
    VkPipeline pipeline;
    VkResult result;
 
-   result = get_itoi_r32g32b32_pipeline(device, &pipeline);
+   result = get_itoi_r32g32b32_pipeline(device, &pipeline, &layout);
    if (result != VK_SUCCESS) {
       vk_command_buffer_set_error(&cmd_buffer->vk, result);
       return;
@@ -1454,7 +1323,25 @@ radv_meta_image_to_image_cs_r32g32b32(struct radv_cmd_buffer *cmd_buffer, struct
 
    create_bview_for_r32g32b32(cmd_buffer, radv_buffer_from_handle(src_buffer), src_offset, src->format, &src_view);
    create_bview_for_r32g32b32(cmd_buffer, radv_buffer_from_handle(dst_buffer), dst_offset, dst->format, &dst_view);
-   itoi_r32g32b32_bind_descriptors(cmd_buffer, &src_view, &dst_view);
+
+   radv_meta_push_descriptor_set(
+      cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, layout, 0, 2,
+      (VkWriteDescriptorSet[]){{
+                                  .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                                  .dstBinding = 0,
+                                  .dstArrayElement = 0,
+                                  .descriptorCount = 1,
+                                  .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,
+                                  .pTexelBufferView = (VkBufferView[]){radv_buffer_view_to_handle(&src_view)},
+                               },
+                               {
+                                  .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                                  .dstBinding = 1,
+                                  .dstArrayElement = 0,
+                                  .descriptorCount = 1,
+                                  .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,
+                                  .pTexelBufferView = (VkBufferView[]){radv_buffer_view_to_handle(&dst_view)},
+                               }});
 
    radv_CmdBindPipeline(radv_cmd_buffer_to_handle(cmd_buffer), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 
@@ -1464,8 +1351,8 @@ radv_meta_image_to_image_cs_r32g32b32(struct radv_cmd_buffer *cmd_buffer, struct
    unsigned push_constants[6] = {
       rect->src_x, rect->src_y, src_stride, rect->dst_x, rect->dst_y, dst_stride,
    };
-   vk_common_CmdPushConstants(radv_cmd_buffer_to_handle(cmd_buffer), device->meta_state.itoi_r32g32b32.img_p_layout,
-                              VK_SHADER_STAGE_COMPUTE_BIT, 0, 24, push_constants);
+   vk_common_CmdPushConstants(radv_cmd_buffer_to_handle(cmd_buffer), layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, 24,
+                              push_constants);
 
    radv_unaligned_dispatch(cmd_buffer, rect->width, rect->height, 1);
 
@@ -1475,39 +1362,6 @@ radv_meta_image_to_image_cs_r32g32b32(struct radv_cmd_buffer *cmd_buffer, struct
    radv_DestroyBuffer(radv_device_to_handle(device), dst_buffer, NULL);
 }
 
-static void
-itoi_bind_descriptors(struct radv_cmd_buffer *cmd_buffer, struct radv_image_view *src, struct radv_image_view *dst)
-{
-   struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-
-   radv_meta_push_descriptor_set(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, device->meta_state.itoi.img_p_layout, 0, 2,
-                                 (VkWriteDescriptorSet[]){{.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-                                                           .dstBinding = 0,
-                                                           .dstArrayElement = 0,
-                                                           .descriptorCount = 1,
-                                                           .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-                                                           .pImageInfo =
-                                                              (VkDescriptorImageInfo[]){
-                                                                 {
-                                                                    .sampler = VK_NULL_HANDLE,
-                                                                    .imageView = radv_image_view_to_handle(src),
-                                                                    .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
-                                                                 },
-                                                              }},
-                                                          {.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-                                                           .dstBinding = 1,
-                                                           .dstArrayElement = 0,
-                                                           .descriptorCount = 1,
-                                                           .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-                                                           .pImageInfo = (VkDescriptorImageInfo[]){
-                                                              {
-                                                                 .sampler = VK_NULL_HANDLE,
-                                                                 .imageView = radv_image_view_to_handle(dst),
-                                                                 .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
-                                                              },
-                                                           }}});
-}
-
 void
 radv_meta_image_to_image_cs(struct radv_cmd_buffer *cmd_buffer, struct radv_meta_blit2d_surf *src,
                             struct radv_meta_blit2d_surf *dst, struct radv_meta_blit2d_rect *rect)
@@ -1515,6 +1369,7 @@ radv_meta_image_to_image_cs(struct radv_cmd_buffer *cmd_buffer, struct radv_meta
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    struct radv_image_view src_view, dst_view;
    uint32_t samples = src->image->vk.samples;
+   VkPipelineLayout layout;
    VkPipeline pipeline;
    VkResult result;
 
@@ -1524,7 +1379,7 @@ radv_meta_image_to_image_cs(struct radv_cmd_buffer *cmd_buffer, struct radv_meta
       return;
    }
 
-   result = get_itoi_pipeline(device, src->image, dst->image, samples, &pipeline);
+   result = get_itoi_pipeline(device, src->image, dst->image, samples, &pipeline, &layout);
    if (result != VK_SUCCESS) {
       vk_command_buffer_set_error(&cmd_buffer->vk, result);
       return;
@@ -1552,15 +1407,41 @@ radv_meta_image_to_image_cs(struct radv_cmd_buffer *cmd_buffer, struct radv_meta
       create_iview(cmd_buffer, src, &src_view, depth_format, src_aspect_mask);
       create_iview(cmd_buffer, dst, &dst_view, depth_format, dst_aspect_mask);
 
-      itoi_bind_descriptors(cmd_buffer, &src_view, &dst_view);
+      radv_meta_push_descriptor_set(
+         cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, layout, 0, 2,
+         (VkWriteDescriptorSet[]){{.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                                   .dstBinding = 0,
+                                   .dstArrayElement = 0,
+                                   .descriptorCount = 1,
+                                   .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                   .pImageInfo =
+                                      (VkDescriptorImageInfo[]){
+                                         {
+                                            .sampler = VK_NULL_HANDLE,
+                                            .imageView = radv_image_view_to_handle(&src_view),
+                                            .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
+                                         },
+                                      }},
+                                  {.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                                   .dstBinding = 1,
+                                   .dstArrayElement = 0,
+                                   .descriptorCount = 1,
+                                   .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                                   .pImageInfo = (VkDescriptorImageInfo[]){
+                                      {
+                                         .sampler = VK_NULL_HANDLE,
+                                         .imageView = radv_image_view_to_handle(&dst_view),
+                                         .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
+                                      },
+                                   }}});
 
       radv_CmdBindPipeline(radv_cmd_buffer_to_handle(cmd_buffer), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 
       unsigned push_constants[6] = {
          rect->src_x, rect->src_y, src->layer, rect->dst_x, rect->dst_y, dst->layer,
       };
-      vk_common_CmdPushConstants(radv_cmd_buffer_to_handle(cmd_buffer), device->meta_state.itoi.img_p_layout,
-                                 VK_SHADER_STAGE_COMPUTE_BIT, 0, 24, push_constants);
+      vk_common_CmdPushConstants(radv_cmd_buffer_to_handle(cmd_buffer), layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, 24,
+                                 push_constants);
 
       radv_unaligned_dispatch(cmd_buffer, rect->width, rect->height, 1);
 
