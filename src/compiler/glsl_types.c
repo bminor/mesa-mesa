@@ -3771,7 +3771,7 @@ glsl_get_natural_size_align_bytes(const glsl_type *type,
 
 /**
  * Returns a byte size/alignment for a type where each array element or struct
- * field is aligned to 16 bytes.
+ * field is aligned to 4 bytes.
  */
 void
 glsl_get_word_size_align_bytes(const glsl_type *type,
@@ -3797,9 +3797,9 @@ glsl_get_word_size_align_bytes(const glsl_type *type,
    case GLSL_TYPE_DOUBLE:
    case GLSL_TYPE_UINT64:
    case GLSL_TYPE_INT64: {
-      unsigned N = glsl_get_bit_size(type) / 8;
-      *size = 16 * (type->matrix_columns - 1) + N * type->vector_elements;
-      *align = 4;
+      unsigned N = MAX2(glsl_get_bit_size(type) / 8, 4);
+      *size = N * glsl_get_components(type);
+      *align = N;
       break;
    }
 
@@ -3814,12 +3814,17 @@ glsl_get_word_size_align_bytes(const glsl_type *type,
    case GLSL_TYPE_SAMPLER:
    case GLSL_TYPE_TEXTURE:
    case GLSL_TYPE_IMAGE:
+      /* Bindless samplers and images. */
+      *size = 8;
+      *align = 8;
+      break;
+
    case GLSL_TYPE_COOPERATIVE_MATRIX:
    case GLSL_TYPE_ATOMIC_UINT:
    case GLSL_TYPE_SUBROUTINE:
    case GLSL_TYPE_VOID:
    case GLSL_TYPE_ERROR:
-      unreachable("type does not make sense for glsl_get_vec4_size_align_bytes()");
+      unreachable("type does not have a natural size");
    }
 }
 
