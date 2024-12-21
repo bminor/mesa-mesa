@@ -236,29 +236,30 @@ static void
 setup_lrz(struct fd_resource *rsc)
 {
    struct fd_screen *screen = fd_screen(rsc->b.b.screen);
-   unsigned width0 = rsc->b.b.width0;
-   unsigned height0 = rsc->b.b.height0;
+   struct fdl_layout *layout = &rsc->layout;
+   unsigned width = layout->width0;
+   unsigned height = layout->height0;
 
    /* LRZ buffer is super-sampled: */
-   switch (rsc->b.b.nr_samples) {
+   switch (layout->nr_samples) {
    case 4:
-      width0 *= 2;
+      width *= 2;
       FALLTHROUGH;
    case 2:
-      height0 *= 2;
+      height *= 2;
    }
 
-   unsigned lrz_pitch = align(DIV_ROUND_UP(width0, 8), 32);
-   unsigned lrz_height = align(DIV_ROUND_UP(height0, 8), 16);
+   unsigned lrz_pitch = align(DIV_ROUND_UP(width, 8), 32);
+   unsigned lrz_height = align(DIV_ROUND_UP(height, 8), 16);
 
    rsc->lrz_height = lrz_height;
    rsc->lrz_width = lrz_pitch;
    rsc->lrz_pitch = lrz_pitch;
 
-   unsigned lrz_size = lrz_pitch * lrz_height * 2;
+   unsigned lrz_size = lrz_pitch * lrz_height * sizeof(uint16_t);
 
-   unsigned nblocksx = DIV_ROUND_UP(DIV_ROUND_UP(width0, 8), 16);
-   unsigned nblocksy = DIV_ROUND_UP(DIV_ROUND_UP(height0, 8), 4);
+   unsigned nblocksx = DIV_ROUND_UP(DIV_ROUND_UP(width, 8), 16);
+   unsigned nblocksy = DIV_ROUND_UP(DIV_ROUND_UP(height, 8), 4);
 
    /* Fast-clear buffer is 1bit/block */
    unsigned lrz_fc_size = DIV_ROUND_UP(nblocksx * nblocksy, 8);
@@ -287,15 +288,15 @@ fd6_setup_slices(struct fd_resource *rsc)
    struct pipe_resource *prsc = &rsc->b.b;
    struct fd_screen *screen = fd_screen(prsc->screen);
 
-   if (!FD_DBG(NOLRZ) && has_depth(prsc->format) && !is_z32(prsc->format))
-      setup_lrz<CHIP>(rsc);
-
    if (rsc->layout.ubwc && !ok_ubwc_format(prsc->screen, prsc->format, prsc->nr_samples))
       rsc->layout.ubwc = false;
 
    fdl6_layout(&rsc->layout, screen->info, prsc->format, fd_resource_nr_samples(prsc),
                prsc->width0, prsc->height0, prsc->depth0, prsc->last_level + 1,
                prsc->array_size, prsc->target == PIPE_TEXTURE_3D, false, NULL);
+
+   if (!FD_DBG(NOLRZ) && has_depth(prsc->format) && !is_z32(prsc->format))
+      setup_lrz<CHIP>(rsc);
 
    return rsc->layout.size;
 }
