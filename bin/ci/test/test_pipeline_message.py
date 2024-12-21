@@ -252,3 +252,58 @@ section_end:1734695027:cleanup_file_variables
 
     error_message = await search_job_log_for_errors(session, project_id, job)
     assert "something fatal" in error_message
+
+
+@pytest.mark.asyncio
+@patch("pipeline_message.get_job_log", new_callable=AsyncMock)
+async def test_search_job_log_for_errors_but_find_none(mock_get_job_log):
+    session = AsyncMock()
+    project_id = "176"
+    job = {"id": 12345}
+
+    job_log = r"""
+[0KRunning with gitlab-runner 17.4.0 (b92ee590)[0;m
+[0K  on fdo-equinix-m3l-30-placeholder_63 XmDXAt7xd, system ID: s_785ae19292ea[0;m
+section_start:1734736110:prepare_executor
+[0K[0K[36;1mPreparing the "docker" executor[0;m[0;m
+[0KUsing Docker executor with image registry.freedesktop.org/mesa/mesa/debian
+[0KAuthenticating with credentials from job payload (GitLab Registry)[0;m
+[0KPulling docker image registry.freedesktop.org/mesa/mesa/debian/x86_64_pyuti
+[0KUsing docker image sha256:ebc7b3fe89be4d390775303adddb33539c235a2663165d78d
+[0Ksection_start:1734736124:prepare_script
+[0K[0K[36;1mPreparing environment[0;m[0;m
+Running on runner-xmdxat7xd-project-23076-concurrent-1 via fdo-equinix-m3l-30...
+section_end:1734736125:prepare_script
+[0Ksection_start:1734736125:get_sources
+[0K[0K[36;1mGetting source from Git repository[0;m[0;m
+[32;1m$ /host/bin/curl -s -L --cacert /host/ca-certificates.crt --retry 4 -f --retry-delay 60 https://gitlab.
+Checking if the user of the pipeline is allowed...
+Checking if the job's project is part of a well-known group...
+Checking if the job is part of an official MR pipeline...
+Thank you for contributing to freedesktop.org
+Running pre-clone script: 'set -o xtrace
+wget -q -O download-git-cache.sh https://gitlab.freedesktop.org/mesa/mesa/-/raw/0d43b4cba639b809ad0e08a065ce01846e262249/.gitlab-ci/download-git-cache.sh
+bash download-git-cache.sh
+rm download-git-cache.sh
+[31;1m errors
+[0K[31;1mERROR:
+[31;1m error
+[31;1m Here is a blank error:
+/builds/mesa/mesa/bin/ci/test/test_pipeline_message.py:162: AssertionError
+Uploading artifacts as "archive" to coordinator... 201 Created[0;m  id[0;m=68509685 responseStatus[0;m=201 Created token[0;m=glcbt-64
+[32;1mUploading artifacts...[0;m
+[0;33mWARNING: results/junit.xml: no matching files. Ensure that the artifact path is relative to the working directory (/builds/mesa/mesa)[0;m
+[31;1mERROR: No files to upload                         [0;m
+section_end:1734695027:upload_artifacts_on_failure
+[0Ksection_start:1734695027:cleanup_file_variables
+[0K[0K[36;1mCleaning up project directory and file based variables[0;m[0;m
+section_end:1734695027:cleanup_file_variables
+[0K[31;1mERROR: Job failed: exit code 1
+[0;m
+[0;m
+    """
+
+    mock_get_job_log.return_value = job_log
+
+    error_message = await search_job_log_for_errors(session, project_id, job)
+    assert error_message == "", f"Unexpected error message: {error_message}"

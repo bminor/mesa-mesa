@@ -250,12 +250,14 @@ async def search_job_log_for_errors(session, project_id, job):
         if "error" in line.lower():
             if any(ignore.lower() in line.lower() for ignore in ignore_list):
                 continue
+
             # remove date and formatting before error message
-            log_error_message = line[line.lower().find("error") :]
+            log_error_message = line[line.lower().find("error") :].strip()
+
             # if there is no further info after the word error then it's not helpful
-            if log_error_message.lower() == "error":
-                continue
-            if log_error_message.lower() == "errors":
+            # so reset the message and try again.
+            if log_error_message.lower() in {"error", "errors", "error:", "errors:"}:
+                log_error_message = ""
                 continue
             break
 
