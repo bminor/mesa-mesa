@@ -62,6 +62,7 @@ static const struct debug_named_value fd_debug_options[] = {
    {"sysmem",    FD_DBG_SYSMEM,   "Use sysmem only rendering (no tiling)"},
    {"serialc",   FD_DBG_SERIALC,  "Disable asynchronous shader compile"},
    {"shaderdb",  FD_DBG_SHADERDB, "Enable shaderdb output"},
+   {"nolrzfc",   FD_DBG_NOLRZFC,  "Disable LRZ fast-clear"},
    {"flush",     FD_DBG_FLUSH,    "Force flush after every draw"},
    {"inorder",   FD_DBG_INORDER,  "Disable reordering for draws/blits"},
    {"bstat",     FD_DBG_BSTAT,    "Print batch stats at context destroy"},

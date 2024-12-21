@@ -268,7 +268,8 @@ setup_lrz(struct fd_resource *rsc)
     * on A7XX (HW limitation)
     */
    bool has_lrz_fc = screen->info->a6xx.enable_lrz_fast_clear &&
-                     lrz_fc_size <= fd_lrzfc_layout<CHIP>::FC_SIZE;
+                     lrz_fc_size <= fd_lrzfc_layout<CHIP>::FC_SIZE &&
+                     !FD_DBG(NOLRZFC);
 
    /* Allocate a LRZ fast-clear buffer even if we aren't using FC, if the
     * hw is re-using this buffer for direction tracking
