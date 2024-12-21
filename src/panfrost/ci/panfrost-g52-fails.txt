@@ -2743,12 +2743,6 @@ dEQP-VK.wsi.wayland.swapchain.simulate_oom.min_image_count,Crash
 dEQP-VK.wsi.wayland.swapchain.simulate_oom.pre_transform,Crash
 dEQP-VK.wsi.wayland.swapchain.simulate_oom.present_mode,Crash
 
-
-# New with sampleRateShading
-dEQP-VK.pipeline.monolithic.multisample_shader_builtin.write_sample_mask.1_samples,Fail
-dEQP-VK.pipeline.fast_linked_library.multisample_shader_builtin.write_sample_mask.1_samples,Fail
-dEQP-VK.pipeline.pipeline_library.multisample_shader_builtin.write_sample_mask.1_samples,Fail
-
 dEQP-VK.dynamic_rendering.primary_cmd_buff.basic.2_cmdbuffers_resuming,Fail
 dEQP-VK.dynamic_rendering.primary_cmd_buff.basic.2_secondary_2_primary_cmdbuffers_resuming,Fail
 dEQP-VK.dynamic_rendering.primary_cmd_buff.basic.2_secondary_cmdbuffers_resuming,Fail

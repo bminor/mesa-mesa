@@ -80,6 +80,33 @@ lower_load_poly_line_smooth_enabled(nir_builder *b, nir_intrinsic_instr *intrin,
    return true;
 }
 
+/* From the OpenGL 4.6 spec 14.3.1:
+ *
+ *    If MULTISAMPLE is disabled, multisample rasterization of all primitives
+ *    is equivalent to single-sample (fragment-center) rasterization, except
+ *    that the fragment coverage value is set to full coverage.
+ *
+ * So always use the original sample mask when multisample is disabled */
+static bool
+lower_sample_mask_writes(nir_builder *b, nir_intrinsic_instr *intrin,
+                         void *data)
+{
+   if (intrin->intrinsic != nir_intrinsic_store_output)
+      return false;
+
+   if (nir_intrinsic_io_semantics(intrin).location != FRAG_RESULT_SAMPLE_MASK)
+      return false;
+
+   b->cursor = nir_before_instr(&intrin->instr);
+
+   nir_def *orig = nir_load_sample_mask(b);
+   nir_def *new = nir_b32csel(b, nir_load_multisampled_pan(b),
+                               intrin->src[0].ssa, orig);
+   nir_src_rewrite(&intrin->src[0], new);
+
+   return true;
+}
+
 static void
 panfrost_shader_compile(struct panfrost_screen *screen, const nir_shader *ir,
                         struct util_debug_callback *dbg,
@@ -148,6 +175,9 @@ panfrost_shader_compile(struct panfrost_screen *screen, const nir_shader *ir,
                   nir_metadata_control_flow, key);
          NIR_PASS(_, s, nir_lower_alu);
       }
+
+      NIR_PASS(_, s, nir_shader_intrinsics_pass,
+               lower_sample_mask_writes, nir_metadata_control_flow, NULL);
    }
 
    if (dev->arch <= 5 && s->info.stage == MESA_SHADER_FRAGMENT) {
