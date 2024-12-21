@@ -124,7 +124,7 @@
         "description": "frontends/va: Get buffer feedback with locked mutex in MapBuffer",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "93d434362b22b5e6b93dbb3b2d70809fd080796b",
         "notes": null
