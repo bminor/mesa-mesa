@@ -1,5 +1,705 @@
 [
     {
+        "sha": "83a7d9a8141570a002ac37260c381d2c01e07493",
+        "description": "hk: fix primitive restart dirty tracking",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c585681378d54b9d177521534d594ef503d3d778",
+        "description": "hk: avoid compiling unneeded VS->GS variants",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "07e1b523b94aabfaf198fda424beb6260b47e8d4",
+        "description": "libagx: use designated initializers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a3b796ba190b8358e99be260e6817149dcff5754",
+        "description": "libagx,hk: handle pipeline stats queries without a GS",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5bc89aa991eb992eb8ad2ab5fb64fd0e704e7fa6",
+        "description": "hk,libagx: handle adjacency without a GS",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "872487919b14b384782882ebca2ebf58093f42ed",
+        "description": "hk,libagx: accelerate index buffer robustness",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f106451a903f5e7fb68b74a0f7d6de45f59d8b38",
+        "description": "hk: factor out hk_draw_as_indexed_indirect",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "954080275b9b45b244885fa0b99796e0e56b2800",
+        "description": "hk: use index buffer overflow check",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e0cfc5eac19af6460bc05ecb160d8cbde1a21fe5",
+        "description": "libagx: factor out load/store_index",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ff7abb1e2241bf6a6714bf71a3844e62ec4fd50b",
+        "description": "libagx: refactor index buffer code",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "686daf2524c85ea1bd7dfd439799cb24e657c01c",
+        "description": "libagx: move index size helpers to the gpu",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b5d41bc0fbe3685b52cdecc45898e6e0b1256d2c",
+        "description": "agx: match another address pattern",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7626e40506d1af41923503f866c354c5dc171dc5",
+        "description": "asahi: reformat",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fc4e53370954e5cd48528f12882bd016f5c281d5",
+        "description": "agx: add more 8-bit address fusing rules",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e110b8f2c9df24717b9a154ee6386f3ac3af98ed",
+        "description": "libagx: add missing agx_vdm_return",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b6dbfe822ba6493977312b4287af903082460a09",
+        "description": "asahi: use common draw",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b9155de0a1b26aaef43d704891f27ae5920f0a43",
+        "description": "hk,libagx: move hk_draw to the gpu",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c80c56a3154a3ab8c4ac4f500d024707be57163b",
+        "description": "asahi: hk: Enable timestamps for virt",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e28129350862c972ccab920deb9a4ad0201a1e36",
+        "description": "asahi: Virt UABI update",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0d5db3238bba01b9219b224b68844d28c92adc40",
+        "description": "asahi: fix mmap'ing imported BOs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "453314460835ee78886e980445ce0a3889376018",
+        "description": "panfrost: apply DEPTH_STENCIL flag consistently",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b6ade2714c8e317b2783fa0c9103baaa7798da99",
+        "description": "panvk: fix fs_required()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5c0c3120ca5c0a19bbc2bdb58c61b4a896db5e20",
+        "description": "intel/brw: Use variable instead of manually count the passes",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ada898bb1c86a24b66d0c8ea0aafed6de02dc4bc",
+        "description": "intel/brw: Disallow cmod in some cases of ARF scalar as destination",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "43d59c61863dcf26cc3bb6b68e453b487ab07183",
+        "description": "intel/brw/xe3+: Relax SEND EOT register assignment restrictions.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8a5ec6044276c2d8460f88bf5e52826a0e31e471",
+        "description": "frontends/vdpau: Get AV1 decode subsampling_x/y",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9a4f5b739e3e73006d56228b91adf078b9352313",
+        "description": "intel/compiler: disable mesh autostrip for WA 16020916187",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b180e2a47c2baf5b8ee36291e9b3909278b53e25",
+        "description": "panvk/ci: update expected failures",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5621ce10a699a135991a725a8b4def2f457f48f1",
+        "description": "radeonsi/vcn: Return error when decoding 12bit VP9 and 4:2:2/4:4:4 AV1",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "245d8c8e9944fcef43d379ba80422ac3cc656aa3",
+        "description": "frontends/va: Get AV1 decode subsampling_x/y",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d94597a2d8b2fbc3d406818fc69e5009f84c27a5",
+        "description": "pipe: Remove PIPE_DEFAULT_DECODER_FEEDBACK_TIMEOUT_NS",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c03805e4f57301b7e625e2a7bef7137994798088",
+        "description": "radeonsi/vcn: Use local variable for destory fence",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fed1ed1eff075d74b9b79d73609db3ca0e6b629f",
+        "description": "radeonsi/vcn: Don't keep last fence",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ad0dbea49d12249bda6391d96937047dc3047ef4",
+        "description": "radeonsi/vpe: add destroy_fence function",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1e14b00e8bd187682f8b10ce903d903f8537c877",
+        "description": "gallium: pass XFB primitive mode to set_stream_output_targets",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e22b78a19619562e31747d5dc3b63ea56bd7c5fc",
+        "description": "mesa: fix printing _NEW_* flags",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b2ddf85591a3562bb2e4ac02a5f98cff0a3ac78b",
+        "description": "mesa: set correct XFB prim mode for draw validation after resuming XFB",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "227f69716f2b57fb939ac69a0ebaf073f3ce5025",
+        "description": "st/mesa: don't use nir_opt_fragdepth because it's incorrect with MSAA",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a7d0f0b30e19fe3ac371c77f7d0cb1e6bc81f87c",
+        "description": "radv: check descriptor indexing features for enabling the global BO list",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "62edab4caca0d66e3d9f19c8b3d3ab3a78147f42",
+        "description": "radv: cleanup enabling the global BO list when BDA is used",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b06797633d0756ec33a84e6420693df1f65567dc",
+        "description": "r300: disable ATI2N textures on R400",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "669b7f881d9ac2147cd8610e619ed3f942100c1b",
+        "description": "ci/container: remove S3_JWT_FILE when container_job_trampoline.sh exits",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "88dfda7f0a5cd55adcf0173fc8e26c68157d59ed",
+        "description": "ci/android: add a script to build LLVM libraries for Android",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f1f4570402ea44878c0ad302bb16efb685069e7f",
+        "description": "ci/android: unset compiler env vars in debian/android_build.sh",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "742c3846e8f383965a87d16a9d17b0c0f6119a02",
+        "description": "ci/container: set up S3_JWT_FILE also for container jobs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6f6072448de54d37fe04661b623e9bc03ed0f55a",
+        "description": "gallium/winsys/nouveau: Don't mark the api PUBLIC",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "821f4c8d99a3068758db834a5c219082a9609b3c",
+        "notes": null
+    },
+    {
+        "sha": "6646b5f95be60bae36fd73c13469685f65161778",
+        "description": "rusticl: fix clippy::doc-lazy-continuation",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c2ec0c26fdfb4991a9424775944da3e9c2daee36",
+        "description": "rusticl: fix clippy::needless-lifetimes",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a4d0d1c87be20ac2967e422c076c767937c1671a",
+        "description": "rusticl/util: fix ptr_to_integer_transmute_in_consts warning",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "de664f05e3d2508a107a3e952bf241734af08369",
+        "description": "rusticl/platform: silence static_mut_refs warning",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a50d069d1ce8e105be6359fbde7568d049891488",
+        "description": "nir/opt_varyings: clear info->clip/cull_distance_array_size if relocated",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9d129505b579717456be45adfd2ad7789564b7ab",
+        "description": "nir/opt_varyings: set all IO types to float to facilitate full vectorization",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6331de400b77909d29b57e42396459f3c6860692",
+        "description": "ci: update token retrieval method for gantt charts",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0366eebe3e157c3ec11b6248922739264798a5ba",
+        "description": "ci: add pytests for the gantt chart scripts",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fd7423b38ee750de65223f346675ab744ef7514d",
+        "description": "ci: add --ci-timeout option for gantt scripts",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "55f452530a7ff71bb383f79f3165279ccb7c22dd",
+        "description": "ci: gantt chart: include in-progress jobs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "45ef1221a30f7ba02b07c60464ccd28967fc8351",
+        "description": "ci: post gantt: ignore pipeline_summary message",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4ae2105fcbd9a613a952893be4594b9471c28e7b",
+        "description": "ci: post gantt: add pipeline-id to gantt filename",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "127a8aa9c37fc2f653f01e94bc534f49c7d3e82f",
+        "description": "ci: post gantt: add --project-id option",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "db62fa626b7aa6e121ed76cceb62db042e19edec",
+        "description": "ci: post gantt: add --marge-user-id option",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1404fb548111fc796f9a5c688231198691e80e2a",
+        "description": "ci: make the gantt scripts available as modules",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cb7403451768e67b1bd74c0a951b138dc640cf5b",
+        "description": "ci: add some static typing to the gantt scripts",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9671de71a3de9c33e6995694ea64d1fbf457cf1c",
+        "description": "ci: post gantt: use logging instead of print",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cb756ae8a24b72e83c9591370e34e03cba6cbd12",
+        "description": "brw: Don't rely on SIMD splitting in opt_combine_convergent_txfs",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "6341b3cd87d98dfca5d40b4c1e95ac26500d8558",
+        "notes": null
+    },
+    {
+        "sha": "9b07cac02ef9e584fb53fb638eb9c56874fb47b7",
+        "description": "docs/release-calendar: Move next release to January 2nd",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "83875451e2a6ed5d990157b095afcf5a0cfaec3c",
+        "description": "docs: update calendar for 24.3.2",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4817771150d987b5472ebae4772d29dfc98fed4e",
+        "description": "docs: Update checksums for 24.3.2",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d1e0572f13bff4ab6fd6369f31da49b6f2e187e7",
+        "description": "docs: add release notes for 24.3.2",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0204baaa8b6ba146f2654a39138b428b746b6d8b",
+        "description": "panvk: silence a perfetto init warning",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "419879ee6292506c79a3f1342161663cac77b33c",
+        "description": "ir3,freedreno: remove binning outputs after vs ucp lowering",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "24b422dc3ec47b0a98a876acffeca258729a83e8",
+        "notes": null
+    },
+    {
         "sha": "adfd7486c2916472860111bf37f79056cf4d43eb",
         "description": "iris: Check that mem_fence_bo was created",
         "nominated": true,
