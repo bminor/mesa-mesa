@@ -674,7 +674,7 @@
         "description": "r600/sfn: gather info and set lowering 64 bit after nir_lower_io",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "89dad5618ddb5be50a9b3dceadf8e0addc831c7c",
         "notes": null
