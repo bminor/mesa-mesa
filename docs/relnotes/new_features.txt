@@ -9,6 +9,7 @@ VK_KHR_shader_non_semantic_info on panvk
 VK_KHR_shader_relaxed_extended_instruction on panvk
 VK_KHR_vertex_attribute_divisor on panvk
 VK_KHR_zero_initialize_workgroup_memory on panvk
+VK_KHR_shader_draw_parameters on panvk
 VK_KHR_shader_float16_int8 on panvk
 VK_KHR_8bit_storage on panvk
 VK_EXT_4444_formats on panvk
@@ -28,4 +29,4 @@ sampleRateShading on panvk
 occlusionQueryPrecise on panvk
 shaderInt16 on panvk
 shaderInt64 on panvk
-imageCubeArray on panvk/v10+
+imageCubeArray on panvk
