@@ -788,7 +788,6 @@ v3d_resource_create_with_modifiers(struct pipe_screen *pscreen,
 {
         struct v3d_screen *screen = v3d_screen(pscreen);
 
-        bool linear_ok = drm_find_modifier(DRM_FORMAT_MOD_LINEAR, modifiers, count);
         struct v3d_resource *rsc = v3d_resource_setup(pscreen, tmpl);
         struct pipe_resource *prsc = &rsc->base;
         /* Use a tiled layout if we can, for better 3D performance. */
@@ -828,13 +827,12 @@ v3d_resource_create_with_modifiers(struct pipe_screen *pscreen,
 
         /* No user-specified modifier; determine our own. */
         if (count == 1 && modifiers[0] == DRM_FORMAT_MOD_INVALID) {
-                linear_ok = true;
                 rsc->tiled = should_tile;
         } else if (should_tile &&
                    drm_find_modifier(DRM_FORMAT_MOD_BROADCOM_UIF,
                                  modifiers, count)) {
                 rsc->tiled = true;
-        } else if (linear_ok) {
+        } else if (drm_find_modifier(DRM_FORMAT_MOD_LINEAR, modifiers, count)) {
                 rsc->tiled = false;
         } else {
                 fprintf(stderr, "Unsupported modifier requested\n");
