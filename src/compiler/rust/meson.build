@@ -47,6 +47,7 @@ _compiler_bindgen_args = [
   '--allowlist-function', 'u_memstream.*',
   '--allowlist-type', 'u_memstream',
   '--no-prepend-enum-name',
+  '--with-derive-default',
 ]
 
 foreach type : _compiler_binding_types
