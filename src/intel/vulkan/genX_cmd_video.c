@@ -1272,6 +1272,20 @@ static const uint32_t av1_gm_trans_prec_diff      = 10;  /* Warp model precision
 static const uint32_t av1_gm_trans_only_prec_diff = 13;  /* Warp model precision bits - 3 */
 static const uint32_t av1_gm_alpha_prec_diff      = 1;   /* Warp model precision bits - gm alpha precision bits */
 
+static const uint32_t av1_max_mib_size_log2 = 5;
+static const uint32_t av1_min_mib_size_log2 = 4;
+static const uint32_t av1_mi_size_log2 = 2;
+
+static const uint32_t av1_rs_scale_subpel_bits = 14;
+static const uint32_t av1_rs_scale_subpel_mask = 16383;
+static const uint32_t av1_rs_scale_extra_off = 128;
+static const uint32_t av1_mfmv_stack_size = 3;
+
+static int32_t chroma_xstep_qn = 0;
+static int32_t luma_xstep_qn = 0;
+static int32_t chroma_x0_qn[64] = { 0, };
+static int32_t luma_x0_qn[64] = { 0, };
+
 static uint32_t
 get_qindex(const VkVideoDecodeAV1PictureInfoKHR *av1_pic_info,
            uint32_t segment_id)
@@ -1318,7 +1332,7 @@ anv_av1_decode_video_tile(struct anv_cmd_buffer *cmd_buffer,
    ANV_FROM_HANDLE(anv_buffer, src_buffer, frame_info->srcBuffer);
    struct anv_video_session *vid = cmd_buffer->video.vid;
    struct anv_video_session_params *params = cmd_buffer->video.params;
-   const struct VkVideoDecodeAV1PictureInfoKHR *av1_pic_info =
+   const VkVideoDecodeAV1PictureInfoKHR *av1_pic_info =
       vk_find_struct_const(frame_info->pNext, VIDEO_DECODE_AV1_PICTURE_INFO_KHR);
    const StdVideoDecodeAV1PictureInfo *std_pic_info = av1_pic_info->pStdPictureInfo;
    const StdVideoAV1SequenceHeader *seq_hdr = &params->vk.av1_dec.seq_hdr.base;
@@ -1370,6 +1384,8 @@ anv_av1_decode_video_tile(struct anv_cmd_buffer *cmd_buffer,
       uint8_t disable_frame_end_update_cdf;
       uint8_t idx;
       uint8_t frame_type;
+      uint32_t frame_width;
+      uint32_t frame_height;
    } ref_info[STD_VIDEO_AV1_NUM_REF_FRAMES] = {};
 
    const struct anv_image_view *dst_iv =
@@ -1381,7 +1397,13 @@ anv_av1_decode_video_tile(struct anv_cmd_buffer *cmd_buffer,
    const struct anv_image *dpb_img = dpb_iv->image;
    const bool is_10bit = seq_hdr->pColorConfig->BitDepth == 10;
 
+   VkExtent2D frameExtent = frame_info->dstPictureResource.codedExtent;
+   int denom = std_pic_info->coded_denom + 9;
+   unsigned downscaled_width = (frameExtent.width * 8 + denom / 2) / denom;
+
    ref_info[AV1_INTRA_FRAME].img = dpb_img;
+   ref_info[AV1_INTRA_FRAME].frame_width = frameExtent.width;
+   ref_info[AV1_INTRA_FRAME].frame_height = frameExtent.height;
 
    if (dpb_img && frame_info->referenceSlotCount) {
       ref_info[AV1_INTRA_FRAME].order_hint = std_pic_info->OrderHint;
@@ -1405,6 +1427,8 @@ anv_av1_decode_video_tile(struct anv_cmd_buffer *cmd_buffer,
 
             ref_info[i + 1].idx = idx;
             ref_info[i + 1].frame_type = std_ref_info->frame_type;
+            ref_info[i + 1].frame_width = frameExtent.width;
+            ref_info[i + 1].frame_height = frameExtent.height;
             ref_info[i + 1].img = ref_img;
             ref_info[i + 1].order_hint = std_ref_info->OrderHint;
             memcpy(ref_info[i + 1].ref_order_hints, std_ref_info->SavedOrderHints, STD_VIDEO_AV1_NUM_REF_FRAMES);
@@ -1932,13 +1956,13 @@ anv_av1_decode_video_tile(struct anv_cmd_buffer *cmd_buffer,
 
       assert (seq_hdr->flags.enable_order_hint);
 
-      int total = 2;
+      int total = av1_mfmv_stack_size - 1;
 
       if (ref_info[AV1_LAST_FRAME].ref_order_hints[AV1_ALTREF_FRAME - AV1_LAST_FRAME + 1] !=
           ref_info[AV1_GOLDEN_FRAME].order_hint) {
 
          if (!frame_is_key_or_intra(ref_info[0 + 1].frame_type)) {
-            total = 3;
+            total = av1_mfmv_stack_size;
             mfmv_ref[num_mfmv++] = AV1_LAST_FRAME - AV1_LAST_FRAME;
          }
       }
@@ -2000,9 +2024,12 @@ anv_av1_decode_video_tile(struct anv_cmd_buffer *cmd_buffer,
       frame_lossless &= lossless[i];
    }
 
-   VkExtent2D frameExtent = frame_info->dstPictureResource.codedExtent;
    anv_batch_emit(&cmd_buffer->batch, GENX(AVP_PIC_STATE), pic) {
-      pic.FrameWidth = frameExtent.width - 1;
+      if (std_pic_info->flags.use_superres) {
+         pic.FrameWidth = downscaled_width - 1;
+      } else {
+         pic.FrameWidth = frameExtent.width - 1;
+      }
       pic.FrameHeight = frameExtent.height - 1;
 
       if (seq_hdr->pColorConfig->BitDepth == 12)
@@ -2136,25 +2163,22 @@ anv_av1_decode_video_tile(struct anv_cmd_buffer *cmd_buffer,
 
       if (!frame_is_key_or_intra(std_pic_info->frame_type)) {
          for (enum av1_ref_frame r = AV1_INTRA_FRAME; r <= AV1_ALTREF_FRAME; r++) {
-            const struct anv_image *ref_img = ref_info[r].img;
 
-            if (!ref_img)
-                continue;
+            int ref_width = ref_info[r].frame_width - 1;
+            int ref_height = ref_info[r].frame_height - 1;
 
-            int ref_width = ref_img->vk.extent.width - 1;
-            int ref_height = ref_img->vk.extent.height - 1;
+            int cur_frame_width = std_pic_info->flags.use_superres ? downscaled_width : frameExtent.width;
+            int cur_frame_height = frameExtent.height;
 
             uint32_t h_scale_factor =
-               (ref_img->vk.extent.width * av1_scaling_factor + (frameExtent.width >> 1)) /
-               frameExtent.width;
+               ((ref_width + 1) * av1_scaling_factor + (cur_frame_width >> 1)) / cur_frame_width;
             uint32_t v_scale_factor =
-               (ref_img->vk.extent.height * av1_scaling_factor + (frameExtent.height >> 1)) /
-               frameExtent.height;
+               ((ref_height + 1) * av1_scaling_factor + (cur_frame_height >> 1)) / cur_frame_height;
 
             switch (r) {
             case AV1_INTRA_FRAME:
-               pic.IntraFrameWidthinPixelMinus1 = frameExtent.width - 1;
-               pic.IntraFrameHeightinPixelMinus1 = frameExtent.height - 1;
+               pic.IntraFrameWidthinPixelMinus1 = cur_frame_width - 1;
+               pic.IntraFrameHeightinPixelMinus1 = cur_frame_height - 1;
                pic.VerticalScaleFactorForIntra = av1_scaling_factor;
                pic.HorizontalScaleFactorForIntra = av1_scaling_factor;
                break;
@@ -2329,7 +2353,7 @@ anv_av1_decode_video_tile(struct anv_cmd_buffer *cmd_buffer,
       fil.CDEFUVStrength6 = cdef_uv_strengths[6];
       fil.CDEFUVStrength7 = cdef_uv_strengths[7];
       fil.SuperResUpscaledFrameWidthMinus1 = frameExtent.width - 1;
-      fil.SuperResDenom = std_pic_info->flags.use_superres ? 0 /*TODO*/ : 8;
+      fil.SuperResDenom = std_pic_info->flags.use_superres ? denom : 8;
       fil.FrameLoopRestorationFilterLumaY = frame_restoration_type[0];
       fil.FrameLoopRestorationFilterChromaU = frame_restoration_type[1];
       fil.FrameLoopRestorationFilterChromaV = frame_restoration_type[2];
@@ -2342,10 +2366,11 @@ anv_av1_decode_video_tile(struct anv_cmd_buffer *cmd_buffer,
       fil.UseSameLoopRestorationUnitSizeChromasUVFlag = (frame_restoration_type[1] != 0 || frame_restoration_type[2] !=0) ?
          std_pic_info->pLoopRestoration->LoopRestorationSize[0] == std_pic_info->pLoopRestoration->LoopRestorationSize[1] : false;
 
-      fil.LumaPlanex_step_qn = 0;
-      fil.LumaPlanex0_qn = 0;
-      fil.ChromaPlanex_step_qn = 0;
-      fil.ChromaPlanex0_qn = 0;
+      fil.LumaPlanex_step_qn = luma_xstep_qn;
+      fil.LumaPlanex0_qn = luma_x0_qn[tile_idx];
+      fil.ChromaPlanex_step_qn = chroma_xstep_qn;
+      fil.ChromaPlanex0_qn = chroma_x0_qn[tile_idx];
+
    };
 
    unsigned column = tile_idx % std_pic_info->pTileInfo->TileCols;
@@ -2395,11 +2420,101 @@ anv_av1_decode_video_tile(struct anv_cmd_buffer *cmd_buffer,
 }
 
 static void
+anv_av1_calculate_xstep_qn(struct anv_cmd_buffer *cmd_buffer,
+                           const VkVideoDecodeInfoKHR *frame_info)
+{
+   const VkVideoDecodeAV1PictureInfoKHR *av1_pic_info =
+      vk_find_struct_const(frame_info->pNext, VIDEO_DECODE_AV1_PICTURE_INFO_KHR);
+
+   const StdVideoDecodeAV1PictureInfo *std_pic_info = av1_pic_info->pStdPictureInfo;
+   struct anv_video_session_params *params = cmd_buffer->video.params;
+   const StdVideoAV1SequenceHeader *seq_hdr = &params->vk.av1_dec.seq_hdr.base;
+   VkExtent2D frameExtent = frame_info->dstPictureResource.codedExtent;
+   unsigned tile_cols = std_pic_info->pTileInfo->TileCols;
+
+   if (!std_pic_info->flags.use_superres) {
+      luma_xstep_qn = chroma_xstep_qn = 0;
+      memset(luma_x0_qn, 0, sizeof(luma_x0_qn));
+      memset(chroma_x0_qn, 0, sizeof(chroma_x0_qn));
+
+      return;
+   }
+
+   int32_t mib_size_log2 = seq_hdr->flags.use_128x128_superblock ?
+      av1_max_mib_size_log2 : av1_min_mib_size_log2;
+
+   int32_t mi_cols = ALIGN(frameExtent.width, 8) >> mib_size_log2;
+
+   int denom = std_pic_info->coded_denom + 9;
+   unsigned downscaled_width = (frameExtent.width * 8 + denom / 2) / denom;
+
+   for (uint8_t i = 0; i < 2; i++) { /* i == 0 : luma, i == 1 : chroma */
+      int subsampling_x = seq_hdr->pColorConfig->subsampling_x;
+      int ssx = i & subsampling_x;
+      int downscaled = ALIGN(downscaled_width, 2) >> ssx;
+      int upscaled = ALIGN(frameExtent.width, 2) >> ssx;
+
+      int xstep_qn = ((downscaled << av1_rs_scale_subpel_bits) + upscaled / 2) / upscaled;
+
+      if (i == 0)
+         luma_xstep_qn = xstep_qn;
+      else
+         chroma_xstep_qn = xstep_qn;
+
+      int32_t err = upscaled * xstep_qn - (downscaled << av1_rs_scale_subpel_bits);
+      int32_t x0 = (-((upscaled - downscaled) << (av1_rs_scale_subpel_bits - 1)) + upscaled / 2) /
+         upscaled + av1_rs_scale_extra_off - err / 2;
+
+      x0 = (int32_t)(x0 & av1_rs_scale_subpel_mask);
+
+      for (unsigned j = 0; j < tile_cols; j++) {
+         int32_t tile_col_end_sb;
+         bool last_col = (j == tile_cols - 1);
+
+         if (i == 0)
+            luma_x0_qn[j] = x0;
+         else
+            chroma_x0_qn[j] = x0;
+
+         if (!last_col) {
+            tile_col_end_sb = std_pic_info->pTileInfo->pMiColStarts[j + 1];
+         } else {
+            tile_col_end_sb = std_pic_info->pTileInfo->pMiColStarts[tile_cols - 1] +
+                              std_pic_info->pTileInfo->pWidthInSbsMinus1[tile_cols - 1];
+         }
+
+
+         int32_t mi_col_end = tile_col_end_sb >> mib_size_log2;
+         mi_col_end = MIN2(mi_col_end, mi_cols);
+
+         int32_t downscaled_x1 = mi_col_end << (av1_mi_size_log2 - ssx);
+         int32_t downscaled_x0 = std_pic_info->pTileInfo->pMiColStarts[j] << mib_size_log2 << (av1_mi_size_log2 - ssx);
+
+         int32_t src_w = downscaled_x1 - downscaled_x0;
+         int32_t upscaled_x0 = (downscaled_x0 * denom) / 8;
+         int32_t upscaled_x1;
+
+         if (last_col) {
+            upscaled_x1 = upscaled;
+         } else
+            upscaled_x1 = (downscaled_x1 * denom) / 8;
+
+         int32_t dst_w = upscaled_x1 - upscaled_x0;
+
+         x0 += (dst_w * xstep_qn) - (src_w << av1_rs_scale_subpel_bits);
+      }
+
+   }
+}
+
+static void
 anv_av1_decode_video(struct anv_cmd_buffer *cmd_buffer,
                      const VkVideoDecodeInfoKHR *frame_info)
 {
-   const struct VkVideoDecodeAV1PictureInfoKHR *av1_pic_info =
+   const VkVideoDecodeAV1PictureInfoKHR *av1_pic_info =
       vk_find_struct_const(frame_info->pNext, VIDEO_DECODE_AV1_PICTURE_INFO_KHR);
+
+   anv_av1_calculate_xstep_qn(cmd_buffer, frame_info);
 
    for (unsigned t = 0; t < av1_pic_info->tileCount; t++)
       anv_av1_decode_video_tile(cmd_buffer, frame_info, t);
