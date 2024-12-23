@@ -243,6 +243,7 @@ impl<'a> Iterator for BitSetIter<'a> {
         while self.w < self.set.words.len() {
             let b = (self.set.words[self.w] & self.mask).trailing_zeros();
             if b < 32 {
+                self.mask &= !(1 << b);
                 return Some(self.w * 32 + usize::try_from(b).unwrap());
             }
             self.mask = u32::MAX;
