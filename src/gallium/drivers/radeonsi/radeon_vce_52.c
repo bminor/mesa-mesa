@@ -72,20 +72,44 @@ static void get_motion_estimation_param(struct rvce_encoder *enc,
 
 static void get_pic_control_param(struct rvce_encoder *enc, struct pipe_h264_enc_picture_desc *pic)
 {
-   unsigned encNumMBsPerSlice;
-   encNumMBsPerSlice = align(enc->base.width, 16) / 16;
-   encNumMBsPerSlice *= align(enc->base.height, 16) / 16;
+   uint32_t num_mbs_total, num_mbs_in_slice;
+
+   num_mbs_total = DIV_ROUND_UP(enc->base.width, 16) * DIV_ROUND_UP(enc->base.height, 16);
+
+   if (pic->num_slice_descriptors <= 1) {
+      num_mbs_in_slice = num_mbs_total;
+   } else {
+      bool use_app_config = true;
+      num_mbs_in_slice = pic->slices_descriptors[0].num_macroblocks;
+
+      /* All slices must have equal size */
+      for (unsigned i = 1; i < pic->num_slice_descriptors - 1; i++) {
+         if (num_mbs_in_slice != pic->slices_descriptors[i].num_macroblocks)
+            use_app_config = false;
+      }
+      /* Except last one can be smaller */
+      if (pic->slices_descriptors[pic->num_slice_descriptors - 1].num_macroblocks > num_mbs_in_slice)
+         use_app_config = false;
+
+      if (!use_app_config) {
+         assert(num_mbs_total >= pic->num_slice_descriptors);
+         num_mbs_in_slice =
+            (num_mbs_total + pic->num_slice_descriptors - 1) / pic->num_slice_descriptors;
+      }
+   }
+
    if (pic->seq.enc_frame_cropping_flag) {
       enc->enc_pic.pc.enc_crop_left_offset = pic->seq.enc_frame_crop_left_offset;
       enc->enc_pic.pc.enc_crop_right_offset = pic->seq.enc_frame_crop_right_offset;
       enc->enc_pic.pc.enc_crop_top_offset = pic->seq.enc_frame_crop_top_offset;
       enc->enc_pic.pc.enc_crop_bottom_offset = pic->seq.enc_frame_crop_bottom_offset;
    }
-   enc->enc_pic.pc.enc_num_mbs_per_slice = encNumMBsPerSlice;
+   enc->enc_pic.pc.enc_num_mbs_per_slice = num_mbs_in_slice;
    enc->enc_pic.pc.enc_number_of_reference_frames = 1;
    enc->enc_pic.pc.enc_max_num_ref_frames = pic->seq.max_num_ref_frames;
    enc->enc_pic.pc.enc_num_default_active_ref_l0 = pic->pic_ctrl.num_ref_idx_l0_default_active_minus1 + 1;
    enc->enc_pic.pc.enc_num_default_active_ref_l1 = pic->pic_ctrl.num_ref_idx_l1_default_active_minus1 + 1;
+   enc->enc_pic.pc.enc_slice_mode = 1;
    enc->enc_pic.pc.enc_use_constrained_intra_pred = pic->pic_ctrl.constrained_intra_pred_flag;
    enc->enc_pic.pc.enc_cabac_enable = pic->pic_ctrl.enc_cabac_enable;
    enc->enc_pic.pc.enc_cabac_idc = pic->pic_ctrl.enc_cabac_init_idc;
@@ -293,8 +317,8 @@ static void create(struct rvce_encoder *enc)
    RVCE_CS(enc->pic.seq.profile_idc); // encProfile
    RVCE_CS(enc->pic.seq.level_idc);                    // encLevel
    RVCE_CS(enc->enc_pic.ec.enc_pic_struct_restriction);
-   RVCE_CS(enc->base.width);  // encImageWidth
-   RVCE_CS(enc->base.height); // encImageHeight
+   RVCE_CS(align(enc->base.width, 16));  // encImageWidth
+   RVCE_CS(align(enc->base.height, 16)); // encImageHeight
 
    if (sscreen->info.gfx_level < GFX9) {
       RVCE_CS(enc->luma->u.legacy.level[0].nblk_x * enc->luma->bpe);     // encRefPicLumaPitch
