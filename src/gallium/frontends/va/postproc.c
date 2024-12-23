@@ -415,6 +415,15 @@ static VAStatus vlVaPostProcBlit(vlVaDriver *drv, vlVaContext *context,
       return VA_STATUS_SUCCESS;
    }
 
+   if (src->interlaced != dst->interlaced) {
+      deinterlace = deinterlace ? deinterlace : VL_COMPOSITOR_WEAVE;
+      vl_compositor_yuv_deint_full(&drv->cstate, &drv->compositor,
+                                   src, dst, &src_rect, &dst_rect,
+                                   deinterlace);
+
+      return VA_STATUS_SUCCESS;
+   }
+
    for (i = 0; i < VL_MAX_SURFACES; ++i) {
       struct pipe_surface *from = src_surfaces[i];
       struct pipe_blit_info blit;
