@@ -479,7 +479,7 @@ def parse_header(nvcl, f):
             if "_cl_" in list[1]:
                 continue
 
-            if not list[1].startswith(nvcl):
+            if (not list[1].startswith(nvcl)) or list[1].endswith('VIDEO_DECODER'):
                 if len(list) > 2 and list[2].startswith("0x"):
                     assert version is None
                     version = (list[1], list[2])
