@@ -7303,6 +7303,9 @@ visit_store_buffer(isel_context* ctx, nir_intrinsic_instr* intrin)
       unsigned const_offset = resolve_excess_vmem_const_offset(
          bld, write_voffset, offsets[i] + nir_intrinsic_base(intrin));
 
+      /* write_voffset may be updated in resolve_excess_vmem_const_offset(). */
+      offen = write_voffset.id();
+
       Operand vaddr_op(v1);
       if (offen && idxen)
          vaddr_op = bld.pseudo(aco_opcode::p_create_vector, bld.def(v2), idx, write_voffset);

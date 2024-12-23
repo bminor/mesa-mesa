@@ -1964,7 +1964,7 @@
         "description": "aco: fix voffset missing when buffer store base >=4096",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "cdaf269924ffc2f40c38ff05359466bfc0155fde",
         "notes": null
