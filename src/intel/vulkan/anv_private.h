@@ -6356,12 +6356,18 @@ enum anv_vid_mem_av1_types {
    ANV_VID_MEM_AV1_MAX,
 };
 
+struct anv_av1_video_refs_info {
+   const struct anv_image *img;
+   uint8_t default_cdf_index;
+};
+
 struct anv_video_session {
    struct vk_video_session vk;
 
    bool cdf_initialized;
    /* the decoder needs some private memory allocations */
    struct anv_vid_mem vid_mem[ANV_VID_MEM_AV1_MAX];
+   struct anv_av1_video_refs_info prev_refs[STD_VIDEO_AV1_NUM_REF_FRAMES];
 };
 
 struct anv_video_session_params {
