@@ -193,7 +193,10 @@ void si_vce_frame_offset(struct rvce_encoder *enc, struct rvce_cpb_slot *slot, s
                          signed *chroma_offset)
 {
    struct si_screen *sscreen = (struct si_screen *)enc->screen;
-   unsigned pitch, vpitch, fsize;
+   unsigned pitch, vpitch, fsize, offset = 0;
+
+   if (enc->dual_pipe)
+      offset += RVCE_MAX_AUX_BUFFER_NUM * RVCE_MAX_BITSTREAM_OUTPUT_ROW_SIZE * 2;
 
    if (sscreen->info.gfx_level < GFX9) {
       pitch = align(enc->luma->u.legacy.level[0].nblk_x * enc->luma->bpe, 128);
@@ -204,7 +207,7 @@ void si_vce_frame_offset(struct rvce_encoder *enc, struct rvce_cpb_slot *slot, s
    }
    fsize = pitch * (vpitch + vpitch / 2);
 
-   *luma_offset = slot->index * fsize;
+   *luma_offset = offset + slot->index * fsize;
    *chroma_offset = *luma_offset + pitch * vpitch;
 }
 
