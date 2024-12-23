@@ -37,7 +37,7 @@ ACO deals with divergent control flow by maintaining two control flow graphs (CF
 
 The instruction selection is based around the divergence analysis and works in 3 passes on the NIR shader.
 
-1. The divergence analysis pass calculates for each SSA definition if its value is guaranteed to be uniform across all threads of the workgroup.
+1. The divergence analysis pass calculates for each SSA definition if its value is guaranteed to be uniform across all threads of the wave (subgroup).
 2. We determine the register class for each SSA definition.
 3. Actual instruction selection. The advanced divergence analysis allows for better usage of the scalar unit, scalar memory loads and the scalar register file.
 
@@ -192,6 +192,16 @@ it's just some "glue code" that we need for outputs to play nicely.
 
 On GFX10/NGG this limitation no longer exists, because NGG can export directly to the PC.
 
+##### Notes about the attribute ring
+
+Starting with GFX11, the parameter cache is replaced by the attribute ring,
+which is a discardable ring buffer located in VRAM.
+The outputs of the last pre-rasterization stage (VS, TES, GS or MS) are stored here.
+
+The attribute ring is designed to utilize the Infinity Cache.
+Store instructions are arranged so that each instruction writes a full cache line,
+so the GPU will never actually have to write any of that to VRAM.
+
 ##### Notes about merged shaders
 
 The merged stages on GFX9 (and GFX10/legacy) are: LSHS and ESGS. On GFX10/NGG the ESGS is merged with HW VS into NGG.
@@ -237,6 +247,8 @@ So, think about these as two independent shader programs slapped together.
 
  * HW GS and VS stages are now merged, and NGG can export directly to PC
  * GS copy shaders are no longer needed
+ * On GFX10.3+, per-primitive attributes (parameters) are also supported
+ * On GFX11+, parameter exports are replaced by attribute ring stores
 
 | GFX10/NGG HW stages:    | LSHS      | NGG                | PS | ACO terminology |
 | -----------------------:|:----------|:-------------------|:---|:----------------|
@@ -250,7 +262,7 @@ So, think about these as two independent shader programs slapped together.
 GFX10.3+:
 
 * TS will run as a CS and stores its output payload to VRAM
-* MS runs on NGG, loads its inputs from VRAM and stores outputs to LDS, then PC
+* MS runs on NGG, loads its inputs from VRAM and stores outputs to LDS, then PC (or attribute ring)
 * Pixel Shaders work the same way as before
 
 | GFX10.3+ HW stages      | CS    | NGG   | PS | ACO terminology |
@@ -332,3 +344,9 @@ Here are some good practices we learned while debugging visual corruption and ha
       Typical issues might be a wrong instruction format leading to a wrong opcode or an sgpr used for vgpr field.
 5. Comparing to the LLVM backend:
    * If everything else didn't help, we probably just do something wrong. The LLVM backend is quite mature, so its output might help find differences, but this can be a long road.
+6. Investigating regressions in shaders:
+   * If you know that something used to work and are sure it's a shader problem,
+     use `RADV_DEBUG=shaders` to print both the correct and incorrect version of the shader.
+     You can further filter by shader stage and compilation stage, eg. `RADV_DEBUG=ps,nir,asm`
+   * Copy the printed shaders into a diff viewer, eg. Meld, to quickly find what changed
+     between the two versions.
