@@ -5429,6 +5429,13 @@ bifrost_preprocess_nir(nir_shader *nir, unsigned gpu_id)
    };
    NIR_PASS(_, nir, nir_lower_mem_access_bit_sizes, &mem_size_options);
 
+   /* Optimize scratch access */
+   NIR_PASS(_, nir, nir_lower_scratch_to_var);
+   NIR_PASS(_, nir, nir_lower_vars_to_scratch, nir_var_function_temp, 256,
+            vars_to_scratch_size_align_func,
+            vars_to_scratch_size_align_func);
+   NIR_PASS(_, nir, nir_lower_indirect_derefs, nir_var_function_temp, ~0);
+
    nir_lower_ssbo_options ssbo_opts = {
       .native_loads = pan_arch(gpu_id) >= 9,
       .native_offset = pan_arch(gpu_id) >= 9,
