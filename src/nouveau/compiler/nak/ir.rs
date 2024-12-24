@@ -6374,6 +6374,53 @@ impl DisplayOp for OpLdc {
 }
 impl_display_for_op!(OpLdc);
 
+#[derive(Clone, Copy, Eq, PartialEq)]
+#[allow(dead_code)]
+pub enum LdsmSize {
+    M8N8,
+    MT8N8,
+}
+
+impl fmt::Display for LdsmSize {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            LdsmSize::M8N8 => write!(f, "m8n8"),
+            LdsmSize::MT8N8 => write!(f, "m8n8.trans"),
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(SrcsAsSlice, DstsAsSlice)]
+pub struct OpLdsm {
+    #[dst_type(Vec)]
+    pub dst: Dst,
+
+    pub mat_size: LdsmSize,
+    pub mat_count: u8,
+
+    #[src_type(SSA)]
+    pub addr: Src,
+
+    pub offset: i32,
+}
+
+impl DisplayOp for OpLdsm {
+    fn fmt_op(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "ldsm.16.{}.x{} [{}",
+            self.mat_size, self.mat_count, self.addr,
+        )?;
+        if self.offset > 0 {
+            write!(f, "+{:#x}", self.offset)?;
+        }
+        write!(f, "]")
+    }
+}
+
+impl_display_for_op!(OpLdsm);
+
 /// Used for Kepler to implement shared atomics.
 /// In addition to the load, it tries to lock the address,
 /// Kepler hardware has (1024?) hardware mutex locks.
@@ -7801,6 +7848,7 @@ pub enum Op {
     HSetP2(OpHSetP2),
     Imma(OpImma),
     Hmma(OpHmma),
+    Ldsm(OpLdsm),
     HMnMx2(OpHMnMx2),
     BMsk(OpBMsk),
     BRev(OpBRev),
@@ -7968,7 +8016,7 @@ impl Op {
             | Op::DSetP(_) => false,
 
             // Matrix Multiply Add
-            Op::Imma(_) | Op::Hmma(_) => false,
+            Op::Imma(_) | Op::Hmma(_) | Op::Ldsm(_) => false,
 
             // Integer ALU
             Op::BRev(_) | Op::Flo(_) | Op::PopC(_) => false,

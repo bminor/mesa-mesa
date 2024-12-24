@@ -3968,6 +3968,40 @@ impl SM70Op for OpHmma {
     }
 }
 
+impl SM70Op for OpLdsm {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        legalize_ext_instr(self, b);
+    }
+
+    fn encode(&self, e: &mut SM70Encoder<'_>) {
+        assert!(e.sm >= 75);
+
+        e.set_opcode(0x83b);
+        e.set_dst(&self.dst);
+        e.set_reg_src(24..32, &self.addr);
+        e.set_field(40..64, self.offset);
+        e.set_field(
+            72..74,
+            match self.mat_count {
+                1 => 0u8,
+                2 => 1u8,
+                4 => 2u8,
+                _ => panic!("Invalid LDSM mat count"),
+            },
+        );
+        e.set_field(
+            78..80,
+            match self.mat_size {
+                LdsmSize::M8N8 => 0u8,
+                LdsmSize::MT8N8 => 1u8,
+                // Those do value expansion and are weird, we'll probably never use them.
+                // LdsmSize::M8N16 => 2,
+                // LdsmSize::M8N32 => 3,
+            },
+        );
+    }
+}
+
 macro_rules! as_sm70_op_match {
     ($op: expr) => {
         match $op {
@@ -4058,6 +4092,7 @@ macro_rules! as_sm70_op_match {
             Op::Match(op) => op,
             Op::Hmma(op) => op,
             Op::Imma(op) => op,
+            Op::Ldsm(op) => op,
             _ => panic!("Unsupported op: {}", $op),
         }
     };

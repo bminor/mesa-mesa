@@ -195,7 +195,7 @@ impl RegLatencySM75 {
             Op::Isberd(_) => Decoupled,
             Op::LdTram(_) => Decoupled,
             Op::Shfl(_) => Decoupled,
-            //Op::LdSm(_) => Decoupled
+            Op::Ldsm(_) => Decoupled,
             x => {
                 panic!("Illegal instuction in reg category {}", x);
             }
