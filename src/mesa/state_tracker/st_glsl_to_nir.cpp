@@ -316,8 +316,7 @@ st_glsl_to_nir_post_opts(struct st_context *st, struct gl_program *prog,
    }
 
    st_set_prog_affected_state_flags(prog);
-
-   st_finalize_nir_before_variants(nir);
+   nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
 
    char *msg = NULL;
    if (st->allow_st_finalize_nir_twice) {

@@ -346,12 +346,6 @@ st_release_program(struct st_context *st, struct gl_program **p)
    _mesa_reference_program(st->ctx, p, NULL);
 }
 
-void
-st_finalize_nir_before_variants(struct nir_shader *nir)
-{
-   nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
-}
-
 static void
 st_prog_to_nir_postprocess(struct st_context *st, nir_shader *nir,
                            struct gl_program *prog)
@@ -374,9 +368,9 @@ st_prog_to_nir_postprocess(struct st_context *st, nir_shader *nir,
    NIR_PASS(_, nir, nir_opt_constant_folding);
    gl_nir_opts(nir);
 
+   nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
    /* This must be done after optimizations to assign IO bases. */
    nir_recompute_io_bases(nir, nir_var_shader_in | nir_var_shader_out);
-   st_finalize_nir_before_variants(nir);
 
    if (st->allow_st_finalize_nir_twice) {
       st_serialize_base_nir(prog, nir);
