@@ -252,3 +252,50 @@ impl<'a> Iterator for BitSetIter<'a> {
         None
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn to_vec(set: &BitSet) -> Vec<usize> {
+        set.iter().collect()
+    }
+
+    #[test]
+    fn test_basic() {
+        let mut set = BitSet::new();
+
+        assert_eq!(to_vec(&set), &[]);
+        assert!(set.is_empty());
+
+        set.insert(0);
+
+        assert_eq!(to_vec(&set), &[0]);
+
+        set.insert(73);
+        set.insert(1);
+
+        assert_eq!(to_vec(&set), &[0, 1, 73]);
+        assert!(!set.is_empty());
+
+        assert!(set.get(73));
+        assert!(!set.get(197));
+
+        assert!(set.remove(1));
+        assert!(!set.remove(7));
+
+        let mut set2 = set.clone();
+        assert_eq!(to_vec(&set), &[0, 73]);
+        assert!(!set.is_empty());
+
+        assert!(set.remove(0));
+        assert!(set.remove(73));
+        assert!(set.is_empty());
+
+        set.clear();
+        assert!(set.is_empty());
+
+        set2.clear();
+        assert!(set2.is_empty());
+    }
+}
