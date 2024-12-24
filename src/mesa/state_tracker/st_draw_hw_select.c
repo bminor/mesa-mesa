@@ -338,7 +338,7 @@ clip_with_plane(nir_builder *b, nir_variable *vert, nir_variable *num_vert,
    }
    end_for_loop(vert_loop);
 
-   nir_copy_var(b, num_vert, vert_index);
+   nir_store_var(b, num_vert, nir_load_var(b, vert_index), 0x1);
 }
 
 static nir_def *
