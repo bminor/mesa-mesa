@@ -411,22 +411,6 @@ st_prog_to_nir_postprocess(struct st_context *st, nir_shader *nir,
 }
 
 /**
- * Translate ARB (asm) program to NIR
- */
-static nir_shader *
-st_translate_prog_to_nir(struct st_context *st, struct gl_program *prog,
-                         gl_shader_stage stage)
-{
-   const struct nir_shader_compiler_options *options =
-      st_get_nir_compiler_options(st, prog->info.stage);
-
-   /* Translate to NIR */
-   nir_shader *nir = prog_to_nir(st->ctx, prog, options);
-
-   return nir;
-}
-
-/**
  * Prepare st_vertex_program info.
  *
  * attrib_to_index is an optional mapping from a vertex attrib to a shader
@@ -616,8 +600,7 @@ st_translate_vertex_program(struct st_context *st,
 
    prog->state.type = PIPE_SHADER_IR_NIR;
    if (prog->arb.Instructions)
-      prog->nir = st_translate_prog_to_nir(st, prog,
-                                           MESA_SHADER_VERTEX);
+      prog->nir = prog_to_nir(st->ctx, prog);
    st_prog_to_nir_postprocess(st, prog->nir, prog);
    prog->info = prog->nir->info;
 
@@ -1021,8 +1004,7 @@ st_translate_fragment_program(struct st_context *st,
 
    prog->state.type = PIPE_SHADER_IR_NIR;
    if (prog->arb.Instructions) {
-      prog->nir = st_translate_prog_to_nir(st, prog,
-                                          MESA_SHADER_FRAGMENT);
+      prog->nir = prog_to_nir(st->ctx, prog);
    } else if (prog->ati_fs) {
       const struct nir_shader_compiler_options *options =
          st_get_nir_compiler_options(st, MESA_SHADER_FRAGMENT);

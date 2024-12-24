@@ -835,9 +835,10 @@ setup_registers_and_variables(struct ptn_compile *c)
 }
 
 struct nir_shader *
-prog_to_nir(const struct gl_context *ctx, const struct gl_program *prog,
-            const nir_shader_compiler_options *options)
+prog_to_nir(const struct gl_context *ctx, const struct gl_program *prog)
 {
+   const struct nir_shader_compiler_options *options =
+      st_get_nir_compiler_options(ctx->st, prog->info.stage);
    struct ptn_compile *c;
    struct nir_shader *s;
    gl_shader_stage stage = _mesa_program_enum_to_shader_stage(prog->Target);
