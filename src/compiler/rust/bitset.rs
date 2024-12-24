@@ -151,6 +151,19 @@ impl Default for BitSet {
     }
 }
 
+impl FromIterator<usize> for BitSet {
+    fn from_iter<T>(iter: T) -> Self
+    where
+        T: IntoIterator<Item = usize>,
+    {
+        let mut res = BitSet::new();
+        for i in iter {
+            res.insert(i);
+        }
+        res
+    }
+}
+
 impl BitAndAssign for BitSet {
     fn bitand_assign(&mut self, rhs: BitSet) {
         self.reserve_words(rhs.words.len());
@@ -297,5 +310,12 @@ mod tests {
 
         set2.clear();
         assert!(set2.is_empty());
+    }
+
+    #[test]
+    fn test_from_iter() {
+        let vec = vec![0, 1, 99];
+        let set: BitSet = vec.clone().into_iter().collect();
+        assert_eq!(to_vec(&set), vec);
     }
 }
