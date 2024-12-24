@@ -158,17 +158,15 @@ st_nir_make_clearcolor_shader(struct st_context *st)
    b.shader->info.num_ubos = 1;
    b.shader->num_outputs = 1;
    b.shader->num_uniforms = 1;
+   b.shader->info.io_lowered = true;
 
    /* Read clear color from constant buffer */
    nir_def *clear_color = nir_load_uniform(&b, 4, 32, nir_imm_int(&b,0),
                                                .range = 16,
                                                .dest_type = nir_type_float32);
 
-   nir_variable *color_out = nir_create_variable_with_location(b.shader, nir_var_shader_out,
-                                                               FRAG_RESULT_COLOR, glsl_vec4_type());
-
-   /* Write out the color */
-   nir_store_var(&b, color_out, clear_color, 0xf);
+   nir_store_output(&b, clear_color, nir_imm_int(&b, 0),
+                    .io_semantics.location = FRAG_RESULT_COLOR);
 
    return st_nir_finish_builtin_shader(st, b.shader);
 }
