@@ -1,8 +1,29 @@
 // Copyright © 2022 Collabora, Ltd.
 // SPDX-License-Identifier: MIT
 
+//! A set of usizes, represented as a bit vector
+//!
+//! In addition to some basic operations like `insert()` and `remove()`, this
+//! module also lets you write expressions on sets that are lazily evaluated. To
+//! do so, call `.s(..)` on the set to reference the bitset in a
+//! lazily-evaluated `BitSetStream`, and then use typical binary operators on
+//! the `BitSetStream`s.
+//! ```rust
+//! let a = BitSet::new();
+//! let b = BitSet::new();
+//! let c = BitSet::new();
+//!
+//! c.assign(a.s(..) | b.s(..));
+//! c ^= a.s(..);
+//! ```
+//! Supported binary operations are `&`, `|`, `^`, `-`. Note that there is no
+//! unary negation, because that would result in an infinite result set. For
+//! patterns like `a & !b`, instead use set subtraction `a - b`.
+
+use std::cmp::{max, min};
 use std::ops::{
     BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Range,
+    RangeFull, Sub, SubAssign,
 };
 
 #[derive(Clone)]
@@ -131,6 +152,20 @@ impl BitSet {
         }
     }
 
+    /// Evaluate an expression and store its value in self
+    pub fn assign<B>(&mut self, value: BitSetStream<B>)
+    where
+        B: BitSetStreamTrait,
+    {
+        let mut value = value.0;
+        let len = value.len();
+        self.words.clear();
+        self.words.resize_with(len, || value.next());
+        for _ in 0..16 {
+            debug_assert_eq!(value.next(), 0);
+        }
+    }
+
     pub fn union_with(&mut self, other: &BitSet) -> bool {
         let mut added_bits = false;
         self.reserve_words(other.words.len());
@@ -142,6 +177,15 @@ impl BitSet {
             }
         }
         added_bits
+    }
+
+    pub fn s<'a>(
+        &'a self,
+        _: RangeFull,
+    ) -> BitSetStream<impl 'a + BitSetStreamTrait> {
+        BitSetStream(BitSetStreamFromBitSet {
+            iter: self.words.iter().copied(),
+        })
     }
 }
 
@@ -164,62 +208,175 @@ impl FromIterator<usize> for BitSet {
     }
 }
 
-impl BitAndAssign for BitSet {
-    fn bitand_assign(&mut self, rhs: BitSet) {
-        self.reserve_words(rhs.words.len());
-        for w in 0..rhs.words.len() {
-            self.words[w] &= rhs.words[w];
+pub trait BitSetStreamTrait {
+    /// Get the next word
+    ///
+    /// Guaranteed to return 0 after len() elements
+    fn next(&mut self) -> u32;
+
+    /// Get the number of output words
+    fn len(&self) -> usize;
+}
+
+struct BitSetStreamFromBitSet<T>
+where
+    T: ExactSizeIterator<Item = u32>,
+{
+    iter: T,
+}
+
+impl<T> BitSetStreamTrait for BitSetStreamFromBitSet<T>
+where
+    T: ExactSizeIterator<Item = u32>,
+{
+    fn next(&mut self) -> u32 {
+        self.iter.next().unwrap_or(0)
+    }
+    fn len(&self) -> usize {
+        self.iter.len()
+    }
+}
+
+pub struct BitSetStream<T>(T)
+where
+    T: BitSetStreamTrait;
+
+impl<T> From<BitSetStream<T>> for BitSet
+where
+    T: BitSetStreamTrait,
+{
+    fn from(value: BitSetStream<T>) -> Self {
+        let mut out = BitSet::new();
+        out.assign(value);
+        out
+    }
+}
+
+macro_rules! binop {
+    (
+        $BinOp:ident,
+        $bin_op:ident,
+        $AssignBinOp:ident,
+        $assign_bin_op:ident,
+        $Struct:ident,
+        |$a:ident, $b:ident| $next_impl:expr,
+        |$a_len: ident, $b_len: ident| $len_impl:expr,
+    ) => {
+        pub struct $Struct<A, B>
+        where
+            A: BitSetStreamTrait,
+            B: BitSetStreamTrait,
+        {
+            a: A,
+            b: B,
         }
-    }
-}
 
-impl BitAnd<BitSet> for BitSet {
-    type Output = BitSet;
+        impl<A, B> BitSetStreamTrait for $Struct<A, B>
+        where
+            A: BitSetStreamTrait,
+            B: BitSetStreamTrait,
+        {
+            fn next(&mut self) -> u32 {
+                let $a = self.a.next();
+                let $b = self.b.next();
+                $next_impl
+            }
 
-    fn bitand(self, rhs: BitSet) -> BitSet {
-        let mut res = self;
-        res.bitand_assign(rhs);
-        res
-    }
-}
-
-impl BitOrAssign for BitSet {
-    fn bitor_assign(&mut self, rhs: BitSet) {
-        self.reserve_words(rhs.words.len());
-        for w in 0..rhs.words.len() {
-            self.words[w] |= rhs.words[w];
+            fn len(&self) -> usize {
+                let $a_len = self.a.len();
+                let $b_len = self.b.len();
+                let new_len = $len_impl;
+                new_len
+            }
         }
-    }
-}
 
-impl BitOr<BitSet> for BitSet {
-    type Output = BitSet;
+        impl<A, B> $BinOp<BitSetStream<B>> for BitSetStream<A>
+        where
+            A: BitSetStreamTrait,
+            B: BitSetStreamTrait,
+        {
+            type Output = BitSetStream<$Struct<A, B>>;
 
-    fn bitor(self, rhs: BitSet) -> BitSet {
-        let mut res = self;
-        res.bitor_assign(rhs);
-        res
-    }
-}
-
-impl BitXorAssign for BitSet {
-    fn bitxor_assign(&mut self, rhs: BitSet) {
-        self.reserve_words(rhs.words.len());
-        for w in 0..rhs.words.len() {
-            self.words[w] ^= rhs.words[w];
+            fn $bin_op(self, rhs: BitSetStream<B>) -> Self::Output {
+                BitSetStream($Struct {
+                    a: self.0,
+                    b: rhs.0,
+                })
+            }
         }
-    }
+
+        impl<B> $AssignBinOp<BitSetStream<B>> for BitSet
+        where
+            B: BitSetStreamTrait,
+        {
+            fn $assign_bin_op(&mut self, rhs: BitSetStream<B>) {
+                let mut rhs = rhs.0;
+
+                let $a_len = self.words.len();
+                let $b_len = rhs.len();
+                let expected_word_len = $len_impl;
+                self.words.resize(expected_word_len, 0);
+
+                for lhs in &mut self.words {
+                    let $a = *lhs;
+                    let $b = rhs.next();
+                    *lhs = $next_impl;
+                }
+
+                for _ in 0..16 {
+                    debug_assert_eq!(
+                        {
+                            let $a = 0;
+                            let $b = rhs.next();
+                            $next_impl
+                        },
+                        0
+                    );
+                }
+            }
+        }
+    };
 }
 
-impl BitXor<BitSet> for BitSet {
-    type Output = BitSet;
+binop!(
+    BitAnd,
+    bitand,
+    BitAndAssign,
+    bitand_assign,
+    BitSetStreamAnd,
+    |a, b| a & b,
+    |a, b| min(a, b),
+);
 
-    fn bitxor(self, rhs: BitSet) -> BitSet {
-        let mut res = self;
-        res.bitxor_assign(rhs);
-        res
-    }
-}
+binop!(
+    BitOr,
+    bitor,
+    BitOrAssign,
+    bitor_assign,
+    BitSetStreamOr,
+    |a, b| a | b,
+    |a, b| max(a, b),
+);
+
+binop!(
+    BitXor,
+    bitxor,
+    BitXorAssign,
+    bitxor_assign,
+    BitSetStreamXor,
+    |a, b| a ^ b,
+    |a, b| max(a, b),
+);
+
+binop!(
+    Sub,
+    sub,
+    SubAssign,
+    sub_assign,
+    BitSetStreamSub,
+    |a, b| a & !b,
+    |a, _b| a,
+);
 
 struct BitSetIter<'a> {
     set: &'a BitSet,
@@ -305,5 +462,88 @@ mod tests {
         let vec = vec![0, 1, 99];
         let set: BitSet = vec.clone().into_iter().collect();
         assert_eq!(to_vec(&set), vec);
+    }
+
+    #[test]
+    fn test_or() {
+        let a: BitSet = vec![9, 23, 18, 72].into_iter().collect();
+        let b: BitSet = vec![7, 23, 1337].into_iter().collect();
+        let expected = vec![7, 9, 18, 23, 72, 1337];
+
+        assert_eq!(to_vec(&(a.s(..) | b.s(..)).into()), &expected[..]);
+        assert_eq!(to_vec(&(b.s(..) | a.s(..)).into()), &expected[..]);
+
+        let mut actual_1 = a.clone();
+        actual_1 |= b.s(..);
+        assert_eq!(to_vec(&actual_1), &expected[..]);
+
+        let mut actual_2 = b.clone();
+        actual_2 |= a.s(..);
+        assert_eq!(to_vec(&actual_2), &expected[..]);
+    }
+
+    #[test]
+    fn test_and() {
+        let a: BitSet = vec![1337, 42, 7, 1].into_iter().collect();
+        let b: BitSet = vec![42, 783, 2, 7].into_iter().collect();
+        let expected = vec![7, 42];
+
+        assert_eq!(to_vec(&(a.s(..) & b.s(..)).into()), &expected[..]);
+        assert_eq!(to_vec(&(b.s(..) & a.s(..)).into()), &expected[..]);
+
+        let mut actual_1 = a.clone();
+        actual_1 &= b.s(..);
+        assert_eq!(to_vec(&actual_1), &expected[..]);
+
+        let mut actual_2 = b.clone();
+        actual_2 &= a.s(..);
+        assert_eq!(to_vec(&actual_2), &expected[..]);
+    }
+
+    #[test]
+    fn test_xor() {
+        let a: BitSet = vec![1337, 42, 7, 1].into_iter().collect();
+        let b: BitSet = vec![42, 127, 2, 7].into_iter().collect();
+        let expected = vec![1, 2, 127, 1337];
+
+        assert_eq!(to_vec(&(a.s(..) ^ b.s(..)).into()), &expected[..]);
+        assert_eq!(to_vec(&(b.s(..) ^ a.s(..)).into()), &expected[..]);
+
+        let mut actual_1 = a.clone();
+        actual_1 ^= b.s(..);
+        assert_eq!(to_vec(&actual_1), &expected[..]);
+
+        let mut actual_2 = b.clone();
+        actual_2 ^= a.s(..);
+        assert_eq!(to_vec(&actual_2), &expected[..]);
+    }
+
+    #[test]
+    fn test_sub() {
+        let a: BitSet = vec![1337, 42, 7, 1].into_iter().collect();
+        let b: BitSet = vec![42, 127, 2, 7].into_iter().collect();
+        let expected_1 = vec![1, 1337];
+        let expected_2 = vec![2, 127];
+
+        assert_eq!(to_vec(&(a.s(..) - b.s(..)).into()), &expected_1[..]);
+        assert_eq!(to_vec(&(b.s(..) - a.s(..)).into()), &expected_2[..]);
+
+        let mut actual_1 = a.clone();
+        actual_1 -= b.s(..);
+        assert_eq!(to_vec(&actual_1), &expected_1[..]);
+
+        let mut actual_2 = b.clone();
+        actual_2 -= a.s(..);
+        assert_eq!(to_vec(&actual_2), &expected_2[..]);
+    }
+
+    #[test]
+    fn test_compund() {
+        let a: BitSet = vec![1337, 42, 7, 1].into_iter().collect();
+        let b: BitSet = vec![42, 127, 2, 7].into_iter().collect();
+        let mut c = BitSet::new();
+
+        c &= a.s(..) | b.s(..);
+        assert!(c.is_empty());
     }
 }
