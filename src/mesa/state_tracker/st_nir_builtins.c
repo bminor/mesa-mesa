@@ -74,6 +74,8 @@ st_nir_finish_builtin_nir(struct st_context *st, nir_shader *nir)
    if (!screen->caps.nir_images_as_deref)
       NIR_PASS(_, nir, gl_nir_lower_images, false);
 
+   assert(nir->info.stage == MESA_SHADER_COMPUTE || nir->info.io_lowered);
+
    if (nir->info.io_lowered &&
        !(nir->options->io_options & nir_io_has_intrinsics)) {
       NIR_PASS(_, nir, st_nir_unlower_io_to_vars);

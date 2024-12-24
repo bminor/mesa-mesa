@@ -853,6 +853,9 @@ st_create_common_variant(struct st_context *st,
                       key->is_draw_shader);
    }
 
+   assert(state.ir.nir->info.stage == MESA_SHADER_COMPUTE ||
+          state.ir.nir->info.io_lowered);
+
    /* This should be after all passes that touch IO. */
    if (state.ir.nir->info.io_lowered &&
        (!(state.ir.nir->options->io_options & nir_io_has_intrinsics) ||
@@ -1244,6 +1247,8 @@ st_create_fp_variant(struct st_context *st,
                  ~key->depth_textures & fp->ShadowSamplers);
       finalize = true;
    }
+
+   assert(state.ir.nir->info.io_lowered);
 
    /* This should be after all passes that touch IO. */
    if (state.ir.nir->info.io_lowered &&
