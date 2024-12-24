@@ -94,6 +94,7 @@ nvk_get_device_extensions(const struct nvk_instance *instance,
       .KHR_buffer_device_address = true,
       .KHR_calibrated_timestamps = true,
       .KHR_compute_shader_derivatives = info->cls_eng3d >= TURING_A,
+      .KHR_cooperative_matrix = info->cls_eng3d >= TURING_A,
       .KHR_copy_commands2 = true,
       .KHR_create_renderpass2 = true,
       .KHR_dedicated_allocation = true,
@@ -287,6 +288,9 @@ nvk_get_device_features(const struct nv_device_info *info,
                         const struct vk_device_extension_table *supported_extensions,
                         struct vk_features *features)
 {
+   /* TU11x uses the same shader model as other Turing but don't support the same features. */
+   bool is_tu11x = info->chipset == 0x167 || info->chipset == 0x168;
+
    *features = (struct vk_features) {
       /* Vulkan 1.0 */
       .robustBufferAccess = true,
@@ -442,6 +446,11 @@ nvk_get_device_features(const struct nv_device_info *info,
       .pipelineRobustness = true,
       .hostImageCopy = info->cls_eng3d >= TURING_A,
       .pushDescriptor = true,
+
+      /* VK_KHR_cooperative_matrix */
+      /* TU11X can run coop matrix but the performances are abysal */
+      .cooperativeMatrix = info->cls_eng3d >= TURING_A && !is_tu11x,
+      .cooperativeMatrixRobustBufferAccess = false,
 
       /* VK_KHR_compute_shader_derivatives */
       .computeDerivativeGroupQuads = info->cls_eng3d >= TURING_A,
@@ -964,6 +973,9 @@ nvk_get_device_properties(const struct nvk_instance *instance,
          VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT,
       .defaultRobustnessImages =
          VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_2_EXT,
+
+      /* VK_KHR_cooperative_matrix */
+      .cooperativeMatrixSupportedStages = VK_SHADER_STAGE_COMPUTE_BIT,
 
       /* VK_KHR_compute_shader_derivatives */
       .meshAndTaskShaderDerivatives = false,
@@ -1701,6 +1713,135 @@ nvk_GetPhysicalDeviceFragmentShadingRatesKHR(
                   break;
 
                p->sampleCounts |= samples;
+            }
+         }
+      }
+   }
+
+   return vk_outarray_status(&out);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL
+nvk_GetPhysicalDeviceCooperativeMatrixPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
+                                                    VkCooperativeMatrixPropertiesKHR *pProperties)
+{
+   VK_FROM_HANDLE(nvk_physical_device, pdev, physicalDevice);
+   VK_OUTARRAY_MAKE_TYPED(VkCooperativeMatrixPropertiesKHR, out, pProperties, pPropertyCount);
+
+   if (pdev->info.cls_compute < VOLTA_COMPUTE_A)
+      return VK_SUCCESS;
+
+   if (pdev->info.cls_compute >= TURING_COMPUTE_A) {
+      for (int use_result_f32 = 0; use_result_f32 < 2; use_result_f32++) {
+         const VkComponentTypeKHR input_type_cd = use_result_f32 ? VK_COMPONENT_TYPE_FLOAT32_KHR : VK_COMPONENT_TYPE_FLOAT16_KHR;
+
+         vk_outarray_append_typed(VkCooperativeMatrixPropertiesKHR, &out, p)
+         {
+            *p = (struct VkCooperativeMatrixPropertiesKHR){
+               .sType = VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_PROPERTIES_KHR,
+               .MSize = 16,
+               .NSize = 8,
+               .KSize = 8,
+               .AType = VK_COMPONENT_TYPE_FLOAT16_KHR,
+               .BType = VK_COMPONENT_TYPE_FLOAT16_KHR,
+               .CType = input_type_cd,
+               .ResultType = input_type_cd,
+               .saturatingAccumulation = false,
+               .scope = VK_SCOPE_SUBGROUP_KHR
+            };
+         }
+
+         vk_outarray_append_typed(VkCooperativeMatrixPropertiesKHR, &out, p)
+         {
+            *p = (struct VkCooperativeMatrixPropertiesKHR){
+               .sType = VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_PROPERTIES_KHR,
+               .MSize = 16,
+               .NSize = 8,
+               .KSize = 16,
+               .AType = VK_COMPONENT_TYPE_FLOAT16_KHR,
+               .BType = VK_COMPONENT_TYPE_FLOAT16_KHR,
+               .CType = input_type_cd,
+               .ResultType = input_type_cd,
+               .saturatingAccumulation = false,
+               .scope = VK_SCOPE_SUBGROUP_KHR
+            };
+         }
+
+         vk_outarray_append_typed(VkCooperativeMatrixPropertiesKHR, &out, p)
+         {
+            *p = (struct VkCooperativeMatrixPropertiesKHR){
+               .sType = VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_PROPERTIES_KHR,
+               .MSize = 16,
+               .NSize = 16,
+               .KSize = 16,
+               .AType = VK_COMPONENT_TYPE_FLOAT16_KHR,
+               .BType = VK_COMPONENT_TYPE_FLOAT16_KHR,
+               .CType = input_type_cd,
+               .ResultType = input_type_cd,
+               .saturatingAccumulation = false,
+               .scope = VK_SCOPE_SUBGROUP_KHR
+            };
+         }
+      }
+   }
+
+   /* IMMA got added with Turing */
+   if (pdev->info.cls_compute >= TURING_COMPUTE_A) {
+      for (int sat = 0; sat < 2; sat++) {
+         for (unsigned is_signed = 0; is_signed < 2; is_signed++) {
+            const VkComponentTypeKHR input_type_ab = is_signed ? VK_COMPONENT_TYPE_SINT8_KHR  : VK_COMPONENT_TYPE_UINT8_KHR;
+            const VkComponentTypeKHR result_type   = is_signed ? VK_COMPONENT_TYPE_SINT32_KHR : VK_COMPONENT_TYPE_UINT32_KHR;
+
+            /* we don't have hw support for uint32, so we can't saturate on C or D */
+            if (result_type == VK_COMPONENT_TYPE_UINT32_KHR && sat)
+               continue;
+
+            vk_outarray_append_typed(VkCooperativeMatrixPropertiesKHR, &out, p)
+            {
+               *p = (struct VkCooperativeMatrixPropertiesKHR){
+                  .sType = VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_PROPERTIES_KHR,
+                  .MSize = 8,
+                  .NSize = 8,
+                  .KSize = 16,
+                  .AType = input_type_ab,
+                  .BType = input_type_ab,
+                  .CType = result_type,
+                  .ResultType = result_type,
+                  .saturatingAccumulation = sat,
+                  .scope = VK_SCOPE_SUBGROUP_KHR
+               };
+            }
+
+            vk_outarray_append_typed(VkCooperativeMatrixPropertiesKHR, &out, p)
+            {
+               *p = (struct VkCooperativeMatrixPropertiesKHR){
+                  .sType = VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_PROPERTIES_KHR,
+                  .MSize = 16,
+                  .NSize = 8,
+                  .KSize = 32,
+                  .AType = input_type_ab,
+                  .BType = input_type_ab,
+                  .CType = result_type,
+                  .ResultType = result_type,
+                  .saturatingAccumulation = sat,
+                  .scope = VK_SCOPE_SUBGROUP_KHR
+               };
+            }
+
+            vk_outarray_append_typed(VkCooperativeMatrixPropertiesKHR, &out, p)
+            {
+               *p = (struct VkCooperativeMatrixPropertiesKHR){
+                  .sType = VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_PROPERTIES_KHR,
+                  .MSize = 16,
+                  .NSize = 16,
+                  .KSize = 32,
+                  .AType = input_type_ab,
+                  .BType = input_type_ab,
+                  .CType = result_type,
+                  .ResultType = result_type,
+                  .saturatingAccumulation = sat,
+                  .scope = VK_SCOPE_SUBGROUP_KHR
+               };
             }
          }
       }
