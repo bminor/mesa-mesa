@@ -109,10 +109,8 @@ lookup_shader(struct st_context *st,
    }
 
    CachedShaders[i].handle =
-      st_nir_make_passthrough_shader(st, "st/drawtex VS",
-                                       MESA_SHADER_VERTEX,
-                                       num_attribs, inputs,
-                                       slots, NULL, 0);
+      st_nir_make_passthrough_vs(st, "st/drawtex VS", num_attribs, inputs,
+                                 slots, 0);
 
    NumCachedShaders++;
 

@@ -135,9 +135,8 @@ make_nir_clear_vertex_shader(struct st_context *st, bool layered)
       VARYING_SLOT_LAYER
    };
 
-   return st_nir_make_passthrough_shader(st, shader_name, MESA_SHADER_VERTEX,
-                                         layered ? 2 : 1, inputs, outputs,
-                                         NULL, (1 << 1));
+   return st_nir_make_passthrough_vs(st, shader_name, layered ? 2 : 1, inputs,
+                                     outputs, (1 << 1));
 }
 
 

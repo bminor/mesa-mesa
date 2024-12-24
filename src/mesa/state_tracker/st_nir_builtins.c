@@ -103,44 +103,41 @@ st_nir_finish_builtin_shader(struct st_context *st,
 }
 
 /**
- * Make a simple shader that copies inputs to corresponding outputs.
+ * Make a simple vertex shader that copies inputs to corresponding outputs.
  */
 void *
-st_nir_make_passthrough_shader(struct st_context *st,
-                               const char *shader_name,
-                               gl_shader_stage stage,
-                               unsigned num_vars,
-                               const unsigned *input_locations,
-                               const gl_varying_slot *output_locations,
-                               unsigned *interpolation_modes,
-                               unsigned sysval_mask)
+st_nir_make_passthrough_vs(struct st_context *st,
+                           const char *shader_name,
+                           unsigned num_vars,
+                           const unsigned *input_locations,
+                           const gl_varying_slot *output_locations,
+                           unsigned sysval_mask)
 {
-   const struct glsl_type *vec4 = glsl_vec4_type();
    const nir_shader_compiler_options *options =
-      st_get_nir_compiler_options(st, stage);
+      st_get_nir_compiler_options(st, MESA_SHADER_VERTEX);
 
-   nir_builder b = nir_builder_init_simple_shader(stage, options,
+   nir_builder b = nir_builder_init_simple_shader(MESA_SHADER_VERTEX, options,
                                                   "%s", shader_name);
+   b.shader->info.io_lowered = true;
 
    for (unsigned i = 0; i < num_vars; i++) {
-      nir_variable *in;
+      nir_def *in;
+
       if (sysval_mask & (1 << i)) {
-         in = nir_create_variable_with_location(b.shader, nir_var_system_value,
-                                                input_locations[i],
-                                  glsl_int_type());
+         nir_variable *var =
+            nir_create_variable_with_location(b.shader, nir_var_system_value,
+                                              input_locations[i],
+                                              glsl_int_type());
+         in = nir_load_var(&b, var);
       } else {
-         in = nir_create_variable_with_location(b.shader, nir_var_shader_in,
-                                                input_locations[i], vec4);
+         in = nir_load_input(&b, 4, 32, nir_imm_int(&b, 0),
+                             .io_semantics.location = input_locations[i]);
       }
-      if (interpolation_modes)
-         in->data.interpolation = interpolation_modes[i];
 
-      nir_variable *out =
-         nir_create_variable_with_location(b.shader, nir_var_shader_out,
-                                           output_locations[i], in->type);
-      out->data.interpolation = in->data.interpolation;
-
-      nir_copy_var(&b, out, in);
+      nir_store_output(&b, in, nir_imm_int(&b, 0),
+                       .src_type = output_locations[i] == VARYING_SLOT_LAYER ?
+                                      nir_type_int32 : nir_type_float32,
+                       .io_semantics.location = output_locations[i]);
    }
 
    return st_nir_finish_builtin_shader(st, b.shader);

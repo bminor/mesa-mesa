@@ -302,9 +302,7 @@ st_make_passthrough_vertex_shader(struct st_context *st)
       { VARYING_SLOT_POS,  VARYING_SLOT_COL0,    VARYING_SLOT_TEX0 };
 
    st->passthrough_vs =
-      st_nir_make_passthrough_shader(st, "drawpixels VS",
-                                     MESA_SHADER_VERTEX, 3,
-                                     inputs, outputs, NULL, 0);
+      st_nir_make_passthrough_vs(st, "drawpixels VS", 3, inputs, outputs, 0);
 }
 
 
