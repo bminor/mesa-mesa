@@ -856,6 +856,10 @@ st_create_common_variant(struct st_context *st,
         key->is_draw_shader)) {
       assert(!state.stream_output.num_outputs || state.ir.nir->xfb_info);
       get_stream_output_info_from_nir(state.ir.nir, &state.stream_output);
+      /* Some lowering passes can leave dead code behind, but dead IO intrinsics
+       * are still counted as enabled IO, which breaks things.
+       */
+      NIR_PASS(_, state.ir.nir, nir_opt_dce);
       NIR_PASS(_, state.ir.nir, st_nir_unlower_io_to_vars);
 
       if (state.ir.nir->info.stage == MESA_SHADER_TESS_CTRL &&
@@ -1235,6 +1239,10 @@ st_create_fp_variant(struct st_context *st,
    /* This should be after all passes that touch IO. */
    if (state.ir.nir->info.io_lowered &&
        !(state.ir.nir->options->io_options & nir_io_has_intrinsics)) {
+      /* Some lowering passes can leave dead code behind, but dead IO intrinsics
+       * are still counted as enabled IO, which breaks things.
+       */
+      NIR_PASS(_, state.ir.nir, nir_opt_dce);
       NIR_PASS(_, state.ir.nir, st_nir_unlower_io_to_vars);
       gl_nir_opts(state.ir.nir);
       finalize = true;
