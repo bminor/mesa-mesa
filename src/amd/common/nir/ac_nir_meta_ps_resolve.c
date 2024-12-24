@@ -63,10 +63,7 @@ ac_create_resolve_ps(const struct ac_ps_resolve_options *options,
    nir_def *zero = nir_imm_int(&b, 0);
    nir_def *baryc = nir_load_barycentric_pixel(&b, 32, .interp_mode = INTERP_MODE_SMOOTH);
    nir_def *coord = nir_load_interpolated_input(&b, 2 + key->src_is_array, 32, baryc, zero,
-                                                .dest_type = nir_type_float32,
-                                                .io_semantics = (nir_io_semantics){
-                                                                .location = VARYING_SLOT_VAR0,
-                                                                .num_slots = 1});
+                                                .io_semantics.location = VARYING_SLOT_VAR0);
 
    /* Nearest filtering floors and then converts to integer, and then
     * applies clamp to edge as clamp(coord, 0, dim - 1).
@@ -158,9 +155,7 @@ ac_create_resolve_ps(const struct ac_ps_resolve_options *options,
    nir_store_output(&b, result, zero,
                     .write_mask = BITFIELD_MASK(key->last_dst_channel + 1),
                     .src_type = key->d16 ? nir_type_float16 : nir_type_float32,
-                    .io_semantics = (nir_io_semantics){
-                                    .location = FRAG_RESULT_DATA0,
-                                    .num_slots = 1});
+                    .io_semantics.location = FRAG_RESULT_DATA0);
 
    return b.shader;
 }
