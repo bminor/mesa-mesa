@@ -53,6 +53,7 @@ pvr_files = files(
   'pvr_shader.c',
   'pvr_spm.c',
   'pvr_tex_state.c',
+  'pvr_usc.c',
   'pvr_wsi.c',
 
   'usc/pvr_uscgen.c',
@@ -69,6 +70,7 @@ pvr_deps = [
   dep_libdrm,
   dep_valgrind,
   idep_mesautil,
+  idep_pco_uscgen_programs_h,
   idep_vulkan_runtime,
   idep_vulkan_util,
   idep_vulkan_wsi,
@@ -109,6 +111,7 @@ libvulkan_powervr_mesa = shared_library(
     libpowervr_compiler,
     libpowervr_pds,
     libpowervr_rogue,
+    libpowervr_uscgen,
     libvulkan_wsi,
   ],
   dependencies : [

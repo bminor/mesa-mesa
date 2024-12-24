@@ -816,7 +816,7 @@ with_driver_using_cl = [
   with_gallium_iris, with_intel_vk,
   with_gallium_asahi, with_asahi_vk,
   with_gallium_panfrost, with_panfrost_vk,
-  with_nouveau_vk,
+  with_nouveau_vk, with_imagination_vk,
 ].contains(true)
 
 if get_option('mesa-clc') == 'system'

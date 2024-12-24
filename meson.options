@@ -241,6 +241,13 @@ option(
                 'vulkan driver',
 )
 
+option('imagination-uscgen-devices',
+  type : 'array',
+  value : [],
+  choices : ['axe-1-16m', 'bxs-4-64', 'gx6250'],
+  description : 'List of devices for which to pre-build USC program binaries.',
+)
+
 option(
   'shader-cache',
   type : 'feature',

@@ -12,8 +12,10 @@
 
 #include "compiler/list.h"
 #include "compiler/glsl_types.h"
+#include "nir_serialize.h"
 #include "pco.h"
 #include "pco_internal.h"
+#include "util/blob.h"
 #include "util/hash_table.h"
 #include "util/list.h"
 #include "util/macros.h"
@@ -56,6 +58,13 @@ pco_ctx *pco_ctx_create(const struct pvr_device_info *dev_info, void *mem_ctx)
    ralloc_set_destructor(ctx, pco_ctx_destructor);
 
    return ctx;
+}
+
+void pco_ctx_setup_usclib(pco_ctx *ctx, const void *data, unsigned size)
+{
+   struct blob_reader blob_reader;
+   blob_reader_init(&blob_reader, data, size);
+   ctx->usclib = nir_deserialize(ctx, pco_nir_options(), &blob_reader);
 }
 
 /**
@@ -290,4 +299,22 @@ void pco_instr_delete(pco_instr *instr)
 pco_data *pco_shader_data(pco_shader *shader)
 {
    return &shader->data;
+}
+
+/**
+ * \brief Returns precompilation data for a shader.
+ *
+ * \param[in] shader PCO shader.
+ * \return The precompilation data.
+ */
+pco_precomp_data pco_get_precomp_data(pco_shader *shader)
+{
+   assert(pco_shader_binary_size(shader));
+
+   return (pco_precomp_data){
+      .temps = shader->data.common.temps,
+      .vtxins = shader->data.common.vtxins,
+      .coeffs = shader->data.common.coeffs,
+      .shareds = shader->data.common.shareds,
+   };
 }

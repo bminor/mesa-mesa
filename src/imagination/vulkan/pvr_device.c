@@ -42,6 +42,7 @@
 #include "git_sha1.h"
 #include "hwdef/rogue_hw_utils.h"
 #include "pco/pco.h"
+#include "pco_uscgen_programs.h"
 #include "pvr_bo.h"
 #include "pvr_border.h"
 #include "pvr_clear.h"
@@ -834,6 +835,9 @@ static VkResult pvr_physical_device_init(struct pvr_physical_device *pdevice,
                          "Failed to initialize PCO compiler context");
       goto err_free_compiler;
    }
+   pco_ctx_setup_usclib(pdevice->pco_ctx,
+                        pco_usclib_0_nir,
+                        sizeof(pco_usclib_0_nir));
 
    result = pvr_wsi_init(pdevice);
    if (result != VK_SUCCESS) {

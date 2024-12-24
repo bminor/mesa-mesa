@@ -43,6 +43,9 @@ typedef struct _pco_ctx {
 
    /** Device-specific SPIR-V to NIR options. */
    struct spirv_to_nir_options spirv_options;
+
+   /** USC library. */
+   const nir_shader *usclib;
 } pco_ctx;
 
 void pco_setup_spirv_options(const struct pvr_device_info *dev_info,

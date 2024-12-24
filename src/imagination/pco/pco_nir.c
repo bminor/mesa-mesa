@@ -627,6 +627,8 @@ void pco_rev_link_nir(pco_ctx *ctx, nir_shader *producer, nir_shader *consumer)
  */
 void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
 {
+   bool uses_usclib = false;
+
    NIR_PASS(_,
             nir,
             nir_opt_access,
@@ -708,6 +710,27 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
          NIR_PASS(_, nir, pco_nir_point_size);
 
       NIR_PASS(_, nir, pco_nir_pvi, &data->vs);
+   }
+
+   if (uses_usclib) {
+      assert(ctx->usclib);
+
+      nir_link_shader_functions(nir, ctx->usclib);
+      NIR_PASS(_, nir, nir_inline_functions);
+      nir_remove_non_entrypoints(nir);
+      NIR_PASS(_, nir, nir_opt_deref);
+      NIR_PASS(_, nir, nir_lower_vars_to_ssa);
+      NIR_PASS(_, nir, nir_remove_dead_derefs);
+      NIR_PASS(_,
+               nir,
+               nir_remove_dead_variables,
+               nir_var_function_temp | nir_var_shader_temp,
+               NULL);
+      NIR_PASS(_,
+               nir,
+               nir_lower_vars_to_explicit_types,
+               nir_var_shader_temp | nir_var_function_temp,
+               glsl_get_cl_type_size_align);
    }
 
    NIR_PASS(_,

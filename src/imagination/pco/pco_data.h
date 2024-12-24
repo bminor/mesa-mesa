@@ -19,6 +19,9 @@
 
 #include <stdbool.h>
 
+/* Compiler-specific forward-declarations. */
+typedef struct _pco_shader pco_shader;
+
 /** Generic range struct. */
 typedef struct _pco_range {
    unsigned start;
@@ -159,4 +162,17 @@ typedef struct _pco_data {
    pco_common_data common;
 } pco_data;
 
+/** PCO precompiled shader data. */
+typedef struct PACKED _pco_precomp_data {
+   uint8_t temps;
+   uint8_t vtxins;
+
+   uint16_t coeffs : 12;
+   uint16_t shareds : 12;
+
+   uint8_t pad[3];
+} pco_precomp_data;
+static_assert(sizeof(pco_precomp_data) == 8, "sizeof(pco_precomp_data) != 8");
+
+pco_precomp_data pco_get_precomp_data(pco_shader *shader);
 #endif /* PCO_DATA_H */
