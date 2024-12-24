@@ -50,7 +50,7 @@ impl BitSet {
         true
     }
 
-    pub fn iter(&self) -> BitSetIter<'_> {
+    pub fn iter(&self) -> impl '_ + Iterator<Item = usize> {
         BitSetIter::new(self)
     }
 
@@ -220,7 +220,7 @@ impl Not for BitSet {
     }
 }
 
-pub struct BitSetIter<'a> {
+struct BitSetIter<'a> {
     set: &'a BitSet,
     w: usize,
     mask: u32,
