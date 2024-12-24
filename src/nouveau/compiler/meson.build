@@ -65,6 +65,8 @@ _nak_bindings_rs = rust.bindgen(
     '--allowlist-function', 'drm.*',
     '--allowlist-function', 'nak_.*',
     '--allowlist-function', 'nouveau_ws_.*',
+    # provided through compiler::bindings::*
+    '--blocklist-type', 'glsl_.*',
     '--no-prepend-enum-name',
     '--with-derive-default',
   ],
