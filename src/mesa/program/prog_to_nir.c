@@ -55,7 +55,6 @@ struct ptn_compile {
    nir_variable *parameters;
    nir_variable *input_vars[VARYING_SLOT_MAX];
    nir_variable *output_vars[VARYING_SLOT_MAX];
-   nir_variable *sysval_vars[SYSTEM_VALUE_MAX];
    nir_variable *sampler_vars[32]; /* matches number of bits in TexSrcUnit */
    nir_def **output_regs;
    nir_def **temp_regs;
@@ -91,15 +90,6 @@ ptn_get_src(struct ptn_compile *c, const struct prog_src_register *prog_src)
       assert(prog_src->Index >= 0 && prog_src->Index < VARYING_SLOT_MAX);
 
       nir_variable *var = c->input_vars[prog_src->Index];
-      src.src = nir_src_for_ssa(nir_load_var(b, var));
-      break;
-   }
-   case PROGRAM_SYSTEM_VALUE: {
-      assert(!prog_src->RelAddr);
-
-      assert(prog_src->Index >= 0 && prog_src->Index < SYSTEM_VALUE_MAX);
-
-      nir_variable *var = c->sysval_vars[prog_src->Index];
       src.src = nir_src_for_ssa(nir_load_var(b, var));
       break;
    }
@@ -796,13 +786,6 @@ setup_registers_and_variables(struct ptn_compile *c)
       }
 
       c->input_vars[i] = var;
-   }
-
-   /* Create system value variables */
-   int i;
-   BITSET_FOREACH_SET(i, c->prog->info.system_values_read, SYSTEM_VALUE_MAX) {
-      c->sysval_vars[i] = nir_create_variable_with_location(b->shader, nir_var_system_value,
-                                                            i, glsl_vec4_type());
    }
 
    /* Create output registers and variables. */
