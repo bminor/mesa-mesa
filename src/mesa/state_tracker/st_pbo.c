@@ -394,16 +394,14 @@ create_fs(struct st_context *st, bool download,
           enum pipe_format format,
           bool need_layer)
 {
-   struct pipe_screen *screen = st->screen;
    const nir_shader_compiler_options *options =
       st_get_nir_compiler_options(st, MESA_SHADER_FRAGMENT);
-   bool pos_is_sysval =
-      screen->get_param(screen, PIPE_CAP_FS_POSITION_IS_SYSVAL);
 
    nir_builder b = nir_builder_init_simple_shader(MESA_SHADER_FRAGMENT, options,
                                                   download ?
                                                   "st/pbo download FS" :
                                                   "st/pbo upload FS");
+   b.shader->info.io_lowered = true;
 
    nir_def *zero = nir_imm_int(&b, 0);
 
@@ -413,14 +411,18 @@ create_fs(struct st_context *st, bool download,
    b.shader->num_uniforms += 4;
    nir_def *param = nir_load_var(&b, param_var);
 
-   nir_variable *fragcoord;
-   if (pos_is_sysval)
-      fragcoord = nir_create_variable_with_location(b.shader, nir_var_system_value,
-                                                    SYSTEM_VALUE_FRAG_COORD, glsl_vec4_type());
-   else
-      fragcoord = nir_create_variable_with_location(b.shader, nir_var_shader_in,
-                                                    VARYING_SLOT_POS, glsl_vec4_type());
-   nir_def *coord = nir_load_var(&b, fragcoord);
+   nir_def *coord;
+   if (st->ctx->Const.GLSLFragCoordIsSysVal) {
+      nir_variable *fragcoord =
+         nir_create_variable_with_location(b.shader, nir_var_system_value,
+                                           SYSTEM_VALUE_FRAG_COORD, glsl_vec4_type());
+      coord = nir_load_var(&b, fragcoord);
+   } else {
+      nir_def *baryc = nir_load_barycentric_pixel(&b, 32, .interp_mode = INTERP_MODE_SMOOTH);
+      coord = nir_load_interpolated_input(&b, 4, 32, baryc,
+                                          nir_imm_int(&b, 0),
+                                          .io_semantics.location = VARYING_SLOT_POS);
+   }
 
    /* When st->pbo.layers == false, it is guaranteed we only have a single
     * layer. But we still need the "layer" variable to add the "array"
@@ -435,12 +437,10 @@ create_fs(struct st_context *st, bool download,
                     target == PIPE_TEXTURE_CUBE_ARRAY) {
       if (need_layer) {
          assert(st->pbo.layers);
-         nir_variable *var = nir_create_variable_with_location(b.shader, nir_var_shader_in,
-                                                               VARYING_SLOT_LAYER, glsl_int_type());
-         var->data.interpolation = INTERP_MODE_FLAT;
-         layer = nir_load_var(&b, var);
-      }
-      else {
+         layer = nir_load_input(&b, 1, 32, nir_imm_int(&b, 0),
+                                .dest_type = nir_type_int32,
+                                .io_semantics.location = VARYING_SLOT_LAYER);
+      } else {
          layer = zero;
       }
    }
@@ -562,11 +562,8 @@ create_fs(struct st_context *st, bool download,
                             .src_type = nir_types[conversion],
                             .image_dim = GLSL_SAMPLER_DIM_BUF);
    } else {
-      nir_variable *color =
-         nir_create_variable_with_location(b.shader, nir_var_shader_out,
-                                           FRAG_RESULT_COLOR, glsl_vec4_type());
-
-      nir_store_var(&b, color, result, TGSI_WRITEMASK_XYZW);
+      nir_store_output(&b, result, nir_imm_int(&b, 0),
+                       .io_semantics.location = FRAG_RESULT_COLOR);
    }
 
    return st_nir_finish_builtin_shader(st, b.shader);
