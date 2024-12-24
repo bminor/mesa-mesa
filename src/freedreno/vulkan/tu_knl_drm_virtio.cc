@@ -881,6 +881,7 @@ virtio_queue_submit(struct tu_queue *queue, void *_submit,
    struct vdrm_execbuf_params params;
 #if HAVE_PERFETTO
    struct tu_perfetto_clocks clocks;
+   uint64_t start_ts = tu_perfetto_begin_submit();
 #endif
 
    /* It would be nice to not need to defer this, but virtio_device_init()
@@ -1024,7 +1025,8 @@ virtio_queue_submit(struct tu_queue *queue, void *_submit,
    }
 
 #if HAVE_PERFETTO
-   clocks = tu_perfetto_submit(queue->device, queue->device->submit_count, NULL);
+   clocks = tu_perfetto_end_submit(queue, queue->device->submit_count,
+                                   start_ts, NULL);
    gpu_offset = clocks.gpu_ts_offset;
 #endif
 

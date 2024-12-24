@@ -1084,6 +1084,10 @@ kgsl_queue_submit(struct tu_queue *queue, void *_submit,
    struct tu_kgsl_queue_submit *submit =
       (struct tu_kgsl_queue_submit *)_submit;
 
+#if HAVE_PERFETTO
+   uint64_t start_ts = tu_perfetto_begin_submit();
+#endif
+
    if (submit->commands.size == 0) {
       const struct kgsl_syncobj *wait_semaphores[wait_count + 1];
       for (uint32_t i = 0; i < wait_count; i++) {
@@ -1257,7 +1261,8 @@ kgsl_queue_submit(struct tu_queue *queue, void *_submit,
          .gpu_ts_offset = gpu_offset,
       };
 
-      clocks = tu_perfetto_submit(queue->device, queue->device->submit_count, &clocks);
+      clocks = tu_perfetto_end_submit(queue, queue->device->submit_count,
+                                      start_ts, &clocks);
       gpu_offset = clocks.gpu_ts_offset;
    }
 #endif
