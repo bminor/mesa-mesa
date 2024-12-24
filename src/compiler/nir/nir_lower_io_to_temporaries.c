@@ -336,9 +336,10 @@ nir_lower_io_to_temporaries(nir_shader *shader, nir_function_impl *entrypoint,
 {
    struct lower_io_state state;
 
-   if (shader->info.stage == MESA_SHADER_TESS_CTRL ||
-       shader->info.stage == MESA_SHADER_TASK ||
-       shader->info.stage == MESA_SHADER_MESH) {
+   if (shader->info.stage != MESA_SHADER_VERTEX &&
+       shader->info.stage != MESA_SHADER_TESS_EVAL &&
+       shader->info.stage != MESA_SHADER_GEOMETRY &&
+       shader->info.stage != MESA_SHADER_FRAGMENT) {
       nir_metadata_preserve(entrypoint, nir_metadata_all);
       return false;
    }
