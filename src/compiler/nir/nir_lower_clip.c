@@ -109,7 +109,6 @@ store_clipdist_output(nir_builder *b, nir_variable *out, int location, int locat
       nir_store_output(b,
                        val[i] ? val[i] : nir_imm_zero(b, 1, 32),
                        nir_imm_int(b, location_offset),
-                       .src_type = nir_type_float32,
                        .write_mask = 0x1,
                        .component = i,
                        .io_semantics = semantics,
@@ -121,11 +120,6 @@ static void
 load_clipdist_input(nir_builder *b, nir_variable *in, int location_offset,
                     nir_def **val, bool use_load_interp)
 {
-   nir_io_semantics semantics = {
-      .location = in->data.location,
-      .num_slots = 1,
-   };
-
    nir_def *load;
    if (use_load_interp) {
       /* TODO: use sample when per-sample shading? */
@@ -134,14 +128,12 @@ load_clipdist_input(nir_builder *b, nir_variable *in, int location_offset,
       load = nir_load_interpolated_input(
          b, 4, 32, barycentric, nir_imm_int(b, location_offset),
          .base = in->data.driver_location,
-         .dest_type = nir_type_float32,
-         .io_semantics = semantics);
+         .io_semantics.location = in->data.location);
 
    } else {
       load = nir_load_input(b, 4, 32, nir_imm_int(b, location_offset),
                             .base = in->data.driver_location,
-                            .dest_type = nir_type_float32,
-                            .io_semantics = semantics);
+                            .io_semantics.location = in->data.location);
    }
 
    val[0] = nir_channel(b, load, 0);

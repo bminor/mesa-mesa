@@ -698,8 +698,7 @@ lower_interpolate_at(nir_intrinsic_instr *intrin, struct lower_io_state *state,
                                   offset,
                                   .base = var->data.driver_location,
                                   .component = component,
-                                  .io_semantics = semantics,
-                                  .dest_type = nir_type_float | intrin->def.bit_size);
+                                  .io_semantics = semantics);
 
    return load;
 }

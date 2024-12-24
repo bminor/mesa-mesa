@@ -38,10 +38,7 @@ lower_point_size_mov_after(nir_builder *b, nir_variable *in)
    load = nir_fclamp(b, nir_channel(b, load, 0), nir_channel(b, load, 1), nir_channel(b, load, 2));
    if (b->shader->info.io_lowered) {
       nir_store_output(b, load, nir_imm_int(b, 0),
-                       .io_semantics.location = VARYING_SLOT_PSIZ,
-                       .io_semantics.num_slots = 1,
-                       .src_type = nir_type_float32
-      );
+                       .io_semantics.location = VARYING_SLOT_PSIZ);
    } else {
       nir_variable *out = NULL;
       /* the existing output can't be removed in order to avoid breaking xfb.

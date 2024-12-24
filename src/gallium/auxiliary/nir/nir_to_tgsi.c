@@ -3812,13 +3812,9 @@ nir_lower_primid_sysval_to_input_lower(nir_builder *b, nir_instr *instr, void *d
    nir_variable *var = nir_get_variable_with_location(b->shader, nir_var_shader_in,
                                                       VARYING_SLOT_PRIMITIVE_ID, glsl_uint_type());
 
-   nir_io_semantics semantics = {
-      .location = var->data.location,
-       .num_slots = 1
-   };
    return nir_load_input(b, 1, 32, nir_imm_int(b, 0),
                          .base = var->data.driver_location,
-                         .io_semantics = semantics);
+                         .io_semantics.location = var->data.location);
 }
 
 static bool
