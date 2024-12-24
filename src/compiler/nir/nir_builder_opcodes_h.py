@@ -151,6 +151,14 @@ _nir_build_${name}(nir_builder *build${intrinsic_decl_list(opcode)})
    if (!indices.io_semantics.num_slots)
       indices.io_semantics.num_slots = 1;
    % endif
+   % if IO_SEMANTICS in opcode.indices and DEST_TYPE in opcode.indices and opcode.has_dest:
+   if (!indices.dest_type)
+      indices.dest_type = (nir_alu_type)(nir_type_float | bit_size);
+   % endif
+   % if IO_SEMANTICS in opcode.indices and SRC_TYPE in opcode.indices and opcode.num_srcs > 0:
+   if (!indices.src_type)
+      indices.src_type = (nir_alu_type)(nir_type_float | src0->bit_size);
+   % endif
    % for index in opcode.indices:
    nir_intrinsic_set_${index.name}(intrin, indices.${index.name});
    % endfor
@@ -214,7 +222,7 @@ nir_${prefix}le_imm(nir_builder *build, nir_def *src1, uint64_t src2)
 #endif /* _NIR_BUILDER_OPCODES_ */"""
 
 from nir_opcodes import opcodes, type_size, type_base_type
-from nir_intrinsics import INTR_OPCODES, WRITE_MASK, ALIGN_MUL, IO_SEMANTICS
+from nir_intrinsics import INTR_OPCODES, WRITE_MASK, ALIGN_MUL, IO_SEMANTICS, DEST_TYPE, SRC_TYPE
 from mako.template import Template
 
 # List of intrinsics that also need a nir_build_ prefixed factory macro.
@@ -243,4 +251,6 @@ print(Template(template).render(opcodes=opcodes,
                                 WRITE_MASK=WRITE_MASK,
                                 ALIGN_MUL=ALIGN_MUL,
                                 IO_SEMANTICS=IO_SEMANTICS,
+                                DEST_TYPE=DEST_TYPE,
+                                SRC_TYPE=SRC_TYPE,
                                 build_prefixed_intrinsics=build_prefixed_intrinsics))
