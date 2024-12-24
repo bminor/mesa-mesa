@@ -51,7 +51,7 @@ impl BitSet {
     }
 
     pub fn iter(&self) -> BitSetIter<'_> {
-        BitSetIter::new(self, 0)
+        BitSetIter::new(self)
     }
 
     pub fn get_word(&self, word: usize) -> u32 {
@@ -227,11 +227,11 @@ pub struct BitSetIter<'a> {
 }
 
 impl<'a> BitSetIter<'a> {
-    fn new(set: &'a BitSet, start: usize) -> Self {
+    fn new(set: &'a BitSet) -> Self {
         Self {
             set,
-            w: start / 32,
-            mask: u32::MAX << (start % 32),
+            w: 0,
+            mask: u32::MAX,
         }
     }
 }
