@@ -104,16 +104,11 @@ impl RegLatencySM75 {
 
             Op::HMnMx2(_) => RedirectedFP16, // not in docs
             // let in for documentation purposes
-            //            Op::Hmma(h) => {
-            //              match h.mat_size {
-            //                  HmmaSize::M16N8K4 => match h.dst_type {
-            //                      FloatType::F16 => RedirectedHMMA_884_F16,
-            //                      _ => RedirectedHMMA_884_F32
-            //                  }
-            //                  HmmaSize::M16N8K8 => RedirectedHMMA_1688,
-            //                  HmmaSize::M16N8K16 => RedirectedHMMA_16816,
-            //                }
-            //           }
+            Op::Hmma(h) => match (h.mat_size, h.dst_type) {
+                (HmmaSize::M16N8K8, _) => RedirectedHMMA_1688,
+                (HmmaSize::M16N8K16, _) => RedirectedHMMA_16816,
+                _ => panic!("Illegal HMMA in reg category {}", h),
+            },
             Op::Ipa(_) => Decoupled,
             Op::MuFu(_) => Decoupled,
 
@@ -168,8 +163,7 @@ impl RegLatencySM75 {
             // PMTRIG => CoupledDisp64
             // CSMTEST =>  CoupledAlu,
             Op::Bar(_) => Decoupled,
-            // Remove when Imma added
-            //Op::Imma(_) => IMMA,
+            Op::Imma(_) => IMMA,
             Op::IDp4(_) => CoupledFMA,
             Op::BClear(_) => Decoupled,
             Op::Bra(_) => Decoupled,

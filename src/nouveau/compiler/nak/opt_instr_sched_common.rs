@@ -182,6 +182,9 @@ pub fn side_effect_type(op: &Op) -> SideEffect {
         | Op::LdTram(_)
         | Op::MemBar(_) => SideEffect::Memory,
 
+        // Matrix ops
+        Op::Imma(_) | Op::Hmma(_) => SideEffect::None,
+
         // Control-flow ops
         Op::BClear(_)
         | Op::Break(_)
@@ -318,6 +321,8 @@ pub fn estimate_variable_latency(sm: u8, op: &Op) -> u32 {
         | Op::PixLd(_)
         | Op::S2R(_)
         | Op::Match(_) => 16,
+
+        Op::Hmma(_) | Op::Imma(_) => 22,
 
         _ => panic!("Unknown variable latency op {op}"),
     }

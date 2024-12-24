@@ -144,16 +144,21 @@ impl RegLatencySM80 {
 
             Op::HSet2(_) | Op::HSetP2(_) | Op::HMnMx2(_) => FP16_Alu,
             // let in for documentation purposes
-            //Op::Hmma(h) => {
-            //match h.mat_size {
-            //        HmmaSize::M16N8K4 => match h.dst_type {
-            //            FloatType::F16 => MMA_1x_Collect,
-            //            _ => MMA_2x_Collect,
-            //        }
-            //        HmmaSize::M16N8K8 => MMA_1x_Collect,
-            //        HmmaSize::M16N8K16 => MMA_2x_Collect,
-            //    }
-            //}
+            Op::Hmma(h) => match (h.mat_size, h.dst_type, h.src_type) {
+                (HmmaSize::M16N8K16, FloatType::F32, FloatType::F16) => {
+                    MMA_2x_collect
+                }
+                // (HmmaSize::M16N8K16, FloatType::F32, FloatType::BF16) => MMA_2x_collect,
+                // (HmmaSize::M16N8K8, FloatType::F32, FloatType::TF32) => MMA_2x_collect,
+                (HmmaSize::M16N8K8, FloatType::F32, FloatType::F16) => {
+                    MMA_1x_collect
+                }
+                // (HmmaSize::M16N8K8, FloatType::F32, FloatType::BF16) => MMA_1x_collect,
+                // (HmmaSize::M16N8K4, FloatType::F32, FloatType::TF32) => MMA_1x_collect,
+                (HmmaSize::M16N8K16, FloatType::F16, _) => MMA_2x_collect,
+                (HmmaSize::M16N8K8, FloatType::F16, _) => MMA_1x_collect,
+                _ => panic!("Illegal HMMA in reg category {}", h),
+            },
             Op::Ipa(_) => DecoupledAgu,
             Op::MuFu(_) => Decoupled,
 
@@ -202,7 +207,17 @@ impl RegLatencySM80 {
             // CSMTEST =>  CoupledAlu,
             Op::Bar(_) => DecoupledAgu,
             // Remove when Imma added
-            //Op::Imma(_) => IMMA,
+            Op::Imma(i) => match (i.mat_size, i.src_types[0]) {
+                (ImmaSize::M16N8K64, _) => MMA_2x_collect,
+                (ImmaSize::M16N8K32, IntType::I8 | IntType::U8) => {
+                    MMA_2x_collect
+                }
+                // (ImmaSize::M16N8K32, IntType::I4 | IntType::U4) => MMA_1x_collect,
+                (ImmaSize::M16N8K16, _) => MMA_1x_collect,
+                (ImmaSize::M8N8K32, _) => IMMA_88,
+                (ImmaSize::M8N8K16, _) => IMMA_88,
+                _ => panic!("Illegal IMMA in reg category {}", i),
+            },
             Op::IDp4(_) => CoupledFMA,
             Op::BClear(_) => Decoupled,
             Op::Bra(_) => Decoupled,

@@ -3832,6 +3832,96 @@ impl SM70Op for OpMatch {
     }
 }
 
+impl SM70Op for OpImma {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        legalize_ext_instr(self, b);
+    }
+
+    fn encode(&self, e: &mut SM70Encoder<'_>) {
+        assert!(e.sm >= 75);
+
+        e.set_opcode(0x237);
+        e.set_dst(&self.dst);
+        e.set_reg_src(24..32, &self.srcs[0]);
+        e.set_reg_src(32..40, &self.srcs[1]);
+        e.set_reg_src(64..72, &self.srcs[2]);
+        e.set_bit(74, true); // SRC1.COL
+
+        assert!(self.mat_size == ImmaSize::M8N8K16 || e.sm >= 80);
+        e.set_field2(
+            75..76,
+            85..87,
+            match self.mat_size {
+                ImmaSize::M8N8K16 => 0u8,
+                ImmaSize::M8N8K32 => 2u8,
+                ImmaSize::M16N8K16 => 4u8,
+                ImmaSize::M16N8K32 => 5u8,
+                ImmaSize::M16N8K64 => 6u8,
+            },
+        );
+
+        e.set_bit(76, self.src_types[0].is_signed());
+        e.set_bit(78, self.src_types[1].is_signed());
+        e.set_bit(82, self.saturate);
+
+        match self.mat_size {
+            ImmaSize::M8N8K32 | ImmaSize::M16N8K64 => {
+                assert_eq!(self.src_types[0].bits(), 4);
+                assert_eq!(self.src_types[1].bits(), 4);
+            }
+            ImmaSize::M16N8K32 => {
+                assert!(matches!(self.src_types[0].bits(), 4 | 8));
+                assert!(matches!(self.src_types[1].bits(), 4 | 8));
+            }
+            ImmaSize::M8N8K16 | ImmaSize::M16N8K16 => {
+                assert_eq!(self.src_types[0].bits(), 8);
+                assert_eq!(self.src_types[1].bits(), 8);
+            }
+        }
+        e.set_bit(83, self.src_types[0].bits() == 4);
+        e.set_bit(84, self.src_types[1].bits() == 4);
+    }
+}
+
+impl SM70Op for OpHmma {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        legalize_ext_instr(self, b);
+    }
+
+    fn encode(&self, e: &mut SM70Encoder<'_>) {
+        assert!(e.sm >= 75);
+
+        e.set_opcode(0x23c);
+        e.set_dst(&self.dst);
+        e.set_reg_src(24..32, &self.srcs[0]);
+        e.set_reg_src(32..40, &self.srcs[1]);
+        e.set_reg_src(64..72, &self.srcs[2]);
+
+        assert!(self.mat_size != HmmaSize::M16N8K4 || e.sm >= 80);
+        e.set_field2(
+            75..76,
+            78..79,
+            match self.mat_size {
+                HmmaSize::M16N8K8 => 0u8,
+                HmmaSize::M16N8K16 => 1u8,
+                HmmaSize::M16N8K4 => 2u8,
+            },
+        );
+
+        assert!(matches!(self.dst_type, FloatType::F16 | FloatType::F32));
+        e.set_bit(76, self.dst_type == FloatType::F32);
+        e.set_field(
+            82..84,
+            match self.src_type {
+                FloatType::F16 => 0u8,
+                // FloatType::BF16 => 1u8,
+                // FloatType::TF32 => 2u8,
+                _ => unreachable!("unsupported src type!"),
+            },
+        )
+    }
+}
+
 macro_rules! as_sm70_op_match {
     ($op: expr) => {
         match $op {
@@ -3920,6 +4010,8 @@ macro_rules! as_sm70_op_match {
             Op::OutFinal(op) => op,
             Op::Vote(op) => op,
             Op::Match(op) => op,
+            Op::Hmma(op) => op,
+            Op::Imma(op) => op,
             _ => panic!("Unsupported op: {}", $op),
         }
     };
