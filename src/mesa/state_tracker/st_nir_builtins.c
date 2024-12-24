@@ -64,6 +64,7 @@ st_nir_finish_builtin_nir(struct st_context *st, nir_shader *nir)
    }
 
    nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
+   nir_recompute_io_bases(nir, nir_var_shader_in | nir_var_shader_out);
 
    st_nir_assign_vs_in_locations(nir);
    st_nir_assign_varying_locations(st, nir);
