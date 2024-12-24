@@ -1278,6 +1278,15 @@ nir_unpack_bits(nir_builder *b, nir_def *src, unsigned dest_bit_size)
          return nir_unpack_64_2x32(b, src);
       case 16:
          return nir_unpack_64_4x16(b, src);
+      case 8: {
+         nir_def *split = nir_unpack_64_2x32(b, src);
+         nir_def *lo = nir_unpack_32_4x8(b, nir_channel(b, split, 0));
+         nir_def *hi = nir_unpack_32_4x8(b, nir_channel(b, split, 1));
+         return nir_vec8(b, nir_channel(b, lo, 0), nir_channel(b, lo, 1),
+                         nir_channel(b, lo, 2), nir_channel(b, lo, 3),
+                         nir_channel(b, hi, 0), nir_channel(b, hi, 1),
+                         nir_channel(b, hi, 2), nir_channel(b, hi, 3));
+      }
       default:
          break;
       }
