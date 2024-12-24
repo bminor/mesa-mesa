@@ -1396,13 +1396,13 @@ bool r600_common_screen_init(struct r600_common_screen *rscreen,
 		.lower_ufind_msb = true,
 		.lower_to_scalar = true,
 		.lower_to_scalar_filter = r600_lower_to_scalar_instr_filter,
-		.linker_ignore_precision = true,
 		.lower_fpow = true,
 		.lower_int64_options = ~0,
 		.lower_cs_local_index_to_id = true,
 		.lower_uniforms_to_ubo = true,
 		.lower_image_offset_to_range_base = 1,
 		.vectorize_tess_levels = 1,
+		.io_options = nir_io_mediump_is_32bit,
 	};
 
 	rscreen->nir_options = nir_options;

@@ -653,7 +653,7 @@ gather_varying_component_info(nir_shader *producer, nir_shader *consumer,
             vc_info->is_32bit = glsl_type_is_32bit(type);
             vc_info->is_patch = in_var->data.patch;
             vc_info->is_per_primitive = in_var->data.per_primitive;
-            vc_info->is_mediump = !producer->options->linker_ignore_precision &&
+            vc_info->is_mediump = !(producer->options->io_options & nir_io_mediump_is_32bit) &&
                                   (in_var->data.precision == GLSL_PRECISION_MEDIUM ||
                                    in_var->data.precision == GLSL_PRECISION_LOW);
             vc_info->is_intra_stage_only = false;
@@ -719,7 +719,7 @@ gather_varying_component_info(nir_shader *producer, nir_shader *consumer,
                vc_info->is_32bit = glsl_type_is_32bit(type);
                vc_info->is_patch = out_var->data.patch;
                vc_info->is_per_primitive = out_var->data.per_primitive;
-               vc_info->is_mediump = !producer->options->linker_ignore_precision &&
+               vc_info->is_mediump = !(producer->options->io_options & nir_io_mediump_is_32bit) &&
                                      (out_var->data.precision == GLSL_PRECISION_MEDIUM ||
                                       out_var->data.precision == GLSL_PRECISION_LOW);
                vc_info->is_intra_stage_only = true;

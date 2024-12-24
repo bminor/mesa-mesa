@@ -157,12 +157,11 @@ nir_options = {
    .max_unroll_iterations = 32, /* arbitrary */
    .force_indirect_unrolling = (nir_var_shader_in | nir_var_shader_out),
    .lower_device_index_to_zero = true,
-   .linker_ignore_precision = true,
    .support_16bit_alu = true,
    .preserve_mediump = true,
    .discard_is_demote = true,
    .scalarize_ddx = true,
-   .io_options = nir_io_dont_use_pos_for_non_fs_varyings,
+   .io_options = nir_io_dont_use_pos_for_non_fs_varyings | nir_io_mediump_is_32bit,
 };
 
 const nir_shader_compiler_options*
