@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 use std::ops::{
-    BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not, Range,
+    BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Range,
 };
 
 #[derive(Clone)]
@@ -217,18 +217,6 @@ impl BitXor<BitSet> for BitSet {
     fn bitxor(self, rhs: BitSet) -> BitSet {
         let mut res = self;
         res.bitxor_assign(rhs);
-        res
-    }
-}
-
-impl Not for BitSet {
-    type Output = BitSet;
-
-    fn not(self) -> BitSet {
-        let mut res = self;
-        for w in 0..res.words.len() {
-            res.words[w] = !res.words[w];
-        }
         res
     }
 }
