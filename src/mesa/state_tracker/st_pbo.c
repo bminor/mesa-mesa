@@ -283,36 +283,37 @@ st_pbo_draw(struct st_context *st, const struct st_pbo_addresses *addr,
 void *
 st_pbo_create_vs(struct st_context *st)
 {
-   const struct glsl_type *vec4 = glsl_vec4_type();
    const nir_shader_compiler_options *options =
       st_get_nir_compiler_options(st, MESA_SHADER_VERTEX);
 
    nir_builder b = nir_builder_init_simple_shader(MESA_SHADER_VERTEX, options,
                                                   "st/pbo VS");
+   b.shader->info.io_lowered = true;
 
-   nir_variable *in_pos = nir_create_variable_with_location(b.shader, nir_var_shader_in,
-                                                             VERT_ATTRIB_POS, vec4);
-
-   nir_variable *out_pos = nir_create_variable_with_location(b.shader, nir_var_shader_out,
-                                                             VARYING_SLOT_POS, vec4);
-
-   if (!st->pbo.use_gs)
-      nir_copy_var(&b, out_pos, in_pos);
+   if (!st->pbo.use_gs) {
+      nir_def *pos = nir_load_input(&b, 4, 32, nir_imm_int(&b, 0),
+                                    .io_semantics.location = VERT_ATTRIB_POS);
+      nir_store_output(&b, pos, nir_imm_int(&b, 0),
+                       .io_semantics.location = VARYING_SLOT_POS);
+   }
 
    if (st->pbo.layers) {
-      nir_variable *instance_id = nir_create_variable_with_location(b.shader, nir_var_system_value,
-                                                                    SYSTEM_VALUE_INSTANCE_ID, glsl_int_type());
+      nir_variable *instance_id_var =
+         nir_create_variable_with_location(b.shader, nir_var_system_value,
+                                           SYSTEM_VALUE_INSTANCE_ID, glsl_int_type());
+      nir_def *instance_id = nir_load_var(&b, instance_id_var);
 
       if (st->pbo.use_gs) {
-         nir_store_var(&b, out_pos,
-                       nir_vector_insert_imm(&b, nir_load_var(&b, in_pos),
-                                             nir_i2f32(&b, nir_load_var(&b, instance_id)), 2),
-                       0xf);
+         nir_def *pos = nir_load_input(&b, 4, 32, nir_imm_int(&b, 0),
+                                       .io_semantics.location = VERT_ATTRIB_POS);
+         nir_store_output(&b, nir_vector_insert_imm(&b, pos,
+                                                    nir_i2f32(&b, instance_id), 2),
+                          nir_imm_int(&b, 0),
+                          .io_semantics.location = VARYING_SLOT_POS);
       } else {
-         nir_variable *out_layer = nir_create_variable_with_location(b.shader, nir_var_shader_out,
-                                                                     VARYING_SLOT_LAYER, glsl_int_type());
-         out_layer->data.interpolation = INTERP_MODE_NONE;
-         nir_copy_var(&b, out_layer, instance_id);
+         nir_store_output(&b, instance_id, nir_imm_int(&b, 0),
+                          .src_type = nir_type_int32,
+                          .io_semantics.location = VARYING_SLOT_LAYER);
       }
    }
 
@@ -334,29 +335,23 @@ st_pbo_create_gs(struct st_context *st)
    b.shader->info.gs.vertices_out = 3;
    b.shader->info.gs.invocations = 1;
    b.shader->info.gs.active_stream_mask = 1;
-
-   const struct glsl_type *in_type = glsl_array_type(glsl_vec4_type(), 3, 0);
-   nir_variable *in_pos = nir_variable_create(b.shader, nir_var_shader_in, in_type, "in_pos");
-   in_pos->data.location = VARYING_SLOT_POS;
-   b.shader->info.inputs_read |= VARYING_BIT_POS;
-
-   nir_variable *out_pos = nir_create_variable_with_location(b.shader, nir_var_shader_out,
-                                                             VARYING_SLOT_POS, glsl_vec4_type());
-
-   b.shader->info.outputs_written |= VARYING_BIT_POS;
-
-   nir_variable *out_layer = nir_create_variable_with_location(b.shader, nir_var_shader_out,
-                                                               VARYING_SLOT_LAYER, glsl_int_type());
-   out_layer->data.interpolation = INTERP_MODE_NONE;
-   b.shader->info.outputs_written |= VARYING_BIT_LAYER;
+   b.shader->info.io_lowered = true;
 
    for (int i = 0; i < 3; ++i) {
-      nir_def *pos = nir_load_array_var_imm(&b, in_pos, i);
+      nir_def *pos =
+         nir_load_per_vertex_input(&b, 4, 32, nir_imm_int(&b, i),
+                                   nir_imm_int(&b, 0),
+                                   .io_semantics.location = VARYING_SLOT_POS);
 
-      nir_store_var(&b, out_pos, nir_vector_insert_imm(&b, pos, nir_imm_float(&b, 0.0), 2), 0xf);
+      nir_store_output(&b, nir_vector_insert_imm(&b, pos, nir_imm_float(&b, 0.0), 2),
+                       nir_imm_int(&b, 0),
+                       .io_semantics.location = VARYING_SLOT_POS);
+
       /* out_layer.x = f2i(in_pos[i].z) */
-      nir_store_var(&b, out_layer, nir_f2i32(&b, nir_channel(&b, pos, 2)), 0x1);
-
+      nir_store_output(&b, nir_f2i32(&b, nir_channel(&b, pos, 2)),
+                       nir_imm_int(&b, 0),
+                       .src_type = nir_type_int32,
+                       .io_semantics.location = VARYING_SLOT_LAYER);
       nir_emit_vertex(&b);
    }
 
