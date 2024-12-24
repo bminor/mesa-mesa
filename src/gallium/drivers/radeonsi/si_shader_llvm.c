@@ -840,12 +840,12 @@ bool si_llvm_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *
       struct si_shader prev_shader = {};
 
       bool free_nir;
-      nir = si_get_prev_stage_nir_shader(shader, &prev_shader, ctx.args, &free_nir);
+      nir_shader *prev_nir = si_get_prev_stage_nir_shader(shader, &prev_shader, ctx.args, &free_nir);
 
       struct ac_llvm_pointer parts[2];
       parts[1] = ctx.main_fn;
 
-      if (!si_llvm_translate_nir(&ctx, &prev_shader, nir, free_nir)) {
+      if (!si_llvm_translate_nir(&ctx, &prev_shader, prev_nir, free_nir)) {
          si_llvm_dispose(&ctx);
          return false;
       }
