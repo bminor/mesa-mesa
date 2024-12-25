@@ -2229,37 +2229,17 @@ si_init_gs_output_info(struct si_shader_info *info, struct si_gs_output_info *ou
    ac_info->types_16bit_lo = ac_info->types_16bit_hi = NULL;
 }
 
-static void get_nir_shader(struct si_shader *shader, struct si_nir_shader_ctx *ctx)
+/* Run passes that eliminate code and affect shader_info. These should be run before linking
+ * and shader_info gathering. Lowering passes can be run here too, but only if they lead to
+ * better code or lower undesirable representations (like derefs). Lowering passes that prevent
+ * linking optimizations or destroy shader_info shouldn't be run here.
+ */
+static bool run_pre_link_optimization_passes(struct si_shader *shader, nir_shader *nir,
+                                             bool *opts_not_run)
 {
    struct si_shader_selector *sel = shader->selector;
    const union si_shader_key *key = &shader->key;
-
-   memset(ctx, 0, sizeof(*ctx));
-   nir_shader *nir;
-
-   if (sel->nir) {
-      ctx->nir = nir = sel->nir;
-   } else if (sel->nir_binary) {
-      ctx->nir = nir = si_deserialize_shader(sel);
-      ctx->free_nir = true;
-   } else {
-      return;
-   }
-
    bool progress = false;
-   bool opts_not_run = true;
-
-   if (unlikely(should_print_nir(nir))) {
-      /* Modify the shader's name so that each variant gets its own name. */
-      nir->info.name = ralloc_asprintf(nir, "%s-%08x", nir->info.name,
-                                       _mesa_hash_data(key, sizeof(*key)));
-
-      /* Dummy pass to get the starting point. */
-      printf("nir_dummy_pass\n");
-      nir_print_shader(nir, stdout);
-   }
-
-   si_init_shader_args(shader, &ctx->args, &nir->info);
 
    /* Kill outputs according to the shader key. */
    if (nir->info.stage <= MESA_SHADER_GEOMETRY)
@@ -2364,8 +2344,8 @@ static void get_nir_shader(struct si_shader *shader, struct si_nir_shader_ctx *c
             NIR_PASS(progress, nir, si_nir_emit_polygon_stipple);
 
          if (progress) {
-            si_nir_opts(sel->screen, nir, opts_not_run);
-            opts_not_run = false;
+            si_nir_opts(sel->screen, nir, *opts_not_run);
+            *opts_not_run = false;
             progress = false;
          }
 
@@ -2401,9 +2381,28 @@ static void get_nir_shader(struct si_shader *shader, struct si_nir_shader_ctx *c
          };
          NIR_PASS(progress, nir, ac_nir_lower_ps_early, &early_options);
       }
-
-      NIR_PASS(progress, nir, nir_lower_fragcoord_wtrans);
    }
+
+   return progress;
+}
+
+/* Late optimization passes and lowering passes. The majority of lowering passes are here.
+ * These passes should have no impact on linking optimizations and shouldn't affect shader_info
+ * (those should be run before this) because any changes in shader_info won't be reflected
+ * in hw registers from now on.
+ */
+static void run_late_optimization_and_lowering_passes(struct si_shader *shader,
+                                                      struct si_nir_shader_ctx *ctx,
+                                                      bool progress, bool opts_not_run)
+{
+   struct si_shader_selector *sel = shader->selector;
+   const union si_shader_key *key = &shader->key;
+   nir_shader *nir = ctx->nir;
+
+   si_init_shader_args(shader, &ctx->args, &nir->info);
+
+   if (nir->info.stage == MESA_SHADER_FRAGMENT)
+      NIR_PASS(progress, nir, nir_lower_fragcoord_wtrans);
 
    NIR_PASS(progress, nir, ac_nir_lower_tex,
             &(ac_nir_lower_tex_options){
@@ -2648,6 +2647,40 @@ static void get_nir_shader(struct si_shader *shader, struct si_nir_shader_ctx *c
     * 200 is tuned for Viewperf. It should be done last.
     */
    NIR_PASS_V(nir, nir_group_loads, nir_group_same_resource_only, 200);
+}
+
+static void get_input_nir(struct si_shader *shader, struct si_nir_shader_ctx *ctx)
+{
+   struct si_shader_selector *sel = shader->selector;
+   const union si_shader_key *key = &shader->key;
+
+   memset(ctx, 0, sizeof(*ctx));
+   ctx->free_nir = !sel->nir && sel->nir_binary;
+   ctx->nir = sel->nir ? sel->nir : (sel->nir_binary ? si_deserialize_shader(sel) : NULL);
+   assert(ctx->nir);
+
+   if (unlikely(should_print_nir(ctx->nir))) {
+      /* Modify the shader's name so that each variant gets its own name. */
+      ctx->nir->info.name = ralloc_asprintf(ctx->nir, "%s-%08x", ctx->nir->info.name,
+                                            _mesa_hash_data(key, sizeof(*key)));
+
+      /* Dummy pass to get the starting point. */
+      printf("nir_dummy_pass\n");
+      nir_print_shader(ctx->nir, stdout);
+   }
+}
+
+static void get_nir_shader(struct si_shader *shader, struct si_nir_shader_ctx *ctx)
+{
+   bool opts_not_run = true;
+
+   get_input_nir(shader, ctx);
+   bool progress = run_pre_link_optimization_passes(shader, ctx->nir, &opts_not_run);
+
+   /* TODO: run linking optimizations here if we have LS+HS or ES+GS */
+   /* TODO: gather shader_info here */
+
+   run_late_optimization_and_lowering_passes(shader, ctx, progress, opts_not_run);
 }
 
 void si_update_shader_binary_info(struct si_shader *shader, nir_shader *nir)
