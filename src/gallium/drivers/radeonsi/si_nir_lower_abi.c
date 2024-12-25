@@ -637,8 +637,7 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
             color[i] = ac_nir_load_arg_at_offset(b, &args->ac, args->color_start, offset++);
 
             nir_intrinsic_set_flags(nir_instr_as_intrinsic(color[i]->parent_instr),
-                                    SI_VECTOR_ARG_IS_COLOR |
-                                    SI_VECTOR_ARG_COLOR_COMPONENT(start + i));
+                                    AC_VECTOR_ARG_FLAG(AC_VECTOR_ARG_IS_COLOR, start + i));
          } else {
             color[i] = nir_undef(b, 1, 32);
          }

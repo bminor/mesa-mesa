@@ -10,6 +10,7 @@
 #include "sid.h"
 #include "nir.h"
 #include "aco_interface.h"
+#include "ac_nir.h"
 
 struct si_shader_profile si_shader_profiles[] =
 {
@@ -468,9 +469,9 @@ static void scan_instruction(const struct nir_shader *nir, struct si_shader_info
       }
       case nir_intrinsic_load_vector_arg_amd:
          /* Non-monolithic lowered PS can have this. We need to record color usage. */
-         if (nir_intrinsic_flags(intr) & SI_VECTOR_ARG_IS_COLOR) {
+         if (AC_VECTOR_ARG_FLAG_GET_NAME(intr) == AC_VECTOR_ARG_IS_COLOR) {
             /* The channel can be between 0 and 7. */
-            unsigned chan = SI_GET_VECTOR_ARG_COLOR_COMPONENT(nir_intrinsic_flags(intr));
+            unsigned chan = AC_VECTOR_ARG_FLAG_GET_VALUE(intr);
             info->colors_read |= BITFIELD_BIT(chan);
          }
          break;

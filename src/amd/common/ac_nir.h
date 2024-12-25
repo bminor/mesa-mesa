@@ -39,6 +39,14 @@ enum {
    AC_EXP_FLAG_VALID_MASK = (1 << 2),
 };
 
+/* TODO: Remove these once radeonsi gathers shader_info before lowering. */
+#define AC_VECTOR_ARG_FLAG(name, value)      (((name) & 0xf) | ((value) << 4))
+#define     AC_VECTOR_ARG_UNSET              0
+#define     AC_VECTOR_ARG_INTERP_MODE        1
+#define     AC_VECTOR_ARG_IS_COLOR           2
+#define AC_VECTOR_ARG_FLAG_GET_NAME(intr)    (nir_intrinsic_flags(intr) & 0xf)
+#define AC_VECTOR_ARG_FLAG_GET_VALUE(intr)   (nir_intrinsic_flags(intr) >> 4)
+
 /* Maps I/O semantics to the actual location used by the lowering pass. */
 typedef unsigned (*ac_nir_map_io_driver_location)(unsigned semantic);
 
