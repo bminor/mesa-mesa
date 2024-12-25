@@ -324,6 +324,14 @@ lower_intrinsic_to_arg(nir_builder *b, nir_instr *instr, void *state)
       replacement = nir_vec2(b, offset_i, offset_j);
       break;
    }
+   case nir_intrinsic_load_gs_wave_id_amd:
+      if (s->args->merged_wave_info.used)
+         replacement = ac_nir_unpack_arg(b, s->args, s->args->merged_wave_info, 16, 8);
+      else if (s->args->gs_wave_id.used)
+         replacement = ac_nir_load_arg(b, s->args, s->args->gs_wave_id);
+      else
+         unreachable("Shader doesn't have GS wave ID.");
+      break;
    default:
       return false;
    }
