@@ -270,7 +270,7 @@ public:
     * for vector and scalar types that have all elements set to the value
     * zero (or \c false for booleans).
     *
-    * \sa ir_constant::has_value, ir_rvalue::is_one, ir_rvalue::is_negative_one
+    * \sa ir_constant::has_value, ir_rvalue::is_one
     */
    virtual bool is_zero() const;
 
@@ -282,29 +282,9 @@ public:
     * for vector and scalar types that have all elements set to the value
     * one (or \c true for booleans).
     *
-    * \sa ir_constant::has_value, ir_rvalue::is_zero, ir_rvalue::is_negative_one
+    * \sa ir_constant::has_value, ir_rvalue::is_zero
     */
    virtual bool is_one() const;
-
-   /**
-    * Determine if an r-value has the value negative one
-    *
-    * The base implementation of this function always returns \c false.  The
-    * \c ir_constant class over-rides this function to return \c true \b only
-    * for vector and scalar types that have all elements set to the value
-    * negative one.  For boolean types, the result is always \c false.
-    *
-    * \sa ir_constant::has_value, ir_rvalue::is_zero, ir_rvalue::is_one
-    */
-   virtual bool is_negative_one() const;
-
-   /**
-    * Determine if an r-value is an unsigned integer constant which can be
-    * stored in 16 bits.
-    *
-    * \sa ir_constant::is_uint16_constant.
-    */
-   virtual bool is_uint16_constant() const { return false; }
 
    /**
     * Return a generic value of error_type.
@@ -609,13 +589,6 @@ public:
     * Enable emitting extension warnings for this variable
     */
    void enable_extension_warning(const char *extension);
-
-   /**
-    * Get the extension warning string for this variable
-    *
-    * If warnings are not enabled, \c NULL is returned.
-    */
-   const char *get_extension_warning() const;
 
    /**
     * Declared type of the variable
@@ -1601,11 +1574,6 @@ public:
              operation == ir_quadop_vector;
    }
 
-   /**
-    * Do a reverse-lookup to translate the given string into an operator.
-    */
-   static ir_expression_operation get_operator(const char *);
-
    virtual void accept(ir_visitor *v)
    {
       v->visit(this);
@@ -1924,11 +1892,6 @@ public:
 
    /** Set the sampler and type. */
    void set_sampler(ir_dereference *sampler, const glsl_type *type);
-
-   /**
-    * Do a reverse-lookup to translate a string into an ir_texture_opcode.
-    */
-   static ir_texture_opcode get_opcode(const char *);
 
    enum ir_texture_opcode op;
 
@@ -2332,15 +2295,6 @@ public:
    virtual bool is_value(float f, int i) const;
    virtual bool is_zero() const;
    virtual bool is_one() const;
-   virtual bool is_negative_one() const;
-
-   /**
-    * Return true for constants that could be stored as 16-bit unsigned values.
-    *
-    * Note that this will return true even for signed integer ir_constants, as
-    * long as the value is non-negative and fits in 16-bits.
-    */
-   virtual bool is_uint16_constant() const;
 
    /**
     * Value of the constant.

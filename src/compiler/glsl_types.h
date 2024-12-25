@@ -536,12 +536,6 @@ glsl_type_is_struct_or_ifc(const glsl_type *t)
 }
 
 static inline bool
-glsl_type_is_packed(const glsl_type *t)
-{
-   return t->packed;
-}
-
-static inline bool
 glsl_type_is_16bit(const glsl_type *t)
 {
    return glsl_base_type_is_16bit(t->base_type);
@@ -613,12 +607,6 @@ static inline bool
 glsl_type_is_float_16_32_64(const glsl_type *t)
 {
    return t->base_type == GLSL_TYPE_FLOAT16 || glsl_type_is_float(t) || glsl_type_is_double(t);
-}
-
-static inline bool
-glsl_type_is_float_32_64(const glsl_type *t)
-{
-   return glsl_type_is_float(t) || glsl_type_is_double(t);
 }
 
 static inline bool
