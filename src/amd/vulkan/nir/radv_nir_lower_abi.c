@@ -138,26 +138,6 @@ lower_abi_instr(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
       break;
    }
 
-   case nir_intrinsic_load_tess_rel_patch_id_amd:
-      if (stage == MESA_SHADER_TESS_CTRL) {
-         replacement = nir_extract_u8(b, ac_nir_load_arg(b, &s->args->ac, s->args->ac.tcs_rel_ids), nir_imm_int(b, 0));
-      } else if (stage == MESA_SHADER_TESS_EVAL) {
-         /* Setting an upper bound like this will actually make it possible
-          * to optimize some multiplications (in address calculations) so that
-          * constant additions can be added to the const offset in memory load instructions.
-          */
-         nir_def *arg = ac_nir_load_arg(b, &s->args->ac, s->args->ac.tes_rel_patch_id);
-
-         if (s->info->tes.tcs_vertices_out) {
-            nir_intrinsic_instr *load_arg = nir_instr_as_intrinsic(arg->parent_instr);
-            nir_intrinsic_set_arg_upper_bound_u32_amd(load_arg, 2048 / MAX2(s->info->tes.tcs_vertices_out, 1));
-         }
-
-         replacement = arg;
-      } else {
-         unreachable("invalid tessellation shader stage");
-      }
-      break;
    case nir_intrinsic_load_patch_vertices_in:
       if (stage == MESA_SHADER_TESS_CTRL) {
          if (s->gfx_state->ts.patch_control_points) {

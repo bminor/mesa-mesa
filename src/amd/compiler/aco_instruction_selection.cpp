@@ -5688,28 +5688,6 @@ visit_load_per_vertex_input(isel_context* ctx, nir_intrinsic_instr* instr)
    }
 }
 
-void
-visit_load_tess_coord(isel_context* ctx, nir_intrinsic_instr* instr)
-{
-   assert(ctx->shader->info.stage == MESA_SHADER_TESS_EVAL);
-
-   Builder bld(ctx->program, ctx->block);
-   Temp dst = get_ssa_temp(ctx, &instr->def);
-
-   Operand tes_u(get_arg(ctx, ctx->args->tes_u));
-   Operand tes_v(get_arg(ctx, ctx->args->tes_v));
-   Operand tes_w = Operand::zero();
-
-   if (ctx->shader->info.tess._primitive_mode == TESS_PRIMITIVE_TRIANGLES) {
-      Temp tmp = bld.vop2(aco_opcode::v_add_f32, bld.def(v1), tes_u, tes_v);
-      tmp = bld.vop2(aco_opcode::v_sub_f32, bld.def(v1), Operand::c32(0x3f800000u /* 1.0f */), tmp);
-      tes_w = Operand(tmp);
-   }
-
-   Temp tess_coord = bld.pseudo(aco_opcode::p_create_vector, Definition(dst), tes_u, tes_v, tes_w);
-   emit_split_vector(ctx, tess_coord, 3);
-}
-
 ac_hw_cache_flags
 get_cache_flags(isel_context* ctx, unsigned access)
 {
@@ -7970,7 +7948,6 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
 {
    Builder bld(ctx->program, ctx->block);
    switch (instr->intrinsic) {
-   case nir_intrinsic_load_tess_coord: visit_load_tess_coord(ctx, instr); break;
    case nir_intrinsic_load_interpolated_input: visit_load_interpolated_input(ctx, instr); break;
    case nir_intrinsic_store_output: visit_store_output(ctx, instr); break;
    case nir_intrinsic_load_input:
@@ -8768,34 +8745,6 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
       emit_split_vector(ctx, dst, 2);
       break;
    }
-   case nir_intrinsic_load_primitive_id: {
-      Temp dst = get_ssa_temp(ctx, &instr->def);
-
-      switch (ctx->shader->info.stage) {
-      case MESA_SHADER_GEOMETRY:
-         bld.copy(Definition(dst), get_arg(ctx, ctx->args->gs_prim_id));
-         break;
-      case MESA_SHADER_TESS_CTRL:
-         bld.copy(Definition(dst), get_arg(ctx, ctx->args->tcs_patch_id));
-         break;
-      case MESA_SHADER_TESS_EVAL:
-         bld.copy(Definition(dst), get_arg(ctx, ctx->args->tes_patch_id));
-         break;
-      default:
-         if (ctx->stage.hw == AC_HW_NEXT_GEN_GEOMETRY_SHADER && !ctx->stage.has(SWStage::GS)) {
-            /* In case of NGG, the GS threads always have the primitive ID
-             * even if there is no SW GS. */
-            bld.copy(Definition(dst), get_arg(ctx, ctx->args->gs_prim_id));
-            break;
-         } else if (ctx->shader->info.stage == MESA_SHADER_VERTEX) {
-            bld.copy(Definition(dst), get_arg(ctx, ctx->args->vs_prim_id));
-            break;
-         }
-         unreachable("Unimplemented shader stage for nir_intrinsic_load_primitive_id");
-      }
-
-      break;
-   }
    case nir_intrinsic_sendmsg_amd: {
       unsigned imm = nir_intrinsic_base(instr);
       Temp m0_content = bld.as_uniform(get_ssa_temp(ctx, instr->src[0].ssa));
@@ -8828,13 +8777,6 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
    case nir_intrinsic_load_resume_shader_address_amd: {
       bld.pseudo(aco_opcode::p_resume_shader_address, Definition(get_ssa_temp(ctx, &instr->def)),
                  bld.def(s1, scc), Operand::c32(nir_intrinsic_call_idx(instr)));
-      break;
-   }
-   case nir_intrinsic_overwrite_tes_arguments_amd: {
-      ctx->arg_temps[ctx->args->tes_u.arg_index] = get_ssa_temp(ctx, instr->src[0].ssa);
-      ctx->arg_temps[ctx->args->tes_v.arg_index] = get_ssa_temp(ctx, instr->src[1].ssa);
-      ctx->arg_temps[ctx->args->tes_rel_patch_id.arg_index] = get_ssa_temp(ctx, instr->src[3].ssa);
-      ctx->arg_temps[ctx->args->tes_patch_id.arg_index] = get_ssa_temp(ctx, instr->src[2].ssa);
       break;
    }
    case nir_intrinsic_load_scalar_arg_amd:

@@ -2791,39 +2791,10 @@ static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *ins
       result = ac_build_gather_values(&ctx->ac, values, 3);
       break;
    }
-   case nir_intrinsic_load_tess_rel_patch_id_amd:
-      switch (ctx->stage) {
-      case MESA_SHADER_TESS_CTRL:
-         result = ac_unpack_param(&ctx->ac, ac_get_arg(&ctx->ac, ctx->args->tcs_rel_ids), 0, 8);
-         break;
-      case MESA_SHADER_TESS_EVAL:
-         result = ctx->abi->tes_rel_patch_id_replaced ? ctx->abi->tes_rel_patch_id_replaced :
-                  ac_get_arg(&ctx->ac, ctx->args->tes_rel_patch_id);
-         break;
-      default:
-         unreachable("invalid stage");
-      }
-      break;
    case nir_intrinsic_load_ring_attr_amd:
    case nir_intrinsic_load_lds_ngg_scratch_base_amd:
    case nir_intrinsic_load_lds_ngg_gs_out_vertex_base_amd:
       result = ctx->abi->intrinsic_load(ctx->abi, instr);
-      break;
-   case nir_intrinsic_load_primitive_id:
-      if (ctx->stage == MESA_SHADER_GEOMETRY) {
-         result = ac_get_arg(&ctx->ac, ctx->args->gs_prim_id);
-      } else if (ctx->stage == MESA_SHADER_TESS_CTRL) {
-         result = ac_get_arg(&ctx->ac, ctx->args->tcs_patch_id);
-      } else if (ctx->stage == MESA_SHADER_TESS_EVAL) {
-         result = ctx->abi->tes_patch_id_replaced ?
-            ctx->abi->tes_patch_id_replaced : ac_get_arg(&ctx->ac, ctx->args->tes_patch_id);
-      } else if (ctx->stage == MESA_SHADER_VERTEX) {
-         if (ctx->args->vs_prim_id.used)
-            result = ac_get_arg(&ctx->ac, ctx->args->vs_prim_id); /* legacy */
-         else
-            result = ac_get_arg(&ctx->ac, ctx->args->gs_prim_id); /* NGG */
-      } else
-         fprintf(stderr, "Unknown primitive id intrinsic: %d", ctx->stage);
       break;
    case nir_intrinsic_load_helper_invocation:
    case nir_intrinsic_is_helper_invocation:
@@ -2964,21 +2935,6 @@ static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *ins
       unsigned imm = nir_intrinsic_base(instr);
       LLVMValueRef m0_content = get_src(ctx, instr->src[0]);
       ac_build_sendmsg(&ctx->ac, imm, m0_content);
-      break;
-   }
-   case nir_intrinsic_load_tess_coord: {
-      LLVMValueRef coord[] = {
-         ctx->abi->tes_u_replaced ? ctx->abi->tes_u_replaced : ac_get_arg(&ctx->ac, ctx->args->tes_u),
-         ctx->abi->tes_v_replaced ? ctx->abi->tes_v_replaced : ac_get_arg(&ctx->ac, ctx->args->tes_v),
-         ctx->ac.f32_0,
-      };
-
-      /* For triangles, the vector should be (u, v, 1-u-v). */
-      if (ctx->info->tess._primitive_mode == TESS_PRIMITIVE_TRIANGLES) {
-         coord[2] = LLVMBuildFSub(ctx->ac.builder, ctx->ac.f32_1,
-                                  LLVMBuildFAdd(ctx->ac.builder, coord[0], coord[1], ""), "");
-      }
-      result = ac_build_gather_values(&ctx->ac, coord, 3);
       break;
    }
    case nir_intrinsic_vote_all: {
@@ -3239,12 +3195,6 @@ static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *ins
       result = LLVMBuildICmp(ctx->ac.builder, LLVMIntULT, ac_get_thread_id(&ctx->ac), count, "");
       break;
    }
-   case nir_intrinsic_overwrite_tes_arguments_amd:
-      ctx->abi->tes_u_replaced = ac_to_float(&ctx->ac, get_src(ctx, instr->src[0]));
-      ctx->abi->tes_v_replaced = ac_to_float(&ctx->ac, get_src(ctx, instr->src[1]));
-      ctx->abi->tes_rel_patch_id_replaced = get_src(ctx, instr->src[3]);
-      ctx->abi->tes_patch_id_replaced = get_src(ctx, instr->src[2]);
-      break;
    case nir_intrinsic_gds_atomic_add_amd: {
       LLVMValueRef store_val = get_src(ctx, instr->src[0]);
       LLVMValueRef addr = get_src(ctx, instr->src[1]);

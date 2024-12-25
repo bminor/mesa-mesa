@@ -550,7 +550,6 @@ init_context(isel_context* ctx, nir_shader* shader)
                case nir_intrinsic_load_per_vertex_input:
                case nir_intrinsic_load_per_vertex_output:
                case nir_intrinsic_load_interpolated_input:
-               case nir_intrinsic_load_tess_coord:
                case nir_intrinsic_write_invocation_amd:
                case nir_intrinsic_mbcnt_amd:
                case nir_intrinsic_lane_permute_16_amd:
@@ -565,7 +564,6 @@ init_context(isel_context* ctx, nir_shader* shader)
                case nir_intrinsic_shared_atomic:
                case nir_intrinsic_shared_atomic_swap:
                case nir_intrinsic_load_scratch:
-               case nir_intrinsic_load_primitive_id:
                case nir_intrinsic_load_typed_buffer_amd:
                case nir_intrinsic_load_buffer_amd:
                case nir_intrinsic_load_initial_edgeflags_amd:

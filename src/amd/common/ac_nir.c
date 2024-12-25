@@ -106,6 +106,10 @@ typedef struct {
    nir_def *vertex_id;
    nir_def *instance_id;
    nir_def *vs_rel_patch_id;
+   nir_def *tes_u;
+   nir_def *tes_v;
+   nir_def *tes_patch_id;
+   nir_def *tes_rel_patch_id;
 } lower_intrinsics_to_args_state;
 
 static nir_def *
@@ -368,6 +372,13 @@ lower_intrinsic_to_arg(nir_builder *b, nir_instr *instr, void *state)
       s->instance_id = intrin->src[1].ssa;
       nir_instr_remove(instr);
       return true;
+   case nir_intrinsic_overwrite_tes_arguments_amd:
+      s->tes_u = intrin->src[0].ssa;
+      s->tes_v = intrin->src[1].ssa;
+      s->tes_patch_id = intrin->src[2].ssa;
+      s->tes_rel_patch_id = intrin->src[3].ssa;
+      nir_instr_remove(instr);
+      return true;
    case nir_intrinsic_load_vertex_id_zero_base:
       if (!s->vertex_id)
          s->vertex_id = preload_arg(s, b->impl, s->args->vertex_id, s->args->tcs_patch_id);
@@ -378,6 +389,57 @@ lower_intrinsic_to_arg(nir_builder *b, nir_instr *instr, void *state)
          s->instance_id = preload_arg(s, b->impl, s->args->instance_id, s->args->vertex_id);
       replacement = s->instance_id;
       break;
+   case nir_intrinsic_load_tess_rel_patch_id_amd:
+      if (b->shader->info.stage == MESA_SHADER_TESS_CTRL) {
+         replacement = ac_nir_unpack_arg(b, s->args, s->args->tcs_rel_ids, 0, 8);
+      } else if (b->shader->info.stage == MESA_SHADER_TESS_EVAL) {
+         if (s->tes_rel_patch_id) {
+            replacement = s->tes_rel_patch_id;
+         } else {
+            replacement = ac_nir_load_arg(b, s->args, s->args->tes_rel_patch_id);
+            if (b->shader->info.tess.tcs_vertices_out) {
+               /* Setting an upper bound like this will actually make it possible
+                * to optimize some multiplications (in address calculations) so that
+                * constant additions can be added to the const offset in memory load instructions.
+                */
+               nir_intrinsic_set_arg_upper_bound_u32_amd(nir_instr_as_intrinsic(replacement->parent_instr),
+                                                         2048 / b->shader->info.tess.tcs_vertices_out);
+            }
+         }
+      } else {
+         unreachable("invalid stage");
+      }
+      break;
+   case nir_intrinsic_load_primitive_id:
+      if (b->shader->info.stage == MESA_SHADER_GEOMETRY) {
+         replacement = ac_nir_load_arg(b, s->args, s->args->gs_prim_id);
+      } else if (b->shader->info.stage == MESA_SHADER_TESS_CTRL) {
+         replacement = ac_nir_load_arg(b, s->args, s->args->tcs_patch_id);
+      } else if (b->shader->info.stage == MESA_SHADER_TESS_EVAL) {
+         replacement = s->tes_patch_id ? s->tes_patch_id :
+                                         ac_nir_load_arg(b, s->args, s->args->tes_patch_id);
+      } else if (b->shader->info.stage == MESA_SHADER_VERTEX) {
+         if (s->hw_stage == AC_HW_VERTEX_SHADER)
+            replacement = ac_nir_load_arg(b, s->args, s->args->vs_prim_id); /* legacy */
+         else
+            replacement = ac_nir_load_arg(b, s->args, s->args->gs_prim_id); /* NGG */
+      } else {
+         unreachable("invalid stage");
+      }
+      break;
+   case nir_intrinsic_load_tess_coord: {
+      nir_def *coord[3] = {
+         s->tes_u ? s->tes_u : ac_nir_load_arg(b, s->args, s->args->tes_u),
+         s->tes_v ? s->tes_v : ac_nir_load_arg(b, s->args, s->args->tes_v),
+         nir_imm_float(b, 0),
+      };
+
+      /* For triangles, the vector should be (u, v, 1-u-v). */
+      if (b->shader->info.tess._primitive_mode == TESS_PRIMITIVE_TRIANGLES)
+         coord[2] = nir_fsub(b, nir_imm_float(b, 1), nir_fadd(b, coord[0], coord[1]));
+      replacement = nir_vec(b, coord, 3);
+      break;
+   }
    case nir_intrinsic_load_local_invocation_index:
       /* GFX11 HS has subgroup_id, so use it instead of vs_rel_patch_id. */
       if (s->gfx_level < GFX11 &&
