@@ -2657,47 +2657,6 @@ static LLVMValueRef visit_var_atomic(struct ac_nir_context *ctx, const nir_intri
    return result;
 }
 
-static LLVMValueRef barycentric_offset(struct ac_nir_context *ctx, unsigned mode,
-                                       LLVMValueRef offset)
-{
-   LLVMValueRef interp_param = mode == INTERP_MODE_NOPERSPECTIVE ?
-                                  ac_get_arg(&ctx->ac, ctx->args->linear_center) :
-                                  ac_get_arg(&ctx->ac, ctx->args->persp_center);
-   LLVMValueRef src_c0 =
-      ac_to_float(&ctx->ac, LLVMBuildExtractElement(ctx->ac.builder, offset, ctx->ac.i32_0, ""));
-   LLVMValueRef src_c1 =
-      ac_to_float(&ctx->ac, LLVMBuildExtractElement(ctx->ac.builder, offset, ctx->ac.i32_1, ""));
-
-   LLVMValueRef ij_out[2];
-   LLVMValueRef ddxy_out = ac_build_ddxy_interp(&ctx->ac, interp_param);
-
-   /*
-    * take the I then J parameters, and the DDX/Y for it, and
-    * calculate the IJ inputs for the interpolator.
-    * temp1 = ddx * offset/sample.x + I;
-    * interp_param.I = ddy * offset/sample.y + temp1;
-    * temp1 = ddx * offset/sample.x + J;
-    * interp_param.J = ddy * offset/sample.y + temp1;
-    */
-   for (unsigned i = 0; i < 2; i++) {
-      LLVMValueRef ix_ll = LLVMConstInt(ctx->ac.i32, i, false);
-      LLVMValueRef iy_ll = LLVMConstInt(ctx->ac.i32, i + 2, false);
-      LLVMValueRef ddx_el = LLVMBuildExtractElement(ctx->ac.builder, ddxy_out, ix_ll, "");
-      LLVMValueRef ddy_el = LLVMBuildExtractElement(ctx->ac.builder, ddxy_out, iy_ll, "");
-      LLVMValueRef interp_el = LLVMBuildExtractElement(ctx->ac.builder, interp_param, ix_ll, "");
-      LLVMValueRef temp1, temp2;
-
-      interp_el = LLVMBuildBitCast(ctx->ac.builder, interp_el, ctx->ac.f32, "");
-
-      temp1 = ac_build_fmad(&ctx->ac, ddx_el, src_c0, interp_el);
-      temp2 = ac_build_fmad(&ctx->ac, ddy_el, src_c1, temp1);
-
-      ij_out[i] = LLVMBuildBitCast(ctx->ac.builder, temp2, ctx->ac.i32, "");
-   }
-   interp_param = ac_build_gather_values(&ctx->ac, ij_out, 2);
-   return LLVMBuildBitCast(ctx->ac.builder, interp_param, ctx->ac.v2i32, "");
-}
-
 static LLVMValueRef load_interpolated_input(struct ac_nir_context *ctx, LLVMValueRef interp_param,
                                             unsigned index, unsigned comp_start,
                                             unsigned num_components, unsigned bitsize,
@@ -3008,11 +2967,6 @@ static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *ins
    case nir_intrinsic_shared_atomic_swap: {
       LLVMValueRef ptr = get_memory_ptr(ctx, instr->src[0], nir_intrinsic_base(instr));
       result = visit_var_atomic(ctx, instr, ptr, 1);
-      break;
-   }
-   case nir_intrinsic_load_barycentric_at_offset: {
-      LLVMValueRef offset = ac_to_float(&ctx->ac, get_src(ctx, instr->src[0]));
-      result = barycentric_offset(ctx, nir_intrinsic_interp_mode(instr), offset);
       break;
    }
    case nir_intrinsic_load_interpolated_input: {

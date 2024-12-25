@@ -305,6 +305,25 @@ lower_intrinsic_to_arg(nir_builder *b, nir_instr *instr, void *state)
    case nir_intrinsic_load_barycentric_model:
       replacement = ac_nir_load_arg(b, s->args, s->args->pull_model);
       break;
+   case nir_intrinsic_load_barycentric_at_offset: {
+      nir_def *baryc = nir_intrinsic_interp_mode(intrin) == INTERP_MODE_NOPERSPECTIVE ?
+                          ac_nir_load_arg(b, s->args, s->args->linear_center) :
+                          ac_nir_load_arg(b, s->args, s->args->persp_center);
+      nir_def *i = nir_channel(b, baryc, 0);
+      nir_def *j = nir_channel(b, baryc, 1);
+      nir_def *offset_x = nir_channel(b, intrin->src[0].ssa, 0);
+      nir_def *offset_y = nir_channel(b, intrin->src[0].ssa, 1);
+      nir_def *ddx_i = nir_ddx(b, i);
+      nir_def *ddx_j = nir_ddx(b, j);
+      nir_def *ddy_i = nir_ddy(b, i);
+      nir_def *ddy_j = nir_ddy(b, j);
+
+      /* Interpolate standard barycentrics by offset. */
+      nir_def *offset_i = nir_ffma(b, ddy_i, offset_y, nir_ffma(b, ddx_i, offset_x, i));
+      nir_def *offset_j = nir_ffma(b, ddy_j, offset_y, nir_ffma(b, ddx_j, offset_x, j));
+      replacement = nir_vec2(b, offset_i, offset_j);
+      break;
+   }
    default:
       return false;
    }

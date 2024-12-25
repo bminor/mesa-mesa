@@ -3483,24 +3483,6 @@ LLVMValueRef ac_build_canonicalize(struct ac_llvm_context *ctx, LLVMValueRef src
    return ac_build_intrinsic(ctx, intr, type, params, 1, 0);
 }
 
-/*
- * this takes an I,J coordinate pair,
- * and works out the X and Y derivatives.
- * it returns DDX(I), DDX(J), DDY(I), DDY(J).
- */
-LLVMValueRef ac_build_ddxy_interp(struct ac_llvm_context *ctx, LLVMValueRef interp_ij)
-{
-   LLVMValueRef result[4], a;
-   unsigned i;
-
-   for (i = 0; i < 2; i++) {
-      a = LLVMBuildExtractElement(ctx->builder, interp_ij, LLVMConstInt(ctx->i32, i, false), "");
-      result[i] = ac_build_ddxy(ctx, AC_TID_MASK_TOP_LEFT, 1, a);
-      result[2 + i] = ac_build_ddxy(ctx, AC_TID_MASK_TOP_LEFT, 2, a);
-   }
-   return ac_build_gather_values(ctx, result, 4);
-}
-
 LLVMValueRef ac_build_load_helper_invocation(struct ac_llvm_context *ctx)
 {
    LLVMValueRef result = ac_build_intrinsic(ctx, "llvm.amdgcn.live.mask", ctx->i1, NULL, 0, 0);

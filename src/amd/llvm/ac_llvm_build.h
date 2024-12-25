@@ -459,8 +459,6 @@ LLVMValueRef ac_build_frexp_mant(struct ac_llvm_context *ctx, LLVMValueRef src0,
 LLVMValueRef ac_build_canonicalize(struct ac_llvm_context *ctx, LLVMValueRef src0,
                                    unsigned bitsize);
 
-LLVMValueRef ac_build_ddxy_interp(struct ac_llvm_context *ctx, LLVMValueRef interp_ij);
-
 LLVMValueRef ac_build_load_helper_invocation(struct ac_llvm_context *ctx);
 
 LLVMValueRef ac_build_call(struct ac_llvm_context *ctx, LLVMTypeRef fn_type, LLVMValueRef func,

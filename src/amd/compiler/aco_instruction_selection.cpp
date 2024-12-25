@@ -7895,52 +7895,6 @@ emit_rotate_by_constant(isel_context* ctx, Temp& dst, Temp src, unsigned cluster
    return dst.id() != 0;
 }
 
-void
-emit_interp_center(isel_context* ctx, Temp dst, Temp bary, Temp pos1, Temp pos2)
-{
-   Builder bld(ctx->program, ctx->block);
-   Temp p1 = emit_extract_vector(ctx, bary, 0, v1);
-   Temp p2 = emit_extract_vector(ctx, bary, 1, v1);
-
-   Temp ddx_1, ddx_2, ddy_1, ddy_2;
-   uint32_t dpp_ctrl0 = dpp_quad_perm(0, 0, 0, 0);
-   uint32_t dpp_ctrl1 = dpp_quad_perm(1, 1, 1, 1);
-   uint32_t dpp_ctrl2 = dpp_quad_perm(2, 2, 2, 2);
-
-   /* Build DD X/Y */
-   if (ctx->program->gfx_level >= GFX8) {
-      Temp tl_1 = bld.vop1_dpp(aco_opcode::v_mov_b32, bld.def(v1), p1, dpp_ctrl0);
-      ddx_1 = bld.vop2_dpp(aco_opcode::v_sub_f32, bld.def(v1), p1, tl_1, dpp_ctrl1);
-      ddy_1 = bld.vop2_dpp(aco_opcode::v_sub_f32, bld.def(v1), p1, tl_1, dpp_ctrl2);
-      Temp tl_2 = bld.vop1_dpp(aco_opcode::v_mov_b32, bld.def(v1), p2, dpp_ctrl0);
-      ddx_2 = bld.vop2_dpp(aco_opcode::v_sub_f32, bld.def(v1), p2, tl_2, dpp_ctrl1);
-      ddy_2 = bld.vop2_dpp(aco_opcode::v_sub_f32, bld.def(v1), p2, tl_2, dpp_ctrl2);
-   } else {
-      Temp tl_1 = bld.ds(aco_opcode::ds_swizzle_b32, bld.def(v1), p1, (1 << 15) | dpp_ctrl0);
-      ddx_1 = bld.ds(aco_opcode::ds_swizzle_b32, bld.def(v1), p1, (1 << 15) | dpp_ctrl1);
-      ddx_1 = bld.vop2(aco_opcode::v_sub_f32, bld.def(v1), ddx_1, tl_1);
-      ddy_1 = bld.ds(aco_opcode::ds_swizzle_b32, bld.def(v1), p1, (1 << 15) | dpp_ctrl2);
-      ddy_1 = bld.vop2(aco_opcode::v_sub_f32, bld.def(v1), ddy_1, tl_1);
-
-      Temp tl_2 = bld.ds(aco_opcode::ds_swizzle_b32, bld.def(v1), p2, (1 << 15) | dpp_ctrl0);
-      ddx_2 = bld.ds(aco_opcode::ds_swizzle_b32, bld.def(v1), p2, (1 << 15) | dpp_ctrl1);
-      ddx_2 = bld.vop2(aco_opcode::v_sub_f32, bld.def(v1), ddx_2, tl_2);
-      ddy_2 = bld.ds(aco_opcode::ds_swizzle_b32, bld.def(v1), p2, (1 << 15) | dpp_ctrl2);
-      ddy_2 = bld.vop2(aco_opcode::v_sub_f32, bld.def(v1), ddy_2, tl_2);
-   }
-
-   /* res_k = p_k + ddx_k * pos1 + ddy_k * pos2 */
-   aco_opcode mad =
-      ctx->program->gfx_level >= GFX10_3 ? aco_opcode::v_fma_f32 : aco_opcode::v_mad_f32;
-   Temp tmp1 = bld.vop3(mad, bld.def(v1), ddx_1, pos1, p1);
-   Temp tmp2 = bld.vop3(mad, bld.def(v1), ddx_2, pos1, p2);
-   tmp1 = bld.vop3(mad, bld.def(v1), ddy_1, pos2, tmp1);
-   tmp2 = bld.vop3(mad, bld.def(v1), ddy_2, pos2, tmp2);
-   bld.pseudo(aco_opcode::p_create_vector, Definition(dst), tmp1, tmp2);
-   set_wqm(ctx, true);
-   return;
-}
-
 Temp merged_wave_info_to_mask(isel_context* ctx, unsigned i);
 Temp lanecount_to_mask(isel_context* ctx, Temp count, unsigned bit_offset);
 void pops_await_overlapped_waves(isel_context* ctx);
@@ -8042,17 +7996,6 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
 {
    Builder bld(ctx->program, ctx->block);
    switch (instr->intrinsic) {
-   case nir_intrinsic_load_barycentric_at_offset: {
-      Temp offset = get_ssa_temp(ctx, instr->src[0].ssa);
-      RegClass rc = RegClass(offset.type(), 1);
-      Temp pos1 = bld.tmp(rc), pos2 = bld.tmp(rc);
-      bld.pseudo(aco_opcode::p_split_vector, Definition(pos1), Definition(pos2), offset);
-      Temp bary = get_arg(ctx, nir_intrinsic_interp_mode(instr) == INTERP_MODE_NOPERSPECTIVE
-                                  ? ctx->args->linear_center
-                                  : ctx->args->persp_center);
-      emit_interp_center(ctx, get_ssa_temp(ctx, &instr->def), bary, pos1, pos2);
-      break;
-   }
    case nir_intrinsic_load_tess_coord: visit_load_tess_coord(ctx, instr); break;
    case nir_intrinsic_load_interpolated_input: visit_load_interpolated_input(ctx, instr); break;
    case nir_intrinsic_store_output: visit_store_output(ctx, instr); break;
