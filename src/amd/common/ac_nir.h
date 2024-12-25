@@ -254,16 +254,6 @@ ac_nir_lower_legacy_gs(nir_shader *nir,
                        ac_nir_gs_output_info *output_info);
 
 typedef struct {
-   /* Which load instructions to lower depending on whether the number of
-    * components being loaded is 1 or more than 1.
-    */
-   nir_variable_mode modes_1_comp;  /* lower 1-component loads for these */
-   nir_variable_mode modes_N_comps; /* lower multi-component loads for these */
-} ac_nir_lower_subdword_options;
-
-bool ac_nir_lower_subdword_loads(nir_shader *nir, ac_nir_lower_subdword_options options);
-
-typedef struct {
    enum radeon_family family;
    enum amd_gfx_level gfx_level;
 
