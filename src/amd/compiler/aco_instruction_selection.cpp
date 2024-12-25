@@ -5528,29 +5528,6 @@ emit_interp_mov_instr(isel_context* ctx, unsigned idx, unsigned component, unsig
 }
 
 void
-emit_load_frag_coord(isel_context* ctx, Temp dst, unsigned num_components)
-{
-   Builder bld(ctx->program, ctx->block);
-
-   aco_ptr<Instruction> vec(
-      create_instruction(aco_opcode::p_create_vector, Format::PSEUDO, num_components, 1));
-   for (unsigned i = 0; i < num_components; i++) {
-      if (ctx->args->frag_pos[i].used)
-         vec->operands[i] = Operand(get_arg(ctx, ctx->args->frag_pos[i]));
-      else
-         vec->operands[i] = Operand(v1);
-   }
-
-   for (Operand& op : vec->operands)
-      op = op.isUndefined() ? Operand::zero() : op;
-
-   vec->definitions[0] = Definition(dst);
-   ctx->block->instructions.emplace_back(std::move(vec));
-   emit_split_vector(ctx, dst, num_components);
-   return;
-}
-
-void
 emit_load_frag_shading_rate(isel_context* ctx, Temp dst)
 {
    Builder bld(ctx->program, ctx->block);
@@ -8152,10 +8129,6 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
    case nir_intrinsic_load_view_index: {
       Temp dst = get_ssa_temp(ctx, &instr->def);
       bld.copy(Definition(dst), Operand(get_arg(ctx, ctx->args->view_index)));
-      break;
-   }
-   case nir_intrinsic_load_frag_coord: {
-      emit_load_frag_coord(ctx, get_ssa_temp(ctx, &instr->def), 4);
       break;
    }
    case nir_intrinsic_load_frag_shading_rate:

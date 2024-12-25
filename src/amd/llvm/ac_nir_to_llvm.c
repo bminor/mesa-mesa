@@ -2873,16 +2873,6 @@ emit_load_frag_shading_rate(struct ac_nir_context *ctx)
    return LLVMBuildOr(ctx->ac.builder, x_rate, y_rate, "");
 }
 
-static LLVMValueRef
-emit_load_frag_coord(struct ac_nir_context *ctx)
-{
-   LLVMValueRef values[4] = {
-      ac_get_arg(&ctx->ac, ctx->args->frag_pos[0]), ac_get_arg(&ctx->ac, ctx->args->frag_pos[1]),
-      ac_get_arg(&ctx->ac, ctx->args->frag_pos[2]), ac_get_arg(&ctx->ac, ctx->args->frag_pos[3])};
-
-   return ac_to_integer(&ctx->ac, ac_build_gather_values(&ctx->ac, values, 4));
-}
-
 static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *instr)
 {
    LLVMValueRef result = NULL;
@@ -3023,9 +3013,6 @@ static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *ins
       break;
    case nir_intrinsic_load_sample_pos:
       result = load_sample_pos(ctx);
-      break;
-   case nir_intrinsic_load_frag_coord:
-      result = emit_load_frag_coord(ctx);
       break;
    case nir_intrinsic_load_frag_shading_rate:
       result = emit_load_frag_shading_rate(ctx);

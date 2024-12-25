@@ -174,6 +174,12 @@ lower_intrinsic_to_arg(nir_builder *b, nir_instr *instr, void *state)
    case nir_intrinsic_load_pixel_coord:
       replacement = nir_unpack_32_2x16(b, ac_nir_load_arg(b, s->args, s->args->pos_fixed_pt));
       break;
+   case nir_intrinsic_load_frag_coord:
+      replacement = nir_vec4(b, ac_nir_load_arg(b, s->args, s->args->frag_pos[0]),
+                             ac_nir_load_arg(b, s->args, s->args->frag_pos[1]),
+                             ac_nir_load_arg(b, s->args, s->args->frag_pos[2]),
+                             ac_nir_load_arg(b, s->args, s->args->frag_pos[3]));
+      break;
    default:
       return false;
    }
