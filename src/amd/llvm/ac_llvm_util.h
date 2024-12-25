@@ -61,7 +61,6 @@ bool ac_is_llvm_processor_supported(LLVMTargetMachineRef tm, const char *process
 void ac_reset_llvm_all_options_occurrences();
 void ac_add_attr_dereferenceable(LLVMValueRef val, uint64_t bytes);
 void ac_add_attr_alignment(LLVMValueRef val, uint64_t bytes);
-bool ac_is_sgpr_param(LLVMValueRef param);
 LLVMAttributeRef ac_get_llvm_attribute(LLVMContextRef ctx, const char *str);
 void ac_add_function_attr(LLVMContextRef ctx, LLVMValueRef function, int attr_idx,
                           const char *attr);
