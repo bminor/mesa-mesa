@@ -2200,15 +2200,6 @@ static uint32_t si_translate_buffer_dataformat(struct pipe_screen *screen,
    return ac_translate_buffer_dataformat(desc, first_non_void);
 }
 
-static uint32_t si_translate_buffer_numformat(struct pipe_screen *screen,
-                                              const struct util_format_description *desc,
-                                              int first_non_void)
-{
-   assert(((struct si_screen *)screen)->info.gfx_level <= GFX9);
-
-   return ac_translate_buffer_numformat(desc, first_non_void);
-}
-
 static unsigned si_is_vertex_format_supported(struct pipe_screen *screen, enum pipe_format format,
                                               unsigned usage)
 {
@@ -4231,11 +4222,6 @@ static uint32_t si_translate_border_color(struct si_context *sctx,
    return V_008F3C_SQ_TEX_BORDER_COLOR_REGISTER;
 }
 
-static inline int S_FIXED(float value, unsigned frac_bits)
-{
-   return value * (1 << frac_bits);
-}
-
 static inline unsigned si_tex_filter(unsigned filter, unsigned max_aniso)
 {
    if (filter == PIPE_TEX_FILTER_LINEAR)
@@ -4989,26 +4975,6 @@ static void si_write_harvested_raster_configs(struct si_context *sctx, struct si
 
    if (sctx->gfx_level >= GFX7) {
       ac_pm4_set_reg(&pm4->base, R_028354_PA_SC_RASTER_CONFIG_1, raster_config_1);
-   }
-}
-
-static void si_set_raster_config(struct si_context *sctx, struct si_pm4_state *pm4)
-{
-   struct si_screen *sscreen = sctx->screen;
-   unsigned num_rb = MIN2(sscreen->info.max_render_backends, 16);
-   uint64_t rb_mask = sscreen->info.enabled_rb_mask;
-   unsigned raster_config = sscreen->pa_sc_raster_config;
-   unsigned raster_config_1 = sscreen->pa_sc_raster_config_1;
-
-   if (!rb_mask || util_bitcount64(rb_mask) >= num_rb) {
-      /* Always use the default config when all backends are enabled
-       * (or when we failed to determine the enabled backends).
-       */
-      ac_pm4_set_reg(&pm4->base, R_028350_PA_SC_RASTER_CONFIG, raster_config);
-      if (sctx->gfx_level >= GFX7)
-         ac_pm4_set_reg(&pm4->base, R_028354_PA_SC_RASTER_CONFIG_1, raster_config_1);
-   } else {
-      si_write_harvested_raster_configs(sctx, pm4, raster_config, raster_config_1);
    }
 }
 

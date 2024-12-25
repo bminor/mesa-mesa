@@ -268,10 +268,6 @@ static void si_begin_gfx_cs_debug(struct si_context *ctx)
                              RADEON_USAGE_READWRITE | RADEON_PRIO_FENCE_TRACE);
 }
 
-static void si_add_gds_to_buffer_list(struct si_context *sctx)
-{
-}
-
 void si_set_tracked_regs_to_clear_state(struct si_context *ctx)
 {
    assert(ctx->gfx_level < GFX12);
