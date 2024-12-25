@@ -338,6 +338,8 @@ unsigned ac_get_all_edge_flag_bits(enum amd_gfx_level gfx_level);
 
 unsigned ac_shader_io_get_unique_index_patch(unsigned semantic);
 
+unsigned ac_nir_lower_bit_size_callback(const nir_instr *instr, void *data);
+
 #ifdef __cplusplus
 }
 #endif

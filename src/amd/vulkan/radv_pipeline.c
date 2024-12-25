@@ -257,76 +257,6 @@ ycbcr_conversion_lookup(const void *data, uint32_t set, uint32_t binding, uint32
    return ycbcr_samplers + array_index;
 }
 
-static unsigned
-lower_bit_size_callback(const nir_instr *instr, void *_)
-{
-   struct radv_device *device = _;
-   const struct radv_physical_device *pdev = radv_device_physical(device);
-   enum amd_gfx_level chip = pdev->info.gfx_level;
-
-   if (instr->type != nir_instr_type_alu)
-      return 0;
-   nir_alu_instr *alu = nir_instr_as_alu(instr);
-
-   /* If an instruction is not scalarized by this point,
-    * it can be emitted as packed instruction */
-   if (alu->def.num_components > 1)
-      return 0;
-
-   if (alu->def.bit_size & (8 | 16)) {
-      unsigned bit_size = alu->def.bit_size;
-      switch (alu->op) {
-      case nir_op_bitfield_select:
-      case nir_op_imul_high:
-      case nir_op_umul_high:
-      case nir_op_uadd_carry:
-      case nir_op_usub_borrow:
-         return 32;
-      case nir_op_iabs:
-      case nir_op_imax:
-      case nir_op_umax:
-      case nir_op_imin:
-      case nir_op_umin:
-      case nir_op_ishr:
-      case nir_op_ushr:
-      case nir_op_ishl:
-      case nir_op_isign:
-      case nir_op_uadd_sat:
-      case nir_op_usub_sat:
-         return (bit_size == 8 || !(chip >= GFX8 && alu->def.divergent)) ? 32 : 0;
-      case nir_op_iadd_sat:
-      case nir_op_isub_sat:
-         return bit_size == 8 || !alu->def.divergent ? 32 : 0;
-
-      default:
-         return 0;
-      }
-   }
-
-   if (nir_src_bit_size(alu->src[0].src) & (8 | 16)) {
-      unsigned bit_size = nir_src_bit_size(alu->src[0].src);
-      switch (alu->op) {
-      case nir_op_bit_count:
-      case nir_op_find_lsb:
-      case nir_op_ufind_msb:
-         return 32;
-      case nir_op_ilt:
-      case nir_op_ige:
-      case nir_op_ieq:
-      case nir_op_ine:
-      case nir_op_ult:
-      case nir_op_uge:
-      case nir_op_bitz:
-      case nir_op_bitnz:
-         return (bit_size == 8 || !(chip >= GFX8 && alu->def.divergent)) ? 32 : 0;
-      default:
-         return 0;
-      }
-   }
-
-   return 0;
-}
-
 static uint8_t
 opt_vectorize_callback(const nir_instr *instr, const void *_)
 {
@@ -597,7 +527,7 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
       if (gfx_level >= GFX8)
          nir_divergence_analysis(stage->nir);
 
-      if (nir_lower_bit_size(stage->nir, lower_bit_size_callback, device)) {
+      if (nir_lower_bit_size(stage->nir, ac_nir_lower_bit_size_callback, &gfx_level)) {
          NIR_PASS(_, stage->nir, nir_opt_constant_folding);
       }
    }
