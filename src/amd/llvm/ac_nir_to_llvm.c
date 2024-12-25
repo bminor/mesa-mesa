@@ -2969,9 +2969,6 @@ static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *ins
       } else
          fprintf(stderr, "Unknown primitive id intrinsic: %d", ctx->stage);
       break;
-   case nir_intrinsic_load_sample_id:
-      result = ac_unpack_param(&ctx->ac, ac_get_arg(&ctx->ac, ctx->args->ancillary), 8, 4);
-      break;
    case nir_intrinsic_load_sample_pos:
       result = load_sample_pos(ctx);
       break;

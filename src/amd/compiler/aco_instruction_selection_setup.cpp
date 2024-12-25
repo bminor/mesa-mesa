@@ -543,7 +543,6 @@ init_context(isel_context* ctx, nir_shader* shader)
                case nir_intrinsic_load_lds_ngg_gs_out_vertex_base_amd:
                case nir_intrinsic_load_smem_amd:
                case nir_intrinsic_unit_test_uniform_amd: type = RegType::sgpr; break;
-               case nir_intrinsic_load_sample_id:
                case nir_intrinsic_load_input:
                case nir_intrinsic_load_per_primitive_input:
                case nir_intrinsic_load_output:

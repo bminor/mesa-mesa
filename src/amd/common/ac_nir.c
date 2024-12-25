@@ -247,6 +247,9 @@ lower_intrinsic_to_arg(nir_builder *b, nir_instr *instr, void *state)
          unreachable("unexpected shader stage");
       }
       break;
+   case nir_intrinsic_load_sample_id:
+      replacement = ac_nir_unpack_arg(b, s->args, s->args->ancillary, 8, 4);
+      break;
    default:
       return false;
    }

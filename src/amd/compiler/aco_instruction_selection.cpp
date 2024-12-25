@@ -8547,11 +8547,6 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
       set_wqm(ctx);
       break;
    }
-   case nir_intrinsic_load_sample_id: {
-      bld.vop3(aco_opcode::v_bfe_u32, Definition(get_ssa_temp(ctx, &instr->def)),
-               get_arg(ctx, ctx->args->ancillary), Operand::c32(8u), Operand::c32(4u));
-      break;
-   }
    case nir_intrinsic_read_first_invocation: {
       Temp src = get_ssa_temp(ctx, instr->src[0].ssa);
       Temp dst = get_ssa_temp(ctx, &instr->def);
