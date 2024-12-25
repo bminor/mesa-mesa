@@ -180,6 +180,46 @@ lower_intrinsic_to_arg(nir_builder *b, nir_instr *instr, void *state)
                              ac_nir_load_arg(b, s->args, s->args->frag_pos[2]),
                              ac_nir_load_arg(b, s->args, s->args->frag_pos[3]));
       break;
+   case nir_intrinsic_load_local_invocation_id:
+      if (s->args->args[s->args->local_invocation_ids.arg_index].size == 1) {
+         /* Thread IDs are packed in VGPR0, 10 bits per component. */
+         unsigned num_bits[3];
+
+         for (unsigned i = 0; i < 3; i++) {
+            bool has_chan = b->shader->info.workgroup_size_variable ||
+                            b->shader->info.workgroup_size[i] > 1;
+            /* Extract as few bits possible - we want the constant to be an inline constant
+             * instead of a literal. ID.z should always extract all remaining bits, which
+             * will translate to a bit shift.
+             */
+            num_bits[i] = !has_chan ? 0 :
+                          i == 2 ? 12 :
+                          b->shader->info.workgroup_size_variable ?
+                                      10 : util_logbase2_ceil(b->shader->info.workgroup_size[i]);
+         }
+
+         /* Always extract all remaining bits if later ID components are always 0, which will
+          * translate to a bit shift.
+          */
+         if (!num_bits[2]) {
+            if (num_bits[1])
+               num_bits[1] = 22; /* Y > 0, Z == 0 */
+            else if (num_bits[0])
+               num_bits[0] = 32; /* X > 0, Y == 0, Z == 0 */
+         }
+
+         nir_def *vec[3];
+         for (unsigned i = 0; i < 3; i++) {
+            vec[i] = !num_bits[i] ? nir_imm_int(b, 0) :
+                        ac_nir_unpack_arg(b, s->args, s->args->local_invocation_ids, i * 10,
+                                          num_bits[i]);
+         }
+
+         replacement = nir_vec(b, vec, 3);
+      } else {
+         replacement = ac_nir_load_arg(b, s->args, s->args->local_invocation_ids);
+      }
+      break;
    default:
       return false;
    }
