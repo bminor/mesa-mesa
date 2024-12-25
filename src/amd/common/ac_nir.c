@@ -1727,7 +1727,9 @@ ac_nir_lower_mem_access_bit_sizes(nir_shader *shader, enum amd_gfx_level gfx_lev
    };
    nir_lower_mem_access_bit_sizes_options lower_mem_access_options = {
       .callback = &lower_mem_access_cb,
-      .modes = nir_var_mem_ubo | nir_var_mem_push_const | nir_var_mem_ssbo | nir_var_mem_global | nir_var_mem_constant,
+      .modes = nir_var_mem_ubo | nir_var_mem_push_const | nir_var_mem_ssbo |
+               nir_var_mem_global | nir_var_mem_constant | nir_var_mem_shared |
+               nir_var_shader_temp,
       .may_lower_unaligned_stores_to_atomics = false,
       .cb_data = &cb_data,
    };
