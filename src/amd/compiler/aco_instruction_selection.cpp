@@ -8125,15 +8125,6 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
    case nir_intrinsic_load_frag_shading_rate:
       emit_load_frag_shading_rate(ctx, get_ssa_temp(ctx, &instr->def));
       break;
-   case nir_intrinsic_load_sample_pos: {
-      Temp posx = get_arg(ctx, ctx->args->frag_pos[0]);
-      Temp posy = get_arg(ctx, ctx->args->frag_pos[1]);
-      bld.pseudo(
-         aco_opcode::p_create_vector, Definition(get_ssa_temp(ctx, &instr->def)),
-         posx.id() ? bld.vop1(aco_opcode::v_fract_f32, bld.def(v1), posx) : Operand::zero(),
-         posy.id() ? bld.vop1(aco_opcode::v_fract_f32, bld.def(v1), posy) : Operand::zero());
-      break;
-   }
    case nir_intrinsic_load_tess_coord: visit_load_tess_coord(ctx, instr); break;
    case nir_intrinsic_load_interpolated_input: visit_load_interpolated_input(ctx, instr); break;
    case nir_intrinsic_store_output: visit_store_output(ctx, instr); break;

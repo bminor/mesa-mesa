@@ -250,6 +250,10 @@ lower_intrinsic_to_arg(nir_builder *b, nir_instr *instr, void *state)
    case nir_intrinsic_load_sample_id:
       replacement = ac_nir_unpack_arg(b, s->args, s->args->ancillary, 8, 4);
       break;
+   case nir_intrinsic_load_sample_pos:
+      replacement = nir_vec2(b, nir_ffract(b, ac_nir_load_arg(b, s->args, s->args->frag_pos[0])),
+                             nir_ffract(b, ac_nir_load_arg(b, s->args, s->args->frag_pos[1])));
+      break;
    default:
       return false;
    }

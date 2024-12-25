@@ -2657,19 +2657,6 @@ static LLVMValueRef visit_var_atomic(struct ac_nir_context *ctx, const nir_intri
    return result;
 }
 
-static LLVMValueRef load_sample_pos(struct ac_nir_context *ctx)
-{
-   LLVMValueRef values[2];
-   LLVMValueRef pos[2];
-
-   pos[0] = ac_to_float(&ctx->ac, ac_get_arg(&ctx->ac, ctx->args->frag_pos[0]));
-   pos[1] = ac_to_float(&ctx->ac, ac_get_arg(&ctx->ac, ctx->args->frag_pos[1]));
-
-   values[0] = ac_build_fract(&ctx->ac, pos[0], 32);
-   values[1] = ac_build_fract(&ctx->ac, pos[1], 32);
-   return ac_build_gather_values(&ctx->ac, values, 2);
-}
-
 static LLVMValueRef lookup_interp_param(struct ac_nir_context *ctx, enum glsl_interp_mode interp,
                                         unsigned location)
 {
@@ -2968,9 +2955,6 @@ static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *ins
             result = ac_get_arg(&ctx->ac, ctx->args->gs_prim_id); /* NGG */
       } else
          fprintf(stderr, "Unknown primitive id intrinsic: %d", ctx->stage);
-      break;
-   case nir_intrinsic_load_sample_pos:
-      result = load_sample_pos(ctx);
       break;
    case nir_intrinsic_load_frag_shading_rate:
       result = emit_load_frag_shading_rate(ctx);
