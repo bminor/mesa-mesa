@@ -220,6 +220,18 @@ lower_intrinsic_to_arg(nir_builder *b, nir_instr *instr, void *state)
          replacement = ac_nir_load_arg(b, s->args, s->args->local_invocation_ids);
       }
       break;
+   case nir_intrinsic_load_first_vertex:
+      replacement = ac_nir_load_arg(b, s->args, s->args->base_vertex);
+      break;
+   case nir_intrinsic_load_base_instance:
+      replacement = ac_nir_load_arg(b, s->args, s->args->start_instance);
+      break;
+   case nir_intrinsic_load_draw_id:
+      replacement = ac_nir_load_arg(b, s->args, s->args->draw_id);
+      break;
+   case nir_intrinsic_load_view_index:
+      replacement = ac_nir_load_arg(b, s->args, s->args->view_index);
+      break;
    default:
       return false;
    }

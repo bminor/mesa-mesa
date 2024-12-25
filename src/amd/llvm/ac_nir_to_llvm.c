@@ -2945,8 +2945,6 @@ static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *ins
          unreachable("invalid stage");
       }
       break;
-   case nir_intrinsic_load_base_vertex:
-   case nir_intrinsic_load_first_vertex:
    case nir_intrinsic_load_ring_attr_amd:
    case nir_intrinsic_load_lds_ngg_scratch_base_amd:
    case nir_intrinsic_load_lds_ngg_gs_out_vertex_base_amd:
@@ -2954,15 +2952,6 @@ static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *ins
       break;
    case nir_intrinsic_load_vertex_id_zero_base:
       result = ctx->abi->vertex_id_replaced ? ctx->abi->vertex_id_replaced : ctx->abi->vertex_id;
-      break;
-   case nir_intrinsic_load_base_instance:
-      result = ac_get_arg(&ctx->ac, ctx->args->start_instance);
-      break;
-   case nir_intrinsic_load_draw_id:
-      result = ac_get_arg(&ctx->ac, ctx->args->draw_id);
-      break;
-   case nir_intrinsic_load_view_index:
-      result = ac_get_arg(&ctx->ac, ctx->args->view_index);
       break;
    case nir_intrinsic_load_invocation_id:
       assert(ctx->stage == MESA_SHADER_TESS_CTRL || ctx->stage == MESA_SHADER_GEOMETRY);

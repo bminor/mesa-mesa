@@ -529,8 +529,6 @@ init_context(isel_context* ctx, nir_shader* shader)
                case nir_intrinsic_load_sbt_base_amd:
                case nir_intrinsic_load_subgroup_id:
                case nir_intrinsic_load_num_subgroups:
-               case nir_intrinsic_load_first_vertex:
-               case nir_intrinsic_load_base_instance:
                case nir_intrinsic_vote_all:
                case nir_intrinsic_vote_any:
                case nir_intrinsic_read_first_invocation:
@@ -623,12 +621,7 @@ init_context(isel_context* ctx, nir_shader* shader)
                case nir_intrinsic_ddx_fine:
                case nir_intrinsic_ddy_fine:
                case nir_intrinsic_ddx_coarse:
-               case nir_intrinsic_ddy_coarse:
-                  type = RegType::vgpr;
-                  break;
-               case nir_intrinsic_load_view_index:
-                  type = ctx->stage == fragment_fs ? RegType::vgpr : RegType::sgpr;
-                  break;
+               case nir_intrinsic_ddy_coarse: type = RegType::vgpr; break;
                default:
                   for (unsigned i = 0; i < nir_intrinsic_infos[intrinsic->intrinsic].num_srcs;
                        i++) {

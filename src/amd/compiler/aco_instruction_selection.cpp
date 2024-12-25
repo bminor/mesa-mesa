@@ -8126,11 +8126,6 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
       bld.copy(Definition(get_ssa_temp(ctx, &instr->def)), get_arg(ctx, ctx->args->front_face));
       break;
    }
-   case nir_intrinsic_load_view_index: {
-      Temp dst = get_ssa_temp(ctx, &instr->def);
-      bld.copy(Definition(dst), Operand(get_arg(ctx, ctx->args->view_index)));
-      break;
-   }
    case nir_intrinsic_load_frag_shading_rate:
       emit_load_frag_shading_rate(ctx, get_ssa_temp(ctx, &instr->def));
       break;
@@ -9009,24 +9004,9 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
       bld.copy(Definition(dst), get_arg(ctx, ctx->args->vertex_id));
       break;
    }
-   case nir_intrinsic_load_first_vertex: {
-      Temp dst = get_ssa_temp(ctx, &instr->def);
-      bld.copy(Definition(dst), get_arg(ctx, ctx->args->base_vertex));
-      break;
-   }
-   case nir_intrinsic_load_base_instance: {
-      Temp dst = get_ssa_temp(ctx, &instr->def);
-      bld.copy(Definition(dst), get_arg(ctx, ctx->args->start_instance));
-      break;
-   }
    case nir_intrinsic_load_instance_id: {
       Temp dst = get_ssa_temp(ctx, &instr->def);
       bld.copy(Definition(dst), get_arg(ctx, ctx->args->instance_id));
-      break;
-   }
-   case nir_intrinsic_load_draw_id: {
-      Temp dst = get_ssa_temp(ctx, &instr->def);
-      bld.copy(Definition(dst), get_arg(ctx, ctx->args->draw_id));
       break;
    }
    case nir_intrinsic_load_invocation_id: {

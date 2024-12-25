@@ -294,9 +294,6 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
    nir_def *replacement = NULL;
 
    switch (intrin->intrinsic) {
-   case nir_intrinsic_load_first_vertex:
-      replacement = ac_nir_load_arg(b, &args->ac, args->ac.base_vertex);
-      break;
    case nir_intrinsic_load_base_vertex: {
       nir_def *indexed = GET_FIELD_NIR(VS_STATE_INDEXED);
       indexed = nir_i2b(b, indexed);

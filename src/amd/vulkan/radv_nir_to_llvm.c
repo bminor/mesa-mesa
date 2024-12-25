@@ -215,18 +215,6 @@ declare_esgs_ring(struct radv_shader_context *ctx)
    LLVMSetAlignment(esgs_ring, 64 * 1024);
 }
 
-static LLVMValueRef
-radv_intrinsic_load(struct ac_shader_abi *abi, nir_intrinsic_instr *intrin)
-{
-   switch (intrin->intrinsic) {
-   case nir_intrinsic_load_base_vertex:
-   case nir_intrinsic_load_first_vertex:
-      return radv_load_base_vertex(abi, intrin->intrinsic == nir_intrinsic_load_base_vertex);
-   default:
-      return NULL;
-   }
-}
-
 static LLVMModuleRef
 ac_translate_nir_to_llvm(struct ac_llvm_compiler *ac_llvm, const struct radv_nir_compiler_options *options,
                          const struct radv_shader_info *info, struct nir_shader *const *shaders, int shader_count,
@@ -280,7 +268,6 @@ ac_translate_nir_to_llvm(struct ac_llvm_compiler *ac_llvm, const struct radv_nir
 
    create_function(&ctx, shaders[shader_count - 1]->info.stage, shader_count >= 2);
 
-   ctx.abi.intrinsic_load = radv_intrinsic_load;
    ctx.abi.load_ubo = radv_load_ubo;
    ctx.abi.load_ssbo = radv_load_ssbo;
    ctx.abi.load_sampler_desc = radv_get_sampler_desc;
