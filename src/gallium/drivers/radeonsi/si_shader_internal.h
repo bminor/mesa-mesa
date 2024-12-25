@@ -7,9 +7,7 @@
 #ifndef SI_SHADER_PRIVATE_H
 #define SI_SHADER_PRIVATE_H
 
-#include "ac_hw_stage.h"
-#include "ac_shader_args.h"
-#include "ac_shader_util.h"
+#include "ac_nir.h"
 #include "si_shader.h"
 
 #define SI_SPI_PS_INPUT_ADDR_FOR_PROLOG (       \
@@ -81,8 +79,17 @@ struct si_shader_args {
    struct ac_arg cs_image[3];
 };
 
-struct ac_nir_gs_output_info;
-typedef struct ac_nir_gs_output_info ac_nir_gs_output_info;
+struct si_gs_output_info {
+   uint8_t streams[64];
+   uint8_t streams_16bit_lo[16];
+   uint8_t streams_16bit_hi[16];
+
+   uint8_t usage_mask[64];
+   uint8_t usage_mask_16bit_lo[16];
+   uint8_t usage_mask_16bit_hi[16];
+
+   ac_nir_gs_output_info info;
+};
 
 struct nir_builder;
 typedef struct nir_builder nir_builder;
