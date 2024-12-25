@@ -91,6 +91,13 @@ struct si_gs_output_info {
    ac_nir_gs_output_info info;
 };
 
+struct si_nir_shader_ctx {
+   struct si_shader_args args;
+   struct si_gs_output_info legacy_gs_output_info;
+   nir_shader *nir;
+   bool free_nir;
+};
+
 struct nir_builder;
 typedef struct nir_builder nir_builder;
 
@@ -103,10 +110,8 @@ bool si_is_merged_shader(struct si_shader *shader);
 unsigned si_get_max_workgroup_size(const struct si_shader *shader);
 enum ac_hw_stage si_select_hw_stage(const gl_shader_stage stage, const union si_shader_key *const key,
                                     const enum amd_gfx_level gfx_level);
-nir_shader *si_get_prev_stage_nir_shader(struct si_shader *shader,
-                                         struct si_shader *prev_shader,
-                                         struct si_shader_args *args,
-                                         bool *free_nir);
+void si_get_prev_stage_nir_shader(struct si_shader *shader, struct si_shader *prev_shader,
+                                  struct si_nir_shader_ctx *ctx);
 void si_get_ps_prolog_args(struct si_shader_args *args,
                            const union si_shader_part_key *key);
 void si_get_ps_epilog_args(struct si_shader_args *args,

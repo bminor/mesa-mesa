@@ -2229,28 +2229,26 @@ si_init_gs_output_info(struct si_shader_info *info, struct si_gs_output_info *ou
    ac_info->types_16bit_lo = ac_info->types_16bit_hi = NULL;
 }
 
-static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_shader_args *args,
-                                            bool *free_nir,
-                                            struct si_gs_output_info *legacy_gs_output_info)
+static void get_nir_shader(struct si_shader *shader, struct si_nir_shader_ctx *ctx)
 {
    struct si_shader_selector *sel = shader->selector;
    const union si_shader_key *key = &shader->key;
 
+   memset(ctx, 0, sizeof(*ctx));
    nir_shader *nir;
-   *free_nir = false;
 
    if (sel->nir) {
-      nir = sel->nir;
+      ctx->nir = nir = sel->nir;
    } else if (sel->nir_binary) {
-      nir = si_deserialize_shader(sel);
-      *free_nir = true;
+      ctx->nir = nir = si_deserialize_shader(sel);
+      ctx->free_nir = true;
    } else {
-      return NULL;
+      return;
    }
 
    if (sel->stage == MESA_SHADER_GEOMETRY && !shader->key.ge.as_ngg) {
-      memset(legacy_gs_output_info, 0, sizeof(*legacy_gs_output_info));
-      si_init_gs_output_info(&sel->info, legacy_gs_output_info);
+      memset(&ctx->legacy_gs_output_info, 0, sizeof(ctx->legacy_gs_output_info));
+      si_init_gs_output_info(&sel->info, &ctx->legacy_gs_output_info);
    }
 
    bool progress = false;
@@ -2267,7 +2265,7 @@ static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_
       nir_print_shader(nir, stdout);
    }
 
-   si_init_shader_args(shader, args, &nir->info);
+   si_init_shader_args(shader, &ctx->args, &nir->info);
 
    /* Kill outputs according to the shader key. */
    if (nir->info.stage <= MESA_SHADER_GEOMETRY)
@@ -2288,7 +2286,7 @@ static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_
                                &inline_uniforms, &inlined_uniform_values);
 
    if (inline_uniforms) {
-      assert(*free_nir);
+      assert(ctx->free_nir);
 
       /* Most places use shader information from the default variant, not
        * the optimized variant. These are the things that the driver looks at
@@ -2427,7 +2425,7 @@ static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_
    progress |= ac_nir_lower_indirect_derefs(nir, sel->screen->info.gfx_level);
 
    if (nir->info.stage == MESA_SHADER_VERTEX)
-      NIR_PASS(progress, nir, si_nir_lower_vs_inputs, shader, args);
+      NIR_PASS(progress, nir, si_nir_lower_vs_inputs, shader, &ctx->args);
 
    progress |= si_lower_io_to_mem(shader, nir);
 
@@ -2461,7 +2459,8 @@ static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_
       }
       progress = true;
    } else if (nir->info.stage == MESA_SHADER_GEOMETRY && !key->ge.as_ngg) {
-      NIR_PASS_V(nir, ac_nir_lower_legacy_gs, false, sel->screen->use_ngg, &legacy_gs_output_info->info);
+      NIR_PASS_V(nir, ac_nir_lower_legacy_gs, false, sel->screen->use_ngg,
+                 &ctx->legacy_gs_output_info.info);
       progress = true;
    } else if (nir->info.stage == MESA_SHADER_FRAGMENT && shader->is_monolithic) {
       /* Uniform inlining can eliminate PS inputs, and colormask can remove PS outputs,
@@ -2549,7 +2548,7 @@ static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_
    NIR_PASS(progress, nir, nir_lower_io_to_scalar,
             nir_var_mem_ubo | nir_var_mem_ssbo | nir_var_mem_shared | nir_var_mem_global,
             ac_nir_scalarize_overfetching_loads_callback, &sel->screen->info.gfx_level);
-   NIR_PASS(progress, nir, si_nir_lower_resource, shader, args);
+   NIR_PASS(progress, nir, si_nir_lower_resource, shader, &ctx->args);
 
    if (progress) {
       si_nir_opts(sel->screen, nir, false);
@@ -2595,11 +2594,11 @@ static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_
       progress |= ac_nir_optimize_uniform_atomics(nir);
 
    NIR_PASS(progress, nir, nir_lower_int64);
-   NIR_PASS(progress, nir, si_nir_lower_abi, shader, args);
+   NIR_PASS(progress, nir, si_nir_lower_abi, shader, &ctx->args);
    NIR_PASS(progress, nir, ac_nir_lower_intrinsics_to_args, sel->screen->info.gfx_level,
             sel->screen->info.has_ls_vgpr_init_bug,
             si_select_hw_stage(nir->info.stage, key, sel->screen->info.gfx_level),
-            shader->wave_size, si_get_max_workgroup_size(shader), &args->ac);
+            shader->wave_size, si_get_max_workgroup_size(shader), &ctx->args.ac);
 
    /* LLVM keep non-uniform sampler as index, so can't do this in NIR.
     * Must be done after si_nir_lower_resource().
@@ -2648,8 +2647,6 @@ static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_
       ralloc_free((void*)nir->info.name);
       nir->info.name = original_name;
    }
-
-   return nir;
 }
 
 void si_update_shader_binary_info(struct si_shader *shader, nir_shader *nir)
@@ -2943,12 +2940,9 @@ bool si_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *compi
    if (sel->stage == MESA_SHADER_FRAGMENT && sel->info.base.use_aco_amd)
       si_set_spi_ps_input_config(shader);
 
-   /* We need this info only when legacy GS. */
-   struct si_gs_output_info legacy_gs_output_info;
-   struct si_shader_args args;
-   bool free_nir;
-   struct nir_shader *nir =
-      si_get_nir_shader(shader, &args, &free_nir, &legacy_gs_output_info);
+   struct si_nir_shader_ctx ctx;
+   get_nir_shader(shader, &ctx);
+   nir_shader *nir = ctx.nir;
 
    /* Dump NIR before doing NIR->LLVM conversion in case the
     * conversion fails. */
@@ -2999,10 +2993,10 @@ bool si_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *compi
 
    ret =
 #if AMD_LLVM_AVAILABLE
-      !nir->info.use_aco_amd ? si_llvm_compile_shader(sscreen, compiler, shader, &args,
+      !nir->info.use_aco_amd ? si_llvm_compile_shader(sscreen, compiler, shader, &ctx.args,
                                                       debug, nir) :
 #endif
-      si_aco_compile_shader(shader, &args, nir, debug);
+      si_aco_compile_shader(shader, &ctx.args, nir, debug);
 
    if (!ret)
       goto out;
@@ -3013,7 +3007,7 @@ bool si_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *compi
    if (nir->info.stage == MESA_SHADER_GEOMETRY && !shader->key.ge.as_ngg) {
       shader->gs_copy_shader =
          si_nir_generate_gs_copy_shader(sscreen, compiler, shader, nir, debug,
-                                        &legacy_gs_output_info.info);
+                                        &ctx.legacy_gs_output_info.info);
       if (!shader->gs_copy_shader) {
          fprintf(stderr, "radeonsi: can't create GS copy shader\n");
          ret = false;
@@ -3121,7 +3115,7 @@ bool si_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *compi
    }
 
 out:
-   if (free_nir)
+   if (ctx.free_nir)
       ralloc_free(nir);
 
    return ret;
@@ -3652,10 +3646,8 @@ void si_shader_destroy(struct si_shader *shader)
    free(shader->shader_log);
 }
 
-nir_shader *si_get_prev_stage_nir_shader(struct si_shader *shader,
-                                         struct si_shader *prev_shader,
-                                         struct si_shader_args *args,
-                                         bool *free_nir)
+void si_get_prev_stage_nir_shader(struct si_shader *shader, struct si_shader *prev_shader,
+                                  struct si_nir_shader_ctx *ctx)
 {
    const struct si_shader_selector *sel = shader->selector;
    const union si_shader_key *key = &shader->key;
@@ -3684,13 +3676,11 @@ nir_shader *si_get_prev_stage_nir_shader(struct si_shader *shader,
    prev_shader->is_monolithic = true;
    prev_shader->wave_size = shader->wave_size;
 
-   nir_shader *nir = si_get_nir_shader(prev_shader, args, free_nir, NULL);
-   si_update_shader_binary_info(shader, nir);
+   get_nir_shader(prev_shader, ctx);
+   si_update_shader_binary_info(shader, ctx->nir);
 
    shader->info.uses_instanceid |=
       prev_shader->selector->info.uses_instanceid || prev_shader->info.uses_instanceid;
-
-   return nir;
 }
 
 void si_get_ps_prolog_args(struct si_shader_args *args,

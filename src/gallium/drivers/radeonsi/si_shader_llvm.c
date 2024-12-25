@@ -804,14 +804,15 @@ bool si_llvm_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *
        (nir->info.stage == MESA_SHADER_TESS_CTRL || nir->info.stage == MESA_SHADER_GEOMETRY)) {
       /* LS or ES shader. */
       struct si_shader prev_shader = {};
+      struct si_nir_shader_ctx prev_nir_ctx;
 
-      bool free_nir;
-      nir_shader *prev_nir = si_get_prev_stage_nir_shader(shader, &prev_shader, ctx.args, &free_nir);
+      si_get_prev_stage_nir_shader(shader, &prev_shader, &prev_nir_ctx);
+      ctx.args = &prev_nir_ctx.args;
 
       struct ac_llvm_pointer parts[2];
       parts[1] = ctx.main_fn;
 
-      if (!si_llvm_translate_nir(&ctx, &prev_shader, prev_nir, free_nir)) {
+      if (!si_llvm_translate_nir(&ctx, &prev_shader, prev_nir_ctx.nir, prev_nir_ctx.free_nir)) {
          si_llvm_dispose(&ctx);
          return false;
       }
