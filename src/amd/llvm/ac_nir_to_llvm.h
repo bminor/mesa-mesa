@@ -15,15 +15,9 @@
 #include <stdbool.h>
 
 struct nir_shader;
-struct nir_variable;
 struct ac_llvm_context;
 struct ac_shader_abi;
 struct ac_shader_args;
-
-/* Interpolation locations */
-#define INTERP_CENTER   0
-#define INTERP_CENTROID 1
-#define INTERP_SAMPLE   2
 
 static inline unsigned ac_llvm_reg_index_soa(unsigned index, unsigned chan)
 {

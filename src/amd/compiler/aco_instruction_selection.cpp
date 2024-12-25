@@ -7945,21 +7945,6 @@ Temp merged_wave_info_to_mask(isel_context* ctx, unsigned i);
 Temp lanecount_to_mask(isel_context* ctx, Temp count, unsigned bit_offset);
 void pops_await_overlapped_waves(isel_context* ctx);
 
-Temp
-get_interp_param(isel_context* ctx, nir_intrinsic_op intrin, enum glsl_interp_mode interp)
-{
-   bool linear = interp == INTERP_MODE_NOPERSPECTIVE;
-   if (intrin == nir_intrinsic_load_barycentric_pixel ||
-       intrin == nir_intrinsic_load_barycentric_at_offset) {
-      return get_arg(ctx, linear ? ctx->args->linear_center : ctx->args->persp_center);
-   } else if (intrin == nir_intrinsic_load_barycentric_centroid) {
-      return get_arg(ctx, linear ? ctx->args->linear_centroid : ctx->args->persp_centroid);
-   } else {
-      assert(intrin == nir_intrinsic_load_barycentric_sample);
-      return get_arg(ctx, linear ? ctx->args->linear_sample : ctx->args->persp_sample);
-   }
-}
-
 void
 ds_ordered_count_offsets(isel_context* ctx, unsigned index_operand, unsigned wave_release,
                          unsigned wave_done, unsigned* offset0, unsigned* offset1)
@@ -8057,32 +8042,14 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
 {
    Builder bld(ctx->program, ctx->block);
    switch (instr->intrinsic) {
-   case nir_intrinsic_load_barycentric_sample:
-   case nir_intrinsic_load_barycentric_pixel:
-   case nir_intrinsic_load_barycentric_centroid: {
-      glsl_interp_mode mode = (glsl_interp_mode)nir_intrinsic_interp_mode(instr);
-      Temp bary = get_interp_param(ctx, instr->intrinsic, mode);
-      assert(bary.size() == 2);
-      Temp dst = get_ssa_temp(ctx, &instr->def);
-      bld.copy(Definition(dst), bary);
-      emit_split_vector(ctx, dst, 2);
-      break;
-   }
-   case nir_intrinsic_load_barycentric_model: {
-      Temp model = get_arg(ctx, ctx->args->pull_model);
-      assert(model.size() == 3);
-      Temp dst = get_ssa_temp(ctx, &instr->def);
-      bld.copy(Definition(dst), model);
-      emit_split_vector(ctx, dst, 3);
-      break;
-   }
    case nir_intrinsic_load_barycentric_at_offset: {
       Temp offset = get_ssa_temp(ctx, instr->src[0].ssa);
       RegClass rc = RegClass(offset.type(), 1);
       Temp pos1 = bld.tmp(rc), pos2 = bld.tmp(rc);
       bld.pseudo(aco_opcode::p_split_vector, Definition(pos1), Definition(pos2), offset);
-      Temp bary = get_interp_param(ctx, instr->intrinsic,
-                                   (glsl_interp_mode)nir_intrinsic_interp_mode(instr));
+      Temp bary = get_arg(ctx, nir_intrinsic_interp_mode(instr) == INTERP_MODE_NOPERSPECTIVE
+                                  ? ctx->args->linear_center
+                                  : ctx->args->persp_center);
       emit_interp_center(ctx, get_ssa_temp(ctx, &instr->def), bary, pos1, pos2);
       break;
    }

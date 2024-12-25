@@ -275,6 +275,36 @@ lower_intrinsic_to_arg(nir_builder *b, nir_instr *instr, void *state)
    case nir_intrinsic_load_front_face_fsign:
       replacement = ac_nir_load_arg(b, s->args, s->args->front_face);
       break;
+   case nir_intrinsic_load_barycentric_pixel:
+      if (nir_intrinsic_interp_mode(intrin) == INTERP_MODE_NOPERSPECTIVE)
+         replacement = ac_nir_load_arg(b, s->args, s->args->linear_center);
+      else
+         replacement = ac_nir_load_arg(b, s->args, s->args->persp_center);
+      nir_intrinsic_set_flags(nir_instr_as_intrinsic(replacement->parent_instr),
+                              AC_VECTOR_ARG_FLAG(AC_VECTOR_ARG_INTERP_MODE,
+                                                 nir_intrinsic_interp_mode(intrin)));
+      break;
+   case nir_intrinsic_load_barycentric_centroid:
+      if (nir_intrinsic_interp_mode(intrin) == INTERP_MODE_NOPERSPECTIVE)
+         replacement = ac_nir_load_arg(b, s->args, s->args->linear_centroid);
+      else
+         replacement = ac_nir_load_arg(b, s->args, s->args->persp_centroid);
+      nir_intrinsic_set_flags(nir_instr_as_intrinsic(replacement->parent_instr),
+                              AC_VECTOR_ARG_FLAG(AC_VECTOR_ARG_INTERP_MODE,
+                                                 nir_intrinsic_interp_mode(intrin)));
+      break;
+   case nir_intrinsic_load_barycentric_sample:
+      if (nir_intrinsic_interp_mode(intrin) == INTERP_MODE_NOPERSPECTIVE)
+         replacement = ac_nir_load_arg(b, s->args, s->args->linear_sample);
+      else
+         replacement = ac_nir_load_arg(b, s->args, s->args->persp_sample);
+      nir_intrinsic_set_flags(nir_instr_as_intrinsic(replacement->parent_instr),
+                              AC_VECTOR_ARG_FLAG(AC_VECTOR_ARG_INTERP_MODE,
+                                                 nir_intrinsic_interp_mode(intrin)));
+      break;
+   case nir_intrinsic_load_barycentric_model:
+      replacement = ac_nir_load_arg(b, s->args, s->args->pull_model);
+      break;
    default:
       return false;
    }

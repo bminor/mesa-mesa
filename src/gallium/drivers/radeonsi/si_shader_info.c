@@ -66,8 +66,11 @@ static void scan_io_usage(const nir_shader *nir, struct si_shader_info *info,
       nir_instr *src_instr = intr->src[0].ssa->parent_instr;
       if (src_instr->type == nir_instr_type_intrinsic) {
          nir_intrinsic_instr *baryc = nir_instr_as_intrinsic(src_instr);
-         if (nir_intrinsic_infos[baryc->intrinsic].index_map[NIR_INTRINSIC_INTERP_MODE] > 0)
+         if (nir_intrinsic_has_interp_mode(baryc))
             interp = nir_intrinsic_interp_mode(baryc);
+         else if (nir_intrinsic_has_flags(baryc) &&
+                  AC_VECTOR_ARG_FLAG_GET_NAME(baryc) == AC_VECTOR_ARG_INTERP_MODE)
+            interp = AC_VECTOR_ARG_FLAG_GET_VALUE(baryc);
          else
             unreachable("unknown barycentric intrinsic");
       } else {
