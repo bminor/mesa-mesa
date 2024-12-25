@@ -254,6 +254,21 @@ lower_intrinsic_to_arg(nir_builder *b, nir_instr *instr, void *state)
       replacement = nir_vec2(b, nir_ffract(b, ac_nir_load_arg(b, s->args, s->args->frag_pos[0])),
                              nir_ffract(b, ac_nir_load_arg(b, s->args, s->args->frag_pos[1])));
       break;
+   case nir_intrinsic_load_frag_shading_rate: {
+      /* VRS Rate X = Ancillary[2:3]
+       * VRS Rate Y = Ancillary[4:5]
+       */
+      nir_def *x_rate = ac_nir_unpack_arg(b, s->args, s->args->ancillary, 2, 2);
+      nir_def *y_rate = ac_nir_unpack_arg(b, s->args, s->args->ancillary, 4, 2);
+
+      /* xRate = xRate == 0x1 ? Horizontal2Pixels : None. */
+      x_rate = nir_bcsel(b, nir_ieq_imm(b, x_rate, 1), nir_imm_int(b, 4), nir_imm_int(b, 0));
+
+      /* yRate = yRate == 0x1 ? Vertical2Pixels : None. */
+      y_rate = nir_bcsel(b, nir_ieq_imm(b, y_rate, 1), nir_imm_int(b, 1), nir_imm_int(b, 0));
+      replacement = nir_ior(b, x_rate, y_rate);
+      break;
+   }
    default:
       return false;
    }
