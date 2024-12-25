@@ -170,7 +170,9 @@ lower_intrinsic_to_arg(nir_builder *b, nir_instr *instr, void *state)
       } else {
          return false;
       }
-
+      break;
+   case nir_intrinsic_load_pixel_coord:
+      replacement = nir_unpack_32_2x16(b, ac_nir_load_arg(b, s->args, s->args->pos_fixed_pt));
       break;
    default:
       return false;

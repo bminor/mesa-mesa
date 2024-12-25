@@ -561,7 +561,6 @@ init_context(isel_context* ctx, nir_shader* shader)
                case nir_intrinsic_load_interpolated_input:
                case nir_intrinsic_load_front_face_fsign:
                case nir_intrinsic_load_frag_coord:
-               case nir_intrinsic_load_pixel_coord:
                case nir_intrinsic_load_frag_shading_rate:
                case nir_intrinsic_load_sample_pos:
                case nir_intrinsic_load_local_invocation_id:
