@@ -2614,8 +2614,13 @@ static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_
             });
    NIR_PASS(progress, nir, nir_opt_shrink_stores, false);
 
+   nir_divergence_analysis(nir);
+   NIR_PASS(progress, nir, ac_nir_flag_smem_for_loads, sel->screen->info.gfx_level,
+            !nir->info.use_aco_amd, false);
+   NIR_PASS(progress, nir, ac_nir_lower_mem_access_bit_sizes,
+            sel->screen->info.gfx_level, !nir->info.use_aco_amd);
+
    if (sel->stage == MESA_SHADER_KERNEL) {
-      NIR_PASS(progress, nir, ac_nir_lower_mem_access_bit_sizes, sel->screen->info.gfx_level, !nir->info.use_aco_amd);
       NIR_PASS(progress, nir, ac_nir_lower_global_access);
 
       if (nir->info.bit_sizes_int & (8 | 16)) {
