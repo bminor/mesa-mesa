@@ -2252,6 +2252,7 @@ static void get_nir_shader(struct si_shader *shader, struct si_nir_shader_ctx *c
    }
 
    bool progress = false;
+   bool opts_not_run = true;
 
    const char *original_name = NULL;
    if (unlikely(should_print_nir(nir))) {
@@ -2401,7 +2402,8 @@ static void get_nir_shader(struct si_shader *shader, struct si_nir_shader_ctx *c
       !shader->key.ge.as_ls && !shader->key.ge.as_es;
 
    if (progress) {
-      si_nir_opts(sel->screen, nir, true);
+      si_nir_opts(sel->screen, nir, opts_not_run);
+      opts_not_run = false;
       progress = false;
    }
 
@@ -2549,7 +2551,8 @@ static void get_nir_shader(struct si_shader *shader, struct si_nir_shader_ctx *c
    NIR_PASS(progress, nir, si_nir_lower_resource, shader, &ctx->args);
 
    if (progress) {
-      si_nir_opts(sel->screen, nir, false);
+      si_nir_opts(sel->screen, nir, opts_not_run);
+      opts_not_run = false;
       progress = false;
    }
 
@@ -2606,7 +2609,8 @@ static void get_nir_shader(struct si_shader *shader, struct si_nir_shader_ctx *c
    }
 
    if (progress) {
-      si_nir_opts(sel->screen, nir, false);
+      si_nir_opts(sel->screen, nir, opts_not_run);
+      opts_not_run = false;
       progress = false;
    }
 
