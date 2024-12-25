@@ -269,6 +269,12 @@ lower_intrinsic_to_arg(nir_builder *b, nir_instr *instr, void *state)
       replacement = nir_ior(b, x_rate, y_rate);
       break;
    }
+   case nir_intrinsic_load_front_face:
+      replacement = nir_fgt_imm(b, ac_nir_load_arg(b, s->args, s->args->front_face), 0);
+      break;
+   case nir_intrinsic_load_front_face_fsign:
+      replacement = ac_nir_load_arg(b, s->args, s->args->front_face);
+      break;
    default:
       return false;
    }

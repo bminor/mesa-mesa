@@ -2590,10 +2590,10 @@ static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_
       NIR_PASS_V(nir, nir_clear_shared_memory, shared_size, chunk_size);
    }
 
+   NIR_PASS(progress, nir, si_nir_lower_abi, shader, args);
    NIR_PASS(progress, nir, ac_nir_lower_intrinsics_to_args, sel->screen->info.gfx_level,
             si_select_hw_stage(nir->info.stage, key, sel->screen->info.gfx_level),
             &args->ac);
-   NIR_PASS(progress, nir, si_nir_lower_abi, shader, args);
 
    if (progress) {
       si_nir_opts(sel->screen, nir, false);
@@ -2761,8 +2761,8 @@ si_nir_generate_gs_copy_shader(struct si_screen *sscreen,
    struct si_shader_args args;
    si_init_shader_args(shader, &args, &gs_nir->info);
 
-   NIR_PASS_V(nir, ac_nir_lower_intrinsics_to_args, sscreen->info.gfx_level, AC_HW_VERTEX_SHADER, &args.ac);
    NIR_PASS_V(nir, si_nir_lower_abi, shader, &args);
+   NIR_PASS_V(nir, ac_nir_lower_intrinsics_to_args, sscreen->info.gfx_level, AC_HW_VERTEX_SHADER, &args.ac);
 
    si_nir_opts(gs_selector->screen, nir, false);
 

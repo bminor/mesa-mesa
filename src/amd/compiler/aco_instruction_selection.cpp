@@ -8086,15 +8086,6 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
       emit_interp_center(ctx, get_ssa_temp(ctx, &instr->def), bary, pos1, pos2);
       break;
    }
-   case nir_intrinsic_load_front_face: {
-      bld.vopc(aco_opcode::v_cmp_lt_f32, Definition(get_ssa_temp(ctx, &instr->def)),
-               Operand::zero(), get_arg(ctx, ctx->args->front_face));
-      break;
-   }
-   case nir_intrinsic_load_front_face_fsign: {
-      bld.copy(Definition(get_ssa_temp(ctx, &instr->def)), get_arg(ctx, ctx->args->front_face));
-      break;
-   }
    case nir_intrinsic_load_tess_coord: visit_load_tess_coord(ctx, instr); break;
    case nir_intrinsic_load_interpolated_input: visit_load_interpolated_input(ctx, instr); break;
    case nir_intrinsic_store_output: visit_store_output(ctx, instr); break;
