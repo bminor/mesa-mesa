@@ -94,7 +94,6 @@ PROC int ac_drm_query_sensor_info(int device_fd, unsigned sensor_type, unsigned 
                                   void *value) TAIL;
 PROC int ac_drm_query_video_caps_info(int device_fd, unsigned cap_type, unsigned size,
                                       void *value) TAIL;
-PROC int ac_drm_query_gpuvm_fault_info(int device_fd, unsigned size, void *value) TAIL;
 PROC int ac_drm_vm_reserve_vmid(int device_fd, uint32_t flags) TAIL;
 PROC int ac_drm_vm_unreserve_vmid(int device_fd, uint32_t flags) TAIL;
 PROC int ac_drm_create_userqueue(int device_fd, uint32_t ip_type, uint32_t doorbell_handle,

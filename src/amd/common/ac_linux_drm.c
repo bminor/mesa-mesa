@@ -654,18 +654,6 @@ int ac_drm_query_video_caps_info(int device_fd, unsigned cap_type, unsigned size
    return drm_ioctl_write(device_fd, DRM_AMDGPU_INFO, &request, sizeof(struct drm_amdgpu_info));
 }
 
-int ac_drm_query_gpuvm_fault_info(int device_fd, unsigned size, void *value)
-{
-   struct drm_amdgpu_info request;
-
-   memset(&request, 0, sizeof(request));
-   request.return_pointer = (uintptr_t)value;
-   request.return_size = size;
-   request.query = AMDGPU_INFO_GPUVM_FAULT;
-
-   return drm_ioctl_write(device_fd, DRM_AMDGPU_INFO, &request, sizeof(struct drm_amdgpu_info));
-}
-
 int ac_drm_vm_reserve_vmid(int device_fd, uint32_t flags)
 {
    union drm_amdgpu_vm vm;

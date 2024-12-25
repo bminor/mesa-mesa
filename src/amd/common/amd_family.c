@@ -93,28 +93,6 @@ enum amd_gfx_level ac_get_gfx_level(enum radeon_family family)
    return GFX6;
 }
 
-unsigned ac_get_family_id(enum radeon_family family)
-{
-   if (family >= CHIP_GFX1200)
-      return FAMILY_GFX12;
-   if (family >= CHIP_GFX1150)
-      return FAMILY_GFX1150;
-   if (family >= CHIP_NAVI31)
-      return FAMILY_NV3;
-   if (family >= CHIP_NAVI21)
-      return FAMILY_NV;
-   if (family >= CHIP_NAVI10)
-      return FAMILY_NV;
-   if (family >= CHIP_VEGA10)
-      return FAMILY_AI;
-   if (family >= CHIP_TONGA)
-      return FAMILY_VI;
-   if (family >= CHIP_BONAIRE)
-      return FAMILY_CI;
-
-   return FAMILY_SI;
-}
-
 const char *ac_get_llvm_processor_name(enum radeon_family family)
 {
    switch (family) {

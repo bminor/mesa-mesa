@@ -113,17 +113,6 @@ ac_is_sqtt_complete(const struct radeon_info *rad_info, const struct ac_sqtt *da
    return info->cur_offset == info->gfx9_write_counter;
 }
 
-uint32_t
-ac_get_expected_buffer_size(struct radeon_info *rad_info, const struct ac_sqtt_data_info *info)
-{
-   if (rad_info->gfx_level >= GFX10) {
-      uint32_t dropped_cntr_per_se = info->gfx10_dropped_cntr / rad_info->max_se;
-      return ((info->cur_offset * 32) + dropped_cntr_per_se) / 1024;
-   }
-
-   return (info->gfx9_write_counter * 32) / 1024;
-}
-
 bool
 ac_sqtt_add_pso_correlation(struct ac_sqtt *sqtt, uint64_t pipeline_hash, uint64_t api_hash)
 {

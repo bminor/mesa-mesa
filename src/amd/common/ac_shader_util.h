@@ -257,8 +257,6 @@ uint32_t ac_vgt_gs_mode(unsigned gs_max_vert_out, enum amd_gfx_level gfx_level);
 
 unsigned ac_get_tbuffer_format(enum amd_gfx_level gfx_level, unsigned dfmt, unsigned nfmt);
 
-const struct ac_data_format_info *ac_get_data_format_info(unsigned dfmt);
-
 const struct ac_vtx_format_info *ac_get_vtx_format_info_table(enum amd_gfx_level level,
                                                               enum radeon_family family);
 
