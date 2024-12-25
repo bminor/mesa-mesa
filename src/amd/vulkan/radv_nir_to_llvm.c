@@ -279,12 +279,6 @@ ac_translate_nir_to_llvm(struct ac_llvm_compiler *ac_llvm, const struct radv_nir
    if (shader_count >= 2 || is_ngg)
       ac_init_exec_full_mask(&ctx.ac);
 
-   if (args->ac.vs_rel_patch_id.used)
-      ctx.abi.vs_rel_patch_id = ac_get_arg(&ctx.ac, args->ac.vs_rel_patch_id);
-
-   if (options->info->has_ls_vgpr_init_bug && shaders[shader_count - 1]->info.stage == MESA_SHADER_TESS_CTRL)
-      ac_fixup_ls_hs_input_vgprs(&ctx.ac, &ctx.abi, &args->ac);
-
    if (is_ngg) {
       if (!info->is_ngg_passthrough)
          declare_esgs_ring(&ctx);

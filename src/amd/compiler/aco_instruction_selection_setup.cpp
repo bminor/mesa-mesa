@@ -550,7 +550,6 @@ init_context(isel_context* ctx, nir_shader* shader)
                case nir_intrinsic_load_per_vertex_input:
                case nir_intrinsic_load_per_vertex_output:
                case nir_intrinsic_load_interpolated_input:
-               case nir_intrinsic_load_local_invocation_index:
                case nir_intrinsic_load_subgroup_invocation:
                case nir_intrinsic_load_tess_coord:
                case nir_intrinsic_write_invocation_amd:

@@ -105,6 +105,7 @@ typedef struct {
 
    nir_def *vertex_id;
    nir_def *instance_id;
+   nir_def *vs_rel_patch_id;
 } lower_intrinsics_to_args_state;
 
 static nir_def *
@@ -376,6 +377,29 @@ lower_intrinsic_to_arg(nir_builder *b, nir_instr *instr, void *state)
       if (!s->instance_id)
          s->instance_id = preload_arg(s, b->impl, s->args->instance_id, s->args->vertex_id);
       replacement = s->instance_id;
+      break;
+   case nir_intrinsic_load_local_invocation_index:
+      /* GFX11 HS has subgroup_id, so use it instead of vs_rel_patch_id. */
+      if (s->gfx_level < GFX11 &&
+          (s->hw_stage == AC_HW_LOCAL_SHADER || s->hw_stage == AC_HW_HULL_SHADER)) {
+         if (!s->vs_rel_patch_id) {
+            s->vs_rel_patch_id = preload_arg(s, b->impl, s->args->vs_rel_patch_id,
+                                             s->args->tcs_rel_ids);
+         }
+         replacement = s->vs_rel_patch_id;
+      } else if (s->workgroup_size <= s->wave_size) {
+         /* Just a subgroup invocation ID. */
+         replacement = nir_mbcnt_amd(b, nir_imm_intN_t(b, ~0ull, s->wave_size), nir_imm_int(b, 0));
+      } else if (s->gfx_level < GFX12 && s->hw_stage == AC_HW_COMPUTE_SHADER && s->wave_size == 64) {
+         /* After the AND the bits are already multiplied by 64 (left shifted by 6) so we can just
+          * feed that to mbcnt. (GFX12 doesn't have tg_size)
+          */
+         nir_def *wave_id_mul_64 = nir_iand_imm(b, ac_nir_load_arg(b, s->args, s->args->tg_size), 0xfc0);
+         replacement = nir_mbcnt_amd(b, nir_imm_intN_t(b, ~0ull, s->wave_size), wave_id_mul_64);
+      } else {
+         replacement = nir_mbcnt_amd(b, nir_imm_intN_t(b, ~0ull, s->wave_size),
+                                     nir_imul_imm(b, load_subgroup_id_lowered(s, b), s->wave_size));
+      }
       break;
    default:
       return false;

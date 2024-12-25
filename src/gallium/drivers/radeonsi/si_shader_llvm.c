@@ -217,15 +217,6 @@ void si_llvm_create_main_func(struct si_shader_context *ctx)
       };
       LLVMSetAlignment(ctx->ac.lds.value, 256);
    }
-
-   if (ctx->stage == MESA_SHADER_VERTEX) {
-      if (ctx->args->ac.vs_rel_patch_id.used)
-         ctx->abi.vs_rel_patch_id = ac_get_arg(&ctx->ac, ctx->args->ac.vs_rel_patch_id);
-
-      /* Apply the LS-HS input VGPR hw bug workaround. */
-      if (shader->key.ge.as_ls && ctx->screen->info.has_ls_vgpr_init_bug)
-         ac_fixup_ls_hs_input_vgprs(&ctx->ac, &ctx->abi, &ctx->args->ac);
-   }
 }
 
 void si_llvm_optimize_module(struct si_shader_context *ctx)

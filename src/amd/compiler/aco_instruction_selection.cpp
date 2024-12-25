@@ -5277,32 +5277,6 @@ resolve_excess_vmem_const_offset(Builder& bld, Temp& voffset, unsigned const_off
    return const_offset;
 }
 
-Temp
-wave_id_in_threadgroup(isel_context* ctx)
-{
-   Builder bld(ctx->program, ctx->block);
-   return bld.sop2(aco_opcode::s_bfe_u32, bld.def(s1), bld.def(s1, scc),
-                   get_arg(ctx, ctx->args->merged_wave_info), Operand::c32(24u | (4u << 16)));
-}
-
-Temp
-thread_id_in_threadgroup(isel_context* ctx)
-{
-   /* tid_in_tg = wave_id * wave_size + tid_in_wave */
-
-   Builder bld(ctx->program, ctx->block);
-   Temp tid_in_wave = emit_mbcnt(ctx, bld.tmp(v1));
-
-   if (ctx->program->workgroup_size <= ctx->program->wave_size)
-      return tid_in_wave;
-
-   Temp wave_id_in_tg = wave_id_in_threadgroup(ctx);
-   Temp num_pre_threads =
-      bld.sop2(aco_opcode::s_lshl_b32, bld.def(s1), bld.def(s1, scc), wave_id_in_tg,
-               Operand::c32(ctx->program->wave_size == 64 ? 6u : 5u));
-   return bld.vadd32(bld.def(v1), Operand(num_pre_threads), Operand(tid_in_wave));
-}
-
 bool
 store_output_to_temps(isel_context* ctx, nir_intrinsic_instr* instr)
 {
@@ -8068,60 +8042,6 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
       assert(ctx->options->gfx_level >= GFX12 && ctx->stage.hw == AC_HW_COMPUTE_SHADER);
       bld.sop2(aco_opcode::s_bfe_u32, Definition(get_ssa_temp(ctx, &instr->def)), bld.def(s1, scc),
                ctx->ttmp8, Operand::c32(25 | (5 << 16)));
-      break;
-   }
-   case nir_intrinsic_load_local_invocation_index: {
-      if (ctx->stage.hw == AC_HW_LOCAL_SHADER || ctx->stage.hw == AC_HW_HULL_SHADER) {
-         if (ctx->options->gfx_level >= GFX11) {
-            /* On GFX11, RelAutoIndex is WaveID * WaveSize + ThreadID. */
-            Temp wave_id =
-               bld.sop2(aco_opcode::s_bfe_u32, bld.def(s1), bld.def(s1, scc),
-                        get_arg(ctx, ctx->args->tcs_wave_id), Operand::c32(0u | (3u << 16)));
-
-            Temp temp = bld.sop2(aco_opcode::s_mul_i32, bld.def(s1), wave_id,
-                                 Operand::c32(ctx->program->wave_size));
-            emit_mbcnt(ctx, get_ssa_temp(ctx, &instr->def), Operand(), Operand(temp));
-         } else {
-            bld.copy(Definition(get_ssa_temp(ctx, &instr->def)),
-                     get_arg(ctx, ctx->args->vs_rel_patch_id));
-         }
-         break;
-      } else if (ctx->stage.hw == AC_HW_LEGACY_GEOMETRY_SHADER ||
-                 ctx->stage.hw == AC_HW_NEXT_GEN_GEOMETRY_SHADER) {
-         bld.copy(Definition(get_ssa_temp(ctx, &instr->def)), thread_id_in_threadgroup(ctx));
-         break;
-      } else if (ctx->program->workgroup_size <= ctx->program->wave_size) {
-         emit_mbcnt(ctx, get_ssa_temp(ctx, &instr->def));
-         break;
-      }
-
-      Temp id = emit_mbcnt(ctx, bld.tmp(v1));
-
-      if (ctx->options->gfx_level >= GFX12) {
-         Temp tg_num = bld.sop2(aco_opcode::s_bfe_u32, bld.def(s1), bld.def(s1, scc), ctx->ttmp8,
-                                Operand::c32(25 | (5 << 16)));
-         bld.vop3(aco_opcode::v_lshl_or_b32, Definition(get_ssa_temp(ctx, &instr->def)), tg_num,
-                  Operand::c32(ctx->program->wave_size == 64 ? 6 : 5), id);
-         break;
-      }
-
-      /* The tg_size bits [6:11] contain the subgroup id,
-       * we need this multiplied by the wave size, and then OR the thread id to it.
-       */
-      if (ctx->program->wave_size == 64) {
-         /* After the s_and the bits are already multiplied by 64 (left shifted by 6) so we can just
-          * feed that to v_or */
-         Temp tg_num = bld.sop2(aco_opcode::s_and_b32, bld.def(s1), bld.def(s1, scc),
-                                Operand::c32(0xfc0u), get_arg(ctx, ctx->args->tg_size));
-         bld.vop2(aco_opcode::v_or_b32, Definition(get_ssa_temp(ctx, &instr->def)), tg_num, id);
-      } else {
-         /* Extract the bit field and multiply the result by 32 (left shift by 5), then do the OR */
-         Temp tg_num =
-            bld.sop2(aco_opcode::s_bfe_u32, bld.def(s1), bld.def(s1, scc),
-                     get_arg(ctx, ctx->args->tg_size), Operand::c32(0x6u | (0x6u << 16)));
-         bld.vop3(aco_opcode::v_lshl_or_b32, Definition(get_ssa_temp(ctx, &instr->def)), tg_num,
-                  Operand::c32(0x5u), id);
-      }
       break;
    }
    case nir_intrinsic_ddx:
@@ -11093,24 +11013,6 @@ add_startpgm(struct isel_context* ctx)
 }
 
 void
-fix_ls_vgpr_init_bug(isel_context* ctx)
-{
-   Builder bld(ctx->program, ctx->block);
-   constexpr unsigned hs_idx = 1u;
-   Builder::Result hs_thread_count =
-      bld.sop2(aco_opcode::s_bfe_u32, bld.def(s1), bld.def(s1, scc),
-               get_arg(ctx, ctx->args->merged_wave_info), Operand::c32((8u << 16) | (hs_idx * 8u)));
-   Temp ls_has_nonzero_hs_threads = bool_to_vector_condition(ctx, hs_thread_count.def(1).getTemp());
-
-   /* If there are no HS threads, SPI mistakenly loads the LS VGPRs starting at VGPR 0. */
-   Temp vs_rel_patch_id =
-      bld.vop2(aco_opcode::v_cndmask_b32, bld.def(v1), get_arg(ctx, ctx->args->tcs_rel_ids),
-               get_arg(ctx, ctx->args->vs_rel_patch_id), ls_has_nonzero_hs_threads);
-
-   ctx->arg_temps[ctx->args->vs_rel_patch_id.arg_index] = vs_rel_patch_id;
-}
-
-void
 split_arguments(isel_context* ctx, Instruction* startpgm)
 {
    /* Split all arguments except for the first (ring_offsets) and the last
@@ -11535,11 +11437,6 @@ select_shader(isel_context& ctx, nir_shader* nir, const bool need_startpgm, cons
       }
 
       append_logical_start(ctx.block);
-
-      if (ctx.options->has_ls_vgpr_init_bug && ctx.stage == vertex_tess_control_hs &&
-          !program->info.vs.has_prolog)
-         fix_ls_vgpr_init_bug(&ctx);
-
       split_arguments(&ctx, startpgm);
    }
 

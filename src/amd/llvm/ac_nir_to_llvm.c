@@ -2506,16 +2506,6 @@ static LLVMValueRef visit_load_subgroup_id(struct ac_nir_context *ctx)
    }
 }
 
-static LLVMValueRef visit_load_local_invocation_index(struct ac_nir_context *ctx)
-{
-   if (ctx->abi->vs_rel_patch_id)
-      return ctx->abi->vs_rel_patch_id;
-
-   return ac_build_imad(&ctx->ac, visit_load_subgroup_id(ctx),
-                        LLVMConstInt(ctx->ac.i32, ctx->ac.wave_size, 0),
-                        ac_get_thread_id(&ctx->ac));
-}
-
 static LLVMValueRef visit_first_invocation(struct ac_nir_context *ctx)
 {
    LLVMValueRef active_set = ac_build_ballot(&ctx->ac, ctx->ac.i32_1);
@@ -2852,9 +2842,6 @@ static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *ins
       break;
    case nir_intrinsic_load_subgroup_id:
       result = visit_load_subgroup_id(ctx);
-      break;
-   case nir_intrinsic_load_local_invocation_index:
-      result = visit_load_local_invocation_index(ctx);
       break;
    case nir_intrinsic_first_invocation:
       result = visit_first_invocation(ctx);
@@ -4187,16 +4174,4 @@ bool ac_nir_translate(struct ac_llvm_context *ac, struct ac_shader_abi *abi,
       ralloc_free(ctx.verified_interp);
 
    return ret;
-}
-
-/* Fixup the HW not emitting the TCS regs if there are no HS threads. */
-void ac_fixup_ls_hs_input_vgprs(struct ac_llvm_context *ac, struct ac_shader_abi *abi,
-                                const struct ac_shader_args *args)
-{
-   LLVMValueRef count = ac_unpack_param(ac, ac_get_arg(ac, args->merged_wave_info), 8, 8);
-   LLVMValueRef hs_empty = LLVMBuildICmp(ac->builder, LLVMIntEQ, count, ac->i32_0, "");
-
-   abi->vs_rel_patch_id =
-      LLVMBuildSelect(ac->builder, hs_empty, ac_get_arg(ac, args->tcs_rel_ids),
-                      abi->vs_rel_patch_id, "");
 }
