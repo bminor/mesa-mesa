@@ -1671,9 +1671,9 @@ BEGIN_TEST(isel.cf.empty_exec.repair_ssa)
             //>> BB6
             //! /* logical preds: BB5, / linear preds: BB5, / kind: uniform, */
             //>> s1: %sgpr0 = p_parallelcopy 42
-            //>> v1: %vgpr0 = v_mbcnt_hi_u32_b32_e64 -1, %_
+            //>> v1: %vgpr0 = v_mbcnt_hi_u32_b32_e64 %_, %_
             val_sgpr = nir_imm_int(nb, 42);
-            val_vgpr = nir_load_subgroup_invocation(nb);
+            val_vgpr = nir_mbcnt_amd(nb, nir_imm_intN_t(nb, UINT64_MAX, 64), nir_imm_int(nb, 0));
 
             //>> BB7
             //! /* logical preds: BB6, / linear preds: BB6, / kind: uniform, break, */

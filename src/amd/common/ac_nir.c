@@ -401,6 +401,9 @@ lower_intrinsic_to_arg(nir_builder *b, nir_instr *instr, void *state)
                                      nir_imul_imm(b, load_subgroup_id_lowered(s, b), s->wave_size));
       }
       break;
+   case nir_intrinsic_load_subgroup_invocation:
+      replacement = nir_mbcnt_amd(b, nir_imm_intN_t(b, ~0ull, s->wave_size), nir_imm_int(b, 0));
+      break;
    default:
       return false;
    }

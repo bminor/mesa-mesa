@@ -2774,9 +2774,6 @@ static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *ins
    case nir_intrinsic_as_uniform:
       result = ac_build_readlane(&ctx->ac, get_src(ctx, instr->src[0]), NULL);
       break;
-   case nir_intrinsic_load_subgroup_invocation:
-      result = ac_get_thread_id(&ctx->ac);
-      break;
    case nir_intrinsic_load_workgroup_id: {
       LLVMValueRef values[3] = {ctx->ac.i32_0, ctx->ac.i32_0, ctx->ac.i32_0};
 
