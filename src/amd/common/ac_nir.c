@@ -232,6 +232,21 @@ lower_intrinsic_to_arg(nir_builder *b, nir_instr *instr, void *state)
    case nir_intrinsic_load_view_index:
       replacement = ac_nir_load_arg(b, s->args, s->args->view_index);
       break;
+   case nir_intrinsic_load_invocation_id:
+      if (b->shader->info.stage == MESA_SHADER_TESS_CTRL) {
+         replacement = ac_nir_unpack_arg(b, s->args, s->args->tcs_rel_ids, 8, 5);
+      } else if (b->shader->info.stage == MESA_SHADER_GEOMETRY) {
+         if (s->gfx_level >= GFX12) {
+            replacement = ac_nir_unpack_arg(b, s->args, s->args->gs_vtx_offset[0], 27, 5);
+         } else if (s->gfx_level >= GFX10) {
+            replacement = ac_nir_unpack_arg(b, s->args, s->args->gs_invocation_id, 0, 7);
+         } else {
+            replacement = ac_nir_load_arg(b, s->args, s->args->gs_invocation_id);
+         }
+      } else {
+         unreachable("unexpected shader stage");
+      }
+      break;
    default:
       return false;
    }

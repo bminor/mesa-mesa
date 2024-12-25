@@ -2953,18 +2953,6 @@ static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *ins
    case nir_intrinsic_load_vertex_id_zero_base:
       result = ctx->abi->vertex_id_replaced ? ctx->abi->vertex_id_replaced : ctx->abi->vertex_id;
       break;
-   case nir_intrinsic_load_invocation_id:
-      assert(ctx->stage == MESA_SHADER_TESS_CTRL || ctx->stage == MESA_SHADER_GEOMETRY);
-      if (ctx->stage == MESA_SHADER_TESS_CTRL) {
-         result = ac_unpack_param(&ctx->ac, ac_get_arg(&ctx->ac, ctx->args->tcs_rel_ids), 8, 5);
-      } else if (ctx->ac.gfx_level >= GFX12) {
-         result = ac_unpack_param(&ctx->ac, ac_get_arg(&ctx->ac, ctx->args->gs_vtx_offset[0]), 27, 5);
-      } else if (ctx->ac.gfx_level >= GFX10) {
-         result = ac_unpack_param(&ctx->ac, ac_get_arg(&ctx->ac, ctx->args->gs_invocation_id), 0, 7);
-      } else {
-         result = ac_get_arg(&ctx->ac, ctx->args->gs_invocation_id);
-      }
-      break;
    case nir_intrinsic_load_primitive_id:
       if (ctx->stage == MESA_SHADER_GEOMETRY) {
          result = ac_get_arg(&ctx->ac, ctx->args->gs_prim_id);

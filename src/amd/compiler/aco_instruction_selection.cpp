@@ -5375,15 +5375,11 @@ load_input_from_temps(isel_context* ctx, nir_intrinsic_instr* instr, Temp dst)
    if (ctx->shader->info.stage != MESA_SHADER_TESS_CTRL || !ctx->tcs_in_out_eq)
       return false;
 
+   /* This can only be indexing with invocation_id because all other access has been lowered
+    * to load_shared.
+    */
    nir_src* off_src = nir_get_io_offset_src(instr);
-   nir_src* vertex_index_src = nir_get_io_arrayed_index_src(instr);
-   nir_instr* vertex_index_instr = vertex_index_src->ssa->parent_instr;
-   bool can_use_temps =
-      nir_src_is_const(*off_src) && vertex_index_instr->type == nir_instr_type_intrinsic &&
-      nir_instr_as_intrinsic(vertex_index_instr)->intrinsic == nir_intrinsic_load_invocation_id;
-
-   if (!can_use_temps)
-      return false;
+   assert(nir_src_is_const(*off_src));
 
    nir_io_semantics sem = nir_intrinsic_io_semantics(instr);
 
@@ -9007,28 +9003,6 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
    case nir_intrinsic_load_instance_id: {
       Temp dst = get_ssa_temp(ctx, &instr->def);
       bld.copy(Definition(dst), get_arg(ctx, ctx->args->instance_id));
-      break;
-   }
-   case nir_intrinsic_load_invocation_id: {
-      Temp dst = get_ssa_temp(ctx, &instr->def);
-
-      if (ctx->shader->info.stage == MESA_SHADER_GEOMETRY) {
-         if (ctx->options->gfx_level >= GFX12)
-            bld.vop3(aco_opcode::v_bfe_u32, Definition(dst),
-                     get_arg(ctx, ctx->args->gs_vtx_offset[0]), Operand::c32(27u),
-                     Operand::c32(5u));
-         else if (ctx->options->gfx_level >= GFX10)
-            bld.vop2_e64(aco_opcode::v_and_b32, Definition(dst), Operand::c32(127u),
-                         get_arg(ctx, ctx->args->gs_invocation_id));
-         else
-            bld.copy(Definition(dst), get_arg(ctx, ctx->args->gs_invocation_id));
-      } else if (ctx->shader->info.stage == MESA_SHADER_TESS_CTRL) {
-         bld.vop3(aco_opcode::v_bfe_u32, Definition(dst), get_arg(ctx, ctx->args->tcs_rel_ids),
-                  Operand::c32(8u), Operand::c32(5u));
-      } else {
-         unreachable("Unsupported stage for load_invocation_id");
-      }
-
       break;
    }
    case nir_intrinsic_load_primitive_id: {
