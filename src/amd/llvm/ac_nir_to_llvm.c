@@ -1538,18 +1538,6 @@ static LLVMValueRef build_tex_intrinsic(struct ac_nir_context *ctx, const nir_te
    return ac_build_image_opcode(&ctx->ac, args);
 }
 
-static LLVMValueRef visit_get_ssbo_size(struct ac_nir_context *ctx,
-                                        const nir_intrinsic_instr *instr)
-{
-   bool non_uniform = nir_intrinsic_access(instr) & ACCESS_NON_UNIFORM;
-
-   LLVMValueRef rsrc = get_src(ctx, instr->src[0]);
-   if (ctx->abi->load_ssbo)
-      rsrc = ctx->abi->load_ssbo(ctx->abi, rsrc, false, non_uniform);
-
-   return LLVMBuildExtractElement(ctx->ac.builder, rsrc, LLVMConstInt(ctx->ac.i32, 2, false), "");
-}
-
 static LLVMValueRef extract_vector_range(struct ac_llvm_context *ctx, LLVMValueRef src,
                                          unsigned start, unsigned count)
 {
@@ -2488,24 +2476,6 @@ static void emit_demote(struct ac_nir_context *ctx, const nir_intrinsic_instr *i
    ac_build_intrinsic(&ctx->ac, "llvm.amdgcn.wqm.demote", ctx->ac.voidt, &cond, 1, 0);
 }
 
-static LLVMValueRef visit_load_subgroup_id(struct ac_nir_context *ctx)
-{
-   if (gl_shader_stage_is_compute(ctx->stage)) {
-      if (ctx->ac.gfx_level >= GFX12)
-         return ac_build_intrinsic(&ctx->ac, "llvm.amdgcn.wave.id", ctx->ac.i32, NULL, 0, 0);
-      else if (ctx->ac.gfx_level >= GFX10_3)
-         return ac_unpack_param(&ctx->ac, ac_get_arg(&ctx->ac, ctx->args->tg_size), 20, 5);
-      else
-         return ac_unpack_param(&ctx->ac, ac_get_arg(&ctx->ac, ctx->args->tg_size), 6, 6);
-   } else if (ctx->args->tcs_wave_id.used) {
-      return ac_unpack_param(&ctx->ac, ac_get_arg(&ctx->ac, ctx->args->tcs_wave_id), 0, 3);
-   } else if (ctx->args->merged_wave_info.used) {
-      return ac_unpack_param(&ctx->ac, ac_get_arg(&ctx->ac, ctx->args->merged_wave_info), 24, 4);
-   } else {
-      return ctx->ac.i32_0;
-   }
-}
-
 static LLVMValueRef visit_first_invocation(struct ac_nir_context *ctx)
 {
    LLVMValueRef active_set = ac_build_ballot(&ctx->ac, ctx->ac.i32_1);
@@ -2791,7 +2761,6 @@ static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *ins
       result = ac_build_gather_values(&ctx->ac, values, 3);
       break;
    }
-   case nir_intrinsic_load_ring_attr_amd:
    case nir_intrinsic_load_lds_ngg_scratch_base_amd:
    case nir_intrinsic_load_lds_ngg_gs_out_vertex_base_amd:
       result = ctx->abi->intrinsic_load(ctx->abi, instr);
@@ -2809,7 +2778,8 @@ static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *ins
       }
       break;
    case nir_intrinsic_load_subgroup_id:
-      result = visit_load_subgroup_id(ctx);
+      assert(gl_shader_stage_is_compute(ctx->stage) && ctx->ac.gfx_level >= GFX12);
+      result = ac_build_intrinsic(&ctx->ac, "llvm.amdgcn.wave.id", ctx->ac.i32, NULL, 0, 0);
       break;
    case nir_intrinsic_first_invocation:
       result = visit_first_invocation(ctx);
@@ -2836,9 +2806,6 @@ static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *ins
       break;
    case nir_intrinsic_load_ubo:
       result = visit_load_ubo_buffer(ctx, instr);
-      break;
-   case nir_intrinsic_get_ssbo_size:
-      result = visit_get_ssbo_size(ctx, instr);
       break;
    case nir_intrinsic_load_input:
    case nir_intrinsic_load_per_primitive_input:
