@@ -680,6 +680,7 @@ static void si_init_shader_args(struct si_shader *shader, struct si_shader_args 
       break;
 
    case MESA_SHADER_COMPUTE:
+   case MESA_SHADER_KERNEL:
       declare_global_desc_pointers(args);
       declare_per_stage_desc_pointers(args, shader, info, true);
       if (shader->selector->info.uses_grid_size)
@@ -2246,7 +2247,8 @@ static void si_nir_emit_polygon_stipple(nir_shader *nir, struct si_shader_args *
 
 bool si_should_clear_lds(struct si_screen *sscreen, const struct nir_shader *shader)
 {
-   return shader->info.stage == MESA_SHADER_COMPUTE && shader->info.shared_size > 0 && sscreen->options.clear_lds;
+   return gl_shader_stage_is_compute(shader->info.stage) &&
+      shader->info.shared_size > 0 && sscreen->options.clear_lds;
 }
 
 static bool clamp_shadow_comparison_value(nir_builder *b, nir_instr *instr, void *state)
@@ -3102,7 +3104,7 @@ bool si_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *compi
    }
 
    /* Validate SGPR and VGPR usage for compute to detect compiler bugs. */
-   if (nir->info.stage == MESA_SHADER_COMPUTE) {
+   if (gl_shader_stage_is_compute(nir->info.stage)) {
       unsigned max_vgprs =
          sscreen->info.num_physical_wave64_vgprs_per_simd * (shader->wave_size == 32 ? 2 : 1);
       unsigned max_sgprs = sscreen->info.num_physical_sgprs_per_simd;

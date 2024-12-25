@@ -157,6 +157,7 @@ void si_llvm_create_func(struct si_shader_context *ctx, const char *name, LLVMTy
       call_conv = AC_LLVM_AMDGPU_PS;
       break;
    case MESA_SHADER_COMPUTE:
+   case MESA_SHADER_KERNEL:
       call_conv = AC_LLVM_AMDGPU_CS;
       break;
    default:
@@ -596,6 +597,7 @@ static bool si_llvm_translate_nir(struct si_shader_context *ctx, struct si_shade
    }
 
    case MESA_SHADER_COMPUTE:
+   case MESA_SHADER_KERNEL:
       if (ctx->shader->selector->info.base.shared_size)
          si_llvm_declare_compute_memory(ctx);
       break;
