@@ -1092,40 +1092,16 @@ ac_nir_lower_indirect_derefs(nir_shader *shader,
 {
    bool progress = false;
 
+   /* TODO: Don't lower convergent VGPR indexing because the hw can do it. */
+
    /* Lower large variables to scratch first so that we won't bloat the
-    * shader by generating large if ladders for them. We later lower
-    * scratch to alloca's, assuming LLVM won't generate VGPR indexing.
+    * shader by generating large if ladders for them.
     */
    NIR_PASS(progress, shader, nir_lower_vars_to_scratch, nir_var_function_temp, 256,
             glsl_get_natural_size_align_bytes, glsl_get_natural_size_align_bytes);
 
-   /* LLVM doesn't support VGPR indexing on GFX9. */
-   bool llvm_has_working_vgpr_indexing = gfx_level != GFX9;
-
-   /* TODO: Indirect indexing of GS inputs is unimplemented.
-    *
-    * TCS and TES load inputs directly from LDS or offchip memory, so
-    * indirect indexing is trivial.
-    */
-   nir_variable_mode indirect_mask = 0;
-   if (shader->info.stage == MESA_SHADER_GEOMETRY ||
-       (shader->info.stage != MESA_SHADER_TESS_CTRL && shader->info.stage != MESA_SHADER_TESS_EVAL &&
-        !llvm_has_working_vgpr_indexing)) {
-      indirect_mask |= nir_var_shader_in;
-   }
-   if (!llvm_has_working_vgpr_indexing && shader->info.stage != MESA_SHADER_TESS_CTRL)
-      indirect_mask |= nir_var_shader_out;
-
-   /* TODO: We shouldn't need to do this, however LLVM isn't currently
-    * smart enough to handle indirects without causing excess spilling
-    * causing the gpu to hang.
-    *
-    * See the following thread for more details of the problem:
-    * https://lists.freedesktop.org/archives/mesa-dev/2017-July/162106.html
-    */
-   indirect_mask |= nir_var_function_temp;
-
-   NIR_PASS(progress, shader, nir_lower_indirect_derefs, indirect_mask, UINT32_MAX);
+   /* This lowers indirect indexing to if-else ladders. */
+   NIR_PASS(progress, shader, nir_lower_indirect_derefs, nir_var_function_temp, UINT32_MAX);
    return progress;
 }
 
