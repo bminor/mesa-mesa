@@ -98,8 +98,30 @@ ac_nir_lower_sin_cos(nir_shader *shader)
 typedef struct {
    const struct ac_shader_args *const args;
    const enum amd_gfx_level gfx_level;
+   bool has_ls_vgpr_init_bug;
    const enum ac_hw_stage hw_stage;
+
+   nir_def *vertex_id;
+   nir_def *instance_id;
 } lower_intrinsics_to_args_state;
+
+static nir_def *
+preload_arg(lower_intrinsics_to_args_state *s, nir_function_impl *impl, struct ac_arg arg,
+            struct ac_arg ls_buggy_arg)
+{
+   nir_builder start_b = nir_builder_at(nir_before_impl(impl));
+   nir_def *value = ac_nir_load_arg(&start_b, s->args, arg);
+
+   /* If there are no HS threads, SPI mistakenly loads the LS VGPRs starting at VGPR 0. */
+   if ((s->hw_stage == AC_HW_LOCAL_SHADER || s->hw_stage == AC_HW_HULL_SHADER) &&
+       s->has_ls_vgpr_init_bug) {
+      nir_def *count = ac_nir_unpack_arg(&start_b, s->args, s->args->merged_wave_info, 8, 8);
+      nir_def *hs_empty = nir_ieq_imm(&start_b, count, 0);
+      value = nir_bcsel(&start_b, hs_empty, ac_nir_load_arg(&start_b, s->args, ls_buggy_arg),
+                        value);
+   }
+   return value;
+}
 
 static bool
 lower_intrinsic_to_arg(nir_builder *b, nir_instr *instr, void *state)
@@ -332,6 +354,21 @@ lower_intrinsic_to_arg(nir_builder *b, nir_instr *instr, void *state)
       else
          unreachable("Shader doesn't have GS wave ID.");
       break;
+   case nir_intrinsic_overwrite_vs_arguments_amd:
+      s->vertex_id = intrin->src[0].ssa;
+      s->instance_id = intrin->src[1].ssa;
+      nir_instr_remove(instr);
+      return true;
+   case nir_intrinsic_load_vertex_id_zero_base:
+      if (!s->vertex_id)
+         s->vertex_id = preload_arg(s, b->impl, s->args->vertex_id, s->args->tcs_patch_id);
+      replacement = s->vertex_id;
+      break;
+   case nir_intrinsic_load_instance_id:
+      if (!s->instance_id)
+         s->instance_id = preload_arg(s, b->impl, s->args->instance_id, s->args->vertex_id);
+      replacement = s->instance_id;
+      break;
    default:
       return false;
    }
@@ -343,12 +380,13 @@ lower_intrinsic_to_arg(nir_builder *b, nir_instr *instr, void *state)
 
 bool
 ac_nir_lower_intrinsics_to_args(nir_shader *shader, const enum amd_gfx_level gfx_level,
-                                const enum ac_hw_stage hw_stage,
+                                bool has_ls_vgpr_init_bug, const enum ac_hw_stage hw_stage,
                                 const struct ac_shader_args *ac_args)
 {
    lower_intrinsics_to_args_state state = {
       .gfx_level = gfx_level,
       .hw_stage = hw_stage,
+      .has_ls_vgpr_init_bug = has_ls_vgpr_init_bug,
       .args = ac_args,
    };
 

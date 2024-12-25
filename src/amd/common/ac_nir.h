@@ -77,7 +77,7 @@ ac_nir_unpack_arg(nir_builder *b, const struct ac_shader_args *ac_args, struct a
 bool ac_nir_lower_sin_cos(nir_shader *shader);
 
 bool ac_nir_lower_intrinsics_to_args(nir_shader *shader, const enum amd_gfx_level gfx_level,
-                                     const enum ac_hw_stage hw_stage,
+                                     bool has_ls_vgpr_init_bug, const enum ac_hw_stage hw_stage,
                                      const struct ac_shader_args *ac_args);
 
 bool ac_nir_optimize_outputs(nir_shader *nir, bool sprite_tex_disallowed,

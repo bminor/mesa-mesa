@@ -2822,9 +2822,6 @@ static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *ins
    case nir_intrinsic_load_lds_ngg_gs_out_vertex_base_amd:
       result = ctx->abi->intrinsic_load(ctx->abi, instr);
       break;
-   case nir_intrinsic_load_vertex_id_zero_base:
-      result = ctx->abi->vertex_id_replaced ? ctx->abi->vertex_id_replaced : ctx->abi->vertex_id;
-      break;
    case nir_intrinsic_load_primitive_id:
       if (ctx->stage == MESA_SHADER_GEOMETRY) {
          result = ac_get_arg(&ctx->ac, ctx->args->gs_prim_id);
@@ -2844,10 +2841,6 @@ static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *ins
    case nir_intrinsic_load_helper_invocation:
    case nir_intrinsic_is_helper_invocation:
       result = ac_build_load_helper_invocation(&ctx->ac);
-      break;
-   case nir_intrinsic_load_instance_id:
-      result = ctx->abi->instance_id_replaced ?
-         ctx->abi->instance_id_replaced : ctx->abi->instance_id;
       break;
    case nir_intrinsic_load_num_workgroups:
       if (ctx->abi->load_grid_size_from_user_sgpr) {
@@ -3262,10 +3255,6 @@ static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *ins
       result = LLVMBuildICmp(ctx->ac.builder, LLVMIntULT, ac_get_thread_id(&ctx->ac), count, "");
       break;
    }
-   case nir_intrinsic_overwrite_vs_arguments_amd:
-      ctx->abi->vertex_id_replaced = get_src(ctx, instr->src[0]);
-      ctx->abi->instance_id_replaced = get_src(ctx, instr->src[1]);
-      break;
    case nir_intrinsic_overwrite_tes_arguments_amd:
       ctx->abi->tes_u_replaced = ac_to_float(&ctx->ac, get_src(ctx, instr->src[0]));
       ctx->abi->tes_v_replaced = ac_to_float(&ctx->ac, get_src(ctx, instr->src[1]));
@@ -4207,15 +4196,7 @@ void ac_fixup_ls_hs_input_vgprs(struct ac_llvm_context *ac, struct ac_shader_abi
    LLVMValueRef count = ac_unpack_param(ac, ac_get_arg(ac, args->merged_wave_info), 8, 8);
    LLVMValueRef hs_empty = LLVMBuildICmp(ac->builder, LLVMIntEQ, count, ac->i32_0, "");
 
-   abi->instance_id =
-      LLVMBuildSelect(ac->builder, hs_empty, ac_get_arg(ac, args->vertex_id),
-                      abi->instance_id, "");
-
    abi->vs_rel_patch_id =
       LLVMBuildSelect(ac->builder, hs_empty, ac_get_arg(ac, args->tcs_rel_ids),
                       abi->vs_rel_patch_id, "");
-
-   abi->vertex_id =
-      LLVMBuildSelect(ac->builder, hs_empty, ac_get_arg(ac, args->tcs_patch_id),
-                      abi->vertex_id, "");
 }

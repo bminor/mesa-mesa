@@ -8852,16 +8852,6 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
       emit_split_vector(ctx, dst, 2);
       break;
    }
-   case nir_intrinsic_load_vertex_id_zero_base: {
-      Temp dst = get_ssa_temp(ctx, &instr->def);
-      bld.copy(Definition(dst), get_arg(ctx, ctx->args->vertex_id));
-      break;
-   }
-   case nir_intrinsic_load_instance_id: {
-      Temp dst = get_ssa_temp(ctx, &instr->def);
-      bld.copy(Definition(dst), get_arg(ctx, ctx->args->instance_id));
-      break;
-   }
    case nir_intrinsic_load_primitive_id: {
       Temp dst = get_ssa_temp(ctx, &instr->def);
 
@@ -8922,11 +8912,6 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
    case nir_intrinsic_load_resume_shader_address_amd: {
       bld.pseudo(aco_opcode::p_resume_shader_address, Definition(get_ssa_temp(ctx, &instr->def)),
                  bld.def(s1, scc), Operand::c32(nir_intrinsic_call_idx(instr)));
-      break;
-   }
-   case nir_intrinsic_overwrite_vs_arguments_amd: {
-      ctx->arg_temps[ctx->args->vertex_id.arg_index] = get_ssa_temp(ctx, instr->src[0].ssa);
-      ctx->arg_temps[ctx->args->instance_id.arg_index] = get_ssa_temp(ctx, instr->src[1].ssa);
       break;
    }
    case nir_intrinsic_overwrite_tes_arguments_amd: {
@@ -11118,20 +11103,11 @@ fix_ls_vgpr_init_bug(isel_context* ctx)
    Temp ls_has_nonzero_hs_threads = bool_to_vector_condition(ctx, hs_thread_count.def(1).getTemp());
 
    /* If there are no HS threads, SPI mistakenly loads the LS VGPRs starting at VGPR 0. */
-
-   Temp instance_id =
-      bld.vop2(aco_opcode::v_cndmask_b32, bld.def(v1), get_arg(ctx, ctx->args->vertex_id),
-               get_arg(ctx, ctx->args->instance_id), ls_has_nonzero_hs_threads);
    Temp vs_rel_patch_id =
       bld.vop2(aco_opcode::v_cndmask_b32, bld.def(v1), get_arg(ctx, ctx->args->tcs_rel_ids),
                get_arg(ctx, ctx->args->vs_rel_patch_id), ls_has_nonzero_hs_threads);
-   Temp vertex_id =
-      bld.vop2(aco_opcode::v_cndmask_b32, bld.def(v1), get_arg(ctx, ctx->args->tcs_patch_id),
-               get_arg(ctx, ctx->args->vertex_id), ls_has_nonzero_hs_threads);
 
-   ctx->arg_temps[ctx->args->instance_id.arg_index] = instance_id;
    ctx->arg_temps[ctx->args->vs_rel_patch_id.arg_index] = vs_rel_patch_id;
-   ctx->arg_temps[ctx->args->vertex_id.arg_index] = vertex_id;
 }
 
 void

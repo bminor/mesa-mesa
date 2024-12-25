@@ -515,8 +515,9 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
             });
 
    NIR_PASS(_, stage->nir, ac_nir_lower_global_access);
-   NIR_PASS_V(stage->nir, ac_nir_lower_intrinsics_to_args, gfx_level, radv_select_hw_stage(&stage->info, gfx_level),
-              &stage->args.ac);
+   NIR_PASS_V(stage->nir, ac_nir_lower_intrinsics_to_args, gfx_level,
+              pdev->info.has_ls_vgpr_init_bug && gfx_state && !gfx_state->vs.has_prolog,
+              radv_select_hw_stage(&stage->info, gfx_level), &stage->args.ac);
    NIR_PASS_V(stage->nir, radv_nir_lower_abi, gfx_level, stage, gfx_state, pdev->info.address32_hi);
    radv_optimize_nir_algebraic(
       stage->nir, io_to_mem || lowered_ngg || stage->stage == MESA_SHADER_COMPUTE || stage->stage == MESA_SHADER_TASK,
