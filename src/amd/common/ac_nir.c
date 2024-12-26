@@ -255,6 +255,52 @@ lower_intrinsic_to_arg(nir_builder *b, nir_instr *instr, void *state)
          replacement = ac_nir_load_arg(b, s->args, s->args->local_invocation_ids);
       }
       break;
+   case nir_intrinsic_load_merged_wave_info_amd:
+      replacement = ac_nir_load_arg(b, s->args, s->args->merged_wave_info);
+      break;
+   case nir_intrinsic_load_workgroup_num_input_vertices_amd:
+      replacement = ac_nir_unpack_arg(b, s->args, s->args->gs_tg_info, 12, 9);
+      break;
+   case nir_intrinsic_load_workgroup_num_input_primitives_amd:
+      replacement = ac_nir_unpack_arg(b, s->args, s->args->gs_tg_info, 22, 9);
+      break;
+   case nir_intrinsic_load_packed_passthrough_primitive_amd:
+      /* NGG passthrough mode: the HW already packs the primitive export value to a single register.
+       */
+      replacement = ac_nir_load_arg(b, s->args, s->args->gs_vtx_offset[0]);
+      break;
+   case nir_intrinsic_load_ordered_id_amd:
+      replacement = ac_nir_unpack_arg(b, s->args, s->args->gs_tg_info, 0, 12);
+      break;
+   case nir_intrinsic_load_ring_tess_offchip_offset_amd:
+      replacement = ac_nir_load_arg(b, s->args, s->args->tess_offchip_offset);
+      break;
+   case nir_intrinsic_load_ring_tess_factors_offset_amd:
+      replacement = ac_nir_load_arg(b, s->args, s->args->tcs_factor_offset);
+      break;
+   case nir_intrinsic_load_ring_es2gs_offset_amd:
+      replacement = ac_nir_load_arg(b, s->args, s->args->es2gs_offset);
+      break;
+   case nir_intrinsic_load_ring_gs2vs_offset_amd:
+      replacement = ac_nir_load_arg(b, s->args, s->args->gs2vs_offset);
+      break;
+   case nir_intrinsic_load_gs_vertex_offset_amd:
+      replacement = ac_nir_load_arg(b, s->args, s->args->gs_vtx_offset[nir_intrinsic_base(intrin)]);
+      break;
+   case nir_intrinsic_load_streamout_config_amd:
+      replacement = ac_nir_load_arg(b, s->args, s->args->streamout_config);
+      break;
+   case nir_intrinsic_load_streamout_write_index_amd:
+      replacement = ac_nir_load_arg(b, s->args, s->args->streamout_write_index);
+      break;
+   case nir_intrinsic_load_streamout_offset_amd:
+      replacement = ac_nir_load_arg(b, s->args, s->args->streamout_offset[nir_intrinsic_base(intrin)]);
+      break;
+   case nir_intrinsic_load_ring_attr_offset_amd: {
+      nir_def *ring_attr_offset = ac_nir_load_arg(b, s->args, s->args->gs_attr_offset);
+      replacement = nir_ishl_imm(b, nir_ubfe_imm(b, ring_attr_offset, 0, 15), 9); /* 512b increments. */
+      break;
+   }
    case nir_intrinsic_load_first_vertex:
       replacement = ac_nir_load_arg(b, s->args, s->args->base_vertex);
       break;
@@ -310,6 +356,16 @@ lower_intrinsic_to_arg(nir_builder *b, nir_instr *instr, void *state)
    case nir_intrinsic_load_front_face_fsign:
       replacement = ac_nir_load_arg(b, s->args, s->args->front_face);
       break;
+   case nir_intrinsic_load_layer_id:
+      replacement = ac_nir_unpack_arg(b, s->args, s->args->ancillary,
+                                      16, s->gfx_level >= GFX12 ? 14 : 13);
+      break;
+   case nir_intrinsic_load_barycentric_optimize_amd: {
+      nir_def *prim_mask = ac_nir_load_arg(b, s->args, s->args->prim_mask);
+      /* enabled when bit 31 is set */
+      replacement = nir_ilt_imm(b, prim_mask, 0);
+      break;
+   }
    case nir_intrinsic_load_barycentric_pixel:
       if (nir_intrinsic_interp_mode(intrin) == INTERP_MODE_NOPERSPECTIVE)
          replacement = ac_nir_load_arg(b, s->args, s->args->linear_center);

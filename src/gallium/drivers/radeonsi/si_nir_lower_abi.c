@@ -386,12 +386,6 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
       replacement = nir_imul(b, per_vtx_out_patch_size, num_patches);
       break;
    }
-   case nir_intrinsic_load_ring_tess_offchip_offset_amd:
-      replacement = ac_nir_load_arg(b, &args->ac, args->ac.tess_offchip_offset);
-      break;
-   case nir_intrinsic_load_ring_es2gs_offset_amd:
-      replacement = ac_nir_load_arg(b, &args->ac, args->ac.es2gs_offset);
-      break;
    case nir_intrinsic_load_clip_half_line_width_amd: {
       nir_def *addr = ac_nir_load_arg(b, &args->ac, args->small_prim_cull_info);
       replacement = nir_load_smem_amd(b, 2, addr, nir_imm_int(b, 32));
@@ -512,24 +506,6 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
    case nir_intrinsic_load_ring_attr_amd:
       replacement = build_attr_ring_desc(b, shader, args);
       break;
-   case nir_intrinsic_load_ring_attr_offset_amd: {
-      nir_def *offset = ac_nir_unpack_arg(b, &args->ac, args->ac.gs_attr_offset, 0, 15);
-      replacement = nir_ishl_imm(b, offset, 9);
-      break;
-   }
-   case nir_intrinsic_load_ring_gs2vs_offset_amd:
-      replacement = ac_nir_load_arg(b, &args->ac, args->ac.gs2vs_offset);
-      break;
-   case nir_intrinsic_load_streamout_config_amd:
-      replacement = ac_nir_load_arg(b, &args->ac, args->ac.streamout_config);
-      break;
-   case nir_intrinsic_load_streamout_write_index_amd:
-      replacement = ac_nir_load_arg(b, &args->ac, args->ac.streamout_write_index);
-      break;
-   case nir_intrinsic_load_streamout_offset_amd:
-      replacement =
-         ac_nir_load_arg(b, &args->ac, args->ac.streamout_offset[nir_intrinsic_base(intrin)]);
-      break;
    case nir_intrinsic_load_force_vrs_rates_amd:
       if (sel->screen->info.gfx_level >= GFX11) {
          /* Bits [2:5] = VRS rate
@@ -593,9 +569,6 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
       replacement = nir_vector_insert_imm(b, s->tess_offchip_ring, addr, 0);
       break;
    }
-   case nir_intrinsic_load_ring_tess_factors_offset_amd:
-      replacement = ac_nir_load_arg(b, &args->ac, args->ac.tcs_factor_offset);
-      break;
    case nir_intrinsic_load_alpha_reference_amd:
       replacement = ac_nir_load_arg(b, &args->ac, args->alpha_reference);
       break;
@@ -607,16 +580,6 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
          replacement = nir_imm_bool(b, key->ps.opt.force_front_face_input == 1);
       else
          replacement = nir_imm_float(b, key->ps.opt.force_front_face_input == 1 ? 1.0 : -1.0);
-      break;
-   case nir_intrinsic_load_barycentric_optimize_amd: {
-      nir_def *prim_mask = ac_nir_load_arg(b, &args->ac, args->ac.prim_mask);
-      /* enabled when bit 31 is set */
-      replacement = nir_ilt_imm(b, prim_mask, 0);
-      break;
-   }
-   case nir_intrinsic_load_layer_id:
-      replacement = ac_nir_unpack_arg(b, &args->ac, args->ac.ancillary,
-                                      16, sel->screen->info.gfx_level >= GFX12 ? 14 : 13);
       break;
    case nir_intrinsic_load_color0:
    case nir_intrinsic_load_color1: {
@@ -661,20 +624,6 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
    case nir_intrinsic_load_poly_line_smooth_enabled:
       replacement = nir_imm_bool(b, key->ps.mono.poly_line_smoothing);
       break;
-   case nir_intrinsic_load_gs_vertex_offset_amd: {
-      unsigned base = nir_intrinsic_base(intrin);
-      replacement = ac_nir_load_arg(b, &args->ac, args->ac.gs_vtx_offset[base]);
-      break;
-   }
-   case nir_intrinsic_load_merged_wave_info_amd:
-      replacement = ac_nir_load_arg(b, &args->ac, args->ac.merged_wave_info);
-      break;
-   case nir_intrinsic_load_workgroup_num_input_vertices_amd:
-      replacement = ac_nir_unpack_arg(b, &args->ac, args->ac.gs_tg_info, 12, 9);
-      break;
-   case nir_intrinsic_load_workgroup_num_input_primitives_amd:
-      replacement = ac_nir_unpack_arg(b, &args->ac, args->ac.gs_tg_info, 22, 9);
-      break;
    case nir_intrinsic_load_initial_edgeflags_amd: {
       unsigned output_prim = si_get_output_prim_simplified(sel, &shader->key);
 
@@ -705,12 +654,6 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
       }
       break;
    }
-   case nir_intrinsic_load_packed_passthrough_primitive_amd:
-      replacement = ac_nir_load_arg(b, &args->ac, args->ac.gs_vtx_offset[0]);
-      break;
-   case nir_intrinsic_load_ordered_id_amd:
-      replacement = ac_nir_unpack_arg(b, &args->ac, args->ac.gs_tg_info, 0, 12);
-      break;
    case nir_intrinsic_load_ring_esgs_amd:
       assert(s->esgs_ring);
       replacement = s->esgs_ring;
