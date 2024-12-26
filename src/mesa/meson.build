@@ -446,12 +446,9 @@ endif
 _mesa_windows_args = []
 if with_platform_windows
   _mesa_windows_args += [
+    '-D_GLAPI_NO_EXPORTS',
     '-D_GDI32_',    # prevent gl* being declared __declspec(dllimport) in MS headers
   ]
-  if not with_shared_glapi
-    # prevent _glapi_* from being declared __declspec(dllimport)
-    _mesa_windows_args += '-D_GLAPI_NO_EXPORTS'
-  endif
 endif
 
 libmesa = static_library(

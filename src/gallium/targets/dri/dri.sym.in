@@ -1,5 +1,16 @@
 {
 	global:
+                # shared-glapi exported from libgallium:
+                _glapi_get_context;
+                _glapi_get_dispatch;
+                _glapi_get_dispatch_table_size;
+                _glapi_get_proc_address;
+                _glapi_get_proc_offset;
+                _glapi_set_context;
+                _glapi_set_dispatch;
+                _glapi_tls_Context;
+                _glapi_tls_Dispatch;
+
 		ddebug_screen_create;
 		noop_screen_create;
 		util_run_tests;

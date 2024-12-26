@@ -205,7 +205,7 @@ libegl = shared_library(
   cpp_args : [cpp_args_for_egl],
   gnu_symbol_visibility : 'hidden',
   include_directories : incs_for_egl,
-  link_with : [link_for_egl, libglapi],
+  link_with : [link_for_egl],
   link_args : [ld_args_bsymbolic, ld_args_gc_sections, link_args_for_egl],
   link_depends : [link_deps_for_egl],
   dependencies : [deps_for_egl, dep_dl, dep_libdrm, dep_clock, dep_thread, idep_mesautil],
