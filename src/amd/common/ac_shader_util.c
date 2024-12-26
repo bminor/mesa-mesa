@@ -17,20 +17,29 @@
 unsigned ac_get_spi_shader_z_format(bool writes_z, bool writes_stencil, bool writes_samplemask,
                                     bool writes_mrt0_alpha)
 {
-   if (writes_z || writes_mrt0_alpha) {
-      /* Z needs 32 bits. */
-      if (writes_samplemask || writes_mrt0_alpha)
+   /* RGBA = (Z, stencil, samplemask, mrt0_alpha).
+    * Both stencil and sample mask need only 16 bits.
+    */
+   if (writes_mrt0_alpha) {
+      if (writes_stencil || writes_samplemask)
          return V_028710_SPI_SHADER_32_ABGR;
-      else if (writes_stencil)
-         return V_028710_SPI_SHADER_32_GR;
       else
-         return V_028710_SPI_SHADER_32_R;
-   } else if (writes_stencil || writes_samplemask) {
-      /* Both stencil and sample mask need only 16 bits. */
-      return V_028710_SPI_SHADER_UINT16_ABGR;
-   } else {
-      return V_028710_SPI_SHADER_ZERO;
+         return V_028710_SPI_SHADER_32_AR;
    }
+
+   if (writes_samplemask) {
+      if (writes_z)
+         return V_028710_SPI_SHADER_32_ABGR;
+      else
+         return V_028710_SPI_SHADER_UINT16_ABGR;
+   }
+
+   if (writes_stencil)
+      return V_028710_SPI_SHADER_32_GR;
+   else if (writes_z)
+      return V_028710_SPI_SHADER_32_R;
+   else
+      return V_028710_SPI_SHADER_ZERO;
 }
 
 unsigned ac_get_cb_shader_mask(unsigned spi_shader_col_format)

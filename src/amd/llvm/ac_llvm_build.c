@@ -3546,16 +3546,26 @@ void ac_export_mrt_z(struct ac_llvm_context *ctx, LLVMValueRef depth, LLVMValueR
          mask |= 0x1;
       }
       if (stencil) {
+         assert(format == V_028710_SPI_SHADER_32_GR ||
+                format == V_028710_SPI_SHADER_32_ABGR);
          args->out[1] = stencil;
          mask |= 0x2;
       }
       if (samplemask) {
+         assert(format == V_028710_SPI_SHADER_32_ABGR);
          args->out[2] = samplemask;
          mask |= 0x4;
       }
       if (mrt0_alpha) {
-         args->out[3] = mrt0_alpha;
-         mask |= 0x8;
+         assert(format == V_028710_SPI_SHADER_32_AR ||
+                format == V_028710_SPI_SHADER_32_ABGR);
+         if (format == V_028710_SPI_SHADER_32_AR && ctx->gfx_level >= GFX10) {
+            args->out[1] = mrt0_alpha;
+            mask |= 0x2;
+         } else {
+            args->out[3] = mrt0_alpha;
+            mask |= 0x8;
+         }
       }
    }
 

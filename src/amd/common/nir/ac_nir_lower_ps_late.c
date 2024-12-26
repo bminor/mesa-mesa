@@ -275,18 +275,28 @@ emit_ps_mrtz_export(nir_builder *b, lower_ps_state *s, nir_def *mrtz_alpha)
       }
 
       if (s->stencil) {
+         assert(format == V_028710_SPI_SHADER_32_GR ||
+                format == V_028710_SPI_SHADER_32_ABGR);
          outputs[1] = s->stencil;
          write_mask |= 0x2;
       }
 
       if (s->sample_mask) {
+         assert(format == V_028710_SPI_SHADER_32_ABGR);
          outputs[2] = s->sample_mask;
          write_mask |= 0x4;
       }
 
       if (mrtz_alpha) {
-         outputs[3] = mrtz_alpha;
-         write_mask |= 0x8;
+         assert(format == V_028710_SPI_SHADER_32_AR ||
+                format == V_028710_SPI_SHADER_32_ABGR);
+         if (format == V_028710_SPI_SHADER_32_AR && s->options->gfx_level >= GFX10) {
+            outputs[1] = mrtz_alpha;
+            write_mask |= 0x2;
+         } else {
+            outputs[3] = mrtz_alpha;
+            write_mask |= 0x8;
+         }
       }
    }
 

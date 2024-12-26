@@ -10626,8 +10626,12 @@ export_fs_mrtz(isel_context* ctx, const struct aco_ps_epilog_info* info, Temp de
       values[i] = Operand(v1);
    }
 
+   const unsigned format =
+      ac_get_spi_shader_z_format(depth.id(), stencil.id(), samplemask.id(), alpha.id());
+   assert(format != V_028710_SPI_SHADER_ZERO);
+
    /* Both stencil and sample mask only need 16-bits. */
-   if (!depth.id() && !alpha.id() && (stencil.id() || samplemask.id())) {
+   if (format == V_028710_SPI_SHADER_UINT16_ABGR) {
       compr = ctx->program->gfx_level < GFX11; /* COMPR flag */
 
       if (stencil.id()) {
@@ -10648,16 +10652,19 @@ export_fs_mrtz(isel_context* ctx, const struct aco_ps_epilog_info* info, Temp de
       }
 
       if (stencil.id()) {
+         assert(format == V_028710_SPI_SHADER_32_GR || format == V_028710_SPI_SHADER_32_ABGR);
          values[1] = Operand(stencil);
          enabled_channels |= 0x2;
       }
 
       if (samplemask.id()) {
+         assert(format == V_028710_SPI_SHADER_32_ABGR);
          values[2] = Operand(samplemask);
          enabled_channels |= 0x4;
       }
 
       if (alpha.id()) {
+         assert(format == V_028710_SPI_SHADER_32_AR || format == V_028710_SPI_SHADER_32_ABGR);
          assert(ctx->program->gfx_level >= GFX11 || info->alpha_to_one);
          values[3] = Operand(alpha);
          enabled_channels |= 0x8;
