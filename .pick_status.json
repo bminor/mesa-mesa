@@ -504,7 +504,7 @@
         "description": "freedreno/a6xx: Align lrz height to 32",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a127a78548721716b5262b127fcc9715052507a2",
         "notes": null
