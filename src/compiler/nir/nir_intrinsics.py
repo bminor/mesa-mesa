@@ -1821,6 +1821,9 @@ system_value("num_vertices_per_primitive_amd", 1)
 # BASE = buffer index
 intrinsic("load_streamout_buffer_amd", dest_comp=4, indices=[BASE], bit_sizes=[32], flags=[CAN_ELIMINATE, CAN_REORDER])
 
+# Polygon stipple buffer descriptor
+system_value("polygon_stipple_buffer_amd", 4)
+
 # An ID for each workgroup ordered by primitve sequence
 system_value("ordered_id_amd", 1)
 

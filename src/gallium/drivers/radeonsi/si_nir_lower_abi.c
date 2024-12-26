@@ -612,6 +612,9 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
       STATIC_ASSERT(SI_PS_IMAGE_COLORBUF0 % 2 == 0);
       replacement = si_nir_load_internal_binding(b, args, SI_PS_IMAGE_COLORBUF0, 8);
       break;
+   case nir_intrinsic_load_polygon_stipple_buffer_amd:
+      replacement = si_nir_load_internal_binding(b, args, SI_PS_CONST_POLY_STIPPLE, 4);
+      break;
    default:
       return false;
    }

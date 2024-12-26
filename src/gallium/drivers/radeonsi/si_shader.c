@@ -2112,7 +2112,7 @@ static bool si_nir_lower_ps_color_input(nir_shader *nir, const union si_shader_k
                                        colors) || progress;
 }
 
-static void si_nir_emit_polygon_stipple(nir_shader *nir, struct si_shader_args *args)
+static bool si_nir_emit_polygon_stipple(nir_shader *nir)
 {
    nir_function_impl *impl = nir_shader_get_entrypoint(nir);
 
@@ -2120,8 +2120,7 @@ static void si_nir_emit_polygon_stipple(nir_shader *nir, struct si_shader_args *
    nir_builder *b = &builder;
 
    /* Load the buffer descriptor. */
-   nir_def *desc =
-      si_nir_load_internal_binding(b, args, SI_PS_CONST_POLY_STIPPLE, 4);
+   nir_def *desc = nir_load_polygon_stipple_buffer_amd(b);
 
    /* Use the fixed-point gl_FragCoord input.
     * Since the stipple pattern is 32x32 and it repeats, just get 5 bits
@@ -2137,6 +2136,9 @@ static void si_nir_emit_polygon_stipple(nir_shader *nir, struct si_shader_args *
 
    nir_def *pass = nir_i2b(b, bit);
    nir_discard_if(b, nir_inot(b, pass));
+
+   nir_metadata_preserve(impl, nir_metadata_control_flow);
+   return true;
 }
 
 bool si_should_clear_lds(struct si_screen *sscreen, const struct nir_shader *shader)
@@ -2462,10 +2464,8 @@ static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_
 
       NIR_PASS(progress, nir, ac_nir_lower_ps_late, &late_options);
 
-      if (key->ps.part.prolog.poly_stipple) {
-         NIR_PASS_V(nir, si_nir_emit_polygon_stipple, args);
-         progress = true;
-      }
+      if (key->ps.part.prolog.poly_stipple)
+         NIR_PASS(progress, nir, si_nir_emit_polygon_stipple);
    }
 
    assert(shader->wave_size == 32 || shader->wave_size == 64);
