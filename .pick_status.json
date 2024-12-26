@@ -1244,7 +1244,7 @@
         "description": "anv: fix index buffer size changes",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5c2aca456eebc8c3a219fe56adcf21a0b9675b4a",
         "notes": null
