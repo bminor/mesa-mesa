@@ -78,6 +78,7 @@ bool ac_nir_lower_sin_cos(nir_shader *shader);
 
 bool ac_nir_lower_intrinsics_to_args(nir_shader *shader, const enum amd_gfx_level gfx_level,
                                      bool has_ls_vgpr_init_bug, const enum ac_hw_stage hw_stage,
+                                     unsigned wave_size, unsigned workgroup_size,
                                      const struct ac_shader_args *ac_args);
 
 bool ac_nir_optimize_outputs(nir_shader *nir, bool sprite_tex_disallowed,

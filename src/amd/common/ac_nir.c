@@ -99,6 +99,8 @@ typedef struct {
    const struct ac_shader_args *const args;
    const enum amd_gfx_level gfx_level;
    bool has_ls_vgpr_init_bug;
+   unsigned wave_size;
+   unsigned workgroup_size;
    const enum ac_hw_stage hw_stage;
 
    nir_def *vertex_id;
@@ -123,6 +125,38 @@ preload_arg(lower_intrinsics_to_args_state *s, nir_function_impl *impl, struct a
    return value;
 }
 
+static nir_def *
+load_subgroup_id_lowered(lower_intrinsics_to_args_state *s, nir_builder *b)
+{
+   if (s->workgroup_size <= s->wave_size) {
+      return nir_imm_int(b, 0);
+   } else if (s->hw_stage == AC_HW_COMPUTE_SHADER) {
+      if (s->gfx_level >= GFX12)
+         return false;
+
+      assert(s->args->tg_size.used);
+
+      if (s->gfx_level >= GFX10_3) {
+         return ac_nir_unpack_arg(b, s->args, s->args->tg_size, 20, 5);
+      } else {
+         /* GFX6-10 don't actually support a wave id, but we can
+          * use the ordered id because ORDERED_APPEND_* is set to
+          * zero in the compute dispatch initiatior.
+          */
+         return ac_nir_unpack_arg(b, s->args, s->args->tg_size, 6, 6);
+      }
+   } else if (s->hw_stage == AC_HW_HULL_SHADER && s->gfx_level >= GFX11) {
+      assert(s->args->tcs_wave_id.used);
+      return ac_nir_unpack_arg(b, s->args, s->args->tcs_wave_id, 0, 3);
+   } else if (s->hw_stage == AC_HW_LEGACY_GEOMETRY_SHADER ||
+              s->hw_stage == AC_HW_NEXT_GEN_GEOMETRY_SHADER) {
+      assert(s->args->merged_wave_info.used);
+      return ac_nir_unpack_arg(b, s->args, s->args->merged_wave_info, 24, 4);
+   } else {
+      return nir_imm_int(b, 0);
+   }
+}
+
 static bool
 lower_intrinsic_to_arg(nir_builder *b, nir_instr *instr, void *state)
 {
@@ -135,35 +169,9 @@ lower_intrinsic_to_arg(nir_builder *b, nir_instr *instr, void *state)
    b->cursor = nir_after_instr(&intrin->instr);
 
    switch (intrin->intrinsic) {
-   case nir_intrinsic_load_subgroup_id: {
-      if (s->hw_stage == AC_HW_COMPUTE_SHADER) {
-         if (s->gfx_level >= GFX12)
-            return false;
-
-         assert(s->args->tg_size.used);
-
-         if (s->gfx_level >= GFX10_3) {
-            replacement = ac_nir_unpack_arg(b, s->args, s->args->tg_size, 20, 5);
-         } else {
-            /* GFX6-10 don't actually support a wave id, but we can
-             * use the ordered id because ORDERED_APPEND_* is set to
-             * zero in the compute dispatch initiatior.
-             */
-            replacement = ac_nir_unpack_arg(b, s->args, s->args->tg_size, 6, 6);
-         }
-      } else if (s->hw_stage == AC_HW_HULL_SHADER && s->gfx_level >= GFX11) {
-         assert(s->args->tcs_wave_id.used);
-         replacement = ac_nir_unpack_arg(b, s->args, s->args->tcs_wave_id, 0, 3);
-      } else if (s->hw_stage == AC_HW_LEGACY_GEOMETRY_SHADER ||
-                 s->hw_stage == AC_HW_NEXT_GEN_GEOMETRY_SHADER) {
-         assert(s->args->merged_wave_info.used);
-         replacement = ac_nir_unpack_arg(b, s->args, s->args->merged_wave_info, 24, 4);
-      } else {
-         replacement = nir_imm_int(b, 0);
-      }
-
+   case nir_intrinsic_load_subgroup_id:
+      replacement = load_subgroup_id_lowered(s, b);
       break;
-   }
    case nir_intrinsic_load_num_subgroups: {
       if (s->hw_stage == AC_HW_COMPUTE_SHADER) {
          assert(s->args->tg_size.used);
@@ -381,12 +389,15 @@ lower_intrinsic_to_arg(nir_builder *b, nir_instr *instr, void *state)
 bool
 ac_nir_lower_intrinsics_to_args(nir_shader *shader, const enum amd_gfx_level gfx_level,
                                 bool has_ls_vgpr_init_bug, const enum ac_hw_stage hw_stage,
+                                unsigned wave_size, unsigned workgroup_size,
                                 const struct ac_shader_args *ac_args)
 {
    lower_intrinsics_to_args_state state = {
       .gfx_level = gfx_level,
       .hw_stage = hw_stage,
       .has_ls_vgpr_init_bug = has_ls_vgpr_init_bug,
+      .wave_size = wave_size,
+      .workgroup_size = workgroup_size,
       .args = ac_args,
    };
 

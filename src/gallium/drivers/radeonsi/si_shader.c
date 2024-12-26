@@ -2596,7 +2596,7 @@ static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_
    NIR_PASS(progress, nir, ac_nir_lower_intrinsics_to_args, sel->screen->info.gfx_level,
             sel->screen->info.has_ls_vgpr_init_bug,
             si_select_hw_stage(nir->info.stage, key, sel->screen->info.gfx_level),
-            &args->ac);
+            shader->wave_size, si_get_max_workgroup_size(shader), &args->ac);
 
    if (progress) {
       si_nir_opts(sel->screen, nir, false);
@@ -2766,7 +2766,7 @@ si_nir_generate_gs_copy_shader(struct si_screen *sscreen,
 
    NIR_PASS_V(nir, si_nir_lower_abi, shader, &args);
    NIR_PASS_V(nir, ac_nir_lower_intrinsics_to_args, sscreen->info.gfx_level,
-              sscreen->info.has_ls_vgpr_init_bug, AC_HW_VERTEX_SHADER, &args.ac);
+              sscreen->info.has_ls_vgpr_init_bug, AC_HW_VERTEX_SHADER, 64, 64, &args.ac);
 
    si_nir_opts(gs_selector->screen, nir, false);
 
