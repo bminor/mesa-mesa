@@ -2205,14 +2205,13 @@ static void si_nir_emit_polygon_stipple(nir_shader *nir, struct si_shader_args *
     * Since the stipple pattern is 32x32 and it repeats, just get 5 bits
     * per coordinate to get the repeating effect.
     */
-   nir_def *pos_x = ac_nir_unpack_arg(b, &args->ac, args->ac.pos_fixed_pt, 0, 5);
-   nir_def *pos_y = ac_nir_unpack_arg(b, &args->ac, args->ac.pos_fixed_pt, 16, 5);
+   nir_def *pixel_coord = nir_u2u32(b, nir_iand_imm(b, nir_load_pixel_coord(b), 0x1f));
 
    nir_def *zero = nir_imm_int(b, 0);
    /* The stipple pattern is 32x32, each row has 32 bits. */
-   nir_def *offset = nir_ishl_imm(b, pos_y, 2);
+   nir_def *offset = nir_ishl_imm(b, nir_channel(b, pixel_coord, 1), 2);
    nir_def *row = nir_load_buffer_amd(b, 1, 32, desc, offset, zero, zero);
-   nir_def *bit = nir_ubfe(b, row, pos_x, nir_imm_int(b, 1));
+   nir_def *bit = nir_ubfe(b, row, nir_channel(b, pixel_coord, 0), nir_imm_int(b, 1));
 
    nir_def *pass = nir_i2b(b, bit);
    nir_discard_if(b, nir_inot(b, pass));
