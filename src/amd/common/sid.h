@@ -45,11 +45,17 @@
 #define PKT3_DISPATCH_INDIRECT                     0x16
 #define PKT3_ATOMIC_MEM                            0x1E
 #define   ATOMIC_OP(x)                                ((unsigned)((x)&0x7f) << 0)
-#define     TC_OP_ATOMIC_SUB_32                       0x10
-#define     TC_OP_ATOMIC_CMPSWAP_32                   0x48
+#define     TC_OP_ATOMIC_SUB_RTN_32                   16
+#define     TC_OP_ATOMIC_SUB_RTN_64                   48
+#define     TC_OP_ATOMIC_CMPSWAP_32                   72
+#define     TC_OP_ATOMIC_SUB_64                       112
+#define     TC_OP_ATOMIC_XOR_64                       119
 #define   ATOMIC_COMMAND(x)                           ((unsigned)((x)&0x3) << 8)
-#define   ATOMIC_COMMAND_SINGLE_PASS                  0x0
-#define   ATOMIC_COMMAND_LOOP                         0x1
+#define   ATOMIC_COMMAND_SEND_RTN                     0x0 /* only RTN opcodes */
+#define   ATOMIC_COMMAND_LOOP                         0x1 /* only RTN opcodes */
+#define   ATOMIC_COMMAND_WR_CONFIRM                   0x2 /* only non-RTN opcodes */
+#define   ATOMIC_COMMAND_SEND_NO_RTN                  0x3 /* only non-RTN opcodes */
+#define   ATOMIC_ENGINE_PFP                           (1 << 30)
 #define PKT3_OCCLUSION_QUERY                       0x1F /* GFX7+ */
 #define PKT3_SET_PREDICATION                       0x20
 #define   PREDICATION_DRAW_NOT_VISIBLE                (0 << 8)
