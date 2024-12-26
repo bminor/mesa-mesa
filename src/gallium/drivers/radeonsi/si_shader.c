@@ -156,6 +156,8 @@ unsigned si_get_max_workgroup_size(const struct si_shader *shader)
    gl_shader_stage stage = shader->is_gs_copy_shader ?
       MESA_SHADER_VERTEX : shader->selector->stage;
 
+   assert(shader->wave_size);
+
    switch (stage) {
    case MESA_SHADER_VERTEX:
    case MESA_SHADER_TESS_EVAL:
@@ -165,22 +167,22 @@ unsigned si_get_max_workgroup_size(const struct si_shader *shader)
 
       /* As part of merged shader. */
       return shader->selector->screen->info.gfx_level >= GFX9 &&
-         (shader->key.ge.as_ls || shader->key.ge.as_es) ? 128 : 0;
+         (shader->key.ge.as_ls || shader->key.ge.as_es) ? 128 : shader->wave_size;
 
    case MESA_SHADER_TESS_CTRL:
       /* Return this so that LLVM doesn't remove s_barrier
        * instructions on chips where we use s_barrier. */
-      return shader->selector->screen->info.gfx_level >= GFX7 ? 128 : 0;
+      return shader->selector->screen->info.gfx_level >= GFX7 ? 128 : shader->wave_size;
 
    case MESA_SHADER_GEOMETRY:
       /* GS can always generate up to 256 vertices. */
-      return shader->selector->screen->info.gfx_level >= GFX9 ? 256 : 0;
+      return shader->selector->screen->info.gfx_level >= GFX9 ? 256 : shader->wave_size;
 
    case MESA_SHADER_COMPUTE:
       break; /* see below */
 
    default:
-      return 0;
+      return shader->wave_size;
    }
 
    /* Compile a variable block size using the maximum variable size. */

@@ -69,10 +69,6 @@ si_fill_aco_shader_info(struct si_shader *shader, struct aco_shader_info *info,
 
    info->wave_size = shader->wave_size;
    info->workgroup_size = si_get_max_workgroup_size(shader);
-   /* aco need non-zero value */
-   if (!info->workgroup_size)
-      info->workgroup_size = info->wave_size;
-
    info->merged_shader_compiled_separately = !shader->is_gs_copy_shader &&
       si_is_multi_part_shader(shader) && !shader->is_monolithic;
 
