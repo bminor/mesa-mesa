@@ -160,8 +160,6 @@ files_libmesa = files(
   'main/rastpos.h',
   'main/readpix.c',
   'main/readpix.h',
-  'main/remap.c',
-  'main/remap.h',
   'main/renderbuffer.c',
   'main/renderbuffer.h',
   'main/robustness.c',
@@ -426,7 +424,6 @@ files_libmesa += [
   main_marshal_generated_h,
   main_dispatch_h,
   ir_expression_operation_h,
-  main_remap_helper_h,
   sha1_h,
   main_unmarshal_table_c,
 ] + main_marshal_generated_c

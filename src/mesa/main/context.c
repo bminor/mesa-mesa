@@ -117,7 +117,6 @@
 #include "queryobj.h"
 #include "syncobj.h"
 #include "rastpos.h"
-#include "remap.h"
 #include "scissor.h"
 #include "shared.h"
 #include "shaderobj.h"
@@ -230,8 +229,6 @@ one_time_init(const char *extensions_override)
     * unecessary creation/destruction of glsl types.
     */
    glsl_type_singleton_init_or_ref();
-
-   _mesa_init_remap_table();
 }
 
 /**

@@ -20,8 +20,6 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 
-MAX_OFFSETS = 2 ** 31 # TODO: remove this
-
 """Table of functions that have ABI-mandated offsets in the dispatch table.
 
 The first 407 entries are required by indirect GLX. The rest can use any
