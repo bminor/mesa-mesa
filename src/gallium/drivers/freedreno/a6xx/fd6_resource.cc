@@ -250,7 +250,7 @@ setup_lrz(struct fd_resource *rsc)
    }
 
    unsigned lrz_pitch = align(DIV_ROUND_UP(width, 8), 32);
-   unsigned lrz_height = align(DIV_ROUND_UP(height, 8), 16);
+   unsigned lrz_height = align(DIV_ROUND_UP(height, 8), 32);
 
    rsc->lrz_height = lrz_height;
    rsc->lrz_width = lrz_pitch;
