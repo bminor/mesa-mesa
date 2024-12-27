@@ -187,30 +187,21 @@ _vlVaSyncSurface(VADriverContextP ctx, VASurfaceID render_target, uint64_t timeo
       pscreen->fence_reference(pscreen, &surf->pipe_fence, NULL);
    }
 
-   /* This is checked before getting the context below as
-    * surf->ctx is only set in begin_frame
-    * and not when the surface is created
-    * Some apps try to sync/map the surface right after creation and
-    * would get VA_STATUS_ERROR_INVALID_CONTEXT
-    */
+   /* No outstanding operation: nothing to do. */
    if (!surf->fence) {
-      // No outstanding encode/decode operation: nothing to do.
       mtx_unlock(&drv->mutex);
       return VA_STATUS_SUCCESS;
    }
 
-   if (!context) {
+   if (!context || !context->decoder) {
       mtx_unlock(&drv->mutex);
       return VA_STATUS_ERROR_INVALID_CONTEXT;
    }
 
-   if (!context->decoder) {
-      mtx_unlock(&drv->mutex);
-      return VA_STATUS_ERROR_UNSUPPORTED_ENTRYPOINT;
-   }
-
-   int ret = context->decoder->fence_wait(context->decoder, fence, timeout_ns);
+   mtx_lock(&context->mutex);
    mtx_unlock(&drv->mutex);
+   int ret = context->decoder->fence_wait(context->decoder, fence, timeout_ns);
+   mtx_unlock(&context->mutex);
    return ret ? VA_STATUS_SUCCESS : VA_STATUS_ERROR_TIMEDOUT;
 }
 
