@@ -5103,6 +5103,12 @@ bool nir_def_all_uses_are_fsat(const nir_def *def);
 bool nir_def_all_uses_ignore_sign_bit(const nir_def *def);
 
 static inline int
+nir_def_first_component_read(nir_def *def)
+{
+    return (int)ffs(nir_def_components_read(def)) - 1;
+}
+
+static inline int
 nir_def_last_component_read(nir_def *def)
 {
     return (int)util_last_bit(nir_def_components_read(def)) - 1;
