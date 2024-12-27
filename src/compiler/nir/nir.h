@@ -4017,6 +4017,11 @@ typedef struct nir_shader_compiler_options {
    bool optimize_sample_mask_in;
 
    /**
+    * Optimize load_front_face ? a : -a to load_front_face_fsign * a
+    */
+   bool optimize_load_front_face_fsign;
+
+   /**
     * Optimize boolean reductions of quad broadcasts. This should only be enabled if
     * nir_intrinsic_reduce supports INCLUDE_HELPERS.
     */
