@@ -17,11 +17,6 @@
 
 #include <stdio.h>
 
-#define FW_40_2_2  ((40 << 24) | (2 << 16) | (2 << 8))
-#define FW_50_0_1  ((50 << 24) | (0 << 16) | (1 << 8))
-#define FW_50_1_2  ((50 << 24) | (1 << 16) | (2 << 8))
-#define FW_50_10_2 ((50 << 24) | (10 << 16) | (2 << 8))
-#define FW_50_17_3 ((50 << 24) | (17 << 16) | (3 << 8))
 #define FW_52_0_3  ((52 << 24) | (0 << 16) | (3 << 8))
 #define FW_52_4_3  ((52 << 24) | (4 << 16) | (3 << 8))
 #define FW_52_8_3  ((52 << 24) | (8 << 16) | (3 << 8))
@@ -460,30 +455,7 @@ struct pipe_video_codec *si_vce_create_encoder(struct pipe_context *context,
       goto error;
    }
 
-   switch (sscreen->info.vce_fw_version) {
-   case FW_40_2_2:
-      si_vce_40_2_2_init(enc);
-      break;
-
-   case FW_50_0_1:
-   case FW_50_1_2:
-   case FW_50_10_2:
-   case FW_50_17_3:
-      si_vce_50_init(enc);
-      break;
-
-   case FW_52_0_3:
-   case FW_52_4_3:
-   case FW_52_8_3:
-      si_vce_52_init(enc);
-      break;
-
-   default:
-      if ((sscreen->info.vce_fw_version & (0xff << 24)) >= FW_53) {
-         si_vce_52_init(enc);
-      } else
-         goto error;
-   }
+   si_vce_52_init(enc);
 
    return &enc->base;
 
@@ -500,11 +472,6 @@ error:
 bool si_vce_is_fw_version_supported(struct si_screen *sscreen)
 {
    switch (sscreen->info.vce_fw_version) {
-   case FW_40_2_2:
-   case FW_50_0_1:
-   case FW_50_1_2:
-   case FW_50_10_2:
-   case FW_50_17_3:
    case FW_52_0_3:
    case FW_52_4_3:
    case FW_52_8_3:

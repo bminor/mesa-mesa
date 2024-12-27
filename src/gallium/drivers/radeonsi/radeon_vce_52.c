@@ -145,7 +145,7 @@ static void get_vui_param(struct rvce_encoder *enc, struct pipe_h264_enc_picture
    enc->enc_pic.vui.max_dec_frame_buffering = 0x00000003;
 }
 
-void si_vce_52_get_param(struct rvce_encoder *enc, struct pipe_h264_enc_picture_desc *pic)
+static void get_param(struct rvce_encoder *enc, struct pipe_h264_enc_picture_desc *pic)
 {
    get_rate_control_param(enc, pic);
    get_motion_estimation_param(enc, pic);
@@ -657,5 +657,5 @@ void si_vce_52_init(struct rvce_encoder *enc)
    enc->config = config;
    enc->encode = encode;
    enc->destroy = destroy;
-   enc->si_get_pic_param = si_vce_52_get_param;
+   enc->si_get_pic_param = get_param;
 }

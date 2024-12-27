@@ -415,22 +415,7 @@ bool si_vce_is_fw_version_supported(struct si_screen *sscreen);
 void si_vce_add_buffer(struct rvce_encoder *enc, struct pb_buffer_lean *buf, unsigned usage,
                        enum radeon_bo_domain domain, signed offset);
 
-/* init vce fw 40.2.2 specific callbacks */
-void si_vce_40_2_2_init(struct rvce_encoder *enc);
-
-/* init vce fw 50 specific callbacks */
-void si_vce_50_init(struct rvce_encoder *enc);
-
 /* init vce fw 52 specific callbacks */
 void si_vce_52_init(struct rvce_encoder *enc);
-
-/* get parameters for vce 40.2.2 */
-void si_vce_40_2_2_get_param(struct rvce_encoder *enc, struct pipe_h264_enc_picture_desc *pic);
-
-/* get parameters for vce 50 */
-void si_vce_50_get_param(struct rvce_encoder *enc, struct pipe_h264_enc_picture_desc *pic);
-
-/* get parameters for vce 52 */
-void si_vce_52_get_param(struct rvce_encoder *enc, struct pipe_h264_enc_picture_desc *pic);
 
 #endif
