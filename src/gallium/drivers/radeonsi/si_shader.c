@@ -2246,11 +2246,6 @@ static void get_nir_shader(struct si_shader *shader, struct si_nir_shader_ctx *c
       return;
    }
 
-   if (sel->stage == MESA_SHADER_GEOMETRY && !shader->key.ge.as_ngg) {
-      memset(&ctx->legacy_gs_output_info, 0, sizeof(ctx->legacy_gs_output_info));
-      si_init_gs_output_info(&sel->info, &ctx->legacy_gs_output_info);
-   }
-
    bool progress = false;
    bool opts_not_run = true;
 
@@ -2285,8 +2280,6 @@ static void get_nir_shader(struct si_shader *shader, struct si_nir_shader_ctx *c
                                &inline_uniforms, &inlined_uniform_values);
 
    if (inline_uniforms) {
-      assert(ctx->free_nir);
-
       /* Most places use shader information from the default variant, not
        * the optimized variant. These are the things that the driver looks at
        * in optimized variants and the list of things that we need to do.
@@ -2372,9 +2365,11 @@ static void get_nir_shader(struct si_shader *shader, struct si_nir_shader_ctx *c
          NIR_PASS(progress, nir, ac_nir_lower_ps_early, &early_options);
       }
 
+      /* This adds gl_SampleMaskIn. */
       if (key->ps.mono.poly_line_smoothing)
          NIR_PASS(progress, nir, nir_lower_poly_line_smooth, SI_NUM_SMOOTH_AA_SAMPLES);
 
+      /* This adds discard. */
       if (key->ps.mono.point_smoothing)
          NIR_PASS(progress, nir, nir_lower_point_smooth, true);
 
@@ -2458,6 +2453,7 @@ static void get_nir_shader(struct si_shader *shader, struct si_nir_shader_ctx *c
       }
       progress = true;
    } else if (nir->info.stage == MESA_SHADER_GEOMETRY && !key->ge.as_ngg) {
+      si_init_gs_output_info(&sel->info, &ctx->legacy_gs_output_info);
       NIR_PASS_V(nir, ac_nir_lower_legacy_gs, false, sel->screen->use_ngg,
                  &ctx->legacy_gs_output_info.info);
       progress = true;
