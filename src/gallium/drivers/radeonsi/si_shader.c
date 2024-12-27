@@ -2362,6 +2362,37 @@ static void get_nir_shader(struct si_shader *shader, struct si_nir_shader_ctx *c
          /* This adds discard. */
          if (key->ps.part.prolog.poly_stipple)
             NIR_PASS(progress, nir, si_nir_emit_polygon_stipple);
+
+         if (progress) {
+            si_nir_opts(sel->screen, nir, opts_not_run);
+            opts_not_run = false;
+            progress = false;
+         }
+
+         /* Uniform inlining can eliminate PS inputs, and colormask can remove PS outputs,
+          * which can also cause the elimination of PS inputs. Remove holes after removed PS inputs
+          * by renumbering them. This can only happen with monolithic PS.
+          */
+         NIR_PASS_V(nir, nir_recompute_io_bases, nir_var_shader_in);
+
+         /* Two-side color selection and interpolation: Get the latest shader info because
+          * uniform inlining and colormask can fully eliminate color inputs.
+          */
+         struct si_shader_info info;
+         si_nir_scan_shader(sel->screen, nir, &info);
+
+         /* We need to set this early for lowering nir_intrinsic_load_point_coord_maybe_flipped,
+          * which can only occur with monolithic PS.
+          */
+         shader->info.num_ps_inputs = info.num_inputs;
+         shader->info.ps_colors_read = info.colors_read;
+
+         /* This lowers load_color intrinsics to COLn/BFCn input loads and two-side color selection.
+          * If uniform inlining eliminated color inputs, it will just be dead code that will be
+          * eliminated later.
+          */
+         if (info.colors_read)
+            NIR_PASS(progress, nir, si_nir_lower_ps_color_input, &shader->key, &info);
       } else {
          ac_nir_lower_ps_early_options early_options = {
             .optimize_frag_coord = true,
@@ -2465,28 +2496,6 @@ static void get_nir_shader(struct si_shader *shader, struct si_nir_shader_ctx *c
                  &ctx->legacy_gs_output_info.info);
       progress = true;
    } else if (nir->info.stage == MESA_SHADER_FRAGMENT && shader->is_monolithic) {
-      /* Uniform inlining can eliminate PS inputs, and colormask can remove PS outputs,
-       * which can also cause the elimination of PS inputs. Remove holes after removed PS inputs
-       * by renumbering them. This can only happen with monolithic PS. Colors are unaffected
-       * because they are still represented by nir_intrinsic_load_color0/1.
-       */
-      NIR_PASS_V(nir, nir_recompute_io_bases, nir_var_shader_in);
-
-      /* Two-side color selection and interpolation: Get the latest shader info because
-       * uniform inlining and colormask can fully eliminate color inputs.
-       */
-      struct si_shader_info info;
-      si_nir_scan_shader(sel->screen, nir, &info);
-
-      if (info.colors_read)
-         NIR_PASS(progress, nir, si_nir_lower_ps_color_input, &shader->key, &info);
-
-      /* We need to set this early for lowering nir_intrinsic_load_point_coord_maybe_flipped,
-       * which can only occur with monolithic PS.
-       */
-      shader->info.num_ps_inputs = info.num_inputs;
-      shader->info.ps_colors_read = info.colors_read;
-
       ac_nir_lower_ps_late_options late_options = {
          .gfx_level = sel->screen->info.gfx_level,
          .family = sel->screen->info.family,
