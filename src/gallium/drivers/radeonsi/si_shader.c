@@ -2265,15 +2265,6 @@ static void get_nir_shader(struct si_shader *shader, struct si_nir_shader_ctx *c
    if (nir->info.stage <= MESA_SHADER_GEOMETRY)
       NIR_PASS(progress, nir, si_nir_kill_outputs, key);
 
-   NIR_PASS(progress, nir, ac_nir_lower_tex,
-            &(ac_nir_lower_tex_options){
-               .gfx_level = sel->screen->info.gfx_level,
-               .lower_array_layer_round_even = !sel->screen->info.conformant_trunc_coord,
-            });
-
-   if (nir->info.uses_resource_info_query)
-      NIR_PASS(progress, nir, ac_nir_lower_resinfo, sel->screen->info.gfx_level);
-
    bool inline_uniforms = false;
    uint32_t *inlined_uniform_values;
    si_get_inline_uniform_state((union si_shader_key*)key, nir->info.stage,
@@ -2321,6 +2312,8 @@ static void get_nir_shader(struct si_shader *shader, struct si_nir_shader_ctx *c
                  inlined_uniform_values, nir->info.inlinable_uniform_dw_offsets);
       progress = true;
    }
+
+   NIR_PASS(progress, nir, nir_opt_shrink_stores, false);
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       /* This uses the epilog key, so only monolithic shaders can call this. */
@@ -2375,6 +2368,15 @@ static void get_nir_shader(struct si_shader *shader, struct si_nir_shader_ctx *c
 
       NIR_PASS(progress, nir, nir_lower_fragcoord_wtrans);
    }
+
+   NIR_PASS(progress, nir, ac_nir_lower_tex,
+            &(ac_nir_lower_tex_options){
+               .gfx_level = sel->screen->info.gfx_level,
+               .lower_array_layer_round_even = !sel->screen->info.conformant_trunc_coord,
+            });
+
+   if (nir->info.uses_resource_info_query)
+      NIR_PASS(progress, nir, ac_nir_lower_resinfo, sel->screen->info.gfx_level);
 
    /* This must be before si_nir_lower_resource. */
    if (!sel->screen->info.has_image_opcodes)
@@ -2562,7 +2564,6 @@ static void get_nir_shader(struct si_shader *shader, struct si_nir_shader_ctx *c
                 */
                .has_shared2_amd = sel->screen->info.gfx_level >= GFX7,
             });
-   NIR_PASS(progress, nir, nir_opt_shrink_stores, false);
 
    nir_divergence_analysis(nir);
    NIR_PASS(progress, nir, ac_nir_flag_smem_for_loads, sel->screen->info.gfx_level,
