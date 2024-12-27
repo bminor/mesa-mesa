@@ -891,6 +891,7 @@ system_value("frag_coord_zw", 1, indices=[COMPONENT])
 system_value("point_coord", 2)
 system_value("line_coord", 1)
 system_value("front_face", 1, bit_sizes=[1, 32])
+system_value("front_face_fsign", 1, bit_sizes=[32]) # front_face ? 1.0 : -1.0
 system_value("vertex_id", 1)
 system_value("vertex_id_zero_base", 1)
 system_value("first_vertex", 1)
