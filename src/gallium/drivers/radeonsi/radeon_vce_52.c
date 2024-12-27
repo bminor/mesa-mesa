@@ -55,19 +55,58 @@ static void get_rate_control_param(struct rvce_encoder *enc, struct pipe_h264_en
 static void get_motion_estimation_param(struct rvce_encoder *enc,
                                         struct pipe_h264_enc_picture_desc *pic)
 {
+   enc->enc_pic.me.enc_ime_decimation_search = 1;
+   enc->enc_pic.me.motion_est_half_pixel = 1;
    enc->enc_pic.me.motion_est_quarter_pixel = 1;
-   enc->enc_pic.me.enc_disable_sub_mode = 254;
+   enc->enc_pic.me.disable_favor_pmv_point = 0;
    enc->enc_pic.me.lsmvert = 2;
-   enc->enc_pic.me.enc_en_ime_overw_dis_subm = 0;
-   enc->enc_pic.me.enc_ime_overw_dis_subm_no = 0;
+   enc->enc_pic.me.disable_16x16_frame1 = 0;
+   enc->enc_pic.me.disable_satd = 0;
+   enc->enc_pic.me.enc_ime_skip_x = 0;
+   enc->enc_pic.me.enc_ime_skip_y = 0;
    enc->enc_pic.me.enc_ime2_search_range_x = 4;
    enc->enc_pic.me.enc_ime2_search_range_y = 4;
-   enc->enc_pic.me.enc_ime_decimation_search = 0x00000001;
-   enc->enc_pic.me.motion_est_half_pixel = 0x00000001;
-   enc->enc_pic.me.enc_search_range_x = 0x00000010;
-   enc->enc_pic.me.enc_search_range_y = 0x00000010;
-   enc->enc_pic.me.enc_search1_range_x = 0x00000010;
-   enc->enc_pic.me.enc_search1_range_y = 0x00000010;
+   enc->enc_pic.me.parallel_mode_speedup_enable = 0;
+   enc->enc_pic.me.fme0_enc_disable_sub_mode = 0;
+   enc->enc_pic.me.fme1_enc_disable_sub_mode = 0;
+   enc->enc_pic.me.ime_sw_speedup_enable = 0;
+
+   switch (pic->quality_modes.preset_mode) {
+   case 0: /* SPEED */
+      enc->enc_pic.me.force_zero_point_center = 0;
+      enc->enc_pic.me.enc_search_range_x = 16;
+      enc->enc_pic.me.enc_search_range_y = 16;
+      enc->enc_pic.me.enc_search1_range_x = 16;
+      enc->enc_pic.me.enc_search1_range_y = 16;
+      enc->enc_pic.me.enable_amd = 0;
+      enc->enc_pic.me.enc_disable_sub_mode = 126;
+      enc->enc_pic.me.enc_en_ime_overw_dis_subm = 0;
+      enc->enc_pic.me.enc_ime_overw_dis_subm_no = 0;
+      break;
+   case 1: /* BALANCED */
+      enc->enc_pic.me.force_zero_point_center = 0;
+      enc->enc_pic.me.enc_search_range_x = 16;
+      enc->enc_pic.me.enc_search_range_y = 16;
+      enc->enc_pic.me.enc_search1_range_x = 16;
+      enc->enc_pic.me.enc_search1_range_y = 16;
+      enc->enc_pic.me.enable_amd = 0;
+      enc->enc_pic.me.enc_disable_sub_mode = 120;
+      enc->enc_pic.me.enc_en_ime_overw_dis_subm = 1;
+      enc->enc_pic.me.enc_ime_overw_dis_subm_no = 1;
+      break;
+   case 2: /* QUALITY */
+   default:
+      enc->enc_pic.me.force_zero_point_center = 1;
+      enc->enc_pic.me.enc_search_range_x = 36;
+      enc->enc_pic.me.enc_search_range_y = 36;
+      enc->enc_pic.me.enc_search1_range_x = 36;
+      enc->enc_pic.me.enc_search1_range_y = 36;
+      enc->enc_pic.me.enable_amd = 1;
+      enc->enc_pic.me.enc_disable_sub_mode = 0;
+      enc->enc_pic.me.enc_en_ime_overw_dis_subm = 0;
+      enc->enc_pic.me.enc_ime_overw_dis_subm_no = 0;
+      break;
+   }
 }
 
 static void get_pic_control_param(struct rvce_encoder *enc, struct pipe_h264_enc_picture_desc *pic)
