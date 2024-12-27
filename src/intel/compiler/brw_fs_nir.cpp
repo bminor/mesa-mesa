@@ -6193,8 +6193,11 @@ fs_nir_emit_intrinsic(nir_to_brw_state &ntb,
       else
          surface = get_nir_buffer_intrinsic_index(ntb, bld, instr, &no_mask_handle);
 
-      const unsigned num_components =
-         nir_def_last_component_read(&instr->def) + 1;
+      const unsigned first_component =
+         nir_def_first_component_read(&instr->def);
+      const unsigned last_component =
+         nir_def_last_component_read(&instr->def);
+      const unsigned num_components = last_component - first_component + 1;
 
       if (!nir_src_is_const(instr->src[1])) {
          s.prog_data->has_ubo_pull = true;
@@ -6209,8 +6212,10 @@ fs_nir_emit_intrinsic(nir_to_brw_state &ntb,
 
             const unsigned comps_per_load = brw_type_size_bytes(dest.type) == 8 ? 2 : 4;
 
-            for (unsigned i = 0; i < num_components; i += comps_per_load) {
-               const unsigned remaining = num_components - i;
+            for (unsigned i = first_component;
+                 i <= last_component;
+                 i += comps_per_load) {
+               const unsigned remaining = last_component + 1 - i;
                xbld.VARYING_PULL_CONSTANT_LOAD(offset(dest, xbld, i),
                                                surface, surface_handle,
                                                base_offset,
@@ -6232,12 +6237,13 @@ fs_nir_emit_intrinsic(nir_to_brw_state &ntb,
           * and we have to split it if necessary.
           */
          const unsigned type_size = brw_type_size_bytes(dest.type);
-         const unsigned load_offset = nir_src_as_uint(instr->src[1]);
+         const unsigned load_offset =
+            nir_src_as_uint(instr->src[1]) + first_component * type_size;
+         const unsigned end_offset = load_offset + num_components * type_size;
          const unsigned ubo_block =
             brw_nir_ubo_surface_index_get_push_block(instr->src[0]);
          const unsigned offset_256b = load_offset / 32;
-         const unsigned end_256b =
-            DIV_ROUND_UP(load_offset + type_size * num_components, 32);
+         const unsigned end_256b = DIV_ROUND_UP(end_offset, 32);
 
          /* See if we've selected this as a push constant candidate */
          brw_reg push_reg;
@@ -6254,9 +6260,10 @@ fs_nir_emit_intrinsic(nir_to_brw_state &ntb,
          }
 
          if (push_reg.file != BAD_FILE) {
-            for (unsigned i = 0; i < num_components; i++) {
+            for (unsigned i = first_component; i <= last_component; i++) {
                xbld.MOV(offset(dest, xbld, i),
-                        byte_offset(push_reg, i * type_size));
+                        byte_offset(push_reg,
+                                    (i - first_component) * type_size));
             }
             break;
          }
@@ -6286,8 +6293,10 @@ fs_nir_emit_intrinsic(nir_to_brw_state &ntb,
                retype(byte_offset(packed_consts, base & (block_sz - 1)),
                       dest.type);
 
-            for (unsigned d = 0; d < count; d++)
-               xbld.MOV(offset(dest, xbld, c + d), component(consts, d));
+            for (unsigned d = 0; d < count; d++) {
+               xbld.MOV(offset(dest, xbld, first_component + c + d),
+                        component(consts, d));
+            }
 
             c += count;
          }
