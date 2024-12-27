@@ -603,9 +603,13 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
       replacement = ac_nir_load_arg(b, &args->ac, args->alpha_reference);
       break;
    case nir_intrinsic_load_front_face:
+   case nir_intrinsic_load_front_face_fsign:
       if (!key->ps.opt.force_front_face_input)
          return false;
-      replacement = nir_imm_bool(b, key->ps.opt.force_front_face_input == 1);
+      if (intrin->intrinsic == nir_intrinsic_load_front_face)
+         replacement = nir_imm_bool(b, key->ps.opt.force_front_face_input == 1);
+      else
+         replacement = nir_imm_float(b, key->ps.opt.force_front_face_input == 1 ? 1.0 : -1.0);
       break;
    case nir_intrinsic_load_barycentric_optimize_amd: {
       nir_def *prim_mask = ac_nir_load_arg(b, &args->ac, args->ac.prim_mask);

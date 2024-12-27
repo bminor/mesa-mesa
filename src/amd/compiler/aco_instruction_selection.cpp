@@ -8145,6 +8145,10 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
                Operand::zero(), get_arg(ctx, ctx->args->front_face));
       break;
    }
+   case nir_intrinsic_load_front_face_fsign: {
+      bld.copy(Definition(get_ssa_temp(ctx, &instr->def)), get_arg(ctx, ctx->args->front_face));
+      break;
+   }
    case nir_intrinsic_load_view_index: {
       Temp dst = get_ssa_temp(ctx, &instr->def);
       bld.copy(Definition(dst), Operand(get_arg(ctx, ctx->args->view_index)));
