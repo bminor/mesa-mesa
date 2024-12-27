@@ -1655,6 +1655,10 @@ bool nir_const_value_negative_equal(nir_const_value c1, nir_const_value c2,
 bool nir_alu_srcs_equal(const nir_alu_instr *alu1, const nir_alu_instr *alu2,
                         unsigned src1, unsigned src2);
 
+bool nir_alu_srcs_negative_equal_typed(const nir_alu_instr *alu1,
+                                       const nir_alu_instr *alu2,
+                                       unsigned src1, unsigned src2,
+                                       nir_alu_type base_type);
 bool nir_alu_srcs_negative_equal(const nir_alu_instr *alu1,
                                  const nir_alu_instr *alu2,
                                  unsigned src1, unsigned src2);
