@@ -194,7 +194,7 @@
         "description": "r600: fix the indirect draw 8-bits path",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d80701df8af4a5d74c4f4eb09a4b3cef6970104b",
         "notes": null
