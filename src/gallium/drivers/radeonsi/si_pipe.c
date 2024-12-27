@@ -1112,13 +1112,8 @@ static void si_disk_cache_create(struct si_screen *sscreen)
    if (!disk_cache_get_function_identifier(si_disk_cache_create, &ctx))
       return;
 
-   /* ACO and LLVM shader binary have different cache id distinguished by if adding
-    * the LLVM function identifier. ACO is a built-in component in mesa, so no need
-    * to add aco function here.
-    */
 #if AMD_LLVM_AVAILABLE
-   if (!sscreen->use_aco &&
-       !disk_cache_get_function_identifier(LLVMInitializeAMDGPUTargetInfo, &ctx))
+   if (!disk_cache_get_function_identifier(LLVMInitializeAMDGPUTargetInfo, &ctx))
       return;
 #endif
 
