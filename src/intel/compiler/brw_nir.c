@@ -1665,8 +1665,25 @@ brw_vectorize_lower_mem_access(nir_shader *nir,
     *   - reduced register pressure
     */
    nir_divergence_analysis(nir);
-   if (OPT(intel_nir_blockify_uniform_loads, compiler->devinfo))
+   if (OPT(intel_nir_blockify_uniform_loads, compiler->devinfo)) {
       OPT(nir_opt_load_store_vectorize, &options);
+
+      OPT(nir_opt_constant_folding);
+      OPT(nir_copy_prop);
+
+      if (OPT(brw_nir_rebase_const_offset_ubo_loads)) {
+         OPT(nir_opt_cse);
+         OPT(nir_copy_prop);
+
+         nir_load_store_vectorize_options ubo_options = {
+            .modes = nir_var_mem_ubo,
+            .callback = brw_nir_should_vectorize_mem,
+            .robust_modes = options.robust_modes & nir_var_mem_ubo,
+         };
+
+         OPT(nir_opt_load_store_vectorize, &ubo_options);
+      }
+   }
 
    nir_lower_mem_access_bit_sizes_options mem_access_options = {
       .modes = nir_var_mem_ssbo |
