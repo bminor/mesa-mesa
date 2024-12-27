@@ -1330,7 +1330,7 @@ llvmpipe_allocate_memory(struct pipe_screen *_screen, uint64_t size)
    if (mem->offset + mem->size > screen->mem_file_size) {
       /* expand the anonymous file */
       screen->mem_file_size = mem->offset + mem->size;
-      ftruncate(screen->fd_mem_alloc, screen->mem_file_size);
+      UNUSED int unused = ftruncate(screen->fd_mem_alloc, screen->mem_file_size);
    }
 
    mtx_unlock(&screen->mem_mutex);
