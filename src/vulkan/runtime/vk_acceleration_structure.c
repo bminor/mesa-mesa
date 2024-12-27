@@ -1165,7 +1165,7 @@ vk_cmd_build_acceleration_structures(VkCommandBuffer commandBuffer,
          progress = false;
 
          bool update;
-         uint32_t encode_key;
+         uint32_t encode_key = 0;
          for (uint32_t i = 0; i < infoCount; ++i) {
             if (bvh_states[i].last_encode_pass == pass + 1)
                continue;
