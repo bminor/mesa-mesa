@@ -914,7 +914,7 @@
         "description": "anv: change bool to VkResult",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "41caf3665ccc0ab77537aaed1412f37c57698a46",
         "notes": null
