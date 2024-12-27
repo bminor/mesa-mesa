@@ -3892,6 +3892,9 @@ struct anv_cmd_pipeline_state {
 
    struct anv_push_constants push_constants;
 
+   /** Amount of data written to anv_push_constants::client_data */
+   uint16_t push_constants_client_size;
+
    /** Tracks whether the push constant data has changed and need to be reemitted */
    bool                                         push_constants_data_dirty;
 

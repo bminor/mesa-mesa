@@ -1208,7 +1208,7 @@ anv_cmd_buffer_merge_dynamic(struct anv_cmd_buffer *cmd_buffer,
 struct anv_state
 anv_cmd_buffer_gfx_push_constants(struct anv_cmd_buffer *cmd_buffer)
 {
-   struct anv_push_constants *data =
+   const struct anv_push_constants *data =
       &cmd_buffer->state.gfx.base.push_constants;
 
    struct anv_state state =
@@ -1218,7 +1218,11 @@ anv_cmd_buffer_gfx_push_constants(struct anv_cmd_buffer *cmd_buffer)
    if (state.alloc_size == 0)
       return state;
 
-   memcpy(state.map, data, sizeof(struct anv_push_constants));
+   memcpy(state.map, data->client_data,
+          cmd_buffer->state.gfx.base.push_constants_client_size);
+   memcpy(state.map + sizeof(data->client_data),
+          &data->desc_surface_offsets,
+          sizeof(struct anv_push_constants) - sizeof(data->client_data));
 
    return state;
 }
@@ -1295,6 +1299,8 @@ void anv_CmdPushConstants2KHR(
       memcpy(pipe_state->push_constants.client_data + pInfo->offset,
              pInfo->pValues, pInfo->size);
       pipe_state->push_constants_data_dirty = true;
+      pipe_state->push_constants_client_size = MAX2(
+         pipe_state->push_constants_client_size, pInfo->offset + pInfo->size);
    }
    if (pInfo->stageFlags & VK_SHADER_STAGE_COMPUTE_BIT) {
       struct anv_cmd_pipeline_state *pipe_state =
@@ -1303,6 +1309,8 @@ void anv_CmdPushConstants2KHR(
       memcpy(pipe_state->push_constants.client_data + pInfo->offset,
              pInfo->pValues, pInfo->size);
       pipe_state->push_constants_data_dirty = true;
+      pipe_state->push_constants_client_size = MAX2(
+         pipe_state->push_constants_client_size, pInfo->offset + pInfo->size);
    }
    if (pInfo->stageFlags & ANV_RT_STAGE_BITS) {
       struct anv_cmd_pipeline_state *pipe_state =
@@ -1311,6 +1319,8 @@ void anv_CmdPushConstants2KHR(
       memcpy(pipe_state->push_constants.client_data + pInfo->offset,
              pInfo->pValues, pInfo->size);
       pipe_state->push_constants_data_dirty = true;
+      pipe_state->push_constants_client_size = MAX2(
+         pipe_state->push_constants_client_size, pInfo->offset + pInfo->size);
    }
 
    cmd_buffer->state.push_constants_dirty |= pInfo->stageFlags;
