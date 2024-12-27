@@ -463,29 +463,29 @@ genX(emit_urb_setup)(struct anv_device *device, struct anv_batch *batch,
                         &constrained);
 
 #if INTEL_NEEDS_WA_16014912113
-      if (genX(need_wa_16014912113)(urb_cfg_in, urb_cfg_out)) {
-         for (int i = 0; i <= MESA_SHADER_GEOMETRY; i++) {
+   if (genX(need_wa_16014912113)(urb_cfg_in, urb_cfg_out)) {
+      for (int i = 0; i <= MESA_SHADER_GEOMETRY; i++) {
 #if GFX_VER >= 12
-            anv_batch_emit(batch, GENX(3DSTATE_URB_ALLOC_VS), urb) {
-               urb._3DCommandSubOpcode             += i;
-               urb.VSURBEntryAllocationSize        = urb_cfg_in->size[i] - 1;
-               urb.VSURBStartingAddressSlice0      = urb_cfg_in->start[i];
-               urb.VSURBStartingAddressSliceN      = urb_cfg_in->start[i];
-               urb.VSNumberofURBEntriesSlice0      = i == 0 ? 256 : 0;
-               urb.VSNumberofURBEntriesSliceN      = i == 0 ? 256 : 0;
-            }
-#else
-            anv_batch_emit(batch, GENX(3DSTATE_URB_VS), urb) {
-               urb._3DCommandSubOpcode      += i;
-               urb.VSURBStartingAddress      = urb_cfg_in->start[i];
-               urb.VSURBEntryAllocationSize  = urb_cfg_in->size[i] - 1;
-               urb.VSNumberofURBEntries      = i == 0 ? 256 : 0;
-            }
-#endif
+         anv_batch_emit(batch, GENX(3DSTATE_URB_ALLOC_VS), urb) {
+            urb._3DCommandSubOpcode             += i;
+            urb.VSURBEntryAllocationSize        = urb_cfg_in->size[i] - 1;
+            urb.VSURBStartingAddressSlice0      = urb_cfg_in->start[i];
+            urb.VSURBStartingAddressSliceN      = urb_cfg_in->start[i];
+            urb.VSNumberofURBEntriesSlice0      = i == 0 ? 256 : 0;
+            urb.VSNumberofURBEntriesSliceN      = i == 0 ? 256 : 0;
          }
-         genx_batch_emit_pipe_control(batch, device->info, _3D,
-                                      ANV_PIPE_HDC_PIPELINE_FLUSH_BIT);
+#else
+         anv_batch_emit(batch, GENX(3DSTATE_URB_VS), urb) {
+            urb._3DCommandSubOpcode      += i;
+            urb.VSURBStartingAddress      = urb_cfg_in->start[i];
+            urb.VSURBEntryAllocationSize  = urb_cfg_in->size[i] - 1;
+            urb.VSNumberofURBEntries      = i == 0 ? 256 : 0;
+         }
+#endif
       }
+      genx_batch_emit_pipe_control(batch, device->info, _3D,
+                                   ANV_PIPE_HDC_PIPELINE_FLUSH_BIT);
+   }
 #endif
 
    for (int i = 0; i <= MESA_SHADER_GEOMETRY; i++) {
