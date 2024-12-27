@@ -2316,8 +2316,9 @@ static void get_nir_shader(struct si_shader *shader, struct si_nir_shader_ctx *c
    NIR_PASS(progress, nir, nir_opt_shrink_stores, false);
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
-      /* This uses the epilog key, so only monolithic shaders can call this. */
+      /* This uses the prolog/epilog keys, so only monolithic shaders can call this. */
       if (shader->is_monolithic) {
+         /* This eliminates system values and unused shader output components. */
          ac_nir_lower_ps_early_options early_options = {
             .force_center_interp_no_msaa = key->ps.part.prolog.force_persp_center_interp ||
                                            key->ps.part.prolog.force_linear_center_interp ||
@@ -2349,6 +2350,18 @@ static void get_nir_shader(struct si_shader *shader, struct si_nir_shader_ctx *c
          };
 
          NIR_PASS(progress, nir, ac_nir_lower_ps_early, &early_options);
+
+         /* This adds gl_SampleMaskIn. */
+         if (key->ps.mono.poly_line_smoothing)
+            NIR_PASS(progress, nir, nir_lower_poly_line_smooth, SI_NUM_SMOOTH_AA_SAMPLES);
+
+         /* This adds discard. */
+         if (key->ps.mono.point_smoothing)
+            NIR_PASS(progress, nir, nir_lower_point_smooth, true);
+
+         /* This adds discard. */
+         if (key->ps.part.prolog.poly_stipple)
+            NIR_PASS(progress, nir, si_nir_emit_polygon_stipple);
       } else {
          ac_nir_lower_ps_early_options early_options = {
             .optimize_frag_coord = true,
@@ -2357,14 +2370,6 @@ static void get_nir_shader(struct si_shader *shader, struct si_nir_shader_ctx *c
          };
          NIR_PASS(progress, nir, ac_nir_lower_ps_early, &early_options);
       }
-
-      /* This adds gl_SampleMaskIn. */
-      if (key->ps.mono.poly_line_smoothing)
-         NIR_PASS(progress, nir, nir_lower_poly_line_smooth, SI_NUM_SMOOTH_AA_SAMPLES);
-
-      /* This adds discard. */
-      if (key->ps.mono.point_smoothing)
-         NIR_PASS(progress, nir, nir_lower_point_smooth, true);
 
       NIR_PASS(progress, nir, nir_lower_fragcoord_wtrans);
    }
@@ -2498,9 +2503,6 @@ static void get_nir_shader(struct si_shader *shader, struct si_nir_shader_ctx *c
       };
 
       NIR_PASS(progress, nir, ac_nir_lower_ps_late, &late_options);
-
-      if (key->ps.part.prolog.poly_stipple)
-         NIR_PASS(progress, nir, si_nir_emit_polygon_stipple);
    }
 
    assert(shader->wave_size == 32 || shader->wave_size == 64);
