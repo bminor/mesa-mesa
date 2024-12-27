@@ -3508,6 +3508,7 @@ lp_build_sample_soa_code(struct gallivm_state *gallivm,
       assert(derivs == NULL);
    } else if (lod_control == LP_SAMPLER_LOD_EXPLICIT) {
       explicit_lod = lod;
+      derived_sampler_state.aniso = 0;
       assert(lod);
       assert(derivs == NULL);
    } else if (lod_control == LP_SAMPLER_LOD_DERIVATIVES) {
