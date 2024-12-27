@@ -2200,7 +2200,7 @@ static void si_shader_ps(struct si_screen *sscreen, struct si_shader *shader)
     */
    shader->ps.spi_baryc_cntl = S_0286E0_POS_FLOAT_LOCATION(2) |
                                S_0286E0_POS_FLOAT_ULC(info->base.fs.pixel_center_integer) |
-                               S_0286E0_FRONT_FACE_ALL_BITS(1);
+                               S_0286E0_FRONT_FACE_ALL_BITS(0);
    shader->ps.spi_shader_col_format = si_get_spi_shader_col_format(shader);
    shader->ps.cb_shader_mask = ac_get_cb_shader_mask(shader->key.ps.part.epilog.spi_shader_col_format);
    shader->ps.spi_ps_input_ena = shader->config.spi_ps_input_ena;

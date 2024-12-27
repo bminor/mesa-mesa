@@ -8141,7 +8141,7 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
       break;
    }
    case nir_intrinsic_load_front_face: {
-      bld.vopc(aco_opcode::v_cmp_lg_u32, Definition(get_ssa_temp(ctx, &instr->def)),
+      bld.vopc(aco_opcode::v_cmp_lt_f32, Definition(get_ssa_temp(ctx, &instr->def)),
                Operand::zero(), get_arg(ctx, ctx->args->front_face));
       break;
    }
@@ -12127,7 +12127,7 @@ interpolate_color_args(isel_context* ctx, const struct aco_ps_prolog_info* finfo
    if (finfo->color_two_side) {
       Temp face = get_arg(ctx, ctx->args->front_face);
       Temp is_face_positive =
-         bld.vopc(aco_opcode::v_cmp_lg_u32, bld.def(bld.lm), Operand::zero(), face);
+         bld.vopc(aco_opcode::v_cmp_lt_f32, bld.def(bld.lm), Operand::zero(), face);
 
       u_foreach_bit (i, finfo->colors_read) {
          unsigned color_index = i / 4;

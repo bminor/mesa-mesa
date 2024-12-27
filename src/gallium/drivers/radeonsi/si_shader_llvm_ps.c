@@ -73,7 +73,7 @@ static void interp_fs_color(struct si_shader_context *ctx, unsigned input_index,
       if (semantic_index == 1 && colors_read_mask & 0xf)
          back_attr_offset += 1;
 
-      is_face_positive = LLVMBuildICmp(ctx->ac.builder, LLVMIntNE, face, ctx->ac.i32_0, "");
+      is_face_positive = LLVMBuildICmp(ctx->ac.builder, LLVMRealOLT, ctx->ac.f32_0, face, "");
 
       for (chan = 0; chan < 4; chan++) {
          LLVMValueRef front, back;
@@ -602,7 +602,7 @@ void si_llvm_build_ps_prolog(struct si_shader_context *ctx, union si_shader_part
       LLVMValueRef face = NULL;
       if (key->ps_prolog.states.color_two_side) {
          face = ac_get_arg(&ctx->ac, args->ac.front_face);
-         face = ac_to_integer(&ctx->ac, face);
+         face = ac_to_float(&ctx->ac, face);
       }
 
       LLVMValueRef color[4];

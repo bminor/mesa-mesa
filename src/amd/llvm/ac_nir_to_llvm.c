@@ -3042,7 +3042,8 @@ static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *ins
       result = emit_load_frag_shading_rate(ctx);
       break;
    case nir_intrinsic_load_front_face:
-      result = emit_i2b(&ctx->ac, ac_get_arg(&ctx->ac, ctx->args->front_face));
+      result = emit_float_cmp(&ctx->ac, LLVMRealOLT, ctx->ac.f32_0,
+                              ac_get_arg(&ctx->ac, ctx->args->front_face));
       break;
    case nir_intrinsic_load_helper_invocation:
    case nir_intrinsic_is_helper_invocation:

@@ -3619,7 +3619,7 @@ radv_emit_rasterization_samples(struct radv_cmd_buffer *cmd_buffer)
    unsigned rasterization_samples = radv_get_rasterization_samples(cmd_buffer);
    unsigned ps_iter_samples = radv_get_ps_iter_samples(cmd_buffer);
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
-   unsigned spi_baryc_cntl = S_0286E0_FRONT_FACE_ALL_BITS(1);
+   unsigned spi_baryc_cntl = S_0286E0_FRONT_FACE_ALL_BITS(0);
    unsigned pa_sc_mode_cntl_1;
    bool has_hiz_his = false;
 
