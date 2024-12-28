@@ -196,7 +196,6 @@ static void get_param(struct rvce_encoder *enc, struct pipe_h264_enc_picture_des
    enc->enc_pic.frame_num_cnt = pic->frame_num_cnt - 1;
    enc->enc_pic.p_remain = pic->p_remain;
    enc->enc_pic.i_remain = pic->i_remain;
-   enc->enc_pic.gop_cnt = pic->gop_cnt;
    enc->enc_pic.pic_order_cnt = pic->pic_order_cnt;
    enc->enc_pic.not_referenced = pic->not_referenced;
    enc->enc_pic.addrmode_arraymode_disrdo_distwoinstants = 0x01000201;
@@ -288,7 +287,7 @@ static void get_param(struct rvce_encoder *enc, struct pipe_h264_enc_picture_des
 static void create(struct rvce_encoder *enc)
 {
    struct si_screen *sscreen = (struct si_screen *)enc->screen;
-   enc->task_info(enc, 0x00000000, 0, 0, 0);
+   enc->task_info(enc, 0x00000000, 0);
 
    RVCE_BEGIN(0x01000001); // create cmd
    RVCE_CS(enc->enc_pic.ec.enc_use_circular_buffer);
@@ -321,10 +320,9 @@ static void encode(struct rvce_encoder *enc)
 {
    struct si_screen *sscreen = (struct si_screen *)enc->screen;
    signed luma_offset, chroma_offset;
-   unsigned bs_idx = enc->bs_idx++;
    int i;
 
-   enc->task_info(enc, 0x00000003, 0, 0, bs_idx);
+   enc->task_info(enc, 0x00000003, 0);
 
    RVCE_BEGIN(0x05000001);                                      // context buffer
    RVCE_READWRITE(enc->dpb.res->buf, enc->dpb.res->domains, 0); // encodeContextAddressHi/Lo
@@ -507,7 +505,7 @@ static void rate_control(struct rvce_encoder *enc)
 
 static void config(struct rvce_encoder *enc)
 {
-   enc->task_info(enc, 0x00000002, 0, 0xffffffff, 0);
+   enc->task_info(enc, 0x00000002, 0xffffffff);
    enc->rate_control(enc);
    enc->config_extension(enc);
    enc->motion_estimation(enc);
@@ -532,7 +530,7 @@ static void feedback(struct rvce_encoder *enc)
 
 static void destroy(struct rvce_encoder *enc)
 {
-   enc->task_info(enc, 0x00000001, 0, 0, 0);
+   enc->task_info(enc, 0x00000001, 0);
 
    feedback(enc);
 
@@ -633,22 +631,13 @@ static void session(struct rvce_encoder *enc)
    RVCE_END();
 }
 
-static void task_info(struct rvce_encoder *enc, uint32_t op, uint32_t dep, uint32_t fb_idx,
-                      uint32_t ring_idx)
+static void task_info(struct rvce_encoder *enc, uint32_t op, uint32_t fb_idx)
 {
    RVCE_BEGIN(0x00000002); // task info
-   if (op == 0x3) {
-      if (enc->task_info_idx) {
-         uint32_t offs = enc->cs.current.cdw - enc->task_info_idx + 3;
-         // Update offsetOfNextTaskInfo
-         enc->cs.current.buf[enc->task_info_idx] = offs;
-      }
-      enc->task_info_idx = enc->cs.current.cdw;
-   }
    enc->enc_pic.ti.task_operation = op;
-   enc->enc_pic.ti.reference_picture_dependency = dep;
+   enc->enc_pic.ti.reference_picture_dependency = 0;
    enc->enc_pic.ti.feedback_index = fb_idx;
-   enc->enc_pic.ti.video_bitstream_ring_index = ring_idx;
+   enc->enc_pic.ti.video_bitstream_ring_index = 0;
    RVCE_CS(enc->enc_pic.ti.offset_of_next_task_info);
    RVCE_CS(enc->enc_pic.ti.task_operation);
    RVCE_CS(enc->enc_pic.ti.reference_picture_dependency);

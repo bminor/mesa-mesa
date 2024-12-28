@@ -292,8 +292,6 @@ struct rvce_h264_enc_pic {
    unsigned p_remain;
    unsigned i_remain;
    unsigned idr_pic_id;
-   unsigned gop_cnt;
-   unsigned gop_size;
    unsigned pic_order_cnt;
    unsigned addrmode_arraymode_disrdo_distwoinstants;
 
@@ -317,8 +315,7 @@ struct rvce_encoder {
    void (*config)(struct rvce_encoder *enc);
    void (*encode)(struct rvce_encoder *enc);
    void (*destroy)(struct rvce_encoder *enc);
-   void (*task_info)(struct rvce_encoder *enc, uint32_t op, uint32_t dep, uint32_t fb_idx,
-                     uint32_t ring_idx);
+   void (*task_info)(struct rvce_encoder *enc, uint32_t op, uint32_t fb_idx);
    void (*si_get_pic_param)(struct rvce_encoder *enc, struct pipe_h264_enc_picture_desc *pic);
 
    unsigned stream_handle;
@@ -343,9 +340,6 @@ struct rvce_encoder {
    struct rvid_buffer dpb;
    struct pipe_h264_enc_picture_desc pic;
    struct rvce_h264_enc_pic enc_pic;
-
-   unsigned task_info_idx;
-   unsigned bs_idx;
 
    bool use_vm;
    bool dual_pipe;

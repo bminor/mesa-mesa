@@ -28,8 +28,6 @@
 static void flush(struct rvce_encoder *enc, unsigned flags, struct pipe_fence_handle **fence)
 {
    enc->ws->cs_flush(&enc->cs, flags, fence);
-   enc->task_info_idx = 0;
-   enc->bs_idx = 0;
 }
 
 #if 0
