@@ -4269,6 +4269,7 @@ VkResult ResourceTracker::on_vkCreateImage(void* context, VkResult, VkDevice dev
                 } else {
                     return VK_ERROR_VALIDATION_FAILED_EXT;
                 }
+               return VK_ERROR_VALIDATION_FAILED_EXT; // stub constant
             }
         }
 
@@ -6746,6 +6747,7 @@ VkResult ResourceTracker::on_vkGetPhysicalDeviceImageFormatProperties2_common(
 
             // Host doesn't support DRM format modifiers, try emulating.
             if (drmFmtMod) {
+
                 if (drmFmtMod->drmFormatModifier == DRM_FORMAT_MOD_LINEAR) {
                     localImageFormatInfo.tiling = VK_IMAGE_TILING_LINEAR;
                     pImageFormatInfo = &localImageFormatInfo;
