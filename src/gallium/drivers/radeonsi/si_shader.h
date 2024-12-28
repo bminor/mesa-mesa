@@ -684,7 +684,6 @@ struct si_ps_epilog_bits {
    unsigned spi_shader_col_format;
    unsigned color_is_int8 : 8;
    unsigned color_is_int10 : 8;
-   unsigned last_cbuf : 3;
    unsigned alpha_func : 3;
    unsigned alpha_to_one : 1;
    unsigned alpha_to_coverage_via_mrtz : 1;  /* gfx11+ or alpha_to_one */
@@ -718,6 +717,7 @@ union si_shader_part_key {
       unsigned uses_discard : 1;
       unsigned colors_written : 8;
       unsigned color_types : 16;
+      unsigned writes_all_cbufs : 1;
       unsigned writes_z : 1;
       unsigned writes_stencil : 1;
       unsigned writes_samplemask : 1;

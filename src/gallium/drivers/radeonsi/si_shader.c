@@ -1578,7 +1578,6 @@ static void si_dump_shader_key(const struct si_shader *shader, FILE *f)
               key->ps.part.epilog.spi_shader_col_format);
       fprintf(f, "  epilog.color_is_int8 = 0x%X\n", key->ps.part.epilog.color_is_int8);
       fprintf(f, "  epilog.color_is_int10 = 0x%X\n", key->ps.part.epilog.color_is_int10);
-      fprintf(f, "  epilog.last_cbuf = %u\n", key->ps.part.epilog.last_cbuf);
       fprintf(f, "  epilog.alpha_func = %u\n", key->ps.part.epilog.alpha_func);
       fprintf(f, "  epilog.alpha_to_one = %u\n", key->ps.part.epilog.alpha_to_one);
       fprintf(f, "  epilog.alpha_to_coverage_via_mrtz = %u\n", key->ps.part.epilog.alpha_to_coverage_via_mrtz);
@@ -3457,6 +3456,9 @@ static void si_get_ps_epilog_key(struct si_shader *shader, union si_shader_part_
    key->ps_epilog.uses_discard = si_shader_uses_discard(shader);
    key->ps_epilog.colors_written = info->colors_written;
    key->ps_epilog.color_types = info->output_color_types;
+   key->ps_epilog.writes_all_cbufs = info->color0_writes_all_cbufs &&
+                                     /* Check whether a non-zero color buffer is bound. */
+                                     !!(shader->key.ps.part.epilog.spi_shader_col_format & 0xfffffff0);
    key->ps_epilog.writes_z = info->writes_z;
    key->ps_epilog.writes_stencil = info->writes_stencil;
    key->ps_epilog.writes_samplemask = info->writes_samplemask;

@@ -636,12 +636,13 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
       info->writes_samplemask = nir->info.outputs_written & BITFIELD64_BIT(FRAG_RESULT_SAMPLE_MASK);
 
       info->colors_written = nir->info.outputs_written >> FRAG_RESULT_DATA0;
-      if (nir->info.outputs_written & BITFIELD64_BIT(FRAG_RESULT_COLOR)) {
-         info->color0_writes_all_cbufs = true;
-         info->colors_written |= 0x1;
-      }
       if (nir->info.fs.color_is_dual_source)
          info->colors_written |= 0x2;
+      if (nir->info.outputs_written & BITFIELD64_BIT(FRAG_RESULT_COLOR)) {
+         info->colors_written |= 0x1;
+         info->color0_writes_all_cbufs = info->colors_written == 0x1;
+
+      }
    } else {
       info->writes_primid = nir->info.outputs_written & VARYING_BIT_PRIMITIVE_ID;
       info->writes_viewport_index = nir->info.outputs_written & VARYING_BIT_VIEWPORT;

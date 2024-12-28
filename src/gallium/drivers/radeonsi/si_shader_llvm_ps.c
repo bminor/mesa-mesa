@@ -309,14 +309,15 @@ static void si_llvm_build_clamp_alpha_test(struct si_shader_context *ctx,
 
 static void si_export_mrt_color(struct si_shader_context *ctx, LLVMValueRef *color, unsigned index,
                                 unsigned first_color_export, unsigned color_type,
-                                struct si_ps_exports *exp)
+                                bool writes_all_cbufs, struct si_ps_exports *exp)
 {
-   /* If last_cbuf > 0, FS_COLOR0_WRITES_ALL_CBUFS is true. */
-   if (ctx->shader->key.ps.part.epilog.last_cbuf > 0) {
+   if (writes_all_cbufs) {
       assert(exp->num == first_color_export);
 
-      /* Get the export arguments, also find out what the last one is. */
-      for (int c = 0; c <= ctx->shader->key.ps.part.epilog.last_cbuf; c++) {
+      /* This will do nothing for color buffers with SPI_SHADER_COL_FORMAT=ZERO, so always
+       * iterate over all 8.
+       */
+      for (int c = 0; c < 8; c++) {
          if (si_llvm_init_ps_export_args(ctx, color, c, exp->num - first_color_export,
                                          color_type, &exp->args[exp->num])) {
             assert(exp->args[exp->num].enabled_channels);
@@ -753,7 +754,8 @@ void si_llvm_build_ps_epilog(struct si_shader_context *ctx, union si_shader_part
       int write_i = u_bit_scan(&colors_written);
       unsigned color_type = (key->ps_epilog.color_types >> (write_i * 2)) & 0x3;
 
-      si_export_mrt_color(ctx, color[write_i], write_i, first_color_export, color_type, &exp);
+      si_export_mrt_color(ctx, color[write_i], write_i, first_color_export, color_type,
+                          key->ps_epilog.writes_all_cbufs, &exp);
    }
 
    if (exp.num) {

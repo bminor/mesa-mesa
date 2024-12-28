@@ -2602,12 +2602,6 @@ void si_ps_key_update_framebuffer(struct si_context *sctx)
    if (!sel)
       return;
 
-   if (sel->info.color0_writes_all_cbufs &&
-       sel->info.colors_written == 0x1)
-      key->ps.part.epilog.last_cbuf = MAX2(sctx->framebuffer.state.nr_cbufs, 1) - 1;
-   else
-      key->ps.part.epilog.last_cbuf = 0;
-
    /* ps_uses_fbfetch is true only if the color buffer is bound. */
    if (sctx->ps_uses_fbfetch) {
       struct pipe_surface *cb0 = sctx->framebuffer.state.cbufs[0];
@@ -2728,7 +2722,7 @@ void si_ps_key_update_framebuffer_blend_dsa_rasterizer(struct si_context *sctx)
    }
 
    /* Disable unwritten outputs (if WRITE_ALL_CBUFS isn't enabled). */
-   if (!key->ps.part.epilog.last_cbuf) {
+   if (!sel->info.color0_writes_all_cbufs) {
       key->ps.part.epilog.spi_shader_col_format &= sel->info.colors_written_4bit;
       key->ps.part.epilog.color_is_int8 &= sel->info.colors_written;
       key->ps.part.epilog.color_is_int10 &= sel->info.colors_written;
