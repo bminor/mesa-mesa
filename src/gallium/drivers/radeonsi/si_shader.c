@@ -1730,84 +1730,6 @@ static bool si_nir_kill_outputs(nir_shader *nir, const union si_shader_key *key)
    return progress;
 }
 
-/* Remove PS output components from NIR if they are disabled by spi_shader_col_format. */
-static bool kill_ps_outputs_cb(struct nir_builder *b, nir_instr *instr, void *_key)
-{
-   if (instr->type != nir_instr_type_intrinsic)
-      return false;
-
-   nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
-   if (intr->intrinsic != nir_intrinsic_store_output)
-      return false;
-
-   /* No indirect indexing allowed. */
-   ASSERTED nir_src offset = *nir_get_io_offset_src(intr);
-   assert(nir_src_is_const(offset) && nir_src_as_uint(offset) == 0);
-
-   unsigned location = nir_intrinsic_io_semantics(intr).location;
-   const union si_shader_key *key = _key;
-
-   switch (location) {
-   case FRAG_RESULT_DEPTH:
-   case FRAG_RESULT_STENCIL:
-      return false;
-
-   case FRAG_RESULT_SAMPLE_MASK:
-      if (key->ps.part.epilog.kill_samplemask) {
-         nir_instr_remove(instr);
-         return true;
-      }
-      return false;
-   }
-
-   /* Color outputs. */
-   unsigned component = nir_intrinsic_component(intr);
-   unsigned comp_mask = BITFIELD_RANGE(component, intr->num_components);
-   unsigned cb_shader_mask = ac_get_cb_shader_mask(key->ps.part.epilog.spi_shader_col_format);
-
-   /* Preserve alpha if ALPHA_TESTING is enabled. */
-   if (key->ps.part.epilog.alpha_func != PIPE_FUNC_ALWAYS ||
-       key->ps.part.epilog.alpha_to_coverage_via_mrtz)
-      cb_shader_mask |= 1 << 3;
-
-   /* If COLOR is broadcasted to multiple color buffers, combine their masks. */
-   if (location == FRAG_RESULT_COLOR) {
-      for (unsigned i = 1; i <= key->ps.part.epilog.last_cbuf; i++)
-         cb_shader_mask |= (cb_shader_mask >> (i * 4)) & 0xf;
-   }
-
-   unsigned index = location == FRAG_RESULT_COLOR ? 0 : location - FRAG_RESULT_DATA0;
-   unsigned output_mask = (cb_shader_mask >> (index * 4)) & 0xf;
-
-   if ((output_mask & comp_mask) == comp_mask)
-      return false;
-
-   if (!(output_mask & comp_mask)) {
-      nir_instr_remove(instr);
-      return true;
-   }
-
-   /* Fill disabled components with undef. */
-   b->cursor = nir_before_instr(instr);
-   nir_def *new_value = intr->src[0].ssa;
-   nir_def *undef = nir_undef(b, 1, new_value->bit_size);
-
-   unsigned kill_mask = (~output_mask & comp_mask) >> component;
-   u_foreach_bit(i, kill_mask) {
-      new_value = nir_vector_insert_imm(b, new_value, undef, i);
-   }
-
-   nir_src_rewrite(&intr->src[0], new_value);
-   return true;
-}
-
-static bool si_nir_kill_ps_outputs(nir_shader *nir, const union si_shader_key *key)
-{
-   assert(nir->info.stage == MESA_SHADER_FRAGMENT);
-   return nir_shader_instructions_pass(nir, kill_ps_outputs_cb,
-                                       nir_metadata_control_flow, (void*)key);
-}
-
 static unsigned si_map_io_driver_location(unsigned semantic)
 {
    if ((semantic >= VARYING_SLOT_PATCH0 && semantic < VARYING_SLOT_TESS_MAX) ||
@@ -2371,8 +2293,46 @@ static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       /* This uses the epilog key, so only monolithic shaders can call this. */
-      if (shader->is_monolithic)
-         NIR_PASS(progress, nir, si_nir_kill_ps_outputs, key);
+      if (shader->is_monolithic) {
+         ac_nir_lower_ps_early_options early_options = {
+            .force_center_interp_no_msaa = key->ps.part.prolog.force_persp_center_interp ||
+                                           key->ps.part.prolog.force_linear_center_interp ||
+                                           key->ps.mono.interpolate_at_sample_force_center,
+            .load_sample_positions_always_loads_current_ones = true,
+            .force_front_face = key->ps.opt.force_front_face_input,
+            .optimize_frag_coord = true,
+            /* This does a lot of things. See the description in ac_nir_lower_ps_early_options. */
+            .ps_iter_samples = key->ps.part.prolog.samplemask_log_ps_iter ?
+                                 (1 << key->ps.part.prolog.samplemask_log_ps_iter) :
+                                 (key->ps.part.prolog.force_persp_sample_interp ||
+                                  key->ps.part.prolog.force_linear_sample_interp ? 2 :
+                                  (key->ps.part.prolog.get_frag_coord_from_pixel_coord ? 1 : 0)),
+
+            .fbfetch_is_1D = key->ps.mono.fbfetch_is_1D,
+            .fbfetch_layered = key->ps.mono.fbfetch_layered,
+            .fbfetch_msaa = key->ps.mono.fbfetch_msaa,
+            .fbfetch_apply_fmask = sel->screen->info.gfx_level < GFX11 &&
+                                   !(sel->screen->debug_flags & DBG(NO_FMASK)),
+
+            .clamp_color = key->ps.part.epilog.clamp_color,
+            .alpha_test_alpha_to_one = key->ps.part.epilog.alpha_to_one,
+            .alpha_func = key->ps.part.epilog.alpha_func,
+            .keep_alpha_for_mrtz = key->ps.part.epilog.alpha_to_coverage_via_mrtz,
+            .spi_shader_col_format_hint = key->ps.part.epilog.spi_shader_col_format,
+            .kill_z = key->ps.part.epilog.kill_z,
+            .kill_stencil = key->ps.part.epilog.kill_stencil,
+            .kill_samplemask = key->ps.part.epilog.kill_samplemask,
+         };
+
+         NIR_PASS(progress, nir, ac_nir_lower_ps_early, &early_options);
+      } else {
+         ac_nir_lower_ps_early_options early_options = {
+            .optimize_frag_coord = true,
+            .alpha_func = COMPARE_FUNC_ALWAYS,
+            .spi_shader_col_format_hint = ~0,
+         };
+         NIR_PASS(progress, nir, ac_nir_lower_ps_early, &early_options);
+      }
 
       if (key->ps.mono.poly_line_smoothing)
          NIR_PASS(progress, nir, nir_lower_poly_line_smooth, SI_NUM_SMOOTH_AA_SAMPLES);
@@ -2485,38 +2445,6 @@ static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_
       shader->info.num_ps_inputs = info.num_inputs;
       shader->info.ps_colors_read = info.colors_read;
 
-      ac_nir_lower_ps_early_options early_options = {
-         .force_center_interp_no_msaa = key->ps.part.prolog.force_persp_center_interp ||
-                                        key->ps.part.prolog.force_linear_center_interp ||
-                                        key->ps.mono.interpolate_at_sample_force_center,
-         .load_sample_positions_always_loads_current_ones = true,
-         .force_front_face = key->ps.opt.force_front_face_input,
-         .optimize_frag_coord = true,
-         /* This does a lot of things. See the description in ac_nir_lower_ps_early_options. */
-         .ps_iter_samples = key->ps.part.prolog.samplemask_log_ps_iter ?
-                              (1 << key->ps.part.prolog.samplemask_log_ps_iter) :
-                              (key->ps.part.prolog.force_persp_sample_interp ||
-                               key->ps.part.prolog.force_linear_sample_interp ? 2 :
-                               (key->ps.part.prolog.get_frag_coord_from_pixel_coord ? 1 : 0)),
-
-         .fbfetch_is_1D = key->ps.mono.fbfetch_is_1D,
-         .fbfetch_layered = key->ps.mono.fbfetch_layered,
-         .fbfetch_msaa = key->ps.mono.fbfetch_msaa,
-         .fbfetch_apply_fmask = sel->screen->info.gfx_level < GFX11 &&
-                                !(sel->screen->debug_flags & DBG(NO_FMASK)),
-
-         .clamp_color = key->ps.part.epilog.clamp_color,
-         .alpha_test_alpha_to_one = key->ps.part.epilog.alpha_to_one,
-         .alpha_func = key->ps.part.epilog.alpha_func,
-         .keep_alpha_for_mrtz = key->ps.part.epilog.alpha_to_coverage_via_mrtz,
-         .spi_shader_col_format_hint = key->ps.part.epilog.spi_shader_col_format,
-         .kill_z = key->ps.part.epilog.kill_z,
-         .kill_stencil = key->ps.part.epilog.kill_stencil,
-         .kill_samplemask = key->ps.part.epilog.kill_samplemask,
-      };
-
-      NIR_PASS(progress, nir, ac_nir_lower_ps_early, &early_options);
-
       ac_nir_lower_ps_late_options late_options = {
          .gfx_level = sel->screen->info.gfx_level,
          .family = sel->screen->info.family,
@@ -2538,13 +2466,6 @@ static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_
          NIR_PASS_V(nir, si_nir_emit_polygon_stipple, args);
          progress = true;
       }
-   } else if (nir->info.stage == MESA_SHADER_FRAGMENT) {
-      ac_nir_lower_ps_early_options early_options = {
-         .optimize_frag_coord = true,
-         .alpha_func = COMPARE_FUNC_ALWAYS,
-         .spi_shader_col_format_hint = ~0,
-      };
-      NIR_PASS(progress, nir, ac_nir_lower_ps_early, &early_options);
    }
 
    assert(shader->wave_size == 32 || shader->wave_size == 64);
