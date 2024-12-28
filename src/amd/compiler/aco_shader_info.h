@@ -65,7 +65,7 @@ struct aco_ps_epilog_info {
    uint16_t color_types;
    bool clamp_color;
    bool skip_null_export;
-   unsigned broadcast_last_cbuf;
+   bool writes_all_cbufs;
    enum compare_func alpha_func;
    /* Depth/stencil/samplemask are always passed via VGPRs, and the epilog key can choose
     * not to export them using these flags, which can be dynamic states.

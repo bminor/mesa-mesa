@@ -13183,8 +13183,11 @@ select_ps_epilog(Program* program, void* pinfo, ac_shader_config* config,
    struct aco_export_mrt mrts[MAX_DRAW_BUFFERS];
    unsigned mrt_num = 0;
 
-   if (einfo->broadcast_last_cbuf) {
-      for (unsigned i = 0; i <= einfo->broadcast_last_cbuf; i++) {
+   if (einfo->writes_all_cbufs) {
+      /* This will do nothing for color buffers with SPI_SHADER_COL_FORMAT=ZERO, so always
+       * iterate over all 8.
+       */
+      for (unsigned i = 0; i < 8; i++) {
          struct aco_export_mrt* mrt = &mrts[mrt_num];
          if (export_fs_mrt_color(&ctx, einfo, colors[0], i, mrt))
             mrt->target += mrt_num++;
