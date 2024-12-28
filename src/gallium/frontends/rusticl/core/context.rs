@@ -348,6 +348,10 @@ impl Context {
 
             let res = res.ok_or(CL_OUT_OF_RESOURCES)?;
             if !dev.system_svm_supported() {
+                if Platform::dbg().memory {
+                    eprintln!("assigning {address:x} to {res:?}");
+                }
+
                 if !dev.screen().resource_assign_vma(&res, address) {
                     return Err(CL_OUT_OF_RESOURCES);
                 }

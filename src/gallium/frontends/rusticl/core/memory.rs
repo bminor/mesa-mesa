@@ -5,6 +5,7 @@ use crate::core::context::*;
 use crate::core::device::*;
 use crate::core::format::*;
 use crate::core::gl::*;
+use crate::core::platform::*;
 use crate::core::queue::*;
 use crate::core::util::*;
 use crate::impl_cl_type_trait;
@@ -28,6 +29,7 @@ use std::cmp;
 use std::collections::btree_map::Entry;
 use std::collections::HashMap;
 use std::convert::TryInto;
+use std::fmt::Debug;
 use std::mem;
 use std::mem::size_of;
 use std::num::NonZeroU64;
@@ -109,6 +111,12 @@ impl ConstMemoryPtr {
     }
 }
 
+impl Debug for ConstMemoryPtr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.ptr.fmt(f)
+    }
+}
+
 impl From<MutMemoryPtr> for ConstMemoryPtr {
     fn from(value: MutMemoryPtr) -> Self {
         Self {
@@ -125,6 +133,12 @@ pub struct MutMemoryPtr {
 unsafe impl Send for MutMemoryPtr {}
 unsafe impl Sync for MutMemoryPtr {}
 
+impl Debug for MutMemoryPtr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.ptr.fmt(f)
+    }
+}
+
 impl MutMemoryPtr {
     pub fn as_ptr(&self) -> *mut c_void {
         self.ptr
@@ -139,7 +153,7 @@ impl MutMemoryPtr {
     }
 }
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum ResourceValidityEntity {
     Host,
     Device(&'static Device),
@@ -221,6 +235,10 @@ impl ResourceAllocation {
             let helper_ctx;
             let map;
             let flush;
+
+            if Platform::dbg().memory {
+                eprintln!("migrating {self:?} from {entity:?} to {dev_entity:?}");
+            }
 
             if to_res.is_buffer() {
                 let ptr;
@@ -388,6 +406,12 @@ impl ResourceAllocation {
         }
 
         Ok(())
+    }
+}
+
+impl Debug for ResourceAllocation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!("ResourceAllocation@{:?}", self as *const _))
     }
 }
 

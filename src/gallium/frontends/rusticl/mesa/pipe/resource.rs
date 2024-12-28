@@ -9,7 +9,7 @@ use std::{
 
 use super::context::PipeContext;
 
-#[derive(PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 #[repr(transparent)]
 pub struct PipeResource {
     pipe: NonNull<pipe_resource>,
