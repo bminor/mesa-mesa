@@ -359,6 +359,10 @@ unsigned ac_get_cb_shader_mask(unsigned spi_shader_col_format)
 {
    unsigned i, cb_shader_mask = 0;
 
+   /* If the format is ~0, it means we want a full mask. */
+   if (spi_shader_col_format == ~0)
+      return ~0;
+
    for (i = 0; i < 8; i++) {
       switch ((spi_shader_col_format >> (i * 4)) & 0xf) {
       case V_028714_SPI_SHADER_ZERO:

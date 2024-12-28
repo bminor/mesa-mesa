@@ -2523,33 +2523,41 @@ static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_
       shader->info.num_ps_inputs = info.num_inputs;
       shader->info.ps_colors_read = info.colors_read;
 
-      ac_nir_lower_ps_options options = {
+      ac_nir_lower_ps_early_options early_options = {
+         .force_persp_sample_interp = key->ps.part.prolog.force_persp_sample_interp,
+         .force_linear_sample_interp = key->ps.part.prolog.force_linear_sample_interp,
+         .force_persp_center_interp = key->ps.part.prolog.force_persp_center_interp,
+         .force_linear_center_interp = key->ps.part.prolog.force_linear_center_interp,
+         .ps_iter_samples = 1 << key->ps.part.prolog.samplemask_log_ps_iter,
+
+         .clamp_color = key->ps.part.epilog.clamp_color,
+         .alpha_test_alpha_to_one = key->ps.part.epilog.alpha_to_one,
+         .alpha_func = key->ps.part.epilog.alpha_func,
+         .keep_alpha_for_mrtz = key->ps.part.epilog.alpha_to_coverage_via_mrtz,
+         .spi_shader_col_format_hint = key->ps.part.epilog.spi_shader_col_format,
+         .kill_z = key->ps.part.epilog.kill_z,
+         .kill_stencil = key->ps.part.epilog.kill_stencil,
+         .kill_samplemask = key->ps.part.epilog.kill_samplemask,
+      };
+
+      NIR_PASS_V(nir, ac_nir_lower_ps_early, &early_options);
+
+      ac_nir_lower_ps_late_options late_options = {
          .gfx_level = sel->screen->info.gfx_level,
          .family = sel->screen->info.family,
          .use_aco = nir->info.use_aco_amd,
+         .bc_optimize_for_persp = key->ps.part.prolog.bc_optimize_for_persp,
+         .bc_optimize_for_linear = key->ps.part.prolog.bc_optimize_for_linear,
          .uses_discard = si_shader_uses_discard(shader),
          .alpha_to_coverage_via_mrtz = key->ps.part.epilog.alpha_to_coverage_via_mrtz,
          .dual_src_blend_swizzle = key->ps.part.epilog.dual_src_blend_swizzle,
          .spi_shader_col_format = key->ps.part.epilog.spi_shader_col_format,
          .color_is_int8 = key->ps.part.epilog.color_is_int8,
          .color_is_int10 = key->ps.part.epilog.color_is_int10,
-         .clamp_color = key->ps.part.epilog.clamp_color,
          .alpha_to_one = key->ps.part.epilog.alpha_to_one,
-         .alpha_func = key->ps.part.epilog.alpha_func,
-         .kill_z = key->ps.part.epilog.kill_z,
-         .kill_stencil = key->ps.part.epilog.kill_stencil,
-         .kill_samplemask = key->ps.part.epilog.kill_samplemask,
-
-         .bc_optimize_for_persp = key->ps.part.prolog.bc_optimize_for_persp,
-         .bc_optimize_for_linear = key->ps.part.prolog.bc_optimize_for_linear,
-         .force_persp_sample_interp = key->ps.part.prolog.force_persp_sample_interp,
-         .force_linear_sample_interp = key->ps.part.prolog.force_linear_sample_interp,
-         .force_persp_center_interp = key->ps.part.prolog.force_persp_center_interp,
-         .force_linear_center_interp = key->ps.part.prolog.force_linear_center_interp,
-         .ps_iter_samples = 1 << key->ps.part.prolog.samplemask_log_ps_iter,
       };
 
-      NIR_PASS_V(nir, ac_nir_lower_ps, &options);
+      NIR_PASS_V(nir, ac_nir_lower_ps_late, &late_options);
 
       if (key->ps.part.prolog.poly_stipple)
          NIR_PASS_V(nir, si_nir_emit_polygon_stipple, args);

@@ -271,41 +271,59 @@ ac_nir_lower_legacy_gs(nir_shader *nir,
                        ac_nir_gs_output_info *output_info);
 
 typedef struct {
-   enum radeon_family family;
-   enum amd_gfx_level gfx_level;
-
-   bool use_aco;
-   bool uses_discard;
-   bool alpha_to_coverage_via_mrtz;
-   bool dual_src_blend_swizzle;
-   unsigned spi_shader_col_format;
-   unsigned color_is_int8;
-   unsigned color_is_int10;
-
-   bool bc_optimize_for_persp;
-   bool bc_optimize_for_linear;
+   /* This is a pre-link pass. It should only eliminate code and do lowering that mostly doesn't
+    * generate AMD-specific intrinsics.
+    */
+   /* System values. */
    bool force_persp_sample_interp;
    bool force_linear_sample_interp;
    bool force_persp_center_interp;
    bool force_linear_center_interp;
    unsigned ps_iter_samples;
 
-   /* OpenGL only */
-   bool clamp_color;
-   bool alpha_to_one;
-   enum compare_func alpha_func;
+   /* Outputs. */
+   bool clamp_color;                /* GL only */
+   bool alpha_test_alpha_to_one;    /* GL only, this only affects alpha test */
+   enum compare_func alpha_func;    /* GL only */
+   bool keep_alpha_for_mrtz;        /* this prevents killing alpha based on spi_shader_col_format_hint */
+   unsigned spi_shader_col_format_hint; /* this only shrinks and eliminates output stores */
    bool kill_z;
    bool kill_stencil;
    bool kill_samplemask;
+} ac_nir_lower_ps_early_options;
+
+void
+ac_nir_lower_ps_early(nir_shader *nir, const ac_nir_lower_ps_early_options *options);
+
+typedef struct {
+   /* This is a post-link pass. It shouldn't eliminate any code and it shouldn't affect shader_info
+    * (those should be done in the early pass).
+    */
+   enum amd_gfx_level gfx_level;
+   enum radeon_family family;
+   bool use_aco;
+
+   /* System values. */
+   bool bc_optimize_for_persp;
+   bool bc_optimize_for_linear;
+
+   /* Exports. */
+   bool uses_discard;
+   bool alpha_to_coverage_via_mrtz;
+   bool dual_src_blend_swizzle;
+   unsigned spi_shader_col_format;
+   unsigned color_is_int8;
+   unsigned color_is_int10;
+   bool alpha_to_one;
 
    /* Vulkan only */
    unsigned enable_mrt_output_nan_fixup;
    bool no_color_export;
    bool no_depth_export;
-} ac_nir_lower_ps_options;
+} ac_nir_lower_ps_late_options;
 
 void
-ac_nir_lower_ps(nir_shader *nir, const ac_nir_lower_ps_options *options);
+ac_nir_lower_ps_late(nir_shader *nir, const ac_nir_lower_ps_late_options *options);
 
 typedef struct {
    enum amd_gfx_level gfx_level;
