@@ -340,6 +340,7 @@ ProfileToPipe(VAProfile profile)
 typedef struct {
    struct vl_screen *vscreen;
    struct pipe_context *pipe;
+   struct pipe_context *pipe_gfx;
    struct handle_table *htab;
    struct vl_compositor compositor;
    struct vl_compositor_state cstate;

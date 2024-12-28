@@ -208,7 +208,8 @@ VA_DRIVER_INIT_FUNC(VADriverContextP ctx)
    if (!drv->vscreen->pscreen->get_video_param || !drv->vscreen->pscreen->is_video_format_supported)
       goto error_pipe;
 
-   drv->pipe = pipe_create_multimedia_context(drv->vscreen->pscreen, false);
+   bool compute_only = drv->vscreen->pscreen->get_param(drv->vscreen->pscreen, PIPE_CAP_PREFER_COMPUTE_FOR_MULTIMEDIA);
+   drv->pipe = pipe_create_multimedia_context(drv->vscreen->pscreen, compute_only);
    if (!drv->pipe)
       goto error_pipe;
 
@@ -220,7 +221,7 @@ VA_DRIVER_INIT_FUNC(VADriverContextP ctx)
                               drv->vscreen->pscreen->get_param(drv->vscreen->pscreen, PIPE_CAP_COMPUTE));
 
    if (can_init_compositor) {
-      if (!vl_compositor_init(&drv->compositor, drv->pipe, false))
+      if (!vl_compositor_init(&drv->compositor, drv->pipe, compute_only))
          goto error_compositor;
       if (!vl_compositor_init_state(&drv->cstate, drv->pipe))
          goto error_compositor_state;
@@ -577,6 +578,8 @@ vlVaTerminate(VADriverContextP ctx)
    drv = ctx->pDriverData;
    vl_compositor_cleanup_state(&drv->cstate);
    vl_compositor_cleanup(&drv->compositor);
+   if (drv->pipe_gfx)
+      drv->pipe_gfx->destroy(drv->pipe_gfx);
    drv->pipe->destroy(drv->pipe);
    drv->vscreen->destroy(drv->vscreen);
    handle_table_destroy(drv->htab);

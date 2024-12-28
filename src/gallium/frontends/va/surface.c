@@ -321,7 +321,7 @@ vlVaPutSubpictures(vlVaSurface *surf, vlVaDriver *drv,
 
    for (i = 0; i < surf->subpics.size/sizeof(vlVaSubpicture *); i++) {
       struct pipe_blend_state blend;
-      void *blend_state;
+      void *blend_state = NULL;
       vlVaBuffer *buf;
       struct pipe_box box;
       struct u_rect *s, *d, sr, dr, c;
@@ -368,30 +368,32 @@ vlVaPutSubpictures(vlVaSurface *surf, vlVaDriver *drv,
       dr.x1 = d->x0 + c.x1*(dw/(float)sw);
       dr.y1 = d->y0 + c.y1*(dh/(float)sh);
 
-      memset(&blend, 0, sizeof(blend));
-      blend.independent_blend_enable = 0;
-      blend.rt[0].blend_enable = 1;
-      blend.rt[0].rgb_src_factor = PIPE_BLENDFACTOR_SRC_ALPHA;
-      blend.rt[0].rgb_dst_factor = PIPE_BLENDFACTOR_INV_SRC_ALPHA;
-      blend.rt[0].alpha_src_factor = PIPE_BLENDFACTOR_ZERO;
-      blend.rt[0].alpha_dst_factor = PIPE_BLENDFACTOR_ZERO;
-      blend.rt[0].rgb_func = PIPE_BLEND_ADD;
-      blend.rt[0].alpha_func = PIPE_BLEND_ADD;
-      blend.rt[0].colormask = PIPE_MASK_RGBA;
-      blend.logicop_enable = 0;
-      blend.logicop_func = PIPE_LOGICOP_CLEAR;
-      blend.dither = 0;
-      blend_state = drv->pipe->create_blend_state(drv->pipe, &blend);
-
       vl_compositor_clear_layers(&drv->cstate);
-      vl_compositor_set_layer_blend(&drv->cstate, 0, blend_state, false);
+      if (drv->pipe->create_blend_state) {
+         memset(&blend, 0, sizeof(blend));
+         blend.independent_blend_enable = 0;
+         blend.rt[0].blend_enable = 1;
+         blend.rt[0].rgb_src_factor = PIPE_BLENDFACTOR_SRC_ALPHA;
+         blend.rt[0].rgb_dst_factor = PIPE_BLENDFACTOR_INV_SRC_ALPHA;
+         blend.rt[0].alpha_src_factor = PIPE_BLENDFACTOR_ZERO;
+         blend.rt[0].alpha_dst_factor = PIPE_BLENDFACTOR_ZERO;
+         blend.rt[0].rgb_func = PIPE_BLEND_ADD;
+         blend.rt[0].alpha_func = PIPE_BLEND_ADD;
+         blend.rt[0].colormask = PIPE_MASK_RGBA;
+         blend.logicop_enable = 0;
+         blend.logicop_func = PIPE_LOGICOP_CLEAR;
+         blend.dither = 0;
+         blend_state = drv->pipe->create_blend_state(drv->pipe, &blend);
+         vl_compositor_set_layer_blend(&drv->cstate, 0, blend_state, false);
+      }
       upload_sampler(drv->pipe, sub->sampler, &box, buf->data,
                      sub->image->pitches[0], 0, 0);
       vl_compositor_set_rgba_layer(&drv->cstate, &drv->compositor, 0, sub->sampler,
                                    &sr, NULL, NULL);
       vl_compositor_set_layer_dst_area(&drv->cstate, 0, &dr);
       vl_compositor_render(&drv->cstate, &drv->compositor, surf_draw, dirty_area, false);
-      drv->pipe->delete_blend_state(drv->pipe, blend_state);
+      if (blend_state)
+         drv->pipe->delete_blend_state(drv->pipe, blend_state);
    }
 
    return VA_STATUS_SUCCESS;
@@ -476,7 +478,8 @@ vlVaPutSurface(VADriverContextP ctx, VASurfaceID surface_id, void* draw, short s
       return status;
    }
 
-   drv->pipe->flush_resource(drv->pipe, tex);
+   if (drv->pipe->flush_resource)
+      drv->pipe->flush_resource(drv->pipe, tex);
 
    /* flush before calling flush_frontbuffer so that rendering is flushed
     * to back buffer so the texture can be copied in flush_frontbuffer
