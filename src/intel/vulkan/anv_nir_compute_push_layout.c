@@ -124,9 +124,13 @@ anv_nir_compute_push_layout(nir_shader *nir,
       push_end = anv_drv_const_offset(cs.subgroup_id);
    }
 
-   /* Align push_start down to a 32B (for 3DSTATE_CONSTANT) or 64B (for
-    * 3DSTATE_(MESH|TASK)_SHADER_DATA) boundary and make it no larger than
-    * push_end (no push constants is indicated by push_start = UINT_MAX).
+   /* Align push_start down to a 32B (for 3DSTATE_CONSTANT) and make it no
+    * larger than push_end (no push constants is indicated by push_start =
+    * UINT_MAX).
+    *
+    * If we were to use
+    * 3DSTATE_(MESH|TASK)_SHADER_DATA::IndirectDataStartAddress we would need
+    * to align things to 64B.
     *
     * SKL PRMs, Volume 2d: Command Reference: Structures,
     * 3DSTATE_CONSTANT::Constant Buffer 0 Read Length:
@@ -146,12 +150,8 @@ anv_nir_compute_push_layout(nir_shader *nir,
     * (unlike all Gfx stages) and so we can bound+align the allocation there
     * (see anv_cmd_buffer_cs_push_constants).
     */
-   const unsigned push_alignment =
-      devinfo->verx10 >= 125 && (nir->info.stage == MESA_SHADER_TASK ||
-                                 nir->info.stage == MESA_SHADER_MESH) ?
-      64 : 32;
    push_start = MIN2(push_start, push_end);
-   push_start = ROUND_DOWN_TO(push_start, push_alignment);
+   push_start = ROUND_DOWN_TO(push_start, 32);
 
    /* For scalar, push data size needs to be aligned to a DWORD. */
    const unsigned alignment = 4;

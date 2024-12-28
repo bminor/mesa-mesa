@@ -1208,7 +1208,6 @@ anv_cmd_buffer_merge_dynamic(struct anv_cmd_buffer *cmd_buffer,
 struct anv_state
 anv_cmd_buffer_gfx_push_constants(struct anv_cmd_buffer *cmd_buffer)
 {
-   const struct intel_device_info *devinfo = cmd_buffer->device->info;
    const struct anv_push_constants *data =
       &cmd_buffer->state.gfx.base.push_constants;
 
@@ -1222,10 +1221,6 @@ anv_cmd_buffer_gfx_push_constants(struct anv_cmd_buffer *cmd_buffer)
     *     the 64-byte aligned address of the indirect data."
     */
    struct anv_state state =
-      devinfo->verx10 >= 125 ?
-      anv_cmd_buffer_alloc_general_state(cmd_buffer,
-                                         align(sizeof(struct anv_push_constants), 64),
-                                         64) :
       anv_cmd_buffer_alloc_temporary_state(cmd_buffer,
                                            sizeof(struct anv_push_constants),
                                            32 /* bottom 5 bits MBZ */);

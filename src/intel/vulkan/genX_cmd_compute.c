@@ -391,6 +391,10 @@ emit_indirect_compute_walker(struct anv_cmd_buffer *cmd_buffer,
 
    uint64_t indirect_addr64 = anv_address_physical(indirect_addr);
 
+   uint64_t push_addr64 = anv_address_physical(
+      anv_state_pool_state_address(&cmd_buffer->device->general_state_pool,
+                                   comp_state->base.push_constants_state));
+
    struct GENX(COMPUTE_WALKER_BODY) body =  {
       .SIMDSize                 = dispatch_size,
       /* HSD 14016252163: Use of Morton walk order (and batching using a batch
@@ -405,8 +409,6 @@ emit_indirect_compute_walker(struct anv_cmd_buffer *cmd_buffer,
                                                             TG_BATCH_1,
 #endif
       .MessageSIMD              = dispatch_size,
-      .IndirectDataStartAddress = comp_state->base.push_constants_state.offset,
-      .IndirectDataLength       = comp_state->base.push_constants_state.alloc_size,
       .GenerateLocalID          = prog_data->generate_local_id != 0,
       .EmitLocal                = prog_data->generate_local_id,
       .WalkOrder                = prog_data->walk_order,
@@ -422,6 +424,8 @@ emit_indirect_compute_walker(struct anv_cmd_buffer *cmd_buffer,
                                        &dispatch),
       .EmitInlineParameter      = prog_data->uses_inline_data,
       .InlineData               = {
+         [ANV_INLINE_PARAM_PUSH_ADDRESS_OFFSET / 4 + 0]   = push_addr64 & 0xffffffff,
+         [ANV_INLINE_PARAM_PUSH_ADDRESS_OFFSET / 4 + 1]   = push_addr64 >> 32,
          [ANV_INLINE_PARAM_NUM_WORKGROUPS_OFFSET / 4 + 0] = UINT32_MAX,
          [ANV_INLINE_PARAM_NUM_WORKGROUPS_OFFSET / 4 + 1] = indirect_addr64 & 0xffffffff,
          [ANV_INLINE_PARAM_NUM_WORKGROUPS_OFFSET / 4 + 2] = indirect_addr64 >> 32,
@@ -466,11 +470,13 @@ emit_compute_walker(struct anv_cmd_buffer *cmd_buffer,
       num_workgroup_data[2] = groupCountZ;
    }
 
+   uint64_t push_addr64 = anv_address_physical(
+      anv_state_pool_state_address(&cmd_buffer->device->general_state_pool,
+                                   comp_state->base.push_constants_state));
+
    struct GENX(COMPUTE_WALKER_BODY) body = {
       .SIMDSize                       = dispatch.simd_size / 16,
       .MessageSIMD                    = dispatch.simd_size / 16,
-      .IndirectDataStartAddress       = comp_state->base.push_constants_state.offset,
-      .IndirectDataLength             = comp_state->base.push_constants_state.alloc_size,
       .GenerateLocalID                = prog_data->generate_local_id != 0,
       .EmitLocal                      = prog_data->generate_local_id,
       .WalkOrder                      = prog_data->walk_order,
@@ -491,6 +497,8 @@ emit_compute_walker(struct anv_cmd_buffer *cmd_buffer,
                                        prog_data, &dispatch),
       .EmitInlineParameter            = prog_data->uses_inline_data,
       .InlineData                     = {
+         [ANV_INLINE_PARAM_PUSH_ADDRESS_OFFSET / 4 + 0]   = push_addr64 & 0xffffffff,
+         [ANV_INLINE_PARAM_PUSH_ADDRESS_OFFSET / 4 + 1]   = push_addr64 >> 32,
          [ANV_INLINE_PARAM_NUM_WORKGROUPS_OFFSET / 4 + 0] = num_workgroup_data[0],
          [ANV_INLINE_PARAM_NUM_WORKGROUPS_OFFSET / 4 + 1] = num_workgroup_data[1],
          [ANV_INLINE_PARAM_NUM_WORKGROUPS_OFFSET / 4 + 2] = num_workgroup_data[2],

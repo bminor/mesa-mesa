@@ -562,18 +562,27 @@ cmd_buffer_flush_gfx_push_constants(struct anv_cmd_buffer *cmd_buffer,
 }
 
 #if GFX_VERx10 >= 125
-static inline uint32_t
-get_mesh_task_push_offset(struct anv_cmd_buffer *cmd_buffer,
-                          const struct anv_push_range *range)
+static inline uint64_t
+get_mesh_task_push_addr64(struct anv_cmd_buffer *cmd_buffer,
+                          const struct anv_graphics_pipeline *pipeline,
+                          gl_shader_stage stage)
 {
    struct anv_cmd_graphics_state *gfx_state = &cmd_buffer->state.gfx;
+   const struct anv_shader_bin *shader = pipeline->base.shaders[stage];
+   const struct anv_pipeline_bind_map *bind_map = &shader->bind_map;
+   if (bind_map->push_ranges[0].length == 0)
+      return 0;
 
    if (gfx_state->base.push_constants_state.alloc_size == 0) {
       gfx_state->base.push_constants_state =
          anv_cmd_buffer_gfx_push_constants(cmd_buffer);
    }
 
-   return gfx_state->base.push_constants_state.offset + range->start * 32;
+   return anv_address_physical(
+      anv_address_add(
+         anv_cmd_buffer_gfx_push_constants_state_address(cmd_buffer,
+                                      gfx_state->base.push_constants_state),
+         bind_map->push_ranges[0].start * 32));
 }
 
 static void
@@ -586,23 +595,23 @@ cmd_buffer_flush_mesh_inline_data(struct anv_cmd_buffer *cmd_buffer,
 
    if (dirty_stages & VK_SHADER_STAGE_TASK_BIT_EXT &&
        anv_pipeline_has_stage(pipeline, MESA_SHADER_TASK)) {
-      const struct anv_shader_bin *shader = pipeline->base.shaders[MESA_SHADER_TASK];
-      const struct anv_push_range *range = &shader->bind_map.push_ranges[0];
+      uint64_t push_addr64 =
+         get_mesh_task_push_addr64(cmd_buffer, pipeline, MESA_SHADER_TASK);
 
       anv_batch_emit(&cmd_buffer->batch, GENX(3DSTATE_TASK_SHADER_DATA), data) {
-         if (range->length > 0)
-            data.IndirectDataStartAddress = get_mesh_task_push_offset(cmd_buffer, range);
+         data.InlineData[ANV_INLINE_PARAM_PUSH_ADDRESS_OFFSET / 4 + 0] = push_addr64 & 0xffffffff;
+         data.InlineData[ANV_INLINE_PARAM_PUSH_ADDRESS_OFFSET / 4 + 1] = push_addr64 >> 32;
       }
    }
 
    if (dirty_stages & VK_SHADER_STAGE_MESH_BIT_EXT &&
        anv_pipeline_has_stage(pipeline, MESA_SHADER_MESH)) {
-      const struct anv_shader_bin *shader = pipeline->base.shaders[MESA_SHADER_MESH];
-      const struct anv_push_range *range = &shader->bind_map.push_ranges[0];
+      uint64_t push_addr64 =
+         get_mesh_task_push_addr64(cmd_buffer, pipeline, MESA_SHADER_MESH);
 
       anv_batch_emit(&cmd_buffer->batch, GENX(3DSTATE_MESH_SHADER_DATA), data) {
-         if (range->length > 0)
-            data.IndirectDataStartAddress = get_mesh_task_push_offset(cmd_buffer, range);
+         data.InlineData[ANV_INLINE_PARAM_PUSH_ADDRESS_OFFSET / 4 + 0] = push_addr64 & 0xffffffff;
+         data.InlineData[ANV_INLINE_PARAM_PUSH_ADDRESS_OFFSET / 4 + 1] = push_addr64 >> 32;
       }
    }
 
