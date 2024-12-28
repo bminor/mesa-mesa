@@ -28,6 +28,7 @@ typedef struct {
    uint8_t colors_written;
    nir_alu_type color_type[MAX_DRAW_BUFFERS];
    bool has_dual_src_blending;
+   bool writes_all_cbufs;
 
    /* MAX_DRAW_BUFFERS for MRT export, 1 for MRTZ export */
    nir_intrinsic_instr *exp[MAX_DRAW_BUFFERS + 1];
@@ -243,6 +244,7 @@ gather_ps_store_output(nir_builder *b, nir_intrinsic_instr *intrin, lower_ps_sta
       s->colors_written |= BITFIELD_BIT(color_index);
       s->color_type[color_index] = nir_intrinsic_src_type(intrin);
       s->has_dual_src_blending |= dual_src_blend_index == 1;
+      s->writes_all_cbufs |= slot == FRAG_RESULT_COLOR;
    }
 
    /* Keep output instruction if not exported in nir. */
@@ -784,10 +786,11 @@ export_ps_outputs(nir_builder *b, lower_ps_state *s)
       }
    }
 
-   if (s->options->broadcast_last_cbuf > 0) {
-      /* write to all color buffers */
-      assert(s->colors_written & 0x1);
-      for (int cbuf = 0; cbuf <= s->options->broadcast_last_cbuf; cbuf++)
+   if (s->writes_all_cbufs && s->colors_written == 0x1) {
+      /* This will do nothing for color buffers with SPI_SHADER_COL_FORMAT=ZERO, so always
+       * iterate over all 8.
+       */
+      for (int cbuf = 0; cbuf < 8; cbuf++)
          emit_ps_color_export(b, s, 0, cbuf);
    } else {
       for (int cbuf = 0; cbuf < MAX_DRAW_BUFFERS; cbuf++)

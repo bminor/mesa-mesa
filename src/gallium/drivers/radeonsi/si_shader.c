@@ -2536,7 +2536,6 @@ static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_
          .clamp_color = key->ps.part.epilog.clamp_color,
          .alpha_to_one = key->ps.part.epilog.alpha_to_one,
          .alpha_func = key->ps.part.epilog.alpha_func,
-         .broadcast_last_cbuf = key->ps.part.epilog.last_cbuf,
          .kill_z = key->ps.part.epilog.kill_z,
          .kill_stencil = key->ps.part.epilog.kill_stencil,
          .kill_samplemask = key->ps.part.epilog.kill_samplemask,

@@ -294,7 +294,6 @@ typedef struct {
    bool clamp_color;
    bool alpha_to_one;
    enum compare_func alpha_func;
-   unsigned broadcast_last_cbuf;
    bool kill_z;
    bool kill_stencil;
    bool kill_samplemask;
