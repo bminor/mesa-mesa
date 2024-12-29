@@ -559,8 +559,11 @@ def group_map(op, hdr, enc_ops, srcs=[], iss=[], dests=[]):
             elif isinstance(_ref, OpRef):
                origin = f'{_ref.type}[{_ref.index}]'
                enc_mapping += f', {{1}}->{origin}'
-            elif isinstance(_ref, str) and _ref == '_':
-               enc_mapping += f', pco_ref_null()'
+            elif isinstance(_ref, str):
+               if _ref == '_':
+                  enc_mapping += ', pco_ref_null()'
+               else:
+                  enc_mapping += f', {_ref}'
             else:
                assert False
 
@@ -712,6 +715,8 @@ def group_map(op, hdr, enc_ops, srcs=[], iss=[], dests=[]):
       enc_srcs = _enc_spec[1] if len(_enc_spec) > 1 else []
 
       origin = enc_dests[origin.index] if origin.type == 'dest' else enc_srcs[origin.index]
+      if isinstance(origin, str):
+         continue
       assert isinstance(origin, OpRef)
 
       if origin.type == 'dest':
