@@ -242,6 +242,14 @@ enum_map(OM_LOGIOP.t, F_LOGICAL_OP, [
    ('xnor', 'xnor'),
 ])
 
+enum_map(OM_SHIFTOP.t, F_SHIFT2_OP, [
+   ('lsl', 'lsl'),
+   ('shr', 'shr'),
+   ('rol', 'rol'),
+   ('cps', 'cps'),
+   ('asr', 'asr_twb'),
+])
+
 enum_map(RM_ELEM.t, F_UPCK_ELEM, [
    ('e0', 'e0'),
    ('e1', 'e1'),
@@ -1049,6 +1057,18 @@ encode_map(O_LOGICAL,
    op_ref_maps=[('1', ['ft4'], ['ft2', 's3'])]
 )
 
+encode_map(O_SHIFT,
+   encodings=[
+      (I_PHASE2, [
+         ('pwen', False),
+         ('tst_src', 0),
+         ('bw_tst_op', 0),
+         ('shift2_op', OM_SHIFTOP),
+      ])
+   ],
+   op_ref_maps=[('2', ['ft5'], ['ft4', 's4', ['_', 'p0']])]
+)
+
 encode_map(O_WOP, encodings=[(I_WOP, [])], op_ref_maps=[('ctrl', [], [])])
 encode_map(O_WDF, encodings=[(I_WDF, [])], op_ref_maps=[('ctrl', [], ['drc'])])
 encode_map(O_NOP, encodings=[(I_NOP, [])], op_ref_maps=[('ctrl', [], [])])
@@ -1607,6 +1627,28 @@ group_map(O_LOGICAL,
       ('s[3]', ('1', SRC(1)), 's3')
    ],
    dests=[('w[0]', ('1', DEST(0)), 'ft4')]
+)
+
+group_map(O_SHIFT,
+   hdr=(I_IGRP_HDR_BITWISE, [
+      ('opcnt', ['p0', 'p2']),
+      ('olchk', OM_OLCHK),
+      ('w1p', False),
+      ('w0p', True),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', OM_RPT)
+   ]),
+   enc_ops=[
+      ('0', O_BBYP0BM, ['ft0', 'ft1'], ['s0', SRC(0)]),
+      ('2', O_SHIFT, [DEST(0)], ['ft4', SRC(1), SRC(2)], [(OM_SHIFTOP, OM_SHIFTOP)])
+   ],
+   srcs=[
+      ('s[1]', ('0', SRC(1)), 's1'),
+      ('s[4]', ('2', SRC(1)), 's4')
+   ],
+   dests=[('w[0]', ('2', DEST(0)), 'ft5')]
 )
 
 group_map(O_WOP,

@@ -880,6 +880,49 @@ static pco_instr *trans_logical(trans_ctx *tctx,
    return pco_logical(&tctx->b, dest, src0, src1, .logiop = logiop);
 }
 
+/**
+ * \brief Translates a NIR shift op into PCO.
+ *
+ * \param[in,out] tctx Translation context.
+ * \param[in] op The NIR op.
+ * \param[in] src Instruction source.
+ * \return The translated PCO instruction.
+ */
+static pco_instr *trans_shift(trans_ctx *tctx,
+                              nir_op op,
+                              pco_ref dest,
+                              pco_ref src0,
+                              pco_ref src1)
+{
+   ASSERTED unsigned bits = pco_ref_get_bits(dest);
+   assert(bits == 32);
+
+   enum pco_shiftop shiftop;
+   switch (op) {
+   case nir_op_ishl:
+      shiftop = PCO_SHIFTOP_LSL;
+      break;
+
+   case nir_op_ishr:
+      shiftop = PCO_SHIFTOP_ASR;
+      break;
+
+   case nir_op_ushr:
+      shiftop = PCO_SHIFTOP_SHR;
+      break;
+
+   default:
+      UNREACHABLE("");
+   }
+
+   return pco_shift(&tctx->b,
+                    dest,
+                    src0,
+                    src1,
+                    pco_ref_null(),
+                    .shiftop = shiftop);
+}
+
 static inline bool is_min(nir_op op)
 {
    switch (op) {
@@ -1005,6 +1048,12 @@ static pco_instr *trans_alu(trans_ctx *tctx, nir_alu_instr *alu)
    case nir_op_ixor:
    case nir_op_inot:
       instr = trans_logical(tctx, alu->op, dest, src[0], src[1]);
+      break;
+
+   case nir_op_ishl:
+   case nir_op_ishr:
+   case nir_op_ushr:
+      instr = trans_shift(tctx, alu->op, dest, src[0], src[1]);
       break;
 
    case nir_op_f2i32:

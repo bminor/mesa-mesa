@@ -284,6 +284,15 @@ OM_LOGIOP = op_mod_enum('logiop', [
    'nand',
    'xnor',
 ])
+
+OM_SHIFTOP = op_mod_enum('shiftop', [
+   'lsl',
+   'shr',
+   'rol',
+   'cps',
+   'asr',
+])
+
 # Ops.
 
 OM_ALU = [OM_OLCHK, OM_EXEC_CND, OM_END, OM_ATOM, OM_RPT]
@@ -324,6 +333,7 @@ O_LD = hw_op('ld', OM_ALU_RPT1 + [OM_MCU_CACHE_MODE_LD], 1, 3)
 O_MOVI32 = hw_op('movi32', OM_ALU, 1, 1)
 
 O_LOGICAL = hw_op('logical', OM_ALU + [OM_LOGIOP], 1, 2)
+O_SHIFT = hw_op('shift', OM_ALU + [OM_SHIFTOP], 1, 3)
 
 O_BBYP0BM = hw_direct_op('bbyp0bm', [], 2, 2)
 O_BBYP0BM_IMM32 = hw_direct_op('bbyp0bm_imm32', [], 2, 2)
