@@ -261,10 +261,14 @@ enum pco_cf_node_type {
 
 /** PCO control-flow flag. */
 enum pco_cf_node_flag {
-   PCO_CF_NODE_FLAG_NONE = 0,
+   PCO_CF_NODE_FLAG_BODY = 0,
 
    PCO_CF_NODE_FLAG_IF_THEN,
    PCO_CF_NODE_FLAG_IF_ELSE,
+
+   PCO_CF_NODE_FLAG_PROLOGUE,
+   PCO_CF_NODE_FLAG_INTERLOGUE,
+   PCO_CF_NODE_FLAG_EPILOGUE,
 };
 
 /** PCO control-flow node. */
@@ -288,8 +292,11 @@ typedef struct _pco_if {
    pco_cf_node cf_node; /** CF node. */
    pco_func *parent_func; /** Parent function. */
    pco_ref cond; /** If condition. */
+   struct list_head prologue; /** List of pco_cf_nodes for if prologue. */
    struct list_head then_body; /** List of pco_cf_nodes for if body. */
+   struct list_head interlogue; /** List of pco_cf_nodes for if interlogue. */
    struct list_head else_body; /** List of pco_cf_nodes for else body. */
+   struct list_head epilogue; /** List of pco_cf_nodes for if epilogue. */
    unsigned index; /** If index. */
 } pco_if;
 
@@ -297,7 +304,9 @@ typedef struct _pco_if {
 typedef struct _pco_loop {
    pco_cf_node cf_node; /** CF node. */
    pco_func *parent_func; /** Parent function. */
+   struct list_head prologue; /** List of pco_cf_nodes for loop prologue. */
    struct list_head body; /** List of pco_cf_nodes for loop body. */
+   struct list_head epilogue; /** List of pco_cf_nodes for loop epilogue. */
    unsigned index; /** Loop index. */
 } pco_loop;
 
@@ -463,14 +472,29 @@ PCO_DEFINE_CAST(pco_cf_node_as_func,
 #define pco_foreach_func_in_shader_rev(func, shader) \
    list_for_each_entry_rev (pco_func, func, &(shader)->funcs, link)
 
+#define pco_foreach_cf_node_in_if_prologue(cf_node, _if) \
+   list_for_each_entry (pco_cf_node, cf_node, &(_if)->prologue, link)
+
 #define pco_foreach_cf_node_in_if_then(cf_node, _if) \
    list_for_each_entry (pco_cf_node, cf_node, &(_if)->then_body, link)
+
+#define pco_foreach_cf_node_in_if_interlogue(cf_node, _if) \
+   list_for_each_entry (pco_cf_node, cf_node, &(_if)->interlogue, link)
 
 #define pco_foreach_cf_node_in_if_else(cf_node, _if) \
    list_for_each_entry (pco_cf_node, cf_node, &(_if)->else_body, link)
 
+#define pco_foreach_cf_node_in_if_epilogue(cf_node, _if) \
+   list_for_each_entry (pco_cf_node, cf_node, &(_if)->epilogue, link)
+
+#define pco_foreach_cf_node_in_loop_prologue(cf_node, loop) \
+   list_for_each_entry (pco_cf_node, cf_node, &(loop)->prologue, link)
+
 #define pco_foreach_cf_node_in_loop(cf_node, loop) \
    list_for_each_entry (pco_cf_node, cf_node, &(loop)->body, link)
+
+#define pco_foreach_cf_node_in_loop_epilogue(cf_node, loop) \
+   list_for_each_entry (pco_cf_node, cf_node, &(loop)->epilogue, link)
 
 #define pco_foreach_cf_node_in_func(cf_node, func) \
    list_for_each_entry (pco_cf_node, cf_node, &(func)->body, link)
@@ -716,6 +740,254 @@ static inline unsigned pco_igrp_variant(const pco_igrp *igrp,
 /* Motions. */
 
 /**
+ * \brief Returns the first CF node in a PCO if.
+ *
+ * \param[in] pif PCO if.
+ * \return The first CF node.
+ */
+static inline pco_cf_node *pco_first_if_cf_node(pco_if *pif)
+{
+   if (!list_is_empty(&pif->prologue))
+      return pco_first_cf_node_list(&pif->prologue);
+
+   if (!list_is_empty(&pif->then_body))
+      return pco_first_cf_node_list(&pif->then_body);
+
+   if (!list_is_empty(&pif->interlogue))
+      return pco_first_cf_node_list(&pif->interlogue);
+
+   if (!list_is_empty(&pif->else_body))
+      return pco_first_cf_node_list(&pif->else_body);
+
+   if (!list_is_empty(&pif->epilogue))
+      return pco_first_cf_node_list(&pif->epilogue);
+
+   UNREACHABLE("Empty if.");
+}
+
+/**
+ * \brief Returns the last CF node in a PCO if.
+ *
+ * \param[in] pif PCO if.
+ * \return The last CF node.
+ */
+static inline pco_cf_node *pco_last_if_cf_node(pco_if *pif)
+{
+   if (!list_is_empty(&pif->epilogue))
+      return pco_last_cf_node_list(&pif->epilogue);
+
+   if (!list_is_empty(&pif->else_body))
+      return pco_last_cf_node_list(&pif->else_body);
+
+   if (!list_is_empty(&pif->interlogue))
+      return pco_last_cf_node_list(&pif->interlogue);
+
+   if (!list_is_empty(&pif->then_body))
+      return pco_last_cf_node_list(&pif->then_body);
+
+   if (!list_is_empty(&pif->prologue))
+      return pco_last_cf_node_list(&pif->prologue);
+
+   UNREACHABLE("Empty if.");
+}
+
+/**
+ * \brief Returns the next CF node in a PCO if.
+ *
+ * \param[in] cf_node The current CF node within the PCO if.
+ * \return The next CF node, or NULL if we've reached the end.
+ */
+static inline pco_cf_node *pco_next_if_cf_node(pco_cf_node *cf_node)
+{
+   pco_if *pif = pco_cf_node_as_if(cf_node->parent);
+
+   switch (cf_node->flag) {
+   case PCO_CF_NODE_FLAG_PROLOGUE:
+      if (!list_is_empty(&pif->then_body))
+         return pco_first_cf_node_list(&pif->then_body);
+
+      FALLTHROUGH;
+
+   case PCO_CF_NODE_FLAG_IF_THEN:
+      if (!list_is_empty(&pif->interlogue))
+         return pco_first_cf_node_list(&pif->interlogue);
+
+      FALLTHROUGH;
+
+   case PCO_CF_NODE_FLAG_INTERLOGUE:
+      if (!list_is_empty(&pif->else_body))
+         return pco_first_cf_node_list(&pif->else_body);
+
+      FALLTHROUGH;
+
+   case PCO_CF_NODE_FLAG_IF_ELSE:
+      if (!list_is_empty(&pif->epilogue))
+         return pco_first_cf_node_list(&pif->epilogue);
+
+      FALLTHROUGH;
+
+   case PCO_CF_NODE_FLAG_EPILOGUE:
+      return NULL;
+
+   default:
+      break;
+   }
+
+   UNREACHABLE("");
+}
+
+/**
+ * \brief Returns the previous CF node in a PCO if.
+ *
+ * \param[in] cf_node The current CF node within the PCO if.
+ * \return The previous CF node, or NULL if we've reached the end.
+ */
+static inline pco_cf_node *pco_prev_if_cf_node(pco_cf_node *cf_node)
+{
+   pco_if *pif = pco_cf_node_as_if(cf_node->parent);
+
+   switch (cf_node->flag) {
+   case PCO_CF_NODE_FLAG_EPILOGUE:
+      if (!list_is_empty(&pif->else_body))
+         return pco_last_cf_node_list(&pif->else_body);
+
+      FALLTHROUGH;
+
+   case PCO_CF_NODE_FLAG_IF_ELSE:
+      if (!list_is_empty(&pif->interlogue))
+         return pco_last_cf_node_list(&pif->interlogue);
+
+      FALLTHROUGH;
+
+   case PCO_CF_NODE_FLAG_INTERLOGUE:
+      if (!list_is_empty(&pif->then_body))
+         return pco_last_cf_node_list(&pif->then_body);
+
+      FALLTHROUGH;
+
+   case PCO_CF_NODE_FLAG_IF_THEN:
+      if (!list_is_empty(&pif->prologue))
+         return pco_last_cf_node_list(&pif->prologue);
+
+      FALLTHROUGH;
+
+   case PCO_CF_NODE_FLAG_PROLOGUE:
+      return NULL;
+
+   default:
+      break;
+   }
+
+   UNREACHABLE("");
+}
+
+/**
+ * \brief Returns the first CF node in a PCO loop.
+ *
+ * \param[in] loop PCO loop.
+ * \return The first CF node.
+ */
+static inline pco_cf_node *pco_first_loop_cf_node(pco_loop *loop)
+{
+   if (!list_is_empty(&loop->prologue))
+      return pco_first_cf_node_list(&loop->prologue);
+
+   if (!list_is_empty(&loop->body))
+      return pco_first_cf_node_list(&loop->body);
+
+   if (!list_is_empty(&loop->epilogue))
+      return pco_first_cf_node_list(&loop->epilogue);
+
+   UNREACHABLE("Empty loop.");
+}
+
+/**
+ * \brief Returns the last CF node in a PCO loop.
+ *
+ * \param[in] loop PCO loop.
+ * \return The last CF node.
+ */
+static inline pco_cf_node *pco_last_loop_cf_node(pco_loop *loop)
+{
+   if (!list_is_empty(&loop->epilogue))
+      return pco_last_cf_node_list(&loop->epilogue);
+
+   if (!list_is_empty(&loop->body))
+      return pco_last_cf_node_list(&loop->body);
+
+   if (!list_is_empty(&loop->prologue))
+      return pco_last_cf_node_list(&loop->prologue);
+
+   UNREACHABLE("Empty loop.");
+}
+
+/**
+ * \brief Returns the next CF node in a PCO loop.
+ *
+ * \param[in] cf_node The current CF node within the PCO loop.
+ * \return The next CF node, or NULL if we've reached the end.
+ */
+static inline pco_cf_node *pco_next_loop_cf_node(pco_cf_node *cf_node)
+{
+   pco_loop *loop = pco_cf_node_as_loop(cf_node->parent);
+
+   switch (cf_node->flag) {
+   case PCO_CF_NODE_FLAG_PROLOGUE:
+      if (!list_is_empty(&loop->body))
+         return pco_first_cf_node_list(&loop->body);
+
+      FALLTHROUGH;
+
+   case PCO_CF_NODE_FLAG_BODY:
+      if (!list_is_empty(&loop->epilogue))
+         return pco_first_cf_node_list(&loop->epilogue);
+
+      FALLTHROUGH;
+
+   case PCO_CF_NODE_FLAG_EPILOGUE:
+      return NULL;
+
+   default:
+      break;
+   }
+
+   UNREACHABLE("");
+}
+
+/**
+ * \brief Returns the previous CF node in a PCO loop.
+ *
+ * \param[in] cf_node The current CF node within the PCO loop.
+ * \return The previous CF node, or NULL if we've reached the end.
+ */
+static inline pco_cf_node *pco_prev_loop_cf_node(pco_cf_node *cf_node)
+{
+   pco_loop *loop = pco_cf_node_as_loop(cf_node->parent);
+
+   switch (cf_node->flag) {
+   case PCO_CF_NODE_FLAG_EPILOGUE:
+      if (!list_is_empty(&loop->body))
+         return pco_last_cf_node_list(&loop->body);
+
+      FALLTHROUGH;
+
+   case PCO_CF_NODE_FLAG_BODY:
+      if (!list_is_empty(&loop->prologue))
+         return pco_last_cf_node_list(&loop->prologue);
+
+      FALLTHROUGH;
+
+   case PCO_CF_NODE_FLAG_PROLOGUE:
+      return NULL;
+
+   default:
+      break;
+   }
+
+   UNREACHABLE("");
+}
+
+/**
  * \brief Returns the first CF node from the body containing the current CF
  *        node.
  *
@@ -727,18 +999,11 @@ static inline pco_cf_node *pco_first_cf_node(pco_cf_node *cf_node)
    pco_cf_node *parent_cf_node = cf_node->parent;
 
    switch (parent_cf_node->type) {
-   case PCO_CF_NODE_TYPE_IF: {
-      pco_if *pif = pco_cf_node_as_if(parent_cf_node);
-
-      if (!list_is_empty(&pif->then_body))
-         return pco_first_cf_node_list(&pif->then_body);
-
-      assert(!list_is_empty(&pif->else_body));
-      return pco_first_cf_node_list(&pif->else_body);
-   }
+   case PCO_CF_NODE_TYPE_IF:
+      return pco_first_if_cf_node(pco_cf_node_as_if(parent_cf_node));
 
    case PCO_CF_NODE_TYPE_LOOP:
-      return pco_first_cf_node_list(&pco_cf_node_as_loop(parent_cf_node)->body);
+      return pco_first_loop_cf_node(pco_cf_node_as_loop(parent_cf_node));
 
    case PCO_CF_NODE_TYPE_FUNC:
       return pco_first_cf_node_list(&pco_cf_node_as_func(parent_cf_node)->body);
@@ -761,18 +1026,11 @@ static inline pco_cf_node *pco_last_cf_node(pco_cf_node *cf_node)
    pco_cf_node *parent_cf_node = cf_node->parent;
 
    switch (parent_cf_node->type) {
-   case PCO_CF_NODE_TYPE_IF: {
-      pco_if *pif = pco_cf_node_as_if(parent_cf_node);
-
-      if (!list_is_empty(&pif->else_body))
-         return pco_last_cf_node_list(&pif->else_body);
-
-      assert(!list_is_empty(&pif->then_body));
-      return pco_last_cf_node_list(&pif->then_body);
-   }
+   case PCO_CF_NODE_TYPE_IF:
+      return pco_last_if_cf_node(pco_cf_node_as_if(parent_cf_node));
 
    case PCO_CF_NODE_TYPE_LOOP:
-      return pco_last_cf_node_list(&pco_cf_node_as_loop(parent_cf_node)->body);
+      return pco_last_loop_cf_node(pco_cf_node_as_loop(parent_cf_node));
 
    case PCO_CF_NODE_TYPE_FUNC:
       return pco_last_cf_node_list(&pco_cf_node_as_func(parent_cf_node)->body);
@@ -802,22 +1060,11 @@ static inline pco_cf_node *pco_next_cf_node(pco_cf_node *cf_node)
          return pco_next_cf_node_list(cf_node);
       break;
 
-   case PCO_CF_NODE_TYPE_IF: {
-      /* Return first cf node in if then body if it exists. */
-      pco_if *pif = pco_cf_node_as_if(cf_node);
+   case PCO_CF_NODE_TYPE_IF:
+      return pco_first_if_cf_node(pco_cf_node_as_if(cf_node));
 
-      if (!list_is_empty(&pif->then_body))
-         return pco_first_cf_node_list(&pif->then_body);
-
-      assert(!list_is_empty(&pif->else_body));
-      return pco_first_cf_node_list(&pif->else_body);
-   }
-
-   case PCO_CF_NODE_TYPE_LOOP: {
-      /* Return first cf node in loop body. */
-      pco_loop *loop = pco_cf_node_as_loop(cf_node);
-      return pco_first_cf_node_list(&loop->body);
-   }
+   case PCO_CF_NODE_TYPE_LOOP:
+      return pco_first_loop_cf_node(pco_cf_node_as_loop(cf_node));
 
    default:
       UNREACHABLE("");
@@ -827,19 +1074,16 @@ static inline pco_cf_node *pco_next_cf_node(pco_cf_node *cf_node)
    pco_cf_node *parent_cf_node = cf_node->parent;
    switch (parent_cf_node->type) {
    case PCO_CF_NODE_TYPE_IF: {
-      /* If we're in the then body, go to the else body if it exists. */
-      pco_if *pif = pco_cf_node_as_if(parent_cf_node);
-      if (cf_node->flag == PCO_CF_NODE_FLAG_IF_THEN &&
-          !list_is_empty(&pif->else_body)) {
-         return pco_first_cf_node_list(&pif->else_body);
-      }
-
-      /* Otherwise go to the next cf_node from the parent's parent cf node. */
-      FALLTHROUGH;
+      pco_cf_node *next_cf_node = pco_next_if_cf_node(cf_node);
+      return next_cf_node ? next_cf_node
+                          : pco_next_cf_node_list(parent_cf_node);
    }
 
-   case PCO_CF_NODE_TYPE_LOOP:
-      return pco_next_cf_node_list(parent_cf_node);
+   case PCO_CF_NODE_TYPE_LOOP: {
+      pco_cf_node *next_cf_node = pco_next_loop_cf_node(cf_node);
+      return next_cf_node ? next_cf_node
+                          : pco_next_cf_node_list(parent_cf_node);
+   }
 
    /* End of the function; return NULL. */
    case PCO_CF_NODE_TYPE_FUNC:
@@ -870,22 +1114,11 @@ static inline pco_cf_node *pco_prev_cf_node(pco_cf_node *cf_node)
          return pco_prev_cf_node_list(cf_node);
       break;
 
-   case PCO_CF_NODE_TYPE_IF: {
-      /* Return last cf node in if else body if it's not empty. */
-      pco_if *pif = pco_cf_node_as_if(cf_node);
+   case PCO_CF_NODE_TYPE_IF:
+      return pco_last_if_cf_node(pco_cf_node_as_if(cf_node));
 
-      if (!list_is_empty(&pif->else_body))
-         return pco_last_cf_node_list(&pif->else_body);
-
-      assert(!list_is_empty(&pif->then_body));
-      return pco_last_cf_node_list(&pif->then_body);
-   }
-
-   case PCO_CF_NODE_TYPE_LOOP: {
-      /* Return last cf node in loop body. */
-      pco_loop *loop = pco_cf_node_as_loop(cf_node);
-      return pco_last_cf_node_list(&loop->body);
-   }
+   case PCO_CF_NODE_TYPE_LOOP:
+      return pco_last_loop_cf_node(pco_cf_node_as_loop(cf_node));
 
    default:
       UNREACHABLE("");
@@ -895,20 +1128,16 @@ static inline pco_cf_node *pco_prev_cf_node(pco_cf_node *cf_node)
    pco_cf_node *parent_cf_node = cf_node->parent;
    switch (parent_cf_node->type) {
    case PCO_CF_NODE_TYPE_IF: {
-      /* If we're in the else body, go to the then body if it exists. */
-      pco_if *pif = pco_cf_node_as_if(parent_cf_node);
-      if (cf_node->flag == PCO_CF_NODE_FLAG_IF_ELSE &&
-          !list_is_empty(&pif->then_body)) {
-         return pco_last_cf_node_list(&pif->then_body);
-      }
-
-      /* Otherwise go to the previous cf_node from the parent's parent cf node.
-       */
-      FALLTHROUGH;
+      pco_cf_node *prev_cf_node = pco_prev_if_cf_node(cf_node);
+      return prev_cf_node ? prev_cf_node
+                          : pco_prev_cf_node_list(parent_cf_node);
    }
 
-   case PCO_CF_NODE_TYPE_LOOP:
-      return pco_prev_cf_node_list(parent_cf_node);
+   case PCO_CF_NODE_TYPE_LOOP: {
+      pco_cf_node *prev_cf_node = pco_prev_loop_cf_node(cf_node);
+      return prev_cf_node ? prev_cf_node
+                          : pco_prev_cf_node_list(parent_cf_node);
+   }
 
    /* Start of the function; return NULL. */
    case PCO_CF_NODE_TYPE_FUNC:

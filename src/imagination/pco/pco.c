@@ -182,8 +182,11 @@ pco_if *pco_if_create(pco_func *func)
 
    init_cf_node(&pif->cf_node, PCO_CF_NODE_TYPE_IF);
    pif->parent_func = func;
+   list_inithead(&pif->prologue);
    list_inithead(&pif->then_body);
+   list_inithead(&pif->interlogue);
    list_inithead(&pif->else_body);
+   list_inithead(&pif->epilogue);
    pif->index = func->next_if++;
 
    return pif;
@@ -201,7 +204,9 @@ pco_loop *pco_loop_create(pco_func *func)
 
    init_cf_node(&loop->cf_node, PCO_CF_NODE_TYPE_LOOP);
    loop->parent_func = func;
+   list_inithead(&loop->prologue);
    list_inithead(&loop->body);
+   list_inithead(&loop->epilogue);
    loop->index = func->next_loop++;
 
    return loop;
