@@ -10,6 +10,7 @@
  * \brief PCO instruction grouping pass.
  */
 
+#include "compiler/list.h"
 #include "hwdef/rogue_hw_defs.h"
 #include "pco.h"
 #include "pco_builder.h"
@@ -155,8 +156,10 @@ static inline void calc_align_padding(pco_igrp *last_igrp,
       *offset_bytes += padding;
 
       /* Pad the size of the penultimate igrp. */
-      pco_igrp *penultimate_igrp =
-         list_entry(last_igrp->link.prev, pco_igrp, link);
+      pco_igrp *penultimate_igrp = pco_prev_igrp(last_igrp);
+
+      /* If we only have one igrp then its offset will be zero. */
+      assert(penultimate_igrp);
 
       penultimate_igrp->enc.len.align_padding += padding;
       penultimate_igrp->enc.len.total += padding;

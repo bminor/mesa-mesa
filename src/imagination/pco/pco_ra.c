@@ -49,7 +49,7 @@ static bool vec_has_repeated_ssas(pco_instr *vec)
    assert(vec->op == PCO_OP_VEC);
 
    pco_foreach_instr_src_ssa (psrc, vec) {
-      pco_foreach_instr_src_ssa_after (psrc_inner, vec, psrc) {
+      pco_foreach_instr_src_ssa_from (psrc_inner, vec, psrc) {
          if (psrc_inner->val == psrc->val)
             return true;
       }

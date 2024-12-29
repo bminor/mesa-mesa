@@ -61,7 +61,7 @@ static inline bool pco_opt_prep_mods(pco_shader *shader,
              mod->op != PCO_OP_FLR)
             continue;
 
-         pco_foreach_instr_in_func_after (instr, mod) {
+         pco_foreach_instr_in_func_from (instr, mod) {
             if (instr->op != PCO_OP_FADD && instr->op != PCO_OP_FMUL)
                continue;
 
@@ -436,7 +436,7 @@ static inline bool try_prop_hw_comp(pco_ref src, pco_ref repl, pco_instr *from)
 {
    bool progress = false;
 
-   pco_foreach_instr_in_func_after (instr, from) {
+   pco_foreach_instr_in_func_from (instr, from) {
       pco_foreach_instr_src_ssa (psrc, instr) {
          if (psrc->val != src.val)
             continue;

@@ -17,7 +17,6 @@
 #include "pco_builder.h"
 #include "pco_internal.h"
 #include "util/bitset.h"
-#include "util/list.h"
 #include "util/macros.h"
 #include "util/ralloc.h"
 
@@ -39,7 +38,7 @@ typedef struct _trans_ctx {
 /* Forward declarations. */
 static pco_block *trans_cf_nodes(trans_ctx *tctx,
                                  pco_cf_node *parent_cf_node,
-                                 struct list_head *cf_node_list,
+                                 struct exec_list *cf_node_list,
                                  struct exec_list *nir_cf_node_list);
 
 /**
@@ -1344,12 +1343,20 @@ static pco_instr *trans_instr(trans_ctx *tctx, nir_instr *ninstr)
  * \brief Translates a NIR block into PCO.
  *
  * \param[in] tctx Translation context.
+ * \param[in] parent_cf_node The parent cf node.
+ * \param[in] cf_node_list The PCO cf node list.
  * \param[in] nblock The nir block.
  * \return The PCO block.
  */
-static pco_block *trans_block(trans_ctx *tctx, nir_block *nblock)
+static pco_block *trans_block(trans_ctx *tctx,
+                              pco_cf_node *parent_cf_node,
+                              struct exec_list *cf_node_list,
+                              nir_block *nblock)
 {
    pco_block *block = pco_block_create(tctx->func);
+   block->cf_node.parent = parent_cf_node;
+   exec_list_push_tail(cf_node_list, &block->cf_node.node);
+
    tctx->b = pco_builder_create(tctx->func, pco_cursor_after_block(block));
 
    nir_foreach_instr (ninstr, nblock) {
@@ -1363,32 +1370,40 @@ static pco_block *trans_block(trans_ctx *tctx, nir_block *nblock)
  * \brief Translates a NIR if into PCO.
  *
  * \param[in] tctx Translation context.
+ * \param[in] parent_cf_node The parent cf node.
+ * \param[in] cf_node_list The PCO cf node list.
  * \param[in] nif The nir if.
- * \return The PCO if.
  */
-static pco_if *trans_if(trans_ctx *tctx, nir_if *nif)
+static void trans_if(trans_ctx *tctx,
+                     pco_cf_node *parent_cf_node,
+                     struct exec_list *cf_node_list,
+                     nir_if *nif)
 {
    pco_if *pif = pco_if_create(tctx->func);
 
    UNREACHABLE("finishme: trans_if");
-
-   return pif;
+   pif->cf_node.parent = parent_cf_node;
+   exec_list_push_tail(cf_node_list, &pif->cf_node.node);
 }
 
 /**
  * \brief Translates a NIR loop into PCO.
  *
  * \param[in] tctx Translation context.
+ * \param[in] parent_cf_node The parent cf node.
+ * \param[in] cf_node_list The PCO cf node list.
  * \param[in] nloop The nir loop.
- * \return The PCO loop.
  */
-static pco_loop *trans_loop(trans_ctx *tctx, nir_loop *nloop)
+static void trans_loop(trans_ctx *tctx,
+                       pco_cf_node *parent_cf_node,
+                       struct exec_list *cf_node_list,
+                       nir_loop *nloop)
 {
    pco_loop *loop = pco_loop_create(tctx->func);
 
+   loop->cf_node.parent = parent_cf_node;
+   exec_list_push_tail(cf_node_list, &loop->cf_node.node);
    UNREACHABLE("finishme: trans_loop");
-
-   return loop;
 }
 
 /**
@@ -1443,41 +1458,42 @@ static pco_func *trans_func(trans_ctx *tctx, nir_function_impl *impl)
  */
 static pco_block *trans_cf_nodes(trans_ctx *tctx,
                                  pco_cf_node *parent_cf_node,
-                                 struct list_head *cf_node_list,
+                                 struct exec_list *cf_node_list,
                                  struct exec_list *nir_cf_node_list)
 {
    pco_block *start_block = NULL;
 
-   pco_cf_node *cf_node;
    foreach_list_typed (nir_cf_node, ncf_node, node, nir_cf_node_list) {
       switch (ncf_node->type) {
       case nir_cf_node_block: {
-         pco_block *block = trans_block(tctx, nir_cf_node_as_block(ncf_node));
-         cf_node = &block->cf_node;
-
+         pco_block *block = trans_block(tctx,
+                                        parent_cf_node,
+                                        cf_node_list,
+                                        nir_cf_node_as_block(ncf_node));
          if (!start_block)
             start_block = block;
          break;
       }
 
       case nir_cf_node_if: {
-         pco_if *pif = trans_if(tctx, nir_cf_node_as_if(ncf_node));
-         cf_node = &pif->cf_node;
+         trans_if(tctx,
+                  parent_cf_node,
+                  cf_node_list,
+                  nir_cf_node_as_if(ncf_node));
          break;
       }
 
       case nir_cf_node_loop: {
-         pco_loop *loop = trans_loop(tctx, nir_cf_node_as_loop(ncf_node));
-         cf_node = &loop->cf_node;
+         trans_loop(tctx,
+                    parent_cf_node,
+                    cf_node_list,
+                    nir_cf_node_as_loop(ncf_node));
          break;
       }
 
       default:
          UNREACHABLE("");
       }
-
-      cf_node->parent = parent_cf_node;
-      list_addtail(&cf_node->link, cf_node_list);
    }
 
    return start_block;

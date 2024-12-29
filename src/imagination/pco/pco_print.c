@@ -448,11 +448,11 @@ static void _pco_print_instr(pco_print_state *state, pco_instr *instr)
    bool printed = false;
 
    /* Destinations. */
-   for (unsigned d = 0; d < instr->num_dests; ++d) {
+   pco_foreach_instr_dest (pdest, instr) {
       if (printed)
          pco_printf(state, ",");
       pco_printf(state, " ");
-      _pco_print_ref(state, instr->dest[d]);
+      _pco_print_ref(state, *pdest);
       printed = true;
    }
 
@@ -492,28 +492,39 @@ static void _pco_print_instr(pco_print_state *state, pco_instr *instr)
    }
 
    /* Sources. */
-   for (unsigned s = 0; s < instr->num_srcs; ++s) {
+   pco_foreach_instr_src (psrc, instr) {
       if (printed)
          pco_printf(state, ",");
       pco_printf(state, " ");
-      _pco_print_ref(state, instr->src[s]);
+      _pco_print_ref(state, *psrc);
       printed = true;
    }
    pco_printf(state, ";");
 
    /* Spec for destinations. */
-   if (state->verbose && !state->is_grouped && instr->num_dests) {
+   bool no_dest_specs = true;
+   pco_foreach_instr_dest (pdest, instr) {
+      if (!pco_ref_is_null(*pdest)) {
+         no_dest_specs = false;
+         break;
+      }
+   }
+
+   if (state->verbose && !state->is_grouped && !no_dest_specs) {
       pco_printf(state, " /*");
 
       printed = false;
-      for (unsigned d = 0; d < instr->num_dests; ++d) {
+      pco_foreach_instr_dest (pdest, instr) {
+         if (pco_ref_is_null(*pdest))
+            continue;
+
          if (printed)
             pco_printf(state, ",");
          pco_printf(state, " ");
 
-         _pco_print_ref(state, instr->dest[d]);
+         _pco_print_ref(state, *pdest);
          pco_printf(state, ":");
-         pco_print_ref_spec(state, instr->dest[d]);
+         pco_print_ref_spec(state, *pdest);
 
          printed = true;
       }
@@ -895,11 +906,16 @@ static void pco_print_if(pco_print_state *state, pco_if *pif)
 {
    pco_printfi(state, "if ");
    pco_print_if_name(state, pif);
-   pco_printf(state, " (");
-   _pco_print_ref(state, pif->cond);
-   pco_printf(state, ") {\n");
 
-   if (!list_is_empty(&pif->prologue)) {
+   if (!pco_ref_is_null(pif->cond)) {
+      pco_printf(state, " (");
+      _pco_print_ref(state, pif->cond);
+      pco_printf(state, ")");
+   }
+
+   pco_printf(state, " {\n");
+
+   if (!exec_list_is_empty(&pif->prologue)) {
       pco_printfi(state, "/* prologue start */\n");
 
       ++state->indent;
@@ -911,7 +927,7 @@ static void pco_print_if(pco_print_state *state, pco_if *pif)
       pco_printfi(state, "/* prologue end */\n");
    }
 
-   if (!list_is_empty(&pif->then_body)) {
+   if (!exec_list_is_empty(&pif->then_body)) {
       ++state->indent;
       pco_foreach_cf_node_in_if_then (cf_node, pif) {
          _pco_print_cf_node(state, cf_node);
@@ -919,10 +935,10 @@ static void pco_print_if(pco_print_state *state, pco_if *pif)
       --state->indent;
    }
 
-   if (!list_is_empty(&pif->else_body)) {
+   if (!exec_list_is_empty(&pif->else_body)) {
       pco_printfi(state, "} else {\n");
 
-      if (!list_is_empty(&pif->interlogue)) {
+      if (!exec_list_is_empty(&pif->interlogue)) {
          pco_printfi(state, "/* interlogue start */\n");
 
          ++state->indent;
@@ -940,10 +956,10 @@ static void pco_print_if(pco_print_state *state, pco_if *pif)
       }
       --state->indent;
    } else {
-      assert(list_is_empty(&pif->interlogue));
+      assert(exec_list_is_empty(&pif->interlogue));
    }
 
-   if (!list_is_empty(&pif->epilogue)) {
+   if (!exec_list_is_empty(&pif->epilogue)) {
       pco_printfi(state, "/* epilogue start */\n");
 
       ++state->indent;
@@ -981,7 +997,7 @@ static void pco_print_loop(pco_print_state *state, pco_loop *loop)
    pco_print_loop_name(state, loop);
    pco_printf(state, " {\n");
 
-   if (!list_is_empty(&loop->prologue)) {
+   if (!exec_list_is_empty(&loop->prologue)) {
       pco_printfi(state, "/* prologue start */\n");
 
       ++state->indent;
@@ -993,7 +1009,7 @@ static void pco_print_loop(pco_print_state *state, pco_loop *loop)
       pco_printfi(state, "/* prologue end */\n");
    }
 
-   if (!list_is_empty(&loop->body)) {
+   if (!exec_list_is_empty(&loop->body)) {
       ++state->indent;
       pco_foreach_cf_node_in_loop (cf_node, loop) {
          _pco_print_cf_node(state, cf_node);
@@ -1001,7 +1017,23 @@ static void pco_print_loop(pco_print_state *state, pco_loop *loop)
       --state->indent;
    }
 
-   if (!list_is_empty(&loop->epilogue)) {
+   if (!exec_list_is_empty(&loop->interlogue)) {
+      pco_printfi(state, "/* loop ");
+      pco_print_loop_name(state, loop);
+      pco_printf(state, " interlogue start */\n");
+
+      ++state->indent;
+      pco_foreach_cf_node_in_loop_interlogue (cf_node, loop) {
+         _pco_print_cf_node(state, cf_node);
+      }
+      --state->indent;
+
+      pco_printfi(state, "/* loop ");
+      pco_print_loop_name(state, loop);
+      pco_printf(state, " interlogue end */\n");
+   }
+
+   if (!exec_list_is_empty(&loop->epilogue)) {
       pco_printfi(state, "/* epilogue start */\n");
 
       ++state->indent;

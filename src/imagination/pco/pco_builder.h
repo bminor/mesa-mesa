@@ -13,9 +13,9 @@
  * \\brief PCO builder header.
  */
 
+#include "compiler/list.h"
 #include "pco.h"
 #include "pco_internal.h"
-#include "util/list.h"
 #include "util/macros.h"
 
 #include <stdbool.h>
@@ -375,22 +375,6 @@ static pco_builder pco_builder_create(pco_func *func, pco_cursor cursor)
 }
 
 /**
- * \brief Inserts a block at a position specified by the builder.
- *
- * \param[in] b The builder.
- * \param[in] block The block.
- */
-/* TODO: test with multiple blocks. */
-static inline void pco_builder_insert_block(pco_builder *b, pco_block *block)
-{
-   struct list_head *list = &pco_cursor_cf_node(b->cursor)->link;
-   bool before = pco_cursor_is_before(b->cursor);
-
-   list_add(&block->cf_node.link, before ? list->prev : list);
-   b->cursor = pco_cursor_after_block(block);
-}
-
-/**
  * \brief Inserts a instruction at a position specified by the builder.
  *
  * \param[in] b The builder.
@@ -398,14 +382,24 @@ static inline void pco_builder_insert_block(pco_builder *b, pco_block *block)
  */
 static inline void pco_builder_insert_instr(pco_builder *b, pco_instr *instr)
 {
-   pco_instr *cursor_instr = pco_cursor_instr(b->cursor);
-   bool before = pco_cursor_is_before(b->cursor);
    pco_block *block = pco_cursor_block(b->cursor);
-   struct list_head *list = cursor_instr ? &cursor_instr->link : &block->instrs;
-
    instr->parent_block = block;
 
-   list_add(&instr->link, (before && cursor_instr) ? list->prev : list);
+   pco_instr *cursor_instr = pco_cursor_instr(b->cursor);
+   bool before = pco_cursor_is_before(b->cursor);
+
+   if (cursor_instr) {
+      if (before)
+         exec_node_insert_node_before(&cursor_instr->node, &instr->node);
+      else
+         exec_node_insert_after(&cursor_instr->node, &instr->node);
+   } else {
+      if (before)
+         exec_list_push_head(&block->instrs, &instr->node);
+      else
+         exec_list_push_tail(&block->instrs, &instr->node);
+   }
+
    b->cursor = pco_cursor_after_instr(instr);
 }
 
@@ -417,14 +411,24 @@ static inline void pco_builder_insert_instr(pco_builder *b, pco_instr *instr)
  */
 static inline void pco_builder_insert_igrp(pco_builder *b, pco_igrp *igrp)
 {
-   pco_igrp *cursor_igrp = pco_cursor_igrp(b->cursor);
-   bool before = pco_cursor_is_before(b->cursor);
    pco_block *block = pco_cursor_block(b->cursor);
-   struct list_head *list = cursor_igrp ? &cursor_igrp->link : &block->instrs;
-
    igrp->parent_block = block;
 
-   list_add(&igrp->link, (before && cursor_igrp) ? list->prev : list);
+   pco_igrp *cursor_igrp = pco_cursor_igrp(b->cursor);
+   bool before = pco_cursor_is_before(b->cursor);
+
+   if (cursor_igrp) {
+      if (before)
+         exec_node_insert_node_before(&cursor_igrp->node, &igrp->node);
+      else
+         exec_node_insert_after(&cursor_igrp->node, &igrp->node);
+   } else {
+      if (before)
+         exec_list_push_head(&block->instrs, &igrp->node);
+      else
+         exec_list_push_tail(&block->instrs, &igrp->node);
+   }
+
    b->cursor = pco_cursor_after_igrp(igrp);
 }
 

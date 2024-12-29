@@ -541,7 +541,7 @@ def group_map(op, hdr, enc_ops, srcs=[], iss=[], dests=[]):
       assert _enc_op.bname in encode_maps.keys()
       assert phase in [phase_map for phase_map, *_ in encode_maps[_enc_op.bname].op_ref_maps]
 
-      op_mappings.append(f'list_del(&{{1}}->link);')
+      op_mappings.append(f'exec_node_remove(&{{1}}->node);')
       op_mappings.append(f'{{}}->instrs[{phase}] = {{}};')
       op_mappings.append(f'{{0}}->instrs[{phase}]->phase = {phase};')
       op_mappings.append(f'{{0}}->instrs[{phase}]->parent_igrp = {{0}};')
