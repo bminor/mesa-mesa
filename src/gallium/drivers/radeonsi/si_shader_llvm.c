@@ -529,7 +529,7 @@ static LLVMValueRef si_llvm_load_sampler_desc(struct ac_shader_abi *abi, LLVMVal
 }
 
 static bool si_llvm_translate_nir(struct si_shader_context *ctx, struct si_shader *shader,
-                                  struct nir_shader *nir, bool free_nir)
+                                  struct nir_shader *nir)
 {
    struct si_shader_selector *sel = shader->selector;
    const struct si_shader_info *info = &sel->info;
@@ -764,18 +764,16 @@ static bool si_llvm_translate_nir(struct si_shader_context *ctx, struct si_shade
    }
 
    si_llvm_build_ret(ctx, ctx->return_value);
-
-   if (free_nir)
-      ralloc_free(nir);
    return true;
 }
 
 bool si_llvm_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *compiler,
-                            struct si_shader *shader, struct si_shader_args *args,
-                            struct util_debug_callback *debug, struct nir_shader *nir)
+                            struct si_shader *shader, struct si_linked_shaders *linked,
+                            struct util_debug_callback *debug)
 {
    struct si_shader_selector *sel = shader->selector;
    struct si_shader_context ctx;
+   nir_shader *nir = linked->consumer.nir;
    enum ac_float_mode float_mode = nir->info.stage == MESA_SHADER_KERNEL ?
                                        AC_FLOAT_MODE_DEFAULT : AC_FLOAT_MODE_DEFAULT_OPENGL;
    bool exports_color_null = false;
@@ -792,27 +790,22 @@ bool si_llvm_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *
 
    si_llvm_context_init(&ctx, sscreen, compiler, shader->wave_size, exports_color_null, exports_mrtz,
                         float_mode);
-   ctx.args = args;
+   ctx.args = &linked->consumer.args;
 
-   if (!si_llvm_translate_nir(&ctx, shader, nir, false)) {
+   if (!si_llvm_translate_nir(&ctx, shader, nir)) {
       si_llvm_dispose(&ctx);
       return false;
    }
 
    /* For merged shader stage. */
-   if (shader->is_monolithic && sscreen->info.gfx_level >= GFX9 &&
-       (nir->info.stage == MESA_SHADER_TESS_CTRL || nir->info.stage == MESA_SHADER_GEOMETRY)) {
+   if (linked->producer.nir) {
       /* LS or ES shader. */
-      struct si_shader prev_shader = {};
-      struct si_nir_shader_ctx prev_nir_ctx;
-
-      si_get_prev_stage_nir_shader(shader, &prev_shader, &prev_nir_ctx);
-      ctx.args = &prev_nir_ctx.args;
+      ctx.args = &linked->producer.args;
 
       struct ac_llvm_pointer parts[2];
       parts[1] = ctx.main_fn;
 
-      if (!si_llvm_translate_nir(&ctx, &prev_shader, prev_nir_ctx.nir, prev_nir_ctx.free_nir)) {
+      if (!si_llvm_translate_nir(&ctx, linked->producer.shader, linked->producer.nir)) {
          si_llvm_dispose(&ctx);
          return false;
       }

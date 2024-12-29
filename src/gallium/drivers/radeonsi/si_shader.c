@@ -2234,11 +2234,12 @@ si_init_gs_output_info(struct si_shader_info *info, struct si_gs_output_info *ou
  * better code or lower undesirable representations (like derefs). Lowering passes that prevent
  * linking optimizations or destroy shader_info shouldn't be run here.
  */
-static bool run_pre_link_optimization_passes(struct si_shader *shader, nir_shader *nir,
-                                             bool *opts_not_run)
+static bool run_pre_link_optimization_passes(struct si_nir_shader_ctx *ctx, bool *opts_not_run)
 {
+   struct si_shader *shader = ctx->shader;
    struct si_shader_selector *sel = shader->selector;
    const union si_shader_key *key = &shader->key;
+   nir_shader *nir = ctx->nir;
    bool progress = false;
 
    /* Kill outputs according to the shader key. */
@@ -2391,10 +2392,10 @@ static bool run_pre_link_optimization_passes(struct si_shader *shader, nir_shade
  * (those should be run before this) because any changes in shader_info won't be reflected
  * in hw registers from now on.
  */
-static void run_late_optimization_and_lowering_passes(struct si_shader *shader,
-                                                      struct si_nir_shader_ctx *ctx,
+static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *ctx,
                                                       bool progress, bool opts_not_run)
 {
+   struct si_shader *shader = ctx->shader;
    struct si_shader_selector *sel = shader->selector;
    const union si_shader_key *key = &shader->key;
    nir_shader *nir = ctx->nir;
@@ -2652,9 +2653,8 @@ static void run_late_optimization_and_lowering_passes(struct si_shader *shader,
 static void get_input_nir(struct si_shader *shader, struct si_nir_shader_ctx *ctx)
 {
    struct si_shader_selector *sel = shader->selector;
-   const union si_shader_key *key = &shader->key;
 
-   memset(ctx, 0, sizeof(*ctx));
+   ctx->shader = shader;
    ctx->free_nir = !sel->nir && sel->nir_binary;
    ctx->nir = sel->nir ? sel->nir : (sel->nir_binary ? si_deserialize_shader(sel) : NULL);
    assert(ctx->nir);
@@ -2662,7 +2662,7 @@ static void get_input_nir(struct si_shader *shader, struct si_nir_shader_ctx *ct
    if (unlikely(should_print_nir(ctx->nir))) {
       /* Modify the shader's name so that each variant gets its own name. */
       ctx->nir->info.name = ralloc_asprintf(ctx->nir, "%s-%08x", ctx->nir->info.name,
-                                            _mesa_hash_data(key, sizeof(*key)));
+                                            _mesa_hash_data(&shader->key, sizeof(shader->key)));
 
       /* Dummy pass to get the starting point. */
       printf("nir_dummy_pass\n");
@@ -2670,17 +2670,76 @@ static void get_input_nir(struct si_shader *shader, struct si_nir_shader_ctx *ct
    }
 }
 
-static void get_nir_shader(struct si_shader *shader, struct si_nir_shader_ctx *ctx)
+static void get_prev_stage_input_nir(struct si_shader *shader, struct si_linked_shaders *linked)
 {
-   bool opts_not_run = true;
+   const union si_shader_key *key = &shader->key;
 
-   get_input_nir(shader, ctx);
-   bool progress = run_pre_link_optimization_passes(shader, ctx->nir, &opts_not_run);
+   if (shader->selector->stage == MESA_SHADER_TESS_CTRL) {
+      linked->producer_shader.selector = key->ge.part.tcs.ls;
+      linked->producer_shader.key.ge.as_ls = 1;
+   } else {
+      linked->producer_shader.selector = key->ge.part.gs.es;
+      linked->producer_shader.key.ge.as_es = 1;
+      linked->producer_shader.key.ge.as_ngg = key->ge.as_ngg;
+   }
+
+   linked->producer_shader.next_shader = shader;
+   linked->producer_shader.key.ge.mono = key->ge.mono;
+   linked->producer_shader.key.ge.opt = key->ge.opt;
+   linked->producer_shader.key.ge.opt.inline_uniforms = false; /* only TCS/GS can inline uniforms */
+   /* kill_outputs was computed based on second shader's outputs so we can't use it to
+    * kill first shader's outputs.
+    */
+   linked->producer_shader.key.ge.opt.kill_outputs = 0;
+   linked->producer_shader.is_monolithic = true;
+   linked->producer_shader.wave_size = shader->wave_size;
+
+   get_input_nir(&linked->producer_shader, &linked->producer);
+}
+
+static void get_nir_shaders(struct si_shader *shader, struct si_linked_shaders *linked)
+{
+   memset(linked, 0, sizeof(*linked));
+   get_input_nir(shader, &linked->consumer);
+
+   if (shader->selector->screen->info.gfx_level >= GFX9 && shader->is_monolithic &&
+       (shader->selector->stage == MESA_SHADER_TESS_CTRL ||
+        shader->selector->stage == MESA_SHADER_GEOMETRY))
+      get_prev_stage_input_nir(shader, linked);
+
+   bool progress[SI_NUM_LINKED_SHADERS] = {0};
+   bool opts_not_run[SI_NUM_LINKED_SHADERS] = {true, true};
+
+   for (unsigned i = 0; i < SI_NUM_LINKED_SHADERS; i++) {
+      if (linked->shader[i].nir) {
+         progress[i] = run_pre_link_optimization_passes(&linked->shader[i], &opts_not_run[i]);
+      }
+   }
 
    /* TODO: run linking optimizations here if we have LS+HS or ES+GS */
-   /* TODO: gather shader_info here */
 
-   run_late_optimization_and_lowering_passes(shader, ctx, progress, opts_not_run);
+   /* TODO: gather shader_info here */
+   if (shader->selector->stage <= MESA_SHADER_GEOMETRY) {
+      shader->info.uses_instanceid |=
+         shader->key.ge.mono.instance_divisor_is_one ||
+         shader->key.ge.mono.instance_divisor_is_fetched;
+
+      if (linked->producer.nir) {
+         shader->info.uses_instanceid |=
+            linked->producer.shader->selector->info.uses_instanceid ||
+            linked->producer.shader->info.uses_instanceid;
+      }
+   }
+
+   for (unsigned i = 0; i < SI_NUM_LINKED_SHADERS; i++) {
+      if (linked->shader[i].nir) {
+         run_late_optimization_and_lowering_passes(&linked->shader[i], progress[i],
+                                                   opts_not_run[i]);
+      }
+   }
+
+   if (linked->producer.nir)
+      si_update_shader_binary_info(shader, linked->producer.nir);
 }
 
 void si_update_shader_binary_info(struct si_shader *shader, nir_shader *nir)
@@ -2763,12 +2822,16 @@ si_nir_generate_gs_copy_shader(struct si_screen *sscreen,
                                    sscreen->options.vrs2x2,
                                    output_info);
 
-   struct si_shader_args args;
-   si_init_shader_args(shader, &args, &gs_nir->info);
+   struct si_linked_shaders linked;
+   memset(&linked, 0, sizeof(linked));
+   linked.consumer.nir = nir;
 
-   NIR_PASS_V(nir, si_nir_lower_abi, shader, &args);
+   si_init_shader_args(shader, &linked.consumer.args, &gs_nir->info);
+
+   NIR_PASS_V(nir, si_nir_lower_abi, shader, &linked.consumer.args);
    NIR_PASS_V(nir, ac_nir_lower_intrinsics_to_args, sscreen->info.gfx_level,
-              sscreen->info.has_ls_vgpr_init_bug, AC_HW_VERTEX_SHADER, 64, 64, &args.ac);
+              sscreen->info.has_ls_vgpr_init_bug, AC_HW_VERTEX_SHADER, 64, 64,
+              &linked.consumer.args.ac);
 
    si_nir_opts(gs_selector->screen, nir, false);
 
@@ -2781,10 +2844,9 @@ si_nir_generate_gs_copy_shader(struct si_screen *sscreen,
 
    bool ok =
 #if AMD_LLVM_AVAILABLE
-      !gs_nir->info.use_aco_amd ? si_llvm_compile_shader(sscreen, compiler, shader,
-                                                                   &args, debug, nir) :
+      !gs_nir->info.use_aco_amd ? si_llvm_compile_shader(sscreen, compiler, shader, &linked, debug) :
 #endif
-      si_aco_compile_shader(shader, &args, nir, debug);
+      si_aco_compile_shader(shader, &linked, debug);
 
    if (ok) {
       assert(!shader->config.scratch_bytes_per_wave);
@@ -2974,9 +3036,9 @@ bool si_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *compi
    if (sel->stage == MESA_SHADER_FRAGMENT && sel->info.base.use_aco_amd)
       si_set_spi_ps_input_config(shader);
 
-   struct si_nir_shader_ctx ctx;
-   get_nir_shader(shader, &ctx);
-   nir_shader *nir = ctx.nir;
+   struct si_linked_shaders linked;
+   get_nir_shaders(shader, &linked);
+   nir_shader *nir = linked.consumer.nir;
 
    /* Dump NIR before doing NIR->LLVM conversion in case the
     * conversion fails. */
@@ -3027,10 +3089,9 @@ bool si_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *compi
 
    ret =
 #if AMD_LLVM_AVAILABLE
-      !nir->info.use_aco_amd ? si_llvm_compile_shader(sscreen, compiler, shader, &ctx.args,
-                                                      debug, nir) :
+      !nir->info.use_aco_amd ? si_llvm_compile_shader(sscreen, compiler, shader, &linked, debug) :
 #endif
-      si_aco_compile_shader(shader, &ctx.args, nir, debug);
+      si_aco_compile_shader(shader, &linked, debug);
 
    if (!ret)
       goto out;
@@ -3041,7 +3102,7 @@ bool si_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *compi
    if (nir->info.stage == MESA_SHADER_GEOMETRY && !shader->key.ge.as_ngg) {
       shader->gs_copy_shader =
          si_nir_generate_gs_copy_shader(sscreen, compiler, shader, nir, debug,
-                                        &ctx.legacy_gs_output_info.info);
+                                        &linked.consumer.legacy_gs_output_info.info);
       if (!shader->gs_copy_shader) {
          fprintf(stderr, "radeonsi: can't create GS copy shader\n");
          ret = false;
@@ -3149,8 +3210,10 @@ bool si_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *compi
    }
 
 out:
-   if (ctx.free_nir)
-      ralloc_free(nir);
+   for (unsigned i = 0; i < SI_NUM_LINKED_SHADERS; i++) {
+      if (linked.shader[i].free_nir)
+         ralloc_free(linked.shader[i].nir);
+   }
 
    return ret;
 }
@@ -3678,43 +3741,6 @@ void si_shader_destroy(struct si_shader *shader)
       si_shader_binary_clean(&shader->binary);
 
    free(shader->shader_log);
-}
-
-void si_get_prev_stage_nir_shader(struct si_shader *shader, struct si_shader *prev_shader,
-                                  struct si_nir_shader_ctx *ctx)
-{
-   const struct si_shader_selector *sel = shader->selector;
-   const union si_shader_key *key = &shader->key;
-
-   if (sel->stage == MESA_SHADER_TESS_CTRL) {
-      struct si_shader_selector *ls = key->ge.part.tcs.ls;
-
-      prev_shader->selector = ls;
-      prev_shader->key.ge.as_ls = 1;
-   } else {
-      struct si_shader_selector *es = key->ge.part.gs.es;
-
-      prev_shader->selector = es;
-      prev_shader->key.ge.as_es = 1;
-      prev_shader->key.ge.as_ngg = key->ge.as_ngg;
-   }
-
-   prev_shader->next_shader = shader;
-   prev_shader->key.ge.mono = key->ge.mono;
-   prev_shader->key.ge.opt = key->ge.opt;
-   prev_shader->key.ge.opt.inline_uniforms = false; /* only TCS/GS can inline uniforms */
-   /* kill_outputs was computed based on second shader's outputs so we can't use it to
-    * kill first shader's outputs.
-    */
-   prev_shader->key.ge.opt.kill_outputs = 0;
-   prev_shader->is_monolithic = true;
-   prev_shader->wave_size = shader->wave_size;
-
-   get_nir_shader(prev_shader, ctx);
-   si_update_shader_binary_info(shader, ctx->nir);
-
-   shader->info.uses_instanceid |=
-      prev_shader->selector->info.uses_instanceid || prev_shader->info.uses_instanceid;
 }
 
 void si_get_ps_prolog_args(struct si_shader_args *args,

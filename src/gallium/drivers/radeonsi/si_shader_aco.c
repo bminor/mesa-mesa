@@ -143,41 +143,32 @@ si_aco_build_shader_binary(void **data, const struct ac_shader_config *config,
 }
 
 bool
-si_aco_compile_shader(struct si_shader *shader,
-                      struct si_shader_args *args,
-                      struct nir_shader *nir,
+si_aco_compile_shader(struct si_shader *shader, struct si_linked_shaders *linked,
                       struct util_debug_callback *debug)
 {
    const struct si_shader_selector *sel = shader->selector;
+   nir_shader *nir = linked->consumer.nir;
 
    struct aco_compiler_options options = {0};
    si_fill_aco_options(sel->screen, nir->info.stage, &options, debug);
 
    struct aco_shader_info info = {0};
-   si_fill_aco_shader_info(shader, &info, args);
+   si_fill_aco_shader_info(shader, &info, &linked->consumer.args);
 
+   const struct ac_shader_args *args = &linked->consumer.args.ac;
    nir_shader *shaders[2];
    unsigned num_shaders = 0;
 
-   struct si_shader prev_shader = {};
-   struct si_nir_shader_ctx prev_ctx;
-   prev_ctx.free_nir = false;
-
    /* For merged shader stage. */
-   if (shader->is_monolithic && sel->screen->info.gfx_level >= GFX9 &&
-       (nir->info.stage == MESA_SHADER_TESS_CTRL || nir->info.stage == MESA_SHADER_GEOMETRY)) {
-      si_get_prev_stage_nir_shader(shader, &prev_shader, &prev_ctx);
-      shaders[num_shaders++] = prev_ctx.nir;
-      args = &prev_ctx.args;
+   if (linked->producer.nir) {
+      shaders[num_shaders++] = linked->producer.nir;
+      args = &linked->producer.args.ac;
    }
 
    shaders[num_shaders++] = nir;
 
-   aco_compile_shader(&options, &info, num_shaders, shaders, &args->ac,
+   aco_compile_shader(&options, &info, num_shaders, shaders, args,
                       si_aco_build_shader_binary, (void **)shader);
-
-   if (prev_ctx.free_nir)
-      ralloc_free(shaders[0]);
 
    return true;
 }
