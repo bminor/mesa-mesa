@@ -572,15 +572,6 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
    case nir_intrinsic_load_alpha_reference_amd:
       replacement = ac_nir_load_arg(b, &args->ac, args->alpha_reference);
       break;
-   case nir_intrinsic_load_front_face:
-   case nir_intrinsic_load_front_face_fsign:
-      if (!key->ps.opt.force_front_face_input)
-         return false;
-      if (intrin->intrinsic == nir_intrinsic_load_front_face)
-         replacement = nir_imm_bool(b, key->ps.opt.force_front_face_input == 1);
-      else
-         replacement = nir_imm_float(b, key->ps.opt.force_front_face_input == 1 ? 1.0 : -1.0);
-      break;
    case nir_intrinsic_load_color0:
    case nir_intrinsic_load_color1: {
       uint32_t colors_read = sel->info.colors_read;

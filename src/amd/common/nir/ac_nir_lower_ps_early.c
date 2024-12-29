@@ -150,8 +150,6 @@ rewrite_ps_load_barycentric(nir_builder *b, nir_intrinsic_instr *intrin, lower_p
    if (!var)
       return false;
 
-   b->cursor = nir_before_instr(&intrin->instr);
-
    nir_def *replacement = nir_load_var(b, var);
    nir_def_replace(&intrin->def, replacement);
    return true;
@@ -188,8 +186,6 @@ optimize_lower_ps_outputs(nir_builder *b, nir_intrinsic_instr *intrin, lower_ps_
                           nir_intrinsic_io_semantics(intrin).dual_source_blend_index;
    nir_def *value = intrin->src[0].ssa;
    bool progress = false;
-
-   b->cursor = nir_before_instr(&intrin->instr);
 
    /* Clamp color. */
    if (s->options->clamp_color) {
@@ -288,9 +284,6 @@ lower_ps_load_sample_mask_in(nir_builder *b, nir_intrinsic_instr *intrin, lower_
     * The samplemask loaded by hardware is always the coverage of the
     * entire pixel/fragment, so mask bits out based on the sample ID.
     */
-
-   b->cursor = nir_before_instr(&intrin->instr);
-
    uint32_t ps_iter_mask = ac_get_ps_iter_mask(s->options->ps_iter_samples);
    nir_def *sampleid = nir_load_sample_id(b);
    nir_def *submask = nir_ishl(b, nir_imm_int(b, ps_iter_mask), sampleid);
@@ -310,6 +303,7 @@ lower_ps_intrinsic(nir_builder *b, nir_instr *instr, void *state)
    if (instr->type != nir_instr_type_intrinsic)
       return false;
 
+   b->cursor = nir_before_instr(instr);
    nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
 
    switch (intrin->intrinsic) {
@@ -324,6 +318,18 @@ lower_ps_intrinsic(nir_builder *b, nir_instr *instr, void *state)
    case nir_intrinsic_load_sample_mask_in:
       if (s->options->ps_iter_samples > 1)
          return lower_ps_load_sample_mask_in(b, intrin, s);
+      break;
+   case nir_intrinsic_load_front_face:
+      if (s->options->force_front_face) {
+         nir_def_replace(&intrin->def, nir_imm_bool(b, s->options->force_front_face == 1));
+         return true;
+      }
+      break;
+   case nir_intrinsic_load_front_face_fsign:
+      if (s->options->force_front_face) {
+         nir_def_replace(&intrin->def, nir_imm_float(b, s->options->force_front_face == 1 ? 1 : -1));
+         return true;
+      }
       break;
    default:
       break;

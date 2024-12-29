@@ -2528,6 +2528,7 @@ static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_
          .force_linear_sample_interp = key->ps.part.prolog.force_linear_sample_interp,
          .force_persp_center_interp = key->ps.part.prolog.force_persp_center_interp,
          .force_linear_center_interp = key->ps.part.prolog.force_linear_center_interp,
+         .force_front_face = key->ps.opt.force_front_face_input,
          .ps_iter_samples = 1 << key->ps.part.prolog.samplemask_log_ps_iter,
 
          .clamp_color = key->ps.part.epilog.clamp_color,

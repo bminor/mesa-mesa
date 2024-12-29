@@ -275,6 +275,7 @@ typedef struct {
    bool force_linear_sample_interp;
    bool force_persp_center_interp;
    bool force_linear_center_interp;
+   int force_front_face; /* 0 -> keep, 1 -> set to true, -1 -> set to false */
    unsigned ps_iter_samples;
 
    /* Outputs. */
