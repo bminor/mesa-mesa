@@ -3614,7 +3614,7 @@ static void *si_create_shader_selector(struct pipe_context *ctx,
       sel->nir = (nir_shader*)state->ir.nir;
    }
 
-   si_nir_scan_shader(sscreen, sel->nir, &sel->info);
+   si_nir_scan_shader(sscreen, sel->nir, &sel->info, false);
 
    sel->stage = sel->nir->info.stage;
    sel->const_and_shader_buf_descriptors_index =

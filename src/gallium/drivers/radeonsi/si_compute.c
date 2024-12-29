@@ -101,7 +101,7 @@ static void si_create_compute_state_async(void *job, void *gdata, int thread_ind
    compiler = &sscreen->compiler[thread_index];
 
    assert(program->ir_type == PIPE_SHADER_IR_NIR);
-   si_nir_scan_shader(sscreen, sel->nir, &sel->info);
+   si_nir_scan_shader(sscreen, sel->nir, &sel->info, false);
 
    if (!sel->nir->info.use_aco_amd && !*compiler)
       *compiler = si_create_llvm_compiler(sscreen);

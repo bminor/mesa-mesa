@@ -1051,7 +1051,6 @@ struct si_shader_part {
 /* si_shader.c */
 struct ac_rtld_binary;
 
-void si_update_shader_binary_info(struct si_shader *shader, struct nir_shader *nir);
 bool si_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *compiler,
                        struct si_shader *shader, struct util_debug_callback *debug);
 bool si_create_shader_variant(struct si_screen *sscreen, struct ac_llvm_compiler *compiler,
@@ -1078,7 +1077,7 @@ unsigned si_get_shader_binary_size(struct si_screen *screen, struct si_shader *s
 
 /* si_shader_info.c */
 void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
-                        struct si_shader_info *info);
+                        struct si_shader_info *info, bool colors_lowered);
 
 /* si_shader_nir.c */
 void si_lower_mediump_io(struct nir_shader *nir);

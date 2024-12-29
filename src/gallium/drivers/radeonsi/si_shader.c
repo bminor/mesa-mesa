@@ -36,9 +36,11 @@ static void si_fix_resource_usage(struct si_screen *sscreen, struct si_shader *s
 /* Get the number of all interpolated inputs */
 unsigned si_get_ps_num_interp(struct si_shader *ps)
 {
-   unsigned num_colors = !!(ps->info.ps_colors_read & 0x0f) + !!(ps->info.ps_colors_read & 0xf0);
-   unsigned num_interp =
-      ps->info.num_ps_inputs + (ps->key.ps.part.prolog.color_two_side ? num_colors : 0);
+   unsigned num_interp = ps->info.num_ps_inputs;
+
+   /* Back colors are added by the PS prolog when needed. */
+   if (!ps->is_monolithic && ps->key.ps.part.prolog.color_two_side)
+      num_interp += !!(ps->info.ps_colors_read & 0x0f) + !!(ps->info.ps_colors_read & 0xf0);
 
    assert(num_interp <= 32);
    return MIN2(num_interp, 32);
@@ -2234,7 +2236,7 @@ si_init_gs_output_info(struct si_shader_info *info, struct si_gs_output_info *ou
  * better code or lower undesirable representations (like derefs). Lowering passes that prevent
  * linking optimizations or destroy shader_info shouldn't be run here.
  */
-static bool run_pre_link_optimization_passes(struct si_nir_shader_ctx *ctx, bool *opts_not_run)
+static bool run_pre_link_optimization_passes(struct si_nir_shader_ctx *ctx)
 {
    struct si_shader *shader = ctx->shader;
    struct si_shader_selector *sel = shader->selector;
@@ -2299,6 +2301,12 @@ static bool run_pre_link_optimization_passes(struct si_nir_shader_ctx *ctx, bool
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       /* This uses the prolog/epilog keys, so only monolithic shaders can call this. */
       if (shader->is_monolithic) {
+         /* This lowers load_color intrinsics to COLn/BFCn input loads and two-side color
+          * selection.
+          */
+         if (sel->info.colors_read)
+            NIR_PASS(progress, nir, si_nir_lower_ps_color_input, &shader->key, &sel->info);
+
          /* This eliminates system values and unused shader output components. */
          ac_nir_lower_ps_early_options early_options = {
             .force_center_interp_no_msaa = key->ps.part.prolog.force_persp_center_interp ||
@@ -2343,37 +2351,6 @@ static bool run_pre_link_optimization_passes(struct si_nir_shader_ctx *ctx, bool
          /* This adds discard. */
          if (key->ps.part.prolog.poly_stipple)
             NIR_PASS(progress, nir, si_nir_emit_polygon_stipple);
-
-         if (progress) {
-            si_nir_opts(sel->screen, nir, *opts_not_run);
-            *opts_not_run = false;
-            progress = false;
-         }
-
-         /* Uniform inlining can eliminate PS inputs, and colormask can remove PS outputs,
-          * which can also cause the elimination of PS inputs. Remove holes after removed PS inputs
-          * by renumbering them. This can only happen with monolithic PS.
-          */
-         NIR_PASS_V(nir, nir_recompute_io_bases, nir_var_shader_in);
-
-         /* Two-side color selection and interpolation: Get the latest shader info because
-          * uniform inlining and colormask can fully eliminate color inputs.
-          */
-         struct si_shader_info info;
-         si_nir_scan_shader(sel->screen, nir, &info);
-
-         /* We need to set this early for lowering nir_intrinsic_load_point_coord_maybe_flipped,
-          * which can only occur with monolithic PS.
-          */
-         shader->info.num_ps_inputs = info.num_inputs;
-         shader->info.ps_colors_read = info.colors_read;
-
-         /* This lowers load_color intrinsics to COLn/BFCn input loads and two-side color selection.
-          * If uniform inlining eliminated color inputs, it will just be dead code that will be
-          * eliminated later.
-          */
-         if (info.colors_read)
-            NIR_PASS(progress, nir, si_nir_lower_ps_color_input, &shader->key, &info);
       } else {
          ac_nir_lower_ps_early_options early_options = {
             .optimize_frag_coord = true,
@@ -2712,7 +2689,7 @@ static void get_nir_shaders(struct si_shader *shader, struct si_linked_shaders *
 
    for (unsigned i = 0; i < SI_NUM_LINKED_SHADERS; i++) {
       if (linked->shader[i].nir) {
-         progress[i] = run_pre_link_optimization_passes(&linked->shader[i], &opts_not_run[i]);
+         progress[i] = run_pre_link_optimization_passes(&linked->shader[i]);
       }
    }
 
@@ -2731,6 +2708,31 @@ static void get_nir_shaders(struct si_shader *shader, struct si_linked_shaders *
       }
    }
 
+   if (shader->selector->stage == MESA_SHADER_FRAGMENT) {
+      if (progress[1]) {
+         si_nir_opts(shader->selector->screen, linked->consumer.nir, opts_not_run[1]);
+         opts_not_run[1] = false;
+         progress[1] = false;
+      }
+
+      /* Remove holes after removed PS inputs by renumbering them. Holes can only occur with
+       * monolithic PS.
+       */
+      if (shader->is_monolithic)
+         NIR_PASS_V(linked->consumer.nir, nir_recompute_io_bases, nir_var_shader_in);
+
+      struct si_shader_info info;
+      si_nir_scan_shader(shader->selector->screen, linked->consumer.nir, &info,
+                         shader->is_monolithic);
+
+      shader->info.num_ps_inputs = info.num_inputs;
+      shader->info.ps_colors_read = info.colors_read;
+
+      /* A non-monolithic PS doesn't know if back colors are enabled, so copy 2 more. */
+      unsigned max_interp = MIN2(info.num_inputs + 2, SI_NUM_INTERP);
+      memcpy(shader->info.ps_inputs, info.input, max_interp * sizeof(info.input[0]));
+   }
+
    for (unsigned i = 0; i < SI_NUM_LINKED_SHADERS; i++) {
       if (linked->shader[i].nir) {
          run_late_optimization_and_lowering_passes(&linked->shader[i], progress[i],
@@ -2738,34 +2740,15 @@ static void get_nir_shaders(struct si_shader *shader, struct si_linked_shaders *
       }
    }
 
-   if (linked->producer.nir)
-      si_update_shader_binary_info(shader, linked->producer.nir);
-
    /* TODO: gather this where other shader_info is gathered */
    for (unsigned i = 0; i < SI_NUM_LINKED_SHADERS; i++) {
       if (linked->shader[i].nir) {
          struct si_shader_info info;
-         si_nir_scan_shader(shader->selector->screen, linked->shader[i].nir, &info);
+         si_nir_scan_shader(shader->selector->screen, linked->shader[i].nir, &info, true);
 
          shader->info.uses_vmem_load_other |= info.uses_vmem_load_other;
          shader->info.uses_vmem_sampler_or_bvh |= info.uses_vmem_sampler_or_bvh;
       }
-   }
-}
-
-void si_update_shader_binary_info(struct si_shader *shader, nir_shader *nir)
-{
-   struct si_shader_info info;
-   si_nir_scan_shader(shader->selector->screen, nir, &info);
-
-   if (nir->info.stage == MESA_SHADER_FRAGMENT) {
-      /* Since uniform inlining can remove PS inputs, set the latest info about PS inputs here. */
-      shader->info.num_ps_inputs = info.num_inputs;
-      shader->info.ps_colors_read = info.colors_read;
-
-      /* A non-monolithic PS doesn't know if back colors are enabled, so copy 2 more. */
-      unsigned max_interp = MIN2(info.num_inputs + 2, SI_NUM_INTERP);
-      memcpy(shader->info.ps_inputs, info.input, max_interp * sizeof(info.input[0]));
    }
 }
 
@@ -3061,8 +3044,6 @@ bool si_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *compi
    for (unsigned i = 0; i < ARRAY_SIZE(shader->info.vs_output_ps_input_cntl); i++)
       shader->info.vs_output_ps_input_cntl[i] = SI_PS_INPUT_CNTL_UNUSED;
    shader->info.vs_output_ps_input_cntl[VARYING_SLOT_COL0] = SI_PS_INPUT_CNTL_UNUSED_COLOR0;
-
-   si_update_shader_binary_info(shader, nir);
 
    /* uses_instanceid may be set by si_nir_lower_vs_inputs(). */
    shader->info.uses_instanceid |= sel->info.uses_instanceid;

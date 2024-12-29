@@ -59,7 +59,7 @@ static const nir_src *get_texture_src(nir_tex_instr *instr, nir_tex_src_type typ
 }
 
 static void scan_io_usage(const nir_shader *nir, struct si_shader_info *info,
-                          nir_intrinsic_instr *intr, bool is_input)
+                          nir_intrinsic_instr *intr, bool is_input, bool colors_lowered)
 {
    unsigned interp = INTERP_MODE_FLAT; /* load_input uses flat shading */
 
@@ -129,8 +129,9 @@ static void scan_io_usage(const nir_shader *nir, struct si_shader_info *info,
       /* Gather color PS inputs. We can only get here after lowering colors in monolithic
        * shaders. This must match what we do for nir_intrinsic_load_color0/1.
        */
-      if (semantic == VARYING_SLOT_COL0 || semantic == VARYING_SLOT_COL1 ||
-          semantic == VARYING_SLOT_BFC0 || semantic == VARYING_SLOT_BFC1) {
+      if (!colors_lowered &&
+          (semantic == VARYING_SLOT_COL0 || semantic == VARYING_SLOT_COL1 ||
+           semantic == VARYING_SLOT_BFC0 || semantic == VARYING_SLOT_BFC1)) {
          unsigned index = semantic == VARYING_SLOT_COL1 || semantic == VARYING_SLOT_BFC1;
          info->colors_read |= mask << (index * 4);
          return;
@@ -311,7 +312,7 @@ static bool is_bindless_handle_indirect(nir_instr *src)
 
 /* TODO: convert to nir_shader_instructions_pass */
 static void scan_instruction(const struct nir_shader *nir, struct si_shader_info *info,
-                             nir_instr *instr)
+                             nir_instr *instr, bool colors_lowered)
 {
    if (instr->type == nir_instr_type_tex) {
       nir_tex_instr *tex = nir_instr_as_tex(instr);
@@ -502,13 +503,13 @@ static void scan_instruction(const struct nir_shader *nir, struct si_shader_info
       case nir_intrinsic_load_per_vertex_input:
       case nir_intrinsic_load_input_vertex:
       case nir_intrinsic_load_interpolated_input:
-         scan_io_usage(nir, info, intr, true);
+         scan_io_usage(nir, info, intr, true, colors_lowered);
          break;
       case nir_intrinsic_load_output:
       case nir_intrinsic_load_per_vertex_output:
       case nir_intrinsic_store_output:
       case nir_intrinsic_store_per_vertex_output:
-         scan_io_usage(nir, info, intr, false);
+         scan_io_usage(nir, info, intr, false, colors_lowered);
          break;
       case nir_intrinsic_load_deref:
       case nir_intrinsic_store_deref:
@@ -529,7 +530,7 @@ static void scan_instruction(const struct nir_shader *nir, struct si_shader_info
 }
 
 void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
-                        struct si_shader_info *info)
+                        struct si_shader_info *info, bool colors_lowered)
 {
    bool force_use_aco = false;
    if (sscreen->force_shader_use_aco) {
@@ -656,7 +657,7 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
    nir_function_impl *impl = nir_shader_get_entrypoint((nir_shader*)nir);
    nir_foreach_block (block, impl) {
       nir_foreach_instr (instr, block)
-         scan_instruction(nir, info, instr);
+         scan_instruction(nir, info, instr, colors_lowered);
    }
 
    if (nir->info.stage == MESA_SHADER_VERTEX || nir->info.stage == MESA_SHADER_TESS_EVAL ||
