@@ -67,15 +67,6 @@ ir_type_to_bvh_type(uint32_t type)
    return RADV_BVH_INVALID_NODE;
 }
 
-/* A GLSL-adapted copy of VkAccelerationStructureInstanceKHR. */
-struct AccelerationStructureInstance {
-   mat3x4 transform;
-   uint32_t custom_instance_and_mask;
-   uint32_t sbt_offset_and_flags;
-   uint64_t accelerationStructureReference;
-};
-TYPE(AccelerationStructureInstance, 8);
-
 bool
 build_triangle(inout vk_aabb bounds, VOID_REF dst_ptr, vk_bvh_geometry_data geom_data, uint32_t global_id)
 {
