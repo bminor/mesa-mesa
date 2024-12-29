@@ -1019,6 +1019,48 @@ static pco_instr *trans_alu(trans_ctx *tctx, nir_alu_instr *alu)
       instr = pco_frcp(&tctx->b, dest, src[0]);
       break;
 
+   case nir_op_iadd:
+      instr = pco_iadd32(&tctx->b, dest, src[0], src[1], pco_ref_null());
+      break;
+
+   case nir_op_imul:
+      instr = pco_imul32(&tctx->b, dest, src[0], src[1], pco_ref_null());
+      break;
+
+   case nir_op_imul_high:
+      instr = pco_imadd64(&tctx->b,
+                          pco_ref_null(),
+                          dest,
+                          src[0],
+                          src[1],
+                          pco_zero,
+                          pco_zero,
+                          pco_ref_null(),
+                          .s = true);
+      break;
+
+   case nir_op_umul_high:
+      instr = pco_imadd64(&tctx->b,
+                          pco_ref_null(),
+                          dest,
+                          src[0],
+                          src[1],
+                          pco_zero,
+                          pco_zero,
+                          pco_ref_null());
+      break;
+
+   case nir_op_umul_low:
+      instr = pco_imadd64(&tctx->b,
+                          dest,
+                          pco_ref_null(),
+                          src[0],
+                          src[1],
+                          pco_zero,
+                          pco_zero,
+                          pco_ref_null());
+      break;
+
    /* Set-on (float) comparisons. */
    case nir_op_slt:
    case nir_op_sge:

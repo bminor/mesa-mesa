@@ -116,6 +116,14 @@ void pco_preprocess_nir(pco_ctx *ctx, nir_shader *nir)
             nir_var_shader_in | nir_var_shader_out,
             UINT32_MAX);
 
+   NIR_PASS(_, nir, nir_opt_idiv_const, 32);
+   NIR_PASS(_,
+            nir,
+            nir_lower_idiv,
+            &(nir_lower_idiv_options){
+               .allow_fp16 = false,
+            });
+
    NIR_PASS(_,
             nir,
             nir_remove_dead_variables,

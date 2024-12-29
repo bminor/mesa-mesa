@@ -947,6 +947,66 @@ encode_map(O_ADD64_32,
    op_ref_maps=[('0', ['ft0', 'fte'], ['s0', 's1', 's2', ['_', 'p0']])]
 )
 
+encode_map(O_IMADD64,
+   encodings=[
+      (I_INT32_64_EXT, [
+         ('s', OM_S),
+         ('int32_64_op', 'madd64'),
+         ('cin', ('!pco_ref_is_null', SRC(4))),
+
+         ('s0neg', (RM_NEG, SRC(0))),
+         ('s0abs', (RM_ABS, SRC(0))),
+         ('s1neg', (RM_NEG, SRC(1))),
+         ('s1abs', (RM_ABS, SRC(1))),
+         ('s2neg', (RM_NEG, SRC(2))),
+         ('s2abs', (RM_ABS, SRC(2)))
+      ]),
+      (I_INT32_64, [
+         ('s', OM_S),
+         ('int32_64_op', 'madd64'),
+         ('s2neg', (RM_NEG, SRC(2))),
+      ], [
+         ('pco_ref_is_null', SRC(4)),
+         (RM_NEG, SRC(0), '== false'),
+         (RM_ABS, SRC(0), '== false'),
+         (RM_NEG, SRC(1), '== false'),
+         (RM_ABS, SRC(1), '== false'),
+         (RM_ABS, SRC(2), '== false')
+      ])
+   ],
+   op_ref_maps=[('0', [['ft0', '_'], ['fte', '_']], ['s0', 's1', 's2', 'is0', ['_', 'p0']])]
+)
+
+encode_map(O_IMADD32,
+   encodings=[
+      (I_INT32_64_EXT, [
+         ('s', OM_S),
+         ('int32_64_op', 'madd32'),
+         ('cin', ('!pco_ref_is_null', SRC(3))),
+
+         ('s0neg', (RM_NEG, SRC(0))),
+         ('s0abs', (RM_ABS, SRC(0))),
+         ('s1neg', (RM_NEG, SRC(1))),
+         ('s1abs', (RM_ABS, SRC(1))),
+         ('s2neg', (RM_NEG, SRC(2))),
+         ('s2abs', (RM_ABS, SRC(2)))
+      ]),
+      (I_INT32_64, [
+         ('s', OM_S),
+         ('int32_64_op', 'madd32'),
+         ('s2neg', (RM_NEG, SRC(2))),
+      ], [
+         ('pco_ref_is_null', SRC(3)),
+         (RM_NEG, SRC(0), '== false'),
+         (RM_ABS, SRC(0), '== false'),
+         (RM_NEG, SRC(1), '== false'),
+         (RM_ABS, SRC(1), '== false'),
+         (RM_ABS, SRC(2), '== false'),
+      ])
+   ],
+   op_ref_maps=[('0', ['ft0'], ['s0', 's1', 's2', ['_', 'p0']])]
+)
+
 encode_map(O_UVSW_WRITE,
    encodings=[
       (I_UVSW_WRITE_IMM, [
@@ -1304,8 +1364,8 @@ group_map(O_ADD64_32,
    hdr=(I_IGRP_HDR_MAIN, [
       ('oporg', 'p0'),
       ('olchk', OM_OLCHK),
-      ('w1p', True),
-      ('w0p', True),
+      ('w1p', ('!pco_ref_is_null', DEST(1))),
+      ('w0p', ('!pco_ref_is_null', DEST(0))),
       ('cc', OM_EXEC_CND),
       ('end', OM_END),
       ('atom', OM_ATOM),
@@ -1324,6 +1384,61 @@ group_map(O_ADD64_32,
    dests=[
       ('w[0]', ('0', DEST(0)), 'ft0'),
       ('w[1]', ('0', DEST(1)), 'fte')
+   ]
+)
+
+group_map(O_IMADD64,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'p0'),
+      ('olchk', OM_OLCHK),
+      # TODO: make this change to add64_32, etc. as well
+      ('w1p', ('!pco_ref_is_null', DEST(1))),
+      ('w0p', ('!pco_ref_is_null', DEST(0))),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', OM_RPT)
+   ]),
+   enc_ops=[('0', O_IMADD64)],
+   srcs=[
+      ('s[0]', ('0', SRC(0)), 's0'),
+      ('s[1]', ('0', SRC(1)), 's1'),
+      ('s[2]', ('0', SRC(2)), 's2'),
+      ('s[3]', ('0', SRC(3)), 'is0')
+   ],
+   iss=[
+      ('is[0]', 's3'),
+      ('is[4]', 'ft0'),
+      ('is[5]', 'fte')
+   ],
+   dests=[
+      ('w[0]', ('0', DEST(0)), 'ft0'),
+      ('w[1]', ('0', DEST(1)), 'fte')
+   ]
+)
+
+group_map(O_IMADD32,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'p0'),
+      ('olchk', OM_OLCHK),
+      ('w1p', False),
+      ('w0p', True),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', OM_RPT)
+   ]),
+   enc_ops=[('0', O_IMADD32)],
+   srcs=[
+      ('s[0]', ('0', SRC(0)), 's0'),
+      ('s[1]', ('0', SRC(1)), 's1'),
+      ('s[2]', ('0', SRC(2)), 's2')
+   ],
+   iss=[
+      ('is[4]', 'ft0'),
+   ],
+   dests=[
+      ('w[0]', ('0', DEST(0)), 'ft0'),
    ]
 )
 
@@ -1454,6 +1569,56 @@ group_map(O_MAX,
    ],
    dests=[
       ('w[0]', ('2_mov', DEST(0)), 'w0'),
+   ]
+)
+
+group_map(O_IADD32,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'p0'),
+      ('olchk', OM_OLCHK),
+      ('w1p', False),
+      ('w0p', True),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', OM_RPT)
+   ]),
+   enc_ops=[('0', O_IMADD32, [DEST(0)], [SRC(0), 'pco_one', SRC(1), SRC(2)], [(OM_S, OM_S)])],
+   srcs=[
+      ('s[0]', ('0', SRC(0)), 's0'),
+      ('s[1]', ('0', SRC(1)), 's1'),
+      ('s[2]', ('0', SRC(2)), 's2')
+   ],
+   iss=[
+      ('is[4]', 'ft0'),
+   ],
+   dests=[
+      ('w[0]', ('0', DEST(0)), 'ft0'),
+   ]
+)
+
+group_map(O_IMUL32,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'p0'),
+      ('olchk', OM_OLCHK),
+      ('w1p', False),
+      ('w0p', True),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', OM_RPT)
+   ]),
+   enc_ops=[('0', O_IMADD32, [DEST(0)], [SRC(0), SRC(1), 'pco_zero', SRC(2)], [(OM_S, OM_S)])],
+   srcs=[
+      ('s[0]', ('0', SRC(0)), 's0'),
+      ('s[1]', ('0', SRC(1)), 's1'),
+      ('s[2]', ('0', SRC(2)), 's2')
+   ],
+   iss=[
+      ('is[4]', 'ft0'),
+   ],
+   dests=[
+      ('w[0]', ('0', DEST(0)), 'ft0'),
    ]
 )
 

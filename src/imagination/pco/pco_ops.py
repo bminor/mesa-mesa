@@ -306,6 +306,8 @@ O_FRCP = hw_op('frcp', OM_ALU, 1, 1, [], [[RM_ABS, RM_NEG]])
 O_MBYP = hw_op('mbyp', OM_ALU, 1, 1, [], [[RM_ABS, RM_NEG]])
 O_PCK = hw_op('pck', OM_ALU + [OM_PCK_FMT, OM_ROUNDZERO, OM_SCALE], 1, 1)
 O_ADD64_32 = hw_op('add64_32', OM_ALU + [OM_S], 2, 4, [], [[RM_ABS, RM_NEG], [], [RM_ABS, RM_NEG]])
+O_IMADD64 = hw_op('imadd64', OM_ALU + [OM_S], 2, 5, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
+O_IMADD32 = hw_op('imadd32', OM_ALU + [OM_S], 1, 4, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
 O_UNPCK = hw_op('unpck', OM_ALU + [OM_PCK_FMT, OM_ROUNDZERO, OM_SCALE], 1, 1, [], [[RM_ELEM]])
 
 O_TST = hw_direct_op('tst', [OM_TST_OP_MAIN, OM_PHASE2END, OM_TST_TYPE_MAIN], 2, 2, [], [[RM_ELEM], [RM_ELEM]])
@@ -355,6 +357,8 @@ O_SCMP = hw_op('scmp', OM_ALU + [OM_TST_OP_MAIN], 1, 2, [], [[RM_ABS, RM_NEG], [
 O_BCMP = hw_op('bcmp', OM_ALU + [OM_TST_OP_MAIN, OM_TST_TYPE_MAIN], 1, 2, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
 O_MIN = hw_op('min', OM_ALU + [OM_TST_TYPE_MAIN], 1, 2, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
 O_MAX = hw_op('max', OM_ALU + [OM_TST_TYPE_MAIN], 1, 2, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
+O_IADD32 = hw_op('iadd32', OM_ALU + [OM_S], 1, 3, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
+O_IMUL32 = hw_op('imul32', OM_ALU + [OM_S], 1, 3, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
 
 # Pseudo-ops (unmapped).
 O_NEG = pseudo_op('neg', OM_ALU, 1, 1)
