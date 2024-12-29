@@ -331,6 +331,14 @@ lower_ps_intrinsic(nir_builder *b, nir_instr *instr, void *state)
          return true;
       }
       break;
+   case nir_intrinsic_load_sample_pos:
+      /* Even though we could lower this by unpacking the sample position from user SGPRs, doing
+       * that hasn't shown any performance improvement in piglit/pixel-rate. Note that this is
+       * only used by sample shading.
+       */
+      /* sample_pos = ffract(frag_coord.xy); */
+      nir_def_replace(&intrin->def, nir_ffract(b, nir_channels(b, nir_load_frag_coord(b), 0x3)));
+      return true;
    default:
       break;
    }

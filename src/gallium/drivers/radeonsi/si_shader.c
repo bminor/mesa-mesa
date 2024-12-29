@@ -2564,6 +2564,13 @@ static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_
          NIR_PASS_V(nir, si_nir_emit_polygon_stipple, args);
 
       progress = true;
+   } else if (nir->info.stage == MESA_SHADER_FRAGMENT) {
+      ac_nir_lower_ps_early_options early_options = {
+         .alpha_func = COMPARE_FUNC_ALWAYS,
+         .spi_shader_col_format_hint = ~0,
+      };
+      NIR_PASS_V(nir, ac_nir_lower_ps_early, &early_options);
+      progress = true;
    }
 
    assert(shader->wave_size == 32 || shader->wave_size == 64);
