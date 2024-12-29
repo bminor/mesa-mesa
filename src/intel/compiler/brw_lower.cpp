@@ -62,8 +62,8 @@ brw_lower_load_payload(fs_visitor &s)
       assert(inst->saturate == false);
       brw_reg dst = inst->dst;
 
-      const fs_builder ibld(&s, block, inst);
-      const fs_builder ubld = ibld.exec_all();
+      const brw_builder ibld(&s, block, inst);
+      const brw_builder ubld = ibld.exec_all();
 
       for (uint8_t i = 0; i < inst->header_size;) {
          /* Number of header GRFs to initialize at once with a single MOV
@@ -155,7 +155,7 @@ brw_lower_csel(fs_visitor &s)
       }
 
       if (!supported) {
-         const fs_builder ibld(&s, block, inst);
+         const brw_builder ibld(&s, block, inst);
 
          /* CSEL: dst = src2 <op> 0 ? src0 : src1 */
          brw_reg zero = brw_imm_reg(orig_type);
@@ -187,7 +187,7 @@ brw_lower_sub_sat(fs_visitor &s)
    bool progress = false;
 
    foreach_block_and_inst_safe(block, fs_inst, inst, s.cfg) {
-      const fs_builder ibld(&s, block, inst);
+      const brw_builder ibld(&s, block, inst);
 
       if (inst->opcode == SHADER_OPCODE_USUB_SAT ||
           inst->opcode == SHADER_OPCODE_ISUB_SAT) {
@@ -295,8 +295,8 @@ brw_lower_barycentrics(fs_visitor &s)
       if (inst->exec_size < 16)
          continue;
 
-      const fs_builder ibld(&s, block, inst);
-      const fs_builder ubld = ibld.exec_all().group(8, 0);
+      const brw_builder ibld(&s, block, inst);
+      const brw_builder ubld = ibld.exec_all().group(8, 0);
 
       switch (inst->opcode) {
       case BRW_OPCODE_PLN: {
@@ -355,7 +355,7 @@ static bool
 lower_derivative(fs_visitor &s, bblock_t *block, fs_inst *inst,
                  unsigned swz0, unsigned swz1)
 {
-   const fs_builder ubld = fs_builder(&s, block, inst).exec_all();
+   const brw_builder ubld = brw_builder(&s, block, inst).exec_all();
    const brw_reg tmp0 = ubld.vgrf(inst->src[0].type);
    const brw_reg tmp1 = ubld.vgrf(inst->src[0].type);
 
@@ -433,11 +433,11 @@ brw_lower_find_live_channel(fs_visitor &s)
        * useless there.
        */
 
-      const fs_builder ibld(&s, block, inst);
+      const brw_builder ibld(&s, block, inst);
       if (!inst->is_partial_write())
          ibld.emit_undef_for_dst(inst);
 
-      const fs_builder ubld = fs_builder(&s, block, inst).exec_all().group(1, 0);
+      const brw_builder ubld = brw_builder(&s, block, inst).exec_all().group(1, 0);
 
       brw_reg exec_mask = ubld.vgrf(BRW_TYPE_UD);
       ubld.UNDEF(exec_mask);
@@ -529,7 +529,7 @@ brw_lower_sends_overlapping_payload(fs_visitor &s)
          /* Sadly, we've lost all notion of channels and bit sizes at this
           * point.  Just WE_all it.
           */
-         const fs_builder ibld = fs_builder(&s, block, inst).exec_all().group(16, 0);
+         const brw_builder ibld = brw_builder(&s, block, inst).exec_all().group(16, 0);
          brw_reg copy_src = retype(inst->src[arg], BRW_TYPE_UD);
          brw_reg copy_dst = tmp;
          for (unsigned i = 0; i < len; i += 2) {
@@ -606,7 +606,7 @@ brw_lower_alu_restrictions(fs_visitor &s)
             assert(!inst->saturate);
             assert(!inst->src[0].abs);
             assert(!inst->src[0].negate);
-            const brw::fs_builder ibld(&s, block, inst);
+            const brw::brw_builder ibld(&s, block, inst);
 
             enum brw_reg_type type = brw_type_with_size(inst->dst.type, 32);
 
@@ -630,7 +630,7 @@ brw_lower_alu_restrictions(fs_visitor &s)
             assert(!inst->src[0].abs && !inst->src[0].negate);
             assert(!inst->src[1].abs && !inst->src[1].negate);
             assert(inst->conditional_mod == BRW_CONDITIONAL_NONE);
-            const brw::fs_builder ibld(&s, block, inst);
+            const brw::brw_builder ibld(&s, block, inst);
 
             enum brw_reg_type type = brw_type_with_size(inst->dst.type, 32);
 
@@ -766,9 +766,9 @@ brw_lower_load_subgroup_invocation(fs_visitor &s)
       if (inst->opcode != SHADER_OPCODE_LOAD_SUBGROUP_INVOCATION)
          continue;
 
-      const fs_builder abld =
-         fs_builder(&s, block, inst).annotate("SubgroupInvocation");
-      const fs_builder ubld8 = abld.group(8, 0).exec_all();
+      const brw_builder abld =
+         brw_builder(&s, block, inst).annotate("SubgroupInvocation");
+      const brw_builder ubld8 = abld.group(8, 0).exec_all();
       ubld8.UNDEF(inst->dst);
 
       if (inst->exec_size == 8) {
@@ -781,7 +781,7 @@ brw_lower_load_subgroup_invocation(fs_visitor &s)
          ubld8.MOV(inst->dst, brw_imm_v(0x76543210));
          ubld8.ADD(byte_offset(inst->dst, 16), inst->dst, brw_imm_uw(8u));
          if (inst->exec_size > 16) {
-            const fs_builder ubld16 = abld.group(16, 0).exec_all();
+            const brw_builder ubld16 = abld.group(16, 0).exec_all();
             ubld16.ADD(byte_offset(inst->dst, 32), inst->dst, brw_imm_uw(16u));
          }
       }
@@ -814,7 +814,7 @@ brw_lower_indirect_mov(fs_visitor &s)
          assert(brw_type_size_bytes(inst->src[0].type) ==
                 brw_type_size_bytes(inst->dst.type));
 
-         const fs_builder ibld(&s, block, inst);
+         const brw_builder ibld(&s, block, inst);
 
          /* Extract unaligned part */
          uint16_t extra_offset = inst->src[0].offset & 0x1;

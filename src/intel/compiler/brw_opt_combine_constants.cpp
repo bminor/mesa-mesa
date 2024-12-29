@@ -1606,7 +1606,7 @@ brw_opt_combine_constants(fs_visitor &s)
        * both HF slots within a DWord with the constant.
        */
       const uint32_t width = 1;
-      const fs_builder ibld = fs_builder(&s, width).at(insert_block, n).exec_all();
+      const brw_builder ibld = brw_builder(&s, width).at(insert_block, n).exec_all();
 
       brw_reg reg = brw_vgrf(imm->nr, BRW_TYPE_F);
       reg.offset = imm->subreg_offset;

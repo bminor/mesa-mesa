@@ -22,7 +22,7 @@ protected:
    struct brw_wm_prog_data *prog_data;
    struct gl_shader_program *shader_prog;
    fs_visitor *v;
-   fs_builder bld;
+   brw_builder bld;
 };
 
 cse_test::cse_test()
@@ -43,7 +43,7 @@ cse_test::cse_test()
    v = new fs_visitor(compiler, &params, NULL, &prog_data->base, shader,
                       16, false, false);
 
-   bld = fs_builder(v).at_end();
+   bld = brw_builder(v).at_end();
 
    devinfo->verx10 = 125;
    devinfo->ver = devinfo->verx10 / 10;

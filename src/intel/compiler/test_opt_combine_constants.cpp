@@ -67,15 +67,15 @@ struct FSCombineConstantsTest : public ::testing::Test {
    }
 };
 
-static fs_builder
+static brw_builder
 make_builder(fs_visitor *s)
 {
-   return fs_builder(s, s->dispatch_width).at_end();
+   return brw_builder(s, s->dispatch_width).at_end();
 }
 
 TEST_F(FSCombineConstantsTest, Simple)
 {
-   fs_builder bld = make_builder(shader);
+   brw_builder bld = make_builder(shader);
 
    brw_reg r = brw_vec8_grf(1, 0);
    brw_reg imm_a = brw_imm_ud(1);
@@ -100,7 +100,7 @@ TEST_F(FSCombineConstantsTest, Simple)
 
 TEST_F(FSCombineConstantsTest, DoContainingDo)
 {
-   fs_builder bld = make_builder(shader);
+   brw_builder bld = make_builder(shader);
 
    brw_reg r1 = brw_vec8_grf(1, 0);
    brw_reg r2 = brw_vec8_grf(2, 0);

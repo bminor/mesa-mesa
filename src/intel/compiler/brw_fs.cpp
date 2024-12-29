@@ -925,7 +925,7 @@ fs_visitor::assign_curb_setup()
 
    if (is_compute && devinfo->verx10 >= 125 && uniform_push_length > 0) {
       assert(devinfo->has_lsc);
-      fs_builder ubld = fs_builder(this, 1).exec_all().at(
+      brw_builder ubld = brw_builder(this, 1).exec_all().at(
          cfg->first_block(), cfg->first_block()->start());
 
       /* The base offset for our push data is passed in as R0.0[31:6]. We have
@@ -1031,7 +1031,7 @@ fs_visitor::assign_curb_setup()
 
    uint64_t want_zero = used & prog_data->zero_push_reg;
    if (want_zero) {
-      fs_builder ubld = fs_builder(this, 8).exec_all().at(
+      brw_builder ubld = brw_builder(this, 8).exec_all().at(
          cfg->first_block(), cfg->first_block()->start());
 
       /* push_reg_mask_param is in 32-bit units */
@@ -1048,7 +1048,7 @@ fs_visitor::assign_curb_setup()
                      brw_imm_v(0x01234567));
             ubld.SHL(shifted, horiz_offset(shifted, 8), brw_imm_w(8));
 
-            fs_builder ubld16 = ubld.group(16, 0);
+            brw_builder ubld16 = ubld.group(16, 0);
             b32 = ubld16.vgrf(BRW_TYPE_D);
             ubld16.group(16, 0).ASR(b32, shifted, brw_imm_w(15));
          }
@@ -1159,7 +1159,7 @@ brw_get_subgroup_id_param_index(const intel_device_info *devinfo,
  * than 16 for fragment shaders.
  */
 brw_reg
-brw_sample_mask_reg(const fs_builder &bld)
+brw_sample_mask_reg(const brw_builder &bld)
 {
    const fs_visitor &s = *bld.shader;
 
@@ -1211,7 +1211,7 @@ brw_fb_write_msg_control(const fs_inst *inst,
  * Predicate the specified instruction on the sample mask.
  */
 void
-brw_emit_predicate_on_sample_mask(const fs_builder &bld, fs_inst *inst)
+brw_emit_predicate_on_sample_mask(const brw_builder &bld, fs_inst *inst)
 {
    assert(bld.shader->stage == MESA_SHADER_FRAGMENT &&
           bld.group() == inst->group &&
@@ -1602,7 +1602,7 @@ bool brw_should_print_shader(const nir_shader *shader, uint64_t debug_flag)
 
 namespace brw {
    brw_reg
-   fetch_payload_reg(const brw::fs_builder &bld, uint8_t regs[2],
+   fetch_payload_reg(const brw::brw_builder &bld, uint8_t regs[2],
                      brw_reg_type type, unsigned n)
    {
       if (!regs[0])
@@ -1610,7 +1610,7 @@ namespace brw {
 
       if (bld.dispatch_width() > 16) {
          const brw_reg tmp = bld.vgrf(type, n);
-         const brw::fs_builder hbld = bld.exec_all().group(16, 0);
+         const brw::brw_builder hbld = bld.exec_all().group(16, 0);
          const unsigned m = bld.dispatch_width() / hbld.dispatch_width();
          brw_reg *const components = new brw_reg[m * n];
 
@@ -1631,7 +1631,7 @@ namespace brw {
    }
 
    brw_reg
-   fetch_barycentric_reg(const brw::fs_builder &bld, uint8_t regs[2])
+   fetch_barycentric_reg(const brw::brw_builder &bld, uint8_t regs[2])
    {
       if (!regs[0])
          return brw_reg();
@@ -1639,7 +1639,7 @@ namespace brw {
          return fetch_payload_reg(bld, regs, BRW_TYPE_F, 2);
 
       const brw_reg tmp = bld.vgrf(BRW_TYPE_F, 2);
-      const brw::fs_builder hbld = bld.exec_all().group(8, 0);
+      const brw::brw_builder hbld = bld.exec_all().group(8, 0);
       const unsigned m = bld.dispatch_width() / hbld.dispatch_width();
       brw_reg *const components = new brw_reg[2 * m];
 
@@ -1656,7 +1656,7 @@ namespace brw {
    }
 
    void
-   check_dynamic_msaa_flag(const fs_builder &bld,
+   check_dynamic_msaa_flag(const brw_builder &bld,
                            const struct brw_wm_prog_data *wm_prog_data,
                            enum intel_msaa_flags flag)
    {

@@ -40,7 +40,7 @@ protected:
    struct brw_wm_prog_data *prog_data;
    struct gl_shader_program *shader_prog;
    fs_visitor *v;
-   fs_builder bld;
+   brw_builder bld;
 };
 
 copy_propagation_test::copy_propagation_test()
@@ -61,7 +61,7 @@ copy_propagation_test::copy_propagation_test()
    v = new fs_visitor(compiler, &params, NULL, &prog_data->base, shader,
                       8, false, false);
 
-   bld = fs_builder(v).at_end();
+   bld = brw_builder(v).at_end();
 
    devinfo->ver = 9;
    devinfo->verx10 = devinfo->ver * 10;

@@ -152,9 +152,9 @@ brw_opt_combine_convergent_txf(fs_visitor &s)
       for (unsigned curr = 0; curr < count; curr += max_simd) {
          const unsigned lanes = CLAMP(count - curr, min_simd, max_simd);
          const unsigned width = util_next_power_of_two(lanes);
-         const fs_builder ubld =
-            fs_builder(&s).at(block, txfs[curr]).exec_all().group(width, 0);
-         const fs_builder ubld1 = ubld.group(1, 0);
+         const brw_builder ubld =
+            brw_builder(&s).at(block, txfs[curr]).exec_all().group(width, 0);
+         const brw_builder ubld1 = ubld.group(1, 0);
 
          enum brw_reg_type coord_type =
             txfs[curr]->src[TEX_LOGICAL_SRC_COORDINATE].type;
@@ -211,7 +211,7 @@ brw_opt_combine_convergent_txf(fs_visitor &s)
             if (!txf)
                break;
 
-            const fs_builder ibld = fs_builder(&s, block, txf);
+            const brw_builder ibld = brw_builder(&s, block, txf);
 
             /* Replace each of the original TXFs with MOVs from our new one */
             const unsigned dest_comps = dest_comps_for_txf(s, txf);

@@ -470,7 +470,7 @@ brw_get_lowered_simd_width(const fs_visitor *shader, const fs_inst *inst)
  * of the lowered instruction.
  */
 static inline bool
-needs_src_copy(const fs_builder &lbld, const fs_inst *inst, unsigned i)
+needs_src_copy(const brw_builder &lbld, const fs_inst *inst, unsigned i)
 {
    /* The indirectly indexed register stays the same even if we split the
     * instruction.
@@ -492,7 +492,7 @@ needs_src_copy(const fs_builder &lbld, const fs_inst *inst, unsigned i)
  * it as result in packed form.
  */
 static brw_reg
-emit_unzip(const fs_builder &lbld, fs_inst *inst, unsigned i)
+emit_unzip(const brw_builder &lbld, fs_inst *inst, unsigned i)
 {
    assert(lbld.group() >= inst->group);
 
@@ -537,7 +537,7 @@ emit_unzip(const fs_builder &lbld, fs_inst *inst, unsigned i)
  * destination region.
  */
 static inline bool
-needs_dst_copy(const fs_builder &lbld, const fs_inst *inst)
+needs_dst_copy(const brw_builder &lbld, const fs_inst *inst)
 {
    if (inst->dst.is_null())
       return false;
@@ -580,7 +580,7 @@ needs_dst_copy(const fs_builder &lbld, const fs_inst *inst)
  * zipping up the destination of \p inst will be inserted using \p lbld_after.
  */
 static brw_reg
-emit_zip(const fs_builder &lbld_before, const fs_builder &lbld_after,
+emit_zip(const brw_builder &lbld_before, const brw_builder &lbld_after,
          fs_inst *inst)
 {
    assert(lbld_before.dispatch_width() == lbld_after.dispatch_width());
@@ -632,7 +632,7 @@ emit_zip(const fs_builder &lbld_before, const fs_builder &lbld_after,
        * have to build a single 32bit value for the SIMD32 message out of 2
        * SIMD16 16 bit values.
        */
-      const fs_builder rbld = lbld_after.exec_all().group(1, 0);
+      const brw_builder rbld = lbld_after.exec_all().group(1, 0);
       brw_reg local_res_reg = component(
          retype(offset(tmp, lbld_before, dst_size), BRW_TYPE_UW), 0);
       brw_reg final_res_reg =
@@ -660,8 +660,8 @@ brw_lower_simd_width(fs_visitor &s)
       assert(lower_width < inst->exec_size);
 
       /* Builder matching the original instruction. */
-      const fs_builder bld = fs_builder(&s).at_end();
-      const fs_builder ibld =
+      const brw_builder bld = brw_builder(&s).at_end();
+      const brw_builder ibld =
          bld.at(block, inst).exec_all(inst->force_writemask_all)
             .group(inst->exec_size, inst->group / inst->exec_size);
 
@@ -737,7 +737,7 @@ brw_lower_simd_width(fs_visitor &s)
           * transform the sources and destination and emit the lowered
           * instruction.
           */
-         const fs_builder lbld = ibld.group(lower_width, i);
+         const brw_builder lbld = ibld.group(lower_width, i);
 
          for (unsigned j = 0; j < inst->sources; j++)
             split_inst.src[j] = emit_unzip(lbld.at(block, inst), inst, j);

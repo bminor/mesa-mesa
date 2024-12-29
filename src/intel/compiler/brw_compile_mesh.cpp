@@ -268,7 +268,7 @@ brw_nir_align_launch_mesh_workgroups(nir_shader *nir)
 static void
 brw_emit_urb_fence(fs_visitor &s)
 {
-   const fs_builder bld1 = fs_builder(&s).at_end().exec_all().group(1, 0);
+   const brw_builder bld1 = brw_builder(&s).at_end().exec_all().group(1, 0);
    brw_reg dst = bld1.vgrf(BRW_TYPE_UD);
    fs_inst *fence = bld1.emit(SHADER_OPCODE_MEMORY_FENCE, dst,
                               brw_vec8_grf(0, 0),

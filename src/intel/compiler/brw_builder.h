@@ -28,21 +28,21 @@
 #include "brw_eu.h"
 #include "brw_fs.h"
 
-static inline brw_reg offset(const brw_reg &, const brw::fs_builder &,
+static inline brw_reg offset(const brw_reg &, const brw::brw_builder &,
                              unsigned);
 
 namespace brw {
    /**
-    * Toolbox to assemble an FS IR program out of individual instructions.
+    * Toolbox to assemble an BRW IR program out of individual instructions.
     */
-   class fs_builder {
+   class brw_builder {
    public:
       /**
-       * Construct an fs_builder that inserts instructions into \p shader.
+       * Construct an brw_builder that inserts instructions into \p shader.
        * \p dispatch_width gives the native execution width of the program.
        */
-      fs_builder(fs_visitor *shader,
-                 unsigned dispatch_width) :
+      brw_builder(fs_visitor *shader,
+                  unsigned dispatch_width) :
          shader(shader), block(NULL), cursor(NULL),
          _dispatch_width(dispatch_width),
          _group(0),
@@ -51,15 +51,15 @@ namespace brw {
       {
       }
 
-      explicit fs_builder(fs_visitor *s) : fs_builder(s, s->dispatch_width) {}
+      explicit brw_builder(fs_visitor *s) : brw_builder(s, s->dispatch_width) {}
 
       /**
-       * Construct an fs_builder that inserts instructions into \p shader
+       * Construct an brw_builder that inserts instructions into \p shader
        * before instruction \p inst in basic block \p block.  The default
        * execution controls and debug annotation are initialized from the
        * instruction passed as argument.
        */
-      fs_builder(fs_visitor *shader, bblock_t *block, fs_inst *inst) :
+      brw_builder(fs_visitor *shader, bblock_t *block, fs_inst *inst) :
          shader(shader), block(block), cursor(inst),
          _dispatch_width(inst->exec_size),
          _group(inst->group),
@@ -73,25 +73,25 @@ namespace brw {
       }
 
       /**
-       * Construct an fs_builder that inserts instructions before \p cursor in
+       * Construct an brw_builder that inserts instructions before \p cursor in
        * basic block \p block, inheriting other code generation parameters
        * from this.
        */
-      fs_builder
+      brw_builder
       at(bblock_t *block, exec_node *cursor) const
       {
-         fs_builder bld = *this;
+         brw_builder bld = *this;
          bld.block = block;
          bld.cursor = cursor;
          return bld;
       }
 
       /**
-       * Construct an fs_builder appending instructions at the end of the
+       * Construct an brw_builder appending instructions at the end of the
        * instruction list of the shader, inheriting other code generation
        * parameters from this.
        */
-      fs_builder
+      brw_builder
       at_end() const
       {
          return at(NULL, (exec_node *)&shader->instructions.tail_sentinel);
@@ -105,10 +105,10 @@ namespace brw {
        * \p n gives the default SIMD width, \p i gives the slot group used for
        * predication and control flow masking in multiples of \p n channels.
        */
-      fs_builder
+      brw_builder
       group(unsigned n, unsigned i) const
       {
-         fs_builder bld = *this;
+         brw_builder bld = *this;
 
          if (n <= dispatch_width() && i < dispatch_width() / n) {
             bld._group += i * n;
@@ -133,7 +133,7 @@ namespace brw {
       /**
        * Alias for group() with width equal to eight.
        */
-      fs_builder
+      brw_builder
       quarter(unsigned i) const
       {
          return group(8, i);
@@ -144,10 +144,10 @@ namespace brw {
        * disabled if \p b is true.  If control flow execution masking is
        * already disabled this has no effect.
        */
-      fs_builder
+      brw_builder
       exec_all(bool b = true) const
       {
-         fs_builder bld = *this;
+         brw_builder bld = *this;
          if (b)
             bld.force_writemask_all = true;
          return bld;
@@ -156,7 +156,7 @@ namespace brw {
       /**
        * Construct a builder for SIMD8-as-scalar
        */
-      fs_builder
+      brw_builder
       scalar_group() const
       {
          return exec_all().group(8 * reg_unit(shader->devinfo), 0);
@@ -165,10 +165,10 @@ namespace brw {
       /**
        * Construct a builder with the given debug annotation info.
        */
-      fs_builder
+      brw_builder
       annotate(const char *str) const
       {
-         fs_builder bld = *this;
+         brw_builder bld = *this;
          bld.annotation.str = str;
          return bld;
       }
@@ -400,7 +400,7 @@ namespace brw {
           * send). Once we teach const/copy propagation about scalars we
           * should go back to scalar destinations here.
           */
-         const fs_builder xbld = scalar_group();
+         const brw_builder xbld = scalar_group();
          const brw_reg chan_index = xbld.vgrf(BRW_TYPE_UD);
 
          /* FIND_LIVE_CHANNEL will only write a single component after
@@ -813,7 +813,7 @@ namespace brw {
       brw_reg
       BROADCAST(brw_reg value, brw_reg index) const
       {
-         const fs_builder xbld = scalar_group();
+         const brw_builder xbld = scalar_group();
          const brw_reg dst = xbld.vgrf(value.type);
 
          assert(is_uniform(index));
@@ -931,7 +931,7 @@ namespace brw {
  * stored differently, so care must be taken to offset properly.
  */
 static inline brw_reg
-offset(const brw_reg &reg, const brw::fs_builder &bld, unsigned delta)
+offset(const brw_reg &reg, const brw::brw_builder &bld, unsigned delta)
 {
    /* If the value is convergent (stored as one or more SIMD8), offset using
     * SIMD8 and select component 0.

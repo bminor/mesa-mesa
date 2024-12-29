@@ -40,7 +40,7 @@ protected:
    struct brw_wm_prog_data *prog_data;
    struct gl_shader_program *shader_prog;
    fs_visitor *v;
-   fs_builder bld;
+   brw_builder bld;
 };
 
 scoreboard_test::scoreboard_test()
@@ -65,7 +65,7 @@ scoreboard_test::scoreboard_test()
    v = new fs_visitor(compiler, &params, NULL, &prog_data->base, shader, 8,
                       false, false);
 
-   bld = fs_builder(v).at_end();
+   bld = brw_builder(v).at_end();
 }
 
 scoreboard_test::~scoreboard_test()
@@ -106,7 +106,7 @@ lower_scoreboard(fs_visitor *v)
 }
 
 fs_inst *
-emit_SEND(const fs_builder &bld, const brw_reg &dst,
+emit_SEND(const brw_builder &bld, const brw_reg &dst,
           const brw_reg &desc, const brw_reg &payload)
 {
    fs_inst *inst = bld.emit(SHADER_OPCODE_SEND, dst, desc, desc, payload);

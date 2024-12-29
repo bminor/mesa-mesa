@@ -64,13 +64,13 @@ static bool
 run_cs(fs_visitor &s, bool allow_spilling)
 {
    assert(gl_shader_stage_is_compute(s.stage));
-   const fs_builder bld = fs_builder(&s).at_end();
+   const brw_builder bld = brw_builder(&s).at_end();
 
    s.payload_ = new cs_thread_payload(s);
 
    if (s.devinfo->platform == INTEL_PLATFORM_HSW && s.prog_data->total_shared > 0) {
       /* Move SLM index from g0.0[27:24] to sr0.1[11:8] */
-      const fs_builder abld = bld.exec_all().group(1, 0);
+      const brw_builder abld = bld.exec_all().group(1, 0);
       abld.MOV(retype(brw_sr0_reg(1), BRW_TYPE_UW),
                suboffset(retype(brw_vec1_grf(0, 0), BRW_TYPE_UW), 1));
    }

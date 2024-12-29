@@ -345,7 +345,7 @@ brw_opt_split_sends(fs_visitor &s)
       if (end <= mid)
          continue;
 
-      const fs_builder ibld(&s, block, lp);
+      const brw_builder ibld(&s, block, lp);
       fs_inst *lp1 = ibld.LOAD_PAYLOAD(lp->dst, &lp->src[0], mid, lp->header_size);
       fs_inst *lp2 = ibld.LOAD_PAYLOAD(lp->dst, &lp->src[mid], end - mid, 0);
 

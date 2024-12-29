@@ -42,7 +42,7 @@ brw_emit_gs_thread_end(fs_visitor &s)
       s.emit_gs_control_data_bits(s.final_gs_vertex_count);
    }
 
-   const fs_builder abld = fs_builder(&s).at_end().annotate("thread end");
+   const brw_builder abld = brw_builder(&s).at_end().annotate("thread end");
    fs_inst *inst;
 
    if (gs_prog_data->static_vertex_count != -1) {
@@ -92,7 +92,7 @@ run_gs(fs_visitor &s)
 
    s.payload_ = new gs_thread_payload(s);
 
-   const fs_builder bld = fs_builder(&s).at_end();
+   const brw_builder bld = brw_builder(&s).at_end();
 
    s.final_gs_vertex_count = bld.vgrf(BRW_TYPE_UD);
 
@@ -105,7 +105,7 @@ run_gs(fs_visitor &s)
        * Otherwise, we need to initialize it to 0 here.
        */
       if (s.gs_compile->control_data_header_size_bits <= 32) {
-         const fs_builder abld = bld.annotate("initialize control data bits");
+         const brw_builder abld = bld.annotate("initialize control data bits");
          abld.MOV(s.control_data_bits, brw_imm_ud(0u));
       }
    }

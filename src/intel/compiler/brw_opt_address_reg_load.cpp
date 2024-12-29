@@ -39,7 +39,7 @@ opt_address_reg_load_local(fs_visitor &s, bblock_t *block, const brw::def_analys
           src_inst->sources > 2)
          continue;
 
-      fs_builder ubld = fs_builder(&s).at(block, inst).exec_all().group(1, 0);
+      brw_builder ubld = brw_builder(&s).at(block, inst).exec_all().group(1, 0);
       brw_reg sources[3];
       for (unsigned i = 0; i < src_inst->sources; i++) {
          sources[i] = inst->src[i].file == VGRF ? component(src_inst->src[i], 0) : src_inst->src[i];

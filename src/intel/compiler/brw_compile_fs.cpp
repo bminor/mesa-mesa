@@ -21,7 +21,7 @@
 using namespace brw;
 
 static fs_inst *
-brw_emit_single_fb_write(fs_visitor &s, const fs_builder &bld,
+brw_emit_single_fb_write(fs_visitor &s, const brw_builder &bld,
                          brw_reg color0, brw_reg color1,
                          brw_reg src0_alpha, unsigned components,
                          bool null_rt)
@@ -61,7 +61,7 @@ brw_emit_single_fb_write(fs_visitor &s, const fs_builder &bld,
 static void
 brw_do_emit_fb_writes(fs_visitor &s, int nr_color_regions, bool replicate_alpha)
 {
-   const fs_builder bld = fs_builder(&s).at_end();
+   const brw_builder bld = brw_builder(&s).at_end();
    fs_inst *inst = NULL;
 
    for (int target = 0; target < nr_color_regions; target++) {
@@ -69,7 +69,7 @@ brw_do_emit_fb_writes(fs_visitor &s, int nr_color_regions, bool replicate_alpha)
       if (s.outputs[target].file == BAD_FILE)
          continue;
 
-      const fs_builder abld = bld.annotate(
+      const brw_builder abld = bld.annotate(
          ralloc_asprintf(s.mem_ctx, "FB write target %d", target));
 
       brw_reg src0_alpha;
@@ -184,8 +184,8 @@ static void
 brw_emit_interpolation_setup(fs_visitor &s)
 {
    const struct intel_device_info *devinfo = s.devinfo;
-   const fs_builder bld = fs_builder(&s).at_end();
-   fs_builder abld = bld.annotate("compute pixel centers");
+   const brw_builder bld = brw_builder(&s).at_end();
+   brw_builder abld = bld.annotate("compute pixel centers");
 
    s.pixel_x = bld.vgrf(BRW_TYPE_F);
    s.pixel_y = bld.vgrf(BRW_TYPE_F);
@@ -255,7 +255,7 @@ brw_emit_interpolation_setup(fs_visitor &s)
        */
       struct brw_reg r1_0 = retype(brw_vec1_reg(FIXED_GRF, 1, 0), BRW_TYPE_UB);
 
-      const fs_builder dbld =
+      const brw_builder dbld =
          abld.exec_all().group(MIN2(16, s.dispatch_width) * 2, 0);
 
       if (devinfo->verx10 >= 125) {
@@ -305,7 +305,7 @@ brw_emit_interpolation_setup(fs_visitor &s)
       break;
 
    case INTEL_SOMETIMES: {
-      const fs_builder dbld =
+      const brw_builder dbld =
          abld.exec_all().group(MIN2(16, s.dispatch_width) * 2, 0);
 
       check_dynamic_msaa_flag(dbld, wm_prog_data,
@@ -353,7 +353,7 @@ brw_emit_interpolation_setup(fs_visitor &s)
    }
 
    for (unsigned i = 0; i < DIV_ROUND_UP(s.dispatch_width, 16); i++) {
-      const fs_builder hbld = abld.group(MIN2(16, s.dispatch_width), i);
+      const brw_builder hbld = abld.group(MIN2(16, s.dispatch_width), i);
       /* According to the "PS Thread Payload for Normal Dispatch"
        * pages on the BSpec, subspan X/Y coordinates are stored in
        * R1.2-R1.5/R2.2-R2.5 on gfx6+, and on R0.10-R0.13/R1.10-R1.13
@@ -365,7 +365,7 @@ brw_emit_interpolation_setup(fs_visitor &s)
       const struct brw_reg gi_uw = retype(gi_reg, BRW_TYPE_UW);
 
       if (devinfo->verx10 >= 125) {
-         const fs_builder dbld =
+         const brw_builder dbld =
             abld.exec_all().group(hbld.dispatch_width() * 2, 0);
          const brw_reg int_pixel_x = dbld.vgrf(BRW_TYPE_UW);
          const brw_reg int_pixel_y = dbld.vgrf(BRW_TYPE_UW);
@@ -402,7 +402,7 @@ brw_emit_interpolation_setup(fs_visitor &s)
           * Thus we can do a single add(16) in SIMD8 or an add(32) in SIMD16
           * to compute our pixel centers.
           */
-         const fs_builder dbld =
+         const brw_builder dbld =
             abld.exec_all().group(hbld.dispatch_width() * 2, 0);
          brw_reg int_pixel_xy = dbld.vgrf(BRW_TYPE_UW);
 
@@ -511,7 +511,7 @@ brw_emit_interpolation_setup(fs_visitor &s)
    if (wm_key->persample_interp == INTEL_SOMETIMES) {
       assert(!devinfo->needs_unlit_centroid_workaround);
 
-      const fs_builder ubld = bld.exec_all().group(16, 0);
+      const brw_builder ubld = bld.exec_all().group(16, 0);
       bool loaded_flag = false;
 
       for (int i = 0; i < INTEL_BARYCENTRIC_MODE_COUNT; ++i) {
@@ -623,7 +623,7 @@ brw_emit_repclear_shader(fs_visitor &s)
               BRW_VERTICAL_STRIDE_8, BRW_WIDTH_2, BRW_HORIZONTAL_STRIDE_4,
               BRW_SWIZZLE_XYZW, WRITEMASK_XYZW);
 
-   const fs_builder bld = fs_builder(&s).at_end();
+   const brw_builder bld = brw_builder(&s).at_end();
    bld.exec_all().group(4, 0).MOV(color_output, color_input);
 
    if (key->nr_color_regions > 1) {
@@ -1460,7 +1460,7 @@ run_fs(fs_visitor &s, bool allow_spilling, bool do_rep_send)
    const struct intel_device_info *devinfo = s.devinfo;
    struct brw_wm_prog_data *wm_prog_data = brw_wm_prog_data(s.prog_data);
    brw_wm_prog_key *wm_key = (brw_wm_prog_key *) s.key;
-   const fs_builder bld = fs_builder(&s).at_end();
+   const brw_builder bld = brw_builder(&s).at_end();
    const nir_shader *nir = s.nir;
 
    assert(s.stage == MESA_SHADER_FRAGMENT);

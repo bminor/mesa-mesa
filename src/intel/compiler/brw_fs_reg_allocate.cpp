@@ -288,18 +288,18 @@ private:
 
    void build_interference_graph(bool allow_spilling);
 
-   brw_reg build_ex_desc(const fs_builder &bld, unsigned reg_size, bool unspill);
+   brw_reg build_ex_desc(const brw_builder &bld, unsigned reg_size, bool unspill);
 
-   brw_reg build_lane_offsets(const fs_builder &bld,
-                             uint32_t spill_offset, int ip);
-   brw_reg build_single_offset(const fs_builder &bld,
+   brw_reg build_lane_offsets(const brw_builder &bld,
                               uint32_t spill_offset, int ip);
-   brw_reg build_legacy_scratch_header(const fs_builder &bld,
+   brw_reg build_single_offset(const brw_builder &bld,
+                              uint32_t spill_offset, int ip);
+   brw_reg build_legacy_scratch_header(const brw_builder &bld,
                                        uint32_t spill_offset, int ip);
 
-   void emit_unspill(const fs_builder &bld, struct brw_shader_stats *stats,
+   void emit_unspill(const brw_builder &bld, struct brw_shader_stats *stats,
                      brw_reg dst, uint32_t spill_offset, unsigned count, int ip);
-   void emit_spill(const fs_builder &bld, struct brw_shader_stats *stats,
+   void emit_spill(const brw_builder &bld, struct brw_shader_stats *stats,
                    brw_reg src, uint32_t spill_offset, unsigned count, int ip);
 
    void set_spill_costs();
@@ -677,7 +677,7 @@ fs_reg_alloc::build_interference_graph(bool allow_spilling)
 }
 
 brw_reg
-fs_reg_alloc::build_single_offset(const fs_builder &bld, uint32_t spill_offset, int ip)
+fs_reg_alloc::build_single_offset(const brw_builder &bld, uint32_t spill_offset, int ip)
 {
    brw_reg offset = retype(alloc_spill_reg(1, ip), BRW_TYPE_UD);
    fs_inst *inst = bld.MOV(offset, brw_imm_ud(spill_offset));
@@ -686,7 +686,7 @@ fs_reg_alloc::build_single_offset(const fs_builder &bld, uint32_t spill_offset, 
 }
 
 brw_reg
-fs_reg_alloc::build_ex_desc(const fs_builder &bld, unsigned reg_size, bool unspill)
+fs_reg_alloc::build_ex_desc(const brw_builder &bld, unsigned reg_size, bool unspill)
 {
    /* Use a different area of the address register than what is used in
     * brw_lower_logical_sends.c (brw_address_reg(2)) so we don't have
@@ -724,11 +724,11 @@ fs_reg_alloc::build_ex_desc(const fs_builder &bld, unsigned reg_size, bool unspi
 }
 
 brw_reg
-fs_reg_alloc::build_lane_offsets(const fs_builder &bld, uint32_t spill_offset, int ip)
+fs_reg_alloc::build_lane_offsets(const brw_builder &bld, uint32_t spill_offset, int ip)
 {
    assert(bld.dispatch_width() <= 16 * reg_unit(bld.shader->devinfo));
 
-   const fs_builder ubld = bld.exec_all();
+   const brw_builder ubld = bld.exec_all();
    const unsigned reg_count = ubld.dispatch_width() / 8;
 
    brw_reg offset = retype(alloc_spill_reg(reg_count, ip), BRW_TYPE_UD);
@@ -776,11 +776,11 @@ fs_reg_alloc::build_lane_offsets(const fs_builder &bld, uint32_t spill_offset, i
  * Generate a scratch header for pre-LSC platforms.
  */
 brw_reg
-fs_reg_alloc::build_legacy_scratch_header(const fs_builder &bld,
+fs_reg_alloc::build_legacy_scratch_header(const brw_builder &bld,
                                           uint32_t spill_offset, int ip)
 {
-   const fs_builder ubld8 = bld.exec_all().group(8, 0);
-   const fs_builder ubld1 = bld.exec_all().group(1, 0);
+   const brw_builder ubld8 = bld.exec_all().group(8, 0);
+   const brw_builder ubld1 = bld.exec_all().group(1, 0);
 
    /* Allocate a spill header and make it interfere with g0 */
    brw_reg header = retype(alloc_spill_reg(1, ip), BRW_TYPE_UD);
@@ -799,7 +799,7 @@ fs_reg_alloc::build_legacy_scratch_header(const fs_builder &bld,
 }
 
 void
-fs_reg_alloc::emit_unspill(const fs_builder &bld,
+fs_reg_alloc::emit_unspill(const brw_builder &bld,
                            struct brw_shader_stats *stats,
                            brw_reg dst,
                            uint32_t spill_offset, unsigned count, int ip)
@@ -819,7 +819,7 @@ fs_reg_alloc::emit_unspill(const fs_builder &bld,
          const bool use_transpose =
             bld.dispatch_width() > 16 * reg_unit(devinfo) ||
             bld.has_writemask_all();
-         const fs_builder ubld = use_transpose ? bld.exec_all().group(1, 0) : bld;
+         const brw_builder ubld = use_transpose ? bld.exec_all().group(1, 0) : bld;
          brw_reg offset;
          if (use_transpose) {
             offset = build_single_offset(ubld, spill_offset, ip);
@@ -898,7 +898,7 @@ fs_reg_alloc::emit_unspill(const fs_builder &bld,
 }
 
 void
-fs_reg_alloc::emit_spill(const fs_builder &bld,
+fs_reg_alloc::emit_spill(const brw_builder &bld,
                          struct brw_shader_stats *stats,
                          brw_reg src,
                          uint32_t spill_offset, unsigned count, int ip)
@@ -1136,7 +1136,7 @@ fs_reg_alloc::spill_reg(unsigned spill_reg)
     */
    int ip = 0;
    foreach_block_and_inst (block, fs_inst, inst, fs->cfg) {
-      const fs_builder ibld = fs_builder(fs, block, inst);
+      const brw_builder ibld = brw_builder(fs, block, inst);
       exec_node *before = inst->prev;
       exec_node *after = inst->next;
 
@@ -1223,7 +1223,7 @@ fs_reg_alloc::spill_reg(unsigned spill_reg)
             inst->exec_size == width;
 
          /* Builder used to emit the scratch messages. */
-         const fs_builder ubld = ibld.exec_all(!per_channel).group(width, 0);
+         const brw_builder ubld = ibld.exec_all(!per_channel).group(width, 0);
 
 	 /* If our write is going to affect just part of the
           * regs_written(inst), then we need to unspill the destination since

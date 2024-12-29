@@ -104,7 +104,7 @@ gs_thread_payload::gs_thread_payload(fs_visitor &v)
 {
    struct brw_vue_prog_data *vue_prog_data = brw_vue_prog_data(v.prog_data);
    struct brw_gs_prog_data *gs_prog_data = brw_gs_prog_data(v.prog_data);
-   const fs_builder bld = fs_builder(&v).at_end();
+   const brw_builder bld = brw_builder(&v).at_end();
 
    /* R0: thread header. */
    unsigned r = reg_unit(v.devinfo);
@@ -390,7 +390,7 @@ cs_thread_payload::cs_thread_payload(const fs_visitor &v)
 }
 
 void
-cs_thread_payload::load_subgroup_id(const fs_builder &bld,
+cs_thread_payload::load_subgroup_id(const brw_builder &bld,
                                     brw_reg &dest) const
 {
    auto devinfo = bld.shader->devinfo;
@@ -430,7 +430,7 @@ task_mesh_thread_payload::task_mesh_thread_payload(fs_visitor &v)
     * the address to descriptors.
     */
 
-   const fs_builder bld = fs_builder(&v).at_end();
+   const brw_builder bld = brw_builder(&v).at_end();
 
    unsigned r = 0;
    assert(subgroup_id_.file != BAD_FILE);
@@ -491,7 +491,7 @@ bs_thread_payload::bs_thread_payload(const fs_visitor &v)
 }
 
 void
-bs_thread_payload::load_shader_type(const fs_builder &bld, brw_reg &dest) const
+bs_thread_payload::load_shader_type(const brw_builder &bld, brw_reg &dest) const
 {
    brw_reg ud_dest = retype(dest, BRW_TYPE_UD);
    bld.MOV(ud_dest, retype(brw_vec1_grf(0, 3), ud_dest.type));

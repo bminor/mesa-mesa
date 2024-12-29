@@ -379,8 +379,8 @@ remap_sources(fs_visitor &s, const brw::def_analysis &defs,
                 */
                fs_inst *def = defs.get(inst->src[i]);
                bblock_t *def_block = defs.get_block(inst->src[i]);
-               const fs_builder dbld =
-                  fs_builder(&s, def_block, def).at(def_block, def->next);
+               const brw_builder dbld =
+                  brw_builder(&s, def_block, def).at(def_block, def->next);
 
                /* Resolve any deferred block IP changes before inserting */
                if (def_block->end_ip_delta)

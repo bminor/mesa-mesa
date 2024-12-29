@@ -139,7 +139,7 @@ struct brw_gs_compile
 };
 
 namespace brw {
-class fs_builder;
+class brw_builder;
 }
 
 struct brw_shader_stats {
@@ -216,7 +216,7 @@ struct fs_thread_payload : public thread_payload {
 struct cs_thread_payload : public thread_payload {
    cs_thread_payload(const fs_visitor &v);
 
-   void load_subgroup_id(const brw::fs_builder &bld, brw_reg &dest) const;
+   void load_subgroup_id(const brw::brw_builder &bld, brw_reg &dest) const;
 
    brw_reg local_invocation_id[3];
 
@@ -244,7 +244,7 @@ struct bs_thread_payload : public thread_payload {
    brw_reg global_arg_ptr;
    brw_reg local_arg_ptr;
 
-   void load_shader_type(const brw::fs_builder &bld, brw_reg &dest) const;
+   void load_shader_type(const brw::brw_builder &bld, brw_reg &dest) const;
 };
 
 enum instruction_scheduler_mode {
@@ -479,12 +479,12 @@ sample_mask_flag_subreg(const fs_visitor &s)
 
 namespace brw {
    brw_reg
-   fetch_payload_reg(const brw::fs_builder &bld, uint8_t regs[2],
+   fetch_payload_reg(const brw::brw_builder &bld, uint8_t regs[2],
                      brw_reg_type type = BRW_TYPE_F,
                      unsigned n = 1);
 
    brw_reg
-   fetch_barycentric_reg(const brw::fs_builder &bld, uint8_t regs[2]);
+   fetch_barycentric_reg(const brw::brw_builder &bld, uint8_t regs[2]);
 
    inline brw_reg
    dynamic_msaa_flags(const struct brw_wm_prog_data *wm_prog_data)
@@ -493,7 +493,7 @@ namespace brw {
    }
 
    void
-   check_dynamic_msaa_flag(const fs_builder &bld,
+   check_dynamic_msaa_flag(const brw_builder &bld,
                            const struct brw_wm_prog_data *wm_prog_data,
                            enum intel_msaa_flags flag);
 
@@ -501,7 +501,7 @@ namespace brw {
    lower_src_modifiers(fs_visitor *v, bblock_t *block, fs_inst *inst, unsigned i);
 }
 
-void shuffle_from_32bit_read(const brw::fs_builder &bld,
+void shuffle_from_32bit_read(const brw::brw_builder &bld,
                              const brw_reg &dst,
                              const brw_reg &src,
                              uint32_t first_component,
@@ -515,8 +515,8 @@ uint32_t brw_fb_write_msg_control(const fs_inst *inst,
 
 void brw_compute_urb_setup_index(struct brw_wm_prog_data *wm_prog_data);
 
-brw_reg brw_sample_mask_reg(const brw::fs_builder &bld);
-void brw_emit_predicate_on_sample_mask(const brw::fs_builder &bld, fs_inst *inst);
+brw_reg brw_sample_mask_reg(const brw::brw_builder &bld);
+void brw_emit_predicate_on_sample_mask(const brw::brw_builder &bld, fs_inst *inst);
 
 int brw_get_subgroup_id_param_index(const intel_device_info *devinfo,
                                     const brw_stage_prog_data *prog_data);
