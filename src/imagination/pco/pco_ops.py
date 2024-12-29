@@ -177,9 +177,9 @@ OM_FCNORM = op_mod('fcnorm', BaseType.bool)
 OM_NNCOORDS = op_mod('nncoords', BaseType.bool)
 OM_LOD_MODE = op_mod_enum('lod_mode', [
    ('normal', ''),
-   ('bias', '.bias'),
-   ('replace', '.replace'),
-   ('gradient', '.gradient'),
+   ('bias', 'bias'),
+   ('replace', 'replace'),
+   ('gradient', 'gradient'),
 ])
 OM_PPLOD = op_mod('pplod', BaseType.bool)
 OM_TAO = op_mod('tao', BaseType.bool)
@@ -188,9 +188,9 @@ OM_SNO = op_mod('sno', BaseType.bool)
 OM_WRT = op_mod('wrt', BaseType.bool)
 OM_SB_MODE = op_mod_enum('sb_mode', [
    ('none', ''),
-   ('data', '.data'),
-   ('info', '.info'),
-   ('both', '.both'),
+   ('data', 'data'),
+   ('info', 'info'),
+   ('both', 'both'),
 ])
 OM_ARRAY = op_mod('array', BaseType.bool)
 OM_INTEGER = op_mod('integer', BaseType.bool)
@@ -220,18 +220,18 @@ OM_ATOM_OP = op_mod_enum('atom_op', [
 ])
 OM_MCU_CACHE_MODE_LD = op_mod_enum('mcu_cache_mode_ld', [
    ('normal', ''),
-   ('bypass', '.bypass'),
-   ('force_line_fill', '.forcelinefill'),
+   ('bypass', 'bypass'),
+   ('force_line_fill', 'forcelinefill'),
 ])
 OM_MCU_CACHE_MODE_ST = op_mod_enum('mcu_cache_mode_st', [
-   ('write_through', '.writethrough'),
-   ('write_back', '.writeback'),
-   ('lazy_write_back', '.lazywriteback'),
+   ('write_through', 'writethrough'),
+   ('write_back', 'writeback'),
+   ('lazy_write_back', 'lazywriteback'),
 ])
 OM_BRANCH_CND = op_mod_enum('branch_cnd', [
    ('exec_cond', ''),
-   ('allinst', '.allinst'),
-   ('anyinst', '.anyinst'),
+   ('allinst', 'allinst'),
+   ('anyinst', 'anyinst'),
 ])
 OM_LINK = op_mod('link', BaseType.bool)
 OM_PCK_FMT = op_mod_enum('pck_fmt', [
