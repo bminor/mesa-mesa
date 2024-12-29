@@ -93,6 +93,11 @@ struct vk_acceleration_structure_build_ops {
                                         uint32_t leaf_count,
                                         struct vk_acceleration_structure *src,
                                         struct vk_acceleration_structure *dst);
+
+   const uint32_t *leaf_spirv_override;
+   size_t leaf_spirv_override_size;
+   const uint32_t *leaf_always_active_spirv_override;
+   size_t leaf_always_active_spirv_override_size;
 };
 
 struct vk_acceleration_structure_build_args {
