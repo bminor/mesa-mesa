@@ -1269,40 +1269,13 @@ static bool visit_alu(struct ac_nir_context *ctx, const nir_alu_instr *instr)
    return true;
 }
 
-static bool visit_load_const(struct ac_nir_context *ctx, const nir_load_const_instr *instr)
+static void visit_load_const(struct ac_nir_context *ctx, const nir_load_const_instr *instr)
 {
-   LLVMValueRef values[16], value = NULL;
-   LLVMTypeRef element_type = LLVMIntTypeInContext(ctx->ac.context, instr->def.bit_size);
+   assert(instr->def.num_components == 1);
 
-   for (unsigned i = 0; i < instr->def.num_components; ++i) {
-      switch (instr->def.bit_size) {
-      case 1:
-         values[i] = LLVMConstInt(element_type, instr->value[i].b, false);
-         break;
-      case 8:
-         values[i] = LLVMConstInt(element_type, instr->value[i].u8, false);
-         break;
-      case 16:
-         values[i] = LLVMConstInt(element_type, instr->value[i].u16, false);
-         break;
-      case 32:
-         values[i] = LLVMConstInt(element_type, instr->value[i].u32, false);
-         break;
-      case 64:
-         values[i] = LLVMConstInt(element_type, instr->value[i].u64, false);
-         break;
-      default:
-         fprintf(stderr, "unsupported nir load_const bit_size: %d\n", instr->def.bit_size);
-         return false;
-      }
-   }
-   if (instr->def.num_components > 1) {
-      value = LLVMConstVector(values, instr->def.num_components);
-   } else
-      value = values[0];
-
-   ctx->ssa_defs[instr->def.index] = value;
-   return true;
+   ctx->ssa_defs[instr->def.index] =
+      LLVMConstInt(LLVMIntTypeInContext(ctx->ac.context, instr->def.bit_size),
+                   nir_const_value_as_uint(instr->value[0], instr->def.bit_size), false);
 }
 
 /* Gather4 should follow the same rules as bilinear filtering, but the hardware
@@ -3868,8 +3841,7 @@ static bool visit_block(struct ac_nir_context *ctx, nir_block *block)
             return false;
          break;
       case nir_instr_type_load_const:
-         if (!visit_load_const(ctx, nir_instr_as_load_const(instr)))
-            return false;
+         visit_load_const(ctx, nir_instr_as_load_const(instr));
          break;
       case nir_instr_type_intrinsic:
          if (!visit_intrinsic(ctx, nir_instr_as_intrinsic(instr)))

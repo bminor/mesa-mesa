@@ -2694,11 +2694,8 @@ static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_
     */
    NIR_PASS(progress, nir, nir_opt_move, nir_move_comparisons);
 
-   /* aco only accept scalar const, must be done after si_nir_late_opts()
-    * which may generate vec const.
-    */
-   if (nir->info.use_aco_amd)
-      NIR_PASS_V(nir, nir_lower_load_const_to_scalar);
+   /* This must be done after si_nir_late_opts() because it may generate vec const. */
+   NIR_PASS(_, nir, nir_lower_load_const_to_scalar);
 
    /* This helps LLVM form VMEM clauses and thus get more GPU cache hits.
     * 200 is tuned for Viewperf. It should be done last.
@@ -2802,9 +2799,7 @@ si_nir_generate_gs_copy_shader(struct si_screen *sscreen,
 
    si_nir_opts(gs_selector->screen, nir, false);
 
-   /* aco only accept scalar const */
-   if (gs_nir->info.use_aco_amd)
-      NIR_PASS_V(nir, nir_lower_load_const_to_scalar);
+   NIR_PASS_V(nir, nir_lower_load_const_to_scalar);
 
    if (si_can_dump_shader(sscreen, MESA_SHADER_GEOMETRY, SI_DUMP_NIR)) {
       fprintf(stderr, "GS Copy Shader:\n");
