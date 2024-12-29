@@ -173,6 +173,23 @@ build_instance(inout vk_aabb bounds, VOID_REF src_ptr, VOID_REF dst_ptr, uint32_
 
    bounds = calculate_instance_node_bounds(blas_aabb, mat3x4(transform));
 
+#ifdef CALCULATE_FINE_INSTANCE_NODE_BOUNDS
+   vec3 blas_aabb_extent = blas_aabb.max - blas_aabb.min;
+   float blas_aabb_volume = blas_aabb_extent.x * blas_aabb_extent.y * blas_aabb_extent.z;
+   blas_aabb_volume *= abs(determinant(mat3(transform)));
+
+   vec3 bounds_extent = bounds.max - bounds.min;
+   float bounds_volume = bounds_extent.x * bounds_extent.y * bounds_extent.z;
+
+   /* Only try calculating finer-grained instance node bounds if the volume of the transformed
+    * instance AABB is significantly higher than the volume of the BLAS without transformations
+    * applied. Otherwise, the finer-grained bounds won't be much smaller and the additional overhead
+    * wouldn't be worth it.
+    */
+   if (bounds_volume > 1.4f * blas_aabb_volume)
+      bounds = CALCULATE_FINE_INSTANCE_NODE_BOUNDS(instance.accelerationStructureReference, mat3x4(transform));
+#endif
+
    DEREF(node).base.aabb = bounds;
    DEREF(node).custom_instance_and_mask = instance.custom_instance_and_mask;
    DEREF(node).sbt_offset_and_flags = instance.sbt_offset_and_flags;
