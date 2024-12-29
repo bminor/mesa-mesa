@@ -772,6 +772,11 @@ inline void exec_node::insert_before(exec_list *before)
         node != NULL;                                         \
         node = exec_node_data_prev(type, node, field))
 
+#define foreach_list_typed_from_reverse(type, node, field, list, __start) \
+   for (type * node = exec_node_data_backward(type, (__start), field);    \
+        node != NULL;                                                     \
+        node = exec_node_data_prev(type, node, field))
+
 /**
  * Iterate over the list from head to tail. Removal is safe for all nodes except the next
  * iteration's. If the next iteration's node is removed and not inserted again, this loop exits.
