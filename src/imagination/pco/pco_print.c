@@ -853,7 +853,7 @@ static void pco_print_block(pco_print_state *state, pco_block *block)
 {
    pco_printfi(state, "block ");
    pco_print_block_name(state, block);
-   pco_printfi(state, ":\n");
+   pco_printf(state, ":\n");
    ++state->indent;
 
    if (state->is_grouped) {
@@ -891,7 +891,7 @@ static void pco_print_if(pco_print_state *state, pco_if *pif)
 {
    pco_printfi(state, "if ");
    pco_print_if_name(state, pif);
-   pco_printfi(state, " (");
+   pco_printf(state, " (");
    _pco_print_ref(state, pif->cond);
    pco_printf(state, ") {\n");
    ++state->indent;
@@ -902,11 +902,11 @@ static void pco_print_if(pco_print_state *state, pco_if *pif)
 
    --state->indent;
    if (list_is_empty(&pif->else_body)) {
-      pco_printf(state, "}\n");
+      pco_printfi(state, "}\n");
       return;
    }
 
-   pco_printf(state, "} else {\n");
+   pco_printfi(state, "} else {\n");
    ++state->indent;
 
    pco_foreach_cf_node_in_if_else (cf_node, pif) {
@@ -914,7 +914,7 @@ static void pco_print_if(pco_print_state *state, pco_if *pif)
    }
 
    --state->indent;
-   pco_printf(state, "}\n");
+   pco_printfi(state, "}\n");
 }
 
 /**
@@ -938,7 +938,7 @@ static void pco_print_loop(pco_print_state *state, pco_loop *loop)
 {
    pco_printfi(state, "loop ");
    pco_print_loop_name(state, loop);
-   pco_printfi(state, " {\n");
+   pco_printf(state, " {\n");
    ++state->indent;
 
    pco_foreach_cf_node_in_loop (cf_node, loop) {
@@ -946,7 +946,7 @@ static void pco_print_loop(pco_print_state *state, pco_loop *loop)
    }
 
    --state->indent;
-   pco_printf(state, "}\n");
+   pco_printfi(state, "}\n");
 }
 
 /**
