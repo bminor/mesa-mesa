@@ -531,23 +531,12 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
          replacement = nir_imm_int(b, (1 << 2) | (1 << 4));
       }
       break;
-   case nir_intrinsic_load_barycentric_at_sample: {
-      unsigned mode = nir_intrinsic_interp_mode(intrin);
-
-      if (key->ps.mono.interpolate_at_sample_force_center) {
-         replacement = nir_load_barycentric_pixel(b, 32, .interp_mode = mode);
-      } else {
-         nir_def *sample_id = intrin->src[0].ssa;
-         /* offset = sample_id * 8  (8 = 2 floats containing samplepos.xy) */
-         nir_def *offset = nir_ishl_imm(b, sample_id, 3);
-
-         nir_def *buf = si_nir_load_internal_binding(b, args, SI_PS_CONST_SAMPLE_POSITIONS, 4);
-         nir_def *sample_pos = nir_load_ubo(b, 2, 32, buf, offset, .range = ~0);
-
-         sample_pos = nir_fadd_imm(b, sample_pos, -0.5);
-
-         replacement = nir_load_barycentric_at_offset(b, 32, sample_pos, .interp_mode = mode);
-      }
+   case nir_intrinsic_load_sample_positions_amd: {
+      /* offset = sample_id * 8  (8 = 2 floats containing samplepos.xy) */
+      nir_def *buf = si_nir_load_internal_binding(b, args, SI_PS_CONST_SAMPLE_POSITIONS, 4);
+      nir_def *sample_id = intrin->src[0].ssa;
+      nir_def *offset = nir_ishl_imm(b, sample_id, 3);
+      replacement = nir_load_ubo(b, 2, 32, buf, offset, .range = ~0);
       break;
    }
    case nir_intrinsic_load_output: {

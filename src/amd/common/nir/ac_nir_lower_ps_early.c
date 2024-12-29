@@ -295,6 +295,25 @@ lower_ps_load_sample_mask_in(nir_builder *b, nir_intrinsic_instr *intrin, lower_
    return true;
 }
 
+static nir_def *
+lower_load_barycentric_at_offset(nir_builder *b, nir_def *offset, enum glsl_interp_mode mode)
+{
+   nir_def *baryc = nir_load_barycentric_pixel(b, 32, .interp_mode = mode);
+   nir_def *i = nir_channel(b, baryc, 0);
+   nir_def *j = nir_channel(b, baryc, 1);
+   nir_def *offset_x = nir_channel(b, offset, 0);
+   nir_def *offset_y = nir_channel(b, offset, 1);
+   nir_def *ddx_i = nir_ddx(b, i);
+   nir_def *ddx_j = nir_ddx(b, j);
+   nir_def *ddy_i = nir_ddy(b, i);
+   nir_def *ddy_j = nir_ddy(b, j);
+
+   /* Interpolate standard barycentrics by offset. */
+   nir_def *offset_i = nir_ffma(b, ddy_i, offset_y, nir_ffma(b, ddx_i, offset_x, i));
+   nir_def *offset_j = nir_ffma(b, ddy_j, offset_y, nir_ffma(b, ddx_j, offset_x, j));
+   return nir_vec2(b, offset_i, offset_j);
+}
+
 static bool
 lower_ps_intrinsic(nir_builder *b, nir_instr *instr, void *state)
 {
@@ -339,6 +358,49 @@ lower_ps_intrinsic(nir_builder *b, nir_instr *instr, void *state)
       /* sample_pos = ffract(frag_coord.xy); */
       nir_def_replace(&intrin->def, nir_ffract(b, nir_channels(b, nir_load_frag_coord(b), 0x3)));
       return true;
+   case nir_intrinsic_load_barycentric_at_offset:
+      nir_def_replace(&intrin->def,
+                      lower_load_barycentric_at_offset(b, intrin->src[0].ssa,
+                                                       nir_intrinsic_interp_mode(intrin)));
+      return true;
+   case nir_intrinsic_load_barycentric_at_sample: {
+      unsigned mode = nir_intrinsic_interp_mode(intrin);
+
+      if (s->options->interpolate_at_sample_force_center) {
+         nir_def_replace(&intrin->def, nir_load_barycentric_pixel(b, 32, .interp_mode = mode));
+         return true;
+      }
+
+      /* If load_sample_positions_always_loads_current_ones is true, load_sample_positions_amd
+       * always loads the sample positions that are currently set in the rasterizer state
+       * even if MSAA is disabled.
+       */
+      nir_def *num_samples = s->options->load_sample_positions_always_loads_current_ones ?
+                                nir_undef(b, 1, 32) : nir_load_rasterization_samples_amd(b);
+      nir_def *sample_id = intrin->src[0].ssa;
+      nir_def *sample_pos = nir_load_sample_positions_amd(b, 32, sample_id, num_samples);
+      sample_pos = nir_fadd_imm(b, sample_pos, -0.5f);
+
+      if (s->options->dynamic_rasterization_samples) {
+         assert(!s->options->load_sample_positions_always_loads_current_ones);
+         nir_def *pixel, *at_sample;
+
+         nir_push_if(b, nir_ieq_imm(b, num_samples, 1));
+         {
+            pixel = nir_load_barycentric_pixel(b, 32, .interp_mode = mode);
+         }
+         nir_push_else(b, NULL);
+         {
+            at_sample = lower_load_barycentric_at_offset(b, sample_pos, mode);
+         }
+         nir_pop_if(b, NULL);
+         nir_def_replace(&intrin->def, nir_if_phi(b, pixel, at_sample));
+      } else {
+         nir_def_replace(&intrin->def,
+                         lower_load_barycentric_at_offset(b, sample_pos, mode));
+      }
+      return true;
+   }
    default:
       break;
    }

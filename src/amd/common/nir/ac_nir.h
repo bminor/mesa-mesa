@@ -275,6 +275,9 @@ typedef struct {
    bool force_linear_sample_interp;
    bool force_persp_center_interp;
    bool force_linear_center_interp;
+   bool interpolate_at_sample_force_center;
+   bool load_sample_positions_always_loads_current_ones;
+   bool dynamic_rasterization_samples;
    int force_front_face; /* 0 -> keep, 1 -> set to true, -1 -> set to false */
    unsigned ps_iter_samples;
 
