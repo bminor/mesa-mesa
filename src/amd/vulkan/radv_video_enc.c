@@ -63,6 +63,7 @@
 #define RENCODE_V2_IB_PARAM_ENCODE_CONTEXT_BUFFER     0x00000011
 #define RENCODE_V2_IB_PARAM_VIDEO_BITSTREAM_BUFFER    0x00000012
 #define RENCODE_V2_IB_PARAM_FEEDBACK_BUFFER           0x00000015
+#define RENCODE_V2_IB_PARAM_ENCODE_LATENCY            0x00000018
 #define RENCODE_V2_IB_PARAM_ENCODE_STATISTICS         0x00000019
 #define RENCODE_V2_IB_PARAM_RATE_CONTROL_PER_PIC_EX   0x0000001d
 
@@ -95,6 +96,7 @@
 #define RENCODE_IB_PARAM_FEEDBACK_BUFFER           0x00000010
 #define RENCODE_IB_PARAM_RATE_CONTROL_PER_PIC_EX   0x0000001d
 #define RENCODE_IB_PARAM_DIRECT_OUTPUT_NALU        0x00000020
+#define RENCODE_IB_PARAM_ENCODE_LATENCY            0x00000022
 #define RENCODE_IB_PARAM_ENCODE_STATISTICS         0x00000024
 
 #define RENCODE_HEVC_IB_PARAM_SLICE_CONTROL     0x00100001
@@ -215,6 +217,7 @@ radv_init_physical_device_encoder(struct radv_physical_device *pdev)
          pdev->vcn_enc_cmds.enc_statistics = RENCODE_V4_IB_PARAM_ENCODE_STATISTICS;
       } else
          pdev->vcn_enc_cmds.enc_statistics = RENCODE_V2_IB_PARAM_ENCODE_STATISTICS;
+      pdev->vcn_enc_cmds.enc_latency = RENCODE_V2_IB_PARAM_ENCODE_LATENCY;
    } else {
       pdev->vcn_enc_cmds.session_info = RENCODE_IB_PARAM_SESSION_INFO;
       pdev->vcn_enc_cmds.task_info = RENCODE_IB_PARAM_TASK_INFO;
@@ -240,6 +243,7 @@ radv_init_physical_device_encoder(struct radv_physical_device *pdev)
       pdev->vcn_enc_cmds.enc_params_h264 = RENCODE_H264_IB_PARAM_ENCODE_PARAMS;
       pdev->vcn_enc_cmds.deblocking_filter_h264 = RENCODE_H264_IB_PARAM_DEBLOCKING_FILTER;
       pdev->vcn_enc_cmds.enc_statistics = RENCODE_IB_PARAM_ENCODE_STATISTICS;
+      pdev->vcn_enc_cmds.enc_latency = RENCODE_IB_PARAM_ENCODE_LATENCY;
    }
 }
 
@@ -733,6 +737,22 @@ radv_enc_quality_params(struct radv_cmd_buffer *cmd_buffer)
    if (pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_2)
       radeon_emit(cs, 0);
    ENC_END;
+}
+
+static void
+radv_enc_latency(struct radv_cmd_buffer *cmd_buffer, VkVideoEncodeTuningModeKHR tuning_mode)
+{
+   struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+   struct radeon_cmdbuf *cs = cmd_buffer->cs;
+   if (tuning_mode == VK_VIDEO_ENCODE_TUNING_MODE_LOW_LATENCY_KHR
+         || tuning_mode == VK_VIDEO_ENCODE_TUNING_MODE_ULTRA_LOW_LATENCY_KHR)
+   {
+      ENC_BEGIN;
+      radeon_emit(cs, pdev->vcn_enc_cmds.enc_latency);
+      radeon_emit(cs, 1000);
+      ENC_END;
+   }
 }
 
 static void
@@ -1712,6 +1732,7 @@ begin(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoKHR *enc_info)
    radv_enc_layer_control(cmd_buffer, &vid->rc_layer_control);
    radv_enc_rc_session_init(cmd_buffer);
    radv_enc_quality_params(cmd_buffer);
+   radv_enc_latency(cmd_buffer, vid->vk.enc_usage.tuning_mode);
    // temporal layers init
    unsigned i = 0;
    do {
