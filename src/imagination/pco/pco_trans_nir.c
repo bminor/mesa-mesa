@@ -714,8 +714,100 @@ static pco_instr *pco_trans_nir_vec(trans_ctx *tctx,
    return instr;
 }
 
+static inline enum pco_tst_op_main to_tst_op_main(nir_op op)
+{
+   switch (op) {
+   case nir_op_slt:
+   case nir_op_flt:
+   case nir_op_ilt:
+   case nir_op_ult:
+      return PCO_TST_OP_MAIN_LESS;
+
+   case nir_op_sge:
+   case nir_op_fge:
+   case nir_op_ige:
+   case nir_op_uge:
+      return PCO_TST_OP_MAIN_GEQUAL;
+
+   case nir_op_seq:
+   case nir_op_feq:
+   case nir_op_ieq:
+      return PCO_TST_OP_MAIN_EQUAL;
+
+   case nir_op_sne:
+   case nir_op_fneu:
+   case nir_op_ine:
+      return PCO_TST_OP_MAIN_NOTEQUAL;
+
+   default:
+      break;
+   }
+
+   UNREACHABLE("");
+}
+
+static inline enum pco_tst_type_main to_tst_type_main(nir_op op, pco_ref src)
+{
+   ASSERTED unsigned bits = pco_ref_get_bits(src);
+
+   assert(bits == 32);
+
+   switch (op) {
+   case nir_op_slt:
+   case nir_op_sge:
+   case nir_op_seq:
+   case nir_op_sne:
+
+   case nir_op_flt:
+   case nir_op_fge:
+   case nir_op_feq:
+   case nir_op_fneu:
+
+   case nir_op_fmin:
+   case nir_op_fmax:
+      return PCO_TST_TYPE_MAIN_F32;
+
+   case nir_op_ilt:
+   case nir_op_ige:
+   case nir_op_ieq:
+   case nir_op_ine:
+
+   case nir_op_imin:
+   case nir_op_imax:
+      return PCO_TST_TYPE_MAIN_S32;
+
+   case nir_op_ult:
+   case nir_op_uge:
+
+   case nir_op_umin:
+   case nir_op_umax:
+      return PCO_TST_TYPE_MAIN_U32;
+
+   default:
+      break;
+   }
+
+   UNREACHABLE("");
+}
+
+static inline bool is_scmp(nir_op op)
+{
+   switch (op) {
+   case nir_op_slt:
+   case nir_op_sge:
+   case nir_op_seq:
+   case nir_op_sne:
+      return true;
+
+   default:
+      break;
+   }
+
+   return false;
+}
+
 /**
- * \brief Translates a NIR float set-on comparison into PCO.
+ * \brief Translates a NIR comparison op into PCO.
  *
  * \param[in,out] tctx Translation context.
  * \param[in] op The NIR op.
@@ -725,31 +817,19 @@ static pco_instr *pco_trans_nir_vec(trans_ctx *tctx,
  * \return The translated PCO instruction.
  */
 static pco_instr *
-trans_scmp(trans_ctx *tctx, nir_op op, pco_ref dest, pco_ref src0, pco_ref src1)
+trans_cmp(trans_ctx *tctx, nir_op op, pco_ref dest, pco_ref src0, pco_ref src1)
 {
-   enum pco_tst_op_main tst_op_main;
-   switch (op) {
-   case nir_op_slt:
-      tst_op_main = PCO_TST_OP_MAIN_LESS;
-      break;
+   enum pco_tst_op_main tst_op_main = to_tst_op_main(op);
+   enum pco_tst_type_main tst_type_main = to_tst_type_main(op, src0);
 
-   case nir_op_sge:
-      tst_op_main = PCO_TST_OP_MAIN_GEQUAL;
-      break;
-
-   case nir_op_seq:
-      tst_op_main = PCO_TST_OP_MAIN_EQUAL;
-      break;
-
-   case nir_op_sne:
-      tst_op_main = PCO_TST_OP_MAIN_NOTEQUAL;
-      break;
-
-   default:
-      UNREACHABLE("");
-   }
-
-   return pco_scmp(&tctx->b, dest, src0, src1, .tst_op_main = tst_op_main);
+   return is_scmp(op)
+             ? pco_scmp(&tctx->b, dest, src0, src1, .tst_op_main = tst_op_main)
+             : pco_bcmp(&tctx->b,
+                        dest,
+                        src0,
+                        src1,
+                        .tst_op_main = tst_op_main,
+                        .tst_type_main = tst_type_main);
 }
 
 /**
@@ -800,6 +880,54 @@ static pco_instr *trans_logical(trans_ctx *tctx,
    return pco_logical(&tctx->b, dest, src0, src1, .logiop = logiop);
 }
 
+static inline bool is_min(nir_op op)
+{
+   switch (op) {
+   case nir_op_fmin:
+   case nir_op_imin:
+   case nir_op_umin:
+      return true;
+
+   case nir_op_fmax:
+   case nir_op_imax:
+   case nir_op_umax:
+      return false;
+
+   default:
+      break;
+   }
+
+   UNREACHABLE("");
+}
+
+/**
+ * \brief Translates a NIR min/max op into PCO.
+ *
+ * \param[in,out] tctx Translation context.
+ * \param[in] op The NIR op.
+ * \param[in] src Instruction source.
+ * \return The translated PCO instruction.
+ */
+static pco_instr *trans_min_max(trans_ctx *tctx,
+                                nir_op op,
+                                pco_ref dest,
+                                pco_ref src0,
+                                pco_ref src1)
+{
+   enum pco_tst_type_main tst_type_main = to_tst_type_main(op, src0);
+
+   return is_min(op) ? pco_min(&tctx->b,
+                               dest,
+                               src0,
+                               src1,
+                               .tst_type_main = tst_type_main)
+                     : pco_max(&tctx->b,
+                               dest,
+                               src0,
+                               src1,
+                               .tst_type_main = tst_type_main);
+}
+
 /**
  * \brief Translates a NIR alu instruction into PCO.
  *
@@ -848,11 +976,28 @@ static pco_instr *trans_alu(trans_ctx *tctx, nir_alu_instr *alu)
       instr = pco_frcp(&tctx->b, dest, src[0]);
       break;
 
+   /* Set-on (float) comparisons. */
    case nir_op_slt:
    case nir_op_sge:
    case nir_op_seq:
    case nir_op_sne:
-      instr = trans_scmp(tctx, alu->op, dest, src[0], src[1]);
+
+   /* Float comparisons. */
+   case nir_op_flt:
+   case nir_op_fge:
+   case nir_op_feq:
+   case nir_op_fneu:
+
+   /* Signed int comparisons. */
+   case nir_op_ilt:
+   case nir_op_ige:
+   case nir_op_ieq:
+   case nir_op_ine:
+
+   /* Unsigned int comparisons. */
+   case nir_op_ult:
+   case nir_op_uge:
+      instr = trans_cmp(tctx, alu->op, dest, src[0], src[1]);
       break;
 
    case nir_op_iand:
@@ -893,11 +1038,14 @@ static pco_instr *trans_alu(trans_ctx *tctx, nir_alu_instr *alu)
       break;
 
    case nir_op_fmin:
-      instr = pco_fmin(&tctx->b, dest, src[0], src[1]);
-      break;
-
    case nir_op_fmax:
-      instr = pco_fmax(&tctx->b, dest, src[0], src[1]);
+
+   case nir_op_imin:
+   case nir_op_imax:
+
+   case nir_op_umin:
+   case nir_op_umax:
+      instr = trans_min_max(tctx, alu->op, dest, src[0], src[1]);
       break;
 
    case nir_op_pack_half_2x16:

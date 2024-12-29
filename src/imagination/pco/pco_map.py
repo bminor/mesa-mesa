@@ -1002,6 +1002,18 @@ encode_map(O_LD,
    op_ref_maps=[('backend', ['s3'], ['drc', 'imm', ['s0', 's1', 's2', 's3', 's4', 's5']])]
 )
 
+encode_map(O_BBYP0BM,
+   encodings=[
+      (I_PHASE0_SRC, [
+         ('count_src', 's2'),
+         ('count_op', 'byp'),
+         ('bitmask_src_op', 'byp'),
+         ('shift1_op', 'byp')
+      ])
+   ],
+   op_ref_maps=[('0', ['ft0', 'ft1'], ['s0', 's1'])]
+)
+
 encode_map(O_BBYP0BM_IMM32,
    encodings=[
       (I_PHASE0_IMM32, [
@@ -1329,7 +1341,7 @@ group_map(O_SCMP,
    ]
 )
 
-group_map(O_FMIN,
+group_map(O_BCMP,
    hdr=(I_IGRP_HDR_MAIN, [
       ('oporg', 'p0_p1_p2'),
       ('olchk', OM_OLCHK),
@@ -1343,7 +1355,41 @@ group_map(O_FMIN,
    enc_ops=[
       ('0', O_MBYP, ['ft0'], [SRC(0)]),
       ('1', O_MBYP, ['ft1'], [SRC(1)]),
-      ('2_tst', O_TST, ['ftt', '_'], ['is1', 'is2'], [(OM_TST_OP_MAIN, 'less'), (OM_TST_TYPE_MAIN, 'f32'), (OM_PHASE2END, True)]),
+      ('2_tst', O_TST, ['ftt', '_'], ['is1', 'is2'], [(OM_TST_OP_MAIN, OM_TST_OP_MAIN), (OM_TST_TYPE_MAIN, OM_TST_TYPE_MAIN)]),
+      ('2_pck', O_PCK, ['ft2'], ['_'], [(OM_PCK_FMT, 'zero')]),
+      ('2_mov', O_MOVC, [DEST(0), '_'], ['ftt', 'fte', 'is4', '_', '_'])
+   ],
+   srcs=[
+      ('s[0]', ('0', SRC(0)), 's0'),
+      ('s[1]', 'pco_true'),
+      ('s[3]', ('1', SRC(0)), 's3'),
+   ],
+   iss=[
+      ('is[0]', 's1'),
+      ('is[1]', 'ft0'),
+      ('is[2]', 'ft1'),
+      ('is[4]', 'ft2'),
+   ],
+   dests=[
+      ('w[0]', ('2_mov', DEST(0)), 'w0'),
+   ]
+)
+
+group_map(O_MIN,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'p0_p1_p2'),
+      ('olchk', OM_OLCHK),
+      ('w1p', False),
+      ('w0p', True),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', OM_RPT)
+   ]),
+   enc_ops=[
+      ('0', O_MBYP, ['ft0'], [SRC(0)]),
+      ('1', O_MBYP, ['ft1'], [SRC(1)]),
+      ('2_tst', O_TST, ['ftt', '_'], ['is1', 'is2'], [(OM_TST_OP_MAIN, 'less'), (OM_TST_TYPE_MAIN, OM_TST_TYPE_MAIN), (OM_PHASE2END, True)]),
       ('2_mov', O_MOVC, [DEST(0), '_'], ['ftt', 'ft0', 'is4', '_', '_'])
    ],
    srcs=[
@@ -1360,7 +1406,7 @@ group_map(O_FMIN,
    ]
 )
 
-group_map(O_FMAX,
+group_map(O_MAX,
    hdr=(I_IGRP_HDR_MAIN, [
       ('oporg', 'p0_p1_p2'),
       ('olchk', OM_OLCHK),
@@ -1374,7 +1420,7 @@ group_map(O_FMAX,
    enc_ops=[
       ('0', O_MBYP, ['ft0'], [SRC(0)]),
       ('1', O_MBYP, ['ft1'], [SRC(1)]),
-      ('2_tst', O_TST, ['ftt', '_'], ['is1', 'is2'], [(OM_TST_OP_MAIN, 'greater'), (OM_TST_TYPE_MAIN, 'f32'), (OM_PHASE2END, True)]),
+      ('2_tst', O_TST, ['ftt', '_'], ['is1', 'is2'], [(OM_TST_OP_MAIN, 'greater'), (OM_TST_TYPE_MAIN, OM_TST_TYPE_MAIN), (OM_PHASE2END, True)]),
       ('2_mov', O_MOVC, [DEST(0), '_'], ['ftt', 'ft0', 'is4', '_', '_'])
    ],
    srcs=[

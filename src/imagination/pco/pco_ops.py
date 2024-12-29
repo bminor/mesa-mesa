@@ -325,7 +325,8 @@ O_MOVI32 = hw_op('movi32', OM_ALU, 1, 1)
 
 O_LOGICAL = hw_op('logical', OM_ALU + [OM_LOGIOP], 1, 2)
 
-O_BBYP0BM_IMM32 = hw_direct_op('bbyp0bm', [], 2, 2)
+O_BBYP0BM = hw_direct_op('bbyp0bm', [], 2, 2)
+O_BBYP0BM_IMM32 = hw_direct_op('bbyp0bm_imm32', [], 2, 2)
 O_BBYP0S1 = hw_direct_op('bbyp0s1', [], 1, 1)
 
 ## Control.
@@ -341,8 +342,9 @@ O_DITRP_READ = hw_op('ditrp.read', [OM_EXEC_CND, OM_ITR_MODE, OM_SAT, OM_SCHED, 
 
 # Combination (> 1 instructions per group).
 O_SCMP = hw_op('scmp', OM_ALU + [OM_TST_OP_MAIN], 1, 2, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
-O_FMIN = hw_op('fmin', OM_ALU, 1, 2, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
-O_FMAX = hw_op('fmax', OM_ALU, 1, 2, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
+O_BCMP = hw_op('bcmp', OM_ALU + [OM_TST_OP_MAIN, OM_TST_TYPE_MAIN], 1, 2, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
+O_MIN = hw_op('min', OM_ALU + [OM_TST_TYPE_MAIN], 1, 2, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
+O_MAX = hw_op('max', OM_ALU + [OM_TST_TYPE_MAIN], 1, 2, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
 
 # Pseudo-ops (unmapped).
 O_NEG = pseudo_op('neg', OM_ALU, 1, 1)
