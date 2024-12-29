@@ -293,7 +293,15 @@ struct rvce_enc_create {
    uint32_t enc_pre_encode_context_buffer_offset;
    uint32_t enc_pre_encode_input_luma_buffer_offset;
    uint32_t enc_pre_encode_input_chroma_buffer_offset;
-   uint32_t enc_pre_encode_mode_chromaflag_vbaqmode_scenechangesensitivity;
+   union {
+      struct {
+         uint8_t enc_pre_encode_mode;
+         uint8_t enc_pre_encode_chroma_flag;
+         uint8_t enc_vbaq_mode;
+         uint8_t enc_scene_change_sensitivity;
+      };
+      uint32_t enc_pre_encode_mode_chromaflag_vbaqmode_scenechangesensitivity;
+   };
 };
 
 struct rvce_config_ext {

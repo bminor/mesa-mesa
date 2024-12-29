@@ -216,6 +216,9 @@ static void get_param(struct rvce_encoder *enc, struct pipe_h264_enc_picture_des
    enc->enc_pic.addrmode_arraymode_disrdo_distwoinstants = 0x01000201;
    enc->enc_pic.is_idr = (pic->picture_type == PIPE_H2645_ENC_PICTURE_TYPE_IDR);
    enc->enc_pic.eo.enc_idr_pic_id = pic->idr_pic_id;
+   enc->enc_pic.ec.enc_vbaq_mode =
+      pic->rate_ctrl[0].rate_ctrl_method != PIPE_H2645_ENC_RATE_CONTROL_METHOD_DISABLE &&
+      pic->quality_modes.vbaq_mode;
 
    enc->enc_pic.eo.insert_headers = 0;
    enc->enc_pic.eo.insert_aud = 0;
