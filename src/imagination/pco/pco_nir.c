@@ -39,6 +39,7 @@ static const nir_shader_compiler_options nir_options = {
    .lower_fquantize2f16 = true,
    .lower_layer_fs_input_to_sysval = true,
    .compact_arrays = true,
+   .scalarize_ddx = true,
 };
 
 /**

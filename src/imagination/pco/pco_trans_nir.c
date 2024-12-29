@@ -557,6 +557,22 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
       instr = trans_load_sysval_vs(tctx, intr, dest);
       break;
 
+   case nir_intrinsic_ddx:
+   case nir_intrinsic_ddx_fine:
+   case nir_intrinsic_ddx_coarse:
+      instr = intr->intrinsic == nir_intrinsic_ddx_fine
+                 ? pco_fdsxf(&tctx->b, dest, src[0])
+                 : pco_fdsx(&tctx->b, dest, src[0]);
+      break;
+
+   case nir_intrinsic_ddy:
+   case nir_intrinsic_ddy_fine:
+   case nir_intrinsic_ddy_coarse:
+      instr = intr->intrinsic == nir_intrinsic_ddy_fine
+                 ? pco_fdsyf(&tctx->b, dest, src[0])
+                 : pco_fdsy(&tctx->b, dest, src[0]);
+      break;
+
    default:
       printf("Unsupported intrinsic: \"");
       nir_print_instr(&intr->instr, stdout);

@@ -835,6 +835,78 @@ encode_map(O_MBYP,
    ]
 )
 
+encode_map(O_FDSX,
+   encodings=[
+      (I_SNGL_EXT, [
+         ('sngl_op', 'dsx'),
+         ('s0neg', (RM_NEG, SRC(0))),
+         ('s0abs', (RM_ABS, SRC(0)))
+      ]),
+      (I_SNGL, [('sngl_op', 'dsx')], [
+         (RM_NEG, SRC(0), '== false'),
+         (RM_ABS, SRC(0), '== false')
+      ])
+   ],
+   op_ref_maps=[
+      ('0', ['ft0'], ['s0']),
+      ('1', ['ft1'], ['s3'])
+   ]
+)
+
+encode_map(O_FDSXF,
+   encodings=[
+      (I_SNGL_EXT, [
+         ('sngl_op', 'dsxf'),
+         ('s0neg', (RM_NEG, SRC(0))),
+         ('s0abs', (RM_ABS, SRC(0)))
+      ]),
+      (I_SNGL, [('sngl_op', 'dsx')], [
+         (RM_NEG, SRC(0), '== false'),
+         (RM_ABS, SRC(0), '== false')
+      ])
+   ],
+   op_ref_maps=[
+      ('0', ['ft0'], ['s0']),
+      ('1', ['ft1'], ['s3'])
+   ]
+)
+
+encode_map(O_FDSY,
+   encodings=[
+      (I_SNGL_EXT, [
+         ('sngl_op', 'dsy'),
+         ('s0neg', (RM_NEG, SRC(0))),
+         ('s0abs', (RM_ABS, SRC(0)))
+      ]),
+      (I_SNGL, [('sngl_op', 'dsy')], [
+         (RM_NEG, SRC(0), '== false'),
+         (RM_ABS, SRC(0), '== false')
+      ])
+   ],
+   op_ref_maps=[
+      ('0', ['ft0'], ['s0']),
+      ('1', ['ft1'], ['s3'])
+   ]
+)
+
+encode_map(O_FDSYF,
+   encodings=[
+      (I_SNGL_EXT, [
+         ('sngl_op', 'dsyf'),
+         ('s0neg', (RM_NEG, SRC(0))),
+         ('s0abs', (RM_ABS, SRC(0)))
+      ]),
+      (I_SNGL, [('sngl_op', 'dsy')], [
+         (RM_NEG, SRC(0), '== false'),
+         (RM_ABS, SRC(0), '== false')
+      ])
+   ],
+   op_ref_maps=[
+      ('0', ['ft0'], ['s0']),
+      ('1', ['ft1'], ['s3'])
+   ]
+)
+
 encode_map(O_PCK,
    encodings=[
       (I_PCK, [
@@ -1271,6 +1343,74 @@ group_map(O_MBYP,
       ('rpt', OM_RPT)
    ]),
    enc_ops=[('0', O_MBYP)],
+   srcs=[('s[0]', ('0', SRC(0)), 's0')],
+   iss=[('is[4]', 'ft0')],
+   dests=[('w[0]', ('0', DEST(0)), 'ft0')]
+)
+
+group_map(O_FDSX,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'p0'),
+      ('olchk', OM_OLCHK),
+      ('w1p', False),
+      ('w0p', True),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', OM_RPT)
+   ]),
+   enc_ops=[('0', O_FDSX)],
+   srcs=[('s[0]', ('0', SRC(0)), 's0')],
+   iss=[('is[4]', 'ft0')],
+   dests=[('w[0]', ('0', DEST(0)), 'ft0')]
+)
+
+group_map(O_FDSXF,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'p0'),
+      ('olchk', OM_OLCHK),
+      ('w1p', False),
+      ('w0p', True),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', OM_RPT)
+   ]),
+   enc_ops=[('0', O_FDSXF)],
+   srcs=[('s[0]', ('0', SRC(0)), 's0')],
+   iss=[('is[4]', 'ft0')],
+   dests=[('w[0]', ('0', DEST(0)), 'ft0')]
+)
+
+group_map(O_FDSY,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'p0'),
+      ('olchk', OM_OLCHK),
+      ('w1p', False),
+      ('w0p', True),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', OM_RPT)
+   ]),
+   enc_ops=[('0', O_FDSY)],
+   srcs=[('s[0]', ('0', SRC(0)), 's0')],
+   iss=[('is[4]', 'ft0')],
+   dests=[('w[0]', ('0', DEST(0)), 'ft0')]
+)
+
+group_map(O_FDSYF,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'p0'),
+      ('olchk', OM_OLCHK),
+      ('w1p', False),
+      ('w0p', True),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', OM_RPT)
+   ]),
+   enc_ops=[('0', O_FDSYF)],
    srcs=[('s[0]', ('0', SRC(0)), 's0')],
    iss=[('is[4]', 'ft0')],
    dests=[('w[0]', ('0', DEST(0)), 'ft0')]

@@ -535,6 +535,15 @@ static inline bool instr_has_side_effects(pco_instr *instr)
    if (pco_instr_has_atom(instr) && pco_instr_get_atom(instr))
       return true;
 
+   switch (instr->op) {
+   case PCO_OP_FDSX:
+   case PCO_OP_FDSY:
+      return true;
+
+   default:
+      break;
+   }
+
    /* TODO:
     * - gradient
     * - conditional
