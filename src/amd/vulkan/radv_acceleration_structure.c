@@ -36,6 +36,14 @@ static const uint32_t update_spv[] = {
 #include "bvh/update.spv.h"
 };
 
+static const uint32_t leaf_spv[] = {
+#include "bvh/radv_leaf.spv.h"
+};
+
+static const uint32_t leaf_always_active_spv[] = {
+#include "bvh/radv_leaf_always_active.spv.h"
+};
+
 struct acceleration_structure_layout {
    uint32_t geometry_info_offset;
    uint32_t bvh_offset;
@@ -649,6 +657,10 @@ static const struct vk_acceleration_structure_build_ops build_ops = {
    .init_update_scratch = radv_init_update_scratch,
    .update_bind_pipeline[0] = radv_update_bind_pipeline,
    .update_as[0] = radv_update_as,
+   .leaf_spirv_override = leaf_spv,
+   .leaf_spirv_override_size = sizeof(leaf_spv),
+   .leaf_always_active_spirv_override = leaf_always_active_spv,
+   .leaf_always_active_spirv_override_size = sizeof(leaf_always_active_spv),
 };
 
 static void
