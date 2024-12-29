@@ -68,7 +68,7 @@ ir_type_to_bvh_type(uint32_t type)
 }
 
 bool
-build_triangle(inout vk_aabb bounds, VOID_REF dst_ptr, vk_bvh_geometry_data geom_data, uint32_t global_id)
+radv_build_triangle(inout vk_aabb bounds, VOID_REF dst_ptr, vk_bvh_geometry_data geom_data, uint32_t global_id)
 {
    bool is_valid = true;
    triangle_indices indices = load_indices(geom_data.indices, geom_data.index_format, global_id);
@@ -117,7 +117,7 @@ build_triangle(inout vk_aabb bounds, VOID_REF dst_ptr, vk_bvh_geometry_data geom
 }
 
 bool
-build_aabb(inout vk_aabb bounds, VOID_REF src_ptr, VOID_REF dst_ptr, uint32_t geometry_id, uint32_t global_id)
+radv_build_aabb(inout vk_aabb bounds, VOID_REF src_ptr, VOID_REF dst_ptr, uint32_t geometry_id, uint32_t global_id)
 {
    bool is_valid = true;
    REF(radv_bvh_aabb_node) node = REF(radv_bvh_aabb_node)(dst_ptr);
@@ -149,7 +149,7 @@ build_aabb(inout vk_aabb bounds, VOID_REF src_ptr, VOID_REF dst_ptr, uint32_t ge
 }
 
 uint32_t
-encode_sbt_offset_and_flags(uint32_t src)
+radv_encode_sbt_offset_and_flags(uint32_t src)
 {
    uint32_t flags = src >> 24;
    uint32_t ret = src & 0xffffffu;
