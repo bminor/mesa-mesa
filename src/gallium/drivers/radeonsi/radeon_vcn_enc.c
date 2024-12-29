@@ -2014,7 +2014,7 @@ struct pipe_video_codec *radeon_create_encoder(struct pipe_context *context,
       radeon_enc_4_0_init(enc);
    }
    else if (sscreen->info.vcn_ip_version >= VCN_3_0_0) {
-      if (sscreen->info.vcn_enc_minor_version >= 24)
+      if (sscreen->info.vcn_enc_minor_version >= 29)
          enc->enc_pic.use_rc_per_pic_ex = true;
       radeon_enc_3_0_init(enc);
    }
