@@ -2740,15 +2740,23 @@ static void get_nir_shaders(struct si_shader *shader, struct si_linked_shaders *
 
    if (linked->producer.nir)
       si_update_shader_binary_info(shader, linked->producer.nir);
+
+   /* TODO: gather this where other shader_info is gathered */
+   for (unsigned i = 0; i < SI_NUM_LINKED_SHADERS; i++) {
+      if (linked->shader[i].nir) {
+         struct si_shader_info info;
+         si_nir_scan_shader(shader->selector->screen, linked->shader[i].nir, &info);
+
+         shader->info.uses_vmem_load_other |= info.uses_vmem_load_other;
+         shader->info.uses_vmem_sampler_or_bvh |= info.uses_vmem_sampler_or_bvh;
+      }
+   }
 }
 
 void si_update_shader_binary_info(struct si_shader *shader, nir_shader *nir)
 {
    struct si_shader_info info;
    si_nir_scan_shader(shader->selector->screen, nir, &info);
-
-   shader->info.uses_vmem_load_other |= info.uses_vmem_load_other;
-   shader->info.uses_vmem_sampler_or_bvh |= info.uses_vmem_sampler_or_bvh;
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       /* Since uniform inlining can remove PS inputs, set the latest info about PS inputs here. */
