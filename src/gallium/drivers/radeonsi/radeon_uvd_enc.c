@@ -17,47 +17,18 @@
 
 #include <stdio.h>
 
-static void radeon_uvd_enc_get_vui_param(struct radeon_uvd_encoder *enc,
-                                         struct pipe_h265_enc_picture_desc *pic)
-{
-   enc->enc_pic.vui_info.vui_parameters_present_flag =
-      pic->seq.vui_parameters_present_flag;
-   enc->enc_pic.vui_info.flags.aspect_ratio_info_present_flag =
-      pic->seq.vui_flags.aspect_ratio_info_present_flag;
-   enc->enc_pic.vui_info.flags.timing_info_present_flag =
-      pic->seq.vui_flags.timing_info_present_flag;
-   enc->enc_pic.vui_info.flags.video_signal_type_present_flag =
-      pic->seq.vui_flags.video_signal_type_present_flag;
-   enc->enc_pic.vui_info.flags.colour_description_present_flag =
-      pic->seq.vui_flags.colour_description_present_flag;
-   enc->enc_pic.vui_info.flags.chroma_loc_info_present_flag =
-      pic->seq.vui_flags.chroma_loc_info_present_flag;
-   enc->enc_pic.vui_info.aspect_ratio_idc = pic->seq.aspect_ratio_idc;
-   enc->enc_pic.vui_info.sar_width = pic->seq.sar_width;
-   enc->enc_pic.vui_info.sar_height = pic->seq.sar_height;
-   enc->enc_pic.vui_info.num_units_in_tick = pic->seq.num_units_in_tick;
-   enc->enc_pic.vui_info.time_scale = pic->seq.time_scale;
-   enc->enc_pic.vui_info.video_format = pic->seq.video_format;
-   enc->enc_pic.vui_info.video_full_range_flag = pic->seq.video_full_range_flag;
-   enc->enc_pic.vui_info.colour_primaries = pic->seq.colour_primaries;
-   enc->enc_pic.vui_info.transfer_characteristics = pic->seq.transfer_characteristics;
-   enc->enc_pic.vui_info.matrix_coefficients = pic->seq.matrix_coefficients;
-   enc->enc_pic.vui_info.chroma_sample_loc_type_top_field =
-      pic->seq.chroma_sample_loc_type_top_field;
-   enc->enc_pic.vui_info.chroma_sample_loc_type_bottom_field =
-      pic->seq.chroma_sample_loc_type_bottom_field;
-}
-
 static void radeon_uvd_enc_get_param(struct radeon_uvd_encoder *enc,
                                      struct pipe_h265_enc_picture_desc *pic)
 {
+   enc->enc_pic.desc = pic;
    enc->enc_pic.picture_type = pic->picture_type;
-   enc->enc_pic.frame_num = pic->frame_num;
-   enc->enc_pic.pic_order_cnt = pic->pic_order_cnt;
-   enc->enc_pic.pic_order_cnt_type = pic->pic_order_cnt_type;
-   enc->enc_pic.not_referenced = pic->not_referenced;
+   enc->enc_pic.nal_unit_type = pic->pic.nal_unit_type;
+   enc->enc_pic.temporal_id = pic->pic.temporal_id;
    enc->enc_pic.is_iframe = (pic->picture_type == PIPE_H2645_ENC_PICTURE_TYPE_IDR) ||
                             (pic->picture_type == PIPE_H2645_ENC_PICTURE_TYPE_I);
+   enc->enc_pic.enc_params.reference_picture_index =
+      pic->ref_list0[0] == PIPE_H2645_LIST_REF_INVALID_ENTRY ? 0xffffffff : pic->ref_list0[0];
+   enc->enc_pic.enc_params.reconstructed_picture_index = pic->dpb_curr_pic;
 
    if (pic->seq.conformance_window_flag) {
          enc->enc_pic.crop_left = pic->seq.conf_win_left_offset;
@@ -70,34 +41,6 @@ static void radeon_uvd_enc_get_param(struct radeon_uvd_encoder *enc,
          enc->enc_pic.crop_top = 0;
          enc->enc_pic.crop_bottom = 0;
    }
-
-   enc->enc_pic.general_tier_flag = pic->seq.general_tier_flag;
-   enc->enc_pic.general_profile_idc = pic->seq.general_profile_idc;
-   enc->enc_pic.general_level_idc = pic->seq.general_level_idc;
-   enc->enc_pic.max_poc = MAX2(16, util_next_power_of_two(pic->seq.intra_period));
-   enc->enc_pic.log2_max_poc = 0;
-   for (int i = enc->enc_pic.max_poc; i != 0; enc->enc_pic.log2_max_poc++)
-      i = (i >> 1);
-   enc->enc_pic.chroma_format_idc = pic->seq.chroma_format_idc;
-   enc->enc_pic.pic_width_in_luma_samples = pic->seq.pic_width_in_luma_samples;
-   enc->enc_pic.pic_height_in_luma_samples = pic->seq.pic_height_in_luma_samples;
-   enc->enc_pic.log2_diff_max_min_luma_coding_block_size =
-      pic->seq.log2_diff_max_min_luma_coding_block_size;
-   enc->enc_pic.log2_min_transform_block_size_minus2 =
-      pic->seq.log2_min_transform_block_size_minus2;
-   enc->enc_pic.log2_diff_max_min_transform_block_size =
-      pic->seq.log2_diff_max_min_transform_block_size;
-   enc->enc_pic.max_transform_hierarchy_depth_inter = pic->seq.max_transform_hierarchy_depth_inter;
-   enc->enc_pic.max_transform_hierarchy_depth_intra = pic->seq.max_transform_hierarchy_depth_intra;
-   enc->enc_pic.log2_parallel_merge_level_minus2 = pic->pic.log2_parallel_merge_level_minus2;
-   enc->enc_pic.bit_depth_luma_minus8 = pic->seq.bit_depth_luma_minus8;
-   enc->enc_pic.bit_depth_chroma_minus8 = pic->seq.bit_depth_chroma_minus8;
-   enc->enc_pic.nal_unit_type = pic->pic.nal_unit_type;
-   enc->enc_pic.max_num_merge_cand = pic->slice.max_num_merge_cand;
-   enc->enc_pic.sample_adaptive_offset_enabled_flag = pic->seq.sample_adaptive_offset_enabled_flag;
-   enc->enc_pic.pcm_enabled_flag = 0; /*HW not support PCM */
-   enc->enc_pic.sps_temporal_mvp_enabled_flag = pic->seq.sps_temporal_mvp_enabled_flag;
-   radeon_uvd_enc_get_vui_param(enc, pic);
 }
 
 static int flush(struct radeon_uvd_encoder *enc, unsigned flags, struct pipe_fence_handle **fence)
@@ -307,7 +250,6 @@ struct pipe_video_codec *radeon_uvd_create_encoder(struct pipe_context *context,
    enc->base.fence_wait = radeon_uvd_enc_fence_wait;
    enc->base.destroy_fence = radeon_uvd_enc_destroy_fence;
    enc->get_buffer = get_buffer;
-   enc->bits_in_shifter = 0;
    enc->screen = context->screen;
    enc->ws = ws;
 
