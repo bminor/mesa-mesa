@@ -432,6 +432,7 @@ fail:
 VkResult
 radv_device_init_meta(struct radv_device *device)
 {
+   const struct radv_physical_device *pdev = radv_device_physical(device);
    VkResult result;
 
    memset(&device->meta_state, 0, sizeof(device->meta_state));
@@ -454,9 +455,13 @@ radv_device_init_meta(struct radv_device *device)
 
    mtx_init(&device->meta_state.mtx, mtx_plain);
 
-   result = radv_device_init_meta_etc_decode_state(device, on_demand);
-   if (result != VK_SUCCESS)
-      return result;
+   if (pdev->emulate_etc2) {
+      device->meta_state.etc_decode.allocator = &device->meta_state.alloc;
+      device->meta_state.etc_decode.nir_options = &pdev->nir_options[MESA_SHADER_COMPUTE];
+      device->meta_state.etc_decode.pipeline_cache = device->meta_state.cache;
+
+      vk_texcompress_etc2_init(&device->vk, &device->meta_state.etc_decode);
+   }
 
    result = radv_device_init_meta_astc_decode_state(device, on_demand);
    if (result != VK_SUCCESS)
@@ -482,7 +487,11 @@ radv_device_init_meta(struct radv_device *device)
 void
 radv_device_finish_meta(struct radv_device *device)
 {
-   radv_device_finish_meta_etc_decode_state(device);
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+
+   if (pdev->emulate_etc2)
+      vk_texcompress_etc2_finish(&device->vk, &device->meta_state.etc_decode);
+
    radv_device_finish_meta_astc_decode_state(device);
    radv_device_finish_accel_struct_build_state(device);
 
