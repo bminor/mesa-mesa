@@ -331,7 +331,6 @@ dri3_create_image_khr_pixmap(_EGLDisplay *disp, _EGLContext *ctx,
    return &dri2_img->base;
 }
 
-#ifdef HAVE_X11_DRM
 static _EGLImage *
 dri3_create_image_khr_pixmap_from_buffers(_EGLDisplay *disp, _EGLContext *ctx,
                                           EGLClientBuffer buffer,
@@ -384,23 +383,18 @@ dri3_create_image_khr_pixmap_from_buffers(_EGLDisplay *disp, _EGLContext *ctx,
 
    return &dri2_img->base;
 }
-#endif
 
 static _EGLImage *
 dri3_create_image_khr(_EGLDisplay *disp, _EGLContext *ctx, EGLenum target,
                       EGLClientBuffer buffer, const EGLint *attr_list)
 {
-#ifdef HAVE_X11_DRM
    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
-#endif
 
    switch (target) {
    case EGL_NATIVE_PIXMAP_KHR:
-#ifdef HAVE_X11_DRM
       if (dri2_dpy->multibuffers_available)
          return dri3_create_image_khr_pixmap_from_buffers(disp, ctx, buffer,
                                                           attr_list);
-#endif
       return dri3_create_image_khr_pixmap(disp, ctx, buffer, attr_list);
    default:
       return dri2_create_image_khr(disp, ctx, target, buffer, attr_list);
