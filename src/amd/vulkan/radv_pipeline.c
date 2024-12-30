@@ -505,6 +505,12 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
       NIR_PASS(_, stage->nir, nir_clear_shared_memory, shared_size, chunk_size);
    }
 
+   /* This must be after lowering resources to descriptor loads and before lowering intrinsics
+    * to args and lowering int64.
+    */
+   if (!radv_use_llvm_for_stage(pdev, stage->stage))
+      ac_nir_optimize_uniform_atomics(stage->nir);
+
    NIR_PASS(_, stage->nir, nir_lower_int64);
 
    NIR_PASS(_, stage->nir, nir_opt_idiv_const, 8);

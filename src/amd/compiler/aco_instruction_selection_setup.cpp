@@ -364,16 +364,10 @@ init_context(isel_context* ctx, nir_shader* shader)
    ctx->ub_config.max_workgroup_size[1] = 1024;
    ctx->ub_config.max_workgroup_size[2] = 1024;
 
-   ac_nir_opt_shared_append(shader);
-
    uint32_t options =
       shader->options->divergence_analysis_options | nir_divergence_ignore_undef_if_phi_srcs;
    nir_divergence_analysis_impl(impl, (nir_divergence_options)options);
    shader->info.divergence_analysis_run = true;
-   if (nir_opt_uniform_atomics(shader, false)) {
-      nir_lower_int64(shader);
-      nir_divergence_analysis_impl(impl, (nir_divergence_options)options);
-   }
 
    apply_nuw_to_offsets(ctx, impl);
    ac_nir_flag_smem_for_loads(shader, ctx->program->gfx_level, false, true);

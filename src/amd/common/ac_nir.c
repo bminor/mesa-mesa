@@ -2208,3 +2208,15 @@ ac_nir_lower_mem_access_bit_sizes(nir_shader *shader, enum amd_gfx_level gfx_lev
    };
    return nir_lower_mem_access_bit_sizes(shader, &lower_mem_access_options);
 }
+
+bool
+ac_nir_optimize_uniform_atomics(nir_shader *nir)
+{
+   bool progress = false;
+   NIR_PASS(progress, nir, ac_nir_opt_shared_append);
+
+   nir_divergence_analysis(nir);
+   NIR_PASS(progress, nir, nir_opt_uniform_atomics, false);
+
+   return progress;
+}

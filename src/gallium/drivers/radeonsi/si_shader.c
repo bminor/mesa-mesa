@@ -2582,7 +2582,6 @@ static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_
             });
 
    NIR_PASS(progress, nir, nir_lower_pack);
-   NIR_PASS(progress, nir, nir_lower_int64);
    NIR_PASS(progress, nir, nir_opt_idiv_const, 8);
    NIR_PASS(progress, nir, nir_lower_idiv,
             &(nir_lower_idiv_options){
@@ -2635,6 +2634,13 @@ static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_
    /* This must be after vectorization because it causes bindings_different_restrict() to fail. */
    NIR_PASS(progress, nir, si_nir_lower_resource, shader, args);
 
+   /* This must be after lowering resources to descriptor loads and before lowering intrinsics
+    * to args and lowering int64.
+    */
+   if (nir->info.use_aco_amd)
+      progress |= ac_nir_optimize_uniform_atomics(nir);
+
+   NIR_PASS(progress, nir, nir_lower_int64);
    NIR_PASS(progress, nir, si_nir_lower_abi, shader, args);
    NIR_PASS(progress, nir, ac_nir_lower_intrinsics_to_args, sel->screen->info.gfx_level,
             sel->screen->info.has_ls_vgpr_init_bug,
