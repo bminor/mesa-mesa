@@ -164,13 +164,6 @@ struct radv_meta_state {
    } resolve_fragment;
 
    struct {
-      VkPipelineLayout p_layout;
-      VkPipeline cmask_eliminate_pipeline;
-      VkPipeline fmask_decompress_pipeline;
-      VkPipeline dcc_decompress_pipeline;
-   } fast_clear_flush;
-
-   struct {
       VkPipelineLayout encode_p_layout;
       VkPipeline encode_pipeline;
       VkPipeline encode_compact_pipeline;
