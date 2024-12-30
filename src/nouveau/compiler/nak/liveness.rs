@@ -320,7 +320,7 @@ impl SimpleLiveness {
             for (b_idx, bl) in l.blocks.iter_mut().enumerate().rev() {
                 // Compute live-out
                 for sb_idx in func.blocks.succ_indices(b_idx) {
-                    to_do |= bl.live_out.union_with(&live_in[*sb_idx]);
+                    to_do |= bl.live_out.union_with(live_in[*sb_idx].s(..));
                 }
 
                 tmp.clear();
@@ -329,7 +329,7 @@ impl SimpleLiveness {
                         & !bl.defs.get_word(w)
                 });
 
-                to_do |= live_in[b_idx].union_with(&tmp);
+                to_do |= live_in[b_idx].union_with(tmp.s(..));
             }
         }
 

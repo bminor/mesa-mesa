@@ -166,11 +166,22 @@ impl BitSet {
         }
     }
 
-    pub fn union_with(&mut self, other: &BitSet) -> bool {
+    /// Calculate the union of self and an expression, and store the result in
+    /// self.
+    ///
+    /// Returns true if the value of self changes, or false otherwise. If you
+    /// don't need the return value of this function, consider using the `|=`
+    /// operator instead.
+    pub fn union_with<B>(&mut self, other: BitSetStream<B>) -> bool
+    where
+        B: BitSetStreamTrait,
+    {
+        let mut other = other.0;
         let mut added_bits = false;
-        self.reserve_words(other.words.len());
-        for w in 0..other.words.len() {
-            let uw = self.words[w] | other.words[w];
+        let other_len = other.len();
+        self.reserve_words(other_len);
+        for w in 0..other_len {
+            let uw = self.words[w] | other.next();
             if uw != self.words[w] {
                 added_bits = true;
                 self.words[w] = uw;
@@ -480,6 +491,16 @@ mod tests {
         let mut actual_2 = b.clone();
         actual_2 |= a.s(..);
         assert_eq!(to_vec(&actual_2), &expected[..]);
+
+        let mut actual_3 = a.clone();
+        assert_eq!(actual_3.union_with(a.s(..)), false);
+        assert_eq!(actual_3.union_with(b.s(..)), true);
+        assert_eq!(to_vec(&actual_3), &expected[..]);
+
+        let mut actual_4 = b.clone();
+        assert_eq!(actual_4.union_with(b.s(..)), false);
+        assert_eq!(actual_4.union_with(a.s(..)), true);
+        assert_eq!(to_vec(&actual_4), &expected[..]);
     }
 
     #[test]
