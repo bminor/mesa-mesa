@@ -22,8 +22,8 @@
 
 use std::cmp::{max, min};
 use std::ops::{
-    BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Range,
-    RangeFull, Sub, SubAssign,
+    BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, RangeFull,
+    Sub, SubAssign,
 };
 
 #[derive(Clone)]
@@ -75,10 +75,6 @@ impl BitSet {
         BitSetIter::new(self)
     }
 
-    pub fn get_word(&self, word: usize) -> u32 {
-        self.words.get(word).cloned().unwrap_or(0)
-    }
-
     pub fn next_unset(&self, start: usize) -> usize {
         if start >= self.words.len() * 32 {
             return start;
@@ -113,43 +109,6 @@ impl BitSet {
         let exists = self.words[w] & (1_u32 << b) != 0;
         self.words[w] &= !(1_u32 << b);
         exists
-    }
-
-    #[inline]
-    fn set_word(
-        &mut self,
-        w: usize,
-        mask: u32,
-        f: &mut impl FnMut(usize) -> u32,
-    ) {
-        self.words[w] = (self.words[w] & !mask) | (f(w) & mask);
-    }
-
-    pub fn set_words(
-        &mut self,
-        bits: Range<usize>,
-        mut f: impl FnMut(usize) -> u32,
-    ) {
-        if bits.is_empty() {
-            return;
-        }
-
-        let first_word = bits.start / 32;
-        let last_word = (bits.end - 1) / 32;
-        let start_mask = !0_u32 << (bits.start % 32);
-        let end_mask = !0_u32 >> (31 - ((bits.end - 1) % 32));
-
-        self.reserve(last_word + 1);
-
-        if first_word == last_word {
-            self.set_word(first_word, start_mask & end_mask, &mut f);
-        } else {
-            self.set_word(first_word, start_mask, &mut f);
-            for w in (first_word + 1)..last_word {
-                self.set_word(w, !0, &mut f);
-            }
-            self.set_word(last_word, end_mask, &mut f);
-        }
     }
 
     /// Evaluate an expression and store its value in self
