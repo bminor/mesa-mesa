@@ -190,7 +190,8 @@ lower_rt_intrinsics_impl(nir_function_impl *impl,
          case nir_intrinsic_load_ray_object_origin:
             if (stage == MESA_SHADER_CLOSEST_HIT) {
                struct brw_nir_rt_bvh_instance_leaf_defs leaf;
-               brw_nir_rt_load_bvh_instance_leaf(b, &leaf, hit_in.inst_leaf_ptr);
+               brw_nir_rt_load_bvh_instance_leaf(b, &leaf, hit_in.inst_leaf_ptr,
+                                                 devinfo);
 
                sysval = nir_build_vec3_mat_mult_col_major(
                   b, world_ray_in.orig, leaf.world_to_object, true);
@@ -202,7 +203,8 @@ lower_rt_intrinsics_impl(nir_function_impl *impl,
          case nir_intrinsic_load_ray_object_direction:
             if (stage == MESA_SHADER_CLOSEST_HIT) {
                struct brw_nir_rt_bvh_instance_leaf_defs leaf;
-               brw_nir_rt_load_bvh_instance_leaf(b, &leaf, hit_in.inst_leaf_ptr);
+               brw_nir_rt_load_bvh_instance_leaf(b, &leaf, hit_in.inst_leaf_ptr,
+                                                 devinfo);
 
                sysval = nir_build_vec3_mat_mult_col_major(
                   b, world_ray_in.dir, leaf.world_to_object, false);
@@ -231,21 +233,21 @@ lower_rt_intrinsics_impl(nir_function_impl *impl,
 
          case nir_intrinsic_load_instance_id: {
             struct brw_nir_rt_bvh_instance_leaf_defs leaf;
-            brw_nir_rt_load_bvh_instance_leaf(b, &leaf, hit_in.inst_leaf_ptr);
+            brw_nir_rt_load_bvh_instance_leaf(b, &leaf, hit_in.inst_leaf_ptr, devinfo);
             sysval = leaf.instance_index;
             break;
          }
 
          case nir_intrinsic_load_ray_object_to_world: {
             struct brw_nir_rt_bvh_instance_leaf_defs leaf;
-            brw_nir_rt_load_bvh_instance_leaf(b, &leaf, hit_in.inst_leaf_ptr);
+            brw_nir_rt_load_bvh_instance_leaf(b, &leaf, hit_in.inst_leaf_ptr, devinfo);
             sysval = leaf.object_to_world[nir_intrinsic_column(intrin)];
             break;
          }
 
          case nir_intrinsic_load_ray_world_to_object: {
             struct brw_nir_rt_bvh_instance_leaf_defs leaf;
-            brw_nir_rt_load_bvh_instance_leaf(b, &leaf, hit_in.inst_leaf_ptr);
+            brw_nir_rt_load_bvh_instance_leaf(b, &leaf, hit_in.inst_leaf_ptr, devinfo);
             sysval = leaf.world_to_object[nir_intrinsic_column(intrin)];
             break;
          }
@@ -286,7 +288,7 @@ lower_rt_intrinsics_impl(nir_function_impl *impl,
 
          case nir_intrinsic_load_ray_instance_custom_index: {
             struct brw_nir_rt_bvh_instance_leaf_defs leaf;
-            brw_nir_rt_load_bvh_instance_leaf(b, &leaf, hit_in.inst_leaf_ptr);
+            brw_nir_rt_load_bvh_instance_leaf(b, &leaf, hit_in.inst_leaf_ptr, devinfo);
             sysval = leaf.instance_id;
             break;
          }

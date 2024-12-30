@@ -1068,14 +1068,22 @@ struct brw_nir_rt_bvh_instance_leaf_defs {
 static inline void
 brw_nir_rt_load_bvh_instance_leaf(nir_builder *b,
                                   struct brw_nir_rt_bvh_instance_leaf_defs *defs,
-                                  nir_def *leaf_addr)
+                                  nir_def *leaf_addr,
+                                  const struct intel_device_info *devinfo)
 {
    nir_def *leaf_desc = brw_nir_rt_load(b, leaf_addr, 4, 2, 32);
 
-   defs->shader_index =
-      nir_iand_imm(b, nir_channel(b, leaf_desc, 0), (1 << 24) - 1);
-   defs->contribution_to_hit_group_index =
-      nir_iand_imm(b, nir_channel(b, leaf_desc, 1), (1 << 24) - 1);
+   if (devinfo->ver >= 30) {
+      /* Not used for Xe3+, just putting 0 for consistency */
+      defs->shader_index = nir_imm_int(b, 0);
+      defs->contribution_to_hit_group_index =
+         nir_iand_imm(b, nir_channel(b, leaf_desc, 0), (1 << 24) - 1);
+   } else {
+      defs->shader_index =
+         nir_iand_imm(b, nir_channel(b, leaf_desc, 0), (1 << 24) - 1);
+      defs->contribution_to_hit_group_index =
+         nir_iand_imm(b, nir_channel(b, leaf_desc, 1), (1 << 24) - 1);
+   }
 
    defs->world_to_object[0] =
       brw_nir_rt_load(b, nir_iadd_imm(b, leaf_addr, 16), 4, 3, 32);

@@ -403,21 +403,24 @@ lower_ray_query_intrinsic(nir_builder *b,
 
       case nir_ray_query_value_intersection_instance_custom_index: {
          struct brw_nir_rt_bvh_instance_leaf_defs leaf;
-         brw_nir_rt_load_bvh_instance_leaf(b, &leaf, hit_in.inst_leaf_ptr);
+         brw_nir_rt_load_bvh_instance_leaf(b, &leaf, hit_in.inst_leaf_ptr,
+                                           state->devinfo);
          sysval = leaf.instance_id;
          break;
       }
 
       case nir_ray_query_value_intersection_instance_id: {
          struct brw_nir_rt_bvh_instance_leaf_defs leaf;
-         brw_nir_rt_load_bvh_instance_leaf(b, &leaf, hit_in.inst_leaf_ptr);
+         brw_nir_rt_load_bvh_instance_leaf(b, &leaf, hit_in.inst_leaf_ptr,
+                                           state->devinfo);
          sysval = leaf.instance_index;
          break;
       }
 
       case nir_ray_query_value_intersection_instance_sbt_index: {
          struct brw_nir_rt_bvh_instance_leaf_defs leaf;
-         brw_nir_rt_load_bvh_instance_leaf(b, &leaf, hit_in.inst_leaf_ptr);
+         brw_nir_rt_load_bvh_instance_leaf(b, &leaf, hit_in.inst_leaf_ptr,
+                                           state->devinfo);
          sysval = leaf.contribution_to_hit_group_index;
          break;
       }
@@ -453,14 +456,16 @@ lower_ray_query_intrinsic(nir_builder *b,
 
       case nir_ray_query_value_intersection_object_to_world: {
          struct brw_nir_rt_bvh_instance_leaf_defs leaf;
-         brw_nir_rt_load_bvh_instance_leaf(b, &leaf, hit_in.inst_leaf_ptr);
+         brw_nir_rt_load_bvh_instance_leaf(b, &leaf, hit_in.inst_leaf_ptr,
+                                           state->devinfo);
          sysval = leaf.object_to_world[nir_intrinsic_column(intrin)];
          break;
       }
 
       case nir_ray_query_value_intersection_world_to_object: {
          struct brw_nir_rt_bvh_instance_leaf_defs leaf;
-         brw_nir_rt_load_bvh_instance_leaf(b, &leaf, hit_in.inst_leaf_ptr);
+         brw_nir_rt_load_bvh_instance_leaf(b, &leaf, hit_in.inst_leaf_ptr,
+                                           state->devinfo);
          sysval = leaf.world_to_object[nir_intrinsic_column(intrin)];
          break;
       }
