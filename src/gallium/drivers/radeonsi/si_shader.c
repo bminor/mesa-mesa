@@ -2595,12 +2595,6 @@ static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_
       NIR_PASS_V(nir, nir_clear_shared_memory, shared_size, chunk_size);
    }
 
-   NIR_PASS(progress, nir, si_nir_lower_abi, shader, args);
-   NIR_PASS(progress, nir, ac_nir_lower_intrinsics_to_args, sel->screen->info.gfx_level,
-            sel->screen->info.has_ls_vgpr_init_bug,
-            si_select_hw_stage(nir->info.stage, key, sel->screen->info.gfx_level),
-            shader->wave_size, si_get_max_workgroup_size(shader), &args->ac);
-
    if (progress) {
       si_nir_opts(sel->screen, nir, false);
       progress = false;
@@ -2640,6 +2634,12 @@ static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_
 
    /* This must be after vectorization because it causes bindings_different_restrict() to fail. */
    NIR_PASS(progress, nir, si_nir_lower_resource, shader, args);
+
+   NIR_PASS(progress, nir, si_nir_lower_abi, shader, args);
+   NIR_PASS(progress, nir, ac_nir_lower_intrinsics_to_args, sel->screen->info.gfx_level,
+            sel->screen->info.has_ls_vgpr_init_bug,
+            si_select_hw_stage(nir->info.stage, key, sel->screen->info.gfx_level),
+            shader->wave_size, si_get_max_workgroup_size(shader), &args->ac);
 
    /* LLVM keep non-uniform sampler as index, so can't do this in NIR.
     * Must be done after si_nir_lower_resource().
