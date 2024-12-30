@@ -4822,7 +4822,7 @@ brw_reduce_op_for_nir_reduction_op(nir_op op)
 }
 
 static brw_reg
-get_nir_image_intrinsic_image(nir_to_brw_state &ntb, const brw::brw_builder &bld,
+get_nir_image_intrinsic_image(nir_to_brw_state &ntb, const brw_builder &bld,
                               nir_intrinsic_instr *instr)
 {
    brw_reg surf_index = get_nir_src_imm(ntb, instr->src[0]);
@@ -4833,7 +4833,7 @@ get_nir_image_intrinsic_image(nir_to_brw_state &ntb, const brw::brw_builder &bld
 }
 
 static brw_reg
-get_nir_buffer_intrinsic_index(nir_to_brw_state &ntb, const brw::brw_builder &bld,
+get_nir_buffer_intrinsic_index(nir_to_brw_state &ntb, const brw_builder &bld,
                                nir_intrinsic_instr *instr, bool *no_mask_handle = NULL)
 {
    /* SSBO stores are weird in that their index is in src[1] */
@@ -4878,7 +4878,7 @@ get_nir_buffer_intrinsic_index(nir_to_brw_state &ntb, const brw::brw_builder &bl
  */
 static brw_reg
 swizzle_nir_scratch_addr(nir_to_brw_state &ntb,
-                         const brw::brw_builder &bld,
+                         const brw_builder &bld,
                          const nir_src &nir_addr_src,
                          bool in_dwords)
 {

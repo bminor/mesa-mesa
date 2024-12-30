@@ -1602,7 +1602,7 @@ bool brw_should_print_shader(const nir_shader *shader, uint64_t debug_flag)
 
 namespace brw {
    brw_reg
-   fetch_payload_reg(const brw::brw_builder &bld, uint8_t regs[2],
+   fetch_payload_reg(const brw_builder &bld, uint8_t regs[2],
                      brw_reg_type type, unsigned n)
    {
       if (!regs[0])
@@ -1610,7 +1610,7 @@ namespace brw {
 
       if (bld.dispatch_width() > 16) {
          const brw_reg tmp = bld.vgrf(type, n);
-         const brw::brw_builder hbld = bld.exec_all().group(16, 0);
+         const brw_builder hbld = bld.exec_all().group(16, 0);
          const unsigned m = bld.dispatch_width() / hbld.dispatch_width();
          brw_reg *const components = new brw_reg[m * n];
 
@@ -1631,7 +1631,7 @@ namespace brw {
    }
 
    brw_reg
-   fetch_barycentric_reg(const brw::brw_builder &bld, uint8_t regs[2])
+   fetch_barycentric_reg(const brw_builder &bld, uint8_t regs[2])
    {
       if (!regs[0])
          return brw_reg();
@@ -1639,7 +1639,7 @@ namespace brw {
          return fetch_payload_reg(bld, regs, BRW_TYPE_F, 2);
 
       const brw_reg tmp = bld.vgrf(BRW_TYPE_F, 2);
-      const brw::brw_builder hbld = bld.exec_all().group(8, 0);
+      const brw_builder hbld = bld.exec_all().group(8, 0);
       const unsigned m = bld.dispatch_width() / hbld.dispatch_width();
       brw_reg *const components = new brw_reg[2 * m];
 

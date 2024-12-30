@@ -606,7 +606,7 @@ brw_lower_alu_restrictions(fs_visitor &s)
             assert(!inst->saturate);
             assert(!inst->src[0].abs);
             assert(!inst->src[0].negate);
-            const brw::brw_builder ibld(&s, block, inst);
+            const brw_builder ibld(&s, block, inst);
 
             enum brw_reg_type type = brw_type_with_size(inst->dst.type, 32);
 
@@ -630,7 +630,7 @@ brw_lower_alu_restrictions(fs_visitor &s)
             assert(!inst->src[0].abs && !inst->src[0].negate);
             assert(!inst->src[1].abs && !inst->src[1].negate);
             assert(inst->conditional_mod == BRW_CONDITIONAL_NONE);
-            const brw::brw_builder ibld(&s, block, inst);
+            const brw_builder ibld(&s, block, inst);
 
             enum brw_reg_type type = brw_type_with_size(inst->dst.type, 32);
 
