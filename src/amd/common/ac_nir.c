@@ -47,6 +47,22 @@ ac_nir_load_arg_at_offset(nir_builder *b, const struct ac_shader_args *ac_args,
       return nir_load_vector_arg_amd(b, num_components, .base = arg_index);
 }
 
+nir_def *
+ac_nir_load_arg(nir_builder *b, const struct ac_shader_args *ac_args, struct ac_arg arg)
+{
+   return ac_nir_load_arg_at_offset(b, ac_args, arg, 0);
+}
+
+nir_def *
+ac_nir_load_arg_upper_bound(nir_builder *b, const struct ac_shader_args *ac_args, struct ac_arg arg,
+                            unsigned upper_bound)
+{
+   nir_def *value = ac_nir_load_arg_at_offset(b, ac_args, arg, 0);
+   nir_intrinsic_set_arg_upper_bound_u32_amd(nir_instr_as_intrinsic(value->parent_instr),
+                                             upper_bound);
+   return value;
+}
+
 void
 ac_nir_store_arg(nir_builder *b, const struct ac_shader_args *ac_args, struct ac_arg arg,
                  nir_def *val)
