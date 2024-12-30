@@ -107,6 +107,7 @@ enum radeon_family
    CHIP_NAVI10,         /* Radeon 5600, 5700 */
    CHIP_NAVI12,         /* Radeon Pro 5600M */
    CHIP_NAVI14,         /* Radeon 5300, 5500 */
+   CHIP_GFX1013,        /* AMD BC-250 */
    /* GFX10.3 (RDNA 2) */
    CHIP_NAVI21,         /* Radeon 6800, 6900 (formerly "Sienna Cichlid") */
    CHIP_NAVI22,         /* Radeon 6700 (formerly "Navy Flounder") */

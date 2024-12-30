@@ -1771,7 +1771,7 @@ ASSERTED static bool is_dcc_supported_by_L2(const struct radeon_info *info,
       return single_indep && valid_64b;
    }
 
-   if (info->family == CHIP_NAVI10) {
+   if (info->family == CHIP_NAVI10 || info->family == CHIP_GFX1013) {
       /* Only independent 128B blocks are supported. */
       return single_indep && valid_128b;
    }

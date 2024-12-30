@@ -130,6 +130,7 @@ to_clrx_device_name(amd_gfx_level gfx_level, radeon_family family)
       switch (family) {
       case CHIP_NAVI10: return "gfx1010";
       case CHIP_NAVI12: return "gfx1011";
+      case CHIP_GFX1013: return "gfx1013";
       default: return nullptr;
       }
    default: return nullptr;

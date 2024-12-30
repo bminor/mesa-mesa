@@ -804,6 +804,7 @@ bool ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
          identify_chip(NAVI10);
          identify_chip(NAVI12);
          identify_chip(NAVI14);
+         identify_chip(GFX1013);
          identify_chip(NAVI21);
          identify_chip(NAVI22);
          identify_chip(NAVI23);
@@ -1208,7 +1209,7 @@ bool ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
     */
    info->has_accelerated_dot_product =
       info->family == CHIP_VEGA20 ||
-      (info->family >= CHIP_MI100 && info->family != CHIP_NAVI10);
+      (info->family >= CHIP_MI100 && info->family != CHIP_NAVI10 && info->family != CHIP_GFX1013);
 
    /* TODO: Figure out how to use LOAD_CONTEXT_REG on GFX6-GFX7. */
    info->has_load_ctx_reg_pkt =
@@ -1339,7 +1340,7 @@ bool ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
    info->sdma_supports_sparse = info->sdma_ip_version >= SDMA_4_0;
 
    /* SDMA v5.0+ (GFX10+) supports DCC and HTILE, but Navi 10 has issues with it according to PAL. */
-   info->sdma_supports_compression = info->sdma_ip_version >= SDMA_5_0 && info->family != CHIP_NAVI10;
+   info->sdma_supports_compression = info->sdma_ip_version >= SDMA_5_0 && info->family != CHIP_NAVI10 && info->family != CHIP_GFX1013;
 
    /* Get the number of good compute units. */
    info->num_cu = 0;
@@ -1476,6 +1477,7 @@ bool ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
       case CHIP_RENOIR:
       case CHIP_NAVI10:
       case CHIP_NAVI12:
+      case CHIP_GFX1013:
       case CHIP_NAVI21:
       case CHIP_NAVI22:
       case CHIP_NAVI23:
@@ -1725,7 +1727,9 @@ bool ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
       info->has_set_sh_pairs_packed = info->register_shadowing_required;
    }
 
-   info->has_image_bvh_intersect_ray = info->gfx_level >= GFX10_3;
+   /* GFX1013 is GFX10 plus ray tracing instructions */
+   info->has_image_bvh_intersect_ray = info->gfx_level >= GFX10_3 ||
+                                       info->family == CHIP_GFX1013;
 
    set_custom_cu_en_mask(info);
 

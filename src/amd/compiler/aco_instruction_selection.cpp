@@ -5910,7 +5910,7 @@ visit_bvh64_intersect_ray_amd(isel_context* ctx, nir_intrinsic_instr* instr)
       node, tmax, origin, dir, inv_dir,
    };
 
-   if (bld.program->gfx_level == GFX10_3) {
+   if (bld.program->gfx_level == GFX10_3 || bld.program->family == CHIP_GFX1013) {
       std::vector<Temp> scalar_args;
       for (Temp tmp : args) {
          for (unsigned i = 0; i < tmp.size(); i++)

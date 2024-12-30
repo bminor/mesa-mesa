@@ -90,6 +90,7 @@
 #define AMDGPU_NAVI10_RANGE     0x01, 0x0A //# 1  <= x < 10
 #define AMDGPU_NAVI12_RANGE     0x0A, 0x14 //# 10 <= x < 20
 #define AMDGPU_NAVI14_RANGE     0x14, 0x28 //# 20 <= x < 40
+#define AMDGPU_GFX1013_RANGE    0x84, 0x85 //# 132 <= x < 133
 #define AMDGPU_NAVI21_RANGE     0x28, 0x32 //# 40  <= x < 50
 #define AMDGPU_NAVI22_RANGE     0x32, 0x3C //# 50  <= x < 60
 #define AMDGPU_NAVI23_RANGE     0x3C, 0x46 //# 60  <= x < 70
