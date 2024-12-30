@@ -365,7 +365,7 @@ create_rect_list_pipeline(struct vk_device *device,
 
    info_local.pDynamicState = &dyn_info;
 
-   VkResult result = disp->CreateGraphicsPipelines(_device, VK_NULL_HANDLE,
+   VkResult result = disp->CreateGraphicsPipelines(_device, meta->pipeline_cache,
                                                    1, &info_local, NULL,
                                                    pipeline_out);
 
@@ -463,7 +463,7 @@ vk_meta_create_graphics_pipeline(struct vk_device *device,
                                          &info_local,
                                          &pipeline);
    } else {
-      result = disp->CreateGraphicsPipelines(_device, VK_NULL_HANDLE,
+      result = disp->CreateGraphicsPipelines(_device, meta->pipeline_cache,
                                              1, &info_local,
                                              NULL, &pipeline);
    }
