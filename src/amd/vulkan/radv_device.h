@@ -142,11 +142,6 @@ struct radv_meta_state {
    } blit2d[MAX_SAMPLES_LOG2];
 
    struct {
-      VkPipelineLayout p_layout;
-      VkPipeline pipeline[NUM_META_FS_KEYS];
-   } resolve;
-
-   struct {
       VkDescriptorSetLayout ds_layout;
       VkPipelineLayout p_layout;
 

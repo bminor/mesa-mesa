@@ -459,10 +459,6 @@ radv_device_init_meta(struct radv_device *device)
    if (result != VK_SUCCESS)
       return result;
 
-   result = radv_device_init_meta_resolve_state(device, on_demand);
-   if (result != VK_SUCCESS)
-      return result;
-
    result = radv_device_init_meta_blit_state(device, on_demand);
    if (result != VK_SUCCESS)
       return result;
@@ -518,7 +514,6 @@ radv_device_finish_meta(struct radv_device *device)
    radv_device_finish_meta_astc_decode_state(device);
    radv_device_finish_accel_struct_build_state(device);
    radv_device_finish_meta_clear_state(device);
-   radv_device_finish_meta_resolve_state(device);
    radv_device_finish_meta_blit_state(device);
    radv_device_finish_meta_blit2d_state(device);
    radv_device_finish_meta_fast_clear_flush_state(device);
