@@ -614,34 +614,3 @@ radv_break_on_count(nir_builder *b, nir_variable *var, nir_def *count)
    counter = nir_iadd_imm(b, counter, 1);
    nir_store_var(b, var, counter, 0x1);
 }
-
-VkResult
-radv_meta_create_pipeline_layout(struct radv_device *device, VkDescriptorSetLayout *set_layout, uint32_t num_pc_ranges,
-                                 const VkPushConstantRange *pc_ranges, VkPipelineLayout *pipeline_layout)
-{
-   const VkPipelineLayoutCreateInfo pipeline_layout_info = {
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-      .setLayoutCount = !!set_layout,
-      .pSetLayouts = set_layout,
-      .pushConstantRangeCount = num_pc_ranges,
-      .pPushConstantRanges = pc_ranges,
-   };
-
-   return radv_CreatePipelineLayout(radv_device_to_handle(device), &pipeline_layout_info, &device->meta_state.alloc,
-                                    pipeline_layout);
-}
-
-VkResult
-radv_meta_create_descriptor_set_layout(struct radv_device *device, uint32_t num_bindings,
-                                       const VkDescriptorSetLayoutBinding *bindings, VkDescriptorSetLayout *desc_layout)
-{
-   const VkDescriptorSetLayoutCreateInfo desc_layout_info = {
-      .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-      .flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT,
-      .bindingCount = num_bindings,
-      .pBindings = bindings,
-   };
-
-   return radv_CreateDescriptorSetLayout(radv_device_to_handle(device), &desc_layout_info, &device->meta_state.alloc,
-                                         desc_layout);
-}
