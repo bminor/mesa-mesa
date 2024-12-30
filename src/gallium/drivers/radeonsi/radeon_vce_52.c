@@ -32,7 +32,9 @@ static void get_rate_control_param(struct rvce_encoder *enc, struct pipe_h264_en
    enc->enc_pic.rc.gop_size = pic->gop_size;
    enc->enc_pic.rc.frame_rate_num = pic->rate_ctrl[0].frame_rate_num;
    enc->enc_pic.rc.frame_rate_den = pic->rate_ctrl[0].frame_rate_den;
-   enc->enc_pic.rc.max_qp = 51;
+   enc->enc_pic.rc.min_qp = pic->rate_ctrl[0].min_qp;
+   enc->enc_pic.rc.max_qp = pic->rate_ctrl[0].max_qp ? pic->rate_ctrl[0].max_qp : 51;
+   enc->enc_pic.rc.max_au_size = pic->rate_ctrl[0].max_au_size;
    enc->enc_pic.rc.vbv_buffer_size = pic->rate_ctrl[0].vbv_buffer_size;
    enc->enc_pic.rc.vbv_buf_lv = pic->rate_ctrl[0].vbv_buf_lv;
    enc->enc_pic.rc.fill_data_enable = pic->rate_ctrl[0].fill_data_enable;
