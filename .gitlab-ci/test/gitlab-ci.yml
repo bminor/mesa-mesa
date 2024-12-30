@@ -280,6 +280,7 @@ yaml-toml-shell-py-test:
     # No need by default to pull the whole repo
     GIT_STRATEGY: none
     # boot2container initrd configuration parameters.
+    B2C_VERSION: v0.9.10
     B2C_JOB_SUCCESS_REGEX: 'hwci: mesa: pass, exit_code: 0\r$'
     B2C_LOG_LEVEL: 6
     B2C_POWEROFF_DELAY: 15
@@ -391,7 +392,7 @@ yaml-toml-shell-py-test:
     - .b2c-test
   variables:
     B2C_KERNEL_URL: 'https://gitlab.freedesktop.org/gfx-ci/ci-tron/-/package_files/519/download'  # Linux 6.1
-    B2C_INITRAMFS_URL: 'https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/v0.9.10/downloads/initramfs.linux_amd64.cpio.xz'
+    B2C_INITRAMFS_URL: 'https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/${B2C_VERSION}/downloads/initramfs.linux_amd64.cpio.xz'
 
 .b2c-x86_64-test-vk:
   extends:
@@ -415,8 +416,8 @@ yaml-toml-shell-py-test:
   extends:
     - .b2c-test
   variables:
-    B2C_INITRAMFS_URL: 'https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/v0.9.10/downloads/initramfs.linux_arm64.cpio.xz'
-    B2C_KERNEL_URL: 'https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/v0.9.10/downloads/linux-arm64'
+    B2C_INITRAMFS_URL: 'https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/${B2C_VERSION}/downloads/initramfs.linux_arm64.cpio.xz'
+    B2C_KERNEL_URL: 'https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/${B2C_VERSION}/downloads/linux-arm64'
 
 .b2c-arm64-test-vk:
   extends:
