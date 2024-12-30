@@ -111,9 +111,6 @@ void radv_device_finish_meta_clear_state(struct radv_device *device);
 VkResult radv_device_init_meta_resolve_state(struct radv_device *device, bool on_demand);
 void radv_device_finish_meta_resolve_state(struct radv_device *device);
 
-VkResult radv_device_init_meta_depth_decomp_state(struct radv_device *device, bool on_demand);
-void radv_device_finish_meta_depth_decomp_state(struct radv_device *device);
-
 VkResult radv_device_init_meta_fast_clear_flush_state(struct radv_device *device, bool on_demand);
 void radv_device_finish_meta_fast_clear_flush_state(struct radv_device *device);
 
