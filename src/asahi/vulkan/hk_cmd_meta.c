@@ -59,6 +59,7 @@ hk_device_init_meta(struct hk_device *dev)
 
    dev->meta.use_gs_for_layer = false;
    dev->meta.use_stencil_export = true;
+   dev->meta.use_rect_list_pipeline = true;
    dev->meta.cmd_bind_map_buffer = hk_cmd_bind_map_buffer;
    dev->meta.max_bind_map_buffer_size_B = 64 * 1024;
 

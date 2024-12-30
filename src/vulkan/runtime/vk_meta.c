@@ -457,8 +457,8 @@ vk_meta_create_graphics_pipeline(struct vk_device *device,
    }
 
    VkPipeline pipeline;
-   if (info_local.pInputAssemblyState->topology ==
-       VK_PRIMITIVE_TOPOLOGY_META_RECT_LIST_MESA) {
+   if (meta->use_rect_list_pipeline &&
+       info_local.pInputAssemblyState->topology == VK_PRIMITIVE_TOPOLOGY_META_RECT_LIST_MESA) {
       result = create_rect_list_pipeline(device, meta,
                                          &info_local,
                                          &pipeline);

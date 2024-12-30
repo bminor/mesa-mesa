@@ -109,6 +109,8 @@ struct vk_meta_device {
    bool use_gs_for_layer;
    bool use_stencil_export;
 
+   bool use_rect_list_pipeline;
+
    struct {
       /* Optimal workgroup size for each possible chunk size. This should be
        * chosen to keep things cache-friendly (something big enough to maximize
