@@ -104,7 +104,7 @@
         "description": "aco/optimizer: fix signed extract of sub dword temps with SDWA",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6cb9d39bc2779513fcba3e9b19858d210e7dfed1",
         "notes": null
