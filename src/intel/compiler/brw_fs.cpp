@@ -1588,7 +1588,7 @@ brw_shader_phase_update(fs_visitor &s, enum brw_shader_phase phase)
 {
    assert(phase == s.phase + 1);
    s.phase = phase;
-   brw_fs_validate(s);
+   brw_validate(s);
 }
 
 bool brw_should_print_shader(const nir_shader *shader, uint64_t debug_flag)

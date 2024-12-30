@@ -54,7 +54,6 @@ libintel_compiler_brw_files = files(
   'brw_fs_nir.cpp',
   'brw_fs_reg_allocate.cpp',
   'brw_fs_thread_payload.cpp',
-  'brw_fs_validate.cpp',
   'brw_fs_visitor.cpp',
   'brw_ir.h',
   'brw_ir_allocator.h',
@@ -112,6 +111,7 @@ libintel_compiler_brw_files = files(
   'brw_schedule_instructions.cpp',
   'brw_shader.cpp',
   'brw_simd_selection.cpp',
+  'brw_validate.cpp',
   'brw_vue_map.c',
   'brw_workaround.cpp',
 )

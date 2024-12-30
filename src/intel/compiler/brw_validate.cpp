@@ -271,7 +271,7 @@ brw_validate_instruction_phase(const fs_visitor &s, fs_inst *inst)
 }
 
 void
-brw_fs_validate(const fs_visitor &s)
+brw_validate(const fs_visitor &s)
 {
    const intel_device_info *devinfo = s.devinfo;
 
