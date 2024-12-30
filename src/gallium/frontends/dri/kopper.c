@@ -52,10 +52,6 @@
 #include "loader_dri3_helper.h"
 #endif
 
-static struct dri_drawable *
-kopper_create_drawable(struct dri_screen *screen, const struct gl_config *visual,
-                       bool isPixmap, void *loaderPrivate);
-
 struct pipe_screen *
 kopper_init_screen(struct dri_screen *screen, bool driver_name_is_inferred)
 {
