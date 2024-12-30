@@ -428,6 +428,23 @@ mod tests {
     }
 
     #[test]
+    fn test_next_unset() {
+        for test_range in
+            &[0..0, 42..1337, 1337..1337, 31..32, 32..33, 63..64, 64..65]
+        {
+            let mut set = BitSet::new();
+            for i in test_range.clone() {
+                set.insert(i);
+            }
+            for extra_bit in [17, 34, 39] {
+                assert!(test_range.end != extra_bit);
+                set.insert(extra_bit);
+            }
+            assert_eq!(set.next_unset(test_range.start), test_range.end);
+        }
+    }
+
+    #[test]
     fn test_from_iter() {
         let vec = vec![0, 1, 99];
         let set: BitSet = vec.clone().into_iter().collect();
