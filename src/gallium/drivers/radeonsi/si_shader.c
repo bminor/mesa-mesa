@@ -2671,6 +2671,10 @@ static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_
    if (late_opts)
       si_nir_late_opts(nir);
 
+   NIR_PASS(progress, nir, nir_opt_sink,
+            nir_move_const_undef | nir_move_copies | nir_move_alu | nir_move_comparisons |
+            nir_move_load_ubo | nir_move_load_ssbo);
+
    /* aco only accept scalar const, must be done after si_nir_late_opts()
     * which may generate vec const.
     */
