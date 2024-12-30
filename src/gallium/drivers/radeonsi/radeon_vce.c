@@ -187,6 +187,79 @@ static void rvce_begin_frame(struct pipe_video_codec *encoder, struct pipe_video
    }
 }
 
+static void *si_vce_encode_headers(struct rvce_encoder *enc)
+{
+   unsigned num_slices = 0, num_headers = 0;
+
+   util_dynarray_foreach(&enc->pic.raw_headers, struct pipe_enc_raw_header, header) {
+      if (header->is_slice)
+         num_slices++;
+      num_headers++;
+   }
+
+   if (!num_headers || !num_slices || num_headers == num_slices)
+      return NULL;
+
+   size_t segments_size =
+      sizeof(struct rvce_output_unit_segment) * (num_headers - num_slices + 1);
+   struct rvce_feedback_data *data =
+      CALLOC_VARIANT_LENGTH_STRUCT(rvce_feedback_data, segments_size);
+   if (!data)
+      return NULL;
+
+   uint8_t *ptr = enc->ws->buffer_map(enc->ws, enc->bs_handle, &enc->cs,
+                                      PIPE_MAP_WRITE | RADEON_MAP_TEMPORARY);
+   if (!ptr) {
+      RVID_ERR("Can't map bs buffer.\n");
+      FREE(data);
+      return NULL;
+   }
+
+   unsigned offset = 0;
+   struct rvce_output_unit_segment *slice_segment = NULL;
+
+   util_dynarray_foreach(&enc->pic.raw_headers, struct pipe_enc_raw_header, header) {
+      if (header->is_slice) {
+         if (slice_segment)
+            continue;
+         slice_segment = &data->segments[data->num_segments];
+         slice_segment->is_slice = true;
+      } else {
+         unsigned size;
+         /* Startcode may be 3 or 4 bytes. */
+         const uint8_t nal_byte = header->buffer[header->buffer[2] == 0x1 ? 3 : 4];
+
+         switch (header->type) {
+         case PIPE_H264_NAL_SPS:
+            size = si_vce_write_sps(enc, nal_byte, ptr + offset);
+            break;
+         case PIPE_H264_NAL_PPS:
+            size = si_vce_write_pps(enc, nal_byte, ptr + offset);
+            break;
+         default:
+            assert(header->buffer);
+            memcpy(ptr + offset, header->buffer, header->size);
+            size = header->size;
+            break;
+         }
+         data->segments[data->num_segments].size = size;
+         data->segments[data->num_segments].offset = offset;
+         offset += size;
+      }
+      data->num_segments++;
+   }
+
+   enc->bs_offset = align(offset, 16);
+   assert(enc->bs_offset < enc->bs_size);
+
+   assert(slice_segment);
+   slice_segment->offset = enc->bs_offset;
+
+   enc->ws->buffer_unmap(enc->ws, enc->bs_handle);
+
+   return data;
+}
+
 static void rvce_encode_bitstream(struct pipe_video_codec *encoder,
                                   struct pipe_video_buffer *source,
                                   struct pipe_resource *destination, void **fb)
@@ -194,12 +267,16 @@ static void rvce_encode_bitstream(struct pipe_video_codec *encoder,
    struct rvce_encoder *enc = (struct rvce_encoder *)encoder;
    enc->get_buffer(destination, &enc->bs_handle, NULL);
    enc->bs_size = destination->width0;
+   enc->bs_offset = 0;
 
    *fb = enc->fb = CALLOC_STRUCT(rvid_buffer);
    if (!si_vid_create_buffer(enc->screen, enc->fb, 512, PIPE_USAGE_STAGING)) {
       RVID_ERR("Can't create feedback buffer.\n");
       return;
    }
+
+   enc->fb->user_data = si_vce_encode_headers(enc);
+
    if (!radeon_emitted(&enc->cs, 0))
       enc->session(enc);
    enc->encode(enc);
@@ -222,18 +299,41 @@ static void rvce_get_feedback(struct pipe_video_codec *encoder, void *feedback, 
    struct rvce_encoder *enc = (struct rvce_encoder *)encoder;
    struct rvid_buffer *fb = feedback;
 
-   if (size) {
-      uint32_t *ptr = enc->ws->buffer_map(enc->ws, fb->res->buf, &enc->cs,
-                                          PIPE_MAP_READ_WRITE | RADEON_MAP_TEMPORARY);
+   uint32_t *ptr = enc->ws->buffer_map(enc->ws, fb->res->buf, &enc->cs,
+                                       PIPE_MAP_READ_WRITE | RADEON_MAP_TEMPORARY);
 
-      if (ptr[1]) {
-         *size = ptr[4] - ptr[9];
-      } else {
-         *size = 0;
-      }
-
-      enc->ws->buffer_unmap(enc->ws, fb->res->buf);
+   if (ptr[1]) {
+      *size = ptr[4] - ptr[9];
+   } else {
+      *size = 0;
    }
+
+   enc->ws->buffer_unmap(enc->ws, fb->res->buf);
+
+   metadata->present_metadata = PIPE_VIDEO_FEEDBACK_METADATA_TYPE_CODEC_UNIT_LOCATION;
+
+   if (fb->user_data) {
+      struct rvce_feedback_data *data = fb->user_data;
+      metadata->codec_unit_metadata_count = data->num_segments;
+      for (unsigned i = 0; i < data->num_segments; i++) {
+         metadata->codec_unit_metadata[i].offset = data->segments[i].offset;
+         if (data->segments[i].is_slice) {
+            metadata->codec_unit_metadata[i].size = *size;
+            metadata->codec_unit_metadata[i].flags = 0;
+         } else {
+            metadata->codec_unit_metadata[i].size = data->segments[i].size;
+            metadata->codec_unit_metadata[i].flags = PIPE_VIDEO_CODEC_UNIT_LOCATION_FLAG_SINGLE_NALU;
+         }
+      }
+      FREE(fb->user_data);
+      fb->user_data = NULL;
+   } else {
+      metadata->codec_unit_metadata_count = 1;
+      metadata->codec_unit_metadata[0].offset = 0;
+      metadata->codec_unit_metadata[0].size = *size;
+      metadata->codec_unit_metadata[0].flags = 0;
+   }
+
    // dump_feedback(enc, fb);
    si_vid_destroy_buffer(fb);
    FREE(fb);

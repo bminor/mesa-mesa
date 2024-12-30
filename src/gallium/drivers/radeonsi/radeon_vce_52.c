@@ -9,6 +9,7 @@
 #include "pipe/p_video_codec.h"
 #include "radeon_vce.h"
 #include "radeon_video.h"
+#include "radeon_bitstream.h"
 #include "radeonsi/si_pipe.h"
 #include "util/u_memory.h"
 #include "util/u_video.h"
@@ -179,63 +180,6 @@ static void get_config_ext_param(struct rvce_encoder *enc)
    enc->enc_pic.ce.enc_enable_perf_logging = 0x00000003;
 }
 
-static void get_vui_param(struct rvce_encoder *enc, struct pipe_h264_enc_picture_desc *pic)
-{
-   pipe_h264_enc_hrd_params *hrd_params = NULL;
-
-   if (pic->seq.vui_flags.nal_hrd_parameters_present_flag)
-      hrd_params = &pic->seq.nal_hrd_parameters;
-   else if (pic->seq.vui_flags.vcl_hrd_parameters_present_flag)
-      hrd_params = &pic->seq.vcl_hrd_parameters;
-
-   enc->enc_pic.enable_vui = pic->seq.vui_parameters_present_flag;
-   enc->enc_pic.vui.aspect_ratio_info_present_flag =
-      pic->seq.vui_flags.aspect_ratio_info_present_flag;
-   enc->enc_pic.vui.aspect_ratio_idc = pic->seq.aspect_ratio_idc;
-   enc->enc_pic.vui.sar_width = pic->seq.sar_width;
-   enc->enc_pic.vui.sar_height = pic->seq.sar_height;
-   enc->enc_pic.vui.overscan_info_present_flag = pic->seq.vui_flags.overscan_info_present_flag;
-   enc->enc_pic.vui.overscan_Approp_flag = pic->seq.vui_flags.overscan_appropriate_flag;
-   enc->enc_pic.vui.video_signal_type_present_flag =
-      pic->seq.vui_flags.video_signal_type_present_flag;
-   enc->enc_pic.vui.video_format = pic->seq.video_format;
-   enc->enc_pic.vui.video_full_range_flag = pic->seq.video_full_range_flag;
-   enc->enc_pic.vui.color_description_present_flag =
-      pic->seq.vui_flags.colour_description_present_flag;
-   enc->enc_pic.vui.color_prim = pic->seq.colour_primaries;
-   enc->enc_pic.vui.transfer_char = pic->seq.transfer_characteristics;
-   enc->enc_pic.vui.matrix_coef = pic->seq.matrix_coefficients;
-   enc->enc_pic.vui.chroma_loc_info_present_flag =
-      pic->seq.vui_flags.chroma_loc_info_present_flag;
-   enc->enc_pic.vui.chroma_loc_top = pic->seq.chroma_sample_loc_type_top_field;
-   enc->enc_pic.vui.chroma_loc_bottom = pic->seq.chroma_sample_loc_type_bottom_field;
-   enc->enc_pic.vui.timing_info_present_flag = pic->seq.vui_flags.timing_info_present_flag;
-   enc->enc_pic.vui.num_units_in_tick = pic->seq.num_units_in_tick;
-   enc->enc_pic.vui.time_scale = pic->seq.time_scale;
-   enc->enc_pic.vui.fixed_frame_rate_flag = pic->seq.vui_flags.fixed_frame_rate_flag;
-   enc->enc_pic.vui.low_delay_hrd_flag = pic->seq.vui_flags.low_delay_hrd_flag;
-   if (hrd_params) {
-      enc->enc_pic.vui.bit_rate_scale = hrd_params->bit_rate_scale;
-      enc->enc_pic.vui.cpb_size_scale = hrd_params->cpb_size_scale;
-      enc->enc_pic.vui.initial_cpb_removal_delay_length_minus1 =
-         hrd_params->initial_cpb_removal_delay_length_minus1;
-      enc->enc_pic.vui.cpb_removal_delay_length_minus1 = hrd_params->cpb_removal_delay_length_minus1;
-      enc->enc_pic.vui.dpb_output_delay_length_minus1 = hrd_params->dpb_output_delay_length_minus1;
-      enc->enc_pic.vui.time_offset_length = hrd_params->time_offset_length;
-      enc->enc_pic.vui.bit_rate_value_minus = hrd_params->bit_rate_value_minus1[0];
-      enc->enc_pic.vui.cpb_size_value_minus = hrd_params->bit_rate_value_minus1[0];
-      enc->enc_pic.vui.cbr_flag = hrd_params->cbr_flag[0];
-   }
-   enc->enc_pic.vui.bitstream_restriction_present_flag = pic->seq.vui_flags.bitstream_restriction_flag;
-   enc->enc_pic.vui.motion_vectors_over_pic_boundaries_flag = 0x00000001;
-   enc->enc_pic.vui.max_bytes_per_pic_denom = 0x00000002;
-   enc->enc_pic.vui.max_bits_per_mb_denom = 0x00000001;
-   enc->enc_pic.vui.log2_max_mv_length_hori = 0x00000010;
-   enc->enc_pic.vui.log2_max_mv_length_vert = 0x00000010;
-   enc->enc_pic.vui.num_reorder_frames = pic->seq.max_num_reorder_frames;
-   enc->enc_pic.vui.max_dec_frame_buffering = pic->seq.max_dec_frame_buffering;
-}
-
 static void get_param(struct rvce_encoder *enc, struct pipe_h264_enc_picture_desc *pic)
 {
    int i;
@@ -245,7 +189,6 @@ static void get_param(struct rvce_encoder *enc, struct pipe_h264_enc_picture_des
    get_pic_control_param(enc, pic);
    get_task_info_param(enc);
    get_feedback_buffer_param(enc, NULL);
-   get_vui_param(enc, pic);
    get_config_ext_param(enc);
 
    enc->enc_pic.picture_type = pic->picture_type;
@@ -268,24 +211,6 @@ static void get_param(struct rvce_encoder *enc, struct pipe_h264_enc_picture_des
       enc->enc_pic.pc.enc_intra_refresh_num_mbs_per_slot = pic->intra_refresh.region_size;
    } else {
       enc->enc_pic.eo.enable_intra_refresh = 0;
-   }
-
-   enc->enc_pic.eo.insert_headers = 0;
-   enc->enc_pic.eo.insert_aud = 0;
-   util_dynarray_foreach(&pic->raw_headers, struct pipe_enc_raw_header, header) {
-      switch (header->type) {
-      case PIPE_H264_NAL_SPS:
-         enc->enc_pic.eo.insert_headers |= 0x01;
-         break;
-      case PIPE_H264_NAL_PPS:
-         enc->enc_pic.eo.insert_headers |= 0x10;
-         break;
-      case PIPE_H264_NAL_AUD:
-         enc->enc_pic.eo.insert_aud = 1;
-         break;
-      default:
-         break;
-      }
    }
 
    enc->enc_pic.eo.num_ref_idx_active_override_flag = pic->slice.num_ref_idx_active_override_flag;
@@ -395,7 +320,7 @@ static void create(struct rvce_encoder *enc)
 static void encode(struct rvce_encoder *enc)
 {
    struct si_screen *sscreen = (struct si_screen *)enc->screen;
-   signed luma_offset, chroma_offset, bs_offset;
+   signed luma_offset, chroma_offset;
    unsigned bs_idx = enc->bs_idx++;
    int i;
 
@@ -405,10 +330,8 @@ static void encode(struct rvce_encoder *enc)
    RVCE_READWRITE(enc->dpb.res->buf, enc->dpb.res->domains, 0); // encodeContextAddressHi/Lo
    RVCE_END();
 
-   bs_offset = -(signed)(bs_idx * enc->bs_size);
-
    RVCE_BEGIN(0x05000004);                                   // video bitstream buffer
-   RVCE_WRITE(enc->bs_handle, RADEON_DOMAIN_GTT, bs_offset); // videoBitstreamRingAddressHi/Lo
+   RVCE_WRITE(enc->bs_handle, RADEON_DOMAIN_GTT, enc->bs_offset); // videoBitstreamRingAddressHi/Lo
    RVCE_CS(enc->bs_size);                                    // videoBitstreamRingSize
    RVCE_END();
 
@@ -427,7 +350,7 @@ static void encode(struct rvce_encoder *enc)
    RVCE_BEGIN(0x03000001);                       // encode
    RVCE_CS(enc->enc_pic.eo.insert_headers);
    RVCE_CS(enc->enc_pic.eo.picture_structure);
-   RVCE_CS(enc->bs_size); // allowedMaxBitstreamSize
+   RVCE_CS(enc->bs_size - enc->bs_offset); // allowedMaxBitstreamSize
    RVCE_CS(enc->enc_pic.eo.force_refresh_map);
    RVCE_CS(enc->enc_pic.eo.insert_aud);
    RVCE_CS(enc->enc_pic.eo.end_of_sequence);
@@ -591,7 +514,6 @@ static void config(struct rvce_encoder *enc)
    enc->config_extension(enc);
    enc->motion_estimation(enc);
    enc->rdo(enc);
-   enc->vui(enc);
    enc->pic_control(enc);
 }
 
@@ -738,58 +660,149 @@ static void task_info(struct rvce_encoder *enc, uint32_t op, uint32_t dep, uint3
    RVCE_END();
 }
 
-static void vui(struct rvce_encoder *enc)
+unsigned int si_vce_write_sps(struct rvce_encoder *enc, uint8_t nal_byte, uint8_t *out)
 {
-   int i;
+   struct pipe_h264_enc_seq_param *sps = &enc->pic.seq;
+   struct radeon_bitstream bs;
 
-   if (!enc->enc_pic.enable_vui)
-      return;
+   radeon_bs_reset(&bs, out, NULL);
+   radeon_bs_set_emulation_prevention(&bs, false);
+   radeon_bs_code_fixed_bits(&bs, 0x00000001, 32);
+   radeon_bs_code_fixed_bits(&bs, nal_byte, 8);
+   radeon_bs_set_emulation_prevention(&bs, true);
+   radeon_bs_code_fixed_bits(&bs, sps->profile_idc, 8);
+   radeon_bs_code_fixed_bits(&bs, sps->enc_constraint_set_flags, 6);
+   radeon_bs_code_fixed_bits(&bs, 0x0, 2); /* reserved_zero_2bits */
+   radeon_bs_code_fixed_bits(&bs, sps->level_idc, 8);
+   radeon_bs_code_ue(&bs, 0x0); /* seq_parameter_set_id */
 
-   RVCE_BEGIN(0x04000009); // vui
-   RVCE_CS(enc->enc_pic.vui.aspect_ratio_info_present_flag);
-   RVCE_CS(enc->enc_pic.vui.aspect_ratio_idc);
-   RVCE_CS(enc->enc_pic.vui.sar_width);
-   RVCE_CS(enc->enc_pic.vui.sar_height);
-   RVCE_CS(enc->enc_pic.vui.overscan_info_present_flag);
-   RVCE_CS(enc->enc_pic.vui.overscan_Approp_flag);
-   RVCE_CS(enc->enc_pic.vui.video_signal_type_present_flag);
-   RVCE_CS(enc->enc_pic.vui.video_format);
-   RVCE_CS(enc->enc_pic.vui.video_full_range_flag);
-   RVCE_CS(enc->enc_pic.vui.color_description_present_flag);
-   RVCE_CS(enc->enc_pic.vui.color_prim);
-   RVCE_CS(enc->enc_pic.vui.transfer_char);
-   RVCE_CS(enc->enc_pic.vui.matrix_coef);
-   RVCE_CS(enc->enc_pic.vui.chroma_loc_info_present_flag);
-   RVCE_CS(enc->enc_pic.vui.chroma_loc_top);
-   RVCE_CS(enc->enc_pic.vui.chroma_loc_bottom);
-   RVCE_CS(enc->enc_pic.vui.timing_info_present_flag);
-   RVCE_CS(enc->enc_pic.vui.num_units_in_tick);
-   RVCE_CS(enc->enc_pic.vui.time_scale);
-   RVCE_CS(enc->enc_pic.vui.fixed_frame_rate_flag);
-   RVCE_CS(enc->enc_pic.vui.nal_hrd_parameters_present_flag);
-   RVCE_CS(enc->enc_pic.vui.cpb_cnt_minus1);
-   RVCE_CS(enc->enc_pic.vui.bit_rate_scale);
-   RVCE_CS(enc->enc_pic.vui.cpb_size_scale);
-   for (i = 0; i < 32; i++) {
-      RVCE_CS(enc->enc_pic.vui.bit_rate_value_minus);
-      RVCE_CS(enc->enc_pic.vui.cpb_size_value_minus);
-      RVCE_CS(enc->enc_pic.vui.cbr_flag);
+   if (sps->profile_idc == 100 || sps->profile_idc == 110 ||
+       sps->profile_idc == 122 || sps->profile_idc == 244 ||
+       sps->profile_idc == 44  || sps->profile_idc == 83 ||
+       sps->profile_idc == 86  || sps->profile_idc == 118 ||
+       sps->profile_idc == 128 || sps->profile_idc == 138) {
+      radeon_bs_code_ue(&bs, 0x1); /* chroma_format_idc */
+      radeon_bs_code_ue(&bs, 0x0); /* bit_depth_luma_minus8 */
+      radeon_bs_code_ue(&bs, 0x0); /* bit_depth_chroma_minus8 */
+      radeon_bs_code_fixed_bits(&bs, 0x0, 2); /* qpprime_y_zero_transform_bypass_flag + seq_scaling_matrix_present_flag */
    }
-   RVCE_CS(enc->enc_pic.vui.initial_cpb_removal_delay_length_minus1);
-   RVCE_CS(enc->enc_pic.vui.cpb_removal_delay_length_minus1);
-   RVCE_CS(enc->enc_pic.vui.dpb_output_delay_length_minus1);
-   RVCE_CS(enc->enc_pic.vui.time_offset_length);
-   RVCE_CS(enc->enc_pic.vui.low_delay_hrd_flag);
-   RVCE_CS(enc->enc_pic.vui.pic_struct_present_flag);
-   RVCE_CS(enc->enc_pic.vui.bitstream_restriction_present_flag);
-   RVCE_CS(enc->enc_pic.vui.motion_vectors_over_pic_boundaries_flag);
-   RVCE_CS(enc->enc_pic.vui.max_bytes_per_pic_denom);
-   RVCE_CS(enc->enc_pic.vui.max_bits_per_mb_denom);
-   RVCE_CS(enc->enc_pic.vui.log2_max_mv_length_hori);
-   RVCE_CS(enc->enc_pic.vui.log2_max_mv_length_vert);
-   RVCE_CS(enc->enc_pic.vui.num_reorder_frames);
-   RVCE_CS(enc->enc_pic.vui.max_dec_frame_buffering);
-   RVCE_END();
+
+   radeon_bs_code_ue(&bs, 3); /* log2_max_frame_num_minus4 */
+   radeon_bs_code_ue(&bs, sps->pic_order_cnt_type);
+
+   if (sps->pic_order_cnt_type == 0)
+      radeon_bs_code_ue(&bs, sps->log2_max_pic_order_cnt_lsb_minus4);
+
+   radeon_bs_code_ue(&bs, sps->max_num_ref_frames);
+   radeon_bs_code_fixed_bits(&bs, sps->gaps_in_frame_num_value_allowed_flag, 1);
+   radeon_bs_code_ue(&bs, DIV_ROUND_UP(enc->base.width, 16) - 1);
+   radeon_bs_code_ue(&bs, DIV_ROUND_UP(enc->base.height, 16) - 1);
+   radeon_bs_code_fixed_bits(&bs, 0x1, 1); /* frame_mbs_only_flag */
+   radeon_bs_code_fixed_bits(&bs, 0x1, 1); /* direct_8x8_inference_flag */
+
+   radeon_bs_code_fixed_bits(&bs, sps->enc_frame_cropping_flag, 1);
+   if (sps->enc_frame_cropping_flag) {
+      radeon_bs_code_ue(&bs, sps->enc_frame_crop_left_offset);
+      radeon_bs_code_ue(&bs, sps->enc_frame_crop_right_offset);
+      radeon_bs_code_ue(&bs, sps->enc_frame_crop_top_offset);
+      radeon_bs_code_ue(&bs, sps->enc_frame_crop_bottom_offset);
+   }
+
+   radeon_bs_code_fixed_bits(&bs, sps->vui_parameters_present_flag, 1);
+   if (sps->vui_parameters_present_flag) {
+      radeon_bs_code_fixed_bits(&bs, (sps->vui_flags.aspect_ratio_info_present_flag), 1);
+      if (sps->vui_flags.aspect_ratio_info_present_flag) {
+         radeon_bs_code_fixed_bits(&bs, (sps->aspect_ratio_idc), 8);
+         if (sps->aspect_ratio_idc == PIPE_H2645_EXTENDED_SAR) {
+            radeon_bs_code_fixed_bits(&bs, (sps->sar_width), 16);
+            radeon_bs_code_fixed_bits(&bs, (sps->sar_height), 16);
+         }
+      }
+      radeon_bs_code_fixed_bits(&bs, sps->vui_flags.overscan_info_present_flag, 1);
+      if (sps->vui_flags.overscan_info_present_flag)
+         radeon_bs_code_fixed_bits(&bs, sps->vui_flags.overscan_appropriate_flag, 1);
+      radeon_bs_code_fixed_bits(&bs, sps->vui_flags.video_signal_type_present_flag, 1);
+      if (sps->vui_flags.video_signal_type_present_flag) {
+         radeon_bs_code_fixed_bits(&bs, sps->video_format, 3);
+         radeon_bs_code_fixed_bits(&bs, sps->video_full_range_flag, 1);
+         radeon_bs_code_fixed_bits(&bs, sps->vui_flags.colour_description_present_flag, 1);
+         if (sps->vui_flags.colour_description_present_flag) {
+            radeon_bs_code_fixed_bits(&bs, sps->colour_primaries, 8);
+            radeon_bs_code_fixed_bits(&bs, sps->transfer_characteristics, 8);
+            radeon_bs_code_fixed_bits(&bs, sps->matrix_coefficients, 8);
+         }
+      }
+      radeon_bs_code_fixed_bits(&bs, sps->vui_flags.chroma_loc_info_present_flag, 1);
+      if (sps->vui_flags.chroma_loc_info_present_flag) {
+         radeon_bs_code_ue(&bs, sps->chroma_sample_loc_type_top_field);
+         radeon_bs_code_ue(&bs, sps->chroma_sample_loc_type_bottom_field);
+      }
+      radeon_bs_code_fixed_bits(&bs, (sps->vui_flags.timing_info_present_flag), 1);
+      if (sps->vui_flags.timing_info_present_flag) {
+         radeon_bs_code_fixed_bits(&bs, (sps->num_units_in_tick), 32);
+         radeon_bs_code_fixed_bits(&bs, (sps->time_scale), 32);
+         radeon_bs_code_fixed_bits(&bs, (sps->vui_flags.fixed_frame_rate_flag), 1);
+      }
+      radeon_bs_code_fixed_bits(&bs, sps->vui_flags.nal_hrd_parameters_present_flag, 1);
+      if (sps->vui_flags.nal_hrd_parameters_present_flag)
+         radeon_bs_h264_hrd_parameters(&bs, &sps->nal_hrd_parameters);
+      radeon_bs_code_fixed_bits(&bs, sps->vui_flags.vcl_hrd_parameters_present_flag, 1);
+      if (sps->vui_flags.vcl_hrd_parameters_present_flag)
+         radeon_bs_h264_hrd_parameters(&bs, &sps->vcl_hrd_parameters);
+      if (sps->vui_flags.nal_hrd_parameters_present_flag || sps->vui_flags.vcl_hrd_parameters_present_flag)
+         radeon_bs_code_fixed_bits(&bs, sps->vui_flags.low_delay_hrd_flag, 1);
+      radeon_bs_code_fixed_bits(&bs, sps->vui_flags.pic_struct_present_flag, 1);
+      radeon_bs_code_fixed_bits(&bs, sps->vui_flags.bitstream_restriction_flag, 1);
+      if (sps->vui_flags.bitstream_restriction_flag) {
+         radeon_bs_code_fixed_bits(&bs, 0x1, 1); /* motion_vectors_over_pic_boundaries_flag */
+         radeon_bs_code_ue(&bs, 0x2); /* max_bytes_per_pic_denom */
+         radeon_bs_code_ue(&bs, 0x1); /* max_bits_per_mb_denom */
+         radeon_bs_code_ue(&bs, 0x10); /* log2_max_mv_length_horizontal */
+         radeon_bs_code_ue(&bs, 0x10); /* log2_max_mv_length_vertical */
+         radeon_bs_code_ue(&bs, sps->max_num_reorder_frames);
+         radeon_bs_code_ue(&bs, sps->max_dec_frame_buffering);
+      }
+   }
+
+   radeon_bs_code_fixed_bits(&bs, 0x1, 1);
+   radeon_bs_byte_align(&bs);
+
+   return bs.bits_output / 8;
+}
+
+unsigned int si_vce_write_pps(struct rvce_encoder *enc, uint8_t nal_byte, uint8_t *out)
+{
+   struct radeon_bitstream bs;
+
+   radeon_bs_reset(&bs, out, NULL);
+   radeon_bs_set_emulation_prevention(&bs, false);
+   radeon_bs_code_fixed_bits(&bs, 0x00000001, 32);
+   radeon_bs_code_fixed_bits(&bs, nal_byte, 8);
+   radeon_bs_set_emulation_prevention(&bs, true);
+   radeon_bs_code_ue(&bs, 0x0); /* pic_parameter_set_id */
+   radeon_bs_code_ue(&bs, 0x0); /* seq_parameter_set_id */
+   radeon_bs_code_fixed_bits(&bs, enc->enc_pic.pc.enc_cabac_enable, 1);
+   radeon_bs_code_fixed_bits(&bs, 0x0, 1); /* bottom_field_pic_order_in_frame_present_flag */
+   radeon_bs_code_ue(&bs, 0x0); /* num_slice_groups_minus_1 */
+   radeon_bs_code_ue(&bs, enc->enc_pic.pc.enc_num_default_active_ref_l0 - 1);
+   radeon_bs_code_ue(&bs, enc->enc_pic.pc.enc_num_default_active_ref_l1 - 1);
+   radeon_bs_code_fixed_bits(&bs, 0x0, 1); /* weighted_pred_flag */
+   radeon_bs_code_fixed_bits(&bs, 0x0, 2); /* weighted_bipred_idc */
+   radeon_bs_code_se(&bs, 0x0); /* pic_init_qp_minus26 */
+   radeon_bs_code_se(&bs, 0x0); /* pic_init_qs_minus26 */
+   radeon_bs_code_se(&bs, 0x0); /* chroma_qp_index_offset */
+   bool deblocking_filter_present_flag =
+      enc->enc_pic.pc.enc_loop_filter_disable ||
+      enc->enc_pic.pc.enc_lf_beta_offset ||
+      enc->enc_pic.pc.enc_lf_alpha_c0_offset;
+   radeon_bs_code_fixed_bits(&bs, deblocking_filter_present_flag, 1);
+   radeon_bs_code_fixed_bits(&bs, enc->enc_pic.pc.enc_use_constrained_intra_pred, 1);
+   radeon_bs_code_fixed_bits(&bs, 0x0, 1); /* redundant_pic_cnt_present_flag */
+
+   radeon_bs_code_fixed_bits(&bs, 0x1, 1);
+   radeon_bs_byte_align(&bs);
+
+   return bs.bits_output / 8;
 }
 
 void si_vce_52_init(struct rvce_encoder *enc)
@@ -803,7 +816,6 @@ void si_vce_52_init(struct rvce_encoder *enc)
    enc->pic_control = pic_control;
    enc->motion_estimation = motion_estimation;
    enc->rdo = rdo;
-   enc->vui = vui;
    enc->config = config;
    enc->encode = encode;
    enc->destroy = destroy;

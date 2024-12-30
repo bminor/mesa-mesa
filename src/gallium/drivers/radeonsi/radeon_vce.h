@@ -157,50 +157,6 @@ struct rvce_rdo {
    uint32_t enc_chroma_coeff_cost;
 };
 
-struct rvce_vui {
-   uint32_t aspect_ratio_info_present_flag;
-   uint32_t aspect_ratio_idc;
-   uint32_t sar_width;
-   uint32_t sar_height;
-   uint32_t overscan_info_present_flag;
-   uint32_t overscan_Approp_flag;
-   uint32_t video_signal_type_present_flag;
-   uint32_t video_format;
-   uint32_t video_full_range_flag;
-   uint32_t color_description_present_flag;
-   uint32_t color_prim;
-   uint32_t transfer_char;
-   uint32_t matrix_coef;
-   uint32_t chroma_loc_info_present_flag;
-   uint32_t chroma_loc_top;
-   uint32_t chroma_loc_bottom;
-   uint32_t timing_info_present_flag;
-   uint32_t num_units_in_tick;
-   uint32_t time_scale;
-   uint32_t fixed_frame_rate_flag;
-   uint32_t nal_hrd_parameters_present_flag;
-   uint32_t cpb_cnt_minus1;
-   uint32_t bit_rate_scale;
-   uint32_t cpb_size_scale;
-   uint32_t bit_rate_value_minus;
-   uint32_t cpb_size_value_minus;
-   uint32_t cbr_flag;
-   uint32_t initial_cpb_removal_delay_length_minus1;
-   uint32_t cpb_removal_delay_length_minus1;
-   uint32_t dpb_output_delay_length_minus1;
-   uint32_t time_offset_length;
-   uint32_t low_delay_hrd_flag;
-   uint32_t pic_struct_present_flag;
-   uint32_t bitstream_restriction_present_flag;
-   uint32_t motion_vectors_over_pic_boundaries_flag;
-   uint32_t max_bytes_per_pic_denom;
-   uint32_t max_bits_per_mb_denom;
-   uint32_t log2_max_mv_length_hori;
-   uint32_t log2_max_mv_length_vert;
-   uint32_t num_reorder_frames;
-   uint32_t max_dec_frame_buffering;
-};
-
 struct rvce_enc_operation {
    uint32_t insert_headers;
    uint32_t picture_structure;
@@ -315,7 +271,6 @@ struct rvce_h264_enc_pic {
    struct rvce_task_info ti;
    struct rvce_feedback_buf_pkg fb;
    struct rvce_rdo rdo;
-   struct rvce_vui vui;
    struct rvce_enc_operation eo;
    struct rvce_enc_create ec;
    struct rvce_config_ext ce;
@@ -337,7 +292,6 @@ struct rvce_h264_enc_pic {
 
    bool not_referenced;
    bool is_idr;
-   bool enable_vui;
 };
 
 /* VCE encoder representation */
@@ -353,7 +307,6 @@ struct rvce_encoder {
    void (*pic_control)(struct rvce_encoder *enc);
    void (*motion_estimation)(struct rvce_encoder *enc);
    void (*rdo)(struct rvce_encoder *enc);
-   void (*vui)(struct rvce_encoder *enc);
    void (*config)(struct rvce_encoder *enc);
    void (*encode)(struct rvce_encoder *enc);
    void (*destroy)(struct rvce_encoder *enc);
@@ -375,6 +328,7 @@ struct rvce_encoder {
 
    struct pb_buffer_lean *bs_handle;
    unsigned bs_size;
+   unsigned bs_offset;
 
    unsigned dpb_slots;
 
@@ -389,6 +343,20 @@ struct rvce_encoder {
    bool use_vm;
    bool dual_pipe;
 };
+
+struct rvce_output_unit_segment {
+   bool is_slice;
+   unsigned size;
+   unsigned offset;
+};
+
+struct rvce_feedback_data {
+   unsigned num_segments;
+   struct rvce_output_unit_segment segments[];
+};
+
+unsigned int si_vce_write_sps(struct rvce_encoder *enc, uint8_t nal_byte, uint8_t *out);
+unsigned int si_vce_write_pps(struct rvce_encoder *enc, uint8_t nal_byte, uint8_t *out);
 
 /* CPB handling functions */
 void si_vce_frame_offset(struct rvce_encoder *enc, unsigned slot, signed *luma_offset,
