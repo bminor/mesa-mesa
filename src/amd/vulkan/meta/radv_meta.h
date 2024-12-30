@@ -109,9 +109,6 @@ VkResult radv_device_init_null_accel_struct(struct radv_device *device);
 VkResult radv_device_init_accel_struct_build_state(struct radv_device *device);
 void radv_device_finish_accel_struct_build_state(struct radv_device *device);
 
-VkResult radv_device_init_meta_astc_decode_state(struct radv_device *device, bool on_demand);
-void radv_device_finish_meta_astc_decode_state(struct radv_device *device);
-
 void radv_meta_save(struct radv_meta_saved_state *saved_state, struct radv_cmd_buffer *cmd_buffer, uint32_t flags);
 
 void radv_meta_restore(const struct radv_meta_saved_state *state, struct radv_cmd_buffer *cmd_buffer);

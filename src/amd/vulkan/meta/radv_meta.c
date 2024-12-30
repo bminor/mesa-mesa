@@ -445,7 +445,6 @@ radv_device_init_meta(struct radv_device *device)
    };
 
    bool loaded_cache = radv_load_meta_pipeline(device);
-   bool on_demand = !loaded_cache;
 
    result = vk_meta_device_init(&device->vk, &device->meta_state.device);
    if (result != VK_SUCCESS)
@@ -463,9 +462,12 @@ radv_device_init_meta(struct radv_device *device)
       vk_texcompress_etc2_init(&device->vk, &device->meta_state.etc_decode);
    }
 
-   result = radv_device_init_meta_astc_decode_state(device, on_demand);
-   if (result != VK_SUCCESS)
-      return result;
+   if (pdev->emulate_astc) {
+      result = vk_texcompress_astc_init(&device->vk, &device->meta_state.alloc, device->meta_state.cache,
+                                        &device->meta_state.astc_decode);
+      if (result != VK_SUCCESS)
+         return result;
+   }
 
    if (device->vk.enabled_extensions.KHR_acceleration_structure) {
       if (device->vk.enabled_features.nullDescriptor) {
@@ -492,7 +494,11 @@ radv_device_finish_meta(struct radv_device *device)
    if (pdev->emulate_etc2)
       vk_texcompress_etc2_finish(&device->vk, &device->meta_state.etc_decode);
 
-   radv_device_finish_meta_astc_decode_state(device);
+   if (pdev->emulate_astc) {
+      if (device->meta_state.astc_decode)
+         vk_texcompress_astc_finish(&device->vk, &device->meta_state.alloc, device->meta_state.astc_decode);
+   }
+
    radv_device_finish_accel_struct_build_state(device);
 
    radv_store_meta_pipeline(device);
