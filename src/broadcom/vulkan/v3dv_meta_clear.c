@@ -950,7 +950,9 @@ get_depth_clear_pipeline(struct v3dv_cmd_buffer *cmd_buffer,
    assert(vk_format_is_depth_or_stencil(format));
 
    uint64_t key;
-   if (device->instance->meta_cache_enabled) {
+   bool meta_cache_enabled = device->instance->meta_cache_enabled;
+
+   if (meta_cache_enabled) {
       key = get_depth_clear_pipeline_cache_key(aspects, format, samples,
                                                is_layered, has_multiview);
       mtx_lock(&device->meta.mtx);
@@ -982,7 +984,7 @@ get_depth_clear_pipeline(struct v3dv_cmd_buffer *cmd_buffer,
    if (result != VK_SUCCESS)
       goto fail;
 
-   if (device->instance->meta_cache_enabled) {
+   if (meta_cache_enabled) {
       (*pipeline)->key = key;
       _mesa_hash_table_insert(device->meta.depth_clear.cache,
                               &(*pipeline)->key, *pipeline);
