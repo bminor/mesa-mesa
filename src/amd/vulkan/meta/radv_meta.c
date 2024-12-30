@@ -444,8 +444,6 @@ radv_device_init_meta(struct radv_device *device)
       .pfnFree = meta_free,
    };
 
-   bool loaded_cache = radv_load_meta_pipeline(device);
-
    result = vk_meta_device_init(&device->vk, &device->meta_state.device);
    if (result != VK_SUCCESS)
       return result;
@@ -469,18 +467,10 @@ radv_device_init_meta(struct radv_device *device)
          return result;
    }
 
-   if (device->vk.enabled_extensions.KHR_acceleration_structure) {
-      if (device->vk.enabled_features.nullDescriptor) {
-         result = radv_device_init_null_accel_struct(device);
-         if (result != VK_SUCCESS)
-            return result;
-      }
-
-      if (loaded_cache) {
-         result = radv_device_init_accel_struct_build_state(device);
-         if (result != VK_SUCCESS)
-            return result;
-      }
+   if (device->vk.enabled_features.nullDescriptor) {
+      result = radv_device_init_null_accel_struct(device);
+      if (result != VK_SUCCESS)
+         return result;
    }
 
    return VK_SUCCESS;
