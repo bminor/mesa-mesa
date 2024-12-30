@@ -315,6 +315,11 @@ struct radeon_info {
       uint32_t csa_alignment;
    } fw_based_mcbp;
    bool has_fw_based_shadowing;
+
+   /* Device supports hardware-accelerated raytracing using
+    * image_bvh*_intersect_ray instructions
+    */
+   bool has_image_bvh_intersect_ray;
 };
 
 bool ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,

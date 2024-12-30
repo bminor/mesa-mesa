@@ -111,7 +111,7 @@ radv_filter_minmax_enabled(const struct radv_physical_device *pdev)
 bool
 radv_enable_rt(const struct radv_physical_device *pdev)
 {
-   if (pdev->info.gfx_level < GFX10_3 && !radv_emulate_rt(pdev))
+   if (!pdev->info.has_image_bvh_intersect_ray && !radv_emulate_rt(pdev))
       return false;
 
    if (pdev->use_llvm)
