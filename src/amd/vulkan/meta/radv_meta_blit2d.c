@@ -494,14 +494,13 @@ meta_blit2d_create_pipe_layout(struct radv_device *device, int idx, uint32_t log
    }
 
    if (!device->meta_state.blit2d[log2_samples].p_layouts[idx]) {
-      const VkPushConstantRange push_constant_ranges[] = {
-         {VK_SHADER_STAGE_VERTEX_BIT, 0, 16},
-         {VK_SHADER_STAGE_FRAGMENT_BIT, 16, 4},
+      const VkPushConstantRange push_constant_range = {
+        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+        .size = 20,
       };
-      int num_push_constant_range = (idx != BLIT2D_SRC_TYPE_IMAGE || log2_samples > 0) ? 2 : 1;
 
       result = radv_meta_create_pipeline_layout(device, &device->meta_state.blit2d[log2_samples].ds_layouts[idx],
-                                                num_push_constant_range, push_constant_ranges,
+                                                1, &push_constant_range,
                                                 &device->meta_state.blit2d[log2_samples].p_layouts[idx]);
    }
 
