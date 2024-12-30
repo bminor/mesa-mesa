@@ -2635,6 +2635,9 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
    ngg_nogs_gather_outputs(b, &if_es_thread->then_list, &state);
    b->cursor = nir_after_cf_list(&if_es_thread->then_list);
 
+   /* This should be after streamout and before exports. */
+   ac_nir_clamp_vertex_color_outputs(b, &state.out);
+
    if (state.has_user_edgeflags)
       ngg_nogs_store_edgeflag_to_lds(b, &state);
 
@@ -3123,6 +3126,9 @@ ngg_gs_export_vertices(nir_builder *b, nir_def *max_num_out_vtx, nir_def *tid_in
          }
       }
    }
+
+   /* This should be after streamout and before exports. */
+   ac_nir_clamp_vertex_color_outputs(b, &s->out);
 
    uint64_t export_outputs = b->shader->info.outputs_written | VARYING_BIT_POS;
    if (s->options->kill_pointsize)

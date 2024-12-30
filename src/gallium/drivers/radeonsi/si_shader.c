@@ -1803,43 +1803,6 @@ static bool si_nir_kill_ps_outputs(nir_shader *nir, const union si_shader_key *k
                                        nir_metadata_control_flow, (void*)key);
 }
 
-static bool clamp_vertex_color_instr(nir_builder *b,
-                                     nir_intrinsic_instr *intrin, void *state)
-{
-   if (intrin->intrinsic != nir_intrinsic_store_output)
-      return false;
-
-   unsigned location = nir_intrinsic_io_semantics(intrin).location;
-   if (location != VARYING_SLOT_COL0 && location != VARYING_SLOT_COL1 &&
-       location != VARYING_SLOT_BFC0 && location != VARYING_SLOT_BFC1)
-      return false;
-
-   /* no indirect output */
-   assert(nir_src_is_const(intrin->src[1]) && !nir_src_as_uint(intrin->src[1]));
-   /* only scalar output */
-   assert(intrin->src[0].ssa->num_components == 1);
-
-   b->cursor = nir_before_instr(&intrin->instr);
-
-   nir_def *color = intrin->src[0].ssa;
-   nir_def *clamp = nir_load_clamp_vertex_color_amd(b);
-   nir_def *new_color = nir_bcsel(b, clamp, nir_fsat(b, color), color);
-   nir_src_rewrite(&intrin->src[0], new_color);
-
-   return true;
-}
-
-static bool si_nir_clamp_vertex_color(nir_shader *nir)
-{
-   uint64_t mask = VARYING_BIT_COL0 | VARYING_BIT_COL1 | VARYING_BIT_BFC0 | VARYING_BIT_BFC1;
-   if (!(nir->info.outputs_written & mask))
-      return false;
-
-   return nir_shader_intrinsics_pass(nir, clamp_vertex_color_instr,
-                                       nir_metadata_control_flow,
-                                       NULL);
-}
-
 static unsigned si_map_io_driver_location(unsigned semantic)
 {
    if ((semantic >= VARYING_SLOT_PATCH0 && semantic < VARYING_SLOT_TESS_MAX) ||
@@ -2428,17 +2391,12 @@ static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_
       NIR_PASS(progress, nir, nir_lower_non_uniform_access, &options);
    }
 
+   /* Legacy GS is not the last VGT stage because there is also the GS copy shader. */
    bool is_last_vgt_stage =
       (nir->info.stage == MESA_SHADER_VERTEX ||
        nir->info.stage == MESA_SHADER_TESS_EVAL ||
        (nir->info.stage == MESA_SHADER_GEOMETRY && shader->key.ge.as_ngg)) &&
       !shader->key.ge.as_ls && !shader->key.ge.as_es;
-
-   /* Legacy GS is not last VGT stage because it has GS copy shader. */
-   bool is_legacy_gs = nir->info.stage == MESA_SHADER_GEOMETRY && !key->ge.as_ngg;
-
-   if (is_last_vgt_stage || is_legacy_gs)
-      NIR_PASS(progress, nir, si_nir_clamp_vertex_color);
 
    if (progress) {
       si_nir_opts(sel->screen, nir, true);
@@ -2497,7 +2455,7 @@ static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_
                     sel->screen->options.vrs2x2);
       }
       progress = true;
-   } else if (is_legacy_gs) {
+   } else if (nir->info.stage == MESA_SHADER_GEOMETRY && !key->ge.as_ngg) {
       NIR_PASS_V(nir, ac_nir_lower_legacy_gs, false, sel->screen->use_ngg, output_info);
       progress = true;
    } else if (nir->info.stage == MESA_SHADER_FRAGMENT && shader->is_monolithic) {
