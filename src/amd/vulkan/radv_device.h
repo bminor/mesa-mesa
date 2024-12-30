@@ -90,16 +90,6 @@ struct radv_meta_state {
    mtx_t mtx;
 
    struct {
-      VkPipelineLayout p_layouts[5];
-      VkDescriptorSetLayout ds_layouts[5];
-      VkPipeline pipelines[5][NUM_META_FS_KEYS];
-
-      VkPipeline depth_only_pipeline[5];
-
-      VkPipeline stencil_only_pipeline[5];
-   } blit2d[MAX_SAMPLES_LOG2];
-
-   struct {
       VkPipelineLayout encode_p_layout;
       VkPipeline encode_pipeline;
       VkPipeline encode_compact_pipeline;
