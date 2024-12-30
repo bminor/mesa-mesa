@@ -17,11 +17,9 @@ if with_gallium_va or with_gallium_vdpau
   gallium_dri_link_with += [libgalliumvlwinsys]
   if with_gallium_va
     gallium_dri_link_whole += [libva_st]
-    sym_config.set('va_driver_init', '__vaDriverInit_*_*;')
   endif
   if with_gallium_vdpau
     gallium_dri_link_whole += [libvdpau_st]
-    sym_config.set('vdp_imp_device_create_x11', 'vdp_imp_device_create_x11;')
   endif
 endif
 
