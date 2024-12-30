@@ -105,9 +105,6 @@ extern const VkFormat radv_fs_key_format_exemplars[NUM_META_FS_KEYS];
 VkResult radv_device_init_meta(struct radv_device *device);
 void radv_device_finish_meta(struct radv_device *device);
 
-VkResult radv_device_init_meta_clear_state(struct radv_device *device, bool on_demand);
-void radv_device_finish_meta_clear_state(struct radv_device *device);
-
 VkResult radv_device_init_meta_blit2d_state(struct radv_device *device, bool on_demand);
 void radv_device_finish_meta_blit2d_state(struct radv_device *device);
 

@@ -89,27 +89,6 @@ struct radv_meta_state {
     */
    mtx_t mtx;
 
-   /**
-    * Use array element `i` for images with `2^i` samples.
-    */
-   struct {
-      VkPipeline color_pipelines[NUM_META_FS_KEYS];
-   } color_clear[MAX_SAMPLES_LOG2][MAX_RTS];
-
-   struct {
-      VkPipeline depth_only_pipeline[NUM_DEPTH_CLEAR_PIPELINES];
-      VkPipeline stencil_only_pipeline[NUM_DEPTH_CLEAR_PIPELINES];
-      VkPipeline depthstencil_pipeline[NUM_DEPTH_CLEAR_PIPELINES];
-
-      VkPipeline depth_only_unrestricted_pipeline[NUM_DEPTH_CLEAR_PIPELINES];
-      VkPipeline stencil_only_unrestricted_pipeline[NUM_DEPTH_CLEAR_PIPELINES];
-      VkPipeline depthstencil_unrestricted_pipeline[NUM_DEPTH_CLEAR_PIPELINES];
-   } ds_clear[MAX_SAMPLES_LOG2];
-
-   VkPipelineLayout clear_color_p_layout;
-   VkPipelineLayout clear_depth_p_layout;
-   VkPipelineLayout clear_depth_unrestricted_p_layout;
-
    struct {
       VkPipelineLayout p_layouts[5];
       VkDescriptorSetLayout ds_layouts[5];
