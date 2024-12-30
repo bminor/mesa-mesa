@@ -413,11 +413,11 @@ struct radeon_uvd_encoder {
    struct pb_buffer_lean *bs_handle;
    unsigned bs_size;
 
-   unsigned cpb_num;
+   unsigned dpb_slots;
 
    struct rvid_buffer *si;
    struct rvid_buffer *fb;
-   struct rvid_buffer cpb;
+   struct rvid_buffer dpb;
    struct radeon_uvd_enc_pic enc_pic;
 
    unsigned shifter;

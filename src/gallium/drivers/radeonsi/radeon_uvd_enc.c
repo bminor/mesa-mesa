@@ -17,20 +17,6 @@
 
 #include <stdio.h>
 
-#define UVD_HEVC_LEVEL_1   30
-#define UVD_HEVC_LEVEL_2   60
-#define UVD_HEVC_LEVEL_2_1 63
-#define UVD_HEVC_LEVEL_3   90
-#define UVD_HEVC_LEVEL_3_1 93
-#define UVD_HEVC_LEVEL_4   120
-#define UVD_HEVC_LEVEL_4_1 123
-#define UVD_HEVC_LEVEL_5   150
-#define UVD_HEVC_LEVEL_5_1 153
-#define UVD_HEVC_LEVEL_5_2 156
-#define UVD_HEVC_LEVEL_6   180
-#define UVD_HEVC_LEVEL_6_1 183
-#define UVD_HEVC_LEVEL_6_2 186
-
 static void radeon_uvd_enc_get_vui_param(struct radeon_uvd_encoder *enc,
                                          struct pipe_h265_enc_picture_desc *pic)
 {
@@ -130,53 +116,33 @@ static void radeon_uvd_enc_cs_flush(void *ctx, unsigned flags, struct pipe_fence
    // just ignored
 }
 
-static unsigned get_cpb_num(struct radeon_uvd_encoder *enc, unsigned level_idc)
+static uint32_t setup_dpb(struct radeon_uvd_encoder *enc, uint32_t num_reconstructed_pictures)
 {
-   unsigned w = align(enc->base.width, 16) / 16;
-   unsigned h = align(enc->base.height, 16) / 16;
-   unsigned dpb;
+   uint32_t i;
+   uint32_t alignment = 256;
+   uint32_t aligned_width = align(enc->base.width, 64);
+   uint32_t aligned_height = align(enc->base.height, 16);
+   uint32_t pitch = align(aligned_width, alignment);
+   uint32_t luma_size = align(pitch * MAX2(256, aligned_height), alignment);
+   uint32_t chroma_size = align(luma_size / 2, alignment);
+   uint32_t offset = 0;
 
-   switch (level_idc) {
-   case UVD_HEVC_LEVEL_1:
-      dpb = 36864;
-      break;
+   assert(num_reconstructed_pictures <= RENC_UVD_MAX_NUM_RECONSTRUCTED_PICTURES);
 
-   case UVD_HEVC_LEVEL_2:
-      dpb = 122880;
-      break;
+   enc->enc_pic.ctx_buf.rec_luma_pitch = pitch;
+   enc->enc_pic.ctx_buf.rec_chroma_pitch = pitch;
+   enc->enc_pic.ctx_buf.num_reconstructed_pictures = num_reconstructed_pictures;
 
-   case UVD_HEVC_LEVEL_2_1:
-      dpb = 245760;
-      break;
-
-   case UVD_HEVC_LEVEL_3:
-      dpb = 552960;
-      break;
-
-   case UVD_HEVC_LEVEL_3_1:
-      dpb = 983040;
-      break;
-
-   case UVD_HEVC_LEVEL_4:
-   case UVD_HEVC_LEVEL_4_1:
-      dpb = 2228224;
-      break;
-
-   case UVD_HEVC_LEVEL_5:
-   case UVD_HEVC_LEVEL_5_1:
-   case UVD_HEVC_LEVEL_5_2:
-      dpb = 8912896;
-      break;
-
-   case UVD_HEVC_LEVEL_6:
-   case UVD_HEVC_LEVEL_6_1:
-   case UVD_HEVC_LEVEL_6_2:
-   default:
-      dpb = 35651584;
-      break;
+   for (i = 0; i < num_reconstructed_pictures; i++) {
+      enc->enc_pic.ctx_buf.reconstructed_pictures[i].luma_offset = offset;
+      offset += luma_size;
+      enc->enc_pic.ctx_buf.reconstructed_pictures[i].chroma_offset = offset;
+      offset += chroma_size;
    }
 
-   return MIN2(dpb / (w * h), 16);
+   enc->dpb_slots = num_reconstructed_pictures;
+
+   return offset;
 }
 
 static void radeon_uvd_enc_begin_frame(struct pipe_video_codec *encoder,
@@ -194,25 +160,17 @@ static void radeon_uvd_enc_begin_frame(struct pipe_video_codec *encoder,
 
    enc->need_feedback = false;
 
-   if (!enc->cpb_num) {
-      struct si_screen *sscreen = (struct si_screen *)encoder->context->screen;
-      unsigned cpb_size;
+   unsigned dpb_slots = MAX2(pic->seq.sps_max_dec_pic_buffering_minus1[0] + 1, pic->dpb_size);
 
-      enc->cpb_num = get_cpb_num(enc, pic->seq.general_level_idc);
-      if (!enc->cpb_num)
-         return;
-
-      cpb_size = (sscreen->info.gfx_level < GFX9)
-                    ? align(enc->luma->u.legacy.level[0].nblk_x * enc->luma->bpe, 128) *
-                         align(enc->luma->u.legacy.level[0].nblk_y, 32)
-                    : align(enc->luma->u.gfx9.surf_pitch * enc->luma->bpe, 256) *
-                         align(enc->luma->u.gfx9.surf_height, 32);
-
-      cpb_size = cpb_size * 3 / 2;
-      cpb_size = cpb_size * enc->cpb_num;
-
-      if (!si_vid_create_buffer(enc->screen, &enc->cpb, cpb_size, PIPE_USAGE_DEFAULT)) {
-         RVID_ERR("Can't create CPB buffer.\n");
+   if (enc->dpb_slots < dpb_slots) {
+      uint32_t dpb_size = setup_dpb(enc, dpb_slots);
+      if (!enc->dpb.res) {
+         if (!si_vid_create_buffer(enc->screen, &enc->dpb, dpb_size, PIPE_USAGE_DEFAULT)) {
+            RVID_ERR("Can't create DPB buffer.\n");
+            return;
+         }
+      } else if (!si_vid_resize_buffer(enc->base.context, &enc->cs, &enc->dpb, dpb_size, NULL)) {
+         RVID_ERR("Can't resize DPB buffer.\n");
          return;
       }
    }
@@ -275,7 +233,8 @@ static void radeon_uvd_enc_destroy(struct pipe_video_codec *encoder)
       si_vid_destroy_buffer(&fb);
    }
 
-   si_vid_destroy_buffer(&enc->cpb);
+   if (enc->dpb.res)
+      si_vid_destroy_buffer(&enc->dpb);
    enc->ws->cs_destroy(&enc->cs);
    FREE(enc);
 }

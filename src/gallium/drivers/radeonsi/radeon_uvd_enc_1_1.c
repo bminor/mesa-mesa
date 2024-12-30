@@ -795,24 +795,24 @@ static void radeon_uvd_enc_ctx(struct radeon_uvd_encoder *enc)
    enc->enc_pic.ctx_buf.num_reconstructed_pictures = 2;
 
    RADEON_ENC_BEGIN(RENC_UVD_IB_PARAM_ENCODE_CONTEXT_BUFFER);
-   RADEON_ENC_READWRITE(enc->cpb.res->buf, enc->cpb.res->domains, 0);
+   RADEON_ENC_READWRITE(enc->dpb.res->buf, enc->dpb.res->domains, 0);
    RADEON_ENC_CS(0x00000000); // reserved
    RADEON_ENC_CS(enc->enc_pic.ctx_buf.swizzle_mode);
    RADEON_ENC_CS(enc->enc_pic.ctx_buf.rec_luma_pitch);
    RADEON_ENC_CS(enc->enc_pic.ctx_buf.rec_chroma_pitch);
    RADEON_ENC_CS(enc->enc_pic.ctx_buf.num_reconstructed_pictures);
-   /* reconstructed_picture_1_luma_offset */
-   RADEON_ENC_CS(0x00000000);
-   /* reconstructed_picture_1_chroma_offset */
-   RADEON_ENC_CS(enc->enc_pic.ctx_buf.rec_chroma_pitch * align(enc->base.height, 16));
-   /* reconstructed_picture_2_luma_offset */
-   RADEON_ENC_CS(enc->enc_pic.ctx_buf.rec_luma_pitch * align(enc->base.height, 16) * 3 / 2);
-   /* reconstructed_picture_2_chroma_offset */
-   RADEON_ENC_CS(enc->enc_pic.ctx_buf.rec_chroma_pitch * align(enc->base.height, 16) * 5 / 2);
-
-   for (int i = 0; i < 136; i++)
-      RADEON_ENC_CS(0x00000000);
-
+   for (uint32_t i = 0; i < RENC_UVD_MAX_NUM_RECONSTRUCTED_PICTURES; i++) {
+      RADEON_ENC_CS(enc->enc_pic.ctx_buf.reconstructed_pictures[i].luma_offset);
+      RADEON_ENC_CS(enc->enc_pic.ctx_buf.reconstructed_pictures[i].chroma_offset);
+   }
+   RADEON_ENC_CS(enc->enc_pic.ctx_buf.pre_encode_picture_luma_pitch);
+   RADEON_ENC_CS(enc->enc_pic.ctx_buf.pre_encode_picture_chroma_pitch);
+   for (uint32_t i = 0; i < RENC_UVD_MAX_NUM_RECONSTRUCTED_PICTURES; i++) {
+      RADEON_ENC_CS(enc->enc_pic.ctx_buf.pre_encode_reconstructed_pictures[i].luma_offset);
+      RADEON_ENC_CS(enc->enc_pic.ctx_buf.pre_encode_reconstructed_pictures[i].chroma_offset);
+   }
+   RADEON_ENC_CS(enc->enc_pic.ctx_buf.pre_encode_input_picture.luma_offset);
+   RADEON_ENC_CS(enc->enc_pic.ctx_buf.pre_encode_input_picture.chroma_offset);
    RADEON_ENC_END();
 }
 
