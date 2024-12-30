@@ -477,3 +477,42 @@ yaml-toml-shell-py-test:
       artifacts: false
     - debian-arm64
     - !reference [.required-for-hardware-jobs, needs]
+
+.b2c-arm32-test:
+  extends:
+    - .b2c-test
+  variables:
+    B2C_INITRAMFS_URL: 'https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/${B2C_VERSION}/downloads/initramfs.linux_arm.cpio.xz'
+    B2C_KERNEL_URL: 'https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/${B2C_VERSION}/downloads/linux-arm'
+
+.b2c-arm32-test-vk:
+  extends:
+    - .use-debian/arm32_test-vk
+    - .b2c-arm32-test
+  needs:
+    - job: debian/arm32_test-vk
+      artifacts: false
+    - debian-arm32
+    - !reference [.required-for-hardware-jobs, needs]
+
+.b2c-arm32-test-gl:
+  extends:
+    - .use-debian/arm32_test-gl
+    - .b2c-arm32-test
+  needs:
+    - job: debian/arm32_test-gl
+      artifacts: false
+    - debian-arm32
+    - !reference [.required-for-hardware-jobs, needs]
+
+.b2c-arm32-test-asan-gl:
+  extends:
+    - .use-debian/arm32_test-gl
+    - .b2c-arm32-test
+  variables:
+    DEQP_FORCE_ASAN: 1
+  needs:
+    - job: debian/arm32_test-gl
+      artifacts: false
+    - debian-arm32-asan
+    - !reference [.required-for-hardware-jobs, needs]
