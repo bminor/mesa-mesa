@@ -21,6 +21,8 @@
 #define REF_LIST_MODIFICATION_OP_LONG_TERM            2
 #define REF_LIST_MODIFICATION_OP_VIEW_ADD             3
 
+#define INTRAREFRESH_METHOD_BAR_BASED                 6
+
 static void get_rate_control_param(struct rvce_encoder *enc, struct pipe_h264_enc_picture_desc *pic)
 {
    enc->enc_pic.rc.rc_method = pic->rate_ctrl[0].rate_ctrl_method;
@@ -260,6 +262,13 @@ static void get_param(struct rvce_encoder *enc, struct pipe_h264_enc_picture_des
    enc->enc_pic.ec.enc_vbaq_mode =
       pic->rate_ctrl[0].rate_ctrl_method != PIPE_H2645_ENC_RATE_CONTROL_METHOD_DISABLE &&
       pic->quality_modes.vbaq_mode;
+   if (pic->intra_refresh.mode != PIPE_VIDEO_ENC_INTRA_REFRESH_NONE) {
+      enc->enc_pic.eo.enable_intra_refresh = 1;
+      enc->enc_pic.pc.enc_force_intra_refresh = INTRAREFRESH_METHOD_BAR_BASED;
+      enc->enc_pic.pc.enc_intra_refresh_num_mbs_per_slot = pic->intra_refresh.region_size;
+   } else {
+      enc->enc_pic.eo.enable_intra_refresh = 0;
+   }
 
    enc->enc_pic.eo.insert_headers = 0;
    enc->enc_pic.eo.insert_aud = 0;
