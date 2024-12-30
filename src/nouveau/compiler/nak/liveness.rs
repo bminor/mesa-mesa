@@ -310,10 +310,6 @@ impl SimpleLiveness {
         assert!(l.blocks.len() == func.blocks.len());
         assert!(live_in.len() == func.blocks.len());
 
-        let num_ssa = usize::try_from(func.ssa_alloc.max_idx() + 1).unwrap();
-        let mut tmp = BitSet::new();
-        tmp.reserve(num_ssa);
-
         let mut to_do = true;
         while to_do {
             to_do = false;
@@ -323,13 +319,9 @@ impl SimpleLiveness {
                     to_do |= bl.live_out.union_with(live_in[*sb_idx].s(..));
                 }
 
-                tmp.clear();
-                tmp.set_words(0..num_ssa, |w| {
-                    (bl.live_out.get_word(w) | bl.uses.get_word(w))
-                        & !bl.defs.get_word(w)
-                });
-
-                to_do |= live_in[b_idx].union_with(tmp.s(..));
+                to_do |= live_in[b_idx].union_with(
+                    (bl.live_out.s(..) | bl.uses.s(..)) - bl.defs.s(..),
+                );
             }
         }
 
