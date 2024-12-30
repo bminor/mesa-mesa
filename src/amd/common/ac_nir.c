@@ -130,17 +130,18 @@ typedef struct {
 
 static nir_def *
 preload_arg(lower_intrinsics_to_args_state *s, nir_function_impl *impl, struct ac_arg arg,
-            struct ac_arg ls_buggy_arg)
+            struct ac_arg ls_buggy_arg, unsigned upper_bound)
 {
    nir_builder start_b = nir_builder_at(nir_before_impl(impl));
-   nir_def *value = ac_nir_load_arg(&start_b, s->args, arg);
+   nir_def *value = ac_nir_load_arg_upper_bound(&start_b, s->args, arg, upper_bound);
 
    /* If there are no HS threads, SPI mistakenly loads the LS VGPRs starting at VGPR 0. */
    if ((s->hw_stage == AC_HW_LOCAL_SHADER || s->hw_stage == AC_HW_HULL_SHADER) &&
        s->has_ls_vgpr_init_bug) {
       nir_def *count = ac_nir_unpack_arg(&start_b, s->args, s->args->merged_wave_info, 8, 8);
       nir_def *hs_empty = nir_ieq_imm(&start_b, count, 0);
-      value = nir_bcsel(&start_b, hs_empty, ac_nir_load_arg(&start_b, s->args, ls_buggy_arg),
+      value = nir_bcsel(&start_b, hs_empty,
+                        ac_nir_load_arg_upper_bound(&start_b, s->args, ls_buggy_arg, upper_bound),
                         value);
    }
    return value;
@@ -453,12 +454,12 @@ lower_intrinsic_to_arg(nir_builder *b, nir_instr *instr, void *state)
       return true;
    case nir_intrinsic_load_vertex_id_zero_base:
       if (!s->vertex_id)
-         s->vertex_id = preload_arg(s, b->impl, s->args->vertex_id, s->args->tcs_patch_id);
+         s->vertex_id = preload_arg(s, b->impl, s->args->vertex_id, s->args->tcs_patch_id, 0);
       replacement = s->vertex_id;
       break;
    case nir_intrinsic_load_instance_id:
       if (!s->instance_id)
-         s->instance_id = preload_arg(s, b->impl, s->args->instance_id, s->args->vertex_id);
+         s->instance_id = preload_arg(s, b->impl, s->args->instance_id, s->args->vertex_id, 0);
       replacement = s->instance_id;
       break;
    case nir_intrinsic_load_tess_rel_patch_id_amd:
@@ -518,7 +519,7 @@ lower_intrinsic_to_arg(nir_builder *b, nir_instr *instr, void *state)
           (s->hw_stage == AC_HW_LOCAL_SHADER || s->hw_stage == AC_HW_HULL_SHADER)) {
          if (!s->vs_rel_patch_id) {
             s->vs_rel_patch_id = preload_arg(s, b->impl, s->args->vs_rel_patch_id,
-                                             s->args->tcs_rel_ids);
+                                             s->args->tcs_rel_ids, 255);
          }
          replacement = s->vs_rel_patch_id;
       } else if (s->workgroup_size <= s->wave_size) {
