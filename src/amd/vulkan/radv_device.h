@@ -111,27 +111,6 @@ struct radv_meta_state {
    VkPipelineLayout clear_depth_unrestricted_p_layout;
 
    struct {
-      /** Pipeline that blits from a 1D image. */
-      VkPipeline pipeline_1d_src[NUM_META_FS_KEYS];
-
-      /** Pipeline that blits from a 2D image. */
-      VkPipeline pipeline_2d_src[NUM_META_FS_KEYS];
-
-      /** Pipeline that blits from a 3D image. */
-      VkPipeline pipeline_3d_src[NUM_META_FS_KEYS];
-
-      VkPipeline depth_only_1d_pipeline;
-      VkPipeline depth_only_2d_pipeline;
-      VkPipeline depth_only_3d_pipeline;
-
-      VkPipeline stencil_only_1d_pipeline;
-      VkPipeline stencil_only_2d_pipeline;
-      VkPipeline stencil_only_3d_pipeline;
-      VkPipelineLayout pipeline_layout;
-      VkDescriptorSetLayout ds_layout;
-   } blit;
-
-   struct {
       VkPipelineLayout p_layouts[5];
       VkDescriptorSetLayout ds_layouts[5];
       VkPipeline pipelines[5][NUM_META_FS_KEYS];
