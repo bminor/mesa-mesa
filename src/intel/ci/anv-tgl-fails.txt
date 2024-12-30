@@ -1,3 +1,0 @@
-# VK 1.4 regression, should be fixed in the next vkcts uprev
-dEQP-VK.api.version_check.version,Fail
-dEQP-VK.info.device_properties,Fail

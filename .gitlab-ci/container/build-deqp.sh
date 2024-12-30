@@ -23,7 +23,7 @@ uncollapsed_section_start deqp-$deqp_api "Building dEQP $DEQP_API"
 # - the GLES release produces `deqp-gles*` and `deqp-egl`
 
 DEQP_MAIN_COMMIT=a9988483c0864d7190e5e6264ccead95423dfd00
-DEQP_VK_VERSION=1.3.10.0
+DEQP_VK_VERSION=1.4.1.0
 DEQP_GL_VERSION=4.6.5.0
 DEQP_GLES_VERSION=3.2.11.0
 
@@ -45,8 +45,6 @@ main_cts_patch_files=(
 
 # shellcheck disable=SC2034
 vk_cts_commits_to_backport=(
-    # Remove multi-line test results in DRM format modifier tests
-    8c95af68a2a85cbdc7e1d9267ab029f73e9427d2
 )
 
 # shellcheck disable=SC2034

@@ -598,4 +598,7 @@ dEQP-VK.draw.renderpass.non_line_with_params.vtx_lines_geom_points_mode_point_li
 dEQP-VK.draw.renderpass.non_line_with_params.vtx_lines_geom_triangles_mode_fill_line_raster_smooth,Fail
 dEQP-VK.draw.renderpass.non_line_with_params.vtx_lines_geom_triangles_mode_point_line_raster_smooth,Fail
 
+# New fails in 1.4.1.0
+asan-dEQP-VK.draw.renderpass.non_line_with_params.vtx_lines_geom_points_mode_point_line_raster_smooth,Fail
+
 ubsan-KHR-GL31.transform_feedback3.multiple_streams,Fail
