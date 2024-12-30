@@ -100,28 +100,6 @@ struct radv_meta_state {
    } blit2d[MAX_SAMPLES_LOG2];
 
    struct {
-      VkDescriptorSetLayout ds_layout;
-      VkPipelineLayout p_layout;
-
-      struct {
-         VkPipeline pipeline[NUM_META_FS_KEYS];
-      } rc[MAX_SAMPLES_LOG2];
-
-      VkPipeline depth_zero_pipeline;
-      struct {
-         VkPipeline average_pipeline;
-         VkPipeline max_pipeline;
-         VkPipeline min_pipeline;
-      } depth[MAX_SAMPLES_LOG2];
-
-      VkPipeline stencil_zero_pipeline;
-      struct {
-         VkPipeline max_pipeline;
-         VkPipeline min_pipeline;
-      } stencil[MAX_SAMPLES_LOG2];
-   } resolve_fragment;
-
-   struct {
       VkPipelineLayout encode_p_layout;
       VkPipeline encode_pipeline;
       VkPipeline encode_compact_pipeline;

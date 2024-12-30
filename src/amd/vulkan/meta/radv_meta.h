@@ -108,9 +108,6 @@ void radv_device_finish_meta(struct radv_device *device);
 VkResult radv_device_init_meta_blit2d_state(struct radv_device *device, bool on_demand);
 void radv_device_finish_meta_blit2d_state(struct radv_device *device);
 
-VkResult radv_device_init_meta_resolve_fragment_state(struct radv_device *device, bool on_demand);
-void radv_device_finish_meta_resolve_fragment_state(struct radv_device *device);
-
 VkResult radv_device_init_null_accel_struct(struct radv_device *device);
 VkResult radv_device_init_accel_struct_build_state(struct radv_device *device);
 void radv_device_finish_accel_struct_build_state(struct radv_device *device);
