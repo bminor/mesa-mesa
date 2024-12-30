@@ -11,7 +11,6 @@ include:
   variables:
     FDO_CI_CONCURRENT: 2
     GPU_VERSION: i915-g33
-    B2C_INITRAMFS_URL: https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/v0.9.12.3/downloads/initramfs.linux_amd64.cpio.xz
     B2C_KERNEL_URL: https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/v0.9.12.3/downloads/linux-x86_64
 
 i915-g33:
