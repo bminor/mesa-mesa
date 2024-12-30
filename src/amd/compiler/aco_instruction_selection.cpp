@@ -12411,9 +12411,11 @@ select_rt_prolog(Program* program, ac_shader_config* config,
    }
    if (options->gfx_level < GFX11)
       in_scratch_offset = get_arg_reg(in_args, in_args->scratch_offset);
+   struct ac_arg arg_id = options->gfx_level >= GFX11 ? in_args->local_invocation_ids_packed
+                                                      : in_args->local_invocation_id_x;
    PhysReg in_local_ids[2] = {
-      get_arg_reg(in_args, in_args->local_invocation_ids),
-      get_arg_reg(in_args, in_args->local_invocation_ids).advance(4),
+      get_arg_reg(in_args, arg_id),
+      get_arg_reg(in_args, arg_id).advance(4),
    };
 
    /* Outputs:

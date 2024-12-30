@@ -741,10 +741,13 @@ static void si_init_shader_args(struct si_shader *shader, struct si_shader_args 
       /* Hardware VGPRs. */
       /* Thread IDs are packed in VGPR0, 10 bits per component or stored in 3 separate VGPRs */
       if (sel->screen->info.gfx_level >= GFX11 ||
-          (!sel->screen->info.has_graphics && sel->screen->info.family >= CHIP_MI200))
-         ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.local_invocation_ids);
-      else
-         ac_add_arg(&args->ac, AC_ARG_VGPR, 3, AC_ARG_INT, &args->ac.local_invocation_ids);
+          (!sel->screen->info.has_graphics && sel->screen->info.family >= CHIP_MI200)) {
+         ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.local_invocation_ids_packed);
+      } else {
+         ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.local_invocation_id_x);
+         ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.local_invocation_id_y);
+         ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.local_invocation_id_z);
+      }
       break;
    default:
       assert(0 && "unimplemented shader");

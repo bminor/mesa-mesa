@@ -233,7 +233,7 @@ lower_intrinsic_to_arg(nir_builder *b, nir_instr *instr, void *state)
                              ac_nir_load_arg(b, s->args, s->args->frag_pos[3]));
       break;
    case nir_intrinsic_load_local_invocation_id:
-      if (s->args->args[s->args->local_invocation_ids.arg_index].size == 1) {
+      if (s->args->local_invocation_ids_packed.used) {
          /* Thread IDs are packed in VGPR0, 10 bits per component. */
          unsigned num_bits[3];
 
@@ -263,13 +263,17 @@ lower_intrinsic_to_arg(nir_builder *b, nir_instr *instr, void *state)
          nir_def *vec[3];
          for (unsigned i = 0; i < 3; i++) {
             vec[i] = !num_bits[i] ? nir_imm_int(b, 0) :
-                        ac_nir_unpack_arg(b, s->args, s->args->local_invocation_ids, i * 10,
+                        ac_nir_unpack_arg(b, s->args,
+                                          s->args->local_invocation_ids_packed, i * 10,
                                           num_bits[i]);
          }
 
          replacement = nir_vec(b, vec, 3);
       } else {
-         replacement = ac_nir_load_arg(b, s->args, s->args->local_invocation_ids);
+         replacement = nir_vec3(b,
+                                ac_nir_load_arg(b, s->args, s->args->local_invocation_id_x),
+                                ac_nir_load_arg(b, s->args, s->args->local_invocation_id_y),
+                                ac_nir_load_arg(b, s->args, s->args->local_invocation_id_z));
       }
       break;
    case nir_intrinsic_load_merged_wave_info_amd:
