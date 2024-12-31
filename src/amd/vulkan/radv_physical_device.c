@@ -109,12 +109,12 @@ radv_filter_minmax_enabled(const struct radv_physical_device *pdev)
 }
 
 bool
-radv_enable_rt(const struct radv_physical_device *pdev, bool rt_pipelines)
+radv_enable_rt(const struct radv_physical_device *pdev)
 {
    if (pdev->info.gfx_level < GFX10_3 && !radv_emulate_rt(pdev))
       return false;
 
-   if (rt_pipelines && pdev->use_llvm)
+   if (pdev->use_llvm)
       return false;
 
    return true;
@@ -541,7 +541,7 @@ radv_physical_device_get_supported_extensions(const struct radv_physical_device 
    const struct vk_device_extension_table ext = {
       .KHR_8bit_storage = true,
       .KHR_16bit_storage = true,
-      .KHR_acceleration_structure = radv_enable_rt(pdev, false),
+      .KHR_acceleration_structure = radv_enable_rt(pdev),
       .KHR_calibrated_timestamps = radv_calibrated_timestamps_enabled(pdev),
       .KHR_compute_shader_derivatives = true,
       .KHR_cooperative_matrix = pdev->info.gfx_level >= GFX11 && !pdev->use_llvm,
@@ -600,10 +600,10 @@ radv_physical_device_get_supported_extensions(const struct radv_physical_device 
       .KHR_present_wait =
          instance->drirc.enable_khr_present_wait || wsi_common_vk_instance_supports_present_wait(&instance->vk),
       .KHR_push_descriptor = true,
-      .KHR_ray_query = radv_enable_rt(pdev, false),
-      .KHR_ray_tracing_maintenance1 = radv_enable_rt(pdev, false),
-      .KHR_ray_tracing_pipeline = radv_enable_rt(pdev, true),
-      .KHR_ray_tracing_position_fetch = radv_enable_rt(pdev, false),
+      .KHR_ray_query = radv_enable_rt(pdev),
+      .KHR_ray_tracing_maintenance1 = radv_enable_rt(pdev),
+      .KHR_ray_tracing_pipeline = radv_enable_rt(pdev),
+      .KHR_ray_tracing_position_fetch = radv_enable_rt(pdev),
       .KHR_relaxed_block_layout = true,
       .KHR_sampler_mirror_clamp_to_edge = true,
       .KHR_sampler_ycbcr_conversion = true,
@@ -711,7 +711,7 @@ radv_physical_device_get_supported_extensions(const struct radv_physical_device 
 #endif
       .EXT_pipeline_creation_cache_control = true,
       .EXT_pipeline_creation_feedback = true,
-      .EXT_pipeline_library_group_handles = radv_enable_rt(pdev, true),
+      .EXT_pipeline_library_group_handles = radv_enable_rt(pdev),
       .EXT_pipeline_robustness = !pdev->use_llvm,
       .EXT_post_depth_coverage = pdev->info.gfx_level >= GFX10,
       .EXT_primitive_topology_list_restart = true,
@@ -1119,7 +1119,7 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
 
       /* VK_KHR_ray_tracing_maintenance1 */
       .rayTracingMaintenance1 = true,
-      .rayTracingPipelineTraceRaysIndirect2 = radv_enable_rt(pdev, true),
+      .rayTracingPipelineTraceRaysIndirect2 = radv_enable_rt(pdev),
 
       /* VK_KHR_ray_tracing_position_fetch */
       .rayTracingPositionFetch = true,
@@ -1399,7 +1399,7 @@ radv_get_physical_device_properties(struct radv_physical_device *pdev)
 
    VkShaderStageFlags taskmesh_stages =
       radv_taskmesh_enabled(pdev) ? VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT : 0;
-   VkShaderStageFlags rt_stages = radv_enable_rt(pdev, true) ? RADV_RT_STAGE_BITS : 0;
+   VkShaderStageFlags rt_stages = radv_enable_rt(pdev) ? RADV_RT_STAGE_BITS : 0;
 
    bool accel_dot = pdev->info.has_accelerated_dot_product;
    bool gfx11plus = pdev->info.gfx_level >= GFX11;

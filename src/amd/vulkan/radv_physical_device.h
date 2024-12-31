@@ -253,7 +253,7 @@ radv_use_llvm_for_stage(const struct radv_physical_device *pdev, UNUSED gl_shade
    return pdev->use_llvm;
 }
 
-bool radv_enable_rt(const struct radv_physical_device *pdev, bool rt_pipelines);
+bool radv_enable_rt(const struct radv_physical_device *pdev);
 
 bool radv_emulate_rt(const struct radv_physical_device *pdev);
 
