@@ -1461,7 +1461,7 @@ radv_get_physical_device_properties(struct radv_physical_device *pdev)
       .maxTessellationControlTotalOutputComponents = 4096,
       .maxTessellationEvaluationInputComponents = 128,
       .maxTessellationEvaluationOutputComponents = 128,
-      .maxGeometryShaderInvocations = 127,
+      .maxGeometryShaderInvocations = 32,
       .maxGeometryInputComponents = 64,
       .maxGeometryOutputComponents = 128,
       .maxGeometryOutputVertices = 256,
