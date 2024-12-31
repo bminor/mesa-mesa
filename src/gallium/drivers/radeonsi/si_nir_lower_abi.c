@@ -60,72 +60,6 @@ static nir_def *build_attr_ring_desc(nir_builder *b, struct si_shader *shader,
    return nir_vec(b, comp, 4);
 }
 
-static nir_def *
-fetch_framebuffer(nir_builder *b, struct si_shader_args *args,
-                  struct si_shader_selector *sel, union si_shader_key *key)
-{
-   /* Load the image descriptor. */
-   STATIC_ASSERT(SI_PS_IMAGE_COLORBUF0 % 2 == 0);
-   STATIC_ASSERT(SI_PS_IMAGE_COLORBUF0_FMASK % 2 == 0);
-
-   nir_def *zero = nir_imm_zero(b, 1, 32);
-   nir_def *undef = nir_undef(b, 1, 32);
-
-   unsigned chan = 0;
-   nir_def *vec[4] = {undef, undef, undef, undef};
-
-   vec[chan++] = ac_nir_unpack_arg(b, &args->ac, args->ac.pos_fixed_pt, 0, 16);
-
-   if (!key->ps.mono.fbfetch_is_1D)
-      vec[chan++] = ac_nir_unpack_arg(b, &args->ac, args->ac.pos_fixed_pt, 16, 16);
-
-   /* Get the current render target layer index. */
-   if (key->ps.mono.fbfetch_layered)
-      vec[chan++] = ac_nir_unpack_arg(b, &args->ac, args->ac.ancillary, 16, 11);
-
-   nir_def *coords = nir_vec(b, vec, 4);
-
-   enum glsl_sampler_dim dim;
-   if (key->ps.mono.fbfetch_msaa)
-      dim = GLSL_SAMPLER_DIM_MS;
-   else if (key->ps.mono.fbfetch_is_1D)
-      dim = GLSL_SAMPLER_DIM_1D;
-   else
-      dim = GLSL_SAMPLER_DIM_2D;
-
-   nir_def *sample_id;
-   if (key->ps.mono.fbfetch_msaa) {
-      sample_id = ac_nir_unpack_arg(b, &args->ac, args->ac.ancillary, 8, 4);
-
-      if (sel->screen->info.gfx_level < GFX11 &&
-          !(sel->screen->debug_flags & DBG(NO_FMASK))) {
-         nir_def *desc =
-            si_nir_load_internal_binding(b, args, SI_PS_IMAGE_COLORBUF0_FMASK, 8);
-
-         nir_def *fmask =
-            nir_bindless_image_fragment_mask_load_amd(
-               b, desc, coords,
-               .image_dim = dim,
-               .image_array = key->ps.mono.fbfetch_layered,
-               .access = ACCESS_CAN_REORDER);
-
-         nir_def *offset = nir_ishl_imm(b, sample_id, 2);
-         /* 3 for EQAA handling, see lower_image_to_fragment_mask_load() */
-         nir_def *width = nir_imm_int(b, 3);
-         sample_id = nir_ubfe(b, fmask, offset, width);
-      }
-   } else {
-      sample_id = zero;
-   }
-
-   nir_def *desc = si_nir_load_internal_binding(b, args, SI_PS_IMAGE_COLORBUF0, 8);
-
-   return nir_bindless_image_load(b, 4, 32, desc, coords, sample_id, zero,
-                                  .image_dim = dim,
-                                  .image_array = key->ps.mono.fbfetch_layered,
-                                  .access = ACCESS_CAN_REORDER);
-}
-
 static nir_def *build_tess_ring_desc(nir_builder *b, struct si_screen *screen,
                                          struct si_shader_args *args)
 {
@@ -539,18 +473,6 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
       replacement = nir_load_ubo(b, 2, 32, buf, offset, .range = ~0);
       break;
    }
-   case nir_intrinsic_load_output: {
-      nir_io_semantics sem = nir_intrinsic_io_semantics(intrin);
-
-      /* not fbfetch */
-      if (!(stage == MESA_SHADER_FRAGMENT && sem.fb_fetch_output))
-         return false;
-
-      /* Ignore src0, because KHR_blend_func_extended disallows multiple render targets. */
-
-      replacement = fetch_framebuffer(b, args, sel, key);
-      break;
-   }
    case nir_intrinsic_load_ring_tess_factors_amd: {
       assert(s->tess_offchip_ring);
       nir_def *addr = nir_channel(b, s->tess_offchip_ring, 0);
@@ -677,6 +599,14 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
       }
       break;
    }
+   case nir_intrinsic_load_fbfetch_image_fmask_desc_amd:
+      STATIC_ASSERT(SI_PS_IMAGE_COLORBUF0_FMASK % 2 == 0);
+      replacement = si_nir_load_internal_binding(b, args, SI_PS_IMAGE_COLORBUF0_FMASK, 8);
+      break;
+   case nir_intrinsic_load_fbfetch_image_desc_amd:
+      STATIC_ASSERT(SI_PS_IMAGE_COLORBUF0 % 2 == 0);
+      replacement = si_nir_load_internal_binding(b, args, SI_PS_IMAGE_COLORBUF0, 8);
+      break;
    default:
       return false;
    }

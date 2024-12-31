@@ -314,6 +314,59 @@ lower_load_barycentric_at_offset(nir_builder *b, nir_def *offset, enum glsl_inte
    return nir_vec2(b, offset_i, offset_j);
 }
 
+static nir_def *
+fbfetch_color_buffer0(nir_builder *b, lower_ps_early_state *s)
+{
+   nir_def *zero = nir_imm_zero(b, 1, 32);
+   nir_def *undef = nir_undef(b, 1, 32);
+
+   unsigned chan = 0;
+   nir_def *coord_vec[4] = {undef, undef, undef, undef};
+   nir_def *pixel_coord = nir_u2u32(b, nir_load_pixel_coord(b));
+
+   coord_vec[chan++] = nir_channel(b, pixel_coord, 0);
+
+   if (!s->options->fbfetch_is_1D)
+      coord_vec[chan++] = nir_channel(b, pixel_coord, 1);
+
+   /* Get the current render target layer index. */
+   if (s->options->fbfetch_layered)
+      coord_vec[chan++] = nir_load_layer_id(b);
+
+   nir_def *coords = nir_vec(b, coord_vec, 4);
+
+   enum glsl_sampler_dim dim;
+   if (s->options->fbfetch_msaa)
+      dim = GLSL_SAMPLER_DIM_MS;
+   else if (s->options->fbfetch_is_1D)
+      dim = GLSL_SAMPLER_DIM_1D;
+   else
+      dim = GLSL_SAMPLER_DIM_2D;
+
+   nir_def *sample_id;
+   if (s->options->fbfetch_msaa) {
+      sample_id = nir_load_sample_id(b);
+
+      if (s->options->fbfetch_apply_fmask) {
+         nir_def *fmask =
+            nir_bindless_image_fragment_mask_load_amd(
+               b, nir_load_fbfetch_image_fmask_desc_amd(b), coords,
+               .image_dim = dim,
+               .image_array = s->options->fbfetch_layered,
+               .access = ACCESS_CAN_REORDER);
+         sample_id = nir_ubfe(b, fmask, nir_ishl_imm(b, sample_id, 2), nir_imm_int(b, 3));
+      }
+   } else {
+      sample_id = zero;
+   }
+
+   return nir_bindless_image_load(b, 4, 32, nir_load_fbfetch_image_desc_amd(b), coords, sample_id,
+                                  zero,
+                                  .image_dim = dim,
+                                  .image_array = s->options->fbfetch_layered,
+                                  .access = ACCESS_CAN_REORDER);
+}
+
 static bool
 lower_ps_intrinsic(nir_builder *b, nir_instr *instr, void *state)
 {
@@ -401,6 +454,12 @@ lower_ps_intrinsic(nir_builder *b, nir_instr *instr, void *state)
       }
       return true;
    }
+   case nir_intrinsic_load_output:
+      if (nir_intrinsic_io_semantics(intrin).fb_fetch_output) {
+         nir_def_replace(&intrin->def, fbfetch_color_buffer0(b, s));
+         return true;
+      }
+      break;
    default:
       break;
    }

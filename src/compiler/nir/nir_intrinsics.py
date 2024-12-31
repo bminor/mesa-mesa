@@ -1915,6 +1915,11 @@ intrinsic("sleep_amd", indices=[BASE])
 # s_nop BASE (sleep for BASE+1 cycles, BASE must be in [0, 15]).
 intrinsic("nop_amd", indices=[BASE])
 
+# Return the FMASK descriptor of color buffer 0.
+system_value("fbfetch_image_fmask_desc_amd", 8)
+# Return the image descriptor of color buffer 0.
+system_value("fbfetch_image_desc_amd", 8)
+
 system_value("ray_tracing_stack_base_lvp", 1)
 
 system_value("shader_call_data_offset_lvp", 1)

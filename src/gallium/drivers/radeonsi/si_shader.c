@@ -2533,6 +2533,12 @@ static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_
          .force_front_face = key->ps.opt.force_front_face_input,
          .ps_iter_samples = 1 << key->ps.part.prolog.samplemask_log_ps_iter,
 
+         .fbfetch_is_1D = key->ps.mono.fbfetch_is_1D,
+         .fbfetch_layered = key->ps.mono.fbfetch_layered,
+         .fbfetch_msaa = key->ps.mono.fbfetch_msaa,
+         .fbfetch_apply_fmask = sel->screen->info.gfx_level < GFX11 &&
+                                !(sel->screen->debug_flags & DBG(NO_FMASK)),
+
          .clamp_color = key->ps.part.epilog.clamp_color,
          .alpha_test_alpha_to_one = key->ps.part.epilog.alpha_to_one,
          .alpha_func = key->ps.part.epilog.alpha_func,

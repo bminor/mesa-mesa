@@ -281,6 +281,12 @@ typedef struct {
    int force_front_face; /* 0 -> keep, 1 -> set to true, -1 -> set to false */
    unsigned ps_iter_samples;
 
+   /* fbfetch_output */
+   bool fbfetch_is_1D;
+   bool fbfetch_layered;
+   bool fbfetch_msaa;
+   bool fbfetch_apply_fmask;
+
    /* Outputs. */
    bool clamp_color;                /* GL only */
    bool alpha_test_alpha_to_one;    /* GL only, this only affects alpha test */
