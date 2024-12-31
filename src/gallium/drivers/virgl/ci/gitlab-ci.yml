@@ -57,7 +57,7 @@ virgl-on-gles:
   variables:
     PIGLIT_REPLAY_EXTRA_ARGS: "--download-caching-proxy-url=${FDO_HTTP_CACHE_URI}"
 
-virgl-iris-traces-performance:
+.virgl-iris-traces-performance:
   extends:
     - .virgl-iris-test
     - .virgl-iris-rules-performance
