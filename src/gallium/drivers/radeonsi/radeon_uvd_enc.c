@@ -29,6 +29,10 @@ static void radeon_uvd_enc_get_param(struct radeon_uvd_encoder *enc,
    enc->enc_pic.enc_params.reference_picture_index =
       pic->ref_list0[0] == PIPE_H2645_LIST_REF_INVALID_ENTRY ? 0xffffffff : pic->ref_list0[0];
    enc->enc_pic.enc_params.reconstructed_picture_index = pic->dpb_curr_pic;
+
+   enc->enc_pic.session_init.pre_encode_mode =
+      pic->quality_modes.pre_encode_mode ? RENC_UVD_PREENCODE_MODE_4X : RENC_UVD_PREENCODE_MODE_NONE;
+   enc->enc_pic.session_init.pre_encode_chroma_enabled = !!enc->enc_pic.session_init.pre_encode_mode;
 }
 
 static int flush(struct radeon_uvd_encoder *enc, unsigned flags, struct pipe_fence_handle **fence)
@@ -57,6 +61,7 @@ static uint32_t setup_dpb(struct radeon_uvd_encoder *enc, uint32_t num_reconstru
    uint32_t luma_size = align(pitch * MAX2(256, aligned_height), alignment);
    uint32_t chroma_size = align(luma_size / 2, alignment);
    uint32_t offset = 0;
+   uint32_t pre_encode_luma_size, pre_encode_chroma_size;
 
    assert(num_reconstructed_pictures <= RENC_UVD_MAX_NUM_RECONSTRUCTED_PICTURES);
 
@@ -64,11 +69,36 @@ static uint32_t setup_dpb(struct radeon_uvd_encoder *enc, uint32_t num_reconstru
    enc->enc_pic.ctx_buf.rec_chroma_pitch = pitch;
    enc->enc_pic.ctx_buf.num_reconstructed_pictures = num_reconstructed_pictures;
 
+   if (enc->enc_pic.session_init.pre_encode_mode) {
+      uint32_t pre_encode_pitch =
+         align(pitch / enc->enc_pic.session_init.pre_encode_mode, alignment);
+      uint32_t pre_encode_aligned_height =
+         align(aligned_height / enc->enc_pic.session_init.pre_encode_mode, alignment);
+      pre_encode_luma_size =
+         align(pre_encode_pitch * MAX2(256, pre_encode_aligned_height), alignment);
+      pre_encode_chroma_size = align(pre_encode_luma_size / 2, alignment);
+
+      enc->enc_pic.ctx_buf.pre_encode_picture_luma_pitch = pre_encode_pitch;
+      enc->enc_pic.ctx_buf.pre_encode_picture_chroma_pitch = pre_encode_pitch;
+
+      enc->enc_pic.ctx_buf.pre_encode_input_picture.luma_offset = offset;
+      offset += pre_encode_luma_size;
+      enc->enc_pic.ctx_buf.pre_encode_input_picture.chroma_offset = offset;
+      offset += pre_encode_chroma_size;
+   }
+
    for (i = 0; i < num_reconstructed_pictures; i++) {
       enc->enc_pic.ctx_buf.reconstructed_pictures[i].luma_offset = offset;
       offset += luma_size;
       enc->enc_pic.ctx_buf.reconstructed_pictures[i].chroma_offset = offset;
       offset += chroma_size;
+
+      if (enc->enc_pic.session_init.pre_encode_mode) {
+         enc->enc_pic.ctx_buf.pre_encode_reconstructed_pictures[i].luma_offset = offset;
+         offset += pre_encode_luma_size;
+         enc->enc_pic.ctx_buf.pre_encode_reconstructed_pictures[i].chroma_offset = offset;
+         offset += pre_encode_chroma_size;
+      }
    }
 
    enc->dpb_slots = num_reconstructed_pictures;

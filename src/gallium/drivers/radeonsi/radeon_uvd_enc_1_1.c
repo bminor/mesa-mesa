@@ -82,8 +82,6 @@ static void radeon_uvd_enc_session_init_hevc(struct radeon_uvd_encoder *enc)
 
    enc->enc_pic.session_init.aligned_picture_width = align(enc->base.width, 64);
    enc->enc_pic.session_init.aligned_picture_height = align(enc->base.height, 16);
-   enc->enc_pic.session_init.pre_encode_mode = RENC_UVD_PREENCODE_MODE_NONE;
-   enc->enc_pic.session_init.pre_encode_chroma_enabled = false;
 
    if (enc->enc_pic.session_init.aligned_picture_width > enc->source->width)
       padding_width = enc->enc_pic.session_init.aligned_picture_width - enc->source->width;
