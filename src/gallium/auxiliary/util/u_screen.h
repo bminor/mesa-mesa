@@ -36,6 +36,9 @@ int
 u_pipe_screen_get_param_defaults(struct pipe_screen *pscreen,
                                  enum pipe_cap param);
 
+void
+u_init_pipe_screen_caps(struct pipe_screen *pscreen, int accel);
+
 uint64_t u_default_get_timestamp(struct pipe_screen *screen);
 
 typedef struct pipe_screen * (*pipe_screen_create_function)

@@ -572,6 +572,158 @@ u_pipe_screen_get_param_defaults(struct pipe_screen *pscreen,
    }
 }
 
+void
+u_init_pipe_screen_caps(struct pipe_screen *pscreen, int accel)
+{
+   struct pipe_caps *caps = (struct pipe_caps *)&pscreen->caps;
+
+   caps->accelerated = accel;
+   caps->graphics = true;
+   caps->gl_clamp = true;
+   caps->max_render_targets = true;
+   caps->mixed_colorbuffer_formats = true;
+   caps->dithering = true;
+
+   caps->supported_prim_modes_with_restart =
+   caps->supported_prim_modes = BITFIELD_MASK(MESA_PRIM_COUNT);
+
+   /* GL 3.x minimum value. */
+   caps->min_texel_offset = -8;
+   caps->max_texel_offset = 7;
+
+   /* GL_EXT_transform_feedback minimum value. */
+   caps->max_stream_output_separate_components = 4;
+   caps->max_stream_output_interleaved_components = 64;
+
+   /* Minimum GLSL level implemented by gallium drivers. */
+   caps->glsl_feature_level =
+   caps->glsl_feature_level_compatibility = 120;
+
+   caps->vertex_input_alignment = PIPE_VERTEX_INPUT_ALIGNMENT_NONE;
+
+   /* GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT default value. */
+   caps->constant_buffer_offset_alignment = 1;
+
+   /* GL_ARB_map_buffer_alignment minimum value. All drivers expose the extension. */
+   caps->min_map_buffer_alignment = 64;
+
+   /* GL_EXT_texture_buffer minimum value. */
+   caps->texture_buffer_offset_alignment = 256;
+
+   caps->texture_transfer_modes = PIPE_TEXTURE_TRANSFER_BLIT;
+
+   /* GL_EXT_texture_buffer minimum value. */
+   caps->max_texel_buffer_elements_uint = 65536;
+
+   caps->max_viewports = 1;
+
+   caps->endianness = PIPE_ENDIAN_LITTLE;
+
+   /* All new drivers should support persistent/coherent mappings. This CAP
+    * should only be unset by layered drivers whose host drivers cannot support
+    * coherent mappings.
+    */
+   caps->buffer_map_persistent_coherent = true;
+
+   caps->min_texture_gather_offset = -8;
+   caps->max_texture_gather_offset = 7;
+
+   caps->vendor_id =
+   caps->device_id = 0xffffffff;
+
+   /* GL minimum value */
+   caps->max_vertex_attrib_stride = 2048;
+
+   /* All drivers should expose this cap, as it is required for applications to
+    * be able to efficiently compile GL shaders from multiple threads during
+    * load.
+    */
+   caps->shareable_shaders = true;
+
+   caps->multi_draw_indirect_partial_stride = true;
+
+   /* GLES 2.0 minimum value */
+   caps->rasterizer_subpixel_bits = 4;
+
+   caps->prefer_back_buffer_reuse = true;
+
+   /* Drivers generally support this, and it reduces GL overhead just to
+    * throw an error when buffers are mapped.
+    */
+   caps->allow_mapped_buffers_during_execution = true;
+
+   /* Don't unset this unless your driver can do better, like using nir_opt_large_constants() */
+   caps->prefer_imm_arrays_as_constbuf = true;
+
+   caps->max_gs_invocations = 32;
+
+   caps->max_shader_buffer_size_uint = 1 << 27;
+
+   caps->max_vertex_element_src_offset = 2047;
+
+   caps->dest_surface_srgb_control = true;
+
+   caps->max_varyings = 8;
+
+   caps->throttle = true;
+
+#if defined(HAVE_LIBDRM) && (DETECT_OS_LINUX || DETECT_OS_BSD || DETECT_OS_MANAGARM)
+   if (pscreen->get_screen_fd) {
+      uint64_t cap;
+      int fd = pscreen->get_screen_fd(pscreen);
+      if (fd != -1 && (drmGetCap(fd, DRM_CAP_PRIME, &cap) == 0))
+         caps->dmabuf = cap;
+   }
+#endif
+
+   /* Enables ARB_shadow */
+   caps->texture_shadow_map = true;
+
+   caps->flatshade = true;
+   caps->alpha_test = true;
+   caps->point_size_fixed = true;
+   caps->two_sided_color = true;
+   caps->clip_planes = 1;
+
+   caps->max_vertex_buffers = 16;
+
+   caps->nir_images_as_deref = true;
+
+   caps->packed_stream_output = true;
+
+   caps->gl_begin_end_buffer_size = 512 * 1024;
+
+   caps->texrect = true;
+
+   caps->allow_dynamic_vao_fastpath = true;
+
+   caps->max_constant_buffer_size_uint =
+      pscreen->get_shader_param(pscreen, PIPE_SHADER_FRAGMENT,
+                                PIPE_SHADER_CAP_MAX_CONST_BUFFER0_SIZE);
+
+   /* accel=0: on CPU, always disabled
+    * accel>0: on GPU, enable by default, user can disable it manually
+    * accel<0: unknown, disable by default, user can enable it manually
+    */
+   caps->hardware_gl_select =
+      !!accel && debug_get_bool_option("MESA_HW_ACCEL_SELECT", accel > 0) &&
+      /* internal geometry shader need indirect array access */
+      pscreen->get_shader_param(pscreen, PIPE_SHADER_GEOMETRY,
+                                PIPE_SHADER_CAP_INDIRECT_TEMP_ADDR) &&
+      /* internal geometry shader need SSBO support */
+      pscreen->get_shader_param(pscreen, PIPE_SHADER_GEOMETRY,
+                                PIPE_SHADER_CAP_MAX_SHADER_BUFFERS);
+
+   caps->query_timestamp_bits = 64;
+
+   /* this is expected of gallium drivers, but some just don't support it */
+   caps->texture_sampler_independent = true;
+
+   caps->performance_monitor =
+      pscreen->get_driver_query_info && pscreen->get_driver_query_group_info &&
+      pscreen->get_driver_query_group_info(pscreen, 0, NULL) != 0;
+}
+
 uint64_t u_default_get_timestamp(UNUSED struct pipe_screen *screen)
 {
    return os_time_get_nano();

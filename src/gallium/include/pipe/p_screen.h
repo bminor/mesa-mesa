@@ -91,6 +91,8 @@ struct pipe_screen {
    int refcnt;
    void *winsys_priv;
 
+   const struct pipe_caps caps;
+
    /**
     * Get the fd associated with the screen
     * The fd returned is considered read-only, and in particular will not
