@@ -771,9 +771,9 @@ static void radeon_uvd_enc_rc_per_pic(struct radeon_uvd_encoder *enc,
 {
    struct pipe_h265_enc_picture_desc *pic = (struct pipe_h265_enc_picture_desc *)picture;
    enc->enc_pic.rc_per_pic.qp = pic->rc[0].quant_i_frames;
-   enc->enc_pic.rc_per_pic.min_qp_app = 0;
-   enc->enc_pic.rc_per_pic.max_qp_app = 51;
-   enc->enc_pic.rc_per_pic.max_au_size = 0;
+   enc->enc_pic.rc_per_pic.min_qp_app = pic->rc[0].min_qp;
+   enc->enc_pic.rc_per_pic.max_qp_app = pic->rc[0].max_qp ? pic->rc[0].max_qp : 51;
+   enc->enc_pic.rc_per_pic.max_au_size = pic->rc[0].max_au_size;
    enc->enc_pic.rc_per_pic.enabled_filler_data = pic->rc[0].fill_data_enable;
    enc->enc_pic.rc_per_pic.skip_frame_enable = false;
    enc->enc_pic.rc_per_pic.enforce_hrd = pic->rc[0].enforce_hrd;
