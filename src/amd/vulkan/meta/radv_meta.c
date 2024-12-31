@@ -432,7 +432,6 @@ fail:
 VkResult
 radv_device_init_meta(struct radv_device *device)
 {
-   struct radv_physical_device *pdev = radv_device_physical(device);
    VkResult result;
 
    memset(&device->meta_state, 0, sizeof(device->meta_state));
@@ -470,15 +469,8 @@ radv_device_init_meta(struct radv_device *device)
             return result;
       }
 
-      /* FIXME: Acceleration structure builds hang when the build shaders are compiled with LLVM.
-       * Work around it by forcing ACO for now.
-       */
-      bool use_llvm = pdev->use_llvm;
-      if (loaded_cache || use_llvm) {
-         pdev->use_llvm = false;
+      if (loaded_cache) {
          result = radv_device_init_accel_struct_build_state(device);
-         pdev->use_llvm = use_llvm;
-
          if (result != VK_SUCCESS)
             return result;
       }
