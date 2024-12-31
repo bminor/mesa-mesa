@@ -3172,7 +3172,7 @@ radv_DestroyIndirectCommandsLayoutEXT(VkDevice _device, VkIndirectCommandsLayout
    if (!layout)
       return;
 
-   vk_indirect_command_layout_destroy(&device->vk, pAllocator, &layout->vk);
+   radv_destroy_indirect_commands_layout(device, pAllocator, layout);
 }
 
 static void

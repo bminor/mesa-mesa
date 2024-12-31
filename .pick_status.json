@@ -254,7 +254,7 @@
         "description": "radv: fix destroying DGC pipelines",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9f8684359fa988fb5a04c97cb3fdbdc1951fcc30",
         "notes": null
