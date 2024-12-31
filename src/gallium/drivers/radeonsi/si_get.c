@@ -1574,7 +1574,6 @@ void si_init_screen_get_functions(struct si_screen *sscreen)
    options->fuse_ffma32 = use_fma32;
    options->fuse_ffma64 = true;
    options->lower_uniforms_to_ubo = true;
-   options->lower_layer_fs_input_to_sysval = true;
    options->lower_to_scalar = true;
    options->lower_to_scalar_filter =
       sscreen->info.has_packed_math_16bit ? si_alu_to_scalar_packed_math_filter : NULL;
