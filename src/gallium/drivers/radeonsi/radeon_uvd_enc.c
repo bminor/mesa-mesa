@@ -33,6 +33,9 @@ static void radeon_uvd_enc_get_param(struct radeon_uvd_encoder *enc,
    enc->enc_pic.session_init.pre_encode_mode =
       pic->quality_modes.pre_encode_mode ? RENC_UVD_PREENCODE_MODE_4X : RENC_UVD_PREENCODE_MODE_NONE;
    enc->enc_pic.session_init.pre_encode_chroma_enabled = !!enc->enc_pic.session_init.pre_encode_mode;
+   enc->enc_pic.quality_params.vbaq_mode =
+      pic->rc[0].rate_ctrl_method != PIPE_H2645_ENC_RATE_CONTROL_METHOD_DISABLE &&
+      pic->quality_modes.vbaq_mode;
 }
 
 static int flush(struct radeon_uvd_encoder *enc, unsigned flags, struct pipe_fence_handle **fence)
