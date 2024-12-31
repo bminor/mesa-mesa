@@ -300,6 +300,87 @@ lima_screen_get_shader_param(struct pipe_screen *pscreen,
    }
 }
 
+static void
+lima_init_screen_caps(struct pipe_screen *screen)
+{
+   struct pipe_caps *caps = (struct pipe_caps *)&screen->caps;
+
+   u_init_pipe_screen_caps(screen, 1);
+
+   caps->npot_textures = true;
+   caps->blend_equation_separate = true;
+   caps->uma = true;
+   caps->clip_halfz = true;
+   caps->native_fence_fd = true;
+   caps->fragment_shader_texture_lod = true;
+   caps->texture_swizzle = true;
+   caps->vertex_color_unclamped = true;
+   caps->texture_barrier = true;
+   caps->surface_sample_count = true;
+
+   /* not clear supported */
+   caps->fs_coord_origin_upper_left = true;
+   caps->fs_coord_origin_lower_left = true;
+   caps->fs_coord_pixel_center_integer = true;
+   caps->fs_coord_pixel_center_half_integer = true;
+
+   caps->fs_position_is_sysval = true;
+   caps->fs_point_is_sysval = true;
+   caps->fs_face_is_integer_sysval = true;
+
+   caps->texture_half_float_linear = true;
+
+   caps->max_texture_2d_size = 1 << (LIMA_MAX_MIP_LEVELS - 1);
+   caps->max_texture_3d_levels =
+   caps->max_texture_cube_levels = LIMA_MAX_MIP_LEVELS;
+
+   caps->vendor_id = 0x13B5;
+
+   caps->video_memory = 0;
+
+   caps->pci_group =
+   caps->pci_bus =
+   caps->pci_device =
+   caps->pci_function = 0;
+
+   caps->texture_transfer_modes = 0;
+
+   caps->shareable_shaders = false;
+
+   caps->alpha_test = true;
+
+   caps->flatshade = false;
+   caps->two_sided_color = false;
+   caps->clip_planes = 0;
+
+   caps->fragment_shader_derivatives = true;
+
+   /* Mali4x0 PP doesn't have a swizzle for load_input, so use POT-aligned
+    * varyings to avoid unnecessary movs for vec3 and precision downgrade
+    * in case if this vec3 is coordinates for a sampler
+    */
+   caps->prefer_pot_aligned_varyings = true;
+
+   caps->max_dual_source_render_targets = true;
+
+   caps->min_line_width =
+   caps->min_line_width_aa =
+   caps->min_point_size =
+   caps->min_point_size_aa = 1;
+
+   caps->point_size_granularity =
+   caps->line_width_granularity = 0.1;
+
+   caps->max_line_width =
+   caps->max_line_width_aa =
+   caps->max_point_size =
+   caps->max_point_size_aa = 100.0f;
+
+   caps->max_texture_anisotropy = 16.0f;
+
+   caps->max_texture_lod_bias = 15.0f;
+}
+
 static bool
 lima_screen_is_format_supported(struct pipe_screen *pscreen,
                                 enum pipe_format format,
@@ -746,6 +827,8 @@ lima_screen_create(int fd, const struct pipe_screen_config *config,
    lima_resource_screen_init(screen);
    lima_fence_screen_init(screen);
    lima_disk_cache_init(screen);
+
+   lima_init_screen_caps(&screen->base);
 
    slab_create_parent(&screen->transfer_pool, sizeof(struct lima_transfer), 16);
 
