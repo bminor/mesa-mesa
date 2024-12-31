@@ -75,14 +75,36 @@ static void radeon_uvd_enc_task_info(struct radeon_uvd_encoder *enc, bool need_f
 
 static void radeon_uvd_enc_session_init_hevc(struct radeon_uvd_encoder *enc)
 {
+   uint32_t padding_width = 0;
+   uint32_t padding_height = 0;
+   uint32_t max_padding_width = 64 - 2;
+   uint32_t max_padding_height = 16 - 2;
+
    enc->enc_pic.session_init.aligned_picture_width = align(enc->base.width, 64);
    enc->enc_pic.session_init.aligned_picture_height = align(enc->base.height, 16);
-   enc->enc_pic.session_init.padding_width =
-      (enc->enc_pic.crop_left + enc->enc_pic.crop_right) * 2;
-   enc->enc_pic.session_init.padding_height =
-      (enc->enc_pic.crop_top + enc->enc_pic.crop_bottom) * 2;
    enc->enc_pic.session_init.pre_encode_mode = RENC_UVD_PREENCODE_MODE_NONE;
    enc->enc_pic.session_init.pre_encode_chroma_enabled = false;
+
+   if (enc->enc_pic.session_init.aligned_picture_width > enc->source->width)
+      padding_width = enc->enc_pic.session_init.aligned_picture_width - enc->source->width;
+   if (enc->enc_pic.session_init.aligned_picture_height > enc->source->height)
+      padding_height = enc->enc_pic.session_init.aligned_picture_height - enc->source->height;
+
+   /* Input surface can be smaller if the difference is within padding bounds. */
+   if (padding_width > max_padding_width || padding_height > max_padding_height)
+      RVID_ERR("Input surface size doesn't match aligned size\n");
+
+   if (enc->enc_pic.desc->seq.conformance_window_flag) {
+      uint32_t pad_w =
+         (enc->enc_pic.desc->seq.conf_win_left_offset + enc->enc_pic.desc->seq.conf_win_right_offset) * 2;
+      uint32_t pad_h =
+         (enc->enc_pic.desc->seq.conf_win_top_offset + enc->enc_pic.desc->seq.conf_win_bottom_offset) * 2;
+      padding_width = CLAMP(pad_w, padding_width, max_padding_width);
+      padding_height = CLAMP(pad_h, padding_height, max_padding_height);
+   }
+
+   enc->enc_pic.session_init.padding_width = padding_width;
+   enc->enc_pic.session_init.padding_height = padding_height;
 
    RADEON_ENC_BEGIN(RENC_UVD_IB_PARAM_SESSION_INIT);
    RADEON_ENC_CS(enc->enc_pic.session_init.aligned_picture_width);

@@ -314,11 +314,6 @@ struct pipe_video_codec *radeon_uvd_create_encoder(struct pipe_context *context,
 struct radeon_uvd_enc_pic {
    enum pipe_h2645_enc_picture_type picture_type;
    struct pipe_h265_enc_picture_desc *desc;
-
-   unsigned crop_left;
-   unsigned crop_right;
-   unsigned crop_top;
-   unsigned crop_bottom;
    unsigned nal_unit_type;
    unsigned temporal_id;
 
@@ -360,6 +355,7 @@ struct radeon_uvd_encoder {
    struct pb_buffer_lean *handle;
    struct radeon_surf *luma;
    struct radeon_surf *chroma;
+   struct pipe_video_buffer *source;
 
    struct pb_buffer_lean *bs_handle;
    unsigned bs_size;

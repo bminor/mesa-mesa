@@ -29,18 +29,6 @@ static void radeon_uvd_enc_get_param(struct radeon_uvd_encoder *enc,
    enc->enc_pic.enc_params.reference_picture_index =
       pic->ref_list0[0] == PIPE_H2645_LIST_REF_INVALID_ENTRY ? 0xffffffff : pic->ref_list0[0];
    enc->enc_pic.enc_params.reconstructed_picture_index = pic->dpb_curr_pic;
-
-   if (pic->seq.conformance_window_flag) {
-         enc->enc_pic.crop_left = pic->seq.conf_win_left_offset;
-         enc->enc_pic.crop_right = pic->seq.conf_win_right_offset;
-         enc->enc_pic.crop_top = pic->seq.conf_win_top_offset;
-         enc->enc_pic.crop_bottom = pic->seq.conf_win_bottom_offset;
-   } else {
-         enc->enc_pic.crop_left = 0;
-         enc->enc_pic.crop_right = 0;
-         enc->enc_pic.crop_top = 0;
-         enc->enc_pic.crop_bottom = 0;
-   }
 }
 
 static int flush(struct radeon_uvd_encoder *enc, unsigned flags, struct pipe_fence_handle **fence)
@@ -101,6 +89,7 @@ static void radeon_uvd_enc_begin_frame(struct pipe_video_codec *encoder,
    enc->get_buffer(vid_buf->resources[0], &enc->handle, &enc->luma);
    enc->get_buffer(vid_buf->resources[1], NULL, &enc->chroma);
 
+   enc->source = source;
    enc->need_feedback = false;
 
    unsigned dpb_slots = MAX2(pic->seq.sps_max_dec_pic_buffering_minus1[0] + 1, pic->dpb_size);
