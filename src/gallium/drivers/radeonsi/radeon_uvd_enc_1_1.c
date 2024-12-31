@@ -134,13 +134,42 @@ static void radeon_uvd_enc_layer_select(struct radeon_uvd_encoder *enc)
    RADEON_ENC_END();
 }
 
-static void radeon_uvd_enc_slice_control_hevc(struct radeon_uvd_encoder *enc)
+static void radeon_uvd_enc_slice_control_hevc(struct radeon_uvd_encoder *enc,
+                                              struct pipe_picture_desc *picture)
 {
+   struct pipe_h265_enc_picture_desc *pic = (struct pipe_h265_enc_picture_desc *)picture;
+   uint32_t num_ctbs_total, num_ctbs_in_slice;
+
+   num_ctbs_total =
+      DIV_ROUND_UP(enc->base.width, 64) * DIV_ROUND_UP(enc->base.height, 64);
+
+   if (pic->num_slice_descriptors <= 1) {
+      num_ctbs_in_slice = num_ctbs_total;
+   } else {
+      bool use_app_config = true;
+      num_ctbs_in_slice = pic->slices_descriptors[0].num_ctu_in_slice;
+
+      /* All slices must have equal size */
+      for (unsigned i = 1; i < pic->num_slice_descriptors - 1; i++) {
+         if (num_ctbs_in_slice != pic->slices_descriptors[i].num_ctu_in_slice)
+            use_app_config = false;
+      }
+      /* Except last one can be smaller */
+      if (pic->slices_descriptors[pic->num_slice_descriptors - 1].num_ctu_in_slice > num_ctbs_in_slice)
+         use_app_config = false;
+
+      if (!use_app_config) {
+         assert(num_ctbs_total >= pic->num_slice_descriptors);
+         num_ctbs_in_slice =
+            (num_ctbs_total + pic->num_slice_descriptors - 1) / pic->num_slice_descriptors;
+      }
+   }
+
    enc->enc_pic.hevc_slice_ctrl.slice_control_mode = RENC_UVD_SLICE_CONTROL_MODE_FIXED_CTBS;
    enc->enc_pic.hevc_slice_ctrl.fixed_ctbs_per_slice.num_ctbs_per_slice =
-      align(enc->base.width, 64) / 64 * align(enc->base.height, 64) / 64;
+      num_ctbs_in_slice;
    enc->enc_pic.hevc_slice_ctrl.fixed_ctbs_per_slice.num_ctbs_per_slice_segment =
-      enc->enc_pic.hevc_slice_ctrl.fixed_ctbs_per_slice.num_ctbs_per_slice;
+      num_ctbs_in_slice;
 
    RADEON_ENC_BEGIN(RENC_UVD_IB_PARAM_SLICE_CONTROL);
    RADEON_ENC_CS(enc->enc_pic.hevc_slice_ctrl.slice_control_mode);
@@ -236,7 +265,7 @@ static void radeon_uvd_enc_deblocking_filter_hevc(struct radeon_uvd_encoder *enc
 {
    struct pipe_h265_enc_picture_desc *pic = (struct pipe_h265_enc_picture_desc *)picture;
    enc->enc_pic.hevc_deblock.loop_filter_across_slices_enabled =
-      pic->slice.slice_loop_filter_across_slices_enabled_flag;
+      pic->pic.pps_loop_filter_across_slices_enabled_flag;
    enc->enc_pic.hevc_deblock.deblocking_filter_disabled =
       pic->slice.slice_deblocking_filter_disabled_flag;
    enc->enc_pic.hevc_deblock.beta_offset_div2 = pic->slice.slice_beta_offset_div2;
@@ -877,7 +906,7 @@ static void begin(struct radeon_uvd_encoder *enc, struct pipe_picture_desc *pic)
    radeon_uvd_enc_op_init(enc);
 
    radeon_uvd_enc_session_init_hevc(enc);
-   radeon_uvd_enc_slice_control_hevc(enc);
+   radeon_uvd_enc_slice_control_hevc(enc, pic);
    radeon_uvd_enc_spec_misc_hevc(enc, pic);
    radeon_uvd_enc_deblocking_filter_hevc(enc, pic);
 
