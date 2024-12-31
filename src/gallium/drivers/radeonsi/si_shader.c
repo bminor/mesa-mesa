@@ -2675,6 +2675,144 @@ static void get_prev_stage_input_nir(struct si_shader *shader, struct si_linked_
    get_input_nir(&linked->producer_shader, &linked->producer);
 }
 
+static void si_fixup_spi_ps_input_config(struct si_shader *shader)
+{
+   const union si_shader_key *key = &shader->key;
+
+   /* Enable POS_FIXED_PT if polygon stippling is enabled. */
+   if (key->ps.part.prolog.poly_stipple)
+      shader->config.spi_ps_input_ena |= S_0286CC_POS_FIXED_PT_ENA(1);
+
+   /* Set up the enable bits for per-sample shading if needed. */
+   if (key->ps.part.prolog.force_persp_sample_interp &&
+       (G_0286CC_PERSP_CENTER_ENA(shader->config.spi_ps_input_ena) ||
+        G_0286CC_PERSP_CENTROID_ENA(shader->config.spi_ps_input_ena))) {
+      shader->config.spi_ps_input_ena &= C_0286CC_PERSP_CENTER_ENA;
+      shader->config.spi_ps_input_ena &= C_0286CC_PERSP_CENTROID_ENA;
+      shader->config.spi_ps_input_ena |= S_0286CC_PERSP_SAMPLE_ENA(1);
+   }
+   if (key->ps.part.prolog.force_linear_sample_interp &&
+       (G_0286CC_LINEAR_CENTER_ENA(shader->config.spi_ps_input_ena) ||
+        G_0286CC_LINEAR_CENTROID_ENA(shader->config.spi_ps_input_ena))) {
+      shader->config.spi_ps_input_ena &= C_0286CC_LINEAR_CENTER_ENA;
+      shader->config.spi_ps_input_ena &= C_0286CC_LINEAR_CENTROID_ENA;
+      shader->config.spi_ps_input_ena |= S_0286CC_LINEAR_SAMPLE_ENA(1);
+   }
+   if (key->ps.part.prolog.force_persp_center_interp &&
+       (G_0286CC_PERSP_SAMPLE_ENA(shader->config.spi_ps_input_ena) ||
+        G_0286CC_PERSP_CENTROID_ENA(shader->config.spi_ps_input_ena))) {
+      shader->config.spi_ps_input_ena &= C_0286CC_PERSP_SAMPLE_ENA;
+      shader->config.spi_ps_input_ena &= C_0286CC_PERSP_CENTROID_ENA;
+      shader->config.spi_ps_input_ena |= S_0286CC_PERSP_CENTER_ENA(1);
+   }
+   if (key->ps.part.prolog.force_linear_center_interp &&
+       (G_0286CC_LINEAR_SAMPLE_ENA(shader->config.spi_ps_input_ena) ||
+        G_0286CC_LINEAR_CENTROID_ENA(shader->config.spi_ps_input_ena))) {
+      shader->config.spi_ps_input_ena &= C_0286CC_LINEAR_SAMPLE_ENA;
+      shader->config.spi_ps_input_ena &= C_0286CC_LINEAR_CENTROID_ENA;
+      shader->config.spi_ps_input_ena |= S_0286CC_LINEAR_CENTER_ENA(1);
+   }
+
+   /* POW_W_FLOAT requires that one of the perspective weights is enabled. */
+   if (G_0286CC_POS_W_FLOAT_ENA(shader->config.spi_ps_input_ena) &&
+       !(shader->config.spi_ps_input_ena & 0xf)) {
+      shader->config.spi_ps_input_ena |= S_0286CC_PERSP_CENTER_ENA(1);
+   }
+
+   /* At least one pair of interpolation weights must be enabled. */
+   if (!(shader->config.spi_ps_input_ena & 0x7f))
+      shader->config.spi_ps_input_ena |= S_0286CC_LINEAR_CENTER_ENA(1);
+
+   /* The sample mask fixup requires the sample ID. */
+   if (key->ps.part.prolog.samplemask_log_ps_iter)
+      shader->config.spi_ps_input_ena |= S_0286CC_ANCILLARY_ENA(1);
+
+   /* The sample mask fixup has an optimization that replaces the sample mask with the sample ID. */
+   if (key->ps.part.prolog.samplemask_log_ps_iter == 3)
+      shader->config.spi_ps_input_ena &= C_0286CC_SAMPLE_COVERAGE_ENA;
+
+   if (key->ps.part.prolog.get_frag_coord_from_pixel_coord) {
+      shader->config.spi_ps_input_ena &= C_0286CC_POS_X_FLOAT_ENA;
+      shader->config.spi_ps_input_ena &= C_0286CC_POS_Y_FLOAT_ENA;
+      shader->config.spi_ps_input_ena |= S_0286CC_POS_FIXED_PT_ENA(1);
+   }
+}
+
+static void
+si_set_spi_ps_input_config(struct si_shader *shader)
+{
+   const struct si_shader_selector *sel = shader->selector;
+   const struct si_shader_info *info = &sel->info;
+   const union si_shader_key *key = &shader->key;
+
+   /* TODO: This should be determined from the final NIR instead of the input NIR,
+    * otherwise LLVM will have a performance advantage here because it determines
+    * VGPR inputs for each shader variant after LLVM optimizations.
+    */
+   uint8_t frag_coord_mask = info->reads_frag_coord_mask | info->reads_sample_pos_mask;
+
+   shader->config.spi_ps_input_ena =
+      S_0286CC_PERSP_CENTER_ENA(info->uses_persp_center) |
+      S_0286CC_PERSP_CENTROID_ENA(info->uses_persp_centroid) |
+      S_0286CC_PERSP_SAMPLE_ENA(info->uses_persp_sample) |
+      S_0286CC_LINEAR_CENTER_ENA(info->uses_linear_center) |
+      S_0286CC_LINEAR_CENTROID_ENA(info->uses_linear_centroid) |
+      S_0286CC_LINEAR_SAMPLE_ENA(info->uses_linear_sample) |
+      S_0286CC_POS_X_FLOAT_ENA(!!(frag_coord_mask & 0x1) &&
+                               !key->ps.part.prolog.get_frag_coord_from_pixel_coord) |
+      S_0286CC_POS_Y_FLOAT_ENA(!!(frag_coord_mask & 0x2) &&
+                               !key->ps.part.prolog.get_frag_coord_from_pixel_coord) |
+      S_0286CC_POS_Z_FLOAT_ENA(!!(frag_coord_mask & 0x4)) |
+      S_0286CC_POS_W_FLOAT_ENA(!!(frag_coord_mask & 0x8)) |
+      S_0286CC_FRONT_FACE_ENA(info->uses_frontface && !key->ps.opt.force_front_face_input) |
+      S_0286CC_SAMPLE_COVERAGE_ENA(info->reads_samplemask) |
+      S_0286CC_ANCILLARY_ENA(info->uses_sampleid || info->uses_layer_id) |
+      S_0286CC_POS_FIXED_PT_ENA(key->ps.part.prolog.get_frag_coord_from_pixel_coord);
+
+   if (key->ps.part.prolog.color_two_side)
+      shader->config.spi_ps_input_ena |= S_0286CC_FRONT_FACE_ENA(1);
+
+   /* INTERP_MODE_COLOR, same as SMOOTH if flat shading is disabled. */
+   if (info->uses_interp_color && !key->ps.part.prolog.flatshade_colors) {
+      shader->config.spi_ps_input_ena |=
+         S_0286CC_PERSP_SAMPLE_ENA(info->uses_persp_sample_color) |
+         S_0286CC_PERSP_CENTER_ENA(info->uses_persp_center_color) |
+         S_0286CC_PERSP_CENTROID_ENA(info->uses_persp_centroid_color);
+   }
+
+   /* nir_lower_poly_line_smooth use nir_load_sample_mask_in */
+   if (key->ps.mono.poly_line_smoothing)
+      shader->config.spi_ps_input_ena |= S_0286CC_SAMPLE_COVERAGE_ENA(1);
+
+   /* nir_lower_point_smooth use nir_load_point_coord_maybe_flipped which is lowered
+    * to nir_load_barycentric_pixel and nir_load_interpolated_input.
+    */
+   if (key->ps.mono.point_smoothing)
+      shader->config.spi_ps_input_ena |= S_0286CC_PERSP_CENTER_ENA(1);
+
+   /* See fetch_framebuffer() for used args when fbfetch output. */
+   if (info->base.fs.uses_fbfetch_output) {
+      shader->config.spi_ps_input_ena |= S_0286CC_POS_FIXED_PT_ENA(1);
+
+      if (key->ps.mono.fbfetch_layered || key->ps.mono.fbfetch_msaa)
+         shader->config.spi_ps_input_ena |= S_0286CC_ANCILLARY_ENA(1);
+   }
+
+   if (shader->is_monolithic) {
+      si_fixup_spi_ps_input_config(shader);
+      shader->config.spi_ps_input_addr = shader->config.spi_ps_input_ena;
+   } else {
+      /* Part mode will call si_fixup_spi_ps_input_config() when combining multi
+       * shader part in si_shader_select_ps_parts().
+       *
+       * Reserve register locations for VGPR inputs the PS prolog may need.
+       */
+      shader->config.spi_ps_input_addr =
+         shader->config.spi_ps_input_ena |
+         SI_SPI_PS_INPUT_ADDR_FOR_PROLOG;
+   }
+}
+
 static void get_nir_shaders(struct si_shader *shader, struct si_linked_shaders *linked)
 {
    memset(linked, 0, sizeof(*linked));
@@ -2851,144 +2989,6 @@ si_nir_generate_gs_copy_shader(struct si_screen *sscreen,
       si_fix_resource_usage(sscreen, shader);
    }
    return shader;
-}
-
-static void si_fixup_spi_ps_input_config(struct si_shader *shader)
-{
-   const union si_shader_key *key = &shader->key;
-
-   /* Enable POS_FIXED_PT if polygon stippling is enabled. */
-   if (key->ps.part.prolog.poly_stipple)
-      shader->config.spi_ps_input_ena |= S_0286CC_POS_FIXED_PT_ENA(1);
-
-   /* Set up the enable bits for per-sample shading if needed. */
-   if (key->ps.part.prolog.force_persp_sample_interp &&
-       (G_0286CC_PERSP_CENTER_ENA(shader->config.spi_ps_input_ena) ||
-        G_0286CC_PERSP_CENTROID_ENA(shader->config.spi_ps_input_ena))) {
-      shader->config.spi_ps_input_ena &= C_0286CC_PERSP_CENTER_ENA;
-      shader->config.spi_ps_input_ena &= C_0286CC_PERSP_CENTROID_ENA;
-      shader->config.spi_ps_input_ena |= S_0286CC_PERSP_SAMPLE_ENA(1);
-   }
-   if (key->ps.part.prolog.force_linear_sample_interp &&
-       (G_0286CC_LINEAR_CENTER_ENA(shader->config.spi_ps_input_ena) ||
-        G_0286CC_LINEAR_CENTROID_ENA(shader->config.spi_ps_input_ena))) {
-      shader->config.spi_ps_input_ena &= C_0286CC_LINEAR_CENTER_ENA;
-      shader->config.spi_ps_input_ena &= C_0286CC_LINEAR_CENTROID_ENA;
-      shader->config.spi_ps_input_ena |= S_0286CC_LINEAR_SAMPLE_ENA(1);
-   }
-   if (key->ps.part.prolog.force_persp_center_interp &&
-       (G_0286CC_PERSP_SAMPLE_ENA(shader->config.spi_ps_input_ena) ||
-        G_0286CC_PERSP_CENTROID_ENA(shader->config.spi_ps_input_ena))) {
-      shader->config.spi_ps_input_ena &= C_0286CC_PERSP_SAMPLE_ENA;
-      shader->config.spi_ps_input_ena &= C_0286CC_PERSP_CENTROID_ENA;
-      shader->config.spi_ps_input_ena |= S_0286CC_PERSP_CENTER_ENA(1);
-   }
-   if (key->ps.part.prolog.force_linear_center_interp &&
-       (G_0286CC_LINEAR_SAMPLE_ENA(shader->config.spi_ps_input_ena) ||
-        G_0286CC_LINEAR_CENTROID_ENA(shader->config.spi_ps_input_ena))) {
-      shader->config.spi_ps_input_ena &= C_0286CC_LINEAR_SAMPLE_ENA;
-      shader->config.spi_ps_input_ena &= C_0286CC_LINEAR_CENTROID_ENA;
-      shader->config.spi_ps_input_ena |= S_0286CC_LINEAR_CENTER_ENA(1);
-   }
-
-   /* POW_W_FLOAT requires that one of the perspective weights is enabled. */
-   if (G_0286CC_POS_W_FLOAT_ENA(shader->config.spi_ps_input_ena) &&
-       !(shader->config.spi_ps_input_ena & 0xf)) {
-      shader->config.spi_ps_input_ena |= S_0286CC_PERSP_CENTER_ENA(1);
-   }
-
-   /* At least one pair of interpolation weights must be enabled. */
-   if (!(shader->config.spi_ps_input_ena & 0x7f))
-      shader->config.spi_ps_input_ena |= S_0286CC_LINEAR_CENTER_ENA(1);
-
-   /* The sample mask fixup requires the sample ID. */
-   if (key->ps.part.prolog.samplemask_log_ps_iter)
-      shader->config.spi_ps_input_ena |= S_0286CC_ANCILLARY_ENA(1);
-
-   /* The sample mask fixup has an optimization that replaces the sample mask with the sample ID. */
-   if (key->ps.part.prolog.samplemask_log_ps_iter == 3)
-      shader->config.spi_ps_input_ena &= C_0286CC_SAMPLE_COVERAGE_ENA;
-
-   if (key->ps.part.prolog.get_frag_coord_from_pixel_coord) {
-      shader->config.spi_ps_input_ena &= C_0286CC_POS_X_FLOAT_ENA;
-      shader->config.spi_ps_input_ena &= C_0286CC_POS_Y_FLOAT_ENA;
-      shader->config.spi_ps_input_ena |= S_0286CC_POS_FIXED_PT_ENA(1);
-   }
-}
-
-static void
-si_set_spi_ps_input_config(struct si_shader *shader)
-{
-   const struct si_shader_selector *sel = shader->selector;
-   const struct si_shader_info *info = &sel->info;
-   const union si_shader_key *key = &shader->key;
-
-   /* TODO: This should be determined from the final NIR instead of the input NIR,
-    * otherwise LLVM will have a performance advantage here because it determines
-    * VGPR inputs for each shader variant after LLVM optimizations.
-    */
-   uint8_t frag_coord_mask = info->reads_frag_coord_mask | info->reads_sample_pos_mask;
-
-   shader->config.spi_ps_input_ena =
-      S_0286CC_PERSP_CENTER_ENA(info->uses_persp_center) |
-      S_0286CC_PERSP_CENTROID_ENA(info->uses_persp_centroid) |
-      S_0286CC_PERSP_SAMPLE_ENA(info->uses_persp_sample) |
-      S_0286CC_LINEAR_CENTER_ENA(info->uses_linear_center) |
-      S_0286CC_LINEAR_CENTROID_ENA(info->uses_linear_centroid) |
-      S_0286CC_LINEAR_SAMPLE_ENA(info->uses_linear_sample) |
-      S_0286CC_POS_X_FLOAT_ENA(!!(frag_coord_mask & 0x1) &&
-                               !key->ps.part.prolog.get_frag_coord_from_pixel_coord) |
-      S_0286CC_POS_Y_FLOAT_ENA(!!(frag_coord_mask & 0x2) &&
-                               !key->ps.part.prolog.get_frag_coord_from_pixel_coord) |
-      S_0286CC_POS_Z_FLOAT_ENA(!!(frag_coord_mask & 0x4)) |
-      S_0286CC_POS_W_FLOAT_ENA(!!(frag_coord_mask & 0x8)) |
-      S_0286CC_FRONT_FACE_ENA(info->uses_frontface && !key->ps.opt.force_front_face_input) |
-      S_0286CC_SAMPLE_COVERAGE_ENA(info->reads_samplemask) |
-      S_0286CC_ANCILLARY_ENA(info->uses_sampleid || info->uses_layer_id) |
-      S_0286CC_POS_FIXED_PT_ENA(key->ps.part.prolog.get_frag_coord_from_pixel_coord);
-
-   if (key->ps.part.prolog.color_two_side)
-      shader->config.spi_ps_input_ena |= S_0286CC_FRONT_FACE_ENA(1);
-
-   /* INTERP_MODE_COLOR, same as SMOOTH if flat shading is disabled. */
-   if (info->uses_interp_color && !key->ps.part.prolog.flatshade_colors) {
-      shader->config.spi_ps_input_ena |=
-         S_0286CC_PERSP_SAMPLE_ENA(info->uses_persp_sample_color) |
-         S_0286CC_PERSP_CENTER_ENA(info->uses_persp_center_color) |
-         S_0286CC_PERSP_CENTROID_ENA(info->uses_persp_centroid_color);
-   }
-
-   /* nir_lower_poly_line_smooth use nir_load_sample_mask_in */
-   if (key->ps.mono.poly_line_smoothing)
-      shader->config.spi_ps_input_ena |= S_0286CC_SAMPLE_COVERAGE_ENA(1);
-
-   /* nir_lower_point_smooth use nir_load_point_coord_maybe_flipped which is lowered
-    * to nir_load_barycentric_pixel and nir_load_interpolated_input.
-    */
-   if (key->ps.mono.point_smoothing)
-      shader->config.spi_ps_input_ena |= S_0286CC_PERSP_CENTER_ENA(1);
-
-   /* See fetch_framebuffer() for used args when fbfetch output. */
-   if (info->base.fs.uses_fbfetch_output) {
-      shader->config.spi_ps_input_ena |= S_0286CC_POS_FIXED_PT_ENA(1);
-
-      if (key->ps.mono.fbfetch_layered || key->ps.mono.fbfetch_msaa)
-         shader->config.spi_ps_input_ena |= S_0286CC_ANCILLARY_ENA(1);
-   }
-
-   if (shader->is_monolithic) {
-      si_fixup_spi_ps_input_config(shader);
-      shader->config.spi_ps_input_addr = shader->config.spi_ps_input_ena;
-   } else {
-      /* Part mode will call si_fixup_spi_ps_input_config() when combining multi
-       * shader part in si_shader_select_ps_parts().
-       *
-       * Reserve register locations for VGPR inputs the PS prolog may need.
-       */
-      shader->config.spi_ps_input_addr =
-         shader->config.spi_ps_input_ena |
-         SI_SPI_PS_INPUT_ADDR_FOR_PROLOG;
-   }
 }
 
 static void
