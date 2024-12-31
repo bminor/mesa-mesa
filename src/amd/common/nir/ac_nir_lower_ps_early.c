@@ -24,49 +24,65 @@ typedef struct {
    nir_variable *linear_center;
    nir_variable *linear_centroid;
    nir_variable *linear_sample;
-   bool lower_load_barycentric;
 
    bool seen_color0_alpha;
 } lower_ps_early_state;
 
-static void
-create_interp_param(nir_builder *b, lower_ps_early_state *s)
+static nir_variable *
+get_baryc_var_common(nir_builder *b, bool will_replace, nir_variable **var, const char *var_name)
 {
-   if (s->options->force_persp_sample_interp) {
-      s->persp_center =
-         nir_local_variable_create(b->impl, glsl_vec_type(2), "persp_center");
+   if (will_replace) {
+      if (!*var) {
+         *var = nir_local_variable_create(b->impl, glsl_vec_type(2), var_name);
+      }
+      return *var;
    }
+   return NULL;
+}
 
-   if (s->options->force_persp_sample_interp ||
-       s->options->force_persp_center_interp) {
-      s->persp_centroid =
-         nir_local_variable_create(b->impl, glsl_vec_type(2), "persp_centroid");
+static nir_variable *
+get_baryc_var(nir_builder *b, nir_intrinsic_op baryc_op, enum glsl_interp_mode mode,
+              lower_ps_early_state *s)
+{
+   switch (baryc_op) {
+   case nir_intrinsic_load_barycentric_pixel:
+      if (mode == INTERP_MODE_NOPERSPECTIVE) {
+         return get_baryc_var_common(b, s->options->force_linear_sample_interp, &s->linear_center,
+                                     "linear_center");
+      } else {
+         return get_baryc_var_common(b, s->options->force_persp_sample_interp, &s->persp_center,
+                                     "persp_center");
+      }
+   case nir_intrinsic_load_barycentric_centroid:
+      if (mode == INTERP_MODE_NOPERSPECTIVE) {
+         return get_baryc_var_common(b, s->options->force_linear_sample_interp ||
+                                     s->options->force_linear_center_interp, &s->linear_centroid,
+                                     "linear_centroid");
+      } else {
+         return get_baryc_var_common(b, s->options->force_persp_sample_interp ||
+                                     s->options->force_persp_center_interp, &s->persp_centroid,
+                                     "persp_centroid");
+      }
+   case nir_intrinsic_load_barycentric_sample:
+      if (mode == INTERP_MODE_NOPERSPECTIVE) {
+         return get_baryc_var_common(b, s->options->force_linear_center_interp, &s->linear_sample,
+                                     "linear_sample");
+      } else {
+         return get_baryc_var_common(b, s->options->force_persp_center_interp, &s->persp_sample,
+                                     "persp_sample");
+      }
+   default:
+      return NULL;
    }
+}
 
-   if (s->options->force_persp_center_interp) {
-      s->persp_sample =
-         nir_local_variable_create(b->impl, glsl_vec_type(2), "persp_sample");
-   }
-
-   if (s->options->force_linear_sample_interp) {
-      s->linear_center =
-         nir_local_variable_create(b->impl, glsl_vec_type(2), "linear_center");
-   }
-
-   if (s->options->force_linear_sample_interp ||
-       s->options->force_linear_center_interp) {
-      s->linear_centroid =
-         nir_local_variable_create(b->impl, glsl_vec_type(2), "linear_centroid");
-   }
-
-   if (s->options->force_linear_center_interp) {
-      s->linear_sample =
-         nir_local_variable_create(b->impl, glsl_vec_type(2), "linear_sample");
-   }
-
-   s->lower_load_barycentric =
-      s->persp_center || s->persp_centroid || s->persp_sample ||
-      s->linear_center || s->linear_centroid || s->linear_sample;
+static void
+set_interp_vars(nir_builder *b, nir_def *new_baryc, nir_variable *baryc1, nir_variable *baryc2)
+{
+   if (baryc1)
+      nir_store_var(b, baryc1, new_baryc, 0x3);
+   if (baryc2)
+      nir_store_var(b, baryc2, new_baryc, 0x3);
 }
 
 static void
@@ -75,83 +91,35 @@ init_interp_param(nir_builder *b, lower_ps_early_state *s)
    b->cursor = nir_before_cf_list(&b->impl->body);
 
    if (s->options->force_persp_sample_interp) {
-      nir_def *sample =
-         nir_load_barycentric_sample(b, 32, .interp_mode = INTERP_MODE_SMOOTH);
-      nir_store_var(b, s->persp_center, sample, 0x3);
-      nir_store_var(b, s->persp_centroid, sample, 0x3);
+      set_interp_vars(b, nir_load_barycentric_sample(b, 32, .interp_mode = INTERP_MODE_SMOOTH),
+                      s->persp_center, s->persp_centroid);
    }
 
    if (s->options->force_linear_sample_interp) {
-      nir_def *sample =
-         nir_load_barycentric_sample(b, 32, .interp_mode = INTERP_MODE_NOPERSPECTIVE);
-      nir_store_var(b, s->linear_center, sample, 0x3);
-      nir_store_var(b, s->linear_centroid, sample, 0x3);
+      set_interp_vars(b, nir_load_barycentric_sample(b, 32, .interp_mode = INTERP_MODE_NOPERSPECTIVE),
+                      s->linear_center, s->linear_centroid);
    }
 
    if (s->options->force_persp_center_interp) {
-      nir_def *center =
-         nir_load_barycentric_pixel(b, 32, .interp_mode = INTERP_MODE_SMOOTH);
-      nir_store_var(b, s->persp_sample, center, 0x3);
-      nir_store_var(b, s->persp_centroid, center, 0x3);
+      set_interp_vars(b, nir_load_barycentric_pixel(b, 32, .interp_mode = INTERP_MODE_SMOOTH),
+                      s->persp_sample, s->persp_centroid);
    }
 
    if (s->options->force_linear_center_interp) {
-      nir_def *center =
-         nir_load_barycentric_pixel(b, 32, .interp_mode = INTERP_MODE_NOPERSPECTIVE);
-      nir_store_var(b, s->linear_sample, center, 0x3);
-      nir_store_var(b, s->linear_centroid, center, 0x3);
+      set_interp_vars(b, nir_load_barycentric_pixel(b, 32, .interp_mode = INTERP_MODE_NOPERSPECTIVE),
+                      s->linear_sample, s->linear_centroid);
    }
 }
 
 static bool
 rewrite_ps_load_barycentric(nir_builder *b, nir_intrinsic_instr *intrin, lower_ps_early_state *s)
 {
-   enum glsl_interp_mode mode = nir_intrinsic_interp_mode(intrin);
-   nir_variable *var = NULL;
-
-   switch (mode) {
-   case INTERP_MODE_NONE:
-   case INTERP_MODE_SMOOTH:
-      switch (intrin->intrinsic) {
-      case nir_intrinsic_load_barycentric_pixel:
-         var = s->persp_center;
-         break;
-      case nir_intrinsic_load_barycentric_centroid:
-         var = s->persp_centroid;
-         break;
-      case nir_intrinsic_load_barycentric_sample:
-         var = s->persp_sample;
-         break;
-      default:
-         break;
-      }
-      break;
-
-   case INTERP_MODE_NOPERSPECTIVE:
-      switch (intrin->intrinsic) {
-      case nir_intrinsic_load_barycentric_pixel:
-         var = s->linear_center;
-         break;
-      case nir_intrinsic_load_barycentric_centroid:
-         var = s->linear_centroid;
-         break;
-      case nir_intrinsic_load_barycentric_sample:
-         var = s->linear_sample;
-         break;
-      default:
-         break;
-      }
-      break;
-
-   default:
-      break;
-   }
-
-   if (!var)
+   nir_variable *baryc_var = get_baryc_var(b, intrin->intrinsic,
+                                           nir_intrinsic_interp_mode(intrin), s);
+   if (!baryc_var)
       return false;
 
-   nir_def *replacement = nir_load_var(b, var);
-   nir_def_replace(&intrin->def, replacement);
+   nir_def_replace(&intrin->def, nir_load_var(b, baryc_var));
    return true;
 }
 
@@ -255,7 +223,8 @@ optimize_lower_ps_outputs(nir_builder *b, nir_intrinsic_instr *intrin, lower_ps_
       }
    }
 
-   if (progress && intrin->src[0].ssa != value) {
+   if (intrin->src[0].ssa != value) {
+      assert(progress);
       nir_src_rewrite(&intrin->src[0], value);
       intrin->num_components = value->num_components;
    } else {
@@ -384,9 +353,7 @@ lower_ps_intrinsic(nir_builder *b, nir_instr *instr, void *state)
    case nir_intrinsic_load_barycentric_pixel:
    case nir_intrinsic_load_barycentric_centroid:
    case nir_intrinsic_load_barycentric_sample:
-      if (s->lower_load_barycentric)
-         return rewrite_ps_load_barycentric(b, intrin, s);
-      break;
+      return rewrite_ps_load_barycentric(b, intrin, s);
    case nir_intrinsic_load_sample_mask_in:
       if (s->options->ps_iter_samples > 1)
          return lower_ps_load_sample_mask_in(b, intrin, s);
@@ -467,7 +434,7 @@ lower_ps_intrinsic(nir_builder *b, nir_instr *instr, void *state)
    return false;
 }
 
-void
+bool
 ac_nir_lower_ps_early(nir_shader *nir, const ac_nir_lower_ps_early_options *options)
 {
    assert(nir->info.stage == MESA_SHADER_FRAGMENT);
@@ -480,16 +447,17 @@ ac_nir_lower_ps_early(nir_shader *nir, const ac_nir_lower_ps_early_options *opti
       .options = options,
    };
 
-   create_interp_param(b, &state);
+   bool progress = nir_shader_instructions_pass(nir, lower_ps_intrinsic,
+                                                nir_metadata_control_flow, &state);
 
-   nir_shader_instructions_pass(nir, lower_ps_intrinsic,
-                                nir_metadata_control_flow,
-                                &state);
+   if (state.persp_center || state.persp_centroid || state.persp_sample ||
+       state.linear_center || state.linear_centroid || state.linear_sample) {
+      /* This must be after lower_ps_intrinsic. */
+      init_interp_param(b, &state);
 
-   /* This must be after lower_ps_intrinsic. */
-   init_interp_param(b, &state);
+      /* Cleanup local variables, as RADV won't do this. */
+      NIR_PASS(_, nir, nir_lower_vars_to_ssa);
+   }
 
-   /* Cleanup local variables, as RADV won't do this. */
-   if (state.lower_load_barycentric)
-      nir_lower_vars_to_ssa(nir);
+   return progress;
 }

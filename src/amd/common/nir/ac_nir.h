@@ -298,7 +298,7 @@ typedef struct {
    bool kill_samplemask;
 } ac_nir_lower_ps_early_options;
 
-void
+bool
 ac_nir_lower_ps_early(nir_shader *nir, const ac_nir_lower_ps_early_options *options);
 
 typedef struct {

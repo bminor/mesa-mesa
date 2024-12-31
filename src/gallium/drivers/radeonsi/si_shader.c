@@ -2549,7 +2549,7 @@ static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_
          .kill_samplemask = key->ps.part.epilog.kill_samplemask,
       };
 
-      NIR_PASS_V(nir, ac_nir_lower_ps_early, &early_options);
+      NIR_PASS(progress, nir, ac_nir_lower_ps_early, &early_options);
 
       ac_nir_lower_ps_late_options late_options = {
          .gfx_level = sel->screen->info.gfx_level,
@@ -2577,8 +2577,7 @@ static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_
          .alpha_func = COMPARE_FUNC_ALWAYS,
          .spi_shader_col_format_hint = ~0,
       };
-      NIR_PASS_V(nir, ac_nir_lower_ps_early, &early_options);
-      progress = true;
+      NIR_PASS(progress, nir, ac_nir_lower_ps_early, &early_options);
    }
 
    assert(shader->wave_size == 32 || shader->wave_size == 64);
