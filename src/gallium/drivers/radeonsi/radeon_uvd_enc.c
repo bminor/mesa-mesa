@@ -23,7 +23,6 @@ static void radeon_uvd_enc_get_param(struct radeon_uvd_encoder *enc,
    enc->enc_pic.desc = pic;
    enc->enc_pic.picture_type = pic->picture_type;
    enc->enc_pic.nal_unit_type = pic->pic.nal_unit_type;
-   enc->enc_pic.temporal_id = pic->pic.temporal_id;
    enc->enc_pic.is_iframe = (pic->picture_type == PIPE_H2645_ENC_PICTURE_TYPE_IDR) ||
                             (pic->picture_type == PIPE_H2645_ENC_PICTURE_TYPE_I);
    enc->enc_pic.enc_params.reference_picture_index =
@@ -36,6 +35,25 @@ static void radeon_uvd_enc_get_param(struct radeon_uvd_encoder *enc,
    enc->enc_pic.quality_params.vbaq_mode =
       pic->rc[0].rate_ctrl_method != PIPE_H2645_ENC_RATE_CONTROL_METHOD_DISABLE &&
       pic->quality_modes.vbaq_mode;
+
+   enc->enc_pic.layer_ctrl.num_temporal_layers = pic->seq.num_temporal_layers ? pic->seq.num_temporal_layers : 1;
+   enc->enc_pic.layer_ctrl.max_num_temporal_layers = enc->enc_pic.layer_ctrl.num_temporal_layers;
+   enc->enc_pic.temporal_id = MIN2(pic->pic.temporal_id, enc->enc_pic.layer_ctrl.num_temporal_layers - 1);
+
+   for (uint32_t i = 0; i < enc->enc_pic.layer_ctrl.num_temporal_layers; i++) {
+      enc->enc_pic.rc_layer_init[i].target_bit_rate = pic->rc[i].target_bitrate;
+      enc->enc_pic.rc_layer_init[i].peak_bit_rate = pic->rc[i].peak_bitrate;
+      enc->enc_pic.rc_layer_init[i].frame_rate_num = pic->rc[i].frame_rate_num;
+      enc->enc_pic.rc_layer_init[i].frame_rate_den = pic->rc[i].frame_rate_den;
+      enc->enc_pic.rc_layer_init[i].vbv_buffer_size = pic->rc[i].vbv_buffer_size;
+      enc->enc_pic.rc_layer_init[i].avg_target_bits_per_picture =
+         pic->rc[i].target_bitrate * ((float)pic->rc[i].frame_rate_den / pic->rc[i].frame_rate_num);
+      enc->enc_pic.rc_layer_init[i].peak_bits_per_picture_integer =
+         pic->rc[i].peak_bitrate * ((float)pic->rc[i].frame_rate_den / pic->rc[i].frame_rate_num);
+      enc->enc_pic.rc_layer_init[i].peak_bits_per_picture_fractional =
+         (((pic->rc[i].peak_bitrate * (uint64_t)pic->rc[i].frame_rate_den) % pic->rc[i].frame_rate_num) << 32) /
+         pic->rc[i].frame_rate_num;
+   }
 }
 
 static int flush(struct radeon_uvd_encoder *enc, unsigned flags, struct pipe_fence_handle **fence)

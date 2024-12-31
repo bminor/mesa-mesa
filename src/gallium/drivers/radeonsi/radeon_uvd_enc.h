@@ -326,7 +326,7 @@ struct radeon_uvd_enc_pic {
    ruvd_enc_hevc_slice_control_t hevc_slice_ctrl;
    ruvd_enc_hevc_spec_misc_t hevc_spec_misc;
    ruvd_enc_rate_ctl_session_init_t rc_session_init;
-   ruvd_enc_rate_ctl_layer_init_t rc_layer_init;
+   ruvd_enc_rate_ctl_layer_init_t rc_layer_init[4];
    ruvd_enc_hevc_deblocking_filter_t hevc_deblock;
    ruvd_enc_rate_ctl_per_picture_t rc_per_pic;
    ruvd_enc_quality_params_t quality_params;

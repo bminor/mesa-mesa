@@ -116,9 +116,6 @@ static void radeon_uvd_enc_session_init_hevc(struct radeon_uvd_encoder *enc)
 
 static void radeon_uvd_enc_layer_control(struct radeon_uvd_encoder *enc)
 {
-   enc->enc_pic.layer_ctrl.max_num_temporal_layers = 1;
-   enc->enc_pic.layer_ctrl.num_temporal_layers = 1;
-
    RADEON_ENC_BEGIN(RENC_UVD_IB_PARAM_LAYER_CONTROL);
    RADEON_ENC_CS(enc->enc_pic.layer_ctrl.max_num_temporal_layers);
    RADEON_ENC_CS(enc->enc_pic.layer_ctrl.num_temporal_layers);
@@ -127,8 +124,6 @@ static void radeon_uvd_enc_layer_control(struct radeon_uvd_encoder *enc)
 
 static void radeon_uvd_enc_layer_select(struct radeon_uvd_encoder *enc)
 {
-   enc->enc_pic.layer_sel.temporal_layer_index = 0;
-
    RADEON_ENC_BEGIN(RENC_UVD_IB_PARAM_LAYER_SELECT);
    RADEON_ENC_CS(enc->enc_pic.layer_sel.temporal_layer_index);
    RADEON_ENC_END();
@@ -231,32 +226,19 @@ static void radeon_uvd_enc_rc_session_init(struct radeon_uvd_encoder *enc,
    RADEON_ENC_END();
 }
 
-static void radeon_uvd_enc_rc_layer_init(struct radeon_uvd_encoder *enc,
-                                         struct pipe_picture_desc *picture)
+static void radeon_uvd_enc_rc_layer_init(struct radeon_uvd_encoder *enc)
 {
-   struct pipe_h265_enc_picture_desc *pic = (struct pipe_h265_enc_picture_desc *)picture;
-   enc->enc_pic.rc_layer_init.target_bit_rate = pic->rc[0].target_bitrate;
-   enc->enc_pic.rc_layer_init.peak_bit_rate = pic->rc[0].peak_bitrate;
-   enc->enc_pic.rc_layer_init.frame_rate_num = pic->rc[0].frame_rate_num;
-   enc->enc_pic.rc_layer_init.frame_rate_den = pic->rc[0].frame_rate_den;
-   enc->enc_pic.rc_layer_init.vbv_buffer_size = pic->rc[0].vbv_buffer_size;
-   enc->enc_pic.rc_layer_init.avg_target_bits_per_picture =
-      pic->rc[0].target_bitrate * ((float)pic->rc[0].frame_rate_den / pic->rc[0].frame_rate_num);
-   enc->enc_pic.rc_layer_init.peak_bits_per_picture_integer =
-      pic->rc[0].peak_bitrate * ((float)pic->rc[0].frame_rate_den / pic->rc[0].frame_rate_num);
-   enc->enc_pic.rc_layer_init.peak_bits_per_picture_fractional =
-      (((pic->rc[0].peak_bitrate * (uint64_t)pic->rc[0].frame_rate_den) % pic->rc[0].frame_rate_num) << 32) /
-      pic->rc[0].frame_rate_num;
+   uint32_t i = enc->enc_pic.layer_sel.temporal_layer_index;
 
    RADEON_ENC_BEGIN(RENC_UVD_IB_PARAM_RATE_CONTROL_LAYER_INIT);
-   RADEON_ENC_CS(enc->enc_pic.rc_layer_init.target_bit_rate);
-   RADEON_ENC_CS(enc->enc_pic.rc_layer_init.peak_bit_rate);
-   RADEON_ENC_CS(enc->enc_pic.rc_layer_init.frame_rate_num);
-   RADEON_ENC_CS(enc->enc_pic.rc_layer_init.frame_rate_den);
-   RADEON_ENC_CS(enc->enc_pic.rc_layer_init.vbv_buffer_size);
-   RADEON_ENC_CS(enc->enc_pic.rc_layer_init.avg_target_bits_per_picture);
-   RADEON_ENC_CS(enc->enc_pic.rc_layer_init.peak_bits_per_picture_integer);
-   RADEON_ENC_CS(enc->enc_pic.rc_layer_init.peak_bits_per_picture_fractional);
+   RADEON_ENC_CS(enc->enc_pic.rc_layer_init[i].target_bit_rate);
+   RADEON_ENC_CS(enc->enc_pic.rc_layer_init[i].peak_bit_rate);
+   RADEON_ENC_CS(enc->enc_pic.rc_layer_init[i].frame_rate_num);
+   RADEON_ENC_CS(enc->enc_pic.rc_layer_init[i].frame_rate_den);
+   RADEON_ENC_CS(enc->enc_pic.rc_layer_init[i].vbv_buffer_size);
+   RADEON_ENC_CS(enc->enc_pic.rc_layer_init[i].avg_target_bits_per_picture);
+   RADEON_ENC_CS(enc->enc_pic.rc_layer_init[i].peak_bits_per_picture_integer);
+   RADEON_ENC_CS(enc->enc_pic.rc_layer_init[i].peak_bits_per_picture_fractional);
    RADEON_ENC_END();
 }
 
@@ -927,10 +909,15 @@ static void begin(struct radeon_uvd_encoder *enc, struct pipe_picture_desc *pic)
    radeon_uvd_enc_layer_control(enc);
    radeon_uvd_enc_rc_session_init(enc, pic);
    radeon_uvd_enc_quality_params(enc);
-   radeon_uvd_enc_layer_select(enc);
-   radeon_uvd_enc_rc_layer_init(enc, pic);
-   radeon_uvd_enc_layer_select(enc);
-   radeon_uvd_enc_rc_per_pic(enc, pic);
+
+   for (uint32_t i = 0; i < enc->enc_pic.layer_ctrl.num_temporal_layers; i++) {
+      enc->enc_pic.layer_sel.temporal_layer_index = i;
+      radeon_uvd_enc_layer_select(enc);
+      radeon_uvd_enc_rc_layer_init(enc);
+      radeon_uvd_enc_layer_select(enc);
+      radeon_uvd_enc_rc_per_pic(enc, pic);
+   }
+
    radeon_uvd_enc_op_init_rc(enc);
    radeon_uvd_enc_op_init_rc_vbv(enc);
    *enc->p_task_size = (enc->total_task_size);
@@ -941,6 +928,9 @@ static void encode(struct radeon_uvd_encoder *enc)
    radeon_uvd_enc_session_info(enc);
    enc->total_task_size = 0;
    radeon_uvd_enc_task_info(enc, enc->need_feedback);
+
+   enc->enc_pic.layer_sel.temporal_layer_index = enc->enc_pic.temporal_id;
+   radeon_uvd_enc_layer_select(enc);
 
    if (enc->enc_pic.is_iframe) {
       radeon_uvd_enc_nalu_vps_hevc(enc);
