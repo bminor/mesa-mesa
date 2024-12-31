@@ -140,7 +140,7 @@ anv_GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice,
       if (pVideoProfile->lumaBitDepth != VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR)
          return VK_ERROR_VIDEO_PROFILE_FORMAT_NOT_SUPPORTED_KHR;
 
-      pCapabilities->maxDpbSlots = 17;
+      pCapabilities->maxDpbSlots = ANV_VIDEO_H264_MAX_DPB_SLOTS;
       pCapabilities->maxActiveReferencePictures = ANV_VIDEO_H264_MAX_NUM_REF_FRAME;
       pCapabilities->pictureAccessGranularity.width = ANV_MB_WIDTH;
       pCapabilities->pictureAccessGranularity.height = ANV_MB_HEIGHT;
