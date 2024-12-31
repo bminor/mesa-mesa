@@ -38,6 +38,9 @@ ac_nir_load_arg_at_offset(nir_builder *b, const struct ac_shader_args *ac_args,
    unsigned arg_index = arg.arg_index + relative_index;
    unsigned num_components = ac_args->args[arg_index].size;
 
+   if (ac_args->args[arg_index].skip)
+      return nir_undef(b, num_components, 32);
+
    if (ac_args->args[arg_index].file == AC_ARG_SGPR)
       return nir_load_scalar_arg_amd(b, num_components, .base = arg_index);
    else
