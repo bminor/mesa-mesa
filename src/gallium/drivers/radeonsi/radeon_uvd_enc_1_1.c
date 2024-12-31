@@ -848,9 +848,24 @@ static void radeon_uvd_enc_op_init_rc_vbv(struct radeon_uvd_encoder *enc)
    RADEON_ENC_END();
 }
 
-static void radeon_uvd_enc_op_speed(struct radeon_uvd_encoder *enc)
+static void radeon_uvd_enc_op_preset(struct radeon_uvd_encoder *enc)
 {
-   RADEON_ENC_BEGIN(RENC_UVD_IB_OP_SET_SPEED_ENCODING_MODE);
+   uint32_t preset_mode;
+
+   switch (enc->enc_pic.desc->quality_modes.preset_mode) {
+   case 0: /* SPEED */
+      preset_mode = RENC_UVD_IB_OP_SET_SPEED_ENCODING_MODE;
+      break;
+   case 1: /* BALANCED */
+      preset_mode = RENC_UVD_IB_OP_SET_BALANCE_ENCODING_MODE;
+      break;
+   case 2: /* QUALITY */
+   default:
+      preset_mode = RENC_UVD_IB_OP_SET_QUALITY_ENCODING_MODE;
+      break;
+   }
+
+   RADEON_ENC_BEGIN(preset_mode);
    RADEON_ENC_END();
 }
 
@@ -897,7 +912,7 @@ static void encode(struct radeon_uvd_encoder *enc)
    radeon_uvd_enc_feedback(enc);
    radeon_uvd_enc_intra_refresh(enc);
 
-   radeon_uvd_enc_op_speed(enc);
+   radeon_uvd_enc_op_preset(enc);
    radeon_uvd_enc_op_enc(enc);
    *enc->p_task_size = (enc->total_task_size);
 }
