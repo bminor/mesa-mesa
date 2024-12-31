@@ -517,11 +517,9 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
       break;
    }
    case nir_intrinsic_load_point_coord_maybe_flipped: {
-      nir_def *interp_param =
-         nir_load_barycentric_pixel(b, 32, .interp_mode = INTERP_MODE_NONE);
-
       /* Load point coordinates (x, y) which are written by the hw after the interpolated inputs */
-      replacement = nir_load_interpolated_input(b, 2, 32, interp_param, nir_imm_int(b, 0),
+      nir_def *baryc = intrin->src[0].ssa;
+      replacement = nir_load_interpolated_input(b, 2, 32, baryc, nir_imm_int(b, 0),
                                                 .base = si_get_ps_num_interp(shader),
                                                 .component = 2,
                                                 /* This tells si_nir_scan_shader that it's PARAM_GEN */

@@ -2307,6 +2307,10 @@ static bool run_pre_link_optimization_passes(struct si_nir_shader_ctx *ctx)
          if (sel->info.colors_read)
             NIR_PASS(progress, nir, si_nir_lower_ps_color_input, &shader->key, &sel->info);
 
+         /* This adds discard and barycentrics. */
+         if (key->ps.mono.point_smoothing)
+            NIR_PASS(progress, nir, nir_lower_point_smooth, true);
+
          /* This eliminates system values and unused shader output components. */
          ac_nir_lower_ps_early_options early_options = {
             .force_center_interp_no_msaa = key->ps.part.prolog.force_persp_center_interp ||
@@ -2343,10 +2347,6 @@ static bool run_pre_link_optimization_passes(struct si_nir_shader_ctx *ctx)
          /* This adds gl_SampleMaskIn. */
          if (key->ps.mono.poly_line_smoothing)
             NIR_PASS(progress, nir, nir_lower_poly_line_smooth, SI_NUM_SMOOTH_AA_SAMPLES);
-
-         /* This adds discard. */
-         if (key->ps.mono.point_smoothing)
-            NIR_PASS(progress, nir, nir_lower_point_smooth, true);
 
          /* This adds discard. */
          if (key->ps.part.prolog.poly_stipple)
