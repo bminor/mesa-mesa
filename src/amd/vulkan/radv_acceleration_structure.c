@@ -451,7 +451,7 @@ radv_encode_as(VkCommandBuffer commandBuffer, const VkAccelerationStructureBuild
    struct radv_dispatch_info dispatch = {
       .unaligned = true,
       .ordered = true,
-      .blocks = {leaf_count, 1, 1},
+      .blocks = {MAX2(leaf_count, 1), 1, 1},
    };
 
    radv_compute_dispatch(cmd_buffer, &dispatch);
