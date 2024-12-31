@@ -2398,7 +2398,9 @@ system_value("sm_id_nv", 1, bit_sizes=[32])
 # flipped in hardware based on a state bit.  This version of gl_PointCoord
 # is defined to be whatever thing the hardware can easily give you, so long as
 # it's in normalized coordinates in the range [0, 1] across the point.
-intrinsic("load_point_coord_maybe_flipped", dest_comp=2, bit_sizes=[32])
+#
+# src0 contains barycentrics for interpolation.
+intrinsic("load_point_coord_maybe_flipped", dest_comp=2, bit_sizes=[32], src_comp=[2])
 
 
 # Load texture size values:

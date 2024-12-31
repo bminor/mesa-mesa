@@ -2411,7 +2411,7 @@ static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_
          NIR_PASS(progress, nir, nir_lower_poly_line_smooth, SI_NUM_SMOOTH_AA_SAMPLES);
 
       if (key->ps.mono.point_smoothing)
-         NIR_PASS(progress, nir, nir_lower_point_smooth);
+         NIR_PASS(progress, nir, nir_lower_point_smooth, true);
 
       NIR_PASS(progress, nir, nir_lower_fragcoord_wtrans);
    }

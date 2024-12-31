@@ -4029,7 +4029,7 @@ zink_shader_compile(struct zink_screen *screen, bool can_shobj, struct zink_shad
                NIR_PASS_V(nir, lower_line_stipple_fs);
 
          if (zink_fs_key(key)->lower_point_smooth) {
-            NIR_PASS_V(nir, nir_lower_point_smooth);
+            NIR_PASS_V(nir, nir_lower_point_smooth, false);
             NIR_PASS_V(nir, nir_lower_discard_if, nir_lower_discard_if_to_cf);
             nir->info.fs.uses_discard = true;
             need_optimize = true;
