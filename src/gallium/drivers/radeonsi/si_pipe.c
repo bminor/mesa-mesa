@@ -143,22 +143,11 @@ struct ac_llvm_compiler *si_create_llvm_compiler(struct si_screen *sscreen)
    if (!compiler)
       return NULL;
 
-   /* Only create the less-optimizing version of the compiler on APUs
-    * predating Ryzen (Raven). */
-   bool create_low_opt_compiler =
-      !sscreen->info.has_dedicated_vram && sscreen->info.gfx_level <= GFX8;
-
-   enum ac_target_machine_options tm_options =
-      (sscreen->debug_flags & DBG(CHECK_IR) ? AC_TM_CHECK_IR : 0) |
-      (create_low_opt_compiler ? AC_TM_CREATE_LOW_OPT : 0);
-
-   if (!ac_init_llvm_compiler(compiler, sscreen->info.family, tm_options))
+   if (!ac_init_llvm_compiler(compiler, sscreen->info.family,
+                              sscreen->debug_flags & DBG(CHECK_IR) ? AC_TM_CHECK_IR : 0))
       return NULL;
 
    compiler->beo = ac_create_backend_optimizer(compiler->tm);
-   if (compiler->low_opt_tm)
-      compiler->low_opt_beo = ac_create_backend_optimizer(compiler->low_opt_tm);
-
    return compiler;
 #else
    return NULL;

@@ -31,7 +31,6 @@ enum ac_target_machine_options
 {
    AC_TM_SUPPORTS_SPILL       = 1 << 0,
    AC_TM_CHECK_IR             = 1 << 1,
-   AC_TM_CREATE_LOW_OPT       = 1 << 2,
 };
 
 enum ac_float_mode
@@ -47,12 +46,6 @@ struct ac_llvm_compiler {
    LLVMTargetMachineRef tm;
    struct ac_midend_optimizer *meo;
    struct ac_backend_optimizer *beo;
-
-   /* Optional compiler for faster compilation with fewer optimizations.
-    * LLVM modules can be created with "tm" too. There is no difference.
-    */
-   LLVMTargetMachineRef low_opt_tm; /* uses -O1 instead of -O2 */
-   struct ac_backend_optimizer *low_opt_beo;
 };
 
 LLVMTargetRef ac_get_llvm_target(const char *triple);

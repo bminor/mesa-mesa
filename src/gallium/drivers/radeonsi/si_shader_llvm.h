@@ -51,7 +51,7 @@ static inline struct si_shader_context *si_shader_context_from_abi(struct ac_sha
 bool si_compile_llvm(struct si_screen *sscreen, struct si_shader_binary *binary,
                      struct ac_shader_config *conf, struct ac_llvm_compiler *compiler,
                      struct ac_llvm_context *ac, struct util_debug_callback *debug,
-                     gl_shader_stage stage, const char *name, bool less_optimized);
+                     gl_shader_stage stage, const char *name);
 void si_llvm_context_init(struct si_shader_context *ctx, struct si_screen *sscreen,
                           struct ac_llvm_compiler *compiler, unsigned wave_size,
                           bool exports_color_null, bool exports_mrtz,

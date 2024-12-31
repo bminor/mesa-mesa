@@ -54,7 +54,7 @@ static void si_diagnostic_handler(LLVMDiagnosticInfoRef di, void *context)
 bool si_compile_llvm(struct si_screen *sscreen, struct si_shader_binary *binary,
                      struct ac_shader_config *conf, struct ac_llvm_compiler *compiler,
                      struct ac_llvm_context *ac, struct util_debug_callback *debug,
-                     gl_shader_stage stage, const char *name, bool less_optimized)
+                     gl_shader_stage stage, const char *name)
 {
    unsigned count = p_atomic_inc_return(&sscreen->num_compilations);
 
@@ -74,9 +74,6 @@ bool si_compile_llvm(struct si_screen *sscreen, struct si_shader_binary *binary,
 
    if (!si_replace_shader(count, binary)) {
       struct ac_backend_optimizer *beo = compiler->beo;
-
-      if (less_optimized && compiler->low_opt_beo)
-         beo = compiler->low_opt_beo;
 
       struct si_llvm_diagnostics diag = {debug};
       LLVMContextSetDiagnosticHandler(ac->context, si_diagnostic_handler, &diag);
@@ -781,20 +778,6 @@ static bool si_llvm_translate_nir(struct si_shader_context *ctx, struct si_shade
    return true;
 }
 
-static bool si_should_optimize_less(struct ac_llvm_compiler *compiler,
-                                    struct si_shader_selector *sel)
-{
-   if (!compiler->low_opt_beo)
-      return false;
-
-   /* Assume a slow CPU. */
-   assert(!sel->screen->info.has_dedicated_vram && sel->screen->info.gfx_level <= GFX8);
-
-   /* For a crazy dEQP test containing 2597 memory opcodes, mostly
-    * buffer stores. */
-   return sel->stage == MESA_SHADER_COMPUTE && sel->info.num_memory_stores > 1000;
-}
-
 bool si_llvm_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *compiler,
                             struct si_shader *shader, struct si_shader_args *args,
                             struct util_debug_callback *debug, struct nir_shader *nir)
@@ -858,8 +841,7 @@ bool si_llvm_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *
 
    /* Compile to bytecode. */
    if (!si_compile_llvm(sscreen, &shader->binary, &shader->config, compiler, &ctx.ac, debug,
-                        nir->info.stage, si_get_shader_name(shader),
-                        si_should_optimize_less(compiler, shader->selector))) {
+                        nir->info.stage, si_get_shader_name(shader))) {
       si_llvm_dispose(&ctx);
       fprintf(stderr, "LLVM failed to compile shader\n");
       return false;
@@ -932,7 +914,7 @@ bool si_llvm_build_shader_part(struct si_screen *sscreen, gl_shader_stage stage,
    si_llvm_optimize_module(&ctx);
 
    bool ret = si_compile_llvm(sscreen, &result->binary, &result->config, compiler,
-                              &ctx.ac, debug, ctx.stage, name, false);
+                              &ctx.ac, debug, ctx.stage, name);
 
    si_llvm_dispose(&ctx);
    return ret;
