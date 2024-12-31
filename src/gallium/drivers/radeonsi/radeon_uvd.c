@@ -1046,29 +1046,39 @@ static void ruvd_decode_bitstream(struct pipe_video_codec *decoder,
    if (!dec->bs_ptr)
       return;
 
-   for (i = 0; i < num_buffers; ++i) {
-      struct rvid_buffer *buf = &dec->bs_buffers[dec->cur_buffer];
-      unsigned new_size = dec->bs_size + sizes[i];
+   unsigned long total_bs_size = dec->bs_size;
+   for (i = 0; i < num_buffers; ++i)
+      total_bs_size += sizes[i];
 
-      if (new_size > buf->res->buf->size) {
-         dec->ws->buffer_unmap(dec->ws, buf->res->buf);
-         dec->bs_ptr = NULL;
+   struct rvid_buffer *buf = &dec->bs_buffers[dec->cur_buffer];
 
-         new_size = align(new_size, 128);
+   if (total_bs_size > buf->res->buf->size) {
+      dec->ws->buffer_unmap(dec->ws, buf->res->buf);
+      dec->bs_ptr = NULL;
 
-         if (!si_vid_resize_buffer(dec->base.context, &dec->cs, buf, new_size, NULL)) {
-            RVID_ERR("Can't resize bitstream buffer!");
+      total_bs_size = align(total_bs_size, 128);
+
+      if (!dec->bs_size) {
+         struct rvid_buffer old_buf = *buf;
+         if (!si_vid_create_buffer(dec->screen, buf, total_bs_size, buf->usage)) {
+            RVID_ERR("Can't create bitstream buffer!");
             return;
          }
-
-         dec->bs_ptr = dec->ws->buffer_map(dec->ws, buf->res->buf, &dec->cs,
-                                           PIPE_MAP_WRITE | RADEON_MAP_TEMPORARY);
-         if (!dec->bs_ptr)
-            return;
-
-         dec->bs_ptr += dec->bs_size;
+         si_vid_destroy_buffer(&old_buf);
+      } else if (!si_vid_resize_buffer(dec->base.context, &dec->cs, buf, total_bs_size, NULL)) {
+         RVID_ERR("Can't resize bitstream buffer!");
+         return;
       }
 
+      dec->bs_ptr = dec->ws->buffer_map(dec->ws, buf->res->buf, &dec->cs,
+                                        PIPE_MAP_WRITE | RADEON_MAP_TEMPORARY);
+      if (!dec->bs_ptr)
+         return;
+
+      dec->bs_ptr += dec->bs_size;
+   }
+
+   for (i = 0; i < num_buffers; ++i) {
       memcpy(dec->bs_ptr, buffers[i], sizes[i]);
       dec->bs_size += sizes[i];
       dec->bs_ptr += sizes[i];
