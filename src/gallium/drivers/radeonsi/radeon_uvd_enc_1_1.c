@@ -766,18 +766,8 @@ static void radeon_uvd_enc_intra_refresh(struct radeon_uvd_encoder *enc)
    RADEON_ENC_END();
 }
 
-static void radeon_uvd_enc_rc_per_pic(struct radeon_uvd_encoder *enc,
-                                      struct pipe_picture_desc *picture)
+static void radeon_uvd_enc_rc_per_pic(struct radeon_uvd_encoder *enc)
 {
-   struct pipe_h265_enc_picture_desc *pic = (struct pipe_h265_enc_picture_desc *)picture;
-   enc->enc_pic.rc_per_pic.qp = pic->rc[0].quant_i_frames;
-   enc->enc_pic.rc_per_pic.min_qp_app = pic->rc[0].min_qp;
-   enc->enc_pic.rc_per_pic.max_qp_app = pic->rc[0].max_qp ? pic->rc[0].max_qp : 51;
-   enc->enc_pic.rc_per_pic.max_au_size = pic->rc[0].max_au_size;
-   enc->enc_pic.rc_per_pic.enabled_filler_data = pic->rc[0].fill_data_enable;
-   enc->enc_pic.rc_per_pic.skip_frame_enable = false;
-   enc->enc_pic.rc_per_pic.enforce_hrd = pic->rc[0].enforce_hrd;
-
    RADEON_ENC_BEGIN(RENC_UVD_IB_PARAM_RATE_CONTROL_PER_PICTURE);
    RADEON_ENC_CS(enc->enc_pic.rc_per_pic.qp);
    RADEON_ENC_CS(enc->enc_pic.rc_per_pic.min_qp_app);
@@ -915,7 +905,7 @@ static void begin(struct radeon_uvd_encoder *enc, struct pipe_picture_desc *pic)
       radeon_uvd_enc_layer_select(enc);
       radeon_uvd_enc_rc_layer_init(enc);
       radeon_uvd_enc_layer_select(enc);
-      radeon_uvd_enc_rc_per_pic(enc, pic);
+      radeon_uvd_enc_rc_per_pic(enc);
    }
 
    radeon_uvd_enc_op_init_rc(enc);
@@ -928,6 +918,17 @@ static void encode(struct radeon_uvd_encoder *enc)
    radeon_uvd_enc_session_info(enc);
    enc->total_task_size = 0;
    radeon_uvd_enc_task_info(enc, enc->need_feedback);
+
+   if (enc->need_rate_control || enc->need_rc_per_pic) {
+      for (uint32_t i = 0; i < enc->enc_pic.layer_ctrl.num_temporal_layers; i++) {
+         enc->enc_pic.layer_sel.temporal_layer_index = i;
+         radeon_uvd_enc_layer_select(enc);
+         if (enc->need_rate_control)
+            radeon_uvd_enc_rc_layer_init(enc);
+         if (enc->need_rc_per_pic)
+            radeon_uvd_enc_rc_per_pic(enc);
+      }
+   }
 
    enc->enc_pic.layer_sel.temporal_layer_index = enc->enc_pic.temporal_id;
    radeon_uvd_enc_layer_select(enc);

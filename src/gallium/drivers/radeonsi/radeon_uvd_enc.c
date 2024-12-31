@@ -54,6 +54,13 @@ static void radeon_uvd_enc_get_param(struct radeon_uvd_encoder *enc,
          (((pic->rc[i].peak_bitrate * (uint64_t)pic->rc[i].frame_rate_den) % pic->rc[i].frame_rate_num) << 32) /
          pic->rc[i].frame_rate_num;
    }
+   enc->enc_pic.rc_per_pic.qp = pic->rc[0].quant_i_frames;
+   enc->enc_pic.rc_per_pic.min_qp_app = pic->rc[0].min_qp;
+   enc->enc_pic.rc_per_pic.max_qp_app = pic->rc[0].max_qp ? pic->rc[0].max_qp : 51;
+   enc->enc_pic.rc_per_pic.max_au_size = pic->rc[0].max_au_size;
+   enc->enc_pic.rc_per_pic.enabled_filler_data = pic->rc[0].fill_data_enable;
+   enc->enc_pic.rc_per_pic.skip_frame_enable = false;
+   enc->enc_pic.rc_per_pic.enforce_hrd = pic->rc[0].enforce_hrd;
 }
 
 static int flush(struct radeon_uvd_encoder *enc, unsigned flags, struct pipe_fence_handle **fence)
@@ -134,6 +141,15 @@ static void radeon_uvd_enc_begin_frame(struct pipe_video_codec *encoder,
    struct radeon_uvd_encoder *enc = (struct radeon_uvd_encoder *)encoder;
    struct vl_video_buffer *vid_buf = (struct vl_video_buffer *)source;
    struct pipe_h265_enc_picture_desc *pic = (struct pipe_h265_enc_picture_desc *)picture;
+
+   enc->need_rate_control =
+      (enc->enc_pic.rc_layer_init[0].target_bit_rate != pic->rc[0].target_bitrate) ||
+      (enc->enc_pic.rc_layer_init[0].frame_rate_num != pic->rc[0].frame_rate_num) ||
+      (enc->enc_pic.rc_layer_init[0].frame_rate_den != pic->rc[0].frame_rate_den);
+
+   enc->need_rc_per_pic =
+      (enc->enc_pic.rc_per_pic.qp != pic->rc[0].quant_i_frames) ||
+      (enc->enc_pic.rc_per_pic.max_au_size != pic->rc[0].max_au_size);
 
    radeon_uvd_enc_get_param(enc, pic);
 

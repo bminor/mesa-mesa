@@ -371,6 +371,8 @@ struct radeon_uvd_encoder {
    uint32_t *p_task_size;
 
    bool need_feedback;
+   bool need_rate_control;
+   bool need_rc_per_pic;
 };
 
 struct si_screen;
