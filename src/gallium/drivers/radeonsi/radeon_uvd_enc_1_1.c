@@ -759,9 +759,23 @@ static void radeon_uvd_enc_feedback(struct radeon_uvd_encoder *enc)
 
 static void radeon_uvd_enc_intra_refresh(struct radeon_uvd_encoder *enc)
 {
-   enc->enc_pic.intra_ref.intra_refresh_mode = RENC_UVD_INTRA_REFRESH_MODE_NONE;
-   enc->enc_pic.intra_ref.offset = 0;
-   enc->enc_pic.intra_ref.region_size = 0;
+   switch (enc->enc_pic.desc->intra_refresh.mode) {
+   case INTRA_REFRESH_MODE_UNIT_ROWS:
+      enc->enc_pic.intra_ref.intra_refresh_mode = RENC_UVD_INTRA_REFRESH_MODE_CTB_MB_ROWS;
+      break;
+   case INTRA_REFRESH_MODE_UNIT_COLUMNS:
+      enc->enc_pic.intra_ref.intra_refresh_mode = RENC_UVD_INTRA_REFRESH_MODE_CTB_MB_COLUMNS;
+      break;
+   default:
+      enc->enc_pic.intra_ref.intra_refresh_mode = RENC_UVD_INTRA_REFRESH_MODE_NONE;
+      break;
+   };
+
+   enc->enc_pic.intra_ref.offset = enc->enc_pic.desc->intra_refresh.offset;
+   enc->enc_pic.intra_ref.region_size = enc->enc_pic.desc->intra_refresh.region_size;
+
+   if (!enc->enc_pic.hevc_deblock.deblocking_filter_disabled)
+      enc->enc_pic.intra_ref.region_size++;
 
    RADEON_ENC_BEGIN(RENC_UVD_IB_PARAM_INTRA_REFRESH);
    RADEON_ENC_CS(enc->enc_pic.intra_ref.intra_refresh_mode);
