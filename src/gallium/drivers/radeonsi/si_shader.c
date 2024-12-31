@@ -636,7 +636,7 @@ static void si_init_shader_args(struct si_shader *shader, struct si_shader_args 
                          SI_PARAM_POS_Z_FLOAT);
       si_add_arg_checked(&args->ac, AC_ARG_VGPR, 1, AC_ARG_FLOAT, &args->ac.frag_pos[3],
                          SI_PARAM_POS_W_FLOAT);
-      si_add_arg_checked(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.front_face,
+      si_add_arg_checked(&args->ac, AC_ARG_VGPR, 1, AC_ARG_FLOAT, &args->ac.front_face,
                          SI_PARAM_FRONT_FACE);
       si_add_arg_checked(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.ancillary,
                          SI_PARAM_ANCILLARY);
