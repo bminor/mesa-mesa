@@ -173,7 +173,6 @@ struct radv_shader_info {
       bool exports_mrtz_via_epilog;
       bool has_pcoord;
       bool prim_id_input;
-      bool layer_input;
       bool viewport_index_input;
       uint8_t input_clips_culls_mask;
       uint32_t input_mask;
@@ -200,6 +199,7 @@ struct radv_shader_info {
       bool reads_linear_centroid;
       bool reads_fully_covered;
       bool reads_pixel_coord;
+      bool reads_layer;
       uint8_t reads_frag_coord_mask;
       uint8_t reads_sample_pos_mask;
       uint8_t depth_layout;

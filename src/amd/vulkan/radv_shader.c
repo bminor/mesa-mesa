@@ -3521,7 +3521,7 @@ radv_compute_spi_ps_input(const struct radv_physical_device *pdev, const struct 
    }
 
    if (info->ps.reads_sample_id || info->ps.reads_frag_shading_rate || info->ps.reads_sample_mask_in ||
-       info->ps.layer_input) {
+       info->ps.reads_layer) {
       spi_ps_input |= S_0286CC_ANCILLARY_ENA(1);
    }
 

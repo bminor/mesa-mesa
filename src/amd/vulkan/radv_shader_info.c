@@ -952,7 +952,7 @@ gather_shader_info_fs(const struct radv_device *device, const nir_shader *nir,
    info->ps.writes_memory = nir->info.writes_memory;
    info->ps.has_pcoord = nir->info.inputs_read & VARYING_BIT_PNTC;
    info->ps.prim_id_input = nir->info.inputs_read & VARYING_BIT_PRIMITIVE_ID;
-   info->ps.layer_input = BITSET_TEST(nir->info.system_values_read, SYSTEM_VALUE_LAYER_ID);
+   info->ps.reads_layer = BITSET_TEST(nir->info.system_values_read, SYSTEM_VALUE_LAYER_ID);
    info->ps.viewport_index_input = nir->info.inputs_read & VARYING_BIT_VIEWPORT;
    info->ps.writes_z = nir->info.outputs_written & BITFIELD64_BIT(FRAG_RESULT_DEPTH);
    info->ps.writes_stencil = nir->info.outputs_written & BITFIELD64_BIT(FRAG_RESULT_STENCIL);
