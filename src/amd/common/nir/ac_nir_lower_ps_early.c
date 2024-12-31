@@ -452,6 +452,8 @@ ac_nir_lower_ps_early(nir_shader *nir, const ac_nir_lower_ps_early_options *opti
 
    if (state.persp_center || state.persp_centroid || state.persp_sample ||
        state.linear_center || state.linear_centroid || state.linear_sample) {
+      assert(progress);
+
       /* This must be after lower_ps_intrinsic. */
       init_interp_param(b, &state);
 

@@ -2566,12 +2566,12 @@ static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_
          .alpha_to_one = key->ps.part.epilog.alpha_to_one,
       };
 
-      NIR_PASS_V(nir, ac_nir_lower_ps_late, &late_options);
+      NIR_PASS(progress, nir, ac_nir_lower_ps_late, &late_options);
 
-      if (key->ps.part.prolog.poly_stipple)
+      if (key->ps.part.prolog.poly_stipple) {
          NIR_PASS_V(nir, si_nir_emit_polygon_stipple, args);
-
-      progress = true;
+         progress = true;
+      }
    } else if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       ac_nir_lower_ps_early_options early_options = {
          .alpha_func = COMPARE_FUNC_ALWAYS,

@@ -497,7 +497,7 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
          late_options.alpha_to_coverage_via_mrtz = stage->info.ps.writes_mrt0_alpha;
       }
 
-      NIR_PASS_V(stage->nir, ac_nir_lower_ps_late, &late_options);
+      NIR_PASS(_, stage->nir, ac_nir_lower_ps_late, &late_options);
    }
 
    if (radv_shader_should_clear_lds(device, stage->nir)) {

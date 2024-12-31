@@ -328,7 +328,7 @@ typedef struct {
    bool no_depth_export;
 } ac_nir_lower_ps_late_options;
 
-void
+bool
 ac_nir_lower_ps_late(nir_shader *nir, const ac_nir_lower_ps_late_options *options);
 
 typedef struct {
