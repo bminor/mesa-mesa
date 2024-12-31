@@ -880,6 +880,8 @@ anv_h264_decode_video(struct anv_cmd_buffer *cmd_buffer,
    const StdVideoH264SequenceParameterSet *sps = vk_video_find_h264_dec_std_sps(&params->vk, h264_pic_info->pStdPictureInfo->seq_parameter_set_id);
    const StdVideoH264PictureParameterSet *pps = vk_video_find_h264_dec_std_pps(&params->vk, h264_pic_info->pStdPictureInfo->pic_parameter_set_id);
 
+   uint8_t dpb_slots[ANV_VIDEO_H264_MAX_DPB_SLOTS] = { 0,};
+
    anv_batch_emit(&cmd_buffer->batch, GENX(MI_FLUSH_DW), flush) {
       flush.DWordLength = 2;
       flush.VideoPipelineCacheInvalidate = 1;
@@ -974,8 +976,16 @@ anv_h264_decode_video(struct anv_cmd_buffer *cmd_buffer,
       for (unsigned i = 0; i < frame_info->referenceSlotCount; i++) {
          const struct anv_image_view *ref_iv = anv_image_view_from_handle(frame_info->pReferenceSlots[i].pPictureResource->imageViewBinding);
          int idx = frame_info->pReferenceSlots[i].slotIndex;
-         buf.ReferencePictureAddress[idx] = anv_image_address(ref_iv->image,
-                                                              &ref_iv->image->planes[0].primary_surface.memory_range);
+
+         assert(idx < ANV_VIDEO_H264_MAX_DPB_SLOTS);
+
+         if (idx < 0)
+            continue;
+
+         dpb_slots[idx] = i;
+
+         buf.ReferencePictureAddress[i] = anv_image_address(ref_iv->image,
+                                                            &ref_iv->image->planes[0].primary_surface.memory_range);
 
          if (i == 0) {
             ref_bo = ref_iv->image->bindings[0].address.bo;
@@ -1029,7 +1039,12 @@ anv_h264_decode_video(struct anv_cmd_buffer *cmd_buffer,
          const struct VkVideoDecodeH264DpbSlotInfoKHR *dpb_slot =
             vk_find_struct_const(frame_info->pReferenceSlots[i].pNext, VIDEO_DECODE_H264_DPB_SLOT_INFO_KHR);
          const StdVideoDecodeH264ReferenceInfo *ref_info = dpb_slot->pStdReferenceInfo;
-         int idx = frame_info->pReferenceSlots[i].slotIndex;
+
+         if (frame_info->pReferenceSlots[i].slotIndex < 0)
+            continue;
+
+         int idx = dpb_slots[frame_info->pReferenceSlots[i].slotIndex];
+
          avc_dpb.NonExistingFrame[idx] = ref_info->flags.is_non_existing;
          avc_dpb.LongTermFrame[idx] = ref_info->flags.used_for_long_term_reference;
          if (!ref_info->flags.top_field_flag && !ref_info->flags.bottom_field_flag)
@@ -1041,7 +1056,14 @@ anv_h264_decode_video(struct anv_cmd_buffer *cmd_buffer,
    }
 
    anv_batch_emit(&cmd_buffer->batch, GENX(MFD_AVC_PICID_STATE), picid) {
-      picid.PictureIDRemappingDisable = true;
+      unsigned i = 0;
+      picid.PictureIDRemappingDisable = false;
+
+      for (i = 0; i < frame_info->referenceSlotCount; i++)
+         picid.PictureID[i] = frame_info->pReferenceSlots[i].slotIndex;
+
+      for (; i < ANV_VIDEO_H264_MAX_NUM_REF_FRAME; i++)
+         picid.PictureID[i] = 0xffff;
    }
 
    uint32_t pic_height = sps->pic_height_in_map_units_minus1 + 1;
@@ -1123,7 +1145,11 @@ anv_h264_decode_video(struct anv_cmd_buffer *cmd_buffer,
       /* bind reference frame DMV */
       struct anv_bo *dmv_bo = NULL;
       for (unsigned i = 0; i < frame_info->referenceSlotCount; i++) {
-         int idx = frame_info->pReferenceSlots[i].slotIndex;
+         if (frame_info->pReferenceSlots[i].slotIndex < 0)
+            continue;
+
+         int idx = dpb_slots[frame_info->pReferenceSlots[i].slotIndex];
+
          const struct VkVideoDecodeH264DpbSlotInfoKHR *dpb_slot =
             vk_find_struct_const(frame_info->pReferenceSlots[i].pNext, VIDEO_DECODE_H264_DPB_SLOT_INFO_KHR);
          const struct anv_image_view *ref_iv = anv_image_view_from_handle(frame_info->pReferenceSlots[i].pPictureResource->imageViewBinding);
