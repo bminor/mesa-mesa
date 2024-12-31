@@ -1148,7 +1148,6 @@ static int ruvd_end_frame(struct pipe_video_codec *decoder, struct pipe_video_bu
          if (!si_vid_create_buffer(dec->screen, &dec->ctx, ctx_size, PIPE_USAGE_DEFAULT)) {
             RVID_ERR("Can't allocated context buffer.\n");
          }
-         si_vid_clear_buffer(decoder->context, &dec->ctx);
       }
 
       if (dec->ctx.res)
@@ -1301,9 +1300,6 @@ struct pipe_video_codec *si_common_uvd_create_decoder(struct pipe_context *conte
          RVID_ERR("Can't allocated bitstream buffers.\n");
          goto error;
       }
-
-      si_vid_clear_buffer(context, &dec->msg_fb_it_buffers[i]);
-      si_vid_clear_buffer(context, &dec->bs_buffers[i]);
    }
 
    dpb_size = calc_dpb_size(dec);
@@ -1312,7 +1308,6 @@ struct pipe_video_codec *si_common_uvd_create_decoder(struct pipe_context *conte
          RVID_ERR("Can't allocated dpb.\n");
          goto error;
       }
-      si_vid_clear_buffer(context, &dec->dpb);
    }
 
    if (dec->stream_type == RUVD_CODEC_H264_PERF && sctx->family >= CHIP_POLARIS10) {
@@ -1321,7 +1316,6 @@ struct pipe_video_codec *si_common_uvd_create_decoder(struct pipe_context *conte
          RVID_ERR("Can't allocated context buffer.\n");
          goto error;
       }
-      si_vid_clear_buffer(context, &dec->ctx);
    }
 
    if (sctx->family >= CHIP_POLARIS10) {
@@ -1330,7 +1324,6 @@ struct pipe_video_codec *si_common_uvd_create_decoder(struct pipe_context *conte
          RVID_ERR("Can't allocated session ctx.\n");
          goto error;
       }
-      si_vid_clear_buffer(context, &dec->sessionctx);
    }
 
    if (sctx->family >= CHIP_VEGA10) {
