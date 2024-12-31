@@ -1608,3 +1608,326 @@ void si_init_screen_get_functions(struct si_screen *sscreen)
    options->support_indirect_outputs = BITFIELD_BIT(MESA_SHADER_TESS_CTRL);
    options->varying_expression_max_cost = si_varying_expression_max_cost;
 }
+
+void si_init_screen_caps(struct si_screen *sscreen)
+{
+   struct pipe_caps *caps = (struct pipe_caps *)&sscreen->b.caps;
+
+   u_init_pipe_screen_caps(&sscreen->b, 1);
+
+   /* Gfx8 (Polaris11) hangs, so don't enable this on Gfx8 and older chips. */
+   bool enable_sparse =
+      sscreen->info.gfx_level >= GFX9 && sscreen->info.gfx_level < GFX12 &&
+      sscreen->info.has_sparse_vm_mappings;
+
+   /* Supported features (boolean caps). */
+   caps->max_dual_source_render_targets = true;
+   caps->anisotropic_filter = true;
+   caps->occlusion_query = true;
+   caps->texture_mirror_clamp = true;
+   caps->texture_shadow_lod = true;
+   caps->texture_mirror_clamp_to_edge = true;
+   caps->blend_equation_separate = true;
+   caps->texture_swizzle = true;
+   caps->depth_clip_disable = true;
+   caps->depth_clip_disable_separate = true;
+   caps->shader_stencil_export = true;
+   caps->vertex_element_instance_divisor = true;
+   caps->fs_coord_origin_upper_left = true;
+   caps->fs_coord_pixel_center_half_integer = true;
+   caps->fs_coord_pixel_center_integer = true;
+   caps->fragment_shader_texture_lod = true;
+   caps->fragment_shader_derivatives = true;
+   caps->primitive_restart = true;
+   caps->primitive_restart_fixed_index = true;
+   caps->conditional_render = true;
+   caps->texture_barrier = true;
+   caps->indep_blend_enable = true;
+   caps->indep_blend_func = true;
+   caps->vertex_color_unclamped = true;
+   caps->start_instance = true;
+   caps->npot_textures = true;
+   caps->mixed_framebuffer_sizes = true;
+   caps->mixed_color_depth_bits = true;
+   caps->vertex_color_clamped = true;
+   caps->fragment_color_clamped = true;
+   caps->vs_instanceid = true;
+   caps->compute = true;
+   caps->texture_buffer_objects = true;
+   caps->vs_layer_viewport = true;
+   caps->query_pipeline_statistics = true;
+   caps->sample_shading = true;
+   caps->draw_indirect = true;
+   caps->clip_halfz = true;
+   caps->vs_window_space_position = true;
+   caps->polygon_offset_clamp = true;
+   caps->multisample_z_resolve = true;
+   caps->quads_follow_provoking_vertex_convention = true;
+   caps->tgsi_texcoord = true;
+   caps->fs_fine_derivative = true;
+   caps->conditional_render_inverted = true;
+   caps->texture_float_linear = true;
+   caps->texture_half_float_linear = true;
+   caps->depth_bounds_test = true;
+   caps->sampler_view_target = true;
+   caps->texture_query_lod = true;
+   caps->texture_gather_sm5 = true;
+   caps->texture_query_samples = true;
+   caps->force_persample_interp = true;
+   caps->copy_between_compressed_and_plain_formats = true;
+   caps->fs_position_is_sysval = true;
+   caps->fs_face_is_integer_sysval = true;
+   caps->invalidate_buffer = true;
+   caps->surface_reinterpret_blocks = true;
+   caps->query_buffer_object = true;
+   caps->query_memory_info = true;
+   caps->shader_pack_half_float = true;
+   caps->framebuffer_no_attachment = true;
+   caps->robust_buffer_access_behavior = true;
+   caps->polygon_offset_units_unscaled = true;
+   caps->string_marker = true;
+   caps->cull_distance = true;
+   caps->shader_array_components = true;
+   caps->stream_output_pause_resume = true;
+   caps->stream_output_interleave_buffers = true;
+   caps->doubles = true;
+   caps->tgsi_tex_txf_lz = true;
+   caps->tes_layer_viewport = true;
+   caps->bindless_texture = true;
+   caps->query_timestamp = true;
+   caps->query_time_elapsed = true;
+   caps->nir_samplers_as_deref = true;
+   caps->memobj = true;
+   caps->load_constbuf = true;
+   caps->int64 = true;
+   caps->shader_clock = true;
+   caps->can_bind_const_buffer_as_vertex = true;
+   caps->allow_mapped_buffers_during_execution = true;
+   caps->signed_vertex_buffer_offset = true;
+   caps->shader_ballot = true;
+   caps->shader_group_vote = true;
+   caps->compute_grid_info_last_block = true;
+   caps->image_load_formatted = true;
+   caps->prefer_compute_for_multimedia = true;
+   caps->tgsi_div = true;
+   caps->packed_uniforms = true;
+   caps->gl_spirv = true;
+   caps->alpha_to_coverage_dither_control = true;
+   caps->map_unsynchronized_thread_safe = true;
+   caps->no_clip_on_copy_tex = true;
+   caps->shader_atomic_int64 = true;
+   caps->frontend_noop = true;
+   caps->demote_to_helper_invocation = true;
+   caps->prefer_real_buffer_in_constbuf0 = true;
+   caps->compute_shader_derivatives = true;
+   caps->image_atomic_inc_wrap = true;
+   caps->image_store_formatted = true;
+   caps->allow_draw_out_of_order = true;
+   caps->query_so_overflow = true;
+   caps->glsl_tess_levels_as_inputs = true;
+   caps->device_reset_status_query = true;
+   caps->texture_multisample = true;
+   caps->allow_glthread_buffer_subdata_opt = true; /* TODO: remove if it's slow */
+   caps->null_textures = true;
+   caps->has_const_bw = true;
+   caps->cl_gl_sharing = true;
+   caps->call_finalize_nir_in_linker = true;
+
+   caps->fbfetch = 1;
+
+   /* Tahiti and Verde only: reduction mode is unsupported due to a bug
+    * (it might work sometimes, but that's not enough)
+    */
+   caps->sampler_reduction_minmax =
+   caps->sampler_reduction_minmax_arb =
+      !(sscreen->info.family == CHIP_TAHITI || sscreen->info.family == CHIP_VERDE);
+
+   caps->texture_transfer_modes =
+      PIPE_TEXTURE_TRANSFER_BLIT | PIPE_TEXTURE_TRANSFER_COMPUTE;
+
+   caps->draw_vertex_state = !(sscreen->debug_flags & DBG(NO_FAST_DISPLAY_LIST));
+
+   caps->shader_samples_identical =
+      sscreen->info.gfx_level < GFX11 && !(sscreen->debug_flags & DBG(NO_FMASK));
+
+   caps->glsl_zero_init = 2;
+
+   caps->generate_mipmap =
+   caps->seamless_cube_map =
+   caps->seamless_cube_map_per_texture =
+   caps->cube_map_array =
+      sscreen->info.has_3d_cube_border_color_mipmap;
+
+   caps->post_depth_coverage = sscreen->info.gfx_level >= GFX10;
+
+   caps->graphics = sscreen->info.has_graphics;
+
+   caps->resource_from_user_memory = !UTIL_ARCH_BIG_ENDIAN && sscreen->info.has_userptr;
+
+   caps->device_protected_surface = sscreen->info.has_tmz_support;
+
+   caps->min_map_buffer_alignment = SI_MAP_BUFFER_ALIGNMENT;
+
+   caps->max_vertex_buffers = SI_MAX_ATTRIBS;
+
+   caps->constant_buffer_offset_alignment =
+   caps->texture_buffer_offset_alignment =
+   caps->max_texture_gather_components =
+   caps->max_stream_output_buffers =
+   caps->max_vertex_streams =
+   caps->shader_buffer_offset_alignment =
+   caps->max_window_rectangles = 4;
+
+   caps->glsl_feature_level =
+   caps->glsl_feature_level_compatibility = 460;
+
+   /* Optimal number for good TexSubImage performance on Polaris10. */
+   caps->max_texture_upload_memory_budget = 64 * 1024 * 1024;
+
+   caps->gl_begin_end_buffer_size = 4096 * 1024;
+
+   /* Return 1/4th of the heap size as the maximum because the max size is not practically
+    * allocatable. Also, this can only return UINT32_MAX at most.
+    */
+   unsigned max_size = MIN2((sscreen->info.max_heap_size_kb * 1024ull) / 4, UINT32_MAX);
+
+   /* Allow max 512 MB to pass CTS with a 32-bit build. */
+   if (sizeof(void*) == 4)
+      max_size = MIN2(max_size, 512 * 1024 * 1024);
+
+   caps->max_constant_buffer_size_uint =
+   caps->max_shader_buffer_size_uint = max_size;
+
+   unsigned max_texels = caps->max_shader_buffer_size_uint;
+
+   /* FYI, BUF_RSRC_WORD2.NUM_RECORDS field limit is UINT32_MAX. */
+
+   /* Gfx8 and older use the size in bytes for bounds checking, and the max element size
+    * is 16B. Gfx9 and newer use the VGPR index for bounds checking.
+    */
+   if (sscreen->info.gfx_level <= GFX8)
+      max_texels = MIN2(max_texels, UINT32_MAX / 16);
+   else
+      /* Gallium has a limitation that it can only bind UINT32_MAX bytes, not texels.
+       * TODO: Remove this after the gallium interface is changed. */
+      max_texels = MIN2(max_texels, UINT32_MAX / 16);
+
+   caps->max_texel_buffer_elements_uint = max_texels;
+
+   /* Allow 1/4th of the heap size. */
+   caps->max_texture_mb = sscreen->info.max_heap_size_kb / 1024 / 4;
+
+   caps->prefer_back_buffer_reuse = false;
+   caps->uma = false;
+   caps->prefer_imm_arrays_as_constbuf = false;
+
+   caps->performance_monitor =
+      sscreen->info.gfx_level >= GFX7 && sscreen->info.gfx_level <= GFX10_3;
+
+   caps->sparse_buffer_page_size = enable_sparse ? RADEON_SPARSE_PAGE_SIZE : 0;
+
+   caps->context_priority_mask = sscreen->info.is_amdgpu ?
+      PIPE_CONTEXT_PRIORITY_LOW | PIPE_CONTEXT_PRIORITY_MEDIUM | PIPE_CONTEXT_PRIORITY_HIGH : 0;
+
+   caps->fence_signal = sscreen->info.has_syncobj;
+
+   caps->constbuf0_flags = SI_RESOURCE_FLAG_32BIT;
+
+   caps->native_fence_fd = sscreen->info.has_fence_to_handle;
+
+   caps->draw_parameters =
+   caps->multi_draw_indirect =
+   caps->multi_draw_indirect_params = sscreen->has_draw_indirect_multi;
+
+   caps->max_shader_patch_varyings = 30;
+
+   caps->max_varyings =
+   caps->max_gs_invocations = 32;
+
+   caps->texture_border_color_quirk =
+      sscreen->info.gfx_level <= GFX8 ? PIPE_QUIRK_TEXTURE_BORDER_COLOR_SWIZZLE_R600 : 0;
+
+   /* Stream output. */
+   caps->max_stream_output_separate_components =
+   caps->max_stream_output_interleaved_components = 32 * 4;
+
+   /* gfx9 has to report 256 to make piglit/gs-max-output pass.
+    * gfx8 and earlier can do 1024.
+    */
+   caps->max_geometry_output_vertices = 256;
+   caps->max_geometry_total_output_components = 4095;
+
+   caps->max_vertex_attrib_stride = 2048;
+
+   /* TODO: Gfx12 supports 64K textures, but Gallium can't represent them at the moment. */
+   caps->max_texture_2d_size = sscreen->info.gfx_level >= GFX12 ? 32768 : 16384;
+   caps->max_texture_cube_levels = sscreen->info.has_3d_cube_border_color_mipmap ?
+      (sscreen->info.gfx_level >= GFX12 ? 16 : 15) /* 32K : 16K */ : 0;
+   caps->max_texture_3d_levels = sscreen->info.has_3d_cube_border_color_mipmap ?
+      /* This is limited by maximums that both the texture unit and layered rendering support. */
+      (sscreen->info.gfx_level >= GFX12 ? 15 : /* 16K */
+       (sscreen->info.gfx_level >= GFX10 ? 14 : 12)) /* 8K : 2K */ : 0;
+   /* This is limited by maximums that both the texture unit and layered rendering support. */
+   caps->max_texture_array_layers = sscreen->info.gfx_level >= GFX10 ? 8192 : 2048;
+
+   /* Sparse texture */
+   caps->max_sparse_texture_size = enable_sparse ? caps->max_texture_2d_size : 0;
+   caps->max_sparse_3d_texture_size = enable_sparse ? (1 << (caps->max_texture_3d_levels - 1)) : 0;
+   caps->max_sparse_array_texture_layers = enable_sparse ? caps->max_texture_array_layers : 0;
+   caps->sparse_texture_full_array_cube_mipmaps =
+   caps->query_sparse_texture_residency =
+   caps->clamp_sparse_texture_lod = enable_sparse;
+
+   /* Viewports and render targets. */
+   caps->max_viewports = SI_MAX_VIEWPORTS;
+   caps->viewport_subpixel_bits =
+   caps->rasterizer_subpixel_bits =
+   caps->max_render_targets = 8;
+   caps->framebuffer_msaa_constraints = sscreen->info.has_eqaa_surface_allocator ? 2 : 0;
+
+   caps->min_texture_gather_offset =
+   caps->min_texel_offset = -32;
+
+   caps->max_texture_gather_offset =
+   caps->max_texel_offset = 31;
+
+   caps->endianness = PIPE_ENDIAN_LITTLE;
+
+   caps->vendor_id = ATI_VENDOR_ID;
+   caps->device_id = sscreen->info.pci_id;
+   caps->video_memory = sscreen->info.vram_size_kb >> 10;
+   caps->pci_group = sscreen->info.pci.domain;
+   caps->pci_bus = sscreen->info.pci.bus;
+   caps->pci_device = sscreen->info.pci.dev;
+   caps->pci_function = sscreen->info.pci.func;
+
+   /* Conversion to nanos from cycles per millisecond */
+   caps->timer_resolution = DIV_ROUND_UP(1000000, sscreen->info.clock_crystal_freq);
+
+   caps->shader_subgroup_size = 64;
+   caps->shader_subgroup_supported_stages = BITFIELD_MASK(PIPE_SHADER_TYPES);
+   caps->shader_subgroup_supported_features = BITFIELD_MASK(PIPE_SHADER_SUBGROUP_NUM_FEATURES);
+   caps->shader_subgroup_quad_all_stages = true;
+
+   caps->min_line_width =
+   caps->min_line_width_aa = 1; /* due to axis-aligned end caps at line width 1 */
+
+   caps->min_point_size =
+   caps->min_point_size_aa =
+   caps->point_size_granularity =
+   caps->line_width_granularity = 1.0 / 8.0; /* due to the register field precision */
+
+   /* This depends on the quant mode, though the precise interactions are unknown. */
+   caps->max_line_width =
+   caps->max_line_width_aa = 2048;
+
+   caps->max_point_size =
+   caps->max_point_size_aa = SI_MAX_POINT_SIZE;
+
+   caps->max_texture_anisotropy = 16.0f;
+
+   /* The hw can do 31, but this test fails if we use that:
+    *    KHR-GL46.texture_lod_bias.texture_lod_bias_all
+    */
+   caps->max_texture_lod_bias = 16;
+}
