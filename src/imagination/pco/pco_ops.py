@@ -379,6 +379,7 @@ O_MAX = hw_op('max', OM_ALU + [OM_TST_TYPE_MAIN], 1, 2, [], [[RM_ABS, RM_NEG], [
 O_IADD32 = hw_op('iadd32', OM_ALU + [OM_S], 1, 3, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
 O_IMUL32 = hw_op('imul32', OM_ALU + [OM_S], 1, 3, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
 
+O_TSTZ = hw_op('tstz', OM_ALU + [OM_TST_TYPE_MAIN], 2, 1, [], [[RM_ELEM]])
 O_ST32 = hw_op('st32', OM_ALU_RPT1 + [OM_MCU_CACHE_MODE_ST], 0, 5)
 
 # Pseudo-ops (unmapped).
