@@ -1522,6 +1522,7 @@ static inline bool pco_should_print_binary(pco_shader *shader)
 
 /* PCO IR passes. */
 bool pco_const_imms(pco_shader *shader);
+bool pco_bool(pco_shader *shader);
 bool pco_dce(pco_shader *shader);
 bool pco_end(pco_shader *shader);
 bool pco_group_instrs(pco_shader *shader);
@@ -2363,6 +2364,19 @@ static inline pco_ref pco_ref_elem(pco_ref ref, enum pco_elem elem)
 static inline pco_ref pco_ref_chans(pco_ref ref, unsigned chans)
 {
    ref.chans = chans - 1;
+   return ref;
+}
+
+/**
+ * \brief Updates a reference to set the bit width.
+ *
+ * \param[in] ref Base reference.
+ * \param[in] bits New bit width.
+ * \return Updated reference.
+ */
+static inline pco_ref pco_ref_bits(pco_ref ref, unsigned bits)
+{
+   ref.bits = pco_bits(bits);
    return ref;
 }
 

@@ -763,10 +763,6 @@ static inline enum pco_tst_op_main to_tst_op_main(nir_op op)
 
 static inline enum pco_tst_type_main to_tst_type_main(nir_op op, pco_ref src)
 {
-   ASSERTED unsigned bits = pco_ref_get_bits(src);
-
-   assert(bits == 32);
-
    switch (op) {
    case nir_op_slt:
    case nir_op_sge:
@@ -865,9 +861,8 @@ static pco_instr *trans_logical(trans_ctx *tctx,
 {
    ASSERTED unsigned bits = pco_ref_get_bits(dest);
 
-   /* TODO: bool support. */
    /* TODO: 8/16-bit support via masking. */
-   assert(bits == 32);
+   assert(bits == 1 || bits == 32);
 
    enum pco_logiop logiop;
    switch (op) {
@@ -1281,10 +1276,19 @@ static pco_instr *trans_const(trans_ctx *tctx, nir_load_const_instr *nconst)
    unsigned num_bits = nconst->def.bit_size;
    unsigned chans = nconst->def.num_components;
 
+   pco_ref dest = pco_ref_nir_def_t(&nconst->def, tctx);
+
+   if (num_bits == 1) {
+      assert(chans == 1);
+
+      bool val = nir_const_value_as_bool(nconst->value[0], 1);
+      pco_ref imm_reg = pco_ref_bits(val ? pco_true : pco_zero, 1);
+
+      return pco_mov(&tctx->b, dest, imm_reg);
+   }
+
    /* TODO: support more bit sizes/components. */
    assert(num_bits == 32);
-
-   pco_ref dest = pco_ref_nir_def_t(&nconst->def, tctx);
 
    if (pco_ref_is_scalar(dest)) {
       assert(chans == 1);
