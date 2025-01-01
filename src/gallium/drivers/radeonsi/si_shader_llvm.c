@@ -537,12 +537,6 @@ static bool si_llvm_translate_nir(struct si_shader_context *ctx, struct si_shade
    ctx->shader = shader;
    ctx->stage = shader->is_gs_copy_shader ? MESA_SHADER_VERTEX : nir->info.stage;
 
-   ctx->num_const_buffers = nir->info.num_ubos;
-   ctx->num_shader_buffers = nir->info.num_ssbos;
-
-   ctx->num_samplers = BITSET_LAST_BIT(nir->info.textures_used);
-   ctx->num_images = nir->info.num_images;
-
    ctx->abi.intrinsic_load = si_llvm_load_intrinsic;
    ctx->abi.load_sampler_desc = si_llvm_load_sampler_desc;
 
@@ -667,9 +661,7 @@ static bool si_llvm_translate_nir(struct si_shader_context *ctx, struct si_shade
       }
 
       if (thread_enabled) {
-         ctx->merged_wrap_if_entry_block = LLVMGetInsertBlock(ctx->ac.builder);
-         ctx->merged_wrap_if_label = 11500;
-         ac_build_ifcc(&ctx->ac, thread_enabled, ctx->merged_wrap_if_label);
+         ac_build_ifcc(&ctx->ac, thread_enabled, SI_MERGED_WRAP_IF_LABEL);
       }
 
       /* Execute a barrier before the second shader in

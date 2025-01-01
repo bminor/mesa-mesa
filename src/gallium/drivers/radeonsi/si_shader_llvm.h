@@ -11,6 +11,8 @@
 #include "ac_llvm_build.h"
 #include "si_shader.h"
 
+#define SI_MERGED_WRAP_IF_LABEL 11500
+
 struct si_shader_args;
 
 struct si_shader_context {
@@ -20,17 +22,8 @@ struct si_shader_context {
 
    gl_shader_stage stage;
 
-   /* For clamping the non-constant index in resource indexing: */
-   unsigned num_const_buffers;
-   unsigned num_shader_buffers;
-   unsigned num_images;
-   unsigned num_samplers;
-
    struct si_shader_args *args;
    struct ac_shader_abi abi;
-
-   LLVMBasicBlockRef merged_wrap_if_entry_block;
-   int merged_wrap_if_label;
 
    struct ac_llvm_pointer main_fn;
    LLVMTypeRef return_type;

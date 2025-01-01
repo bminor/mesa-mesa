@@ -35,7 +35,7 @@ static LLVMValueRef si_nir_load_tcs_varyings(struct ac_shader_abi *abi, LLVMType
 void si_llvm_tcs_build_end(struct si_shader_context *ctx)
 {
    if (ctx->screen->info.gfx_level >= GFX9) {
-      ac_build_endif(&ctx->ac, ctx->merged_wrap_if_label);
+      ac_build_endif(&ctx->ac, SI_MERGED_WRAP_IF_LABEL);
    }
 }
 
@@ -49,7 +49,7 @@ void si_llvm_ls_build_end(struct si_shader_context *ctx)
       return;
 
    if (!ctx->shader->is_monolithic)
-      ac_build_endif(&ctx->ac, ctx->merged_wrap_if_label);
+      ac_build_endif(&ctx->ac, SI_MERGED_WRAP_IF_LABEL);
 
    LLVMValueRef ret = ctx->return_value;
 
