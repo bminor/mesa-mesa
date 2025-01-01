@@ -277,6 +277,21 @@ static inline nir_def *cs_fetch_texel(struct cs_shader *s, nir_def *coords, unsi
    return nir_tex_deref(b, tex_deref, tex_deref, nir_channels(b, coords, mask));
 }
 
+static inline nir_def *cs_image_load(struct cs_shader *s, nir_def *pos)
+{
+   /*
+      imageLoad(image, pos.xy);
+   */
+   nir_builder *b = &s->b;
+   nir_def *zero = nir_imm_int(b, 0);
+   nir_def *sample = nir_imm_int(b, 0);
+   pos = nir_pad_vector_imm_int(b, pos, 0, 4);
+   enum glsl_sampler_dim sampler_dim = s->array ? GLSL_SAMPLER_DIM_2D : GLSL_SAMPLER_DIM_RECT;
+   return nir_image_deref_load(b, 4, 32, &nir_build_deref_var(b, s->image)->def, pos, sample, zero,
+                               .image_dim = sampler_dim,
+                               .image_array = s->array);
+}
+
 static inline void cs_image_store(struct cs_shader *s, nir_def *pos, nir_def *color)
 {
    /*
@@ -574,6 +589,29 @@ static nir_def *create_weave_shader(struct vl_compositor *c, bool rgb, bool y)
    return cs_create_shader_state(c, &s);
 }
 
+static void *create_rgba_shader(struct vl_compositor *c)
+{
+   struct cs_shader s = {
+      .name = "rgba",
+      .num_samplers = 1,
+   };
+   nir_builder *b = &s.b;
+
+   nir_def *ipos = cs_create_shader(c, &s);
+   nir_def *pos = cs_tex_coords(&s, ipos, COORDS_LUMA);
+   nir_def *pos_out = cs_translate(&s, ipos);
+
+   nir_def *col = cs_fetch_texel(&s, pos, 0);
+   nir_def *blend = cs_image_load(&s, pos_out);
+
+   nir_def *color = nir_flrp(b, blend, col, nir_channel(b, col, 3));
+   color = nir_vector_insert_imm(b, color, s.fone, 3);
+
+   cs_image_store(&s, pos_out, color);
+
+   return cs_create_shader_state(c, &s);
+}
+
 static void
 cs_launch(struct vl_compositor *c,
           void                 *cs,
@@ -840,6 +878,12 @@ bool vl_compositor_cs_init_shaders(struct vl_compositor *c)
                 return false;
         }
 
+        c->cs_rgba = create_rgba_shader(c);
+        if (!c->cs_rgba) {
+                debug_printf("Unable to create rgba compute shader.\n");
+                return false;
+        }
+
         c->cs_yuv.weave.y = create_weave_shader(c, false, true);
         c->cs_yuv.weave.uv = create_weave_shader(c, false, false);
         c->cs_yuv.progressive.y = create_yuv_progressive_shader(c, VL_COMPOSITOR_PLANE_Y);
@@ -877,6 +921,8 @@ void vl_compositor_cs_cleanup_shaders(struct vl_compositor *c)
                 c->pipe->delete_compute_state(c->pipe, c->cs_video_buffer);
         if (c->cs_weave_rgb)
                 c->pipe->delete_compute_state(c->pipe, c->cs_weave_rgb);
+        if (c->cs_rgba)
+                c->pipe->delete_compute_state(c->pipe, c->cs_rgba);
         if (c->cs_yuv.weave.y)
                 c->pipe->delete_compute_state(c->pipe, c->cs_yuv.weave.y);
         if (c->cs_yuv.weave.uv)

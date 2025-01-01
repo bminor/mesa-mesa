@@ -688,7 +688,10 @@ vl_compositor_set_rgba_layer(struct vl_compositor_state *s,
       return;
 
    s->used_layers |= 1 << layer;
-   s->layers[layer].fs = c->fs_rgba;
+   if (c->fs_rgba)
+      s->layers[layer].fs = c->fs_rgba;
+   else if (c->cs_rgba)
+      s->layers[layer].cs = c->cs_rgba;
    s->layers[layer].samplers[0] = c->sampler_linear;
    s->layers[layer].samplers[1] = NULL;
    s->layers[layer].samplers[2] = NULL;
