@@ -1493,9 +1493,7 @@ void si_uvd_set_dt_surfaces(struct ruvd_msg *msg, struct radeon_surf *luma,
       break;
    case RUVD_SURFACE_TYPE_GFX9:
       msg->body.decode.dt_pitch = luma->u.gfx9.surf_pitch * luma->blk_w;
-      /* SWIZZLE LINEAR MODE */
-      msg->body.decode.dt_tiling_mode = RUVD_TILE_LINEAR;
-      msg->body.decode.dt_array_mode = RUVD_ARRAY_MODE_LINEAR;
+      msg->body.decode.dt_wa_chroma_bottom_offset = luma->u.gfx9.swizzle_mode;
       msg->body.decode.dt_luma_top_offset = texture_offset(luma, 0, type);
       msg->body.decode.dt_chroma_top_offset = texture_offset(chroma, 0, type);
       if (msg->body.decode.dt_field_mode) {
