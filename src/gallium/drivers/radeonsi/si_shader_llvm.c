@@ -926,8 +926,11 @@ bool si_llvm_build_shader_part(struct si_screen *sscreen, gl_shader_stage stage,
    /* Compile. */
    si_llvm_optimize_module(&ctx);
 
-   bool ret = si_compile_llvm(sscreen, &result->binary, &result->config, compiler,
+   struct ac_shader_config config = {0};
+   bool ret = si_compile_llvm(sscreen, &result->binary, &config, compiler,
                               &ctx.ac, debug, ctx.stage, name);
+   result->num_vgprs = config.num_vgprs;
+   result->num_sgprs = config.num_sgprs;
 
    si_llvm_dispose(&ctx);
    return ret;

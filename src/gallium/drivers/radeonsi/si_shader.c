@@ -3601,9 +3601,9 @@ bool si_create_shader_variant(struct si_screen *sscreen, struct ac_llvm_compiler
       /* Update SGPR and VGPR counts. */
       if (shader->prolog) {
          shader->config.num_sgprs =
-            MAX2(shader->config.num_sgprs, shader->prolog->config.num_sgprs);
+            MAX2(shader->config.num_sgprs, shader->prolog->num_sgprs);
          shader->config.num_vgprs =
-            MAX2(shader->config.num_vgprs, shader->prolog->config.num_vgprs);
+            MAX2(shader->config.num_vgprs, shader->prolog->num_vgprs);
       }
       if (shader->previous_stage) {
          shader->config.num_sgprs =
@@ -3625,9 +3625,9 @@ bool si_create_shader_variant(struct si_screen *sscreen, struct ac_llvm_compiler
       }
       if (shader->epilog) {
          shader->config.num_sgprs =
-            MAX2(shader->config.num_sgprs, shader->epilog->config.num_sgprs);
+            MAX2(shader->config.num_sgprs, shader->epilog->num_sgprs);
          shader->config.num_vgprs =
-            MAX2(shader->config.num_vgprs, shader->epilog->config.num_vgprs);
+            MAX2(shader->config.num_vgprs, shader->epilog->num_vgprs);
       }
       si_calculate_max_simd_waves(shader);
    }

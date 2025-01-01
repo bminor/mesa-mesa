@@ -1045,7 +1045,8 @@ struct si_shader_part {
    struct si_shader_part *next;
    union si_shader_part_key key;
    struct si_shader_binary binary;
-   struct ac_shader_config config;
+   unsigned num_vgprs;
+   unsigned num_sgprs;
 };
 
 /* si_shader.c */

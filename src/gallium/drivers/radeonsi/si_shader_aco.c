@@ -243,8 +243,8 @@ si_aco_build_shader_part_binary(void** priv_ptr, uint32_t num_sgprs, uint32_t nu
       result->binary.disasm_size = disasm_size;
    }
 
-   result->config.num_sgprs = num_sgprs;
-   result->config.num_vgprs = num_vgprs;
+   result->num_sgprs = num_sgprs;
+   result->num_vgprs = num_vgprs;
 }
 
 static bool
