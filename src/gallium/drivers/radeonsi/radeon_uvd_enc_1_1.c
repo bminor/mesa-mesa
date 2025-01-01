@@ -277,17 +277,13 @@ static void radeon_uvd_enc_quality_params(struct radeon_uvd_encoder *enc)
    RADEON_ENC_END();
 }
 
-static void radeon_uvd_enc_nalu_sps_hevc(struct radeon_uvd_encoder *enc)
+unsigned int radeon_uvd_enc_write_sps(struct radeon_uvd_encoder *enc, uint8_t *out)
 {
    struct radeon_bitstream bs;
    struct pipe_h265_enc_seq_param *sps = &enc->enc_pic.desc->seq;
    int i;
 
-   RADEON_ENC_BEGIN(RENC_UVD_IB_PARAM_INSERT_NALU_BUFFER);
-   RADEON_ENC_CS(RENC_UVD_NALU_TYPE_SPS);
-   uint32_t *size_in_bytes = &enc->cs.current.buf[enc->cs.current.cdw++];
-
-   radeon_bs_reset(&bs, NULL, &enc->cs);
+   radeon_bs_reset(&bs, out, NULL);
    radeon_bs_set_emulation_prevention(&bs, false);
    radeon_bs_code_fixed_bits(&bs, 0x00000001, 32);
    radeon_bs_code_fixed_bits(&bs, 0x4201, 16);
@@ -412,21 +408,15 @@ static void radeon_uvd_enc_nalu_sps_hevc(struct radeon_uvd_encoder *enc)
    radeon_bs_code_fixed_bits(&bs, 0x1, 1);
    radeon_bs_byte_align(&bs);
 
-   radeon_bs_flush_headers(&bs);
-   *size_in_bytes = bs.bits_output / 8;
-   RADEON_ENC_END();
+   return bs.bits_output / 8;
 }
 
-static void radeon_uvd_enc_nalu_pps_hevc(struct radeon_uvd_encoder *enc)
+unsigned int radeon_uvd_enc_write_pps(struct radeon_uvd_encoder *enc, uint8_t *out)
 {
    struct radeon_bitstream bs;
    struct pipe_h265_enc_pic_param *pps = &enc->enc_pic.desc->pic;
 
-   RADEON_ENC_BEGIN(RENC_UVD_IB_PARAM_INSERT_NALU_BUFFER);
-   RADEON_ENC_CS(RENC_UVD_NALU_TYPE_PPS);
-   uint32_t *size_in_bytes = &enc->cs.current.buf[enc->cs.current.cdw++];
-
-   radeon_bs_reset(&bs, NULL, &enc->cs);
+   radeon_bs_reset(&bs, out, NULL);
    radeon_bs_set_emulation_prevention(&bs, false);
    radeon_bs_code_fixed_bits(&bs, 0x00000001, 32);
    radeon_bs_code_fixed_bits(&bs, 0x4401, 16);
@@ -473,22 +463,16 @@ static void radeon_uvd_enc_nalu_pps_hevc(struct radeon_uvd_encoder *enc)
    radeon_bs_code_fixed_bits(&bs, 0x1, 1);
    radeon_bs_byte_align(&bs);
 
-   radeon_bs_flush_headers(&bs);
-   *size_in_bytes = bs.bits_output / 8;
-   RADEON_ENC_END();
+   return bs.bits_output / 8;
 }
 
-static void radeon_uvd_enc_nalu_vps_hevc(struct radeon_uvd_encoder *enc)
+unsigned int radeon_uvd_enc_write_vps(struct radeon_uvd_encoder *enc, uint8_t *out)
 {
    struct radeon_bitstream bs;
    struct pipe_h265_enc_vid_param *vps = &enc->enc_pic.desc->vid;
    int i;
 
-   RADEON_ENC_BEGIN(RENC_UVD_IB_PARAM_INSERT_NALU_BUFFER);
-   RADEON_ENC_CS(RENC_UVD_NALU_TYPE_VPS);
-   uint32_t *size_in_bytes = &enc->cs.current.buf[enc->cs.current.cdw++];
-
-   radeon_bs_reset(&bs, NULL, &enc->cs);
+   radeon_bs_reset(&bs, out, NULL);
    radeon_bs_set_emulation_prevention(&bs, false);
    radeon_bs_code_fixed_bits(&bs, 0x00000001, 32);
    radeon_bs_code_fixed_bits(&bs, 0x4001, 16);
@@ -524,9 +508,7 @@ static void radeon_uvd_enc_nalu_vps_hevc(struct radeon_uvd_encoder *enc)
    radeon_bs_code_fixed_bits(&bs, 0x1, 1);
    radeon_bs_byte_align(&bs);
 
-   radeon_bs_flush_headers(&bs);
-   *size_in_bytes = bs.bits_output / 8;
-   RADEON_ENC_END();
+   return bs.bits_output / 8;
 }
 
 static void radeon_uvd_enc_slice_header_hevc(struct radeon_uvd_encoder *enc)
@@ -715,7 +697,7 @@ static void radeon_uvd_enc_bitstream(struct radeon_uvd_encoder *enc)
 {
    enc->enc_pic.bit_buf.mode = RENC_UVD_SWIZZLE_MODE_LINEAR;
    enc->enc_pic.bit_buf.video_bitstream_buffer_size = enc->bs_size;
-   enc->enc_pic.bit_buf.video_bitstream_data_offset = 0;
+   enc->enc_pic.bit_buf.video_bitstream_data_offset = enc->bs_offset;
 
    RADEON_ENC_BEGIN(RENC_UVD_IB_PARAM_VIDEO_BITSTREAM_BUFFER);
    RADEON_ENC_CS(enc->enc_pic.bit_buf.mode);
@@ -800,7 +782,7 @@ static void radeon_uvd_enc_encode_params_hevc(struct radeon_uvd_encoder *enc)
       enc->enc_pic.enc_params.pic_type = RENC_UVD_PICTURE_TYPE_I;
    }
 
-   enc->enc_pic.enc_params.allowed_max_bitstream_size = enc->bs_size;
+   enc->enc_pic.enc_params.allowed_max_bitstream_size = enc->bs_size - enc->bs_offset;
    if (sscreen->info.gfx_level < GFX9) {
       enc->enc_pic.enc_params.input_pic_luma_pitch =
          (enc->luma->u.legacy.level[0].nblk_x * enc->luma->bpe);
@@ -933,11 +915,6 @@ static void encode(struct radeon_uvd_encoder *enc)
    enc->enc_pic.layer_sel.temporal_layer_index = enc->enc_pic.temporal_id;
    radeon_uvd_enc_layer_select(enc);
 
-   if (enc->enc_pic.is_iframe) {
-      radeon_uvd_enc_nalu_vps_hevc(enc);
-      radeon_uvd_enc_nalu_pps_hevc(enc);
-      radeon_uvd_enc_nalu_sps_hevc(enc);
-   }
    radeon_uvd_enc_slice_header_hevc(enc);
    radeon_uvd_enc_encode_params_hevc(enc);
 

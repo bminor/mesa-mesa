@@ -23,8 +23,6 @@ static void radeon_uvd_enc_get_param(struct radeon_uvd_encoder *enc,
    enc->enc_pic.desc = pic;
    enc->enc_pic.picture_type = pic->picture_type;
    enc->enc_pic.nal_unit_type = pic->pic.nal_unit_type;
-   enc->enc_pic.is_iframe = (pic->picture_type == PIPE_H2645_ENC_PICTURE_TYPE_IDR) ||
-                            (pic->picture_type == PIPE_H2645_ENC_PICTURE_TYPE_I);
    enc->enc_pic.enc_params.reference_picture_index =
       pic->ref_list0[0] == PIPE_H2645_LIST_REF_INVALID_ENTRY ? 0xffffffff : pic->ref_list0[0];
    enc->enc_pic.enc_params.reconstructed_picture_index = pic->dpb_curr_pic;
@@ -187,6 +185,79 @@ static void radeon_uvd_enc_begin_frame(struct pipe_video_codec *encoder,
    }
 }
 
+static void *radeon_uvd_enc_encode_headers(struct radeon_uvd_encoder *enc)
+{
+   unsigned num_slices = 0, num_headers = 0;
+
+   util_dynarray_foreach(&enc->enc_pic.desc->raw_headers, struct pipe_enc_raw_header, header) {
+      if (header->is_slice)
+         num_slices++;
+      num_headers++;
+   }
+
+   if (!num_headers || !num_slices || num_headers == num_slices)
+      return NULL;
+
+   size_t segments_size =
+      sizeof(struct ruvd_enc_output_unit_segment) * (num_headers - num_slices + 1);
+   struct ruvd_enc_feedback_data *data =
+      CALLOC_VARIANT_LENGTH_STRUCT(ruvd_enc_feedback_data, segments_size);
+   if (!data)
+      return NULL;
+
+   uint8_t *ptr = enc->ws->buffer_map(enc->ws, enc->bs_handle, &enc->cs,
+                                      PIPE_MAP_WRITE | RADEON_MAP_TEMPORARY);
+   if (!ptr) {
+      RVID_ERR("Can't map bs buffer.\n");
+      FREE(data);
+      return NULL;
+   }
+
+   unsigned offset = 0;
+   struct ruvd_enc_output_unit_segment *slice_segment = NULL;
+
+   util_dynarray_foreach(&enc->enc_pic.desc->raw_headers, struct pipe_enc_raw_header, header) {
+      if (header->is_slice) {
+         if (slice_segment)
+            continue;
+         slice_segment = &data->segments[data->num_segments];
+         slice_segment->is_slice = true;
+      } else {
+         unsigned size;
+         switch (header->type) {
+         case PIPE_H265_NAL_VPS:
+            size = radeon_uvd_enc_write_vps(enc, ptr + offset);
+            break;
+         case PIPE_H265_NAL_SPS:
+            size = radeon_uvd_enc_write_sps(enc, ptr + offset);
+            break;
+         case PIPE_H265_NAL_PPS:
+            size = radeon_uvd_enc_write_pps(enc, ptr + offset);
+            break;
+         default:
+            assert(header->buffer);
+            memcpy(ptr + offset, header->buffer, header->size);
+            size = header->size;
+            break;
+         }
+         data->segments[data->num_segments].size = size;
+         data->segments[data->num_segments].offset = offset;
+         offset += size;
+      }
+      data->num_segments++;
+   }
+
+   enc->bs_offset = align(offset, 16);
+   assert(enc->bs_offset < enc->bs_size);
+
+   assert(slice_segment);
+   slice_segment->offset = enc->bs_offset;
+
+   enc->ws->buffer_unmap(enc->ws, enc->bs_handle);
+
+   return data;
+}
+
 static void radeon_uvd_enc_encode_bitstream(struct pipe_video_codec *encoder,
                                             struct pipe_video_buffer *source,
                                             struct pipe_resource *destination, void **fb)
@@ -194,6 +265,7 @@ static void radeon_uvd_enc_encode_bitstream(struct pipe_video_codec *encoder,
    struct radeon_uvd_encoder *enc = (struct radeon_uvd_encoder *)encoder;
    enc->get_buffer(destination, &enc->bs_handle, NULL);
    enc->bs_size = destination->width0;
+   enc->bs_offset = 0;
 
    *fb = enc->fb = CALLOC_STRUCT(rvid_buffer);
 
@@ -201,6 +273,8 @@ static void radeon_uvd_enc_encode_bitstream(struct pipe_video_codec *encoder,
       RVID_ERR("Can't create feedback buffer.\n");
       return;
    }
+
+   enc->fb->user_data = radeon_uvd_enc_encode_headers(enc);
 
    enc->need_feedback = true;
    enc->encode(enc);
@@ -244,15 +318,38 @@ static void radeon_uvd_enc_get_feedback(struct pipe_video_codec *encoder, void *
    struct radeon_uvd_encoder *enc = (struct radeon_uvd_encoder *)encoder;
    struct rvid_buffer *fb = feedback;
 
-   if (NULL != size) {
-      radeon_uvd_enc_feedback_t *fb_data = (radeon_uvd_enc_feedback_t *)enc->ws->buffer_map(
-         enc->ws, fb->res->buf, &enc->cs, PIPE_MAP_READ_WRITE | RADEON_MAP_TEMPORARY);
+   radeon_uvd_enc_feedback_t *fb_data = (radeon_uvd_enc_feedback_t *)enc->ws->buffer_map(
+      enc->ws, fb->res->buf, &enc->cs, PIPE_MAP_READ_WRITE | RADEON_MAP_TEMPORARY);
 
-      if (!fb_data->status)
-         *size = fb_data->bitstream_size;
-      else
-         *size = 0;
-      enc->ws->buffer_unmap(enc->ws, fb->res->buf);
+   if (!fb_data->status)
+      *size = fb_data->bitstream_size;
+   else
+      *size = 0;
+
+   enc->ws->buffer_unmap(enc->ws, fb->res->buf);
+
+   metadata->present_metadata = PIPE_VIDEO_FEEDBACK_METADATA_TYPE_CODEC_UNIT_LOCATION;
+
+   if (fb->user_data) {
+      struct ruvd_enc_feedback_data *data = fb->user_data;
+      metadata->codec_unit_metadata_count = data->num_segments;
+      for (unsigned i = 0; i < data->num_segments; i++) {
+         metadata->codec_unit_metadata[i].offset = data->segments[i].offset;
+         if (data->segments[i].is_slice) {
+            metadata->codec_unit_metadata[i].size = *size;
+            metadata->codec_unit_metadata[i].flags = 0;
+         } else {
+            metadata->codec_unit_metadata[i].size = data->segments[i].size;
+            metadata->codec_unit_metadata[i].flags = PIPE_VIDEO_CODEC_UNIT_LOCATION_FLAG_SINGLE_NALU;
+         }
+      }
+      FREE(fb->user_data);
+      fb->user_data = NULL;
+   } else {
+      metadata->codec_unit_metadata_count = 1;
+      metadata->codec_unit_metadata[0].offset = 0;
+      metadata->codec_unit_metadata[0].size = *size;
+      metadata->codec_unit_metadata[0].flags = 0;
    }
 
    si_vid_destroy_buffer(fb);

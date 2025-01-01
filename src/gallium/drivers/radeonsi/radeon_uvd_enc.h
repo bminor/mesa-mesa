@@ -317,8 +317,6 @@ struct radeon_uvd_enc_pic {
    unsigned nal_unit_type;
    unsigned temporal_id;
 
-   bool is_iframe;
-
    ruvd_enc_task_info_t task_info;
    ruvd_enc_session_init_t session_init;
    ruvd_enc_layer_control_t layer_ctrl;
@@ -359,6 +357,7 @@ struct radeon_uvd_encoder {
 
    struct pb_buffer_lean *bs_handle;
    unsigned bs_size;
+   unsigned bs_offset;
 
    unsigned dpb_slots;
 
@@ -375,9 +374,24 @@ struct radeon_uvd_encoder {
    bool need_rc_per_pic;
 };
 
+struct ruvd_enc_output_unit_segment {
+   bool is_slice;
+   unsigned size;
+   unsigned offset;
+};
+
+struct ruvd_enc_feedback_data {
+   unsigned num_segments;
+   struct ruvd_enc_output_unit_segment segments[];
+};
+
 struct si_screen;
 
 void radeon_uvd_enc_1_1_init(struct radeon_uvd_encoder *enc);
 bool si_radeon_uvd_enc_supported(struct si_screen *sscreen);
+
+unsigned int radeon_uvd_enc_write_vps(struct radeon_uvd_encoder *enc, uint8_t *out);
+unsigned int radeon_uvd_enc_write_sps(struct radeon_uvd_encoder *enc, uint8_t *out);
+unsigned int radeon_uvd_enc_write_pps(struct radeon_uvd_encoder *enc, uint8_t *out);
 
 #endif // _RADEON_UVD_ENC_H
