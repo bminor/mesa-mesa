@@ -2361,6 +2361,32 @@ static bool run_pre_link_optimization_passes(struct si_nir_shader_ctx *ctx)
       }
    }
 
+   if (progress) {
+      si_nir_opts(sel->screen, nir, true);
+      progress = false;
+   }
+
+   /* Remove dead temps before we lower indirect indexing. */
+   NIR_PASS_V(nir, nir_remove_dead_variables, nir_var_function_temp, NULL);
+
+   /* Lower indirect indexing last.
+    *
+    * Shader variant optimizations (such as uniform inlining, replacing barycentrics, and IO
+    * elimination) can help eliminate indirect indexing, so this should be done after that.
+    *
+    * Note that the code can still contain tautologies such as "array1[i] == array2[i]" when
+    * array1 and array2 have provably equal values (NIR doesn't have a pass that can do that),
+    * which NIR can optimize only after we lower indirecting indexing, so it's important that
+    * we lower it before we gather shader_info.
+    */
+
+   /* Lower indirect indexing of large constant arrays to the load_constant intrinsic, which
+    * will be turned into PC-relative loads from a data section next to the shader.
+    */
+   NIR_PASS(progress, nir, nir_opt_large_constants, glsl_get_natural_size_align_bytes, 16);
+
+   /* Lower all other indirect indexing to if-else ladders or scratch. */
+   progress |= ac_nir_lower_indirect_derefs(nir, sel->screen->info.gfx_level);
    return progress;
 }
 
@@ -2370,7 +2396,7 @@ static bool run_pre_link_optimization_passes(struct si_nir_shader_ctx *ctx)
  * in hw registers from now on.
  */
 static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *ctx,
-                                                      bool progress, bool opts_not_run)
+                                                      bool progress)
 {
    struct si_shader *shader = ctx->shader;
    struct si_shader_selector *sel = shader->selector;
@@ -2409,29 +2435,6 @@ static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *
        nir->info.stage == MESA_SHADER_TESS_EVAL ||
        (nir->info.stage == MESA_SHADER_GEOMETRY && shader->key.ge.as_ngg)) &&
       !shader->key.ge.as_ls && !shader->key.ge.as_es;
-
-   if (progress) {
-      si_nir_opts(sel->screen, nir, opts_not_run);
-      opts_not_run = false;
-      progress = false;
-   }
-
-   /* Lower large variables that are always constant with load_constant intrinsics, which
-    * get turned into PC-relative loads from a data section next to the shader.
-    *
-    * Loop unrolling caused by uniform inlining can help eliminate indirect indexing, so
-    * this should be done after that.
-    *
-    * The pass crashes if there are dead temps of lowered IO interface types, so remove
-    * them first.
-    */
-   NIR_PASS_V(nir, nir_remove_dead_variables, nir_var_function_temp, NULL);
-   NIR_PASS(progress, nir, nir_opt_large_constants, glsl_get_natural_size_align_bytes, 16);
-
-   /* Loop unrolling caused by uniform inlining can help eliminate indirect indexing, so
-    * this should be done after that.
-    */
-   progress |= ac_nir_lower_indirect_derefs(nir, sel->screen->info.gfx_level);
 
    if (nir->info.stage == MESA_SHADER_VERTEX)
       NIR_PASS(progress, nir, si_nir_lower_vs_inputs, shader, &ctx->args);
@@ -2536,8 +2539,7 @@ static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *
    NIR_PASS(progress, nir, si_nir_lower_resource, shader, &ctx->args);
 
    if (progress) {
-      si_nir_opts(sel->screen, nir, opts_not_run);
-      opts_not_run = false;
+      si_nir_opts(sel->screen, nir, false);
       progress = false;
    }
 
@@ -2593,8 +2595,7 @@ static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *
    }
 
    if (progress) {
-      si_nir_opts(sel->screen, nir, opts_not_run);
-      opts_not_run = false;
+      si_nir_opts(sel->screen, nir, false);
       progress = false;
    }
 
@@ -2685,7 +2686,6 @@ static void get_nir_shaders(struct si_shader *shader, struct si_linked_shaders *
       get_prev_stage_input_nir(shader, linked);
 
    bool progress[SI_NUM_LINKED_SHADERS] = {0};
-   bool opts_not_run[SI_NUM_LINKED_SHADERS] = {true, true};
 
    for (unsigned i = 0; i < SI_NUM_LINKED_SHADERS; i++) {
       if (linked->shader[i].nir) {
@@ -2710,8 +2710,7 @@ static void get_nir_shaders(struct si_shader *shader, struct si_linked_shaders *
 
    if (shader->selector->stage == MESA_SHADER_FRAGMENT) {
       if (progress[1]) {
-         si_nir_opts(shader->selector->screen, linked->consumer.nir, opts_not_run[1]);
-         opts_not_run[1] = false;
+         si_nir_opts(shader->selector->screen, linked->consumer.nir, false);
          progress[1] = false;
       }
 
@@ -2735,8 +2734,7 @@ static void get_nir_shaders(struct si_shader *shader, struct si_linked_shaders *
 
    for (unsigned i = 0; i < SI_NUM_LINKED_SHADERS; i++) {
       if (linked->shader[i].nir) {
-         run_late_optimization_and_lowering_passes(&linked->shader[i], progress[i],
-                                                   opts_not_run[i]);
+         run_late_optimization_and_lowering_passes(&linked->shader[i], progress[i]);
       }
    }
 
