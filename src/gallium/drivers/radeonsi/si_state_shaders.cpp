@@ -758,12 +758,14 @@ static void si_shader_hs(struct si_screen *sscreen, struct si_shader *shader)
    shader->config.rsrc2 = S_00B42C_SCRATCH_EN(shader->config.scratch_bytes_per_wave > 0) |
                           S_00B42C_USER_SGPR(num_user_sgprs);
 
-   if (sscreen->info.gfx_level >= GFX10)
-      shader->config.rsrc2 |= S_00B42C_USER_SGPR_MSB_GFX10(num_user_sgprs >> 5);
-   else if (sscreen->info.gfx_level >= GFX9)
+   if (sscreen->info.gfx_level >= GFX10) {
+      shader->config.rsrc2 |= S_00B42C_USER_SGPR_MSB_GFX10(num_user_sgprs >> 5) |
+                              S_00B42C_SHARED_VGPR_CNT(shader->config.num_shared_vgprs / 8);
+   } else if (sscreen->info.gfx_level >= GFX9) {
       shader->config.rsrc2 |= S_00B42C_USER_SGPR_MSB_GFX9(num_user_sgprs >> 5);
-   else
+   } else {
       shader->config.rsrc2 |= S_00B42C_OC_LDS_EN(1);
+   }
 
    if (sscreen->info.gfx_level <= GFX8)
       ac_pm4_set_reg(&pm4->base, R_00B42C_SPI_SHADER_PGM_RSRC2_HS, shader->config.rsrc2);
@@ -1125,7 +1127,8 @@ static void si_shader_gs(struct si_screen *sscreen, struct si_shader *shader)
                        S_00B22C_SCRATCH_EN(shader->config.scratch_bytes_per_wave > 0);
 
       if (sscreen->info.gfx_level >= GFX10) {
-         rsrc2 |= S_00B22C_USER_SGPR_MSB_GFX10(num_user_sgprs >> 5);
+         rsrc2 |= S_00B22C_USER_SGPR_MSB_GFX10(num_user_sgprs >> 5) |
+                  S_00B22C_SHARED_VGPR_CNT(shader->config.num_shared_vgprs / 8);
       } else {
          rsrc2 |= S_00B22C_USER_SGPR_MSB_GFX9(num_user_sgprs >> 5);
       }
@@ -1588,9 +1591,10 @@ static void gfx10_shader_ngg(struct si_screen *sscreen, struct si_shader *shader
                   S_00B22C_SCRATCH_EN(shader->config.scratch_bytes_per_wave > 0) |
                   S_00B22C_USER_SGPR(num_user_sgprs) |
                   S_00B22C_ES_VGPR_COMP_CNT(es_vgpr_comp_cnt) |
-                  S_00B22C_USER_SGPR_MSB_GFX10(num_user_sgprs >> 5) |
                   S_00B22C_OC_LDS_EN(es_stage == MESA_SHADER_TESS_EVAL) |
-                  S_00B22C_LDS_SIZE(shader->config.lds_size));
+                  S_00B22C_LDS_SIZE(shader->config.lds_size) |
+                  S_00B22C_USER_SGPR_MSB_GFX10(num_user_sgprs >> 5) |
+                  S_00B22C_SHARED_VGPR_CNT(shader->config.num_shared_vgprs / 8));
 
    /* Set register values emitted conditionally in gfx10_emit_shader_ngg_*. */
    shader->ngg.spi_shader_pos_format =
@@ -1950,7 +1954,8 @@ static void si_shader_vs(struct si_screen *sscreen, struct si_shader *shader,
                     S_00B12C_SCRATCH_EN(shader->config.scratch_bytes_per_wave > 0);
 
    if (sscreen->info.gfx_level >= GFX10)
-      rsrc2 |= S_00B12C_USER_SGPR_MSB_GFX10(num_user_sgprs >> 5);
+      rsrc2 |= S_00B12C_USER_SGPR_MSB_GFX10(num_user_sgprs >> 5) |
+               S_00B12C_SHARED_VGPR_CNT(shader->config.num_shared_vgprs / 8);
    else if (sscreen->info.gfx_level == GFX9)
       rsrc2 |= S_00B12C_USER_SGPR_MSB_GFX9(num_user_sgprs >> 5);
 
@@ -2312,7 +2317,8 @@ static void si_shader_ps(struct si_screen *sscreen, struct si_shader *shader)
    ac_pm4_set_reg(&pm4->base, R_00B02C_SPI_SHADER_PGM_RSRC2_PS,
                   S_00B02C_EXTRA_LDS_SIZE(shader->config.lds_size) |
                   S_00B02C_USER_SGPR(SI_PS_NUM_USER_SGPR) |
-                  S_00B32C_SCRATCH_EN(shader->config.scratch_bytes_per_wave > 0));
+                  S_00B02C_SCRATCH_EN(shader->config.scratch_bytes_per_wave > 0) |
+                  S_00B02C_SHARED_VGPR_CNT(shader->config.num_shared_vgprs / 8));
    ac_pm4_finalize(&pm4->base);
 }
 
