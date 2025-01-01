@@ -365,9 +365,9 @@ O_IADD32 = hw_op('iadd32', OM_ALU + [OM_S], 1, 3, [], [[RM_ABS, RM_NEG], [RM_ABS
 O_IMUL32 = hw_op('imul32', OM_ALU + [OM_S], 1, 3, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
 
 # Pseudo-ops (unmapped).
-O_NEG = pseudo_op('neg', OM_ALU, 1, 1)
-O_ABS = pseudo_op('abs', OM_ALU, 1, 1)
-O_FLR = pseudo_op('flr', OM_ALU, 1, 1)
+O_FNEG = pseudo_op('fneg', OM_ALU, 1, 1)
+O_FABS = pseudo_op('fabs', OM_ALU, 1, 1)
+O_FFLR = pseudo_op('fflr', OM_ALU, 1, 1)
 O_MOV = pseudo_op('mov', OM_ALU, 1, 1)
 O_VEC = pseudo_op('vec', [], 1, VARIABLE, [], [[RM_ABS, RM_NEG]])
 O_COMP = pseudo_op('comp', [], 1, 2)

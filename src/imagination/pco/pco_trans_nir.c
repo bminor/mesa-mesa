@@ -1007,15 +1007,16 @@ static pco_instr *trans_alu(trans_ctx *tctx, nir_alu_instr *alu)
    pco_instr *instr;
    switch (alu->op) {
    case nir_op_fneg:
-      instr = pco_neg(&tctx->b, dest, src[0]);
+      instr = pco_fneg(&tctx->b, dest, src[0]);
       break;
 
    case nir_op_fabs:
-      instr = pco_abs(&tctx->b, dest, src[0]);
+      instr = pco_fabs(&tctx->b, dest, src[0]);
       break;
 
    case nir_op_ffloor:
-      instr = pco_flr(&tctx->b, dest, src[0]);
+      instr = pco_fflr(&tctx->b, dest, src[0]);
+      break;
       break;
 
    case nir_op_fadd:

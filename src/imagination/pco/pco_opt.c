@@ -57,8 +57,8 @@ static inline bool pco_opt_prep_mods(pco_shader *shader,
     */
    pco_foreach_func_in_shader (func, shader) {
       pco_foreach_instr_in_func_safe (mod, func) {
-         if (mod->op != PCO_OP_NEG && mod->op != PCO_OP_ABS &&
-             mod->op != PCO_OP_FLR)
+         if (mod->op != PCO_OP_FNEG && mod->op != PCO_OP_FABS &&
+             mod->op != PCO_OP_FFLR)
             continue;
 
          pco_foreach_instr_in_func_from (instr, mod) {
@@ -89,17 +89,17 @@ static inline bool pco_opt_prep_mods(pco_shader *shader,
             bool other_has_mod = false;
 
             switch (mod->op) {
-            case PCO_OP_NEG:
+            case PCO_OP_FNEG:
                match_has_mod = pco_instr_src_has_neg(instr, match_src_index);
                other_has_mod = pco_instr_src_has_neg(instr, other_src_index);
                break;
 
-            case PCO_OP_ABS:
+            case PCO_OP_FABS:
                match_has_mod = pco_instr_src_has_abs(instr, match_src_index);
                other_has_mod = pco_instr_src_has_abs(instr, other_src_index);
                break;
 
-            case PCO_OP_FLR:
+            case PCO_OP_FFLR:
                match_has_mod = pco_instr_src_has_flr(instr, match_src_index);
                other_has_mod = pco_instr_src_has_flr(instr, other_src_index);
                break;
@@ -127,15 +127,15 @@ static inline bool pco_opt_prep_mods(pco_shader *shader,
          /* Rewrite the mod op to a mov. */
          pco_ref src = mod->src[0];
          switch (mod->op) {
-         case PCO_OP_NEG:
+         case PCO_OP_FNEG:
             src = pco_ref_neg(src);
             break;
 
-         case PCO_OP_ABS:
+         case PCO_OP_FABS:
             src = pco_ref_abs(src);
             break;
 
-         case PCO_OP_FLR:
+         case PCO_OP_FFLR:
             src = pco_ref_flr(src);
             break;
 
