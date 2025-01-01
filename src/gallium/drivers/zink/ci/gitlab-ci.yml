@@ -87,13 +87,7 @@ zink-anv-tgl-full:
 
 zink-anv-tgl-traces:
   extends:
-    - .lava-piglit-traces:x86_64
-    - .zink-anv-tgl-test
-    - .zink-trace-test
-    # Add .lava-traces-base again to override .zink-anv-tgl-test setting the
-    # HWCI_TEST_SCRIPT, but .lava-piglit-traces having to come first to get
-    # dependencies right.
-    - .lava-traces-base
+    - .zink-anv-tgl-trace-test
   variables:
     PIGLIT_TRACES_FILE: traces-zink.yml
 
