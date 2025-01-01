@@ -22,6 +22,7 @@ static const struct spirv_to_nir_options spirv_options = {
    .environment = NIR_SPIRV_VULKAN,
 
    .ubo_addr_format = nir_address_format_vec2_index_32bit_offset,
+   .ssbo_addr_format = nir_address_format_vec2_index_32bit_offset,
 
    .min_ubo_alignment = PVR_UNIFORM_BUFFER_OFFSET_ALIGNMENT,
    .min_ssbo_alignment = PVR_STORAGE_BUFFER_OFFSET_ALIGNMENT,
@@ -220,8 +221,8 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
    NIR_PASS(_,
             nir,
             nir_lower_explicit_io,
-            nir_var_mem_ubo,
-            spirv_options.ubo_addr_format);
+            nir_var_mem_ubo | nir_var_mem_ssbo,
+            nir_address_format_vec2_index_32bit_offset);
 
    NIR_PASS(_, nir, pco_nir_lower_vk, &data->common);
 
@@ -383,6 +384,57 @@ static void gather_fs_data(nir_shader *nir, pco_data *data)
 }
 
 /**
+ * \brief Checks whether a NIR intrinsic op is atomic.
+ *
+ * \param[in] op The NIR intrinsic op.
+ * \return True if the intrinsic op is atomic, else false.
+ */
+static inline bool intr_op_is_atomic(nir_intrinsic_op op)
+{
+   switch (op) {
+   case nir_intrinsic_ssbo_atomic:
+   case nir_intrinsic_shared_atomic:
+   case nir_intrinsic_shared_atomic_swap:
+      return true;
+
+   default:
+      break;
+   }
+   return false;
+}
+
+/**
+ * \brief Gather common data pass.
+ *
+ * \param[in] b NIR builder.
+ * \param[in] intr NIR intrinsic instruction.
+ * \param[in,out] cb_data Callback data.
+ * \return True if the shader was modified (always return false).
+ */
+static bool gather_common_data_pass(UNUSED struct nir_builder *b,
+                                    nir_intrinsic_instr *intr,
+                                    void *cb_data)
+{
+   pco_data *data = cb_data;
+   data->common.uses.atomics |= intr_op_is_atomic(intr->intrinsic);
+   return false;
+}
+
+/**
+ * \brief Gathers data common to all shader stages.
+ *
+ * \param[in] nir NIR shader.
+ * \param[in,out] data Shader data.
+ */
+static void gather_common_data(nir_shader *nir, pco_data *data)
+{
+   nir_shader_intrinsics_pass(nir,
+                              gather_common_data_pass,
+                              nir_metadata_all,
+                              data);
+}
+
+/**
  * \brief Gathers shader data.
  *
  * \param[in] nir NIR shader.
@@ -390,6 +442,8 @@ static void gather_fs_data(nir_shader *nir, pco_data *data)
  */
 static void gather_data(nir_shader *nir, pco_data *data)
 {
+   gather_common_data(nir, data);
+
    switch (nir->info.stage) {
    case MESA_SHADER_FRAGMENT:
       return gather_fs_data(nir, data);

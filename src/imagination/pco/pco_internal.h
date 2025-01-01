@@ -2026,6 +2026,19 @@ static inline void pco_ref_new_ssa_addr_comps(pco_func *func,
 }
 
 /**
+ * \brief Builds and returns a new 32x(2+n) SSA address and data reference.
+ *
+ * \param[in,out] func The function.
+ * \param[in] data_size The size of the data.
+ * \return SSA address and data reference.
+ */
+static inline pco_ref pco_ref_new_ssa_addr_data(pco_func *func,
+                                                unsigned data_size)
+{
+   return pco_ref_new_ssa(func, 32, 2 + data_size);
+}
+
+/**
  * \brief Builds and returns a virtual register reference.
  *
  * \param[in] index Virtual register index.

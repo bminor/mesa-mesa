@@ -341,6 +341,8 @@ O_FITR = hw_op('fitr', OM_ALU + [OM_ITR_MODE, OM_SAT], 1, 3)
 O_FITRP = hw_op('fitrp', OM_ALU + [OM_ITR_MODE, OM_SAT], 1, 4)
 
 O_LD = hw_op('ld', OM_ALU_RPT1 + [OM_MCU_CACHE_MODE_LD], 1, 3)
+O_ST = hw_direct_op('st', [OM_MCU_CACHE_MODE_ST], 0, 6)
+O_ATOMIC = hw_op('atomic', [OM_OLCHK, OM_EXEC_CND, OM_END, OM_ATOM_OP], 1, 2)
 
 ## Bitwise.
 O_MOVI32 = hw_op('movi32', OM_ALU, 1, 1)
@@ -376,6 +378,8 @@ O_MIN = hw_op('min', OM_ALU + [OM_TST_TYPE_MAIN], 1, 2, [], [[RM_ABS, RM_NEG], [
 O_MAX = hw_op('max', OM_ALU + [OM_TST_TYPE_MAIN], 1, 2, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
 O_IADD32 = hw_op('iadd32', OM_ALU + [OM_S], 1, 3, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
 O_IMUL32 = hw_op('imul32', OM_ALU + [OM_S], 1, 3, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
+
+O_ST32 = hw_op('st32', OM_ALU_RPT1 + [OM_MCU_CACHE_MODE_ST], 0, 5)
 
 # Pseudo-ops (unmapped).
 O_FNEG = pseudo_op('fneg', OM_ALU, 1, 1)

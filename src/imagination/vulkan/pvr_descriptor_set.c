@@ -76,6 +76,7 @@ static unsigned pvr_descriptor_size(VkDescriptorType type)
 {
    switch (type) {
    case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+   case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
       return sizeof(struct pvr_buffer_descriptor);
 
    default:
@@ -501,6 +502,7 @@ void pvr_UpdateDescriptorSets(VkDevice _device,
 
       switch (write->descriptorType) {
       case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+      case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
          for (uint32_t j = 0; j < write->descriptorCount; j++) {
             write_buffer(set,
                          &write->pBufferInfo[j],

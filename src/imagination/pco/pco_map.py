@@ -210,6 +210,12 @@ enum_map(OM_MCU_CACHE_MODE_LD.t, F_CACHEMODE_LD, [
    ('force_line_fill', 'force_line_fill'),
 ])
 
+enum_map(OM_MCU_CACHE_MODE_ST.t, F_CACHEMODE_ST, [
+   ('write_through', 'write_through'),
+   ('write_back', 'write_back'),
+   ('lazy_write_back', 'write_back_lazy'),
+])
+
 enum_map(OM_TST_OP_MAIN.t, F_TST_OP, [
    ('zero', 'z'),
    ('gzero', 'gz'),
@@ -275,6 +281,19 @@ enum_map(OM_BRANCH_CND.t, F_BPRED, [
    ('exec_cond', 'cc'),
    ('allinst', 'allp'),
    ('anyinst', 'anyp'),
+])
+
+enum_map(OM_ATOM_OP.t, F_ATOMIC_OP, [
+   ('add', 'add'),
+   ('sub', 'sub'),
+   ('xchg', 'xchg'),
+   ('umin', 'umin'),
+   ('imin', 'imin'),
+   ('umax', 'umax'),
+   ('imax', 'imax'),
+   ('and', 'and'),
+   ('or', 'or'),
+   ('xor', 'xor'),
 ])
 
 class OpRef(object):
@@ -1177,6 +1196,32 @@ encode_map(O_LD,
    op_ref_maps=[('backend', ['s3'], ['drc', 'imm', ['s0', 's1', 's2', 's3', 's4', 's5']])]
 )
 
+encode_map(O_ST,
+   encodings=[
+      (I_ST_IMMBL, [
+         ('drc', ('pco_ref_get_drc', SRC(2))),
+         ('srcseladd', ('pco_ref_srcsel', SRC(4))),
+         ('burstlen', ('pco_ref_get_imm', SRC(3))),
+         ('cachemode_st', OM_MCU_CACHE_MODE_ST),
+         ('srcseldata', ('pco_ref_srcsel', SRC(0))),
+         ('dsize', ('pco_ref_get_imm', SRC(1)))
+      ])
+   ],
+   op_ref_maps=[('backend', [], [['s0', 's1', 's2', 's3', 's4', 's5'], 'imm', 'drc', 'imm', ['s0', 's1', 's2', 's3', 's4', 's5'], ['s0', 's1', 's2', 's3', 's4', 's5', '_']])]
+)
+
+encode_map(O_ATOMIC,
+   encodings=[
+      (I_ATOMIC, [
+         ('drc', ('pco_ref_get_drc', SRC(0))),
+         ('atomic_op', OM_ATOM_OP),
+         ('srcsel', ('pco_ref_srcsel', SRC(1))),
+         ('dstsel', ('pco_ref_srcsel', DEST(0)))
+      ])
+   ],
+   op_ref_maps=[('backend', [['s0', 's1', 's2', 's3', 's4', 's5']], ['drc', ['s0', 's1', 's2', 's3', 's4', 's5']])]
+)
+
 encode_map(O_BBYP0BM,
    encodings=[
       (I_PHASE0_SRC, [
@@ -1831,6 +1876,24 @@ group_map(O_IMUL32,
    ]
 )
 
+group_map(O_ST32,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'be'),
+      ('olchk', OM_OLCHK),
+      ('w1p', False),
+      ('w0p', False),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', 1)
+   ]),
+   enc_ops=[('backend', O_ST, [], [SRC(0), 'pco_ref_imm8(PCO_DSIZE_32BIT)', SRC(1), SRC(2), SRC(3), SRC(4)], [(OM_MCU_CACHE_MODE_ST, OM_MCU_CACHE_MODE_ST)])],
+   srcs=[
+      ('s[0]', ('backend', SRC(0)), 's0'),
+      ('s[3]', ('backend', SRC(4)), 's3')
+   ]
+)
+
 group_map(O_UVSW_WRITE,
    hdr=(I_IGRP_HDR_MAIN, [
       ('oporg', 'be'),
@@ -1962,6 +2025,24 @@ group_map(O_LD,
    enc_ops=[('backend', O_LD)],
    srcs=[
       ('s[0]', ('backend', SRC(2)), 's0'),
+      ('s[3]', ('backend', DEST(0)), 's3')
+   ]
+)
+
+group_map(O_ATOMIC,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'be'),
+      ('olchk', OM_OLCHK),
+      ('w1p', False),
+      ('w0p', False),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', False),
+      ('rpt', 1)
+   ]),
+   enc_ops=[('backend', O_ATOMIC)],
+   srcs=[
+      ('s[0]', ('backend', SRC(1)), 's0'),
       ('s[3]', ('backend', DEST(0)), 's3')
    ]
 )
