@@ -2724,7 +2724,7 @@ struct pipe_video_codec *radeon_create_decoder(struct pipe_context *context,
       return NULL;
 
    if (sctx->vcn_has_ctx) {
-      dec->ectx = pipe_create_multimedia_context(context->screen);
+      dec->ectx = context->screen->context_create(context->screen, NULL, PIPE_CONTEXT_COMPUTE_ONLY);
       if (!dec->ectx)
          sctx->vcn_has_ctx = false;
    }
