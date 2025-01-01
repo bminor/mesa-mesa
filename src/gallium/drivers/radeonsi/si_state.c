@@ -4927,11 +4927,7 @@ static void si_init_compute_preamble_state(struct si_context *sctx,
    };
 
    ac_init_compute_preamble_state(&preamble_state, &pm4->base);
-
-   if (sctx->gfx_level == GFX10 || sctx->gfx_level == GFX10_3)
-      ac_pm4_set_reg(&pm4->base, R_00B8A0_COMPUTE_PGM_RSRC3, 0);
 }
-
 
 static void si_init_graphics_preamble_state(struct si_context *sctx,
                                             struct si_pm4_state *pm4)

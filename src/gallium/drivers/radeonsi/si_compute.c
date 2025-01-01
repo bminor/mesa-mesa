@@ -201,10 +201,13 @@ static void si_create_compute_state_async(void *job, void *gdata, int thread_ind
                                                         : sel->info.uses_thread_id[1] ? 1 : 0) |
                              S_00B84C_LDS_SIZE(shader->config.lds_size);
 
+      /* COMPUTE_PGM_RSRC3 is only present on GFX10+ and GFX940+. */
+      shader->config.rsrc3 = S_00B8A0_SHARED_VGPR_CNT(shader->config.num_shared_vgprs / 8);
+
       if (sscreen->info.gfx_level >= GFX12)
-         shader->config.rsrc3 = S_00B8A0_INST_PREF_SIZE_GFX12(si_get_shader_prefetch_size(shader));
+         shader->config.rsrc3 |= S_00B8A0_INST_PREF_SIZE_GFX12(si_get_shader_prefetch_size(shader));
       else if (sscreen->info.gfx_level >= GFX11)
-         shader->config.rsrc3 = S_00B8A0_INST_PREF_SIZE_GFX11(si_get_shader_prefetch_size(shader));
+         shader->config.rsrc3 |= S_00B8A0_INST_PREF_SIZE_GFX11(si_get_shader_prefetch_size(shader));
 
       simple_mtx_lock(&sscreen->shader_cache_mutex);
       si_shader_cache_insert_shader(sscreen, ir_sha1_cache_key, shader, true);
@@ -580,7 +583,7 @@ static bool si_switch_compute_shader(struct si_context *sctx, struct si_compute 
                                 sctx->compute_scratch_buffer->gpu_address >> 40);
       }
 
-      if (sctx->gfx_level >= GFX11) {
+      if (sctx->gfx_level >= GFX10) {
          radeon_opt_set_sh_reg(R_00B8A0_COMPUTE_PGM_RSRC3,
                                SI_TRACKED_COMPUTE_PGM_RSRC3, config->rsrc3);
       }
