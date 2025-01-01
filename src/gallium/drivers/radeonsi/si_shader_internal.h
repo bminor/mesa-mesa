@@ -92,12 +92,7 @@ typedef struct nir_shader nir_shader;
 /* si_shader.c */
 bool si_is_multi_part_shader(struct si_shader *shader);
 bool si_is_merged_shader(struct si_shader *shader);
-void si_add_arg_checked(struct ac_shader_args *args, enum ac_arg_regfile file, unsigned registers,
-                        enum ac_arg_type type, struct ac_arg *arg, unsigned idx);
 unsigned si_get_max_workgroup_size(const struct si_shader *shader);
-bool si_need_ps_prolog(const union si_shader_part_key *key);
-void si_get_ps_prolog_key(struct si_shader *shader, union si_shader_part_key *key);
-void si_get_ps_epilog_key(struct si_shader *shader, union si_shader_part_key *key);
 enum ac_hw_stage si_select_hw_stage(const gl_shader_stage stage, const union si_shader_key *const key,
                                     const enum amd_gfx_level gfx_level);
 nir_shader *si_get_prev_stage_nir_shader(struct si_shader *shader,

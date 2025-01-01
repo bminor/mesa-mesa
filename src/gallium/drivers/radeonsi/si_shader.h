@@ -1068,10 +1068,6 @@ const char *si_get_shader_name(const struct si_shader *shader);
 void si_shader_binary_clean(struct si_shader_binary *binary);
 struct nir_shader *si_deserialize_shader(struct si_shader_selector *sel);
 unsigned si_get_ps_num_interp(struct si_shader *ps);
-bool si_shader_binary_open(struct si_screen *screen, struct si_shader *shader,
-                           struct ac_rtld_binary *rtld);
-bool si_get_external_symbol(enum amd_gfx_level gfx_level, void *data, const char *name,
-                            uint64_t *value);
 unsigned si_get_shader_prefetch_size(struct si_shader *shader);
 unsigned si_get_shader_binary_size(struct si_screen *screen, struct si_shader *shader);
 
@@ -1124,28 +1120,12 @@ static inline struct si_shader **si_get_main_shader_part(struct si_shader_select
    return &sel->main_shader_part[index];
 }
 
-static inline bool si_shader_uses_bindless_samplers(struct si_shader_selector *selector)
-{
-   return selector ? selector->info.uses_bindless_samplers : false;
-}
-
-static inline bool si_shader_uses_bindless_images(struct si_shader_selector *selector)
-{
-   return selector ? selector->info.uses_bindless_images : false;
-}
-
 static inline bool gfx10_has_variable_edgeflags(struct si_shader *shader)
 {
    unsigned output_prim = si_get_output_prim_simplified(shader->selector, &shader->key);
 
    return shader->selector->stage == MESA_SHADER_VERTEX &&
           (output_prim == MESA_PRIM_TRIANGLES || output_prim == MESA_PRIM_UNKNOWN);
-}
-
-static inline bool gfx10_ngg_writes_user_edgeflags(struct si_shader *shader)
-{
-   return gfx10_has_variable_edgeflags(shader) &&
-          shader->selector->info.writes_edgeflag;
 }
 
 static inline bool si_shader_uses_streamout(const struct si_shader *shader)

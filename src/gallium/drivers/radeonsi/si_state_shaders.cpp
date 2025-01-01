@@ -112,6 +112,16 @@ unsigned si_determine_wave_size(struct si_screen *sscreen, struct si_shader *sha
    return 64;
 }
 
+static bool si_shader_uses_bindless_samplers(struct si_shader_selector *selector)
+{
+   return selector ? selector->info.uses_bindless_samplers : false;
+}
+
+static bool si_shader_uses_bindless_images(struct si_shader_selector *selector)
+{
+   return selector ? selector->info.uses_bindless_images : false;
+}
+
 /* SHADER_CACHE */
 
 /**

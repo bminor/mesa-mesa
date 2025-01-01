@@ -51,10 +51,10 @@ static void si_diagnostic_handler(LLVMDiagnosticInfoRef di, void *context)
    LLVMDisposeMessage(description);
 }
 
-bool si_compile_llvm(struct si_screen *sscreen, struct si_shader_binary *binary,
-                     struct ac_shader_config *conf, struct ac_llvm_compiler *compiler,
-                     struct ac_llvm_context *ac, struct util_debug_callback *debug,
-                     gl_shader_stage stage, const char *name)
+static bool si_compile_llvm(struct si_screen *sscreen, struct si_shader_binary *binary,
+                            struct ac_shader_config *conf, struct ac_llvm_compiler *compiler,
+                            struct ac_llvm_context *ac, struct util_debug_callback *debug,
+                            gl_shader_stage stage, const char *name)
 {
    unsigned count = p_atomic_inc_return(&sscreen->num_compilations);
 
@@ -105,10 +105,10 @@ bool si_compile_llvm(struct si_screen *sscreen, struct si_shader_binary *binary,
    return ok;
 }
 
-void si_llvm_context_init(struct si_shader_context *ctx, struct si_screen *sscreen,
-                          struct ac_llvm_compiler *compiler, unsigned wave_size,
-                          bool exports_color_null, bool exports_mrtz,
-                          enum ac_float_mode float_mode)
+static void si_llvm_context_init(struct si_shader_context *ctx, struct si_screen *sscreen,
+                                 struct ac_llvm_compiler *compiler, unsigned wave_size,
+                                 bool exports_color_null, bool exports_mrtz,
+                                 enum ac_float_mode float_mode)
 {
    memset(ctx, 0, sizeof(*ctx));
    ctx->screen = sscreen;
@@ -179,7 +179,7 @@ void si_llvm_create_func(struct si_shader_context *ctx, const char *name, LLVMTy
    ac_llvm_set_target_features(ctx->main_fn.value, &ctx->ac, false);
 }
 
-void si_llvm_create_main_func(struct si_shader_context *ctx)
+static void si_llvm_create_main_func(struct si_shader_context *ctx)
 {
    struct si_shader *shader = ctx->shader;
    LLVMTypeRef returns[AC_MAX_ARGS];
@@ -216,7 +216,7 @@ void si_llvm_create_main_func(struct si_shader_context *ctx)
    }
 }
 
-void si_llvm_optimize_module(struct si_shader_context *ctx)
+static void si_llvm_optimize_module(struct si_shader_context *ctx)
 {
    /* Dump LLVM IR before any optimization passes */
    if (si_can_dump_shader(ctx->screen, ctx->stage, SI_DUMP_INIT_LLVM_IR))
@@ -226,7 +226,7 @@ void si_llvm_optimize_module(struct si_shader_context *ctx)
    ac_llvm_optimize_module(ctx->compiler->meo, ctx->ac.module);
 }
 
-void si_llvm_dispose(struct si_shader_context *ctx)
+static void si_llvm_dispose(struct si_shader_context *ctx)
 {
    LLVMDisposeModule(ctx->ac.module);
    LLVMContextDispose(ctx->ac.context);

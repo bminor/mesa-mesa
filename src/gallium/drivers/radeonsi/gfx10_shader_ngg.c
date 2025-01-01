@@ -8,6 +8,12 @@
 #include "si_query.h"
 #include "si_shader_internal.h"
 
+static bool gfx10_ngg_writes_user_edgeflags(struct si_shader *shader)
+{
+   return gfx10_has_variable_edgeflags(shader) &&
+          shader->selector->info.writes_edgeflag;
+}
+
 bool gfx10_ngg_export_prim_early(struct si_shader *shader)
 {
    struct si_shader_selector *sel = shader->selector;

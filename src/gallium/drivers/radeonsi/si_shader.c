@@ -333,8 +333,8 @@ enum
    SI_SHADER_MERGED_VERTEX_OR_TESSEVAL_GEOMETRY,
 };
 
-void si_add_arg_checked(struct ac_shader_args *args, enum ac_arg_regfile file, unsigned registers,
-                        enum ac_arg_type type, struct ac_arg *arg, unsigned idx)
+static void si_add_arg_checked(struct ac_shader_args *args, enum ac_arg_regfile file, unsigned registers,
+                               enum ac_arg_type type, struct ac_arg *arg, unsigned idx)
 {
    assert(args->arg_count == idx);
    ac_add_arg(args, file, registers, type, arg);
@@ -767,8 +767,8 @@ static unsigned get_lds_granularity(struct si_screen *screen, gl_shader_stage st
           screen->info.gfx_level >= GFX7 ? 512 : 256;
 }
 
-bool si_shader_binary_open(struct si_screen *screen, struct si_shader *shader,
-                           struct ac_rtld_binary *rtld)
+static bool si_shader_binary_open(struct si_screen *screen, struct si_shader *shader,
+                                  struct ac_rtld_binary *rtld)
 {
    const struct si_shader_selector *sel = shader->selector;
    const char *part_elfs[5];
@@ -892,8 +892,8 @@ unsigned si_get_shader_prefetch_size(struct si_shader *shader)
    return MIN2(max_pref_size, exec_size_gran128);
 }
 
-bool si_get_external_symbol(enum amd_gfx_level gfx_level, void *data, const char *name,
-                            uint64_t *value)
+static bool si_get_external_symbol(enum amd_gfx_level gfx_level, void *data, const char *name,
+                                   uint64_t *value)
 {
    uint64_t *scratch_va = data;
 
@@ -3318,7 +3318,7 @@ static bool si_shader_select_gs_parts(struct si_screen *sscreen, struct ac_llvm_
  * Compute the PS prolog key, which contains all the information needed to
  * build the PS prolog function, and set related bits in shader->config.
  */
-void si_get_ps_prolog_key(struct si_shader *shader, union si_shader_part_key *key)
+static void si_get_ps_prolog_key(struct si_shader *shader, union si_shader_part_key *key)
 {
    struct si_shader_info *info = &shader->selector->info;
 
@@ -3428,7 +3428,7 @@ void si_get_ps_prolog_key(struct si_shader *shader, union si_shader_part_key *ke
 /**
  * Check whether a PS prolog is required based on the key.
  */
-bool si_need_ps_prolog(const union si_shader_part_key *key)
+static bool si_need_ps_prolog(const union si_shader_part_key *key)
 {
    return key->ps_prolog.colors_read || key->ps_prolog.states.force_persp_sample_interp ||
           key->ps_prolog.states.force_linear_sample_interp ||
@@ -3443,7 +3443,7 @@ bool si_need_ps_prolog(const union si_shader_part_key *key)
  * Compute the PS epilog key, which contains all the information needed to
  * build the PS epilog function.
  */
-void si_get_ps_epilog_key(struct si_shader *shader, union si_shader_part_key *key)
+static void si_get_ps_epilog_key(struct si_shader *shader, union si_shader_part_key *key)
 {
    struct si_shader_info *info = &shader->selector->info;
    memset(key, 0, sizeof(*key));
