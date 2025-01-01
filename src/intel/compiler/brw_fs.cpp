@@ -1147,25 +1147,6 @@ fs_visitor::assign_constant_locations()
    push_constant_loc = ralloc_array(mem_ctx, int, uniforms);
    for (unsigned u = 0; u < uniforms; u++)
       push_constant_loc[u] = u;
-
-   /* Now that we know how many regular uniforms we'll push, reduce the
-    * UBO push ranges so we don't exceed the 3DSTATE_CONSTANT limits.
-    */
-   const unsigned max_push_length = 64;
-   unsigned push_length =
-      round_components_to_whole_registers(devinfo, prog_data->nr_params);
-   for (int i = 0; i < 4; i++) {
-      struct brw_ubo_range *range = &prog_data->ubo_ranges[i];
-
-      if (push_length + range->length > max_push_length)
-         range->length = max_push_length - push_length;
-
-      push_length += range->length;
-
-      assert(push_length % (1 * reg_unit(devinfo)) == 0);
-
-   }
-   assert(push_length <= max_push_length);
 }
 
 bool
