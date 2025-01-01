@@ -826,14 +826,14 @@ bool si_llvm_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *
    assert(LLVMGetTypeKind(LLVMTypeOf(LLVMGetParam(ctx.main_fn.value, 0))) == LLVMPointerTypeKind);
 
    /* Compile to bytecode. */
-   if (!si_compile_llvm(sscreen, &shader->binary, &shader->config, compiler, &ctx.ac, debug,
-                        nir->info.stage, si_get_shader_name(shader))) {
-      si_llvm_dispose(&ctx);
+   bool success = si_compile_llvm(sscreen, &shader->binary, &shader->config, compiler, &ctx.ac,
+                                  debug, nir->info.stage, si_get_shader_name(shader));
+   si_llvm_dispose(&ctx);
+   if (!success) {
       fprintf(stderr, "LLVM failed to compile shader\n");
       return false;
    }
 
-   si_llvm_dispose(&ctx);
    return true;
 }
 
