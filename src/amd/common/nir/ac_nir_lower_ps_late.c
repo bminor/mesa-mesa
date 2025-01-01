@@ -176,14 +176,9 @@ gather_ps_store_output(nir_builder *b, nir_intrinsic_instr *intrin, lower_ps_sta
 }
 
 static bool
-lower_ps_intrinsic(nir_builder *b, nir_instr *instr, void *state)
+lower_ps_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
 {
    lower_ps_state *s = (lower_ps_state *)state;
-
-   if (instr->type != nir_instr_type_intrinsic)
-      return false;
-
-   nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
 
    switch (intrin->intrinsic) {
    case nir_intrinsic_store_output:
@@ -706,8 +701,8 @@ ac_nir_lower_ps_late(nir_shader *nir, const ac_nir_lower_ps_late_options *option
       .spi_shader_col_format = options->spi_shader_col_format,
    };
 
-   bool progress = nir_shader_instructions_pass(nir, lower_ps_intrinsic,
-                                                nir_metadata_control_flow, &state);
+   bool progress = nir_shader_intrinsics_pass(nir, lower_ps_intrinsic,
+                                              nir_metadata_control_flow, &state);
    progress |= export_ps_outputs(b, &state);
 
    if (state.persp_centroid || state.linear_centroid) {

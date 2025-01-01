@@ -338,15 +338,11 @@ fbfetch_color_buffer0(nir_builder *b, lower_ps_early_state *s)
 }
 
 static bool
-lower_ps_intrinsic(nir_builder *b, nir_instr *instr, void *state)
+lower_ps_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
 {
    lower_ps_early_state *s = (lower_ps_early_state *)state;
 
-   if (instr->type != nir_instr_type_intrinsic)
-      return false;
-
-   b->cursor = nir_before_instr(instr);
-   nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
+   b->cursor = nir_before_instr(&intrin->instr);
 
    switch (intrin->intrinsic) {
    case nir_intrinsic_store_output:
@@ -468,8 +464,8 @@ ac_nir_lower_ps_early(nir_shader *nir, const ac_nir_lower_ps_early_options *opti
    /* Don't gather shader_info. Just gather the single thing we want to know. */
    nir_shader_intrinsics_pass(nir, gather_frag_color_dual_src_blend, nir_metadata_all, &state);
 
-   bool progress = nir_shader_instructions_pass(nir, lower_ps_intrinsic,
-                                                nir_metadata_control_flow, &state);
+   bool progress = nir_shader_intrinsics_pass(nir, lower_ps_intrinsic,
+                                              nir_metadata_control_flow, &state);
 
    if (state.persp_center || state.persp_centroid || state.persp_sample ||
        state.linear_center || state.linear_centroid || state.linear_sample) {
