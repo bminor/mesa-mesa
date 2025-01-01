@@ -210,12 +210,12 @@ impl PipeContext {
         }
     }
 
-    pub fn buffer_map(
+    pub fn buffer_map_flags(
         &self,
         res: &PipeResource,
         offset: i32,
         size: i32,
-        rw: RWFlags,
+        flags: pipe_map_flags,
     ) -> Option<PipeTransfer> {
         let b = pipe_box {
             x: offset,
@@ -225,11 +225,30 @@ impl PipeContext {
             ..Default::default()
         };
 
-        self.resource_map(res, &b, rw.into(), true)
+        self.resource_map(res, &b, flags, true)
+    }
+
+    pub fn buffer_map(
+        &self,
+        res: &PipeResource,
+        offset: i32,
+        size: i32,
+        rw: RWFlags,
+    ) -> Option<PipeTransfer> {
+        self.buffer_map_flags(res, offset, size, rw.into())
     }
 
     pub(super) fn buffer_unmap(&self, tx: *mut pipe_transfer) {
         unsafe { self.pipe.as_ref().buffer_unmap.unwrap()(self.pipe.as_ptr(), tx) };
+    }
+
+    pub fn texture_map_flags(
+        &self,
+        res: &PipeResource,
+        bx: &pipe_box,
+        flags: pipe_map_flags,
+    ) -> Option<PipeTransfer> {
+        self.resource_map(res, bx, flags, false)
     }
 
     pub fn texture_map(
@@ -238,7 +257,7 @@ impl PipeContext {
         bx: &pipe_box,
         rw: RWFlags,
     ) -> Option<PipeTransfer> {
-        self.resource_map(res, bx, rw.into(), false)
+        self.texture_map_flags(res, bx, rw.into())
     }
 
     pub(super) fn texture_unmap(&self, tx: *mut pipe_transfer) {

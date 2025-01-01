@@ -13,6 +13,7 @@ use mesa_rust::pipe::device::load_screens;
 use mesa_rust::pipe::fence::*;
 use mesa_rust::pipe::resource::*;
 use mesa_rust::pipe::screen::*;
+use mesa_rust::pipe::transfer::PipeTransfer;
 use mesa_rust_gen::*;
 use mesa_rust_util::math::SetBitIndices;
 use mesa_rust_util::static_assert;
@@ -109,6 +110,21 @@ pub trait HelperContextWrapper {
     fn compute_state_info(&self, state: *mut c_void) -> pipe_compute_state_object_info;
     fn compute_state_subgroup_size(&self, state: *mut c_void, block: &[u32; 3]) -> u32;
 
+    fn map_buffer_unsynchronized(
+        &self,
+        res: &PipeResource,
+        offset: i32,
+        size: i32,
+        rw: RWFlags,
+    ) -> Option<PipeTransfer>;
+
+    fn map_texture_unsynchronized(
+        &self,
+        res: &PipeResource,
+        bx: &pipe_box,
+        rw: RWFlags,
+    ) -> Option<PipeTransfer>;
+
     fn is_create_fence_fd_supported(&self) -> bool;
     fn import_fence(&self, fence_fd: &FenceFd) -> PipeFence;
 }
@@ -164,6 +180,31 @@ impl HelperContextWrapper for HelperContext<'_> {
 
     fn compute_state_subgroup_size(&self, state: *mut c_void, block: &[u32; 3]) -> u32 {
         self.lock.compute_state_subgroup_size(state, block)
+    }
+
+    fn map_buffer_unsynchronized(
+        &self,
+        res: &PipeResource,
+        offset: i32,
+        size: i32,
+        rw: RWFlags,
+    ) -> Option<PipeTransfer> {
+        self.lock.buffer_map_flags(
+            res,
+            offset,
+            size,
+            pipe_map_flags::PIPE_MAP_UNSYNCHRONIZED | rw.into(),
+        )
+    }
+
+    fn map_texture_unsynchronized(
+        &self,
+        res: &PipeResource,
+        bx: &pipe_box,
+        rw: RWFlags,
+    ) -> Option<PipeTransfer> {
+        self.lock
+            .texture_map_flags(res, bx, pipe_map_flags::PIPE_MAP_UNSYNCHRONIZED | rw.into())
     }
 
     fn is_create_fence_fd_supported(&self) -> bool {
