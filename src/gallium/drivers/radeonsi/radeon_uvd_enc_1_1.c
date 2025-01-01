@@ -792,8 +792,8 @@ static void radeon_uvd_enc_encode_params_hevc(struct radeon_uvd_encoder *enc)
       enc->enc_pic.enc_params.input_pic_luma_pitch = enc->luma->u.gfx9.surf_pitch * enc->luma->bpe;
       enc->enc_pic.enc_params.input_pic_chroma_pitch =
          enc->chroma->u.gfx9.surf_pitch * enc->chroma->bpe;
+      enc->enc_pic.enc_params.input_pic_swizzle_mode = enc->luma->u.gfx9.swizzle_mode;
    }
-   enc->enc_pic.enc_params.input_pic_swizzle_mode = RENC_UVD_SWIZZLE_MODE_LINEAR;
 
    RADEON_ENC_BEGIN(RENC_UVD_IB_PARAM_ENCODE_PARAMS);
    RADEON_ENC_CS(enc->enc_pic.enc_params.pic_type);
@@ -808,7 +808,7 @@ static void radeon_uvd_enc_encode_params_hevc(struct radeon_uvd_encoder *enc)
    }
    RADEON_ENC_CS(enc->enc_pic.enc_params.input_pic_luma_pitch);
    RADEON_ENC_CS(enc->enc_pic.enc_params.input_pic_chroma_pitch);
-   RADEON_ENC_CS(0x00000000); // reserved
+   RADEON_ENC_CS(enc->enc_pic.enc_params.input_pic_addr_mode);
    RADEON_ENC_CS(enc->enc_pic.enc_params.input_pic_swizzle_mode);
    RADEON_ENC_CS(enc->enc_pic.enc_params.reference_picture_index);
    RADEON_ENC_CS(enc->enc_pic.enc_params.reconstructed_picture_index);
