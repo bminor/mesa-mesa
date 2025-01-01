@@ -347,12 +347,13 @@ O_ATOMIC = hw_op('atomic', [OM_OLCHK, OM_EXEC_CND, OM_END, OM_ATOM_OP], 1, 2)
 ## Bitwise.
 O_MOVI32 = hw_op('movi32', OM_ALU, 1, 1)
 
-O_LOGICAL = hw_op('logical', OM_ALU + [OM_LOGIOP], 1, 2)
+O_LOGICAL = hw_op('logical', OM_ALU + [OM_LOGIOP], 1, 4)
 O_SHIFT = hw_op('shift', OM_ALU + [OM_SHIFTOP], 1, 3)
 
 O_BBYP0BM = hw_direct_op('bbyp0bm', [], 2, 2)
 O_BBYP0BM_IMM32 = hw_direct_op('bbyp0bm_imm32', [], 2, 2)
 O_BBYP0S1 = hw_direct_op('bbyp0s1', [], 1, 1)
+O_MSK_BBYP0S1 = hw_direct_op('msk_bbyp0s1', [], 3, 3)
 
 ## Control.
 O_WOP = hw_op('wop')

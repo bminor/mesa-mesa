@@ -1041,7 +1041,13 @@ static pco_instr *trans_logical(trans_ctx *tctx,
       UNREACHABLE("");
    }
 
-   return pco_logical(&tctx->b, dest, src0, src1, .logiop = logiop);
+   return pco_logical(&tctx->b,
+                      dest,
+                      pco_ref_null(),
+                      src0,
+                      pco_ref_null(),
+                      src1,
+                      .logiop = logiop);
 }
 
 /**

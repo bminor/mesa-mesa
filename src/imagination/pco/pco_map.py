@@ -27,6 +27,7 @@ REF_MAP = enum_type('ref_map', [
 
    ('ft0', 'ft0'),
    ('ft1', 'ft1'),
+   ('ft1_invert', '~ft1'),
    ('ft2', 'ft2'),
    ('fte', 'fte'),
 
@@ -1258,15 +1259,27 @@ encode_map(O_BBYP0S1,
    op_ref_maps=[('0', ['ft2'], ['s2'])]
 )
 
+encode_map(O_MSK_BBYP0S1,
+   encodings=[
+      (I_PHASE0_SRC, [
+         ('count_src', 's2'),
+         ('count_op', 'byp'),
+         ('bitmask_src_op', 'msk'),
+         ('shift1_op', 'byp')
+      ])
+   ],
+   op_ref_maps=[('0', ['ft0', 'ft1', 'ft2'], ['s0', 's1', 's2'])]
+)
+
 encode_map(O_LOGICAL,
    encodings=[
       (I_PHASE1, [
-         ('mskb', False),
-         ('mska', False),
+         ('mskb', ('!pco_ref_is_null', SRC(2))),
+         ('mska', ('!pco_ref_is_null', SRC(0))),
          ('logical_op', OM_LOGIOP),
       ])
    ],
-   op_ref_maps=[('1', ['ft4'], ['ft2', 's3'])]
+   op_ref_maps=[('1', ['ft4'], [['ft1', '_'], 'ft2', ['ft1_invert', '_'], 's3'])]
 )
 
 encode_map(O_SHIFT,
@@ -2105,12 +2118,12 @@ group_map(O_LOGICAL,
       ('rpt', OM_RPT)
    ]),
    enc_ops=[
-      ('0', O_BBYP0S1, ['ft2'], [SRC(0)]),
-      ('1', O_LOGICAL, [DEST(0)], ['ft2', SRC(1)], [(OM_LOGIOP, OM_LOGIOP)])
+      ('0', O_BBYP0S1, ['ft2'], [SRC(1)]),
+      ('1', O_LOGICAL, [DEST(0)], [SRC(0), 'ft2', SRC(2), SRC(3)], [(OM_LOGIOP, OM_LOGIOP)])
    ],
    srcs=[
       ('s[2]', ('0', SRC(0)), 's2'),
-      ('s[3]', ('1', SRC(1)), 's3')
+      ('s[3]', ('1', SRC(3)), 's3')
    ],
    dests=[('w[0]', ('1', DEST(0)), 'ft4')]
 )
