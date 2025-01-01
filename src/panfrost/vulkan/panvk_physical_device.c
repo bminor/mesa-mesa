@@ -68,9 +68,7 @@ create_kmod_dev(struct panvk_physical_device *device,
    if (strcmp(version->name, "panfrost") && strcmp(version->name, "panthor")) {
       drmFreeVersion(version);
       close(fd);
-      return panvk_errorf(instance, VK_ERROR_INCOMPATIBLE_DRIVER,
-                          "device %s does not use the panfrost kernel driver",
-                          path);
+      return VK_ERROR_INCOMPATIBLE_DRIVER;
    }
 
    drmFreeVersion(version);
