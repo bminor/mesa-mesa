@@ -119,6 +119,7 @@ anv-tgl-angle:
   variables:
     DEQP_SUITE: anv-tgl-angle
     GPU_VERSION: angle-anv-tgl
+  parallel: 2
 
 anv-tgl-angle-full:
   extends:
@@ -126,6 +127,7 @@ anv-tgl-angle-full:
     - .intel-manual-rules
   variables:
     DEQP_SUITE: anv-tgl-angle-full
+  parallel: null
 
 iris-apl-deqp:
   extends:
