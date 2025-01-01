@@ -2499,6 +2499,36 @@ ref_src_map_valid(pco_ref ref, enum pco_io mapped_src, bool *needs_s124)
    return false;
 }
 
+static inline enum pco_srcsel pco_ref_srcsel(pco_ref ref)
+{
+   enum pco_io io = pco_ref_get_io(ref);
+
+   switch (io) {
+   case PCO_IO_S0:
+      return PCO_SRCSEL_S0;
+
+   case PCO_IO_S1:
+      return PCO_SRCSEL_S1;
+
+   case PCO_IO_S2:
+      return PCO_SRCSEL_S2;
+
+   case PCO_IO_S3:
+      return PCO_SRCSEL_S3;
+
+   case PCO_IO_S4:
+      return PCO_SRCSEL_S4;
+
+   case PCO_IO_S5:
+      return PCO_SRCSEL_S5;
+
+   default:
+      break;
+   }
+
+   UNREACHABLE("");
+}
+
 /**
  * \brief Returns whether none of the lower/upper sources in an instruction
  *        group are set.

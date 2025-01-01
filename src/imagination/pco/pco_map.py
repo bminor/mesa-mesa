@@ -1135,7 +1135,7 @@ encode_map(O_LD,
          ('drc', ('pco_ref_get_drc', SRC(0))),
          ('burstlen', ('pco_ref_get_imm', SRC(1))),
 
-         ('srcseladd', 's0'),
+         ('srcseladd', ('pco_ref_srcsel', SRC(2))),
          ('cachemode_ld', OM_MCU_CACHE_MODE_LD)
       ])
    ],
