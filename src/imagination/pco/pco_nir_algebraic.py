@@ -11,6 +11,27 @@ b = 'b'
 lower_algebraic = []
 lower_algebraic_late = []
 
+def lowered_fround_even(src):
+   abs_src = ('fabs', src)
+   ffloor_temp = ('ffloor', abs_src)
+   ffract_temp = ('ffract', abs_src)
+
+   ceil_temp = ('fadd', ffloor_temp, 1.0)
+   even_temp = ('fmul', ffloor_temp, 0.5)
+
+   even_ffract_temp = ('ffract', even_temp)
+
+   ishalf_temp = ('feq', ffract_temp, 0.5)
+   ffract_temp = ('bcsel', ishalf_temp, even_ffract_temp, ffract_temp)
+
+   lesshalf_temp = ('flt', ffract_temp, 0.5)
+   result_temp = ('bcsel', lesshalf_temp, ffloor_temp, ceil_temp)
+
+   res = ('fcopysign_pco', result_temp, src)
+   return res
+
+lower_algebraic.append((('fround_even', a), lowered_fround_even(a)))
+
 lower_scmp = [
    # Float comparisons + bool conversions.
    (('b2f32', ('flt', a, b)), ('slt', a, 'b@32'), '!options->lower_scmp'),

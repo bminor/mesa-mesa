@@ -37,7 +37,14 @@ static const nir_shader_compiler_options nir_options = {
    .instance_id_includes_base_index = true,
 
    .lower_fdiv = true,
+   .lower_ffract = true,
    .lower_fquantize2f16 = true,
+   .lower_flrp32 = true,
+   .lower_fmod = true,
+   .lower_fpow = true,
+   .lower_fsqrt = true,
+   .lower_ftrunc = true,
+   .lower_ldexp = true,
    .lower_layer_fs_input_to_sysval = true,
    .compact_arrays = true,
    .scalarize_ddx = true,
@@ -125,6 +132,9 @@ void pco_preprocess_nir(pco_ctx *ctx, nir_shader *nir)
             &(nir_lower_idiv_options){
                .allow_fp16 = false,
             });
+
+   NIR_PASS(_, nir, nir_lower_frexp);
+   NIR_PASS(_, nir, nir_lower_flrp, 32, true);
 
    NIR_PASS(_,
             nir,

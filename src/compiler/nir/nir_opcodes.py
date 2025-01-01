@@ -979,6 +979,8 @@ if (!isnormal(dst))
    dst = copysignf(0.0f, src0);
 """)
 
+binop("fcopysign_pco", tfloat, "", "bit_size == 64 ? copysign(src0, src1) : copysignf(src0, src1)")
+
 binop_horiz("vec2", 2, tuint, 1, tuint, 1, tuint, """
 dst.x = src0.x;
 dst.y = src1.x;

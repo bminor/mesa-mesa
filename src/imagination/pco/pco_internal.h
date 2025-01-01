@@ -2670,11 +2670,20 @@ static inline bool pco_should_skip_pass(const char *pass)
 /** Integer one. */
 #define pco_one pco_ref_hwreg(1, PCO_REG_CLASS_CONST)
 
+/** Integer 31. */
+#define pco_31 pco_ref_hwreg(31, PCO_REG_CLASS_CONST)
+
 /** Integer -1/true/0xffffffff. */
 #define pco_true pco_ref_hwreg(143, PCO_REG_CLASS_CONST)
 
 /** Float 1. */
 #define pco_fone pco_ref_hwreg(64, PCO_REG_CLASS_CONST)
+
+/** Float -1. */
+#define pco_fnegone pco_ref_neg(pco_ref_hwreg(64, PCO_REG_CLASS_CONST))
+
+/** Float infinity. */
+#define pco_finf pco_ref_hwreg(142, PCO_REG_CLASS_CONST)
 
 /* Printing. */
 void pco_print_ref(pco_shader *shader, pco_ref ref);

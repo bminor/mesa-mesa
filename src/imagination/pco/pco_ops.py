@@ -300,6 +300,16 @@ OM_CND = op_mod_enum('cnd', [
    ('p0_false', 'if(!p0)'),
 ])
 
+OM_FRED_TYPE = op_mod_enum('fred_type', [
+   'sin',
+   'cos',
+])
+
+OM_FRED_PART = op_mod_enum('fred_part', [
+   'a',
+   'b',
+])
+
 # Ops.
 
 OM_ALU = [OM_OLCHK, OM_EXEC_CND, OM_END, OM_ATOM, OM_RPT]
@@ -310,6 +320,12 @@ O_FADD = hw_op('fadd', OM_ALU + [OM_SAT], 1, 2, [], [[RM_ABS, RM_NEG, RM_FLR], [
 O_FMUL = hw_op('fmul', OM_ALU + [OM_SAT], 1, 2, [], [[RM_ABS, RM_NEG, RM_FLR], [RM_ABS]])
 O_FMAD = hw_op('fmad', OM_ALU + [OM_SAT, OM_LP], 1, 3, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG], [RM_ABS, RM_NEG, RM_FLR]])
 O_FRCP = hw_op('frcp', OM_ALU, 1, 1, [], [[RM_ABS, RM_NEG]])
+O_FRSQ = hw_op('frsq', OM_ALU, 1, 1, [], [[RM_ABS, RM_NEG]])
+O_FLOG = hw_op('flog', OM_ALU, 1, 1, [], [[RM_ABS, RM_NEG]])
+O_FLOGCN = hw_op('flogcn', OM_ALU, 1, 1, [], [[RM_ABS, RM_NEG]])
+O_FEXP = hw_op('fexp', OM_ALU, 1, 1, [], [[RM_ABS, RM_NEG]])
+O_FRED = hw_op('fred', OM_ALU + [OM_FRED_TYPE, OM_FRED_PART], 3, 3, [], [[RM_ABS, RM_NEG]])
+O_FSINC = hw_op('fsinc', OM_ALU, 2, 1)
 O_MBYP = hw_op('mbyp', OM_ALU, 1, 1, [], [[RM_ABS, RM_NEG]])
 O_FDSX = hw_op('fdsx', OM_ALU, 1, 1, [], [[RM_ABS, RM_NEG]])
 O_FDSXF = hw_op('fdsxf', OM_ALU, 1, 1, [], [[RM_ABS, RM_NEG]])
@@ -350,6 +366,8 @@ O_MOVI32 = hw_op('movi32', OM_ALU, 1, 1)
 O_LOGICAL = hw_op('logical', OM_ALU + [OM_LOGIOP], 1, 4)
 O_SHIFT = hw_op('shift', OM_ALU + [OM_SHIFTOP], 1, 3)
 
+O_COPYSIGN = hw_op('copysign', OM_ALU, 1, 2)
+
 O_BBYP0BM = hw_direct_op('bbyp0bm', [], 2, 2)
 O_BBYP0BM_IMM32 = hw_direct_op('bbyp0bm_imm32', [], 2, 2)
 O_BBYP0S1 = hw_direct_op('bbyp0s1', [], 1, 1)
@@ -375,6 +393,12 @@ O_BR = hw_op('br', [OM_EXEC_CND, OM_BRANCH_CND, OM_LINK], has_target_cf_node=Tru
 # Combination (> 1 instructions per group).
 O_SCMP = hw_op('scmp', OM_ALU + [OM_TST_OP_MAIN], 1, 2, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
 O_BCMP = hw_op('bcmp', OM_ALU + [OM_TST_OP_MAIN, OM_TST_TYPE_MAIN], 1, 2, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
+O_BCSEL = hw_op('bcsel', OM_ALU, 1, 3, [], [[], [RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
+O_CSEL = hw_op('csel', OM_ALU + [OM_TST_OP_MAIN, OM_TST_TYPE_MAIN], 1, 3, [], [[], [RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
+O_PSEL_TRIG = hw_op('psel_trig', OM_ALU, 1, 3)
+O_FSIGN = hw_op('fsign', OM_ALU, 1, 1)
+O_ISIGN = hw_op('isign', OM_ALU, 1, 1)
+O_FCEIL = hw_op('fceil', OM_ALU, 1, 1)
 O_MIN = hw_op('min', OM_ALU + [OM_TST_TYPE_MAIN], 1, 2, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
 O_MAX = hw_op('max', OM_ALU + [OM_TST_TYPE_MAIN], 1, 2, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
 O_IADD32 = hw_op('iadd32', OM_ALU + [OM_S], 1, 3, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])

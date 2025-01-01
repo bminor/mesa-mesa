@@ -886,6 +886,18 @@ static pco_instr *pco_trans_nir_vec(trans_ctx *tctx,
 static inline enum pco_tst_op_main to_tst_op_main(nir_op op)
 {
    switch (op) {
+   case nir_op_fcsel:
+   case nir_op_icsel_eqz:
+      return PCO_TST_OP_MAIN_ZERO;
+
+   case nir_op_fcsel_gt:
+   case nir_op_i32csel_gt:
+      return PCO_TST_OP_MAIN_GZERO;
+
+   case nir_op_fcsel_ge:
+   case nir_op_i32csel_ge:
+      return PCO_TST_OP_MAIN_GEZERO;
+
    case nir_op_slt:
    case nir_op_flt:
    case nir_op_ilt:
@@ -918,6 +930,10 @@ static inline enum pco_tst_op_main to_tst_op_main(nir_op op)
 static inline enum pco_tst_type_main to_tst_type_main(nir_op op, pco_ref src)
 {
    switch (op) {
+   case nir_op_fcsel:
+   case nir_op_fcsel_gt:
+   case nir_op_fcsel_ge:
+
    case nir_op_slt:
    case nir_op_sge:
    case nir_op_seq:
@@ -931,6 +947,10 @@ static inline enum pco_tst_type_main to_tst_type_main(nir_op op, pco_ref src)
    case nir_op_fmin:
    case nir_op_fmax:
       return PCO_TST_TYPE_MAIN_F32;
+
+   case nir_op_icsel_eqz:
+   case nir_op_i32csel_gt:
+   case nir_op_i32csel_ge:
 
    case nir_op_ilt:
    case nir_op_ige:
@@ -995,6 +1015,39 @@ trans_cmp(trans_ctx *tctx, nir_op op, pco_ref dest, pco_ref src0, pco_ref src1)
                         src1,
                         .tst_op_main = tst_op_main,
                         .tst_type_main = tst_type_main);
+}
+
+/**
+ * \brief Translates a NIR {i,f}csel op into PCO.
+ *
+ * \param[in,out] tctx Translation context.
+ * \param[in] op The NIR op.
+ * \param[in] src Instruction source.
+ * \return The translated PCO instruction.
+ */
+static pco_instr *trans_csel(trans_ctx *tctx,
+                             nir_op op,
+                             pco_ref dest,
+                             pco_ref src0,
+                             pco_ref src1,
+                             pco_ref src2)
+{
+   enum pco_tst_op_main tst_op_main = to_tst_op_main(op);
+   enum pco_tst_type_main tst_type_main = to_tst_type_main(op, src0);
+
+   if (op == nir_op_fcsel) {
+      pco_ref tmp = src2;
+      src2 = src1;
+      src1 = tmp;
+   }
+
+   return pco_csel(&tctx->b,
+                   dest,
+                   src0,
+                   src1,
+                   src2,
+                   .tst_op_main = tst_op_main,
+                   .tst_type_main = tst_type_main);
 }
 
 /**
@@ -1142,6 +1195,76 @@ static pco_instr *trans_min_max(trans_ctx *tctx,
 }
 
 /**
+ * \brief Translates a NIR trigonometric op into PCO.
+ *
+ * \param[in,out] tctx Translation context.
+ * \param[in] op The NIR op.
+ * \param[in] dest Instruction destination.
+ * \param[in] src Instruction source.
+ * \return The translated PCO instruction.
+ */
+static pco_instr *
+trans_trig(trans_ctx *tctx, nir_op op, pco_ref dest, pco_ref src)
+{
+   assert(pco_ref_get_chans(dest) == 1);
+   assert(pco_ref_get_bits(dest) == 32);
+
+   enum pco_fred_type fred_type;
+   switch (op) {
+   case nir_op_fsin:
+      fred_type = PCO_FRED_TYPE_SIN;
+      break;
+
+   case nir_op_fcos:
+      fred_type = PCO_FRED_TYPE_COS;
+      break;
+
+   /* TODO: arctan, arctanc, sinc, cosc. */
+   default:
+      UNREACHABLE("");
+   }
+
+   pco_ref fred_dest_a = pco_ref_new_ssa32(tctx->func);
+   pco_fred(&tctx->b,
+            pco_ref_null(),
+            fred_dest_a,
+            pco_ref_null(),
+            src,
+            pco_ref_null(),
+            pco_ref_imm8(0),
+            .fred_type = fred_type,
+            .fred_part = PCO_FRED_PART_A);
+
+   pco_ref fred_dest_b = pco_ref_new_ssa32(tctx->func);
+   pco_fred(&tctx->b,
+            fred_dest_b,
+            pco_ref_null(),
+            pco_ref_null(),
+            src,
+            fred_dest_a,
+            pco_ref_imm8(0),
+            .fred_type = fred_type,
+            .fred_part = PCO_FRED_PART_B);
+
+   pco_ref trig_dest = pco_ref_new_ssa32(tctx->func);
+   switch (op) {
+   case nir_op_fsin:
+   case nir_op_fcos:
+      pco_fsinc(&tctx->b, trig_dest, pco_ref_pred(PCO_PRED_P0), fred_dest_b);
+      break;
+
+   default:
+      UNREACHABLE("");
+   }
+
+   return pco_psel_trig(&tctx->b,
+                        dest,
+                        pco_ref_pred(PCO_PRED_P0),
+                        trig_dest,
+                        fred_dest_b);
+}
+
+/**
  * \brief Translates a NIR alu instruction into PCO.
  *
  * \param[in] tctx Translation context.
@@ -1172,10 +1295,17 @@ static pco_instr *trans_alu(trans_ctx *tctx, nir_alu_instr *alu)
    case nir_op_ffloor:
       instr = pco_fflr(&tctx->b, dest, src[0]);
       break;
+
+   case nir_op_fceil:
+      instr = pco_fceil(&tctx->b, dest, src[0]);
       break;
 
    case nir_op_fadd:
       instr = pco_fadd(&tctx->b, dest, src[0], src[1]);
+      break;
+
+   case nir_op_fsub:
+      instr = pco_fadd(&tctx->b, dest, pco_ref_neg(src[1]), src[0]);
       break;
 
    case nir_op_fmul:
@@ -1188,6 +1318,39 @@ static pco_instr *trans_alu(trans_ctx *tctx, nir_alu_instr *alu)
 
    case nir_op_frcp:
       instr = pco_frcp(&tctx->b, dest, src[0]);
+      break;
+
+   case nir_op_frsq:
+      instr = pco_frsq(&tctx->b, dest, src[0]);
+      break;
+
+   case nir_op_fexp2:
+      instr = pco_fexp(&tctx->b, dest, src[0]);
+      break;
+
+   case nir_op_flog2:
+      instr = pco_flog(&tctx->b, dest, src[0]);
+      break;
+
+   case nir_op_fsign:
+      instr = pco_fsign(&tctx->b, dest, src[0]);
+      break;
+
+   case nir_op_fsat:
+      instr = pco_fadd(&tctx->b, dest, src[0], pco_zero, .sat = true);
+      break;
+
+   case nir_op_fsin:
+   case nir_op_fcos:
+      instr = trans_trig(tctx, alu->op, dest, src[0]);
+      break;
+
+   case nir_op_isign:
+      instr = pco_isign(&tctx->b, dest, src[0]);
+      break;
+
+   case nir_op_fcopysign_pco:
+      instr = pco_copysign(&tctx->b, dest, src[0], src[1]);
       break;
 
    case nir_op_iadd:
@@ -1254,6 +1417,28 @@ static pco_instr *trans_alu(trans_ctx *tctx, nir_alu_instr *alu)
    case nir_op_ult:
    case nir_op_uge:
       instr = trans_cmp(tctx, alu->op, dest, src[0], src[1]);
+      break;
+
+   case nir_op_bcsel:
+      instr = pco_bcsel(&tctx->b, dest, src[0], src[1], src[2]);
+      break;
+
+   case nir_op_fcsel:
+   case nir_op_fcsel_gt:
+   case nir_op_fcsel_ge:
+
+   case nir_op_icsel_eqz:
+   case nir_op_i32csel_gt:
+   case nir_op_i32csel_ge:
+      instr = trans_csel(tctx, alu->op, dest, src[0], src[1], src[2]);
+      break;
+
+   case nir_op_b2f32:
+      instr = pco_bcsel(&tctx->b, dest, src[0], pco_fone, pco_zero);
+      break;
+
+   case nir_op_b2i32:
+      instr = pco_bcsel(&tctx->b, dest, src[0], pco_one, pco_zero);
       break;
 
    case nir_op_iand:
