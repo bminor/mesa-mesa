@@ -4944,41 +4944,6 @@ void si_init_screen_state_functions(struct si_screen *sscreen)
                                 si_create_vertex_state, si_vertex_state_destroy);
 }
 
-static void si_set_grbm_gfx_index(struct si_context *sctx, struct si_pm4_state *pm4, unsigned value)
-{
-   unsigned reg = sctx->gfx_level >= GFX7 ? R_030800_GRBM_GFX_INDEX : R_00802C_GRBM_GFX_INDEX;
-   ac_pm4_set_reg(&pm4->base, reg, value);
-}
-
-static void si_set_grbm_gfx_index_se(struct si_context *sctx, struct si_pm4_state *pm4, unsigned se)
-{
-   assert(se == ~0 || se < sctx->screen->info.max_se);
-   si_set_grbm_gfx_index(sctx, pm4,
-                         (se == ~0 ? S_030800_SE_BROADCAST_WRITES(1) : S_030800_SE_INDEX(se)) |
-                            S_030800_SH_BROADCAST_WRITES(1) |
-                            S_030800_INSTANCE_BROADCAST_WRITES(1));
-}
-
-static void si_write_harvested_raster_configs(struct si_context *sctx, struct si_pm4_state *pm4,
-                                              unsigned raster_config, unsigned raster_config_1)
-{
-   unsigned num_se = MAX2(sctx->screen->info.max_se, 1);
-   unsigned raster_config_se[4];
-   unsigned se;
-
-   ac_get_harvested_configs(&sctx->screen->info, raster_config, &raster_config_1, raster_config_se);
-
-   for (se = 0; se < num_se; se++) {
-      si_set_grbm_gfx_index_se(sctx, pm4, se);
-      ac_pm4_set_reg(&pm4->base, R_028350_PA_SC_RASTER_CONFIG, raster_config_se[se]);
-   }
-   si_set_grbm_gfx_index(sctx, pm4, ~0);
-
-   if (sctx->gfx_level >= GFX7) {
-      ac_pm4_set_reg(&pm4->base, R_028354_PA_SC_RASTER_CONFIG_1, raster_config_1);
-   }
-}
-
 static void si_init_compute_preamble_state(struct si_context *sctx,
                                            struct si_pm4_state *pm4)
 {

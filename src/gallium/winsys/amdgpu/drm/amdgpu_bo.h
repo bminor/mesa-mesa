@@ -195,7 +195,7 @@ static inline struct amdgpu_bo_real *get_slab_entry_real_bo(struct amdgpu_winsys
    return &get_bo_from_slab(((struct amdgpu_bo_slab_entry*)bo)->entry.slab)->b.b;
 }
 
-static struct amdgpu_bo_real_reusable_slab *get_real_bo_reusable_slab(struct amdgpu_winsys_bo *bo)
+static inline struct amdgpu_bo_real_reusable_slab *get_real_bo_reusable_slab(struct amdgpu_winsys_bo *bo)
 {
    assert(bo->type == AMDGPU_BO_REAL_REUSABLE_SLAB);
    return (struct amdgpu_bo_real_reusable_slab*)bo;
