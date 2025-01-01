@@ -313,8 +313,6 @@ public:
                                  unsigned payload_node_count,
                                  int *payload_last_use_ip) const;
    void assign_constant_locations();
-   bool get_pull_locs(const brw_reg &src, unsigned *out_surf_index,
-                      unsigned *out_pull_index);
    void invalidate_analysis(brw::analysis_dependency_class c);
 
    void vfail(const char *msg, va_list args);

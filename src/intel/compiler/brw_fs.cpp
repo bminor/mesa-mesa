@@ -1149,31 +1149,6 @@ fs_visitor::assign_constant_locations()
       push_constant_loc[u] = u;
 }
 
-bool
-fs_visitor::get_pull_locs(const brw_reg &src,
-                          unsigned *out_surf_index,
-                          unsigned *out_pull_index)
-{
-   assert(src.file == UNIFORM);
-
-   if (src.nr < UBO_START)
-      return false;
-
-   const struct brw_ubo_range *range =
-      &prog_data->ubo_ranges[src.nr - UBO_START];
-
-   /* If this access is in our (reduced) range, use the push data. */
-   if (src.offset / 32 < range->length)
-      return false;
-
-   *out_surf_index = range->block;
-   *out_pull_index = (32 * range->start + src.offset) / 4;
-
-   prog_data->has_ubo_pull = true;
-
-   return true;
-}
-
 /**
  * Get the mask of SIMD channels enabled during dispatch and not yet disabled
  * by discard.  Due to the layout of the sample mask in the fragment shader

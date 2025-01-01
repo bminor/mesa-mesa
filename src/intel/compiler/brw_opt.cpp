@@ -44,7 +44,6 @@ brw_optimize(fs_visitor &s)
    })
 
    s.assign_constant_locations();
-   OPT(brw_lower_constant_loads);
 
    if (s.compiler->lower_dpas)
       OPT(brw_lower_dpas);
