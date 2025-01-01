@@ -862,16 +862,6 @@ struct pvr_pipeline_stage_state {
 struct pvr_compute_shader_state {
    /* Pointer to a buffer object that contains the shader binary. */
    struct pvr_suballoc_bo *bo;
-
-   bool uses_atomic_ops;
-   bool uses_barrier;
-   /* E.g. GLSL shader uses gl_NumWorkGroups. */
-   bool uses_num_workgroups;
-
-   uint32_t const_shared_reg_count;
-   uint32_t input_register_count;
-   uint32_t work_size;
-   uint32_t coefficient_register_count;
 };
 
 struct pvr_vertex_shader_state {
@@ -910,28 +900,17 @@ struct pvr_pipeline {
 struct pvr_compute_pipeline {
    struct pvr_pipeline base;
 
+   pco_data cs_data;
+
    struct pvr_compute_shader_state shader_state;
-
-   struct {
-      uint32_t base_workgroup : 1;
-   } flags;
-
    struct pvr_stage_allocation_descriptor_state descriptor_state;
 
-   struct pvr_pds_upload primary_program;
-   struct pvr_pds_info primary_program_info;
+   struct pvr_pds_upload pds_cs_program;
+   struct pvr_pds_info pds_cs_program_info;
 
-   struct pvr_pds_base_workgroup_program {
-      struct pvr_pds_upload code_upload;
-
-      uint32_t *data_section;
-      /* Offset within the PDS data section at which the base workgroup id
-       * resides.
-       */
-      uint32_t base_workgroup_data_patching_offset;
-
-      struct pvr_pds_info info;
-   } primary_base_workgroup_variant_program;
+   uint32_t *pds_cs_data_section;
+   uint32_t base_workgroup_data_patching_offset;
+   uint32_t num_workgroups_data_patching_offset;
 };
 
 struct pvr_graphics_pipeline {

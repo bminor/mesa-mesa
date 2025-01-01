@@ -630,8 +630,36 @@ static pco_instr *trans_atomic_buffer(trans_ctx *tctx,
    UNREACHABLE("");
 }
 
+static inline enum pco_reg_class sys_val_to_reg_class(gl_system_value sys_val,
+                                                      mesa_shader_stage stage)
+{
+   switch (stage) {
+   case MESA_SHADER_VERTEX:
+      return PCO_REG_CLASS_VTXIN;
+
+   case MESA_SHADER_COMPUTE:
+      switch (sys_val) {
+      case SYSTEM_VALUE_LOCAL_INVOCATION_INDEX:
+         return PCO_REG_CLASS_VTXIN;
+
+      case SYSTEM_VALUE_WORKGROUP_ID:
+      case SYSTEM_VALUE_NUM_WORKGROUPS:
+         return PCO_REG_CLASS_COEFF;
+
+      default:
+         break;
+      }
+      break;
+
+   default:
+      break;
+   }
+
+   UNREACHABLE("");
+}
+
 /**
- * \brief Translates a NIR vs load system value intrinsic into PCO.
+ * \brief Translates a NIR load system value intrinsic into PCO.
  *
  * \param[in,out] tctx Translation context.
  * \param[in] intr System value intrinsic.
@@ -639,7 +667,7 @@ static pco_instr *trans_atomic_buffer(trans_ctx *tctx,
  * \return The translated PCO instruction.
  */
 static pco_instr *
-trans_load_sysval_vs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
+trans_load_sysval(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
 {
    gl_system_value sys_val = nir_system_value_from_intrinsic(intr->intrinsic);
    const pco_range *range = &tctx->shader->data.common.sys_vals[sys_val];
@@ -647,7 +675,9 @@ trans_load_sysval_vs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
    unsigned chans = pco_ref_get_chans(dest);
    assert(chans == range->count);
 
-   pco_ref src = pco_ref_hwreg_vec(range->start, PCO_REG_CLASS_VTXIN, chans);
+   pco_ref src = pco_ref_hwreg_vec(range->start,
+                                   sys_val_to_reg_class(sys_val, tctx->stage),
+                                   chans);
    return pco_mov(&tctx->b, dest, src, .rpt = chans);
 }
 
@@ -702,12 +732,18 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
       instr = trans_atomic_buffer(tctx, intr, dest, src[1], src[2]);
       break;
 
+   /* Vertex sysvals. */
    case nir_intrinsic_load_vertex_id:
    case nir_intrinsic_load_instance_id:
    case nir_intrinsic_load_base_instance:
    case nir_intrinsic_load_base_vertex:
    case nir_intrinsic_load_draw_id:
-      instr = trans_load_sysval_vs(tctx, intr, dest);
+
+   /* Compute sysvals. */
+   case nir_intrinsic_load_local_invocation_index:
+   case nir_intrinsic_load_workgroup_id:
+   case nir_intrinsic_load_num_workgroups:
+      instr = trans_load_sysval(tctx, intr, dest);
       break;
 
    case nir_intrinsic_ddx:

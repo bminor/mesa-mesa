@@ -539,6 +539,7 @@ struct pvr_pds_compute_shader_program {
 
    uint32_t local_input_regs[3];
    uint32_t work_group_input_regs[3];
+   uint32_t num_work_groups_regs[3];
    uint32_t global_input_regs[3];
 
    uint32_t barrier_coefficient;
@@ -553,8 +554,8 @@ struct pvr_pds_compute_shader_program {
 
    uint32_t coeff_update_task_branch_size;
 
-   bool add_base_workgroup;
    uint32_t base_workgroup_constant_offset_in_dwords[3];
+   uint32_t num_workgroups_constant_offset_in_dwords[3];
 
    bool kick_usc;
 
@@ -581,6 +582,11 @@ static inline void pvr_pds_compute_shader_program_init(
          PVR_PDS_REG_UNUSED,
       },
       .work_group_input_regs = {
+         PVR_PDS_REG_UNUSED,
+         PVR_PDS_REG_UNUSED,
+         PVR_PDS_REG_UNUSED,
+      },
+      .num_work_groups_regs = {
          PVR_PDS_REG_UNUSED,
          PVR_PDS_REG_UNUSED,
          PVR_PDS_REG_UNUSED,

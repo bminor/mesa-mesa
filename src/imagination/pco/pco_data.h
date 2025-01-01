@@ -71,7 +71,7 @@ typedef struct _pco_fs_data {
 
 /** PCO compute shader-specific data. */
 typedef struct _pco_cs_data {
-   /**/
+   unsigned workgroup_size[3]; /** Workgroup size. */
 } pco_cs_data;
 
 /** PCO descriptor binding data. */

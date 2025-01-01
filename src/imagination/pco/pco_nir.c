@@ -81,6 +81,9 @@ const nir_shader_compiler_options *pco_nir_options(void)
  */
 void pco_preprocess_nir(pco_ctx *ctx, nir_shader *nir)
 {
+   if (nir->info.stage == MESA_SHADER_COMPUTE)
+      NIR_PASS(_, nir, pco_nir_compute_instance_check);
+
    if (nir->info.internal)
       NIR_PASS(_, nir, nir_lower_returns);
 
@@ -107,6 +110,15 @@ void pco_preprocess_nir(pco_ctx *ctx, nir_shader *nir)
    }
 
    NIR_PASS(_, nir, nir_lower_system_values);
+
+   if (nir->info.stage == MESA_SHADER_COMPUTE) {
+      NIR_PASS(_,
+               nir,
+               nir_lower_compute_system_values,
+               &(nir_lower_compute_system_values_options){
+                  .lower_cs_local_id_to_index = true,
+               });
+   }
 
    NIR_PASS(_,
             nir,
@@ -397,6 +409,18 @@ static void gather_fs_data(nir_shader *nir, pco_data *data)
 }
 
 /**
+ * \brief Gathers compute shader data.
+ *
+ * \param[in] nir NIR shader.
+ * \param[in,out] data Shader data.
+ */
+static void gather_cs_data(nir_shader *nir, pco_data *data)
+{
+   for (unsigned u = 0; u < ARRAY_SIZE(data->cs.workgroup_size); ++u)
+      data->cs.workgroup_size[u] = nir->info.workgroup_size[u];
+}
+
+/**
  * \brief Checks whether a NIR intrinsic op is atomic.
  *
  * \param[in] op The NIR intrinsic op.
@@ -462,12 +486,16 @@ static void gather_data(nir_shader *nir, pco_data *data)
       return gather_fs_data(nir, data);
 
    case MESA_SHADER_VERTEX:
-      /* TODO */
-      break;
+      return;
+
+   case MESA_SHADER_COMPUTE:
+      return gather_cs_data(nir, data);
 
    default:
-      UNREACHABLE("");
+      break;
    }
+
+   UNREACHABLE("");
 }
 
 /**

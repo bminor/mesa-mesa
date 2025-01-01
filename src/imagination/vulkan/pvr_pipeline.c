@@ -669,221 +669,164 @@ static void pvr_pds_descriptor_program_destroy(
 
 static void pvr_pds_compute_program_setup(
    const struct pvr_device_info *dev_info,
-   const uint32_t local_input_regs[static const PVR_WORKGROUP_DIMENSIONS],
-   const uint32_t work_group_input_regs[static const PVR_WORKGROUP_DIMENSIONS],
-   uint32_t barrier_coefficient,
-   bool add_base_workgroup,
-   uint32_t usc_temps,
-   pvr_dev_addr_t usc_shader_dev_addr,
+   pco_data *cs_data,
+   struct pvr_compute_shader_state *compute_state,
    struct pvr_pds_compute_shader_program *const program)
 {
+   pco_range *sys_vals = cs_data->common.sys_vals;
+
    pvr_pds_compute_shader_program_init(program);
-   program->local_input_regs[0] = local_input_regs[0];
-   program->local_input_regs[1] = local_input_regs[1];
-   program->local_input_regs[2] = local_input_regs[2];
-   program->work_group_input_regs[0] = work_group_input_regs[0];
-   program->work_group_input_regs[1] = work_group_input_regs[1];
-   program->work_group_input_regs[2] = work_group_input_regs[2];
-   program->barrier_coefficient = barrier_coefficient;
-   program->add_base_workgroup = add_base_workgroup;
+
+   if (sys_vals[SYSTEM_VALUE_LOCAL_INVOCATION_INDEX].count > 0) {
+      program->local_input_regs[0] =
+         sys_vals[SYSTEM_VALUE_LOCAL_INVOCATION_INDEX].start;
+   }
+
+   for (unsigned u = 0; u < ARRAY_SIZE(program->work_group_input_regs); ++u) {
+      if (sys_vals[SYSTEM_VALUE_WORKGROUP_ID].count > u) {
+         program->work_group_input_regs[u] =
+            sys_vals[SYSTEM_VALUE_WORKGROUP_ID].start + u;
+      }
+   }
+
+   for (unsigned u = 0; u < ARRAY_SIZE(program->num_work_groups_regs); ++u) {
+      if (sys_vals[SYSTEM_VALUE_NUM_WORKGROUPS].count > u) {
+         program->num_work_groups_regs[u] =
+            sys_vals[SYSTEM_VALUE_NUM_WORKGROUPS].start + u;
+      }
+   }
+
    program->flattened_work_groups = true;
    program->kick_usc = true;
 
-   STATIC_ASSERT(ARRAY_SIZE(program->local_input_regs) ==
-                 PVR_WORKGROUP_DIMENSIONS);
-   STATIC_ASSERT(ARRAY_SIZE(program->work_group_input_regs) ==
-                 PVR_WORKGROUP_DIMENSIONS);
-   STATIC_ASSERT(ARRAY_SIZE(program->global_input_regs) ==
-                 PVR_WORKGROUP_DIMENSIONS);
-
    pvr_pds_setup_doutu(&program->usc_task_control,
-                       usc_shader_dev_addr.addr,
-                       usc_temps,
+                       compute_state->bo->dev_addr.addr,
+                       cs_data->common.temps,
                        ROGUE_PDSINST_DOUTU_SAMPLE_RATE_INSTANCE,
                        false);
 
    pvr_pds_compute_shader(program, NULL, PDS_GENERATE_SIZES, dev_info);
 }
 
-/* FIXME: See if pvr_device_init_compute_pds_program() and this could be merged.
+/* This uploads the code segment and base data segment variant.
+ * This can be patched at dispatch time.
  */
 static VkResult pvr_pds_compute_program_create_and_upload(
    struct pvr_device *const device,
    const VkAllocationCallbacks *const allocator,
-   const uint32_t local_input_regs[static const PVR_WORKGROUP_DIMENSIONS],
-   const uint32_t work_group_input_regs[static const PVR_WORKGROUP_DIMENSIONS],
-   uint32_t barrier_coefficient,
-   uint32_t usc_temps,
-   pvr_dev_addr_t usc_shader_dev_addr,
-   struct pvr_pds_upload *const pds_upload_out,
-   struct pvr_pds_info *const pds_info_out)
+   struct pvr_compute_shader_state *compute_state,
+   struct pvr_compute_pipeline *compute_pipeline)
 {
+   pco_range *sys_vals = compute_pipeline->cs_data.common.sys_vals;
    struct pvr_device_info *dev_info = &device->pdevice->dev_info;
    struct pvr_pds_compute_shader_program program;
-   uint32_t staging_buffer_size;
-   uint32_t *staging_buffer;
+   uint32_t *code_buffer;
+   uint32_t *data_buffer;
    VkResult result;
 
+   bool uses_wg_id = sys_vals[SYSTEM_VALUE_WORKGROUP_ID].count > 0;
+   bool uses_num_wgs = sys_vals[SYSTEM_VALUE_NUM_WORKGROUPS].count > 0;
+
    pvr_pds_compute_program_setup(dev_info,
-                                 local_input_regs,
-                                 work_group_input_regs,
-                                 barrier_coefficient,
-                                 false,
-                                 usc_temps,
-                                 usc_shader_dev_addr,
+                                 &compute_pipeline->cs_data,
+                                 compute_state,
                                  &program);
 
-   /* FIXME: According to pvr_device_init_compute_pds_program() the code size
-    * is in bytes. Investigate this.
-    */
-   staging_buffer_size = PVR_DW_TO_BYTES(program.code_size + program.data_size);
-
-   staging_buffer = vk_alloc2(&device->vk.alloc,
-                              allocator,
-                              staging_buffer_size,
-                              8,
-                              VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-   if (!staging_buffer)
+   code_buffer = vk_alloc2(&device->vk.alloc,
+                           allocator,
+                           PVR_DW_TO_BYTES(program.code_size),
+                           8,
+                           VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+   if (!code_buffer)
       return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
 
-   /* FIXME: pvr_pds_compute_shader doesn't implement
-    * PDS_GENERATE_CODEDATA_SEGMENTS.
-    */
+   data_buffer = vk_alloc2(&device->vk.alloc,
+                           allocator,
+                           PVR_DW_TO_BYTES(program.code_size),
+                           8,
+                           VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+   if (!data_buffer) {
+      vk_free2(&device->vk.alloc, allocator, code_buffer);
+      return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
+   }
+
    pvr_pds_compute_shader(&program,
-                          &staging_buffer[0],
+                          &code_buffer[0],
                           PDS_GENERATE_CODE_SEGMENT,
                           dev_info);
 
    pvr_pds_compute_shader(&program,
-                          &staging_buffer[program.code_size],
+                          &data_buffer[0],
                           PDS_GENERATE_DATA_SEGMENT,
                           dev_info);
 
+   /* Initialize. */
+   if (uses_wg_id) {
+      unsigned offset = program.base_workgroup_constant_offset_in_dwords[0];
+      for (unsigned u = 0; u < PVR_WORKGROUP_DIMENSIONS; ++u) {
+         data_buffer[offset + u] = 0;
+      }
+   }
+
+   if (uses_num_wgs) {
+      unsigned offset = program.num_workgroups_constant_offset_in_dwords[0];
+      for (unsigned u = 0; u < PVR_WORKGROUP_DIMENSIONS; ++u) {
+         data_buffer[offset + u] = 0;
+      }
+   }
+
    /* FIXME: Figure out the define for alignment of 16. */
    result = pvr_gpu_upload_pds(device,
-                               &staging_buffer[program.code_size],
+                               data_buffer,
                                program.data_size,
                                16,
-                               &staging_buffer[0],
+                               code_buffer,
                                program.code_size,
                                16,
                                16,
-                               pds_upload_out);
+                               &compute_pipeline->pds_cs_program);
    if (result != VK_SUCCESS) {
-      vk_free2(&device->vk.alloc, allocator, staging_buffer);
+      vk_free2(&device->vk.alloc, allocator, code_buffer);
+      vk_free2(&device->vk.alloc, allocator, data_buffer);
       return result;
    }
 
-   *pds_info_out = (struct pvr_pds_info){
+   compute_pipeline->pds_cs_data_section = data_buffer;
+
+   /* The base workgroup and num workgroups can be patched in the
+    * PDS data section before dispatch so we save their offsets.
+    */
+   compute_pipeline->base_workgroup_data_patching_offset = ~0u;
+   if (uses_wg_id) {
+      compute_pipeline->base_workgroup_data_patching_offset =
+         program.base_workgroup_constant_offset_in_dwords[0];
+   }
+
+   compute_pipeline->num_workgroups_data_patching_offset = ~0u;
+   if (uses_num_wgs) {
+      compute_pipeline->num_workgroups_data_patching_offset =
+         program.num_workgroups_constant_offset_in_dwords[0];
+   }
+
+   compute_pipeline->pds_cs_program_info = (struct pvr_pds_info){
       .temps_required = program.highest_temp,
       .code_size_in_dwords = program.code_size,
       .data_size_in_dwords = program.data_size,
    };
 
-   vk_free2(&device->vk.alloc, allocator, staging_buffer);
-
-   return VK_SUCCESS;
-};
-
-static void pvr_pds_compute_program_destroy(
-   struct pvr_device *const device,
-   const struct VkAllocationCallbacks *const allocator,
-   struct pvr_pds_upload *const pds_program,
-   struct pvr_pds_info *const pds_info)
-{
-   /* We don't allocate an entries buffer so we don't need to free it */
-   pvr_bo_suballoc_free(pds_program->pvr_bo);
-}
-
-/* This only uploads the code segment. The data segment will need to be patched
- * with the base workgroup before uploading.
- */
-static VkResult pvr_pds_compute_base_workgroup_variant_program_init(
-   struct pvr_device *const device,
-   const VkAllocationCallbacks *const allocator,
-   const uint32_t local_input_regs[static const PVR_WORKGROUP_DIMENSIONS],
-   const uint32_t work_group_input_regs[static const PVR_WORKGROUP_DIMENSIONS],
-   uint32_t barrier_coefficient,
-   uint32_t usc_temps,
-   pvr_dev_addr_t usc_shader_dev_addr,
-   struct pvr_pds_base_workgroup_program *program_out)
-{
-   struct pvr_device_info *dev_info = &device->pdevice->dev_info;
-   struct pvr_pds_compute_shader_program program;
-   uint32_t buffer_size;
-   uint32_t *buffer;
-   VkResult result;
-
-   pvr_pds_compute_program_setup(dev_info,
-                                 local_input_regs,
-                                 work_group_input_regs,
-                                 barrier_coefficient,
-                                 true,
-                                 usc_temps,
-                                 usc_shader_dev_addr,
-                                 &program);
-
-   /* FIXME: According to pvr_device_init_compute_pds_program() the code size
-    * is in bytes. Investigate this.
-    */
-   buffer_size = PVR_DW_TO_BYTES(MAX2(program.code_size, program.data_size));
-
-   buffer = vk_alloc2(&device->vk.alloc,
-                      allocator,
-                      buffer_size,
-                      8,
-                      VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
-   if (!buffer)
-      return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
-
-   pvr_pds_compute_shader(&program,
-                          &buffer[0],
-                          PDS_GENERATE_CODE_SEGMENT,
-                          dev_info);
-
-   /* FIXME: Figure out the define for alignment of 16. */
-   result = pvr_gpu_upload_pds(device,
-                               NULL,
-                               0,
-                               0,
-                               buffer,
-                               program.code_size,
-                               16,
-                               16,
-                               &program_out->code_upload);
-   if (result != VK_SUCCESS) {
-      vk_free2(&device->vk.alloc, allocator, buffer);
-      return result;
-   }
-
-   pvr_pds_compute_shader(&program, buffer, PDS_GENERATE_DATA_SEGMENT, dev_info);
-
-   program_out->data_section = buffer;
-
-   /* We'll need to patch the base workgroup in the PDS data section before
-    * dispatch so we save the offsets at which to patch. We only need to save
-    * the offset for the first workgroup id since the workgroup ids are stored
-    * contiguously in the data segment.
-    */
-   program_out->base_workgroup_data_patching_offset =
-      program.base_workgroup_constant_offset_in_dwords[0];
-
-   program_out->info = (struct pvr_pds_info){
-      .temps_required = program.highest_temp,
-      .code_size_in_dwords = program.code_size,
-      .data_size_in_dwords = program.data_size,
-   };
+   vk_free2(&device->vk.alloc, allocator, code_buffer);
 
    return VK_SUCCESS;
 }
 
-static void pvr_pds_compute_base_workgroup_variant_program_finish(
-   struct pvr_device *device,
-   const VkAllocationCallbacks *const allocator,
-   struct pvr_pds_base_workgroup_program *const state)
+static void
+pvr_pds_compute_program_destroy(struct pvr_device *device,
+                                const VkAllocationCallbacks *const allocator,
+                                struct pvr_pds_upload *const pds_cs_program,
+                                uint32_t *pds_cs_data_section)
 {
-   pvr_bo_suballoc_free(state->code_upload.pvr_bo);
-   vk_free2(&device->vk.alloc, allocator, state->data_section);
+   pvr_bo_suballoc_free(pds_cs_program->pvr_bo);
+   vk_free2(&device->vk.alloc, allocator, pds_cs_data_section);
 }
 
 /******************************************************************************
@@ -917,9 +860,27 @@ static void pvr_pipeline_finish(struct pvr_device *device,
 #define PVR_DEV_ADDR_SIZE_IN_SH_REGS \
    DIV_ROUND_UP(sizeof(pvr_dev_addr_t), sizeof(uint32_t))
 
+static void pvr_preprocess_shader_data(pco_data *data,
+                                       nir_shader *nir,
+                                       const void *pCreateInfo,
+                                       struct vk_pipeline_layout *layout);
+
+static void pvr_postprocess_shader_data(pco_data *data,
+                                        nir_shader *nir,
+                                        const void *pCreateInfo,
+                                        struct vk_pipeline_layout *layout);
+
 /******************************************************************************
    Compute pipeline functions
  ******************************************************************************/
+
+static void
+pvr_compute_state_save(struct pvr_compute_pipeline *compute_pipeline,
+                       pco_shader *cs)
+{
+   const pco_data *shader_data = pco_shader_data(cs);
+   memcpy(&compute_pipeline->cs_data, shader_data, sizeof(*shader_data));
+}
 
 /* Compiles and uploads shaders and PDS programs. */
 static VkResult pvr_compute_pipeline_compile(
@@ -930,70 +891,75 @@ static VkResult pvr_compute_pipeline_compile(
    struct pvr_compute_pipeline *const compute_pipeline)
 {
    struct vk_pipeline_layout *layout = compute_pipeline->base.layout;
-   uint32_t work_group_input_regs[PVR_WORKGROUP_DIMENSIONS];
-   uint32_t local_input_regs[PVR_WORKGROUP_DIMENSIONS];
-   uint32_t barrier_coefficient;
-   uint32_t usc_temps;
+   const uint32_t cache_line_size =
+      rogue_get_slc_cache_line_size(&device->pdevice->dev_info);
+   pco_ctx *pco_ctx = device->pdevice->pco_ctx;
+   void *shader_mem_ctx = ralloc_context(NULL);
+   pco_data shader_data = { 0 };
+   nir_shader *nir;
+   pco_shader *cs;
+
+   struct pvr_compute_shader_state *compute_state =
+      &compute_pipeline->shader_state;
+
    VkResult result;
 
-   compute_pipeline->shader_state.const_shared_reg_count = 0;
+   result =
+      vk_pipeline_shader_stage_to_nir(&device->vk,
+                                      compute_pipeline->base.pipeline_flags,
+                                      &pCreateInfo->stage,
+                                      pco_spirv_options(),
+                                      pco_nir_options(),
+                                      shader_mem_ctx,
+                                      &nir);
+   if (result != VK_SUCCESS)
+      goto err_free_build_context;
 
-   /* FIXME: Compile and upload the shader. */
-   /* FIXME: Initialize the shader state and setup build info. */
-   UNREACHABLE("finishme: compute support");
+   pco_preprocess_nir(pco_ctx, nir);
+   pvr_preprocess_shader_data(&shader_data, nir, pCreateInfo, layout);
+   pco_lower_nir(pco_ctx, nir, &shader_data);
+   pco_postprocess_nir(pco_ctx, nir, &shader_data);
+   pvr_postprocess_shader_data(&shader_data, nir, pCreateInfo, layout);
+
+   cs = pco_trans_nir(pco_ctx, nir, &shader_data, shader_mem_ctx);
+   if (!cs) {
+      result = VK_ERROR_INITIALIZATION_FAILED;
+      goto err_free_build_context;
+   }
+
+   pco_process_ir(pco_ctx, cs);
+   pco_encode_ir(pco_ctx, cs);
+
+   pvr_compute_state_save(compute_pipeline, cs);
+
+   result = pvr_gpu_upload_usc(device,
+                               pco_shader_binary_data(cs),
+                               pco_shader_binary_size(cs),
+                               cache_line_size,
+                               &compute_pipeline->shader_state.bo);
+   if (result != VK_SUCCESS)
+      goto err_free_build_context;
 
    result = pvr_pds_descriptor_program_create_and_upload(
       device,
       allocator,
       layout,
       MESA_SHADER_COMPUTE,
-      NULL,
+      &compute_pipeline->cs_data,
       &compute_pipeline->descriptor_state);
    if (result != VK_SUCCESS)
       goto err_free_shader;
 
-   result = pvr_pds_compute_program_create_and_upload(
-      device,
-      allocator,
-      local_input_regs,
-      work_group_input_regs,
-      barrier_coefficient,
-      usc_temps,
-      compute_pipeline->shader_state.bo->dev_addr,
-      &compute_pipeline->primary_program,
-      &compute_pipeline->primary_program_info);
+   result = pvr_pds_compute_program_create_and_upload(device,
+                                                      allocator,
+                                                      compute_state,
+                                                      compute_pipeline);
    if (result != VK_SUCCESS)
       goto err_free_descriptor_program;
 
-   /* If the workgroup ID is required, then we require the base workgroup
-    * variant of the PDS compute program as well.
-    */
-   compute_pipeline->flags.base_workgroup =
-      work_group_input_regs[0] != PVR_PDS_REG_UNUSED ||
-      work_group_input_regs[1] != PVR_PDS_REG_UNUSED ||
-      work_group_input_regs[2] != PVR_PDS_REG_UNUSED;
-
-   if (compute_pipeline->flags.base_workgroup) {
-      result = pvr_pds_compute_base_workgroup_variant_program_init(
-         device,
-         allocator,
-         local_input_regs,
-         work_group_input_regs,
-         barrier_coefficient,
-         usc_temps,
-         compute_pipeline->shader_state.bo->dev_addr,
-         &compute_pipeline->primary_base_workgroup_variant_program);
-      if (result != VK_SUCCESS)
-         goto err_destroy_compute_program;
-   }
+   ralloc_free(shader_mem_ctx);
 
    return VK_SUCCESS;
-
-err_destroy_compute_program:
-   pvr_pds_compute_program_destroy(device,
-                                   allocator,
-                                   &compute_pipeline->primary_program,
-                                   &compute_pipeline->primary_program_info);
 
 err_free_descriptor_program:
    pvr_pds_descriptor_program_destroy(device,
@@ -1003,6 +969,8 @@ err_free_descriptor_program:
 err_free_shader:
    pvr_bo_suballoc_free(compute_pipeline->shader_state.bo);
 
+err_free_build_context:
+   ralloc_free(shader_mem_ctx);
    return result;
 }
 
@@ -1067,26 +1035,23 @@ pvr_compute_pipeline_create(struct pvr_device *device,
    return VK_SUCCESS;
 }
 
+static void pvr_pipeline_destroy_shader_data(pco_data *data);
+
 static void pvr_compute_pipeline_destroy(
    struct pvr_device *const device,
    const VkAllocationCallbacks *const allocator,
    struct pvr_compute_pipeline *const compute_pipeline)
 {
-   if (compute_pipeline->flags.base_workgroup) {
-      pvr_pds_compute_base_workgroup_variant_program_finish(
-         device,
-         allocator,
-         &compute_pipeline->primary_base_workgroup_variant_program);
-   }
-
    pvr_pds_compute_program_destroy(device,
                                    allocator,
-                                   &compute_pipeline->primary_program,
-                                   &compute_pipeline->primary_program_info);
+                                   &compute_pipeline->pds_cs_program,
+                                   compute_pipeline->pds_cs_data_section);
    pvr_pds_descriptor_program_destroy(device,
                                       allocator,
                                       &compute_pipeline->descriptor_state);
    pvr_bo_suballoc_free(compute_pipeline->shader_state.bo);
+
+   pvr_pipeline_destroy_shader_data(&compute_pipeline->cs_data);
 
    pvr_pipeline_finish(device, &compute_pipeline->base);
 
@@ -1915,6 +1880,58 @@ static void pvr_setup_fs_input_attachments(
    pvr_finishme("pvr_setup_fs_input_attachments");
 }
 
+static void pvr_alloc_cs_sysvals(pco_data *data, nir_shader *nir)
+{
+   BITSET_DECLARE(system_values_read, SYSTEM_VALUE_MAX);
+   BITSET_COPY(system_values_read, nir->info.system_values_read);
+
+   gl_system_value vtxin_sys_vals[] = {
+      SYSTEM_VALUE_LOCAL_INVOCATION_INDEX,
+   };
+
+   gl_system_value coeff_sys_vals[] = {
+      SYSTEM_VALUE_WORKGROUP_ID,
+      SYSTEM_VALUE_NUM_WORKGROUPS,
+   };
+
+   for (unsigned u = 0; u < ARRAY_SIZE(vtxin_sys_vals); ++u) {
+      if (BITSET_TEST(system_values_read, vtxin_sys_vals[u])) {
+         nir_intrinsic_op op =
+            nir_intrinsic_from_system_value(vtxin_sys_vals[u]);
+         unsigned dwords = nir_intrinsic_infos[op].dest_components;
+         assert(dwords > 0);
+
+         allocate_val(data->common.sys_vals,
+                      &data->common.vtxins,
+                      vtxin_sys_vals[u],
+                      dwords);
+
+         BITSET_CLEAR(system_values_read, vtxin_sys_vals[u]);
+      }
+   }
+
+   for (unsigned u = 0; u < ARRAY_SIZE(coeff_sys_vals); ++u) {
+      if (BITSET_TEST(system_values_read, coeff_sys_vals[u])) {
+         nir_intrinsic_op op =
+            nir_intrinsic_from_system_value(coeff_sys_vals[u]);
+         unsigned dwords = nir_intrinsic_infos[op].dest_components;
+         assert(dwords > 0);
+
+         if (dwords > 1 && data->common.coeffs & 1)
+            ++data->common.coeffs;
+
+         allocate_val(data->common.sys_vals,
+                      &data->common.coeffs,
+                      coeff_sys_vals[u],
+                      dwords);
+
+         BITSET_CLEAR(system_values_read, coeff_sys_vals[u]);
+      }
+   }
+
+   assert(BITSET_IS_EMPTY(system_values_read));
+}
+
 static void pvr_init_descriptors(pco_data *data,
                                  nir_shader *nir,
                                  struct vk_pipeline_layout *layout)
@@ -1985,27 +2002,28 @@ static void pvr_setup_descriptors(pco_data *data,
    assert(data->common.shareds < 256);
 }
 
-static void
-pvr_preprocess_shader_data(pco_data *data,
-                           nir_shader *nir,
-                           const VkGraphicsPipelineCreateInfo *pCreateInfo,
-                           struct vk_pipeline_layout *layout)
+static void pvr_preprocess_shader_data(pco_data *data,
+                                       nir_shader *nir,
+                                       const void *pCreateInfo,
+                                       struct vk_pipeline_layout *layout)
 {
+   const VkGraphicsPipelineCreateInfo *pGraphicsCreateInfo = pCreateInfo;
+
    switch (nir->info.stage) {
    case MESA_SHADER_VERTEX: {
       const VkPipelineVertexInputStateCreateInfo *const vertex_input_state =
-         pCreateInfo->pVertexInputState;
+         pGraphicsCreateInfo->pVertexInputState;
 
       pvr_init_vs_attribs(data, vertex_input_state);
       break;
    }
 
    case MESA_SHADER_FRAGMENT: {
-      PVR_FROM_HANDLE(pvr_render_pass, pass, pCreateInfo->renderPass);
+      PVR_FROM_HANDLE(pvr_render_pass, pass, pGraphicsCreateInfo->renderPass);
       const struct pvr_render_subpass *const subpass =
-         &pass->subpasses[pCreateInfo->subpass];
+         &pass->subpasses[pGraphicsCreateInfo->subpass];
       const struct pvr_renderpass_hw_map *subpass_map =
-         &pass->hw_setup->subpass_map[pCreateInfo->subpass];
+         &pass->hw_setup->subpass_map[pGraphicsCreateInfo->subpass];
       const struct pvr_renderpass_hwsetup_subpass *hw_subpass =
          &pass->hw_setup->renders[subpass_map->render]
              .subpasses[subpass_map->subpass];
@@ -2014,6 +2032,10 @@ pvr_preprocess_shader_data(pco_data *data,
       pvr_init_fs_input_attachments(data, subpass, hw_subpass);
 
       /* TODO: push consts, blend consts, dynamic state, etc. */
+      break;
+   }
+
+   case MESA_SHADER_COMPUTE: {
       break;
    }
 
@@ -2026,12 +2048,13 @@ pvr_preprocess_shader_data(pco_data *data,
    /* TODO: common things, like large constants being put into shareds. */
 }
 
-static void
-pvr_postprocess_shader_data(pco_data *data,
-                            nir_shader *nir,
-                            const VkGraphicsPipelineCreateInfo *pCreateInfo,
-                            struct vk_pipeline_layout *layout)
+static void pvr_postprocess_shader_data(pco_data *data,
+                                        nir_shader *nir,
+                                        const void *pCreateInfo,
+                                        struct vk_pipeline_layout *layout)
 {
+   const VkGraphicsPipelineCreateInfo *pGraphicsCreateInfo = pCreateInfo;
+
    switch (nir->info.stage) {
    case MESA_SHADER_VERTEX: {
       pvr_alloc_vs_sysvals(data, nir);
@@ -2041,11 +2064,11 @@ pvr_postprocess_shader_data(pco_data *data,
    }
 
    case MESA_SHADER_FRAGMENT: {
-      PVR_FROM_HANDLE(pvr_render_pass, pass, pCreateInfo->renderPass);
+      PVR_FROM_HANDLE(pvr_render_pass, pass, pGraphicsCreateInfo->renderPass);
       const struct pvr_render_subpass *const subpass =
-         &pass->subpasses[pCreateInfo->subpass];
+         &pass->subpasses[pGraphicsCreateInfo->subpass];
       const struct pvr_renderpass_hw_map *subpass_map =
-         &pass->hw_setup->subpass_map[pCreateInfo->subpass];
+         &pass->hw_setup->subpass_map[pGraphicsCreateInfo->subpass];
       const struct pvr_renderpass_hwsetup_subpass *hw_subpass =
          &pass->hw_setup->renders[subpass_map->render]
              .subpasses[subpass_map->subpass];
@@ -2056,6 +2079,11 @@ pvr_postprocess_shader_data(pco_data *data,
       pvr_setup_fs_input_attachments(data, nir, subpass, hw_subpass);
 
       /* TODO: push consts, blend consts, dynamic state, etc. */
+      break;
+   }
+
+   case MESA_SHADER_COMPUTE: {
+      pvr_alloc_cs_sysvals(data, nir);
       break;
    }
 

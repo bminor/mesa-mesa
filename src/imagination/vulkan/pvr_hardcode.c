@@ -102,14 +102,6 @@ static const struct pvr_hard_coding_data {
          .shader_size = sizeof(pvr_simple_compute_shader),
 
          .shader_info = {
-            .uses_atomic_ops = false,
-            .uses_barrier = false,
-            .uses_num_workgroups = false,
-
-            .const_shared_reg_count = 4,
-            .input_register_count = 8,
-            .work_size = 1 * 1 * 1,
-            .coefficient_register_count = 4,
          },
 
          .build_info = {
