@@ -2732,12 +2732,12 @@ static void si_fixup_spi_ps_input_config(struct si_shader *shader)
    /* POW_W_FLOAT requires that one of the perspective weights is enabled. */
    if (G_0286CC_POS_W_FLOAT_ENA(shader->config.spi_ps_input_ena) &&
        !(shader->config.spi_ps_input_ena & 0xf)) {
-      shader->config.spi_ps_input_ena |= S_0286CC_PERSP_CENTER_ENA(1);
+      shader->config.spi_ps_input_ena |= S_0286CC_PERSP_SAMPLE_ENA(1);
    }
 
    /* At least one pair of interpolation weights must be enabled. */
    if (!(shader->config.spi_ps_input_ena & 0x7f))
-      shader->config.spi_ps_input_ena |= S_0286CC_LINEAR_CENTER_ENA(1);
+      shader->config.spi_ps_input_ena |= S_0286CC_PERSP_SAMPLE_ENA(1);
 }
 
 static void
@@ -2748,7 +2748,7 @@ si_get_shader_variant_info(struct si_shader *shader, nir_shader *nir)
    const BITSET_WORD *sysvals = nir->info.system_values_read;
 
    /* ACO needs spi_ps_input_ena before si_init_shader_args. */
-   if (nir->info.use_aco_amd) {
+   if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       /* Find out which frag coord components are used. */
       uint8_t frag_coord_mask = 0;
 

@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+#include "ac_debug.h"
 #include "ac_nir.h"
 #include "ac_nir_to_llvm.h"
 #include "ac_rtld.h"
@@ -767,6 +768,23 @@ static bool si_llvm_translate_nir(struct si_shader_context *ctx, struct si_shade
    return true;
 }
 
+static void assert_registers_equal(struct si_screen *sscreen, unsigned reg, unsigned nir_value,
+                                   unsigned llvm_value, bool allow_zero)
+{
+   if (nir_value != llvm_value) {
+      fprintf(stderr, "Error: Unexpected non-matching shader config:\n");
+      fprintf(stderr, "From NIR:\n");
+      ac_dump_reg(stderr, sscreen->info.gfx_level, sscreen->info.family, reg, nir_value, ~0);
+      fprintf(stderr, "From LLVM:\n");
+      ac_dump_reg(stderr, sscreen->info.gfx_level, sscreen->info.family, reg, llvm_value, ~0);
+   }
+   if (0)
+      printf("nir_value = 0x%x, llvm_value = 0x%x\n", nir_value, llvm_value);
+   assert(nir_value || allow_zero);
+   assert(llvm_value || allow_zero);
+   assert(nir_value == llvm_value);
+}
+
 bool si_llvm_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *compiler,
                             struct si_shader *shader, struct si_linked_shaders *linked,
                             struct util_debug_callback *debug)
@@ -826,14 +844,23 @@ bool si_llvm_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *
    assert(LLVMGetTypeKind(LLVMTypeOf(LLVMGetParam(ctx.main_fn.value, 0))) == LLVMPointerTypeKind);
 
    /* Compile to bytecode. */
-   bool success = si_compile_llvm(sscreen, &shader->binary, &shader->config, compiler, &ctx.ac,
-                                  debug, nir->info.stage, si_get_shader_name(shader));
+   struct ac_shader_config config = {0};
+
+   bool success = si_compile_llvm(sscreen, &shader->binary, &config, compiler, &ctx.ac, debug,
+                                  nir->info.stage, si_get_shader_name(shader));
    si_llvm_dispose(&ctx);
    if (!success) {
       fprintf(stderr, "LLVM failed to compile shader\n");
       return false;
    }
 
+   if (nir->info.stage == MESA_SHADER_FRAGMENT) {
+      assert_registers_equal(sscreen, R_0286CC_SPI_PS_INPUT_ENA, shader->config.spi_ps_input_ena,
+                             config.spi_ps_input_ena, !shader->is_monolithic);
+      assert_registers_equal(sscreen, R_0286D0_SPI_PS_INPUT_ADDR, shader->config.spi_ps_input_addr,
+                             config.spi_ps_input_addr, false);
+   }
+   shader->config = config;
    return true;
 }
 
