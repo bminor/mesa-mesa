@@ -208,7 +208,7 @@ VA_DRIVER_INIT_FUNC(VADriverContextP ctx)
    if (!drv->vscreen->pscreen->get_video_param || !drv->vscreen->pscreen->is_video_format_supported)
       goto error_pipe;
 
-   drv->pipe = pipe_create_multimedia_context(drv->vscreen->pscreen);
+   drv->pipe = pipe_create_multimedia_context(drv->vscreen->pscreen, false);
    if (!drv->pipe)
       goto error_pipe;
 

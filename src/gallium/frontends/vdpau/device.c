@@ -82,7 +82,7 @@ vdp_imp_device_create_x11(Display *display, int screen, VdpDevice *device,
       goto no_vscreen;
    }
 
-   dev->context = pipe_create_multimedia_context(pscreen);
+   dev->context = pipe_create_multimedia_context(pscreen, false);
    if (!dev->context) {
       ret = VDP_STATUS_RESOURCES;
       goto no_context;

@@ -903,14 +903,14 @@ util_writes_depth_stencil(const struct pipe_depth_stencil_alpha_state *zsa)
 }
 
 static inline struct pipe_context *
-pipe_create_multimedia_context(struct pipe_screen *screen)
+pipe_create_multimedia_context(struct pipe_screen *screen, bool compute_only)
 {
    unsigned flags = 0;
 
    if (!screen->get_param(screen, PIPE_CAP_GRAPHICS) &&
       !screen->get_param(screen, PIPE_CAP_COMPUTE))
       flags |= PIPE_CONTEXT_MEDIA_ONLY;
-   else if (!screen->get_param(screen, PIPE_CAP_GRAPHICS))
+   else if (compute_only || !screen->get_param(screen, PIPE_CAP_GRAPHICS))
       flags |= PIPE_CONTEXT_COMPUTE_ONLY;
 
    return screen->context_create(screen, NULL, flags);
