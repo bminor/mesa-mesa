@@ -340,6 +340,7 @@ typedef struct _pco_func {
    struct hash_table_u64 *vec_infos;
 
    unsigned next_ssa; /** Next SSA node index. */
+   unsigned next_vreg; /** Next virtual register index. */
    unsigned next_instr; /** Next instruction index. */
    unsigned next_igrp; /** Next igrp index. */
    unsigned next_block; /** Next block index. */
@@ -638,6 +639,14 @@ PCO_DEFINE_CAST(pco_cf_node_as_func,
    pco_foreach_instr_dest_from (pdest, instr, pdest_from)         \
       if (pco_ref_is_ssa(*pdest))
 
+#define pco_foreach_instr_dest_vreg(pdest, instr) \
+   pco_foreach_instr_dest (pdest, instr)          \
+      if (pco_ref_is_vreg(*pdest))
+
+#define pco_foreach_instr_dest_vreg_ssa(pdest, instr) \
+   pco_foreach_instr_dest (pdest, instr)              \
+      if (pco_ref_is_vreg(*pdest) || pco_ref_is_ssa(*pdest))
+
 #define pco_foreach_instr_src(psrc, instr)                                   \
    for (pco_ref *psrc = &instr->src[0]; psrc < &instr->src[instr->num_srcs]; \
         ++psrc)
@@ -653,6 +662,14 @@ PCO_DEFINE_CAST(pco_cf_node_as_func,
 #define pco_foreach_instr_src_ssa_from(psrc, instr, psrc_from) \
    pco_foreach_instr_src_from (psrc, instr, psrc_from)         \
       if (pco_ref_is_ssa(*psrc))
+
+#define pco_foreach_instr_src_vreg(psrc, instr) \
+   pco_foreach_instr_src (psrc, instr)          \
+      if (pco_ref_is_vreg(*psrc))
+
+#define pco_foreach_instr_src_vreg_ssa(psrc, instr) \
+   pco_foreach_instr_src (psrc, instr)              \
+      if (pco_ref_is_vreg(*psrc) || pco_ref_is_ssa(*psrc))
 
 #define pco_cf_node_head(list) exec_node_data_head(pco_cf_node, list, node)
 #define pco_cf_node_tail(list) exec_node_data_tail(pco_cf_node, list, node)
@@ -1575,6 +1592,17 @@ static inline bool pco_ref_is_ssa(pco_ref ref)
 }
 
 /**
+ * \brief Returns whether a reference is a virtual register.
+ *
+ * \param[in] ref PCO reference.
+ * \return True if the reference is a virtual register.
+ */
+static inline bool pco_ref_is_vreg(pco_ref ref)
+{
+   return ref.type == PCO_REF_TYPE_REG && ref.reg_class == PCO_REG_CLASS_VIRT;
+}
+
+/**
  * \brief Returns whether a reference is a register.
  *
  * \param[in] ref PCO reference.
@@ -2010,6 +2038,17 @@ static inline pco_ref pco_ref_vreg(unsigned index)
       .type = PCO_REF_TYPE_REG,
       .reg_class = PCO_REG_CLASS_VIRT,
    };
+}
+
+/**
+ * \brief Builds and returns a new virtual register.
+ *
+ * \param[in,out] func The function.
+ * \return Virtual register reference.
+ */
+static inline pco_ref pco_ref_new_vreg(pco_func *func)
+{
+   return pco_ref_vreg(func->next_vreg++);
 }
 
 /**

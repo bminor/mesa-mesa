@@ -79,23 +79,32 @@ static bool pco_ra_func(pco_func *func,
     * TODO: track successors/predecessors.
     */
 
+   unsigned num_ssas = func->next_ssa;
+   unsigned num_vregs = func->next_vreg;
+   unsigned num_vars = num_ssas + num_vregs;
+
    /* Collect used bit sizes. */
-   uint8_t ssa_bits = 0;
+   uint8_t used_bits = 0;
    pco_foreach_instr_in_func (instr, func) {
       pco_foreach_instr_dest_ssa (pdest, instr) {
-         ssa_bits |= (1 << pdest->bits);
+         used_bits |= (1 << pdest->bits);
       }
    }
 
+   /* vregs are always 32x1. */
+   if (num_vregs > 0) {
+      used_bits |= (1 << PCO_BITS_32);
+   }
+
    /* No registers to allocate. */
-   if (!ssa_bits)
+   if (!used_bits)
       return false;
 
-   /* 64-bit SSA should've been lowered by now. */
-   assert(!(ssa_bits & (1 << PCO_BITS_64)));
+   /* 64-bit vars should've been lowered by now. */
+   assert(!(used_bits & (1 << PCO_BITS_64)));
 
    /* TODO: support multiple bit sizes. */
-   bool only_32bit = ssa_bits == (1 << PCO_BITS_32);
+   bool only_32bit = used_bits == (1 << PCO_BITS_32);
    assert(only_32bit);
 
    struct ra_regs *ra_regs =
@@ -181,6 +190,14 @@ static bool pco_ra_func(pco_func *func,
       }
    }
 
+   /* vregs are always 32x1. */
+   if (num_vregs > 0) {
+      if (!_mesa_hash_table_u64_search(ra_classes, 1)) {
+         struct ra_class *ra_class = ra_alloc_contig_reg_class(ra_regs, 1);
+         _mesa_hash_table_u64_insert(ra_classes, 1, ra_class);
+      }
+   }
+
    /* Assign registers to classes. */
    hash_table_u64_foreach (ra_classes, entry) {
       const unsigned stride = entry.key;
@@ -192,15 +209,14 @@ static bool pco_ra_func(pco_func *func,
 
    ra_set_finalize(ra_regs, NULL);
 
-   struct ra_graph *ra_graph =
-      ra_alloc_interference_graph(ra_regs, func->next_ssa);
+   struct ra_graph *ra_graph = ra_alloc_interference_graph(ra_regs, num_vars);
    ralloc_steal(ra_regs, ra_graph);
 
    /* Allocate and calculate live ranges. */
    struct live_range *live_ranges =
-      rzalloc_array_size(ra_regs, sizeof(*live_ranges), func->next_ssa);
+      rzalloc_array_size(ra_regs, sizeof(*live_ranges), num_vars);
 
-   for (unsigned u = 0; u < func->next_ssa; ++u)
+   for (unsigned u = 0; u < num_vars; ++u)
       live_ranges[u].start = ~0U;
 
    pco_foreach_instr_in_func (instr, func) {
@@ -238,16 +254,44 @@ static bool pco_ra_func(pco_func *func,
          live_ranges[src.val].end =
             MAX2(live_ranges[src.val].end, instr->index);
       }
+
+      pco_foreach_instr_dest_vreg (pdest, instr) {
+         pco_ref dest = *pdest;
+
+         /* Place vregs after ssa vars. */
+         dest.val += num_ssas;
+
+         live_ranges[dest.val].start =
+            MIN2(live_ranges[dest.val].start, instr->index);
+
+         /* Set class if it hasn't already been set up in an override. */
+         unsigned chans = pco_ref_get_chans(dest);
+         struct ra_class *ra_class =
+            _mesa_hash_table_u64_search(ra_classes, chans);
+         assert(ra_class);
+
+         ra_set_node_class(ra_graph, dest.val, ra_class);
+      }
+
+      pco_foreach_instr_src_vreg (psrc, instr) {
+         pco_ref src = *psrc;
+
+         /* Place vregs after ssa vars. */
+         src.val += num_ssas;
+
+         live_ranges[src.val].end =
+            MAX2(live_ranges[src.val].end, instr->index);
+      }
    }
 
    /* Build interference graph from overlapping live ranges. */
-   for (unsigned ssa0 = 0; ssa0 < func->next_ssa; ++ssa0) {
-      for (unsigned ssa1 = ssa0 + 1; ssa1 < func->next_ssa; ++ssa1) {
+   for (unsigned var0 = 0; var0 < num_vars; ++var0) {
+      for (unsigned var1 = var0 + 1; var1 < num_vars; ++var1) {
          /* If the live ranges overlap, the register nodes interfere. */
-         if ((live_ranges[ssa0].start != ~0U && live_ranges[ssa1].end != ~0U) &&
-             !(live_ranges[ssa0].start >= live_ranges[ssa1].end ||
-               live_ranges[ssa1].start >= live_ranges[ssa0].end)) {
-            ra_add_node_interference(ra_graph, ssa0, ssa1);
+         if ((live_ranges[var0].start != ~0U && live_ranges[var1].end != ~0U) &&
+             !(live_ranges[var0].start >= live_ranges[var1].end ||
+               live_ranges[var1].start >= live_ranges[var0].end)) {
+            ra_add_node_interference(ra_graph, var0, var1);
          }
       }
    }
@@ -258,8 +302,12 @@ static bool pco_ra_func(pco_func *func,
 
    if (PCO_DEBUG_PRINT(RA)) {
       printf("RA live ranges:\n");
-      for (unsigned u = 0; u < func->next_ssa; ++u)
-         printf("  %%%u: %u, %u\n", u, live_ranges[u].start, live_ranges[u].end);
+      for (unsigned u = 0; u < num_vars; ++u)
+         printf("  %c%u: %u, %u\n",
+                u >= num_ssas ? '$' : '%',
+                u >= num_ssas ? u - num_ssas : u,
+                live_ranges[u].start,
+                live_ranges[u].end);
 
       if (_mesa_hash_table_u64_num_entries(overrides)) {
          printf("RA overrides:\n");
@@ -273,7 +321,7 @@ static bool pco_ra_func(pco_func *func,
       }
    }
 
-   /* Replace SSA regs with allocated registers. */
+   /* Replace vars with allocated registers. */
    unsigned temps = 0;
    unsigned vtxins = 0;
    unsigned interns = 0;
@@ -360,6 +408,24 @@ static bool pco_ra_func(pco_func *func,
          psrc->reg_class = PCO_REG_CLASS_TEMP;
          psrc->val = val;
       }
+
+      pco_foreach_instr_dest_vreg (pdest, instr) {
+         unsigned val = ra_get_node_reg(ra_graph, pdest->val + num_ssas);
+         unsigned dest_temps = val + 1;
+
+         pdest->type = PCO_REF_TYPE_REG;
+         pdest->reg_class = PCO_REG_CLASS_TEMP;
+         pdest->val = val;
+         temps = MAX2(temps, dest_temps);
+      }
+
+      pco_foreach_instr_src_vreg (psrc, instr) {
+         unsigned val = ra_get_node_reg(ra_graph, psrc->val + num_ssas);
+
+         psrc->type = PCO_REF_TYPE_REG;
+         psrc->reg_class = PCO_REG_CLASS_TEMP;
+         psrc->val = val;
+      }
    }
 
    ralloc_free(ra_regs);
@@ -367,10 +433,13 @@ static bool pco_ra_func(pco_func *func,
    func->temps = temps;
 
    if (PCO_DEBUG_PRINT(RA)) {
-      printf("RA allocated %u temps, %u vtxins, %u interns.\n",
-             temps,
-             vtxins,
-             interns);
+      printf(
+         "RA allocated %u temps, %u vtxins, %u interns from %u SSA vars, %u vregs.\n",
+         temps,
+         vtxins,
+         interns,
+         num_ssas,
+         num_vregs);
    }
 
    return true;
