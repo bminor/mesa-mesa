@@ -293,6 +293,13 @@ OM_SHIFTOP = op_mod_enum('shiftop', [
    'asr',
 ])
 
+OM_CND = op_mod_enum('cnd', [
+   ('always', 'if(1)'),
+   ('p0_true', 'if(p0)'),
+   ('never', 'if(0)'),
+   ('p0_false', 'if(!p0)'),
+])
+
 # Ops.
 
 OM_ALU = [OM_OLCHK, OM_EXEC_CND, OM_END, OM_ATOM, OM_RPT]
@@ -355,6 +362,12 @@ O_DITR = hw_op('ditr', [OM_EXEC_CND, OM_ITR_MODE, OM_SAT, OM_SCHED, OM_F16], 1, 
 O_DITRP = hw_op('ditrp', [OM_EXEC_CND, OM_ITR_MODE, OM_SAT, OM_SCHED, OM_F16], 1, 4)
 O_DITRP_WRITE = hw_op('ditrp.write', [OM_EXEC_CND, OM_ITR_MODE, OM_SAT, OM_SCHED, OM_F16], 1, 4)
 O_DITRP_READ = hw_op('ditrp.read', [OM_EXEC_CND, OM_ITR_MODE, OM_SAT, OM_SCHED, OM_F16], 1, 3)
+
+O_CNDST = hw_op('cndst', [OM_EXEC_CND, OM_CND], 2, 2)
+O_CNDEF = hw_op('cndef', [OM_EXEC_CND, OM_CND], 2, 2)
+O_CNDEND = hw_op('cndend', [OM_EXEC_CND], 2, 2)
+
+O_BR = hw_op('br', [OM_EXEC_CND, OM_BRANCH_CND, OM_LINK], has_target_cf_node=True)
 
 # Combination (> 1 instructions per group).
 O_SCMP = hw_op('scmp', OM_ALU + [OM_TST_OP_MAIN], 1, 2, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])

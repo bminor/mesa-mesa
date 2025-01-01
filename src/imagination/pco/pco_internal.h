@@ -2604,6 +2604,22 @@ static inline pco_instr *find_parent_instr_from(pco_ref src, pco_instr *from)
    return NULL;
 }
 
+static inline unsigned pco_igrp_offset(pco_igrp *igrp)
+{
+   return igrp->enc.offset;
+}
+
+static inline unsigned pco_cf_node_offset(pco_cf_node *cf_node)
+{
+   pco_block *block = pco_cf_node_as_block(cf_node);
+   return pco_igrp_offset(pco_first_igrp(block));
+}
+
+static inline unsigned pco_branch_rel_offset(pco_igrp *br, pco_cf_node *cf_node)
+{
+   return pco_cf_node_offset(cf_node) - pco_igrp_offset(br);
+}
+
 static inline bool pco_should_skip_pass(const char *pass)
 {
    return comma_separated_list_contains(pco_skip_passes, pass);

@@ -264,6 +264,19 @@ enum_map(RM_ELEM.t, F_MASKW0, [
    ('e3', 'e3'),
 ], pass_zero=['e0', 'e1', 'e2', 'e3'])
 
+enum_map(OM_CND.t, F_PCND, [
+   ('always', 'always'),
+   ('p0_true', 'p0_true'),
+   ('never', 'never'),
+   ('p0_false', 'p0_false'),
+])
+
+enum_map(OM_BRANCH_CND.t, F_BPRED, [
+   ('exec_cond', 'cc'),
+   ('allinst', 'allp'),
+   ('anyinst', 'anyp'),
+])
+
 class OpRef(object):
    def __init__(self, ref_type, index, mods):
       self.type = ref_type
@@ -311,13 +324,19 @@ def encode_map(op, encodings, op_ref_maps):
          elif isinstance(val_spec, int):
             encode_variant += str(val_spec)
          elif isinstance(val_spec, str):
-            assert struct_field.type.base_type == BaseType.enum
+            # Special case
+            if val_spec == 'target_cf_node':
+               assert op.has_target_cf_node
 
-            enum = struct_field.type.enum
-            assert enum.parent is None
-            assert val_spec in enum.elems.keys(), f'Invalid enum element "{val_spec}" in field "{isa_op_field}" in isa op "{isa_op.bsname}" mapping for op "{op.name}".'
+               encode_variant += f'pco_branch_rel_offset({{1}}->parent_igrp, {{1}}->target_cf_node)'
+            else:
+               assert struct_field.type.base_type == BaseType.enum
 
-            encode_variant += enum.elems[val_spec].cname
+               enum = struct_field.type.enum
+               assert enum.parent is None
+               assert val_spec in enum.elems.keys(), f'Invalid enum element "{val_spec}" in field "{isa_op_field}" in isa op "{isa_op.bsname}" mapping for op "{op.name}".'
+
+               encode_variant += enum.elems[val_spec].cname
          elif isinstance(val_spec, OpMod):
             assert val_spec in op.op_mods, f'Op mod "{val_spec.t.tname}" was specified but not valid in isa op "{isa_op.bsname}" mapping for op "{op.name}".'
 
@@ -1269,6 +1288,40 @@ encode_map(O_DITRP,
    op_ref_maps=[('ctrl', ['temp'], ['drc', 'coeff', 'coeff', 'imm'])]
 )
 
+encode_map(O_CNDST,
+   encodings=[
+      (I_CND, [
+         ('adjust', ('pco_ref_get_imm', SRC(1))),
+         ('pcnd', OM_CND),
+         ('cndinst', 'st')
+      ])
+   ],
+   op_ref_maps=[('ctrl', ['pe', 'w0'], ['s0', 'imm'])]
+)
+
+encode_map(O_CNDEND,
+   encodings=[
+      (I_CND, [
+         ('adjust', ('pco_ref_get_imm', SRC(1))),
+         ('pcnd', 0),
+         ('cndinst', 'end')
+      ])
+   ],
+   op_ref_maps=[('ctrl', ['pe', 'w0'], ['s0', 'imm'])]
+)
+
+encode_map(O_BR,
+   encodings=[
+      (I_BRANCH, [
+         ('link', OM_LINK),
+         ('bpred', OM_BRANCH_CND),
+         ('abs', False),
+         ('offset', 'target_cf_node')
+      ])
+   ],
+   op_ref_maps=[('ctrl', [], [])]
+)
+
 # Group mappings.
 group_map(O_FADD,
    hdr=(I_IGRP_HDR_MAIN, [
@@ -2030,4 +2083,50 @@ group_map(O_DITRP,
       ('ctrlop', 'ditr')
    ]),
    enc_ops=[('ctrl', O_DITRP)]
+)
+
+group_map(O_CNDST,
+   hdr=(I_IGRP_HDR_CONTROL, [
+      ('olchk', False),
+      ('w1p', False),
+      ('w0p', True),
+      ('cc', OM_EXEC_CND),
+      ('miscctl', False),
+      ('ctrlop', 'cnd')
+   ]),
+   enc_ops=[('ctrl', O_CNDST)],
+   srcs=[
+      ('s[0]', ('ctrl', SRC(0)), 's0'),
+      ('s[3]', 'pco_zero')
+   ],
+   dests=[('w[0]', ('ctrl', DEST(1)), 'w0')]
+)
+
+group_map(O_CNDEND,
+   hdr=(I_IGRP_HDR_CONTROL, [
+      ('olchk', False),
+      ('w1p', False),
+      ('w0p', True),
+      ('cc', OM_EXEC_CND),
+      ('miscctl', False),
+      ('ctrlop', 'cnd')
+   ]),
+   enc_ops=[('ctrl', O_CNDEND)],
+   srcs=[
+      ('s[0]', ('ctrl', SRC(0)), 's0'),
+      ('s[3]', 'pco_zero')
+   ],
+   dests=[('w[0]', ('ctrl', DEST(1)), 'w0')]
+)
+
+group_map(O_BR,
+   hdr=(I_IGRP_HDR_CONTROL, [
+      ('olchk', False),
+      ('w1p', False),
+      ('w0p', False),
+      ('cc', OM_EXEC_CND),
+      ('miscctl', False),
+      ('ctrlop', 'b')
+   ]),
+   enc_ops=[('ctrl', O_BR)]
 )
