@@ -25,6 +25,7 @@ typedef struct {
    nir_variable *linear_centroid;
    nir_variable *linear_sample;
 
+   bool frag_color_is_frag_data0;
    bool seen_color0_alpha;
 } lower_ps_early_state;
 
@@ -185,7 +186,7 @@ optimize_lower_ps_outputs(nir_builder *b, nir_intrinsic_instr *intrin, lower_ps_
    unsigned cb_shader_mask = ac_get_cb_shader_mask(s->options->spi_shader_col_format_hint);
    unsigned format_mask;
 
-   if (slot == FRAG_RESULT_COLOR) {
+   if (slot == FRAG_RESULT_COLOR && !s->frag_color_is_frag_data0) {
       /* cb_shader_mask is 0 for disabled color buffers, so combine all of them. */
       format_mask = 0;
       for (unsigned i = 0; i < 8; i++)
@@ -434,6 +435,23 @@ lower_ps_intrinsic(nir_builder *b, nir_instr *instr, void *state)
    return false;
 }
 
+static bool
+gather_frag_color_dual_src_blend(nir_builder *b, nir_intrinsic_instr *intr, void *state)
+{
+   lower_ps_early_state *s = (lower_ps_early_state *)state;
+
+   /* FRAG_RESULT_COLOR can't broadcast results to all color buffers if another
+    * FRAG_RESULT_COLOR output exists with dual_src_blend_index=1. This happens
+    * with gl_SecondaryFragColorEXT in GLES.
+    */
+   if (intr->intrinsic == nir_intrinsic_store_output &&
+       nir_intrinsic_io_semantics(intr).location == FRAG_RESULT_COLOR &&
+       nir_intrinsic_io_semantics(intr).dual_source_blend_index)
+      s->frag_color_is_frag_data0 = true;
+
+   return false;
+}
+
 bool
 ac_nir_lower_ps_early(nir_shader *nir, const ac_nir_lower_ps_early_options *options)
 {
@@ -446,6 +464,9 @@ ac_nir_lower_ps_early(nir_shader *nir, const ac_nir_lower_ps_early_options *opti
    lower_ps_early_state state = {
       .options = options,
    };
+
+   /* Don't gather shader_info. Just gather the single thing we want to know. */
+   nir_shader_intrinsics_pass(nir, gather_frag_color_dual_src_blend, nir_metadata_all, &state);
 
    bool progress = nir_shader_instructions_pass(nir, lower_ps_intrinsic,
                                                 nir_metadata_control_flow, &state);
