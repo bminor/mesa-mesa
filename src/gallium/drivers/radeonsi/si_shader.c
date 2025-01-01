@@ -2675,7 +2675,7 @@ static void get_prev_stage_input_nir(struct si_shader *shader, struct si_linked_
    get_input_nir(&linked->producer_shader, &linked->producer);
 }
 
-static void si_fixup_spi_ps_input_config(struct si_shader *shader)
+static void si_set_spi_ps_input_config_for_separate_prolog(struct si_shader *shader)
 {
    const union si_shader_key *key = &shader->key;
 
@@ -2713,16 +2713,6 @@ static void si_fixup_spi_ps_input_config(struct si_shader *shader)
       shader->config.spi_ps_input_ena |= S_0286CC_LINEAR_CENTER_ENA(1);
    }
 
-   /* POW_W_FLOAT requires that one of the perspective weights is enabled. */
-   if (G_0286CC_POS_W_FLOAT_ENA(shader->config.spi_ps_input_ena) &&
-       !(shader->config.spi_ps_input_ena & 0xf)) {
-      shader->config.spi_ps_input_ena |= S_0286CC_PERSP_CENTER_ENA(1);
-   }
-
-   /* At least one pair of interpolation weights must be enabled. */
-   if (!(shader->config.spi_ps_input_ena & 0x7f))
-      shader->config.spi_ps_input_ena |= S_0286CC_LINEAR_CENTER_ENA(1);
-
    /* The sample mask fixup requires the sample ID. */
    if (key->ps.part.prolog.samplemask_log_ps_iter)
       shader->config.spi_ps_input_ena |= S_0286CC_ANCILLARY_ENA(1);
@@ -2736,6 +2726,19 @@ static void si_fixup_spi_ps_input_config(struct si_shader *shader)
       shader->config.spi_ps_input_ena &= C_0286CC_POS_Y_FLOAT_ENA;
       shader->config.spi_ps_input_ena |= S_0286CC_POS_FIXED_PT_ENA(1);
    }
+}
+
+static void si_fixup_spi_ps_input_config(struct si_shader *shader)
+{
+   /* POW_W_FLOAT requires that one of the perspective weights is enabled. */
+   if (G_0286CC_POS_W_FLOAT_ENA(shader->config.spi_ps_input_ena) &&
+       !(shader->config.spi_ps_input_ena & 0xf)) {
+      shader->config.spi_ps_input_ena |= S_0286CC_PERSP_CENTER_ENA(1);
+   }
+
+   /* At least one pair of interpolation weights must be enabled. */
+   if (!(shader->config.spi_ps_input_ena & 0x7f))
+      shader->config.spi_ps_input_ena |= S_0286CC_LINEAR_CENTER_ENA(1);
 }
 
 static void
@@ -2799,6 +2802,7 @@ si_set_spi_ps_input_config(struct si_shader *shader)
    }
 
    if (shader->is_monolithic) {
+      si_set_spi_ps_input_config_for_separate_prolog(shader);
       si_fixup_spi_ps_input_config(shader);
       shader->config.spi_ps_input_addr = shader->config.spi_ps_input_ena;
    } else {
@@ -3482,6 +3486,7 @@ static bool si_shader_select_ps_parts(struct si_screen *sscreen, struct ac_llvm_
    if (!shader->epilog)
       return false;
 
+   si_set_spi_ps_input_config_for_separate_prolog(shader);
    si_fixup_spi_ps_input_config(shader);
 
    /* Make sure spi_ps_input_addr bits is superset of spi_ps_input_ena. */
