@@ -136,7 +136,7 @@ vdp_imp_device_create_x11(Display *display, int screen, VdpDevice *device,
       goto no_handle;
    }
 
-   if (!vl_compositor_init(&dev->compositor, dev->context)) {
+   if (!vl_compositor_init(&dev->compositor, dev->context, false)) {
        ret = VDP_STATUS_ERROR;
        goto no_compositor;
    }

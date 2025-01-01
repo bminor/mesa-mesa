@@ -819,17 +819,14 @@ vl_compositor_render(struct vl_compositor_state *s,
 }
 
 bool
-vl_compositor_init(struct vl_compositor *c, struct pipe_context *pipe)
+vl_compositor_init(struct vl_compositor *c, struct pipe_context *pipe, bool compute_only)
 {
    assert(c);
 
    memset(c, 0, sizeof(*c));
 
-   c->pipe_cs_composit_supported = pipe->screen->get_param(pipe->screen, PIPE_CAP_PREFER_COMPUTE_FOR_MULTIMEDIA) &&
-            pipe->screen->get_param(pipe->screen, PIPE_CAP_TGSI_TEX_TXF_LZ) &&
-            pipe->screen->get_param(pipe->screen, PIPE_CAP_TGSI_DIV);
-
-   c->pipe_gfx_supported = pipe->screen->get_param(pipe->screen, PIPE_CAP_GRAPHICS);
+   c->pipe_cs_composit_supported = compute_only || pipe->screen->get_param(pipe->screen, PIPE_CAP_PREFER_COMPUTE_FOR_MULTIMEDIA);
+   c->pipe_gfx_supported = !compute_only && pipe->screen->get_param(pipe->screen, PIPE_CAP_GRAPHICS);
    c->pipe = pipe;
 
    c->deinterlace = VL_COMPOSITOR_NONE;

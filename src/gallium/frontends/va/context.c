@@ -220,7 +220,7 @@ VA_DRIVER_INIT_FUNC(VADriverContextP ctx)
                               drv->vscreen->pscreen->get_param(drv->vscreen->pscreen, PIPE_CAP_COMPUTE));
 
    if (can_init_compositor) {
-      if (!vl_compositor_init(&drv->compositor, drv->pipe))
+      if (!vl_compositor_init(&drv->compositor, drv->pipe, false))
          goto error_compositor;
       if (!vl_compositor_init_state(&drv->cstate, drv->pipe))
          goto error_compositor_state;

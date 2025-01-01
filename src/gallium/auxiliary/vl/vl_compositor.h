@@ -203,7 +203,7 @@ struct vl_compositor
  * initialize this compositor
  */
 bool
-vl_compositor_init(struct vl_compositor *compositor, struct pipe_context *pipe);
+vl_compositor_init(struct vl_compositor *compositor, struct pipe_context *pipe, bool compute_only);
 
 /**
  * init state bag
