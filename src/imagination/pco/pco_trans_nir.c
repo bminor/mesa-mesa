@@ -30,6 +30,7 @@ typedef struct _trans_ctx {
    pco_func *func; /** Current function. */
    pco_builder b; /** Builder. */
    mesa_shader_stage stage; /** Shader stage. */
+   enum pco_cf_node_flag flag; /** Implementation-defined control-flow flag. */
 
    BITSET_WORD *float_types; /** NIR SSA float vars. */
    BITSET_WORD *int_types; /** NIR SSA int vars. */
@@ -1512,6 +1513,8 @@ static pco_block *trans_block(trans_ctx *tctx,
                               nir_block *nblock)
 {
    pco_block *block = pco_block_create(tctx->func);
+
+   block->cf_node.flag = tctx->flag;
    block->cf_node.parent = parent_cf_node;
    exec_list_push_tail(cf_node_list, &block->cf_node.node);
 
@@ -1539,9 +1542,29 @@ static void trans_if(trans_ctx *tctx,
 {
    pco_if *pif = pco_if_create(tctx->func);
 
-   UNREACHABLE("finishme: trans_if");
+   pif->cf_node.flag = tctx->flag;
    pif->cf_node.parent = parent_cf_node;
    exec_list_push_tail(cf_node_list, &pif->cf_node.node);
+
+   pif->cond = pco_ref_nir_src_t(&nif->condition, tctx);
+   assert(pco_ref_is_scalar(pif->cond));
+
+   bool has_then = !nir_cf_list_is_empty_block(&nif->then_list);
+   bool has_else = !nir_cf_list_is_empty_block(&nif->else_list);
+   assert(has_then || has_else);
+
+   enum pco_cf_node_flag flag = tctx->flag;
+   if (has_then) {
+      tctx->flag = PCO_CF_NODE_FLAG_IF_THEN;
+      trans_cf_nodes(tctx, &pif->cf_node, &pif->then_body, &nif->then_list);
+   }
+
+   if (has_else) {
+      tctx->flag = PCO_CF_NODE_FLAG_IF_ELSE;
+      trans_cf_nodes(tctx, &pif->cf_node, &pif->else_body, &nif->else_list);
+   }
+
+   tctx->flag = flag;
 }
 
 /**
@@ -1559,8 +1582,10 @@ static void trans_loop(trans_ctx *tctx,
 {
    pco_loop *loop = pco_loop_create(tctx->func);
 
+   loop->cf_node.flag = tctx->flag;
    loop->cf_node.parent = parent_cf_node;
    exec_list_push_tail(cf_node_list, &loop->cf_node.node);
+
    UNREACHABLE("finishme: trans_loop");
 }
 
@@ -1597,6 +1622,7 @@ static pco_func *trans_func(trans_ctx *tctx, nir_function_impl *impl)
       rzalloc_array(NULL, BITSET_WORD, BITSET_WORDS(impl->ssa_alloc));
    nir_gather_types(impl, tctx->float_types, tctx->int_types);
 
+   tctx->flag = PCO_CF_NODE_FLAG_BODY;
    trans_cf_nodes(tctx, &func->cf_node, &func->body, &impl->body);
 
    ralloc_free(tctx->float_types);

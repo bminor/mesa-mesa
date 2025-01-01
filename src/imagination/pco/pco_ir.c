@@ -36,6 +36,13 @@ void pco_process_ir(pco_ctx *ctx, pco_shader *shader)
    } while (progress);
 
    PCO_PASS(_, shader, pco_bool);
+   PCO_PASS(_, shader, pco_cf);
+
+   do {
+      progress = false;
+      PCO_PASS(progress, shader, pco_dce);
+   } while (progress);
+
    /* TODO: schedule after RA instead as e.g. vecs may no longer be the first
     * time a drc result is used.
     */

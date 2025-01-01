@@ -85,6 +85,13 @@ bool pco_index(pco_shader *shader, bool skip_ssa)
       func->next_if = 0;
       pco_foreach_if_in_func (pif, func) {
          pif->index = func->next_if++;
+
+         if (!skip_ssa) {
+            if (!pco_ref_is_ssa(pif->cond))
+               continue;
+
+            pif->cond.val = ssa_idx_map[pif->cond.val];
+         }
       }
 
       func->next_loop = 0;

@@ -576,6 +576,10 @@ bool pco_dce(pco_shader *shader)
          }
       }
 
+      pco_foreach_ssa_if_in_func (pif, func) {
+         BITSET_SET(ssa_used, pif->cond.val);
+      }
+
       /* Remove instructions with unused SSA destinations (if they also have no
        * side-effects).
        */

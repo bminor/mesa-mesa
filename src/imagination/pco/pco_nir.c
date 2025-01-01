@@ -133,6 +133,7 @@ void pco_preprocess_nir(pco_ctx *ctx, nir_shader *nir)
             NULL);
    NIR_PASS(_, nir, nir_copy_prop);
    NIR_PASS(_, nir, nir_opt_dce);
+   NIR_PASS(_, nir, nir_opt_dead_cf);
    NIR_PASS(_, nir, nir_opt_cse);
 
    if (pco_should_print_nir(nir)) {

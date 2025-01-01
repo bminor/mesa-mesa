@@ -349,6 +349,8 @@ typedef struct _pco_func {
 
    unsigned temps; /** Number of temps allocated. */
 
+   pco_ref emc; /** Execution mask counter register. */
+
    unsigned enc_offset; /** Encoding offset. */
 } pco_func;
 
@@ -1523,6 +1525,7 @@ static inline bool pco_should_print_binary(pco_shader *shader)
 /* PCO IR passes. */
 bool pco_const_imms(pco_shader *shader);
 bool pco_bool(pco_shader *shader);
+bool pco_cf(pco_shader *shader);
 bool pco_dce(pco_shader *shader);
 bool pco_end(pco_shader *shader);
 bool pco_group_instrs(pco_shader *shader);

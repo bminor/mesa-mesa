@@ -465,14 +465,12 @@ static void _pco_print_instr(pco_print_state *state, pco_instr *instr)
       switch (instr->target_cf_node->type) {
       case PCO_CF_NODE_TYPE_BLOCK: {
          pco_block *target_block = pco_cf_node_as_block(instr->target_cf_node);
-         pco_printf(state, " ");
          pco_print_block_name(state, target_block);
          break;
       }
 
       case PCO_CF_NODE_TYPE_FUNC: {
          pco_func *target_func = pco_cf_node_as_func(instr->target_cf_node);
-         pco_printf(state, " ");
          pco_print_func_sig(state, target_func, true);
          break;
       }

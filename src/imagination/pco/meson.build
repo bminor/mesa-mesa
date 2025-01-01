@@ -7,6 +7,7 @@ libpowervr_compiler_files = files(
   'pco.c',
   'pco_binary.c',
   'pco_bool.c',
+  'pco_cf.c',
   'pco_const_imms.c',
   'pco_debug.c',
   'pco_end.c',
