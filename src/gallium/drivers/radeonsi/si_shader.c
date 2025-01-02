@@ -2482,9 +2482,9 @@ static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_
       shader->info.ps_colors_read = info.colors_read;
 
       ac_nir_lower_ps_early_options early_options = {
-         .force_persp_center_interp = key->ps.part.prolog.force_persp_center_interp,
-         .force_linear_center_interp = key->ps.part.prolog.force_linear_center_interp,
-         .interpolate_at_sample_force_center = key->ps.mono.interpolate_at_sample_force_center,
+         .force_center_interp_no_msaa = key->ps.part.prolog.force_persp_center_interp ||
+                                        key->ps.part.prolog.force_linear_center_interp ||
+                                        key->ps.mono.interpolate_at_sample_force_center,
          .load_sample_positions_always_loads_current_ones = true,
          .force_front_face = key->ps.opt.force_front_face_input,
          /* This forces per-sample interpolation (if at least 2) and lowers sample_mask_in. */

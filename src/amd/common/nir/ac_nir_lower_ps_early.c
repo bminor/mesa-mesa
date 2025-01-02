@@ -57,19 +57,19 @@ get_baryc_var(nir_builder *b, nir_intrinsic_op baryc_op, enum glsl_interp_mode m
    case nir_intrinsic_load_barycentric_centroid:
       if (mode == INTERP_MODE_NOPERSPECTIVE) {
          return get_baryc_var_common(b, s->options->ps_iter_samples > 1 ||
-                                     s->options->force_linear_center_interp, &s->linear_centroid,
+                                     s->options->force_center_interp_no_msaa, &s->linear_centroid,
                                      "linear_centroid");
       } else {
          return get_baryc_var_common(b, s->options->ps_iter_samples > 1 ||
-                                     s->options->force_persp_center_interp, &s->persp_centroid,
+                                     s->options->force_center_interp_no_msaa, &s->persp_centroid,
                                      "persp_centroid");
       }
    case nir_intrinsic_load_barycentric_sample:
       if (mode == INTERP_MODE_NOPERSPECTIVE) {
-         return get_baryc_var_common(b, s->options->force_linear_center_interp, &s->linear_sample,
+         return get_baryc_var_common(b, s->options->force_center_interp_no_msaa, &s->linear_sample,
                                      "linear_sample");
       } else {
-         return get_baryc_var_common(b, s->options->force_persp_center_interp, &s->persp_sample,
+         return get_baryc_var_common(b, s->options->force_center_interp_no_msaa, &s->persp_sample,
                                      "persp_sample");
       }
    default:
@@ -98,12 +98,9 @@ init_interp_param(nir_builder *b, lower_ps_early_state *s)
                       s->linear_center, s->linear_centroid);
    }
 
-   if (s->options->force_persp_center_interp) {
+   if (s->options->force_center_interp_no_msaa) {
       set_interp_vars(b, nir_load_barycentric_pixel(b, 32, .interp_mode = INTERP_MODE_SMOOTH),
                       s->persp_sample, s->persp_centroid);
-   }
-
-   if (s->options->force_linear_center_interp) {
       set_interp_vars(b, nir_load_barycentric_pixel(b, 32, .interp_mode = INTERP_MODE_NOPERSPECTIVE),
                       s->linear_sample, s->linear_centroid);
    }
@@ -387,7 +384,7 @@ lower_ps_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
    case nir_intrinsic_load_barycentric_at_sample: {
       unsigned mode = nir_intrinsic_interp_mode(intrin);
 
-      if (s->options->interpolate_at_sample_force_center) {
+      if (s->options->force_center_interp_no_msaa) {
          nir_def_replace(&intrin->def, nir_load_barycentric_pixel(b, 32, .interp_mode = mode));
          return true;
       }
