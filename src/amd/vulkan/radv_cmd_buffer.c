@@ -11467,9 +11467,6 @@ VKAPI_ATTR void VKAPI_CALL
 radv_CmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer, VkBuffer _buffer, VkDeviceSize offset,
                                  uint32_t drawCount, uint32_t stride)
 {
-   if (!drawCount)
-      return;
-
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
    VK_FROM_HANDLE(radv_buffer, buffer, _buffer);
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
