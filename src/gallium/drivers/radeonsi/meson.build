@@ -101,6 +101,8 @@ files_libradeonsi = files(
   'radeon_vcn_enc_5_0.c',
   'radeon_video.c',
   'radeon_video.h',
+  'radeon_bitstream.h',
+  'radeon_bitstream.c',
 )
 
 radeonsi_include_dirs = [inc_src, inc_include, inc_gallium, inc_gallium_aux, inc_amd_common,
