@@ -445,7 +445,7 @@ mir_compute_interference(compiler_context *ctx, struct lcra_state *l)
 }
 
 static bool
-mir_is_64(midgard_instruction *ins)
+mir_is_64(const midgard_instruction *ins)
 {
    if (nir_alu_type_get_type_size(ins->dest_type) == 64)
       return true;
@@ -463,7 +463,7 @@ mir_is_64(midgard_instruction *ins)
  * allocation. TODO: Optimize if barriers and local memory are unused.
  */
 static bool
-needs_contiguous_workgroup(compiler_context *ctx)
+needs_contiguous_workgroup(const compiler_context *ctx)
 {
    return gl_shader_stage_uses_workgroup(ctx->stage);
 }
@@ -475,7 +475,7 @@ needs_contiguous_workgroup(compiler_context *ctx)
  * workgroups.
  */
 static unsigned
-max_threads_per_workgroup(compiler_context *ctx)
+max_threads_per_workgroup(const compiler_context *ctx)
 {
    if (ctx->nir->info.workgroup_size_variable) {
       return 128;
@@ -502,7 +502,7 @@ max_threads_per_workgroup(compiler_context *ctx)
  *    work properly).
  */
 static unsigned
-max_work_registers(compiler_context *ctx)
+max_work_registers(const compiler_context *ctx)
 {
    if (ctx->inputs->is_blend)
       return 8;

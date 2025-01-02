@@ -128,7 +128,8 @@ mir_single_use(compiler_context *ctx, unsigned value)
 }
 
 bool
-mir_nontrivial_mod(midgard_instruction *ins, unsigned i, bool check_swizzle)
+mir_nontrivial_mod(const midgard_instruction *ins, unsigned i,
+                   bool check_swizzle)
 {
    bool is_int = midgard_is_integer_op(ins->op);
 
@@ -158,7 +159,7 @@ mir_nontrivial_mod(midgard_instruction *ins, unsigned i, bool check_swizzle)
 }
 
 bool
-mir_nontrivial_outmod(midgard_instruction *ins)
+mir_nontrivial_outmod(const midgard_instruction *ins)
 {
    bool is_int = midgard_is_integer_op(ins->op);
    unsigned mod = ins->outmod;
@@ -232,7 +233,7 @@ mir_round_bytemask_up(uint16_t mask, unsigned bits)
 /* Grabs the per-byte mask of an instruction (as opposed to per-component) */
 
 uint16_t
-mir_bytemask(midgard_instruction *ins)
+mir_bytemask(const midgard_instruction *ins)
 {
    unsigned type_size = nir_alu_type_get_type_size(ins->dest_type);
    return pan_to_bytemask(type_size, ins->mask);
@@ -251,7 +252,7 @@ mir_set_bytemask(midgard_instruction *ins, uint16_t bytemask)
  * for a lower override and negative for no override.
  */
 signed
-mir_upper_override(midgard_instruction *ins, unsigned inst_size)
+mir_upper_override(const midgard_instruction *ins, unsigned inst_size)
 {
    unsigned type_size = nir_alu_type_get_type_size(ins->dest_type);
 
@@ -282,7 +283,7 @@ mir_upper_override(midgard_instruction *ins, unsigned inst_size)
  */
 
 static uint16_t
-mir_bytemask_of_read_components_single(unsigned *swizzle, unsigned inmask,
+mir_bytemask_of_read_components_single(const unsigned *swizzle, unsigned inmask,
                                        unsigned bits)
 {
    unsigned cmask = 0;
@@ -297,7 +298,8 @@ mir_bytemask_of_read_components_single(unsigned *swizzle, unsigned inmask,
 }
 
 uint16_t
-mir_bytemask_of_read_components_index(midgard_instruction *ins, unsigned i)
+mir_bytemask_of_read_components_index(const midgard_instruction *ins,
+                                      unsigned i)
 {
    /* Conditional branches read one 32-bit component = 4 bytes (TODO: multi
     * branch??) */
@@ -326,7 +328,7 @@ mir_bytemask_of_read_components_index(midgard_instruction *ins, unsigned i)
 }
 
 uint16_t
-mir_bytemask_of_read_components(midgard_instruction *ins, unsigned node)
+mir_bytemask_of_read_components(const midgard_instruction *ins, unsigned node)
 {
    uint16_t mask = 0;
 
@@ -374,7 +376,7 @@ mir_bundle_for_op(compiler_context *ctx, midgard_instruction ins)
 }
 
 static unsigned
-mir_bundle_idx_for_ins(midgard_instruction *tag, midgard_block *block)
+mir_bundle_idx_for_ins(const midgard_instruction *tag, midgard_block *block)
 {
    midgard_bundle *bundles = (midgard_bundle *)block->bundles.data;
 
@@ -394,7 +396,7 @@ mir_bundle_idx_for_ins(midgard_instruction *tag, midgard_block *block)
 midgard_instruction *
 mir_insert_instruction_before_scheduled(compiler_context *ctx,
                                         midgard_block *block,
-                                        midgard_instruction *tag,
+                                        const midgard_instruction *tag,
                                         midgard_instruction ins)
 {
    unsigned before = mir_bundle_idx_for_ins(tag, block);
@@ -419,7 +421,7 @@ mir_insert_instruction_before_scheduled(compiler_context *ctx,
 midgard_instruction *
 mir_insert_instruction_after_scheduled(compiler_context *ctx,
                                        midgard_block *block,
-                                       midgard_instruction *tag,
+                                       const midgard_instruction *tag,
                                        midgard_instruction ins)
 {
    /* We need to grow the bundles array to add our new bundle */

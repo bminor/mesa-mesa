@@ -2452,7 +2452,7 @@ inline_alu_constants(compiler_context *ctx, midgard_block *block)
 }
 
 unsigned
-max_bitsize_for_alu(midgard_instruction *ins)
+max_bitsize_for_alu(const midgard_instruction *ins)
 {
    unsigned max_bitsize = 0;
    for (int i = 0; i < MIR_SRC_COUNT; i++) {
