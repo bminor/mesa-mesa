@@ -2437,6 +2437,217 @@ agx_get_compute_param(struct pipe_screen *pscreen, enum pipe_shader_ir ir_type,
    return 0;
 }
 
+static void
+agx_init_screen_caps(struct pipe_screen *pscreen)
+{
+   struct pipe_caps *caps = (struct pipe_caps *)&pscreen->caps;
+
+   u_init_pipe_screen_caps(pscreen, 1);
+
+   caps->clip_halfz = true;
+   caps->npot_textures = true;
+   caps->shader_stencil_export = true;
+   caps->mixed_color_depth_bits = true;
+   caps->fragment_shader_texture_lod = true;
+   caps->vertex_color_unclamped = true;
+   caps->depth_clip_disable = true;
+   caps->mixed_framebuffer_sizes = true;
+   caps->fragment_shader_derivatives = true;
+   caps->framebuffer_no_attachment = true;
+   caps->shader_pack_half_float = true;
+   caps->fs_fine_derivative = true;
+   caps->glsl_tess_levels_as_inputs = true;
+   caps->doubles = true;
+
+   caps->max_render_targets =
+   caps->fbfetch = 8;
+   caps->fbfetch_coherent = true;
+
+   caps->max_dual_source_render_targets = 1;
+
+   caps->occlusion_query = true;
+   caps->query_timestamp = true;
+   caps->query_time_elapsed = true;
+   caps->query_so_overflow = true;
+   caps->query_memory_info = true;
+   caps->primitive_restart = true;
+   caps->primitive_restart_fixed_index = true;
+   caps->anisotropic_filter = true;
+   caps->native_fence_fd = true;
+   caps->texture_barrier = true;
+
+   /* Timer resolution is the length of a single tick in nanos */
+   caps->timer_resolution = agx_gpu_time_to_ns(agx_device(pscreen), 1);
+
+   caps->sampler_view_target = true;
+   caps->texture_swizzle = true;
+   caps->blend_equation_separate = true;
+   caps->indep_blend_enable = true;
+   caps->indep_blend_func = true;
+   caps->uma = true;
+   caps->texture_float_linear = true;
+   caps->texture_half_float_linear = true;
+   caps->texture_mirror_clamp_to_edge = true;
+   caps->shader_array_components = true;
+   caps->packed_uniforms = true;
+   caps->quads_follow_provoking_vertex_convention = true;
+   caps->vs_instanceid = true;
+   caps->vertex_element_instance_divisor = true;
+   caps->conditional_render = true;
+   caps->conditional_render_inverted = true;
+   caps->seamless_cube_map = true;
+   caps->load_constbuf = true;
+   caps->seamless_cube_map_per_texture = true;
+   caps->texture_buffer_objects = true;
+   caps->null_textures = true;
+   caps->texture_multisample = true;
+   caps->image_load_formatted = true;
+   caps->image_store_formatted = true;
+   caps->compute = true;
+   caps->int64 = true;
+   caps->sample_shading = true;
+   caps->start_instance = true;
+   caps->draw_parameters = true;
+   caps->multi_draw_indirect = true;
+   caps->multi_draw_indirect_params = true;
+   caps->cull_distance = true;
+   caps->gl_spirv = true;
+   caps->polygon_offset_clamp = true;
+
+   /* TODO: MSRTT */
+   caps->surface_sample_count = false;
+
+   caps->cube_map_array = true;
+
+   caps->copy_between_compressed_and_plain_formats = true;
+
+   caps->max_stream_output_buffers = PIPE_MAX_SO_BUFFERS;
+
+   caps->max_stream_output_separate_components =
+   caps->max_stream_output_interleaved_components = PIPE_MAX_SO_OUTPUTS;
+
+   caps->stream_output_pause_resume = true;
+   caps->stream_output_interleave_buffers = true;
+
+   caps->max_texture_array_layers = 2048;
+
+   caps->glsl_feature_level =
+   caps->glsl_feature_level_compatibility = 460;
+   caps->essl_feature_level = 320;
+
+   /* Settings from iris, may need tuning */
+   caps->max_vertex_streams = 4;
+   caps->max_geometry_output_vertices = 256;
+   caps->max_geometry_total_output_components = 1024;
+   caps->max_gs_invocations = 32;
+   caps->constant_buffer_offset_alignment = 16;
+
+   caps->max_texel_buffer_elements_uint = AGX_TEXTURE_BUFFER_MAX_SIZE;
+
+   caps->texture_buffer_offset_alignment = 64;
+
+   caps->vertex_input_alignment = PIPE_VERTEX_INPUT_ALIGNMENT_ELEMENT;
+
+   caps->query_pipeline_statistics_single = true;
+
+   caps->max_texture_2d_size = 16384;
+   caps->max_texture_cube_levels = 15; /* Max 16384x16384 */
+   caps->max_texture_3d_levels = 12; /* Max 2048x2048x2048 */
+
+   caps->fs_coord_origin_upper_left = true;
+   caps->fs_coord_pixel_center_integer = true;
+   caps->tgsi_texcoord = true;
+   caps->fs_face_is_integer_sysval = true;
+   caps->fs_position_is_sysval = true;
+
+   caps->fs_coord_origin_lower_left = false;
+   caps->fs_coord_pixel_center_half_integer = false;
+   caps->fs_point_is_sysval = false;
+
+   caps->max_vertex_element_src_offset = 0xffff;
+
+   caps->texture_transfer_modes = PIPE_TEXTURE_TRANSFER_BLIT;
+
+   caps->endianness = PIPE_ENDIAN_LITTLE;
+
+   caps->shader_group_vote = true;
+   caps->shader_ballot = true;
+
+   caps->max_texture_gather_components = 4;
+   caps->min_texture_gather_offset = -8;
+   caps->max_texture_gather_offset = 7;
+   caps->draw_indirect = true;
+   caps->texture_query_samples = true;
+   caps->texture_query_lod = true;
+   caps->texture_shadow_lod = true;
+
+   caps->max_viewports = AGX_MAX_VIEWPORTS;
+
+   uint64_t system_memory;
+   caps->video_memory = os_get_total_physical_memory(&system_memory) ?
+      (system_memory >> 20) : 0;
+
+   caps->device_reset_status_query = true;
+   caps->robust_buffer_access_behavior = true;
+
+   caps->shader_buffer_offset_alignment = 4;
+
+   caps->max_shader_patch_varyings = 32;
+   /* TODO: Probably should bump to 32? */
+   caps->max_varyings = 16;
+
+   caps->flatshade = false;
+   caps->two_sided_color = false;
+   caps->alpha_test = false;
+   caps->clip_planes = 0;
+   caps->nir_images_as_deref = false;
+
+   caps->query_buffer_object = true;
+
+   caps->texture_border_color_quirk = PIPE_QUIRK_TEXTURE_BORDER_COLOR_SWIZZLE_FREEDRENO;
+
+   caps->supported_prim_modes =
+   caps->supported_prim_modes_with_restart =
+      BITFIELD_BIT(MESA_PRIM_POINTS) | BITFIELD_BIT(MESA_PRIM_LINES) |
+      BITFIELD_BIT(MESA_PRIM_LINE_STRIP) |
+      BITFIELD_BIT(MESA_PRIM_LINE_LOOP) |
+      BITFIELD_BIT(MESA_PRIM_TRIANGLES) |
+      BITFIELD_BIT(MESA_PRIM_TRIANGLE_STRIP) |
+      BITFIELD_BIT(MESA_PRIM_TRIANGLE_FAN) |
+      BITFIELD_BIT(MESA_PRIM_LINES_ADJACENCY) |
+      BITFIELD_BIT(MESA_PRIM_LINE_STRIP_ADJACENCY) |
+      BITFIELD_BIT(MESA_PRIM_TRIANGLES_ADJACENCY) |
+      BITFIELD_BIT(MESA_PRIM_TRIANGLE_STRIP_ADJACENCY) |
+      BITFIELD_BIT(MESA_PRIM_PATCHES);
+
+   caps->map_unsynchronized_thread_safe = true;
+
+   caps->vs_layer_viewport = true;
+   caps->tes_layer_viewport = true;
+
+   caps->context_priority_mask =
+      PIPE_CONTEXT_PRIORITY_LOW | PIPE_CONTEXT_PRIORITY_MEDIUM |
+      PIPE_CONTEXT_PRIORITY_HIGH | PIPE_CONTEXT_PRIORITY_REALTIME;
+
+   caps->min_line_width =
+   caps->min_line_width_aa =
+   caps->min_point_size =
+   caps->min_point_size_aa = 1;
+
+   caps->point_size_granularity =
+   caps->line_width_granularity = 0.1;
+
+   caps->max_line_width =
+   caps->max_line_width_aa = 16.0; /* Off-by-one fixed point 4:4 encoding */
+
+   caps->max_point_size =
+   caps->max_point_size_aa = 511.95f;
+
+   caps->max_texture_anisotropy = 16.0;
+
+   caps->max_texture_lod_bias = 16.0; /* arbitrary */
+}
+
 static bool
 agx_is_format_supported(struct pipe_screen *pscreen, enum pipe_format format,
                         enum pipe_texture_target target, unsigned sample_count,
@@ -2732,6 +2943,8 @@ agx_screen_create(int fd, struct renderonly *ro,
       &transfer_vtbl,
       U_TRANSFER_HELPER_SEPARATE_Z32S8 | U_TRANSFER_HELPER_SEPARATE_STENCIL |
          U_TRANSFER_HELPER_MSAA_MAP | U_TRANSFER_HELPER_Z24_IN_Z32F);
+
+   agx_init_screen_caps(screen);
 
    agx_disk_cache_init(agx_screen);
 
