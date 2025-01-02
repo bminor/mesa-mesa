@@ -150,8 +150,7 @@ struct radv_vertex_binding {
 };
 
 struct radv_streamout_binding {
-   struct radv_buffer *buffer;
-   VkDeviceSize offset;
+   uint64_t va;
    VkDeviceSize size;
 };
 

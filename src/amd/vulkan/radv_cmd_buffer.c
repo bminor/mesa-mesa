@@ -6058,15 +6058,12 @@ radv_flush_streamout_descriptors(struct radv_cmd_buffer *cmd_buffer)
          return;
 
       for (uint32_t i = 0; i < MAX_SO_BUFFERS; i++) {
-         struct radv_buffer *buffer = sb[i].buffer;
          uint32_t *desc = &((uint32_t *)so_ptr)[i * 4];
          uint32_t size = 0;
          uint64_t va = 0;
 
          if (so->enabled_mask & (1 << i)) {
-            va = radv_buffer_get_va(buffer->bo) + buffer->offset;
-
-            va += sb[i].offset;
+            va = sb[i].va;
 
             /* Set the descriptor.
              *
@@ -13258,18 +13255,18 @@ radv_CmdBindTransformFeedbackBuffersEXT(VkCommandBuffer commandBuffer, uint32_t 
 
    assert(firstBinding + bindingCount <= MAX_SO_BUFFERS);
    for (uint32_t i = 0; i < bindingCount; i++) {
+      VK_FROM_HANDLE(radv_buffer, buffer, pBuffers[i]);
       uint32_t idx = firstBinding + i;
 
-      sb[idx].buffer = radv_buffer_from_handle(pBuffers[i]);
-      sb[idx].offset = pOffsets[i];
+      sb[idx].va = radv_buffer_get_va(buffer->bo) + buffer->offset + pOffsets[i];
 
       if (!pSizes || pSizes[i] == VK_WHOLE_SIZE) {
-         sb[idx].size = sb[idx].buffer->vk.size - sb[idx].offset;
+         sb[idx].size = buffer->vk.size - pOffsets[i];
       } else {
          sb[idx].size = pSizes[i];
       }
 
-      radv_cs_add_buffer(device->ws, cmd_buffer->cs, sb[idx].buffer->bo);
+      radv_cs_add_buffer(device->ws, cmd_buffer->cs, buffer->bo);
 
       enabled_mask |= 1 << idx;
    }
