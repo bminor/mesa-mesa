@@ -6263,6 +6263,11 @@ fs_nir_emit_intrinsic(nir_to_brw_state &ntb,
 
          s.prog_data->has_ubo_pull = true;
 
+         if (instr->intrinsic == nir_intrinsic_load_ubo_uniform_block_intel) {
+            fs_nir_emit_memory_access(ntb, bld, xbld, instr);
+            break;
+         }
+
          const unsigned block_sz = 64; /* Fetch one cacheline at a time. */
          const fs_builder ubld = bld.exec_all().group(block_sz / 4, 0);
 
