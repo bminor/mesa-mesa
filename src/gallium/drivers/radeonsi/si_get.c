@@ -315,12 +315,12 @@ static int si_get_video_param(struct pipe_screen *screen, enum pipe_video_profil
       case PIPE_VIDEO_CAP_STACKED_FRAMES:
          return (sscreen->info.family < CHIP_TONGA) ? 1 : 2;
       case PIPE_VIDEO_CAP_MAX_TEMPORAL_LAYERS:
-         return (codec == PIPE_VIDEO_FORMAT_MPEG4_AVC &&
+         return (sscreen->info.ip[AMD_IP_UVD_ENC].num_queues ||
                  sscreen->info.vcn_ip_version >= VCN_1_0_0) ? 4 : 0;
       case PIPE_VIDEO_CAP_ENC_QUALITY_LEVEL:
-         return (sscreen->info.vcn_ip_version >= VCN_1_0_0) ? 32 : 0;
+         return 32;
       case PIPE_VIDEO_CAP_ENC_SUPPORTS_MAX_FRAME_SIZE:
-         return (sscreen->info.vcn_ip_version >= VCN_1_0_0) ? 1 : 0;
+         return 1;
 
       case PIPE_VIDEO_CAP_ENC_HEVC_FEATURE_FLAGS:
          if (profile == PIPE_VIDEO_PROFILE_HEVC_MAIN ||
@@ -368,16 +368,12 @@ static int si_get_video_param(struct pipe_screen *screen, enum pipe_video_profil
             return 0;
 
       case PIPE_VIDEO_CAP_ENC_MAX_SLICES_PER_FRAME:
-         return (sscreen->info.vcn_ip_version >= VCN_1_0_0) ? 128 : 1;
+         return 128;
 
       case PIPE_VIDEO_CAP_ENC_SLICES_STRUCTURE:
-         if (sscreen->info.vcn_ip_version >= VCN_2_0_0) {
-            int value = (PIPE_VIDEO_CAP_SLICE_STRUCTURE_ARBITRARY_MACROBLOCKS |
-                         PIPE_VIDEO_CAP_SLICE_STRUCTURE_EQUAL_ROWS |
-                         PIPE_VIDEO_CAP_SLICE_STRUCTURE_EQUAL_MULTI_ROWS);
-            return value;
-         } else
-            return 0;
+         return PIPE_VIDEO_CAP_SLICE_STRUCTURE_ARBITRARY_MACROBLOCKS |
+                PIPE_VIDEO_CAP_SLICE_STRUCTURE_EQUAL_ROWS |
+                PIPE_VIDEO_CAP_SLICE_STRUCTURE_EQUAL_MULTI_ROWS;
 
       case PIPE_VIDEO_CAP_ENC_AV1_FEATURE:
          if (sscreen->info.vcn_ip_version >= VCN_4_0_0 && sscreen->info.vcn_ip_version != VCN_4_0_3) {
@@ -458,14 +454,9 @@ static int si_get_video_param(struct pipe_screen *screen, enum pipe_video_profil
             return 1;
 
       case PIPE_VIDEO_CAP_ENC_INTRA_REFRESH:
-         if (sscreen->info.vcn_ip_version >= VCN_1_0_0) {
-            int value = PIPE_VIDEO_ENC_INTRA_REFRESH_ROW |
-                        PIPE_VIDEO_ENC_INTRA_REFRESH_COLUMN |
-                        PIPE_VIDEO_ENC_INTRA_REFRESH_P_FRAME;
-            return value;
-         }
-         else
-            return 0;
+            return PIPE_VIDEO_ENC_INTRA_REFRESH_ROW |
+                   PIPE_VIDEO_ENC_INTRA_REFRESH_COLUMN |
+                   PIPE_VIDEO_ENC_INTRA_REFRESH_P_FRAME;
 
       case PIPE_VIDEO_CAP_ENC_ROI:
          if (sscreen->info.vcn_ip_version >= VCN_1_0_0) {
