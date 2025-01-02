@@ -591,7 +591,7 @@ tu_image_update_layout(struct tu_device *device, struct tu_image *image,
       }
 
       unsigned lrz_pitch  = align(DIV_ROUND_UP(width, 8), 32);
-      unsigned lrz_height = align(DIV_ROUND_UP(height, 8), 16);
+      unsigned lrz_height = align(DIV_ROUND_UP(height, 8), 32);
 
       image->lrz_height = lrz_height;
       image->lrz_pitch = lrz_pitch;
