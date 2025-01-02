@@ -11779,12 +11779,9 @@ radv_emit_dispatch_packets(struct radv_cmd_buffer *cmd_buffer, const struct radv
    if (info->ordered)
       dispatch_initiator &= ~S_00B800_ORDER_MODE(1);
 
-   if (info->va) {
+   if (info->indirect_va) {
       if (radv_device_fault_detection_enabled(device))
-         radv_save_dispatch_size(cmd_buffer, info->va);
-
-      if (info->indirect)
-         radv_cs_add_buffer(ws, cs, info->indirect);
+         radv_save_dispatch_size(cmd_buffer, info->indirect_va);
 
       if (info->unaligned) {
          radeon_set_sh_reg_seq(cs, R_00B81C_COMPUTE_NUM_THREAD_X, 3);
@@ -11804,17 +11801,17 @@ radv_emit_dispatch_packets(struct radv_cmd_buffer *cmd_buffer, const struct radv
          if (device->load_grid_size_from_user_sgpr) {
             assert(pdev->info.gfx_level >= GFX10_3);
             radeon_emit(cs, PKT3(PKT3_LOAD_SH_REG_INDEX, 3, 0));
-            radeon_emit(cs, info->va);
-            radeon_emit(cs, info->va >> 32);
+            radeon_emit(cs, info->indirect_va);
+            radeon_emit(cs, info->indirect_va >> 32);
             radeon_emit(cs, (grid_size_offset - SI_SH_REG_OFFSET) >> 2);
             radeon_emit(cs, 3);
          } else {
-            radv_emit_shader_pointer(device, cmd_buffer->cs, grid_size_offset, info->va, true);
+            radv_emit_shader_pointer(device, cmd_buffer->cs, grid_size_offset, info->indirect_va, true);
          }
       }
 
       if (radv_cmd_buffer_uses_mec(cmd_buffer)) {
-         uint64_t indirect_va = info->va;
+         uint64_t indirect_va = info->indirect_va;
          const bool needs_align32_workaround = pdev->info.has_async_compute_align32_bug &&
                                                cmd_buffer->qf == RADV_QUEUE_COMPUTE &&
                                                !util_is_aligned(indirect_va, 32);
@@ -11855,8 +11852,8 @@ radv_emit_dispatch_packets(struct radv_cmd_buffer *cmd_buffer, const struct radv
       } else {
          radeon_emit(cs, PKT3(PKT3_SET_BASE, 2, 0) | PKT3_SHADER_TYPE_S(1));
          radeon_emit(cs, 1);
-         radeon_emit(cs, info->va);
-         radeon_emit(cs, info->va >> 32);
+         radeon_emit(cs, info->indirect_va);
+         radeon_emit(cs, info->indirect_va >> 32);
 
          if (cmd_buffer->qf == RADV_QUEUE_COMPUTE) {
             radv_cs_emit_compute_predication(device, &cmd_buffer->state, cs, cmd_buffer->state.mec_inv_pred_va,
@@ -12191,10 +12188,10 @@ radv_unaligned_dispatch(struct radv_cmd_buffer *cmd_buffer, uint32_t x, uint32_t
 void
 radv_indirect_dispatch(struct radv_cmd_buffer *cmd_buffer, struct radeon_winsys_bo *bo, uint64_t va)
 {
-   struct radv_dispatch_info info = {0};
+   struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   struct radv_dispatch_info info = {.indirect_va = va};
 
-   info.indirect = bo;
-   info.va = va;
+   radv_cs_add_buffer(device->ws, cmd_buffer->cs, bo);
 
    radv_compute_dispatch(cmd_buffer, &info);
 }
@@ -12345,7 +12342,7 @@ radv_trace_rays(struct radv_cmd_buffer *cmd_buffer, VkTraceRaysIndirectCommand2K
          info.blocks[1] = rt_prolog->info.cs.block_size[1];
       }
    } else
-      info.va = launch_size_va;
+      info.indirect_va = launch_size_va;
 
    ASSERTED unsigned cdw_max = radeon_check_space(device->ws, cmd_buffer->cs, 15);
 
