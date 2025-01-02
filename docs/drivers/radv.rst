@@ -176,7 +176,7 @@ Registers in shaders (not to be confused with registers in the CP):
 * SGPR - scalar general purpose register: same value within a wave
 
 For further reading, AMD has publised whitepapers and documentation for the GCN and RDNA GPU architectures.
-`These can be found on their GPUOpen site. <https://gpuopen.com/amd-gpu-architecture-programming-documentation/>`
+`These can be found on their GPUOpen site. <https://gpuopen.com/amd-gpu-architecture-programming-documentation/>`__
 
 Debugging
 ---------
