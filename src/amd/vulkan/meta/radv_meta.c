@@ -608,3 +608,12 @@ radv_break_on_count(nir_builder *b, nir_variable *var, nir_def *count)
    counter = nir_iadd_imm(b, counter, 1);
    nir_store_var(b, var, counter, 0x1);
 }
+
+VkResult
+radv_meta_get_noop_pipeline_layout(struct radv_device *device, VkPipelineLayout *layout_out)
+{
+   const char *key_data = "radv-noop";
+
+   return vk_meta_get_pipeline_layout(&device->vk, &device->meta_state.device, NULL, NULL, key_data, strlen(key_data),
+                                      layout_out);
+}

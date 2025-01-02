@@ -125,8 +125,7 @@ get_pipeline(struct radv_device *device, enum radv_color_op op, VkPipeline *pipe
 
    snprintf(key_data, sizeof(key_data), "radv-color-op-%d", op);
 
-   result = vk_meta_get_pipeline_layout(&device->vk, &device->meta_state.device, NULL, NULL, key_data,
-                                        strlen(key_data), layout_out);
+   result = radv_meta_get_noop_pipeline_layout(device, layout_out);
    if (result != VK_SUCCESS)
       return result;
 

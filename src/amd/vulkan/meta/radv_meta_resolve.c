@@ -37,8 +37,7 @@ get_pipeline(struct radv_device *device, unsigned fs_key, VkPipeline *pipeline_o
 
    snprintf(key_data, sizeof(key_data), "radv-resolve-hw-%d", fs_key);
 
-   result = vk_meta_get_pipeline_layout(&device->vk, &device->meta_state.device, NULL, NULL, key_data,
-                                        strlen(key_data), layout_out);
+   result = radv_meta_get_noop_pipeline_layout(device, layout_out);
    if (result != VK_SUCCESS)
       return result;
 

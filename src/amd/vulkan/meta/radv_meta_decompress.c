@@ -57,12 +57,11 @@ get_pipeline_gfx(struct radv_device *device, struct radv_image *image, VkPipelin
    char key_data[64];
    VkResult result;
 
-   snprintf(key_data, sizeof(key_data), "radv-htile-expand-gfx-%d", samples);
-
-   result = vk_meta_get_pipeline_layout(&device->vk, &device->meta_state.device, NULL, NULL, key_data,
-                                        strlen(key_data), layout_out);
+   result = radv_meta_get_noop_pipeline_layout(device, layout_out);
    if (result != VK_SUCCESS)
       return result;
+
+   snprintf(key_data, sizeof(key_data), "radv-htile-expand-gfx-%d", samples);
 
    VkPipeline pipeline_from_cache = vk_meta_lookup_pipeline(&device->meta_state.device, key_data, strlen(key_data));
    if (pipeline_from_cache != VK_NULL_HANDLE) {

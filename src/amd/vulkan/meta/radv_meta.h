@@ -255,6 +255,8 @@ void radv_cmd_buffer_resolve_rendering_fs(struct radv_cmd_buffer *cmd_buffer, st
 void radv_depth_stencil_resolve_rendering_fs(struct radv_cmd_buffer *cmd_buffer, VkImageAspectFlags aspects,
                                              VkResolveModeFlagBits resolve_mode);
 
+VkResult radv_meta_get_noop_pipeline_layout(struct radv_device *device, VkPipelineLayout *layout_out);
+
 #ifdef __cplusplus
 }
 #endif
