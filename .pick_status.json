@@ -24,7 +24,7 @@
         "description": "docs/ci: treat warnings as errors",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "fdd204538b93e17cecd32786603e0e2452e459c4",
         "notes": null
