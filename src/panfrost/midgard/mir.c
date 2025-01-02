@@ -352,12 +352,12 @@ mir_bytemask_of_read_components(const midgard_instruction *ins, unsigned node)
  * in question */
 
 static midgard_bundle
-mir_bundle_for_op(compiler_context *ctx, midgard_instruction ins)
+mir_bundle_for_op(compiler_context *ctx, const midgard_instruction *ins)
 {
    midgard_instruction *u = mir_upload_ins(ctx, ins);
 
    midgard_bundle bundle = {
-      .tag = ins.type,
+      .tag = ins->type,
       .instruction_count = 1,
       .instructions = {u},
    };
@@ -369,7 +369,7 @@ mir_bundle_for_op(compiler_context *ctx, midgard_instruction ins)
       size_t bytes_emitted = sizeof(uint32_t) + sizeof(midgard_reg_info) +
                              sizeof(midgard_vector_alu);
       bundle.padding = ~(bytes_emitted - 1) & 0xF;
-      bundle.control = ins.type | u->unit;
+      bundle.control = ins->type | u->unit;
    }
 
    return bundle;
@@ -397,7 +397,7 @@ midgard_instruction *
 mir_insert_instruction_before_scheduled(compiler_context *ctx,
                                         midgard_block *block,
                                         const midgard_instruction *tag,
-                                        midgard_instruction ins)
+                                        const midgard_instruction *ins)
 {
    unsigned before = mir_bundle_idx_for_ins(tag, block);
    size_t count = util_dynarray_num_elements(&block->bundles, midgard_bundle);
@@ -422,7 +422,7 @@ midgard_instruction *
 mir_insert_instruction_after_scheduled(compiler_context *ctx,
                                        midgard_block *block,
                                        const midgard_instruction *tag,
-                                       midgard_instruction ins)
+                                       const midgard_instruction *ins)
 {
    /* We need to grow the bundles array to add our new bundle */
    size_t count = util_dynarray_num_elements(&block->bundles, midgard_bundle);

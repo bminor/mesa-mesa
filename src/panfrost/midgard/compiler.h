@@ -315,16 +315,17 @@ typedef struct compiler_context {
 /* Append instruction to end of current block */
 
 static inline midgard_instruction *
-mir_upload_ins(struct compiler_context *ctx, struct midgard_instruction ins)
+mir_upload_ins(struct compiler_context *ctx,
+               const struct midgard_instruction *ins)
 {
    midgard_instruction *heap = ralloc(ctx, struct midgard_instruction);
-   memcpy(heap, &ins, sizeof(ins));
+   memcpy(heap, ins, sizeof(*ins));
    return heap;
 }
 
 static inline midgard_instruction *
 emit_mir_instruction(struct compiler_context *ctx,
-                     struct midgard_instruction ins)
+                     const struct midgard_instruction *ins)
 {
    midgard_instruction *u = mir_upload_ins(ctx, ins);
    list_addtail(&u->link, &ctx->current_block->base.instructions);
@@ -334,7 +335,7 @@ emit_mir_instruction(struct compiler_context *ctx,
 static inline struct midgard_instruction *
 mir_insert_instruction_before(struct compiler_context *ctx,
                               struct midgard_instruction *tag,
-                              struct midgard_instruction ins)
+                              const struct midgard_instruction *ins)
 {
    struct midgard_instruction *u = mir_upload_ins(ctx, ins);
    list_addtail(&u->link, &tag->link);
@@ -541,10 +542,10 @@ bool mir_nontrivial_outmod(const midgard_instruction *ins);
 
 midgard_instruction *mir_insert_instruction_before_scheduled(
    compiler_context *ctx, midgard_block *block, const midgard_instruction *tag,
-   midgard_instruction ins);
+   const midgard_instruction *ins);
 midgard_instruction *mir_insert_instruction_after_scheduled(
    compiler_context *ctx, midgard_block *block, const midgard_instruction *tag,
-   midgard_instruction ins);
+   const midgard_instruction *ins);
 void mir_flip(midgard_instruction *ins);
 void mir_compute_temp_count(compiler_context *ctx);
 
