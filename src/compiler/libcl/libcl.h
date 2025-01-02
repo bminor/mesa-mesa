@@ -126,6 +126,7 @@ static inline void abort(void) { nir_printf_abort(); }
  * careful to use a single printf so the lines don't get split up if multiple
  * threads assert in parallel.
  */
+#ifndef NDEBUG
 #define _ASSERT_STRING(x) _ASSERT_STRING_INNER(x)
 #define _ASSERT_STRING_INNER(x) #x
 #define assert(x) if (!(x)) { \
@@ -133,6 +134,9 @@ static inline void abort(void) { nir_printf_abort(); }
           _ASSERT_STRING(__LINE__) "\nExpected " #x "\n\n"); \
    nir_printf_abort(); \
 }
+#else
+#define assert(x)
+#endif
 
 /* Core OpenCL C like likely/unlikely. We might be able to map to a clang built
  * in though...
