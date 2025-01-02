@@ -1809,12 +1809,8 @@ emit_task_state(struct anv_graphics_pipeline *pipeline)
                                                       task_dispatch.group_size,
                                                       task_dispatch.simd_size);
 
-      /*
-       * 3DSTATE_TASK_SHADER_DATA.InlineData[0:1] will be used for an address
-       * of a buffer with push constants and descriptor set table and
-       * InlineData[2:7] will be used for first few push constants.
-       */
-      task.EmitInlineParameter = true;
+      task.EmitInlineParameter = task_prog_data->base.uses_inline_data;
+      task.IndirectDataLength = align(task_bin->bind_map.push_ranges[0].length * 32, 64);
 
       task.XP0Required = task_prog_data->uses_drawid;
 
@@ -1912,12 +1908,8 @@ emit_mesh_state(struct anv_graphics_pipeline *pipeline)
                                                       mesh_dispatch.group_size,
                                                       mesh_dispatch.simd_size);
 
-      /*
-       * 3DSTATE_MESH_SHADER_DATA.InlineData[0:1] will be used for an address
-       * of a buffer with push constants and descriptor set table and
-       * InlineData[2:7] will be used for first few push constants.
-       */
-      mesh.EmitInlineParameter = true;
+      mesh.EmitInlineParameter = mesh_prog_data->base.uses_inline_data;
+      mesh.IndirectDataLength = align(mesh_bin->bind_map.push_ranges[0].length * 32, 64);
 
       mesh.XP0Required = mesh_prog_data->uses_drawid;
 

@@ -124,11 +124,34 @@ anv_nir_compute_push_layout(nir_shader *nir,
       push_end = anv_drv_const_offset(cs.subgroup_id);
    }
 
-   /* Align push_start down to a 32B boundary and make it no larger than
+   /* Align push_start down to a 32B (for 3DSTATE_CONSTANT) or 64B (for
+    * 3DSTATE_(MESH|TASK)_SHADER_DATA) boundary and make it no larger than
     * push_end (no push constants is indicated by push_start = UINT_MAX).
+    *
+    * SKL PRMs, Volume 2d: Command Reference: Structures,
+    * 3DSTATE_CONSTANT::Constant Buffer 0 Read Length:
+    *
+    *    "This field specifies the length of the constant data to be loaded
+    *     from memory in 256-bit units."
+    *
+    * ATS-M PRMs, Volume 2d: Command Reference: Structures,
+    * 3DSTATE_MESH_SHADER_DATA_BODY::Indirect Data Start Address:
+    *
+    *    "This pointer is relative to the General State Base Address. It is
+    *     the 64-byte aligned address of the indirect data."
+    *
+    * COMPUTE_WALKER::Indirect Data Start Address has the same requirements as
+    * 3DSTATE_MESH_SHADER_DATA_BODY::Indirect Data Start Address but the push
+    * constant allocation for compute shader is not shared with other stages
+    * (unlike all Gfx stages) and so we can bound+align the allocation there
+    * (see anv_cmd_buffer_cs_push_constants).
     */
+   const unsigned push_alignment =
+      devinfo->verx10 >= 125 && (nir->info.stage == MESA_SHADER_TASK ||
+                                 nir->info.stage == MESA_SHADER_MESH) ?
+      64 : 32;
    push_start = MIN2(push_start, push_end);
-   push_start = ROUND_DOWN_TO(push_start, 32);
+   push_start = ROUND_DOWN_TO(push_start, push_alignment);
 
    /* For scalar, push data size needs to be aligned to a DWORD. */
    const unsigned alignment = 4;
@@ -159,7 +182,7 @@ anv_nir_compute_push_layout(nir_shader *nir,
                    * brw_nir_lower_rt_intrinsics.c).
                    */
                   unsigned base_offset =
-                     brw_shader_stage_requires_bindless_resources(nir->info.stage) ? 0 : push_start;
+                     brw_shader_stage_is_bindless(nir->info.stage) ? 0 : push_start;
                   intrin->intrinsic = nir_intrinsic_load_uniform;
                   nir_intrinsic_set_base(intrin,
                                          nir_intrinsic_base(intrin) -

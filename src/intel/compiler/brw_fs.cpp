@@ -205,9 +205,10 @@ fs_visitor::assign_curb_setup()
       prog_data->curb_read_length = MAX2(1, prog_data->curb_read_length);
 
    uint64_t used = 0;
-   bool is_compute = gl_shader_stage_is_compute(stage);
+   const bool shader_pulls_constants = devinfo->verx10 >= 125 &&
+      (gl_shader_stage_is_compute(stage) || gl_shader_stage_is_mesh(stage));
 
-   if (is_compute && devinfo->verx10 >= 125 && uniform_push_length > 0) {
+   if (shader_pulls_constants && uniform_push_length > 0) {
       assert(devinfo->has_lsc);
       brw_builder ubld = brw_builder(this, 1).exec_all().at(
          cfg->first_block(), cfg->first_block()->start());

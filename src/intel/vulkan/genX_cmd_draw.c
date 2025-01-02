@@ -562,6 +562,20 @@ cmd_buffer_flush_gfx_push_constants(struct anv_cmd_buffer *cmd_buffer,
 }
 
 #if GFX_VERx10 >= 125
+static inline uint32_t
+get_mesh_task_push_offset(struct anv_cmd_buffer *cmd_buffer,
+                          const struct anv_push_range *range)
+{
+   struct anv_cmd_graphics_state *gfx_state = &cmd_buffer->state.gfx;
+
+   if (gfx_state->base.push_constants_state.alloc_size == 0) {
+      gfx_state->base.push_constants_state =
+         anv_cmd_buffer_gfx_push_constants(cmd_buffer);
+   }
+
+   return gfx_state->base.push_constants_state.offset + range->start * 32;
+}
+
 static void
 cmd_buffer_flush_mesh_inline_data(struct anv_cmd_buffer *cmd_buffer,
                                   VkShaderStageFlags dirty_stages)
@@ -572,47 +586,23 @@ cmd_buffer_flush_mesh_inline_data(struct anv_cmd_buffer *cmd_buffer,
 
    if (dirty_stages & VK_SHADER_STAGE_TASK_BIT_EXT &&
        anv_pipeline_has_stage(pipeline, MESA_SHADER_TASK)) {
-
       const struct anv_shader_bin *shader = pipeline->base.shaders[MESA_SHADER_TASK];
-      const struct anv_pipeline_bind_map *bind_map = &shader->bind_map;
+      const struct anv_push_range *range = &shader->bind_map.push_ranges[0];
 
       anv_batch_emit(&cmd_buffer->batch, GENX(3DSTATE_TASK_SHADER_DATA), data) {
-         const struct anv_push_range *range = &bind_map->push_ranges[0];
-         if (range->length > 0) {
-            struct anv_address buffer =
-               get_push_range_address(cmd_buffer, shader, range);
-
-            uint64_t addr = anv_address_physical(buffer);
-            data.InlineData[0] = addr & 0xffffffff;
-            data.InlineData[1] = addr >> 32;
-
-            memcpy(&data.InlineData[BRW_TASK_MESH_PUSH_CONSTANTS_START_DW],
-                   cmd_buffer->state.gfx.base.push_constants.client_data,
-                   BRW_TASK_MESH_PUSH_CONSTANTS_SIZE_DW * 4);
-         }
+         if (range->length > 0)
+            data.IndirectDataStartAddress = get_mesh_task_push_offset(cmd_buffer, range);
       }
    }
 
    if (dirty_stages & VK_SHADER_STAGE_MESH_BIT_EXT &&
        anv_pipeline_has_stage(pipeline, MESA_SHADER_MESH)) {
-
       const struct anv_shader_bin *shader = pipeline->base.shaders[MESA_SHADER_MESH];
-      const struct anv_pipeline_bind_map *bind_map = &shader->bind_map;
+      const struct anv_push_range *range = &shader->bind_map.push_ranges[0];
 
       anv_batch_emit(&cmd_buffer->batch, GENX(3DSTATE_MESH_SHADER_DATA), data) {
-         const struct anv_push_range *range = &bind_map->push_ranges[0];
-         if (range->length > 0) {
-            struct anv_address buffer =
-               get_push_range_address(cmd_buffer, shader, range);
-
-            uint64_t addr = anv_address_physical(buffer);
-            data.InlineData[0] = addr & 0xffffffff;
-            data.InlineData[1] = addr >> 32;
-
-            memcpy(&data.InlineData[BRW_TASK_MESH_PUSH_CONSTANTS_START_DW],
-                   cmd_buffer->state.gfx.base.push_constants.client_data,
-                   BRW_TASK_MESH_PUSH_CONSTANTS_SIZE_DW * 4);
-         }
+         if (range->length > 0)
+            data.IndirectDataStartAddress = get_mesh_task_push_offset(cmd_buffer, range);
       }
    }
 

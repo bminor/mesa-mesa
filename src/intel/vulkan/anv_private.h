@@ -4508,6 +4508,8 @@ anv_cmd_buffer_gfx_push_constants_state_address(struct anv_cmd_buffer *cmd_buffe
                                                 struct anv_state state)
 {
    return anv_state_pool_state_address(
+      cmd_buffer->device->info->verx10 >= 125 ?
+      &cmd_buffer->device->general_state_pool :
       &cmd_buffer->device->dynamic_state_pool, state);
 }
 

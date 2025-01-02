@@ -36,51 +36,6 @@
 
 using namespace brw;
 
-static bool
-brw_nir_lower_load_uniforms_filter(const nir_instr *instr,
-                                   UNUSED const void *data)
-{
-   if (instr->type != nir_instr_type_intrinsic)
-      return false;
-   nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
-   return intrin->intrinsic == nir_intrinsic_load_uniform;
-}
-
-static nir_def *
-brw_nir_lower_load_uniforms_impl(nir_builder *b, nir_instr *instr,
-                                 void *data)
-{
-   assert(instr->type == nir_instr_type_intrinsic);
-   nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
-   assert(intrin->intrinsic == nir_intrinsic_load_uniform);
-
-   /* Use the first few bytes of InlineData as push constants. */
-   if (nir_src_is_const(intrin->src[0])) {
-      int offset =
-         BRW_TASK_MESH_PUSH_CONSTANTS_START_DW * 4 +
-         nir_intrinsic_base(intrin) + nir_src_as_uint(intrin->src[0]);
-      int range = intrin->def.num_components * intrin->def.bit_size / 8;
-      if ((offset + range) <= (int)(BRW_TASK_MESH_INLINE_DATA_SIZE_DW * 4)) {
-         return nir_load_inline_data_intel(b,
-                                           intrin->def.num_components,
-                                           intrin->def.bit_size,
-                                           .base = offset);
-      }
-   }
-
-   return brw_nir_load_global_const(b, intrin,
-                                    nir_load_inline_data_intel(b, 1, 64, 0), 0);
-}
-
-static bool
-brw_nir_lower_load_uniforms(nir_shader *nir,
-                            const struct intel_device_info *devinfo)
-{
-   return nir_shader_lower_instructions(nir, brw_nir_lower_load_uniforms_filter,
-                                        brw_nir_lower_load_uniforms_impl,
-                                        (void *)devinfo);
-}
-
 static inline int
 type_size_scalar_dwords(const struct glsl_type *type, bool bindless)
 {
@@ -431,7 +386,6 @@ brw_compile_task(const struct brw_compiler *compiler,
    prog_data->uses_drawid =
       BITSET_TEST(nir->info.system_values_read, SYSTEM_VALUE_DRAW_ID);
 
-   NIR_PASS(_, nir, brw_nir_lower_load_uniforms, compiler->devinfo);
    prog_data->base.uses_inline_data = brw_nir_uses_inline_data(nir);
 
    brw_simd_selection_state simd_state{
@@ -1742,7 +1696,6 @@ brw_compile_mesh(const struct brw_compiler *compiler,
 
    prog_data->autostrip_enable = brw_mesh_autostrip_enable(compiler, nir, &prog_data->map);
 
-   NIR_PASS(_, nir, brw_nir_lower_load_uniforms, compiler->devinfo);
    prog_data->base.uses_inline_data = brw_nir_uses_inline_data(nir);
 
    brw_simd_selection_state simd_state{
