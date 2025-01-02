@@ -112,7 +112,7 @@ iris_utrace_record_ts(struct u_trace *trace, void *cs,
 
    const bool is_end_compute =
       cs == NULL &&
-      (flags & INTEL_DS_TRACEPOINT_FLAG_END_OF_PIPE_CS);
+      (flags & INTEL_DS_TRACEPOINT_FLAG_END_CS);
    if (is_end_compute) {
       assert(ice->utrace.last_compute_walker != NULL);
       batch->screen->vtbl.rewrite_compute_walker_pc(
