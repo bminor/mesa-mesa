@@ -43,8 +43,6 @@ brw_optimize(fs_visitor &s)
       this_progress;                                                    \
    })
 
-   s.assign_constant_locations();
-
    if (s.compiler->lower_dpas)
       OPT(brw_lower_dpas);
 

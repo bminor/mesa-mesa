@@ -312,7 +312,6 @@ public:
    void calculate_payload_ranges(bool allow_spilling,
                                  unsigned payload_node_count,
                                  int *payload_last_use_ip) const;
-   void assign_constant_locations();
    void invalidate_analysis(brw::analysis_dependency_class c);
 
    void vfail(const char *msg, va_list args);
@@ -362,12 +361,6 @@ public:
 
    /** Byte-offset for the next available spot in the scratch space buffer. */
    unsigned last_scratch;
-
-   /**
-    * Array mapping UNIFORM register numbers to the push parameter index,
-    * or -1 if this uniform register isn't being uploaded as a push constant.
-    */
-   int *push_constant_loc;
 
    brw_reg frag_depth;
    brw_reg frag_stencil;

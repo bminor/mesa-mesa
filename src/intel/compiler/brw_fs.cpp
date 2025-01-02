@@ -803,7 +803,6 @@ fs_inst::is_raw_move() const
 void
 fs_visitor::import_uniforms(fs_visitor *v)
 {
-   this->push_constant_loc = v->push_constant_loc;
    this->uniforms = v->uniforms;
 }
 
@@ -974,7 +973,7 @@ fs_visitor::assign_curb_setup()
                constant_nr = ubo_push_start[inst->src[i].nr - UBO_START] +
                              inst->src[i].offset / 4;
             } else if (uniform_nr >= 0 && uniform_nr < (int) uniforms) {
-               constant_nr = push_constant_loc[uniform_nr];
+               constant_nr = uniform_nr;
             } else {
                /* Section 5.11 of the OpenGL 4.1 spec says:
                 * "Out-of-bounds reads return undefined values, which include
@@ -1126,27 +1125,6 @@ brw_get_subgroup_id_param_index(const intel_device_info *devinfo,
       return prog_data->nr_params - 1;
 
    return -1;
-}
-
-/**
- * Assign UNIFORM file registers to either push constants or pull constants.
- *
- * We allow a fragment shader to have more than the specified minimum
- * maximum number of fragment shader uniform components (64).  If
- * there are too many of these, they'd fill up all of register space.
- * So, this will push some of them out to the pull constant buffer and
- * update the program to load them.
- */
-void
-fs_visitor::assign_constant_locations()
-{
-   /* Only the first compile gets to decide on locations. */
-   if (push_constant_loc)
-      return;
-
-   push_constant_loc = ralloc_array(mem_ctx, int, uniforms);
-   for (unsigned u = 0; u < uniforms; u++)
-      push_constant_loc[u] = u;
 }
 
 /**
