@@ -232,7 +232,6 @@ vlVaPostProcCompositor(vlVaDriver *drv,
 
    drv->cstate.chroma_location = VL_COMPOSITOR_LOCATION_NONE;
 
-   drv->pipe->flush(drv->pipe, NULL, 0);
    return VA_STATUS_SUCCESS;
 }
 
@@ -572,6 +571,8 @@ vlVaHandleVAProcPipelineParameterBufferType(vlVaDriver *drv, vlVaContext *contex
          return VA_STATUS_SUCCESS;
    }
 
-   return vlVaPostProcCompositor(drv, src_region, dst_region,
-                                 src, context->target, deinterlace, param);
+   VAStatus ret = vlVaPostProcCompositor(drv, src_region, dst_region,
+                                         src, context->target, deinterlace, param);
+   vlVaSurfaceFlush(drv, dst_surface);
+   return ret;
 }

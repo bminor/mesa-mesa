@@ -119,6 +119,8 @@ vlVaDestroySurfaces(VADriverContextP ctx, VASurfaceID *surface_list, int num_sur
       }
       if (surf->buffer)
          surf->buffer->destroy(surf->buffer);
+      if (surf->pipe_fence)
+         drv->pipe->screen->fence_reference(drv->pipe->screen, &surf->pipe_fence, NULL);
       if (surf->ctx) {
          assert(_mesa_set_search(surf->ctx->surfaces, surf));
          _mesa_set_remove_key(surf->ctx->surfaces, surf);
@@ -176,13 +178,22 @@ _vlVaSyncSurface(VADriverContextP ctx, VASurfaceID render_target, uint64_t timeo
       fence = surf->fence;
    }
 
+   if (surf->pipe_fence) {
+      struct pipe_screen *pscreen = drv->pipe->screen;
+      if (!pscreen->fence_finish(pscreen, NULL, surf->pipe_fence, timeout_ns)) {
+         mtx_unlock(&drv->mutex);
+         return VA_STATUS_ERROR_TIMEDOUT;
+      }
+      pscreen->fence_reference(pscreen, &surf->pipe_fence, NULL);
+   }
+
    /* This is checked before getting the context below as
     * surf->ctx is only set in begin_frame
     * and not when the surface is created
     * Some apps try to sync/map the surface right after creation and
     * would get VA_STATUS_ERROR_INVALID_CONTEXT
     */
-   if (!surf->buffer || !fence) {
+   if (!surf->fence) {
       // No outstanding encode/decode operation: nothing to do.
       mtx_unlock(&drv->mutex);
       return VA_STATUS_SUCCESS;
@@ -441,7 +452,7 @@ vlVaPutSurface(VADriverContextP ctx, VASurfaceID surface_id, void* draw, short s
    /* flush before calling flush_frontbuffer so that rendering is flushed
     * to back buffer so the texture can be copied in flush_frontbuffer
     */
-   drv->pipe->flush(drv->pipe, NULL, 0);
+   vlVaSurfaceFlush(drv, surf);
 
    screen->flush_frontbuffer(screen, drv->pipe, tex, 0, 0,
                              vscreen->get_private(vscreen), 0, NULL);
@@ -996,7 +1007,7 @@ vlVaHandleSurfaceAllocate(vlVaDriver *drv, vlVaSurface *surface,
                   surfaces[i]->width, surfaces[i]->height,
                   false);
       }
-      drv->pipe->flush(drv->pipe, NULL, 0);
+      vlVaSurfaceFlush(drv, surface);
    }
 
    return VA_STATUS_SUCCESS;
@@ -1011,6 +1022,13 @@ vlVaGetSurfaceBuffer(vlVaDriver *drv, vlVaSurface *surface)
       return surface->buffer;
    vlVaHandleSurfaceAllocate(drv, surface, &surface->templat, NULL, 0);
    return surface->buffer;
+}
+
+void
+vlVaSurfaceFlush(vlVaDriver *drv, vlVaSurface *surf)
+{
+   drv->pipe->flush(drv->pipe, &surf->pipe_fence,
+                    drv->has_external_handles ? 0 : PIPE_FLUSH_ASYNC);
 }
 
 static int

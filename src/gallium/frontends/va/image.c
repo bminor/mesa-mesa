@@ -548,6 +548,7 @@ vlVaGetImage(VADriverContextP ctx, VASurfaceID surface, int x, int y,
       ret = vlVaPostProcCompositor(drv, &src_rect, &dst_rect,
                                    surf->buffer, tmp_surf.buffer,
                                    VL_COMPOSITOR_NONE, &proc);
+      drv->pipe->flush(drv->pipe, NULL, 0);
       if (ret != VA_STATUS_SUCCESS) {
          tmp_surf.buffer->destroy(tmp_surf.buffer);
          mtx_unlock(&drv->mutex);
@@ -715,14 +716,14 @@ vlVaPutImage(VADriverContextP ctx, VASurfaceID surface, VAImageID image,
       ret = vlVaPostProcCompositor(drv, &src_rect, &dst_rect,
                                    tmp_surf.buffer, surf->buffer,
                                    VL_COMPOSITOR_NONE, &proc);
+      vlVaSurfaceFlush(drv, surf);
       tmp_surf.buffer->destroy(tmp_surf.buffer);
       mtx_unlock(&drv->mutex);
       return ret;
    }
 
    vlVaUploadImage(drv, surf, img_buf, vaimage);
-
-   drv->pipe->flush(drv->pipe, NULL, 0);
+   vlVaSurfaceFlush(drv, surf);
    mtx_unlock(&drv->mutex);
 
    return VA_STATUS_SUCCESS;

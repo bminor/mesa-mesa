@@ -448,7 +448,8 @@ typedef struct vlVaSurface {
    vlVaContext *ctx;
    vlVaBuffer *coded_buf;
    bool full_range;
-   struct pipe_fence_handle *fence;
+   struct pipe_fence_handle *fence; /* pipe_video_codec fence */
+   struct pipe_fence_handle *pipe_fence; /* pipe_context fence */
    struct vlVaSurface *efc_surface; /* input surface for EFC */
    bool is_dpb;
 } vlVaSurface;
@@ -569,6 +570,7 @@ VAStatus vlVaHandleVAProcPipelineParameterBufferType(vlVaDriver *drv, vlVaContex
 VAStatus vlVaHandleSurfaceAllocate(vlVaDriver *drv, vlVaSurface *surface, struct pipe_video_buffer *templat,
                                    const uint64_t *modifiers, unsigned int modifiers_count);
 struct pipe_video_buffer *vlVaGetSurfaceBuffer(vlVaDriver *drv, vlVaSurface *surface);
+void vlVaSurfaceFlush(vlVaDriver *drv, vlVaSurface *surf);
 void vlVaAddRawHeader(struct util_dynarray *headers, uint8_t type, uint32_t size, uint8_t *buf,
                       bool is_slice, uint32_t emulation_bytes_start);
 void vlVaGetBufferFeedback(vlVaBuffer *buf);
