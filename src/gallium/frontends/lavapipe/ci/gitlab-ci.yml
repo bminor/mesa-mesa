@@ -20,9 +20,7 @@ lavapipe-full:
   variables:
     DEQP_FRACTION: 1
 
-# this seems broken
-# https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/29068#note_2403558
-.lavapipe-vk-asan:
+lavapipe-vk-asan:
   extends:
     - .deqp-test
     - .lavapipe-test
