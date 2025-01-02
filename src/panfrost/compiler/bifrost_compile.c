@@ -5346,9 +5346,29 @@ bifrost_nir_lower_load_output(nir_shader *nir)
       nir_metadata_control_flow, NULL);
 }
 
+static bool
+bi_lower_halt_to_return(nir_builder *b, nir_instr *instr, UNUSED void *_data)
+{
+   if (instr->type != nir_instr_type_jump)
+      return false;
+
+   nir_jump_instr *jump = nir_instr_as_jump(instr);
+   if (jump->type != nir_jump_halt)
+      return false;
+
+   assert(b->impl == nir_shader_get_entrypoint(b->shader));
+   jump->type = nir_jump_return;
+   return true;
+}
+
 void
 bifrost_preprocess_nir(nir_shader *nir, unsigned gpu_id)
 {
+   /* Ensure that halt are translated to returns and get ride of them */
+   NIR_PASS(_, nir, nir_shader_instructions_pass, bi_lower_halt_to_return,
+            nir_metadata_all, NULL);
+   NIR_PASS(_, nir, nir_lower_returns);
+
    /* Lower gl_Position pre-optimisation, but after lowering vars to ssa
     * (so we don't accidentally duplicate the epilogue since mesa/st has
     * messed with our I/O quite a bit already) */

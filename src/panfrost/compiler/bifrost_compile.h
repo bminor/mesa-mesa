@@ -24,6 +24,7 @@
 #ifndef __BIFROST_PUBLIC_H_
 #define __BIFROST_PUBLIC_H_
 
+#include <stdint.h>
 #include <string.h>
 #include "compiler/nir/nir.h"
 #include "panfrost/util/pan_ir.h"
@@ -33,6 +34,7 @@ struct bifrost_precompiled_kernel_sysvals {
    struct {
       unsigned x, y, z;
    } num_workgroups;
+   uint64_t printf_buffer_address;
 } __attribute__((aligned(8)));
 ;
 

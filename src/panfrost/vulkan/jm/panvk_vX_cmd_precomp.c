@@ -39,6 +39,7 @@ panvk_per_arch(dispatch_precomp)(struct panvk_precomp_ctx *ctx,
    sysvals.num_workgroups.x = grid.count[0];
    sysvals.num_workgroups.y = grid.count[1];
    sysvals.num_workgroups.z = grid.count[2];
+   sysvals.printf_buffer_address = dev->printf.bo->addr.dev;
 
    bifrost_precompiled_kernel_prepare_push_uniforms(push_uniforms.cpu, data,
                                                     data_size, &sysvals);

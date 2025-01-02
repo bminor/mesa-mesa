@@ -76,6 +76,7 @@ struct panvk_graphics_sysvals {
    } vs;
 
    aligned_u64 push_consts;
+   aligned_u64 printf_buffer_address;
 
 #if PAN_ARCH <= 7
    /* gl_Layer on Bifrost is a bit of hack. We have to issue one draw per
@@ -112,6 +113,7 @@ struct panvk_compute_sysvals {
    } local_group_size;
 
    aligned_u64 push_consts;
+   aligned_u64 printf_buffer_address;
 
 #if PAN_ARCH <= 7
    struct {

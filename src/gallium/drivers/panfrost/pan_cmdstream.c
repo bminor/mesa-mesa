@@ -1313,6 +1313,9 @@ panfrost_upload_sysvals(struct panfrost_batch *batch, void *ptr_cpu,
       case PAN_SYSVAL_DRAWID:
          uniforms[i].u[0] = batch->ctx->drawid;
          break;
+      case PAN_SYSVAL_PRINTF_BUFFER:
+         uniforms[i].du[0] = batch->ctx->printf.bo->ptr.gpu;
+         break;
       default:
          assert(0);
       }

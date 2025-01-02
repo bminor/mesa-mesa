@@ -118,6 +118,13 @@ panvk_lower_sysvals(nir_builder *b, nir_instr *instr, void *data)
       val = nir_imm_int(b, 0);
       break;
 
+   case nir_intrinsic_load_printf_buffer_address:
+      if (b->shader->info.stage == MESA_SHADER_COMPUTE)
+         val = load_sysval(b, compute, bit_size, printf_buffer_address);
+      else
+         val = load_sysval(b, graphics, bit_size, printf_buffer_address);
+      break;
+
    default:
       return false;
    }

@@ -242,6 +242,11 @@ struct panfrost_context {
    union {
       struct panfrost_csf_context csf;
    };
+
+   struct {
+      struct u_printf_ctx ctx;
+      struct panfrost_bo *bo;
+   } printf;
 };
 
 /* Corresponds to the CSO */
@@ -296,6 +301,7 @@ enum {
    PAN_SYSVAL_BLEND_CONSTANTS = 16,
    PAN_SYSVAL_XFB = 17,
    PAN_SYSVAL_NUM_VERTICES = 18,
+   PAN_SYSVAL_PRINTF_BUFFER = 19,
 };
 
 #define PAN_TXS_SYSVAL_ID(texidx, dim, is_array)                               \

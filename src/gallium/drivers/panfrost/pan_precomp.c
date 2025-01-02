@@ -255,6 +255,7 @@ GENX(panfrost_launch_precomp)(struct panfrost_batch *batch,
    sysvals.num_workgroups.x = grid.count[0];
    sysvals.num_workgroups.y = grid.count[1];
    sysvals.num_workgroups.z = grid.count[2];
+   sysvals.printf_buffer_address = ctx->printf.bo->ptr.gpu;
 
    bifrost_precompiled_kernel_prepare_push_uniforms(push_uniforms.cpu, data,
                                                     data_size, &sysvals);

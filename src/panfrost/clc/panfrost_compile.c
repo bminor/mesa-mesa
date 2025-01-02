@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+#include "panfrost_compile.h"
 #include "compiler/glsl_types.h"
 #include "compiler/spirv/nir_spirv.h"
 #include "panfrost/compiler/bifrost_compile.h"
@@ -27,6 +28,7 @@
 #include "util/macros.h"
 #include "util/u_dynarray.h"
 #include <sys/mman.h>
+#include "panfrost_compile.h"
 
 static const struct spirv_to_nir_options spirv_options = {
    .environment = NIR_SPIRV_OPENCL,
@@ -35,6 +37,7 @@ static const struct spirv_to_nir_options spirv_options = {
    .temp_addr_format = nir_address_format_62bit_generic,
    .constant_addr_format = nir_address_format_64bit_global,
    .create_library = true,
+   .printf = true,
 };
 
 static const nir_shader_compiler_options *
@@ -100,6 +103,12 @@ compile(void *memctx, const uint32_t *spirv, size_t spirv_size, unsigned arch)
 
    nir_lower_compute_system_values_options cs = {.global_id_is_32bit = true};
    NIR_PASS(_, nir, nir_lower_compute_system_values, &cs);
+
+   NIR_PASS(_, nir, nir_lower_printf,
+            &(const struct nir_lower_printf_options){
+               .max_buffer_size = LIBPAN_PRINTF_BUFFER_SIZE - 8,
+               .ptr_bit_size = 64,
+            });
 
    /* We have to lower away local constant initializers right before we
     * inline functions.  That way they get properly initialized at the top
@@ -212,6 +221,14 @@ lower_sysvals(nir_builder *b, nir_intrinsic_instr *intr, UNUSED void *_data)
    case nir_intrinsic_load_num_workgroups:
       val = load_sysval_from_push_const(
          b, offsetof(struct bifrost_precompiled_kernel_sysvals, num_workgroups),
+         bit_size, num_comps);
+      break;
+
+   case nir_intrinsic_load_printf_buffer_address:
+      val = load_sysval_from_push_const(
+         b,
+         offsetof(struct bifrost_precompiled_kernel_sysvals,
+                  printf_buffer_address),
          bit_size, num_comps);
       break;
 
