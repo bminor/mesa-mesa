@@ -27,6 +27,8 @@ typedef struct {
 
    bool frag_color_is_frag_data0;
    bool seen_color0_alpha;
+   bool uses_fragcoord_xy_as_float;
+   bool use_fragcoord;
 } lower_ps_early_state;
 
 static nir_variable *
@@ -432,6 +434,35 @@ lower_ps_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
          return true;
       }
       break;
+   case nir_intrinsic_load_frag_coord:
+      if (!s->options->optimize_frag_coord)
+         break;
+      /* Compute frag_coord.xy from pixel_coord. */
+      if (!s->use_fragcoord && nir_def_components_read(&intrin->def) & 0x3) {
+         nir_def *new_fragcoord_xy = nir_u2f32(b, nir_load_pixel_coord(b));
+         if (!b->shader->info.fs.pixel_center_integer)
+            new_fragcoord_xy = nir_fadd_imm(b, new_fragcoord_xy, 0.5);
+         nir_def *fragcoord = nir_load_frag_coord(b);
+         nir_def_replace(&intrin->def,
+                         nir_vec4(b, nir_channel(b, new_fragcoord_xy, 0),
+                                  nir_channel(b, new_fragcoord_xy, 1),
+                                  nir_channel(b, fragcoord, 2),
+                                  nir_channel(b, fragcoord, 3)));
+         return true;
+      }
+      break;
+   case nir_intrinsic_load_pixel_coord:
+      if (!s->options->optimize_frag_coord)
+         break;
+      /* There is already a floating-point frag_coord.xy use in the shader. Don't add pixel_coord.
+       * Instead, compute pixel_coord from frag_coord.
+       */
+      if (s->use_fragcoord) {
+         nir_def *new_pixel_coord = nir_f2u16(b, nir_channels(b, nir_load_frag_coord(b), 0x3));
+         nir_def_replace(&intrin->def, new_pixel_coord);
+         return true;
+      }
+      break;
    default:
       break;
    }
@@ -440,18 +471,51 @@ lower_ps_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
 }
 
 static bool
-gather_frag_color_dual_src_blend(nir_builder *b, nir_intrinsic_instr *intr, void *state)
+gather_info(nir_builder *b, nir_intrinsic_instr *intr, void *state)
 {
    lower_ps_early_state *s = (lower_ps_early_state *)state;
 
-   /* FRAG_RESULT_COLOR can't broadcast results to all color buffers if another
-    * FRAG_RESULT_COLOR output exists with dual_src_blend_index=1. This happens
-    * with gl_SecondaryFragColorEXT in GLES.
-    */
-   if (intr->intrinsic == nir_intrinsic_store_output &&
-       nir_intrinsic_io_semantics(intr).location == FRAG_RESULT_COLOR &&
-       nir_intrinsic_io_semantics(intr).dual_source_blend_index)
-      s->frag_color_is_frag_data0 = true;
+   switch (intr->intrinsic) {
+   case nir_intrinsic_store_output:
+      /* FRAG_RESULT_COLOR can't broadcast results to all color buffers if another
+       * FRAG_RESULT_COLOR output exists with dual_src_blend_index=1. This happens
+       * with gl_SecondaryFragColorEXT in GLES.
+       */
+      if (nir_intrinsic_io_semantics(intr).location == FRAG_RESULT_COLOR &&
+          nir_intrinsic_io_semantics(intr).dual_source_blend_index)
+         s->frag_color_is_frag_data0 = true;
+      break;
+   case nir_intrinsic_load_frag_coord:
+      assert(intr->def.bit_size == 32);
+      nir_foreach_use(use, &intr->def) {
+         if (nir_src_parent_instr(use)->type == nir_instr_type_alu &&
+             nir_src_components_read(use) & 0x3) {
+            switch (nir_instr_as_alu(nir_src_parent_instr(use))->op) {
+            case nir_op_f2i8:
+            case nir_op_f2i16:
+            case nir_op_f2i32:
+            case nir_op_f2i64:
+            case nir_op_f2u8:
+            case nir_op_f2u16:
+            case nir_op_f2u32:
+            case nir_op_f2u64:
+            case nir_op_ftrunc:
+            case nir_op_ffloor:
+               continue;
+            default:
+               break;
+            }
+         }
+         s->uses_fragcoord_xy_as_float = true;
+         break;
+      }
+      break;
+   case nir_intrinsic_load_sample_pos:
+      s->uses_fragcoord_xy_as_float = true;
+      break;
+   default:
+      break;
+   }
 
    return false;
 }
@@ -470,7 +534,19 @@ ac_nir_lower_ps_early(nir_shader *nir, const ac_nir_lower_ps_early_options *opti
    };
 
    /* Don't gather shader_info. Just gather the single thing we want to know. */
-   nir_shader_intrinsics_pass(nir, gather_frag_color_dual_src_blend, nir_metadata_all, &state);
+   nir_shader_intrinsics_pass(nir, gather_info, nir_metadata_all, &state);
+
+   /* The preferred option is replacing frag_coord by pixel_coord.xy + 0.5. The goal is to reduce
+    * input VGPRs to increase PS wave launch rate. pixel_coord uses 1 input VGPR, while
+    * frag_coord.xy uses 2 input VGPRs. It only helps performance if the number of input VGPRs
+    * decreases to an even number. If it only decreases to an odd number, it has no effect.
+    *
+    * TODO: estimate input VGPRs and don't lower to pixel_coord if their number doesn't decrease to
+    * an even number?
+    */
+   state.use_fragcoord = state.options->ps_iter_samples != 1 &&
+                         !state.options->force_center_interp_no_msaa &&
+                         state.uses_fragcoord_xy_as_float;
 
    bool progress = nir_shader_intrinsics_pass(nir, lower_ps_intrinsic,
                                               nir_metadata_control_flow, &state);
