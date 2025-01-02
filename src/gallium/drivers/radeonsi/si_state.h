@@ -84,7 +84,6 @@ struct si_state_rasterizer {
    unsigned flatshade_first : 1;
    unsigned two_side : 1;
    unsigned multisample_enable : 1;
-   unsigned force_persample_interp : 1;
    unsigned line_stipple_enable : 1;
    unsigned poly_stipple_enable : 1;
    unsigned line_smooth : 1;

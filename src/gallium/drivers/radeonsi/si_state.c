@@ -979,7 +979,6 @@ static void *si_create_rs_state(struct pipe_context *ctx, const struct pipe_rast
    rs->clip_halfz = state->clip_halfz;
    rs->two_side = state->light_twoside;
    rs->multisample_enable = state->multisample;
-   rs->force_persample_interp = state->force_persample_interp;
    rs->clip_plane_enable = state->clip_plane_enable;
    rs->half_pixel_center = state->half_pixel_center;
    rs->line_stipple_enable = state->line_stipple_enable;
@@ -1352,7 +1351,6 @@ static void si_bind_rs_state(struct pipe_context *ctx, void *state)
       si_ps_key_update_rasterizer(sctx);
 
    if (old_rs->flatshade != rs->flatshade ||
-       old_rs->force_persample_interp != rs->force_persample_interp ||
        old_rs->multisample_enable != rs->multisample_enable)
       si_ps_key_update_framebuffer_rasterizer_sample_shading(sctx);
 
