@@ -546,6 +546,9 @@ build_leaves(VkCommandBuffer commandBuffer,
 
          const VkAccelerationStructureBuildRangeInfoKHR *build_range_info = &ppBuildRangeInfos[i][j];
 
+         if (build_range_info->primitiveCount == 0)
+            continue;
+
          leaf_consts.geom_data = vk_fill_geometry_data(pInfos[i].type, bvh_states[i].leaf_node_count, j, geom, build_range_info);
 
          disp->CmdPushConstants(commandBuffer, layout,
