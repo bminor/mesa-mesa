@@ -1673,7 +1673,7 @@ static bool si_nir_kill_outputs(nir_shader *nir, const union si_shader_key *key)
          assert(intr->num_components == 1); /* only scalar stores expected */
          nir_io_semantics sem = nir_intrinsic_io_semantics(intr);
 
-         if (nir_slot_is_varying(sem.location) &&
+         if (nir_slot_is_varying(sem.location, MESA_SHADER_FRAGMENT) &&
              key->ge.opt.kill_outputs &
              (1ull << si_shader_io_get_unique_index(sem.location)))
             progress |= nir_remove_varying(intr, MESA_SHADER_FRAGMENT);
@@ -1681,7 +1681,7 @@ static bool si_nir_kill_outputs(nir_shader *nir, const union si_shader_key *key)
          switch (sem.location) {
          case VARYING_SLOT_PSIZ:
             if (key->ge.opt.kill_pointsize)
-               progress |= nir_remove_sysval_output(intr);
+               progress |= nir_remove_sysval_output(intr, MESA_SHADER_FRAGMENT);
             break;
 
          case VARYING_SLOT_CLIP_VERTEX:
@@ -1690,7 +1690,7 @@ static bool si_nir_kill_outputs(nir_shader *nir, const union si_shader_key *key)
              */
             if ((key->ge.opt.kill_clip_distances & SI_USER_CLIP_PLANE_MASK) ==
                 SI_USER_CLIP_PLANE_MASK)
-               progress |= nir_remove_sysval_output(intr);
+               progress |= nir_remove_sysval_output(intr, MESA_SHADER_FRAGMENT);
             break;
 
          case VARYING_SLOT_CLIP_DIST0:
@@ -1701,7 +1701,7 @@ static bool si_nir_kill_outputs(nir_shader *nir, const union si_shader_key *key)
                                 nir_intrinsic_component(intr);
 
                if (key->ge.opt.kill_clip_distances & BITFIELD_BIT(index))
-                  progress |= nir_remove_sysval_output(intr);
+                  progress |= nir_remove_sysval_output(intr, MESA_SHADER_FRAGMENT);
             }
             break;
 
@@ -1710,7 +1710,7 @@ static bool si_nir_kill_outputs(nir_shader *nir, const union si_shader_key *key)
             progress |= nir_remove_varying(intr, MESA_SHADER_FRAGMENT);
 
             if (key->ge.opt.kill_layer)
-               progress |= nir_remove_sysval_output(intr);
+               progress |= nir_remove_sysval_output(intr, MESA_SHADER_FRAGMENT);
             break;
          }
       }
@@ -2033,7 +2033,7 @@ static void si_nir_assign_param_offsets(nir_shader *nir, struct si_shader *shade
             outputs_written |= BITFIELD64_BIT(sem.location);
 
          /* Assign the param index if it's unassigned. */
-         if (nir_slot_is_varying(sem.location) && !sem.no_varying &&
+         if (nir_slot_is_varying(sem.location, MESA_SHADER_FRAGMENT) && !sem.no_varying &&
              (sem.gs_streams & 0x3) == 0 &&
              info->vs_output_param_offset[sem.location] == AC_EXP_PARAM_DEFAULT_VAL_0000) {
             /* The semantic and the base should be the same as in si_shader_info. */
@@ -2763,7 +2763,7 @@ si_nir_generate_gs_copy_shader(struct si_screen *sscreen,
       unsigned semantic = gsinfo->output_semantic[i];
 
       /* Skip if no channel writes to stream 0. */
-      if (!nir_slot_is_varying(semantic) ||
+      if (!nir_slot_is_varying(semantic, MESA_SHADER_FRAGMENT) ||
           (gsinfo->output_streams[i] & 0x03 &&
            gsinfo->output_streams[i] & 0x0c &&
            gsinfo->output_streams[i] & 0x30 &&

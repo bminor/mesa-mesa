@@ -254,7 +254,7 @@ bool ac_nir_optimize_outputs(nir_shader *nir, bool sprite_tex_disallowed,
          nir_io_semantics sem = nir_intrinsic_io_semantics(intr);
 
          /* Only process varyings that appear as param exports. */
-         if (!nir_slot_is_varying(sem.location) || sem.no_varying)
+         if (!nir_slot_is_varying(sem.location, MESA_SHADER_FRAGMENT) || sem.no_varying)
             continue;
 
          /* We can't optimize texture coordinates if sprite_coord_enable can override them. */

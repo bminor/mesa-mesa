@@ -42,7 +42,7 @@ opt_clip_cull(nir_builder *b, nir_intrinsic_instr *intr, void *unused)
          return false;
    }
 
-   nir_remove_sysval_output(intr);
+   nir_remove_sysval_output(intr, MESA_SHADER_FRAGMENT);
    return true;
 }
 

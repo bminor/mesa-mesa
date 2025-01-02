@@ -161,7 +161,8 @@ lower_store_output_to_scalar(nir_builder *b, nir_intrinsic_instr *intr)
        */
       if ((sem.no_sysval_output ||
            !nir_slot_is_sysval_output(sem.location, MESA_SHADER_NONE)) &&
-          (sem.no_varying || !nir_slot_is_varying(sem.location)) &&
+          (sem.no_varying ||
+           !nir_slot_is_varying(sem.location, MESA_SHADER_NONE)) &&
           !has_xfb)
          continue;
 
