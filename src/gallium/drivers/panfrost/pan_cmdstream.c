@@ -52,6 +52,7 @@
 #include "pan_jm.h"
 #include "pan_job.h"
 #include "pan_pool.h"
+#include "pan_precomp.h"
 #include "pan_resource.h"
 #include "pan_samples.h"
 #include "pan_shader.h"
@@ -4218,6 +4219,8 @@ GENX(panfrost_cmdstream_screen_init)(struct panfrost_screen *screen)
    GENX(pan_fb_preload_cache_init)
    (&dev->fb_preload_cache, panfrost_device_gpu_id(dev), &dev->blend_shaders,
     &screen->mempools.bin.base, &screen->mempools.desc.base);
+
+   dev->precomp_cache = GENX(panfrost_precomp_cache_init)(screen);
 
 #if PAN_GPU_SUPPORTS_DISPATCH_INDIRECT
    pan_indirect_dispatch_meta_init(

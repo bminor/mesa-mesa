@@ -48,6 +48,7 @@ foreach ver : panfrost_versions
   files_panfrost_vx = [
     'pan_cmdstream.c',
     'pan_fb_preload.c',
+    'pan_precomp.c',
     pan_packers,
   ]
   if ver in ['4', '5', '6', '7', '9']
