@@ -605,6 +605,221 @@ crocus_get_compute_param(struct pipe_screen *pscreen,
    }
 }
 
+static void
+crocus_init_screen_caps(struct crocus_screen *screen)
+{
+   const struct intel_device_info *devinfo = &screen->devinfo;
+   struct pipe_caps *caps = (struct pipe_caps *)&screen->base.caps;
+
+   u_init_pipe_screen_caps(&screen->base, 1);
+
+   caps->npot_textures = true;
+   caps->anisotropic_filter = true;
+   caps->occlusion_query = true;
+   caps->texture_swizzle = true;
+   caps->texture_mirror_clamp_to_edge = true;
+   caps->blend_equation_separate = true;
+   caps->fragment_shader_texture_lod = true;
+   caps->fragment_shader_derivatives = true;
+   caps->primitive_restart = true;
+   caps->primitive_restart_fixed_index = true;
+   caps->indep_blend_enable = true;
+   caps->fs_coord_origin_upper_left = true;
+   caps->fs_coord_pixel_center_integer = true;
+   caps->depth_clip_disable = true;
+   caps->vs_instanceid = true;
+   caps->vertex_element_instance_divisor = true;
+   caps->seamless_cube_map = true;
+   caps->seamless_cube_map_per_texture = true;
+   caps->conditional_render = true;
+   caps->texture_barrier = true;
+   caps->vertex_color_unclamped = true;
+   caps->start_instance = true;
+   caps->force_persample_interp = true;
+   caps->mixed_framebuffer_sizes = true;
+   caps->vs_layer_viewport = true;
+   caps->tes_layer_viewport = true;
+   caps->uma = true;
+   caps->clip_halfz = true;
+   caps->tgsi_texcoord = true;
+   caps->device_reset_status_query = true;
+   caps->copy_between_compressed_and_plain_formats = true;
+   caps->signed_vertex_buffer_offset = true;
+   caps->texture_float_linear = true;
+   caps->texture_half_float_linear = true;
+   caps->polygon_offset_clamp = true;
+   caps->tgsi_tex_txf_lz = true;
+   caps->multisample_z_resolve = true;
+   caps->shader_group_vote = true;
+   caps->vs_window_space_position = true;
+   caps->texture_gather_sm5 = true;
+   caps->shader_array_components = true;
+   caps->glsl_tess_levels_as_inputs = true;
+   caps->fs_position_is_sysval = true;
+   caps->fs_face_is_integer_sysval = true;
+   caps->invalidate_buffer = true;
+   caps->surface_reinterpret_blocks = true;
+   caps->fence_signal = true;
+   caps->demote_to_helper_invocation = true;
+   caps->gl_clamp = true;
+   caps->legacy_math_rules = true;
+   caps->native_fence_fd = true;
+
+   caps->int64 =
+   caps->shader_ballot =
+   caps->packed_uniforms = devinfo->ver == 8;
+
+   caps->quads_follow_provoking_vertex_convention = devinfo->ver <= 5;
+
+   caps->texture_query_lod =
+   caps->query_time_elapsed = devinfo->ver >= 5;
+
+   caps->draw_indirect =
+   caps->multi_draw_indirect =
+   caps->multi_draw_indirect_params =
+   caps->framebuffer_no_attachment =
+   caps->fs_fine_derivative =
+   caps->stream_output_interleave_buffers =
+   caps->shader_clock =
+   caps->texture_query_samples =
+   caps->compute =
+   caps->sampler_view_target =
+   caps->shader_samples_identical =
+   caps->shader_pack_half_float =
+   caps->gl_spirv =
+   caps->gl_spirv_variable_pointers =
+   caps->compute_shader_derivatives =
+   caps->doubles =
+   caps->memobj =
+   caps->image_store_formatted =
+   caps->alpha_to_coverage_dither_control = devinfo->ver >= 7;
+
+   caps->query_buffer_object =
+   caps->robust_buffer_access_behavior = devinfo->verx10 >= 75;
+
+   caps->cull_distance =
+   caps->query_pipeline_statistics_single =
+   caps->stream_output_pause_resume =
+   caps->sample_shading =
+   caps->cube_map_array =
+   caps->query_so_overflow =
+   caps->texture_multisample =
+   caps->conditional_render_inverted =
+   caps->query_timestamp =
+   caps->texture_buffer_objects =
+   caps->indep_blend_func =
+   caps->texture_shadow_lod =
+   caps->load_constbuf =
+   caps->draw_parameters =
+   caps->clear_scissored = devinfo->ver >= 6;
+
+   caps->fbfetch = devinfo->verx10 >= 45 ? ELK_MAX_DRAW_BUFFERS : 0;
+   /* in theory CL (965gm) can do this */
+   caps->max_dual_source_render_targets = devinfo->verx10 >= 45 ? 1 : 0;
+   caps->max_render_targets = ELK_MAX_DRAW_BUFFERS;
+   caps->max_texture_2d_size = devinfo->ver >= 7 ? 16384 : 8192;
+   caps->max_texture_cube_levels = devinfo->ver >= 7 ?
+      CROCUS_MAX_MIPLEVELS /* 16384x16384 */ : CROCUS_MAX_MIPLEVELS - 1; /* 8192x8192 */
+   caps->max_texture_3d_levels = 12; /* 2048x2048 */
+   caps->max_stream_output_buffers = (devinfo->ver >= 6) ? 4 : 0;
+   caps->max_texture_array_layers = devinfo->ver >= 7 ? 2048 : 512;
+   caps->max_stream_output_separate_components =
+      ELK_MAX_SOL_BINDINGS / CROCUS_MAX_SOL_BUFFERS;
+   caps->max_stream_output_interleaved_components = ELK_MAX_SOL_BINDINGS;
+   caps->glsl_feature_level_compatibility =
+   caps->glsl_feature_level = devinfo->verx10 >= 75 ? 460 :
+      (devinfo->ver >= 7 ? 420 : (devinfo->ver >= 6 ? 330 : 140));
+   caps->clip_planes = devinfo->verx10 < 45 ? 6 : 1; // defaults to MAX (8)
+   /* 3DSTATE_CONSTANT_XS requires the start of UBOs to be 32B aligned */
+   caps->constant_buffer_offset_alignment = 32;
+   caps->min_map_buffer_alignment = CROCUS_MAP_BUFFER_ALIGNMENT;
+   caps->shader_buffer_offset_alignment = devinfo->ver >= 7 ? 4 : 0;
+   caps->max_shader_buffer_size_uint = devinfo->ver >= 7 ? (1 << 27) : 0;
+   caps->texture_buffer_offset_alignment = 16; // XXX: u_screen says 256 is the minimum value...
+   caps->texture_transfer_modes = PIPE_TEXTURE_TRANSFER_BLIT;
+   caps->max_texel_buffer_elements_uint = CROCUS_MAX_TEXTURE_BUFFER_SIZE;
+   caps->max_viewports = devinfo->ver >= 6 ? 16 : 1;
+   caps->max_geometry_output_vertices = devinfo->ver >= 6 ? 256 : 0;
+   caps->max_geometry_total_output_components = devinfo->ver >= 6 ? 1024 : 0;
+   caps->max_gs_invocations = devinfo->ver >= 7 ? 32 : 1;
+   caps->max_texture_gather_components = devinfo->ver >= 7 ? 4 :
+      (devinfo->ver == 6 ? 1 : 0);
+   caps->min_texture_gather_offset = devinfo->ver >= 7 ? -32 :
+      (devinfo->ver == 6 ? -8 : 0);
+   caps->max_texture_gather_offset = devinfo->ver >= 7 ? 31 :
+      (devinfo->ver == 6 ? 7 : 0);
+   caps->max_vertex_streams = devinfo->ver >= 7 ? 4 : 1;
+   caps->vendor_id = 0x8086;
+   caps->device_id = screen->pci_id;
+
+   /* Once a batch uses more than 75% of the maximum mappable size, we
+    * assume that there's some fragmentation, and we start doing extra
+    * flushing, etc.  That's the big cliff apps will care about.
+    */
+   const unsigned gpu_mappable_megabytes =
+      (screen->aperture_threshold) / (1024 * 1024);
+
+   const long system_memory_pages = sysconf(_SC_PHYS_PAGES);
+   const long system_page_size = sysconf(_SC_PAGE_SIZE);
+
+   if (system_memory_pages <= 0 || system_page_size <= 0) {
+      caps->video_memory = -1;
+   } else {
+      const uint64_t system_memory_bytes =
+         (uint64_t) system_memory_pages * (uint64_t) system_page_size;
+
+      const unsigned system_memory_megabytes =
+         (unsigned) (system_memory_bytes / (1024 * 1024));
+
+      caps->video_memory = MIN2(system_memory_megabytes, gpu_mappable_megabytes);
+   }
+
+   caps->max_shader_patch_varyings =
+   caps->max_varyings = (screen->devinfo.ver >= 6) ? 32 : 16;
+   /* AMD_pinned_memory assumes the flexibility of using client memory
+    * for any buffer (incl. vertex buffers) which rules out the prospect
+    * of using snooped buffers, as using snooped buffers without
+    * cogniscience is likely to be detrimental to performance and require
+    * extensive checking in the driver for correctness, e.g. to prevent
+    * illegal snoop <-> snoop transfers.
+    */
+   caps->resource_from_user_memory = devinfo->has_llc;
+   caps->throttle = !screen->driconf.disable_throttling;
+
+   caps->context_priority_mask =
+      PIPE_CONTEXT_PRIORITY_LOW |
+      PIPE_CONTEXT_PRIORITY_MEDIUM |
+      PIPE_CONTEXT_PRIORITY_HIGH;
+
+   caps->frontend_noop = true;
+   // XXX: don't hardcode 00:00:02.0 PCI here
+   caps->pci_group = 0;
+   caps->pci_bus = 0;
+   caps->pci_device = 2;
+   caps->pci_function = 0;
+
+   caps->hardware_gl_select = false;
+
+   caps->timer_resolution = DIV_ROUND_UP(1000000000ull, devinfo->timestamp_frequency);
+
+   caps->min_line_width =
+   caps->min_line_width_aa =
+   caps->min_point_size =
+   caps->min_point_size_aa = 1;
+
+   caps->point_size_granularity =
+   caps->line_width_granularity = 0.1;
+
+   caps->max_line_width =
+   caps->max_line_width_aa = devinfo->ver >= 6 ? 7.375f : 7.0f;
+
+   caps->max_point_size =
+   caps->max_point_size_aa = 255.0f;
+
+   caps->max_texture_anisotropy = 16.0f;
+   caps->max_texture_lod_bias = 15.0f;
+}
+
 static uint64_t
 crocus_get_timestamp(struct pipe_screen *pscreen)
 {
@@ -819,6 +1034,8 @@ crocus_screen_create(int fd, const struct pipe_screen_config *config)
    pscreen->query_memory_info = crocus_query_memory_info;
    pscreen->get_driver_query_group_info = crocus_get_monitor_group_info;
    pscreen->get_driver_query_info = crocus_get_monitor_info;
+
+   crocus_init_screen_caps(screen);
 
    genX_call(&screen->devinfo, crocus_init_screen_state, screen);
    genX_call(&screen->devinfo, crocus_init_screen_query, screen);
