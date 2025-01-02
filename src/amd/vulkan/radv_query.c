@@ -1696,7 +1696,7 @@ radv_copy_ms_prim_query_result(struct radv_cmd_buffer *cmd_buffer, struct radv_q
 static VkResult
 create_layout(struct radv_device *device, VkPipelineLayout *layout_out)
 {
-   const char *key_data = "radv-query-layout";
+   const char *key_data = "radv-query";
 
    const VkDescriptorSetLayoutBinding bindings[] = {
       {.binding = 0,
