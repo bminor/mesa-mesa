@@ -71,6 +71,7 @@ struct si_shader_args {
    /* API TCS & TES */
    struct ac_arg tes_offchip_addr;
    /* PS */
+   struct ac_arg sample_locs[2];
    struct ac_arg alpha_reference;
    struct ac_arg color_start;
    /* CS */

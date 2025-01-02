@@ -466,11 +466,16 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
       }
       break;
    case nir_intrinsic_load_sample_positions_amd: {
-      /* offset = sample_id * 8  (8 = 2 floats containing samplepos.xy) */
-      nir_def *buf = si_nir_load_internal_binding(b, args, SI_PS_CONST_SAMPLE_POSITIONS, 4);
+      /* Sample locations are packed in 2 user SGPRs, 4 bits per component. */
       nir_def *sample_id = intrin->src[0].ssa;
-      nir_def *offset = nir_ishl_imm(b, sample_id, 3);
-      replacement = nir_load_ubo(b, 2, 32, buf, offset, .range = ~0);
+      nir_def *sample_locs =
+         nir_pack_64_2x32_split(b, ac_nir_load_arg(b, &s->args->ac, s->args->sample_locs[0]),
+                                ac_nir_load_arg(b, &s->args->ac, s->args->sample_locs[1]));
+      sample_locs = nir_ushr(b, sample_locs, nir_imul_imm(b, sample_id, 8));
+      sample_locs = nir_u2u32(b, sample_locs);
+      nir_def *sample_pos = nir_vec2(b, nir_iand_imm(b, sample_locs, 0xf),
+                                     nir_ubfe_imm(b, sample_locs, 4, 4));
+      replacement = nir_fmul_imm(b, nir_u2f32(b, sample_pos), 1.0 / 16);
       break;
    }
    case nir_intrinsic_load_ring_tess_factors_amd: {

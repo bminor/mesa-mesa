@@ -1270,18 +1270,6 @@ struct si_context {
    bool uses_bindless_samplers;
    bool uses_bindless_images;
 
-   /* MSAA sample locations.
-    * The first index is the sample index.
-    * The second index is the coordinate: X, Y. */
-   struct {
-      float x1[1][2];
-      float x2[2][2];
-      float x4[4][2];
-      float x8[8][2];
-      float x16[16][2];
-   } sample_positions;
-   struct pipe_resource *sample_pos_buffer;
-
    /* Misc stats. */
    unsigned num_draw_calls;
    unsigned num_decompress_calls;

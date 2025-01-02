@@ -611,6 +611,10 @@ static void si_init_shader_args(struct si_shader *shader, struct si_shader_args 
    case MESA_SHADER_FRAGMENT:
       declare_global_desc_pointers(args);
       declare_per_stage_desc_pointers(args, shader, info, true);
+      si_add_arg_checked(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->sample_locs[0],
+                         SI_PARAM_SAMPLE_LOCS0);
+      si_add_arg_checked(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->sample_locs[1],
+                         SI_PARAM_SAMPLE_LOCS1);
       si_add_arg_checked(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->alpha_reference,
                          SI_PARAM_ALPHA_REF);
       si_add_arg_checked(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.prim_mask,
@@ -3799,6 +3803,8 @@ void si_get_ps_epilog_args(struct si_shader_args *args,
 {
    memset(args, 0, sizeof(*args));
 
+   ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, NULL);
+   ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, NULL);
    ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, NULL);
    ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, NULL);
    ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, NULL);

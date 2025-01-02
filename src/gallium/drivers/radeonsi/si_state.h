@@ -465,7 +465,6 @@ enum
    SI_VS_CONST_INSTANCE_DIVISORS,
    SI_VS_CONST_CLIP_PLANES,
    SI_PS_CONST_POLY_STIPPLE,
-   SI_PS_CONST_SAMPLE_POSITIONS,
 
    SI_RING_ESGS,                       /* gfx6-8 */
    SI_RING_GSVS,                       /* gfx6-10 */
