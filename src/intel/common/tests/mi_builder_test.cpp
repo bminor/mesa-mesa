@@ -337,8 +337,8 @@ mi_builder_test::SetUp()
             break;
          }
       }
-      ASSERT_TRUE(found_engine);
       free(engines_info);
+      ASSERT_TRUE(found_engine);
 
       struct drm_xe_exec_queue_create queue_create = {
          .width          = 1,
