@@ -97,9 +97,6 @@ program@execute@atomic_int32_cmpxchg-local@simple int,Fail
 program@execute@atomic_int32_cmpxchg-local@simple uint,Fail
 program@execute@atomic_int32_xchg-global-return,Crash
 program@execute@atomic_xchg-global-return,Crash
-program@execute@bswap,Crash
-program@execute@bswap@s_bswap_u64,Fail
-program@execute@bswap@v_bswap_u64,Fail
 program@execute@builtin@builtin-char-abs-1.0.generated,Crash
 program@execute@builtin@builtin-char-abs_diff-1.0.generated,Crash
 program@execute@builtin@builtin-char-add_sat-1.0.generated,Crash
