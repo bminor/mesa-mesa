@@ -48,19 +48,19 @@ get_baryc_var(nir_builder *b, nir_intrinsic_op baryc_op, enum glsl_interp_mode m
    switch (baryc_op) {
    case nir_intrinsic_load_barycentric_pixel:
       if (mode == INTERP_MODE_NOPERSPECTIVE) {
-         return get_baryc_var_common(b, s->options->force_linear_sample_interp, &s->linear_center,
+         return get_baryc_var_common(b, s->options->ps_iter_samples > 1, &s->linear_center,
                                      "linear_center");
       } else {
-         return get_baryc_var_common(b, s->options->force_persp_sample_interp, &s->persp_center,
+         return get_baryc_var_common(b, s->options->ps_iter_samples > 1, &s->persp_center,
                                      "persp_center");
       }
    case nir_intrinsic_load_barycentric_centroid:
       if (mode == INTERP_MODE_NOPERSPECTIVE) {
-         return get_baryc_var_common(b, s->options->force_linear_sample_interp ||
+         return get_baryc_var_common(b, s->options->ps_iter_samples > 1 ||
                                      s->options->force_linear_center_interp, &s->linear_centroid,
                                      "linear_centroid");
       } else {
-         return get_baryc_var_common(b, s->options->force_persp_sample_interp ||
+         return get_baryc_var_common(b, s->options->ps_iter_samples > 1 ||
                                      s->options->force_persp_center_interp, &s->persp_centroid,
                                      "persp_centroid");
       }
@@ -91,12 +91,9 @@ init_interp_param(nir_builder *b, lower_ps_early_state *s)
 {
    b->cursor = nir_before_cf_list(&b->impl->body);
 
-   if (s->options->force_persp_sample_interp) {
+   if (s->options->ps_iter_samples > 1) {
       set_interp_vars(b, nir_load_barycentric_sample(b, 32, .interp_mode = INTERP_MODE_SMOOTH),
                       s->persp_center, s->persp_centroid);
-   }
-
-   if (s->options->force_linear_sample_interp) {
       set_interp_vars(b, nir_load_barycentric_sample(b, 32, .interp_mode = INTERP_MODE_NOPERSPECTIVE),
                       s->linear_center, s->linear_centroid);
    }
