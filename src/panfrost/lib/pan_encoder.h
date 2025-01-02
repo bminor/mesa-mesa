@@ -27,13 +27,17 @@
 #ifndef __PAN_ENCODER_H
 #define __PAN_ENCODER_H
 
+#ifndef __OPENCL_VERSION__
 #include "util/macros.h"
 
 #include <stdbool.h>
-#include "genxml/gen_macros.h"
 #include "util/format/u_format.h"
-
 #include "pan_pool.h"
+#else
+#include "compiler/libcl/libcl.h"
+#endif
+
+#include "genxml/gen_macros.h"
 
 /* Tiler structure size computation */
 
@@ -200,6 +204,7 @@ pan_pack_work_groups_compute(struct mali_invocation_packed *out, unsigned num_x,
 }
 #endif
 
+#ifndef __OPENCL_VERSION__
 #if PAN_ARCH >= 5
 /* Format conversion */
 static inline enum mali_z_internal_format
@@ -220,9 +225,11 @@ pan_get_z_internal_format(enum pipe_format fmt)
    }
 }
 #endif
+#endif
 
 #endif /* PAN_ARCH */
 
+#ifndef __OPENCL_VERSION__
 #if PAN_ARCH >= 9
 static inline void
 pan_make_resource_table(struct pan_ptr base, unsigned index, uint64_t address,
@@ -237,6 +244,7 @@ pan_make_resource_table(struct pan_ptr base, unsigned index, uint64_t address,
       cfg.size = resource_count * pan_size(BUFFER);
    }
 }
+#endif
 #endif
 
 #endif
