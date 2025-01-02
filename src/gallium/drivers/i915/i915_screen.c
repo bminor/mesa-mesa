@@ -547,6 +547,105 @@ i915_get_paramf(struct pipe_screen *screen, enum pipe_capf cap)
    }
 }
 
+static void
+i915_init_screen_caps(struct i915_screen *is)
+{
+   struct pipe_caps *caps = (struct pipe_caps *)&is->base.caps;
+
+   u_init_pipe_screen_caps(&is->base, 1);
+
+   /* Supported features (boolean caps). */
+   caps->anisotropic_filter = true;
+   caps->npot_textures = true;
+   caps->mixed_framebuffer_sizes = true;
+   caps->primitive_restart = true; /* draw module */
+   caps->primitive_restart_fixed_index = true;
+   caps->vertex_element_instance_divisor = true;
+   caps->blend_equation_separate = true;
+   caps->vs_instanceid = true;
+   caps->vertex_color_clamped = true;
+   caps->user_vertex_buffers = true;
+   caps->mixed_color_depth_bits = true;
+   caps->tgsi_texcoord = true;
+   caps->call_finalize_nir_in_linker = true;
+
+   caps->texture_transfer_modes =
+   caps->pci_group =
+   caps->pci_bus =
+   caps->pci_device =
+   caps->pci_function = 0;
+
+   caps->allow_mapped_buffers_during_execution = false;
+
+   /* Can't expose shareable shaders because the draw shaders reference the
+    * draw module's state, which is per-context.
+    */
+   caps->shareable_shaders = false;
+
+   caps->max_gs_invocations = 32;
+
+   caps->max_shader_buffer_size_uint = 1 << 27;
+
+   caps->max_viewports = 1;
+
+   caps->min_map_buffer_alignment = 64;
+
+   caps->glsl_feature_level =
+   caps->glsl_feature_level_compatibility = 120;
+
+   caps->constant_buffer_offset_alignment = 16;
+
+   /* Texturing. */
+   caps->max_texture_2d_size = 1 << (I915_MAX_TEXTURE_2D_LEVELS - 1);
+   caps->max_texture_3d_levels = I915_MAX_TEXTURE_3D_LEVELS;
+   caps->max_texture_cube_levels = I915_MAX_TEXTURE_2D_LEVELS;
+
+   /* Render targets. */
+   caps->max_render_targets = 1;
+
+   caps->max_vertex_attrib_stride = 2048;
+
+   /* Fragment coordinate conventions. */
+   caps->fs_coord_origin_upper_left =
+   caps->fs_coord_pixel_center_half_integer = true;
+   caps->endianness = PIPE_ENDIAN_LITTLE;
+   caps->max_varyings = 10;
+
+   caps->nir_images_as_deref = false;
+
+   caps->vendor_id = 0x8086;
+   caps->device_id = is->iws->pci_id;
+
+   /* Once a batch uses more than 75% of the maximum mappable size, we
+    * assume that there's some fragmentation, and we start doing extra
+    * flushing, etc.  That's the big cliff apps will care about.
+    */
+   const int gpu_mappable_megabytes = is->iws->aperture_size(is->iws) * 3 / 4;
+   uint64_t system_memory;
+   caps->video_memory =
+      os_get_total_physical_memory(&system_memory) ?
+      MIN2(gpu_mappable_megabytes, (int)(system_memory >> 20)) : 0;
+   caps->uma = true;
+
+   caps->min_line_width =
+   caps->min_line_width_aa =
+   caps->min_point_size =
+   caps->min_point_size_aa = 1;
+
+   caps->point_size_granularity =
+   caps->line_width_granularity = 0.1;
+
+   caps->max_line_width =
+   caps->max_line_width_aa = 7.5;
+
+   caps->max_point_size =
+   caps->max_point_size_aa = 255.0;
+
+   caps->max_texture_anisotropy = 4.0;
+
+   caps->max_texture_lod_bias = 16.0;
+}
+
 bool
 i915_is_format_supported(struct pipe_screen *screen, enum pipe_format format,
                          enum pipe_texture_target target, unsigned sample_count,
@@ -712,6 +811,8 @@ i915_screen_create(struct i915_winsys *iws)
    is->base.fence_finish = i915_fence_finish;
 
    i915_init_screen_resource_functions(is);
+
+   i915_init_screen_caps(is);
 
    i915_debug_init(is);
 
