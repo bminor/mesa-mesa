@@ -98,6 +98,7 @@ You need to set the ``ANDROID_NDK_ROOT``, ``ANDROID_SDK_VERSION`` and
 ``LLVML_INSTALL_PREFIX`` environment variables appropriately.
 
 .. code-block:: sh
+
    #!/bin/bash
 
    set -e
@@ -146,6 +147,7 @@ The list of libraries passed in `dep_llvm` below should match what it was
 produced by the LLVM build from above.
 
 .. code-block:: sh
+
    #!/usr/bin/env bash
 
    set -exu
