@@ -6926,7 +6926,7 @@ fs_nir_emit_memory_access(nir_to_brw_state &ntb,
       srcs[MEMORY_LOGICAL_BINDING] =
          get_nir_buffer_intrinsic_index(ntb, bld, instr, &no_mask_handle);
       srcs[MEMORY_LOGICAL_ADDRESS] =
-         get_nir_src(ntb, instr->src[is_store ? 2 : 1]);
+         get_nir_src_imm(ntb, instr->src[is_store ? 2 : 1]);
 
       data_src = is_atomic ? 2 : 0;
       break;
@@ -7113,8 +7113,26 @@ fs_nir_emit_memory_access(nir_to_brw_state &ntb,
 
       const fs_builder ubld = bld.exec_all().group(1, 0);
       unsigned total, done;
+      unsigned first_read_component = 0;
 
       if (convergent_block_load) {
+         /* If the address is a constant and alignment permits, skip unread
+          * leading and trailing components.  (It's probably not worth the
+          * extra address math for non-constant addresses.)
+          *
+          * Note that SLM block loads on HDC platforms need to be 16B aligned.
+          */
+         if (srcs[MEMORY_LOGICAL_ADDRESS].file == IMM &&
+             align >= data_bit_size / 8 &&
+             (devinfo->has_lsc ||
+              srcs[MEMORY_LOGICAL_MODE].ud != MEMORY_MODE_SHARED_LOCAL)) {
+            first_read_component = nir_def_first_component_read(&instr->def);
+            unsigned last_component = nir_def_last_component_read(&instr->def);
+            srcs[MEMORY_LOGICAL_ADDRESS].u64 +=
+               first_read_component * (data_bit_size / 8);
+            components = last_component - first_read_component + 1;
+         }
+
          total = ALIGN(components, REG_SIZE * reg_unit(devinfo) / 4);
          dest = ubld.vgrf(BRW_TYPE_UD, total);
       } else {
@@ -7157,7 +7175,8 @@ fs_nir_emit_memory_access(nir_to_brw_state &ntb,
 
       if (convergent_block_load) {
          for (unsigned c = 0; c < components; c++) {
-            xbld.MOV(retype(offset(nir_dest, xbld, c), BRW_TYPE_UD),
+            xbld.MOV(retype(offset(nir_dest, xbld, first_read_component + c),
+                            BRW_TYPE_UD),
                      component(dest, c));
          }
       }
