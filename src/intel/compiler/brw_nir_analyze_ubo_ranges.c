@@ -276,16 +276,26 @@ brw_nir_analyze_ubo_ranges(const struct brw_compiler *compiler,
 
    struct ubo_range_entry *entries = ranges.data;
 
-   /* Return the top 4.
+   /* Return the top 4, limited to the maximum number of push registers.
     *
-    * The backend may need to shrink these ranges to ensure that they
-    * don't exceed the maximum push constant limits.  It can simply drop
-    * the tail of the list, as that's the least valuable portion.  We
-    * unfortunately can't truncate it here, because we don't know what
-    * the backend is planning to do with regular uniforms.
+    * The Vulkan driver sets up additional non-UBO push constants, so it may
+    * need to shrink these ranges further (see anv_nir_compute_push_layout.c).
+    * The OpenGL driver treats legacy uniforms as a UBO, so this is enough.
+    *
+    * To limit further, simply drop the tail of the list, as that's the least
+    * valuable portion.
     */
    const int max_ubos = 4;
    nr_entries = MIN2(nr_entries, max_ubos);
+
+   const unsigned max_push_regs = 64;
+   unsigned total_push_regs = 0;
+
+   for (unsigned i = 0; i < nr_entries; i++) {
+      if (total_push_regs + entries[i].range.length > max_push_regs)
+         entries[i].range.length = max_push_regs - total_push_regs;
+      total_push_regs += entries[i].range.length;
+   }
 
    for (int i = 0; i < nr_entries; i++) {
       out_ranges[i] = entries[i].range;
