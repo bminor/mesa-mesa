@@ -283,26 +283,6 @@ spec@ext_image_dma_buf_import@ext_image_dma_buf_import-refcount-multithread,Cras
 dEQP-VK.api.object_management.max_concurrent.device,Fail
 dEQP-VK.api.object_management.max_concurrent.device_group,Fail
 
-# CmdDispatchIndirect not supported yet
-dEQP-VK.compute.pipeline.indirect_dispatch.gen_in_compute.empty_command,Crash
-dEQP-VK.compute.pipeline.indirect_dispatch.gen_in_compute.large_offset,Crash
-dEQP-VK.compute.pipeline.indirect_dispatch.gen_in_compute.large_offset_multiple_invocations,Crash
-dEQP-VK.compute.pipeline.indirect_dispatch.gen_in_compute.multi_dispatch,Crash
-dEQP-VK.compute.pipeline.indirect_dispatch.gen_in_compute.multi_dispatch_reuse_command,Crash
-dEQP-VK.compute.pipeline.indirect_dispatch.gen_in_compute.multiple_groups,Crash
-dEQP-VK.compute.pipeline.indirect_dispatch.gen_in_compute.multiple_groups_multiple_invocations,Crash
-dEQP-VK.compute.pipeline.indirect_dispatch.gen_in_compute.single_invocation,Crash
-dEQP-VK.compute.pipeline.indirect_dispatch.gen_in_compute.small_offset,Crash
-dEQP-VK.compute.pipeline.indirect_dispatch.upload_buffer.empty_command,Crash
-dEQP-VK.compute.pipeline.indirect_dispatch.upload_buffer.large_offset,Crash
-dEQP-VK.compute.pipeline.indirect_dispatch.upload_buffer.large_offset_multiple_invocations,Crash
-dEQP-VK.compute.pipeline.indirect_dispatch.upload_buffer.multi_dispatch,Crash
-dEQP-VK.compute.pipeline.indirect_dispatch.upload_buffer.multi_dispatch_reuse_command,Crash
-dEQP-VK.compute.pipeline.indirect_dispatch.upload_buffer.multiple_groups,Crash
-dEQP-VK.compute.pipeline.indirect_dispatch.upload_buffer.multiple_groups_multiple_invocations,Crash
-dEQP-VK.compute.pipeline.indirect_dispatch.upload_buffer.single_invocation,Crash
-dEQP-VK.compute.pipeline.indirect_dispatch.upload_buffer.small_offset,Crash
-
 # CTS bug, see https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/5296
 dEQP-VK.api.device_init.create_device_unsupported_features.protected_memory_features,Fail
 

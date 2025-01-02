@@ -71,7 +71,7 @@ shaders@glsl-bug-110796
 
 dEQP-VK.dynamic_rendering.primary_cmd_buff.random.seed*
 
-# indirect dispatch and draw not supported yet
+# indirect draw not supported yet
 dEQP-VK.synchronization.*indirect*
 dEQP-VK.synchronization2.*indirect*
 dEQP-VK.draw.renderpass.indirect_draw.*
