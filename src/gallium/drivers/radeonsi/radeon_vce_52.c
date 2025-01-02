@@ -372,12 +372,10 @@ static void encode(struct rvce_encoder *enc)
       RVCE_CS(align(enc->luma->u.gfx9.surf_height, 16));          // encInputFrameYPitch
       RVCE_CS(enc->luma->u.gfx9.surf_pitch * enc->luma->bpe);     // encInputPicLumaPitch
       RVCE_CS(enc->chroma->u.gfx9.surf_pitch * enc->chroma->bpe); // encInputPicChromaPitch
+      enc->enc_pic.eo.enc_input_pic_swizzle_mode = enc->luma->u.gfx9.swizzle_mode;
    }
 
-   if (enc->dual_pipe)
-      enc->enc_pic.eo.enc_input_pic_addr_array_disable2pipe_disablemboffload = 0x00000000;
-   else
-      enc->enc_pic.eo.enc_input_pic_addr_array_disable2pipe_disablemboffload = 0x00010000;
+   enc->enc_pic.eo.enc_disable_two_pipe_mode = !enc->dual_pipe;
    RVCE_CS(enc->enc_pic.eo.enc_input_pic_addr_array_disable2pipe_disablemboffload);
    RVCE_CS(enc->enc_pic.eo.enc_input_pic_tile_config);
    RVCE_CS(enc->enc_pic.picture_type);                                    // encPicType

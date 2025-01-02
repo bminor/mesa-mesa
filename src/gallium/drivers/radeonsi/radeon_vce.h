@@ -173,8 +173,15 @@ struct rvce_enc_operation {
    uint32_t enc_input_pic_luma_pitch;
    uint32_t enc_input_pic_chroma_pitch;
    ;
-   uint32_t enc_input_pic_addr_array;
-   uint32_t enc_input_pic_addr_array_disable2pipe_disablemboffload;
+   union {
+      struct {
+         uint8_t enc_input_pic_addr_mode;
+         uint8_t enc_input_pic_swizzle_mode;
+         uint8_t enc_disable_two_pipe_mode;
+         uint8_t enc_disable_mb_offloading;
+      };
+      uint32_t enc_input_pic_addr_array_disable2pipe_disablemboffload;
+   };
    uint32_t enc_input_pic_tile_config;
    uint32_t enc_pic_type;
    uint32_t enc_idr_flag;
