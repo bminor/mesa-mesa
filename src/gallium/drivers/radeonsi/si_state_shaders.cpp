@@ -2816,9 +2816,16 @@ void si_ps_key_update_sample_shading(struct si_context *sctx)
 
    union si_shader_key *key = &sctx->shader.ps.key;
    unsigned ps_iter_samples = si_get_ps_iter_samples(sctx);
+   assert(ps_iter_samples <= MAX2(1, sctx->framebuffer.nr_color_samples));
 
    if (ps_iter_samples > 1 && sel->info.reads_samplemask) {
-      key->ps.part.prolog.samplemask_log_ps_iter = util_logbase2(ps_iter_samples);
+      /* Set samplemask_log_ps_iter=3 if full sample shading is enabled even for 2x and 4x MSAA
+       * to get the fast path that fully replaces sample_mask_in with sample_id.
+       */
+      if (ps_iter_samples == sctx->framebuffer.nr_color_samples)
+         key->ps.part.prolog.samplemask_log_ps_iter = 3;
+      else
+         key->ps.part.prolog.samplemask_log_ps_iter = util_logbase2(ps_iter_samples);
    } else {
       key->ps.part.prolog.samplemask_log_ps_iter = 0;
    }

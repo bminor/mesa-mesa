@@ -254,12 +254,19 @@ lower_ps_load_sample_mask_in(nir_builder *b, nir_intrinsic_instr *intrin, lower_
     * The samplemask loaded by hardware is always the coverage of the
     * entire pixel/fragment, so mask bits out based on the sample ID.
     */
-   uint32_t ps_iter_mask = ac_get_ps_iter_mask(s->options->ps_iter_samples);
-   nir_def *sampleid = nir_load_sample_id(b);
-   nir_def *submask = nir_ishl(b, nir_imm_int(b, ps_iter_mask), sampleid);
+   nir_def *replacement;
 
-   nir_def *sample_mask = nir_load_sample_mask_in(b);
-   nir_def *replacement = nir_iand(b, sample_mask, submask);
+   /* Set ps_iter_samples=8 if full sample shading is enabled even for 2x and 4x MSAA
+    * to get this fast path that fully replaces sample_mask_in with sample_id.
+    */
+   if (s->options->ps_iter_samples == 8) {
+      replacement = nir_bcsel(b, nir_load_helper_invocation(b, 1), nir_imm_int(b, 0),
+                              nir_ishl(b, nir_imm_int(b, 1), nir_load_sample_id(b)));
+   } else {
+      uint32_t ps_iter_mask = ac_get_ps_iter_mask(s->options->ps_iter_samples);
+      nir_def *submask = nir_ishl(b, nir_imm_int(b, ps_iter_mask), nir_load_sample_id(b));
+      replacement = nir_iand(b, nir_load_sample_mask_in(b), submask);
+   }
 
    nir_def_replace(&intrin->def, replacement);
    return true;

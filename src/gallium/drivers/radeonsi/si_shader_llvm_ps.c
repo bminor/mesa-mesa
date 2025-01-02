@@ -631,20 +631,29 @@ void si_llvm_build_ps_prolog(struct si_shader_context *ctx, union si_shader_part
     * entire pixel/fragment, so mask bits out based on the sample ID.
     */
    if (key->ps_prolog.states.samplemask_log_ps_iter) {
-      uint32_t ps_iter_mask =
-         ac_get_ps_iter_mask(1 << key->ps_prolog.states.samplemask_log_ps_iter);
-      LLVMValueRef sampleid = si_unpack_param(ctx, args->ac.ancillary, 8, 4);
-      LLVMValueRef samplemask = ac_get_arg(&ctx->ac, args->ac.sample_coverage);
+      LLVMValueRef sample_id = si_unpack_param(ctx, args->ac.ancillary, 8, 4);
+      LLVMValueRef sample_mask_in;
 
-      samplemask = ac_to_integer(&ctx->ac, samplemask);
-      samplemask =
-         LLVMBuildAnd(ctx->ac.builder, samplemask,
-                      LLVMBuildShl(ctx->ac.builder, LLVMConstInt(ctx->ac.i32, ps_iter_mask, false),
-                                   sampleid, ""),
-                      "");
-      samplemask = ac_to_float(&ctx->ac, samplemask);
+      /* Set samplemask_log_ps_iter=3 if full sample shading is enabled even for 2x and 4x MSAA
+       * to get this fast path that fully replaces sample_mask_in with sample_id.
+       */
+      if (key->ps_prolog.states.samplemask_log_ps_iter == 3) {
+         sample_mask_in =
+            LLVMBuildSelect(ctx->ac.builder, ac_build_load_helper_invocation(&ctx->ac),
+                            ctx->ac.i32_0,
+                            LLVMBuildShl(ctx->ac.builder, ctx->ac.i32_1, sample_id, ""), "");
+      } else {
+         uint32_t ps_iter_mask =
+            ac_get_ps_iter_mask(1 << key->ps_prolog.states.samplemask_log_ps_iter);
+         sample_mask_in =
+            LLVMBuildAnd(ctx->ac.builder,
+                         ac_to_integer(&ctx->ac, ac_get_arg(&ctx->ac, args->ac.sample_coverage)),
+                         LLVMBuildShl(ctx->ac.builder, LLVMConstInt(ctx->ac.i32, ps_iter_mask, false),
+                                      sample_id, ""), "");
+      }
 
-      ret = insert_ret_of_arg(ctx, ret, samplemask, args->ac.sample_coverage.arg_index);
+      sample_mask_in = ac_to_float(&ctx->ac, sample_mask_in);
+      ret = insert_ret_of_arg(ctx, ret, sample_mask_in, args->ac.sample_coverage.arg_index);
    }
 
    /* Tell LLVM to insert WQM instruction sequence when needed. */

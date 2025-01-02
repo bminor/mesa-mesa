@@ -2895,9 +2895,13 @@ static void si_fixup_spi_ps_input_config(struct si_shader *shader)
    if (!(shader->config.spi_ps_input_ena & 0x7f))
       shader->config.spi_ps_input_ena |= S_0286CC_LINEAR_CENTER_ENA(1);
 
-   /* Samplemask fixup requires the sample ID. */
+   /* The sample mask fixup requires the sample ID. */
    if (key->ps.part.prolog.samplemask_log_ps_iter)
       shader->config.spi_ps_input_ena |= S_0286CC_ANCILLARY_ENA(1);
+
+   /* The sample mask fixup has an optimization that replaces the sample mask with the sample ID. */
+   if (key->ps.part.prolog.samplemask_log_ps_iter == 3)
+      shader->config.spi_ps_input_ena &= C_0286CC_SAMPLE_COVERAGE_ENA;
 }
 
 static void

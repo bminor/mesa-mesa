@@ -11632,13 +11632,29 @@ overwrite_samplemask_arg(isel_context* ctx, const struct aco_ps_prolog_info* fin
       Temp ancillary = get_arg(ctx, ctx->args->ancillary);
       Temp sampleid = bld.vop3(aco_opcode::v_bfe_u32, bld.def(v1), ancillary, Operand::c32(8u),
                                Operand::c32(4u));
-      Temp samplemask = get_arg(ctx, ctx->args->sample_coverage);
+      Temp samplemask;
 
-      uint32_t ps_iter_mask = ac_get_ps_iter_mask(1 << finfo->samplemask_log_ps_iter);
-      Temp iter_mask = bld.copy(bld.def(v1), Operand::c32(ps_iter_mask));
+      if (finfo->samplemask_log_ps_iter == 3) {
+         Temp is_helper_invoc =
+            bld.pseudo(aco_opcode::p_is_helper, bld.def(bld.lm), Operand(exec, bld.lm));
+         ctx->program->needs_exact = true;
 
-      Temp mask = bld.vop2(aco_opcode::v_lshlrev_b32, bld.def(v1), sampleid, iter_mask);
-      samplemask = bld.vop2(aco_opcode::v_and_b32, bld.def(v1), samplemask, mask);
+         /* samplemask = is_helper ? 0 : (1 << sample_id); */
+         samplemask =
+            bld.vop2_e64(aco_opcode::v_lshlrev_b32, bld.def(v1), sampleid, Operand::c32(1u));
+         samplemask = bld.vop2_e64(aco_opcode::v_cndmask_b32, bld.def(v1), samplemask,
+                                   Operand::c32(0u), is_helper_invoc);
+      } else {
+         /* samplemask &= ps_iter_mask << sample_id; */
+         uint32_t ps_iter_mask = ac_get_ps_iter_mask(1 << finfo->samplemask_log_ps_iter);
+         Builder::Op mask = ctx->options->gfx_level >= GFX11
+                               ? Operand::c32(ps_iter_mask)
+                               : bld.copy(bld.def(v1), Operand::c32(ps_iter_mask));
+
+         samplemask = bld.vop2_e64(aco_opcode::v_lshlrev_b32, bld.def(v1), sampleid, mask);
+         samplemask = bld.vop2(aco_opcode::v_and_b32, bld.def(v1),
+                               get_arg(ctx, ctx->args->sample_coverage), samplemask);
+      }
 
       ctx->arg_temps[ctx->args->sample_coverage.arg_index] = samplemask;
    }
