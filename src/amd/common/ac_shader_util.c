@@ -664,11 +664,10 @@ uint16_t ac_get_ps_iter_mask(unsigned ps_iter_samples)
     * processing.
     */
    switch (ps_iter_samples) {
-   case 1: return 0xffff;
-   case 2: return 0x5555;
-   case 4: return 0x1111;
-   case 8: return 0x0101;
-   case 16: return 0x0001;
+   case 1: return 0xff;
+   case 2: return 0x55;
+   case 4: return 0x11;
+   case 8: return 0x01;
    default:
       unreachable("invalid sample count");
    }
