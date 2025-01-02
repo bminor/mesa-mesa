@@ -455,7 +455,6 @@ vlVaAcquireBufferHandle(VADriverContextP ctx, VABufferID buf_id,
          struct winsys_handle whandle;
 
          mtx_lock(&drv->mutex);
-         drv->pipe->flush(drv->pipe, NULL, 0);
 
          memset(&whandle, 0, sizeof(whandle));
          whandle.type = WINSYS_HANDLE_TYPE_FD;
