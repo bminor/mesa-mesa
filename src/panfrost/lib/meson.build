@@ -37,17 +37,6 @@ foreach ver : ['4', '5', '6', '7', '9', '10', '12', '13']
   )
 endforeach
 
-foreach ver : ['7']
-  libpanfrost_per_arch += static_library(
-    'pan-arch-indirect-v' + ver,
-    'pan_indirect_dispatch.c',
-    include_directories : [inc_include, inc_src, inc_panfrost],
-    c_args : ['-DPAN_ARCH=' + ver],
-    gnu_symbol_visibility : 'hidden',
-    dependencies : [deps_for_libpanfrost, idep_nir],
-  )
-endforeach
-
 libpanfrost_lib_files = files(
   'pan_encoder.h',
 

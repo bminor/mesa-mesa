@@ -41,7 +41,6 @@
 #include "panfrost/util/pan_ir.h"
 #include "pan_blend_cso.h"
 #include "pan_fb_preload.h"
-#include "pan_indirect_dispatch.h"
 #include "pan_pool.h"
 #include "pan_props.h"
 #include "pan_util.h"
@@ -155,7 +154,6 @@ struct panfrost_device {
 
    struct pan_fb_preload_cache fb_preload_cache;
    struct pan_blend_shader_cache blend_shaders;
-   struct pan_indirect_dispatch_meta indirect_dispatch;
 
    /* Tiler heap shared across all tiler jobs, allocated against the
     * device since there's only a single tiler. Since this is invisible to
