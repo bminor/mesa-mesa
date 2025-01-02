@@ -324,6 +324,7 @@ print_memory_logical_source(FILE *file, const fs_inst *inst, unsigned i)
          [MEMORY_MODE_UNTYPED]      = "untyped",
          [MEMORY_MODE_SHARED_LOCAL] = "shared",
          [MEMORY_MODE_SCRATCH]      = "scratch",
+         [MEMORY_MODE_CONSTANT]     = "const",
       };
       assert(inst->src[i].ud < ARRAY_SIZE(modes));
       fprintf(file, " %s", modes[inst->src[i].ud]);

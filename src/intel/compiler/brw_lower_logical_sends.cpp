@@ -1531,6 +1531,7 @@ lower_lsc_memory_logical_send(const fs_builder &bld, fs_inst *inst)
 
    switch (mode) {
    case MEMORY_MODE_UNTYPED:
+   case MEMORY_MODE_CONSTANT:
    case MEMORY_MODE_SCRATCH:
       inst->sfid = GFX12_SFID_UGM;
       break;
@@ -1780,6 +1781,11 @@ lower_hdc_memory_logical_send(const fs_builder &bld, fs_inst *inst)
          desc = brw_dp_typed_surface_rw_desc(devinfo, inst->exec_size,
                                              inst->group, components, !has_dest);
       }
+   } else if (mode == MEMORY_MODE_CONSTANT) {
+      assert(block); /* non-block loads not yet handled */
+
+      sfid = GFX6_SFID_DATAPORT_CONSTANT_CACHE;
+      desc = brw_dp_oword_block_rw_desc(devinfo, false, components, !has_dest);
    } else if (addr_size == LSC_ADDR_SIZE_A64) {
       assert(binding_type == LSC_ADDR_SURFTYPE_FLAT);
       assert(!dword_scattered);

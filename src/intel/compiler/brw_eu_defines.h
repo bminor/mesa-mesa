@@ -643,6 +643,7 @@ enum memory_logical_mode {
    MEMORY_MODE_UNTYPED,
    MEMORY_MODE_SHARED_LOCAL,
    MEMORY_MODE_SCRATCH,
+   MEMORY_MODE_CONSTANT,
 };
 
 enum memory_logical_srcs {
