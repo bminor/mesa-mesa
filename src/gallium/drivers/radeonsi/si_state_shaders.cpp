@@ -2811,15 +2811,17 @@ void si_ps_key_update_dsa(struct si_context *sctx)
 void si_ps_key_update_sample_shading(struct si_context *sctx)
 {
    struct si_shader_selector *sel = sctx->shader.ps.cso;
-   union si_shader_key *key = &sctx->shader.ps.key;
-
    if (!sel)
       return;
 
-   if (sctx->ps_iter_samples > 1 && sel->info.reads_samplemask)
-      key->ps.part.prolog.samplemask_log_ps_iter = util_logbase2(sctx->ps_iter_samples);
-   else
+   union si_shader_key *key = &sctx->shader.ps.key;
+   unsigned ps_iter_samples = si_get_ps_iter_samples(sctx);
+
+   if (ps_iter_samples > 1 && sel->info.reads_samplemask) {
+      key->ps.part.prolog.samplemask_log_ps_iter = util_logbase2(ps_iter_samples);
+   } else {
       key->ps.part.prolog.samplemask_log_ps_iter = 0;
+   }
 }
 
 void si_ps_key_update_framebuffer_rasterizer_sample_shading(struct si_context *sctx)

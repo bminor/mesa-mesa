@@ -671,7 +671,7 @@ struct si_ps_prolog_bits {
    unsigned force_linear_center_interp : 1;
    unsigned bc_optimize_for_persp : 1;
    unsigned bc_optimize_for_linear : 1;
-   unsigned samplemask_log_ps_iter : 3;
+   unsigned samplemask_log_ps_iter : 2;
 };
 
 /* Common PS bits between the shader key and the epilog key. */

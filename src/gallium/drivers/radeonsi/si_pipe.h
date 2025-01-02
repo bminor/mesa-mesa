@@ -1140,7 +1140,8 @@ struct si_context {
    struct si_resource *last_const_upload_buffer;
 
    /* MSAA config state. */
-   int ps_iter_samples;
+   uint8_t ps_iter_samples;
+   uint8_t last_ps_iter_samples;
    bool ps_uses_fbfetch;
    bool smoothing_enabled;
 

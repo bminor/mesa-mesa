@@ -2786,6 +2786,7 @@ static void si_set_framebuffer_state(struct pipe_context *ctx,
    si_ps_key_update_framebuffer(sctx);
    si_ps_key_update_framebuffer_blend_dsa_rasterizer(sctx);
    si_ps_key_update_framebuffer_rasterizer_sample_shading(sctx);
+   si_ps_key_update_sample_shading(sctx);
    si_vs_ps_key_update_rast_prim_smooth_stipple(sctx);
    si_update_ps_inputs_read_or_disabled(sctx);
    si_update_vrs_flat_shading(sctx);
@@ -3607,6 +3608,11 @@ static void si_emit_msaa_config(struct si_context *sctx, unsigned index)
 
 void si_update_ps_iter_samples(struct si_context *sctx)
 {
+   if (sctx->ps_iter_samples == sctx->last_ps_iter_samples)
+      return;
+
+   sctx->last_ps_iter_samples = sctx->ps_iter_samples;
+   si_ps_key_update_sample_shading(sctx);
    if (sctx->framebuffer.nr_samples > 1)
       si_mark_atom_dirty(sctx, &sctx->atoms.s.msaa_config);
    if (sctx->screen->dpbb_allowed)
@@ -3625,7 +3631,6 @@ static void si_set_min_samples(struct pipe_context *ctx, unsigned min_samples)
 
    sctx->ps_iter_samples = min_samples;
 
-   si_ps_key_update_sample_shading(sctx);
    si_ps_key_update_framebuffer_rasterizer_sample_shading(sctx);
    sctx->do_update_shaders = true;
 

@@ -3307,7 +3307,8 @@ static void si_get_ps_prolog_key(struct si_shader *shader, union si_shader_part_
        key->ps_prolog.states.force_linear_sample_interp ||
        key->ps_prolog.states.force_persp_center_interp ||
        key->ps_prolog.states.force_linear_center_interp ||
-       key->ps_prolog.states.bc_optimize_for_persp || key->ps_prolog.states.bc_optimize_for_linear);
+       key->ps_prolog.states.bc_optimize_for_persp || key->ps_prolog.states.bc_optimize_for_linear ||
+       key->ps_prolog.states.samplemask_log_ps_iter);
    key->ps_prolog.num_fragcoord_components = shader->info.num_fragcoord_components;
 
    if (shader->key.ps.part.prolog.poly_stipple)
