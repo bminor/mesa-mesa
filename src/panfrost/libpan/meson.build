@@ -4,6 +4,7 @@
 
 libpan_shader_files = files(
   'query_pool.cl',
+  'indirect_dispatch.cl',
 )
 
 idep_libpan_per_arch = {}
