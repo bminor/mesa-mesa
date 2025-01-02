@@ -376,7 +376,6 @@ typedef struct {
    VABufferInfo export_state;
    unsigned int coded_size;
    struct pipe_enc_feedback_metadata extended_metadata;
-   struct pipe_video_buffer *derived_image_buffer;
    void *feedback;
    struct vlVaContext *ctx;
    struct vlVaSurface *coded_surf;
