@@ -462,6 +462,159 @@ etna_screen_get_shader_param(struct pipe_screen *pscreen,
    return 0;
 }
 
+static void
+etna_init_screen_caps(struct etna_screen *screen)
+{
+   struct pipe_caps *caps = (struct pipe_caps *)&screen->base.caps;
+
+   u_init_pipe_screen_caps(&screen->base, 1);
+
+   /* Supported features (boolean caps). */
+   caps->blend_equation_separate = true;
+   caps->fs_coord_origin_upper_left = true;
+   caps->fs_coord_pixel_center_half_integer = true;
+   caps->fragment_shader_texture_lod = true;
+   caps->fragment_shader_derivatives = true;
+   caps->texture_barrier = true;
+   caps->quads_follow_provoking_vertex_convention = true;
+   caps->tgsi_texcoord = true;
+   caps->vertex_color_unclamped = true;
+   caps->mixed_color_depth_bits = true;
+   caps->mixed_framebuffer_sizes = true;
+   caps->string_marker = true;
+   caps->frontend_noop = true;
+   caps->framebuffer_no_attachment = true;
+   caps->vertex_input_alignment = PIPE_VERTEX_INPUT_ALIGNMENT_4BYTE;
+   caps->native_fence_fd = screen->drm_version >= ETNA_DRM_VERSION_FENCE_FD;
+   caps->fs_position_is_sysval = true;
+   caps->fs_face_is_integer_sysval = true; /* note: not integer */
+   caps->fs_point_is_sysval = false;
+
+   /* Memory */
+   caps->constant_buffer_offset_alignment = 256;
+   caps->min_map_buffer_alignment = 4096;
+
+   caps->npot_textures = true; /* VIV_FEATURE(priv->dev, chipMinorFeatures1, NON_POWER_OF_TWO); */
+
+   caps->anisotropic_filter =
+   caps->texture_swizzle =
+   caps->primitive_restart =
+   caps->primitive_restart_fixed_index = VIV_FEATURE(screen, ETNA_FEATURE_HALTI0);
+
+   caps->alpha_test = !VIV_FEATURE(screen, ETNA_FEATURE_PE_NO_ALPHA_TEST);
+
+   caps->draw_indirect = VIV_FEATURE(screen, ETNA_FEATURE_HALTI5);
+
+   /* Unsupported features. */
+   caps->texture_buffer_offset_alignment = false;
+   caps->texrect = false;
+
+   /* Stream output. */
+   caps->max_stream_output_buffers = DBG_ENABLED(ETNA_DBG_DEQP) ? 4 : 0;
+   caps->max_stream_output_separate_components = 0;
+   caps->max_stream_output_interleaved_components = 0;
+
+   caps->max_vertex_attrib_stride = 128;
+   caps->max_vertex_element_src_offset = 255;
+   caps->max_vertex_buffers = screen->info->gpu.stream_count;
+   caps->vs_instanceid =
+   caps->vertex_element_instance_divisor = VIV_FEATURE(screen, ETNA_FEATURE_HALTI2);
+
+
+   /* Texturing. */
+   caps->texture_half_float_linear = VIV_FEATURE(screen, ETNA_FEATURE_HALF_FLOAT);
+   caps->texture_shadow_map = true;
+   caps->max_texture_2d_size = screen->specs.max_texture_size;
+   caps->max_texture_array_layers =
+      screen->info->halti >= 0 ? screen->specs.max_texture_size : 0; /* TODO: verify */
+   unsigned log2_max_tex_size = util_last_bit(screen->specs.max_texture_size);
+   assert(log2_max_tex_size > 0);
+   caps->max_texture_3d_levels = screen->info->halti < 0 ? 0 : log2_max_tex_size;
+   caps->max_texture_cube_levels = log2_max_tex_size;
+
+   caps->min_texture_gather_offset =
+   caps->min_texel_offset = -8;
+   caps->max_texture_gather_offset =
+   caps->max_texel_offset = 7;
+   caps->seamless_cube_map_per_texture = screen->specs.seamless_cube_map;
+
+   /* Render targets. */
+   caps->max_render_targets = VIV_FEATURE(screen, ETNA_FEATURE_HALTI2) ?
+      /* If the GPU supports float formats we need to reserve half of
+       * the available render targets for emulation proposes.
+       */
+      screen->specs.num_rts / 2 :
+      screen->specs.num_rts;
+   caps->indep_blend_enable =
+   caps->indep_blend_func = screen->info->halti >= 5;
+
+   /* Queries. */
+   caps->occlusion_query =
+   caps->conditional_render =
+   caps->conditional_render_inverted = VIV_FEATURE(screen, ETNA_FEATURE_HALTI0);
+
+   /* Preferences */
+   caps->texture_transfer_modes = 0;
+   /* etnaviv is being run on systems as small as 256MB total RAM so
+    * we need to provide a sane value for such a device. Limit the
+    * memory budget to min(~3% of pyhiscal memory, 64MB).
+    *
+    * a simple divison by 32 provides the numbers we want.
+    *    256MB / 32 =  8MB
+    *   2048MB / 32 = 64MB
+    */
+   uint64_t system_memory;
+   if (!os_get_total_physical_memory(&system_memory))
+      system_memory = (uint64_t)4096 << 20;
+   caps->max_texture_upload_memory_budget = MIN2(system_memory / 32, 64 * 1024 * 1024);
+
+   caps->max_varyings = screen->specs.max_varyings;
+
+   /* Generate the bitmask of supported draw primitives. */
+   uint32_t modes = 1 << MESA_PRIM_POINTS |
+      1 << MESA_PRIM_LINES |
+      1 << MESA_PRIM_LINE_STRIP |
+      1 << MESA_PRIM_TRIANGLES |
+      1 << MESA_PRIM_TRIANGLE_FAN;
+
+   /* TODO: The bug relates only to indexed draws, but here we signal
+    * that there is no support for triangle strips at all. This should
+    * be refined.
+    */
+   if (VIV_FEATURE(screen, ETNA_FEATURE_BUG_FIXES8))
+      modes |= 1 << MESA_PRIM_TRIANGLE_STRIP;
+
+   if (VIV_FEATURE(screen, ETNA_FEATURE_LINE_LOOP))
+      modes |= 1 << MESA_PRIM_LINE_LOOP;
+
+   caps->supported_prim_modes =
+   caps->supported_prim_modes_with_restart = modes;
+
+   caps->pci_group =
+   caps->pci_bus =
+   caps->pci_device =
+   caps->pci_function = 0;
+   caps->video_memory = 0;
+   caps->uma = true;
+   caps->graphics = !VIV_FEATURE(screen, ETNA_FEATURE_COMPUTE_ONLY);
+
+   caps->min_line_width =
+   caps->min_line_width_aa =
+   caps->min_point_size =
+   caps->min_point_size_aa = 1;
+
+   caps->point_size_granularity =
+   caps->line_width_granularity = 0.1;
+
+   caps->max_line_width =
+   caps->max_line_width_aa =
+   caps->max_point_size =
+   caps->max_point_size_aa = 8192.0f;
+
+   caps->max_texture_anisotropy = 16.0f;
+   caps->max_texture_lod_bias = util_last_bit(screen->specs.max_texture_size);
+}
+
 static bool
 gpu_supports_texture_target(struct etna_screen *screen,
                             enum pipe_texture_target target)
@@ -1157,6 +1310,8 @@ etna_screen_create(struct etna_device *dev, struct etna_gpu *gpu,
    etna_fence_screen_init(pscreen);
    etna_query_screen_init(pscreen);
    etna_resource_screen_init(pscreen);
+
+   etna_init_screen_caps(screen);
 
    util_dynarray_init(&screen->supported_pm_queries, NULL);
    slab_create_parent(&screen->transfer_pool, sizeof(struct etna_transfer), 16);
