@@ -4,7 +4,7 @@
         "description": "aco/insert_exec: reset top exec for p_discard_if",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 3,
         "main_sha": null,
         "because_sha": "31f62a6123d46311bed7a54dc10e518bbe4c5f8d",
         "notes": null
