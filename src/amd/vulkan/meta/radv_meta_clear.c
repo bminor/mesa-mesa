@@ -55,6 +55,20 @@ build_color_shaders(struct radv_device *dev, struct nir_shader **out_vs, struct 
 }
 
 static VkResult
+get_color_pipeline_layout(struct radv_device *device, VkPipelineLayout *layout_out)
+{
+   const char *key_data = "radv-clear-color";
+
+   const VkPushConstantRange pc_range = {
+      .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+      .size = 16,
+   };
+
+   return vk_meta_get_pipeline_layout(&device->vk, &device->meta_state.device, NULL, &pc_range, key_data,
+                                      strlen(key_data), layout_out);
+}
+
+static VkResult
 get_color_pipeline(struct radv_device *device, uint32_t samples, uint32_t frag_output, VkFormat format,
                    VkPipeline *pipeline_out, VkPipelineLayout *layout_out)
 {
@@ -62,17 +76,11 @@ get_color_pipeline(struct radv_device *device, uint32_t samples, uint32_t frag_o
    char key_data[64];
    VkResult result;
 
-   snprintf(key_data, sizeof(key_data), "radv-clear-color-%d-%d-%d", samples, frag_output, fs_key);
-
-   const VkPushConstantRange pc_range = {
-      .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
-      .size = 16,
-   };
-
-   result = vk_meta_get_pipeline_layout(&device->vk, &device->meta_state.device, NULL, &pc_range, key_data,
-                                        strlen(key_data), layout_out);
+   result = get_color_pipeline_layout(device, layout_out);
    if (result != VK_SUCCESS)
       return result;
+
+   snprintf(key_data, sizeof(key_data), "radv-clear-color-%d-%d-%d", samples, frag_output, fs_key);
 
    VkPipeline pipeline_from_cache = vk_meta_lookup_pipeline(&device->meta_state.device, key_data, strlen(key_data));
    if (pipeline_from_cache != VK_NULL_HANDLE) {
@@ -310,6 +318,22 @@ static bool radv_can_fast_clear_depth(struct radv_cmd_buffer *cmd_buffer, const 
                                       uint32_t view_mask);
 
 static VkResult
+get_depth_stencil_pipeline_layout(struct radv_device *device, bool unrestricted, VkPipelineLayout *layout_out)
+{
+   char key_data[64];
+
+   snprintf(key_data, sizeof(key_data), "radv-clear-ds-%d", unrestricted);
+
+   const VkPushConstantRange pc_range = {
+      .stageFlags = unrestricted ? VK_SHADER_STAGE_FRAGMENT_BIT : VK_SHADER_STAGE_VERTEX_BIT,
+      .size = 4,
+   };
+
+   return vk_meta_get_pipeline_layout(&device->vk, &device->meta_state.device, NULL, &pc_range, key_data,
+                                      strlen(key_data), layout_out);
+}
+
+static VkResult
 get_depth_stencil_pipeline(struct radv_device *device, int samples, VkImageAspectFlags aspects, bool fast,
                            VkPipeline *pipeline_out, VkPipelineLayout *layout_out)
 {
@@ -317,17 +341,11 @@ get_depth_stencil_pipeline(struct radv_device *device, int samples, VkImageAspec
    char key_data[64];
    VkResult result;
 
-   snprintf(key_data, sizeof(key_data), "radv-clear-ds-%d-%d-%d-%d", aspects, samples, fast, unrestricted);
-
-   const VkPushConstantRange pc_range = {
-      .stageFlags = unrestricted ? VK_SHADER_STAGE_FRAGMENT_BIT : VK_SHADER_STAGE_VERTEX_BIT,
-      .size = 4,
-   };
-
-   result = vk_meta_get_pipeline_layout(&device->vk, &device->meta_state.device, NULL, &pc_range, key_data,
-                                        strlen(key_data), layout_out);
+   result = get_depth_stencil_pipeline_layout(device, unrestricted, layout_out);
    if (result != VK_SUCCESS)
       return result;
+
+   snprintf(key_data, sizeof(key_data), "radv-clear-ds-%d-%d-%d-%d", aspects, samples, fast, unrestricted);
 
    VkPipeline pipeline_from_cache = vk_meta_lookup_pipeline(&device->meta_state.device, key_data, strlen(key_data));
    if (pipeline_from_cache != VK_NULL_HANDLE) {
@@ -1013,13 +1031,9 @@ radv_clear_dcc(struct radv_cmd_buffer *cmd_buffer, struct radv_image *image, con
 }
 
 static VkResult
-get_clear_dcc_comp_to_single_pipeline(struct radv_device *device, bool is_msaa, VkPipeline *pipeline_out,
-                                      VkPipelineLayout *layout_out)
+get_clear_dcc_comp_to_single_pipeline_layout(struct radv_device *device, VkPipelineLayout *layout_out)
 {
-   char key_data[64];
-   VkResult result;
-
-   snprintf(key_data, sizeof(key_data), "radv-clear-dcc-comp-to-single-%d", is_msaa);
+   const char *key_data = "radv-clear-dcc-comp-to-single";
 
    const VkDescriptorSetLayoutBinding binding = {
       .binding = 0,
@@ -1040,10 +1054,22 @@ get_clear_dcc_comp_to_single_pipeline(struct radv_device *device, bool is_msaa, 
       .size = 24,
    };
 
-   result = vk_meta_get_pipeline_layout(&device->vk, &device->meta_state.device, &desc_info, &pc_range, key_data,
-                                        strlen(key_data), layout_out);
+   return vk_meta_get_pipeline_layout(&device->vk, &device->meta_state.device, &desc_info, &pc_range, key_data,
+                                      strlen(key_data), layout_out);
+}
+
+static VkResult
+get_clear_dcc_comp_to_single_pipeline(struct radv_device *device, bool is_msaa, VkPipeline *pipeline_out,
+                                      VkPipelineLayout *layout_out)
+{
+   char key_data[64];
+   VkResult result;
+
+   result = get_clear_dcc_comp_to_single_pipeline_layout(device, layout_out);
    if (result != VK_SUCCESS)
       return result;
+
+   snprintf(key_data, sizeof(key_data), "radv-clear-dcc-comp-to-single-%d", is_msaa);
 
    VkPipeline pipeline_from_cache = vk_meta_lookup_pipeline(&device->meta_state.device, key_data, strlen(key_data));
    if (pipeline_from_cache != VK_NULL_HANDLE) {

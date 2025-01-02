@@ -59,23 +59,10 @@ build_dcc_retile_compute_shader(struct radv_device *dev, struct radeon_surf *sur
    return b.shader;
 }
 
-/*
- * This take a surface, but the only things used are:
- * - BPE
- * - DCC equations
- * - DCC block size
- *
- * BPE is always 4 at the moment and the rest is derived from the tilemode.
- */
 static VkResult
-get_pipeline(struct radv_device *device, struct radv_image *image, VkPipeline *pipeline_out,
-             VkPipelineLayout *layout_out)
+get_pipeline_layout(struct radv_device *device, VkPipelineLayout *layout_out)
 {
-   const unsigned swizzle_mode = image->planes[0].surface.u.gfx9.swizzle_mode;
-   char key_data[64];
-   VkResult result;
-
-   snprintf(key_data, sizeof(key_data), "radv-dcc-retile-%d", swizzle_mode);
+   const char *key_data = "radv-dcc-retile";
 
    const VkDescriptorSetLayoutBinding bindings[] = {
       {
@@ -105,10 +92,31 @@ get_pipeline(struct radv_device *device, struct radv_image *image, VkPipeline *p
       .size = 16,
    };
 
-   result = vk_meta_get_pipeline_layout(&device->vk, &device->meta_state.device, &desc_info, &pc_range, key_data,
-                                        strlen(key_data), layout_out);
+   return vk_meta_get_pipeline_layout(&device->vk, &device->meta_state.device, &desc_info, &pc_range, key_data,
+                                      strlen(key_data), layout_out);
+}
+
+/*
+ * This take a surface, but the only things used are:
+ * - BPE
+ * - DCC equations
+ * - DCC block size
+ *
+ * BPE is always 4 at the moment and the rest is derived from the tilemode.
+ */
+static VkResult
+get_pipeline(struct radv_device *device, struct radv_image *image, VkPipeline *pipeline_out,
+             VkPipelineLayout *layout_out)
+{
+   const unsigned swizzle_mode = image->planes[0].surface.u.gfx9.swizzle_mode;
+   char key_data[64];
+   VkResult result;
+
+   result = get_pipeline_layout(device, layout_out);
    if (result != VK_SUCCESS)
       return result;
+
+   snprintf(key_data, sizeof(key_data), "radv-dcc-retile-%d", swizzle_mode);
 
    VkPipeline pipeline_from_cache = vk_meta_lookup_pipeline(&device->meta_state.device, key_data, strlen(key_data));
    if (pipeline_from_cache != VK_NULL_HANDLE) {

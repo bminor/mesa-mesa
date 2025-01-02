@@ -56,14 +56,9 @@ build_nir_itob_compute_shader(struct radv_device *dev, bool is_3d)
 }
 
 static VkResult
-get_itob_pipeline(struct radv_device *device, const struct radv_image *image, VkPipeline *pipeline_out,
-                  VkPipelineLayout *layout_out)
+get_itob_pipeline_layout(struct radv_device *device, VkPipelineLayout *layout_out)
 {
-   const bool is_3d = image->vk.image_type == VK_IMAGE_TYPE_3D;
-   char key_data[64];
-   VkResult result;
-
-   snprintf(key_data, sizeof(key_data), "radv-itob-%d", is_3d);
+   const char *key_data = "radv-itob";
 
    const VkDescriptorSetLayoutBinding bindings[] = {
       {
@@ -92,10 +87,23 @@ get_itob_pipeline(struct radv_device *device, const struct radv_image *image, Vk
       .size = 16,
    };
 
-   result = vk_meta_get_pipeline_layout(&device->vk, &device->meta_state.device, &desc_info, &pc_range, key_data,
-                                        strlen(key_data), layout_out);
+   return vk_meta_get_pipeline_layout(&device->vk, &device->meta_state.device, &desc_info, &pc_range, key_data,
+                                      strlen(key_data), layout_out);
+}
+
+static VkResult
+get_itob_pipeline(struct radv_device *device, const struct radv_image *image, VkPipeline *pipeline_out,
+                  VkPipelineLayout *layout_out)
+{
+   const bool is_3d = image->vk.image_type == VK_IMAGE_TYPE_3D;
+   char key_data[64];
+   VkResult result;
+
+   result = get_itob_pipeline_layout(device, layout_out);
    if (result != VK_SUCCESS)
       return result;
+
+   snprintf(key_data, sizeof(key_data), "radv-itob-%d", is_3d);
 
    VkPipeline pipeline_from_cache = vk_meta_lookup_pipeline(&device->meta_state.device, key_data, strlen(key_data));
    if (pipeline_from_cache != VK_NULL_HANDLE) {
@@ -168,14 +176,9 @@ build_nir_btoi_compute_shader(struct radv_device *dev, bool is_3d)
 }
 
 static VkResult
-get_btoi_pipeline(struct radv_device *device, const struct radv_image *image, VkPipeline *pipeline_out,
-                  VkPipelineLayout *layout_out)
+get_btoi_pipeline_layout(struct radv_device *device, VkPipelineLayout *layout_out)
 {
-   const bool is_3d = image->vk.image_type == VK_IMAGE_TYPE_3D;
-   char key_data[64];
-   VkResult result;
-
-   snprintf(key_data, sizeof(key_data), "radv-btoi-%d", is_3d);
+   const char *key_data = "radv-btoi";
 
    const VkDescriptorSetLayoutBinding bindings[] = {
       {
@@ -204,10 +207,23 @@ get_btoi_pipeline(struct radv_device *device, const struct radv_image *image, Vk
       .size = 16,
    };
 
-   result = vk_meta_get_pipeline_layout(&device->vk, &device->meta_state.device, &desc_info, &pc_range, key_data,
-                                        strlen(key_data), layout_out);
+   return vk_meta_get_pipeline_layout(&device->vk, &device->meta_state.device, &desc_info, &pc_range, key_data,
+                                      strlen(key_data), layout_out);
+}
+
+static VkResult
+get_btoi_pipeline(struct radv_device *device, const struct radv_image *image, VkPipeline *pipeline_out,
+                  VkPipelineLayout *layout_out)
+{
+   const bool is_3d = image->vk.image_type == VK_IMAGE_TYPE_3D;
+   char key_data[64];
+   VkResult result;
+
+   result = get_btoi_pipeline_layout(device, layout_out);
    if (result != VK_SUCCESS)
       return result;
+
+   snprintf(key_data, sizeof(key_data), "radv-btoi-%d", is_3d);
 
    VkPipeline pipeline_from_cache = vk_meta_lookup_pipeline(&device->meta_state.device, key_data, strlen(key_data));
    if (pipeline_from_cache != VK_NULL_HANDLE) {
@@ -410,16 +426,9 @@ build_nir_itoi_compute_shader(struct radv_device *dev, bool src_3d, bool dst_3d,
 }
 
 static VkResult
-get_itoi_pipeline(struct radv_device *device, const struct radv_image *src_image, const struct radv_image *dst_image,
-                  int samples, VkPipeline *pipeline_out, VkPipelineLayout *layout_out)
+get_itoi_pipeline_layout(struct radv_device *device, VkPipelineLayout *layout_out)
 {
-   const bool src_3d = src_image->vk.image_type == VK_IMAGE_TYPE_3D;
-   const bool dst_3d = dst_image->vk.image_type == VK_IMAGE_TYPE_3D;
-   const uint32_t samples_log2 = ffs(samples) - 1;
-   VkResult result;
-   char key_data[64];
-
-   snprintf(key_data, sizeof(key_data), "radv-itoi-%d-%d-%d", src_3d, dst_3d, samples_log2);
+   const char *key_data = "radv-itoi";
 
    const VkDescriptorSetLayoutBinding bindings[] = {
       {
@@ -448,10 +457,25 @@ get_itoi_pipeline(struct radv_device *device, const struct radv_image *src_image
       .size = 24,
    };
 
-   result = vk_meta_get_pipeline_layout(&device->vk, &device->meta_state.device, &desc_info, &pc_range, key_data,
-                                        strlen(key_data), layout_out);
+   return vk_meta_get_pipeline_layout(&device->vk, &device->meta_state.device, &desc_info, &pc_range, key_data,
+                                      strlen(key_data), layout_out);
+}
+
+static VkResult
+get_itoi_pipeline(struct radv_device *device, const struct radv_image *src_image, const struct radv_image *dst_image,
+                  int samples, VkPipeline *pipeline_out, VkPipelineLayout *layout_out)
+{
+   const bool src_3d = src_image->vk.image_type == VK_IMAGE_TYPE_3D;
+   const bool dst_3d = dst_image->vk.image_type == VK_IMAGE_TYPE_3D;
+   const uint32_t samples_log2 = ffs(samples) - 1;
+   VkResult result;
+   char key_data[64];
+
+   result = get_itoi_pipeline_layout(device, layout_out);
    if (result != VK_SUCCESS)
       return result;
+
+   snprintf(key_data, sizeof(key_data), "radv-itoi-%d-%d-%d", src_3d, dst_3d, samples_log2);
 
    VkPipeline pipeline_from_cache = vk_meta_lookup_pipeline(&device->meta_state.device, key_data, strlen(key_data));
    if (pipeline_from_cache != VK_NULL_HANDLE) {
@@ -639,16 +663,9 @@ build_nir_cleari_compute_shader(struct radv_device *dev, bool is_3d, int samples
 }
 
 static VkResult
-get_cleari_pipeline(struct radv_device *device, const struct radv_image *image, VkPipeline *pipeline_out,
-                    VkPipelineLayout *layout_out)
+get_cleari_pipeline_layout(struct radv_device *device, VkPipelineLayout *layout_out)
 {
-   const bool is_3d = image->vk.image_type == VK_IMAGE_TYPE_3D;
-   const uint32_t samples = image->vk.samples;
-   const uint32_t samples_log2 = ffs(samples) - 1;
-   char key_data[64];
-   VkResult result;
-
-   snprintf(key_data, sizeof(key_data), "radv-cleari-%d-%d", is_3d, samples_log2);
+   const char *key_data = "radv-cleari";
 
    const VkDescriptorSetLayoutBinding binding = {
       .binding = 0,
@@ -669,10 +686,25 @@ get_cleari_pipeline(struct radv_device *device, const struct radv_image *image, 
       .size = 20,
    };
 
-   result = vk_meta_get_pipeline_layout(&device->vk, &device->meta_state.device, &desc_info, &pc_range, key_data,
-                                        strlen(key_data), layout_out);
+   return vk_meta_get_pipeline_layout(&device->vk, &device->meta_state.device, &desc_info, &pc_range, key_data,
+                                      strlen(key_data), layout_out);
+}
+
+static VkResult
+get_cleari_pipeline(struct radv_device *device, const struct radv_image *image, VkPipeline *pipeline_out,
+                    VkPipelineLayout *layout_out)
+{
+   const bool is_3d = image->vk.image_type == VK_IMAGE_TYPE_3D;
+   const uint32_t samples = image->vk.samples;
+   const uint32_t samples_log2 = ffs(samples) - 1;
+   char key_data[64];
+   VkResult result;
+
+   result = get_cleari_pipeline_layout(device, layout_out);
    if (result != VK_SUCCESS)
       return result;
+
+   snprintf(key_data, sizeof(key_data), "radv-cleari-%d-%d", is_3d, samples_log2);
 
    VkPipeline pipeline_from_cache = vk_meta_lookup_pipeline(&device->meta_state.device, key_data, strlen(key_data));
    if (pipeline_from_cache != VK_NULL_HANDLE) {

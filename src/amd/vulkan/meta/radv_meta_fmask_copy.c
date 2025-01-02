@@ -83,13 +83,9 @@ build_fmask_copy_compute_shader(struct radv_device *dev, int samples)
 }
 
 static VkResult
-get_pipeline(struct radv_device *device, uint32_t samples_log2, VkPipeline *pipeline_out, VkPipelineLayout *layout_out)
+get_pipeline_layout(struct radv_device *device, VkPipelineLayout *layout_out)
 {
-   const uint32_t samples = 1 << samples_log2;
-   char key_data[64];
-   VkResult result;
-
-   snprintf(key_data, sizeof(key_data), "radv-fmask-copy-%d", samples);
+   const char *key_data = "radv-fmask-copy";
 
    const VkDescriptorSetLayoutBinding bindings[] = {
       {
@@ -113,10 +109,22 @@ get_pipeline(struct radv_device *device, uint32_t samples_log2, VkPipeline *pipe
       .pBindings = bindings,
    };
 
-   result = vk_meta_get_pipeline_layout(&device->vk, &device->meta_state.device, &desc_info, NULL, key_data,
-                                        strlen(key_data), layout_out);
+   return vk_meta_get_pipeline_layout(&device->vk, &device->meta_state.device, &desc_info, NULL, key_data,
+                                      strlen(key_data), layout_out);
+}
+
+static VkResult
+get_pipeline(struct radv_device *device, uint32_t samples_log2, VkPipeline *pipeline_out, VkPipelineLayout *layout_out)
+{
+   const uint32_t samples = 1 << samples_log2;
+   char key_data[64];
+   VkResult result;
+
+   result = get_pipeline_layout(device, layout_out);
    if (result != VK_SUCCESS)
       return result;
+
+   snprintf(key_data, sizeof(key_data), "radv-fmask-copy-%d", samples);
 
    VkPipeline pipeline_from_cache = vk_meta_lookup_pipeline(&device->meta_state.device, key_data, strlen(key_data));
    if (pipeline_from_cache != VK_NULL_HANDLE) {
