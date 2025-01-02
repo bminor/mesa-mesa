@@ -777,8 +777,6 @@ vl_compositor_yuv_deint_full(struct vl_compositor_state *s,
          }
       }
    }
-
-   s->pipe->flush(s->pipe, NULL, 0);
 }
 
 void
@@ -821,8 +819,6 @@ vl_compositor_convert_rgb_to_yuv(struct vl_compositor_state *s,
    }
 
    pipe_sampler_view_reference(&sv, NULL);
-
-   s->pipe->flush(s->pipe, NULL, 0);
 }
 
 void
