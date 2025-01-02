@@ -13217,10 +13217,13 @@ radv_CmdBeginConditionalRenderingEXT(VkCommandBuffer commandBuffer,
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
    VK_FROM_HANDLE(radv_buffer, buffer, pConditionalRenderingBegin->buffer);
+   struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    bool draw_visible = true;
    uint64_t va;
 
    va = radv_buffer_get_va(buffer->bo) + buffer->offset + pConditionalRenderingBegin->offset;
+
+   radv_cs_add_buffer(device->ws, cmd_buffer->cs, buffer->bo);
 
    /* By default, if the 32-bit value at offset in buffer memory is zero,
     * then the rendering commands are discarded, otherwise they are
