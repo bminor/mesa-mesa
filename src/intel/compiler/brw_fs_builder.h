@@ -382,6 +382,10 @@ namespace brw {
       brw_reg
       emit_uniformize(const brw_reg &src) const
       {
+         /* Trivial: skip unnecessary work and retain IMM */
+         if (src.file == IMM)
+            return src;
+
          /* FIXME: We use a vector chan_index and dst to allow constant and
           * copy propagration to move result all the way into the consuming
           * instruction (typically a surface index or sampler index for a
