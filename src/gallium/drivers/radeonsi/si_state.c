@@ -1617,9 +1617,11 @@ static void si_pm4_emit_dsa(struct si_context *sctx, unsigned index)
       gfx12_end_context_regs();
       radeon_end(); /* don't track context rolls on GFX12 */
 
-      gfx12_opt_push_gfx_sh_reg(R_00B030_SPI_SHADER_USER_DATA_PS_0 + SI_SGPR_ALPHA_REF * 4,
-                                SI_TRACKED_SPI_SHADER_USER_DATA_PS__ALPHA_REF,
-                                state->spi_shader_user_data_ps_alpha_ref);
+      if (state->alpha_func != PIPE_FUNC_ALWAYS && state->alpha_func != PIPE_FUNC_NEVER) {
+         gfx12_opt_push_gfx_sh_reg(R_00B030_SPI_SHADER_USER_DATA_PS_0 + SI_SGPR_ALPHA_REF * 4,
+                                   SI_TRACKED_SPI_SHADER_USER_DATA_PS__ALPHA_REF,
+                                   state->spi_shader_user_data_ps_alpha_ref);
+      }
    } else if (sctx->screen->info.has_set_context_pairs_packed) {
       radeon_begin(&sctx->gfx_cs);
       gfx11_begin_packed_context_regs();
@@ -1637,7 +1639,7 @@ static void si_pm4_emit_dsa(struct si_context *sctx, unsigned index)
       }
       gfx11_end_packed_context_regs();
 
-      if (state->alpha_func != PIPE_FUNC_ALWAYS) {
+      if (state->alpha_func != PIPE_FUNC_ALWAYS && state->alpha_func != PIPE_FUNC_NEVER) {
          if (sctx->screen->info.has_set_sh_pairs_packed) {
             gfx11_opt_push_gfx_sh_reg(R_00B030_SPI_SHADER_USER_DATA_PS_0 + SI_SGPR_ALPHA_REF * 4,
                                       SI_TRACKED_SPI_SHADER_USER_DATA_PS__ALPHA_REF,
@@ -1665,7 +1667,7 @@ static void si_pm4_emit_dsa(struct si_context *sctx, unsigned index)
       }
       radeon_end_update_context_roll();
 
-      if (state->alpha_func != PIPE_FUNC_ALWAYS) {
+      if (state->alpha_func != PIPE_FUNC_ALWAYS && state->alpha_func != PIPE_FUNC_NEVER) {
          radeon_begin(&sctx->gfx_cs);
          radeon_opt_set_sh_reg(R_00B030_SPI_SHADER_USER_DATA_PS_0 + SI_SGPR_ALPHA_REF * 4,
                                SI_TRACKED_SPI_SHADER_USER_DATA_PS__ALPHA_REF,
