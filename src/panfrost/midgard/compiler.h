@@ -347,17 +347,11 @@ mir_remove_instruction(struct midgard_instruction *ins)
    list_del(&ins->link);
 }
 
-static inline midgard_instruction *
-mir_prev_op(struct midgard_instruction *ins)
-{
-   return list_last_entry(&(ins->link), midgard_instruction, link);
-}
+#define mir_prev_op(ins) \
+   list_last_entry(&((ins)->link), midgard_instruction, link)
 
-static inline midgard_instruction *
-mir_next_op(struct midgard_instruction *ins)
-{
-   return list_first_entry(&(ins->link), midgard_instruction, link);
-}
+#define mir_next_op(ins) \
+   list_first_entry(&((ins)->link), midgard_instruction, link)
 
 #define mir_foreach_block(ctx, v)                                              \
    list_for_each_entry(pan_block, v, &ctx->blocks, link)
