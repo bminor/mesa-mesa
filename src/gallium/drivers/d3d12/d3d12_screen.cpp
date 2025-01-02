@@ -586,6 +586,225 @@ d3d12_get_compute_param(struct pipe_screen *pscreen,
    }
 }
 
+static void
+d3d12_init_screen_caps(struct d3d12_screen *screen)
+{
+   struct pipe_caps *caps = (struct pipe_caps *)&screen->base.caps;
+
+   caps->accelerated = screen->vendor_id != HW_VENDOR_MICROSOFT ? 1 : 0;
+   caps->uma = screen->architecture.UMA;
+   caps->video_memory = d3d12_get_video_mem(&screen->base);
+
+   if (screen->max_feature_level < D3D_FEATURE_LEVEL_11_0)
+      return;
+
+   u_init_pipe_screen_caps(&screen->base, caps->accelerated);
+
+   caps->npot_textures = true;
+
+   /* D3D12 only supports dual-source blending for a single
+    * render-target. From the D3D11 functional spec (which also defines
+    * this for D3D12):
+    *
+    * "When Dual Source Color Blending is enabled, the Pixel Shader must
+    *  have only a single RenderTarget bound, at slot 0, and must output
+    *  both o0 and o1. Writing to other outputs (o2, o3 etc.) produces
+    *  undefined results for the corresponding RenderTargets, if bound
+    *  illegally."
+    *
+    * Source: https://microsoft.github.io/DirectX-Specs/d3d/archive/D3D11_3_FunctionalSpec.htm#17.6%20Dual%20Source%20Color%20Blending
+    */
+   caps->max_dual_source_render_targets = 1;
+
+   caps->anisotropic_filter = true;
+
+   caps->max_render_targets = D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT;
+
+   caps->texture_swizzle = true;
+
+   caps->max_texel_buffer_elements_uint =
+      1 << D3D12_REQ_BUFFER_RESOURCE_TEXEL_COUNT_2_TO_EXP;
+
+   caps->max_texture_2d_size = D3D12_REQ_TEXTURE2D_U_OR_V_DIMENSION;
+
+   static_assert(D3D12_REQ_TEXTURE3D_U_V_OR_W_DIMENSION == (1 << 11),
+                 "D3D12_REQ_TEXTURE3D_U_V_OR_W_DIMENSION");
+   caps->max_texture_3d_levels = 12;
+
+   caps->max_texture_cube_levels = D3D12_REQ_MIP_LEVELS;
+
+   caps->primitive_restart = true;
+   caps->indep_blend_enable = true;
+   caps->indep_blend_func = true;
+   caps->fragment_shader_texture_lod = true;
+   caps->fragment_shader_derivatives = true;
+   caps->quads_follow_provoking_vertex_convention = true;
+   caps->mixed_color_depth_bits = true;
+
+   caps->vertex_input_alignment = PIPE_VERTEX_INPUT_ALIGNMENT_4BYTE;
+
+   /* We need to do some lowering that requires a link to the sampler */
+   caps->nir_samplers_as_deref = true;
+
+   caps->nir_images_as_deref = true;
+
+   caps->max_texture_array_layers = D3D12_REQ_TEXTURE2D_ARRAY_AXIS_DIMENSION;
+
+   caps->depth_clip_disable = true;
+
+   caps->tgsi_texcoord = true;
+
+   caps->vertex_color_unclamped = true;
+
+   caps->glsl_feature_level = 460;
+   caps->glsl_feature_level_compatibility = 460;
+   caps->essl_feature_level = 310;
+
+   caps->compute = true;
+
+   caps->texture_multisample = true;
+
+   caps->cube_map_array = true;
+
+   caps->texture_buffer_objects = true;
+
+   caps->texture_transfer_modes = PIPE_TEXTURE_TRANSFER_BLIT;
+
+   caps->endianness = PIPE_ENDIAN_NATIVE; /* unsure */
+
+   caps->max_viewports = D3D12_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE;
+
+   caps->mixed_framebuffer_sizes = true;
+
+   caps->max_texture_gather_components = 4;
+
+   caps->fs_coord_pixel_center_half_integer = true;
+   caps->fs_coord_origin_upper_left = true;
+
+   caps->max_vertex_attrib_stride = 2048; /* FIXME: no clue how to query this */
+
+   caps->texture_float_linear = true;
+   caps->texture_half_float_linear = true;
+
+   caps->shader_buffer_offset_alignment = D3D12_RAW_UAV_SRV_BYTE_ALIGNMENT;
+
+   caps->constant_buffer_offset_alignment = D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT;
+
+   caps->pci_group =
+   caps->pci_bus =
+   caps->pci_device =
+   caps->pci_function = 0; /* TODO: figure these out */
+
+   caps->flatshade = false;
+   caps->alpha_test = false;
+   caps->two_sided_color = false;
+   caps->clip_planes = 0;
+
+   caps->shader_stencil_export = screen->opts.PSSpecifiedStencilRefSupported;
+
+   caps->seamless_cube_map = true;
+   caps->texture_query_lod = true;
+   caps->vs_instanceid = true;
+   caps->tgsi_tex_txf_lz = true;
+   caps->occlusion_query = true;
+   caps->viewport_transform_lowered = true;
+   caps->psiz_clamped = true;
+   caps->blend_equation_separate = true;
+   caps->conditional_render = true;
+   caps->conditional_render_inverted = true;
+   caps->query_timestamp = true;
+   caps->vertex_element_instance_divisor = true;
+   caps->image_store_formatted = true;
+   caps->glsl_tess_levels_as_inputs = true;
+
+   caps->max_stream_output_buffers = D3D12_SO_BUFFER_SLOT_COUNT;
+
+   caps->max_stream_output_separate_components =
+   caps->max_stream_output_interleaved_components = D3D12_SO_OUTPUT_COMPONENT_COUNT;
+
+   /* Geometry shader output. */
+   caps->max_geometry_output_vertices =
+      D3D12_GS_MAX_OUTPUT_VERTEX_COUNT_ACROSS_INSTANCES;
+   caps->max_geometry_total_output_components =
+      D3D12_REQ_GS_INVOCATION_32BIT_OUTPUT_COMPONENT_LIMIT;
+
+   /* Subtract one so that implicit position can be added */
+   caps->max_varyings = D3D12_PS_INPUT_REGISTER_COUNT - 1;
+
+   caps->max_combined_shader_output_resources =
+      screen->max_feature_level <= D3D_FEATURE_LEVEL_11_0 ? D3D12_PS_CS_UAV_REGISTER_COUNT :
+      (screen->opts.ResourceBindingTier <= D3D12_RESOURCE_BINDING_TIER_2 ? D3D12_UAV_SLOT_COUNT : 0);
+
+   caps->start_instance = true;
+   caps->draw_parameters = true;
+   caps->draw_indirect = true;
+   caps->multi_draw_indirect = true;
+   caps->multi_draw_indirect_params = true;
+   caps->framebuffer_no_attachment = true;
+   caps->sample_shading = true;
+   caps->stream_output_pause_resume = true;
+   caps->stream_output_interleave_buffers = true;
+   caps->int64 = true;
+   caps->doubles = true;
+   caps->device_reset_status_query = true;
+   caps->robust_buffer_access_behavior = true;
+   caps->memobj = true;
+   caps->fence_signal = true;
+   caps->timeline_semaphore_import = true;
+   caps->clip_halfz = true;
+   caps->vs_layer_viewport = true;
+   caps->copy_between_compressed_and_plain_formats = true;
+   caps->shader_array_components = true;
+   caps->texture_mirror_clamp_to_edge = true;
+   caps->query_time_elapsed = true;
+   caps->fs_fine_derivative = true;
+   caps->cull_distance = true;
+   caps->texture_query_samples = true;
+   caps->texture_barrier = true;
+   caps->gl_spirv = true;
+   caps->polygon_offset_clamp = true;
+   caps->shader_group_vote = true;
+   caps->shader_ballot = true;
+   caps->query_pipeline_statistics = true;
+   caps->query_so_overflow = true;
+
+   caps->query_buffer_object =
+      (screen->opts3.WriteBufferImmediateSupportFlags & D3D12_COMMAND_LIST_SUPPORT_FLAG_DIRECT) != 0;
+
+   caps->max_vertex_streams = D3D12_SO_BUFFER_SLOT_COUNT;
+
+   /* This is asking about varyings, not total registers, so remove the 2 tess factor registers. */
+   caps->max_shader_patch_varyings = D3D12_HS_OUTPUT_PATCH_CONSTANT_REGISTER_COUNT - 2;
+
+   /* Picking a value in line with other drivers. Without this, we can end up easily hitting OOM
+    * if an app just creates, initializes, and destroys resources without explicitly flushing. */
+   caps->max_texture_upload_memory_budget = 64 * 1024 * 1024;
+
+   caps->sampler_view_target = screen->opts12.RelaxedFormatCastingSupported;
+
+#ifndef _GAMING_XBOX
+   caps->query_memory_info = true;
+#endif
+
+   caps->min_line_width =
+   caps->min_line_width_aa =
+   caps->min_point_size =
+   caps->min_point_size_aa = 1;
+
+   caps->point_size_granularity =
+   caps->line_width_granularity = 0.1;
+
+   caps->max_line_width =
+   caps->max_line_width_aa = 1.0f; /* no clue */
+
+   caps->max_point_size =
+   caps->max_point_size_aa = D3D12_MAX_POINT_SIZE;
+
+   caps->max_texture_anisotropy = D3D12_MAX_MAXANISOTROPY;
+
+   caps->max_texture_lod_bias = 15.99f;
+}
+
 static bool
 d3d12_is_format_supported(struct pipe_screen *pscreen,
                           enum pipe_format format,
@@ -1767,6 +1986,8 @@ d3d12_init_screen(struct d3d12_screen *screen, IUnknown *adapter)
 #ifdef HAVE_GALLIUM_D3D12_VIDEO
    d3d12_screen_video_init(&screen->base);
 #endif
+
+   d3d12_init_screen_caps(screen);
 
    struct pb_desc desc;
    desc.alignment = D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT;

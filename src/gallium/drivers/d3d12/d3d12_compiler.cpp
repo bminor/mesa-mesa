@@ -111,7 +111,7 @@ compile_nir(struct d3d12_context *ctx, struct d3d12_shader_selector *sel,
    if (key->samples_int_textures)
       NIR_PASS_V(nir, dxil_lower_sample_to_txf_for_integer_tex,
                  key->n_texture_states, key->tex_wrap_states, key->swizzle_state,
-                 screen->base.get_paramf(&screen->base, PIPE_CAPF_MAX_TEXTURE_LOD_BIAS));
+                 screen->base.caps.max_texture_lod_bias);
 
    if (key->stage == PIPE_SHADER_VERTEX && key->vs.needs_format_emulation)
       dxil_nir_lower_vs_vertex_conversion(nir, key->vs.format_conversion);
