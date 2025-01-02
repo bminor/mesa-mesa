@@ -469,6 +469,7 @@ process_instructions(exec_ctx& ctx, Block* block, std::vector<aco_ptr<Instructio
             instr->operands[0] = bld.scc(exit_cond);
          }
 
+         info.exec.back().op = Operand(exec, bld.lm);
          instr->opcode = aco_opcode::p_exit_early_if_not;
          assert(!ctx.handle_wqm || (info.exec[0].type & mask_type_wqm) == 0);
       } else if (instr->opcode == aco_opcode::p_is_helper) {
