@@ -3438,7 +3438,7 @@ hk_draw(struct hk_cmd_buffer *cmd, uint16_t draw_id, struct agx_draw draw_)
 
       if (ia_stats) {
          hk_ia_update(cmd, ccs, draw, stat_ia_verts, stat_ia_prims, stat_vs_inv,
-                      stat_c_inv, stat_c_prims);
+                      stat_c_prims, stat_c_inv);
       }
 
       if (tess) {
