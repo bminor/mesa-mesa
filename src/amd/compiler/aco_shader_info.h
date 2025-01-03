@@ -92,6 +92,8 @@ struct aco_ps_prolog_info {
    bool force_linear_center_interp;
 
    unsigned samplemask_log_ps_iter;
+   bool get_frag_coord_from_pixel_coord;
+   bool pixel_center_integer;
    unsigned num_interp_inputs;
    unsigned colors_read;
    int color_interp_vgpr_index[2];
