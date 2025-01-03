@@ -3348,7 +3348,7 @@ int ac_compute_surface(struct ac_addrlib *addrlib, const struct radeon_info *inf
       return r;
 
    /* Images are emulated on some CDNA chips. */
-   if (!info->has_image_opcodes)
+   if (!info->has_image_opcodes && !(surf->flags & RADEON_SURF_VIDEO_REFERENCE))
       mode = RADEON_SURF_MODE_LINEAR_ALIGNED;
 
    /* 0 offsets mean disabled. */
