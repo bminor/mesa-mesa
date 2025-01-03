@@ -1,5 +1,465 @@
 [
     {
+        "sha": "5f30bc62fe962d4fc78633d44e1020a713c2f9bc",
+        "description": "rusticl/mesa/resource: port to NonNull",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0fe59874c02a1ce402f0d08edab5d12112b716f9",
+        "description": "rusticl/mem: pass around QueueContext instead of PipeContext",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b2f42dbe61475a6c242bb04a15ed2a33be6de943",
+        "description": "rusticl/queue: make QueueContext::dev public",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d460cb36758288f559f7899db838823e8822d7f4",
+        "description": "rusticl/mesa: add missing files to meson.build",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f3f84cfe9ff55bdfe89b33dcd136db81e8720b02",
+        "description": "rusticl/mesa/context: use Default for pipe_grid_info initialization",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a4cae3c6ed68c70201b376f6250c9f227aec5289",
+        "description": "rusticl/device: remove unused functions",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "05b37f39681f0b39bdb0d4d4d0bcd373ec1c275c",
+        "description": "rusticl/mem: remove mem_type argument from new_image",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4cbd4bead75cef0514a2a9a28e458cd8f8435f96",
+        "description": "rusticl/mesa: remove PipeTransfer::res",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f667845741cefbabfbac5ebf1e99fed81e5aa662",
+        "description": "include: Update the OpenCL headers to latest",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f75ba4f9e36acaae81922a317c7fccae84c713e6",
+        "description": "rusticl: stop using system headers for CL and GL",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ccfeda77bd01032fddd4b6d61c15ac1ab0da9bcc",
+        "description": "rusticl/queue: add a life check to prevent applications dead locking",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f70ef03100bac9a08f2dee2910ffccd12192deaf",
+        "description": "docs: update calendar for 24.3.3",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d518c59b9db8a5ee80f887eaa7fb432c9d3b6b82",
+        "description": "docs: Add SHA sums to 24.3.3 release notes",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0861975f4900df780a4e6ec6544ce6fcc00e4edd",
+        "description": "docs: add release notes for 24.3.3",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3514b65c358e0fe40613ecc46cea041073076433",
+        "description": "hk: Fix hk_ia_update arguments order",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "a3b796ba190b8358e99be260e6817149dcff5754",
+        "notes": null
+    },
+    {
+        "sha": "eac8f1d4602cb1e44793b959c5680c92c9854be7",
+        "description": "Revert \"panfrost: Disable CRC by default\"",
+        "nominated": true,
+        "nomination_type": 3,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "fc30fe5bc5e744dd1cdb7a69cc8a5c382e940fbe",
+        "notes": null
+    },
+    {
+        "sha": "1448778385ea93a563c1d1fefec66caa13681128",
+        "description": "anv: rework tbimr push constant workaround",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6281b207db9e59ec51274465185e9b3cf4162b7b",
+        "description": "anv: add tracepoints timestamp mode for empty dispatches",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "de00fe3f6629d77e380cd730684d50d09785028d",
+        "notes": null
+    },
+    {
+        "sha": "a224105a26dfca52dfe828cb19db274f6405ec9d",
+        "description": "vulkan/runtime: avoid emitting empty build_leaves",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2b9b34887eaf66bb27cc6f51c84c8c896a1501e0",
+        "description": "docs/features: Mark more Vulkan 1.4 features as done for drivers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "43eaba013e1e06326aa5bca29a82fdad9634dfd9",
+        "description": "docs/features: Mark VK_EXT_host_image_copy as implemented on Turnip",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a0931e3361c19ce48767384e5d7f3fe215d827ba",
+        "description": "features.txt: Add Vulkan 1.4 section",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5fd9f08c1d2862200ae9e1eacbefe251b9823019",
+        "description": "lavapipe/ci: Re-enable lavapipe-vk-asan",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "03b037a0e361ec984bebd032d1957122bdc08eb3",
+        "description": "radv: disable logic op for float/srgb formats",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "001990031256673edde563517f0cfc048e565a9e",
+        "description": "radv/meta: do not create redundant pipeline layout objects",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "105e809a9d4d332ff61da6a1d74849f6089ad52d",
+        "description": "radv/meta: add radv_meta_get_noop_pipeline_layout()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "dd7343f2782e7146e40ea313b0a195c52f03fb4e",
+        "description": "radv/meta: reduce length of some cache keys",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c8d2614113e9ec577b20681d9c43fac0b86b2b65",
+        "description": "radv/meta: fix loading the meta pipeline cache",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "f528c9e8f54c8dee41a21ce52c5446128de8424a",
+        "notes": null
+    },
+    {
+        "sha": "370e3923130e48366338a514648ada94f62b067d",
+        "description": "radv: fix adding the BO to cmdbuf list when emitting buffer markers",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ff2a214e5ff96013e68e3401dd1ecc2c7c9ea72d",
+        "description": "panfrost: specialize VS on FS interpolation qualifiers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bbd268d22cde56192ea173a6e61edfa9718555fa",
+        "description": "panfrost: factor FS shader key into a helper function",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d93f9d6d1a85268df41923d5750a211bd61d8100",
+        "description": "panvk: use static noperspective when statically linking VS and FS",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "98de4f42ff751b77184217234821b5759faaff08",
+        "description": "panfrost: add pass to lower noperspective varyings to a constant",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "30a288cdc993c2de0e4ea906e709c3fb833d73a5",
+        "description": "panvk: pass noperspective_varyings sysval as a push constant",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "103c4123abf47aa857b9e7031344637d06597033",
+        "description": "panfrost: collect noperspective varyings in shader info",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "081438ad3974d797c6248ccd76eba3d7ede72d1c",
+        "description": "panfrost: add nir pass to lower noperspective varyings",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6f541e2016f8b989084a03f5b4d33247586fb6e9",
+        "description": "panfrost: add intrinsic to load frag coord at a barycentric",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9033e64b022cc2da84b51fa5b2aa2133f8a0e6a9",
+        "description": "util/disk_cache: silence unused result warnings",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8c819a2f95891e68ccfad98949a978812b5cf0f4",
+        "description": "llvmpipe: silence an unused result warning",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "03d24e56a25075d1599d162b5f9bcf0c4dfa00e7",
+        "description": "vulkan: silence an unused variable warning",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3474978d523b3e8c28bf27afd229af0cc0e2c205",
+        "description": "radv: Fix sampling from image layers of video decode target",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "5deb4760956f86369222cebef40a63a88ff9f5b8",
+        "notes": null
+    },
+    {
+        "sha": "9d477fae68bf1a053a3536d1219ffbf217389da4",
+        "description": "radv/video: Remove dt_field_mode handling code",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ca0cb788696235d7ec6d14f659f6c40488dfb14b",
+        "description": "radv/video: Use correct array index for decode target and DPB images",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8dabb480e26e45e4e171493a1186f7a0a56dee42",
+        "description": "radv/video: Fix DPB tier2 surface params",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "3e2c768aa860f96074df73cd3171960e76f5c312",
+        "notes": null
+    },
+    {
+        "sha": "d9429229cf467d1cc3cf006782daa4f529fb68dc",
+        "description": "intel/tests: Fix missing assignment of error condition",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "6b931a68c79a1fa7a13c3e3fa9ee48b1968c8201",
+        "notes": null
+    },
+    {
+        "sha": "5420fc16d66caab45fab9236877bb69eb76934e6",
+        "description": "intel/tests: Fix coverity warning about possibly leaked memory",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "6b931a68c79a1fa7a13c3e3fa9ee48b1968c8201",
+        "notes": null
+    },
+    {
         "sha": "51a2f70e5e736636049c1180c1552c34a5f17009",
         "description": "panvk/ci: drop needless envvar",
         "nominated": false,
