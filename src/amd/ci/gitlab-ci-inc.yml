@@ -22,6 +22,7 @@
         - src/amd/ci/$GPU_VERSION-vkd3d-flakes.txt
         - src/amd/ci/$GPU_VERSION-vkd3d-skips.txt
         - src/amd/common/**/*
+        - src/amd/compiler/**/*
         - src/amd/llvm/**/*
         - src/amd/registers/**/*
       when: on_success
