@@ -74,15 +74,17 @@ tu6_emit_lrz_buffer(struct tu_cs *cs, struct tu_image *depth_image)
       return;
    }
 
-   uint64_t lrz_iova = depth_image->iova + depth_image->lrz_offset;
-   uint64_t lrz_fc_iova = depth_image->iova + depth_image->lrz_fc_offset;
-   if (!depth_image->lrz_fc_offset)
+   uint64_t lrz_iova = depth_image->iova + depth_image->lrz_layout.lrz_offset;
+   uint64_t lrz_fc_iova =
+      depth_image->iova + depth_image->lrz_layout.lrz_fc_offset;
+   if (!depth_image->lrz_layout.lrz_fc_offset)
       lrz_fc_iova = 0;
 
    tu_cs_emit_regs(
       cs, A6XX_GRAS_LRZ_BUFFER_BASE(.qword = lrz_iova),
-      A6XX_GRAS_LRZ_BUFFER_PITCH(.pitch = depth_image->lrz_pitch,
-                                 .array_pitch = depth_image->lrz_layer_size),
+      A6XX_GRAS_LRZ_BUFFER_PITCH(.pitch = depth_image->lrz_layout.lrz_pitch,
+                                 .array_pitch =
+                                    depth_image->lrz_layout.lrz_layer_size),
       A6XX_GRAS_LRZ_FAST_CLEAR_BUFFER_BASE(.qword = lrz_fc_iova));
 
    if (CHIP >= A7XX) {
@@ -153,7 +155,7 @@ tu_lrz_init_state(struct tu_cmd_buffer *cmd,
                   const struct tu_render_pass_attachment *att,
                   const struct tu_image_view *view)
 {
-   if (!view->image->lrz_height) {
+   if (!view->image->lrz_layout.lrz_total_size) {
       assert(!cmd->device->use_lrz || !vk_format_has_depth(att->format));
       return;
    }
@@ -182,7 +184,8 @@ tu_lrz_init_state(struct tu_cmd_buffer *cmd,
    /* Be optimistic and unconditionally enable fast-clear in
     * secondary cmdbufs and when reusing previous LRZ state.
     */
-   cmd->state.lrz.fast_clear = view->image->has_lrz_fc;
+   cmd->state.lrz.fast_clear =
+      view->image->lrz_layout.lrz_fc_size > 0 && !TU_DEBUG(NOLRZFC);
 
    cmd->state.lrz.gpu_dir_tracking = has_gpu_tracking;
    cmd->state.lrz.reuse_previous_state = !clears_depth;
@@ -246,7 +249,7 @@ tu_lrz_begin_resumed_renderpass(struct tu_cmd_buffer *cmd)
 
    uint32_t a;
    for (a = 0; a < cmd->state.pass->attachment_count; a++) {
-      if (cmd->state.attachments[a]->image->lrz_height)
+      if (cmd->state.attachments[a]->image->lrz_layout.lrz_total_size)
          break;
    }
 
@@ -274,7 +277,7 @@ tu_lrz_begin_renderpass(struct tu_cmd_buffer *cmd)
 
    int lrz_img_count = 0;
    for (unsigned i = 0; i < pass->attachment_count; i++) {
-      if (cmd->state.attachments[i]->image->lrz_height)
+      if (cmd->state.attachments[i]->image->lrz_layout.lrz_total_size)
          lrz_img_count++;
    }
 
@@ -387,7 +390,7 @@ tu_lrz_tiling_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
        * TODO: we could avoid this if we don't store depth and don't
        * expect secondary cmdbufs.
        */
-      if (lrz->image_view->image->has_lrz_fc) {
+      if (lrz->image_view->image->lrz_layout.lrz_fc_size > 0) {
          tu6_dirty_lrz_fc<CHIP>(cmd, cs, lrz->image_view->image);
       }
    }
@@ -524,7 +527,7 @@ tu_disable_lrz(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
    if (!cmd->device->physical_device->info->a6xx.has_lrz_dir_tracking)
       return;
 
-   if (!image->lrz_height)
+   if (!image->lrz_layout.lrz_total_size)
       return;
 
    tu6_emit_lrz_buffer<CHIP>(cs, image);
@@ -540,19 +543,20 @@ tu_disable_lrz_cpu(struct tu_device *device, struct tu_image *image)
    if (!device->physical_device->info->a6xx.has_lrz_dir_tracking)
       return;
 
-   if (!image->lrz_height)
+   if (!image->lrz_layout.lrz_total_size)
       return;
 
    const unsigned lrz_dir_offset = offsetof(fd_lrzfc_layout<CHIP>, dir_track);
    uint8_t *lrz_dir_tracking =
-      (uint8_t *)image->map + image->lrz_fc_offset + lrz_dir_offset;
+      (uint8_t *)image->map + image->lrz_layout.lrz_fc_offset + lrz_dir_offset;
 
    *lrz_dir_tracking = FD_LRZ_GPU_DIR_DISABLED;
 
    if (image->bo->cached_non_coherent) {
-      tu_bo_sync_cache(device, image->bo,
-                       image->bo_offset + image->lrz_offset + lrz_dir_offset,
-                       1, TU_MEM_SYNC_CACHE_TO_GPU);
+      tu_bo_sync_cache(
+         device, image->bo,
+         image->bo_offset + image->lrz_layout.lrz_offset + lrz_dir_offset, 1,
+         TU_MEM_SYNC_CACHE_TO_GPU);
    }
 }
 TU_GENX(tu_disable_lrz_cpu);
@@ -566,7 +570,7 @@ tu_lrz_clear_depth_image(struct tu_cmd_buffer *cmd,
                          uint32_t rangeCount,
                          const VkImageSubresourceRange *pRanges)
 {
-   if (!rangeCount || !image->lrz_height ||
+   if (!rangeCount || !image->lrz_layout.lrz_total_size ||
        !cmd->device->physical_device->info->a6xx.has_lrz_dir_tracking)
       return;
 
@@ -585,8 +589,9 @@ tu_lrz_clear_depth_image(struct tu_cmd_buffer *cmd,
    if (!range)
       return;
 
-   bool fast_clear = image->has_lrz_fc &&
-                     tu_lrzfc_depth_supported<CHIP>(pDepthStencil->depth);
+   bool fast_clear = image->lrz_layout.lrz_fc_size &&
+                     tu_lrzfc_depth_supported<CHIP>(pDepthStencil->depth) &&
+                     !TU_DEBUG(NOLRZFC);
 
    tu6_emit_lrz_buffer<CHIP>(&cmd->cs, image);
 

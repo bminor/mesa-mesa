@@ -2094,11 +2094,11 @@ tu6_clear_lrz(struct tu_cmd_buffer *cmd,
               VK_SAMPLE_COUNT_1_BIT);
    ops->clear_value(cmd, cs, PIPE_FORMAT_Z16_UNORM, value);
    ops->dst_buffer(cs, PIPE_FORMAT_Z16_UNORM,
-                   image->iova + image->lrz_offset,
-                   image->lrz_pitch * 2, PIPE_FORMAT_Z16_UNORM);
-   uint32_t lrz_height = image->lrz_height * image->vk.array_layers;
+                   image->iova + image->lrz_layout.lrz_offset,
+                   image->lrz_layout.lrz_pitch * 2, PIPE_FORMAT_Z16_UNORM);
+   uint32_t lrz_height = image->lrz_layout.lrz_height * image->vk.array_layers;
    ops->coords(cmd, cs, (VkOffset2D) {}, blt_no_coord,
-               (VkExtent2D) { image->lrz_pitch, lrz_height });
+               (VkExtent2D) { image->lrz_layout.lrz_pitch, lrz_height });
    ops->run(cmd, cs);
    ops->teardown(cmd, cs);
 
@@ -2122,7 +2122,7 @@ tu6_dirty_lrz_fc(struct tu_cmd_buffer *cmd,
    clear.color.uint32[0] = 0xffffffff;
 
    using LRZFC = fd_lrzfc_layout<CHIP>;
-   uint64_t lrz_fc_iova = image->iova + image->lrz_fc_offset;
+   uint64_t lrz_fc_iova = image->iova + image->lrz_layout.lrz_fc_offset;
    ops->setup(cmd, cs, PIPE_FORMAT_R32_UINT, PIPE_FORMAT_R32_UINT,
               VK_IMAGE_ASPECT_COLOR_BIT, 0, true, false,
               VK_SAMPLE_COUNT_1_BIT);
@@ -2361,7 +2361,7 @@ tu_CmdBlitImage2(VkCommandBuffer commandBuffer,
                      pBlitImageInfo->filter);
    }
 
-   if (dst_image->lrz_height) {
+   if (dst_image->lrz_layout.lrz_total_size) {
       tu_disable_lrz<CHIP>(cmd, &cmd->cs, dst_image);
    }
 }
@@ -2495,7 +2495,7 @@ tu_CmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
       tu_copy_buffer_to_image<CHIP>(cmd, src_buffer, dst_image,
                               pCopyBufferToImageInfo->pRegions + i);
 
-   if (dst_image->lrz_height) {
+   if (dst_image->lrz_layout.lrz_total_size) {
       tu_disable_lrz<CHIP>(cmd, &cmd->cs, dst_image);
    }
 }
@@ -2584,7 +2584,7 @@ tu_CopyMemoryToImageEXT(VkDevice _device,
                               info->flags & VK_HOST_IMAGE_COPY_MEMCPY_EXT);
    }
 
-   if (dst_image->lrz_height) {
+   if (dst_image->lrz_layout.lrz_total_size) {
       TU_CALLX(device, tu_disable_lrz_cpu)(device, dst_image);
    }
 
@@ -3028,7 +3028,7 @@ tu_CmdCopyImage2(VkCommandBuffer commandBuffer,
                              pCopyImageInfo->pRegions + i);
    }
 
-   if (dst_image->lrz_height) {
+   if (dst_image->lrz_layout.lrz_total_size) {
       tu_disable_lrz<CHIP>(cmd, &cmd->cs, dst_image);
    }
 }
@@ -3207,7 +3207,7 @@ tu_CopyImageToImageEXT(VkDevice _device,
                                  copy_memcpy);
    }
 
-   if (dst_image->lrz_height) {
+   if (dst_image->lrz_layout.lrz_total_size) {
       TU_CALLX(device, tu_disable_lrz_cpu)(device, dst_image);
    }
 
