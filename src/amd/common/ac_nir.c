@@ -166,7 +166,7 @@ load_subgroup_id_lowered(lower_intrinsics_to_args_state *s, nir_builder *b)
       } else {
          /* GFX6-10 don't actually support a wave id, but we can
           * use the ordered id because ORDERED_APPEND_* is set to
-          * zero in the compute dispatch initiatior.
+          * zero in the compute dispatch initiator.
           */
          return ac_nir_unpack_arg(b, s->args, s->args->tg_size, 6, 6);
       }
