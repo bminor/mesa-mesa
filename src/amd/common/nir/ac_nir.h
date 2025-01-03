@@ -275,7 +275,21 @@ typedef struct {
    bool load_sample_positions_always_loads_current_ones;
    bool dynamic_rasterization_samples;
    int force_front_face; /* 0 -> keep, 1 -> set to true, -1 -> set to false */
-   unsigned ps_iter_samples; /* >= 2 forces sample interpolation, affects sample_mask_in lowering */
+
+   /* barycentrics:
+    *    ps_iter_samples >= 2:
+    *       * All barycentrics are changed to per-sample interpolation except at_offset/at_sample.
+    *       * barycentric_at_sample(sample_id) is replaced by barycentric_sample.
+    *
+    * sample_mask_in:
+    *    ps_iter_samples == 2, 4:
+    *       * sample_mask_in is changed to (sample_mask_in & (ps_iter_mask << sample_id))
+    *    ps_iter_samples == 8:
+    *       * sample_mask_in is replaced by 1 << sample_id.
+    *
+    * When ps_iter_samples is equal to rasterization samples, set ps_iter_samples = 8 for this pass.
+    */
+   unsigned ps_iter_samples;
 
    /* fbfetch_output */
    bool fbfetch_is_1D;

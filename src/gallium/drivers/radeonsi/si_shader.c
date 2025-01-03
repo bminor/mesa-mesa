@@ -2487,11 +2487,11 @@ static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_
                                         key->ps.mono.interpolate_at_sample_force_center,
          .load_sample_positions_always_loads_current_ones = true,
          .force_front_face = key->ps.opt.force_front_face_input,
-         /* This forces per-sample interpolation (if at least 2) and lowers sample_mask_in. */
+         /* This does a lot of things. See the description in ac_nir_lower_ps_early_options. */
          .ps_iter_samples = key->ps.part.prolog.samplemask_log_ps_iter ?
                               (1 << key->ps.part.prolog.samplemask_log_ps_iter) :
                               (key->ps.part.prolog.force_persp_sample_interp ||
-                               key->ps.part.prolog.force_linear_sample_interp ? 2 : 1),
+                               key->ps.part.prolog.force_linear_sample_interp ? 2 : 0),
 
          .fbfetch_is_1D = key->ps.mono.fbfetch_is_1D,
          .fbfetch_layered = key->ps.mono.fbfetch_layered,

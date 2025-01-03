@@ -383,9 +383,17 @@ lower_ps_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
       return true;
    case nir_intrinsic_load_barycentric_at_sample: {
       unsigned mode = nir_intrinsic_interp_mode(intrin);
+      nir_def *sample_id = intrin->src[0].ssa;
 
       if (s->options->force_center_interp_no_msaa) {
          nir_def_replace(&intrin->def, nir_load_barycentric_pixel(b, 32, .interp_mode = mode));
+         return true;
+      }
+
+      if (s->options->ps_iter_samples >= 2 &&
+          sample_id->parent_instr->type == nir_instr_type_intrinsic &&
+          nir_instr_as_intrinsic(sample_id->parent_instr)->intrinsic == nir_intrinsic_load_sample_id) {
+         nir_def_replace(&intrin->def, nir_load_barycentric_sample(b, 32, .interp_mode = mode));
          return true;
       }
 
@@ -395,7 +403,6 @@ lower_ps_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
        */
       nir_def *num_samples = s->options->load_sample_positions_always_loads_current_ones ?
                                 nir_undef(b, 1, 32) : nir_load_rasterization_samples_amd(b);
-      nir_def *sample_id = intrin->src[0].ssa;
       nir_def *sample_pos = nir_load_sample_positions_amd(b, 32, sample_id, num_samples);
       sample_pos = nir_fadd_imm(b, sample_pos, -0.5f);
 
