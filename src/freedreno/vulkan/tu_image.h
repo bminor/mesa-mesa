@@ -44,6 +44,7 @@ struct tu_image
    uint32_t lrz_height;
    uint32_t lrz_pitch;
    uint32_t lrz_offset;
+   uint32_t lrz_layer_size;
    uint32_t lrz_fc_offset;
    bool has_lrz_fc;
 

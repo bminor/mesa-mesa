@@ -2082,8 +2082,9 @@ tu6_clear_lrz(struct tu_cmd_buffer *cmd,
    ops->dst_buffer(cs, PIPE_FORMAT_Z16_UNORM,
                    image->iova + image->lrz_offset,
                    image->lrz_pitch * 2, PIPE_FORMAT_Z16_UNORM);
+   uint32_t lrz_height = image->lrz_height * image->vk.array_layers;
    ops->coords(cmd, cs, (VkOffset2D) {}, blt_no_coord,
-               (VkExtent2D) { image->lrz_pitch, image->lrz_height });
+               (VkExtent2D) { image->lrz_pitch, lrz_height });
    ops->run(cmd, cs);
    ops->teardown(cmd, cs);
 
