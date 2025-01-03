@@ -354,7 +354,7 @@
         "description": "radeonsi: fix a perf regression due to slow reply from GEM_WAIT_IDLE for timeout=0",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4194774edf5998e3e0126ab1b058278da978fdaa",
         "notes": null
