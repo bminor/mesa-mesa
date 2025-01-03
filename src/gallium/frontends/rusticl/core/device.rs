@@ -36,7 +36,7 @@ pub struct Device {
     pub cl_version: CLVersion,
     pub clc_version: CLVersion,
     pub clc_versions: Vec<cl_name_version>,
-    pub custom: bool,
+    pub device_type: u32,
     pub embedded: bool,
     pub extension_string: String,
     pub extensions: Vec<cl_name_version>,
@@ -200,7 +200,7 @@ impl Device {
             cl_version: CLVersion::Cl3_0,
             clc_version: CLVersion::Cl3_0,
             clc_versions: Vec::new(),
-            custom: false,
+            device_type: 0,
             embedded: false,
             extension_string: String::from(""),
             extensions: Vec::new(),
@@ -214,8 +214,7 @@ impl Device {
         // check if we are embedded or full profile first
         d.embedded = d.check_embedded_profile();
 
-        // check if we have to report it as a custom device
-        d.custom = d.check_custom();
+        d.set_device_type();
 
         d.fill_format_tables();
 
@@ -477,21 +476,6 @@ impl Device {
         !self.int64_supported()
     }
 
-    fn parse_env_device_type() -> Option<cl_device_type> {
-        let mut val = env::var("RUSTICL_DEVICE_TYPE").ok()?;
-        val.make_ascii_lowercase();
-        Some(
-            match &*val {
-                "accelerator" => CL_DEVICE_TYPE_ACCELERATOR,
-                "cpu" => CL_DEVICE_TYPE_CPU,
-                "custom" => CL_DEVICE_TYPE_CUSTOM,
-                "gpu" => CL_DEVICE_TYPE_GPU,
-                _ => return None,
-            }
-            .into(),
-        )
-    }
-
     fn parse_env_version() -> Option<CLVersion> {
         let val = env::var("RUSTICL_CL_VERSION").ok()?;
         let (major, minor) = val.split_once('.')?;
@@ -697,8 +681,40 @@ impl Device {
             .shader_param(pipe_shader_type::PIPE_SHADER_COMPUTE, cap)
     }
 
-    pub fn all() -> impl Iterator<Item = Device> {
-        load_screens().filter_map(Device::new)
+    pub fn all() -> Vec<Device> {
+        let mut devs: Vec<_> = load_screens().filter_map(Device::new).collect();
+
+        // Pick a default device. One must be the default one no matter what. And custom devices can
+        // only be that one if they are the only devices available.
+        //
+        // The entry with the highest value will be the default device.
+        let default = devs.iter_mut().max_by_key(|dev| {
+            let mut val = if dev.device_type == CL_DEVICE_TYPE_CUSTOM {
+                // needs to be small enough so it's always going to be the smallest value
+                -100
+            } else if dev.device_type == CL_DEVICE_TYPE_CPU {
+                0
+            } else if dev.unified_memory() {
+                // we give unified memory devices max priority, because we don't want to spin up the
+                // discrete GPU on laptops by default.
+                100
+            } else {
+                10
+            };
+
+            // we deprioritize zink for now.
+            if dev.screen.driver_name() == c"zink" {
+                val -= 1;
+            }
+
+            val
+        });
+
+        if let Some(default) = default {
+            default.device_type |= CL_DEVICE_TYPE_DEFAULT;
+        }
+
+        devs
     }
 
     pub fn address_bits(&self) -> cl_uint {
@@ -726,26 +742,30 @@ impl Device {
         self.shader_param(pipe_shader_cap::PIPE_SHADER_CAP_MAX_CONST_BUFFERS) as cl_uint
     }
 
-    pub fn device_type(&self, internal: bool) -> cl_device_type {
-        if let Some(env) = Self::parse_env_device_type() {
-            return env;
-        }
+    fn set_device_type(&mut self) {
+        let env = env::var("RUSTICL_DEVICE_TYPE").ok().and_then(|env| {
+            Some(match &*env.to_ascii_lowercase() {
+                "accelerator" => CL_DEVICE_TYPE_ACCELERATOR,
+                "cpu" => CL_DEVICE_TYPE_CPU,
+                "custom" => CL_DEVICE_TYPE_CUSTOM,
+                "gpu" => CL_DEVICE_TYPE_GPU,
+                // if no valid string is set we treat is as no value was set
+                _ => return None,
+            })
+        });
 
-        if self.custom {
-            return CL_DEVICE_TYPE_CUSTOM as cl_device_type;
-        }
-        let mut res = match self.screen.device_type() {
-            pipe_loader_device_type::PIPE_LOADER_DEVICE_SOFTWARE => CL_DEVICE_TYPE_CPU,
-            pipe_loader_device_type::PIPE_LOADER_DEVICE_PCI => CL_DEVICE_TYPE_GPU,
-            pipe_loader_device_type::PIPE_LOADER_DEVICE_PLATFORM => CL_DEVICE_TYPE_GPU,
-            pipe_loader_device_type::NUM_PIPE_LOADER_DEVICE_TYPES => CL_DEVICE_TYPE_CUSTOM,
+        self.device_type = if let Some(env) = env {
+            env
+        } else if self.check_custom() {
+            CL_DEVICE_TYPE_CUSTOM
+        } else {
+            match self.screen.device_type() {
+                pipe_loader_device_type::PIPE_LOADER_DEVICE_SOFTWARE => CL_DEVICE_TYPE_CPU,
+                pipe_loader_device_type::PIPE_LOADER_DEVICE_PCI => CL_DEVICE_TYPE_GPU,
+                pipe_loader_device_type::PIPE_LOADER_DEVICE_PLATFORM => CL_DEVICE_TYPE_GPU,
+                pipe_loader_device_type::NUM_PIPE_LOADER_DEVICE_TYPES => CL_DEVICE_TYPE_CUSTOM,
+            }
         };
-
-        if internal && res == CL_DEVICE_TYPE_GPU && self.screen.driver_name() != c"zink" {
-            res |= CL_DEVICE_TYPE_DEFAULT;
-        }
-
-        res as cl_device_type
     }
 
     pub fn fp16_supported(&self) -> bool {
@@ -1108,7 +1128,7 @@ pub fn devs() -> &'static Vec<Device> {
 pub fn get_devs_for_type(device_type: cl_device_type) -> Vec<&'static Device> {
     devs()
         .iter()
-        .filter(|d| device_type & d.device_type(true) != 0)
+        .filter(|d| device_type & d.device_type as cl_device_type != 0)
         .collect()
 }
 

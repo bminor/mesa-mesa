@@ -161,7 +161,7 @@ impl Platform {
             glsl_type_singleton_init_or_ref();
         }
 
-        self.devs = Device::all().collect();
+        self.devs = Device::all();
     }
 
     pub fn init_once() {

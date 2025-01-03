@@ -290,7 +290,11 @@ unsafe impl CLInfo<cl_device_info> for cl_device_id {
                     .into(),
                 )
             }
-            CL_DEVICE_TYPE => v.write::<cl_device_type>(dev.device_type(false)),
+            CL_DEVICE_TYPE => {
+                // CL_DEVICE_TYPE_DEFAULT ... will never be returned in CL_DEVICE_TYPE for any
+                // OpenCL device.
+                v.write::<cl_device_type>((dev.device_type & !CL_DEVICE_TYPE_DEFAULT).into())
+            }
             CL_DEVICE_UUID_KHR => v.write::<[cl_uchar; CL_UUID_SIZE_KHR as usize]>(
                 dev.screen().device_uuid().unwrap_or_default(),
             ),
