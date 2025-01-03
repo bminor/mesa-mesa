@@ -154,7 +154,7 @@
         "description": "Revert \"panfrost: Disable CRC by default\"",
         "nominated": true,
         "nomination_type": 3,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "fc30fe5bc5e744dd1cdb7a69cc8a5c382e940fbe",
         "notes": null
