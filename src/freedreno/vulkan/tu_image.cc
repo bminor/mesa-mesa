@@ -580,6 +580,9 @@ tu_image_update_layout(struct tu_device *device, struct tu_image *image,
 
       /* LRZ buffer is super-sampled */
       switch (layout->nr_samples) {
+      case 8:
+         height *= 2;
+         FALLTHROUGH;
       case 4:
          width *= 2;
          FALLTHROUGH;
