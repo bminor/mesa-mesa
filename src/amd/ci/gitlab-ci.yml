@@ -278,16 +278,28 @@ vkcts-vangogh-valve:
     GPU_VERSION: radv-vangogh-aco
     RADV_PERFTEST: transfer_queue
 
-glcts-vangogh-valve:
+.glcts-vangogh-valve-common:
   extends:
     - .b2c-x86_64-test-gl
     - .b2c-deqp-test
     - .vangogh-test-valve
-    - .radeonsi-valve-manual-rules
-  timeout: 60m
   variables:
     GPU_VERSION: radeonsi-vangogh
     DEQP_SUITE: radeonsi-vangogh
+
+glcts-vangogh-valve:
+  extends:
+    - .glcts-vangogh-valve-common
+    - .radeonsi-valve-rules
+  timeout: 30m
+  variables:
+    DEQP_FRACTION: 4
+
+glcts-vangogh-full-valve:
+  extends:
+    - .glcts-vangogh-valve-common
+    - .radeonsi-valve-manual-rules
+  timeout: 90m
 
 vkcts-navi31-valve:
   parallel: 2
