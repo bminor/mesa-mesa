@@ -134,7 +134,7 @@
         "description": "anv: handle negative value of slot index for h265 decoding.",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8d519eb5f5947800279e4c02bf7aa79b0b65cd17",
         "notes": null
