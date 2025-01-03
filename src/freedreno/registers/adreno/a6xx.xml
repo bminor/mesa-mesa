@@ -3381,9 +3381,8 @@ to upconvert to 32b float internally?
 	</reg32>
 	<reg64 offset="0x8103" name="GRAS_LRZ_BUFFER_BASE" align="256" type="waddress" usage="rp_blit"/>
 	<reg32 offset="0x8105" name="GRAS_LRZ_BUFFER_PITCH" usage="rp_blit">
-		<!-- TODO: fix the shr fields -->
 		<bitfield name="PITCH" low="0" high="7" shr="5" type="uint"/>
-		<bitfield name="ARRAY_PITCH" low="10" high="28" shr="4" type="uint"/>
+		<bitfield name="ARRAY_PITCH" low="10" high="28" shr="8" type="uint"/>
 	</reg32>
 
 	<!--
