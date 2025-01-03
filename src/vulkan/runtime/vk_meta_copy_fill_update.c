@@ -65,8 +65,6 @@ struct vk_meta_copy_image_view {
 struct vk_meta_copy_buffer_image_key {
    enum vk_meta_object_key_type key_type;
 
-   VkPipelineBindPoint bind_point;
-
    struct {
       struct vk_meta_copy_image_view view;
 
@@ -78,8 +76,6 @@ struct vk_meta_copy_buffer_image_key {
 
 struct vk_meta_copy_image_key {
    enum vk_meta_object_key_type key_type;
-
-   VkPipelineBindPoint bind_point;
 
    /* One source per-aspect being copied. */
    struct {
@@ -240,7 +236,7 @@ layer_count_as_extent(VkImageViewType view_type, VkExtent3D extent,
 
 static VkResult
 get_copy_pipeline_layout(struct vk_device *device, struct vk_meta_device *meta,
-                         const char *key, VkShaderStageFlagBits shader_stage,
+                         enum vk_meta_object_key_type key, VkShaderStageFlagBits shader_stage,
                          size_t push_const_size,
                          const struct VkDescriptorSetLayoutBinding *bindings,
                          uint32_t binding_count, VkPipelineLayout *layout_out)
@@ -259,7 +255,7 @@ get_copy_pipeline_layout(struct vk_device *device, struct vk_meta_device *meta,
    };
 
    return vk_meta_get_pipeline_layout(device, meta, &set_layout, &push_range,
-                                      key, strlen(key) + 1, layout_out);
+                                      &key, sizeof(key), layout_out);
 }
 
 #define COPY_PUSH_SET_IMG_DESC(__binding, __type, __iview, __layout)           \
@@ -898,8 +894,6 @@ build_image_to_buffer_shader(const struct vk_meta_device *meta,
 {
    const struct vk_meta_copy_buffer_image_key *key = key_data;
 
-   assert(key->bind_point == VK_PIPELINE_BIND_POINT_COMPUTE);
-
    nir_builder builder = nir_builder_init_simple_shader(
       MESA_SHADER_COMPUTE, NULL, "vk-meta-copy-image-to-buffer");
    nir_builder *b = &builder;
@@ -986,7 +980,7 @@ get_copy_image_to_buffer_pipeline(
    };
 
    VkResult result = get_copy_pipeline_layout(
-      device, meta, "vk-meta-copy-image-to-buffer-pipeline-layout",
+      device, meta, VK_META_OBJECT_KEY_COPY_IMAGE_TO_BUFFER,
       VK_SHADER_STAGE_COMPUTE_BIT,
       sizeof(struct vk_meta_copy_buffer_image_info), bindings,
       ARRAY_SIZE(bindings), layout_out);
@@ -1004,8 +998,6 @@ build_buffer_to_image_fs(const struct vk_meta_device *meta,
                          const void *key_data)
 {
    const struct vk_meta_copy_buffer_image_key *key = key_data;
-
-   assert(key->bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS);
 
    nir_builder builder = nir_builder_init_simple_shader(
       MESA_SHADER_FRAGMENT, NULL, "vk-meta-copy-buffer-to-image-frag");
@@ -1062,7 +1054,7 @@ get_copy_buffer_to_image_gfx_pipeline(
    VkPipelineLayout *layout_out, VkPipeline *pipeline_out)
 {
    VkResult result = get_copy_pipeline_layout(
-      device, meta, "vk-meta-copy-buffer-to-image-gfx-pipeline-layout",
+      device, meta, VK_META_OBJECT_KEY_COPY_BUFFER_TO_IMAGE_GFX,
       VK_SHADER_STAGE_FRAGMENT_BIT,
       sizeof(struct vk_meta_copy_buffer_image_info), NULL, 0, layout_out);
 
@@ -1080,8 +1072,6 @@ build_buffer_to_image_cs(const struct vk_meta_device *meta,
                          const void *key_data)
 {
    const struct vk_meta_copy_buffer_image_key *key = key_data;
-
-   assert(key->bind_point == VK_PIPELINE_BIND_POINT_COMPUTE);
 
    nir_builder builder = nir_builder_init_simple_shader(
       MESA_SHADER_COMPUTE, NULL, "vk-meta-copy-buffer-to-image-compute");
@@ -1170,7 +1160,7 @@ get_copy_buffer_to_image_compute_pipeline(
    };
 
    VkResult result = get_copy_pipeline_layout(
-      device, meta, "vk-meta-copy-buffer-to-image-compute-pipeline-layout",
+      device, meta, VK_META_OBJECT_KEY_COPY_BUFFER_TO_IMAGE_CS,
       VK_SHADER_STAGE_COMPUTE_BIT,
       sizeof(struct vk_meta_copy_buffer_image_info), bindings,
       ARRAY_SIZE(bindings), layout_out);
@@ -1324,7 +1314,6 @@ copy_image_to_buffer_region(
    const struct vk_device_dispatch_table *disp = &dev->dispatch_table;
    struct vk_meta_copy_buffer_image_key key = {
       .key_type = VK_META_OBJECT_KEY_COPY_IMAGE_TO_BUFFER,
-      .bind_point = VK_PIPELINE_BIND_POINT_COMPUTE,
       .img = {
          .view = img_copy_view_info(vk_image_sampled_view_type(img),
                                     region->imageSubresource.aspectMask, img,
@@ -1503,8 +1492,7 @@ copy_buffer_to_image_region_gfx(
          : (VkImageViewType)-1;
 
    struct vk_meta_copy_buffer_image_key key = {
-      .key_type = VK_META_OBJECT_KEY_COPY_BUFFER_TO_IMAGE,
-      .bind_point = VK_PIPELINE_BIND_POINT_GRAPHICS,
+      .key_type = VK_META_OBJECT_KEY_COPY_BUFFER_TO_IMAGE_GFX,
       .img = {
          .view = img_copy_view_info(view_type,
                                     region->imageSubresource.aspectMask, img,
@@ -1548,8 +1536,7 @@ copy_buffer_to_image_region_compute(
    const struct vk_device_dispatch_table *disp = &dev->dispatch_table;
    VkImageViewType view_type = vk_image_storage_view_type(img);
    struct vk_meta_copy_buffer_image_key key = {
-      .key_type = VK_META_OBJECT_KEY_COPY_BUFFER_TO_IMAGE,
-      .bind_point = VK_PIPELINE_BIND_POINT_COMPUTE,
+      .key_type = VK_META_OBJECT_KEY_COPY_BUFFER_TO_IMAGE_CS,
       .img = {
          .view = img_copy_view_info(view_type,
                                     region->imageSubresource.aspectMask, img,
@@ -1643,8 +1630,6 @@ build_copy_image_fs(const struct vk_meta_device *meta, const void *key_data)
 {
    const struct vk_meta_copy_image_key *key = key_data;
 
-   assert(key->bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS);
-
    nir_builder builder = nir_builder_init_simple_shader(
       MESA_SHADER_FRAGMENT, NULL, "vk-meta-copy-image-frag");
    nir_builder *b = &builder;
@@ -1712,7 +1697,7 @@ get_copy_image_gfx_pipeline(struct vk_device *device,
    };
 
    VkResult result = get_copy_pipeline_layout(
-      device, meta, "vk-meta-copy-image-gfx-pipeline-layout",
+      device, meta, VK_META_OBJECT_KEY_COPY_IMAGE_GFX,
       VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(struct vk_meta_copy_image_fs_info),
       bindings, ARRAY_SIZE(bindings), layout_out);
    if (unlikely(result != VK_SUCCESS))
@@ -1727,8 +1712,6 @@ static nir_shader *
 build_copy_image_cs(const struct vk_meta_device *meta, const void *key_data)
 {
    const struct vk_meta_copy_image_key *key = key_data;
-
-   assert(key->bind_point == VK_PIPELINE_BIND_POINT_COMPUTE);
 
    nir_builder builder = nir_builder_init_simple_shader(
       MESA_SHADER_COMPUTE, NULL, "vk-meta-copy-image-compute");
@@ -1815,7 +1798,7 @@ get_copy_image_compute_pipeline(struct vk_device *device,
    };
 
    VkResult result = get_copy_pipeline_layout(
-      device, meta, "vk-meta-copy-image-compute-pipeline-layout",
+      device, meta, VK_META_OBJECT_KEY_COPY_IMAGE_CS,
       VK_SHADER_STAGE_COMPUTE_BIT, sizeof(struct vk_meta_copy_image_cs_info),
       bindings, ARRAY_SIZE(bindings), layout_out);
 
@@ -2037,8 +2020,7 @@ copy_image_region_gfx(struct vk_command_buffer *cmd,
           region->dstSubresource.aspectMask);
 
    struct vk_meta_copy_image_key key = {
-      .key_type = VK_META_OBJECT_KEY_COPY_IMAGE,
-      .bind_point = VK_PIPELINE_BIND_POINT_GRAPHICS,
+      .key_type = VK_META_OBJECT_KEY_COPY_IMAGE_GFX,
       .samples = src_img->samples,
       .aspects = region->srcSubresource.aspectMask,
       .src.view = img_copy_view_info(vk_image_sampled_view_type(src_img),
@@ -2098,8 +2080,7 @@ copy_image_region_compute(struct vk_command_buffer *cmd,
           region->dstSubresource.aspectMask);
 
    struct vk_meta_copy_image_key key = {
-      .key_type = VK_META_OBJECT_KEY_COPY_IMAGE,
-      .bind_point = VK_PIPELINE_BIND_POINT_COMPUTE,
+      .key_type = VK_META_OBJECT_KEY_COPY_IMAGE_CS,
       .samples = src_img->samples,
       .aspects = region->srcSubresource.aspectMask,
       .src.view = img_copy_view_info(vk_image_sampled_view_type(src_img),
@@ -2250,7 +2231,7 @@ get_copy_buffer_pipeline(struct vk_device *device, struct vk_meta_device *meta,
                          VkPipelineLayout *layout_out, VkPipeline *pipeline_out)
 {
    VkResult result = get_copy_pipeline_layout(
-      device, meta, "vk-meta-copy-buffer-pipeline-layout",
+      device, meta, VK_META_OBJECT_KEY_COPY_BUFFER,
       VK_SHADER_STAGE_COMPUTE_BIT, sizeof(struct vk_meta_copy_buffer_info),
       NULL, 0, layout_out);
 
@@ -2429,7 +2410,7 @@ get_fill_buffer_pipeline(struct vk_device *device, struct vk_meta_device *meta,
                          VkPipelineLayout *layout_out, VkPipeline *pipeline_out)
 {
    VkResult result = get_copy_pipeline_layout(
-      device, meta, "vk-meta-fill-buffer-pipeline-layout",
+      device, meta, VK_META_OBJECT_KEY_FILL_BUFFER,
       VK_SHADER_STAGE_COMPUTE_BIT, sizeof(struct vk_meta_fill_buffer_info), NULL, 0,
       layout_out);
    if (unlikely(result != VK_SUCCESS))

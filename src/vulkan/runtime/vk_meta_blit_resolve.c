@@ -336,7 +336,7 @@ get_blit_pipeline_layout(struct vk_device *device,
                          struct vk_meta_device *meta,
                          VkPipelineLayout *layout_out)
 {
-   const char key[] = "vk-meta-blit-pipeline-layout";
+   enum vk_meta_object_key_type key = VK_META_OBJECT_KEY_BLIT;
 
    const VkDescriptorSetLayoutBinding bindings[] = {{
       .binding = BLIT_DESC_BINDING_SAMPLER,
@@ -374,7 +374,7 @@ get_blit_pipeline_layout(struct vk_device *device,
    };
 
    return vk_meta_get_pipeline_layout(device, meta, &desc_info, &push_range,
-                                      key, sizeof(key), layout_out);
+                                      &key, sizeof(key), layout_out);
 }
 
 static VkResult
