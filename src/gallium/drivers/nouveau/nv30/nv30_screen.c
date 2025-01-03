@@ -418,6 +418,220 @@ nv30_screen_get_shader_param(struct pipe_screen *pscreen,
    }
 }
 
+static void
+nv30_init_screen_caps(struct nv30_screen *screen)
+{
+   struct pipe_caps *caps = (struct pipe_caps *)&screen->base.base.caps;
+
+   u_init_pipe_screen_caps(&screen->base.base, 1);
+
+   struct nouveau_object *eng3d = screen->eng3d;
+   struct nouveau_device *dev = screen->base.device;
+
+   /* non-boolean capabilities */
+   caps->max_render_targets = (eng3d->oclass >= NV40_3D_CLASS) ? 4 : 1;
+   caps->max_texture_2d_size = 4096;
+   caps->max_texture_3d_levels = 10;
+   caps->max_texture_cube_levels = 13;
+   caps->glsl_feature_level =
+   caps->glsl_feature_level_compatibility = 120;
+   caps->endianness = PIPE_ENDIAN_LITTLE;
+   caps->constant_buffer_offset_alignment = 16;
+   caps->min_map_buffer_alignment = NOUVEAU_MIN_BUFFER_MAP_ALIGN;
+   caps->max_viewports = 1;
+   caps->max_vertex_attrib_stride = 2048;
+   caps->max_texture_upload_memory_budget = 8 * 1024 * 1024;
+   caps->max_varyings = 8;
+
+   /* supported capabilities */
+   caps->anisotropic_filter = true;
+   caps->occlusion_query = true;
+   caps->query_time_elapsed = true;
+   caps->query_timestamp = true;
+   caps->texture_swizzle = true;
+   caps->depth_clip_disable = true;
+   caps->fs_coord_origin_upper_left = true;
+   caps->fs_coord_origin_lower_left = true;
+   caps->fs_coord_pixel_center_half_integer = true;
+   caps->fs_coord_pixel_center_integer = true;
+   caps->tgsi_texcoord = true;
+   caps->buffer_map_persistent_coherent = true;
+   caps->clear_scissored = true;
+   caps->allow_mapped_buffers_during_execution = true;
+   caps->query_memory_info = true;
+   caps->vertex_input_alignment = PIPE_VERTEX_INPUT_ALIGNMENT_4BYTE;
+   caps->texture_transfer_modes = PIPE_TEXTURE_TRANSFER_BLIT;
+   /* nv35 capabilities */
+   caps->depth_bounds_test =
+      eng3d->oclass == NV35_3D_CLASS || eng3d->oclass >= NV40_3D_CLASS;
+   caps->supported_prim_modes_with_restart =
+   caps->supported_prim_modes = BITFIELD_MASK(MESA_PRIM_COUNT);
+   /* nv4x capabilities */
+   caps->blend_equation_separate =
+   caps->npot_textures =
+   caps->conditional_render =
+   caps->texture_mirror_clamp =
+   caps->texture_mirror_clamp_to_edge =
+   caps->primitive_restart =
+   caps->primitive_restart_fixed_index = eng3d->oclass >= NV40_3D_CLASS;
+   /* unsupported */
+   caps->emulate_nonfixed_primitive_restart = false;
+   caps->depth_clip_disable_separate = false;
+   caps->max_dual_source_render_targets = 0;
+   caps->fragment_shader_texture_lod = false;
+   caps->fragment_shader_derivatives = false;
+   caps->indep_blend_enable = false;
+   caps->indep_blend_func = false;
+   caps->max_texture_array_layers = 0;
+   caps->shader_stencil_export = false;
+   caps->vs_instanceid = false;
+   caps->vertex_element_instance_divisor = false; /* xxx = yes? */
+   caps->max_stream_output_buffers = 0;
+   caps->stream_output_pause_resume = false;
+   caps->stream_output_interleave_buffers = false;
+   caps->min_texel_offset = 0;
+   caps->max_texel_offset = 0;
+   caps->min_texture_gather_offset = 0;
+   caps->max_texture_gather_offset = 0;
+   caps->max_stream_output_separate_components = 0;
+   caps->max_stream_output_interleaved_components = 0;
+   caps->max_geometry_output_vertices = 0;
+   caps->max_geometry_total_output_components = 0;
+   caps->max_vertex_streams = 0;
+   caps->tgsi_can_compact_constants = false;
+   caps->texture_barrier = false;
+   caps->seamless_cube_map = false;
+   caps->seamless_cube_map_per_texture = false;
+   caps->cube_map_array = false;
+   caps->vertex_color_unclamped = false;
+   caps->fragment_color_clamped = false;
+   caps->vertex_color_clamped = false;
+   caps->quads_follow_provoking_vertex_convention = false;
+   caps->mixed_colorbuffer_formats = false;
+   caps->start_instance = false;
+   caps->texture_multisample = false;
+   caps->texture_buffer_objects = false;
+   caps->texture_buffer_offset_alignment = 0;
+   caps->query_pipeline_statistics = false;
+   caps->texture_border_color_quirk = false;
+   caps->max_texel_buffer_elements_uint = 0;
+   caps->mixed_framebuffer_sizes = false;
+   caps->vs_layer_viewport = false;
+   caps->max_texture_gather_components = 0;
+   caps->texture_gather_sm5 = false;
+   caps->fake_sw_msaa = false;
+   caps->texture_query_lod = false;
+   caps->sample_shading = false;
+   caps->texture_gather_offsets = false;
+   caps->vs_window_space_position = false;
+   caps->user_vertex_buffers = false;
+   caps->compute = false;
+   caps->draw_indirect = false;
+   caps->multi_draw_indirect = false;
+   caps->multi_draw_indirect_params = false;
+   caps->fs_fine_derivative = false;
+   caps->conditional_render_inverted = false;
+   caps->sampler_view_target = false;
+   caps->clip_halfz = false;
+   caps->polygon_offset_clamp = false;
+   caps->multisample_z_resolve = false;
+   caps->resource_from_user_memory = false;
+   caps->device_reset_status_query = false;
+   caps->max_shader_patch_varyings = 0;
+   caps->texture_float_linear = false;
+   caps->texture_half_float_linear = false;
+   caps->texture_query_samples = false;
+   caps->force_persample_interp = false;
+   caps->copy_between_compressed_and_plain_formats = false;
+   caps->shareable_shaders = false;
+   caps->draw_parameters = false;
+   caps->shader_pack_half_float = false;
+   caps->fs_position_is_sysval = false;
+   caps->fs_face_is_integer_sysval = false;
+   caps->shader_buffer_offset_alignment = 0;
+   caps->invalidate_buffer = false;
+   caps->generate_mipmap = false;
+   caps->string_marker = false;
+   caps->buffer_sampler_view_rgba_only = false;
+   caps->surface_reinterpret_blocks = false;
+   caps->query_buffer_object = false;
+   caps->framebuffer_no_attachment = false;
+   caps->robust_buffer_access_behavior = false;
+   caps->cull_distance = false;
+   caps->shader_group_vote = false;
+   caps->max_window_rectangles = 0;
+   caps->polygon_offset_units_unscaled = false;
+   caps->viewport_subpixel_bits = 0;
+   caps->mixed_color_depth_bits = 0;
+   caps->shader_array_components = false;
+   caps->native_fence_fd = false;
+   caps->fbfetch = 0;
+   caps->legacy_math_rules = false;
+   caps->doubles = false;
+   caps->int64 = false;
+   caps->tgsi_tex_txf_lz = false;
+   caps->shader_clock = false;
+   caps->polygon_mode_fill_rectangle = false;
+   caps->sparse_buffer_page_size = 0;
+   caps->shader_ballot = false;
+   caps->tes_layer_viewport = false;
+   caps->can_bind_const_buffer_as_vertex = false;
+   caps->post_depth_coverage = false;
+   caps->bindless_texture = false;
+   caps->nir_samplers_as_deref = false;
+   caps->query_so_overflow = false;
+   caps->memobj = false;
+   caps->load_constbuf = false;
+   caps->tile_raster_order = false;
+   caps->max_combined_shader_output_resources = 0;
+   caps->framebuffer_msaa_constraints = false;
+   caps->signed_vertex_buffer_offset = false;
+   caps->context_priority_mask = 0;
+   caps->fence_signal = false;
+   caps->constbuf0_flags = 0;
+   caps->packed_uniforms = false;
+   caps->conservative_raster_post_snap_triangles = false;
+   caps->conservative_raster_post_snap_points_lines = false;
+   caps->conservative_raster_pre_snap_triangles = false;
+   caps->conservative_raster_pre_snap_points_lines = false;
+   caps->conservative_raster_post_depth_coverage = false;
+   caps->max_conservative_raster_subpixel_precision_bias = false;
+   caps->programmable_sample_locations = false;
+   caps->image_load_formatted = false;
+   caps->tgsi_div = false;
+   caps->image_atomic_inc_wrap = false;
+   caps->image_store_formatted = false;
+
+   caps->pci_group = dev->info.pci.domain;
+   caps->pci_bus = dev->info.pci.bus;
+   caps->pci_device = dev->info.pci.dev;
+   caps->pci_function = dev->info.pci.func;
+
+   caps->max_gs_invocations = 32;
+   caps->max_shader_buffer_size_uint = 1 << 27;
+   caps->vendor_id = 0x10de;
+   caps->device_id = dev->info.device_id;
+   caps->video_memory = dev->vram_size >> 20;
+   caps->uma = false;
+
+   caps->min_line_width =
+   caps->min_line_width_aa =
+   caps->min_point_size =
+   caps->min_point_size_aa = 1;
+
+   caps->point_size_granularity =
+   caps->line_width_granularity = 0.1;
+
+   caps->max_line_width =
+   caps->max_line_width_aa = 10.0;
+
+   caps->max_point_size =
+   caps->max_point_size_aa = 64.0;
+
+   caps->max_texture_anisotropy = (eng3d->oclass >= NV40_3D_CLASS) ? 16.0 : 8.0;
+   caps->max_texture_lod_bias = 15.0;
+}
+
 static bool
 nv30_screen_is_format_supported(struct pipe_screen *pscreen,
                                 enum pipe_format format,
@@ -720,6 +934,8 @@ nv30_screen_create(struct nouveau_device *dev)
                             NULL, 0, &screen->eng3d);
    if (ret)
       FAIL_SCREEN_INIT("error allocating 3d object: %d\n", ret);
+
+   nv30_init_screen_caps(screen);
 
    BEGIN_NV04(push, NV01_SUBC(3D, OBJECT), 1);
    PUSH_DATA (push, screen->eng3d->handle);
