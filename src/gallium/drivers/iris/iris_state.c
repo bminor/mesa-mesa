@@ -3805,8 +3805,10 @@ iris_set_framebuffer_state(struct pipe_context *ctx,
    } else {
       new_render_area.x = 0;
       new_render_area.y = 0;
+      new_render_area.z = 0;
       new_render_area.width = state->width;
       new_render_area.height = state->height;
+      new_render_area.depth = 0;
    }
 
    if (memcmp(&ice->state.render_area, &new_render_area, sizeof(new_render_area))) {
