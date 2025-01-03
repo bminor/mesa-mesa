@@ -204,7 +204,7 @@
         "description": "anv: ensure null-rt bit in compiler isn't used when there is ds attachment",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "15987f49bb9ca105f7b252d90349f614c492c3d5",
         "notes": null
