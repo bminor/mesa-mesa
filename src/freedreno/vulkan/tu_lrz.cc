@@ -79,10 +79,11 @@ tu6_emit_lrz_buffer(struct tu_cs *cs, struct tu_image *depth_image)
    if (!depth_image->lrz_fc_offset)
       lrz_fc_iova = 0;
 
-   tu_cs_emit_regs(cs,
-                   A6XX_GRAS_LRZ_BUFFER_BASE(.qword = lrz_iova),
-                   A6XX_GRAS_LRZ_BUFFER_PITCH(.pitch = depth_image->lrz_pitch),
-                   A6XX_GRAS_LRZ_FAST_CLEAR_BUFFER_BASE(.qword = lrz_fc_iova));
+   tu_cs_emit_regs(
+      cs, A6XX_GRAS_LRZ_BUFFER_BASE(.qword = lrz_iova),
+      A6XX_GRAS_LRZ_BUFFER_PITCH(.pitch = depth_image->lrz_pitch,
+                                 .array_pitch = depth_image->lrz_layer_size),
+      A6XX_GRAS_LRZ_FAST_CLEAR_BUFFER_BASE(.qword = lrz_fc_iova));
 
    if (CHIP >= A7XX) {
       tu_cs_emit_regs(cs, A7XX_GRAS_LRZ_DEPTH_BUFFER_INFO(
