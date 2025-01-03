@@ -599,6 +599,214 @@ llvmpipe_get_compute_param(struct pipe_screen *_screen,
 
 
 static void
+llvmpipe_init_screen_caps(struct pipe_screen *screen)
+{
+   struct pipe_caps *caps = (struct pipe_caps *)&screen->caps;
+
+   u_init_pipe_screen_caps(screen, 0);
+
+#ifdef HAVE_LIBDRM
+   struct llvmpipe_screen *lscreen = llvmpipe_screen(screen);
+#endif
+
+#ifdef HAVE_LIBDRM
+   if (lscreen->winsys->get_fd)
+      caps->dmabuf = DRM_PRIME_CAP_IMPORT | DRM_PRIME_CAP_EXPORT;
+#ifdef HAVE_LINUX_UDMABUF_H
+   else if (lscreen->udmabuf_fd != -1)
+      caps->dmabuf = DRM_PRIME_CAP_IMPORT | DRM_PRIME_CAP_EXPORT;
+   else
+      caps->dmabuf = DRM_PRIME_CAP_IMPORT;
+#endif
+#else
+   caps->dmabuf = 0;
+#endif
+
+#if defined(HAVE_LIBDRM) && defined(HAVE_LINUX_UDMABUF_H)
+   caps->native_fence_fd = lscreen->dummy_sync_fd != -1;
+#endif
+   caps->npot_textures = true;
+   caps->mixed_framebuffer_sizes = true;
+   caps->mixed_color_depth_bits = true;
+   caps->anisotropic_filter = true;
+   caps->fragment_shader_texture_lod = true;
+   caps->fragment_shader_derivatives = true;
+   caps->multiview = 2;
+   caps->max_dual_source_render_targets = 1;
+   caps->max_stream_output_buffers = PIPE_MAX_SO_BUFFERS;
+   caps->max_render_targets = PIPE_MAX_COLOR_BUFS;
+   caps->occlusion_query = true;
+   caps->query_timestamp = true;
+   caps->timer_resolution = true;
+   caps->query_time_elapsed = true;
+   caps->query_pipeline_statistics = true;
+   caps->texture_mirror_clamp = true;
+   caps->texture_mirror_clamp_to_edge = true;
+   caps->texture_swizzle = true;
+   caps->texture_shadow_lod = true;
+   caps->max_texture_2d_size = 1 << (LP_MAX_TEXTURE_2D_LEVELS - 1);
+   caps->max_texture_3d_levels = LP_MAX_TEXTURE_3D_LEVELS;
+   caps->max_texture_cube_levels = LP_MAX_TEXTURE_CUBE_LEVELS;
+   caps->max_texture_array_layers = LP_MAX_TEXTURE_ARRAY_LAYERS;
+   caps->blend_equation_separate = true;
+   caps->indep_blend_enable = true;
+   caps->indep_blend_func = true;
+   caps->fs_coord_origin_upper_left = true;
+   caps->fs_coord_pixel_center_integer = true;
+   caps->fs_coord_pixel_center_half_integer = true;
+   caps->primitive_restart = true;
+   caps->primitive_restart_fixed_index = true;
+   caps->depth_clip_disable = true;
+   caps->depth_clamp_enable = true;
+   caps->shader_stencil_export = true;
+   caps->vs_instanceid = true;
+   caps->vertex_element_instance_divisor = true;
+   caps->start_instance = true;
+   caps->seamless_cube_map = true;
+   caps->seamless_cube_map_per_texture = true;
+   /* this is a lie could support arbitrary large offsets */
+   caps->min_texture_gather_offset =
+   caps->min_texel_offset = -32;
+   caps->max_texture_gather_offset =
+   caps->max_texel_offset = 31;
+   caps->conditional_render = true;
+   caps->texture_barrier = true;
+   caps->max_stream_output_separate_components =
+   caps->max_stream_output_interleaved_components = 16*4;
+   caps->max_geometry_output_vertices =
+   caps->max_geometry_total_output_components = 1024;
+   caps->max_vertex_streams = 4;
+   caps->max_vertex_attrib_stride = 2048;
+   caps->stream_output_pause_resume = true;
+   caps->stream_output_interleave_buffers = true;
+   caps->vertex_color_unclamped = true;
+   caps->vertex_color_clamped = true;
+   caps->glsl_feature_level_compatibility =
+   caps->glsl_feature_level = 450;
+   caps->compute = GALLIVM_COROUTINES;
+   caps->user_vertex_buffers = true;
+   caps->tgsi_texcoord = true;
+   caps->draw_indirect = true;
+
+   caps->cube_map_array = true;
+   caps->constant_buffer_offset_alignment = 16;
+   caps->min_map_buffer_alignment = 64;
+   caps->texture_buffer_objects = true;
+   caps->linear_image_pitch_alignment = 1;
+   caps->linear_image_base_address_alignment = 1;
+   /* Adressing that many 64bpp texels fits in an i32 so this is a reasonable value */
+   caps->max_texel_buffer_elements_uint = LP_MAX_TEXEL_BUFFER_ELEMENTS;
+   caps->texture_buffer_offset_alignment = 16;
+   caps->texture_transfer_modes = 0;
+   caps->max_viewports = PIPE_MAX_VIEWPORTS;
+   caps->endianness = PIPE_ENDIAN_NATIVE;
+   caps->tes_layer_viewport = true;
+   caps->vs_layer_viewport = true;
+   caps->max_texture_gather_components = 4;
+   caps->vs_window_space_position = true;
+   caps->fs_fine_derivative = true;
+   caps->tgsi_tex_txf_lz = true;
+   caps->sampler_view_target = true;
+   caps->fake_sw_msaa = false;
+   caps->texture_query_lod = true;
+   caps->conditional_render_inverted = true;
+   caps->shader_array_components = true;
+   caps->doubles = true;
+   caps->int64 = true;
+   caps->query_so_overflow = true;
+   caps->tgsi_div = true;
+   caps->vendor_id = 0xFFFFFFFF;
+   caps->device_id = 0xFFFFFFFF;
+
+   /* XXX: Do we want to return the full amount fo system memory ? */
+   uint64_t system_memory;
+   if (os_get_total_physical_memory(&system_memory)) {
+      if (sizeof(void *) == 4)
+         /* Cap to 2 GB on 32 bits system. We do this because llvmpipe does
+          * eat application memory, which is quite limited on 32 bits. App
+          * shouldn't expect too much available memory. */
+         system_memory = MIN2(system_memory, 2048 << 20);
+
+      caps->video_memory = system_memory >> 20;
+   } else {
+      caps->video_memory = 0;
+   }
+
+   caps->uma = true;
+   caps->query_memory_info = true;
+   caps->clip_halfz = true;
+   caps->polygon_offset_clamp = true;
+   caps->texture_float_linear = true;
+   caps->texture_half_float_linear = true;
+   caps->cull_distance = true;
+   caps->copy_between_compressed_and_plain_formats = true;
+   caps->max_varyings = 32;
+   caps->shader_buffer_offset_alignment = 16;
+   caps->query_buffer_object = true;
+   caps->draw_parameters = true;
+   caps->fbfetch = 8;
+   caps->fbfetch_coherent = true;
+   caps->fbfetch_zs = true;
+   caps->multi_draw_indirect = true;
+   caps->multi_draw_indirect_params = true;
+   caps->device_reset_status_query = true;
+   caps->robust_buffer_access_behavior = true;
+   caps->max_shader_patch_varyings = 32;
+   caps->rasterizer_subpixel_bits = 8;
+   caps->pci_group =
+   caps->pci_bus =
+   caps->pci_device =
+   caps->pci_function = 0;
+   caps->allow_mapped_buffers_during_execution = false;
+
+   /* Can't expose shareable shaders because the draw shaders reference the
+    * draw module's state, which is per-context.
+    */
+   caps->shareable_shaders = false;
+   caps->max_gs_invocations = 32;
+   caps->max_shader_buffer_size_uint = LP_MAX_TGSI_SHADER_BUFFER_SIZE;
+   caps->framebuffer_no_attachment = true;
+   caps->tgsi_tg4_component_in_swizzle = true;
+   caps->fs_face_is_integer_sysval = true;
+   caps->resource_from_user_memory = true;
+   caps->image_store_formatted = true;
+   caps->image_load_formatted = true;
+#ifdef PIPE_MEMORY_FD
+   caps->memobj = true;
+#endif
+   caps->sampler_reduction_minmax = true;
+   caps->texture_query_samples = true;
+   caps->shader_group_vote = true;
+   caps->shader_ballot = true;
+   caps->image_atomic_float_add = true;
+   caps->load_constbuf = true;
+   caps->texture_multisample = true;
+   caps->sample_shading = true;
+   caps->gl_spirv = true;
+   caps->post_depth_coverage = true;
+   caps->shader_clock = true;
+   caps->packed_uniforms = true;
+   caps->system_svm = true;
+   caps->atomic_float_minmax = LLVM_VERSION_MAJOR >= 15;
+   caps->nir_images_as_deref = false;
+   caps->alpha_to_coverage_dither_control = true;
+
+   caps->min_line_width =
+   caps->min_line_width_aa =
+   caps->min_point_size =
+   caps->min_point_size_aa = 1.0;
+   caps->point_size_granularity =
+   caps->line_width_granularity = 0.1;
+   caps->max_line_width =
+   caps->max_line_width_aa = 255.0; /* arbitrary */
+   caps->max_point_size =
+   caps->max_point_size_aa = LP_MAX_POINT_WIDTH; /* arbitrary */
+   caps->max_texture_anisotropy = 16.0; /* not actually signficant at this time */
+   caps->max_texture_lod_bias = 16.0; /* arbitrary */
+}
+
+
+static void
 llvmpipe_get_driver_uuid(struct pipe_screen *pscreen, char *uuid)
 {
    memset(uuid, 0, PIPE_UUID_SIZE);
@@ -1203,6 +1411,8 @@ llvmpipe_create_screen(struct sw_winsys *winsys)
    screen->mem_heap.alloc_high = false;
    screen->fd_mem_alloc = os_create_anonymous_file(0, "allocation fd");
 #endif
+
+   llvmpipe_init_screen_caps(&screen->base);
 
    snprintf(screen->renderer_string, sizeof(screen->renderer_string),
             "llvmpipe (LLVM " MESA_LLVM_VERSION_STRING ", %u bits)",
