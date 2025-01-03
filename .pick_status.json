@@ -1,5 +1,885 @@
 [
     {
+        "sha": "51a2f70e5e736636049c1180c1552c34a5f17009",
+        "description": "panvk/ci: drop needless envvar",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "976eb6825e487d39f1b6bd21835cee23b6a9ef41",
+        "notes": null
+    },
+    {
+        "sha": "2bb6db3fb36a49e600e4cf66a0dd92869b7a6d55",
+        "description": "docs: update panvk status",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cf07e89d0665fc06911946c188105ac12e5404fd",
+        "description": "docs/ci: treat warnings as errors",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "fdd204538b93e17cecd32786603e0e2452e459c4",
+        "notes": null
+    },
+    {
+        "sha": "7a8c46f54c538d5e7b55b09de4484ad07cc036a8",
+        "description": "docs: fixup link in radv docs",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "3ba3e007503c1c94f079c9d78d541ae722031add",
+        "notes": null
+    },
+    {
+        "sha": "46ccc136915de642b25eae779729dbc234ed63ca",
+        "description": "docs: fixup broken markup",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "5d6d67a4d136301c7fd336f18dec37a65005a5d1",
+        "notes": null
+    },
+    {
+        "sha": "c273ada5026d36b368418065a6e58e2d0b8a1a6f",
+        "description": "compiler/rust/bitset: Test next_unset()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2bcb950865d7d6e3786ac0df5105b4e1d31f68ed",
+        "description": "compiler/rust/bitset: Don't expose words",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4e3ba6706344003ad855b8e501e9b3143291cb92",
+        "description": "nak: Migrate liveness to new bitset expression api",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "86e5cb7c2dcdd2eef7a2969859a1c1d824f34e8c",
+        "description": "compiler/rust/bitset: Take a stream in union_with",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "47da213e197b408f1f1b6c8785098dd0225c7daf",
+        "description": "compiler/rust/bitset: Add a lazy expression API",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e52b2ee4b9b27916fa012f281888bd2d65518c32",
+        "description": "compiler/rust/bitset: Remove impl Not",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8ec885da1d6d3e83452c5cca3785fe48f7dbbac2",
+        "description": "compiler/rust/bitset: impl FromIterator",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "de47702dde335897d6e39914b5d9e083df26c3cc",
+        "description": "compiler/rust/bitset: Make BitSetIter private",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "06cd3c7fa3d8e11e984cb8dd4777aa20936ea2bf",
+        "description": "compiler/rust/bitset: Removed unused start param",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6ba317bd8cccfa0954e057c29c869eed71c86b28",
+        "description": "compiler/rust/bitset: Add a basic test",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3b341366a63f4b89c6cefaafce057a1850aca2b5",
+        "description": "compiler/rust: Fix running tests",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "639211dea818bc0582843285ff69ebe778ef0f8f",
+        "description": "compiler/rust/bitset: Fix the bitset iterator",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6df997f6bcb388bae327f40e1e4b27b745bf2fd6",
+        "description": "ci/android: upgrade DEBIAN_TEST_ANDROID_TAG",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "578fb242f9b0491ad060b806896ee48cc95998fb",
+        "description": "ci/android: add ci rules to test venus on Android",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "610fc8cd13053cb85bbb729498ebae05427a57ed",
+        "description": "ci/android: add ci rules to test llvmpipe on Android",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "44caff4abab35ff92d2a239d3ca5c60cb880ab56",
+        "description": "ci/android: set VK_DRIVER_FILES before launching cuttlefish",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d93626a84bda016fd4307752f97a012dc56fa42d",
+        "description": "ci/android: use a /data/deqp subdirectory on guest to store dEQP files",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a3c6f7aa5a30ea48a2aaaed6f8c7731d536c4f58",
+        "description": "ci/android: set XDG_CACHE_HOME and pass --shader-cache-dir to deqp-runner",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a3e444ff1d5cda4f894c178c6997d9feeea7b4cc",
+        "description": "ci/android: use a native adb connection",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "030b5f310b5ba917fe47c46ccd28bcbe754f81a8",
+        "description": "ci/android: update list of deqp files pushed to the guest system",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2a85675eff4d1d92daeecabfacfcc2de4b4018ff",
+        "description": "ci/android: also copy mesa vulkan libraries to the Android guest",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "948f179f65cee466fab021f25a89ea7888b911f4",
+        "description": "ci/android: reorder PATH and LD_LIBRARY_PATH values to clarify priority",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5cec9b69fdc1b7f7f19fb689f6755ed1124e8fe4",
+        "description": "ci/android: don't call cuttlefish-host-resources script",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6e1959c56ac6d6881b8c4117e95823035b4ff217",
+        "description": "ci/android: fix result dir for Android guest execution of deqp-runner",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4d3eced2c0aede5f84cb56a447265b3828fa8dd8",
+        "description": "ci/android: fix warning when using chown",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8252ffbf11eeb154d96cc0a0c32c7379a5e8c884",
+        "description": "ci/android: use a custom kernel when launching cuttlefish",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3cc3384e95e39a8a75a8e5823fbe7d28a7302551",
+        "description": "ci/android: better separate host and guest mesa artifacts",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0c0e268761dbdcd765e315a135e84f391a257287",
+        "description": "ci/android: make cuttlefish-runner.sh more robust against different Android images",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5d539f1a30d044b0e63d0f9b271711a79ab9337b",
+        "description": "ci/android: get custom cuttlefish images from the S3",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "92488c459886da211e6396d8ad372937c91eae16",
+        "description": "ci/android: add sudo to EPHEMERAL deps for debian/x86_64_test-android.sh",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "711c9adb30d68accf87e8fdaf26ae557d226b968",
+        "description": "ci/android: update version of cuttlefish host tools",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "03f15ca6eb4aca387b7300d0cf5246b8c28593fb",
+        "description": "ci/android: handle premature exit of .gitlab-ci/cuttlefish-runner.sh",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c4fd424a2bf11ba3edea4d4436239a6f1e3a0bbc",
+        "description": "ci/android: restart all services after copying the new mesa libraries",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5bd669e076d8e5164bd04e67726a8b5158428225",
+        "description": "ci/android: don't copy the DRI drivers which are not needed anymore",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "17eabaf55c369715c371b2d2f2dfe2dfa6809bf0",
+        "description": "ci/android: build llvmpipe driver for Android by forcing llvm fallback",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a90d771724b0fc0aa35192b5dcd30068a06b42a8",
+        "description": "ci/android: build deqp for DEQP_API=VK",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f6b3f2bee5c1e445664fcec64c1d42a66ead2bce",
+        "description": "ci/android: fix problem with deqp version file when building for Android",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "960cdbae99625ea482787f53ced41bcce03113e6",
+        "description": "ci/deqp: collect the mustpass lists also for the android target",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "956ac1e562c3b8aef1262f4a6e141c0500efdac4",
+        "description": "ci/deqp: enable building testlog tools on Android too",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f908bf1e7f9f300797a2ffb858fbee51c41ab433",
+        "description": "ci/deqp: cherry-pick fixes for building GL and GLES deqp on Android",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ab29d6e4a7b873f90f66e1354f819f35abe2dcbc",
+        "description": "ci/deqp: refresh some patches to apply on top of recent VK-GL-CTS",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "47558b718aaf8dfd8f444a8109e8c446c13f3e79",
+        "description": "ci: set GIT_COMMITTER_DATE in a locale-agnostic format",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "195663484edf312bce8186b0a6b2bed16aa43221",
+        "description": "ci/meson: add FORCE_FALLBACK_FOR variable for build jobs to use",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "776b5378969fa96fce2d9c737c1eb6104371b805",
+        "description": "ci/meson: make meson wrap fallback list more readable",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a933acdfd799b36c070c15876a8639f5a44146ec",
+        "description": "tu: Align lrz height to 32",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "37598898463fa8057db4efe01c2b8b639dc1a221",
+        "description": "freedreno/a6xx: Align lrz height to 32",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "a127a78548721716b5262b127fcc9715052507a2",
+        "notes": null
+    },
+    {
+        "sha": "f7af64cece110987079b43b1deaf18f7d73fa2ec",
+        "description": "freedreno/a6xx: Add nolrzfc debug option",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "746f41688cfc52e52b10e5029adc7cb6ac72c06f",
+        "description": "freedreno/a6xx: Align lrz setup with tu",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e1aebf8a0c1c37e186ada066ac6f43afbd82881c",
+        "description": "intel/brw: Remove 'fs' prefix from passes and related functions",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "25384dccc0defbc44b6c3d2598cd77e4c989864f",
+        "description": "intel/brw: Remove 'fs' prefix from passes filenames",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e772a4f3fd77c553e84417b8b8f07ccddc723ffb",
+        "description": "radeonsi: use nir_opt_move",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f114a1850103abf762e1083981302f2fe6529b1e",
+        "description": "radeonsi: use nir_opt_sink",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7fbca998b1e5d9fb9a8055ca2ca7a9a013adf902",
+        "description": "amd: optimize atomics before lowering intrinsics",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d30c55abf10551807447d3d76fea5c7ea3e36619",
+        "description": "radeonsi: lower sysval intrinsics as late as possible",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5dd9171765afeceaefb08ad7e7a1b421c6d73687",
+        "description": "ac/nir: set upper ranges for range analysis while lowering system values",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0d5b03f2b9f1248ddc47d4a5b67b0aaf91fecf5a",
+        "description": "ac/nir: split local_invocation_ids to 3 separate VGPR inputs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "65d241c94733626e7f31bca8e9014b653d509444",
+        "description": "ac/nir: set arg_upper_bound_u32 for vs_rel_patch_id",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1d9fbe5387b913e53652effb5e264852629a4552",
+        "description": "ac/nir: add helper ac_nir_load_arg_upper_bound",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cfeaa45dc694dc6ca44d852c8789a78b821b2d0a",
+        "description": "ac/nir: clean up ac_nir_lower_indirect_derefs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ae22da2ff87dc8ba57f07cadc295149b57711275",
+        "description": "ac/nir: lower more loads in ac_nir_lower_intrinsics_to_args instead of drivers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "dc8a40ff3e64e21ee5cedb66a27f36523370b374",
+        "description": "ac/llvm: remove already lowered cases",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ceb6f8fc32be8423349e3b67963fdd7837ae932c",
+        "description": "amd: lower load_tess_rel_patch_id/primitive_id/tess_coord and overwrite.. in NIR",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "61bfb4fa06ef2b70243e5a8e6294f6ac8293104f",
+        "description": "amd: lower load_subgroup_invocation in NIR",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e69f47faee742be92e727a4bb177c114fd3dff89",
+        "description": "amd: lower load_local_invocation_index in NIR",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "433ca6ba389f81b8156d3a92725a725ffe788b3c",
+        "description": "ac/nir: extract a load_subgroup_id lowered helper",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "85ce311a36173c895a36e46a3026c9e3a45bb699",
+        "description": "radeonsi: don't return 0 from si_get_max_workgroup_size",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "342dcbdc8b3ff5c361f1035c9f713e94711343b9",
+        "description": "amd: lower load_vertex_id/instance_id and overwrite_vs_arguments in NIR",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "66dd70adc556fdb3ee2c00d719e0bd94af869cdf",
+        "description": "amd: lower load_gs_wave_id_amd in NIR",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "923f59c97164ce24c3016cae24d479d4b6b9e3dd",
+        "description": "amd: lower load_barycentric_at_offset in NIR",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "16ab05fad18bd58438075ee4ac70e43441efa217",
+        "description": "amd: lower load_barycentric_pixel/centroid/sample in NIR",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a15e733a8155d1f3218e0b5f1bf05b08f9d58754",
+        "description": "ac,radeonsi: move load_vector_arg flags to common code",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7e83f6ca8b4e1e4b42089607cd0b7c8c23210894",
+        "description": "amd: lower load_front_face in NIR",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6ad5225b2a7168c4c2fd26d256110afda9095d75",
+        "description": "amd: lower load_frag_shading_rate in NIR",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6d2e29ff6e063c5684b2b02f4e96c6c698e9b207",
+        "description": "amd: lower load_sample_pos in NIR",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "110e474b4f4207d8d8521ec22406a5d5914b860a",
+        "description": "amd: lower load_sample_id in NIR",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "684c8da5536f4adfebe3328169ef2198ec5d6faa",
+        "description": "amd: lower load_invocation_id in NIR",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d281240c57568e0ceb8da20c43ae126cbdda5299",
+        "description": "amd: lower load_first_vertex/base_instance/draw_id/view_index in NIR",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0d372b043be86c634e0789b15a1d88d4d437efa9",
+        "description": "amd: lower load_local_invocation_id in NIR",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "13cb5c7b72bbad54a45df25e72db7acedb9962e8",
+        "description": "amd: lower load_frag_coord in NIR",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "58cb155068a2825b343e1f5a3d62aff5f0bb9283",
+        "description": "amd: lower load_pixel_coord in NIR",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "85c3b5159ae9a6425d41ddf055c362cd91224838",
+        "description": "ac/nir: handle disabled PS VGPRs in ac_nir_load_arg_at_offset",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "58b7b9ab15218b8106ae4d23c1b194a7f231b967",
+        "description": "radv: reduce maxGeometryShaderInvocations to 32",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6fb2d3b1630985b1097c792fa43fe16467c86fc1",
+        "description": "anv: limit the memcpy data for push constants",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "272ff275fa27a2536e8699c7de100c8e266ae2b0",
         "description": "aco/insert_exec: reset top exec for p_discard_if",
         "nominated": true,
