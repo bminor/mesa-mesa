@@ -559,7 +559,9 @@ vlVaHandleVAProcPipelineParameterBufferType(vlVaDriver *drv, vlVaContext *contex
                                 PIPE_VIDEO_ENTRYPOINT_PROCESSING,
                                 PIPE_VIDEO_CAP_SUPPORTED)) {
       if (!context->decoder) {
+         mtx_lock(&context->mutex);
          context->decoder = drv->pipe->create_video_codec(drv->pipe, &context->templat);
+         mtx_unlock(&context->mutex);
          if (!context->decoder)
             return VA_STATUS_ERROR_ALLOCATION_FAILED;
       }

@@ -272,12 +272,16 @@ handlePictureParameterBuffer(vlVaDriver *drv, vlVaContext *context, vlVaBuffer *
       if (!context->target)
          return VA_STATUS_ERROR_INVALID_CONTEXT;
 
+      mtx_lock(&context->mutex);
+
       if (format == PIPE_VIDEO_FORMAT_MPEG4_AVC)
          context->templat.level = u_get_h264_level(context->templat.width,
             context->templat.height, &context->templat.max_references);
 
       context->decoder = drv->pipe->create_video_codec(drv->pipe,
          &context->templat);
+
+      mtx_unlock(&context->mutex);
 
       if (!context->decoder)
          return VA_STATUS_ERROR_ALLOCATION_FAILED;

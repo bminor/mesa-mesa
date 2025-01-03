@@ -451,6 +451,7 @@ vlVaCreateContext(VADriverContextP ctx, VAConfigID config_id, int picture_width,
          return VA_STATUS_ERROR_ALLOCATION_FAILED;
    }
 
+   mtx_init(&context->mutex, mtx_plain);
    context->surfaces = _mesa_set_create(NULL, _mesa_hash_pointer, _mesa_key_pointer_equal);
    context->buffers = _mesa_set_create(NULL, _mesa_hash_pointer, _mesa_key_pointer_equal);
 
@@ -480,6 +481,8 @@ vlVaDestroyContext(VADriverContextP ctx, VAContextID context_id)
       mtx_unlock(&drv->mutex);
       return VA_STATUS_ERROR_INVALID_CONTEXT;
    }
+
+   mtx_lock(&context->mutex);
 
    set_foreach(context->surfaces, entry) {
       vlVaSurface *surf = (vlVaSurface *)entry->key;
@@ -555,6 +558,8 @@ vlVaDestroyContext(VADriverContextP ctx, VAContextID context_id)
       vl_deint_filter_cleanup(context->deint);
       FREE(context->deint);
    }
+   mtx_unlock(&context->mutex);
+   mtx_destroy(&context->mutex);
    FREE(context->desc.base.decrypt_key);
    FREE(context->bs.buffers);
    FREE(context->bs.sizes);
