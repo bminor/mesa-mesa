@@ -1004,7 +1004,7 @@
         "description": "winsys/radeon: fix radeon_winsys_bo_from_handle() related race condition",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ccd3bb45483b25330f435d7e041a69237edc9631",
         "notes": null
