@@ -462,8 +462,10 @@ vk_accel_struct_cmd_begin_debug_marker(VkCommandBuffer commandBuffer,
    va_start(ap, format);
 
    char *name;
-   if (vasprintf(&name, format, ap) == -1)
+   if (vasprintf(&name, format, ap) == -1) {
+      va_end(ap);
       return;
+   }
 
    va_end(ap);
 
