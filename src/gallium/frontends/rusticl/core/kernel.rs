@@ -1713,9 +1713,22 @@ impl Kernel {
     }
 
     pub fn local_mem_size(&self, dev: &Device) -> cl_ulong {
-        // TODO include args
+        // TODO: take alignment into account?
         // this is purely informational so it shouldn't even matter
-        self.builds.get(dev).unwrap()[NirKernelVariant::Default].shared_size as cl_ulong
+        let local =
+            self.builds.get(dev).unwrap()[NirKernelVariant::Default].shared_size as cl_ulong;
+        let args: cl_ulong = self
+            .arg_values()
+            .iter()
+            .map(|arg| match arg {
+                Some(KernelArgValue::LocalMem(val)) => *val as cl_ulong,
+                // If the local memory size, for any pointer argument to the kernel declared with
+                // the __local address qualifier, is not specified, its size is assumed to be 0.
+                _ => 0,
+            })
+            .sum();
+
+        local + args
     }
 
     pub fn has_svm_devs(&self) -> bool {
