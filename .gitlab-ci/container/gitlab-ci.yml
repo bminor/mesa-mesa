@@ -156,10 +156,10 @@ debian/s390x_build:
 # Android NDK cross-build image
 .android-variables:
   variables:
-    ANDROID_SDK_VERSION: 33
-    ANDROID_NDK: android-ndk-r25b
+    ANDROID_SDK_VERSION: 34
+    ANDROID_NDK: android-ndk-r27c
     ANDROID_LLVM_VERSION: llvmorg-18.1.8
-    ANDROID_LLVM_ARTIFACT_NAME: android-x86_64-llvm-20241219
+    ANDROID_LLVM_ARTIFACT_NAME: android-x86_64-llvm-20250103
 
 debian/android_build:
   extends:
