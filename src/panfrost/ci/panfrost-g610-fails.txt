@@ -265,6 +265,9 @@ dEQP-VK.texture.filtering.3d.formats.d32_sfloat_s8_uint_stencil.d32_sfloat_s8_ui
 # CTS bug, see https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/5296
 dEQP-VK.api.device_init.create_device_unsupported_features.protected_memory_features,Fail
 
+# CTS bug, tries to use vkCmdSetPatchControlPointsEXT when we don't have that
+dEQP-VK.pipeline.fast_linked_library.misc.interpolate_at_sample_no_sample_shading,Crash
+
 # CTS bug, works fine if Vulkan 1.1 is forced
 dEQP-VK.api.device_init.create_device_global_priority.basic,Fail
 dEQP-VK.api.device_init.create_device_global_priority_khr.basic,Fail
@@ -291,6 +294,8 @@ dEQP-VK.glsl.loops.special.do_while_dynamic_iterations.dowhile_trap_vertex,Crash
 
 dEQP-VK.rasterization.rasterization_order_attachment_access.depth.samples_1.multi_draw_barriers,Crash
 dEQP-VK.rasterization.rasterization_order_attachment_access.stencil.samples_1.multi_draw_barriers,Crash
+
+dEQP-VK.ycbcr.query.lod.fragment.r8g8b8a8_unorm,Fail
 
 dEQP-VK.wsi.wayland.swapchain.simulate_oom.composite_alpha,Crash
 dEQP-VK.wsi.wayland.swapchain.simulate_oom.exclusive_nonzero_queues,Crash
