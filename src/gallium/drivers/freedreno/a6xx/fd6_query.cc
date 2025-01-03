@@ -96,6 +96,12 @@ occlusion_resume(struct fd_acc_query *aq, struct fd_batch *batch)
       );
    }
 
+   ctx->occlusion_queries_active++;
+
+   /* Just directly bash the gen specific LRZ dirty bit, since we don't
+    * need to re-emit any other LRZ related state:
+    */
+   ctx->gen_dirty |= FD6_GROUP_LRZ;
 }
 
 template <chip CHIP>
@@ -170,6 +176,14 @@ occlusion_pause(struct fd_acc_query *aq, struct fd_batch *batch) assert_dt
          EV_DST_RAM_CP_EVENT_WRITE7_1(query_sample(aq, start)),
       );
    }
+
+   assert(ctx->occlusion_queries_active > 0);
+   ctx->occlusion_queries_active--;
+
+   /* Just directly bash the gen specific LRZ dirty bit, since we don't
+    * need to re-emit any other LRZ related state:
+    */
+   ctx->gen_dirty |= FD6_GROUP_LRZ;
 }
 
 static void
