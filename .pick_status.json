@@ -1194,7 +1194,7 @@
         "description": "glsl: fix corruption due to blake3 hash not being set for nir_opt_undef",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "cbfc225e2bda2c8627a4580fa3a9b63bfb7133e0",
         "notes": null
