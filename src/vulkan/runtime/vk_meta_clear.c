@@ -209,7 +209,7 @@ vk_meta_clear_attachments(struct vk_command_buffer *cmd,
 
    struct vk_meta_clear_key key;
    memset(&key, 0, sizeof(key));
-   key.key_type = VK_META_OBJECT_KEY_CLEAR_PIPELINE;
+   key.key_type = VK_META_OBJECT_KEY_CLEAR;
    vk_meta_rendering_info_copy(&key.render, render);
 
    struct vk_meta_clear_push_data push = {0};

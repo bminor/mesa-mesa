@@ -1323,7 +1323,7 @@ copy_image_to_buffer_region(
    struct vk_device *dev = cmd->base.device;
    const struct vk_device_dispatch_table *disp = &dev->dispatch_table;
    struct vk_meta_copy_buffer_image_key key = {
-      .key_type = VK_META_OBJECT_KEY_COPY_IMAGE_TO_BUFFER_PIPELINE,
+      .key_type = VK_META_OBJECT_KEY_COPY_IMAGE_TO_BUFFER,
       .bind_point = VK_PIPELINE_BIND_POINT_COMPUTE,
       .img = {
          .view = img_copy_view_info(vk_image_sampled_view_type(img),
@@ -1503,7 +1503,7 @@ copy_buffer_to_image_region_gfx(
          : (VkImageViewType)-1;
 
    struct vk_meta_copy_buffer_image_key key = {
-      .key_type = VK_META_OBJECT_KEY_COPY_BUFFER_TO_IMAGE_PIPELINE,
+      .key_type = VK_META_OBJECT_KEY_COPY_BUFFER_TO_IMAGE,
       .bind_point = VK_PIPELINE_BIND_POINT_GRAPHICS,
       .img = {
          .view = img_copy_view_info(view_type,
@@ -1548,7 +1548,7 @@ copy_buffer_to_image_region_compute(
    const struct vk_device_dispatch_table *disp = &dev->dispatch_table;
    VkImageViewType view_type = vk_image_storage_view_type(img);
    struct vk_meta_copy_buffer_image_key key = {
-      .key_type = VK_META_OBJECT_KEY_COPY_BUFFER_TO_IMAGE_PIPELINE,
+      .key_type = VK_META_OBJECT_KEY_COPY_BUFFER_TO_IMAGE,
       .bind_point = VK_PIPELINE_BIND_POINT_COMPUTE,
       .img = {
          .view = img_copy_view_info(view_type,
@@ -2037,7 +2037,7 @@ copy_image_region_gfx(struct vk_command_buffer *cmd,
           region->dstSubresource.aspectMask);
 
    struct vk_meta_copy_image_key key = {
-      .key_type = VK_META_OBJECT_KEY_COPY_IMAGE_PIPELINE,
+      .key_type = VK_META_OBJECT_KEY_COPY_IMAGE,
       .bind_point = VK_PIPELINE_BIND_POINT_GRAPHICS,
       .samples = src_img->samples,
       .aspects = region->srcSubresource.aspectMask,
@@ -2098,7 +2098,7 @@ copy_image_region_compute(struct vk_command_buffer *cmd,
           region->dstSubresource.aspectMask);
 
    struct vk_meta_copy_image_key key = {
-      .key_type = VK_META_OBJECT_KEY_COPY_IMAGE_PIPELINE,
+      .key_type = VK_META_OBJECT_KEY_COPY_IMAGE,
       .bind_point = VK_PIPELINE_BIND_POINT_COMPUTE,
       .samples = src_img->samples,
       .aspects = region->srcSubresource.aspectMask,
@@ -2272,7 +2272,7 @@ copy_buffer_region(struct vk_command_buffer *cmd, struct vk_meta_device *meta,
    VkResult result;
 
    struct vk_meta_copy_buffer_key key = {
-      .key_type = VK_META_OBJECT_KEY_COPY_BUFFER_PIPELINE,
+      .key_type = VK_META_OBJECT_KEY_COPY_BUFFER,
    };
 
    VkDeviceSize size = region->size;
@@ -2452,7 +2452,7 @@ vk_meta_fill_buffer(struct vk_command_buffer *cmd, struct vk_meta_device *meta,
    VkResult result;
 
    struct vk_meta_fill_buffer_key key = {
-      .key_type = VK_META_OBJECT_KEY_FILL_BUFFER_PIPELINE,
+      .key_type = VK_META_OBJECT_KEY_FILL_BUFFER,
    };
 
    VkPipelineLayout pipeline_layout;
