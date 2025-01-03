@@ -12768,8 +12768,16 @@ load_unaligned_vs_attrib(Builder& bld, PhysReg dst, Operand desc, Operand index,
    } else {
       for (unsigned i = 0; i < size; i++) {
          Definition def(i ? scratch.advance(i * 4 - 4) : dst, v1);
-         bld.mubuf(aco_opcode::buffer_load_ubyte, def, desc, index, Operand::c32(offset + i), 0,
-                   false, true);
+         unsigned soffset = 0, const_offset = 0;
+
+         if (bld.program->gfx_level >= GFX12) {
+            const_offset = offset + i;
+         } else {
+            soffset = offset + i;
+         }
+
+         bld.mubuf(aco_opcode::buffer_load_ubyte, def, desc, index, Operand::c32(soffset),
+                   const_offset, false, true);
       }
    }
 
@@ -12947,6 +12955,17 @@ select_vs_prolog(Program* program, const struct aco_vs_prolog_info* pinfo, ac_sh
             for (unsigned j = 0; j < (vtx_info->chan_byte_size ? vtx_info->num_channels : 1); j++) {
                bool post_shuffle = pinfo->post_shuffle & (1u << loc);
                unsigned offset = vtx_info->chan_byte_size * (post_shuffle && j < 3 ? 2 - j : j);
+               unsigned soffset = 0, const_offset = 0;
+
+               /* We need to use soffset on GFX6-7 to avoid being considered
+                * out-of-bounds when offset>=stride. GFX12 doesn't support a
+                * non-zero constant soffset.
+                */
+               if (program->gfx_level >= GFX12) {
+                  const_offset = offset;
+               } else {
+                  soffset = offset;
+               }
 
                if ((pinfo->unaligned_mask & (1u << loc)) && vtx_info->chan_byte_size <= 4)
                   load_unaligned_vs_attrib(bld, dest.advance(j * 4u), Operand(cur_desc, s4),
@@ -12954,11 +12973,12 @@ select_vs_prolog(Program* program, const struct aco_vs_prolog_info* pinfo, ac_sh
                else if (vtx_info->chan_byte_size == 8)
                   bld.mtbuf(aco_opcode::tbuffer_load_format_xy,
                             Definition(dest.advance(j * 8u), v2), Operand(cur_desc, s4),
-                            fetch_index, Operand::c32(offset), dfmt, nfmt, 0, false, true);
+                            fetch_index, Operand::c32(soffset), dfmt, nfmt, const_offset, false,
+                            true);
                else
                   bld.mtbuf(aco_opcode::tbuffer_load_format_x, Definition(dest.advance(j * 4u), v1),
-                            Operand(cur_desc, s4), fetch_index, Operand::c32(offset), dfmt, nfmt,
-                            0, false, true);
+                            Operand(cur_desc, s4), fetch_index, Operand::c32(soffset), dfmt, nfmt,
+                            const_offset, false, true);
             }
 
             unsigned slots = vtx_info->chan_byte_size == 8 && vtx_info->num_channels > 2 ? 2 : 1;
