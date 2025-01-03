@@ -88,14 +88,10 @@ unsafe impl CLInfo<cl_device_info> for cl_device_id {
             CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE => v.write::<cl_uint>(0),
             CL_DEVICE_GLOBAL_MEM_SIZE => v.write::<cl_ulong>(dev.global_mem_size()),
             CL_DEVICE_GLOBAL_VARIABLE_PREFERRED_TOTAL_SIZE => v.write::<usize>(0),
-            CL_DEVICE_HALF_FP_CONFIG => v.write::<cl_device_fp_config>(
-                if dev.fp16_supported() {
-                    CL_FP_ROUND_TO_NEAREST | CL_FP_INF_NAN
-                } else {
-                    0
-                }
-                .into(),
-            ),
+            // Provided by the cl_khr_fp16 extension.
+            CL_DEVICE_HALF_FP_CONFIG if dev.fp16_supported() => {
+                v.write::<cl_device_fp_config>((CL_FP_ROUND_TO_NEAREST | CL_FP_INF_NAN).into())
+            }
             CL_DEVICE_HOST_MEM_CAPABILITIES_INTEL => {
                 v.write::<cl_device_unified_shared_memory_capabilities_intel>(0)
             }
