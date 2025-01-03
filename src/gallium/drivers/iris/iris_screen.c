@@ -634,6 +634,218 @@ iris_get_compute_param(struct pipe_screen *pscreen,
    }
 }
 
+static void
+iris_init_screen_caps(struct iris_screen *screen)
+{
+   struct pipe_caps *caps = (struct pipe_caps *)&screen->base.caps;
+
+   u_init_pipe_screen_caps(&screen->base, 1);
+
+   const struct intel_device_info *devinfo = screen->devinfo;
+
+   caps->npot_textures = true;
+   caps->anisotropic_filter = true;
+   caps->occlusion_query = true;
+   caps->query_time_elapsed = true;
+   caps->texture_swizzle = true;
+   caps->texture_mirror_clamp_to_edge = true;
+   caps->blend_equation_separate = true;
+   caps->fragment_shader_texture_lod = true;
+   caps->fragment_shader_derivatives = true;
+   caps->primitive_restart = true;
+   caps->primitive_restart_fixed_index = true;
+   caps->indep_blend_enable = true;
+   caps->indep_blend_func = true;
+   caps->fs_coord_origin_upper_left = true;
+   caps->fs_coord_pixel_center_integer = true;
+   caps->depth_clip_disable = true;
+   caps->vs_instanceid = true;
+   caps->vertex_element_instance_divisor = true;
+   caps->seamless_cube_map = true;
+   caps->seamless_cube_map_per_texture = true;
+   caps->conditional_render = true;
+   caps->texture_barrier = true;
+   caps->stream_output_pause_resume = true;
+   caps->vertex_color_unclamped = true;
+   caps->compute = true;
+   caps->start_instance = true;
+   caps->query_timestamp = true;
+   caps->texture_multisample = true;
+   caps->cube_map_array = true;
+   caps->texture_buffer_objects = true;
+   caps->query_pipeline_statistics_single = true;
+   caps->texture_query_lod = true;
+   caps->sample_shading = true;
+   caps->force_persample_interp = true;
+   caps->draw_indirect = true;
+   caps->multi_draw_indirect = true;
+   caps->multi_draw_indirect_params = true;
+   caps->mixed_framebuffer_sizes = true;
+   caps->vs_layer_viewport = true;
+   caps->tes_layer_viewport = true;
+   caps->fs_fine_derivative = true;
+   caps->shader_pack_half_float = true;
+   caps->conditional_render_inverted = true;
+   caps->clip_halfz = true;
+   caps->tgsi_texcoord = true;
+   caps->stream_output_interleave_buffers = true;
+   caps->doubles = true;
+   caps->int64 = true;
+   caps->sampler_view_target = true;
+   caps->robust_buffer_access_behavior = true;
+   caps->device_reset_status_query = true;
+   caps->copy_between_compressed_and_plain_formats = true;
+   caps->framebuffer_no_attachment = true;
+   caps->cull_distance = true;
+   caps->packed_uniforms = true;
+   caps->signed_vertex_buffer_offset = true;
+   caps->texture_float_linear = true;
+   caps->texture_half_float_linear = true;
+   caps->polygon_offset_clamp = true;
+   caps->query_so_overflow = true;
+   caps->query_buffer_object = true;
+   caps->tgsi_tex_txf_lz = true;
+   caps->texture_query_samples = true;
+   caps->shader_clock = true;
+   caps->shader_ballot = true;
+   caps->multisample_z_resolve = true;
+   caps->clear_scissored = true;
+   caps->shader_group_vote = true;
+   caps->vs_window_space_position = true;
+   caps->texture_gather_sm5 = true;
+   caps->shader_array_components = true;
+   caps->glsl_tess_levels_as_inputs = true;
+   caps->load_constbuf = true;
+   caps->draw_parameters = true;
+   caps->fs_position_is_sysval = true;
+   caps->fs_face_is_integer_sysval = true;
+   caps->compute_shader_derivatives = true;
+   caps->invalidate_buffer = true;
+   caps->surface_reinterpret_blocks = true;
+   caps->texture_shadow_lod = true;
+   caps->shader_samples_identical = true;
+   caps->gl_spirv = true;
+   caps->gl_spirv_variable_pointers = true;
+   caps->demote_to_helper_invocation = true;
+   caps->native_fence_fd = true;
+   caps->memobj = true;
+   caps->mixed_color_depth_bits = true;
+   caps->fence_signal = true;
+   caps->image_store_formatted = true;
+   caps->legacy_math_rules = true;
+   caps->alpha_to_coverage_dither_control = true;
+   caps->map_unsynchronized_thread_safe = true;
+   caps->has_const_bw = true;
+   caps->cl_gl_sharing = true;
+   caps->uma = iris_bufmgr_vram_size(screen->bufmgr) == 0;
+   caps->query_memory_info = iris_bufmgr_vram_size(screen->bufmgr) != 0;
+   caps->prefer_back_buffer_reuse = false;
+   caps->fbfetch = IRIS_MAX_DRAW_BUFFERS;
+   caps->fbfetch_coherent = devinfo->ver >= 9 && devinfo->ver < 20;
+   caps->conservative_raster_inner_coverage =
+   caps->post_depth_coverage =
+   caps->shader_stencil_export =
+   caps->depth_clip_disable_separate =
+   caps->fragment_shader_interlock =
+   caps->atomic_float_minmax = devinfo->ver >= 9;
+   caps->depth_bounds_test = devinfo->ver >= 12;
+   caps->max_dual_source_render_targets = 1;
+   caps->max_render_targets = IRIS_MAX_DRAW_BUFFERS;
+   caps->max_texture_2d_size = 16384;
+   caps->max_texture_cube_levels = IRIS_MAX_MIPLEVELS; /* 16384x16384 */
+   caps->max_texture_3d_levels = 12; /* 2048x2048 */
+   caps->max_stream_output_buffers = 4;
+   caps->max_texture_array_layers = 2048;
+   caps->max_stream_output_separate_components =
+      IRIS_MAX_SOL_BINDINGS / IRIS_MAX_SOL_BUFFERS;
+   caps->max_stream_output_interleaved_components = IRIS_MAX_SOL_BINDINGS;
+   caps->glsl_feature_level =
+   caps->glsl_feature_level_compatibility = 460;
+   /* 3DSTATE_CONSTANT_XS requires the start of UBOs to be 32B aligned */
+   caps->constant_buffer_offset_alignment = 32;
+   caps->min_map_buffer_alignment = IRIS_MAP_BUFFER_ALIGNMENT;
+   caps->shader_buffer_offset_alignment = 4;
+   caps->max_shader_buffer_size_uint = 1 << 27;
+   caps->texture_buffer_offset_alignment = 16; // XXX: u_screen says 256 is the minimum value...
+   caps->linear_image_pitch_alignment = 1;
+   caps->linear_image_base_address_alignment = 1;
+   caps->texture_transfer_modes = PIPE_TEXTURE_TRANSFER_BLIT;
+   caps->max_texel_buffer_elements_uint = IRIS_MAX_TEXTURE_BUFFER_SIZE;
+   caps->max_viewports = 16;
+   caps->max_geometry_output_vertices = 256;
+   caps->max_geometry_total_output_components = 1024;
+   caps->max_gs_invocations = 32;
+   caps->max_texture_gather_components = 4;
+   caps->min_texture_gather_offset = -32;
+   caps->max_texture_gather_offset = 31;
+   caps->max_vertex_streams = 4;
+   caps->vendor_id = 0x8086;
+   caps->device_id = screen->devinfo->pci_device_id;
+   caps->video_memory = iris_get_video_memory(screen);
+   caps->max_shader_patch_varyings =
+   caps->max_varyings = 32;
+   /* We want immediate arrays to go get uploaded as nir->constant_data by
+    * nir_opt_large_constants() instead.
+    */
+   caps->prefer_imm_arrays_as_constbuf = false;
+   /* AMD_pinned_memory assumes the flexibility of using client memory
+    * for any buffer (incl. vertex buffers) which rules out the prospect
+    * of using snooped buffers, as using snooped buffers without
+    * cogniscience is likely to be detrimental to performance and require
+    * extensive checking in the driver for correctness, e.g. to prevent
+    * illegal snoop <-> snoop transfers.
+    */
+   caps->resource_from_user_memory = devinfo->has_llc;
+   caps->throttle = !screen->driconf.disable_throttling;
+
+   caps->context_priority_mask =
+      PIPE_CONTEXT_PRIORITY_LOW |
+      PIPE_CONTEXT_PRIORITY_MEDIUM |
+      PIPE_CONTEXT_PRIORITY_HIGH;
+
+   caps->frontend_noop = true;
+
+   // XXX: don't hardcode 00:00:02.0 PCI here
+   caps->pci_group = 0;
+   caps->pci_bus = 0;
+   caps->pci_device = 2;
+   caps->pci_function = 0;
+
+   caps->opencl_integer_functions =
+   caps->integer_multiply_32x16 = true;
+
+   /* Internal details of VF cache make this optimization harmful on GFX
+    * version 8 and 9, because generated VERTEX_BUFFER_STATEs are cached
+    * separately.
+    */
+   caps->allow_dynamic_vao_fastpath = devinfo->ver >= 11;
+
+   caps->timer_resolution = DIV_ROUND_UP(1000000000ull, devinfo->timestamp_frequency);
+
+   caps->device_protected_context =
+      screen->kernel_features & KERNEL_HAS_PROTECTED_CONTEXT;
+
+   caps->astc_void_extents_need_denorm_flush =
+      devinfo->ver == 9 && !intel_device_info_is_9lp(devinfo);
+
+   caps->min_line_width =
+   caps->min_line_width_aa =
+   caps->min_point_size =
+   caps->min_point_size_aa = 1;
+
+   caps->point_size_granularity =
+   caps->line_width_granularity = 0.1;
+
+   caps->max_line_width =
+   caps->max_line_width_aa = 7.375f;
+
+   caps->max_point_size =
+   caps->max_point_size_aa = 255.0f;
+
+   caps->max_texture_anisotropy = 16.0f;
+   caps->max_texture_lod_bias = 15.0f;
+}
+
 static uint64_t
 iris_get_timestamp(struct pipe_screen *pscreen)
 {
@@ -917,6 +1129,8 @@ iris_screen_create(int fd, const struct pipe_screen_config *config)
    pscreen->get_driver_query_info = iris_get_monitor_info;
    pscreen->set_damage_region = iris_set_damage_region;
    iris_init_screen_program_functions(pscreen);
+
+   iris_init_screen_caps(screen);
 
    genX_call(screen->devinfo, init_screen_state, screen);
    genX_call(screen->devinfo, init_screen_gen_state, screen);
