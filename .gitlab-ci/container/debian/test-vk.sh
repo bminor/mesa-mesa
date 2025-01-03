@@ -47,7 +47,6 @@ EPHEMERAL=(
     python3-pip
     python3-setuptools
     python3-wheel
-    software-properties-common
     xz-utils
 )
 
