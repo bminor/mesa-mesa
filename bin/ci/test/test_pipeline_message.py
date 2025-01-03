@@ -172,6 +172,7 @@ async def test_search_job_log_for_errors(mock_get_job_log):
 
     job_log = r"""
 error_msg: something useful
+[0m15:41:36.102:                GL_KHR_no_error GL_KHR_texture_compression_astc_sliced_3d
 1 error generated
 3 errors generated.
 -- Looking for strerror_r - found
@@ -223,3 +224,31 @@ section_end:1734695027:cleanup_file_variables
 
     error_message = await search_job_log_for_errors(session, project_id, job)
     assert "something useful" in error_message
+
+
+@pytest.mark.asyncio
+@patch("pipeline_message.get_job_log", new_callable=AsyncMock)
+async def test_search_job_log_for_fatal_errors(mock_get_job_log):
+    session = AsyncMock()
+    project_id = "176"
+    job = {"id": 12345}
+
+    job_log = r"""
+[0m15:41:36.105: [15:41:31.951] fatal: something fatal
+Uploading artifacts as "archive" to coordinator... 201 Created[0;m  id[0;m=68509685 responseStatus[0;m=201 Created token[0;m=glcbt-64
+[32;1mUploading artifacts...[0;m
+[0;33mWARNING: results/junit.xml: no matching files. Ensure that the artifact path is relative to the working directory (/builds/mesa/mesa)[0;m
+[31;1mERROR: No files to upload                         [0;m
+section_end:1734695027:upload_artifacts_on_failure
+[0Ksection_start:1734695027:cleanup_file_variables
+[0K[0K[36;1mCleaning up project directory and file based variables[0;m[0;m
+section_end:1734695027:cleanup_file_variables
+[0K[31;1mERROR: Job failed: exit code 1
+[0;m
+[0;m
+    """
+
+    mock_get_job_log.return_value = job_log
+
+    error_message = await search_job_log_for_errors(session, project_id, job)
+    assert "something fatal" in error_message

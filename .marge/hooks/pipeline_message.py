@@ -217,8 +217,10 @@ async def search_job_log_for_errors(session, project_id, job):
     # The entries are case insensitive. Keep them in alphabetical order and don't
     # forget to add a comma after each entry
     ignore_list = [
+        "403: b",
         "aborting",
         "building c",
+        "continuing",
         "error_msg      : None",
         "error_type",
         "error generated",
@@ -227,6 +229,7 @@ async def search_job_log_for_errors(session, project_id, job):
         "exit status",
         "exiting now",
         "job failed",
+        "no_error",
         "no files to upload",
         "performing test",
         "ret code",
@@ -239,6 +242,11 @@ async def search_job_log_for_errors(session, project_id, job):
     job_log = await get_job_log(session, project_id, job["id"])
 
     for line in reversed(job_log.splitlines()):
+        if "fatal" in line.lower():
+            # remove date and formatting before fatal message
+            log_error_message = line[line.lower().find("fatal") :]
+            break
+
         if "error" in line.lower():
             if any(ignore.lower() in line.lower() for ignore in ignore_list):
                 continue
