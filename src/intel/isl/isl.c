@@ -1076,6 +1076,45 @@ tiling_max_mip_tail(enum isl_tiling tiling,
 }
 
 /**
+ * Returns whether a tiling supports a given dimension.
+ *
+ * :param tiling:       |in|  The tiling format to introspect
+ * :param dim:          |in|  The dimensionality of the surface being tiled
+ */
+bool
+isl_tiling_supports_dimensions(const struct intel_device_info *devinfo,
+                               enum isl_tiling tiling,
+                               enum isl_surf_dim dim)
+{
+   switch (dim) {
+   case ISL_SURF_DIM_1D:
+      return (tiling != ISL_TILING_SKL_Yf &&
+              tiling != ISL_TILING_SKL_Ys &&
+              tiling != ISL_TILING_ICL_Yf &&
+              tiling != ISL_TILING_ICL_Ys &&
+              tiling != ISL_TILING_64 &&
+              tiling != ISL_TILING_64_XE2 &&
+              tiling != ISL_TILING_X);
+
+   case ISL_SURF_DIM_2D:
+      return true;
+
+   case ISL_SURF_DIM_3D:
+      /* BSpec 57023, RENDER_SURFACE_STATE:Tile Mode:
+       *
+       *   "TILEMODE_XMAJOR is only allowed if the Surface Type is
+       *    SURFTYPE_2D"
+       */
+      if (devinfo->ver >= 20)
+         return tiling != ISL_TILING_X;
+      return true;
+
+   default:
+      unreachable("invalid dimension");
+   }
+}
+
+/**
  * Returns an isl_tile_info representation of the given isl_tiling when
  * combined when used in the given configuration.
  *

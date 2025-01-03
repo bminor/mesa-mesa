@@ -2300,6 +2300,11 @@ bool
 isl_has_matching_typed_storage_image_format(const struct intel_device_info *devinfo,
                                             enum isl_format fmt);
 
+bool
+isl_tiling_supports_dimensions(const struct intel_device_info *devinfo,
+                               enum isl_tiling tiling,
+                               enum isl_surf_dim dim);
+
 void
 isl_tiling_get_info(enum isl_tiling tiling,
                     enum isl_surf_dim dim,
