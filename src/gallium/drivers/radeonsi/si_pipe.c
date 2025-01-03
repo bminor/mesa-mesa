@@ -908,7 +908,8 @@ static bool si_is_resource_busy(struct pipe_screen *screen, struct pipe_resource
                            /* If mapping for write, we need to wait for all reads and writes.
                             * If mapping for read, we only need to wait for writes.
                             */
-                           usage & PIPE_MAP_WRITE ? RADEON_USAGE_READWRITE : RADEON_USAGE_WRITE);
+                           (usage & PIPE_MAP_WRITE ? RADEON_USAGE_READWRITE : RADEON_USAGE_WRITE) |
+                           RADEON_USAGE_DISALLOW_SLOW_REPLY);
 }
 
 static struct pipe_context *si_pipe_create_context(struct pipe_screen *screen, void *priv,
