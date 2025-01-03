@@ -1969,19 +1969,12 @@ get_nir_src(nir_to_brw_state &ntb, const nir_src &src, int channel)
 }
 
 /**
- * Return an IMM for constants; otherwise call get_nir_src() as normal.
- *
- * This function should not be called on any value which may be 64 bits.
- * We could theoretically support 64-bit on gfx8+ but we choose not to
- * because it wouldn't work in general (no gfx7 support) and there are
- * enough restrictions in 64-bit immediates that you can't take the return
- * value and treat it the same as the result of get_nir_src().
+ * Return an IMM for 32-bit constants; otherwise call get_nir_src() as normal.
  */
 static brw_reg
 get_nir_src_imm(nir_to_brw_state &ntb, const nir_src &src)
 {
-   assert(nir_src_bit_size(src) == 32);
-   return nir_src_is_const(src) ?
+   return nir_src_is_const(src) && nir_src_bit_size(src) == 32 ?
           brw_reg(brw_imm_d(nir_src_as_int(src))) : get_nir_src(ntb, src);
 }
 
