@@ -612,8 +612,8 @@ radv_break_on_count(nir_builder *b, nir_variable *var, nir_def *count)
 VkResult
 radv_meta_get_noop_pipeline_layout(struct radv_device *device, VkPipelineLayout *layout_out)
 {
-   const char *key_data = "radv-noop";
+   enum radv_meta_object_key_type key = RADV_META_OBJECT_KEY_NOOP;
 
-   return vk_meta_get_pipeline_layout(&device->vk, &device->meta_state.device, NULL, NULL, key_data, strlen(key_data),
+   return vk_meta_get_pipeline_layout(&device->vk, &device->meta_state.device, NULL, NULL, &key, sizeof(key),
                                       layout_out);
 }
