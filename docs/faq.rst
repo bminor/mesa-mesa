@@ -125,8 +125,8 @@ popular and feature-complete.
 2.1 What's the easiest way to install Mesa?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you're using a Linux-based system, your distro CD most likely already
-has Mesa packages (like RPM or DEB) which you can easily install.
+If you're using a Linux-based system, your distribution
+most likely already includes Mesa packages.
 
 2.2 I get undefined symbols such as bgnpolygon, v3f, etc...
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -413,7 +413,7 @@ Our documentation is written as `reStructuredText`_ files in the
 
 .. code-block:: sh
 
-   # Install dependencies (adapt for your distro)
+   # Install dependencies (adapt for your distribution)
    apk add coreutils graphviz py3-clang clang-dev musl-dev linux-headers
    pip3 install sphinx===5.1.1 mako===1.2.3 hawkmoth===0.16.0
 

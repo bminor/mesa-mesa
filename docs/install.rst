@@ -66,7 +66,7 @@ Check/install the respective development package as prompted by the
 configure error message.
 
 Here are some common ways to retrieve most/all of the dependencies based
-on the packaging tool used by your distro.
+on the packaging tool used by your distribution.
 
 .. code-block:: sh
 
