@@ -4386,6 +4386,9 @@ tu_CmdExecuteCommands(VkCommandBuffer commandBuffer,
           VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) {
          assert(tu_cs_is_empty(&secondary->cs));
 
+         TU_CALLX(cmd->device, tu_lrz_flush_valid_during_renderpass)
+            (cmd, &cmd->draw_cs);
+
          result = tu_cs_add_entries(&cmd->draw_cs, &secondary->draw_cs);
          if (result != VK_SUCCESS) {
             vk_command_buffer_set_error(&cmd->vk, result);
@@ -7137,8 +7140,14 @@ tu_CmdEndRendering(VkCommandBuffer commandBuffer)
 {
    VK_FROM_HANDLE(tu_cmd_buffer, cmd_buffer, commandBuffer);
 
-   if (cmd_buffer->state.suspending)
+   if (cmd_buffer->state.suspending) {
       cmd_buffer->state.suspended_pass.lrz = cmd_buffer->state.lrz;
+      /* We cannot pass LRZ state to next resuming renderpass, so we have to
+       * force disable it here.
+       */
+      TU_CALLX(cmd_buffer->device, tu_lrz_flush_valid_during_renderpass)
+         (cmd_buffer, &cmd_buffer->draw_cs);
+   }
 
    if (!cmd_buffer->state.suspending) {
       tu_cs_end(&cmd_buffer->draw_cs);

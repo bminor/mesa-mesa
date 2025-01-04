@@ -353,13 +353,11 @@ tu_lrz_tiling_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
       return;
    }
 
-   bool invalidate_lrz = !lrz->valid && lrz->gpu_dir_tracking;
-   if (invalidate_lrz) {
-      /* Following the blob we elect to disable LRZ for the whole renderpass
-       * if it is known that LRZ is disabled somewhere in the renderpass.
-       *
+   if (lrz->disable_for_rp) {
+      /* We may deem necessary to disable LRZ for the whole renderpass.
        * This is accomplished by making later GRAS_LRZ_CNTL (in binning pass)
        * to fail the comparison of depth views.
+       * TODO: Find if there are conditions where it is beneficial.
        */
       tu6_disable_lrz_via_depth_view<CHIP>(cmd, cs);
       tu6_write_lrz_reg(cmd, cs, A6XX_GRAS_LRZ_DEPTH_VIEW(.dword = 0));
@@ -384,7 +382,7 @@ tu_lrz_tiling_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
       tu_emit_event_write<CHIP>(cmd, cs, FD_LRZ_CLEAR);
    }
 
-   if (!lrz->fast_clear && !invalidate_lrz) {
+   if (!lrz->fast_clear && !lrz->disable_for_rp) {
       tu6_clear_lrz<CHIP>(cmd, cs, lrz->image_view->image, &lrz->depth_clear_value);
       /* Even though we disable fast-clear we still have to dirty
        * fast-clear buffer because both secondary cmdbufs and following
@@ -414,7 +412,7 @@ tu_lrz_before_tile(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
       tu6_emit_lrz_buffer<CHIP>(cs, lrz->image_view->image);
 
       if (lrz->gpu_dir_tracking) {
-         if (!lrz->valid) {
+         if (lrz->disable_for_rp) {
             /* Make sure we fail the comparison of depth views */
             tu6_write_lrz_reg(cmd, cs, A6XX_GRAS_LRZ_DEPTH_VIEW(.dword = 0));
          } else {
@@ -448,18 +446,22 @@ tu_lrz_tiling_end(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
       tu6_write_lrz_cntl<CHIP>(cmd, cs, {.enable = false});
    }
 
-   tu_emit_event_write<CHIP>(cmd, cs, FD_LRZ_FLUSH);
-
-   /* If gpu_dir_tracking is enabled and lrz is not valid blob, at this point,
-    * additionally clears direction buffer:
-    *  GRAS_LRZ_DEPTH_VIEW(.dword = 0)
-    *  GRAS_LRZ_DEPTH_VIEW(.dword = 0xffffffff)
-    *  A6XX_GRAS_LRZ_CNTL(.enable = true, .disable_on_wrong_dir = true)
-    *  LRZ_CLEAR
-    *  LRZ_FLUSH
-    * Since it happens after all of the rendering is done there is no known
-    * reason to do such clear.
+   /* If we haven't disabled LRZ during renderpass, we need to disable it here
+    * for next renderpass to not use invalid LRZ values.
     */
+   if (cmd->state.lrz.gpu_dir_tracking && !cmd->state.lrz.disable_for_rp &&
+       !cmd->state.lrz.valid) {
+      tu6_write_lrz_reg(cmd, cs, A6XX_GRAS_LRZ_DEPTH_VIEW(
+         .base_layer = 0b11111111111,
+         .layer_count = 0b11111111111,
+         .base_mip_level = 0b1111,
+      ));
+
+      tu_emit_event_write<CHIP>(cmd, cs, FD_LRZ_CLEAR);
+      tu_emit_event_write<CHIP>(cmd, cs, FD_LRZ_FLUSH);
+   } else {
+      tu_emit_event_write<CHIP>(cmd, cs, FD_LRZ_FLUSH);
+   }
 }
 TU_GENX(tu_lrz_tiling_end);
 
@@ -632,16 +634,24 @@ tu_lrz_disable_during_renderpass(struct tu_cmd_buffer *cmd,
 
    cmd->state.lrz.valid = false;
    cmd->state.dirty |= TU_CMD_DIRTY_LRZ;
-
-   if (cmd->state.lrz.gpu_dir_tracking) {
-      tu6_write_lrz_cntl<CHIP>(cmd, &cmd->cs, {
-         .enable = true,
-         .dir = LRZ_DIR_INVALID,
-         .disable_on_wrong_dir = true,
-      });
-   }
 }
 TU_GENX(tu_lrz_disable_during_renderpass);
+
+template <chip CHIP>
+void
+tu_lrz_flush_valid_during_renderpass(struct tu_cmd_buffer *cmd,
+                                     struct tu_cs *cs)
+{
+   if (cmd->state.lrz.valid || cmd->state.lrz.disable_for_rp)
+      return;
+
+   tu6_write_lrz_reg(cmd, cs, A6XX_GRAS_LRZ_DEPTH_VIEW(
+      .base_layer = 0b11111111111,
+      .layer_count = 0b11111111111,
+      .base_mip_level = 0b1111,
+   ));
+}
+TU_GENX(tu_lrz_flush_valid_during_renderpass);
 
 /* update lrz state based on stencil-test func:
  *
@@ -910,17 +920,7 @@ tu6_calculate_lrz_state(struct tu_cmd_buffer *cmd,
    if (disable_lrz)
       cmd->state.lrz.valid = false;
 
-   if (disable_lrz && cmd->state.lrz.gpu_dir_tracking) {
-      /* Direction byte on GPU should be set to CUR_DIR_DISABLED,
-       * for this it's not enough to emit empty GRAS_LRZ_CNTL.
-       */
-      gras_lrz_cntl.enable = true;
-      gras_lrz_cntl.dir = LRZ_DIR_INVALID;
-
-      return gras_lrz_cntl;
-   }
-
-   if (temporary_disable_lrz)
+   if (temporary_disable_lrz || disable_lrz)
       gras_lrz_cntl.enable = false;
 
    cmd->state.lrz.enabled = cmd->state.lrz.valid && gras_lrz_cntl.enable;
