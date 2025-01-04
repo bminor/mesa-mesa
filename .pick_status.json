@@ -1264,7 +1264,7 @@
         "description": "wsi: Fix wrong function name for lvp wsi metal surface",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a42c2293abc2f14c86b407a140c0a9f158bb4be8",
         "notes": null
