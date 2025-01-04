@@ -1488,7 +1488,7 @@ brw_nir_should_vectorize_mem(unsigned align_mul, unsigned align_offset,
          if (num_components > 32)
             return false;
 
-         if (hole_size > 4 * (8 - low->num_components))
+         if (hole_size >= 8 * 4)
             return false;
       }
    } else {
