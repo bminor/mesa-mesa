@@ -1409,16 +1409,9 @@ si_texture_create_with_modifier(struct pipe_screen *screen,
 
    bool is_flushed_depth = templ->flags & SI_RESOURCE_FLAG_FLUSHED_DEPTH ||
                            templ->flags & SI_RESOURCE_FLAG_FORCE_LINEAR;
-   /* We enable TC-compatible HTILE for all Z/S on GFX11+ by default because non-TC-compatible
-    * HTILE causes corruption on Navi31.
-    *
-    * See: https://gitlab.freedesktop.org/mesa/mesa/-/issues/11891
-    */
    bool tc_compatible_htile = is_zs && !is_flushed_depth &&
                               !(sscreen->debug_flags & DBG(NO_HYPERZ)) &&
-                              sscreen->info.has_tc_compatible_htile &&
-                              (sscreen->info.gfx_level >= GFX11 ||
-                               templ->flags & PIPE_RESOURCE_FLAG_TEXTURING_MORE_LIKELY);
+                              sscreen->info.has_tc_compatible_htile;
 
    enum radeon_surf_mode tile_mode = si_choose_tiling(sscreen, templ, tc_compatible_htile);
 
