@@ -55,7 +55,9 @@
 static inline void
 tu_lrz_disable_reason(struct tu_cmd_buffer *cmd, const char *reason) {
    cmd->state.rp.lrz_disable_reason = reason;
-   perf_debug(cmd->device, "Disabling LRZ because '%s'", reason);
+   cmd->state.rp.lrz_disabled_at_draw = cmd->state.rp.drawcall_count;
+   perf_debug(cmd->device, "Disabling LRZ because '%s' at draw %u", reason,
+              cmd->state.rp.lrz_disabled_at_draw);
 }
 
 template <chip CHIP>
@@ -274,6 +276,7 @@ tu_lrz_begin_renderpass(struct tu_cmd_buffer *cmd)
    const struct tu_render_pass *pass = cmd->state.pass;
 
    cmd->state.rp.lrz_disable_reason = "";
+   cmd->state.rp.lrz_disabled_at_draw = 0;
 
    int lrz_img_count = 0;
    for (unsigned i = 0; i < pass->attachment_count; i++) {
@@ -620,9 +623,12 @@ TU_GENX(tu_lrz_clear_depth_image);
 
 template <chip CHIP>
 void
-tu_lrz_disable_during_renderpass(struct tu_cmd_buffer *cmd)
+tu_lrz_disable_during_renderpass(struct tu_cmd_buffer *cmd,
+                                 const char *reason)
 {
    assert(cmd->state.pass);
+
+   tu_lrz_disable_reason(cmd, reason);
 
    cmd->state.lrz.valid = false;
    cmd->state.dirty |= TU_CMD_DIRTY_LRZ;

@@ -2062,7 +2062,8 @@ tu_trace_end_render_pass(struct tu_cmd_buffer *cmd, bool gmem)
    trace_end_render_pass(&cmd->trace, &cmd->cs, gmem,
                          cmd->state.rp.drawcall_count,
                          avg_per_sample_bandwidth, cmd->state.lrz.valid,
-                         cmd->state.rp.lrz_disable_reason, addr);
+                         cmd->state.rp.lrz_disable_reason,
+                         cmd->state.rp.lrz_disabled_at_draw, addr);
 }
 
 static void
@@ -4260,8 +4261,11 @@ tu_render_pass_state_merge(struct tu_render_pass_state *dst,
    dst->drawcall_count += src->drawcall_count;
    dst->drawcall_bandwidth_per_sample_sum +=
       src->drawcall_bandwidth_per_sample_sum;
-   if (!dst->lrz_disable_reason)
+   if (!dst->lrz_disable_reason && src->lrz_disable_reason) {
       dst->lrz_disable_reason = src->lrz_disable_reason;
+      dst->lrz_disabled_at_draw =
+         dst->drawcall_count + src->lrz_disabled_at_draw;
+   }
 }
 
 void

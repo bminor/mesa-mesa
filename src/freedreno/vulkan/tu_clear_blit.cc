@@ -4374,7 +4374,7 @@ tu_CmdClearAttachments(VkCommandBuffer commandBuffer,
       if ((pAttachments[j].aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) == 0)
          continue;
 
-      tu_lrz_disable_during_renderpass<CHIP>(cmd);
+      tu_lrz_disable_during_renderpass<CHIP>(cmd, "CmdClearAttachments");
    }
 
    if (cmd->device->physical_device->info->a7xx.has_generic_clear &&

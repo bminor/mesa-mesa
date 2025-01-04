@@ -96,6 +96,7 @@ tu_lrz_sysmem_end(struct tu_cmd_buffer *cmd, struct tu_cs *cs);
 
 template <chip CHIP>
 void
-tu_lrz_disable_during_renderpass(struct tu_cmd_buffer *cmd);
+tu_lrz_disable_during_renderpass(struct tu_cmd_buffer *cmd,
+                                 const char *reason);
 
 #endif /* TU_LRZ_H */

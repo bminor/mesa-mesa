@@ -319,6 +319,7 @@ struct tu_render_pass_state
    uint32_t drawcall_bandwidth_per_sample_sum;
 
    const char *lrz_disable_reason;
+   uint32_t lrz_disabled_at_draw;
 };
 
 /* These are the states of the suspend/resume state machine. In addition to
