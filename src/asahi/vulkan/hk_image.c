@@ -824,10 +824,17 @@ hk_image_init(struct hk_device *dev, struct hk_image *image,
       enum ail_tiling tiling =
          hk_map_tiling(dev, pCreateInfo, plane, image->vk.drm_format_mod);
 
+      uint32_t linear_stride_B = 0;
+      if (mod_explicit_info &&
+          image->vk.drm_format_mod == DRM_FORMAT_MOD_LINEAR)
+         linear_stride_B = mod_explicit_info->pPlaneLayouts[plane].rowPitch;
+
       image->planes[plane].layout = (struct ail_layout){
          .tiling = tiling,
          .mipmapped_z = pCreateInfo->imageType == VK_IMAGE_TYPE_3D,
          .format = hk_format_to_pipe_format(format),
+
+         .linear_stride_B = linear_stride_B,
 
          .width_px = pCreateInfo->extent.width / width_scale,
          .height_px = pCreateInfo->extent.height / height_scale,
