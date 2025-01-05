@@ -29,6 +29,8 @@ typedef struct {
    bool seen_color0_alpha;
    bool uses_fragcoord_xy_as_float;
    bool use_fragcoord;
+
+   nir_def *load_helper_invoc_at_top;
 } lower_ps_early_state;
 
 static nir_variable *
@@ -231,6 +233,18 @@ optimize_lower_ps_outputs(nir_builder *b, nir_intrinsic_instr *intrin, lower_ps_
    return progress;
 }
 
+static nir_def *
+get_load_helper_invocation(nir_function_impl *impl, lower_ps_early_state *s)
+{
+   /* Insert this only once. */
+   if (!s->load_helper_invoc_at_top) {
+      nir_builder b = nir_builder_at(nir_before_impl(impl));
+      s->load_helper_invoc_at_top = nir_load_helper_invocation(&b, 1);
+   }
+
+   return s->load_helper_invoc_at_top;
+}
+
 static bool
 lower_ps_load_sample_mask_in(nir_builder *b, nir_intrinsic_instr *intrin, lower_ps_early_state *s)
 {
@@ -250,18 +264,22 @@ lower_ps_load_sample_mask_in(nir_builder *b, nir_intrinsic_instr *intrin, lower_
     * The samplemask loaded by hardware is always the coverage of the
     * entire pixel/fragment, so mask bits out based on the sample ID.
     */
-   nir_def *replacement;
+   nir_def *replacement = NULL;
 
    /* Set ps_iter_samples=8 if full sample shading is enabled even for 2x and 4x MSAA
     * to get this fast path that fully replaces sample_mask_in with sample_id.
     */
-   if (s->options->ps_iter_samples == 8) {
-      replacement = nir_bcsel(b, nir_load_helper_invocation(b, 1), nir_imm_int(b, 0),
+   if (s->options->force_center_interp_no_msaa && !s->options->uses_vrs_coarse_shading) {
+      replacement = nir_b2i32(b, nir_inot(b, get_load_helper_invocation(b->impl, s)));
+   } else if (s->options->ps_iter_samples == 8) {
+      replacement = nir_bcsel(b, get_load_helper_invocation(b->impl, s), nir_imm_int(b, 0),
                               nir_ishl(b, nir_imm_int(b, 1), nir_load_sample_id(b)));
-   } else {
+   } else if (s->options->ps_iter_samples > 1) {
       uint32_t ps_iter_mask = ac_get_ps_iter_mask(s->options->ps_iter_samples);
       nir_def *submask = nir_ishl(b, nir_imm_int(b, ps_iter_mask), nir_load_sample_id(b));
       replacement = nir_iand(b, nir_load_sample_mask_in(b), submask);
+   } else {
+      return false;
    }
 
    nir_def_replace(&intrin->def, replacement);
@@ -355,9 +373,7 @@ lower_ps_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
    case nir_intrinsic_load_barycentric_sample:
       return rewrite_ps_load_barycentric(b, intrin, s);
    case nir_intrinsic_load_sample_mask_in:
-      if (s->options->ps_iter_samples > 1)
-         return lower_ps_load_sample_mask_in(b, intrin, s);
-      break;
+      return lower_ps_load_sample_mask_in(b, intrin, s);
    case nir_intrinsic_load_front_face:
       if (s->options->force_front_face) {
          nir_def_replace(&intrin->def, nir_imm_bool(b, s->options->force_front_face == 1));

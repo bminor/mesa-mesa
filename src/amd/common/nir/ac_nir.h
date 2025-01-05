@@ -272,6 +272,7 @@ typedef struct {
     */
    /* System values. */
    bool force_center_interp_no_msaa; /* true if MSAA is disabled, false may mean that the state is unknown */
+   bool uses_vrs_coarse_shading;
    bool load_sample_positions_always_loads_current_ones;
    bool dynamic_rasterization_samples;
    int force_front_face; /* 0 -> keep, 1 -> set to true, -1 -> set to false */
@@ -286,11 +287,16 @@ typedef struct {
     *       * ps_iter_samples == 0 means the state is unknown.
     *
     * barycentrics:
+    *    force_center_interp_no_msaa:
+    *       * All barycentrics including at_sample but excluding at_offset are changed to
+    *         barycentric_pixel
     *    ps_iter_samples >= 2:
     *       * All barycentrics are changed to per-sample interpolation except at_offset/at_sample.
     *       * barycentric_at_sample(sample_id) is replaced by barycentric_sample.
     *
     * sample_mask_in:
+    *    force_center_interp_no_msaa && !uses_vrs_coarse_shading:
+    *       * sample_mask_in is replaced by b2i32(!helper_invocation)
     *    ps_iter_samples == 2, 4:
     *       * sample_mask_in is changed to (sample_mask_in & (ps_iter_mask << sample_id))
     *    ps_iter_samples == 8:
