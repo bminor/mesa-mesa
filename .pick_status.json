@@ -1954,7 +1954,7 @@
         "description": "intel/elk: Fix assert with side effect",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ebd67382604d0b7bddf2ebd2aa824a272e8e9bb2",
         "notes": null
