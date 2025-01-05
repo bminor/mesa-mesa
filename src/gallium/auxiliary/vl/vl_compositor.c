@@ -489,6 +489,7 @@ vl_compositor_clear_layers(struct vl_compositor_state *s)
       s->layers[i].viewport.swizzle_z = PIPE_VIEWPORT_SWIZZLE_POSITIVE_Z;
       s->layers[i].viewport.swizzle_w = PIPE_VIEWPORT_SWIZZLE_POSITIVE_W;
       s->layers[i].rotate = VL_COMPOSITOR_ROTATE_0;
+      s->layers[i].mirror = VL_COMPOSITOR_MIRROR_NONE;
 
       for ( j = 0; j < 3; j++)
          pipe_sampler_view_reference(&s->layers[i].sampler_views[j], NULL);
@@ -715,6 +716,16 @@ vl_compositor_set_layer_rotation(struct vl_compositor_state *s,
    assert(s);
    assert(layer < VL_COMPOSITOR_MAX_LAYERS);
    s->layers[layer].rotate = rotate;
+}
+
+void
+vl_compositor_set_layer_mirror(struct vl_compositor_state *s,
+                               unsigned layer,
+                               enum vl_compositor_mirror mirror)
+{
+   assert(s);
+   assert(layer < VL_COMPOSITOR_MAX_LAYERS);
+   s->layers[layer].mirror = mirror;
 }
 
 void
