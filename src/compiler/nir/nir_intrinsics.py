@@ -1782,7 +1782,7 @@ intrinsic("load_scalar_arg_amd", dest_comp=0, bit_sizes=[32],
           indices=[BASE, ARG_UPPER_BOUND_U32_AMD],
           flags=[CAN_ELIMINATE, CAN_REORDER])
 intrinsic("load_vector_arg_amd", dest_comp=0, bit_sizes=[32],
-          indices=[BASE, ARG_UPPER_BOUND_U32_AMD, FLAGS],
+          indices=[BASE, ARG_UPPER_BOUND_U32_AMD],
           flags=[CAN_ELIMINATE, CAN_REORDER])
 store("scalar_arg_amd", [], [BASE])
 store("vector_arg_amd", [], [BASE])

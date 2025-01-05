@@ -61,28 +61,6 @@ static const nir_src *get_texture_src(nir_tex_instr *instr, nir_tex_src_type typ
 static void scan_io_usage(const nir_shader *nir, struct si_shader_info *info,
                           nir_intrinsic_instr *intr, bool is_input, bool colors_lowered)
 {
-   unsigned interp = INTERP_MODE_FLAT; /* load_input uses flat shading */
-
-   if (intr->intrinsic == nir_intrinsic_load_interpolated_input) {
-      nir_instr *src_instr = intr->src[0].ssa->parent_instr;
-      if (src_instr->type == nir_instr_type_intrinsic) {
-         nir_intrinsic_instr *baryc = nir_instr_as_intrinsic(src_instr);
-         if (nir_intrinsic_has_interp_mode(baryc))
-            interp = nir_intrinsic_interp_mode(baryc);
-         else if (nir_intrinsic_has_flags(baryc) &&
-                  AC_VECTOR_ARG_FLAG_GET_NAME(baryc) == AC_VECTOR_ARG_INTERP_MODE)
-            interp = AC_VECTOR_ARG_FLAG_GET_VALUE(baryc);
-         else
-            unreachable("unknown barycentric intrinsic");
-      } else {
-         /* May get here when si_update_shader_binary_info() after ps lower bc_optimize
-          * which select center and centroid. Set to any value is OK because we don't
-          * care this when si_update_shader_binary_info().
-          */
-         interp = INTERP_MODE_SMOOTH;
-      }
-   }
-
    unsigned mask, bit_size;
    bool is_output_load;
 
@@ -122,10 +100,6 @@ static void scan_io_usage(const nir_shader *nir, struct si_shader_info *info,
       semantic = nir_intrinsic_io_semantics(intr).location;
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT && is_input) {
-      /* The PARAM_GEN input shouldn't be scanned. */
-      if (nir_intrinsic_io_semantics(intr).no_varying)
-         return;
-
       /* Gather color PS inputs. We can only get here after lowering colors in monolithic
        * shaders. This must match what we do for nir_intrinsic_load_color0/1.
        */
@@ -156,19 +130,8 @@ static void scan_io_usage(const nir_shader *nir, struct si_shader_info *info,
 
          info->input[loc].semantic = semantic + i;
 
-         /* "interpolate" starts out as FLAT. The first seen load_interpolated_input overwrites it.  */
-         if (semantic != VARYING_SLOT_PRIMITIVE_ID &&
-             info->input[loc].interpolate == INTERP_MODE_FLAT)
-            info->input[loc].interpolate = interp;
-
          if (mask) {
             info->input[loc].usage_mask |= mask;
-            if (bit_size == 16) {
-               if (nir_intrinsic_io_semantics(intr).high_16bits)
-                  info->input[loc].fp16_lo_hi_valid |= 0x2;
-               else
-                  info->input[loc].fp16_lo_hi_valid |= 0x1;
-            }
             info->num_inputs = MAX2(info->num_inputs, loc + 1);
          }
       }
@@ -394,9 +357,6 @@ static void scan_instruction(const struct nir_shader *nir, struct si_shader_info
       if (is_bindless_image)
          info->uses_bindless_images = true;
 
-      if (nir_intrinsic_writes_external_memory(intr))
-         info->num_memory_stores++;
-
       if (is_image && nir_deref_instr_has_indirect(nir_src_as_deref(intr->src[0])))
          info->uses_indirect_descriptor = true;
 
@@ -472,14 +432,6 @@ static void scan_instruction(const struct nir_shader *nir, struct si_shader_info
          }
          break;
       }
-      case nir_intrinsic_load_vector_arg_amd:
-         /* Non-monolithic lowered PS can have this. We need to record color usage. */
-         if (AC_VECTOR_ARG_FLAG_GET_NAME(intr) == AC_VECTOR_ARG_IS_COLOR) {
-            /* The channel can be between 0 and 7. */
-            unsigned chan = AC_VECTOR_ARG_FLAG_GET_VALUE(intr);
-            info->colors_read |= BITFIELD_BIT(chan);
-         }
-         break;
       case nir_intrinsic_load_barycentric_at_offset:   /* uses center */
       case nir_intrinsic_load_barycentric_at_sample:   /* uses center */
          if (nir_intrinsic_interp_mode(intr) == INTERP_MODE_FLAT)
@@ -495,9 +447,6 @@ static void scan_instruction(const struct nir_shader *nir, struct si_shader_info
          break;
       case nir_intrinsic_load_frag_coord:
          info->reads_frag_coord_mask |= nir_def_components_read(&intr->def);
-         break;
-      case nir_intrinsic_load_sample_pos:
-         info->reads_sample_pos_mask |= nir_def_components_read(&intr->def);
          break;
       case nir_intrinsic_load_input:
       case nir_intrinsic_load_per_vertex_input:
@@ -581,12 +530,6 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
        * conditions are met.
        */
       info->writes_1_if_tex_is_1 = nir->info.writes_memory ? 0 : 0xff;
-
-      /* Initialize all FS inputs to flat. If we see load_interpolated_input for any component,
-       * it will be changed to its interp mode.
-       */
-      for (unsigned i = 0; i < ARRAY_SIZE(info->input); i++)
-         info->input[i].interpolate = INTERP_MODE_FLAT;
    }
 
    info->constbuf0_num_slots = nir->num_uniforms;
@@ -628,8 +571,6 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
    info->uses_persp_sample = BITSET_TEST(nir->info.system_values_read, SYSTEM_VALUE_BARYCENTRIC_PERSP_SAMPLE);
    info->uses_persp_centroid = BITSET_TEST(nir->info.system_values_read, SYSTEM_VALUE_BARYCENTRIC_PERSP_CENTROID);
    info->uses_persp_center = BITSET_TEST(nir->info.system_values_read, SYSTEM_VALUE_BARYCENTRIC_PERSP_PIXEL);
-   info->uses_sampleid = BITSET_TEST(nir->info.system_values_read, SYSTEM_VALUE_SAMPLE_ID);
-   info->uses_layer_id = BITSET_TEST(nir->info.system_values_read, SYSTEM_VALUE_LAYER_ID);
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       info->writes_z = nir->info.outputs_written & BITFIELD64_BIT(FRAG_RESULT_DEPTH);
@@ -702,7 +643,6 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
                unsigned index = num_inputs_with_colors;
 
                info->input[index].semantic = (back ? VARYING_SLOT_BFC0 : VARYING_SLOT_COL0) + i;
-               info->input[index].interpolate = info->color_interpolate[i];
                info->input[index].usage_mask = info->colors_read >> (i * 4);
                num_inputs_with_colors++;
 

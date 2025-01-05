@@ -503,14 +503,10 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
 
       nir_def *color[4];
       for (int i = 0; i < 4; i++) {
-         if (colors_read & BITFIELD_BIT(start + i)) {
+         if (colors_read & BITFIELD_BIT(start + i))
             color[i] = ac_nir_load_arg_at_offset(b, &args->ac, args->color_start, offset++);
-
-            nir_intrinsic_set_flags(nir_instr_as_intrinsic(color[i]->parent_instr),
-                                    AC_VECTOR_ARG_FLAG(AC_VECTOR_ARG_IS_COLOR, start + i));
-         } else {
+         else
             color[i] = nir_undef(b, 1, 32);
-         }
       }
 
       replacement = nir_vec(b, color, 4);
@@ -521,9 +517,7 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
       nir_def *baryc = intrin->src[0].ssa;
       replacement = nir_load_interpolated_input(b, 2, 32, baryc, nir_imm_int(b, 0),
                                                 .base = si_get_ps_num_interp(shader),
-                                                .component = 2,
-                                                /* This tells si_nir_scan_shader that it's PARAM_GEN */
-                                                .io_semantics.no_varying = 1);
+                                                .component = 2);
       break;
    }
    case nir_intrinsic_load_poly_line_smooth_enabled:

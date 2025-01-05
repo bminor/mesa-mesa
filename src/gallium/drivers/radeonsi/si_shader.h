@@ -462,14 +462,9 @@ union si_ps_input_info {
    uint32_t _unused; /* this just forces 4-byte alignment */
 };
 
-union si_input_info {
-   struct {
-      uint8_t semantic;
-      uint8_t interpolate;
-      uint8_t fp16_lo_hi_valid;
-      uint8_t usage_mask;
-   };
-   uint32_t _unused; /* this just forces 4-byte alignment */
+struct si_vs_tcs_input_info {
+   uint8_t semantic;
+   uint8_t usage_mask;
 };
 
 struct si_shader_info {
@@ -479,7 +474,7 @@ struct si_shader_info {
 
    uint8_t num_inputs;
    uint8_t num_outputs;
-   union si_input_info input[PIPE_MAX_SHADER_INPUTS];
+   struct si_vs_tcs_input_info input[PIPE_MAX_SHADER_INPUTS];
    uint8_t output_semantic[PIPE_MAX_SHADER_OUTPUTS];
    uint8_t output_usagemask[PIPE_MAX_SHADER_OUTPUTS];
    uint8_t output_streams[PIPE_MAX_SHADER_OUTPUTS];
@@ -517,7 +512,6 @@ struct si_shader_info {
    unsigned colors_written_4bit;
 
    int constbuf0_num_slots;
-   uint num_memory_stores;
    uint8_t color_attr_index[2];
    uint8_t color_interpolate[2];
    uint8_t color_interpolate_loc[2];
@@ -568,8 +562,6 @@ struct si_shader_info {
    bool uses_bindless_images;
    bool uses_indirect_descriptor;
    bool has_divergent_loop;
-   bool uses_sampleid;
-   bool uses_layer_id;
    bool has_non_uniform_tex_access;
    bool has_shadow_comparison;
 
@@ -593,7 +585,6 @@ struct si_shader_info {
 
    /* frag coord and sample pos per component read mask. */
    uint8_t reads_frag_coord_mask;
-   uint8_t reads_sample_pos_mask;
 };
 
 /* A shader selector is a gallium CSO and contains shader variants and
