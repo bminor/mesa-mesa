@@ -655,6 +655,13 @@ void si_llvm_build_ps_prolog(struct si_shader_context *ctx, union si_shader_part
 
       sample_mask_in = ac_to_float(&ctx->ac, sample_mask_in);
       ret = insert_ret_of_arg(ctx, ret, sample_mask_in, args->ac.sample_coverage.arg_index);
+   } else if (key->ps_prolog.states.force_samplemask_to_helper_invocation) {
+      LLVMValueRef sample_mask_in =
+         LLVMBuildZExt(ctx->ac.builder,
+                       LLVMBuildNot(ctx->ac.builder, ac_build_load_helper_invocation(&ctx->ac), ""),
+                       ctx->ac.i32, "");
+      ret = insert_ret_of_arg(ctx, ret, ac_to_float(&ctx->ac, sample_mask_in),
+                              args->ac.sample_coverage.arg_index);
    }
 
    if (key->ps_prolog.states.get_frag_coord_from_pixel_coord) {

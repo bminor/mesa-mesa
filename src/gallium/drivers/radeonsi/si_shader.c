@@ -1576,6 +1576,8 @@ static void si_dump_shader_key(const struct si_shader *shader, FILE *f)
               key->ps.part.prolog.samplemask_log_ps_iter);
       fprintf(f, "  prolog.get_frag_coord_from_pixel_coord = %u\n",
               key->ps.part.prolog.get_frag_coord_from_pixel_coord);
+      fprintf(f, "  prolog.force_samplemask_to_helper_invocation = %u\n",
+              key->ps.part.prolog.force_samplemask_to_helper_invocation);
       fprintf(f, "  epilog.spi_shader_col_format = 0x%x\n",
               key->ps.part.epilog.spi_shader_col_format);
       fprintf(f, "  epilog.color_is_int8 = 0x%X\n", key->ps.part.epilog.color_is_int8);
@@ -2302,6 +2304,7 @@ static bool run_pre_link_optimization_passes(struct si_nir_shader_ctx *ctx)
          ac_nir_lower_ps_early_options early_options = {
             .force_center_interp_no_msaa = key->ps.part.prolog.force_persp_center_interp ||
                                            key->ps.part.prolog.force_linear_center_interp ||
+                                           key->ps.part.prolog.force_samplemask_to_helper_invocation ||
                                            key->ps.mono.interpolate_at_sample_force_center,
             .load_sample_positions_always_loads_current_ones = true,
             .force_front_face = key->ps.opt.force_front_face_input,
@@ -2331,7 +2334,11 @@ static bool run_pre_link_optimization_passes(struct si_nir_shader_ctx *ctx)
 
          NIR_PASS(progress, nir, ac_nir_lower_ps_early, &early_options);
 
-         /* This adds gl_SampleMaskIn. */
+         /* This adds gl_SampleMaskIn. It must be after ac_nir_lower_ps_early that lowers
+          * sample_mask_in to load_helper_invocation because we only want to do that for user
+          * shaders while keeping the real sample mask for smoothing, which is produced using
+          * MSAA overrasterization over a single-sample color buffer.
+          */
          if (key->ps.mono.poly_line_smoothing)
             NIR_PASS(progress, nir, nir_lower_poly_line_smooth, SI_NUM_SMOOTH_AA_SAMPLES);
 
@@ -2703,6 +2710,12 @@ static void si_set_spi_ps_input_config_for_separate_prolog(struct si_shader *sha
    /* The sample mask fixup requires the sample ID. */
    if (key->ps.part.prolog.samplemask_log_ps_iter)
       shader->config.spi_ps_input_ena |= S_0286CC_ANCILLARY_ENA(1);
+
+   if (key->ps.part.prolog.force_samplemask_to_helper_invocation) {
+      assert(key->ps.part.prolog.samplemask_log_ps_iter == 0);
+      assert(!key->ps.mono.poly_line_smoothing);
+      shader->config.spi_ps_input_ena &= C_0286CC_SAMPLE_COVERAGE_ENA;
+   }
 
    /* The sample mask fixup has an optimization that replaces the sample mask with the sample ID. */
    if (key->ps.part.prolog.samplemask_log_ps_iter == 3)
@@ -3342,7 +3355,8 @@ static void si_get_ps_prolog_key(struct si_shader *shader, union si_shader_part_
        key->ps_prolog.states.force_linear_center_interp ||
        key->ps_prolog.states.bc_optimize_for_persp || key->ps_prolog.states.bc_optimize_for_linear ||
        key->ps_prolog.states.samplemask_log_ps_iter ||
-       key->ps_prolog.states.get_frag_coord_from_pixel_coord);
+       key->ps_prolog.states.get_frag_coord_from_pixel_coord ||
+       key->ps_prolog.states.force_samplemask_to_helper_invocation);
    key->ps_prolog.fragcoord_usage_mask =
       G_0286CC_POS_X_FLOAT_ENA(shader->config.spi_ps_input_ena) |
       (G_0286CC_POS_Y_FLOAT_ENA(shader->config.spi_ps_input_ena) << 1) |
@@ -3451,7 +3465,8 @@ static bool si_need_ps_prolog(const union si_shader_part_key *key)
           key->ps_prolog.states.bc_optimize_for_persp ||
           key->ps_prolog.states.bc_optimize_for_linear || key->ps_prolog.states.poly_stipple ||
           key->ps_prolog.states.samplemask_log_ps_iter ||
-          key->ps_prolog.states.get_frag_coord_from_pixel_coord;
+          key->ps_prolog.states.get_frag_coord_from_pixel_coord ||
+          key->ps_prolog.states.force_samplemask_to_helper_invocation;
 }
 
 /**
