@@ -278,7 +278,7 @@ disk_cache_create(const char *gpu_name, const char *driver_id,
       /* Since switching the default cache to <mesa_shader_cache_db>, remove the
        * old cache folder if it hasn't been modified for more than 7 days.
        */
-      if (!getenv("MESA_SHADER_CACHE_DIR") && !getenv("MESA_GLSL_CACHE_DIR"))
+      if (!getenv("MESA_SHADER_CACHE_DIR") && !getenv("MESA_GLSL_CACHE_DIR") && disk_cache_enabled())
          disk_cache_delete_old_cache();
    }
 
