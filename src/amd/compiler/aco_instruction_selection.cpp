@@ -11657,6 +11657,14 @@ overwrite_samplemask_arg(isel_context* ctx, const struct aco_ps_prolog_info* fin
       }
 
       ctx->arg_temps[ctx->args->sample_coverage.arg_index] = samplemask;
+   } else if (finfo->force_samplemask_to_helper_invocation) {
+      Temp is_helper_invoc =
+         bld.pseudo(aco_opcode::p_is_helper, bld.def(bld.lm), Operand(exec, bld.lm));
+      ctx->program->needs_exact = true;
+
+      ctx->arg_temps[ctx->args->sample_coverage.arg_index] =
+         bld.vop2_e64(aco_opcode::v_cndmask_b32, bld.def(v1), Operand::c32(1u), Operand::c32(0u),
+                      is_helper_invoc);
    }
 }
 
