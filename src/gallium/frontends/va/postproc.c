@@ -111,6 +111,8 @@ vlVaPostProcCompositor(vlVaDriver *drv,
    struct u_rect src_rect;
    struct u_rect dst_rect;
    enum VL_CSC_COLOR_STANDARD color_standard;
+   enum vl_compositor_rotation rotation;
+   enum vl_compositor_mirror mirror;
    bool src_yuv = util_format_is_yuv(src->buffer_format);
    bool dst_yuv = util_format_is_yuv(dst->buffer_format);
    bool src_full_range = vlVaGetFullRange(src->buffer_format,
@@ -171,6 +173,39 @@ vlVaPostProcCompositor(vlVaDriver *drv,
       drv->cstate.chroma_location =
          vlVaGetChromaLocation(param->output_color_properties.chroma_sample_location,
                                dst->buffer_format);
+
+   switch (param->rotation_state) {
+   default:
+   case VA_ROTATION_NONE:
+      rotation = VL_COMPOSITOR_ROTATE_0;
+      break;
+   case VA_ROTATION_90:
+      rotation = VL_COMPOSITOR_ROTATE_90;
+      break;
+   case VA_ROTATION_180:
+      rotation = VL_COMPOSITOR_ROTATE_180;
+      break;
+   case VA_ROTATION_270:
+      rotation = VL_COMPOSITOR_ROTATE_270;
+      break;
+   }
+
+   switch (param->mirror_state) {
+   default:
+   case VA_MIRROR_NONE:
+      mirror = VL_COMPOSITOR_MIRROR_NONE;
+      break;
+   case VA_MIRROR_HORIZONTAL:
+      mirror = VL_COMPOSITOR_MIRROR_HORIZONTAL;
+      break;
+   case VA_MIRROR_VERTICAL:
+      mirror = VL_COMPOSITOR_MIRROR_VERTICAL;
+      break;
+   }
+
+   vl_compositor_clear_layers(&drv->cstate);
+   vl_compositor_set_layer_rotation(&drv->cstate, 0, rotation);
+   vl_compositor_set_layer_mirror(&drv->cstate, 0, mirror);
 
    if (dst_yuv) {
       if (src_yuv) {

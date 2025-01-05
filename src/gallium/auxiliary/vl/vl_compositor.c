@@ -740,7 +740,6 @@ vl_compositor_yuv_deint_full(struct vl_compositor_state *s,
    struct pipe_surface **dst_surfaces;
 
    dst_surfaces = dst->get_surfaces(dst);
-   vl_compositor_clear_layers(s);
 
    set_yuv_layer(s, c, 0, src, src_rect, NULL, VL_COMPOSITOR_PLANE_Y, deinterlace);
    vl_compositor_set_layer_dst_area(s, 0, dst_rect);
@@ -799,8 +798,6 @@ vl_compositor_convert_rgb_to_yuv(struct vl_compositor_state *s,
    memset(&sv_templ, 0, sizeof(sv_templ));
    u_sampler_view_default_template(&sv_templ, src_res, src_res->format);
    sv = s->pipe->create_sampler_view(s->pipe, src_res, &sv_templ);
-
-   vl_compositor_clear_layers(s);
 
    set_rgb_to_yuv_layer(s, c, 0, sv, src_rect, NULL, VL_COMPOSITOR_PLANE_Y);
    vl_compositor_set_layer_dst_area(s, 0, dst_rect);

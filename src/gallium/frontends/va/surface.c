@@ -1461,25 +1461,26 @@ vlVaQueryVideoProcPipelineCaps(VADriverContextP ctx, VAContextID context,
    pipeline_cap->filter_flags = 0;
    pipeline_cap->num_forward_references = 0;
    pipeline_cap->num_backward_references = 0;
+   pipeline_cap->rotation_flags = VA_ROTATION_NONE;
+   pipeline_cap->mirror_flags = VA_MIRROR_NONE;
 
    struct pipe_screen *pscreen = VL_VA_PSCREEN(ctx);
+   bool media_only = !pscreen->caps.graphics && !pscreen->caps.compute;
    uint32_t pipe_orientation_flags = pscreen->get_video_param(pscreen,
                                                               PIPE_VIDEO_PROFILE_UNKNOWN,
                                                               PIPE_VIDEO_ENTRYPOINT_PROCESSING,
                                                               PIPE_VIDEO_CAP_VPP_ORIENTATION_MODES);
 
-   pipeline_cap->rotation_flags = VA_ROTATION_NONE;
-   if(pipe_orientation_flags & PIPE_VIDEO_VPP_ROTATION_90)
+   if (!media_only || pipe_orientation_flags & PIPE_VIDEO_VPP_ROTATION_90)
       pipeline_cap->rotation_flags |= (1 << VA_ROTATION_90);
-   if(pipe_orientation_flags & PIPE_VIDEO_VPP_ROTATION_180)
+   if (!media_only || pipe_orientation_flags & PIPE_VIDEO_VPP_ROTATION_180)
       pipeline_cap->rotation_flags |= (1 << VA_ROTATION_180);
-   if(pipe_orientation_flags & PIPE_VIDEO_VPP_ROTATION_270)
+   if (!media_only || pipe_orientation_flags & PIPE_VIDEO_VPP_ROTATION_270)
       pipeline_cap->rotation_flags |= (1 << VA_ROTATION_270);
 
-   pipeline_cap->mirror_flags = VA_MIRROR_NONE;
-   if(pipe_orientation_flags & PIPE_VIDEO_VPP_FLIP_HORIZONTAL)
+   if (!media_only || pipe_orientation_flags & PIPE_VIDEO_VPP_FLIP_HORIZONTAL)
       pipeline_cap->mirror_flags |= VA_MIRROR_HORIZONTAL;
-   if(pipe_orientation_flags & PIPE_VIDEO_VPP_FLIP_VERTICAL)
+   if (!media_only || pipe_orientation_flags & PIPE_VIDEO_VPP_FLIP_VERTICAL)
       pipeline_cap->mirror_flags |= VA_MIRROR_VERTICAL;
 
    if (pscreen->get_video_param(pscreen, PIPE_VIDEO_PROFILE_UNKNOWN, PIPE_VIDEO_ENTRYPOINT_PROCESSING,
