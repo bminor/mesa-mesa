@@ -395,6 +395,9 @@ st_prog_to_nir_postprocess(struct st_context *st, nir_shader *nir,
    /* Optimise NIR */
    NIR_PASS(_, nir, nir_opt_constant_folding);
    gl_nir_opts(nir);
+
+   /* This must be done after optimizations to assign IO bases. */
+   nir_recompute_io_bases(nir, nir_var_shader_in | nir_var_shader_out);
    st_finalize_nir_before_variants(nir);
 
    if (st->allow_st_finalize_nir_twice) {
