@@ -924,7 +924,7 @@
         "description": "util/disk_cache: Do not try to delete old cache if cache is disabled",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c3bc6991d27c61b5c1b362f60db513044c5e41c3",
         "notes": null
