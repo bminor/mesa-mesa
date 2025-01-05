@@ -2039,14 +2039,6 @@ static bool si_nir_lower_ps_color_input(nir_shader *nir, const union si_shader_k
       if (!(info->colors_read & (0xf << (i * 4))))
          continue;
 
-      unsigned color_base = info->color_attr_index[i];
-      /* If BCOLOR0 is used, BCOLOR1 is at offset "num_inputs + 1",
-       * otherwise it's at offset "num_inputs".
-       */
-      unsigned back_color_base = info->num_inputs;
-      if (i == 1 && (info->colors_read & 0xf))
-         back_color_base += 1;
-
       enum glsl_interp_mode interp_mode = info->color_interpolate[i];
       if (interp_mode == INTERP_MODE_COLOR) {
          interp_mode = key->ps.part.prolog.flatshade_colors ?
@@ -2056,13 +2048,11 @@ static bool si_nir_lower_ps_color_input(nir_shader *nir, const union si_shader_k
       nir_def *back_color = NULL;
       if (interp_mode == INTERP_MODE_FLAT) {
          colors[i] = nir_load_input(b, 4, 32, nir_imm_int(b, 0),
-                                   .base = color_base,
                                    .io_semantics.location = VARYING_SLOT_COL0 + i,
                                    .io_semantics.num_slots = 1);
 
          if (key->ps.part.prolog.color_two_side) {
             back_color = nir_load_input(b, 4, 32, nir_imm_int(b, 0),
-                                        .base = back_color_base,
                                         .io_semantics.location = VARYING_SLOT_BFC0 + i,
                                         .io_semantics.num_slots = 1);
          }
@@ -2087,14 +2077,12 @@ static bool si_nir_lower_ps_color_input(nir_shader *nir, const union si_shader_k
 
          colors[i] =
             nir_load_interpolated_input(b, 4, 32, barycentric, nir_imm_int(b, 0),
-                                        .base = color_base,
                                         .io_semantics.location = VARYING_SLOT_COL0 + i,
                                         .io_semantics.num_slots = 1);
 
          if (key->ps.part.prolog.color_two_side) {
             back_color =
                nir_load_interpolated_input(b, 4, 32, barycentric, nir_imm_int(b, 0),
-                                           .base = back_color_base,
                                            .io_semantics.location = VARYING_SLOT_BFC0 + i,
                                            .io_semantics.num_slots = 1);
          }
