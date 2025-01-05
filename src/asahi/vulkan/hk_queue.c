@@ -494,11 +494,17 @@ queue_submit(struct hk_device *dev, struct hk_queue *queue,
    };
 
    /* Now setup the command structs */
-   struct drm_asahi_command *cmds = alloca(sizeof(*cmds) * command_count);
+   struct drm_asahi_command *cmds = malloc(sizeof(*cmds) * command_count);
    union drm_asahi_cmd *cmds_inner =
-      alloca(sizeof(*cmds_inner) * command_count);
+      malloc(sizeof(*cmds_inner) * command_count);
    union drm_asahi_user_timestamps *ts_inner =
-      alloca(sizeof(*ts_inner) * command_count);
+      malloc(sizeof(*ts_inner) * command_count);
+   if (cmds == NULL || cmds_inner == NULL || ts_inner == NULL) {
+      free(ts_inner);
+      free(cmds_inner);
+      free(cmds);
+      return vk_error(dev, VK_ERROR_OUT_OF_HOST_MEMORY);
+   }
 
    unsigned cmd_it = 0;
    unsigned nr_vdm = 0, nr_cdm = 0;
@@ -589,10 +595,17 @@ queue_submit(struct hk_device *dev, struct hk_queue *queue,
       .commands = (uint64_t)(uintptr_t)(cmds),
    };
 
+   VkResult result;
    if (command_count <= max_commands_per_submit(dev))
-      return queue_submit_single(dev, &submit_ioctl);
+      result = queue_submit_single(dev, &submit_ioctl);
    else
-      return queue_submit_looped(dev, &submit_ioctl);
+      result = queue_submit_looped(dev, &submit_ioctl);
+
+   free(ts_inner);
+   free(cmds_inner);
+   free(cmds);
+
+   return result;
 }
 
 static VkResult
