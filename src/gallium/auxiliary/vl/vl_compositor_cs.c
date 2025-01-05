@@ -669,21 +669,77 @@ calc_proj(struct vl_compositor_layer *layer,
           struct pipe_resource *texture,
           float m[2][4])
 {
-   memset(m, 0, sizeof(float) * 2 * 4);
-
+   enum vl_compositor_mirror mirror = layer->mirror;
    float ratio_x = (float)texture->width0 / layer->sampler_views[0]->texture->width0;
    float ratio_y = (float)texture->height0 / layer->sampler_views[0]->texture->height0;
-   float scale_x = ((float)layer->sampler_views[0]->texture->width0 *
-      (layer->src.br.x - layer->src.tl.x)) / layer->viewport.scale[0];
-   float scale_y = ((float)layer->sampler_views[0]->texture->height0 *
-      (layer->src.br.y - layer->src.tl.y)) / layer->viewport.scale[1];
-   float crop_x = (layer->src.tl.x * layer->sampler_views[0]->texture->width0) * ratio_x;
-   float crop_y = (layer->src.tl.y * layer->sampler_views[0]->texture->height0) * ratio_y;
+   float width = layer->sampler_views[0]->texture->width0;
+   float height = layer->sampler_views[0]->texture->height0;
+   float translate_x = texture->width0 * ratio_x;
+   float translate_y = texture->height0 * ratio_y;
 
-   m[0][0] = scale_x;
-   m[1][1] = scale_y;
-   m[0][2] = crop_x;
-   m[1][2] = crop_y;
+   memset(m, 0, sizeof(float) * 2 * 4);
+
+   switch (layer->rotate) {
+   default:
+   case VL_COMPOSITOR_ROTATE_0:
+      m[0][0] = 1.0;
+      m[1][1] = 1.0;
+      break;
+   case VL_COMPOSITOR_ROTATE_90:
+      m[0][1] = 1.0;
+      m[1][0] = -1.0;
+      m[1][2] = translate_y;
+      width = layer->sampler_views[0]->texture->height0;
+      height = layer->sampler_views[0]->texture->width0;
+      break;
+   case VL_COMPOSITOR_ROTATE_180:
+      m[0][0] = 1.0;
+      m[1][1] = 1.0;
+      if (mirror != VL_COMPOSITOR_MIRROR_VERTICAL)
+         mirror = VL_COMPOSITOR_MIRROR_VERTICAL;
+      else
+         mirror = VL_COMPOSITOR_MIRROR_HORIZONTAL;
+      break;
+   case VL_COMPOSITOR_ROTATE_270:
+      m[0][1] = -1.0;
+      m[1][0] = 1.0;
+      m[0][2] = translate_x;
+      width = layer->sampler_views[0]->texture->height0;
+      height = layer->sampler_views[0]->texture->width0;
+      break;
+   }
+
+   switch (mirror) {
+   default:
+   case VL_COMPOSITOR_MIRROR_NONE:
+      break;
+   case VL_COMPOSITOR_MIRROR_HORIZONTAL:
+      m[0][0] *= -1;
+      m[0][1] *= -1;
+      m[0][2] = translate_x - m[0][2];
+      break;
+   case VL_COMPOSITOR_MIRROR_VERTICAL:
+      m[1][0] *= -1;
+      m[1][1] *= -1;
+      m[1][2] = translate_y - m[1][2];
+      break;
+   }
+
+   float scale_x = (width * (layer->src.br.x - layer->src.tl.x)) / layer->viewport.scale[0];
+   float scale_y = (height * (layer->src.br.y - layer->src.tl.y)) / layer->viewport.scale[1];
+
+   m[0][0] *= scale_x;
+   m[0][1] *= scale_x;
+   m[0][2] *= scale_x;
+   m[1][0] *= scale_y;
+   m[1][1] *= scale_y;
+   m[1][2] *= scale_y;
+
+   float crop_x = (layer->src.tl.x * width) * ratio_x;
+   float crop_y = (layer->src.tl.y * height) * ratio_y;
+
+   m[0][2] += crop_x;
+   m[1][2] += crop_y;
 }
 
 static inline float
