@@ -5049,7 +5049,7 @@ static void si_emit_spi_map(struct si_context *sctx, unsigned index)
    struct si_state_rasterizer *rs = sctx->queued.named.rasterizer;
 
    for (unsigned i = 0; i < NUM_INTERP; i++) {
-      union si_input_info input = ps->info.ps_inputs[i];
+      union si_ps_input_info input = ps->info.ps_inputs[i];
       unsigned ps_input_cntl = vs->info.vs_output_ps_input_cntl[input.semantic];
       bool non_default_val = G_028644_OFFSET(ps_input_cntl) != 0x20;
 

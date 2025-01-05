@@ -2752,14 +2752,78 @@ si_get_shader_variant_info(struct si_shader *shader, nir_shader *nir)
       /* Find out which frag coord components are used. */
       uint8_t frag_coord_mask = 0;
 
-      if (BITSET_TEST(sysvals, SYSTEM_VALUE_FRAG_COORD)) {
-         nir_foreach_block(block, nir_shader_get_entrypoint(nir)) {
-            nir_foreach_instr(instr, block) {
-               if (instr->type == nir_instr_type_intrinsic) {
-                  nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
-                  if (intr->intrinsic == nir_intrinsic_load_frag_coord ||
-                      intr->intrinsic == nir_intrinsic_load_sample_pos)
-                     frag_coord_mask |= nir_def_components_read(&intr->def);
+      /* Since flat+convergent and non-flat components can occur in the same vec4, start with
+       * all PS inputs as flat and change them to smooth when we find a component that's
+       * interpolated.
+       */
+      for (unsigned i = 0; i < ARRAY_SIZE(shader->info.ps_inputs); i++)
+         shader->info.ps_inputs[i].interpolate = INTERP_MODE_FLAT;
+
+      nir_foreach_block(block, nir_shader_get_entrypoint(nir)) {
+         nir_foreach_instr(instr, block) {
+            if (instr->type == nir_instr_type_intrinsic) {
+               nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
+
+               switch (intr->intrinsic) {
+               case nir_intrinsic_load_frag_coord:
+               case nir_intrinsic_load_sample_pos:
+                  frag_coord_mask |= nir_def_components_read(&intr->def);
+                  break;
+               case nir_intrinsic_load_input:
+               case nir_intrinsic_load_interpolated_input: {
+                  nir_io_semantics sem = nir_intrinsic_io_semantics(intr);
+                  unsigned index = nir_intrinsic_base(intr);
+                  assert(sem.num_slots == 1);
+
+                  shader->info.num_ps_inputs = MAX2(shader->info.num_ps_inputs, index + 1);
+                  shader->info.ps_inputs[index].semantic = sem.location;
+                  /* Determine interpolation mode. This only cares about FLAT/SMOOTH/COLOR.
+                   * COLOR is only for nir_intrinsic_load_color0/1.
+                   */
+                  if (intr->intrinsic == nir_intrinsic_load_interpolated_input) {
+                     shader->info.ps_inputs[index].interpolate = INTERP_MODE_SMOOTH;
+                     if (intr->def.bit_size == 16)
+                        shader->info.ps_inputs[index].fp16_lo_hi_valid |= 0x1 << sem.high_16bits;
+                  }
+                  break;
+               }
+               case nir_intrinsic_load_color0:
+                  assert(!shader->is_monolithic);
+                  shader->info.ps_colors_read |= nir_def_components_read(&intr->def);
+                  break;
+               case nir_intrinsic_load_color1:
+                  assert(!shader->is_monolithic);
+                  shader->info.ps_colors_read |= nir_def_components_read(&intr->def) << 4;
+                  break;
+               default:
+                  break;
+               }
+            }
+         }
+      }
+
+      /* Add both front and back color inputs. */
+      if (!shader->is_monolithic) {
+         unsigned index = shader->info.num_ps_inputs;
+
+         for (unsigned back = 0; back < 2; back++) {
+            for (unsigned i = 0; i < 2; i++) {
+               if ((shader->info.ps_colors_read >> (i * 4)) & 0xf) {
+                  assert(index < ARRAY_SIZE(shader->info.ps_inputs));
+                  shader->info.ps_inputs[index].semantic =
+                     (back ? VARYING_SLOT_BFC0 : VARYING_SLOT_COL0) + i;
+
+                  enum glsl_interp_mode mode = i ? nir->info.fs.color1_interp
+                                                 : nir->info.fs.color0_interp;
+                  shader->info.ps_inputs[index].interpolate =
+                     mode == INTERP_MODE_NONE ? INTERP_MODE_COLOR : mode;
+                  index++;
+
+                  /* Back-face colors don't increment num_ps_inputs. si_emit_spi_map will use
+                   * back-face colors conditionally only when needed.
+                   */
+                  if (!back)
+                     shader->info.num_ps_inputs++;
                }
             }
          }
@@ -2844,17 +2908,6 @@ static void get_nir_shaders(struct si_shader *shader, struct si_linked_shaders *
          NIR_PASS_V(linked->consumer.nir, nir_recompute_io_bases, nir_var_shader_in);
 
       si_get_shader_variant_info(shader, linked->consumer.nir);
-
-      struct si_shader_info info;
-      si_nir_scan_shader(shader->selector->screen, linked->consumer.nir, &info,
-                         shader->is_monolithic);
-
-      shader->info.num_ps_inputs = info.num_inputs;
-      shader->info.ps_colors_read = info.colors_read;
-
-      /* A non-monolithic PS doesn't know if back colors are enabled, so copy 2 more. */
-      unsigned max_interp = MIN2(info.num_inputs + 2, SI_NUM_INTERP);
-      memcpy(shader->info.ps_inputs, info.input, max_interp * sizeof(info.input[0]));
    }
 
    for (unsigned i = 0; i < SI_NUM_LINKED_SHADERS; i++) {

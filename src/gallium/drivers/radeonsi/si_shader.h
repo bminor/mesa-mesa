@@ -453,6 +453,15 @@ enum si_color_output_type {
    SI_TYPE_UINT16,
 };
 
+union si_ps_input_info {
+   struct {
+      uint8_t semantic;
+      uint8_t interpolate;
+      uint8_t fp16_lo_hi_valid;
+   };
+   uint32_t _unused; /* this just forces 4-byte alignment */
+};
+
 union si_input_info {
    struct {
       uint8_t semantic;
@@ -864,7 +873,7 @@ union si_shader_key {
 struct si_shader_binary_info {
    uint8_t vs_output_param_offset[NUM_TOTAL_VARYING_SLOTS];
    uint32_t vs_output_ps_input_cntl[NUM_TOTAL_VARYING_SLOTS];
-   union si_input_info ps_inputs[SI_NUM_INTERP];
+   union si_ps_input_info ps_inputs[SI_NUM_INTERP];
    uint8_t num_ps_inputs;
    uint8_t ps_colors_read;
    uint8_t num_input_sgprs;
