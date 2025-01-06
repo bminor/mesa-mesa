@@ -559,6 +559,219 @@ nvc0_screen_get_compute_param(struct pipe_screen *pscreen,
 }
 
 static void
+nvc0_init_screen_caps(struct nvc0_screen *screen)
+{
+   struct pipe_caps *caps = (struct pipe_caps *)&screen->base.base.caps;
+
+   u_init_pipe_screen_caps(&screen->base.base, 1);
+
+   const uint16_t class_3d = screen->base.class_3d;
+   struct nouveau_device *dev = screen->base.device;
+
+   /* non-boolean caps */
+   caps->max_texture_2d_size = 16384;
+   caps->max_texture_cube_levels = 15;
+   caps->max_texture_3d_levels = 12;
+   caps->max_texture_array_layers = 2048;
+   caps->min_texel_offset = -8;
+   caps->max_texel_offset = 7;
+   caps->min_texture_gather_offset = -32;
+   caps->max_texture_gather_offset = 31;
+   caps->max_texel_buffer_elements_uint = 128 * 1024 * 1024;
+   caps->glsl_feature_level = 430;
+   caps->glsl_feature_level_compatibility = 430;
+   caps->max_render_targets = 8;
+   caps->max_dual_source_render_targets = 1;
+   caps->viewport_subpixel_bits =
+   caps->rasterizer_subpixel_bits = 8;
+   caps->max_stream_output_buffers = 4;
+   caps->max_stream_output_separate_components =
+   caps->max_stream_output_interleaved_components = 128;
+   caps->max_geometry_output_vertices =
+   caps->max_geometry_total_output_components = 1024;
+   caps->max_vertex_streams = 4;
+   caps->max_gs_invocations = 32;
+   caps->max_shader_buffer_size_uint = 1 << 27;
+   caps->max_vertex_attrib_stride = 2048;
+   caps->max_vertex_element_src_offset = 2047;
+   caps->constant_buffer_offset_alignment = 256;
+   caps->texture_buffer_offset_alignment = class_3d < GM107_3D_CLASS ?
+      256 /* IMAGE bindings require alignment to 256 */ : 16;
+   caps->shader_buffer_offset_alignment = 16;
+   caps->min_map_buffer_alignment = NOUVEAU_MIN_BUFFER_MAP_ALIGN;
+   caps->max_viewports = NVC0_MAX_VIEWPORTS;
+   caps->max_texture_gather_components = 4;
+   caps->texture_border_color_quirk = PIPE_QUIRK_TEXTURE_BORDER_COLOR_SWIZZLE_NV50;
+   caps->endianness = PIPE_ENDIAN_LITTLE;
+   caps->max_shader_patch_varyings = 30;
+   caps->max_window_rectangles = NVC0_MAX_WINDOW_RECTANGLES;
+   caps->max_conservative_raster_subpixel_precision_bias = class_3d >= GM200_3D_CLASS ? 8 : 0;
+   caps->max_texture_upload_memory_budget = 64 * 1024 * 1024;
+   /* NOTE: These only count our slots for GENERIC varyings.
+    * The address space may be larger, but the actual hard limit seems to be
+    * less than what the address space layout permits, so don't add TEXCOORD,
+    * COLOR, etc. here.
+    */
+   caps->max_varyings = 0x1f0 / 16;
+   caps->max_vertex_buffers = 16;
+   caps->gl_begin_end_buffer_size = 512 * 1024; /* TODO: Investigate tuning this */
+   caps->max_texture_mb = 0; /* TODO: use 1/2 of VRAM for this? */
+
+   caps->timer_resolution = 1000;
+
+   caps->supported_prim_modes_with_restart =
+   caps->supported_prim_modes = BITFIELD_MASK(MESA_PRIM_COUNT);
+
+   /* supported caps */
+   caps->texture_mirror_clamp = true;
+   caps->texture_mirror_clamp_to_edge = true;
+   caps->texture_swizzle = true;
+   caps->npot_textures = true;
+   caps->mixed_framebuffer_sizes = true;
+   caps->mixed_color_depth_bits = true;
+   caps->anisotropic_filter = true;
+   caps->seamless_cube_map = true;
+   caps->cube_map_array = true;
+   caps->texture_buffer_objects = true;
+   caps->texture_multisample = true;
+   caps->depth_clip_disable = true;
+   caps->tgsi_texcoord = true;
+   caps->fragment_shader_texture_lod = true;
+   caps->fragment_shader_derivatives = true;
+   caps->fragment_color_clamped = true;
+   caps->vertex_color_unclamped = true;
+   caps->vertex_color_clamped = true;
+   caps->query_timestamp = true;
+   caps->query_time_elapsed = true;
+   caps->occlusion_query = true;
+   caps->stream_output_pause_resume = true;
+   caps->stream_output_interleave_buffers = true;
+   caps->query_pipeline_statistics = true;
+   caps->blend_equation_separate = true;
+   caps->indep_blend_enable = true;
+   caps->indep_blend_func = true;
+   caps->fs_coord_origin_upper_left = true;
+   caps->fs_coord_pixel_center_half_integer = true;
+   caps->primitive_restart = true;
+   caps->primitive_restart_fixed_index = true;
+   caps->vs_instanceid = true;
+   caps->vertex_element_instance_divisor = true;
+   caps->conditional_render = true;
+   caps->texture_barrier = true;
+   caps->quads_follow_provoking_vertex_convention = true;
+   caps->start_instance = true;
+   caps->draw_indirect = true;
+   caps->user_vertex_buffers = true;
+   caps->texture_query_lod = true;
+   caps->sample_shading = true;
+   caps->texture_gather_offsets = true;
+   caps->texture_gather_sm5 = true;
+   caps->fs_fine_derivative = true;
+   caps->conditional_render_inverted = true;
+   caps->sampler_view_target = true;
+   caps->clip_halfz = true;
+   caps->polygon_offset_clamp = true;
+   caps->multisample_z_resolve = true;
+   caps->texture_float_linear = true;
+   caps->texture_half_float_linear = true;
+   caps->depth_bounds_test = true;
+   caps->texture_query_samples = true;
+   caps->copy_between_compressed_and_plain_formats = true;
+   caps->force_persample_interp = true;
+   caps->draw_parameters = true;
+   caps->shader_pack_half_float = true;
+   caps->multi_draw_indirect = true;
+   caps->memobj = true;
+   caps->multi_draw_indirect_params = true;
+   caps->fs_face_is_integer_sysval = true;
+   caps->query_buffer_object = true;
+   caps->invalidate_buffer = true;
+   caps->string_marker = true;
+   caps->framebuffer_no_attachment = true;
+   caps->cull_distance = true;
+   caps->robust_buffer_access_behavior = true;
+   caps->shader_group_vote = true;
+   caps->polygon_offset_units_unscaled = true;
+   caps->shader_array_components = true;
+   caps->legacy_math_rules = true;
+   caps->doubles = true;
+   caps->int64 = true;
+   caps->tgsi_tex_txf_lz = true;
+   caps->shader_clock = true;
+   caps->compute = true;
+   caps->can_bind_const_buffer_as_vertex = true;
+   caps->query_so_overflow = true;
+   caps->tgsi_div = true;
+   caps->image_atomic_inc_wrap = true;
+   caps->demote_to_helper_invocation = true;
+   caps->device_reset_status_query = true;
+   caps->texture_shadow_lod = true;
+   caps->clear_scissored = true;
+   caps->image_store_formatted = true;
+   caps->query_memory_info = true;
+   caps->texture_transfer_modes =
+      screen->base.vram_domain & NOUVEAU_BO_VRAM ? PIPE_TEXTURE_TRANSFER_BLIT : 0;
+   caps->fbfetch = class_3d >= NVE4_3D_CLASS ? 1 : 0; /* needs testing on fermi */
+   caps->seamless_cube_map_per_texture =
+   caps->shader_ballot = class_3d >= NVE4_3D_CLASS;
+   caps->bindless_texture = class_3d >= NVE4_3D_CLASS;
+   caps->image_atomic_float_add = class_3d < GM107_3D_CLASS; /* needs additional lowering */
+   caps->polygon_mode_fill_rectangle =
+   caps->vs_layer_viewport =
+   caps->tes_layer_viewport =
+   caps->post_depth_coverage =
+   caps->conservative_raster_post_snap_triangles =
+   caps->conservative_raster_post_snap_points_lines =
+   caps->conservative_raster_post_depth_coverage =
+   caps->programmable_sample_locations =
+   caps->viewport_swizzle =
+   caps->viewport_mask =
+   caps->sampler_reduction_minmax = class_3d >= GM200_3D_CLASS;
+   caps->conservative_raster_pre_snap_triangles = class_3d >= GP100_3D_CLASS;
+   caps->resource_from_user_memory_compute_only =
+   caps->system_svm = screen->base.has_svm;
+
+   caps->gl_spirv = true;
+   caps->gl_spirv_variable_pointers = true;
+
+   /* nir related caps */
+   caps->nir_images_as_deref = false;
+
+   caps->pci_group = dev->info.pci.domain;
+   caps->pci_bus = dev->info.pci.bus;
+   caps->pci_device = dev->info.pci.dev;
+   caps->pci_function = dev->info.pci.func;
+
+   caps->opencl_integer_functions = false; /* could be done */
+   caps->integer_multiply_32x16 = false; /* could be done */
+   caps->map_unsynchronized_thread_safe = false; /* when we fix MT stuff */
+   caps->alpha_to_coverage_dither_control = false; /* TODO */
+   caps->shader_atomic_int64 = false; /* TODO */
+   caps->hardware_gl_select = false;
+
+   caps->vendor_id = 0x10de;
+   caps->device_id = dev->info.device_id;
+   caps->video_memory = dev->vram_size >> 20;
+   caps->uma = screen->base.is_uma;
+
+   caps->min_line_width =
+   caps->min_line_width_aa =
+   caps->min_point_size =
+   caps->min_point_size_aa = 1;
+   caps->point_size_granularity =
+   caps->line_width_granularity = 0.1;
+   caps->max_line_width =
+   caps->max_line_width_aa = 10.0f;
+   caps->max_point_size = 63.0f;
+   caps->max_point_size_aa = 63.375f;
+   caps->max_texture_anisotropy = 16.0f;
+   caps->max_texture_lod_bias = 15.0f;
+   caps->min_conservative_raster_dilate = 0.0f;
+   caps->max_conservative_raster_dilate = class_3d >= GM200_3D_CLASS ? 0.75f : 0.0f;
+   caps->conservative_raster_dilate_granularity = class_3d >= GM200_3D_CLASS ? 0.25f : 0.0f;
+}
+
+static void
 nvc0_screen_get_sample_pixel_grid(struct pipe_screen *pscreen,
                                   unsigned sample_count,
                                   unsigned *width, unsigned *height)
@@ -1140,6 +1353,8 @@ nvc0_screen_create(struct nouveau_device *dev)
    if (ret)
       FAIL_SCREEN_INIT("Error allocating PGRAPH context for 3D: %d\n", ret);
    screen->base.class_3d = screen->eng3d->oclass;
+
+   nvc0_init_screen_caps(screen);
 
    BEGIN_NVC0(push, SUBC_3D(NV01_SUBCHAN_OBJECT), 1);
    PUSH_DATA (push, screen->eng3d->oclass);
