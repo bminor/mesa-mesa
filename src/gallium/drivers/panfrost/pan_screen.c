@@ -881,6 +881,253 @@ panfrost_get_compute_param(struct pipe_screen *pscreen,
 }
 
 static void
+panfrost_init_screen_caps(struct panfrost_screen *screen)
+{
+   struct pipe_caps *caps = (struct pipe_caps *)&screen->base.caps;
+
+   u_init_pipe_screen_caps(&screen->base, 1);
+
+   struct panfrost_device *dev = &screen->dev;
+
+   /* Our GL 3.x implementation is WIP */
+   bool is_gl3 = dev->debug & PAN_DBG_GL3;
+
+   /* Native MRT is introduced with v5 */
+   bool has_mrt = (dev->arch >= 5);
+
+   caps->npot_textures = true;
+   caps->mixed_color_depth_bits = true;
+   caps->fragment_shader_texture_lod = true;
+   caps->vertex_color_unclamped = true;
+   caps->depth_clip_disable = true;
+   caps->mixed_framebuffer_sizes = true;
+   caps->frontend_noop = true;
+   caps->sample_shading = true;
+   caps->fragment_shader_derivatives = true;
+   caps->framebuffer_no_attachment = true;
+   caps->quads_follow_provoking_vertex_convention = true;
+   caps->shader_pack_half_float = true;
+   caps->has_const_bw = true;
+
+   /* Removed in v9 (Valhall) */
+   caps->depth_clip_disable_separate = dev->arch < 9;
+
+   caps->max_render_targets =
+   caps->fbfetch = has_mrt ? 8 : 1;
+   caps->fbfetch_coherent = true;
+
+   caps->max_dual_source_render_targets = 1;
+
+   caps->occlusion_query = true;
+   caps->primitive_restart = true;
+   caps->primitive_restart_fixed_index = true;
+
+   caps->anisotropic_filter =
+      panfrost_device_gpu_rev(dev) >= dev->model->min_rev_anisotropic;
+
+   /* Compile side is done for Bifrost, Midgard TODO. Needs some kernel
+    * work to turn on, since CYCLE_COUNT_START needs to be issued. In
+    * kbase, userspace requests this via BASE_JD_REQ_PERMON. There is not
+    * yet way to request this with mainline TODO */
+   caps->shader_clock = false;
+
+   caps->vs_instanceid = true;
+   caps->texture_multisample = true;
+   caps->surface_sample_count = true;
+
+   caps->sampler_view_target = true;
+   caps->clip_halfz = true;
+   caps->polygon_offset_clamp = true;
+   caps->texture_swizzle = true;
+   caps->texture_mirror_clamp_to_edge = true;
+   caps->vertex_element_instance_divisor = true;
+   caps->blend_equation_separate = true;
+   caps->indep_blend_enable = true;
+   caps->indep_blend_func = true;
+   caps->generate_mipmap = true;
+   caps->uma = true;
+   caps->texture_float_linear = true;
+   caps->texture_half_float_linear = true;
+   caps->shader_array_components = true;
+   caps->texture_buffer_objects = true;
+   caps->packed_uniforms = true;
+   caps->image_load_formatted = true;
+   caps->cube_map_array = true;
+   caps->compute = true;
+   caps->int64 = true;
+
+   caps->copy_between_compressed_and_plain_formats = true;
+
+   caps->max_stream_output_buffers = PIPE_MAX_SO_BUFFERS;
+
+   caps->max_stream_output_separate_components =
+   caps->max_stream_output_interleaved_components = PIPE_MAX_SO_OUTPUTS;
+
+   caps->stream_output_pause_resume = true;
+   caps->stream_output_interleave_buffers = true;
+
+   caps->max_texture_array_layers = 2048;
+
+   caps->glsl_feature_level =
+   caps->glsl_feature_level_compatibility = is_gl3 ? 330 : 140;
+   caps->essl_feature_level = dev->arch >= 6 ? 320 : 310;
+
+   caps->constant_buffer_offset_alignment = 16;
+
+   /* v7 (only) restricts component orders with AFBC. To workaround, we
+    * compose format swizzles with texture swizzles. pan_texture.c motsly
+    * handles this but we need to fix up the border colour.
+    */
+   caps->texture_border_color_quirk = dev->arch == 7 || dev->arch >= 10 ?
+      PIPE_QUIRK_TEXTURE_BORDER_COLOR_SWIZZLE_FREEDRENO : 0;
+
+   caps->max_texel_buffer_elements_uint = PAN_MAX_TEXEL_BUFFER_ELEMENTS;
+
+   /* Must be at least 64 for correct behaviour */
+   caps->texture_buffer_offset_alignment = 64;
+
+   caps->query_time_elapsed =
+   caps->query_timestamp =
+      dev->kmod.props.gpu_can_query_timestamp &&
+      dev->kmod.props.timestamp_frequency != 0;
+
+   caps->timer_resolution = pan_gpu_time_to_ns(dev, 1);
+
+   /* The hardware requires element alignment for data conversion to work
+    * as expected. If data conversion is not required, this restriction is
+    * lifted on Midgard at a performance penalty. We conservatively
+    * require element alignment for vertex buffers, using u_vbuf to
+    * translate to match the hardware requirement.
+    *
+    * This is less heavy-handed than PIPE_VERTEX_INPUT_ALIGNMENT_4BYTE, which
+    * would needlessly require alignment even for 8-bit formats.
+    */
+   caps->vertex_input_alignment = PIPE_VERTEX_INPUT_ALIGNMENT_ELEMENT;
+
+   caps->max_texture_2d_size = 1 << (PAN_MAX_MIP_LEVELS - 1);
+
+   caps->max_texture_3d_levels =
+   caps->max_texture_cube_levels = PAN_MAX_MIP_LEVELS;
+
+   /* pixel coord is in integer sysval on bifrost. */
+   caps->fs_coord_pixel_center_integer = dev->arch >= 6;
+   caps->fs_coord_pixel_center_half_integer = dev->arch < 6;
+
+   /* Hardware is upper left */
+   caps->fs_coord_origin_lower_left = false;
+
+   caps->fs_coord_origin_upper_left = true;
+   caps->tgsi_texcoord = true;
+
+   /* We would prefer varyings on Midgard, but proper sysvals on Bifrost */
+   caps->fs_face_is_integer_sysval =
+   caps->fs_position_is_sysval =
+   caps->fs_point_is_sysval = dev->arch >= 6;
+
+   caps->seamless_cube_map = true;
+   caps->seamless_cube_map_per_texture = true;
+
+   caps->max_vertex_element_src_offset = 0xffff;
+
+   caps->texture_transfer_modes = 0;
+
+   caps->endianness = PIPE_ENDIAN_NATIVE;
+
+   caps->max_texture_gather_components = 4;
+
+   caps->min_texture_gather_offset = -8;
+
+   caps->max_texture_gather_offset = 7;
+
+   uint64_t system_memory;
+   caps->video_memory = os_get_total_physical_memory(&system_memory) ?
+      system_memory >> 20 : 0;
+
+   caps->shader_stencil_export = true;
+   caps->conditional_render = true;
+   caps->conditional_render_inverted = true;
+
+   caps->shader_buffer_offset_alignment = 4;
+
+   caps->max_varyings = dev->arch >= 9 ? 16 : 32;
+
+   /* Removed in v6 (Bifrost) */
+   caps->gl_clamp =
+   caps->texture_mirror_clamp =
+   caps->alpha_test = dev->arch <= 5;
+
+   /* Removed in v9 (Valhall). PRIMTIIVE_RESTART_FIXED_INDEX is of course
+    * still supported as it is core GLES3.0 functionality
+    */
+   caps->emulate_nonfixed_primitive_restart = dev->arch >= 9;
+
+   caps->flatshade = false;
+   caps->two_sided_color = false;
+   caps->clip_planes = 0;
+
+   caps->packed_stream_output = false;
+
+   caps->viewport_transform_lowered = true;
+   caps->psiz_clamped = true;
+
+   caps->nir_images_as_deref = false;
+
+   caps->draw_indirect = true;
+
+   caps->multi_draw_indirect = dev->arch >= 10;
+
+   caps->start_instance =
+   caps->draw_parameters = pan_is_bifrost(dev);
+
+   /* Mali supports GLES and QUADS. Midgard and v6 Bifrost
+    * support more */
+   uint32_t modes = BITFIELD_MASK(MESA_PRIM_QUADS + 1);
+
+   if (dev->arch <= 6) {
+      modes |= BITFIELD_BIT(MESA_PRIM_QUAD_STRIP);
+      modes |= BITFIELD_BIT(MESA_PRIM_POLYGON);
+   }
+
+   if (dev->arch >= 9) {
+      /* Although Valhall is supposed to support quads, they
+       * don't seem to work correctly. Disable to fix
+       * arb-provoking-vertex-render.
+       */
+      modes &= ~BITFIELD_BIT(MESA_PRIM_QUADS);
+   }
+
+   caps->supported_prim_modes =
+   caps->supported_prim_modes_with_restart = modes;
+
+   caps->image_store_formatted = true;
+
+   caps->native_fence_fd = true;
+
+   caps->context_priority_mask =
+      from_kmod_group_allow_priority_flags(
+         dev->kmod.props.allowed_group_priorities_mask);
+
+   caps->astc_decode_mode = dev->arch >= 9 && (dev->compressed_formats & (1 << 30));
+
+   caps->min_line_width =
+   caps->min_line_width_aa =
+   caps->min_point_size =
+   caps->min_point_size_aa = 1;
+
+   caps->point_size_granularity =
+   caps->line_width_granularity = 0.0625;
+
+   caps->max_line_width =
+   caps->max_line_width_aa =
+   caps->max_point_size =
+   caps->max_point_size_aa = 4095.9375;
+
+   caps->max_texture_anisotropy = 16.0;
+
+   caps->max_texture_lod_bias = 16.0; /* arbitrary */
+}
+
+static void
 panfrost_destroy_screen(struct pipe_screen *pscreen)
 {
    struct panfrost_device *dev = pan_device(pscreen);
@@ -1039,6 +1286,8 @@ panfrost_create_screen(int fd, const struct pipe_screen_config *config,
    panfrost_resource_screen_init(&screen->base);
    pan_blend_shader_cache_init(&dev->blend_shaders,
                                panfrost_device_gpu_id(dev));
+
+   panfrost_init_screen_caps(screen);
 
    panfrost_disk_cache_init(screen);
 
