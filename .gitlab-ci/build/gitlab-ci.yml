@@ -410,6 +410,7 @@ fedora-release:
 
 debian-android:
   extends:
+    - .android-variables
     - .meson-cross
     - .use-debian/android_build
     - .ci-deqp-artifacts
@@ -439,7 +440,7 @@ debian-android:
     FORCE_FALLBACK_FOR: llvm
     EXTRA_OPTION: >
       -D android-stub=true
-      -D platform-sdk-version=33
+      -D platform-sdk-version=${ANDROID_SDK_VERSION}
       -D cpp_rtti=false
       -D valgrind=disabled
       -D android-libbacktrace=disabled
