@@ -54,6 +54,7 @@ static const struct debug_control tu_debug_options[] = {
  * The runtime debug flags are a subset of the debug flags that can be set at
  * runtime. Flags which depend on running state of the driver, the application
  * or the hardware and would otherwise break when toggled should not be set here.
+ * Note: Keep in sync with the list of flags in 'docs/drivers/freedreno.rst'.
  */
 const uint32_t tu_runtime_debug_flags =
    TU_DEBUG_NIR | TU_DEBUG_NOBIN | TU_DEBUG_SYSMEM | TU_DEBUG_GMEM |
