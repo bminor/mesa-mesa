@@ -572,7 +572,7 @@ panvk_per_arch(cmd_prepare_draw_sysvals)(struct panvk_cmd_buffer *cmdbuf,
    }
 
    if (dyn_gfx_state_dirty(cmdbuf, VP_VIEWPORTS) ||
-       dyn_gfx_state_dirty(cmdbuf, RS_CULL_MODE) ||
+       dyn_gfx_state_dirty(cmdbuf, RS_DEPTH_CLIP_ENABLE) ||
        dyn_gfx_state_dirty(cmdbuf, RS_DEPTH_CLAMP_ENABLE)) {
       VkViewport *viewport = &cmdbuf->vk.dynamic_graphics_state.vp.viewports[0];
 
