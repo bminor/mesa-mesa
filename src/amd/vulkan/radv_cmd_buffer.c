@@ -4616,6 +4616,11 @@ radv_emit_framebuffer_state(struct radv_cmd_buffer *cmd_buffer)
 
          xmax = vrs_iview->vk.extent.width - 1;
          ymax = vrs_iview->vk.extent.height - 1;
+
+         if (pdev->info.gfx_level >= GFX12) {
+            radeon_set_context_reg(cmd_buffer->cs, R_0283E0_PA_SC_VRS_INFO,
+                                   S_0283E0_RATE_SW_MODE(vrs_image->planes[0].surface.u.gfx9.swizzle_mode));
+         }
       }
 
       radeon_set_context_reg_seq(cmd_buffer->cs, R_0283F0_PA_SC_VRS_RATE_BASE, 3);
