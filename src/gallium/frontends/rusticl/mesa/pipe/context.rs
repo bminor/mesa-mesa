@@ -451,7 +451,7 @@ impl PipeContext {
         }
     }
 
-    pub fn set_sampler_views(&self, views: &mut [*mut pipe_sampler_view]) {
+    pub fn set_sampler_views(&self, mut views: Vec<*mut pipe_sampler_view>) {
         unsafe {
             self.pipe.as_ref().set_sampler_views.unwrap()(
                 self.pipe.as_ptr(),
@@ -459,7 +459,7 @@ impl PipeContext {
                 0,
                 views.len() as u32,
                 0,
-                false,
+                true,
                 views.as_mut_ptr(),
             )
         }
@@ -474,14 +474,10 @@ impl PipeContext {
                 0,
                 count,
                 0,
-                false,
+                true,
                 samplers.as_mut_ptr(),
             )
         }
-    }
-
-    pub fn sampler_view_destroy(&self, view: *mut pipe_sampler_view) {
-        unsafe { self.pipe.as_ref().sampler_view_destroy.unwrap()(self.pipe.as_ptr(), view) }
     }
 
     pub fn set_shader_images(&self, images: &[PipeImageView]) {
@@ -618,6 +614,7 @@ fn has_required_cbs(context: &pipe_context) -> bool {
         & has_required_feature!(context, launch_grid)
         & has_required_feature!(context, memory_barrier)
         & has_required_feature!(context, resource_copy_region)
+        // implicitly used through pipe_sampler_view_reference
         & has_required_feature!(context, sampler_view_destroy)
         & has_required_feature!(context, set_constant_buffer)
         & has_required_feature!(context, set_global_binding)

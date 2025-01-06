@@ -1522,7 +1522,7 @@ impl Kernel {
             // subtract the shader local_size as we only request something on top of that.
             variable_local_size -= static_local_size;
 
-            let mut sviews: Vec<_> = sviews
+            let sviews: Vec<_> = sviews
                 .iter()
                 .map(|(s, f, size, aii)| ctx.create_sampler_view(s, *f, *size, aii.as_ref()))
                 .collect();
@@ -1547,9 +1547,10 @@ impl Kernel {
                 }
             };
 
+            let sviews_len = sviews.len();
             ctx.bind_compute_state(cso.cso_ptr);
             ctx.bind_sampler_states(&samplers);
-            ctx.set_sampler_views(&mut sviews);
+            ctx.set_sampler_views(sviews);
             ctx.set_shader_images(&iviews);
             ctx.set_global_binding(resources.as_slice(), &mut globals);
 
@@ -1589,7 +1590,7 @@ impl Kernel {
 
             ctx.clear_global_binding(globals.len() as u32);
             ctx.clear_shader_images(iviews.len() as u32);
-            ctx.clear_sampler_views(sviews.len() as u32);
+            ctx.clear_sampler_views(sviews_len as u32);
             ctx.clear_sampler_states(samplers.len() as u32);
 
             ctx.bind_compute_state(ptr::null_mut());
@@ -1597,7 +1598,6 @@ impl Kernel {
             ctx.memory_barrier(PIPE_BARRIER_GLOBAL_BUFFER);
 
             samplers.iter().for_each(|s| ctx.delete_sampler_state(*s));
-            sviews.iter().for_each(|v| ctx.sampler_view_destroy(*v));
 
             if let Some(printf_buf) = &printf_buf {
                 let tx = ctx
