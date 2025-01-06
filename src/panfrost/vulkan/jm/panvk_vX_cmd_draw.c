@@ -631,12 +631,18 @@ panvk_draw_prepare_attributes(struct panvk_cmd_buffer *cmdbuf,
 }
 
 static void
-panvk_emit_viewport(const struct vk_viewport_state *vp, void *vpd)
+panvk_emit_viewport(struct panvk_cmd_buffer *cmdbuf, void *vpd)
 {
-   assert(vp->viewport_count == 1);
+   const struct vk_viewport_state *vp = &cmdbuf->vk.dynamic_graphics_state.vp;
 
+   if (vp->viewport_count < 1)
+      return;
+
+   struct panvk_graphics_sysvals *sysvals = &cmdbuf->state.gfx.sysvals;
    const VkViewport *viewport = &vp->viewports[0];
    const VkRect2D *scissor = &vp->scissors[0];
+   float minz = sysvals->viewport.offset.z;
+   float maxz = minz + sysvals->viewport.scale.z;
 
    /* The spec says "width must be greater than 0.0" */
    assert(viewport->width >= 0);
@@ -663,16 +669,13 @@ panvk_emit_viewport(const struct vk_viewport_state *vp, void *vpd)
    miny = CLAMP(miny, 0, UINT16_MAX);
    maxy = CLAMP(maxy, 0, UINT16_MAX);
 
-   assert(viewport->minDepth >= 0.0f && viewport->minDepth <= 1.0f);
-   assert(viewport->maxDepth >= 0.0f && viewport->maxDepth <= 1.0f);
-
    pan_pack(vpd, VIEWPORT, cfg) {
       cfg.scissor_minimum_x = minx;
       cfg.scissor_minimum_y = miny;
       cfg.scissor_maximum_x = maxx;
       cfg.scissor_maximum_y = maxy;
-      cfg.minimum_z = MIN2(viewport->minDepth, viewport->maxDepth);
-      cfg.maximum_z = MAX2(viewport->minDepth, viewport->maxDepth);
+      cfg.minimum_z = MIN2(minz, maxz);
+      cfg.maximum_z = MAX2(minz, maxz);
    }
 }
 
@@ -685,16 +688,14 @@ panvk_draw_prepare_viewport(struct panvk_cmd_buffer *cmdbuf,
     * As a result, we define an empty one.
     */
    if (!cmdbuf->state.gfx.vpd || dyn_gfx_state_dirty(cmdbuf, VP_VIEWPORTS) ||
-       dyn_gfx_state_dirty(cmdbuf, VP_SCISSORS)) {
+       dyn_gfx_state_dirty(cmdbuf, VP_SCISSORS) ||
+       dyn_gfx_state_dirty(cmdbuf, RS_DEPTH_CLIP_ENABLE) ||
+       dyn_gfx_state_dirty(cmdbuf, RS_DEPTH_CLAMP_ENABLE)) {
       struct panfrost_ptr vp = panvk_cmd_alloc_desc(cmdbuf, VIEWPORT);
       if (!vp.gpu)
          return VK_ERROR_OUT_OF_DEVICE_MEMORY;
 
-      const struct vk_viewport_state *vps =
-         &cmdbuf->vk.dynamic_graphics_state.vp;
-
-      if (vps->viewport_count > 0)
-         panvk_emit_viewport(vps, vp.cpu);
+      panvk_emit_viewport(cmdbuf, vp.cpu);
       cmdbuf->state.gfx.vpd = vp.gpu;
    }
 
@@ -1231,10 +1232,6 @@ panvk_cmd_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_data *draw)
    if (result != VK_SUCCESS)
       return;
 
-   result = panvk_draw_prepare_viewport(cmdbuf, draw);
-   if (result != VK_SUCCESS)
-      return;
-
    batch->tlsinfo.tls.size = MAX3(vs->info.tls_size, fs ? fs->info.tls_size : 0,
                                   batch->tlsinfo.tls.size);
 
@@ -1259,6 +1256,16 @@ panvk_cmd_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_data *draw)
          return;
 
       panvk_per_arch(cmd_prepare_draw_sysvals)(cmdbuf, &draw->info);
+
+      /* Viewport emission requires up-to-date {scale,offset}.z for min/max Z,
+       * so we need to call it after calling cmd_prepare_draw_sysvals(), but
+       * viewports are the same for all layers, so we only emit when layer_id=0.
+       */
+      if (i == 0) {
+         result = panvk_draw_prepare_viewport(cmdbuf, draw);
+         if (result != VK_SUCCESS)
+            return;
+      }
 
       result = panvk_per_arch(cmd_prepare_push_uniforms)(
          cmdbuf, cmdbuf->state.gfx.vs.shader);

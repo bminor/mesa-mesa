@@ -606,7 +606,6 @@ panvk_per_arch(cmd_prepare_draw_sysvals)(struct panvk_cmd_buffer *cmdbuf,
       set_gfx_sysval(cmdbuf, dirty_sysvals, viewport.offset.z,
                      viewport->minDepth);
 
-#if PAN_ARCH >= 9
       /* Doing the viewport transform in the vertex shader and then depth
        * clipping with the viewport depth range gets a similar result to
        * clipping in clip-space, but loses precision when the viewport depth
@@ -643,7 +642,6 @@ panvk_per_arch(cmd_prepare_draw_sysvals)(struct panvk_cmd_buffer *cmdbuf,
          set_gfx_sysval(cmdbuf, dirty_sysvals, viewport.offset.z,
                         CLAMP(z_offset, 0.0f, 1.0f));
       }
-#endif
    }
 
    const struct panvk_shader *vs = cmdbuf->state.gfx.vs.shader;
