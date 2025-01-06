@@ -8,7 +8,7 @@ deqp_args = [
     "--deqp-surface-type=pbuffer", "--deqp-visibility=hidden",
     "--deqp-gl-config-name=rgba8888d24s8ms0",
 ]
-fraction = 6
+fraction = 20
 version_check = "GL ES 3.2.*git"
 renderer_check = "GLK"
 
@@ -21,7 +21,7 @@ deqp_args = [
     "--deqp-surface-type=pbuffer", "--deqp-visibility=hidden",
     "--deqp-gl-config-name=rgba8888d24s8ms0",
 ]
-fraction = 8
+fraction = 20
 
 [[deqp]]
 deqp = "/deqp-gles/modules/gles31/deqp-gles31"
@@ -32,7 +32,7 @@ deqp_args = [
     "--deqp-surface-type=pbuffer", "--deqp-visibility=hidden",
     "--deqp-gl-config-name=rgba8888d24s8ms0",
 ]
-fraction = 8
+fraction = 20
 
 [[deqp]]
 deqp = "/deqp-gles/external/openglcts/modules/glcts"
@@ -47,7 +47,7 @@ deqp_args = [
     "--deqp-surface-type=pbuffer", "--deqp-visibility=hidden",
     "--deqp-gl-config-name=rgba8888d24s8ms0",
 ]
-fraction = 2
+fraction = 5
 
 # Note that KHR-GL3* test sets include all tests from the previous
 # version, so we only need to run one test list (unlike dEQP-GLES,
@@ -64,7 +64,7 @@ deqp_args = [
     "--deqp-surface-type=pbuffer", "--deqp-visibility=hidden",
     "--deqp-gl-config-name=rgba8888d24s8ms0",
 ]
-fraction = 2
+fraction = 5
 
 # 565-nozs
 [[deqp]]
@@ -77,7 +77,7 @@ deqp_args = [
     "--deqp-gl-config-name=rgb565d0s0ms0",
 ]
 prefix = "565-nozs-"
-fraction = 2
+fraction = 5
 
 [[deqp]]
 deqp = "/deqp-gles/modules/gles31/deqp-gles31"
@@ -89,7 +89,7 @@ deqp_args = [
     "--deqp-gl-config-name=rgb565d0s0ms0",
 ]
 prefix = "565-nozs-"
-fraction = 2
+fraction = 5
 
 # multisample
 [[deqp]]
@@ -102,7 +102,7 @@ deqp_args = [
     "--deqp-gl-config-name=rgba8888d24s8ms4",
 ]
 prefix = "multisample-"
-fraction = 2
+fraction = 5
 
 [[deqp]]
 deqp = "/deqp-gles/modules/gles31/deqp-gles31"
@@ -114,4 +114,4 @@ deqp_args = [
     "--deqp-gl-config-name=rgba8888d24s8ms4",
 ]
 prefix = "multisample-"
-fraction = 2
+fraction = 5
