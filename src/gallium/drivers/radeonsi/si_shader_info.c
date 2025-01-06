@@ -442,6 +442,8 @@ static void scan_instruction(const struct nir_shader *nir, struct si_shader_info
          } else {
             info->uses_persp_center = true;
          }
+         if (intr->intrinsic == nir_intrinsic_load_barycentric_at_offset)
+            info->uses_interp_at_offset = true;
          if (intr->intrinsic == nir_intrinsic_load_barycentric_at_sample)
             info->uses_interp_at_sample = true;
          break;

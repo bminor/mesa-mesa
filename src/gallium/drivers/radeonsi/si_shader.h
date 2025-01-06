@@ -538,6 +538,7 @@ struct si_shader_info {
    bool uses_linear_center;
    bool uses_linear_centroid;
    bool uses_linear_sample;
+   bool uses_interp_at_offset;
    bool uses_interp_at_sample;
    bool uses_instanceid;
    bool uses_base_vertex;
@@ -824,6 +825,7 @@ struct si_shader_key_ps {
 
    /* Flags for monolithic compilation only. */
    struct {
+      unsigned force_mono : 1;
       unsigned poly_line_smoothing : 1;
       unsigned point_smoothing : 1;
       unsigned interpolate_at_sample_force_center : 1;
