@@ -964,6 +964,12 @@ size_t VkDecoder::Impl::decode(void* buf, size_t len, IOStream* ioStream,
     def onEnd(self,):
         self.cgen.line("default:")
         self.cgen.beginBlock()
+        self.cgen.line("""
+        if (m_snapshotsEnabled) {
+            m_state->snapshot()->destroyApiCallInfoIfUnused(%s);
+        }
+        """ % (SNAPSHOT_API_CALL_INFO_VARNAME))
+
         self.cgen.stmt("m_pool.freeAll()")
         self.cgen.stmt("return ptr - (unsigned char *)buf")
         self.cgen.endBlock()
