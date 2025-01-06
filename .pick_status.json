@@ -14,7 +14,7 @@
         "description": "nir/lower_robust_access: fix robustness with atomic swap",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f0fb8d05e30c51e070155c957f3b71cf31c4b784",
         "notes": null
