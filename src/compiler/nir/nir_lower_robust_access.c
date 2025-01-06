@@ -191,6 +191,7 @@ lower(nir_builder *b, nir_intrinsic_instr *intr, void *_opts)
       lower_buffer_store(b, intr);
       return true;
    case nir_intrinsic_ssbo_atomic:
+   case nir_intrinsic_ssbo_atomic_swap:
       lower_buffer_atomic(b, intr);
       return true;
 
