@@ -1775,8 +1775,9 @@ radv_get_physical_device_properties(struct radv_physical_device *pdev)
       .fragmentShadingRateNonTrivialCombinerOps = true,
       .maxFragmentSize = (VkExtent2D){2, 2},
       .maxFragmentSizeAspectRatio = 2,
-      .maxFragmentShadingRateCoverageSamples = 32,
-      .maxFragmentShadingRateRasterizationSamples = VK_SAMPLE_COUNT_8_BIT,
+      .maxFragmentShadingRateCoverageSamples = pdev->info.gfx_level >= GFX12 ? 16 : 32,
+      .maxFragmentShadingRateRasterizationSamples =
+         pdev->info.gfx_level >= GFX12 ? VK_SAMPLE_COUNT_4_BIT : VK_SAMPLE_COUNT_8_BIT,
       .fragmentShadingRateWithShaderDepthStencilWrites = !pdev->info.has_vrs_ds_export_bug,
       .fragmentShadingRateWithSampleMask = true,
       .fragmentShadingRateWithShaderSampleMask = false,
@@ -2697,6 +2698,7 @@ VKAPI_ATTR VkResult VKAPI_CALL
 radv_GetPhysicalDeviceFragmentShadingRatesKHR(VkPhysicalDevice physicalDevice, uint32_t *pFragmentShadingRateCount,
                                               VkPhysicalDeviceFragmentShadingRateKHR *pFragmentShadingRates)
 {
+   VK_FROM_HANDLE(radv_physical_device, pdev, physicalDevice);
    VK_OUTARRAY_MAKE_TYPED(VkPhysicalDeviceFragmentShadingRateKHR, out, pFragmentShadingRates,
                           pFragmentShadingRateCount);
 
@@ -2717,7 +2719,13 @@ radv_GetPhysicalDeviceFragmentShadingRatesKHR(VkPhysicalDevice physicalDevice, u
          if (x == 1 && y == 1) {
             samples = ~0;
          } else {
-            samples = VK_SAMPLE_COUNT_1_BIT | VK_SAMPLE_COUNT_2_BIT | VK_SAMPLE_COUNT_4_BIT | VK_SAMPLE_COUNT_8_BIT;
+            samples = VK_SAMPLE_COUNT_1_BIT | VK_SAMPLE_COUNT_2_BIT | VK_SAMPLE_COUNT_4_BIT;
+
+            /* VRS coarse shading with 8x MSAA isn't supported on GFX12 and the
+             * hw automatically clamps to 1x1.
+             */
+            if (pdev->info.gfx_level < GFX12)
+               samples |= VK_SAMPLE_COUNT_8_BIT;
          }
 
          append_rate(x, y, samples);
