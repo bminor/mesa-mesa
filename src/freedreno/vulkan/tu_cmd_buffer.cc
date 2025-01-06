@@ -4725,15 +4725,17 @@ tu_CmdBeginRenderPass2(VkCommandBuffer commandBuffer,
    cmd->state.framebuffer = fb;
    cmd->state.render_area = pRenderPassBegin->renderArea;
 
-   VK_MULTIALLOC(ma);
-   vk_multialloc_add(&ma, &cmd->state.attachments,
-                     const struct tu_image_view *, pass->attachment_count);
-   vk_multialloc_add(&ma, &cmd->state.clear_values, VkClearValue,
-                     pRenderPassBegin->clearValueCount);
-   if (ma.size && !vk_multialloc_alloc(&ma, &cmd->vk.pool->alloc,
-                                       VK_SYSTEM_ALLOCATION_SCOPE_OBJECT)) {
-      vk_command_buffer_set_error(&cmd->vk, VK_ERROR_OUT_OF_HOST_MEMORY);
-      return;
+   if (pass->attachment_count > 0) {
+      VK_MULTIALLOC(ma);
+      vk_multialloc_add(&ma, &cmd->state.attachments,
+                        const struct tu_image_view *, pass->attachment_count);
+      vk_multialloc_add(&ma, &cmd->state.clear_values, VkClearValue,
+                        pRenderPassBegin->clearValueCount);
+      if (!vk_multialloc_alloc(&ma, &cmd->vk.pool->alloc,
+                               VK_SYSTEM_ALLOCATION_SCOPE_OBJECT)) {
+         vk_command_buffer_set_error(&cmd->vk, VK_ERROR_OUT_OF_HOST_MEMORY);
+         return;
+      }
    }
 
    if (cmd->device->dbg_renderpass_stomp_cs) {
@@ -4745,8 +4747,10 @@ tu_CmdBeginRenderPass2(VkCommandBuffer commandBuffer,
          tu_image_view_from_handle(pAttachmentInfo->pAttachments[i]) :
          cmd->state.framebuffer->attachments[i].attachment;
    }
-   for (unsigned i = 0; i < pRenderPassBegin->clearValueCount; i++)
-         cmd->state.clear_values[i] = pRenderPassBegin->pClearValues[i];
+   if (pass->attachment_count) {
+      for (unsigned i = 0; i < pRenderPassBegin->clearValueCount; i++)
+            cmd->state.clear_values[i] = pRenderPassBegin->pClearValues[i];
+   }
 
    tu_choose_gmem_layout(cmd);
 

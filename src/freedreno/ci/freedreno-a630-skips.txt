@@ -22,5 +22,3 @@ asan-dEQP-VK.wsi.*
 
 # Leaky in Turnip
 asan-dEQP-VK.dynamic_rendering.*_cmd_buff.fragment_density_map.*
-asan-dEQP-VK.image.texel_view_compatible.graphic.basic.*d_image.texture_read.*
-asan-dEQP-VK.image.texel_view_compatible.graphic.extended.*d_image.texture_read.*
