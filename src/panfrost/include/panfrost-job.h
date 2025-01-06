@@ -32,11 +32,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-typedef uint8_t u8;
-typedef uint16_t u16;
-typedef uint32_t u32;
-typedef uint64_t u64;
-
 #define MALI_FORMAT_COMPRESSED     (0 << 5)
 #define MALI_EXTRACT_TYPE(fmt)     ((fmt)&0xe0)
 #define MALI_EXTRACT_INDEX(pixfmt) (((pixfmt) >> 12) & 0xFF)

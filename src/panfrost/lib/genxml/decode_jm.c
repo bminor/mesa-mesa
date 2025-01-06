@@ -123,8 +123,8 @@ pandecode_attribute_meta(struct pandecode_context *ctx, int count,
 }
 
 /* return bits [lo, hi) of word */
-static u32
-bits(u32 word, u32 lo, u32 hi)
+static uint32_t
+bits(uint32_t word, uint32_t lo, uint32_t hi)
 {
    if (hi - lo >= 32)
       return word; // avoid undefined behavior with the shift

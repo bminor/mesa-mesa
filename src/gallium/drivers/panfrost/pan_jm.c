@@ -163,7 +163,7 @@ jm_submit_jc(struct panfrost_batch *batch, uint64_t first_job_desc,
    bo_handles[submit.bo_handle_count++] =
       panfrost_bo_handle(dev->sample_positions);
 
-   submit.bo_handles = (u64)(uintptr_t)bo_handles;
+   submit.bo_handles = (uint64_t)(uintptr_t)bo_handles;
    if (ctx->is_noop)
       ret = 0;
    else

@@ -97,7 +97,7 @@ pandecode_sample_locations(struct pandecode_context *ctx, const void *fb)
 {
    pan_section_unpack(fb, FRAMEBUFFER, PARAMETERS, params);
 
-   const u16 *PANDECODE_PTR_VAR(ctx, samples, params.sample_locations);
+   const uint16_t *PANDECODE_PTR_VAR(ctx, samples, params.sample_locations);
 
    pandecode_log(ctx, "Sample locations @%" PRIx64 ":\n",
                  params.sample_locations);

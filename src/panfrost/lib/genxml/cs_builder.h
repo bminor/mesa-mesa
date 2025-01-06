@@ -1402,7 +1402,7 @@ enum cs_res_id {
 };
 
 static inline void
-cs_req_res(struct cs_builder *b, u32 res_mask)
+cs_req_res(struct cs_builder *b, uint32_t res_mask)
 {
    cs_emit(b, REQ_RESOURCE, I) {
       I.compute = res_mask & CS_COMPUTE_RES;

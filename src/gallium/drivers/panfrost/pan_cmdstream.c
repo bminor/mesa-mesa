@@ -370,7 +370,7 @@ panfrost_emit_blend(struct panfrost_batch *batch, void *rts,
 
          pan_pack(&packed->opaque[2], INTERNAL_BLEND, cfg) {
             cfg.mode = MALI_BLEND_MODE_SHADER;
-            cfg.shader.pc = (u32)blend_shaders[i];
+            cfg.shader.pc = (uint32_t)blend_shaders[i];
 
 #if PAN_ARCH <= 7
             unsigned ret_offset = fs->info.bifrost.blend[i].return_offset;
