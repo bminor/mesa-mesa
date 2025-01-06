@@ -100,14 +100,13 @@ anv_physical_device_init_va_ranges(struct anv_physical_device *device)
    uint64_t address = 0x000000200000ULL; /* 2MiB */
 
    address = va_add(&device->va.general_state_pool, address,
-                    _1Gb - address);
+                    2 * _1Gb - address);
 
    address = va_add(&device->va.low_heap, address, _1Gb);
 
    /* The binding table pool has to be located directly in front of the
     * surface states.
     */
-   address += _1Gb;
    address = va_add(&device->va.binding_table_pool, address, _1Gb);
    address = va_add(&device->va.internal_surface_state_pool, address, 1 * _1Gb);
    assert(device->va.internal_surface_state_pool.addr ==
