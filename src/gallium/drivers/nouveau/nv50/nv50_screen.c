@@ -465,6 +465,167 @@ nv50_screen_get_compute_param(struct pipe_screen *pscreen,
 }
 
 static void
+nv50_init_screen_caps(struct nv50_screen *screen)
+{
+   struct pipe_caps *caps = (struct pipe_caps *)&screen->base.base.caps;
+
+   u_init_pipe_screen_caps(&screen->base.base, 1);
+
+   const uint16_t class_3d = screen->base.class_3d;
+   struct nouveau_device *dev = screen->base.device;
+
+   /* Non-boolean caps */
+   caps->max_texture_2d_size = 8192;
+   caps->max_texture_3d_levels = 12;
+   caps->max_texture_cube_levels = 14;
+   caps->max_texture_array_layers = 512;
+   caps->min_texture_gather_offset =
+   caps->min_texel_offset = -8;
+   caps->max_texture_gather_offset =
+   caps->max_texel_offset = 7;
+   caps->max_texel_buffer_elements_uint = 128 * 1024 * 1024;
+   caps->glsl_feature_level = 330;
+   caps->glsl_feature_level_compatibility = 330;
+   caps->essl_feature_level = class_3d >= NVA3_3D_CLASS ? 310 : 300;
+   caps->max_render_targets = 8;
+   caps->max_dual_source_render_targets = 1;
+   caps->max_combined_shader_output_resources = NV50_MAX_GLOBALS - 1;
+   caps->viewport_subpixel_bits =
+   caps->rasterizer_subpixel_bits = 8;
+   caps->max_stream_output_buffers = 4;
+   caps->max_stream_output_interleaved_components = 64;
+   caps->max_stream_output_separate_components = 4;
+   caps->max_geometry_output_vertices =
+   caps->max_geometry_total_output_components = 1024;
+   caps->max_vertex_streams = 1;
+   caps->max_gs_invocations = 0;
+   caps->max_shader_buffer_size_uint = 1 << 27;
+   caps->max_vertex_attrib_stride = 2048;
+   caps->max_vertex_element_src_offset = 2047;
+   caps->constant_buffer_offset_alignment = 256;
+   caps->texture_buffer_offset_alignment = 16; /* 256 for binding as RT, but that's not possible in GL */
+   caps->shader_buffer_offset_alignment = 256; /* the access limit is aligned to 256 */
+   caps->min_map_buffer_alignment = NOUVEAU_MIN_BUFFER_MAP_ALIGN;
+   caps->max_viewports = NV50_MAX_VIEWPORTS;
+   caps->texture_border_color_quirk = PIPE_QUIRK_TEXTURE_BORDER_COLOR_SWIZZLE_NV50;
+   caps->endianness = PIPE_ENDIAN_LITTLE;
+   caps->max_texture_gather_components = (class_3d >= NVA3_3D_CLASS) ? 4 : 0;
+   caps->max_window_rectangles = NV50_MAX_WINDOW_RECTANGLES;
+   caps->max_texture_upload_memory_budget = 16 * 1024 * 1024;
+   caps->max_varyings = 15;
+   caps->max_vertex_buffers = 16;
+   caps->gl_begin_end_buffer_size = 512 * 1024; /* TODO: Investigate tuning this */
+   caps->max_texture_mb = 0; /* TODO: use 1/2 of VRAM for this? */
+
+   caps->supported_prim_modes_with_restart =
+   caps->supported_prim_modes = BITFIELD_MASK(MESA_PRIM_COUNT);
+
+   /* supported caps */
+   caps->texture_mirror_clamp = true;
+   caps->texture_mirror_clamp_to_edge = true;
+   caps->texture_swizzle = true;
+   caps->npot_textures = true;
+   caps->mixed_framebuffer_sizes = true;
+   caps->mixed_color_depth_bits = true;
+   caps->anisotropic_filter = true;
+   caps->texture_buffer_objects = true;
+   caps->depth_clip_disable = true;
+   caps->fragment_shader_texture_lod = true;
+   caps->fragment_shader_derivatives = true;
+   caps->fragment_color_clamped = true;
+   caps->vertex_color_unclamped = true;
+   caps->vertex_color_clamped = true;
+   caps->query_timestamp = true;
+   caps->query_time_elapsed = true;
+   caps->occlusion_query = true;
+   caps->blend_equation_separate = true;
+   caps->indep_blend_enable = true;
+   caps->fs_coord_origin_upper_left = true;
+   caps->fs_coord_pixel_center_half_integer = true;
+   caps->primitive_restart = true;
+   caps->primitive_restart_fixed_index = true;
+   caps->vs_instanceid = true;
+   caps->vertex_element_instance_divisor = true;
+   caps->conditional_render = true;
+   caps->texture_barrier = true;
+   caps->quads_follow_provoking_vertex_convention = true;
+   caps->start_instance = true;
+   caps->user_vertex_buffers = true;
+   caps->texture_multisample = true;
+   caps->fs_fine_derivative = true;
+   caps->sampler_view_target = true;
+   caps->conditional_render_inverted = true;
+   caps->clip_halfz = true;
+   caps->memobj = true;
+   caps->polygon_offset_clamp = true;
+   caps->query_pipeline_statistics = true;
+   caps->texture_float_linear = true;
+   caps->texture_half_float_linear = true;
+   caps->depth_bounds_test = true;
+   caps->texture_query_samples = true;
+   caps->copy_between_compressed_and_plain_formats = true;
+   caps->fs_face_is_integer_sysval = true;
+   caps->invalidate_buffer = true;
+   caps->string_marker = true;
+   caps->cull_distance = true;
+   caps->shader_array_components = true;
+   caps->legacy_math_rules = true;
+   caps->tgsi_tex_txf_lz = true;
+   caps->shader_clock = true;
+   caps->can_bind_const_buffer_as_vertex = true;
+   caps->tgsi_div = true;
+   caps->clear_scissored = true;
+   caps->framebuffer_no_attachment = true;
+   caps->compute = true;
+   caps->query_memory_info = true;
+
+   /* nvc0 has fixed function alpha test support, but nv50 doesn't.  If we
+    * don't have it, then the frontend will lower it for us.
+    */
+   caps->alpha_test = class_3d >= NVC0_3D_CLASS;
+
+   caps->texture_transfer_modes = PIPE_TEXTURE_TRANSFER_BLIT;
+   caps->seamless_cube_map = true; /* class_3d >= NVA0_3D_CLASS; */
+   /* supported on nva0+ */
+   caps->stream_output_pause_resume = class_3d >= NVA0_3D_CLASS;
+   /* supported on nva3+ */
+   caps->cube_map_array =
+   caps->indep_blend_func =
+   caps->texture_query_lod =
+   caps->sample_shading =
+   caps->force_persample_interp = class_3d >= NVA3_3D_CLASS;
+
+   caps->pci_group = dev->info.pci.domain;
+   caps->pci_bus = dev->info.pci.bus;
+   caps->pci_device = dev->info.pci.dev;
+   caps->pci_function = dev->info.pci.func;
+
+   caps->multisample_z_resolve = false; /* potentially supported on some hw */
+   caps->integer_multiply_32x16 = false; /* could be done */
+   caps->map_unsynchronized_thread_safe = false; /* when we fix MT stuff */
+   caps->nir_images_as_deref = false;
+   caps->hardware_gl_select = false;
+
+   caps->vendor_id = 0x10de;
+   caps->device_id = dev->info.device_id;
+   caps->video_memory = dev->vram_size >> 20;
+   caps->uma = screen->base.is_uma;
+
+   caps->min_line_width =
+   caps->min_line_width_aa =
+   caps->min_point_size =
+   caps->min_point_size_aa = 1;
+   caps->point_size_granularity =
+   caps->line_width_granularity = 0.1;
+   caps->max_line_width =
+   caps->max_line_width_aa = 10.0f;
+   caps->max_point_size =
+   caps->max_point_size_aa = 64.0f;
+   caps->max_texture_anisotropy = 16.0f;
+   caps->max_texture_lod_bias = 15.0f;
+}
+
+static void
 nv50_screen_destroy(struct pipe_screen *pscreen)
 {
    struct nv50_screen *screen = nv50_screen(pscreen);
@@ -974,6 +1135,8 @@ nv50_screen_create(struct nouveau_device *dev)
       goto fail;
    }
    screen->base.class_3d = tesla_class;
+
+   nv50_init_screen_caps(screen);
 
    ret = nouveau_object_new(chan, 0xbeef5097, tesla_class,
                             NULL, 0, &screen->tesla);
