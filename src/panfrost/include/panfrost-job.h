@@ -32,10 +32,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define MALI_FORMAT_COMPRESSED     (0 << 5)
-#define MALI_EXTRACT_TYPE(fmt)     ((fmt)&0xe0)
-#define MALI_EXTRACT_INDEX(pixfmt) (((pixfmt) >> 12) & 0xFF)
-
 #define MAX_MIP_LEVELS (17)
 
 #define MAX_IMAGE_PLANES (3)

@@ -192,6 +192,8 @@ struct pan_decomposed_swizzle
 
 #endif
 
+#define MALI_EXTRACT_INDEX(pixfmt) (((pixfmt) >> 12) & 0xFF)
+
 static inline bool panfrost_format_is_yuv(enum pipe_format f)
 {
    enum util_format_layout layout = util_format_description(f)->layout;
