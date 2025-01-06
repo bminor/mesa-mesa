@@ -1597,39 +1597,41 @@ impl Image {
 
     pub fn sampler_view<'c>(&self, ctx: &'c QueueContext) -> CLResult<PipeSamplerView<'c, '_>> {
         let res = self.get_res_of_dev(ctx.dev)?;
-        let size = self.size.try_into().map_err(|_| CL_OUT_OF_RESOURCES)?;
 
-        // If resource is a buffer, the image was created from a buffer. Use
-        // strides and dimensions of the image then.
-        let app_img_info = if res.is_buffer() && self.mem_type == CL_MEM_OBJECT_IMAGE2D {
-            Some(self.buffer_2d_info()?)
+        let template = if res.is_buffer() && self.mem_type == CL_MEM_OBJECT_IMAGE2D {
+            res.pipe_sampler_view_template_2d_buffer(self.pipe_format, &self.buffer_2d_info()?)
+        } else if res.is_buffer() {
+            // we need to pass in the size of the buffer, not the width.
+            let size = self.size.try_into().map_err(|_| CL_OUT_OF_RESOURCES)?;
+            res.pipe_sampler_view_template_1d_buffer(self.pipe_format, size)
         } else {
-            None
+            res.pipe_sampler_view_template()
         };
 
-        PipeSamplerView::new(ctx, res, self.pipe_format, size, app_img_info.as_ref())
-            .ok_or(CL_OUT_OF_HOST_MEMORY)
+        PipeSamplerView::new(ctx, res, &template).ok_or(CL_OUT_OF_HOST_MEMORY)
     }
 
     pub fn image_view(&self, dev: &Device, read_write: bool) -> CLResult<PipeImageView> {
         let res = self.get_res_of_dev(dev)?;
-        let size = self.size.try_into().map_err(|_| CL_OUT_OF_RESOURCES)?;
 
-        // If resource is a buffer, the image was created from a buffer. Use
-        // strides and dimensions of the image then.
-        let app_img_info = if res.is_buffer() && self.mem_type == CL_MEM_OBJECT_IMAGE2D {
-            Some(self.buffer_2d_info()?)
+        if res.is_buffer() && self.mem_type == CL_MEM_OBJECT_IMAGE2D {
+            Ok(res.pipe_image_view_2d_buffer(
+                self.pipe_format,
+                read_write,
+                self.pipe_image_host_access(),
+                &self.buffer_2d_info()?,
+            ))
+        } else if res.is_buffer() {
+            let size = self.size.try_into().map_err(|_| CL_OUT_OF_RESOURCES)?;
+            Ok(res.pipe_image_view_1d_buffer(
+                self.pipe_format,
+                read_write,
+                self.pipe_image_host_access(),
+                size,
+            ))
         } else {
-            None
-        };
-
-        Ok(res.pipe_image_view(
-            self.pipe_format,
-            read_write,
-            self.pipe_image_host_access(),
-            size,
-            app_img_info.as_ref(),
-        ))
+            Ok(res.pipe_image_view(read_write, self.pipe_image_host_access()))
+        }
     }
 }
 

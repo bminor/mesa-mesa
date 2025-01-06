@@ -124,45 +124,42 @@ impl PipeResource {
         self.as_ref().flags & PIPE_RESOURCE_FLAG_RUSTICL_IS_USER != 0
     }
 
-    pub fn pipe_image_view(
+    pub fn pipe_image_view(&self, read_write: bool, host_access: u16) -> PipeImageView {
+        debug_assert!(!self.is_buffer());
+
+        let pipe = self.as_ref();
+        let shader_access = if read_write {
+            PIPE_IMAGE_ACCESS_READ_WRITE
+        } else {
+            PIPE_IMAGE_ACCESS_WRITE
+        } as u16;
+
+        let mut tex = pipe_image_view__bindgen_ty_1__bindgen_ty_1::default();
+        tex.set_level(0);
+        tex.set_first_layer(0);
+        if pipe.target() == pipe_texture_target::PIPE_TEXTURE_3D {
+            tex.set_last_layer((pipe.depth0 - 1).into());
+        } else {
+            tex.set_last_layer(pipe.array_size.saturating_sub(1).into());
+        }
+
+        PipeImageView::new(pipe_image_view {
+            resource: self.pipe(),
+            format: pipe.format(),
+            access: host_access,
+            shader_access: shader_access,
+            u: pipe_image_view__bindgen_ty_1 { tex: tex },
+        })
+    }
+
+    pub fn pipe_image_view_1d_buffer(
         &self,
         format: pipe_format,
         read_write: bool,
         host_access: u16,
         size: u32,
-        app_img_info: Option<&AppImgInfo>,
     ) -> PipeImageView {
-        let pipe = PipeResource::as_ref(self);
-        let u = if let Some(app_img_info) = app_img_info {
-            pipe_image_view__bindgen_ty_1 {
-                tex2d_from_buf: pipe_image_view__bindgen_ty_1__bindgen_ty_3 {
-                    offset: 0,
-                    row_stride: app_img_info.row_stride as u16,
-                    width: app_img_info.width as u16,
-                    height: app_img_info.height as u16,
-                },
-            }
-        } else if self.is_buffer() {
-            pipe_image_view__bindgen_ty_1 {
-                buf: pipe_image_view__bindgen_ty_1__bindgen_ty_2 {
-                    offset: 0,
-                    size: size,
-                },
-            }
-        } else {
-            let mut tex = pipe_image_view__bindgen_ty_1__bindgen_ty_1::default();
-            tex.set_level(0);
-            tex.set_first_layer(0);
-            if pipe.target() == pipe_texture_target::PIPE_TEXTURE_3D {
-                tex.set_last_layer((pipe.depth0 - 1).into());
-            } else if pipe.array_size > 0 {
-                tex.set_last_layer((pipe.array_size - 1).into());
-            } else {
-                tex.set_last_layer(0);
-            }
-
-            pipe_image_view__bindgen_ty_1 { tex: tex }
-        };
+        debug_assert!(self.is_buffer());
 
         let shader_access = if read_write {
             PIPE_IMAGE_ACCESS_READ_WRITE
@@ -170,43 +167,105 @@ impl PipeResource {
             PIPE_IMAGE_ACCESS_WRITE
         } as u16;
 
-        let access = if app_img_info.is_some() {
-            PIPE_IMAGE_ACCESS_TEX2D_FROM_BUFFER
+        PipeImageView::new(pipe_image_view {
+            resource: self.pipe(),
+            format: format,
+            access: host_access,
+            shader_access: shader_access,
+            u: pipe_image_view__bindgen_ty_1 {
+                buf: pipe_image_view__bindgen_ty_1__bindgen_ty_2 {
+                    offset: 0,
+                    size: size,
+                },
+            },
+        })
+    }
+
+    pub fn pipe_image_view_2d_buffer(
+        &self,
+        format: pipe_format,
+        read_write: bool,
+        host_access: u16,
+        app_img_info: &AppImgInfo,
+    ) -> PipeImageView {
+        debug_assert!(self.is_buffer());
+
+        let shader_access = if read_write {
+            PIPE_IMAGE_ACCESS_READ_WRITE
         } else {
-            0
+            PIPE_IMAGE_ACCESS_WRITE
         } as u16;
 
         PipeImageView::new(pipe_image_view {
             resource: self.pipe(),
             format: format,
-            access: access | host_access,
+            access: PIPE_IMAGE_ACCESS_TEX2D_FROM_BUFFER as u16 | host_access,
             shader_access: shader_access,
-            u: u,
+            u: pipe_image_view__bindgen_ty_1 {
+                tex2d_from_buf: pipe_image_view__bindgen_ty_1__bindgen_ty_3 {
+                    offset: 0,
+                    row_stride: app_img_info.row_stride as u16,
+                    width: app_img_info.width as u16,
+                    height: app_img_info.height as u16,
+                },
+            },
         })
     }
 
-    pub fn pipe_sampler_view_template(
+    pub fn pipe_sampler_view_template(&self) -> pipe_sampler_view {
+        debug_assert!(!self.is_buffer());
+
+        let mut res = pipe_sampler_view::default();
+        unsafe {
+            u_sampler_view_default_template(&mut res, self.pipe(), self.as_ref().format());
+        }
+
+        res
+    }
+
+    pub fn pipe_sampler_view_template_1d_buffer(
         &self,
         format: pipe_format,
         size: u32,
-        app_img_info: Option<&AppImgInfo>,
     ) -> pipe_sampler_view {
+        debug_assert!(self.is_buffer());
+
         let mut res = pipe_sampler_view::default();
         unsafe {
             u_sampler_view_default_template(&mut res, self.pipe(), format);
         }
 
-        if let Some(app_img_info) = app_img_info {
-            res.u.tex2d_from_buf.offset = 0;
-            res.u.tex2d_from_buf.row_stride = app_img_info.row_stride as u16;
-            res.u.tex2d_from_buf.width = app_img_info.width as u16;
-            res.u.tex2d_from_buf.height = app_img_info.height as u16;
+        // write the entire union field because u_sampler_view_default_template might have left it
+        // in an undefined state.
+        res.u.buf = pipe_sampler_view__bindgen_ty_2__bindgen_ty_2 {
+            offset: 0,
+            size: size,
+        };
 
-            res.set_is_tex2d_from_buf(true);
-        } else if res.target() == pipe_texture_target::PIPE_BUFFER {
-            res.u.buf.offset = 0;
-            res.u.buf.size = size;
+        res
+    }
+
+    pub fn pipe_sampler_view_template_2d_buffer(
+        &self,
+        format: pipe_format,
+        app_img_info: &AppImgInfo,
+    ) -> pipe_sampler_view {
+        debug_assert!(self.is_buffer());
+
+        let mut res = pipe_sampler_view::default();
+        unsafe {
+            u_sampler_view_default_template(&mut res, self.pipe(), format);
         }
+
+        // write the entire union field because u_sampler_view_default_template might have left it
+        // in an undefined state.
+        res.u.tex2d_from_buf = pipe_sampler_view__bindgen_ty_2__bindgen_ty_3 {
+            offset: 0,
+            row_stride: app_img_info.row_stride as u16,
+            width: app_img_info.width as u16,
+            height: app_img_info.height as u16,
+        };
+        res.set_is_tex2d_from_buf(true);
 
         res
     }
@@ -233,16 +292,13 @@ impl<'c, 'r> PipeSamplerView<'c, 'r> {
     pub fn new(
         ctx: &'c PipeContext,
         res: &'r PipeResource,
-        format: pipe_format,
-        size: u32,
-        app_img_info: Option<&AppImgInfo>,
+        template: &pipe_sampler_view,
     ) -> Option<Self> {
-        let template = res.pipe_sampler_view_template(format, size, app_img_info);
         let view = unsafe {
             ctx.pipe().as_ref().create_sampler_view.unwrap()(
                 ctx.pipe().as_ptr(),
                 res.pipe(),
-                &template,
+                template,
             )
         };
 
