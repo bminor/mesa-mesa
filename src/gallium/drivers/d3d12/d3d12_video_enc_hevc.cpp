@@ -868,6 +868,10 @@ d3d12_video_encoder_convert_hevc_codec_configuration(struct d3d12_video_encoder 
          }
    }
 
+   if (pD3D12Enc->max_num_ltr_frames > 0) {
+      config.ConfigurationFlags |= D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION_HEVC_FLAG_ENABLE_LONG_TERM_REFERENCES;
+   }
+
    if (picture->seq.amp_enabled_flag)
       config.ConfigurationFlags |= D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION_HEVC_FLAG_USE_ASYMETRIC_MOTION_PARTITION;
 

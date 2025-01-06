@@ -1741,6 +1741,13 @@ d3d12_video_encoder_create_encoder(struct pipe_context *context, const struct pi
    if (d3d12_video_encode_requires_texture_array_dpb(pD3D12Enc->m_pD3D12Screen, codec->profile))
       pD3D12Enc->m_currentEncodeCapabilities.m_SupportFlags |= D3D12_VIDEO_ENCODER_SUPPORT_FLAG_RECONSTRUCTED_FRAMES_REQUIRE_TEXTURE_ARRAYS;
 
+   // Cache max num ltr frames
+   pD3D12Enc->max_num_ltr_frames =
+      context->screen->get_video_param(context->screen,
+                                       codec->profile,
+                                       codec->entrypoint,
+                                       PIPE_VIDEO_CAP_ENC_MAX_LONG_TERM_REFERENCES_PER_FRAME);
+
    return &pD3D12Enc->base;
 
 failed:

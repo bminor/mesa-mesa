@@ -386,6 +386,7 @@ struct d3d12_video_encoder
    struct pipe_screen *    m_screen = nullptr;
    struct d3d12_screen *   m_pD3D12Screen = nullptr;
    UINT max_quality_levels = 1;
+   UINT max_num_ltr_frames = 0;
 
    enum d3d12_video_encoder_driver_workarounds driver_workarounds = d3d12_video_encoder_driver_workaround_none;
 
