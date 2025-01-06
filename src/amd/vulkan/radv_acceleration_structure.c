@@ -551,6 +551,8 @@ radv_init_header(VkCommandBuffer commandBuffer, const VkAccelerationStructureBui
 
       radv_CmdUpdateBuffer(commandBuffer, dst->buffer, dst->offset + layout.geometry_info_offset, geometry_infos_size,
                            geometry_infos);
+
+      free(geometry_infos);
    }
 }
 
