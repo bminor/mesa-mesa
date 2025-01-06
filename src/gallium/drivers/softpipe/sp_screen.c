@@ -482,6 +482,154 @@ softpipe_is_format_supported( struct pipe_screen *screen,
 
 
 static void
+softpipe_init_screen_caps(struct softpipe_screen *sp_screen)
+{
+   struct pipe_caps *caps = (struct pipe_caps *)&sp_screen->base.caps;
+
+   u_init_pipe_screen_caps(&sp_screen->base, 0);
+
+   caps->npot_textures = true;
+   caps->mixed_framebuffer_sizes = true;
+   caps->mixed_color_depth_bits = true;
+   caps->fragment_shader_texture_lod = true;
+   caps->fragment_shader_derivatives = true;
+   caps->anisotropic_filter = true;
+   caps->max_render_targets = PIPE_MAX_COLOR_BUFS;
+   caps->max_dual_source_render_targets = 1;
+   caps->occlusion_query = true;
+   caps->query_time_elapsed = true;
+   caps->query_pipeline_statistics = true;
+   caps->texture_mirror_clamp = true;
+   caps->texture_mirror_clamp_to_edge = true;
+   caps->texture_swizzle = true;
+   caps->max_texture_2d_size = 1 << (SP_MAX_TEXTURE_2D_LEVELS - 1);
+   caps->max_texture_3d_levels = SP_MAX_TEXTURE_3D_LEVELS;
+   caps->max_texture_cube_levels = SP_MAX_TEXTURE_CUBE_LEVELS;
+   caps->blend_equation_separate = true;
+   caps->indep_blend_enable = true;
+   caps->indep_blend_func = true;
+   caps->fs_coord_origin_upper_left = true;
+   caps->fs_coord_origin_lower_left = true;
+   caps->fs_coord_pixel_center_half_integer = true;
+   caps->fs_coord_pixel_center_integer = true;
+   caps->depth_clip_disable = true;
+   caps->depth_bounds_test = true;
+   caps->max_stream_output_buffers = PIPE_MAX_SO_BUFFERS;
+   caps->max_stream_output_separate_components =
+   caps->max_stream_output_interleaved_components = 16*4;
+   caps->max_geometry_output_vertices =
+   caps->max_geometry_total_output_components = 1024;
+   caps->max_vertex_streams = sp_screen->use_llvm ? 1 : PIPE_MAX_VERTEX_STREAMS;
+   caps->max_vertex_attrib_stride = 2048;
+   caps->primitive_restart = true;
+   caps->primitive_restart_fixed_index = true;
+   caps->shader_stencil_export = true;
+   caps->image_atomic_float_add = true;
+   caps->vs_instanceid = true;
+   caps->vertex_element_instance_divisor = true;
+   caps->start_instance = true;
+   caps->seamless_cube_map = true;
+   caps->seamless_cube_map_per_texture = true;
+   caps->max_texture_array_layers = 256; /* for GL3 */
+   caps->min_texel_offset = -8;
+   caps->max_texel_offset = 7;
+   caps->conditional_render = true;
+   caps->fragment_color_clamped = true;
+   caps->vertex_color_unclamped = true; /* draw module */
+   caps->vertex_color_clamped = true; /* draw module */
+   caps->glsl_feature_level =
+   caps->glsl_feature_level_compatibility = 400;
+   caps->compute = true;
+   caps->user_vertex_buffers = true;
+   caps->stream_output_pause_resume = true;
+   caps->stream_output_interleave_buffers = true;
+   caps->vs_layer_viewport = true;
+   caps->doubles = true;
+   caps->int64 = true;
+   caps->tgsi_div = true;
+   caps->constant_buffer_offset_alignment = 16;
+   caps->min_map_buffer_alignment = 64;
+   caps->query_timestamp = true;
+   caps->timer_resolution = true;
+   caps->cube_map_array = true;
+   caps->texture_buffer_objects = true;
+   caps->max_texel_buffer_elements_uint = 65536;
+   caps->texture_buffer_offset_alignment = 16;
+   caps->texture_transfer_modes = 0;
+   caps->max_viewports = PIPE_MAX_VIEWPORTS;
+   caps->endianness = PIPE_ENDIAN_NATIVE;
+   caps->max_texture_gather_components = 4;
+   caps->texture_gather_sm5 = true;
+   caps->texture_query_lod = true;
+   caps->vs_window_space_position = true;
+   caps->fs_fine_derivative = true;
+   caps->sampler_view_target = true;
+   caps->fake_sw_msaa = true;
+   caps->min_texture_gather_offset = -32;
+   caps->max_texture_gather_offset = 31;
+   caps->draw_indirect = true;
+   caps->query_so_overflow = true;
+   caps->nir_images_as_deref = false;
+
+   /* Can't expose shareable shaders because the draw shaders reference the
+    * draw module's state, which is per-context.
+    */
+   caps->shareable_shaders = false;
+
+   caps->vendor_id = 0xFFFFFFFF;
+   caps->device_id = 0xFFFFFFFF;
+
+   /* XXX: Do we want to return the full amount fo system memory ? */
+   uint64_t system_memory;
+   if (os_get_total_physical_memory(&system_memory)) {
+      if (sizeof(void *) == 4)
+         /* Cap to 2 GB on 32 bits system. We do this because llvmpipe does
+          * eat application memory, which is quite limited on 32 bits. App
+          * shouldn't expect too much available memory. */
+         system_memory = MIN2(system_memory, 2048 << 20);
+
+      caps->video_memory = system_memory >> 20;
+   } else {
+      caps->video_memory = 0;
+   }
+
+   caps->uma = false;
+   caps->query_memory_info = true;
+   caps->conditional_render_inverted = true;
+   caps->clip_halfz = true;
+   caps->texture_float_linear = true;
+   caps->texture_half_float_linear = true;
+   caps->framebuffer_no_attachment = true;
+   caps->cull_distance = true;
+   caps->copy_between_compressed_and_plain_formats = true;
+   caps->shader_array_components = true;
+   caps->tgsi_texcoord = true;
+   caps->max_varyings = TGSI_EXEC_MAX_INPUT_ATTRIBS;
+   caps->pci_group =
+   caps->pci_bus =
+   caps->pci_device =
+   caps->pci_function = 0;
+   caps->max_gs_invocations = 32;
+   caps->max_shader_buffer_size_uint = 1 << 27;
+   caps->shader_buffer_offset_alignment = 4;
+   caps->image_store_formatted = true;
+
+   caps->min_line_width =
+   caps->min_line_width_aa =
+   caps->min_point_size =
+   caps->min_point_size_aa = 1;
+   caps->point_size_granularity =
+   caps->line_width_granularity = 0.1;
+   caps->max_line_width =
+   caps->max_line_width_aa = 255.0; /* arbitrary */
+   caps->max_point_size =
+   caps->max_point_size_aa = 255.0; /* arbitrary */
+   caps->max_texture_anisotropy = 16.0;
+   caps->max_texture_lod_bias = 16.0; /* arbitrary */
+}
+
+
+static void
 softpipe_destroy_screen( struct pipe_screen *screen )
 {
    FREE(screen);
@@ -609,6 +757,8 @@ softpipe_create_screen(struct sw_winsys *winsys)
 
    softpipe_init_screen_texture_funcs(&screen->base);
    softpipe_init_screen_fence_funcs(&screen->base);
+
+   softpipe_init_screen_caps(screen);
 
    return &screen->base;
 }
