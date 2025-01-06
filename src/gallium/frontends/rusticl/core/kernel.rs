@@ -1437,7 +1437,15 @@ impl Kernel {
                                     ));
                                     (&mut img_formats, &mut img_orders)
                                 } else {
-                                    sviews.push((res.clone(), format, size, app_img_info));
+                                    let sview = PipeSamplerView::new(
+                                        ctx,
+                                        res,
+                                        format,
+                                        size,
+                                        app_img_info.as_ref(),
+                                    )
+                                    .ok_or(CL_OUT_OF_HOST_MEMORY)?;
+                                    sviews.push(sview);
                                     (&mut tex_formats, &mut tex_orders)
                                 };
 
@@ -1522,11 +1530,6 @@ impl Kernel {
             // subtract the shader local_size as we only request something on top of that.
             variable_local_size -= static_local_size;
 
-            let sviews: Option<Vec<_>> = sviews
-                .iter()
-                .map(|(s, f, size, aii)| PipeSamplerView::new(ctx, s, *f, *size, aii.as_ref()))
-                .collect();
-            let sviews = sviews.ok_or(CL_OUT_OF_HOST_MEMORY)?;
             let samplers: Vec<_> = samplers
                 .iter()
                 .map(|s| ctx.create_sampler_state(s))
