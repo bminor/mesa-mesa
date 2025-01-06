@@ -1414,11 +1414,14 @@ impl Kernel {
                                 };
 
                                 let format = image.pipe_format;
+                                let size =
+                                    image.size.try_into().map_err(|_| CL_OUT_OF_RESOURCES)?;
                                 let (formats, orders) = if api_arg.kind == KernelArgType::Image {
                                     iviews.push(res.pipe_image_view(
                                         format,
                                         false,
                                         image.pipe_image_host_access(),
+                                        size,
                                         app_img_info.as_ref(),
                                     ));
                                     (&mut img_formats, &mut img_orders)
@@ -1427,11 +1430,12 @@ impl Kernel {
                                         format,
                                         true,
                                         image.pipe_image_host_access(),
+                                        size,
                                         app_img_info.as_ref(),
                                     ));
                                     (&mut img_formats, &mut img_orders)
                                 } else {
-                                    sviews.push((res.clone(), format, app_img_info));
+                                    sviews.push((res.clone(), format, size, app_img_info));
                                     (&mut tex_formats, &mut tex_orders)
                                 };
 
@@ -1518,7 +1522,7 @@ impl Kernel {
 
             let mut sviews: Vec<_> = sviews
                 .iter()
-                .map(|(s, f, aii)| ctx.create_sampler_view(s, *f, aii.as_ref()))
+                .map(|(s, f, size, aii)| ctx.create_sampler_view(s, *f, *size, aii.as_ref()))
                 .collect();
             let samplers: Vec<_> = samplers
                 .iter()
