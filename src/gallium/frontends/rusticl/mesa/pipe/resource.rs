@@ -1,9 +1,12 @@
 use mesa_rust_gen::*;
 
 use std::{
+    marker::PhantomData,
     mem,
     ptr::{self, NonNull},
 };
+
+use super::context::PipeContext;
 
 #[derive(PartialEq, Eq, Hash)]
 #[repr(transparent)]
@@ -212,5 +215,60 @@ impl PipeResource {
 impl Drop for PipeResource {
     fn drop(&mut self) {
         unsafe { pipe_resource_reference(&mut self.pipe.as_ptr(), ptr::null_mut()) }
+    }
+}
+
+/// Wrapper around gallium's pipe_sampler_view.
+///
+/// It deals with the refcounting and frees the object automatically if not needed anymore.
+#[repr(transparent)]
+pub struct PipeSamplerView<'c, 'r> {
+    view: NonNull<pipe_sampler_view>,
+    // the pipe_sampler_view object references both a context and a resource.
+    _ctx: PhantomData<&'c PipeContext>,
+    _res: PhantomData<&'r PipeResource>,
+}
+
+impl<'c, 'r> PipeSamplerView<'c, 'r> {
+    pub fn new(
+        ctx: &'c PipeContext,
+        res: &'r PipeResource,
+        format: pipe_format,
+        size: u32,
+        app_img_info: Option<&AppImgInfo>,
+    ) -> Option<Self> {
+        let template = res.pipe_sampler_view_template(format, size, app_img_info);
+        let view = unsafe {
+            ctx.pipe().as_ref().create_sampler_view.unwrap()(
+                ctx.pipe().as_ptr(),
+                res.pipe(),
+                &template,
+            )
+        };
+
+        let view = NonNull::new(view)?;
+        unsafe {
+            debug_assert_eq!(view.as_ref().context, ctx.pipe().as_ptr());
+            debug_assert_eq!(view.as_ref().texture, res.pipe());
+        }
+
+        Some(Self {
+            view: view,
+            _ctx: PhantomData,
+            _res: PhantomData,
+        })
+    }
+
+    pub(crate) fn as_pipe(views: &mut [Self]) -> *mut *mut pipe_sampler_view {
+        // We are transparent over *mut pipe_sample_view, so this is sound.
+        views.as_mut_ptr().cast()
+    }
+}
+
+impl Drop for PipeSamplerView<'_, '_> {
+    fn drop(&mut self) {
+        unsafe {
+            pipe_sampler_view_reference(&mut ptr::null_mut(), self.view.as_ptr());
+        }
     }
 }

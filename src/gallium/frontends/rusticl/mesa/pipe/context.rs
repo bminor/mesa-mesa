@@ -51,6 +51,10 @@ impl PipeContext {
         Some(s)
     }
 
+    pub(crate) fn pipe(&self) -> NonNull<pipe_context> {
+        self.pipe
+    }
+
     pub fn buffer_subdata(
         &self,
         res: &PipeResource,
