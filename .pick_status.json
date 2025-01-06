@@ -174,7 +174,7 @@
         "description": "radeonsi: add si_screen::use_aco to shader cache key to fix shader cache failures",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
