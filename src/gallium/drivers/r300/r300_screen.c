@@ -775,6 +775,116 @@ static bool r300_is_format_supported(struct pipe_screen* screen,
     return retval == usage;
 }
 
+static void r300_init_screen_caps(struct r300_screen* r300screen)
+{
+   struct pipe_caps *caps = (struct pipe_caps *)&r300screen->screen.caps;
+
+   u_init_pipe_screen_caps(&r300screen->screen, 1);
+
+   bool is_r500 = r300screen->caps.is_r500;
+
+   /* Supported features (boolean caps). */
+   caps->npot_textures = true;
+   caps->mixed_framebuffer_sizes = true;
+   caps->mixed_color_depth_bits = true;
+   caps->anisotropic_filter = true;
+   caps->occlusion_query = true;
+   caps->texture_mirror_clamp = true;
+   caps->texture_mirror_clamp_to_edge = true;
+   caps->blend_equation_separate = true;
+   caps->vertex_element_instance_divisor = true;
+   caps->fs_coord_origin_upper_left = true;
+   caps->fs_coord_pixel_center_half_integer = true;
+   caps->conditional_render = true;
+   caps->texture_barrier = true;
+   caps->tgsi_can_compact_constants = true;
+   caps->clip_halfz = true;
+   caps->allow_mapped_buffers_during_execution = true;
+   caps->legacy_math_rules = true;
+   caps->tgsi_texcoord = true;
+   caps->call_finalize_nir_in_linker = true;
+
+   caps->texture_transfer_modes = PIPE_TEXTURE_TRANSFER_BLIT;
+
+   caps->min_map_buffer_alignment = R300_BUFFER_ALIGNMENT;
+
+   caps->constant_buffer_offset_alignment = 16;
+
+   caps->glsl_feature_level =
+   caps->glsl_feature_level_compatibility = 120;
+
+   /* r300 cannot do swizzling of compressed textures. Supported otherwise. */
+   caps->texture_swizzle = r300screen->caps.dxtc_swizzle;
+
+   /* We don't support color clamping on r500, so that we can use color
+    * interpolators for generic varyings. */
+   caps->vertex_color_clamped = !is_r500;
+
+   /* Supported on r500 only. */
+   caps->vertex_color_unclamped =
+   caps->mixed_colorbuffer_formats =
+   caps->fragment_shader_texture_lod =
+   caps->fragment_shader_derivatives = is_r500;
+
+   caps->shareable_shaders = false;
+
+   caps->max_gs_invocations = 32;
+   caps->max_shader_buffer_size_uint = 1 << 27;
+
+   /* SWTCL-only features. */
+   caps->primitive_restart =
+   caps->primitive_restart_fixed_index =
+   caps->user_vertex_buffers =
+   caps->vs_window_space_position = !r300screen->caps.has_tcl;
+
+   /* HWTCL-only features / limitations. */
+   caps->vertex_input_alignment =
+      r300screen->caps.has_tcl ? PIPE_VERTEX_INPUT_ALIGNMENT_4BYTE : PIPE_VERTEX_INPUT_ALIGNMENT_NONE;
+
+   /* Texturing. */
+   caps->max_texture_2d_size = is_r500 ? 4096 : 2048;
+   caps->max_texture_3d_levels =
+   caps->max_texture_cube_levels = is_r500 ? 13 : 12; /* 13 == 4096, 12 == 2048 */
+
+   /* Render targets. */
+   caps->max_render_targets = 4;
+   caps->endianness = PIPE_ENDIAN_LITTLE;
+
+   caps->max_viewports = 1;
+
+   caps->max_vertex_attrib_stride = 2048;
+
+   caps->max_varyings = 10;
+
+   caps->prefer_imm_arrays_as_constbuf = false;
+
+   caps->vendor_id = 0x1002;
+   caps->device_id = r300screen->info.pci_id;
+   caps->video_memory = r300screen->info.vram_size_kb >> 10;
+   caps->uma = false;
+   caps->pci_group = r300screen->info.pci.domain;
+   caps->pci_bus = r300screen->info.pci.bus;
+   caps->pci_device = r300screen->info.pci.dev;
+   caps->pci_function = r300screen->info.pci.func;
+
+   caps->min_line_width =
+   caps->min_line_width_aa =
+   caps->min_point_size =
+   caps->min_point_size_aa = 1;
+   caps->point_size_granularity =
+   caps->line_width_granularity = 0.1;
+   caps->max_line_width =
+   caps->max_line_width_aa =
+   caps->max_point_size =
+   caps->max_point_size_aa =
+      /* The maximum dimensions of the colorbuffer are our practical
+       * rendering limits. 2048 pixels should be enough for anybody. */
+      r300screen->caps.is_r500 ? 4096.0f :
+      (r300screen->caps.is_r400 ? 4021.0f : 2560.0f);
+   caps->max_texture_anisotropy = 16.0f;
+   caps->max_texture_lod_bias = 16.0f;
+}
+
 static void r300_destroy_screen(struct pipe_screen* pscreen)
 {
     struct r300_screen* r300screen = r300_screen(pscreen);
@@ -876,6 +986,8 @@ struct pipe_screen* r300_screen_create(struct radeon_winsys *rws,
     r300screen->screen.fence_finish = r300_fence_finish;
 
     r300_init_screen_resource_functions(r300screen);
+
+    r300_init_screen_caps(r300screen);
 
     r300_disk_cache_create(r300screen);
 
