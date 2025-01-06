@@ -248,7 +248,10 @@ init_common_queue_state(struct anv_queue *queue, struct anv_batch *batch)
    uint32_t mocs = device->isl_dev.mocs.internal;
    anv_batch_emit(batch, GENX(STATE_BASE_ADDRESS), sba) {
       sba.GeneralStateBaseAddress = (struct anv_address) { NULL, 0 };
-      sba.GeneralStateBufferSize  = 0xfffff;
+      sba.GeneralStateBufferSize  = DIV_ROUND_UP(
+         device->physical->va.first_2mb.size +
+         device->physical->va.general_state_pool.size +
+         device->physical->va.low_heap.size, 4096);
       sba.GeneralStateMOCS = mocs;
       sba.GeneralStateBaseAddressModifyEnable = true;
       sba.GeneralStateBufferSizeModifyEnable = true;
