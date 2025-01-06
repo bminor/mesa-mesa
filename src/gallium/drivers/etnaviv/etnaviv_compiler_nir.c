@@ -1397,10 +1397,10 @@ etna_link_shader(struct etna_shader_link_info *info,
       else /* texture coord or other bypasses flat shading */
          varying->pa_attributes = 0x2f1;
 
-      varying->use[0] = VARYING_COMPONENT_USE_UNUSED;
-      varying->use[1] = VARYING_COMPONENT_USE_UNUSED;
-      varying->use[2] = VARYING_COMPONENT_USE_UNUSED;
-      varying->use[3] = VARYING_COMPONENT_USE_UNUSED;
+      varying->use[0] = VARYING_COMPONENT_USE_GENERIC;
+      varying->use[1] = VARYING_COMPONENT_USE_GENERIC;
+      varying->use[2] = VARYING_COMPONENT_USE_GENERIC;
+      varying->use[3] = VARYING_COMPONENT_USE_GENERIC;
 
       /* point/tex coord is an input to the PS without matching VS output,
        * so it gets a varying slot without being assigned a VS register.
