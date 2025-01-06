@@ -226,6 +226,8 @@ emit_pre_halti5_state(struct etna_context *ctx)
          /*03828*/ EMIT_STATE(GL_VARYING_COMPONENT_USE(x), ctx->shader_state.GL_VARYING_COMPONENT_USE[x]);
       }
       /*03834*/ EMIT_STATE(GL_VARYING_NUM_COMPONENTS2, ctx->shader_state.GL_VARYING_NUM_COMPONENTS[1]);
+      /*03838*/ EMIT_STATE(GL_VARYING_COMPONENT_USE2, ctx->shader_state.GL_VARYING_COMPONENT_USE[2]);
+      /*03854*/ EMIT_STATE(GL_VARYING_COMPONENT_USE3, ctx->shader_state.GL_VARYING_COMPONENT_USE[3]);
    }
    etna_coalesce_end(stream, &coalesce);
 }
