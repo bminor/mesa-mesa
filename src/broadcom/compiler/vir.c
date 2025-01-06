@@ -1673,6 +1673,32 @@ v3d_nir_lower_subgroup_intrinsics(nir_shader *s, struct v3d_compile *c)
         return progress;
 }
 
+static bool
+should_lower_robustness(const nir_intrinsic_instr *intr, const void *data)
+{
+        const struct v3d_key *key = data;
+
+        switch (intr->intrinsic) {
+        case nir_intrinsic_load_ubo:
+                return key->robust_uniform_access;
+
+        case nir_intrinsic_load_ssbo:
+        case nir_intrinsic_store_ssbo:
+        case nir_intrinsic_ssbo_atomic:
+        case nir_intrinsic_ssbo_atomic_swap:
+                return key->robust_storage_access;
+
+        case nir_intrinsic_image_load:
+        case nir_intrinsic_image_store:
+        case nir_intrinsic_image_atomic:
+        case nir_intrinsic_image_atomic_swap:
+                return key->robust_image_access;
+
+        default:
+                return false;
+        }
+}
+
 static void
 v3d_attempt_compile(struct v3d_compile *c)
 {
@@ -1744,13 +1770,8 @@ v3d_attempt_compile(struct v3d_compile *c)
                 NIR_PASS(_, c->s, nir_copy_prop);
                 NIR_PASS(_, c->s, nir_opt_constant_folding);
 
-                nir_lower_robust_access_options opts = {
-                   .lower_image = c->key->robust_image_access,
-                   .lower_ssbo = c->key->robust_storage_access,
-                   .lower_ubo = c->key->robust_uniform_access,
-                };
-
-                NIR_PASS(_, c->s, nir_lower_robust_access, &opts);
+                NIR_PASS(_, c->s, nir_lower_robust_access,
+                         should_lower_robustness, c->key);
         }
 
         NIR_PASS(_, c->s, nir_lower_vars_to_scratch,

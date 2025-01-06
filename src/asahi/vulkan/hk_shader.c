@@ -578,6 +578,17 @@ lower_subpass_dim(nir_builder *b, nir_instr *instr, UNUSED void *_data)
    return true;
 }
 
+static bool
+should_lower_robust(const nir_intrinsic_instr *intr, const void *_)
+{
+   /* The hardware is robust, but our software image atomics are not. Unlike the
+    * GL driver, we don't use the common buffer image lowering, using the
+    * agx_nir_lower_texture lowering for robustImageAccess2 semantics.
+    */
+   return intr->intrinsic == nir_intrinsic_image_deref_atomic ||
+          intr->intrinsic == nir_intrinsic_image_deref_atomic_swap;
+}
+
 void
 hk_lower_nir(struct hk_device *dev, nir_shader *nir,
              const struct vk_pipeline_robustness_state *rs, bool is_multiview,
@@ -633,16 +644,7 @@ hk_lower_nir(struct hk_device *dev, nir_shader *nir,
    /* Turn cache flushes into image coherency bits while we still have derefs */
    NIR_PASS(_, nir, nir_lower_memory_model);
 
-   /* Images accessed through the texture or PBE hardware are robust, so we
-    * don't set lower_image. (There are some sticky details around txf but
-    * they're handled by agx_nir_lower_texture). However, image atomics are
-    * software so require robustness lowering.
-    */
-   nir_lower_robust_access_options robustness = {
-      .lower_image_atomic = true,
-   };
-
-   NIR_PASS(_, nir, nir_lower_robust_access, &robustness);
+   NIR_PASS(_, nir, nir_lower_robust_access, should_lower_robust, NULL);
 
    /* We must do early lowering before hk_nir_lower_descriptors, since this will
     * create lod_bias_agx instructions.

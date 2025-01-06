@@ -1788,6 +1788,37 @@ glsl_type_size(const struct glsl_type *type, bool bindless)
    return glsl_count_attribute_slots(type, false);
 }
 
+static bool
+should_lower_robustness(const nir_intrinsic_instr *intr, const void *data)
+{
+   const bool *gl_robust = data;
+
+   switch (intr->intrinsic) {
+   /* The texture/PBE hardware is robust, but our buffer image implementation
+    * is not. Lower robustness only for buffer images.
+    */
+   case nir_intrinsic_image_load:
+   case nir_intrinsic_image_store:
+      return nir_intrinsic_image_dim(intr) == GLSL_SAMPLER_DIM_BUF;
+
+   /* Image atomics are lowered to raw memory access */
+   case nir_intrinsic_image_atomic:
+   case nir_intrinsic_image_atomic_swap:
+      return true;
+
+   /* UBOs/SSBOs are lowered to raw pointers */
+   case nir_intrinsic_load_ubo:
+   case nir_intrinsic_load_ssbo:
+   case nir_intrinsic_store_ssbo:
+   case nir_intrinsic_ssbo_atomic:
+   case nir_intrinsic_ssbo_atomic_swap:
+      return *gl_robust;
+
+   default:
+      return false;
+   }
+}
+
 static void
 agx_shader_initialize(struct agx_device *dev, struct agx_uncompiled_shader *so,
                       nir_shader *nir, bool support_lod_bias, bool robust)
@@ -1798,24 +1829,10 @@ agx_shader_initialize(struct agx_device *dev, struct agx_uncompiled_shader *so,
    blob_init(&so->early_serialized_nir);
    nir_serialize(&so->early_serialized_nir, nir, true);
 
-   nir_lower_robust_access_options robustness = {
-      /* Images accessed through the texture or PBE hardware are robust, so we
-       * don't set lower_image. However, buffer images and image atomics are
-       * lowered so require robustness lowering.
-       */
-      .lower_buffer_image = true,
-      .lower_image_atomic = true,
-
-      /* Buffer access is based on raw pointers and hence needs lowering to be
-         robust */
-      .lower_ubo = robust,
-      .lower_ssbo = robust,
-   };
-
    /* We need to lower robustness before bindings, since robustness lowering
     * affects the bindings used.
     */
-   NIR_PASS(_, nir, nir_lower_robust_access, &robustness);
+   NIR_PASS(_, nir, nir_lower_robust_access, should_lower_robustness, &robust);
 
    /* Similarly, we need to do early texture lowering before bindings */
    NIR_PASS(_, nir, agx_nir_lower_texture_early, support_lod_bias);
