@@ -11,6 +11,7 @@
 #include "common/freedreno_rd_output.h"
 #include "util/u_math.h"
 #include "util/timespec.h"
+#include "util/os_file_notify.h"
 #include "vk_enum_to_str.h"
 
 #include "tu_device.h"
@@ -49,22 +50,97 @@ static const struct debug_control tu_debug_options[] = {
    { NULL, 0 }
 };
 
+/*
+ * The runtime debug flags are a subset of the debug flags that can be set at
+ * runtime. Flags which depend on running state of the driver, the application
+ * or the hardware and would otherwise break when toggled should not be set here.
+ */
+const uint32_t tu_runtime_debug_flags =
+   TU_DEBUG_NIR | TU_DEBUG_NOBIN | TU_DEBUG_SYSMEM | TU_DEBUG_GMEM |
+   TU_DEBUG_FORCEBIN | TU_DEBUG_LAYOUT | TU_DEBUG_NOLRZFC |
+   TU_DEBUG_PERF | TU_DEBUG_FLUSHALL | TU_DEBUG_SYNCDRAW |
+   TU_DEBUG_RAST_ORDER | TU_DEBUG_UNALIGNED_STORE |
+   TU_DEBUG_LOG_SKIP_GMEM_OPS | TU_DEBUG_3D_LOAD | TU_DEBUG_FDM |
+   TU_DEBUG_NO_CONCURRENT_RESOLVES | TU_DEBUG_NO_CONCURRENT_UNRESOLVES;
+
+os_file_notifier_t tu_debug_notifier;
 struct tu_env tu_env;
+
+static void
+tu_env_notify(
+   void *data, const char *path, bool created, bool deleted, bool dir_deleted)
+{
+   int file_flags = 0;
+   if (!deleted) {
+      FILE *file = fopen(path, "r");
+      if (file) {
+         char buf[512];
+         size_t len = fread(buf, 1, sizeof(buf) - 1, file);
+         fclose(file);
+         buf[len] = '\0';
+
+         file_flags = parse_debug_string(buf, tu_debug_options);
+      }
+   }
+
+   int runtime_flags = file_flags & tu_runtime_debug_flags;
+   if (unlikely(runtime_flags != file_flags)) {
+      mesa_logw(
+         "Certain options in TU_DEBUG_FILE don't support runtime changes: 0x%x, ignoring",
+         file_flags & ~tu_runtime_debug_flags);
+   }
+
+   tu_env.debug.store(runtime_flags | tu_env.env_debug, std::memory_order_release);
+
+   if (unlikely(dir_deleted))
+      mesa_logw(
+         "Directory containing TU_DEBUG_FILE (%s) was deleted, stopping watching",
+         path);
+}
+
+static void
+tu_env_deinit(void)
+{
+   if (tu_debug_notifier)
+      os_file_notifier_destroy(tu_debug_notifier);
+}
 
 static void
 tu_env_init_once(void)
 {
-    tu_env.debug = parse_debug_string(os_get_option("TU_DEBUG"),
-            tu_debug_options);
+   tu_env.debug = parse_debug_string(os_get_option("TU_DEBUG"), tu_debug_options);
+   tu_env.env_debug = tu_env.debug & ~tu_runtime_debug_flags;
 
    if (TU_DEBUG(STARTUP))
-      mesa_logi("TU_DEBUG=0x%x", tu_env.debug);
+      mesa_logi("TU_DEBUG=0x%x", tu_env.env_debug);
 
    /* TU_DEBUG=rd functionality was moved to fd_rd_output. This debug option
     * should translate to the basic-level FD_RD_DUMP_ENABLE option.
     */
    if (TU_DEBUG(RD))
       fd_rd_dump_env.flags |= FD_RD_DUMP_ENABLE;
+
+   const char *debug_file = os_get_option("TU_DEBUG_FILE");
+   if (debug_file) {
+      if (tu_env.debug != tu_env.env_debug) {
+         mesa_logw("TU_DEBUG_FILE is set (%s), but TU_DEBUG is also set. "
+                   "Any runtime options (0x%x) in TU_DEBUG will be ignored.",
+                   debug_file, tu_env.debug & ~tu_runtime_debug_flags);
+      }
+
+      if (TU_DEBUG(STARTUP))
+         mesa_logi("Watching TU_DEBUG_FILE: %s", debug_file);
+
+      const char* error_str = "Unknown error";
+      tu_debug_notifier =
+         os_file_notifier_create(debug_file, tu_env_notify, NULL, &error_str);
+      if (!tu_debug_notifier)
+         mesa_logw("Failed to watch TU_DEBUG_FILE (%s): %s", debug_file, error_str);
+   } else {
+      tu_debug_notifier = NULL;
+   }
+
+   atexit(tu_env_deinit);
 }
 
 void
