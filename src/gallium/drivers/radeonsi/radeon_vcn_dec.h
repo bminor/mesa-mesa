@@ -135,7 +135,7 @@ struct radeon_decoder {
    struct list_head dpb_ref_list;
    struct list_head dpb_unref_list;
 
-   void (*send_cmd)(struct radeon_decoder *dec, struct pipe_video_buffer *target,
+   bool (*send_cmd)(struct radeon_decoder *dec, struct pipe_video_buffer *target,
                     struct pipe_picture_desc *picture);
    /* Additional contexts for mJPEG */
    struct radeon_cmdbuf *jcs;
@@ -148,10 +148,10 @@ struct radeon_decoder {
    struct pipe_context *ectx;
 };
 
-void send_cmd_dec(struct radeon_decoder *dec, struct pipe_video_buffer *target,
+bool send_cmd_dec(struct radeon_decoder *dec, struct pipe_video_buffer *target,
                   struct pipe_picture_desc *picture);
 
-void send_cmd_jpeg(struct radeon_decoder *dec, struct pipe_video_buffer *target,
+bool send_cmd_jpeg(struct radeon_decoder *dec, struct pipe_video_buffer *target,
                    struct pipe_picture_desc *picture);
 
 struct pipe_video_codec *radeon_create_decoder(struct pipe_context *context,

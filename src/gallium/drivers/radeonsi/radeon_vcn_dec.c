@@ -2340,6 +2340,11 @@ static void radeon_dec_destroy(struct pipe_video_codec *decoder)
       dec->bs_ptr = NULL;
    }
 
+   if (dec->msg) {
+      dec->ws->buffer_unmap(dec->ws, dec->msg_fb_it_probs_buffers[dec->cur_buffer].res->buf);
+      dec->msg = NULL;
+   }
+
    if (dec->stream_type != RDECODE_CODEC_JPEG) {
       struct pipe_fence_handle *fence = NULL;
       map_msg_fb_it_probs_buf(dec);
@@ -2399,6 +2404,9 @@ static void radeon_dec_begin_frame(struct pipe_video_codec *decoder,
    uintptr_t frame;
 
    assert(decoder);
+
+   if (dec->error)
+      return;
 
    switch (dec->stream_type) {
    case RDECODE_CODEC_VP9: {
@@ -2511,7 +2519,7 @@ static void radeon_dec_decode_bitstream(struct pipe_video_codec *decoder,
 /**
  * send cmd for vcn dec
  */
-void send_cmd_dec(struct radeon_decoder *dec, struct pipe_video_buffer *target,
+bool send_cmd_dec(struct radeon_decoder *dec, struct pipe_video_buffer *target,
                   struct pipe_picture_desc *picture)
 {
    struct pb_buffer_lean *dt;
@@ -2526,6 +2534,8 @@ void send_cmd_dec(struct radeon_decoder *dec, struct pipe_video_buffer *target,
 
    map_msg_fb_it_probs_buf(dec);
    dt = rvcn_dec_message_decode(dec, target, picture);
+   if (!dt)
+      return false;
    rvcn_dec_message_feedback(dec);
    send_msg_buf(dec);
 
@@ -2549,6 +2559,8 @@ void send_cmd_dec(struct radeon_decoder *dec, struct pipe_video_buffer *target,
 
    if (dec->vcn_dec_sw_ring == false)
       set_reg(dec, dec->reg.cntl, 1);
+
+   return true;
 }
 
 /**
@@ -2564,7 +2576,9 @@ static int radeon_dec_end_frame(struct pipe_video_codec *decoder, struct pipe_vi
    if (dec->error)
       return 1;
 
-   dec->send_cmd(dec, target, picture);
+   if (!dec->send_cmd(dec, target, picture))
+      return 1;
+
    flush(dec, picture->flush_flags, picture->fence);
 
    next_buffer(dec);

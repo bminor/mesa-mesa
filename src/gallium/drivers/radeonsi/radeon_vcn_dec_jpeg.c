@@ -408,7 +408,7 @@ static void send_cmd_target_direct(struct radeon_decoder *dec, struct pb_buffer_
 /**
  * send cmd for vcn jpeg
  */
-void send_cmd_jpeg(struct radeon_decoder *dec, struct pipe_video_buffer *target,
+bool send_cmd_jpeg(struct radeon_decoder *dec, struct pipe_video_buffer *target,
                    struct pipe_picture_desc *picture)
 {
    struct pb_buffer_lean *dt;
@@ -429,4 +429,6 @@ void send_cmd_jpeg(struct radeon_decoder *dec, struct pipe_video_buffer *target,
       send_cmd_bitstream_direct(dec, bs_buf->res->buf, 0, RADEON_USAGE_READ, RADEON_DOMAIN_GTT);
       send_cmd_target_direct(dec, dt, 0, RADEON_USAGE_WRITE, RADEON_DOMAIN_VRAM, target->buffer_format);
    }
+
+   return true;
 }
