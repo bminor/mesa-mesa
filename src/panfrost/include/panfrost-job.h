@@ -32,8 +32,4 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define MAX_MIP_LEVELS (17)
-
-#define MAX_IMAGE_PLANES (3)
-
 #endif /* __PANFROST_JOB_H__ */

@@ -44,6 +44,9 @@
 extern "C" {
 #endif
 
+#define MAX_MIP_LEVELS   17
+#define MAX_IMAGE_PLANES 3
+
 #define PAN_MODIFIER_COUNT 14
 extern uint64_t pan_best_modifiers[PAN_MODIFIER_COUNT];
 
