@@ -1907,7 +1907,6 @@ spec@!opengl 1.3@gl-1.3-texture-env,Fail
 spec@!opengl 1.3@tex3d-depth1,Fail
 spec@!opengl 1.3@tex-border-1,Fail
 
-spec@!opengl 1.4@gl-1.4-polygon-offset,Fail
 spec@!opengl 1.5@depth-tex-compare,Fail
 
 spec@!opengl 2.0@gl-2.0-edgeflag,Fail
