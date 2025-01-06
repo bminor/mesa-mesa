@@ -378,6 +378,9 @@ spec@!opengl 1.0@gl-1.0-edgeflag-quads,Fail
 spec@!opengl 1.0@gl-1.0-no-op-paths,Fail
 spec@!opengl 1.0@gl-1.0-scissor-offscreen,Fail
 
+# This one started to fail in CI at the turn of 2024 and 2025 but works locally
+spec@!opengl 1.0@gl-1.0-drawbuffer-modes,Fail
+
 spec@!opengl 1.1@depthstencil-default_fb-blit samples=2,Fail
 spec@!opengl 1.1@depthstencil-default_fb-blit samples=4,Fail
 spec@!opengl 1.1@depthstencil-default_fb-blit samples=6,Fail
