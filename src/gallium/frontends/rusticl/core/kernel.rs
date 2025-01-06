@@ -1398,54 +1398,14 @@ impl Kernel {
                                 add_global(q, &mut input, &mut resource_info, res, buffer.offset);
                             }
                             KernelArgValue::Image(image) => {
-                                let res = image.get_res_of_dev(q.device)?;
-
-                                // If resource is a buffer, the image was created from a buffer. Use
-                                // strides and dimensions of the image then.
-                                let app_img_info = if res.as_ref().is_buffer()
-                                    && image.mem_type == CL_MEM_OBJECT_IMAGE2D
-                                {
-                                    Some(AppImgInfo::new(
-                                        image.image_desc.row_pitch()?
-                                            / image.image_elem_size as u32,
-                                        image.image_desc.width()?,
-                                        image.image_desc.height()?,
-                                    ))
-                                } else {
-                                    None
-                                };
-
-                                let format = image.pipe_format;
-                                let size =
-                                    image.size.try_into().map_err(|_| CL_OUT_OF_RESOURCES)?;
                                 let (formats, orders) = if api_arg.kind == KernelArgType::Image {
-                                    iviews.push(res.pipe_image_view(
-                                        format,
-                                        false,
-                                        image.pipe_image_host_access(),
-                                        size,
-                                        app_img_info.as_ref(),
-                                    ));
+                                    iviews.push(image.image_view(q.device, false)?);
                                     (&mut img_formats, &mut img_orders)
                                 } else if api_arg.kind == KernelArgType::RWImage {
-                                    iviews.push(res.pipe_image_view(
-                                        format,
-                                        true,
-                                        image.pipe_image_host_access(),
-                                        size,
-                                        app_img_info.as_ref(),
-                                    ));
+                                    iviews.push(image.image_view(q.device, true)?);
                                     (&mut img_formats, &mut img_orders)
                                 } else {
-                                    let sview = PipeSamplerView::new(
-                                        ctx,
-                                        res,
-                                        format,
-                                        size,
-                                        app_img_info.as_ref(),
-                                    )
-                                    .ok_or(CL_OUT_OF_HOST_MEMORY)?;
-                                    sviews.push(sview);
+                                    sviews.push(image.sampler_view(ctx)?);
                                     (&mut tex_formats, &mut tex_orders)
                                 };
 

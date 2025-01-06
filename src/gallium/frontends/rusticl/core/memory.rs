@@ -1384,7 +1384,7 @@ impl Image {
         )
     }
 
-    pub fn pipe_image_host_access(&self) -> u16 {
+    fn pipe_image_host_access(&self) -> u16 {
         // those flags are all mutually exclusive
         (if bit_check(self.flags, CL_MEM_HOST_READ_ONLY) {
             PIPE_IMAGE_ACCESS_READ
@@ -1584,6 +1584,52 @@ impl Image {
             );
         }
         Ok(())
+    }
+
+    /// Creates metadata when an 2D image or sampler view is created over a buffer resource.
+    fn buffer_2d_info(&self) -> CLResult<AppImgInfo> {
+        Ok(AppImgInfo::new(
+            self.image_desc.row_pitch()? / self.image_elem_size as u32,
+            self.image_desc.width()?,
+            self.image_desc.height()?,
+        ))
+    }
+
+    pub fn sampler_view<'c>(&self, ctx: &'c QueueContext) -> CLResult<PipeSamplerView<'c, '_>> {
+        let res = self.get_res_of_dev(ctx.dev)?;
+        let size = self.size.try_into().map_err(|_| CL_OUT_OF_RESOURCES)?;
+
+        // If resource is a buffer, the image was created from a buffer. Use
+        // strides and dimensions of the image then.
+        let app_img_info = if res.is_buffer() && self.mem_type == CL_MEM_OBJECT_IMAGE2D {
+            Some(self.buffer_2d_info()?)
+        } else {
+            None
+        };
+
+        PipeSamplerView::new(ctx, res, self.pipe_format, size, app_img_info.as_ref())
+            .ok_or(CL_OUT_OF_HOST_MEMORY)
+    }
+
+    pub fn image_view(&self, dev: &Device, read_write: bool) -> CLResult<PipeImageView> {
+        let res = self.get_res_of_dev(dev)?;
+        let size = self.size.try_into().map_err(|_| CL_OUT_OF_RESOURCES)?;
+
+        // If resource is a buffer, the image was created from a buffer. Use
+        // strides and dimensions of the image then.
+        let app_img_info = if res.is_buffer() && self.mem_type == CL_MEM_OBJECT_IMAGE2D {
+            Some(self.buffer_2d_info()?)
+        } else {
+            None
+        };
+
+        Ok(res.pipe_image_view(
+            self.pipe_format,
+            read_write,
+            self.pipe_image_host_access(),
+            size,
+            app_img_info.as_ref(),
+        ))
     }
 }
 
