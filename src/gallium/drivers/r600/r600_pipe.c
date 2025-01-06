@@ -618,6 +618,230 @@ static int r600_get_shader_param(struct pipe_screen* pscreen,
 	return 0;
 }
 
+static void r600_init_screen_caps(struct r600_screen *rscreen)
+{
+	struct pipe_caps *caps = (struct pipe_caps *)&rscreen->b.b.caps;
+
+	u_init_pipe_screen_caps(&rscreen->b.b, 1);
+
+	enum radeon_family family = rscreen->b.family;
+
+	/* Supported features (boolean caps). */
+	caps->npot_textures = true;
+	caps->mixed_framebuffer_sizes = true;
+	caps->mixed_color_depth_bits = true;
+	caps->anisotropic_filter = true;
+	caps->occlusion_query = true;
+	caps->texture_mirror_clamp = true;
+	caps->texture_mirror_clamp_to_edge = true;
+	caps->blend_equation_separate = true;
+	caps->texture_swizzle = true;
+	caps->depth_clip_disable = true;
+	caps->depth_clip_disable_separate = true;
+	caps->shader_stencil_export = true;
+	caps->vertex_element_instance_divisor = true;
+	caps->fs_coord_origin_upper_left = true;
+	caps->fs_coord_pixel_center_half_integer = true;
+	caps->fragment_shader_texture_lod = true;
+	caps->fragment_shader_derivatives = true;
+	caps->seamless_cube_map = true;
+	caps->primitive_restart = true;
+	caps->primitive_restart_fixed_index = true;
+	caps->conditional_render = true;
+	caps->texture_barrier = true;
+	caps->vertex_color_unclamped = true;
+	caps->quads_follow_provoking_vertex_convention = true;
+	caps->vs_instanceid = true;
+	caps->start_instance = true;
+	caps->max_dual_source_render_targets = true;
+	caps->texture_buffer_objects = true;
+	caps->query_pipeline_statistics = true;
+	caps->texture_multisample = true;
+	caps->vs_window_space_position = true;
+	caps->vs_layer_viewport = true;
+	caps->sample_shading = true;
+	caps->memobj = true;
+	caps->clip_halfz = true;
+	caps->polygon_offset_clamp = true;
+	caps->conditional_render_inverted = true;
+	caps->texture_float_linear = true;
+	caps->texture_half_float_linear = true;
+	caps->texture_query_samples = true;
+	caps->copy_between_compressed_and_plain_formats = true;
+	caps->invalidate_buffer = true;
+	caps->surface_reinterpret_blocks = true;
+	caps->query_memory_info = true;
+	caps->framebuffer_no_attachment = true;
+	caps->polygon_offset_units_unscaled = true;
+	caps->legacy_math_rules = true;
+	caps->can_bind_const_buffer_as_vertex = true;
+	caps->allow_mapped_buffers_during_execution = true;
+	caps->robust_buffer_access_behavior = true;
+
+	caps->vertex_input_alignment = PIPE_VERTEX_INPUT_ALIGNMENT_4BYTE;
+
+	caps->nir_atomics_as_deref = true;
+	caps->gl_spirv = true;
+
+	caps->texture_transfer_modes = PIPE_TEXTURE_TRANSFER_BLIT;
+
+	caps->shareable_shaders = false;
+
+	/* Optimal number for good TexSubImage performance on Polaris10. */
+	caps->max_texture_upload_memory_budget = 64 * 1024 * 1024;
+
+	caps->device_reset_status_query = true;
+
+	caps->resource_from_user_memory =
+		!UTIL_ARCH_BIG_ENDIAN && rscreen->b.info.has_userptr;
+
+	caps->compute = rscreen->b.gfx_level > R700;
+
+	caps->tgsi_texcoord = true;
+
+	caps->nir_images_as_deref = false;
+	caps->fake_sw_msaa = false;
+
+	caps->max_texel_buffer_elements_uint =
+		MIN2(rscreen->b.info.max_heap_size_kb * 1024ull / 4, INT_MAX);
+
+	caps->min_map_buffer_alignment = R600_MAP_BUFFER_ALIGNMENT;
+
+	caps->constant_buffer_offset_alignment = 256;
+
+	caps->texture_buffer_offset_alignment = 4;
+	caps->glsl_feature_level_compatibility =
+	caps->glsl_feature_level = family >= CHIP_CEDAR ? 450 : 330;
+
+	/* Supported except the original R600. */
+	caps->indep_blend_enable =
+	caps->indep_blend_func = family != CHIP_R600; /* R600 doesn't support per-MRT blends */
+
+	/* Supported on Evergreen. */
+	caps->seamless_cube_map_per_texture =
+	caps->cube_map_array =
+	caps->texture_gather_sm5 =
+	caps->texture_query_lod =
+	caps->fs_fine_derivative =
+	caps->sampler_view_target =
+	caps->shader_pack_half_float =
+	caps->shader_clock =
+	caps->shader_array_components =
+	caps->query_buffer_object =
+	caps->image_store_formatted =
+	caps->alpha_to_coverage_dither_control = family >= CHIP_CEDAR;
+	caps->max_texture_gather_components = family >= CHIP_CEDAR ? 4 : 0;
+	/* kernel command checker support is also required */
+	caps->draw_indirect = family >= CHIP_CEDAR;
+
+	caps->buffer_sampler_view_rgba_only = family < CHIP_CEDAR;
+
+	caps->max_combined_shader_output_resources = 8;
+
+	caps->max_gs_invocations = 32;
+
+	/* shader buffer objects */
+	caps->max_shader_buffer_size_uint = 1 << 27;
+	caps->max_combined_shader_buffers = 8;
+
+	caps->int64 =
+	caps->doubles =
+		rscreen->b.family == CHIP_ARUBA ||
+		rscreen->b.family == CHIP_CAYMAN ||
+		rscreen->b.family == CHIP_CYPRESS ||
+		rscreen->b.family == CHIP_HEMLOCK ||
+		rscreen->b.family >= CHIP_CEDAR;
+
+	caps->two_sided_color = false;
+	caps->cull_distance = true;
+
+	caps->shader_buffer_offset_alignment = family >= CHIP_CEDAR ?  256 : 0;
+
+	caps->max_shader_patch_varyings = family >= CHIP_CEDAR ? 30 : 0;
+
+	/* Stream output. */
+	caps->max_stream_output_buffers = rscreen->b.has_streamout ? 4 : 0;
+	caps->stream_output_pause_resume =
+	caps->stream_output_interleave_buffers = rscreen->b.has_streamout;
+	caps->max_stream_output_separate_components =
+	caps->max_stream_output_interleaved_components = 32*4;
+
+	/* Geometry shader output. */
+	caps->max_geometry_output_vertices = 1024;
+	caps->max_geometry_total_output_components = 16384;
+	caps->max_vertex_streams = family >= CHIP_CEDAR ? 4 : 1;
+
+	/* Should be 2047, but 2048 is a requirement for GL 4.4 */
+	caps->max_vertex_attrib_stride = 2048;
+
+	/* Texturing. */
+	caps->max_texture_2d_size = family >= CHIP_CEDAR ? 16384 : 8192;
+	caps->max_texture_cube_levels = family >= CHIP_CEDAR ? 15 : 14;
+	/* textures support 8192, but layered rendering supports 2048 */
+	caps->max_texture_3d_levels = 12;
+	/* textures support 8192, but layered rendering supports 2048 */
+	caps->max_texture_array_layers = 2048;
+
+	/* Render targets. */
+	caps->max_render_targets = 8; /* XXX some r6xx are buggy and can only do 4 */
+
+	caps->max_viewports = R600_MAX_VIEWPORTS;
+	caps->viewport_subpixel_bits =
+	caps->rasterizer_subpixel_bits = 8;
+
+	/* Timer queries, present when the clock frequency is non zero. */
+	caps->query_time_elapsed =
+	caps->query_timestamp = rscreen->b.info.clock_crystal_freq != 0;
+
+	/* Conversion to nanos from cycles per millisecond */
+	caps->timer_resolution = DIV_ROUND_UP(1000000, rscreen->b.info.clock_crystal_freq);
+
+	caps->min_texture_gather_offset =
+	caps->min_texel_offset = -8;
+
+	caps->max_texture_gather_offset =
+	caps->max_texel_offset = 7;
+
+	caps->max_varyings = 32;
+
+	caps->texture_border_color_quirk = PIPE_QUIRK_TEXTURE_BORDER_COLOR_SWIZZLE_R600;
+	caps->endianness = PIPE_ENDIAN_LITTLE;
+
+	caps->vendor_id = ATI_VENDOR_ID;
+	caps->device_id = rscreen->b.info.pci_id;
+	caps->video_memory = rscreen->b.info.vram_size_kb >> 10;
+	caps->uma = false;
+	caps->multisample_z_resolve = rscreen->b.gfx_level >= R700;
+	caps->pci_group = rscreen->b.info.pci.domain;
+	caps->pci_bus = rscreen->b.info.pci.bus;
+	caps->pci_device = rscreen->b.info.pci.dev;
+	caps->pci_function = rscreen->b.info.pci.func;
+
+	caps->max_combined_hw_atomic_counters =
+		rscreen->b.family >= CHIP_CEDAR && rscreen->has_atomics ? 8 : 0;
+
+	caps->max_combined_hw_atomic_counter_buffers =
+		rscreen->b.family >= CHIP_CEDAR && rscreen->has_atomics ?
+		EG_MAX_ATOMIC_BUFFERS : 0;
+
+	caps->validate_all_dirty_states = true;
+
+	caps->min_line_width =
+	caps->min_line_width_aa =
+	caps->min_point_size =
+	caps->min_point_size_aa = 1;
+
+	caps->point_size_granularity =
+	caps->line_width_granularity = 0.1;
+
+	caps->max_line_width =
+	caps->max_line_width_aa =
+	caps->max_point_size =
+	caps->max_point_size_aa = 8191.0f;
+	caps->max_texture_anisotropy = 16.0f;
+	caps->max_texture_lod_bias = 16.0f;
+}
+
 static void r600_destroy_screen(struct pipe_screen* pscreen)
 {
 	struct r600_screen *rscreen = (struct r600_screen *)pscreen;
@@ -671,6 +895,8 @@ struct pipe_screen *r600_screen_create(struct radeon_winsys *ws,
 	} else {
 		rscreen->b.b.is_format_supported = r600_is_format_supported;
 	}
+
+	r600_init_screen_caps(rscreen);
 
 	rscreen->b.debug_flags |= debug_get_flags_option("R600_DEBUG", r600_debug_options, 0);
 	if (debug_get_bool_option("R600_DEBUG_COMPUTE", false))
