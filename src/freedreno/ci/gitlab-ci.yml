@@ -357,7 +357,7 @@ a630-piglit-full:
     DEQP_SUITE: freedreno-a630-piglit-full
     TEST_PHASE_TIMEOUT_MINUTES: 55
 
-a630-traces:
+.a630-traces:
   extends:
     - .google-freedreno-test-traces
     - .a630-test
@@ -372,7 +372,7 @@ a630-traces:
 
 a630-traces-restricted:
   extends:
-    - a630-traces
+    - .a630-traces
     - .google-freedreno-rules-restricted
   variables:
     PIGLIT_TRACES_FILE: restricted-traces-freedreno.yml
@@ -381,7 +381,7 @@ a630-traces-restricted:
 
 a630-traces-performance:
   extends:
-    - a630-traces
+    - .a630-traces
     - .google-freedreno-rules-performance
   variables:
     PIGLIT_REPLAY_SUBCOMMAND: "profile"
