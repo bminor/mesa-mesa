@@ -1522,10 +1522,11 @@ impl Kernel {
             // subtract the shader local_size as we only request something on top of that.
             variable_local_size -= static_local_size;
 
-            let sviews: Vec<_> = sviews
+            let sviews: Option<Vec<_>> = sviews
                 .iter()
-                .map(|(s, f, size, aii)| ctx.create_sampler_view(s, *f, *size, aii.as_ref()))
+                .map(|(s, f, size, aii)| PipeSamplerView::new(ctx, s, *f, *size, aii.as_ref()))
                 .collect();
+            let sviews = sviews.ok_or(CL_OUT_OF_HOST_MEMORY)?;
             let samplers: Vec<_> = samplers
                 .iter()
                 .map(|s| ctx.create_sampler_state(s))

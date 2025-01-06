@@ -8,6 +8,7 @@ use mesa_rust_gen::pipe_fd_type::*;
 use mesa_rust_gen::*;
 use mesa_rust_util::has_required_feature;
 
+use std::mem;
 use std::mem::size_of;
 use std::os::raw::*;
 use std::ptr;
@@ -423,26 +424,6 @@ impl PipeContext {
         }
     }
 
-    pub fn create_sampler_view(
-        &self,
-        res: &PipeResource,
-        format: pipe_format,
-        size: u32,
-        app_img_info: Option<&AppImgInfo>,
-    ) -> *mut pipe_sampler_view {
-        let template = res.pipe_sampler_view_template(format, size, app_img_info);
-
-        unsafe {
-            let s_view = self.pipe.as_ref().create_sampler_view.unwrap()(
-                self.pipe.as_ptr(),
-                res.pipe(),
-                &template,
-            );
-
-            s_view
-        }
-    }
-
     pub fn clear_global_binding(&self, count: u32) {
         unsafe {
             self.pipe.as_ref().set_global_binding.unwrap()(
@@ -455,7 +436,7 @@ impl PipeContext {
         }
     }
 
-    pub fn set_sampler_views(&self, mut views: Vec<*mut pipe_sampler_view>) {
+    pub fn set_sampler_views(&self, mut views: Vec<PipeSamplerView>) {
         unsafe {
             self.pipe.as_ref().set_sampler_views.unwrap()(
                 self.pipe.as_ptr(),
@@ -464,9 +445,13 @@ impl PipeContext {
                 views.len() as u32,
                 0,
                 true,
-                views.as_mut_ptr(),
+                PipeSamplerView::as_pipe(views.as_mut_slice()),
             )
         }
+
+        // the take_ownership parameter of set_sampler_views is set to true, so we need to forget
+        // about them on our side as ownership has been transferred to the driver.
+        views.into_iter().for_each(mem::forget);
     }
 
     pub fn clear_sampler_views(&self, count: u32) {
