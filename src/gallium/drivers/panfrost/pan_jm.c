@@ -78,7 +78,7 @@ GENX(jm_init_batch)(struct panfrost_batch *batch)
 }
 
 static int
-jm_submit_jc(struct panfrost_batch *batch, mali_ptr first_job_desc,
+jm_submit_jc(struct panfrost_batch *batch, uint64_t first_job_desc,
              uint32_t reqs, uint32_t out_sync)
 {
    struct panfrost_context *ctx = batch->ctx;
@@ -290,7 +290,7 @@ GENX(jm_emit_fragment_job)(struct panfrost_batch *batch,
 static void
 jm_emit_shader_env(struct panfrost_batch *batch,
                    struct MALI_SHADER_ENVIRONMENT *cfg,
-                   enum pipe_shader_type stage, mali_ptr shader_ptr)
+                   enum pipe_shader_type stage, uint64_t shader_ptr)
 {
    cfg->resources = panfrost_emit_resources(batch, stage);
    cfg->thread_storage = batch->tls.gpu;
@@ -399,11 +399,11 @@ GENX(jm_launch_grid)(struct panfrost_batch *batch,
 }
 
 #if PAN_ARCH >= 6
-static mali_ptr
+static uint64_t
 jm_emit_tiler_desc(struct panfrost_batch *batch)
 {
    struct panfrost_device *dev = pan_device(batch->ctx->base.screen);
-   mali_ptr tiler_desc = PAN_ARCH >= 9 ? batch->tiler_ctx.bifrost.desc
+   uint64_t tiler_desc = PAN_ARCH >= 9 ? batch->tiler_ctx.bifrost.desc
                                        : batch->tiler_ctx.valhall.desc;
 
    if (tiler_desc)
@@ -418,7 +418,7 @@ jm_emit_tiler_desc(struct panfrost_batch *batch)
       heap.top = dev->tiler_heap->ptr.gpu + panfrost_bo_size(dev->tiler_heap);
    }
 
-   mali_ptr heap = t.gpu;
+   uint64_t heap = t.gpu;
    unsigned max_levels = dev->tiler_features.max_levels;
    assert(max_levels >= 2);
 
@@ -890,7 +890,7 @@ GENX(jm_launch_xfb)(struct panfrost_batch *batch,
                                      PAN_ARCH <= 5, false);
 
    /* No varyings on XFB compute jobs. */
-   mali_ptr saved_vs_varyings = batch->varyings.vs;
+   uint64_t saved_vs_varyings = batch->varyings.vs;
 
    batch->varyings.vs = 0;
    jm_emit_vertex_job(batch, info, &invocation, t.cpu);

@@ -51,7 +51,7 @@
 #include "vk_format.h"
 
 static VkResult
-panvk_cmd_prepare_fragment_job(struct panvk_cmd_buffer *cmdbuf, mali_ptr fbd)
+panvk_cmd_prepare_fragment_job(struct panvk_cmd_buffer *cmdbuf, uint64_t fbd)
 {
    const struct pan_fb_info *fbinfo = &cmdbuf->state.gfx.render.fb.info;
    struct panvk_batch *batch = cmdbuf->cur_batch;
@@ -150,7 +150,7 @@ panvk_per_arch(cmd_close_batch)(struct panvk_cmd_buffer *cmdbuf)
       for (uint32_t i = 0; i < batch->fb.layer_count; i++) {
          VkResult result;
 
-         mali_ptr fbd = batch->fb.desc.gpu + (batch->fb.desc_stride * i);
+         uint64_t fbd = batch->fb.desc.gpu + (batch->fb.desc_stride * i);
 
          result = panvk_per_arch(cmd_prepare_tiler_context)(cmdbuf, i);
          if (result != VK_SUCCESS)
@@ -228,7 +228,7 @@ panvk_per_arch(cmd_prepare_tiler_context)(struct panvk_cmd_buffer *cmdbuf,
    struct panvk_physical_device *phys_dev =
       to_panvk_physical_device(cmdbuf->vk.base.device->physical);
    struct panvk_batch *batch = cmdbuf->cur_batch;
-   mali_ptr tiler_desc;
+   uint64_t tiler_desc;
 
    if (batch->tiler.ctx_descs.gpu) {
       tiler_desc =

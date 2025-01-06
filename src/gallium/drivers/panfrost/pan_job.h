@@ -117,35 +117,35 @@ struct panfrost_batch {
    struct panfrost_bo *polygon_list_bo;
 
    /* Keep the num_work_groups sysval around for indirect dispatch */
-   mali_ptr num_wg_sysval[3];
+   uint64_t num_wg_sysval[3];
 
    /* Cached descriptors */
-   mali_ptr viewport;
-   mali_ptr rsd[PIPE_SHADER_TYPES];
-   mali_ptr textures[PIPE_SHADER_TYPES];
-   mali_ptr samplers[PIPE_SHADER_TYPES];
-   mali_ptr attribs[PIPE_SHADER_TYPES];
-   mali_ptr attrib_bufs[PIPE_SHADER_TYPES];
-   mali_ptr uniform_buffers[PIPE_SHADER_TYPES];
-   mali_ptr push_uniforms[PIPE_SHADER_TYPES];
-   mali_ptr depth_stencil;
-   mali_ptr blend;
+   uint64_t viewport;
+   uint64_t rsd[PIPE_SHADER_TYPES];
+   uint64_t textures[PIPE_SHADER_TYPES];
+   uint64_t samplers[PIPE_SHADER_TYPES];
+   uint64_t attribs[PIPE_SHADER_TYPES];
+   uint64_t attrib_bufs[PIPE_SHADER_TYPES];
+   uint64_t uniform_buffers[PIPE_SHADER_TYPES];
+   uint64_t push_uniforms[PIPE_SHADER_TYPES];
+   uint64_t depth_stencil;
+   uint64_t blend;
 
    unsigned nr_push_uniforms[PIPE_SHADER_TYPES];
    unsigned nr_uniform_buffers[PIPE_SHADER_TYPES];
 
    /* Varying related pointers */
    struct {
-      mali_ptr bufs;
+      uint64_t bufs;
       unsigned nr_bufs;
-      mali_ptr vs;
-      mali_ptr fs;
-      mali_ptr pos;
-      mali_ptr psiz;
+      uint64_t vs;
+      uint64_t fs;
+      uint64_t pos;
+      uint64_t psiz;
    } varyings;
 
    /* Index array */
-   mali_ptr indices;
+   uint64_t indices;
 
    /* Valhall: struct mali_scissor_packed */
    unsigned scissor[2];
@@ -154,10 +154,10 @@ struct panfrost_batch {
    /* Used on Valhall only. Midgard includes attributes in-band with
     * attributes, wildly enough.
     */
-   mali_ptr images[PIPE_SHADER_TYPES];
+   uint64_t images[PIPE_SHADER_TYPES];
 
    /* SSBOs. */
-   mali_ptr ssbos[PIPE_SHADER_TYPES];
+   uint64_t ssbos[PIPE_SHADER_TYPES];
 
    /* On Valhall, these are properties of the batch. On Bifrost, they are
     * per draw.

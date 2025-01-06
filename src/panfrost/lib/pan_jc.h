@@ -33,7 +33,7 @@
 /* Job chain */
 struct pan_jc {
    /* The first job in the chain */
-   mali_ptr first_job;
+   uint64_t first_job;
 
    /* The number of jobs in the chain, essentially */
    unsigned job_index;
@@ -236,7 +236,7 @@ pan_jc_add_job(struct pan_jc *jc, enum mali_job_type type, bool barrier,
 static inline struct panfrost_ptr
 pan_jc_initialize_tiler(struct pan_pool *pool,
                         struct pan_jc *jc,
-                        mali_ptr polygon_list)
+                        uint64_t polygon_list)
 {
    struct panfrost_ptr transfer = {0};
 

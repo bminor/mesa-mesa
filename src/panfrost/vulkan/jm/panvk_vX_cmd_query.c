@@ -297,7 +297,7 @@ panvk_per_arch(CmdBeginQueryIndexedEXT)(VkCommandBuffer commandBuffer,
 
    bool had_batch;
    struct panvk_batch *batch = open_batch(cmd, &had_batch);
-   mali_ptr report_addr = panvk_query_report_dev_addr(pool, query);
+   uint64_t report_addr = panvk_query_report_dev_addr(pool, query);
 
    switch (pool->vk.query_type) {
    case VK_QUERY_TYPE_OCCLUSION: {

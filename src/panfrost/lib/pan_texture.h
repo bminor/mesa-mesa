@@ -116,7 +116,7 @@ struct pan_image_layout {
 };
 
 struct pan_image_mem {
-   mali_ptr base;
+   uint64_t base;
    unsigned offset;
 };
 
@@ -451,10 +451,10 @@ unsigned panfrost_from_legacy_stride(unsigned legacy_stride,
 
 struct pan_surface {
    union {
-      mali_ptr data;
+      uint64_t data;
       struct {
-         mali_ptr header;
-         mali_ptr body;
+         uint64_t header;
+         uint64_t body;
       } afbc;
    };
 };

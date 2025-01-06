@@ -284,7 +284,7 @@ struct panvk_shader {
    const char *asm_str;
 };
 
-static inline mali_ptr
+static inline uint64_t
 panvk_shader_get_dev_addr(const struct panvk_shader *shader)
 {
    return shader != NULL ? panvk_priv_mem_dev_addr(shader->code_mem) : 0;

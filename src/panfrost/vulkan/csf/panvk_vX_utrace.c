@@ -11,7 +11,7 @@
 #include "panvk_priv_bo.h"
 
 static void
-cmd_write_timestamp(struct cs_builder *b, mali_ptr addr)
+cmd_write_timestamp(struct cs_builder *b, uint64_t addr)
 {
    const struct cs_index addr_reg = cs_scratch_reg64(b, 0);
    /* abuse DEFERRED_SYNC */
@@ -23,7 +23,7 @@ cmd_write_timestamp(struct cs_builder *b, mali_ptr addr)
 }
 
 static void
-cmd_copy_data(struct cs_builder *b, mali_ptr dst_addr, mali_ptr src_addr,
+cmd_copy_data(struct cs_builder *b, uint64_t dst_addr, uint64_t src_addr,
               uint32_t size)
 {
    assert((dst_addr | src_addr | size) % sizeof(uint32_t) == 0);
@@ -80,7 +80,7 @@ panvk_utrace_record_ts(struct u_trace *ut, void *cs, void *timestamps,
 {
    struct cs_builder *b = get_builder(cs, ut);
    const struct panvk_priv_bo *bo = timestamps;
-   const mali_ptr addr = bo->addr.dev + offset_B;
+   const uint64_t addr = bo->addr.dev + offset_B;
 
    cmd_write_timestamp(b, addr);
 }
@@ -109,8 +109,8 @@ panvk_per_arch(utrace_copy_buffer)(struct u_trace_context *utctx,
    struct cs_builder *b = cmdstream;
    const struct panvk_priv_bo *src_bo = ts_from;
    const struct panvk_priv_bo *dst_bo = ts_to;
-   const mali_ptr src_addr = src_bo->addr.dev + from_offset;
-   const mali_ptr dst_addr = dst_bo->addr.dev + to_offset;
+   const uint64_t src_addr = src_bo->addr.dev + from_offset;
+   const uint64_t dst_addr = dst_bo->addr.dev + to_offset;
 
    cmd_copy_data(b, dst_addr, src_addr, size_B);
 }

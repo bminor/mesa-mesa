@@ -463,7 +463,7 @@ pandecode_run_compute(struct pandecode_context *ctx, FILE *fp,
 
    GENX(pandecode_resource_tables)(ctx, cs_get_u64(qctx, reg_srt), "Resources");
 
-   mali_ptr fau = cs_get_u64(qctx, reg_fau);
+   uint64_t fau = cs_get_u64(qctx, reg_fau);
 
    if (fau)
       GENX(pandecode_fau)(ctx, fau & BITFIELD64_MASK(48), fau >> 56, "FAU");
@@ -503,7 +503,7 @@ pandecode_run_compute_indirect(struct pandecode_context *ctx, FILE *fp,
 
    GENX(pandecode_resource_tables)(ctx, cs_get_u64(qctx, reg_srt), "Resources");
 
-   mali_ptr fau = cs_get_u64(qctx, reg_fau);
+   uint64_t fau = cs_get_u64(qctx, reg_fau);
 
    if (fau)
       GENX(pandecode_fau)(ctx, fau & BITFIELD64_MASK(48), fau >> 56, "FAU");
@@ -545,10 +545,10 @@ pandecode_run_tiling(struct pandecode_context *ctx, FILE *fp,
    unsigned reg_spd = 16 + I->spd_select * 2;
    unsigned reg_tsd = 24 + I->tsd_select;
 
-   mali_ptr srt = cs_get_u64(qctx, reg_srt);
-   mali_ptr fau = cs_get_u64(qctx, reg_fau);
-   mali_ptr spd = cs_get_u64(qctx, reg_spd);
-   mali_ptr tsd = cs_get_u64(qctx, reg_tsd);
+   uint64_t srt = cs_get_u64(qctx, reg_srt);
+   uint64_t fau = cs_get_u64(qctx, reg_fau);
+   uint64_t spd = cs_get_u64(qctx, reg_spd);
+   uint64_t tsd = cs_get_u64(qctx, reg_tsd);
 
    if (srt)
       GENX(pandecode_resource_tables)(ctx, srt, "Fragment resources");
@@ -590,7 +590,7 @@ pandecode_run_tiling(struct pandecode_context *ctx, FILE *fp,
    pandecode_log(ctx, "Vertex position array: %" PRIx64 "\n",
                  cs_get_u64(qctx, 48));
 
-   mali_ptr blend = cs_get_u64(qctx, 50);
+   uint64_t blend = cs_get_u64(qctx, 50);
    GENX(pandecode_blend_descs)(ctx, blend & ~7, blend & 7, 0, qctx->gpu_id);
 
    DUMP_ADDR(ctx, DEPTH_STENCIL, cs_get_u64(qctx, 52), "Depth/stencil");
@@ -645,9 +645,9 @@ pandecode_run_idvs(struct pandecode_context *ctx, FILE *fp,
    if (frag_srt)
       GENX(pandecode_resource_tables)(ctx, frag_srt, "Fragment resources");
 
-   mali_ptr position_fau = cs_get_u64(qctx, reg_position_fau);
-   mali_ptr vary_fau = cs_get_u64(qctx, reg_vary_fau);
-   mali_ptr fragment_fau = cs_get_u64(qctx, reg_frag_fau);
+   uint64_t position_fau = cs_get_u64(qctx, reg_position_fau);
+   uint64_t vary_fau = cs_get_u64(qctx, reg_vary_fau);
+   uint64_t fragment_fau = cs_get_u64(qctx, reg_frag_fau);
 
    if (position_fau) {
       uint64_t lo = position_fau & BITFIELD64_MASK(48);
@@ -720,7 +720,7 @@ pandecode_run_idvs(struct pandecode_context *ctx, FILE *fp,
    if (tiler_flags.secondary_shader)
       pandecode_log(ctx, "Varying allocation: %u\n", cs_get_u32(qctx, 48));
 
-   mali_ptr blend = cs_get_u64(qctx, 50);
+   uint64_t blend = cs_get_u64(qctx, 50);
    GENX(pandecode_blend_descs)(ctx, blend & ~7, blend & 7, 0, qctx->gpu_id);
 
    DUMP_ADDR(ctx, DEPTH_STENCIL, cs_get_u64(qctx, 52), "Depth/stencil");
@@ -921,7 +921,7 @@ interpret_cs_instr(struct pandecode_context *ctx, struct queue_ctx *qctx)
 
    case MALI_CS_OPCODE_LOAD_MULTIPLE: {
       pan_unpack(bytes, CS_LOAD_MULTIPLE, I);
-      mali_ptr addr =
+      uint64_t addr =
          ((uint64_t)qctx->regs[I.address + 1] << 32) | qctx->regs[I.address];
       addr += I.offset;
 
@@ -1046,7 +1046,7 @@ no_interpret:
 }
 
 void
-GENX(pandecode_interpret_cs)(struct pandecode_context *ctx, mali_ptr queue,
+GENX(pandecode_interpret_cs)(struct pandecode_context *ctx, uint64_t queue,
                              uint32_t size, unsigned gpu_id, uint32_t *regs)
 {
    pandecode_dump_file_open(ctx);
@@ -1341,7 +1341,7 @@ collect_indirect_branch_targets(struct cs_code_cfg *cfg,
 
 static struct cs_code_cfg *
 get_cs_cfg(struct pandecode_context *ctx, struct hash_table_u64 *symbols,
-           mali_ptr bin, uint32_t bin_size)
+           uint64_t bin, uint32_t bin_size)
 {
    uint32_t instr_count = bin_size / sizeof(uint64_t);
    struct cs_code_cfg *cfg = _mesa_hash_table_u64_search(symbols, bin);
@@ -1449,7 +1449,7 @@ get_cs_cfg(struct pandecode_context *ctx, struct hash_table_u64 *symbols,
 }
 
 static void
-print_cs_binary(struct pandecode_context *ctx, mali_ptr bin,
+print_cs_binary(struct pandecode_context *ctx, uint64_t bin,
                 struct cs_code_cfg *cfg, const char *name)
 {
    pandecode_log(ctx, "%s@%" PRIx64 "{\n", name, bin);
@@ -1520,7 +1520,7 @@ print_cs_binary(struct pandecode_context *ctx, mali_ptr bin,
 }
 
 void
-GENX(pandecode_cs_binary)(struct pandecode_context *ctx, mali_ptr bin,
+GENX(pandecode_cs_binary)(struct pandecode_context *ctx, uint64_t bin,
                           uint32_t bin_size, unsigned gpu_id)
 {
    if (!bin_size)
@@ -1546,7 +1546,7 @@ GENX(pandecode_cs_binary)(struct pandecode_context *ctx, mali_ptr bin,
 }
 
 void
-GENX(pandecode_cs_trace)(struct pandecode_context *ctx, mali_ptr trace,
+GENX(pandecode_cs_trace)(struct pandecode_context *ctx, uint64_t trace,
                          uint32_t trace_size, unsigned gpu_id)
 {
    pandecode_dump_file_open(ctx);

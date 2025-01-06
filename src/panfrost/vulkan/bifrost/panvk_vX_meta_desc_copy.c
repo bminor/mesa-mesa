@@ -21,11 +21,11 @@
 #include "panvk_shader.h"
 
 struct pan_nir_desc_copy_info {
-   mali_ptr sets[MAX_SETS];
-   mali_ptr tables[PANVK_BIFROST_DESC_TABLE_COUNT];
-   mali_ptr img_attrib_table;
+   uint64_t sets[MAX_SETS];
+   uint64_t tables[PANVK_BIFROST_DESC_TABLE_COUNT];
+   uint64_t img_attrib_table;
    struct {
-      mali_ptr table;
+      uint64_t table;
       uint32_t limits[PANVK_BIFROST_DESC_TABLE_COUNT];
       uint32_t attrib_buf_idx_offset;
    } desc_copy;
@@ -265,7 +265,7 @@ single_desc_copy(nir_builder *b, nir_def *desc_copy_idx)
    nir_pop_if(b, NULL);
 }
 
-static mali_ptr
+static uint64_t
 panvk_meta_desc_copy_rsd(struct panvk_device *dev)
 {
    struct panvk_physical_device *phys_dev =
@@ -344,7 +344,7 @@ panvk_per_arch(meta_get_copy_desc_job)(
    if (!shader)
       return VK_SUCCESS;
 
-   mali_ptr copy_table = panvk_priv_mem_dev_addr(shader->desc_info.others.map);
+   uint64_t copy_table = panvk_priv_mem_dev_addr(shader->desc_info.others.map);
    if (!copy_table)
       return VK_SUCCESS;
 
@@ -381,7 +381,7 @@ panvk_per_arch(meta_get_copy_desc_job)(
       copy_info.tables[i] = shader_desc_state->tables[i];
    }
 
-   mali_ptr desc_copy_rsd = panvk_meta_desc_copy_rsd(dev);
+   uint64_t desc_copy_rsd = panvk_meta_desc_copy_rsd(dev);
    if (!desc_copy_rsd)
       return VK_ERROR_OUT_OF_DEVICE_MEMORY;
 

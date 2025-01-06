@@ -28,7 +28,6 @@
 
 #include <time.h>
 #include "util/list.h"
-#include "panfrost-job.h"
 
 #include "pan_pool.h"
 

@@ -35,7 +35,7 @@ struct panfrost_ptr {
    void *cpu;
 
    /* GPU address */
-   mali_ptr gpu;
+   uint64_t gpu;
 };
 
 /* Represents grow-only memory. */
@@ -65,7 +65,7 @@ struct panfrost_ptr pan_pool_alloc_aligned(struct pan_pool *pool, size_t sz,
       return alloc_func(pool, sz, alignment);                                  \
    }
 
-static inline mali_ptr
+static inline uint64_t
 pan_pool_upload_aligned(struct pan_pool *pool, const void *data, size_t sz,
                         unsigned alignment)
 {
@@ -77,7 +77,7 @@ pan_pool_upload_aligned(struct pan_pool *pool, const void *data, size_t sz,
    return transfer.gpu;
 }
 
-static inline mali_ptr
+static inline uint64_t
 pan_pool_upload(struct pan_pool *pool, const void *data, size_t sz)
 {
    return pan_pool_upload_aligned(pool, data, sz, sz);

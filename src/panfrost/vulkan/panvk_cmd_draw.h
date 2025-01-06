@@ -28,7 +28,7 @@
 struct panvk_cmd_buffer;
 
 struct panvk_attrib_buf {
-   mali_ptr address;
+   uint64_t address;
    unsigned size;
 };
 
@@ -71,7 +71,7 @@ struct panvk_rendering_state {
 
 #if PAN_ARCH >= 10
    struct panfrost_ptr fbds;
-   mali_ptr tiler;
+   uint64_t tiler;
 
    /* When a secondary command buffer has to flush draws, it disturbs the
     * inherited context, and the primary command buffer needs to know. */
@@ -110,20 +110,20 @@ struct panvk_cmd_graphics_state {
    struct {
       const struct panvk_shader *shader;
       struct panvk_shader_desc_state desc;
-      mali_ptr push_uniforms;
+      uint64_t push_uniforms;
       bool required;
 #if PAN_ARCH <= 7
-      mali_ptr rsd;
+      uint64_t rsd;
 #endif
    } fs;
 
    struct {
       const struct panvk_shader *shader;
       struct panvk_shader_desc_state desc;
-      mali_ptr push_uniforms;
+      uint64_t push_uniforms;
 #if PAN_ARCH <= 7
-      mali_ptr attribs;
-      mali_ptr attrib_bufs;
+      uint64_t attribs;
+      uint64_t attrib_bufs;
 #endif
    } vs;
 
@@ -146,11 +146,11 @@ struct panvk_cmd_graphics_state {
    struct panvk_rendering_state render;
 
 #if PAN_ARCH <= 7
-   mali_ptr vpd;
+   uint64_t vpd;
 #endif
 
 #if PAN_ARCH >= 10
-   mali_ptr tsd;
+   uint64_t tsd;
 #endif
 
    BITSET_DECLARE(dirty, PANVK_CMD_GRAPHICS_DIRTY_STATE_COUNT);
@@ -336,7 +336,7 @@ struct panvk_draw_info {
    } instance;
 
    struct {
-      mali_ptr buffer_dev_addr;
+      uint64_t buffer_dev_addr;
       uint32_t draw_count;
       uint32_t stride;
    } indirect;

@@ -162,7 +162,7 @@ panfrost_set_blend_color(struct pipe_context *pipe,
 
 /* Create a final blend given the context */
 
-mali_ptr
+uint64_t
 panfrost_get_blend(struct panfrost_batch *batch, unsigned rti,
                    struct panfrost_bo **bo, unsigned *shader_offset)
 {

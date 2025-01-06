@@ -62,13 +62,13 @@ void pandecode_jc(struct pandecode_context *ctx, uint64_t jc_gpu_va,
                   unsigned gpu_id);
 
 void pandecode_interpret_cs(struct pandecode_context *ctx,
-                            mali_ptr queue_gpu_va, uint32_t size,
+                            uint64_t queue_gpu_va, uint32_t size,
                             unsigned gpu_id, uint32_t *regs);
 
-void pandecode_cs_binary(struct pandecode_context *ctx, mali_ptr binary_gpu_va,
+void pandecode_cs_binary(struct pandecode_context *ctx, uint64_t binary_gpu_va,
                          uint32_t size, unsigned gpu_id);
 
-void pandecode_cs_trace(struct pandecode_context *ctx, mali_ptr trace_gpu_va,
+void pandecode_cs_trace(struct pandecode_context *ctx, uint64_t trace_gpu_va,
                         uint32_t size, unsigned gpu_id);
 
 void pandecode_abort_on_fault(struct pandecode_context *ctx, uint64_t jc_gpu_va,

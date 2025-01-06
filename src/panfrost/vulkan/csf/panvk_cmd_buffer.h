@@ -83,7 +83,7 @@ get_fbd_size(bool has_zs_ext, uint32_t rt_count)
    offsetof(struct panvk_cs_subqueue_context, tiler_oom_ctx._name)
 #define TILER_OOM_CTX_FBDPTR_OFFSET(_pass)                                     \
    (TILER_OOM_CTX_FIELD_OFFSET(fbds) +                                         \
-    (PANVK_IR_##_pass##_PASS * sizeof(mali_ptr)))
+    (PANVK_IR_##_pass##_PASS * sizeof(uint64_t)))
 
 struct panvk_cs_subqueue_context {
    uint64_t syncobjs;
@@ -96,10 +96,10 @@ struct panvk_cs_subqueue_context {
    } render;
    struct {
       uint32_t counter;
-      mali_ptr fbds[PANVK_IR_PASS_COUNT];
+      uint64_t fbds[PANVK_IR_PASS_COUNT];
       uint32_t td_count;
       uint32_t layer_count;
-      mali_ptr reg_dump_addr;
+      uint64_t reg_dump_addr;
    } tiler_oom_ctx;
    struct {
       uint64_t syncobjs;

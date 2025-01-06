@@ -260,7 +260,7 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
          cs_move64_to(b, cs_sr_reg64(b, 0), cs_desc_state->res_table);
 
       if (compute_state_dirty(cmdbuf, PUSH_UNIFORMS)) {
-         mali_ptr fau_ptr = cmdbuf->state.compute.push_uniforms |
+         uint64_t fau_ptr = cmdbuf->state.compute.push_uniforms |
                             ((uint64_t)shader->fau.total_count << 56);
          cs_move64_to(b, cs_sr_reg64(b, 8), fau_ptr);
       }

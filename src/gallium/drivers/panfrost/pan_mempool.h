@@ -71,14 +71,14 @@ struct panfrost_pool_ref {
    struct panfrost_bo *bo;
 
    /* Mapped GPU VA */
-   mali_ptr gpu;
+   uint64_t gpu;
 };
 
 /* Take a reference to an allocation pool. Call directly after allocating from
  * an unowned pool for correct operation. */
 
 static inline struct panfrost_pool_ref
-panfrost_pool_take_ref(struct panfrost_pool *pool, mali_ptr ptr)
+panfrost_pool_take_ref(struct panfrost_pool *pool, uint64_t ptr)
 {
    if (!pool->owned)
       panfrost_bo_reference(pool->transient_bo);

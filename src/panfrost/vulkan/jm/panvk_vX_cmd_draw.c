@@ -42,25 +42,25 @@ struct panvk_draw_data {
    unsigned padded_vertex_count;
    struct mali_invocation_packed invocation;
    struct {
-      mali_ptr varyings;
-      mali_ptr attributes;
-      mali_ptr attribute_bufs;
+      uint64_t varyings;
+      uint64_t attributes;
+      uint64_t attribute_bufs;
    } vs;
    struct {
-      mali_ptr rsd;
-      mali_ptr varyings;
+      uint64_t rsd;
+      uint64_t varyings;
    } fs;
-   mali_ptr varying_bufs;
-   mali_ptr position;
-   mali_ptr indices;
+   uint64_t varying_bufs;
+   uint64_t position;
+   uint64_t indices;
    union {
-      mali_ptr psiz;
+      uint64_t psiz;
       float line_width;
    };
-   mali_ptr tls;
-   mali_ptr fb;
+   uint64_t tls;
+   uint64_t fb;
    const struct pan_tiler_context *tiler_ctx;
-   mali_ptr viewport;
+   uint64_t viewport;
    struct {
       struct panfrost_ptr vertex_copy_desc;
       struct panfrost_ptr frag_copy_desc;
@@ -236,7 +236,7 @@ panvk_draw_prepare_fs_rsd(struct panvk_cmd_buffer *cmdbuf,
    struct mali_blend_packed *bds = ptr.cpu + pan_size(RENDERER_STATE);
    struct panvk_blend_info *binfo = &cmdbuf->state.gfx.cb.info;
 
-   mali_ptr fs_code = panvk_shader_get_dev_addr(fs);
+   uint64_t fs_code = panvk_shader_get_dev_addr(fs);
 
    if (fs_info != NULL) {
       panvk_per_arch(blend_emit_descs)(cmdbuf, bds);
@@ -416,11 +416,11 @@ panvk_draw_prepare_varyings(struct panvk_cmd_buffer *cmdbuf,
       ia->primitive_topology == VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
    unsigned vertex_count =
       draw->padded_vertex_count * draw->info.instance.count;
-   mali_ptr psiz_buf = 0;
+   uint64_t psiz_buf = 0;
 
    for (unsigned i = 0; i < PANVK_VARY_BUF_MAX; i++) {
       unsigned buf_size = vertex_count * link->buf_strides[i];
-      mali_ptr buf_addr =
+      uint64_t buf_addr =
          buf_size ? panvk_cmd_alloc_dev_mem(cmdbuf, varying, buf_size, 64).gpu
                   : 0;
       if (buf_size && !buf_addr)
@@ -462,7 +462,7 @@ panvk_draw_emit_attrib_buf(const struct panvk_draw_data *draw,
                            const struct vk_vertex_binding_state *buf_info,
                            const struct panvk_attrib_buf *buf, void *desc)
 {
-   mali_ptr addr = buf->address & ~63ULL;
+   uint64_t addr = buf->address & ~63ULL;
    unsigned size = buf->size + (buf->address & 63);
    unsigned divisor = draw->padded_vertex_count * buf_info->divisor;
    bool per_instance = buf_info->input_rate == VK_VERTEX_INPUT_RATE_INSTANCE;

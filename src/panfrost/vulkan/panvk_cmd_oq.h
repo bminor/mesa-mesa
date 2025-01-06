@@ -11,10 +11,9 @@
 #endif
 
 #include "genxml/gen_macros.h"
-#include "panfrost-job.h"
 
 struct panvk_occlusion_query_state {
-   mali_ptr ptr;
+   uint64_t ptr;
    enum mali_occlusion_mode mode;
 };
 

@@ -21,7 +21,7 @@ struct panvk_cmd_compute_state {
    struct panvk_descriptor_state desc_state;
    const struct panvk_shader *shader;
    struct panvk_compute_sysvals sysvals;
-   mali_ptr push_uniforms;
+   uint64_t push_uniforms;
    struct {
       struct panvk_shader_desc_state desc;
    } cs;
@@ -67,7 +67,7 @@ struct panvk_dispatch_info {
    } direct;
 
    struct {
-      mali_ptr buffer_dev_addr;
+      uint64_t buffer_dev_addr;
    } indirect;
 };
 

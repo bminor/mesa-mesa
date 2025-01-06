@@ -694,7 +694,7 @@ pan_iview_get_surface(const struct pan_image_view *iview, unsigned level,
 
    bool is_3d = image->layout.dim == MALI_TEXTURE_DIMENSION_3D;
    const struct pan_image_slice_layout *slice = &image->layout.slices[level];
-   mali_ptr base = image->data.base + image->data.offset;
+   uint64_t base = image->data.base + image->data.offset;
 
    if (drm_is_afbc(image->layout.modifier)) {
       assert(!sample);

@@ -29,15 +29,15 @@ struct panvk_cmd_buffer;
 
 struct panvk_shader_desc_state {
 #if PAN_ARCH <= 7
-   mali_ptr tables[PANVK_BIFROST_DESC_TABLE_COUNT];
-   mali_ptr img_attrib_table;
-   mali_ptr dyn_ssbos;
+   uint64_t tables[PANVK_BIFROST_DESC_TABLE_COUNT];
+   uint64_t img_attrib_table;
+   uint64_t dyn_ssbos;
 #else
    struct {
-      mali_ptr dev_addr;
+      uint64_t dev_addr;
       uint32_t size;
    } driver_set;
-   mali_ptr res_table;
+   uint64_t res_table;
 #endif
 };
 

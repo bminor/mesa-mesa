@@ -30,7 +30,7 @@ struct panvk_tiler_heap {
    struct panvk_priv_mem desc;
    struct {
       uint32_t handle;
-      mali_ptr dev_addr;
+      uint64_t dev_addr;
    } context;
 };
 

@@ -229,7 +229,7 @@ panfrost_get_z_internal_format(enum pipe_format fmt)
 #if PAN_ARCH >= 9
 static inline void
 panfrost_make_resource_table(struct panfrost_ptr base, unsigned index,
-                             mali_ptr address, unsigned resource_count)
+                             uint64_t address, unsigned resource_count)
 {
    if (resource_count == 0)
       return;

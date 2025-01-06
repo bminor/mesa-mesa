@@ -11,7 +11,7 @@ VkResult
 panvk_per_arch(cmd_prepare_push_uniforms)(struct panvk_cmd_buffer *cmdbuf,
                                           const struct panvk_shader *shader)
 {
-   mali_ptr *push_ptr;
+   uint64_t *push_ptr;
 
    switch (shader->vk.stage) {
    case MESA_SHADER_COMPUTE:

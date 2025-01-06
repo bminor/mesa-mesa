@@ -61,7 +61,7 @@ panvk_per_arch(CmdDispatchBase)(VkCommandBuffer commandBuffer,
       &cmdbuf->state.compute.cs.desc;
 
    panvk_per_arch(cmd_alloc_tls_desc)(cmdbuf, false);
-   mali_ptr tsd = batch->tls.gpu;
+   uint64_t tsd = batch->tls.gpu;
 
    result = panvk_per_arch(cmd_prepare_push_descs)(
       cmdbuf, desc_state, shader->desc_info.used_set_mask);

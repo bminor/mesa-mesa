@@ -1219,7 +1219,7 @@ prepare_push_uniforms(struct panvk_cmd_buffer *cmdbuf)
    }
 
    if (fs_user_dirty(cmdbuf) || gfx_state_dirty(cmdbuf, FS_PUSH_UNIFORMS)) {
-      mali_ptr fau_ptr = 0;
+      uint64_t fau_ptr = 0;
 
       if (fs) {
          result = panvk_per_arch(cmd_prepare_push_uniforms)(cmdbuf, fs);
@@ -2202,7 +2202,7 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
    struct cs_index addr_reg = cs_scratch_reg64(b, 0);
    struct cs_index length_reg = cs_scratch_reg32(b, 2);
    uint32_t handler_idx = calc_tiler_oom_handler_idx(cmdbuf);
-   mali_ptr handler_addr = dev->tiler_oom.handlers_bo->addr.dev +
+   uint64_t handler_addr = dev->tiler_oom.handlers_bo->addr.dev +
                            handler_idx * dev->tiler_oom.handler_stride;
    cs_move64_to(b, addr_reg, handler_addr);
    cs_move32_to(b, length_reg, dev->tiler_oom.handler_stride);

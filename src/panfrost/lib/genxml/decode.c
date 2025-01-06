@@ -80,9 +80,9 @@ pandecode_render_target(struct pandecode_context *ctx, uint64_t gpu_va,
    ctx->indent++;
 
    for (int i = 0; i < (fb->render_target_count); i++) {
-      mali_ptr rt_va = gpu_va + i * pan_size(RENDER_TARGET);
+      uint64_t rt_va = gpu_va + i * pan_size(RENDER_TARGET);
       const struct mali_render_target_packed *PANDECODE_PTR_VAR(
-         ctx, rtp, (mali_ptr)rt_va);
+         ctx, rtp, (uint64_t)rt_va);
       DUMP_CL(ctx, RENDER_TARGET, rtp, "Color Render Target %d:\n", i);
    }
 
@@ -112,7 +112,7 @@ struct pandecode_fbd
 GENX(pandecode_fbd)(struct pandecode_context *ctx, uint64_t gpu_va,
                     bool is_fragment, unsigned gpu_id)
 {
-   const void *PANDECODE_PTR_VAR(ctx, fb, (mali_ptr)gpu_va);
+   const void *PANDECODE_PTR_VAR(ctx, fb, (uint64_t)gpu_va);
    pan_section_unpack(fb, FRAMEBUFFER, PARAMETERS, params);
    DUMP_UNPACKED(ctx, FRAMEBUFFER_PARAMETERS, params, "Parameters:\n");
 
@@ -176,7 +176,7 @@ GENX(pandecode_fbd)(struct pandecode_context *ctx, uint64_t gpu_va,
 
    if (params.has_zs_crc_extension) {
       const struct mali_zs_crc_extension_packed *PANDECODE_PTR_VAR(
-         ctx, zs_crc, (mali_ptr)gpu_va);
+         ctx, zs_crc, (uint64_t)gpu_va);
       DUMP_CL(ctx, ZS_CRC_EXTENSION, zs_crc, "ZS CRC Extension:\n");
       pandecode_log(ctx, "\n");
 
@@ -204,9 +204,9 @@ GENX(pandecode_fbd)(struct pandecode_context *ctx, uint64_t gpu_va,
 }
 
 #if PAN_ARCH >= 5
-mali_ptr
+uint64_t
 GENX(pandecode_blend)(struct pandecode_context *ctx, void *descs, int rt_no,
-                      mali_ptr frag_shader)
+                      uint64_t frag_shader)
 {
    pan_unpack(descs + (rt_no * pan_size(BLEND)), BLEND, b);
    DUMP_UNPACKED(ctx, BLEND, b, "Blend RT %d:\n", rt_no);
@@ -242,7 +242,7 @@ panfrost_is_yuv_format(uint32_t packed)
 }
 
 static void
-pandecode_texture_payload(struct pandecode_context *ctx, mali_ptr payload,
+pandecode_texture_payload(struct pandecode_context *ctx, uint64_t payload,
                           const struct MALI_TEXTURE *tex)
 {
    unsigned nr_samples =
@@ -314,7 +314,7 @@ pandecode_texture_payload(struct pandecode_context *ctx, mali_ptr payload,
 
 #if PAN_ARCH <= 5
 void
-GENX(pandecode_texture)(struct pandecode_context *ctx, mali_ptr u, unsigned tex)
+GENX(pandecode_texture)(struct pandecode_context *ctx, uint64_t u, unsigned tex)
 {
    const uint8_t *cl = pandecode_fetch_gpu_mem(ctx, u, pan_size(TEXTURE));
 
@@ -354,7 +354,7 @@ GENX(pandecode_texture)(struct pandecode_context *ctx, const void *cl,
 
 #if PAN_ARCH >= 6
 void
-GENX(pandecode_tiler)(struct pandecode_context *ctx, mali_ptr gpu_va,
+GENX(pandecode_tiler)(struct pandecode_context *ctx, uint64_t gpu_va,
                       unsigned gpu_id)
 {
    pan_unpack(PANDECODE_PTR(ctx, gpu_va, void), TILER_CONTEXT, t);
@@ -371,7 +371,7 @@ GENX(pandecode_tiler)(struct pandecode_context *ctx, mali_ptr gpu_va,
 
 #if PAN_ARCH >= 9
 void
-GENX(pandecode_fau)(struct pandecode_context *ctx, mali_ptr addr,
+GENX(pandecode_fau)(struct pandecode_context *ctx, uint64_t addr,
                     unsigned count, const char *name)
 {
    if (count == 0)
@@ -388,8 +388,8 @@ GENX(pandecode_fau)(struct pandecode_context *ctx, mali_ptr addr,
    fprintf(ctx->dump_stream, "\n");
 }
 
-mali_ptr
-GENX(pandecode_shader)(struct pandecode_context *ctx, mali_ptr addr,
+uint64_t
+GENX(pandecode_shader)(struct pandecode_context *ctx, uint64_t addr,
                        const char *label, unsigned gpu_id)
 {
    MAP_ADDR(ctx, SHADER_PROGRAM, addr, cl);
@@ -404,7 +404,7 @@ GENX(pandecode_shader)(struct pandecode_context *ctx, mali_ptr addr,
 }
 
 static void
-pandecode_resources(struct pandecode_context *ctx, mali_ptr addr, unsigned size)
+pandecode_resources(struct pandecode_context *ctx, uint64_t addr, unsigned size)
 {
    const uint8_t *cl = pandecode_fetch_gpu_mem(ctx, addr, size);
    assert((size % 0x20) == 0);
@@ -434,7 +434,7 @@ pandecode_resources(struct pandecode_context *ctx, mali_ptr addr, unsigned size)
 }
 
 void
-GENX(pandecode_resource_tables)(struct pandecode_context *ctx, mali_ptr addr,
+GENX(pandecode_resource_tables)(struct pandecode_context *ctx, uint64_t addr,
                                 const char *label)
 {
    unsigned count = addr & 0x3F;
@@ -459,7 +459,7 @@ GENX(pandecode_resource_tables)(struct pandecode_context *ctx, mali_ptr addr,
 }
 
 void
-GENX(pandecode_depth_stencil)(struct pandecode_context *ctx, mali_ptr addr)
+GENX(pandecode_depth_stencil)(struct pandecode_context *ctx, uint64_t addr)
 {
    MAP_ADDR(ctx, DEPTH_STENCIL, addr, cl);
    pan_unpack(cl, DEPTH_STENCIL, desc);
@@ -485,14 +485,14 @@ GENX(pandecode_shader_environment)(struct pandecode_context *ctx,
 }
 
 void
-GENX(pandecode_blend_descs)(struct pandecode_context *ctx, mali_ptr blend,
-                            unsigned count, mali_ptr frag_shader,
+GENX(pandecode_blend_descs)(struct pandecode_context *ctx, uint64_t blend,
+                            unsigned count, uint64_t frag_shader,
                             unsigned gpu_id)
 {
    for (unsigned i = 0; i < count; ++i) {
       struct mali_blend_packed *PANDECODE_PTR_VAR(ctx, blend_descs, blend);
 
-      mali_ptr blend_shader =
+      uint64_t blend_shader =
          GENX(pandecode_blend)(ctx, blend_descs, i, frag_shader);
       if (blend_shader) {
          fprintf(ctx->dump_stream, "Blend shader %u @%" PRIx64 "", i,
@@ -506,7 +506,7 @@ void
 GENX(pandecode_dcd)(struct pandecode_context *ctx, const struct MALI_DRAW *p,
                     unsigned unused, unsigned gpu_id)
 {
-   mali_ptr frag_shader = 0;
+   uint64_t frag_shader = 0;
 
    GENX(pandecode_depth_stencil)(ctx, p->depth_stencil);
    GENX(pandecode_blend_descs)

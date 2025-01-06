@@ -1154,7 +1154,7 @@ panvk_queue_submit_process_debug(const struct panvk_queue_submit *submit)
             ctx->render.desc_ringbuf.pos <= queue->render_desc_ringbuf.size ||
             !"OOB access on the desc tracebuf, pass a bigger PANVK_DESC_TRACEBUF_SIZE");
 
-         mali_ptr trace = queue->subqueues[i].tracebuf.addr.dev;
+         uint64_t trace = queue->subqueues[i].tracebuf.addr.dev;
 
          pandecode_user_msg(decode_ctx, "\nCS traces on subqueue %d\n\n", i);
          pandecode_cs_trace(decode_ctx, trace, trace_size, props->gpu_prod_id);

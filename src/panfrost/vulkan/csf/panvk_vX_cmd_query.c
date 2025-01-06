@@ -66,7 +66,7 @@ panvk_cmd_begin_occlusion_query(struct panvk_cmd_buffer *cmd,
                                 struct panvk_query_pool *pool, uint32_t query,
                                 VkQueryControlFlags flags)
 {
-   mali_ptr report_addr = panvk_query_report_dev_addr(pool, query);
+   uint64_t report_addr = panvk_query_report_dev_addr(pool, query);
 
    cmd->state.gfx.occlusion_query.ptr = report_addr;
    cmd->state.gfx.occlusion_query.mode = flags & VK_QUERY_CONTROL_PRECISE_BIT
@@ -133,7 +133,7 @@ static void
 panvk_copy_occlusion_query_results(struct panvk_cmd_buffer *cmd,
                                    struct panvk_query_pool *pool,
                                    uint32_t first_query, uint32_t query_count,
-                                   mali_ptr dst_buffer_addr,
+                                   uint64_t dst_buffer_addr,
                                    VkDeviceSize stride,
                                    VkQueryResultFlags flags)
 {
@@ -294,7 +294,7 @@ panvk_per_arch(CmdCopyQueryPoolResults)(
    VK_FROM_HANDLE(panvk_query_pool, pool, queryPool);
    VK_FROM_HANDLE(panvk_buffer, dst_buffer, dstBuffer);
 
-   mali_ptr dst_buffer_addr = panvk_buffer_gpu_ptr(dst_buffer, dstOffset);
+   uint64_t dst_buffer_addr = panvk_buffer_gpu_ptr(dst_buffer, dstOffset);
 
    switch (pool->vk.query_type) {
    case VK_QUERY_TYPE_OCCLUSION: {

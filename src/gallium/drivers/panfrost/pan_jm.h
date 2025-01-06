@@ -34,7 +34,7 @@ struct panfrost_jm_batch {
       struct pan_jc vtc_jc;
 
       /* Fragment job, only one per batch. */
-      mali_ptr frag;
+      uint64_t frag;
    } jobs;
 };
 

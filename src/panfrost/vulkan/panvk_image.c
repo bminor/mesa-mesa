@@ -496,7 +496,7 @@ panvk_GetDeviceImageSparseMemoryRequirements(VkDevice device,
 
 static void
 panvk_image_plane_bind(struct pan_image *plane, struct pan_kmod_bo *bo,
-                       mali_ptr base, uint64_t offset)
+                       uint64_t base, uint64_t offset)
 {
    plane->data.base = base;
    plane->data.offset = offset;

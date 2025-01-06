@@ -1069,7 +1069,7 @@ GENX(pan_emit_fbd)(const struct pan_fb_info *fb, unsigned layer_idx,
 
 #if PAN_ARCH <= 9
 void
-GENX(pan_emit_fragment_job_payload)(const struct pan_fb_info *fb, mali_ptr fbd,
+GENX(pan_emit_fragment_job_payload)(const struct pan_fb_info *fb, uint64_t fbd,
                                     void *out)
 {
    pan_section_pack(out, FRAGMENT_JOB, PAYLOAD, payload) {

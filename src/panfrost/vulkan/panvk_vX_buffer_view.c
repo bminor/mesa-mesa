@@ -39,7 +39,7 @@ panvk_per_arch(CreateBufferView)(VkDevice _device,
 
    enum pipe_format pfmt = vk_format_to_pipe_format(view->vk.format);
 
-   mali_ptr address = panvk_buffer_gpu_ptr(buffer, pCreateInfo->offset);
+   uint64_t address = panvk_buffer_gpu_ptr(buffer, pCreateInfo->offset);
    VkBufferUsageFlags tex_usage_mask = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
 
 #if PAN_ARCH >= 9

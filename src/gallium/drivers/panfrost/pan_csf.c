@@ -649,7 +649,7 @@ out_free_syncops:
    return ret;
 }
 
-static mali_ptr
+static uint64_t
 csf_get_tiler_desc(struct panfrost_batch *batch)
 {
    if (batch->tiler_ctx.valhall.desc)
@@ -856,9 +856,9 @@ GENX(csf_emit_fragment_job)(struct panfrost_batch *batch,
 
 static void
 csf_emit_shader_regs(struct panfrost_batch *batch, enum pipe_shader_type stage,
-                     mali_ptr shader)
+                     uint64_t shader)
 {
-   mali_ptr resources = panfrost_emit_resources(batch, stage);
+   uint64_t resources = panfrost_emit_resources(batch, stage);
 
    assert(stage == PIPE_SHADER_VERTEX || stage == PIPE_SHADER_FRAGMENT ||
           stage == PIPE_SHADER_COMPUTE);

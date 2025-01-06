@@ -192,9 +192,9 @@ panfrost_get_surface_strides(const struct pan_image_layout *layout, unsigned l,
    }
 }
 
-static mali_ptr
+static uint64_t
 panfrost_get_surface_pointer(const struct pan_image_layout *layout,
-                             enum mali_texture_dimension dim, mali_ptr base,
+                             enum mali_texture_dimension dim, uint64_t base,
                              unsigned l, unsigned i, unsigned s)
 {
    unsigned offset;
@@ -211,7 +211,7 @@ panfrost_get_surface_pointer(const struct pan_image_layout *layout,
 }
 
 struct pan_image_section_info {
-   mali_ptr pointer;
+   uint64_t pointer;
    int32_t row_stride;
    int32_t surface_stride;
 };
@@ -223,7 +223,7 @@ get_image_section_info(const struct pan_image_view *iview,
 {
    const struct util_format_description *desc =
       util_format_description(iview->format);
-   mali_ptr base = plane->data.base + plane->data.offset;
+   uint64_t base = plane->data.base + plane->data.offset;
    struct pan_image_section_info info = {0};
 
    if (iview->buf.size) {
@@ -416,7 +416,7 @@ panfrost_emit_plane(const struct pan_image_view *iview,
    const struct pan_image_layout *layout = &plane->layout;
    int32_t row_stride = sections[plane_index].row_stride;
    int32_t surface_stride = sections[plane_index].surface_stride;
-   mali_ptr pointer = sections[plane_index].pointer;
+   uint64_t pointer = sections[plane_index].pointer;
 
    assert(row_stride >= 0 && surface_stride >= 0 && "negative stride");
 
