@@ -794,7 +794,7 @@
         "description": "freedreno/a6xx: Fix timestamp emit",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8609d62e4d7a5112b2426e9c2856d48864f9c2d6",
         "notes": null
