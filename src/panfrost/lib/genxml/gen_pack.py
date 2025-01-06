@@ -744,7 +744,6 @@ class Parser(object):
             self.aggregate = None
         elif name == "panxml":
             # Include at the end so it can depend on us but not the converse
-            print('#include "panfrost-job.h"')
             print('#endif')
 
     def emit_header(self, name):
