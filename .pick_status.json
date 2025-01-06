@@ -1,5 +1,265 @@
 [
     {
+        "sha": "70fa598696c6fe2db6e6370a91443a3cb9449db3",
+        "description": "zink: do not set transform feedback bits when not available",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c179a7dde4d032f9a7ae868d7aa3a0b1700760e0",
+        "description": "r300/ci: update CI expectations",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4ab04799ee36f4787b52a53f31fe865d349fddc5",
+        "description": "brw: Delete assign_constant_locations and push_constant_loc[]",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "93e186e1a4c43b4b09ca5522f85f2c7b35eefad0",
+        "description": "brw: Delete pull constant lowering",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1ab4fe2dd690491ffb6fdb82eea6fc61b48a53b4",
+        "description": "brw: Don't shrink UBO push ranges in the backend",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "583ad35455d2214628ae1ee9e6ed5972f32caa1e",
+        "description": "brw: Limit maximum push UBO ranges to 64 registers in the NIR pass.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "96c8eb64f054940933c6b788606045b02d60be01",
+        "description": "virgl: Ensure that PIPE_SHADER_CAP_MAX_CONST_BUFFERS is less than PIPE_MAX_CONSTANT_BUFFERS",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f1a6af133a1f9eca5c859e581e49b7a181b4de7d",
+        "description": "radeonsi/ci: run a fraction of glcts-vangogh in pre-merge",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0c538f82bc87b370868085ecbc389f2778488668",
+        "description": "radeonsi/ci: run on ACO changes",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bec7f09e76fc44e333ad941e6189c423a618434e",
+        "description": "radeonsi/ci: update the vangogh expectations",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b1b1a4ef91f86044ae59921b445908b318d1b4b9",
+        "description": "iris: initialize whole pipe_box struct for memcmp",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "1fc82ee55800b39c6fc0d27486ce3472f9861352",
+        "notes": null
+    },
+    {
+        "sha": "72351afe24f9c880e07a944aaacf3a09681e1590",
+        "description": "anv: handle mesh in sbe_primitive_id_override",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "36bedf6c80d4ed4b50f3334f754754e1349cec21",
+        "description": "frontends/va: Get buffer feedback with locked mutex in MapBuffer",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "93d434362b22b5e6b93dbb3b2d70809fd080796b",
+        "notes": null
+    },
+    {
+        "sha": "5ecea6ec4a63d6a8fe083452f5e2914eadb8162b",
+        "description": "anv: handle negative value of slot index for h265 decoding.",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "8d519eb5f5947800279e4c02bf7aa79b0b65cd17",
+        "notes": null
+    },
+    {
+        "sha": "168298b8914d1420e95d40636e95df1eb8da50f9",
+        "description": "anv: Enable remapping picture ID",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9221feaf792cfbffd9145174e791460c9caf3486",
+        "description": "anv: define ANV_VIDEO_H264_MAX_DPB_SLOTS",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "61593e9c549e6f497fd7344aa353663e10354058",
+        "description": "pan/ci: update opencl expectations",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f313b33d132dda4f588cac80bd19d217213b7fc9",
+        "description": "pan/ci: update t760 checksum",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "73d675451b9ea047102bef57afa2ea9c44416e12",
+        "notes": null
+    },
+    {
+        "sha": "e33452a6d36338f7fc5b3931844afc84c91192a5",
+        "description": "ac/surface: Don't force linear for VIDEO_REFERENCE with emulated image opcodes",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "308bae950fe7e2fa70cb0dc4e9498b0aee6e0992",
+        "notes": null
+    },
+    {
+        "sha": "fb59a9fb08629b6871a87983e1feabdfd032e5ff",
+        "description": "freedreno/a6xx: Use LATE_Z with OC + discard",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "98cdb9349a7fa181c3895655d217589f909a7beb",
+        "description": "anv: ensure null-rt bit in compiler isn't used when there is ds attachment",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "15987f49bb9ca105f7b252d90349f614c492c3d5",
+        "notes": null
+    },
+    {
+        "sha": "6968794c504e19a06dcd826afc379c148d22e1fc",
+        "description": "intel/brw: Add missing bits in 3-src SWSB encoding for Xe2+",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "4a24f49b5790383effadfece49735f27b576de73",
+        "notes": null
+    },
+    {
+        "sha": "51b0bad30ba870fbcceea5963551e2e913d93974",
+        "description": "panfrost/va: implement fquantizetf16 ftz",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c9de3d57f70cfbbb96df8f2b124bef6d99b19098",
+        "description": "panfrost/va: add FLUSH instruction",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9f171385711afe1b23a647abdf721518ddcb6ba0",
+        "description": "panvk: remove load_multisampled_pan sysval",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "41c6148c0d2158ac643164198f32125018aea2b7",
+        "description": "panvk: handle sample mask writes on 1-sample targets",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "5f30bc62fe962d4fc78633d44e1020a713c2f9bc",
         "description": "rusticl/mesa/resource: port to NonNull",
         "nominated": false,
