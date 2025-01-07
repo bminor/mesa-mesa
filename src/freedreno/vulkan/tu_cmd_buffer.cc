@@ -6120,13 +6120,30 @@ vs_params_offset(struct tu_cmd_buffer *cmd)
    return param_offset;
 }
 
+template <chip CHIP>
 static void
 tu6_emit_empty_vs_params(struct tu_cmd_buffer *cmd)
 {
-   if (cmd->state.vs_params.iova) {
+   if (cmd->state.last_vs_params.empty)
+      return;
+
+   if (cmd->device->physical_device->info->a7xx.load_shader_consts_via_preamble) {
+      struct tu_cs cs;
+      cmd->state.vs_params = tu_cs_draw_state(&cmd->sub_cs, &cs, 2);
+
+      /* CP_LOAD_STATE6_GEOM from previous draws can override consts loaded for
+       * indirect draws, causing problems like incorrect vertex index computation.
+       * VS state invalidation avoids that.
+       */
+      tu_cs_emit_regs(&cs, HLSQ_INVALIDATE_CMD(CHIP,
+         .vs_state = true));
+      assert(cs.cur == cs.end);
+   } else {
       cmd->state.vs_params = (struct tu_draw_state) {};
-      cmd->state.dirty |= TU_CMD_DIRTY_VS_PARAMS;
    }
+   cmd->state.dirty |= TU_CMD_DIRTY_VS_PARAMS;
+
+   cmd->state.last_vs_params.empty = true;
 }
 
 static void
@@ -6143,7 +6160,7 @@ tu6_emit_vs_params(struct tu_cmd_buffer *cmd,
     */
    if (!(cmd->state.dirty & (TU_CMD_DIRTY_DRAW_STATE | TU_CMD_DIRTY_VS_PARAMS |
                              TU_CMD_DIRTY_PROGRAM)) &&
-       cmd->state.vs_params.iova &&
+       !cmd->state.last_vs_params.empty &&
        (offset == 0 || draw_id == cmd->state.last_vs_params.draw_id) &&
        vertex_offset == cmd->state.last_vs_params.vertex_offset &&
        first_instance == cmd->state.last_vs_params.first_instance) {
@@ -6195,6 +6212,7 @@ tu6_emit_vs_params(struct tu_cmd_buffer *cmd,
    cmd->state.last_vs_params.vertex_offset = vertex_offset;
    cmd->state.last_vs_params.first_instance = first_instance;
    cmd->state.last_vs_params.draw_id = draw_id;
+   cmd->state.last_vs_params.empty = false;
 
    struct tu_cs_entry entry = tu_cs_end_sub_stream(&cmd->sub_cs, &cs);
    cmd->state.vs_params = (struct tu_draw_state) {entry.bo->iova + entry.offset, entry.size / 4};
@@ -6373,7 +6391,7 @@ tu_CmdDrawIndirect(VkCommandBuffer commandBuffer,
    VK_FROM_HANDLE(tu_buffer, buf, _buffer);
    struct tu_cs *cs = &cmd->draw_cs;
 
-   tu6_emit_empty_vs_params(cmd);
+   tu6_emit_empty_vs_params<CHIP>(cmd);
 
    if (cmd->device->physical_device->info->a6xx.indirect_draw_wfm_quirk)
       draw_wfm(cmd);
@@ -6402,7 +6420,7 @@ tu_CmdDrawIndexedIndirect(VkCommandBuffer commandBuffer,
    VK_FROM_HANDLE(tu_buffer, buf, _buffer);
    struct tu_cs *cs = &cmd->draw_cs;
 
-   tu6_emit_empty_vs_params(cmd);
+   tu6_emit_empty_vs_params<CHIP>(cmd);
 
    if (cmd->device->physical_device->info->a6xx.indirect_draw_wfm_quirk)
       draw_wfm(cmd);
@@ -6436,7 +6454,7 @@ tu_CmdDrawIndirectCount(VkCommandBuffer commandBuffer,
    VK_FROM_HANDLE(tu_buffer, count_buf, countBuffer);
    struct tu_cs *cs = &cmd->draw_cs;
 
-   tu6_emit_empty_vs_params(cmd);
+   tu6_emit_empty_vs_params<CHIP>(cmd);
 
    /* It turns out that the firmware we have for a650 only partially fixed the
     * problem with CP_DRAW_INDIRECT_MULTI not waiting for WFI's to complete
@@ -6473,7 +6491,7 @@ tu_CmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer,
    VK_FROM_HANDLE(tu_buffer, count_buf, countBuffer);
    struct tu_cs *cs = &cmd->draw_cs;
 
-   tu6_emit_empty_vs_params(cmd);
+   tu6_emit_empty_vs_params<CHIP>(cmd);
 
    draw_wfm(cmd);
 
