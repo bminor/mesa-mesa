@@ -919,11 +919,9 @@ fs_reg_alloc::set_spill_costs()
 {
    float block_scale = 1.0;
    float spill_costs[fs->alloc.count];
-   bool no_spill[fs->alloc.count];
 
    for (unsigned i = 0; i < fs->alloc.count; i++) {
       spill_costs[i] = 0.0;
-      no_spill[i] = false;
    }
 
    /* Calculate costs for spilling nodes.  Call it a cost of 1 per
@@ -943,10 +941,10 @@ fs_reg_alloc::set_spill_costs()
       if (_mesa_set_search(spill_insts, inst)) {
          for (unsigned int i = 0; i < inst->sources; i++) {
 	    if (inst->src[i].file == VGRF)
-               no_spill[inst->src[i].nr] = true;
+               spill_costs[inst->src[i].nr] = INFINITY;
          }
 	 if (inst->dst.file == VGRF)
-            no_spill[inst->dst.nr] = true;
+            spill_costs[inst->dst.nr] = INFINITY;
       }
 
       switch (inst->opcode) {
@@ -979,7 +977,7 @@ fs_reg_alloc::set_spill_costs()
        * used in SCRATCH_READ/WRITE instructions so they'll always be flagged
        * no_spill.
        */
-      if (no_spill[i])
+      if (isinf(spill_costs[i]))
          continue;
 
       int live_length = live.vgrf_end[i] - live.vgrf_start[i];
