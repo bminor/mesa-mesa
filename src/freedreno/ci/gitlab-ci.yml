@@ -248,7 +248,7 @@ a660-vk:
   parallel: 5
   variables:
     DEQP_SUITE: freedreno-a660-vk
-    DEQP_FRACTION: 5
+    DEQP_FRACTION: 6
 
 a660-vk-full:
   extends:
