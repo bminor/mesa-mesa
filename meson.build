@@ -912,7 +912,9 @@ if get_option('allow-kcmp') \
   pre_args += '-DALLOW_KCMP'
 endif
 
-prog_python = import('python').find_installation('python3')
+# On Windows, a venv has no versioned aliased to 'python'.
+prog_python = find_program('python', 'python3', version : '>= 3.8')
+
 has_mako = run_command(
   prog_python, '-c',
   '''
