@@ -68,7 +68,6 @@ public:
     }
 
     void load(android::base::Stream* stream, GfxApiLogger& gfx_logger, HealthMonitor<>* healthMonitor) {
-        std::lock_guard<std::mutex> lock(mReconstructionMutex);
         mReconstruction.load(stream, gfx_logger, healthMonitor);
     }
 
