@@ -105,7 +105,7 @@ a618-vk-full:
     DEQP_SUITE: freedreno-a618-vk-full
     DEQP_FRACTION: 1
 
-a618-gl:
+.a618-gl:
   extends:
     - .lava-test-deqp:arm64
     - .lava-sc7180-trogdor-lazor-limozeen:arm64
@@ -117,7 +117,7 @@ a618-gl:
 
 a618-gl-full:
   extends:
-    - a618-gl
+    - .a618-gl
     - .collabora-freedreno-manual-rules
   timeout: 65m
   variables:
@@ -125,7 +125,7 @@ a618-gl-full:
 
 # Run dEQP EGL window system tests separately with the window systems available.
 # X11 takes over the screen, wayland is run headless.
-a618-egl:
+.a618-egl:
   extends:
     - .lava-test-deqp:arm64
     - .lava-sc7180-trogdor-lazor-limozeen:arm64
@@ -148,7 +148,7 @@ a618-skqp:
     HWCI_START_XORG: 1
     DEQP_SUITE: freedreno-a618-skqp
 
-a618-piglit:
+.a618-piglit:
   extends:
     - .lava-test-deqp:arm64
     - .lava-sc7180-trogdor-lazor-limozeen:arm64
