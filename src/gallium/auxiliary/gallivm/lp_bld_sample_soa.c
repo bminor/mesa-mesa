@@ -2266,6 +2266,8 @@ lp_build_sample_aniso(struct lp_build_sample_context *bld,
 
    LLVMValueRef float_N = lp_build_int_to_float(coord_bld, N);
    LLVMValueRef rcp_N = lp_build_rcp(coord_bld, float_N);
+   LLVMValueRef base_k = LLVMBuildFMul(builder, float_N, lp_build_const_vec(gallivm, coord_bld->type, -0.5), "");
+   base_k = lp_build_add(coord_bld, base_k, lp_build_const_vec(gallivm, coord_bld->type, 0.5));
 
    struct lp_build_for_loop_state loop_state;
    lp_build_for_loop_begin(&loop_state, gallivm, lp_build_const_int32(gallivm, 0),
@@ -2275,8 +2277,8 @@ lp_build_sample_aniso(struct lp_build_sample_context *bld,
       k = lp_build_broadcast_scalar(int_coord_bld, k);
 
       LLVMValueRef float_k = lp_build_int_to_float(coord_bld, k);
+      float_k = lp_build_add(coord_bld, float_k, base_k);
       float_k = lp_build_mul(coord_bld, float_k, rcp_N);
-      float_k = lp_build_add(coord_bld, float_k, lp_build_const_vec(gallivm, coord_bld->type, -0.5));
 
       LLVMValueRef u_offset = lp_build_mul(coord_bld, float_k, dudk);
       LLVMValueRef v_offset = lp_build_mul(coord_bld, float_k, dvdk);
