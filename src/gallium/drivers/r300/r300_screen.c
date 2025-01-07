@@ -105,131 +105,6 @@ static struct disk_cache* r300_get_disk_shader_cache(struct pipe_screen* pscreen
 	return r300screen->disk_shader_cache;
 }
 
-static int r300_get_param(struct pipe_screen* pscreen, enum pipe_cap param)
-{
-    struct r300_screen* r300screen = r300_screen(pscreen);
-    bool is_r500 = r300screen->caps.is_r500;
-
-    switch (param) {
-        /* Supported features (boolean caps). */
-        case PIPE_CAP_NPOT_TEXTURES:
-        case PIPE_CAP_MIXED_FRAMEBUFFER_SIZES:
-        case PIPE_CAP_MIXED_COLOR_DEPTH_BITS:
-        case PIPE_CAP_ANISOTROPIC_FILTER:
-        case PIPE_CAP_OCCLUSION_QUERY:
-        case PIPE_CAP_TEXTURE_MIRROR_CLAMP:
-        case PIPE_CAP_TEXTURE_MIRROR_CLAMP_TO_EDGE:
-        case PIPE_CAP_BLEND_EQUATION_SEPARATE:
-        case PIPE_CAP_VERTEX_ELEMENT_INSTANCE_DIVISOR:
-        case PIPE_CAP_FS_COORD_ORIGIN_UPPER_LEFT:
-        case PIPE_CAP_FS_COORD_PIXEL_CENTER_HALF_INTEGER:
-        case PIPE_CAP_CONDITIONAL_RENDER:
-        case PIPE_CAP_TEXTURE_BARRIER:
-        case PIPE_CAP_TGSI_CAN_COMPACT_CONSTANTS:
-        case PIPE_CAP_CLIP_HALFZ:
-        case PIPE_CAP_ALLOW_MAPPED_BUFFERS_DURING_EXECUTION:
-        case PIPE_CAP_LEGACY_MATH_RULES:
-        case PIPE_CAP_TGSI_TEXCOORD:
-        case PIPE_CAP_CALL_FINALIZE_NIR_IN_LINKER:
-            return 1;
-
-        case PIPE_CAP_TEXTURE_TRANSFER_MODES:
-            return PIPE_TEXTURE_TRANSFER_BLIT;
-
-        case PIPE_CAP_MIN_MAP_BUFFER_ALIGNMENT:
-            return R300_BUFFER_ALIGNMENT;
-
-        case PIPE_CAP_CONSTANT_BUFFER_OFFSET_ALIGNMENT:
-            return 16;
-
-        case PIPE_CAP_GLSL_FEATURE_LEVEL:
-        case PIPE_CAP_GLSL_FEATURE_LEVEL_COMPATIBILITY:
-            return 120;
-
-        /* r300 cannot do swizzling of compressed textures. Supported otherwise. */
-        case PIPE_CAP_TEXTURE_SWIZZLE:
-            return r300screen->caps.dxtc_swizzle;
-
-        /* We don't support color clamping on r500, so that we can use color
-         * interpolators for generic varyings. */
-        case PIPE_CAP_VERTEX_COLOR_CLAMPED:
-            return !is_r500;
-
-        /* Supported on r500 only. */
-        case PIPE_CAP_VERTEX_COLOR_UNCLAMPED:
-        case PIPE_CAP_MIXED_COLORBUFFER_FORMATS:
-        case PIPE_CAP_FRAGMENT_SHADER_TEXTURE_LOD:
-        case PIPE_CAP_FRAGMENT_SHADER_DERIVATIVES:
-            return is_r500 ? 1 : 0;
-
-        case PIPE_CAP_SHAREABLE_SHADERS:
-            return 0;
-
-        case PIPE_CAP_MAX_GS_INVOCATIONS:
-            return 32;
-       case PIPE_CAP_MAX_SHADER_BUFFER_SIZE_UINT:
-            return 1 << 27;
-
-        /* SWTCL-only features. */
-        case PIPE_CAP_PRIMITIVE_RESTART:
-        case PIPE_CAP_PRIMITIVE_RESTART_FIXED_INDEX:
-        case PIPE_CAP_USER_VERTEX_BUFFERS:
-        case PIPE_CAP_VS_WINDOW_SPACE_POSITION:
-            return !r300screen->caps.has_tcl;
-
-        /* HWTCL-only features / limitations. */
-        case PIPE_CAP_VERTEX_INPUT_ALIGNMENT:
-            return r300screen->caps.has_tcl ? PIPE_VERTEX_INPUT_ALIGNMENT_4BYTE : PIPE_VERTEX_INPUT_ALIGNMENT_NONE;
-
-        /* Texturing. */
-        case PIPE_CAP_MAX_TEXTURE_2D_SIZE:
-            return is_r500 ? 4096 : 2048;
-        case PIPE_CAP_MAX_TEXTURE_3D_LEVELS:
-        case PIPE_CAP_MAX_TEXTURE_CUBE_LEVELS:
-            /* 13 == 4096, 12 == 2048 */
-            return is_r500 ? 13 : 12;
-
-        /* Render targets. */
-        case PIPE_CAP_MAX_RENDER_TARGETS:
-            return 4;
-        case PIPE_CAP_ENDIANNESS:
-            return PIPE_ENDIAN_LITTLE;
-
-        case PIPE_CAP_MAX_VIEWPORTS:
-            return 1;
-
-        case PIPE_CAP_MAX_VERTEX_ATTRIB_STRIDE:
-            return 2048;
-
-        case PIPE_CAP_MAX_VARYINGS:
-            return 10;
-
-	case PIPE_CAP_PREFER_IMM_ARRAYS_AS_CONSTBUF:
-	    return 0;
-
-        case PIPE_CAP_VENDOR_ID:
-                return 0x1002;
-        case PIPE_CAP_DEVICE_ID:
-                return r300screen->info.pci_id;
-        case PIPE_CAP_ACCELERATED:
-                return 1;
-        case PIPE_CAP_VIDEO_MEMORY:
-                return r300screen->info.vram_size_kb >> 10;
-        case PIPE_CAP_UMA:
-                return 0;
-        case PIPE_CAP_PCI_GROUP:
-            return r300screen->info.pci.domain;
-        case PIPE_CAP_PCI_BUS:
-            return r300screen->info.pci.bus;
-        case PIPE_CAP_PCI_DEVICE:
-            return r300screen->info.pci.dev;
-        case PIPE_CAP_PCI_FUNCTION:
-            return r300screen->info.pci.func;
-        default:
-            return u_pipe_screen_get_param_defaults(pscreen, param);
-    }
-}
-
 static int r300_get_shader_param(struct pipe_screen *pscreen,
                                  enum pipe_shader_type shader,
                                  enum pipe_shader_cap param)
@@ -391,48 +266,6 @@ static int r300_get_shader_param(struct pipe_screen *pscreen,
         ; /* nothing */
     }
     return 0;
-}
-
-static float r300_get_paramf(struct pipe_screen* pscreen,
-                             enum pipe_capf param)
-{
-    struct r300_screen* r300screen = r300_screen(pscreen);
-
-    switch (param) {
-        case PIPE_CAPF_MIN_LINE_WIDTH:
-        case PIPE_CAPF_MIN_LINE_WIDTH_AA:
-        case PIPE_CAPF_MIN_POINT_SIZE:
-        case PIPE_CAPF_MIN_POINT_SIZE_AA:
-            return 1;
-        case PIPE_CAPF_POINT_SIZE_GRANULARITY:
-        case PIPE_CAPF_LINE_WIDTH_GRANULARITY:
-            return 0.1;
-        case PIPE_CAPF_MAX_LINE_WIDTH:
-        case PIPE_CAPF_MAX_LINE_WIDTH_AA:
-        case PIPE_CAPF_MAX_POINT_SIZE:
-        case PIPE_CAPF_MAX_POINT_SIZE_AA:
-            /* The maximum dimensions of the colorbuffer are our practical
-             * rendering limits. 2048 pixels should be enough for anybody. */
-            if (r300screen->caps.is_r500) {
-                return 4096.0f;
-            } else if (r300screen->caps.is_r400) {
-                return 4021.0f;
-            } else {
-                return 2560.0f;
-            }
-        case PIPE_CAPF_MAX_TEXTURE_ANISOTROPY:
-            return 16.0f;
-        case PIPE_CAPF_MAX_TEXTURE_LOD_BIAS:
-            return 16.0f;
-        case PIPE_CAPF_MIN_CONSERVATIVE_RASTER_DILATE:
-        case PIPE_CAPF_MAX_CONSERVATIVE_RASTER_DILATE:
-        case PIPE_CAPF_CONSERVATIVE_RASTER_DILATE_GRANULARITY:
-            return 0.0f;
-        default:
-            debug_printf("r300: Warning: Unknown CAP %d in get_paramf.\n",
-                         param);
-            return 0.0f;
-    }
 }
 
 static int r300_get_video_param(struct pipe_screen *screen,
@@ -975,9 +808,7 @@ struct pipe_screen* r300_screen_create(struct radeon_winsys *rws,
     r300screen->screen.get_device_vendor = r300_get_device_vendor;
     r300screen->screen.get_disk_shader_cache = r300_get_disk_shader_cache;
     r300screen->screen.get_screen_fd = r300_screen_get_fd;
-    r300screen->screen.get_param = r300_get_param;
     r300screen->screen.get_shader_param = r300_get_shader_param;
-    r300screen->screen.get_paramf = r300_get_paramf;
     r300screen->screen.get_video_param = r300_get_video_param;
     r300screen->screen.is_format_supported = r300_is_format_supported;
     r300screen->screen.is_video_format_supported = vl_video_buffer_is_format_supported;
