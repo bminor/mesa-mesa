@@ -1873,6 +1873,8 @@ agx_shader_initialize(struct agx_device *dev, struct agx_uncompiled_shader *so,
               nir->info.stage == MESA_SHADER_TESS_EVAL) {
       so->info.has_edgeflags = nir->info.outputs_written & VARYING_BIT_EDGE;
       so->info.cull_distance_size = nir->info.cull_distance_array_size;
+   } else if (nir->info.stage == MESA_SHADER_GEOMETRY) {
+      so->info.cull_distance_size = nir->info.cull_distance_array_size;
    }
 
    /* Shrink and vectorize SSBOs before lowering them, since it is harder to
@@ -2321,6 +2323,16 @@ optimize_blend_factor_w_1(enum pipe_blendfactor f)
       return f;
 }
 
+/* Tessellation ignored here due to the hard rebinding we do atm */
+static struct agx_uncompiled_shader *
+agx_last_uncompiled_vgt(struct agx_context *ctx)
+{
+   if (ctx->stage[MESA_SHADER_GEOMETRY].shader)
+      return ctx->stage[MESA_SHADER_GEOMETRY].shader;
+   else
+      return ctx->stage[MESA_SHADER_VERTEX].shader;
+}
+
 static bool
 agx_update_fs(struct agx_batch *batch)
 {
@@ -2336,7 +2348,8 @@ agx_update_fs(struct agx_batch *batch)
     */
    if (!(ctx->dirty & (AGX_DIRTY_VS_PROG | AGX_DIRTY_FS_PROG | AGX_DIRTY_RS |
                        AGX_DIRTY_BLEND | AGX_DIRTY_SAMPLE_MASK |
-                       AGX_DIRTY_PRIM | AGX_DIRTY_QUERY)))
+                       AGX_DIRTY_PRIM | AGX_DIRTY_QUERY)) &&
+       !ctx->stage[MESA_SHADER_GEOMETRY].dirty)
       return false;
 
    struct agx_device *dev = agx_device(ctx->base.screen);
@@ -2367,7 +2380,7 @@ agx_update_fs(struct agx_batch *batch)
          ctx->pipeline_statistics[PIPE_STAT_QUERY_PS_INVOCATIONS],
 
       .prolog.fs.cull_distance_size =
-         ctx->stage[MESA_SHADER_VERTEX].shader->info.cull_distance_size,
+         agx_last_uncompiled_vgt(ctx)->info.cull_distance_size,
 
       .prolog.fs.polygon_stipple =
          ctx->rast->base.poly_stipple_enable &&
