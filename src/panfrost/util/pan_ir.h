@@ -121,6 +121,10 @@ struct panfrost_compile_inputs {
       struct {
          uint32_t rt_conv[8];
       } bifrost;
+      struct {
+         /* Use LD_VAR_BUF[_IMM] instead of LD_VAR[_IMM] to load varyings. */
+         bool use_ld_var_buf;
+      } valhall;
    };
 };
 

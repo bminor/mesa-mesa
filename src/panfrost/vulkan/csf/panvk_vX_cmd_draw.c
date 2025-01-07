@@ -165,6 +165,73 @@ prepare_vs_driver_set(struct panvk_cmd_buffer *cmdbuf)
    return VK_SUCCESS;
 }
 
+static uint32_t
+get_varying_slots(const struct panvk_cmd_buffer *cmdbuf)
+{
+   const struct panvk_shader *vs = cmdbuf->state.gfx.vs.shader;
+   const struct panvk_shader *fs = get_fs(cmdbuf);
+   uint32_t varying_slots = 0;
+
+   if (fs) {
+      unsigned vs_vars = vs->info.varyings.output_count;
+      unsigned fs_vars = fs->info.varyings.input_count;
+      varying_slots = MAX2(vs_vars, fs_vars);
+   }
+
+   return varying_slots;
+}
+
+static void
+emit_varying_descs(const struct panvk_cmd_buffer *cmdbuf,
+                   struct mali_attribute_packed *descs)
+{
+   uint32_t varying_slots = get_varying_slots(cmdbuf);
+   /* Assumes 16 byte slots. We could do better. */
+   uint32_t varying_size = varying_slots * 16;
+
+   const struct panvk_shader *fs = get_fs(cmdbuf);
+
+   for (uint32_t i = 0; i < varying_slots; i++) {
+      const struct pan_shader_varying *var = &fs->info.varyings.input[i];
+      /* Skip special varyings. */
+      if (var->location < VARYING_SLOT_VAR0)
+         continue;
+
+      /* We currently always write out F32 in the vertex shaders, so the format
+       * needs to reflect this. */
+      enum pipe_format f = var->format;
+      switch (f) {
+      case PIPE_FORMAT_R16_FLOAT:
+         f = PIPE_FORMAT_R32_FLOAT;
+         break;
+      case PIPE_FORMAT_R16G16_FLOAT:
+         f = PIPE_FORMAT_R32G32_FLOAT;
+         break;
+      case PIPE_FORMAT_R16G16B16_FLOAT:
+         f = PIPE_FORMAT_R32G32B32_FLOAT;
+         break;
+      case PIPE_FORMAT_R16G16B16A16_FLOAT:
+         f = PIPE_FORMAT_R32G32B32A32_FLOAT;
+         break;
+      default:
+         break;
+      }
+
+      uint32_t loc = var->location - VARYING_SLOT_VAR0;
+      pan_pack(&descs[i], ATTRIBUTE, cfg) {
+         cfg.attribute_type = MALI_ATTRIBUTE_TYPE_VERTEX_PACKET;
+         cfg.offset_enable = false;
+         cfg.format = GENX(panfrost_format_from_pipe_format)(f)->hw;
+         cfg.table = 61;
+         cfg.frequency = MALI_ATTRIBUTE_FREQUENCY_VERTEX;
+         cfg.offset = 1024 + (loc * 16);
+         cfg.buffer_index = 0;
+         cfg.attribute_stride = varying_size;
+         cfg.packet_stride = varying_size + 16;
+      }
+   }
+}
+
 static VkResult
 prepare_fs_driver_set(struct panvk_cmd_buffer *cmdbuf)
 {
@@ -172,7 +239,7 @@ prepare_fs_driver_set(struct panvk_cmd_buffer *cmdbuf)
    const struct panvk_shader *fs = cmdbuf->state.gfx.fs.shader;
    const struct panvk_descriptor_state *desc_state =
       &cmdbuf->state.gfx.desc_state;
-   uint32_t desc_count = fs->desc_info.dyn_bufs.count + 1;
+   uint32_t desc_count = fs->desc_info.dyn_bufs.count + MAX_VARYING + 1;
    struct panfrost_ptr driver_set = panvk_cmd_alloc_dev_mem(
       cmdbuf, desc, desc_count * PANVK_DESCRIPTOR_SIZE, PANVK_DESCRIPTOR_SIZE);
    struct panvk_opaque_desc *descs = driver_set.cpu;
@@ -180,13 +247,15 @@ prepare_fs_driver_set(struct panvk_cmd_buffer *cmdbuf)
    if (desc_count && !driver_set.gpu)
       return VK_ERROR_OUT_OF_DEVICE_MEMORY;
 
-   /* Dummy sampler always comes first. */
-   pan_cast_and_pack(&descs[0], SAMPLER, cfg) {
+   emit_varying_descs(cmdbuf, (struct mali_attribute_packed *)(&descs[0]));
+
+   /* Dummy sampler always comes right after the varyings. */
+   pan_cast_and_pack(&descs[MAX_VARYING], SAMPLER, cfg) {
       cfg.clamp_integer_array_indices = false;
    }
 
-   panvk_per_arch(cmd_fill_dyn_bufs)(desc_state, fs,
-                                     (struct mali_buffer_packed *)(&descs[1]));
+   panvk_per_arch(cmd_fill_dyn_bufs)(
+      desc_state, fs, (struct mali_buffer_packed *)(&descs[1 + MAX_VARYING]));
 
    fs_desc_state->driver_set.dev_addr = driver_set.gpu;
    fs_desc_state->driver_set.size = desc_count * PANVK_DESCRIPTOR_SIZE;
@@ -1650,16 +1719,8 @@ prepare_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
    if (result != VK_SUCCESS)
       return result;
 
-   uint32_t varying_size = 0;
-
-   if (fs) {
-      unsigned vs_vars = vs->info.varyings.output_count;
-      unsigned fs_vars = fs->info.varyings.input_count;
-      unsigned var_slots = MAX2(vs_vars, fs_vars);
-
-      /* Assumes 16 byte slots. We could do better. */
-      varying_size = var_slots * 16;
-   }
+   /* Assumes 16 byte slots. We could do better. */
+   uint32_t varying_size = get_varying_slots(cmdbuf) * 16;
 
    cs_update_vt_ctx(b) {
       /* We don't use the resource dep system yet. */

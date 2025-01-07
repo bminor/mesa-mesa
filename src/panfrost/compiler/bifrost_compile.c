@@ -589,45 +589,30 @@ bi_emit_load_vary(bi_builder *b, nir_intrinsic_instr *instr)
       b->shader->info.bifrost->uses_flat_shading = true;
    }
 
-   enum bi_source_format source_format =
-      smooth ? BI_SOURCE_FORMAT_F32 : BI_SOURCE_FORMAT_FLAT32;
-
    nir_src *offset = nir_get_io_offset_src(instr);
    unsigned imm_index = 0;
    bool immediate = bi_is_imm_var_desc_handle(b, instr, &imm_index);
    unsigned base = nir_intrinsic_base(instr);
 
-   /* On Valhall, ensure the table and index are valid for usage with immediate
-    * form when IDVS isn't used */
-   if (b->shader->arch >= 9 && !b->shader->malloc_idvs)
-      immediate &= va_is_valid_const_table(pan_res_handle_get_table(base)) &&
-                   pan_res_handle_get_index(base) < 256;
+   /* LD_VAR_BUF[_IMM] takes an 8-bit offset, limiting its use to 64 or less
+    * varying components, assuming F32.
+    * Therefore, only use LD_VAR_BUF[_IMM] if explicitly told by the driver
+    * through a compiler input value, falling back to LD_VAR[_IMM] +
+    * Attribute Descriptors otherwise. */
+   bool use_ld_var_buf =
+      b->shader->malloc_idvs && b->shader->inputs->valhall.use_ld_var_buf;
 
-   if (b->shader->malloc_idvs && immediate) {
-      /* Immediate index given in bytes. */
-      bi_ld_var_buf_imm_to(b, sz, dest, src0, regfmt, sample, source_format,
-                           update, vecsize,
-                           bi_varying_offset(b->shader, instr));
-   } else if (immediate) {
-      bi_instr *I;
+   if (use_ld_var_buf) {
+      enum bi_source_format source_format =
+         smooth ? BI_SOURCE_FORMAT_F32 : BI_SOURCE_FORMAT_FLAT32;
 
-      if (smooth) {
-         I = bi_ld_var_imm_to(b, dest, src0, regfmt, sample, update, vecsize,
-                              pan_res_handle_get_index(imm_index));
+      if (immediate) {
+         /* Immediate index given in bytes. */
+         bi_ld_var_buf_imm_to(b, sz, dest, src0, regfmt, sample, source_format,
+                              update, vecsize,
+                              bi_varying_offset(b->shader, instr));
       } else {
-         I = bi_ld_var_flat_imm_to(b, dest, BI_FUNCTION_NONE, regfmt, vecsize,
-                                   pan_res_handle_get_index(imm_index));
-      }
-
-      /* Valhall usually uses machine-allocated IDVS. If this is disabled,
-       * use a simple Midgard-style ABI.
-       */
-      if (b->shader->arch >= 9)
-         I->table = va_res_fold_table_idx(pan_res_handle_get_table(base));
-   } else {
-      bi_index idx = bi_src_index(offset);
-
-      if (b->shader->malloc_idvs) {
+         bi_index idx = bi_src_index(offset);
          /* Index needs to be in bytes, but NIR gives the index
           * in slots. For now assume 16 bytes per element.
           */
@@ -639,7 +624,33 @@ bi_emit_load_vary(bi_builder *b, nir_intrinsic_instr *instr)
 
          bi_ld_var_buf_to(b, sz, dest, src0, idx_bytes, regfmt, sample,
                           source_format, update, vecsize);
+      }
+   } else {
+      /* On Valhall, ensure the table and index are valid for usage with
+       * immediate form when IDVS isn't used */
+      if (b->shader->arch >= 9)
+         immediate &= va_is_valid_const_table(pan_res_handle_get_table(base)) &&
+                      pan_res_handle_get_index(base) < 256;
+
+      if (immediate) {
+         bi_instr *I;
+
+         if (smooth) {
+            I = bi_ld_var_imm_to(b, dest, src0, regfmt, sample, update, vecsize,
+                                 pan_res_handle_get_index(imm_index));
+         } else {
+            I =
+               bi_ld_var_flat_imm_to(b, dest, BI_FUNCTION_NONE, regfmt, vecsize,
+                                     pan_res_handle_get_index(imm_index));
+         }
+
+         /* Valhall usually uses LD_VAR_BUF. If this is disabled, use a simple
+          * Midgard-style ABI. */
+         if (b->shader->arch >= 9)
+            I->table = va_res_fold_table_idx(pan_res_handle_get_table(base));
       } else {
+         bi_index idx = bi_src_index(offset);
+
          if (base != 0)
             idx = bi_iadd_u32(b, idx, bi_imm_u32(base), false);
 

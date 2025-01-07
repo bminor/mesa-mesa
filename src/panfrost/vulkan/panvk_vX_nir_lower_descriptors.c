@@ -1025,8 +1025,22 @@ create_copy_table(nir_shader *nir, struct lower_desc_ctx *ctx)
    for (uint32_t i = 0; i < PANVK_BIFROST_DESC_TABLE_COUNT; i++)
       copy_count += desc_info->others[i].count;
 #else
-   /* Dummy sampler comes after the vertex attributes. */
-   uint32_t dummy_sampler_idx = nir->info.stage == MESA_SHADER_VERTEX ? 16 : 0;
+   uint32_t dummy_sampler_idx;
+   switch (nir->info.stage) {
+   case MESA_SHADER_VERTEX:
+      /* Dummy sampler comes after the vertex attributes. */
+      dummy_sampler_idx = 16;
+      break;
+   case MESA_SHADER_FRAGMENT:
+      /* Dummy sampler comes after the varyings. */
+      dummy_sampler_idx = MAX_VARYING;
+      break;
+   case MESA_SHADER_COMPUTE:
+      dummy_sampler_idx = 0;
+      break;
+   default:
+      unreachable("unexpected stage");
+   }
    desc_info->dummy_sampler_handle = pan_res_handle(0, dummy_sampler_idx);
 
    copy_count = desc_info->dyn_bufs.count + desc_info->dyn_bufs.count;
