@@ -773,37 +773,6 @@ static const char* r600_get_name(struct pipe_screen* pscreen)
 	return rscreen->renderer_string;
 }
 
-static float r600_get_paramf(struct pipe_screen* pscreen,
-			     enum pipe_capf param)
-{
-	switch (param) {
-	case PIPE_CAPF_MIN_LINE_WIDTH:
-	case PIPE_CAPF_MIN_LINE_WIDTH_AA:
-	case PIPE_CAPF_MIN_POINT_SIZE:
-	case PIPE_CAPF_MIN_POINT_SIZE_AA:
-		return 1;
-
-	case PIPE_CAPF_POINT_SIZE_GRANULARITY:
-	case PIPE_CAPF_LINE_WIDTH_GRANULARITY:
-		return 0.1;
-
-	case PIPE_CAPF_MAX_LINE_WIDTH:
-	case PIPE_CAPF_MAX_LINE_WIDTH_AA:
-	case PIPE_CAPF_MAX_POINT_SIZE:
-	case PIPE_CAPF_MAX_POINT_SIZE_AA:
-         return 8191.0f;
-	case PIPE_CAPF_MAX_TEXTURE_ANISOTROPY:
-		return 16.0f;
-	case PIPE_CAPF_MAX_TEXTURE_LOD_BIAS:
-		return 16.0f;
-    case PIPE_CAPF_MIN_CONSERVATIVE_RASTER_DILATE:
-    case PIPE_CAPF_MAX_CONSERVATIVE_RASTER_DILATE:
-    case PIPE_CAPF_CONSERVATIVE_RASTER_DILATE_GRANULARITY:
-        return 0.0f;
-	}
-	return 0.0f;
-}
-
 static int r600_get_video_param(struct pipe_screen *screen,
 				enum pipe_video_profile profile,
 				enum pipe_video_entrypoint entrypoint,
@@ -1266,7 +1235,6 @@ bool r600_common_screen_init(struct r600_common_screen *rscreen,
 	rscreen->b.get_disk_shader_cache = r600_get_disk_shader_cache;
 	rscreen->b.get_compute_param = r600_get_compute_param;
 	rscreen->b.get_screen_fd = r600_get_screen_fd;
-	rscreen->b.get_paramf = r600_get_paramf;
 	rscreen->b.get_timestamp = r600_get_timestamp;
 	rscreen->b.get_compiler_options = r600_get_compiler_options;
 	rscreen->b.fence_finish = r600_fence_finish;
