@@ -227,7 +227,7 @@ try_swap_two_srcs(struct ir3_instruction *instr, unsigned n, unsigned new_flags,
 
    if (!valid_swap) {
       /* put things back the way they were: */
-      swap(instr->srcs[0], instr->srcs[1]);
+      swap(instr->srcs[swap_n], instr->srcs[n]);
    } else {
       /* otherwise leave things swapped */
       instr->cat3.swapped = true;
