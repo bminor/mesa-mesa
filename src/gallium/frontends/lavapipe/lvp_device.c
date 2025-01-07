@@ -121,6 +121,7 @@ static const struct vk_device_extension_table lvp_device_extensions_supported = 
    .KHR_create_renderpass2                = true,
    .KHR_compute_shader_derivatives        = true,
    .KHR_copy_commands2                    = true,
+   .KHR_copy_memory_indirect              = true,
    .KHR_dedicated_allocation              = true,
    .KHR_deferred_host_operations          = true,
    .KHR_depth_stencil_resolve             = true,
@@ -769,6 +770,10 @@ lvp_get_features(const struct lvp_physical_device *pdevice,
       .shaderImageInt64Atomics = true,
       .sparseImageInt64Atomics = true,
 
+      /* VK_KHR_copy_memory_indirect */
+      .indirectMemoryCopy = true,
+      .indirectMemoryToImageCopy = true,
+
       /* VK_EXT_memory_priority */
       .memoryPriority = true,
 
@@ -1316,6 +1321,9 @@ lvp_get_properties(const struct lvp_physical_device *device, struct vk_propertie
 
    /* VK_EXT_host_image_copy */
    lvp_device_get_cache_uuid(p->optimalTilingLayoutUUID);
+
+   /* VK_KHR_copy_memory_indirect */
+   p->supportedQueues = 0xffffffff;
 
    /* maintenance7 */
    p->robustFragmentShadingRateAttachmentAccess = false;

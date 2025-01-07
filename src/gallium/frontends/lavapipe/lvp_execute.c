@@ -2153,6 +2153,48 @@ static void handle_copy_image_to_buffer2(struct vk_cmd_queue_entry *cmd,
    }
 }
 
+static void
+handle_copy_memory_to_image_indirect(struct vk_cmd_queue_entry *cmd,
+                                     struct rendering_state *state)
+{
+   const VkCopyMemoryToImageIndirectInfoKHR *copycmd = cmd->u.copy_memory_to_image_indirect_khr.copy_memory_to_image_indirect_info;
+   LVP_FROM_HANDLE(lvp_image, image, copycmd->dstImage);
+
+   for (uint32_t i = 0; i < copycmd->copyCount; i++) {
+      uint8_t *ptr = (void*)(uintptr_t)copycmd->copyAddressRange.address;
+      VkCopyMemoryToImageIndirectCommandKHR *copy = (void*)(ptr + i * copycmd->copyAddressRange.stride);
+      VkImageSubresourceLayers sub = copy->imageSubresource;
+      VkOffset3D off = copy->imageOffset;
+      VkExtent3D ext = copy->imageExtent;
+      if (image->vk.image_type == VK_IMAGE_TYPE_3D) {
+         off.z = sub.baseArrayLayer;
+         ext.depth = sub.layerCount;
+         sub.baseArrayLayer = 0;
+         sub.layerCount = 1;
+      }
+      VkMemoryToImageCopy copyregion = {
+         VK_STRUCTURE_TYPE_MEMORY_TO_IMAGE_COPY_EXT,
+         NULL,
+         (void*)(uintptr_t)copy->srcAddress,
+         copy->bufferRowLength,
+         copy->bufferImageHeight,
+         sub,
+         off,
+         ext,
+      };
+      VkCopyMemoryToImageInfoEXT hiccopy = {
+         VK_STRUCTURE_TYPE_COPY_MEMORY_TO_IMAGE_INFO_EXT,
+         NULL,
+         0,
+         copycmd->dstImage,
+         VK_IMAGE_LAYOUT_GENERAL,
+         1,
+         &copyregion
+      };
+      state->device->vk.dispatch_table.CopyMemoryToImageEXT(lvp_device_to_handle(state->device), &hiccopy);
+   }
+}
+
 static void handle_copy_buffer_to_image(struct vk_cmd_queue_entry *cmd,
                                         struct rendering_state *state)
 {
@@ -2345,6 +2387,20 @@ static void handle_copy_image(struct vk_cmd_queue_entry *cmd,
                                           region->srcSubresource.mipLevel,
                                           &src_box);
       }
+   }
+}
+
+static void handle_copy_memory_indirect(struct vk_cmd_queue_entry *cmd,
+                                        struct rendering_state *state)
+{
+   const VkCopyMemoryIndirectInfoKHR *copycmd = cmd->u.copy_memory_indirect_khr.copy_memory_indirect_info;
+
+   for (uint32_t i = 0; i < copycmd->copyCount; i++) {
+      uint8_t *ptr = (void*)(uintptr_t)copycmd->copyAddressRange.address;
+      VkCopyMemoryIndirectCommandKHR *copy = (void*)(ptr + i * copycmd->copyAddressRange.stride);
+      void *src = (void*)(uintptr_t)copy->srcAddress;
+      void *dst = (void*)(uintptr_t)copy->dstAddress;
+      memcpy(dst, src, copycmd->copyAddressRange.size);
    }
 }
 
@@ -4716,6 +4772,8 @@ void lvp_add_enqueue_cmd_entrypoints(struct vk_device_dispatch_table *disp)
    ENQUEUE_CMD(CmdClearDepthStencilImage)
    ENQUEUE_CMD(CmdClearAttachments)
    ENQUEUE_CMD(CmdResolveImage2)
+   ENQUEUE_CMD(CmdCopyMemoryIndirectKHR)
+   ENQUEUE_CMD(CmdCopyMemoryToImageIndirectKHR)
    ENQUEUE_CMD(CmdBeginQueryIndexedEXT)
    ENQUEUE_CMD(CmdEndQueryIndexedEXT)
    ENQUEUE_CMD(CmdBeginQuery)
@@ -5162,6 +5220,12 @@ static void lvp_execute_cmd_buffer(struct list_head *cmds,
          break;
       case VK_CMD_BIND_SHADERS_EXT:
          handle_shaders(cmd, state);
+         break;
+      case VK_CMD_COPY_MEMORY_INDIRECT_KHR:
+         handle_copy_memory_indirect(cmd, state);
+         break;
+      case VK_CMD_COPY_MEMORY_TO_IMAGE_INDIRECT_KHR:
+         handle_copy_memory_to_image_indirect(cmd, state);
          break;
       case VK_CMD_SET_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT:
          break;
