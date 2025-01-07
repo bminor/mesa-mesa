@@ -1492,7 +1492,6 @@ static void gfx10_shader_ngg(struct si_screen *sscreen, struct si_shader *shader
    unsigned gs_num_invocations = gs_sel->stage == MESA_SHADER_GEOMETRY ?
                                     CLAMP(gs_info->base.gs.invocations, 1, 32) : 0;
    unsigned input_prim = si_get_input_prim(gs_sel, &shader->key, false);
-   bool break_wave_at_eoi = false;
 
    struct si_pm4_state *pm4 = si_get_shader_pm4_state(shader, NULL);
    if (!pm4)
@@ -1530,9 +1529,6 @@ static void gfx10_shader_ngg(struct si_screen *sscreen, struct si_shader *shader
       assert(es_stage == MESA_SHADER_TESS_EVAL);
       es_vgpr_comp_cnt = es_enable_prim_id ? 3 : 2;
       num_user_sgprs = GFX9_GS_NUM_USER_SGPR;
-
-      if (es_enable_prim_id || gs_info->uses_primid)
-         break_wave_at_eoi = true;
    }
 
    /* Primitives with adjancency can only occur without tessellation. */
@@ -1704,13 +1700,11 @@ static void gfx10_shader_ngg(struct si_screen *sscreen, struct si_shader *shader
 
       shader->ge_cntl = S_03096C_PRIMS_PER_SUBGRP(shader->ngg.max_gsprims) |
                         S_03096C_VERTS_PER_SUBGRP(shader->ngg.hw_max_esverts) |
-                        S_03096C_BREAK_PRIMGRP_AT_EOI(break_wave_at_eoi) |
                         S_03096C_PRIM_GRP_SIZE_GFX11(
                            CLAMP(max_prim_grp_size / MAX2(prim_amp_factor, 1), 1, 256));
    } else {
       shader->ge_cntl = S_03096C_PRIM_GRP_SIZE_GFX10(shader->ngg.max_gsprims) |
-                        S_03096C_VERT_GRP_SIZE(shader->ngg.hw_max_esverts) |
-                        S_03096C_BREAK_WAVE_AT_EOI(break_wave_at_eoi);
+                        S_03096C_VERT_GRP_SIZE(shader->ngg.hw_max_esverts);
 
       shader->ngg.vgt_gs_onchip_cntl =
          S_028A44_ES_VERTS_PER_SUBGRP(shader->ngg.hw_max_esverts) |
