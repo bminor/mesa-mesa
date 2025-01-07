@@ -372,6 +372,10 @@ SPDX-License-Identifier: MIT
      ({SRC2_USE} != 0)
 </expr>
 
+<expr name="#instruction-has-src0-src1-src2">
+     ({SRC0_USE} != 0) &amp;&amp; ({SRC1_USE} != 0)  &amp;&amp; ({SRC2_USE} != 0)
+</expr>
+
 <bitset name="#instruction-alu-no-dst-maybe-src0-src1" extends="#instruction-alu">
 	<doc>Needed for texkill</doc>
 	<display>
@@ -785,7 +789,7 @@ SPDX-License-Identifier: MIT
 	<field name="SRC2_RGROUP" low="124" high="126" type="#reg_group"/>
 </bitset>
 
-<bitset name="#instruction-tex-maybe-src0-src1" extends="#instruction-tex">
+<bitset name="#instruction-tex-src0-maybe-src1-src2" extends="#instruction-tex">
 	<meta has_dest="true" valid_srcs="0|1"/>
 
 	<display>
@@ -795,6 +799,12 @@ SPDX-License-Identifier: MIT
 	<override expr="#instruction-has-src0">
 		<display>
 			{INSTR_TEX} {DST:align=18}, tex{TEX_ID}{TEX_SWIZ}, {SRC0}, void, void
+		</display>
+	</override>
+
+	<override expr="#instruction-has-src0-src1-src2">
+		<display>
+			{INSTR_TEX} {DST:align=18}, tex{TEX_ID}{TEX_SWIZ}, {SRC0}, {SRC1}, {SRC2}
 		</display>
 	</override>
 
@@ -821,13 +831,15 @@ SPDX-License-Identifier: MIT
 	<field name="SRC1_RGROUP" low="96" high="98" type="#reg_group"/>
 
 	<!-- SRC2 -->
-	<pattern pos="99">0</pattern> <!-- SRC2_USE -->
-	<pattern low="100" high="108">000000000</pattern> <!-- SRC2_REG -->
-	<pattern low="110" high="117">00000000</pattern> <!-- SRC2_SWIZ -->
-	<pattern pos="118">0</pattern> <!-- SRC2_NEG -->
-	<pattern pos="119">0</pattern> <!-- SRC2_ABS -->
-	<pattern low="121" high="123">000</pattern> <!-- SRC2_AMODE -->
-	<pattern low="124" high="126">000</pattern> <!-- SRC2_RGROUP -->
+	<field name="SRC2_USE" pos="99" type="bool"/> <!-- SRC2_USE -->
+	<field name="SRC2_REG" low="100" high="108" type="uint"/>
+	<field name="SRC2" low="110" high="119" type="#instruction-src">
+		<param name="SRC2_REG" as="SRC_REG"/>
+		<param name="SRC2_AMODE" as="SRC_AMODE"/>
+		<param name="SRC2_RGROUP" as="SRC_RGROUP"/>
+	</field>
+	<field name="SRC2_AMODE" low="121" high="123" type="#reg_addressing_mode"/>
+	<field name="SRC2_RGROUP" low="124" high="126" type="#reg_group"/>
 </bitset>
 
 <bitset name="#instruction-cf" extends="#instruction">
@@ -1197,7 +1209,7 @@ SPDX-License-Identifier: MIT
 	<pattern pos="80">0</pattern> <!-- OPCODE_BIT6 -->
 </bitset>
 
-<bitset name="texldb" extends="#instruction-tex-maybe-src0-src1">
+<bitset name="texldb" extends="#instruction-tex-src0-maybe-src1-src2">
 	<pattern low="0" high="5">011001</pattern> <!-- OPC -->
 	<pattern pos="80">0</pattern> <!-- OPCODE_BIT6 -->
 </bitset>
@@ -1207,7 +1219,7 @@ SPDX-License-Identifier: MIT
 	<pattern pos="80">0</pattern> <!-- OPCODE_BIT6 -->
 </bitset>
 
-<bitset name="texldl" extends="#instruction-tex-maybe-src0-src1">
+<bitset name="texldl" extends="#instruction-tex-src0-maybe-src1-src2">
 	<pattern low="0" high="5">011011</pattern> <!-- OPC -->
 	<pattern pos="80">0</pattern> <!-- OPCODE_BIT6 -->
 </bitset>
