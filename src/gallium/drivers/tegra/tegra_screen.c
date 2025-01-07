@@ -644,5 +644,7 @@ tegra_screen_create(int fd)
    screen->base.get_dmabuf_modifier_planes = tegra_screen_get_dmabuf_modifier_planes;
    screen->base.memobj_create_from_handle = tegra_screen_memobj_create_from_handle;
 
+   memcpy((void *)&screen->base.caps, &screen->gpu->caps, sizeof(screen->base.caps));
+
    return &screen->base;
 }
