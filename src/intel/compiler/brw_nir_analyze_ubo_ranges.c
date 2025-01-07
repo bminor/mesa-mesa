@@ -288,7 +288,7 @@ brw_nir_analyze_ubo_ranges(const struct brw_compiler *compiler,
    const int max_ubos = 4;
    nr_entries = MIN2(nr_entries, max_ubos);
 
-   const unsigned max_push_regs = 64;
+   const unsigned max_push_regs = 64 / reg_unit(compiler->devinfo);
    unsigned total_push_regs = 0;
 
    for (unsigned i = 0; i < nr_entries; i++) {
