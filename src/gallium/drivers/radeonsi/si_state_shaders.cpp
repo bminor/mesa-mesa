@@ -3847,10 +3847,11 @@ static void si_bind_vs_shader(struct pipe_context *ctx, void *state)
 static void si_update_tess_uses_prim_id(struct si_context *sctx)
 {
    sctx->ia_multi_vgt_param_key.u.tess_uses_prim_id =
-      (sctx->shader.tes.cso && sctx->shader.tes.cso->info.uses_primid) ||
-      (sctx->shader.tcs.cso && sctx->shader.tcs.cso->info.uses_primid) ||
-      (sctx->shader.gs.cso && sctx->shader.gs.cso->info.uses_primid) ||
-      (sctx->shader.ps.cso && !sctx->shader.gs.cso && sctx->shader.ps.cso->info.uses_primid);
+      sctx->shader.tes.cso &&
+      ((sctx->shader.tcs.cso && sctx->shader.tcs.cso->info.uses_primid) ||
+       sctx->shader.tes.cso->info.uses_primid ||
+       (sctx->shader.gs.cso && sctx->shader.gs.cso->info.uses_primid) ||
+       (!sctx->shader.gs.cso && sctx->shader.ps.cso && sctx->shader.ps.cso->info.uses_primid));
 }
 
 bool si_update_ngg(struct si_context *sctx)
