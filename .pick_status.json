@@ -1254,7 +1254,7 @@
         "description": "frontends/va: Only report surface alignment when non-zero",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b24748a93ab164c5c5884e49974de0902a42c3be",
         "notes": null
