@@ -547,6 +547,13 @@ etna_set_vertex_buffers(struct pipe_context *pctx, unsigned num_buffers,
                                 true);
    so->count = util_last_bit(so->enabled_mask);
 
+   if (!num_buffers) {
+      so->count = 1;
+      so->cvb[0].FE_VERTEX_STREAM_BASE_ADDR.bo = ctx->screen->dummy_bo;
+      so->cvb[0].FE_VERTEX_STREAM_BASE_ADDR.offset = 0;
+      so->cvb[0].FE_VERTEX_STREAM_BASE_ADDR.flags = ETNA_RELOC_READ;
+   }
+
    for (unsigned idx = 0; idx < num_buffers; ++idx) {
       struct compiled_set_vertex_buffer *cs = &so->cvb[idx];
       struct pipe_vertex_buffer *vbi = &so->vb[idx];
@@ -634,6 +641,18 @@ etna_vertex_elements_state_create(struct pipe_context *pctx,
 
    /* XXX could minimize number of consecutive stretches here by sorting, and
     * permuting the inputs in shader or does Mesa do this already? */
+
+   if (!num_elements) {
+      /* There's no way to disable all elements on the hardware, so we need to
+       * plug in a dummy element and vertex buffer (stride = 0, so only fetches
+       * first location). */
+      static const struct pipe_vertex_element dummy_element = {
+         .src_format = PIPE_FORMAT_R8G8B8A8_UNORM,
+      };
+
+      elements = &dummy_element;
+      num_elements = 1;
+   }
 
    cs->num_elements = num_elements;
 
