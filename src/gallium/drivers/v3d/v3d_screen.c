@@ -534,6 +534,165 @@ v3d_get_compute_param(struct pipe_screen *pscreen, enum pipe_shader_ir ir_type,
         return 0;
 }
 
+static void
+v3d_init_screen_caps(struct v3d_screen *screen)
+{
+        struct pipe_caps *caps = (struct pipe_caps *)&screen->base.caps;
+
+        u_init_pipe_screen_caps(&screen->base, 1);
+
+        /* Supported features (boolean caps). */
+        caps->vertex_color_unclamped = true;
+        caps->npot_textures = true;
+        caps->blend_equation_separate = true;
+        caps->texture_multisample = true;
+        caps->texture_swizzle = true;
+        caps->vertex_element_instance_divisor = true;
+        caps->start_instance = true;
+        caps->vs_instanceid = true;
+        caps->fragment_shader_texture_lod = true;
+        caps->fragment_shader_derivatives = true;
+        caps->primitive_restart_fixed_index = true;
+        caps->emulate_nonfixed_primitive_restart = true;
+        caps->primitive_restart = true;
+        caps->occlusion_query = true;
+        caps->stream_output_pause_resume = true;
+        caps->draw_indirect = true;
+        caps->multi_draw_indirect = true;
+        caps->quads_follow_provoking_vertex_convention = true;
+        caps->signed_vertex_buffer_offset = true;
+        caps->shader_pack_half_float = true;
+        caps->texture_half_float_linear = true;
+        caps->framebuffer_no_attachment = true;
+        caps->fs_face_is_integer_sysval = true;
+        caps->tgsi_texcoord = true;
+        caps->texture_mirror_clamp_to_edge = true;
+        caps->sampler_view_target = true;
+        caps->anisotropic_filter = true;
+        caps->copy_between_compressed_and_plain_formats = true;
+        caps->indep_blend_func = true;
+        caps->conditional_render = true;
+        caps->conditional_render_inverted = true;
+        caps->cube_map_array = true;
+        caps->texture_barrier = true;
+        caps->polygon_offset_clamp = true;
+        caps->texture_query_lod = true;
+
+        caps->query_timestamp =
+        caps->query_time_elapsed = screen->has_cpu_queue && screen->has_multisync;
+        caps->texture_sampler_independent = false;
+
+        /* We can't enable this flag, because it results in load_ubo
+         * intrinsics across a 16b boundary, but v3d's TMU general
+         * memory accesses wrap on 16b boundaries.
+         */
+        caps->packed_uniforms = false;
+
+        caps->nir_images_as_deref = false;
+
+        /* XXX perf: we don't want to emit these extra blits for
+         * glReadPixels(), since we still have to do an uncached read
+         * from the GPU of the result after waiting for the TFU blit
+         * to happen.  However, disabling this introduces instability
+         * in
+         * dEQP-GLES31.functional.image_load_store.early_fragment_tests.*
+         * and corruption in chromium's rendering.
+         */
+        caps->texture_transfer_modes = PIPE_TEXTURE_TRANSFER_BLIT;
+
+        caps->compute = screen->has_csd;
+
+        caps->generate_mipmap = v3d_has_feature(screen, DRM_V3D_PARAM_SUPPORTS_TFU);
+
+        caps->indep_blend_enable = true;
+
+        caps->constant_buffer_offset_alignment = V3D_NON_COHERENT_ATOM_SIZE;
+
+        caps->max_texture_gather_components = 4;
+
+        /* Disables shader storage when 0. */
+        caps->shader_buffer_offset_alignment = screen->has_cache_flush ? 4 : 0;
+
+        caps->glsl_feature_level = 330;
+
+        caps->essl_feature_level = 310;
+
+        caps->glsl_feature_level_compatibility = 140;
+
+        caps->fs_coord_origin_upper_left = true;
+        caps->fs_coord_origin_lower_left = false;
+        caps->fs_coord_pixel_center_integer = false;
+        caps->fs_coord_pixel_center_half_integer = true;
+
+        caps->mixed_framebuffer_sizes = true;
+        caps->mixed_color_depth_bits = true;
+
+        caps->max_stream_output_buffers = 4;
+
+        caps->max_varyings = V3D_MAX_FS_INPUTS / 4;
+
+        /* Texturing. */
+        caps->max_texture_2d_size =
+                screen->nonmsaa_texture_size_limit ? 7680 : V3D_MAX_IMAGE_DIMENSION;
+        caps->max_texture_cube_levels =
+        caps->max_texture_3d_levels = V3D_MAX_MIP_LEVELS;
+        caps->max_texture_array_layers = V3D_MAX_ARRAY_LAYERS;
+
+        caps->max_render_targets = V3D_MAX_RENDER_TARGETS(screen->devinfo.ver);
+
+        caps->vendor_id = 0x14E4;
+
+        uint64_t system_memory;
+        caps->video_memory = os_get_total_physical_memory(&system_memory) ?
+                system_memory >> 20 : 0;
+
+        caps->uma = true;
+
+        caps->alpha_test = false;
+        caps->flatshade = false;
+        caps->two_sided_color = false;
+        caps->vertex_color_clamped = false;
+        caps->fragment_color_clamped = false;
+        caps->gl_clamp = false;
+
+        /* Geometry shaders */
+        /* Minimum required by GLES 3.2 */
+        caps->max_geometry_total_output_components = 1024;
+        /* MAX_GEOMETRY_TOTAL_OUTPUT_COMPONENTS / 4 */
+        caps->max_geometry_output_vertices = 256;
+        caps->max_gs_invocations = 32;
+
+        caps->supported_prim_modes =
+        caps->supported_prim_modes_with_restart = screen->prim_types;
+
+        caps->texture_buffer_objects = true;
+
+        caps->texture_buffer_offset_alignment = V3D_TMU_TEXEL_ALIGN;
+
+        caps->image_store_formatted = false;
+
+        caps->native_fence_fd = true;
+
+        caps->depth_clip_disable = screen->devinfo.ver >= 71;
+
+        caps->min_line_width =
+        caps->min_line_width_aa =
+        caps->min_point_size =
+        caps->min_point_size_aa = 1;
+
+        caps->point_size_granularity =
+        caps->line_width_granularity = 0.1;
+
+        caps->max_line_width =
+        caps->max_line_width_aa = V3D_MAX_LINE_WIDTH;
+
+        caps->max_point_size =
+        caps->max_point_size_aa = V3D_MAX_POINT_SIZE;
+
+        caps->max_texture_anisotropy = 16.0f;
+        caps->max_texture_lod_bias = 16.0f;
+}
+
 static bool
 v3d_screen_is_format_supported(struct pipe_screen *pscreen,
                                enum pipe_format format,
@@ -1009,6 +1168,8 @@ v3d_screen_create(int fd, const struct pipe_screen_config *config,
                              BITFIELD_BIT(MESA_PRIM_LINE_STRIP_ADJACENCY) |
                              BITFIELD_BIT(MESA_PRIM_TRIANGLES_ADJACENCY) |
                              BITFIELD_BIT(MESA_PRIM_TRIANGLE_STRIP_ADJACENCY);
+
+        v3d_init_screen_caps(screen);
 
         return pscreen;
 
