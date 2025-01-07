@@ -503,7 +503,9 @@ emit_unzip(const fs_builder &lbld, fs_inst *inst, unsigned i)
       const unsigned num_components = inst->components_read(i);
       const brw_reg tmp = lbld.vgrf(inst->src[i].type, num_components);
 
-      brw_reg comps[num_components];
+      assert(num_components <= NIR_MAX_VEC_COMPONENTS);
+      brw_reg comps[NIR_MAX_VEC_COMPONENTS];
+
       for (unsigned k = 0; k < num_components; ++k)
          comps[k] = offset(src, inst->exec_size, k);
       lbld.VEC(tmp, comps, num_components);
