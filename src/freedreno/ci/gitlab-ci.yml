@@ -302,7 +302,7 @@ a630-gles-asan-full:
     DEQP_SUITE: freedreno-a630-gles-asan-full
     TEST_PHASE_TIMEOUT_MINUTES: 55
 
-a630-vk:
+.a630-vk:
   extends:
     - .a630-test
     - .baremetal-deqp-test
@@ -317,7 +317,7 @@ a630-vk-full:
   # blocking up normal merges, so going more parallel doesn't make any sense.
   timeout: 2h
   extends:
-    - a630-vk
+    - .a630-vk
     - .a630-full
     - .google-turnip-manual-rules
   parallel: 2
