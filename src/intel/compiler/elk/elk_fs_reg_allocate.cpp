@@ -983,7 +983,8 @@ elk_fs_reg_alloc::spill_reg(unsigned spill_reg)
     * SIMD16 mode, because we'd stomp the FB writes.
     */
    if (!fs->spilled_any_registers) {
-      bool mrf_used[ELK_MAX_MRF(devinfo->ver)];
+      bool mrf_used[ELK_MAX_MRF_ALL];
+      assert(ARRAY_SIZE(mrf_used) <= ELK_MAX_MRF(devinfo->ver));
       get_used_mrfs(fs, mrf_used);
 
       for (int i = spill_base_mrf(fs); i < ELK_MAX_MRF(devinfo->ver); i++) {
