@@ -653,6 +653,237 @@ virgl_get_compute_param(struct pipe_screen *screen,
    return 0;
 }
 
+static void
+virgl_init_screen_caps(struct virgl_screen *vscreen)
+{
+   struct pipe_caps *caps = (struct pipe_caps *)&vscreen->base.caps;
+
+   u_init_pipe_screen_caps(&vscreen->base, -1);
+
+   caps->npot_textures = true;
+   caps->fragment_shader_texture_lod = true;
+   caps->fragment_shader_derivatives = true;
+   caps->anisotropic_filter = vscreen->caps.caps.v2.max_anisotropy > 1.0;
+   caps->max_render_targets = vscreen->caps.caps.v1.max_render_targets;
+   caps->max_dual_source_render_targets =
+      vscreen->caps.caps.v1.max_dual_source_render_targets;
+   caps->occlusion_query = vscreen->caps.caps.v1.bset.occlusion_query;
+   caps->texture_mirror_clamp_to_edge =
+      vscreen->caps.caps.v2.host_feature_check_version >= 20 ?
+      vscreen->caps.caps.v2.capability_bits_v2 & VIRGL_CAP_V2_MIRROR_CLAMP_TO_EDGE :
+      vscreen->caps.caps.v1.bset.mirror_clamp &&
+      !(vscreen->caps.caps.v2.capability_bits & VIRGL_CAP_HOST_IS_GLES);
+   caps->texture_mirror_clamp =
+      vscreen->caps.caps.v2.host_feature_check_version >= 22 ?
+      vscreen->caps.caps.v2.capability_bits_v2 & VIRGL_CAP_V2_MIRROR_CLAMP :
+      vscreen->caps.caps.v1.bset.mirror_clamp &&
+      !(vscreen->caps.caps.v2.capability_bits & VIRGL_CAP_HOST_IS_GLES);
+   caps->texture_swizzle = true;
+   caps->max_texture_2d_size = vscreen->caps.caps.v2.max_texture_2d_size ?
+      vscreen->caps.caps.v2.max_texture_2d_size : 16384;
+   caps->max_texture_3d_levels = vscreen->caps.caps.v2.max_texture_3d_size ?
+      1 + util_logbase2(vscreen->caps.caps.v2.max_texture_3d_size) :
+      9; /* 256 x 256 x 256 */
+   caps->max_texture_cube_levels = vscreen->caps.caps.v2.max_texture_cube_size ?
+      1 + util_logbase2(vscreen->caps.caps.v2.max_texture_cube_size) :
+      13; /* 4K x 4K */
+   caps->blend_equation_separate = true;
+   caps->indep_blend_enable = vscreen->caps.caps.v1.bset.indep_blend_enable;
+   caps->indep_blend_func = vscreen->caps.caps.v1.bset.indep_blend_func;
+   caps->fs_coord_origin_upper_left = true;
+   caps->fs_coord_pixel_center_half_integer = true;
+   caps->fs_coord_pixel_center_integer = true;
+   caps->fs_coord_origin_lower_left =
+      vscreen->caps.caps.v1.bset.fragment_coord_conventions;
+   caps->depth_clip_disable = vscreen->caps.caps.v1.bset.depth_clip_disable;
+   caps->max_stream_output_buffers = vscreen->caps.caps.v1.max_streamout_buffers;
+   caps->max_stream_output_separate_components =
+   caps->max_stream_output_interleaved_components = 16*4;
+   caps->supported_prim_modes =
+      BITFIELD_MASK(MESA_PRIM_COUNT) &
+      ~BITFIELD_BIT(MESA_PRIM_QUADS) &
+      ~BITFIELD_BIT(MESA_PRIM_QUAD_STRIP);
+   caps->primitive_restart =
+   caps->primitive_restart_fixed_index = vscreen->caps.caps.v1.bset.primitive_restart;
+   caps->shader_stencil_export = vscreen->caps.caps.v1.bset.shader_stencil_export;
+   caps->vs_instanceid = true;
+   caps->vertex_element_instance_divisor = true;
+   caps->seamless_cube_map = vscreen->caps.caps.v1.bset.seamless_cube_map;
+   caps->seamless_cube_map_per_texture =
+      vscreen->caps.caps.v1.bset.seamless_cube_map_per_texture;
+   caps->max_texture_array_layers = vscreen->caps.caps.v1.max_texture_array_layers;
+   caps->min_texel_offset = vscreen->caps.caps.v2.min_texel_offset;
+   caps->min_texture_gather_offset = vscreen->caps.caps.v2.min_texture_gather_offset;
+   caps->max_texel_offset = vscreen->caps.caps.v2.max_texel_offset;
+   caps->max_texture_gather_offset = vscreen->caps.caps.v2.max_texture_gather_offset;
+   caps->conditional_render = vscreen->caps.caps.v1.bset.conditional_render;
+   caps->texture_barrier =
+      vscreen->caps.caps.v2.capability_bits & VIRGL_CAP_TEXTURE_BARRIER;
+   caps->vertex_color_unclamped = true;
+   caps->fragment_color_clamped =
+   caps->vertex_color_clamped = vscreen->caps.caps.v1.bset.color_clamping;
+   caps->mixed_colorbuffer_formats =
+      (vscreen->caps.caps.v2.capability_bits & VIRGL_CAP_FBO_MIXED_COLOR_FORMATS) ||
+      (vscreen->caps.caps.v2.host_feature_check_version < 1);
+   caps->glsl_feature_level_compatibility =
+      vscreen->caps.caps.v2.host_feature_check_version < 6 ?
+      MIN2(vscreen->caps.caps.v1.glsl_level, 140) :
+      vscreen->caps.caps.v1.glsl_level;
+   caps->glsl_feature_level = vscreen->caps.caps.v1.glsl_level;
+   caps->quads_follow_provoking_vertex_convention = true;
+   caps->depth_clip_disable_separate = false;
+   caps->compute = vscreen->caps.caps.v2.capability_bits & VIRGL_CAP_COMPUTE_SHADER;
+   caps->user_vertex_buffers = false;
+   caps->constant_buffer_offset_alignment =
+      vscreen->caps.caps.v2.uniform_buffer_offset_alignment;
+   caps->stream_output_pause_resume =
+   caps->stream_output_interleave_buffers =
+      vscreen->caps.caps.v1.bset.streamout_pause_resume;
+   caps->start_instance = vscreen->caps.caps.v1.bset.start_instance;
+   caps->tgsi_can_compact_constants = false;
+   caps->texture_transfer_modes = false;
+   caps->nir_images_as_deref = false;
+   caps->query_timestamp =
+   caps->query_time_elapsed =
+      vscreen->caps.caps.v2.host_feature_check_version >= 15 ?
+      vscreen->caps.caps.v1.bset.timer_query :
+      true; /* older versions had this always enabled */
+   caps->tgsi_texcoord = vscreen->caps.caps.v2.host_feature_check_version >= 10;
+   caps->min_map_buffer_alignment = VIRGL_MAP_BUFFER_ALIGNMENT;
+   caps->texture_buffer_objects = vscreen->caps.caps.v1.max_tbo_size > 0;
+   caps->texture_buffer_offset_alignment =
+      vscreen->caps.caps.v2.texture_buffer_offset_alignment;
+   caps->buffer_sampler_view_rgba_only = false;
+   caps->cube_map_array = vscreen->caps.caps.v1.bset.cube_map_array;
+   caps->texture_multisample = vscreen->caps.caps.v1.bset.texture_multisample;
+   caps->max_viewports = vscreen->caps.caps.v1.max_viewports;
+   caps->max_texel_buffer_elements_uint = vscreen->caps.caps.v1.max_tbo_size;
+   caps->texture_border_color_quirk = 0;
+   caps->endianness = PIPE_ENDIAN_LITTLE;
+   caps->query_pipeline_statistics =
+      !!(vscreen->caps.caps.v2.capability_bits_v2 & VIRGL_CAP_V2_PIPELINE_STATISTICS_QUERY);
+   caps->mixed_framebuffer_sizes = true;
+   caps->mixed_color_depth_bits = true;
+   caps->vs_layer_viewport =
+      (vscreen->caps.caps.v2.capability_bits_v2 & VIRGL_CAP_V2_VS_VERTEX_LAYER) &&
+      (vscreen->caps.caps.v2.capability_bits_v2 & VIRGL_CAP_V2_VS_VIEWPORT_INDEX);
+   caps->max_geometry_output_vertices = vscreen->caps.caps.v2.max_geom_output_vertices;
+   caps->max_geometry_total_output_components =
+      vscreen->caps.caps.v2.max_geom_total_output_components;
+   caps->texture_query_lod = vscreen->caps.caps.v1.bset.texture_query_lod;
+   caps->max_texture_gather_components =
+      vscreen->caps.caps.v1.max_texture_gather_components;
+   caps->draw_indirect = vscreen->caps.caps.v1.bset.has_indirect_draw;
+   caps->sample_shading =
+   caps->force_persample_interp = vscreen->caps.caps.v1.bset.has_sample_shading;
+   caps->cull_distance = vscreen->caps.caps.v1.bset.has_cull;
+   caps->max_vertex_streams =
+      ((vscreen->caps.caps.v2.capability_bits & VIRGL_CAP_TRANSFORM_FEEDBACK3) ||
+       (vscreen->caps.caps.v2.host_feature_check_version < 2)) ? 4 : 1;
+   caps->conditional_render_inverted =
+      vscreen->caps.caps.v1.bset.conditional_render_inverted;
+   caps->fs_fine_derivative = vscreen->caps.caps.v1.bset.derivative_control;
+   caps->polygon_offset_clamp = vscreen->caps.caps.v1.bset.polygon_offset_clamp;
+   caps->query_so_overflow =
+      vscreen->caps.caps.v1.bset.transform_feedback_overflow_query;
+   caps->shader_buffer_offset_alignment =
+      vscreen->caps.caps.v2.shader_buffer_offset_alignment;
+   caps->doubles =
+      vscreen->caps.caps.v1.bset.has_fp64 ||
+      (vscreen->caps.caps.v2.capability_bits & VIRGL_CAP_HOST_IS_GLES);
+   caps->max_shader_patch_varyings = vscreen->caps.caps.v2.max_shader_patch_varyings;
+   caps->sampler_view_target =
+      vscreen->caps.caps.v2.capability_bits & VIRGL_CAP_TEXTURE_VIEW;
+   caps->max_vertex_attrib_stride = vscreen->caps.caps.v2.max_vertex_attrib_stride;
+   caps->copy_between_compressed_and_plain_formats =
+      vscreen->caps.caps.v2.capability_bits & VIRGL_CAP_COPY_IMAGE;
+   caps->texture_query_samples = vscreen->caps.caps.v2.capability_bits & VIRGL_CAP_TXQS;
+   caps->framebuffer_no_attachment =
+      vscreen->caps.caps.v2.capability_bits & VIRGL_CAP_FB_NO_ATTACH;
+   caps->robust_buffer_access_behavior =
+      vscreen->caps.caps.v2.capability_bits & VIRGL_CAP_ROBUST_BUFFER_ACCESS;
+   caps->fbfetch =
+      (vscreen->caps.caps.v2.capability_bits & VIRGL_CAP_TGSI_FBFETCH) ? 1 : 0;
+   caps->blend_equation_advanced =
+      vscreen->caps.caps.v2.capability_bits_v2 & VIRGL_CAP_V2_BLEND_EQUATION;
+   caps->shader_clock = vscreen->caps.caps.v2.capability_bits & VIRGL_CAP_SHADER_CLOCK;
+   caps->shader_array_components =
+      vscreen->caps.caps.v2.capability_bits & VIRGL_CAP_TGSI_COMPONENTS;
+   caps->max_combined_shader_buffers = vscreen->caps.caps.v2.max_combined_shader_buffers;
+   caps->max_combined_hw_atomic_counters =
+      vscreen->caps.caps.v2.max_combined_atomic_counters;
+   caps->max_combined_hw_atomic_counter_buffers =
+      vscreen->caps.caps.v2.max_combined_atomic_counter_buffers;
+   caps->texture_float_linear = true;
+   caps->texture_half_float_linear = true; /* TODO: need to introduce a hw-cap for this */
+   caps->query_buffer_object = vscreen->caps.caps.v2.capability_bits & VIRGL_CAP_QBO;
+   caps->max_varyings = vscreen->caps.caps.v1.glsl_level < 150 ?
+      vscreen->caps.caps.v2.max_vertex_attribs : 32;
+   /* If the host supports only one sample (e.g., if it is using softpipe),
+    * fake multisampling to able to advertise higher GL versions. */
+   caps->fake_sw_msaa = vscreen->caps.caps.v1.max_samples == 1;
+   caps->multi_draw_indirect =
+      !!(vscreen->caps.caps.v2.capability_bits & VIRGL_CAP_MULTI_DRAW_INDIRECT);
+   caps->multi_draw_indirect_params =
+      !!(vscreen->caps.caps.v2.capability_bits & VIRGL_CAP_INDIRECT_PARAMS);
+   caps->buffer_map_persistent_coherent =
+      (vscreen->caps.caps.v2.capability_bits & VIRGL_CAP_ARB_BUFFER_STORAGE) &&
+      (vscreen->caps.caps.v2.host_feature_check_version >= 4) &&
+      vscreen->vws->supports_coherent && !vscreen->no_coherent;
+   caps->pci_group =
+   caps->pci_bus =
+   caps->pci_device =
+   caps->pci_function = 0;
+   caps->allow_mapped_buffers_during_execution = 0;
+   caps->clip_halfz = vscreen->caps.caps.v2.capability_bits & VIRGL_CAP_CLIP_HALFZ;
+   caps->max_gs_invocations = 32;
+   caps->max_shader_buffer_size_uint = 1 << 27;
+   caps->vendor_id = 0x1af4;
+   caps->device_id = 0x1010;
+   caps->video_memory =
+      vscreen->caps.caps.v2.capability_bits_v2 & VIRGL_CAP_V2_VIDEO_MEMORY ?
+      vscreen->caps.caps.v2.max_video_memory : 0;
+   caps->uma = !!caps->video_memory;
+   caps->texture_shadow_lod =
+      vscreen->caps.caps.v2.capability_bits_v2 & VIRGL_CAP_V2_TEXTURE_SHADOW_LOD;
+   caps->native_fence_fd = vscreen->vws->supports_fences;
+   caps->dest_surface_srgb_control =
+      (vscreen->caps.caps.v2.capability_bits & VIRGL_CAP_SRGB_WRITE_CONTROL) ||
+      (vscreen->caps.caps.v2.host_feature_check_version < 1);
+   /* Shader creation emits the shader through the context's command buffer
+    * in virgl_encode_shader_state().
+    */
+   caps->shareable_shaders = false;
+   caps->query_memory_info =
+      vscreen->caps.caps.v2.capability_bits_v2 & VIRGL_CAP_V2_MEMINFO;
+   caps->string_marker =
+      vscreen->caps.caps.v2.capability_bits_v2 & VIRGL_CAP_V2_STRING_MARKER;
+   caps->surface_sample_count =
+      vscreen->caps.caps.v2.capability_bits_v2 & VIRGL_CAP_V2_IMPLICIT_MSAA;
+   caps->draw_parameters =
+      !!(vscreen->caps.caps.v2.capability_bits_v2 & VIRGL_CAP_V2_DRAW_PARAMETERS);
+   caps->shader_group_vote =
+      !!(vscreen->caps.caps.v2.capability_bits_v2 & VIRGL_CAP_V2_GROUP_VOTE);
+   caps->image_store_formatted = true;
+   caps->gl_spirv = true;
+
+   if (vscreen->caps.caps.v2.host_feature_check_version >= 13)
+      caps->max_constant_buffer_size_uint = vscreen->caps.caps.v2.max_uniform_block_size;
+
+   caps->min_line_width =
+   caps->min_line_width_aa =
+   caps->min_point_size =
+   caps->min_point_size_aa = 1;
+   caps->point_size_granularity =
+   caps->line_width_granularity = 0.1;
+   caps->max_line_width = vscreen->caps.caps.v2.max_aliased_line_width;
+   caps->max_line_width_aa = vscreen->caps.caps.v2.max_smooth_line_width;
+   caps->max_point_size = vscreen->caps.caps.v2.max_aliased_point_size;
+   caps->max_point_size_aa = vscreen->caps.caps.v2.max_smooth_point_size;
+   caps->max_texture_anisotropy = vscreen->caps.caps.v2.max_anisotropy;
+   caps->max_texture_lod_bias = vscreen->caps.caps.v2.max_texture_lod_bias;
+}
+
 static bool
 has_format_bit(struct virgl_supported_format_mask *mask,
                enum virgl_formats fmt)
@@ -1211,10 +1442,12 @@ virgl_create_screen(struct virgl_winsys *vws, const struct pipe_screen_config *c
    screen->tweak_gles_emulate_bgra &= !virgl_format_check_bitmask(PIPE_FORMAT_B8G8R8A8_SRGB, caps->v1.render.bitmask, false);
    screen->refcnt = 1;
 
+   virgl_init_screen_caps(screen);
+
    /* Set up the NIR shader compiler options now that we've figured out the caps. */
    screen->compiler_options = *(nir_shader_compiler_options *)
       nir_to_tgsi_get_compiler_options(&screen->base, PIPE_SHADER_IR_NIR, PIPE_SHADER_FRAGMENT);
-   if (virgl_get_param(&screen->base, PIPE_CAP_DOUBLES)) {
+   if (screen->base.caps.doubles) {
       /* virglrenderer is missing DFLR support, so avoid turning 64-bit
        * ffract+fsub back into ffloor.
        */
