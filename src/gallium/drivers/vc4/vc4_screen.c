@@ -312,6 +312,74 @@ vc4_screen_get_shader_param(struct pipe_screen *pscreen,
         return 0;
 }
 
+static void
+vc4_init_screen_caps(struct vc4_screen *screen)
+{
+        struct pipe_caps *caps = (struct pipe_caps *)&screen->base.caps;
+
+        u_init_pipe_screen_caps(&screen->base, 1);
+
+        /* Supported features (boolean caps). */
+        caps->vertex_color_unclamped = true;
+        caps->fragment_color_clamped = true;
+        caps->npot_textures = true;
+        caps->blend_equation_separate = true;
+        caps->texture_multisample = true;
+        caps->texture_swizzle = true;
+        caps->texture_barrier = true;
+        caps->tgsi_texcoord = true;
+
+        caps->native_fence_fd = screen->has_syncobj;
+
+        caps->tile_raster_order =
+                vc4_has_feature(screen, DRM_VC4_PARAM_SUPPORTS_FIXED_RCL_ORDER);
+
+        caps->fs_coord_origin_upper_left = true;
+        caps->fs_coord_pixel_center_half_integer = true;
+        caps->fs_face_is_integer_sysval = true;
+
+        caps->mixed_framebuffer_sizes = true;
+        caps->mixed_color_depth_bits = true;
+
+        /* Texturing. */
+        caps->max_texture_2d_size = 2048;
+        caps->max_texture_cube_levels = VC4_MAX_MIP_LEVELS;
+        caps->max_texture_3d_levels = 0;
+
+        caps->max_varyings = 8;
+
+        caps->vendor_id = 0x14E4;
+
+        uint64_t system_memory;
+        caps->video_memory = os_get_total_physical_memory(&system_memory) ?
+                system_memory >> 20 : 0;
+
+        caps->uma = true;
+
+        caps->alpha_test = false;
+        caps->vertex_color_clamped = false;
+        caps->two_sided_color = false;
+        caps->texrect = false;
+        caps->image_store_formatted = false;
+        caps->clip_planes = 0;
+
+        caps->supported_prim_modes = screen->prim_types;
+
+        caps->min_line_width =
+        caps->min_line_width_aa =
+        caps->min_point_size =
+        caps->min_point_size_aa = 1;
+
+        caps->point_size_granularity =
+        caps->line_width_granularity = 0.1;
+
+        caps->max_line_width =
+        caps->max_line_width_aa = 32;
+
+        caps->max_point_size =
+        caps->max_point_size_aa = 512.0f;
+}
+
 static bool
 vc4_screen_is_format_supported(struct pipe_screen *pscreen,
                                enum pipe_format format,
@@ -619,6 +687,7 @@ vc4_screen_create(int fd, const struct pipe_screen_config *config,
                              BITFIELD_BIT(MESA_PRIM_TRIANGLE_STRIP) |
                              BITFIELD_BIT(MESA_PRIM_TRIANGLE_FAN);
 
+        vc4_init_screen_caps(screen);
 
         return pscreen;
 
