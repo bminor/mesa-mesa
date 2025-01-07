@@ -468,10 +468,13 @@ lower_instr(struct ir3 *ir, struct ir3_block **block, struct ir3_instruction *in
          break;
 
       case OPC_BALLOT_MACRO: {
-         unsigned comp_count = util_last_bit(instr->dsts[0]->wrmask);
+         unsigned wrmask = instr->dsts[0]->wrmask;
+         unsigned comp_count = util_last_bit(wrmask);
          struct ir3_instruction *movmsk = ir3_instr_create_at(
             ir3_before_terminator(then_block), OPC_MOVMSK, 1, 0);
-         ir3_dst_create(movmsk, instr->dsts[0]->num, instr->dsts[0]->flags);
+         struct ir3_register *dst =
+            ir3_dst_create(movmsk, instr->dsts[0]->num, instr->dsts[0]->flags);
+         dst->wrmask = wrmask;
          movmsk->repeat = comp_count - 1;
          break;
       }
