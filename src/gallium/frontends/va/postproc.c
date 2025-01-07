@@ -185,6 +185,9 @@ static void vlVaSetProcParameters(vlVaDriver *drv,
       color_standard = VL_CSC_COLOR_STANDARD_BT_709_REV;
    }
 
+   if (util_format_get_nr_components(src->buffer->buffer_format) == 1)
+      color_standard = VL_CSC_COLOR_STANDARD_IDENTITY;
+
    vl_csc_get_matrix(color_standard, NULL, dst->full_range, &drv->csc);
    vl_compositor_set_csc_matrix(&drv->cstate, &drv->csc, 1.0f, 0.0f);
 
