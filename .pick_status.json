@@ -2354,7 +2354,7 @@
         "description": "gallium/vl: Fix sampler view components for Y8_400 format",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8a20e634ce536cf028c725d647ab7c1e0b4cd0ed",
         "notes": null
