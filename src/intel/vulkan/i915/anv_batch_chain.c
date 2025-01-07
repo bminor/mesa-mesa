@@ -976,7 +976,8 @@ i915_queue_exec_locked(struct anv_queue *queue,
       }
    }
 
-   if (cmd_buffer_count != 0 && cmd_buffers[0]->companion_rcs_cmd_buffer) {
+   if (cmd_buffer_count != 0 && cmd_buffers[0]->companion_rcs_cmd_buffer &&
+       result == VK_SUCCESS) {
       struct anv_cmd_buffer *companion_rcs_cmd_buffer =
          cmd_buffers[0]->companion_rcs_cmd_buffer;
       assert(companion_rcs_cmd_buffer->is_companion_rcs_cmd_buffer);
