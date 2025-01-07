@@ -747,6 +747,8 @@ vl_compositor_yuv_deint_full(struct vl_compositor_state *s,
    vl_compositor_render(s, c, dst_surfaces[0], NULL, false);
 
    if (dst_surfaces[1]) {
+      bool clear = util_format_get_nr_components(src->buffer_format) == 1;
+      union pipe_color_union clear_color = { .f = {0.5, 0.5} };
       dst_rect->x0 = util_format_get_plane_width(dst->buffer_format, 1, dst_rect->x0);
       dst_rect->x1 = util_format_get_plane_width(dst->buffer_format, 1, dst_rect->x1);
       dst_rect->y0 = util_format_get_plane_height(dst->buffer_format, 1, dst_rect->y0);
@@ -754,12 +756,26 @@ vl_compositor_yuv_deint_full(struct vl_compositor_state *s,
       set_yuv_layer(s, c, 0, src, src_rect, NULL, dst_surfaces[2] ? VL_COMPOSITOR_PLANE_U :
                     VL_COMPOSITOR_PLANE_UV, deinterlace);
       vl_compositor_set_layer_dst_area(s, 0, dst_rect);
-      vl_compositor_render(s, c, dst_surfaces[1], NULL, false);
+      if (clear) {
+         struct u_rect clear_rect = *dst_rect;
+         s->used_layers = 0;
+         vl_compositor_set_clear_color(s, &clear_color);
+         vl_compositor_render(s, c, dst_surfaces[1], &clear_rect, true);
+      } else {
+         vl_compositor_render(s, c, dst_surfaces[1], NULL, false);
+      }
 
       if (dst_surfaces[2]) {
          set_yuv_layer(s, c, 0, src, src_rect, NULL, VL_COMPOSITOR_PLANE_V, deinterlace);
          vl_compositor_set_layer_dst_area(s, 0, dst_rect);
-         vl_compositor_render(s, c, dst_surfaces[2], NULL, false);
+         if (clear) {
+            struct u_rect clear_rect = *dst_rect;
+            s->used_layers = 0;
+            vl_compositor_set_clear_color(s, &clear_color);
+            vl_compositor_render(s, c, dst_surfaces[2], &clear_rect, true);
+         } else {
+            vl_compositor_render(s, c, dst_surfaces[2], NULL, false);
+         }
       }
    }
 
