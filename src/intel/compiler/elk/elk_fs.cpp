@@ -1697,7 +1697,7 @@ elk_fs_visitor::split_virtual_grfs()
 
    /* Count the total number of registers */
    unsigned reg_count = 0;
-   unsigned vgrf_to_reg[num_vars];
+   unsigned *vgrf_to_reg = new unsigned[num_vars];
    for (unsigned i = 0; i < num_vars; i++) {
       vgrf_to_reg[i] = reg_count;
       reg_count += alloc.sizes[i];
@@ -1866,6 +1866,7 @@ cleanup:
    delete[] vgrf_has_split;
    delete[] new_virtual_grf;
    delete[] new_reg_offset;
+   delete[] vgrf_to_reg;
 
    return progress;
 }

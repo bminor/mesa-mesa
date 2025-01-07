@@ -882,7 +882,7 @@ elk_fs_instruction_scheduler::setup_liveness(elk_cfg_t *cfg)
       }
    }
 
-   int payload_last_use_ip[hw_reg_count];
+   int *payload_last_use_ip = ralloc_array(NULL, int, hw_reg_count);
    v->calculate_payload_ranges(hw_reg_count, payload_last_use_ip);
 
    for (unsigned i = 0; i < hw_reg_count; i++) {
@@ -897,6 +897,8 @@ elk_fs_instruction_scheduler::setup_liveness(elk_cfg_t *cfg)
             BITSET_SET(hw_liveout[block], i);
       }
    }
+
+   ralloc_free(payload_last_use_ip);
 }
 
 void
