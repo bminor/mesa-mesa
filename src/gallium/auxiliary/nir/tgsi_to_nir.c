@@ -2237,6 +2237,7 @@ ttn_compile_init(const void *tgsi_tokens,
    struct ttn_compile *c;
    struct nir_shader *s;
    struct tgsi_shader_info scan;
+   static int ttn_sh_counter = 0;
 
    assert(options || screen);
    c = rzalloc(NULL, struct ttn_compile);
@@ -2250,9 +2251,10 @@ ttn_compile_init(const void *tgsi_tokens,
    }
 
    c->build = nir_builder_init_simple_shader(tgsi_processor_to_shader_stage(scan.processor),
-                                             options, "TTN");
+                                             options, "TTN%d", (int)p_atomic_inc_return(&ttn_sh_counter));
 
    s = c->build.shader;
+   _mesa_blake3_compute(&scan, sizeof(scan), s->info.source_blake3);
 
    if (screen) {
       ttn_read_pipe_caps(c, screen);
