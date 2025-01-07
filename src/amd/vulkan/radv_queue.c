@@ -886,10 +886,6 @@ radv_emit_graphics(struct radv_device *device, struct radeon_cmdbuf *cs)
 
    if (pdev->info.gfx_level >= GFX12) {
       radeon_set_context_reg(cs, R_028000_DB_RENDER_CONTROL, 0);
-      radeon_set_context_reg(cs, R_02800C_DB_RENDER_OVERRIDE,
-                             S_02800C_FORCE_STENCIL_READ(1) |
-                                /* TODO: this should be conditional based on stencil state */
-                                S_02800C_FORCE_STENCIL_VALID(1));
    }
 
    ac_pm4_finalize(pm4);
