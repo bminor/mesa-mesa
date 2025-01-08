@@ -748,7 +748,7 @@ NineAdapter9_GetDeviceCaps( struct NineAdapter9 *This,
         D3DLINECAPS_TEXTURE |
         D3DLINECAPS_ZTEST |
         D3DLINECAPS_FOG;
-    if (screen->get_paramf(screen, PIPE_CAPF_MAX_LINE_WIDTH_AA) > 0.0) {
+    if (screen->caps.max_line_width_aa > 0.0) {
         pCaps->LineCaps |= D3DLINECAPS_ANTIALIAS;
     }
 
@@ -761,7 +761,7 @@ NineAdapter9_GetDeviceCaps( struct NineAdapter9 *This,
     pCaps->MaxTextureAspectRatio = pCaps->MaxTextureWidth;
 
     pCaps->MaxAnisotropy =
-        (DWORD)screen->get_paramf(screen, PIPE_CAPF_MAX_TEXTURE_ANISOTROPY);
+        (DWORD)screen->caps.max_texture_anisotropy;
 
     /* Values for GeForce 9600 GT */
     pCaps->MaxVertexW = 1e10f;
@@ -831,7 +831,7 @@ NineAdapter9_GetDeviceCaps( struct NineAdapter9 *This,
     pCaps->MaxVertexBlendMatrices = 4; /* 1 vec4 BLENDWEIGHT/INDICES input */
     pCaps->MaxVertexBlendMatrixIndex = 8; /* D3DTS_WORLDMATRIX(0..8) */
 
-    pCaps->MaxPointSize = screen->get_paramf(screen, PIPE_CAPF_MAX_POINT_SIZE);
+    pCaps->MaxPointSize = screen->caps.max_point_size;
 
     pCaps->MaxPrimitiveCount = 0x555555; /* <- wine, really 0xFFFFFFFF; */
     pCaps->MaxVertexIndex = 0xFFFFFF; /* <- wine, really 0xFFFFFFFF */

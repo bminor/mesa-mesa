@@ -156,29 +156,29 @@ void st_init_limits(struct pipe_screen *screen,
              0, MAX_DRAW_BUFFERS);
 
    c->MaxLineWidth =
-      _maxf(1.0f, screen->get_paramf(screen, PIPE_CAPF_MAX_LINE_WIDTH));
+      _maxf(1.0f, screen->caps.max_line_width);
    c->MaxLineWidthAA =
-      _maxf(1.0f, screen->get_paramf(screen, PIPE_CAPF_MAX_LINE_WIDTH_AA));
+      _maxf(1.0f, screen->caps.max_line_width_aa);
 
-   c->MinLineWidth = screen->get_paramf(screen, PIPE_CAPF_MIN_LINE_WIDTH);
-   c->MinLineWidthAA = screen->get_paramf(screen, PIPE_CAPF_MIN_LINE_WIDTH_AA);
-   c->LineWidthGranularity = screen->get_paramf(screen, PIPE_CAPF_LINE_WIDTH_GRANULARITY);
+   c->MinLineWidth = screen->caps.min_line_width;
+   c->MinLineWidthAA = screen->caps.min_line_width_aa;
+   c->LineWidthGranularity = screen->caps.line_width_granularity;
 
    c->MaxPointSize =
-      _maxf(1.0f, screen->get_paramf(screen, PIPE_CAPF_MAX_POINT_SIZE));
+      _maxf(1.0f, screen->caps.max_point_size);
    c->MaxPointSizeAA =
-      _maxf(1.0f, screen->get_paramf(screen, PIPE_CAPF_MAX_POINT_SIZE_AA));
+      _maxf(1.0f, screen->caps.max_point_size_aa);
 
-   c->MinPointSize = MAX2(screen->get_paramf(screen, PIPE_CAPF_MIN_POINT_SIZE), 0.01);
-   c->MinPointSizeAA = MAX2(screen->get_paramf(screen, PIPE_CAPF_MIN_POINT_SIZE_AA), 0.01);
-   c->PointSizeGranularity = screen->get_paramf(screen, PIPE_CAPF_POINT_SIZE_GRANULARITY);
+   c->MinPointSize = MAX2(screen->caps.min_point_size, 0.01);
+   c->MinPointSizeAA = MAX2(screen->caps.min_point_size_aa, 0.01);
+   c->PointSizeGranularity = screen->caps.point_size_granularity;
 
    c->MaxTextureMaxAnisotropy =
       _maxf(2.0f,
-            screen->get_paramf(screen, PIPE_CAPF_MAX_TEXTURE_ANISOTROPY));
+            screen->caps.max_texture_anisotropy);
 
    c->MaxTextureLodBias =
-      _minf(31.0f, screen->get_paramf(screen, PIPE_CAPF_MAX_TEXTURE_LOD_BIAS));
+      _minf(31.0f, screen->caps.max_texture_lod_bias);
 
    c->QuadsFollowProvokingVertexConvention =
       screen->caps.quads_follow_provoking_vertex_convention;
@@ -595,11 +595,11 @@ void st_init_limits(struct pipe_screen *screen,
       screen->caps.max_conservative_raster_subpixel_precision_bias;
 
    c->ConservativeRasterDilateRange[0] =
-      screen->get_paramf(screen, PIPE_CAPF_MIN_CONSERVATIVE_RASTER_DILATE);
+      screen->caps.min_conservative_raster_dilate;
    c->ConservativeRasterDilateRange[1] =
-      screen->get_paramf(screen, PIPE_CAPF_MAX_CONSERVATIVE_RASTER_DILATE);
+      screen->caps.max_conservative_raster_dilate;
    c->ConservativeRasterDilateGranularity =
-      screen->get_paramf(screen, PIPE_CAPF_CONSERVATIVE_RASTER_DILATE_GRANULARITY);
+      screen->caps.conservative_raster_dilate_granularity;
 
    /* limit the max combined shader output resources to a driver limit */
    temp = screen->caps.max_combined_shader_output_resources;
@@ -1726,7 +1726,7 @@ void st_init_extensions(struct pipe_screen *screen,
       extensions->OES_texture_float;
 
    if (extensions->EXT_texture_filter_anisotropic &&
-       screen->get_paramf(screen, PIPE_CAPF_MAX_TEXTURE_ANISOTROPY) >= 16.0)
+       screen->caps.max_texture_anisotropy >= 16.0)
       extensions->ARB_texture_filter_anisotropic = GL_TRUE;
 
    extensions->KHR_robustness = extensions->ARB_robust_buffer_access_behavior;
@@ -1811,7 +1811,7 @@ void st_init_extensions(struct pipe_screen *screen,
       float max_dilate;
       bool pre_snap_triangles, pre_snap_points_lines;
 
-      max_dilate = screen->get_paramf(screen, PIPE_CAPF_MAX_CONSERVATIVE_RASTER_DILATE);
+      max_dilate = screen->caps.max_conservative_raster_dilate;
 
       pre_snap_triangles =
          screen->caps.conservative_raster_pre_snap_triangles;
