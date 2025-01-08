@@ -38,6 +38,8 @@ void pco_process_ir(pco_ctx *ctx, pco_shader *shader)
    PCO_PASS(_, shader, pco_bool);
    PCO_PASS(_, shader, pco_cf);
 
+   PCO_PASS(_, shader, pco_shrink_vecs);
+
    do {
       progress = false;
       PCO_PASS(progress, shader, pco_dce);

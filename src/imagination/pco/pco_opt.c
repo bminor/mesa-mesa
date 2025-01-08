@@ -603,3 +603,75 @@ bool pco_dce(pco_shader *shader)
 
    return progress;
 }
+
+static inline bool only_uncollated_elems(pco_instr *vec)
+{
+   pco_foreach_instr_src (psrc, vec) {
+      if (pco_ref_get_chans(*psrc) > 1)
+         return false;
+   }
+
+   return true;
+}
+
+/**
+ * \brief Shrinks vectors with unused components.
+ *
+ * \param[in,out] shader PCO shader.
+ * \return True if the pass made progress.
+ */
+bool pco_shrink_vecs(pco_shader *shader)
+{
+   bool progress = false;
+
+   pco_foreach_func_in_shader (func, shader) {
+      pco_foreach_instr_in_func (vec, func) {
+         if (vec->op != PCO_OP_VEC)
+            continue;
+
+         /* Can't shrink if has collated elems. */
+         if (!only_uncollated_elems(vec))
+            continue;
+
+         pco_ref *pdest = &vec->dest[0];
+         unsigned chans_used = 0;
+         unsigned chans = pco_ref_get_chans(*pdest);
+         pco_foreach_instr_in_func_from (instr, vec) {
+            if (instr->op == PCO_OP_COMP) {
+               pco_ref src = instr->src[0];
+               if (!pco_ref_is_ssa(src))
+                  continue;
+
+               if (src.val != pdest->val)
+                  continue;
+
+               unsigned offset = pco_ref_get_imm(instr->src[1]);
+               chans_used = MAX2(chans_used, offset);
+
+               continue;
+            }
+
+            pco_foreach_instr_src_ssa (psrc, instr) {
+               if (psrc->val == pdest->val) {
+                  chans_used = MAX2(chans_used, pco_ref_get_chans(*psrc) - 1);
+               }
+            }
+         }
+
+         ++chans_used;
+         assert(chans_used <= chans);
+
+         /* Whole vec used, skip. */
+         if (chans_used == chans)
+            continue;
+
+         /* Update the vec. */
+         vec->num_srcs = chans_used;
+         *pdest = pco_ref_chans(*pdest, chans_used);
+
+         progress = true;
+      }
+   }
+
+   return progress;
+}
