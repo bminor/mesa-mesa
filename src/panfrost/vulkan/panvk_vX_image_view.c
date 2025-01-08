@@ -191,7 +191,7 @@ prepare_attr_buf_descs(struct panvk_image_view *view)
       &image->planes[plane_idx].layout, view->pview.first_level,
       is_3d ? 0 : view->pview.first_layer, is_3d ? view->pview.first_layer : 0);
 
-   pan_pack(view->descs.img_attrib_buf[0].opaque, ATTRIBUTE_BUFFER, cfg) {
+   pan_pack(&view->descs.img_attrib_buf[0], ATTRIBUTE_BUFFER, cfg) {
       /* The format is the only thing we lack to emit attribute descriptors
        * when copying from the set to the attribute tables. Instead of
        * making the descriptor size to store an extra format, we pack
@@ -213,8 +213,8 @@ prepare_attr_buf_descs(struct panvk_image_view *view)
       cfg.size = pan_kmod_bo_size(image->bo) - offset;
    }
 
-   pan_pack(view->descs.img_attrib_buf[1].opaque,
-            ATTRIBUTE_BUFFER_CONTINUATION_3D, cfg) {
+   struct mali_attribute_buffer_packed *buf = &view->descs.img_attrib_buf[1];
+   pan_cast_and_pack(buf, ATTRIBUTE_BUFFER_CONTINUATION_3D, cfg) {
       unsigned level = view->pview.first_level;
       VkExtent3D extent = view->vk.extent;
 

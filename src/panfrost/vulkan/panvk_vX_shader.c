@@ -895,7 +895,8 @@ panvk_shader_upload(struct panvk_device *dev, struct panvk_shader *shader,
    if (!panvk_priv_mem_dev_addr(shader->rsd))
       return panvk_error(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY);
 
-   pan_pack(panvk_priv_mem_host_addr(shader->rsd), RENDERER_STATE, cfg) {
+   pan_cast_and_pack(panvk_priv_mem_host_addr(shader->rsd), RENDERER_STATE,
+                     cfg) {
       pan_shader_prepare_rsd(&shader->info, panvk_shader_get_dev_addr(shader),
                              &cfg);
    }
@@ -905,7 +906,8 @@ panvk_shader_upload(struct panvk_device *dev, struct panvk_shader *shader,
       if (!panvk_priv_mem_dev_addr(shader->spd))
          return panvk_error(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY);
 
-      pan_pack(panvk_priv_mem_host_addr(shader->spd), SHADER_PROGRAM, cfg) {
+      pan_cast_and_pack(panvk_priv_mem_host_addr(shader->spd), SHADER_PROGRAM,
+                        cfg) {
          cfg.stage = pan_shader_stage(&shader->info);
 
          if (cfg.stage == MALI_SHADER_STAGE_FRAGMENT)
@@ -928,8 +930,8 @@ panvk_shader_upload(struct panvk_device *dev, struct panvk_shader *shader,
       if (!panvk_priv_mem_dev_addr(shader->spds.pos_points))
          return panvk_error(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY);
 
-      pan_pack(panvk_priv_mem_host_addr(shader->spds.pos_points),
-               SHADER_PROGRAM, cfg) {
+      pan_cast_and_pack(panvk_priv_mem_host_addr(shader->spds.pos_points),
+                        SHADER_PROGRAM, cfg) {
          cfg.stage = pan_shader_stage(&shader->info);
          cfg.vertex_warp_limit = MALI_WARP_LIMIT_HALF;
          cfg.register_allocation =
@@ -944,8 +946,8 @@ panvk_shader_upload(struct panvk_device *dev, struct panvk_shader *shader,
       if (!panvk_priv_mem_dev_addr(shader->spds.pos_triangles))
          return panvk_error(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY);
 
-      pan_pack(panvk_priv_mem_host_addr(shader->spds.pos_triangles),
-               SHADER_PROGRAM, cfg) {
+      pan_cast_and_pack(panvk_priv_mem_host_addr(shader->spds.pos_triangles),
+                        SHADER_PROGRAM, cfg) {
          cfg.stage = pan_shader_stage(&shader->info);
          cfg.vertex_warp_limit = MALI_WARP_LIMIT_HALF;
          cfg.register_allocation =
@@ -962,8 +964,8 @@ panvk_shader_upload(struct panvk_device *dev, struct panvk_shader *shader,
          if (!panvk_priv_mem_dev_addr(shader->spds.var))
             return panvk_error(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY);
 
-         pan_pack(panvk_priv_mem_host_addr(shader->spds.var), SHADER_PROGRAM,
-                  cfg) {
+         pan_cast_and_pack(panvk_priv_mem_host_addr(shader->spds.var),
+                           SHADER_PROGRAM, cfg) {
             unsigned work_count = shader->info.vs.secondary_work_reg_count;
 
             cfg.stage = pan_shader_stage(&shader->info);

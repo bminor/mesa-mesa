@@ -458,15 +458,13 @@ pan_blend_to_fixed_function_equation(const struct pan_blend_equation equation,
 uint32_t
 pan_pack_blend(const struct pan_blend_equation equation)
 {
-   STATIC_ASSERT(sizeof(uint32_t) == MALI_BLEND_EQUATION_LENGTH);
-
-   uint32_t out = 0;
+   struct mali_blend_equation_packed out;
 
    pan_pack(&out, BLEND_EQUATION, cfg) {
       pan_blend_to_fixed_function_equation(equation, &cfg);
    }
 
-   return out;
+   return out.opaque[0];
 }
 
 DERIVE_HASH_TABLE(pan_blend_shader_key);
@@ -724,7 +722,7 @@ GENX(pan_blend_get_internal_desc)(enum pipe_format fmt, unsigned rt,
                                   unsigned force_size, bool dithered)
 {
    const struct util_format_description *desc = util_format_description(fmt);
-   uint64_t res;
+   struct mali_internal_blend_packed res;
 
    pan_pack(&res, INTERNAL_BLEND, cfg) {
       cfg.mode = MALI_BLEND_MODE_OPAQUE;
@@ -771,7 +769,7 @@ GENX(pan_blend_get_internal_desc)(enum pipe_format fmt, unsigned rt,
          GENX(panfrost_dithered_format_from_pipe_format)(fmt, dithered);
    }
 
-   return res;
+   return res.opaque[0] | ((uint64_t)res.opaque[1] << 32);
 }
 
 static bool

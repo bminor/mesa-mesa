@@ -10,6 +10,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+#include <stdint.h>
 #include "genxml/gen_macros.h"
 
 #include "panvk_buffer.h"
@@ -136,7 +137,7 @@ prepare_vs_driver_set(struct panvk_cmd_buffer *cmdbuf)
    }
 
    /* Dummy sampler always comes right after the vertex attribs. */
-   pan_pack(&descs[MAX_VS_ATTRIBS], SAMPLER, cfg) {
+   pan_cast_and_pack(&descs[MAX_VS_ATTRIBS], SAMPLER, cfg) {
       cfg.clamp_integer_array_indices = false;
    }
 
@@ -147,7 +148,7 @@ prepare_vs_driver_set(struct panvk_cmd_buffer *cmdbuf)
    for (uint32_t i = 0; i < vb_count; i++) {
       const struct panvk_attrib_buf *vb = &cmdbuf->state.gfx.vb.bufs[i];
 
-      pan_pack(&descs[vb_offset + i], BUFFER, cfg) {
+      pan_cast_and_pack(&descs[vb_offset + i], BUFFER, cfg) {
          if (vi->bindings_valid & BITFIELD_BIT(i)) {
             cfg.address = vb->address;
             cfg.size = vb->size;
@@ -180,7 +181,7 @@ prepare_fs_driver_set(struct panvk_cmd_buffer *cmdbuf)
       return VK_ERROR_OUT_OF_DEVICE_MEMORY;
 
    /* Dummy sampler always comes first. */
-   pan_pack(&descs[0], SAMPLER, cfg) {
+   pan_cast_and_pack(&descs[0], SAMPLER, cfg) {
       cfg.clamp_integer_array_indices = false;
    }
 
@@ -421,7 +422,7 @@ prepare_vp(struct panvk_cmd_buffer *cmdbuf)
 
    if (dyn_gfx_state_dirty(cmdbuf, VP_VIEWPORTS) ||
        dyn_gfx_state_dirty(cmdbuf, VP_SCISSORS)) {
-      uint64_t scissor_box;
+      struct mali_scissor_packed scissor_box;
       pan_pack(&scissor_box, SCISSOR, cfg) {
 
          /* The spec says "width must be greater than 0.0" */
@@ -452,7 +453,8 @@ prepare_vp(struct panvk_cmd_buffer *cmdbuf)
          cfg.scissor_maximum_y = CLAMP(maxy, 0, UINT16_MAX);
       }
 
-      cs_move64_to(b, cs_sr_reg64(b, 42), scissor_box);
+      struct mali_scissor_packed *scissor_box_ptr = &scissor_box;
+      cs_move64_to(b, cs_sr_reg64(b, 42), *((uint64_t*)scissor_box_ptr));
    }
 
    if (dyn_gfx_state_dirty(cmdbuf, VP_VIEWPORTS) ||
@@ -1271,7 +1273,7 @@ prepare_ds(struct panvk_cmd_buffer *cmdbuf)
    if (!zsd.gpu)
       return VK_ERROR_OUT_OF_DEVICE_MEMORY;
 
-   pan_pack(zsd.cpu, DEPTH_STENCIL, cfg) {
+   pan_cast_and_pack(zsd.cpu, DEPTH_STENCIL, cfg) {
       cfg.stencil_test_enable = test_s;
       if (test_s) {
          cfg.front_compare_function =

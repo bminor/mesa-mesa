@@ -176,7 +176,7 @@ pan_jc_add_job(struct pan_jc *jc, enum mali_job_type type, bool barrier,
    /* Assign the index */
    unsigned index = ++jc->job_index;
 
-   pan_pack(job->cpu, JOB_HEADER, header) {
+   pan_cast_and_pack(job->cpu, JOB_HEADER, header) {
       header.type = type;
       header.barrier = barrier;
       header.suppress_prefetch = suppress_prefetch;

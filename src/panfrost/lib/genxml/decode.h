@@ -189,7 +189,7 @@ pandecode_log_cont(struct pandecode_context *ctx, const char *format, ...)
 
 #define DUMP_CL(ctx, T, cl, ...)                                               \
    {                                                                           \
-      pan_unpack(cl, T, temp);                                                 \
+      pan_unpack((MALI_##T##_PACKED_T *)cl, T, temp);                          \
       DUMP_UNPACKED(ctx, T, temp, __VA_ARGS__);                                \
    }
 
@@ -201,7 +201,8 @@ pandecode_log_cont(struct pandecode_context *ctx, const char *format, ...)
    }
 
 #define MAP_ADDR(ctx, T, addr, cl)                                             \
-   const uint8_t *cl = pandecode_fetch_gpu_mem(ctx, addr, pan_size(T));
+   const MALI_##T##_PACKED_T *cl =                                             \
+      pandecode_fetch_gpu_mem(ctx, addr, pan_size(T));
 
 #define DUMP_ADDR(ctx, T, addr, ...)                                           \
    {                                                                           \
@@ -238,13 +239,15 @@ void GENX(pandecode_dcd)(struct pandecode_context *ctx,
 void GENX(pandecode_texture)(struct pandecode_context *ctx, uint64_t u,
                              unsigned tex);
 #else
-void GENX(pandecode_texture)(struct pandecode_context *ctx, const void *cl,
+void GENX(pandecode_texture)(struct pandecode_context *ctx,
+                             const struct mali_texture_packed *cl,
                              unsigned tex);
 #endif
 
 #if PAN_ARCH >= 5
-uint64_t GENX(pandecode_blend)(struct pandecode_context *ctx, void *descs,
-                               int rt_no, uint64_t frag_shader);
+uint64_t GENX(pandecode_blend)(struct pandecode_context *ctx,
+                               struct mali_blend_packed *descs, int rt_no,
+                               uint64_t frag_shader);
 #endif
 
 #if PAN_ARCH >= 6

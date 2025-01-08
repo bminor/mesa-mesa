@@ -687,7 +687,8 @@ init_tiler(struct panvk_queue *queue)
    tiler_heap->context.handle = thc.handle;
    tiler_heap->context.dev_addr = thc.tiler_heap_ctx_gpu_va;
 
-   pan_pack(panvk_priv_mem_host_addr(tiler_heap->desc), TILER_HEAP, cfg) {
+   pan_cast_and_pack(panvk_priv_mem_host_addr(tiler_heap->desc), TILER_HEAP,
+                     cfg) {
       cfg.size = tiler_heap->chunk_size;
       cfg.base = thc.first_heap_chunk_gpu_va;
       cfg.bottom = cfg.base + 64;

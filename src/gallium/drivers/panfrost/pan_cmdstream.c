@@ -316,7 +316,7 @@ panfrost_emit_blend(struct panfrost_batch *batch, void *rts,
 
       /* Disable blending for unbacked render targets */
       if (rt_count == 0 || !batch->key.cbufs[i] || !so->info[i].enabled) {
-         pan_pack(rts + i * pan_size(BLEND), BLEND, cfg) {
+         pan_pack(packed, BLEND, cfg) {
             cfg.enable = false;
 #if PAN_ARCH >= 6
             cfg.internal.mode = MALI_BLEND_MODE_OFF;
@@ -358,6 +358,8 @@ panfrost_emit_blend(struct panfrost_batch *batch, void *rts,
 
 #if PAN_ARCH >= 6
       struct panfrost_compiled_shader *fs = ctx->prog[PIPE_SHADER_FRAGMENT];
+      struct mali_internal_blend_packed *internal_blend_packed =
+         (struct mali_internal_blend_packed *)&packed->opaque[2];
 
       /* Words 2 and 3: Internal blend */
       if (blend_shaders[i]) {
@@ -368,7 +370,7 @@ panfrost_emit_blend(struct panfrost_batch *batch, void *rts,
          assert(!fs->bin.bo || (blend_shaders[i] & (0xffffffffull << 32)) ==
                                   (fs->bin.gpu & (0xffffffffull << 32)));
 
-         pan_pack(&packed->opaque[2], INTERNAL_BLEND, cfg) {
+         pan_pack(internal_blend_packed, INTERNAL_BLEND, cfg) {
             cfg.mode = MALI_BLEND_MODE_SHADER;
             cfg.shader.pc = (uint32_t)blend_shaders[i];
 
@@ -380,7 +382,7 @@ panfrost_emit_blend(struct panfrost_batch *batch, void *rts,
 #endif
          }
       } else {
-         pan_pack(&packed->opaque[2], INTERNAL_BLEND, cfg) {
+         pan_pack(internal_blend_packed, INTERNAL_BLEND, cfg) {
             cfg.mode = info.opaque ? MALI_BLEND_MODE_OPAQUE
                                    : MALI_BLEND_MODE_FIXED_FUNCTION;
 
@@ -757,7 +759,7 @@ panfrost_emit_viewport(struct panfrost_batch *batch)
    if (!T.cpu)
       return 0;
 
-   pan_pack(T.cpu, VIEWPORT, cfg) {
+   pan_cast_and_pack(T.cpu, VIEWPORT, cfg) {
       cfg.scissor_minimum_x = minx;
       cfg.scissor_minimum_y = miny;
       cfg.scissor_maximum_x = maxx;
@@ -769,7 +771,7 @@ panfrost_emit_viewport(struct panfrost_batch *batch)
 
    return T.gpu;
 #else
-   pan_pack(&batch->scissor, SCISSOR, cfg) {
+   pan_cast_and_pack(&batch->scissor, SCISSOR, cfg) {
       cfg.scissor_minimum_x = minx;
       cfg.scissor_minimum_y = miny;
       cfg.scissor_maximum_x = maxx;
@@ -1197,7 +1199,7 @@ panfrost_upload_rt_conversion_sysval(struct panfrost_batch *batch,
       uniform->u[0] =
          GENX(pan_blend_get_internal_desc)(format, rt, size, false) >> 32;
    } else {
-      pan_pack(&uniform->u[0], INTERNAL_CONVERSION, cfg)
+      pan_cast_and_pack(&uniform->u[0], INTERNAL_CONVERSION, cfg)
          cfg.memory_format =
             GENX(panfrost_format_from_pipe_format)(PIPE_FORMAT_NONE)->hw;
    }
@@ -1827,7 +1829,7 @@ static uint64_t
 panfrost_upload_wa_sampler(struct panfrost_batch *batch)
 {
    struct panfrost_ptr T = pan_pool_alloc_desc(&batch->pool.base, SAMPLER);
-   pan_pack(T.cpu, SAMPLER, cfg)
+   pan_cast_and_pack(T.cpu, SAMPLER, cfg)
       ;
    return T.gpu;
 }
@@ -1939,7 +1941,8 @@ emit_image_bufs(struct panfrost_batch *batch, enum pipe_shader_type shader,
       }
 
       if (is_buffer) {
-         pan_pack(bufs + (i * 2) + 1, ATTRIBUTE_BUFFER_CONTINUATION_3D, cfg) {
+         pan_cast_and_pack(&bufs[(i * 2) + 1], ATTRIBUTE_BUFFER_CONTINUATION_3D,
+                           cfg) {
             cfg.s_dimension =
                rsrc->base.width0 / util_format_get_blocksize(image->format);
             cfg.t_dimension = cfg.r_dimension = 1;
@@ -1948,7 +1951,8 @@ emit_image_bufs(struct panfrost_batch *batch, enum pipe_shader_type shader,
          continue;
       }
 
-      pan_pack(bufs + (i * 2) + 1, ATTRIBUTE_BUFFER_CONTINUATION_3D, cfg) {
+      pan_cast_and_pack(&bufs[(i * 2) + 1], ATTRIBUTE_BUFFER_CONTINUATION_3D,
+                        cfg) {
          unsigned level = image->u.tex.level;
          unsigned samples = rsrc->image.layout.nr_samples;
 
@@ -2009,8 +2013,9 @@ panfrost_emit_image_attribs(struct panfrost_batch *batch, uint64_t *buffers,
 
    /* We need an empty attrib buf to stop the prefetching on Bifrost */
 #if PAN_ARCH >= 6
-   pan_pack(bufs.cpu + ((buf_count - 1) * pan_size(ATTRIBUTE_BUFFER)),
-            ATTRIBUTE_BUFFER, cfg)
+   struct  mali_attribute_buffer_packed *attrib_bufs = bufs.cpu;
+
+   pan_pack(&attrib_bufs[buf_count - 1], ATTRIBUTE_BUFFER, cfg)
       ;
 #endif
 
@@ -2148,7 +2153,8 @@ panfrost_emit_vertex_data(struct panfrost_batch *batch, uint64_t *buffers)
             cfg.divisor_e = extra_flags;
          }
 
-         pan_pack(bufs + k + 1, ATTRIBUTE_BUFFER_CONTINUATION_NPOT, cfg) {
+         pan_cast_and_pack(&bufs[k + 1], ATTRIBUTE_BUFFER_CONTINUATION_NPOT,
+                           cfg) {
             cfg.divisor_numerator = magic_divisor;
             cfg.divisor = divisor;
          }
@@ -2162,14 +2168,17 @@ panfrost_emit_vertex_data(struct panfrost_batch *batch, uint64_t *buffers)
 #if PAN_ARCH <= 5
    /* Add special gl_VertexID/gl_InstanceID buffers */
    if (special_vbufs) {
-      panfrost_vertex_id(ctx->padded_count, &bufs[k], ctx->instance_count > 1);
+      panfrost_vertex_id(ctx->padded_count,
+                         (struct mali_attribute_vertex_id_packed *)&bufs[k],
+                         ctx->instance_count > 1);
 
       pan_pack(out + PAN_VERTEX_ID, ATTRIBUTE, cfg) {
          cfg.buffer_index = k++;
          cfg.format = so->formats[PAN_VERTEX_ID];
       }
 
-      panfrost_instance_id(ctx->padded_count, &bufs[k],
+      panfrost_instance_id(ctx->padded_count,
+                           (struct mali_attribute_instance_id_packed *)&bufs[k],
                            ctx->instance_count > 1);
 
       pan_pack(out + PAN_INSTANCE_ID, ATTRIBUTE, cfg) {
@@ -3640,7 +3649,7 @@ panfrost_create_depth_stencil_state(
 #else
    /* Pack with nodefaults so only explicitly set fields affect pan_merge() when
     * emitting depth stencil descriptor */
-   pan_pack_nodefaults(&so->desc, DEPTH_STENCIL, cfg) {
+   pan_cast_and_pack_nodefaults(&so->desc, DEPTH_STENCIL, cfg) {
       cfg.front_compare_function = (enum mali_func)front.func;
       cfg.front_stencil_fail = pan_pipe_to_stencil_op(front.fail_op);
       cfg.front_depth_fail = pan_pipe_to_stencil_op(front.zfail_op);
@@ -3824,7 +3833,8 @@ prepare_shader(struct panfrost_compiled_shader *state,
                struct panfrost_pool *pool, bool upload)
 {
 #if PAN_ARCH <= 7
-   void *out = &state->partial_rsd;
+   struct mali_renderer_state_packed *out =
+      (struct mali_renderer_state_packed *)&state->partial_rsd;
 
    if (upload) {
       struct panfrost_ptr ptr =
@@ -3857,8 +3867,10 @@ prepare_shader(struct panfrost_compiled_shader *state,
 
    state->state = panfrost_pool_take_ref(pool, ptr.gpu);
 
+   struct mali_shader_program_packed *programs = ptr.cpu;
+
    /* Generic, or IDVS/points */
-   pan_pack(ptr.cpu, SHADER_PROGRAM, cfg) {
+   pan_cast_and_pack(&programs[0], SHADER_PROGRAM, cfg) {
       cfg.stage = pan_shader_stage(&state->info);
 
       if (cfg.stage == MALI_SHADER_STAGE_FRAGMENT)
@@ -3880,7 +3892,7 @@ prepare_shader(struct panfrost_compiled_shader *state,
       return;
 
    /* IDVS/triangles */
-   pan_pack(ptr.cpu + pan_size(SHADER_PROGRAM), SHADER_PROGRAM, cfg) {
+   pan_pack(&programs[1], SHADER_PROGRAM, cfg) {
       cfg.stage = pan_shader_stage(&state->info);
       cfg.vertex_warp_limit = MALI_WARP_LIMIT_HALF;
       cfg.register_allocation =
@@ -3893,7 +3905,7 @@ prepare_shader(struct panfrost_compiled_shader *state,
    if (!secondary_enable)
       return;
 
-   pan_pack(ptr.cpu + (pan_size(SHADER_PROGRAM) * 2), SHADER_PROGRAM, cfg) {
+   pan_pack(&programs[2], SHADER_PROGRAM, cfg) {
       unsigned work_count = state->info.vs.secondary_work_reg_count;
 
       cfg.stage = pan_shader_stage(&state->info);

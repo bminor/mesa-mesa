@@ -153,7 +153,8 @@ panfrost_overdraw_alpha(const struct panfrost_context *ctx, bool zero)
 
 static inline void
 panfrost_emit_primitive_size(struct panfrost_context *ctx, bool points,
-                             uint64_t size_array, void *prim_size)
+                             uint64_t size_array,
+                             struct mali_primitive_size_packed *prim_size)
 {
    struct panfrost_rasterizer *rast = ctx->rasterizer;
 

@@ -415,7 +415,8 @@ void GENX(panfrost_texture_swizzle_replicate_x)(struct pan_image_view *iview);
 void GENX(panfrost_texture_afbc_reswizzle)(struct pan_image_view *iview);
 #endif
 
-void GENX(panfrost_new_texture)(const struct pan_image_view *iview, void *out,
+void GENX(panfrost_new_texture)(const struct pan_image_view *iview,
+                                struct mali_texture_packed *out,
                                 const struct panfrost_ptr *payload);
 #endif
 

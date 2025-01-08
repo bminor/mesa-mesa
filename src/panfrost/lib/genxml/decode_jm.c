@@ -30,7 +30,8 @@
 #if PAN_ARCH <= 9
 
 static void
-pandecode_primitive(struct pandecode_context *ctx, const void *p)
+pandecode_primitive(struct pandecode_context *ctx,
+                    const struct mali_primitive_packed *p)
 {
    pan_unpack(p, PRIMITIVE, primitive);
    DUMP_UNPACKED(ctx, PRIMITIVE, primitive, "Primitive:\n");
@@ -75,14 +76,14 @@ pandecode_attributes(struct pandecode_context *ctx, uint64_t addr, int count,
    MAP_ADDR(ctx, ATTRIBUTE_BUFFER, addr, cl);
 
    for (int i = 0; i < count; ++i) {
-      pan_unpack(cl + i * pan_size(ATTRIBUTE_BUFFER), ATTRIBUTE_BUFFER, temp);
+      pan_unpack(&cl[i], ATTRIBUTE_BUFFER, temp);
       DUMP_UNPACKED(ctx, ATTRIBUTE_BUFFER, temp, "%s:\n", prefix);
 
       switch (temp.type) {
       case MALI_ATTRIBUTE_TYPE_1D_NPOT_DIVISOR_WRITE_REDUCTION:
       case MALI_ATTRIBUTE_TYPE_1D_NPOT_DIVISOR: {
-         pan_unpack(cl + (i + 1) * pan_size(ATTRIBUTE_BUFFER),
-                    ATTRIBUTE_BUFFER_CONTINUATION_NPOT, temp2);
+         pan_cast_and_unpack(&cl[i + 1], ATTRIBUTE_BUFFER_CONTINUATION_NPOT,
+                             temp2);
          pan_print(ctx->dump_stream, ATTRIBUTE_BUFFER_CONTINUATION_NPOT, temp2,
                    (ctx->indent + 1) * 2);
          i++;
@@ -90,8 +91,8 @@ pandecode_attributes(struct pandecode_context *ctx, uint64_t addr, int count,
       }
       case MALI_ATTRIBUTE_TYPE_3D_LINEAR:
       case MALI_ATTRIBUTE_TYPE_3D_INTERLEAVED: {
-         pan_unpack(cl + (i + 1) * pan_size(ATTRIBUTE_BUFFER_CONTINUATION_3D),
-                    ATTRIBUTE_BUFFER_CONTINUATION_3D, temp2);
+         pan_cast_and_unpack(&cl[i + 1], ATTRIBUTE_BUFFER_CONTINUATION_3D,
+                             temp2);
          pan_print(ctx->dump_stream, ATTRIBUTE_BUFFER_CONTINUATION_3D, temp2,
                    (ctx->indent + 1) * 2);
          i++;
@@ -136,7 +137,8 @@ bits(uint32_t word, uint32_t lo, uint32_t hi)
 }
 
 static void
-pandecode_invocation(struct pandecode_context *ctx, const void *i)
+pandecode_invocation(struct pandecode_context *ctx,
+                     const struct mali_invocation_packed *i)
 {
    /* Decode invocation_count. See the comment before the definition of
     * invocation_count for an explanation.
@@ -269,7 +271,8 @@ GENX(pandecode_dcd)(struct pandecode_context *ctx, const struct MALI_DRAW *p,
       /* On v5 only, the actual framebuffer pointer is tagged with extra
        * metadata that we validate but do not print.
        */
-      pan_unpack(&p->fbd, FRAMEBUFFER_POINTER, ptr);
+      const uint64_t *fbd = &p->fbd;
+      pan_cast_and_unpack(fbd, FRAMEBUFFER_POINTER, ptr);
 
       if (!ptr.type || ptr.zs_crc_extension_present ||
           ptr.render_target_count != 1) {
@@ -288,7 +291,7 @@ GENX(pandecode_dcd)(struct pandecode_context *ctx, const struct MALI_DRAW *p,
    int texture_count = 0, sampler_count = 0;
 
    if (p->state) {
-      uint32_t *cl =
+      struct mali_renderer_state_packed *cl =
          pandecode_fetch_gpu_mem(ctx, p->state, pan_size(RENDERER_STATE));
 
       pan_unpack(cl, RENDERER_STATE, state);
@@ -485,7 +488,8 @@ pandecode_fragment_job(struct pandecode_context *ctx, uint64_t job,
    /* On v5 and newer, the actual framebuffer pointer is tagged with extra
     * metadata that we need to disregard.
     */
-   pan_unpack(&s.framebuffer, FRAMEBUFFER_POINTER, ptr);
+   const uint64_t *framebuffer_packed_raw = &s.framebuffer;
+   pan_cast_and_unpack(framebuffer_packed_raw, FRAMEBUFFER_POINTER, ptr);
    fbd_pointer = ptr.pointer;
 #else
    /* On v4, the framebuffer pointer is untagged. */

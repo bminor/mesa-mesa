@@ -65,11 +65,12 @@ GENX(jm_init_batch)(struct panfrost_batch *batch)
 #if PAN_ARCH == 5
    struct mali_framebuffer_pointer_packed ptr;
 
-   pan_pack(ptr.opaque, FRAMEBUFFER_POINTER, cfg) {
+   pan_pack(&ptr, FRAMEBUFFER_POINTER, cfg) {
       cfg.pointer = batch->framebuffer.gpu;
       cfg.render_target_count = 1; /* a necessary lie */
    }
 
+   /* XXX: THIS IS A BUG, FIXME */
    batch->tls.gpu = ptr.opaque[0];
 #endif
 #endif
@@ -411,7 +412,7 @@ jm_emit_tiler_desc(struct panfrost_batch *batch)
 
    struct panfrost_ptr t = pan_pool_alloc_desc(&batch->pool.base, TILER_HEAP);
 
-   pan_pack(t.cpu, TILER_HEAP, heap) {
+   pan_cast_and_pack(t.cpu, TILER_HEAP, heap) {
       heap.size = panfrost_bo_size(dev->tiler_heap);
       heap.base = dev->tiler_heap->ptr.gpu;
       heap.bottom = dev->tiler_heap->ptr.gpu;
@@ -423,7 +424,7 @@ jm_emit_tiler_desc(struct panfrost_batch *batch)
    assert(max_levels >= 2);
 
    t = pan_pool_alloc_desc(&batch->pool.base, TILER_CONTEXT);
-   pan_pack(t.cpu, TILER_CONTEXT, tiler) {
+   pan_cast_and_pack(t.cpu, TILER_CONTEXT, tiler) {
       /* TODO: Select hierarchy mask more effectively */
       tiler.hierarchy_mask = (max_levels >= 8) ? 0xFF : 0x28;
 
@@ -471,7 +472,8 @@ jm_emit_draw_descs(struct panfrost_batch *batch, struct MALI_DRAW *d,
 }
 
 static void
-jm_emit_vertex_draw(struct panfrost_batch *batch, void *section)
+jm_emit_vertex_draw(struct panfrost_batch *batch,
+                    struct mali_draw_packed *section)
 {
    pan_pack(section, DRAW, cfg) {
       cfg.state = batch->rsd[PIPE_SHADER_VERTEX];
@@ -507,8 +509,8 @@ jm_emit_vertex_job(struct panfrost_batch *batch,
 #endif /* PAN_ARCH <= 7 */
 
 static void
-jm_emit_tiler_draw(void *out, struct panfrost_batch *batch, bool fs_required,
-                   enum mesa_prim prim)
+jm_emit_tiler_draw(struct mali_draw_packed *out, struct panfrost_batch *batch,
+                   bool fs_required, enum mesa_prim prim)
 {
    struct panfrost_context *ctx = batch->ctx;
    struct pipe_rasterizer_state *rast = &ctx->rasterizer->base;
@@ -672,7 +674,7 @@ static void
 jm_emit_primitive(struct panfrost_batch *batch,
                   const struct pipe_draw_info *info,
                   const struct pipe_draw_start_count_bias *draw,
-                  bool secondary_shader, void *out)
+                  bool secondary_shader, struct mali_primitive_packed *out)
 {
    struct panfrost_context *ctx = batch->ctx;
    UNUSED struct pipe_rasterizer_state *rast = &ctx->rasterizer->base;

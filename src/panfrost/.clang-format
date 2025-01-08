@@ -73,6 +73,8 @@ ForEachMacros: [
   'nodearray_dense_foreach',
   'nodearray_dense_foreach_64',
   'nodearray_sparse_foreach',
+  'pan_cast_and_pack',
+  'pan_cast_and_pack_nodefaults',
   'pan_foreach_instr_in_block_rev',
   'pan_foreach_predecessor',
   'pan_foreach_successor',

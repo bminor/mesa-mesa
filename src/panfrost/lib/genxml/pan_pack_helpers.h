@@ -87,20 +87,29 @@ __gen_unpack_padded(const uint32_t *restrict cl, uint32_t start, uint32_t end)
    for (struct PREFIX1(T) name = {PREFIX2(T, header)},                         \
                           *_loop_terminate = &name;                            \
         __builtin_expect(_loop_terminate != NULL, 1); ({                       \
-           PREFIX2(T, pack)((PREFIX2(T, PACKED_T) *)(dst), &name);             \
+           PREFIX2(T, pack)((dst), &name);                                     \
            _loop_terminate = NULL;                                             \
         }))
 
 #define pan_pack_nodefaults(dst, T, name)                                      \
    for (struct PREFIX1(T) name = {0}, *_loop_terminate = &name;                \
         __builtin_expect(_loop_terminate != NULL, 1); ({                       \
-           PREFIX2(T, pack)((PREFIX2(T, PACKED_T) *)(dst), &name);             \
+           PREFIX2(T, pack)((dst), &name);                                     \
            _loop_terminate = NULL;                                             \
         }))
 
+#define pan_cast_and_pack(dst, T, name)                                        \
+   pan_pack((PREFIX2(T, PACKED_T) *)dst, T, name)
+
+#define pan_cast_and_pack_nodefaults(dst, T, name)                             \
+   pan_pack_nodefaults((PREFIX2(T, PACKED_T) *)dst, T, name)
+
 #define pan_unpack(src, T, name)                                               \
    struct PREFIX1(T) name;                                                     \
-   PREFIX2(T, unpack)((const PREFIX2(T, PACKED_T) *)(src), &name)
+   PREFIX2(T, unpack)((src), &name)
+
+#define pan_cast_and_unpack(src, T, name)                                      \
+   pan_unpack((const PREFIX2(T, PACKED_T) *)(src), T, name)
 
 #define pan_print(fp, T, var, indent) PREFIX2(T, print)(fp, &(var), indent)
 

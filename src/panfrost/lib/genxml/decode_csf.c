@@ -36,6 +36,8 @@
 /* Limit for Mali-G610. -1 because we're not including the active frame */
 #define MAX_CALL_STACK_DEPTH (8 - 1)
 
+#define cs_unpack(packed, T, unpacked) pan_cast_and_unpack(packed, T, unpacked)
+
 struct queue_ctx {
    /* Size of CSHWIF register file in 32-bit registers */
    unsigned nr_regs;
@@ -93,12 +95,12 @@ static const char *conditions_str[] = {
 };
 
 static void
-print_cs_instr(FILE *fp, uint64_t instr)
+print_cs_instr(FILE *fp, const uint64_t *instr)
 {
-   pan_unpack(&instr, CS_BASE, base);
+   cs_unpack(instr, CS_BASE, base);
    switch (base.opcode) {
    case MALI_CS_OPCODE_NOP: {
-      pan_unpack(&instr, CS_NOP, I);
+      cs_unpack(instr, CS_NOP, I);
       if (I.ignored)
          fprintf(fp, "NOP // 0x%" PRIX64, I.ignored);
       else
@@ -107,19 +109,19 @@ print_cs_instr(FILE *fp, uint64_t instr)
    }
 
    case MALI_CS_OPCODE_MOVE: {
-      pan_unpack(&instr, CS_MOVE, I);
+      cs_unpack(instr, CS_MOVE, I);
       fprintf(fp, "MOVE d%u, #0x%" PRIX64, I.destination, I.immediate);
       break;
    }
 
    case MALI_CS_OPCODE_MOVE32: {
-      pan_unpack(&instr, CS_MOVE32, I);
+      cs_unpack(instr, CS_MOVE32, I);
       fprintf(fp, "MOVE32 r%u, #0x%X", I.destination, I.immediate);
       break;
    }
 
    case MALI_CS_OPCODE_WAIT: {
-      pan_unpack(&instr, CS_WAIT, I);
+      cs_unpack(instr, CS_WAIT, I);
       fprintf(fp, "WAIT%s #%x", I.progress_increment ? ".progress_inc" : "",
               I.wait_mask);
       break;
@@ -127,7 +129,7 @@ print_cs_instr(FILE *fp, uint64_t instr)
 
    case MALI_CS_OPCODE_RUN_COMPUTE: {
       const char *axes[4] = {"x_axis", "y_axis", "z_axis"};
-      pan_unpack(&instr, CS_RUN_COMPUTE, I);
+      cs_unpack(instr, CS_RUN_COMPUTE, I);
 
       /* Print the instruction. Ignore the selects and the flags override
        * since we'll print them implicitly later.
@@ -140,7 +142,7 @@ print_cs_instr(FILE *fp, uint64_t instr)
    }
 
    case MALI_CS_OPCODE_RUN_TILING: {
-      pan_unpack(&instr, CS_RUN_TILING, I);
+      cs_unpack(instr, CS_RUN_TILING, I);
       fprintf(fp, "RUN_TILING%s.srt%d.spd%d.tsd%d.fau%d",
               I.progress_increment ? ".progress_inc" : "", I.srt_select,
               I.spd_select, I.tsd_select, I.fau_select);
@@ -148,7 +150,7 @@ print_cs_instr(FILE *fp, uint64_t instr)
    }
 
    case MALI_CS_OPCODE_RUN_IDVS: {
-      pan_unpack(&instr, CS_RUN_IDVS, I);
+      cs_unpack(instr, CS_RUN_IDVS, I);
       fprintf(
          fp,
          "RUN_IDVS%s%s%s.varying_srt%d.varying_fau%d.varying_tsd%d.frag_srt%d.frag_tsd%d r%u, #%x",
@@ -168,7 +170,7 @@ print_cs_instr(FILE *fp, uint64_t instr)
          "unknown", "unknown",        "unknown",      "unknown",
          "unknown", "unknown",        "unknown",      "unknown",
       };
-      pan_unpack(&instr, CS_RUN_FRAGMENT, I);
+      cs_unpack(instr, CS_RUN_FRAGMENT, I);
 
       fprintf(fp, "RUN_FRAGMENT%s%s.tile_order=%s",
               I.progress_increment ? ".progress_inc" : "",
@@ -178,21 +180,22 @@ print_cs_instr(FILE *fp, uint64_t instr)
    }
 
    case MALI_CS_OPCODE_RUN_FULLSCREEN: {
-      pan_unpack(&instr, CS_RUN_FULLSCREEN, I);
+      cs_unpack(instr, CS_RUN_FULLSCREEN, I);
       fprintf(fp, "RUN_FULLSCREEN%s r%u, #%x",
-              I.progress_increment ? ".progress_inc" : "", I.dcd, I.flags_override);
+              I.progress_increment ? ".progress_inc" : "", I.dcd,
+              I.flags_override);
       break;
    }
 
    case MALI_CS_OPCODE_FINISH_TILING: {
-      pan_unpack(&instr, CS_FINISH_TILING, I);
+      cs_unpack(instr, CS_FINISH_TILING, I);
       fprintf(fp, "FINISH_TILING%s",
               I.progress_increment ? ".progress_inc" : "");
       break;
    }
 
    case MALI_CS_OPCODE_FINISH_FRAGMENT: {
-      pan_unpack(&instr, CS_FINISH_FRAGMENT, I);
+      cs_unpack(instr, CS_FINISH_FRAGMENT, I);
       fprintf(fp, "FINISH_FRAGMENT%s d%u, d%u, #%x, #%u",
               I.increment_fragment_completed ? ".frag_end" : "",
               I.last_heap_chunk, I.first_heap_chunk, I.wait_mask,
@@ -201,7 +204,7 @@ print_cs_instr(FILE *fp, uint64_t instr)
    }
 
    case MALI_CS_OPCODE_ADD_IMMEDIATE32: {
-      pan_unpack(&instr, CS_ADD_IMMEDIATE32, I);
+      cs_unpack(instr, CS_ADD_IMMEDIATE32, I);
 
       fprintf(fp, "ADD_IMMEDIATE32 r%u, r%u, #%d", I.destination, I.source,
               I.immediate);
@@ -209,7 +212,7 @@ print_cs_instr(FILE *fp, uint64_t instr)
    }
 
    case MALI_CS_OPCODE_ADD_IMMEDIATE64: {
-      pan_unpack(&instr, CS_ADD_IMMEDIATE64, I);
+      cs_unpack(instr, CS_ADD_IMMEDIATE64, I);
 
       fprintf(fp, "ADD_IMMEDIATE64 d%u, d%u, #%d", I.destination, I.source,
               I.immediate);
@@ -217,7 +220,7 @@ print_cs_instr(FILE *fp, uint64_t instr)
    }
 
    case MALI_CS_OPCODE_UMIN32: {
-      pan_unpack(&instr, CS_UMIN32, I);
+      cs_unpack(instr, CS_UMIN32, I);
 
       fprintf(fp, "UMIN32 r%u, r%u, r%u", I.destination, I.source_1,
               I.source_2);
@@ -225,7 +228,7 @@ print_cs_instr(FILE *fp, uint64_t instr)
    }
 
    case MALI_CS_OPCODE_LOAD_MULTIPLE: {
-      pan_unpack(&instr, CS_LOAD_MULTIPLE, I);
+      cs_unpack(instr, CS_LOAD_MULTIPLE, I);
 
       fprintf(fp, "LOAD_MULTIPLE ");
       print_reg_tuple(I.base_register, I.mask, fp);
@@ -235,7 +238,7 @@ print_cs_instr(FILE *fp, uint64_t instr)
    }
 
    case MALI_CS_OPCODE_STORE_MULTIPLE: {
-      pan_unpack(&instr, CS_STORE_MULTIPLE, I);
+      cs_unpack(instr, CS_STORE_MULTIPLE, I);
 
       fprintf(fp, "STORE_MULTIPLE ");
       print_indirect(I.address, I.offset, fp);
@@ -245,44 +248,44 @@ print_cs_instr(FILE *fp, uint64_t instr)
    }
 
    case MALI_CS_OPCODE_BRANCH: {
-      pan_unpack(&instr, CS_BRANCH, I);
+      cs_unpack(instr, CS_BRANCH, I);
       fprintf(fp, "BRANCH.%s r%u, #%d", conditions_str[I.condition], I.value,
               I.offset);
       break;
    }
 
    case MALI_CS_OPCODE_SET_SB_ENTRY: {
-      pan_unpack(&instr, CS_SET_SB_ENTRY, I);
+      cs_unpack(instr, CS_SET_SB_ENTRY, I);
       fprintf(fp, "SET_SB_ENTRY #%u, #%u", I.endpoint_entry, I.other_entry);
       break;
    }
 
    case MALI_CS_OPCODE_PROGRESS_WAIT: {
-      pan_unpack(&instr, CS_PROGRESS_WAIT, I);
+      cs_unpack(instr, CS_PROGRESS_WAIT, I);
       fprintf(fp, "PROGRESS_WAIT d%u, #%u", I.source, I.queue);
       break;
    }
 
    case MALI_CS_OPCODE_SET_EXCEPTION_HANDLER: {
-      pan_unpack(&instr, CS_SET_EXCEPTION_HANDLER, I);
+      cs_unpack(instr, CS_SET_EXCEPTION_HANDLER, I);
       fprintf(fp, "SET_EXCEPTION_HANDLER d%u, r%u", I.address, I.length);
       break;
    }
 
    case MALI_CS_OPCODE_CALL: {
-      pan_unpack(&instr, CS_CALL, I);
+      cs_unpack(instr, CS_CALL, I);
       fprintf(fp, "CALL d%u, r%u", I.address, I.length);
       break;
    }
 
    case MALI_CS_OPCODE_JUMP: {
-      pan_unpack(&instr, CS_JUMP, I);
+      cs_unpack(instr, CS_JUMP, I);
       fprintf(fp, "JUMP d%u, r%u", I.address, I.length);
       break;
    }
 
    case MALI_CS_OPCODE_REQ_RESOURCE: {
-      pan_unpack(&instr, CS_REQ_RESOURCE, I);
+      cs_unpack(instr, CS_REQ_RESOURCE, I);
       fprintf(fp, "REQ_RESOURCE%s%s%s%s", I.compute ? ".compute" : "",
               I.fragment ? ".fragment" : "", I.tiler ? ".tiler" : "",
               I.idvs ? ".idvs" : "");
@@ -290,7 +293,7 @@ print_cs_instr(FILE *fp, uint64_t instr)
    }
 
    case MALI_CS_OPCODE_FLUSH_CACHE2: {
-      pan_unpack(&instr, CS_FLUSH_CACHE2, I);
+      cs_unpack(instr, CS_FLUSH_CACHE2, I);
       static const char *mode[] = {
          "nop",
          "clean",
@@ -306,7 +309,7 @@ print_cs_instr(FILE *fp, uint64_t instr)
    }
 
    case MALI_CS_OPCODE_SYNC_ADD32: {
-      pan_unpack(&instr, CS_SYNC_ADD32, I);
+      cs_unpack(instr, CS_SYNC_ADD32, I);
       fprintf(fp, "SYNC_ADD32%s%s [d%u], r%u, #%x, #%u",
               I.error_propagate ? ".error_propagate" : "",
               I.scope == MALI_CS_SYNC_SCOPE_CSG ? ".csg" : ".system", I.address,
@@ -315,7 +318,7 @@ print_cs_instr(FILE *fp, uint64_t instr)
    }
 
    case MALI_CS_OPCODE_SYNC_SET32: {
-      pan_unpack(&instr, CS_SYNC_SET32, I);
+      cs_unpack(instr, CS_SYNC_SET32, I);
       fprintf(fp, "SYNC_SET32.%s%s [d%u], r%u, #%x, #%u",
               I.error_propagate ? ".error_propagate" : "",
               I.scope == MALI_CS_SYNC_SCOPE_CSG ? ".csg" : ".system", I.address,
@@ -324,7 +327,7 @@ print_cs_instr(FILE *fp, uint64_t instr)
    }
 
    case MALI_CS_OPCODE_SYNC_WAIT32: {
-      pan_unpack(&instr, CS_SYNC_WAIT32, I);
+      cs_unpack(instr, CS_SYNC_WAIT32, I);
       fprintf(fp, "SYNC_WAIT32%s%s d%u, r%u", conditions_str[I.condition],
               I.error_reject ? ".reject" : ".inherit", I.address, I.data);
       break;
@@ -338,7 +341,7 @@ print_cs_instr(FILE *fp, uint64_t instr)
          "ERROR_STATE",
       };
 
-      pan_unpack(&instr, CS_STORE_STATE, I);
+      cs_unpack(instr, CS_STORE_STATE, I);
       fprintf(fp, "STORE_STATE.%s d%u, #%i, #%x, #%u",
               I.state >= ARRAY_SIZE(states_str) ? "UNKNOWN_STATE"
                                                 : states_str[I.state],
@@ -347,25 +350,25 @@ print_cs_instr(FILE *fp, uint64_t instr)
    }
 
    case MALI_CS_OPCODE_PROT_REGION: {
-      pan_unpack(&instr, CS_PROT_REGION, I);
+      cs_unpack(instr, CS_PROT_REGION, I);
       fprintf(fp, "PROT_REGION #%u", I.size);
       break;
    }
 
    case MALI_CS_OPCODE_PROGRESS_STORE: {
-      pan_unpack(&instr, CS_PROGRESS_STORE, I);
+      cs_unpack(instr, CS_PROGRESS_STORE, I);
       fprintf(fp, "PROGRESS_STORE d%u", I.source);
       break;
    }
 
    case MALI_CS_OPCODE_PROGRESS_LOAD: {
-      pan_unpack(&instr, CS_PROGRESS_LOAD, I);
+      cs_unpack(instr, CS_PROGRESS_LOAD, I);
       fprintf(fp, "PROGRESS_LOAD d%u", I.destination);
       break;
    }
 
    case MALI_CS_OPCODE_RUN_COMPUTE_INDIRECT: {
-      pan_unpack(&instr, CS_RUN_COMPUTE_INDIRECT, I);
+      cs_unpack(instr, CS_RUN_COMPUTE_INDIRECT, I);
       fprintf(fp, "RUN_COMPUTE_INDIRECT%s.srt%d.spd%d.tsd%d.fau%d #%u",
               I.progress_increment ? ".progress_inc" : "", I.srt_select,
               I.spd_select, I.tsd_select, I.fau_select, I.workgroups_per_task);
@@ -374,19 +377,19 @@ print_cs_instr(FILE *fp, uint64_t instr)
    }
 
    case MALI_CS_OPCODE_ERROR_BARRIER: {
-      pan_unpack(&instr, CS_ERROR_BARRIER, I);
+      cs_unpack(instr, CS_ERROR_BARRIER, I);
       fprintf(fp, "ERROR_BARRIER");
       break;
    }
 
    case MALI_CS_OPCODE_HEAP_SET: {
-      pan_unpack(&instr, CS_HEAP_SET, I);
+      cs_unpack(instr, CS_HEAP_SET, I);
       fprintf(fp, "HEAP_SET d%u", I.address);
       break;
    }
 
    case MALI_CS_OPCODE_HEAP_OPERATION: {
-      pan_unpack(&instr, CS_HEAP_OPERATION, I);
+      cs_unpack(instr, CS_HEAP_OPERATION, I);
       const char *counter_names[] = {"vt_start", "vt_end", NULL, "frag_end"};
       fprintf(fp, "HEAP_OPERATION.%s #%x, #%d", counter_names[I.operation],
               I.wait_mask, I.signal_slot);
@@ -394,7 +397,7 @@ print_cs_instr(FILE *fp, uint64_t instr)
    }
 
    case MALI_CS_OPCODE_TRACE_POINT: {
-      pan_unpack(&instr, CS_TRACE_POINT, I);
+      cs_unpack(instr, CS_TRACE_POINT, I);
       fprintf(fp, "TRACE_POINT r%d:r%d, #%x, #%u", I.base_register,
               I.base_register + I.register_count - 1, I.wait_mask,
               I.signal_slot);
@@ -402,7 +405,7 @@ print_cs_instr(FILE *fp, uint64_t instr)
    }
 
    case MALI_CS_OPCODE_SYNC_ADD64: {
-      pan_unpack(&instr, CS_SYNC_ADD64, I);
+      cs_unpack(instr, CS_SYNC_ADD64, I);
       fprintf(fp, "SYNC_ADD64%s%s [d%u], d%u, #%x, #%u",
               I.error_propagate ? ".error_propagate" : "",
               I.scope == MALI_CS_SYNC_SCOPE_CSG ? ".csg" : ".system", I.address,
@@ -411,7 +414,7 @@ print_cs_instr(FILE *fp, uint64_t instr)
    }
 
    case MALI_CS_OPCODE_SYNC_SET64: {
-      pan_unpack(&instr, CS_SYNC_SET64, I);
+      cs_unpack(instr, CS_SYNC_SET64, I);
       fprintf(fp, "SYNC_SET64.%s%s [d%u], d%u, #%x, #%u",
               I.error_propagate ? ".error_propagate" : "",
               I.scope == MALI_CS_SYNC_SCOPE_CSG ? ".csg" : ".system", I.address,
@@ -420,7 +423,7 @@ print_cs_instr(FILE *fp, uint64_t instr)
    }
 
    case MALI_CS_OPCODE_SYNC_WAIT64: {
-      pan_unpack(&instr, CS_SYNC_WAIT64, I);
+      cs_unpack(instr, CS_SYNC_WAIT64, I);
 
       fprintf(fp, "SYNC_WAIT64%s%s d%u, d%u", conditions_str[I.condition],
               I.error_reject ? ".reject" : ".inherit", I.address, I.data);
@@ -536,9 +539,10 @@ pandecode_run_tiling(struct pandecode_context *ctx, FILE *fp,
    ctx->indent++;
 
    /* Merge flag overrides with the register flags */
-   uint32_t tiler_flags_raw = cs_get_u64(qctx, 56);
-   tiler_flags_raw |= I->flags_override;
-   pan_unpack(&tiler_flags_raw, PRIMITIVE_FLAGS, tiler_flags);
+   struct mali_primitive_flags_packed tiler_flags_packed = {
+      .opaque[0] = cs_get_u32(qctx, 56) | I->flags_override,
+   };
+   pan_unpack(&tiler_flags_packed, PRIMITIVE_FLAGS, tiler_flags);
 
    unsigned reg_srt = I->srt_select * 2;
    unsigned reg_fau = 8 + I->fau_select * 2;
@@ -616,9 +620,10 @@ pandecode_run_idvs(struct pandecode_context *ctx, FILE *fp,
    ctx->indent++;
 
    /* Merge flag overrides with the register flags */
-   uint32_t tiler_flags_raw = cs_get_u64(qctx, 56);
-   tiler_flags_raw |= I->flags_override;
-   pan_unpack(&tiler_flags_raw, PRIMITIVE_FLAGS, tiler_flags);
+   struct mali_primitive_flags_packed tiler_flags_packed = {
+      .opaque[0] = cs_get_u32(qctx, 56) | I->flags_override,
+   };
+   pan_unpack(&tiler_flags_packed, PRIMITIVE_FLAGS, tiler_flags);
 
    unsigned reg_position_srt = 0;
    unsigned reg_position_fau = 8;
@@ -765,16 +770,19 @@ pandecode_run_fullscreen(struct pandecode_context *ctx, FILE *fp,
    ctx->indent++;
 
    /* Merge flag overrides with the register flags */
-   uint32_t tiler_flags_raw = cs_get_u64(qctx, 56);
-   tiler_flags_raw |= I->flags_override;
-   pan_unpack(&tiler_flags_raw, PRIMITIVE_FLAGS, tiler_flags);
+   struct mali_primitive_flags_packed tiler_flags_packed = {
+      .opaque[0] = cs_get_u32(qctx, 56) | I->flags_override,
+   };
+   pan_unpack(&tiler_flags_packed, PRIMITIVE_FLAGS, tiler_flags);
    DUMP_UNPACKED(ctx, PRIMITIVE_FLAGS, tiler_flags, "Primitive flags\n");
 
    GENX(pandecode_tiler)(ctx, cs_get_u64(qctx, 40), qctx->gpu_id);
 
    DUMP_CL(ctx, SCISSOR, &qctx->regs[42], "Scissor\n");
 
-   pan_unpack(PANDECODE_PTR(ctx, cs_get_u64(qctx, I->dcd), void), DRAW, dcd);
+   pan_unpack(
+      PANDECODE_PTR(ctx, cs_get_u64(qctx, I->dcd), struct mali_draw_packed),
+      DRAW, dcd);
    GENX(pandecode_dcd)(ctx, &dcd, 0, qctx->gpu_id);
 
    ctx->indent--;
@@ -857,7 +865,7 @@ interpret_cs_instr(struct pandecode_context *ctx, struct queue_ctx *qctx)
    FILE *fp = ctx->dump_stream;
    /* Unpack the base so we get the opcode */
    uint8_t *bytes = (uint8_t *)qctx->ip;
-   pan_unpack(bytes, CS_BASE, base);
+   cs_unpack(bytes, CS_BASE, base);
 
    assert(qctx->ip < qctx->end);
 
@@ -869,43 +877,43 @@ interpret_cs_instr(struct pandecode_context *ctx, struct queue_ctx *qctx)
 
    switch (base.opcode) {
    case MALI_CS_OPCODE_RUN_COMPUTE: {
-      pan_unpack(bytes, CS_RUN_COMPUTE, I);
+      cs_unpack(bytes, CS_RUN_COMPUTE, I);
       pandecode_run_compute(ctx, fp, qctx, &I);
       break;
    }
 
    case MALI_CS_OPCODE_RUN_TILING: {
-      pan_unpack(bytes, CS_RUN_TILING, I);
+      cs_unpack(bytes, CS_RUN_TILING, I);
       pandecode_run_tiling(ctx, fp, qctx, &I);
       break;
    }
 
    case MALI_CS_OPCODE_RUN_IDVS: {
-      pan_unpack(bytes, CS_RUN_IDVS, I);
+      cs_unpack(bytes, CS_RUN_IDVS, I);
       pandecode_run_idvs(ctx, fp, qctx, &I);
       break;
    }
 
    case MALI_CS_OPCODE_RUN_FRAGMENT: {
-      pan_unpack(bytes, CS_RUN_FRAGMENT, I);
+      cs_unpack(bytes, CS_RUN_FRAGMENT, I);
       pandecode_run_fragment(ctx, fp, qctx, &I);
       break;
    }
 
    case MALI_CS_OPCODE_RUN_FULLSCREEN: {
-      pan_unpack(bytes, CS_RUN_FULLSCREEN, I);
+      cs_unpack(bytes, CS_RUN_FULLSCREEN, I);
       pandecode_run_fullscreen(ctx, fp, qctx, &I);
       break;
    }
 
    case MALI_CS_OPCODE_RUN_COMPUTE_INDIRECT: {
-      pan_unpack(bytes, CS_RUN_COMPUTE_INDIRECT, I);
+      cs_unpack(bytes, CS_RUN_COMPUTE_INDIRECT, I);
       pandecode_run_compute_indirect(ctx, fp, qctx, &I);
       break;
    }
 
    case MALI_CS_OPCODE_MOVE: {
-      pan_unpack(bytes, CS_MOVE, I);
+      cs_unpack(bytes, CS_MOVE, I);
 
       qctx->regs[I.destination + 0] = (uint32_t)I.immediate;
       qctx->regs[I.destination + 1] = (uint32_t)(I.immediate >> 32);
@@ -913,14 +921,14 @@ interpret_cs_instr(struct pandecode_context *ctx, struct queue_ctx *qctx)
    }
 
    case MALI_CS_OPCODE_MOVE32: {
-      pan_unpack(bytes, CS_MOVE32, I);
+      cs_unpack(bytes, CS_MOVE32, I);
 
       qctx->regs[I.destination] = I.immediate;
       break;
    }
 
    case MALI_CS_OPCODE_LOAD_MULTIPLE: {
-      pan_unpack(bytes, CS_LOAD_MULTIPLE, I);
+      cs_unpack(bytes, CS_LOAD_MULTIPLE, I);
       uint64_t addr =
          ((uint64_t)qctx->regs[I.address + 1] << 32) | qctx->regs[I.address];
       addr += I.offset;
@@ -936,14 +944,14 @@ interpret_cs_instr(struct pandecode_context *ctx, struct queue_ctx *qctx)
    }
 
    case MALI_CS_OPCODE_ADD_IMMEDIATE32: {
-      pan_unpack(bytes, CS_ADD_IMMEDIATE32, I);
+      cs_unpack(bytes, CS_ADD_IMMEDIATE32, I);
 
       qctx->regs[I.destination] = qctx->regs[I.source] + I.immediate;
       break;
    }
 
    case MALI_CS_OPCODE_ADD_IMMEDIATE64: {
-      pan_unpack(bytes, CS_ADD_IMMEDIATE64, I);
+      cs_unpack(bytes, CS_ADD_IMMEDIATE64, I);
 
       int64_t value =
          (qctx->regs[I.source] | ((int64_t)qctx->regs[I.source + 1] << 32)) +
@@ -955,7 +963,7 @@ interpret_cs_instr(struct pandecode_context *ctx, struct queue_ctx *qctx)
    }
 
    case MALI_CS_OPCODE_CALL: {
-      pan_unpack(bytes, CS_CALL, I);
+      cs_unpack(bytes, CS_CALL, I);
 
       if (qctx->call_stack_depth == MAX_CALL_STACK_DEPTH) {
          fprintf(stderr, "CS call stack overflow\n");
@@ -978,7 +986,7 @@ interpret_cs_instr(struct pandecode_context *ctx, struct queue_ctx *qctx)
    }
 
    case MALI_CS_OPCODE_SET_EXCEPTION_HANDLER: {
-      pan_unpack(bytes, CS_SET_EXCEPTION_HANDLER, I);
+      cs_unpack(bytes, CS_SET_EXCEPTION_HANDLER, I);
 
       assert(qctx->call_stack_depth < MAX_CALL_STACK_DEPTH);
 
@@ -1001,7 +1009,7 @@ interpret_cs_instr(struct pandecode_context *ctx, struct queue_ctx *qctx)
    }
 
    case MALI_CS_OPCODE_JUMP: {
-      pan_unpack(bytes, CS_JUMP, I);
+      cs_unpack(bytes, CS_JUMP, I);
 
       if (qctx->call_stack_depth == 0) {
          fprintf(stderr, "Cannot jump from the entrypoint\n");
@@ -1012,7 +1020,7 @@ interpret_cs_instr(struct pandecode_context *ctx, struct queue_ctx *qctx)
    }
 
    case MALI_CS_OPCODE_BRANCH: {
-      pan_unpack(bytes, CS_BRANCH, I);
+      cs_unpack(bytes, CS_BRANCH, I);
 
       interpret_cs_branch(ctx, qctx, I.offset, I.condition, I.value);
       break;
@@ -1081,7 +1089,7 @@ GENX(pandecode_interpret_cs)(struct pandecode_context *ctx, uint64_t queue,
          for (int i = 0; i < 1 + qctx.call_stack_depth; ++i)
             fprintf(fp, "  ");
 
-         print_cs_instr(fp, *(qctx.ip));
+         print_cs_instr(fp, qctx.ip);
          fprintf(fp, "\n");
       } while (interpret_cs_instr(ctx, &qctx));
    }
@@ -1145,35 +1153,35 @@ record_indirect_branch_target(struct cs_code_cfg *cfg,
       for (; blk_offs < blk->size &&
              blk->start + blk_offs != ibranch->instr_idx;
            blk_offs++) {
-         uint64_t instr = cfg->instrs[blk->start + blk_offs];
-         pan_unpack(&instr, CS_BASE, base);
+         const uint64_t *instr = &cfg->instrs[blk->start + blk_offs];
+         cs_unpack(instr, CS_BASE, base);
          switch (base.opcode) {
          case MALI_CS_OPCODE_MOVE: {
-            pan_unpack(&instr, CS_MOVE, I);
+            cs_unpack(instr, CS_MOVE, I);
             reg_file.u64[I.destination] = I.immediate;
             break;
          }
 
          case MALI_CS_OPCODE_MOVE32: {
-            pan_unpack(&instr, CS_MOVE32, I);
+            cs_unpack(instr, CS_MOVE32, I);
             reg_file.u32[I.destination] = I.immediate;
             break;
          }
 
          case MALI_CS_OPCODE_ADD_IMMEDIATE32: {
-            pan_unpack(&instr, CS_ADD_IMMEDIATE32, I);
+            cs_unpack(instr, CS_ADD_IMMEDIATE32, I);
             reg_file.u32[I.destination] = reg_file.u32[I.source] + I.immediate;
             break;
          }
 
          case MALI_CS_OPCODE_ADD_IMMEDIATE64: {
-            pan_unpack(&instr, CS_ADD_IMMEDIATE64, I);
+            cs_unpack(instr, CS_ADD_IMMEDIATE64, I);
             reg_file.u64[I.destination] = reg_file.u64[I.source] + I.immediate;
             break;
          }
 
          case MALI_CS_OPCODE_UMIN32: {
-            pan_unpack(&instr, CS_UMIN32, I);
+            cs_unpack(instr, CS_UMIN32, I);
             reg_file.u32[I.destination] =
                MIN2(reg_file.u32[I.source_1], reg_file.u32[I.source_2]);
             break;
@@ -1187,8 +1195,8 @@ record_indirect_branch_target(struct cs_code_cfg *cfg,
    }
    list_delinit(&cur_blk->node);
 
-   uint64_t instr = cfg->instrs[ibranch->instr_idx];
-   pan_unpack(&instr, CS_JUMP, I);
+   uint64_t *instr = &cfg->instrs[ibranch->instr_idx];
+   cs_unpack(instr, CS_JUMP, I);
 
    struct cs_indirect_branch_target target = {
       .address = reg_file.u64[I.address],
@@ -1209,24 +1217,24 @@ collect_indirect_branch_targets_recurse(struct cs_code_cfg *cfg,
 {
    for (; instr_ptr >= (int)cur_blk->start; instr_ptr--) {
       assert(instr_ptr >= 0);
-      uint64_t instr = cfg->instrs[instr_ptr];
-      pan_unpack(&instr, CS_BASE, base);
+      const uint64_t *instr = &cfg->instrs[instr_ptr];
+      cs_unpack(instr, CS_BASE, base);
       switch (base.opcode) {
       case MALI_CS_OPCODE_MOVE: {
-         pan_unpack(&instr, CS_MOVE, I);
+         cs_unpack(instr, CS_MOVE, I);
          BITSET_CLEAR(track_map, I.destination);
          BITSET_CLEAR(track_map, I.destination + 1);
          break;
       }
 
       case MALI_CS_OPCODE_MOVE32: {
-         pan_unpack(&instr, CS_MOVE32, I);
+         cs_unpack(instr, CS_MOVE32, I);
          BITSET_CLEAR(track_map, I.destination);
          break;
       }
 
       case MALI_CS_OPCODE_ADD_IMMEDIATE32: {
-         pan_unpack(&instr, CS_ADD_IMMEDIATE32, I);
+         cs_unpack(instr, CS_ADD_IMMEDIATE32, I);
          if (BITSET_TEST(track_map, I.destination)) {
             BITSET_SET(track_map, I.source);
             BITSET_CLEAR(track_map, I.destination);
@@ -1235,7 +1243,7 @@ collect_indirect_branch_targets_recurse(struct cs_code_cfg *cfg,
       }
 
       case MALI_CS_OPCODE_ADD_IMMEDIATE64: {
-         pan_unpack(&instr, CS_ADD_IMMEDIATE64, I);
+         cs_unpack(instr, CS_ADD_IMMEDIATE64, I);
          if (BITSET_TEST(track_map, I.destination)) {
             BITSET_SET(track_map, I.source);
             BITSET_CLEAR(track_map, I.destination);
@@ -1248,7 +1256,7 @@ collect_indirect_branch_targets_recurse(struct cs_code_cfg *cfg,
       }
 
       case MALI_CS_OPCODE_UMIN32: {
-         pan_unpack(&instr, CS_UMIN32, I);
+         cs_unpack(instr, CS_UMIN32, I);
          if (BITSET_TEST(track_map, I.destination)) {
             BITSET_SET(track_map, I.source_1);
             BITSET_SET(track_map, I.source_2);
@@ -1258,7 +1266,7 @@ collect_indirect_branch_targets_recurse(struct cs_code_cfg *cfg,
       }
 
       case MALI_CS_OPCODE_LOAD_MULTIPLE: {
-         pan_unpack(&instr, CS_LOAD_MULTIPLE, I);
+         cs_unpack(instr, CS_LOAD_MULTIPLE, I);
          for (unsigned i = 0; i < 16; i++) {
             if ((I.mask & BITFIELD_BIT(i)) &&
                 BITSET_TEST(track_map, I.base_register + i)) {
@@ -1270,7 +1278,7 @@ collect_indirect_branch_targets_recurse(struct cs_code_cfg *cfg,
       }
 
       case MALI_CS_OPCODE_PROGRESS_LOAD: {
-         pan_unpack(&instr, CS_PROGRESS_LOAD, I);
+         cs_unpack(instr, CS_PROGRESS_LOAD, I);
          for (unsigned i = 0; i < 16; i++) {
             if (BITSET_TEST(track_map, I.destination) ||
                 BITSET_TEST(track_map, I.destination + 1)) {
@@ -1323,14 +1331,14 @@ static void
 collect_indirect_branch_targets(struct cs_code_cfg *cfg,
                                 struct cs_indirect_branch *ibranch)
 {
-   uint64_t instr = cfg->instrs[ibranch->instr_idx];
+   uint64_t *instr = &cfg->instrs[ibranch->instr_idx];
    struct cs_code_block *cur_blk = cfg->blk_map[ibranch->instr_idx];
    struct list_head blk_stack;
    BITSET_DECLARE(track_map, 256) = {0};
 
    list_inithead(&blk_stack);
 
-   pan_unpack(&instr, CS_JUMP, I);
+   cs_unpack(instr, CS_JUMP, I);
    BITSET_SET(track_map, I.address);
    BITSET_SET(track_map, I.address + 1);
    BITSET_SET(track_map, I.length);
@@ -1358,15 +1366,14 @@ get_cs_cfg(struct pandecode_context *ctx, struct hash_table_u64 *symbols,
 
    util_dynarray_init(&cfg->indirect_branches, cfg);
 
-   cfg->blk_map =
-      rzalloc_array(cfg, struct cs_code_block *, instr_count);
+   cfg->blk_map = rzalloc_array(cfg, struct cs_code_block *, instr_count);
    cfg->instrs = instrs;
    cfg->instr_count = instr_count;
 
    struct cs_code_block *block = cs_code_block_alloc(cfg, 0, 0);
 
    for (unsigned i = 0; i < instr_count; i++) {
-      uint64_t instr = instrs[i];
+      const uint64_t *instr = &instrs[i];
 
       if (!cfg->blk_map[i]) {
          cfg->blk_map[i] = block;
@@ -1379,7 +1386,7 @@ get_cs_cfg(struct pandecode_context *ctx, struct hash_table_u64 *symbols,
          util_dynarray_append(&block->predecessors, unsigned, i - 1);
       }
 
-      pan_unpack(&instr, CS_BASE, base);
+      cs_unpack(instr, CS_BASE, base);
 
       if (base.opcode == MALI_CS_OPCODE_JUMP ||
           base.opcode == MALI_CS_OPCODE_CALL) {
@@ -1394,7 +1401,7 @@ get_cs_cfg(struct pandecode_context *ctx, struct hash_table_u64 *symbols,
       if (base.opcode != MALI_CS_OPCODE_BRANCH)
          continue;
 
-      pan_unpack(&instr, CS_BRANCH, I);
+      cs_unpack(instr, CS_BRANCH, I);
 
       unsigned target = MIN2(i + 1 + I.offset, instr_count);
 
@@ -1437,10 +1444,12 @@ get_cs_cfg(struct pandecode_context *ctx, struct hash_table_u64 *symbols,
    }
 
    util_dynarray_foreach(&cfg->indirect_branches, struct cs_indirect_branch,
-                         ibranch) {
+                         ibranch)
+   {
       collect_indirect_branch_targets(cfg, ibranch);
-      util_dynarray_foreach(&ibranch->targets,
-                            struct cs_indirect_branch_target, target) {
+      util_dynarray_foreach(&ibranch->targets, struct cs_indirect_branch_target,
+                            target)
+      {
          get_cs_cfg(ctx, symbols, target->address, target->length);
       }
    }
@@ -1464,8 +1473,8 @@ print_cs_binary(struct pandecode_context *ctx, uint64_t bin,
       }
 
       pandecode_make_indent(ctx);
-      print_cs_instr(ctx->dump_stream, cfg->instrs[i]);
-      pan_unpack(&cfg->instrs[i], CS_BASE, base);
+      print_cs_instr(ctx->dump_stream, &cfg->instrs[i]);
+      cs_unpack(&cfg->instrs[i], CS_BASE, base);
       switch (base.opcode) {
       case MALI_CS_OPCODE_JUMP:
       case MALI_CS_OPCODE_CALL: {
@@ -1475,20 +1484,20 @@ print_cs_binary(struct pandecode_context *ctx, uint64_t bin,
          assert(ibranch->instr_idx == i);
          fprintf(ctx->dump_stream, " // ");
          util_dynarray_foreach(&ibranch->targets,
-                               struct cs_indirect_branch_target, target) {
+                               struct cs_indirect_branch_target, target)
+         {
             fprintf(ctx->dump_stream, "%scs@%" PRIx64,
                     target == ibranch->targets.data ? "" : ",",
                     target->address);
          }
          if (ibranch->has_unknown_targets)
-            fprintf(ctx->dump_stream, "%s??",
-                    ibranch->targets.size ? "," : "");
+            fprintf(ctx->dump_stream, "%s??", ibranch->targets.size ? "," : "");
          ibranch_idx++;
          break;
       }
 
       case MALI_CS_OPCODE_BRANCH: {
-         pan_unpack(&cfg->instrs[i], CS_BRANCH, I);
+         cs_unpack(&cfg->instrs[i], CS_BRANCH, I);
          fprintf(ctx->dump_stream, " // ");
 
          unsigned target = i + 1 + I.offset;
@@ -1532,7 +1541,8 @@ GENX(pandecode_cs_binary)(struct pandecode_context *ctx, uint64_t bin,
    struct cs_code_cfg *main_cfg = get_cs_cfg(ctx, symbols, bin, bin_size);
 
    print_cs_binary(ctx, bin, main_cfg, "main_cs");
-   hash_table_u64_foreach(symbols, he) {
+   hash_table_u64_foreach(symbols, he)
+   {
       struct cs_code_cfg *other_cfg = he.data;
       if (other_cfg == main_cfg)
          continue;
@@ -1571,17 +1581,17 @@ GENX(pandecode_cs_trace)(struct pandecode_context *ctx, uint64_t trace,
       };
 
       pandecode_make_indent(ctx);
-      print_cs_instr(ctx->dump_stream, *instr);
+      print_cs_instr(ctx->dump_stream, instr);
       fprintf(ctx->dump_stream, " // from tracepoint_%" PRIx64 "\n", *ip);
 
-      pan_unpack(instr, CS_BASE, base);
+      cs_unpack(instr, CS_BASE, base);
 
       switch (base.opcode) {
       case MALI_CS_OPCODE_RUN_IDVS: {
          struct cs_run_idvs_trace *idvs_trace = trace_data;
 
          assert(trace_size >= sizeof(idvs_trace));
-         pan_unpack(instr, CS_RUN_IDVS, I);
+         cs_unpack(instr, CS_RUN_IDVS, I);
          memcpy(regs, idvs_trace->sr, sizeof(idvs_trace->sr));
 
          if (I.draw_id_register_enable)
@@ -1597,7 +1607,7 @@ GENX(pandecode_cs_trace)(struct pandecode_context *ctx, uint64_t trace,
          struct cs_run_fragment_trace *frag_trace = trace_data;
 
          assert(trace_size >= sizeof(frag_trace));
-         pan_unpack(instr, CS_RUN_FRAGMENT, I);
+         cs_unpack(instr, CS_RUN_FRAGMENT, I);
          memcpy(&regs[40], frag_trace->sr, sizeof(frag_trace->sr));
          pandecode_run_fragment(ctx, ctx->dump_stream, &qctx, &I);
          trace_data = frag_trace + 1;
@@ -1609,7 +1619,7 @@ GENX(pandecode_cs_trace)(struct pandecode_context *ctx, uint64_t trace,
          struct cs_run_compute_trace *comp_trace = trace_data;
 
          assert(trace_size >= sizeof(comp_trace));
-         pan_unpack(instr, CS_RUN_COMPUTE, I);
+         cs_unpack(instr, CS_RUN_COMPUTE, I);
          memcpy(regs, comp_trace->sr, sizeof(comp_trace->sr));
          pandecode_run_compute(ctx, ctx->dump_stream, &qctx, &I);
          trace_data = comp_trace + 1;
@@ -1621,7 +1631,7 @@ GENX(pandecode_cs_trace)(struct pandecode_context *ctx, uint64_t trace,
          struct cs_run_compute_trace *comp_trace = trace_data;
 
          assert(trace_size >= sizeof(comp_trace));
-         pan_unpack(instr, CS_RUN_COMPUTE_INDIRECT, I);
+         cs_unpack(instr, CS_RUN_COMPUTE_INDIRECT, I);
          memcpy(regs, comp_trace->sr, sizeof(comp_trace->sr));
          pandecode_run_compute_indirect(ctx, ctx->dump_stream, &qctx, &I);
          trace_data = comp_trace + 1;

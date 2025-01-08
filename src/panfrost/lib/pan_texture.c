@@ -254,7 +254,7 @@ static void
 panfrost_emit_surface_with_stride(const struct pan_image_section_info *section,
                                   void **payload)
 {
-   pan_pack(*payload, SURFACE_WITH_STRIDE, cfg) {
+   pan_cast_and_pack(*payload, SURFACE_WITH_STRIDE, cfg) {
       cfg.pointer = section->pointer;
       cfg.row_stride = section->row_stride;
       cfg.surface_stride = section->surface_stride;
@@ -271,7 +271,7 @@ panfrost_emit_multiplanar_surface(const struct pan_image_section_info *sections,
    assert(sections[2].row_stride == 0 ||
           sections[1].row_stride == sections[2].row_stride);
 
-   pan_pack(*payload, MULTIPLANAR_SURFACE, cfg) {
+   pan_cast_and_pack(*payload, MULTIPLANAR_SURFACE, cfg) {
       cfg.plane_0_pointer = sections[0].pointer;
       cfg.plane_0_row_stride = sections[0].row_stride;
       cfg.plane_1_2_row_stride = sections[1].row_stride;
@@ -425,7 +425,7 @@ panfrost_emit_plane(const struct pan_image_view *iview,
    // TODO: this isn't technically guaranteed to be YUV, but it is in practice.
    bool is_3_planar_yuv = desc->layout == UTIL_FORMAT_LAYOUT_PLANAR3;
 
-   pan_pack(*payload, PLANE, cfg) {
+   pan_cast_and_pack(*payload, PLANE, cfg) {
       cfg.pointer = pointer;
       cfg.row_stride = row_stride;
       cfg.size = layout->data_size - layout->slices[level].offset;
@@ -696,7 +696,8 @@ GENX(panfrost_texture_afbc_reswizzle)(struct pan_image_view *iview)
  * consists of a 32-byte header followed by pointers.
  */
 void
-GENX(panfrost_new_texture)(const struct pan_image_view *iview, void *out,
+GENX(panfrost_new_texture)(const struct pan_image_view *iview,
+                           struct mali_texture_packed *out,
                            const struct panfrost_ptr *payload)
 {
    const struct util_format_description *desc =

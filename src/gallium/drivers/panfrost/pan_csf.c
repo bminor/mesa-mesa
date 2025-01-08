@@ -28,6 +28,7 @@
 #include "genxml/cs_builder.h"
 #include "panfrost/lib/genxml/cs_builder.h"
 
+#include "gen_macros.h"
 #include "pan_cmdstream.h"
 #include "pan_context.h"
 #include "pan_csf.h"
@@ -702,7 +703,7 @@ csf_emit_tiler_desc(struct panfrost_batch *batch, const struct pan_fb_info *fb)
       tiler.geometry_buffer_size = ctx->csf.tmp_geom_bo->kmod_bo->size;
    }
 
-   batch->csf.pending_tiler_desc = 0;
+   batch->csf.pending_tiler_desc = NULL;
 }
 
 void
@@ -895,8 +896,8 @@ GENX(csf_launch_grid)(struct panfrost_batch *batch,
    cs_move32_to(b, cs_reg32(b, 32), 0);
 
    /* Compute workgroup size */
-   uint32_t wg_size[4];
-   pan_pack(wg_size, COMPUTE_SIZE_WORKGROUP, cfg) {
+   struct mali_compute_size_workgroup_packed wg_size;
+   pan_pack(&wg_size, COMPUTE_SIZE_WORKGROUP, cfg) {
       cfg.workgroup_size_x = info->block[0];
       cfg.workgroup_size_y = info->block[1];
       cfg.workgroup_size_z = info->block[2];
@@ -911,7 +912,7 @@ GENX(csf_launch_grid)(struct panfrost_batch *batch,
                                      (info->variable_shared_mem == 0);
    }
 
-   cs_move32_to(b, cs_reg32(b, 33), wg_size[0]);
+   cs_move32_to(b, cs_reg32(b, 33), wg_size.opaque[0]);
 
    /* Offset */
    for (unsigned i = 0; i < 3; ++i)
@@ -998,8 +999,8 @@ GENX(csf_launch_xfb)(struct panfrost_batch *batch,
    cs_move32_to(b, cs_reg32(b, 32), batch->ctx->offset_start);
 
    /* Compute workgroup size */
-   uint32_t wg_size[4];
-   pan_pack(wg_size, COMPUTE_SIZE_WORKGROUP, cfg) {
+   struct mali_compute_size_workgroup_packed wg_size;
+   pan_pack(&wg_size, COMPUTE_SIZE_WORKGROUP, cfg) {
       cfg.workgroup_size_x = 1;
       cfg.workgroup_size_y = 1;
       cfg.workgroup_size_z = 1;
@@ -1009,7 +1010,7 @@ GENX(csf_launch_xfb)(struct panfrost_batch *batch,
        */
       cfg.allow_merging_workgroups = true;
    }
-   cs_move32_to(b, cs_reg32(b, 33), wg_size[0]);
+   cs_move32_to(b, cs_reg32(b, 33), wg_size.opaque[0]);
 
    /* Offset */
    for (unsigned i = 0; i < 3; ++i)
@@ -1119,7 +1120,7 @@ csf_emit_draw_state(struct panfrost_batch *batch,
 
    struct pipe_rasterizer_state *rast = &ctx->rasterizer->base;
 
-   uint32_t primitive_flags = 0;
+   struct mali_primitive_flags_packed primitive_flags;
    pan_pack(&primitive_flags, PRIMITIVE_FLAGS, cfg) {
       if (panfrost_writes_point_size(ctx))
          cfg.point_size_array_format = MALI_POINT_SIZE_ARRAY_FORMAT_FP16;
@@ -1138,9 +1139,11 @@ csf_emit_draw_state(struct panfrost_batch *batch,
                                     : MALI_FIFO_FORMAT_BASIC;
    }
 
-   cs_move32_to(b, cs_reg32(b, 56), primitive_flags);
+   cs_move32_to(b, cs_reg32(b, 56), primitive_flags.opaque[0]);
 
-   uint32_t dcd_flags0 = 0, dcd_flags1 = 0;
+   struct mali_dcd_flags_0_packed dcd_flags0;
+   struct mali_dcd_flags_1_packed dcd_flags1;
+
    pan_pack(&dcd_flags0, DCD_FLAGS_0, cfg) {
       enum mesa_prim reduced_mode = u_reduced_prim(info->mode);
       bool polygon = reduced_mode == MESA_PRIM_TRIANGLES;
@@ -1245,15 +1248,16 @@ csf_emit_draw_state(struct panfrost_batch *batch,
       }
    }
 
-   cs_move32_to(b, cs_reg32(b, 57), dcd_flags0);
-   cs_move32_to(b, cs_reg32(b, 58), dcd_flags1);
+   cs_move32_to(b, cs_reg32(b, 57), dcd_flags0.opaque[0]);
+   cs_move32_to(b, cs_reg32(b, 58), dcd_flags1.opaque[0]);
 
-   uint64_t primsize = 0;
+   struct mali_primitive_size_packed primsize;
    panfrost_emit_primitive_size(ctx, info->mode == MESA_PRIM_POINTS, 0,
                                 &primsize);
-   cs_move64_to(b, cs_reg64(b, 60), primsize);
+   struct mali_primitive_size_packed *primsize_ptr = &primsize;
+   cs_move64_to(b, cs_reg64(b, 60), *((uint64_t*)primsize_ptr));
 
-   uint32_t flags_override;
+   struct mali_primitive_flags_packed flags_override;
    /* Pack with nodefaults so only explicitly set override fields affect the
     * previously set register values */
    pan_pack_nodefaults(&flags_override, PRIMITIVE_FLAGS, cfg) {
@@ -1262,7 +1266,7 @@ csf_emit_draw_state(struct panfrost_batch *batch,
       cfg.secondary_shader = secondary_shader;
    };
 
-   return flags_override;
+   return flags_override.opaque[0];
 }
 
 static struct cs_index
@@ -1430,7 +1434,7 @@ GENX(csf_init_context)(struct panfrost_context *ctx)
    if (ctx->csf.heap.desc_bo == NULL)
       goto err_tiler_heap_desc_bo;
 
-   pan_pack(ctx->csf.heap.desc_bo->ptr.cpu, TILER_HEAP, heap) {
+   pan_cast_and_pack(ctx->csf.heap.desc_bo->ptr.cpu, TILER_HEAP, heap) {
       heap.size = pan_screen(ctx->base.screen)->csf_tiler_heap.chunk_size;
       heap.base = thc.first_heap_chunk_gpu_va;
       heap.bottom = heap.base + 64;

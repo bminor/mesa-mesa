@@ -187,7 +187,8 @@ pan_sample_pattern(unsigned samples)
 
 void GENX(pan_select_tile_size)(struct pan_fb_info *fb);
 
-void GENX(pan_emit_tls)(const struct pan_tls_info *info, void *out);
+void GENX(pan_emit_tls)(const struct pan_tls_info *info,
+                        struct mali_local_storage_packed *out);
 
 int GENX(pan_select_crc_rt)(const struct pan_fb_info *fb, unsigned tile_size);
 

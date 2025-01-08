@@ -460,13 +460,14 @@ panvk_draw_prepare_varyings(struct panvk_cmd_buffer *cmdbuf,
 static void
 panvk_draw_emit_attrib_buf(const struct panvk_draw_data *draw,
                            const struct vk_vertex_binding_state *buf_info,
-                           const struct panvk_attrib_buf *buf, void *desc)
+                           const struct panvk_attrib_buf *buf,
+                           struct mali_attribute_buffer_packed *desc)
 {
    uint64_t addr = buf->address & ~63ULL;
    unsigned size = buf->size + (buf->address & 63);
    unsigned divisor = draw->padded_vertex_count * buf_info->divisor;
    bool per_instance = buf_info->input_rate == VK_VERTEX_INPUT_RATE_INSTANCE;
-   void *buf_ext = desc + pan_size(ATTRIBUTE_BUFFER);
+   struct mali_attribute_buffer_packed *buf_ext = &desc[1];
 
    /* TODO: support instanced arrays */
    if (draw->info.instance.count <= 1) {
@@ -515,7 +516,7 @@ panvk_draw_emit_attrib_buf(const struct panvk_draw_data *draw,
          cfg.divisor_e = divisor_e;
       }
 
-      pan_pack(buf_ext, ATTRIBUTE_BUFFER_CONTINUATION_NPOT, cfg) {
+      pan_cast_and_pack(buf_ext, ATTRIBUTE_BUFFER_CONTINUATION_NPOT, cfg) {
          cfg.divisor_numerator = divisor_num;
          cfg.divisor = buf_info->divisor;
       }
@@ -532,7 +533,8 @@ static void
 panvk_draw_emit_attrib(const struct panvk_draw_data *draw,
                        const struct vk_vertex_attribute_state *attrib_info,
                        const struct vk_vertex_binding_state *buf_info,
-                       const struct panvk_attrib_buf *buf, void *desc)
+                       const struct panvk_attrib_buf *buf,
+                       struct mali_attribute_packed *desc)
 {
    bool per_instance = buf_info->input_rate == VK_VERTEX_INPUT_RATE_INSTANCE;
    enum pipe_format f = vk_format_to_pipe_format(attrib_info->format);
@@ -631,7 +633,8 @@ panvk_draw_prepare_attributes(struct panvk_cmd_buffer *cmdbuf,
 }
 
 static void
-panvk_emit_viewport(struct panvk_cmd_buffer *cmdbuf, void *vpd)
+panvk_emit_viewport(struct panvk_cmd_buffer *cmdbuf,
+                    struct mali_viewport_packed *vpd)
 {
    const struct vk_viewport_state *vp = &cmdbuf->vk.dynamic_graphics_state.vp;
 
@@ -705,7 +708,8 @@ panvk_draw_prepare_viewport(struct panvk_cmd_buffer *cmdbuf,
 
 static void
 panvk_emit_vertex_dcd(struct panvk_cmd_buffer *cmdbuf,
-                      const struct panvk_draw_data *draw, void *dcd)
+                      const struct panvk_draw_data *draw,
+                      struct mali_draw_packed *dcd)
 {
    const struct panvk_shader *vs = cmdbuf->state.gfx.vs.shader;
    const struct panvk_shader_desc_state *vs_desc_state =
@@ -786,7 +790,8 @@ translate_prim_topology(VkPrimitiveTopology in)
 
 static void
 panvk_emit_tiler_primitive(struct panvk_cmd_buffer *cmdbuf,
-                           const struct panvk_draw_data *draw, void *prim)
+                           const struct panvk_draw_data *draw,
+                           struct mali_primitive_packed *prim)
 {
    const struct panvk_shader *vs = cmdbuf->state.gfx.vs.shader;
    const struct panvk_shader *fs = get_fs(cmdbuf);
@@ -846,7 +851,7 @@ panvk_emit_tiler_primitive(struct panvk_cmd_buffer *cmdbuf,
 static void
 panvk_emit_tiler_primitive_size(struct panvk_cmd_buffer *cmdbuf,
                                 const struct panvk_draw_data *draw,
-                                void *primsz)
+                                struct mali_primitive_size_packed *primsz)
 {
    const struct panvk_shader *vs = cmdbuf->state.gfx.vs.shader;
    const struct vk_input_assembly_state *ia =
@@ -866,7 +871,8 @@ panvk_emit_tiler_primitive_size(struct panvk_cmd_buffer *cmdbuf,
 
 static void
 panvk_emit_tiler_dcd(struct panvk_cmd_buffer *cmdbuf,
-                     const struct panvk_draw_data *draw, void *dcd)
+                     const struct panvk_draw_data *draw,
+                     struct mali_draw_packed *dcd)
 {
    struct panvk_shader_desc_state *fs_desc_state = &cmdbuf->state.gfx.fs.desc;
    const struct vk_rasterization_state *rs =

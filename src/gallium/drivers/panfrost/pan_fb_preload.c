@@ -132,7 +132,7 @@ static void
 pan_preload_emit_blend(unsigned rt,
                        const struct pan_image_view *iview,
                        const struct pan_preload_shader_data *preload_shader,
-                       uint64_t blend_shader, void *out)
+                       uint64_t blend_shader, struct mali_blend_packed *out)
 {
    assert(blend_shader == 0 || PAN_ARCH <= 5);
 
@@ -212,14 +212,13 @@ pan_preload_is_ms(struct pan_preload_views *views)
 static void
 pan_preload_emit_blends(const struct pan_preload_shader_data *preload_shader,
                         struct pan_preload_views *views,
-                        uint64_t *blend_shaders, void *out)
+                        uint64_t *blend_shaders, struct mali_blend_packed *out)
 {
    for (unsigned i = 0; i < MAX2(views->rt_count, 1); ++i) {
-      void *dest = out + pan_size(BLEND) * i;
       const struct pan_image_view *rt_view = views->rts[i];
       uint64_t blend_shader = blend_shaders ? blend_shaders[i] : 0;
 
-      pan_preload_emit_blend(i, rt_view, preload_shader, blend_shader, dest);
+      pan_preload_emit_blend(i, rt_view, preload_shader, blend_shader, &out[i]);
    }
 }
 #endif
@@ -228,7 +227,7 @@ pan_preload_emit_blends(const struct pan_preload_shader_data *preload_shader,
 static void
 pan_preload_emit_rsd(const struct pan_preload_shader_data *preload_shader,
                      struct pan_preload_views *views, uint64_t *blend_shaders,
-                     void *out)
+                     struct mali_renderer_state_packed *out)
 {
    UNUSED bool zs = (views->z || views->s);
    bool ms = pan_preload_is_ms(views);
@@ -312,7 +311,7 @@ pan_preload_emit_rsd(const struct pan_preload_shader_data *preload_shader,
 
 #if PAN_ARCH >= 5
    pan_preload_emit_blends(preload_shader, views, blend_shaders,
-                           out + pan_size(RENDERER_STATE));
+                           (void*)((uint8_t*)out + pan_size(RENDERER_STATE)));
 #endif
 }
 #endif
@@ -827,7 +826,7 @@ pan_preload_emit_varying(struct pan_pool *pool)
    if (!varying.cpu)
       return 0;
 
-   pan_pack(varying.cpu, ATTRIBUTE, cfg) {
+   pan_cast_and_pack(varying.cpu, ATTRIBUTE, cfg) {
       cfg.buffer_index = 0;
       cfg.offset_enable = PAN_ARCH <= 5;
       cfg.format =
@@ -853,7 +852,7 @@ pan_preload_emit_varying_buffer(struct pan_pool *pool, uint64_t coordinates)
    if (!varying_buffer.cpu)
       return 0;
 
-   pan_pack(varying_buffer.cpu, BUFFER, cfg) {
+   pan_cast_and_pack(varying_buffer.cpu, BUFFER, cfg) {
       cfg.address = coordinates;
       cfg.size = 4 * sizeof(float) * 4;
    }
@@ -867,15 +866,15 @@ pan_preload_emit_varying_buffer(struct pan_pool *pool, uint64_t coordinates)
    if (!varying_buffer.cpu)
       return 0;
 
-   pan_pack(varying_buffer.cpu, ATTRIBUTE_BUFFER, cfg) {
+   pan_cast_and_pack(varying_buffer.cpu, ATTRIBUTE_BUFFER, cfg) {
       cfg.pointer = coordinates;
       cfg.stride = 4 * sizeof(float);
       cfg.size = cfg.stride * 4;
    }
 
    if (padding_buffer) {
-      pan_pack(varying_buffer.cpu + pan_size(ATTRIBUTE_BUFFER),
-               ATTRIBUTE_BUFFER, cfg)
+      pan_cast_and_pack(varying_buffer.cpu + pan_size(ATTRIBUTE_BUFFER),
+                        ATTRIBUTE_BUFFER, cfg)
          ;
    }
 #endif
@@ -891,7 +890,7 @@ pan_preload_emit_sampler(struct pan_pool *pool, bool nearest_filter)
    if (!sampler.cpu)
       return 0;
 
-   pan_pack(sampler.cpu, SAMPLER, cfg) {
+   pan_cast_and_pack(sampler.cpu, SAMPLER, cfg) {
       cfg.seamless_cube_map = false;
       cfg.normalized_coordinates = false;
       cfg.minify_nearest = nearest_filter;
@@ -1027,7 +1026,7 @@ pan_preload_emit_zs(struct pan_pool *pool, bool z, bool s)
    if (!zsd.cpu)
       return 0;
 
-   pan_pack(zsd.cpu, DEPTH_STENCIL, cfg) {
+   pan_cast_and_pack(zsd.cpu, DEPTH_STENCIL, cfg) {
       cfg.depth_function = MALI_FUNC_ALWAYS;
       cfg.depth_write_enable = z;
 
@@ -1066,7 +1065,7 @@ pan_preload_emit_viewport(struct pan_pool *pool, uint16_t minx, uint16_t miny,
    if (!vp.cpu)
       return 0;
 
-   pan_pack(vp.cpu, VIEWPORT, cfg) {
+   pan_cast_and_pack(vp.cpu, VIEWPORT, cfg) {
       cfg.scissor_minimum_x = minx;
       cfg.scissor_minimum_y = miny;
       cfg.scissor_maximum_x = maxx;
@@ -1078,9 +1077,9 @@ pan_preload_emit_viewport(struct pan_pool *pool, uint16_t minx, uint16_t miny,
 #endif
 
 static void
-pan_preload_emit_dcd(struct pan_fb_preload_cache *cache,
-                     struct pan_pool *pool, struct pan_fb_info *fb, bool zs,
-                     uint64_t coordinates, uint64_t tsd, void *out,
+pan_preload_emit_dcd(struct pan_fb_preload_cache *cache, struct pan_pool *pool,
+                     struct pan_fb_info *fb, bool zs, uint64_t coordinates,
+                     uint64_t tsd, struct mali_draw_packed *out,
                      bool always_write)
 {
    unsigned tex_count = 0;
@@ -1163,7 +1162,7 @@ pan_preload_emit_dcd(struct pan_fb_preload_cache *cache,
       return;
    }
 
-   pan_pack(spd.cpu, SHADER_PROGRAM, cfg) {
+   pan_cast_and_pack(spd.cpu, SHADER_PROGRAM, cfg) {
       cfg.stage = MALI_SHADER_STAGE_FRAGMENT;
       cfg.fragment_coverage_bitmask_type = MALI_COVERAGE_BITMASK_TYPE_GL;
       cfg.register_allocation = MALI_SHADER_REGISTER_ALLOCATION_32_PER_THREAD;

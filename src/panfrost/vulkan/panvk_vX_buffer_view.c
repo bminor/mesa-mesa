@@ -112,14 +112,14 @@ panvk_per_arch(CreateBufferView)(VkDevice _device,
          .cpu = panvk_priv_mem_host_addr(view->mem),
       };
 
-      GENX(panfrost_new_texture)(&pview, view->descs.tex.opaque, &ptr);
+      GENX(panfrost_new_texture)(&pview, &view->descs.tex, &ptr);
    }
 
 #if PAN_ARCH <= 7
    if (buffer->vk.usage & VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT) {
       unsigned blksz = vk_format_get_blocksize(pCreateInfo->format);
 
-      pan_pack(view->descs.img_attrib_buf[0].opaque, ATTRIBUTE_BUFFER, cfg) {
+      pan_pack(&view->descs.img_attrib_buf[0], ATTRIBUTE_BUFFER, cfg) {
          /* The format is the only thing we lack to emit attribute descriptors
           * when copying from the set to the attribute tables. Instead of
           * making the descriptor size to store an extra format, we pack
@@ -137,8 +137,8 @@ panvk_per_arch(CreateBufferView)(VkDevice _device,
          cfg.size = view->vk.elements * blksz;
       }
 
-      pan_pack(view->descs.img_attrib_buf[1].opaque,
-               ATTRIBUTE_BUFFER_CONTINUATION_3D, cfg) {
+      struct mali_attribute_buffer_packed *buf = &view->descs.img_attrib_buf[1];
+      pan_cast_and_pack(buf, ATTRIBUTE_BUFFER_CONTINUATION_3D, cfg) {
          cfg.s_dimension = view->vk.elements;
          cfg.t_dimension = 1;
          cfg.r_dimension = 1;

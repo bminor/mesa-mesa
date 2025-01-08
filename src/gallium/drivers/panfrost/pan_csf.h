@@ -78,7 +78,7 @@ struct panfrost_csf_batch {
 
    struct panfrost_ptr tiler_oom_ctx;
 
-   void *pending_tiler_desc;
+   struct mali_tiler_context_packed *pending_tiler_desc;
 };
 
 struct panfrost_csf_context {

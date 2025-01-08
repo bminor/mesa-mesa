@@ -321,7 +321,7 @@ pan_prepare_crc(const struct pan_fb_info *fb, int rt_crc,
 
 static void
 pan_emit_zs_crc_ext(const struct pan_fb_info *fb, unsigned layer_idx,
-                    int rt_crc, void *zs_crc_ext)
+                    int rt_crc, struct mali_zs_crc_extension_packed *zs_crc_ext)
 {
    pan_pack(zs_crc_ext, ZS_CRC_EXTENSION, cfg) {
       pan_prepare_crc(fb, rt_crc, &cfg);
@@ -605,7 +605,8 @@ pan_prepare_rt(const struct pan_fb_info *fb, unsigned layer_idx,
 #endif
 
 void
-GENX(pan_emit_tls)(const struct pan_tls_info *info, void *out)
+GENX(pan_emit_tls)(const struct pan_tls_info *info,
+                   struct mali_local_storage_packed *out)
 {
    pan_pack(out, LOCAL_STORAGE, cfg) {
       if (info->tls.size) {
@@ -644,7 +645,8 @@ GENX(pan_emit_tls)(const struct pan_tls_info *info, void *out)
 #if PAN_ARCH <= 5
 static void
 pan_emit_midgard_tiler(const struct pan_fb_info *fb,
-                       const struct pan_tiler_context *tiler_ctx, void *out)
+                       const struct pan_tiler_context *tiler_ctx,
+                       struct mali_tiler_context_packed *out)
 {
    bool hierarchy = !tiler_ctx->midgard.no_hierarchical_tiling;
 
@@ -679,8 +681,8 @@ pan_emit_midgard_tiler(const struct pan_fb_info *fb,
 
 #if PAN_ARCH >= 5
 static void
-pan_emit_rt(const struct pan_fb_info *fb, unsigned layer_idx,
-            unsigned idx, unsigned cbuf_offset, void *out)
+pan_emit_rt(const struct pan_fb_info *fb, unsigned layer_idx, unsigned idx,
+            unsigned cbuf_offset, struct mali_render_target_packed *out)
 {
    pan_pack(out, RENDER_TARGET, cfg) {
       pan_prepare_rt(fb, layer_idx, idx, cbuf_offset, &cfg);
@@ -900,7 +902,10 @@ GENX(pan_emit_fbd)(const struct pan_fb_info *fb, unsigned layer_idx,
 #endif
 
    if (has_zs_crc_ext) {
-      pan_emit_zs_crc_ext(fb, layer_idx, crc_rt, out + pan_size(FRAMEBUFFER));
+      struct mali_zs_crc_extension_packed *zs_crc_ext =
+         out + pan_size(FRAMEBUFFER);
+
+      pan_emit_zs_crc_ext(fb, layer_idx, crc_rt, zs_crc_ext);
       rtd += pan_size(ZS_CRC_EXTENSION);
    }
 
@@ -920,7 +925,7 @@ GENX(pan_emit_fbd)(const struct pan_fb_info *fb, unsigned layer_idx,
    }
 
    struct mali_framebuffer_pointer_packed tag;
-   pan_pack(tag.opaque, FRAMEBUFFER_POINTER, cfg) {
+   pan_pack(&tag, FRAMEBUFFER_POINTER, cfg) {
       cfg.zs_crc_extension_present = has_zs_crc_ext;
       cfg.render_target_count = MAX2(fb->rt_count, 1);
    }

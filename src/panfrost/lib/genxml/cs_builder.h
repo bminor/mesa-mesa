@@ -495,14 +495,14 @@ cs_reserve_instrs(struct cs_builder *b, uint32_t num_instrs)
 
       uint64_t *ptr = b->cur_chunk.buffer.cpu + (b->cur_chunk.pos++);
 
-      pan_pack(ptr, CS_MOVE, I) {
+      pan_cast_and_pack(ptr, CS_MOVE, I) {
          I.destination = cs_overflow_address_reg(b);
          I.immediate = newbuf.gpu;
       }
 
       ptr = b->cur_chunk.buffer.cpu + (b->cur_chunk.pos++);
 
-      pan_pack(ptr, CS_MOVE32, I) {
+      pan_cast_and_pack(ptr, CS_MOVE32, I) {
          I.destination = cs_overflow_length_reg(b);
       }
 
@@ -511,7 +511,7 @@ cs_reserve_instrs(struct cs_builder *b, uint32_t num_instrs)
 
       ptr = b->cur_chunk.buffer.cpu + (b->cur_chunk.pos++);
 
-      pan_pack(ptr, CS_JUMP, I) {
+      pan_cast_and_pack(ptr, CS_JUMP, I) {
          I.length = cs_overflow_length_reg(b);
          I.address = cs_overflow_address_reg(b);
       }
@@ -680,7 +680,7 @@ cs_finish(struct cs_builder *b)
  * to be separated out being pan_pack can evaluate its argument multiple times,
  * yet cs_alloc has side effects.
  */
-#define cs_emit(b, T, cfg) pan_pack(cs_alloc_ins(b), CS_##T, cfg)
+#define cs_emit(b, T, cfg) pan_cast_and_pack(cs_alloc_ins(b), CS_##T, cfg)
 
 /* Asynchronous operations take a mask of scoreboard slots to wait on
  * before executing the instruction, and signal a scoreboard slot when
