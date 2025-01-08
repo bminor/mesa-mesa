@@ -1342,7 +1342,7 @@ prepare_dcd(struct panvk_cmd_buffer *cmdbuf)
             cfg.allow_forward_pixel_to_kill = true;
             cfg.allow_forward_pixel_to_be_killed = true;
             cfg.pixel_kill_operation = MALI_PIXEL_KILL_FORCE_EARLY;
-            cfg.zs_update_operation = MALI_PIXEL_KILL_STRONG_EARLY;
+            cfg.zs_update_operation = MALI_PIXEL_KILL_FORCE_EARLY;
             cfg.overdraw_alpha0 = true;
             cfg.overdraw_alpha1 = true;
          }

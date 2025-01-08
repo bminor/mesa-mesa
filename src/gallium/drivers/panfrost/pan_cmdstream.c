@@ -460,7 +460,7 @@ pan_merge_empty_fs(struct mali_renderer_state_packed *rsd)
       cfg.properties.shader_modifies_coverage = true;
       cfg.properties.allow_forward_pixel_to_kill = true;
       cfg.properties.allow_forward_pixel_to_be_killed = true;
-      cfg.properties.zs_update_operation = MALI_PIXEL_KILL_STRONG_EARLY;
+      cfg.properties.zs_update_operation = MALI_PIXEL_KILL_FORCE_EARLY;
 
       /* Alpha isn't written so these are vacuous */
       cfg.multisample_misc.overdraw_alpha0 = true;

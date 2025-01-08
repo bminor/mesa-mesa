@@ -1304,7 +1304,7 @@
         "description": "panfrost: remove incorrect usage of MALI_PIXEL_KILL_STRONG_EARLY",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "519643bbe0c600ec473118ccdaef333fa0245d20",
         "notes": null

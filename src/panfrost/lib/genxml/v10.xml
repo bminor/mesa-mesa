@@ -356,7 +356,6 @@
 
   <enum name="Pixel Kill">
     <value name="Force Early" value="0"/>
-    <value name="Strong Early" value="1"/>
     <value name="Weak Early" value="2"/>
     <value name="Force Late" value="3"/>
   </enum>
