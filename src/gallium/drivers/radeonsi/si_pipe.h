@@ -2215,6 +2215,13 @@ static inline void si_emit_barrier_direct(struct si_context *sctx)
    }
 }
 
+static inline bool si_is_buffer_idle(struct si_context *sctx, struct si_resource *buf,
+                                     unsigned usage)
+{
+   return !si_cs_is_buffer_referenced(sctx, buf->buf, usage) &&
+          sctx->ws->buffer_wait(sctx->ws, buf->buf, 0, usage | RADEON_USAGE_DISALLOW_SLOW_REPLY);
+}
+
 #define PRINT_ERR(fmt, args...)                                                                    \
    fprintf(stderr, "EE %s:%d %s - " fmt, __FILE__, __LINE__, __func__, ##args)
 

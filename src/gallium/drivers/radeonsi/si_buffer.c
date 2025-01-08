@@ -257,9 +257,7 @@ static bool si_invalidate_buffer(struct si_context *sctx, struct si_resource *bu
       return false;
 
    /* Check if mapping this buffer would cause waiting for the GPU. */
-   if (si_cs_is_buffer_referenced(sctx, buf->buf, RADEON_USAGE_READWRITE) ||
-       !sctx->ws->buffer_wait(sctx->ws, buf->buf, 0,
-                              RADEON_USAGE_READWRITE | RADEON_USAGE_DISALLOW_SLOW_REPLY)) {
+   if (!si_is_buffer_idle(sctx, buf, RADEON_USAGE_READWRITE)) {
       /* Reallocate the buffer in the same pipe_resource. */
       si_alloc_resource(sctx->screen, buf);
       si_rebind_buffer(sctx, &buf->b.b);
@@ -401,9 +399,7 @@ static void *si_buffer_transfer_map(struct pipe_context *ctx, struct pipe_resour
        */
       if (buf->flags & (RADEON_FLAG_SPARSE | RADEON_FLAG_NO_CPU_ACCESS) ||
           force_discard_range ||
-          si_cs_is_buffer_referenced(sctx, buf->buf, RADEON_USAGE_READWRITE) ||
-          !sctx->ws->buffer_wait(sctx->ws, buf->buf, 0,
-                                 RADEON_USAGE_READWRITE | RADEON_USAGE_DISALLOW_SLOW_REPLY)) {
+          !si_is_buffer_idle(sctx, buf, RADEON_USAGE_READWRITE)) {
          /* Do a wait-free write-only transfer using a temporary buffer. */
          struct u_upload_mgr *uploader;
          struct si_resource *staging = NULL;

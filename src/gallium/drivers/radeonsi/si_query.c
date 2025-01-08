@@ -517,9 +517,7 @@ void si_query_buffer_reset(struct si_context *sctx, struct si_query_buffer *buff
       return;
 
    /* Discard even the oldest buffer if it can't be mapped without a stall. */
-   if (si_cs_is_buffer_referenced(sctx, buffer->buf->buf, RADEON_USAGE_READWRITE) ||
-       !sctx->ws->buffer_wait(sctx->ws, buffer->buf->buf, 0,
-                              RADEON_USAGE_READWRITE | RADEON_USAGE_DISALLOW_SLOW_REPLY)) {
+   if (!si_is_buffer_idle(sctx, buffer->buf, RADEON_USAGE_READWRITE)) {
       si_resource_reference(&buffer->buf, NULL);
    }
 }
