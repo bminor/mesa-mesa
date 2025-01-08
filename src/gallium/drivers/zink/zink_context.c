@@ -5635,6 +5635,20 @@ add_implicit_feedback_loop(struct zink_context *ctx, struct zink_resource *res)
       /* if zsbuf isn't used then it effectively has no fb binds */
       /* if zsbuf isn't written to then it'll be fine with read-only access */
       return false;
+
+   /* build attachment array for miplevel/layer checks */
+   struct pipe_surface *psurfs[PIPE_MAX_COLOR_BUFS];
+   unsigned surf_idx = 0;
+   u_foreach_bit(idx, res->fb_binds) {
+      struct pipe_surface *psurf;
+      if (idx == PIPE_MAX_COLOR_BUFS)
+         psurf = ctx->fb_state.zsbuf;
+      else
+         psurf = ctx->fb_state.cbufs[idx];
+      if (psurf->texture == &res->base.b)
+         psurfs[surf_idx++] = psurf;
+   }
+
    bool is_feedback = false;
    /* avoid false positives when a texture is bound but not used */
    u_foreach_bit(vkstage, res->gfx_barrier) {
@@ -5644,8 +5658,25 @@ add_implicit_feedback_loop(struct zink_context *ctx, struct zink_resource *res)
       /* in-range VkPipelineStageFlagBits can be converted to VkShaderStageFlags with a bitshift */
       gl_shader_stage stage = vk_to_mesa_shader_stage((VkShaderStageFlagBits)(vkstagebit >> 3));
       /* check shader texture usage against resource's sampler binds */
-      if ((ctx->gfx_stages[stage] && (res->sampler_binds[stage] & ctx->gfx_stages[stage]->info.textures_used[0])))
-         is_feedback = true;
+      uint32_t texuse = res->sampler_binds[stage] & ctx->gfx_stages[stage]->info.textures_used[0];
+      if (!ctx->gfx_stages[stage] || !texuse)
+         continue;
+
+      /* check miplevel/layer: a feedback loop only exists if these overlap between fb and sampler */
+      u_foreach_bit(slot, texuse) {
+         struct pipe_sampler_view *sv = ctx->sampler_views[stage][slot];
+
+         for (unsigned i = 0; i < surf_idx; i++) {
+            if (sv->u.tex.first_level > psurfs[i]->u.tex.level || sv->u.tex.last_level < psurfs[i]->u.tex.level)
+               continue;
+            if (sv->u.tex.first_layer > psurfs[i]->u.tex.last_layer || sv->u.tex.last_layer < psurfs[i]->u.tex.first_layer)
+               continue;
+            is_feedback = true;
+            break;
+         }
+         if (is_feedback)
+            break;
+      }
    }
    if (!is_feedback)
       return false;
