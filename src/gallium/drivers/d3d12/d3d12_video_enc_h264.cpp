@@ -734,7 +734,6 @@ d3d12_video_encoder_update_h264_gop_configuration(struct d3d12_video_encoder *pD
                                                   pipe_h264_enc_picture_desc *picture)
 {
    // Only update GOP when it begins
-   // Only update GOP when it begins
    // This triggers DPB/encoder/heap re-creation, so only check on IDR when a GOP might change
    if ((picture->picture_type == PIPE_H2645_ENC_PICTURE_TYPE_IDR)
       || (picture->picture_type == PIPE_H2645_ENC_PICTURE_TYPE_I)) {
@@ -746,18 +745,6 @@ d3d12_video_encoder_update_h264_gop_configuration(struct d3d12_video_encoder *pD
                          "only supports pic_order_cnt_type = 0 or pic_order_cnt_type = 2\n",
                          picture->seq.pic_order_cnt_type);
          return false;
-      }
-
-      // Workaround: D3D12 needs to use the POC in the DPB to track reference frames
-      // even when there's no frame reordering (picture->seq.pic_order_cnt_type == 2)
-      // So in that case, derive an artificial log2_max_pic_order_cnt_lsb_minus4
-      // to avoid unexpected wrapping
-      if (picture->seq.pic_order_cnt_type == 2u) {
-         if (GOPLength == 0) // Use max frame num to wrap on infinite GOPs
-            GOPLength = 1 << (picture->seq.log2_max_frame_num_minus4 + 4);
-         const uint32_t max_pic_order_cnt_lsb = 2 * GOPLength;
-         picture->seq.log2_max_pic_order_cnt_lsb_minus4 = static_cast<unsigned int>(std::max(0.0, std::ceil(std::log2(max_pic_order_cnt_lsb)) - 4));
-         assert(picture->seq.log2_max_pic_order_cnt_lsb_minus4 < UCHAR_MAX);
       }
 
       assert(picture->seq.pic_order_cnt_type < UCHAR_MAX);
