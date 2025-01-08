@@ -210,7 +210,7 @@ VkResult pvr_pack_tex_state(struct pvr_device *device,
          if (iview_type == VK_IMAGE_VIEW_TYPE_3D) {
             if (info->extent.depth > 0)
                word1.depth = info->extent.depth - 1;
-         } else if (PVR_HAS_FEATURE(dev_info, tpu_array_textures)) {
+         } else {
             uint32_t array_layers = info->array_size;
 
             if (iview_type == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY)
