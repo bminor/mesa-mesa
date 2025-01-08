@@ -2545,6 +2545,24 @@ static inline enum pco_srcsel pco_ref_srcsel(pco_ref ref)
    UNREACHABLE("");
 }
 
+static inline enum pco_count_src pco_ref_count_src(pco_ref ref)
+{
+   enum pco_io io = pco_ref_get_io(ref);
+
+   switch (io) {
+   case PCO_IO_S2:
+      return PCO_COUNT_SRC_S2;
+
+   case PCO_IO_FT2:
+      return PCO_COUNT_SRC_FT2;
+
+   default:
+      break;
+   }
+
+   UNREACHABLE("");
+}
+
 /**
  * \brief Returns whether none of the lower/upper sources in an instruction
  *        group are set.

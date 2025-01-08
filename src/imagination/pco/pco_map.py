@@ -254,7 +254,10 @@ enum_map(OM_SHIFTOP.t, F_SHIFT2_OP, [
    ('shr', 'shr'),
    ('rol', 'rol'),
    ('cps', 'cps'),
-   ('asr', 'asr_twb'),
+   ('asr_twb', 'asr_twb'),
+   ('asr_pwb', 'asr_pwb'),
+   ('asr_mtb', 'asr_mtb'),
+   ('asr_ftb', 'asr_ftb'),
 ])
 
 enum_map(RM_ELEM.t, F_UPCK_ELEM, [
@@ -1365,6 +1368,54 @@ encode_map(O_MSK_BBYP0S1,
    op_ref_maps=[('0', ['ft0', 'ft1', 'ft2'], ['s0', 's1', 's2'])]
 )
 
+encode_map(O_MSK_LSL,
+   encodings=[
+      (I_PHASE0_SRC, [
+         ('count_src', 's2'),
+         ('count_op', 'byp'),
+         ('bitmask_src_op', 'msk'),
+         ('shift1_op', 'lsl')
+      ])
+   ],
+   op_ref_maps=[('0', ['ft0', 'ft1', 'ft2'], ['s0', 's1', 's2'])]
+)
+
+encode_map(O_CBS,
+   encodings=[
+      (I_PHASE0_SRC, [
+         ('count_src', ('pco_ref_count_src', SRC(0))),
+         ('count_op', 'cbs'),
+         ('bitmask_src_op', 'byp'),
+         ('shift1_op', 'byp')
+      ])
+   ],
+   op_ref_maps=[('0', ['ft3'], [['s2', 'ft2']])]
+)
+
+encode_map(O_FTB,
+   encodings=[
+      (I_PHASE0_SRC, [
+         ('count_src', ('pco_ref_count_src', SRC(0))),
+         ('count_op', 'ftb'),
+         ('bitmask_src_op', 'byp'),
+         ('shift1_op', 'byp')
+      ])
+   ],
+   op_ref_maps=[('0', ['ft3'], [['s2', 'ft2']])]
+)
+
+encode_map(O_REV,
+   encodings=[
+      (I_PHASE0_SRC, [
+         ('count_src', 'ft2'),
+         ('count_op', 'byp'),
+         ('bitmask_src_op', 'byp'),
+         ('shift1_op', 'rev')
+      ])
+   ],
+   op_ref_maps=[('0', ['ft2'], ['s2'])]
+)
+
 encode_map(O_LOGICAL,
    encodings=[
       (I_PHASE1, [
@@ -1385,7 +1436,7 @@ encode_map(O_SHIFT,
          ('shift2_op', OM_SHIFTOP),
       ])
    ],
-   op_ref_maps=[('2', ['ft5'], ['ft4', 's4', ['_', 'p0']])]
+   op_ref_maps=[('2', ['ft5'], ['ft4', 's4', ['_', 'ft0', 'ft3']])]
 )
 
 encode_map(O_WOP, encodings=[(I_WOP, [])], op_ref_maps=[('ctrl', [], [])])
@@ -2499,6 +2550,54 @@ group_map(O_MOVI32,
    dests=[('w[0]', ('0', DEST(1)), 'ft1')]
 )
 
+group_map(O_CBS,
+   hdr=(I_IGRP_HDR_BITWISE, [
+      ('opcnt', 'p0'),
+      ('olchk', OM_OLCHK),
+      ('w1p', True),
+      ('w0p', False),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', OM_RPT)
+   ]),
+   enc_ops=[('0', O_CBS)],
+   srcs=[('s[2]', ('0', SRC(0)), 's2')],
+   dests=[('w[1]', ('0', DEST(0)), 'ft3')]
+)
+
+group_map(O_FTB,
+   hdr=(I_IGRP_HDR_BITWISE, [
+      ('opcnt', 'p0'),
+      ('olchk', OM_OLCHK),
+      ('w1p', True),
+      ('w0p', False),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', OM_RPT)
+   ]),
+   enc_ops=[('0', O_FTB)],
+   srcs=[('s[2]', ('0', SRC(0)), 's2')],
+   dests=[('w[1]', ('0', DEST(0)), 'ft3')]
+)
+
+group_map(O_REV,
+   hdr=(I_IGRP_HDR_BITWISE, [
+      ('opcnt', 'p0'),
+      ('olchk', OM_OLCHK),
+      ('w1p', True),
+      ('w0p', False),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', OM_RPT)
+   ]),
+   enc_ops=[('0', O_REV)],
+   srcs=[('s[2]', ('0', SRC(0)), 's2')],
+   dests=[('w[1]', ('0', DEST(0)), 'ft2')]
+)
+
 group_map(O_LOGICAL,
    hdr=(I_IGRP_HDR_BITWISE, [
       ('opcnt', ['p0', 'p1']),
@@ -2563,6 +2662,82 @@ group_map(O_COPYSIGN,
       ('s[1]', ('0', SRC(1)), 's1'),
       ('s[2]', ('0', SRC(2)), 's2'),
       ('s[3]', ('1', SRC(3)), 's3')
+   ],
+   dests=[('w[0]', ('1', DEST(0)), 'ft4')]
+)
+
+group_map(O_IBFE,
+   hdr=(I_IGRP_HDR_BITWISE, [
+      ('opcnt', ['p0', 'p1', 'p2']),
+      ('olchk', OM_OLCHK),
+      ('w1p', False),
+      ('w0p', True),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', OM_RPT)
+   ]),
+   enc_ops=[
+      ('0', O_MSK_BBYP0S1, ['ft0', 'ft1', 'ft2'], [SRC(2), SRC(1), SRC(0)]),
+      ('1', O_LOGICAL, ['ft4'], ['ft1', 'ft2', 'ft1_invert', 'pco_zero'], [(OM_LOGIOP, 'or')]),
+      ('2', O_SHIFT, [DEST(0)], ['ft4', SRC(1), 'ft0'], [(OM_SHIFTOP, 'asr_mtb')])
+   ],
+   srcs=[
+      ('s[0]', ('0', SRC(0)), 's0'),
+      ('s[1]', ('0', SRC(1)), 's1'),
+      ('s[2]', ('0', SRC(2)), 's2'),
+      ('s[3]', ('1', SRC(3)), 's3'),
+      ('s[4]', ('2', SRC(1)), 's4')
+   ],
+   dests=[('w[0]', ('2', DEST(0)), 'ft5')]
+)
+
+group_map(O_UBFE,
+   hdr=(I_IGRP_HDR_BITWISE, [
+      ('opcnt', ['p0', 'p1', 'p2']),
+      ('olchk', OM_OLCHK),
+      ('w1p', False),
+      ('w0p', True),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', OM_RPT)
+   ]),
+   enc_ops=[
+      ('0', O_MSK_BBYP0S1, ['ft0', 'ft1', 'ft2'], [SRC(2), SRC(1), SRC(0)]),
+      ('1', O_LOGICAL, ['ft4'], ['ft1', 'ft2', 'ft1_invert', 'pco_zero'], [(OM_LOGIOP, 'or')]),
+      ('2', O_SHIFT, [DEST(0)], ['ft4', SRC(1), '_'], [(OM_SHIFTOP, 'shr')])
+   ],
+   srcs=[
+      ('s[0]', ('0', SRC(0)), 's0'),
+      ('s[1]', ('0', SRC(1)), 's1'),
+      ('s[2]', ('0', SRC(2)), 's2'),
+      ('s[3]', ('1', SRC(3)), 's3'),
+      ('s[4]', ('2', SRC(1)), 's4')
+   ],
+   dests=[('w[0]', ('2', DEST(0)), 'ft5')]
+)
+
+group_map(O_BFI,
+   hdr=(I_IGRP_HDR_BITWISE, [
+      ('opcnt', ['p0', 'p1']),
+      ('olchk', OM_OLCHK),
+      ('w1p', False),
+      ('w0p', True),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', OM_RPT)
+   ]),
+   enc_ops=[
+      ('0', O_MSK_LSL, ['ft0', 'ft1', 'ft2'], [SRC(3), SRC(2), SRC(1)]),
+      ('1', O_LOGICAL, [DEST(0)], ['ft1', 'ft2', 'ft1_invert', SRC(0)], [(OM_LOGIOP, 'or')]),
+   ],
+   srcs=[
+      ('s[0]', ('0', SRC(0)), 's0'),
+      ('s[1]', ('0', SRC(1)), 's1'),
+      ('s[2]', ('0', SRC(2)), 's2'),
+      ('s[3]', ('1', SRC(3)), 's3'),
    ],
    dests=[('w[0]', ('1', DEST(0)), 'ft4')]
 )

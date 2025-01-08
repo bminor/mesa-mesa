@@ -290,7 +290,10 @@ OM_SHIFTOP = op_mod_enum('shiftop', [
    'shr',
    'rol',
    'cps',
-   'asr',
+   'asr_twb',
+   'asr_pwb',
+   'asr_mtb',
+   'asr_ftb',
 ])
 
 OM_CND = op_mod_enum('cnd', [
@@ -363,15 +366,23 @@ O_ATOMIC = hw_op('atomic', [OM_OLCHK, OM_EXEC_CND, OM_END, OM_ATOM_OP], 1, 2)
 ## Bitwise.
 O_MOVI32 = hw_op('movi32', OM_ALU, 1, 1)
 
+O_CBS = hw_op('cbs', OM_ALU, 1, 1)
+O_FTB = hw_op('ftb', OM_ALU, 1, 1)
+O_REV = hw_op('rev', OM_ALU, 1, 1)
 O_LOGICAL = hw_op('logical', OM_ALU + [OM_LOGIOP], 1, 4)
 O_SHIFT = hw_op('shift', OM_ALU + [OM_SHIFTOP], 1, 3)
 
 O_COPYSIGN = hw_op('copysign', OM_ALU, 1, 2)
 
+O_IBFE = hw_op('ibfe', OM_ALU, 1, 3)
+O_UBFE = hw_op('ubfe', OM_ALU, 1, 3)
+O_BFI = hw_op('bfi', OM_ALU, 1, 4)
+
 O_BBYP0BM = hw_direct_op('bbyp0bm', [], 2, 2)
 O_BBYP0BM_IMM32 = hw_direct_op('bbyp0bm_imm32', [], 2, 2)
 O_BBYP0S1 = hw_direct_op('bbyp0s1', [], 1, 1)
 O_MSK_BBYP0S1 = hw_direct_op('msk_bbyp0s1', [], 3, 3)
+O_MSK_LSL = hw_direct_op('msk_lsl', [], 3, 3)
 
 ## Control.
 O_WOP = hw_op('wop')

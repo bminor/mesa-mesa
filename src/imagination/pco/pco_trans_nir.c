@@ -1127,7 +1127,7 @@ static pco_instr *trans_shift(trans_ctx *tctx,
       break;
 
    case nir_op_ishr:
-      shiftop = PCO_SHIFTOP_ASR;
+      shiftop = PCO_SHIFTOP_ASR_TWB;
       break;
 
    case nir_op_ushr:
@@ -1452,6 +1452,39 @@ static pco_instr *trans_alu(trans_ctx *tctx, nir_alu_instr *alu)
    case nir_op_ishr:
    case nir_op_ushr:
       instr = trans_shift(tctx, alu->op, dest, src[0], src[1]);
+      break;
+
+   case nir_op_bit_count:
+      instr = pco_cbs(&tctx->b, dest, src[0]);
+      break;
+
+   case nir_op_ufind_msb:
+      instr = pco_ftb(&tctx->b, dest, src[0]);
+      break;
+
+   case nir_op_ibitfield_extract: {
+      pco_ref bfe = pco_ref_new_ssa32(tctx->func);
+      pco_ibfe(&tctx->b, bfe, src[0], src[1], src[2]);
+      instr = pco_bcsel(&tctx->b, dest, src[2], bfe, pco_zero);
+      break;
+   }
+
+   case nir_op_ubitfield_extract: {
+      pco_ref bfe = pco_ref_new_ssa32(tctx->func);
+      pco_ubfe(&tctx->b, bfe, src[0], src[1], src[2]);
+      instr = pco_bcsel(&tctx->b, dest, src[2], bfe, pco_zero);
+      break;
+   }
+
+   case nir_op_bitfield_insert: {
+      pco_ref bfi = pco_ref_new_ssa32(tctx->func);
+      pco_bfi(&tctx->b, bfi, src[0], src[1], src[2], src[3]);
+      instr = pco_bcsel(&tctx->b, dest, src[3], bfi, src[0]);
+      break;
+   }
+
+   case nir_op_bitfield_reverse:
+      instr = pco_rev(&tctx->b, dest, src[0]);
       break;
 
    case nir_op_f2i32:
