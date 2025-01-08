@@ -41,6 +41,7 @@
 #include <xcb/xcb.h>
 #include <xcb/glx.h>
 #include "dri_util.h"
+#include "pipe/p_screen.h"
 #if defined(GLX_DIRECT_RENDERING) && (!defined(GLX_USE_APPLEGL) || defined(GLX_USE_APPLE))
 #include <dlfcn.h>
 #endif
@@ -807,7 +808,7 @@ bind_extensions(struct glx_screen *psc, const char *driverName)
                                  "GLX_EXT_create_context_es2_profile");
    }
 
-   if (dri_get_screen_param(psc->frontend_screen, PIPE_CAP_DEVICE_RESET_STATUS_QUERY))
+   if (dri_get_pipe_screen(psc->frontend_screen)->caps.device_reset_status_query)
       __glXEnableDirectExtension(psc,
                                  "GLX_ARB_create_context_robustness");
 
