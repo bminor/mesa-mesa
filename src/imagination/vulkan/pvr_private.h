@@ -54,7 +54,6 @@
 #include "pvr_spm.h"
 #include "pvr_types.h"
 #include "pvr_winsys.h"
-#include "rogue/rogue.h"
 #include "util/bitscan.h"
 #include "util/format/u_format.h"
 #include "util/log.h"
@@ -112,7 +111,6 @@ struct pvr_physical_device {
 
    struct wsi_device wsi_device;
 
-   struct rogue_compiler *compiler;
    pco_ctx *pco_ctx;
 
    uint8_t device_uuid[SHA1_DIGEST_LENGTH];

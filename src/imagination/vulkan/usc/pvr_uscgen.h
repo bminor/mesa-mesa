@@ -145,12 +145,14 @@ void pvr_uscgen_eot(const char *name,
                     struct util_dynarray *binary);
 #endif
 
+#if 0
 void pvr_uscgen_nop(struct util_dynarray *binary);
 
 void pvr_uscgen_tq_frag(const struct pvr_tq_shader_properties *shader_props,
                         struct pvr_tq_frag_sh_reg_layout *sh_reg_layout,
                         unsigned *temps_used,
                         struct util_dynarray *binary);
+#endif
 
 #if 0
 void pvr_uscgen_tq_eot(unsigned rt_count,

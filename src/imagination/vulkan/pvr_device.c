@@ -62,7 +62,6 @@
 #include "pvr_usc.h"
 #include "pvr_util.h"
 #include "pvr_winsys.h"
-#include "rogue/rogue.h"
 #include "util/build_id.h"
 #include "util/disk_cache.h"
 #include "util/log.h"
@@ -602,9 +601,6 @@ static void pvr_physical_device_destroy(struct vk_physical_device *vk_pdevice)
    if (pdevice->pco_ctx)
       ralloc_free(pdevice->pco_ctx);
 
-   if (pdevice->compiler)
-      ralloc_free(pdevice->compiler);
-
    pvr_wsi_finish(pdevice);
 
    pvr_physical_device_free_pipeline_cache(pdevice);
@@ -823,21 +819,12 @@ static VkResult pvr_physical_device_init(struct pvr_physical_device *pdevice,
       VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
    pdevice->memory.memoryTypes[0].heapIndex = 0;
 
-   pdevice->compiler = rogue_compiler_create(&pdevice->dev_info);
-   if (!pdevice->compiler) {
-      result = vk_errorf(instance,
-                         VK_ERROR_INITIALIZATION_FAILED,
-                         "Failed to initialize Rogue compiler");
-      goto err_free_pipeline_cache;
-   }
-
    pdevice->pco_ctx = pco_ctx_create(&pdevice->dev_info, NULL);
    if (!pdevice->pco_ctx) {
-      ralloc_free(pdevice->compiler);
       result = vk_errorf(instance,
                          VK_ERROR_INITIALIZATION_FAILED,
                          "Failed to initialize PCO compiler context");
-      goto err_free_compiler;
+      goto err_free_pipeline_cache;
    }
    pco_ctx_setup_usclib(pdevice->pco_ctx,
                         pco_usclib_0_nir,
@@ -853,9 +840,6 @@ static VkResult pvr_physical_device_init(struct pvr_physical_device *pdevice,
 
 err_free_pco_ctx:
    ralloc_free(pdevice->pco_ctx);
-
-err_free_compiler:
-   ralloc_free(pdevice->compiler);
 
 err_free_pipeline_cache:
    pvr_physical_device_free_pipeline_cache(pdevice);

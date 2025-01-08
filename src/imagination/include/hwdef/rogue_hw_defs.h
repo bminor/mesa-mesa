@@ -188,4 +188,6 @@ enum {
 
 #define ROGUE_SMP_MAX_DATA_WORDS 18U
 
+#define ROGUE_REG_SIZE_BYTES 4U
+
 #endif /* ROGUE_HW_DEFS_H */

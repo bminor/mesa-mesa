@@ -35,7 +35,6 @@
 #include "pvr_usc.h"
 #include "usc/programs/pvr_usc_fragment_shader.h"
 #include "util/macros.h"
-#include "rogue/rogue.h"
 #include "vk_alloc.h"
 #include "vk_format.h"
 #include "vk_log.h"

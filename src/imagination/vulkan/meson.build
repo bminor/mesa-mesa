@@ -50,14 +50,10 @@ pvr_files = files(
   'pvr_query_compute.c',
   'pvr_queue.c',
   'pvr_robustness.c',
-  'pvr_shader.c',
   'pvr_spm.c',
   'pvr_tex_state.c',
   'pvr_usc.c',
   'pvr_wsi.c',
-
-  'usc/pvr_uscgen.c',
-  'usc/pvr_uscgen_tq.c',
 )
 
 pvr_includes = [
@@ -110,7 +106,6 @@ libvulkan_powervr_mesa = shared_library(
     libpowervr_common,
     libpowervr_compiler,
     libpowervr_pds,
-    libpowervr_rogue,
     libpowervr_uscgen,
     libvulkan_wsi,
   ],
