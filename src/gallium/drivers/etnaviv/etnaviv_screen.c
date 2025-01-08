@@ -91,8 +91,8 @@ etna_screen_destroy(struct pipe_screen *pscreen)
 {
    struct etna_screen *screen = etna_screen(pscreen);
 
-   if (screen->dummy_desc_reloc.bo)
-      etna_bo_del(screen->dummy_desc_reloc.bo);
+   if (screen->dummy_bo)
+      etna_bo_del(screen->dummy_bo);
 
    if (screen->dummy_rt_reloc.bo)
       etna_bo_del(screen->dummy_rt_reloc.bo);
@@ -1166,11 +1166,11 @@ etna_screen_create(struct etna_device *dev, struct etna_gpu *gpu,
 
 
    /* create dummy RT buffer, used when rendering with no color buffer */
-   screen->dummy_rt_reloc.bo = etna_bo_new(screen->dev, 64 * 64 * 4,
-                                           DRM_ETNA_GEM_CACHE_WC);
-   if (!screen->dummy_rt_reloc.bo)
+   screen->dummy_bo = etna_bo_new(screen->dev, 64 * 64 * 4, DRM_ETNA_GEM_CACHE_WC);
+   if (!screen->dummy_bo)
       goto fail;
 
+   screen->dummy_rt_reloc.bo = screen->dummy_bo;
    screen->dummy_rt_reloc.offset = 0;
    screen->dummy_rt_reloc.flags = ETNA_RELOC_READ | ETNA_RELOC_WRITE;
 
