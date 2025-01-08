@@ -92,6 +92,25 @@ static bool try_legalize_src_mappings(pco_instr *instr,
    return progress;
 }
 
+static bool legalize_pseudo(pco_instr *instr)
+{
+   switch (instr->op) {
+   case PCO_OP_MOV:
+      if (pco_ref_is_reg(instr->src[0]) &&
+          pco_ref_get_reg_class(instr->src[0]) == PCO_REG_CLASS_SPEC)
+         instr->op = PCO_OP_MOVS1;
+      else
+         instr->op = PCO_OP_MBYP;
+
+      return true;
+
+   default:
+      break;
+   }
+
+   return false;
+}
+
 /**
  * \brief Try to legalizes an instruction.
  *
@@ -105,7 +124,7 @@ static bool try_legalize(pco_instr *instr)
 
    /* Skip pseudo instructions. */
    if (info->type == PCO_OP_TYPE_PSEUDO)
-      return false;
+      return legalize_pseudo(instr);
 
    progress |= try_legalize_src_mappings(instr, info);
 
