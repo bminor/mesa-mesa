@@ -758,7 +758,7 @@ LLVMValueRef ac_build_fs_interp_mov(struct ac_llvm_context *ctx, unsigned parame
       p = ac_build_intrinsic(ctx, "llvm.amdgcn.lds.param.load",
                              ctx->f32, args, 3, 0);
       p = ac_build_intrinsic(ctx, "llvm.amdgcn.wqm.f32", ctx->f32, &p, 1, 0);
-      p = ac_build_quad_swizzle(ctx, p, parameter, parameter, parameter, parameter);
+      p = ac_build_quad_swizzle(ctx, p, parameter, parameter, parameter, parameter, false);
       return ac_build_intrinsic(ctx, "llvm.amdgcn.wqm.f32", ctx->f32, &p, 1, 0);
    } else {
       args[0] = LLVMConstInt(ctx->i32, (parameter + 2) % 3, 0);
@@ -1298,9 +1298,9 @@ LLVMValueRef ac_build_ddxy(struct ac_llvm_context *ctx, uint32_t mask, int idx, 
       trbl_lanes[i] = (i & mask) + idx;
    }
 
-   tl = ac_build_quad_swizzle(ctx, val, tl_lanes[0], tl_lanes[1], tl_lanes[2], tl_lanes[3]);
+   tl = ac_build_quad_swizzle(ctx, val, tl_lanes[0], tl_lanes[1], tl_lanes[2], tl_lanes[3], false);
    trbl =
-      ac_build_quad_swizzle(ctx, val, trbl_lanes[0], trbl_lanes[1], trbl_lanes[2], trbl_lanes[3]);
+      ac_build_quad_swizzle(ctx, val, trbl_lanes[0], trbl_lanes[1], trbl_lanes[2], trbl_lanes[3], false);
 
    if (result_type == ctx->f16) {
       tl = LLVMBuildTrunc(ctx->builder, tl, ctx->i16, "");
@@ -2676,13 +2676,17 @@ static inline enum dpp_ctrl dpp_row_sr(unsigned amount)
 
 static LLVMValueRef _ac_build_dpp(struct ac_llvm_context *ctx, LLVMValueRef old, LLVMValueRef src,
                                   enum dpp_ctrl dpp_ctrl, unsigned row_mask, unsigned bank_mask,
-                                  bool bound_ctrl)
+                                  bool bound_ctrl, bool use_wqm)
 {
    LLVMTypeRef type = LLVMTypeOf(src);
    LLVMValueRef res;
 
    old = LLVMBuildZExt(ctx->builder, old, ctx->i32, "");
+   if (use_wqm)
+      old = ac_build_intrinsic(ctx, "llvm.amdgcn.wqm.i32", ctx->i32, &old, 1, 0);
    src = LLVMBuildZExt(ctx->builder, src, ctx->i32, "");
+   if (use_wqm)
+      src = ac_build_intrinsic(ctx, "llvm.amdgcn.wqm.i32", ctx->i32, &src, 1, 0);
 
    res = ac_build_intrinsic(
       ctx, "llvm.amdgcn.update.dpp.i32", ctx->i32,
@@ -2691,16 +2695,23 @@ static LLVMValueRef _ac_build_dpp(struct ac_llvm_context *ctx, LLVMValueRef old,
                        LLVMConstInt(ctx->i1, bound_ctrl, 0)},
       6, 0);
 
+   if (use_wqm)
+      res = ac_build_intrinsic(ctx, "llvm.amdgcn.wqm.i32", ctx->i32, &res, 1, 0);
+
    return LLVMBuildTrunc(ctx->builder, res, type, "");
 }
 
 static LLVMValueRef ac_build_dpp(struct ac_llvm_context *ctx, LLVMValueRef old, LLVMValueRef src,
                                  enum dpp_ctrl dpp_ctrl, unsigned row_mask, unsigned bank_mask,
-                                 bool bound_ctrl)
+                                 bool bound_ctrl, bool use_wqm)
 {
    LLVMTypeRef src_type = LLVMTypeOf(src);
    src = ac_to_integer(ctx, src);
+   if (use_wqm)
+      src = ac_build_intrinsic(ctx, "llvm.amdgcn.wqm.i32", ctx->i32, &src, 1, 0);
    old = ac_to_integer(ctx, old);
+   if (use_wqm)
+      old = ac_build_intrinsic(ctx, "llvm.amdgcn.wqm.i32", ctx->i32, &old, 1, 0);
    unsigned bits = LLVMGetIntTypeWidth(LLVMTypeOf(src));
    LLVMValueRef ret;
    if (bits > 32) {
@@ -2713,12 +2724,12 @@ static LLVMValueRef ac_build_dpp(struct ac_llvm_context *ctx, LLVMValueRef old, 
          src = LLVMBuildExtractElement(ctx->builder, src_vector, LLVMConstInt(ctx->i32, i, 0), "");
          old = LLVMBuildExtractElement(ctx->builder, old_vector, LLVMConstInt(ctx->i32, i, 0), "");
          LLVMValueRef ret_comp =
-            _ac_build_dpp(ctx, old, src, dpp_ctrl, row_mask, bank_mask, bound_ctrl);
+            _ac_build_dpp(ctx, old, src, dpp_ctrl, row_mask, bank_mask, bound_ctrl, use_wqm);
          ret =
             LLVMBuildInsertElement(ctx->builder, ret, ret_comp, LLVMConstInt(ctx->i32, i, 0), "");
       }
    } else {
-      ret = _ac_build_dpp(ctx, old, src, dpp_ctrl, row_mask, bank_mask, bound_ctrl);
+      ret = _ac_build_dpp(ctx, old, src, dpp_ctrl, row_mask, bank_mask, bound_ctrl, use_wqm);
    }
    return LLVMBuildBitCast(ctx->builder, ret, src_type, "");
 }
@@ -3064,7 +3075,7 @@ static LLVMValueRef ac_wavefront_shift_right_1(struct ac_llvm_context *ctx, LLVM
       LLVMValueRef active, tmp1, tmp2;
       LLVMValueRef tid = ac_get_thread_id(ctx);
 
-      tmp1 = ac_build_dpp(ctx, identity, src, dpp_row_sr(1), 0xf, 0xf, false);
+      tmp1 = ac_build_dpp(ctx, identity, src, dpp_row_sr(1), 0xf, 0xf, false, false);
 
       tmp2 = ac_build_permlane16(ctx, src, (uint64_t)~0, true, false);
 
@@ -3090,7 +3101,7 @@ static LLVMValueRef ac_wavefront_shift_right_1(struct ac_llvm_context *ctx, LLVM
          return LLVMBuildSelect(ctx->builder, active, tmp2, tmp1, "");
       }
    } else if (ctx->gfx_level >= GFX8) {
-      return ac_build_dpp(ctx, identity, src, dpp_wf_sr1, 0xf, 0xf, false);
+      return ac_build_dpp(ctx, identity, src, dpp_wf_sr1, 0xf, 0xf, false, false);
    }
 
    /* wavefront shift_right by 1 on SI/CI */
@@ -3177,23 +3188,23 @@ static LLVMValueRef ac_build_scan(struct ac_llvm_context *ctx, nir_op op, LLVMVa
 
    if (maxprefix <= 1)
       return result;
-   tmp = ac_build_dpp(ctx, identity, src, dpp_row_sr(1), 0xf, 0xf, false);
+   tmp = ac_build_dpp(ctx, identity, src, dpp_row_sr(1), 0xf, 0xf, false, false);
    result = ac_build_alu_op(ctx, result, tmp, op);
    if (maxprefix <= 2)
       return result;
-   tmp = ac_build_dpp(ctx, identity, src, dpp_row_sr(2), 0xf, 0xf, false);
+   tmp = ac_build_dpp(ctx, identity, src, dpp_row_sr(2), 0xf, 0xf, false, false);
    result = ac_build_alu_op(ctx, result, tmp, op);
    if (maxprefix <= 3)
       return result;
-   tmp = ac_build_dpp(ctx, identity, src, dpp_row_sr(3), 0xf, 0xf, false);
+   tmp = ac_build_dpp(ctx, identity, src, dpp_row_sr(3), 0xf, 0xf, false, false);
    result = ac_build_alu_op(ctx, result, tmp, op);
    if (maxprefix <= 4)
       return result;
-   tmp = ac_build_dpp(ctx, identity, result, dpp_row_sr(4), 0xf, 0xe, false);
+   tmp = ac_build_dpp(ctx, identity, result, dpp_row_sr(4), 0xf, 0xe, false, false);
    result = ac_build_alu_op(ctx, result, tmp, op);
    if (maxprefix <= 8)
       return result;
-   tmp = ac_build_dpp(ctx, identity, result, dpp_row_sr(8), 0xf, 0xc, false);
+   tmp = ac_build_dpp(ctx, identity, result, dpp_row_sr(8), 0xf, 0xc, false, false);
    result = ac_build_alu_op(ctx, result, tmp, op);
    if (maxprefix <= 16)
       return result;
@@ -3225,11 +3236,11 @@ static LLVMValueRef ac_build_scan(struct ac_llvm_context *ctx, nir_op op, LLVMVa
       return result;
    }
 
-   tmp = ac_build_dpp(ctx, identity, result, dpp_row_bcast15, 0xa, 0xf, false);
+   tmp = ac_build_dpp(ctx, identity, result, dpp_row_bcast15, 0xa, 0xf, false, false);
    result = ac_build_alu_op(ctx, result, tmp, op);
    if (maxprefix <= 32)
       return result;
-   tmp = ac_build_dpp(ctx, identity, result, dpp_row_bcast31, 0xc, 0xf, false);
+   tmp = ac_build_dpp(ctx, identity, result, dpp_row_bcast31, 0xc, 0xf, false, false);
    result = ac_build_alu_op(ctx, result, tmp, op);
    return result;
 }
@@ -3289,18 +3300,18 @@ LLVMValueRef ac_build_reduce(struct ac_llvm_context *ctx, LLVMValueRef src, nir_
    LLVMValueRef identity = get_reduction_identity(ctx, op, ac_get_type_size(LLVMTypeOf(src)));
    result = LLVMBuildBitCast(ctx->builder, ac_build_set_inactive(ctx, src, identity),
                              LLVMTypeOf(identity), "");
-   swap = ac_build_quad_swizzle(ctx, result, 1, 0, 3, 2);
+   swap = ac_build_quad_swizzle(ctx, result, 1, 0, 3, 2, false);
    result = ac_build_alu_op(ctx, result, swap, op);
    if (cluster_size == 2)
       return ac_build_wwm(ctx, result);
 
-   swap = ac_build_quad_swizzle(ctx, result, 2, 3, 0, 1);
+   swap = ac_build_quad_swizzle(ctx, result, 2, 3, 0, 1, false);
    result = ac_build_alu_op(ctx, result, swap, op);
    if (cluster_size == 4)
       return ac_build_wwm(ctx, result);
 
    if (ctx->gfx_level >= GFX8)
-      swap = ac_build_dpp(ctx, identity, result, dpp_row_half_mirror, 0xf, 0xf, false);
+      swap = ac_build_dpp(ctx, identity, result, dpp_row_half_mirror, 0xf, 0xf, false, false);
    else
       swap = ac_build_ds_swizzle(ctx, result, ds_pattern_bitmode(0x1f, 0, 0x04));
    result = ac_build_alu_op(ctx, result, swap, op);
@@ -3308,7 +3319,7 @@ LLVMValueRef ac_build_reduce(struct ac_llvm_context *ctx, LLVMValueRef src, nir_
       return ac_build_wwm(ctx, result);
 
    if (ctx->gfx_level >= GFX8)
-      swap = ac_build_dpp(ctx, identity, result, dpp_row_mirror, 0xf, 0xf, false);
+      swap = ac_build_dpp(ctx, identity, result, dpp_row_mirror, 0xf, 0xf, false, false);
    else
       swap = ac_build_ds_swizzle(ctx, result, ds_pattern_bitmode(0x1f, 0, 0x08));
    result = ac_build_alu_op(ctx, result, swap, op);
@@ -3318,7 +3329,7 @@ LLVMValueRef ac_build_reduce(struct ac_llvm_context *ctx, LLVMValueRef src, nir_
    if (ctx->gfx_level >= GFX10)
       swap = ac_build_permlane16(ctx, result, 0, true, false);
    else if (ctx->gfx_level >= GFX8 && cluster_size != 32)
-      swap = ac_build_dpp(ctx, identity, result, dpp_row_bcast15, 0xa, 0xf, false);
+      swap = ac_build_dpp(ctx, identity, result, dpp_row_bcast15, 0xa, 0xf, false, false);
    else
       swap = ac_build_ds_swizzle(ctx, result, ds_pattern_bitmode(0x1f, 0, 0x10));
    result = ac_build_alu_op(ctx, result, swap, op);
@@ -3330,7 +3341,7 @@ LLVMValueRef ac_build_reduce(struct ac_llvm_context *ctx, LLVMValueRef src, nir_
          if (ctx->gfx_level >= GFX10)
             swap = ac_build_readlane(ctx, result, LLVMConstInt(ctx->i32, 31, false));
          else
-            swap = ac_build_dpp(ctx, identity, result, dpp_row_bcast31, 0xc, 0xf, false);
+            swap = ac_build_dpp(ctx, identity, result, dpp_row_bcast31, 0xc, 0xf, false, false);
          result = ac_build_alu_op(ctx, result, swap, op);
          result = ac_build_readlane(ctx, result, LLVMConstInt(ctx->i32, 63, 0));
       }
@@ -3395,11 +3406,12 @@ void ac_build_dual_src_blend_swizzle(struct ac_llvm_context *ctx,
 }
 
 LLVMValueRef ac_build_quad_swizzle(struct ac_llvm_context *ctx, LLVMValueRef src, unsigned lane0,
-                                   unsigned lane1, unsigned lane2, unsigned lane3)
+                                   unsigned lane1, unsigned lane2, unsigned lane3,
+                                   bool use_wqm)
 {
    unsigned mask = dpp_quad_perm(lane0, lane1, lane2, lane3);
    if (ctx->gfx_level >= GFX8) {
-      return ac_build_dpp(ctx, src, src, mask, 0xf, 0xf, false);
+      return ac_build_dpp(ctx, src, src, mask, 0xf, 0xf, false, use_wqm);
    } else {
       return ac_build_ds_swizzle(ctx, src, (1 << 15) | mask);
    }
