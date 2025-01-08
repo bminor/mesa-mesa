@@ -654,7 +654,7 @@ class Parser(object):
 
     def emit_unpack_function(self, name, group):
         print("static inline void")
-        print("%s_unpack(const uint8_t * restrict cl,\n%sstruct %s * restrict values)\n{" %
+        print("%s_unpack(const uint32_t * restrict cl,\n%sstruct %s * restrict values)\n{" %
               (name.upper(), ' ' * (len(name) + 8), name))
 
         group.emit_unpack_function()
