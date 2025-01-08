@@ -64,17 +64,17 @@ pub struct DeviceCaps {
 
 impl DeviceCaps {
     fn new(screen: &PipeScreen) -> Self {
-        let cap_timestamp = screen.param(pipe_cap::PIPE_CAP_QUERY_TIMESTAMP) != 0;
-        let timer_resolution = screen.param(pipe_cap::PIPE_CAP_TIMER_RESOLUTION) as u32;
+        let cap_timestamp = screen.caps().query_timestamp;
+        let timer_resolution = screen.caps().timer_resolution;
 
         let max_write_images =
             Self::shader_param(screen, pipe_shader_cap::PIPE_SHADER_CAP_MAX_SHADER_IMAGES) as u32;
         let max_read_images =
             Self::shader_param(screen, pipe_shader_cap::PIPE_SHADER_CAP_MAX_SAMPLER_VIEWS) as u32;
-        let image_2d_size = screen.param(pipe_cap::PIPE_CAP_MAX_TEXTURE_2D_SIZE) as u32;
+        let image_2d_size = screen.caps().max_texture_2d_size;
 
-        let has_images = screen.param(pipe_cap::PIPE_CAP_TEXTURE_SAMPLER_INDEPENDENT) != 0 &&
-            screen.param(pipe_cap::PIPE_CAP_IMAGE_STORE_FORMATTED) != 0 &&
+        let has_images = screen.caps().texture_sampler_independent &&
+            screen.caps().image_store_formatted &&
             // The minimum value is 8 if CL_DEVICE_IMAGE_SUPPORT is CL_TRUE
             max_read_images >= 8 &&
             // The minimum value is 8 if CL_DEVICE_IMAGE_SUPPORT is CL_TRUE
@@ -333,7 +333,7 @@ impl Device {
         }
 
         // we require formatted loads
-        if self.screen.param(pipe_cap::PIPE_CAP_IMAGE_LOAD_FORMATTED) != 0 {
+        if self.screen.caps().image_load_formatted {
             // "For embedded profiles devices that support reading from and writing to the same
             // image object from the same kernel instance (see CL_DEVICE_MAX_READ_WRITE_IMAGE_ARGS)
             // there is no required minimum list of supported image formats."
@@ -363,7 +363,7 @@ impl Device {
     }
 
     fn check_valid(screen: &PipeScreen) -> bool {
-        if screen.param(pipe_cap::PIPE_CAP_COMPUTE) == 0
+        if !screen.caps().compute
             || screen.shader_param(
                 pipe_shader_type::PIPE_SHADER_COMPUTE,
                 pipe_shader_cap::PIPE_SHADER_CAP_SUPPORTED_IRS,
@@ -732,8 +732,7 @@ impl Device {
             1 << 26,
             min(
                 self.max_mem_alloc(),
-                self.screen
-                    .param(pipe_cap::PIPE_CAP_MAX_SHADER_BUFFER_SIZE_UINT) as u64,
+                self.screen.caps().max_shader_buffer_size_uint as u64,
             ),
         )
     }
@@ -781,12 +780,12 @@ impl Device {
             return false;
         }
 
-        self.screen.param(pipe_cap::PIPE_CAP_DOUBLES) == 1
+        self.screen.caps().doubles
     }
 
     pub fn is_gl_sharing_supported(&self) -> bool {
-        self.screen.param(pipe_cap::PIPE_CAP_CL_GL_SHARING) != 0
-            && self.screen.param(pipe_cap::PIPE_CAP_DMABUF) != 0
+        self.screen.caps().cl_gl_sharing
+            && self.screen.caps().dmabuf != 0
             && !self.is_device_software()
             && self.screen.is_res_handle_supported()
             && self.screen.device_uuid().is_some()
@@ -841,7 +840,7 @@ impl Device {
     }
 
     pub fn int64_supported(&self) -> bool {
-        self.screen.param(pipe_cap::PIPE_CAP_INT64) == 1
+        self.screen.caps().int64
     }
 
     pub fn global_mem_size(&self) -> cl_ulong {
@@ -860,20 +859,19 @@ impl Device {
 
     pub fn image_3d_size(&self) -> usize {
         if self.caps.has_images {
-            1 << (self.screen.param(pipe_cap::PIPE_CAP_MAX_TEXTURE_3D_LEVELS) - 1)
+            1 << (self.screen.caps().max_texture_3d_levels - 1)
         } else {
             0
         }
     }
 
     pub fn image_3d_supported(&self) -> bool {
-        self.caps.has_images && self.screen.param(pipe_cap::PIPE_CAP_MAX_TEXTURE_3D_LEVELS) != 0
+        self.caps.has_images && self.screen.caps().max_texture_3d_levels != 0
     }
 
     pub fn image_array_size(&self) -> usize {
         if self.caps.has_images {
-            self.screen
-                .param(pipe_cap::PIPE_CAP_MAX_TEXTURE_ARRAY_LAYERS) as usize
+            self.screen.caps().max_texture_array_layers as usize
         } else {
             0
         }
@@ -881,8 +879,7 @@ impl Device {
 
     pub fn image_pitch_alignment(&self) -> cl_uint {
         if self.caps.has_images {
-            self.screen
-                .param(pipe_cap::PIPE_CAP_LINEAR_IMAGE_PITCH_ALIGNMENT) as u32
+            self.screen.caps().linear_image_pitch_alignment
         } else {
             0
         }
@@ -890,8 +887,7 @@ impl Device {
 
     pub fn image_base_address_alignment(&self) -> cl_uint {
         if self.caps.has_images {
-            self.screen
-                .param(pipe_cap::PIPE_CAP_LINEAR_IMAGE_BASE_ADDRESS_ALIGNMENT) as u32
+            self.screen.caps().linear_image_base_address_alignment
         } else {
             0
         }
@@ -909,9 +905,7 @@ impl Device {
                     self.max_mem_alloc() / MAX_PIXEL_SIZE_BYTES,
                     c_int::MAX as cl_ulong,
                 ),
-                self.screen
-                    .param(pipe_cap::PIPE_CAP_MAX_TEXEL_BUFFER_ELEMENTS_UINT)
-                    as cl_ulong,
+                self.screen.caps().max_texel_buffer_elements_uint as cl_ulong,
             ) as usize
         } else {
             0
@@ -923,8 +917,8 @@ impl Device {
     }
 
     pub fn little_endian(&self) -> bool {
-        let endianness = self.screen.param(pipe_cap::PIPE_CAP_ENDIANNESS);
-        endianness == (pipe_endian::PIPE_ENDIAN_LITTLE as i32)
+        let endianness = self.screen.caps().endianness;
+        endianness == pipe_endian::PIPE_ENDIAN_LITTLE
     }
 
     pub fn local_mem_size(&self) -> cl_ulong {
@@ -1002,10 +996,10 @@ impl Device {
             return None;
         }
 
-        let pci_domain = self.screen.param(pipe_cap::PIPE_CAP_PCI_GROUP) as cl_uint;
-        let pci_bus = self.screen.param(pipe_cap::PIPE_CAP_PCI_BUS) as cl_uint;
-        let pci_device = self.screen.param(pipe_cap::PIPE_CAP_PCI_DEVICE) as cl_uint;
-        let pci_function = self.screen.param(pipe_cap::PIPE_CAP_PCI_FUNCTION) as cl_uint;
+        let pci_domain = self.screen.caps().pci_group as cl_uint;
+        let pci_bus = self.screen.caps().pci_bus as cl_uint;
+        let pci_device = self.screen.caps().pci_device as cl_uint;
+        let pci_function = self.screen.caps().pci_function as cl_uint;
 
         Some(cl_device_pci_bus_info_khr {
             pci_domain,
@@ -1063,37 +1057,35 @@ impl Device {
     }
 
     pub fn svm_supported(&self) -> bool {
-        self.screen.param(pipe_cap::PIPE_CAP_SYSTEM_SVM) == 1
+        self.screen.caps().system_svm
     }
 
     pub fn unified_memory(&self) -> bool {
-        self.screen.param(pipe_cap::PIPE_CAP_UMA) == 1
+        self.screen.caps().uma
     }
 
     pub fn vendor_id(&self) -> cl_uint {
-        let id = self.screen.param(pipe_cap::PIPE_CAP_VENDOR_ID);
-        if id == -1 {
+        let id = self.screen.caps().vendor_id;
+        if id == 0xFFFFFFFF {
             return 0;
         }
-        id as u32
+        id
     }
 
     pub fn prefers_real_buffer_in_cb0(&self) -> bool {
-        self.screen
-            .param(pipe_cap::PIPE_CAP_PREFER_REAL_BUFFER_IN_CONSTBUF0)
-            == 1
+        self.screen.caps().prefer_real_buffer_in_constbuf0
     }
 
     pub fn shareable_shaders(&self) -> bool {
-        self.screen.param(pipe_cap::PIPE_CAP_SHAREABLE_SHADERS) == 1
+        self.screen.caps().shareable_shaders
     }
 
     pub fn images_as_deref(&self) -> bool {
-        self.screen.param(pipe_cap::PIPE_CAP_NIR_IMAGES_AS_DEREF) == 1
+        self.screen.caps().nir_images_as_deref
     }
 
     pub fn samplers_as_deref(&self) -> bool {
-        self.screen.param(pipe_cap::PIPE_CAP_NIR_SAMPLERS_AS_DEREF) == 1
+        self.screen.caps().nir_samplers_as_deref
     }
 
     pub fn helper_ctx(&self) -> impl HelperContextWrapper + '_ {

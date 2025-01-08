@@ -107,6 +107,10 @@ impl PipeScreen {
         unsafe { self.screen.as_ref() }
     }
 
+    pub fn caps(&self) -> &pipe_caps {
+        &self.screen().caps
+    }
+
     pub fn create_context(self: &Arc<Self>) -> Option<PipeContext> {
         PipeContext::new(
             unsafe {
@@ -274,10 +278,6 @@ impl PipeScreen {
                 false,
             )
         }
-    }
-
-    pub fn param(&self, cap: pipe_cap) -> i32 {
-        unsafe { self.screen().get_param.unwrap()(self.screen.as_ptr(), cap) }
     }
 
     pub fn shader_param(&self, t: pipe_shader_type, cap: pipe_shader_cap) -> i32 {
@@ -473,7 +473,6 @@ fn has_required_cbs(screen: *mut pipe_screen) -> bool {
         & has_required_feature!(screen, get_compiler_options)
         & has_required_feature!(screen, get_compute_param)
         & has_required_feature!(screen, get_name)
-        & has_required_feature!(screen, get_param)
         & has_required_feature!(screen, get_shader_param)
         & has_required_feature!(screen, is_format_supported)
         & has_required_feature!(screen, resource_create)
