@@ -1250,6 +1250,12 @@ nir_ubitfield_extract_imm(nir_builder *build, nir_def *x, uint32_t offset, uint3
 }
 
 static inline nir_def *
+nir_bitfield_insert_imm(nir_builder *build, nir_def *x, nir_def *insert, uint32_t offset, uint32_t size)
+{
+   return nir_bitfield_insert(build, x, insert, nir_imm_int(build, offset), nir_imm_int(build, size));
+}
+
+static inline nir_def *
 nir_extract_u8_imm(nir_builder *b, nir_def *a, unsigned i)
 {
    return nir_extract_u8(b, a, nir_imm_intN_t(b, i, a->bit_size));
