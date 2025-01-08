@@ -231,10 +231,10 @@ impl ShaderBin {
                 ShaderStageInfo::Tessellation(_) => MESA_SHADER_TESS_EVAL,
             },
             sm: sm.sm(),
-            num_gprs: if sm.sm() >= 70 {
-                max(4, info.num_gprs + 2)
-            } else {
-                max(4, info.num_gprs)
+            num_gprs: {
+                max(4, info.num_gprs as u32 + sm.hw_reserved_gprs())
+                    .try_into()
+                    .unwrap()
             },
             num_control_barriers: info.num_control_barriers,
             _pad0: Default::default(),
