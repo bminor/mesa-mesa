@@ -165,6 +165,7 @@ nvk_cmd_buffer_new_push(struct nvk_cmd_buffer *cmd)
 
    VkResult result = nvk_cmd_buffer_alloc_mem(cmd, false, &cmd->push_mem);
    if (unlikely(result != VK_SUCCESS)) {
+      vk_command_buffer_set_error(&cmd->vk, result);
       STATIC_ASSERT(NVK_CMD_BUFFER_MAX_PUSH <= NVK_CMD_MEM_SIZE / 4);
       cmd->push_mem = NULL;
       nv_push_init(&cmd->push, push_runout, 0);
