@@ -136,10 +136,8 @@ shaders@glsl-fs-pointcoord,Fail
 # segfault
 shaders@glsl-kwin-blur-1,Crash
 
-shaders@glsl-novertexdata,Fail
 shaders@glsl-uniform-interstage-limits@subdivide 5- statechanges,Timeout
 shaders@glsl-uniform-interstage-limits@subdivide 5,Timeout
-shaders@glsl-vs-point-size,Fail
 
 # Expects that some format/internal_format combinations should be supported when they currently aren't.
 spec@arb_clear_texture@arb_clear_texture-sized-formats,Fail
@@ -628,9 +626,6 @@ spec@!opengl 2.1@pbo,Fail
 spec@!opengl 2.1@pbo@test_polygon_stip,Fail
 spec@!opengl 2.1@polygon-stipple-fs,Fail
 spec@!opengl es 2.0@glsl-fs-pointcoord,Fail
-
-# Failure since 2024-01-30
-spec@arb_vertex_buffer_object@pos-array,Fail
 
 # tests that require multisample resolve parameters not supported in hardware
 spec@!opengl 1.1@depthstencil-default_fb-blit samples=2,Fail
