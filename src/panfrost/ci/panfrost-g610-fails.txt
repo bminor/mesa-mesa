@@ -268,9 +268,6 @@ dEQP-VK.renderpass2.suballocation.attachment_allocation.input_output.63,Fail
 
 dEQP-VK.glsl.loops.special.do_while_dynamic_iterations.dowhile_trap_vertex,Crash
 
-dEQP-VK.rasterization.rasterization_order_attachment_access.depth.samples_1.multi_draw_barriers,Crash
-dEQP-VK.rasterization.rasterization_order_attachment_access.stencil.samples_1.multi_draw_barriers,Crash
-
 dEQP-VK.wsi.wayland.swapchain.simulate_oom.composite_alpha,Crash
 dEQP-VK.wsi.wayland.swapchain.simulate_oom.exclusive_nonzero_queues,Crash
 dEQP-VK.wsi.wayland.swapchain.simulate_oom.image_array_layers,Crash
