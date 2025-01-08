@@ -184,7 +184,7 @@
         "description": "panvk: Don't invalidate the viewport on cull mode updates",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "7ca01506c961760a75c2e682c199dc36c89f4af5",
         "notes": null
