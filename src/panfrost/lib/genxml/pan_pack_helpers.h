@@ -119,7 +119,8 @@ __gen_unpack_padded(const uint32_t *restrict cl, uint32_t start, uint32_t end)
 #define pan_section_offset(A, S) PREFIX4(A, SECTION, S, OFFSET)
 
 #define pan_section_ptr(base, A, S)                                            \
-   ((void *)((uint8_t *)(base) + pan_section_offset(A, S)))
+   ((PREFIX4(A, SECTION, S, PACKED_TYPE) *)((uint8_t *)(base) +                \
+                                            pan_section_offset(A, S)))
 
 #define pan_section_pack(dst, A, S, name)                                      \
    for (PREFIX4(A, SECTION, S, TYPE) name = {PREFIX4(A, SECTION, S, header)},  \

@@ -630,6 +630,7 @@ class Parser(object):
             print('#define {}_ALIGN {}'.format(aggregate.name.upper(), aggregate.align))
         for section in aggregate.sections:
             print('#define {}_SECTION_{}_TYPE struct {}'.format(aggregate.name.upper(), section.name.upper(), section.type_name))
+            print('#define {}_SECTION_{}_PACKED_TYPE {}_PACKED_T'.format(aggregate.name.upper(), section.name.upper(), section.type_name.upper()))
             print('#define {}_SECTION_{}_header {}_header'.format(aggregate.name.upper(), section.name.upper(), section.type_name))
             print('#define {}_SECTION_{}_pack {}_pack'.format(aggregate.name.upper(), section.name.upper(), section.type_name))
             print('#define {}_SECTION_{}_unpack {}_unpack'.format(aggregate.name.upper(), section.name.upper(), section.type_name))
