@@ -1701,7 +1701,8 @@ static void gfx10_shader_ngg(struct si_screen *sscreen, struct si_shader *shader
       shader->ge_cntl = S_03096C_PRIMS_PER_SUBGRP(shader->ngg.max_gsprims) |
                         S_03096C_VERTS_PER_SUBGRP(shader->ngg.hw_max_esverts) |
                         S_03096C_PRIM_GRP_SIZE_GFX11(
-                           CLAMP(max_prim_grp_size / MAX2(prim_amp_factor, 1), 1, 256));
+                           CLAMP(max_prim_grp_size / MAX2(prim_amp_factor, 1), 1, 256)) |
+                        S_03096C_DIS_PG_SIZE_ADJUST_FOR_STRIP(sscreen->info.gfx_level >= GFX12);
    } else {
       shader->ge_cntl = S_03096C_PRIM_GRP_SIZE_GFX10(shader->ngg.max_gsprims) |
                         S_03096C_VERT_GRP_SIZE(shader->ngg.hw_max_esverts);

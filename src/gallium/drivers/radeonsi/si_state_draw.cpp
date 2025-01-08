@@ -213,9 +213,6 @@ static bool si_update_shaders(struct si_context *sctx)
          } else {
             ge_cntl = si_get_vs_inline(sctx, HAS_TESS, HAS_GS)->current->ge_cntl;
          }
-
-         if (GFX_VERSION >= GFX12)
-            ge_cntl |= S_03096C_DIS_PG_SIZE_ADJUST_FOR_STRIP(1);
       } else {
          unsigned primgroup_size;
          unsigned vertgroup_size;
