@@ -636,13 +636,8 @@ class Parser(object):
             print('#define {}_SECTION_{}_OFFSET {}'.format(aggregate.name.upper(), section.name.upper(), section.offset))
         print("")
 
-    def emit_pack_function(self, name, group):
-        print("static ALWAYS_INLINE void\n%s_pack(uint32_t * restrict cl,\n%sconst struct %s * restrict values)\n{" %
-              (name, ' ' * (len(name) + 6), name))
-
-        group.emit_pack_function()
-
-        print("}\n\n")
+    def emit_struct_detail(self, name, group):
+        group.get_length()
 
         # Should be a whole number of words
         assert((self.group.length % 4) == 0)
@@ -651,6 +646,14 @@ class Parser(object):
         if self.group.align != None:
             print('#define {} {}'.format (name + "_ALIGN", self.group.align))
         print('struct {}_packed {{ uint32_t opaque[{}]; }};'.format(name.lower(), self.group.length // 4))
+
+    def emit_pack_function(self, name, group):
+        print("static ALWAYS_INLINE void\n%s_pack(uint32_t * restrict cl,\n%sconst struct %s * restrict values)\n{" %
+              (name, ' ' * (len(name) + 6), name))
+
+        group.emit_pack_function()
+
+        print("}\n\n")
 
     def emit_unpack_function(self, name, group):
         print("static inline void")
@@ -675,6 +678,7 @@ class Parser(object):
         self.emit_template_struct(self.struct, self.group)
         self.emit_header(name)
         if self.no_direct_packing == False:
+            self.emit_struct_detail(self.struct, self.group)
             self.emit_pack_function(self.struct, self.group)
             self.emit_unpack_function(self.struct, self.group)
         self.emit_print_function(self.struct, self.group)
