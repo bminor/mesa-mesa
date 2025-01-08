@@ -86,7 +86,7 @@ kopper_init_screen(struct dri_screen *screen, bool driver_name_is_inferred)
    if (!pscreen)
       return NULL;
 
-   assert(pscreen->get_param(pscreen, PIPE_CAP_DEVICE_RESET_STATUS_QUERY));
+   assert(pscreen->caps.device_reset_status_query);
    screen->is_sw = zink_kopper_is_cpu(pscreen);
 
    return pscreen;

@@ -71,7 +71,7 @@ st_nir_finish_builtin_nir(struct st_context *st, nir_shader *nir)
 
    st_nir_lower_samplers(screen, nir, NULL, NULL);
    st_nir_lower_uniforms(st, nir);
-   if (!screen->get_param(screen, PIPE_CAP_NIR_IMAGES_AS_DEREF))
+   if (!screen->caps.nir_images_as_deref)
       NIR_PASS(_, nir, gl_nir_lower_images, false);
 
    if (nir->info.io_lowered &&

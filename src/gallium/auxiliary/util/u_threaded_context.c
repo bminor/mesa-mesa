@@ -5228,9 +5228,9 @@ threaded_context_create(struct pipe_context *pipe,
    tc->pipe = pipe;
    tc->replace_buffer_storage = replace_buffer;
    tc->map_buffer_alignment =
-      pipe->screen->get_param(pipe->screen, PIPE_CAP_MIN_MAP_BUFFER_ALIGNMENT);
+      pipe->screen->caps.min_map_buffer_alignment;
    tc->ubo_alignment =
-      MAX2(pipe->screen->get_param(pipe->screen, PIPE_CAP_CONSTANT_BUFFER_OFFSET_ALIGNMENT), 64);
+      MAX2(pipe->screen->caps.constant_buffer_offset_alignment, 64);
    tc->base.priv = pipe; /* priv points to the wrapped driver context */
    tc->base.screen = pipe->screen;
    tc->base.destroy = tc_destroy;

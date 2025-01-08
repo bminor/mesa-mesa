@@ -232,7 +232,7 @@ drm_create_adapter( int fd,
         return D3DERR_DRIVERINTERNALERROR;
     }
 
-    if (!ctx->base.hal->get_param(ctx->base.hal, PIPE_CAP_DMABUF)) {
+    if (!ctx->base.hal->caps.dmabuf) {
         ERR("The driver is not capable of dma-buf sharing."
             "Abandon to load nine state tracker\n");
         drm_destroy(&ctx->base);

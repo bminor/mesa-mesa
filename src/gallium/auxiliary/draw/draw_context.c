@@ -163,8 +163,8 @@ draw_init(struct draw_context *draw)
    if (!draw_gs_init(draw))
       return false;
 
-   draw->quads_always_flatshade_last = !draw->pipe->screen->get_param(
-      draw->pipe->screen, PIPE_CAP_QUADS_FOLLOW_PROVOKING_VERTEX_CONVENTION);
+   draw->quads_always_flatshade_last =
+      !draw->pipe->screen->caps.quads_follow_provoking_vertex_convention;
 
    draw->floating_point_depth = false;
 

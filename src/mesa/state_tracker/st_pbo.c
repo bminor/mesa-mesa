@@ -614,7 +614,7 @@ st_pbo_get_download_fs(struct st_context *st, enum pipe_texture_target target,
 
    struct pipe_screen *screen = st->screen;
    enum st_pbo_conversion conversion = get_pbo_conversion(src_format, dst_format);
-   bool formatless_store = screen->get_param(screen, PIPE_CAP_IMAGE_STORE_FORMATTED);
+   bool formatless_store = screen->caps.image_store_formatted;
 
    /* For drivers not supporting formatless storing, download FS is stored in an
     * indirect dynamically allocated array of storing formats.
@@ -640,26 +640,26 @@ st_init_pbo_helpers(struct st_context *st)
    struct pipe_screen *screen = st->screen;
 
    st->pbo.upload_enabled =
-      screen->get_param(screen, PIPE_CAP_TEXTURE_BUFFER_OBJECTS) &&
-      screen->get_param(screen, PIPE_CAP_TEXTURE_BUFFER_OFFSET_ALIGNMENT) >= 1 &&
+      screen->caps.texture_buffer_objects &&
+      screen->caps.texture_buffer_offset_alignment >= 1 &&
       screen->get_shader_param(screen, PIPE_SHADER_FRAGMENT, PIPE_SHADER_CAP_INTEGERS);
    if (!st->pbo.upload_enabled)
       return;
 
    st->pbo.download_enabled =
       st->pbo.upload_enabled &&
-      screen->get_param(screen, PIPE_CAP_SAMPLER_VIEW_TARGET) &&
-      screen->get_param(screen, PIPE_CAP_FRAMEBUFFER_NO_ATTACHMENT) &&
+      screen->caps.sampler_view_target &&
+      screen->caps.framebuffer_no_attachment &&
       screen->get_shader_param(screen, PIPE_SHADER_FRAGMENT,
                                        PIPE_SHADER_CAP_MAX_SHADER_IMAGES) >= 1;
 
    st->pbo.rgba_only =
-      screen->get_param(screen, PIPE_CAP_BUFFER_SAMPLER_VIEW_RGBA_ONLY);
+      screen->caps.buffer_sampler_view_rgba_only;
 
-   if (screen->get_param(screen, PIPE_CAP_VS_INSTANCEID)) {
-      if (screen->get_param(screen, PIPE_CAP_VS_LAYER_VIEWPORT)) {
+   if (screen->caps.vs_instanceid) {
+      if (screen->caps.vs_layer_viewport) {
          st->pbo.layers = true;
-      } else if (screen->get_param(screen, PIPE_CAP_MAX_GEOMETRY_OUTPUT_VERTICES) >= 3) {
+      } else if (screen->caps.max_geometry_output_vertices >= 3) {
          st->pbo.layers = true;
          st->pbo.use_gs = true;
       }
@@ -687,7 +687,7 @@ void
 st_destroy_pbo_helpers(struct st_context *st)
 {
    struct pipe_screen *screen = st->screen;
-   bool formatless_store = screen->get_param(screen, PIPE_CAP_IMAGE_STORE_FORMATTED);
+   bool formatless_store = screen->caps.image_store_formatted;
    unsigned i;
 
    for (i = 0; i < ARRAY_SIZE(st->pbo.upload_fs); ++i) {

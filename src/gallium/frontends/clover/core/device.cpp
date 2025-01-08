@@ -159,7 +159,7 @@ namespace {
 device::device(clover::platform &platform, pipe_loader_device *ldev) :
    platform(platform), clc_cache(NULL), ldev(ldev) {
    pipe = pipe_loader_create_screen(ldev, false);
-   if (pipe && pipe->get_param(pipe, PIPE_CAP_COMPUTE)) {
+   if (pipe && pipe->caps.compute) {
       const bool has_supported_ir = supports_ir(PIPE_SHADER_IR_NATIVE);
       if (has_supported_ir) {
          unsigned major = 1, minor = 1;
@@ -243,22 +243,22 @@ device::max_images_write() const {
 
 size_t
 device::max_image_buffer_size() const {
-   return pipe->get_param(pipe, PIPE_CAP_MAX_TEXEL_BUFFER_ELEMENTS_UINT);
+   return pipe->caps.max_texel_buffer_elements_uint;
 }
 
 cl_uint
 device::max_image_size() const {
-   return pipe->get_param(pipe, PIPE_CAP_MAX_TEXTURE_2D_SIZE);
+   return pipe->caps.max_texture_2d_size;
 }
 
 cl_uint
 device::max_image_size_3d() const {
-   return 1 << (pipe->get_param(pipe, PIPE_CAP_MAX_TEXTURE_3D_LEVELS) - 1);
+   return 1 << (pipe->caps.max_texture_3d_levels - 1);
 }
 
 size_t
 device::max_image_array_number() const {
-   return pipe->get_param(pipe, PIPE_CAP_MAX_TEXTURE_ARRAY_LAYERS);
+   return pipe->caps.max_texture_array_layers;
 }
 
 cl_uint
@@ -353,7 +353,7 @@ device::has_doubles() const {
          (nir_shader_compiler_options *)pipe->get_compiler_options(pipe,
                                                                    PIPE_SHADER_IR_NIR,
                                                                    PIPE_SHADER_COMPUTE);
-   return pipe->get_param(pipe, PIPE_CAP_DOUBLES) &&
+   return pipe->caps.doubles &&
          !(options->lower_doubles_options & nir_lower_fp64_full_software);
 }
 
@@ -371,7 +371,7 @@ device::has_int64_atomics() const {
 
 bool
 device::has_unified_memory() const {
-   return pipe->get_param(pipe, PIPE_CAP_UMA);
+   return pipe->caps.uma;
 }
 
 size_t
@@ -398,7 +398,7 @@ device::svm_support() const {
    //
    // Another unsolvable scenario is a cl_mem object passed by cl_mem reference
    // and SVM pointer into the same kernel at the same time.
-   if (allows_user_pointers() && pipe->get_param(pipe, PIPE_CAP_SYSTEM_SVM))
+   if (allows_user_pointers() && pipe->caps.system_svm)
       // we can emulate all lower levels if we support fine grain system
       return CL_DEVICE_SVM_FINE_GRAIN_SYSTEM |
              CL_DEVICE_SVM_COARSE_GRAIN_BUFFER |
@@ -408,8 +408,8 @@ device::svm_support() const {
 
 bool
 device::allows_user_pointers() const {
-   return pipe->get_param(pipe, PIPE_CAP_RESOURCE_FROM_USER_MEMORY) ||
-          pipe->get_param(pipe, PIPE_CAP_RESOURCE_FROM_USER_MEMORY_COMPUTE_ONLY);
+   return pipe->caps.resource_from_user_memory ||
+          pipe->caps.resource_from_user_memory_compute_only;
 }
 
 std::vector<size_t>
@@ -459,7 +459,7 @@ device::ir_target() const {
 
 enum pipe_endian
 device::endianness() const {
-   return (enum pipe_endian)pipe->get_param(pipe, PIPE_CAP_ENDIANNESS);
+   return pipe->caps.endianness;
 }
 
 std::string

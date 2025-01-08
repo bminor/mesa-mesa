@@ -33,7 +33,7 @@ default_src_texture(struct pipe_sampler_view *src_templ,
                     struct pipe_resource *src, unsigned srclevel)
 {
    bool cube_as_2darray =
-      src->screen->get_param(src->screen, PIPE_CAP_SAMPLER_VIEW_TARGET);
+      src->screen->caps.sampler_view_target;
 
    memset(src_templ, 0, sizeof(*src_templ));
 

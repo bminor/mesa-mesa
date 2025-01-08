@@ -259,7 +259,7 @@ NineDevice9_ctor( struct NineDevice9 *This,
     /* Available memory counter. Updated only for allocations with this device
      * instance. This is the Win 7 behavior.
      * Win XP shares this counter across multiple devices. */
-    This->available_texture_mem = This->screen->get_param(This->screen, PIPE_CAP_VIDEO_MEMORY);
+    This->available_texture_mem = This->screen->caps.video_memory;
     This->available_texture_mem =  (pCTX->override_vram_size >= 0) ?
         (long long)pCTX->override_vram_size : This->available_texture_mem;
     This->available_texture_mem <<= 20;
@@ -555,7 +555,7 @@ NineDevice9_ctor( struct NineDevice9 *This,
 
     /* Allocate upload helper for drivers that suck (from st pov ;). */
 
-    This->driver_caps.user_sw_vbufs = This->screen_sw->get_param(This->screen_sw, PIPE_CAP_USER_VERTEX_BUFFERS);
+    This->driver_caps.user_sw_vbufs = This->screen_sw->caps.user_vertex_buffers;
     This->vertex_uploader = This->csmt_active ? This->pipe_secondary->stream_uploader : This->context.pipe->stream_uploader;
     This->driver_caps.window_space_position_support = GET_PCAP(vs_window_space_position);
     This->driver_caps.disabling_depth_clipping_support = GET_PCAP(depth_clip_disable);
@@ -3261,7 +3261,7 @@ NineDevice9_ProcessVertices( struct NineDevice9 *This,
 
     user_assert(pDestBuffer && pVertexDecl, D3DERR_INVALIDCALL);
 
-    if (!screen_sw->get_param(screen_sw, PIPE_CAP_MAX_STREAM_OUTPUT_BUFFERS)) {
+    if (!screen_sw->caps.max_stream_output_buffers) {
         DBG("ProcessVertices not supported\n");
         return D3DERR_INVALIDCALL;
     }

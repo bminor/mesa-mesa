@@ -1189,7 +1189,7 @@ _mesa_ImportSemaphoreWin32HandleEXT(GLuint semaphore,
    }
 
    if (handleType == GL_HANDLE_TYPE_D3D12_FENCE_EXT &&
-       !ctx->screen->get_param(ctx->screen, PIPE_CAP_TIMELINE_SEMAPHORE_IMPORT)) {
+       !ctx->screen->caps.timeline_semaphore_import) {
       _mesa_error(ctx, GL_INVALID_ENUM, "%s(handleType=%u)", func, handleType);
    }
 
@@ -1233,7 +1233,7 @@ _mesa_ImportSemaphoreWin32NameEXT(GLuint semaphore,
    }
 
    if (handleType == GL_HANDLE_TYPE_D3D12_FENCE_EXT &&
-       !ctx->screen->get_param(ctx->screen, PIPE_CAP_TIMELINE_SEMAPHORE_IMPORT)) {
+       !ctx->screen->caps.timeline_semaphore_import) {
       _mesa_error(ctx, GL_INVALID_ENUM, "%s(handleType=%u)", func, handleType);
    }
 

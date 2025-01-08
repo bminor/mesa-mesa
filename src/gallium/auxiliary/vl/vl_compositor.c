@@ -825,8 +825,8 @@ vl_compositor_init(struct vl_compositor *c, struct pipe_context *pipe, bool comp
 
    memset(c, 0, sizeof(*c));
 
-   c->pipe_cs_composit_supported = compute_only || pipe->screen->get_param(pipe->screen, PIPE_CAP_PREFER_COMPUTE_FOR_MULTIMEDIA);
-   c->pipe_gfx_supported = !compute_only && pipe->screen->get_param(pipe->screen, PIPE_CAP_GRAPHICS);
+   c->pipe_cs_composit_supported = compute_only || pipe->screen->caps.prefer_compute_for_multimedia;
+   c->pipe_gfx_supported = !compute_only && pipe->screen->caps.graphics;
    c->pipe = pipe;
 
    c->deinterlace = VL_COMPOSITOR_NONE;

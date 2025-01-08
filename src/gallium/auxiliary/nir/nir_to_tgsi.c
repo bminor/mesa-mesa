@@ -2839,8 +2839,7 @@ ntt_emit_texture(struct ntt_compile *c, nir_tex_instr *instr)
    }
 
    if (instr->op == nir_texop_tg4 && target != TGSI_TEXTURE_SHADOWCUBE_ARRAY) {
-      if (c->screen->get_param(c->screen,
-                               PIPE_CAP_TGSI_TG4_COMPONENT_IN_SWIZZLE)) {
+      if (c->screen->caps.tgsi_tg4_component_in_swizzle) {
          sampler = ureg_scalar(sampler, instr->component);
          s.srcs[s.i++] = ureg_src_undef();
       } else {
@@ -3684,7 +3683,7 @@ ntt_fix_nir_options(struct pipe_screen *screen, struct nir_shader *s,
                                 PIPE_SHADER_CAP_TGSI_SQRT_SUPPORTED);
 
    bool force_indirect_unrolling_sampler =
-      screen->get_param(screen, PIPE_CAP_GLSL_FEATURE_LEVEL) < 400;
+      screen->caps.glsl_feature_level < 400;
 
    nir_variable_mode no_indirects_mask = ntt_no_indirects_mask(s, screen);
 
@@ -3931,7 +3930,7 @@ const void *nir_to_tgsi_options(struct nir_shader *s,
 
    if (!original_options->lower_uniforms_to_ubo) {
       NIR_PASS_V(s, nir_lower_uniforms_to_ubo,
-                 screen->get_param(screen, PIPE_CAP_PACKED_UNIFORMS),
+                 screen->caps.packed_uniforms,
                  !native_integers);
    }
 
@@ -3942,7 +3941,7 @@ const void *nir_to_tgsi_options(struct nir_shader *s,
    NIR_PASS_V(s, nir_lower_alu_to_scalar, scalarize_64bit, NULL);
    NIR_PASS_V(s, nir_to_tgsi_lower_64bit_to_vec2);
 
-   if (!screen->get_param(screen, PIPE_CAP_LOAD_CONSTBUF))
+   if (!screen->caps.load_constbuf)
       NIR_PASS_V(s, nir_lower_ubo_vec4);
 
    ntt_optimize_nir(s, screen, options);
@@ -4007,15 +4006,15 @@ const void *nir_to_tgsi_options(struct nir_shader *s,
    c->options = options;
 
    c->needs_texcoord_semantic =
-      screen->get_param(screen, PIPE_CAP_TGSI_TEXCOORD);
+      screen->caps.tgsi_texcoord;
    c->has_txf_lz =
-      screen->get_param(screen, PIPE_CAP_TGSI_TEX_TXF_LZ);
+      screen->caps.tgsi_tex_txf_lz;
 
    c->s = s;
    c->native_integers = native_integers;
    c->ureg = ureg_create(pipe_shader_type_from_mesa(s->info.stage));
    ureg_setup_shader_info(c->ureg, &s->info);
-   if (s->info.use_legacy_math_rules && screen->get_param(screen, PIPE_CAP_LEGACY_MATH_RULES))
+   if (s->info.use_legacy_math_rules && screen->caps.legacy_math_rules)
       ureg_property(c->ureg, TGSI_PROPERTY_LEGACY_MATH_RULES, 1);
 
    if (s->info.stage == MESA_SHADER_FRAGMENT) {

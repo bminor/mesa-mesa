@@ -141,7 +141,7 @@ CreateDevice(D3D10DDI_HADAPTER hAdapter,                 // IN
    pipe->bind_fs_state(pipe, pDevice->empty_fs);
 
    pDevice->max_dual_source_render_targets =
-         screen->get_param(screen, PIPE_CAP_MAX_DUAL_SOURCE_RENDER_TARGETS);
+         screen->caps.max_dual_source_render_targets;
 
    pDevice->hRTCoreLayer = pCreateData->hRTCoreLayer;
    pDevice->hDevice = (HANDLE)pCreateData->hRTDevice.handle;

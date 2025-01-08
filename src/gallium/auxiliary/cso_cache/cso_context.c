@@ -334,13 +334,11 @@ cso_create_context(struct pipe_context *pipe, unsigned flags)
                                 PIPE_SHADER_CAP_MAX_INSTRUCTIONS) > 0) {
       ctx->has_task_mesh_shader = true;
    }
-   if (pipe->screen->get_param(pipe->screen,
-                               PIPE_CAP_MAX_STREAM_OUTPUT_BUFFERS) != 0) {
+   if (pipe->screen->caps.max_stream_output_buffers != 0) {
       ctx->has_streamout = true;
    }
 
-   if (pipe->screen->get_param(pipe->screen,
-                               PIPE_CAP_TEXTURE_BORDER_COLOR_QUIRK) &
+   if (pipe->screen->caps.texture_border_color_quirk &
        PIPE_QUIRK_TEXTURE_BORDER_COLOR_SWIZZLE_FREEDRENO)
       ctx->sampler_format = true;
 

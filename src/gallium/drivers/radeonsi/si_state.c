@@ -2291,7 +2291,7 @@ static bool si_is_format_supported(struct pipe_screen *screen, enum pipe_format 
       return false;
 
    if (sample_count > 1) {
-      if (!screen->get_param(screen, PIPE_CAP_TEXTURE_MULTISAMPLE))
+      if (!screen->caps.texture_multisample)
          return false;
 
       /* Only power-of-two sample counts are supported. */
@@ -2361,7 +2361,7 @@ static bool si_is_format_supported(struct pipe_screen *screen, enum pipe_format 
       retval |= PIPE_BIND_LINEAR;
 
    if ((usage & PIPE_BIND_SAMPLER_REDUCTION_MINMAX) &&
-       screen->get_param(screen, PIPE_CAP_SAMPLER_REDUCTION_MINMAX) &&
+       screen->caps.sampler_reduction_minmax &&
        si_is_reduction_mode_supported(screen, format))
       retval |= PIPE_BIND_SAMPLER_REDUCTION_MINMAX;
 

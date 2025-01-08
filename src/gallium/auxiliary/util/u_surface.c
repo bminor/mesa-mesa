@@ -700,8 +700,8 @@ u_default_clear_texture(struct pipe_context *pipe,
    bool cleared = false;
    assert(data != NULL);
 
-   bool has_layers = screen->get_param(screen, PIPE_CAP_VS_INSTANCEID) &&
-                     screen->get_param(screen, PIPE_CAP_VS_LAYER_VIEWPORT);
+   bool has_layers = screen->caps.vs_instanceid &&
+                     screen->caps.vs_layer_viewport;
 
    if (has_layers) {
       cleared = util_clear_texture_as_surface(pipe, tex, level,

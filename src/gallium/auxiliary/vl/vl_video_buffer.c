@@ -149,7 +149,7 @@ vl_video_buffer_is_format_supported(struct pipe_screen *screen,
 unsigned
 vl_video_buffer_max_size(struct pipe_screen *screen)
 {
-   return screen->get_param(screen, PIPE_CAP_MAX_TEXTURE_2D_SIZE);
+   return screen->caps.max_texture_2d_size;
 }
 
 void

@@ -463,8 +463,7 @@ static VAStatus vlVaPostProcBlit(vlVaDriver *drv, vlVaContext *context,
       blit.mask = PIPE_MASK_RGBA;
       blit.filter = PIPE_TEX_MIPFILTER_LINEAR;
 
-      if (drv->pipe->screen->get_param(drv->pipe->screen,
-                                       PIPE_CAP_PREFER_COMPUTE_FOR_MULTIMEDIA))
+      if (drv->pipe->screen->caps.prefer_compute_for_multimedia)
          util_compute_blit(drv->pipe, &blit, &context->blit_cs);
       else
          drv->pipe->blit(drv->pipe, &blit);
@@ -674,8 +673,7 @@ vlVaHandleVAProcPipelineParameterBufferType(vlVaDriver *drv, vlVaContext *contex
    /* Some devices may be media only (PIPE_VIDEO_ENTRYPOINT_PROCESSING with video engine)
     * and won't have shader support
     */
-   if (!drv->vscreen->pscreen->get_param(drv->vscreen->pscreen, PIPE_CAP_GRAPHICS) &&
-       !drv->vscreen->pscreen->get_param(drv->vscreen->pscreen, PIPE_CAP_COMPUTE))
+   if (!drv->vscreen->pscreen->caps.graphics && !drv->vscreen->pscreen->caps.compute)
       return VA_STATUS_ERROR_UNSUPPORTED_ENTRYPOINT;
 
    /* Subsampled formats not supported */

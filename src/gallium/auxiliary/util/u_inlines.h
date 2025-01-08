@@ -363,7 +363,7 @@ pipe_buffer_create_const0(struct pipe_screen *screen,
    buffer.format = PIPE_FORMAT_R8_UNORM;
    buffer.bind = bind;
    buffer.usage = usage;
-   buffer.flags = screen->get_param(screen, PIPE_CAP_CONSTBUF0_FLAGS);
+   buffer.flags = screen->caps.constbuf0_flags;
    buffer.width0 = size;
    buffer.height0 = 1;
    buffer.depth0 = 1;
@@ -907,10 +907,9 @@ pipe_create_multimedia_context(struct pipe_screen *screen, bool compute_only)
 {
    unsigned flags = 0;
 
-   if (!screen->get_param(screen, PIPE_CAP_GRAPHICS) &&
-      !screen->get_param(screen, PIPE_CAP_COMPUTE))
+   if (!screen->caps.graphics && !screen->caps.compute)
       flags |= PIPE_CONTEXT_MEDIA_ONLY;
-   else if (compute_only || !screen->get_param(screen, PIPE_CAP_GRAPHICS))
+   else if (compute_only || !screen->caps.graphics)
       flags |= PIPE_CONTEXT_COMPUTE_ONLY;
 
    return screen->context_create(screen, NULL, flags);

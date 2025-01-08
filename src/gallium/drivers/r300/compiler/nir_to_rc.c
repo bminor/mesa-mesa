@@ -1703,7 +1703,7 @@ ntr_emit_texture(struct ntr_compile *c, nir_tex_instr *instr)
    }
 
    if (instr->op == nir_texop_tg4 && target != TGSI_TEXTURE_SHADOWCUBE_ARRAY) {
-      if (c->screen->get_param(c->screen, PIPE_CAP_TGSI_TG4_COMPONENT_IN_SWIZZLE)) {
+      if (c->screen->caps.tgsi_tg4_component_in_swizzle) {
          sampler = ureg_scalar(sampler, instr->component);
          s.srcs[s.i++] = ureg_src_undef();
       } else {
@@ -2364,7 +2364,7 @@ nir_to_rc(struct nir_shader *s, struct pipe_screen *screen)
    c->s = s;
    c->ureg = ureg_create(pipe_shader_type_from_mesa(s->info.stage));
    ureg_setup_shader_info(c->ureg, &s->info);
-   if (s->info.use_legacy_math_rules && screen->get_param(screen, PIPE_CAP_LEGACY_MATH_RULES))
+   if (s->info.use_legacy_math_rules && screen->caps.legacy_math_rules)
       ureg_property(c->ureg, TGSI_PROPERTY_LEGACY_MATH_RULES, 1);
 
    if (s->info.stage == MESA_SHADER_FRAGMENT) {

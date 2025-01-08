@@ -2211,13 +2211,13 @@ static void
 ttn_read_pipe_caps(struct ttn_compile *c,
                    struct pipe_screen *screen)
 {
-   c->cap_samplers_as_deref = screen->get_param(screen, PIPE_CAP_NIR_SAMPLERS_AS_DEREF);
-   c->cap_face_is_sysval = screen->get_param(screen, PIPE_CAP_FS_FACE_IS_INTEGER_SYSVAL);
-   c->cap_position_is_sysval = screen->get_param(screen, PIPE_CAP_FS_POSITION_IS_SYSVAL);
-   c->cap_point_is_sysval = screen->get_param(screen, PIPE_CAP_FS_POINT_IS_SYSVAL);
+   c->cap_samplers_as_deref = screen->caps.nir_samplers_as_deref;
+   c->cap_face_is_sysval = screen->caps.fs_face_is_integer_sysval;
+   c->cap_position_is_sysval = screen->caps.fs_position_is_sysval;
+   c->cap_point_is_sysval = screen->caps.fs_point_is_sysval;
    c->cap_integers = screen->get_shader_param(screen, c->scan->processor, PIPE_SHADER_CAP_INTEGERS);
    c->cap_tg4_component_in_swizzle =
-       screen->get_param(screen, PIPE_CAP_TGSI_TG4_COMPONENT_IN_SWIZZLE);
+       screen->caps.tgsi_tg4_component_in_swizzle;
 }
 
 #define BITSET_SET32(bitset, u32_mask) do { \
@@ -2532,7 +2532,7 @@ ttn_finalize_nir(struct ttn_compile *c, struct pipe_screen *screen)
    NIR_PASS_V(nir, nir_lower_system_values);
    NIR_PASS_V(nir, nir_lower_compute_system_values, NULL);
 
-   if (!screen->get_param(screen, PIPE_CAP_TEXRECT)) {
+   if (!screen->caps.texrect) {
       const struct nir_lower_tex_options opts = { .lower_rect = true, };
       NIR_PASS_V(nir, nir_lower_tex, &opts);
    }

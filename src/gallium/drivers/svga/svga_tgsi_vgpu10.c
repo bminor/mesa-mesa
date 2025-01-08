@@ -12798,7 +12798,7 @@ transform_fs_aapoint(struct svga_context *svga,
                      int aa_coord_index)
 {
    bool need_texcoord_semantic =
-      svga->pipe.screen->get_param(svga->pipe.screen, PIPE_CAP_TGSI_TEXCOORD);
+      svga->pipe.screen->caps.tgsi_texcoord;
 
    if (0) {
       debug_printf("Before tgsi_add_aa_point ------------------\n");

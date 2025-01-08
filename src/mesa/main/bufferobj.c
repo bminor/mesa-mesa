@@ -302,7 +302,7 @@ bufferobj_data(struct gl_context *ctx,
          return GL_TRUE;
       } else if (is_mapped) {
          return GL_TRUE; /* can't reallocate, nothing to do */
-      } else if (screen->get_param(screen, PIPE_CAP_INVALIDATE_BUFFER)) {
+      } else if (screen->caps.invalidate_buffer) {
          pipe->invalidate_resource(pipe, obj->buffer);
          return GL_TRUE;
       }

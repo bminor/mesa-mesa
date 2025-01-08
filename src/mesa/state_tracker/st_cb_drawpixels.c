@@ -730,8 +730,7 @@ draw_textured_quad(struct gl_context *ctx, GLint x, GLint y, GLfloat z,
    /* XXX if DrawPixels image is larger than max texture size, break
     * it up into chunks.
     */
-   maxSize = st->screen->get_param(st->screen,
-                                   PIPE_CAP_MAX_TEXTURE_2D_SIZE);
+   maxSize = st->screen->caps.max_texture_2d_size;
    assert(width <= maxSize);
    assert(height <= maxSize);
 
@@ -1165,8 +1164,7 @@ static void
 clamp_size(struct st_context *st, GLsizei *width, GLsizei *height,
            struct gl_pixelstore_attrib *unpack)
 {
-   const int maxSize = st->screen->get_param(st->screen,
-                                             PIPE_CAP_MAX_TEXTURE_2D_SIZE);
+   const int maxSize = st->screen->caps.max_texture_2d_size;
 
    if (*width > maxSize) {
       if (unpack->RowLength == 0)

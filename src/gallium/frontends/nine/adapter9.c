@@ -21,8 +21,8 @@
 static bool
 has_sm3(struct pipe_screen *hal)
 {
-    return hal->get_param(hal, PIPE_CAP_FRAGMENT_SHADER_TEXTURE_LOD) &&
-           hal->get_param(hal, PIPE_CAP_FRAGMENT_SHADER_DERIVATIVES);
+    return hal->caps.fragment_shader_texture_lod &&
+           hal->caps.fragment_shader_derivatives;
 }
 
 HRESULT
@@ -38,7 +38,7 @@ NineAdapter9_ctor( struct NineAdapter9 *This,
     nine_dump_D3DADAPTER_IDENTIFIER9(DBG_CHANNEL, &pCTX->identifier);
 
     This->ctx = pCTX;
-    if (!hal->get_param(hal, PIPE_CAP_CLIP_HALFZ)) {
+    if (!hal->caps.clip_halfz) {
         WARN_ONCE("Driver doesn't natively support d3d9 coordinates\n");
         const nir_shader_compiler_options *options = hal->get_compiler_options(hal, PIPE_SHADER_IR_NIR, PIPE_SHADER_VERTEX);
         if(!options->compact_arrays){
@@ -335,7 +335,7 @@ NineAdapter9_CheckDeviceFormat( struct NineAdapter9 *This,
     /* RESZ hack */
     if (CheckFormat == D3DFMT_RESZ && bind == PIPE_BIND_RENDER_TARGET &&
         RType == D3DRTYPE_SURFACE)
-        return screen->get_param(screen, PIPE_CAP_MULTISAMPLE_Z_RESOLVE) ?
+        return screen->caps.multisample_z_resolve ?
                D3D_OK : D3DERR_NOTAVAILABLE;
 
     /* ATOC hack */
@@ -633,8 +633,8 @@ NineAdapter9_GetDeviceCaps( struct NineAdapter9 *This,
                                D3DPIPECAP(mixed_colorbuffer_formats, D3DPMISCCAPS_MRTINDEPENDENTBITDEPTHS) |
                                D3DPMISCCAPS_MRTPOSTPIXELSHADERBLENDING |
                                D3DPMISCCAPS_FOGVERTEXCLAMPED;
-    if (!screen->get_param(screen, PIPE_CAP_VS_WINDOW_SPACE_POSITION) &&
-        !screen->get_param(screen, PIPE_CAP_DEPTH_CLIP_DISABLE))
+    if (!screen->caps.vs_window_space_position &&
+        !screen->caps.depth_clip_disable)
         pCaps->PrimitiveMiscCaps |= D3DPMISCCAPS_CLIPTLVERTS;
 
     pCaps->RasterCaps =
@@ -752,11 +752,10 @@ NineAdapter9_GetDeviceCaps( struct NineAdapter9 *This,
         pCaps->LineCaps |= D3DLINECAPS_ANTIALIAS;
     }
 
-    pCaps->MaxTextureWidth =screen->get_param(screen,
-                                              PIPE_CAP_MAX_TEXTURE_2D_SIZE);
+    pCaps->MaxTextureWidth =screen->caps.max_texture_2d_size;
     pCaps->MaxTextureHeight = pCaps->MaxTextureWidth;
     pCaps->MaxVolumeExtent =
-        1 << (screen->get_param(screen, PIPE_CAP_MAX_TEXTURE_3D_LEVELS) - 1);
+        1 << (screen->caps.max_texture_3d_levels - 1);
     /* XXX values from wine */
     pCaps->MaxTextureRepeat = 32768;
     pCaps->MaxTextureAspectRatio = pCaps->MaxTextureWidth;
@@ -841,8 +840,7 @@ NineAdapter9_GetDeviceCaps( struct NineAdapter9 *This,
                  PIPE_SHADER_VERTEX, PIPE_SHADER_CAP_MAX_INPUTS),
              16);
 
-    pCaps->MaxStreamStride = screen->get_param(screen,
-            PIPE_CAP_MAX_VERTEX_ATTRIB_STRIDE);
+    pCaps->MaxStreamStride = screen->caps.max_vertex_attrib_stride;
 
     pCaps->VertexShaderVersion = D3DVS_VERSION(3,0);
 
@@ -886,7 +884,7 @@ NineAdapter9_GetDeviceCaps( struct NineAdapter9 *This,
                        D3DDTCAPS_FLOAT16_4;
 
     pCaps->NumSimultaneousRTs =
-        screen->get_param(screen, PIPE_CAP_MAX_RENDER_TARGETS);
+        screen->caps.max_render_targets;
     if (pCaps->NumSimultaneousRTs > NINE_MAX_SIMULTANEOUS_RENDERTARGETS)
         pCaps->NumSimultaneousRTs = NINE_MAX_SIMULTANEOUS_RENDERTARGETS;
 

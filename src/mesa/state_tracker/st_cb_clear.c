@@ -162,7 +162,7 @@ set_vertex_shader_layered(struct st_context *st)
 {
    struct pipe_context *pipe = st->pipe;
 
-   if (!st->screen->get_param(st->screen, PIPE_CAP_VS_INSTANCEID)) {
+   if (!st->screen->caps.vs_instanceid) {
       assert(!"Got layered clear, but VS instancing is unsupported");
       set_vertex_shader(st);
       return;
@@ -170,7 +170,7 @@ set_vertex_shader_layered(struct st_context *st)
 
    if (!st->clear.vs_layered) {
       bool vs_layer =
-         st->screen->get_param(st->screen, PIPE_CAP_VS_LAYER_VIEWPORT);
+         st->screen->caps.vs_layer_viewport;
       if (vs_layer) {
          st->clear.vs_layered = make_nir_clear_vertex_shader(st, true);
       } else {

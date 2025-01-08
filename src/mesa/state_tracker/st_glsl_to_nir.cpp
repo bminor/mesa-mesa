@@ -323,7 +323,7 @@ st_glsl_to_nir_post_opts(struct st_context *st, struct gl_program *prog,
        !st->ctx->Const.PackedDriverUniformStorage)
       NIR_PASS(_, nir, st_nir_lower_builtin);
 
-   if (!screen->get_param(screen, PIPE_CAP_NIR_ATOMICS_AS_DEREF))
+   if (!screen->caps.nir_atomics_as_deref)
       NIR_PASS(_, nir, gl_nir_lower_atomics, shader_program, true);
 
    NIR_PASS(_, nir, nir_opt_intrinsics);
@@ -367,7 +367,7 @@ st_glsl_to_nir_post_opts(struct st_context *st, struct gl_program *prog,
       nir_var_shader_in | nir_var_shader_out | nir_var_function_temp;
    nir_remove_dead_variables(nir, mask, NULL);
 
-   if (!st->has_hw_atomics && !screen->get_param(screen, PIPE_CAP_NIR_ATOMICS_AS_DEREF)) {
+   if (!st->has_hw_atomics && !screen->caps.nir_atomics_as_deref) {
       unsigned align_offset_state = 0;
       if (st->ctx->Const.ShaderStorageBufferOffsetAlignment > 4) {
          struct gl_program_parameter_list *params = prog->Parameters;
@@ -466,17 +466,13 @@ st_nir_lower_wpos_ytransform(struct nir_shader *nir,
    memcpy(wpos_options.state_tokens, wposTransformState,
           sizeof(wpos_options.state_tokens));
    wpos_options.fs_coord_origin_upper_left =
-      pscreen->get_param(pscreen,
-                         PIPE_CAP_FS_COORD_ORIGIN_UPPER_LEFT);
+      pscreen->caps.fs_coord_origin_upper_left;
    wpos_options.fs_coord_origin_lower_left =
-      pscreen->get_param(pscreen,
-                         PIPE_CAP_FS_COORD_ORIGIN_LOWER_LEFT);
+      pscreen->caps.fs_coord_origin_lower_left;
    wpos_options.fs_coord_pixel_center_integer =
-      pscreen->get_param(pscreen,
-                         PIPE_CAP_FS_COORD_PIXEL_CENTER_INTEGER);
+      pscreen->caps.fs_coord_pixel_center_integer;
    wpos_options.fs_coord_pixel_center_half_integer =
-      pscreen->get_param(pscreen,
-                         PIPE_CAP_FS_COORD_PIXEL_CENTER_HALF_INTEGER);
+      pscreen->caps.fs_coord_pixel_center_half_integer;
 
    if (nir_lower_wpos_ytransform(nir, &wpos_options)) {
       _mesa_add_state_reference(prog->Parameters, wposTransformState);
@@ -831,7 +827,7 @@ st_nir_lower_samplers(struct pipe_screen *screen, nir_shader *nir,
                       struct gl_shader_program *shader_program,
                       struct gl_program *prog)
 {
-   if (screen->get_param(screen, PIPE_CAP_NIR_SAMPLERS_AS_DEREF))
+   if (screen->caps.nir_samplers_as_deref)
       NIR_PASS(_, nir, gl_nir_lower_samplers_as_deref, shader_program);
    else
       NIR_PASS(_, nir, gl_nir_lower_samplers, shader_program);
@@ -893,7 +889,7 @@ st_finalize_nir(struct st_context *st, struct gl_program *prog,
    NIR_PASS(_, nir, nir_lower_var_copies);
 
    const bool lower_tg4_offsets =
-      !is_draw_shader && !st->screen->get_param(screen, PIPE_CAP_TEXTURE_GATHER_OFFSETS);
+      !is_draw_shader && !st->screen->caps.texture_gather_offsets;
 
    if (!is_draw_shader && (st->lower_rect_tex || lower_tg4_offsets)) {
       struct nir_lower_tex_options opts = {0};
@@ -920,7 +916,7 @@ st_finalize_nir(struct st_context *st, struct gl_program *prog,
    }
 
    st_nir_lower_samplers(screen, nir, shader_program, prog);
-   if (!is_draw_shader && !screen->get_param(screen, PIPE_CAP_NIR_IMAGES_AS_DEREF))
+   if (!is_draw_shader && !screen->caps.nir_images_as_deref)
       NIR_PASS(_, nir, gl_nir_lower_images, false);
 }
 

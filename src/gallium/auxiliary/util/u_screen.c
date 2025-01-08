@@ -531,7 +531,7 @@ u_pipe_screen_get_param_defaults(struct pipe_screen *pscreen,
        * >0: on GPU, enable by default, user can disable it manually
        * <0: unknown, disable by default, user can enable it manually
        */
-      int accel = pscreen->get_param(pscreen, PIPE_CAP_ACCELERATED);
+      int accel = pscreen->caps.accelerated;
 
       return !!accel && debug_get_bool_option("MESA_HW_ACCEL_SELECT", accel > 0) &&
          /* internal geometry shader need indirect array access */

@@ -83,7 +83,7 @@ dri_fence_get_caps(struct dri_screen *driscreen)
    struct pipe_screen *screen = driscreen->base.screen;
    unsigned caps = 0;
 
-   if (screen->get_param(screen, PIPE_CAP_NATIVE_FENCE_FD))
+   if (screen->caps.native_fence_fd)
       caps |= __DRI_FENCE_CAP_NATIVE_FD;
 
    return caps;
