@@ -654,12 +654,6 @@ void st_init_limits(struct pipe_screen *screen,
  */
 #define o(x) offsetof(struct gl_extensions, x)
 
-
-struct st_extension_cap_mapping {
-   int extension_offset;
-   int cap;
-};
-
 struct st_extension_format_mapping {
    int extension_offset[2];
    enum pipe_format format[32];
@@ -772,131 +766,6 @@ void st_init_extensions(struct pipe_screen *screen,
                         gl_api api)
 {
    unsigned i;
-   GLboolean *extension_table = (GLboolean *) extensions;
-
-   static const struct st_extension_cap_mapping cap_mapping[] = {
-      { o(ARB_base_instance),                PIPE_CAP_START_INSTANCE                   },
-      { o(ARB_bindless_texture),             PIPE_CAP_BINDLESS_TEXTURE                 },
-      { o(ARB_buffer_storage),               PIPE_CAP_BUFFER_MAP_PERSISTENT_COHERENT   },
-      { o(ARB_clip_control),                 PIPE_CAP_CLIP_HALFZ                       },
-      { o(ARB_color_buffer_float),           PIPE_CAP_VERTEX_COLOR_UNCLAMPED           },
-      { o(ARB_conditional_render_inverted),  PIPE_CAP_CONDITIONAL_RENDER_INVERTED      },
-      { o(ARB_copy_image),                   PIPE_CAP_COPY_BETWEEN_COMPRESSED_AND_PLAIN_FORMATS },
-      { o(OES_copy_image),                   PIPE_CAP_COPY_BETWEEN_COMPRESSED_AND_PLAIN_FORMATS },
-      { o(ARB_cull_distance),                PIPE_CAP_CULL_DISTANCE                    },
-      { o(ARB_depth_clamp),                  PIPE_CAP_DEPTH_CLIP_DISABLE               },
-      { o(ARB_derivative_control),           PIPE_CAP_FS_FINE_DERIVATIVE               },
-      { o(ARB_draw_buffers_blend),           PIPE_CAP_INDEP_BLEND_FUNC                 },
-      { o(ARB_draw_indirect),                PIPE_CAP_DRAW_INDIRECT                    },
-      { o(ARB_draw_instanced),               PIPE_CAP_VS_INSTANCEID                    },
-      { o(ARB_fragment_program_shadow),      PIPE_CAP_TEXTURE_SHADOW_MAP               },
-      { o(ARB_framebuffer_object),           PIPE_CAP_MIXED_FRAMEBUFFER_SIZES          },
-      { o(ARB_gpu_shader_int64),             PIPE_CAP_INT64                            },
-      { o(ARB_gl_spirv),                     PIPE_CAP_GL_SPIRV                         },
-      { o(ARB_indirect_parameters),          PIPE_CAP_MULTI_DRAW_INDIRECT_PARAMS       },
-      { o(ARB_instanced_arrays),             PIPE_CAP_VERTEX_ELEMENT_INSTANCE_DIVISOR  },
-      { o(ARB_occlusion_query2),             PIPE_CAP_OCCLUSION_QUERY                  },
-      { o(ARB_pipeline_statistics_query),    PIPE_CAP_QUERY_PIPELINE_STATISTICS        },
-      { o(ARB_pipeline_statistics_query),    PIPE_CAP_QUERY_PIPELINE_STATISTICS_SINGLE },
-      { o(ARB_polygon_offset_clamp),         PIPE_CAP_POLYGON_OFFSET_CLAMP             },
-      { o(ARB_post_depth_coverage),          PIPE_CAP_POST_DEPTH_COVERAGE              },
-      { o(ARB_query_buffer_object),          PIPE_CAP_QUERY_BUFFER_OBJECT              },
-      { o(ARB_robust_buffer_access_behavior), PIPE_CAP_ROBUST_BUFFER_ACCESS_BEHAVIOR   },
-      { o(ARB_sample_shading),               PIPE_CAP_SAMPLE_SHADING                   },
-      { o(ARB_sample_locations),             PIPE_CAP_PROGRAMMABLE_SAMPLE_LOCATIONS    },
-      { o(ARB_seamless_cube_map),            PIPE_CAP_SEAMLESS_CUBE_MAP                },
-      { o(ARB_shader_ballot),                PIPE_CAP_SHADER_BALLOT                    },
-      { o(ARB_shader_clock),                 PIPE_CAP_SHADER_CLOCK                     },
-      { o(ARB_shader_draw_parameters),       PIPE_CAP_DRAW_PARAMETERS                  },
-      { o(ARB_shader_group_vote),            PIPE_CAP_SHADER_GROUP_VOTE                },
-      { o(EXT_shader_image_load_formatted),  PIPE_CAP_IMAGE_LOAD_FORMATTED             },
-      { o(EXT_shader_image_load_store),      PIPE_CAP_IMAGE_ATOMIC_INC_WRAP            },
-      { o(ARB_shader_stencil_export),        PIPE_CAP_SHADER_STENCIL_EXPORT            },
-      { o(ARB_shader_texture_image_samples), PIPE_CAP_TEXTURE_QUERY_SAMPLES            },
-      { o(ARB_shader_texture_lod),           PIPE_CAP_FRAGMENT_SHADER_TEXTURE_LOD      },
-      { o(ARB_shadow),                       PIPE_CAP_TEXTURE_SHADOW_MAP               },
-      { o(ARB_sparse_buffer),                PIPE_CAP_SPARSE_BUFFER_PAGE_SIZE          },
-      { o(ARB_sparse_texture),               PIPE_CAP_MAX_SPARSE_TEXTURE_SIZE          },
-      { o(ARB_sparse_texture2),              PIPE_CAP_QUERY_SPARSE_TEXTURE_RESIDENCY   },
-      { o(ARB_sparse_texture_clamp),         PIPE_CAP_CLAMP_SPARSE_TEXTURE_LOD         },
-      { o(ARB_spirv_extensions),             PIPE_CAP_GL_SPIRV                         },
-      { o(ARB_texture_buffer_object),        PIPE_CAP_TEXTURE_BUFFER_OBJECTS           },
-      { o(ARB_texture_cube_map_array),       PIPE_CAP_CUBE_MAP_ARRAY                   },
-      { o(ARB_texture_filter_minmax),        PIPE_CAP_SAMPLER_REDUCTION_MINMAX_ARB     },
-      { o(ARB_texture_gather),               PIPE_CAP_MAX_TEXTURE_GATHER_COMPONENTS    },
-      { o(ARB_texture_mirror_clamp_to_edge), PIPE_CAP_TEXTURE_MIRROR_CLAMP_TO_EDGE     },
-      { o(ARB_texture_multisample),          PIPE_CAP_TEXTURE_MULTISAMPLE              },
-      { o(ARB_texture_non_power_of_two),     PIPE_CAP_NPOT_TEXTURES                    },
-      { o(ARB_texture_query_lod),            PIPE_CAP_TEXTURE_QUERY_LOD                },
-      { o(ARB_texture_view),                 PIPE_CAP_SAMPLER_VIEW_TARGET              },
-      { o(ARB_timer_query),                  PIPE_CAP_QUERY_TIMESTAMP                  },
-      { o(ARB_transform_feedback2),          PIPE_CAP_STREAM_OUTPUT_PAUSE_RESUME       },
-      { o(ARB_transform_feedback3),          PIPE_CAP_STREAM_OUTPUT_INTERLEAVE_BUFFERS },
-      { o(ARB_transform_feedback_overflow_query), PIPE_CAP_QUERY_SO_OVERFLOW           },
-      { o(ARB_fragment_shader_interlock),    PIPE_CAP_FRAGMENT_SHADER_INTERLOCK        },
-
-      { o(EXT_blend_equation_separate),      PIPE_CAP_BLEND_EQUATION_SEPARATE          },
-      { o(EXT_demote_to_helper_invocation),  PIPE_CAP_DEMOTE_TO_HELPER_INVOCATION      },
-      { o(EXT_depth_bounds_test),            PIPE_CAP_DEPTH_BOUNDS_TEST                },
-      { o(EXT_disjoint_timer_query),         PIPE_CAP_QUERY_TIMESTAMP                  },
-      { o(EXT_draw_buffers2),                PIPE_CAP_INDEP_BLEND_ENABLE               },
-      { o(EXT_memory_object),                PIPE_CAP_MEMOBJ                           },
-#ifndef _WIN32
-      { o(EXT_memory_object_fd),             PIPE_CAP_MEMOBJ                           },
-#else
-      { o(EXT_memory_object_win32),          PIPE_CAP_MEMOBJ                           },
-#endif
-      { o(EXT_multisampled_render_to_texture), PIPE_CAP_SURFACE_SAMPLE_COUNT           },
-      { o(EXT_semaphore),                    PIPE_CAP_FENCE_SIGNAL                     },
-#ifndef _WIN32
-      { o(EXT_semaphore_fd),                 PIPE_CAP_FENCE_SIGNAL                     },
-#else
-      { o(EXT_semaphore_win32),              PIPE_CAP_FENCE_SIGNAL                     },
-#endif
-      { o(EXT_shader_samples_identical),     PIPE_CAP_SHADER_SAMPLES_IDENTICAL         },
-      { o(EXT_texture_array),                PIPE_CAP_MAX_TEXTURE_ARRAY_LAYERS         },
-      { o(EXT_texture_compression_astc_decode_mode), PIPE_CAP_ASTC_DECODE_MODE         },
-      { o(EXT_texture_filter_anisotropic),   PIPE_CAP_ANISOTROPIC_FILTER               },
-      { o(EXT_texture_filter_minmax),        PIPE_CAP_SAMPLER_REDUCTION_MINMAX         },
-      { o(EXT_texture_mirror_clamp),         PIPE_CAP_TEXTURE_MIRROR_CLAMP             },
-      { o(EXT_texture_shadow_lod),           PIPE_CAP_TEXTURE_SHADOW_LOD               },
-      { o(EXT_texture_swizzle),              PIPE_CAP_TEXTURE_SWIZZLE                  },
-      { o(EXT_transform_feedback),           PIPE_CAP_MAX_STREAM_OUTPUT_BUFFERS        },
-      { o(EXT_window_rectangles),            PIPE_CAP_MAX_WINDOW_RECTANGLES            },
-
-      { o(KHR_shader_subgroup),              PIPE_CAP_SHADER_SUBGROUP_SIZE             },
-
-      { o(AMD_depth_clamp_separate),         PIPE_CAP_DEPTH_CLIP_DISABLE_SEPARATE      },
-      { o(AMD_framebuffer_multisample_advanced), PIPE_CAP_FRAMEBUFFER_MSAA_CONSTRAINTS },
-      { o(AMD_gpu_shader_half_float),        PIPE_CAP_FP16                             },
-      { o(AMD_performance_monitor),          PIPE_CAP_PERFORMANCE_MONITOR              },
-      { o(AMD_pinned_memory),                PIPE_CAP_RESOURCE_FROM_USER_MEMORY        },
-      { o(ATI_meminfo),                      PIPE_CAP_QUERY_MEMORY_INFO                },
-      { o(AMD_seamless_cubemap_per_texture), PIPE_CAP_SEAMLESS_CUBE_MAP_PER_TEXTURE    },
-      { o(ATI_texture_mirror_once),          PIPE_CAP_TEXTURE_MIRROR_CLAMP             },
-      { o(INTEL_conservative_rasterization), PIPE_CAP_CONSERVATIVE_RASTER_INNER_COVERAGE },
-      { o(INTEL_shader_atomic_float_minmax), PIPE_CAP_ATOMIC_FLOAT_MINMAX              },
-      { o(MESA_tile_raster_order),           PIPE_CAP_TILE_RASTER_ORDER                },
-      { o(NV_alpha_to_coverage_dither_control), PIPE_CAP_ALPHA_TO_COVERAGE_DITHER_CONTROL },
-      { o(NV_compute_shader_derivatives),    PIPE_CAP_COMPUTE_SHADER_DERIVATIVES       },
-      { o(NV_conditional_render),            PIPE_CAP_CONDITIONAL_RENDER               },
-      { o(NV_fill_rectangle),                PIPE_CAP_POLYGON_MODE_FILL_RECTANGLE      },
-      { o(NV_primitive_restart),             PIPE_CAP_PRIMITIVE_RESTART                },
-      { o(NV_shader_atomic_float),           PIPE_CAP_IMAGE_ATOMIC_FLOAT_ADD           },
-      { o(NV_shader_atomic_int64),           PIPE_CAP_SHADER_ATOMIC_INT64              },
-      { o(NV_texture_barrier),               PIPE_CAP_TEXTURE_BARRIER                  },
-      { o(NV_viewport_array2),               PIPE_CAP_VIEWPORT_MASK                    },
-      { o(NV_viewport_swizzle),              PIPE_CAP_VIEWPORT_SWIZZLE                 },
-      { o(NVX_gpu_memory_info),              PIPE_CAP_QUERY_MEMORY_INFO                },
-
-      { o(OES_standard_derivatives),         PIPE_CAP_FRAGMENT_SHADER_DERIVATIVES      },
-      { o(OES_texture_float_linear),         PIPE_CAP_TEXTURE_FLOAT_LINEAR             },
-      { o(OES_texture_half_float_linear),    PIPE_CAP_TEXTURE_HALF_FLOAT_LINEAR        },
-      { o(OES_texture_view),                 PIPE_CAP_SAMPLER_VIEW_TARGET              },
-      { o(INTEL_blackhole_render),           PIPE_CAP_FRONTEND_NOOP                    },
-      { o(ARM_shader_framebuffer_fetch_depth_stencil), PIPE_CAP_FBFETCH_ZS             },
-      { o(MESA_texture_const_bandwidth),     PIPE_CAP_HAS_CONST_BW                     },
-   };
 
    /* Required: render target and sampler support */
    static const struct st_extension_format_mapping rendertarget_mapping[] = {
@@ -1146,12 +1015,132 @@ void st_init_extensions(struct pipe_screen *screen,
         } },
    };
 
+#define EXT_CAP(ext, cap) extensions->ext |= !!screen->caps.cap
+
    /* Expose the extensions which directly correspond to gallium caps. */
-   for (i = 0; i < ARRAY_SIZE(cap_mapping); i++) {
-      if (screen->get_param(screen, cap_mapping[i].cap)) {
-         extension_table[cap_mapping[i].extension_offset] = GL_TRUE;
-      }
-   }
+   EXT_CAP(ARB_base_instance,                start_instance);
+   EXT_CAP(ARB_bindless_texture,             bindless_texture);
+   EXT_CAP(ARB_buffer_storage,               buffer_map_persistent_coherent);
+   EXT_CAP(ARB_clip_control,                 clip_halfz);
+   EXT_CAP(ARB_color_buffer_float,           vertex_color_unclamped);
+   EXT_CAP(ARB_conditional_render_inverted,  conditional_render_inverted);
+   EXT_CAP(ARB_copy_image,                   copy_between_compressed_and_plain_formats);
+   EXT_CAP(OES_copy_image,                   copy_between_compressed_and_plain_formats);
+   EXT_CAP(ARB_cull_distance,                cull_distance);
+   EXT_CAP(ARB_depth_clamp,                  depth_clip_disable);
+   EXT_CAP(ARB_derivative_control,           fs_fine_derivative);
+   EXT_CAP(ARB_draw_buffers_blend,           indep_blend_func);
+   EXT_CAP(ARB_draw_indirect,                draw_indirect);
+   EXT_CAP(ARB_draw_instanced,               vs_instanceid);
+   EXT_CAP(ARB_fragment_program_shadow,      texture_shadow_map);
+   EXT_CAP(ARB_framebuffer_object,           mixed_framebuffer_sizes);
+   EXT_CAP(ARB_gpu_shader_int64,             int64);
+   EXT_CAP(ARB_gl_spirv,                     gl_spirv);
+   EXT_CAP(ARB_indirect_parameters,          multi_draw_indirect_params);
+   EXT_CAP(ARB_instanced_arrays,             vertex_element_instance_divisor);
+   EXT_CAP(ARB_occlusion_query2,             occlusion_query);
+   EXT_CAP(ARB_pipeline_statistics_query,    query_pipeline_statistics);
+   EXT_CAP(ARB_pipeline_statistics_query,    query_pipeline_statistics_single);
+   EXT_CAP(ARB_polygon_offset_clamp,         polygon_offset_clamp);
+   EXT_CAP(ARB_post_depth_coverage,          post_depth_coverage);
+   EXT_CAP(ARB_query_buffer_object,          query_buffer_object);
+   EXT_CAP(ARB_robust_buffer_access_behavior, robust_buffer_access_behavior);
+   EXT_CAP(ARB_sample_shading,               sample_shading);
+   EXT_CAP(ARB_sample_locations,             programmable_sample_locations);
+   EXT_CAP(ARB_seamless_cube_map,            seamless_cube_map);
+   EXT_CAP(ARB_shader_ballot,                shader_ballot);
+   EXT_CAP(ARB_shader_clock,                 shader_clock);
+   EXT_CAP(ARB_shader_draw_parameters,       draw_parameters);
+   EXT_CAP(ARB_shader_group_vote,            shader_group_vote);
+   EXT_CAP(EXT_shader_image_load_formatted,  image_load_formatted);
+   EXT_CAP(EXT_shader_image_load_store,      image_atomic_inc_wrap);
+   EXT_CAP(ARB_shader_stencil_export,        shader_stencil_export);
+   EXT_CAP(ARB_shader_texture_image_samples, texture_query_samples);
+   EXT_CAP(ARB_shader_texture_lod,           fragment_shader_texture_lod);
+   EXT_CAP(ARB_shadow,                       texture_shadow_map);
+   EXT_CAP(ARB_sparse_buffer,                sparse_buffer_page_size);
+   EXT_CAP(ARB_sparse_texture,               max_sparse_texture_size);
+   EXT_CAP(ARB_sparse_texture2,              query_sparse_texture_residency);
+   EXT_CAP(ARB_sparse_texture_clamp,         clamp_sparse_texture_lod);
+   EXT_CAP(ARB_spirv_extensions,             gl_spirv);
+   EXT_CAP(ARB_texture_buffer_object,        texture_buffer_objects);
+   EXT_CAP(ARB_texture_cube_map_array,       cube_map_array);
+   EXT_CAP(ARB_texture_filter_minmax,        sampler_reduction_minmax_arb);
+   EXT_CAP(ARB_texture_gather,               max_texture_gather_components);
+   EXT_CAP(ARB_texture_mirror_clamp_to_edge, texture_mirror_clamp_to_edge);
+   EXT_CAP(ARB_texture_multisample,          texture_multisample);
+   EXT_CAP(ARB_texture_non_power_of_two,     npot_textures);
+   EXT_CAP(ARB_texture_query_lod,            texture_query_lod);
+   EXT_CAP(ARB_texture_view,                 sampler_view_target);
+   EXT_CAP(ARB_timer_query,                  query_timestamp);
+   EXT_CAP(ARB_transform_feedback2,          stream_output_pause_resume);
+   EXT_CAP(ARB_transform_feedback3,          stream_output_interleave_buffers);
+   EXT_CAP(ARB_transform_feedback_overflow_query, query_so_overflow);
+   EXT_CAP(ARB_fragment_shader_interlock,    fragment_shader_interlock);
+
+   EXT_CAP(EXT_blend_equation_separate,      blend_equation_separate);
+   EXT_CAP(EXT_demote_to_helper_invocation,  demote_to_helper_invocation);
+   EXT_CAP(EXT_depth_bounds_test,            depth_bounds_test);
+   EXT_CAP(EXT_disjoint_timer_query,         query_timestamp);
+   EXT_CAP(EXT_draw_buffers2,                indep_blend_enable);
+   EXT_CAP(EXT_memory_object,                memobj);
+#ifndef _WIN32
+   EXT_CAP(EXT_memory_object_fd,             memobj);
+#else
+   EXT_CAP(EXT_memory_object_win32,          memobj);
+#endif
+   EXT_CAP(EXT_multisampled_render_to_texture, surface_sample_count);
+   EXT_CAP(EXT_semaphore,                    fence_signal);
+#ifndef _WIN32
+   EXT_CAP(EXT_semaphore_fd,                 fence_signal);
+#else
+   EXT_CAP(EXT_semaphore_win32,              fence_signal);
+#endif
+   EXT_CAP(EXT_shader_samples_identical,     shader_samples_identical);
+   EXT_CAP(EXT_texture_array,                max_texture_array_layers);
+   EXT_CAP(EXT_texture_compression_astc_decode_mode, astc_decode_mode);
+   EXT_CAP(EXT_texture_filter_anisotropic,   anisotropic_filter);
+   EXT_CAP(EXT_texture_filter_minmax,        sampler_reduction_minmax);
+   EXT_CAP(EXT_texture_mirror_clamp,         texture_mirror_clamp);
+   EXT_CAP(EXT_texture_shadow_lod,           texture_shadow_lod);
+   EXT_CAP(EXT_texture_swizzle,              texture_swizzle);
+   EXT_CAP(EXT_transform_feedback,           max_stream_output_buffers);
+   EXT_CAP(EXT_window_rectangles,            max_window_rectangles);
+
+   EXT_CAP(KHR_shader_subgroup,              shader_subgroup_size);
+
+   EXT_CAP(AMD_depth_clamp_separate,         depth_clip_disable_separate);
+   EXT_CAP(AMD_framebuffer_multisample_advanced, framebuffer_msaa_constraints);
+   EXT_CAP(AMD_gpu_shader_half_float,        fp16);
+   EXT_CAP(AMD_performance_monitor,          performance_monitor);
+   EXT_CAP(AMD_pinned_memory,                resource_from_user_memory);
+   EXT_CAP(ATI_meminfo,                      query_memory_info);
+   EXT_CAP(AMD_seamless_cubemap_per_texture, seamless_cube_map_per_texture);
+   EXT_CAP(ATI_texture_mirror_once,          texture_mirror_clamp);
+   EXT_CAP(INTEL_conservative_rasterization, conservative_raster_inner_coverage);
+   EXT_CAP(INTEL_shader_atomic_float_minmax, atomic_float_minmax);
+   EXT_CAP(MESA_tile_raster_order,           tile_raster_order);
+   EXT_CAP(NV_alpha_to_coverage_dither_control, alpha_to_coverage_dither_control);
+   EXT_CAP(NV_compute_shader_derivatives,    compute_shader_derivatives);
+   EXT_CAP(NV_conditional_render,            conditional_render);
+   EXT_CAP(NV_fill_rectangle,                polygon_mode_fill_rectangle);
+   EXT_CAP(NV_primitive_restart,             primitive_restart);
+   EXT_CAP(NV_shader_atomic_float,           image_atomic_float_add);
+   EXT_CAP(NV_shader_atomic_int64,           shader_atomic_int64);
+   EXT_CAP(NV_texture_barrier,               texture_barrier);
+   EXT_CAP(NV_viewport_array2,               viewport_mask);
+   EXT_CAP(NV_viewport_swizzle,              viewport_swizzle);
+   EXT_CAP(NVX_gpu_memory_info,              query_memory_info);
+
+   EXT_CAP(OES_standard_derivatives,         fragment_shader_derivatives);
+   EXT_CAP(OES_texture_float_linear,         texture_float_linear);
+   EXT_CAP(OES_texture_half_float_linear,    texture_half_float_linear);
+   EXT_CAP(OES_texture_view,                 sampler_view_target);
+   EXT_CAP(INTEL_blackhole_render,           frontend_noop);
+   EXT_CAP(ARM_shader_framebuffer_fetch_depth_stencil, fbfetch_zs);
+   EXT_CAP(MESA_texture_const_bandwidth,     has_const_bw);
+
+#undef EXT_CAP
 
    /* MESA_texture_const_bandwidth depends on EXT_memory_object */
    if (!extensions->EXT_memory_object)
