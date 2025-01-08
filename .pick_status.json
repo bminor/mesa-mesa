@@ -324,7 +324,7 @@
         "description": "ir3: always set wrmask for movmsk",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "1a78604d201d1e1e54da814ccf8f4f5a24b19ca3",
         "notes": null
