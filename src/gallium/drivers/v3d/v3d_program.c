@@ -402,7 +402,7 @@ v3d_uncompiled_shader_create(struct pipe_context *pctx,
 
         NIR_PASS(_, s, nir_lower_frexp);
 
-        /* Since we can't expose PIPE_CAP_PACKED_UNIFORMS the state tracker
+        /* Since we can't expose pipe_caps.packed_uniforms the state tracker
          * will produce uniform intrinsics with offsets in vec4 units but
          * our compiler expects to work in units of bytes.
          */

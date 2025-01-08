@@ -632,7 +632,7 @@ v3d_job_submit(struct v3d_context *v3d, struct v3d_job *job)
                 v3d_X(devinfo, bcl_epilogue)(v3d, job);
 
         if (v3d->in_fence_fd >= 0) {
-                /* PIPE_CAP_NATIVE_FENCE */
+                /* pipe_caps.native_fence */
                 if (drmSyncobjImportSyncFile(v3d->fd, v3d->in_syncobj,
                                              v3d->in_fence_fd)) {
                    fprintf(stderr, "Failed to import native fence.\n");

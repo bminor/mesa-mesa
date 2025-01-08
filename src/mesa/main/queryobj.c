@@ -90,7 +90,7 @@ target_to_index(const struct gl_query_object *q)
        q->Target == GL_TRANSFORM_FEEDBACK_STREAM_OVERFLOW_ARB)
       return q->Stream;
 
-   /* Drivers with PIPE_CAP_QUERY_PIPELINE_STATISTICS_SINGLE = 0 ignore the
+   /* Drivers with pipe_caps.query_pipeline_statistics_single = 0 ignore the
     * index param so it should be useless; but radeonsi needs it in some cases,
     * so pass the correct value.
     */

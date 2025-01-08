@@ -1314,7 +1314,7 @@ ntr_emit_load_ubo(struct ntr_compile *c, nir_intrinsic_instr *instr)
       src = ureg_src_dimension_indirect(src, ntr_reladdr(c, ureg_src(addr_temp), 1), c->first_ubo);
    }
 
-   /* !PIPE_CAP_LOAD_CONSTBUF: Just emit it as a vec4 reference to the const
+   /* !pipe_caps.load_constbuf: Just emit it as a vec4 reference to the const
     * file.
     */
    src.Index = nir_intrinsic_base(instr);

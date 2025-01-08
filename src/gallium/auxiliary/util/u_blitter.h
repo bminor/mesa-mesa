@@ -171,7 +171,7 @@ struct pipe_context *util_blitter_get_pipe(struct blitter_context *blitter)
 }
 
 /**
- * Override PIPE_CAP_TEXTURE_MULTISAMPLE as reported by the driver.
+ * Override pipe_caps.texture_multisample as reported by the driver.
  */
 void util_blitter_set_texture_multisample(struct blitter_context *blitter,
                                           bool supported);

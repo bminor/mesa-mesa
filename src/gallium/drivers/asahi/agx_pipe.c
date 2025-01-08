@@ -755,7 +755,7 @@ agx_prepare_for_map(struct agx_context *ctx, struct agx_resource *rsrc,
 
    /* Everything after this needs the context, which is not safe for
     * unsynchronized transfers when we claim
-    * PIPE_CAP_MAP_UNSYNCHRONIZED_THREAD_SAFE.
+    * pipe_caps.map_unsynchronized_thread_safe.
     */
    assert(!(usage & PIPE_MAP_UNSYNCHRONIZED));
 
@@ -1084,7 +1084,7 @@ agx_clear(struct pipe_context *pctx, unsigned buffers,
    unsigned fastclear = buffers & ~(batch->draw | batch->load);
    unsigned slowclear = buffers & ~fastclear;
 
-   assert(scissor_state == NULL && "we don't support PIPE_CAP_CLEAR_SCISSORED");
+   assert(scissor_state == NULL && "we don't support pipe_caps.clear_scissored");
 
    /* Fast clears configure the batch */
    for (unsigned rt = 0; rt < PIPE_MAX_COLOR_BUFS; ++rt) {

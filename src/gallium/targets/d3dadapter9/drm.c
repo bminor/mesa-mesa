@@ -239,7 +239,7 @@ drm_create_adapter( int fd,
         return D3DERR_DRIVERINTERNALERROR;
     }
 
-    /* Previously was set to PIPE_CAP_MAX_FRAMES_IN_FLIGHT,
+    /* Previously was set to pipe_caps.max_frames_in_flight,
      * but the change of value of this cap to 1 seems to cause
      * regressions. */
     ctx->base.throttling_value = 2;

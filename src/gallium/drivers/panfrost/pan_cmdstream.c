@@ -965,7 +965,7 @@ panfrost_map_constant_buffer_gpu(struct panfrost_batch *batch,
       panfrost_batch_read_rsrc(batch, rsrc, st);
 
       /* Alignment gauranteed by
-       * PIPE_CAP_CONSTANT_BUFFER_OFFSET_ALIGNMENT */
+       * pipe_caps.constant_buffer_offset_alignment */
       return rsrc->image.data.base + cb->buffer_offset;
    } else if (cb->user_buffer) {
       return pan_pool_upload_aligned(&batch->pool.base,

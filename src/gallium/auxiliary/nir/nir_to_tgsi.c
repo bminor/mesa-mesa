@@ -1896,7 +1896,7 @@ ntt_emit_load_ubo(struct ntt_compile *c, nir_intrinsic_instr *instr)
    }
 
    if (instr->intrinsic == nir_intrinsic_load_ubo_vec4) {
-      /* !PIPE_CAP_LOAD_CONSTBUF: Just emit it as a vec4 reference to the const
+      /* !pipe_caps.load_constbuf: Just emit it as a vec4 reference to the const
        * file.
        */
       src.Index = nir_intrinsic_base(instr);
@@ -1916,7 +1916,7 @@ ntt_emit_load_ubo(struct ntt_compile *c, nir_intrinsic_instr *instr)
 
       ntt_store(c, &instr->def, src);
    } else {
-      /* PIPE_CAP_LOAD_CONSTBUF: Not necessarily vec4 aligned, emit a
+      /* pipe_caps.load_constbuf: Not necessarily vec4 aligned, emit a
        * TGSI_OPCODE_LOAD instruction from the const file.
        */
       struct ntt_insn *insn =

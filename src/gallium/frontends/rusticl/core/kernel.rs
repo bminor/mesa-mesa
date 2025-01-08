@@ -440,7 +440,7 @@ struct NirKernelBuild {
     compiled_args: Vec<CompiledKernelArg>,
 }
 
-// SAFETY: `CSOWrapper` is only safe to use if the device supports `PIPE_CAP_SHAREABLE_SHADERS` and
+// SAFETY: `CSOWrapper` is only safe to use if the device supports `pipe_caps.shareable_shaders` and
 //         we make sure to set `nir_or_cso` to `KernelDevStateVariant::Cso` only if that's the case.
 unsafe impl Send for NirKernelBuild {}
 unsafe impl Sync for NirKernelBuild {}

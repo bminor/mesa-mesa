@@ -135,7 +135,7 @@ struct pipe_screen {
 
    /**
     * Query a per-shader-stage integer-valued capability/parameter/limit
-    * \param param  one of PIPE_CAP_x
+    * \param param  one of pipe_caps.x
     */
    int (*get_shader_param)(struct pipe_screen *, enum pipe_shader_type shader,
                            enum pipe_shader_cap param);
@@ -166,7 +166,7 @@ struct pipe_screen {
 
    /**
     * Get the sample pixel grid's size. This function requires
-    * PIPE_CAP_PROGRAMMABLE_SAMPLE_LOCATIONS to be callable.
+    * pipe_caps.programmable_sample_locations to be callable.
     *
     * \param sample_count - total number of samples
     * \param out_width - the width of the pixel grid

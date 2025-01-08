@@ -496,7 +496,7 @@ enum pipe_flush_flags
 #define PIPE_BIND_SHARED      (1 << 20) /* get_texture_handle ??? */
 #define PIPE_BIND_LINEAR      (1 << 21)
 #define PIPE_BIND_PROTECTED   (1 << 22) /* Resource will be protected/encrypted */
-#define PIPE_BIND_SAMPLER_REDUCTION_MINMAX (1 << 23) /* PIPE_CAP_SAMPLER_REDUCTION_MINMAX */
+#define PIPE_BIND_SAMPLER_REDUCTION_MINMAX (1 << 23) /* pipe_caps.sampler_reduction_minmax */
 /* Resource is the DRI_PRIME blit destination. Only set on on the render GPU. */
 #define PIPE_BIND_PRIME_BLIT_DST (1 << 24)
 #define PIPE_BIND_USE_FRONT_RENDERING (1 << 25) /* Resource may be used for frontbuffer rendering */
@@ -707,7 +707,7 @@ enum pipe_texture_transfer_mode {
 };
 
 /**
- * Possible bits for PIPE_CAP_CONTEXT_PRIORITY_MASK param, which should
+ * Possible bits for pipe_caps.context_priority_mask param, which should
  * return a bitmask of the supported priorities.  If the driver does not
  * support prioritized contexts, it can return 0.
  *

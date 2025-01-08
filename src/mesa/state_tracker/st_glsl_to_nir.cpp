@@ -62,7 +62,7 @@ type_size(const struct glsl_type *type)
    return glsl_count_attribute_slots(type, false);
 }
 
-/* Depending on PIPE_CAP_TGSI_TEXCOORD (st->needs_texcoord_semantic) we
+/* Depending on pipe_caps.tgsi_texcoord (st->needs_texcoord_semantic) we
  * may need to fix up varying slots so the glsl->nir path is aligned
  * with the anything->tgsi->nir path.
  */

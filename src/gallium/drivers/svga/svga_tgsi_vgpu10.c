@@ -8877,7 +8877,7 @@ emit_tg4(struct svga_shader_emitter_v10 *emit,
    }
    else {
       /* Only a single channel is supported in SM4_1 and we report
-       * PIPE_CAP_MAX_TEXTURE_GATHER_COMPONENTS = 1.
+       * pipe_caps.max_texture_gather_components = 1.
        * Only the 0th component will be gathered.
        */
       switch (emit->key.tex[unit].swizzle_r) {
@@ -11190,7 +11190,7 @@ emit_instruction(struct svga_shader_emitter_v10 *emit,
       return emit_dtrunc(emit, inst);
 
    /* The following opcodes should never be seen here.  We return zero
-    * for PIPE_CAP_TGSI_DROUND_SUPPORTED.
+    * for pipe_caps.tgsi_dround_supported.
     */
    case TGSI_OPCODE_LDEXP:
    case TGSI_OPCODE_DSSG:

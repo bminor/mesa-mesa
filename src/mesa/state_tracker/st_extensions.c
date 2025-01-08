@@ -136,7 +136,7 @@ void st_init_limits(struct pipe_screen *screen,
 
    /* Define max viewport size and max renderbuffer size in terms of
     * max texture size (note: max tex RECT size = max tex 2D size).
-    * If this isn't true for some hardware we'll need new PIPE_CAP_ queries.
+    * If this isn't true for some hardware we'll need new pipe_caps. queries.
     */
    c->MaxViewportWidth =
    c->MaxViewportHeight =
@@ -571,7 +571,7 @@ void st_init_limits(struct pipe_screen *screen,
    c->MaxFramebufferWidth   = c->MaxViewportWidth;
    c->MaxFramebufferHeight  = c->MaxViewportHeight;
    /* NOTE: we cheat here a little by assuming that
-    * PIPE_CAP_MAX_TEXTURE_ARRAY_LAYERS has the same
+    * pipe_caps.max_texture_array_layers has the same
     * number of layers as we need, although we technically
     * could have more the generality is not really useful
     * in practicality.
@@ -749,7 +749,7 @@ get_max_samples_for_formats_advanced(struct pipe_screen *screen,
 }
 
 /**
- * Use pipe_screen::get_param() to query PIPE_CAP_ values to determine
+ * Use pipe_screen::get_param() to query pipe_caps. values to determine
  * which GL extensions are supported.
  * Quite a few extensions are always supported because they are standard
  * features or can be built on top of other gallium features.
@@ -1338,7 +1338,7 @@ void st_init_extensions(struct pipe_screen *screen,
       extensions->ARB_draw_indirect = GL_TRUE;
    }
 
-   /* Needs PIPE_CAP_SAMPLE_SHADING + all the sample-related bits of
+   /* Needs pipe_caps.sample_shading + all the sample-related bits of
     * ARB_gpu_shader5. This enables all the per-sample shading ES extensions.
     */
    extensions->OES_sample_variables = extensions->ARB_sample_shading &&

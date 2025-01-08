@@ -1414,7 +1414,7 @@ prelink_lowering(const struct gl_constants *consts,
       struct gl_program *prog = shader->Program;
 
       /* NIR drivers that support tess shaders and compact arrays need to use
-      * GLSLTessLevelsAsInputs / PIPE_CAP_GLSL_TESS_LEVELS_AS_INPUTS. The NIR
+      * GLSLTessLevelsAsInputs / pipe_caps.glsl_tess_levels_as_inputs. The NIR
       * linker doesn't support linking these as compat arrays of sysvals.
       */
       assert(consts->GLSLTessLevelsAsInputs || !options->compact_arrays ||

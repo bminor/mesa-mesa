@@ -145,7 +145,7 @@ struct pipe_rasterizer_state
    unsigned rasterizer_discard:1;
 
    /**
-    * Exposed by PIPE_CAP_TILE_RASTER_ORDER.  When true,
+    * Exposed by pipe_caps.tile_raster_order.  When true,
     * tile_raster_order_increasing_* indicate the order that the rasterizer
     * should render tiles, to meet the requirements of
     * GL_MESA_tile_raster_order.
@@ -157,9 +157,9 @@ struct pipe_rasterizer_state
    /**
     * When false, depth clipping is disabled and the depth value will be
     * clamped later at the per-pixel level before depth testing.
-    * This depends on PIPE_CAP_DEPTH_CLIP_DISABLE.
+    * This depends on pipe_caps.depth_clip_disable.
     *
-    * If PIPE_CAP_DEPTH_CLIP_DISABLE_SEPARATE is unsupported, depth_clip_near
+    * If pipe_caps.depth_clip_disable_separate is unsupported, depth_clip_near
     * is equal to depth_clip_far.
     */
    unsigned depth_clip_near:1;
@@ -167,7 +167,7 @@ struct pipe_rasterizer_state
 
    /**
     * When true, depth clamp is enabled.
-    * If PIPE_CAP_DEPTH_CLAMP_ENABLE is unsupported, this is always the inverse
+    * If pipe_caps.depth_clamp_enable is unsupported, this is always the inverse
     * of depth_clip_far.
     */
    unsigned depth_clamp:1;
@@ -183,7 +183,7 @@ struct pipe_rasterizer_state
    /**
     * When true do not scale offset_units and use same rules for unorm and
     * float depth buffers (D3D9). When false use GL/D3D1X behaviour.
-    * This depends on PIPE_CAP_POLYGON_OFFSET_UNITS_UNSCALED.
+    * This depends on pipe_caps.polygon_offset_units_unscaled.
     */
    unsigned offset_units_unscaled:1;
 

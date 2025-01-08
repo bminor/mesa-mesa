@@ -1166,7 +1166,7 @@ unsigned glsl_type_get_image_count(const glsl_type *t);
  *
  * This is the underlying recursive type_size function for
  * count_attribute_slots() (vertex inputs and varyings) but also for
- * gallium's !PIPE_CAP_PACKED_UNIFORMS case.
+ * gallium's !pipe_caps.packed_uniforms case.
  */
 unsigned glsl_count_vec4_slots(const glsl_type *t, bool is_gl_vertex_input, bool is_bindless);
 
@@ -1174,7 +1174,7 @@ unsigned glsl_count_vec4_slots(const glsl_type *t, bool is_gl_vertex_input, bool
  * Calculate the number of vec4 slots required to hold this type.
  *
  * This is the underlying recursive type_size function for
- * gallium's PIPE_CAP_PACKED_UNIFORMS case.
+ * gallium's pipe_caps.packed_uniforms case.
  */
 unsigned glsl_count_dword_slots(const glsl_type *t, bool is_bindless);
 

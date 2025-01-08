@@ -207,7 +207,7 @@ st_save_zombie_sampler_view(struct st_context *st,
  * with variants of a shader created with different contexts.
  * When we go to destroy a gallium shader, we want to free it with the
  * same context that it was created with, unless the driver reports
- * PIPE_CAP_SHAREABLE_SHADERS = TRUE.
+ * pipe_caps.shareable_shaders = TRUE.
  */
 void
 st_save_zombie_shader(struct st_context *st,
