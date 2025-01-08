@@ -584,7 +584,6 @@ emit_alu(struct ir3_context *ctx, nir_alu_instr *alu)
       alu->op != nir_op_sudot_4x8_iadd &&
       alu->op != nir_op_sudot_4x8_iadd_sat &&
       /* not supported in HW, we have to fall back to normal registers */
-      alu->op != nir_op_iadd3 &&
       alu->op != nir_op_ffma;
 
    struct ir3_instruction **def = ir3_get_def(ctx, &alu->def, dst_sz);
@@ -786,10 +785,24 @@ emit_alu(struct ir3_context *ctx, nir_alu_instr *alu)
       dst = ir3_ADD_U_rpt(b, dst_sz, src[0], 0, src[1], 0);
       break;
    case nir_op_iadd3:
-      if (is_half(src[0].rpts[0])) {
-         dst = ir3_SAD_S16_rpt(b, dst_sz, src[0], 0, src[1], 0, src[2], 0);
+      if (use_shared) {
+         /* sad doesn't support the scalar ALU so expand to two adds so that we
+          * don't unnecessarily fall back to non-earlypreamble.
+          */
+         struct ir3_instruction_rpt add01 =
+            ir3_ADD_U_rpt(b, dst_sz, src[0], 0, src[1], 0);
+
+         if (is_half(src[0].rpts[0])) {
+            set_dst_flags(add01.rpts, dst_sz, IR3_REG_HALF);
+         }
+
+         dst = ir3_ADD_U_rpt(b, dst_sz, add01, 0, src[2], 0);
       } else {
-         dst = ir3_SAD_S32_rpt(b, dst_sz, src[0], 0, src[1], 0, src[2], 0);
+         if (is_half(src[0].rpts[0])) {
+            dst = ir3_SAD_S16_rpt(b, dst_sz, src[0], 0, src[1], 0, src[2], 0);
+         } else {
+            dst = ir3_SAD_S32_rpt(b, dst_sz, src[0], 0, src[1], 0, src[2], 0);
+         }
       }
       break;
    case nir_op_ihadd:
