@@ -1385,8 +1385,6 @@ static void pvr_graphics_pipeline_setup_vertex_dma(
          dma_desc->flags = 0;
 
       /* Size to DMA per vertex attribute. Used to setup src3 in the DDMAD. */
-      /* TODO: what if not all components are used */
-      assert(attrib_range->count == fmt_description->block.bits / 32);
       dma_desc->size_in_dwords = attrib_range->count;
 
       /* Vtxin reg offset to start DMAing into. */
