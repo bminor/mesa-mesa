@@ -78,6 +78,9 @@ typedef struct _pco_cs_data {
 typedef struct _pco_binding_data {
    pco_range range; /** Descriptor location range. */
    bool used; /** Whether the descriptor binding is used by the shader. */
+
+   /** Whether the descriptor binding is a combined image sampler. */
+   bool is_img_smp;
 } pco_binding_data;
 
 /** PCO descriptor set data. */

@@ -79,6 +79,9 @@ static unsigned pvr_descriptor_size(VkDescriptorType type)
    case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
       return sizeof(struct pvr_buffer_descriptor);
 
+   case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+      return sizeof(struct pvr_combined_image_sampler_descriptor);
+
    default:
       mesa_loge("Unsupported descriptor type %s.\n",
                 vk_DescriptorType_to_str(type));
@@ -478,6 +481,30 @@ write_buffer(const struct pvr_descriptor_set *set,
    memcpy(desc_mapping, &buffer_desc, sizeof(buffer_desc));
 }
 
+static void
+write_image_sampler(const struct pvr_descriptor_set *set,
+                    const VkDescriptorImageInfo *image_info,
+                    const struct pvr_descriptor_set_layout_binding *binding,
+                    uint32_t elem)
+{
+   PVR_FROM_HANDLE(pvr_sampler, info_sampler, image_info->sampler);
+   PVR_FROM_HANDLE(pvr_image_view, image_view, image_info->imageView);
+
+   const unsigned desc_offset = binding->offset + (elem * binding->stride);
+   void *desc_mapping = (uint8_t *)set->mapping + desc_offset;
+
+   struct pvr_sampler *sampler = binding->immutable_sampler_count
+                                    ? binding->immutable_samplers[elem]
+                                    : info_sampler;
+
+   struct pvr_combined_image_sampler_descriptor image_sampler_desc = {
+      .image = image_view->image_state[PVR_TEXTURE_STATE_SAMPLE],
+      .sampler = sampler->descriptor,
+   };
+
+   memcpy(desc_mapping, &image_sampler_desc, sizeof(image_sampler_desc));
+}
+
 void pvr_UpdateDescriptorSets(VkDevice _device,
                               uint32_t descriptorWriteCount,
                               const VkWriteDescriptorSet *pDescriptorWrites,
@@ -508,6 +535,15 @@ void pvr_UpdateDescriptorSets(VkDevice _device,
                          &write->pBufferInfo[j],
                          binding,
                          write->dstArrayElement + j);
+         }
+         break;
+
+      case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+         for (uint32_t j = 0; j < write->descriptorCount; j++) {
+            write_image_sampler(set,
+                                &write->pImageInfo[j],
+                                binding,
+                                write->dstArrayElement + j);
          }
          break;
 

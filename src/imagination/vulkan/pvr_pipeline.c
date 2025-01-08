@@ -1960,6 +1960,7 @@ static void pvr_setup_descriptors(pco_data *data,
 {
    mesa_shader_stage stage = nir->info.stage;
 
+   /* Allocate shareds for the descriptors. */
    for (unsigned desc_set = 0; desc_set < layout->set_count; ++desc_set) {
       const struct pvr_descriptor_set_layout *set_layout =
          vk_to_pvr_descriptor_set_layout(layout->set_layouts[desc_set]);
@@ -1988,6 +1989,9 @@ static void pvr_setup_descriptors(pco_data *data,
          const struct pvr_descriptor_set_layout_binding *layout_binding =
             &set_layout->bindings[binding];
          pco_binding_data *binding_data = &desc_set_data->bindings[binding];
+
+         binding_data->is_img_smp = layout_binding->type ==
+                                    VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 
          binding_data->range = (pco_range){
             .start = desc_set_range->start +
