@@ -1394,6 +1394,27 @@ static pco_instr *trans_alu(trans_ctx *tctx, nir_alu_instr *alu)
       instr = pco_iadd32(&tctx->b, dest, src[0], src[1], pco_ref_null());
       break;
 
+   case nir_op_uadd64_32: {
+      pco_ref dest_comps[2] = {
+         [0] = pco_ref_new_ssa32(tctx->func),
+         [1] = pco_ref_new_ssa32(tctx->func),
+      };
+
+      pco_add64_32(&tctx->b,
+                   dest_comps[0],
+                   dest_comps[1],
+                   src[0],
+                   src[1],
+                   src[2],
+                   pco_ref_null());
+
+      /* TODO: mark this vec as being non-contiguous,
+       * add pass for expanding.
+       */
+      instr = pco_trans_nir_vec(tctx, dest, 2, dest_comps);
+      break;
+   }
+
    case nir_op_imul:
       instr = pco_imul32(&tctx->b, dest, src[0], src[1], pco_ref_null());
       break;

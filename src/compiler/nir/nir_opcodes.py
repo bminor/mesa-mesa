@@ -637,6 +637,12 @@ binop("isub_sat", tint, "", """
 """)
 binop("usub_sat", tuint, "", "src0 < src1 ? 0 : src0 - src1")
 
+opcode("uadd64_32", 2, tuint32, [1, 1, 1], [tuint32, tuint32, tuint32], False, "", """
+uint64_t sum = ((uint64_t)src1.x << 32 | (uint64_t)src0.x) + (uint64_t)src2.x;
+dst.x = sum & 0xffffffff;
+dst.y = sum >> 32;
+""")
+
 binop("fsub", tfloat, "", """
 if (nir_is_rounding_mode_rtz(execution_mode, bit_size)) {
    if (bit_size == 64)
