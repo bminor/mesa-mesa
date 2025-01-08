@@ -279,7 +279,9 @@ void si_replace_buffer_storage(struct pipe_context *ctx, struct pipe_resource *d
 
    radeon_bo_reference(sctx->screen->ws, &sdst->buf, ssrc->buf);
    sdst->gpu_address = ssrc->gpu_address;
+   sdst->b.b.usage = ssrc->b.b.usage;
    sdst->b.b.bind = ssrc->b.b.bind;
+   sdst->domains = ssrc->domains;
    sdst->flags = ssrc->flags;
 
    assert(sdst->bo_size == ssrc->bo_size);
@@ -289,6 +291,28 @@ void si_replace_buffer_storage(struct pipe_context *ctx, struct pipe_resource *d
    si_rebind_buffer(sctx, dst);
 
    util_idalloc_mt_free(&sctx->screen->buffer_ids, delete_buffer_id);
+}
+
+bool si_reallocate_buffer_change_flags(struct si_context *sctx, struct pipe_resource *buf,
+                                       unsigned usage, unsigned bind)
+{
+   struct pipe_resource templ = *buf;
+   templ.usage = usage;
+   templ.bind = bind;
+
+   struct pipe_resource *new_buf = sctx->b.screen->resource_create(sctx->b.screen, &templ);
+   if (!new_buf)
+      return false;
+
+   /* Copy the old buffer contents to the new one. */
+   struct pipe_box box;
+   u_box_1d(0, new_buf->width0, &box);
+   sctx->b.resource_copy_region(&sctx->b, new_buf, 0, 0, 0, 0, buf, 0, &box);
+
+   /* Move the new buffer storage to the old pipe_resource. */
+   si_replace_buffer_storage(&sctx->b, buf, new_buf, 0, 0, 0);
+   pipe_resource_reference(&new_buf, NULL);
+   return true;
 }
 
 static void si_invalidate_resource(struct pipe_context *ctx, struct pipe_resource *resource)

@@ -874,25 +874,14 @@ static bool si_texture_get_handle(struct pipe_screen *screen, struct pipe_contex
          assert(!res->b.is_shared);
 
          /* Allocate a new buffer with PIPE_BIND_SHARED. */
-         struct pipe_resource templ = res->b.b;
-         templ.bind |= PIPE_BIND_SHARED;
-
-         struct pipe_resource *newb = screen->resource_create(screen, &templ);
-         if (!newb) {
+         if (!si_reallocate_buffer_change_flags(sctx, &res->b.b, res->b.b.usage,
+                                                res->b.b.bind | PIPE_BIND_SHARED)) {
             if (!ctx)
                si_put_aux_context_flush(&sscreen->aux_context.general);
             return false;
          }
 
-         /* Copy the old buffer contents to the new one. */
-         struct pipe_box box;
-         u_box_1d(0, newb->width0, &box);
-         sctx->b.resource_copy_region(&sctx->b, newb, 0, 0, 0, 0, &res->b.b, 0, &box);
          flush = true;
-         /* Move the new buffer storage to the old pipe_resource. */
-         si_replace_buffer_storage(&sctx->b, &res->b.b, newb, 0, 0, 0);
-         pipe_resource_reference(&newb, NULL);
-
          assert(res->b.b.bind & PIPE_BIND_SHARED);
          assert(res->flags & RADEON_FLAG_NO_SUBALLOC);
       }
