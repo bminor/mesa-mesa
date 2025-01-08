@@ -58,6 +58,37 @@ static bool vec_has_repeated_ssas(pco_instr *vec)
    return false;
 }
 
+static void pco_extend_live_range(pco_ref origin,
+                                  pco_ref current_ref,
+                                  pco_instr *current_instr,
+                                  struct hash_table_u64 *overrides,
+                                  struct live_range *live_ranges)
+{
+   pco_foreach_instr_in_func_from (instr, current_instr) {
+      pco_foreach_instr_src_ssa (psrc, instr) {
+         if (current_ref.val != psrc->val)
+            continue;
+
+         pco_foreach_instr_dest_ssa (pdest, instr) {
+            struct vec_override *override =
+               _mesa_hash_table_u64_search(overrides, pdest->val);
+
+            if (override) {
+               live_ranges[origin.val].end =
+                  MAX2(live_ranges[origin.val].end,
+                       live_ranges[override->ref.val].end);
+               break;
+            }
+
+            live_ranges[origin.val].end =
+               MAX2(live_ranges[origin.val].end, instr->index);
+         }
+
+         break;
+      }
+   }
+}
+
 /**
  * \brief Performs register allocation on a function.
  *
@@ -153,6 +184,9 @@ static bool pco_ra_func(pco_func *func,
       }
    }
 
+   BITSET_WORD *comps =
+      rzalloc_array_size(ra_regs, sizeof(*comps), BITSET_WORDS(num_ssas));
+
    /* Overrides for vector component uses. */
    pco_foreach_instr_in_func (instr, func) {
       if (instr->op != PCO_OP_COMP)
@@ -162,8 +196,18 @@ static bool pco_ra_func(pco_func *func,
       pco_ref src = instr->src[0];
       unsigned offset = pco_ref_get_imm(instr->src[1]);
 
+      BITSET_SET(comps, dest.val);
+
       assert(pco_ref_is_ssa(src));
       assert(pco_ref_is_ssa(dest));
+
+      struct vec_override *vec_override =
+         _mesa_hash_table_u64_search(overrides, src.val);
+
+      if (vec_override) {
+         src = vec_override->ref;
+         offset += vec_override->offset;
+      }
 
       struct vec_override *src_override =
          rzalloc_size(overrides, sizeof(*src_override));
@@ -284,6 +328,27 @@ static bool pco_ra_func(pco_func *func,
       }
    }
 
+   /* Extend lifetimes of non-overriden vecs that have comp instructions. */
+   pco_foreach_instr_in_func (instr, func) {
+      if (instr->op != PCO_OP_COMP)
+         continue;
+
+      pco_ref dest = instr->dest[0];
+      pco_ref src_vec = instr->src[0];
+
+      struct vec_override *vec_override =
+         _mesa_hash_table_u64_search(overrides, src_vec.val);
+
+      /* Already taken care of. */
+      if (vec_override) {
+         assert(live_ranges[src_vec.val].start == ~0U &&
+                live_ranges[src_vec.val].end == 0);
+         continue;
+      }
+
+      pco_extend_live_range(src_vec, dest, instr, overrides, live_ranges);
+   }
+
    /* Build interference graph from overlapping live ranges. */
    for (unsigned var0 = 0; var0 < num_vars; ++var0) {
       for (unsigned var1 = var0 + 1; var1 < num_vars; ++var1) {
@@ -326,8 +391,10 @@ static bool pco_ra_func(pco_func *func,
    unsigned vtxins = 0;
    unsigned interns = 0;
    pco_foreach_instr_in_func_safe (instr, func) {
+      /*
       if (PCO_DEBUG_PRINT(RA))
          pco_print_shader(func->parent_shader, stdout, "ra debug");
+         */
 
       /* Insert movs for scalar components of super vecs. */
       if (instr->op == PCO_OP_VEC) {
@@ -345,23 +412,44 @@ static bool pco_ra_func(pco_func *func,
 
          pco_foreach_instr_src (psrc, instr) {
             if (!pco_ref_is_ssa(*psrc) ||
-                !_mesa_hash_table_u64_search(overrides, psrc->val)) {
+                !_mesa_hash_table_u64_search(overrides, psrc->val) ||
+                BITSET_TEST(comps, psrc->val)) {
                unsigned chans = pco_ref_get_chans(*psrc);
 
+               unsigned temp_src_base = ~0U;
+               if (pco_ref_is_ssa(*psrc)) {
+                  temp_src_base = ra_get_node_reg(ra_graph, psrc->val);
+
+                  struct vec_override *src_override =
+                     _mesa_hash_table_u64_search(overrides, psrc->val);
+                  if (src_override) {
+                     temp_src_base =
+                        ra_get_node_reg(ra_graph, src_override->ref.val);
+                     temp_src_base += src_override->offset;
+                  }
+               } else if (pco_ref_is_vreg(*psrc)) {
+                  temp_src_base =
+                     ra_get_node_reg(ra_graph, psrc->val + num_ssas);
+               }
+
+               enum pco_exec_cnd exec_cnd = pco_instr_get_exec_cnd(instr);
                for (unsigned u = 0; u < chans; ++u) {
                   pco_ref dest =
                      pco_ref_hwreg(temp_dest_base + offset, PCO_REG_CLASS_TEMP);
                   dest = pco_ref_offset(dest, u);
 
-                  pco_ref src =
-                     pco_ref_is_ssa(*psrc)
-                        ? pco_ref_hwreg(ra_get_node_reg(ra_graph, psrc->val),
-                                        PCO_REG_CLASS_TEMP)
-                        : pco_ref_chans(*psrc, 1);
+                  pco_ref src;
+                  if (pco_ref_is_ssa(*psrc) || pco_ref_is_vreg(*psrc))
+                     src = pco_ref_hwreg(temp_src_base, PCO_REG_CLASS_TEMP);
+                  else
+                     src = pco_ref_chans(*psrc, 1);
+
                   src = pco_ref_offset(src, u);
 
-                  if (!pco_refs_are_equal(src, dest))
-                     pco_mbyp(&b, dest, src);
+                  pco_ref_xfer_mods(&src, psrc, false);
+
+                  if (!pco_refs_are_equal(src, dest, true))
+                     pco_mbyp(&b, dest, src, .exec_cnd = exec_cnd);
                }
 
                temps = MAX2(temps, temp_dest_base + offset + chans);
@@ -425,6 +513,13 @@ static bool pco_ra_func(pco_func *func,
          psrc->type = PCO_REF_TYPE_REG;
          psrc->reg_class = PCO_REG_CLASS_TEMP;
          psrc->val = val;
+      }
+
+      /* Drop no-ops. */
+      if (instr->op == PCO_OP_MBYP &&
+          (pco_ref_is_ssa(instr->src[0]) || pco_ref_is_vreg(instr->src[0])) &&
+          pco_refs_are_equal(instr->src[0], instr->dest[0], true)) {
+         pco_instr_delete(instr);
       }
    }
 

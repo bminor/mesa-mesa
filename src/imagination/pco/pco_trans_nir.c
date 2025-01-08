@@ -806,7 +806,8 @@ try_collate_vec(pco_ref *src, pco_instr *from, pco_ref vec, unsigned vec_chans)
       unsigned comp_idx = pco_ref_get_imm(parent_instr->src[1]);
       ASSERTED unsigned chans = pco_ref_get_chans(comp_src);
 
-      if (!pco_refs_are_equal(comp_src, vec))
+      /* TODO: can this be true? */
+      if (!pco_refs_are_equal(comp_src, vec, false))
          return pco_ref_null();
 
       assert(chans == vec_chans);

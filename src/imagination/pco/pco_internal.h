@@ -2439,10 +2439,12 @@ static inline bool pco_ref_mods_are_equal(pco_ref ref0, pco_ref ref1)
  *
  * \param[in] ref0 First reference.
  * \param[in] ref1 Second reference.
+ * \param[in] ignore_dtype Whether to ignore the datatype.
  * \return True if both references are the same.
  */
 /* TODO: can this be simplified? */
-static inline bool pco_refs_are_equal(pco_ref ref0, pco_ref ref1)
+static inline bool
+pco_refs_are_equal(pco_ref ref0, pco_ref ref1, bool ignore_dtype)
 {
    if (ref0.type != ref1.type)
       return false;
@@ -2466,7 +2468,7 @@ static inline bool pco_refs_are_equal(pco_ref ref0, pco_ref ref1)
    if (ref0.chans != ref1.chans)
       return false;
 
-   if (pco_ref_get_dtype(ref0) != pco_ref_get_dtype(ref1))
+   if (!ignore_dtype && pco_ref_get_dtype(ref0) != pco_ref_get_dtype(ref1))
       return false;
 
    if (pco_ref_get_bits(ref0) != pco_ref_get_bits(ref1))
@@ -2625,13 +2627,13 @@ static inline bool pco_igrp_dests_unset(pco_igrp *igrp)
 static inline pco_instr *find_parent_instr_from(pco_ref src, pco_instr *from)
 {
    pco_foreach_instr_dest_ssa (pdest, from) {
-      if (pco_refs_are_equal(*pdest, src))
+      if (pco_refs_are_equal(*pdest, src, false))
          return from;
    }
 
    pco_foreach_instr_in_func_from_rev (instr, from) {
       pco_foreach_instr_dest_ssa (pdest, instr) {
-         if (pco_refs_are_equal(*pdest, src))
+         if (pco_refs_are_equal(*pdest, src, false))
             return instr;
       }
    }
