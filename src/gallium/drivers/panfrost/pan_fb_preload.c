@@ -259,7 +259,7 @@ pan_preload_emit_rsd(const struct pan_preload_shader_data *preload_shader,
          cfg.properties.pixel_kill_operation = MALI_PIXEL_KILL_FORCE_LATE;
       } else {
          /* Skipping ATEST requires forcing Z/S */
-         cfg.properties.zs_update_operation = MALI_PIXEL_KILL_STRONG_EARLY;
+         cfg.properties.zs_update_operation = MALI_PIXEL_KILL_FORCE_EARLY;
          cfg.properties.pixel_kill_operation = MALI_PIXEL_KILL_FORCE_EARLY;
       }
 
@@ -1190,7 +1190,7 @@ pan_preload_emit_dcd(struct pan_fb_preload_cache *cache, struct pan_pool *pool,
          cfg.blend_count = 0;
       } else {
          /* Skipping ATEST requires forcing Z/S */
-         cfg.zs_update_operation = MALI_PIXEL_KILL_STRONG_EARLY;
+         cfg.zs_update_operation = MALI_PIXEL_KILL_FORCE_EARLY;
          cfg.pixel_kill_operation = MALI_PIXEL_KILL_FORCE_EARLY;
 
          cfg.blend = blend.gpu;
