@@ -800,8 +800,8 @@ debian-x86_32:
   variables:
     BUILDTYPE: debug
     CROSS: i386
-    VULKAN_DRIVERS: intel,amd,swrast,virtio
-    GALLIUM_DRIVERS: "iris,nouveau,r300,r600,radeonsi,llvmpipe,softpipe,virgl,zink,crocus,d3d12"
+    VULKAN_DRIVERS: intel,amd,swrast,virtio,panfrost
+    GALLIUM_DRIVERS: "iris,nouveau,r300,r600,radeonsi,llvmpipe,softpipe,virgl,zink,crocus,d3d12,panfrost"
     LLVM_VERSION: 15
     DRI_LOADERS:
       -D glvnd=disabled
