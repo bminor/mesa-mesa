@@ -7251,6 +7251,7 @@ pub struct ShaderInfo {
 pub trait ShaderModel {
     fn sm(&self) -> u8;
     fn num_regs(&self, file: RegFile) -> u32;
+    fn hw_reserved_gprs(&self) -> u32;
     fn crs_size(&self, max_crs_depth: u32) -> u32;
 
     fn op_can_be_uniform(&self, op: &Op) -> bool;
