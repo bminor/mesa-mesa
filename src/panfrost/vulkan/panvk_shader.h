@@ -51,6 +51,10 @@ enum panvk_desc_table_id {
 };
 #endif
 
+#define FAU_WORD_SIZE sizeof(uint64_t)
+
+#define aligned_u64 __attribute__((aligned(sizeof(uint64_t)))) uint64_t
+
 struct panvk_graphics_sysvals {
    struct {
       float constants[4];
@@ -71,7 +75,7 @@ struct panvk_graphics_sysvals {
       uint32_t noperspective_varyings;
    } vs;
 
-   uint64_t push_consts;
+   aligned_u64 push_consts;
 
 #if PAN_ARCH <= 7
    /* gl_Layer on Bifrost is a bit of hack. We have to issue one draw per
@@ -80,10 +84,21 @@ struct panvk_graphics_sysvals {
    int32_t layer_id;
 
    struct {
-      uint64_t sets[PANVK_DESC_TABLE_GFX_COUNT];
+      aligned_u64 sets[PANVK_DESC_TABLE_GFX_COUNT];
    } desc;
 #endif
-};
+} __attribute__((aligned(FAU_WORD_SIZE)));
+
+static_assert((sizeof(struct panvk_graphics_sysvals) % FAU_WORD_SIZE) == 0,
+              "struct panvk_graphics_sysvals must be 8-byte aligned");
+static_assert((offsetof(struct panvk_graphics_sysvals, push_consts) %
+               FAU_WORD_SIZE) == 0,
+              "panvk_graphics_sysvals::push_consts must be 8-byte aligned");
+#if PAN_ARCH <= 7
+static_assert((offsetof(struct panvk_graphics_sysvals, desc) % FAU_WORD_SIZE) ==
+                 0,
+              "panvk_graphics_sysvals::desc must be 8-byte aligned");
+#endif
 
 struct panvk_compute_sysvals {
    struct {
@@ -96,26 +111,31 @@ struct panvk_compute_sysvals {
       uint32_t x, y, z;
    } local_group_size;
 
-   uint64_t push_consts;
+   aligned_u64 push_consts;
 
 #if PAN_ARCH <= 7
    struct {
-      uint64_t sets[PANVK_DESC_TABLE_COMPUTE_COUNT];
+      aligned_u64 sets[PANVK_DESC_TABLE_COMPUTE_COUNT];
    } desc;
 #endif
-};
+} __attribute__((aligned(FAU_WORD_SIZE)));
+
+static_assert((sizeof(struct panvk_compute_sysvals) % FAU_WORD_SIZE) == 0,
+              "struct panvk_compute_sysvals must be 8-byte aligned");
+static_assert((offsetof(struct panvk_compute_sysvals, push_consts) %
+               FAU_WORD_SIZE) == 0,
+              "panvk_compute_sysvals::push_consts must be 8-byte aligned");
+#if PAN_ARCH <= 7
+static_assert((offsetof(struct panvk_compute_sysvals, desc) % FAU_WORD_SIZE) ==
+                 0,
+              "panvk_compute_sysvals::desc must be 8-byte aligned");
+#endif
 
 /* This is not the final offset in the push constant buffer (AKA FAU), but
  * just a magic offset we use before packing push constants so we can easily
  * identify the type of push constant (driver sysvals vs user push constants).
  */
 #define SYSVALS_PUSH_CONST_BASE MAX_PUSH_CONSTANTS_SIZE
-#define FAU_WORD_SIZE           sizeof(uint64_t)
-
-static_assert((sizeof(struct panvk_compute_sysvals) % FAU_WORD_SIZE) == 0,
-              "struct panvk_compute_sysvals must be 8-byte aligned");
-static_assert((sizeof(struct panvk_graphics_sysvals) % FAU_WORD_SIZE) == 0,
-              "struct panvk_graphics_sysvals must be 8-byte aligned");
 
 #define sysval_size(__ptype, __name)                                           \
    sizeof(((struct panvk_##__ptype##_sysvals *)NULL)->__name)
