@@ -656,16 +656,12 @@ d3d12_video_encoder_update_hevc_gop_configuration(struct d3d12_video_encoder *pD
       uint32_t GOPLength = picture->seq.intra_period;
       uint32_t PPicturePeriod = picture->seq.ip_period;
 
-      const uint32_t max_pic_order_cnt_lsb = MAX2(16, util_next_power_of_two(GOPLength));
-      double log2_max_pic_order_cnt_lsb_minus4 = std::max(0.0, std::ceil(std::log2(max_pic_order_cnt_lsb)) - 4);
-      assert(log2_max_pic_order_cnt_lsb_minus4 < UCHAR_MAX);
-
       // Set dirty flag if m_HEVCGroupOfPictures changed
       auto previousGOPConfig = pD3D12Enc->m_currentEncodeConfig.m_encoderGOPConfigDesc.m_HEVCGroupOfPictures;
       pD3D12Enc->m_currentEncodeConfig.m_encoderGOPConfigDesc.m_HEVCGroupOfPictures = {
          GOPLength,
          PPicturePeriod,
-         static_cast<uint8_t>(log2_max_pic_order_cnt_lsb_minus4)
+         picture->seq.log2_max_pic_order_cnt_lsb_minus4
       };
 
       if (memcmp(&previousGOPConfig,
