@@ -38,12 +38,14 @@ projective_divide(struct r300_fragment_program_compiler *compiler, struct rc_ins
 {
    struct rc_instruction *inst_mul, *inst_rcp;
 
-   unsigned temp = rc_find_free_temporary(&compiler->Base);
+   /* Make sure there is no temp reusing, some later passes depend on the SSA-like form. */
+   unsigned temp_rcp = rc_find_free_temporary(&compiler->Base);
+   unsigned temp_mul = rc_find_free_temporary(&compiler->Base);
 
    inst_rcp = rc_insert_new_instruction(&compiler->Base, inst->Prev);
    inst_rcp->U.I.Opcode = RC_OPCODE_RCP;
    inst_rcp->U.I.DstReg.File = RC_FILE_TEMPORARY;
-   inst_rcp->U.I.DstReg.Index = temp;
+   inst_rcp->U.I.DstReg.Index = temp_rcp;
    inst_rcp->U.I.DstReg.WriteMask = RC_MASK_W;
    inst_rcp->U.I.SrcReg[0] = inst->U.I.SrcReg[0];
    /* Because the input can be arbitrarily swizzled,
@@ -53,16 +55,16 @@ projective_divide(struct r300_fragment_program_compiler *compiler, struct rc_ins
    inst_mul = rc_insert_new_instruction(&compiler->Base, inst->Prev);
    inst_mul->U.I.Opcode = RC_OPCODE_MUL;
    inst_mul->U.I.DstReg.File = RC_FILE_TEMPORARY;
-   inst_mul->U.I.DstReg.Index = temp;
+   inst_mul->U.I.DstReg.Index = temp_mul;
    inst_mul->U.I.SrcReg[0] = inst->U.I.SrcReg[0];
    inst_mul->U.I.SrcReg[1].File = RC_FILE_TEMPORARY;
-   inst_mul->U.I.SrcReg[1].Index = temp;
+   inst_mul->U.I.SrcReg[1].Index = temp_rcp;
    inst_mul->U.I.SrcReg[1].Swizzle = RC_SWIZZLE_WWWW;
 
    reset_srcreg(&inst->U.I.SrcReg[0]);
    inst->U.I.Opcode = RC_OPCODE_TEX;
    inst->U.I.SrcReg[0].File = RC_FILE_TEMPORARY;
-   inst->U.I.SrcReg[0].Index = temp;
+   inst->U.I.SrcReg[0].Index = temp_mul;
 }
 
 /**
@@ -152,33 +154,36 @@ radeonTransformTEX(struct radeon_compiler *c, struct rc_instruction *inst, void 
          unsigned two, two_swizzle;
 
          inst_mul = rc_insert_new_instruction(c, inst->Prev);
+         unsigned temp_mul = rc_find_free_temporary(c);
 
          inst_mul->U.I.Opcode = RC_OPCODE_MUL;
          inst_mul->U.I.DstReg.File = RC_FILE_TEMPORARY;
-         inst_mul->U.I.DstReg.Index = temp;
+         inst_mul->U.I.DstReg.Index = temp_mul;
          inst_mul->U.I.DstReg.WriteMask = RC_MASK_XYZ;
          inst_mul->U.I.SrcReg[0] = inst->U.I.SrcReg[0];
          inst_mul->U.I.SrcReg[1].Swizzle = RC_SWIZZLE_HHHH;
 
          inst_frc = rc_insert_new_instruction(c, inst->Prev);
+         unsigned temp_frc = rc_find_free_temporary(c);
 
          inst_frc->U.I.Opcode = RC_OPCODE_FRC;
          inst_frc->U.I.DstReg.File = RC_FILE_TEMPORARY;
-         inst_frc->U.I.DstReg.Index = temp;
+         inst_frc->U.I.DstReg.Index = temp_frc;
          inst_frc->U.I.DstReg.WriteMask = RC_MASK_XYZ;
          inst_frc->U.I.SrcReg[0].File = RC_FILE_TEMPORARY;
-         inst_frc->U.I.SrcReg[0].Index = temp;
+         inst_frc->U.I.SrcReg[0].Index = temp_mul;
          inst_frc->U.I.SrcReg[0].Swizzle = RC_SWIZZLE_XYZ0;
 
          two = rc_constants_add_immediate_scalar(&c->Program.Constants, 2, &two_swizzle);
          inst_mad = rc_insert_new_instruction(c, inst->Prev);
+         unsigned temp_mad = rc_find_free_temporary(c);
 
          inst_mad->U.I.Opcode = RC_OPCODE_MAD;
          inst_mad->U.I.DstReg.File = RC_FILE_TEMPORARY;
-         inst_mad->U.I.DstReg.Index = temp;
+         inst_mad->U.I.DstReg.Index = temp_mad;
          inst_mad->U.I.DstReg.WriteMask = RC_MASK_XYZ;
          inst_mad->U.I.SrcReg[0].File = RC_FILE_TEMPORARY;
-         inst_mad->U.I.SrcReg[0].Index = temp;
+         inst_mad->U.I.SrcReg[0].Index = temp_frc;
          inst_mad->U.I.SrcReg[0].Swizzle = RC_SWIZZLE_XYZ0;
          inst_mad->U.I.SrcReg[1].File = RC_FILE_CONSTANT;
          inst_mad->U.I.SrcReg[1].Index = two;
@@ -194,7 +199,7 @@ radeonTransformTEX(struct radeon_compiler *c, struct rc_instruction *inst, void 
          inst_add->U.I.DstReg.WriteMask = RC_MASK_XYZ;
          inst_add->U.I.SrcReg[0].Swizzle = RC_SWIZZLE_1111;
          inst_add->U.I.SrcReg[1].File = RC_FILE_TEMPORARY;
-         inst_add->U.I.SrcReg[1].Index = temp;
+         inst_add->U.I.SrcReg[1].Index = temp_mad;
          inst_add->U.I.SrcReg[1].Swizzle = RC_SWIZZLE_XYZ0;
          inst_add->U.I.SrcReg[1].Abs = 1;
          inst_add->U.I.SrcReg[1].Negate = RC_MASK_XYZ;
