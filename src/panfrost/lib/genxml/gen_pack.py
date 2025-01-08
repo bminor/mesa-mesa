@@ -316,16 +316,16 @@ class Group(object):
             if field.modifier[0] == "shr":
                 shift = field.modifier[1]
                 mask = hex((1 << shift) - 1)
-                print("   assert((values->{} & {}) == 0);".format(field.name, mask))
+                print("   assert((__unpacked->{} & {}) == 0);".format(field.name, mask))
             elif field.modifier[0] == "minus":
-                print("   assert(values->{} >= {});".format(field.name, field.modifier[1]))
+                print("   assert(__unpacked->{} >= {});".format(field.name, field.modifier[1]))
             elif field.modifier[0] == "log2":
-                print("   assert(IS_POT_NONZERO(values->{}));".format(field.name))
+                print("   assert(IS_POT_NONZERO(__unpacked->{}));".format(field.name))
 
         for index in range(self.length // 4):
             # Handle MBZ words
             if not index in words:
-                print("   cl[%2d] = 0;" % index)
+                print("   __packed->opaque[%2d] = 0;" % index)
                 continue
 
             word = words[index]
@@ -333,7 +333,7 @@ class Group(object):
             word_start = index * 32
 
             v = None
-            prefix = "   cl[%2d] =" % index
+            prefix = "   __packed->opaque[%2d] =" % index
 
             for contributor in word.contributors:
                 field = contributor.field
@@ -344,7 +344,7 @@ class Group(object):
                 start -= contrib_word_start
                 end -= contrib_word_start
 
-                value = "values->{}".format(contributor.path)
+                value = "__unpacked->{}".format(contributor.path)
                 if field.modifier is not None:
                     if field.modifier[0] == "shr":
                         value = "{} >> {}".format(value, field.modifier[1])
@@ -423,7 +423,7 @@ class Group(object):
             ALL_ONES = 0xffffffff
 
             if mask != ALL_ONES:
-                TMPL = '   if (((const uint32_t *) cl)[{}] & {}) fprintf(stderr, "XXX: Invalid field of {} unpacked at word {}\\n");'
+                TMPL = '   if (__packed->opaque[{}] & {}) fprintf(stderr, "XXX: Invalid field of {} unpacked at word {}\\n");'
                 print(TMPL.format(index, hex(mask ^ ALL_ONES), self.label, index))
 
         fieldrefs = []
@@ -433,7 +433,7 @@ class Group(object):
             convert = None
 
             args = []
-            args.append('cl')
+            args.append('&__packed->opaque[0]')
             args.append(str(fieldref.start))
             args.append(str(fieldref.end))
 
@@ -468,10 +468,10 @@ class Group(object):
 
             decoded = '{}{}({}){}'.format(prefix, convert, ', '.join(args), suffix)
 
-            print('   values->{} = {};'.format(fieldref.path, decoded))
+            print('   __unpacked->{} = {};'.format(fieldref.path, decoded))
             if field.modifier and field.modifier[0] == "align":
                 mask = hex(field.modifier[1] - 1)
-                print('   assert(!(values->{} & {}));'.format(fieldref.path, mask))
+                print('   assert(!(__unpacked->{} & {}));'.format(fieldref.path, mask))
 
     def emit_print_function(self):
         for field in self.fields:
@@ -647,10 +647,11 @@ class Parser(object):
         if self.group.align != None:
             print('#define {} {}'.format (name + "_ALIGN", self.group.align))
         print('struct {}_packed {{ uint32_t opaque[{}]; }};'.format(name.lower(), self.group.length // 4))
+        print('#define {}_PACKED_T struct {}_packed'.format(name.upper(), name.lower()))
 
     def emit_pack_function(self, name, group):
-        print("static ALWAYS_INLINE void\n%s_pack(uint32_t * restrict cl,\n%sconst struct %s * restrict values)\n{" %
-              (name, ' ' * (len(name) + 6), name))
+        print("static ALWAYS_INLINE void\n%s_pack(%s_PACKED_T * restrict __packed,\n%sconst struct %s * restrict __unpacked)\n{" %
+              (name, name.upper(), ' ' * (len(name) + 6), name))
 
         group.emit_pack_function()
 
@@ -658,8 +659,8 @@ class Parser(object):
 
     def emit_unpack_function(self, name, group):
         print("static inline void")
-        print("%s_unpack(const uint32_t * restrict cl,\n%sstruct %s * restrict values)\n{" %
-              (name.upper(), ' ' * (len(name) + 8), name))
+        print("%s_unpack(const %s_PACKED_T * restrict __packed,\n%sstruct %s * restrict __unpacked)\n{" %
+              (name.upper(), name.upper(), ' ' * (len(name) + 8), name))
 
         group.emit_unpack_function()
 

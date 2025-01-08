@@ -87,20 +87,20 @@ __gen_unpack_padded(const uint32_t *restrict cl, uint32_t start, uint32_t end)
    for (struct PREFIX1(T) name = {PREFIX2(T, header)},                         \
                           *_loop_terminate = &name;                            \
         __builtin_expect(_loop_terminate != NULL, 1); ({                       \
-           PREFIX2(T, pack)((uint32_t *)(dst), &name);                         \
+           PREFIX2(T, pack)((PREFIX2(T, PACKED_T) *)(dst), &name);             \
            _loop_terminate = NULL;                                             \
         }))
 
 #define pan_pack_nodefaults(dst, T, name)                                      \
    for (struct PREFIX1(T) name = {0}, *_loop_terminate = &name;                \
         __builtin_expect(_loop_terminate != NULL, 1); ({                       \
-           PREFIX2(T, pack)((uint32_t *)(dst), &name);                         \
+           PREFIX2(T, pack)((PREFIX2(T, PACKED_T) *)(dst), &name);             \
            _loop_terminate = NULL;                                             \
         }))
 
 #define pan_unpack(src, T, name)                                               \
    struct PREFIX1(T) name;                                                     \
-   PREFIX2(T, unpack)((uint32_t *)(src), &name)
+   PREFIX2(T, unpack)((const PREFIX2(T, PACKED_T) *)(src), &name)
 
 #define pan_print(fp, T, var, indent) PREFIX2(T, print)(fp, &(var), indent)
 
