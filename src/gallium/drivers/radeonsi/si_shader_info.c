@@ -9,6 +9,7 @@
 #include "util/mesa-sha1.h"
 #include "sid.h"
 #include "nir.h"
+#include "nir_xfb_info.h"
 #include "aco_interface.h"
 #include "ac_nir.h"
 
@@ -539,8 +540,11 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
    }
 
    nir->info.use_aco_amd = aco_is_gpu_supported(&sscreen->info) &&
-                           (sscreen->use_aco || nir->info.use_aco_amd || force_use_aco) &&
-                           sscreen->info.has_image_opcodes;
+                           sscreen->info.has_image_opcodes &&
+                           (sscreen->use_aco || nir->info.use_aco_amd || force_use_aco ||
+                            /* Use ACO for streamout on gfx12 because it's faster. */
+                            (sscreen->info.gfx_level >= GFX12 && nir->xfb_info &&
+                             nir->xfb_info->output_count));
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       /* post_depth_coverage implies early_fragment_tests */
