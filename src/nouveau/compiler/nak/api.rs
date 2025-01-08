@@ -204,7 +204,7 @@ pub extern "C" fn nak_nir_options(
 
 #[repr(C)]
 pub struct ShaderBin {
-    bin: nak_shader_bin,
+    pub bin: nak_shader_bin,
     code: Vec<u32>,
     asm: CString,
 }
