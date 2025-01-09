@@ -116,7 +116,7 @@ d3d12_video_decoder_prepare_current_frame_references_h264(struct d3d12_video_dec
       d3d12_video_decoder_get_current_dxva_picparams<DXVA_PicParams_H264>(pD3D12Dec)->RefFrameList,
       pD3D12Dec->m_transitionsStorage);
 
-   pD3D12Dec->m_spDecodeCommandList->ResourceBarrier(pD3D12Dec->m_transitionsStorage.size(), pD3D12Dec->m_transitionsStorage.data());
+   pD3D12Dec->m_spDecodeCommandList->ResourceBarrier(static_cast<UINT>(pD3D12Dec->m_transitionsStorage.size()), pD3D12Dec->m_transitionsStorage.data());
 
    // Schedule reverse (back to common) transitions before command list closes for current frame
    for (auto BarrierDesc : pD3D12Dec->m_transitionsStorage) {

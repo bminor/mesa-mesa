@@ -391,7 +391,7 @@ d3d12_video_encoder_update_current_frame_pic_params_info_h264(struct d3d12_video
          h264_max_delta_qp,
          pD3D12Enc->m_currentEncodeConfig.m_encoderRateControlDesc[h264Pic->pic_ctrl.temporal_id].m_pRateControlQPMap8Bit);
       picParams.pH264PicData->pRateControlQPMap = pD3D12Enc->m_currentEncodeConfig.m_encoderRateControlDesc[h264Pic->pic_ctrl.temporal_id].m_pRateControlQPMap8Bit.data();
-      picParams.pH264PicData->QPMapValuesCount = pD3D12Enc->m_currentEncodeConfig.m_encoderRateControlDesc[h264Pic->pic_ctrl.temporal_id].m_pRateControlQPMap8Bit.size();
+      picParams.pH264PicData->QPMapValuesCount = static_cast<UINT>(pD3D12Enc->m_currentEncodeConfig.m_encoderRateControlDesc[h264Pic->pic_ctrl.temporal_id].m_pRateControlQPMap8Bit.size());
    }
 
    pD3D12Enc->m_upDPBManager->begin_frame(picParams, bUsedAsReference, picture);
@@ -1274,7 +1274,7 @@ d3d12_video_encoder_build_codec_headers_h264(struct d3d12_video_encoder *pD3D12E
 
    assert(std::accumulate(pWrittenCodecUnitsSizes.begin(), pWrittenCodecUnitsSizes.end(), 0u) ==
       static_cast<uint64_t>(pD3D12Enc->m_BitstreamHeadersBuffer.size()));
-   return pD3D12Enc->m_BitstreamHeadersBuffer.size();
+   return static_cast<uint32_t>(pD3D12Enc->m_BitstreamHeadersBuffer.size());
 }
 
 uint32_t
@@ -1307,5 +1307,5 @@ d3d12_video_encoder_build_slice_svc_prefix_nalu_h264(struct d3d12_video_encoder 
       headerBitstream.resize(writtenSVCPrefixNalBytes);
    }
 
-   return headerBitstream.size();
+   return static_cast<uint32_t>(headerBitstream.size());
 }

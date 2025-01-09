@@ -1465,7 +1465,7 @@ d3d12_init_screen_base(struct d3d12_screen *screen, struct sw_winsys *winsys, LU
 #ifdef _WIN32
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 static const char *
-try_find_d3d12core_next_to_self(char *path, size_t path_arr_size)
+try_find_d3d12core_next_to_self(char *path, DWORD path_arr_size)
 {
    uint32_t path_size = GetModuleFileNameA((HINSTANCE)&__ImageBase,
                                            path, path_arr_size);

@@ -141,7 +141,7 @@ d3d12_video_bitstream_builder_av1::write_temporal_delimiter_obu(std::vector<uint
       headerBitstream.resize(startByteOffset + c_DefaultBitstreamBufSize);
 
    d3d12_video_encoder_bitstream bitstream_full_obu;
-   bitstream_full_obu.setup_bitstream(headerBitstream.size(), headerBitstream.data(), startByteOffset);
+   bitstream_full_obu.setup_bitstream(static_cast<uint32_t>(headerBitstream.size()), headerBitstream.data(), startByteOffset);
 
    {
       // temporal_delimiter_obu() has empty payload as per AV1 codec spec
@@ -177,12 +177,12 @@ d3d12_video_bitstream_builder_av1::write_sequence_header(const av1_seq_header_t 
       headerBitstream.resize(startByteOffset + c_DefaultBitstreamBufSize);
 
    d3d12_video_encoder_bitstream bitstream_full_obu;
-   bitstream_full_obu.setup_bitstream(headerBitstream.size(), headerBitstream.data(), startByteOffset);
+   bitstream_full_obu.setup_bitstream(static_cast<uint32_t>(headerBitstream.size()), headerBitstream.data(), startByteOffset);
 
    // to handle variable length we first write the content
    // and later the obu header and concatenate both bitstreams
    d3d12_video_encoder_bitstream bitstream_seq;
-   bitstream_seq.create_bitstream(c_DefaultBitstreamBufSize);
+   bitstream_seq.create_bitstream(static_cast<uint32_t>(c_DefaultBitstreamBufSize));
 
    {
       // Write the data
@@ -796,12 +796,12 @@ d3d12_video_bitstream_builder_av1::write_frame_header(const av1_seq_header_t *pS
       headerBitstream.resize(startByteOffset + c_DefaultBitstreamBufSize);
 
    d3d12_video_encoder_bitstream bitstream_full_obu;
-   bitstream_full_obu.setup_bitstream(headerBitstream.size(), headerBitstream.data(), startByteOffset);
+   bitstream_full_obu.setup_bitstream(static_cast<uint32_t>(headerBitstream.size()), headerBitstream.data(), startByteOffset);
 
    // to handle variable length we first write the content
    // and later the obu header and concatenate both bitstreams
    d3d12_video_encoder_bitstream bitstream_pic;
-   bitstream_pic.create_bitstream(c_DefaultBitstreamBufSize);
+   bitstream_pic.create_bitstream(static_cast<uint32_t>(c_DefaultBitstreamBufSize));
 
    {
       // Write frame_header_obu()
@@ -905,7 +905,7 @@ d3d12_video_bitstream_builder_av1::write_obu_tile_group_header(size_t tile_group
       headerBitstream.resize(startByteOffset + c_DefaultBitstreamBufSize);
 
    d3d12_video_encoder_bitstream bitstream_full_obu;
-   bitstream_full_obu.setup_bitstream(headerBitstream.size(), headerBitstream.data(), startByteOffset);
+   bitstream_full_obu.setup_bitstream(static_cast<uint32_t>(headerBitstream.size()), headerBitstream.data(), startByteOffset);
 
    // Write the obu_header
    constexpr uint32_t obu_extension_flag = 0;

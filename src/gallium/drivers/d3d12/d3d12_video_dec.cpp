@@ -469,7 +469,7 @@ d3d12_video_decoder_end_frame(struct pipe_video_codec *codec,
                                            inFlightResources.pPipeCompressedBufferObj,   // dst buffer
                                            PIPE_MAP_WRITE,                               // usage PIPE_MAP_x
                                            0,                                            // offset
-                                           sizeof(*sliceDataStagingBufferPtr) * sliceDataStagingBufferSize,   // size
+                                           static_cast<UINT>(sizeof(*sliceDataStagingBufferPtr)) * sliceDataStagingBufferSize,   // size
                                            sliceDataStagingBufferPtr                                          // data
    );
 
@@ -777,7 +777,7 @@ d3d12_video_decoder_flush(struct pipe_video_codec *codec)
       }
 
       if (pD3D12Dec->m_transitionsBeforeCloseCmdList.size() > 0) {
-         pD3D12Dec->m_spDecodeCommandList->ResourceBarrier(pD3D12Dec->m_transitionsBeforeCloseCmdList.size(),
+         pD3D12Dec->m_spDecodeCommandList->ResourceBarrier(static_cast<UINT>(pD3D12Dec->m_transitionsBeforeCloseCmdList.size()),
                                                            pD3D12Dec->m_transitionsBeforeCloseCmdList.data());
          pD3D12Dec->m_transitionsBeforeCloseCmdList.clear();
       }

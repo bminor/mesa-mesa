@@ -136,7 +136,7 @@ d3d12_video_encoder_flush(struct pipe_video_codec *codec)
       }
 
       if (pD3D12Enc->m_transitionsBeforeCloseCmdList.size() > 0) {
-         pD3D12Enc->m_spEncodeCommandList->ResourceBarrier(pD3D12Enc->m_transitionsBeforeCloseCmdList.size(),
+         pD3D12Enc->m_spEncodeCommandList->ResourceBarrier(static_cast<UINT>(pD3D12Enc->m_transitionsBeforeCloseCmdList.size()),
                                                            pD3D12Enc->m_transitionsBeforeCloseCmdList.data());
          pD3D12Enc->m_transitionsBeforeCloseCmdList.clear();
       }
@@ -2113,7 +2113,7 @@ d3d12_video_encoder_encode_bitstream(struct pipe_video_codec * codec,
             &pOutputBitstreamBuffer->base.b, // dst buffer
             PIPE_MAP_WRITE,                  // usage PIPE_MAP_x
             0,                               // offset
-            pD3D12Enc->m_BitstreamHeadersBuffer.size(),
+            static_cast<unsigned int>(pD3D12Enc->m_BitstreamHeadersBuffer.size()),
             pD3D12Enc->m_BitstreamHeadersBuffer.data());
       }
    }
@@ -2164,7 +2164,7 @@ d3d12_video_encoder_encode_bitstream(struct pipe_video_codec * codec,
                                            D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE)
    };
 
-   pD3D12Enc->m_spEncodeCommandList->ResourceBarrier(rgCurrentFrameStateTransitions.size(),
+   pD3D12Enc->m_spEncodeCommandList->ResourceBarrier(static_cast<UINT>(rgCurrentFrameStateTransitions.size()),
                                                      rgCurrentFrameStateTransitions.data());
 
    D3D12_VIDEO_ENCODER_RECONSTRUCTED_PICTURE reconPicOutputTextureDesc =
@@ -2555,7 +2555,7 @@ d3d12_video_encoder_get_feedback(struct pipe_video_codec *codec,
          // Skip SPS, PPS, etc first preEncodeGeneratedHeadersByteSize bytes in src_driver_buffer_read_bytes
          uint32_t src_driver_buffer_read_bytes = pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].preEncodeGeneratedHeadersByteSize;
          uint32_t dst_tmp_buffer_written_bytes = 0;
-         uint32_t num_slices = pSubregionsMetadata.size();
+         uint32_t num_slices = static_cast<uint32_t>(pSubregionsMetadata.size());
          std::vector<std::vector<uint8_t> > prefix_nal_bufs;
          prefix_nal_bufs.resize(num_slices);
          size_t written_prefix_nal_bytes = 0;
@@ -2576,9 +2576,9 @@ d3d12_video_encoder_get_feedback(struct pipe_video_codec *codec,
                                                     pD3D12Enc->m_nalPrefixTmpBuffer,       // dst buffer
                                                     PIPE_MAP_WRITE,                        // dst usage PIPE_MAP_x
                                                     dst_tmp_buffer_written_bytes,          // dst offset
-                                                    written_prefix_nal_bytes,              // src size
+                                                    static_cast<unsigned>(written_prefix_nal_bytes), // src size
                                                     prefix_nal_bufs[cur_slice_idx].data());                // src void* buffer
-            dst_tmp_buffer_written_bytes += written_prefix_nal_bytes;
+            dst_tmp_buffer_written_bytes += static_cast<uint32_t>(written_prefix_nal_bytes);
 
             // Copy slice (padded as-is) cur_subregion_metadata.bSize at src_driver_buffer_read_bytes into m_nalPrefixTmpBuffer AFTER the prefix nal (written_prefix_nal_bytes) to m_nalPrefixTmpBuffer
             struct pipe_box src_box = {};
@@ -2950,7 +2950,7 @@ int d3d12_video_encoder_get_encode_headers([[maybe_unused]] struct pipe_video_co
    if (preEncodeGeneratedHeadersByteSize > *bitstream_buf_size)
       return ENOMEM;
 
-   *bitstream_buf_size = pD3D12Enc->m_BitstreamHeadersBuffer.size();
+   *bitstream_buf_size = static_cast<unsigned>(pD3D12Enc->m_BitstreamHeadersBuffer.size());
    memcpy(bitstream_buf,
           pD3D12Enc->m_BitstreamHeadersBuffer.data(),
           *bitstream_buf_size);

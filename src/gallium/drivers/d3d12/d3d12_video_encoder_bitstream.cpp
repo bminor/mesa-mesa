@@ -95,7 +95,7 @@ d3d12_video_encoder_bitstream::setup_bitstream(uint32_t uiInitBufferSize, uint8_
 {
    m_pBitsBuffer = pBuffer;
    m_uiBitsBufferSize = uiInitBufferSize;
-   m_uiOffset = initial_byte_offset;
+   m_uiOffset = static_cast<uint32_t>(initial_byte_offset);
    memset(m_pBitsBuffer + initial_byte_offset, 0, m_uiBitsBufferSize - initial_byte_offset);
    m_bExternalBuffer = true;
    m_bAllowReallocate = false;

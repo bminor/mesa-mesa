@@ -1639,7 +1639,7 @@ d3d12_video_encoder_update_current_frame_pic_params_info_av1(struct d3d12_video_
          av1_max_delta_qp,
          pD3D12Enc->m_currentEncodeConfig.m_encoderRateControlDesc[pAV1Pic->temporal_id].m_pRateControlQPMap16Bit);
       picParams.pAV1PicData->pRateControlQPMap = pD3D12Enc->m_currentEncodeConfig.m_encoderRateControlDesc[pAV1Pic->temporal_id].m_pRateControlQPMap16Bit.data();
-      picParams.pAV1PicData->QPMapValuesCount = pD3D12Enc->m_currentEncodeConfig.m_encoderRateControlDesc[pAV1Pic->temporal_id].m_pRateControlQPMap16Bit.size();
+      picParams.pAV1PicData->QPMapValuesCount = static_cast<UINT>(pD3D12Enc->m_currentEncodeConfig.m_encoderRateControlDesc[pAV1Pic->temporal_id].m_pRateControlQPMap16Bit.size());
    }
 }
 
@@ -2362,7 +2362,7 @@ d3d12_video_encoder_build_post_encode_codec_bitstream_av1(struct d3d12_video_enc
                                               associatedMetadata.comp_bit_destination,   // comp. bitstream
                                               PIPE_MAP_WRITE,                            // usage PIPE_MAP_x
                                               0,                                         // offset
-                                              pD3D12Enc->m_BitstreamHeadersBuffer.size(),
+                                              static_cast<unsigned int>(pD3D12Enc->m_BitstreamHeadersBuffer.size()),
                                               pD3D12Enc->m_BitstreamHeadersBuffer.data());
 
       comp_bitstream_offset = pD3D12Enc->m_BitstreamHeadersBuffer.size();
@@ -2439,7 +2439,7 @@ d3d12_video_encoder_build_post_encode_codec_bitstream_av1(struct d3d12_video_enc
                                               associatedMetadata.comp_bit_destination,   // comp. bitstream
                                               PIPE_MAP_WRITE,                            // usage PIPE_MAP_x
                                               0,                                         // offset
-                                              pD3D12Enc->m_BitstreamHeadersBuffer.size(),
+                                              static_cast<unsigned int>(pD3D12Enc->m_BitstreamHeadersBuffer.size()),
                                               pD3D12Enc->m_BitstreamHeadersBuffer.data());
 
       comp_bitstream_offset = pD3D12Enc->m_BitstreamHeadersBuffer.size();
@@ -2493,8 +2493,8 @@ d3d12_video_encoder_build_post_encode_codec_bitstream_av1(struct d3d12_video_enc
             pD3D12Enc->base.context,                   // context
             associatedMetadata.comp_bit_destination,   // comp. bitstream
             PIPE_MAP_WRITE,                            // usage PIPE_MAP_x
-            comp_bitstream_offset,                     // offset
-            writtenTileObuPrefixBytes,
+            static_cast<unsigned int>(comp_bitstream_offset),                     // offset
+            static_cast<unsigned int>(writtenTileObuPrefixBytes),
             associatedMetadata.m_StagingBitstreamConstruction.data() + staging_bitstream_buffer_offset);
 
          debug_printf("Uploading %" PRIu64 " bytes for OBU_TILE_GROUP open_bitstream_unit() prefix with obu_header() "
@@ -2649,8 +2649,8 @@ d3d12_video_encoder_build_post_encode_codec_bitstream_av1(struct d3d12_video_enc
             pD3D12Enc->base.context->buffer_subdata(pD3D12Enc->base.context,                   // context
                                                     associatedMetadata.comp_bit_destination,   // comp. bitstream
                                                     PIPE_MAP_WRITE,                            // usage PIPE_MAP_x
-                                                    comp_bitstream_offset,                     // offset
-                                                    writtenShowExistingFrameBytes + writtenTemporalDelimBytes,
+                                                    static_cast<unsigned int>(comp_bitstream_offset),                     // offset
+                                                    static_cast<unsigned int>(writtenShowExistingFrameBytes + writtenTemporalDelimBytes),
                                                     pD3D12Enc->m_BitstreamHeadersBuffer.data() + staging_buf_offset);
 
             comp_bitstream_offset += writtenShowExistingFrameBytes;
@@ -2750,7 +2750,7 @@ upload_tile_group_obu(struct d3d12_video_encoder *pD3D12Enc,
       staging_bitstream_buffer.resize(staging_bitstream_buffer_offset + tile_obu_prefix_size);
 
    d3d12_video_encoder_bitstream bitstream_tile_group_obu;
-   bitstream_tile_group_obu.setup_bitstream(staging_bitstream_buffer.size(),
+   bitstream_tile_group_obu.setup_bitstream(static_cast<uint32_t>(staging_bitstream_buffer.size()),
                                             staging_bitstream_buffer.data(),
                                             staging_bitstream_buffer_offset);
 
@@ -2793,8 +2793,8 @@ upload_tile_group_obu(struct d3d12_video_encoder *pD3D12Enc,
          pD3D12Enc->base.context,                                              // context
          comp_bit_destination,                                                 // comp. bitstream
          PIPE_MAP_WRITE,                                                       // usage PIPE_MAP_x
-         comp_bit_destination_offset,                                          // offset
-         bitstream_tile_group_obu_bytes,                                       // size
+         static_cast<unsigned int>(comp_bit_destination_offset),               // offset
+         static_cast<unsigned int>(bitstream_tile_group_obu_bytes),            // size
          staging_bitstream_buffer.data() + staging_bitstream_buffer_offset);   // data
 
       debug_printf("[Tile group start %d to end %d]  Uploading %" PRIu64 " bytes"
@@ -2824,7 +2824,7 @@ upload_tile_group_obu(struct d3d12_video_encoder *pD3D12Enc,
       // tile_size_minus_1	not coded for last tile
       if ((TileIdx != tileGroup.tg_end)) {
          bitstream_tile_group_obu.put_le_bytes(TileSizeBytes,   // tile_size_minus_1	le(TileSizeBytes)
-                                               tile_size - 1 /* convert to ..._minus_1 */);
+                                               static_cast<uint32_t>(tile_size - 1) /* convert to ..._minus_1 */);
          bitstream_tile_group_obu.flush();
 
          debug_printf("[Tile group start %d to end %d] [TileIdx %" PRIu64 "] Written %" PRIu64
@@ -2842,8 +2842,8 @@ upload_tile_group_obu(struct d3d12_video_encoder *pD3D12Enc,
          pD3D12Enc->base.context->buffer_subdata(pD3D12Enc->base.context,       // context
                                                  comp_bit_destination,          // comp. bitstream
                                                  PIPE_MAP_WRITE,                // usage PIPE_MAP_x
-                                                 comp_bit_destination_offset,   // offset
-                                                 TileSizeBytes,                 // size
+                                                 static_cast<unsigned int>(comp_bit_destination_offset),   // offset
+                                                 static_cast<unsigned int>(TileSizeBytes),                 // size
                                                  staging_bitstream_buffer.data() +
                                                     written_bytes_to_staging_bitstream_buffer +
                                                     staging_bitstream_buffer_offset);   // data
@@ -2879,7 +2879,7 @@ upload_tile_group_obu(struct d3d12_video_encoder *pD3D12Enc,
       pD3D12Enc->base.context->resource_copy_region(pD3D12Enc->base.context,       // ctx
                                                     comp_bit_destination,          // dst
                                                     0,                             // dst_level
-                                                    comp_bit_destination_offset,   // dstX
+                                                    static_cast<unsigned int>(comp_bit_destination_offset),   // dstX
                                                     0,                             // dstY
                                                     0,                             // dstZ
                                                     src_driver_bitstream,          // src

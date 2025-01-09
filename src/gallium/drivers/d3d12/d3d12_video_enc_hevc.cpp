@@ -492,7 +492,7 @@ d3d12_video_encoder_update_current_frame_pic_params_info_hevc(struct d3d12_video
          hevc_max_delta_qp,
          pD3D12Enc->m_currentEncodeConfig.m_encoderRateControlDesc[hevcPic->pic.temporal_id].m_pRateControlQPMap8Bit);
       picParams.pHEVCPicData->pRateControlQPMap = pD3D12Enc->m_currentEncodeConfig.m_encoderRateControlDesc[hevcPic->pic.temporal_id].m_pRateControlQPMap8Bit.data();
-      picParams.pHEVCPicData->QPMapValuesCount = pD3D12Enc->m_currentEncodeConfig.m_encoderRateControlDesc[hevcPic->pic.temporal_id].m_pRateControlQPMap8Bit.size();
+      picParams.pHEVCPicData->QPMapValuesCount = static_cast<UINT>(pD3D12Enc->m_currentEncodeConfig.m_encoderRateControlDesc[hevcPic->pic.temporal_id].m_pRateControlQPMap8Bit.size());
    }
 
    pD3D12Enc->m_upDPBManager->begin_frame(picParams, bUsedAsReference, picture);
@@ -1499,5 +1499,5 @@ d3d12_video_encoder_build_codec_headers_hevc(struct d3d12_video_encoder *pD3D12E
 
    assert(std::accumulate(pWrittenCodecUnitsSizes.begin(), pWrittenCodecUnitsSizes.end(), 0u) ==
       static_cast<uint64_t>(pD3D12Enc->m_BitstreamHeadersBuffer.size()));
-   return pD3D12Enc->m_BitstreamHeadersBuffer.size();
+   return static_cast<uint32_t>(pD3D12Enc->m_BitstreamHeadersBuffer.size());
 }

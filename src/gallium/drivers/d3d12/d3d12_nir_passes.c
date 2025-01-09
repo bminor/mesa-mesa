@@ -433,7 +433,7 @@ get_state_var_offset(struct d3d12_shader *shader, enum d3d12_state_var var)
          return shader->state_vars[i].offset;
    }
 
-   unsigned offset = shader->state_vars_size;
+   unsigned offset = (unsigned)shader->state_vars_size;
    shader->state_vars[shader->num_state_vars].offset = offset;
    shader->state_vars[shader->num_state_vars].var = var;
    shader->state_vars_size += 4; /* Use 4-words slots no matter the variable size */
@@ -543,7 +543,7 @@ d3d12_lower_state_vars(nir_shader *nir, struct d3d12_shader *shader)
 
       const gl_state_index16 tokens[STATE_LENGTH] = { STATE_INTERNAL_DRIVER };
       const struct glsl_type *type = glsl_array_type(glsl_vec4_type(),
-                                                     shader->state_vars_size / 4, 0);
+                                                     (unsigned)(shader->state_vars_size / 4), 0);
       nir_variable *ubo = nir_variable_create(nir, nir_var_mem_ubo, type,
                                                   "d3d12_state_vars");
       if (binding >= nir->info.num_ubos)
