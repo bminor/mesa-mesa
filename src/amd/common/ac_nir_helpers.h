@@ -86,6 +86,9 @@ typedef struct nir_xfb_info nir_xfb_info;
 /* Executed by ac_nir_cull when the current primitive is accepted. */
 typedef void (*ac_nir_cull_accepted)(nir_builder *b, void *state);
 
+nir_def *
+ac_nir_unpack_value(nir_builder *b, nir_def *value, unsigned rshift, unsigned bitwidth);
+
 void
 ac_nir_store_var_components(nir_builder *b, nir_variable *var, nir_def *value,
                             unsigned component, unsigned writemask);

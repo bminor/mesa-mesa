@@ -175,7 +175,7 @@ ac_nir_store_arg(nir_builder *b, const struct ac_shader_args *ac_args, struct ac
       nir_store_vector_arg_amd(b, val, .base = arg.arg_index);
 }
 
-static nir_def *
+nir_def *
 ac_nir_unpack_value(nir_builder *b, nir_def *value, unsigned rshift, unsigned bitwidth)
 {
    if (rshift == 0 && bitwidth == 32)
