@@ -23,7 +23,7 @@ uncollapsed_section_start deqp-$deqp_api "Building dEQP $DEQP_API"
 # - the GLES release produces `deqp-gles*` and `deqp-egl`
 
 DEQP_MAIN_COMMIT=a9988483c0864d7190e5e6264ccead95423dfd00
-DEQP_VK_VERSION=1.4.1.0
+DEQP_VK_VERSION=1.4.1.1
 DEQP_GL_VERSION=4.6.5.0
 DEQP_GLES_VERSION=3.2.11.0
 

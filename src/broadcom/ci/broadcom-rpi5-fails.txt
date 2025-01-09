@@ -479,3 +479,6 @@ dEQP-VK.image.concurrent_copy.vk_format_r8g8b8a8_unorm.vk_image_tiling_linear.vk
 dEQP-VK.image.concurrent_copy.vk_format_r8g8b8a8_unorm.vk_image_tiling_optimal.vk_image_type_3d.multiple.random.device.write,Fail
 dEQP-VK.image.concurrent_copy.vk_format_r8g8b8a8_unorm.vk_image_tiling_optimal.vk_image_type_3d.single.gradient.device.write,Fail
 dEQP-VK.image.concurrent_copy.vk_format_r8g8b8a8_unorm.vk_image_tiling_optimal.vk_image_type_3d.single.random.device.write,Fail
+
+# New fails in 1.4.1.1
+dEQP-VK.glsl.texture_functions.query.texturequerylevels.usampler1darray_vertex,Fail

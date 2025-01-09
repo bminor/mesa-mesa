@@ -353,3 +353,6 @@ ubsan-dEQP-VK.ssbo.layout.3_level_unsized_array.std140.row_major_mat3x4_store_co
 ubsan-dEQP-VK.ssbo.layout.basic_unsized_array.std430.column_major_mat4_store_cols
 ubsan-dEQP-VK.ssbo.layout.basic_unsized_array.std430.row_major_mat4_comp_access_store_cols
 ubsan-dEQP-VK.ssbo.layout.random.16bit.all_shared_buffer.33
+
+# Leaky in VKCTS 1.4.1.1
+asan-dEQP-VK.video.*
