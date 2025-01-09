@@ -172,7 +172,7 @@ static void
 agx_set_null_texture(struct agx_texture_packed *tex, uint64_t valid_address)
 {
    agx_pack(tex, TEXTURE, cfg) {
-      cfg.layout = AGX_LAYOUT_NULL;
+      cfg.layout = AGX_LAYOUT_TILED;
       cfg.channels = AGX_CHANNELS_R8;
       cfg.type = AGX_TEXTURE_TYPE_UNORM /* don't care */;
       cfg.swizzle_r = AGX_CHANNEL_0;
@@ -191,7 +191,7 @@ agx_set_null_pbe(struct agx_pbe_packed *pbe, uint64_t sink)
       cfg.width = 1;
       cfg.height = 1;
       cfg.levels = 1;
-      cfg.layout = AGX_LAYOUT_NULL;
+      cfg.layout = AGX_LAYOUT_TILED;
       cfg.channels = AGX_CHANNELS_R8;
       cfg.type = AGX_TEXTURE_TYPE_UNORM /* don't care */;
       cfg.swizzle_r = AGX_CHANNEL_R;

@@ -77,8 +77,8 @@
 
   <enum name="Layout">
     <value name="Linear" value="0"/>
-    <!-- Default layout if no other layout is set -->
-    <value name="Null" value="1"/>
+    <!-- Needs investigation, blob uses this with sparse -->
+    <value name="Tiled" value="1"/>
     <!-- Morton order -->
     <value name="Twiddled" value="2"/>
     <!-- With a metadata buffer -->
