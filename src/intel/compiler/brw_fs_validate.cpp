@@ -108,6 +108,13 @@ validate_memory_logical(const fs_visitor &s, const fs_inst *inst)
    fsv_assert(is_ud_imm(inst->src[MEMORY_LOGICAL_COMPONENTS]));
    fsv_assert(is_ud_imm(inst->src[MEMORY_LOGICAL_FLAGS]));
 
+   enum lsc_opcode op = (enum lsc_opcode) inst->src[MEMORY_LOGICAL_OPCODE].ud;
+   enum memory_flags flags = (memory_flags)inst->src[MEMORY_LOGICAL_FLAGS].ud;
+   bool transpose = flags & MEMORY_FLAG_TRANSPOSE;
+   bool include_helpers = flags & MEMORY_FLAG_INCLUDE_HELPERS;
+   enum memory_logical_mode mode =
+      (memory_logical_mode)inst->src[MEMORY_LOGICAL_MODE].ud;
+
    enum lsc_data_size data_size =
       (enum lsc_data_size) inst->src[MEMORY_LOGICAL_DATA_SIZE].ud;
    unsigned data_size_B = lsc_data_size_bytes(data_size);
@@ -117,12 +124,13 @@ validate_memory_logical(const fs_visitor &s, const fs_inst *inst)
                  data_size == LSC_DATA_SIZE_D16U32 ||
                  data_size == LSC_DATA_SIZE_D32 ||
                  data_size == LSC_DATA_SIZE_D64);
-   }
 
-   enum lsc_opcode op = (enum lsc_opcode) inst->src[MEMORY_LOGICAL_OPCODE].ud;
-   enum memory_flags flags = (memory_flags)inst->src[MEMORY_LOGICAL_FLAGS].ud;
-   bool transpose = flags & MEMORY_FLAG_TRANSPOSE;
-   bool include_helpers = flags & MEMORY_FLAG_INCLUDE_HELPERS;
+      if (transpose) {
+         const unsigned min_alignment =
+            mode == MEMORY_MODE_SHARED_LOCAL ? 16 : 4;
+         fsv_assert(inst->src[MEMORY_LOGICAL_ALIGNMENT].ud >= min_alignment);
+      }
+   }
 
    fsv_assert(!transpose || !include_helpers);
    fsv_assert(!transpose || lsc_opcode_has_transpose(op));

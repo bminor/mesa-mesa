@@ -1671,6 +1671,7 @@ lower_hdc_memory_logical_send(const fs_builder &bld, fs_inst *inst)
     */
    const bool oword_aligned = block && mode == MEMORY_MODE_SHARED_LOCAL;
    assert(!oword_aligned || (alignment % 16) == 0);
+   assert(!block || (alignment % 4) == 0);
 
    enum lsc_addr_size addr_size = lsc_addr_size_for_type(addr.type);
    unsigned addr_size_B = coord_components * lsc_addr_size_bytes(addr_size);
