@@ -175,6 +175,11 @@ ail_initialize_twiddled(struct ail_layout *layout)
    assert(layout->levels < ARRAY_SIZE(layout->level_offsets_B));
    layout->level_offsets_B[layout->levels] = offset_B;
 
+   /* Determine the start of the miptail. From that level on, we can no longer
+    * precisely bind at page granularity.
+    */
+   layout->mip_tail_first_lod = MIN2(pot_level, layout->levels);
+
    /* Align layer size if we have mipmaps and one miptree is larger than one
     * page */
    layout->page_aligned_layers = layout->levels != 1 && offset_B > AIL_PAGESIZE;

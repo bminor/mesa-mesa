@@ -118,6 +118,12 @@ struct ail_layout {
     */
    uint32_t stride_el[AIL_MAX_MIP_LEVELS];
 
+   /**
+    * If the image is bound sparsely, the first LOD/level of the miptail.
+    * This corresponds to Vulkan imageMipTailFirstLod.
+    */
+   uint32_t mip_tail_first_lod;
+
    /* Offset of the start of the compression metadata buffer */
    uint32_t metadata_offset_B;
 
