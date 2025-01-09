@@ -561,10 +561,10 @@ NineAdapter9_GetDeviceCaps( struct NineAdapter9 *This,
     }
 
 #define D3DPIPECAP(pcap, d3dcap) \
-    (screen->get_param(screen, PIPE_CAP_##pcap) ? (d3dcap) : 0)
+    (screen->caps.pcap ? (d3dcap) : 0)
 
 #define D3DNPIPECAP(pcap, d3dcap) \
-    (screen->get_param(screen, PIPE_CAP_##pcap) ? 0 : (d3dcap))
+    (screen->caps.pcap ? 0 : (d3dcap))
 
     pCaps->DeviceType = DeviceType;
 
@@ -625,12 +625,12 @@ NineAdapter9_GetDeviceCaps( struct NineAdapter9 *This,
                                /*D3DPMISCCAPS_CLIPTLVERTS |*/
                                D3DPMISCCAPS_TSSARGTEMP |
                                D3DPMISCCAPS_BLENDOP |
-                               D3DPIPECAP(INDEP_BLEND_ENABLE, D3DPMISCCAPS_INDEPENDENTWRITEMASKS) |
+                               D3DPIPECAP(indep_blend_enable, D3DPMISCCAPS_INDEPENDENTWRITEMASKS) |
                                D3DPMISCCAPS_PERSTAGECONSTANT |
                                /*D3DPMISCCAPS_POSTBLENDSRGBCONVERT |*/ /* TODO: advertise if Ex and dx10 able card */
                                D3DPMISCCAPS_FOGANDSPECULARALPHA | /* Note: documentation of the flag is wrong */
-                               D3DPIPECAP(BLEND_EQUATION_SEPARATE, D3DPMISCCAPS_SEPARATEALPHABLEND) |
-                               D3DPIPECAP(MIXED_COLORBUFFER_FORMATS, D3DPMISCCAPS_MRTINDEPENDENTBITDEPTHS) |
+                               D3DPIPECAP(blend_equation_separate, D3DPMISCCAPS_SEPARATEALPHABLEND) |
+                               D3DPIPECAP(mixed_colorbuffer_formats, D3DPMISCCAPS_MRTINDEPENDENTBITDEPTHS) |
                                D3DPMISCCAPS_MRTPOSTPIXELSHADERBLENDING |
                                D3DPMISCCAPS_FOGVERTEXCLAMPED;
     if (!screen->get_param(screen, PIPE_CAP_VS_WINDOW_SPACE_POSITION) &&
@@ -638,7 +638,7 @@ NineAdapter9_GetDeviceCaps( struct NineAdapter9 *This,
         pCaps->PrimitiveMiscCaps |= D3DPMISCCAPS_CLIPTLVERTS;
 
     pCaps->RasterCaps =
-        D3DPIPECAP(ANISOTROPIC_FILTER, D3DPRASTERCAPS_ANISOTROPY) |
+        D3DPIPECAP(anisotropic_filter, D3DPRASTERCAPS_ANISOTROPY) |
         D3DPRASTERCAPS_COLORPERSPECTIVE |
         D3DPRASTERCAPS_DITHER |
         D3DPRASTERCAPS_DEPTHBIAS |
@@ -678,7 +678,7 @@ NineAdapter9_GetDeviceCaps( struct NineAdapter9 *This,
                           D3DPBLENDCAPS_BOTHSRCALPHA |
                           D3DPBLENDCAPS_BOTHINVSRCALPHA |
                           D3DPBLENDCAPS_BLENDFACTOR |
-                          D3DPIPECAP(MAX_DUAL_SOURCE_RENDER_TARGETS,
+                          D3DPIPECAP(max_dual_source_render_targets,
                               D3DPBLENDCAPS_INVSRCCOLOR2 |
                               D3DPBLENDCAPS_SRCCOLOR2);
 
@@ -707,25 +707,25 @@ NineAdapter9_GetDeviceCaps( struct NineAdapter9 *This,
         D3DPTEXTURECAPS_TEXREPEATNOTSCALEDBYSIZE |
         D3DPTEXTURECAPS_CUBEMAP |
         D3DPTEXTURECAPS_VOLUMEMAP |
-        D3DNPIPECAP(NPOT_TEXTURES, D3DPTEXTURECAPS_POW2) |
-        D3DNPIPECAP(NPOT_TEXTURES, D3DPTEXTURECAPS_NONPOW2CONDITIONAL) |
-        D3DNPIPECAP(NPOT_TEXTURES, D3DPTEXTURECAPS_CUBEMAP_POW2) |
-        D3DNPIPECAP(NPOT_TEXTURES, D3DPTEXTURECAPS_VOLUMEMAP_POW2) |
-        D3DPIPECAP(MAX_TEXTURE_2D_SIZE, D3DPTEXTURECAPS_MIPMAP) |
-        D3DPIPECAP(MAX_TEXTURE_3D_LEVELS, D3DPTEXTURECAPS_MIPVOLUMEMAP) |
-        D3DPIPECAP(MAX_TEXTURE_CUBE_LEVELS, D3DPTEXTURECAPS_MIPCUBEMAP);
+        D3DNPIPECAP(npot_textures, D3DPTEXTURECAPS_POW2) |
+        D3DNPIPECAP(npot_textures, D3DPTEXTURECAPS_NONPOW2CONDITIONAL) |
+        D3DNPIPECAP(npot_textures, D3DPTEXTURECAPS_CUBEMAP_POW2) |
+        D3DNPIPECAP(npot_textures, D3DPTEXTURECAPS_VOLUMEMAP_POW2) |
+        D3DPIPECAP(max_texture_2d_size, D3DPTEXTURECAPS_MIPMAP) |
+        D3DPIPECAP(max_texture_3d_levels, D3DPTEXTURECAPS_MIPVOLUMEMAP) |
+        D3DPIPECAP(max_texture_cube_levels, D3DPTEXTURECAPS_MIPCUBEMAP);
 
     pCaps->TextureFilterCaps =
         D3DPTFILTERCAPS_MINFPOINT |
         D3DPTFILTERCAPS_MINFLINEAR |
-        D3DPIPECAP(ANISOTROPIC_FILTER, D3DPTFILTERCAPS_MINFANISOTROPIC) |
+        D3DPIPECAP(anisotropic_filter, D3DPTFILTERCAPS_MINFANISOTROPIC) |
         /*D3DPTFILTERCAPS_MINFPYRAMIDALQUAD |*/
         /*D3DPTFILTERCAPS_MINFGAUSSIANQUAD |*/
         D3DPTFILTERCAPS_MIPFPOINT |
         D3DPTFILTERCAPS_MIPFLINEAR |
         D3DPTFILTERCAPS_MAGFPOINT |
         D3DPTFILTERCAPS_MAGFLINEAR |
-        D3DPIPECAP(ANISOTROPIC_FILTER, D3DPTFILTERCAPS_MAGFANISOTROPIC) |
+        D3DPIPECAP(anisotropic_filter, D3DPTFILTERCAPS_MAGFANISOTROPIC) |
         /*D3DPTFILTERCAPS_MAGFPYRAMIDALQUAD |*/
         /*D3DPTFILTERCAPS_MAGFGAUSSIANQUAD*/0;
 
@@ -738,7 +738,7 @@ NineAdapter9_GetDeviceCaps( struct NineAdapter9 *This,
         D3DPTADDRESSCAPS_WRAP |
         D3DPTADDRESSCAPS_MIRROR |
         D3DPTADDRESSCAPS_CLAMP |
-        D3DPIPECAP(TEXTURE_MIRROR_CLAMP, D3DPTADDRESSCAPS_MIRRORONCE);
+        D3DPIPECAP(texture_mirror_clamp, D3DPTADDRESSCAPS_MIRRORONCE);
 
     pCaps->VolumeTextureAddressCaps = pCaps->TextureAddressCaps;
 

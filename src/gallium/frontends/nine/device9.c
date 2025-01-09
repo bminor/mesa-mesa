@@ -151,7 +151,7 @@ NineDevice9_SetDefaultState( struct NineDevice9 *This, bool is_reset )
             This, (IDirect3DSurface9 *)This->swapchains[0]->zsbuf);
 }
 
-#define GET_PCAP(n) pScreen->get_param(pScreen, PIPE_CAP_##n)
+#define GET_PCAP(n) pScreen->caps.n
 HRESULT
 NineDevice9_ctor( struct NineDevice9 *This,
                   struct NineUnknownParams *pParams,
@@ -330,7 +330,7 @@ NineDevice9_ctor( struct NineDevice9 *This,
     /* We rely on u_upload_mgr using persistent coherent buffers (which don't
      * require flush to work in multi-pipe_context scenario) for vertex and
      * index buffers */
-    if (!GET_PCAP(BUFFER_MAP_PERSISTENT_COHERENT))
+    if (!GET_PCAP(buffer_map_persistent_coherent))
         This->csmt_active = false;
 
     if (This->csmt_active) {
@@ -557,16 +557,16 @@ NineDevice9_ctor( struct NineDevice9 *This,
 
     This->driver_caps.user_sw_vbufs = This->screen_sw->get_param(This->screen_sw, PIPE_CAP_USER_VERTEX_BUFFERS);
     This->vertex_uploader = This->csmt_active ? This->pipe_secondary->stream_uploader : This->context.pipe->stream_uploader;
-    This->driver_caps.window_space_position_support = GET_PCAP(VS_WINDOW_SPACE_POSITION);
-    This->driver_caps.disabling_depth_clipping_support = GET_PCAP(DEPTH_CLIP_DISABLE);
+    This->driver_caps.window_space_position_support = GET_PCAP(vs_window_space_position);
+    This->driver_caps.disabling_depth_clipping_support = GET_PCAP(depth_clip_disable);
     This->driver_caps.vs_integer = pScreen->get_shader_param(pScreen, PIPE_SHADER_VERTEX, PIPE_SHADER_CAP_INTEGERS);
     This->driver_caps.ps_integer = pScreen->get_shader_param(pScreen, PIPE_SHADER_FRAGMENT, PIPE_SHADER_CAP_INTEGERS);
-    This->driver_caps.offset_units_unscaled = GET_PCAP(POLYGON_OFFSET_UNITS_UNSCALED);
-    This->driver_caps.alpha_test_emulation = !GET_PCAP(ALPHA_TEST);
+    This->driver_caps.offset_units_unscaled = GET_PCAP(polygon_offset_units_unscaled);
+    This->driver_caps.alpha_test_emulation = !GET_PCAP(alpha_test);
     /* Always write pointsize output when the driver doesn't support point_size_per_vertex = 0.
      * TODO: Only generate pointsize for draw calls that need it */
-    This->driver_caps.always_output_pointsize = !GET_PCAP(POINT_SIZE_FIXED);
-    This->driver_caps.emulate_ucp = !(GET_PCAP(CLIP_PLANES) == 1 || GET_PCAP(CLIP_PLANES) >= 8);
+    This->driver_caps.always_output_pointsize = !GET_PCAP(point_size_fixed);
+    This->driver_caps.emulate_ucp = !(GET_PCAP(clip_planes) == 1 || GET_PCAP(clip_planes) >= 8);
     This->driver_caps.shader_emulate_features =  pCTX->force_emulation;
 
     if (pCTX->force_emulation) {
