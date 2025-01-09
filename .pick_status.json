@@ -1124,7 +1124,7 @@
         "description": "rusticl/device: fix CL_DEVICE_HALF_FP_CONFIG query",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": null,
         "notes": null
