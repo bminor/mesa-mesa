@@ -509,7 +509,7 @@ d3d12_video_encoder_negotiate_current_av1_tiles_configuration(struct d3d12_video
 
    // Copy the tile col sizes (up to 63 defined in VA-API interface array sizes)
    size_t accum_cols_sb = 0;
-   uint8_t src_cols_count = MIN2(63, pAV1Pic->tile_cols);
+   uint8_t src_cols_count = static_cast<uint8_t>(MIN2(63, pAV1Pic->tile_cols));
    for (uint8_t i = 0; i < src_cols_count; i++) {
       tilePartition.ColWidths[i] = pAV1Pic->width_in_sbs_minus_1[i] + 1;
       accum_cols_sb += tilePartition.ColWidths[i];
@@ -522,7 +522,7 @@ d3d12_video_encoder_negotiate_current_av1_tiles_configuration(struct d3d12_video
 
    // Copy the tile row sizes (up to 63 defined in VA-API interface array sizes)
    size_t accum_rows_sb = 0;
-   uint8_t src_rows_count = MIN2(63, pAV1Pic->tile_rows);
+   uint8_t src_rows_count = static_cast<uint8_t>(MIN2(63, pAV1Pic->tile_rows));
    for (uint8_t i = 0; i < src_rows_count; i++) {
       tilePartition.RowHeights[i] = pAV1Pic->height_in_sbs_minus_1[i] + 1;
       accum_rows_sb += tilePartition.RowHeights[i];
@@ -536,8 +536,8 @@ d3d12_video_encoder_negotiate_current_av1_tiles_configuration(struct d3d12_video
    // Iterate the tiles and see if they're uniformly partitioned to decide
    // which D3D12 tile mode to use
    // Ignore the last row and last col width
-   bool tilesUniform = !D3D12_VIDEO_FORCE_TILE_MODE && util_is_power_of_two_or_zero(tilePartition.RowCount) &&
-                       util_is_power_of_two_or_zero(tilePartition.ColCount);
+   bool tilesUniform = !D3D12_VIDEO_FORCE_TILE_MODE && util_is_power_of_two_or_zero(static_cast<uint32_t>(tilePartition.RowCount)) &&
+                       util_is_power_of_two_or_zero(static_cast<uint32_t>(tilePartition.ColCount));
    // Iterate again now that the 63/64 edge case has been handled above.
    for (uint8_t i = 1; tilesUniform && (i < tilePartition.RowCount - 1) /* Ignore last row */; i++)
       tilesUniform = tilesUniform && (tilePartition.RowHeights[i - 1] == tilePartition.RowHeights[i]);
@@ -551,7 +551,7 @@ d3d12_video_encoder_negotiate_current_av1_tiles_configuration(struct d3d12_video
 
    assert(pAV1Pic->num_tile_groups <= 128);   // ARRAY_SIZE(TilesGroups)
    pD3D12Enc->m_currentEncodeConfig.m_encoderSliceConfigDesc.m_TilesConfig_AV1.TilesGroupsCount =
-      pAV1Pic->num_tile_groups;
+      static_cast<uint8_t>(pAV1Pic->num_tile_groups);
    for (uint8_t i = 0; i < pAV1Pic->num_tile_groups; i++) {
       pD3D12Enc->m_currentEncodeConfig.m_encoderSliceConfigDesc.m_TilesConfig_AV1.TilesGroups[i].tg_start =
          pAV1Pic->tile_groups[i].tile_group_start;
@@ -1973,8 +1973,8 @@ fill_av1_pic_header(EncodedBitstreamResolvedMetadata &associatedMetadata,
 
    pic_header->order_hint = associatedMetadata.m_associatedEncodeConfig.m_encoderPicParamsDesc.m_AV1PicData.OrderHint;
 
-   pic_header->refresh_frame_flags =
-      associatedMetadata.m_associatedEncodeConfig.m_encoderPicParamsDesc.m_AV1PicData.RefreshFrameFlags;
+   pic_header->refresh_frame_flags = static_cast<uint8_t>(
+      associatedMetadata.m_associatedEncodeConfig.m_encoderPicParamsDesc.m_AV1PicData.RefreshFrameFlags);
 
    // frame_size (comes from input texture size)
    pic_header->FrameWidth = associatedMetadata.m_associatedEncodeConfig.m_currentResolution.Width;
@@ -2012,7 +2012,7 @@ fill_av1_pic_header(EncodedBitstreamResolvedMetadata &associatedMetadata,
    }
 
    for (uint8_t i = 0; i < ARRAY_SIZE(pParsedPostEncodeValues->ReferenceIndices); i++)
-      pic_header->ref_frame_idx[i] = pParsedPostEncodeValues->ReferenceIndices[i];
+      pic_header->ref_frame_idx[i] = static_cast<int32_t>(pParsedPostEncodeValues->ReferenceIndices[i]);
 
    pic_header->allow_high_precision_mv =
       ((associatedMetadata.m_associatedEncodeConfig.m_encoderPicParamsDesc.m_AV1PicData.Flags &
@@ -2050,10 +2050,10 @@ fill_av1_pic_header(EncodedBitstreamResolvedMetadata &associatedMetadata,
    bool lr_enabled =
       pic_header->lr_params.lr_type[0] || pic_header->lr_params.lr_type[1] || pic_header->lr_params.lr_type[2];
    if (lr_enabled) {
-      uint8_t luma_shift_total = log2(d3d12_video_encoder_looprestorationsize_d3d12_to_uint_av1(
+      uint8_t luma_shift_total = static_cast<uint8_t>(log2(d3d12_video_encoder_looprestorationsize_d3d12_to_uint_av1(
                                     associatedMetadata.m_associatedEncodeConfig.m_encoderPicParamsDesc.m_AV1PicData
                                        .FrameRestorationConfig.LoopRestorationPixelSize[0])) -
-                                 6;
+                                 6);
       pic_header->lr_params.lr_unit_shift = (luma_shift_total > 0) ? 1 : 0;
       pic_header->lr_params.lr_unit_extra_shift = (luma_shift_total > 1) ? 1 : 0;
       assert(associatedMetadata.m_associatedEncodeConfig.m_encoderPicParamsDesc.m_AV1PicData.FrameRestorationConfig
@@ -2062,10 +2062,10 @@ fill_av1_pic_header(EncodedBitstreamResolvedMetadata &associatedMetadata,
 
       if (associatedMetadata.m_associatedEncodeConfig.m_encoderPicParamsDesc.m_AV1PicData.FrameRestorationConfig
              .LoopRestorationPixelSize[1]) {
-         pic_header->lr_params.lr_uv_shift = log2(d3d12_video_encoder_looprestorationsize_d3d12_to_uint_av1(
+         pic_header->lr_params.lr_uv_shift = static_cast<uint32_t>(log2(d3d12_video_encoder_looprestorationsize_d3d12_to_uint_av1(
                                                 associatedMetadata.m_associatedEncodeConfig.m_encoderPicParamsDesc
                                                    .m_AV1PicData.FrameRestorationConfig.LoopRestorationPixelSize[1])) +
-                                             6 + luma_shift_total;
+                                             6 + luma_shift_total);
       } else {
          pic_header->lr_params.lr_uv_shift = 0;
       }
@@ -2707,8 +2707,8 @@ d3d12_video_encoder_build_post_encode_codec_bitstream_av1(struct d3d12_video_enc
 
    uint32_t total_bytes_written = static_cast<uint32_t>(writtenSequenceBytes + writtenTemporalDelimBytes + writtenFrameBytes +
                                     writtenTileBytes + extra_show_existing_frame_payload_bytes);
-   assert(std::accumulate(associatedMetadata.pWrittenCodecUnitsSizes.begin(), associatedMetadata.pWrittenCodecUnitsSizes.end(), 0u) ==
-      static_cast<uint64_t>(total_bytes_written));
+   assert(std::accumulate(associatedMetadata.pWrittenCodecUnitsSizes.begin(), associatedMetadata.pWrittenCodecUnitsSizes.end(), 0ull) ==
+      total_bytes_written);
    return total_bytes_written;
 }
 
@@ -2754,14 +2754,14 @@ upload_tile_group_obu(struct d3d12_video_encoder *pD3D12Enc,
                                             staging_bitstream_buffer.data(),
                                             staging_bitstream_buffer_offset);
 
-   uint8_t NumTiles = TilesPartition.ColCount * TilesPartition.RowCount;
+   uint8_t NumTiles = static_cast<uint8_t>(TilesPartition.ColCount * TilesPartition.RowCount);
    bool tile_start_and_end_present_flag = !(tileGroup.tg_start == 0 && (tileGroup.tg_end == (NumTiles - 1)));
    if (NumTiles > 1)
       bitstream_tile_group_obu.put_bits(1,
                                         tile_start_and_end_present_flag);   // tile_start_and_end_present_flag f(1)
 
    if (!(NumTiles == 1 || !tile_start_and_end_present_flag)) {
-      uint8_t tileBits = log2(TilesPartition.ColCount) + log2(TilesPartition.RowCount);
+      uint8_t tileBits = static_cast<uint8_t>(log2(TilesPartition.ColCount) + log2(TilesPartition.RowCount));
       bitstream_tile_group_obu.put_bits(tileBits, tileGroup.tg_start);   // tg_start	   f(tileBits)
       bitstream_tile_group_obu.put_bits(tileBits, tileGroup.tg_end);     // tg_end	      f(tileBits)
    }

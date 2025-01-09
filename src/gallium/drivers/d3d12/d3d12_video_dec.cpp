@@ -469,7 +469,7 @@ d3d12_video_decoder_end_frame(struct pipe_video_codec *codec,
                                            inFlightResources.pPipeCompressedBufferObj,   // dst buffer
                                            PIPE_MAP_WRITE,                               // usage PIPE_MAP_x
                                            0,                                            // offset
-                                           static_cast<UINT>(sizeof(*sliceDataStagingBufferPtr)) * sliceDataStagingBufferSize,   // size
+                                           static_cast<unsigned int>(sizeof(*sliceDataStagingBufferPtr) * sliceDataStagingBufferSize),   // size
                                            sliceDataStagingBufferPtr                                          // data
    );
 
@@ -1192,7 +1192,7 @@ d3d12_video_decoder_reconfigure_dpb(struct d3d12_video_decoder *pD3D12Dec,
       D3D12_VIDEO_DECODER_HEAP_DESC decoderHeapDesc = {};
       decoderHeapDesc.NodeMask = pD3D12Dec->m_NodeMask;
       decoderHeapDesc.Configuration = pD3D12Dec->m_decoderDesc.Configuration;
-      decoderHeapDesc.DecodeWidth = dpbDesc.Width;
+      decoderHeapDesc.DecodeWidth = static_cast<UINT>(dpbDesc.Width);
       decoderHeapDesc.DecodeHeight = dpbDesc.Height;
       decoderHeapDesc.Format = dpbDesc.Format;
       decoderHeapDesc.MaxDecodePictureBufferCount = maxDPB;
@@ -1327,7 +1327,7 @@ d3d12_video_decoder_store_converted_dxva_picparams_from_pipe_input(
          DXVA_PicParams_H264 dxvaPicParamsH264 =
             d3d12_video_decoder_dxva_picparams_from_pipe_picparams_h264(pD3D12Dec->m_fenceValue,
                                                                         codec->base.profile,
-                                                                        outputResourceDesc.Width,
+                                                                        static_cast<UINT>(outputResourceDesc.Width),
                                                                         outputResourceDesc.Height,
                                                                         pPicControlH264);
 

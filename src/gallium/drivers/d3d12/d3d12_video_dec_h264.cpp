@@ -296,10 +296,10 @@ d3d12_video_decoder_dxva_picparams_from_pipe_picparams_h264(
 
    // uint16_t  wFrameWidthInMbsMinus1;
    uint width_in_mb = decodeWidth / D3D12_VIDEO_H264_MB_IN_PIXELS;
-   dxvaStructure.wFrameWidthInMbsMinus1 = width_in_mb - 1;
+   dxvaStructure.wFrameWidthInMbsMinus1 = static_cast<uint16_t>(width_in_mb - 1);
    // uint16_t  wFrameHeightInMbsMinus1;
    uint height_in_mb = static_cast<uint>(std::ceil(decodeHeight / D3D12_VIDEO_H264_MB_IN_PIXELS));
-   dxvaStructure.wFrameHeightInMbsMinus1 = height_in_mb - 1;
+   dxvaStructure.wFrameHeightInMbsMinus1 = static_cast<uint16_t>(height_in_mb - 1);
 
    // CurrPic.Index7Bits is handled by d3d12_video_decoder_refresh_dpb_active_references_h264
    // CurrPic.AssociatedFlag
@@ -374,7 +374,7 @@ d3d12_video_decoder_dxva_picparams_from_pipe_picparams_h264(
    dxvaStructure.num_ref_idx_l1_active_minus1 = pPipeDesc->num_ref_idx_l1_active_minus1;
 
    // uint16_t frame_num;
-   dxvaStructure.frame_num = pPipeDesc->frame_num;
+   dxvaStructure.frame_num = static_cast<uint16_t>(pPipeDesc->frame_num);
 
    // uint8_t  log2_max_frame_num_minus4;
    dxvaStructure.log2_max_frame_num_minus4 = pPipeDesc->pps->sps->log2_max_frame_num_minus4;
@@ -466,7 +466,7 @@ d3d12_video_decoder_dxva_picparams_from_pipe_picparams_h264(
          // entry in RefFrameList is empty or is marked as "not used for reference"), the value
          // of the FrameNumList entry shall be 0. Accelerators can rely on this constraint being
          // fulfilled.
-         dxvaStructure.FrameNumList[i] = pPipeDesc->frame_num_list[i];
+         dxvaStructure.FrameNumList[i] = static_cast<uint16_t>(pPipeDesc->frame_num_list[i]);
 
          // int32_t    FieldOrderCntList[16][2];
          // Contains the picture order counts for the reference frames listed in RefFrameList.

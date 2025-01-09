@@ -333,8 +333,8 @@ d3d12_bufmgr_create_buffer(struct pb_manager *pmgr,
       return NULL;
 
    pipe_reference_init(&buf->base.base.reference, 1);
-   buf->base.base.alignment_log2 = util_logbase2(pb_desc->alignment);
-   buf->base.base.usage = pb_desc->usage;
+   buf->base.base.alignment_log2 = static_cast<uint8_t>(util_logbase2(pb_desc->alignment));
+   buf->base.base.usage = static_cast<uint16_t>(pb_desc->usage);
    buf->base.vtbl = &d3d12_buffer_vtbl;
    buf->base.base.size = size;
    buf->range.Begin = 0;

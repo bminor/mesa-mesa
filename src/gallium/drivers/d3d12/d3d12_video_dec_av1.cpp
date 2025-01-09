@@ -83,10 +83,10 @@ d3d12_video_decoder_prepare_current_frame_references_av1(struct d3d12_video_deco
                                                           uint32_t subresourceIndex)
 {
    DXVA_PicParams_AV1 *pPicParams = d3d12_video_decoder_get_current_dxva_picparams<DXVA_PicParams_AV1>(pD3D12Dec);
-   pPicParams->CurrPicTextureIndex = pD3D12Dec->m_spDPBManager->store_future_reference(pPicParams->CurrPicTextureIndex,
-                                                                                      pD3D12Dec->m_spVideoDecoderHeap,
-                                                                                      pTexture2D,
-                                                                                      subresourceIndex);
+   pPicParams->CurrPicTextureIndex = static_cast<uint8_t>(pD3D12Dec->m_spDPBManager->store_future_reference(pPicParams->CurrPicTextureIndex,
+                                                                                                            pD3D12Dec->m_spVideoDecoderHeap,
+                                                                                                            pTexture2D,
+                                                                                                            subresourceIndex));
    pD3D12Dec->m_spDPBManager->update_entries_av1(
       d3d12_video_decoder_get_current_dxva_picparams<DXVA_PicParams_AV1>(pD3D12Dec)->RefFrameMapTextureIndex,
       pD3D12Dec->m_transitionsStorage);
@@ -411,8 +411,8 @@ d3d12_video_decoder_dxva_picparams_from_pipe_picparams_av1(
          for (uint32_t i = 0; i < dxvaStructure.tiles.cols - 1u; i++)
             acumSbWMinusLast += dxvaStructure.tiles.widths[i];
 
-         dxvaStructure.tiles.widths[dxvaStructure.tiles.cols-1] =
-            std::ceil(pipe_av1->picture_parameter.frame_width / (float)sbPixSize) - acumSbWMinusLast;
+         dxvaStructure.tiles.widths[dxvaStructure.tiles.cols-1] = static_cast<uint16_t>(
+            std::ceil(pipe_av1->picture_parameter.frame_width / (float)sbPixSize) - acumSbWMinusLast);
       }
 
       if (dxvaStructure.tiles.rows > 1) {
@@ -420,8 +420,8 @@ d3d12_video_decoder_dxva_picparams_from_pipe_picparams_av1(
          for (uint32_t i = 0; i < dxvaStructure.tiles.rows - 1u; i++)
             acumSbHMinusLast += dxvaStructure.tiles.heights[i];
 
-         dxvaStructure.tiles.heights[dxvaStructure.tiles.rows-1] =
-            std::ceil(pipe_av1->picture_parameter.frame_width / (float)sbPixSize) - acumSbHMinusLast;
+         dxvaStructure.tiles.heights[dxvaStructure.tiles.rows-1] = static_cast<uint16_t>(
+            std::ceil(pipe_av1->picture_parameter.frame_width / (float)sbPixSize) - acumSbHMinusLast);
       }
    }
 

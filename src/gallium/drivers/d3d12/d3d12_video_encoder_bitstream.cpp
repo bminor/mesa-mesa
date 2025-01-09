@@ -333,7 +333,7 @@ d3d12_video_encoder_bitstream::calculate_su_bits(uint16_t uiBitsCount, int32_t i
    int16_t mask_sign = 1 << (uiBitsCount - 1);
    if (iBitsVal & mask_sign)
       iBitsVal = iBitsVal - 2 * mask_sign;
-   return iBitsVal;
+   return static_cast<uint16_t>(iBitsVal);
 }
 
 void

@@ -329,7 +329,7 @@ create_tmp_resource(struct pipe_screen *screen,
 {
    struct pipe_resource tpl = {};
    tpl.width0 = info->dst.box.width;
-   tpl.height0 = info->dst.box.height;
+   tpl.height0 = static_cast<uint16_t>(info->dst.box.height);
    tpl.depth0 = info->dst.box.depth;
    tpl.array_size = 1;
    tpl.format = PIPE_FORMAT_R8_UINT;

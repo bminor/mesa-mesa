@@ -95,7 +95,7 @@ d3d12_create_vertex_elements_state(struct pipe_context *pctx,
          cso->elements[i].InstanceDataStepRate = 0;
       }
       max_vb = MAX2(max_vb, elements[i].vertex_buffer_index);
-      cso->strides[elements[i].vertex_buffer_index] = elements[i].src_stride;
+      cso->strides[elements[i].vertex_buffer_index] = static_cast<uint16_t>(elements[i].src_stride);
    }
 
    cso->num_elements = num_elements;
@@ -719,9 +719,9 @@ d3d12_bind_sampler_states(struct pipe_context *pctx,
       ctx->samplers[shader][start_slot + i] = sampler;
       dxil_wrap_sampler_state &wrap = ctx->tex_wrap_states[shader][start_slot + i];
       if (sampler) {
-         wrap.wrap[0] = pipe_to_dxil_tex_wrap(sampler->wrap_s);
-         wrap.wrap[1] = pipe_to_dxil_tex_wrap(sampler->wrap_t);
-         wrap.wrap[2] = pipe_to_dxil_tex_wrap(sampler->wrap_r);
+         wrap.wrap[0] = static_cast<uint8_t>(pipe_to_dxil_tex_wrap(sampler->wrap_s));
+         wrap.wrap[1] = static_cast<uint8_t>(pipe_to_dxil_tex_wrap(sampler->wrap_t));
+         wrap.wrap[2] = static_cast<uint8_t>(pipe_to_dxil_tex_wrap(sampler->wrap_r));
          wrap.lod_bias = sampler->lod_bias;
          wrap.min_lod = sampler->min_lod;
          wrap.max_lod = sampler->max_lod;
@@ -1869,14 +1869,14 @@ d3d12_disable_fake_so_buffers(struct d3d12_context *ctx)
          if (key.fake_so_buffer_copy_back.num_ranges > 0) {
             auto& last_range = key.fake_so_buffer_copy_back.ranges[key.fake_so_buffer_copy_back.num_ranges - 1];
             if (output.dst_offset * 4 == last_range.offset + last_range.size) {
-               last_range.size += output.num_components * 4;
+               last_range.size += static_cast<uint16_t>(output.num_components * 4);
                continue;
             }
          }
 
          auto& new_range = key.fake_so_buffer_copy_back.ranges[key.fake_so_buffer_copy_back.num_ranges++];
-         new_range.offset = output.dst_offset * 4;
-         new_range.size = output.num_components * 4;
+         new_range.offset = static_cast<uint16_t>(output.dst_offset * 4);
+         new_range.size = static_cast<uint16_t>(output.num_components * 4);
       }
       ctx->base.bind_compute_state(&ctx->base, d3d12_get_compute_transform(ctx, &key));
 
@@ -1945,12 +1945,12 @@ d3d12_clear_render_target(struct pipe_context *pctx,
 
    if (util_format_is_pure_uint(format)) {
       for (int c = 0; c < 4 && !clear_fallback; ++c) {
-         clear_color[c] = color->ui[c];
+         clear_color[c] = static_cast<float>(color->ui[c]);
          clear_fallback = (uint32_t)clear_color[c] != color->ui[c];
       }
    } else if (util_format_is_pure_sint(format)) {
       for (int c = 0; c < 4 && !clear_fallback; ++c) {
-         clear_color[c] = color->i[c];
+         clear_color[c] = static_cast<float>(color->i[c]);
          clear_fallback = (int32_t)clear_color[c] != color->i[c];
       }
    } else {
@@ -2043,7 +2043,7 @@ d3d12_clear_depth_stencil(struct pipe_context *pctx,
                        (int)dstx + (int)width,
                        (int)dsty + (int)height };
    ctx->cmdlist->ClearDepthStencilView(surf->desc_handle.cpu_handle, flags,
-                                       depth, stencil, 1, &rect);
+                                       static_cast<float>(depth), static_cast<UINT8>(stencil), 1, &rect);
 
    d3d12_batch_reference_surface_texture(d3d12_current_batch(ctx), surf);
 

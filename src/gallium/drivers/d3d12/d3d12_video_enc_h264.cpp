@@ -756,7 +756,7 @@ d3d12_video_encoder_update_h264_gop_configuration(struct d3d12_video_encoder *pD
          if (GOPLength == 0) // Use max frame num to wrap on infinite GOPs
             GOPLength = 1 << (picture->seq.log2_max_frame_num_minus4 + 4);
          const uint32_t max_pic_order_cnt_lsb = 2 * GOPLength;
-         picture->seq.log2_max_pic_order_cnt_lsb_minus4 = std::max(0.0, std::ceil(std::log2(max_pic_order_cnt_lsb)) - 4);
+         picture->seq.log2_max_pic_order_cnt_lsb_minus4 = static_cast<unsigned int>(std::max(0.0, std::ceil(std::log2(max_pic_order_cnt_lsb)) - 4));
          assert(picture->seq.log2_max_pic_order_cnt_lsb_minus4 < UCHAR_MAX);
       }
 
@@ -1272,8 +1272,8 @@ d3d12_video_encoder_build_codec_headers_h264(struct d3d12_video_encoder *pD3D12E
       pD3D12Enc->m_BitstreamHeadersBuffer.resize(writtenAUDBytesCount + writtenSEIBytesCount + writtenSPSBytesCount + writtenPPSBytesCount);
    }
 
-   assert(std::accumulate(pWrittenCodecUnitsSizes.begin(), pWrittenCodecUnitsSizes.end(), 0u) ==
-      static_cast<uint64_t>(pD3D12Enc->m_BitstreamHeadersBuffer.size()));
+   assert(std::accumulate(pWrittenCodecUnitsSizes.begin(), pWrittenCodecUnitsSizes.end(), 0ull) ==
+      pD3D12Enc->m_BitstreamHeadersBuffer.size());
    return static_cast<uint32_t>(pD3D12Enc->m_BitstreamHeadersBuffer.size());
 }
 

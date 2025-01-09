@@ -120,7 +120,7 @@ d3d12_get_video_mem(struct pipe_screen *pscreen)
 {
    struct d3d12_screen* screen = d3d12_screen(pscreen);
 
-   return screen->memory_device_size_megabytes + screen->memory_system_size_megabytes;
+   return static_cast<int>(screen->memory_device_size_megabytes + screen->memory_system_size_megabytes);
 }
 
 static int
@@ -1368,28 +1368,28 @@ d3d12_query_memory_info(struct pipe_screen *pscreen, struct pipe_memory_info *in
          DXGI_MEMORY_SEGMENT_GROUP_LOCAL, as there is only one unified memory and it's all "local" to the GPU.
        */
       info->total_device_memory =
-         (screen->memory_device_size_megabytes << 10) + (screen->memory_system_size_megabytes << 10);
+         static_cast<unsigned int>(CLAMP((screen->memory_device_size_megabytes << 10) + (screen->memory_system_size_megabytes << 10), 0u, UINT32_MAX));
       info->total_staging_memory = 0;
    } else {
-      info->total_device_memory = (screen->memory_device_size_megabytes << 10);
-      info->total_staging_memory = (screen->memory_system_size_megabytes << 10);
+      info->total_device_memory = static_cast<unsigned int>(CLAMP(screen->memory_device_size_megabytes << 10, 0u, UINT32_MAX));
+      info->total_staging_memory = static_cast<unsigned int>(CLAMP(screen->memory_system_size_megabytes << 10, 0u, UINT32_MAX));;
    }
 
    d3d12_memory_info m;
    screen->get_memory_info(screen, &m);
    // bytes to kilobytes
    if (m.budget_local > m.usage_local) {
-      info->avail_device_memory = (m.budget_local - m.usage_local) / 1024;
+      info->avail_device_memory = static_cast<unsigned int>(CLAMP((m.budget_local - m.usage_local) / 1024, 0u, UINT32_MAX));
    } else {
       info->avail_device_memory = 0;
    }
    if (m.budget_nonlocal > m.usage_nonlocal) {
-      info->avail_staging_memory = (m.budget_nonlocal - m.usage_nonlocal) / 1024;
+      info->avail_staging_memory = static_cast<unsigned int>(CLAMP(m.budget_nonlocal - m.usage_nonlocal / 1024, 0u, UINT32_MAX));
    } else {
       info->avail_staging_memory = 0;
    }
 
-   info->device_memory_evicted = screen->total_bytes_evicted / 1024;
+   info->device_memory_evicted = static_cast<unsigned int>(CLAMP(screen->total_bytes_evicted / 1024, 0u, UINT32_MAX));
    info->nr_device_memory_evictions = screen->num_evictions;
 }
 
@@ -1397,7 +1397,7 @@ bool
 d3d12_init_screen_base(struct d3d12_screen *screen, struct sw_winsys *winsys, LUID *adapter_luid)
 {
    glsl_type_singleton_init_or_ref();
-   d3d12_debug = debug_get_option_d3d12_debug();
+   d3d12_debug = static_cast<uint32_t>(debug_get_option_d3d12_debug());
 
    screen->winsys = winsys;
    if (adapter_luid)

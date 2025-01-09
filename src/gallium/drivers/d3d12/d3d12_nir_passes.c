@@ -547,7 +547,7 @@ d3d12_lower_state_vars(nir_shader *nir, struct d3d12_shader *shader)
       nir_variable *ubo = nir_variable_create(nir, nir_var_mem_ubo, type,
                                                   "d3d12_state_vars");
       if (binding >= nir->info.num_ubos)
-         nir->info.num_ubos = binding + 1;
+         nir->info.num_ubos = (uint8_t) binding + 1;
       ubo->data.binding = binding;
       ubo->num_state_slots = 1;
       ubo->state_slots = ralloc_array(ubo, nir_state_slot, 1);
@@ -878,7 +878,7 @@ split_varying_accesses(nir_builder *b, nir_intrinsic_instr *intr,
       if (intr->intrinsic == nir_intrinsic_store_deref) {
          unsigned mask_num_channels = (1 << var_state->subvars[subvar].num_components) - 1;
          unsigned orig_write_mask = nir_intrinsic_write_mask(intr);
-         nir_def *sub_value = nir_channels(b, intr->src[1].ssa, mask_num_channels << first_channel);
+         nir_def *sub_value = nir_channels(b, intr->src[1].ssa, (nir_component_mask_t) (mask_num_channels << first_channel));
 
          unsigned new_write_mask = (orig_write_mask >> first_channel) & mask_num_channels;
          nir_build_store_deref(b, &new_path->def, sub_value, new_write_mask, nir_intrinsic_access(intr));
@@ -918,7 +918,7 @@ d3d12_split_needed_varyings(nir_shader *s)
          for (unsigned i = 0; i < glsl_get_vector_elements(var->type); ++i) {
             unsigned stream = (var->data.stream >> (2 * (i + var->data.location_frac))) & 0x3;
             if (var_state->num_subvars == 0 || stream != subvars[var_state->num_subvars - 1].stream) {
-               subvars[var_state->num_subvars].stream = stream;
+               subvars[var_state->num_subvars].stream = (uint8_t)stream;
                subvars[var_state->num_subvars].num_components = 1;
                var_state->num_subvars++;
             } else {
@@ -955,13 +955,13 @@ d3d12_split_needed_varyings(nir_shader *s)
          var_state->num_subvars = 2;
          subvars[0].var = var;
          subvars[0].num_components = 2;
-         subvars[0].stream = var->data.stream;
+         subvars[0].stream = (uint8_t)var->data.stream;
          const struct glsl_type *base_type = glsl_without_array(var->type);
          var->type = glsl_type_wrap_in_arrays(glsl_vector_type(glsl_get_base_type(base_type), 2), var->type);
 
          subvars[1].var = nir_variable_clone(var, s);
-         subvars[1].num_components = components - 2;
-         subvars[1].stream = var->data.stream;
+         subvars[1].num_components = (uint8_t) (components - 2);
+         subvars[1].stream = (uint8_t)var->data.stream;
          exec_node_insert_after(&var->node, &subvars[1].var->node);
          subvars[1].var->type = glsl_type_wrap_in_arrays(glsl_vector_type(glsl_get_base_type(base_type), components - 2), var->type);
          subvars[1].var->data.location++;
