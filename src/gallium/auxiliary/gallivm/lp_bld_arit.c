@@ -1861,9 +1861,10 @@ static bool
 arch_rounding_available(const struct lp_type type)
 {
    if ((util_get_cpu_caps()->has_sse4_1 &&
-       (type.length == 1 || type.width*type.length == 128)) ||
-       (util_get_cpu_caps()->has_avx && type.width*type.length == 256) ||
-       (util_get_cpu_caps()->has_avx512f && type.width*type.length == 512))
+       (type.length == 1 || (LLVM_VERSION_MAJOR >= 8 && type.length == 2) ||
+        type.width * type.length == 128)) ||
+       (util_get_cpu_caps()->has_avx && type.width * type.length == 256) ||
+       (util_get_cpu_caps()->has_avx512f && type.width * type.length == 512))
       return true;
    else if ((util_get_cpu_caps()->has_altivec &&
             (type.width == 32 && type.length == 4)))

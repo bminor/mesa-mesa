@@ -477,9 +477,10 @@ test_unary(unsigned verbose, FILE *fp, const struct unary_test_t *test, unsigned
             continue;
          }
 
-         if (!util_get_cpu_caps()->has_neon &&
+         if (test->ref == &nearbyintf && length == 2 &&
+             !util_get_cpu_caps()->has_neon &&
              util_get_cpu_caps()->family != CPU_S390X &&
-             test->ref == &nearbyintf && length == 2 &&
+             !(util_get_cpu_caps()->has_sse4_1 && LLVM_VERSION_MAJOR >= 8) &&
              ref != roundf(testval)) {
             /* FIXME: The generic (non SSE) path in lp_build_iround, which is
              * always taken for length==2 regardless of native round support,
