@@ -19,6 +19,7 @@
 #include "radv_pipeline_rt.h"
 #include "radv_rmv.h"
 #include "radv_shader.h"
+#include "ac_nir.h"
 
 struct rt_handle_hash_entry {
    uint32_t key;

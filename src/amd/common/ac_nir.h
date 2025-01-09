@@ -372,6 +372,14 @@ ac_nir_optimize_uniform_atomics(nir_shader *nir);
 unsigned
 ac_nir_lower_bit_size_callback(const nir_instr *instr, void *data);
 
+bool
+ac_nir_mem_vectorize_callback(unsigned align_mul, unsigned align_offset, unsigned bit_size,
+                              unsigned num_components, int64_t hole_size,
+                              nir_intrinsic_instr *low, nir_intrinsic_instr *high, void *data);
+
+bool
+ac_nir_scalarize_overfetching_loads_callback(const nir_instr *instr, const void *data);
+
 enum gl_access_qualifier
 ac_nir_get_mem_access_flags(const nir_intrinsic_instr *instr);
 
