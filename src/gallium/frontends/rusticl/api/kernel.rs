@@ -425,13 +425,15 @@ fn set_kernel_arg(
                         if ptr.is_null() || (*ptr).is_null() {
                             KernelArgValue::None
                         } else {
-                            KernelArgValue::Buffer(Buffer::arc_from_raw(*ptr)?)
+                            let buffer = Buffer::arc_from_raw(*ptr)?;
+                            KernelArgValue::Buffer(Arc::downgrade(&buffer))
                         }
                     }
                     KernelArgType::MemLocal => KernelArgValue::LocalMem(arg_size),
                     KernelArgType::Image | KernelArgType::RWImage | KernelArgType::Texture => {
                         let img: *const cl_mem = arg_value.cast();
-                        KernelArgValue::Image(Image::arc_from_raw(*img)?)
+                        let img = Image::arc_from_raw(*img)?;
+                        KernelArgValue::Image(Arc::downgrade(&img))
                     }
                     KernelArgType::Sampler => {
                         let ptr: *const cl_sampler = arg_value.cast();

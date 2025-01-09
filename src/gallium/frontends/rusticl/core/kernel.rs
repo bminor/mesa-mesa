@@ -33,14 +33,24 @@ use std::slice;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::MutexGuard;
+use std::sync::Weak;
 
-// ugh, we are not allowed to take refs, so...
+// According to the CL spec we are not allowed to let any cl_kernel object hold any references on
+// its arguments as this might make it unfeasible for applications to free the backing memory of
+// memory objects allocated with `CL_USE_HOST_PTR`.
+//
+// However those arguments might temporarily get referenced by event objects, so we'll use Weak in
+// order to upgrade the reference when needed. It's also safer to use Weak over raw pointers,
+// because it makes it impossible to run into use-after-free issues.
+//
+// Technically we also need to do it for samplers, but there it's kinda pointless to take a weak
+// reference as samplers don't have the same host_ptr or any similar problems as cl_mem objects.
 #[derive(Clone)]
 pub enum KernelArgValue {
     None,
-    Buffer(Arc<Buffer>),
+    Buffer(Weak<Buffer>),
     Constant(Vec<u8>),
-    Image(Arc<Image>),
+    Image(Weak<Image>),
     LocalMem(usize),
     Sampler(Arc<Sampler>),
 }
@@ -1273,6 +1283,31 @@ impl Kernel {
         let arg_values = self.arg_values().clone();
         let nir_kernel_builds = Arc::clone(&self.builds[q.device]);
 
+        let mut buffer_arcs = HashMap::new();
+        let mut image_arcs = HashMap::new();
+
+        // need to preprocess buffer and image arguments so we hold a strong reference until the
+        // event was processed.
+        for arg in arg_values.iter() {
+            match arg {
+                Some(KernelArgValue::Buffer(buffer)) => {
+                    buffer_arcs.insert(
+                        // we use the ptr as the key, and also cast it to usize so we don't need to
+                        // deal with Send + Sync here.
+                        buffer.as_ptr() as usize,
+                        buffer.upgrade().ok_or(CL_INVALID_KERNEL_ARGS)?,
+                    );
+                }
+                Some(KernelArgValue::Image(image)) => {
+                    image_arcs.insert(
+                        image.as_ptr() as usize,
+                        image.upgrade().ok_or(CL_INVALID_KERNEL_ARGS)?,
+                    );
+                }
+                _ => {}
+            }
+        }
+
         // operations we want to report errors to the clients
         let mut block = create_kernel_arr::<u32>(block, 1)?;
         let mut grid = create_kernel_arr::<usize>(grid, 1)?;
@@ -1394,10 +1429,12 @@ impl Kernel {
                         match value {
                             KernelArgValue::Constant(c) => input.extend_from_slice(c),
                             KernelArgValue::Buffer(buffer) => {
+                                let buffer = &buffer_arcs[&(buffer.as_ptr() as usize)];
                                 let res = buffer.get_res_of_dev(q.device)?;
                                 add_global(q, &mut input, &mut resource_info, res, buffer.offset);
                             }
                             KernelArgValue::Image(image) => {
+                                let image = &image_arcs[&(image.as_ptr() as usize)];
                                 let (formats, orders) = if api_arg.kind == KernelArgType::Image {
                                     iviews.push(image.image_view(q.device, false)?);
                                     (&mut img_formats, &mut img_orders)
