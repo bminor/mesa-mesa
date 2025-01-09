@@ -1220,7 +1220,7 @@ nir_a_minus_bc(nir_builder *build, nir_def *src0, nir_def *src1,
 static inline nir_def *
 nir_pack_bits(nir_builder *b, nir_def *src, unsigned dest_bit_size)
 {
-   assert(src->num_components * src->bit_size == dest_bit_size);
+   assert((unsigned)(src->num_components * src->bit_size) == dest_bit_size);
 
    switch (dest_bit_size) {
    case 64:
