@@ -444,7 +444,7 @@
         "description": "brw: extend the NOP+WHILE workaround",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5ca883505e29870c7ae8929049397b9ef85666e9",
         "notes": null
