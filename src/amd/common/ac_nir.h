@@ -60,6 +60,10 @@ typedef struct nir_xfb_info nir_xfb_info;
 /* Executed by ac_nir_cull when the current primitive is accepted. */
 typedef void (*ac_nir_cull_accepted)(nir_builder *b, void *state);
 
+void
+ac_nir_set_options(struct radeon_info *info, bool use_llvm,
+                   nir_shader_compiler_options *options);
+
 nir_def *
 ac_nir_load_arg_at_offset(nir_builder *b, const struct ac_shader_args *ac_args,
                           struct ac_arg arg, unsigned relative_index);

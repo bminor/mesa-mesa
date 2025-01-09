@@ -55,7 +55,7 @@ get_nir_options_for_stage(struct radv_physical_device *pdev, gl_shader_stage sta
    bool split_fma =
       (stage <= MESA_SHADER_GEOMETRY || stage == MESA_SHADER_MESH) && instance->debug_flags & RADV_DEBUG_SPLIT_FMA;
 
-   ac_set_nir_options(&pdev->info, pdev->use_llvm, options);
+   ac_nir_set_options(&pdev->info, pdev->use_llvm, options);
 
    options->lower_ffma16 = split_fma || pdev->info.gfx_level < GFX9;
    options->lower_ffma32 = split_fma || pdev->info.gfx_level < GFX10_3;

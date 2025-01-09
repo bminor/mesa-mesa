@@ -6,6 +6,7 @@
 #include "helpers.h"
 
 #include "common/amd_family.h"
+#include "common/ac_nir.h"
 #include "vk_format.h"
 
 #include <llvm-c/Target.h>
@@ -147,7 +148,7 @@ setup_nir_cs(enum amd_gfx_level gfx_level, gl_shader_stage stage, enum radeon_fa
    rad_info.family = family;
 
    memset(&nir_options, 0, sizeof(nir_options));
-   ac_set_nir_options(&rad_info, false, &nir_options);
+   ac_nir_set_options(&rad_info, false, &nir_options);
 
    glsl_type_singleton_init_or_ref();
 

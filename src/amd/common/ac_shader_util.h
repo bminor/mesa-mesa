@@ -246,9 +246,6 @@ struct ac_nir_config {
    bool uses_aco;
 };
 
-void ac_set_nir_options(struct radeon_info *info, bool use_llvm,
-                        nir_shader_compiler_options *options);
-
 unsigned ac_get_spi_shader_z_format(bool writes_z, bool writes_stencil, bool writes_samplemask,
                                     bool writes_mrt0_alpha);
 
