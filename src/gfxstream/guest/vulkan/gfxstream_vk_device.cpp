@@ -256,7 +256,7 @@ static VkResult gfxstream_vk_enumerate_devices(struct vk_instance* vk_instance) 
         for (uint32_t i = 0; i < deviceCount; i++) {
             struct gfxstream_vk_physical_device* gfxstream_physicalDevice =
                 (struct gfxstream_vk_physical_device*)vk_zalloc(
-                    &gfxstream_instance->vk.alloc, sizeof(struct gfxstream_vk_physical_device), 8,
+                    &gfxstream_instance->vk.alloc, sizeof(struct gfxstream_vk_physical_device), GFXSTREAM_DEFAULT_ALIGN,
                     VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
             if (!gfxstream_physicalDevice) {
                 result = VK_ERROR_OUT_OF_HOST_MEMORY;
@@ -328,7 +328,7 @@ VkResult gfxstream_vk_CreateInstance(const VkInstanceCreateInfo* pCreateInfo,
     struct gfxstream_vk_instance* instance;
 
     pAllocator = pAllocator ?: vk_default_allocator();
-    instance = (struct gfxstream_vk_instance*)vk_zalloc(pAllocator, sizeof(*instance), 8,
+    instance = (struct gfxstream_vk_instance*)vk_zalloc(pAllocator, sizeof(*instance), GFXSTREAM_DEFAULT_ALIGN,
                                                         VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
     if (NULL == instance) {
         return vk_error(NULL, VK_ERROR_OUT_OF_HOST_MEMORY);
@@ -339,6 +339,7 @@ VkResult gfxstream_vk_CreateInstance(const VkInstanceCreateInfo* pCreateInfo,
     {
         result = SetupInstanceForProcess();
         if (VK_SUCCESS != result) {
+            vk_free(pAllocator, instance);
             return vk_error(NULL, result);
         }
         uint32_t initialEnabledExtensionCount = pCreateInfo->enabledExtensionCount;
@@ -354,6 +355,7 @@ VkResult gfxstream_vk_CreateInstance(const VkInstanceCreateInfo* pCreateInfo,
         result = vkEnc->vkCreateInstance(pCreateInfo, nullptr, &instance->internal_object,
                                          true /* do lock */);
         if (VK_SUCCESS != result) {
+            vk_free(pAllocator, instance);
             return vk_error(NULL, result);
         }
         // Revert the createInfo the user-set data
@@ -462,7 +464,7 @@ VkResult gfxstream_vk_CreateDevice(VkPhysicalDevice physicalDevice,
     const VkAllocationCallbacks* pMesaAllocator =
         pAllocator ?: &gfxstream_physicalDevice->instance->vk.alloc;
     struct gfxstream_vk_device* gfxstream_device = (struct gfxstream_vk_device*)vk_zalloc(
-        pMesaAllocator, sizeof(struct gfxstream_vk_device), 8, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+        pMesaAllocator, sizeof(struct gfxstream_vk_device), GFXSTREAM_DEFAULT_ALIGN, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
     result = gfxstream_device ? VK_SUCCESS : VK_ERROR_OUT_OF_HOST_MEMORY;
     if (VK_SUCCESS == result) {
         uint32_t initialEnabledExtensionCount = pCreateInfo->enabledExtensionCount;
@@ -482,7 +484,7 @@ VkResult gfxstream_vk_CreateDevice(VkPhysicalDevice physicalDevice,
         if (mutablePhysicalDeviceGroupProperties) {
             // Temporarily modify the VkPhysicalDeviceGroupProperties structure to use translated
             // VkPhysicalDevice references for the encoder call
-            for (int physDev = 0;
+            for (uint32_t physDev = 0;
                  physDev < mutablePhysicalDeviceGroupProperties->physicalDeviceCount; physDev++) {
                 initialPhysicalDeviceList.push_back(
                     mutablePhysicalDeviceGroupProperties->physicalDevices[physDev]);
@@ -503,7 +505,7 @@ VkResult gfxstream_vk_CreateDevice(VkPhysicalDevice physicalDevice,
         if (mutablePhysicalDeviceGroupProperties) {
             // Revert the physicalDevice list in VkPhysicalDeviceGroupProperties to the user-set
             // data
-            for (int physDev = 0;
+            for (uint32_t physDev = 0;
                  physDev < mutablePhysicalDeviceGroupProperties->physicalDeviceCount; physDev++) {
                 initialPhysicalDeviceList.push_back(
                     mutablePhysicalDeviceGroupProperties->physicalDevices[physDev]);
@@ -558,7 +560,7 @@ void gfxstream_vk_GetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uin
     MESA_TRACE_SCOPE("vkGetDeviceQueue");
     VK_FROM_HANDLE(gfxstream_vk_device, gfxstream_device, device);
     struct gfxstream_vk_queue* gfxstream_queue = (struct gfxstream_vk_queue*)vk_zalloc(
-        &gfxstream_device->vk.alloc, sizeof(struct gfxstream_vk_queue), 8,
+        &gfxstream_device->vk.alloc, sizeof(struct gfxstream_vk_queue), GFXSTREAM_DEFAULT_ALIGN,
         VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
     VkResult result = gfxstream_queue ? VK_SUCCESS : VK_ERROR_OUT_OF_HOST_MEMORY;
     if (VK_SUCCESS == result) {
@@ -590,7 +592,7 @@ void gfxstream_vk_GetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2* pQu
     MESA_TRACE_SCOPE("vkGetDeviceQueue2");
     VK_FROM_HANDLE(gfxstream_vk_device, gfxstream_device, device);
     struct gfxstream_vk_queue* gfxstream_queue = (struct gfxstream_vk_queue*)vk_zalloc(
-        &gfxstream_device->vk.alloc, sizeof(struct gfxstream_vk_queue), 8,
+        &gfxstream_device->vk.alloc, sizeof(struct gfxstream_vk_queue), GFXSTREAM_DEFAULT_ALIGN,
         VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
     VkResult result = gfxstream_queue ? VK_SUCCESS : VK_ERROR_OUT_OF_HOST_MEMORY;
     if (VK_SUCCESS == result) {
