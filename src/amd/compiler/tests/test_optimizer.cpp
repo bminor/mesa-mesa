@@ -2317,3 +2317,57 @@ BEGIN_TEST(optimizer.pk_fma)
       finish_opt_test();
    }
 END_TEST
+
+static Builder::Result
+cvt_pk_rtz(Definition def, Builder::Op op1, Builder::Op op2)
+{
+   if (bld.program->gfx_level >= GFX8 && bld.program->gfx_level < GFX10)
+      return bld.vop3(aco_opcode::v_cvt_pkrtz_f16_f32_e64, def, op1, op2);
+   else
+      return bld.vop2(aco_opcode::v_cvt_pkrtz_f16_f32, def, op1, op2);
+}
+
+BEGIN_TEST(optimizer.pk_mul_pk_cvt)
+   for (unsigned i = GFX9; i <= GFX10; i++) {
+      //>> v1: %a:v[0],  v1: %b:v[1] = p_startpgm
+      if (!setup_cs("v1 v1", (amd_gfx_level)i))
+         continue;
+
+      Temp a = inputs[0];
+      Temp b = inputs[1];
+
+      //~gfx9! v1: %res0 = v_cvt_pkrtz_f16_f32_e64 %a, %b
+      //~gfx10! v1: %res0 = v_cvt_pkrtz_f16_f32 %a, %b
+      //! p_unit_test 0, %res0
+      Builder::Result cvt = cvt_pk_rtz(bld.def(v1), a, b);
+      Builder::Result mul =
+         bld.vop3p(aco_opcode::v_pk_mul_f16, bld.def(v1), cvt, Operand::c16(0x3c00), 0x0, 0x1);
+      writeout(0, mul);
+
+      //~gfx9! v1: %res1 = v_cvt_pkrtz_f16_f32_e64 -%b, %b
+      //~gfx10! v1: %res1 = v_cvt_pkrtz_f16_f32 -%b, %b
+      //! p_unit_test 1, %res1
+      cvt = cvt_pk_rtz(bld.def(v1), a, b);
+      mul = bld.vop3p(aco_opcode::v_pk_mul_f16, bld.def(v1), cvt, Operand::c16(0x3c00), 0x1, 0x1);
+      mul->valu().neg_lo[1] = true;
+      writeout(1, mul);
+
+      //~gfx9! v1: %tmp = v_cvt_pkrtz_f16_f32_e64 %a, %b
+      //~gfx10! v1: %tmp = v_cvt_pkrtz_f16_f32 %a, %b
+      //! v1: %res2 = v_pk_mul_f16 %tmp, 1.0.xx clamp
+      //! p_unit_test 2, %res2
+      cvt = cvt_pk_rtz(bld.def(v1), a, b);
+      mul = bld.vop3p(aco_opcode::v_pk_mul_f16, bld.def(v1), cvt, Operand::c16(0x3c00), 0x0, 0x1);
+      mul->valu().clamp = true;
+      writeout(2, mul);
+
+      //~gfx9! v1: %res3 = v_cvt_pkrtz_f16_f32_e64 %b, %a
+      //~gfx10! v1: %res3 = v_cvt_pkrtz_f16_f32 %b, %a
+      //! p_unit_test 3, %res3
+      cvt = cvt_pk_rtz(bld.def(v1), a, b);
+      mul = bld.vop3p(aco_opcode::v_pk_mul_f16, bld.def(v1), cvt, Operand::c16(0x3c00), 0x1, 0x0);
+      writeout(3, mul);
+
+      finish_opt_test();
+   }
+END_TEST

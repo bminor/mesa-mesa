@@ -3768,52 +3768,6 @@ apply_load_extract(opt_ctx& ctx, aco_ptr<Instruction>& extract, Instruction* loa
    return load;
 }
 
-void
-propagate_swizzles(VALU_instruction* instr, bool opsel_lo, bool opsel_hi)
-{
-   /* propagate swizzles which apply to a result down to the instruction's operands:
-    * result = a.xy + b.xx -> result.yx = a.yx + b.xx */
-   uint8_t tmp_lo = instr->opsel_lo;
-   uint8_t tmp_hi = instr->opsel_hi;
-   uint8_t neg_lo = instr->neg_lo;
-   uint8_t neg_hi = instr->neg_hi;
-   if (opsel_lo == 1) {
-      instr->opsel_lo = tmp_hi;
-      instr->neg_lo = neg_hi;
-   }
-   if (opsel_hi == 0) {
-      instr->opsel_hi = tmp_lo;
-      instr->neg_hi = neg_lo;
-   }
-}
-
-void
-combine_vop3p(opt_ctx& ctx, aco_ptr<Instruction>& instr)
-{
-   VALU_instruction* vop3p = &instr->valu();
-
-   /* apply clamp */
-   if (instr->opcode == aco_opcode::v_pk_mul_f16 && instr->operands[1].constantEquals(0x3C00) &&
-       vop3p->clamp && instr->operands[0].isTemp() && ctx.uses[instr->operands[0].tempId()] == 1 &&
-       !vop3p->opsel_lo[1] && !vop3p->opsel_hi[1]) {
-
-      Instruction* op_instr = ctx.info[instr->operands[0].tempId()].parent_instr;
-      const aco_alu_opcode_info& opcode_info = instr_info.alu_opcode_infos[(int)op_instr->opcode];
-      aco_type op_type = opcode_info.def_types[0];
-      if (op_instr->isVOP3P() && op_type.num_components == 2 &&
-          op_type.base_type == aco_base_type_float && op_type.bit_size == 16 &&
-          opcode_info.output_modifiers) {
-         op_instr->valu().clamp = true;
-         propagate_swizzles(&op_instr->valu(), vop3p->opsel_lo[0], vop3p->opsel_hi[0]);
-         instr->definitions[0].swapTemp(op_instr->definitions[0]);
-         ctx.info[op_instr->definitions[0].tempId()].parent_instr = op_instr;
-         ctx.info[instr->definitions[0].tempId()].parent_instr = instr.get();
-         ctx.uses[instr->definitions[0].tempId()]--;
-         return;
-      }
-   }
-}
-
 bool
 can_use_mad_mix(opt_ctx& ctx, aco_ptr<Instruction>& instr)
 {
@@ -4001,7 +3955,8 @@ apply_output_impl(opt_ctx& ctx, aco_ptr<Instruction>& instr, Instruction* parent
    else if (instr->opcode == aco_opcode::s_abs_i32)
       return apply_s_abs(ctx, instr, parent);
    else if (instr->opcode == aco_opcode::v_mul_f64 || instr->opcode == aco_opcode::v_mul_f64_e64 ||
-            instr->opcode == aco_opcode::v_mul_f32 || instr->opcode == aco_opcode::v_mul_f16)
+            instr->opcode == aco_opcode::v_mul_f32 || instr->opcode == aco_opcode::v_mul_f16 ||
+            instr->opcode == aco_opcode::v_pk_mul_f16)
       return apply_output_mul(ctx, instr, parent);
    else
       UNREACHABLE("unhandled opcode");
@@ -4021,7 +3976,8 @@ apply_output(opt_ctx& ctx, aco_ptr<Instruction>& instr)
    case aco_opcode::v_mul_f64:
    case aco_opcode::v_mul_f64_e64:
    case aco_opcode::v_mul_f32:
-   case aco_opcode::v_mul_f16: break;
+   case aco_opcode::v_mul_f16:
+   case aco_opcode::v_pk_mul_f16: break;
    default: return false;
    }
 
@@ -4289,11 +4245,6 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       while (apply_omod_clamp(ctx, instr) || combine_output_conversion(ctx, instr))
          ;
       apply_insert(ctx, instr);
-   }
-
-   if (instr->isVOP3P() && instr->opcode != aco_opcode::v_fma_mix_f32 &&
-       instr->opcode != aco_opcode::v_fma_mixlo_f16) {
-      combine_vop3p(ctx, instr);
    }
 
    if (instr->isDPP())
