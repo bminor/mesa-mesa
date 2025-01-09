@@ -87,6 +87,7 @@ amd_common_files = files(
   'ac_nir_helpers.h',
   'ac_nir_opt_outputs.c',
   'ac_nir_cull.c',
+  'ac_nir_create_gs_copy_shader.c',
   'ac_nir_lower_esgs_io_to_mem.c',
   'ac_nir_lower_global_access.c',
   'ac_nir_lower_image_opcodes_cdna.c',
