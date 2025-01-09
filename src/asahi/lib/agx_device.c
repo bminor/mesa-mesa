@@ -120,6 +120,10 @@ agx_bo_bind(struct agx_device *dev, struct agx_bo *bo, uint64_t addr,
       .addr = addr,
    };
 
+   assert((size_B % 16384) == 0 && "page alignment required");
+   assert((offset_B % 16384) == 0 && "page alignment required");
+   assert((addr % 16384) == 0 && "page alignment required");
+
    int ret = drmIoctl(dev->fd, DRM_IOCTL_ASAHI_GEM_BIND, &gem_bind);
    if (ret) {
       fprintf(stderr, "DRM_IOCTL_ASAHI_GEM_BIND failed: %m (handle=%d)\n",
