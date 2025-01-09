@@ -1049,7 +1049,7 @@ d3d12_fill_shader_key(struct d3d12_selection_context *sel_ctx,
    }
 
    key->n_images = sel_ctx->ctx->num_image_views[stage];
-   for (int i = 0; i < key->n_images; ++i) {
+   for (unsigned i = 0; i < key->n_images; ++i) {
       key->image_format_conversion[i].emulated_format = sel_ctx->ctx->image_view_emulation_formats[stage][i];
       if (key->image_format_conversion[i].emulated_format != PIPE_FORMAT_NONE)
          key->image_format_conversion[i].view_format = sel_ctx->ctx->image_views[stage][i].format;

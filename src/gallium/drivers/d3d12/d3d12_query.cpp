@@ -160,7 +160,7 @@ d3d12_create_query(struct pipe_context *pctx,
       }
 
       /* Query result goes into a readback buffer */
-      unsigned buffer_size = static_cast<unsigned>(query->subqueries[i].query_size) * query->subqueries[i].num_queries;
+      unsigned buffer_size = query->subqueries[i].query_size * query->subqueries[i].num_queries;
       u_suballocator_alloc(&ctx->query_allocator, buffer_size, 256,
                            &query->subqueries[i].buffer_offset, &query->subqueries[i].buffer);
 
@@ -206,7 +206,7 @@ accumulate_subresult_cpu(struct d3d12_context *ctx, struct d3d12_query *q_parent
    access |= PIPE_MAP_UNSYNCHRONIZED;
 
    results = pipe_buffer_map_range(&ctx->base, q->buffer, q->buffer_offset,
-                                   q->num_queries * static_cast<unsigned int>(q->query_size),
+                                   q->num_queries * q->query_size,
                                    access, &transfer);
 
    if (results == NULL)
@@ -386,7 +386,7 @@ accumulate_subresult_gpu(struct d3d12_context *ctx, struct d3d12_query *q_parent
    pipe_shader_buffer new_cs_ssbos[1];
    new_cs_ssbos[0].buffer = q_parent->subqueries[sub_query].buffer;
    new_cs_ssbos[0].buffer_offset = q_parent->subqueries[sub_query].buffer_offset;
-   new_cs_ssbos[0].buffer_size = static_cast<unsigned int>(q_parent->subqueries[sub_query].query_size) * q_parent->subqueries[sub_query].num_queries;
+   new_cs_ssbos[0].buffer_size = q_parent->subqueries[sub_query].query_size * q_parent->subqueries[sub_query].num_queries;
    ctx->base.set_shader_buffers(&ctx->base, PIPE_SHADER_COMPUTE, 0, 1, new_cs_ssbos, 1);
 
    pipe_grid_info grid = {};
@@ -423,7 +423,7 @@ accumulate_result_gpu(struct d3d12_context *ctx, struct d3d12_query *q,
       ctx->transform_state_vars[i] = q->subqueries[i].curr_query;
       new_cs_ssbos[num_ssbos].buffer = q->subqueries[i].buffer;
       new_cs_ssbos[num_ssbos].buffer_offset = q->subqueries[i].buffer_offset;
-      new_cs_ssbos[num_ssbos].buffer_size = static_cast<unsigned int>(q->subqueries[i].query_size) * q->subqueries[i].num_queries;
+      new_cs_ssbos[num_ssbos].buffer_size = q->subqueries[i].query_size * q->subqueries[i].num_queries;
       num_ssbos++;
    }
 
