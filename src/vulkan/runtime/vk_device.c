@@ -23,6 +23,7 @@
 
 #include "vk_device.h"
 
+#include "vk_alloc.h"
 #include "vk_common_entrypoints.h"
 #include "vk_instance.h"
 #include "vk_log.h"
@@ -84,6 +85,42 @@ collect_enabled_features(struct vk_device *device,
    if (pCreateInfo->pEnabledFeatures)
       vk_set_physical_device_features_1_0(&device->enabled_features, pCreateInfo->pEnabledFeatures);
    vk_set_physical_device_features(&device->enabled_features, pCreateInfo->pNext);
+}
+
+static VkResult
+vk_device_memory_report_init(struct vk_device *device,
+                             const VkDeviceCreateInfo *pCreateInfo)
+{
+   struct vk_device_memory_report *mem_reports = NULL;
+   uint32_t count = 0;
+
+   vk_foreach_struct_const(pnext, pCreateInfo->pNext) {
+      if (pnext->sType == VK_STRUCTURE_TYPE_DEVICE_DEVICE_MEMORY_REPORT_CREATE_INFO_EXT)
+         count++;
+   }
+
+   if (!count)
+      return VK_SUCCESS;
+
+   mem_reports = vk_alloc(&device->alloc, sizeof(*mem_reports) * count,
+                          8, VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
+   if (!mem_reports)
+      return VK_ERROR_OUT_OF_HOST_MEMORY;
+
+   count = 0;
+   vk_foreach_struct_const(pnext, pCreateInfo->pNext) {
+      if (pnext->sType == VK_STRUCTURE_TYPE_DEVICE_DEVICE_MEMORY_REPORT_CREATE_INFO_EXT) {
+         const struct VkDeviceDeviceMemoryReportCreateInfoEXT *report = (void *)pnext;
+	 mem_reports[count].callback = report->pfnUserCallback;
+	 mem_reports[count].data = report->pUserData;
+	 count++;
+      }
+   }
+
+   device->memory_report_count = count;
+   device->memory_reports = mem_reports;
+
+   return VK_SUCCESS;
 }
 
 VkResult
@@ -222,7 +259,17 @@ vk_device_init(struct vk_device *device,
          (uint64_t)ceilf(device->physical->properties.timestampPeriod);
    }
 
+   result = vk_device_memory_report_init(device, pCreateInfo);
+   if (result != VK_SUCCESS)
+      return result;
+
    return VK_SUCCESS;
+}
+
+static void
+vk_device_memory_report_finish(struct vk_device *device)
+{
+   vk_free(&device->alloc, device->memory_reports);
 }
 
 void
@@ -231,6 +278,7 @@ vk_device_finish(struct vk_device *device)
    /* Drivers should tear down their own queues */
    assert(list_is_empty(&device->queues));
 
+   vk_device_memory_report_finish(device);
    vk_memory_trace_finish(device);
 
 #if DETECT_OS_ANDROID

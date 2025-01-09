@@ -92,6 +92,11 @@ enum vk_queue_submit_mode {
    VK_QUEUE_SUBMIT_MODE_THREADED_ON_DEMAND,
 };
 
+struct vk_device_memory_report {
+   PFN_vkDeviceMemoryReportCallbackEXT callback;
+   void *data;
+};
+
 /** Base struct for VkDevice */
 struct vk_device {
    struct vk_object_base base;
@@ -313,6 +318,9 @@ struct vk_device {
 
    /* For VK_KHR_pipeline_binary */
    bool disable_internal_cache;
+
+   struct vk_device_memory_report *memory_reports;
+   uint32_t memory_report_count;
 };
 
 VK_DEFINE_HANDLE_CASTS(vk_device, base, VkDevice,
