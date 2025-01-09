@@ -209,6 +209,9 @@ Image layouts
 AGX supports several image layouts, described here. To work with image layouts
 in the drivers, use the ail library, located in ``src/asahi/layout``.
 
+Strided linear
+``````````````
+
 The simplest layout is **strided linear**. Pixels are stored in raster-order in
 memory with a software-controlled stride. Strided linear images are useful for
 working with modifier-unaware window systems, however performance will suffer.
@@ -229,6 +232,9 @@ With these limitations, addressing into a strided linear image is as simple as
    \text{address} = (y \cdot \text{stride}) + (x \cdot \text{bytes per pixel})
 
 In practice, this suffices for window system integration and little else.
+
+Twiddled
+````````
 
 The most common uncompressed layout is **twiddled**. The image is divided into
 power-of-two sized tiles. The tiles themselves are stored in raster-order.
