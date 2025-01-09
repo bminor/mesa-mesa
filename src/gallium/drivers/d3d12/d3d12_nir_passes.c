@@ -453,7 +453,7 @@ lower_instr(nir_intrinsic_instr *instr, nir_builder *b,
 
    if (instr->intrinsic == nir_intrinsic_load_uniform) {
       nir_foreach_variable_with_modes(var, b->shader, nir_var_uniform) {
-         if (var->data.driver_location == nir_intrinsic_base(instr)) {
+         if (var->data.driver_location == (unsigned int) nir_intrinsic_base(instr)) {
             variable = var;
             break;
          }

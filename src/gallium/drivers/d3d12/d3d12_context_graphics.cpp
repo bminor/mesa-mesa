@@ -1868,7 +1868,7 @@ d3d12_disable_fake_so_buffers(struct d3d12_context *ctx)
 
          if (key.fake_so_buffer_copy_back.num_ranges > 0) {
             auto& last_range = key.fake_so_buffer_copy_back.ranges[key.fake_so_buffer_copy_back.num_ranges - 1];
-            if (output.dst_offset * 4 == last_range.offset + last_range.size) {
+            if (output.dst_offset * 4 == static_cast<unsigned>(last_range.offset + last_range.size)) {
                last_range.size += static_cast<uint16_t>(output.num_components * 4);
                continue;
             }
