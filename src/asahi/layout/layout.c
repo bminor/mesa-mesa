@@ -248,6 +248,16 @@ ail_initialize_compression(struct ail_layout *layout)
       (uint64_t)(layout->compression_layer_stride_B * layout->depth_px);
 }
 
+static void
+ail_initialize_sparse_table(struct ail_layout *layout)
+{
+   layout->sparse_folios_per_layer =
+      DIV_ROUND_UP(layout->layer_stride_B, AIL_IMAGE_SIZE_PER_FOLIO_B);
+
+   unsigned folios = layout->sparse_folios_per_layer * layout->depth_px;
+   layout->sparse_table_size_B = folios * AIL_FOLIO_SIZE_B;
+}
+
 void
 ail_make_miptree(struct ail_layout *layout)
 {
@@ -302,6 +312,8 @@ ail_make_miptree(struct ail_layout *layout)
    default:
       unreachable("Unsupported tiling");
    }
+
+   ail_initialize_sparse_table(layout);
 
    layout->size_B = ALIGN_POT(layout->size_B, AIL_CACHELINE);
    assert(layout->size_B > 0 && "Invalid dimensions");

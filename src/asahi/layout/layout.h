@@ -127,6 +127,22 @@ struct ail_layout {
    /* Size of entire texture */
    uint64_t size_B;
 
+   /* Size of the sparse page table required to address this image. This is
+    * calculated for all images (whether sparse is used or not), since the
+    * hardware has few requirements imposed on sparse.
+    *
+    * This size does not contribute to size_B. In a sparse image, size_B is the
+    * logical size of the image (if it were completely resident), whereas
+    * sparse_table_size_B is the physical size of the page table required to
+    * address that logical image.
+    */
+   uint64_t sparse_table_size_B;
+
+   /* Number of sparse folios required to cover a single layer of an image. This
+    * is proportional to sparse_table_size_B but split out for convenience.
+    */
+   uint32_t sparse_folios_per_layer;
+
    /* Must the layout support writeable images? If false, the layout MUST NOT be
     * used as a writeable image (either PBE or image atomics).
     */
@@ -460,6 +476,32 @@ ail_drm_modifier_to_tiling(uint64_t modifier)
    default:
       unreachable("Unsupported modifier");
    }
+}
+
+/*
+ * Constants for sparse page tables. See docs/drivers/asahi.rst.
+ */
+#define AIL_SPARSE_ELSIZE_B        4
+#define AIL_PAGES_PER_FOLIO        256
+#define AIL_IMAGE_SIZE_PER_FOLIO_B (AIL_PAGESIZE * AIL_PAGES_PER_FOLIO)
+#define AIL_FOLIO_SIZE_EL          (AIL_PAGES_PER_FOLIO * 2)
+#define AIL_FOLIO_SIZE_B           (AIL_FOLIO_SIZE_EL * AIL_SPARSE_ELSIZE_B)
+
+/*
+ * Map a logical page of the image (i.e. page = logical address / page_size) to
+ * a word-index into the sparse table.
+ */
+static inline unsigned
+ail_page_to_sparse_index_el(const struct ail_layout *layout, unsigned z,
+                            unsigned page)
+{
+   unsigned z_base = z * layout->sparse_folios_per_layer;
+   unsigned folio = page / AIL_PAGES_PER_FOLIO;
+   unsigned index_in_folio = page % AIL_PAGES_PER_FOLIO;
+   unsigned idx = ((z_base + folio) * AIL_FOLIO_SIZE_EL) + index_in_folio;
+
+   assert((idx * AIL_SPARSE_ELSIZE_B) < layout->sparse_table_size_B);
+   return idx;
 }
 
 #ifdef __cplusplus
