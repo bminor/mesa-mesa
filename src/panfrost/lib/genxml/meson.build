@@ -6,7 +6,7 @@ pan_packers = []
 foreach packer : ['common', 'v4', 'v5', 'v6', 'v7', 'v9', 'v10']
   pan_packers += custom_target(
     packer + '_pack.h',
-    input : ['gen_pack.py', packer + '.xml', 'pan_pack_helpers.h'],
+    input : ['gen_pack.py', packer + '.xml'],
     output : packer + '_pack.h',
     command : [prog_python, '@INPUT@'],
     capture : true,
