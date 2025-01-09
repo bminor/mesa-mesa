@@ -1308,8 +1308,7 @@ BEGIN_TEST(optimize.mad_mix.output_conv.modifiers)
       //! p_unit_test 0, %res0
       writeout(0, f2f16(fabs(fadd(a, b))));
 
-      //! v1: %res1_add = v_add_f32 %1, %2
-      //! v2b: %res1 = v_cvt_f16_f32 -%res1_add
+      //! v2b: %res1 = v_fma_mixlo_f16 1.0, -%a, -%b
       //! p_unit_test 1, %res1
       writeout(1, f2f16(fneg(fadd(a, b))));
 
