@@ -624,6 +624,7 @@ class Parser(object):
         print("struct %s_packed {" % aggregate.name.lower())
         print("   uint32_t opaque[{}];".format(aggregate.get_size() // 4))
         print("};\n")
+        print('#define {}_PACKED_T struct {}_packed'.format(aggregate.name.upper(), aggregate.name.lower()))
         print('#define {}_LENGTH {}'.format(aggregate.name.upper(), aggregate.size))
         if aggregate.align != None:
             print('#define {}_ALIGN {}'.format(aggregate.name.upper(), aggregate.align))
