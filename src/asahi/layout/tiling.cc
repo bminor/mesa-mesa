@@ -163,7 +163,7 @@ ail_tile(void *_tiled, void *_linear, const struct ail_layout *tiled_layout,
 {
    unsigned width_px = u_minify(tiled_layout->width_px, level);
    unsigned height_px = u_minify(tiled_layout->height_px, level);
-   unsigned blocksize_B = util_format_get_blocksize(tiled_layout->format);
+   unsigned blocksize_B = ail_get_blocksize_B(tiled_layout);
 
    assert(level < tiled_layout->levels && "Mip level out of bounds");
    assert(ail_is_level_twiddled_uncompressed(tiled_layout, level) &&

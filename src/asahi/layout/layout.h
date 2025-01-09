@@ -257,6 +257,12 @@ ail_space_bits(unsigned x)
 
 #define MOD_POT(x, y) (x) & ((y) - 1)
 
+static inline uint32_t
+ail_get_blocksize_B(const struct ail_layout *layout)
+{
+   return util_format_get_blocksize(layout->format);
+}
+
 static inline unsigned
 ail_effective_width_sa(unsigned width_px, unsigned sample_count_sa)
 {
