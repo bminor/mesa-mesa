@@ -55,14 +55,6 @@ static GfxStreamConnectionManager* getConnectionManager(void) {
     return GfxStreamConnectionManager::getThreadLocalInstance(transport, kCapsetGfxStreamVulkan);
 }
 
-#define VK_HOST_CONNECTION(ret)                               \
-    GfxStreamConnectionManager* mgr = getConnectionManager(); \
-    gfxstream::vk::VkEncoder* vkEnc = getVulkanEncoder(mgr);  \
-    if (!vkEnc) {                                             \
-        mesa_loge("vulkan: Failed to get Vulkan encoder\n");  \
-        return ret;                                           \
-    }
-
 namespace {
 
 static bool instance_extension_table_initialized = false;
@@ -283,7 +275,7 @@ static struct vk_instance_extension_table* get_instance_extensions() {
     if (!instance_extension_table_initialized) {
         VkResult result = SetupInstanceForProcess();
         if (VK_SUCCESS == result) {
-            VK_HOST_CONNECTION(retTablePtr)
+            auto vkEnc = gfxstream::vk::ResourceTracker::getThreadLocalEncoder();
             auto resources = gfxstream::vk::ResourceTracker::get();
             uint32_t numInstanceExts = 0;
             result = resources->on_vkEnumerateInstanceExtensionProperties(vkEnc, VK_SUCCESS, NULL,
@@ -351,7 +343,7 @@ VkResult gfxstream_vk_CreateInstance(const VkInstanceCreateInfo* pCreateInfo,
         mutableCreateInfo->enabledExtensionCount = static_cast<uint32_t>(filteredExts.size());
         mutableCreateInfo->ppEnabledExtensionNames = filteredExts.data();
 
-        VK_HOST_CONNECTION(VK_ERROR_DEVICE_LOST);
+        auto vkEnc = gfxstream::vk::ResourceTracker::getThreadLocalEncoder();
         result = vkEnc->vkCreateInstance(pCreateInfo, nullptr, &instance->internal_object,
                                          true /* do lock */);
         if (VK_SUCCESS != result) {
@@ -393,7 +385,7 @@ void gfxstream_vk_DestroyInstance(VkInstance _instance, const VkAllocationCallba
 
     VK_FROM_HANDLE(gfxstream_vk_instance, instance, _instance);
 
-    VK_HOST_CONNECTION()
+    auto vkEnc = gfxstream::vk::ResourceTracker::getThreadLocalEncoder();
     vkEnc->vkDestroyInstance(instance->internal_object, pAllocator, true /* do lock */);
 
     vk_instance_finish(&instance->vk);
