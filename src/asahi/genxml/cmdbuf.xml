@@ -215,6 +215,13 @@
     <value name="Sparse" value="3"/>
   </enum>
 
+  <struct name="Sparse block" size="4">
+    <field name="Address" size="26" start="0" type="address" modifier="shr(14)"/>
+    <!-- Bits 26...29 don't seem to do anything and I don't see macOS setting them. Bit 30 on the other hand macOS sets and I don't know why. -->
+    <field name="Unknown" size="1" start="30" type="bool"/>
+    <field name="Enabled" size="1" start="31" type="bool"/>
+  </struct>
+
   <struct name="PBE" size="24">
     <field name="Dimension" size="4" start="0" type="Texture dimension"/>
     <field name="Layout" size="2" start="4" type="Layout"/>
