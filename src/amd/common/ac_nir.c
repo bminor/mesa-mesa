@@ -1312,8 +1312,8 @@ get_output_and_type(ac_nir_prerast_out *out, unsigned slot, bool high_16bits,
    return data;
 }
 
-static void
-emit_streamout(nir_builder *b, unsigned stream, nir_xfb_info *info, ac_nir_prerast_out *out)
+void
+ac_nir_emit_legacy_streamout(nir_builder *b, unsigned stream, nir_xfb_info *info, ac_nir_prerast_out *out)
 {
    nir_def *so_vtx_count = nir_ubfe_imm(b, nir_load_streamout_config_amd(b), 16, 7);
    nir_def *tid = nir_load_subgroup_invocation(b);
@@ -1500,7 +1500,7 @@ ac_nir_create_gs_copy_shader(const nir_shader *gs_nir,
       }
 
       if (stream_id)
-         emit_streamout(&b, stream, info, &out);
+         ac_nir_emit_legacy_streamout(&b, stream, info, &out);
 
       if (stream == 0) {
          uint64_t export_outputs = b.shader->info.outputs_written | VARYING_BIT_POS;
@@ -1587,7 +1587,7 @@ ac_nir_lower_legacy_vs(nir_shader *nir,
    }
 
    if (!disable_streamout && nir->xfb_info) {
-      emit_streamout(&b, 0, ac_nir_get_sorted_xfb_info(nir), &out);
+      ac_nir_emit_legacy_streamout(&b, 0, ac_nir_get_sorted_xfb_info(nir), &out);
       preserved = nir_metadata_none;
    }
 

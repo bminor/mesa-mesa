@@ -80,6 +80,9 @@ typedef unsigned (*ac_nir_map_io_driver_location)(unsigned semantic);
 struct nir_builder;
 typedef struct nir_builder nir_builder;
 
+struct nir_xfb_info;
+typedef struct nir_xfb_info nir_xfb_info;
+
 /* Executed by ac_nir_cull when the current primitive is accepted. */
 typedef void (*ac_nir_cull_accepted)(nir_builder *b, void *state);
 
@@ -154,6 +157,9 @@ ac_optimization_barrier_vgpr_array(const struct radeon_info *info, nir_builder *
 
 nir_def *
 ac_get_global_ids(nir_builder *b, unsigned num_components, unsigned bit_size);
+
+void
+ac_nir_emit_legacy_streamout(nir_builder *b, unsigned stream, nir_xfb_info *info, ac_nir_prerast_out *out);
 
 #ifdef __cplusplus
 }
