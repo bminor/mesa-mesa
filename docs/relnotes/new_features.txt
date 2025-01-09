@@ -25,6 +25,8 @@ VK_EXT_scalar_block_layout on panvk
 VK_EXT_tooling_info on panvk
 depthClamp on panvk
 depthBiasClamp on panvk
+drawIndirectFirstInstance on panvk
+fragmentStoresAndAtomics on panvk/v10+
 sampleRateShading on panvk
 occlusionQueryPrecise on panvk
 shaderInt16 on panvk
