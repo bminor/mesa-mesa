@@ -393,6 +393,10 @@ struct drm_xe_query_mem_regions {
  *
  *    - %DRM_XE_QUERY_CONFIG_FLAG_HAS_VRAM - Flag is set if the device
  *      has usable VRAM
+ *    - %DRM_XE_QUERY_CONFIG_FLAG_HAS_LOW_LATENCY - Flag is set if the device
+ *      has low latency hint support
+ *    - %DRM_XE_QUERY_CONFIG_FLAG_HAS_CPU_ADDR_MIRROR - Flag is set if the
+ *      device has CPU address mirroring support
  *  - %DRM_XE_QUERY_CONFIG_MIN_ALIGNMENT - Minimal memory alignment
  *    required by this device, typically SZ_4K or SZ_64K
  *  - %DRM_XE_QUERY_CONFIG_VA_BITS - Maximum bits of a virtual address
@@ -409,6 +413,8 @@ struct drm_xe_query_config {
 #define DRM_XE_QUERY_CONFIG_REV_AND_DEVICE_ID	0
 #define DRM_XE_QUERY_CONFIG_FLAGS			1
 	#define DRM_XE_QUERY_CONFIG_FLAG_HAS_VRAM	(1 << 0)
+	#define DRM_XE_QUERY_CONFIG_FLAG_HAS_LOW_LATENCY	(1 << 1)
+	#define DRM_XE_QUERY_CONFIG_FLAG_HAS_CPU_ADDR_MIRROR	(1 << 2)
 #define DRM_XE_QUERY_CONFIG_MIN_ALIGNMENT		2
 #define DRM_XE_QUERY_CONFIG_VA_BITS			3
 #define DRM_XE_QUERY_CONFIG_MAX_EXEC_QUEUE_PRIORITY	4
@@ -987,6 +993,12 @@ struct drm_xe_vm_destroy {
  *  - %DRM_XE_VM_BIND_FLAG_CHECK_PXP - If the object is encrypted via PXP,
  *    reject the binding if the encryption key is no longer valid. This
  *    flag has no effect on BOs that are not marked as using PXP.
+ *  - %DRM_XE_VM_BIND_FLAG_CPU_ADDR_MIRROR - When the CPU address mirror flag is
+ *    set, no mappings are created rather the range is reserved for CPU address
+ *    mirroring which will be populated on GPU page faults or prefetches. Only
+ *    valid on VMs with DRM_XE_VM_CREATE_FLAG_FAULT_MODE set. The CPU address
+ *    mirror flag are only valid for DRM_XE_VM_BIND_OP_MAP operations, the BO
+ *    handle MBZ, and the BO offset MBZ.
  */
 struct drm_xe_vm_bind_op {
 	/** @extensions: Pointer to the first extension struct, if any */
@@ -1039,7 +1051,9 @@ struct drm_xe_vm_bind_op {
 	 * on the @pat_index. For such mappings there is no actual memory being
 	 * mapped (the address in the PTE is invalid), so the various PAT memory
 	 * attributes likely do not apply.  Simply leaving as zero is one
-	 * option (still a valid pat_index).
+	 * option (still a valid pat_index). Same applies to
+	 * DRM_XE_VM_BIND_FLAG_CPU_ADDR_MIRROR bindings as for such mapping
+	 * there is no actual memory being mapped.
 	 */
 	__u16 pat_index;
 
@@ -1055,6 +1069,14 @@ struct drm_xe_vm_bind_op {
 
 		/** @userptr: user pointer to bind on */
 		__u64 userptr;
+
+		/**
+		 * @cpu_addr_mirror_offset: Offset from GPU @addr to create
+		 * CPU address mirror mappings. MBZ with current level of
+		 * support (e.g. 1 to 1 mapping between GPU and CPU mappings
+		 * only supported).
+		 */
+		__s64 cpu_addr_mirror_offset;
 	};
 
 	/**
@@ -1078,6 +1100,7 @@ struct drm_xe_vm_bind_op {
 #define DRM_XE_VM_BIND_FLAG_NULL	(1 << 2)
 #define DRM_XE_VM_BIND_FLAG_DUMPABLE	(1 << 3)
 #define DRM_XE_VM_BIND_FLAG_CHECK_PXP	(1 << 4)
+#define DRM_XE_VM_BIND_FLAG_CPU_ADDR_MIRROR	(1 << 5)
 	/** @flags: Bind flags */
 	__u32 flags;
 
@@ -1205,6 +1228,21 @@ struct drm_xe_vm_bind {
  *     };
  *     ioctl(fd, DRM_IOCTL_XE_EXEC_QUEUE_CREATE, &exec_queue_create);
  *
+ *     Allow users to provide a hint to kernel for cases demanding low latency
+ *     profile. Please note it will have impact on power consumption. User can
+ *     indicate low latency hint with flag while creating exec queue as
+ *     mentioned below,
+ *
+ *     struct drm_xe_exec_queue_create exec_queue_create = {
+ *          .flags = DRM_XE_EXEC_QUEUE_LOW_LATENCY_HINT,
+ *          .extensions = 0,
+ *          .vm_id = vm,
+ *          .num_bb_per_exec = 1,
+ *          .num_eng_per_bb = 1,
+ *          .instances = to_user_pointer(&instance),
+ *     };
+ *     ioctl(fd, DRM_IOCTL_XE_EXEC_QUEUE_CREATE, &exec_queue_create);
+ *
  */
 struct drm_xe_exec_queue_create {
 #define DRM_XE_EXEC_QUEUE_EXTENSION_SET_PROPERTY		0
@@ -1223,7 +1261,8 @@ struct drm_xe_exec_queue_create {
 	/** @vm_id: VM to use for this exec queue */
 	__u32 vm_id;
 
-	/** @flags: MBZ */
+#define DRM_XE_EXEC_QUEUE_LOW_LATENCY_HINT	(1 << 0)
+	/** @flags: flags to use for this exec queue */
 	__u32 flags;
 
 	/** @exec_queue_id: Returned exec queue ID */
@@ -1497,6 +1536,7 @@ struct drm_xe_wait_user_fence {
 enum drm_xe_observation_type {
 	/** @DRM_XE_OBSERVATION_TYPE_OA: OA observation stream type */
 	DRM_XE_OBSERVATION_TYPE_OA,
+	/** @DRM_XE_OBSERVATION_TYPE_EU_STALL: EU stall sampling observation stream type */
 	DRM_XE_OBSERVATION_TYPE_EU_STALL,
 };
 
@@ -1850,29 +1890,40 @@ enum drm_xe_pxp_session_type {
 /* ID of the protected content session managed by Xe when PXP is active */
 #define DRM_XE_PXP_HWDRM_DEFAULT_SESSION 0xf
 
+/**
+ * enum drm_xe_eu_stall_property_id - EU stall sampling input property ids.
+ *
+ * These properties are passed to the driver at open as a chain of
+ * @drm_xe_ext_set_property structures with @property set to these
+ * properties' enums and @value set to the corresponding values of these
+ * properties. @drm_xe_user_extension base.name should be set to
+ * @DRM_XE_EU_STALL_EXTENSION_SET_PROPERTY.
+ *
+ * With the file descriptor obtained from open, user space must enable
+ * the EU stall stream fd with @DRM_XE_OBSERVATION_IOCTL_ENABLE before
+ * calling read(). EIO errno from read() indicates HW dropped data
+ * due to full buffer.
+ */
 enum drm_xe_eu_stall_property_id {
 #define DRM_XE_EU_STALL_EXTENSION_SET_PROPERTY		0
 	/**
-	 * @DRM_XE_EU_STALL_PROP_GT_ID: GT ID of the GT on which
+	 * @DRM_XE_EU_STALL_PROP_GT_ID: @gt_id of the GT on which
 	 * EU stall data will be captured.
 	 */
 	DRM_XE_EU_STALL_PROP_GT_ID = 1,
 
 	/**
-	 * @DRM_XE_EU_STALL_PROP_SAMPLE_RATE: Sampling rate
-	 * in GPU cycles. For example:
-	 * 251, 251x2, 251x3, 251x4, 251x5, 251x6 and 251x7.
+	 * @DRM_XE_EU_STALL_PROP_SAMPLE_RATE: Sampling rate in
+	 * GPU cycles from @sampling_rates in struct @drm_xe_query_eu_stall
 	 */
 	DRM_XE_EU_STALL_PROP_SAMPLE_RATE,
 
 	/**
 	 * @DRM_XE_EU_STALL_PROP_WAIT_NUM_REPORTS: Minimum number of
 	 * EU stall data reports to be present in the kernel buffer
-	 * before unblocking poll or read that is blocked.
+	 * before unblocking a blocked poll or read.
 	 */
 	DRM_XE_EU_STALL_PROP_WAIT_NUM_REPORTS,
-
-	DRM_XE_EU_STALL_PROP_MAX
 };
 
 /**
@@ -1888,17 +1939,18 @@ struct drm_xe_query_eu_stall {
 
 	/** @capabilities: EU stall capabilities bit-mask */
 	__u64 capabilities;
+#define DRM_XE_EU_STALL_CAPS_BASE		(1 << 0)
 
 	/** @record_size: size of each EU stall data record */
 	__u64 record_size;
 
-	/** @per_xecore_buf_size: Per XeCore buffer size */
+	/** @per_xecore_buf_size: internal per XeCore buffer size */
 	__u64 per_xecore_buf_size;
 
 	/** @reserved: Reserved */
 	__u64 reserved[5];
 
-	/** @num_sampling_rates: Number of sampling rates supported */
+	/** @num_sampling_rates: Number of sampling rates in @sampling_rates array */
 	__u64 num_sampling_rates;
 
 	/**
@@ -1908,73 +1960,6 @@ struct drm_xe_query_eu_stall {
 	 */
 	__u64 sampling_rates[];
 };
-#define DRM_XE_EU_STALL_CAPS_BASE		(1 << 0)
-
-/**
- * struct drm_xe_eu_stall_data_pvc - EU stall data format for PVC
- *
- * Bits		Field
- * 0  to 28	IP (addr)
- * 29 to 36	active count
- * 37 to 44	other count
- * 45 to 52	control count
- * 53 to 60	pipestall count
- * 61 to 68	send count
- * 69 to 76	dist_acc count
- * 77 to 84	sbid count
- * 85 to 92	sync count
- * 93 to 100	inst_fetch count
- */
-struct drm_xe_eu_stall_data_pvc {
-	__u64 ip_addr:29;
-	__u64 active_count:8;
-	__u64 other_count:8;
-	__u64 control_count:8;
-	__u64 pipestall_count:8;
-	__u64 send_count:8;
-	__u64 dist_acc_count:8;
-	__u64 sbid_count:8;
-	__u64 sync_count:8;
-	__u64 inst_fetch_count:8;
-	__u64 unused_bits:27;
-	__u64 unused[6];
-} __attribute__((packed));
-
-/**
- * struct drm_xe_eu_stall_data_xe2 - EU stall data format for LNL, BMG
- *
- * Bits		Field
- * 0  to 28	IP (addr)
- * 29 to 36	Tdr count
- * 37 to 44	other count
- * 45 to 52	control count
- * 53 to 60	pipestall count
- * 61 to 68	send count
- * 69 to 76	dist_acc count
- * 77 to 84	sbid count
- * 85 to 92	sync count
- * 93 to 100	inst_fetch count
- * 101 to 108	Active count
- * 109 to 111	Exid
- * 112		EndFlag (is always 1)
- */
-struct drm_xe_eu_stall_data_xe2 {
-	__u64 ip_addr:29;
-	__u64 tdr_count:8;
-	__u64 other_count:8;
-	__u64 control_count:8;
-	__u64 pipestall_count:8;
-	__u64 send_count:8;
-	__u64 dist_acc_count:8;
-	__u64 sbid_count:8;
-	__u64 sync_count:8;
-	__u64 inst_fetch_count:8;
-	__u64 active_count:8;
-	__u64 ex_id:3;
-	__u64 end_flag:1;
-	__u64 unused_bits:15;
-	__u64 unused[6];
-} __attribute__((packed));
 
 #if defined(__cplusplus)
 }
