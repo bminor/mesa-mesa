@@ -70,12 +70,11 @@ enum Label {
    label_omod4 = 1ull << 34,
    label_omod5 = 1ull << 35,
    label_clamp = 1ull << 36,
-   label_insert = 1ull << 38,
    label_f2f16 = 1ull << 39,
 };
 
 static constexpr uint64_t instr_mod_labels =
-   label_omod2 | label_omod4 | label_omod5 | label_clamp | label_insert | label_f2f16;
+   label_omod2 | label_omod4 | label_omod5 | label_clamp | label_f2f16;
 
 static constexpr uint64_t input_mod_labels =
    label_abs_fp16 | label_abs_fp32_64 | label_neg_fp16 | label_neg_fp32_64;
@@ -292,16 +291,6 @@ struct ssa_info {
    void set_extract() { add_label(label_extract); }
 
    bool is_extract() { return label & label_extract; }
-
-   void set_insert(Instruction* insert)
-   {
-      if (label & temp_labels)
-         return;
-      add_label(label_insert);
-      mod_instr = insert;
-   }
-
-   bool is_insert() { return label & label_insert; }
 };
 
 struct opt_ctx {
@@ -986,7 +975,8 @@ alu_opt_info_is_valid(opt_ctx& ctx, alu_opt_info& info)
       if (!info.uses_insert()) {
          info.insert = SubdwordSel::dword;
       } else if (info.defs[0].bytes() != 4 ||
-                 (!format_is(info.format, Format::VOP1) && !format_is(info.format, Format::VOP2))) {
+                 (!format_is(info.format, Format::VOP1) && !format_is(info.format, Format::VOP2)) ||
+                 ctx.program->gfx_level < GFX8 || ctx.program->gfx_level >= GFX11) {
          return false;
       } else {
          info.format = format_combine(info.format, Format::SDWA);
@@ -3018,19 +3008,12 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
    case aco_opcode::p_extract: {
       if (instr->operands[0].isTemp()) {
          ctx.info[instr->definitions[0].tempId()].set_extract();
-         if (instr->definitions[0].bytes() == 4 && instr->operands[0].regClass() == v1 &&
-             parse_insert(instr.get()))
-            ctx.info[instr->operands[0].tempId()].set_insert(instr.get());
       }
       break;
    }
    case aco_opcode::p_insert: {
-      if (instr->operands[0].isTemp()) {
-         if (instr->operands[0].regClass() == v1)
-            ctx.info[instr->operands[0].tempId()].set_insert(instr.get());
-         if (parse_extract(instr.get()))
-            ctx.info[instr->definitions[0].tempId()].set_extract();
-      }
+      if (instr->operands[0].isTemp() && parse_extract(instr.get()))
+         ctx.info[instr->definitions[0].tempId()].set_extract();
       break;
    }
    case aco_opcode::v_cvt_f16_f32: {
@@ -3600,7 +3583,7 @@ apply_omod_clamp(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       instr->valu().clamp = true;
 
    instr->definitions[0].swapTemp(def_info.mod_instr->definitions[0]);
-   ctx.info[instr->definitions[0].tempId()].label &= label_clamp | label_insert | label_f2f16;
+   ctx.info[instr->definitions[0].tempId()].label &= label_clamp | label_f2f16;
    ctx.uses[def_info.mod_instr->definitions[0].tempId()]--;
    ctx.info[instr->definitions[0].tempId()].parent_instr = instr.get();
    ctx.info[def_info.mod_instr->definitions[0].tempId()].parent_instr = def_info.mod_instr;
@@ -3609,45 +3592,34 @@ apply_omod_clamp(opt_ctx& ctx, aco_ptr<Instruction>& instr)
 }
 
 /* Combine an p_insert (or p_extract, in some cases) instruction with instr.
- * p_insert(instr(...)) -> instr_insert().
+ * p_insert(parent(...)) -> instr_insert().
  */
-bool
-apply_insert(opt_ctx& ctx, aco_ptr<Instruction>& instr)
+Instruction*
+apply_insert(opt_ctx& ctx, aco_ptr<Instruction>& instr, Instruction* parent)
 {
-   if (instr->definitions.empty() || ctx.uses[instr->definitions[0].tempId()] != 1)
-      return false;
+   if (instr->definitions[0].regClass() != v1)
+      return nullptr;
 
-   ssa_info& def_info = ctx.info[instr->definitions[0].tempId()];
-   if (!def_info.is_insert())
-      return false;
-   /* if the insert instruction is dead, then the single user of this
-    * instruction is a different instruction */
-   if (!ctx.uses[def_info.mod_instr->definitions[0].tempId()])
-      return false;
+   SubdwordSel sel = parse_insert(instr.get());
+   if (!sel)
+      return nullptr;
 
-   /* MADs/FMAs are created later, so we don't have to update the original add */
-   assert(!ctx.info[instr->definitions[0].tempId()].is_combined());
+   if (ctx.info[instr->operands[0].tempId()].label & temp_labels)
+      return nullptr;
 
-   SubdwordSel sel = parse_insert(def_info.mod_instr);
-   assert(sel);
+   alu_opt_info parent_info;
+   if (!alu_opt_gather_info(ctx, parent, parent_info))
+      return nullptr;
 
-   if (!can_use_SDWA(ctx.program->gfx_level, instr, true))
-      return false;
+   if (parent_info.uses_insert())
+      return nullptr;
 
-   convert_to_SDWA(ctx.program->gfx_level, instr);
-   if (instr->sdwa().dst_sel.size() != 4)
-      return false;
-   instr->sdwa().dst_sel = sel;
+   parent_info.insert = sel;
 
-   instr->definitions[0].swapTemp(def_info.mod_instr->definitions[0]);
-   ctx.info[instr->definitions[0].tempId()].label = 0;
-   ctx.uses[def_info.mod_instr->definitions[0].tempId()]--;
-   ctx.info[instr->definitions[0].tempId()].label = 0;
-   ctx.info[def_info.mod_instr->definitions[0].tempId()].parent_instr = def_info.mod_instr;
-   for (const Definition& def : instr->definitions)
-      ctx.info[def.tempId()].parent_instr = instr.get();
-
-   return true;
+   parent_info.defs[0].setTemp(instr->definitions[0].getTemp());
+   if (!alu_opt_info_is_valid(ctx, parent_info))
+      return nullptr;
+   return alu_opt_info_to_instr(ctx, parent_info, parent);
 }
 
 /* Remove superfluous extract after ds_read like so:
@@ -3946,8 +3918,8 @@ apply_output_impl(opt_ctx& ctx, aco_ptr<Instruction>& instr, Instruction* parent
    if (instr->opcode == aco_opcode::p_extract &&
        (parent->isDS() || parent->isSMEM() || parent->isMUBUF() || parent->isFlatLike()))
       return apply_load_extract(ctx, instr, parent);
-   else if (instr->opcode == aco_opcode::p_extract)
-      return nullptr;
+   else if (instr->opcode == aco_opcode::p_extract || instr->opcode == aco_opcode::p_insert)
+      return apply_insert(ctx, instr, parent);
    else if (instr->opcode == aco_opcode::v_not_b32)
       return apply_v_not(ctx, instr, parent);
    else if (instr->opcode == aco_opcode::s_not_b32 || instr->opcode == aco_opcode::s_not_b64)
@@ -3969,6 +3941,7 @@ apply_output(opt_ctx& ctx, aco_ptr<Instruction>& instr)
 {
    switch (instr->opcode) {
    case aco_opcode::p_extract:
+   case aco_opcode::p_insert:
    case aco_opcode::v_not_b32:
    case aco_opcode::s_not_b32:
    case aco_opcode::s_not_b64:
@@ -4244,7 +4217,6 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
    if (instr->isVALU()) {
       while (apply_omod_clamp(ctx, instr) || combine_output_conversion(ctx, instr))
          ;
-      apply_insert(ctx, instr);
    }
 
    if (instr->isDPP())
