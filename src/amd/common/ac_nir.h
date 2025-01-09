@@ -369,6 +369,9 @@ ac_nir_lower_mem_access_bit_sizes(nir_shader *shader, enum amd_gfx_level gfx_lev
 bool
 ac_nir_optimize_uniform_atomics(nir_shader *nir);
 
+unsigned
+ac_nir_lower_bit_size_callback(const nir_instr *instr, void *data);
+
 #ifdef __cplusplus
 }
 #endif
