@@ -553,8 +553,6 @@ struct si_screen {
    /* Texture filter settings. */
    int force_aniso; /* -1 = disabled */
 
-   unsigned max_texel_buffer_elements;
-
    /* Auxiliary context. Used to initialize resources and upload shaders. */
    union {
       struct {

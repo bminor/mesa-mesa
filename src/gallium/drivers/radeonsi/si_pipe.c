@@ -1280,8 +1280,6 @@ static struct pipe_screen *radeonsi_screen_create_impl(struct radeon_winsys *ws,
 
    si_init_screen_caps(sscreen);
 
-   sscreen->max_texel_buffer_elements = sscreen->b.caps.max_texel_buffer_elements;
-
    if (sscreen->debug_flags & DBG(INFO))
       ac_print_gpu_info(&sscreen->info, stdout);
 
