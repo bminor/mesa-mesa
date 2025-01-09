@@ -433,6 +433,7 @@ class Group(object):
             convert = None
 
             args = []
+            args.append('(__unpacked)->{}'.format(fieldref.path))
             args.append('&__tmp_packed.opaque[0]')
             args.append(str(fieldref.start))
             args.append(str(fieldref.end))
@@ -440,7 +441,7 @@ class Group(object):
             if field.type in set(["uint", "hex", "uint/float", "address", "Pixel Format", "Component Swizzle"]):
                 convert = "__gen_unpack_uint"
             elif field.type in self.parser.enums:
-                convert = "(enum %s)__gen_unpack_uint" % enum_name(field.type)
+                convert = "__gen_unpack_uint"
             elif field.type == "int":
                 convert = "__gen_unpack_sint"
             elif field.type == "padded":
@@ -466,9 +467,12 @@ class Group(object):
                 if field.modifier[0] == "log2":
                     prefix = "1U << "
 
-            decoded = '{}{}({}){}'.format(prefix, convert, ', '.join(args), suffix)
+            print('   {}({}); \\'.format(convert, ', '.join(args)))
 
-            print('   (__unpacked)->{} = {}; \\'.format(fieldref.path, decoded))
+            if len(prefix) != 0 or len(suffix) != 0:
+                print('   (__unpacked)->{} = {}(__unpacked)->{}{}; \\'.format(fieldref.path, prefix, fieldref.path, suffix))
+
+
             if field.modifier and field.modifier[0] == "align":
                 mask = hex(field.modifier[1] - 1)
                 print('   assert(!((__unpacked)->{} & {})); \\'.format(fieldref.path, mask))

@@ -11,8 +11,6 @@
 
 #include "util/bitpack_helpers.h"
 
-#define __gen_unpack_float(x, y, z) uif(__gen_unpack_uint(x, y, z))
-
 static inline uint32_t
 __gen_padded(uint32_t v, uint32_t start, uint32_t end)
 {
@@ -29,55 +27,56 @@ __gen_padded(uint32_t v, uint32_t start, uint32_t end)
    return util_bitpack_uint(shift | (odd << 5), start, end);
 }
 
-static inline uint64_t
-__gen_unpack_uint(const uint32_t *restrict cl, uint32_t start, uint32_t end)
-{
-   uint64_t val = 0;
-   const int width = end - start + 1;
-   const uint64_t mask =
-      (width == 64) ? ~((uint64_t)0) : ((uint64_t)1 << width) - 1;
+#define __gen_unpack_uint(out, cl, start, end)                                 \
+   do {                                                                        \
+      uint64_t __val = 0;                                                      \
+      const int __width = (end) - (start) + 1;                                 \
+      const uint64_t __mask =                                                  \
+         (__width == 64) ? ~((uint64_t)0) : ((uint64_t)1 << __width) - 1;      \
+                                                                               \
+      for (unsigned __word = (start) / 32; __word < ((end) / 32) + 1;          \
+           __word++) {                                                         \
+         __val |= ((uint64_t)(cl)[__word]) << ((__word - (start) / 32) * 32);  \
+      }                                                                        \
+                                                                               \
+      (out) = (__val >> ((start) % 32)) & __mask;                              \
+   } while (0)
 
-   for (unsigned word = start / 32; word < (end / 32) + 1; word++) {
-      val |= ((uint64_t)cl[word]) << ((word - start / 32) * 32);
-   }
+#define __gen_unpack_sint(out, cl, start, end)                                 \
+   do {                                                                        \
+      int size = (end) - (start) + 1;                                          \
+      int64_t __tmp_sint;                                                      \
+      __gen_unpack_uint(__tmp_sint, cl, start, end);                           \
+      (out) = util_sign_extend(__tmp_sint, size);                              \
+   } while (0)
 
-   return (val >> (start % 32)) & mask;
-}
+#define __gen_unpack_ulod(out, cl, start, end)                                 \
+   do {                                                                        \
+      uint32_t __tmp_ulod;                                                     \
+      __gen_unpack_uint(__tmp_ulod, cl, start, end);                           \
+      (out) = ((float)__tmp_ulod) / 256.0;                                     \
+   } while (0)
 
-static inline uint64_t
-__gen_unpack_sint(const uint32_t *restrict cl, uint32_t start, uint32_t end)
-{
-   int size = end - start + 1;
-   int64_t val = __gen_unpack_uint(cl, start, end);
+#define __gen_unpack_slod(out, cl, start, end)                                 \
+   do {                                                                        \
+      int32_t __tmp_slod;                                                      \
+      __gen_unpack_sint(__tmp_slod, cl, start, end);                           \
+      (out) = ((float)__tmp_slod) / 256.0;                                     \
+   } while (0)
 
-   return util_sign_extend(val, size);
-}
+#define __gen_unpack_float(out, cl, start, end)                                \
+   do {                                                                        \
+      uint32_t __tmp_float;                                                    \
+      __gen_unpack_uint(__tmp_float, cl, start, end);                          \
+      (out) = uif(__tmp_float);                                                \
+   } while (0)
 
-static inline float
-__gen_unpack_ulod(const uint32_t *restrict cl, uint32_t start, uint32_t end)
-{
-   uint32_t u = __gen_unpack_uint(cl, start, end);
-
-   return ((float)u) / 256.0;
-}
-
-static inline float
-__gen_unpack_slod(const uint32_t *restrict cl, uint32_t start, uint32_t end)
-{
-   int32_t u = __gen_unpack_sint(cl, start, end);
-
-   return ((float)u) / 256.0;
-}
-
-static inline uint64_t
-__gen_unpack_padded(const uint32_t *restrict cl, uint32_t start, uint32_t end)
-{
-   unsigned val = __gen_unpack_uint(cl, start, end);
-   unsigned shift = val & 0b11111;
-   unsigned odd = val >> 5;
-
-   return (2 * odd + 1) << shift;
-}
+#define __gen_unpack_padded(out, cl, start, end)                               \
+   do {                                                                        \
+      uint32_t __tmp_padded;                                                   \
+      __gen_unpack_uint(__tmp_padded, cl, start, end);                         \
+      (out) = (2 * (__tmp_padded >> 5) + 1) << (__tmp_padded & 0b11111);       \
+   } while (0)
 
 #define PREFIX1(A)          MALI_##A
 #define PREFIX2(A, B)       MALI_##A##_##B
