@@ -180,7 +180,7 @@ agx_set_null_texture(struct agx_texture_packed *tex, uint64_t valid_address)
       cfg.swizzle_b = AGX_CHANNEL_0;
       cfg.swizzle_a = AGX_CHANNEL_0;
       cfg.address = valid_address;
-      cfg.null = true;
+      cfg.mode = AGX_IMAGE_MODE_NULL;
    }
 }
 

@@ -204,6 +204,17 @@
     <value name="4" value="1"/>
   </enum>
 
+  <enum name="Image Mode">
+    <value name="Normal" value="0"/>
+    <!-- Needs investigation, only seen with null textures so far -->
+    <value name="Null" value="1"/>
+    <!-- This is r/e, I can name things however I'd like.
+         Might be a legacy mode of some kind, we should investigate.
+      -->
+    <value name="Sparse but it does not seem to work" value="2"/>
+    <value name="Sparse" value="3"/>
+  </enum>
+
   <struct name="PBE" size="24">
     <field name="Dimension" size="4" start="0" type="Texture dimension"/>
     <field name="Layout" size="2" start="4" type="Layout"/>
@@ -221,6 +232,7 @@
     <field name="Samples" size="1" start="56" type="Sample Count"/>
     <field name="Unk mipmapped" size="1" start="58" type="bool"/>
     <field name="Compressed 1" size="1" start="59" type="bool"/>
+    <field name="Mode" size="2" start="60" type="Image Mode"/>
     <field name="Buffer" size="36" start="64" type="address" modifier="shr(4)"/>
     <field name="Level" size="4" start="100" type="uint"/>
 
@@ -282,8 +294,7 @@
     reduce wasted memory due to padding. Causing test flakiness when set. -->
     <field name="Unk mipmapped" size="1" start="102" type="bool"/>
     <field name="Compressed 1" size="1" start="103" type="bool"/>
-    <!-- This is set when no texture is bound, with layout 1 -->
-    <field name="Null" size="1" start="105" type="bool"/>
+    <field name="Mode" size="2" start="104" type="Image Mode"/>
     <field name="Compression" size="2" start="106" type="hex"/> <!-- 0 for uncompressed -->
     <field name="sRGB" size="1" start="108" type="bool"/>
     <field name="sRGB 2-channel" size="1" start="109" type="bool"/>
