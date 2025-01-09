@@ -80,6 +80,8 @@ TEST(Miptree, AllMipLevels)
    ail_make_miptree(&layout);
 
    EXPECT_EQ(layout.size_B, 0x555680);
+   EXPECT_EQ(layout.sparse_folios_per_layer, 2);
+   EXPECT_EQ(layout.sparse_table_size_B, 0x1000);
 }
 
 TEST(Miptree, SomeMipLevels)
@@ -97,6 +99,8 @@ TEST(Miptree, SomeMipLevels)
    ail_make_miptree(&layout);
 
    EXPECT_EQ(layout.size_B, 0x555680);
+   EXPECT_EQ(layout.sparse_folios_per_layer, 2);
+   EXPECT_EQ(layout.sparse_table_size_B, 0x1000);
 }
 
 TEST(Miptree, SmallPartialMiptree2DArray)
@@ -115,6 +119,8 @@ TEST(Miptree, SmallPartialMiptree2DArray)
 
    EXPECT_EQ(layout.layer_stride_B, 0xc00);
    EXPECT_EQ(layout.size_B, 0x30000);
+   EXPECT_EQ(layout.sparse_folios_per_layer, 1);
+   EXPECT_EQ(layout.sparse_table_size_B, 0x20000);
 }
 
 TEST(Miptree, SmallPartialMiptree3D)
@@ -134,4 +140,6 @@ TEST(Miptree, SmallPartialMiptree3D)
 
    EXPECT_EQ(layout.layer_stride_B, 0xc80);
    EXPECT_EQ(layout.size_B, 0x32000);
+   EXPECT_EQ(layout.sparse_folios_per_layer, 1);
+   EXPECT_EQ(layout.sparse_table_size_B, 0x20000);
 }
