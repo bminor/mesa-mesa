@@ -79,13 +79,13 @@ pipe_reference_described(struct pipe_reference *dst,
    if (dst != src) {
       /* bump the src.count first */
       if (src) {
-         ASSERTED int count = p_atomic_inc_return(&src->count);
+         ASSERTED int64_t count = p_atomic_inc_return(&src->count);
          assert(count != 1); /* src had to be referenced */
          debug_reference(src, get_desc, 1);
       }
 
       if (dst) {
-         int count = p_atomic_dec_return(&dst->count);
+         int64_t count = p_atomic_dec_return(&dst->count);
          assert(count != -1); /* dst had to be referenced */
          debug_reference(dst, get_desc, -1);
          if (!count)
@@ -171,7 +171,7 @@ pipe_resource_reference(struct pipe_resource **dst, struct pipe_resource *src)
 static inline void
 pipe_drop_resource_references(struct pipe_resource *dst, int num_refs)
 {
-   int count = p_atomic_add_return(&dst->reference.count, -num_refs);
+   int64_t count = p_atomic_add_return(&dst->reference.count, -num_refs);
 
    assert(count >= 0);
    /* Underflows shouldn't happen, but let's be safe. */
@@ -282,8 +282,8 @@ pipe_surface_reset(struct pipe_context *ctx, struct pipe_surface* ps,
 {
    pipe_resource_reference(&ps->texture, pt);
    ps->format = pt->format;
-   ps->width = u_minify(pt->width0, level);
-   ps->height = u_minify(pt->height0, level);
+   ps->width = (uint16_t)u_minify(pt->width0, level);
+   ps->height = (uint16_t)u_minify(pt->height0, level);
    ps->u.tex.level = level;
    ps->u.tex.first_layer = ps->u.tex.last_layer = layer;
    ps->context = ctx;
