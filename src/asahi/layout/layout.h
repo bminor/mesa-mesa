@@ -263,6 +263,36 @@ ail_get_blocksize_B(const struct ail_layout *layout)
    return util_format_get_blocksize(layout->format);
 }
 
+static inline uint32_t
+ail_get_twiddled_block_B(const struct ail_layout *layout, unsigned level,
+                         uint32_t x_px, uint32_t y_px, uint32_t z_px)
+{
+   assert(layout->tiling == AIL_TILING_TWIDDLED ||
+          layout->tiling == AIL_TILING_TWIDDLED_COMPRESSED);
+
+   assert(level < layout->levels);
+
+   unsigned x_el = util_format_get_nblocksx(layout->format, x_px);
+   unsigned y_el = util_format_get_nblocksy(layout->format, y_px);
+
+   struct ail_tile tile_size = layout->tilesize_el[level];
+   assert((x_el % tile_size.width_el) == 0 && "must be aligned");
+   assert((y_el % tile_size.height_el) == 0 && "must be aligned");
+
+   unsigned stride_el = layout->stride_el[level];
+   unsigned tile_area_el = tile_size.width_el * tile_size.height_el;
+   unsigned tiles_per_row = DIV_ROUND_UP(stride_el, tile_size.width_el);
+
+   unsigned y_rowtile = y_el / tile_size.height_el;
+   unsigned y_tile = y_rowtile * tiles_per_row;
+
+   unsigned tile_idx = y_tile + (x_el / tile_size.width_el);
+   unsigned tile_offset_el = tile_idx * tile_area_el;
+   unsigned tile_offset_B = tile_offset_el * ail_get_blocksize_B(layout);
+
+   return ail_get_layer_level_B(layout, z_px, level) + tile_offset_B;
+}
+
 static inline unsigned
 ail_effective_width_sa(unsigned width_px, unsigned sample_count_sa)
 {
