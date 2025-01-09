@@ -1399,42 +1399,9 @@ void ac_get_scratch_tmpring_size(const struct radeon_info *info,
                    S_0286E8_WAVESIZE(*max_seen_bytes_per_wave >> size_shift);
 }
 
-/* Get chip-agnostic memory instruction access flags (as opposed to chip-specific GLC/DLC/SLC)
- * from a NIR memory intrinsic.
- */
-enum gl_access_qualifier ac_get_mem_access_flags(const nir_intrinsic_instr *instr)
-{
-   enum gl_access_qualifier access =
-      nir_intrinsic_has_access(instr) ? nir_intrinsic_access(instr) : 0;
-
-   /* Determine ACCESS_MAY_STORE_SUBDWORD. (for the GFX6 TC L1 bug workaround) */
-   if (!nir_intrinsic_infos[instr->intrinsic].has_dest) {
-      switch (instr->intrinsic) {
-      case nir_intrinsic_bindless_image_store:
-         access |= ACCESS_MAY_STORE_SUBDWORD;
-         break;
-
-      case nir_intrinsic_store_ssbo:
-      case nir_intrinsic_store_buffer_amd:
-      case nir_intrinsic_store_global:
-      case nir_intrinsic_store_global_amd:
-         if (access & ACCESS_USES_FORMAT_AMD ||
-             (nir_intrinsic_has_align_offset(instr) && nir_intrinsic_align(instr) % 4 != 0) ||
-             ((instr->src[0].ssa->bit_size / 8) * instr->src[0].ssa->num_components) % 4 != 0)
-            access |= ACCESS_MAY_STORE_SUBDWORD;
-         break;
-
-      default:
-         unreachable("unexpected store instruction");
-      }
-   }
-
-   return access;
-}
-
 /* Convert chip-agnostic memory access flags into hw-specific cache flags.
  *
- * "access" must be a result of ac_get_mem_access_flags() with the appropriate ACCESS_TYPE_*
+ * "access" must be a result of ac_nir_get_mem_access_flags() with the appropriate ACCESS_TYPE_*
  * flags set.
  */
 union ac_hw_cache_flags ac_get_hw_cache_flags(enum amd_gfx_level gfx_level,

@@ -336,8 +336,6 @@ ac_ngg_get_scratch_lds_size(gl_shader_stage stage,
                             bool can_cull,
                             bool compact_primitives);
 
-enum gl_access_qualifier ac_get_mem_access_flags(const nir_intrinsic_instr *instr);
-
 union ac_hw_cache_flags ac_get_hw_cache_flags(enum amd_gfx_level gfx_level,
                                               enum gl_access_qualifier access);
 
