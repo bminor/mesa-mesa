@@ -706,27 +706,29 @@ bool vpe_color_calculate_input_cs(struct vpe_priv *vpe_priv, enum color_space in
     struct fixed31_32 fixed_csc_matrix[12];
 
     struct vpe_color_adjustments vpe_adjust    = {0};
-    struct vpe_color_adjust      vpe_in_adjust = {0};
-    int32_t                      bright_norm_factor = 1;
+    struct vpe_color_adjust      vpe_in_adjust = {0};    
     const int32_t                bright_norm_factor_8bit  = 2550;  // 255*10 
     const int32_t                bright_norm_factor_10bit = 10230; // 1023*10
+    int32_t                      bright_norm_factor = bright_norm_factor_8bit; // by default is 8 bit range
 
     if ( (surface_info == 0) || (vpe_blt_adjust == 0) || (input_cs == 0) || (matrix_scaling_factor == 0) ) {
         vpe_log("Invalid input parameters");
         return false;
     }
     vpe_in_adjust = *vpe_blt_adjust;
-    if ( (surface_info->cs.range == VPE_COLOR_RANGE_STUDIO)) { // brightness adjustment to match shader
+    if ( (surface_info->cs.range == VPE_COLOR_RANGE_STUDIO)) { // brightness adjustment to match shader for studio range
         if (vpe_is_8bit(surface_info->format)) {
-            vpe_in_adjust.brightness *= 1.16f; // 255/235 - scaling factor, applies only to the brightness
-            bright_norm_factor = bright_norm_factor_8bit;
+            vpe_in_adjust.brightness *= 1.16f; // 255/235 - scaling factor, applies only to the brightness            
         }
-        else {
-            if (vpe_is_10bit(surface_info->format)) {
-                vpe_in_adjust.brightness *= 1.066f; // 1023/(1023 - 64) - scaling factor, applies only to the brightness
-                bright_norm_factor = bright_norm_factor_10bit;
-            }
-        }
+        else if (vpe_is_10bit(surface_info->format)) {
+                vpe_in_adjust.brightness *= 1.066f; // 1023/(1023 - 64) - scaling factor, applies only to the brightness               
+        }                                           // for more than 10 bit formats, the scaling factor is 1        
+    }
+    if (vpe_is_8bit(surface_info->format)) {
+        bright_norm_factor = bright_norm_factor_8bit;
+    }
+    else if (vpe_is_10bit(surface_info->format)) {
+        bright_norm_factor = bright_norm_factor_10bit;        
     }
 
     if (vpe_blt_adjust) {
