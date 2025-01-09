@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef PAN_PAN_HELPERS_H
-#define PAN_PAN_HELPERS_H
+#ifndef PAN_PACK_HELPERS_H
+#define PAN_PACK_HELPERS_H
 
 #include <inttypes.h>
 #include <stdio.h>
