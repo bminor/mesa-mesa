@@ -1302,7 +1302,8 @@ mem_access_base_pointer(struct lp_build_nir_soa_context *bld,
       }
       else
          ptr = bld->shared_ptr;
-      *bounds = NULL;
+      if (bounds)
+         *bounds = NULL;
    }
 
    /* Cast it to the pointer type of the access this instruction is doing. */
@@ -1316,7 +1317,7 @@ static void emit_load_mem(struct lp_build_nir_soa_context *bld,
                           unsigned nc,
                           unsigned bit_size,
                           bool index_uniform, bool offset_uniform,
-                          bool payload,
+                          bool payload, bool in_bounds,
                           LLVMValueRef index,
                           LLVMValueRef offset,
                           LLVMValueRef outval[NIR_MAX_VEC_COMPONENTS])
@@ -1336,9 +1337,9 @@ static void emit_load_mem(struct lp_build_nir_soa_context *bld,
     * offset if exec_mask == 0.
     */
    if (index_uniform && offset_uniform) {
-      LLVMValueRef ssbo_limit;
+      LLVMValueRef ssbo_limit = NULL;
       LLVMValueRef mem_ptr = mem_access_base_pointer(bld, load_bld, bit_size, payload, index,
-                                                     NULL, &ssbo_limit);
+                                                     NULL, in_bounds ? NULL : &ssbo_limit);
 
       for (unsigned c = 0; c < nc; c++) {
          LLVMValueRef chan_offset = LLVMBuildAdd(builder, offset, lp_build_const_int32(gallivm, c), "");
@@ -1367,22 +1368,21 @@ static void emit_load_mem(struct lp_build_nir_soa_context *bld,
    if (index_uniform) {
       LLVMValueRef limit = NULL;
       LLVMValueRef mem_ptr = mem_access_base_pointer(bld, load_bld, bit_size, payload, index,
-                                                     NULL, &limit);
+                                                     NULL, in_bounds ? NULL : &limit);
 
-      if (limit) {
+      if (limit)
          limit = lp_build_broadcast_scalar(uint_bld, limit);
-      } else {
-         if (payload)
-            limit = lp_build_const_int_vec(gallivm, uint_bld->type, bld->shader->info.task_payload_size >> shift_val);
-         else
-            limit = lp_build_const_int_vec(gallivm, uint_bld->type, bld->shader->info.shared_size >> shift_val);
-      }
 
       for (unsigned c = 0; c < nc; c++) {
          LLVMValueRef channel_offset = LLVMBuildAdd(builder, offset, lp_build_const_int_vec(gallivm, uint_bld->type, c), "channel_offset");
-         LLVMValueRef oob_cmp = LLVMBuildICmp(builder, LLVMIntULT, channel_offset, limit, "oob_cmp");
          LLVMValueRef channel_ptr = LLVMBuildGEP2(builder, load_bld->elem_type, mem_ptr, &channel_offset, 1, "channel_ptr");
-         LLVMValueRef mask = LLVMBuildAnd(builder, gather_cond, oob_cmp, "mask");
+
+         LLVMValueRef mask = gather_cond;
+         if (limit) {
+            LLVMValueRef oob_cmp = LLVMBuildICmp(builder, LLVMIntULT, channel_offset, limit, "oob_cmp");
+            mask = LLVMBuildAnd(builder, mask, oob_cmp, "mask");
+         }
+
          outval[c] = lp_build_masked_gather(gallivm, load_bld->type.length, load_bld->type.width, load_bld->vec_type,
                                             channel_ptr, mask);
       }
@@ -1401,9 +1401,9 @@ static void emit_load_mem(struct lp_build_nir_soa_context *bld,
       struct lp_build_if_state if_gather_element;
       lp_build_if(&if_gather_element, gallivm, element_gather_cond);
 
-      LLVMValueRef ssbo_limit;
+      LLVMValueRef ssbo_limit = NULL;
       LLVMValueRef mem_ptr = mem_access_base_pointer(bld, load_bld, bit_size, payload, index,
-                                                     counter, &ssbo_limit);
+                                                     counter, in_bounds ? NULL : &ssbo_limit);
 
       LLVMValueRef loop_offset = LLVMBuildExtractElement(gallivm->builder, offset, counter, "");
 
@@ -1446,6 +1446,7 @@ static void emit_store_mem(struct lp_build_nir_soa_context *bld,
                            unsigned nc,
                            unsigned bit_size,
                            bool payload,
+                           bool in_bounds,
                            LLVMValueRef index,
                            LLVMValueRef offset,
                            LLVMValueRef *dst)
@@ -1473,9 +1474,9 @@ static void emit_store_mem(struct lp_build_nir_soa_context *bld,
 
       LLVMValueRef any_active = LLVMBuildICmp(builder, LLVMIntNE, cond, lp_build_const_int32(gallivm, 0), "any_active");
 
-      LLVMValueRef ssbo_limit;
+      LLVMValueRef ssbo_limit = NULL;
       LLVMValueRef mem_ptr = mem_access_base_pointer(bld, store_bld, bit_size, payload, index,
-                                                     NULL, &ssbo_limit);
+                                                     NULL, in_bounds ? NULL : &ssbo_limit);
 
       for (unsigned c = 0; c < nc; c++) {
          if (!(writemask & (1u << c)))
@@ -1484,17 +1485,16 @@ static void emit_store_mem(struct lp_build_nir_soa_context *bld,
          LLVMValueRef value_ptr = LLVMBuildBitCast(gallivm->builder, dst[c], store_bld->elem_type, "");
 
          LLVMValueRef chan_offset = LLVMBuildAdd(builder, offset, lp_build_const_int32(gallivm, c), "");
+         LLVMValueRef ptr = LLVMBuildGEP2(builder, store_bld->elem_type, mem_ptr, &chan_offset, 1, "");
 
+         LLVMValueRef valid_store = any_active;
          /* If storing outside the SSBO, we need to skip the store instead. */
-         if (ssbo_limit) {
-            LLVMValueRef valid_store = LLVMBuildAnd(builder, lp_offset_in_range(bld, chan_offset, ssbo_limit), any_active, "");
-            LLVMValueRef ptr = LLVMBuildGEP2(builder, store_bld->elem_type, mem_ptr, &chan_offset, 1, "");
-            LLVMValueRef noop_ptr = LLVMBuildBitCast(builder, bld->noop_store_ptr, LLVMTypeOf(ptr), "");
-            ptr = LLVMBuildSelect(builder, valid_store, ptr, noop_ptr, "");
-            LLVMBuildStore(builder, value_ptr, ptr);
-         } else {
-            lp_build_pointer_set(builder, mem_ptr, chan_offset, value_ptr);
-         }
+         if (ssbo_limit)
+            valid_store = LLVMBuildAnd(builder, valid_store, lp_offset_in_range(bld, chan_offset, ssbo_limit), "");
+
+         LLVMValueRef noop_ptr = LLVMBuildBitCast(builder, bld->noop_store_ptr, LLVMTypeOf(ptr), "");
+         ptr = LLVMBuildSelect(builder, valid_store, ptr, noop_ptr, "");
+         LLVMBuildStore(builder, value_ptr, ptr);
       }
       return;
    }
@@ -1502,25 +1502,24 @@ static void emit_store_mem(struct lp_build_nir_soa_context *bld,
    if (!lp_value_is_divergent(index)) {
       LLVMValueRef limit = NULL;
       LLVMValueRef mem_ptr = mem_access_base_pointer(bld, store_bld, bit_size, payload, index,
-                                                     NULL, &limit);
+                                                     NULL, in_bounds ? NULL : &limit);
 
-      if (limit) {
+      if (limit)
          limit = lp_build_broadcast_scalar(uint_bld, limit);
-      } else {
-         if (payload)
-            limit = lp_build_const_int_vec(gallivm, uint_bld->type, bld->shader->info.task_payload_size >> shift_val);
-         else
-            limit = lp_build_const_int_vec(gallivm, uint_bld->type, bld->shader->info.shared_size >> shift_val);
-      }
 
       for (unsigned c = 0; c < nc; c++) {
          if (!(writemask & (1u << c)))
             continue;
 
          LLVMValueRef channel_offset = LLVMBuildAdd(builder, offset, lp_build_const_int_vec(gallivm, uint_bld->type, c), "channel_offset");
-         LLVMValueRef oob_cmp = LLVMBuildICmp(builder, LLVMIntULT, channel_offset, limit, "oob_cmp");
          LLVMValueRef channel_ptr = LLVMBuildGEP2(builder, store_bld->elem_type, mem_ptr, &channel_offset, 1, "channel_ptr");
-         LLVMValueRef mask = LLVMBuildAnd(builder, cond, oob_cmp, "mask");
+
+         LLVMValueRef mask = cond;
+         if (limit) {
+            LLVMValueRef oob_cmp = LLVMBuildICmp(builder, LLVMIntULT, channel_offset, limit, "oob_cmp");
+            mask = LLVMBuildAnd(builder, mask, oob_cmp, "mask");
+         }
+
          LLVMValueRef value = LLVMBuildBitCast(gallivm->builder, dst[c], store_bld->vec_type, "");
          lp_build_masked_scatter(gallivm, store_bld->type.length, store_bld->type.width, channel_ptr, value, mask);
       }
@@ -1535,9 +1534,9 @@ static void emit_store_mem(struct lp_build_nir_soa_context *bld,
       struct lp_build_if_state exec_ifthen;
       lp_build_if(&exec_ifthen, gallivm, loop_cond);
 
-      LLVMValueRef ssbo_limit;
+      LLVMValueRef ssbo_limit = NULL;
       LLVMValueRef mem_ptr = mem_access_base_pointer(bld, store_bld, bit_size, payload, index,
-                                                     counter, &ssbo_limit);
+                                                     counter, in_bounds ? NULL : &ssbo_limit);
 
       LLVMValueRef loop_offset = LLVMBuildExtractElement(gallivm->builder, offset, counter, "");
 
@@ -1573,6 +1572,7 @@ static void emit_atomic_mem(struct lp_build_nir_soa_context *bld,
                             nir_atomic_op nir_op,
                             uint32_t bit_size,
                             bool payload,
+                            bool in_bounds,
                             LLVMValueRef index, LLVMValueRef offset,
                             LLVMValueRef val, LLVMValueRef val2,
                             LLVMValueRef *result)
@@ -1597,9 +1597,9 @@ static void emit_atomic_mem(struct lp_build_nir_soa_context *bld,
       struct lp_build_if_state exec_ifthen;
       lp_build_if(&exec_ifthen, gallivm, loop_cond);
 
-      LLVMValueRef ssbo_limit;
+      LLVMValueRef ssbo_limit = NULL;
       LLVMValueRef mem_ptr = mem_access_base_pointer(bld, atomic_bld, bit_size, payload, index,
-                                                     counter, &ssbo_limit);
+                                                     counter, in_bounds ? NULL : &ssbo_limit);
 
       LLVMValueRef loop_offset = LLVMBuildExtractElement(gallivm->builder, offset, counter, "");
 
@@ -3991,11 +3991,15 @@ visit_load_ubo(struct lp_build_nir_soa_context *bld,
    LLVMValueRef index = get_src(bld, &instr->src[0], 0);
    LLVMValueRef offset = get_src(bld, &instr->src[1], 0);
 
+   bool in_bounds = nir_intrinsic_access(instr) & ACCESS_IN_BOUNDS;
+   if (!lp_exec_mask_is_nz(bld))
+      in_bounds = false;
+
    struct lp_build_context *uint_bld = get_int_bld(bld, true, 32, lp_value_is_divergent(offset));
    struct lp_build_context *bld_broad = get_int_bld(bld, true, instr->def.bit_size, lp_value_is_divergent(offset));
 
    LLVMValueRef consts_ptr = lp_llvm_buffer_base(gallivm, bld->consts_ptr, index, LP_MAX_TGSI_CONST_BUFFERS);
-   LLVMValueRef num_consts = lp_llvm_buffer_num_elements(gallivm, bld->consts_ptr, index, LP_MAX_TGSI_CONST_BUFFERS);
+   LLVMValueRef num_consts = in_bounds ? NULL : lp_llvm_buffer_num_elements(gallivm, bld->consts_ptr, index, LP_MAX_TGSI_CONST_BUFFERS);
 
    unsigned size_shift = bit_size_to_shift_size(instr->def.bit_size);
    if (size_shift)
@@ -4006,43 +4010,54 @@ visit_load_ubo(struct lp_build_nir_soa_context *bld,
 
    if (!lp_value_is_divergent(offset)) {
       struct lp_build_context *load_bld = get_int_bld(bld, true, instr->def.bit_size, false);
-      switch (instr->def.bit_size) {
-      case 8:
-         num_consts = LLVMBuildShl(gallivm->builder, num_consts, lp_build_const_int32(gallivm, 2), "");
-         break;
-      case 16:
-         num_consts = LLVMBuildShl(gallivm->builder, num_consts, lp_build_const_int32(gallivm, 1), "");
-         break;
-      case 64:
-         num_consts = LLVMBuildLShr(gallivm->builder, num_consts, lp_build_const_int32(gallivm, 1), "");
-         break;
-      default: break;
+
+      if (num_consts) {
+         switch (instr->def.bit_size) {
+         case 8:
+            num_consts = LLVMBuildShl(gallivm->builder, num_consts, lp_build_const_int32(gallivm, 2), "");
+            break;
+         case 16:
+            num_consts = LLVMBuildShl(gallivm->builder, num_consts, lp_build_const_int32(gallivm, 1), "");
+            break;
+         case 64:
+            num_consts = LLVMBuildLShr(gallivm->builder, num_consts, lp_build_const_int32(gallivm, 1), "");
+            break;
+         default: break;
+         }
       }
 
       for (unsigned c = 0; c < instr->def.num_components; c++) {
          LLVMValueRef chan_offset = LLVMBuildAdd(builder, offset, lp_build_const_int32(gallivm, c), "");
-         LLVMValueRef in_range = lp_offset_in_range(bld, chan_offset, num_consts);
          LLVMValueRef ptr = LLVMBuildGEP2(builder, bld_broad->elem_type, consts_ptr, &chan_offset, 1, "");
-         LLVMValueRef null_ptr = LLVMBuildBitCast(builder, bld->null_qword_ptr, LLVMTypeOf(ptr), "");
-         ptr = LLVMBuildSelect(builder, in_range, ptr, null_ptr, "");
+
+         if (num_consts) {
+            LLVMValueRef in_range = lp_offset_in_range(bld, chan_offset, num_consts);
+            LLVMValueRef null_ptr = LLVMBuildBitCast(builder, bld->null_qword_ptr, LLVMTypeOf(ptr), "");
+            ptr = LLVMBuildSelect(builder, in_range, ptr, null_ptr, "");
+         }
 
          result[c] = LLVMBuildLoad2(builder, load_bld->elem_type, ptr, "");
       }
    } else {
-      LLVMValueRef overflow_mask;
-
-      num_consts = lp_build_broadcast_scalar(uint_bld, num_consts);
-      if (instr->def.bit_size == 64)
-         num_consts = lp_build_shr_imm(uint_bld, num_consts, 1);
-      else if (instr->def.bit_size == 16)
-         num_consts = lp_build_shl_imm(uint_bld, num_consts, 1);
-      else if (instr->def.bit_size == 8)
-         num_consts = lp_build_shl_imm(uint_bld, num_consts, 2);
+      if (num_consts) {
+         num_consts = lp_build_broadcast_scalar(uint_bld, num_consts);
+         if (instr->def.bit_size == 64)
+            num_consts = lp_build_shr_imm(uint_bld, num_consts, 1);
+         else if (instr->def.bit_size == 16)
+            num_consts = lp_build_shl_imm(uint_bld, num_consts, 1);
+         else if (instr->def.bit_size == 8)
+            num_consts = lp_build_shl_imm(uint_bld, num_consts, 2);
+      }
 
       for (unsigned c = 0; c < instr->def.num_components; c++) {
          LLVMValueRef this_offset = lp_build_add(uint_bld, offset, lp_build_const_int_vec(gallivm, uint_bld->type, c));
-         overflow_mask = lp_build_compare(gallivm, uint_bld->type, PIPE_FUNC_GEQUAL,
-                                          this_offset, num_consts);
+
+         LLVMValueRef overflow_mask = NULL;
+         if (num_consts) {
+            overflow_mask = lp_build_compare(gallivm, uint_bld->type, PIPE_FUNC_GEQUAL,
+                                             this_offset, num_consts);
+         }
+
          result[c] = build_gather(bld, bld_broad, bld_broad->elem_type, consts_ptr, this_offset, overflow_mask, NULL);
       }
    }
@@ -4058,11 +4073,15 @@ visit_load_ssbo(struct lp_build_nir_soa_context *bld,
 
    LLVMValueRef offset = get_src(bld, &instr->src[1], 0);
 
+   bool in_bounds = nir_intrinsic_access(instr) & ACCESS_IN_BOUNDS;
+   if (!lp_exec_mask_is_nz(bld))
+      in_bounds = false;
+
    emit_load_mem(bld, instr->def.num_components,
                  instr->def.bit_size,
                  !lp_nir_instr_src_divergent(&instr->instr, 0),
                  !lp_nir_instr_src_divergent(&instr->instr, 1),
-                 false, idx, offset, result);
+                 false, in_bounds, idx, offset, result);
 }
 
 static void
@@ -4078,8 +4097,13 @@ visit_store_ssbo(struct lp_build_nir_soa_context *bld,
    int writemask = instr->const_index[0];
    int nc = nir_src_num_components(instr->src[0]);
    int bitsize = nir_src_bit_size(instr->src[0]);
+
+   bool in_bounds = nir_intrinsic_access(instr) & ACCESS_IN_BOUNDS;
+   if (!lp_exec_mask_is_nz(bld))
+      in_bounds = false;
+
    emit_store_mem(bld, writemask, nc, bitsize,
-                  false, idx, offset, val);
+                  false, in_bounds, idx, offset, val);
 }
 
 static void
@@ -4111,8 +4135,12 @@ visit_ssbo_atomic(struct lp_build_nir_soa_context *bld,
    if (instr->intrinsic == nir_intrinsic_ssbo_atomic_swap)
       val2 = get_src(bld, &instr->src[3], 0);
 
-   emit_atomic_mem(bld, nir_intrinsic_atomic_op(instr), bitsize, false, idx,
-                   offset, val, val2, &result[0]);
+   bool in_bounds = nir_intrinsic_access(instr) & ACCESS_IN_BOUNDS;
+   if (bld->exec_mask.has_mask && !nir_src_is_const(instr->src[1]))
+      in_bounds = false;
+
+   emit_atomic_mem(bld, nir_intrinsic_atomic_op(instr), bitsize, false,
+                   in_bounds, idx, offset, val, val2, &result[0]);
 }
 
 static void
@@ -4383,7 +4411,7 @@ visit_shared_load(struct lp_build_nir_soa_context *bld,
    bool offset_is_uniform = !lp_nir_instr_src_divergent(&instr->instr, 0);
    emit_load_mem(bld, instr->def.num_components,
                  instr->def.bit_size, true,
-                 offset_is_uniform, false, NULL, offset, result);
+                 offset_is_uniform, false, true, NULL, offset, result);
 }
 
 static void
@@ -4395,7 +4423,7 @@ visit_shared_store(struct lp_build_nir_soa_context *bld,
    int writemask = instr->const_index[1];
    int nc = nir_src_num_components(instr->src[0]);
    int bitsize = nir_src_bit_size(instr->src[0]);
-   emit_store_mem(bld, writemask, nc, bitsize, false, NULL, offset, val);
+   emit_store_mem(bld, writemask, nc, bitsize, false, true, NULL, offset, val);
 }
 
 static void
@@ -4410,8 +4438,8 @@ visit_shared_atomic(struct lp_build_nir_soa_context *bld,
    if (instr->intrinsic == nir_intrinsic_shared_atomic_swap)
       val2 = get_src(bld, &instr->src[2], 0);
 
-   emit_atomic_mem(bld, nir_intrinsic_atomic_op(instr), bitsize, false, NULL,
-                   offset, val, val2, &result[0]);
+   emit_atomic_mem(bld, nir_intrinsic_atomic_op(instr), bitsize, false, true,
+                   NULL, offset, val, val2, &result[0]);
 }
 
 static void
@@ -4807,7 +4835,7 @@ visit_payload_load(struct lp_build_nir_soa_context *bld,
    bool offset_is_uniform = !lp_nir_instr_src_divergent(&instr->instr, 0);
    emit_load_mem(bld, instr->def.num_components,
                  instr->def.bit_size, true,
-                 offset_is_uniform, true, NULL, offset, result);
+                 offset_is_uniform, true, true, NULL, offset, result);
 }
 
 static void
@@ -4819,7 +4847,7 @@ visit_payload_store(struct lp_build_nir_soa_context *bld,
    int writemask = instr->const_index[1];
    int nc = nir_src_num_components(instr->src[0]);
    int bitsize = nir_src_bit_size(instr->src[0]);
-   emit_store_mem(bld, writemask, nc, bitsize, true, NULL, offset, val);
+   emit_store_mem(bld, writemask, nc, bitsize, true, true, NULL, offset, val);
 }
 
 static void
@@ -4834,8 +4862,8 @@ visit_payload_atomic(struct lp_build_nir_soa_context *bld,
    if (instr->intrinsic == nir_intrinsic_task_payload_atomic_swap)
       val2 = get_src(bld, &instr->src[2], 0);
 
-   emit_atomic_mem(bld, nir_intrinsic_atomic_op(instr), bitsize, true, NULL,
-                   offset, val, val2, &result[0]);
+   emit_atomic_mem(bld, nir_intrinsic_atomic_op(instr), bitsize, true, true,
+                   NULL, offset, val, val2, &result[0]);
 }
 
 static void visit_load_param(struct lp_build_nir_soa_context *bld,
@@ -5959,7 +5987,7 @@ lp_build_nir_soa_prepasses(struct nir_shader *nir)
    NIR_PASS(_, nir, nir_lower_vars_to_ssa);
    NIR_PASS(_, nir, nir_remove_dead_derefs);
    NIR_PASS(_, nir, nir_remove_dead_variables, nir_var_function_temp, NULL);
-   NIR_PASS(_, nir, nir_convert_to_lcssa, true, true);
+   NIR_PASS(_, nir, nir_convert_to_lcssa, false, false);
    NIR_PASS(_, nir, nir_lower_phis_to_scalar, true);
 
    bool progress;
@@ -5967,7 +5995,6 @@ lp_build_nir_soa_prepasses(struct nir_shader *nir)
       progress = false;
       NIR_PASS(progress, nir, nir_lower_alu_to_scalar, NULL, NULL);
       NIR_PASS(progress, nir, nir_copy_prop);
-      NIR_PASS(progress, nir, nir_opt_cse);
       NIR_PASS(progress, nir, nir_opt_dce);
    } while (progress);
 
