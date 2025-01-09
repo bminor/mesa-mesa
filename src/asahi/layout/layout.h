@@ -246,6 +246,17 @@ ail_get_linear_pixel_B(const struct ail_layout *layout, ASSERTED unsigned level,
           (x_px * util_format_get_blocksize(layout->format));
 }
 
+static inline uint32_t
+ail_space_bits(unsigned x)
+{
+   assert(x < 128 && "offset must be inside the tile");
+
+   return ((x & 1) << 0) | ((x & 2) << 1) | ((x & 4) << 2) | ((x & 8) << 3) |
+          ((x & 16) << 4) | ((x & 32) << 5) | ((x & 64) << 6);
+}
+
+#define MOD_POT(x, y) (x) & ((y) - 1)
+
 static inline unsigned
 ail_effective_width_sa(unsigned width_px, unsigned sample_count_sa)
 {
