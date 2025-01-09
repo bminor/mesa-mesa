@@ -84,15 +84,15 @@ __gen_unpack_padded(const uint32_t *restrict cl, uint32_t start, uint32_t end)
 #define PREFIX4(A, B, C, D) MALI_##A##_##B##_##C##_##D
 
 #define pan_pack(dst, T, name)                                                 \
-   for (struct PREFIX1(T) name = {PREFIX2(T, header)},                         \
-                          *_loop_terminate = &name;                            \
+   for (UNUSED struct PREFIX1(T) name = {PREFIX2(T, header)},                  \
+                                 *_loop_terminate = &name;                     \
         __builtin_expect(_loop_terminate != NULL, 1); ({                       \
            PREFIX2(T, pack)((dst), &name);                                     \
            _loop_terminate = NULL;                                             \
         }))
 
 #define pan_pack_nodefaults(dst, T, name)                                      \
-   for (struct PREFIX1(T) name = {0}, *_loop_terminate = &name;                \
+   for (UNUSED struct PREFIX1(T) name = {0}, *_loop_terminate = &name;         \
         __builtin_expect(_loop_terminate != NULL, 1); ({                       \
            PREFIX2(T, pack)((dst), &name);                                     \
            _loop_terminate = NULL;                                             \
@@ -105,7 +105,7 @@ __gen_unpack_padded(const uint32_t *restrict cl, uint32_t start, uint32_t end)
    pan_pack_nodefaults((PREFIX2(T, PACKED_T) *)dst, T, name)
 
 #define pan_unpack(src, T, name)                                               \
-   struct PREFIX1(T) name;                                                     \
+   UNUSED struct PREFIX1(T) name;                                              \
    PREFIX2(T, unpack)((src), &name)
 
 #define pan_cast_and_unpack(src, T, name)                                      \
@@ -123,15 +123,16 @@ __gen_unpack_padded(const uint32_t *restrict cl, uint32_t start, uint32_t end)
                                             pan_section_offset(A, S)))
 
 #define pan_section_pack(dst, A, S, name)                                      \
-   for (PREFIX4(A, SECTION, S, TYPE) name = {PREFIX4(A, SECTION, S, header)},  \
-                                     *_loop_terminate = (void *)(dst);         \
+   for (UNUSED PREFIX4(A, SECTION, S, TYPE)                                    \
+           name = {PREFIX4(A, SECTION, S, header)},                            \
+           *_loop_terminate = (void *)(dst);                                   \
         __builtin_expect(_loop_terminate != NULL, 1); ({                       \
            PREFIX4(A, SECTION, S, pack)(pan_section_ptr(dst, A, S), &name);    \
            _loop_terminate = NULL;                                             \
         }))
 
 #define pan_section_unpack(src, A, S, name)                                    \
-   PREFIX4(A, SECTION, S, TYPE) name;                                          \
+   UNUSED PREFIX4(A, SECTION, S, TYPE) name;                                   \
    PREFIX4(A, SECTION, S, unpack)(pan_section_ptr(src, A, S), &name)
 
 #define pan_section_print(fp, A, S, var, indent)                               \
