@@ -883,6 +883,10 @@
    DRI_CONF_OPT_B(anv_large_workgroup_non_coherent_image_workaround, def, \
                   "Fixup image coherency qualifier for certain shaders.")
 
+#define DRI_CONF_ANV_FORCE_GUC_LOW_LATENCY(def) \
+   DRI_CONF_OPT_B(force_guc_low_latency, def, \
+                  "Enable low latency GuC strategy.")
+
 /**
  * \brief HASVK specific configuration options
  */
@@ -890,10 +894,6 @@
 #define DRI_CONF_HASVK_OVERRIDE_API_VERSION(def) \
    DRI_CONF_OPT_B(hasvk_report_vk_1_3_version, def, \
                   "Override intel_hasvk API version")
-
-#define DRI_CONF_ANV_FORCE_GUC_LOW_LATENCY(def) \
-   DRI_CONF_OPT_B(force_guc_low_latency, def, \
-                  "Enable low latency GuC strategy. Only supported on i915.")
 
 /**
  * \brief DZN specific configuration options
