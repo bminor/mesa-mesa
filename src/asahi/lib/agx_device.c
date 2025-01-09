@@ -85,10 +85,10 @@ agx_bo_free(struct agx_device *dev, struct agx_bo *bo)
    if (bo->_map)
       munmap(bo->_map, bo->size);
 
-   /* Free the VA. No need to unmap the BO, as the kernel will take care of that
-    * when we close it.
+   /* Free the VA. No need to unmap the BO or unbind the VA, as the kernel will
+    * take care of that when we close it.
     */
-   agx_va_free(dev, bo->va);
+   agx_va_free(dev, bo->va, false);
 
    if (bo->prime_fd != -1)
       close(bo->prime_fd);

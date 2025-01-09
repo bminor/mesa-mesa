@@ -141,11 +141,7 @@ hk_DestroyBuffer(VkDevice device, VkBuffer _buffer,
       return;
 
    if (buffer->va) {
-      /* Unbind the VA */
-      dev->dev.ops.bo_bind(&dev->dev, NULL, buffer->addr, buffer->va->size_B, 0,
-                           0, true);
-
-      agx_va_free(&dev->dev, buffer->va);
+      agx_va_free(&dev->dev, buffer->va, true);
    }
 
    vk_buffer_destroy(&dev->vk, pAllocator, &buffer->vk);
