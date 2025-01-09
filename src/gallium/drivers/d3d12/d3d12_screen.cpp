@@ -301,8 +301,7 @@ d3d12_init_screen_caps(struct d3d12_screen *screen)
 
    caps->texture_swizzle = true;
 
-   caps->max_texel_buffer_elements_uint =
-      1 << D3D12_REQ_BUFFER_RESOURCE_TEXEL_COUNT_2_TO_EXP;
+   caps->max_texel_buffer_elements = 1 << D3D12_REQ_BUFFER_RESOURCE_TEXEL_COUNT_2_TO_EXP;
 
    caps->max_texture_2d_size = D3D12_REQ_TEXTURE2D_U_OR_V_DIMENSION;
 

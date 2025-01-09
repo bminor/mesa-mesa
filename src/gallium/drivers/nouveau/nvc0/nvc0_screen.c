@@ -279,7 +279,7 @@ nvc0_init_screen_caps(struct nvc0_screen *screen)
    caps->max_texel_offset = 7;
    caps->min_texture_gather_offset = -32;
    caps->max_texture_gather_offset = 31;
-   caps->max_texel_buffer_elements_uint = 128 * 1024 * 1024;
+   caps->max_texel_buffer_elements = 128 * 1024 * 1024;
    caps->glsl_feature_level = 430;
    caps->glsl_feature_level_compatibility = 430;
    caps->max_render_targets = 8;
@@ -293,7 +293,7 @@ nvc0_init_screen_caps(struct nvc0_screen *screen)
    caps->max_geometry_total_output_components = 1024;
    caps->max_vertex_streams = 4;
    caps->max_gs_invocations = 32;
-   caps->max_shader_buffer_size_uint = 1 << 27;
+   caps->max_shader_buffer_size = 1 << 27;
    caps->max_vertex_attrib_stride = 2048;
    caps->max_vertex_element_src_offset = 2047;
    caps->constant_buffer_offset_alignment = 256;

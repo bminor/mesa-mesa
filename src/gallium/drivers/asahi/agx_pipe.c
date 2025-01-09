@@ -2255,7 +2255,7 @@ agx_init_screen_caps(struct pipe_screen *pscreen)
    caps->max_gs_invocations = 32;
    caps->constant_buffer_offset_alignment = 16;
 
-   caps->max_texel_buffer_elements_uint = AGX_TEXTURE_BUFFER_MAX_SIZE;
+   caps->max_texel_buffer_elements = AGX_TEXTURE_BUFFER_MAX_SIZE;
 
    caps->texture_buffer_offset_alignment = 64;
 

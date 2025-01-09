@@ -429,7 +429,7 @@ i915_init_screen_caps(struct i915_screen *is)
 
    caps->max_gs_invocations = 32;
 
-   caps->max_shader_buffer_size_uint = 1 << 27;
+   caps->max_shader_buffer_size = 1 << 27;
 
    caps->max_viewports = 1;
 

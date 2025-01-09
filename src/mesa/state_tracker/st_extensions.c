@@ -184,7 +184,7 @@ void st_init_limits(struct pipe_screen *screen,
       screen->caps.quads_follow_provoking_vertex_convention;
 
    c->MaxUniformBlockSize =
-      screen->caps.max_constant_buffer_size_uint;
+      screen->caps.max_constant_buffer_size;
 
    if (c->MaxUniformBlockSize < 16384) {
       can_ubo = false;
@@ -547,7 +547,7 @@ void st_init_limits(struct pipe_screen *screen,
       c->MaxCombinedShaderOutputResources +=
          c->MaxCombinedShaderStorageBlocks;
       c->MaxShaderStorageBlockSize =
-         screen->caps.max_shader_buffer_size_uint;
+         screen->caps.max_shader_buffer_size;
       if (c->Program[MESA_SHADER_FRAGMENT].MaxShaderStorageBlocks)
          extensions->ARB_shader_storage_buffer_object = GL_TRUE;
    }
@@ -1529,7 +1529,7 @@ void st_init_extensions(struct pipe_screen *screen,
 
    if (extensions->ARB_texture_buffer_object) {
       consts->MaxTextureBufferSize =
-         screen->caps.max_texel_buffer_elements_uint;
+         screen->caps.max_texel_buffer_elements;
       consts->TextureBufferOffsetAlignment =
          screen->caps.texture_buffer_offset_alignment;
 

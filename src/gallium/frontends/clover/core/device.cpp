@@ -243,7 +243,7 @@ device::max_images_write() const {
 
 size_t
 device::max_image_buffer_size() const {
-   return pipe->caps.max_texel_buffer_elements_uint;
+   return pipe->caps.max_texel_buffer_elements;
 }
 
 cl_uint

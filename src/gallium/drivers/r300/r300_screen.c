@@ -662,7 +662,7 @@ static void r300_init_screen_caps(struct r300_screen* r300screen)
    caps->shareable_shaders = false;
 
    caps->max_gs_invocations = 32;
-   caps->max_shader_buffer_size_uint = 1 << 27;
+   caps->max_shader_buffer_size = 1 << 27;
 
    /* SWTCL-only features. */
    caps->primitive_restart =

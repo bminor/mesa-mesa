@@ -1388,10 +1388,10 @@ void si_init_screen_caps(struct si_screen *sscreen)
    if (sizeof(void*) == 4)
       max_size = MIN2(max_size, 512 * 1024 * 1024);
 
-   caps->max_constant_buffer_size_uint =
-   caps->max_shader_buffer_size_uint = max_size;
+   caps->max_constant_buffer_size =
+   caps->max_shader_buffer_size = max_size;
 
-   unsigned max_texels = caps->max_shader_buffer_size_uint;
+   unsigned max_texels = caps->max_shader_buffer_size;
 
    /* FYI, BUF_RSRC_WORD2.NUM_RECORDS field limit is UINT32_MAX. */
 
@@ -1405,7 +1405,7 @@ void si_init_screen_caps(struct si_screen *sscreen)
        * TODO: Remove this after the gallium interface is changed. */
       max_texels = MIN2(max_texels, UINT32_MAX / 16);
 
-   caps->max_texel_buffer_elements_uint = max_texels;
+   caps->max_texel_buffer_elements = max_texels;
 
    /* Allow 1/4th of the heap size. */
    caps->max_texture_mb = sscreen->info.max_heap_size_kb / 1024 / 4;

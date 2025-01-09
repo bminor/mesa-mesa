@@ -1043,7 +1043,7 @@ struct pipe_caps {
    unsigned texture_transfer_modes;
    /* pipe_quirk_texture_border_color_swizzle */
    unsigned texture_border_color_quirk;
-   unsigned max_texel_buffer_elements_uint;
+   unsigned max_texel_buffer_elements;
    unsigned max_viewports;
    unsigned max_geometry_output_vertices;
    unsigned max_geometry_total_output_components;
@@ -1071,7 +1071,7 @@ struct pipe_caps {
    unsigned constbuf0_flags;
    unsigned max_conservative_raster_subpixel_precision_bias;
    unsigned max_gs_invocations;
-   unsigned max_shader_buffer_size_uint;
+   unsigned max_shader_buffer_size;
    unsigned max_combined_shader_buffers;
    unsigned max_combined_hw_atomic_counters;
    unsigned max_combined_hw_atomic_counter_buffers;
@@ -1089,7 +1089,7 @@ struct pipe_caps {
    unsigned max_sparse_texture_size;
    unsigned max_sparse_3d_texture_size;
    unsigned max_sparse_array_texture_layers;
-   unsigned max_constant_buffer_size_uint;
+   unsigned max_constant_buffer_size;
    unsigned query_timestamp_bits;
    unsigned shader_subgroup_size;
    unsigned shader_subgroup_supported_stages;

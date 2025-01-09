@@ -482,12 +482,12 @@ iris_init_screen_caps(struct iris_screen *screen)
    caps->constant_buffer_offset_alignment = 32;
    caps->min_map_buffer_alignment = IRIS_MAP_BUFFER_ALIGNMENT;
    caps->shader_buffer_offset_alignment = 4;
-   caps->max_shader_buffer_size_uint = 1 << 27;
+   caps->max_shader_buffer_size = 1 << 27;
    caps->texture_buffer_offset_alignment = 16; // XXX: u_screen says 256 is the minimum value...
    caps->linear_image_pitch_alignment = 1;
    caps->linear_image_base_address_alignment = 1;
    caps->texture_transfer_modes = PIPE_TEXTURE_TRANSFER_BLIT;
-   caps->max_texel_buffer_elements_uint = IRIS_MAX_TEXTURE_BUFFER_SIZE;
+   caps->max_texel_buffer_elements = IRIS_MAX_TEXTURE_BUFFER_SIZE;
    caps->max_viewports = 16;
    caps->max_geometry_output_vertices = 256;
    caps->max_geometry_total_output_components = 1024;

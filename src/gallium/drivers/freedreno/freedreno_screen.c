@@ -521,7 +521,7 @@ fd_init_screen_caps(struct fd_screen *screen)
 
    caps->texture_buffer_offset_alignment = is_a3xx(screen) ? 16 :
       (is_a4xx(screen) || is_a5xx(screen) || is_a6xx(screen) ? 64 : 0);
-   caps->max_texel_buffer_elements_uint =
+   caps->max_texel_buffer_elements =
       /* We could possibly emulate more by pretending 2d/rect textures and
        * splitting high bits of index into 2nd dimension..
        */

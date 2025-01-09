@@ -309,7 +309,7 @@ softpipe_init_screen_caps(struct softpipe_screen *sp_screen)
    caps->timer_resolution = true;
    caps->cube_map_array = true;
    caps->texture_buffer_objects = true;
-   caps->max_texel_buffer_elements_uint = 65536;
+   caps->max_texel_buffer_elements = 65536;
    caps->texture_buffer_offset_alignment = 16;
    caps->texture_transfer_modes = 0;
    caps->max_viewports = PIPE_MAX_VIEWPORTS;
@@ -366,7 +366,7 @@ softpipe_init_screen_caps(struct softpipe_screen *sp_screen)
    caps->pci_device =
    caps->pci_function = 0;
    caps->max_gs_invocations = 32;
-   caps->max_shader_buffer_size_uint = 1 << 27;
+   caps->max_shader_buffer_size = 1 << 27;
    caps->shader_buffer_offset_alignment = 4;
    caps->image_store_formatted = true;
 

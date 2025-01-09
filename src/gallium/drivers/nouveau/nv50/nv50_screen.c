@@ -246,7 +246,7 @@ nv50_init_screen_caps(struct nv50_screen *screen)
    caps->min_texel_offset = -8;
    caps->max_texture_gather_offset =
    caps->max_texel_offset = 7;
-   caps->max_texel_buffer_elements_uint = 128 * 1024 * 1024;
+   caps->max_texel_buffer_elements = 128 * 1024 * 1024;
    caps->glsl_feature_level = 330;
    caps->glsl_feature_level_compatibility = 330;
    caps->essl_feature_level = class_3d >= NVA3_3D_CLASS ? 310 : 300;
@@ -262,7 +262,7 @@ nv50_init_screen_caps(struct nv50_screen *screen)
    caps->max_geometry_total_output_components = 1024;
    caps->max_vertex_streams = 1;
    caps->max_gs_invocations = 0;
-   caps->max_shader_buffer_size_uint = 1 << 27;
+   caps->max_shader_buffer_size = 1 << 27;
    caps->max_vertex_attrib_stride = 2048;
    caps->max_vertex_element_src_offset = 2047;
    caps->constant_buffer_offset_alignment = 256;

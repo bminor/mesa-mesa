@@ -251,7 +251,7 @@ nv30_init_screen_caps(struct nv30_screen *screen)
    caps->texture_buffer_offset_alignment = 0;
    caps->query_pipeline_statistics = false;
    caps->texture_border_color_quirk = false;
-   caps->max_texel_buffer_elements_uint = 0;
+   caps->max_texel_buffer_elements = 0;
    caps->mixed_framebuffer_sizes = false;
    caps->vs_layer_viewport = false;
    caps->max_texture_gather_components = 0;
@@ -345,7 +345,7 @@ nv30_init_screen_caps(struct nv30_screen *screen)
    caps->pci_function = dev->info.pci.func;
 
    caps->max_gs_invocations = 32;
-   caps->max_shader_buffer_size_uint = 1 << 27;
+   caps->max_shader_buffer_size = 1 << 27;
    caps->vendor_id = 0x10de;
    caps->device_id = dev->info.device_id;
    caps->video_memory = dev->vram_size >> 20;

@@ -78,7 +78,7 @@ u_init_pipe_screen_caps(struct pipe_screen *pscreen, int accel)
    caps->texture_transfer_modes = PIPE_TEXTURE_TRANSFER_BLIT;
 
    /* GL_EXT_texture_buffer minimum value. */
-   caps->max_texel_buffer_elements_uint = 65536;
+   caps->max_texel_buffer_elements = 65536;
 
    caps->max_viewports = 1;
 
@@ -122,7 +122,7 @@ u_init_pipe_screen_caps(struct pipe_screen *pscreen, int accel)
 
    caps->max_gs_invocations = 32;
 
-   caps->max_shader_buffer_size_uint = 1 << 27;
+   caps->max_shader_buffer_size = 1 << 27;
 
    caps->max_vertex_element_src_offset = 2047;
 
@@ -162,7 +162,7 @@ u_init_pipe_screen_caps(struct pipe_screen *pscreen, int accel)
 
    caps->allow_dynamic_vao_fastpath = true;
 
-   caps->max_constant_buffer_size_uint =
+   caps->max_constant_buffer_size =
       pscreen->get_shader_param(pscreen, PIPE_SHADER_FRAGMENT,
                                 PIPE_SHADER_CAP_MAX_CONST_BUFFER0_SIZE);
 

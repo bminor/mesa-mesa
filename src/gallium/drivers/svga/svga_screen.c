@@ -595,7 +595,7 @@ svga_init_screen_caps(struct svga_screen *svgascreen)
    /* convert bytes to texels for the case of the largest texel
     * size: float[4].
     */
-   caps->max_texel_buffer_elements_uint =
+   caps->max_texel_buffer_elements =
       SVGA3D_DX_MAX_RESOURCE_SIZE / (4 * sizeof(float));
 
    caps->min_texel_offset = sws->have_vgpu10 ? VGPU10_MIN_TEXEL_FETCH_OFFSET : 0;
@@ -677,7 +677,7 @@ svga_init_screen_caps(struct svga_screen *svgascreen)
    caps->allow_mapped_buffers_during_execution = false;
    caps->tgsi_div = true;
    caps->max_gs_invocations = 32;
-   caps->max_shader_buffer_size_uint = 1 << 27;
+   caps->max_shader_buffer_size = 1 << 27;
    /* Verify this once protocol is finalized. Setting it to minimum value. */
    caps->max_shader_patch_varyings = sws->have_sm5 ? 30 : 0;
    caps->texture_float_linear = true;

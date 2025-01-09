@@ -1032,7 +1032,7 @@ zink_init_screen_caps(struct zink_screen *screen)
       caps->texture_transfer_modes = mode;
    }
 
-   caps->max_texel_buffer_elements_uint =
+   caps->max_texel_buffer_elements =
       MIN2(get_smallest_buffer_heap(screen),
            screen->info.props.limits.maxTexelBufferElements);
 
@@ -1133,7 +1133,7 @@ zink_init_screen_caps(struct zink_screen *screen)
    /* 1<<27 is required by VK spec */
    assert(screen->info.props.limits.maxStorageBufferRange >= 1 << 27);
    /* clamp to VK spec minimum */
-   caps->max_shader_buffer_size_uint =
+   caps->max_shader_buffer_size =
       MIN2(get_smallest_buffer_heap(screen), screen->info.props.limits.maxStorageBufferRange);
 
    caps->fs_coord_origin_upper_left = true;

@@ -427,10 +427,10 @@ crocus_init_screen_caps(struct crocus_screen *screen)
    caps->constant_buffer_offset_alignment = 32;
    caps->min_map_buffer_alignment = CROCUS_MAP_BUFFER_ALIGNMENT;
    caps->shader_buffer_offset_alignment = devinfo->ver >= 7 ? 4 : 0;
-   caps->max_shader_buffer_size_uint = devinfo->ver >= 7 ? (1 << 27) : 0;
+   caps->max_shader_buffer_size = devinfo->ver >= 7 ? (1 << 27) : 0;
    caps->texture_buffer_offset_alignment = 16; // XXX: u_screen says 256 is the minimum value...
    caps->texture_transfer_modes = PIPE_TEXTURE_TRANSFER_BLIT;
-   caps->max_texel_buffer_elements_uint = CROCUS_MAX_TEXTURE_BUFFER_SIZE;
+   caps->max_texel_buffer_elements = CROCUS_MAX_TEXTURE_BUFFER_SIZE;
    caps->max_viewports = devinfo->ver >= 6 ? 16 : 1;
    caps->max_geometry_output_vertices = devinfo->ver >= 6 ? 256 : 0;
    caps->max_geometry_total_output_components = devinfo->ver >= 6 ? 1024 : 0;

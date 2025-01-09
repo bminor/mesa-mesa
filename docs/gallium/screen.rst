@@ -195,7 +195,7 @@ Capability about the features and limits of the driver/GPU.
   state should be swizzled manually according to the swizzle in the sampler
   view it is intended to be used with, or herein undefined results may occur
   for permutational swizzles.
-* ``pipe_caps.max_texel_buffer_elements_uint``: The maximum accessible number of
+* ``pipe_caps.max_texel_buffer_elements``: The maximum accessible number of
   elements within a sampler buffer view and image buffer view. This is unsigned
   integer with the maximum of 4G - 1.
 * ``pipe_caps.max_viewports``: The maximum number of viewports (and scissors
@@ -510,7 +510,7 @@ Capability about the features and limits of the driver/GPU.
   ```set_sample_locations```.
 * ``pipe_caps.max_gs_invocations``: Maximum supported value of
   TGSI_PROPERTY_GS_INVOCATIONS.
-* ``pipe_caps.max_shader_buffer_size_uint``: Maximum supported size for binding
+* ``pipe_caps.max_shader_buffer_size``: Maximum supported size for binding
   with set_shader_buffers. This is unsigned integer with the maximum of 4GB - 1.
 * ``pipe_caps.max_combined_shader_buffers``: Maximum total number of shader
   buffers. A value of 0 means the sum of all per-shader stage maximums (see
@@ -630,7 +630,7 @@ Capability about the features and limits of the driver/GPU.
 * ``pipe_caps.query_sparse_texture_residency``: TRUE if shader sparse texture sample instruction could also return the residency information.
 * ``pipe_caps.clamp_sparse_texture_lod``: TRUE if shader sparse texture sample instruction support clamp the minimal lod to prevent read from uncommitted pages.
 * ``pipe_caps.allow_draw_out_of_order``: TRUE if the driver allows the "draw out of order" optimization to be enabled. See _mesa_update_allow_draw_out_of_order for more details.
-* ``pipe_caps.max_constant_buffer_size_uint``: Maximum bound constant buffer size in bytes. This is unsigned integer with the maximum of 4GB - 1. This applies to all constant buffers used by UBOs, unlike ``PIPE_SHADER_CAP_MAX_CONST_BUFFER0_SIZE``, which is specifically for GLSL uniforms.
+* ``pipe_caps.max_constant_buffer_size``: Maximum bound constant buffer size in bytes. This is unsigned integer with the maximum of 4GB - 1. This applies to all constant buffers used by UBOs, unlike ``PIPE_SHADER_CAP_MAX_CONST_BUFFER0_SIZE``, which is specifically for GLSL uniforms.
 * ``pipe_caps.hardware_gl_select``: Enable hardware accelerated GL_SELECT for this driver.
 * ``pipe_caps.device_protected_context``: Whether the device supports protected / encrypted context which can manipulate protected / encrypted content (some devices might need protected contexts to access protected content, whereas ``pipe_caps.device_protected_surface`` does not require any particular context to do so).
 * ``pipe_caps.allow_glthread_buffer_subdata_opt``: Whether to allow glthread to convert glBufferSubData to glCopyBufferSubData. This may improve or worsen performance depending on your driver.

@@ -425,7 +425,7 @@ virgl_init_screen_caps(struct virgl_screen *vscreen)
    caps->cube_map_array = vscreen->caps.caps.v1.bset.cube_map_array;
    caps->texture_multisample = vscreen->caps.caps.v1.bset.texture_multisample;
    caps->max_viewports = vscreen->caps.caps.v1.max_viewports;
-   caps->max_texel_buffer_elements_uint = vscreen->caps.caps.v1.max_tbo_size;
+   caps->max_texel_buffer_elements = vscreen->caps.caps.v1.max_tbo_size;
    caps->texture_border_color_quirk = 0;
    caps->endianness = PIPE_ENDIAN_LITTLE;
    caps->query_pipeline_statistics =
@@ -505,7 +505,7 @@ virgl_init_screen_caps(struct virgl_screen *vscreen)
    caps->allow_mapped_buffers_during_execution = 0;
    caps->clip_halfz = vscreen->caps.caps.v2.capability_bits & VIRGL_CAP_CLIP_HALFZ;
    caps->max_gs_invocations = 32;
-   caps->max_shader_buffer_size_uint = 1 << 27;
+   caps->max_shader_buffer_size = 1 << 27;
    caps->vendor_id = 0x1af4;
    caps->device_id = 0x1010;
    caps->video_memory =
@@ -536,7 +536,7 @@ virgl_init_screen_caps(struct virgl_screen *vscreen)
    caps->gl_spirv = true;
 
    if (vscreen->caps.caps.v2.host_feature_check_version >= 13)
-      caps->max_constant_buffer_size_uint = vscreen->caps.caps.v2.max_uniform_block_size;
+      caps->max_constant_buffer_size = vscreen->caps.caps.v2.max_uniform_block_size;
 
    caps->min_line_width =
    caps->min_line_width_aa =

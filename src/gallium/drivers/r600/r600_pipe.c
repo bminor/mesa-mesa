@@ -412,7 +412,7 @@ static void r600_init_screen_caps(struct r600_screen *rscreen)
 	caps->nir_images_as_deref = false;
 	caps->fake_sw_msaa = false;
 
-	caps->max_texel_buffer_elements_uint =
+	caps->max_texel_buffer_elements =
 		MIN2(rscreen->b.info.max_heap_size_kb * 1024ull / 4, INT_MAX);
 
 	caps->min_map_buffer_alignment = R600_MAP_BUFFER_ALIGNMENT;
@@ -451,7 +451,7 @@ static void r600_init_screen_caps(struct r600_screen *rscreen)
 	caps->max_gs_invocations = 32;
 
 	/* shader buffer objects */
-	caps->max_shader_buffer_size_uint = 1 << 27;
+	caps->max_shader_buffer_size = 1 << 27;
 	caps->max_combined_shader_buffers = 8;
 
 	caps->int64 =

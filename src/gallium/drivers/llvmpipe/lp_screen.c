@@ -380,7 +380,7 @@ llvmpipe_init_screen_caps(struct pipe_screen *screen)
    caps->linear_image_pitch_alignment = 1;
    caps->linear_image_base_address_alignment = 1;
    /* Adressing that many 64bpp texels fits in an i32 so this is a reasonable value */
-   caps->max_texel_buffer_elements_uint = LP_MAX_TEXEL_BUFFER_ELEMENTS;
+   caps->max_texel_buffer_elements = LP_MAX_TEXEL_BUFFER_ELEMENTS;
    caps->texture_buffer_offset_alignment = 16;
    caps->texture_transfer_modes = 0;
    caps->max_viewports = PIPE_MAX_VIEWPORTS;
@@ -449,7 +449,7 @@ llvmpipe_init_screen_caps(struct pipe_screen *screen)
     */
    caps->shareable_shaders = false;
    caps->max_gs_invocations = 32;
-   caps->max_shader_buffer_size_uint = LP_MAX_TGSI_SHADER_BUFFER_SIZE;
+   caps->max_shader_buffer_size = LP_MAX_TGSI_SHADER_BUFFER_SIZE;
    caps->framebuffer_no_attachment = true;
    caps->tgsi_tg4_component_in_swizzle = true;
    caps->fs_face_is_integer_sysval = true;

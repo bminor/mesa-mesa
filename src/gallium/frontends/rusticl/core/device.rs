@@ -732,7 +732,7 @@ impl Device {
             1 << 26,
             min(
                 self.max_mem_alloc(),
-                self.screen.caps().max_shader_buffer_size_uint as u64,
+                self.screen.caps().max_shader_buffer_size as u64,
             ),
         )
     }
@@ -905,7 +905,7 @@ impl Device {
                     self.max_mem_alloc() / MAX_PIXEL_SIZE_BYTES,
                     c_int::MAX as cl_ulong,
                 ),
-                self.screen.caps().max_texel_buffer_elements_uint as cl_ulong,
+                self.screen.caps().max_texel_buffer_elements as cl_ulong,
             ) as usize
         } else {
             0
