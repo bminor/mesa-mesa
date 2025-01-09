@@ -2470,8 +2470,7 @@ static void si_draw_rectangle(struct blitter_context *blitter, void *vertex_elem
    uint32_t attribute_ring_address_lo =
       sctx->gfx_level >= GFX11 ? sctx->screen->attribute_pos_prim_ring->gpu_address : 0;
 
-   if (std::max(std::abs(x1), std::abs(x2)) > INT16_MAX ||
-       std::max(std::abs(y1), std::abs(y2)) > INT16_MAX) {
+   if (MAX2(abs(x1), abs(x2)) > INT16_MAX || MAX2(abs(y1), abs(y2)) > INT16_MAX) {
       /* Fallback when coordinates can't fit in int16. */
       util_blitter_save_vertex_elements(sctx->blitter, sctx->vertex_elements);
       util_blitter_draw_rectangle(blitter, vertex_elements_cso, get_vs, x1, y1, x2, y2,
