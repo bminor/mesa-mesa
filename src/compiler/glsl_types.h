@@ -536,6 +536,12 @@ glsl_type_is_struct_or_ifc(const glsl_type *t)
 }
 
 static inline bool
+glsl_type_is_packed(const glsl_type *t)
+{
+   return (t->packed != 0);
+}
+
+static inline bool
 glsl_type_is_16bit(const glsl_type *t)
 {
    return glsl_base_type_is_16bit(t->base_type);
@@ -674,14 +680,14 @@ static inline bool
 glsl_matrix_type_is_row_major(const glsl_type *t)
 {
    assert((glsl_type_is_matrix(t) && t->explicit_stride) || glsl_type_is_interface(t));
-   return t->interface_row_major;
+   return (t->interface_row_major != 0);
 }
 
 static inline bool
 glsl_sampler_type_is_shadow(const glsl_type *t)
 {
    assert(glsl_type_is_sampler(t));
-   return t->sampler_shadow;
+   return (t->sampler_shadow != 0);
 }
 
 static inline bool
@@ -690,14 +696,14 @@ glsl_sampler_type_is_array(const glsl_type *t)
    assert(glsl_type_is_sampler(t) ||
           glsl_type_is_texture(t) ||
           glsl_type_is_image(t));
-   return t->sampler_array;
+   return (t->sampler_array != 0);
 }
 
 static inline bool
 glsl_struct_type_is_packed(const glsl_type *t)
 {
    assert(glsl_type_is_struct(t));
-   return t->packed;
+   return (t->packed != 0);
 }
 
 /**
@@ -1130,7 +1136,7 @@ glsl_texture_type_to_sampler(const glsl_type *t, bool is_shadow)
 {
    assert(glsl_type_is_texture(t));
    return glsl_sampler_type((enum glsl_sampler_dim)t->sampler_dimensionality,
-                            is_shadow, t->sampler_array,
+                            is_shadow, (t->sampler_array != 0),
                             (enum glsl_base_type)t->sampled_type);
 }
 
@@ -1139,7 +1145,7 @@ glsl_sampler_type_to_texture(const glsl_type *t)
 {
    assert(glsl_type_is_sampler(t) && !glsl_type_is_bare_sampler(t));
    return glsl_texture_type((enum glsl_sampler_dim)t->sampler_dimensionality,
-                            t->sampler_array,
+                            (t->sampler_array != 0),
                             (enum glsl_base_type)t->sampled_type);
 }
 
@@ -1318,10 +1324,10 @@ glsl_get_explicit_interface_type(const glsl_type *t, bool supports_std430)
 {
    enum glsl_interface_packing packing = glsl_get_internal_ifc_packing(t, supports_std430);
    if (packing == GLSL_INTERFACE_PACKING_STD140) {
-      return glsl_get_explicit_std140_type(t, t->interface_row_major);
+      return glsl_get_explicit_std140_type(t, (t->interface_row_major != 0));
    } else {
       assert(packing == GLSL_INTERFACE_PACKING_STD430);
-      return glsl_get_explicit_std430_type(t, t->interface_row_major);
+      return glsl_get_explicit_std430_type(t, (t->interface_row_major != 0));
    }
 }
 

@@ -124,7 +124,7 @@ _nir_build_${name}(nir_builder *build${intrinsic_decl_list(opcode)})
    % if 0 in opcode.src_components:
    intrin->num_components = src${opcode.src_components.index(0)}->num_components;
    % elif opcode.dest_components == 0:
-   intrin->num_components = num_components;
+   intrin->num_components = (uint8_t)num_components;
    % endif
    % if opcode.has_dest:
       % if opcode.dest_components == 0:

@@ -329,9 +329,9 @@ nir_const_value_for_raw_uint(uint64_t x, unsigned bit_size)
    /* clang-format off */
    switch (bit_size) {
    case 1:  v.b   = x;  break;
-   case 8:  v.u8  = x;  break;
-   case 16: v.u16 = x;  break;
-   case 32: v.u32 = x;  break;
+   case 8:  v.u8  = (uint8_t)x;  break;
+   case 16: v.u16 = (uint16_t)x;  break;
+   case 32: v.u32 = (uint32_t)x;  break;
    case 64: v.u64 = x;  break;
    default:
       unreachable("Invalid bit size");
