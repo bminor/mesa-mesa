@@ -9,7 +9,6 @@
 
 #include "ac_binary.h"
 #include "amd_family.h"
-#include "compiler/nir/nir.h"
 #include "compiler/shader_enums.h"
 #include "util/format/u_format.h"
 
