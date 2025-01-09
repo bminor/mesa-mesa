@@ -311,6 +311,31 @@ first layer, simplifying layout calculations for both software and hardware.
 Although the padding is logically unnecessary, it wastes little space compared
 to the sizes of large mipmapped 3D textures.
 
+Sparse page tables
+``````````````````
+
+The hardware has native support for sparse images. If an texture/PBE descriptor
+is configured in sparse mode, the specified address does not point to the image
+itself. Rather, it points to a **sparse page table**. The extra indirection
+enables on-device sparse binding (e.g. by updating the page table from a compute
+kernel).
+
+At the top level, the sparse page table is an array of **folios**. Each folio
+describes 256 pages. The folio itself has two halves. The first half is the page
+table itself, containing 4-byte "Sparse Block" data structures mapping image
+pages to GPU virtual addresses. The second half is probably sparse texture
+counters, again 4-bytes per page. Each folio therefore consumes :math:`256 \cdot
+4 \cdot 2 = 2 \mathrm{KiB}` in order to describe :math:`256 \cdot 16384 =
+4 \mathrm{MiB}`.
+
+In a layered (array or 3D) image, a given folio only describes a single layer.
+That implies extra padding between layers.
+
+Within a layer, the table works purely at an address level. It maps pages to
+pages, rather than tiles to tiles. It is not a spatial data structure in itself.
+Rather, it inherits the tiling of the image by virtue of the addresses mapped.
+This presumably simplifies the hardware implementation.
+
 drm-shim (Linux only)
 ---------------------
 
