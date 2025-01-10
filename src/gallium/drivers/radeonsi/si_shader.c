@@ -2550,10 +2550,6 @@ static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *
                 */
                .has_shared2_amd = sel->screen->info.gfx_level >= GFX7,
             });
-
-   nir_divergence_analysis(nir);
-   NIR_PASS(progress, nir, ac_nir_flag_smem_for_loads, sel->screen->info.gfx_level,
-            !nir->info.use_aco_amd, false);
    NIR_PASS(progress, nir, ac_nir_lower_mem_access_bit_sizes,
             sel->screen->info.gfx_level, !nir->info.use_aco_amd);
 
