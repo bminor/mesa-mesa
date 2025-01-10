@@ -149,7 +149,7 @@ nir_opt_move(nir_shader *shader, nir_move_options options)
                                         nir_metadata_live_defs);
          progress = true;
       } else {
-         nir_metadata_preserve(impl, nir_metadata_all);
+         nir_metadata_preserve(impl, nir_metadata_all & ~nir_metadata_instr_index);
       }
    }
 
