@@ -5020,7 +5020,7 @@ ms_calculate_output_layout(enum amd_gfx_level gfx_level, unsigned api_shared_siz
 }
 
 void
-ac_nir_lower_ngg_ms(nir_shader *shader,
+ac_nir_lower_ngg_mesh(nir_shader *shader,
                     enum amd_gfx_level gfx_level,
                     uint32_t clipdist_enable_mask,
                     const uint8_t *vs_output_param_offset,
