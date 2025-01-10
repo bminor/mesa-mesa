@@ -6,6 +6,7 @@
 #pragma once
 
 #include "VirtGpu.h"
+#include <xf86drm.h>
 
 class LinuxVirtGpuResource : public std::enable_shared_from_this<LinuxVirtGpuResource>,
                              public VirtGpuResource {
@@ -69,4 +70,15 @@ class LinuxVirtGpuDevice : public VirtGpuDevice {
    private:
     int64_t mDeviceHandle;
     struct VirtGpuCaps mCaps;
+
+    int openDevice(const drmDevicePtr dev);
+
+    bool mHasPrimary;
+    int mPrimaryMajor;
+    int mPrimaryMinor;
+    int mRenderMajor;
+    int mRenderMinor;
+
+    int mBusType;
+    drmPciBusInfo mPciBusInfo;
 };

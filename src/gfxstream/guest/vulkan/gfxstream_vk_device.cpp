@@ -368,9 +368,10 @@ VkResult gfxstream_vk_CreateInstance(const VkInstanceCreateInfo* pCreateInfo,
         return vk_error(NULL, result);
     }
 
+    // Note: Do not support try_create_for_drm. virtio_gpu DRM device opened in
+    // init_renderer above, which can still enumerate multiple physical devices on the host.
     instance->vk.physical_devices.enumerate = gfxstream_vk_enumerate_devices;
     instance->vk.physical_devices.destroy = gfxstream_vk_destroy_physical_device;
-    // TODO: instance->vk.physical_devices.try_create_for_drm (?)
 
     *pInstance = gfxstream_vk_instance_to_handle(instance);
     return VK_SUCCESS;
