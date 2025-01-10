@@ -164,6 +164,16 @@ ac_get_global_ids(nir_builder *b, unsigned num_components, unsigned bit_size);
 void
 ac_nir_emit_legacy_streamout(nir_builder *b, unsigned stream, nir_xfb_info *info, ac_nir_prerast_out *out);
 
+bool
+ac_nir_gs_shader_query(nir_builder *b,
+                       bool has_gen_prim_query,
+                       bool has_gs_invocations_query,
+                       bool has_gs_primitives_query,
+                       unsigned num_vertices_per_primitive,
+                       unsigned wave_size,
+                       nir_def *vertex_count[4],
+                       nir_def *primitive_count[4]);
+
 #ifdef __cplusplus
 }
 #endif

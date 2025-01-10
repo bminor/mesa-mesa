@@ -263,16 +263,6 @@ ac_nir_lower_legacy_vs(nir_shader *nir,
                        bool kill_layer,
                        bool force_vrs);
 
-bool
-ac_nir_gs_shader_query(nir_builder *b,
-                       bool has_gen_prim_query,
-                       bool has_gs_invocations_query,
-                       bool has_gs_primitives_query,
-                       unsigned num_vertices_per_primitive,
-                       unsigned wave_size,
-                       nir_def *vertex_count[4],
-                       nir_def *primitive_count[4]);
-
 void
 ac_nir_lower_legacy_gs(nir_shader *nir,
                        bool has_gen_prim_query,
