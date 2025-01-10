@@ -332,7 +332,7 @@ d3d12_video_decoder_prepare_dxva_slices_control_av1(struct d3d12_video_decoder *
    debug_printf("[d3d12_video_decoder_av1] Upper layer reported %d tiles for this frame, parsing them below...\n",
                   tileCount);
 
-   uint64_t totalSlicesDXVAArrayByteSize = tileCount * sizeof(DXVA_Tile_AV1);
+   size_t totalSlicesDXVAArrayByteSize = tileCount * sizeof(DXVA_Tile_AV1);
    vecOutSliceControlBuffers.resize(totalSlicesDXVAArrayByteSize);
 
    uint8_t* pData = vecOutSliceControlBuffers.data();

@@ -135,7 +135,7 @@ d3d12_video_decoder_prepare_dxva_slices_control_h264(struct d3d12_video_decoder 
                                                      std::vector<uint8_t> &vecOutSliceControlBuffers,
                                                      struct pipe_h264_picture_desc *picture_h264)
 {
-   uint64_t TotalSlicesDXVAArrayByteSize = picture_h264->slice_count * sizeof(DXVA_Slice_H264_Short);
+   size_t TotalSlicesDXVAArrayByteSize = picture_h264->slice_count * sizeof(DXVA_Slice_H264_Short);
    vecOutSliceControlBuffers.resize(TotalSlicesDXVAArrayByteSize);
    uint8_t* pData = vecOutSliceControlBuffers.data();
    assert(picture_h264->slice_parameter.slice_info_present);
