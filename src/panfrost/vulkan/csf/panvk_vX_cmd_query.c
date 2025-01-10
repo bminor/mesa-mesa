@@ -64,7 +64,7 @@ panvk_cmd_reset_occlusion_queries(struct panvk_cmd_buffer *cmd,
    for (uint32_t query = first_query; query < first_query + query_count;
         query++) {
       cs_move64_to(b, addr, panvk_query_available_dev_addr(pool, query));
-      cs_sync32_set(b, true, MALI_CS_SYNC_SCOPE_SYSTEM, zero32, addr,
+      cs_sync32_set(b, true, MALI_CS_SYNC_SCOPE_CSG, zero32, addr,
                     cs_defer(SB_IMM_MASK, SB_ID(DEFERRED_SYNC)));
    }
 }
@@ -126,7 +126,7 @@ panvk_cmd_end_occlusion_query(struct panvk_cmd_buffer *cmd,
 
    /* We wait on any previous flush, and defer on sync */
    cs_move64_to(b, sync_addr, panvk_query_available_dev_addr(pool, query));
-   cs_sync32_set(b, true, MALI_CS_SYNC_SCOPE_SYSTEM, seqno, sync_addr,
+   cs_sync32_set(b, true, MALI_CS_SYNC_SCOPE_CSG, seqno, sync_addr,
                  cs_defer(SB_MASK(DEFERRED_FLUSH), SB_ID(DEFERRED_SYNC)));
 }
 

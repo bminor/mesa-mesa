@@ -148,7 +148,7 @@ finish_cs(struct panvk_cmd_buffer *cmdbuf, uint32_t subqueue)
                    offsetof(struct panvk_cs_sync32, error));
       cs_wait_slots(b, SB_ALL_MASK, false);
       if (cmdbuf->vk.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY)
-         cs_sync32_add(b, true, MALI_CS_SYNC_SCOPE_SYSTEM, one,
+         cs_sync32_add(b, true, MALI_CS_SYNC_SCOPE_CSG, one,
                        debug_sync_addr, cs_now());
       cs_match(b, error, cmp_scratch) {
          cs_case(b, 0) {

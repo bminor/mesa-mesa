@@ -50,7 +50,7 @@ panvk_per_arch(CmdResetEvent2)(VkCommandBuffer commandBuffer, VkEvent _event,
 
          cs_default(b) {
             cs_move32_to(b, seqno, 0);
-            cs_sync32_set(b, false, MALI_CS_SYNC_SCOPE_SYSTEM, seqno, sync_addr,
+            cs_sync32_set(b, false, MALI_CS_SYNC_SCOPE_CSG, seqno, sync_addr,
                           cs_defer(sb_mask | SB_MASK(DEFERRED_FLUSH),
                                    SB_ID(DEFERRED_SYNC)));
          }
@@ -100,7 +100,7 @@ panvk_per_arch(CmdSetEvent2)(VkCommandBuffer commandBuffer, VkEvent _event,
             }
 
             cs_move32_to(b, seqno, 1);
-            cs_sync32_set(b, false, MALI_CS_SYNC_SCOPE_SYSTEM, seqno, sync_addr,
+            cs_sync32_set(b, false, MALI_CS_SYNC_SCOPE_CSG, seqno, sync_addr,
                           cs_defer(sb_mask | SB_MASK(DEFERRED_FLUSH),
                                    SB_ID(DEFERRED_SYNC)));
          }
