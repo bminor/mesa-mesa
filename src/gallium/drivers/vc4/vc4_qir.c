@@ -809,7 +809,9 @@ qir_SF(struct vc4_compile *c, struct qreg src)
             last_inst != c->defs[src.index]) {
                 last_inst = qir_MOV_dest(c, qir_reg(QFILE_NULL, 0), src);
         }
-        last_inst->sf = true;
+
+        if (last_inst)
+                last_inst->sf = true;
 }
 
 #define OPTPASS(func)                                                   \
