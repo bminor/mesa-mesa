@@ -289,8 +289,7 @@ static VkResult
 hk_get_timestamp(struct vk_device *device, uint64_t *timestamp)
 {
    struct hk_device *dev = container_of(device, struct hk_device, vk);
-   unreachable("todo");
-   // *timestamp = agx_get_gpu_timestamp(dev);
+   *timestamp = agx_gpu_time_to_ns(&dev->dev, agx_get_gpu_timestamp(&dev->dev));
    return VK_SUCCESS;
 }
 
@@ -407,6 +406,14 @@ hk_CreateDevice(VkPhysicalDevice physicalDevice,
    dev->vk.command_buffer_ops = &hk_cmd_buffer_ops;
    dev->vk.check_status = hk_check_status;
    dev->vk.get_timestamp = hk_get_timestamp;
+
+   /* This holds for current platforms. We do not currently implement
+    * timestamp scaling, this would require changes in the query copy kernel
+    * as well. Calibrated timestamps depends on this.
+    */
+   assert(dev->dev.user_timestamp_to_ns.num ==
+             dev->dev.user_timestamp_to_ns.den &&
+          "user timestamps are in ns");
 
    result = hk_descriptor_table_init(dev, &dev->images, AGX_TEXTURE_LENGTH,
                                      1024, 1024 * 1024);
