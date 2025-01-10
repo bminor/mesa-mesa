@@ -1360,8 +1360,8 @@ BEGIN_TEST(optimize.mad_mix.fma.basic)
       writeout(1, fadd(fmul(a, b), f2f32(c16)));
 
       /* omod/clamp check */
-      //! v1: %res2_mul = v_fma_mix_f32 lo(%a16), %b, neg(0)
-      //! v1: %res2 = v_add_f32 %res2_mul, %c *2
+      //! v1: %res2_fma = v_fma_mix_f32 lo(%a16), %b, %c
+      //! v1: %res2 = v_mul_f32 2.0, %res2_fma
       //! p_unit_test 2, %res2
       writeout(2, bld.vop2(aco_opcode::v_mul_f32, bld.def(v1), Operand::c32(0x40000000),
                            fadd(fmul(f2f32(a16), b), c)));
