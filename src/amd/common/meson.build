@@ -92,6 +92,7 @@ amd_common_files = files(
   'ac_nir_lower_global_access.c',
   'ac_nir_lower_image_opcodes_cdna.c',
   'ac_nir_lower_intrinsics_to_args.c',
+  'ac_nir_lower_legacy_vs.c',
   'ac_nir_lower_resinfo.c',
   'ac_nir_lower_taskmesh_io_to_mem.c',
   'ac_nir_lower_tess_io_to_mem.c',
