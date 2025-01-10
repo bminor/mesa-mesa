@@ -17,9 +17,6 @@
 extern "C" {
 #endif
 
-/* Reserve this size at the beginning of LDS for the tf0/1 shader message group vote. */
-#define AC_HS_MSG_VOTE_LDS_BYTES 16
-
 enum
 {
    /* SPI_PS_INPUT_CNTL_i.OFFSET[0:4] */
