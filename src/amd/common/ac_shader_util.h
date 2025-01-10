@@ -240,11 +240,6 @@ enum ac_descriptor_type
    AC_DESC_PLANE_2,
 };
 
-struct ac_nir_config {
-   enum amd_gfx_level gfx_level;
-   bool uses_aco;
-};
-
 unsigned ac_get_spi_shader_z_format(bool writes_z, bool writes_stencil, bool writes_samplemask,
                                     bool writes_mrt0_alpha);
 

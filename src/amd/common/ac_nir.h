@@ -39,6 +39,11 @@ enum {
    AC_EXP_FLAG_VALID_MASK = (1 << 2),
 };
 
+struct ac_nir_config {
+   enum amd_gfx_level gfx_level;
+   bool uses_aco;
+};
+
 /* TODO: Remove these once radeonsi gathers shader_info before lowering. */
 #define AC_VECTOR_ARG_FLAG(name, value)      (((name) & 0xf) | ((value) << 4))
 #define     AC_VECTOR_ARG_UNSET              0
