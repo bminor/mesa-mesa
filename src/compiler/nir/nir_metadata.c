@@ -119,4 +119,14 @@ nir_metadata_check_validation_flag(nir_shader *shader)
       assert(!(impl->valid_metadata & nir_metadata_not_properly_reset));
    }
 }
+
+void nir_metadata_require_all(nir_shader *shader)
+{
+   bool force_unroll_sampler_indirect = shader->options->force_indirect_unrolling_sampler;
+   nir_variable_mode indirect_mask = shader->options->force_indirect_unrolling;
+   nir_foreach_function_impl(impl, shader) {
+      nir_metadata_require(impl, nir_metadata_all, indirect_mask,
+                           (int)force_unroll_sampler_indirect);
+   }
+}
 #endif

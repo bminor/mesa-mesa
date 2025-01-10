@@ -48,6 +48,8 @@ static const struct debug_named_value nir_debug_control[] = {
      "Test serialize and deserialize shader at each successful lowering/optimization call" },
    { "novalidate", NIR_DEBUG_NOVALIDATE,
      "Disable shader validation at each successful lowering/optimization call" },
+   { "extended_validation", NIR_DEBUG_EXTENDED_VALIDATION,
+     "Validate even if a pass does not make progress and test that it properly preserves all types of metadata. This can be very slow" },
    { "tgsi", NIR_DEBUG_TGSI,
      "Dump NIR/TGSI shaders when doing a NIR<->TGSI translation" },
    { "print", NIR_DEBUG_PRINT,
