@@ -6,7 +6,6 @@
 
 #include "ac_shader_util.h"
 #include "ac_gpu_info.h"
-#include "ac_nir.h"
 
 #include "sid.h"
 #include "util/u_math.h"
