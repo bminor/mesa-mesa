@@ -80,6 +80,7 @@ v3dv_descriptor_map_get_descriptor(struct v3dv_descriptor_state *descriptor_stat
    assert(array_index < binding_layout->array_size);
 
    if (vk_descriptor_type_is_dynamic(binding_layout->type)) {
+      assert(dynamic_offset);
       uint32_t dynamic_offset_index =
          pipeline_layout->set[set_number].dynamic_offset_start +
          binding_layout->dynamic_offset_index + array_index;
