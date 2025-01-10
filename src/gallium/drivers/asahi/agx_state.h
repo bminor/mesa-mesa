@@ -796,8 +796,8 @@ void agx_launch(struct agx_batch *batch, struct agx_grid grid,
                 unsigned variable_shared_mem);
 
 void agx_launch_precomp(struct agx_batch *batch, struct agx_grid grid,
-                        enum libagx_program program, void *args,
-                        size_t arg_size);
+                        enum agx_barrier barrier, enum libagx_program program,
+                        void *args, size_t arg_size);
 
 #define MESA_DISPATCH_PRECOMP agx_launch_precomp
 

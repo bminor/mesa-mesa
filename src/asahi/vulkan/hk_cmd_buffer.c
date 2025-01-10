@@ -709,7 +709,8 @@ hk_upload_usc_words(struct hk_cmd_buffer *cmd, struct hk_shader *s,
 
 void
 hk_dispatch_precomp(struct hk_cs *cs, struct agx_grid grid,
-                    enum libagx_program idx, void *data, size_t data_size)
+                    enum agx_barrier barrier, enum libagx_program idx,
+                    void *data, size_t data_size)
 {
    struct hk_device *dev = hk_cmd_buffer_device(cs->cmd);
    struct agx_precompiled_shader *prog = agx_get_precompiled(&dev->bg_eot, idx);

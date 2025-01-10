@@ -3103,7 +3103,8 @@ agx_launch_internal(struct agx_batch *batch, struct agx_grid grid,
 
 void
 agx_launch_precomp(struct agx_batch *batch, struct agx_grid grid,
-                   enum libagx_program program, void *args, size_t arg_size)
+                   enum agx_barrier barrier, enum libagx_program program,
+                   void *args, size_t arg_size)
 {
    struct agx_device *dev = agx_device(batch->ctx->base.screen);
    struct agx_precompiled_shader *cs =
@@ -3935,14 +3936,15 @@ agx_ia_update(struct agx_batch *batch, const struct pipe_draw_info *info,
       perf_debug(dev, "Input assembly counters with primitive restart");
 
       libagx_increment_ia_restart(
-         batch, agx_1d(1024), ia_vertices, ia_primitives, vs_invocations,
-         c_prims, c_invs, draw, ib, ib_range_el, info->restart_index,
-         info->index_size, info->mode);
+         batch, agx_1d(1024), AGX_BARRIER_ALL, ia_vertices, ia_primitives,
+         vs_invocations, c_prims, c_invs, draw, ib, ib_range_el,
+         info->restart_index, info->index_size, info->mode);
    } else {
       perf_debug(dev, "Input assembly counters");
 
-      libagx_increment_ia(batch, agx_1d(1), ia_vertices, ia_primitives,
-                          vs_invocations, c_prims, c_invs, draw, info->mode);
+      libagx_increment_ia(batch, agx_1d(1), AGX_BARRIER_ALL, ia_vertices,
+                          ia_primitives, vs_invocations, c_prims, c_invs, draw,
+                          info->mode);
    }
 }
 
@@ -4146,7 +4148,7 @@ agx_launch_gs_prerast(struct agx_batch *batch,
          .prim = info->mode,
       };
 
-      libagx_gs_setup_indirect_struct(batch, agx_1d(1), gsi);
+      libagx_gs_setup_indirect_struct(batch, agx_1d(1), AGX_BARRIER_ALL, gsi);
 
       wg = agx_workgroup(1, 1, 1);
       grid_vs =
@@ -4172,7 +4174,8 @@ agx_launch_gs_prerast(struct agx_batch *batch,
       agx_launch(batch, grid_gs, wg, gs->gs_count, NULL, PIPE_SHADER_GEOMETRY,
                  0);
 
-      libagx_prefix_sum_geom(batch, agx_1d(1024 * gs->gs_count_words), gp);
+      libagx_prefix_sum_geom(batch, agx_1d(1024 * gs->gs_count_words),
+                             AGX_BARRIER_ALL, gp);
    }
 
    /* Pre-GS shader */
@@ -4243,9 +4246,9 @@ agx_draw_without_restart(struct agx_batch *batch,
    };
 
    /* Unroll the index buffer for each draw */
-   libagx_unroll_restart_struct(batch, agx_1d(1024 * indirect->draw_count),
-                                unroll, util_logbase2(info->index_size),
-                                libagx_compact_prim(info->mode));
+   libagx_unroll_restart_struct(
+      batch, agx_1d(1024 * indirect->draw_count), AGX_BARRIER_ALL, unroll,
+      util_logbase2(info->index_size), libagx_compact_prim(info->mode));
 
    /* Now draw the results without restart */
    struct pipe_draw_info new_info = {
@@ -4675,10 +4678,10 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
       uint64_t grids =
          agx_pool_alloc_aligned(&batch->pool, grid_stride * 3, 4).gpu;
 
-      libagx_tess_setup_indirect(batch, agx_1d(1), state, grids,
-                                 0 /* XXX: IA */, indirect_ptr, vertex_out_ptr,
-                                 0, 0, 0 /* XXX: Index buffer */,
-                                 ctx->vs->b.info.outputs, tcs_statistic);
+      libagx_tess_setup_indirect(
+         batch, agx_1d(1), AGX_BARRIER_ALL, state, grids, 0 /* XXX: IA */,
+         indirect_ptr, vertex_out_ptr, 0, 0, 0 /* XXX: Index buffer */,
+         ctx->vs->b.info.outputs, tcs_statistic);
 
       batch->uniforms.vertex_output_buffer_ptr = vertex_out_ptr;
 
@@ -4698,10 +4701,11 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
    batch->uniforms.vertex_output_buffer_ptr = 0;
 
    /* Generate counts, then prefix sum them, then finally tessellate. */
-   libagx_tessellate(batch, tess_grid, mode, LIBAGX_TESS_MODE_COUNT, state);
-   libagx_prefix_sum_tess(batch, agx_1d(1024), state);
-   libagx_tessellate(batch, tess_grid, mode, LIBAGX_TESS_MODE_WITH_COUNTS,
-                     state);
+   libagx_tessellate(batch, tess_grid, AGX_BARRIER_ALL, mode,
+                     LIBAGX_TESS_MODE_COUNT, state);
+   libagx_prefix_sum_tess(batch, agx_1d(1024), AGX_BARRIER_ALL, state);
+   libagx_tessellate(batch, tess_grid, AGX_BARRIER_ALL, mode,
+                     LIBAGX_TESS_MODE_WITH_COUNTS, state);
 
    /* Face culling state needs to be specialized for tess */
    ctx->dirty |= AGX_DIRTY_RS;
@@ -5307,7 +5311,8 @@ agx_launch_grid(struct pipe_context *pipe, const struct pipe_grid_info *info)
       if (indirect) {
          uint64_t addr = agx_get_query_address(batch, statistic);
 
-         libagx_increment_cs_invocations(batch, agx_1d(1), indirect, addr,
+         libagx_increment_cs_invocations(batch, agx_1d(1), AGX_BARRIER_ALL,
+                                         indirect, addr,
                                          agx_workgroup_threads(wg));
       } else {
          agx_query_increment_cpu(ctx, statistic,
@@ -5435,7 +5440,8 @@ agx_decompress_inplace(struct agx_batch *batch, struct pipe_surface *surf,
              ail_metadata_height_tl(layout, level),
              surf->u.tex.last_layer - surf->u.tex.first_layer + 1);
 
-   libagx_decompress(batch, grid, layout, surf->u.tex.first_layer, level,
+   libagx_decompress(batch, grid, AGX_BARRIER_ALL, layout,
+                     surf->u.tex.first_layer, level,
                      agx_map_texture_gpu(rsrc, 0), images.gpu);
 }
 

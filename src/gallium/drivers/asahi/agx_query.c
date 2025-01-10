@@ -15,6 +15,7 @@
 #include "agx_device.h"
 #include "agx_state.h"
 #include "libagx.h"
+#include "libagx_dgc.h"
 #include "libagx_shaders.h"
 
 static bool
@@ -500,7 +501,7 @@ agx_get_query_result_resource_gpu(struct agx_context *ctx,
                         : copy_type == QUERY_COPY_BOOL32 ? 4
                                                          : 0;
 
-   libagx_copy_query_gl(batch, agx_1d(1), query->ptr.gpu,
+   libagx_copy_query_gl(batch, agx_1d(1), AGX_BARRIER_ALL, query->ptr.gpu,
                         rsrc->bo->va->addr + offset, result_type, bool_size);
    return true;
 }

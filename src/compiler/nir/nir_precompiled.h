@@ -104,14 +104,15 @@
  * implement that mechanism, a driver must implement the following function
  * signature:
  *
- *    MESA_DISPATCH_PRECOMP(context, grid, kernel index, argument pointer,
- *                          size of arguments)
+ *    MESA_DISPATCH_PRECOMP(context, grid, barrier, kernel index,
+ *                          argument pointer, size of arguments)
  *
  * The exact types used are determined by the driver. context is something like
- * a Vulkan command buffer. grid represents the 3D dispatch size. kernel index
- * is the index of the precompiled kernel (nir_precomp_index). argument pointer
- * is a host pointer to the sized argument structure, which the driver must
- * upload and bind (e.g. as push constants).
+ * a Vulkan command buffer. grid represents the 3D dispatch size. barrier
+ * describes the synchronization and cache flushing required before and after
+ * the dispatch. kernel index is the index of the precompiled kernel
+ * (nir_precomp_index). argument pointer is a host pointer to the sized argument
+ * structure, which the driver must upload and bind (e.g. as push constants).
  *
  * Because the types are ambiguous here, the same mechanism works for both
  * Gallium and Vulkan drivers.
@@ -479,7 +480,7 @@ nir_precomp_print_dispatch_macros(FILE *fp, const struct nir_precomp_opts *opt,
       for (unsigned i = 0; i < 2; ++i) {
          bool is_struct = i == 0;
 
-         fprintf(fp, "#define %s%s(_context, _grid%s", func->name,
+         fprintf(fp, "#define %s%s(_context, _grid, _barrier%s", func->name,
                  is_struct ? "_struct" : "", is_struct ? ", _data" : "");
 
          /* Add the arguments, including variant parameters. For struct macros,
@@ -523,7 +524,7 @@ nir_precomp_print_dispatch_macros(FILE *fp, const struct nir_precomp_opts *opt,
          /* Dispatch via MESA_DISPATCH_PRECOMP, which the driver must #define
           * suitably before #include-ing this file.
           */
-         fprintf(fp, "   MESA_DISPATCH_PRECOMP(_context, _grid, ");
+         fprintf(fp, "   MESA_DISPATCH_PRECOMP(_context, _grid, _barrier, ");
          nir_precomp_print_enum_value(fp, func);
          nir_precomp_print_variant_params(fp, func, false);
          fprintf(fp, ", &_args, sizeof(_args)); \\\n");
