@@ -1082,6 +1082,12 @@ d3d12_resource_from_memobj(struct pipe_screen *pscreen,
    struct winsys_handle whandle = {};
    whandle.type = WINSYS_HANDLE_TYPE_D3D12_RES;
    whandle.com_obj = memobj->res ? (void *) memobj->res : (void *) memobj->heap;
+
+   if (offset > UINT32_MAX) {
+      debug_printf("d3d12: Offset too large for resource \n");
+      return NULL;
+   }
+
    whandle.offset = static_cast<unsigned int>(offset);
    whandle.format = templ->format;
    whandle.modifier = memobj->res ? 0 : 1;
