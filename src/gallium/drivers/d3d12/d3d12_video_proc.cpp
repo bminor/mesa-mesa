@@ -742,7 +742,7 @@ d3d12_video_processor_convert_pipe_rotation(enum pipe_video_vpp_orientation orie
     return result;
 }
 
-uint64_t
+unsigned int
 d3d12_video_processor_pool_current_index(struct d3d12_video_processor *pD3D12Proc)
 {
    return pD3D12Proc->m_fenceValue % D3D12_VIDEO_PROC_ASYNC_DEPTH;
