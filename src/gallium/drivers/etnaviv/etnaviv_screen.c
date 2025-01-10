@@ -761,8 +761,13 @@ etna_determine_uniform_limits(struct etna_screen *screen)
     * gcmCONFIGUREUNIFORMS in the Vivante kernel driver file
     * drivers/mxc/gpu-viv/hal/kernel/inc/gc_hal_base.h.
     */
-   if (screen->info->model == chipModel_GC2000 &&
-       (screen->info->revision == 0x5118 || screen->info->revision == 0x5140)) {
+   if (screen->info->halti >= 1) {
+      /* with halti1 we use unified constant mode */
+      screen->specs.max_vs_uniforms = screen->specs.max_ps_uniforms =
+            MIN2(512, screen->info->gpu.num_constants - 64);
+   } else if (screen->info->model == chipModel_GC2000 &&
+              (screen->info->revision == 0x5118 ||
+               screen->info->revision == 0x5140)) {
       screen->specs.max_vs_uniforms = 256;
       screen->specs.max_ps_uniforms = 64;
    } else if (screen->info->gpu.num_constants == 320) {
