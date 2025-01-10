@@ -38,6 +38,7 @@ struct ir3_info {
    /* Size in dwords of the instructions. */
    uint16_t sizedwords;
    uint16_t instrs_count; /* expanded to account for rpt's */
+   uint16_t preamble_instrs_count;
    uint16_t nops_count;   /* # of nop instructions, including nopN */
    uint16_t mov_count;
    uint16_t cov_count;

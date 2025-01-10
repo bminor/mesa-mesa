@@ -4817,6 +4817,14 @@ tu_GetPipelineExecutableStatisticsKHR(
    }
 
    vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
+      WRITE_STR(stat->name, "Preamble Instruction Count");
+      WRITE_STR(stat->description,
+                "Total number of IR3 instructions in the preamble.");
+      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
+      stat->value.u64 = exe->stats.preamble_instrs_count;
+   }
+
+   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
       WRITE_STR(stat->name, "Early preamble");
       WRITE_STR(stat->description,
                 "Whether the preamble will be executed early.");

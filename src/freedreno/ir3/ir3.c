@@ -374,6 +374,9 @@ ir3_collect_info(struct ir3_shader_variant *v)
                int n = MIN2(mem_delay, 1 + instr->repeat + instr->nop);
                mem_delay -= n;
             }
+         } else {
+            unsigned instrs_count = 1 + instr->repeat + instr->nop;
+            info->preamble_instrs_count += instrs_count;
          }
 
          if (instr->opc == OPC_SHPE)

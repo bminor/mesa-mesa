@@ -930,7 +930,7 @@ ir3_shader_disasm(struct ir3_shader_variant *so, uint32_t *bin, FILE *out)
 
    fprintf(
       out,
-      "; %s prog %d/%d: %u cat0, %u cat1, %u cat2, %u cat3, %u cat4, %u cat5, %u cat6, %u cat7, \n",
+      "; %s prog %d/%d: %u cat0, %u cat1, %u cat2, %u cat3, %u cat4, %u cat5, %u cat6, %u cat7\n",
       type, so->shader_id, so->id, so->info.instrs_per_cat[0],
       so->info.instrs_per_cat[1], so->info.instrs_per_cat[2],
       so->info.instrs_per_cat[3], so->info.instrs_per_cat[4],
@@ -942,6 +942,12 @@ ir3_shader_disasm(struct ir3_shader_variant *so, uint32_t *bin, FILE *out)
       "; %s prog %d/%d: %u sstall, %u (ss), %u systall, %u (sy), %d loops\n",
       type, so->shader_id, so->id, so->info.sstall, so->info.ss,
       so->info.systall, so->info.sy, so->loops);
+
+   if (so->info.preamble_instrs_count) {
+      fprintf(
+         out, "; %u preamble instr, %s preamble\n",
+         so->info.preamble_instrs_count, so->info.early_preamble ? "early" : "late");
+   }
 
    /* print shader type specific info: */
    switch (so->type) {
