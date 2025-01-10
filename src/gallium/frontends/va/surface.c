@@ -1099,7 +1099,7 @@ vlVaCreateSurfaces2(VADriverContextP ctx, unsigned int format,
    const VADRMFormatModifierList *modifier_list;
 #endif
 #endif
-   struct pipe_video_buffer templat;
+   struct pipe_video_buffer templat = {0};
    struct pipe_screen *pscreen;
    int i;
    int memory_type;
@@ -1228,17 +1228,19 @@ vlVaCreateSurfaces2(VADriverContextP ctx, unsigned int format,
       break;
    case VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME_2:
    case VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME_3:
-      if (!prime_desc)
-         return VA_STATUS_ERROR_INVALID_PARAMETER;
-
-      expected_fourcc = prime_desc->fourcc;
+      /* If we don't have surface descriptor, use it as a hint
+       * that application will export the surface later. */
+      if (!prime_desc) {
+         templat.bind |= PIPE_BIND_SHARED;
+         memory_type = VA_SURFACE_ATTRIB_MEM_TYPE_VA;
+      } else {
+         expected_fourcc = prime_desc->fourcc;
+      }
       break;
 #endif
    default:
       assert(0);
    }
-
-   memset(&templat, 0, sizeof(templat));
 
    if (!modifiers)
       templat.interlaced =
