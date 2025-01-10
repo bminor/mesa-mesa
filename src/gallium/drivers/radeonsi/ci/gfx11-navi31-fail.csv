@@ -6,7 +6,6 @@ glx@glx_arb_sync_control@timing -divisor 2,Fail
 glx@glx-make-current,Fail
 glx@glx-multi-window-single-context,Fail
 glx@glx-swap-event_interval,Fail
-glx@glx_arb_create_context_es2_profile@invalid opengl es version,Fail
 glx@glx_arb_create_context_no_error@no error,Fail
 glx@glx_ext_no_config_context@no fbconfig,Fail
 glx@glx-visuals-depth -pixmap,Crash

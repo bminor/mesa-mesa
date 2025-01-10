@@ -22,7 +22,6 @@ glx@glx_arb_create_context_no_error@no error,Fail
 # Version = 2.1
 # X error 167 (GLXBadFBConfig (9)) was generated, but GLXBadProfileARB (13) was expected.
 # Version = 3.3
-glx@glx_arb_create_context_es2_profile@invalid opengl es version,Fail
 
 spec@!opengl 1.0@rasterpos,Fail
 

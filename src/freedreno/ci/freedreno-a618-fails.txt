@@ -13,7 +13,6 @@ KHR-GL46.texture_cube_map_array.color_depth_attachments,Fail
 #
 
 
-glx@glx_arb_create_context_es2_profile@invalid opengl es version,Fail
 glx@glx_arb_create_context_no_error@no error,Fail
 
 spec@arb_depth_buffer_float@fbo-generatemipmap-formats,Fail
