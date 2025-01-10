@@ -4249,6 +4249,10 @@ struct anv_cmd_buffer {
 
    struct anv_cmd_state                         state;
 
+   /* Fast-clear statistics. */
+   uint64_t                                     num_dependent_clears;
+   uint64_t                                     num_independent_clears;
+
    struct anv_address                           return_addr;
 
    /* Set by SetPerformanceMarkerINTEL, written into queries by CmdBeginQuery */
