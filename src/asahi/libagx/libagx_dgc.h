@@ -97,6 +97,17 @@ agx_is_indirect(struct agx_grid grid)
    return grid.mode != AGX_CDM_MODE_DIRECT;
 }
 
+enum agx_barrier {
+   /* No barrier/cache operations needed */
+   AGX_BARRIER_NONE = 0,
+
+   /* Catch-all for all defined barriers. Because we have not yet
+    * reverse-engineered the finer details here, this is the only barrier we
+    * have....
+    */
+   AGX_BARRIER_ALL = (1 << 0),
+};
+
 struct agx_draw {
    struct agx_grid b;
    uint64_t index_buffer;
