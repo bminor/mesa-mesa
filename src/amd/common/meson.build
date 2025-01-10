@@ -100,6 +100,7 @@ amd_common_files = files(
   'ac_nir_lower_tess_io_to_mem.c',
   'ac_nir_lower_tex.c',
   'ac_nir_lower_ngg.c',
+  'ac_nir_lower_ngg_mesh.c',
   'ac_nir_lower_ps_early.c',
   'ac_nir_lower_ps_late.c',
   'ac_nir_lower_sin_cos.c',

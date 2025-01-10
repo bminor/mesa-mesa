@@ -801,3 +801,26 @@ ac_nir_gs_shader_query(nir_builder *b,
    nir_pop_if(b, if_shader_query);
    return true;
 }
+
+nir_def *
+ac_nir_pack_ngg_prim_exp_arg(nir_builder *b, unsigned num_vertices_per_primitives,
+                             nir_def *vertex_indices[3], nir_def *is_null_prim,
+                             enum amd_gfx_level gfx_level)
+{
+   nir_def *arg = nir_load_initial_edgeflags_amd(b);
+
+   for (unsigned i = 0; i < num_vertices_per_primitives; ++i) {
+      assert(vertex_indices[i]);
+      arg = nir_ior(b, arg, nir_ishl_imm(b, vertex_indices[i],
+                                         (gfx_level >= GFX12 ? 9u : 10u) * i));
+   }
+
+   if (is_null_prim) {
+      if (is_null_prim->bit_size == 1)
+         is_null_prim = nir_b2i32(b, is_null_prim);
+      assert(is_null_prim->bit_size == 32);
+      arg = nir_ior(b, arg, nir_ishl_imm(b, is_null_prim, 31u));
+   }
+
+   return arg;
+}

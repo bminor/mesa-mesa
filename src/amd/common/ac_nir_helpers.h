@@ -174,6 +174,11 @@ ac_nir_gs_shader_query(nir_builder *b,
                        nir_def *vertex_count[4],
                        nir_def *primitive_count[4]);
 
+nir_def *
+ac_nir_pack_ngg_prim_exp_arg(nir_builder *b, unsigned num_vertices_per_primitives,
+                             nir_def *vertex_indices[3], nir_def *is_null_prim,
+                             enum amd_gfx_level gfx_level);
+
 #ifdef __cplusplus
 }
 #endif
