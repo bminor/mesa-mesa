@@ -508,7 +508,7 @@ d3d12_video_encoder_negotiate_current_av1_tiles_configuration(struct d3d12_video
    // last one has to be calculated from the frame width/height in superblocks.
 
    // Copy the tile col sizes (up to 63 defined in VA-API interface array sizes)
-   size_t accum_cols_sb = 0;
+   uint64_t accum_cols_sb = 0;
    uint8_t src_cols_count = static_cast<uint8_t>(MIN2(63, pAV1Pic->tile_cols));
    for (uint8_t i = 0; i < src_cols_count; i++) {
       tilePartition.ColWidths[i] = pAV1Pic->width_in_sbs_minus_1[i] + 1;
@@ -521,7 +521,7 @@ d3d12_video_encoder_negotiate_current_av1_tiles_configuration(struct d3d12_video
       tilePartition.ColWidths[63] = pAV1Pic->frame_width_sb - accum_cols_sb;
 
    // Copy the tile row sizes (up to 63 defined in VA-API interface array sizes)
-   size_t accum_rows_sb = 0;
+   uint64_t accum_rows_sb = 0;
    uint8_t src_rows_count = static_cast<uint8_t>(MIN2(63, pAV1Pic->tile_rows));
    for (uint8_t i = 0; i < src_rows_count; i++) {
       tilePartition.RowHeights[i] = pAV1Pic->height_in_sbs_minus_1[i] + 1;
@@ -1613,7 +1613,7 @@ d3d12_video_encoder_update_current_frame_pic_params_info_av1(struct d3d12_video_
    pD3D12Enc->m_upDPBManager->get_current_frame_picture_control_data(picParams);
 
    // Save state snapshot from record time to resolve headers at get_feedback time
-   uint64_t current_metadata_slot = (pD3D12Enc->m_fenceValue % D3D12_VIDEO_ENC_METADATA_BUFFERS_COUNT);
+   size_t current_metadata_slot = static_cast<size_t>(pD3D12Enc->m_fenceValue % D3D12_VIDEO_ENC_METADATA_BUFFERS_COUNT);
    pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_associatedEncodeCapabilities =
       pD3D12Enc->m_currentEncodeCapabilities;
    pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_associatedEncodeConfig =
@@ -2815,11 +2815,11 @@ upload_tile_group_obu(struct d3d12_video_encoder *pD3D12Enc,
 
    size_t src_offset = 0;
    for (UINT64 TileIdx = tileGroup.tg_start; TileIdx <= tileGroup.tg_end; TileIdx++) {
-      size_t tile_size = pFrameSubregionMetadata[TileIdx].bSize - pFrameSubregionMetadata[TileIdx].bStartOffset;
+      size_t tile_size = static_cast<size_t>(pFrameSubregionMetadata[TileIdx].bSize - pFrameSubregionMetadata[TileIdx].bStartOffset);
       // The i-th tile is read from the src_buffer[offset] with offset = [sum j = (0, (i-1)){ tile[j].bSize }] +
       // tile[i].bStartOffset
-      size_t src_buf_tile_position = src_offset + pFrameSubregionMetadata[TileIdx].bStartOffset;
-      src_offset += pFrameSubregionMetadata[TileIdx].bSize;
+      size_t src_buf_tile_position = src_offset + static_cast<size_t>(pFrameSubregionMetadata[TileIdx].bStartOffset);
+      src_offset += static_cast<size_t>(pFrameSubregionMetadata[TileIdx].bSize);
 
       // tile_size_minus_1	not coded for last tile
       if ((TileIdx != tileGroup.tg_end)) {
@@ -2918,6 +2918,6 @@ d3d12_video_encoder_store_current_picture_references_av1(d3d12_video_encoder *pD
 {
    // Update DX12 picparams for post execution (get_feedback) after d3d12_video_encoder_references_manager_av1
    // changes
-   pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_associatedEncodeConfig.m_encoderPicParamsDesc =
+   pD3D12Enc->m_spEncodedFrameMetadata[static_cast<size_t>(current_metadata_slot)].m_associatedEncodeConfig.m_encoderPicParamsDesc =
       pD3D12Enc->m_currentEncodeConfig.m_encoderPicParamsDesc;
 }
