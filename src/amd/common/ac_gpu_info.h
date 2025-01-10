@@ -176,6 +176,7 @@ struct radeon_info {
    uint32_t tcc_cache_line_size;
    bool tcc_rb_non_coherent; /* whether L2 inv is needed for render->texture transitions */
    bool cp_sdma_ge_use_system_memory_scope;
+   bool cp_dma_use_L2;
    unsigned pc_lines;
    uint32_t lds_size_per_workgroup;
    uint32_t lds_alloc_granularity;

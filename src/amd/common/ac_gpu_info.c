@@ -1086,6 +1086,7 @@ bool ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
                                !util_is_power_of_two_or_zero(info->num_tcc_blocks) &&
                                info->num_rb != info->num_tcc_blocks;
    info->cp_sdma_ge_use_system_memory_scope = info->gfx_level == GFX12;
+   info->cp_dma_use_L2 = info->gfx_level >= GFX7 && !info->cp_sdma_ge_use_system_memory_scope;
 
    if (info->drm_minor >= 52) {
       info->sqc_inst_cache_size = device_info.sqc_inst_cache_size * 1024;
