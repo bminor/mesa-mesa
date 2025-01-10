@@ -436,7 +436,7 @@ etna_emit_state(struct etna_context *ctx)
 
    }
    if (unlikely(dirty & (ETNA_DIRTY_RASTERIZER | ETNA_DIRTY_FRAMEBUFFER))) {
-      /*00C14*/ EMIT_STATE(SE_DEPTH_BIAS, fui(ctx->rasterizer->offset_units * 2.0f * ctx->framebuffer.depth_mrd));
+      /*00C14*/ EMIT_STATE(SE_DEPTH_BIAS, fui(etna_rasterizer_state(ctx->rasterizer)->offset_units * ctx->framebuffer.depth_mrd));
    }
    if (unlikely(dirty & (ETNA_DIRTY_RASTERIZER))) {
       /*00C18*/ EMIT_STATE(SE_CONFIG, etna_rasterizer_state(ctx->rasterizer)->SE_CONFIG);
