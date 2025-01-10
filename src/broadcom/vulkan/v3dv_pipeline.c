@@ -1075,6 +1075,7 @@ enable_line_smooth(struct v3dv_pipeline *pipeline,
    if (!pipeline->rasterization_enabled)
       return false;
 
+   assert(rs_info);
    const VkPipelineRasterizationLineStateCreateInfoKHR *ls_info =
       vk_find_struct_const(rs_info->pNext,
                            PIPELINE_RASTERIZATION_LINE_STATE_CREATE_INFO_KHR);
