@@ -353,9 +353,9 @@ namespace {
    unsigned
    spill_max_size(const fs_visitor *s)
    {
-      /* LSC is limited to SIMD16 sends */
+      /* LSC is limited to SIMD16 sends (SIMD32 on Xe2) */
       if (s->devinfo->has_lsc)
-         return 2;
+         return 2 * reg_unit(s->devinfo);
 
       /* FINISHME - On Gfx7+ it should be possible to avoid this limit
        *            altogether by spilling directly from the temporary GRF
@@ -726,8 +726,7 @@ fs_reg_alloc::build_ex_desc(const fs_builder &bld, unsigned reg_size, bool unspi
 brw_reg
 fs_reg_alloc::build_lane_offsets(const fs_builder &bld, uint32_t spill_offset, int ip)
 {
-   /* LSC messages are limited to SIMD16 */
-   assert(bld.dispatch_width() <= 16);
+   assert(bld.dispatch_width() <= 16 * reg_unit(bld.shader->devinfo));
 
    const fs_builder ubld = bld.exec_all();
    const unsigned reg_count = ubld.dispatch_width() / 8;
@@ -754,6 +753,15 @@ fs_reg_alloc::build_lane_offsets(const fs_builder &bld, uint32_t spill_offset, i
    /* Make the offset a dword */
    inst = ubld.SHL(offset, offset, brw_imm_ud(2));
    _mesa_set_add(spill_insts, inst);
+
+   /* Build offsets in the upper 16 lanes of SIMD32 */
+   if (ubld.dispatch_width() > 16) {
+      inst = ubld.group(16, 0).ADD(
+         byte_offset(offset, 2 * REG_SIZE),
+         byte_offset(offset, 0),
+         brw_imm_ud(16 << 2));
+      _mesa_set_add(spill_insts, inst);
+   }
 
    /* Add the base offset */
    if (spill_offset) {
@@ -805,10 +813,12 @@ fs_reg_alloc::emit_unspill(const fs_builder &bld,
 
       fs_inst *unspill_inst;
       if (devinfo->verx10 >= 125) {
-         /* LSC is limited to SIMD16 load/store but we can load more using
-          * transpose messages.
+         /* LSC is limited to SIMD16 (SIMD32 on Xe2) load/store but we can
+          * load more using transpose messages.
           */
-         const bool use_transpose = bld.dispatch_width() > 16 || bld.has_writemask_all();
+         const bool use_transpose =
+            bld.dispatch_width() > 16 * reg_unit(devinfo) ||
+            bld.has_writemask_all();
          const fs_builder ubld = use_transpose ? bld.exec_all().group(1, 0) : bld;
          brw_reg offset;
          if (use_transpose) {
