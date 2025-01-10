@@ -227,6 +227,7 @@ typedef struct brw_reg {
    bool is_negative_one() const;
    bool is_null() const;
    bool is_accumulator() const;
+   bool is_ip() const;
    bool is_address() const;
 
    unsigned address_slot(unsigned byte_offset) const;

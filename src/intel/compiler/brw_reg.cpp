@@ -264,6 +264,12 @@ brw_reg::is_accumulator() const
 }
 
 bool
+brw_reg::is_ip() const
+{
+   return file == ARF && (nr & 0xF0) == BRW_ARF_IP;
+}
+
+bool
 brw_reg::is_address() const
 {
    return file == ADDRESS;

@@ -1087,7 +1087,7 @@ static bool
 is_scheduling_barrier(const brw_inst *inst)
 {
    return inst->opcode == SHADER_OPCODE_HALT_TARGET ||
-          inst->is_control_flow() ||
+          (inst->is_control_flow() && inst->opcode != BRW_OPCODE_HALT) ||
           inst->has_side_effects();
 }
 

@@ -826,8 +826,19 @@ brw_inst::is_control_flow() const
    case BRW_OPCODE_ENDIF:
    case BRW_OPCODE_BREAK:
    case BRW_OPCODE_CONTINUE:
+   case BRW_OPCODE_JMPI:
+   case BRW_OPCODE_BRD:
+   case BRW_OPCODE_BRC:
+   case BRW_OPCODE_HALT:
+   case BRW_OPCODE_CALLA:
+   case BRW_OPCODE_CALL:
+   case BRW_OPCODE_GOTO:
+   case BRW_OPCODE_RET:
    case SHADER_OPCODE_FLOW:
       return true;
+   case BRW_OPCODE_MOV:
+   case BRW_OPCODE_ADD:
+      return dst.is_ip();
    default:
       return false;
    }
