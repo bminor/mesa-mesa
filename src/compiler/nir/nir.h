@@ -73,7 +73,6 @@ extern bool nir_debug_print_shader[MESA_SHADER_KERNEL + 1];
 #define NIR_DEBUG_CLONE                  (1u << 0)
 #define NIR_DEBUG_SERIALIZE              (1u << 1)
 #define NIR_DEBUG_NOVALIDATE             (1u << 2)
-#define NIR_DEBUG_VALIDATE_SSA_DOMINANCE (1u << 3)
 #define NIR_DEBUG_TGSI                   (1u << 4)
 #define NIR_DEBUG_PRINT_VS               (1u << 5)
 #define NIR_DEBUG_PRINT_TCS              (1u << 6)

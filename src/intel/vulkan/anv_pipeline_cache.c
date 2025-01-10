@@ -756,7 +756,6 @@ anv_load_fp64_shader(struct anv_device *device)
    assert(nir != NULL);
 
    nir_validate_shader(nir, "after spirv_to_nir");
-   nir_validate_ssa_dominance(nir, "after spirv_to_nir");
 
    NIR_PASS_V(nir, nir_lower_variable_initializers, nir_var_function_temp);
    NIR_PASS_V(nir, nir_lower_returns);

@@ -1721,10 +1721,8 @@ validate_dominance(nir_function_impl *impl, validate_state *state)
       state->block = NULL;
    }
 
-   if (NIR_DEBUG(VALIDATE_SSA_DOMINANCE)) {
-      memset(state->ssa_defs_found, 0, BITSET_WORDS(impl->ssa_alloc) * sizeof(BITSET_WORD));
-      validate_ssa_dominance(impl, state);
-   }
+   memset(state->ssa_defs_found, 0, BITSET_WORDS(impl->ssa_alloc) * sizeof(BITSET_WORD));
+   validate_ssa_dominance(impl, state);
 
    /* Restore the old dominance metadata */
    set_foreach(state->blocks, entry) {
@@ -1900,10 +1898,8 @@ validate_metadata_and_ssa_dominance(nir_function_impl *impl, validate_state *sta
    if (impl->valid_metadata & nir_metadata_instr_index)
       validate_instr_index(impl, state);
 
-   if (((impl->valid_metadata & nir_metadata_dominance) ||
-       NIR_DEBUG(VALIDATE_SSA_DOMINANCE))) {
-      validate_dominance(impl, state);
-   }
+   /* This validates both metadata and SSA dominance. */
+   validate_dominance(impl, state);
 
    if (impl->valid_metadata & nir_metadata_live_defs)
       validate_live_defs(impl, state);
