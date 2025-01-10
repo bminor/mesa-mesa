@@ -6,7 +6,7 @@
 #include "helpers.h"
 
 #include "common/amd_family.h"
-#include "common/ac_nir.h"
+#include "common/nir/ac_nir.h"
 #include "vk_format.h"
 
 #include <llvm-c/Target.h>

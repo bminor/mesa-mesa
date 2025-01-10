@@ -13,7 +13,7 @@
 
 #include "common/ac_descriptors.h"
 #include "common/ac_gpu_info.h"
-#include "common/ac_nir.h"
+#include "common/nir/ac_nir.h"
 #include "common/sid.h"
 
 #include "util/fast_idiv_by_const.h"

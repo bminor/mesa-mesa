@@ -6,7 +6,7 @@
 
 #include "aco_instruction_selection.h"
 
-#include "common/ac_nir.h"
+#include "common/nir/ac_nir.h"
 #include "common/sid.h"
 
 #include "nir_control_flow.h"
