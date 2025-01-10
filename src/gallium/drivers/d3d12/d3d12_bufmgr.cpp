@@ -226,12 +226,12 @@ d3d12_bo_map(struct d3d12_bo *bo, D3D12_RANGE *range)
    base_bo = d3d12_bo_get_base(bo, &offset);
 
    if (!range || range->Begin >= range->End) {
-      offset_range.Begin = offset;
-      offset_range.End = offset + d3d12_bo_get_size(bo);
+      offset_range.Begin = static_cast<size_t>(offset);
+      offset_range.End = static_cast<size_t>(offset + d3d12_bo_get_size(bo));
       range = &offset_range;
    } else {
-      offset_range.Begin = range->Begin + offset;
-      offset_range.End = range->End + offset;
+      offset_range.Begin = static_cast<size_t>(range->Begin + offset);
+      offset_range.End = static_cast<size_t>(range->End + offset);
       range = &offset_range;
    }
 
@@ -251,12 +251,12 @@ d3d12_bo_unmap(struct d3d12_bo *bo, D3D12_RANGE *range)
    base_bo = d3d12_bo_get_base(bo, &offset);
 
    if (!range || range->Begin >= range->End) {
-      offset_range.Begin = offset;
-      offset_range.End = offset + d3d12_bo_get_size(bo);
+      offset_range.Begin = static_cast<size_t>(offset);
+      offset_range.End = static_cast<size_t>(offset + d3d12_bo_get_size(bo));
       range = &offset_range;
    } else {
-      offset_range.Begin = range->Begin + offset;
-      offset_range.End = range->End + offset;
+      offset_range.Begin = static_cast<size_t>(range->Begin + offset);
+      offset_range.End = static_cast<size_t>(range->End + offset);
       range = &offset_range;
    }
 
@@ -338,7 +338,7 @@ d3d12_bufmgr_create_buffer(struct pb_manager *pmgr,
    buf->base.vtbl = &d3d12_buffer_vtbl;
    buf->base.base.size = size;
    buf->range.Begin = 0;
-   buf->range.End = size;
+   buf->range.End = static_cast<size_t>(size);
 
    buf->bo = d3d12_bo_new(mgr->screen, size, pb_desc);
    if (!buf->bo) {
