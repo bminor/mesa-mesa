@@ -236,9 +236,18 @@ a660-gl:
     - .lava-test-deqp:arm64
     - .collabora-freedreno-rules
     - .lava-sm8350-hdk:arm64
-  parallel: 4
+  parallel: 2
   variables:
     DEQP_SUITE: freedreno-a660
+    DEQP_FRACTION: 2
+
+a660-gl-full:
+  extends:
+    - a660-gl
+    - .collabora-freedreno-manual-rules
+  parallel: null
+  variables:
+    DEQP_FRACTION: 1
 
 a660-vk:
   extends:
