@@ -2690,7 +2690,7 @@ tu_BeginCommandBuffer(VkCommandBuffer commandBuffer,
                                         cmd_buffer->state.subpass->color_count);
          cmd_buffer->state.dirty |= TU_CMD_DIRTY_SUBPASS;
 
-         cmd_buffer->patchpoints_ctx = ralloc_parent(NULL);
+         cmd_buffer->patchpoints_ctx = ralloc_context(NULL);
 
          /* We can't set the gmem layout here, because the state.pass only has
           * to be compatible (same formats/sample counts) with the primary's
@@ -4778,8 +4778,7 @@ tu_CmdBeginRenderPass2(VkCommandBuffer commandBuffer,
    tu_emit_renderpass_begin(cmd);
    tu_emit_subpass_begin<CHIP>(cmd);
 
-   if (pass->has_fdm)
-      cmd->patchpoints_ctx = ralloc_parent(NULL);
+   cmd->patchpoints_ctx = ralloc_context(NULL);
 }
 TU_GENX(tu_CmdBeginRenderPass2);
 
@@ -4867,8 +4866,7 @@ tu_CmdBeginRendering(VkCommandBuffer commandBuffer,
    };
    vk_cmd_set_rendering_attachment_locations(&cmd->vk, &ral_info);
 
-   if (cmd->dynamic_pass.has_fdm)
-      cmd->patchpoints_ctx = ralloc_context(NULL);
+   cmd->patchpoints_ctx = ralloc_context(NULL);
 
    a = cmd->dynamic_subpass.fsr_attachment;
    if (a != VK_ATTACHMENT_UNUSED) {
