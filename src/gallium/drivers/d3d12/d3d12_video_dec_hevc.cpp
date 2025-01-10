@@ -136,7 +136,7 @@ d3d12_video_decoder_prepare_dxva_slices_control_hevc(struct d3d12_video_decoder 
    debug_printf("[d3d12_video_decoder_hevc] Upper layer reported %d slices for this frame, parsing them below...\n",
                   picture_hevc->slice_parameter.slice_count);
 
-   uint64_t TotalSlicesDXVAArrayByteSize = picture_hevc->slice_parameter.slice_count * sizeof(DXVA_Slice_HEVC_Short);
+   size_t TotalSlicesDXVAArrayByteSize = picture_hevc->slice_parameter.slice_count * sizeof(DXVA_Slice_HEVC_Short);
    vecOutSliceControlBuffers.resize(TotalSlicesDXVAArrayByteSize);
 
    uint8_t* pData = vecOutSliceControlBuffers.data();
