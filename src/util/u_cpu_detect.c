@@ -373,11 +373,12 @@ UTIL_ALIGN_STACK
 static inline bool
 sse2_has_daz(void)
 {
-   alignas(16) struct {
+   struct area_t {
       uint32_t pad1[7];
       uint32_t mxcsr_mask;
       uint32_t pad2[128-8];
-   } fxarea;
+   };
+   alignas(16) struct area_t fxarea;
 
    fxarea.mxcsr_mask = 0;
 #if DETECT_CC_GCC
