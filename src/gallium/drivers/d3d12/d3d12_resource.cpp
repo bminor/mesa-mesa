@@ -1515,9 +1515,9 @@ prepare_zs_layer_strides(struct d3d12_screen *screen,
 
    trans->base.b.stride = align(util_format_get_stride(res->base.b.format, width),
                                 D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
-   trans->base.b.layer_stride = util_format_get_2d_size(res->base.b.format,
-                                                        trans->base.b.stride,
-                                                        height);
+   trans->base.b.layer_stride = static_cast<uintptr_t>(util_format_get_2d_size(res->base.b.format,
+                                                                               trans->base.b.stride,
+                                                                               height));
 
    if (copy_whole_resource) {
       trans->zs_cpu_copy_stride = align(util_format_get_stride(res->base.b.format, box->width),
@@ -1753,9 +1753,9 @@ d3d12_transfer_map(struct pipe_context *pctx,
          ptrans->layer_stride = 0;
       } else {
          ptrans->stride = util_format_get_stride(pres->format, box->width);
-         ptrans->layer_stride = util_format_get_2d_size(pres->format,
-                                                        ptrans->stride,
-                                                        box->height);
+         ptrans->layer_stride = static_cast<uintptr_t>(util_format_get_2d_size(pres->format,
+                                                                               ptrans->stride,
+                                                                               box->height));
       }
 
       range = linear_range(box, ptrans->stride, ptrans->layer_stride);
@@ -1842,9 +1842,9 @@ d3d12_transfer_map(struct pipe_context *pctx,
    } else {
       ptrans->stride = align(util_format_get_stride(pres->format, box->width),
                               D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
-      ptrans->layer_stride = util_format_get_2d_size(pres->format,
-                                                     ptrans->stride,
-                                                     box->height);
+      ptrans->layer_stride = static_cast<uintptr_t>(util_format_get_2d_size(pres->format,
+                                                                            ptrans->stride,
+                                                                            box->height));
 
       if (res->base.b.target != PIPE_TEXTURE_3D)
          ptrans->layer_stride = static_cast<uintptr_t>(align(static_cast<uint32_t>(ptrans->layer_stride),
@@ -1857,9 +1857,9 @@ d3d12_transfer_map(struct pipe_context *pctx,
          
          ptrans->stride = align(util_format_get_stride(pres->format, pres->width0),
                                 D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
-         ptrans->layer_stride = util_format_get_2d_size(pres->format,
-                                                        ptrans->stride,
-                                                        pres->height0);
+         ptrans->layer_stride = static_cast<uintptr_t>(util_format_get_2d_size(pres->format,
+                                                                               ptrans->stride,
+                                                                               pres->height0));
 
          range.Begin = box->y * ptrans->stride +
             box->x * util_format_get_blocksize(pres->format);
