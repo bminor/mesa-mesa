@@ -184,7 +184,7 @@ struct nir_xfb_info;
  *
  * :c:member:`nir_variable.state_slots`
  */
-typedef struct {
+typedef struct nir_state_slot {
    gl_state_index16 tokens[STATE_LENGTH];
 } nir_state_slot;
 
@@ -1680,7 +1680,7 @@ typedef enum {
    nir_deref_type_cast,
 } nir_deref_type;
 
-typedef struct {
+typedef struct nir_deref_instr {
    nir_instr instr;
 
    /** The type of this deref instruction */
@@ -1874,7 +1874,7 @@ bool nir_deref_instr_remove_if_unused(nir_deref_instr *instr);
 
 unsigned nir_deref_instr_array_stride(nir_deref_instr *instr);
 
-typedef struct {
+typedef struct nir_call_instr {
    nir_instr instr;
 
    struct nir_function *callee;
@@ -1917,7 +1917,7 @@ typedef struct {
  * instructions are the only types of instruction that can operate on
  * variables.
  */
-typedef struct {
+typedef struct nir_intrinsic_instr {
    nir_instr instr;
 
    nir_intrinsic_op intrinsic;
@@ -2046,7 +2046,7 @@ nir_instr_xfb_write_mask(nir_intrinsic_instr *instr);
 
 #define NIR_INTRINSIC_MAX_INPUTS 11
 
-typedef struct {
+typedef struct nir_intrinsic_info {
    const char *name;
 
    /** number of register/SSA inputs */
@@ -2626,7 +2626,7 @@ void nir_tex_instr_remove_src(nir_tex_instr *tex, unsigned src_idx);
 
 bool nir_tex_instr_has_explicit_tg4_offsets(nir_tex_instr *tex);
 
-typedef struct {
+typedef struct nir_load_const_instr {
    nir_instr instr;
 
    nir_def def;
@@ -2683,7 +2683,7 @@ typedef enum {
    nir_jump_goto_if,
 } nir_jump_type;
 
-typedef struct {
+typedef struct nir_jump_instr {
    nir_instr instr;
    nir_jump_type type;
    nir_src condition;
@@ -2693,12 +2693,12 @@ typedef struct {
 
 /* creates a new SSA variable in an undefined state */
 
-typedef struct {
+typedef struct nir_undef_instr {
    nir_instr instr;
    nir_def def;
 } nir_undef_instr;
 
-typedef struct {
+typedef struct nir_phi_src {
    struct exec_node node;
 
    /* The predecessor block corresponding to this source */
@@ -2712,7 +2712,7 @@ typedef struct {
 #define nir_foreach_phi_src_safe(phi_src, phi) \
    foreach_list_typed_safe(nir_phi_src, phi_src, node, &(phi)->srcs)
 
-typedef struct {
+typedef struct nir_phi_instr {
    nir_instr instr;
 
    /** list of nir_phi_src */
@@ -2733,7 +2733,7 @@ nir_phi_get_src_from_block(nir_phi_instr *phi, struct nir_block *block)
    return NULL;
 }
 
-typedef struct {
+typedef struct nir_parallel_copy_entry {
    struct exec_node node;
    bool src_is_reg;
    bool dest_is_reg;
@@ -2747,7 +2747,7 @@ typedef struct {
 #define nir_foreach_parallel_copy_entry(entry, pcopy) \
    foreach_list_typed(nir_parallel_copy_entry, entry, node, &(pcopy)->entries)
 
-typedef struct {
+typedef struct nir_parallel_copy_instr {
    nir_instr instr;
 
    /* A list of nir_parallel_copy_entrys.  The sources of all of the
@@ -2763,11 +2763,11 @@ typedef struct {
  * or glsl. To avoid adding unnecessary overhead when the driver does not
  * preserve non-semantic information (which is the common case), debug
  * information is allocated before the instruction:
- * 
+ *
  * +-------------------+-----------+--------------------------------+
  * | Debug information | nir_instr | Instruction type specific data |
  * +-------------------+-----------+--------------------------------+
- * 
+ *
  * This is only allocated if nir_shader::has_debug_info is set. Accesses
  * to nir_instr_debug_info should therefore check nir_shader::has_debug_info
  * or nir_instr::has_debug_info.
@@ -2840,7 +2840,7 @@ NIR_DEFINE_SRC_AS_CONST(double, float)
 
 #undef NIR_DEFINE_SRC_AS_CONST
 
-typedef struct {
+typedef struct nir_scalar {
    nir_def *def;
    unsigned comp;
 } nir_scalar;
@@ -2964,7 +2964,7 @@ nir_alu_src_as_uint(nir_alu_src src)
    return nir_scalar_as_uint(scalar);
 }
 
-typedef struct {
+typedef struct nir_binding {
    bool success;
 
    nir_variable *var;
@@ -3215,7 +3215,7 @@ typedef struct nir_if {
    struct exec_list else_list;
 } nir_if;
 
-typedef struct {
+typedef struct nir_loop_terminator {
    nir_if *nif;
 
    /** Condition instruction that contains the induction variable */
@@ -3245,7 +3245,7 @@ typedef struct {
    struct list_head loop_terminator_link;
 } nir_loop_terminator;
 
-typedef struct {
+typedef struct nir_loop_induction_variable {
    /* SSA def of the phi-node associated with this induction variable. */
    nir_def *basis;
 
@@ -3259,7 +3259,7 @@ typedef struct {
    nir_alu_src *update_src;
 } nir_loop_induction_variable;
 
-typedef struct {
+typedef struct nir_loop_info {
    /* Estimated cost (in number of instructions) of the loop */
    unsigned instr_cost;
 
@@ -3299,7 +3299,7 @@ typedef enum {
    nir_loop_control_dont_unroll = 0x2,
 } nir_loop_control;
 
-typedef struct {
+typedef struct nir_loop {
    nir_cf_node cf_node;
 
    /** list of nir_cf_node */
@@ -3426,7 +3426,7 @@ typedef enum {
 } nir_metadata;
 MESA_DEFINE_CPP_ENUM_BITFIELD_OPERATORS(nir_metadata)
 
-typedef struct {
+typedef struct nir_function_impl {
    nir_cf_node cf_node;
 
    /** pointer to the function of which this is an implementation */
@@ -3614,7 +3614,7 @@ nir_cf_list_is_empty_block(struct exec_list *cf_list)
    return false;
 }
 
-typedef struct {
+typedef struct nir_parameter {
    uint8_t num_components;
    uint8_t bit_size;
 
@@ -4799,7 +4799,7 @@ typedef enum {
    nir_cursor_after_instr,
 } nir_cursor_option;
 
-typedef struct {
+typedef struct nir_cursor {
    nir_cursor_option option;
    union {
       nir_block *block;
@@ -5705,7 +5705,7 @@ void nir_gather_types(nir_function_impl *impl,
                       BITSET_WORD *float_types,
                       BITSET_WORD *int_types);
 
-typedef struct {
+typedef struct nir_tcs_info {
    /* Whether all invocations write tess level outputs.
     *
     * This is useful when a pass wants to read tess level values at the end
@@ -6020,7 +6020,7 @@ typedef enum {
    nir_mem_access_shift_method_bytealign_amd,
 } nir_mem_access_shift_method;
 
-typedef struct {
+typedef struct nir_mem_access_size_align {
    uint8_t num_components;
    uint8_t bit_size;
    uint16_t align;
@@ -6042,7 +6042,7 @@ typedef nir_mem_access_size_align
                                         const void *cb_data);
 /* clang-format on */
 
-typedef struct {
+typedef struct nir_lower_mem_access_bit_sizes_options {
    nir_lower_mem_access_bit_sizes_cb callback;
    nir_variable_mode modes;
    bool may_lower_unaligned_stores_to_atomics;
@@ -6068,7 +6068,7 @@ typedef bool (*nir_should_vectorize_mem_func)(unsigned align_mul,
                                               void *data);
 /* clang-format on */
 
-typedef struct {
+typedef struct nir_load_store_vectorize_options {
    nir_should_vectorize_mem_func callback;
    nir_variable_mode modes;
    nir_variable_mode robust_modes;
@@ -6613,7 +6613,7 @@ bool nir_opt_non_uniform_access(nir_shader *shader);
 bool nir_lower_non_uniform_access(nir_shader *shader,
                                   const nir_lower_non_uniform_access_options *options);
 
-typedef struct {
+typedef struct nir_lower_idiv_options {
    /* Whether 16-bit floating point arithmetic should be allowed in 8-bit
     * division lowering
     */
@@ -6716,7 +6716,7 @@ bool nir_lower_gs_intrinsics(nir_shader *shader, nir_lower_gs_intrinsics_flags o
 
 bool nir_lower_tess_coord_z(nir_shader *shader, bool triangles);
 
-typedef struct {
+typedef struct nir_lower_task_shader_options {
    bool payload_to_shared_for_atomics : 1;
    bool payload_to_shared_for_small_types : 1;
    uint32_t payload_offset_in_bytes;
@@ -6769,7 +6769,7 @@ struct nir_opt_16bit_tex_image_options {
 bool nir_opt_16bit_tex_image(nir_shader *nir,
                              struct nir_opt_16bit_tex_image_options *options);
 
-typedef struct {
+typedef struct nir_tex_src_type_constraint {
    bool legalize_type;         /* whether this src should be legalized */
    uint8_t bit_size;           /* bit_size to enforce */
    nir_tex_src_type match_src; /* if bit_size is 0, match bit size of this */
@@ -7002,7 +7002,7 @@ bool nir_opt_sink(nir_shader *shader, nir_move_options options);
 
 bool nir_opt_move(nir_shader *shader, nir_move_options options);
 
-typedef struct {
+typedef struct nir_opt_offsets_options {
    /** nir_load_uniform max base offset */
    uint32_t uniform_max;
 
@@ -7140,7 +7140,7 @@ nir_addition_might_overflow(nir_shader *shader, struct hash_table *range_ht,
                             nir_scalar ssa, unsigned const_val,
                             const nir_unsigned_upper_bound_config *config);
 
-typedef struct {
+typedef struct nir_opt_preamble_options {
    /* True if gl_DrawID is considered uniform, i.e. if the preamble is run
     * at least once per "internal" draw rather than per user-visible draw.
     */
