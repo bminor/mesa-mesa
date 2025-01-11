@@ -258,10 +258,6 @@ spec@ext_image_dma_buf_import@ext_image_dma_buf_import-refcount-multithread,Cras
 
 # physical device and device needs more robustness in allocation handling
 
-# Filtering of 3D depth-stencil textures fails unless we set SAMPLER:round_to_nearest_even=false
-dEQP-VK.texture.filtering.3d.formats.d24_unorm_s8_uint_stencil.d24_unorm_s8_uint_stencil_nearest,Fail
-dEQP-VK.texture.filtering.3d.formats.d32_sfloat_s8_uint_stencil.d32_sfloat_s8_uint_stencil_nearest,Fail
-
 # CTS bug, see https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/5296
 dEQP-VK.api.device_init.create_device_unsupported_features.protected_memory_features,Fail
 

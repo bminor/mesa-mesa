@@ -113,6 +113,24 @@ panvk_per_arch(CreateSampler)(VkDevice _device,
       cfg.normalized_coordinates = !pCreateInfo->unnormalizedCoordinates;
       cfg.clamp_integer_array_indices = false;
 
+      /* Normalized float texture coordinates are rounded to fixed-point
+       * before rounding to integer coordinates. When round_to_nearest_even is
+       * enabled with VK_FILTER_NEAREST, the upper 2^-9 float coordinates in
+       * each texel are rounded up to the next texel.
+       *
+       * The Vulkan 1.4.304 spec seems to allow both rounding modes for all
+       * filters, but a CTS bug[1] causes test failures when round-to-nearest
+       * is used with VK_FILTER_NEAREST.
+       *
+       * Regardless, disabling round_to_nearest_even for NEAREST filters
+       * is a desirable precision improvement.
+       *
+       * [1]: https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/5547
+       */
+      if (pCreateInfo->minFilter == VK_FILTER_NEAREST &&
+          pCreateInfo->magFilter == VK_FILTER_NEAREST)
+         cfg.round_to_nearest_even = false;
+
       cfg.lod_bias = pCreateInfo->mipLodBias;
       cfg.minimum_lod = pCreateInfo->minLod;
       cfg.maximum_lod = pCreateInfo->maxLod;
