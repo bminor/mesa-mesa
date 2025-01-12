@@ -302,6 +302,9 @@ etna_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
       .sprite_coord_yinvert = !!ctx->rasterizer->sprite_coord_mode,
    };
 
+   if (screen->info->halti >= 5)
+      key.flatshade = ctx->rasterizer->flatshade;
+
     for (i = 0; i < pfb->nr_cbufs; i++) {
        if (pfb->cbufs[i])
          key.frag_rb_swap |= !!translate_pe_format_rb_swap(pfb->cbufs[i]->format) << i;

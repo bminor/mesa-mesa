@@ -1222,6 +1222,11 @@ etna_compile_shader(struct etna_shader_variant *v)
          unsigned idx = var->data.driver_location;
          sf->reg[idx].reg = idx + 1;
          sf->reg[idx].slot = var->data.location;
+         if (var->data.interpolation == INTERP_MODE_NONE && v->key.flatshade &&
+             (var->data.location == VARYING_SLOT_COL0 ||
+              var->data.location == VARYING_SLOT_COL1)) {
+            var->data.interpolation = INTERP_MODE_FLAT;
+         }
          sf->reg[idx].interpolation = var->data.interpolation;
          sf->reg[idx].num_components = glsl_get_components(var->type);
          sf->num_reg = MAX2(sf->num_reg, idx+1);
