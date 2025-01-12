@@ -1286,6 +1286,7 @@ _mesa_test_framebuffer_completeness(struct gl_context *ctx,
    GLenum layer_tex_target = 0;
    bool has_depth_attachment = false;
    bool has_stencil_attachment = false;
+   GLsizei num_views = 0;
 
    assert(_mesa_is_user_fbo(fb));
 
@@ -1553,6 +1554,7 @@ _mesa_test_framebuffer_completeness(struct gl_context *ctx,
       }
       if (!layer_info_valid) {
          is_layered = att->Layered;
+         num_views = att->NumViews;
          max_layer_count = att_layer_count;
          layer_info_valid = true;
       } else if (max_layer_count > 0 && layer_tex_target &&
@@ -1564,6 +1566,12 @@ _mesa_test_framebuffer_completeness(struct gl_context *ctx,
          fb->_Status = GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS;
          fbo_incomplete(ctx,
                         "framebuffer attachment layer mode is inconsistent",
+                        i);
+         return;
+      } else if (num_views != att->NumViews) {
+         fb->_Status = GL_FRAMEBUFFER_INCOMPLETE_VIEW_TARGETS_OVR;
+         fbo_incomplete(ctx,
+                        "framebuffer attachment view count is inconsistent",
                         i);
          return;
       } else if (att_layer_count > max_layer_count) {
