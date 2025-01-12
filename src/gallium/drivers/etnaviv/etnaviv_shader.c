@@ -152,6 +152,7 @@ etna_link_shaders(struct etna_context *ctx, struct compiled_shader_state *cs,
    STATIC_ASSERT(VIVS_PA_SHADER_ATTRIBUTES__LEN >= ETNA_NUM_VARYINGS);
    for (int idx = 0; idx < link.num_varyings; ++idx)
       cs->PA_SHADER_ATTRIBUTES[idx] = link.varyings[idx].pa_attributes;
+   cs->pa_shader_attributes_states = link.num_varyings;
 
    cs->VS_END_PC = vs->code_size / 4;
    cs->VS_OUTPUT_COUNT = 1 + link.num_varyings; /* position + varyings */

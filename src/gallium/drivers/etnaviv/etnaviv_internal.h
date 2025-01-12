@@ -234,6 +234,7 @@ struct compiled_shader_state {
    uint32_t PA_ATTRIBUTE_ELEMENT_COUNT;
    uint32_t PA_CONFIG;
    uint32_t PA_SHADER_ATTRIBUTES[VIVS_PA_SHADER_ATTRIBUTES__LEN];
+   int pa_shader_attributes_states;
    uint32_t VS_END_PC;
    uint32_t VS_OUTPUT_COUNT; /* number of outputs if point size per vertex disabled */
    uint32_t VS_OUTPUT_COUNT_PSIZE; /* number of outputs of point size per vertex enabled */
