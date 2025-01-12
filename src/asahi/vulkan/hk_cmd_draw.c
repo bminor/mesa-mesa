@@ -3468,7 +3468,8 @@ hk_draw(struct hk_cmd_buffer *cmd, uint16_t draw_id, struct agx_draw draw_)
 
          if (agx_is_indirect(draw.b)) {
             const size_t size = sizeof(VkDrawIndexedIndirectCommand);
-            static_assert(size > sizeof(VkDrawIndirectCommand),
+            static_assert(sizeof(VkDrawIndexedIndirectCommand) >
+                             sizeof(VkDrawIndirectCommand),
                           "allocation size is conservative");
 
             uint64_t out_draw = hk_pool_alloc(cmd, size, 4).gpu;
