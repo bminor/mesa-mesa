@@ -2554,7 +2554,7 @@
         "description": "mesa: OVR_multiview framebuffer attachment parameters",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "328c29d6007ed7677d5c5307bd6997d84a32104a",
         "notes": null

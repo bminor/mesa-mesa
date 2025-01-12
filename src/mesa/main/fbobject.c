@@ -5057,6 +5057,30 @@ get_framebuffer_attachment_parameter(struct gl_context *ctx,
          goto invalid_pname_enum;
       }
       return;
+   case GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_NUM_VIEWS_OVR:
+      if (!ctx->Extensions.OVR_multiview) {
+         goto invalid_pname_enum;
+      } else if (att->Type == GL_TEXTURE) {
+         *params = att->NumViews;
+      } else if (att->Type == GL_NONE) {
+         _mesa_error(ctx, err, "%s(invalid pname %s)", caller,
+                     _mesa_enum_to_string(pname));
+      } else {
+         goto invalid_pname_enum;
+      }
+      return;
+   case GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_BASE_VIEW_INDEX_OVR:
+      if (!ctx->Extensions.OVR_multiview) {
+         goto invalid_pname_enum;
+      } else if (att->Type == GL_TEXTURE) {
+         *params = att->NumViews > 0 ? att->Zoffset : 0;
+      } else if (att->Type == GL_NONE) {
+         _mesa_error(ctx, err, "%s(invalid pname %s)", caller,
+                     _mesa_enum_to_string(pname));
+      } else {
+         goto invalid_pname_enum;
+      }
+      return;
    default:
       goto invalid_pname_enum;
    }
