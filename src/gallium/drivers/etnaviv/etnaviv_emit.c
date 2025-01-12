@@ -150,6 +150,9 @@ emit_halti5_only_state(struct etna_context *ctx, int vs_output_count)
       /*01080*/ EMIT_STATE(PS_VARYING_NUM_COMPONENTS(0), ctx->shader_state.GL_VARYING_NUM_COMPONENTS[0]);
       /*01084*/ EMIT_STATE(PS_VARYING_NUM_COMPONENTS(1), ctx->shader_state.GL_VARYING_NUM_COMPONENTS[1]);
       /*03888*/ EMIT_STATE(GL_HALTI5_SH_SPECIALS, ctx->shader_state.GL_HALTI5_SH_SPECIALS);
+      for (int x = 0; x < ctx->shader_state.halti5_shader_attributes_states; ++x) {
+         /*038C0*/ EMIT_STATE(GL_HALTI5_SHADER_ATTRIBUTES(x), ctx->shader_state.GL_HALTI5_SHADER_ATTRIBUTES[x]);
+      }
    }
    if (unlikely(dirty & (ETNA_DIRTY_BLEND))) {
       for (int i = 1; i < ctx->framebuffer.num_rt; i++) {

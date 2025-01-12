@@ -253,6 +253,8 @@ struct compiled_shader_state {
    uint32_t GL_VARYING_TOTAL_COMPONENTS;
    uint32_t GL_VARYING_NUM_COMPONENTS[2];
    uint32_t GL_VARYING_COMPONENT_USE[4];
+   uint32_t GL_HALTI5_SHADER_ATTRIBUTES[VIVS_GL_HALTI5_SHADER_ATTRIBUTES__LEN];
+   int halti5_shader_attributes_states;
    uint32_t GL_HALTI5_SH_SPECIALS;
    uint32_t FE_HALTI5_ID_CONFIG;
    unsigned vs_inst_mem_size;
