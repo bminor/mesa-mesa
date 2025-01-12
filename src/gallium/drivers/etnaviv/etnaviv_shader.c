@@ -244,12 +244,8 @@ etna_link_shaders(struct etna_context *ctx, struct compiled_shader_state *cs,
 
    cs->GL_VARYING_TOTAL_COMPONENTS =
       VIVS_GL_VARYING_TOTAL_COMPONENTS_NUM(align(total_components, 2));
-   cs->GL_VARYING_NUM_COMPONENTS[0] = num_components[0];
-   cs->GL_VARYING_NUM_COMPONENTS[1] = num_components[1];
-   cs->GL_VARYING_COMPONENT_USE[0] = component_use[0];
-   cs->GL_VARYING_COMPONENT_USE[1] = component_use[1];
-   cs->GL_VARYING_COMPONENT_USE[2] = component_use[2];
-   cs->GL_VARYING_COMPONENT_USE[3] = component_use[3];
+   memcpy(cs->GL_VARYING_NUM_COMPONENTS, num_components, sizeof(uint32_t) * 2);
+   memcpy(cs->GL_VARYING_COMPONENT_USE, component_use, sizeof(uint32_t) * 4);
 
    cs->GL_HALTI5_SH_SPECIALS =
       0x7f7f0000 | /* unknown bits, probably other PS inputs */
