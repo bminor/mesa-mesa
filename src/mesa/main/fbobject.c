@@ -3631,6 +3631,7 @@ reuse_framebuffer_texture_attachment(struct gl_framebuffer *fb,
    dst_att->CubeMapFace = src_att->CubeMapFace;
    dst_att->Zoffset = src_att->Zoffset;
    dst_att->Layered = src_att->Layered;
+   dst_att->NumViews = src_att->NumViews;
 }
 
 
@@ -4023,7 +4024,8 @@ _mesa_framebuffer_texture(struct gl_context *ctx, struct gl_framebuffer *fb,
           _mesa_tex_target_to_face(textarget) ==
           fb->Attachment[BUFFER_STENCIL].CubeMapFace &&
           samples == fb->Attachment[BUFFER_STENCIL].NumSamples &&
-          layer == fb->Attachment[BUFFER_STENCIL].Zoffset) {
+          layer == fb->Attachment[BUFFER_STENCIL].Zoffset &&
+          numviews == fb->Attachment[BUFFER_STENCIL].NumViews) {
          /* The texture object is already attached to the stencil attachment
           * point. Don't create a new renderbuffer; just reuse the stencil
           * attachment's. This is required to prevent a GL error in
@@ -4037,7 +4039,8 @@ _mesa_framebuffer_texture(struct gl_context *ctx, struct gl_framebuffer *fb,
                  _mesa_tex_target_to_face(textarget) ==
                  fb->Attachment[BUFFER_DEPTH].CubeMapFace &&
                  samples == fb->Attachment[BUFFER_DEPTH].NumSamples &&
-                 layer == fb->Attachment[BUFFER_DEPTH].Zoffset) {
+                 layer == fb->Attachment[BUFFER_DEPTH].Zoffset &&
+                 numviews == fb->Attachment[BUFFER_DEPTH].NumViews) {
          /* As above, but with depth and stencil transposed. */
          reuse_framebuffer_texture_attachment(fb, BUFFER_STENCIL,
                                               BUFFER_DEPTH);
