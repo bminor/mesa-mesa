@@ -3773,6 +3773,12 @@ check_multiview_texture_target(struct gl_context *ctx, GLuint texture, GLenum ta
          "%s baseViewIndex is less than 0)", caller);
       ret = false;
    }
+   else if (baseViewIndex + numViews > ctx->Const.MaxArrayTextureLayers)
+   {
+      _mesa_error(ctx, GL_INVALID_VALUE,
+         "%s baseViewIndex + numViews > GL_MAX_ARRAY_TEXTURE_LAYERS", caller);
+      ret = false;
+   }
 
    return ret;
 }
