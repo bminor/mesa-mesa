@@ -326,7 +326,8 @@ add_memory_dependency(struct panvk_cache_flush_info *cache_flush,
    const VkAccessFlags2 ro_l1_access =
       VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT |
       VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-      VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_SHADER_SAMPLED_READ_BIT;
+      VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_SHADER_SAMPLED_READ_BIT |
+      VK_ACCESS_2_INPUT_ATTACHMENT_READ_BIT;
 
    /* visibility op */
    if (dst_access & ro_l1_access)
