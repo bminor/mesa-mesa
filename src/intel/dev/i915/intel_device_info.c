@@ -613,6 +613,8 @@ bool intel_device_info_i915_get_info_from_fd(int fd, struct intel_device_info *d
       devinfo->has_userptr_probe = val;
    if (getparam(fd, I915_PARAM_HAS_CONTEXT_ISOLATION, &val))
       devinfo->has_context_isolation = val;
+   if (getparam(fd, getparam(fd, I915_PARAM_HAS_CONTEXT_ISOLATION, &val), &val))
+      devinfo->supports_low_latency_hint = val == 1;
 
    /* TODO: We might be able to reduce alignment to 4Kb on DG1. */
    if (devinfo->verx10 >= 125)

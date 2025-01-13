@@ -60,16 +60,14 @@ anv_i915_create_engine(struct anv_device *device,
       assert(pCreateInfo->queueFamilyIndex < physical->queue.family_count);
       enum intel_engine_class engine_classes[1];
       enum intel_gem_create_context_flags flags = 0;
-      int val = 0;
 
       engine_classes[0] = queue_family->engine_class;
       if (pCreateInfo->flags & VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT)
          flags |= INTEL_GEM_CREATE_CONTEXT_EXT_PROTECTED_FLAG;
 
       if (device->physical->instance->force_guc_low_latency &&
-          i915_gem_get_param(device->fd, I915_PARAM_HAS_CONTEXT_FREQ_HINT, &val) && (val == 1)) {
+          physical->info.supports_low_latency_hint)
 	      flags |= INTEL_GEM_CREATE_CONTEXT_EXT_LOW_LATENCY_FLAG;
-      }
 
       if (!intel_gem_create_context_engines(device->fd, flags,
                                             physical->engine_info,
