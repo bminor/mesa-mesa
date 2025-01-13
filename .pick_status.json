@@ -1694,7 +1694,7 @@
         "description": "svga: fix printing 64-bit value for 32-bit build",
         "nominated": false,
         "nomination_type": 2,
-        "resolution": 4,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b13e2a495e9e3da56add7d852ca01b2cd7eef52d",
         "notes": null

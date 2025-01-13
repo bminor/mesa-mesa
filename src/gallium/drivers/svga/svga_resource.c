@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+#include <inttypes.h>
 #include "util/u_debug.h"
 
 #include "svga_resource.h"
@@ -61,7 +62,7 @@ svga_resource_create_with_modifiers(struct pipe_screen *screen,
     * to deal with here.
     */
    if (count > 0 && modifiers != NULL && modifiers[0] != 0) {
-      debug_printf("vmware: unexpected format modifier 0x%lx\n",
+      debug_printf("vmware: unexpected format modifier 0x%" PRIx64 "\n",
                    modifiers[0]);
    }
    return svga_resource_create(screen, templat);
