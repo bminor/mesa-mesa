@@ -14,6 +14,7 @@
         - src/panfrost/ci/$GPU_VERSION-fails.txt
         - src/panfrost/ci/$GPU_VERSION-flakes.txt
         - src/panfrost/ci/$GPU_VERSION-skips.txt
+        - src/panfrost/ci/$DRIVER_NAME-skips.txt
         - src/panfrost/ci/$PIGLIT_TRACES_FILE
         - src/panfrost/include/*
         - src/panfrost/lib/*
@@ -197,7 +198,6 @@
     BOOT_METHOD: depthcharge
     DEVICE_TYPE: rk3288-veyron-jaq
     DEQP_SUITE: panfrost-t760
-    DRIVER_NAME: panfrost
     DTB: rk3288-veyron-jaq
     FDO_CI_CONCURRENT: 6
     FARM: collabora
@@ -212,7 +212,6 @@
     DTB: $DEVICE_TYPE
     FARM: collabora
     GPU_VERSION: panfrost-t860
-    DRIVER_NAME: panfrost
 #   FDO_CI_CONCURRENT: ?
     BOOT_METHOD: depthcharge
     KERNEL_IMAGE_TYPE: ""
@@ -225,7 +224,6 @@
     DTB: $DEVICE_TYPE
     FARM: collabora
     GPU_VERSION: panfrost-g610
-    DRIVER_NAME: panfrost
     FDO_CI_CONCURRENT: 6
     HWCI_KERNEL_MODULES: panthor
     BOOT_METHOD: u-boot
@@ -333,6 +331,7 @@ panfrost-g52-vk:arm64:
     - .lava-meson-g12b-a311d-khadas-vim3:arm64
     - .panfrost-vk-rules
   variables:
+    DRIVER_NAME: panvk
     # Using more than 4 cores cause instabilities
     FDO_CI_CONCURRENT: 4
     MESA_VK_IGNORE_CONFORMANCE_WARNING: 1
@@ -409,6 +408,7 @@ panfrost-g610-vk:arm64:
     - .lava-rk3588-rock-5b:arm64
     - .panfrost-vk-manual-rules
   variables:
+    DRIVER_NAME: panvk
     # Using more than 4 cores cause instabilities
     FDO_CI_CONCURRENT: 4
     MESA_VK_IGNORE_CONFORMANCE_WARNING: 1
