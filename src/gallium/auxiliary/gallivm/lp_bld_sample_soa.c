@@ -2283,12 +2283,13 @@ lp_build_sample_aniso(struct lp_build_sample_context *bld,
       LLVMValueRef u_offset = lp_build_mul(coord_bld, float_k, dudk);
       LLVMValueRef v_offset = lp_build_mul(coord_bld, float_k, dvdk);
 
-      LLVMValueRef sample_coords[4] = {
+      LLVMValueRef sample_coords[5] = {
          lp_build_add(coord_bld, coords[0], u_offset),
          lp_build_add(coord_bld, coords[1], v_offset),
-         coords[2],
-         coords[3],
       };
+      for (uint32_t i = 2; i < ARRAY_SIZE(sample_coords); i++)
+         sample_coords[i] = coords[i];
+
 
       if (bld->static_texture_state->target == PIPE_TEXTURE_CUBE ||
           bld->static_texture_state->target == PIPE_TEXTURE_CUBE_ARRAY) {
