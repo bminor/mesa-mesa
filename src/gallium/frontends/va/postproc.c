@@ -413,15 +413,9 @@ vlVaApplyDeint(vlVaDriver *drv, vlVaContext *context,
       context->deint = NULL;
    }
 
-   if (!drv->pipe_gfx) {
-      drv->pipe_gfx = pipe_create_multimedia_context(drv->pipe->screen, false);
-      if (!drv->pipe_gfx)
-         return current;
-   }
-
    if (!context->deint) {
       context->deint = MALLOC(sizeof(struct vl_deint_filter));
-      if (!vl_deint_filter_init(context->deint, drv->pipe_gfx, current->width,
+      if (!vl_deint_filter_init(context->deint, drv->pipe, current->width,
                                 current->height, false, false, !current->interlaced)) {
          FREE(context->deint);
          context->deint = NULL;
@@ -435,8 +429,6 @@ vlVaApplyDeint(vlVaDriver *drv, vlVaContext *context,
 
    vl_deint_filter_render(context->deint, prevprev->buffer, prev->buffer,
                           current, next->buffer, field);
-
-   drv->pipe_gfx->flush(drv->pipe_gfx, NULL, 0);
 
    return context->deint->video_buffer;
 }
