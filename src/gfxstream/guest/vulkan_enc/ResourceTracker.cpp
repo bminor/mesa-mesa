@@ -1093,8 +1093,6 @@ void ResourceTracker::unregister_VkImage(VkImage img) {
     auto it = info_VkImage.find(img);
     if (it == info_VkImage.end()) return;
 
-    auto& imageInfo = it->second;
-
     info_VkImage.erase(img);
 }
 
@@ -2119,8 +2117,7 @@ VkResult ResourceTracker::on_vkCreateInstance(void* context, VkResult input_resu
     VkEncoder* enc = (VkEncoder*)context;
 
     uint32_t apiVersion;
-    VkResult enumInstanceVersionRes =
-        enc->vkEnumerateInstanceVersion(&apiVersion, false /* no lock */);
+    input_result = enc->vkEnumerateInstanceVersion(&apiVersion, false /* no lock */);
 
     setInstanceInfo(*pInstance, createInfo->enabledExtensionCount,
                     createInfo->ppEnabledExtensionNames, apiVersion);
@@ -2980,7 +2977,6 @@ CoherentMemoryPtr ResourceTracker::createCoherentMemory(
 VkResult ResourceTracker::allocateCoherentMemory(VkDevice device,
                                                  const VkMemoryAllocateInfo* pAllocateInfo,
                                                  VkEncoder* enc, VkDeviceMemory* pMemory) {
-    uint64_t blobId = 0;
     uint64_t offset = 0;
     uint8_t* ptr = nullptr;
     VkMemoryAllocateFlagsInfo allocFlagsInfo;
@@ -3144,9 +3140,6 @@ VkResult ResourceTracker::allocateCoherentMemory(VkDevice device,
 VkResult ResourceTracker::getCoherentMemory(const VkMemoryAllocateInfo* pAllocateInfo,
                                             VkEncoder* enc, VkDevice device,
                                             VkDeviceMemory* pMemory) {
-    VkMemoryAllocateFlagsInfo allocFlagsInfo;
-    VkMemoryOpaqueCaptureAddressAllocateInfo opaqueCaptureAddressAllocInfo;
-
     // Add buffer device address capture structs
     const VkMemoryAllocateFlagsInfo* allocFlagsInfoPtr =
         vk_find_struct<VkMemoryAllocateFlagsInfo>(pAllocateInfo);
@@ -3340,6 +3333,7 @@ VkResult ResourceTracker::on_vkAllocateMemory(void* context, VkResult input_resu
     bool importVmo = false;
     bool importDmabuf = false;
     (void)exportVmo;
+    (void)exportAhb;
 
     if (exportAllocateInfoPtr) {
         exportAhb = exportAllocateInfoPtr->handleTypes &
@@ -3935,7 +3929,6 @@ VkResult ResourceTracker::on_vkAllocateMemory(void* context, VkResult input_resu
 
         if (input_result != VK_SUCCESS) _RETURN_FAILURE_WITH_DEVICE_MEMORY_REPORT(input_result);
 
-        VkDeviceSize allocationSize = finalAllocInfo.allocationSize;
         setDeviceMemoryInfo(device, *pMemory, 0, nullptr, finalAllocInfo.memoryTypeIndex, ahw,
                             isImport, vmo_handle, bufferBlob);
 
@@ -4582,9 +4575,9 @@ VkResult ResourceTracker::on_vkCreateSampler(void* context, VkResult, VkDevice d
                                              const VkAllocationCallbacks* pAllocator,
                                              VkSampler* pSampler) {
     VkSamplerCreateInfo localCreateInfo = vk_make_orphan_copy(*pCreateInfo);
-    vk_struct_chain_iterator structChainIter = vk_make_chain_iterator(&localCreateInfo);
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR) || defined(VK_USE_PLATFORM_FUCHSIA)
+    vk_struct_chain_iterator structChainIter = vk_make_chain_iterator(&localCreateInfo);
     VkSamplerYcbcrConversionInfo localVkSamplerYcbcrConversionInfo;
     const VkSamplerYcbcrConversionInfo* samplerYcbcrConversionInfo =
         vk_find_struct<VkSamplerYcbcrConversionInfo>(pCreateInfo);
@@ -4735,8 +4728,6 @@ VkResult ResourceTracker::on_vkImportFenceFdKHR(void* context, VkResult, VkDevic
 
     // Transference: copy
     // meaning dup() the incoming fd
-
-    VkEncoder* enc = (VkEncoder*)context;
 
     bool hasFence = pImportFenceFdInfo->fence != VK_NULL_HANDLE;
 
@@ -4908,9 +4899,8 @@ VkResult ResourceTracker::on_vkGetFenceStatus(void* context, VkResult input_resu
 VkResult ResourceTracker::on_vkWaitForFences(void* context, VkResult, VkDevice device,
                                              uint32_t fenceCount, const VkFence* pFences,
                                              VkBool32 waitAll, uint64_t timeout) {
-    VkEncoder* enc = (VkEncoder*)context;
-
 #if defined(VK_USE_PLATFORM_ANDROID_KHR) || DETECT_OS_LINUX
+    (void)context;
     std::vector<int> fencesExternalSyncFds;
     std::vector<VkFence> fencesNonExternal;
 
@@ -4965,6 +4955,7 @@ VkResult ResourceTracker::on_vkWaitForFences(void* context, VkResult, VkDevice d
     return VK_SUCCESS;
 
 #else
+    VkEncoder* enc = (VkEncoder*)context;
     return enc->vkWaitForFences(device, fenceCount, pFences, waitAll, timeout, true /* do lock */);
 #endif
 }
@@ -5752,7 +5743,8 @@ VkResult ResourceTracker::on_vkGetSemaphoreFdKHR(void* context, VkResult, VkDevi
             return result;
         }
         *pFd = os_create_anonymous_file(size, "vk_opaque_fd");
-        write(*pFd, &hostFd, sizeof(hostFd));
+        int write_result = write(*pFd, &hostFd, sizeof(hostFd));
+        (void)write_result;
         return VK_SUCCESS;
     }
 #else
@@ -5774,8 +5766,6 @@ VkResult ResourceTracker::on_vkImportSemaphoreFdKHR(
     }
 
     if (pImportSemaphoreFdInfo->handleType & VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT) {
-        VkImportSemaphoreFdInfoKHR tmpInfo = *pImportSemaphoreFdInfo;
-
         std::lock_guard<std::recursive_mutex> lock(mLock);
 
         auto semaphoreIt = info_VkSemaphore.find(pImportSemaphoreFdInfo->semaphore);
@@ -5795,7 +5785,8 @@ VkResult ResourceTracker::on_vkImportSemaphoreFdKHR(
             mesa_loge("lseek fail on import semaphore");
         }
         int hostFd = 0;
-        read(fd, &hostFd, sizeof(hostFd));
+        int read_result = read(fd, &hostFd, sizeof(hostFd));
+        (void)read_result;
         VkImportSemaphoreFdInfoKHR tmpInfo = *pImportSemaphoreFdInfo;
         tmpInfo.fd = hostFd;
         VkResult result = enc->vkImportSemaphoreFdKHR(device, &tmpInfo, true /* do lock */);
@@ -6190,10 +6181,12 @@ VkResult ResourceTracker::on_vkQueueSubmitTemplate(void* context, VkResult input
         }
     }
 #endif
+    VkResult waitIdleRes = VK_SUCCESS;
     if (externalFenceFdToSignal >= 0 || !post_wait_events.empty() || !post_wait_sync_fds.empty()) {
         auto hostConn = ResourceTracker::threadingCallbacks.hostConnectionGetFunc();
         auto vkEncoder = ResourceTracker::threadingCallbacks.vkEncoderGetFunc(hostConn);
-        auto waitIdleRes = vkEncoder->vkQueueWaitIdle(queue, true /* do lock */);
+        waitIdleRes = vkEncoder->vkQueueWaitIdle(queue, true /* do lock */);
+        if (VK_SUCCESS == waitIdleRes) {
 #ifdef VK_USE_PLATFORM_FUCHSIA
             MESA_TRACE_SCOPE("on_vkQueueSubmit::SignalSemaphores");
             (void)externalFenceFdToSignal;
@@ -6218,8 +6211,9 @@ VkResult ResourceTracker::on_vkQueueSubmitTemplate(void* context, VkResult input
                 goldfish_sync_signal(externalFenceFdToSignal);
             }
 #endif
+        }
     }
-    return VK_SUCCESS;
+    return waitIdleRes;
 }
 
 VkResult ResourceTracker::on_vkQueueWaitIdle(void* context, VkResult, VkQueue queue) {
@@ -6532,7 +6526,6 @@ void ResourceTracker::on_vkUpdateDescriptorSetWithTemplate(
     uint32_t imageInfoCount = info.imageInfoCount;
     uint32_t bufferInfoCount = info.bufferInfoCount;
     uint32_t bufferViewCount = info.bufferViewCount;
-    uint32_t inlineUniformBlockCount = info.inlineUniformBlockCount;
     uint32_t* imageInfoIndices = info.imageInfoIndices;
     uint32_t* bufferInfoIndices = info.bufferInfoIndices;
     uint32_t* bufferViewIndices = info.bufferViewIndices;
@@ -6721,8 +6714,6 @@ VkResult ResourceTracker::on_vkGetPhysicalDeviceImageFormatProperties2_common(
     }
 
 #ifdef LINUX_GUEST_BUILD
-    VkImageDrmFormatModifierExplicitCreateInfoEXT localDrmFormatModifierInfo;
-
     const VkPhysicalDeviceImageDrmFormatModifierInfoEXT* drmFmtMod =
         vk_find_struct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>(pImageFormatInfo);
     VkDrmFormatModifierPropertiesListEXT* emulatedDrmFmtModPropsList = nullptr;
@@ -7099,9 +7090,9 @@ VkResult ResourceTracker::on_vkCreateImageView(void* context, VkResult input_res
     (void)input_result;
 
     VkImageViewCreateInfo localCreateInfo = vk_make_orphan_copy(*pCreateInfo);
-    vk_struct_chain_iterator structChainIter = vk_make_chain_iterator(&localCreateInfo);
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
+    vk_struct_chain_iterator structChainIter = vk_make_chain_iterator(&localCreateInfo);
     if (pCreateInfo->format == VK_FORMAT_UNDEFINED) {
         std::lock_guard<std::recursive_mutex> lock(mLock);
 
@@ -7491,8 +7482,6 @@ void ResourceTracker::resetCommandBufferStagingInfo(VkCommandBuffer commandBuffe
         forAllObjects(cb->superObjects, [this, alsoResetPrimaries,
                                          alsoClearPendingDescriptorSets](void* obj) {
             VkCommandBuffer superCommandBuffer = (VkCommandBuffer)obj;
-            struct goldfish_VkCommandBuffer* superCb =
-                as_goldfish_VkCommandBuffer(superCommandBuffer);
             this->resetCommandBufferStagingInfo(superCommandBuffer, alsoResetPrimaries,
                                                 alsoClearPendingDescriptorSets);
         });
