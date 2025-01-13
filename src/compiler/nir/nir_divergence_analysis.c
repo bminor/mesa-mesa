@@ -41,6 +41,7 @@ struct divergence_state {
    nir_shader *shader;
    nir_divergence_options options;
    nir_loop *loop;
+   bool loop_all_invariant;
 
    /* Whether the caller requested vertex divergence (meaning between vertices
     * of the same primitive) instead of subgroup invocation divergence
@@ -1160,7 +1161,7 @@ visit_block(nir_block *block, struct divergence_state *state)
          continue;
 
       if (state->first_visit) {
-         bool invariant = instr_is_loop_invariant(instr, state);
+         bool invariant = state->loop_all_invariant || instr_is_loop_invariant(instr, state);
          nir_foreach_def(instr, set_ssa_def_not_divergent, &invariant);
       }
 
@@ -1361,6 +1362,7 @@ visit_loop(nir_loop *loop, struct divergence_state *state)
    /* setup loop state */
    struct divergence_state loop_state = *state;
    loop_state.loop = loop;
+   loop_state.loop_all_invariant = loop_header->predecessors->entries == 1;
    loop_state.divergent_loop_cf = false;
    loop_state.divergent_loop_continue = false;
    loop_state.divergent_loop_break = false;
@@ -1432,6 +1434,7 @@ nir_divergence_analysis_impl(nir_function_impl *impl, nir_divergence_options opt
       .shader = impl->function->shader,
       .options = options,
       .loop = NULL,
+      .loop_all_invariant = false,
       .divergent_loop_cf = false,
       .divergent_loop_continue = false,
       .divergent_loop_break = false,
@@ -1465,6 +1468,7 @@ nir_vertex_divergence_analysis(nir_shader *shader)
       .shader = shader,
       .options = shader->options->divergence_analysis_options,
       .loop = NULL,
+      .loop_all_invariant = false,
       .vertex_divergence = true,
       .first_visit = true,
    };
