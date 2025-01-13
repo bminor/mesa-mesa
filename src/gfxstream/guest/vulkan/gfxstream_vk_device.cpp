@@ -6,7 +6,6 @@
 #include <errno.h>
 #include <string.h>
 
-#include "../vulkan_enc/vk_util.h"
 #include "GfxStreamConnectionManager.h"
 #include "GfxStreamRenderControl.h"
 #include "GfxStreamVulkanConnection.h"
@@ -14,12 +13,10 @@
 #include "VkEncoder.h"
 #include "gfxstream_vk_entrypoints.h"
 #include "gfxstream_vk_private.h"
-#include "util/perf/cpu_trace.h"
-#include "vk_alloc.h"
-#include "vk_device.h"
-#include "vk_instance.h"
-#include "vk_sync_dummy.h"
 #include "util/detect_os.h"
+#include "util/perf/cpu_trace.h"
+#include "vk_sync_dummy.h"
+#include "vk_util.h"
 
 uint32_t gSeqno = 0;
 uint32_t gNoRenderControlEnc = 0;
@@ -448,7 +445,8 @@ VkResult gfxstream_vk_CreateDevice(VkPhysicalDevice physicalDevice,
      * reaches it.
      */
     VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT* swapchainMaintenance1Features =
-        (VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT*)vk_find_struct<VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT>(pCreateInfo);
+        vk_find_struct(const_cast<VkDeviceCreateInfo*>(pCreateInfo),
+                       PHYSICAL_DEVICE_SWAPCHAIN_MAINTENANCE_1_FEATURES_EXT);
     if (swapchainMaintenance1Features) {
         swapchainMaintenance1Features->swapchainMaintenance1 = VK_FALSE;
     }
@@ -470,9 +468,8 @@ VkResult gfxstream_vk_CreateDevice(VkPhysicalDevice physicalDevice,
 
         /* pNext = VkPhysicalDeviceGroupProperties */
         std::vector<VkPhysicalDevice> initialPhysicalDeviceList;
-        VkPhysicalDeviceGroupProperties* mutablePhysicalDeviceGroupProperties =
-            (VkPhysicalDeviceGroupProperties*)vk_find_struct<VkPhysicalDeviceGroupProperties>(
-                pCreateInfo);
+        VkPhysicalDeviceGroupProperties* mutablePhysicalDeviceGroupProperties = vk_find_struct(
+            const_cast<VkDeviceCreateInfo*>(pCreateInfo), PHYSICAL_DEVICE_GROUP_PROPERTIES);
         if (mutablePhysicalDeviceGroupProperties) {
             // Temporarily modify the VkPhysicalDeviceGroupProperties structure to use translated
             // VkPhysicalDevice references for the encoder call
@@ -640,9 +637,8 @@ VkResult gfxstream_vk_AllocateMemory(VkDevice device, const VkMemoryAllocateInfo
     VK_FROM_HANDLE(gfxstream_vk_device, gfxstream_device, device);
     VkResult vkAllocateMemory_VkResult_return = (VkResult)0;
     /* VkMemoryDedicatedAllocateInfo */
-    VkMemoryDedicatedAllocateInfo* dedicatedAllocInfoPtr =
-        (VkMemoryDedicatedAllocateInfo*)vk_find_struct<VkMemoryDedicatedAllocateInfo>(
-            pAllocateInfo);
+    VkMemoryDedicatedAllocateInfo* dedicatedAllocInfoPtr = vk_find_struct(
+        const_cast<VkMemoryAllocateInfo*>(pAllocateInfo), MEMORY_DEDICATED_ALLOCATE_INFO);
     if (dedicatedAllocInfoPtr) {
         if (dedicatedAllocInfoPtr->buffer) {
             VK_FROM_HANDLE(gfxstream_vk_buffer, gfxstream_buffer, dedicatedAllocInfoPtr->buffer);
@@ -691,6 +687,18 @@ VkResult gfxstream_vk_EnumerateInstanceVersion(uint32_t* pApiVersion) {
             vkEnc->vkEnumerateInstanceVersion(pApiVersion, true /* do lock */);
     }
     return vkEnumerateInstanceVersion_VkResult_return;
+}
+
+static bool vk_descriptor_type_has_descriptor_buffer(VkDescriptorType type) {
+    switch (type) {
+        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
+        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
+            return true;
+        default:
+            return false;
+    }
 }
 
 static std::vector<VkWriteDescriptorSet> transformDescriptorSetList(

@@ -67,7 +67,7 @@ VkResult getAndroidHardwareBufferPropertiesANDROID(
     gfxstream::Gralloc* grallocHelper, const AHardwareBuffer* buffer,
     VkAndroidHardwareBufferPropertiesANDROID* pProperties) {
     VkAndroidHardwareBufferFormatPropertiesANDROID* ahbFormatProps =
-        vk_find_struct<VkAndroidHardwareBufferFormatPropertiesANDROID>(pProperties);
+        vk_find_struct(pProperties, ANDROID_HARDWARE_BUFFER_FORMAT_PROPERTIES_ANDROID);
 
     const auto format = grallocHelper->getFormat(buffer);
     if (ahbFormatProps) {
