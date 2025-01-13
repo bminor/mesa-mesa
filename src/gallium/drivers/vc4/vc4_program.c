@@ -399,7 +399,8 @@ ntq_emit_txf(struct vc4_compile *c, nir_tex_instr *instr)
 static void
 ntq_emit_tex(struct vc4_compile *c, nir_tex_instr *instr)
 {
-        struct qreg s, t, r, lod, compare;
+        struct qreg lod, compare;
+        struct qreg r = { 0 }, s= { 0 }, t = { 0 };
         bool is_txb = false, is_txl = false;
         unsigned unit = instr->texture_index;
 
@@ -511,7 +512,7 @@ ntq_emit_tex(struct vc4_compile *c, nir_tex_instr *instr)
 
         if (util_format_is_depth_or_stencil(format)) {
                 struct qreg normalized = ntq_scale_depth_texture(c, tex);
-                struct qreg depth_output;
+                struct qreg depth_output = { 0 };
 
                 struct qreg u0 = qir_uniform_f(c, 0.0f);
                 struct qreg u1 = qir_uniform_f(c, 1.0f);
