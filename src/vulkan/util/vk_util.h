@@ -23,9 +23,11 @@
 #ifndef VK_UTIL_H
 #define VK_UTIL_H
 
+#include "compiler/shader_enums.h"
 #include "util/bitscan.h"
 #include "util/macros.h"
-#include "compiler/shader_enums.h"
+#include "c99_compat.h"
+
 #include <stdlib.h>
 #include <string.h>
 
