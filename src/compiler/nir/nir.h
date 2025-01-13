@@ -6780,9 +6780,11 @@ nir_rewrite_uses_to_load_reg(struct nir_builder *b, nir_def *old,
 /* If phi_webs_only is true, only convert SSA values involved in phi nodes to
  * registers.  If false, convert all values (even those not involved in a phi
  * node) to registers.
+ * If consider_divergence is true, this pass will use divergence information
+ * in order to not coalesce copies from uniform to divergent registers.
  */
 bool nir_convert_from_ssa(nir_shader *shader,
-                          bool phi_webs_only);
+                          bool phi_webs_only, bool consider_divergence);
 
 bool nir_lower_phis_to_regs_block(nir_block *block);
 bool nir_lower_ssa_defs_to_regs_block(nir_block *block);

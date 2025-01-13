@@ -3506,7 +3506,7 @@ Converter::run()
    NIR_PASS_V(nir, nir_lower_bit_size, Converter::lowerBitSizeCB, this);
 
    NIR_PASS_V(nir, nir_divergence_analysis);
-   NIR_PASS_V(nir, nir_convert_from_ssa, true);
+   NIR_PASS_V(nir, nir_convert_from_ssa, true, true);
 
    // Garbage collect dead instructions
    nir_sweep(nir);

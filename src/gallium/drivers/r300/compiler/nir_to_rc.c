@@ -2345,7 +2345,7 @@ nir_to_rc(struct nir_shader *s, struct pipe_screen *screen)
    if (s->info.stage == MESA_SHADER_VERTEX)
       NIR_PASS_V(s, nir_opt_vectorize, ntr_should_vectorize_instr, NULL);
 
-   NIR_PASS_V(s, nir_convert_from_ssa, true);
+   NIR_PASS_V(s, nir_convert_from_ssa, true, false);
    NIR_PASS_V(s, nir_lower_vec_to_regs, NULL, NULL);
 
    /* locals_to_reg_intrinsics will leave dead derefs that are good to clean up.

@@ -2955,7 +2955,7 @@ void
 lp_build_nir_prepasses(struct nir_shader *nir)
 {
    NIR_PASS_V(nir, nir_convert_to_lcssa, true, true);
-   NIR_PASS_V(nir, nir_convert_from_ssa, true);
+   NIR_PASS_V(nir, nir_convert_from_ssa, true, false);
    NIR_PASS_V(nir, nir_lower_locals_to_regs, 32);
    NIR_PASS_V(nir, nir_remove_dead_derefs);
    NIR_PASS_V(nir, nir_remove_dead_variables, nir_var_function_temp, NULL);
