@@ -1818,6 +1818,111 @@ validate_live_defs(nir_function_impl *impl, validate_state *state)
    ralloc_free(blocks);
 }
 
+typedef struct {
+   uint32_t index;
+   bool divergent;
+   bool divergent_break;
+   bool divergent_continue;
+   bool is_loop_header;
+} block_divergence_metadata;
+
+static void
+validate_divergence(nir_function_impl *impl, validate_state *state)
+{
+   nir_metadata valid_metadata = impl->valid_metadata;
+
+   /* Preserve divergence information. */
+   unsigned num_blocks = impl->num_blocks;
+   block_divergence_metadata *blocks = ralloc_array(state->mem_ctx,
+                                                    block_divergence_metadata,
+                                                    state->blocks->size);
+   BITSET_WORD *ssa_divergence = rzalloc_array(state->mem_ctx, BITSET_WORD,
+                                               BITSET_WORDS(impl->ssa_alloc));
+   BITSET_WORD *loop_invariance = rzalloc_array(state->mem_ctx, BITSET_WORD,
+                                                BITSET_WORDS(impl->ssa_alloc));
+
+   set_foreach(state->blocks, entry) {
+      nir_block *block = (nir_block *)entry->key;
+      block_divergence_metadata *md = &blocks[entry - state->blocks->table];
+      md->index = block->index;
+      md->divergent = block->divergent;
+      md->is_loop_header = false;
+
+      if (block->cf_node.parent->type == nir_cf_node_loop &&
+          nir_cf_node_is_first(&block->cf_node)) {
+         md->is_loop_header = true;
+         nir_loop *loop = nir_cf_node_as_loop(block->cf_node.parent);
+         md->divergent_break = loop->divergent_break;
+         md->divergent_continue = loop->divergent_continue;
+      }
+
+      nir_foreach_instr(instr, block) {
+         nir_def *def = nir_instr_def(instr);
+         if (def && def->divergent)
+            BITSET_SET(ssa_divergence, def->index);
+         if (def && def->loop_invariant)
+            BITSET_SET(loop_invariance, def->index);
+      }
+   }
+
+   /* Call metadata passes and compare it against the preserved metadata */
+   impl->valid_metadata &= ~nir_metadata_divergence;
+   nir_metadata_require(impl, nir_metadata_divergence);
+   assert(impl->valid_metadata == (valid_metadata | nir_metadata_block_index));
+
+   set_foreach(state->blocks, entry) {
+      nir_block *block = (nir_block *)entry->key;
+      block_divergence_metadata *md = &blocks[entry - state->blocks->table];
+      state->block = (nir_block *)block;
+
+      validate_assert(state, block->divergent == md->divergent);
+      if (md->is_loop_header) {
+         nir_loop *loop = nir_cf_node_as_loop(block->cf_node.parent);
+         validate_assert(state, loop->divergent_break == md->divergent_break);
+         validate_assert(state, loop->divergent_continue == md->divergent_continue);
+      }
+
+      nir_foreach_instr(instr, block) {
+         nir_def *def = nir_instr_def(instr);
+         if (def) {
+            state->instr = instr;
+            validate_assert(state, def->divergent == BITSET_TEST(ssa_divergence, def->index));
+            validate_assert(state, def->loop_invariant == BITSET_TEST(loop_invariance, def->index));
+         }
+      }
+      state->instr = NULL;
+   }
+   state->block = NULL;
+
+   /* Restore the old divergence metadata */
+   set_foreach(state->blocks, entry) {
+      nir_block *block = (nir_block *)entry->key;
+      block_divergence_metadata *md = &blocks[entry - state->blocks->table];
+      block->index = md->index;
+      block->divergent = md->divergent;
+
+      if (md->is_loop_header) {
+         nir_loop *loop = nir_cf_node_as_loop(block->cf_node.parent);
+         loop->divergent_break = md->divergent_break;
+         loop->divergent_continue = md->divergent_continue;
+      }
+
+      nir_foreach_instr(instr, block) {
+         nir_def *def = nir_instr_def(instr);
+         if (def) {
+            def->divergent = BITSET_TEST(ssa_divergence, def->index);
+            def->loop_invariant = BITSET_TEST(loop_invariance, def->index);
+         }
+      }
+   }
+   impl->num_blocks = num_blocks;
+
+   ralloc_free(blocks);
+   ralloc_free(ssa_divergence);
+   ralloc_free(loop_invariance);
+   impl->valid_metadata = valid_metadata;
+}
+
 static bool
 are_loop_terminators_equal(const nir_loop_terminator *a, const nir_loop_terminator *b)
 {
@@ -1922,6 +2027,12 @@ validate_metadata_and_ssa_dominance(nir_function_impl *impl, validate_state *sta
 
    if (impl->valid_metadata & nir_metadata_live_defs)
       validate_live_defs(impl, state);
+
+   if (!impl->structured)
+      return;
+
+   if (impl->valid_metadata & nir_metadata_divergence)
+      validate_divergence(impl, state);
 
    if (impl->valid_metadata & nir_metadata_loop_analysis)
       validate_loop_info(impl, state);
