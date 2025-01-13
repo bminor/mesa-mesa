@@ -80,6 +80,7 @@ constant_fold(struct vc4_compile *c, struct qinst *inst)
         uint32_t result = 0;
         switch (inst->op) {
         case QOP_SHR:
+                assert(nsrc == 2);
                 result = ui[0] >> ui[1];
                 break;
 
