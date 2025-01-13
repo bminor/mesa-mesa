@@ -1263,7 +1263,7 @@ create_gfx_program_separable(struct zink_context *ctx, struct zink_shader **stag
 
    prog->is_separable = true;
    prog->gfx_hash = ctx->gfx_hash;
-   prog->base.uses_shobj = screen->info.have_EXT_shader_object;
+   prog->base.uses_shobj = screen->info.have_EXT_shader_object && !stages[MESA_SHADER_VERTEX]->info.view_mask && !BITSET_TEST(stages[MESA_SHADER_FRAGMENT]->info.system_values_read, SYSTEM_VALUE_SAMPLE_MASK_IN);
 
    prog->stages_remaining = prog->stages_present = ctx->shader_stages;
    memcpy(prog->shaders, stages, sizeof(prog->shaders));
@@ -2247,7 +2247,7 @@ zink_link_gfx_shader(struct pipe_context *pctx, void **shaders)
       VKSCR(DestroyPipeline)(screen->dev, pipeline, NULL);
    } else {
       if (zink_screen(pctx->screen)->info.have_EXT_shader_object)
-         prog->base.uses_shobj = !BITSET_TEST(zshaders[MESA_SHADER_FRAGMENT]->info.system_values_read, SYSTEM_VALUE_SAMPLE_MASK_IN);
+         prog->base.uses_shobj = !zshaders[MESA_SHADER_VERTEX]->info.view_mask && !BITSET_TEST(zshaders[MESA_SHADER_FRAGMENT]->info.system_values_read, SYSTEM_VALUE_SAMPLE_MASK_IN);
       if (zink_debug & ZINK_DEBUG_NOBGC)
          gfx_program_precompile_job(prog, pctx->screen, 0);
       else
