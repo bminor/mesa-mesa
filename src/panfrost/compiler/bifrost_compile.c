@@ -1853,15 +1853,36 @@ bi_emit_intrinsic(bi_builder *b, nir_intrinsic_instr *instr)
       break;
 
    case nir_intrinsic_barrier:
-      if (nir_intrinsic_execution_scope(instr) != SCOPE_NONE) {
-         assert(b->shader->stage != MESA_SHADER_FRAGMENT);
-         assert(nir_intrinsic_execution_scope(instr) > SCOPE_SUBGROUP &&
-                "todo: subgroup barriers (different divergence rules)");
+      switch (nir_intrinsic_execution_scope(instr)) {
+      case SCOPE_NONE:
+         /*
+          * No execution barrier, and we don't have to do anything for memory
+          * barriers (see SCOPE_WORKGROUP case.)
+          */
+         break;
+
+      case SCOPE_SUBGROUP:
+         /*
+          * To implement a subgroup barrier, we only need to prevent the
+          * scheduler from reordering memory operations around the barrier.
+          * Avail and vis are trivially established.
+          */
+         bi_memory_barrier(b);
+         break;
+
+      case SCOPE_WORKGROUP:
+         assert(b->shader->stage == MESA_SHADER_COMPUTE);
          bi_barrier(b);
+         /*
+          * Blob doesn't seem to do anything for memory barriers, so no need to
+          * check nir_intrinsic_memory_scope().
+          */
+         break;
+
+      default:
+         unreachable("Unsupported barrier scope");
       }
-      /* Blob doesn't seem to do anything for memory barriers, so no need to
-       * check nir_intrinsic_memory_scope().
-       */
+
       break;
 
    case nir_intrinsic_shared_atomic: {
