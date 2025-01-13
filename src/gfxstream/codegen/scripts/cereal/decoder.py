@@ -287,7 +287,7 @@ def emit_decode_parameters(typeInfo: VulkanTypeInfo, api: VulkanAPI, cgen, globa
         lenAccess = cgen.generalLengthAccess(p)
 
         if p.dispatchHandle:
-            if api.name in DELAYED_DECODER_DELETE_DICT_ENTRIES:
+            if api.name in DELAYED_DECODER_DELETE_DICT_ENTRIES or api.name in DELAYED_DECODER_DELETES:
                 emit_dispatch_unmarshal(typeInfo, p, cgen, False)
             else:
                 emit_dispatch_unmarshal(typeInfo, p, cgen, globalWrapped)
@@ -352,16 +352,25 @@ def emit_dispatch_call(api, cgen):
         cgen.line("};")
 
 def emit_global_state_wrapped_call(api, cgen, context):
-    if api.name in DELAYED_DECODER_DELETES:
-        print("Error: Cannot generate a global state wrapped call that is also a delayed delete (yet)");
-        raise
+    # Delayed deletes will call wrapped call with a callback without pool or snapshot info
+    delay = api.name in DELAYED_DECODER_DELETES
+    coreCustomParams = list(map(lambda p: p.paramName, api.parameters))
 
-    customParams = ["&m_pool", SNAPSHOT_API_CALL_INFO_VARNAME] + list(map(lambda p: p.paramName, api.parameters))
+    if delay:
+        cgen.line("std::function<void()> delayed_remove_callback = [%s]() {" % ", ".join(coreCustomParams))
+        cgen.stmt("auto m_state = VkDecoderGlobalState::get()")
+        customParams = ["nullptr", "nullptr"] + coreCustomParams
+    else:
+        customParams = ["&m_pool", SNAPSHOT_API_CALL_INFO_VARNAME] + coreCustomParams
+
     if context:
         customParams += ["context"]
     cgen.vkApiCall(api, customPrefix=global_state_prefix, \
         customParameters=customParams, globalStatePrefix=global_state_prefix, \
         checkForDeviceLost=True, checkForOutOfMemory=True)
+
+    if delay:
+        cgen.line("};")
 
 def emit_decode_parameters_writeback(typeInfo, api, cgen, autobox=True):
     decodingParams = DecodingParameters(api)
@@ -685,6 +694,8 @@ custom_decodes = {
     "vkDestroyShaderModule": emit_global_state_wrapped_decoding,
     "vkCreatePipelineCache": emit_global_state_wrapped_decoding,
     "vkDestroyPipelineCache": emit_global_state_wrapped_decoding,
+    "vkCreatePipelineLayout": emit_global_state_wrapped_decoding,
+    "vkDestroyPipelineLayout": emit_global_state_wrapped_decoding,
     "vkCreateComputePipelines": emit_global_state_wrapped_decoding,
     "vkCreateGraphicsPipelines": emit_global_state_wrapped_decoding,
     "vkDestroyPipeline": emit_global_state_wrapped_decoding,

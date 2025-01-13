@@ -50,6 +50,7 @@ class ApiLogDecoder(VulkanWrapperGenerator):
         "vkCreateImageView",
         "vkCreateImageWithRequirementsGOOGLE",
         "vkCreatePipelineCache",
+        "vkCreatePipelineLayout",
         "vkCreateRenderPass",
         "vkCreateSampler",
         "vkCreateSemaphore",
