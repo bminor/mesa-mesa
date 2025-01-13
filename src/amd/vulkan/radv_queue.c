@@ -611,8 +611,7 @@ radv_emit_graphics_shader_pointers(struct radv_device *device, struct radeon_cmd
 }
 
 static void
-radv_emit_attribute_ring(struct radv_device *device, struct radeon_cmdbuf *cs, struct radeon_winsys_bo *attr_ring_bo,
-                         uint32_t attr_ring_size)
+radv_emit_attribute_ring(struct radv_device *device, struct radeon_cmdbuf *cs, struct radeon_winsys_bo *attr_ring_bo)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
    uint64_t va;
@@ -655,7 +654,7 @@ radv_emit_attribute_ring(struct radv_device *device, struct radeon_cmdbuf *cs, s
    radeon_emit(cs, 0x12355123); /* SPI_GS_THROTTLE_CNTL1 */
    radeon_emit(cs, 0x1544D);    /* SPI_GS_THROTTLE_CNTL2 */
    radeon_emit(cs, va >> 16);   /* SPI_ATTRIBUTE_RING_BASE */
-   radeon_emit(cs, S_03111C_MEM_SIZE(((attr_ring_size / pdev->info.max_se) >> 16) - 1) |
+   radeon_emit(cs, S_03111C_MEM_SIZE((pdev->info.attribute_ring_size_per_se >> 16) - 1) |
                       S_03111C_BIG_PAGE(pdev->info.discardable_allows_big_page) |
                       S_03111C_L1_POLICY(1)); /* SPI_ATTRIBUTE_RING_SIZE */
 
@@ -1122,7 +1121,7 @@ radv_update_preamble_cs(struct radv_queue_state *queue, struct radv_device *devi
          radv_emit_gs_ring_sizes(device, cs, esgs_ring_bo, needs->esgs_ring_size, gsvs_ring_bo, needs->gsvs_ring_size);
          radv_emit_tess_factor_ring(device, cs, tess_rings_bo);
          radv_emit_task_rings(device, cs, task_rings_bo, false);
-         radv_emit_attribute_ring(device, cs, attr_ring_bo, needs->attr_ring_size);
+         radv_emit_attribute_ring(device, cs, attr_ring_bo);
          radv_emit_graphics_shader_pointers(device, cs, descriptor_bo);
          radv_emit_compute_scratch(device, cs, needs->compute_scratch_size_per_wave, needs->compute_scratch_waves,
                                    compute_scratch_bo);
