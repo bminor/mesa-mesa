@@ -1216,7 +1216,7 @@ panvk_per_arch(nir_lower_descriptors)(
             VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED_EXT ||
          rs->images != VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_DISABLED_EXT,
    };
-   bool progress;
+   bool progress = false;
 
 #if PAN_ARCH <= 7
    ctx.ubo_addr_format = nir_address_format_32bit_index_offset;
