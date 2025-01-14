@@ -310,9 +310,7 @@ etna_init_screen_caps(struct etna_screen *screen)
    caps->max_texture_3d_levels = screen->info->halti < 0 ? 0 : log2_max_tex_size;
    caps->max_texture_cube_levels = log2_max_tex_size;
 
-   caps->min_texture_gather_offset =
    caps->min_texel_offset = -8;
-   caps->max_texture_gather_offset =
    caps->max_texel_offset = 7;
    caps->seamless_cube_map_per_texture = screen->specs.seamless_cube_map;
 
