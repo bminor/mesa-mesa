@@ -559,13 +559,14 @@ panfrost_emit_surface(const struct pan_image_view *iview, unsigned level,
                                       : pan_image_view_get_plane(iview, 0);
    assert(plane != NULL);
 
-   struct pan_image_section_info section =
-      get_image_section_info(iview, plane, level, index, sample);
+   struct pan_image_section_info section[1] = {
+      get_image_section_info(iview, plane, level, index, sample),
+   };
 
 #if PAN_ARCH >= 9
-   panfrost_emit_plane(iview, &section, 0, level, payload);
+   panfrost_emit_plane(iview, section, 0, level, payload);
 #else
-   panfrost_emit_surface_with_stride(&section, payload);
+   panfrost_emit_surface_with_stride(section, payload);
 #endif
 }
 
