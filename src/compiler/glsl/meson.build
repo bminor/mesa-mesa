@@ -178,7 +178,6 @@ files_libglsl = files(
   'opt_algebraic.cpp',
   'opt_dead_builtin_variables.cpp',
   'opt_dead_code.cpp',
-  'opt_dead_code_local.cpp',
   'opt_flatten_nested_if_blocks.cpp',
   'opt_flip_matrices.cpp',
   'opt_function_inlining.cpp',
