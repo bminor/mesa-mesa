@@ -524,10 +524,10 @@ ast_type_qualifier::merge_qualifier(YYLTYPE *loc,
       unsigned num_views;
       if (process_qualifier_constant(state, loc, "num_views",
                                      this->num_views, &num_views)){
-        if (!validate_view_qualifier(loc, state, num_views)){
-            _mesa_glsl_error(loc, state,
-                  "Invalid num_views specified");
-        }
+         if (!validate_view_qualifier(loc, state, num_views)){
+            _mesa_glsl_error(loc, state, "Invalid num_views specified");
+         }
+         state->view_mask = BITFIELD_MASK(num_views);
       }
    }
 

@@ -2722,6 +2722,7 @@ link_intrastage_shaders(void *mem_ctx,
 {
    bool arb_fragment_coord_conventions_enable = false;
    bool KHR_shader_subgroup_basic_enable = false;
+   int32_t view_mask = -1;
 
    /* Check that global variables defined in multiple shaders are consistent.
     */
@@ -2736,6 +2737,14 @@ link_intrastage_shaders(void *mem_ctx,
          arb_fragment_coord_conventions_enable = true;
       if (shader_list[i]->KHR_shader_subgroup_basic_enable)
          KHR_shader_subgroup_basic_enable = true;
+
+      if (view_mask != -1 && view_mask != shader_list[i]->view_mask) {
+         linker_error(prog, "vertex shader defined with "
+                        "conflicting num_views (%d and %d)\n",
+                        ffs(view_mask) - 1, ffs(shader_list[i]->view_mask) - 1);
+         return NULL;
+      }
+      view_mask = shader_list[i]->view_mask;
    }
 
    if (!prog->data->LinkStatus)
@@ -2833,6 +2842,7 @@ link_intrastage_shaders(void *mem_ctx,
 
    link_layer_viewport_relative_qualifier(prog, gl_prog, shader_list, num_shaders);
 
+   gl_prog->nir->info.view_mask = view_mask;
    gl_prog->nir->info.subgroup_size = KHR_shader_subgroup_basic_enable ?
       SUBGROUP_SIZE_API_CONSTANT : SUBGROUP_SIZE_UNIFORM;
 
