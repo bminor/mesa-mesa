@@ -254,15 +254,6 @@ freedreno_cpp_args += cpp.get_supported_arguments([
   '-Wno-address-of-packed-member',
 ])
 
-# HACK compiler.get_supported_arguments()/has_argument() do not seem
-# to be reliable for cross builds (!?!) so just jam in some args we
-# need and hope for the best
-if meson.is_cross_build()
-  freedreno_cpp_args += '-Wno-array-bounds'
-  freedreno_cpp_args += '-Wno-c++11-narrowing'
-  freedreno_cpp_args += '-Wno-c99-designator'
-endif
-
 libfreedreno_dependencies = [
   dep_libdrm,
   idep_mesautil,

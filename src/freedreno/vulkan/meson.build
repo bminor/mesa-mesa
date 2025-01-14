@@ -139,6 +139,7 @@ tu_cpp_args += cpp.get_supported_arguments([
   '-fno-rtti',
   '-Wno-address-of-temporary',
   '-Wno-array-bounds',
+  '-Wno-c++11-narrowing',
   '-Wno-c99-designator',
   '-Wno-class-memaccess',
   '-Wno-missing-braces',
@@ -152,17 +153,6 @@ tu_cpp_args += cpp.get_supported_arguments([
   '-Wno-write-strings',
   '-Wno-vla-cxx-extension',
 ])
-
-# HACK compiler.get_supported_arguments()/has_argument() do not seem
-# to be reliable for cross builds (!?!) so just jam in some args we
-# need and hope for the best
-if meson.is_cross_build()
-  tu_cpp_args += '-Wno-array-bounds'
-  tu_cpp_args += '-Wno-c++11-narrowing'
-  tu_cpp_args += '-Wno-missing-braces'
-  tu_cpp_args += '-Wno-unused-function'
-  tu_cpp_args += '-Wno-writable-strings'
-endif
 
 libvulkan_freedreno = shared_library(
   'vulkan_freedreno',
