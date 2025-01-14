@@ -214,7 +214,7 @@
         "description": "panfrost: avoid accidental aliasing",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "22985caf3ff3d5845d5c03c4516be12f6d004d5e",
         "notes": null
