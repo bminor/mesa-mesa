@@ -1487,23 +1487,3 @@ nir_has_divergent_loop(nir_shader *shader)
 
    return false;
 }
-
-/* Recommended when computing divergence information in shared code such
- * as the GLSL linker.
- */
-void
-nir_clear_divergence_info(nir_shader *nir)
-{
-   nir_foreach_function_impl(impl, nir) {
-      nir_foreach_block(block, impl) {
-         /* true is the safer value. */
-         block->divergent = true;
-
-         nir_foreach_instr(instr, block) {
-            nir_def *def = nir_instr_def(instr);
-            if (def)
-               def->divergent = true;
-         }
-      }
-   }
-}
