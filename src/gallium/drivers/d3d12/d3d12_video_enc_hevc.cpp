@@ -367,98 +367,160 @@ d3d12_video_encoder_update_current_frame_pic_params_info_hevc(struct d3d12_video
    {
       assert(picParams.DataSize == sizeof(D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC1));
 
-      //
-      // Copy from pipe params
-      //
+      if (hevcPic->pic.pps_range_extension.pps_range_extension_flag)
       {
-         picParams.pHEVCPicData1->diff_cu_chroma_qp_offset_depth = static_cast<UCHAR>(hevcPic->pic.pps_range_extension.diff_cu_chroma_qp_offset_depth);
-         picParams.pHEVCPicData1->log2_sao_offset_scale_luma = static_cast<UCHAR>(hevcPic->pic.pps_range_extension.log2_sao_offset_scale_luma);
-         picParams.pHEVCPicData1->log2_sao_offset_scale_chroma = static_cast<UCHAR>(hevcPic->pic.pps_range_extension.log2_sao_offset_scale_chroma);
-         picParams.pHEVCPicData1->log2_max_transform_skip_block_size_minus2 = static_cast<CHAR>(hevcPic->pic.pps_range_extension.log2_max_transform_skip_block_size_minus2);
-         picParams.pHEVCPicData1->chroma_qp_offset_list_len_minus1 = static_cast<CHAR>(hevcPic->pic.pps_range_extension.chroma_qp_offset_list_len_minus1);
-
+         //
+         // Clear pps_range_extension() params if pps_range_extension_flag not enabled
+         //
+         picParams.pHEVCPicData1->log2_max_transform_skip_block_size_minus2 = 0u;
+         picParams.pHEVCPicData1->Flags &= ~D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC_FLAG_CROSS_COMPONENT_PREDICTION;
+         picParams.pHEVCPicData1->Flags &= ~D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC_FLAG_CHROMA_QP_OFFSET_LIST;
+         picParams.pHEVCPicData1->diff_cu_chroma_qp_offset_depth = 0u;
+         picParams.pHEVCPicData1->chroma_qp_offset_list_len_minus1 = 0u;
          for (uint32_t i = 0; i < ARRAY_SIZE(picParams.pHEVCPicData1->cb_qp_offset_list) ; i++)
          {
-            picParams.pHEVCPicData1->cb_qp_offset_list[i] = static_cast<CHAR>(hevcPic->pic.pps_range_extension.cb_qp_offset_list[i]);
-            picParams.pHEVCPicData1->cr_qp_offset_list[i] = static_cast<CHAR>(hevcPic->pic.pps_range_extension.cr_qp_offset_list[i]);
+            picParams.pHEVCPicData1->cb_qp_offset_list[i] = 0u;
+            picParams.pHEVCPicData1->cr_qp_offset_list[i] = 0u;
+         }
+         picParams.pHEVCPicData1->log2_sao_offset_scale_luma = 0u;
+         picParams.pHEVCPicData1->log2_sao_offset_scale_chroma = 0u;
+      }
+      else
+      {
+         //
+         // Copy pps_range_extension() from pipe params if pps_range_extension_flag set
+         //
+
+         //
+         // Set and validate log2_max_transform_skip_block_size_minus2
+         //
+         {
+            if (hevcPic->pic.transform_skip_enabled_flag)
+            {
+               picParams.pHEVCPicData1->log2_max_transform_skip_block_size_minus2 = static_cast<CHAR>(hevcPic->pic.pps_range_extension.log2_max_transform_skip_block_size_minus2);
+               if ((pD3D12Enc->m_currentEncodeCapabilities.m_encoderCodecSpecificConfigCaps.m_HEVCCodecCaps.allowed_log2_max_transform_skip_block_size_minus2_values & (1 << picParams.pHEVCPicData1->log2_max_transform_skip_block_size_minus2)) == 0)
+               {
+                  debug_printf("D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC1 arguments are not supported - log2_max_transform_skip_block_size_minus2 %d is not supported.\n", picParams.pHEVCPicData1->log2_max_transform_skip_block_size_minus2);
+                  assert(false);
+               }
+            }
          }
 
-         if (hevcPic->pic.pps_range_extension.cross_component_prediction_enabled_flag)
-            picParams.pHEVCPicData1->Flags |= D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC_FLAG_CROSS_COMPONENT_PREDICTION;
+         //
+         // Set and validate cross_component_prediction_enabled_flag
+         //
+         {
+            if (hevcPic->pic.pps_range_extension.cross_component_prediction_enabled_flag)
+               picParams.pHEVCPicData1->Flags |= D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC_FLAG_CROSS_COMPONENT_PREDICTION;
 
+            if(((picParams.pHEVCPicData1->Flags & D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC_FLAG_CROSS_COMPONENT_PREDICTION) != 0)
+                  && ((pD3D12Enc->m_currentEncodeCapabilities.m_encoderCodecSpecificConfigCaps.m_HEVCCodecCaps.SupportFlags & D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION_SUPPORT_HEVC_FLAG_CROSS_COMPONENT_PREDICTION_ENABLED_FLAG_SUPPORT) == 0))
+            {
+                  debug_printf("D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC1 arguments are not supported - D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC_FLAG_CROSS_COMPONENT_PREDICTION is not supported."
+                  " Ignoring the request for this feature flag on this encode session\n");
+                  // Disable it and keep going with a warning
+                  picParams.pHEVCPicData1->Flags &= ~D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC_FLAG_CROSS_COMPONENT_PREDICTION;
+            }
+
+            if(((picParams.pHEVCPicData1->Flags & D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC_FLAG_CROSS_COMPONENT_PREDICTION) == 0)
+                  && ((pD3D12Enc->m_currentEncodeCapabilities.m_encoderCodecSpecificConfigCaps.m_HEVCCodecCaps.SupportFlags & D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION_SUPPORT_HEVC_FLAG_CROSS_COMPONENT_PREDICTION_ENABLED_FLAG_REQUIRED) != 0))
+            {
+                  debug_printf("D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC1 arguments are not supported - D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC_FLAG_CROSS_COMPONENT_PREDICTION is required to be set."
+                  " Enabling this HW required feature flag on this encode session\n");
+                  // HW doesn't support otherwise, so set it
+                  picParams.pHEVCPicData1->Flags |= D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC_FLAG_CROSS_COMPONENT_PREDICTION;
+            }
+         }
+
+         //
+         // Set and validate chroma_qp_offset_list_enabled_flag
+         //
          if (hevcPic->pic.pps_range_extension.chroma_qp_offset_list_enabled_flag)
+         {
             picParams.pHEVCPicData1->Flags |= D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC_FLAG_CHROMA_QP_OFFSET_LIST;
-      }
+            if(((picParams.pHEVCPicData1->Flags & D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC_FLAG_CHROMA_QP_OFFSET_LIST) != 0)
+                  && ((pD3D12Enc->m_currentEncodeCapabilities.m_encoderCodecSpecificConfigCaps.m_HEVCCodecCaps.SupportFlags & D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION_SUPPORT_HEVC_FLAG_CHROMA_QP_OFFSET_LIST_ENABLED_FLAG_SUPPORT) == 0))
+            {
+                  debug_printf("D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC1 arguments are not supported - D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC_FLAG_CHROMA_QP_OFFSET_LIST is not supported."
+                  " Ignoring the request for this feature flag on this encode session\n");
+                  // Disable it and keep going with a warning
+                  picParams.pHEVCPicData1->Flags &= ~D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC_FLAG_CHROMA_QP_OFFSET_LIST;
+            }
 
-      //
-      // Validate caps from copied params
-      //
+            if(((picParams.pHEVCPicData1->Flags & D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC_FLAG_CHROMA_QP_OFFSET_LIST) == 0)
+                  && ((pD3D12Enc->m_currentEncodeCapabilities.m_encoderCodecSpecificConfigCaps.m_HEVCCodecCaps.SupportFlags & D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION_SUPPORT_HEVC_FLAG_CHROMA_QP_OFFSET_LIST_ENABLED_FLAG_REQUIRED) != 0))
+            {
+                  debug_printf("D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC1 arguments are not supported - D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC_FLAG_CHROMA_QP_OFFSET_LIST is required to be set."
+                  " Enabling this HW required feature flag on this encode session\n");
+                  // HW doesn't support otherwise, so set it
+                  picParams.pHEVCPicData1->Flags |= D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC_FLAG_CHROMA_QP_OFFSET_LIST;
+            }
 
-      // Check for support of value with: (allowed_diff_cu_chroma_qp_offset_depth_values & (1 << value) != 0)
-      if ((pD3D12Enc->m_currentEncodeCapabilities.m_encoderCodecSpecificConfigCaps.m_HEVCCodecCaps.allowed_diff_cu_chroma_qp_offset_depth_values & (1 << picParams.pHEVCPicData1->diff_cu_chroma_qp_offset_depth)) == 0)
-      {
-         debug_printf("D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC1 arguments are not supported - diff_cu_chroma_qp_offset_depth %d is not supported.\n", picParams.pHEVCPicData1->diff_cu_chroma_qp_offset_depth);
-         assert(false);
-      }
+            //
+            // Set and validate diff_cu_chroma_qp_offset_depth
+            //
+            picParams.pHEVCPicData1->diff_cu_chroma_qp_offset_depth = static_cast<UCHAR>(hevcPic->pic.pps_range_extension.diff_cu_chroma_qp_offset_depth);
+            if ((pD3D12Enc->m_currentEncodeCapabilities.m_encoderCodecSpecificConfigCaps.m_HEVCCodecCaps.allowed_diff_cu_chroma_qp_offset_depth_values & (1 << picParams.pHEVCPicData1->diff_cu_chroma_qp_offset_depth)) == 0)
+            {
+               debug_printf("D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC1 arguments are not supported - diff_cu_chroma_qp_offset_depth %d is not supported.\n", picParams.pHEVCPicData1->diff_cu_chroma_qp_offset_depth);
+               assert(false);
+            }
 
-      if ((pD3D12Enc->m_currentEncodeCapabilities.m_encoderCodecSpecificConfigCaps.m_HEVCCodecCaps.allowed_log2_sao_offset_scale_luma_values & (1 << picParams.pHEVCPicData1->log2_sao_offset_scale_luma)) == 0)
-      {
-         debug_printf("D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC1 arguments are not supported - log2_sao_offset_scale_luma %d is not supported.\n", picParams.pHEVCPicData1->log2_sao_offset_scale_luma);
-         assert(false);
-      }
+            //
+            // Set and validate chroma_qp_offset_list_len_minus1
+            //
+            picParams.pHEVCPicData1->chroma_qp_offset_list_len_minus1 = static_cast<CHAR>(hevcPic->pic.pps_range_extension.chroma_qp_offset_list_len_minus1);
+            if (hevcPic->pic.pps_range_extension.chroma_qp_offset_list_len_minus1 > 5)
+            {
+               debug_printf("D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC1 arguments are not supported - chroma_qp_offset_list_len_minus1 %d is not supported.\n", hevcPic->pic.pps_range_extension.chroma_qp_offset_list_len_minus1);
+               assert(false);
+            }
 
-      if ((pD3D12Enc->m_currentEncodeCapabilities.m_encoderCodecSpecificConfigCaps.m_HEVCCodecCaps.allowed_log2_sao_offset_scale_chroma_values & (1 << picParams.pHEVCPicData1->log2_sao_offset_scale_chroma)) == 0)
-      {
-         debug_printf("D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC1 arguments are not supported - log2_sao_offset_scale_chroma %d is not supported.\n", picParams.pHEVCPicData1->log2_sao_offset_scale_chroma);
-         assert(false);
-      }
+            if ((pD3D12Enc->m_currentEncodeCapabilities.m_encoderCodecSpecificConfigCaps.m_HEVCCodecCaps.allowed_chroma_qp_offset_list_len_minus1_values & (1 << picParams.pHEVCPicData1->chroma_qp_offset_list_len_minus1)) == 0)
+            {
+               debug_printf("D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC1 arguments are not supported - chroma_qp_offset_list_len_minus1 %d is not supported.\n", picParams.pHEVCPicData1->chroma_qp_offset_list_len_minus1);
+               assert(false);
+            }
 
-      if ((pD3D12Enc->m_currentEncodeCapabilities.m_encoderCodecSpecificConfigCaps.m_HEVCCodecCaps.allowed_log2_max_transform_skip_block_size_minus2_values & (1 << picParams.pHEVCPicData1->log2_max_transform_skip_block_size_minus2)) == 0)
-      {
-         debug_printf("D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC1 arguments are not supported - log2_max_transform_skip_block_size_minus2 %d is not supported.\n", picParams.pHEVCPicData1->log2_max_transform_skip_block_size_minus2);
-         assert(false);
-      }
+            //
+            // Set and validate cb_qp_offset_list, cr_qp_offset_list
+            //
+            for (uint32_t i = 0; i < picParams.pHEVCPicData1->chroma_qp_offset_list_len_minus1 ; i++)
+            {
+               picParams.pHEVCPicData1->cb_qp_offset_list[i] = static_cast<CHAR>(hevcPic->pic.pps_range_extension.cb_qp_offset_list[i]);
+               if ((pD3D12Enc->m_currentEncodeCapabilities.m_encoderCodecSpecificConfigCaps.m_HEVCCodecCaps.allowed_cb_qp_offset_list_values[i] & (1 << (picParams.pHEVCPicData1->cb_qp_offset_list[i] + 12))) == 0)
+               {
+                  debug_printf("D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC1 arguments are not supported - cb_qp_offset_list[%d] %d is not supported.\n", i, picParams.pHEVCPicData1->chroma_qp_offset_list_len_minus1);
+                  assert(false);
+               }
+               picParams.pHEVCPicData1->cr_qp_offset_list[i] = static_cast<CHAR>(hevcPic->pic.pps_range_extension.cr_qp_offset_list[i]);
+               if ((pD3D12Enc->m_currentEncodeCapabilities.m_encoderCodecSpecificConfigCaps.m_HEVCCodecCaps.allowed_cr_qp_offset_list_values[i] & (1 << (picParams.pHEVCPicData1->cr_qp_offset_list[i] + 12))) == 0)
+               {
+                  debug_printf("D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC1 arguments are not supported - cr_qp_offset_list[%d] %d is not supported.\n", i, picParams.pHEVCPicData1->chroma_qp_offset_list_len_minus1);
+                  assert(false);
+               }
+            }
+         }
 
-      if ((pD3D12Enc->m_currentEncodeCapabilities.m_encoderCodecSpecificConfigCaps.m_HEVCCodecCaps.allowed_chroma_qp_offset_list_len_minus1_values & (1 << picParams.pHEVCPicData1->chroma_qp_offset_list_len_minus1)) == 0)
-      {
-         debug_printf("D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC1 arguments are not supported - chroma_qp_offset_list_len_minus1 %d is not supported.\n", picParams.pHEVCPicData1->chroma_qp_offset_list_len_minus1);
-         assert(false);
-      }
+         //
+         // Set and validate log2_sao_offset_scale_luma
+         //
+         picParams.pHEVCPicData1->log2_sao_offset_scale_luma = static_cast<UCHAR>(hevcPic->pic.pps_range_extension.log2_sao_offset_scale_luma);
+         if ((pD3D12Enc->m_currentEncodeCapabilities.m_encoderCodecSpecificConfigCaps.m_HEVCCodecCaps.allowed_log2_sao_offset_scale_luma_values & (1 << picParams.pHEVCPicData1->log2_sao_offset_scale_luma)) == 0)
+         {
+            debug_printf("D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC1 arguments are not supported - log2_sao_offset_scale_luma %d is not supported.\n", picParams.pHEVCPicData1->log2_sao_offset_scale_luma);
+            assert(false);
+         }
 
-      if(((picParams.pHEVCPicData1->Flags & D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC_FLAG_CROSS_COMPONENT_PREDICTION) != 0)
-            && ((pD3D12Enc->m_currentEncodeCapabilities.m_encoderCodecSpecificConfigCaps.m_HEVCCodecCaps.SupportFlags & D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION_SUPPORT_HEVC_FLAG_CROSS_COMPONENT_PREDICTION_ENABLED_FLAG_SUPPORT) == 0))
-      {
-            debug_printf("D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC1 arguments are not supported - D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC_FLAG_CROSS_COMPONENT_PREDICTION is not supported."
-            " Ignoring the request for this feature flag on this encode session\n");
-            // Disable it and keep going with a warning
-            picParams.pHEVCPicData1->Flags &= ~D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC_FLAG_CROSS_COMPONENT_PREDICTION;
-      }
-
-      if(((picParams.pHEVCPicData1->Flags & D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC_FLAG_CROSS_COMPONENT_PREDICTION) == 0)
-            && ((pD3D12Enc->m_currentEncodeCapabilities.m_encoderCodecSpecificConfigCaps.m_HEVCCodecCaps.SupportFlags & D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION_SUPPORT_HEVC_FLAG_CROSS_COMPONENT_PREDICTION_ENABLED_FLAG_REQUIRED) != 0))
-      {
-            debug_printf("D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC1 arguments are not supported - D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC_FLAG_CROSS_COMPONENT_PREDICTION is required to be set."
-            " Enabling this HW required feature flag on this encode session\n");
-            // HW doesn't support otherwise, so set it
-            picParams.pHEVCPicData1->Flags |= D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC_FLAG_CROSS_COMPONENT_PREDICTION;
-      }
-
-      if(((picParams.pHEVCPicData1->Flags & D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC_FLAG_CHROMA_QP_OFFSET_LIST) != 0)
-            && ((pD3D12Enc->m_currentEncodeCapabilities.m_encoderCodecSpecificConfigCaps.m_HEVCCodecCaps.SupportFlags & D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION_SUPPORT_HEVC_FLAG_CHROMA_QP_OFFSET_LIST_ENABLED_FLAG_SUPPORT) == 0))
-      {
-            debug_printf("D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC1 arguments are not supported - D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC_FLAG_CHROMA_QP_OFFSET_LIST is not supported."
-            " Ignoring the request for this feature flag on this encode session\n");
-            // Disable it and keep going with a warning
-            picParams.pHEVCPicData1->Flags &= ~D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC_FLAG_CHROMA_QP_OFFSET_LIST;
-      }
-
-      if(((picParams.pHEVCPicData1->Flags & D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC_FLAG_CHROMA_QP_OFFSET_LIST) == 0)
-            && ((pD3D12Enc->m_currentEncodeCapabilities.m_encoderCodecSpecificConfigCaps.m_HEVCCodecCaps.SupportFlags & D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION_SUPPORT_HEVC_FLAG_CHROMA_QP_OFFSET_LIST_ENABLED_FLAG_REQUIRED) != 0))
-      {
-            debug_printf("D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC1 arguments are not supported - D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC_FLAG_CHROMA_QP_OFFSET_LIST is required to be set."
-            " Enabling this HW required feature flag on this encode session\n");
-            // HW doesn't support otherwise, so set it
-            picParams.pHEVCPicData1->Flags |= D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC_FLAG_CHROMA_QP_OFFSET_LIST;
+         //
+         // Set and validate log2_sao_offset_scale_chroma
+         //
+         picParams.pHEVCPicData1->log2_sao_offset_scale_chroma = static_cast<UCHAR>(hevcPic->pic.pps_range_extension.log2_sao_offset_scale_chroma);
+         if ((pD3D12Enc->m_currentEncodeCapabilities.m_encoderCodecSpecificConfigCaps.m_HEVCCodecCaps.allowed_log2_sao_offset_scale_chroma_values & (1 << picParams.pHEVCPicData1->log2_sao_offset_scale_chroma)) == 0)
+         {
+            debug_printf("D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC1 arguments are not supported - log2_sao_offset_scale_chroma %d is not supported.\n", picParams.pHEVCPicData1->log2_sao_offset_scale_chroma);
+            assert(false);
+         }
       }
    }
 
