@@ -444,7 +444,7 @@
         "description": "Revert \"anv: turn off non zero fast clears for CCS_E\"",
         "nominated": true,
         "nomination_type": 3,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "25a232238f40bf2776f224b8bc2df318b54e982e",
         "notes": null
