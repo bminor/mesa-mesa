@@ -1,24 +1,27 @@
 Performance Tips
 ================
 
-# Performance Tips for Intel GPUs
+Intel GPUs
+----------
 
 #. Keep the system updated with the latest kernel and Mesa versions.
 #. Ensure SoC firmware is up-to-date. These firmware updates currently
-   require installing the Windows graphics driver; firmware updates 
+   require installing the Windows graphics driver; firmware updates
    via `fwupd` are in progress.
 #. Use Wayland where possible, as it supports additional modifiers for
    better performance.
 #. For MTL and newer integrated GPUs, disable VT-d if virtualization is
    not needed.
 #. For discrete GPUs:
+
    #. Enable `ReBAR`_
    #. Enable `ASPM`_
 
 .. _ReBAR: https://www.intel.com/content/www/us/en/support/articles/000090831/graphics.html
 .. _ASPM: https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/6/html/power_management_guide/aspm
 
-# Performance tips for software rendering
+Software rendering
+------------------
 
 #. Turn off smooth shading when you don't need it (glShadeModel)
 #. Turn off depth buffering when you don't need it.
