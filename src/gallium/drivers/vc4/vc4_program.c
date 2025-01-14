@@ -409,6 +409,7 @@ ntq_emit_tex(struct vc4_compile *c, nir_tex_instr *instr)
                 return;
         }
 
+        assert(instr->num_srcs > 0);
         for (unsigned i = 0; i < instr->num_srcs; i++) {
                 switch (instr->src[i].src_type) {
                 case nir_tex_src_coord:
