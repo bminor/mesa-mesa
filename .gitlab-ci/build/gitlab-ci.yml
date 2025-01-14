@@ -137,11 +137,11 @@ debian-testing-asan:
       -D b_sanitize=address
       -D valgrind=disabled
       -D tools=dlclose-skip
-      -D intel-clc=system
+      -D mesa-clc=system
     S3_ARTIFACT_NAME: ""
     ARTIFACTS_DEBUG_SYMBOLS: 1
-    # Do a host build for intel-clc (asan complains not being loaded
-    # as the first library)
+    # Do a host build for mesa-clc (asan complains not being loaded as
+    # the first library)
     HOST_BUILD_OPTIONS: >
       -D build-tests=false
       -D enable-glcpp-tests=false
@@ -151,8 +151,8 @@ debian-testing-asan:
       -D video-codecs=
       -D glx=disabled
       -D platforms=
-      -D intel-clc=enabled
-      -D install-intel-clc=true
+      -D mesa-clc=enabled
+      -D install-mesa-clc=true
 
 debian-testing-msan:
   # https://github.com/google/sanitizers/wiki/MemorySanitizerLibcxxHowTo
@@ -166,7 +166,7 @@ debian-testing-msan:
     EXTRA_OPTION:
       -D b_sanitize=memory
       -D b_lundef=false
-      -D intel-clc=system
+      -D mesa-clc=system
     S3_ARTIFACT_NAME: ""
     ARTIFACTS_DEBUG_SYMBOLS: 1
     # Don't run all the tests yet:
@@ -175,8 +175,8 @@ debian-testing-msan:
     MESON_TEST_ARGS: "--suite glcpp --suite format"
     GALLIUM_DRIVERS: "freedreno,iris,nouveau,r300,r600,llvmpipe,softpipe,svga,v3d,vc4,virgl,etnaviv,panfrost,lima,zink,radeonsi,tegra,d3d12,crocus"
     VULKAN_DRIVERS: intel,amd,broadcom,virtio
-    # Do a host build for intel-clc (msan complains about
-    # uninitialized values in the LLVM libs)
+    # Do a host build for mesa-clc (msan complains about uninitialized
+    # values in the LLVM libs)
     HOST_BUILD_OPTIONS: >
       -D build-tests=false
       -D enable-glcpp-tests=false
@@ -186,8 +186,8 @@ debian-testing-msan:
       -D video-codecs=
       -D glx=disabled
       -D platforms=
-      -D intel-clc=enabled
-      -D install-intel-clc=true
+      -D mesa-clc=enabled
+      -D install-mesa-clc=true
 
 debian-testing-ubsan:
   extends:
@@ -202,7 +202,7 @@ debian-testing-ubsan:
       -Wno-error=array-bounds
     EXTRA_OPTION: >
       -D b_sanitize=undefined
-      -D intel-clc=system
+      -D mesa-clc=system
     S3_ARTIFACT_NAME: ""
     ARTIFACTS_DEBUG_SYMBOLS: 1
     HOST_BUILD_OPTIONS: >
@@ -214,8 +214,8 @@ debian-testing-ubsan:
       -D video-codecs=
       -D glx=disabled
       -D platforms=
-      -D intel-clc=enabled
-      -D install-intel-clc=true
+      -D mesa-clc=enabled
+      -D install-mesa-clc=true
 
 debian-build-testing:
   extends: .meson-build
@@ -311,7 +311,7 @@ debian-release:
       -D spirv-to-dxil=true
       -D osmesa=true
       -D tools=all
-      -D intel-clc=enabled
+      -D mesa-clc=enabled
       -D intel-rt=enabled
       -D imagination-srv=true
     BUILDTYPE: "release"
@@ -444,7 +444,7 @@ debian-android:
       -D cpp_rtti=false
       -D valgrind=disabled
       -D android-libbacktrace=disabled
-      -D intel-clc=system
+      -D mesa-clc=system
     GALLIUM_ST: >
       -D gallium-vdpau=disabled
       -D gallium-va=disabled
@@ -462,8 +462,8 @@ debian-android:
       -D video-codecs=
       -D glx=disabled
       -D platforms=
-      -D intel-clc=enabled
-      -D install-intel-clc=true
+      -D mesa-clc=enabled
+      -D install-mesa-clc=true
     ARTIFACTS_DEBUG_SYMBOLS: 1
     S3_ARTIFACT_NAME: mesa-x86_64-android-${BUILDTYPE}
   script:
@@ -710,7 +710,7 @@ debian-clang:
       -D tools=drm-shim,etnaviv,freedreno,glsl,intel,intel-ui,nir,nouveau,lima,panfrost,asahi,imagination
       -D vulkan-layers=device-select,overlay
       -D build-aco-tests=true
-      -D intel-clc=enabled
+      -D mesa-clc=enabled
       -D intel-rt=enabled
       -D imagination-srv=true
       -D teflon=true
@@ -806,7 +806,7 @@ debian-x86_32:
       -D glvnd=disabled
     EXTRA_OPTION: >
       -D vulkan-layers=device-select,overlay
-      -D intel-clc=system
+      -D mesa-clc=system
     HOST_BUILD_OPTIONS: >
       -D build-tests=false
       -D enable-glcpp-tests=false
@@ -816,8 +816,8 @@ debian-x86_32:
       -D video-codecs=
       -D glx=disabled
       -D platforms=
-      -D intel-clc=enabled
-      -D install-intel-clc=true
+      -D mesa-clc=enabled
+      -D install-mesa-clc=true
 
 # While s390 is dead, s390x is very much alive, and one of the last major
 # big-endian platforms, so it provides useful coverage.

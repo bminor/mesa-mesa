@@ -35,8 +35,8 @@ variables:
    DEBIAN_PYUTILS_IMAGE: "debian/x86_64_pyutils"
    DEBIAN_PYUTILS_TAG: "20241223-pyutils"
 
-   ALPINE_X86_64_BUILD_TAG: "20241122-sections"
-   ALPINE_X86_64_LAVA_SSH_TAG: "20241122-sections"
+   ALPINE_X86_64_BUILD_TAG: "20250124-spirv-tools"
+   ALPINE_X86_64_LAVA_SSH_TAG: "20250124-spirv-tools"
    FEDORA_X86_64_BUILD_TAG: "20241122-sections"
 
    KERNEL_TAG: "v6.13-rc4-mesa-5e77"

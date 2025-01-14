@@ -9,39 +9,19 @@
 #ifndef __OPENCL_VERSION__
 #include <stdint.h>
 
+#include <vulkan/vulkan_core.h>
+
 #include "util/macros.h"
 
 #else
-#define PRAGMA_POISON(param)
-#define BITFIELD_BIT(i) (1u << i)
 
-typedef ulong uint64_t;
-typedef uint uint32_t;
-typedef ushort uint16_t;
-typedef uchar uint8_t;
-
-typedef long int64_t;
-typedef int int32_t;
-typedef short int16_t;
-typedef char int8_t;
-
-typedef struct VkDrawIndexedIndirectCommand {
-    uint32_t    indexCount;
-    uint32_t    instanceCount;
-    uint32_t    firstIndex;
-    int32_t     vertexOffset;
-    uint32_t    firstInstance;
-} VkDrawIndexedIndirectCommand __attribute__((aligned(4)));
-
-typedef struct VkDrawIndirectCommand {
-    uint32_t    vertexCount;
-    uint32_t    instanceCount;
-    uint32_t    firstVertex;
-    uint32_t    firstInstance;
-} VkDrawIndirectCommand __attribute__((aligned(4)));
+#define _MESA_LIBCL_ASSERT_IGNORE 1
+#include "libcl_vk.h"
 
 #include "genxml/gen_macros.h"
 #include "genxml/genX_cl_pack.h"
+
+#define PRAGMA_POISON(param)
 #endif
 
 /**
@@ -126,6 +106,7 @@ void genX(write_draw)(global uint32_t *dst_ptr,
                       bool uses_base,
                       bool uses_draw_id,
                       uint32_t mocs);
+
 
 void genX(copy_data)(global void *dst_ptr,
                      global void *src_ptr,
