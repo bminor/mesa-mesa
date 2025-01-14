@@ -113,6 +113,7 @@ libintel_compiler_brw_files = files(
   'brw_schedule_instructions.cpp',
   'brw_shader.cpp',
   'brw_simd_selection.cpp',
+  'brw_spirv.c',
   'brw_validate.cpp',
   'brw_vue_map.c',
   'brw_workaround.cpp',
@@ -161,6 +162,7 @@ idep_intel_compiler_brw = declare_dependency(
   dependencies : [
     idep_nir,
     idep_mesautil,
+    idep_vtn,
   ],
 )
 
@@ -178,12 +180,13 @@ elif with_intel_clc
       # Use just the nir_options part of ELK instead of fully linking.
       'elk/elk_nir_options.h',
       'elk/elk_nir_options.c',
+      'elk/elk_spirv.c',
     ],
     link_with : [libisl],
     include_directories : [inc_include, inc_src, inc_intel],
     c_args : [pre_args, no_override_init_args],
     link_args : [ld_args_build_id],
-    dependencies : [idep_nir, idep_vtn, idep_mesaclc, idep_mesautil, idep_intel_dev,
+    dependencies : [idep_nir, idep_mesaclc, idep_mesautil, idep_intel_dev,
                     idep_intel_compiler_brw],
     # If we can run host binaries directly, just build intel_clc for the host.
     # Most commonly this happens when doing a cross compile from an x86_64 build

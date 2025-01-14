@@ -293,6 +293,10 @@ brw_nir_no_indirect_mask(const struct brw_compiler *compiler,
 
 bool brw_nir_uses_inline_data(nir_shader *shader);
 
+nir_shader *
+brw_nir_from_spirv(void *mem_ctx, unsigned gfx_version, const uint32_t *spirv,
+                   size_t spirv_size, bool llvm17_wa);
+
 #ifdef __cplusplus
 }
 #endif

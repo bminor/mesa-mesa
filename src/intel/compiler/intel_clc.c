@@ -23,6 +23,8 @@
 
 #include "brw_compiler.h"
 #include "brw_kernel.h"
+#include "brw_nir.h"
+#include "elk/elk_nir.h"
 #include "compiler/brw_disasm.h"
 #include "compiler/clc/clc.h"
 #include "compiler/glsl_types.h"
@@ -387,9 +389,13 @@ output_nir(const struct intel_clc_params *params, struct clc_binary *binary)
    spirv_library_to_nir_builder(fp, binary->data, binary->size / 4,
                                 &spirv_options);
 
-   nir_shader *nir = brw_nir_from_spirv(params->mem_ctx, params->gfx_version,
-                                        binary->data, binary->size,
-                                        params->llvm17_wa);
+   nir_shader *nir = params->gfx_version >= 9 ?
+      brw_nir_from_spirv(params->mem_ctx, params->gfx_version,
+                         binary->data, binary->size,
+                         params->llvm17_wa) :
+      elk_nir_from_spirv(params->mem_ctx, params->gfx_version,
+                         binary->data, binary->size,
+                         params->llvm17_wa);
    if (!nir) {
       fprintf(stderr, "Failed to generate NIR out of SPIRV\n");
       fclose(fp);

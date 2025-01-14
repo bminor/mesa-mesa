@@ -274,6 +274,10 @@ const struct glsl_type *elk_nir_get_var_type(const struct nir_shader *nir,
 
 void elk_nir_adjust_payload(nir_shader *shader);
 
+nir_shader *
+elk_nir_from_spirv(void *mem_ctx, unsigned gfx_version, const uint32_t *spirv,
+                   size_t spirv_size, bool llvm17_wa);
+
 #ifdef __cplusplus
 }
 #endif
