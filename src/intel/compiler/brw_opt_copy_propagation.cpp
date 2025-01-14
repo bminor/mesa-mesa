@@ -935,6 +935,29 @@ try_copy_propagate(fs_visitor &s, brw_inst *inst,
    return true;
 }
 
+/**
+ * Handle cases like UW subreads of a UD immediate, with an offset.
+ */
+static brw_reg
+extract_imm(brw_reg val, brw_reg_type type, unsigned offset)
+{
+   assert(val.file == IMM);
+
+   const unsigned bitsize = brw_type_size_bits(type);
+
+   if (offset == 0 || bitsize == brw_type_size_bits(val.type))
+      return val;
+
+   /* The whole extracted value must come from bits that acutally exist in the
+    * original immediate value.
+    */
+   assert((8 * offset) + bitsize <= brw_type_size_bits(val.type));
+
+   val.u64 = (val.u64 >> (8 * offset)) & ((1ull << bitsize) - 1);
+
+   return val;
+}
+
 static bool
 try_constant_propagate_value(brw_reg val, brw_reg_type dst_type,
                              brw_inst *inst, int arg)
@@ -959,15 +982,8 @@ try_constant_propagate_value(brw_reg val, brw_reg_type dst_type,
           brw_type_size_bytes(dst_type) != 4)
          return false;
 
-      assert(inst->src[arg].subnr == 0 || inst->src[arg].subnr == 2);
-
-      /* When subnr is 0, we want the lower 16-bits, and when it's 2, we
-       * want the upper 16-bits. No other values of subnr are valid for a
-       * UD source.
-       */
-      const uint16_t v = inst->src[arg].subnr == 2 ? val.ud >> 16 : val.ud;
-
-      val.ud = v | (uint32_t(v) << 16);
+      val = extract_imm(val, inst->src[arg].type, inst->src[arg].subnr);
+      val = brw_imm_uw(val.ud);
    }
 
    val.type = inst->src[arg].type;
@@ -1724,29 +1740,6 @@ try_constant_propagate_def(const struct intel_device_info *devinfo,
       return false;
 
    return try_constant_propagate_value(val, def->dst.type, inst, arg);
-}
-
-/**
- * Handle cases like UW subreads of a UD immediate, with an offset.
- */
-static brw_reg
-extract_imm(brw_reg val, brw_reg_type type, unsigned offset)
-{
-   assert(val.file == IMM);
-
-   const unsigned bitsize = brw_type_size_bits(type);
-
-   if (offset == 0 || bitsize == brw_type_size_bits(val.type))
-      return val;
-
-   /* The whole extracted value must come from bits that acutally exist in the
-    * original immediate value.
-    */
-   assert((8 * offset) + bitsize <= brw_type_size_bits(val.type));
-
-   val.u64 = (val.u64 >> (8 * offset)) & ((1ull << bitsize) - 1);
-
-   return val;
 }
 
 static brw_reg
