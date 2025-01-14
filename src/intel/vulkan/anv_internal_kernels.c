@@ -56,7 +56,7 @@ load_libanv(struct anv_device *device)
 
    void *mem_ctx = ralloc_context(NULL);
 
-   return brw_nir_from_spirv(mem_ctx, device->info->ver, spv_code, spv_size, true);
+   return brw_nir_from_spirv(mem_ctx, spv_code, spv_size);
 }
 
 static void
@@ -73,6 +73,7 @@ link_libanv(nir_shader *nir, const nir_shader *libanv)
               nir_var_shader_temp | nir_var_function_temp | nir_var_mem_shared |
                  nir_var_mem_global,
               nir_address_format_62bit_generic);
+   NIR_PASS_V(nir, nir_lower_scratch_to_var);
 }
 
 static struct anv_shader_bin *

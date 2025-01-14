@@ -325,11 +325,9 @@ iris_destroy_program_cache(struct iris_context *ice)
 
 static void
 link_libintel_shaders(nir_shader *nir,
-                      const struct intel_device_info *devinfo,
                       const uint32_t *spv_code, uint32_t spv_size)
 {
-   nir_shader *libintel = brw_nir_from_spirv(nir, devinfo->ver,
-                                             spv_code, spv_size, true);
+   nir_shader *libintel = brw_nir_from_spirv(nir, spv_code, spv_size);
 
    nir_link_shader_functions(nir, libintel);
    NIR_PASS_V(nir, nir_inline_functions);
@@ -342,6 +340,7 @@ link_libintel_shaders(nir_shader *nir,
               nir_var_shader_temp | nir_var_function_temp | nir_var_mem_shared |
                  nir_var_mem_global,
               nir_address_format_62bit_generic);
+   NIR_PASS_V(nir, nir_lower_scratch_to_var);
 }
 
 void
@@ -378,7 +377,7 @@ iris_ensure_indirect_generation_shader(struct iris_batch *batch)
 
    nir_shader *nir = b.shader;
 
-   link_libintel_shaders(nir, screen->devinfo, spv_code, spv_size);
+   link_libintel_shaders(nir, spv_code, spv_size);
 
    NIR_PASS_V(nir, nir_lower_vars_to_ssa);
    NIR_PASS_V(nir, nir_opt_cse);
