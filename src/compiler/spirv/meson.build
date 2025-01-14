@@ -84,7 +84,7 @@ if get_option('mesa-clc') == 'system'
 #
 # XXX: Build by default once https://github.com/mesonbuild/meson/pull/12022
 # ships.
-elif get_option('mesa-clc') != 'auto' or with_gallium_asahi or with_asahi_vk
+elif get_option('mesa-clc') != 'auto' or with_gallium_asahi or with_asahi_vk or with_intel_vk or with_gallium_iris
    prog_vtn_bindgen = executable(
      'vtn_bindgen',
      ['vtn_bindgen.c'],
