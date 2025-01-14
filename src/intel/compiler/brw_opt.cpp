@@ -180,6 +180,9 @@ brw_optimize(fs_visitor &s)
    if (progress)
       OPT(brw_lower_simd_width);
 
+   if (s.devinfo->ver >= 30)
+      OPT(brw_opt_send_gather_to_send);
+
    OPT(brw_lower_uniform_pull_constant_loads);
 
    if (OPT(brw_lower_send_descriptors)) {
@@ -642,6 +645,108 @@ brw_opt_send_to_send_gather(fs_visitor &s)
    if (progress)
       s.invalidate_analysis(DEPENDENCY_INSTRUCTION_DETAIL |
                             DEPENDENCY_INSTRUCTION_DATA_FLOW);
+
+   return progress;
+}
+
+/* If after optimizations, the sources are *still* contiguous in a
+ * SEND_GATHER, prefer to use the regular SEND, which would save
+ * having to write the ARF scalar register.
+ */
+bool
+brw_opt_send_gather_to_send(fs_visitor &s)
+{
+   const intel_device_info *devinfo = s.devinfo;
+   bool progress = false;
+
+   assert(devinfo->ver >= 30);
+
+   const unsigned unit = reg_unit(devinfo);
+   assert(unit == 2);
+
+   foreach_block_and_inst_safe(block, fs_inst, inst, s.cfg) {
+      if (inst->opcode != SHADER_OPCODE_SEND_GATHER)
+         continue;
+
+      assert(inst->sources > 2);
+      assert(inst->src[2].file == BAD_FILE);
+
+      const int num_payload_sources = inst->sources - 3;
+      assert(num_payload_sources > 0);
+
+      /* Limited by Src0.Length in the SEND instruction. */
+      assert(num_payload_sources < 16);
+
+      /* Determine whether the sources are still spread in either one or two
+       * spans.  In those cases the regular SEND instruction can be used
+       * and there's no need to use SEND_GATHER (which would set ARF scalar register
+       * adding an extra instruction).
+       */
+      const brw_reg *payload = &inst->src[3];
+      brw_reg payload1       = payload[0];
+      brw_reg payload2       = {};
+      int payload1_len       = 0;
+      int payload2_len       = 0;
+
+      for (int i = 0; i < num_payload_sources; i++) {
+         if (payload[i].file == VGRF &&
+             payload[i].nr == payload1.nr &&
+             payload[i].offset == payload1_len * REG_SIZE * unit)
+            payload1_len++;
+         else {
+            payload2 = payload[i];
+            break;
+         }
+      }
+
+      if (payload2.file == VGRF) {
+         for (int i = payload1_len; i < num_payload_sources; i++) {
+            if (payload[i].file == VGRF &&
+                payload[i].nr == payload2.nr &&
+                payload[i].offset == payload2_len * REG_SIZE * unit)
+               payload2_len++;
+            else
+               break;
+         }
+      } else {
+         payload2 = brw_null_reg();
+      }
+
+      if (payload1_len + payload2_len != num_payload_sources)
+         continue;
+
+      /* Bspec 57058 (r64705) says
+       *
+       *    When a source data payload is used in dataport message, that payload
+       *    must be specified as Source 1 portion of a Split Send message.
+       *
+       * But at this point the split point is not guaranteed to respect that.
+       *
+       * TODO: Pass LSC address length or infer it so valid splits can work.
+       */
+      if (payload2_len && (inst->sfid == GFX12_SFID_UGM ||
+                           inst->sfid == GFX12_SFID_TGM ||
+                           inst->sfid == GFX12_SFID_SLM ||
+                           inst->sfid == BRW_SFID_URB)) {
+         enum lsc_opcode lsc_op = lsc_msg_desc_opcode(devinfo, inst->desc);
+         if (lsc_op_num_data_values(lsc_op) > 0)
+            continue;
+      }
+
+      inst->resize_sources(4);
+      inst->opcode  = SHADER_OPCODE_SEND;
+      inst->src[2]  = payload1;
+      inst->src[3]  = payload2;
+      inst->mlen    = payload1_len * unit;
+      inst->ex_mlen = payload2_len * unit;
+
+      progress = true;
+   }
+
+   if (progress) {
+      s.invalidate_analysis(DEPENDENCY_INSTRUCTION_DETAIL |
+                            DEPENDENCY_INSTRUCTION_DATA_FLOW);
+   }
 
    return progress;
 }

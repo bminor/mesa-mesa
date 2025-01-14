@@ -559,6 +559,7 @@ bool brw_opt_register_coalesce(fs_visitor &s);
 bool brw_opt_remove_extra_rounding_modes(fs_visitor &s);
 bool brw_opt_remove_redundant_halts(fs_visitor &s);
 bool brw_opt_saturate_propagation(fs_visitor &s);
+bool brw_opt_send_gather_to_send(fs_visitor &s);
 bool brw_opt_send_to_send_gather(fs_visitor &s);
 bool brw_opt_split_sends(fs_visitor &s);
 bool brw_opt_split_virtual_grfs(fs_visitor &s);
