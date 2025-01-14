@@ -3105,6 +3105,15 @@ anv_layout_to_aux_state(const struct intel_device_info * const devinfo,
    case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR: {
       assert(image->vk.aspects == VK_IMAGE_ASPECT_COLOR_BIT);
 
+      /* Handle transition to present layout for non wsi images just like
+       * normal images. Some apps like gfx-reconstruct incorrectly use this
+       * layout on non-wsi image which is against spec. It's easy enough to
+       * deal with it here and potentially avoid unnecessary resolve
+       * operations.
+       */
+      if (!image->from_wsi)
+         break;
+
       enum isl_aux_state aux_state =
          isl_drm_modifier_get_default_aux_state(image->vk.drm_format_mod);
 
