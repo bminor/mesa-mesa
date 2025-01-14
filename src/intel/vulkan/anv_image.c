@@ -367,48 +367,6 @@ add_surface(struct anv_device *device,
 }
 
 static bool
-can_fast_clear_with_non_zero_color(const struct intel_device_info *devinfo,
-                                   const struct anv_image *image,
-                                   uint32_t plane,
-                                   const VkImageFormatListCreateInfo *fmt_list)
-{
-   /* If we don't have an AUX surface where fast clears apply, we can return
-    * early.
-    */
-   if (!isl_aux_usage_has_fast_clears(image->planes[plane].aux_usage))
-      return false;
-
-   /* On TGL (< C0), if a block of fragment shader outputs match the surface's
-    * clear color, the HW may convert them to fast-clears (see HSD 1607794140).
-    * This can lead to rendering corruptions if not handled properly. We
-    * restrict the clear color to zero to avoid issues that can occur with:
-    *     - Texture view rendering (including blorp_copy calls)
-    *     - Images with multiple levels or array layers
-    */
-   if (image->planes[plane].aux_usage == ISL_AUX_USAGE_FCV_CCS_E)
-      return false;
-
-
-   /* Generally, enabling non-zero fast-clears is dependent on knowing which
-    * formats will be used with the surface. So, disable them if we lack this
-    * knowledge.
-    *
-    * For dmabufs with clear color modifiers, we already restrict
-    * problematic accesses for the clear color during the negotiation
-    * phase. So, don't restrict clear color support in this case.
-    */
-   const struct isl_drm_modifier_info *isl_mod_info =
-      image->vk.tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT ?
-      isl_drm_modifier_get_info(image->vk.drm_format_mod) : NULL;
-
-   if (anv_image_view_formats_incomplete(image) &&
-       !(isl_mod_info && isl_mod_info->supports_clear_color))
-      return false;
-
-   return true;
-}
-
-static bool
 image_may_use_r32_view(VkImageCreateFlags create_flags,
                        VkFormat vk_format,
                        const VkImageFormatListCreateInfo *fmt_list)
