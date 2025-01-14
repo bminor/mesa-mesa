@@ -825,7 +825,7 @@ else
   with_drivers_clc = false
 endif
 
-with_clc = get_option('mesa-clc') != 'auto' or with_microsoft_clc or with_intel_clc or with_drivers_clc or with_gallium_asahi or with_asahi_vk or with_gallium_rusticl
+with_clc = get_option('mesa-clc') != 'auto' or with_microsoft_clc or with_intel_vk or with_gallium_iris or with_drivers_clc or with_gallium_asahi or with_asahi_vk or with_gallium_rusticl
 
 dep_clc = null_dep
 if with_gallium_clover or with_clc
