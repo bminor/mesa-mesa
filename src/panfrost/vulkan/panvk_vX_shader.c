@@ -1097,9 +1097,6 @@ panvk_compile_shaders(struct vk_device *vk_dev, uint32_t shader_count,
                                     pAllocator,
                                     &shaders_out[i]);
 
-      /* Clean up NIR for the current shader */
-      ralloc_free(infos[i].nir);
-
       if (result != VK_SUCCESS)
          goto err_cleanup;
 
@@ -1112,6 +1109,9 @@ panvk_compile_shaders(struct vk_device *vk_dev, uint32_t shader_count,
          use_static_noperspective = true;
          noperspective_varyings = shader->info.varyings.noperspective;
       }
+
+      /* Clean up NIR for the current shader */
+      ralloc_free(infos[i].nir);
    }
 
    /* TODO: If we get multiple shaders here, we can perform part of the link
@@ -1121,11 +1121,11 @@ panvk_compile_shaders(struct vk_device *vk_dev, uint32_t shader_count,
 
 err_cleanup:
    /* Clean up all the shaders before this point */
-   for (uint32_t j = 0; j < i; j++)
+   for (int32_t j = shader_count - 1; j > i; j--)
       panvk_shader_destroy(&dev->vk, shaders_out[j], pAllocator);
 
-   /* Clean up all the NIR after this point */
-   for (uint32_t j = i + 1; j < shader_count; j++)
+   /* Clean up all the NIR from this point */
+   for (int32_t j = i; j >= 0; j--)
       ralloc_free(infos[j].nir);
 
    /* Memset the output array */
