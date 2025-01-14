@@ -164,6 +164,9 @@ struct radv_streamout_state {
 
    /* State of VGT_STRMOUT_(CONFIG|EN) */
    bool streamout_enabled;
+
+   /* VA of the streamout state (GFX12+). */
+   uint64_t state_va;
 };
 
 /**

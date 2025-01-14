@@ -6019,16 +6019,20 @@ radv_emit_streamout_buffers(struct radv_cmd_buffer *cmd_buffer, uint64_t va)
 }
 
 static void
-radv_emit_streamout_state(struct radv_cmd_buffer *cmd_buffer, uint64_t va)
+radv_emit_streamout_state(struct radv_cmd_buffer *cmd_buffer)
 {
+   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   const struct radv_physical_device *pdev = radv_device_physical(device);
    const struct radv_shader *last_vgt_shader = cmd_buffer->state.last_vgt_shader;
    const uint32_t streamout_state_offset = radv_get_user_sgpr_loc(last_vgt_shader, AC_UD_STREAMOUT_STATE);
-   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   struct radv_streamout_state *so = &cmd_buffer->state.streamout;
+
+   assert(pdev->info.gfx_level >= GFX12);
 
    if (!streamout_state_offset)
       return;
 
-   radv_emit_shader_pointer(device, cmd_buffer->cs, streamout_state_offset, va, false);
+   radv_emit_shader_pointer(device, cmd_buffer->cs, streamout_state_offset, so->state_va, false);
 }
 
 static void
@@ -6083,38 +6087,8 @@ radv_flush_streamout_descriptors(struct radv_cmd_buffer *cmd_buffer)
 
       radv_emit_streamout_buffers(cmd_buffer, desc_va);
 
-      if (pdev->info.gfx_level >= GFX12) {
-         const uint8_t first_target = ffs(so->enabled_mask) - 1;
-         unsigned state_offset;
-         uint64_t state_va;
-         void *state_ptr;
-
-         /* The layout is:
-          *    struct {
-          *       struct {
-          *          uint32_t ordered_id; // equal for all buffers
-          *          uint32_t dwords_written;
-          *       } buffer[4];
-          *    };
-          *
-          * The buffer must be initialized to 0 and the address must be aligned to 64
-          * because it's faster when the atomic doesn't straddle a 64B block boundary.
-          */
-         if (!radv_cmd_buffer_upload_alloc_aligned(cmd_buffer, MAX_SO_BUFFERS * 8, 64, &state_offset, &state_ptr))
-            return;
-
-         memset(state_ptr, 0, MAX_SO_BUFFERS * 8);
-
-         state_va = radv_buffer_get_va(cmd_buffer->upload.upload_bo);
-         state_va += state_offset;
-
-         /* The first enabled streamout target will contain the ordered ID/offset buffer for all
-          * targets.
-          */
-         state_va += first_target * 8;
-
-         radv_emit_streamout_state(cmd_buffer, state_va);
-      }
+      if (pdev->info.gfx_level >= GFX12)
+         radv_emit_streamout_state(cmd_buffer);
    }
 
    cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_STREAMOUT_BUFFER;
@@ -13387,6 +13361,46 @@ radv_flush_vgt_streamout(struct radv_cmd_buffer *cmd_buffer)
    assert(cs->cdw <= cdw_max);
 }
 
+static void
+radv_init_streamout_state(struct radv_cmd_buffer *cmd_buffer)
+{
+   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+   struct radv_streamout_state *so = &cmd_buffer->state.streamout;
+   unsigned offset;
+   void *ptr;
+
+   assert(pdev->info.gfx_level >= GFX12);
+
+   /* The layout is:
+    *    struct {
+    *       struct {
+    *          uint32_t ordered_id; // equal for all buffers
+    *          uint32_t dwords_written;
+    *       } buffer[4];
+    *    };
+    *
+    * The buffer must be initialized to 0 and the address must be aligned to 64
+    * because it's faster when the atomic doesn't straddle a 64B block boundary.
+    */
+   if (!radv_cmd_buffer_upload_alloc_aligned(cmd_buffer, MAX_SO_BUFFERS * 8, 64, &offset, &ptr))
+      return;
+
+   memset(ptr, 0, MAX_SO_BUFFERS * 8);
+
+   so->state_va = radv_buffer_get_va(cmd_buffer->upload.upload_bo);
+   so->state_va += offset;
+
+   /* GE must be idle when GE_GS_ORDERED_ID is written. */
+   cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_VS_PARTIAL_FLUSH;
+   radv_emit_cache_flush(cmd_buffer);
+
+   /* Reset the ordered ID for the next GS workgroup to 0 because it must be
+    * equal to the 4 ordered IDs in the layout.
+    */
+   radeon_set_uconfig_reg(cmd_buffer->cs, R_0309B0_GE_GS_ORDERED_ID_BASE, 0);
+}
+
 VKAPI_ATTR void VKAPI_CALL
 radv_CmdBeginTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
                                   uint32_t counterBufferCount, const VkBuffer *pCounterBuffers,
@@ -13398,10 +13412,12 @@ radv_CmdBeginTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstC
    struct radv_streamout_binding *sb = cmd_buffer->streamout_bindings;
    struct radv_streamout_state *so = &cmd_buffer->state.streamout;
    struct radeon_cmdbuf *cs = cmd_buffer->cs;
-   bool first_target = true;
 
    assert(firstCounterBuffer + counterBufferCount <= MAX_SO_BUFFERS);
-   if (!pdev->use_ngg_streamout)
+
+   if (pdev->info.gfx_level >= GFX12)
+      radv_init_streamout_state(cmd_buffer);
+   else if (!pdev->use_ngg_streamout)
       radv_flush_vgt_streamout(cmd_buffer);
 
    ASSERTED unsigned cdw_max = radeon_check_space(device->ws, cmd_buffer->cs, MAX_SO_BUFFERS * 10);
@@ -13428,21 +13444,14 @@ radv_CmdBeginTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstC
       }
 
       if (pdev->info.gfx_level >= GFX12) {
-         /* Only the first streamout target holds information. */
-         if (first_target) {
-            if (append) {
-               radeon_emit(cs, PKT3(PKT3_COPY_DATA, 4, 0));
-               radeon_emit(
-                  cs, COPY_DATA_SRC_SEL(COPY_DATA_SRC_MEM) | COPY_DATA_DST_SEL(COPY_DATA_REG) | COPY_DATA_WR_CONFIRM);
-               radeon_emit(cs, va);
-               radeon_emit(cs, va >> 32);
-               radeon_emit(cs, (R_0309B0_GE_GS_ORDERED_ID_BASE >> 2));
-               radeon_emit(cs, 0);
-            } else {
-               radeon_set_uconfig_reg(cs, R_0309B0_GE_GS_ORDERED_ID_BASE, 0);
-            }
-
-            first_target = false;
+         if (append) {
+            radeon_emit(cs, PKT3(PKT3_COPY_DATA, 4, 0));
+            radeon_emit(
+               cs, COPY_DATA_SRC_SEL(COPY_DATA_SRC_MEM) | COPY_DATA_DST_SEL(COPY_DATA_DST_MEM) | COPY_DATA_WR_CONFIRM);
+            radeon_emit(cs, va);
+            radeon_emit(cs, va >> 32);
+            radeon_emit(cs, (so->state_va + i * 8 + 4));
+            radeon_emit(cs, (so->state_va + i * 8 + 4) >> 32);
          }
       } else if (pdev->use_ngg_streamout) {
          if (append) {
@@ -13508,17 +13517,14 @@ radv_CmdEndTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCou
 
    assert(firstCounterBuffer + counterBufferCount <= MAX_SO_BUFFERS);
 
-   if (pdev->info.gfx_level >= GFX12) {
-      /* Nothing to do. The streamout state buffer already contains the next ordered ID, which
-       * is the only thing we need to restore.
-       */
-      radv_set_streamout_enable(cmd_buffer, false);
-      return;
-   }
-
    if (pdev->use_ngg_streamout) {
-      /* Wait for streamout to finish before reading GDS_STRMOUT registers. */
+      /* Wait for streamout to finish before copying back the number of bytes
+       * written.
+       */
       cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_VS_PARTIAL_FLUSH;
+      if (pdev->info.cp_sdma_ge_use_system_memory_scope)
+         cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_INV_L2;
+
       radv_emit_cache_flush(cmd_buffer);
    } else {
       radv_flush_vgt_streamout(cmd_buffer);
@@ -13547,7 +13553,17 @@ radv_CmdEndTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCou
          radv_cs_add_buffer(device->ws, cs, buffer->bo);
       }
 
-      if (pdev->use_ngg_streamout) {
+      if (pdev->info.gfx_level >= GFX12) {
+         if (append) {
+            radeon_emit(cs, PKT3(PKT3_COPY_DATA, 4, 0));
+            radeon_emit(
+               cs, COPY_DATA_SRC_SEL(COPY_DATA_SRC_MEM) | COPY_DATA_DST_SEL(COPY_DATA_DST_MEM) | COPY_DATA_WR_CONFIRM);
+            radeon_emit(cs, (so->state_va + i * 8 + 4));
+            radeon_emit(cs, (so->state_va + i * 8 + 4) >> 32);
+            radeon_emit(cs, va);
+            radeon_emit(cs, va >> 32);
+         }
+      } else if (pdev->use_ngg_streamout) {
          if (append) {
             radeon_emit(cs, PKT3(PKT3_COPY_DATA, 4, 0));
             radeon_emit(cs,
