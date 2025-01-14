@@ -25,10 +25,10 @@ struct radv_queue_ring_info {
    uint32_t compute_scratch_waves;
    uint32_t esgs_ring_size;
    uint32_t gsvs_ring_size;
-   uint32_t attr_ring_size;
    bool tess_rings;
    bool task_rings;
    bool mesh_scratch_ring;
+   bool ge_rings;
    bool gds;
    bool gds_oa;
    bool sample_positions;
@@ -58,7 +58,7 @@ struct radv_queue_state {
    struct radeon_winsys_bo *tess_rings_bo;
    struct radeon_winsys_bo *task_rings_bo;
    struct radeon_winsys_bo *mesh_scratch_ring_bo;
-   struct radeon_winsys_bo *attr_ring_bo;
+   struct radeon_winsys_bo *ge_rings_bo;
    struct radeon_winsys_bo *gds_bo;
    struct radeon_winsys_bo *gds_oa_bo;
 
