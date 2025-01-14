@@ -4515,7 +4515,7 @@ fs_nir_emit_fs_intrinsic(nir_to_brw_state &ntb,
       if (devinfo->ver >= 20) {
          emit_pixel_interpolater_alu_at_offset(
             bld, dest,
-            retype(get_nir_src(ntb, instr->src[0]), BRW_TYPE_F),
+            retype(get_nir_src(ntb, instr->src[0], -1), BRW_TYPE_F),
             interpolation);
 
       } else if (nir_const_value *const_offset = nir_src_as_const_value(instr->src[0])) {
@@ -4561,7 +4561,7 @@ fs_nir_emit_fs_intrinsic(nir_to_brw_state &ntb,
       if (bary_intrin == nir_intrinsic_load_barycentric_at_offset ||
           bary_intrin == nir_intrinsic_load_barycentric_at_sample) {
          /* Use the result of the PI message. */
-         dst_xy = retype(get_nir_src(ntb, instr->src[0]), BRW_TYPE_F);
+         dst_xy = retype(get_nir_src(ntb, instr->src[0], -1), BRW_TYPE_F);
       } else {
          /* Use the delta_xy values computed from the payload */
          enum intel_barycentric_mode bary = brw_barycentric_mode(
