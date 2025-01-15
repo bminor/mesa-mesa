@@ -35,6 +35,9 @@
 #include "u_math.h"
 #include "u_printf.h"
 
+#define XXH_INLINE_ALL
+#include "util/xxhash.h"
+
 /* Some versions of MinGW are missing _vscprintf's declaration, although they
  * still provide the symbol in the import library. */
 #ifdef __MINGW32__
@@ -331,4 +334,29 @@ u_printf_deserialize_info(void *mem_ctx,
    }
 
    return printf_info;
+}
+
+/*
+ * Hash the format string, allowing the driver to pool format strings.
+ *
+ * Post-condition: hash is nonzero. This is convenient.
+ */
+uint32_t
+u_printf_hash(const u_printf_info *info)
+{
+   struct blob blob;
+   blob_init(&blob);
+   u_printf_serialize_info(&blob, info, 1);
+   uint32_t hash = XXH32(blob.data, blob.size, 0);
+   blob_finish(&blob);
+
+   /* Force things away from zero. This weakens the hash only slightly, as
+    * there's only a 2^-31 probability of hashing to either hash=0 or hash=1.
+    */
+   if (hash == 0) {
+      hash = 1;
+   }
+
+   assert(hash != 0);
+   return hash;
 }

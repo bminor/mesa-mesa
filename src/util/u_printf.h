@@ -49,6 +49,8 @@ u_printf_info *u_printf_deserialize_info(void *mem_ctx,
                                          struct blob_reader *blob,
                                          unsigned *printf_info_count);
 
+uint32_t u_printf_hash(const u_printf_info *info);
+
 struct u_printf_ctx {
    simple_mtx_t lock;
    void *bo;
