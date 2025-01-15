@@ -882,6 +882,9 @@ flags_to_heap(struct iris_bufmgr *bufmgr, unsigned flags)
       if (flags & BO_ALLOC_COMPRESSED)
          return IRIS_HEAP_SYSTEM_MEMORY_UNCACHED_COMPRESSED;
 
+      if (flags & (BO_ALLOC_SCANOUT | BO_ALLOC_SHARED))
+            return IRIS_HEAP_SYSTEM_MEMORY_UNCACHED;
+
       if (flags & BO_ALLOC_CACHED_COHERENT)
          return IRIS_HEAP_SYSTEM_MEMORY_CACHED_COHERENT;
 
