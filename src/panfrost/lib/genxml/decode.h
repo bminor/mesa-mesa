@@ -189,7 +189,7 @@ pandecode_log_cont(struct pandecode_context *ctx, const char *format, ...)
 
 #define DUMP_CL(ctx, T, cl, ...)                                               \
    {                                                                           \
-      pan_unpack((MALI_##T##_PACKED_T *)cl, T, temp);                          \
+      pan_unpack((MALI_##T##_PACKED_T *)(cl), T, temp);                        \
       DUMP_UNPACKED(ctx, T, temp, __VA_ARGS__);                                \
    }
 
