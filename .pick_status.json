@@ -2754,7 +2754,7 @@
         "description": "egl/wayland: validate dri_screen_display_gpu before use",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d795b4712cbadea2d6eff5c81a7dd7aa9c78b4e1",
         "notes": null
