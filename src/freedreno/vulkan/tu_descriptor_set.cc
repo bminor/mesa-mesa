@@ -635,6 +635,9 @@ tu_descriptor_set_create(struct tu_device *device,
          int index;
 
          for (index = 0; index < pool->entry_count; ++index) {
+            if (pool->entries[index].size == 0)
+               continue;
+
             if (pool->entries[index].offset - offset >= layout_size)
                break;
             offset = pool->entries[index].offset + pool->entries[index].size;
@@ -656,6 +659,15 @@ tu_descriptor_set_create(struct tu_device *device,
          pool->entry_count++;
       } else
          return vk_error(device, VK_ERROR_OUT_OF_POOL_MEMORY);
+   } else if (!pool->host_memory_base) {
+      /* Also keep track of zero sized descriptor sets, such as descriptor
+       * sets with just dynamic descriptors, so that we can free the sets on
+       * vkDestroyDescriptorPool().
+       */
+      pool->entries[pool->entry_count].offset = ~0;
+      pool->entries[pool->entry_count].size = 0;
+      pool->entries[pool->entry_count].set = set;
+      pool->entry_count++;
    }
 
    if (layout->has_immutable_samplers) {
@@ -693,11 +705,17 @@ tu_descriptor_set_destroy(struct tu_device *device,
 {
    assert(!pool->host_memory_base);
 
-   if (free_bo && set->size && !pool->host_memory_base) {
-      uint32_t offset = (uint8_t*)set->mapped_ptr - pool_base(pool);
-
+   if (free_bo && !pool->host_memory_base) {
       for (int i = 0; i < pool->entry_count; ++i) {
-         if (pool->entries[i].offset == offset) {
+         if (pool->entries[i].set == set) {
+            if (set->size) {
+               ASSERTED uint32_t offset =
+                  (uint8_t *) set->mapped_ptr - pool_base(pool);
+               assert(pool->entries[i].offset == offset);
+            } else {
+               assert(pool->entries[i].size == 0);
+            }
+
             memmove(&pool->entries[i], &pool->entries[i+1],
                sizeof(pool->entries[i]) * (pool->entry_count - i - 1));
             --pool->entry_count;
