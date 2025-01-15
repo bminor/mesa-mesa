@@ -51,6 +51,12 @@ u_printf_info *u_printf_deserialize_info(void *mem_ctx,
 
 uint32_t u_printf_hash(const u_printf_info *info);
 
+void u_printf_singleton_init_or_ref(void);
+void u_printf_singleton_decref(void);
+void u_printf_singleton_add(const u_printf_info *info, unsigned count);
+void u_printf_singleton_add_serialized(const void *data, size_t data_size);
+const u_printf_info *u_printf_singleton_search(uint32_t hash);
+
 struct u_printf_ctx {
    simple_mtx_t lock;
    void *bo;

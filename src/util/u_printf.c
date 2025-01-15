@@ -31,6 +31,7 @@
 #include "hash_table.h"
 #include "macros.h"
 #include "ralloc.h"
+#include "simple_mtx.h"
 #include "strndup.h"
 #include "u_math.h"
 #include "u_printf.h"
@@ -359,4 +360,114 @@ u_printf_hash(const u_printf_info *info)
 
    assert(hash != 0);
    return hash;
+}
+
+static struct {
+   uint32_t users;
+   struct hash_table_u64 *ht;
+} u_printf_cache = {0};
+
+static simple_mtx_t u_printf_lock = SIMPLE_MTX_INITIALIZER;
+
+void
+u_printf_singleton_init_or_ref(void)
+{
+   simple_mtx_lock(&u_printf_lock);
+
+   if ((u_printf_cache.users++) == 0) {
+      u_printf_cache.ht = _mesa_hash_table_u64_create(NULL);
+   }
+
+   simple_mtx_unlock(&u_printf_lock);
+}
+
+void
+u_printf_singleton_decref()
+{
+   simple_mtx_lock(&u_printf_lock);
+   assert(u_printf_cache.users > 0);
+
+   if ((--u_printf_cache.users) == 0) {
+      ralloc_free(u_printf_cache.ht);
+      memset(&u_printf_cache, 0, sizeof(u_printf_cache));
+   }
+
+   simple_mtx_unlock(&u_printf_lock);
+}
+
+static void
+assert_singleton_exists_and_is_locked()
+{
+   simple_mtx_assert_locked(&u_printf_lock);
+   assert(u_printf_cache.users > 0);
+}
+
+static const u_printf_info *
+u_printf_singleton_search_locked(uint32_t hash)
+{
+   assert_singleton_exists_and_is_locked();
+
+   return _mesa_hash_table_u64_search(u_printf_cache.ht, hash);
+}
+
+static void
+u_printf_singleton_add_locked(const u_printf_info *info)
+{
+   assert_singleton_exists_and_is_locked();
+
+   /* If the format string is already known, do nothing. */
+   uint32_t hash = u_printf_hash(info);
+   const u_printf_info *cached = u_printf_singleton_search_locked(hash);
+   if (cached != NULL) {
+      assert(u_printf_hash(cached) == hash && "hash table invariant");
+      assert(!strcmp(cached->strings, info->strings) && "assume no collisions");
+      return;
+   }
+
+   /* Otherwise, we need to add the string to the table. Doing so requires
+    * a deep-clone, so the singleton will probably outlive our parameter.
+    */
+   u_printf_info *clone = rzalloc(u_printf_cache.ht, u_printf_info);
+   clone->num_args = info->num_args;
+   clone->string_size = info->string_size;
+   clone->arg_sizes = ralloc_memdup(u_printf_cache.ht, info->arg_sizes,
+                                    sizeof(info->arg_sizes[0]) * info->num_args);
+   clone->strings = ralloc_memdup(u_printf_cache.ht, info->strings,
+                                  info->string_size);
+
+   assert(_mesa_hash_table_u64_search(u_printf_cache.ht, hash) == NULL &&
+          "no duplicates at this point");
+
+   _mesa_hash_table_u64_insert(u_printf_cache.ht, hash, clone);
+}
+
+const u_printf_info *
+u_printf_singleton_search(uint32_t hash)
+{
+   simple_mtx_lock(&u_printf_lock);
+   const u_printf_info *info = u_printf_singleton_search_locked(hash);
+   simple_mtx_unlock(&u_printf_lock);
+   return info;
+}
+
+void
+u_printf_singleton_add(const u_printf_info *info, unsigned count)
+{
+   simple_mtx_lock(&u_printf_lock);
+   for (unsigned i = 0; i < count; ++i) {
+      u_printf_singleton_add_locked(&info[i]);
+   }
+   simple_mtx_unlock(&u_printf_lock);
+}
+
+void
+u_printf_singleton_add_serialized(const void *data, size_t data_size)
+{
+   struct blob_reader blob;
+   blob_reader_init(&blob, data, data_size);
+
+   unsigned count = 0;
+   u_printf_info *info = u_printf_deserialize_info(NULL, &blob, &count);
+   u_printf_singleton_add(info, count);
+   ralloc_free(info);
 }
