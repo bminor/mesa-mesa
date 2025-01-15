@@ -656,6 +656,28 @@ void si_llvm_build_ps_prolog(struct si_shader_context *ctx, union si_shader_part
       ret = insert_ret_of_arg(ctx, ret, sample_mask_in, args->ac.sample_coverage.arg_index);
    }
 
+   if (key->ps_prolog.states.get_frag_coord_from_pixel_coord) {
+      LLVMValueRef pixel_coord = ac_get_arg(&ctx->ac, args->ac.pos_fixed_pt);
+      pixel_coord = LLVMBuildBitCast(ctx->ac.builder, pixel_coord, ctx->ac.v2i16, "");
+      pixel_coord = LLVMBuildUIToFP(ctx->ac.builder, pixel_coord, ctx->ac.v2f32, "");
+
+      if (!key->ps_prolog.pixel_center_integer) {
+         LLVMValueRef vec2_half = LLVMConstVector((LLVMValueRef[]){LLVMConstReal(ctx->ac.f32, 0.5),
+                                                                   LLVMConstReal(ctx->ac.f32, 0.5)}, 2);
+         pixel_coord = LLVMBuildFAdd(ctx->ac.builder, pixel_coord, vec2_half, "");
+      }
+
+      for (unsigned i = 0; i < 2; i++) {
+         if (!args->ac.frag_pos[i].used)
+            continue;
+
+         ret = insert_ret_of_arg(ctx, ret,
+                                 LLVMBuildExtractElement(ctx->ac.builder, pixel_coord,
+                                                         LLVMConstInt(ctx->ac.i32, i, 0), ""),
+                                 args->ac.frag_pos[i].arg_index);
+      }
+   }
+
    /* Tell LLVM to insert WQM instruction sequence when needed. */
    if (key->ps_prolog.wqm) {
       LLVMAddTargetDependentFunctionAttr(func, "amdgpu-ps-wqm-outputs", "");
@@ -754,4 +776,3 @@ void si_llvm_build_ps_epilog(struct si_shader_context *ctx, union si_shader_part
    /* Compile. */
    LLVMBuildRetVoid(ctx->ac.builder);
 }
-

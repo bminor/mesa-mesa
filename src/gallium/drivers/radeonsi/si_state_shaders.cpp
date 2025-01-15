@@ -2874,6 +2874,8 @@ void si_ps_key_update_framebuffer_rasterizer_sample_shading(struct si_context *s
          uses_persp_center && uses_persp_centroid;
       key->ps.part.prolog.bc_optimize_for_linear =
          sel->info.uses_linear_center && sel->info.uses_linear_centroid;
+      key->ps.part.prolog.get_frag_coord_from_pixel_coord =
+         !sel->info.base.fs.uses_sample_shading && sel->info.reads_frag_coord_mask & 0x3;
       key->ps.mono.interpolate_at_sample_force_center = 0;
    } else {
       key->ps.part.prolog.force_persp_sample_interp = 0;
@@ -2890,6 +2892,8 @@ void si_ps_key_update_framebuffer_rasterizer_sample_shading(struct si_context *s
                                                        sel->info.uses_linear_sample > 1;
       key->ps.part.prolog.bc_optimize_for_persp = 0;
       key->ps.part.prolog.bc_optimize_for_linear = 0;
+      key->ps.part.prolog.get_frag_coord_from_pixel_coord =
+         !!(sel->info.reads_frag_coord_mask & 0x3);
       key->ps.mono.interpolate_at_sample_force_center = sel->info.uses_interp_at_sample;
    }
 

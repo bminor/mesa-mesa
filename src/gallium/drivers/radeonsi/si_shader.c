@@ -1572,6 +1572,8 @@ static void si_dump_shader_key(const struct si_shader *shader, FILE *f)
               key->ps.part.prolog.bc_optimize_for_linear);
       fprintf(f, "  prolog.samplemask_log_ps_iter = %u\n",
               key->ps.part.prolog.samplemask_log_ps_iter);
+      fprintf(f, "  prolog.get_frag_coord_from_pixel_coord = %u\n",
+              key->ps.part.prolog.get_frag_coord_from_pixel_coord);
       fprintf(f, "  epilog.spi_shader_col_format = 0x%x\n",
               key->ps.part.epilog.spi_shader_col_format);
       fprintf(f, "  epilog.color_is_int8 = 0x%X\n", key->ps.part.epilog.color_is_int8);
@@ -2491,11 +2493,13 @@ static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_
                                         key->ps.mono.interpolate_at_sample_force_center,
          .load_sample_positions_always_loads_current_ones = true,
          .force_front_face = key->ps.opt.force_front_face_input,
+         .optimize_frag_coord = true,
          /* This does a lot of things. See the description in ac_nir_lower_ps_early_options. */
          .ps_iter_samples = key->ps.part.prolog.samplemask_log_ps_iter ?
                               (1 << key->ps.part.prolog.samplemask_log_ps_iter) :
                               (key->ps.part.prolog.force_persp_sample_interp ||
-                               key->ps.part.prolog.force_linear_sample_interp ? 2 : 0),
+                               key->ps.part.prolog.force_linear_sample_interp ? 2 :
+                               (key->ps.part.prolog.get_frag_coord_from_pixel_coord ? 1 : 0)),
 
          .fbfetch_is_1D = key->ps.mono.fbfetch_is_1D,
          .fbfetch_layered = key->ps.mono.fbfetch_layered,
@@ -2538,6 +2542,7 @@ static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_
       }
    } else if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       ac_nir_lower_ps_early_options early_options = {
+         .optimize_frag_coord = true,
          .alpha_func = COMPARE_FUNC_ALWAYS,
          .spi_shader_col_format_hint = ~0,
       };
@@ -2908,6 +2913,12 @@ static void si_fixup_spi_ps_input_config(struct si_shader *shader)
    /* The sample mask fixup has an optimization that replaces the sample mask with the sample ID. */
    if (key->ps.part.prolog.samplemask_log_ps_iter == 3)
       shader->config.spi_ps_input_ena &= C_0286CC_SAMPLE_COVERAGE_ENA;
+
+   if (key->ps.part.prolog.get_frag_coord_from_pixel_coord) {
+      shader->config.spi_ps_input_ena &= C_0286CC_POS_X_FLOAT_ENA;
+      shader->config.spi_ps_input_ena &= C_0286CC_POS_Y_FLOAT_ENA;
+      shader->config.spi_ps_input_ena |= S_0286CC_POS_FIXED_PT_ENA(1);
+   }
 }
 
 static void
@@ -2921,6 +2932,8 @@ si_set_spi_ps_input_config(struct si_shader *shader)
     * otherwise LLVM will have a performance advantage here because it determines
     * VGPR inputs for each shader variant after LLVM optimizations.
     */
+   uint8_t frag_coord_mask = info->reads_frag_coord_mask | info->reads_sample_pos_mask;
+
    shader->config.spi_ps_input_ena =
       S_0286CC_PERSP_CENTER_ENA(info->uses_persp_center) |
       S_0286CC_PERSP_CENTROID_ENA(info->uses_persp_centroid) |
@@ -2928,14 +2941,16 @@ si_set_spi_ps_input_config(struct si_shader *shader)
       S_0286CC_LINEAR_CENTER_ENA(info->uses_linear_center) |
       S_0286CC_LINEAR_CENTROID_ENA(info->uses_linear_centroid) |
       S_0286CC_LINEAR_SAMPLE_ENA(info->uses_linear_sample) |
+      S_0286CC_POS_X_FLOAT_ENA(!!(frag_coord_mask & 0x1) &&
+                               !key->ps.part.prolog.get_frag_coord_from_pixel_coord) |
+      S_0286CC_POS_Y_FLOAT_ENA(!!(frag_coord_mask & 0x2) &&
+                               !key->ps.part.prolog.get_frag_coord_from_pixel_coord) |
+      S_0286CC_POS_Z_FLOAT_ENA(!!(frag_coord_mask & 0x4)) |
+      S_0286CC_POS_W_FLOAT_ENA(!!(frag_coord_mask & 0x8)) |
       S_0286CC_FRONT_FACE_ENA(info->uses_frontface && !key->ps.opt.force_front_face_input) |
       S_0286CC_SAMPLE_COVERAGE_ENA(info->reads_samplemask) |
-      S_0286CC_ANCILLARY_ENA(info->uses_sampleid || info->uses_layer_id);
-
-   uint8_t mask = info->reads_frag_coord_mask | info->reads_sample_pos_mask;
-   u_foreach_bit(i, mask) {
-      shader->config.spi_ps_input_ena |= S_0286CC_POS_X_FLOAT_ENA(1) << i;
-   }
+      S_0286CC_ANCILLARY_ENA(info->uses_sampleid || info->uses_layer_id) |
+      S_0286CC_POS_FIXED_PT_ENA(key->ps.part.prolog.get_frag_coord_from_pixel_coord);
 
    if (key->ps.part.prolog.color_two_side)
       shader->config.spi_ps_input_ena |= S_0286CC_FRONT_FACE_ENA(1);
@@ -3316,12 +3331,15 @@ static void si_get_ps_prolog_key(struct si_shader *shader, union si_shader_part_
        key->ps_prolog.states.force_persp_center_interp ||
        key->ps_prolog.states.force_linear_center_interp ||
        key->ps_prolog.states.bc_optimize_for_persp || key->ps_prolog.states.bc_optimize_for_linear ||
-       key->ps_prolog.states.samplemask_log_ps_iter);
+       key->ps_prolog.states.samplemask_log_ps_iter ||
+       key->ps_prolog.states.get_frag_coord_from_pixel_coord);
    key->ps_prolog.fragcoord_usage_mask =
       G_0286CC_POS_X_FLOAT_ENA(shader->config.spi_ps_input_ena) |
       (G_0286CC_POS_Y_FLOAT_ENA(shader->config.spi_ps_input_ena) << 1) |
       (G_0286CC_POS_Z_FLOAT_ENA(shader->config.spi_ps_input_ena) << 2) |
       (G_0286CC_POS_W_FLOAT_ENA(shader->config.spi_ps_input_ena) << 3);
+   key->ps_prolog.pixel_center_integer = key->ps_prolog.fragcoord_usage_mask &&
+                                         shader->selector->info.base.fs.pixel_center_integer;
 
    if (shader->key.ps.part.prolog.poly_stipple)
       shader->info.uses_vmem_load_other = true;
@@ -3422,7 +3440,8 @@ static bool si_need_ps_prolog(const union si_shader_part_key *key)
           key->ps_prolog.states.force_linear_center_interp ||
           key->ps_prolog.states.bc_optimize_for_persp ||
           key->ps_prolog.states.bc_optimize_for_linear || key->ps_prolog.states.poly_stipple ||
-          key->ps_prolog.states.samplemask_log_ps_iter;
+          key->ps_prolog.states.samplemask_log_ps_iter ||
+          key->ps_prolog.states.get_frag_coord_from_pixel_coord;
 }
 
 /**
