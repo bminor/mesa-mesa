@@ -2576,9 +2576,6 @@ radv_emit_ps_inputs(struct radv_cmd_buffer *cmd_buffer)
    assert(pdev->info.gfx_level >= GFX10_3 || num_per_primitive_params == 0);
 
    if (pdev->info.gfx_level >= GFX12) {
-      radeon_set_sh_reg(cmd_buffer->cs, R_00B0C4_SPI_SHADER_GS_OUT_CONFIG_PS,
-                        last_vgt_shader->info.regs.spi_vs_out_config | ps->info.regs.ps.spi_gs_out_config_ps);
-
       radeon_opt_set_context_regn(cmd_buffer, R_028664_SPI_PS_INPUT_CNTL_0, ps_input_cntl,
                                   cmd_buffer->tracked_regs.spi_ps_input_cntl, ps_offset);
    } else {
@@ -2841,6 +2838,15 @@ radv_emit_graphics_shaders(struct radv_cmd_buffer *cmd_buffer)
       default:
          unreachable("invalid bind stage");
       }
+   }
+
+   if (pdev->info.gfx_level >= GFX12) {
+      const struct radv_shader *ps = cmd_buffer->state.shaders[MESA_SHADER_FRAGMENT];
+      const struct radv_shader *last_vgt_shader = cmd_buffer->state.last_vgt_shader;
+      const uint32_t gs_out_config_ps =
+         last_vgt_shader->info.regs.spi_vs_out_config | (ps ? ps->info.regs.ps.spi_gs_out_config_ps : 0);
+
+      radeon_set_sh_reg(cmd_buffer->cs, R_00B0C4_SPI_SHADER_GS_OUT_CONFIG_PS, gs_out_config_ps);
    }
 
    const struct radv_vgt_shader_key vgt_shader_cfg_key =
