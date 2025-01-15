@@ -665,6 +665,7 @@ fn compile_nir_to_args(
         buffer_address: 0,
         ptr_bit_size: 0,
         use_printf_base_identifier: false,
+        hash_format_strings: false,
         max_buffer_size: dev.printf_buffer_size() as u32,
     };
     nir_pass!(nir, nir_lower_printf, &printf_opts);

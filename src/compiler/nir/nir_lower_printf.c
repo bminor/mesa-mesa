@@ -26,6 +26,7 @@
 #include "nir_builder_opcodes.h"
 
 #include "util/u_math.h"
+#include "util/u_printf.h"
 
 static bool
 lower_printf_intrin(nir_builder *b, nir_intrinsic_instr *prntf, void *_options)
@@ -77,6 +78,16 @@ lower_printf_intrin(nir_builder *b, nir_intrinsic_instr *prntf, void *_options)
       fmt_str_id = nir_iadd(b,
                             nir_load_printf_base_identifier(b),
                             fmt_str_id);
+   } else if (options->hash_format_strings) {
+      /* Rather than store the index of the format string, instead store the
+       * hash of the format string itself. This is invariant across shaders
+       * which may be more convenient.
+       */
+      unsigned idx = nir_src_as_uint(prntf->src[0]) - 1;
+      assert(idx < b->shader->printf_info_count && "must be in-bounds");
+
+      uint32_t hash = u_printf_hash(&b->shader->printf_info[idx]);
+      fmt_str_id = nir_imm_int(b, hash);
    }
 
    nir_deref_instr *args = nir_src_as_deref(prntf->src[1]);
