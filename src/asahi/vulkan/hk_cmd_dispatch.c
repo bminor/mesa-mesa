@@ -59,7 +59,7 @@ hk_dispatch_with_usc_launch(struct hk_device *dev, struct hk_cs *cs,
                             uint32_t usc, struct agx_grid grid,
                             struct agx_workgroup wg)
 {
-   assert(cs->current + 0x2000 < cs->end && "should have ensured space");
+   hk_ensure_cs_has_space(cs->cmd, cs, 0x2000 /* TODO */);
    cs->stats.cmds++;
 
    cs->current =
@@ -106,8 +106,6 @@ dispatch(struct hk_cmd_buffer *cmd, struct agx_grid grid)
       libagx_increment_cs_invocations(cs, agx_1d(1), AGX_BARRIER_ALL, grid,
                                       stat, agx_workgroup_threads(local_size));
    }
-
-   hk_ensure_cs_has_space(cmd, cs, 0x2000 /* TODO */);
 
    if (!agx_is_indirect(grid)) {
       grid.count[0] *= local_size.x;

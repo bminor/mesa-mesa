@@ -1409,8 +1409,6 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
    struct vk_dynamic_graphics_state *dyn = &cmd->vk.dynamic_graphics_state;
    bool rast_disc = dyn->rs.rasterizer_discard_enable;
 
-   hk_ensure_cs_has_space(cmd, cs, 0x2000 /*XXX*/);
-
    struct hk_shader *vs = hk_bound_sw_vs_before_gs(gfx);
    struct hk_shader *main = hk_main_gs_variant(gs, rast_disc);
    struct hk_shader *count = hk_count_gs_variant(gs, rast_disc);
@@ -1516,8 +1514,6 @@ hk_launch_tess(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
    uint32_t input_patch_size = dyn->ts.patch_control_points;
    uint64_t state = gfx->descriptors.root.draw.tess_params;
    struct hk_tess_info info = gfx->tess.info;
-
-   hk_ensure_cs_has_space(cmd, cs, 0x2000 /*XXX*/);
 
    perf_debug(dev, "Tessellation");
 
@@ -3324,7 +3320,6 @@ hk_ia_update(struct hk_cmd_buffer *cmd, struct hk_cs *cs, struct agx_draw draw,
              uint64_t ia_vertices, uint64_t ia_prims, uint64_t vs_invocations,
              uint64_t c_prims, uint64_t c_inv)
 {
-   /* XXX: stream link needed? */
    struct hk_device *dev = hk_cmd_buffer_device(cmd);
    perf_debug(dev, "Input assembly counters");
 
@@ -3719,8 +3714,6 @@ hk_draw_indirect_count(VkCommandBuffer commandBuffer, VkBuffer _buffer,
    if (!cs)
       return;
 
-   hk_ensure_cs_has_space(cmd, cs, 0x2000 /* TODO */);
-
    assert((stride % 4) == 0 && "aligned");
 
    size_t out_stride = sizeof(uint32_t) * (indexed ? 5 : 4);
@@ -3810,7 +3803,6 @@ hk_begin_end_xfb(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
       hk_cmd_buffer_get_cs_general(cmd, &cmd->current_cs.pre_gfx, true);
    if (!cs)
       return;
-   hk_ensure_cs_has_space(cmd, cs, 0x2000 /* TODO */);
 
    struct libagx_xfb_counter_copy params = {};
    unsigned copies = 0;

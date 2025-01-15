@@ -247,8 +247,6 @@ hk_query_report_map(struct hk_device *dev, struct hk_query_pool *pool,
 void
 hk_dispatch_imm_writes(struct hk_cmd_buffer *cmd, struct hk_cs *cs)
 {
-   hk_ensure_cs_has_space(cmd, cs, 0x2000 /* TODO */);
-
    /* As soon as we mark a query available, it needs to be available system
     * wide, otherwise a CPU-side get result can query. As such, we cache flush
     * before and then let coherency works its magic. Without this barrier, we
@@ -291,8 +289,6 @@ hk_queue_write(struct hk_cmd_buffer *cmd, uint64_t address, uint32_t value,
       util_dynarray_append(&cs->imm_writes, struct libagx_imm_write, imm);
       return;
    }
-
-   hk_ensure_cs_has_space(cmd, cs, 0x2000 /* TODO */);
 
    /* As soon as we mark a query available, it needs to be available system
     * wide, otherwise a CPU-side get result can query. As such, we cache flush
@@ -684,7 +680,6 @@ hk_CmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool,
       return;
 
    perf_debug(dev, "Query pool copy");
-   hk_ensure_cs_has_space(cmd, cs, 0x2000 /* TODO */);
 
    struct libagx_copy_query_args info = {
       .availability = hk_has_available(pool) ? pool->bo->va->addr : 0,
