@@ -48,10 +48,7 @@ rm -rf results
 mkdir -p results/job-rootfs-overlay/
 
 artifacts/ci-common/generate-env.sh > results/job-rootfs-overlay/set-job-env-vars.sh
-cp artifacts/ci-common/capture-devcoredump.sh results/job-rootfs-overlay/
 cp artifacts/ci-common/init-*.sh results/job-rootfs-overlay/
-cp artifacts/ci-common/intel-gpu-freq.sh results/job-rootfs-overlay/
-cp artifacts/ci-common/kdl.sh results/job-rootfs-overlay/
 cp "$SCRIPTS_DIR"/setup-test-env.sh results/job-rootfs-overlay/
 
 tar zcf job-rootfs-overlay.tar.gz -C results/job-rootfs-overlay/ .
