@@ -3040,13 +3040,6 @@ agx_optimize_nir(nir_shader *nir, bool soft_fault, uint16_t *preamble_size)
    NIR_PASS(_, nir, nir_lower_pack);
    NIR_PASS(_, nir, nir_opt_algebraic);
 
-   /* Lower addressing modes. The sooner we do this, the sooner we get rid of
-    * amul/aadd instructions and can let nir_opt_algebraic do its job. But we
-    * want to vectorize first since nir_opt_load_store_vectorize doesn't know
-    * how to handle our loads.
-    */
-   NIR_PASS(_, nir, agx_nir_lower_address);
-
    NIR_PASS_V(nir, nir_divergence_analysis);
    bool progress = false;
 
@@ -3058,6 +3051,14 @@ agx_optimize_nir(nir_shader *nir, bool soft_fault, uint16_t *preamble_size)
    };
 
    NIR_PASS(progress, nir, nir_opt_uniform_atomics, true);
+
+   /* Lower addressing modes. The sooner we do this, the sooner we get rid of
+    * amul/aadd instructions and can let nir_opt_algebraic do its job. But we
+    * want to vectorize first since nir_opt_load_store_vectorize doesn't know
+    * how to handle our loads. Likewise for uniform atomic optimization.
+    */
+   NIR_PASS(_, nir, agx_nir_lower_address);
+
    NIR_PASS(progress, nir, nir_opt_uniform_subgroup, &subgroups_options);
    if (progress) {
       NIR_PASS(_, nir, agx_nir_lower_subgroups);
