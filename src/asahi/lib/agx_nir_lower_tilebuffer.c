@@ -257,9 +257,9 @@ load_memory(nir_builder *b, unsigned bindless_base, unsigned nr_samples,
    /* Ensure pixels below this one have written out their results */
    nir_begin_invocation_interlock(b);
 
-   return nir_bindless_image_load(
-      b, comps, bit_size, image, coords, sample, lod, .image_dim = dim,
-      .image_array = true, .format = format, .access = ACCESS_IN_BOUNDS);
+   return nir_bindless_image_load(b, comps, bit_size, image, coords, sample,
+                                  lod, .image_dim = dim, .image_array = true,
+                                  .format = format, .access = ACCESS_IN_BOUNDS);
 }
 
 static nir_def *
