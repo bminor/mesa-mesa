@@ -1734,7 +1734,7 @@
         "description": "radeonsi: remove an incorrectly defined modifier",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0833dd7d124bfd94161bff15e5b4293987920fce",
         "notes": null
