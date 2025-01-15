@@ -462,10 +462,9 @@ vk_common_QueueInsertDebugUtilsLabelEXT(
 }
 
 VkResult
-vk_check_printf_status(struct vk_device *dev, struct u_printf_ctx *ctx,
-                       struct u_printf_info *info, uint32_t count)
+vk_check_printf_status(struct vk_device *dev, struct u_printf_ctx *ctx)
 {
-   if (u_printf_check_abort(stdout, ctx, info, count)) {
+   if (u_printf_check_abort(stdout, ctx)) {
       vk_device_set_lost(dev, "GPU abort.");
       return VK_ERROR_DEVICE_LOST;
    } else {

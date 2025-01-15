@@ -98,6 +98,7 @@ compile(void *memctx, const uint32_t *spirv, size_t spirv_size)
 
    NIR_PASS(_, nir, nir_lower_printf,
             &(const struct nir_lower_printf_options){
+               .hash_format_strings = true,
             });
 
    /* We have to lower away local constant initializers right before we

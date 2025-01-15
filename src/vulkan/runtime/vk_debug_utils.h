@@ -69,11 +69,9 @@ vk_address_binding_report(struct vk_instance *instance,
                           VkDeviceAddressBindingTypeEXT type);
 
 struct u_printf_ctx;
-struct u_printf_info;
 
 VkResult
-vk_check_printf_status(struct vk_device *dev, struct u_printf_ctx *ctx,
-                       struct u_printf_info *info, uint32_t count);
+vk_check_printf_status(struct vk_device *dev, struct u_printf_ctx *ctx);
 
 #ifdef __cplusplus
 }

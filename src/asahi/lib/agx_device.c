@@ -30,6 +30,7 @@
 #include "util/os_mman.h"
 #include "util/os_time.h"
 #include "util/simple_mtx.h"
+#include "util/u_printf.h"
 #include "git_sha1.h"
 #include "nir_serialize.h"
 #include "unstable_asahi_drm.h"
@@ -694,7 +695,9 @@ agx_open_device(void *memctx, struct agx_device *dev)
    }
 
    u_printf_init(&dev->printf, bo, agx_bo_map(bo));
-
+   u_printf_singleton_init_or_ref();
+   u_printf_singleton_add(dev->libagx->printf_info,
+                          dev->libagx->printf_info_count);
    return true;
 }
 
@@ -711,6 +714,7 @@ agx_close_device(struct agx_device *dev)
    util_vma_heap_finish(&dev->main_heap);
    util_vma_heap_finish(&dev->usc_heap);
    glsl_type_singleton_decref();
+   u_printf_singleton_decref();
 
    close(dev->fd);
 }

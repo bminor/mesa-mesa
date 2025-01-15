@@ -102,8 +102,7 @@ u_printf_destroy(struct u_printf_ctx *ctx)
 }
 
 static inline void
-u_printf_with_ctx(FILE *out, struct u_printf_ctx *ctx,
-                  const u_printf_info *info, unsigned info_size)
+u_printf_with_ctx(FILE *out, struct u_printf_ctx *ctx)
 {
    /* If the printf buffer is empty, early-exit without taking the lock. The
     * speeds up the happy path and makes this function reasonable to call even
@@ -113,7 +112,7 @@ u_printf_with_ctx(FILE *out, struct u_printf_ctx *ctx,
       return;
 
    simple_mtx_lock(&ctx->lock);
-   u_printf(out, (char *)(ctx->map + 2), ctx->map[0] - 8, info, info_size);
+   u_printf(out, (char *)(ctx->map + 2), ctx->map[0] - 8, NULL, 0);
 
    /* Reset */
    ctx->map[0] = 8;
@@ -125,10 +124,9 @@ u_printf_with_ctx(FILE *out, struct u_printf_ctx *ctx,
  * intended to be called periodically to handle aborts in a timely manner.
  */
 static inline bool
-u_printf_check_abort(FILE *out, struct u_printf_ctx *ctx,
-                     const u_printf_info *info, unsigned info_size)
+u_printf_check_abort(FILE *out, struct u_printf_ctx *ctx)
 {
-   u_printf_with_ctx(out, ctx, info, info_size);
+   u_printf_with_ctx(out, ctx);
 
    /* Check the aborted flag */
    return (ctx->map[1] != 0);

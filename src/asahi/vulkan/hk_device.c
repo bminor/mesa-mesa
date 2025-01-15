@@ -282,9 +282,7 @@ static VkResult
 hk_check_status(struct vk_device *device)
 {
    struct hk_device *dev = container_of(device, struct hk_device, vk);
-   return vk_check_printf_status(&dev->vk, &dev->dev.printf,
-                                 dev->dev.libagx->printf_info,
-                                 dev->dev.libagx->printf_info_count);
+   return vk_check_printf_status(&dev->vk, &dev->dev.printf);
 }
 
 static VkResult
