@@ -18,6 +18,7 @@
 #include <functional>
 #include <iterator>
 #include <map>
+#include <memory>
 #include <type_traits>
 #include <unordered_map>
 #include <vector>
@@ -1054,7 +1055,8 @@ using bitarray32 = bitfield_array<uint32_t, 0, 32, uint32_t>;
  */
 template <typename T, uint32_t Size> class small_vec {
 public:
-   static_assert(std::is_trivial<T>::value);
+   /* We could support destructors with some effort, but currently there's no use case. */
+   static_assert(std::is_trivially_destructible<T>::value);
 
    using value_type = T;
    using pointer = value_type*;
@@ -1085,7 +1087,7 @@ public:
       clear();
       reserve(other.capacity);
       length = other.length;
-      memcpy(begin(), other.begin(), length * sizeof(value_type));
+      std::uninitialized_copy(other.begin(), other.end(), begin());
       return *this;
    }
 
@@ -1094,16 +1096,23 @@ public:
       if (&other == this)
          return *this;
       clear();
-      void* ptr = this;
-      memcpy(ptr, &other, sizeof(*this));
+      length = other.length;
+      capacity = other.capacity;
+      if (capacity > Size)
+         data = other.data;
+      else
+         std::uninitialized_move(other.begin(), other.end(), begin());
       other.length = 0;
       other.capacity = Size;
       return *this;
    }
 
-   constexpr iterator begin() noexcept { return capacity > Size ? data : inline_data; }
+   constexpr iterator begin() noexcept { return capacity > Size ? data : (T*)inline_data; }
 
-   constexpr const_iterator begin() const noexcept { return capacity > Size ? data : inline_data; }
+   constexpr const_iterator begin() const noexcept
+   {
+      return capacity > Size ? data : (T*)inline_data;
+   }
 
    constexpr iterator end() noexcept { return std::next(begin(), length); }
 
@@ -1186,13 +1195,18 @@ public:
    constexpr void reserve(size_type n)
    {
       if (n > capacity) {
-         if (capacity > Size) {
-            data = (T*)realloc(data, sizeof(T) * n);
-         } else {
-            T* ptr = (T*)malloc(sizeof(T) * n);
-            memcpy(ptr, inline_data, sizeof(T) * length);
-            data = ptr;
+         if constexpr (std::is_trivial<T>::value) {
+            if (capacity > Size) {
+               data = (T*)realloc(data, sizeof(T) * n);
+               capacity = n;
+               return;
+            }
          }
+         T* ptr = (T*)malloc(sizeof(T) * n);
+         std::uninitialized_move(begin(), end(), ptr);
+         if (capacity > Size)
+            free(data);
+         data = ptr;
          capacity = n;
       }
    }
@@ -1202,7 +1216,7 @@ public:
       if (length == capacity)
          reserve(2 * capacity);
 
-      *std::next(begin(), length++) = val;
+      new (std::next(begin(), length++)) T(val);
    }
 
    template <typename... Args> constexpr void emplace_back(Args... args) noexcept
@@ -1210,7 +1224,7 @@ public:
       if (length == capacity)
          reserve(2 * capacity);
 
-      *std::next(begin(), length++) = T(args...);
+      new (std::next(begin(), length++)) T(args...);
    }
 
    constexpr void clear() noexcept
@@ -1237,7 +1251,7 @@ private:
    uint32_t capacity = Size;
    union {
       T* data = NULL;
-      T inline_data[Size];
+      alignas(T) uint8_t inline_data[sizeof(T) * Size];
    };
 };
 
