@@ -14,6 +14,7 @@
 #include "hk_entrypoints.h"
 #include "hk_shader.h"
 
+#include "libagx_dgc.h"
 #include "libagx_shaders.h"
 #include "vk_common_entrypoints.h"
 
@@ -266,7 +267,7 @@ hk_dispatch_imm_writes(struct hk_cmd_buffer *cmd, struct hk_cs *cs)
       util_dynarray_num_elements(&cs->imm_writes, struct libagx_imm_write);
    assert(count > 0);
 
-   libagx_write_u32s(cs, agx_1d(count), AGX_BARRIER_ALL, params);
+   libagx_write_u32s(cmd, agx_1d(count), AGX_BARRIER_ALL | AGX_POSTGFX, params);
 }
 
 void
@@ -301,7 +302,7 @@ hk_queue_write(struct hk_cmd_buffer *cmd, uint64_t address, uint32_t value,
    hk_cdm_cache_flush(dev, cs);
 
    perf_debug(dev, "Queued write");
-   libagx_write_u32(cs, agx_1d(1), AGX_BARRIER_ALL, address, value);
+   libagx_write_u32(cmd, agx_1d(1), AGX_BARRIER_ALL, address, value);
 }
 
 /**
@@ -424,13 +425,8 @@ hk_CmdWriteTimestamp2(VkCommandBuffer commandBuffer,
    if (cs->timestamp.end.addr) {
       assert(after_gfx && "compute is handled above");
 
-      struct hk_cs *after =
-         hk_cmd_buffer_get_cs_general(cmd, &cmd->current_cs.post_gfx, true);
-      if (!after)
-         return;
-
-      libagx_copy_timestamp(after, agx_1d(1), AGX_BARRIER_ALL, report_addr,
-                            cs->timestamp.end.addr);
+      libagx_copy_timestamp(cmd, agx_1d(1), AGX_BARRIER_ALL | AGX_POSTGFX,
+                            report_addr, cs->timestamp.end.addr);
    } else {
       cs->timestamp.end = (struct agx_timestamp_req){
          .addr = report_addr,
@@ -675,10 +671,6 @@ hk_CmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool,
    struct hk_device *dev = hk_cmd_buffer_device(cmd);
    hk_flush_if_timestamp(cmd, pool);
 
-   struct hk_cs *cs = hk_cmd_buffer_get_cs(cmd, true);
-   if (!cs)
-      return;
-
    perf_debug(dev, "Query pool copy");
 
    struct libagx_copy_query_args info = {
@@ -697,5 +689,5 @@ hk_CmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool,
       .with_availability = flags & VK_QUERY_RESULT_WITH_AVAILABILITY_BIT,
    };
 
-   libagx_copy_query_struct(cs, agx_1d(queryCount), AGX_BARRIER_ALL, info);
+   libagx_copy_query_struct(cmd, agx_1d(queryCount), AGX_BARRIER_ALL, info);
 }

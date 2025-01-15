@@ -103,7 +103,7 @@ dispatch(struct hk_cmd_buffer *cmd, struct agx_grid grid)
       perf_debug(dev, "CS invocation statistic");
       uint64_t grid = cmd->state.cs.descriptors.root.cs.group_count_addr;
 
-      libagx_increment_cs_invocations(cs, agx_1d(1), AGX_BARRIER_ALL, grid,
+      libagx_increment_cs_invocations(cmd, agx_1d(1), AGX_BARRIER_ALL, grid,
                                       stat, agx_workgroup_threads(local_size));
    }
 

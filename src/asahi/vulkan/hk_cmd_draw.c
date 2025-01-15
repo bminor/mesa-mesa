@@ -844,11 +844,6 @@ hk_CmdBeginRendering(VkCommandBuffer commandBuffer,
                struct hk_device *dev = hk_cmd_buffer_device(cmd);
                perf_debug(dev, "Decompressing in-place");
 
-               struct hk_cs *cs = hk_cmd_buffer_get_cs_general(
-                  cmd, &cmd->current_cs.pre_gfx, true);
-               if (!cs)
-                  return;
-
                unsigned level = view->vk.base_mip_level;
                unsigned layer = view->vk.base_array_layer;
                uint64_t base = hk_image_base_address(image, image_plane);
@@ -862,8 +857,8 @@ hk_CmdBeginRendering(VkCommandBuffer commandBuffer,
                   agx_3d(ail_metadata_width_tl(layout, level) * 32,
                          ail_metadata_height_tl(layout, level), layer_count);
 
-               libagx_decompress(cs, grid, AGX_BARRIER_ALL, layout, layer,
-                                 level, base,
+               libagx_decompress(cmd, grid, AGX_BARRIER_ALL | AGX_PREGFX,
+                                 layout, layer, level, base,
                                  hk_pool_upload(cmd, &imgs, sizeof(imgs), 64));
             }
          }
@@ -1359,8 +1354,8 @@ hk_draw_as_indexed_indirect(struct hk_cmd_buffer *cmd, struct agx_draw draw)
 }
 
 static struct agx_draw
-hk_draw_without_restart(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
-                        struct agx_draw draw, uint32_t draw_count)
+hk_draw_without_restart(struct hk_cmd_buffer *cmd, struct agx_draw draw,
+                        uint32_t draw_count)
 {
    struct hk_device *dev = hk_cmd_buffer_device(cmd);
    struct hk_graphics_state *gfx = &cmd->state.gfx;
@@ -1388,8 +1383,9 @@ hk_draw_without_restart(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
          dyn->rs.provoking_vertex == VK_PROVOKING_VERTEX_MODE_FIRST_VERTEX_EXT,
    };
 
-   libagx_unroll_restart_struct(cs, agx_1d(1024 * draw_count), AGX_BARRIER_ALL,
-                                ia, draw.index_size, libagx_compact_prim(prim));
+   libagx_unroll_restart_struct(cmd, agx_1d(1024 * draw_count),
+                                AGX_BARRIER_ALL | AGX_PREGFX, ia,
+                                draw.index_size, libagx_compact_prim(prim));
 
    return agx_draw_indexed_indirect(ia.out_draw, dev->heap->va->addr,
                                     dev->heap->size, draw.index_size,
@@ -1427,7 +1423,7 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
    enum mesa_prim mode = hk_gs_in_prim(cmd);
 
    if (draw.restart) {
-      draw = hk_draw_without_restart(cmd, cs, draw, 1);
+      draw = hk_draw_without_restart(cmd, draw, 1);
       mode = u_decomposed_prim(mode);
    }
 
@@ -1456,7 +1452,8 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
          gsi.index_buffer_range_el = agx_draw_index_range_el(draw);
       }
 
-      libagx_gs_setup_indirect_struct(cs, agx_1d(1), AGX_BARRIER_ALL, gsi);
+      libagx_gs_setup_indirect_struct(cmd, agx_1d(1),
+                                      AGX_BARRIER_ALL | AGX_PREGFX, gsi);
 
       grid_vs = agx_grid_indirect(
          geometry_params + offsetof(struct agx_geometry_params, vs_grid));
@@ -1482,8 +1479,8 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
       hk_dispatch_with_local_size(cmd, cs, count, grid_gs,
                                   agx_workgroup(1, 1, 1));
 
-      libagx_prefix_sum_geom(cs, agx_1d(1024 * count_words), AGX_BARRIER_ALL,
-                             geometry_params);
+      libagx_prefix_sum_geom(cmd, agx_1d(1024 * count_words),
+                             AGX_BARRIER_ALL | AGX_PREGFX, geometry_params);
    }
 
    /* Pre-GS shader */
@@ -1544,7 +1541,8 @@ hk_launch_tess(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
          args.in_index_buffer_range_el = agx_draw_index_range_el(draw);
       }
 
-      libagx_tess_setup_indirect_struct(cs, agx_1d(1), AGX_BARRIER_ALL, args);
+      libagx_tess_setup_indirect_struct(cmd, agx_1d(1),
+                                        AGX_BARRIER_ALL | AGX_PREGFX, args);
 
       uint32_t grid_stride = sizeof(uint32_t) * 6;
       grid_vs = agx_grid_indirect_local(gfx->tess.grids + 0 * grid_stride);
@@ -1560,8 +1558,8 @@ hk_launch_tess(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
       /* TCS invocation counter increments once per-patch */
       if (tcs_stat) {
          perf_debug(dev, "Direct TCS statistic");
-         libagx_increment_statistic(cs, agx_1d(1), AGX_BARRIER_ALL, tcs_stat,
-                                    patches);
+         libagx_increment_statistic(
+            cmd, agx_1d(1), AGX_BARRIER_ALL | AGX_PREGFX, tcs_stat, patches);
       }
    }
 
@@ -1579,12 +1577,13 @@ hk_launch_tess(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
       grid_tcs, agx_workgroup(tcs->info.tess.tcs_output_patch_size, 1, 1));
 
    /* First generate counts, then prefix sum them, and then tessellate. */
-   libagx_tessellate(cs, grid_tess, AGX_BARRIER_ALL, info.mode,
+   libagx_tessellate(cmd, grid_tess, AGX_BARRIER_ALL | AGX_PREGFX, info.mode,
                      LIBAGX_TESS_MODE_COUNT, state);
 
-   libagx_prefix_sum_tess(cs, agx_1d(1024), AGX_BARRIER_ALL, state);
+   libagx_prefix_sum_tess(cmd, agx_1d(1024), AGX_BARRIER_ALL | AGX_PREGFX,
+                          state);
 
-   libagx_tessellate(cs, grid_tess, AGX_BARRIER_ALL, info.mode,
+   libagx_tessellate(cmd, grid_tess, AGX_BARRIER_ALL | AGX_PREGFX, info.mode,
                      LIBAGX_TESS_MODE_WITH_COUNTS, state);
 
    return agx_draw_indexed_indirect(gfx->tess.out_draws, dev->heap->va->addr,
@@ -3316,7 +3315,7 @@ hk_set_view_index(struct hk_cmd_buffer *cmd, uint32_t view_idx)
       if (hk_set_view_index(cmd, view_idx))
 
 static void
-hk_ia_update(struct hk_cmd_buffer *cmd, struct hk_cs *cs, struct agx_draw draw,
+hk_ia_update(struct hk_cmd_buffer *cmd, struct agx_draw draw,
              uint64_t ia_vertices, uint64_t ia_prims, uint64_t vs_invocations,
              uint64_t c_prims, uint64_t c_inv)
 {
@@ -3352,13 +3351,14 @@ hk_ia_update(struct hk_cmd_buffer *cmd, struct hk_cs *cs, struct agx_draw draw,
       uint32_t index_size_B = agx_index_size_to_B(draw.index_size);
 
       libagx_increment_ia_restart(
-         cs, agx_1d(1024), AGX_BARRIER_ALL, ia_vertices, ia_prims,
+         cmd, agx_1d(1024), AGX_BARRIER_ALL | AGX_PREGFX, ia_vertices, ia_prims,
          vs_invocations, c_prims, c_inv, draw_ptr, draw.index_buffer,
          agx_draw_index_range_el(draw), cmd->state.gfx.index.restart,
          index_size_B, prim);
    } else {
-      libagx_increment_ia(cs, agx_1d(1), AGX_BARRIER_ALL, ia_vertices, ia_prims,
-                          vs_invocations, c_prims, c_inv, draw_ptr, prim);
+      libagx_increment_ia(cmd, agx_1d(1), AGX_BARRIER_ALL | AGX_PREGFX,
+                          ia_vertices, ia_prims, vs_invocations, c_prims, c_inv,
+                          draw_ptr, prim);
    }
 }
 
@@ -3422,9 +3422,7 @@ hk_draw(struct hk_cmd_buffer *cmd, uint16_t draw_id, struct agx_draw draw_)
 
       cs->stats.calls++;
 
-      if (geom || tess || ia_stats || needs_idx_robust ||
-          (adj && (agx_is_indirect(draw.b) || draw.restart))) {
-
+      if (geom || tess) {
          ccs =
             hk_cmd_buffer_get_cs_general(cmd, &cmd->current_cs.pre_gfx, true);
          if (!ccs)
@@ -3432,7 +3430,7 @@ hk_draw(struct hk_cmd_buffer *cmd, uint16_t draw_id, struct agx_draw draw_)
       }
 
       if (ia_stats) {
-         hk_ia_update(cmd, ccs, draw, stat_ia_verts, stat_ia_prims, stat_vs_inv,
+         hk_ia_update(cmd, draw, stat_ia_verts, stat_ia_prims, stat_vs_inv,
                       stat_c_prims, stat_c_inv);
       }
 
@@ -3457,7 +3455,7 @@ hk_draw(struct hk_cmd_buffer *cmd, uint16_t draw_id, struct agx_draw draw_)
          enum mesa_prim prim = vk_conv_topology(dyn->ia.primitive_topology);
 
          if (draw.restart) {
-            draw = hk_draw_without_restart(cmd, ccs, draw, 1);
+            draw = hk_draw_without_restart(cmd, draw, 1);
             prim = u_decomposed_prim(prim);
          }
 
@@ -3471,8 +3469,8 @@ hk_draw(struct hk_cmd_buffer *cmd, uint16_t draw_id, struct agx_draw draw_)
             struct hk_descriptor_state *desc = &cmd->state.gfx.descriptors;
 
             libagx_draw_without_adj(
-               ccs, agx_1d(1), AGX_BARRIER_ALL, out_draw, draw.b.ptr,
-               desc->root.draw.input_assembly, draw.index_buffer,
+               cmd, agx_1d(1), AGX_BARRIER_ALL | AGX_PREGFX, out_draw,
+               draw.b.ptr, desc->root.draw.input_assembly, draw.index_buffer,
                draw.indexed ? agx_draw_index_range_el(draw) : 0,
                draw.indexed ? agx_index_size_to_B(draw.index_size) : 0, prim);
 
@@ -3498,8 +3496,8 @@ hk_draw(struct hk_cmd_buffer *cmd, uint16_t draw_id, struct agx_draw draw_)
          size_t size_B = libagx_draw_robust_index_vdm_size();
          uint64_t target = hk_cs_alloc_for_indirect(cs, size_B);
 
-         libagx_draw_robust_index(ccs, agx_1d(32), AGX_BARRIER_ALL, target,
-                                  hk_geometry_state(cmd), draw.b.ptr,
+         libagx_draw_robust_index(cmd, agx_1d(32), AGX_BARRIER_ALL | AGX_PREGFX,
+                                  target, hk_geometry_state(cmd), draw.b.ptr,
                                   draw.index_buffer, draw.index_buffer_range_B,
                                   draw.restart, topology, draw.index_size);
       } else {
@@ -3709,11 +3707,6 @@ hk_draw_indirect_count(VkCommandBuffer commandBuffer, VkBuffer _buffer,
    struct hk_device *dev = hk_cmd_buffer_device(cmd);
    perf_debug(dev, "Draw indirect count");
 
-   struct hk_cs *cs =
-      hk_cmd_buffer_get_cs_general(cmd, &cmd->current_cs.pre_gfx, true);
-   if (!cs)
-      return;
-
    assert((stride % 4) == 0 && "aligned");
 
    size_t out_stride = sizeof(uint32_t) * (indexed ? 5 : 4);
@@ -3721,8 +3714,9 @@ hk_draw_indirect_count(VkCommandBuffer commandBuffer, VkBuffer _buffer,
    uint64_t in = hk_buffer_address(buffer, offset);
    uint64_t count_addr = hk_buffer_address(count_buffer, countBufferOffset);
 
-   libagx_predicate_indirect(cs, agx_1d(maxDrawCount), AGX_BARRIER_ALL, patched,
-                             in, count_addr, stride / 4, indexed);
+   libagx_predicate_indirect(cmd, agx_1d(maxDrawCount),
+                             AGX_BARRIER_ALL | AGX_PREGFX, patched, in,
+                             count_addr, stride / 4, indexed);
 
    if (indexed) {
       hk_draw_indexed_indirect_inner(commandBuffer, patched, maxDrawCount,
@@ -3799,11 +3793,6 @@ hk_begin_end_xfb(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
       gfx->xfb_offsets = hk_pool_alloc(cmd, 4 * sizeof(uint32_t), 4).gpu;
    }
 
-   struct hk_cs *cs =
-      hk_cmd_buffer_get_cs_general(cmd, &cmd->current_cs.pre_gfx, true);
-   if (!cs)
-      return;
-
    struct libagx_xfb_counter_copy params = {};
    unsigned copies = 0;
 
@@ -3839,7 +3828,8 @@ hk_begin_end_xfb(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
    if (copies > 0) {
       perf_debug(dev, "XFB counter copy");
 
-      libagx_copy_xfb_counters(cs, agx_1d(copies), AGX_BARRIER_ALL,
+      libagx_copy_xfb_counters(cmd, agx_1d(copies),
+                               AGX_BARRIER_ALL | AGX_PREGFX,
                                hk_pool_upload(cmd, &params, sizeof(params), 8));
    }
 }

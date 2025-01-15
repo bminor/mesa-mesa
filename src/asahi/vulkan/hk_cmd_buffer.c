@@ -708,15 +708,23 @@ hk_upload_usc_words(struct hk_cmd_buffer *cmd, struct hk_shader *s,
 }
 
 void
-hk_dispatch_precomp(struct hk_cs *cs, struct agx_grid grid,
+hk_dispatch_precomp(struct hk_cmd_buffer *cmd, struct agx_grid grid,
                     enum agx_barrier barrier, enum libagx_program idx,
                     void *data, size_t data_size)
 {
-   struct hk_device *dev = hk_cmd_buffer_device(cs->cmd);
+   struct hk_device *dev = hk_cmd_buffer_device(cmd);
    struct agx_precompiled_shader *prog = agx_get_precompiled(&dev->bg_eot, idx);
 
-   struct agx_ptr t = hk_pool_usc_alloc(cs->cmd, agx_usc_size(15), 64);
-   uint64_t uploaded_data = hk_pool_upload(cs->cmd, data, data_size, 4);
+   struct hk_cs **target = (barrier & AGX_POSTGFX)  ? &cmd->current_cs.post_gfx
+                           : (barrier & AGX_PREGFX) ? &cmd->current_cs.pre_gfx
+                                                    : &cmd->current_cs.cs;
+
+   struct hk_cs *cs = hk_cmd_buffer_get_cs_general(cmd, target, true);
+   if (!cs)
+      return;
+
+   struct agx_ptr t = hk_pool_usc_alloc(cmd, agx_usc_size(15), 64);
+   uint64_t uploaded_data = hk_pool_upload(cmd, data, data_size, 4);
 
    agx_usc_words_precomp(t.cpu, &prog->b, uploaded_data, data_size);
 
