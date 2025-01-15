@@ -1080,6 +1080,8 @@ public:
 
    constexpr small_vec& operator=(const small_vec& other)
    {
+      if (&other == this)
+         return *this;
       clear();
       reserve(other.capacity);
       length = other.length;
@@ -1089,6 +1091,8 @@ public:
 
    constexpr small_vec& operator=(small_vec&& other) noexcept
    {
+      if (&other == this)
+         return *this;
       clear();
       void* ptr = this;
       memcpy(ptr, &other, sizeof(*this));
