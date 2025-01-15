@@ -1227,6 +1227,42 @@ public:
       new (std::next(begin(), length++)) T(args...);
    }
 
+   constexpr void insert(const_iterator it, const value_type& val) noexcept
+   {
+      size_t idx = it - begin();
+      assert(idx <= size());
+
+      if (length == capacity)
+         reserve(2 * capacity);
+
+      if (idx == length) {
+         new (end()) T(val);
+      } else {
+         /* We can't do this one as part of move_backward because end() is uninitialized. */
+         new (end()) T(std::move(*(end() - 1)));
+         std::move_backward(std::next(begin(), idx), std::prev(end(), 1), end());
+         *std::next(begin(), idx) = val;
+      }
+      length++;
+   }
+
+   constexpr void erase(const_iterator it) noexcept
+   {
+      std::move(iterator(it) + 1, end(), iterator(it));
+      length--;
+   }
+
+   constexpr void resize(uint32_t new_size) noexcept
+   {
+      if (new_size > capacity)
+         reserve(new_size);
+
+      for (uint32_t i = length; i < new_size; i++)
+         new (std::next(begin(), i)) T();
+
+      length = new_size;
+   }
+
    constexpr void clear() noexcept
    {
       if (capacity > Size)
