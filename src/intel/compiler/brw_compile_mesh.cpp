@@ -264,6 +264,74 @@ brw_nir_align_launch_mesh_workgroups(nir_shader *nir)
                                        NULL);
 }
 
+static bool
+lower_set_vtx_and_prim_to_temp_write(nir_builder *b,
+                                     nir_intrinsic_instr *intrin,
+                                     void *data)
+{
+   if (intrin->intrinsic != nir_intrinsic_set_vertex_and_primitive_count)
+      return false;
+
+   /* Detect some cases of invalid primitive count. They might lead to URB
+    * memory corruption, where workgroups overwrite each other output memory.
+    */
+   if (nir_src_is_const(intrin->src[1]) &&
+       nir_src_as_uint(intrin->src[1]) > b->shader->info.mesh.max_primitives_out)
+      unreachable("number of primitives bigger than max specified");
+
+   b->cursor = nir_instr_remove(&intrin->instr);
+
+   nir_variable *temporary_primitive_count = (nir_variable *)data;
+   nir_store_var(b, temporary_primitive_count, intrin->src[1].ssa, 0x1);
+
+   return true;
+}
+
+static bool
+brw_nir_lower_mesh_primitive_count(nir_shader *nir)
+{
+   nir_function_impl *impl = nir_shader_get_entrypoint(nir);
+
+   nir_variable *temporary_primitive_count =
+      nir_local_variable_create(impl,
+                                glsl_uint_type(),
+                                "__temp_primitive_count");
+
+   nir_shader_intrinsics_pass(nir,
+                              lower_set_vtx_and_prim_to_temp_write,
+                              nir_metadata_control_flow,
+                              temporary_primitive_count);
+
+   nir_builder _b = nir_builder_at(nir_before_impl(impl)), *b = &_b;
+
+   nir_store_var(b, temporary_primitive_count, nir_imm_int(b, 0), 0x1);
+
+   b->cursor = nir_after_impl(impl);
+
+   /* Have a single lane write the primitive count */
+   nir_def *local_invocation_index = nir_load_local_invocation_index(b);
+   nir_push_if(b, nir_ieq_imm(b, local_invocation_index, 0));
+   {
+      nir_variable *final_primitive_count =
+         nir_create_variable_with_location(nir, nir_var_shader_out,
+                                           VARYING_SLOT_PRIMITIVE_COUNT,
+                                           glsl_uint_type());
+      final_primitive_count->name = ralloc_strdup(final_primitive_count,
+                                                  "gl_PrimitiveCountNV");
+      final_primitive_count->data.interpolation = INTERP_MODE_NONE;
+
+      nir_store_var(b, final_primitive_count,
+                    nir_load_var(b, temporary_primitive_count), 0x1);
+   }
+   nir_pop_if(b, NULL);
+
+   nir_metadata_preserve(impl, nir_metadata_none);
+
+   nir->info.outputs_written |= VARYING_BIT_PRIMITIVE_COUNT;
+
+   return true;
+}
+
 static void
 brw_emit_urb_fence(fs_visitor &s)
 {
@@ -1632,6 +1700,10 @@ brw_compile_mesh(const struct brw_compiler *compiler,
 
    prog_data->uses_drawid =
       BITSET_TEST(nir->info.system_values_read, SYSTEM_VALUE_DRAW_ID);
+
+   NIR_PASS(_, nir, brw_nir_lower_mesh_primitive_count);
+   NIR_PASS(_, nir, nir_opt_dce);
+   NIR_PASS(_, nir, nir_remove_dead_variables, nir_var_shader_out, NULL);
 
    brw_nir_lower_tue_inputs(nir, params->tue_map);
 
