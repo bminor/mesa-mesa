@@ -8,6 +8,8 @@
  * of gathering accurate shader_info and determining hw registers. It should be run before
  * linking passes and it doesn't produce AMD intrinsics that would break linking passes.
  * Some of the options come from dynamic state.
+ *
+ * It should be run after nir_lower_io, but before nir_opt_varyings.
  */
 
 #include "ac_nir.h"

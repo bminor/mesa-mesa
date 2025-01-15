@@ -266,10 +266,10 @@ ac_nir_lower_legacy_gs(nir_shader *nir,
                        bool has_pipeline_stats_query,
                        ac_nir_gs_output_info *output_info);
 
+/* This is a pre-link pass. It should only eliminate code and do lowering that mostly doesn't
+ * generate AMD-specific intrinsics.
+ */
 typedef struct {
-   /* This is a pre-link pass. It should only eliminate code and do lowering that mostly doesn't
-    * generate AMD-specific intrinsics.
-    */
    /* System values. */
    bool force_center_interp_no_msaa; /* true if MSAA is disabled, false may mean that the state is unknown */
    bool uses_vrs_coarse_shading;
@@ -326,10 +326,10 @@ typedef struct {
 bool
 ac_nir_lower_ps_early(nir_shader *nir, const ac_nir_lower_ps_early_options *options);
 
+/* This is a post-link pass. It shouldn't eliminate any code and it shouldn't affect shader_info
+ * (those should be done in the early pass).
+ */
 typedef struct {
-   /* This is a post-link pass. It shouldn't eliminate any code and it shouldn't affect shader_info
-    * (those should be done in the early pass).
-    */
    enum amd_gfx_level gfx_level;
    enum radeon_family family;
    bool use_aco;
