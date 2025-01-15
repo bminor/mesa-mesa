@@ -1160,6 +1160,7 @@ alloc_fresh_bo(struct iris_bufmgr *bufmgr, uint64_t bo_size, unsigned flags)
    bo->idle = true;
    bo->zeroed = true;
    bo->real.capture = (flags & BO_ALLOC_CAPTURE) != 0;
+   bo->real.scanout = (flags & BO_ALLOC_SCANOUT) != 0;
 
    return bo;
 }
@@ -2654,8 +2655,16 @@ iris_bufmgr_compute_engine_supported(struct iris_bufmgr *bufmgr)
  */
 const struct intel_device_info_pat_entry *
 iris_heap_to_pat_entry(const struct intel_device_info *devinfo,
-                       enum iris_heap heap)
+                       enum iris_heap heap, bool scanout)
 {
+   if (scanout) {
+      if (iris_heap_is_compressed(heap) == false)
+         return &devinfo->pat.scanout;
+
+      WARN_ONCE(iris_heap_is_compressed(heap),
+                "update heap_to_pat_entry when compressed scanout pat entries are added");
+   }
+
    switch (heap) {
    case IRIS_HEAP_SYSTEM_MEMORY_CACHED_COHERENT:
       return &devinfo->pat.cached_coherent;
