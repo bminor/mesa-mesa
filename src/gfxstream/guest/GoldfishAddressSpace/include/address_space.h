@@ -7,13 +7,8 @@
 
 #include <inttypes.h>
 #include <stddef.h>
-#include "util/detect_os.h"
 
-#if DETECT_OS_FUCHSIA
-    typedef void* address_space_handle_t;
-#else
-    typedef int address_space_handle_t;
-#endif
+typedef int address_space_handle_t;
 
 enum AddressSpaceSubdeviceType {
     NoSubdevice = -1,

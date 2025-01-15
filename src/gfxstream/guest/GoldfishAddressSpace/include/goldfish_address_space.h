@@ -8,11 +8,6 @@
 
 #include <inttypes.h>
 #include <stddef.h>
-#include "util/detect_os.h"
-
-#if DETECT_OS_FUCHSIA
-#include <fidl/fuchsia.hardware.goldfish/cpp/wire.h>
-#endif
 
 #include "address_space.h"
 
@@ -34,15 +29,7 @@ private:
     void close();
     address_space_handle_t release();
     static void closeHandle(address_space_handle_t handle);
-
-#if DETECT_OS_FUCHSIA
-    ::fidl::WireSyncClient<fuchsia_hardware_goldfish::AddressSpaceDevice>
-        m_device;
-    ::fidl::WireSyncClient<fuchsia_hardware_goldfish::AddressSpaceChildDriver>
-        m_child_driver;
-#else // DETECT_OS_FUCHSIA
     address_space_handle_t m_handle;
-#endif // !DETECT_OS_FUCHSIA
 
     friend class GoldfishAddressSpaceBlock;
     friend class GoldfishAddressSpaceHostMemoryAllocator;
@@ -70,14 +57,7 @@ private:
     void destroy();
     GoldfishAddressSpaceBlock &operator=(const GoldfishAddressSpaceBlock &);
 
-#if DETECT_OS_FUCHSIA
-    ::fidl::WireSyncClient<fuchsia_hardware_goldfish::AddressSpaceChildDriver>*
-        m_driver;
-    uint32_t  m_vmo;
-#else // DETECT_OS_FUCHSIA
     address_space_handle_t m_handle;
-#endif // !DETECT_OS_FUCHSIA
-
     void     *m_mmaped_ptr;
     uint64_t  m_phys_addr;
     uint64_t  m_host_addr;
