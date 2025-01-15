@@ -23,9 +23,22 @@
 #include "xf86drm.h"
 
 static bool
+radv_is_gpu_supported(const struct radeon_info *info)
+{
+   /* Unknown GPU generations aren't supported. */
+   if (info->gfx_level > GFX12)
+      return false;
+
+   return true;
+}
+
+static bool
 do_winsys_init(struct radv_amdgpu_winsys *ws, int fd)
 {
    if (!ac_query_gpu_info(fd, ws->dev, &ws->info, true))
+      return false;
+
+   if (!radv_is_gpu_supported(&ws->info))
       return false;
 
    /*
