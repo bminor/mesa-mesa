@@ -474,12 +474,6 @@ VK_DEFINE_HANDLE_CASTS(hk_cmd_buffer, vk.base, VkCommandBuffer,
 
 extern const struct vk_command_buffer_ops hk_cmd_buffer_ops;
 
-static inline struct hk_device *
-hk_cmd_buffer_device(struct hk_cmd_buffer *cmd)
-{
-   return (struct hk_device *)cmd->vk.base.device;
-}
-
 static inline struct hk_cmd_pool *
 hk_cmd_buffer_pool(struct hk_cmd_buffer *cmd)
 {

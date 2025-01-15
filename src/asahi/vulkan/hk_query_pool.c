@@ -65,14 +65,12 @@ hk_reports_per_query(struct hk_query_pool *pool)
 static void
 hk_flush_if_timestamp(struct hk_cmd_buffer *cmd, struct hk_query_pool *pool)
 {
-   struct hk_device *dev = hk_cmd_buffer_device(cmd);
-
    /* There might not be a barrier between the timestamp write and the copy
     * otherwise but we need one to give the CPU a chance to write the timestamp.
     * This could maybe optimized.
     */
    if (pool->vk.query_type == VK_QUERY_TYPE_TIMESTAMP) {
-      perf_debug(dev, "Flushing for timestamp copy");
+      perf_debug(cmd, "Flushing for timestamp copy");
       hk_cmd_buffer_end_graphics(cmd);
       hk_cmd_buffer_end_compute(cmd);
    }
@@ -258,7 +256,7 @@ hk_dispatch_imm_writes(struct hk_cmd_buffer *cmd, struct hk_cs *cs)
    struct hk_device *dev = hk_cmd_buffer_device(cmd);
    hk_cdm_cache_flush(dev, cs);
 
-   perf_debug(dev, "Queued writes");
+   perf_debug(cmd, "Queued writes");
 
    uint64_t params =
       hk_pool_upload(cmd, cs->imm_writes.data, cs->imm_writes.size, 16);
@@ -301,7 +299,7 @@ hk_queue_write(struct hk_cmd_buffer *cmd, uint64_t address, uint32_t value,
    struct hk_device *dev = hk_cmd_buffer_device(cmd);
    hk_cdm_cache_flush(dev, cs);
 
-   perf_debug(dev, "Queued write");
+   perf_debug(cmd, "Queued write");
    libagx_write_u32(cmd, agx_1d(1), AGX_BARRIER_ALL, address, value);
 }
 
@@ -376,11 +374,10 @@ hk_CmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool,
 {
    VK_FROM_HANDLE(hk_cmd_buffer, cmd, commandBuffer);
    VK_FROM_HANDLE(hk_query_pool, pool, queryPool);
-   struct hk_device *dev = hk_cmd_buffer_device(cmd);
 
    hk_flush_if_timestamp(cmd, pool);
 
-   perf_debug(dev, "Reset query pool");
+   perf_debug(cmd, "Reset query pool");
    emit_zero_queries(cmd, pool, firstQuery, queryCount, false);
 }
 
@@ -413,7 +410,7 @@ hk_CmdWriteTimestamp2(VkCommandBuffer commandBuffer,
    if (!after_gfx && cmd->current_cs.cs &&
        cmd->current_cs.cs->timestamp.end.addr) {
 
-      perf_debug(dev, "Splitting for compute timestamp");
+      perf_debug(cmd, "Splitting for compute timestamp");
       hk_cmd_buffer_end_compute(cmd);
    }
 
@@ -513,7 +510,7 @@ hk_cmd_begin_end_query(struct hk_cmd_buffer *cmd, struct hk_query_pool *pool,
 
    /* We need to set available=1 after the graphics work finishes. */
    if (end) {
-      perf_debug(dev, "Query ending, type %u", pool->vk.query_type);
+      perf_debug(cmd, "Query ending, type %u", pool->vk.query_type);
       hk_queue_write(cmd, hk_query_available_addr(pool, query), 1, graphics);
    }
 }
@@ -535,7 +532,6 @@ hk_CmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool,
 {
    VK_FROM_HANDLE(hk_cmd_buffer, cmd, commandBuffer);
    VK_FROM_HANDLE(hk_query_pool, pool, queryPool);
-   struct hk_device *dev = hk_cmd_buffer_device(cmd);
 
    hk_cmd_begin_end_query(cmd, pool, query, index, 0, true);
 
@@ -555,7 +551,7 @@ hk_CmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool,
       const uint32_t num_queries =
          util_bitcount(cmd->state.gfx.render.view_mask);
       if (num_queries > 1) {
-         perf_debug(dev, "Multiview query zeroing");
+         perf_debug(cmd, "Multiview query zeroing");
          emit_zero_queries(cmd, pool, query + 1, num_queries - 1, true);
       }
    }
@@ -671,7 +667,7 @@ hk_CmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool,
    struct hk_device *dev = hk_cmd_buffer_device(cmd);
    hk_flush_if_timestamp(cmd, pool);
 
-   perf_debug(dev, "Query pool copy");
+   perf_debug(cmd, "Query pool copy");
 
    struct libagx_copy_query_args info = {
       .availability = hk_has_available(pool) ? pool->bo->va->addr : 0,

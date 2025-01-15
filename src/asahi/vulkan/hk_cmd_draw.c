@@ -355,7 +355,7 @@ hk_build_bg_eot(struct hk_cmd_buffer *cmd, const VkRenderingInfo *info,
          bool no_store = (att_info->storeOp == VK_ATTACHMENT_STORE_OP_NONE);
          bool no_store_wa = no_store && !load && !clear;
          if (no_store_wa) {
-            perf_debug(dev, "STORE_OP_NONE workaround");
+            perf_debug(cmd, "STORE_OP_NONE workaround");
          }
 
          load |= no_store_wa;
@@ -582,7 +582,6 @@ hk_CmdBeginRendering(VkCommandBuffer commandBuffer,
 {
    VK_FROM_HANDLE(hk_cmd_buffer, cmd, commandBuffer);
    struct hk_rendering_state *render = &cmd->state.gfx.render;
-   struct hk_device *dev = hk_cmd_buffer_device(cmd);
 
    memset(render, 0, sizeof(*render));
 
@@ -659,7 +658,7 @@ hk_CmdBeginRendering(VkCommandBuffer commandBuffer,
       (render->view_mask &&
        render->view_mask != BITFIELD64_MASK(render->cr.layers));
 
-   perf_debug(dev, "Rendering %ux%ux%u@%u %s%s", render->cr.width,
+   perf_debug(cmd, "Rendering %ux%ux%u@%u %s%s", render->cr.width,
               render->cr.height, render->cr.layers,
               render->tilebuffer.nr_samples,
               render->view_mask ? " multiview" : "",
@@ -827,7 +826,7 @@ hk_CmdBeginRendering(VkCommandBuffer commandBuffer,
     * we're not that clever yet.
     */
    if (agx_tilebuffer_spills(&render->tilebuffer)) {
-      perf_debug(dev, "eMRT render pass");
+      perf_debug(cmd, "eMRT render pass");
 
       for (unsigned i = 0; i < render->color_att_count; ++i) {
          struct hk_image_view *view = render->color_att[i].iview;
@@ -841,8 +840,7 @@ hk_CmdBeginRendering(VkCommandBuffer commandBuffer,
             struct ail_layout *layout = &image->planes[image_plane].layout;
 
             if (ail_is_level_compressed(layout, view->vk.base_mip_level)) {
-               struct hk_device *dev = hk_cmd_buffer_device(cmd);
-               perf_debug(dev, "Decompressing in-place");
+               perf_debug(cmd, "Decompressing in-place");
 
                unsigned level = view->vk.base_mip_level;
                unsigned layer = view->vk.base_array_layer;
@@ -936,7 +934,6 @@ hk_CmdEndRendering(VkCommandBuffer commandBuffer)
 {
    VK_FROM_HANDLE(hk_cmd_buffer, cmd, commandBuffer);
    struct hk_rendering_state *render = &cmd->state.gfx.render;
-   struct hk_device *dev = hk_cmd_buffer_device(cmd);
 
    /* The last control stream of the render pass is special since it gets its
     * stores dropped. Swap it in.
@@ -946,7 +943,7 @@ hk_CmdEndRendering(VkCommandBuffer commandBuffer)
       cs->cr.eot.main = render->cr.eot.main;
    }
 
-   perf_debug(dev, "End rendering");
+   perf_debug(cmd, "End rendering");
    hk_cmd_buffer_end_graphics(cmd);
 
    bool need_resolve = false;
@@ -1009,7 +1006,7 @@ hk_CmdEndRendering(VkCommandBuffer commandBuffer)
    memset(render, 0, sizeof(*render));
 
    if (need_resolve) {
-      perf_debug(dev, "Resolving render pass, colour store op %u",
+      perf_debug(cmd, "Resolving render pass, colour store op %u",
                  vk_color_att[0].storeOp);
 
       hk_meta_resolve_rendering(cmd, &vk_render);
@@ -1023,7 +1020,7 @@ hk_geometry_state(struct hk_cmd_buffer *cmd)
 
    /* We tie heap allocation to geometry state allocation, so allocate now. */
    if (unlikely(!dev->heap)) {
-      perf_debug(dev, "Allocating heap");
+      perf_debug(cmd, "Allocating heap");
 
       size_t size = 128 * 1024 * 1024;
       dev->heap = agx_bo_create(&dev->dev, size, 0, 0, "Geometry heap");
@@ -1042,7 +1039,7 @@ hk_geometry_state(struct hk_cmd_buffer *cmd)
 
    /* We need to free all allocations after each command buffer execution */
    if (!cmd->uses_heap) {
-      perf_debug(dev, "Freeing heap");
+      perf_debug(cmd, "Freeing heap");
       uint64_t addr = dev->rodata.geometry_state;
 
       /* Zeroing the allocated index frees everything */
@@ -1361,7 +1358,7 @@ hk_draw_without_restart(struct hk_cmd_buffer *cmd, struct agx_draw draw,
    struct hk_graphics_state *gfx = &cmd->state.gfx;
    struct vk_dynamic_graphics_state *dyn = &cmd->vk.dynamic_graphics_state;
 
-   perf_debug(dev, "Unrolling primitive restart due to GS/XFB");
+   perf_debug(cmd, "Unrolling primitive restart due to GS/XFB");
 
    /* The unroll kernel assumes an indirect draw. Synthesize one if needed */
    draw = hk_draw_as_indexed_indirect(cmd, draw);
@@ -1414,11 +1411,11 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
    unsigned count_words = count->info.gs.count_words;
 
    if (false /* TODO */)
-      perf_debug(dev, "Transform feedbck");
+      perf_debug(cmd, "Transform feedbck");
    else if (count_words)
-      perf_debug(dev, "Geometry shader with counts");
+      perf_debug(cmd, "Geometry shader with counts");
    else
-      perf_debug(dev, "Geometry shader without counts");
+      perf_debug(cmd, "Geometry shader without counts");
 
    enum mesa_prim mode = hk_gs_in_prim(cmd);
 
@@ -1512,14 +1509,14 @@ hk_launch_tess(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
    uint64_t state = gfx->descriptors.root.draw.tess_params;
    struct hk_tess_info info = gfx->tess.info;
 
-   perf_debug(dev, "Tessellation");
+   perf_debug(cmd, "Tessellation");
 
    uint64_t tcs_stat = hk_pipeline_stat_addr(
       cmd, VK_QUERY_PIPELINE_STATISTIC_TESSELLATION_CONTROL_SHADER_PATCHES_BIT);
 
    /* Setup grids */
    if (agx_is_indirect(draw.b)) {
-      perf_debug(dev, "Indirect tessellation");
+      perf_debug(cmd, "Indirect tessellation");
 
       struct libagx_tess_setup_indirect_args args = {
          .p = state,
@@ -1557,7 +1554,7 @@ hk_launch_tess(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
 
       /* TCS invocation counter increments once per-patch */
       if (tcs_stat) {
-         perf_debug(dev, "Direct TCS statistic");
+         perf_debug(cmd, "Direct TCS statistic");
          libagx_increment_statistic(
             cmd, agx_1d(1), AGX_BARRIER_ALL | AGX_PREGFX, tcs_stat, patches);
       }
@@ -2643,13 +2640,13 @@ hk_flush_dynamic_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
       bool has_sample_mask = api_sample_mask != tib_sample_mask;
 
       if (hw_vs->info.vs.cull_distance_array_size) {
-         perf_debug(dev, "Emulating cull distance (size %u, %s a frag shader)",
+         perf_debug(cmd, "Emulating cull distance (size %u, %s a frag shader)",
                     hw_vs->info.vs.cull_distance_array_size,
                     fs ? "with" : "without");
       }
 
       if (has_sample_mask) {
-         perf_debug(dev, "Emulating sample mask (%s a frag shader)",
+         perf_debug(cmd, "Emulating sample mask (%s a frag shader)",
                     fs ? "with" : "without");
       }
 
@@ -2711,7 +2708,7 @@ hk_flush_dynamic_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
              dyn->cb.logic_op_enable) {
 
             perf_debug(
-               dev, "Epilog with%s%s%s",
+               cmd, "Epilog with%s%s%s",
                dyn->ms.alpha_to_one_enable ? " alpha-to-one" : "",
                dyn->ms.alpha_to_coverage_enable ? " alpha-to-coverage" : "",
                dyn->cb.logic_op_enable ? " logic-op" : "");
@@ -3140,7 +3137,7 @@ hk_handle_passthrough_gs(struct hk_cmd_buffer *cmd, struct agx_draw draw)
    }
 
    struct hk_device *dev = hk_cmd_buffer_device(cmd);
-   perf_debug(dev, "Binding passthrough GS for%s\n", xfb_outputs ? " XFB" : "");
+   perf_debug(cmd, "Binding passthrough GS for%s\n", xfb_outputs ? " XFB" : "");
 
    gs = hk_meta_shader(dev, hk_nir_passthrough_gs, key, key_size);
    gs->is_passthrough = true;
@@ -3185,7 +3182,7 @@ hk_flush_gfx_state(struct hk_cmd_buffer *cmd, uint32_t draw_id,
        */
       bool succ = u_tristate_set(&cs->cr.dbias_is_int, dbias_is_int);
       if (!succ) {
-         perf_debug(dev, "Splitting control stream due to depth bias");
+         perf_debug(cmd, "Splitting control stream due to depth bias");
 
          hk_cmd_buffer_end_graphics(cmd);
          cs = hk_cmd_buffer_get_cs(cmd, false /* compute */);
@@ -3319,8 +3316,7 @@ hk_ia_update(struct hk_cmd_buffer *cmd, struct agx_draw draw,
              uint64_t ia_vertices, uint64_t ia_prims, uint64_t vs_invocations,
              uint64_t c_prims, uint64_t c_inv)
 {
-   struct hk_device *dev = hk_cmd_buffer_device(cmd);
-   perf_debug(dev, "Input assembly counters");
+   perf_debug(cmd, "Input assembly counters");
 
    uint64_t draw_ptr;
    if (agx_is_indirect(draw.b)) {
@@ -3487,7 +3483,7 @@ hk_draw(struct hk_cmd_buffer *cmd, uint16_t draw_id, struct agx_draw draw_)
       enum agx_primitive topology = cmd->state.gfx.topology;
       if (needs_idx_robust) {
          assert(!geom && !tess && !adj);
-         perf_debug(dev, "lowering robust index buffer");
+         perf_debug(cmd, "lowering robust index buffer");
 
          cs->current = out;
 
@@ -3704,8 +3700,7 @@ hk_draw_indirect_count(VkCommandBuffer commandBuffer, VkBuffer _buffer,
    VK_FROM_HANDLE(hk_buffer, buffer, _buffer);
    VK_FROM_HANDLE(hk_buffer, count_buffer, countBuffer);
 
-   struct hk_device *dev = hk_cmd_buffer_device(cmd);
-   perf_debug(dev, "Draw indirect count");
+   perf_debug(cmd, "Draw indirect count");
 
    assert((stride % 4) == 0 && "aligned");
 
@@ -3783,7 +3778,6 @@ hk_begin_end_xfb(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
 
 {
    VK_FROM_HANDLE(hk_cmd_buffer, cmd, commandBuffer);
-   struct hk_device *dev = hk_cmd_buffer_device(cmd);
    struct hk_graphics_state *gfx = &cmd->state.gfx;
 
    gfx->xfb_enabled = begin;
@@ -3826,7 +3820,7 @@ hk_begin_end_xfb(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
       copies = 4;
 
    if (copies > 0) {
-      perf_debug(dev, "XFB counter copy");
+      perf_debug(cmd, "XFB counter copy");
 
       libagx_copy_xfb_counters(cmd, agx_1d(copies),
                                AGX_BARRIER_ALL | AGX_PREGFX,

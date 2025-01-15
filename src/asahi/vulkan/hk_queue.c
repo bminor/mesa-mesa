@@ -768,8 +768,9 @@ queue_submit(struct hk_device *dev, struct hk_queue *queue,
       command_count += list_length(&cmdbuf->control_streams);
    }
 
-   perf_debug(dev, "Submitting %u control streams (%u command buffers)",
-              command_count, submit->command_buffer_count);
+   perf_debug_dev(&dev->dev,
+                  "Submitting %u control streams (%u command buffers)",
+                  command_count, submit->command_buffer_count);
 
    if (command_count == 0)
       return queue_submit_empty(dev, queue, submit);
@@ -854,7 +855,7 @@ queue_submit(struct hk_device *dev, struct hk_queue *queue,
 
          if (cs->type == HK_CS_CDM) {
             perf_debug(
-               dev,
+               cmdbuf,
                "%u: Submitting CDM with %u API calls, %u dispatches, %u flushes",
                i, cs->stats.calls, cs->stats.cmds, cs->stats.flushes);
 
@@ -874,8 +875,8 @@ queue_submit(struct hk_device *dev, struct hk_queue *queue,
                cmd.cmd_buffer_size -= 8;
          } else {
             assert(cs->type == HK_CS_VDM);
-            perf_debug(dev, "%u: Submitting VDM with %u API draws, %u draws", i,
-                       cs->stats.calls, cs->stats.cmds);
+            perf_debug(cmdbuf, "%u: Submitting VDM with %u API draws, %u draws",
+                       i, cs->stats.calls, cs->stats.cmds);
             assert(cs->stats.cmds > 0 || cs->cr.process_empty_tiles ||
                    cs->timestamp.end.handle);
 

@@ -1340,7 +1340,7 @@ hk_CmdBlitImage2(VkCommandBuffer commandBuffer,
 {
    VK_FROM_HANDLE(hk_cmd_buffer, cmd, commandBuffer);
    struct hk_device *dev = hk_cmd_buffer_device(cmd);
-   perf_debug(dev, "Blit image");
+   perf_debug(cmd, "Blit image");
 
    struct hk_meta_save save;
    hk_meta_begin(cmd, &save, VK_PIPELINE_BIND_POINT_GRAPHICS);
@@ -1354,7 +1354,7 @@ hk_CmdResolveImage2(VkCommandBuffer commandBuffer,
 {
    VK_FROM_HANDLE(hk_cmd_buffer, cmd, commandBuffer);
    struct hk_device *dev = hk_cmd_buffer_device(cmd);
-   perf_debug(dev, "Resolve");
+   perf_debug(cmd, "Resolve");
 
    struct hk_meta_save save;
    hk_meta_begin(cmd, &save, VK_PIPELINE_BIND_POINT_GRAPHICS);
