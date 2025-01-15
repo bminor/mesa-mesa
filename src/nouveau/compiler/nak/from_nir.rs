@@ -21,6 +21,7 @@ use std::ops::Index;
 
 fn init_info_from_nir(nak: &nak_compiler, nir: &nir_shader) -> ShaderInfo {
     ShaderInfo {
+        max_warps_per_sm: 0,
         num_gprs: 0,
         num_instrs: 0,
         num_static_cycles: 0,

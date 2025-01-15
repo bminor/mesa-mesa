@@ -198,6 +198,7 @@ impl<'a> TestShaderBuilder<'a> {
             smem_size: 0,
         };
         let info = ShaderInfo {
+            max_warps_per_sm: 0,
             num_gprs: 0,
             num_control_barriers: 0,
             num_instrs: 0,

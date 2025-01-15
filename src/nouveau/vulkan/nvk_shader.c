@@ -1256,6 +1256,14 @@ nvk_shader_get_executable_statistics(
    }
 
    vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
+      WRITE_STR(stat->name, "Max warps/SM");
+      WRITE_STR(stat->description,
+                "Maximum number of warps per SM based on static information");
+      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
+      stat->value.u64 = shader->info.max_warps_per_sm;
+   }
+
+   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
       WRITE_STR(stat->name, "Code Size");
       WRITE_STR(stat->description,
                 "Size of the compiled shader binary, in bytes");

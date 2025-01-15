@@ -137,6 +137,9 @@ struct nak_shader_info {
 
    uint8_t _pad0;
 
+   /** Maximum number of warps per SM based on static information */
+   uint32_t max_warps_per_sm;
+
    /** Number of instructions used */
    uint32_t num_instrs;
 
