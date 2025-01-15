@@ -374,7 +374,9 @@ presub_replace_add(struct rc_instruction *inst_add, struct rc_instruction *inst_
       negates++;
    if (inst_add->U.I.SrcReg[1].Negate)
       negates++;
-   assert(negates != 2 || inst_add->U.I.SrcReg[1].Negate == inst_add->U.I.SrcReg[0].Negate);
+   assert(negates != 2 ||
+          ((inst_add->U.I.SrcReg[1].Negate & inst_add->U.I.DstReg.WriteMask) ==
+           (inst_add->U.I.SrcReg[0].Negate & inst_add->U.I.DstReg.WriteMask)));
 
    if (negates == 1)
       presub_opcode = RC_PRESUB_SUB;
