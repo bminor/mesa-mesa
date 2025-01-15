@@ -148,6 +148,7 @@ u_printf_impl(FILE *out, const char *buffer, size_t buffer_size,
               const u_printf_info **info_ptr,
               unsigned info_size)
 {
+   bool use_singleton = info == NULL && info_ptr == NULL;
    for (size_t buf_pos = 0; buf_pos < buffer_size;) {
       uint32_t fmt_idx = *(uint32_t*)&buffer[buf_pos];
 
@@ -155,16 +156,23 @@ u_printf_impl(FILE *out, const char *buffer, size_t buffer_size,
       if (fmt_idx == 0)
          break;
 
-      /* the idx is 1 based */
+      /* the idx is 1 based, and hashes are nonzero */
       assert(fmt_idx > 0);
-      fmt_idx -= 1;
 
-      /* The API allows more arguments than the format uses */
-      if (fmt_idx >= info_size)
-         return;
+      const u_printf_info *fmt;
+      if (use_singleton) {
+         fmt = u_printf_singleton_search(fmt_idx /* hash */);
+         if (!fmt)
+            return;
+      } else {
+         fmt_idx -= 1;
 
-      const u_printf_info *fmt = info != NULL ?
-         &info[fmt_idx] : info_ptr[fmt_idx];
+         if (fmt_idx >= info_size)
+            return;
+
+         fmt = info != NULL ?  &info[fmt_idx] : info_ptr[fmt_idx];
+      }
+
       const char *format = fmt->strings;
       buf_pos += sizeof(fmt_idx);
 
