@@ -124,7 +124,7 @@
         "description": "brw: fix coarse_z computation on Xe2+",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4672fcbc76b1e2d02810cd95584fcfa72f774b47",
         "notes": null
