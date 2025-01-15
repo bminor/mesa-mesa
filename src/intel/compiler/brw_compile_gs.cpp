@@ -5,7 +5,7 @@
 
 #include "brw_eu.h"
 #include "brw_fs.h"
-#include "brw_fs_builder.h"
+#include "brw_builder.h"
 #include "brw_generator.h"
 #include "brw_prim.h"
 #include "brw_nir.h"

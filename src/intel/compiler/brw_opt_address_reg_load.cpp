@@ -4,7 +4,7 @@
  */
 
 #include "brw_fs.h"
-#include "brw_fs_builder.h"
+#include "brw_builder.h"
 #include "brw_cfg.h"
 #include "brw_eu.h"
 

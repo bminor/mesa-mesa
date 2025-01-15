@@ -21,6 +21,7 @@ intel_nir_files = files(
 )
 
 libintel_compiler_brw_files = files(
+  'brw_builder.h',
   'brw_cfg.cpp',
   'brw_cfg.h',
   'brw_compile_bs.cpp',
@@ -45,7 +46,6 @@ libintel_compiler_brw_files = files(
   'brw_eu_inst.h',
   'brw_eu.h',
   'brw_eu_validate.c',
-  'brw_fs_builder.h',
   'brw_fs.cpp',
   'brw_fs.h',
   'brw_fs_live_variables.cpp',
