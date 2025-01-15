@@ -1419,7 +1419,7 @@ impl Shader<'_> {
         for file in spill_files {
             let num_regs = self.sm.num_regs(file);
             if max_live[file] > num_regs {
-                f.spill_values(file, num_regs);
+                f.spill_values(file, num_regs, &mut self.info);
 
                 // Re-calculate liveness after we spill
                 live = SimpleLiveness::for_function(f);
@@ -1461,7 +1461,7 @@ impl Shader<'_> {
             total_gprs = max_gprs;
             gpr_limit = total_gprs - u32::from(tmp_gprs);
 
-            f.spill_values(RegFile::GPR, gpr_limit);
+            f.spill_values(RegFile::GPR, gpr_limit, &mut self.info);
 
             // Re-calculate liveness one last time
             live = SimpleLiveness::for_function(f);

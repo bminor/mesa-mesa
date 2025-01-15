@@ -85,21 +85,24 @@ trait Spill {
     fn fill(&mut self, dst: Dst, src: SSAValue) -> Box<Instr>;
 }
 
-struct SpillUniform {}
+struct SpillUniform<'a> {
+    info: &'a mut ShaderInfo,
+}
 
-impl SpillUniform {
-    fn new() -> Self {
-        Self {}
+impl<'a> SpillUniform<'a> {
+    fn new(info: &'a mut ShaderInfo) -> Self {
+        Self { info }
     }
 }
 
-impl Spill for SpillUniform {
+impl Spill for SpillUniform<'_> {
     fn spill_file(&self, file: RegFile) -> RegFile {
         debug_assert!(file.is_uniform());
         file.to_warp()
     }
 
     fn spill(&mut self, dst: SSAValue, src: Src) -> Box<Instr> {
+        self.info.num_spills_to_reg += 1;
         Instr::new_boxed(OpCopy {
             dst: dst.into(),
             src: src,
@@ -107,6 +110,7 @@ impl Spill for SpillUniform {
     }
 
     fn fill(&mut self, dst: Dst, src: SSAValue) -> Box<Instr> {
+        self.info.num_fills_from_reg += 1;
         Instr::new_boxed(OpR2UR {
             dst: dst,
             src: src.into(),
@@ -114,15 +118,17 @@ impl Spill for SpillUniform {
     }
 }
 
-struct SpillPred {}
+struct SpillPred<'a> {
+    info: &'a mut ShaderInfo,
+}
 
-impl SpillPred {
-    fn new() -> Self {
-        Self {}
+impl<'a> SpillPred<'a> {
+    fn new(info: &'a mut ShaderInfo) -> Self {
+        Self { info }
     }
 }
 
-impl Spill for SpillPred {
+impl Spill for SpillPred<'_> {
     fn spill_file(&self, file: RegFile) -> RegFile {
         match file {
             RegFile::Pred => RegFile::GPR,
@@ -133,6 +139,7 @@ impl Spill for SpillPred {
 
     fn spill(&mut self, dst: SSAValue, src: Src) -> Box<Instr> {
         assert!(matches!(dst.file(), RegFile::GPR | RegFile::UGPR));
+        self.info.num_spills_to_reg += 1;
         if let Some(b) = src.as_bool() {
             let u32_src = if b {
                 Src::new_imm_u32(!0)
@@ -154,6 +161,7 @@ impl Spill for SpillPred {
 
     fn fill(&mut self, dst: Dst, src: SSAValue) -> Box<Instr> {
         assert!(matches!(src.file(), RegFile::GPR | RegFile::UGPR));
+        self.info.num_fills_from_reg += 1;
         Instr::new_boxed(OpISetP {
             dst: dst,
             set_op: PredSetOp::And,
@@ -167,15 +175,17 @@ impl Spill for SpillPred {
     }
 }
 
-struct SpillBar {}
+struct SpillBar<'a> {
+    info: &'a mut ShaderInfo,
+}
 
-impl SpillBar {
-    fn new() -> Self {
-        Self {}
+impl<'a> SpillBar<'a> {
+    fn new(info: &'a mut ShaderInfo) -> Self {
+        Self { info }
     }
 }
 
-impl Spill for SpillBar {
+impl Spill for SpillBar<'_> {
     fn spill_file(&self, file: RegFile) -> RegFile {
         assert!(file == RegFile::Bar);
         RegFile::GPR
@@ -183,6 +193,7 @@ impl Spill for SpillBar {
 
     fn spill(&mut self, dst: SSAValue, src: Src) -> Box<Instr> {
         assert!(dst.file() == RegFile::GPR);
+        self.info.num_spills_to_reg += 1;
         Instr::new_boxed(OpBMov {
             dst: dst.into(),
             src: src,
@@ -192,6 +203,7 @@ impl Spill for SpillBar {
 
     fn fill(&mut self, dst: Dst, src: SSAValue) -> Box<Instr> {
         assert!(src.file() == RegFile::GPR);
+        self.info.num_fills_from_reg += 1;
         Instr::new_boxed(OpBMov {
             dst: dst,
             src: src.into(),
@@ -200,15 +212,17 @@ impl Spill for SpillBar {
     }
 }
 
-struct SpillGPR {}
+struct SpillGPR<'a> {
+    info: &'a mut ShaderInfo,
+}
 
-impl SpillGPR {
-    fn new() -> Self {
-        Self {}
+impl<'a> SpillGPR<'a> {
+    fn new(info: &'a mut ShaderInfo) -> Self {
+        Self { info }
     }
 }
 
-impl Spill for SpillGPR {
+impl Spill for SpillGPR<'_> {
     fn spill_file(&self, file: RegFile) -> RegFile {
         assert!(file == RegFile::GPR);
         RegFile::Mem
@@ -216,6 +230,7 @@ impl Spill for SpillGPR {
 
     fn spill(&mut self, dst: SSAValue, src: Src) -> Box<Instr> {
         assert!(dst.file() == RegFile::Mem);
+        self.info.num_spills_to_mem += 1;
         Instr::new_boxed(OpCopy {
             dst: dst.into(),
             src: src,
@@ -224,6 +239,7 @@ impl Spill for SpillGPR {
 
     fn fill(&mut self, dst: Dst, src: SSAValue) -> Box<Instr> {
         assert!(src.file() == RegFile::Mem);
+        self.info.num_fills_from_mem += 1;
         Instr::new_boxed(OpCopy {
             dst: dst,
             src: src.into(),
@@ -1023,26 +1039,31 @@ impl Function {
     /// just for the sake of a parallel copy.  While this may not be true in
     /// general, especially not when spilling to memory, the register allocator
     /// is good at eliding unnecessary copies.
-    pub fn spill_values(&mut self, file: RegFile, limit: u32) {
+    pub fn spill_values(
+        &mut self,
+        file: RegFile,
+        limit: u32,
+        info: &mut ShaderInfo,
+    ) {
         match file {
             RegFile::GPR => {
-                let spill = SpillGPR::new();
+                let spill = SpillGPR::new(info);
                 spill_values(self, file, limit, spill);
             }
             RegFile::UGPR => {
-                let spill = SpillUniform::new();
+                let spill = SpillUniform::new(info);
                 spill_values(self, file, limit, spill);
             }
             RegFile::Pred => {
-                let spill = SpillPred::new();
+                let spill = SpillPred::new(info);
                 spill_values(self, file, limit, spill);
             }
             RegFile::UPred => {
-                let spill = SpillPred::new();
+                let spill = SpillPred::new(info);
                 spill_values(self, file, limit, spill);
             }
             RegFile::Bar => {
-                let spill = SpillBar::new();
+                let spill = SpillBar::new(info);
                 spill_values(self, file, limit, spill);
             }
             _ => panic!("Don't know how to spill {} registers", file),

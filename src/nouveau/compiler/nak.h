@@ -146,6 +146,18 @@ struct nak_shader_info {
    /** Number of cycles used by fixed-latency instructions */
    uint32_t num_static_cycles;
 
+   /** Number of spills from GPRs to Memory */
+   uint32_t num_spills_to_mem;
+
+   /** Number of fills from Memory to GPRs */
+   uint32_t num_fills_from_mem;
+
+   /** Number of spills between register files */
+   uint32_t num_spills_to_reg;
+
+   /** Number of fills between register files */
+   uint32_t num_fills_from_reg;
+
    /** Size of shader local (scratch) memory */
    uint32_t slm_size;
 

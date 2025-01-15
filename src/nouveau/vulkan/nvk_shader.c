@@ -1264,6 +1264,36 @@ nvk_shader_get_executable_statistics(
    }
 
    vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
+      WRITE_STR(stat->name, "Spills to memory");
+      WRITE_STR(stat->description, "Number of spills from GPRs to memory");
+      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
+      stat->value.u64 = shader->info.num_spills_to_mem;
+   }
+
+   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
+      WRITE_STR(stat->name, "Fills from memory");
+      WRITE_STR(stat->description, "Number of fills from memory to GPRs");
+      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
+      stat->value.u64 = shader->info.num_spills_to_mem;
+   }
+
+   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
+      WRITE_STR(stat->name, "Spills to reg");
+      WRITE_STR(stat->description,
+                "Number of spills between different register files");
+      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
+      stat->value.u64 = shader->info.num_spills_to_reg;
+   }
+
+   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
+      WRITE_STR(stat->name, "Fills from reg");
+      WRITE_STR(stat->description,
+                "Number of fills between different register files");
+      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
+      stat->value.u64 = shader->info.num_fills_from_reg;
+   }
+
+   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
       WRITE_STR(stat->name, "Code Size");
       WRITE_STR(stat->description,
                 "Size of the compiled shader binary, in bytes");
