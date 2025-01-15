@@ -1262,6 +1262,7 @@ dri3_cpp_for_fourcc(uint32_t format) {
    switch (format) {
    case DRM_FORMAT_R8:
       return 1;
+   case DRM_FORMAT_ARGB1555:
    case DRM_FORMAT_RGB565:
    case DRM_FORMAT_GR88:
       return 2;
