@@ -688,6 +688,15 @@ option(
 )
 
 option(
+  'intel-elk',
+  type : 'boolean',
+  value : true,
+  description : 'Build ELK compiler (used for Gfx8 and earlier). ' +
+                'This is required for Crocus and Hasvk, and it is ' +
+                'optional for Iris and various developer tools.'
+)
+
+option(
   'video-codecs',
   type : 'array',
   value : ['all_free'],

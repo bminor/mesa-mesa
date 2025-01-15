@@ -327,4 +327,8 @@ brw_disasm_tool = executable(
 
 endif
 
-subdir('elk')
+if with_intel_elk
+  subdir('elk')
+else
+  idep_intel_compiler_elk = null_dep
+endif

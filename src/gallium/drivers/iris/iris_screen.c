@@ -87,6 +87,11 @@
       unreachable("Unknown hardware generation"); \
    }
 
+#ifndef INTEL_USE_ELK
+static inline void gfx8_init_screen_state(struct iris_screen *screen) { unreachable("no elk support"); }
+static inline void gfx8_init_screen_gen_state(struct iris_screen *screen) { unreachable("no elk support"); }
+#endif
+
 static const char *
 iris_get_vendor(struct pipe_screen *pscreen)
 {

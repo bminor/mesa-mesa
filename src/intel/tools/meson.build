@@ -21,7 +21,7 @@ libintel_tools = static_library(
     idep_libintel_common,
   ],
   include_directories : [inc_include, inc_src, inc_intel],
-  c_args : [no_override_init_args],
+  c_args : [intel_common_args, no_override_init_args],
   gnu_symbol_visibility : 'hidden',
   install : false,
 )
