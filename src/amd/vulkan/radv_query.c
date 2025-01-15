@@ -962,6 +962,28 @@ emit_sample_streamout(struct radv_cmd_buffer *cmd_buffer, uint64_t va, uint32_t 
 }
 
 static void
+radv_alloc_shader_query_buf(struct radv_cmd_buffer *cmd_buffer)
+{
+   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+   unsigned offset;
+   void *ptr;
+
+   assert(pdev->info.gfx_level >= GFX12);
+
+   if (cmd_buffer->state.shader_query_buf_va)
+      return;
+
+   if (!radv_cmd_buffer_upload_alloc_aligned(cmd_buffer, RADV_SHADER_QUERY_BUF_SIZE, 64, &offset, &ptr))
+      return;
+
+   memset(ptr, 0, RADV_SHADER_QUERY_BUF_SIZE);
+
+   cmd_buffer->state.shader_query_buf_va = radv_buffer_get_va(cmd_buffer->upload.upload_bo);
+   cmd_buffer->state.shader_query_buf_va += offset;
+}
+
+static void
 radv_begin_tfb_query(struct radv_cmd_buffer *cmd_buffer, uint64_t va, uint32_t index)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
@@ -1953,6 +1975,10 @@ radv_create_query_pool(struct radv_device *device, const VkQueryPoolCreateInfo *
    /* The number of task shader invocations needs to be queried on ACE. */
    pool->uses_ace = (pool->vk.pipeline_statistics & VK_QUERY_PIPELINE_STATISTIC_TASK_SHADER_INVOCATIONS_BIT_EXT);
 
+   pool->uses_shader_query_buf =
+      pdev->info.gfx_level >= GFX12 && (pool->vk.query_type == VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT ||
+                                        pool->vk.query_type == VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT);
+
    switch (pCreateInfo->queryType) {
    case VK_QUERY_TYPE_OCCLUSION:
       pool->stride = 16 * pdev->info.max_render_backends;
@@ -2700,6 +2726,9 @@ radv_CmdBeginQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPoo
 
       radv_cs_add_buffer(device->ws, cmd_buffer->gang.cs, pool->bo);
    }
+
+   if (pool->uses_shader_query_buf)
+      radv_alloc_shader_query_buf(cmd_buffer);
 
    emit_begin_query(cmd_buffer, pool, va, pool->vk.query_type, flags, index);
 }
