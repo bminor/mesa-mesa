@@ -24,6 +24,10 @@
 static bool
 radv_is_gpu_supported(const struct radeon_info *info)
 {
+   /* AMD CDNA isn't supported. */
+   if (info->gfx_level == GFX9 && !info->has_graphics)
+      return false;
+
    /* GFX12 isn't supported. */
    if (info->gfx_level >= GFX12)
       return false;
