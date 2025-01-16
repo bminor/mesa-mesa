@@ -69,6 +69,9 @@ static const char *tc_call_names[] = {
 #endif
 
 static void
+tc_batch_execute(void *job, UNUSED void *gdata, int thread_index);
+
+static void
 tc_buffer_subdata(struct pipe_context *_pipe,
                   struct pipe_resource *resource,
                   unsigned usage, unsigned offset,
@@ -428,112 +431,6 @@ incr_rp_info(struct tc_renderpass_info *tc_info)
 {
    struct tc_batch_rp_info *info = tc_batch_rp_info(tc_info);
    return &info[1].info;
-}
-
-ALWAYS_INLINE static void
-batch_execute(struct tc_batch *batch, struct pipe_context *pipe, uint64_t *last, bool parsing)
-{
-   /* if the framebuffer state is persisting from a previous batch,
-    * begin incrementing renderpass info on the first set_framebuffer_state call
-    */
-   bool first = !batch->first_set_fb;
-   const tc_execute *execute_func = batch->tc->execute_func;
-
-   for (uint64_t *iter = batch->slots; iter != last;) {
-      struct tc_call_base *call = (struct tc_call_base *)iter;
-
-      tc_assert(call->sentinel == TC_SENTINEL);
-
-#if TC_DEBUG >= 3
-      tc_printf("CALL: %s", tc_call_names[call->call_id]);
-#endif
-
-      TC_TRACE_SCOPE(call->call_id);
-
-      iter += execute_func[call->call_id](pipe, call);
-
-      if (parsing) {
-         if (call->call_id == TC_CALL_flush) {
-            /* always increment renderpass info for non-deferred flushes */
-            batch->tc->renderpass_info = incr_rp_info(batch->tc->renderpass_info);
-            /* if a flush happens, renderpass info is always incremented after */
-            first = false;
-         } else if (call->call_id == TC_CALL_set_framebuffer_state) {
-            /* the renderpass info pointer is already set at the start of the batch,
-             * so don't increment on the first set_framebuffer_state call
-             */
-            if (!first)
-               batch->tc->renderpass_info = incr_rp_info(batch->tc->renderpass_info);
-            first = false;
-         } else if (call->call_id >= TC_CALL_draw_single &&
-                    call->call_id <= TC_CALL_draw_vstate_multi) {
-            /* if a draw happens before a set_framebuffer_state on this batch,
-             * begin incrementing renderpass data 
-             */
-            first = false;
-         }
-      }
-   }
-}
-
-static void
-tc_batch_execute(void *job, UNUSED void *gdata, int thread_index)
-{
-   struct tc_batch *batch = job;
-   struct pipe_context *pipe = batch->tc->pipe;
-   uint64_t *last = &batch->slots[batch->num_total_slots];
-
-   tc_batch_check(batch);
-   tc_set_driver_thread(batch->tc);
-
-   assert(!batch->token);
-
-   /* setup renderpass info */
-   batch->tc->renderpass_info = batch->renderpass_infos.data;
-
-   if (batch->tc->options.parse_renderpass_info) {
-      batch_execute(batch, pipe, last, true);
-
-      struct tc_batch_rp_info *info = batch->renderpass_infos.data;
-      for (unsigned i = 0; i < batch->max_renderpass_info_idx + 1; i++) {
-         if (info[i].next)
-            info[i].next->prev = NULL;
-         info[i].next = NULL;
-      }
-   } else {
-      batch_execute(batch, pipe, last, false);
-   }
-
-   /* Add the fence to the list of fences for the driver to signal at the next
-    * flush, which we use for tracking which buffers are referenced by
-    * an unflushed command buffer.
-    */
-   struct threaded_context *tc = batch->tc;
-   struct util_queue_fence *fence =
-      &tc->buffer_lists[batch->buffer_list_index].driver_flushed_fence;
-
-   if (tc->options.driver_calls_flush_notify) {
-      tc->signal_fences_next_flush[tc->num_signal_fences_next_flush++] = fence;
-
-      /* Since our buffer lists are chained as a ring, we need to flush
-       * the context twice as we go around the ring to make the driver signal
-       * the buffer list fences, so that the producer thread can reuse the buffer
-       * list structures for the next batches without waiting.
-       */
-      unsigned half_ring = TC_MAX_BUFFER_LISTS / 2;
-      if (batch->buffer_list_index % half_ring == half_ring - 1)
-         pipe->flush(pipe, NULL, PIPE_FLUSH_ASYNC);
-   } else {
-      util_queue_fence_signal(fence);
-   }
-
-   tc_clear_driver_thread(batch->tc);
-   tc_batch_check(batch);
-   batch->num_total_slots = 0;
-   batch->last_mergeable_call = NULL;
-   batch->first_set_fb = false;
-   batch->max_renderpass_info_idx = 0;
-   batch->tc->last_completed = batch->batch_idx;
 }
 
 static void
@@ -5118,6 +5015,115 @@ tc_callback(struct pipe_context *_pipe, void (*fn)(void *), void *data,
    p->data = data;
 }
 
+/********************************************************************
+ * batch execution in the driver thread
+ */
+
+ALWAYS_INLINE static void
+batch_execute(struct tc_batch *batch, struct pipe_context *pipe, uint64_t *last, bool parsing)
+{
+   /* if the framebuffer state is persisting from a previous batch,
+    * begin incrementing renderpass info on the first set_framebuffer_state call
+    */
+   bool first = !batch->first_set_fb;
+   const tc_execute *execute_func = batch->tc->execute_func;
+
+   for (uint64_t *iter = batch->slots; iter != last;) {
+      struct tc_call_base *call = (struct tc_call_base *)iter;
+
+      tc_assert(call->sentinel == TC_SENTINEL);
+
+#if TC_DEBUG >= 3
+      tc_printf("CALL: %s", tc_call_names[call->call_id]);
+#endif
+
+      TC_TRACE_SCOPE(call->call_id);
+
+      iter += execute_func[call->call_id](pipe, call);
+
+      if (parsing) {
+         if (call->call_id == TC_CALL_flush) {
+            /* always increment renderpass info for non-deferred flushes */
+            batch->tc->renderpass_info = incr_rp_info(batch->tc->renderpass_info);
+            /* if a flush happens, renderpass info is always incremented after */
+            first = false;
+         } else if (call->call_id == TC_CALL_set_framebuffer_state) {
+            /* the renderpass info pointer is already set at the start of the batch,
+             * so don't increment on the first set_framebuffer_state call
+             */
+            if (!first)
+               batch->tc->renderpass_info = incr_rp_info(batch->tc->renderpass_info);
+            first = false;
+         } else if (call->call_id >= TC_CALL_draw_single &&
+                    call->call_id <= TC_CALL_draw_vstate_multi) {
+            /* if a draw happens before a set_framebuffer_state on this batch,
+             * begin incrementing renderpass data
+             */
+            first = false;
+         }
+      }
+   }
+}
+
+static void
+tc_batch_execute(void *job, UNUSED void *gdata, int thread_index)
+{
+   struct tc_batch *batch = job;
+   struct pipe_context *pipe = batch->tc->pipe;
+   uint64_t *last = &batch->slots[batch->num_total_slots];
+
+   tc_batch_check(batch);
+   tc_set_driver_thread(batch->tc);
+
+   assert(!batch->token);
+
+   /* setup renderpass info */
+   batch->tc->renderpass_info = batch->renderpass_infos.data;
+
+   if (batch->tc->options.parse_renderpass_info) {
+      batch_execute(batch, pipe, last, true);
+
+      struct tc_batch_rp_info *info = batch->renderpass_infos.data;
+      for (unsigned i = 0; i < batch->max_renderpass_info_idx + 1; i++) {
+         if (info[i].next)
+            info[i].next->prev = NULL;
+         info[i].next = NULL;
+      }
+   } else {
+      batch_execute(batch, pipe, last, false);
+   }
+
+   /* Add the fence to the list of fences for the driver to signal at the next
+    * flush, which we use for tracking which buffers are referenced by
+    * an unflushed command buffer.
+    */
+   struct threaded_context *tc = batch->tc;
+   struct util_queue_fence *fence =
+      &tc->buffer_lists[batch->buffer_list_index].driver_flushed_fence;
+
+   if (tc->options.driver_calls_flush_notify) {
+      tc->signal_fences_next_flush[tc->num_signal_fences_next_flush++] = fence;
+
+      /* Since our buffer lists are chained as a ring, we need to flush
+       * the context twice as we go around the ring to make the driver signal
+       * the buffer list fences, so that the producer thread can reuse the buffer
+       * list structures for the next batches without waiting.
+       */
+      unsigned half_ring = TC_MAX_BUFFER_LISTS / 2;
+      if (batch->buffer_list_index % half_ring == half_ring - 1)
+         pipe->flush(pipe, NULL, PIPE_FLUSH_ASYNC);
+   } else {
+      util_queue_fence_signal(fence);
+   }
+
+   tc_clear_driver_thread(batch->tc);
+   tc_batch_check(batch);
+   batch->num_total_slots = 0;
+   batch->last_mergeable_call = NULL;
+   batch->first_set_fb = false;
+   batch->max_renderpass_info_idx = 0;
+   batch->tc->last_completed = batch->batch_idx;
+}
 
 /********************************************************************
  * create & destroy
