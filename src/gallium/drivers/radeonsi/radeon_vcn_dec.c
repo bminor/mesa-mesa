@@ -1375,7 +1375,7 @@ static unsigned rvcn_dec_dynamic_dpb_t2_message(struct radeon_decoder *dec, rvcn
    list_for_each_entry_safe(struct rvcn_dec_dynamic_dpb_t2, d, &dec->dpb_ref_list, list) {
       bool found = false;
 
-      res = &(((struct si_texture *)((struct vl_video_buffer *)d->vbuf)->resources[0])->buffer);
+      res = (struct si_resource *)d->buf;
       for (i = 0; i < dec->ref_codec.ref_size; ++i) {
          if (((dec->ref_codec.ref_list[i] & 0x7f) != 0x7f) && (d->index == (dec->ref_codec.ref_list[i] & 0x7f))) {
             addr = dec->ws->buffer_get_virtual_address(res->buf);
@@ -1387,7 +1387,7 @@ static unsigned rvcn_dec_dynamic_dpb_t2_message(struct radeon_decoder *dec, rvcn
          }
       }
       if (!found) {
-         if (d->vbuf->width != width || d->vbuf->height != height) {
+         if (d->buf->width0 != width || d->buf->height0 != height) {
             list_del(&d->list);
             list_addtail(&d->list, &dec->dpb_unref_list);
          } else {
@@ -1397,7 +1397,7 @@ static unsigned rvcn_dec_dynamic_dpb_t2_message(struct radeon_decoder *dec, rvcn
    }
 
    list_for_each_entry_safe(struct rvcn_dec_dynamic_dpb_t2, d, &dec->dpb_ref_list, list) {
-      if (d->vbuf->width == width && d->vbuf->height == height && d->index == dec->ref_codec.index) {
+      if (d->buf->width0 == width && d->buf->height0 == height && d->index == dec->ref_codec.index) {
          dpb = d;
          break;
       }
@@ -1415,7 +1415,7 @@ static unsigned rvcn_dec_dynamic_dpb_t2_message(struct radeon_decoder *dec, rvcn
 
    list_for_each_entry_safe(struct rvcn_dec_dynamic_dpb_t2, d, &dec->dpb_unref_list, list) {
       list_del(&d->list);
-      d->vbuf->destroy(d->vbuf);
+      pipe_resource_reference(&d->buf, NULL);
       FREE(d);
    }
 
@@ -1425,17 +1425,20 @@ static unsigned rvcn_dec_dynamic_dpb_t2_message(struct radeon_decoder *dec, rvcn
          return 1;
       dpb->index = dec->ref_codec.index;
 
-      struct pipe_video_buffer templat;
+      struct pipe_resource templat;
       memset(&templat, 0, sizeof(templat));
-      templat.buffer_format = get_buffer_format(dec);
-      templat.width = width;
-      templat.height = height;
+      templat.format = get_buffer_format(dec);
+      templat.target = PIPE_TEXTURE_2D;
+      templat.width0 = width;
+      templat.height0 = height;
+      templat.depth0 = 1;
+      templat.array_size = 1;
+      templat.usage = PIPE_USAGE_DEFAULT;
       templat.bind = PIPE_BIND_VIDEO_DECODE_DPB;
       if (encrypted)
          templat.bind |= PIPE_BIND_PROTECTED;
-      dpb->vbuf = dec->base.context->create_video_buffer(dec->base.context, &templat);
-
-      if (!dpb->vbuf) {
+      dpb->buf = dec->screen->resource_create(dec->screen, &templat);
+      if (!dpb->buf) {
          RADEON_DEC_ERR("Can't allocate dpb buffer.\n");
          FREE(dpb);
          return 1;
@@ -1447,7 +1450,7 @@ static unsigned rvcn_dec_dynamic_dpb_t2_message(struct radeon_decoder *dec, rvcn
       struct rvcn_dec_dynamic_dpb_t2 *d =
          list_first_entry(&dec->dpb_ref_list, struct rvcn_dec_dynamic_dpb_t2, list);
 
-      res = &(((struct si_texture *)((struct vl_video_buffer *)d->vbuf)->resources[0])->buffer);
+      res = (struct si_resource *)d->buf;
       addr = dec->ws->buffer_get_virtual_address(res->buf);
       for (i = 0; i < dec->ref_codec.num_refs; ++i) {
          if (dynamic_dpb_t2->dpbAddrLo[i] || dynamic_dpb_t2->dpbAddrHi[i])
@@ -1461,8 +1464,8 @@ static unsigned rvcn_dec_dynamic_dpb_t2_message(struct radeon_decoder *dec, rvcn
 
    struct si_texture *dpb_luma, *dpb_chroma;
 
-   dpb_luma   = (struct si_texture *)((struct vl_video_buffer *)dpb->vbuf)->resources[0];
-   dpb_chroma = (struct si_texture *)((struct vl_video_buffer *)dpb->vbuf)->resources[1];
+   dpb_luma   = (struct si_texture *)dpb->buf;
+   dpb_chroma = (struct si_texture *)dpb->buf->next;
 
    decode->db_swizzle_mode = dpb_luma->surface.u.gfx9.swizzle_mode;
 
@@ -2381,7 +2384,7 @@ static void radeon_dec_destroy(struct pipe_video_codec *decoder)
    } else {
       list_for_each_entry_safe(struct rvcn_dec_dynamic_dpb_t2, d, &dec->dpb_ref_list, list) {
          list_del(&d->list);
-         d->vbuf->destroy(d->vbuf);
+         pipe_resource_reference(&d->buf, NULL);
          FREE(d);
       }
    }
