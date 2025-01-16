@@ -2151,6 +2151,116 @@ agx_get_compute_param(struct pipe_screen *pscreen,
 }
 
 static void
+agx_init_shader_caps(struct pipe_screen *pscreen)
+{
+   bool is_no16 = agx_device(pscreen)->debug & AGX_DBG_NO16;
+
+   for (unsigned i = 0; i <= PIPE_SHADER_COMPUTE; i++) {
+      struct pipe_shader_caps *caps =
+         (struct pipe_shader_caps *)&pscreen->shader_caps[i];
+
+      caps->max_instructions =
+      caps->max_alu_instructions =
+      caps->max_tex_instructions =
+      caps->max_tex_indirections = 16384;
+
+      caps->max_control_flow_depth = 1024;
+
+      caps->max_inputs = i == PIPE_SHADER_VERTEX ? 16 : 32;
+
+      /* For vertex, the spec min/max is 16. We need more to handle dmat3
+       * correctly, though. The full 32 is undesirable since it would require
+       * shenanigans to handle.
+       */
+      caps->max_outputs = i == PIPE_SHADER_FRAGMENT ? 8
+         : i == PIPE_SHADER_VERTEX ? 24 : 32;
+
+      caps->max_temps = 256; /* GL_MAX_PROGRAM_TEMPORARIES_ARB */
+
+      caps->max_const_buffer0_size = 16 * 1024 * sizeof(float);
+
+      caps->max_const_buffers = 16;
+
+      caps->cont_supported = true;
+
+      caps->indirect_temp_addr = true;
+      caps->indirect_const_addr = true;
+      caps->integers = true;
+
+      caps->fp16 =
+      caps->glsl_16bit_consts =
+      caps->fp16_derivatives = !is_no16;
+      /* GLSL compiler is broken. Flip this on when Panfrost does. */
+      caps->int16 = false;
+      /* This cap is broken, see 9a38dab2d18 ("zink: disable
+       * PIPE_SHADER_CAP_FP16_CONST_BUFFERS") */
+      caps->fp16_const_buffers = false;
+
+      /* TODO: Enable when fully baked */
+      if (strcmp(util_get_process_name(), "blender") == 0)
+         caps->max_texture_samplers = PIPE_MAX_SAMPLERS;
+      else if (strcmp(util_get_process_name(), "run") == 0)
+         caps->max_texture_samplers = PIPE_MAX_SAMPLERS;
+      else if (strcasestr(util_get_process_name(), "ryujinx") != NULL)
+         caps->max_texture_samplers = PIPE_MAX_SAMPLERS;
+      else
+         caps->max_texture_samplers = 16;
+
+      caps->max_sampler_views = PIPE_MAX_SHADER_SAMPLER_VIEWS;
+
+      caps->supported_irs = (1 << PIPE_SHADER_IR_NIR);
+
+      caps->max_shader_buffers = PIPE_MAX_SHADER_BUFFERS;
+
+      caps->max_shader_images = PIPE_MAX_SHADER_IMAGES;
+   }
+}
+
+static void
+agx_init_compute_caps(struct pipe_screen *pscreen)
+{
+   struct pipe_compute_caps *caps = (struct pipe_compute_caps *)&pscreen->compute_caps;
+   struct agx_device *dev = agx_device(pscreen);
+
+   caps->address_bits = 64;
+
+   snprintf(caps->ir_target, sizeof(caps->ir_target), "agx");
+
+   caps->grid_dimension = 3;
+
+   caps->max_grid_size[0] =
+   caps->max_grid_size[1] =
+   caps->max_grid_size[2] = 65535;
+
+   caps->max_block_size[0] =
+   caps->max_block_size[1] =
+   caps->max_block_size[2] = 1024;
+
+   caps->max_threads_per_block = 1024;
+
+   uint64_t system_memory;
+   if (os_get_total_physical_memory(&system_memory)) {
+      caps->max_global_size =
+      caps->max_mem_alloc_size = system_memory;
+   }
+
+   caps->max_local_size = 32768;
+
+   caps->max_private_size =
+   caps->max_input_size = 4096;
+
+   caps->max_clock_frequency = dev->params.max_frequency_khz / 1000;
+
+   caps->max_compute_units = agx_get_num_cores(dev);
+
+   caps->images_supported = true;
+
+   caps->subgroup_sizes = 32;
+
+   caps->max_variable_threads_per_block = 1024; // TODO
+}
+
+static void
 agx_init_screen_caps(struct pipe_screen *pscreen)
 {
    struct pipe_caps *caps = (struct pipe_caps *)&pscreen->caps;
@@ -2655,6 +2765,8 @@ agx_screen_create(int fd, struct renderonly *ro,
       U_TRANSFER_HELPER_SEPARATE_Z32S8 | U_TRANSFER_HELPER_SEPARATE_STENCIL |
          U_TRANSFER_HELPER_MSAA_MAP | U_TRANSFER_HELPER_Z24_IN_Z32F);
 
+   agx_init_shader_caps(screen);
+   agx_init_compute_caps(screen);
    agx_init_screen_caps(screen);
 
    agx_disk_cache_init(agx_screen);
