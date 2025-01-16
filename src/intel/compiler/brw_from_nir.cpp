@@ -4937,10 +4937,13 @@ emit_rt_lsc_fence(const brw_builder &bld,
 
    const brw_builder ubld = bld.exec_all().group(8, 0);
    brw_reg tmp = ubld.vgrf(BRW_TYPE_UD);
-   brw_inst *send = ubld.emit(SHADER_OPCODE_SEND, tmp,
-                             brw_imm_ud(0) /* desc */,
-                             brw_imm_ud(0) /* ex_desc */,
-                             brw_vec8_grf(0, 0) /* payload */);
+   brw_reg srcs[SEND_NUM_SRCS] = {
+      [SEND_SRC_DESC]     = brw_imm_ud(0),
+      [SEND_SRC_EX_DESC]  = brw_imm_ud(0),
+      [SEND_SRC_PAYLOAD1] = brw_vec8_grf(0, 0),
+      [SEND_SRC_PAYLOAD2] = brw_reg(),
+   };
+   brw_inst *send = ubld.emit(SHADER_OPCODE_SEND, tmp, srcs, SEND_NUM_SRCS);
    send->sfid = BRW_SFID_UGM;
    send->desc = lsc_fence_msg_desc(devinfo, scope, flush_type, true);
    send->mlen = reg_unit(devinfo); /* g0 header */

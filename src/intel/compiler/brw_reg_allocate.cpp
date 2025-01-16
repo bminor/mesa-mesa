@@ -615,10 +615,13 @@ brw_reg_alloc::setup_inst_interference(const brw_inst *inst)
     * interference here.
     */
    if (inst->opcode == SHADER_OPCODE_SEND && inst->ex_mlen > 0 &&
-       inst->src[2].file == VGRF && inst->src[3].file == VGRF &&
-       inst->src[2].nr != inst->src[3].nr)
-      ra_add_node_interference(g, first_vgrf_node + inst->src[2].nr,
-                                  first_vgrf_node + inst->src[3].nr);
+       inst->src[SEND_SRC_PAYLOAD1].file == VGRF &&
+       inst->src[SEND_SRC_PAYLOAD2].file == VGRF &&
+       inst->src[SEND_SRC_PAYLOAD1].nr != inst->src[SEND_SRC_PAYLOAD2].nr) {
+      ra_add_node_interference(g,
+         first_vgrf_node + inst->src[SEND_SRC_PAYLOAD1].nr,
+         first_vgrf_node + inst->src[SEND_SRC_PAYLOAD2].nr);
+   }
 
    /* When we do send-from-GRF for FB writes, we need to ensure that the last
     * write instruction sends from a high register.  This is because the
@@ -631,7 +634,7 @@ brw_reg_alloc::setup_inst_interference(const brw_inst *inst)
     */
    if (inst->eot && devinfo->ver < 30) {
       assert(inst->opcode == SHADER_OPCODE_SEND);
-      const int vgrf = inst->src[2].nr;
+      const int vgrf = inst->src[SEND_SRC_PAYLOAD1].nr;
       const int size = DIV_ROUND_UP(fs->alloc.sizes[vgrf], reg_unit(devinfo));
       int reg = BRW_MAX_GRF - size;
 
@@ -646,7 +649,7 @@ brw_reg_alloc::setup_inst_interference(const brw_inst *inst)
       ra_set_node_reg(g, first_vgrf_node + vgrf, reg);
 
       if (inst->ex_mlen > 0) {
-         const int vgrf = inst->src[3].nr;
+         const int vgrf = inst->src[SEND_SRC_PAYLOAD2].nr;
          reg -= DIV_ROUND_UP(fs->alloc.sizes[vgrf], reg_unit(devinfo));
          assert(reg >= 112);
          ra_set_node_reg(g, first_vgrf_node + vgrf, reg);
@@ -881,11 +884,11 @@ brw_reg_alloc::emit_unspill(const brw_builder &bld,
             offset = build_lane_offsets(ubld, spill_offset, ip);
          }
 
-         brw_reg srcs[] = {
-            brw_imm_ud(0), /* desc */
-            build_ex_desc(bld, reg_size, true),
-            offset,        /* payload */
-            brw_reg(),      /* payload2 */
+         brw_reg srcs[SEND_NUM_SRCS] = {
+            [SEND_SRC_DESC] = brw_imm_ud(0),
+            [SEND_SRC_EX_DESC] = build_ex_desc(bld, reg_size, true),
+            [SEND_SRC_PAYLOAD1] = offset,
+            [SEND_SRC_PAYLOAD2] = brw_reg(),
          };
 
          uint32_t desc = lsc_msg_desc(devinfo, LSC_OP_LOAD,
@@ -920,10 +923,11 @@ brw_reg_alloc::emit_unspill(const brw_builder &bld,
 
          const unsigned bti = GFX8_BTI_STATELESS_NON_COHERENT;
 
-         brw_reg srcs[] = {
-            brw_imm_ud(0), /* desc */
-            brw_imm_ud(0), /* ex_desc */
-            header
+         brw_reg srcs[SEND_NUM_SRCS] = {
+            [SEND_SRC_DESC]     = brw_imm_ud(0),
+            [SEND_SRC_EX_DESC]  = brw_imm_ud(0),
+            [SEND_SRC_PAYLOAD1] = header,
+            [SEND_SRC_PAYLOAD2] = brw_reg(),
          };
          unspill_inst = bld.emit(SHADER_OPCODE_SEND, dst,
                                  srcs, ARRAY_SIZE(srcs));
@@ -968,11 +972,11 @@ brw_reg_alloc::emit_spill(const brw_builder &bld,
       if (devinfo->verx10 >= 125) {
          brw_reg offset = build_lane_offsets(bld, spill_offset, ip);
 
-         brw_reg srcs[] = {
-            brw_imm_ud(0), /* desc */
-            build_ex_desc(bld, reg_size, false),
-            offset,        /* payload */
-            src,           /* payload2 */
+         brw_reg srcs[SEND_NUM_SRCS] = {
+            [SEND_SRC_DESC]     = brw_imm_ud(0),
+            [SEND_SRC_EX_DESC]  = build_ex_desc(bld, reg_size, false),
+            [SEND_SRC_PAYLOAD1] = offset,
+            [SEND_SRC_PAYLOAD2] = src,
          };
          spill_inst = bld.emit(SHADER_OPCODE_SEND, bld.null_reg_f(),
                                srcs, ARRAY_SIZE(srcs));
@@ -1002,11 +1006,11 @@ brw_reg_alloc::emit_spill(const brw_builder &bld,
          brw_reg header = build_legacy_scratch_header(bld, spill_offset, ip);
 
          const unsigned bti = GFX8_BTI_STATELESS_NON_COHERENT;
-         brw_reg srcs[] = {
-            brw_imm_ud(0), /* desc */
-            brw_imm_ud(0), /* ex_desc */
-            header,
-            src
+         brw_reg srcs[SEND_NUM_SRCS] = {
+            [SEND_SRC_DESC]     = brw_imm_ud(0),
+            [SEND_SRC_EX_DESC]  = brw_imm_ud(0),
+            [SEND_SRC_PAYLOAD1] = header,
+            [SEND_SRC_PAYLOAD2] = src
          };
          spill_inst = bld.emit(SHADER_OPCODE_SEND, bld.null_reg_f(),
                                srcs, ARRAY_SIZE(srcs));

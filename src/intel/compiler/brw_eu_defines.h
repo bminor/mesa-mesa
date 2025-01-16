@@ -567,6 +567,26 @@ enum opcode {
    SHADER_OPCODE_LOAD_REG,
 };
 
+enum send_srcs {
+   /** The 32-bit message descriptor (can be a register) */
+   SEND_SRC_DESC,
+   /** The 32-bit extended message descriptor (can be a register) */
+   SEND_SRC_EX_DESC,
+   /** The leading register for the first SEND payload */
+   SEND_SRC_PAYLOAD1,
+   /** The leading register for the second split-SEND payload */
+   SEND_SRC_PAYLOAD2,
+
+   SEND_NUM_SRCS
+};
+
+enum send_gather_srcs {
+   SEND_GATHER_SRC_DESC,
+   SEND_GATHER_SRC_EX_DESC,
+   SEND_GATHER_SRC_SCALAR,
+   SEND_GATHER_SRC_PAYLOAD
+};
+
 enum fb_write_logical_srcs {
    FB_WRITE_LOGICAL_SRC_COLOR0,      /* REQUIRED */
    FB_WRITE_LOGICAL_SRC_COLOR1,      /* for dual source blend messages */

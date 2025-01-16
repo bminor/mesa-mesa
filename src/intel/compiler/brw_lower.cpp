@@ -522,9 +522,12 @@ brw_lower_sends_overlapping_payload(brw_shader &s)
 
    foreach_block_and_inst_safe (block, brw_inst, inst, s.cfg) {
       if (inst->opcode == SHADER_OPCODE_SEND && inst->ex_mlen > 0 &&
-          regions_overlap(inst->src[2], inst->mlen * REG_SIZE,
-                          inst->src[3], inst->ex_mlen * REG_SIZE)) {
-         const unsigned arg = inst->mlen < inst->ex_mlen ? 2 : 3;
+          regions_overlap(inst->src[SEND_SRC_PAYLOAD1],
+                          inst->mlen * REG_SIZE,
+                          inst->src[SEND_SRC_PAYLOAD2],
+                          inst->ex_mlen * REG_SIZE)) {
+         const unsigned arg = inst->mlen < inst->ex_mlen ?
+                              SEND_SRC_PAYLOAD1 : SEND_SRC_PAYLOAD2;
          const unsigned len = MIN2(inst->mlen, inst->ex_mlen);
 
          brw_reg tmp = retype(brw_allocate_vgrf_units(s, len), BRW_TYPE_UD);

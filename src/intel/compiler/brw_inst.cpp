@@ -210,7 +210,7 @@ brw_inst::is_control_source(unsigned arg) const
 
    case SHADER_OPCODE_SEND:
    case SHADER_OPCODE_SEND_GATHER:
-      return arg == 0 || arg == 1;
+      return arg < SEND_SRC_PAYLOAD1;
 
    case SHADER_OPCODE_MEMORY_LOAD_LOGICAL:
    case SHADER_OPCODE_MEMORY_STORE_LOGICAL:
@@ -246,10 +246,10 @@ brw_inst::is_payload(unsigned arg) const
       return arg == 0;
 
    case SHADER_OPCODE_SEND:
-      return arg == 2 || arg == 3;
+      return arg >= SEND_SRC_PAYLOAD1;
 
    case SHADER_OPCODE_SEND_GATHER:
-      return arg >= 2;
+      return arg >= SEND_GATHER_SRC_SCALAR;
 
    default:
       return false;
@@ -521,15 +521,15 @@ brw_inst::size_read(const struct intel_device_info *devinfo, int arg) const
 {
    switch (opcode) {
    case SHADER_OPCODE_SEND:
-      if (arg == 2) {
+      if (arg == SEND_SRC_PAYLOAD1) {
          return mlen * REG_SIZE;
-      } else if (arg == 3) {
+      } else if (arg == SEND_SRC_PAYLOAD2) {
          return ex_mlen * REG_SIZE;
       }
       break;
 
    case SHADER_OPCODE_SEND_GATHER:
-      if (arg >= 3) {
+      if (arg >= SEND_GATHER_SRC_PAYLOAD) {
          /* SEND_GATHER is Xe3+, so no need to pass devinfo around. */
          const unsigned reg_unit = 2;
          return REG_SIZE * reg_unit;

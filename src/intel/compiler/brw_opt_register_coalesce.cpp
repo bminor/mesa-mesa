@@ -201,19 +201,21 @@ would_violate_eot_restriction(brw_shader &s,
          if (send->opcode != SHADER_OPCODE_SEND || !send->eot)
             continue;
 
-         if ((send->src[2].file == VGRF && send->src[2].nr == src_reg) ||
-             (send->sources >= 4 &&
-              send->src[3].file == VGRF && send->src[3].nr == src_reg)) {
-            const unsigned s2 =
-               send->src[2].file == VGRF ? s.alloc.sizes[send->src[2].nr] : 0;
-            const unsigned s3 = send->sources >= 4 &&
-               send->src[3].file == VGRF ?
-               s.alloc.sizes[send->src[3].nr] : 0;
+         if ((send->src[SEND_SRC_PAYLOAD1].file == VGRF &&
+              send->src[SEND_SRC_PAYLOAD1].nr == src_reg) ||
+             (send->src[SEND_SRC_PAYLOAD2].file == VGRF &&
+              send->src[SEND_SRC_PAYLOAD2].nr == src_reg)) {
+            const unsigned p1 =
+               send->src[SEND_SRC_PAYLOAD1].file == VGRF ?
+               s.alloc.sizes[send->src[SEND_SRC_PAYLOAD1].nr] : 0;
+            const unsigned p2 =
+               send->src[SEND_SRC_PAYLOAD2].file == VGRF ?
+               s.alloc.sizes[send->src[SEND_SRC_PAYLOAD2].nr] : 0;
 
             const unsigned increase =
                s.alloc.sizes[dst_reg] - s.alloc.sizes[src_reg];
 
-            if (s2 + s3 + increase > 15)
+            if (p1 + p2 + increase > 15)
                return true;
          }
          break;

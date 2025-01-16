@@ -640,22 +640,23 @@ brw_emit_repclear_shader(brw_shader &s)
          bld.uniform().MOV(component(header, 2), brw_imm_ud(i));
 
       write = bld.emit(SHADER_OPCODE_SEND);
-      write->resize_sources(3);
+      write->resize_sources(SEND_NUM_SRCS);
 
       /* We can use a headerless message for the first render target */
       write->header_size = i == 0 ? 0 : 2;
       write->mlen = 1 + write->header_size;
 
       write->sfid = BRW_SFID_RENDER_CACHE;
-      write->src[0] = brw_imm_ud(
+      write->src[SEND_SRC_DESC] = brw_imm_ud(
          brw_fb_write_desc(
             s.devinfo, i,
             BRW_DATAPORT_RENDER_TARGET_WRITE_SIMD16_SINGLE_SOURCE_REPLICATED,
             i == key->nr_color_regions - 1, false) |
          brw_message_desc(s.devinfo, write->mlen,
                           0 /* rlen */, write->header_size));
-      write->src[1] = brw_imm_ud(0);
-      write->src[2] = i == 0 ? color_output : header;
+      write->src[SEND_SRC_EX_DESC] = brw_imm_ud(0);
+      write->src[SEND_SRC_PAYLOAD1] = i == 0 ? color_output : header;
+      write->src[SEND_SRC_PAYLOAD2] = brw_reg();
       write->check_tdr = true;
       write->send_has_side_effects = true;
 

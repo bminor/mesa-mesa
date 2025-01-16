@@ -679,9 +679,9 @@ eot_send_has_constraint(brw_shader &s, brw_inst *inst, brw_reg val, int arg)
     * We need to pin both split SEND sources in g112-g126/127, so only
     * allow this if the registers aren't too large.
     */
-   if (inst->opcode == SHADER_OPCODE_SEND && inst->sources >= 4 &&
-       val.file == VGRF) {
-      int other_src = arg == 2 ? 3 : 2;
+   if (inst->opcode == SHADER_OPCODE_SEND && val.file == VGRF) {
+      const int other_src =
+         arg == SEND_SRC_PAYLOAD1 ? SEND_SRC_PAYLOAD2 : SEND_SRC_PAYLOAD1;
       unsigned other_size = inst->src[other_src].file == VGRF ?
                             s.alloc.sizes[inst->src[other_src].nr] :
                             (inst->size_read(devinfo, other_src) / REG_SIZE);

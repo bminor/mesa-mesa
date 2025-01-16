@@ -1143,9 +1143,15 @@ brw_generator::generate_code(const cfg_t *cfg, int dispatch_width,
          break;
 
       case SHADER_OPCODE_SEND:
+         generate_send(inst, dst, src[SEND_SRC_DESC], src[SEND_SRC_EX_DESC],
+                       src[SEND_SRC_PAYLOAD1], src[SEND_SRC_PAYLOAD2]);
+         send_count++;
+         break;
+
       case SHADER_OPCODE_SEND_GATHER:
-         generate_send(inst, dst, src[0], src[1], src[2],
-                       inst->ex_mlen > 0 ? src[3] : brw_null_reg());
+         generate_send(inst, dst,
+                       src[SEND_GATHER_SRC_DESC], src[SEND_GATHER_SRC_EX_DESC],
+                       src[SEND_GATHER_SRC_SCALAR], brw_null_reg());
          send_count++;
          break;
 

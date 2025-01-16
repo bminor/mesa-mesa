@@ -313,7 +313,11 @@ brw_validate(const brw_shader &s)
 
          switch (inst->opcode) {
          case SHADER_OPCODE_SEND:
-            fsv_assert(is_uniform(inst->src[0]) && is_uniform(inst->src[1]));
+            fsv_assert(inst->sources == SEND_NUM_SRCS);
+            fsv_assert(is_uniform(inst->src[SEND_SRC_DESC]));
+            fsv_assert(is_uniform(inst->src[SEND_SRC_EX_DESC]));
+            fsv_assert(inst->ex_mlen > 0 ||
+                       inst->src[SEND_SRC_PAYLOAD2].file == BAD_FILE);
             break;
 
          case SHADER_OPCODE_SEND_GATHER:

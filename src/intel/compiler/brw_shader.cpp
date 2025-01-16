@@ -375,14 +375,15 @@ brw_shader::emit_cs_terminate()
    if (devinfo->ver < 11)
       desc |= (1 << 4); /* Do not dereference URB */
 
-   brw_reg srcs[4] = {
-      brw_imm_ud(desc), /* desc */
-      brw_imm_ud(0), /* ex_desc */
-      payload,       /* payload */
-      brw_reg(),      /* payload2 */
+   brw_reg srcs[SEND_NUM_SRCS] = {
+      [SEND_SRC_DESC]     = brw_imm_ud(desc),
+      [SEND_SRC_EX_DESC]  = brw_imm_ud(0),
+      [SEND_SRC_PAYLOAD1] = payload,
+      [SEND_SRC_PAYLOAD2] = brw_reg(),
    };
 
-   brw_inst *send = ubld.emit(SHADER_OPCODE_SEND, reg_undef, srcs, 4);
+   brw_inst *send =
+      ubld.emit(SHADER_OPCODE_SEND, reg_undef, srcs, SEND_NUM_SRCS);
 
    /* On Alchemist and later, send an EOT message to the message gateway to
     * terminate a compute shader.  For older GPUs, send to the thread spawner.
@@ -725,11 +726,11 @@ brw_shader::assign_curb_setup()
             addr = base_addr;
          }
 
-         brw_reg srcs[4] = {
-            brw_imm_ud(0), /* desc */
-            brw_imm_ud(0), /* ex_desc */
-            addr,          /* payload */
-            brw_reg(),      /* payload2 */
+         brw_reg srcs[SEND_NUM_SRCS] = {
+            [SEND_SRC_DESC]     = brw_imm_ud(0),
+            [SEND_SRC_EX_DESC]  = brw_imm_ud(0),
+            [SEND_SRC_PAYLOAD1] = addr,
+            [SEND_SRC_PAYLOAD2] = brw_reg(),
          };
 
          brw_reg dest = retype(brw_vec8_grf(payload().num_regs + i, 0),
@@ -755,11 +756,11 @@ brw_shader::assign_curb_setup()
                 (payload().num_regs + prog_data->curb_read_length));
          send->send_is_volatile = true;
 
-         send->src[0] = brw_imm_ud(desc |
-                                   brw_message_desc(devinfo,
-                                                    send->mlen,
-                                                    send->size_written / REG_SIZE,
-                                                    send->header_size));
+         send->src[SEND_SRC_DESC] =
+            brw_imm_ud(desc | brw_message_desc(devinfo,
+                                               send->mlen,
+                                               send->size_written / REG_SIZE,
+                                               send->header_size));
 
          i += num_regs;
       }
