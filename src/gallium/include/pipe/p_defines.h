@@ -817,6 +817,64 @@ enum pipe_compute_cap
    PIPE_COMPUTE_CAP_MAX_VARIABLE_THREADS_PER_BLOCK,
 };
 
+/** Shader caps not specific to any single stage */
+struct pipe_shader_caps {
+   unsigned max_instructions; /* if 0, it means the stage is unsupported */
+   unsigned max_alu_instructions;
+   unsigned max_tex_instructions;
+   unsigned max_tex_indirections;
+   unsigned max_control_flow_depth;
+   unsigned max_inputs;
+   unsigned max_outputs;
+   unsigned max_const_buffer0_size;
+   unsigned max_const_buffers;
+   unsigned max_temps;
+   unsigned max_texture_samplers;
+   unsigned max_sampler_views;
+   unsigned max_shader_buffers;
+   unsigned max_shader_images;
+   unsigned max_hw_atomic_counters;
+   unsigned max_hw_atomic_counter_buffers;
+   unsigned supported_irs;
+
+   bool cont_supported;
+   bool indirect_temp_addr;
+   bool indirect_const_addr;
+   bool subroutines; /* BGNSUB, ENDSUB, CAL, RET */
+   bool integers;
+   bool int64_atomics;
+   bool fp16;
+   bool fp16_derivatives;
+   bool fp16_const_buffers;
+   bool int16;
+   bool glsl_16bit_consts;
+   bool tgsi_sqrt_supported;
+   bool tgsi_any_inout_decl_range;
+};
+
+/** Compute-specific implementation capability. */
+struct pipe_compute_caps {
+   unsigned address_bits;
+   unsigned grid_dimension;
+   unsigned max_grid_size[3];
+   unsigned max_block_size[3];
+   unsigned max_block_size_clover[3];
+   unsigned max_threads_per_block;
+   unsigned max_threads_per_block_clover;
+   unsigned max_local_size;
+   unsigned max_private_size;
+   unsigned max_input_size;
+   unsigned max_clock_frequency;
+   unsigned max_compute_units;
+   unsigned max_subgroups;
+   unsigned subgroup_sizes;
+   unsigned max_variable_threads_per_block;
+   uint64_t max_mem_alloc_size;
+   uint64_t max_global_size;
+   char ir_target[32];
+   bool images_supported;
+};
+
 struct pipe_caps {
    bool graphics;
    bool npot_textures;
