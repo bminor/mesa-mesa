@@ -229,7 +229,6 @@
     BOOT_METHOD: u-boot
     KERNEL_IMAGE_NAME: Image
     KERNEL_IMAGE_TYPE: "image"
-    EXTERNAL_KERNEL_TAG: "v6.11-rc7-mesa-f9e9"
     RUNNER_TAG: mesa-ci-x86-64-lava-rk3588-rock-5b
     VK_DRIVER: panfrost
 
@@ -312,10 +311,6 @@ panfrost-t860-traces:arm64:
     - .panfrost-test
     - .lava-rk3399-gru-kevin:arm64
     - .panfrost-traces
-  variables:
-    # force fixed kernel until 6.11 is switched officially
-    EXTERNAL_KERNEL_TAG: "v6.11-rc7-mesa-3fb8"
-
 
 panfrost-g52-gl:arm64:
   parallel: 4

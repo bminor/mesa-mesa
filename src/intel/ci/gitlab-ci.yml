@@ -8,6 +8,8 @@ anv-jsl:
   variables:
     DEQP_SUITE: anv-jsl
     VK_DRIVER: intel
+    # force fixed kernel, since too many flakes and unexpected results seen with 6.13-rc4
+    EXTERNAL_KERNEL_TAG: "v6.11-rc7-mesa-c984"
   parallel: 5
 
 anv-jsl-full:
