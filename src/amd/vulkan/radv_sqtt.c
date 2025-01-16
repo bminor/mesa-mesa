@@ -20,8 +20,6 @@
 #include "vk_command_pool.h"
 #include "vk_common_entrypoints.h"
 
-#define SQTT_BUFFER_ALIGN_SHIFT 12
-
 bool
 radv_is_instruction_timing_enabled(void)
 {
