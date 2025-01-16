@@ -35,6 +35,15 @@
 
 using namespace brw;
 
+struct remap_entry {
+   fs_inst *inst;
+   bblock_t *block;
+   enum brw_reg_type type;
+   unsigned nr;
+   bool negate;
+   bool still_used;
+};
+
 static bool
 is_expression(const fs_visitor *v, const fs_inst *const inst)
 {
@@ -353,50 +362,37 @@ cmp_func(const void *data1, const void *data2)
    return instructions_match((fs_inst *) data1, (fs_inst *) data2, &negate);
 }
 
-/* We set bit 31 in remap_table entries if it needs to be negated. */
-#define REMAP_NEGATE (0x80000000u)
-
-static void
+static bool
 remap_sources(fs_visitor &s, const brw::def_analysis &defs,
-              fs_inst *inst, unsigned *remap_table)
+              fs_inst *inst, struct remap_entry *remap_table)
 {
+   bool progress = false;
+
    for (int i = 0; i < inst->sources; i++) {
       if (inst->src[i].file == VGRF &&
           inst->src[i].nr < defs.count() &&
-          remap_table[inst->src[i].nr] != ~0u) {
+          remap_table[inst->src[i].nr].inst != NULL) {
          const unsigned old_nr = inst->src[i].nr;
-         unsigned new_nr = remap_table[old_nr];
-         const bool need_negate = new_nr & REMAP_NEGATE;
-         new_nr &= ~REMAP_NEGATE;
+         const unsigned new_nr = remap_table[old_nr].nr;
+         const bool need_negate = remap_table[old_nr].negate;
+
+         if (need_negate &&
+             (remap_table[old_nr].type != inst->src[i].type ||
+              !inst->can_do_source_mods(s.devinfo))) {
+            remap_table[old_nr].still_used = true;
+            continue;
+         }
+
          inst->src[i].nr = new_nr;
 
-         if (need_negate) {
-            if ((inst->src[i].type != BRW_TYPE_F &&
-                 !inst->can_change_types()) ||
-                !inst->can_do_source_mods(s.devinfo)) {
-               /* We can't use the negate directly, resolve it just after the
-                * def and use that for any future uses.
-                */
-               fs_inst *def = defs.get(inst->src[i]);
-               bblock_t *def_block = defs.get_block(inst->src[i]);
-               const brw_builder dbld =
-                  brw_builder(&s, def_block, def).at(def_block, def->next);
+         if (!inst->src[i].abs)
+            inst->src[i].negate ^= need_negate;
 
-               /* Resolve any deferred block IP changes before inserting */
-               if (def_block->end_ip_delta)
-                  s.cfg->adjust_block_ips();
-
-               brw_reg neg = brw_vgrf(new_nr, BRW_TYPE_F);
-               brw_reg tmp = dbld.MOV(negate(neg));
-               inst->src[i].nr = tmp.nr;
-               remap_table[old_nr] = tmp.nr;
-            } else {
-               inst->src[i].negate = !inst->src[i].negate;
-               inst->src[i].type = BRW_TYPE_F;
-            }
-         }
+         progress = true;
       }
    }
+
+   return progress;
 }
 
 bool
@@ -408,8 +404,8 @@ brw_opt_cse_defs(fs_visitor &s)
    bool progress = false;
    bool need_remaps = false;
 
-   unsigned *remap_table = new unsigned[defs.count()];
-   memset(remap_table, ~0u, defs.count() * sizeof(int));
+   struct remap_entry *remap_table = new remap_entry[defs.count()];
+   memset(remap_table, 0, defs.count() * sizeof(struct remap_entry));
    struct set *set = _mesa_set_create(NULL, NULL, cmp_func);
 
    foreach_block(block, s.cfg) {
@@ -418,7 +414,7 @@ brw_opt_cse_defs(fs_visitor &s)
 
       foreach_inst_in_block_safe(fs_inst, inst, block) {
          if (need_remaps)
-            remap_sources(s, defs, inst, remap_table);
+            progress |= remap_sources(s, defs, inst, remap_table);
 
          /* Updating last_flag_written should be at the bottom of the loop,
           * but doing it this way lets us use "continue" more easily.
@@ -490,13 +486,25 @@ brw_opt_cse_defs(fs_visitor &s)
                }
             }
 
-            progress = true;
             need_remaps = true;
-            remap_table[inst->dst.nr] =
-               match->dst.nr | (negate ? REMAP_NEGATE : 0);
-
-            inst->remove(block, true);
+            remap_table[inst->dst.nr].inst = inst;
+            remap_table[inst->dst.nr].block = block;
+            remap_table[inst->dst.nr].type = match->dst.type;
+            remap_table[inst->dst.nr].nr = match->dst.nr;
+            remap_table[inst->dst.nr].negate = negate;
+            remap_table[inst->dst.nr].still_used = false;
          }
+      }
+   }
+
+   /* Remove instruction now unused */
+   for (unsigned i = 0; i < defs.count(); i++) {
+      if (!remap_table[i].inst)
+         continue;
+
+      if (!remap_table[i].still_used) {
+         remap_table[i].inst->remove(remap_table[i].block, true);
+         progress = true;
       }
    }
 
