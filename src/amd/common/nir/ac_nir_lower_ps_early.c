@@ -291,15 +291,18 @@ lower_ps_load_sample_mask_in(nir_builder *b, nir_intrinsic_instr *intrin, lower_
 static nir_def *
 lower_load_barycentric_at_offset(nir_builder *b, nir_def *offset, enum glsl_interp_mode mode)
 {
-   nir_def *baryc = nir_load_barycentric_pixel(b, 32, .interp_mode = mode);
-   nir_def *i = nir_channel(b, baryc, 0);
-   nir_def *j = nir_channel(b, baryc, 1);
+   /* ddx/ddy must execute before terminate (discard). */
+   nir_builder sb = nir_builder_at(nir_before_impl(b->impl));
+   nir_def *baryc = nir_load_barycentric_pixel(&sb, 32, .interp_mode = mode);
+   nir_def *i = nir_channel(&sb, baryc, 0);
+   nir_def *j = nir_channel(&sb, baryc, 1);
+   nir_def *ddx_i = nir_ddx(&sb, i);
+   nir_def *ddx_j = nir_ddx(&sb, j);
+   nir_def *ddy_i = nir_ddy(&sb, i);
+   nir_def *ddy_j = nir_ddy(&sb, j);
+
    nir_def *offset_x = nir_channel(b, offset, 0);
    nir_def *offset_y = nir_channel(b, offset, 1);
-   nir_def *ddx_i = nir_ddx(b, i);
-   nir_def *ddx_j = nir_ddx(b, j);
-   nir_def *ddy_i = nir_ddy(b, i);
-   nir_def *ddy_j = nir_ddy(b, j);
 
    /* Interpolate standard barycentrics by offset. */
    nir_def *offset_i = nir_ffma(b, ddy_i, offset_y, nir_ffma(b, ddx_i, offset_x, i));
