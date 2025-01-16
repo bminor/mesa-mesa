@@ -886,7 +886,7 @@ lower_sampler_logical_send(const brw_builder &bld, brw_inst *inst,
     * be included.
     */
    const unsigned msg_type =
-      sampler_msg_type(devinfo, op, inst->shadow_compare, lod_is_zero,
+      sampler_msg_type(devinfo, op, shadow_c.file != BAD_FILE, lod_is_zero,
                        min_lod.file != BAD_FILE);
 
    const bool min_lod_is_first = devinfo->ver >= 20 &&
@@ -1087,7 +1087,7 @@ lower_sampler_logical_send(const brw_builder &bld, brw_inst *inst,
 
       /* Wa_14014595444: Populate MLOD as parameter 5 (twice). */
        if (devinfo->verx10 == 125 && op == FS_OPCODE_TXB_LOGICAL &&
-          !inst->shadow_compare)
+           shadow_c.file == BAD_FILE)
          bld.MOV(sources[length++], min_lod);
    }
 

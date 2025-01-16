@@ -7533,9 +7533,6 @@ brw_from_nir_emit_texture(nir_to_brw_state &ntb,
    inst->offset = header_bits;
    inst->size_written = total_regs * grf_size;
 
-   if (srcs[TEX_LOGICAL_SRC_SHADOW_C].file != BAD_FILE)
-      inst->shadow_compare = true;
-
    /* Wa_14012688258:
     *
     * Don't trim zeros at the end of payload for sample operations

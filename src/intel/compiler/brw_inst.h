@@ -192,7 +192,7 @@ public:
           */
          unsigned rcount:4;
 
-         unsigned pad:2;
+         unsigned pad:3;
 
          bool predicate_inverse:1;
          bool writes_accumulator:1; /**< instruction implicitly writes accumulator */
@@ -200,7 +200,6 @@ public:
          bool no_dd_clear:1;
          bool no_dd_check:1;
          bool saturate:1;
-         bool shadow_compare:1;
          bool check_tdr:1; /**< Only valid for SEND; turns it into a SENDC */
          bool send_has_side_effects:1; /**< Only valid for SHADER_OPCODE_SEND */
          bool send_is_volatile:1; /**< Only valid for SHADER_OPCODE_SEND */
