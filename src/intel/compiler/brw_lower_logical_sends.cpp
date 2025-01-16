@@ -70,7 +70,7 @@ lower_urb_read_logical_send(const brw_builder &bld, brw_inst *inst)
    inst->src[0] = brw_imm_ud(0); /* desc */
    inst->src[1] = brw_imm_ud(0); /* ex_desc */
    inst->src[2] = payload;
-   inst->src[3] = brw_null_reg();
+   inst->src[3] = brw_reg();
 }
 
 static void
@@ -129,7 +129,7 @@ lower_urb_read_logical_send_xe2(const brw_builder &bld, brw_inst *inst)
    inst->src[1] = brw_imm_ud(0);
 
    inst->src[2] = payload;
-   inst->src[3] = brw_null_reg();
+   inst->src[3] = brw_reg();
 }
 
 static void
@@ -186,7 +186,7 @@ lower_urb_write_logical_send(const brw_builder &bld, brw_inst *inst)
    inst->src[0] = brw_imm_ud(0); /* desc */
    inst->src[1] = brw_imm_ud(0); /* ex_desc */
    inst->src[2] = payload;
-   inst->src[3] = brw_null_reg();
+   inst->src[3] = brw_reg();
 }
 
 static void
