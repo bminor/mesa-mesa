@@ -154,8 +154,6 @@ KHR-GL46.geometry_shader.layered_rendering_fbo_no_attachment.layered_rendering_f
 KHR-GL46.shader_image_load_store.advanced-sso-subroutine,Fail
 KHR-GL46.shader_image_load_store.basic-allTargets-atomic,Fail
 KHR-GL46.texture_cube_map_array.sampling,Fail
-GTF-GL46.gtf30.GL3Tests.fragment_coord_conventions.fragment_coord_conventions_multisample,Fail
-GTF-GL46.gtf32.GL3Tests.fragment_coord_conventions.fragment_coord_conventions_32_multisample,Fail
 
 # These are GLCTS bugs. See: https://gitlab.freedesktop.org/mesa/mesa/-/issues/10361
 GTF-GL46.gtf31.GL3Tests.uniform_buffer_object.uniform_buffer_object_accessing_info_for_block_with_an_instance_array,Fail

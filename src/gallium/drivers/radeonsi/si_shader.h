@@ -1022,7 +1022,6 @@ struct si_shader {
       struct {
          unsigned spi_ps_input_ena;
          unsigned spi_ps_input_addr;
-         unsigned spi_baryc_cntl;
          unsigned spi_ps_in_control;
          unsigned spi_shader_z_format;
          unsigned spi_shader_col_format;

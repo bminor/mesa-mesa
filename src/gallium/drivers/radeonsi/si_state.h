@@ -309,9 +309,10 @@ enum si_tracked_reg
    /* 5 consecutive registers (GFX12), or 2 consecutive registers (GFX6-11) */
    SI_TRACKED_SPI_SHADER_Z_FORMAT,
    SI_TRACKED_SPI_SHADER_COL_FORMAT,
-   /* Continuing consecutive registers (GFX12), or separate register (GFX6-11) */
-   SI_TRACKED_SPI_BARYC_CNTL,
-   /* Continuing consecutive registers (GFX12), or 2 consecutive registers (GFX6-11) */
+
+   SI_TRACKED__UNUSED_GAP, /* TODO: remove */
+
+   /* 2 consecutive registers. */
    SI_TRACKED_SPI_PS_INPUT_ENA,
    SI_TRACKED_SPI_PS_INPUT_ADDR,
 

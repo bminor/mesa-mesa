@@ -4983,8 +4983,10 @@ static void gfx6_init_gfx_preamble_state(struct si_context *sctx)
    /* Graphics registers. */
    si_init_graphics_preamble_state(sctx, pm4);
 
-   if (!has_clear_state)
+   if (!has_clear_state) {
       ac_pm4_set_reg(&pm4->base, R_02800C_DB_RENDER_OVERRIDE, 0);
+      ac_pm4_set_reg(&pm4->base, R_0286E0_SPI_BARYC_CNTL, 0);
+   }
 
    if (sctx->family >= CHIP_POLARIS10 && !sctx->screen->info.has_small_prim_filter_sample_loc_bug) {
       /* Polaris10-12 should disable small line culling, but those also have the sample loc bug,
@@ -5141,6 +5143,7 @@ static void gfx12_init_gfx_preamble_state(struct si_context *sctx)
 
    ac_pm4_set_reg(&pm4->base, R_028648_SPI_SHADER_IDX_FORMAT,
                   S_028648_IDX0_EXPORT_FORMAT(V_028648_SPI_SHADER_1COMP));
+   ac_pm4_set_reg(&pm4->base, R_028658_SPI_BARYC_CNTL, 0);
 
    /* The rate combiners have no effect if they are disabled like this:
     *   VERTEX_RATE:    BYPASS_VTX_RATE_COMBINER = 1

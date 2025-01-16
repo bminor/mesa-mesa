@@ -2309,6 +2309,7 @@ static bool run_pre_link_optimization_passes(struct si_nir_shader_ctx *ctx)
             .load_sample_positions_always_loads_current_ones = true,
             .force_front_face = key->ps.opt.force_front_face_input,
             .optimize_frag_coord = true,
+            .frag_coord_is_center = true,
             /* This does a lot of things. See the description in ac_nir_lower_ps_early_options. */
             .ps_iter_samples = key->ps.part.prolog.samplemask_log_ps_iter ?
                                  (1 << key->ps.part.prolog.samplemask_log_ps_iter) :
@@ -2348,6 +2349,7 @@ static bool run_pre_link_optimization_passes(struct si_nir_shader_ctx *ctx)
       } else {
          ac_nir_lower_ps_early_options early_options = {
             .optimize_frag_coord = true,
+            .frag_coord_is_center = true,
             .alpha_func = COMPARE_FUNC_ALWAYS,
             .spi_shader_col_format_hint = ~0,
          };

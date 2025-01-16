@@ -29,8 +29,6 @@ spec@oes_shader_io_blocks@compiler@layout-location-aliasing.vert,Fail
 spec@arb_bindless_texture@compiler@samplers@arith-bound-sampler-texture2d.frag,Crash
 
 # glcts failures
-GTF-GL46.gtf30.GL3Tests.fragment_coord_conventions.fragment_coord_conventions_multisample,Fail
-GTF-GL46.gtf32.GL3Tests.fragment_coord_conventions.fragment_coord_conventions_32_multisample,Fail
 KHR-GL46.shader_image_load_store.basic-allTargets-atomic,Fail
 ## Fail because GFX10+ removed MS texture support (see si_get_sparse_texture_virtual_page_size)
 KHR-GL46.sparse_texture2_tests.SparseTexture2Allocation,Fail

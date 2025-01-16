@@ -2012,8 +2012,6 @@ static void gfx6_emit_shader_ps(struct si_context *sctx, unsigned index)
    radeon_opt_set_context_reg2(R_0286CC_SPI_PS_INPUT_ENA, SI_TRACKED_SPI_PS_INPUT_ENA,
                                shader->ps.spi_ps_input_ena,
                                shader->ps.spi_ps_input_addr);
-   radeon_opt_set_context_reg(R_0286E0_SPI_BARYC_CNTL, SI_TRACKED_SPI_BARYC_CNTL,
-                              shader->ps.spi_baryc_cntl);
    radeon_opt_set_context_reg(R_0286D8_SPI_PS_IN_CONTROL, SI_TRACKED_SPI_PS_IN_CONTROL,
                               shader->ps.spi_ps_in_control);
    radeon_opt_set_context_reg2(R_028710_SPI_SHADER_Z_FORMAT, SI_TRACKED_SPI_SHADER_Z_FORMAT,
@@ -2034,8 +2032,6 @@ static void gfx11_dgpu_emit_shader_ps(struct si_context *sctx, unsigned index)
                              shader->ps.spi_ps_input_ena);
    gfx11_opt_set_context_reg(R_0286D0_SPI_PS_INPUT_ADDR, SI_TRACKED_SPI_PS_INPUT_ADDR,
                              shader->ps.spi_ps_input_addr);
-   gfx11_opt_set_context_reg(R_0286E0_SPI_BARYC_CNTL, SI_TRACKED_SPI_BARYC_CNTL,
-                             shader->ps.spi_baryc_cntl);
    gfx11_opt_set_context_reg(R_0286D8_SPI_PS_IN_CONTROL, SI_TRACKED_SPI_PS_IN_CONTROL,
                              shader->ps.spi_ps_in_control);
    gfx11_opt_set_context_reg(R_028710_SPI_SHADER_Z_FORMAT, SI_TRACKED_SPI_SHADER_Z_FORMAT,
@@ -2060,8 +2056,6 @@ static void gfx12_emit_shader_ps(struct si_context *sctx, unsigned index)
                              shader->ps.spi_shader_z_format);
    gfx12_opt_set_context_reg(R_028654_SPI_SHADER_COL_FORMAT, SI_TRACKED_SPI_SHADER_COL_FORMAT,
                              shader->ps.spi_shader_col_format);
-   gfx12_opt_set_context_reg(R_028658_SPI_BARYC_CNTL, SI_TRACKED_SPI_BARYC_CNTL,
-                             shader->ps.spi_baryc_cntl);
    gfx12_opt_set_context_reg(R_02865C_SPI_PS_INPUT_ENA, SI_TRACKED_SPI_PS_INPUT_ENA,
                              shader->ps.spi_ps_input_ena);
    gfx12_opt_set_context_reg(R_028660_SPI_PS_INPUT_ADDR, SI_TRACKED_SPI_PS_INPUT_ADDR,
@@ -2190,27 +2184,6 @@ static void si_shader_ps(struct si_screen *sscreen, struct si_shader *shader)
    if (sscreen->info.has_rbplus && !sscreen->info.rbplus_allowed)
       shader->ps.db_shader_control |= S_02880C_DUAL_QUAD_DISABLE(1);
 
-   /* SPI_BARYC_CNTL.POS_FLOAT_LOCATION
-    * Possible values:
-    * 0 -> Position = pixel center
-    * 1 -> Position = pixel centroid
-    * 2 -> Position = at sample position
-    *
-    * From GLSL 4.5 specification, section 7.1:
-    *   "The variable gl_FragCoord is available as an input variable from
-    *    within fragment shaders and it holds the window relative coordinates
-    *    (x, y, z, 1/w) values for the fragment. If multi-sampling, this
-    *    value can be for any location within the pixel, or one of the
-    *    fragment samples. The use of centroid does not further restrict
-    *    this value to be inside the current primitive."
-    *
-    * Meaning that centroid has no effect and we can return anything within
-    * the pixel. Thus, return the value at sample position, because that's
-    * the most accurate one shaders can get.
-    */
-   shader->ps.spi_baryc_cntl = S_0286E0_POS_FLOAT_LOCATION(2) |
-                               S_0286E0_POS_FLOAT_ULC(info->base.fs.pixel_center_integer) |
-                               S_0286E0_FRONT_FACE_ALL_BITS(0);
    shader->ps.spi_shader_col_format = si_get_spi_shader_col_format(shader);
    shader->ps.cb_shader_mask = ac_get_cb_shader_mask(shader->key.ps.part.epilog.spi_shader_col_format);
    shader->ps.spi_ps_input_ena = shader->config.spi_ps_input_ena;
