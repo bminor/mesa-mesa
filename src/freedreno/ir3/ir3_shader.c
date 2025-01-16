@@ -980,8 +980,8 @@ ir3_shader_disasm(struct ir3_shader_variant *so, uint32_t *bin, FILE *out)
 
    if (so->info.preamble_instrs_count) {
       fprintf(
-         out, "; %u preamble instr, %s preamble\n",
-         so->info.preamble_instrs_count, so->info.early_preamble ? "early" : "late");
+         out, "; %u preamble instr, %d early-preamble\n",
+         so->info.preamble_instrs_count, so->info.early_preamble);
    }
 
    /* print shader type specific info: */
