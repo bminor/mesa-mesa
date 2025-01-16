@@ -2072,6 +2072,8 @@ lower_interpolator_logical_send(const brw_builder &bld, brw_inst *inst,
                                 const struct brw_wm_prog_key *wm_prog_key,
                                 const struct brw_wm_prog_data *wm_prog_data)
 {
+   assert(inst->src[INTERP_SRC_NOPERSPECTIVE].file == IMM);
+
    const intel_device_info *devinfo = bld.shader->devinfo;
 
    /* We have to send something */
@@ -2110,7 +2112,7 @@ lower_interpolator_logical_send(const brw_builder &bld, brw_inst *inst,
                              * dynamic, it will be ORed in below.
                              */
                             dynamic_mode ? 0 : mode,
-                            inst->pi_noperspective,
+                            inst->src[INTERP_SRC_NOPERSPECTIVE].ud,
                             false /* coarse_pixel_rate */,
                             inst->exec_size, inst->group);
 

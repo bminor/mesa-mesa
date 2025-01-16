@@ -2083,18 +2083,21 @@ emit_pixel_interpolater_send(const brw_builder &bld,
 
    srcs[INTERP_SRC_MSG_DESC]     = desc;
    srcs[INTERP_SRC_DYNAMIC_MODE] = flag_reg;
+   srcs[INTERP_SRC_NOPERSPECTIVE] = brw_imm_ud(false);
 
-   brw_inst *inst = bld.emit(opcode, dst, srcs, INTERP_NUM_SRCS);
-   /* 2 floats per slot returned */
-   inst->size_written = 2 * dst.component_size(inst->exec_size);
    if (interpolation == INTERP_MODE_NOPERSPECTIVE) {
-      inst->pi_noperspective = true;
+      srcs[INTERP_SRC_NOPERSPECTIVE] = brw_imm_ud(true);
+
       /* TGL BSpec says:
        *     This field cannot be set to "Linear Interpolation"
        *     unless Non-Perspective Barycentric Enable in 3DSTATE_CLIP is enabled"
        */
       wm_prog_data->uses_nonperspective_interp_modes = true;
    }
+
+   brw_inst *inst = bld.emit(opcode, dst, srcs, INTERP_NUM_SRCS);
+   /* 2 floats per slot returned */
+   inst->size_written = 2 * dst.component_size(inst->exec_size);
 
    wm_prog_data->pulls_bary = true;
 

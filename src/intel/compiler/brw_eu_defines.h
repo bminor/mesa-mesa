@@ -737,6 +737,8 @@ enum interpolator_logical_srcs {
    INTERP_SRC_MSG_DESC,
    /** Flag register for dynamic mode */
    INTERP_SRC_DYNAMIC_MODE,
+   /** Whether this should use noperspective (0/1 as UD immediate) */
+   INTERP_SRC_NOPERSPECTIVE,
 
    INTERP_NUM_SRCS
 };
