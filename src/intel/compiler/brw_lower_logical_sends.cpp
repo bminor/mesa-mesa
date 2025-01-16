@@ -288,6 +288,8 @@ lower_fb_write_logical_send(const brw_builder &bld, brw_inst *inst,
    assert(inst->src[FB_WRITE_LOGICAL_SRC_COMPONENTS].file == IMM);
    assert(inst->src[FB_WRITE_LOGICAL_SRC_NULL_RT].file == IMM);
    assert(inst->src[FB_WRITE_LOGICAL_SRC_LAST_RT].file == IMM);
+   assert(inst->src[FB_WRITE_LOGICAL_SRC_TARGET].file == IMM);
+
    const intel_device_info *devinfo = bld.shader->devinfo;
    const brw_reg color0 = inst->src[FB_WRITE_LOGICAL_SRC_COLOR0];
    const brw_reg color1 = inst->src[FB_WRITE_LOGICAL_SRC_COLOR1];
@@ -297,10 +299,11 @@ lower_fb_write_logical_send(const brw_builder &bld, brw_inst *inst,
    brw_reg sample_mask = inst->src[FB_WRITE_LOGICAL_SRC_OMASK];
    const unsigned components =
       inst->src[FB_WRITE_LOGICAL_SRC_COMPONENTS].ud;
+   const unsigned target = inst->src[FB_WRITE_LOGICAL_SRC_TARGET].ud;
    const bool null_rt = inst->src[FB_WRITE_LOGICAL_SRC_NULL_RT].ud != 0;
    const bool last_rt = inst->src[FB_WRITE_LOGICAL_SRC_LAST_RT].ud != 0;
 
-   assert(inst->target != 0 || src0_alpha.file == BAD_FILE);
+   assert(target != 0 || src0_alpha.file == BAD_FILE);
 
    brw_reg sources[15];
    int header_size = 2, payload_header_size;
@@ -356,8 +359,8 @@ lower_fb_write_logical_send(const brw_builder &bld, brw_inst *inst,
       }
 
       /* Set the render target index for choosing BLEND_STATE. */
-      if (inst->target > 0) {
-         ubld.group(1, 0).MOV(component(header, 2), brw_imm_ud(inst->target));
+      if (target > 0) {
+         ubld.group(1, 0).MOV(component(header, 2), brw_imm_ud(target));
       }
 
       if (prog_data->uses_kill) {
@@ -453,7 +456,7 @@ lower_fb_write_logical_send(const brw_builder &bld, brw_inst *inst,
    /* XXX - Bit 13 Per-sample PS enable */
    inst->desc =
       (inst->group / 16) << 11 | /* rt slot group */
-      brw_fb_write_desc(devinfo, inst->target, msg_ctl, last_rt,
+      brw_fb_write_desc(devinfo, target, msg_ctl, last_rt,
                         0 /* coarse_rt_write */);
 
    brw_reg desc = brw_imm_ud(0);
@@ -470,7 +473,7 @@ lower_fb_write_logical_send(const brw_builder &bld, brw_inst *inst,
 
    uint32_t ex_desc = 0;
    if (devinfo->ver >= 20) {
-      ex_desc = inst->target << 21 |
+      ex_desc = target << 21 |
                 null_rt << 20 |
                 (src0_alpha.file != BAD_FILE) << 15 |
                 (src_stencil.file != BAD_FILE) << 14 |
@@ -480,7 +483,7 @@ lower_fb_write_logical_send(const brw_builder &bld, brw_inst *inst,
       /* Set the "Render Target Index" and "Src0 Alpha Present" fields
        * in the extended message descriptor, in lieu of using a header.
        */
-      ex_desc = inst->target << 12 |
+      ex_desc = target << 12 |
                 null_rt << 20 |
                 (src0_alpha.file != BAD_FILE) << 15;
    }
@@ -507,6 +510,8 @@ lower_fb_read_logical_send(const brw_builder &bld, brw_inst *inst,
    const brw_builder &ubld = bld.exec_all().group(8, 0);
    const unsigned length = 2;
    const brw_reg header = ubld.vgrf(BRW_TYPE_UD, length);
+   assert(inst->src[0].file == IMM);
+   unsigned target = inst->src[0].ud;
 
    assert(devinfo->ver >= 9 && devinfo->ver < 20);
 
@@ -561,7 +566,7 @@ lower_fb_read_logical_send(const brw_builder &bld, brw_inst *inst,
    inst->check_tdr = true;
    inst->desc =
       (inst->group / 16) << 11 | /* rt slot group */
-      brw_fb_read_desc(devinfo, inst->target,
+      brw_fb_read_desc(devinfo, target,
                        0 /* msg_control */, inst->exec_size,
                        wm_prog_data->persample_dispatch);
 }

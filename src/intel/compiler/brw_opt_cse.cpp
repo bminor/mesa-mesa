@@ -250,7 +250,6 @@ instructions_match(brw_inst *a, brw_inst *b, bool *negate)
           a->size_written == b->size_written &&
           a->check_tdr == b->check_tdr &&
           a->header_size == b->header_size &&
-          a->target == b->target &&
           a->sources == b->sources &&
           a->bits == b->bits &&
           operands_match(a, b, negate);
@@ -294,7 +293,6 @@ hash_inst(const void *v)
       inst->ex_mlen,
       inst->sfid,
       inst->header_size,
-      inst->target,
 
       inst->conditional_mod,
       inst->predicate,

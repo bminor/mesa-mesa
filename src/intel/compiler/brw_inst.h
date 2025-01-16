@@ -162,7 +162,6 @@ public:
    uint8_t sfid; /**< SFID for SEND instructions */
    /** The number of hardware registers used for a message header. */
    uint8_t header_size;
-   uint8_t target; /**< MRT target. */
    uint32_t desc; /**< SEND[S] message descriptor immediate */
    uint32_t ex_desc; /**< SEND[S] extended message descriptor immediate */
 

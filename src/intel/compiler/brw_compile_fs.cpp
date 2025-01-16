@@ -21,7 +21,8 @@
 static brw_inst *
 brw_emit_single_fb_write(fs_visitor &s, const brw_builder &bld,
                          brw_reg color0, brw_reg color1,
-                         brw_reg src0_alpha, unsigned components,
+                         brw_reg src0_alpha,
+                         unsigned target, unsigned components,
                          bool null_rt)
 {
    assert(s.stage == MESA_SHADER_FRAGMENT);
@@ -31,6 +32,7 @@ brw_emit_single_fb_write(fs_visitor &s, const brw_builder &bld,
    sources[FB_WRITE_LOGICAL_SRC_COLOR0]     = color0;
    sources[FB_WRITE_LOGICAL_SRC_COLOR1]     = color1;
    sources[FB_WRITE_LOGICAL_SRC_SRC0_ALPHA] = src0_alpha;
+   sources[FB_WRITE_LOGICAL_SRC_TARGET]     = brw_imm_ud(target);
    sources[FB_WRITE_LOGICAL_SRC_COMPONENTS] = brw_imm_ud(components);
    sources[FB_WRITE_LOGICAL_SRC_NULL_RT]    = brw_imm_ud(null_rt);
    sources[FB_WRITE_LOGICAL_SRC_LAST_RT]    = brw_imm_ud(false);
@@ -72,9 +74,8 @@ brw_do_emit_fb_writes(fs_visitor &s, int nr_color_regions, bool replicate_alpha)
          src0_alpha = offset(s.outputs[0], bld, 3);
 
       inst = brw_emit_single_fb_write(s, abld, s.outputs[target],
-                                      s.dual_src_output, src0_alpha, 4,
+                                      s.dual_src_output, src0_alpha, target, 4,
                                       false);
-      inst->target = target;
    }
 
    if (inst == NULL) {
@@ -101,9 +102,8 @@ brw_do_emit_fb_writes(fs_visitor &s, int nr_color_regions, bool replicate_alpha)
       const brw_reg tmp = bld.vgrf(BRW_TYPE_UD, 4);
       bld.LOAD_PAYLOAD(tmp, srcs, 4, 0);
 
-      inst = brw_emit_single_fb_write(s, bld, tmp, reg_undef, reg_undef, 4,
-                                      use_null_rt);
-      inst->target = 0;
+      inst = brw_emit_single_fb_write(s, bld, tmp, reg_undef, reg_undef,
+                                      0, 4, use_null_rt);
    }
 
    inst->src[FB_WRITE_LOGICAL_SRC_LAST_RT] = brw_imm_ud(true);

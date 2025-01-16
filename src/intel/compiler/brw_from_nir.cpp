@@ -3750,8 +3750,8 @@ emit_non_coherent_fb_read(nir_to_brw_state &ntb, const brw_builder &bld, const b
 static brw_inst *
 emit_coherent_fb_read(const brw_builder &bld, const brw_reg &dst, unsigned target)
 {
-   brw_inst *inst = bld.emit(FS_OPCODE_FB_READ_LOGICAL, dst);
-   inst->target = target;
+   brw_inst *inst =
+      bld.emit(FS_OPCODE_FB_READ_LOGICAL, dst, brw_imm_ud(target));
    inst->size_written = 4 * inst->dst.component_size(inst->exec_size);
 
    return inst;
