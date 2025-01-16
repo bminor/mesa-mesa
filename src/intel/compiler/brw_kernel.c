@@ -323,6 +323,7 @@ brw_kernel_from_spirv(struct brw_compiler *compiler,
 
    nir_lower_printf_options printf_opts = {
       .ptr_bit_size               = 64,
+      .max_buffer_size            = 1024 * 1024,
       .use_printf_base_identifier = true,
    };
    NIR_PASS_V(nir, nir_lower_printf, &printf_opts);

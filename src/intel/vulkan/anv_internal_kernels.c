@@ -91,6 +91,7 @@ compile_shader(struct anv_device *device,
       nir_lower_printf_options printf_opts = {
          .ptr_bit_size               = 64,
          .use_printf_base_identifier = true,
+         .max_buffer_size            = 1024 * 1024,
       };
       NIR_PASS_V(nir, nir_lower_printf, &printf_opts);
    }
