@@ -1915,8 +1915,9 @@ bool elk_validate_instructions(const struct elk_isa_info *isa,
                                struct elk_disasm_info *disasm);
 
 static inline int
-next_offset(const struct intel_device_info *devinfo, void *store, int offset)
+next_offset(struct elk_codegen *p, void *store, int offset)
 {
+   const struct intel_device_info *devinfo = p->devinfo;
    elk_inst *insn = (elk_inst *)((char *)store + offset);
 
    if (elk_inst_cmpt_control(devinfo, insn))
