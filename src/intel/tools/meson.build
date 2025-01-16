@@ -1,23 +1,19 @@
 # Copyright © 2017 Intel Corporation
 # SPDX-License-Identifier: MIT
 
-libaub = static_library(
-  'aub',
-  files('aub_read.c', 'aub_mem.c'),
-  include_directories : [inc_include, inc_src, inc_intel],
-  dependencies : [idep_mesautil, idep_intel_dev, idep_intel_decoder_brw, idep_intel_decoder_elk, idep_libintel_common],
-  c_args : [no_override_init_args],
-  gnu_symbol_visibility : 'hidden',
-  install : false
-)
-
 libintel_tools = static_library(
   'intel_tools',
   files(
+    'aub_mem.c',
+    'aub_mem.h',
+    'aub_read.c',
+    'aub_read.h',
     'intel_tools.c',
     'intel_tools.h'
   ),
   dependencies : [
+    idep_mesautil,
+    idep_intel_dev,
     idep_intel_decoder_brw,
     idep_intel_decoder_elk,
     idep_intel_compiler_brw,
@@ -25,7 +21,6 @@ libintel_tools = static_library(
     idep_libintel_common,
   ],
   include_directories : [inc_include, inc_src, inc_intel],
-  link_with : [libintel_common],
   c_args : [no_override_init_args],
   gnu_symbol_visibility : 'hidden',
   install : false,
@@ -45,7 +40,6 @@ aubinator = executable(
   dependencies : [idep_mesautil, dep_expat, dep_zlib, dep_dl, dep_thread, dep_m, idep_intel_dev,
                   idep_libintel_common, idep_libintel_tools],
   include_directories : [inc_include, inc_src, inc_intel],
-  link_with : [libaub],
   c_args : [no_override_init_args],
   gnu_symbol_visibility : 'hidden',
   install : true
@@ -192,7 +186,6 @@ if with_tools.contains('intel-ui')
     dependencies : [idep_mesautil, dep_zlib, dep_dl, dep_thread, dep_m, libintel_imgui_gtk_dep, idep_intel_dev,
                     idep_libintel_common, idep_libintel_tools],
     include_directories : [inc_include, inc_src, inc_intel],
-    link_with : [libaub],
     c_args : [no_override_init_args],
     gnu_symbol_visibility : 'hidden',
     cpp_args : ['-fpermissive', '-Wno-parentheses'],
