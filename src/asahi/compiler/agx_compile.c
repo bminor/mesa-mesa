@@ -6,6 +6,7 @@
  */
 
 #include "agx_compile.h"
+#include "asahi/clc/asahi_clc.h"
 #include "asahi/layout/layout.h"
 #include "compiler/nir/nir_builder.h"
 #include "util/bitset.h"
@@ -3774,6 +3775,9 @@ agx_compile_shader_nir(nir_shader *nir, struct agx_shader_key *key,
    /* If required, tag writes will be enabled by instruction selection */
    if (nir->info.stage == MESA_SHADER_FRAGMENT)
       info->tag_write_disable = !nir->info.writes_memory;
+
+   NIR_PASS(_, nir, nir_lower_printf_buffer, LIBAGX_PRINTF_BUFFER_ADDRESS,
+            LIBAGX_PRINTF_BUFFER_SIZE - 8);
 
    bool needs_libagx = true /* TODO: Optimize */;
 

@@ -98,8 +98,6 @@ compile(void *memctx, const uint32_t *spirv, size_t spirv_size)
 
    NIR_PASS(_, nir, nir_lower_printf,
             &(const struct nir_lower_printf_options){
-               .buffer_address = LIBAGX_PRINTF_BUFFER_ADDRESS,
-               .max_buffer_size = LIBAGX_PRINTF_BUFFER_SIZE - 8,
             });
 
    /* We have to lower away local constant initializers right before we
