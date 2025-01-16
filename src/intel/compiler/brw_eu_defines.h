@@ -81,13 +81,6 @@ enum brw_compression {
    BRW_COMPRESSION_COMPRESSED = 2,
 };
 
-#define GFX6_COMPRESSION_1Q		0
-#define GFX6_COMPRESSION_2Q		1
-#define GFX6_COMPRESSION_3Q		2
-#define GFX6_COMPRESSION_4Q		3
-#define GFX6_COMPRESSION_1H		0
-#define GFX6_COMPRESSION_2H		2
-
 enum ENUM_PACKED brw_conditional_mod {
    BRW_CONDITIONAL_NONE = 0,
    BRW_CONDITIONAL_Z    = 1,
