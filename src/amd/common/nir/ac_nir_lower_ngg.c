@@ -1858,7 +1858,9 @@ ngg_build_streamout_buffer_info(nir_builder *b,
 
    nir_if *if_invocation_0 = nir_push_if(b, nir_ieq_imm(b, tid_in_tg, 0));
    {
+      nir_def *any_buffer_valid = nir_imm_false(b);
       nir_def *workgroup_buffer_sizes[4];
+
       for (unsigned buffer = 0; buffer < 4; buffer++) {
          if (info->buffers_written & BITFIELD_BIT(buffer)) {
             nir_def *buffer_size = nir_channel(b, so_buffer_ret[buffer], 2);
@@ -1873,6 +1875,7 @@ ngg_build_streamout_buffer_info(nir_builder *b,
                nir_imul(b, gen_prim[info->buffer_to_stream[buffer]], prim_stride[buffer]);
             workgroup_buffer_sizes[buffer] =
                nir_bcsel(b, buffer_valid, inc_buffer_size, nir_imm_int(b, 0));
+            any_buffer_valid = nir_ior(b, any_buffer_valid, buffer_valid);
          } else
             workgroup_buffer_sizes[buffer] = undef;
       }
@@ -1888,12 +1891,13 @@ ngg_build_streamout_buffer_info(nir_builder *b,
 
          for (unsigned buffer = 0; buffer < 4; buffer++)
             workgroup_buffer_sizes[buffer] = nir_if_phi(b, workgroup_buffer_sizes[buffer], undef);
+         any_buffer_valid = nir_if_phi(b, any_buffer_valid, nir_undef(b, 1, 1));
 
          /* These must be set after nir_pop_if and phis. */
          xfb_state_address = nir_load_xfb_state_address_gfx12_amd(b);
          xfb_voffset = nir_imul_imm(b, tid_in_tg, 8);
 
-         nir_if *if_4lanes = nir_push_if(b, nir_ult_imm(b, tid_in_tg, 4));
+         nir_if *if_4lanes = nir_push_if(b, nir_iand(b, any_buffer_valid, nir_ult_imm(b, tid_in_tg, 4)));
          {
             /* Move workgroup buffer sizes from SGPRs to the first 4 lanes. */
             nir_def *workgroup_buffer_size_per_lane =
