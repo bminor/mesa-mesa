@@ -20,7 +20,8 @@ from ruamel.yaml import YAML
 
 import gitlab
 from colorama import Fore, Style
-from gitlab_common import get_gitlab_project, read_token, wait_for_pipeline, get_gitlab_pipeline_from_url
+from gitlab_common import (get_gitlab_project, read_token, wait_for_pipeline,
+                           get_gitlab_pipeline_from_url, TOKEN_DIR, get_token_from_default_dir)
 
 
 DESCRIPTION_FILE = "export PIGLIT_REPLAY_DESCRIPTION_FILE=.*/install/(.*)$"
@@ -122,7 +123,10 @@ def parse_args() -> None:
     parser.add_argument(
         "--token",
         metavar="token",
-        help="force GitLab token, otherwise it's read from ~/.config/gitlab-token",
+        type=str,
+        default=get_token_from_default_dir(),
+        help="Use the provided GitLab token or token file, "
+             f"otherwise it's read from {TOKEN_DIR / 'gitlab-token'}",
     )
     parser.add_argument(
         "--pipeline-url",
