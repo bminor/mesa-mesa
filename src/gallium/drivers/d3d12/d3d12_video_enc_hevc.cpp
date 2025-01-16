@@ -363,7 +363,10 @@ d3d12_video_encoder_update_current_frame_pic_params_info_hevc(struct d3d12_video
       picParams.pHEVCPicData->Flags |= D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC_FLAG_REQUEST_NUM_REF_IDX_ACTIVE_OVERRIDE_FLAG_SLICE;
    }
 
-   if (hevcPic->base.profile == PIPE_VIDEO_PROFILE_HEVC_MAIN_444)
+   if ((hevcPic->base.profile == PIPE_VIDEO_PROFILE_HEVC_MAIN_444) ||
+       (hevcPic->base.profile == PIPE_VIDEO_PROFILE_HEVC_MAIN10_444) ||
+       (hevcPic->base.profile == PIPE_VIDEO_PROFILE_HEVC_MAIN_422) ||
+       (hevcPic->base.profile == PIPE_VIDEO_PROFILE_HEVC_MAIN10_422))
    {
       assert(picParams.DataSize == sizeof(D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC1));
 
@@ -880,7 +883,10 @@ d3d12_video_encoder_convert_hevc_codec_configuration(struct d3d12_video_encoder 
    if (picture->pic.constrained_intra_pred_flag)
       config.ConfigurationFlags |= D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION_HEVC_FLAG_USE_CONSTRAINED_INTRAPREDICTION;
 
-   if (picture->base.profile == PIPE_VIDEO_PROFILE_HEVC_MAIN_444)
+   if ((picture->base.profile == PIPE_VIDEO_PROFILE_HEVC_MAIN_444) ||
+       (picture->base.profile == PIPE_VIDEO_PROFILE_HEVC_MAIN10_444) ||
+       (picture->base.profile == PIPE_VIDEO_PROFILE_HEVC_MAIN_422) ||
+       (picture->base.profile == PIPE_VIDEO_PROFILE_HEVC_MAIN10_422))
    {
       if (picture->seq.sps_range_extension.transform_skip_rotation_enabled_flag)
          config.ConfigurationFlags |= D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION_HEVC_FLAG_TRANSFORM_SKIP_ROTATION;
@@ -1409,6 +1415,15 @@ d3d12_video_encoder_convert_profile_to_d3d12_enc_profile_hevc(enum pipe_video_pr
       case PIPE_VIDEO_PROFILE_HEVC_MAIN_444:
       {
          return D3D12_VIDEO_ENCODER_PROFILE_HEVC_MAIN_444;
+      } break;
+      case PIPE_VIDEO_PROFILE_HEVC_MAIN10_444:
+      {
+         return D3D12_VIDEO_ENCODER_PROFILE_HEVC_MAIN10_444;
+      } break;
+      case PIPE_VIDEO_PROFILE_HEVC_MAIN_422:
+      case PIPE_VIDEO_PROFILE_HEVC_MAIN10_422:
+      {
+         return D3D12_VIDEO_ENCODER_PROFILE_HEVC_MAIN10_422;
       } break;
       default:
       {
