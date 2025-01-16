@@ -15,7 +15,10 @@ Intel GPUs
 #. For discrete GPUs:
 
    #. Enable `ReBAR`_
-   #. Enable `ASPM`_
+   #. For workloads that keep the GPU busy (e.g. 3D videogames), 
+      minimize idle power consumption by enabling `ASPM`_ powersave mode.
+   #. For "bursty", latency-sensitive workloads (e.g. AI inference),
+      enable ASPM performance mode.
 
 .. _ReBAR: https://www.intel.com/content/www/us/en/support/articles/000090831/graphics.html
 .. _ASPM: https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/6/html/power_management_guide/aspm
