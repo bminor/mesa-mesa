@@ -41,12 +41,7 @@ lower_printf_intrin(nir_builder *b, nir_intrinsic_instr *prntf, void *_options)
    const unsigned ptr_bit_size =
       options->ptr_bit_size != 0 ? options->ptr_bit_size : nir_get_ptr_bitsize(b->shader);
 
-   nir_def *buffer_addr;
-   if (options->buffer_address != 0) {
-      buffer_addr = nir_imm_intN_t(b, options->buffer_address, ptr_bit_size);
-   } else {
-      buffer_addr = nir_load_printf_buffer_address(b, ptr_bit_size);
-   }
+   nir_def *buffer_addr = nir_load_printf_buffer_address(b, ptr_bit_size);
 
    /* For aborts, just write a nonzero value to the aborted? flag. The printf
     * buffer layout looks like:

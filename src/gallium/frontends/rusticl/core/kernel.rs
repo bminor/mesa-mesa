@@ -662,7 +662,6 @@ fn compile_nir_to_args(
     nir_pass!(nir, nir_dedup_inline_samplers);
 
     let printf_opts = nir_lower_printf_options {
-        buffer_address: 0,
         ptr_bit_size: 0,
         use_printf_base_identifier: false,
         hash_format_strings: false,
