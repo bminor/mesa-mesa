@@ -4947,12 +4947,13 @@ static void gfx6_emit_tess_io_layout_state(struct si_context *sctx, unsigned ind
       gfx11_opt_push_gfx_sh_reg(tes_sh_base + SI_SGPR_TES_OFFCHIP_ADDR * 4,
                                 SI_TRACKED_SPI_SHADER_USER_DATA_ES__DRAWID,
                                 sctx->tes_offchip_ring_va_sgpr);
-   } else {
-      bool has_gs = sctx->ngg || sctx->shader.gs.cso;
-
+   } else if (sctx->ngg || sctx->shader.gs.cso) {
       radeon_opt_set_sh_reg2(tes_sh_base + SI_SGPR_TES_OFFCHIP_LAYOUT * 4,
-                             has_gs ? SI_TRACKED_SPI_SHADER_USER_DATA_ES__BASE_VERTEX
-                                    : SI_TRACKED_SPI_SHADER_USER_DATA_VS__BASE_VERTEX,
+                             SI_TRACKED_SPI_SHADER_USER_DATA_ES__BASE_VERTEX,
+                             sctx->tcs_offchip_layout, sctx->tes_offchip_ring_va_sgpr);
+   } else {
+      radeon_opt_set_sh_reg2(tes_sh_base + SI_SGPR_TES_OFFCHIP_LAYOUT * 4,
+                             SI_TRACKED_SPI_SHADER_USER_DATA_VS__BASE_VERTEX,
                              sctx->tcs_offchip_layout, sctx->tes_offchip_ring_va_sgpr);
    }
    radeon_end();
