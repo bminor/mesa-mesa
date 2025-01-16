@@ -28,7 +28,6 @@ libagx_spv = custom_target(
     '-I' + join_paths(meson.current_build_dir(), '../genxml'),
     '-fmacro-prefix-map=@0@='.format(relative_dir),
     ],
-  env: ['MESA_SHADER_CACHE_DISABLE=true'],
   depends : [prog_mesa_clc, agx_pack],
   depfile : 'libagx_shaders.h.d',
 )

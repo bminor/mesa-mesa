@@ -55,7 +55,6 @@ libagx_shaders = custom_target(
   input : libagx_spv,
   output : ['libagx_shaders.h', 'libagx_shaders.c'],
   command : [prog_asahi_clc, libagx_spv, '@OUTPUT0@', '@OUTPUT1@'],
-  env: ['MESA_SHADER_CACHE_DISABLE=true'],
   depends : [prog_asahi_clc],
 )
 
