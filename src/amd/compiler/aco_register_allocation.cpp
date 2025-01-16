@@ -3192,7 +3192,6 @@ register_allocation(Program* program, ra_test_policy policy)
          }
 
          /* handle fixed definitions first */
-         bool has_precolored_defs = false;
          for (unsigned i = 0; i < instr->definitions.size(); ++i) {
             auto& definition = instr->definitions[i];
             if (!definition.isFixed())
@@ -3215,7 +3214,6 @@ register_allocation(Program* program, ra_test_policy policy)
                assert(success);
 
                update_renames(ctx, register_file, parallelcopy, instr);
-               has_precolored_defs = true;
             }
 
             if (!definition.isTemp())
@@ -3307,8 +3305,7 @@ register_allocation(Program* program, ra_test_policy policy)
             register_file.fill(*definition);
          }
 
-         if (instr->opcode == aco_opcode::p_create_vector || has_precolored_defs)
-            undo_renames(ctx, parallelcopy, instr);
+         undo_renames(ctx, parallelcopy, instr);
 
          handle_pseudo(ctx, register_file, instr.get());
 
