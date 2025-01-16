@@ -3936,16 +3936,17 @@ agx_ia_update(struct agx_batch *batch, const struct pipe_draw_info *info,
    if (info->primitive_restart) {
       perf_debug(dev, "Input assembly counters with primitive restart");
 
-      libagx_increment_ia_restart(
-         batch, agx_1d(1024), AGX_BARRIER_ALL, ia_vertices, ia_primitives,
-         vs_invocations, c_prims, c_invs, draw, ib, ib_range_el,
-         info->restart_index, info->index_size, info->mode);
+      libagx_increment_ia_restart(batch, agx_1d(1024), AGX_BARRIER_ALL,
+                                  ia_vertices, ia_primitives, vs_invocations,
+                                  c_prims, c_invs, draw, ib, ib_range_el,
+                                  info->restart_index, info->index_size,
+                                  info->mode, ctx->patch_vertices);
    } else {
       perf_debug(dev, "Input assembly counters");
 
       libagx_increment_ia(batch, agx_1d(1), AGX_BARRIER_ALL, ia_vertices,
                           ia_primitives, vs_invocations, c_prims, c_invs, draw,
-                          info->mode);
+                          info->mode, ctx->patch_vertices);
    }
 }
 

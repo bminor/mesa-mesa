@@ -3343,6 +3343,8 @@ hk_ia_update(struct hk_cmd_buffer *cmd, struct agx_draw draw,
       c_inv = 0;
    }
 
+   uint32_t patch_size = dyn->ts.patch_control_points;
+
    if (draw.restart) {
       uint32_t index_size_B = agx_index_size_to_B(draw.index_size);
 
@@ -3350,11 +3352,11 @@ hk_ia_update(struct hk_cmd_buffer *cmd, struct agx_draw draw,
          cmd, agx_1d(1024), AGX_BARRIER_ALL | AGX_PREGFX, ia_vertices, ia_prims,
          vs_invocations, c_prims, c_inv, draw_ptr, draw.index_buffer,
          agx_draw_index_range_el(draw), cmd->state.gfx.index.restart,
-         index_size_B, prim);
+         index_size_B, prim, patch_size);
    } else {
       libagx_increment_ia(cmd, agx_1d(1), AGX_BARRIER_ALL | AGX_PREGFX,
                           ia_vertices, ia_prims, vs_invocations, c_prims, c_inv,
-                          draw_ptr, prim);
+                          draw_ptr, prim, patch_size);
    }
 }
 

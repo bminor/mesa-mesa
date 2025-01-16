@@ -330,16 +330,30 @@ increment_counters(global uint32_t *a, global uint32_t *b, global uint32_t *c,
    }
 }
 
+static unsigned
+decomposed_prims_for_vertices_with_tess(enum mesa_prim prim, int vertices,
+                                        unsigned verts_per_patch)
+{
+   if (prim >= MESA_PRIM_PATCHES) {
+      return vertices / verts_per_patch;
+   } else {
+      return u_decomposed_prims_for_vertices(prim, vertices);
+   }
+}
+
 KERNEL(1)
 libagx_increment_ia(global uint32_t *ia_vertices,
                     global uint32_t *ia_primitives,
                     global uint32_t *vs_invocations, global uint32_t *c_prims,
                     global uint32_t *c_invs, constant uint32_t *draw,
-                    enum mesa_prim prim)
+                    enum mesa_prim prim, unsigned verts_per_patch)
 {
    increment_counters(ia_vertices, vs_invocations, NULL, draw[0] * draw[1]);
 
-   uint prims = u_decomposed_prims_for_vertices(prim, draw[0]) * draw[1];
+   uint prims =
+      decomposed_prims_for_vertices_with_tess(prim, draw[0], verts_per_patch) *
+      draw[1];
+
    increment_counters(ia_primitives, c_prims, c_invs, prims);
 }
 
@@ -351,7 +365,7 @@ libagx_increment_ia_restart(global uint32_t *ia_vertices,
                             constant uint32_t *draw, uint64_t index_buffer,
                             uint32_t index_buffer_range_el,
                             uint32_t restart_index, uint32_t index_size_B,
-                            enum mesa_prim prim)
+                            enum mesa_prim prim, unsigned verts_per_patch)
 {
    uint tid = cl_global_id.x;
    unsigned count = draw[0];
@@ -389,15 +403,15 @@ libagx_increment_ia_restart(global uint32_t *ia_vertices,
                                  index_size_B);
 
          if (index == restart_index) {
-            accum +=
-               u_decomposed_prims_for_vertices(prim, i - last_restart - 1);
+            accum += decomposed_prims_for_vertices_with_tess(
+               prim, i - last_restart - 1, verts_per_patch);
             last_restart = i;
          }
       }
 
       {
-         accum +=
-            u_decomposed_prims_for_vertices(prim, count - last_restart - 1);
+         accum += decomposed_prims_for_vertices_with_tess(
+            prim, count - last_restart - 1, verts_per_patch);
       }
 
       increment_counters(ia_primitives, c_prims, c_invs, accum * draw[1]);
