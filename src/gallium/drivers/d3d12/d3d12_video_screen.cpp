@@ -965,6 +965,7 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
             memset(&roi_support, 0, sizeof(roi_support));
             roi_support.bits.roi_rc_qp_delta_support = ((capEncoderSupportData1.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_RATE_CONTROL_DELTA_QP_AVAILABLE) != 0) ? 1 : 0;
             roi_support.bits.num_roi_regions = roi_support.bits.roi_rc_qp_delta_support ? PIPE_ENC_ROI_REGION_NUM_MAX : 0;
+            roi_support.bits.log2_roi_min_block_pixel_size = static_cast<uint32_t>(std::log2(capEncoderSupportData1.pResolutionDependentSupport[0].QPMapRegionPixelsSize));
 
             supportsProfile = d3d12_video_encode_get_h264_codec_support(profDesc,
                                                                         spD3D12VideoDevice.Get(),
@@ -1242,6 +1243,7 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
                memset(&roi_support, 0, sizeof(roi_support));
                roi_support.bits.roi_rc_qp_delta_support = ((capEncoderSupportData1.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_RATE_CONTROL_DELTA_QP_AVAILABLE) != 0) ? 1 : 0;
                roi_support.bits.num_roi_regions = roi_support.bits.roi_rc_qp_delta_support ? PIPE_ENC_ROI_REGION_NUM_MAX : 0;
+               roi_support.bits.log2_roi_min_block_pixel_size = static_cast<uint32_t>(std::log2(capEncoderSupportData1.pResolutionDependentSupport[0].QPMapRegionPixelsSize));
             }
          }
       } break;
@@ -1507,6 +1509,7 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
                memset(&roi_support, 0, sizeof(roi_support));
                roi_support.bits.roi_rc_qp_delta_support = ((capEncoderSupportData1.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_RATE_CONTROL_DELTA_QP_AVAILABLE) != 0) ? 1 : 0;
                roi_support.bits.num_roi_regions = roi_support.bits.roi_rc_qp_delta_support ? PIPE_ENC_ROI_REGION_NUM_MAX : 0;
+               roi_support.bits.log2_roi_min_block_pixel_size = static_cast<uint32_t>(std::log2(capEncoderSupportData1.pResolutionDependentSupport[0].QPMapRegionPixelsSize));
             }
          }
       } break;
