@@ -119,11 +119,15 @@ lower_printf_intrin(nir_builder *b, nir_intrinsic_instr *prntf, void *_options)
                        .atomic_op = nir_atomic_op_iadd);
 
    /* Check if we're still in-bounds */
-   int max_valid_offset =
-      options->max_buffer_size - args_size - fmt_str_id_size - counter_size;
-   assert(max_valid_offset >= 0 && "printf buffer must be sufficiently large");
+   nir_def *buffer_size;
+   if (options->max_buffer_size) {
+      buffer_size = nir_imm_int(b, options->max_buffer_size);
+   } else {
+      buffer_size = nir_load_printf_buffer_size(b);
+   }
 
-   nir_push_if(b, nir_ult_imm(b, offset, max_valid_offset));
+   unsigned this_printf_size = args_size + fmt_str_id_size + counter_size;
+   nir_push_if(b, nir_ult(b, offset, nir_iadd_imm(b, buffer_size, -this_printf_size)));
 
    nir_def *printf_succ_val = nir_imm_int(b, 0);
 

@@ -1278,8 +1278,9 @@ system_value("fully_covered", dest_comp=1, bit_sizes=[1])
 intrinsic("printf", src_comp=[1, 1], dest_comp=1, bit_sizes=[32])
 # Since most drivers will want to lower to just dumping args
 # in a buffer, nir_lower_printf will do that, but requires
-# the driver to at least provide a base location
+# the driver to at least provide a base location and size
 system_value("printf_buffer_address", 1, bit_sizes=[32,64])
+system_value("printf_buffer_size", 1, bit_sizes=[32])
 # If driver wants to have all printfs from various shaders merged into a
 # single output buffer, it needs each shader to have its own base identifier
 # from which each printf is indexed.
