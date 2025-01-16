@@ -1398,6 +1398,7 @@ radv_get_physical_device_properties(struct radv_physical_device *pdev)
    bool gfx11plus = pdev->info.gfx_level >= GFX11;
 
    VkExtent2D vrs_texel_extent = radv_vrs_attachment_enabled(pdev) ? (VkExtent2D){8, 8} : (VkExtent2D){0, 0};
+   const int32_t max_viewport_size = pdev->info.gfx_level >= GFX12 ? 32768 : 16384;
 
    uint64_t os_page_size = 4096;
    os_get_page_size(&os_page_size);
@@ -1475,8 +1476,8 @@ radv_get_physical_device_properties(struct radv_physical_device *pdev)
       .maxSamplerLodBias = 16,
       .maxSamplerAnisotropy = 16,
       .maxViewports = MAX_VIEWPORTS,
-      .maxViewportDimensions = {(1 << 14), (1 << 14)},
-      .viewportBoundsRange = {INT16_MIN, INT16_MAX},
+      .maxViewportDimensions = {max_viewport_size, max_viewport_size},
+      .viewportBoundsRange = {-2 * max_viewport_size, 2 * max_viewport_size - 1},
       .viewportSubPixelBits = 8,
       .minMemoryMapAlignment = 4096, /* A page */
       .minTexelBufferOffsetAlignment = 4,
