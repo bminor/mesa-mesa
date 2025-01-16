@@ -392,12 +392,16 @@ lower_ps_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
       }
       break;
    case nir_intrinsic_load_sample_pos:
-      /* Even though we could lower this by unpacking the sample position from user SGPRs, doing
-       * that hasn't shown any performance improvement in piglit/pixel-rate. Note that this is
-       * only used by sample shading.
-       */
-      /* sample_pos = ffract(frag_coord.xy); */
-      nir_def_replace(&intrin->def, nir_ffract(b, nir_channels(b, nir_load_frag_coord(b), 0x3)));
+      if (s->options->frag_coord_is_center) {
+         /* We have to use the alternative way to get sample_pos. */
+         nir_def *num_samples = s->options->load_sample_positions_always_loads_current_ones ?
+                                   nir_undef(b, 1, 32) : nir_load_rasterization_samples_amd(b);
+         nir_def_replace(&intrin->def, nir_load_sample_positions_amd(b, 32, nir_load_sample_id(b),
+                                                                     num_samples));
+      } else {
+         /* sample_pos = ffract(frag_coord.xy); */
+         nir_def_replace(&intrin->def, nir_ffract(b, nir_channels(b, nir_load_frag_coord(b), 0x3)));
+      }
       return true;
    case nir_intrinsic_load_barycentric_at_offset:
       nir_def_replace(&intrin->def,
@@ -532,7 +536,8 @@ gather_info(nir_builder *b, nir_intrinsic_instr *intr, void *state)
       }
       break;
    case nir_intrinsic_load_sample_pos:
-      s->uses_fragcoord_xy_as_float = true;
+      if (!s->options->frag_coord_is_center)
+         s->uses_fragcoord_xy_as_float = true;
       break;
    default:
       break;
@@ -565,7 +570,7 @@ ac_nir_lower_ps_early(nir_shader *nir, const ac_nir_lower_ps_early_options *opti
     * TODO: estimate input VGPRs and don't lower to pixel_coord if their number doesn't decrease to
     * an even number?
     */
-   state.use_fragcoord = state.options->ps_iter_samples != 1 &&
+   state.use_fragcoord = !options->frag_coord_is_center && state.options->ps_iter_samples != 1 &&
                          !state.options->force_center_interp_no_msaa &&
                          state.uses_fragcoord_xy_as_float;
 

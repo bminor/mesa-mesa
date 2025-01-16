@@ -277,9 +277,11 @@ typedef struct {
    bool dynamic_rasterization_samples;
    int force_front_face; /* 0 -> keep, 1 -> set to true, -1 -> set to false */
    bool optimize_frag_coord; /* TODO: remove this after RADV can handle it */
+   bool frag_coord_is_center; /* GL requirement for sample shading */
 
    /* frag_coord/pixel_coord:
-    *    allow_pixel_coord && (ps_iter_samples == 1 || force_center_interp_no_msaa ||
+    *    allow_pixel_coord && (frag_coord_is_center || ps_iter_samples == 1 ||
+    *                          force_center_interp_no_msaa ||
     *                          the fractional part of frag_coord.xy isn't used):
     *       * frag_coord.xy is replaced by u2f(pixel_coord) + 0.5.
     *    else:
