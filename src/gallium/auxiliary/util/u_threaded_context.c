@@ -73,6 +73,7 @@ enum tc_call_id {
 #include "u_threaded_context_calls.h"
 #undef CALL
    TC_NUM_CALLS,
+   TC_END_BATCH = TC_NUM_CALLS,
 };
 
 static void
@@ -467,7 +468,7 @@ tc_add_call_end(struct tc_batch *next)
    assert(next->num_total_slots < TC_SLOTS_PER_BATCH);
    struct tc_call_base *call =
       (struct tc_call_base*)&next->slots[next->num_total_slots];
-   call->call_id = TC_NUM_CALLS;
+   call->call_id = TC_END_BATCH;
    call->num_slots = 1;
 }
 
@@ -5036,15 +5037,19 @@ static const tc_execute execute_func[TC_NUM_CALLS] = {
 };
 
 ALWAYS_INLINE static void
-batch_execute(struct tc_batch *batch, struct pipe_context *pipe, uint64_t *last, bool parsing)
+batch_execute(struct tc_batch *batch, struct pipe_context *pipe, bool parsing)
 {
    /* if the framebuffer state is persisting from a previous batch,
     * begin incrementing renderpass info on the first set_framebuffer_state call
     */
    bool first = !batch->first_set_fb;
+   uint64_t *iter = batch->slots;
 
-   for (uint64_t *iter = batch->slots; iter != last;) {
+   while (1) {
       struct tc_call_base *call = (struct tc_call_base *)iter;
+
+      if (call->call_id == TC_END_BATCH)
+         return;
 
       tc_assert(call->sentinel == TC_SENTINEL);
 
@@ -5085,7 +5090,6 @@ tc_batch_execute(void *job, UNUSED void *gdata, int thread_index)
 {
    struct tc_batch *batch = job;
    struct pipe_context *pipe = batch->tc->pipe;
-   uint64_t *last = &batch->slots[batch->num_total_slots];
 
    tc_batch_check(batch);
    tc_set_driver_thread(batch->tc);
@@ -5096,7 +5100,7 @@ tc_batch_execute(void *job, UNUSED void *gdata, int thread_index)
    batch->tc->renderpass_info = batch->renderpass_infos.data;
 
    if (batch->tc->options.parse_renderpass_info) {
-      batch_execute(batch, pipe, last, true);
+      batch_execute(batch, pipe, true);
 
       struct tc_batch_rp_info *info = batch->renderpass_infos.data;
       for (unsigned i = 0; i < batch->max_renderpass_info_idx + 1; i++) {
@@ -5105,7 +5109,7 @@ tc_batch_execute(void *job, UNUSED void *gdata, int thread_index)
          info[i].next = NULL;
       }
    } else {
-      batch_execute(batch, pipe, last, false);
+      batch_execute(batch, pipe, false);
    }
 
    /* Add the fence to the list of fences for the driver to signal at the next
