@@ -1547,9 +1547,9 @@ brw_find_next_block_end(struct brw_codegen *p, int start_offset)
 
    int depth = 0;
 
-   for (offset = next_offset(devinfo, store, start_offset);
+   for (offset = next_offset(p, store, start_offset);
         offset < p->next_insn_offset;
-        offset = next_offset(devinfo, store, offset)) {
+        offset = next_offset(p, store, offset)) {
       brw_eu_inst *insn = store + offset;
 
       switch (brw_eu_inst_opcode(p->isa, insn)) {
@@ -1595,9 +1595,9 @@ brw_find_loop_end(struct brw_codegen *p, int start_offset)
    /* Always start after the instruction (such as a WHILE) we're trying to fix
     * up.
     */
-   for (offset = next_offset(devinfo, store, start_offset);
+   for (offset = next_offset(p, store, start_offset);
         offset < p->next_insn_offset;
-        offset = next_offset(devinfo, store, offset)) {
+        offset = next_offset(p, store, offset)) {
       brw_eu_inst *insn = store + offset;
 
       if (brw_eu_inst_opcode(p->isa, insn) == BRW_OPCODE_WHILE) {

@@ -1586,8 +1586,9 @@ bool brw_validate_instructions(const struct brw_isa_info *isa,
                                struct disasm_info *disasm);
 
 static inline int
-next_offset(const struct intel_device_info *devinfo, void *store, int offset)
+next_offset(struct brw_codegen *p, void *store, int offset)
 {
+   const struct intel_device_info *devinfo = p->devinfo;
    brw_eu_inst *insn = (brw_eu_inst *)((char *)store + offset);
 
    if (brw_eu_inst_cmpt_control(devinfo, insn))

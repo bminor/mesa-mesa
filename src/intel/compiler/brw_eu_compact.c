@@ -2402,7 +2402,7 @@ brw_compact_instructions(struct brw_codegen *p, int start_offset,
    /* Fix up control flow offsets. */
    p->next_insn_offset = start_offset + offset;
    for (offset = 0; offset < p->next_insn_offset - start_offset;
-        offset = next_offset(devinfo, store, offset)) {
+        offset = next_offset(p, store, offset)) {
       brw_eu_inst *insn = store + offset;
       int this_old_ip = old_ip[offset / sizeof(brw_eu_compact_inst)];
       int this_compacted_count = compacted_counts[this_old_ip];
@@ -2494,7 +2494,7 @@ brw_compact_instructions(struct brw_codegen *p, int start_offset,
                 sizeof(brw_eu_inst) != group->offset) {
             assert(start_offset + old_ip[offset / sizeof(brw_eu_compact_inst)] *
                    sizeof(brw_eu_inst) < group->offset);
-            offset = next_offset(devinfo, store, offset);
+            offset = next_offset(p, store, offset);
          }
 
          group->offset = start_offset + offset;
