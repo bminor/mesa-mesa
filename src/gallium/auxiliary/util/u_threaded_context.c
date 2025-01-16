@@ -68,6 +68,13 @@ static const char *tc_call_names[] = {
 #  define TC_TRACE_SCOPE(call_id)
 #endif
 
+enum tc_call_id {
+#define CALL(name) TC_CALL_##name,
+#include "u_threaded_context_calls.h"
+#undef CALL
+   TC_NUM_CALLS,
+};
+
 static void
 tc_batch_execute(void *job, UNUSED void *gdata, int thread_index);
 
@@ -5019,6 +5026,15 @@ tc_callback(struct pipe_context *_pipe, void (*fn)(void *), void *data,
  * batch execution in the driver thread
  */
 
+typedef uint16_t (*tc_execute)(struct pipe_context *pipe, void *call);
+
+/* Callbacks that call pipe_context functions. */
+static const tc_execute execute_func[TC_NUM_CALLS] = {
+#define CALL(name) tc_call_##name,
+#include "u_threaded_context_calls.h"
+#undef CALL
+};
+
 ALWAYS_INLINE static void
 batch_execute(struct tc_batch *batch, struct pipe_context *pipe, uint64_t *last, bool parsing)
 {
@@ -5026,7 +5042,6 @@ batch_execute(struct tc_batch *batch, struct pipe_context *pipe, uint64_t *last,
     * begin incrementing renderpass info on the first set_framebuffer_state call
     */
    bool first = !batch->first_set_fb;
-   const tc_execute *execute_func = batch->tc->execute_func;
 
    for (uint64_t *iter = batch->slots; iter != last;) {
       struct tc_call_base *call = (struct tc_call_base *)iter;
@@ -5427,10 +5442,6 @@ threaded_context_create(struct pipe_context *pipe,
    CTX_INIT(is_intel_perf_query_ready);
    CTX_INIT(get_intel_perf_query_data);
 #undef CTX_INIT
-
-#define CALL(name) tc->execute_func[TC_CALL_##name] = tc_call_##name;
-#include "u_threaded_context_calls.h"
-#undef CALL
 
    if (out)
       *out = tc;
