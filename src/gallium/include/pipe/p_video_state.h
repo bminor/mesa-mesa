@@ -2405,7 +2405,12 @@ union pipe_enc_cap_roi {
        * because ROI delta QP is always required when VAConfigAttribRateControl == VA_RC_CQP.
        */
       uint32_t roi_rc_qp_delta_support         : 1;
-      uint32_t reserved                        : 22;
+      /*
+       * Indicates the minimum driver granularity to set a ROI region with a specific QP value.
+       * In other words, the QP delta block granularity pixel size of the hardware encoder.
+       */
+      uint32_t log2_roi_min_block_pixel_size   : 4;
+      uint32_t reserved                        : 18;
 
    } bits;
    uint32_t value;
