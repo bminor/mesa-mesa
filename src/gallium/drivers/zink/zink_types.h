@@ -1544,6 +1544,7 @@ struct zink_screen {
       bool needs_sanitised_layer;
       bool io_opt;
       bool broken_const;
+      bool broken_demote;
    } driver_compiler_workarounds;
    struct {
       bool broken_l4a4;

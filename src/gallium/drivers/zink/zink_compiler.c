@@ -1362,7 +1362,8 @@ zink_screen_init_compiler(struct zink_screen *screen)
        zink_driverid(screen) == VK_DRIVER_ID_AMD_PROPRIETARY)
       screen->nir_options.lower_doubles_options = nir_lower_dmod;
 
-   if (screen->info.have_EXT_shader_demote_to_helper_invocation)
+   if (screen->info.have_EXT_shader_demote_to_helper_invocation &&
+       !screen->driver_compiler_workarounds.broken_demote)
       screen->nir_options.discard_is_demote = true;
 
    screen->nir_options.support_indirect_inputs = (uint8_t)BITFIELD_MASK(PIPE_SHADER_TYPES);
