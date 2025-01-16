@@ -265,6 +265,100 @@ d3d12_get_compute_param(struct pipe_screen *pscreen,
 }
 
 static void
+d3d12_init_shader_caps(struct d3d12_screen *screen)
+{
+   for (unsigned i = 0; i <= PIPE_SHADER_COMPUTE; i++) {
+      struct pipe_shader_caps *caps =
+         (struct pipe_shader_caps *)&screen->base.shader_caps[i];
+
+      caps->max_instructions =
+      caps->max_alu_instructions =
+      caps->max_tex_instructions =
+      caps->max_tex_indirections =
+      caps->max_control_flow_depth = INT_MAX;
+
+      switch (i) {
+      case PIPE_SHADER_VERTEX:
+         caps->max_inputs = D3D12_VS_INPUT_REGISTER_COUNT;
+         caps->max_outputs = D3D12_VS_OUTPUT_REGISTER_COUNT;
+         break;
+      case PIPE_SHADER_FRAGMENT:
+         caps->max_inputs = D3D12_PS_INPUT_REGISTER_COUNT;
+         caps->max_outputs = D3D12_PS_OUTPUT_REGISTER_COUNT;
+         break;
+      case PIPE_SHADER_GEOMETRY:
+         caps->max_inputs = D3D12_GS_INPUT_REGISTER_COUNT;
+         caps->max_outputs = D3D12_GS_OUTPUT_REGISTER_COUNT;
+         break;
+      case PIPE_SHADER_TESS_CTRL:
+         caps->max_inputs = D3D12_HS_CONTROL_POINT_PHASE_INPUT_REGISTER_COUNT;
+         caps->max_outputs = D3D12_HS_CONTROL_POINT_PHASE_OUTPUT_REGISTER_COUNT;
+         break;
+      case PIPE_SHADER_TESS_EVAL:
+         caps->max_inputs = D3D12_DS_INPUT_CONTROL_POINT_REGISTER_COUNT;
+         caps->max_outputs = D3D12_DS_OUTPUT_REGISTER_COUNT;
+         break;
+      default:
+         break;
+      }
+
+      caps->max_texture_samplers =
+         screen->opts.ResourceBindingTier == D3D12_RESOURCE_BINDING_TIER_1 ?
+         16 : PIPE_MAX_SAMPLERS;
+
+      caps->max_const_buffer0_size = 65536;
+
+      caps->max_const_buffers =
+         screen->opts.ResourceBindingTier < D3D12_RESOURCE_BINDING_TIER_3 ?
+         13 /* 15 - 2 for lowered uniforms and state vars*/ : 15;
+
+      caps->max_temps = INT_MAX;
+
+      caps->indirect_const_addr = true;
+      caps->integers = true;
+
+      /* Note: This is wrong, but this is the max value that
+       * TC can support to avoid overflowing an array.
+       */
+      caps->max_sampler_views = PIPE_MAX_SAMPLERS;
+
+      caps->max_shader_buffers =
+         (screen->max_feature_level >= D3D_FEATURE_LEVEL_11_1 ||
+          screen->opts.ResourceBindingTier >= D3D12_RESOURCE_BINDING_TIER_3) ?
+         PIPE_MAX_SHADER_BUFFERS : D3D12_PS_CS_UAV_REGISTER_COUNT;
+
+      caps->supported_irs = 1 << PIPE_SHADER_IR_NIR;
+
+      if (screen->support_shader_images) {
+         caps->max_shader_images =
+            (screen->max_feature_level >= D3D_FEATURE_LEVEL_11_1 ||
+             screen->opts.ResourceBindingTier >= D3D12_RESOURCE_BINDING_TIER_3) ?
+            PIPE_MAX_SHADER_IMAGES : D3D12_PS_CS_UAV_REGISTER_COUNT;
+      }
+   }
+}
+
+static void
+d3d12_init_compute_caps(struct d3d12_screen *screen)
+{
+   struct pipe_compute_caps *caps =
+      (struct pipe_compute_caps *)&screen->base.compute_caps;
+
+   caps->max_grid_size[0] =
+   caps->max_grid_size[1] =
+   caps->max_grid_size[2] = D3D12_CS_DISPATCH_MAX_THREAD_GROUPS_PER_DIMENSION;
+
+   caps->max_block_size[0] = D3D12_CS_THREAD_GROUP_MAX_X;
+   caps->max_block_size[1] = D3D12_CS_THREAD_GROUP_MAX_Y;
+   caps->max_block_size[2] = D3D12_CS_THREAD_GROUP_MAX_Z;
+
+   caps->max_variable_threads_per_block =
+   caps->max_threads_per_block = D3D12_CS_THREAD_GROUP_MAX_THREADS_PER_GROUP;
+
+   caps->max_local_size = D3D12_CS_TGSM_REGISTER_COUNT /*DWORDs*/ * 4;
+}
+
+static void
 d3d12_init_screen_caps(struct d3d12_screen *screen)
 {
    struct pipe_caps *caps = (struct pipe_caps *)&screen->base.caps;
@@ -1662,8 +1756,6 @@ d3d12_init_screen(struct d3d12_screen *screen, IUnknown *adapter)
    d3d12_screen_video_init(&screen->base);
 #endif
 
-   d3d12_init_screen_caps(screen);
-
    struct pb_desc desc;
    desc.alignment = D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT;
    desc.usage = (pb_usage_flags)(PB_USAGE_CPU_WRITE | PB_USAGE_GPU_READ);
@@ -1761,6 +1853,10 @@ d3d12_init_screen(struct d3d12_screen *screen, IUnknown *adapter)
    _mesa_sha1_update(&sha1_ctx, &screen->revision, sizeof(screen->revision));
    _mesa_sha1_final(&sha1_ctx, sha1);
    memcpy(screen->device_uuid, sha1, PIPE_UUID_SIZE);
+
+   d3d12_init_shader_caps(screen);
+   d3d12_init_compute_caps(screen);
+   d3d12_init_screen_caps(screen);
 
    return true;
 }
