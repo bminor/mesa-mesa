@@ -255,9 +255,10 @@ a660-vk-full:
     - a660-vk
     - .collabora-turnip-manual-rules
   parallel: 3
-  timeout: 1h
+  timeout: 2h
   variables:
     DEQP_SUITE: freedreno-a660-vk-full
+    DEQP_FRACTION: 1
 
 # X11 takes over the screen, wayland is run headless.
 a630-gl:

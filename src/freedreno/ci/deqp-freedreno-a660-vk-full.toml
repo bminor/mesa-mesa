@@ -15,6 +15,7 @@ caselists = ["/deqp-vk/mustpass/vk-main.txt"]
 skips = ["install/freedreno-a6xx-skips.txt"]
 timeout = 300
 prefix = "gmem-"
+fraction = 10
 tests_per_group = 5000
 [deqp.env]
 TU_DEBUG = "gmem,forcebin"
@@ -26,6 +27,7 @@ caselists = ["/deqp-vk/mustpass/vk-main.txt"]
 skips = ["install/freedreno-a6xx-skips.txt"]
 timeout = 300
 prefix = "nobin-"
+fraction = 10
 include = ["dEQP-VK.transform_feedback.*"]
 tests_per_group = 5000
 [deqp.env]
