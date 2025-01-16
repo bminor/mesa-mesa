@@ -706,6 +706,25 @@ panfrost_resource_set_damage_region(struct pipe_screen *screen,
    }
 }
 
+static bool
+panfrost_can_create_resource(struct pipe_screen *screen,
+                             const struct pipe_resource *template)
+{
+   struct panfrost_resource tmp;
+   tmp.base = *template;
+
+   panfrost_resource_setup(screen, &tmp, DRM_FORMAT_MOD_INVALID, template->format);
+
+   uint64_t system_memory;
+   if (!os_get_total_physical_memory(&system_memory))
+      return false;
+
+   /* Limit maximum texture size to a quarter of the system memory, to avoid
+    * allocating huge textures on systems with little memory.
+    */
+   return tmp.image.layout.data_size <= system_memory / 4;
+}
+
 struct pipe_resource *
 panfrost_resource_create_with_modifier(struct pipe_screen *screen,
                                        const struct pipe_resource *template,
@@ -1937,6 +1956,7 @@ static const struct u_transfer_vtbl transfer_vtbl = {
 void
 panfrost_resource_screen_init(struct pipe_screen *pscreen)
 {
+   pscreen->can_create_resource = panfrost_can_create_resource;
    pscreen->resource_create_with_modifiers =
       panfrost_resource_create_with_modifiers;
    pscreen->resource_create = u_transfer_helper_resource_create;
