@@ -218,6 +218,7 @@ files_libnir = files(
   'nir_lower_sysvals_to_varyings.c',
   'nir_metadata.c',
   'nir_mod_analysis.c',
+  'nir_move_output_stores_to_end.c',
   'nir_move_vec_src_uses_to_dest.c',
   'nir_normalize_cubemap_coords.c',
   'nir_opt_access.c',
