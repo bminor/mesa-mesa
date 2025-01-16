@@ -73,3 +73,9 @@ dEQP-VK.tessellation.primitive_discard.quads_equal_spacing_ccw
 dEQP-VK.tessellation.shader_input_output.cross_invocation_per_vertex_vec4
 dEQP-VK.tessellation.user_defined_io.per_patch_block_array.vertex_io_array_size_implicit.triangles
 nir-stress=dEQP-VK.sparse_resources.buffer.vertex_buffer.sparse_binding
+
+# With linux kernel 6.13-rc4 uprev
+dEQP-VK.sparse_resources.image_sparse_residency.cube_array.r16ui.256_256_6
+dEQP-VK.synchronization.implicit.timeline_semaphore.write_ssbo_vertex_read_ssbo_vertex.buffer_16384.3100
+dEQP-VK.synchronization2.timeline_semaphore.device_host.write_copy_image_read_image_compute_indirect.image_128x128_r32g32b32a32_sfloat
+dEQP-VK.tessellation.primitive_discard.isolines_fractional_odd_spacing_cw

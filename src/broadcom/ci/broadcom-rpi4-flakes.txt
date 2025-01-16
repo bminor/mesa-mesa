@@ -84,3 +84,9 @@ dEQP-VK.synchronization2.timeline_semaphore.device_host.write_copy_buffer_read_s
 dEQP-VK.synchronization2.timeline_semaphore.device_host.write_copy_image_read_image_compute.image_128x128_r32g32b32a32_sfloat
 dEQP-VK.synchronization2.timeline_semaphore.device_host.write_ssbo_geometry_read_vertex_input.buffer_262144
 dEQP-VK.texture.shadow.cube.linear.less_d24_unorm_s8_uint
+
+# With linux kernel 6.13-rc4 uprev. Broadcom job uses 6.6.47 kernel, so likely this is caused with recent mesa
+dEQP-VK.glsl.derivate.fwidthfine.static_if.float_mediump
+dEQP-VK.glsl.texture_functions.query.texturequerylevels.sampler1darray_fixed_fragment
+dEQP-VK.renderpass.suballocation.multisample_resolve.layers_6.r32g32b32a32_sfloat.samples_4_resolve_level_4
+dEQP-VK.ssbo.layout.random.all_per_block_buffers.0

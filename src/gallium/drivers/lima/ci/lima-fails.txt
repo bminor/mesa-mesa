@@ -1052,8 +1052,6 @@ dEQP-GLES2.functional.fragment_ops.depth_stencil.stencil_ops.incr_incr_incr_wrap
 dEQP-GLES2.functional.fragment_ops.depth_stencil.stencil_ops.incr_wrap_keep_keep,Fail
 dEQP-GLES2.functional.fragment_ops.depth_stencil.stencil_ops.keep_keep_incr_wrap,Fail
 dEQP-GLES2.functional.fragment_ops.depth_stencil.stencil_ops.decr_incr_wrap_decr_wrap,Fail
-dEQP-GLES2.functional.shaders.texture_functions.fragment.texture2dproj_vec3_bias,Fail
-dEQP-GLES2.functional.shaders.texture_functions.fragment.texture2d_bias,Fail
 dEQP-GLES2.functional.shaders.texture_functions.fragment.texture2dproj_vec4_bias,Fail
 
 # uprev Piglit in Mesa
@@ -1077,3 +1075,7 @@ spec@arb_pixel_buffer_object@pbo-drawpixels,Fail
 spec@ext_framebuffer_object@fbo-fragcoord2,Fail
 spec@glsl-1.10@execution@variable-indexing@vs-temp-array-mat4-index-col-row-wr,Crash
 
+# With linux kernel 6.13-rc4 uprev
+dEQP-GLES2.functional.shaders.operator.selection.bool_fragment,Fail
+dEQP-GLES2.functional.shaders.operator.selection.bvec2_fragment,Fail
+dEQP-GLES2.functional.shaders.operator.selection.bvec3_fragment,Fail

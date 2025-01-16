@@ -98,3 +98,9 @@ dEQP-GLES31.functional.synchronization.inter_call.with_memory_barrier.image_over
 
 # glcts: ../src/vulkan/runtime/vk_pipeline_cache.c:666: vk_pipeline_cache_destroy: Assertion `cache->object_cache->entries == 0' failed.
 dEQP-GLES31.functional.copy_image.mixed.viewclass_64_bits_mixed.rg32f_r11_eac.texture3d_to_cubemap
+
+# With linux kernel 6.13-rc4 uprev
+dEQP-GLES31.functional.draw_indirect.compute_interop.large.drawelements_separate_grid_100x100_drawcount_200
+dEQP-GLES31.functional.draw_indirect.compute_interop.large.drawelements_separate_grid_1200x1200_drawcount_1
+spec@arb_compute_shader@zero-dispatch-size
+spec@arb_fragment_layer_viewport@layer-gs-writes-in-range

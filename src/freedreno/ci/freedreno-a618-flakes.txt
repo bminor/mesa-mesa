@@ -342,3 +342,12 @@ dEQP-VK.tessellation.invariance.primitive_set.triangles_equal_spacing_cw
 gmem-dEQP-VK.binding_model.shader_access.primary_cmd_buf.bind.with_push_template.sampler_immutable.tess_ctrl.multiple_discontiguous_descriptors.2d_base_slice
 gmem-dEQP-VK.fragment_operations.scissor.multi_viewport.scissor_10
 gmem-dEQP-VK.tessellation.invariance.outer_edge_division.quads_fractional_odd_spacing
+
+# With linux kernel 6.13-rc4 uprev
+dEQP-VK.tessellation.invariance.outer_edge_division.triangles_fractional_odd_spacing
+dEQP-VK.tessellation.invariance.outer_triangle_set.quads_equal_spacing
+dEQP-VK.tessellation.invariance.primitive_set.quads_fractional_odd_spacing_cw_point_mode
+gmem-dEQP-GLES31.functional.copy_image.mixed.viewclass_128_bits_mixed.rgba32ui_rgba_astc_5x4_khr.texture2d_array_to_texture3d
+gmem-dEQP-VK.binding_model.shader_access.primary_cmd_buf.bind2.with_template.uniform_buffer_dynamic.geometry.multiple_descriptor_sets.descriptor_array.offset_view_nonzero_dynamic_zero
+gmem-dEQP-VK.tessellation.invariance.outer_edge_index_independence.triangles_fractional_even_spacing_ccw
+KHR-GL46.shader_storage_buffer_object.advanced-switchBuffers
