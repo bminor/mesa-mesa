@@ -1589,6 +1589,7 @@ static inline int
 next_offset(struct brw_codegen *p, void *store, int offset)
 {
    const struct intel_device_info *devinfo = p->devinfo;
+   assert((char *)store + offset < (char *)p->store + p->next_insn_offset);
    brw_eu_inst *insn = (brw_eu_inst *)((char *)store + offset);
 
    if (brw_eu_inst_cmpt_control(devinfo, insn))
