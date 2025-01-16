@@ -5029,13 +5029,6 @@ tc_callback(struct pipe_context *_pipe, void (*fn)(void *), void *data,
 
 typedef uint16_t (*tc_execute)(struct pipe_context *pipe, void *call);
 
-/* Callbacks that call pipe_context functions. */
-static const tc_execute execute_func[TC_NUM_CALLS] = {
-#define CALL(name) tc_call_##name,
-#include "u_threaded_context_calls.h"
-#undef CALL
-};
-
 ALWAYS_INLINE static void
 batch_execute(struct tc_batch *batch, struct pipe_context *pipe, bool parsing)
 {
@@ -5048,18 +5041,23 @@ batch_execute(struct tc_batch *batch, struct pipe_context *pipe, bool parsing)
    while (1) {
       struct tc_call_base *call = (struct tc_call_base *)iter;
 
-      if (call->call_id == TC_END_BATCH)
-         return;
-
       tc_assert(call->sentinel == TC_SENTINEL);
-
 #if TC_DEBUG >= 3
       tc_printf("CALL: %s", tc_call_names[call->call_id]);
 #endif
-
       TC_TRACE_SCOPE(call->call_id);
 
-      iter += execute_func[call->call_id](pipe, call);
+      /* This executes the call using a switch. */
+      switch (call->call_id) {
+#define CALL(name) \
+      case TC_CALL_##name: \
+         iter += tc_call_##name(pipe, call); \
+         break;
+#include "u_threaded_context_calls.h"
+#undef CALL
+      case TC_END_BATCH:
+         return;
+      }
 
       if (parsing) {
          if (call->call_id == TC_CALL_flush) {
