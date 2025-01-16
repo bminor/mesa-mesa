@@ -40,6 +40,7 @@ static const struct debug_control panvk_debug_options[] = {
    {"cs", PANVK_DEBUG_CS},
    {"copy_gfx", PANVK_DEBUG_COPY_GFX},
    {"force_simultaneous", PANVK_DEBUG_FORCE_SIMULTANEOUS},
+   {"implicit_others_inv", PANVK_DEBUG_IMPLICIT_OTHERS_INV},
    {NULL, 0}};
 
 VKAPI_ATTR VkResult VKAPI_CALL

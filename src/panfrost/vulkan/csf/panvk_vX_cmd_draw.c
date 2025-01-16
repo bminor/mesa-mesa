@@ -2236,6 +2236,8 @@ static VkResult
 issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
 {
    struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
+   struct panvk_instance *instance =
+      to_panvk_instance(dev->vk.physical->instance);
    const struct cs_tracing_ctx *tracing_ctx =
       &cmdbuf->state.cs[PANVK_SUBQUEUE_FRAGMENT].tracing;
    struct pan_fb_info *fbinfo = &cmdbuf->state.gfx.render.fb.info;
@@ -2319,6 +2321,18 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
       cs_update_frag_ctx(b)
          cs_add64(b, cs_sr_reg64(b, 40), cs_sr_reg64(b, 40),
                   (1 + PANVK_IR_LAST_PASS) * fbd_ir_pass_offset);
+
+   /* Applications tend to forget to describe subpass dependencies, especially
+    * when it comes to write -> read dependencies on attachments. The
+    * proprietary driver forces "others" invalidation as a workaround, and this
+    * invalidation even became implicit (done as part of the RUN_FRAGMENT) on
+    * v13+. We don't do that in panvk, but we provide a debug flag to help
+    * identify those issues. */
+   if (unlikely(instance->debug_flags & PANVK_DEBUG_IMPLICIT_OTHERS_INV)) {
+      cs_flush_caches(b, 0, 0, true, length_reg,
+                      cs_defer(0x0, SB_ID(IMM_FLUSH)));
+      cs_wait_slot(b, SB_ID(IMM_FLUSH), false);
+   }
 
    cs_req_res(b, CS_FRAG_RES);
    if (cmdbuf->state.gfx.render.layer_count > 1) {
