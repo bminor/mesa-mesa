@@ -11,13 +11,39 @@ libaub = static_library(
   install : false
 )
 
+libintel_tools = static_library(
+  'intel_tools',
+  files(
+    'intel_tools.c',
+    'intel_tools.h'
+  ),
+  dependencies : [
+    idep_intel_decoder_brw,
+    idep_intel_decoder_elk,
+    idep_intel_compiler_brw,
+    idep_intel_compiler_elk,
+    idep_libintel_common,
+  ],
+  include_directories : [inc_include, inc_src, inc_intel],
+  link_with : [libintel_common],
+  c_args : [no_override_init_args],
+  gnu_symbol_visibility : 'hidden',
+  install : false,
+)
+
+idep_libintel_tools = declare_dependency(
+  link_with : libintel_tools,
+  dependencies : [
+    idep_intel_decoder_brw,
+    idep_intel_decoder_elk,
+  ]
+)
+
 aubinator = executable(
   'aubinator',
   files('aubinator.c'),
   dependencies : [idep_mesautil, dep_expat, dep_zlib, dep_dl, dep_thread, dep_m, idep_intel_dev,
-                  idep_libintel_common,
-                  idep_intel_decoder_brw, idep_intel_decoder_elk,
-                  idep_intel_compiler_brw, idep_intel_compiler_elk],
+                  idep_libintel_common, idep_libintel_tools],
   include_directories : [inc_include, inc_src, inc_intel],
   link_with : [libaub],
   c_args : [no_override_init_args],
@@ -37,9 +63,7 @@ aubinator_error_decode = executable(
         'error_decode_xe_lib.c',
         'error_decode_xe_lib.h'),
   dependencies : [idep_mesautil, dep_zlib, dep_thread, idep_intel_dev,
-                  idep_libintel_common,
-                  idep_intel_decoder_brw, idep_intel_decoder_elk,
-                  idep_intel_compiler_brw, idep_intel_compiler_elk],
+                  idep_libintel_common, idep_libintel_tools],
   include_directories : [inc_include, inc_src, inc_intel],
   c_args : [no_override_init_args],
   gnu_symbol_visibility : 'hidden',
@@ -82,7 +106,7 @@ intel_hang_replay = executable(
   'intel_hang_replay',
   files('intel_hang_replay.c'),
   dependencies : [idep_intel_dev, idep_libintel_common, dep_libdrm, dep_dl, dep_thread, dep_m,
-                  idep_intel_compiler_brw, idep_intel_compiler_elk],
+                  idep_libintel_tools],
   include_directories : [inc_include, inc_src, inc_intel],
   c_args : [no_override_init_args],
   gnu_symbol_visibility : 'hidden',
@@ -166,8 +190,7 @@ if with_tools.contains('intel-ui')
     'aubinator_viewer',
     files('aubinator_viewer.cpp', 'aubinator_viewer_decoder.cpp'),
     dependencies : [idep_mesautil, dep_zlib, dep_dl, dep_thread, dep_m, libintel_imgui_gtk_dep, idep_intel_dev,
-                    idep_libintel_common,
-                    idep_intel_compiler_brw, idep_intel_compiler_elk],
+                    idep_libintel_common, idep_libintel_tools],
     include_directories : [inc_include, inc_src, inc_intel],
     link_with : [libaub],
     c_args : [no_override_init_args],
@@ -188,10 +211,7 @@ if with_tools.contains('intel-ui')
       libintel_imgui_gtk_dep,
       idep_intel_dev,
       idep_libintel_common,
-      idep_intel_compiler_brw,
-      idep_intel_compiler_elk,
-      idep_intel_decoder_brw,
-      idep_intel_decoder_elk,
+      idep_libintel_tools,
     ],
     include_directories : [inc_include, inc_src, inc_intel],
     c_args : [no_override_init_args],
