@@ -32,6 +32,7 @@
 #include "vk_util.h"
 #include "compiler/spirv/nir_spirv.h"
 #include "shaders/float64_spv.h"
+#include "util/u_printf.h"
 
 /**
  * Embedded sampler management.
@@ -474,8 +475,8 @@ anv_shader_bin_serialize(struct vk_pipeline_cache_object *object,
    blob_write_bytes(blob, shader->prog_data->relocs,
                     shader->prog_data->num_relocs *
                     sizeof(shader->prog_data->relocs[0]));
-   nir_serialize_printf_info(blob, shader->prog_data->printf_info,
-                             shader->prog_data->printf_info_count);
+   u_printf_serialize_info(blob, shader->prog_data->printf_info,
+                           shader->prog_data->printf_info_count);
 
    blob_write_uint32(blob, shader->num_stats);
    blob_write_bytes(blob, shader->stats,
@@ -555,8 +556,8 @@ anv_shader_bin_deserialize(struct vk_pipeline_cache *cache,
 
    void *mem_ctx = ralloc_context(NULL);
    prog_data.base.printf_info =
-      nir_deserialize_printf_info(mem_ctx, blob,
-                                  &prog_data.base.printf_info_count);
+      u_printf_deserialize_info(mem_ctx, blob,
+                                &prog_data.base.printf_info_count);
 
    uint32_t num_stats = blob_read_uint32(blob);
    const struct brw_compile_stats *stats =

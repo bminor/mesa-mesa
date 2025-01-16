@@ -27,7 +27,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "blob.h"
+#include "hash_table.h"
 #include "macros.h"
+#include "ralloc.h"
 #include "strndup.h"
 #include "u_math.h"
 #include "u_printf.h"
@@ -286,4 +289,46 @@ void u_printf_ptr(FILE *out, const char *buffer, size_t buffer_size,
                   const u_printf_info **info, unsigned info_size)
 {
    u_printf_impl(out, buffer, buffer_size, NULL, info, info_size);
+}
+
+void
+u_printf_serialize_info(struct blob *blob,
+                        const u_printf_info *printf_info,
+                        unsigned printf_info_count)
+{
+   blob_write_uint32(blob, printf_info_count);
+   for (int i = 0; i < printf_info_count; i++) {
+      const u_printf_info *info = &printf_info[i];
+      blob_write_uint32(blob, info->num_args);
+      blob_write_uint32(blob, info->string_size);
+      blob_write_bytes(blob, info->arg_sizes,
+                       info->num_args * sizeof(info->arg_sizes[0]));
+      /* we can't use blob_write_string, because it contains multiple NULL
+       * terminated strings */
+      blob_write_bytes(blob, info->strings, info->string_size);
+   }
+}
+
+u_printf_info *
+u_printf_deserialize_info(void *mem_ctx,
+                          struct blob_reader *blob,
+                          unsigned *printf_info_count)
+{
+   *printf_info_count = blob_read_uint32(blob);
+
+   u_printf_info *printf_info =
+      ralloc_array(mem_ctx, u_printf_info, *printf_info_count);
+
+   for (int i = 0; i < *printf_info_count; i++) {
+      u_printf_info *info = &printf_info[i];
+      info->num_args = blob_read_uint32(blob);
+      info->string_size = blob_read_uint32(blob);
+      info->arg_sizes = ralloc_array(mem_ctx, unsigned, info->num_args);
+      blob_copy_bytes(blob, info->arg_sizes,
+                      info->num_args * sizeof(info->arg_sizes[0]));
+      info->strings = ralloc_array(mem_ctx, char, info->string_size);
+      blob_copy_bytes(blob, info->strings, info->string_size);
+   }
+
+   return printf_info;
 }

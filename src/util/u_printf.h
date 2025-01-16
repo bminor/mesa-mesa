@@ -38,6 +38,17 @@ typedef struct u_printf_info {
    char *strings;
 } u_printf_info;
 
+struct blob;
+struct blob_reader;
+
+void u_printf_serialize_info(struct blob *blob,
+                             const u_printf_info *info,
+                             unsigned printf_info_count);
+
+u_printf_info *u_printf_deserialize_info(void *mem_ctx,
+                                         struct blob_reader *blob,
+                                         unsigned *printf_info_count);
+
 struct u_printf_ctx {
    simple_mtx_t lock;
    void *bo;
