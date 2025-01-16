@@ -605,7 +605,6 @@ void si_add_all_descriptors_to_bo_list(struct si_context *sctx);
 void si_update_all_texture_descriptors(struct si_context *sctx);
 void si_shader_change_notify(struct si_context *sctx);
 void si_update_needs_color_decompress_masks(struct si_context *sctx);
-void si_emit_graphics_shader_pointers(struct si_context *sctx, unsigned index);
 void si_emit_compute_shader_pointers(struct si_context *sctx);
 void si_set_internal_const_buffer(struct si_context *sctx, uint slot,
                                   const struct pipe_constant_buffer *input);
@@ -614,10 +613,6 @@ void si_set_internal_shader_buffer(struct si_context *sctx, uint slot,
 void si_set_active_descriptors(struct si_context *sctx, unsigned desc_idx,
                                uint64_t new_active_mask);
 void si_set_active_descriptors_for_shader(struct si_context *sctx, struct si_shader_selector *sel);
-bool si_bindless_descriptor_can_reclaim_slab(void *priv, struct pb_slab_entry *entry);
-struct pb_slab *si_bindless_descriptor_slab_alloc(void *priv, unsigned heap, unsigned entry_size,
-                                                  unsigned group_index);
-void si_bindless_descriptor_slab_free(void *priv, struct pb_slab *pslab);
 void si_rebind_buffer(struct si_context *sctx, struct pipe_resource *buf);
 /* si_state.c */
 void si_make_texture_descriptor(struct si_screen *screen, struct si_texture *tex,
@@ -639,16 +634,6 @@ void si_mark_display_dcc_dirty(struct si_context *sctx, struct si_texture *tex);
 void si_update_ps_iter_samples(struct si_context *sctx);
 void si_save_qbo_state(struct si_context *sctx, struct si_qbo_state *st);
 void si_restore_qbo_state(struct si_context *sctx, struct si_qbo_state *st);
-
-struct si_fast_udiv_info32 {
-   unsigned multiplier; /* the "magic number" multiplier */
-   unsigned pre_shift;  /* shift for the dividend before multiplying */
-   unsigned post_shift; /* shift for the dividend after multiplying */
-   int increment;       /* 0 or 1; if set then increment the numerator, using one of
-                           the two strategies */
-};
-
-struct si_fast_udiv_info32 si_compute_fast_udiv_info32(uint32_t D, unsigned num_bits);
 
 /* si_state_binning.c */
 void si_emit_dpbb_state(struct si_context *sctx, unsigned index);

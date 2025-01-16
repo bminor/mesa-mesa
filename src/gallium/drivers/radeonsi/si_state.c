@@ -4363,7 +4363,15 @@ static void si_delete_sampler_state(struct pipe_context *ctx, void *state)
  * Vertex elements & buffers
  */
 
-struct si_fast_udiv_info32 si_compute_fast_udiv_info32(uint32_t D, unsigned num_bits)
+struct si_fast_udiv_info32 {
+   unsigned multiplier; /* the "magic number" multiplier */
+   unsigned pre_shift;  /* shift for the dividend before multiplying */
+   unsigned post_shift; /* shift for the dividend after multiplying */
+   int increment;       /* 0 or 1; if set then increment the numerator, using one of
+                           the two strategies */
+};
+
+static struct si_fast_udiv_info32 si_compute_fast_udiv_info32(uint32_t D, unsigned num_bits)
 {
    struct util_fast_udiv_info info = util_compute_fast_udiv_info(D, num_bits, 32);
 
@@ -4404,7 +4412,7 @@ static void *si_create_vertex_elements(struct pipe_context *ctx, unsigned count,
 
    v->count = count;
 
-   unsigned num_vbos_in_user_sgprs = si_num_vbos_in_user_sgprs(sscreen);
+   unsigned num_vbos_in_user_sgprs = si_num_vbos_in_user_sgprs_inline(sscreen->info.gfx_level);
    unsigned alloc_count =
       count > num_vbos_in_user_sgprs ? count - num_vbos_in_user_sgprs : 0;
    v->vb_desc_list_alloc_size = align(alloc_count * 16, SI_CPDMA_ALIGNMENT);
