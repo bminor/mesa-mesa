@@ -421,6 +421,159 @@ fd_get_compute_param(struct pipe_screen *pscreen,
 }
 
 static void
+fd_init_shader_caps(struct fd_screen *screen)
+{
+   for (unsigned i = 0; i <= PIPE_SHADER_COMPUTE; i++) {
+      struct pipe_shader_caps *caps =
+         (struct pipe_shader_caps *)&screen->base.shader_caps[i];
+
+      switch (i) {
+      case PIPE_SHADER_TESS_CTRL:
+      case PIPE_SHADER_TESS_EVAL:
+      case PIPE_SHADER_GEOMETRY:
+         if (!is_a6xx(screen))
+            continue;
+         break;
+      case PIPE_SHADER_COMPUTE:
+         if (!has_compute(screen))
+            continue;
+         break;
+      default:
+         break;
+      }
+
+      caps->max_instructions =
+      caps->max_alu_instructions =
+      caps->max_tex_instructions =
+      caps->max_tex_indirections = 16384;
+
+      caps->max_control_flow_depth = 8; /* XXX */
+
+      caps->max_inputs = is_a6xx(screen) && i != PIPE_SHADER_GEOMETRY ?
+         screen->info->a6xx.vs_max_inputs_count : 16;
+
+      caps->max_outputs = is_a6xx(screen) ? 32 : 16;
+
+      caps->max_temps = 64; /* Max native temporaries. */
+
+      /* NOTE: seems to be limit for a3xx is actually 512 but
+       * split between VS and FS.  Use lower limit of 256 to
+       * avoid getting into impossible situations:
+       */
+      caps->max_const_buffer0_size =
+         (is_a3xx(screen) || is_a4xx(screen) || is_a5xx(screen) || is_a6xx(screen) ? 4096 : 64) * sizeof(float[4]);
+
+      caps->max_const_buffers = is_ir3(screen) ? 16 : 1;
+
+      caps->cont_supported = true;
+
+      /* a2xx compiler doesn't handle indirect: */
+      caps->indirect_temp_addr =
+      caps->indirect_const_addr = is_ir3(screen);
+
+      caps->tgsi_sqrt_supported = true;
+
+      caps->integers = is_ir3(screen);
+
+      caps->int16 =
+      caps->fp16 =
+         (is_a5xx(screen) || is_a6xx(screen)) &&
+         (i == PIPE_SHADER_COMPUTE || i == PIPE_SHADER_FRAGMENT) &&
+         !FD_DBG(NOFP16);
+
+      caps->max_texture_samplers =
+      caps->max_sampler_views = 16;
+
+      caps->supported_irs =
+         (1 << PIPE_SHADER_IR_NIR) |
+         /* tgsi_to_nir doesn't support all stages: */
+         COND(i == PIPE_SHADER_VERTEX ||
+              i == PIPE_SHADER_FRAGMENT ||
+              i == PIPE_SHADER_COMPUTE,
+              1 << PIPE_SHADER_IR_TGSI);
+
+      if (is_a6xx(screen)) {
+         caps->max_shader_buffers = IR3_BINDLESS_SSBO_COUNT;
+         caps->max_shader_images = IR3_BINDLESS_IMAGE_COUNT;
+      } else if (is_a4xx(screen) || is_a5xx(screen)) {
+         /* a5xx (and a4xx for that matter) has one state-block
+          * for compute-shader SSBO's and another that is shared
+          * by VS/HS/DS/GS/FS..  so to simplify things for now
+          * just advertise SSBOs for FS and CS.  We could possibly
+          * do what blob does, and partition the space for
+          * VS/HS/DS/GS/FS.  The blob advertises:
+          *
+          *   GL_MAX_VERTEX_SHADER_STORAGE_BLOCKS: 4
+          *   GL_MAX_GEOMETRY_SHADER_STORAGE_BLOCKS: 4
+          *   GL_MAX_TESS_CONTROL_SHADER_STORAGE_BLOCKS: 4
+          *   GL_MAX_TESS_EVALUATION_SHADER_STORAGE_BLOCKS: 4
+          *   GL_MAX_FRAGMENT_SHADER_STORAGE_BLOCKS: 4
+          *   GL_MAX_COMPUTE_SHADER_STORAGE_BLOCKS: 24
+          *   GL_MAX_COMBINED_SHADER_STORAGE_BLOCKS: 24
+          *
+          * I think that way we could avoid having to patch shaders
+          * for actual SSBO indexes by using a static partitioning.
+          *
+          * Note same state block is used for images and buffers,
+          * but images also need texture state for read access
+          * (isam/isam.3d)
+          */
+         if (i == PIPE_SHADER_FRAGMENT || i == PIPE_SHADER_COMPUTE) {
+            caps->max_shader_buffers =
+            caps->max_shader_images = 24;
+         }
+      }
+   }
+}
+
+static void
+fd_init_compute_caps(struct fd_screen *screen)
+{
+   struct pipe_compute_caps *caps =
+      (struct pipe_compute_caps *)&screen->base.compute_caps;
+
+   if (!has_compute(screen))
+      return;
+
+   struct ir3_compiler *compiler = screen->compiler;
+
+   caps->address_bits = screen->gen >= 5 ? 64 : 32;
+
+   snprintf(caps->ir_target, sizeof(caps->ir_target), "ir3");
+
+   caps->grid_dimension = 3;
+
+   caps->max_grid_size[0] =
+   caps->max_grid_size[1] =
+   caps->max_grid_size[2] = 65535;
+
+   caps->max_block_size[0] = 1024;
+   caps->max_block_size[1] = 1024;
+   caps->max_block_size[2] = 64;
+
+   caps->max_threads_per_block = 1024;
+
+   caps->max_global_size = screen->ram_size;
+
+   caps->max_local_size = screen->info->cs_shared_mem_size;
+
+   caps->max_private_size =
+   caps->max_input_size = 4096;
+
+   caps->max_mem_alloc_size = screen->ram_size;
+
+   caps->max_clock_frequency = screen->max_freq / 1000000;
+
+   caps->max_compute_units = 9999; // TODO
+
+   caps->images_supported = true;
+
+   caps->subgroup_sizes = 32; // TODO
+
+   caps->max_variable_threads_per_block = compiler->max_variable_workgroup_size;
+}
+
+static void
 fd_init_screen_caps(struct fd_screen *screen)
 {
    struct pipe_caps *caps = (struct pipe_caps *)&screen->base.caps;
@@ -619,8 +772,7 @@ fd_init_screen_caps(struct fd_screen *screen)
        * the frontend clip-plane lowering.  So we handle this in the backend
        *
        */
-      screen->base.get_shader_param(&screen->base, PIPE_SHADER_GEOMETRY,
-                                    PIPE_SHADER_CAP_MAX_INSTRUCTIONS) ? 1 :
+      screen->base.shader_caps[PIPE_SHADER_GEOMETRY].max_instructions ? 1 :
       /* On a3xx, there is HW support for GL user clip planes that
        * occasionally has to fall back to shader key-based lowering to clip
        * distances in the VS, and we don't support clip distances so that is
@@ -1113,6 +1265,8 @@ fd_screen_create(int fd,
    pscreen->get_device_uuid = fd_screen_get_device_uuid;
    pscreen->get_driver_uuid = fd_screen_get_driver_uuid;
 
+   fd_init_shader_caps(screen);
+   fd_init_compute_caps(screen);
    fd_init_screen_caps(screen);
 
    slab_create_parent(&screen->transfer_pool, sizeof(struct fd_transfer), 16);
