@@ -28,6 +28,11 @@ struct radv_device_memory {
    void *map;
    void *user_ptr;
 
+   /* Import handle type (if any) */
+   VkExternalMemoryHandleTypeFlags import_handle_type;
+
+   VkExternalMemoryHandleTypeFlags export_handle_type;
+
 #if RADV_SUPPORT_ANDROID_HARDWARE_BUFFER
    struct AHardwareBuffer *android_hardware_buffer;
 #endif

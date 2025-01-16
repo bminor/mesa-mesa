@@ -130,11 +130,14 @@ radv_alloc_memory(struct radv_device *device, const VkMemoryAllocateInfo *pAlloc
       result = radv_import_ahb_memory(device, mem, priority, ahb_import_info);
       if (result != VK_SUCCESS)
          goto fail;
+      if (ahb_import_info->sType == VK_STRUCTURE_TYPE_IMPORT_ANDROID_HARDWARE_BUFFER_INFO_ANDROID)
+         mem->import_handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
    } else if (export_info &&
               (export_info->handleTypes & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID)) {
       result = radv_create_ahb_memory(device, mem, priority, pAllocateInfo);
       if (result != VK_SUCCESS)
          goto fail;
+      mem->export_handle_type = export_info->handleTypes;
    } else if (import_info) {
       assert(import_info->handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT ||
              import_info->handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT);
@@ -144,6 +147,7 @@ radv_alloc_memory(struct radv_device *device, const VkMemoryAllocateInfo *pAlloc
       } else {
          close(import_info->fd);
       }
+      mem->import_handle_type = import_info->handleType;
 
       if (mem->image && mem->image->plane_count == 1 && !vk_format_is_depth_or_stencil(mem->image->vk.format) &&
           mem->image->vk.samples == 1 && mem->image->vk.tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
@@ -169,6 +173,7 @@ radv_alloc_memory(struct radv_device *device, const VkMemoryAllocateInfo *pAlloc
       } else {
          mem->user_ptr = host_ptr_info->pHostPointer;
       }
+      mem->import_handle_type = host_ptr_info->handleType;
    } else {
       const struct radv_physical_device *pdev = radv_device_physical(device);
       const struct radv_instance *instance = radv_physical_device_instance(pdev);
