@@ -298,6 +298,103 @@ crocus_get_compute_param(struct pipe_screen *pscreen,
 }
 
 static void
+crocus_init_shader_caps(struct crocus_screen *screen)
+{
+   const struct intel_device_info *devinfo = &screen->devinfo;
+
+   for (unsigned i = 0; i <= PIPE_SHADER_COMPUTE; i++) {
+      struct pipe_shader_caps *caps =
+         (struct pipe_shader_caps *)&screen->base.shader_caps[i];
+
+      if (devinfo->ver < 6 &&
+          i != PIPE_SHADER_VERTEX &&
+          i != PIPE_SHADER_FRAGMENT)
+         continue;
+
+      if (devinfo->ver == 6 &&
+          i != PIPE_SHADER_VERTEX &&
+          i != PIPE_SHADER_FRAGMENT &&
+          i != PIPE_SHADER_GEOMETRY)
+         continue;
+
+      caps->max_instructions = i == MESA_SHADER_FRAGMENT ? 1024 : 16384;
+      caps->max_alu_instructions =
+      caps->max_tex_instructions =
+      caps->max_tex_indirections = i == MESA_SHADER_FRAGMENT ? 1024 : 0;
+
+      caps->max_control_flow_depth = UINT_MAX;
+
+      /* Gen7 vec4 geom backend */
+      caps->max_inputs = i == MESA_SHADER_VERTEX || i == MESA_SHADER_GEOMETRY ? 16 : 32;
+      caps->max_outputs = 32;
+      caps->max_const_buffer0_size = 16 * 1024 * sizeof(float);
+      caps->max_const_buffers = devinfo->ver >= 6 ? 16 : 1;
+      caps->max_temps = 256; /* GL_MAX_PROGRAM_TEMPORARIES_ARB */
+
+      /* Lie about these to avoid st/mesa's GLSL IR lowering of indirects,
+       * which we don't want.  Our compiler backend will check elk_compiler's
+       * options and call nir_lower_indirect_derefs appropriately anyway.
+       */
+      caps->indirect_temp_addr = true;
+      caps->indirect_const_addr = true;
+
+      caps->integers = true;
+      caps->max_texture_samplers =
+      caps->max_sampler_views =
+         (devinfo->verx10 >= 75) ? CROCUS_MAX_TEXTURE_SAMPLERS : 16;
+
+      if (devinfo->ver >= 7 &&
+          (i == PIPE_SHADER_FRAGMENT || i == PIPE_SHADER_COMPUTE))
+         caps->max_shader_images = CROCUS_MAX_TEXTURE_SAMPLERS;
+
+      caps->max_shader_buffers =
+         devinfo->ver >= 7 ? (CROCUS_MAX_ABOS + CROCUS_MAX_SSBOS) : 0;
+
+      caps->supported_irs = 1 << PIPE_SHADER_IR_NIR;
+   }
+}
+
+static void
+crocus_init_compute_caps(struct crocus_screen *screen)
+{
+   struct pipe_compute_caps *caps =
+      (struct pipe_compute_caps *)&screen->base.compute_caps;
+   const struct intel_device_info *devinfo = &screen->devinfo;
+
+   if (devinfo->ver < 7)
+      return;
+
+   const uint32_t max_invocations = 32 * devinfo->max_cs_workgroup_threads;
+
+   caps->address_bits = 32;
+
+   snprintf(caps->ir_target, sizeof(caps->ir_target), "gen");
+
+   caps->grid_dimension = 3;
+
+   caps->max_grid_size[0] =
+   caps->max_grid_size[1] =
+   caps->max_grid_size[2] = 65535;
+
+   /* MaxComputeWorkGroupSize[0..2] */
+   caps->max_block_size[0] =
+   caps->max_block_size[1] =
+   caps->max_block_size[2] = max_invocations;
+
+   /* MaxComputeWorkGroupInvocations */
+   caps->max_threads_per_block = max_invocations;
+
+   /* MaxComputeSharedMemorySize */
+   caps->max_local_size = 64 * 1024;
+
+   caps->images_supported = true;
+
+   caps->subgroup_sizes = ELK_SUBGROUP_SIZE;
+
+   caps->max_variable_threads_per_block = max_invocations;
+}
+
+static void
 crocus_init_screen_caps(struct crocus_screen *screen)
 {
    const struct intel_device_info *devinfo = &screen->devinfo;
@@ -725,6 +822,8 @@ crocus_screen_create(int fd, const struct pipe_screen_config *config)
    pscreen->get_driver_query_group_info = crocus_get_monitor_group_info;
    pscreen->get_driver_query_info = crocus_get_monitor_info;
 
+   crocus_init_shader_caps(screen);
+   crocus_init_compute_caps(screen);
    crocus_init_screen_caps(screen);
 
    genX_call(&screen->devinfo, crocus_init_screen_state, screen);
