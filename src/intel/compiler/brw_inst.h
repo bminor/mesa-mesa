@@ -192,7 +192,7 @@ public:
           */
          unsigned rcount:4;
 
-         unsigned pad:4;
+         unsigned pad:5;
 
          bool predicate_inverse:1;
          bool writes_accumulator:1; /**< instruction implicitly writes accumulator */
@@ -214,7 +214,6 @@ public:
           */
          bool predicate_trivial:1;
          bool eot:1;
-         bool last_rt:1;
          bool keep_payload_trailing_zeros:1;
          /**
           * Whether the parameters of the SEND instructions are build with

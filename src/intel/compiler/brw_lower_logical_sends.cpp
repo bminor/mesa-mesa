@@ -287,6 +287,7 @@ lower_fb_write_logical_send(const brw_builder &bld, brw_inst *inst,
 {
    assert(inst->src[FB_WRITE_LOGICAL_SRC_COMPONENTS].file == IMM);
    assert(inst->src[FB_WRITE_LOGICAL_SRC_NULL_RT].file == IMM);
+   assert(inst->src[FB_WRITE_LOGICAL_SRC_LAST_RT].file == IMM);
    const intel_device_info *devinfo = bld.shader->devinfo;
    const brw_reg color0 = inst->src[FB_WRITE_LOGICAL_SRC_COLOR0];
    const brw_reg color1 = inst->src[FB_WRITE_LOGICAL_SRC_COLOR1];
@@ -297,6 +298,7 @@ lower_fb_write_logical_send(const brw_builder &bld, brw_inst *inst,
    const unsigned components =
       inst->src[FB_WRITE_LOGICAL_SRC_COMPONENTS].ud;
    const bool null_rt = inst->src[FB_WRITE_LOGICAL_SRC_NULL_RT].ud != 0;
+   const bool last_rt = inst->src[FB_WRITE_LOGICAL_SRC_LAST_RT].ud != 0;
 
    assert(inst->target != 0 || src0_alpha.file == BAD_FILE);
 
@@ -451,7 +453,7 @@ lower_fb_write_logical_send(const brw_builder &bld, brw_inst *inst,
    /* XXX - Bit 13 Per-sample PS enable */
    inst->desc =
       (inst->group / 16) << 11 | /* rt slot group */
-      brw_fb_write_desc(devinfo, inst->target, msg_ctl, inst->last_rt,
+      brw_fb_write_desc(devinfo, inst->target, msg_ctl, last_rt,
                         0 /* coarse_rt_write */);
 
    brw_reg desc = brw_imm_ud(0);

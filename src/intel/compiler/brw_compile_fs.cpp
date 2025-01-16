@@ -33,6 +33,7 @@ brw_emit_single_fb_write(fs_visitor &s, const brw_builder &bld,
    sources[FB_WRITE_LOGICAL_SRC_SRC0_ALPHA] = src0_alpha;
    sources[FB_WRITE_LOGICAL_SRC_COMPONENTS] = brw_imm_ud(components);
    sources[FB_WRITE_LOGICAL_SRC_NULL_RT]    = brw_imm_ud(null_rt);
+   sources[FB_WRITE_LOGICAL_SRC_LAST_RT]    = brw_imm_ud(false);
 
    if (prog_data->uses_omask)
       sources[FB_WRITE_LOGICAL_SRC_OMASK] = s.sample_mask;
@@ -105,7 +106,7 @@ brw_do_emit_fb_writes(fs_visitor &s, int nr_color_regions, bool replicate_alpha)
       inst->target = 0;
    }
 
-   inst->last_rt = true;
+   inst->src[FB_WRITE_LOGICAL_SRC_LAST_RT] = brw_imm_ud(true);
    inst->eot = true;
 }
 
@@ -655,7 +656,6 @@ brw_emit_repclear_shader(fs_visitor &s)
       write->mlen = 1 + write->header_size;
    }
    write->eot = true;
-   write->last_rt = true;
 
    brw_calculate_cfg(s);
 
