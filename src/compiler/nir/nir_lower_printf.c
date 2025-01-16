@@ -73,7 +73,7 @@ lower_printf_intrin(nir_builder *b, nir_intrinsic_instr *prntf, void *_options)
    }
 
    nir_def *fmt_str_id = prntf->src[0].ssa;
-   if (options && options->use_printf_base_identifier) {
+   if (options->use_printf_base_identifier) {
       fmt_str_id = nir_iadd(b,
                             nir_load_printf_base_identifier(b),
                             fmt_str_id);
