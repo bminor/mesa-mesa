@@ -12,11 +12,6 @@ libagx_shader_files = files(
   'helper.cl',
 )
 
-prepended_input_args = []
-foreach input_arg : libagx_shader_files
-  prepended_input_args += ['--in', input_arg]
-endforeach
-
 # We need to set -fmacro-prefix-map properly for reproducability.
 relative_dir = fs.relative_to(meson.global_source_root(), meson.global_build_root()) + '/'
 
@@ -25,8 +20,8 @@ libagx_spv = custom_target(
   input : libagx_shader_files,
   output : 'libagx.spv',
   command : [
-    prog_mesa_clc,
-    prepended_input_args, '-o', '@OUTPUT@', '--depfile', '@DEPFILE@', '--',
+    prog_mesa_clc, '-o', '@OUTPUT@', '--depfile', '@DEPFILE@',
+    libagx_shader_files, '--',
     '-cl-std=cl2.0', '-D__OPENCL_VERSION__=200',
     '-I' + join_paths(meson.current_source_dir(), '.'),
     '-I' + join_paths(meson.current_source_dir(), '../../'),

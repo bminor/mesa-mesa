@@ -28,11 +28,6 @@ intel_shader_files = files(
   'util.cl',
 )
 
-prepended_input_args = []
-foreach input_arg : intel_shader_files
-  prepended_input_args += ['--in', input_arg]
-endforeach
-
 intel_shaders_gens = [ [ 80,   8],
                        [ 90,   9],
                        [110,  11],
@@ -47,7 +42,7 @@ foreach gen : intel_shaders_gens
     output : 'intel_gfx@0@_shaders.spv'.format(gen[0]),
     command : [
       prog_mesa_clc,
-      prepended_input_args, '-o', '@OUTPUT@', '--',
+      intel_shader_files, '-o', '@OUTPUT@', '--',
       '-cl-std=cl2.0', '-D__OPENCL_VERSION__=200',
       '-DNDEBUG=1',
       '-DGFX_VERx10=@0@'.format(gen[0]),
