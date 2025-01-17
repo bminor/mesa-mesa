@@ -3455,7 +3455,7 @@ tu_resolve_sysmem(struct tu_cmd_buffer *cmd,
                   uint32_t layers,
                   const VkRect2D *rect)
 {
-   assert(src->image->vk.format == dst->image->vk.format ||
+   assert(src->vk.format == dst->vk.format ||
           (vk_format_is_depth_or_stencil(src->image->vk.format) &&
            vk_format_is_depth_or_stencil(dst->image->vk.format)));
 
@@ -3470,7 +3470,7 @@ tu_resolve_sysmem(struct tu_cmd_buffer *cmd,
                      src, dst, layer_mask, layers, rect,
                      src_separate_ds, dst_separate_ds);
    } else {
-      resolve_sysmem<CHIP>(cmd, cs, src->image->vk.format, dst->image->vk.format,
+      resolve_sysmem<CHIP>(cmd, cs, src->vk.format, dst->vk.format,
                      src, dst, layer_mask, layers, rect,
                      src_separate_ds, dst_separate_ds);
    }
