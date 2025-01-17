@@ -194,6 +194,45 @@ lima_screen_get_shader_param(struct pipe_screen *pscreen,
 }
 
 static void
+lima_init_shader_caps(struct pipe_screen *screen)
+{
+   struct pipe_shader_caps *caps =
+      (struct pipe_shader_caps *)&screen->shader_caps[PIPE_SHADER_VERTEX];
+
+   caps->max_instructions =
+   caps->max_alu_instructions =
+   caps->max_tex_instructions =
+   caps->max_tex_indirections = 16384; /* need investigate */
+   caps->max_control_flow_depth = 1024;
+   caps->max_inputs = 16; /* attributes */
+   caps->max_outputs = LIMA_MAX_VARYING_NUM; /* varying */
+   /* Mali-400 GP provides space for 304 vec4 uniforms, globals and
+    * temporary variables. */
+   caps->max_const_buffer0_size = 304 * 4 * sizeof(float);
+   caps->max_const_buffers = 1;
+   caps->max_temps = 256; /* need investigate */
+
+   caps = (struct pipe_shader_caps *)&screen->shader_caps[PIPE_SHADER_FRAGMENT];
+
+   caps->max_instructions =
+   caps->max_alu_instructions =
+   caps->max_tex_instructions =
+   caps->max_tex_indirections = 16384; /* need investigate */
+   caps->max_inputs = LIMA_MAX_VARYING_NUM - 1; /* varying, minus gl_Position */
+   caps->max_control_flow_depth = 1024;
+   /* The Mali-PP supports a uniform table up to size 32768 total.
+    * However, indirect access to an uniform only supports indices up
+    * to 8192 (a 2048 vec4 array). To prevent indices bigger than that,
+    * limit max const buffer size to 8192 for now. */
+   caps->max_const_buffer0_size = 2048 * 4 * sizeof(float);
+   caps->max_const_buffers = 1;
+   caps->max_sampler_views =
+   caps->max_texture_samplers = 16; /* need investigate */
+   caps->max_temps = 256; /* need investigate */
+   caps->indirect_const_addr = true;
+}
+
+static void
 lima_init_screen_caps(struct pipe_screen *screen)
 {
    struct pipe_caps *caps = (struct pipe_caps *)&screen->caps;
@@ -719,6 +758,7 @@ lima_screen_create(int fd, const struct pipe_screen_config *config,
    lima_fence_screen_init(screen);
    lima_disk_cache_init(screen);
 
+   lima_init_shader_caps(&screen->base);
    lima_init_screen_caps(&screen->base);
 
    slab_create_parent(&screen->transfer_pool, sizeof(struct lima_transfer), 16);
