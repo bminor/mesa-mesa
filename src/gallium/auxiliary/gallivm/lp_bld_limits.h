@@ -159,5 +159,38 @@ gallivm_get_shader_param(enum pipe_shader_cap param)
    return 0;
 }
 
+static inline void
+gallivm_init_shader_caps(struct pipe_shader_caps *caps)
+{
+   caps->max_instructions =
+   caps->max_alu_instructions =
+   caps->max_tex_instructions =
+   caps->max_tex_indirections = 1 * 1024 * 1024;
+   caps->max_control_flow_depth = LP_MAX_TGSI_NESTING;
+   caps->max_inputs = 32;
+   caps->max_outputs = 32;
+   caps->max_const_buffer0_size = LP_MAX_TGSI_CONST_BUFFER_SIZE;
+   caps->max_const_buffers = LP_MAX_TGSI_CONST_BUFFERS;
+   caps->max_temps = LP_MAX_TGSI_TEMPS;
+   caps->cont_supported = true;
+   caps->indirect_temp_addr = true;
+   caps->indirect_const_addr = true;
+   caps->subroutines = true;
+   caps->integers = true;
+   caps->fp16 =
+   caps->fp16_derivatives = lp_has_fp16();
+   //enabling this breaks GTF-GL46.gtf21.GL2Tests.glGetUniform.glGetUniform
+   caps->fp16_const_buffers = false;
+   caps->int16 = true;
+   caps->glsl_16bit_consts = true;
+   caps->max_texture_samplers = PIPE_MAX_SAMPLERS;
+   caps->max_sampler_views = PIPE_MAX_SHADER_SAMPLER_VIEWS;
+   caps->supported_irs = (1 << PIPE_SHADER_IR_TGSI) | (1 << PIPE_SHADER_IR_NIR);
+   caps->tgsi_sqrt_supported = true;
+   caps->tgsi_any_inout_decl_range = true;
+   caps->max_shader_buffers = LP_MAX_TGSI_SHADER_BUFFERS;
+   caps->max_shader_images = LP_MAX_TGSI_SHADER_IMAGES;
+}
+
 
 #endif /* LP_BLD_LIMITS_H_ */
