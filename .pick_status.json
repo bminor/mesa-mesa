@@ -3564,7 +3564,7 @@
         "description": "intel/brw: Add missing cases to flags_written()",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "019770f026ad1e1a9b03ddacab2df252126fd636",
         "notes": null
