@@ -54,7 +54,6 @@ libagx_shaders = custom_target(
   input : libagx_spv,
   output : ['libagx_shaders.h', 'libagx_shaders.c'],
   command : [prog_asahi_clc, libagx_spv, '@OUTPUT0@', '@OUTPUT1@'],
-  depends : [prog_asahi_clc],
 )
 
 idep_libagx_shaders_h = declare_dependency(
