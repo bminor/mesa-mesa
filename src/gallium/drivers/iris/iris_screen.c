@@ -356,6 +356,99 @@ iris_get_compute_param(struct pipe_screen *pscreen,
 }
 
 static void
+iris_init_shader_caps(struct iris_screen *screen)
+{
+   for (unsigned i = 0; i <= PIPE_SHADER_COMPUTE; i++) {
+      struct pipe_shader_caps *caps =
+         (struct pipe_shader_caps *)&screen->base.shader_caps[i];
+
+      caps->max_instructions = i == PIPE_SHADER_FRAGMENT ? 1024 : 16384;
+      caps->max_alu_instructions =
+      caps->max_tex_instructions =
+      caps->max_tex_indirections = i == PIPE_SHADER_FRAGMENT ? 1024 : 0;
+
+      caps->max_control_flow_depth = UINT_MAX;
+
+      caps->max_inputs = i == PIPE_SHADER_VERTEX ? 16 : 32;
+      caps->max_outputs = 32;
+      caps->max_const_buffer0_size = 16 * 1024 * sizeof(float);
+      caps->max_const_buffers = 16;
+      caps->max_temps = 256; /* GL_MAX_PROGRAM_TEMPORARIES_ARB */
+
+      /* Lie about these to avoid st/mesa's GLSL IR lowering of indirects,
+       * which we don't want.  Our compiler backend will check brw_compiler's
+       * options and call nir_lower_indirect_derefs appropriately anyway.
+       */
+      caps->indirect_temp_addr = true;
+      caps->indirect_const_addr = true;
+
+      caps->integers = true;
+      caps->max_texture_samplers = IRIS_MAX_SAMPLERS;
+      caps->max_sampler_views = IRIS_MAX_TEXTURES;
+      caps->max_shader_images = IRIS_MAX_IMAGES;
+      caps->max_shader_buffers = IRIS_MAX_ABOS + IRIS_MAX_SSBOS;
+      caps->supported_irs = 1 << PIPE_SHADER_IR_NIR;
+   }
+}
+
+static void
+iris_init_compute_caps(struct iris_screen *screen)
+{
+   struct pipe_compute_caps *caps =
+      (struct pipe_compute_caps *)&screen->base.compute_caps;
+
+   const struct intel_device_info *devinfo = screen->devinfo;
+
+   const uint32_t max_invocations =
+      MIN2(1024, 32 * devinfo->max_cs_workgroup_threads);
+
+   /* This gets queried on OpenCL device init and is never queried by the
+    * OpenGL state tracker.
+    */
+   caps->address_bits = 64;
+
+   snprintf(caps->ir_target, sizeof(caps->ir_target), "gen");
+
+   caps->grid_dimension = 3;
+
+   caps->max_grid_size[0] =
+   caps->max_grid_size[1] =
+   caps->max_grid_size[2] = UINT32_MAX;
+
+   /* MaxComputeWorkGroupSize[0..2] */
+   caps->max_block_size[0] =
+   caps->max_block_size[1] =
+   caps->max_block_size[2] = max_invocations;
+
+   /* MaxComputeWorkGroupInvocations */
+   caps->max_threads_per_block =
+   /* MaxComputeVariableGroupInvocations */
+   caps->max_variable_threads_per_block = max_invocations;
+
+   /* MaxComputeSharedMemorySize */
+   caps->max_local_size = 64 * 1024;
+
+   caps->images_supported = true;
+
+   caps->subgroup_sizes = 32 | 16 | 8;
+
+   caps->max_subgroups = devinfo->max_cs_workgroup_threads;
+
+   caps->max_mem_alloc_size =
+   caps->max_global_size = 1 << 30; /* TODO */
+
+   caps->max_clock_frequency = 400; /* TODO */
+
+   caps->max_compute_units = intel_device_info_subslice_total(devinfo);
+
+   /* MaxComputeSharedMemorySize */
+   caps->max_private_size = 64 * 1024;
+
+   /* We could probably allow more; this is the OpenCL minimum */
+   caps->max_input_size = 1024;
+}
+
+static void
 iris_init_screen_caps(struct iris_screen *screen)
 {
    struct pipe_caps *caps = (struct pipe_caps *)&screen->base.caps;
@@ -849,6 +942,8 @@ iris_screen_create(int fd, const struct pipe_screen_config *config)
    pscreen->set_damage_region = iris_set_damage_region;
    iris_init_screen_program_functions(pscreen);
 
+   iris_init_shader_caps(screen);
+   iris_init_compute_caps(screen);
    iris_init_screen_caps(screen);
 
    genX_call(screen->devinfo, init_screen_state, screen);
