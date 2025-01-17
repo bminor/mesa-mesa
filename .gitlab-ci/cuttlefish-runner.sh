@@ -207,7 +207,7 @@ EXIT_CODE=$?
 set -e
 section_switch cuttlefish_results "cuttlefish: gathering the results"
 
-$ADB pull $AOSP_RESULTS $RESULTS_DIR
+$ADB pull "$AOSP_RESULTS/." "$RESULTS_DIR"
 
 section_end cuttlefish_results
 exit $EXIT_CODE
