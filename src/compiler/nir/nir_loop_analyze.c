@@ -336,22 +336,13 @@ compute_induction_information(loop_info_state *state)
 {
    unsigned num_induction_vars = 0;
 
-   list_for_each_entry_safe(nir_loop_variable, var, &state->process_list,
-                            process_link) {
-
-      /* Things in nested loops or conditionals should not have been added into
-       * the procss_list.
-       */
-      assert(!var->in_if_branch && !var->in_nested_loop);
-
-      /* We are only interested in checking phis for the basic induction
-       * variable case as its simple to detect. All basic induction variables
-       * have a phi node
-       */
-      if (!is_var_phi(var))
-         continue;
-
-      nir_phi_instr *phi = nir_instr_as_phi(var->def->parent_instr);
+   /* We are only interested in checking phis for the basic induction
+    * variable case as its simple to detect. All basic induction variables
+    * have a phi node
+    */
+   nir_block *header = nir_loop_first_block(state->loop);
+   nir_foreach_phi(phi, header) {
+      nir_loop_variable *var = get_loop_var(&phi->def, state);
 
       nir_loop_variable *alu_src_var = NULL;
       nir_foreach_phi_src(src, phi) {
