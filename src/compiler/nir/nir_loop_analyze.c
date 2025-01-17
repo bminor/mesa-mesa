@@ -33,9 +33,6 @@ typedef enum {
 } nir_loop_variable_type;
 
 typedef struct {
-   /* A link for the work list */
-   struct list_head process_link;
-
    /* The ssa_def associated with this info */
    nir_def *def;
 
@@ -65,9 +62,6 @@ typedef struct {
    struct util_sparse_array loop_vars;
    BITSET_WORD *loop_vars_init;
 
-   /* A list of the loop_vars to analyze */
-   struct list_head process_list;
-
    nir_variable_mode indirect_mask;
 
    bool force_unroll_sampler_indirect;
@@ -88,30 +82,6 @@ get_loop_var(nir_def *value, loop_info_state *state)
    }
 
    return var;
-}
-
-typedef struct {
-   loop_info_state *state;
-   bool in_if_branch;
-   bool in_nested_loop;
-} init_loop_state;
-
-static bool
-init_loop_def(nir_def *def, void *void_init_loop_state)
-{
-   init_loop_state *loop_init_state = void_init_loop_state;
-   nir_loop_variable *var = get_loop_var(def, loop_init_state->state);
-
-   if (!loop_init_state->in_nested_loop && !loop_init_state->in_if_branch) {
-      /* Add to the tail of the list. That way we start at the beginning of
-       * the defs in the loop instead of the end when walking the list. This
-       * means less recursive calls. Only add defs that are not in nested
-       * loops or conditional blocks.
-       */
-      list_addtail(&var->process_link, &loop_init_state->state->process_list);
-   }
-
-   return true;
 }
 
 /** Calculate an estimated cost in number of instructions
@@ -218,21 +188,6 @@ instr_cost(loop_info_state *state, nir_instr *instr,
 
       return cost;
    }
-}
-
-static bool
-init_loop_block(nir_block *block, loop_info_state *state,
-                bool in_if_branch, bool in_nested_loop)
-{
-   init_loop_state init_state = { .in_if_branch = in_if_branch,
-                                  .in_nested_loop = in_nested_loop,
-                                  .state = state };
-
-   nir_foreach_instr(instr, block) {
-      nir_foreach_def(instr, init_loop_def, &init_state);
-   }
-
-   return true;
 }
 
 static inline bool
@@ -1463,32 +1418,6 @@ get_loop_info(loop_info_state *state, nir_function_impl *impl)
    nir_shader *shader = impl->function->shader;
    const nir_shader_compiler_options *options = shader->options;
 
-   /* Add all entries in the outermost part of the loop to the processing list
-    * Mark the entries in conditionals or in nested loops accordingly
-    */
-   foreach_list_typed_safe(nir_cf_node, node, node, &state->loop->body) {
-      switch (node->type) {
-
-      case nir_cf_node_block:
-         init_loop_block(nir_cf_node_as_block(node), state, false, false);
-         break;
-
-      case nir_cf_node_if:
-         nir_foreach_block_in_cf_node(block, node)
-            init_loop_block(block, state, true, false);
-         break;
-
-      case nir_cf_node_loop:
-         nir_foreach_block_in_cf_node(block, node) {
-            init_loop_block(block, state, false, true);
-         }
-         break;
-
-      case nir_cf_node_function:
-         break;
-      }
-   }
-
    /* Try to find all simple terminators of the loop. If we can't find any,
     * or we find possible terminators that have side effects then bail.
     */
@@ -1533,8 +1462,6 @@ initialize_loop_info_state(nir_loop *loop, void *mem_ctx,
    state->loop_vars_init = rzalloc_array(mem_ctx, BITSET_WORD,
                                          BITSET_WORDS(impl->ssa_alloc));
    state->loop = loop;
-
-   list_inithead(&state->process_list);
 
    if (loop->info)
       ralloc_free(loop->info);
