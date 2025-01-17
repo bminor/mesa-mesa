@@ -325,14 +325,10 @@ compute_induction_information(loop_info_state *state)
       if (var.update_src && var.init_src &&
           is_only_uniform_src(var.init_src)) {
          /* Insert induction variables into hash table. */
-         nir_loop_variable *alu_src_var = ralloc(state, nir_loop_variable);
-         *alu_src_var = var;
-         _mesa_hash_table_insert(state->loop_vars, alu_src_var->def, alu_src_var);
-
-         nir_loop_variable *phi_def_var = ralloc(state, nir_loop_variable);
-         *phi_def_var = var;
-         phi_def_var->def = var.basis;
-         _mesa_hash_table_insert(state->loop_vars, phi_def_var->def, phi_def_var);
+         nir_loop_variable *induction_var = ralloc(state, nir_loop_variable);
+         *induction_var = var;
+         _mesa_hash_table_insert(state->loop_vars, induction_var->def, induction_var);
+         _mesa_hash_table_insert(state->loop_vars, induction_var->basis, induction_var);
 
          /* record induction variables into nir_loop_info */
          nir_loop_induction_variable *ivar;
