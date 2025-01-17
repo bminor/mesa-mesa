@@ -969,55 +969,19 @@ print_ubo_load(nir_builder *b,
                nir_intrinsic_instr *intrin,
                UNUSED void *cb_data)
 {
-   if (intrin->intrinsic != nir_intrinsic_load_ubo)
+   if (intrin->intrinsic != nir_intrinsic_load_uniform)
       return false;
 
-   b->cursor = nir_before_instr(&intrin->instr);
-   nir_printf_fmt(b, true, 64, "ubo=> pos=%02.2fx%02.2f offset=0x%08x\n",
-                  nir_channel(b, nir_load_frag_coord(b), 0),
-                  nir_channel(b, nir_load_frag_coord(b), 1),
-                  intrin->src[1].ssa);
-
    b->cursor = nir_after_instr(&intrin->instr);
-   nir_printf_fmt(b, true, 64, "ubo<= pos=%02.2fx%02.2f offset=0x%08x val=0x%08x\n",
+   nir_printf_fmt(b, true, 64,
+                  "uniform<= pos=%02.2fx%02.2f offset=0x%08x val=0x%08x\n",
                   nir_channel(b, nir_load_frag_coord(b), 0),
                   nir_channel(b, nir_load_frag_coord(b), 1),
-                  intrin->src[1].ssa,
+                  intrin->src[0].ssa,
                   &intrin->def);
    return true;
 }
 #endif
-
-static bool
-print_tex_handle(nir_builder *b,
-                 nir_instr *instr,
-                 UNUSED void *cb_data)
-{
-   if (instr->type != nir_instr_type_tex)
-      return false;
-
-   nir_tex_instr *tex = nir_instr_as_tex(instr);
-
-   nir_src tex_src = {};
-   for (unsigned i = 0; i < tex->num_srcs; i++) {
-      if (tex->src[i].src_type == nir_tex_src_texture_handle)
-         tex_src = tex->src[i].src;
-   }
-
-   b->cursor = nir_before_instr(instr);
-   nir_printf_fmt(b, true, 64, "starting pos=%02.2fx%02.2f tex=0x%08x\n",
-                  nir_channel(b, nir_load_frag_coord(b), 0),
-                  nir_channel(b, nir_load_frag_coord(b), 1),
-                  tex_src.ssa);
-
-   b->cursor = nir_after_instr(instr);
-   nir_printf_fmt(b, true, 64, "done pos=%02.2fx%02.2f tex=0x%08x\n",
-                  nir_channel(b, nir_load_frag_coord(b), 0),
-                  nir_channel(b, nir_load_frag_coord(b), 1),
-                  tex_src.ssa);
-
-   return true;
-}
 
 static void
 anv_pipeline_lower_nir(struct anv_pipeline *pipeline,
@@ -1206,7 +1170,7 @@ anv_pipeline_lower_nir(struct anv_pipeline *pipeline,
 #if DEBUG_PRINTF_EXAMPLE
    if (stage->stage == MESA_SHADER_FRAGMENT) {
       nir_shader_intrinsics_pass(nir, print_ubo_load,
-                                 nir_metadata_control_flow,
+                                 nir_metadata_none,
                                  NULL);
    }
 #endif
