@@ -271,28 +271,37 @@ nir_printf_fmt(nir_builder *b,
                         nir_imm_int(b, args_size + sizeof(uint32_t)),
                         .atomic_op = nir_atomic_op_iadd);
 
-   /* Identifier */
-   nir_def *identifier =
-      use_printf_base_identifier ?
-      nir_iadd_imm(b,
-                   nir_load_printf_base_identifier(b),
-                   b->shader->printf_info_count) :
-      nir_imm_int(b, b->shader->printf_info_count);
+   uint32_t total_size = sizeof(uint32_t); /* identifier */
+   for (unsigned a = 0; a < info->num_args; a++)
+      total_size += info->arg_sizes[a];
 
-   nir_def *store_addr =
-      nir_iadd(b, buffer_addr, nir_u2uN(b, buffer_offset, buffer_addr->bit_size));
-   nir_store_global(b, store_addr, 4, identifier, 0x1);
+   nir_push_if(b, nir_ilt(b, nir_iadd_imm(b, buffer_offset, total_size),
+                             nir_load_printf_buffer_size(b)));
+   {
+      /* Identifier */
+      nir_def *identifier =
+         use_printf_base_identifier ?
+         nir_iadd_imm(b,
+                      nir_load_printf_base_identifier(b),
+                      b->shader->printf_info_count) :
+         nir_imm_int(b, b->shader->printf_info_count);
 
-   /* Arguments */
-   va_start(ap, fmt);
-   unsigned store_offset = sizeof(uint32_t);
-   for (unsigned a = 0; a < info->num_args; a++) {
-      nir_def *def = va_arg(ap, nir_def*);
+      nir_def *store_addr =
+         nir_iadd(b, buffer_addr, nir_u2uN(b, buffer_offset, buffer_addr->bit_size));
+      nir_store_global(b, store_addr, 4, identifier, 0x1);
 
-      nir_store_global(b, nir_iadd_imm(b, store_addr, store_offset),
-                       4, def, 0x1);
+      /* Arguments */
+      va_start(ap, fmt);
+      unsigned store_offset = sizeof(uint32_t);
+      for (unsigned a = 0; a < info->num_args; a++) {
+         nir_def *def = va_arg(ap, nir_def*);
 
-      store_offset += info->arg_sizes[a];
+         nir_store_global(b, nir_iadd_imm(b, store_addr, store_offset),
+                          4, def, 0x1);
+
+         store_offset += info->arg_sizes[a];
+      }
+      va_end(ap);
    }
-   va_end(ap);
+   nir_pop_if(b, NULL);
 }
