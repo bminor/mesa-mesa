@@ -792,8 +792,6 @@ static void radeon_vcn_enc_av1_get_session_param(struct radeon_encoder *enc,
       enc->enc_pic.session_init.aligned_picture_height = align(height, align_height);
       if (!(height % 8) && (height % 16))
          enc->enc_pic.session_init.aligned_picture_height = height + 2;
-      enc->enc_pic.av1.coded_width = enc->enc_pic.session_init.aligned_picture_width;
-      enc->enc_pic.av1.coded_height = enc->enc_pic.session_init.aligned_picture_height;
       if (sscreen->info.vcn_ip_version == VCN_4_0_2 ||
           sscreen->info.vcn_ip_version == VCN_4_0_5 ||
           sscreen->info.vcn_ip_version == VCN_4_0_6)
@@ -803,9 +801,9 @@ static void radeon_vcn_enc_av1_get_session_param(struct radeon_encoder *enc,
       align_height = 2;
       enc->enc_pic.session_init.aligned_picture_width = align(width, align_width);
       enc->enc_pic.session_init.aligned_picture_height = align(height, align_height);
-      enc->enc_pic.av1.coded_width = width;
-      enc->enc_pic.av1.coded_height = height;
    }
+   enc->enc_pic.av1.coded_width = enc->enc_pic.session_init.aligned_picture_width;
+   enc->enc_pic.av1.coded_height = enc->enc_pic.session_init.aligned_picture_height;
 
    uint32_t padding_width = 0;
    uint32_t padding_height = 0;
