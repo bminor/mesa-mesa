@@ -494,6 +494,33 @@ tgsi_exec_get_shader_param(enum pipe_shader_cap param)
    return 0;
 }
 
+static inline void
+tgsi_exec_init_shader_caps(struct pipe_shader_caps *caps)
+{
+   caps->max_instructions =
+   caps->max_alu_instructions =
+   caps->max_tex_instructions =
+   caps->max_tex_indirections = INT_MAX;
+   caps->max_control_flow_depth = TGSI_EXEC_MAX_NESTING;
+   caps->max_inputs = TGSI_EXEC_MAX_INPUT_ATTRIBS;
+   caps->max_outputs = 32;
+   caps->max_const_buffer0_size = TGSI_EXEC_MAX_CONST_BUFFER_SIZE;
+   caps->max_const_buffers = PIPE_MAX_CONSTANT_BUFFERS;
+   caps->max_temps = TGSI_EXEC_NUM_TEMPS;
+   caps->cont_supported = true;
+   caps->indirect_temp_addr = true;
+   caps->indirect_const_addr = true;
+   caps->subroutines = true;
+   caps->integers = true;
+   caps->max_texture_samplers = PIPE_MAX_SAMPLERS;
+   caps->max_sampler_views = PIPE_MAX_SHADER_SAMPLER_VIEWS;
+   caps->supported_irs = 1 << PIPE_SHADER_IR_TGSI;
+   caps->tgsi_sqrt_supported = true;
+   caps->tgsi_any_inout_decl_range = true;
+   caps->max_shader_buffers = PIPE_MAX_SHADER_BUFFERS;
+   caps->max_shader_images = PIPE_MAX_SHADER_IMAGES;
+}
+
 #if defined __cplusplus
 } /* extern "C" */
 #endif
