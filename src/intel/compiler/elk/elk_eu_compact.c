@@ -1936,14 +1936,14 @@ elk_compact_instructions(struct elk_codegen *p, int start_offset,
    unsigned num_compacted_counts =
       (p->next_insn_offset - start_offset) / sizeof(elk_inst);
    int *compacted_counts =
-      calloc(1, sizeof(*compacted_counts) * num_compacted_counts);
+      calloc(num_compacted_counts, sizeof(*compacted_counts));
 
    /* For an instruction at byte offset 8*i after compaction, this was its IP
     * (in 16-byte units) before compaction.
     */
    unsigned num_old_ip =
       (p->next_insn_offset - start_offset) / sizeof(elk_compact_inst) + 1;
-   int *old_ip = calloc(1, sizeof(*old_ip) * num_old_ip);
+   int *old_ip = calloc(num_old_ip, sizeof(*old_ip));
 
    struct compaction_state c;
    compaction_state_init(&c, p->isa);
