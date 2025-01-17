@@ -329,9 +329,15 @@ brw_lower_scan(fs_visitor &s, bblock_t *block, fs_inst *inst)
        * we can't do this with a normal stride; we have to use indirects.
        */
       brw_reg shifted = bld.vgrf(src.type);
-      brw_reg idx = bld.vgrf(BRW_TYPE_W);
+      brw_reg idx = bld.vgrf(BRW_TYPE_UW);
 
-      ubld.ADD(idx, bld.LOAD_SUBGROUP_INVOCATION(), brw_imm_w(-1));
+      /* Set the saturate modifier in the offset index to ensure it's
+       * normalized within the expected range without negative values,
+       * since the situation can cause us to read past the end of the
+       * register file leading to hangs on Xe3.
+       */
+      set_saturate(true, ubld.ADD(idx, bld.LOAD_SUBGROUP_INVOCATION(),
+                                  brw_imm_w(-1)));
       ubld.emit(SHADER_OPCODE_SHUFFLE, shifted, scan, idx);
       ubld.group(1, 0).MOV(horiz_offset(shifted, 0), info.identity);
       scan = shifted;
