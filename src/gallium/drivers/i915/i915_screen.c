@@ -393,6 +393,54 @@ i915_get_shader_param(struct pipe_screen *screen, enum pipe_shader_type shader,
 }
 
 static void
+i915_init_shader_caps(struct i915_screen *is)
+{
+   struct pipe_shader_caps *caps =
+      (struct pipe_shader_caps *)&is->base.shader_caps[PIPE_SHADER_VERTEX];
+
+   draw_init_shader_caps(caps);
+
+   caps->supported_irs = (1 << PIPE_SHADER_IR_NIR) | (1 << PIPE_SHADER_IR_TGSI);
+   /* mesa/st requires that this cap is the same across stages, and the FS
+    * can't do ints.
+    */
+   caps->integers = false;
+   /* i915 can't do these, and even if gallivm NIR can we call nir_to_tgsi
+    * manually and TGSI can't.
+    */
+   caps->int16 = false;
+   caps->fp16 = false;
+   caps->fp16_derivatives = false;
+   caps->fp16_const_buffers = false;
+   /* While draw could normally handle this for the VS, the NIR lowering
+    * to regs can't handle our non-native-integers, so we have to lower to
+    * if ladders.
+    */
+   caps->indirect_temp_addr = false;
+   caps->max_texture_samplers = false;
+   caps->max_sampler_views = false;
+   caps->max_shader_buffers = false;
+   caps->max_shader_images = false;
+
+   caps = (struct pipe_shader_caps *)&is->base.shader_caps[PIPE_SHADER_FRAGMENT];
+
+   caps->supported_irs = (1 << PIPE_SHADER_IR_NIR) | (1 << PIPE_SHADER_IR_TGSI);
+   /* XXX: some of these are just shader model 2.0 values, fix this! */
+   caps->max_instructions = I915_MAX_ALU_INSN + I915_MAX_TEX_INSN;
+   caps->max_alu_instructions = I915_MAX_ALU_INSN;
+   caps->max_tex_instructions = I915_MAX_TEX_INSN;
+   caps->max_tex_indirections = 4;
+   caps->max_inputs = 10;
+   caps->max_outputs = 1;
+   caps->max_const_buffer0_size = 32 * sizeof(float[4]);
+   caps->max_const_buffers = 1;
+   /* 16 inter-phase temps, 3 intra-phase temps.  i915c reported 16. too. */
+   caps->max_temps = 16;
+   caps->max_texture_samplers =
+   caps->max_sampler_views = I915_TEX_UNITS;
+}
+
+static void
 i915_init_screen_caps(struct i915_screen *is)
 {
    struct pipe_caps *caps = (struct pipe_caps *)&is->base.caps;
@@ -655,6 +703,7 @@ i915_screen_create(struct i915_winsys *iws)
 
    i915_init_screen_resource_functions(is);
 
+   i915_init_shader_caps(is);
    i915_init_screen_caps(is);
 
    i915_debug_init(is);
