@@ -51,7 +51,6 @@ libasahi_decode_shared = shared_library(
 )
 
 libagx_shaders = custom_target(
-  'libagx_shaders',
   input : libagx_spv,
   output : ['libagx_shaders.h', 'libagx_shaders.c'],
   command : [prog_asahi_clc, libagx_spv, '@OUTPUT0@', '@OUTPUT1@'],

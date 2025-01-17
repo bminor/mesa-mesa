@@ -17,7 +17,6 @@ libagx_shader_files = files(
 relative_dir = fs.relative_to(meson.global_source_root(), meson.global_build_root()) + '/'
 
 libagx_spv = custom_target(
-  'libagx.spv',
   input : libagx_shader_files,
   output : 'libagx.spv',
   command : [
@@ -34,7 +33,6 @@ libagx_spv = custom_target(
 )
 
 libagx = custom_target(
-  'libagx',
   input : libagx_spv,
   output : ['libagx.cpp', 'libagx.h'],
   command : [prog_vtn_bindgen2, libagx_spv, '@OUTPUT0@', '@OUTPUT1@'],
