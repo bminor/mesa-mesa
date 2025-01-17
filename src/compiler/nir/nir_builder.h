@@ -2342,6 +2342,12 @@ void nir_printf_fmt(nir_builder *b,
                     unsigned ptr_bit_size,
                     const char *fmt, ...);
 
+/* Call a serialized function. This is used internally by vtn_bindgen, it is not
+ * intended for end-users of NIR.
+ */
+nir_def *nir_call_serialized(nir_builder *build, const uint32_t *serialized,
+                             size_t serialized_size_B, nir_def **args);
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

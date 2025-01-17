@@ -23,6 +23,11 @@
  */
 
 #include "nir_builder.h"
+#include "glsl/list.h"
+#include "util/list.h"
+#include "util/ralloc.h"
+#include "nir.h"
+#include "nir_serialize.h"
 
 nir_builder MUST_CHECK PRINTFLIKE(3, 4)
    nir_builder_init_simple_shader(gl_shader_stage stage,
@@ -654,4 +659,31 @@ nir_gen_rect_vertices(nir_builder *b, nir_def *z, nir_def *w)
    comp[3] = w;
 
    return nir_vec(b, comp, 4);
+}
+
+nir_def *
+nir_call_serialized(nir_builder *b, const uint32_t *serialized,
+                    size_t serialized_size_B, nir_def **args)
+{
+   /* Deserialize the NIR. */
+   void *memctx = ralloc_context(NULL);
+   struct blob_reader blob;
+   blob_reader_init(&blob, (const void *)serialized, serialized_size_B);
+   nir_function *func = nir_deserialize_function(memctx, b->shader->options,
+                                                 &blob);
+
+   /* Validate the arguments, since this won't happen anywhere else */
+   for (unsigned i = 0; i < func->num_params; ++i) {
+      assert(func->params[i].num_components == args[i]->num_components);
+      assert(func->params[i].bit_size == args[i]->bit_size);
+   }
+
+   /* Insert the function at the cursor position */
+   nir_def *ret = nir_inline_function_impl(b, func->impl, args, NULL);
+
+   /* Indices & metadata are completely messed up now */
+   nir_index_ssa_defs(b->impl);
+   nir_metadata_preserve(b->impl, nir_metadata_none);
+   ralloc_free(memctx);
+   return ret;
 }
