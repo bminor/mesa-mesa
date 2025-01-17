@@ -177,6 +177,7 @@ struct radeon_winsys_bo {
    bool use_global_list;
    bool gfx12_allow_dcc;
    enum radeon_bo_domain initial_domain;
+   uint64_t obj_id;
 };
 
 struct radv_winsys_submit_info {
