@@ -43,7 +43,6 @@ foreach gen : intel_shaders_gens
     command : [
       prog_mesa_clc,
       intel_shader_files, '-o', '@OUTPUT@', '--',
-      '-cl-std=cl2.0', '-D__OPENCL_VERSION__=200',
       '-DNDEBUG=1',
       '-DGFX_VERx10=@0@'.format(gen[0]),
       '-I' + join_paths(meson.current_source_dir(), '.'),
