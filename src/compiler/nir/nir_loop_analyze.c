@@ -447,11 +447,10 @@ find_array_access_via_induction(loop_info_state *state,
    return 0;
 }
 
-static bool
-guess_loop_limit(loop_info_state *state, nir_const_value *limit_val,
-                 nir_scalar basic_ind)
+static unsigned
+guess_loop_limit(loop_info_state *state)
 {
-   unsigned min_array_size = 0;
+   unsigned min_array_size = UINT_MAX;
 
    nir_foreach_block_in_cf_node(block, &state->loop->cf_node) {
       nir_foreach_instr(instr, block) {
@@ -470,12 +469,8 @@ guess_loop_limit(loop_info_state *state, nir_const_value *limit_val,
                find_array_access_via_induction(state,
                                                nir_src_as_deref(intrin->src[0]),
                                                &array_idx);
-            if (array_idx && basic_ind.def == array_idx->def &&
-                (min_array_size == 0 || min_array_size > array_size)) {
-               /* Array indices are scalars */
-               assert(basic_ind.def->num_components == 1);
-               min_array_size = array_size;
-            }
+            if (array_idx)
+               min_array_size = MIN2(min_array_size, array_size);
 
             if (intrin->intrinsic != nir_intrinsic_copy_deref)
                continue;
@@ -484,23 +479,16 @@ guess_loop_limit(loop_info_state *state, nir_const_value *limit_val,
                find_array_access_via_induction(state,
                                                nir_src_as_deref(intrin->src[1]),
                                                &array_idx);
-            if (array_idx && basic_ind.def == array_idx->def &&
-                (min_array_size == 0 || min_array_size > array_size)) {
-               /* Array indices are scalars */
-               assert(basic_ind.def->num_components == 1);
-               min_array_size = array_size;
-            }
+            if (array_idx)
+               min_array_size = MIN2(min_array_size, array_size);
          }
       }
    }
 
-   if (min_array_size) {
-      *limit_val = nir_const_value_for_uint(min_array_size,
-                                            basic_ind.def->bit_size);
-      return true;
-   }
-
-   return false;
+   if (min_array_size != UINT_MAX)
+      return min_array_size;
+   else
+      return 0;
 }
 
 static nir_op invert_comparison_if_needed(nir_op alu_op, bool invert);
@@ -1194,7 +1182,11 @@ find_trip_count(loop_info_state *state, unsigned execution_mode,
 
          if (!try_find_limit_of_alu(limit, &limit_val, alu_op, invert_cond, terminator, state)) {
             /* Guess loop limit based on array access */
-            if (!guess_loop_limit(state, &limit_val, basic_ind)) {
+            unsigned guessed_loop_limit = guess_loop_limit(state);
+            if (guessed_loop_limit) {
+               limit_val = nir_const_value_for_uint(guessed_loop_limit,
+                                                    basic_ind.def->bit_size);
+            } else {
                terminator->exact_trip_count_unknown = true;
                continue;
             }
