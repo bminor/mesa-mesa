@@ -201,6 +201,7 @@ $ADB shell "mkdir ${AOSP_RESULTS}; cd ${AOSP_RESULTS}/..; \
     --fraction $(( CI_NODE_TOTAL * ${DEQP_FRACTION:-1})) \
     --jobs ${FDO_CI_CONCURRENT:-4} \
     $BASELINE \
+    ${DEQP_RUNNER_MAX_FAILS:+--max-fails \"$DEQP_RUNNER_MAX_FAILS\"} \
     "
 
 EXIT_CODE=$?
