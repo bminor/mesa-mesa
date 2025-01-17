@@ -417,6 +417,9 @@ int
 draw_get_shader_param_no_llvm(enum pipe_shader_type shader,
                               enum pipe_shader_cap param);
 
+void
+draw_init_shader_caps(struct pipe_shader_caps *caps);
+
 bool
 draw_get_option_use_llvm(void);
 

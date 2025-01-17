@@ -1207,6 +1207,17 @@ draw_get_shader_param(enum pipe_shader_type shader, enum pipe_shader_cap param)
    return draw_get_shader_param_no_llvm(shader, param);
 }
 
+void
+draw_init_shader_caps(struct pipe_shader_caps *caps)
+{
+#if DRAW_LLVM_AVAILABLE
+   if (draw_get_option_use_llvm())
+      gallivm_init_shader_caps(caps);
+   else
+#endif
+      tgsi_exec_init_shader_caps(caps);
+}
+
 
 /**
  * Enables or disables collection of statistics.
