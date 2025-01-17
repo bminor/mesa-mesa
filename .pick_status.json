@@ -3854,7 +3854,7 @@
         "description": "zink: fix decomposed_attrs val error when zink_vs_key->size is 4",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "19fbdb9064efecd245b084ffe5a61564f7f20adc",
         "notes": null
