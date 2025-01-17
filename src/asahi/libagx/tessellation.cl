@@ -131,16 +131,13 @@ libagx_tes_in_address(constant struct libagx_tess_args *p, uint raw_id,
 float4
 libagx_tess_level_outer_default(constant struct libagx_tess_args *p)
 {
-   return (
-      float4)(p->tess_level_outer_default[0], p->tess_level_outer_default[1],
-              p->tess_level_outer_default[2], p->tess_level_outer_default[3]);
+   return vload4(0, p->tess_level_outer_default);
 }
 
 float2
 libagx_tess_level_inner_default(constant struct libagx_tess_args *p)
 {
-   return (float2)(p->tess_level_inner_default[0],
-                   p->tess_level_inner_default[1]);
+   return vload2(0, p->tess_level_inner_default);
 }
 
 KERNEL(1)
