@@ -18,7 +18,6 @@ foreach input_arg : libagx_shader_files
 endforeach
 
 # We need to set -fmacro-prefix-map properly for reproducability.
-fs = import('fs')
 relative_dir = fs.relative_to(meson.global_source_root(), meson.global_build_root()) + '/'
 
 libagx_spv = custom_target(

@@ -1,8 +1,6 @@
 # Copyright © 2017 Intel Corporation
 # SPDX-License-Identifier: MIT
 
-fs = import('fs')
-
 files_libintel_common = files(
   'i915/intel_engine.c',
   'i915/intel_engine.h',
