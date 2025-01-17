@@ -2654,7 +2654,7 @@
         "description": "brw: Avoid reading past the end of `p->store`",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a35b9cb625495e51a42b56cd1d8d2cb019abe243",
         "notes": null
