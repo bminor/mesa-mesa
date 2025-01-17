@@ -138,7 +138,7 @@ SNAPSHOT_HANDLE_DEPENDENCIES = [
 handleDependenciesDict = dict(SNAPSHOT_HANDLE_DEPENDENCIES)
 
 def extract_deps_vkAllocateMemory(param, access, lenExpr, api, cgen):
-    cgen.stmt("const VkMemoryDedicatedAllocateInfo* dedicatedAllocateInfo = vk_find_struct_const(pAllocateInfo, MEMORY_DEDICATED_ALLOCATE_INFO)");
+    cgen.stmt("const VkMemoryDedicatedAllocateInfo* dedicatedAllocateInfo = vk_find_struct<VkMemoryDedicatedAllocateInfo>(pAllocateInfo)");
     cgen.beginIf("dedicatedAllocateInfo");
     cgen.beginIf("dedicatedAllocateInfo->image")
     cgen.stmt("mReconstruction.addHandleDependency((const uint64_t*)%s, %s, (uint64_t)(uintptr_t)%s)" % \

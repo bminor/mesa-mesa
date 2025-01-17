@@ -7246,7 +7246,7 @@ VkResult ResourceTracker::on_vkAllocateCommandBuffers(
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
 VkResult ResourceTracker::exportSyncFdForQSRILocked(VkImage image, int* fd) {
-    mesa_logd("%s: call for image %p hos timage handle 0x%llx\n", __func__, (void*)image,
+    mesa_logd("%s: call for image %p host image handle 0x%llx\n", __func__, (void*)image,
               (unsigned long long)get_host_u64_VkImage(image));
 
     if (mFeatureInfo.hasVirtioGpuNativeSync) {
