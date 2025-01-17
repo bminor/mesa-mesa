@@ -634,50 +634,6 @@ enum vpe_status vpe_build_noops(struct vpe *vpe, uint32_t num_dword, uint32_t **
     return status;
 }
 
-static bool validate_cached_param(struct vpe_priv *vpe_priv, const struct vpe_build_param *param)
-{
-    uint32_t           i;
-    struct output_ctx *output_ctx;
-
-    if (vpe_priv->num_input_streams != param->num_streams &&
-       !(vpe_priv->init.debug.bg_color_fill_only == true && vpe_priv->num_streams == 1))
-        return false;
-
-    if (vpe_priv->collaboration_mode != param->collaboration_mode)
-        return false;
-
-    if (param->num_instances > 0 && vpe_priv->vpe_num_instance != param->num_instances)
-        return false;
-
-    for (i = 0; i < vpe_priv->num_input_streams; i++) {
-        struct vpe_stream stream = param->streams[i];
-
-        vpe_clip_stream(
-            &stream.scaling_info.src_rect, &stream.scaling_info.dst_rect, &param->target_rect);
-
-        if (memcmp(&vpe_priv->stream_ctx[i].stream, &stream, sizeof(struct vpe_stream)))
-            return false;
-    }
-
-    output_ctx = &vpe_priv->output_ctx;
-    if (output_ctx->alpha_mode != param->alpha_mode)
-        return false;
-
-    if (memcmp(&output_ctx->mpc_bg_color, &param->bg_color, sizeof(struct vpe_color)))
-        return false;
-
-    if (memcmp(&output_ctx->opp_bg_color, &param->bg_color, sizeof(struct vpe_color)))
-        return false;
-
-    if (memcmp(&output_ctx->target_rect, &param->target_rect, sizeof(struct vpe_rect)))
-        return false;
-
-    if (memcmp(&output_ctx->surface, &param->dst_surface, sizeof(struct vpe_surface_info)))
-        return false;
-
-    return true;
-}
-
 enum vpe_status vpe_build_commands(
     struct vpe *vpe, const struct vpe_build_param *param, struct vpe_build_bufs *bufs)
 {
@@ -704,7 +660,7 @@ enum vpe_status vpe_build_commands(
     }
 
     if (status == VPE_STATUS_OK) {
-        if (!validate_cached_param(vpe_priv, param)) {
+        if (!vpe_priv->resource.validate_cached_param(vpe_priv, param)) {
             status = VPE_STATUS_PARAM_CHECK_ERROR;
         }
     }

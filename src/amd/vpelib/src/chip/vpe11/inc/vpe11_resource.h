@@ -35,7 +35,9 @@ void vpe11_destroy_resource(struct vpe_priv *vpe_priv, struct resource *res);
 
 enum vpe_status vpe11_set_num_segments(struct vpe_priv *vpe_priv, struct stream_ctx *stream_ctx,
     struct scaler_data *scl_data, struct vpe_rect *src_rect, struct vpe_rect *dst_rect,
-    uint32_t *max_seg_width);
+    uint32_t *max_seg_width, uint32_t recout_width_alignment);
+
+bool vpe11_validate_cached_param(struct vpe_priv *vpe_priv, const struct vpe_build_param *param);
 
 #ifdef __cplusplus
 }

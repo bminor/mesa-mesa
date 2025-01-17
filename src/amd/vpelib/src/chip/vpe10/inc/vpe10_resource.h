@@ -35,7 +35,7 @@ void vpe10_destroy_resource(struct vpe_priv *vpe_priv, struct resource *res);
 
 enum vpe_status vpe10_set_num_segments(struct vpe_priv *vpe_priv, struct stream_ctx *stream_ctx,
     struct scaler_data *scl_data, struct vpe_rect *src_rect, struct vpe_rect *dst_rect,
-    uint32_t *max_seg_width);
+    uint32_t *max_seg_width, uint32_t recout_width_alignment);
 
 bool vpe10_get_dcc_compression_output_cap(const struct vpe *vpe, const struct vpe_dcc_surface_param *params, struct vpe_surface_dcc_cap *cap);
 
@@ -84,6 +84,8 @@ struct dpp *vpe10_dpp_create(struct vpe_priv *vpe_priv, int inst);
 
 struct cdc_fe *vpe10_cdc_fe_create(struct vpe_priv *vpe_priv, int inst);
 struct cdc_be *vpe10_cdc_be_create(struct vpe_priv *vpe_priv, int inst);
+
+bool vpe10_validate_cached_param(struct vpe_priv *vpe_priv, const struct vpe_build_param *param);
 
 #ifdef __cplusplus
 }

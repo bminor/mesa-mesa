@@ -196,6 +196,7 @@ enum vpe_status vpe11_construct_resource(struct vpe_priv *vpe_priv, struct resou
     res->check_bg_color_support            = vpe10_check_bg_color_support;
     res->check_mirror_rotation_support     = vpe10_check_mirror_rotation_support;
     res->update_blnd_gamma                 = vpe10_update_blnd_gamma;
+    res->validate_cached_param             = vpe11_validate_cached_param;
 
     return VPE_STATUS_OK;
 err:
@@ -233,13 +234,13 @@ void vpe11_destroy_resource(struct vpe_priv *vpe_priv, struct resource *res)
 
 enum vpe_status vpe11_set_num_segments(struct vpe_priv *vpe_priv, struct stream_ctx *stream_ctx,
     struct scaler_data *scl_data, struct vpe_rect *src_rect, struct vpe_rect *dst_rect,
-    uint32_t *max_seg_width)
+    uint32_t *max_seg_width, uint32_t recout_width_alignment)
 {
-
     uint16_t       num_segs;
     struct dpp    *dpp         = vpe_priv->resource.dpp[0];
     const uint32_t max_lb_size = dpp->funcs->get_line_buffer_size();
 
+    (void)recout_width_alignment;
     *max_seg_width = min(*max_seg_width, max_lb_size / scl_data->taps.v_taps);
 
     num_segs = vpe_get_num_segments(vpe_priv, src_rect, dst_rect, *max_seg_width);
@@ -255,4 +256,48 @@ enum vpe_status vpe11_set_num_segments(struct vpe_priv *vpe_priv, struct stream_
     stream_ctx->num_segments = num_segs;
 
     return VPE_STATUS_OK;
+}
+
+bool vpe11_validate_cached_param(struct vpe_priv *vpe_priv, const struct vpe_build_param *param)
+{
+    uint32_t           i;
+    struct output_ctx *output_ctx;
+
+    if (vpe_priv->num_input_streams != param->num_streams &&
+        !(vpe_priv->init.debug.bg_color_fill_only == true && vpe_priv->num_streams == 1))
+        return false;
+
+    if (vpe_priv->collaboration_mode != param->collaboration_mode)
+        return false;
+
+    if (param->num_instances > 0 && vpe_priv->vpe_num_instance != param->num_instances)
+        return false;
+
+    for (i = 0; i < vpe_priv->num_input_streams; i++) {
+        struct vpe_stream stream = param->streams[i];
+
+        vpe_clip_stream(
+            &stream.scaling_info.src_rect, &stream.scaling_info.dst_rect, &param->target_rect);
+
+        if (memcmp(&vpe_priv->stream_ctx[i].stream, &stream, sizeof(struct vpe_stream)))
+            return false;
+    }
+
+    output_ctx = &vpe_priv->output_ctx;
+    if (output_ctx->alpha_mode != param->alpha_mode)
+        return false;
+
+    if (memcmp(&output_ctx->mpc_bg_color, &param->bg_color, sizeof(struct vpe_color)))
+        return false;
+
+    if (memcmp(&output_ctx->opp_bg_color, &param->bg_color, sizeof(struct vpe_color)))
+        return false;
+
+    if (memcmp(&output_ctx->target_rect, &param->target_rect, sizeof(struct vpe_rect)))
+        return false;
+
+    if (memcmp(&output_ctx->surface, &param->dst_surface, sizeof(struct vpe_surface_info)))
+        return false;
+
+    return true;
 }

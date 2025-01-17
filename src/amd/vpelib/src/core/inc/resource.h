@@ -76,7 +76,7 @@ struct resource {
 
     enum vpe_status (*set_num_segments)(struct vpe_priv *vpe_priv, struct stream_ctx *stream_ctx,
         struct scaler_data *scl_data, struct vpe_rect *src_rect, struct vpe_rect *dst_rect,
-        uint32_t *max_seg_width);
+        uint32_t *max_seg_width, uint32_t recout_width_alignment);
 
     bool (*split_bg_gap)(struct vpe_rect *gaps, const struct vpe_rect *target_rect,
         uint32_t max_width, uint16_t max_gaps, uint16_t *num_gaps, uint16_t num_instances);
@@ -106,6 +106,7 @@ struct resource {
         const struct vpe_build_param *param, const struct vpe_stream *stream,
         struct transfer_func *blnd_tf);
 
+    bool (*validate_cached_param)(struct vpe_priv *vpe_priv, const struct vpe_build_param *param);
     // Indicates the nominal range hdr input content should be in during processing.
     int internal_hdr_normalization;
 

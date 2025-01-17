@@ -56,6 +56,7 @@ extern "C" {
 bool vpe_find_color_space_from_table(
     const struct vpe_color_space *table, int table_size, const struct vpe_color_space *cs);
 
+bool vpe_is_subsampled_format(enum vpe_surface_pixel_format format);
 bool vpe_is_dual_plane_format(enum vpe_surface_pixel_format format);
 
 // RGB checkers

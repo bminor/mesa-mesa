@@ -38,6 +38,12 @@ bool vpe_find_color_space_from_table(
     return false;
 }
 
+bool vpe_is_subsampled_format(enum vpe_surface_pixel_format format)
+{
+    return (format >= VPE_SURFACE_PIXEL_FORMAT_VIDEO_BEGIN &&
+            format <= VPE_SURFACE_PIXEL_FORMAT_SUBSAMPLE_END);
+}
+
 bool vpe_is_dual_plane_format(enum vpe_surface_pixel_format format)
 {
     switch (format) {
