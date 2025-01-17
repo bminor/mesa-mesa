@@ -109,7 +109,16 @@ rm "${S3_ANDROID_ARTIFACT_NAME}.tar.zst" &
 INSTALL="/mesa-android/install"
 
 $ADB push "$INSTALL/all-skips.txt" /data/deqp
-$ADB push "$INSTALL/$GPU_VERSION-flakes.txt" /data/deqp
+$ADB push "$INSTALL/angle-skips.txt" /data/deqp
+if [ -e "$INSTALL/$GPU_VERSION-flakes.txt" ]; then
+  $ADB push "$INSTALL/$GPU_VERSION-flakes.txt" /data/deqp
+fi
+if [ -e "$INSTALL/$GPU_VERSION-fails.txt" ]; then
+  $ADB push "$INSTALL/$GPU_VERSION-fails.txt" /data/deqp
+fi
+if [ -e "$INSTALL/$GPU_VERSION-skips.txt" ]; then
+  $ADB push "$INSTALL/$GPU_VERSION-skips.txt" /data/deqp
+fi
 $ADB push "$INSTALL/deqp-$DEQP_SUITE.toml" /data/deqp
 
 # remove 32 bits libs from /vendor/lib
@@ -158,6 +167,22 @@ if ! printf "%s" "$MESA_RUNTIME_VERSION" | grep "${MESA_BUILD_VERSION}$"; then
     exit 1
 fi
 
+BASELINE=""
+if [ -e "$INSTALL/$GPU_VERSION-fails.txt" ]; then
+    BASELINE="--baseline /data/deqp/$GPU_VERSION-fails.txt"
+fi
+
+# Default to an empty known flakes file if it doesn't exist.
+$ADB shell "touch /data/deqp/$GPU_VERSION-flakes.txt"
+
+if [ -e "$INSTALL/$GPU_VERSION-skips.txt" ]; then
+    DEQP_SKIPS="$DEQP_SKIPS /data/deqp/$GPU_VERSION-skips.txt"
+fi
+
+if [ -n "$USE_ANGLE" ]; then
+    DEQP_SKIPS="$DEQP_SKIPS /data/deqp/angle-skips.txt"
+fi
+
 AOSP_RESULTS=/data/deqp/results
 uncollapsed_section_switch cuttlefish_test "cuttlefish: testing"
 
@@ -174,7 +199,9 @@ $ADB shell "mkdir ${AOSP_RESULTS}; cd ${AOSP_RESULTS}/..; \
     --shader-cache-dir /data/local/tmp \
     --fraction-start ${CI_NODE_INDEX:-1} \
     --fraction $(( CI_NODE_TOTAL * ${DEQP_FRACTION:-1})) \
-    --jobs ${FDO_CI_CONCURRENT:-4}"
+    --jobs ${FDO_CI_CONCURRENT:-4} \
+    $BASELINE \
+    "
 
 EXIT_CODE=$?
 set -e
