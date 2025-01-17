@@ -91,6 +91,19 @@ if get_option('mesa-clc') != 'system' and (with_driver_using_cl or \
      native : not meson.can_run_host_binaries(),
      install : get_option('install-mesa-clc'),
    )
+
+   prog_vtn_bindgen2 = executable(
+     'vtn_bindgen2',
+     ['vtn_bindgen2.c'],
+     include_directories : [inc_include, inc_src],
+     c_args : [c_msvc_compat_args, no_override_init_args],
+     dependencies : [idep_vtn, idep_mesautil, idep_nir],
+     # If we can run host binaries directly, just build vtn_bindgen for the host.
+     # Most commonly this happens when doing a cross compile from an x86_64 build
+     # machine to an x86 host
+     native : not meson.can_run_host_binaries(),
+     install : get_option('install-mesa-clc'),
+   )
 endif
 
 if with_tests
