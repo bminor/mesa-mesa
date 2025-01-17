@@ -5278,6 +5278,7 @@ unsigned nir_shader_index_vars(nir_shader *shader, nir_variable_mode modes);
 unsigned nir_function_impl_index_vars(nir_function_impl *impl);
 
 void nir_print_shader(nir_shader *shader, FILE *fp);
+void nir_print_function_body(nir_function_impl *impl, FILE *fp);
 void nir_print_shader_annotated(nir_shader *shader, FILE *fp, struct hash_table *errors);
 void nir_print_instr(const nir_instr *instr, FILE *fp);
 void nir_print_deref(const nir_deref_instr *deref, FILE *fp);

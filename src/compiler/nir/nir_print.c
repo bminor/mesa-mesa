@@ -2291,15 +2291,17 @@ print_cf_node(nir_cf_node *node, print_state *state, unsigned int tabs)
 }
 
 static void
-print_function_impl(nir_function_impl *impl, print_state *state)
+print_function_impl(nir_function_impl *impl, print_state *state, bool print_name)
 {
    FILE *fp = state->fp;
 
    state->max_dest_index = impl->ssa_alloc;
 
-   fprintf(fp, "\nimpl %s ", impl->function->name);
+   if (print_name) {
+      fprintf(fp, "\nimpl %s ", impl->function->name);
 
-   fprintf(fp, "{\n");
+      fprintf(fp, "{\n");
+   }
 
    if (impl->preamble) {
       print_indentation(1, fp);
@@ -2328,7 +2330,11 @@ print_function_impl(nir_function_impl *impl, print_state *state)
    }
 
    print_indentation(1, fp);
-   fprintf(fp, "block b%u:\n}\n\n", impl->end_block->index);
+   fprintf(fp, "block b%u:\n", impl->end_block->index);
+
+   if (print_name) {
+      fprintf(fp, "}\n\n");
+   }
 
    free(state->float_types);
    free(state->int_types);
@@ -2380,7 +2386,7 @@ print_function(nir_function *function, print_state *state)
    fprintf(fp, "\n");
 
    if (function->impl != NULL) {
-      print_function_impl(function->impl, state);
+      print_function_impl(function->impl, state, true);
       return;
    }
 }
@@ -2738,6 +2744,16 @@ print_shader_info(const struct shader_info *info, FILE *fp)
    default:
       fprintf(fp, "Unhandled stage %d\n", info->stage);
    }
+}
+
+void
+nir_print_function_body(nir_function_impl *impl, FILE *fp)
+{
+   print_state state = { 0 };
+   init_print_state(&state, impl->function->shader, fp);
+   state.def_prefix = "%";
+   print_function_impl(impl, &state, false);
+   destroy_print_state(&state);
 }
 
 static void
