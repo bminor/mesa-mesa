@@ -22,8 +22,8 @@
  */
 
 #include "nir_loop_analyze.h"
-#include "util/bitset.h"
-#include "util/sparse_array.h"
+#include "util/hash_table.h"
+#include "util/ralloc.h"
 #include "nir.h"
 #include "nir_constant_expressions.h"
 
@@ -32,7 +32,7 @@ typedef enum {
    basic_induction
 } nir_loop_variable_type;
 
-typedef struct {
+typedef struct nir_loop_variable {
    /* The ssa_def associated with this info */
    nir_def *def;
 
@@ -59,8 +59,7 @@ typedef struct {
    nir_loop *loop;
 
    /* Loop_variable for all ssa_defs in function */
-   struct util_sparse_array loop_vars;
-   BITSET_WORD *loop_vars_init;
+   struct hash_table *loop_vars;
 
    nir_variable_mode indirect_mask;
 
@@ -70,17 +69,13 @@ typedef struct {
 static nir_loop_variable *
 get_loop_var(nir_def *value, loop_info_state *state)
 {
-   nir_loop_variable *var = util_sparse_array_get(&state->loop_vars, value->index);
+   struct hash_entry *entry = _mesa_hash_table_search(state->loop_vars, value);
+   if (entry)
+      return entry->data;
 
-   if (!BITSET_TEST(state->loop_vars_init, value->index)) {
-      var->def = value;
-      var->init_src = NULL;
-      var->update_src = NULL;
-      var->type = undefined;
-
-      BITSET_SET(state->loop_vars_init, value->index);
-   }
-
+   nir_loop_variable *var = rzalloc(state, nir_loop_variable);
+   var->def = value;
+   _mesa_hash_table_insert(state->loop_vars, value, var);
    return var;
 }
 
@@ -1458,9 +1453,7 @@ initialize_loop_info_state(nir_loop *loop, void *mem_ctx,
                            nir_function_impl *impl)
 {
    loop_info_state *state = rzalloc(mem_ctx, loop_info_state);
-   util_sparse_array_init(&state->loop_vars, sizeof(nir_loop_variable), 128);
-   state->loop_vars_init = rzalloc_array(mem_ctx, BITSET_WORD,
-                                         BITSET_WORDS(impl->ssa_alloc));
+   state->loop_vars = _mesa_pointer_hash_table_create(mem_ctx);
    state->loop = loop;
 
    if (loop->info)
@@ -1510,7 +1503,6 @@ process_loops(nir_cf_node *cf_node, nir_variable_mode indirect_mask,
 
    get_loop_info(state, impl);
 
-   util_sparse_array_finish(&state->loop_vars);
    ralloc_free(mem_ctx);
 }
 
