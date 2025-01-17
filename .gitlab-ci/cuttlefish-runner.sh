@@ -106,9 +106,11 @@ mkdir /mesa-android
 tar -C /mesa-android -xvf ${S3_ANDROID_ARTIFACT_NAME}.tar.zst
 rm "${S3_ANDROID_ARTIFACT_NAME}.tar.zst" &
 
-$ADB push /mesa-android/install/all-skips.txt /data/deqp
-$ADB push "/mesa-android/install/$GPU_VERSION-flakes.txt" /data/deqp
-$ADB push "/mesa-android/install/deqp-$DEQP_SUITE.toml" /data/deqp
+INSTALL="/mesa-android/install"
+
+$ADB push "$INSTALL/all-skips.txt" /data/deqp
+$ADB push "$INSTALL/$GPU_VERSION-flakes.txt" /data/deqp
+$ADB push "$INSTALL/deqp-$DEQP_SUITE.toml" /data/deqp
 
 # remove 32 bits libs from /vendor/lib
 
@@ -126,14 +128,14 @@ $ADB shell rm -f /vendor/lib/hw/vulkan.*
 
 # replace on /vendor/lib64
 
-$ADB push /mesa-android/install/lib/libgallium_dri.so /vendor/lib64/libgallium_dri.so
-$ADB push /mesa-android/install/lib/libglapi.so /vendor/lib64/libglapi.so
-$ADB push /mesa-android/install/lib/libEGL.so /vendor/lib64/egl/libEGL_mesa.so
-$ADB push /mesa-android/install/lib/libGLESv1_CM.so /vendor/lib64/egl/libGLESv1_CM_mesa.so
-$ADB push /mesa-android/install/lib/libGLESv2.so /vendor/lib64/egl/libGLESv2_mesa.so
+$ADB push "$INSTALL/lib/libgallium_dri.so" /vendor/lib64/libgallium_dri.so
+$ADB push "$INSTALL/lib/libglapi.so" /vendor/lib64/libglapi.so
+$ADB push "$INSTALL/lib/libEGL.so" /vendor/lib64/egl/libEGL_mesa.so
+$ADB push "$INSTALL/lib/libGLESv1_CM.so" /vendor/lib64/egl/libGLESv1_CM_mesa.so
+$ADB push "$INSTALL/lib/libGLESv2.so" /vendor/lib64/egl/libGLESv2_mesa.so
 
-$ADB push /mesa-android/install/lib/libvulkan_lvp.so /vendor/lib64/hw/vulkan.lvp.so
-$ADB push /mesa-android/install/lib/libvulkan_virtio.so /vendor/lib64/hw/vulkan.virtio.so
+$ADB push "$INSTALL/lib/libvulkan_lvp.so" /vendor/lib64/hw/vulkan.lvp.so
+$ADB push "$INSTALL/lib/libvulkan_virtio.so" /vendor/lib64/hw/vulkan.virtio.so
 
 $ADB shell rm -f /vendor/lib64/egl/libEGL_emulation.so
 $ADB shell rm -f /vendor/lib64/egl/libGLESv1_CM_emulation.so
@@ -150,7 +152,7 @@ $ADB shell start
 # Check what GLES implementation Surfaceflinger is using after copying the new mesa libraries
 while [ "$($ADB shell dumpsys SurfaceFlinger | grep GLES:)" = "" ] ; do sleep 1; done
 MESA_RUNTIME_VERSION="$($ADB shell dumpsys SurfaceFlinger | grep GLES:)"
-MESA_BUILD_VERSION=$(cat /mesa-android/install/VERSION)
+MESA_BUILD_VERSION=$(cat "$INSTALL/VERSION")
 if ! printf "%s" "$MESA_RUNTIME_VERSION" | grep "${MESA_BUILD_VERSION}$"; then
     echo "Fatal: Android is loading a wrong version of the Mesa3D libs: ${MESA_RUNTIME_VERSION}" 1>&2
     exit 1
