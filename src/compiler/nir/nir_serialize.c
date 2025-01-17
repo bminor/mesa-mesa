@@ -2042,7 +2042,7 @@ write_function(write_ctx *ctx, const nir_function *fxn)
     */
 }
 
-static void
+static nir_function *
 read_function(read_ctx *ctx)
 {
    uint32_t flags = blob_read_uint32(ctx->blob);
@@ -2092,6 +2092,7 @@ read_function(read_ctx *ctx)
    fxn->dont_inline = flags & 0x20;
    fxn->is_subroutine = flags & 0x40;
    fxn->is_tmp_globals_wrapper = flags & 0x80;
+   return fxn;
 }
 
 static void
@@ -2125,6 +2126,27 @@ enum nir_serialize_shader_flags {
    NIR_SERIALIZE_SHADER_LABEL = 1 << 1,
    NIR_SERIALIZE_DEBUG_INFO = 1 << 2,
 };
+
+void
+nir_serialize_function(struct blob *blob, const nir_function *fxn)
+{
+   write_ctx ctx = { 0 };
+   ctx.remap_table = _mesa_pointer_hash_table_create(NULL);
+   ctx.blob = blob;
+   ctx.nir = fxn->shader;
+   ctx.strip = true;
+   util_dynarray_init(&ctx.phi_fixups, NULL);
+
+   size_t idx_size_offset = blob_reserve_uint32(blob);
+
+   write_function(&ctx, fxn);
+   write_function_impl(&ctx, fxn->impl);
+
+   blob_overwrite_uint32(blob, idx_size_offset, ctx.next_idx);
+
+   _mesa_hash_table_destroy(ctx.remap_table, NULL);
+   util_dynarray_fini(&ctx.phi_fixups);
+}
 
 /**
  * Serialize NIR into a binary blob.
@@ -2262,6 +2284,27 @@ nir_deserialize(void *mem_ctx,
    nir_validate_shader(ctx.nir, "after deserialize");
 
    return ctx.nir;
+}
+
+nir_function *
+nir_deserialize_function(void *mem_ctx,
+                         const struct nir_shader_compiler_options *options,
+                         struct blob_reader *blob)
+{
+   read_ctx ctx = { 0 };
+   ctx.blob = blob;
+   list_inithead(&ctx.phi_srcs);
+   ctx.idx_table_len = blob_read_uint32(blob);
+   ctx.idx_table = calloc(ctx.idx_table_len, sizeof(uintptr_t));
+
+   ctx.nir = nir_shader_create(mem_ctx, 0 /* stage */, options, NULL);
+
+   nir_function *fxn = read_function(&ctx);
+   nir_function_set_impl(fxn, read_function_impl(&ctx));
+
+   free(ctx.idx_table);
+   nir_validate_shader(ctx.nir, "after deserialize");
+   return fxn;
 }
 
 void

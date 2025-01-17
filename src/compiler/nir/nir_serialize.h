@@ -36,6 +36,14 @@ nir_shader *nir_deserialize(void *mem_ctx,
                             const struct nir_shader_compiler_options *options,
                             struct blob_reader *blob);
 
+void
+nir_serialize_function(struct blob *blob, const nir_function *fxn);
+
+nir_function *
+nir_deserialize_function(void *mem_ctx,
+                         const struct nir_shader_compiler_options *options,
+                         struct blob_reader *blob);
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
