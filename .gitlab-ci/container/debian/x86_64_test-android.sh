@@ -125,7 +125,7 @@ git checkout FETCH_HEAD
 
 ./tools/buildutils/build_packages.sh
 
-apt-get install -y ./cuttlefish-base_*.deb ./cuttlefish-user_*.deb
+apt-get install -y --allow-downgrades ./cuttlefish-base_*.deb ./cuttlefish-user_*.deb
 
 popd
 rm -rf android-cuttlefish
