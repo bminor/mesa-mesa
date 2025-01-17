@@ -3207,6 +3207,10 @@ lp_build_sample_soa_code(struct gallivm_state *gallivm,
       return;
    }
 
+   if (texture_dims(target) != 2) {
+      derived_sampler_state.aniso = 0;
+   }
+
    assert(type.floating);
 
    /* Setup our build context */
