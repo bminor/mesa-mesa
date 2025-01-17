@@ -318,7 +318,7 @@ anv_shader_bin_create(struct anv_device *device,
       prog_data_in->const_data_offset;
 
    int rv_count = 0;
-   struct brw_shader_reloc_value reloc_values[9];
+   struct brw_shader_reloc_value reloc_values[10];
    assert((device->physical->va.dynamic_visible_pool.addr & 0xffffffff) == 0);
    reloc_values[rv_count++] = (struct brw_shader_reloc_value) {
       .id = BRW_SHADER_RELOC_DESCRIPTORS_BUFFER_ADDR_HIGH,
@@ -392,6 +392,10 @@ anv_shader_bin_create(struct anv_device *device,
       reloc_values[rv_count++] = (struct brw_shader_reloc_value) {
          .id = BRW_SHADER_RELOC_PRINTF_BUFFER_ADDR_HIGH,
          .value = device->printf.bo->offset >> 32,
+      };
+      reloc_values[rv_count++] = (struct brw_shader_reloc_value) {
+         .id = BRW_SHADER_RELOC_PRINTF_BUFFER_SIZE,
+         .value = anv_printf_buffer_size(),
       };
    } else if (prog_data_in->printf_info_count > 0) {
       unreachable("shader with printf intrinsics requires INTEL_DEBUG=shader-print");

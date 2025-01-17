@@ -2155,6 +2155,12 @@ struct anv_device {
 };
 
 static inline uint32_t
+anv_printf_buffer_size(void)
+{
+   return debug_get_num_option("ANV_PRINTF_BUFFER_SIZE", 1024 * 1024);
+}
+
+static inline uint32_t
 anv_get_first_render_queue_index(struct anv_physical_device *pdevice)
 {
    assert(pdevice != NULL);
