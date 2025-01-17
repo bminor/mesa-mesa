@@ -2545,7 +2545,9 @@ tu_cmd_buffer_destroy(struct vk_command_buffer *vk_cmd_buffer)
    }
 
    ralloc_free(cmd_buffer->patchpoints_ctx);
+   ralloc_free(cmd_buffer->pre_chain.patchpoints_ctx);
    util_dynarray_fini(&cmd_buffer->fdm_bin_patchpoints);
+   util_dynarray_fini(&cmd_buffer->pre_chain.fdm_bin_patchpoints);
 
    vk_command_buffer_finish(&cmd_buffer->vk);
    vk_free2(&cmd_buffer->device->vk.alloc, &cmd_buffer->vk.pool->alloc,
@@ -2593,8 +2595,11 @@ tu_reset_cmd_buffer(struct vk_command_buffer *vk_cmd_buffer,
    cmd_buffer->prev_fsr_is_null = false;
 
    ralloc_free(cmd_buffer->patchpoints_ctx);
+   ralloc_free(cmd_buffer->pre_chain.patchpoints_ctx);
    cmd_buffer->patchpoints_ctx = NULL;
+   cmd_buffer->pre_chain.patchpoints_ctx = NULL;
    util_dynarray_clear(&cmd_buffer->fdm_bin_patchpoints);
+   util_dynarray_clear(&cmd_buffer->pre_chain.fdm_bin_patchpoints);
 }
 
 const struct vk_command_buffer_ops tu_cmd_buffer_ops = {
