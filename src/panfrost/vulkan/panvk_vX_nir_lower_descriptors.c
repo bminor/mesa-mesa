@@ -530,7 +530,7 @@ load_resource_deref_desc(nir_builder *b, nir_deref_instr *deref,
    if (index_ssa == NULL)
       index_ssa = nir_imm_int(b, index_imm);
 
-   unsigned desc_stride = panvk_get_desc_stride(bind_layout->type);
+   unsigned desc_stride = panvk_get_desc_stride(bind_layout);
    nir_def *set_offset =
       nir_imul_imm(b,
                    nir_iadd_imm(b, nir_imul_imm(b, index_ssa, desc_stride),
@@ -682,7 +682,7 @@ get_desc_array_stride(const struct panvk_descriptor_set_binding_layout *layout)
    /* On Bifrost, descriptors are copied from the sets to the final
     * descriptor tables which are per-type, making the stride one in
     * this context. */
-   return PAN_ARCH >= 9 ? panvk_get_desc_stride(layout->type) : 1;
+   return PAN_ARCH >= 9 ? panvk_get_desc_stride(layout) : 1;
 }
 
 static bool
@@ -885,7 +885,7 @@ record_binding(struct lower_desc_ctx *ctx, unsigned set, unsigned binding,
    const struct panvk_descriptor_set_binding_layout *binding_layout =
       &set_layout->bindings[binding];
    uint32_t subdesc_idx = get_subdesc_idx(binding_layout, subdesc_type);
-   uint32_t desc_stride = panvk_get_desc_stride(binding_layout->type);
+   uint32_t desc_stride = panvk_get_desc_stride(binding_layout);
 
    assert(desc_stride == 1 || desc_stride == 2);
    ctx->desc_info.used_set_mask |= BITFIELD_BIT(set);
@@ -951,7 +951,7 @@ fill_copy_descs_for_binding(struct lower_desc_ctx *ctx, unsigned set,
    const struct panvk_descriptor_set_layout *set_layout = ctx->set_layouts[set];
    const struct panvk_descriptor_set_binding_layout *binding_layout =
       &set_layout->bindings[binding];
-   uint32_t desc_stride = panvk_get_desc_stride(binding_layout->type);
+   uint32_t desc_stride = panvk_get_desc_stride(binding_layout);
    uint32_t *first_entry = NULL;
 
    assert(desc_count <= binding_layout->desc_count);

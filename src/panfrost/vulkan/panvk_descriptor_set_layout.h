@@ -64,10 +64,10 @@ to_panvk_descriptor_set_layout(const struct vk_descriptor_set_layout *layout)
 }
 
 static inline const uint32_t
-panvk_get_desc_stride(VkDescriptorType type)
+panvk_get_desc_stride(const struct panvk_descriptor_set_binding_layout *layout)
 {
    /* One descriptor for the sampler, and one for the texture. */
-   return type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER ? 2 : 1;
+   return layout->type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER ? 2 : 1;
 }
 
 static inline uint32_t
@@ -82,7 +82,7 @@ panvk_get_desc_index(const struct panvk_descriptor_set_binding_layout *layout,
    assert(!vk_descriptor_type_is_dynamic(layout->type));
 
    uint32_t desc_idx =
-      layout->desc_idx + elem * panvk_get_desc_stride(layout->type);
+      layout->desc_idx + elem * panvk_get_desc_stride(layout);
 
    /* In case of combined image-sampler, we put the texture first. */
    if (layout->type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER &&

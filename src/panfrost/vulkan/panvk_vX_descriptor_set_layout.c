@@ -135,7 +135,7 @@ panvk_per_arch(CreateDescriptorSetLayout)(
          dyn_buf_idx += binding_layout->desc_count;
       } else {
          binding_layout->desc_idx = desc_idx;
-         desc_idx += panvk_get_desc_stride(binding_layout->type) *
+         desc_idx += panvk_get_desc_stride(binding_layout) *
                      binding_layout->desc_count;
       }
    }
@@ -183,10 +183,16 @@ panvk_per_arch(GetDescriptorSetLayoutSupport)(
       const VkDescriptorSetLayoutBinding *binding = &pCreateInfo->pBindings[i];
       VkDescriptorType type = binding->descriptorType;
 
-      if (vk_descriptor_type_is_dynamic(type))
+      if (vk_descriptor_type_is_dynamic(type)) {
          dyn_buf_count += binding->descriptorCount;
-      else
-         desc_count += panvk_get_desc_stride(type) * binding->descriptorCount;
+         continue;
+      }
+
+      const struct panvk_descriptor_set_binding_layout layout = {
+         .type = type,
+      };
+
+      desc_count += panvk_get_desc_stride(&layout) * binding->descriptorCount;
    }
 
    if (desc_count > PANVK_MAX_DESCS_PER_SET ||

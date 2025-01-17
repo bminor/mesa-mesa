@@ -239,9 +239,13 @@ panvk_per_arch(CreateDescriptorPool)(
 
    uint32_t desc_count = 0;
    for (unsigned i = 0; i < pCreateInfo->poolSizeCount; ++i) {
-      if (!vk_descriptor_type_is_dynamic(pCreateInfo->pPoolSizes[i].type))
-         desc_count += panvk_get_desc_stride(pCreateInfo->pPoolSizes[i].type) *
+      if (!vk_descriptor_type_is_dynamic(pCreateInfo->pPoolSizes[i].type)) {
+         const struct panvk_descriptor_set_binding_layout layout = {
+            .type = pCreateInfo->pPoolSizes[i].type,
+         };
+         desc_count += panvk_get_desc_stride(&layout) *
                        pCreateInfo->pPoolSizes[i].descriptorCount;
+      }
    }
 
    /* initialize to all ones to indicate all sets are free */
@@ -324,7 +328,7 @@ panvk_desc_pool_allocate_set(struct panvk_descriptor_pool *pool,
            VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT) &&
           !vk_descriptor_type_is_dynamic(layout->bindings[last_binding].type)) {
          uint32_t desc_stride =
-            panvk_get_desc_stride(layout->bindings[last_binding].type);
+            panvk_get_desc_stride(&layout->bindings[last_binding]);
 
          num_descs -= layout->bindings[last_binding].desc_count * desc_stride;
          num_descs += variable_count * desc_stride;
@@ -539,7 +543,7 @@ panvk_descriptor_set_copy(const VkCopyDescriptorSet *copy)
 
          memcpy(dst, src,
                 PANVK_DESCRIPTOR_SIZE *
-                   panvk_get_desc_stride(src_binding_layout->type));
+                   panvk_get_desc_stride(src_binding_layout));
       }
       break;
 
