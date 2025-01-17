@@ -36,8 +36,6 @@ typedef struct {
    /* A link for the work list */
    struct list_head process_link;
 
-   bool in_loop;
-
    /* The ssa_def associated with this info */
    nir_def *def;
 
@@ -81,7 +79,6 @@ get_loop_var(nir_def *value, loop_info_state *state)
    nir_loop_variable *var = util_sparse_array_get(&state->loop_vars, value->index);
 
    if (!BITSET_TEST(state->loop_vars_init, value->index)) {
-      var->in_loop = false;
       var->def = value;
       var->init_src = NULL;
       var->update_src = NULL;
@@ -113,8 +110,6 @@ init_loop_def(nir_def *def, void *void_init_loop_state)
        */
       list_addtail(&var->process_link, &loop_init_state->state->process_list);
    }
-
-   var->in_loop = true;
 
    return true;
 }
@@ -329,19 +324,25 @@ compute_induction_information(loop_info_state *state)
     * have a phi node
     */
    nir_block *header = nir_loop_first_block(state->loop);
+   nir_block *preheader = nir_block_cf_tree_prev(header);
+
    nir_foreach_phi(phi, header) {
       nir_loop_variable *var = get_loop_var(&phi->def, state);
-
       nir_loop_variable *alu_src_var = NULL;
+
       nir_foreach_phi_src(src, phi) {
-         nir_loop_variable *src_var = get_loop_var(src->src.ssa, state);
+         if (src->pred == preheader) {
+            var->init_src = &src->src;
+            continue;
+         }
 
          /* If one of the sources is in an if branch or nested loop then don't
           * attempt to go any further.
           */
-         if (src_var->in_loop &&
-             src_var->def->parent_instr->block->cf_node.parent != &state->loop->cf_node)
+         if (src->src.ssa->parent_instr->block->cf_node.parent != &state->loop->cf_node)
             break;
+
+         nir_loop_variable *src_var = get_loop_var(src->src.ssa, state);
 
          /* Detect inductions variables that are incremented in both branches
           * of an unnested if rather than in a loop block.
@@ -355,9 +356,7 @@ compute_induction_information(loop_info_state *state)
             }
          }
 
-         if (!src_var->in_loop && !var->init_src) {
-            var->init_src = &src->src;
-         } else if (is_var_alu(src_var) && !var->update_src) {
+         if (is_var_alu(src_var) && !var->update_src) {
             alu_src_var = src_var;
             nir_alu_instr *alu = nir_instr_as_alu(src_var->def->parent_instr);
 
