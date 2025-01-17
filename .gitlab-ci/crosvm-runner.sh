@@ -80,9 +80,12 @@ ${SCRIPTS_DIR}/common/generate-env.sh | tee ${VM_TEMP_DIR}/crosvm-env.sh
 cp ${SCRIPTS_DIR}/setup-test-env.sh ${VM_TEMP_DIR}/setup-test-env.sh
 
 # Set the crosvm-script as the arguments of the current script
-echo "export SCRIPTS_DIR=${SCRIPTS_DIR}" > ${VM_TEMP_DIR}/crosvm-script.sh
-echo ". ${VM_TEMP_DIR}/setup-test-env.sh" >> ${VM_TEMP_DIR}/crosvm-script.sh
-echo "$@" >> ${VM_TEMP_DIR}/crosvm-script.sh
+{
+  echo "export SCRIPTS_DIR=${SCRIPTS_DIR}"
+  echo "export RESULTS_DIR=${RESULTS_DIR}"
+  echo ". ${VM_TEMP_DIR}/setup-test-env.sh"
+  echo "$@"
+} > ${VM_TEMP_DIR}/crosvm-script.sh
 
 # Setup networking
 /usr/sbin/iptables-legacy -w -t nat -A POSTROUTING -o eth0 -j MASQUERADE
