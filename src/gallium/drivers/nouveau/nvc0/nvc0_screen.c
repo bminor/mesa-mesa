@@ -260,6 +260,80 @@ nvc0_screen_get_compute_param(struct pipe_screen *pscreen,
 }
 
 static void
+nvc0_init_shader_caps(struct nvc0_screen *screen)
+{
+   const uint16_t class_3d = screen->base.class_3d;
+
+   for (unsigned i = 0; i <= PIPE_SHADER_COMPUTE; i++) {
+      struct pipe_shader_caps *caps =
+         (struct pipe_shader_caps *)&screen->base.base.shader_caps[i];
+
+      caps->supported_irs = 1 << PIPE_SHADER_IR_NIR;
+      caps->max_instructions =
+      caps->max_alu_instructions =
+      caps->max_tex_instructions =
+      caps->max_tex_indirections = 16384;
+      caps->max_control_flow_depth = 16;
+      caps->max_inputs = 0x200 / 16;
+      caps->max_outputs = 32;
+      caps->max_const_buffer0_size = NVC0_MAX_CONSTBUF_SIZE;
+      caps->max_const_buffers = NVC0_MAX_PIPE_CONSTBUFS;
+      caps->indirect_temp_addr = true;
+      caps->indirect_const_addr = true;
+      caps->max_temps = NVC0_CAP_MAX_PROGRAM_TEMPS;
+      caps->cont_supported = true;
+      caps->tgsi_sqrt_supported = true;
+      caps->subroutines = true;
+      caps->integers = true;
+      caps->max_shader_buffers = NVC0_MAX_BUFFERS;
+      caps->max_texture_samplers = (class_3d >= NVE4_3D_CLASS) ? 32 : 16;
+      caps->max_sampler_views = (class_3d >= NVE4_3D_CLASS) ? 32 : 16;
+      caps->max_shader_images =
+         class_3d >= NVE4_3D_CLASS ||
+         i == PIPE_SHADER_FRAGMENT ||
+         i == PIPE_SHADER_COMPUTE ? NVC0_MAX_IMAGES : 0;
+   }
+}
+
+static void
+nvc0_init_compute_caps(struct nvc0_screen *screen)
+{
+   struct nouveau_device *dev = screen->base.device;
+   const uint16_t obj_class = screen->compute->oclass;
+
+   struct pipe_compute_caps *caps =
+      (struct pipe_compute_caps *)&screen->base.base.compute_caps;
+
+   caps->grid_dimension = 3;
+
+   caps->max_grid_size[0] = obj_class >= NVE4_COMPUTE_CLASS ? 0x7fffffff : 65535;
+   caps->max_grid_size[1] = 65535;
+   caps->max_grid_size[2] = 65535;
+
+   caps->max_block_size[0] = 1024;
+   caps->max_block_size[1] = 1024;
+   caps->max_block_size[2] = 64;
+
+   caps->max_threads_per_block = 1024;
+
+   caps->max_variable_threads_per_block = obj_class >= NVE4_COMPUTE_CLASS ? 1024 : 512;
+   caps->max_mem_alloc_size =
+   caps->max_global_size = nouveau_device_get_global_mem_size(dev); /* g[] */
+
+   caps->max_local_size = /* s[] */
+      obj_class == GM200_COMPUTE_CLASS ? 96 << 10 :
+      (obj_class == GM107_COMPUTE_CLASS ? 64 << 10 : 48 << 10);
+
+   caps->max_private_size = 512 << 10; /* l[] */
+   caps->max_input_size = 4096; /* c[], arbitrary limit */
+   caps->subgroup_sizes = 32;
+   caps->images_supported = !!NVC0_MAX_IMAGES;
+   caps->max_compute_units = screen->mp_count_compute;
+   caps->max_clock_frequency = 512; /* FIXME: arbitrary limit */
+   caps->address_bits = 64;
+}
+
+static void
 nvc0_init_screen_caps(struct nvc0_screen *screen)
 {
    struct pipe_caps *caps = (struct pipe_caps *)&screen->base.base.caps;
@@ -1053,8 +1127,6 @@ nvc0_screen_create(struct nouveau_device *dev)
       FAIL_SCREEN_INIT("Error allocating PGRAPH context for 3D: %d\n", ret);
    screen->base.class_3d = screen->eng3d->oclass;
 
-   nvc0_init_screen_caps(screen);
-
    BEGIN_NVC0(push, SUBC_3D(NV01_SUBCHAN_OBJECT), 1);
    PUSH_DATA (push, screen->eng3d->oclass);
 
@@ -1388,6 +1460,11 @@ nvc0_screen_create(struct nouveau_device *dev)
                                         screen->compute->oclass,
                                         screen->m2mf->oclass,
                                         screen->copy ? screen->copy->oclass : 0);
+
+   nvc0_init_shader_caps(screen);
+   nvc0_init_compute_caps(screen);
+   nvc0_init_screen_caps(screen);
+
    return &screen->base;
 
 fail:
