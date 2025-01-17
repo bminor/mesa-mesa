@@ -340,6 +340,10 @@ intrinsic("convert_alu_types", dest_comp=0, src_comp=[0],
 
 intrinsic("load_param", dest_comp=0, indices=[PARAM_IDX], flags=[CAN_ELIMINATE])
 
+# Store a scalar value to be used as a return value. Usually store_deref is used
+# for this, but vtn_bindgen needs to lower derefs.
+intrinsic("bindgen_return", src_comp=[0])
+
 intrinsic("load_deref", dest_comp=0, src_comp=[-1],
           indices=[ACCESS], flags=[CAN_ELIMINATE])
 intrinsic("store_deref", src_comp=[-1, 0], indices=[WRITE_MASK, ACCESS])

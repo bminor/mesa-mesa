@@ -5581,10 +5581,10 @@ bool nir_split_struct_vars(nir_shader *shader, nir_variable_mode modes);
 bool nir_lower_returns_impl(nir_function_impl *impl);
 bool nir_lower_returns(nir_shader *shader);
 
-void nir_inline_function_impl(struct nir_builder *b,
-                              const nir_function_impl *impl,
-                              nir_def **params,
-                              struct hash_table *shader_var_remap);
+nir_def *nir_inline_function_impl(struct nir_builder *b,
+                                  const nir_function_impl *impl,
+                                  nir_def **params,
+                                  struct hash_table *shader_var_remap);
 bool nir_inline_functions(nir_shader *shader);
 void nir_cleanup_functions(nir_shader *shader);
 bool nir_link_shader_functions(nir_shader *shader,
