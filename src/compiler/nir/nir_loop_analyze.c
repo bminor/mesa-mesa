@@ -317,14 +317,23 @@ is_only_uniform_src(nir_src *src)
 static bool
 compute_induction_information(loop_info_state *state)
 {
-   unsigned num_induction_vars = 0;
-
    /* We are only interested in checking phis for the basic induction
     * variable case as its simple to detect. All basic induction variables
     * have a phi node
     */
    nir_block *header = nir_loop_first_block(state->loop);
    nir_block *preheader = nir_block_cf_tree_prev(header);
+
+   /* There can be at most 2 induction vars per phi. */
+   unsigned num_phis = 0;
+   nir_foreach_phi(phi, header)
+      num_phis++;
+
+   nir_loop_info *info = state->loop->info;
+   info->induction_vars = reralloc(info, info->induction_vars,
+                                   nir_loop_induction_variable,
+                                   num_phis * 2);
+   info->num_induction_vars = 0;
 
    nir_foreach_phi(phi, header) {
       nir_loop_variable *var = get_loop_var(&phi->def, state);
@@ -398,7 +407,18 @@ compute_induction_information(loop_info_state *state)
          var->basis = var->def;
          var->type = basic_induction;
 
-         num_induction_vars += 2;
+         /* record induction variables into nir_loop_info */
+         nir_loop_induction_variable *ivar;
+         ivar = &info->induction_vars[info->num_induction_vars++];
+         ivar->def = var->def;
+         ivar->init_src = var->init_src;
+         ivar->update_src = var->update_src;
+         ivar = &info->induction_vars[info->num_induction_vars++];
+         ivar->def = alu_src_var->def;
+         ivar->init_src = alu_src_var->init_src;
+         ivar->update_src = alu_src_var->update_src;
+         /* don't overflow */
+         assert(info->num_induction_vars <= num_phis * 2);
       } else {
          var->init_src = NULL;
          var->update_src = NULL;
@@ -406,30 +426,7 @@ compute_induction_information(loop_info_state *state)
       }
    }
 
-   nir_loop_info *info = state->loop->info;
-   ralloc_free(info->induction_vars);
-   info->num_induction_vars = 0;
-
-   /* record induction variables into nir_loop_info */
-   if (num_induction_vars) {
-      info->induction_vars = ralloc_array(info, nir_loop_induction_variable,
-                                          num_induction_vars);
-
-      list_for_each_entry(nir_loop_variable, var, &state->process_list,
-                          process_link) {
-         if (var->type == basic_induction) {
-            nir_loop_induction_variable *ivar =
-               &info->induction_vars[info->num_induction_vars++];
-            ivar->def = var->def;
-            ivar->init_src = var->init_src;
-            ivar->update_src = var->update_src;
-         }
-      }
-      /* don't overflow */
-      assert(info->num_induction_vars <= num_induction_vars);
-   }
-
-   return num_induction_vars != 0;
+   return info->num_induction_vars != 0;
 }
 
 static bool
