@@ -32,3 +32,4 @@ occlusionQueryPrecise on panvk
 shaderInt16 on panvk
 shaderInt64 on panvk
 imageCubeArray on panvk
+VK_KHR_depth_clamp_zero_one on RADV

@@ -543,6 +543,7 @@ radv_physical_device_get_supported_extensions(const struct radv_physical_device 
       .KHR_create_renderpass2 = true,
       .KHR_dedicated_allocation = true,
       .KHR_deferred_host_operations = true,
+      .KHR_depth_clamp_zero_one = true,
       .KHR_depth_stencil_resolve = true,
       .KHR_descriptor_update_template = true,
       .KHR_device_group = true,
@@ -1251,7 +1252,7 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
       .deviceFault = true,
       .deviceFaultVendorBinary = instance->debug_flags & RADV_DEBUG_HANG,
 
-      /* VK_EXT_depth_clamp_zero_one */
+      /* VK_KHR_depth_clamp_zero_one */
       .depthClampZeroOne = true,
 
       /* VK_KHR_maintenance6 */
