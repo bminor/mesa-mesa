@@ -44,12 +44,6 @@ typedef struct {
    /* The type of this ssa_def */
    nir_loop_variable_type type;
 
-   /* True if variable is in an if branch */
-   bool in_if_branch;
-
-   /* True if variable is in a nested loop */
-   bool in_nested_loop;
-
    /* Could be a basic_induction if following uniforms are inlined */
    nir_src *init_src;
    nir_alu_src *update_src;
@@ -89,8 +83,6 @@ get_loop_var(nir_def *value, loop_info_state *state)
    if (!BITSET_TEST(state->loop_vars_init, value->index)) {
       var->in_loop = false;
       var->def = value;
-      var->in_if_branch = false;
-      var->in_nested_loop = false;
       var->init_src = NULL;
       var->update_src = NULL;
       var->type = undefined;
@@ -113,11 +105,7 @@ init_loop_def(nir_def *def, void *void_init_loop_state)
    init_loop_state *loop_init_state = void_init_loop_state;
    nir_loop_variable *var = get_loop_var(def, loop_init_state->state);
 
-   if (loop_init_state->in_nested_loop) {
-      var->in_nested_loop = true;
-   } else if (loop_init_state->in_if_branch) {
-      var->in_if_branch = true;
-   } else {
+   if (!loop_init_state->in_nested_loop && !loop_init_state->in_if_branch) {
       /* Add to the tail of the list. That way we start at the beginning of
        * the defs in the loop instead of the end when walking the list. This
        * means less recursive calls. Only add defs that are not in nested
@@ -351,7 +339,8 @@ compute_induction_information(loop_info_state *state)
          /* If one of the sources is in an if branch or nested loop then don't
           * attempt to go any further.
           */
-         if (src_var->in_if_branch || src_var->in_nested_loop)
+         if (src_var->in_loop &&
+             src_var->def->parent_instr->block->cf_node.parent != &state->loop->cf_node)
             break;
 
          /* Detect inductions variables that are incremented in both branches
@@ -363,8 +352,6 @@ compute_induction_information(loop_info_state *state)
             nir_alu_instr *src_phi_alu = phi_instr_as_alu(src_phi);
             if (src_phi_alu) {
                src_var = get_loop_var(&src_phi_alu->def, state);
-               if (!src_var->in_if_branch)
-                  break;
             }
          }
 
