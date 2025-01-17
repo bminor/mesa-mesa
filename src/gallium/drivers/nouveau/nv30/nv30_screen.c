@@ -156,6 +156,43 @@ nv30_screen_get_shader_param(struct pipe_screen *pscreen,
 }
 
 static void
+nv30_init_shader_caps(struct nv30_screen *screen)
+{
+   struct nouveau_object *eng3d = screen->eng3d;
+
+   struct pipe_shader_caps *caps =
+      (struct pipe_shader_caps *)&screen->base.base.shader_caps[PIPE_SHADER_VERTEX];
+
+   caps->max_instructions =
+   caps->max_alu_instructions = (eng3d->oclass >= NV40_3D_CLASS) ? 512 : 256;
+   caps->max_tex_instructions =
+   caps->max_tex_indirections = (eng3d->oclass >= NV40_3D_CLASS) ? 512 : 0;
+   caps->max_inputs =
+   caps->max_outputs = 16;
+   caps->max_const_buffer0_size =
+      ((eng3d->oclass >= NV40_3D_CLASS) ? (468 - 6): (256 - 6)) * sizeof(float[4]);
+   caps->max_const_buffers = 1;
+   caps->max_temps = (eng3d->oclass >= NV40_3D_CLASS) ? 32 : 13;
+   caps->supported_irs = (1 << PIPE_SHADER_IR_NIR) | (1 << PIPE_SHADER_IR_TGSI);
+
+   caps = (struct pipe_shader_caps *)&screen->base.base.shader_caps[PIPE_SHADER_FRAGMENT];
+
+   caps->max_instructions =
+   caps->max_alu_instructions =
+   caps->max_tex_instructions =
+   caps->max_tex_indirections = 4096;
+   caps->max_inputs = 8; /* should be possible to do 10 with nv4x */
+   caps->max_outputs = 4;
+   caps->max_const_buffer0_size =
+      ((eng3d->oclass >= NV40_3D_CLASS) ? 224 : 32) * sizeof(float[4]);
+   caps->max_const_buffers = 1;
+   caps->max_temps = 32;
+   caps->max_texture_samplers =
+   caps->max_sampler_views = 16;
+   caps->supported_irs = (1 << PIPE_SHADER_IR_NIR) | (1 << PIPE_SHADER_IR_TGSI);
+}
+
+static void
 nv30_init_screen_caps(struct nv30_screen *screen)
 {
    struct pipe_caps *caps = (struct pipe_caps *)&screen->base.base.caps;
@@ -670,6 +707,7 @@ nv30_screen_create(struct nouveau_device *dev)
    if (ret)
       FAIL_SCREEN_INIT("error allocating 3d object: %d\n", ret);
 
+   nv30_init_shader_caps(screen);
    nv30_init_screen_caps(screen);
 
    BEGIN_NV04(push, NV01_SUBC(3D, OBJECT), 1);
