@@ -3214,13 +3214,16 @@ typedef struct {
 } nir_loop_terminator;
 
 typedef struct {
-   /* Induction variable. */
+   /* SSA def of the phi-node associated with this induction variable. */
+   nir_def *basis;
+
+   /* SSA def of the increment of the induction variable. */
    nir_def *def;
 
-   /* Init statement with only uniform. */
+   /* Init statement */
    nir_src *init_src;
 
-   /* Update statement with only uniform. */
+   /* Update statement */
    nir_alu_src *update_src;
 } nir_loop_induction_variable;
 
@@ -3254,9 +3257,8 @@ typedef struct {
    /* A list of loop_terminators terminating this loop. */
    struct list_head loop_terminator_list;
 
-   /* array of induction variables for this loop */
-   nir_loop_induction_variable *induction_vars;
-   unsigned num_induction_vars;
+   /* hash table of induction variables for this loop */
+   struct hash_table *induction_vars;
 } nir_loop_info;
 
 typedef enum {

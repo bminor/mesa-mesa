@@ -27,41 +27,19 @@
 #include "nir.h"
 #include "nir_constant_expressions.h"
 
-typedef struct nir_loop_variable {
-   /* The ssa_def associated with this info */
-   nir_def *def;
-
-   /* Could be a basic_induction if following uniforms are inlined */
-   nir_src *init_src;
-   nir_alu_src *update_src;
-
-   /**
-    * SSA def of the phi-node associated with this induction variable.
-    *
-    * Every loop induction variable has an associated phi node in the loop
-    * header. This may point to the same SSA def as \c def. If, however, \c def
-    * is the increment of the induction variable, this will point to the SSA
-    * def being incremented.
-    */
-   nir_def *basis;
-} nir_loop_variable;
-
 typedef struct {
    /* The loop we store information for */
    nir_loop *loop;
-
-   /* Loop_variable for all ssa_defs in function */
-   struct hash_table *loop_vars;
 
    nir_variable_mode indirect_mask;
 
    bool force_unroll_sampler_indirect;
 } loop_info_state;
 
-static nir_loop_variable *
+static nir_loop_induction_variable *
 get_loop_var(nir_def *value, loop_info_state *state)
 {
-   struct hash_entry *entry = _mesa_hash_table_search(state->loop_vars, value);
+   struct hash_entry *entry = _mesa_hash_table_search(state->loop->info->induction_vars, value);
    if (entry)
       return entry->data;
    else
@@ -244,6 +222,8 @@ is_only_uniform_src(nir_src *src)
 static bool
 compute_induction_information(loop_info_state *state)
 {
+   bool progress = false;
+
    /* We are only interested in checking phis for the basic induction
     * variable case as its simple to detect. All basic induction variables
     * have a phi node
@@ -251,19 +231,8 @@ compute_induction_information(loop_info_state *state)
    nir_block *header = nir_loop_first_block(state->loop);
    nir_block *preheader = nir_block_cf_tree_prev(header);
 
-   /* There can be at most 2 induction vars per phi. */
-   unsigned num_phis = 0;
-   nir_foreach_phi(phi, header)
-      num_phis++;
-
-   nir_loop_info *info = state->loop->info;
-   info->induction_vars = reralloc(info, info->induction_vars,
-                                   nir_loop_induction_variable,
-                                   num_phis * 2);
-   info->num_induction_vars = 0;
-
    nir_foreach_phi(phi, header) {
-      nir_loop_variable var = { .basis = &phi->def };
+      nir_loop_induction_variable var = { .basis = &phi->def };
 
       nir_foreach_phi_src(phi_src, phi) {
          nir_def *src = phi_src->src.ssa;
@@ -324,28 +293,17 @@ compute_induction_information(loop_info_state *state)
 
       if (var.update_src && var.init_src &&
           is_only_uniform_src(var.init_src)) {
-         /* Insert induction variables into hash table. */
-         nir_loop_variable *induction_var = ralloc(state, nir_loop_variable);
+         /* Insert induction variable into hash table. */
+         struct hash_table *vars = state->loop->info->induction_vars;
+         nir_loop_induction_variable *induction_var = ralloc(vars, nir_loop_induction_variable);
          *induction_var = var;
-         _mesa_hash_table_insert(state->loop_vars, induction_var->def, induction_var);
-         _mesa_hash_table_insert(state->loop_vars, induction_var->basis, induction_var);
-
-         /* record induction variables into nir_loop_info */
-         nir_loop_induction_variable *ivar;
-         ivar = &info->induction_vars[info->num_induction_vars++];
-         ivar->def = var.basis;
-         ivar->init_src = var.init_src;
-         ivar->update_src = var.update_src;
-         ivar = &info->induction_vars[info->num_induction_vars++];
-         ivar->def = var.def;
-         ivar->init_src = var.init_src;
-         ivar->update_src = var.update_src;
-         /* don't overflow */
-         assert(info->num_induction_vars <= num_phis * 2);
+         _mesa_hash_table_insert(vars, induction_var->def, induction_var);
+         _mesa_hash_table_insert(vars, induction_var->basis, induction_var);
+         progress = true;
       }
    }
 
-   return info->num_induction_vars != 0;
+   return progress;
 }
 
 static bool
@@ -416,13 +374,13 @@ find_loop_terminators(loop_info_state *state)
 static unsigned
 find_array_access_via_induction(loop_info_state *state,
                                 nir_deref_instr *deref,
-                                nir_loop_variable **array_index_out)
+                                nir_loop_induction_variable **array_index_out)
 {
    for (nir_deref_instr *d = deref; d; d = nir_deref_instr_parent(d)) {
       if (d->deref_type != nir_deref_type_array)
          continue;
 
-      nir_loop_variable *array_index = get_loop_var(d->arr.index.ssa, state);
+      nir_loop_induction_variable *array_index = get_loop_var(d->arr.index.ssa, state);
 
       if (!array_index)
          continue;
@@ -460,7 +418,7 @@ guess_loop_limit(loop_info_state *state)
              intrin->intrinsic == nir_intrinsic_store_deref ||
              intrin->intrinsic == nir_intrinsic_copy_deref) {
 
-            nir_loop_variable *array_idx = NULL;
+            nir_loop_induction_variable *array_idx = NULL;
             unsigned array_size =
                find_array_access_via_induction(state,
                                                nir_src_as_deref(intrin->src[0]),
@@ -1013,8 +971,8 @@ get_induction_and_limit_vars(nir_scalar cond,
    lhs = nir_scalar_chase_alu_src(cond, 0);
    rhs = nir_scalar_chase_alu_src(cond, 1);
 
-   nir_loop_variable *src0_lv = get_loop_var(lhs.def, state);
-   nir_loop_variable *src1_lv = get_loop_var(rhs.def, state);
+   nir_loop_induction_variable *src0_lv = get_loop_var(lhs.def, state);
+   nir_loop_induction_variable *src1_lv = get_loop_var(rhs.def, state);
 
    if (src0_lv) {
       *ind = lhs;
@@ -1199,7 +1157,7 @@ find_trip_count(loop_info_state *state, unsigned execution_mode,
        * Thats all thats needed to calculate the trip-count
        */
 
-      nir_loop_variable *lv = get_loop_var(basic_ind.def, state);
+      nir_loop_induction_variable *lv = get_loop_var(basic_ind.def, state);
 
       /* The basic induction var might be a vector but, because we guarantee
        * earlier that the phi source has a scalar swizzle, we can take the
@@ -1414,13 +1372,13 @@ initialize_loop_info_state(nir_loop *loop, void *mem_ctx,
                            nir_function_impl *impl)
 {
    loop_info_state *state = rzalloc(mem_ctx, loop_info_state);
-   state->loop_vars = _mesa_pointer_hash_table_create(mem_ctx);
    state->loop = loop;
 
    if (loop->info)
       ralloc_free(loop->info);
 
    loop->info = rzalloc(loop, nir_loop_info);
+   loop->info->induction_vars = _mesa_pointer_hash_table_create(loop->info);
 
    list_inithead(&loop->info->loop_terminator_list);
 

@@ -20,6 +20,7 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
+#include "util/hash_table.h"
 #include <gtest/gtest.h>
 #include "nir.h"
 #include "nir_builder.h"
@@ -263,20 +264,20 @@ TEST_F(nir_loop_analyze_test, one_iteration_fneu)
    EXPECT_TRUE(loop->info->exact_trip_count_known);
 
    /* Loop should have an induction variable for ssa_5 and ssa_4. */
-   EXPECT_EQ(2, loop->info->num_induction_vars);
    ASSERT_NE((void *)0, loop->info->induction_vars);
+   EXPECT_EQ(2, _mesa_hash_table_num_entries(loop->info->induction_vars));
 
-   /* The def field should not be NULL. The init_src field should point to a
-    * load_const. The update_src field should point to a load_const.
+   /* The basis and def fields should not be NULL. The init_src field should
+    * point to a load_const. The update_src field should point to a load_const.
     */
-   const nir_loop_induction_variable *const ivars = loop->info->induction_vars;
-
-   for (unsigned i = 0; i < loop->info->num_induction_vars; i++) {
-      EXPECT_NE((void *)0, ivars[i].def);
-      ASSERT_NE((void *)0, ivars[i].init_src);
-      EXPECT_TRUE(nir_src_is_const(*ivars[i].init_src));
-      ASSERT_NE((void *)0, ivars[i].update_src);
-      EXPECT_TRUE(nir_src_is_const(ivars[i].update_src->src));
+   hash_table_foreach(loop->info->induction_vars, entry) {
+      nir_loop_induction_variable *ivar = (nir_loop_induction_variable *)entry->data;
+      EXPECT_NE((void *)0, ivar->basis);
+      EXPECT_NE((void *)0, ivar->def);
+      ASSERT_NE((void *)0, ivar->init_src);
+      EXPECT_TRUE(nir_src_is_const(*ivar->init_src));
+      ASSERT_NE((void *)0, ivar->update_src);
+      EXPECT_TRUE(nir_src_is_const(ivar->update_src->src));
    }
 }
 
@@ -328,112 +329,109 @@ CMP_MIN(ilt, imax)
 CMP_MIN_REV(ilt, imin)
 INOT_COMPARE(ilt_imin_rev)
 
-#define KNOWN_COUNT_TEST(_init_value, _cond_value, _incr_value, cond, incr, count) \
-   TEST_F(nir_loop_analyze_test, incr ## _ ## cond ## _known_count_ ## count)    \
-   {                                                                    \
-      nir_loop *loop =                                                  \
-         loop_builder(&b, {.init_value = _init_value,                   \
-                           .cond_value = _cond_value,                   \
-                           .incr_value = _incr_value,                   \
-                           .cond_instr = nir_ ## cond,                  \
-                           .incr_instr = nir_ ## incr,                  \
-                           .use_unknown_init_value = false,             \
-                           .invert_exit_condition_and_continue_branch = false}); \
-                                                                        \
-      nir_validate_shader(b.shader, "input");                           \
-                                                                        \
-      nir_loop_analyze_impl(b.impl, nir_var_all, false);                \
-                                                                        \
-      ASSERT_NE((void *)0, loop->info);                                 \
-      EXPECT_NE((void *)0, loop->info->limiting_terminator);            \
-      EXPECT_EQ(count, loop->info->max_trip_count);                     \
-      EXPECT_TRUE(loop->info->exact_trip_count_known);                  \
-                                                                        \
-      EXPECT_EQ(2, loop->info->num_induction_vars);                     \
-      ASSERT_NE((void *)0, loop->info->induction_vars);                 \
-                                                                        \
-      const nir_loop_induction_variable *const ivars =                  \
-         loop->info->induction_vars;                                    \
-                                                                        \
-      for (unsigned i = 0; i < loop->info->num_induction_vars; i++) {   \
-         EXPECT_NE((void *)0, ivars[i].def);                            \
-         ASSERT_NE((void *)0, ivars[i].init_src);                       \
-         EXPECT_TRUE(nir_src_is_const(*ivars[i].init_src));             \
-         ASSERT_NE((void *)0, ivars[i].update_src);                     \
-         EXPECT_TRUE(nir_src_is_const(ivars[i].update_src->src));       \
-      }                                                                 \
+#define KNOWN_COUNT_TEST(_init_value, _cond_value, _incr_value, cond, incr, count)       \
+   TEST_F(nir_loop_analyze_test, incr##_##cond##_known_count_##count)                    \
+   {                                                                                     \
+      nir_loop *loop =                                                                   \
+         loop_builder(&b, { .init_value = _init_value,                                   \
+                            .cond_value = _cond_value,                                   \
+                            .incr_value = _incr_value,                                   \
+                            .cond_instr = nir_##cond,                                    \
+                            .incr_instr = nir_##incr,                                    \
+                            .use_unknown_init_value = false,                             \
+                            .invert_exit_condition_and_continue_branch = false });       \
+                                                                                         \
+      nir_validate_shader(b.shader, "input");                                            \
+                                                                                         \
+      nir_loop_analyze_impl(b.impl, nir_var_all, false);                                 \
+                                                                                         \
+      ASSERT_NE((void *)0, loop->info);                                                  \
+      EXPECT_NE((void *)0, loop->info->limiting_terminator);                             \
+      EXPECT_EQ(count, loop->info->max_trip_count);                                      \
+      EXPECT_TRUE(loop->info->exact_trip_count_known);                                   \
+                                                                                         \
+      ASSERT_NE((void *)0, loop->info->induction_vars);                                  \
+      EXPECT_EQ(2, _mesa_hash_table_num_entries(loop->info->induction_vars));            \
+                                                                                         \
+      hash_table_foreach(loop->info->induction_vars, entry) {                            \
+         nir_loop_induction_variable *ivar = (nir_loop_induction_variable *)entry->data; \
+         EXPECT_NE((void *)0, ivar->basis);                                              \
+         EXPECT_NE((void *)0, ivar->def);                                                \
+         ASSERT_NE((void *)0, ivar->init_src);                                           \
+         EXPECT_TRUE(nir_src_is_const(*ivar->init_src));                                 \
+         ASSERT_NE((void *)0, ivar->update_src);                                         \
+         EXPECT_TRUE(nir_src_is_const(ivar->update_src->src));                           \
+      }                                                                                  \
    }
 
 #define INEXACT_COUNT_TEST_UNKNOWN_INIT(_cond_value, _incr_value, cond, incr, count, invert) \
-   TEST_F(nir_loop_analyze_test, incr ## _ ## cond ## _inexact_count_ ## count ## _invert_ ## invert)    \
-   {                                                                    \
-      nir_loop *loop =                                                  \
-         loop_builder(&b, {.init_value = 0,                             \
-                           .cond_value = _cond_value,                   \
-                           .incr_value = _incr_value,                   \
-                           .cond_instr = nir_ ## cond,                  \
-                           .incr_instr = nir_ ## incr,                  \
-                           .use_unknown_init_value = true,              \
-                           .invert_exit_condition_and_continue_branch = invert }); \
-                                                                        \
-      nir_validate_shader(b.shader, "input");                           \
-                                                                        \
-      nir_loop_analyze_impl(b.impl, nir_var_all, false);                \
-                                                                        \
-      ASSERT_NE((void *)0, loop->info);                                 \
-      EXPECT_NE((void *)0, loop->info->limiting_terminator);            \
-      EXPECT_EQ(count, loop->info->max_trip_count);                     \
-      EXPECT_FALSE(loop->info->exact_trip_count_known);                 \
-                                                                        \
-      EXPECT_EQ(2, loop->info->num_induction_vars);                     \
-      ASSERT_NE((void *)0, loop->info->induction_vars);                 \
-                                                                        \
-      const nir_loop_induction_variable *const ivars =                  \
-         loop->info->induction_vars;                                    \
-                                                                        \
-      for (unsigned i = 0; i < loop->info->num_induction_vars; i++) {   \
-         EXPECT_NE((void *)0, ivars[i].def);                            \
-         ASSERT_NE((void *)0, ivars[i].init_src);                       \
-         EXPECT_FALSE(nir_src_is_const(*ivars[i].init_src));            \
-         ASSERT_NE((void *)0, ivars[i].update_src);                     \
-         EXPECT_TRUE(nir_src_is_const(ivars[i].update_src->src));       \
-      }                                                                 \
+   TEST_F(nir_loop_analyze_test, incr##_##cond##_inexact_count_##count##_invert_##invert)    \
+   {                                                                                         \
+      nir_loop *loop =                                                                       \
+         loop_builder(&b, { .init_value = 0,                                                 \
+                            .cond_value = _cond_value,                                       \
+                            .incr_value = _incr_value,                                       \
+                            .cond_instr = nir_##cond,                                        \
+                            .incr_instr = nir_##incr,                                        \
+                            .use_unknown_init_value = true,                                  \
+                            .invert_exit_condition_and_continue_branch = invert });          \
+                                                                                             \
+      nir_validate_shader(b.shader, "input");                                                \
+                                                                                             \
+      nir_loop_analyze_impl(b.impl, nir_var_all, false);                                     \
+                                                                                             \
+      ASSERT_NE((void *)0, loop->info);                                                      \
+      EXPECT_NE((void *)0, loop->info->limiting_terminator);                                 \
+      EXPECT_EQ(count, loop->info->max_trip_count);                                          \
+      EXPECT_FALSE(loop->info->exact_trip_count_known);                                      \
+                                                                                             \
+      ASSERT_NE((void *)0, loop->info->induction_vars);                                      \
+      EXPECT_EQ(2, _mesa_hash_table_num_entries(loop->info->induction_vars));                \
+                                                                                             \
+      hash_table_foreach(loop->info->induction_vars, entry) {                                \
+         nir_loop_induction_variable *ivar = (nir_loop_induction_variable *)entry->data;     \
+         EXPECT_NE((void *)0, ivar->basis);                                                  \
+         EXPECT_NE((void *)0, ivar->def);                                                    \
+         ASSERT_NE((void *)0, ivar->init_src);                                               \
+         EXPECT_FALSE(nir_src_is_const(*ivar->init_src));                                    \
+         ASSERT_NE((void *)0, ivar->update_src);                                             \
+         EXPECT_TRUE(nir_src_is_const(ivar->update_src->src));                               \
+      }                                                                                      \
    }
 
-#define INEXACT_COUNT_TEST(_init_value, _cond_value, _incr_value, cond, incr, count) \
-   TEST_F(nir_loop_analyze_test, incr ## _ ## cond ## _inexact_count_ ## count)    \
-   {                                                                    \
-      nir_loop *loop =                                                  \
-         loop_builder(&b, {.init_value = _init_value,                   \
-                           .cond_value = _cond_value,                   \
-                           .incr_value = _incr_value,                   \
-                           .cond_instr = nir_ ## cond,                  \
-                           .incr_instr = nir_ ## incr,                  \
-                           .use_unknown_init_value = false,             \
-                           .invert_exit_condition_and_continue_branch = false}); \
-                                                                        \
-      nir_validate_shader(b.shader, "input");                           \
-                                                                        \
-      nir_loop_analyze_impl(b.impl, nir_var_all, false);                \
-                                                                        \
-      ASSERT_NE((void *)0, loop->info);                                 \
-      EXPECT_NE((void *)0, loop->info->limiting_terminator);            \
-      EXPECT_EQ(count, loop->info->max_trip_count);                     \
-      EXPECT_FALSE(loop->info->exact_trip_count_known);                 \
-                                                                        \
-      EXPECT_EQ(2, loop->info->num_induction_vars);                     \
-      ASSERT_NE((void *)0, loop->info->induction_vars);                 \
-                                                                        \
-      const nir_loop_induction_variable *const ivars =                  \
-         loop->info->induction_vars;                                    \
-                                                                        \
-      for (unsigned i = 0; i < loop->info->num_induction_vars; i++) {   \
-         EXPECT_NE((void *)0, ivars[i].def);                            \
-         ASSERT_NE((void *)0, ivars[i].init_src);                       \
-         EXPECT_TRUE(nir_src_is_const(*ivars[i].init_src));             \
-         ASSERT_NE((void *)0, ivars[i].update_src);                     \
-         EXPECT_TRUE(nir_src_is_const(ivars[i].update_src->src));       \
-      }                                                                 \
+#define INEXACT_COUNT_TEST(_init_value, _cond_value, _incr_value, cond, incr, count)     \
+   TEST_F(nir_loop_analyze_test, incr##_##cond##_inexact_count_##count)                  \
+   {                                                                                     \
+      nir_loop *loop =                                                                   \
+         loop_builder(&b, { .init_value = _init_value,                                   \
+                            .cond_value = _cond_value,                                   \
+                            .incr_value = _incr_value,                                   \
+                            .cond_instr = nir_##cond,                                    \
+                            .incr_instr = nir_##incr,                                    \
+                            .use_unknown_init_value = false,                             \
+                            .invert_exit_condition_and_continue_branch = false });       \
+                                                                                         \
+      nir_validate_shader(b.shader, "input");                                            \
+                                                                                         \
+      nir_loop_analyze_impl(b.impl, nir_var_all, false);                                 \
+                                                                                         \
+      ASSERT_NE((void *)0, loop->info);                                                  \
+      EXPECT_NE((void *)0, loop->info->limiting_terminator);                             \
+      EXPECT_EQ(count, loop->info->max_trip_count);                                      \
+      EXPECT_FALSE(loop->info->exact_trip_count_known);                                  \
+                                                                                         \
+      ASSERT_NE((void *)0, loop->info->induction_vars);                                  \
+      EXPECT_EQ(2, _mesa_hash_table_num_entries(loop->info->induction_vars));            \
+                                                                                         \
+      hash_table_foreach(loop->info->induction_vars, entry) {                            \
+         nir_loop_induction_variable *ivar = (nir_loop_induction_variable *)entry->data; \
+         EXPECT_NE((void *)0, ivar->basis);                                              \
+         EXPECT_NE((void *)0, ivar->def);                                                \
+         ASSERT_NE((void *)0, ivar->init_src);                                           \
+         EXPECT_TRUE(nir_src_is_const(*ivar->init_src));                                 \
+         ASSERT_NE((void *)0, ivar->update_src);                                         \
+         EXPECT_TRUE(nir_src_is_const(ivar->update_src->src));                           \
+      }                                                                                  \
    }
 
 #define UNKNOWN_COUNT_TEST(_init_value, _cond_value, _incr_value, cond, incr) \
@@ -481,37 +479,36 @@ INOT_COMPARE(ilt_imin_rev)
    }
 
 #define KNOWN_COUNT_TEST_INVERT(_init_value, _incr_value, _cond_value, cond, incr, count) \
-   TEST_F(nir_loop_analyze_test, incr ## _ ## cond ## _known_count_invert_ ## count)   \
-   {                                                                    \
-      nir_loop *loop =                                                  \
-         loop_builder_invert(&b, {.init_value = _init_value,            \
-                                  .incr_value = _incr_value,            \
-                                  .cond_value = _cond_value,            \
-                                  .cond_instr = nir_ ## cond,           \
-                                  .incr_instr = nir_ ## incr});         \
-                                                                        \
-      nir_validate_shader(b.shader, "input");                           \
-                                                                        \
-      nir_loop_analyze_impl(b.impl, nir_var_all, false);                \
-                                                                        \
-      ASSERT_NE((void *)0, loop->info);                                 \
-      EXPECT_NE((void *)0, loop->info->limiting_terminator);            \
-      EXPECT_EQ(count, loop->info->max_trip_count);                     \
-      EXPECT_TRUE(loop->info->exact_trip_count_known);                  \
-                                                                        \
-      EXPECT_EQ(2, loop->info->num_induction_vars);                     \
-      ASSERT_NE((void *)0, loop->info->induction_vars);                 \
-                                                                        \
-      const nir_loop_induction_variable *const ivars =                  \
-         loop->info->induction_vars;                                    \
-                                                                        \
-      for (unsigned i = 0; i < loop->info->num_induction_vars; i++) {   \
-         EXPECT_NE((void *)0, ivars[i].def);                            \
-         ASSERT_NE((void *)0, ivars[i].init_src);                       \
-         EXPECT_TRUE(nir_src_is_const(*ivars[i].init_src));             \
-         ASSERT_NE((void *)0, ivars[i].update_src);                     \
-         EXPECT_TRUE(nir_src_is_const(ivars[i].update_src->src));       \
-      }                                                                 \
+   TEST_F(nir_loop_analyze_test, incr##_##cond##_known_count_invert_##count)              \
+   {                                                                                      \
+      nir_loop *loop =                                                                    \
+         loop_builder_invert(&b, { .init_value = _init_value,                             \
+                                   .incr_value = _incr_value,                             \
+                                   .cond_value = _cond_value,                             \
+                                   .cond_instr = nir_##cond,                              \
+                                   .incr_instr = nir_##incr });                           \
+                                                                                          \
+      nir_validate_shader(b.shader, "input");                                             \
+                                                                                          \
+      nir_loop_analyze_impl(b.impl, nir_var_all, false);                                  \
+                                                                                          \
+      ASSERT_NE((void *)0, loop->info);                                                   \
+      EXPECT_NE((void *)0, loop->info->limiting_terminator);                              \
+      EXPECT_EQ(count, loop->info->max_trip_count);                                       \
+      EXPECT_TRUE(loop->info->exact_trip_count_known);                                    \
+                                                                                          \
+      ASSERT_NE((void *)0, loop->info->induction_vars);                                   \
+      EXPECT_EQ(2, _mesa_hash_table_num_entries(loop->info->induction_vars));             \
+                                                                                          \
+      hash_table_foreach(loop->info->induction_vars, entry) {                             \
+         nir_loop_induction_variable *ivar = (nir_loop_induction_variable *)entry->data;  \
+         EXPECT_NE((void *)0, ivar->basis);                                               \
+         EXPECT_NE((void *)0, ivar->def);                                                 \
+         ASSERT_NE((void *)0, ivar->init_src);                                            \
+         EXPECT_TRUE(nir_src_is_const(*ivar->init_src));                                  \
+         ASSERT_NE((void *)0, ivar->update_src);                                          \
+         EXPECT_TRUE(nir_src_is_const(ivar->update_src->src));                            \
+      }                                                                                   \
    }
 
 #define UNKNOWN_COUNT_TEST_INVERT(_init_value, _incr_value, _cond_value, cond, incr) \
