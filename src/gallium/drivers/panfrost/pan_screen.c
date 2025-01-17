@@ -557,6 +557,139 @@ panfrost_get_compute_param(struct pipe_screen *pscreen,
 }
 
 static void
+panfrost_init_shader_caps(struct panfrost_screen *screen)
+{
+   struct panfrost_device *dev = &screen->dev;
+   bool is_nofp16 = dev->debug & PAN_DBG_NOFP16;
+
+   for (unsigned i = 0; i <= PIPE_SHADER_COMPUTE; i++) {
+      struct pipe_shader_caps *caps =
+         (struct pipe_shader_caps *)&screen->base.shader_caps[i];
+
+      switch (i) {
+      case PIPE_SHADER_VERTEX:
+      case PIPE_SHADER_FRAGMENT:
+      case PIPE_SHADER_COMPUTE:
+         break;
+      default:
+         continue;
+      }
+
+      /* We only allow observable side effects (memory writes) in compute and
+       * fragment shaders. Side effects in the geometry pipeline cause
+       * trouble with IDVS and conflict with our transform feedback lowering.
+       */
+      bool allow_side_effects = (i != PIPE_SHADER_VERTEX);
+
+      caps->max_instructions =
+      caps->max_alu_instructions =
+      caps->max_tex_instructions =
+      caps->max_tex_indirections = 16384; /* arbitrary */
+      caps->max_control_flow_depth = 1024; /* arbitrary */
+      /* Used as ABI on Midgard */
+      caps->max_inputs = 16;
+      caps->max_outputs = i == PIPE_SHADER_FRAGMENT ? 8 : PIPE_MAX_ATTRIBS;
+      caps->max_temps = 256; /* arbitrary */
+      caps->max_const_buffer0_size = 16 * 1024 * sizeof(float);
+      STATIC_ASSERT(PAN_MAX_CONST_BUFFERS < 0x100);
+      caps->max_const_buffers = PAN_MAX_CONST_BUFFERS;
+      caps->indirect_temp_addr = dev->arch >= 6;
+      caps->indirect_const_addr = true;
+      caps->integers = true;
+      /* The Bifrost compiler supports full 16-bit. Midgard could but int16
+       * support is untested, so restrict INT16 to Bifrost. Midgard
+       * architecturally cannot support fp16 derivatives. */
+      caps->fp16 =
+      caps->glsl_16bit_consts = !is_nofp16;
+      caps->fp16_derivatives =
+      caps->fp16_const_buffers = dev->arch >= 6 && !is_nofp16;
+      /* Blocked on https://gitlab.freedesktop.org/mesa/mesa/-/issues/6075 */
+      caps->int16 = false;
+      STATIC_ASSERT(PIPE_MAX_SAMPLERS < 0x10000);
+      caps->max_texture_samplers = PIPE_MAX_SAMPLERS;
+      STATIC_ASSERT(PIPE_MAX_SHADER_SAMPLER_VIEWS < 0x10000);
+      caps->max_sampler_views = PIPE_MAX_SHADER_SAMPLER_VIEWS;
+      caps->supported_irs = (1 << PIPE_SHADER_IR_NIR);
+      caps->max_shader_buffers = allow_side_effects ? 16 : 0;
+      caps->max_shader_images = allow_side_effects ? PIPE_MAX_SHADER_IMAGES : 0;
+   }
+}
+
+static void
+panfrost_init_compute_caps(struct panfrost_screen *screen)
+{
+   struct panfrost_device *dev = &screen->dev;
+
+   struct pipe_compute_caps *caps =
+      (struct pipe_compute_caps *)&screen->base.compute_caps;
+
+   caps->address_bits = 64;
+
+   snprintf(caps->ir_target, sizeof(caps->ir_target), "panfrost");
+
+   caps->grid_dimension = 3;
+
+   caps->max_grid_size[0] =
+   caps->max_grid_size[1] =
+   caps->max_grid_size[2] = 65535;
+
+   /* Unpredictable behaviour at larger sizes. Mali-G52 advertises
+    * 384x384x384.
+    *
+    * On Midgard, we don't allow more than 128 threads in each
+    * direction to match PIPE_COMPUTE_CAP_MAX_THREADS_PER_BLOCK.
+    * That still exceeds the minimum-maximum.
+    */
+   caps->max_block_size[0] =
+   caps->max_block_size[1] =
+   caps->max_block_size[2] = dev->arch >= 6 ? 256 : 128;
+
+   /* On Bifrost and newer, all GPUs can support at least 256 threads
+    * regardless of register usage, so we report 256.
+    *
+    * On Midgard, with maximum register usage, the maximum
+    * thread count is only 64. We would like to report 64 here, but
+    * the GLES3.1 spec minimum is 128, so we report 128 and limit
+    * the register allocation of affected compute kernels.
+    */
+   caps->max_threads_per_block = dev->arch >= 6 ? 256 : 128;
+
+   uint64_t total_ram;
+   if (!os_get_total_physical_memory(&total_ram))
+      total_ram = 0;
+
+   /* We don't want to burn too much ram with the GPU. If the user has 4GiB
+    * or less, we use at most half. If they have more than 4GiB, we use 3/4.
+    */
+   uint64_t available_ram;
+   if (total_ram <= 4ull * 1024 * 1024 * 1024)
+      available_ram = total_ram / 2;
+   else
+      available_ram = total_ram * 3 / 4;
+
+   /* 48bit address space max, with the lower 32MB reserved. We clamp
+    * things so it matches kmod VA range limitations.
+    */
+   uint64_t user_va_start =
+      panfrost_clamp_to_usable_va_range(dev->kmod.dev, PAN_VA_USER_START);
+   uint64_t user_va_end =
+      panfrost_clamp_to_usable_va_range(dev->kmod.dev, PAN_VA_USER_END);
+
+   /* We cannot support more than the VA limit */
+   caps->max_global_size =
+   caps->max_mem_alloc_size = MIN2(available_ram, user_va_end - user_va_start);
+
+   caps->max_local_size = 32768;
+   caps->max_private_size =
+   caps->max_input_size = 4096;
+   caps->max_clock_frequency = 800; /* MHz -- TODO */
+   caps->max_compute_units = dev->core_count;
+   caps->images_supported = true;
+   caps->subgroup_sizes = pan_subgroup_size(dev->arch);
+   caps->max_variable_threads_per_block = 1024; // TODO
+}
+
+static void
 panfrost_init_screen_caps(struct panfrost_screen *screen)
 {
    struct pipe_caps *caps = (struct pipe_caps *)&screen->base.caps;
@@ -961,6 +1094,8 @@ panfrost_create_screen(int fd, const struct pipe_screen_config *config,
    pan_blend_shader_cache_init(&dev->blend_shaders,
                                panfrost_device_gpu_id(dev));
 
+   panfrost_init_shader_caps(screen);
+   panfrost_init_compute_caps(screen);
    panfrost_init_screen_caps(screen);
 
    panfrost_disk_cache_init(screen);
