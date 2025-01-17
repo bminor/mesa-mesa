@@ -43,18 +43,6 @@ protected:
    fs_builder bld;
 };
 
-class copy_propagation_fs_visitor : public fs_visitor
-{
-public:
-   copy_propagation_fs_visitor(struct brw_compiler *compiler,
-                               struct brw_compile_params *params,
-                               struct brw_wm_prog_data *prog_data,
-                               nir_shader *shader)
-      : fs_visitor(compiler, params, NULL,
-                   &prog_data->base, shader, 8, false, false) {}
-};
-
-
 copy_propagation_test::copy_propagation_test()
    : bld(NULL, 0)
 {
@@ -70,7 +58,8 @@ copy_propagation_test::copy_propagation_test()
    nir_shader *shader =
       nir_shader_create(ctx, MESA_SHADER_FRAGMENT, NULL, NULL);
 
-   v = new copy_propagation_fs_visitor(compiler, &params, prog_data, shader);
+   v = new fs_visitor(compiler, &params, NULL, &prog_data->base, shader,
+                      8, false, false);
 
    bld = fs_builder(v).at_end();
 
