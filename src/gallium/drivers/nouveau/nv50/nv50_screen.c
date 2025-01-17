@@ -227,6 +227,71 @@ nv50_screen_get_compute_param(struct pipe_screen *pscreen,
 }
 
 static void
+nv50_init_shader_caps(struct nv50_screen *screen)
+{
+   for (unsigned i = 0; i <= PIPE_SHADER_COMPUTE; i++) {
+      struct pipe_shader_caps *caps =
+         (struct pipe_shader_caps *)&screen->base.base.shader_caps[i];
+
+      if (i == PIPE_SHADER_TESS_CTRL || i == PIPE_SHADER_TESS_EVAL)
+         continue;
+
+      caps->max_instructions =
+      caps->max_alu_instructions =
+      caps->max_tex_instructions =
+      caps->max_tex_indirections = 16384;
+      caps->max_control_flow_depth = 4;
+      caps->max_inputs = i == PIPE_SHADER_VERTEX ? 32 : 15;
+      caps->max_outputs = 16;
+      caps->max_const_buffer0_size = 65536;
+      caps->max_const_buffers = NV50_MAX_PIPE_CONSTBUFS;
+      caps->indirect_temp_addr = true;
+      caps->indirect_const_addr = true;
+      caps->max_temps = screen->max_tls_space / ONE_TEMP_SIZE;
+      caps->cont_supported = true;
+      caps->tgsi_sqrt_supported = true;
+      caps->integers = true;
+      caps->max_texture_samplers =
+      /* The chip could handle more sampler views than samplers */
+      caps->max_sampler_views = MIN2(16, PIPE_MAX_SAMPLERS);
+      caps->max_shader_buffers =
+      caps->max_shader_images = i == PIPE_SHADER_COMPUTE ? NV50_MAX_GLOBALS - 1 : 0;
+      caps->supported_irs = 1 << PIPE_SHADER_IR_NIR;
+   }
+}
+
+static void
+nv50_init_compute_caps(struct nv50_screen *screen)
+{
+   struct nouveau_device *dev = screen->base.device;
+
+   struct pipe_compute_caps *caps =
+      (struct pipe_compute_caps *)&screen->base.base.compute_caps;
+
+   caps->grid_dimension = 3;
+
+   caps->max_grid_size[0] =
+   caps->max_grid_size[1] =
+   caps->max_grid_size[2] = 65535;
+
+   caps->max_block_size[0] = 512;
+   caps->max_block_size[1] = 512;
+   caps->max_block_size[2] = 64;
+
+   caps->max_threads_per_block = 512;
+
+   caps->max_mem_alloc_size =
+   caps->max_global_size = nouveau_device_get_global_mem_size(dev); /* g0-15[] */
+   caps->max_local_size = 16 << 10; /* s[] */
+   caps->max_private_size = 16 << 10; /* l[] */
+   caps->max_input_size = 4096; /* c[], arbitrary limit */
+   caps->subgroup_sizes = 32;
+   caps->max_compute_units = screen->mp_count;
+   caps->max_clock_frequency = 512; /* FIXME: arbitrary limit */
+   caps->address_bits = 32;
+}
+
+static void
 nv50_init_screen_caps(struct nv50_screen *screen)
 {
    struct pipe_caps *caps = (struct pipe_caps *)&screen->base.base.caps;
@@ -896,8 +961,6 @@ nv50_screen_create(struct nouveau_device *dev)
    }
    screen->base.class_3d = tesla_class;
 
-   nv50_init_screen_caps(screen);
-
    ret = nouveau_object_new(chan, 0xbeef5097, tesla_class,
                             NULL, 0, &screen->tesla);
    if (ret) {
@@ -987,6 +1050,10 @@ nv50_screen_create(struct nouveau_device *dev)
 
    // submit all initial state
    PUSH_KICK(screen->base.pushbuf);
+
+   nv50_init_shader_caps(screen);
+   nv50_init_compute_caps(screen);
+   nv50_init_screen_caps(screen);
 
    return &screen->base;
 
