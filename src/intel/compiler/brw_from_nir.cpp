@@ -4967,7 +4967,7 @@ increment_a64_address(const brw_builder &_bld, brw_reg address, uint32_t v, bool
 static brw_reg
 emit_fence(const brw_builder &bld, enum opcode opcode,
            uint8_t sfid, uint32_t desc,
-           bool commit_enable, uint8_t bti)
+           bool commit_enable)
 {
    const struct intel_device_info *devinfo = bld.shader->devinfo;
 
@@ -4976,8 +4976,7 @@ emit_fence(const brw_builder &bld, enum opcode opcode,
 
    brw_reg dst = bld.vgrf(BRW_TYPE_UD);
    brw_inst *fence = bld.emit(opcode, dst, brw_vec8_grf(0, 0),
-                             brw_imm_ud(commit_enable),
-                             brw_imm_ud(bti));
+                              brw_imm_ud(commit_enable));
    fence->sfid = sfid;
    fence->desc = desc;
    fence->size_written = commit_enable ? REG_SIZE * reg_unit(devinfo) : 0;
@@ -5993,15 +5992,13 @@ brw_from_nir_emit_intrinsic(nir_to_brw_state &ntb,
          if (ugm_fence) {
             fence_regs[fence_regs_count++] =
                emit_fence(ubld1, opcode, GFX12_SFID_UGM, desc,
-                          true /* commit_enable */,
-                          0 /* bti; ignored for LSC */);
+                          true /* commit_enable */);
          }
 
          if (tgm_fence) {
             fence_regs[fence_regs_count++] =
                emit_fence(ubld1, opcode, GFX12_SFID_TGM, desc,
-                          true /* commit_enable */,
-                          0 /* bti; ignored for LSC */);
+                          true /* commit_enable */);
          }
 
          if (slm_fence) {
@@ -6016,31 +6013,31 @@ brw_from_nir_emit_intrinsic(nir_to_brw_state &ntb,
             }
             fence_regs[fence_regs_count++] =
                emit_fence(ubld1, opcode, GFX12_SFID_SLM, desc,
-                          true /* commit_enable */,
-                          0 /* BTI; ignored for LSC */);
+                          true /* commit_enable */);
          }
 
          if (urb_fence) {
             assert(opcode == SHADER_OPCODE_MEMORY_FENCE);
             fence_regs[fence_regs_count++] =
                emit_fence(ubld1, opcode, BRW_SFID_URB, desc,
-                          true /* commit_enable */,
-                          0 /* BTI; ignored for LSC */);
+                          true /* commit_enable */);
          }
       } else if (devinfo->ver >= 11) {
          if (tgm_fence || ugm_fence || urb_fence) {
             fence_regs[fence_regs_count++] =
                emit_fence(ubld1, opcode, GFX7_SFID_DATAPORT_DATA_CACHE, 0,
-                          true /* commit_enable HSD ES # 1404612949 */,
-                          0 /* BTI = 0 means data cache */);
+                          true /* commit_enable HSD ES # 1404612949 */);
          }
 
          if (slm_fence) {
             assert(opcode == SHADER_OPCODE_MEMORY_FENCE);
+            /* We use the "SLM" SFID here even though it doesn't exist;
+             * the logical send lowering will replace it with the SLM
+             * special binding table index and the normal DATA_CACHE SFID.
+             */
             fence_regs[fence_regs_count++] =
-               emit_fence(ubld1, opcode, GFX7_SFID_DATAPORT_DATA_CACHE, 0,
-                          true /* commit_enable HSD ES # 1404612949 */,
-                          GFX7_BTI_SLM);
+               emit_fence(ubld1, opcode, GFX12_SFID_SLM, 0,
+                          true /* commit_enable HSD ES # 1404612949 */);
          }
       } else {
          /* Simulation also complains on Gfx9 if we do not enable commit.
@@ -6052,7 +6049,7 @@ brw_from_nir_emit_intrinsic(nir_to_brw_state &ntb,
          if (tgm_fence || ugm_fence || slm_fence || urb_fence) {
             fence_regs[fence_regs_count++] =
                emit_fence(ubld1, opcode, GFX7_SFID_DATAPORT_DATA_CACHE, 0,
-                          commit_enable, 0 /* BTI */);
+                          commit_enable);
          }
       }
 

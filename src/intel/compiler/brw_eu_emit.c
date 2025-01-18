@@ -1692,13 +1692,24 @@ static void
 brw_set_memory_fence_message(struct brw_codegen *p,
                              struct brw_eu_inst *insn,
                              enum brw_message_target sfid,
-                             bool commit_enable,
-                             unsigned bti)
+                             bool commit_enable)
 {
    const struct intel_device_info *devinfo = p->devinfo;
 
    brw_set_desc(p, insn, brw_message_desc(
                    devinfo, 1, (commit_enable ? 1 : 0), true), false);
+
+   unsigned bti = 0;
+   if (sfid == GFX12_SFID_SLM) {
+      assert(devinfo->ver >= 11);
+
+      /* This SFID doesn't exist on Gfx11-12.0, but we use it to represent
+       * SLM fences, and map back here to the way Gfx11-12 represented that:
+       * a special "SLM" binding table index and the data cache SFID.
+       */
+      sfid = GFX7_SFID_DATAPORT_DATA_CACHE;
+      bti = GFX7_BTI_SLM;
+   }
 
    brw_eu_inst_set_sfid(devinfo, insn, sfid);
 
@@ -1716,7 +1727,6 @@ brw_set_memory_fence_message(struct brw_codegen *p,
    if (commit_enable)
       brw_eu_inst_set_dp_msg_control(devinfo, insn, 1 << 5);
 
-   assert(devinfo->ver >= 11 || bti == 0);
    brw_eu_inst_set_binding_table_index(devinfo, insn, bti);
 }
 
@@ -1780,8 +1790,7 @@ brw_memory_fence(struct brw_codegen *p,
                  enum opcode send_op,
                  enum brw_message_target sfid,
                  uint32_t desc,
-                 bool commit_enable,
-                 unsigned bti)
+                 bool commit_enable)
 {
    const struct intel_device_info *devinfo = p->devinfo;
 
@@ -1801,7 +1810,7 @@ brw_memory_fence(struct brw_codegen *p,
    if (devinfo->has_lsc)
       gfx12_set_memory_fence_message(p, insn, sfid, desc);
    else
-      brw_set_memory_fence_message(p, insn, sfid, commit_enable, bti);
+      brw_set_memory_fence_message(p, insn, sfid, commit_enable);
 }
 
 void

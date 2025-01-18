@@ -1196,7 +1196,6 @@ brw_generator::generate_code(const cfg_t *cfg, int dispatch_width,
       case SHADER_OPCODE_INTERLOCK:
       case SHADER_OPCODE_MEMORY_FENCE: {
          assert(src[1].file == IMM);
-         assert(src[2].file == IMM);
 
          const enum opcode send_op = inst->opcode == SHADER_OPCODE_INTERLOCK ?
             BRW_OPCODE_SENDC : BRW_OPCODE_SEND;
@@ -1204,8 +1203,7 @@ brw_generator::generate_code(const cfg_t *cfg, int dispatch_width,
          brw_memory_fence(p, dst, src[0], send_op,
                           brw_message_target(inst->sfid),
                           inst->desc,
-                          /* commit_enable */ src[1].ud,
-                          /* bti */ src[2].ud);
+                          /* commit_enable */ src[1].ud);
          send_count++;
          break;
       }

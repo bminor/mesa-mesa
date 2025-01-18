@@ -337,10 +337,6 @@ enum opcode {
     * Source 0: Must be register g0, used as header.
     * Source 1: Immediate bool to indicate whether control is returned to the
     *           thread only after the fence has been honored.
-    * Source 2: Immediate byte indicating which memory to fence.  Zero means
-    *           global memory; GFX7_BTI_SLM means SLM (for Gfx11+ only).
-    *
-    * Vec4 backend only uses Source 0.
     */
    SHADER_OPCODE_MEMORY_FENCE,
 

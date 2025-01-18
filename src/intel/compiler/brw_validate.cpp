@@ -318,6 +318,8 @@ brw_validate(const fs_visitor &s)
          case SHADER_OPCODE_INTERLOCK:
             fsv_assert(inst->exec_size == 1);
             fsv_assert(inst->force_writemask_all);
+            fsv_assert(inst->sources == 2);
+            fsv_assert(is_ud_imm(inst->src[1])); /* commit enable */
             break;
 
          default:
