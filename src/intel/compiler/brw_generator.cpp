@@ -750,6 +750,7 @@ brw_generator::generate_code(const brw_shader &s,
    bool is_accum_used = false;
 
    struct disasm_info *disasm_info = disasm_initialize(p->isa, s.cfg);
+   const bool annotate = debug_flag || params->archiver;
 
    brw_inst *prev_inst = NULL;
    foreach_block_and_inst (block, brw_inst, inst, s.cfg) {
@@ -825,7 +826,7 @@ brw_generator::generate_code(const brw_shader &s,
          swsb = tgl_swsb_dst_dep(swsb, 1);
       }
 
-      if (unlikely(debug_flag))
+      if (unlikely(annotate))
          disasm_annotate(disasm_info, inst, p->next_insn_offset);
 
       if (devinfo->ver >= 20 && inst->group % 8 != 0) {
@@ -1192,7 +1193,7 @@ brw_generator::generate_code(const brw_shader &s,
       case FS_OPCODE_SCHEDULING_FENCE:
          if (inst->sources == 0 && swsb.regdist == 0 &&
                                    swsb.mode == TGL_SBID_NULL) {
-            if (unlikely(debug_flag))
+            if (unlikely(annotate))
                disasm_info->use_tail = true;
             break;
          }
@@ -1303,7 +1304,7 @@ brw_generator::generate_code(const brw_shader &s,
           * we've emitted any discards.  If not, this will emit no code.
           */
          if (!patch_halt_jumps()) {
-            if (unlikely(debug_flag)) {
+            if (unlikely(annotate)) {
                disasm_info->use_tail = true;
             }
          }
@@ -1413,7 +1414,8 @@ brw_generator::generate_code(const brw_shader &s,
    char sha1buf[41];
 
    auto override_path = debug_get_option_shader_bin_override_path();
-   if (unlikely(debug_flag || dump_shader_bin || override_path != NULL)) {
+   if (unlikely(debug_flag || dump_shader_bin || override_path != NULL ||
+                params->archiver)) {
       _mesa_sha1_compute(p->store + start_offset / sizeof(brw_eu_inst),
                          after_size, sha1);
       _mesa_sha1_format(sha1buf, sha1);
@@ -1438,10 +1440,22 @@ brw_generator::generate_code(const brw_shader &s,
       return start_offset;
    }
 
-   if (unlikely(debug_flag)) {
-      if (!intel_shader_dump_filter ||
-          (intel_shader_dump_filter && intel_shader_dump_filter == params->source_hash)) {
-         fprintf(stderr, "Native code for %s (src_hash 0x%08x) (sha1 %s)\n"
+   if (unlikely(debug_flag || params->archiver)) {
+      FILE *files[2] = { NULL, NULL };
+
+      if (debug_flag && (!intel_shader_dump_filter ||
+                         (intel_shader_dump_filter && intel_shader_dump_filter == params->source_hash)))
+         files[0] = stderr;
+
+      if (params->archiver) {
+         const char *filename =
+            ralloc_asprintf(mem_ctx, "ASM%d/0", dispatch_width);
+         files[1] = debug_archiver_start_file(params->archiver, filename);
+      }
+
+      for (unsigned i = 0; i < ARRAY_SIZE(files); i++) {
+         if (!files[i]) continue;
+         fprintf(files[i], "Native code for %s (src_hash 0x%08x) (sha1 %s)\n"
                  "SIMD%d shader: %d instructions. %d loops. %u cycles. "
                  "%d:%d spills:fills, %u sends, "
                  "scheduled with mode %s. "
@@ -1461,10 +1475,16 @@ brw_generator::generate_code(const brw_shader &s,
                  before_size, after_size,
                  100.0f * (before_size - after_size) / before_size);
          dump_assembly(p->store, start_offset, p->next_insn_offset,
-                       disasm_info, perf.block_latency, stderr);
+                       disasm_info, perf.block_latency, files[i]);
+      }
+
+      if (params->archiver) {
+         debug_archiver_finish_file(params->archiver);
       }
    }
+
    ralloc_free(disasm_info);
+
 #ifndef NDEBUG
    if (!validated && !debug_flag) {
       fprintf(stderr,
