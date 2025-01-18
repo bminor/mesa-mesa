@@ -76,24 +76,35 @@ static nir_instr *
 get_intrinsic_resource(nir_intrinsic_instr *intr)
 {
    /* This is also the list of intrinsics that are grouped. */
-   /* load_ubo is ignored because it's usually cheap. */
    switch (intr->intrinsic) {
+   /* Image loads. */
    case nir_intrinsic_image_load:
    case nir_intrinsic_image_deref_load:
+   case nir_intrinsic_bindless_image_load:
    case nir_intrinsic_image_sparse_load:
    case nir_intrinsic_image_deref_sparse_load:
-   /* Group image_size too because it has the same latency as cache hits. */
-   case nir_intrinsic_image_samples_identical:
-   case nir_intrinsic_image_deref_samples_identical:
-   case nir_intrinsic_bindless_image_samples_identical:
-   case nir_intrinsic_image_size:
-   case nir_intrinsic_image_deref_size:
-   case nir_intrinsic_bindless_image_load:
    case nir_intrinsic_bindless_image_sparse_load:
-   case nir_intrinsic_load_ssbo:
+   /* Fragment mask loads. (samples_identical also loads it) */
    case nir_intrinsic_image_fragment_mask_load_amd:
    case nir_intrinsic_image_deref_fragment_mask_load_amd:
    case nir_intrinsic_bindless_image_fragment_mask_load_amd:
+   case nir_intrinsic_image_samples_identical:
+   case nir_intrinsic_image_deref_samples_identical:
+   case nir_intrinsic_bindless_image_samples_identical:
+   /* Queries */
+   case nir_intrinsic_image_size:
+   case nir_intrinsic_image_deref_size:
+   case nir_intrinsic_bindless_image_size:
+   case nir_intrinsic_image_samples:
+   case nir_intrinsic_image_deref_samples:
+   case nir_intrinsic_bindless_image_samples:
+   case nir_intrinsic_image_levels:
+   case nir_intrinsic_image_deref_levels:
+   case nir_intrinsic_bindless_image_levels:
+   /* Other loads. */
+   /* load_ubo is ignored because it's usually cheap. */
+   case nir_intrinsic_load_ssbo:
+   case nir_intrinsic_load_global:
       return intr->src[0].ssa->parent_instr;
    default:
       return NULL;
