@@ -895,6 +895,40 @@ static pco_instr *trans_alu(trans_ctx *tctx, nir_alu_instr *alu)
       instr = pco_fmax(&tctx->b, dest, src[0], src[1]);
       break;
 
+   case nir_op_pack_half_2x16:
+      instr = pco_pck(&tctx->b,
+                      dest,
+                      src[0],
+                      .rpt = 2,
+                      .pck_fmt = PCO_PCK_FMT_F16F16);
+      break;
+
+   case nir_op_unpack_half_2x16:
+      instr = pco_unpck(&tctx->b,
+                        dest,
+                        pco_ref_elem(src[0], 0),
+                        .rpt = 2,
+                        .pck_fmt = PCO_PCK_FMT_F16F16);
+      break;
+
+   case nir_op_pack_snorm_4x8:
+      instr = pco_pck(&tctx->b,
+                      dest,
+                      src[0],
+                      .rpt = 4,
+                      .pck_fmt = PCO_PCK_FMT_S8888,
+                      .scale = true);
+      break;
+
+   case nir_op_unpack_snorm_4x8:
+      instr = pco_unpck(&tctx->b,
+                        dest,
+                        pco_ref_elem(src[0], 0),
+                        .rpt = 4,
+                        .pck_fmt = PCO_PCK_FMT_S8888,
+                        .scale = true);
+      break;
+
    case nir_op_pack_unorm_4x8:
       instr = pco_pck(&tctx->b,
                       dest,
@@ -902,6 +936,51 @@ static pco_instr *trans_alu(trans_ctx *tctx, nir_alu_instr *alu)
                       .rpt = 4,
                       .pck_fmt = PCO_PCK_FMT_U8888,
                       .scale = true);
+      break;
+
+   case nir_op_unpack_unorm_4x8:
+      instr = pco_unpck(&tctx->b,
+                        dest,
+                        pco_ref_elem(src[0], 0),
+                        .rpt = 4,
+                        .pck_fmt = PCO_PCK_FMT_U8888,
+                        .scale = true);
+      break;
+
+   case nir_op_pack_snorm_2x16:
+      instr = pco_pck(&tctx->b,
+                      dest,
+                      src[0],
+                      .rpt = 2,
+                      .pck_fmt = PCO_PCK_FMT_S1616,
+                      .scale = true);
+      break;
+
+   case nir_op_unpack_snorm_2x16:
+      instr = pco_unpck(&tctx->b,
+                        dest,
+                        pco_ref_elem(src[0], 0),
+                        .rpt = 2,
+                        .pck_fmt = PCO_PCK_FMT_S1616,
+                        .scale = true);
+      break;
+
+   case nir_op_pack_unorm_2x16:
+      instr = pco_pck(&tctx->b,
+                      dest,
+                      src[0],
+                      .rpt = 2,
+                      .pck_fmt = PCO_PCK_FMT_U1616,
+                      .scale = true);
+      break;
+
+   case nir_op_unpack_unorm_2x16:
+      instr = pco_unpck(&tctx->b,
+                        dest,
+                        pco_ref_elem(src[0], 0),
+                        .rpt = 2,
+                        .pck_fmt = PCO_PCK_FMT_U1616,
+                        .scale = true);
       break;
 
    case nir_op_vec2:
