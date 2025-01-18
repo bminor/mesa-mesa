@@ -5072,8 +5072,10 @@ batch_execute(struct tc_batch *batch, struct pipe_context *pipe, bool parsing)
             if (!first)
                batch->tc->renderpass_info = incr_rp_info(batch->tc->renderpass_info);
             first = false;
-         } else if (call->call_id >= TC_CALL_draw_single &&
-                    call->call_id <= TC_CALL_draw_vstate_multi) {
+         } else if (call->call_id == TC_CALL_draw_single ||
+                    call->call_id == TC_CALL_draw_multi ||
+                    (call->call_id >= TC_CALL_draw_single_drawid &&
+                     call->call_id <= TC_CALL_draw_vstate_multi)) {
             /* if a draw happens before a set_framebuffer_state on this batch,
              * begin incrementing renderpass data
              */
