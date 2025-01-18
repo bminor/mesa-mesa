@@ -6472,7 +6472,8 @@ bool
 nir_lower_tex_shadow(nir_shader *s,
                      unsigned n_states,
                      enum compare_func *compare_func,
-                     nir_lower_tex_shadow_swizzle *tex_swizzles);
+                     nir_lower_tex_shadow_swizzle *tex_swizzles,
+                     bool is_fixed_point_format);
 
 typedef struct nir_lower_image_options {
    /**
