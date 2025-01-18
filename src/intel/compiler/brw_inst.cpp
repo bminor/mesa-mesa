@@ -535,12 +535,6 @@ brw_inst::size_read(const struct intel_device_info *devinfo, int arg) const
       }
       break;
 
-   case FS_OPCODE_INTERPOLATE_AT_SAMPLE:
-   case FS_OPCODE_INTERPOLATE_AT_SHARED_OFFSET:
-      if (arg == 0)
-         return mlen * REG_SIZE;
-      break;
-
    case BRW_OPCODE_PLN:
       if (arg == 0)
          return 16;
