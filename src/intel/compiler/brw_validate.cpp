@@ -314,6 +314,12 @@ brw_validate(const fs_visitor &s)
             validate_memory_logical(s, inst);
             break;
 
+         case SHADER_OPCODE_MEMORY_FENCE:
+         case SHADER_OPCODE_INTERLOCK:
+            fsv_assert(inst->exec_size == 1);
+            fsv_assert(inst->force_writemask_all);
+            break;
+
          default:
             break;
          }

@@ -4969,6 +4969,8 @@ emit_fence(const brw_builder &bld, enum opcode opcode,
            uint8_t sfid, uint32_t desc,
            bool commit_enable, uint8_t bti)
 {
+   const struct intel_device_info *devinfo = bld.shader->devinfo;
+
    assert(opcode == SHADER_OPCODE_INTERLOCK ||
           opcode == SHADER_OPCODE_MEMORY_FENCE);
 
@@ -4978,6 +4980,7 @@ emit_fence(const brw_builder &bld, enum opcode opcode,
                              brw_imm_ud(bti));
    fence->sfid = sfid;
    fence->desc = desc;
+   fence->size_written = commit_enable ? REG_SIZE * reg_unit(devinfo) : 0;
 
    return dst;
 }
@@ -5938,7 +5941,7 @@ brw_from_nir_emit_intrinsic(nir_to_brw_state &ntb,
       unsigned fence_regs_count = 0;
       brw_reg fence_regs[4] = {};
 
-      const brw_builder ubld = bld.group(8, 0);
+      const brw_builder ubld1 = bld.exec_all().group(1, 0);
 
       /* A memory barrier with acquire semantics requires us to
        * guarantee that memory operations of the specified storage
@@ -5980,7 +5983,7 @@ brw_from_nir_emit_intrinsic(nir_to_brw_state &ntb,
       if (devinfo->ver >= 12 &&
           (!nir_intrinsic_has_memory_scope(instr) ||
            (nir_intrinsic_memory_semantics(instr) & NIR_MEMORY_ACQUIRE))) {
-         ubld.exec_all().group(1, 0).SYNC(TGL_SYNC_ALLWR);
+         ubld1.SYNC(TGL_SYNC_ALLWR);
       }
 
       if (devinfo->has_lsc) {
@@ -5989,14 +5992,14 @@ brw_from_nir_emit_intrinsic(nir_to_brw_state &ntb,
             lsc_fence_descriptor_for_intrinsic(devinfo, instr);
          if (ugm_fence) {
             fence_regs[fence_regs_count++] =
-               emit_fence(ubld, opcode, GFX12_SFID_UGM, desc,
+               emit_fence(ubld1, opcode, GFX12_SFID_UGM, desc,
                           true /* commit_enable */,
                           0 /* bti; ignored for LSC */);
          }
 
          if (tgm_fence) {
             fence_regs[fence_regs_count++] =
-               emit_fence(ubld, opcode, GFX12_SFID_TGM, desc,
+               emit_fence(ubld1, opcode, GFX12_SFID_TGM, desc,
                           true /* commit_enable */,
                           0 /* bti; ignored for LSC */);
          }
@@ -6009,10 +6012,10 @@ brw_from_nir_emit_intrinsic(nir_to_brw_state &ntb,
                 * Before SLM fence compiler needs to insert SYNC.ALLWR in order
                 * to avoid the SLM data race.
                 */
-               ubld.exec_all().group(1, 0).SYNC(TGL_SYNC_ALLWR);
+               ubld1.SYNC(TGL_SYNC_ALLWR);
             }
             fence_regs[fence_regs_count++] =
-               emit_fence(ubld, opcode, GFX12_SFID_SLM, desc,
+               emit_fence(ubld1, opcode, GFX12_SFID_SLM, desc,
                           true /* commit_enable */,
                           0 /* BTI; ignored for LSC */);
          }
@@ -6020,14 +6023,14 @@ brw_from_nir_emit_intrinsic(nir_to_brw_state &ntb,
          if (urb_fence) {
             assert(opcode == SHADER_OPCODE_MEMORY_FENCE);
             fence_regs[fence_regs_count++] =
-               emit_fence(ubld, opcode, BRW_SFID_URB, desc,
+               emit_fence(ubld1, opcode, BRW_SFID_URB, desc,
                           true /* commit_enable */,
                           0 /* BTI; ignored for LSC */);
          }
       } else if (devinfo->ver >= 11) {
          if (tgm_fence || ugm_fence || urb_fence) {
             fence_regs[fence_regs_count++] =
-               emit_fence(ubld, opcode, GFX7_SFID_DATAPORT_DATA_CACHE, 0,
+               emit_fence(ubld1, opcode, GFX7_SFID_DATAPORT_DATA_CACHE, 0,
                           true /* commit_enable HSD ES # 1404612949 */,
                           0 /* BTI = 0 means data cache */);
          }
@@ -6035,7 +6038,7 @@ brw_from_nir_emit_intrinsic(nir_to_brw_state &ntb,
          if (slm_fence) {
             assert(opcode == SHADER_OPCODE_MEMORY_FENCE);
             fence_regs[fence_regs_count++] =
-               emit_fence(ubld, opcode, GFX7_SFID_DATAPORT_DATA_CACHE, 0,
+               emit_fence(ubld1, opcode, GFX7_SFID_DATAPORT_DATA_CACHE, 0,
                           true /* commit_enable HSD ES # 1404612949 */,
                           GFX7_BTI_SLM);
          }
@@ -6048,7 +6051,7 @@ brw_from_nir_emit_intrinsic(nir_to_brw_state &ntb,
 
          if (tgm_fence || ugm_fence || slm_fence || urb_fence) {
             fence_regs[fence_regs_count++] =
-               emit_fence(ubld, opcode, GFX7_SFID_DATAPORT_DATA_CACHE, 0,
+               emit_fence(ubld1, opcode, GFX7_SFID_DATAPORT_DATA_CACHE, 0,
                           commit_enable, 0 /* BTI */);
          }
       }
@@ -6085,9 +6088,9 @@ brw_from_nir_emit_intrinsic(nir_to_brw_state &ntb,
        */
       if (instr->intrinsic == nir_intrinsic_end_invocation_interlock ||
           fence_regs_count != 1 || devinfo->has_lsc || force_stall) {
-         ubld.exec_all().group(1, 0).emit(
-            FS_OPCODE_SCHEDULING_FENCE, ubld.null_reg_ud(),
-            fence_regs, fence_regs_count);
+         ubld1.emit(FS_OPCODE_SCHEDULING_FENCE,
+                    retype(brw_null_reg(), BRW_TYPE_UW),
+                    fence_regs, fence_regs_count);
       }
 
       break;
