@@ -1785,7 +1785,7 @@ brw_memory_fence(struct brw_codegen *p,
 {
    const struct intel_device_info *devinfo = p->devinfo;
 
-   dst = retype(vec1(dst), BRW_TYPE_UW);
+   dst = retype(vec1(dst), BRW_TYPE_UD);
    src = retype(vec1(src), BRW_TYPE_UD);
 
    /* Set dst as destination for dependency tracking, the MEMORY_FENCE
