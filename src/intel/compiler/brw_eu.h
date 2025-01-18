@@ -1517,15 +1517,6 @@ brw_eu_inst *brw_DPAS(struct brw_codegen *p, enum gfx12_systolic_depth sdepth,
                    struct brw_reg src1, struct brw_reg src2);
 
 void
-brw_memory_fence(struct brw_codegen *p,
-                 struct brw_reg dst,
-                 struct brw_reg src,
-                 enum opcode send_op,
-                 enum brw_message_target sfid,
-                 uint32_t desc,
-                 bool commit_enable);
-
-void
 brw_broadcast(struct brw_codegen *p,
               struct brw_reg dst,
               struct brw_reg src,

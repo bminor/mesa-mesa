@@ -4974,7 +4974,7 @@ emit_fence(const brw_builder &bld, enum opcode opcode,
    assert(opcode == SHADER_OPCODE_INTERLOCK ||
           opcode == SHADER_OPCODE_MEMORY_FENCE);
 
-   brw_reg dst = bld.vgrf(BRW_TYPE_UD);
+   brw_reg dst = commit_enable ? bld.vgrf(BRW_TYPE_UD) : bld.null_reg_ud();
    brw_inst *fence = bld.emit(opcode, dst, brw_vec8_grf(0, 0),
                               brw_imm_ud(commit_enable));
    fence->sfid = sfid;

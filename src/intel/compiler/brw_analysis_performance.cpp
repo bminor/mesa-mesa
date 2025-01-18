@@ -566,26 +566,6 @@ namespace {
                                8 /* XXX */, 750 /* XXX */, 0, 0,
                                2 /* XXX */, 0);
 
-      case SHADER_OPCODE_MEMORY_FENCE:
-      case SHADER_OPCODE_INTERLOCK:
-         switch (info.sfid) {
-         case GFX6_SFID_DATAPORT_RENDER_CACHE:
-            return calculate_desc(info, EU_UNIT_DP_RC, 2, 0, 0, 30 /* XXX */, 0,
-                                  10 /* XXX */, 300 /* XXX */, 0, 0, 0, 0);
-
-         case BRW_SFID_URB:
-         case GFX7_SFID_DATAPORT_DATA_CACHE:
-         case GFX12_SFID_SLM:
-         case GFX12_SFID_TGM:
-         case GFX12_SFID_UGM:
-         case HSW_SFID_DATAPORT_DATA_CACHE_1:
-            return calculate_desc(info, EU_UNIT_DP_DC, 2, 0, 0, 30 /* XXX */, 0,
-                                  10 /* XXX */, 100 /* XXX */, 0, 0, 0, 0);
-
-         default:
-            abort();
-         }
-
       case FS_OPCODE_UNIFORM_PULL_CONSTANT_LOAD:
          return calculate_desc(info, EU_UNIT_DP_CC, 2, 0, 0, 0, 16 /* XXX */,
                                10 /* XXX */, 100 /* XXX */, 0, 0, 0, 0);
@@ -615,6 +595,10 @@ namespace {
                                      30 /* XXX */, 450 /* XXX */,
                                      10 /* XXX */, 100 /* XXX */,
                                      0, 0, 0, 400 /* XXX */);
+            case GFX7_DATAPORT_RC_MEMORY_FENCE:
+               return calculate_desc(info, EU_UNIT_DP_RC, 2, 0, 0,
+                                     30 /* XXX */, 0,
+                                     10 /* XXX */, 300 /* XXX */, 0, 0, 0, 0);
             default:
                return calculate_desc(info, EU_UNIT_DP_RC, 2, 0, 0,
                                      0, 450 /* XXX */,
@@ -626,6 +610,18 @@ namespace {
                                   8, 750, 0, 0, 2, 0);
          }
          case GFX7_SFID_DATAPORT_DATA_CACHE:
+            switch (brw_dp_desc_msg_type(devinfo, info.desc)) {
+            case GFX7_DATAPORT_DC_MEMORY_FENCE:
+               return calculate_desc(info, EU_UNIT_DP_DC, 2, 0, 0,
+                                     30 /* XXX */, 0,
+                                     10 /* XXX */, 100 /* XXX */, 0, 0, 0, 0);
+            default:
+               return calculate_desc(info, EU_UNIT_DP_DC, 2, 0, 0,
+                                     0, 20 /* XXX */,
+                                     10 /* XXX */, 100 /* XXX */, 0, 0,
+                                     0, 0);
+            }
+
          case HSW_SFID_DATAPORT_DATA_CACHE_1:
             switch (brw_dp_desc_msg_type(devinfo, info.desc)) {
             case HSW_DATAPORT_DC_PORT1_UNTYPED_ATOMIC_OP:
@@ -662,6 +658,10 @@ namespace {
                                      0, 0);
 
             case LSC_OP_FENCE:
+               return calculate_desc(info, EU_UNIT_DP_DC, 2, 0, 0,
+                                     30 /* XXX */, 0,
+                                     10 /* XXX */, 100 /* XXX */, 0, 0, 0, 0);
+
             case LSC_OP_ATOMIC_INC:
             case LSC_OP_ATOMIC_DEC:
             case LSC_OP_ATOMIC_LOAD:
@@ -696,6 +696,13 @@ namespace {
                                   10 /* XXX */, 0, 0, 0, 0, 0);
 
          case BRW_SFID_URB:
+            if (brw_urb_desc_msg_type(devinfo, info.desc) ==
+                GFX125_URB_OPCODE_FENCE) {
+               return calculate_desc(info, EU_UNIT_DP_DC, 2, 0, 0,
+                                     30 /* XXX */, 0,
+                                     10 /* XXX */, 100 /* XXX */, 0, 0, 0, 0);
+            }
+
             return calculate_desc(info, EU_UNIT_URB, 2, 0, 0, 0, 6 /* XXX */,
                                   32 /* XXX */, 200 /* XXX */, 0, 0, 0, 0);
 

@@ -2399,6 +2399,118 @@ lower_get_buffer_size(const brw_builder &bld, brw_inst *inst)
    setup_surface_descriptors(bld, inst, desc, surface, surface_handle);
 }
 
+static void
+lower_lsc_memory_fence_and_interlock(const brw_builder &bld, brw_inst *inst)
+{
+   const intel_device_info *devinfo = bld.shader->devinfo;
+   const bool interlock = inst->opcode == SHADER_OPCODE_INTERLOCK;
+
+   assert(inst->src[1].file == IMM);
+   const bool commit_enable = inst->src[1].ud;
+   assert(commit_enable); /* always used */
+
+   brw_reg header = inst->src[0];
+
+   assert(inst->size_written == reg_unit(devinfo) * REG_SIZE);
+
+   inst->opcode = SHADER_OPCODE_SEND;
+   inst->resize_sources(4);
+   inst->check_tdr = interlock;
+   inst->send_has_side_effects = true;
+
+   inst->src[0] = brw_imm_ud(0);
+   inst->src[1] = brw_imm_ud(0);
+   inst->src[2] = retype(vec1(header), BRW_TYPE_UD);
+   inst->src[3] = brw_reg();
+   inst->mlen = reg_unit(devinfo);
+   inst->ex_mlen = 0;
+
+   /* On Gfx12.5 URB is not listed as port usable for fences with the LSC (see
+    * BSpec 53578 for Gfx12.5, BSpec 57330 for Gfx20), so we completely ignore
+    * the descriptor value and rebuild a legacy URB fence descriptor.
+    */
+   if (inst->sfid == BRW_SFID_URB && devinfo->ver < 20) {
+      inst->desc = brw_urb_fence_desc(devinfo);
+      inst->header_size = 1;
+   } else {
+      enum lsc_fence_scope scope =
+         lsc_fence_msg_desc_scope(devinfo, inst->desc);
+      enum lsc_flush_type flush_type =
+         lsc_fence_msg_desc_flush_type(devinfo, inst->desc);
+
+      if (inst->sfid == GFX12_SFID_TGM) {
+         scope = LSC_FENCE_TILE;
+         flush_type = LSC_FLUSH_TYPE_EVICT;
+      }
+
+      /* Wa_14012437816:
+       *
+       *   "For any fence greater than local scope, always set flush type to
+       *    at least invalidate so that fence goes on properly."
+       *
+       *   "The bug is if flush_type is 'None', the scope is always downgraded
+       *    to 'local'."
+       *
+       * Here set scope to NONE_6 instead of NONE, which has the same effect
+       * as NONE but avoids the downgrade to scope LOCAL.
+       */
+      if (intel_needs_workaround(devinfo, 14012437816) &&
+          scope > LSC_FENCE_LOCAL &&
+          flush_type == LSC_FLUSH_TYPE_NONE) {
+         flush_type = LSC_FLUSH_TYPE_NONE_6;
+      }
+
+      inst->desc = lsc_fence_msg_desc(devinfo, scope, flush_type, false);
+   }
+}
+
+static void
+lower_hdc_memory_fence_and_interlock(const brw_builder &bld, brw_inst *inst)
+{
+   const intel_device_info *devinfo = bld.shader->devinfo;
+   const bool interlock = inst->opcode == SHADER_OPCODE_INTERLOCK;
+
+   assert(inst->src[1].file == IMM);
+
+   brw_reg header = inst->src[0];
+   const bool commit_enable = inst->src[1].ud;
+
+   bool slm = false;
+   if (inst->sfid == GFX12_SFID_SLM) {
+      assert(devinfo->ver >= 11);
+
+      /* This SFID doesn't exist on Gfx11-12.0, but we use it to represent
+       * SLM fences, and map back here to the way Gfx11 represented that:
+       * a special "SLM" binding table index and the data cache SFID.
+       */
+      inst->sfid = GFX7_SFID_DATAPORT_DATA_CACHE;
+      slm = true;
+   }
+
+   assert(inst->size_written == (commit_enable ? REG_SIZE : 0));
+
+   inst->opcode = SHADER_OPCODE_SEND;
+   inst->resize_sources(4);
+   inst->check_tdr = interlock;
+   inst->send_has_side_effects = true;
+
+   inst->src[0] = brw_imm_ud(0);
+   inst->src[1] = brw_imm_ud(0);
+   inst->src[2] = retype(vec1(header), BRW_TYPE_UD);
+   inst->src[3] = brw_reg();
+   inst->mlen = reg_unit(devinfo);
+   inst->ex_mlen = 0;
+   inst->header_size = 1;
+
+   const unsigned msg_type =
+      inst->sfid == GFX6_SFID_DATAPORT_RENDER_CACHE ?
+      GFX7_DATAPORT_RC_MEMORY_FENCE :
+      GFX7_DATAPORT_DC_MEMORY_FENCE;
+
+   inst->desc = brw_dp_desc(devinfo, slm ? GFX7_BTI_SLM : 0, msg_type,
+                            commit_enable ? 1 << 5 : 0);
+}
+
 bool
 brw_lower_logical_sends(fs_visitor &s)
 {
@@ -2495,6 +2607,14 @@ brw_lower_logical_sends(fs_visitor &s)
          else
             lower_urb_write_logical_send_xe2(ibld, inst);
 
+         break;
+
+      case SHADER_OPCODE_MEMORY_FENCE:
+      case SHADER_OPCODE_INTERLOCK:
+         if (devinfo->has_lsc)
+            lower_lsc_memory_fence_and_interlock(ibld, inst);
+         else
+            lower_hdc_memory_fence_and_interlock(ibld, inst);
          break;
 
       default:
