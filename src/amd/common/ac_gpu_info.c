@@ -645,6 +645,11 @@ bool ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
                                             ip_info.ib_size_alignment, 256);
    }
 
+   /* GFX1013 is known to have broken compute queue */
+   if (device_info.family == FAMILY_NV && ASICREV_IS(device_info.external_rev, GFX1013)) {
+      info->ip[AMD_IP_COMPUTE].num_queues = 0;
+   }
+
    /* Set dword padding minus 1. */
    info->ip[AMD_IP_GFX].ib_pad_dw_mask = 0x7;
    info->ip[AMD_IP_COMPUTE].ib_pad_dw_mask = 0x7;

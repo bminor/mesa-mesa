@@ -522,6 +522,7 @@ static struct pipe_context *si_create_context(struct pipe_screen *screen, unsign
                         ((sscreen->info.family == CHIP_RAVEN ||
                           sscreen->info.family == CHIP_RAVEN2) &&
                          !sscreen->info.has_dedicated_vram) ||
+                        !sscreen->info.ip[AMD_IP_COMPUTE].num_queues ||
                         !(flags & PIPE_CONTEXT_COMPUTE_ONLY);
 
    if (flags & PIPE_CONTEXT_DEBUG)
