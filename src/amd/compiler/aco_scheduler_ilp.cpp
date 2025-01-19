@@ -43,8 +43,6 @@ struct InstrInfo {
    int32_t priority;
    mask_t dependency_mask;       /* bitmask of nodes which have to be scheduled before this node. */
    uint8_t next_non_reorderable; /* index of next non-reorderable instruction node after this one. */
-   bool potential_clause; /* indicates that this instruction is not (yet) immediately followed by a
-                             reorderable instruction. */
 };
 
 struct RegisterInfo {
@@ -64,6 +62,8 @@ struct SchedILPContext {
    mask_t active_mask = 0;      /* bitmask of valid instruction nodes. */
    uint8_t next_non_reorderable = UINT8_MAX; /* index of next node which should not be reordered. */
    uint8_t last_non_reorderable = UINT8_MAX; /* index of last node which should not be reordered. */
+   bool potential_partial_clause; /* indicates that last_non_reorderable is the last instruction in
+                                     the DAG, meaning the clause might continue outside of it. */
 
    /* VOPD scheduler: */
    VOPDInfo vopd[num_nodes];
@@ -431,9 +431,9 @@ add_entry(SchedILPContext& ctx, Instruction* const instr, const uint32_t idx)
        * any cases that are actually a concern for clause formation are added as transitive
        * dependencies. */
       entry.dependency_mask &= ~ctx.non_reorder_mask;
-      entry.potential_clause = true;
+      ctx.potential_partial_clause = true;
    } else if (ctx.last_non_reorderable != UINT8_MAX) {
-      ctx.nodes[ctx.last_non_reorderable].potential_clause = false;
+      ctx.potential_partial_clause = false;
    }
 
    entry.dependency_mask &= ~mask;
@@ -490,8 +490,10 @@ remove_entry(SchedILPContext& ctx, const Instruction* const instr, const uint32_
    if (ctx.next_non_reorderable == idx) {
       ctx.non_reorder_mask &= mask;
       ctx.next_non_reorderable = ctx.nodes[idx].next_non_reorderable;
-      if (ctx.last_non_reorderable == idx)
+      if (ctx.last_non_reorderable == idx) {
          ctx.last_non_reorderable = UINT8_MAX;
+         ctx.potential_partial_clause = false;
+      }
    }
 }
 
@@ -506,7 +508,11 @@ collect_clause_dependencies(const SchedILPContext& ctx, const uint8_t next, mask
 {
    const InstrInfo& entry = ctx.nodes[next];
    mask_t dependencies = entry.dependency_mask;
-   clause_mask |= (entry.potential_clause << next);
+   clause_mask |= BITFIELD_BIT(next);
+
+   /* If we dependent on the clause, don't add our dependencies. */
+   if (dependencies & clause_mask)
+      return 0;
 
    if (!is_memory_instr(entry.instr))
       return dependencies;
@@ -516,20 +522,13 @@ collect_clause_dependencies(const SchedILPContext& ctx, const uint8_t next, mask
     * instructions as dependencies. This prevents splitting of larger, already
     * formed clauses.
     */
-   if (next == ctx.last_non_reorderable && entry.potential_clause)
+   if (next == ctx.last_non_reorderable && ctx.potential_partial_clause)
       return (~clause_mask & ctx.active_mask) | dependencies;
 
-   if (entry.next_non_reorderable == UINT8_MAX)
-      return dependencies;
-
    /* Check if this can form a clause with the following non-reorderable instruction */
-   if (should_form_clause(entry.instr, ctx.nodes[entry.next_non_reorderable].instr)) {
-      mask_t clause_deps =
-         collect_clause_dependencies(ctx, entry.next_non_reorderable, clause_mask);
-
-      /* if the following clause is independent from us, add their dependencies */
-      if (!(clause_deps & BITFIELD_BIT(next)))
-         dependencies |= clause_deps;
+   if (entry.next_non_reorderable != UINT8_MAX &&
+       should_form_clause(entry.instr, ctx.nodes[entry.next_non_reorderable].instr)) {
+      dependencies |= collect_clause_dependencies(ctx, entry.next_non_reorderable, clause_mask);
    }
 
    return dependencies;
@@ -554,11 +553,7 @@ select_instruction_ilp(const SchedILPContext& ctx)
       mask = collect_clause_dependencies(ctx, ctx.next_non_reorderable, 0);
    }
 
-   /* If the next non-reorderable instruction has no dependencies, select it */
-   if (mask == 0)
-      return ctx.next_non_reorderable;
-
-   /* Otherwise, select the instruction with highest priority of all candidates. */
+   /* Select the instruction with highest priority of all candidates. */
    unsigned idx = -1u;
    int32_t priority = INT32_MIN;
    u_foreach_bit (i, mask) {
@@ -574,8 +569,13 @@ select_instruction_ilp(const SchedILPContext& ctx)
       }
    }
 
-   assert(idx != -1u);
-   return idx;
+   if (idx != -1u)
+      return idx;
+
+   /* Select the next non-reorderable instruction. (it must have no dependencies) */
+   assert(ctx.next_non_reorderable != UINT8_MAX);
+   assert(ctx.nodes[ctx.next_non_reorderable].dependency_mask == 0);
+   return ctx.next_non_reorderable;
 }
 
 bool
@@ -756,7 +756,7 @@ do_schedule(SchedILPContext& ctx, It& insert_it, It& remove_it, It instructions_
       if (remove_it != instructions_end) {
          add_entry(ctx, (remove_it++)->get(), next_idx);
       } else if (ctx.last_non_reorderable != UINT8_MAX) {
-         ctx.nodes[ctx.last_non_reorderable].potential_clause = false;
+         ctx.potential_partial_clause = false;
          ctx.last_non_reorderable = UINT8_MAX;
       }
    }
