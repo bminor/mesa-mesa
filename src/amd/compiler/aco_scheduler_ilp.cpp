@@ -543,11 +543,16 @@ select_instruction_ilp(const SchedILPContext& ctx)
 {
    mask_t mask = ctx.active_mask;
 
-   /* First, collect all dependencies of the next non-reorderable instruction(s).
+   /* First, continue the currently open clause.
+    * Otherwise collect all dependencies of the next non-reorderable instruction(s).
     * These make up the list of possible candidates.
     */
-   if (ctx.next_non_reorderable != UINT8_MAX)
+   if (ctx.next_non_reorderable != UINT8_MAX) {
+      if (ctx.prev_info.instr && ctx.nodes[ctx.next_non_reorderable].dependency_mask == 0 &&
+          should_form_clause(ctx.prev_info.instr, ctx.nodes[ctx.next_non_reorderable].instr))
+         return ctx.next_non_reorderable;
       mask = collect_clause_dependencies(ctx, ctx.next_non_reorderable, 0);
+   }
 
    /* If the next non-reorderable instruction has no dependencies, select it */
    if (mask == 0)
