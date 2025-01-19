@@ -128,10 +128,11 @@ is_grouped_load(nir_instr *instr)
 }
 
 static bool
-can_move(nir_instr *instr, uint8_t current_indirection_level)
+is_part_of_group(nir_instr *instr, uint8_t current_indirection_level)
 {
-   /* Grouping is done by moving everything else out of the first/last
-    * instruction range of the indirection level.
+   /* Grouping is done by moving everything else out of the first..last
+    * instruction range of the load group corresponding to the given
+    * indirection level.
     *
     * We can move anything that's not a grouped load because we are not really
     * moving it. What we are doing is that we are moving grouped loads to
@@ -139,7 +140,7 @@ can_move(nir_instr *instr, uint8_t current_indirection_level)
     * out of the way. This doesn't change the order of non-reorderable
     * instructions.
     */
-   return !is_grouped_load(instr) || instr->pass_flags != current_indirection_level;
+   return is_grouped_load(instr) && instr->pass_flags == current_indirection_level;
 }
 
 static nir_instr *
@@ -194,8 +195,7 @@ group_loads(nir_instr *first, nir_instr *last)
                                                    last->node.prev, node);
         instr != first;
         instr = exec_node_data_backward(nir_instr, instr->node.prev, node)) {
-      /* Only move instructions without side effects. */
-      if (!can_move(instr, first->pass_flags))
+      if (is_part_of_group(instr, first->pass_flags))
          continue;
 
       bool all_uses_after_last = true;
@@ -238,7 +238,7 @@ group_loads(nir_instr *first, nir_instr *last)
         instr != last;
         instr = exec_node_data_forward(nir_instr, instr->node.next, node)) {
       /* Only move instructions without side effects. */
-      if (!can_move(instr, first->pass_flags))
+      if (is_part_of_group(instr, first->pass_flags))
          continue;
 
       if (nir_foreach_src(instr, has_only_sources_less_than, &state)) {
