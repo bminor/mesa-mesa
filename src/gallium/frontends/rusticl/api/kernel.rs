@@ -504,22 +504,29 @@ fn set_kernel_exec_info(
         return Err(CL_INVALID_OPERATION);
     }
 
-    // CL_INVALID_VALUE ... if param_value is NULL
-    if param_value.is_null() {
-        return Err(CL_INVALID_VALUE);
-    }
-
     // CL_INVALID_VALUE ... if the size specified by param_value_size is not valid.
     match param_name {
         CL_KERNEL_EXEC_INFO_SVM_PTRS | CL_KERNEL_EXEC_INFO_SVM_PTRS_ARM => {
-            // it's a list of pointers
-            if param_value_size % mem::size_of::<*const c_void>() != 0 {
-                return Err(CL_INVALID_VALUE);
+            // To specify that no SVM allocations will be accessed by a kernel other than those set
+            // as kernel arguments, specify an empty set by passing param_value_size equal to zero
+            // and param_value equal to NULL.
+            if !param_value.is_null() || param_value_size != 0 {
+                let _ = unsafe {
+                    cl_slice::from_raw_parts_bytes_len::<*const c_void>(
+                        param_value,
+                        param_value_size,
+                    )?
+                };
             }
         }
         CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM
         | CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM_ARM => {
-            if param_value_size != mem::size_of::<cl_bool>() {
+            let val = unsafe {
+                cl_slice::from_raw_parts_bytes_len::<cl_bool>(param_value, param_value_size)?
+            };
+
+            // we must explicitly check that we only got one element
+            if val.len() != 1 {
                 return Err(CL_INVALID_VALUE);
             }
         }
