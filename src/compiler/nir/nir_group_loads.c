@@ -50,28 +50,6 @@
 
 #include "nir.h"
 
-static bool
-is_memory_load(nir_instr *instr)
-{
-   /* Count texture_size too because it has the same latency as cache hits. */
-   if (instr->type == nir_instr_type_tex)
-      return true;
-
-   if (instr->type == nir_instr_type_intrinsic) {
-      nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
-      const char *name = nir_intrinsic_infos[intr->intrinsic].name;
-
-      /* TODO: nir_intrinsics.py could do this */
-      /* load_ubo is ignored because it's usually cheap. */
-      if (!nir_intrinsic_writes_external_memory(intr) &&
-          !strstr(name, "shared") &&
-          (strstr(name, "ssbo") || strstr(name, "image")))
-         return true;
-   }
-
-   return false;
-}
-
 static nir_instr *
 get_intrinsic_resource(nir_intrinsic_instr *intr)
 {
@@ -341,7 +319,7 @@ gather_indirections(nir_src *src, void *data)
    if (instr->block == state->block) {
       unsigned indirections = get_num_indirections(src->ssa->parent_instr);
 
-      if (instr->type == nir_instr_type_tex || is_memory_load(instr))
+      if (instr->type == nir_instr_type_tex || is_grouped_load(instr))
          indirections++;
 
       state->indirections = MAX2(state->indirections, indirections);
