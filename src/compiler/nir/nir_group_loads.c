@@ -119,8 +119,10 @@ is_grouped_load(nir_instr *instr)
    if (instr->type == nir_instr_type_tex)
       return true;
 
-   if (instr->type == nir_instr_type_intrinsic)
-      return get_intrinsic_resource(nir_instr_as_intrinsic(instr)) != NULL;
+   if (instr->type == nir_instr_type_intrinsic) {
+      return get_intrinsic_resource(nir_instr_as_intrinsic(instr)) != NULL &&
+             nir_intrinsic_can_reorder(nir_instr_as_intrinsic(instr));
+   }
 
    return false;
 }
@@ -130,22 +132,14 @@ can_move(nir_instr *instr, uint8_t current_indirection_level)
 {
    /* Grouping is done by moving everything else out of the first/last
     * instruction range of the indirection level.
+    *
+    * We can move anything that's not a grouped load because we are not really
+    * moving it. What we are doing is that we are moving grouped loads to
+    * the same place by moving everything else between the first and last load
+    * out of the way. This doesn't change the order of non-reorderable
+    * instructions.
     */
-   if (is_grouped_load(instr) && instr->pass_flags == current_indirection_level)
-      return false;
-
-   if (instr->type == nir_instr_type_alu ||
-       instr->type == nir_instr_type_deref ||
-       instr->type == nir_instr_type_tex ||
-       instr->type == nir_instr_type_load_const ||
-       instr->type == nir_instr_type_undef)
-      return true;
-
-   if (instr->type == nir_instr_type_intrinsic &&
-       nir_intrinsic_can_reorder(nir_instr_as_intrinsic(instr)))
-      return true;
-
-   return false;
+   return !is_grouped_load(instr) || instr->pass_flags != current_indirection_level;
 }
 
 static nir_instr *
@@ -329,21 +323,6 @@ is_demote(nir_instr *instr)
    return false;
 }
 
-static bool
-is_barrier(nir_instr *instr)
-{
-   if (instr->type == nir_instr_type_intrinsic) {
-      nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
-      const char *name = nir_intrinsic_infos[intr->intrinsic].name;
-
-      /* TODO: nir_intrinsics.py could do this */
-      if (strstr(name, "barrier"))
-         return true;
-   }
-
-   return false;
-}
-
 struct indirection_state {
    nir_block *block;
    unsigned indirections;
@@ -447,8 +426,8 @@ process_block(nir_block *block, nir_load_grouping grouping,
        * between them out.
        */
       nir_foreach_instr(current, block) {
-         /* Don't group across terminate and barriers. */
-         if (is_demote(current) || is_barrier(current)) {
+         /* Don't group across terminate. */
+         if (is_demote(current)) {
             /* Group unconditionally.  */
             handle_load_range(&first_load, &last_load, NULL, 0);
             first_load = NULL;
