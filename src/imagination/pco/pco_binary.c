@@ -69,10 +69,7 @@ static unsigned pco_encode_igrp(struct util_dynarray *buf, pco_igrp *igrp)
    bytes_encoded += pco_igrp_hdr_map_encode(ptr, igrp);
 
    /* Instructions. */
-   for (enum pco_op_phase p = _PCO_OP_PHASE_COUNT; p-- > 0;) {
-      if (!igrp->enc.len.instrs[p])
-         continue;
-
+   pco_foreach_phase_in_igrp_rev (igrp, p) {
       ptr = util_dynarray_grow(buf, uint8_t, igrp->enc.len.instrs[p]);
       bytes_encoded += pco_instr_map_encode(ptr, igrp, p);
    }

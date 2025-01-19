@@ -615,6 +615,35 @@ PCO_DEFINE_CAST(pco_cf_node_as_func,
    pco_foreach_block_in_func (block, func)   \
       pco_foreach_igrp_in_block (igrp, block)
 
+#define pco_foreach_phase(phase) \
+   for (enum pco_op_phase phase = 0; phase < _PCO_OP_PHASE_COUNT; ++phase)
+
+#define pco_foreach_phase_rev(phase) \
+   for (enum pco_op_phase phase = _PCO_OP_PHASE_COUNT; phase-- > 0;)
+
+#define pco_foreach_phase_from(phase, from)                              \
+   for (enum pco_op_phase phase = from + 1; phase < _PCO_OP_PHASE_COUNT; \
+        ++phase)
+
+#define pco_foreach_phase_from_rev(phase, from) \
+   for (enum pco_op_phase phase = from; phase-- > 0;)
+
+#define pco_foreach_phase_in_igrp(igrp, phase) \
+   pco_foreach_phase (phase)                   \
+      if (igrp->instrs[phase])
+
+#define pco_foreach_phase_in_igrp_rev(igrp, phase) \
+   pco_foreach_phase_rev (phase)                   \
+      if (igrp->instrs[phase])
+
+#define pco_foreach_phase_in_igrp_from(igrp, phase, from) \
+   pco_foreach_phase_from (phase, from)                   \
+      if (igrp->instrs[phase])
+
+#define pco_foreach_phase_in_igrp_from_rev(igrp, phase, from) \
+   pco_foreach_phase_from_rev (phase, from)                   \
+      if (igrp->instrs[phase])
+
 #define pco_foreach_instr_in_igrp(instr, igrp)                        \
    for (pco_instr *instr = pco_igrp_first_instr(igrp); instr != NULL; \
         instr = pco_igrp_next_instr(instr))
@@ -1391,9 +1420,8 @@ static inline pco_igrp *pco_prev_igrp(pco_igrp *igrp)
  */
 static inline pco_instr *pco_igrp_first_instr(pco_igrp *igrp)
 {
-   for (enum pco_op_phase p = 0; p < _PCO_OP_PHASE_COUNT; ++p)
-      if (igrp->instrs[p])
-         return igrp->instrs[p];
+   pco_foreach_phase_in_igrp (igrp, p)
+      return igrp->instrs[p];
 
    return NULL;
 }
@@ -1406,9 +1434,8 @@ static inline pco_instr *pco_igrp_first_instr(pco_igrp *igrp)
  */
 static inline pco_instr *pco_igrp_last_instr(pco_igrp *igrp)
 {
-   for (enum pco_op_phase p = _PCO_OP_PHASE_COUNT; p-- > 0;)
-      if (igrp->instrs[p])
-         return igrp->instrs[p];
+   pco_foreach_phase_in_igrp_rev (igrp, p)
+      return igrp->instrs[p];
 
    return NULL;
 }
@@ -1425,9 +1452,8 @@ static inline pco_instr *pco_igrp_next_instr(pco_instr *instr)
       return NULL;
 
    pco_igrp *igrp = instr->parent_igrp;
-   for (enum pco_op_phase p = instr->phase + 1; p < _PCO_OP_PHASE_COUNT; ++p)
-      if (igrp->instrs[p])
-         return igrp->instrs[p];
+   pco_foreach_phase_in_igrp_from (igrp, p, instr->phase)
+      return igrp->instrs[p];
 
    return NULL;
 }
@@ -1445,9 +1471,8 @@ static inline pco_instr *pco_igrp_prev_instr(pco_instr *instr)
       return NULL;
 
    pco_igrp *igrp = instr->parent_igrp;
-   for (enum pco_op_phase p = instr->phase; p-- > 0;)
-      if (igrp->instrs[p])
-         return igrp->instrs[p];
+   pco_foreach_phase_in_igrp_from_rev (igrp, p, instr->phase)
+      return igrp->instrs[p];
 
    return NULL;
 }
