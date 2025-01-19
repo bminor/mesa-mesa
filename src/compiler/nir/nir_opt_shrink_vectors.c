@@ -135,7 +135,7 @@ shrink_dest_to_read_mask(nir_def *def, bool shrink_start)
 
          /* Reswizzle sources, which must be ALU since they have swizzle */
          assert(first_bit + comps <= NIR_MAX_VEC_COMPONENTS);
-         uint8_t swizzle[NIR_MAX_VEC_COMPONENTS] = { 0 };
+         uint8_t swizzle[NIR_MAX_VEC_COMPONENTS + 1] = { 0 };
          for (unsigned i = 0; i < comps; ++i) {
             swizzle[first_bit + i] = i;
          }
