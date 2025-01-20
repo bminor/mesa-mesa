@@ -239,7 +239,9 @@ prepare_fs_driver_set(struct panvk_cmd_buffer *cmdbuf)
    const struct panvk_shader *fs = cmdbuf->state.gfx.fs.shader;
    const struct panvk_descriptor_state *desc_state =
       &cmdbuf->state.gfx.desc_state;
-   uint32_t desc_count = fs->desc_info.dyn_bufs.count + MAX_VARYING + 1;
+   uint32_t num_varying_attr_descs = fs->desc_info.max_varying_loads;
+   uint32_t desc_count =
+      fs->desc_info.dyn_bufs.count + num_varying_attr_descs + 1;
    struct panfrost_ptr driver_set = panvk_cmd_alloc_dev_mem(
       cmdbuf, desc, desc_count * PANVK_DESCRIPTOR_SIZE, PANVK_DESCRIPTOR_SIZE);
    struct panvk_opaque_desc *descs = driver_set.cpu;
@@ -250,12 +252,13 @@ prepare_fs_driver_set(struct panvk_cmd_buffer *cmdbuf)
    emit_varying_descs(cmdbuf, (struct mali_attribute_packed *)(&descs[0]));
 
    /* Dummy sampler always comes right after the varyings. */
-   pan_cast_and_pack(&descs[MAX_VARYING], SAMPLER, cfg) {
+   pan_cast_and_pack(&descs[num_varying_attr_descs], SAMPLER, cfg) {
       cfg.clamp_integer_array_indices = false;
    }
 
    panvk_per_arch(cmd_fill_dyn_bufs)(
-      desc_state, fs, (struct mali_buffer_packed *)(&descs[1 + MAX_VARYING]));
+      desc_state, fs,
+      (struct mali_buffer_packed *)(&descs[num_varying_attr_descs + 1]));
 
    fs_desc_state->driver_set.dev_addr = driver_set.gpu;
    fs_desc_state->driver_set.size = desc_count * PANVK_DESCRIPTOR_SIZE;

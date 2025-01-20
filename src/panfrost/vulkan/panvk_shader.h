@@ -277,6 +277,7 @@ struct panvk_shader {
          uint32_t map[MAX_DYNAMIC_BUFFERS];
          uint32_t count;
       } dyn_bufs;
+      uint32_t max_varying_loads;
 #endif
    } desc_info;
 

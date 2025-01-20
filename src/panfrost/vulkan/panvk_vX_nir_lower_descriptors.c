@@ -61,6 +61,7 @@ struct panvk_shader_desc_info {
    uint32_t dummy_sampler_handle;
    uint32_t dyn_bufs_start;
    struct panvk_shader_desc_map dyn_bufs;
+   uint32_t num_varying_attr_descs;
 #endif
 };
 
@@ -1033,7 +1034,7 @@ create_copy_table(nir_shader *nir, struct lower_desc_ctx *ctx)
       break;
    case MESA_SHADER_FRAGMENT:
       /* Dummy sampler comes after the varyings. */
-      dummy_sampler_idx = MAX_VARYING;
+      dummy_sampler_idx = desc_info->num_varying_attr_descs;
       break;
    case MESA_SHADER_COMPUTE:
       dummy_sampler_idx = 0;
@@ -1256,6 +1257,9 @@ panvk_per_arch(nir_lower_descriptors)(
    if (!progress)
       goto out;
 
+#if PAN_ARCH >= 9
+   ctx.desc_info.num_varying_attr_descs = shader->desc_info.max_varying_loads;
+#endif
    create_copy_table(nir, &ctx);
    upload_shader_desc_info(dev, shader, &ctx.desc_info);
 
