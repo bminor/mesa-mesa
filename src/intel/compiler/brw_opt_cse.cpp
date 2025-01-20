@@ -126,14 +126,21 @@ is_expression(const brw_shader *v, const brw_inst *const inst)
    case SHADER_OPCODE_SIN:
    case SHADER_OPCODE_COS:
    case SHADER_OPCODE_LOAD_SUBGROUP_INVOCATION:
+   case FS_OPCODE_INTERPOLATE_AT_SAMPLE:
+   case FS_OPCODE_INTERPOLATE_AT_SHARED_OFFSET:
+   case FS_OPCODE_INTERPOLATE_AT_PER_SLOT_OFFSET:
       return true;
    case SHADER_OPCODE_MEMORY_LOAD_LOGICAL:
       return inst->src[MEMORY_LOGICAL_MODE].ud == MEMORY_MODE_CONSTANT;
    case SHADER_OPCODE_LOAD_PAYLOAD:
       return !is_coalescing_payload(*v, inst);
+   case SHADER_OPCODE_SEND:
+   case SHADER_OPCODE_SEND_GATHER:
+      return !inst->send_has_side_effects &&
+             !inst->send_is_volatile &&
+             !inst->eot;
    default:
-      return inst->is_send_from_grf() && !inst->has_side_effects() &&
-         !inst->is_volatile();
+      return false;
    }
 }
 
