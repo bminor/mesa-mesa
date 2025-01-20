@@ -896,6 +896,7 @@ static int r600_get_compute_param(struct pipe_screen *screen,
 		return 3 * sizeof(uint64_t) ;
 
 	case PIPE_COMPUTE_CAP_MAX_BLOCK_SIZE:
+	case PIPE_COMPUTE_CAP_MAX_BLOCK_SIZE_CLOVER:
 		if (ret) {
 			uint64_t *block_size = ret;
 			unsigned threads_per_block = get_max_threads_per_block(rscreen, ir_type);
@@ -906,6 +907,7 @@ static int r600_get_compute_param(struct pipe_screen *screen,
 		return 3 * sizeof(uint64_t);
 
 	case PIPE_COMPUTE_CAP_MAX_THREADS_PER_BLOCK:
+	case PIPE_COMPUTE_CAP_MAX_THREADS_PER_BLOCK_CLOVER:
 		if (ret) {
 			uint64_t *max_threads_per_block = ret;
 			*max_threads_per_block = get_max_threads_per_block(rscreen, ir_type);

@@ -761,11 +761,15 @@ pipe_screen::get_compute_param.
   units.  Value type: ``uint64_t []``.  Shader IR type dependent.
 * ``PIPE_COMPUTE_CAP_MAX_BLOCK_SIZE``: Maximum block size in thread
   units.  Value type: ``uint64_t []``. Shader IR type dependent.
+* ``PIPE_COMPUTE_CAP_MAX_BLOCK_SIZE_CLOVER``: Same as ``PIPE_COMPUTE_CAP_MAX_BLOCK_SIZE``
+  but used by clover only.
 * ``PIPE_COMPUTE_CAP_MAX_THREADS_PER_BLOCK``: Maximum number of threads that
   a single block can contain.  Value type: ``uint64_t``. Shader IR type dependent.
   This may be less than the product of the components of MAX_BLOCK_SIZE and is
   usually limited by the number of threads that can be resident simultaneously
   on a compute unit.
+* ``PIPE_COMPUTE_CAP_MAX_THREADS_PER_BLOCK_CLOVER``: Same as
+  ``PIPE_COMPUTE_CAP_MAX_THREADS_PER_BLOCK`` but used by clover only.
 * ``PIPE_COMPUTE_CAP_MAX_GLOBAL_SIZE``: Maximum size of the GLOBAL
   resource.  Value type: ``uint64_t``. Shader IR type dependent.
 * ``PIPE_COMPUTE_CAP_MAX_LOCAL_SIZE``: Maximum size of the LOCAL

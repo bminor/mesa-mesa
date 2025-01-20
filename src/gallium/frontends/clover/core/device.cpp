@@ -300,7 +300,7 @@ device::max_const_buffers() const {
 size_t
 device::max_threads_per_block() const {
    return get_compute_param<uint64_t>(
-      pipe, ir_format(), PIPE_COMPUTE_CAP_MAX_THREADS_PER_BLOCK)[0];
+      pipe, ir_format(), PIPE_COMPUTE_CAP_MAX_THREADS_PER_BLOCK_CLOVER)[0];
 }
 
 cl_ulong
@@ -415,7 +415,7 @@ device::allows_user_pointers() const {
 std::vector<size_t>
 device::max_block_size() const {
    auto v = get_compute_param<uint64_t>(pipe, ir_format(),
-                                        PIPE_COMPUTE_CAP_MAX_BLOCK_SIZE);
+                                        PIPE_COMPUTE_CAP_MAX_BLOCK_SIZE_CLOVER);
    return { v.begin(), v.end() };
 }
 
