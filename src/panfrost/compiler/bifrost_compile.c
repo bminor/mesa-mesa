@@ -594,9 +594,7 @@ bi_emit_load_vary(bi_builder *b, nir_intrinsic_instr *instr)
    bool immediate = bi_is_imm_var_desc_handle(b, instr, &imm_index);
    unsigned base = nir_intrinsic_base(instr);
 
-   /* LD_VAR_BUF[_IMM] takes an 8-bit offset, limiting its use to 64 or less
-    * varying components, assuming F32.
-    * Therefore, only use LD_VAR_BUF[_IMM] if explicitly told by the driver
+   /* Only use LD_VAR_BUF[_IMM] if explicitly told by the driver
     * through a compiler input value, falling back to LD_VAR[_IMM] +
     * Attribute Descriptors otherwise. */
    bool use_ld_var_buf =

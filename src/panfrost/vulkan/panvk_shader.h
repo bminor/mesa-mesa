@@ -353,6 +353,18 @@ struct panvk_internal_shader {
 #endif
 };
 
+#if PAN_ARCH >= 9
+static inline bool
+panvk_use_ld_var_buf(const struct panvk_shader *shader)
+{
+   /* LD_VAR_BUF[_IMM] takes an 8-bit offset, limiting its use to 16 or less
+    * varyings, assuming highp vec4. */
+   if (shader->desc_info.max_varying_loads <= 16)
+      return true;
+   return false;
+}
+#endif
+
 VK_DEFINE_NONDISP_HANDLE_CASTS(panvk_internal_shader, vk.base, VkShaderEXT,
                                VK_OBJECT_TYPE_SHADER_EXT)
 

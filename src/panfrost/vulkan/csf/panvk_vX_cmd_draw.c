@@ -239,7 +239,10 @@ prepare_fs_driver_set(struct panvk_cmd_buffer *cmdbuf)
    const struct panvk_shader *fs = cmdbuf->state.gfx.fs.shader;
    const struct panvk_descriptor_state *desc_state =
       &cmdbuf->state.gfx.desc_state;
-   uint32_t num_varying_attr_descs = fs->desc_info.max_varying_loads;
+   /* If the shader is using LD_VAR_BUF[_IMM], we do not have to set up
+    * Attribute Descriptors for varying loads. */
+   uint32_t num_varying_attr_descs =
+      panvk_use_ld_var_buf(fs) ? 0 : fs->desc_info.max_varying_loads;
    uint32_t desc_count =
       fs->desc_info.dyn_bufs.count + num_varying_attr_descs + 1;
    struct panfrost_ptr driver_set = panvk_cmd_alloc_dev_mem(
@@ -249,7 +252,8 @@ prepare_fs_driver_set(struct panvk_cmd_buffer *cmdbuf)
    if (desc_count && !driver_set.gpu)
       return VK_ERROR_OUT_OF_DEVICE_MEMORY;
 
-   emit_varying_descs(cmdbuf, (struct mali_attribute_packed *)(&descs[0]));
+   if (num_varying_attr_descs > 0)
+      emit_varying_descs(cmdbuf, (struct mali_attribute_packed *)(&descs[0]));
 
    /* Dummy sampler always comes right after the varyings. */
    pan_cast_and_pack(&descs[num_varying_attr_descs], SAMPLER, cfg) {

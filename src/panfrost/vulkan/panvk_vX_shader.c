@@ -1053,10 +1053,6 @@ panvk_compile_shader(struct panvk_device *dev,
       .gpu_id = phys_dev->kmod.props.gpu_prod_id,
       .no_ubo_to_push = true,
       .view_mask = (state && state->rp) ? state->rp->view_mask : 0,
-#if PAN_ARCH >= 9
-      /* LD_VAR_BUF does not support maxVertexOutputComponents (128) */
-      .valhall.use_ld_var_buf = false,
-#endif
    };
 
    if (info->stage == MESA_SHADER_FRAGMENT && state != NULL &&
@@ -1065,6 +1061,12 @@ panvk_compile_shader(struct panvk_device *dev,
 
    panvk_lower_nir(dev, nir, info->set_layout_count, info->set_layouts,
                    info->robustness, noperspective_varyings, &inputs, shader);
+
+#if PAN_ARCH >= 9
+   if (info->stage == MESA_SHADER_FRAGMENT)
+      /* Use LD_VAR_BUF[_IMM] for varyings if possible. */
+      inputs.valhall.use_ld_var_buf = panvk_use_ld_var_buf(shader);
+#endif
 
    result = panvk_compile_nir(dev, nir, info->flags, &inputs, shader);
 
