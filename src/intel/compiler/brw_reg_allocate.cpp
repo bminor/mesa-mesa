@@ -597,8 +597,8 @@ brw_reg_alloc::setup_inst_interference(const brw_inst *inst)
        * We don't apply it to SIMD16 instructions because previous code avoids
        * any register overlap between sources and destination.
        */
-      if (inst->exec_size < 16 && inst->is_send_from_grf() &&
-          inst->dst.file == VGRF)
+      if (inst->opcode == SHADER_OPCODE_SEND && inst->dst.file == VGRF &&
+          inst->exec_size < 16)
          ra_add_node_interference(g, first_vgrf_node + inst->dst.nr,
                                      grf127_send_hack_node);
    }
