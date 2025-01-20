@@ -630,8 +630,8 @@ brw_reg_alloc::setup_inst_interference(const brw_inst *inst)
     * register that works.
     */
    if (inst->eot && devinfo->ver < 30) {
-      const int vgrf = inst->opcode == SHADER_OPCODE_SEND ?
-                       inst->src[2].nr : inst->src[0].nr;
+      assert(inst->opcode == SHADER_OPCODE_SEND);
+      const int vgrf = inst->src[2].nr;
       const int size = DIV_ROUND_UP(fs->alloc.sizes[vgrf], reg_unit(devinfo));
       int reg = BRW_MAX_GRF - size;
 
