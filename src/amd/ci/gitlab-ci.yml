@@ -138,17 +138,6 @@ radeonsi-raven-va:
     # allocated if we run at the normal 4 threads.
     # https://github.com/intel/libva-utils/issues/248
     FDO_CI_CONCURRENT: 1
-    # A whole run would be about 25 minutes currently.  Fixing
-    # https://github.com/intel/libva-utils/issues/247 and
-    # https://github.com/google/googletest/issues/3614 would probably help.
-    GTEST_FRACTION: 2
-
-radeonsi-raven-va-full:
-  extends:
-    - radeonsi-raven-va
-    - .radeonsi-vaapi-manual-rules
-  variables:
-    GTEST_FRACTION: null
 
 ############### VKCTS tests ###############
 
