@@ -6344,8 +6344,6 @@ brw_from_nir_emit_intrinsic(nir_to_brw_state &ntb,
       srcs[GET_BUFFER_SIZE_SRC_LOD] = src_payload;
       brw_inst *inst = ubld.emit(SHADER_OPCODE_GET_BUFFER_SIZE, ret_payload,
                                 srcs, GET_BUFFER_SIZE_SRCS);
-      inst->header_size = 0;
-      inst->mlen = reg_unit(devinfo);
       inst->size_written = 4 * REG_SIZE * reg_unit(devinfo);
 
       /* SKL PRM, vol07, 3D Media GPGPU Engine, Bounds Checking and Faulting:
