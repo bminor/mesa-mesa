@@ -1154,7 +1154,7 @@
         "description": "egl: never select swrast for vmwgfx",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1de7c86bc1accf45ed42d4b67a1c37cd36f6306d",
         "notes": null
