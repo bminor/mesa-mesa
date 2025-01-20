@@ -849,17 +849,6 @@ const char *r600_get_llvm_processor_name(enum radeon_family family)
 	}
 }
 
-static unsigned get_max_threads_per_block(struct r600_common_screen *screen,
-					  enum pipe_shader_ir ir_type)
-{
-	if (ir_type != PIPE_SHADER_IR_TGSI &&
-	    ir_type != PIPE_SHADER_IR_NIR)
-		return 256;
-	if (screen->gfx_level >= EVERGREEN)
-		return 1024;
-	return 256;
-}
-
 static int r600_get_compute_param(struct pipe_screen *screen,
         enum pipe_shader_ir ir_type,
         enum pipe_compute_cap param,
@@ -896,23 +885,38 @@ static int r600_get_compute_param(struct pipe_screen *screen,
 		return 3 * sizeof(uint64_t) ;
 
 	case PIPE_COMPUTE_CAP_MAX_BLOCK_SIZE:
-	case PIPE_COMPUTE_CAP_MAX_BLOCK_SIZE_CLOVER:
 		if (ret) {
 			uint64_t *block_size = ret;
-			unsigned threads_per_block = get_max_threads_per_block(rscreen, ir_type);
+			unsigned threads_per_block = rscreen->gfx_level >= EVERGREEN ? 1024 : 256;
 			block_size[0] = threads_per_block;
 			block_size[1] = threads_per_block;
 			block_size[2] = threads_per_block;
 		}
 		return 3 * sizeof(uint64_t);
 
+	case PIPE_COMPUTE_CAP_MAX_BLOCK_SIZE_CLOVER:
+		if (ret) {
+			uint64_t *block_size = ret;
+			block_size[0] = 256;
+			block_size[1] = 256;
+			block_size[2] = 256;
+		}
+		return 3 * sizeof(uint64_t);
+
 	case PIPE_COMPUTE_CAP_MAX_THREADS_PER_BLOCK:
+		if (ret) {
+			uint64_t *max_threads_per_block = ret;
+			*max_threads_per_block = rscreen->gfx_level >= EVERGREEN ? 1024 : 256;
+		}
+		return sizeof(uint64_t);
+
 	case PIPE_COMPUTE_CAP_MAX_THREADS_PER_BLOCK_CLOVER:
 		if (ret) {
 			uint64_t *max_threads_per_block = ret;
-			*max_threads_per_block = get_max_threads_per_block(rscreen, ir_type);
+			*max_threads_per_block = 256;
 		}
 		return sizeof(uint64_t);
+
 	case PIPE_COMPUTE_CAP_ADDRESS_BITS:
 		if (ret) {
 			uint32_t *address_bits = ret;
