@@ -22,7 +22,7 @@ uncollapsed_section_start deqp-$deqp_api "Building dEQP $DEQP_API"
 # - the GL release produces `glcts`, and
 # - the GLES release produces `deqp-gles*` and `deqp-egl`
 
-DEQP_MAIN_COMMIT=a9f7069b9a5ba94715a175cb1818ed504add0107
+DEQP_MAIN_COMMIT=a9988483c0864d7190e5e6264ccead95423dfd00
 DEQP_VK_VERSION=1.3.10.0
 DEQP_GL_VERSION=4.6.5.0
 DEQP_GLES_VERSION=3.2.11.0
@@ -37,9 +37,6 @@ DEQP_GLES_VERSION=3.2.11.0
 main_cts_commits_to_backport=(
     # If you find yourself wanting to add something in here, consider whether
     # bumping DEQP_MAIN_COMMIT is not a better solution :)
-
-    # Build testlog-* and other tools also on Android
-    0fcd87248f83a2174e5c938cb105dc2da03f3683
 )
 
 # shellcheck disable=SC2034
