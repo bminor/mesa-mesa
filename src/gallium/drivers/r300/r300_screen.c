@@ -608,6 +608,77 @@ static bool r300_is_format_supported(struct pipe_screen* screen,
     return retval == usage;
 }
 
+static void r300_init_shader_caps(struct r300_screen* r300screen)
+{
+   bool is_r400 = r300screen->caps.is_r400;
+   bool is_r500 = r300screen->caps.is_r500;
+
+   struct pipe_shader_caps *caps =
+      (struct pipe_shader_caps *)&r300screen->screen.shader_caps[PIPE_SHADER_VERTEX];
+
+   if (r300screen->caps.has_tcl) {
+      caps->max_instructions =
+      caps->max_alu_instructions = is_r500 ? 1024 : 256;
+      /* For loops; not sure about conditionals. */
+      caps->max_control_flow_depth = is_r500 ? 4 : 0;
+      caps->max_inputs = 16;
+      caps->max_outputs = 10;
+      caps->max_const_buffer0_size = 256 * sizeof(float[4]);
+      caps->max_const_buffers = 1;
+      caps->max_temps = 32;
+      caps->indirect_const_addr = true;
+      caps->tgsi_any_inout_decl_range = true;
+   } else {
+      draw_init_shader_caps(caps);
+
+      caps->max_texture_samplers = 0;
+      caps->max_sampler_views = 0;
+      caps->subroutines = false;
+      caps->max_shader_buffers = 0;
+      caps->max_shader_images = 0;
+      /* mesa/st requires that this cap is the same across stages, and the FS
+       * can't do ints.
+       */
+      caps->integers = false;
+      /* Even if gallivm NIR can do this, we call nir_to_tgsi manually and
+       * TGSI can't.
+       */
+      caps->int16 = false;
+      caps->fp16 = false;
+      caps->fp16_derivatives = false;
+      caps->fp16_const_buffers = false;
+      /* While draw could normally handle this for the VS, the NIR lowering
+       * to regs can't handle our non-native-integers, so we have to lower to
+       * if ladders.
+       */
+      caps->indirect_temp_addr = false;
+   }
+   caps->supported_irs = (1 << PIPE_SHADER_IR_NIR) | (1 << PIPE_SHADER_IR_TGSI);
+
+   caps = (struct pipe_shader_caps *)&r300screen->screen.shader_caps[PIPE_SHADER_FRAGMENT];
+
+   caps->max_instructions = is_r500 || is_r400 ? 512 : 96;
+   caps->max_alu_instructions = is_r500 || is_r400 ? 512 : 64;
+   caps->max_tex_instructions = is_r500 || is_r400 ? 512 : 32;
+   caps->max_tex_indirections = is_r500 ? 511 : 4;
+   caps->max_control_flow_depth = is_r500 ? 64 : 0; /* Actually unlimited on r500. */
+   /* 2 colors + 8 texcoords are always supported
+    * (minus fog and wpos).
+    *
+    * R500 has the ability to turn 3rd and 4th color into
+    * additional texcoords but there is no two-sided color
+    * selection then. However the facing bit can be used instead. */
+   caps->max_inputs = 10;
+   caps->max_outputs = 4;
+   caps->max_const_buffer0_size = (is_r500 ? 256 : 32) * sizeof(float[4]);
+   caps->max_const_buffers = 1;
+   caps->tgsi_any_inout_decl_range = true;
+   caps->max_temps = is_r500 ? 128 : is_r400 ? 64 : 32;
+   caps->max_texture_samplers =
+   caps->max_sampler_views = r300screen->caps.num_tex_units;
+   caps->supported_irs = (1 << PIPE_SHADER_IR_NIR) | (1 << PIPE_SHADER_IR_TGSI);
+}
+
 static void r300_init_screen_caps(struct r300_screen* r300screen)
 {
    struct pipe_caps *caps = (struct pipe_caps *)&r300screen->screen.caps;
@@ -818,6 +889,7 @@ struct pipe_screen* r300_screen_create(struct radeon_winsys *rws,
 
     r300_init_screen_resource_functions(r300screen);
 
+    r300_init_shader_caps(r300screen);
     r300_init_screen_caps(r300screen);
 
     r300_disk_cache_create(r300screen);
