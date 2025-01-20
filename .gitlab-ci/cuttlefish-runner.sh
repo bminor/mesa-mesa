@@ -13,10 +13,8 @@ export LD_LIBRARY_PATH=/cuttlefish/lib64:${CI_PROJECT_DIR}/install/lib:$LD_LIBRA
 export EGL_PLATFORM=surfaceless
 
 # Pick up a vulkan driver
-#
-# TODO: the vulkan driver should probably be controlled by a variable in the
-# .test-android job or in derived jobs
-export VK_DRIVER_FILES=${CI_PROJECT_DIR}/install/share/vulkan/icd.d/
+ARCH=$(uname -m)
+export VK_DRIVER_FILES=${CI_PROJECT_DIR}/install/share/vulkan/icd.d/${VK_DRIVER:-}_icd.$ARCH.json
 
 syslogd
 

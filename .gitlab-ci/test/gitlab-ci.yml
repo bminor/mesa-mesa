@@ -117,6 +117,10 @@ yaml-toml-shell-py-test:
     # This is for the guest artifacts from debian-android which will be
     # downloaded explicitly by cuttlefish-runner.sh
     S3_ANDROID_ARTIFACT_NAME: mesa-x86_64-android-debug
+    # Set the default Vulkan driver to lavapipe for some preliminary checks
+    # that Cuttlefish always performs before starting the VM. This can be
+    # overwritten depending on the physical machine running the job.
+    VK_DRIVER: "lvp"
   needs:
     - job: debian-testing
       artifacts: true  # On the host we want the Linux build
