@@ -1535,19 +1535,7 @@ radv_precompute_registers_hw_ngg(struct radv_device *device, const struct ac_sha
    const unsigned num_prim_params = info->outinfo.prim_param_exports;
 
    if (pdev->info.gfx_level >= GFX12) {
-      unsigned num_params = info->outinfo.param_exports;
-
-      /* Since there is no alloc/dealloc mechanism for the 12-bit ordered IDs, they can wrap
-       * around if there are more than 2^12 workgroups, causing 2 workgroups to get the same
-       * ordered ID, which would break the streamout algorithm.
-       * The recommended solution is to use the alloc/dealloc mechanism of the attribute ring,
-       * which is enough to limit the range of ordered IDs that can be in flight.
-       */
-      if (info->so.num_outputs) {
-         num_params = MAX2(num_params, 8);
-      } else {
-         num_params = MAX2(num_params, 1);
-      }
+      const unsigned num_params = MAX2(info->outinfo.param_exports, 1);
 
       info->regs.spi_vs_out_config = S_00B0C4_VS_EXPORT_COUNT(num_params - 1) |
                                      S_00B0C4_PRIM_EXPORT_COUNT(num_prim_params) | S_00B0C4_NO_PC_EXPORT(no_pc_export);
