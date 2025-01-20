@@ -812,15 +812,6 @@ static bool si_vid_is_target_buffer_supported(struct pipe_screen *screen,
    return si_vid_is_format_supported(screen, format, profile, entrypoint);
 }
 
-static unsigned get_max_threads_per_block(struct si_screen *screen, enum pipe_shader_ir ir_type)
-{
-   if (ir_type == PIPE_SHADER_IR_NATIVE)
-      return 256;
-
-   /* LLVM only supports 1024 threads per block. */
-   return 1024;
-}
-
 static int si_get_compute_param(struct pipe_screen *screen, enum pipe_shader_ir ir_type,
                                 enum pipe_compute_cap param, void *ret)
 {
@@ -857,23 +848,37 @@ static int si_get_compute_param(struct pipe_screen *screen, enum pipe_shader_ir 
       return 3 * sizeof(uint64_t);
 
    case PIPE_COMPUTE_CAP_MAX_BLOCK_SIZE:
+      if (ret) {
+         uint64_t *block_size = ret;
+         block_size[0] = 1024;
+         block_size[1] = 1024;
+         block_size[2] = 1024;
+      }
+      return 3 * sizeof(uint64_t);
+
    case PIPE_COMPUTE_CAP_MAX_BLOCK_SIZE_CLOVER:
       if (ret) {
          uint64_t *block_size = ret;
-         unsigned threads_per_block = get_max_threads_per_block(sscreen, ir_type);
-         block_size[0] = threads_per_block;
-         block_size[1] = threads_per_block;
-         block_size[2] = threads_per_block;
+         block_size[0] = 256;
+         block_size[1] = 256;
+         block_size[2] = 256;
       }
       return 3 * sizeof(uint64_t);
 
    case PIPE_COMPUTE_CAP_MAX_THREADS_PER_BLOCK:
+      if (ret) {
+         uint64_t *max_threads_per_block = ret;
+         *max_threads_per_block = 1024;
+      }
+      return sizeof(uint64_t);
+
    case PIPE_COMPUTE_CAP_MAX_THREADS_PER_BLOCK_CLOVER:
       if (ret) {
          uint64_t *max_threads_per_block = ret;
-         *max_threads_per_block = get_max_threads_per_block(sscreen, ir_type);
+         *max_threads_per_block = 256;
       }
       return sizeof(uint64_t);
+
    case PIPE_COMPUTE_CAP_ADDRESS_BITS:
       if (ret) {
          uint32_t *address_bits = ret;
@@ -955,7 +960,7 @@ static int si_get_compute_param(struct pipe_screen *screen, enum pipe_shader_ir 
    case PIPE_COMPUTE_CAP_MAX_SUBGROUPS: {
       if (ret) {
          uint32_t *max_subgroups = ret;
-         unsigned threads = get_max_threads_per_block(sscreen, ir_type);
+         unsigned threads = 1024;
          unsigned subgroup_size;
 
          if (sscreen->debug_flags & DBG(W64_CS) || sscreen->info.gfx_level < GFX10)
@@ -981,10 +986,7 @@ static int si_get_compute_param(struct pipe_screen *screen, enum pipe_shader_ir 
    case PIPE_COMPUTE_CAP_MAX_VARIABLE_THREADS_PER_BLOCK:
       if (ret) {
          uint64_t *max_variable_threads_per_block = ret;
-         if (ir_type == PIPE_SHADER_IR_NATIVE)
-            *max_variable_threads_per_block = 0;
-         else
-            *max_variable_threads_per_block = SI_MAX_VARIABLE_THREADS_PER_BLOCK;
+         *max_variable_threads_per_block = SI_MAX_VARIABLE_THREADS_PER_BLOCK;
       }
       return sizeof(uint64_t);
    }
