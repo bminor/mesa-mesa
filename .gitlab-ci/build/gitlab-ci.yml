@@ -471,13 +471,11 @@ debian-android:
     - export VULKAN_DRIVERS=freedreno,broadcom,virtio
     - *meson-build
     # x86_64 build:
-    # Can't do Intel because gen_decoder.c currently requires libexpat, which
-    # is not a dependency that AOSP wants to accept.  Can't do Radeon Gallium
-    # drivers because they requires LLVM, which we don't have an Android build
-    # of.
+    # Can't do AMD drivers because they require LLVM, which is currently
+    # problematic in our Android builds.
     - export CROSS=x86_64-linux-android
     - export GALLIUM_DRIVERS=iris,virgl,zink,softpipe,llvmpipe,swrast
-    - export VULKAN_DRIVERS=virtio,swrast
+    - export VULKAN_DRIVERS=intel,virtio,swrast
     - .gitlab-ci/create-llvm-meson-wrap-file.sh
     - *meson-build
     - .gitlab-ci/prepare-artifacts.sh
