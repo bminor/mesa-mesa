@@ -163,7 +163,7 @@ a618-skqp:
 a618-piglit-full:
   extends:
     - .lava-test-deqp:arm64
-    - .lava-sc7180-trogdor-lazor-limozeen:arm64
+    - .lava-sc7180-trogdor-kingoftown:arm64
     # Note that piglit has GL+VK integration testing.
     - .collabora-freedreno-turnip-manual-rules
   timeout: 60m
