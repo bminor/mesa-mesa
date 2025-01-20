@@ -36,23 +36,10 @@ enum clause_type {
 void
 emit_clause(Builder& bld, unsigned num_instrs, aco_ptr<Instruction>* instrs)
 {
-   unsigned start = 0;
-   unsigned end = num_instrs;
+   if (num_instrs > 1)
+      bld.sopp(aco_opcode::s_clause, num_instrs - 1);
 
-   if (bld.program->gfx_level < GFX11) {
-      /* skip any stores at the start */
-      for (; (start < num_instrs) && instrs[start]->definitions.empty(); start++)
-         bld.insert(std::move(instrs[start]));
-
-      for (end = start; (end < num_instrs) && !instrs[end]->definitions.empty(); end++)
-         ;
-   }
-
-   unsigned clause_size = end - start;
-   if (clause_size > 1)
-      bld.sopp(aco_opcode::s_clause, clause_size - 1);
-
-   for (unsigned i = start; i < num_instrs; i++)
+   for (unsigned i = 0; i < num_instrs; i++)
       bld.insert(std::move(instrs[i]));
 }
 
@@ -211,6 +198,10 @@ get_type(Program* program, aco_ptr<Instruction>& instr)
          }
       }
    } else {
+      /* Exclude stores from clauses before GFX11. */
+      if (instr->definitions.empty())
+         return clause_other;
+
       if (instr->isVMEM() && !instr->operands.empty()) {
          if (program->gfx_level == GFX10 && instr->isMIMG() && get_mimg_nsa_dwords(instr.get()) > 0)
             return clause_other;
