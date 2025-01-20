@@ -177,7 +177,6 @@ trace_screen_get_shader_param(struct pipe_screen *_screen,
 
 static int
 trace_screen_get_compute_param(struct pipe_screen *_screen,
-                               enum pipe_shader_ir ir_type,
                                enum pipe_compute_cap param,
                                void *data)
 {
@@ -188,11 +187,10 @@ trace_screen_get_compute_param(struct pipe_screen *_screen,
    trace_dump_call_begin("pipe_screen", "get_compute_param");
 
    trace_dump_arg(ptr, screen);
-   trace_dump_arg_enum(pipe_shader_ir, ir_type);
    trace_dump_arg_enum(pipe_compute_cap, param);
    trace_dump_arg(ptr, data);
 
-   result = screen->get_compute_param(screen, ir_type, param, data);
+   result = screen->get_compute_param(screen, param, data);
 
    trace_dump_ret(int, result);
 

@@ -95,13 +95,12 @@ tegra_screen_get_video_param(struct pipe_screen *pscreen,
 
 static int
 tegra_screen_get_compute_param(struct pipe_screen *pscreen,
-                               enum pipe_shader_ir ir_type,
                                enum pipe_compute_cap param,
                                void *retp)
 {
    struct tegra_screen *screen = to_tegra_screen(pscreen);
 
-   return screen->gpu->get_compute_param(screen->gpu, ir_type, param,
+   return screen->gpu->get_compute_param(screen->gpu, param,
                                          retp);
 }
 

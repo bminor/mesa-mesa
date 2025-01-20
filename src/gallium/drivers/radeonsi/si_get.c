@@ -812,7 +812,7 @@ static bool si_vid_is_target_buffer_supported(struct pipe_screen *screen,
    return si_vid_is_format_supported(screen, format, profile, entrypoint);
 }
 
-static int si_get_compute_param(struct pipe_screen *screen, enum pipe_shader_ir ir_type,
+static int si_get_compute_param(struct pipe_screen *screen,
                                 enum pipe_compute_cap param, void *ret)
 {
    struct si_screen *sscreen = (struct si_screen *)screen;
@@ -891,7 +891,7 @@ static int si_get_compute_param(struct pipe_screen *screen, enum pipe_shader_ir 
          uint64_t *max_global_size = ret;
          uint64_t max_mem_alloc_size;
 
-         si_get_compute_param(screen, ir_type, PIPE_COMPUTE_CAP_MAX_MEM_ALLOC_SIZE,
+         si_get_compute_param(screen, PIPE_COMPUTE_CAP_MAX_MEM_ALLOC_SIZE,
                               &max_mem_alloc_size);
 
          /* In OpenCL, the MAX_MEM_ALLOC_SIZE must be at least

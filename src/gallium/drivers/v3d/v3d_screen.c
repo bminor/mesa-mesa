@@ -219,7 +219,7 @@ v3d_screen_get_shader_param(struct pipe_screen *pscreen, enum pipe_shader_type s
 }
 
 static int
-v3d_get_compute_param(struct pipe_screen *pscreen, enum pipe_shader_ir ir_type,
+v3d_get_compute_param(struct pipe_screen *pscreen,
                       enum pipe_compute_cap param, void *ret)
 {
         struct v3d_screen *screen = v3d_screen(pscreen);

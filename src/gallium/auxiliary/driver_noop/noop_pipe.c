@@ -506,13 +506,12 @@ static int noop_get_shader_param(struct pipe_screen* pscreen,
 }
 
 static int noop_get_compute_param(struct pipe_screen *pscreen,
-                                  enum pipe_shader_ir ir_type,
                                   enum pipe_compute_cap param,
                                   void *ret)
 {
    struct pipe_screen *screen = ((struct noop_pipe_screen*)pscreen)->oscreen;
 
-   return screen->get_compute_param(screen, ir_type, param, ret);
+   return screen->get_compute_param(screen, param, ret);
 }
 
 static bool noop_is_format_supported(struct pipe_screen* pscreen,

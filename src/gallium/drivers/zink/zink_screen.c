@@ -450,7 +450,7 @@ zink_screen_get_pipeline_cache(struct zink_screen *screen, struct zink_program *
 }
 
 static int
-zink_get_compute_param(struct pipe_screen *pscreen, enum pipe_shader_ir ir_type,
+zink_get_compute_param(struct pipe_screen *pscreen,
                        enum pipe_compute_cap param, void *ret)
 {
    struct zink_screen *screen = zink_screen(pscreen);

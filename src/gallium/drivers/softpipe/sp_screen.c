@@ -414,7 +414,6 @@ softpipe_flush_frontbuffer(struct pipe_screen *_screen,
 
 static int
 softpipe_get_compute_param(struct pipe_screen *_screen,
-                           enum pipe_shader_ir ir_type,
                            enum pipe_compute_cap param,
                            void *ret)
 {

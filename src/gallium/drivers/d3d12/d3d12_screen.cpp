@@ -236,7 +236,6 @@ d3d12_get_shader_param(struct pipe_screen *pscreen,
 
 static int
 d3d12_get_compute_param(struct pipe_screen *pscreen,
-                        enum pipe_shader_ir ir,
                         enum pipe_compute_cap cap,
                         void *ret)
 {

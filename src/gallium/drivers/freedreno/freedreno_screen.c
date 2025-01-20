@@ -344,7 +344,7 @@ fd_screen_get_shader_param(struct pipe_screen *pscreen,
  * into per-generation backend?
  */
 static int
-fd_get_compute_param(struct pipe_screen *pscreen, enum pipe_shader_ir ir_type,
+fd_get_compute_param(struct pipe_screen *pscreen,
                      enum pipe_compute_cap param, void *ret)
 {
    struct fd_screen *screen = fd_screen(pscreen);

@@ -76,13 +76,12 @@ dd_screen_get_disk_shader_cache(struct pipe_screen *_screen)
 
 static int
 dd_screen_get_compute_param(struct pipe_screen *_screen,
-                            enum pipe_shader_ir ir_type,
                             enum pipe_compute_cap param,
                             void *ret)
 {
    struct pipe_screen *screen = dd_screen(_screen)->screen;
 
-   return screen->get_compute_param(screen, ir_type, param, ret);
+   return screen->get_compute_param(screen, param, ret);
 }
 
 static int

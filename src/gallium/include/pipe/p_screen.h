@@ -151,8 +151,6 @@ struct pipe_screen {
 
    /**
     * Query a compute-specific capability/parameter/limit.
-    * \param ir_type shader IR type for which the param applies, or don't care
-    *                if the param is not shader related
     * \param param   one of PIPE_COMPUTE_CAP_x
     * \param ret     pointer to a preallocated buffer that will be
     *                initialized to the parameter value, or NULL.
@@ -160,7 +158,6 @@ struct pipe_screen {
     *                returned.
     */
    int (*get_compute_param)(struct pipe_screen *,
-                            enum pipe_shader_ir ir_type,
                             enum pipe_compute_cap param,
                             void *ret);
 

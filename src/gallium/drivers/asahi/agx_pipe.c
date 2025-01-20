@@ -2078,7 +2078,7 @@ agx_get_shader_param(struct pipe_screen *pscreen, enum pipe_shader_type shader,
 }
 
 static int
-agx_get_compute_param(struct pipe_screen *pscreen, enum pipe_shader_ir ir_type,
+agx_get_compute_param(struct pipe_screen *pscreen,
                       enum pipe_compute_cap param, void *ret)
 {
    struct agx_device *dev = agx_device(pscreen);

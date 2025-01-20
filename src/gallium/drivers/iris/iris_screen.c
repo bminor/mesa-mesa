@@ -274,7 +274,6 @@ iris_get_shader_param(struct pipe_screen *pscreen,
 
 static int
 iris_get_compute_param(struct pipe_screen *pscreen,
-                       enum pipe_shader_ir ir_type,
                        enum pipe_compute_cap param,
                        void *ret)
 {

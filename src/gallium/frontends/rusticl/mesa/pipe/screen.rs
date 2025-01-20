@@ -298,7 +298,6 @@ impl PipeScreen {
         unsafe {
             self.screen().get_compute_param.unwrap()(
                 self.screen.as_ptr(),
-                pipe_shader_ir::PIPE_SHADER_IR_NIR,
                 cap,
                 ptr,
             )

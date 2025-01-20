@@ -1668,14 +1668,14 @@ void st_init_extensions(struct pipe_screen *screen,
       uint64_t grid_size[3], block_size[3];
       uint64_t max_local_size, max_threads_per_block;
 
-      screen->get_compute_param(screen, PIPE_SHADER_IR_NIR,
+      screen->get_compute_param(screen,
                                  PIPE_COMPUTE_CAP_MAX_GRID_SIZE, grid_size);
-      screen->get_compute_param(screen, PIPE_SHADER_IR_NIR,
+      screen->get_compute_param(screen,
                                  PIPE_COMPUTE_CAP_MAX_BLOCK_SIZE, block_size);
-      screen->get_compute_param(screen, PIPE_SHADER_IR_NIR,
+      screen->get_compute_param(screen,
                                  PIPE_COMPUTE_CAP_MAX_THREADS_PER_BLOCK,
                                  &max_threads_per_block);
-      screen->get_compute_param(screen, PIPE_SHADER_IR_NIR,
+      screen->get_compute_param(screen,
                                  PIPE_COMPUTE_CAP_MAX_LOCAL_SIZE,
                                  &max_local_size);
 
@@ -1696,7 +1696,7 @@ void st_init_extensions(struct pipe_screen *screen,
       if (extensions->ARB_compute_shader) {
          uint64_t max_variable_threads_per_block = 0;
 
-         screen->get_compute_param(screen, PIPE_SHADER_IR_NIR,
+         screen->get_compute_param(screen,
                                     PIPE_COMPUTE_CAP_MAX_VARIABLE_THREADS_PER_BLOCK,
                                     &max_variable_threads_per_block);
 

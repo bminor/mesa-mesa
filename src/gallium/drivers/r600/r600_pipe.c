@@ -269,7 +269,7 @@ static int r600_get_shader_param(struct pipe_screen* pscreen,
 	case PIPE_SHADER_CAP_MAX_CONST_BUFFER0_SIZE:
 		if (shader == PIPE_SHADER_COMPUTE) {
 			uint64_t max_const_buffer_size;
-			pscreen->get_compute_param(pscreen, PIPE_SHADER_IR_NIR,
+			pscreen->get_compute_param(pscreen,
 						   PIPE_COMPUTE_CAP_MAX_MEM_ALLOC_SIZE,
 						   &max_const_buffer_size);
 			return MIN2(max_const_buffer_size, INT_MAX);

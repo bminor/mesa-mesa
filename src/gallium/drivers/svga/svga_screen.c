@@ -470,7 +470,6 @@ svga_get_shader_param(struct pipe_screen *screen, enum pipe_shader_type shader,
 
 static int
 svga_sm5_get_compute_param(struct pipe_screen *screen,
-                           enum pipe_shader_ir ir_type,
                            enum pipe_compute_cap param,
                            void *ret)
 {

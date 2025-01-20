@@ -448,7 +448,6 @@ panfrost_is_dmabuf_modifier_supported(struct pipe_screen *screen,
 
 static int
 panfrost_get_compute_param(struct pipe_screen *pscreen,
-                           enum pipe_shader_ir ir_type,
                            enum pipe_compute_cap param, void *ret)
 {
    struct panfrost_device *dev = pan_device(pscreen);

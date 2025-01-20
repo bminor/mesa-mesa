@@ -754,30 +754,30 @@ pipe_screen::get_compute_param.
   ``processor-arch-manufacturer-os`` that will be passed on to the compiler.
   This CAP is only relevant for drivers that specify PIPE_SHADER_IR_NATIVE for
   their preferred IR.
-  Value type: null-terminated string. Shader IR type dependent.
+  Value type: null-terminated string.
 * ``PIPE_COMPUTE_CAP_GRID_DIMENSION``: Number of supported dimensions
-  for grid and block coordinates.  Value type: ``uint64_t``. Shader IR type dependent.
+  for grid and block coordinates.  Value type: ``uint64_t``.
 * ``PIPE_COMPUTE_CAP_MAX_GRID_SIZE``: Maximum grid size in block
-  units.  Value type: ``uint64_t []``.  Shader IR type dependent.
+  units.  Value type: ``uint64_t []``.
 * ``PIPE_COMPUTE_CAP_MAX_BLOCK_SIZE``: Maximum block size in thread
-  units.  Value type: ``uint64_t []``. Shader IR type dependent.
+  units.  Value type: ``uint64_t []``.
 * ``PIPE_COMPUTE_CAP_MAX_BLOCK_SIZE_CLOVER``: Same as ``PIPE_COMPUTE_CAP_MAX_BLOCK_SIZE``
   but used by clover only.
 * ``PIPE_COMPUTE_CAP_MAX_THREADS_PER_BLOCK``: Maximum number of threads that
-  a single block can contain.  Value type: ``uint64_t``. Shader IR type dependent.
+  a single block can contain.  Value type: ``uint64_t``.
   This may be less than the product of the components of MAX_BLOCK_SIZE and is
   usually limited by the number of threads that can be resident simultaneously
   on a compute unit.
 * ``PIPE_COMPUTE_CAP_MAX_THREADS_PER_BLOCK_CLOVER``: Same as
   ``PIPE_COMPUTE_CAP_MAX_THREADS_PER_BLOCK`` but used by clover only.
 * ``PIPE_COMPUTE_CAP_MAX_GLOBAL_SIZE``: Maximum size of the GLOBAL
-  resource.  Value type: ``uint64_t``. Shader IR type dependent.
+  resource.  Value type: ``uint64_t``.
 * ``PIPE_COMPUTE_CAP_MAX_LOCAL_SIZE``: Maximum size of the LOCAL
-  resource.  Value type: ``uint64_t``. Shader IR type dependent.
+  resource.  Value type: ``uint64_t``.
 * ``PIPE_COMPUTE_CAP_MAX_PRIVATE_SIZE``: Maximum size of the PRIVATE
-  resource.  Value type: ``uint64_t``. Shader IR type dependent.
+  resource.  Value type: ``uint64_t``.
 * ``PIPE_COMPUTE_CAP_MAX_INPUT_SIZE``: Maximum size of the INPUT
-  resource.  Value type: ``uint64_t``. Shader IR type dependent.
+  resource.  Value type: ``uint64_t``.
 * ``PIPE_COMPUTE_CAP_MAX_MEM_ALLOC_SIZE``: Maximum size of a memory object
   allocation in bytes.  Value type: ``uint64_t``.
 * ``PIPE_COMPUTE_CAP_MAX_CLOCK_FREQUENCY``: Maximum frequency of the GPU

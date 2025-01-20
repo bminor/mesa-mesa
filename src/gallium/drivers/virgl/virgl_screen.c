@@ -278,7 +278,6 @@ virgl_get_video_param(struct pipe_screen *screen,
 
 static int
 virgl_get_compute_param(struct pipe_screen *screen,
-                        enum pipe_shader_ir ir_type,
                         enum pipe_compute_cap param,
                         void *ret)
 {

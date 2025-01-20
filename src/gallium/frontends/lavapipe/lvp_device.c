@@ -782,14 +782,14 @@ lvp_get_properties(const struct lvp_physical_device *device, struct vk_propertie
    uint64_t grid_size[3], block_size[3];
    uint64_t max_threads_per_block, max_local_size;
 
-   device->pscreen->get_compute_param(device->pscreen, PIPE_SHADER_IR_NIR,
+   device->pscreen->get_compute_param(device->pscreen,
                                        PIPE_COMPUTE_CAP_MAX_GRID_SIZE, grid_size);
-   device->pscreen->get_compute_param(device->pscreen, PIPE_SHADER_IR_NIR,
+   device->pscreen->get_compute_param(device->pscreen,
                                        PIPE_COMPUTE_CAP_MAX_BLOCK_SIZE, block_size);
-   device->pscreen->get_compute_param(device->pscreen, PIPE_SHADER_IR_NIR,
+   device->pscreen->get_compute_param(device->pscreen,
                                        PIPE_COMPUTE_CAP_MAX_THREADS_PER_BLOCK,
                                        &max_threads_per_block);
-   device->pscreen->get_compute_param(device->pscreen, PIPE_SHADER_IR_NIR,
+   device->pscreen->get_compute_param(device->pscreen,
                                        PIPE_COMPUTE_CAP_MAX_LOCAL_SIZE,
                                        &max_local_size);
 
