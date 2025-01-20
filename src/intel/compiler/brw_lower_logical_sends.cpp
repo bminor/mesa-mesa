@@ -2190,7 +2190,7 @@ lower_interpolator_logical_send(const brw_builder &bld, brw_inst *inst,
       break;
 
    case FS_OPCODE_INTERPOLATE_AT_PER_SLOT_OFFSET:
-      payload = inst->src[INTERP_SRC_OFFSET];
+      payload = bld.move_to_vgrf(inst->src[INTERP_SRC_OFFSET], 2);
       mlen = 2 * inst->exec_size / 8;
       mode = GFX7_PIXEL_INTERPOLATOR_LOC_PER_SLOT_OFFSET;
       break;
@@ -2486,7 +2486,7 @@ lower_get_buffer_size(const brw_builder &bld, brw_inst *inst)
 
    brw_reg surface = inst->src[GET_BUFFER_SIZE_SRC_SURFACE];
    brw_reg surface_handle = inst->src[GET_BUFFER_SIZE_SRC_SURFACE_HANDLE];
-   brw_reg lod = inst->src[GET_BUFFER_SIZE_SRC_LOD];
+   brw_reg lod = bld.move_to_vgrf(inst->src[GET_BUFFER_SIZE_SRC_LOD], 1);
 
    inst->opcode = SHADER_OPCODE_SEND;
    inst->mlen = inst->exec_size / 8;
