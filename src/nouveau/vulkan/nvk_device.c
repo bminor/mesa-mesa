@@ -102,7 +102,7 @@ nvk_slm_area_ensure(struct nvk_device *dev,
    simple_mtx_lock(&area->mutex);
    if (bytes_per_tpc <= area->bytes_per_tpc) {
       /* We lost the race, throw away our BO */
-      assert(area->bytes_per_warp == bytes_per_warp);
+      assert(area->bytes_per_warp >= bytes_per_warp);
       unref_mem = mem;
    } else {
       unref_mem = area->mem;
