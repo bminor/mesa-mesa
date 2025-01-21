@@ -1432,6 +1432,8 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
       tu_cs_emit_regs(cs, A7XX_PC_TESS_FACTOR_SIZE(TU_TESS_FACTOR_SIZE));
    }
 
+   tu_cs_emit_regs(cs, A6XX_PC_DGEN_SU_CONSERVATIVE_RAS_CNTL());
+
    /* There is an optimization to skip executing draw states for draws with no
     * instances. Instead of simply skipping the draw, internally the firmware
     * sets a bit in PC_DRAW_INITIATOR that seemingly skips the draw. However
