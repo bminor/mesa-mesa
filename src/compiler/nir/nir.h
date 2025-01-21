@@ -2752,6 +2752,11 @@ typedef struct nir_instr_debug_info {
    /* Line in the output of nir_print_shader. 0 if uninitialized. */
    uint32_t nir_line;
 
+   /* Contains the name of the variable/input/... that was lowered to this
+    * def by a pass like nir_lower_vars_to_ssa.
+    */
+   char *variable_name;
+
    /* The nir_instr has to be the last field since it has a varying size. */
    nir_instr instr;
 } nir_instr_debug_info;

@@ -1605,6 +1605,11 @@ read_call(read_ctx *ctx)
    return call;
 }
 
+enum nir_serialize_debug_info_flags {
+   NIR_SERIALIZE_FILENAME = 1 << 0,
+   NIR_SERIALIZE_VARIABLE_NAME = 1 << 1,
+};
+
 static void
 write_debug_info(write_ctx *ctx, const nir_instr *instr)
 {
@@ -1616,9 +1621,17 @@ write_debug_info(write_ctx *ctx, const nir_instr *instr)
 
    blob_write_uint32(ctx->blob, debug_info->nir_line);
 
-   blob_write_uint8(ctx->blob, !!debug_info->filename);
+   enum nir_serialize_debug_info_flags flags = 0;
+   if (debug_info->filename)
+      flags |= NIR_SERIALIZE_FILENAME;
+   if (debug_info->variable_name)
+      flags |= NIR_SERIALIZE_VARIABLE_NAME;
+   blob_write_uint8(ctx->blob, flags);
+
    if (debug_info->filename)
       blob_write_string(ctx->blob, debug_info->filename);
+   if (debug_info->variable_name)
+      blob_write_string(ctx->blob, debug_info->variable_name);
 }
 
 static void
@@ -1632,8 +1645,9 @@ read_debug_info(read_ctx *ctx, nir_instr_debug_info *debug_info)
 
    debug_info->nir_line = blob_read_uint32(ctx->blob);
 
-   bool has_filename = blob_read_uint8(ctx->blob);
-   if (has_filename) {
+   enum nir_serialize_debug_info_flags flags = blob_read_uint8(ctx->blob);
+
+   if (flags & NIR_SERIALIZE_FILENAME) {
       const char *filename = blob_read_string(ctx->blob);
 
       struct hash_entry *entry = _mesa_hash_table_search(ctx->strings, filename);
@@ -1642,6 +1656,18 @@ read_debug_info(read_ctx *ctx, nir_instr_debug_info *debug_info)
       } else {
          debug_info->filename = ralloc_strdup(ctx->nir, filename);
          _mesa_hash_table_insert(ctx->strings, filename, debug_info->filename);
+      }
+   }
+
+   if (flags & NIR_SERIALIZE_VARIABLE_NAME) {
+      const char *variable_name = blob_read_string(ctx->blob);
+
+      struct hash_entry *entry = _mesa_hash_table_search(ctx->strings, variable_name);
+      if (entry) {
+         debug_info->variable_name = entry->data;
+      } else {
+         debug_info->variable_name = ralloc_strdup(ctx->nir, variable_name);
+         _mesa_hash_table_insert(ctx->strings, variable_name, debug_info->variable_name);
       }
    }
 }

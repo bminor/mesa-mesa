@@ -137,6 +137,12 @@ print_def(nir_def *def, print_state *state)
            divergence_status(state, def->divergent),
            def->bit_size, sizes[def->num_components],
            padding, "", state->def_prefix, def->index);
+
+   if (state->shader->has_debug_info) {
+      nir_instr_debug_info *debug_info = nir_instr_get_debug_info(def->parent_instr);
+      if (debug_info->variable_name)
+         fprintf(fp, ".%s", debug_info->variable_name);
+   }
 }
 
 static unsigned
@@ -399,6 +405,12 @@ print_src(const nir_src *src, print_state *state, nir_alu_type src_type)
    FILE *fp = state->fp;
    fprintf(fp, "%s%u", state->def_prefix, src->ssa->index);
    nir_instr *instr = src->ssa->parent_instr;
+
+   if (state->shader->has_debug_info) {
+      nir_instr_debug_info *debug_info = nir_instr_get_debug_info(instr);
+      if (debug_info->variable_name)
+         fprintf(fp, ".%s", debug_info->variable_name);
+   }
 
    if (instr->type == nir_instr_type_load_const && !NIR_DEBUG(PRINT_NO_INLINE_CONSTS)) {
       nir_load_const_instr *load_const = nir_instr_as_load_const(instr);

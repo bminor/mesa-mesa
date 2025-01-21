@@ -249,6 +249,7 @@ clone_debug_info(clone_state *state, nir_instr *ninstr, const nir_instr *instr)
    const nir_instr_debug_info *debug_info = nir_instr_get_debug_info((void *)instr);
 
    ndebug_info->filename = clone_string(state, debug_info->filename);
+   ndebug_info->variable_name = clone_string(state, debug_info->variable_name);
 
    ndebug_info->line = debug_info->line;
    ndebug_info->column = debug_info->column;
