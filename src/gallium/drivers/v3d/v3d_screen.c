@@ -307,6 +307,123 @@ v3d_get_compute_param(struct pipe_screen *pscreen,
 }
 
 static void
+v3d_init_shader_caps(struct v3d_screen *screen)
+{
+        for (unsigned i = 0; i <= PIPE_SHADER_COMPUTE; i++) {
+                struct pipe_shader_caps *caps =
+                        (struct pipe_shader_caps *)&screen->base.shader_caps[i];
+
+                switch (i) {
+                case PIPE_SHADER_VERTEX:
+                case PIPE_SHADER_FRAGMENT:
+                case PIPE_SHADER_GEOMETRY:
+                        break;
+                case PIPE_SHADER_COMPUTE:
+                        if (!screen->has_csd)
+                                continue;
+                        break;
+                default:
+                        continue;
+                }
+
+                caps->max_instructions =
+                caps->max_alu_instructions =
+                caps->max_tex_instructions =
+                caps->max_tex_indirections = 16384;
+                caps->max_control_flow_depth = UINT_MAX;
+
+                switch (i) {
+                case PIPE_SHADER_VERTEX:
+                        caps->max_inputs = V3D_MAX_VS_INPUTS / 4;
+                        break;
+                case PIPE_SHADER_GEOMETRY:
+                        caps->max_inputs = V3D_MAX_GS_INPUTS / 4;
+                        break;
+                case PIPE_SHADER_FRAGMENT:
+                        caps->max_inputs = V3D_MAX_FS_INPUTS / 4;
+                        break;
+                default:
+                        break;
+                }
+
+                caps->max_outputs =
+                        i == PIPE_SHADER_FRAGMENT ? 4 : V3D_MAX_FS_INPUTS / 4;
+
+                caps->max_temps = 256; /* GL_MAX_PROGRAM_TEMPORARIES_ARB */
+                /* Note: Limited by the offset size in
+                 * v3d_unit_data_create().
+                 */
+                caps->max_const_buffer0_size = 16 * 1024 * sizeof(float);
+                caps->max_const_buffers = 16;
+                caps->indirect_temp_addr = true;
+                caps->indirect_const_addr = true;
+                caps->integers = true;
+                caps->max_texture_samplers =
+                caps->max_sampler_views = V3D_MAX_TEXTURE_SAMPLERS;
+
+                caps->max_shader_buffers =
+                        screen->has_cache_flush &&
+                        (i != PIPE_SHADER_VERTEX && i != PIPE_SHADER_GEOMETRY) ?
+                        PIPE_MAX_SHADER_BUFFERS : 0;
+
+                caps->max_shader_images =
+                        screen->has_cache_flush ? PIPE_MAX_SHADER_IMAGES : 0;
+
+                caps->supported_irs = 1 << PIPE_SHADER_IR_NIR;
+        }
+}
+
+static void
+v3d_init_compute_caps(struct v3d_screen *screen)
+{
+        struct pipe_compute_caps *caps =
+                (struct pipe_compute_caps *)&screen->base.compute_caps;
+
+        if (!screen->has_csd)
+                return;
+
+        caps->address_bits = 32;
+
+        snprintf(caps->ir_target, sizeof(caps->ir_target), "v3d");
+
+        caps->grid_dimension = 3;
+
+        /* GL_MAX_COMPUTE_SHADER_WORK_GROUP_COUNT: The CSD has a
+         * 16-bit field for the number of workgroups in each
+         * dimension.
+         */
+        caps->max_grid_size[0] =
+        caps->max_grid_size[1] =
+        caps->max_grid_size[2] = 65535;
+
+        /* GL_MAX_COMPUTE_WORK_GROUP_SIZE */
+        caps->max_block_size[0] =
+        caps->max_block_size[1] =
+        caps->max_block_size[2] = 256;
+
+        /* GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS: This is
+         * limited by WG_SIZE in the CSD.
+         */
+        caps->max_threads_per_block =
+        caps->max_variable_threads_per_block = 256;
+
+        /* GL_MAX_COMPUTE_SHARED_MEMORY_SIZE */
+        caps->max_local_size = 32768;
+
+        caps->max_private_size =
+        caps->max_input_size = 4096;
+
+        struct sysinfo si;
+        sysinfo(&si);
+        caps->max_global_size = si.totalram;
+        caps->max_mem_alloc_size = MIN2(V3D_MAX_BUFFER_RANGE, si.totalram);
+
+        caps->max_compute_units = 1;
+        caps->images_supported = true;
+        caps->subgroup_sizes = 16;
+}
+
+static void
 v3d_init_screen_caps(struct v3d_screen *screen)
 {
         struct pipe_caps *caps = (struct pipe_caps *)&screen->base.caps;
@@ -939,6 +1056,8 @@ v3d_screen_create(int fd, const struct pipe_screen_config *config,
                              BITFIELD_BIT(MESA_PRIM_TRIANGLES_ADJACENCY) |
                              BITFIELD_BIT(MESA_PRIM_TRIANGLE_STRIP_ADJACENCY);
 
+        v3d_init_shader_caps(screen);
+        v3d_init_compute_caps(screen);
         v3d_init_screen_caps(screen);
 
         return pscreen;
