@@ -321,6 +321,120 @@ virgl_get_compute_param(struct pipe_screen *screen,
 }
 
 static void
+virgl_init_shader_caps(struct virgl_screen *vscreen)
+{
+   for (unsigned i = 0; i <= PIPE_SHADER_COMPUTE; i++) {
+      struct pipe_shader_caps *caps =
+         (struct pipe_shader_caps *)&vscreen->base.shader_caps[i];
+
+      switch (i) {
+      case PIPE_SHADER_TESS_CTRL:
+      case PIPE_SHADER_TESS_EVAL:
+         if (!vscreen->caps.caps.v1.bset.has_tessellation_shaders)
+            continue;
+         break;
+      case PIPE_SHADER_COMPUTE:
+         if (!(vscreen->caps.caps.v2.capability_bits & VIRGL_CAP_COMPUTE_SHADER))
+            continue;
+         break;
+      default:
+         break;
+      }
+
+      caps->max_instructions =
+      caps->max_alu_instructions =
+      caps->max_tex_instructions =
+      caps->max_tex_indirections = INT_MAX;
+      caps->indirect_temp_addr = true;
+      caps->indirect_const_addr = true;
+      caps->tgsi_any_inout_decl_range =
+         vscreen->caps.caps.v2.capability_bits & VIRGL_CAP_INDIRECT_INPUT_ADDR;
+
+      caps->max_inputs =
+         vscreen->caps.caps.v1.glsl_level < 150 ?
+         vscreen->caps.caps.v2.max_vertex_attribs :
+         (i == PIPE_SHADER_VERTEX || i == PIPE_SHADER_GEOMETRY ?
+          vscreen->caps.caps.v2.max_vertex_attribs : 32);
+
+      switch (i) {
+      case PIPE_SHADER_FRAGMENT:
+         caps->max_outputs = vscreen->caps.caps.v1.max_render_targets;
+         break;
+      case PIPE_SHADER_TESS_CTRL:
+         if (vscreen->caps.caps.v2.host_feature_check_version >= 19) {
+            caps->max_outputs = vscreen->caps.caps.v2.max_tcs_outputs;
+            break;
+         }
+         FALLTHROUGH;
+      case PIPE_SHADER_TESS_EVAL:
+         if (vscreen->caps.caps.v2.host_feature_check_version >= 19) {
+            caps->max_outputs = vscreen->caps.caps.v2.max_tes_outputs;
+            break;
+         }
+         FALLTHROUGH;
+      default:
+         caps->max_outputs = vscreen->caps.caps.v2.max_vertex_outputs;
+         break;
+      }
+
+      caps->max_temps = 256;
+      caps->max_const_buffers =
+         MIN2(vscreen->caps.caps.v1.max_uniform_blocks, PIPE_MAX_CONSTANT_BUFFERS);
+      caps->subroutines = true;
+      caps->max_texture_samplers =
+         MIN2(vscreen->caps.caps.v2.max_texture_samplers, PIPE_MAX_SAMPLERS);
+      caps->integers = vscreen->caps.caps.v1.glsl_level >= 130;
+      caps->max_control_flow_depth = 32;
+      caps->max_const_buffer0_size =
+         vscreen->caps.caps.v2.host_feature_check_version < 12 ?
+         4096 * sizeof(float[4]) : VIRGL_SHADER_STAGE_CAP_V2(max_const_buffer_size, i);
+
+      int max_shader_buffers = VIRGL_SHADER_STAGE_CAP_V2(max_shader_storage_blocks, i);
+      if (max_shader_buffers != INT_MAX) {
+         caps->max_shader_buffers = max_shader_buffers;
+      } else if (i == PIPE_SHADER_FRAGMENT || i == PIPE_SHADER_COMPUTE) {
+         caps->max_shader_buffers = vscreen->caps.caps.v2.max_shader_buffer_frag_compute;
+      } else {
+         caps->max_shader_buffers = vscreen->caps.caps.v2.max_shader_buffer_other_stages;
+      }
+
+      caps->max_shader_images =
+         i == PIPE_SHADER_FRAGMENT || i == PIPE_SHADER_COMPUTE ?
+         vscreen->caps.caps.v2.max_shader_image_frag_compute :
+         vscreen->caps.caps.v2.max_shader_image_other_stages;
+
+      caps->supported_irs = (1 << PIPE_SHADER_IR_TGSI) | (1 << PIPE_SHADER_IR_NIR);
+
+      caps->max_hw_atomic_counters =
+         VIRGL_SHADER_STAGE_CAP_V2(max_atomic_counters, i);
+      caps->max_hw_atomic_counter_buffers =
+         VIRGL_SHADER_STAGE_CAP_V2(max_atomic_counter_buffers, i);
+   }
+}
+
+static void
+virgl_init_compute_caps(struct virgl_screen *vscreen)
+{
+   struct pipe_compute_caps *caps =
+      (struct pipe_compute_caps *)&vscreen->base.compute_caps;
+
+   if (!(vscreen->caps.caps.v2.capability_bits & VIRGL_CAP_COMPUTE_SHADER))
+      return;
+
+   caps->max_grid_size[0] = vscreen->caps.caps.v2.max_compute_grid_size[0];
+   caps->max_grid_size[1] = vscreen->caps.caps.v2.max_compute_grid_size[1];
+   caps->max_grid_size[2] = vscreen->caps.caps.v2.max_compute_grid_size[2];
+
+   caps->max_block_size[0] = vscreen->caps.caps.v2.max_compute_block_size[0];
+   caps->max_block_size[1] = vscreen->caps.caps.v2.max_compute_block_size[1];
+   caps->max_block_size[2] = vscreen->caps.caps.v2.max_compute_block_size[2];
+
+   caps->max_threads_per_block =
+      vscreen->caps.caps.v2.max_compute_work_group_invocations;
+   caps->max_local_size = vscreen->caps.caps.v2.max_compute_shared_memory_size;
+}
+
+static void
 virgl_init_screen_caps(struct virgl_screen *vscreen)
 {
    struct pipe_caps *caps = (struct pipe_caps *)&vscreen->base.caps;
@@ -1107,6 +1221,8 @@ virgl_create_screen(struct virgl_winsys *vws, const struct pipe_screen_config *c
    screen->tweak_gles_emulate_bgra &= !virgl_format_check_bitmask(PIPE_FORMAT_B8G8R8A8_SRGB, caps->v1.render.bitmask, false);
    screen->refcnt = 1;
 
+   virgl_init_shader_caps(screen);
+   virgl_init_compute_caps(screen);
    virgl_init_screen_caps(screen);
 
    /* Set up the NIR shader compiler options now that we've figured out the caps. */
