@@ -200,7 +200,7 @@ validate_view_qualifier(YYLTYPE *loc, struct _mesa_glsl_parse_state *state,
    }
    else if (view <= 0) {
       _mesa_glsl_error(loc, state,
-                       "invalid view specified %d is less than 0", view);
+                       "invalid view specified %d is less than 1", view);
       return false;
    }
 
