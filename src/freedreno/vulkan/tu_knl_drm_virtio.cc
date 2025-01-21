@@ -1159,6 +1159,9 @@ tu_knl_drm_virtio_load(struct tu_instance *instance,
    uint32_t bank_swizzle_levels = tu_drm_get_ubwc_swizzle(vdrm);
    enum fdl_macrotile_mode macrotile_mode = tu_drm_get_macrotile_mode(vdrm);
 
+   /* TODO add a cap for this */
+   bool has_raytracing = tu_drm_get_raytracing(vdrm);
+
    vdrm_device_close(vdrm);
 
    mesa_logd("wire_format_version: %u", caps.wire_format_version);
@@ -1227,8 +1230,7 @@ tu_knl_drm_virtio_load(struct tu_instance *instance,
 
    device->submitqueue_priority_count = caps.u.msm.priorities;
 
-   /* TODO add a cap for this */
-   device->has_raytracing = tu_drm_get_raytracing(vdrm);
+   device->has_raytracing = has_raytracing;
 
    device->syncobj_type = vk_drm_syncobj_get_type(fd);
    /* we don't support DRM_CAP_SYNCOBJ_TIMELINE, but drm-shim does */
