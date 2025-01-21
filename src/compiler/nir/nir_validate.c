@@ -1689,34 +1689,42 @@ validate_dominance(nir_function_impl *impl, validate_state *state)
       block->dom_frontier = _mesa_pointer_set_create(block);
    }
 
-   /* Call metadata passes and compare it against the preserved metadata. Dominance requires block
-    * indices, but we should ignore the current ones, since we don't trust them.
+   /* Call metadata passes and compare it against the preserved metadata and call SSA dominance
+    * validation. Dominance requires block indices, but we should ignore the current ones, since
+    * we don't trust them.
     */
    impl->valid_metadata &= ~(nir_metadata_block_index | nir_metadata_dominance);
    nir_metadata_require(impl, nir_metadata_block_index | nir_metadata_dominance);
    assert(impl->valid_metadata == (valid_metadata | nir_metadata_block_index | nir_metadata_dominance));
 
-   set_foreach(state->blocks, entry) {
-      nir_block *block = (nir_block *)entry->key;
-      block_dom_metadata *md = &blocks[entry - state->blocks->table];
-      state->block = (nir_block *)block;
+   if (valid_metadata & nir_metadata_dominance) {
+      set_foreach(state->blocks, entry) {
+         nir_block *block = (nir_block *)entry->key;
+         block_dom_metadata *md = &blocks[entry - state->blocks->table];
+         state->block = (nir_block *)block;
 
-      validate_assert(state, block->num_dom_children == md->num_dom_children);
-      validate_assert(state, block->dom_pre_index == md->dom_pre_index);
-      validate_assert(state, block->dom_post_index == md->dom_post_index);
+         validate_assert(state, block->num_dom_children == md->num_dom_children);
+         validate_assert(state, block->dom_pre_index == md->dom_pre_index);
+         validate_assert(state, block->dom_post_index == md->dom_post_index);
 
-      if (block->num_dom_children == md->num_dom_children && block->num_dom_children) {
-         validate_assert(state, !memcmp(block->dom_children, md->dom_children,
-                                        block->num_dom_children * sizeof(md->dom_children[0])));
+         if (block->num_dom_children == md->num_dom_children && block->num_dom_children) {
+            validate_assert(state, !memcmp(block->dom_children, md->dom_children,
+                                           block->num_dom_children * sizeof(md->dom_children[0])));
+         }
+
+         validate_assert(state, block->dom_frontier->entries == md->dom_frontier->entries);
+         set_foreach(block->dom_frontier, entry) {
+            validate_assert(state, _mesa_set_search_pre_hashed(md->dom_frontier,
+                                                               entry->hash, entry->key));
+         }
       }
-
-      validate_assert(state, block->dom_frontier->entries == md->dom_frontier->entries);
-      set_foreach(block->dom_frontier, entry) {
-         validate_assert(state, _mesa_set_search_pre_hashed(md->dom_frontier,
-                                                            entry->hash, entry->key));
-      }
+      state->block = NULL;
    }
-   state->block = NULL;
+
+   if (NIR_DEBUG(VALIDATE_SSA_DOMINANCE)) {
+      memset(state->ssa_defs_found, 0, BITSET_WORDS(impl->ssa_alloc) * sizeof(BITSET_WORD));
+      validate_ssa_dominance(impl, state);
+   }
 
    /* Restore the old dominance metadata */
    set_foreach(state->blocks, entry) {
@@ -1880,7 +1888,7 @@ validate_loop_info(nir_function_impl *impl, validate_state *state)
 }
 
 static void
-validate_metadata(nir_function_impl *impl, validate_state *state)
+validate_metadata_and_ssa_dominance(nir_function_impl *impl, validate_state *state)
 {
    /* We should preserve and restore metadata when necessary, so that passes do not accidentally
     * depend on nir_validate_shader().
@@ -1892,8 +1900,10 @@ validate_metadata(nir_function_impl *impl, validate_state *state)
    if (impl->valid_metadata & nir_metadata_instr_index)
       validate_instr_index(impl, state);
 
-   if (impl->valid_metadata & nir_metadata_dominance)
+   if (((impl->valid_metadata & nir_metadata_dominance) ||
+       NIR_DEBUG(VALIDATE_SSA_DOMINANCE))) {
       validate_dominance(impl, state);
+   }
 
    if (impl->valid_metadata & nir_metadata_live_defs)
       validate_live_defs(impl, state);
@@ -1949,17 +1959,7 @@ validate_function_impl(nir_function_impl *impl, validate_state *state)
 
    /* Metadata validation assumes a valid NIR shader. */
    if (_mesa_hash_table_num_entries(state->errors) == 0)
-      validate_metadata(impl, state);
-
-   static int run_validate_ssa_dominance = -1;
-   if (run_validate_ssa_dominance < 0) {
-      run_validate_ssa_dominance =
-         NIR_DEBUG(VALIDATE_SSA_DOMINANCE);
-   }
-   if (run_validate_ssa_dominance) {
-      memset(state->ssa_defs_found, 0, BITSET_WORDS(impl->ssa_alloc) * sizeof(BITSET_WORD));
-      validate_ssa_dominance(impl, state);
-   }
+      validate_metadata_and_ssa_dominance(impl, state);
 }
 
 static void
