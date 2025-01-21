@@ -238,6 +238,53 @@ softpipe_is_format_supported( struct pipe_screen *screen,
 
 
 static void
+softpipe_init_shader_caps(struct softpipe_screen *sp_screen)
+{
+   for (unsigned i = 0; i <= PIPE_SHADER_COMPUTE; i++) {
+      struct pipe_shader_caps *caps =
+         (struct pipe_shader_caps *)&sp_screen->base.shader_caps[i];
+
+      switch(i) {
+      case PIPE_SHADER_VERTEX:
+      case PIPE_SHADER_GEOMETRY:
+         if (sp_screen->use_llvm) {
+            draw_init_shader_caps(caps);
+            break;
+         }
+         FALLTHROUGH;
+      case PIPE_SHADER_FRAGMENT:
+      case PIPE_SHADER_COMPUTE:
+         tgsi_exec_init_shader_caps(caps);
+         break;
+      default:
+         continue;
+      }
+
+      caps->supported_irs = (1 << PIPE_SHADER_IR_NIR) | (1 << PIPE_SHADER_IR_TGSI);
+   }
+}
+
+
+static void
+softpipe_init_compute_caps(struct softpipe_screen *sp_screen)
+{
+   struct pipe_compute_caps *caps =
+      (struct pipe_compute_caps *)&sp_screen->base.compute_caps;
+
+   caps->max_grid_size[0] =
+   caps->max_grid_size[1] =
+   caps->max_grid_size[2] = 65535;
+
+   caps->max_block_size[0] =
+   caps->max_block_size[1] =
+   caps->max_block_size[2] = 1024;
+
+   caps->max_threads_per_block = 1024;
+   caps->max_local_size = 32768;
+}
+
+
+static void
 softpipe_init_screen_caps(struct softpipe_screen *sp_screen)
 {
    struct pipe_caps *caps = (struct pipe_caps *)&sp_screen->base.caps;
@@ -511,6 +558,8 @@ softpipe_create_screen(struct sw_winsys *winsys)
    softpipe_init_screen_texture_funcs(&screen->base);
    softpipe_init_screen_fence_funcs(&screen->base);
 
+   softpipe_init_shader_caps(screen);
+   softpipe_init_compute_caps(screen);
    softpipe_init_screen_caps(screen);
 
    return &screen->base;
