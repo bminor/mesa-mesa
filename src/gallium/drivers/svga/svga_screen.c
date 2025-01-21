@@ -506,6 +506,166 @@ svga_sm5_get_compute_param(struct pipe_screen *screen,
 }
 
 static void
+vgpu9_init_shader_caps(struct svga_screen *svgascreen)
+{
+   struct svga_winsys_screen *sws = svgascreen->sws;
+
+   assert(!sws->have_vgpu10);
+
+   struct pipe_shader_caps *caps =
+      (struct pipe_shader_caps *)&svgascreen->screen.shader_caps[PIPE_SHADER_VERTEX];
+
+   caps->max_instructions =
+   caps->max_alu_instructions =
+      get_uint_cap(sws, SVGA3D_DEVCAP_MAX_VERTEX_SHADER_INSTRUCTIONS, 512);
+
+   caps->max_control_flow_depth = SVGA3D_MAX_NESTING_LEVEL;
+   caps->max_inputs = 16;
+   caps->max_outputs = 10;
+   caps->max_const_buffer0_size = 256 * sizeof(float[4]);
+   caps->max_const_buffers = 1;
+   caps->max_temps =
+      MIN2(get_uint_cap(sws, SVGA3D_DEVCAP_MAX_VERTEX_SHADER_TEMPS, 32),
+           SVGA3D_TEMPREG_MAX);
+
+   caps->indirect_const_addr = true;
+   caps->supported_irs = (1 << PIPE_SHADER_IR_TGSI) | (1 << PIPE_SHADER_IR_NIR);
+
+   caps = (struct pipe_shader_caps *)&svgascreen->screen.shader_caps[PIPE_SHADER_FRAGMENT];
+
+   caps->max_instructions =
+   caps->max_alu_instructions =
+      get_uint_cap(sws, SVGA3D_DEVCAP_MAX_FRAGMENT_SHADER_INSTRUCTIONS, 512);
+   caps->max_tex_instructions =
+   caps->max_tex_indirections = 512;
+   caps->max_control_flow_depth = SVGA3D_MAX_NESTING_LEVEL;
+   caps->max_inputs = 10;
+   caps->max_outputs = svgascreen->max_color_buffers;
+   caps->max_const_buffer0_size = 224 * sizeof(float[4]);
+   caps->max_const_buffers = 1;
+   caps->max_temps =
+      MIN2(get_uint_cap(sws, SVGA3D_DEVCAP_MAX_FRAGMENT_SHADER_TEMPS, 32),
+           SVGA3D_TEMPREG_MAX);
+
+   caps->max_texture_samplers =
+   caps->max_sampler_views = 16;
+   caps->supported_irs = (1 << PIPE_SHADER_IR_TGSI) | (1 << PIPE_SHADER_IR_NIR);
+}
+
+static void
+vgpu10_init_shader_caps(struct svga_screen *svgascreen)
+{
+   struct svga_winsys_screen *sws = svgascreen->sws;
+
+   assert(sws->have_vgpu10);
+
+    for (unsigned i = 0; i <= PIPE_SHADER_COMPUTE; i++) {
+       struct pipe_shader_caps *caps =
+          (struct pipe_shader_caps *)&svgascreen->screen.shader_caps[i];
+
+       switch (i) {
+       case PIPE_SHADER_TESS_CTRL:
+       case PIPE_SHADER_TESS_EVAL:
+          if (!sws->have_sm5)
+             continue;
+          break;
+       case PIPE_SHADER_COMPUTE:
+          if (!sws->have_gl43)
+             continue;
+          break;
+       default:
+          break;
+       }
+
+       /* NOTE: we do not query the device for any caps/limits at this time */
+
+       /* Generally the same limits for vertex, geometry and fragment shaders */
+       caps->max_instructions =
+       caps->max_alu_instructions =
+       caps->max_tex_instructions =
+       caps->max_tex_indirections = 64 * 1024;
+       caps->max_control_flow_depth = 64;
+
+       switch (i) {
+       case PIPE_SHADER_FRAGMENT:
+          caps->max_inputs = VGPU10_MAX_PS_INPUTS;
+          caps->max_outputs = VGPU10_MAX_PS_OUTPUTS;
+          break;
+       case PIPE_SHADER_GEOMETRY:
+          caps->max_inputs = svgascreen->max_gs_inputs;
+          caps->max_outputs = VGPU10_MAX_GS_OUTPUTS;
+          break;
+       case PIPE_SHADER_TESS_CTRL:
+          caps->max_inputs = VGPU11_MAX_HS_INPUT_CONTROL_POINTS;
+          caps->max_outputs = VGPU11_MAX_HS_OUTPUTS;
+          break;
+       case PIPE_SHADER_TESS_EVAL:
+          caps->max_inputs = VGPU11_MAX_DS_INPUT_CONTROL_POINTS;
+          caps->max_outputs = VGPU11_MAX_DS_OUTPUTS;
+          break;
+       default:
+          caps->max_inputs = svgascreen->max_vs_inputs;
+          caps->max_outputs = svgascreen->max_vs_outputs;
+          break;
+       }
+
+       caps->max_const_buffer0_size =
+          VGPU10_MAX_CONSTANT_BUFFER_ELEMENT_COUNT * sizeof(float[4]);
+       caps->max_const_buffers = svgascreen->max_const_buffers;
+       caps->max_temps = VGPU10_MAX_TEMPS;
+       /* XXX verify */
+       caps->indirect_temp_addr = true;
+       caps->indirect_const_addr = true;
+       caps->cont_supported = true;
+       caps->tgsi_sqrt_supported = true;
+       caps->subroutines = true;
+       caps->integers = true;
+       caps->max_texture_samplers =
+       caps->max_sampler_views =
+          sws->have_gl43 ? PIPE_MAX_SAMPLERS : SVGA3D_DX_MAX_SAMPLERS;
+       caps->supported_irs =
+          sws->have_gl43 ? (1 << PIPE_SHADER_IR_TGSI) | (1 << PIPE_SHADER_IR_NIR) : 0;
+       caps->max_shader_images = sws->have_gl43 ? SVGA_MAX_IMAGES : 0;
+       caps->max_shader_buffers = sws->have_gl43 ? SVGA_MAX_SHADER_BUFFERS : 0;
+       caps->max_hw_atomic_counters =
+       caps->max_hw_atomic_counter_buffers = sws->have_gl43 ? SVGA_MAX_ATOMIC_BUFFERS : 0;
+    }
+}
+
+static void
+svga_init_shader_caps(struct svga_screen *svgascreen)
+{
+   struct svga_winsys_screen *sws = svgascreen->sws;
+   if (sws->have_vgpu10)
+      vgpu10_init_shader_caps(svgascreen);
+   else
+      vgpu9_init_shader_caps(svgascreen);
+}
+
+static void
+svga_init_compute_caps(struct svga_screen *svgascreen)
+{
+   struct svga_winsys_screen *sws = svgascreen->sws;
+
+   if (!sws->have_gl43)
+      return;
+
+   struct pipe_compute_caps *caps =
+      (struct pipe_compute_caps *)&svgascreen->screen.compute_caps;
+
+   caps->max_grid_size[0] =
+   caps->max_grid_size[1] =
+   caps->max_grid_size[2] = 65535;
+
+   caps->max_block_size[0] = 1024;
+   caps->max_block_size[1] = 1024;
+   caps->max_block_size[2] = 64;
+
+   caps->max_threads_per_block = 1024;
+   caps->max_local_size = 32768;
+}
+
+static void
 svga_init_screen_caps(struct svga_screen *svgascreen)
 {
    struct pipe_caps *caps = (struct pipe_caps *)&svgascreen->screen.caps;
@@ -1159,6 +1319,8 @@ svga_screen_create(struct svga_winsys_screen *sws)
 
    svga_screen_cache_init(svgascreen);
 
+   svga_init_shader_caps(svgascreen);
+   svga_init_compute_caps(svgascreen);
    svga_init_screen_caps(svgascreen);
 
    if (debug_get_bool_option("SVGA_NO_LOGGING", false) == true) {
