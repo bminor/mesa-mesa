@@ -1284,6 +1284,8 @@ static struct pipe_screen *radeonsi_screen_create_impl(struct radeon_winsys *ws,
       (sscreen->info.gfx_level == GFX6 && sscreen->info.pfp_fw_version >= 79 &&
        sscreen->info.me_fw_version >= 142);
 
+   si_init_shader_caps(sscreen);
+   si_init_compute_caps(sscreen);
    si_init_screen_caps(sscreen);
 
    if (sscreen->debug_flags & DBG(INFO))

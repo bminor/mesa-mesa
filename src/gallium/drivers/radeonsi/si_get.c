@@ -1205,6 +1205,115 @@ void si_init_screen_get_functions(struct si_screen *sscreen)
    options->varying_expression_max_cost = si_varying_expression_max_cost;
 }
 
+void si_init_shader_caps(struct si_screen *sscreen)
+{
+   for (unsigned i = 0; i <= PIPE_SHADER_COMPUTE; i++) {
+      struct pipe_shader_caps *caps =
+         (struct pipe_shader_caps *)&sscreen->b.shader_caps[i];
+
+      /* Shader limits. */
+      caps->max_instructions =
+      caps->max_alu_instructions =
+      caps->max_tex_instructions =
+      caps->max_tex_indirections =
+      caps->max_control_flow_depth = 16384;
+      caps->max_inputs = i == PIPE_SHADER_VERTEX ? SI_MAX_ATTRIBS : 32;
+      caps->max_outputs = i == PIPE_SHADER_FRAGMENT ? 8 : 32;
+      caps->max_temps = 256; /* Max native temporaries. */
+      caps->max_const_buffer0_size = 1 << 26; /* 64 MB */
+      caps->max_const_buffers = SI_NUM_CONST_BUFFERS;
+      caps->max_texture_samplers =
+      caps->max_sampler_views = SI_NUM_SAMPLERS;
+      caps->max_shader_buffers = SI_NUM_SHADER_BUFFERS;
+      caps->max_shader_images = SI_NUM_IMAGES;
+
+      caps->supported_irs = (1 << PIPE_SHADER_IR_TGSI) | (1 << PIPE_SHADER_IR_NIR);
+      if (i == PIPE_SHADER_COMPUTE)
+         caps->supported_irs |= 1 << PIPE_SHADER_IR_NATIVE;
+
+      /* Supported boolean features. */
+      caps->cont_supported = true;
+      caps->tgsi_sqrt_supported = true;
+      caps->indirect_temp_addr = true;
+      caps->indirect_const_addr = true;
+      caps->integers = true;
+      caps->int64_atomics = true;
+      caps->tgsi_any_inout_decl_range = true;
+
+      /* We need f16c for fast FP16 conversions in glUniform. */
+      caps->fp16_const_buffers =
+         util_get_cpu_caps()->has_f16c && sscreen->nir_options->lower_mediump_io;
+
+      caps->fp16 =
+      caps->fp16_derivatives =
+      caps->glsl_16bit_consts =
+      caps->int16 = sscreen->nir_options->lower_mediump_io != NULL;
+   }
+}
+
+void si_init_compute_caps(struct si_screen *sscreen)
+{
+   struct pipe_compute_caps *caps =
+      (struct pipe_compute_caps *)&sscreen->b.compute_caps;
+
+   snprintf(caps->ir_target, sizeof(caps->ir_target), "%s-amdgcn-mesa-mesa3d",
+            ac_get_llvm_processor_name(sscreen->info.family));
+
+   caps->grid_dimension = 3;
+
+   /* Use this size, so that internal counters don't overflow 64 bits. */
+   caps->max_grid_size[0] = UINT32_MAX;
+   caps->max_grid_size[1] = UINT16_MAX;
+   caps->max_grid_size[2] = UINT16_MAX;
+
+   caps->max_block_size[0] =
+   caps->max_block_size[1] =
+   caps->max_block_size[2] = 1024;
+
+   caps->max_block_size_clover[0] =
+   caps->max_block_size_clover[1] =
+   caps->max_block_size_clover[2] = 256;
+
+   caps->max_threads_per_block = 1024;
+   caps->max_threads_per_block_clover = 256;
+   caps->address_bits = 64;
+
+   /* Return 1/4 of the heap size as the maximum because the max size is not practically
+    * allocatable.
+    */
+   caps->max_mem_alloc_size = (sscreen->info.max_heap_size_kb / 4) * 1024ull;
+
+   /* In OpenCL, the MAX_MEM_ALLOC_SIZE must be at least
+    * 1/4 of the MAX_GLOBAL_SIZE.  Since the
+    * MAX_MEM_ALLOC_SIZE is fixed for older kernels,
+    * make sure we never report more than
+    * 4 * MAX_MEM_ALLOC_SIZE.
+    */
+   caps->max_global_size = MIN2(4 * caps->max_mem_alloc_size,
+                                sscreen->info.max_heap_size_kb * 1024ull);
+
+   /* Value reported by the closed source driver. */
+   caps->max_local_size = sscreen->info.gfx_level == GFX6 ? 32 * 1024 : 64 * 1024;
+   caps->max_input_size = 1024;
+
+   caps->max_clock_frequency = sscreen->info.max_gpu_freq_mhz;
+   caps->max_compute_units = sscreen->info.num_cu;
+
+   unsigned threads = 1024;
+   unsigned subgroup_size =
+      sscreen->debug_flags & DBG(W64_CS) || sscreen->info.gfx_level < GFX10 ? 64 : 32;
+   caps->max_subgroups = threads / subgroup_size;
+
+   if (sscreen->debug_flags & DBG(W32_CS))
+      caps->subgroup_sizes = 32;
+   else if (sscreen->debug_flags & DBG(W64_CS))
+      caps->subgroup_sizes = 64;
+   else
+      caps->subgroup_sizes = sscreen->info.gfx_level < GFX10 ? 64 : 64 | 32;
+
+   caps->max_variable_threads_per_block = SI_MAX_VARIABLE_THREADS_PER_BLOCK;
+}
+
 void si_init_screen_caps(struct si_screen *sscreen)
 {
    struct pipe_caps *caps = (struct pipe_caps *)&sscreen->b.caps;
