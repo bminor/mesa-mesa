@@ -1905,7 +1905,10 @@ bind_last_vertex_stage(struct zink_context *ctx, gl_shader_stage stage, struct z
             memset(&ctx->gfx_pipeline_state.shader_keys.key[MESA_SHADER_VERTEX].key.vs_base, 0, sizeof(struct zink_vs_key_base));
          }
       }
+      ctx->last_vertex_stage_dirty = true;
+   }
 
+   if (ctx->last_vertex_stage != prev_shader) {
       unsigned num_viewports = ctx->vp_state.num_viewports;
       struct zink_screen *screen = zink_screen(ctx->base.screen);
       /* number of enabled viewports is based on whether last vertex stage writes viewport index */
@@ -1923,7 +1926,6 @@ bind_last_vertex_stage(struct zink_context *ctx, gl_shader_stage stage, struct z
             ctx->gfx_pipeline_state.dirty = true;
          ctx->gfx_pipeline_state.dyn_state1.num_viewports = ctx->vp_state.num_viewports;
       }
-      ctx->last_vertex_stage_dirty = true;
    }
 }
 
