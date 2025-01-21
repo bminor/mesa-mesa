@@ -1380,8 +1380,11 @@ should_form_clause(const Instruction* a, const Instruction* b)
    if (a->definitions.empty() != b->definitions.empty())
       return false;
 
-   if (a->format != b->format)
+   /* MUBUF and MTBUF can appear in the same clause. */
+   if ((a->isMTBUF() && b->isMUBUF()) || (a->isMUBUF() && b->isMTBUF())) {
+   } else if (a->format != b->format) {
       return false;
+   }
 
    if (a->operands.empty() || b->operands.empty())
       return false;

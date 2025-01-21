@@ -282,15 +282,21 @@ BEGIN_TEST(form_hard_clauses.heuristic)
    create_smem_buffer(buf_desc0);
    create_smem();
 
-   /* Only form clause between MUBUF and MTBUF if they load from the same binding. Ignore descriptor
-    * if they're te same binding.
-    */
+   /* Form clause with MTBUF/MUBUF mix if they use the same descriptor. */
    //>> p_unit_test 7
+   //! s_clause imm:1
    //; search_re('buffer_load_dword')
    //; search_re('tbuffer_load_format_x')
    bld.pseudo(aco_opcode::p_unit_test, Operand::c32(7u));
    create_mubuf(buf_desc0);
    create_mtbuf(buf_desc0);
+
+   //>> p_unit_test 8
+   //; search_re('buffer_load_dword')
+   //; search_re('tbuffer_load_format_x')
+   bld.pseudo(aco_opcode::p_unit_test, Operand::c32(8u));
+   create_mubuf(buf_desc0);
+   create_mtbuf(buf_desc1);
 
    finish_form_hard_clause_test();
 END_TEST
