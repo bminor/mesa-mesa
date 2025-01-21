@@ -760,6 +760,193 @@ zink_get_shader_param(struct pipe_screen *pscreen,
 }
 
 static void
+zink_init_shader_caps(struct zink_screen *screen)
+{
+   for (unsigned i = 0; i <= PIPE_SHADER_COMPUTE; i++) {
+      struct pipe_shader_caps *caps =
+         (struct pipe_shader_caps *)&screen->base.shader_caps[i];
+
+      switch (i) {
+      case MESA_SHADER_TESS_CTRL:
+      case MESA_SHADER_TESS_EVAL:
+         if (!screen->info.feats.features.tessellationShader ||
+             !screen->info.have_KHR_maintenance2)
+            continue;
+         break;
+      case MESA_SHADER_GEOMETRY:
+         if (!screen->info.feats.features.geometryShader)
+            continue;
+         break;
+      default:
+         break;
+      }
+
+      caps->max_instructions =
+      caps->max_alu_instructions =
+      caps->max_tex_instructions =
+      caps->max_tex_indirections =
+      caps->max_control_flow_depth = INT_MAX;
+
+      unsigned max_in = 0;
+      unsigned max_out = 0;
+      switch (i) {
+      case MESA_SHADER_VERTEX:
+         max_in = MIN2(screen->info.props.limits.maxVertexInputAttributes, PIPE_MAX_ATTRIBS);
+         max_out = screen->info.props.limits.maxVertexOutputComponents / 4;
+         break;
+      case MESA_SHADER_TESS_CTRL:
+         max_in = screen->info.props.limits.maxTessellationControlPerVertexInputComponents / 4;
+         max_out = screen->info.props.limits.maxTessellationControlPerVertexOutputComponents / 4;
+         break;
+      case MESA_SHADER_TESS_EVAL:
+         max_in = screen->info.props.limits.maxTessellationEvaluationInputComponents / 4;
+         max_out = screen->info.props.limits.maxTessellationEvaluationOutputComponents / 4;
+         break;
+      case MESA_SHADER_GEOMETRY:
+         max_in = screen->info.props.limits.maxGeometryInputComponents / 4;
+         max_out = screen->info.props.limits.maxGeometryOutputComponents / 4;
+         break;
+      case MESA_SHADER_FRAGMENT:
+         /* intel drivers report fewer components, but it's a value that's compatible
+          * with what we need for GL, so we can still force a conformant value here
+          */
+         if (zink_driverid(screen) == VK_DRIVER_ID_INTEL_OPEN_SOURCE_MESA ||
+             zink_driverid(screen) == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS)
+            max_in = 32;
+         else
+            max_in = screen->info.props.limits.maxFragmentInputComponents / 4;
+
+         max_out = screen->info.props.limits.maxColorAttachments;
+         break;
+      default:
+         break;
+      }
+
+      switch (i) {
+      case MESA_SHADER_VERTEX:
+      case MESA_SHADER_TESS_EVAL:
+      case MESA_SHADER_GEOMETRY:
+         /* last vertex stage must support streamout, and this is capped in glsl compiler */
+         caps->max_inputs = MIN2(max_in, MAX_VARYING);
+         break;
+      default:
+         /* prevent overflowing struct shader_info::inputs_read */
+         caps->max_inputs = MIN2(max_in, 64);
+         break;
+      }
+
+      /* prevent overflowing struct shader_info::outputs_read/written */
+      caps->max_outputs = MIN2(max_out, 64);
+
+      /* At least 16384 is guaranteed by VK spec */
+      assert(screen->info.props.limits.maxUniformBufferRange >= 16384);
+      /* but Gallium can't handle values that are too big */
+      caps->max_const_buffer0_size =
+         MIN3(get_smallest_buffer_heap(screen),
+              screen->info.props.limits.maxUniformBufferRange, BITFIELD_BIT(31));
+
+      caps->max_const_buffers =
+         MIN2(screen->info.props.limits.maxPerStageDescriptorUniformBuffers,
+              PIPE_MAX_CONSTANT_BUFFERS);
+
+      caps->max_temps = INT_MAX;
+      caps->integers = true;
+      caps->indirect_const_addr = true;
+      caps->indirect_temp_addr = true;
+
+      /* enabling this breaks GTF-GL46.gtf21.GL2Tests.glGetUniform.glGetUniform */
+      caps->fp16_const_buffers = false;
+         //screen->info.feats11.uniformAndStorageBuffer16BitAccess ||
+         //(screen->info.have_KHR_16bit_storage && screen->info.storage_16bit_feats.uniformAndStorageBuffer16BitAccess);
+
+      /* spirv requires 32bit derivative srcs and dests */
+      caps->fp16_derivatives = false;
+
+      caps->fp16 =
+         screen->info.feats12.shaderFloat16 ||
+         (screen->info.have_KHR_shader_float16_int8 &&
+          screen->info.shader_float16_int8_feats.shaderFloat16);
+
+      caps->int16 = screen->info.feats.features.shaderInt16;
+
+      caps->max_texture_samplers =
+      caps->max_sampler_views =
+         MIN2(MIN2(screen->info.props.limits.maxPerStageDescriptorSamplers,
+                   screen->info.props.limits.maxPerStageDescriptorSampledImages),
+              PIPE_MAX_SAMPLERS);
+
+      /* TODO: this limitation is dumb, and will need some fixes in mesa */
+      caps->max_shader_buffers =
+         MIN2(screen->info.props.limits.maxPerStageDescriptorStorageBuffers,
+              PIPE_MAX_SHADER_BUFFERS);
+
+      switch (i) {
+      case MESA_SHADER_VERTEX:
+      case MESA_SHADER_TESS_CTRL:
+      case MESA_SHADER_TESS_EVAL:
+      case MESA_SHADER_GEOMETRY:
+         if (!screen->info.feats.features.vertexPipelineStoresAndAtomics)
+            caps->max_shader_buffers = 0;
+         break;
+      case MESA_SHADER_FRAGMENT:
+         if (!screen->info.feats.features.fragmentStoresAndAtomics)
+            caps->max_shader_buffers = 0;
+         break;
+      default:
+         break;
+      }
+
+      caps->supported_irs = (1 << PIPE_SHADER_IR_NIR) | (1 << PIPE_SHADER_IR_TGSI);
+
+      if (screen->info.feats.features.shaderStorageImageExtendedFormats &&
+          screen->info.feats.features.shaderStorageImageWriteWithoutFormat) {
+         caps->max_shader_images =
+            MIN2(screen->info.props.limits.maxPerStageDescriptorStorageImages,
+                 ZINK_MAX_SHADER_IMAGES);
+      }
+
+      caps->cont_supported = true;
+   }
+}
+
+static void
+zink_init_compute_caps(struct zink_screen *screen)
+{
+   struct pipe_compute_caps *caps =
+      (struct pipe_compute_caps *)&screen->base.compute_caps;
+
+   caps->address_bits = 64;
+
+   snprintf(caps->ir_target, sizeof(caps->ir_target), "nir");
+
+   caps->grid_dimension = 3;
+
+   caps->max_grid_size[0] = screen->info.props.limits.maxComputeWorkGroupCount[0];
+   caps->max_grid_size[1] = screen->info.props.limits.maxComputeWorkGroupCount[1];
+   caps->max_grid_size[2] = screen->info.props.limits.maxComputeWorkGroupCount[2];
+
+   /* MaxComputeWorkGroupSize[0..2] */
+   caps->max_block_size[0] = screen->info.props.limits.maxComputeWorkGroupSize[0];
+   caps->max_block_size[1] = screen->info.props.limits.maxComputeWorkGroupSize[1];
+   caps->max_block_size[2] = screen->info.props.limits.maxComputeWorkGroupSize[2];
+
+   caps->max_threads_per_block =
+   caps->max_variable_threads_per_block =
+      screen->info.props.limits.maxComputeWorkGroupInvocations;
+
+   caps->max_local_size =
+      screen->info.props.limits.maxComputeSharedMemorySize;
+
+   caps->images_supported = true;
+   caps->subgroup_sizes = screen->info.props11.subgroupSize;
+   caps->max_mem_alloc_size = screen->clamp_video_mem;
+   caps->max_global_size = screen->total_video_mem;
+   /* no way in vulkan to retrieve this information. */
+   caps->max_compute_units = 1;
+   caps->max_subgroups = screen->info.props13.maxComputeWorkgroupSubgroups;
+}
+
+static void
 zink_init_screen_caps(struct zink_screen *screen)
 {
    struct pipe_caps *caps = (struct pipe_caps *)&screen->base.caps;
@@ -3562,6 +3749,16 @@ zink_internal_create_screen(const struct pipe_screen_config *config, int64_t dev
    screen->base.set_damage_region = zink_set_damage_region;
    screen->base.get_cl_cts_version = zink_cl_cts_version;
 
+   screen->total_video_mem = get_video_mem(screen);
+   screen->clamp_video_mem = screen->total_video_mem * 0.8;
+   if (!os_get_total_physical_memory(&screen->total_mem)) {
+      if (!screen->driver_name_is_inferred)
+         mesa_loge("ZINK: failed to get total physical memory");
+      goto fail;
+   }
+
+   zink_init_shader_caps(screen);
+   zink_init_compute_caps(screen);
    zink_init_screen_caps(screen);
 
    if (screen->info.have_EXT_sample_locations) {
@@ -3601,14 +3798,6 @@ zink_internal_create_screen(const struct pipe_screen_config *config, int64_t dev
    slab_create_parent(&screen->transfer_pool, sizeof(struct zink_transfer), 16);
 
    screen->driconf.inline_uniforms = debug_get_bool_option("ZINK_INLINE_UNIFORMS", screen->is_cpu);
-
-   screen->total_video_mem = get_video_mem(screen);
-   screen->clamp_video_mem = screen->total_video_mem * 0.8;
-   if (!os_get_total_physical_memory(&screen->total_mem)) {
-      if (!screen->driver_name_is_inferred)
-         mesa_loge("ZINK: failed to get total physical memory");
-      goto fail;
-   }
 
    if (!zink_screen_init_semaphore(screen)) {
       if (!screen->driver_name_is_inferred)
