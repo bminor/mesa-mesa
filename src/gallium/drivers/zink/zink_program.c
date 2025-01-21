@@ -741,6 +741,16 @@ zink_gfx_program_update_optimal(struct zink_context *ctx)
                 (!(zink_debug & ZINK_DEBUG_NOOPT) || !ZINK_SHADER_KEY_OPTIMAL_IS_DEFAULT(ctx->gfx_pipeline_state.optimal_key) || must_replace)) {
                prog = replace_separable_prog(ctx, entry, prog);
             }
+         } else if (must_replace) {
+            /* this is a non-separable, incompatible prog which needs replacement */
+            struct zink_gfx_program *real = zink_create_gfx_program(ctx, ctx->gfx_stages, ctx->gfx_pipeline_state.dyn_state2.vertices_per_patch, ctx->gfx_hash);
+            generate_gfx_program_modules_optimal(ctx, screen, real, &ctx->gfx_pipeline_state);
+            entry->data = real;
+            entry->key = real->shaders;
+            real->base.removed = false;
+            prog->base.removed = true;
+            zink_gfx_program_reference(screen, &prog, NULL);
+            prog = real;
          }
          update_gfx_program_optimal(ctx, prog);
       } else {
