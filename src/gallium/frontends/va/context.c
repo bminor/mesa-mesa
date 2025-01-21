@@ -344,6 +344,9 @@ vlVaCreateContext(VADriverContextP ctx, VAConfigID config_id, int picture_width,
       context->templat.height = picture_height;
       context->templat.expect_chunked_decode = true;
 
+      if (config->entrypoint == PIPE_VIDEO_ENTRYPOINT_BITSTREAM)
+         context->desc.base.protected_playback = flag & VL_VA_CREATE_CONTEXT_PROTECTED;
+
       switch (u_reduce_video_profile(context->templat.profile)) {
       case PIPE_VIDEO_FORMAT_MPEG12:
       case PIPE_VIDEO_FORMAT_VC1:
