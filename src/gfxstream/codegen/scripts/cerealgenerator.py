@@ -43,6 +43,7 @@ SUPPORTED_FEATURES = [
     "VK_KHR_dedicated_allocation",
     "VK_KHR_get_memory_requirements2",
     "VK_KHR_sampler_ycbcr_conversion",
+    "VK_KHR_global_priority",
     "VK_KHR_shader_float16_int8",
     "VK_AMD_gpu_shader_half_float",
     "VK_NV_shader_subgroup_partitioned",
