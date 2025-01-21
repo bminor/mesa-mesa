@@ -1670,8 +1670,10 @@ anv_image_init(struct anv_device *device, struct anv_image *image,
       return VK_SUCCESS;
 #endif
 
-   image->from_wsi =
-      vk_find_struct_const(pCreateInfo->pNext, WSI_IMAGE_CREATE_INFO_MESA) != NULL;
+   const struct wsi_image_create_info *wsi_info =
+      vk_find_struct_const(pCreateInfo->pNext, WSI_IMAGE_CREATE_INFO_MESA);
+   image->from_wsi = wsi_info != NULL;
+   image->wsi_blit_src = wsi_info && wsi_info->blit_src;
 
    /* The Vulkan 1.2.165 glossary says:
     *
@@ -3104,13 +3106,19 @@ anv_layout_to_aux_state(const struct intel_device_info * const devinfo,
       switch (aux_state) {
       case ISL_AUX_STATE_AUX_INVALID:
          /* The modifier does not support compression. But, if we arrived
-          * here, then we have enabled compression on it anyway, in which case
-          * we must resolve the aux surface before we release ownership to the
-          * presentation engine (because, having no modifier, the presentation
-          * engine will not be aware of the aux surface). The presentation
-          * engine will not access the aux surface (because it is unware of
-          * it), and so the aux surface will still be resolved when we
-          * re-acquire ownership.
+          * here, then we have enabled compression on it anyway. If this is a
+          * WSI blit source, keep compression as we can do a compressed to
+          * uncompressed copy.
+          */
+         if (image->wsi_blit_src)
+            return ISL_AUX_STATE_COMPRESSED_CLEAR;
+
+         /* If this is not a WSI blit source, we must resolve the aux surface
+          * before we release ownership to the presentation engine (because,
+          * having no modifier, the presentation engine will not be aware of
+          * the aux surface). The presentation engine will not access the aux
+          * surface (because it is unware of it), and so the aux surface will
+          * still be resolved when we re-acquire ownership.
           *
           * Therefore, at ownership transfers in either direction, there does
           * exist an aux surface despite the lack of modifier and its state is
