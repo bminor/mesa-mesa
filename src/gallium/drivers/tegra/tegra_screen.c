@@ -626,6 +626,8 @@ tegra_screen_create(int fd)
    screen->base.memobj_create_from_handle = tegra_screen_memobj_create_from_handle;
 
    memcpy((void *)&screen->base.caps, &screen->gpu->caps, sizeof(screen->base.caps));
+   memcpy((void *)screen->base.shader_caps, screen->gpu->shader_caps, sizeof(screen->base.shader_caps));
+   memcpy((void *)&screen->base.compute_caps, &screen->gpu->compute_caps, sizeof(screen->base.compute_caps));
 
    return &screen->base;
 }
