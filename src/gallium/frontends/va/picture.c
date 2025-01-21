@@ -1170,8 +1170,6 @@ vlVaEndPicture(VADriverContextP ctx, VAContextID context_id)
    apply_av1_fg = vlVaQueryApplyFilmGrainAV1(context, &output_id, &out_target);
 
    surf = handle_table_get(drv->htab, output_id);
-   if (surf && !surf->buffer && context->desc.base.protected_playback)
-      surf->templat.bind |= PIPE_BIND_PROTECTED;
    vlVaGetSurfaceBuffer(drv, surf);
    if (!surf || !surf->buffer) {
       mtx_unlock(&drv->mutex);
