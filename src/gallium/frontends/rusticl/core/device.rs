@@ -644,6 +644,11 @@ impl Device {
         add_spirv(c"SPV_KHR_integer_dot_product");
         add_spirv(c"SPV_KHR_no_integer_wrap_decoration");
 
+        if self.linkonce_supported() {
+            add_ext(1, 0, 0, "cl_khr_spirv_linkonce_odr");
+            add_spirv(c"SPV_KHR_linkonce_odr");
+        }
+
         if self.fp16_supported() {
             add_ext(1, 0, 0, "cl_khr_fp16");
         }
@@ -806,6 +811,32 @@ impl Device {
                 pipe_loader_device_type::NUM_PIPE_LOADER_DEVICE_TYPES => CL_DEVICE_TYPE_CUSTOM,
             }
         };
+    }
+
+    pub fn linkonce_supported(&self) -> bool {
+        let version = unsafe {
+            match CStr::from_ptr(clc_spirv_tools_version()).to_str() {
+                Ok(v) => v,
+                Err(_) => return false,
+            }
+        };
+
+        // check format and compare to "v2025.1"
+        if !version.starts_with('v') {
+            return false;
+        }
+
+        let version = &version[1..];
+        if let Some((year_str, minor_version_str)) = version.split_once('.') {
+            let year = year_str.parse::<u32>();
+            let minor_version = minor_version_str.parse::<u32>();
+
+            if year_str.len() == 4 && year.is_ok() && minor_version.is_ok() {
+                return version >= "2025.1";
+            }
+        }
+
+        false
     }
 
     pub fn fp16_supported(&self) -> bool {

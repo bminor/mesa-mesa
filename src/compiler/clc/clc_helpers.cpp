@@ -55,6 +55,7 @@
 #include <clang/Frontend/Utils.h>
 #include <clang/Basic/TargetInfo.h>
 
+#include <spirv-tools/libspirv.h>
 #include <spirv-tools/libspirv.hpp>
 #include <spirv-tools/linker.hpp>
 #include <spirv-tools/optimizer.hpp>
@@ -1265,6 +1266,10 @@ public:
 private:
    const struct clc_logger *logger;
 };
+
+const char* clc_spirv_tools_version() {
+   return spvSoftwareVersionString();
+}
 
 int
 clc_link_spirv_binaries(const struct clc_linker_args *args,

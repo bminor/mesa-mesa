@@ -1,0 +1,1 @@
+cl_khr_spirv_linkonce_odr in rusticl
