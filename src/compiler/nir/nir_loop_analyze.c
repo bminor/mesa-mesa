@@ -1367,13 +1367,9 @@ get_loop_info(loop_info_state *state, nir_function_impl *impl)
    }
 }
 
-static loop_info_state *
-initialize_loop_info_state(nir_loop *loop, void *mem_ctx,
-                           nir_function_impl *impl)
+static void
+initialize_loop_info(nir_loop *loop)
 {
-   loop_info_state *state = rzalloc(mem_ctx, loop_info_state);
-   state->loop = loop;
-
    if (loop->info)
       ralloc_free(loop->info);
 
@@ -1381,8 +1377,6 @@ initialize_loop_info_state(nir_loop *loop, void *mem_ctx,
    loop->info->induction_vars = _mesa_pointer_hash_table_create(loop->info);
 
    list_inithead(&loop->info->loop_terminator_list);
-
-   return state;
 }
 
 static void
@@ -1414,15 +1408,14 @@ process_loops(nir_cf_node *cf_node, nir_variable_mode indirect_mask,
 
    nir_loop *loop = nir_cf_node_as_loop(cf_node);
    nir_function_impl *impl = nir_cf_node_get_function(cf_node);
-   void *mem_ctx = ralloc_context(NULL);
+   loop_info_state state = {
+      .loop = loop,
+      .indirect_mask = indirect_mask,
+      .force_unroll_sampler_indirect = force_unroll_sampler_indirect,
+   };
 
-   loop_info_state *state = initialize_loop_info_state(loop, mem_ctx, impl);
-   state->indirect_mask = indirect_mask;
-   state->force_unroll_sampler_indirect = force_unroll_sampler_indirect;
-
-   get_loop_info(state, impl);
-
-   ralloc_free(mem_ctx);
+   initialize_loop_info(loop);
+   get_loop_info(&state, impl);
 }
 
 void
