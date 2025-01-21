@@ -201,6 +201,35 @@ vc4_screen_get_shader_param(struct pipe_screen *pscreen,
 }
 
 static void
+vc4_init_shader_caps(struct vc4_screen *screen)
+{
+        for (unsigned i = 0; i <= PIPE_SHADER_FRAGMENT; i++) {
+                struct pipe_shader_caps *caps =
+                        (struct pipe_shader_caps *)&screen->base.shader_caps[i];
+
+                if (i != PIPE_SHADER_VERTEX && i != PIPE_SHADER_FRAGMENT)
+                        continue;
+
+                caps->max_instructions =
+                caps->max_alu_instructions =
+                caps->max_tex_instructions =
+                caps->max_tex_indirections = 16384;
+
+                caps->max_control_flow_depth = screen->has_control_flow;
+                caps->max_inputs = 8;
+                caps->max_outputs = i == PIPE_SHADER_FRAGMENT ? 1 : 8;
+                caps->max_temps = 256; /* GL_MAX_PROGRAM_TEMPORARIES_ARB */
+                caps->max_const_buffer0_size = 16 * 1024 * sizeof(float);
+                caps->max_const_buffers = 1;
+                caps->indirect_const_addr = true;
+                caps->integers = true;
+                caps->max_texture_samplers =
+                caps->max_sampler_views = VC4_MAX_TEXTURE_SAMPLERS;
+                caps->supported_irs = 1 << PIPE_SHADER_IR_NIR;
+        }
+}
+
+static void
 vc4_init_screen_caps(struct vc4_screen *screen)
 {
         struct pipe_caps *caps = (struct pipe_caps *)&screen->base.caps;
@@ -573,6 +602,7 @@ vc4_screen_create(int fd, const struct pipe_screen_config *config,
                              BITFIELD_BIT(MESA_PRIM_TRIANGLE_STRIP) |
                              BITFIELD_BIT(MESA_PRIM_TRIANGLE_FAN);
 
+        vc4_init_shader_caps(screen);
         vc4_init_screen_caps(screen);
 
         return pscreen;
