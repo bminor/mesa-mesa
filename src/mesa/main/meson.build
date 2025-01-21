@@ -12,7 +12,7 @@ main_dispatch_h = custom_target(
 
 main_marshal_generated_h = custom_target(
   'marshal_generated.h',
-  input : ['../../mapi/glapi/gen/gl_marshal_h.py', '../../mapi/glapi/gen/gl_and_es_API.xml'],
+  input : ['../../mapi/glapi/gen/marshal_generated_h.py', '../../mapi/glapi/gen/gl_and_es_API.xml'],
   output : 'marshal_generated.h',
   command : [prog_python, '@INPUT0@', '@INPUT1@', sizeof_pointer],
   depend_files : glapi_xml_py_deps,

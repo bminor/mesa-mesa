@@ -70,7 +70,7 @@ class PrintCode(gl_XML.gl_print_base):
     def __init__(self):
         super(PrintCode, self).__init__()
 
-        self.name = 'gl_marshal.py'
+        self.name = 'marshal_generated_c.py'
         self.license = license.bsd_license_template % (
             'Copyright (C) 2012 Intel Corporation', 'INTEL CORPORATION')
 

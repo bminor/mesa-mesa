@@ -1,5 +1,5 @@
+
 # Copyright (C) 2012 Intel Corporation
-# Copyright (C) 2022 Advanced Micro Devices, Inc.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -20,38 +20,28 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 
-import contextlib
+import getopt
 import gl_XML
 import license
 import marshal_XML
 import sys
 
-header = """#include "glthread_marshal.h"
+
+header = """
+#ifndef MARSHAL_GENERATED_H
+#define MARSHAL_GENERATED_H
 """
 
-current_indent = 0
-
-
-def out(str):
-    if str:
-        print(' '*current_indent + str)
-    else:
-        print('')
-
-
-@contextlib.contextmanager
-def indent(delta=3):
-    global current_indent
-    current_indent += delta
-    yield
-    current_indent -= delta
+footer = """
+#endif /* MARSHAL_GENERATED_H */
+"""
 
 
 class PrintCode(gl_XML.gl_print_base):
     def __init__(self):
         super(PrintCode, self).__init__()
 
-        self.name = 'gl_marshal.py'
+        self.name = 'marshal_generated_h.py'
         self.license = license.bsd_license_template % (
             'Copyright (C) 2012 Intel Corporation', 'INTEL CORPORATION')
 
@@ -59,34 +49,42 @@ class PrintCode(gl_XML.gl_print_base):
         print(header)
 
     def printRealFooter(self):
-        pass
+        print(footer)
 
     def printBody(self, api):
-        out('const _mesa_unmarshal_func _mesa_unmarshal_dispatch[NUM_DISPATCH_CMD] = {')
-        with indent():
-            for func in api.functionIterateAll():
-                if func.marshal_flavor() in ('skip', 'sync'):
-                    continue
-                out('[DISPATCH_CMD_{0}] = (_mesa_unmarshal_func)_mesa_unmarshal_{0},'.format(func.name))
-                if func.packed_fixed_params:
-                    out('[DISPATCH_CMD_{0}_packed] = (_mesa_unmarshal_func)_mesa_unmarshal_{0}_packed,'.format(func.name))
-        out('};')
+        print('#include "util/glheader.h"')
+        print('')
+        print('enum marshal_dispatch_cmd_id')
+        print('{')
+        for func in api.functionIterateAll():
+            flavor = func.marshal_flavor()
+            if flavor in ('skip', 'sync'):
+                continue
+            print('   DISPATCH_CMD_{0},'.format(func.name))
+            if func.packed_fixed_params:
+                print('   DISPATCH_CMD_{0}_packed,'.format(func.name))
+        print('   NUM_DISPATCH_CMD,')
+        print('};')
+        print('')
 
-        # Print the string table of function names.
-        out('')
-        out('const char *_mesa_unmarshal_func_name[NUM_DISPATCH_CMD] = {')
-        with indent():
-            for func in api.functionIterateAll():
-                if func.marshal_flavor() in ('skip', 'sync'):
-                    continue
-                out('[DISPATCH_CMD_{0}] = "{0}",'.format(func.name))
+        for func in api.functionIterateAll():
+            func.print_struct(is_header=True)
+
+            flavor = func.marshal_flavor()
+
+            if flavor in ('custom', 'async'):
+                func.print_unmarshal_prototype(suffix=';')
                 if func.packed_fixed_params:
-                    out('[DISPATCH_CMD_{0}_packed] = "{0}_packed",'.format(func.name))
-        out('};')
+                    func.print_unmarshal_prototype(suffix=';', is_packed=True)
+
+            if flavor in ('custom', 'async', 'sync') and not func.marshal_is_static():
+                print('{0} GLAPIENTRY _mesa_marshal_{1}({2});'.format(func.return_type, func.name, func.get_parameter_string()))
+                if func.marshal_no_error:
+                    print('{0} GLAPIENTRY _mesa_marshal_{1}_no_error({2});'.format(func.return_type, func.name, func.get_parameter_string()))
 
 
 def show_usage():
-    print('Usage: %s [file_name]' % sys.argv[0])
+    print('Usage: %s [-f input_file_name]' % sys.argv[0])
     sys.exit(1)
 
 

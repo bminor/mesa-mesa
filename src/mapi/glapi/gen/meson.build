@@ -110,7 +110,7 @@ main_api_hw_select_init_h = custom_target(
 
 main_unmarshal_table_c = custom_target(
   'unmarshal_table.c',
-  input : ['gl_unmarshal_table.py', 'gl_and_es_API.xml'],
+  input : ['unmarshal_table_c.py', 'gl_and_es_API.xml'],
   output : 'unmarshal_table.c',
   command : [prog_python, '@INPUT0@', '@INPUT1@', sizeof_pointer],
   depend_files : glapi_xml_py_deps,
@@ -121,7 +121,7 @@ main_marshal_generated_c = []
 foreach x : ['0', '1', '2', '3', '4', '5', '6', '7']
   main_marshal_generated_c += custom_target(
     'marshal_generated' + x + '.c',
-    input : ['gl_marshal.py', 'gl_and_es_API.xml'],
+    input : ['marshal_generated_c.py', 'gl_and_es_API.xml'],
     output : 'marshal_generated' + x + '.c',
     command : [prog_python, '@INPUT0@', '@INPUT1@', x, '8', sizeof_pointer],
     depend_files : glapi_xml_py_deps,
