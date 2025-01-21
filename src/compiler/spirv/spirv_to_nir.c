@@ -32,6 +32,7 @@
 #include "nir/nir_constant_expressions.h"
 #include "nir/nir_deref.h"
 #include "spirv_info.h"
+#include "NonSemanticShaderDebugInfo100.h"
 
 #include "util/format/u_format.h"
 #include "util/u_math.h"
@@ -817,6 +818,30 @@ vtn_handle_non_semantic_debug_break_instruction(struct vtn_builder *b, SpvOp ext
    return true;
 }
 
+static bool
+vtn_handle_non_semantic_debug_info(struct vtn_builder *b, SpvOp ext_opcode,
+                                   const uint32_t *w, unsigned count)
+{
+   enum NonSemanticShaderDebugInfo100Instructions instr = w[4];
+
+   if (instr == NonSemanticShaderDebugInfo100DebugLine) {
+      uint32_t source_id = w[5];
+      uint32_t line = vtn_constant_uint(b, w[6]);
+      uint32_t column = vtn_constant_uint(b, w[8]);
+
+      b->file = vtn_value(b, source_id, vtn_value_type_string)->str;
+      b->line = line;
+      b->col = column;
+   } else if (instr == NonSemanticShaderDebugInfo100DebugSource) {
+      uint32_t result_id = w[2];
+      uint32_t file_id = w[5];
+      vtn_push_value(b, result_id, vtn_value_type_string)->str =
+         vtn_value(b, file_id, vtn_value_type_string)->str;
+   }
+
+   return true;
+}
+
 static void
 vtn_handle_extension(struct vtn_builder *b, SpvOp opcode,
                      const uint32_t *w, unsigned count)
@@ -844,6 +869,9 @@ vtn_handle_extension(struct vtn_builder *b, SpvOp opcode,
       } else if ((strcmp(ext, "NonSemantic.DebugBreak") == 0)
                 && (b->options && b->options->emit_debug_break)) {
          val->ext_handler = vtn_handle_non_semantic_debug_break_instruction;
+      } else if ((strcmp(ext, "NonSemantic.Shader.DebugInfo.100") == 0)
+                && (b->options && b->options->debug_info)) {
+         val->ext_handler = vtn_handle_non_semantic_debug_info;
       } else if (strstr(ext, "NonSemantic.") == ext) {
          val->ext_handler = vtn_handle_non_semantic_instruction;
       } else {
@@ -5041,6 +5069,9 @@ vtn_handle_preamble_instruction(struct vtn_builder *b, SpvOp opcode,
          /* NonSemantic extended instructions are acceptable in preamble. */
          vtn_handle_non_semantic_instruction(b, w[4], w, count);
          return true;
+      } else if (val->ext_handler == vtn_handle_non_semantic_debug_info) {
+         vtn_handle_non_semantic_debug_info(b, w[4], w, count);
+         return true;
       } else {
          return false; /* End of preamble. */
       }
@@ -5657,6 +5688,10 @@ vtn_handle_variable_or_type_instruction(struct vtn_builder *b, SpvOp opcode,
    case SpvOpExtInst:
    case SpvOpExtInstWithForwardRefsKHR: {
       struct vtn_value *val = vtn_value(b, w[3], vtn_value_type_extension);
+
+      if (val->ext_handler == vtn_handle_non_semantic_debug_info)
+         return vtn_handle_non_semantic_debug_info(b, opcode, w, count);
+
       /* NonSemantic extended instructions are acceptable in preamble, others
        * will indicate the end of preamble.
        */
@@ -7163,9 +7198,6 @@ spirv_to_nir(const uint32_t *words, size_t word_count,
 
    nir_shader *shader = b->shader;
    ralloc_free(b);
-
-   if (shader->has_debug_info)
-      nir_print_shader(shader, stdout);
 
    return shader;
 }
