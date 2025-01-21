@@ -1934,7 +1934,9 @@ tu_emit_input_attachments(struct tu_cmd_buffer *cmd,
          continue;
 
       /* patched for gmem */
-      dst[0] &= ~(A6XX_TEX_CONST_0_SWAP__MASK | A6XX_TEX_CONST_0_TILE_MODE__MASK);
+      dst[0] &= ~A6XX_TEX_CONST_0_TILE_MODE__MASK;
+      if (!iview->view.is_mutable)
+         dst[0] &= ~A6XX_TEX_CONST_0_SWAP__MASK;
       dst[0] |= A6XX_TEX_CONST_0_TILE_MODE(TILE6_2);
       dst[2] =
          A6XX_TEX_CONST_2_TYPE(A6XX_TEX_2D) |
