@@ -955,6 +955,11 @@ r3d_common(struct tu_cmd_buffer *cmd, struct tu_cs *cs, enum r3d_type type,
       tu_cs_emit_regs(cs, A6XX_VPC_UNKNOWN_9107());
    } else {
       tu_cs_emit_regs(cs, A7XX_PC_RASTER_CNTL_V2());
+
+      tu_cs_emit_regs(cs, RB_RENDER_CNTL(CHIP,
+            .raster_mode = TYPE_TILED,
+            .raster_direction = LR_TB));
+      tu_cs_emit_regs(cs, A7XX_GRAS_SU_RENDER_CNTL());
    }
 
    tu_cs_emit_regs(cs,

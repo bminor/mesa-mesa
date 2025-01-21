@@ -3106,7 +3106,7 @@ tu6_rast_size(struct tu_device *dev,
    if (CHIP == A6XX) {
       return 15 + (dev->physical_device->info->a6xx.has_legacy_pipeline_shading_rate ? 8 : 0);
    } else {
-      return 17;
+      return 21;
    }
 }
 
@@ -3167,6 +3167,11 @@ tu6_emit_rast(struct tu_cs *cs,
       tu_cs_emit_regs(cs, A7XX_PC_RASTER_CNTL_V2(
          .stream = rs->rasterization_stream,
          .discard = rs->rasterizer_discard_enable));
+
+      tu_cs_emit_regs(cs, RB_RENDER_CNTL(CHIP,
+            .raster_mode = TYPE_TILED,
+            .raster_direction = LR_TB));
+      tu_cs_emit_regs(cs, A7XX_GRAS_SU_RENDER_CNTL());
    }
 
    /* move to hw ctx init? */
