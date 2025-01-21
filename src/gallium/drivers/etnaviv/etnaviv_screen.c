@@ -149,97 +149,6 @@ etna_screen_get_device_vendor(struct pipe_screen *pscreen)
    return "Vivante";
 }
 
-static int
-etna_screen_get_shader_param(struct pipe_screen *pscreen,
-                             enum pipe_shader_type shader,
-                             enum pipe_shader_cap param)
-{
-   struct etna_screen *screen = etna_screen(pscreen);
-   bool ubo_enable = screen->info->halti >= 2;
-
-   if (DBG_ENABLED(ETNA_DBG_DEQP))
-      ubo_enable = true;
-
-   switch (shader) {
-   case PIPE_SHADER_FRAGMENT:
-   case PIPE_SHADER_VERTEX:
-      break;
-   case PIPE_SHADER_COMPUTE:
-   case PIPE_SHADER_GEOMETRY:
-   case PIPE_SHADER_TESS_CTRL:
-   case PIPE_SHADER_TESS_EVAL:
-      return 0;
-   default:
-      DBG("unknown shader type %d", shader);
-      return 0;
-   }
-
-   switch (param) {
-   case PIPE_SHADER_CAP_MAX_INSTRUCTIONS:
-   case PIPE_SHADER_CAP_MAX_ALU_INSTRUCTIONS:
-   case PIPE_SHADER_CAP_MAX_TEX_INSTRUCTIONS:
-   case PIPE_SHADER_CAP_MAX_TEX_INDIRECTIONS:
-      return ETNA_MAX_TOKENS;
-   case PIPE_SHADER_CAP_MAX_CONTROL_FLOW_DEPTH:
-      return ETNA_MAX_DEPTH; /* XXX */
-   case PIPE_SHADER_CAP_MAX_INPUTS:
-      /* Maximum number of inputs for the vertex shader is the number
-       * of vertex elements - each element defines one vertex shader
-       * input register.  For the fragment shader, this is the number
-       * of varyings. */
-      return shader == PIPE_SHADER_FRAGMENT ? screen->specs.max_varyings
-                                            : screen->specs.vertex_max_elements;
-   case PIPE_SHADER_CAP_MAX_OUTPUTS:
-      return screen->specs.max_vs_outputs;
-   case PIPE_SHADER_CAP_MAX_TEMPS:
-      return 64; /* Max native temporaries. */
-   case PIPE_SHADER_CAP_MAX_CONST_BUFFERS:
-      return ubo_enable ? ETNA_MAX_CONST_BUF : 1;
-   case PIPE_SHADER_CAP_CONT_SUPPORTED:
-      return 1;
-   case PIPE_SHADER_CAP_INDIRECT_TEMP_ADDR:
-   case PIPE_SHADER_CAP_INDIRECT_CONST_ADDR:
-      return 1;
-   case PIPE_SHADER_CAP_SUBROUTINES:
-      return 0;
-   case PIPE_SHADER_CAP_TGSI_SQRT_SUPPORTED:
-      return VIV_FEATURE(screen, ETNA_FEATURE_HAS_SQRT_TRIG);
-   case PIPE_SHADER_CAP_INT64_ATOMICS:
-   case PIPE_SHADER_CAP_FP16:
-   case PIPE_SHADER_CAP_FP16_DERIVATIVES:
-   case PIPE_SHADER_CAP_FP16_CONST_BUFFERS:
-   case PIPE_SHADER_CAP_INT16:
-   case PIPE_SHADER_CAP_GLSL_16BIT_CONSTS:
-      return 0;
-   case PIPE_SHADER_CAP_INTEGERS:
-      return screen->info->halti >= 2;
-   case PIPE_SHADER_CAP_MAX_TEXTURE_SAMPLERS:
-   case PIPE_SHADER_CAP_MAX_SAMPLER_VIEWS:
-      return shader == PIPE_SHADER_FRAGMENT
-                ? screen->specs.fragment_sampler_count
-                : screen->specs.vertex_sampler_count;
-   case PIPE_SHADER_CAP_MAX_CONST_BUFFER0_SIZE:
-      if (ubo_enable)
-         return 16384; /* 16384 so state tracker enables UBOs */
-      return shader == PIPE_SHADER_FRAGMENT
-                ? screen->specs.max_ps_uniforms * sizeof(float[4])
-                : screen->specs.max_vs_uniforms * sizeof(float[4]);
-   case PIPE_SHADER_CAP_TGSI_ANY_INOUT_DECL_RANGE:
-      return false;
-   case PIPE_SHADER_CAP_SUPPORTED_IRS:
-      return (1 << PIPE_SHADER_IR_TGSI) |
-             (1 << PIPE_SHADER_IR_NIR);
-   case PIPE_SHADER_CAP_MAX_SHADER_BUFFERS:
-   case PIPE_SHADER_CAP_MAX_SHADER_IMAGES:
-   case PIPE_SHADER_CAP_MAX_HW_ATOMIC_COUNTERS:
-   case PIPE_SHADER_CAP_MAX_HW_ATOMIC_COUNTER_BUFFERS:
-      return 0;
-   }
-
-   debug_printf("unknown shader param %d", param);
-   return 0;
-}
-
 static void
 etna_init_single_shader_caps(struct etna_screen *screen, enum pipe_shader_type shader)
 {
@@ -1118,7 +1027,6 @@ etna_screen_create(struct etna_device *dev, struct etna_gpu *gpu,
 
    pscreen->destroy = etna_screen_destroy;
    pscreen->get_screen_fd = etna_screen_get_fd;
-   pscreen->get_shader_param = etna_screen_get_shader_param;
    pscreen->get_compiler_options = etna_get_compiler_options;
    pscreen->get_disk_shader_cache = etna_get_disk_shader_cache;
 
