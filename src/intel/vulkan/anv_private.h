@@ -5331,6 +5331,12 @@ struct anv_image {
    bool from_wsi;
 
    /**
+    * Image is a WSI blit src image, it will never be scanout directly to
+    * display but will be copied to a dma-buf that can be scanout.
+    */
+   bool wsi_blit_src;
+
+   /**
     * Image was imported from an struct AHardwareBuffer.  We have to delay
     * final image creation until bind time.
     */
