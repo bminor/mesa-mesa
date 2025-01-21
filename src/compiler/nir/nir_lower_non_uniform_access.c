@@ -204,9 +204,12 @@ add_non_uniform_instr(struct nu_state *state, struct nu_handle *handles,
 }
 
 static bool
-lower_non_uniform_tex_access(struct nu_state *state, nir_tex_instr *tex)
+lower_non_uniform_tex_access(struct nu_state *state, nir_tex_instr *tex,
+                             const nir_lower_non_uniform_access_options *opts)
 {
-   if (!tex->texture_non_uniform && !tex->sampler_non_uniform)
+   if (!(tex->texture_non_uniform && (opts->types & nir_lower_non_uniform_texture_access)) &&
+       !(tex->sampler_non_uniform && (opts->types & nir_lower_non_uniform_texture_access)) &&
+       !(tex->offset_non_uniform  && (opts->types & nir_lower_non_uniform_texture_offset_access)))
       return false;
 
    /* We can have at most one texture and one sampler handle */
@@ -220,12 +223,29 @@ lower_non_uniform_tex_access(struct nu_state *state, nir_tex_instr *tex)
       case nir_tex_src_texture_deref:
          if (!tex->texture_non_uniform)
             continue;
+         if (!(opts->types & nir_lower_non_uniform_texture_access))
+            continue;
+         if (opts->tex_src_callback && !opts->tex_src_callback(tex, i, opts->callback_data))
+            continue;
          break;
 
       case nir_tex_src_sampler_offset:
       case nir_tex_src_sampler_handle:
       case nir_tex_src_sampler_deref:
          if (!tex->sampler_non_uniform)
+            continue;
+         if (!(opts->types & nir_lower_non_uniform_texture_access))
+            continue;
+         if (opts->tex_src_callback && !opts->tex_src_callback(tex, i, opts->callback_data))
+            continue;
+         break;
+
+      case nir_tex_src_offset:
+         if (!tex->offset_non_uniform)
+            continue;
+         if (!(opts->types & nir_lower_non_uniform_texture_offset_access))
+            continue;
+         if (opts->tex_src_callback && !opts->tex_src_callback(tex, i, opts->callback_data))
             continue;
          break;
 
@@ -243,11 +263,13 @@ lower_non_uniform_tex_access(struct nu_state *state, nir_tex_instr *tex)
       /* nu_handle_init() returned false because the handles are uniform. */
       tex->texture_non_uniform = false;
       tex->sampler_non_uniform = false;
+      tex->offset_non_uniform = false;
       return false;
    }
 
    tex->texture_non_uniform = false;
    tex->sampler_non_uniform = false;
+   tex->offset_non_uniform = false;
 
    add_non_uniform_instr(state, handles, srcs, num_handles, true,
                          nir_lower_non_uniform_texture_access);
@@ -309,8 +331,9 @@ nir_lower_non_uniform_access_impl(nir_function_impl *impl,
          switch (instr->type) {
          case nir_instr_type_tex: {
             nir_tex_instr *tex = nir_instr_as_tex(instr);
-            if ((options->types & nir_lower_non_uniform_texture_access) &&
-                lower_non_uniform_tex_access(&state, tex))
+            if ((options->types & (nir_lower_non_uniform_texture_access |
+                                   nir_lower_non_uniform_texture_offset_access)) &&
+                lower_non_uniform_tex_access(&state, tex, options))
                progress = true;
             break;
          }

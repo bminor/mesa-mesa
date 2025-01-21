@@ -417,6 +417,7 @@ clone_tex(clone_state *state, const nir_tex_instr *tex)
 
    ntex->texture_non_uniform = tex->texture_non_uniform;
    ntex->sampler_non_uniform = tex->sampler_non_uniform;
+   ntex->offset_non_uniform = tex->offset_non_uniform;
 
    ntex->backend_flags = tex->backend_flags;
 

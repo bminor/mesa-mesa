@@ -2435,6 +2435,9 @@ typedef struct nir_tex_instr {
     */
    bool sampler_non_uniform;
 
+   /** True if the offset is not dynamically uniform */
+   bool offset_non_uniform;
+
    /** The texture index
     *
     * If this texture instruction has a nir_tex_src_texture_offset source,
@@ -5647,14 +5650,20 @@ enum nir_lower_non_uniform_access_type {
    nir_lower_non_uniform_texture_access = (1 << 2),
    nir_lower_non_uniform_image_access = (1 << 3),
    nir_lower_non_uniform_get_ssbo_size = (1 << 4),
-   nir_lower_non_uniform_access_type_count = 5,
+   nir_lower_non_uniform_texture_offset_access = (1 << 5),
+   nir_lower_non_uniform_access_type_count = 6,
 };
 
+typedef bool (*nir_lower_non_uniform_src_access_callback)(const nir_tex_instr *, unsigned, void *);
 /* Given the nir_src used for the resource, return the channels which might be non-uniform. */
 typedef nir_component_mask_t (*nir_lower_non_uniform_access_callback)(const nir_src *, void *);
 
 typedef struct nir_lower_non_uniform_access_options {
    enum nir_lower_non_uniform_access_type types;
+   /* Called on nir_tex_instr to ask whether non-uniform lowering is required
+    * for a particular source
+    */
+   nir_lower_non_uniform_src_access_callback tex_src_callback;
    nir_lower_non_uniform_access_callback callback;
    void *callback_data;
 } nir_lower_non_uniform_access_options;
