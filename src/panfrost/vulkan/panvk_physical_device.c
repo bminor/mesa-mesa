@@ -185,6 +185,7 @@ get_device_extensions(const struct panvk_physical_device *device,
       .KHR_create_renderpass2 = true,
       .KHR_dedicated_allocation = true,
       .KHR_descriptor_update_template = true,
+      .KHR_depth_stencil_resolve = true,
       .KHR_device_group = true,
       .KHR_driver_properties = true,
       .KHR_dynamic_rendering = true,
@@ -716,9 +717,13 @@ get_device_properties(const struct panvk_instance *instance,
 
       /* Vulkan 1.2 properties */
       /* XXX: 1.2 support */
-      /* XXX: VK_KHR_depth_stencil_resolve */
-      .supportedDepthResolveModes = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT,
-      .supportedStencilResolveModes = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT,
+      .supportedDepthResolveModes = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT |
+                                    VK_RESOLVE_MODE_AVERAGE_BIT |
+                                    VK_RESOLVE_MODE_MIN_BIT |
+                                    VK_RESOLVE_MODE_MAX_BIT,
+      .supportedStencilResolveModes = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT |
+                                      VK_RESOLVE_MODE_MIN_BIT |
+                                      VK_RESOLVE_MODE_MAX_BIT,
       .independentResolveNone = true,
       .independentResolve = true,
       /* VK_KHR_driver_properties */
