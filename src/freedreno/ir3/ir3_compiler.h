@@ -282,6 +282,9 @@ struct ir3_compiler {
    /* True if (rptN) is supported for bary.f. */
    bool has_rpt_bary_f;
 
+   /* True if alias.tex and alias.rt are supported. */
+   bool has_alias;
+
    bool reading_shading_rate_requires_smask_quirk;
 };
 
