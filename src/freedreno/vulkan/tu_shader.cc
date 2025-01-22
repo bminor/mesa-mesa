@@ -1808,6 +1808,7 @@ tu6_emit_fs_inputs(struct tu_cs *cs, const struct ir3_shader_variant *fs)
                   A6XX_VPC_CNTL_0_VIEWIDLOC(viewid_loc));
 }
 
+template <chip CHIP>
 static void
 tu6_emit_fs_outputs(struct tu_cs *cs,
                     const struct ir3_shader_variant *fs)
@@ -2048,12 +2049,12 @@ tu6_emit_fs(struct tu_cs *cs,
 
    if (fs) {
       tu6_emit_fs_inputs<CHIP>(cs, fs);
-      tu6_emit_fs_outputs(cs, fs);
+      tu6_emit_fs_outputs<CHIP>(cs, fs);
    } else {
       /* TODO: check if these can be skipped if fs is disabled */
       struct ir3_shader_variant dummy_variant = {};
       tu6_emit_fs_inputs<CHIP>(cs, &dummy_variant);
-      tu6_emit_fs_outputs(cs, &dummy_variant);
+      tu6_emit_fs_outputs<CHIP>(cs, &dummy_variant);
    }
 }
 TU_GENX(tu6_emit_fs);
