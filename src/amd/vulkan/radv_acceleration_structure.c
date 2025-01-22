@@ -148,32 +148,6 @@ radv_GetAccelerationStructureBuildSizesKHR(VkDevice _device, VkAccelerationStruc
                          &device->meta_state.accel_struct_build.build_args);
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL
-radv_WriteAccelerationStructuresPropertiesKHR(VkDevice _device, uint32_t accelerationStructureCount,
-                                              const VkAccelerationStructureKHR *pAccelerationStructures,
-                                              VkQueryType queryType, size_t dataSize, void *pData, size_t stride)
-{
-   unreachable("Unimplemented");
-   return VK_ERROR_FEATURE_NOT_PRESENT;
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL
-radv_BuildAccelerationStructuresKHR(VkDevice _device, VkDeferredOperationKHR deferredOperation, uint32_t infoCount,
-                                    const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
-                                    const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos)
-{
-   unreachable("Unimplemented");
-   return VK_ERROR_FEATURE_NOT_PRESENT;
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL
-radv_CopyAccelerationStructureKHR(VkDevice _device, VkDeferredOperationKHR deferredOperation,
-                                  const VkCopyAccelerationStructureInfoKHR *pInfo)
-{
-   unreachable("Unimplemented");
-   return VK_ERROR_FEATURE_NOT_PRESENT;
-}
-
 void
 radv_device_finish_accel_struct_build_state(struct radv_device *device)
 {
@@ -849,22 +823,6 @@ radv_GetDeviceAccelerationStructureCompatibilityKHR(VkDevice _device,
                             : VK_ACCELERATION_STRUCTURE_COMPATIBILITY_INCOMPATIBLE_KHR;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL
-radv_CopyMemoryToAccelerationStructureKHR(VkDevice _device, VkDeferredOperationKHR deferredOperation,
-                                          const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo)
-{
-   unreachable("Unimplemented");
-   return VK_ERROR_FEATURE_NOT_PRESENT;
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL
-radv_CopyAccelerationStructureToMemoryKHR(VkDevice _device, VkDeferredOperationKHR deferredOperation,
-                                          const VkCopyAccelerationStructureToMemoryInfoKHR *pInfo)
-{
-   unreachable("Unimplemented");
-   return VK_ERROR_FEATURE_NOT_PRESENT;
-}
-
 VKAPI_ATTR void VKAPI_CALL
 radv_CmdCopyMemoryToAccelerationStructureKHR(VkCommandBuffer commandBuffer,
                                              const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo)
@@ -947,14 +905,4 @@ radv_CmdCopyAccelerationStructureToMemoryKHR(VkCommandBuffer commandBuffer,
    memcpy(header_data + VK_UUID_SIZE, pdev->cache_uuid, VK_UUID_SIZE);
 
    radv_update_buffer_cp(cmd_buffer, pInfo->dst.deviceAddress, header_data, sizeof(header_data));
-}
-
-VKAPI_ATTR void VKAPI_CALL
-radv_CmdBuildAccelerationStructuresIndirectKHR(VkCommandBuffer commandBuffer, uint32_t infoCount,
-                                               const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
-                                               const VkDeviceAddress *pIndirectDeviceAddresses,
-                                               const uint32_t *pIndirectStrides,
-                                               const uint32_t *const *ppMaxPrimitiveCounts)
-{
-   unreachable("Unimplemented");
 }
