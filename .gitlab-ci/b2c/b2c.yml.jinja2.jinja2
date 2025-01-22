@@ -98,9 +98,14 @@ deployment:
         {{ kernel_cmdline_extras }}
         {% endif %}
 
-{% if initramfs_url %}
+{% if initramfs_url or firmware_url %}
     initramfs:
-      url: '{{ initramfs_url }}'
+{% if firmware_url %}
+      - url: '{{ firmware_url }}'
+{% endif %}
+{% if initramfs_url %}
+      - url: '{{ initramfs_url }}'
+{% endif %}
 {% endif %}
 
 {% if dtb_url %}
