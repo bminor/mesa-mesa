@@ -7497,7 +7497,8 @@ radv_bind_pre_rast_shader(struct radv_cmd_buffer *cmd_buffer, const struct radv_
        radv_get_user_sgpr_info(shader, AC_UD_NGG_QUERY_BUF_VA)->sgpr_idx != -1)
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_NGG_STATE;
 
-   if (radv_get_user_sgpr_info(shader, AC_UD_STREAMOUT_BUFFERS)->sgpr_idx != -1) {
+   if (radv_get_user_sgpr_info(shader, AC_UD_STREAMOUT_BUFFERS)->sgpr_idx != -1 ||
+       radv_get_user_sgpr_info(shader, AC_UD_STREAMOUT_STATE)->sgpr_idx != -1) {
       /* Re-emit the streamout buffers because the SGPR idx can be different and with NGG streamout
        * they always need to be emitted because a buffer size of 0 is used to disable streamout.
        */
