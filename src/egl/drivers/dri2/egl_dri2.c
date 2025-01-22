@@ -99,7 +99,7 @@ dri_set_background_context(void *loaderPrivate)
 static void
 dri2_gl_flush_get(_glapi_proc *glFlush)
 {
-   *glFlush = _glapi_get_proc_address("glFlush");
+   *glFlush = _mesa_glapi_get_proc_address("glFlush");
 }
 
 static void

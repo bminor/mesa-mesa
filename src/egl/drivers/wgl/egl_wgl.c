@@ -508,7 +508,7 @@ wgl_destroy_surface(_EGLDisplay *disp, _EGLSurface *surf)
 static void
 wgl_gl_flush_get(_glapi_proc *glFlush)
 {
-   *glFlush = _glapi_get_proc_address("glFlush");
+   *glFlush = _mesa_glapi_get_proc_address("glFlush");
 }
 
 static void

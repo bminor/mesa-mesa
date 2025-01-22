@@ -991,7 +991,7 @@ OSMesaGetProcAddress(const char *funcName)
       if (strcmp(functions[i].Name, funcName) == 0)
          return functions[i].Function;
    }
-   return _glapi_get_proc_address(funcName);
+   return _mesa_glapi_get_proc_address(funcName);
 }
 
 

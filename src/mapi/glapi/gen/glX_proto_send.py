@@ -949,7 +949,7 @@ struct _glapi_table * __glXNewIndirectAPI( void )
     unsigned entries;
     unsigned i;
 
-    entries = _glapi_get_dispatch_table_size();
+    entries = _mesa_glapi_get_dispatch_table_size();
     table = malloc(entries * sizeof(_glapi_proc));
     if (table == NULL)
         return NULL;
