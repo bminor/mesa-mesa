@@ -170,6 +170,17 @@ typedef enum ir3_register_flags {
     * tell which ones are actual aliases.
     */
    IR3_REG_ALIAS = BIT(21),
+
+   /* Alias registers allow us to allocate non-consecutive registers and remap
+    * them to consecutive ones using alias.tex. We implement this by adding the
+    * sources of collects directly to the sources of their users. This way, RA
+    * treats them as scalar registers and we can remap them to consecutive
+    * registers afterwards. This flag is used to keep track of the scalar
+    * sources that should be remapped together. Every source of such an "alias
+    * group" will have the IR3_REG_ALIAS set, while the first one will also have
+    * IR3_REG_FIRST_ALIAS set.
+    */
+   IR3_REG_FIRST_ALIAS = BIT(22),
 } ir3_register_flags;
 
 struct ir3_register {
@@ -1918,6 +1929,44 @@ ir3_try_swap_signedness(opc_t opc, bool *can_swap)
 #define foreach_src_if(__srcreg, __instr, __filter)                            \
    foreach_src (__srcreg, __instr)                                             \
       if (__filter(__srcreg))
+
+/* Is this either the first src in an alias group (see IR3_REG_FIRST_ALIAS) or a
+ * normal src.
+ */
+static inline bool
+ir3_src_is_first_in_group(struct ir3_register *src)
+{
+   return (src->flags & IR3_REG_FIRST_ALIAS) || !(src->flags & IR3_REG_ALIAS);
+}
+
+/* Iterator for an instruction's sources taking alias groups into account.
+ * __src_n will hold the original source index (i.e., the index before expanding
+ * collects to alias groups) while __alias_n the index within the current
+ * group. Thus, the actual source index is __src_n + __alias_n.
+ */
+#define foreach_src_with_alias_n(__srcreg, __src_n, __alias_n, __instr)        \
+   for (unsigned __src_n = -1, __alias_n = -1, __e = 0; !__e; __e = 1)         \
+      foreach_src (__srcreg, __instr)                                          \
+         if (__src_n += ir3_src_is_first_in_group(__srcreg) ? 1 : 0,           \
+             __alias_n =                                                       \
+                ir3_src_is_first_in_group(__srcreg) ? 0 : __alias_n + 1,       \
+             true)
+
+/* Iterator for all the sources in the alias group (see IR3_REG_FIRST_ALIAS)
+ * starting at source index __start. __alias_n is the offset of the source
+ * from the start of the alias group.
+ */
+#define foreach_src_in_alias_group_n(__alias, __alias_n, __instr, __start)     \
+   for (struct ir3_register *__alias = __instr->srcs[__start];                 \
+        __alias && (__alias->flags & IR3_REG_FIRST_ALIAS); __alias = NULL)     \
+      for (unsigned __i = __start, __alias_n = 0;                              \
+           __i < __instr->srcs_count &&                                        \
+           (__i == __start || !ir3_src_is_first_in_group(__instr->srcs[__i])); \
+           __i++, __alias_n++)                                                 \
+         if ((__alias = __instr->srcs[__i]))
+
+#define foreach_src_in_alias_group(__alias, __instr, __start)                  \
+   foreach_src_in_alias_group_n (__alias, __alias_n, __instr, __start)
 
 /* iterator for an instructions's destinations (reg), also returns dst #: */
 #define foreach_dst_n(__dstreg, __n, __instr)                                  \

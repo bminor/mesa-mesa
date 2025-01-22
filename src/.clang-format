@@ -243,6 +243,9 @@ ForEachMacros:
   - foreach_src
   - foreach_src_n
   - foreach_src_if
+  - foreach_src_with_alias_n
+  - foreach_src_in_alias_group_n
+  - foreach_src_in_alias_group
   - foreach_dst
   - foreach_dst_n
   - foreach_dst_if

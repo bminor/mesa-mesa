@@ -206,7 +206,10 @@ validate_instr(struct ir3_validate_ctx *ctx, struct ir3_instruction *instr)
 
    validate_rpt(ctx, instr);
 
-   foreach_src_n (reg, n, instr) {
+   /* Use alias-group-aware iterator to make sure the src number will be the
+    * same with and without alias groups.
+    */
+   foreach_src_with_alias_n (reg, n, _, instr) {
       if (reg->flags & IR3_REG_RELATIV)
          validate_assert(ctx, instr->address);
 

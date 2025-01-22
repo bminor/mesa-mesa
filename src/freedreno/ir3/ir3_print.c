@@ -451,13 +451,22 @@ print_instr(struct log_stream *stream, struct ir3_instruction *instr, int lvl)
          continue;
       if (!first)
          mesa_log_stream_printf(stream, ", ");
+      if (reg->flags & IR3_REG_ALIAS)
+         mesa_log_stream_printf(stream, "@");
       print_reg_name(stream, instr, reg, true);
       first = false;
    }
    foreach_src_n (reg, n, instr) {
       if (!first)
          mesa_log_stream_printf(stream, ", ");
+      if (reg->flags & IR3_REG_FIRST_ALIAS)
+         mesa_log_stream_printf(stream, "@{");
       print_reg_name(stream, instr, reg, false);
+      if ((reg->flags & IR3_REG_ALIAS) &&
+          (n == instr->srcs_count - 1 ||
+           ir3_src_is_first_in_group(instr->srcs[n + 1]))) {
+         mesa_log_stream_printf(stream, "}");
+      }
       if (instr->opc == OPC_END || instr->opc == OPC_CHMASK)
          mesa_log_stream_printf(stream, " (%u)", instr->end.outidxs[n]);
       first = false;
