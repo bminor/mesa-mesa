@@ -93,7 +93,15 @@ validate_src(struct ir3_validate_ctx *ctx, struct ir3_instruction *instr,
    struct ir3_register *src = reg->def;
 
    validate_assert(ctx, _mesa_set_search(ctx->defs, src->instr));
-   validate_assert(ctx, src->wrmask == reg->wrmask);
+
+   if (src->instr->opc == OPC_META_COLLECT) {
+      /* We only support reading a subset of written components from collects.
+       */
+      validate_assert(ctx, !(reg->wrmask & ~src->wrmask));
+   } else {
+      validate_assert(ctx, src->wrmask == reg->wrmask);
+   }
+
    validate_assert(ctx, reg_class_flags(src) == reg_class_flags(reg));
 
    if (src->flags & IR3_REG_CONST)

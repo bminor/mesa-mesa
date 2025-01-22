@@ -396,7 +396,7 @@ print_reg_name(struct log_stream *stream, struct ir3_instruction *instr,
                                 "xyzw"[reg_comp(reg)]);
    }
 
-   if (reg->wrmask > 0x1)
+   if (reg->wrmask != 0x1)
       mesa_log_stream_printf(stream, " (wrmask=0x%x)", reg->wrmask);
 }
 
