@@ -258,8 +258,8 @@ typedef enum {
 
 typedef enum {
    ALIAS_TEX = 0,
-   ALIAS_RT = 3,
-   ALIAS_MEM = 4,
+   ALIAS_RT = 1,
+   ALIAS_MEM = 2,
 } ir3_alias_scope;
 
 typedef enum {
@@ -435,6 +435,7 @@ struct ir3_instruction {
          unsigned g : 1; /* global */
 
          ir3_alias_scope alias_scope;
+         bool alias_type_float;
       } cat7;
       /* for meta-instructions, just used to hold extra data
        * before instruction scheduling, etc

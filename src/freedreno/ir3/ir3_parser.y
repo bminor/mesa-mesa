@@ -711,6 +711,8 @@ static void print_token(FILE *file, int type, YYSTYPE value)
 %token <tok> T_TYPE_U8
 %token <tok> T_TYPE_U8_32
 %token <tok> T_TYPE_U64
+%token <tok> T_TYPE_B16
+%token <tok> T_TYPE_B32
 
 %token <tok> T_UNTYPED
 %token <tok> T_TYPED
@@ -749,7 +751,6 @@ static void print_token(FILE *file, int type, YYSTYPE value)
 %token <num> T_P0
 %token <num> T_W
 %token <str> T_CAT1_TYPE_TYPE
-%token <str> T_INSTR_TYPE
 
 %token <tok> T_MOD_TEX
 %token <tok> T_MOD_MEM
@@ -1449,6 +1450,15 @@ cat7_alias_scope: T_MOD_TEX	{ instr->cat7.alias_scope = ALIAS_TEX; }
 |                 T_MOD_MEM	{ instr->cat7.alias_scope = ALIAS_MEM; }
 |                 T_MOD_RT	{ instr->cat7.alias_scope = ALIAS_RT; }
 
+cat7_alias_int_type:   T_TYPE_B16
+|                      T_TYPE_B32
+
+cat7_alias_float_type: T_TYPE_F16
+|                      T_TYPE_F32
+
+cat7_alias_type:  cat7_alias_int_type
+|                 cat7_alias_float_type { instr->cat7.alias_type_float = true; }
+
 cat7_instr:        cat7_barrier
 |                  cat7_data_cache
 |                  T_OP_SLEEP              { new_instr(OPC_SLEEP); }
@@ -1457,9 +1467,8 @@ cat7_instr:        cat7_barrier
 |                  T_OP_LOCK               { new_instr(OPC_LOCK); }
 |                  T_OP_UNLOCK             { new_instr(OPC_UNLOCK); }
 |                  T_OP_ALIAS {
-                       /* TODO: handle T_INSTR_TYPE */
                        new_instr(OPC_ALIAS);
-                   } '.' cat7_alias_scope '.' T_INSTR_TYPE '.' integer dst_reg ',' cat7_alias_src {
+                   } '.' cat7_alias_scope '.' cat7_alias_type '.' integer dst_reg ',' cat7_alias_src {
                        new_src(0, IR3_REG_IMMED)->uim_val = $8;
                    }
 

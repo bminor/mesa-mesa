@@ -426,8 +426,6 @@ static int parse_reg(const char *str)
 
 "ray_intersection"                return TOKEN(T_OP_RAY_INTERSECTION);
 
-("b16"|"b32"){1} ir3_yylval.str = yytext; return T_INSTR_TYPE;
-
                                   /* category 7: */
 "bar"                             return TOKEN(T_OP_BAR);
 "fence"                           return TOKEN(T_OP_FENCE);
@@ -452,6 +450,8 @@ static int parse_reg(const char *str)
 "u8"                              return TOKEN(T_TYPE_U8);
 "u8_32"                           return TOKEN(T_TYPE_U8_32);
 "u64"                             return TOKEN(T_TYPE_U64);
+"b16"                             return TOKEN(T_TYPE_B16);
+"b32"                             return TOKEN(T_TYPE_B32);
 
 "untyped"                         return TOKEN(T_UNTYPED);
 "typed"                           return TOKEN(T_TYPED);

@@ -500,9 +500,11 @@ static const struct test {
    INSTR_7XX(fbc21000_00000000, "(sy)(ss)(jp)lock"),
 
    /* dEQP-VK.pipeline.monolithic.sampler.border_swizzle.r4g4b4a4_unorm_pack16.rg1a.opaque_white.gather_1.no_swizzle_hint */
-   INSTR_7XX(e45401a0_bfba7736, "alias.tex.b32.1 r40.x, (-1.456763)"),
+   INSTR_7XX(e45401a0_bfba7736, "alias.tex.f32.1 r40.x, (-1.456763)"),
    /* dEQP-VK.synchronization.op.single_queue.event.write_draw_indexed_read_image_geometry.image_128x128_r32g32b32a32_sfloat */
-   INSTR_7XX(e44c0009_00000007, "alias.tex.b32.0 r2.y, c1.w"),
+   INSTR_7XX(e44c0009_00000007, "alias.tex.f32.0 r2.y, c1.w"),
+   /* dEQP-VK.binding_model.shader_access.primary_cmd_buf.storage_image.geometry.single_descriptor.2d_base_mip */
+   INSTR_7XX(ec5501a0_00000006, "(jp)alias.tex.b32.1 r40.x, (0x6)"),
 
    INSTR_6XX(ffffffff_ffffffff, "raw 0xFFFFFFFFFFFFFFFF"),
    /* clang-format on */
