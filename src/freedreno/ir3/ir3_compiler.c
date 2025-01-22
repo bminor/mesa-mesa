@@ -35,6 +35,7 @@ static const struct debug_named_value shader_debug_options[] = {
    {"nodescprefetch", IR3_DBG_NODESCPREFETCH, "Disable descriptor prefetch optimization"},
    {"expandrpt",  IR3_DBG_EXPANDRPT,  "Expand rptN instructions"},
    {"noaliastex", IR3_DBG_NOALIASTEX, "Don't use alias.tex"},
+   {"noaliasrt",  IR3_DBG_NOALIASRT,  "Don't use alias.rt"},
 #if MESA_DEBUG
    /* MESA_DEBUG-only options: */
    {"schedmsgs",  IR3_DBG_SCHEDMSGS,  "Enable scheduler debug messages"},

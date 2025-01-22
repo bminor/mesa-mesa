@@ -5797,6 +5797,7 @@ ir3_compile_shader_nir(struct ir3_compiler *compiler,
    } while (progress);
 
    progress = IR3_PASS(ir, ir3_create_alias_tex_regs);
+   progress |= IR3_PASS(ir, ir3_create_alias_rt, so);
 
    if (progress) {
       IR3_PASS(ir, ir3_dce, so);

@@ -637,3 +637,126 @@ ir3_insert_alias_tex(struct ir3 *ir)
 
    return progress;
 }
+
+static struct ir3_instruction *
+get_or_create_shpe(struct ir3 *ir)
+{
+   struct ir3_instruction *shpe = ir3_find_shpe(ir);
+
+   if (!shpe) {
+      shpe = ir3_create_empty_preamble(ir);
+      assert(shpe);
+   }
+
+   return shpe;
+}
+
+static bool
+create_output_aliases(struct ir3_shader_variant *v, struct ir3_instruction *end)
+{
+   bool progress = false;
+   struct ir3_instruction *shpe = NULL;
+
+   foreach_src_n (src, src_n, end) {
+      struct ir3_shader_output *output = &v->outputs[end->end.outidxs[src_n]];
+
+      if (output->slot < FRAG_RESULT_DATA0 ||
+          output->slot > FRAG_RESULT_DATA7) {
+         continue;
+      }
+
+      assert(src->flags & IR3_REG_SSA);
+      struct ir3_instruction *src_instr = src->def->instr;
+
+      if (src_instr->opc != OPC_META_COLLECT && src_instr->opc != OPC_MOV) {
+         continue;
+      }
+
+      unsigned rt = output->slot - FRAG_RESULT_DATA0;
+
+      foreach_src_n (comp_src, comp, src_instr) {
+         if (!(comp_src->flags & (IR3_REG_IMMED | IR3_REG_CONST))) {
+            /* Only const and immediate values can be aliased. */
+            continue;
+         }
+
+         if ((comp_src->flags & IR3_REG_HALF) &&
+             (comp_src->flags & IR3_REG_CONST)) {
+            /* alias.rt doesn't seem to work with half const.
+             * TODO figure out what's going wrong here. Might just be
+             * unsupported because the blob only uses it in one CTS test.
+             */
+            continue;
+         }
+
+         if (!shpe) {
+            shpe = get_or_create_shpe(v->ir);
+         }
+
+         struct ir3_instruction *alias =
+            ir3_instr_create_at(ir3_before_instr(shpe), OPC_ALIAS, 1, 2);
+         alias->cat7.alias_scope = ALIAS_RT;
+         ir3_dst_create(alias, regid(rt, comp), IR3_REG_RT);
+
+         unsigned src_flags =
+            comp_src->flags & (IR3_REG_HALF | IR3_REG_CONST | IR3_REG_IMMED);
+         ir3_src_create(alias, comp_src->num, src_flags)->uim_val =
+            comp_src->uim_val;
+
+         if (src_instr->opc == OPC_MOV) {
+            /* The float type bit seems entirely optional (i.e., it only affects
+             * disassembly) but since we have this info for movs, we might as
+             * well set it.
+             */
+            alias->cat7.alias_type_float = type_float(src_instr->cat1.dst_type);
+         }
+
+         if (comp_src->flags & IR3_REG_CONST) {
+            /* alias.rt seems to read const registers (as opposed to storing a
+             * reference in the alias table) so we have to make sure it's
+             * scheduled after const writes.
+             */
+            alias->barrier_class = alias->barrier_conflict =
+               IR3_BARRIER_CONST_W;
+         }
+
+         /* Nothing actually uses the alias.rt dst so make sure it doesn't get
+          * DCE'd.
+          */
+         array_insert(shpe->block, shpe->block->keeps, alias);
+
+         output->aliased_components |= (1 << comp);
+         progress = true;
+      }
+
+      /* Remove the aliased components from the src so that they can be DCE'd.
+       */
+      src->wrmask &= ~output->aliased_components;
+
+      if (!src->wrmask) {
+         src->def = NULL;
+      }
+   }
+
+   return progress;
+}
+
+/* Replace const and immediate components of the RT sources of end with alias.rt
+ * instructions in the preamble.
+ */
+bool
+ir3_create_alias_rt(struct ir3 *ir, struct ir3_shader_variant *v)
+{
+   if (!ir->compiler->has_alias)
+      return false;
+   if (ir3_shader_debug & IR3_DBG_NOALIASRT)
+      return false;
+   if (v->type != MESA_SHADER_FRAGMENT)
+      return false;
+   if (v->shader_options.fragdata_dynamic_remap)
+      return false;
+
+   struct ir3_instruction *end = ir3_find_end(ir);
+   assert(end->opc == OPC_END);
+   return create_output_aliases(v, end);
+}
