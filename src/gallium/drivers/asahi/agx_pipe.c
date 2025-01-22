@@ -2007,7 +2007,7 @@ agx_init_shader_caps(struct pipe_screen *pscreen)
       /* GLSL compiler is broken. Flip this on when Panfrost does. */
       caps->int16 = false;
       /* This cap is broken, see 9a38dab2d18 ("zink: disable
-       * PIPE_SHADER_CAP_FP16_CONST_BUFFERS") */
+       * pipe_shader_caps.fp16_const_buffers") */
       caps->fp16_const_buffers = false;
 
       /* TODO: Enable when fully baked */

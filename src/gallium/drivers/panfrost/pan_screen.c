@@ -413,7 +413,7 @@ panfrost_init_compute_caps(struct panfrost_screen *screen)
     * 384x384x384.
     *
     * On Midgard, we don't allow more than 128 threads in each
-    * direction to match PIPE_COMPUTE_CAP_MAX_THREADS_PER_BLOCK.
+    * direction to match pipe_compute_caps.max_threads_per_block.
     * That still exceeds the minimum-maximum.
     */
    caps->max_block_size[0] =
