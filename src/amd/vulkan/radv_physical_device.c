@@ -318,7 +318,7 @@ radv_physical_device_init_queue_table(struct radv_physical_device *pdev)
       }
    }
 
-   if (radv_sparse_queue_enabled(pdev)) {
+   if (radv_dedicated_sparse_queue_enabled(pdev)) {
       pdev->vk_queue_to_radv[idx] = RADV_QUEUE_SPARSE;
       idx++;
    }
@@ -2401,7 +2401,7 @@ radv_get_physical_device_queue_family_properties(struct radv_physical_device *pd
        num_queue_families++;
    }
 
-   if (radv_sparse_queue_enabled(pdev)) {
+   if (radv_dedicated_sparse_queue_enabled(pdev)) {
       num_queue_families++;
    }
 
@@ -2415,9 +2415,8 @@ radv_get_physical_device_queue_family_properties(struct radv_physical_device *pd
 
    idx = 0;
    if (*pCount >= 1) {
-      VkQueueFlags gfx_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT;
-      if (!radv_sparse_queue_enabled(pdev))
-         gfx_flags |= VK_QUEUE_SPARSE_BINDING_BIT;
+      VkQueueFlags gfx_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT |
+                               VK_QUEUE_TRANSFER_BIT | VK_QUEUE_SPARSE_BINDING_BIT;
       *pQueueFamilyProperties[idx] = (VkQueueFamilyProperties){
          .queueFlags = gfx_flags,
          .queueCount = 1,
@@ -2428,9 +2427,7 @@ radv_get_physical_device_queue_family_properties(struct radv_physical_device *pd
    }
 
    if (pdev->info.ip[AMD_IP_COMPUTE].num_queues > 0 && !(instance->debug_flags & RADV_DEBUG_NO_COMPUTE_QUEUE)) {
-      VkQueueFlags compute_flags = VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT;
-      if (!radv_sparse_queue_enabled(pdev))
-         compute_flags |= VK_QUEUE_SPARSE_BINDING_BIT;
+      VkQueueFlags compute_flags = VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT | VK_QUEUE_SPARSE_BINDING_BIT;
       if (*pCount > idx) {
          *pQueueFamilyProperties[idx] = (VkQueueFamilyProperties){
             .queueFlags = compute_flags,
@@ -2459,7 +2456,7 @@ radv_get_physical_device_queue_family_properties(struct radv_physical_device *pd
    if (radv_transfer_queue_enabled(pdev)) {
       if (*pCount > idx) {
          *pQueueFamilyProperties[idx] = (VkQueueFamilyProperties){
-            .queueFlags = VK_QUEUE_TRANSFER_BIT,
+            .queueFlags = VK_QUEUE_TRANSFER_BIT | VK_QUEUE_SPARSE_BINDING_BIT,
             .queueCount = pdev->info.ip[AMD_IP_SDMA].num_queues,
             .timestampValidBits = 64,
             .minImageTransferGranularity = (VkExtent3D){16, 16, 8},
@@ -2482,7 +2479,7 @@ radv_get_physical_device_queue_family_properties(struct radv_physical_device *pd
       }
    }
 
-   if (radv_sparse_queue_enabled(pdev)) {
+   if (radv_dedicated_sparse_queue_enabled(pdev)) {
       if (*pCount > idx) {
          *pQueueFamilyProperties[idx] = (VkQueueFamilyProperties){
             .queueFlags = VK_QUEUE_SPARSE_BINDING_BIT,

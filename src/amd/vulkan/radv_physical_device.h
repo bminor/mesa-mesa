@@ -195,7 +195,7 @@ radv_physical_device_instance(const struct radv_physical_device *pdev)
 }
 
 static inline bool
-radv_sparse_queue_enabled(const struct radv_physical_device *pdev)
+radv_dedicated_sparse_queue_enabled(const struct radv_physical_device *pdev)
 {
    const struct radv_instance *instance = radv_physical_device_instance(pdev);
 
