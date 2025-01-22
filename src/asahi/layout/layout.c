@@ -29,7 +29,7 @@ ail_initialize_linear(struct ail_layout *layout)
  * Get the maximum tile size possible for a given block size. This satisfy
  * width * height * blocksize = 16384 = page size, so each tile is one page.
  */
-static inline struct ail_tile
+struct ail_tile
 ail_get_max_tile_size(unsigned blocksize_B)
 {
    /* clang-format off */

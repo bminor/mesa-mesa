@@ -329,6 +329,8 @@ ail_is_level_twiddled_uncompressed(const struct ail_layout *layout,
    }
 }
 
+struct ail_tile ail_get_max_tile_size(unsigned blocksize_B);
+
 void ail_make_miptree(struct ail_layout *layout);
 
 void ail_detile(void *_tiled, void *_linear,
