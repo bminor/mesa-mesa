@@ -111,154 +111,6 @@ nvc0_screen_is_format_supported(struct pipe_screen *pscreen,
             nvc0_vertex_format[format].usage) & bindings) == bindings;
 }
 
-static int
-nvc0_screen_get_shader_param(struct pipe_screen *pscreen,
-                             enum pipe_shader_type shader,
-                             enum pipe_shader_cap param)
-{
-   const struct nouveau_screen *screen = nouveau_screen(pscreen);
-   const uint16_t class_3d = screen->class_3d;
-
-   switch (shader) {
-   case PIPE_SHADER_VERTEX:
-   case PIPE_SHADER_GEOMETRY:
-   case PIPE_SHADER_FRAGMENT:
-   case PIPE_SHADER_COMPUTE:
-   case PIPE_SHADER_TESS_CTRL:
-   case PIPE_SHADER_TESS_EVAL:
-      break;
-   default:
-      return 0;
-   }
-
-   switch (param) {
-   case PIPE_SHADER_CAP_SUPPORTED_IRS:
-      return 1 << PIPE_SHADER_IR_NIR;
-   case PIPE_SHADER_CAP_MAX_INSTRUCTIONS:
-   case PIPE_SHADER_CAP_MAX_ALU_INSTRUCTIONS:
-   case PIPE_SHADER_CAP_MAX_TEX_INSTRUCTIONS:
-   case PIPE_SHADER_CAP_MAX_TEX_INDIRECTIONS:
-      return 16384;
-   case PIPE_SHADER_CAP_MAX_CONTROL_FLOW_DEPTH:
-      return 16;
-   case PIPE_SHADER_CAP_MAX_INPUTS:
-      return 0x200 / 16;
-   case PIPE_SHADER_CAP_MAX_OUTPUTS:
-      return 32;
-   case PIPE_SHADER_CAP_MAX_CONST_BUFFER0_SIZE:
-      return NVC0_MAX_CONSTBUF_SIZE;
-   case PIPE_SHADER_CAP_MAX_CONST_BUFFERS:
-      return NVC0_MAX_PIPE_CONSTBUFS;
-   case PIPE_SHADER_CAP_INDIRECT_TEMP_ADDR:
-   case PIPE_SHADER_CAP_INDIRECT_CONST_ADDR:
-      return 1;
-   case PIPE_SHADER_CAP_MAX_TEMPS:
-      return NVC0_CAP_MAX_PROGRAM_TEMPS;
-   case PIPE_SHADER_CAP_CONT_SUPPORTED:
-      return 1;
-   case PIPE_SHADER_CAP_TGSI_SQRT_SUPPORTED:
-      return 1;
-   case PIPE_SHADER_CAP_SUBROUTINES:
-      return 1;
-   case PIPE_SHADER_CAP_INTEGERS:
-      return 1;
-   case PIPE_SHADER_CAP_TGSI_ANY_INOUT_DECL_RANGE:
-   case PIPE_SHADER_CAP_INT64_ATOMICS:
-   case PIPE_SHADER_CAP_FP16:
-   case PIPE_SHADER_CAP_FP16_DERIVATIVES:
-   case PIPE_SHADER_CAP_FP16_CONST_BUFFERS:
-   case PIPE_SHADER_CAP_INT16:
-   case PIPE_SHADER_CAP_GLSL_16BIT_CONSTS:
-   case PIPE_SHADER_CAP_MAX_HW_ATOMIC_COUNTERS:
-   case PIPE_SHADER_CAP_MAX_HW_ATOMIC_COUNTER_BUFFERS:
-      return 0;
-   case PIPE_SHADER_CAP_MAX_SHADER_BUFFERS:
-      return NVC0_MAX_BUFFERS;
-   case PIPE_SHADER_CAP_MAX_TEXTURE_SAMPLERS:
-      return (class_3d >= NVE4_3D_CLASS) ? 32 : 16;
-   case PIPE_SHADER_CAP_MAX_SAMPLER_VIEWS:
-      return (class_3d >= NVE4_3D_CLASS) ? 32 : 16;
-   case PIPE_SHADER_CAP_MAX_SHADER_IMAGES:
-      if (class_3d >= NVE4_3D_CLASS)
-         return NVC0_MAX_IMAGES;
-      if (shader == PIPE_SHADER_FRAGMENT || shader == PIPE_SHADER_COMPUTE)
-         return NVC0_MAX_IMAGES;
-      return 0;
-   default:
-      NOUVEAU_ERR("unknown PIPE_SHADER_CAP %d\n", param);
-      return 0;
-   }
-}
-
-static int
-nvc0_screen_get_compute_param(struct pipe_screen *pscreen,
-                              enum pipe_compute_cap param, void *data)
-{
-   struct nvc0_screen *screen = nvc0_screen(pscreen);
-   struct nouveau_device *dev = screen->base.device;
-   const uint16_t obj_class = screen->compute->oclass;
-
-#define RET(x) do {                  \
-   if (data)                         \
-      memcpy(data, x, sizeof(x));    \
-   return sizeof(x);                 \
-} while (0)
-
-   switch (param) {
-   case PIPE_COMPUTE_CAP_GRID_DIMENSION:
-      RET((uint64_t []) { 3 });
-   case PIPE_COMPUTE_CAP_MAX_GRID_SIZE:
-      if (obj_class >= NVE4_COMPUTE_CLASS) {
-         RET(((uint64_t []) { 0x7fffffff, 65535, 65535 }));
-      } else {
-         RET(((uint64_t []) { 65535, 65535, 65535 }));
-      }
-   case PIPE_COMPUTE_CAP_MAX_BLOCK_SIZE:
-      RET(((uint64_t []) { 1024, 1024, 64 }));
-   case PIPE_COMPUTE_CAP_MAX_THREADS_PER_BLOCK:
-      RET((uint64_t []) { 1024 });
-   case PIPE_COMPUTE_CAP_MAX_VARIABLE_THREADS_PER_BLOCK:
-      if (obj_class >= NVE4_COMPUTE_CLASS) {
-         RET((uint64_t []) { 1024 });
-      } else {
-         RET((uint64_t []) { 512 });
-      }
-   case PIPE_COMPUTE_CAP_MAX_GLOBAL_SIZE: /* g[] */
-      RET((uint64_t []) { nouveau_device_get_global_mem_size(dev) });
-   case PIPE_COMPUTE_CAP_MAX_LOCAL_SIZE: /* s[] */
-      switch (obj_class) {
-      case GM200_COMPUTE_CLASS:
-         RET((uint64_t []) { 96 << 10 });
-      case GM107_COMPUTE_CLASS:
-         RET((uint64_t []) { 64 << 10 });
-      default:
-         RET((uint64_t []) { 48 << 10 });
-      }
-   case PIPE_COMPUTE_CAP_MAX_PRIVATE_SIZE: /* l[] */
-      RET((uint64_t []) { 512 << 10 });
-   case PIPE_COMPUTE_CAP_MAX_INPUT_SIZE: /* c[], arbitrary limit */
-      RET((uint64_t []) { 4096 });
-   case PIPE_COMPUTE_CAP_SUBGROUP_SIZES:
-      RET((uint32_t []) { 32 });
-   case PIPE_COMPUTE_CAP_MAX_SUBGROUPS:
-      RET((uint32_t []) { 0 });
-   case PIPE_COMPUTE_CAP_MAX_MEM_ALLOC_SIZE:
-      RET((uint64_t []) { nouveau_device_get_global_mem_size(dev) });
-   case PIPE_COMPUTE_CAP_IMAGES_SUPPORTED:
-      RET((uint32_t []) { NVC0_MAX_IMAGES });
-   case PIPE_COMPUTE_CAP_MAX_COMPUTE_UNITS:
-      RET((uint32_t []) { screen->mp_count_compute });
-   case PIPE_COMPUTE_CAP_MAX_CLOCK_FREQUENCY:
-      RET((uint32_t []) { 512 }); /* FIXME: arbitrary limit */
-   case PIPE_COMPUTE_CAP_ADDRESS_BITS:
-      RET((uint32_t []) { 64 });
-   default:
-      return 0;
-   }
-
-#undef RET
-}
-
 static void
 nvc0_init_shader_caps(struct nvc0_screen *screen)
 {
@@ -779,8 +631,6 @@ nvc0_screen_init_compute(struct nvc0_screen *screen)
    struct nouveau_object *chan = screen->base.channel;
    int ret;
 
-   screen->base.base.get_compute_param = nvc0_screen_get_compute_param;
-
    ret = nouveau_object_mclass(chan, computes);
    if (ret < 0) {
       NOUVEAU_ERR("No supported compute class: %d\n", ret);
@@ -995,7 +845,6 @@ nvc0_screen_create(struct nouveau_device *dev)
 
    pscreen->context_create = nvc0_create;
    pscreen->is_format_supported = nvc0_screen_is_format_supported;
-   pscreen->get_shader_param = nvc0_screen_get_shader_param;
    pscreen->get_sample_pixel_grid = nvc0_screen_get_sample_pixel_grid;
    pscreen->get_driver_query_info = nvc0_screen_get_driver_query_info;
    pscreen->get_driver_query_group_info = nvc0_screen_get_driver_query_group_info;
