@@ -107,37 +107,6 @@ softpipe_get_compiler_options(struct pipe_screen *pscreen,
    return &sp_compiler_options;
 }
 
-static int
-softpipe_get_shader_param(struct pipe_screen *screen,
-                          enum pipe_shader_type shader,
-                          enum pipe_shader_cap param)
-{
-   struct softpipe_screen *sp_screen = softpipe_screen(screen);
-
-   switch (param) {
-   case PIPE_SHADER_CAP_SUPPORTED_IRS:
-      return (1 << PIPE_SHADER_IR_NIR) | (1 << PIPE_SHADER_IR_TGSI);
-   default:
-      break;
-   }
-
-   switch(shader)
-   {
-   case PIPE_SHADER_FRAGMENT:
-      return tgsi_exec_get_shader_param(param);
-   case PIPE_SHADER_COMPUTE:
-      return tgsi_exec_get_shader_param(param);
-   case PIPE_SHADER_VERTEX:
-   case PIPE_SHADER_GEOMETRY:
-      if (sp_screen->use_llvm)
-         return draw_get_shader_param(shader, param);
-      else
-         return draw_get_shader_param_no_llvm(shader, param);
-   default:
-      return 0;
-   }
-}
-
 /**
  * Query format support for creating a texture, drawing surface, etc.
  * \param format  the format to test
@@ -460,59 +429,6 @@ softpipe_flush_frontbuffer(struct pipe_screen *_screen,
 }
 
 static int
-softpipe_get_compute_param(struct pipe_screen *_screen,
-                           enum pipe_compute_cap param,
-                           void *ret)
-{
-   switch (param) {
-   case PIPE_COMPUTE_CAP_IR_TARGET:
-      return 0;
-   case PIPE_COMPUTE_CAP_MAX_GRID_SIZE:
-      if (ret) {
-         uint64_t *grid_size = ret;
-         grid_size[0] = 65535;
-         grid_size[1] = 65535;
-         grid_size[2] = 65535;
-      }
-      return 3 * sizeof(uint64_t) ;
-   case PIPE_COMPUTE_CAP_MAX_BLOCK_SIZE:
-      if (ret) {
-         uint64_t *block_size = ret;
-         block_size[0] = 1024;
-         block_size[1] = 1024;
-         block_size[2] = 1024;
-      }
-      return 3 * sizeof(uint64_t);
-   case PIPE_COMPUTE_CAP_MAX_THREADS_PER_BLOCK:
-      if (ret) {
-         uint64_t *max_threads_per_block = ret;
-         *max_threads_per_block = 1024;
-      }
-      return sizeof(uint64_t);
-   case PIPE_COMPUTE_CAP_MAX_LOCAL_SIZE:
-      if (ret) {
-         uint64_t *max_local_size = ret;
-         *max_local_size = 32768;
-      }
-      return sizeof(uint64_t);
-   case PIPE_COMPUTE_CAP_GRID_DIMENSION:
-   case PIPE_COMPUTE_CAP_MAX_GLOBAL_SIZE:
-   case PIPE_COMPUTE_CAP_MAX_PRIVATE_SIZE:
-   case PIPE_COMPUTE_CAP_MAX_INPUT_SIZE:
-   case PIPE_COMPUTE_CAP_MAX_MEM_ALLOC_SIZE:
-   case PIPE_COMPUTE_CAP_MAX_CLOCK_FREQUENCY:
-   case PIPE_COMPUTE_CAP_MAX_COMPUTE_UNITS:
-   case PIPE_COMPUTE_CAP_IMAGES_SUPPORTED:
-   case PIPE_COMPUTE_CAP_SUBGROUP_SIZES:
-   case PIPE_COMPUTE_CAP_MAX_SUBGROUPS:
-   case PIPE_COMPUTE_CAP_ADDRESS_BITS:
-   case PIPE_COMPUTE_CAP_MAX_VARIABLE_THREADS_PER_BLOCK:
-      break;
-   }
-   return 0;
-}
-
-static int
 softpipe_screen_get_fd(struct pipe_screen *screen)
 {
    struct sw_winsys *winsys = softpipe_screen(screen)->winsys;
@@ -545,13 +461,11 @@ softpipe_create_screen(struct sw_winsys *winsys)
    screen->base.get_vendor = softpipe_get_vendor;
    screen->base.get_device_vendor = softpipe_get_vendor; // TODO should be the CPU vendor
    screen->base.get_screen_fd = softpipe_screen_get_fd;
-   screen->base.get_shader_param = softpipe_get_shader_param;
    screen->base.get_timestamp = u_default_get_timestamp;
    screen->base.query_memory_info = util_sw_query_memory_info;
    screen->base.is_format_supported = softpipe_is_format_supported;
    screen->base.context_create = softpipe_create_context;
    screen->base.flush_frontbuffer = softpipe_flush_frontbuffer;
-   screen->base.get_compute_param = softpipe_get_compute_param;
    screen->base.get_compiler_options = softpipe_get_compiler_options;
    screen->use_llvm = sp_debug & SP_DBG_USE_LLVM;
 
