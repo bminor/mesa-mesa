@@ -86,9 +86,28 @@ ref_access_tiled(uint8_t *tiled, uint8_t *linear, struct ail_layout *layout,
             linear + linear_offset_B(linear_x_el, linear_y_el, linear_stride_B,
                                      blocksize_B);
 
-         uint8_t *tiled_ptr =
-            tiled +
-            (blocksize_B * tiled_offset_el(layout, 0, tiled_x_el, tiled_y_el));
+         unsigned twiddled_offs_B =
+            blocksize_B * tiled_offset_el(layout, 0, tiled_x_el, tiled_y_el);
+
+         /* While we're at it, check that ail_get_twiddled_block_B does the
+          * right thing where it is defined (at tile boundaries). We can't
+          * otherwise use it here as it is part of the routine under test.
+          */
+         if ((tiled_x_el % layout->tilesize_el[0].width_el) == 0 &&
+             (tiled_y_el % layout->tilesize_el[0].height_el) == 0) {
+
+            unsigned tiled_x_px =
+               tiled_x_el * util_format_get_blockwidth(layout->format);
+
+            unsigned tiled_y_px =
+               tiled_y_el * util_format_get_blockwidth(layout->format);
+
+            EXPECT_EQ(
+               ail_get_twiddled_block_B(layout, 0, tiled_x_px, tiled_y_px, 0),
+               twiddled_offs_B);
+         }
+
+         uint8_t *tiled_ptr = tiled + twiddled_offs_B;
 
          if (dst_is_tiled) {
             memcpy(tiled_ptr, linear_ptr, blocksize_B);
