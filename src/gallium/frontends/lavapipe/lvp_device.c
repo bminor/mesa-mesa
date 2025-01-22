@@ -294,28 +294,39 @@ assert_memhandle_type(VkExternalMemoryHandleTypeFlags types)
    return types == 0;
 }
 
-static int
-min_vertex_pipeline_param(struct pipe_screen *pscreen, enum pipe_shader_cap param)
+static unsigned min_shader_cap(struct pipe_screen *pscreen,
+                               enum pipe_shader_type shader,
+                               unsigned cap_offset)
 {
-   int val = INT_MAX;
-   for (int i = 0; i < MESA_SHADER_COMPUTE; ++i) {
-      if (i == MESA_SHADER_FRAGMENT ||
-          !pscreen->get_shader_param(pscreen, i,
-                                     PIPE_SHADER_CAP_MAX_INSTRUCTIONS))
+   unsigned val = UINT_MAX;
+   for (int i = 0; i <= shader; ++i) {
+      if (!pscreen->shader_caps[i].max_instructions)
          continue;
-
-      val = MIN2(val, pscreen->get_shader_param(pscreen, i, param));
+      val = MIN2(val, *(unsigned *)((char *)&pscreen->shader_caps[i] + cap_offset));
    }
    return val;
 }
 
-static int
-min_shader_param(struct pipe_screen *pscreen, enum pipe_shader_cap param)
+static bool and_shader_cap(struct pipe_screen *pscreen,
+                           unsigned cap_offset)
 {
-   return MIN3(min_vertex_pipeline_param(pscreen, param),
-               pscreen->get_shader_param(pscreen, MESA_SHADER_FRAGMENT, param),
-               pscreen->get_shader_param(pscreen, MESA_SHADER_COMPUTE, param));
+   bool val = true;
+   for (int i = 0; i <= MESA_SHADER_COMPUTE; ++i) {
+      if (!pscreen->shader_caps[i].max_instructions)
+         continue;
+      val &= *(bool *)((char *)&pscreen->shader_caps[i] + cap_offset);
+   }
+   return val;
 }
+
+#define MIN_VERTEX_PIPELINE_CAP(pscreen, cap) \
+   min_shader_cap(pscreen, MESA_SHADER_GEOMETRY, offsetof(struct pipe_shader_caps, cap))
+
+#define MIN_SHADER_CAP(pscreen, cap) \
+   min_shader_cap(pscreen, MESA_SHADER_COMPUTE, offsetof(struct pipe_shader_caps, cap))
+
+#define AND_SHADER_CAP(pscreen, cap) \
+   and_shader_cap(pscreen, offsetof(struct pipe_shader_caps, cap))
 
 static void
 lvp_get_features(const struct lvp_physical_device *pdevice,
@@ -350,11 +361,11 @@ lvp_get_features(const struct lvp_physical_device *pdevice,
       .textureCompressionBC                     = true,
       .occlusionQueryPrecise                    = true,
       .pipelineStatisticsQuery                  = true,
-      .vertexPipelineStoresAndAtomics           = (min_vertex_pipeline_param(pdevice->pscreen, PIPE_SHADER_CAP_MAX_SHADER_BUFFERS) != 0),
+      .vertexPipelineStoresAndAtomics           = (MIN_VERTEX_PIPELINE_CAP(pdevice->pscreen, max_shader_buffers) != 0),
       .fragmentStoresAndAtomics                 = (pdevice->pscreen->get_shader_param(pdevice->pscreen, MESA_SHADER_FRAGMENT, PIPE_SHADER_CAP_MAX_SHADER_BUFFERS) != 0),
       .shaderTessellationAndGeometryPointSize   = true,
       .shaderImageGatherExtended                = true,
-      .shaderStorageImageExtendedFormats        = (min_shader_param(pdevice->pscreen, PIPE_SHADER_CAP_MAX_SHADER_IMAGES) != 0),
+      .shaderStorageImageExtendedFormats        = (MIN_SHADER_CAP(pdevice->pscreen, max_shader_images) != 0),
       .shaderStorageImageMultisample            = (pdevice->pscreen->caps.texture_multisample != 0),
       .shaderUniformBufferArrayDynamicIndexing  = true,
       .shaderSampledImageArrayDynamicIndexing   = true,
@@ -366,7 +377,7 @@ lvp_get_features(const struct lvp_physical_device *pdevice,
       .shaderCullDistance                       = (pdevice->pscreen->caps.cull_distance == 1),
       .shaderFloat64                            = (pdevice->pscreen->caps.doubles == 1),
       .shaderInt64                              = (pdevice->pscreen->caps.int64 == 1),
-      .shaderInt16                              = (min_shader_param(pdevice->pscreen, PIPE_SHADER_CAP_INT16) == 1),
+      .shaderInt16                              = AND_SHADER_CAP(pdevice->pscreen, int16),
       .variableMultisampleRate                  = false,
       .inheritedQueries                         = false,
       .sparseBinding                            = DETECT_OS_LINUX,
@@ -811,7 +822,7 @@ lvp_get_properties(const struct lvp_physical_device *device, struct vk_propertie
       .maxImageDimensionCube                    = (1 << device->pscreen->caps.max_texture_cube_levels),
       .maxImageArrayLayers                      = device->pscreen->caps.max_texture_array_layers,
       .maxTexelBufferElements                   = device->pscreen->caps.max_texel_buffer_elements,
-      .maxUniformBufferRange                    = min_shader_param(device->pscreen, PIPE_SHADER_CAP_MAX_CONST_BUFFER0_SIZE),
+      .maxUniformBufferRange                    = MIN_SHADER_CAP(device->pscreen, max_const_buffer0_size),
       .maxStorageBufferRange                    = device->pscreen->caps.max_shader_buffer_size,
       .maxPushConstantsSize                     = MAX_PUSH_CONSTANTS_SIZE,
       .maxMemoryAllocationCount                 = UINT32_MAX,
