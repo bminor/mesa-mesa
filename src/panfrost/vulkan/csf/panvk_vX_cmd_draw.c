@@ -690,15 +690,6 @@ cs_render_desc_ringbuf_move_ptr(struct cs_builder *b, uint32_t size,
    cs_wait_slot(b, SB_ID(LS), false);
 }
 
-static bool
-inherits_render_ctx(struct panvk_cmd_buffer *cmdbuf)
-{
-   return (cmdbuf->vk.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY &&
-           (cmdbuf->flags &
-            VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) ||
-          (cmdbuf->state.gfx.render.flags & VK_RENDERING_RESUMING_BIT);
-}
-
 static VkResult
 get_tiler_desc(struct panvk_cmd_buffer *cmdbuf)
 {
@@ -1187,7 +1178,7 @@ set_provoking_vertex_mode(struct panvk_cmd_buffer *cmdbuf)
    /* If this is not the first draw, first_provoking_vertex should match
     * the one from the previous draws. Unfortunately, we can't check it
     * when the render pass is inherited. */
-   assert(!cmdbuf->state.gfx.render.fbds.gpu ||
+   assert(!cmdbuf->state.gfx.render.fbds.gpu || inherits_render_ctx(cmdbuf) ||
           fbinfo->first_provoking_vertex == first_provoking_vertex);
 
    fbinfo->first_provoking_vertex = first_provoking_vertex;
@@ -2613,6 +2604,11 @@ panvk_per_arch(CmdEndRendering)(VkCommandBuffer commandBuffer)
           sizeof(cmdbuf->state.gfx.render.fbds));
    memset(&cmdbuf->state.gfx.render.oq, 0, sizeof(cmdbuf->state.gfx.render.oq));
    cmdbuf->state.gfx.render.tiler = 0;
+
+   /* If we're finished with this render pass, make sure we reset the flags
+    * so any barrier encountered after EndRendering() doesn't try to flush
+    * draws. */
+   cmdbuf->state.gfx.render.flags = 0;
 
    /* If we're not suspending, we need to resolve attachments. */
    if (!suspending)
