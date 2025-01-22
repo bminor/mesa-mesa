@@ -376,6 +376,7 @@ static void print_token(FILE *file, int type, YYSTYPE value)
 %token <str> T_IDENTIFIER
 %token <num> T_REGISTER
 %token <num> T_CONSTANT
+%token <num> T_RT
 
 /* @ headers (@const/@sampler/@uniform/@varying) */
 %token <tok> T_A_LOCALSIZE
@@ -1443,6 +1444,9 @@ cat7_data_cache:   T_OP_DCCLN              { new_instr(OPC_DCCLN); }
 |                  T_OP_DCINV              { new_instr(OPC_DCINV); }
 |                  T_OP_DCFLU              { new_instr(OPC_DCFLU); }
 
+cat7_alias_dst:    dst_reg
+|                  T_RT { new_dst($1, IR3_REG_RT); }
+
 cat7_alias_src:    src_reg_or_const
 |                  immediate_cat1
 
@@ -1470,7 +1474,7 @@ cat7_instr:        cat7_barrier
 |                  T_OP_UNLOCK             { new_instr(OPC_UNLOCK); }
 |                  T_OP_ALIAS {
                        new_instr(OPC_ALIAS);
-                   } '.' cat7_alias_scope '.' cat7_alias_type '.' cat7_alias_table_size_minus_one dst_reg ',' cat7_alias_src
+                   } '.' cat7_alias_scope '.' cat7_alias_type '.' cat7_alias_table_size_minus_one cat7_alias_dst ',' cat7_alias_src
 
 raw_instr: T_RAW   {new_instr(OPC_META_RAW)->raw.value = $1;}
 

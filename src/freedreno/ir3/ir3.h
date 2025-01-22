@@ -156,6 +156,9 @@ typedef enum ir3_register_flags {
 
    /* Predicate register (p0.c). Cannot be combined with half or shared. */
    IR3_REG_PREDICATE = BIT(19),
+
+   /* Render target dst. Only used by alias.rt. */
+   IR3_REG_RT = BIT(20),
 } ir3_register_flags;
 
 struct ir3_register {

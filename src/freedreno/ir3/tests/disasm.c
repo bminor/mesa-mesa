@@ -508,6 +508,19 @@ static const struct test {
    /* dEQP-VK.subgroups.quad.graphics.subgroupquadbroadcast_i16vec2 */
    INSTR_7XX(e45100a0_00000002, "alias.tex.b16.0 hr40.x, h(0x2)"),
 
+   /* dEQP-VK.glsl.derivate.dfdx.constant.float */
+   INSTR_7XX(e4508003_00003c00, "alias.rt.f16.0 rt0.w, h(1.000000)"),
+   INSTR_7XX(f4488000_00000000, "(sy)alias.rt.f16.0 rt0.x, hc0.x"),
+
+   /* dEQP-VK.glsl.opaque_type_indexing.ubo.const_literal_fragment */
+   INSTR_7XX(e44c8008_00000010, "alias.rt.f32.0 rt2.x, c4.x"),
+
+   /* dEQP-VK.dynamic_rendering.primary_cmd_buff.suballocation.multisample_resolve.layers_3.r16g16_unorm.samples_4_resolve_level_4 */
+   INSTR_7XX(e4548008_3f800000, "alias.rt.f32.0 rt2.x, (1.000000)"),
+
+   /* dEQP-VK.renderpass.suballocation.multisample_resolve.layers_3.r8g8b8a8_uint.samples_2_baseLayer1 */
+   INSTR_7XX(e4558007_000000ff, "alias.rt.b32.0 rt1.w, (0xff)"),
+
    INSTR_6XX(ffffffff_ffffffff, "raw 0xFFFFFFFFFFFFFFFF"),
    /* clang-format on */
 };

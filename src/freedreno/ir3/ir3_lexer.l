@@ -96,6 +96,9 @@ static int parse_reg(const char *str)
 		num++;
 	}
 	str++;
+	if (str[0] == 't') {
+		str++;
+	}
 	num += strtol(str, (char **)&str, 10) << 3;
 	switch (str[1]) {
 	case 'x': num += 0; break;
@@ -170,6 +173,7 @@ static int parse_reg(const char *str)
 
 [h]?"r"[0-9]+"."[xyzw]            ir3_yylval.num = parse_reg(yytext); return T_REGISTER;
 [h]?"c"[0-9]+"."[xyzw]            ir3_yylval.num = parse_reg(yytext); return T_CONSTANT;
+"rt"[0-7]"."[xyzw]                ir3_yylval.num = parse_reg(yytext); return T_RT;
 "a0.x"                            return T_A0;
 "a1.x"                            return T_A1;
 "p0."[xyzw]                       ir3_yylval.num = parse_reg(yytext); return T_P0;

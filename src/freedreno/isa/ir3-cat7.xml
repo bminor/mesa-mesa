@@ -284,6 +284,18 @@ SOFTWARE.
 	<value val="2" display="IMMED"/>
 </enum>
 
+<bitset name="#dst-rt" size="5">
+	<display>
+		rt{RT}.{SWIZ}
+	</display>
+	<field name="SWIZ" low="0" high="1" type="#swiz"/>
+	<field name="RT" low="2"  high="4" type="uint"/>
+	<encode type="struct ir3_register *">
+		<map name="RT">src->num >> 2</map>
+		<map name="SWIZ">src->num &amp; 0x3</map>
+	</encode>
+</bitset>
+
 <bitset name="alias" extends="#instruction">
 	<doc>
 		Add an entry to the scope-specific "alias table", when instruction
@@ -335,6 +347,13 @@ SOFTWARE.
 		<param name="TYPE_SIZE"/>
 		<param name="TYPE"/>
 	</field>
+
+	<override>
+		<expr>{SCOPE} == 1</expr>
+		<field low="32" high="36" name="DST" type="#dst-rt"/>
+		<pattern low="37" high="39">000</pattern>
+		<derived name="DST_HALF" expr="#false" type="bool" display=""/>
+	</override>
 	<field   low="32" high="39" name="DST" type="#reg-gpr"/>
 	<field   low="40" high="43" name="TABLE_SIZE_MINUS_ONE" type="uint"/>
 	<field   pos="44"           name="SS" type="bool" display="(ss)"/>
