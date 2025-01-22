@@ -231,6 +231,9 @@ delay_update(struct ir3_legalize_state *state,
       return;
 
    foreach_dst_n (dst, n, instr) {
+      if (dst->flags & IR3_REG_RT)
+         continue;
+
       unsigned elems = post_ra_reg_elems(dst);
       unsigned num = post_ra_reg_num(dst);
       unsigned dst_cycle = cycle;
@@ -523,6 +526,8 @@ legalize_block(struct ir3_legalize_ctx *ctx, struct ir3_block *block)
       }
 
       foreach_dst (reg, n) {
+         if (reg->flags & IR3_REG_RT)
+            continue;
          if (needs_ss_war(state, reg, n_is_scalar_alu)) {
             apply_ss(n, state, mergedregs);
             last_input_needs_ss = false;
@@ -540,7 +545,7 @@ legalize_block(struct ir3_legalize_ctx *ctx, struct ir3_block *block)
        * clever if we were aware of this during scheduling, but
        * this should be a pretty rare case:
        */
-      if ((n->flags & IR3_INSTR_SS) && (opc_cat(n->opc) >= 5)) {
+      if ((n->flags & IR3_INSTR_SS) && !supports_ss(n)) {
          struct ir3_instruction *nop;
          nop = ir3_NOP(&build);
          nop->flags |= IR3_INSTR_SS;

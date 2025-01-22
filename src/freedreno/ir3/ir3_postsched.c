@@ -488,6 +488,8 @@ calculate_deps(struct ir3_postsched_deps_state *state,
    foreach_dst_n (reg, i, node->instr) {
       if (reg->wrmask == 0)
          continue;
+      if (reg->flags & IR3_REG_RT)
+         continue;
       if (reg->flags & IR3_REG_RELATIV) {
          /* mark the entire array as written: */
          for (unsigned j = 0; j < reg->size; j++) {

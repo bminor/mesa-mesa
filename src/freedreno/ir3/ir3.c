@@ -275,19 +275,37 @@ ir3_collect_info(struct ir3_shader_variant *v)
    bool in_preamble = false;
    bool has_eq = false;
 
+   /* Track which registers are currently aliases because they shouldn't be
+    * included in the GPR footprint.
+    */
+   regmask_t aliases;
+
+   /* Full and half aliases do not overlap so treat them as !mergedregs. */
+   regmask_init(&aliases, false);
+
    foreach_block (block, &shader->block_list) {
       int sfu_delay = 0, mem_delay = 0;
 
       foreach_instr (instr, &block->instr_list) {
 
          foreach_src (reg, instr) {
-            collect_reg_info(instr, reg, info);
+            if (!is_reg_gpr(reg) || !regmask_get(&aliases, reg)) {
+               collect_reg_info(instr, reg, info);
+            }
          }
 
          foreach_dst (reg, instr) {
-            if (is_dest_gpr(reg)) {
+            if (instr->opc == OPC_ALIAS &&
+                instr->cat7.alias_scope == ALIAS_TEX) {
+               regmask_set(&aliases, instr->dsts[0]);
+            } else if (is_dest_gpr(reg)) {
                collect_reg_info(instr, reg, info);
             }
+         }
+
+         if (is_tex(instr)) {
+            /* All aliases are cleared after they are used. */
+            regmask_init(&aliases, false);
          }
 
          if ((instr->opc == OPC_STP || instr->opc == OPC_LDP)) {
@@ -1479,7 +1497,7 @@ ir3_valid_flags(struct ir3_instruction *instr, unsigned n, unsigned flags)
 bool
 ir3_valid_immediate(struct ir3_instruction *instr, int32_t immed)
 {
-   if (instr->opc == OPC_MOV || is_meta(instr))
+   if (instr->opc == OPC_MOV || is_meta(instr) || instr->opc == OPC_ALIAS)
       return true;
 
    if (is_mem(instr)) {
