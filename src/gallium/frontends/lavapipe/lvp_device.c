@@ -790,19 +790,8 @@ lvp_get_properties(const struct lvp_physical_device *device, struct vk_propertie
 {
    VkSampleCountFlags sample_counts = VK_SAMPLE_COUNT_1_BIT | VK_SAMPLE_COUNT_4_BIT;
 
-   uint64_t grid_size[3], block_size[3];
-   uint64_t max_threads_per_block, max_local_size;
-
-   device->pscreen->get_compute_param(device->pscreen,
-                                       PIPE_COMPUTE_CAP_MAX_GRID_SIZE, grid_size);
-   device->pscreen->get_compute_param(device->pscreen,
-                                       PIPE_COMPUTE_CAP_MAX_BLOCK_SIZE, block_size);
-   device->pscreen->get_compute_param(device->pscreen,
-                                       PIPE_COMPUTE_CAP_MAX_THREADS_PER_BLOCK,
-                                       &max_threads_per_block);
-   device->pscreen->get_compute_param(device->pscreen,
-                                       PIPE_COMPUTE_CAP_MAX_LOCAL_SIZE,
-                                       &max_local_size);
+   const unsigned *grid_size = device->pscreen->compute_caps.max_grid_size;
+   const unsigned *block_size = device->pscreen->compute_caps.max_block_size;
 
    const uint64_t max_render_targets = device->pscreen->caps.max_render_targets;
 
@@ -869,9 +858,9 @@ lvp_get_properties(const struct lvp_physical_device *device, struct vk_propertie
       .maxFragmentCombinedOutputResources       = max_render_targets +
                                                   device->pscreen->shader_caps[MESA_SHADER_FRAGMENT].max_shader_buffers +
                                                   device->pscreen->shader_caps[MESA_SHADER_FRAGMENT].max_shader_images,
-      .maxComputeSharedMemorySize               = max_local_size,
+      .maxComputeSharedMemorySize               = device->pscreen->compute_caps.max_local_size,
       .maxComputeWorkGroupCount                 = { grid_size[0], grid_size[1], grid_size[2] },
-      .maxComputeWorkGroupInvocations           = max_threads_per_block,
+      .maxComputeWorkGroupInvocations           = device->pscreen->compute_caps.max_threads_per_block,
       .maxComputeWorkGroupSize                  = { block_size[0], block_size[1], block_size[2] },
       .subPixelPrecisionBits                    = device->pscreen->caps.rasterizer_subpixel_bits,
       .subTexelPrecisionBits                    = 8,

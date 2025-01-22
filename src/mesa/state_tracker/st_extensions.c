@@ -1647,40 +1647,23 @@ void st_init_extensions(struct pipe_screen *screen,
       extensions->GREMEDY_string_marker = GL_TRUE;
 
    if (screen->caps.compute) {
-      uint64_t grid_size[3], block_size[3];
-      uint64_t max_local_size, max_threads_per_block;
-
-      screen->get_compute_param(screen,
-                                 PIPE_COMPUTE_CAP_MAX_GRID_SIZE, grid_size);
-      screen->get_compute_param(screen,
-                                 PIPE_COMPUTE_CAP_MAX_BLOCK_SIZE, block_size);
-      screen->get_compute_param(screen,
-                                 PIPE_COMPUTE_CAP_MAX_THREADS_PER_BLOCK,
-                                 &max_threads_per_block);
-      screen->get_compute_param(screen,
-                                 PIPE_COMPUTE_CAP_MAX_LOCAL_SIZE,
-                                 &max_local_size);
-
-      consts->MaxComputeWorkGroupInvocations = max_threads_per_block;
-      consts->MaxComputeSharedMemorySize = max_local_size;
+      consts->MaxComputeWorkGroupInvocations = screen->compute_caps.max_threads_per_block;
+      consts->MaxComputeSharedMemorySize = screen->compute_caps.max_local_size;
 
       for (i = 0; i < 3; i++) {
          /* There are tests that fail if we report more that INT_MAX - 1. */
-         consts->MaxComputeWorkGroupCount[i] = MIN2(grid_size[i], INT_MAX - 1);
-         consts->MaxComputeWorkGroupSize[i] = block_size[i];
+         consts->MaxComputeWorkGroupCount[i] = MIN2(screen->compute_caps.max_grid_size[i], INT_MAX - 1);
+         consts->MaxComputeWorkGroupSize[i] = screen->compute_caps.max_block_size[i];
       }
 
       extensions->ARB_compute_shader =
-         max_threads_per_block >= 1024 &&
+         screen->compute_caps.max_threads_per_block >= 1024 &&
          extensions->ARB_shader_image_load_store &&
          extensions->ARB_shader_atomic_counters;
 
       if (extensions->ARB_compute_shader) {
-         uint64_t max_variable_threads_per_block = 0;
-
-         screen->get_compute_param(screen,
-                                    PIPE_COMPUTE_CAP_MAX_VARIABLE_THREADS_PER_BLOCK,
-                                    &max_variable_threads_per_block);
+         unsigned max_variable_threads_per_block =
+            screen->compute_caps.max_variable_threads_per_block;
 
          for (i = 0; i < 3; i++) {
             /* Clamp the values to avoid having a local work group size
