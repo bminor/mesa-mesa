@@ -306,10 +306,14 @@ SOFTWARE.
 
 		Notice the lack of nops between alias and the instruction
 		that uses it.
+
+		In this case, the size of the table is bounded (max 16 entries)
+		and the number of entries in the table is indicated by
+		the first alias instruction in the TABLE_SIZE_MINUS_ONE field.
 	</doc>
 	<gen min="700"/>
 	<display>
-		{SY}{SS}{JP}{NAME}.{SCOPE}.{TYPE}{TYPE_SIZE}.{UNK} {DST_HALF}{DST}, {SRC}
+		{SY}{SS}{JP}{NAME}.{SCOPE}.{TYPE}{TYPE_SIZE}.{TABLE_SIZE_MINUS_ONE} {DST_HALF}{DST}, {SRC}
 	</display>
 
 	<override>
@@ -332,7 +336,7 @@ SOFTWARE.
 		<param name="TYPE"/>
 	</field>
 	<field   low="32" high="39" name="DST" type="#reg-gpr"/>
-	<field   low="40" high="43" name="UNK" type="uint"/>
+	<field   low="40" high="43" name="TABLE_SIZE_MINUS_ONE" type="uint"/>
 	<field   pos="44"           name="SS" type="bool" display="(ss)"/>
 	<pattern low="45" high="46">xx</pattern>
 	<field   pos="47"           name="SCOPE_LO" type="uint"/>
@@ -354,7 +358,7 @@ SOFTWARE.
 	<encode>
 		<map name="SRC">src->srcs[0]</map>
 		<map name="SRC_REG_TYPE">(src->srcs[0]->flags &amp; IR3_REG_CONST) ? 1 : ((src->srcs[0]->flags &amp; IR3_REG_IMMED) ? 2 : 0)</map>
-		<map name="UNK">extract_reg_uim(src->srcs[1])</map>
+		<map name="TABLE_SIZE_MINUS_ONE">src->cat7.alias_table_size_minus_one</map>
 		<map name="TYPE_SIZE">(src->srcs[0]->flags &amp; IR3_REG_HALF) ? 0 : 1</map>
 		<map name="SCOPE_LO">src->cat7.alias_scope &amp; 0x1</map>
 		<map name="SCOPE_HI">src->cat7.alias_scope &gt;&gt; 1</map>

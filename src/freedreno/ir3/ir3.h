@@ -435,6 +435,7 @@ struct ir3_instruction {
          unsigned g : 1; /* global */
 
          ir3_alias_scope alias_scope;
+         unsigned alias_table_size_minus_one;
          bool alias_type_float;
       } cat7;
       /* for meta-instructions, just used to hold extra data

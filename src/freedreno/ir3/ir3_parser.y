@@ -1459,6 +1459,8 @@ cat7_alias_float_type: T_TYPE_F16
 cat7_alias_type:  cat7_alias_int_type
 |                 cat7_alias_float_type { instr->cat7.alias_type_float = true; }
 
+cat7_alias_table_size_minus_one: T_INT { instr->cat7.alias_table_size_minus_one = $1; }
+
 cat7_instr:        cat7_barrier
 |                  cat7_data_cache
 |                  T_OP_SLEEP              { new_instr(OPC_SLEEP); }
@@ -1468,9 +1470,7 @@ cat7_instr:        cat7_barrier
 |                  T_OP_UNLOCK             { new_instr(OPC_UNLOCK); }
 |                  T_OP_ALIAS {
                        new_instr(OPC_ALIAS);
-                   } '.' cat7_alias_scope '.' cat7_alias_type '.' integer dst_reg ',' cat7_alias_src {
-                       new_src(0, IR3_REG_IMMED)->uim_val = $8;
-                   }
+                   } '.' cat7_alias_scope '.' cat7_alias_type '.' cat7_alias_table_size_minus_one dst_reg ',' cat7_alias_src
 
 raw_instr: T_RAW   {new_instr(OPC_META_RAW)->raw.value = $1;}
 
