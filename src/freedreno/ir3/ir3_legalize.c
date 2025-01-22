@@ -644,7 +644,7 @@ legalize_block(struct ir3_legalize_ctx *ctx, struct ir3_block *block)
          } else {
             regmask_set(&state->needs_ss, n->dsts[0]);
          }
-      } else if (n->opc == OPC_PUSH_CONSTS_LOAD_MACRO) {
+      } else if (n->opc == OPC_PUSH_CONSTS_LOAD_MACRO || n->opc == OPC_STC) {
          state->needs_ss_for_const = true;
       }
 
