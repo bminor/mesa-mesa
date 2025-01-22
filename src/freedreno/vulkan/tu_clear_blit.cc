@@ -807,6 +807,8 @@ compile_shader(struct tu_device *dev, struct nir_shader *nir,
       .api_wavesize = IR3_SINGLE_OR_DOUBLE,
       .real_wavesize = IR3_SINGLE_OR_DOUBLE,
       .const_allocs = const_allocs,
+      .fragdata_dynamic_remap =
+         idx >= GLOBAL_SH_VS_CLEAR && idx <= GLOBAL_SH_FS_CLEAR_MAX,
    };
 
    ir3_finalize_nir(dev->compiler, &options.nir_options, nir);
