@@ -106,4 +106,9 @@ deployment:
 {% if dtb_url %}
     dtb:
       url: '{{ dtb_url }}'
+{% if dtb_match %}
+      format:
+        archive:
+          match: "{{ dtb_match }}"
+{% endif %}
 {% endif %}
