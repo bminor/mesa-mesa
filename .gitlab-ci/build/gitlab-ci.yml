@@ -177,6 +177,7 @@ debian-testing-msan:
       -D b_sanitize=memory
       -D b_lundef=false
       -D mesa-clc=system
+      -D precomp-compiler=system
     S3_ARTIFACT_NAME: ""
     ARTIFACTS_DEBUG_SYMBOLS: 1
     # Don't run all the tests yet:
@@ -186,19 +187,21 @@ debian-testing-msan:
     GALLIUM_DRIVERS: "freedreno,iris,nouveau,r300,r600,llvmpipe,softpipe,svga,v3d,vc4,virgl,etnaviv,panfrost,lima,zink,radeonsi,tegra,d3d12,crocus"
     VULKAN_DRIVERS: intel,amd,broadcom,virtio
     RUN_MESON_TESTS: "false" # just too slow
-    # Do a host build for mesa-clc (msan complains about uninitialized
+    # Do a host build for mesa-clc and precomp-compiler (msan complains about uninitialized
     # values in the LLVM libs)
     HOST_BUILD_OPTIONS: >
       -D build-tests=false
       -D enable-glcpp-tests=false
       -D gallium-opencl=disabled
-      -D gallium-drivers=
+      -D gallium-drivers=panfrost
       -D vulkan-drivers=
       -D video-codecs=
       -D glx=disabled
       -D platforms=
       -D mesa-clc=enabled
       -D install-mesa-clc=true
+      -D precomp-compiler=enabled
+      -D install-precomp-compiler=true
 
 debian-testing-ubsan:
   extends:
@@ -330,6 +333,7 @@ debian-release:
       -D osmesa=true
       -D tools=all
       -D mesa-clc=enabled
+      -D precomp-compiler=enabled
       -D intel-rt=enabled
       -D imagination-srv=true
     BUILDTYPE: "release"
@@ -462,6 +466,7 @@ debian-android:
       -D valgrind=disabled
       -D android-libbacktrace=disabled
       -D mesa-clc=system
+      -D precomp-compiler=system
     GALLIUM_ST: >
       -D gallium-vdpau=disabled
       -D gallium-va=disabled
@@ -473,13 +478,15 @@ debian-android:
       -D build-tests=false
       -D enable-glcpp-tests=false
       -D gallium-opencl=disabled
-      -D gallium-drivers=
+      -D gallium-drivers=panfrost
       -D vulkan-drivers=
       -D video-codecs=
       -D glx=disabled
       -D platforms=
       -D mesa-clc=enabled
       -D install-mesa-clc=true
+      -D precomp-compiler=enabled
+      -D install-precomp-compiler=true
     ARTIFACTS_DEBUG_SYMBOLS: 1
     S3_ARTIFACT_NAME: mesa-x86_64-android-${BUILDTYPE}
   script:
@@ -742,6 +749,7 @@ debian-clang:
       -D vulkan-layers=device-select,overlay
       -D build-aco-tests=true
       -D mesa-clc=enabled
+      -D precomp-compiler=enabled
       -D intel-rt=enabled
       -D imagination-srv=true
       -D teflon=true
