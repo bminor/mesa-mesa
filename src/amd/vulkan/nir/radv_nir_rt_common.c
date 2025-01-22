@@ -232,11 +232,15 @@ intersect_ray_amd_software_tri(struct radv_device *device, nir_builder *b, nir_d
       nir_channel(b, abs_dir, 2),
    };
    /* Find index of greatest value of abs_dir and put that as kz. */
-   nir_def *kz = nir_bcsel(b, nir_fge(b, abs_dirs[0], abs_dirs[1]),
-                           nir_bcsel(b, nir_fge(b, abs_dirs[0], abs_dirs[2]), nir_imm_int(b, 0), nir_imm_int(b, 2)),
-                           nir_bcsel(b, nir_fge(b, abs_dirs[1], abs_dirs[2]), nir_imm_int(b, 1), nir_imm_int(b, 2)));
-   nir_def *kx = nir_imod_imm(b, nir_iadd_imm(b, kz, 1), 3);
-   nir_def *ky = nir_imod_imm(b, nir_iadd_imm(b, kx, 1), 3);
+   nir_def *packed_k =
+      nir_bcsel(b, nir_fge(b, abs_dirs[0], abs_dirs[1]),
+                nir_bcsel(b, nir_fge(b, abs_dirs[0], abs_dirs[2]), nir_imm_int(b, (0 << 4) | (2 << 2) | (1 << 0)),
+                          nir_imm_int(b, (2 << 4) | (1 << 2) | (0 << 0))),
+                nir_bcsel(b, nir_fge(b, abs_dirs[1], abs_dirs[2]), nir_imm_int(b, (1 << 4) | (0 << 2) | (2 << 0)),
+                          nir_imm_int(b, (2 << 4) | (1 << 2) | (0 << 0))));
+   nir_def *kx = nir_iand_imm(b, packed_k, 0x3);
+   nir_def *ky = nir_ubfe_imm(b, packed_k, 2, 2);
+   nir_def *kz = nir_ishr_imm(b, packed_k, 4);
    nir_def *k_indices[3] = {kx, ky, kz};
    nir_def *k = nir_vec(b, k_indices, 3);
 
