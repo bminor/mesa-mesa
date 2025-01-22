@@ -697,6 +697,8 @@ hk_cmd_buffer_end_graphics(struct hk_cmd_buffer *cmd)
    hk_cmd_buffer_end_compute_internal(cmd, &cmd->current_cs.post_gfx);
 
    assert(cmd->current_cs.gfx == NULL);
+   assert(cmd->current_cs.pre_gfx == NULL);
+   assert(cmd->current_cs.post_gfx == NULL);
 
    /* We just flushed out the heap use. If we want to use it again, we'll need
     * to queue a free for it again.
