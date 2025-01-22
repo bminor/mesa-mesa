@@ -520,6 +520,13 @@ ail_drm_modifier_to_tiling(uint64_t modifier)
 #define AIL_FOLIO_SIZE_EL          (AIL_PAGES_PER_FOLIO * 2)
 #define AIL_FOLIO_SIZE_B           (AIL_FOLIO_SIZE_EL * AIL_SPARSE_ELSIZE_B)
 
+static inline unsigned
+ail_bytes_to_pages(unsigned x_B)
+{
+   assert((x_B % AIL_PAGESIZE) == 0);
+   return x_B / AIL_PAGESIZE;
+}
+
 /*
  * Map a logical page of the image (i.e. page = logical address / page_size) to
  * a word-index into the sparse table.
