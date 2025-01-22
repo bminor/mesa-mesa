@@ -2338,11 +2338,14 @@ anv_physical_device_init_queue_families(struct anv_physical_device *pdevice)
          };
       }
       if (c_count > 0) {
+         /* TODO: CCS don't support MI_SET_APPID instruction, that might be
+          * the reason some tests protected memory tests fail on CCS.
+          * Re-enable it if a workaround/solution is found.
+          */
          pdevice->queue.families[family_count++] = (struct anv_queue_family) {
             .queueFlags = VK_QUEUE_COMPUTE_BIT |
                           VK_QUEUE_TRANSFER_BIT |
-                          sparse_flags |
-                          protected_flag,
+                          sparse_flags,
             .queueCount = c_count,
             .engine_class = compute_class,
          };
