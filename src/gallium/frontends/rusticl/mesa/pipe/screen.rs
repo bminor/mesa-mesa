@@ -290,8 +290,8 @@ impl PipeScreen {
         }
     }
 
-    pub fn shader_param(&self, t: pipe_shader_type, cap: pipe_shader_cap) -> i32 {
-        unsafe { self.screen().get_shader_param.unwrap()(self.screen.as_ptr(), t, cap) }
+    pub fn shader_caps(&self, t: pipe_shader_type) -> &pipe_shader_caps {
+        &self.screen().shader_caps[t as usize]
     }
 
     fn compute_param_wrapped(&self, cap: pipe_compute_cap, ptr: *mut c_void) -> i32 {
@@ -482,7 +482,6 @@ fn has_required_cbs(screen: *mut pipe_screen) -> bool {
         & has_required_feature!(screen, get_compiler_options)
         & has_required_feature!(screen, get_compute_param)
         & has_required_feature!(screen, get_name)
-        & has_required_feature!(screen, get_shader_param)
         & has_required_feature!(screen, is_format_supported)
         & has_required_feature!(screen, resource_create)
 }

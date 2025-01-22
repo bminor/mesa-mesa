@@ -68,10 +68,8 @@ impl DeviceCaps {
         let cap_timestamp = screen.caps().query_timestamp;
         let timer_resolution = screen.caps().timer_resolution;
 
-        let max_write_images =
-            Self::shader_param(screen, pipe_shader_cap::PIPE_SHADER_CAP_MAX_SHADER_IMAGES) as u32;
-        let max_read_images =
-            Self::shader_param(screen, pipe_shader_cap::PIPE_SHADER_CAP_MAX_SAMPLER_VIEWS) as u32;
+        let max_write_images = Self::shader_caps(screen).max_shader_images;
+        let max_read_images = Self::shader_caps(screen).max_sampler_views;
         let image_2d_size = screen.caps().max_texture_2d_size;
 
         let has_images = screen.caps().texture_sampler_independent &&
@@ -94,8 +92,8 @@ impl DeviceCaps {
         }
     }
 
-    fn shader_param(screen: &PipeScreen, cap: pipe_shader_cap) -> i32 {
-        screen.shader_param(pipe_shader_type::PIPE_SHADER_COMPUTE, cap)
+    fn shader_caps(screen: &PipeScreen) -> &pipe_shader_caps {
+        screen.shader_caps(pipe_shader_type::PIPE_SHADER_COMPUTE)
     }
 }
 
@@ -405,10 +403,10 @@ impl Device {
 
     fn check_valid(screen: &PipeScreen) -> bool {
         if !screen.caps().compute
-            || screen.shader_param(
-                pipe_shader_type::PIPE_SHADER_COMPUTE,
-                pipe_shader_cap::PIPE_SHADER_CAP_SUPPORTED_IRS,
-            ) & (1 << (pipe_shader_ir::PIPE_SHADER_IR_NIR as i32))
+            || screen
+                .shader_caps(pipe_shader_type::PIPE_SHADER_COMPUTE)
+                .supported_irs
+                & (1 << (pipe_shader_ir::PIPE_SHADER_IR_NIR as i32))
                 == 0
         {
             return false;
@@ -416,10 +414,9 @@ impl Device {
 
         // CL_DEVICE_MAX_PARAMETER_SIZE
         // For this minimum value, only a maximum of 128 arguments can be passed to a kernel
-        if (screen.shader_param(
-            pipe_shader_type::PIPE_SHADER_COMPUTE,
-            pipe_shader_cap::PIPE_SHADER_CAP_MAX_CONST_BUFFER0_SIZE,
-        ) as u32)
+        if screen
+            .shader_caps(pipe_shader_type::PIPE_SHADER_COMPUTE)
+            .max_const_buffer0_size
             < 128
         {
             return false;
@@ -722,9 +719,9 @@ impl Device {
         self.spirv_extensions = spirv_exts;
     }
 
-    fn shader_param(&self, cap: pipe_shader_cap) -> i32 {
+    fn shader_caps(&self) -> &pipe_shader_caps {
         self.screen
-            .shader_param(pipe_shader_type::PIPE_SHADER_COMPUTE, cap)
+            .shader_caps(pipe_shader_type::PIPE_SHADER_COMPUTE)
     }
 
     pub fn all() -> Vec<Device> {
@@ -784,7 +781,7 @@ impl Device {
     }
 
     pub fn const_max_count(&self) -> cl_uint {
-        self.shader_param(pipe_shader_cap::PIPE_SHADER_CAP_MAX_CONST_BUFFERS) as cl_uint
+        self.shader_caps().max_const_buffers
     }
 
     fn set_device_type(&mut self) {
@@ -844,7 +841,7 @@ impl Device {
             return false;
         }
 
-        self.shader_param(pipe_shader_cap::PIPE_SHADER_CAP_FP16) != 0
+        self.shader_caps().fp16
     }
 
     pub fn fp64_supported(&self) -> bool {
@@ -1042,7 +1039,7 @@ impl Device {
     }
 
     pub fn max_samplers(&self) -> cl_uint {
-        self.shader_param(pipe_shader_cap::PIPE_SHADER_CAP_MAX_TEXTURE_SAMPLERS) as cl_uint
+        self.shader_caps().max_texture_samplers
     }
 
     pub fn max_threads_per_block(&self) -> usize {
@@ -1053,10 +1050,7 @@ impl Device {
     }
 
     pub fn param_max_size(&self) -> usize {
-        min(
-            self.shader_param(pipe_shader_cap::PIPE_SHADER_CAP_MAX_CONST_BUFFER0_SIZE) as u32,
-            4 * 1024,
-        ) as usize
+        min(self.shader_caps().max_const_buffer0_size, 4 * 1024) as usize
     }
 
     pub fn printf_buffer_size(&self) -> usize {
