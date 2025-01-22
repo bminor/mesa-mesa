@@ -2257,6 +2257,8 @@ is_war_hazard_producer(struct ir3_instruction *instr)
 bool ir3_cleanup_rpt(struct ir3 *ir, struct ir3_shader_variant *v);
 bool ir3_merge_rpt(struct ir3 *ir, struct ir3_shader_variant *v);
 bool ir3_opt_predicates(struct ir3 *ir, struct ir3_shader_variant *v);
+bool ir3_create_alias_tex_regs(struct ir3 *ir);
+bool ir3_insert_alias_tex(struct ir3 *ir);
 
 /* unreachable block elimination: */
 bool ir3_remove_unreachable(struct ir3 *ir);

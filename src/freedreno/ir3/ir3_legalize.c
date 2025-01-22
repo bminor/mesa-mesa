@@ -1859,6 +1859,7 @@ ir3_legalize(struct ir3 *ir, struct ir3_shader_variant *so, int *max_bary)
       progress |= expand_dummy_dests(block);
    }
 
+   ir3_insert_alias_tex(ir);
    ir3_count_instructions(ir);
    resolve_jumps(ir);
 

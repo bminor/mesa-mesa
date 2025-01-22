@@ -5808,6 +5808,12 @@ ir3_compile_shader_nir(struct ir3_compiler *compiler,
       progress |= IR3_PASS(ir, ir3_shared_fold);
    } while (progress);
 
+   progress = IR3_PASS(ir, ir3_create_alias_tex_regs);
+
+   if (progress) {
+      IR3_PASS(ir, ir3_dce, so);
+   }
+
    IR3_PASS(ir, ir3_sched_add_deps);
 
    /* At this point, all the dead code should be long gone: */
