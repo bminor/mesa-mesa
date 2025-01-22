@@ -432,68 +432,6 @@ tgsi_exec_set_constant_buffers(struct tgsi_exec_machine *mach,
                                unsigned num_bufs,
                                const struct tgsi_exec_consts_info *bufs);
 
-
-static inline int
-tgsi_exec_get_shader_param(enum pipe_shader_cap param)
-{
-   switch(param) {
-   case PIPE_SHADER_CAP_MAX_INSTRUCTIONS:
-   case PIPE_SHADER_CAP_MAX_ALU_INSTRUCTIONS:
-   case PIPE_SHADER_CAP_MAX_TEX_INSTRUCTIONS:
-   case PIPE_SHADER_CAP_MAX_TEX_INDIRECTIONS:
-      return INT_MAX;
-   case PIPE_SHADER_CAP_MAX_CONTROL_FLOW_DEPTH:
-      return TGSI_EXEC_MAX_NESTING;
-   case PIPE_SHADER_CAP_MAX_INPUTS:
-      return TGSI_EXEC_MAX_INPUT_ATTRIBS;
-   case PIPE_SHADER_CAP_MAX_OUTPUTS:
-      return 32;
-   case PIPE_SHADER_CAP_MAX_CONST_BUFFER0_SIZE:
-      return TGSI_EXEC_MAX_CONST_BUFFER_SIZE;
-   case PIPE_SHADER_CAP_MAX_CONST_BUFFERS:
-      return PIPE_MAX_CONSTANT_BUFFERS;
-   case PIPE_SHADER_CAP_MAX_TEMPS:
-      return TGSI_EXEC_NUM_TEMPS;
-   case PIPE_SHADER_CAP_CONT_SUPPORTED:
-      return 1;
-   case PIPE_SHADER_CAP_INDIRECT_TEMP_ADDR:
-   case PIPE_SHADER_CAP_INDIRECT_CONST_ADDR:
-      return 1;
-   case PIPE_SHADER_CAP_SUBROUTINES:
-      return 1;
-   case PIPE_SHADER_CAP_INTEGERS:
-      return 1;
-   case PIPE_SHADER_CAP_INT64_ATOMICS:
-   case PIPE_SHADER_CAP_FP16:
-   case PIPE_SHADER_CAP_FP16_DERIVATIVES:
-   case PIPE_SHADER_CAP_FP16_CONST_BUFFERS:
-   case PIPE_SHADER_CAP_INT16:
-   case PIPE_SHADER_CAP_GLSL_16BIT_CONSTS:
-      return 0;
-   case PIPE_SHADER_CAP_MAX_TEXTURE_SAMPLERS:
-      return PIPE_MAX_SAMPLERS;
-   case PIPE_SHADER_CAP_MAX_SAMPLER_VIEWS:
-      return PIPE_MAX_SHADER_SAMPLER_VIEWS;
-   case PIPE_SHADER_CAP_SUPPORTED_IRS:
-      return 1 << PIPE_SHADER_IR_TGSI;
-   case PIPE_SHADER_CAP_TGSI_SQRT_SUPPORTED:
-      return 1;
-   case PIPE_SHADER_CAP_TGSI_ANY_INOUT_DECL_RANGE:
-      return 1;
-   case PIPE_SHADER_CAP_MAX_HW_ATOMIC_COUNTERS:
-   case PIPE_SHADER_CAP_MAX_HW_ATOMIC_COUNTER_BUFFERS:
-      return 0;
-   case PIPE_SHADER_CAP_MAX_SHADER_BUFFERS:
-      return PIPE_MAX_SHADER_BUFFERS;
-   case PIPE_SHADER_CAP_MAX_SHADER_IMAGES:
-      return PIPE_MAX_SHADER_IMAGES;
-   }
-   /* if we get here, we missed a shader cap above (and should have seen
-    * a compiler warning.)
-    */
-   return 0;
-}
-
 static inline void
 tgsi_exec_init_shader_caps(struct pipe_shader_caps *caps)
 {
