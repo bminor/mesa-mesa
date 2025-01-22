@@ -438,6 +438,7 @@ legalize_image_lod(nir_builder *b, nir_intrinsic_instr *intr, UNUSED void *data)
 
    switch (intr->intrinsic) {
       CASE(image_load, 3)
+      CASE(image_sparse_load, 3)
       CASE(image_store, 4)
       CASE(image_size, 1)
    default:
@@ -527,6 +528,9 @@ lower_buffer_image(nir_builder *b, nir_intrinsic_instr *intr)
    nir_def *coord_vector = intr->src[1].ssa;
    nir_def *coord = nir_channel(b, coord_vector, 0);
 
+   assert(intr->intrinsic != nir_intrinsic_bindless_image_sparse_load &&
+          "sparse buffer textures not expected");
+
    /* If we're not bindless, assume we don't need an offset (GL driver) */
    if (intr->intrinsic == nir_intrinsic_bindless_image_load) {
       nir_def *desc = nir_load_from_texture_handle_agx(b, intr->src[0].ssa);
@@ -612,12 +616,14 @@ lower_images(nir_builder *b, nir_intrinsic_instr *intr, UNUSED void *data)
    case nir_intrinsic_image_load:
    case nir_intrinsic_image_store:
    case nir_intrinsic_bindless_image_load:
+   case nir_intrinsic_bindless_image_sparse_load:
    case nir_intrinsic_bindless_image_store: {
       /* Legalize MSAA index */
       nir_src_rewrite(&intr->src[2], nir_u2u16(b, intr->src[2].ssa));
 
       if (intr->intrinsic == nir_intrinsic_image_load ||
-          intr->intrinsic == nir_intrinsic_bindless_image_load) {
+          intr->intrinsic == nir_intrinsic_bindless_image_load ||
+          intr->intrinsic == nir_intrinsic_bindless_image_sparse_load) {
          lower_image_load_robustness(b, intr);
       }
 
@@ -648,6 +654,19 @@ lower_images(nir_builder *b, nir_intrinsic_instr *intr, UNUSED void *data)
       nir_def_rewrite_uses(&intr->def, image_texel_address(b, intr, false));
       return true;
 
+   case nir_intrinsic_is_sparse_texels_resident:
+      /* Residency information is in bit 0, so we need to mask. Unclear what's
+       * in the upper bits. For now, let's match the blob.
+       */
+      nir_def_replace(&intr->def,
+                      nir_ieq_imm(b, nir_iand_imm(b, intr->src[0].ssa, 1), 0));
+      return true;
+
+   case nir_intrinsic_sparse_residency_code_and:
+      nir_def_replace(&intr->def,
+                      nir_iand(b, intr->src[0].ssa, intr->src[1].ssa));
+      return true;
+
    case nir_intrinsic_image_size:
    case nir_intrinsic_image_texel_address:
       unreachable("should've been lowered");
@@ -669,6 +688,7 @@ lower_robustness(nir_builder *b, nir_intrinsic_instr *intr, UNUSED void *data)
 
    switch (intr->intrinsic) {
    case nir_intrinsic_image_deref_load:
+   case nir_intrinsic_image_deref_sparse_load:
    case nir_intrinsic_image_deref_store:
       break;
    default:
