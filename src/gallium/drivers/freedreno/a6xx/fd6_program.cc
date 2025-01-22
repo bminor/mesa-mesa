@@ -1111,6 +1111,7 @@ emit_fs_inputs(struct fd_ringbuffer *ring, const struct program_builder *b)
    OUT_RING(ring, COND(sample_shading, A6XX_GRAS_SAMPLE_CNTL_PER_SAMP_MODE));
 }
 
+template<chip CHIP>
 static void
 emit_fs_outputs(struct fd_ringbuffer *ring, const struct program_builder *b)
 {
@@ -1175,7 +1176,7 @@ setup_stateobj(struct fd_ringbuffer *ring, const struct program_builder *b)
    emit_vpc<CHIP>(ring, b);
 
    emit_fs_inputs<CHIP>(ring, b);
-   emit_fs_outputs(ring, b);
+   emit_fs_outputs<CHIP>(ring, b);
 
    if (b->hs) {
       uint32_t patch_control_points = b->key->patch_vertices;
