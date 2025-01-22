@@ -524,6 +524,18 @@ ir3_block_create(struct ir3 *shader)
    return block;
 }
 
+struct ir3_instruction *
+ir3_find_end(struct ir3 *ir)
+{
+   foreach_block_rev (block, &ir->block_list) {
+      foreach_instr_rev (instr, &block->instr_list) {
+         if (instr->opc == OPC_END || instr->opc == OPC_CHMASK)
+            return instr;
+      }
+   }
+   unreachable("couldn't find end instruction");
+}
+
 static struct ir3_instruction *
 block_get_last_instruction(struct ir3_block *block)
 {

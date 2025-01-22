@@ -788,6 +788,8 @@ ir3_end_block(struct ir3 *ir)
    return list_last_entry(&ir->block_list, struct ir3_block, node);
 }
 
+struct ir3_instruction *ir3_find_end(struct ir3 *ir);
+
 struct ir3_instruction *ir3_block_get_terminator(struct ir3_block *block);
 
 struct ir3_instruction *ir3_block_take_terminator(struct ir3_block *block);

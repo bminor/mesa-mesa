@@ -5505,18 +5505,6 @@ fixup_tg4(struct ir3_context *ctx)
    }
 }
 
-static struct ir3_instruction *
-find_end(struct ir3 *ir)
-{
-   foreach_block_rev (block, &ir->block_list) {
-      foreach_instr_rev (instr, &block->instr_list) {
-         if (instr->opc == OPC_END || instr->opc == OPC_CHMASK)
-            return instr;
-      }
-   }
-   unreachable("couldn't find end instruction");
-}
-
 static void
 collect_tex_prefetches(struct ir3_context *ctx, struct ir3 *ir)
 {
@@ -5912,7 +5900,7 @@ ir3_compile_shader_nir(struct ir3_compiler *compiler,
    for (unsigned i = 0; i < so->outputs_count; i++)
       so->outputs[i].regid = INVALID_REG;
 
-   struct ir3_instruction *end = find_end(so->ir);
+   struct ir3_instruction *end = ir3_find_end(so->ir);
 
    for (unsigned i = 0; i < end->srcs_count; i++) {
       unsigned outidx = end->end.outidxs[i];
@@ -5980,7 +5968,7 @@ ir3_compile_shader_nir(struct ir3_compiler *compiler,
    }
 
    if (ctx->compiler->gen >= 7 && so->type == MESA_SHADER_COMPUTE) {
-      struct ir3_instruction *end = find_end(so->ir);
+      struct ir3_instruction *end = ir3_find_end(so->ir);
       struct ir3_instruction *lock =
          ir3_build_instr(&ctx->build, OPC_LOCK, 0, 0);
       /* TODO: This flags should be set by scheduler only when needed */
