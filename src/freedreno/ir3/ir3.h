@@ -811,6 +811,17 @@ ir3_after_preamble(struct ir3 *ir)
       return block;
 }
 
+static inline bool
+ir3_has_preamble(struct ir3 *ir)
+{
+   return ir3_start_block(ir) != ir3_after_preamble(ir);
+}
+
+struct ir3_instruction *ir3_find_shpe(struct ir3 *ir);
+
+/* Create an empty preamble and return shpe. */
+struct ir3_instruction *ir3_create_empty_preamble(struct ir3 *ir);
+
 void ir3_block_add_predecessor(struct ir3_block *block, struct ir3_block *pred);
 void ir3_block_link_physical(struct ir3_block *pred, struct ir3_block *succ);
 void ir3_block_remove_predecessor(struct ir3_block *block,
