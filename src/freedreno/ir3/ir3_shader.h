@@ -614,6 +614,13 @@ struct ir3_shader_options {
    bool fragdata_dynamic_remap;
 };
 
+struct ir3_shader_output {
+   uint8_t slot;
+   uint8_t regid;
+   uint8_t view;
+   bool half : 1;
+};
+
 /**
  * Shader variant which contains the actual hw shader instructions,
  * and necessary info for shader state setup.
@@ -737,12 +744,7 @@ struct ir3_shader_variant {
 
    /* varyings/outputs: */
    unsigned outputs_count;
-   struct {
-      uint8_t slot;
-      uint8_t regid;
-      uint8_t view;
-      bool half : 1;
-   } outputs[32 + 2]; /* +POSITION +PSIZE */
+   struct ir3_shader_output outputs[32 + 2]; /* +POSITION +PSIZE */
    bool writes_pos, writes_smask, writes_psize, writes_viewport, writes_stencilref;
    bool writes_shading_rate;
 
