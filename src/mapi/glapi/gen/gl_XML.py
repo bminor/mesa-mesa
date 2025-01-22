@@ -661,9 +661,8 @@ class gl_function( gl_item ):
 
             if name in static_data.offsets:
                 self.offset = static_data.offsets[name]
-            else:
-                if self.exec_flavor != "skip":
-                    raise RuntimeError("Entry-point %s is missing offset in static_data.py. Add one at the bottom of the list." % (name))
+            elif self.exec_flavor != "skip":
+                raise RuntimeError("Entry-point %s is missing in static_data.py. Add one into all_functions." % (name))
 
         if not self.name:
             self.name = true_name
