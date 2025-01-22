@@ -68,6 +68,7 @@ brw_compile_tes(const struct brw_compiler *compiler,
    const struct brw_tes_prog_key *key = params->key;
    const struct intel_vue_map *input_vue_map = params->input_vue_map;
    struct brw_tes_prog_data *prog_data = params->prog_data;
+   const unsigned dispatch_width = brw_geometry_stage_dispatch_width(compiler->devinfo);
 
    const bool debug_enabled = brw_should_print_shader(nir, DEBUG_TES);
 
@@ -77,8 +78,7 @@ brw_compile_tes(const struct brw_compiler *compiler,
    nir->info.inputs_read = key->inputs_read;
    nir->info.patch_inputs_read = key->patch_inputs_read;
 
-   brw_nir_apply_key(nir, compiler, &key->base,
-                     brw_geometry_stage_dispatch_width(compiler->devinfo));
+   brw_nir_apply_key(nir, compiler, &key->base, dispatch_width);
    brw_nir_lower_tes_inputs(nir, input_vue_map);
    brw_nir_lower_vue_outputs(nir);
    brw_postprocess_nir(nir, compiler, debug_enabled,
@@ -153,7 +153,6 @@ brw_compile_tes(const struct brw_compiler *compiler,
                         MESA_SHADER_TESS_EVAL);
    }
 
-   const unsigned dispatch_width = devinfo->ver >= 20 ? 16 : 8;
    fs_visitor v(compiler, &params->base, &key->base,
                 &prog_data->base.base, nir, dispatch_width,
                 params->base.stats != NULL, debug_enabled);

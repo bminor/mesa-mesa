@@ -142,6 +142,7 @@ brw_compile_gs(const struct brw_compiler *compiler,
    nir_shader *nir = params->base.nir;
    const struct brw_gs_prog_key *key = params->key;
    struct brw_gs_prog_data *prog_data = params->prog_data;
+   const unsigned dispatch_width = brw_geometry_stage_dispatch_width(compiler->devinfo);
 
    struct brw_gs_compile c;
    memset(&c, 0, sizeof(c));
@@ -166,8 +167,7 @@ brw_compile_gs(const struct brw_compiler *compiler,
                        &c.input_vue_map, inputs_read,
                        nir->info.separate_shader, 1);
 
-   brw_nir_apply_key(nir, compiler, &key->base,
-                     brw_geometry_stage_dispatch_width(compiler->devinfo));
+   brw_nir_apply_key(nir, compiler, &key->base, dispatch_width);
    brw_nir_lower_vue_inputs(nir, &c.input_vue_map);
    brw_nir_lower_vue_outputs(nir);
    brw_postprocess_nir(nir, compiler, debug_enabled,

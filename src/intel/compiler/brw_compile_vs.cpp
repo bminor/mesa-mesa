@@ -72,13 +72,13 @@ brw_compile_vs(const struct brw_compiler *compiler,
    const bool debug_enabled =
       brw_should_print_shader(nir, params->base.debug_flag ?
                                    params->base.debug_flag : DEBUG_VS);
+   const unsigned dispatch_width = brw_geometry_stage_dispatch_width(compiler->devinfo);
 
    prog_data->base.base.stage = MESA_SHADER_VERTEX;
    prog_data->base.base.ray_queries = nir->info.ray_queries;
    prog_data->base.base.total_scratch = 0;
 
-   brw_nir_apply_key(nir, compiler, &key->base,
-                     brw_geometry_stage_dispatch_width(compiler->devinfo));
+   brw_nir_apply_key(nir, compiler, &key->base, dispatch_width);
 
    prog_data->inputs_read = nir->info.inputs_read;
    prog_data->double_inputs_read = nir->info.vs.double_inputs;
@@ -147,7 +147,6 @@ brw_compile_vs(const struct brw_compiler *compiler,
       brw_print_vue_map(stderr, &prog_data->base.vue_map, MESA_SHADER_VERTEX);
    }
 
-   const unsigned dispatch_width = compiler->devinfo->ver >= 20 ? 16 : 8;
    prog_data->base.dispatch_mode = INTEL_DISPATCH_MODE_SIMD8;
 
    fs_visitor v(compiler, &params->base, &key->base,
