@@ -458,39 +458,73 @@ static unsigned fetch_resource_base_reg_packed(const pco_common_data *common,
    return fetch_resource_base_reg(common, desc_set, binding, elem, is_img_smp);
 }
 
-static pco_instr *trans_load_push_constant(trans_ctx *tctx,
-                                           nir_intrinsic_instr *intr,
-                                           pco_ref dest,
-                                           pco_ref src)
+static pco_instr *trans_load_common_store(trans_ctx *tctx,
+                                          nir_intrinsic_instr *intr,
+                                          pco_ref dest,
+                                          pco_ref offset_src,
+                                          bool coeffs,
+                                          pco_range *range)
 {
-   const pco_common_data *common = &tctx->shader->data.common;
+   nir_src *noffset_src = &intr->src[0];
+   enum pco_reg_class reg_class = coeffs ? PCO_REG_CLASS_COEFF
+                                         : PCO_REG_CLASS_SHARED;
 
    unsigned chans = pco_ref_get_chans(dest);
    ASSERTED unsigned bits = pco_ref_get_bits(dest);
    assert(bits == 32);
 
-   assert(common->push_consts.range.count > 0);
+   assert(range->count > 0);
 
-   if (nir_src_is_const(intr->src[0])) {
-      unsigned offset = nir_src_as_uint(intr->src[0]);
-      assert(offset < common->push_consts.range.count);
+   if (pco_ref_is_null(offset_src) || nir_src_is_const(*noffset_src)) {
+      unsigned offset =
+         pco_ref_is_null(offset_src) ? 0 : nir_src_as_uint(*noffset_src);
+      assert(offset < range->count);
 
-      unsigned reg_index = common->push_consts.range.start + offset;
-
-      src = pco_ref_hwreg_vec(reg_index, PCO_REG_CLASS_SHARED, chans);
+      pco_ref src = pco_ref_hwreg_vec(range->start + offset, reg_class, chans);
       return pco_mov(&tctx->b, dest, src, .rpt = chans);
    }
 
-   /* Use the dynamic offset to set up the index register. */
-   pco_ref idx_reg = pco_ref_hwreg_idx(0, 0, PCO_REG_CLASS_INDEX);
-   pco_mov(&tctx->b, idx_reg, src);
+   pco_ref src_base = pco_ref_hwreg_vec(range->start, reg_class, chans);
+   return pco_mov_offset(&tctx->b,
+                         dest,
+                         src_base,
+                         offset_src,
+                         .offset_sd = PCO_OFFSET_SD_SRC,
+                         .rpt = chans);
+}
 
-   pco_ref idx_src = pco_ref_hwreg_idx_vec(0,
-                                           common->push_consts.range.start,
-                                           PCO_REG_CLASS_SHARED,
-                                           chans);
+static pco_instr *trans_store_common_store(trans_ctx *tctx,
+                                           nir_intrinsic_instr *intr,
+                                           pco_ref data,
+                                           pco_ref offset_src,
+                                           bool coeffs,
+                                           pco_range *range)
+{
+   nir_src *noffset_src = &intr->src[1];
+   enum pco_reg_class reg_class = coeffs ? PCO_REG_CLASS_COEFF
+                                         : PCO_REG_CLASS_SHARED;
 
-   return pco_mov(&tctx->b, dest, idx_src, .rpt = chans);
+   unsigned chans = pco_ref_get_chans(data);
+   ASSERTED unsigned bits = pco_ref_get_bits(data);
+   assert(bits == 32);
+
+   assert(range->count > 0);
+
+   if (nir_src_is_const(*noffset_src)) {
+      unsigned offset = nir_src_as_uint(*noffset_src);
+      assert(offset < range->count);
+
+      pco_ref dest = pco_ref_hwreg_vec(range->start + offset, reg_class, chans);
+      return pco_mov(&tctx->b, dest, data, .rpt = chans);
+   }
+
+   pco_ref dest_base = pco_ref_hwreg_vec(range->start, reg_class, chans);
+   return pco_mov_offset(&tctx->b,
+                         dest_base,
+                         data,
+                         offset_src,
+                         .offset_sd = PCO_OFFSET_SD_DEST,
+                         .rpt = chans);
 }
 
 static pco_instr *trans_load_buffer(trans_ctx *tctx,
@@ -1011,7 +1045,33 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
       break;
 
    case nir_intrinsic_load_push_constant:
-      instr = trans_load_push_constant(tctx, intr, dest, src[0]);
+      instr =
+         trans_load_common_store(tctx,
+                                 intr,
+                                 dest,
+                                 src[0],
+                                 false,
+                                 &tctx->shader->data.common.push_consts.range);
+      break;
+
+   case nir_intrinsic_load_shared:
+      assert(tctx->stage == MESA_SHADER_COMPUTE);
+      instr = trans_load_common_store(tctx,
+                                      intr,
+                                      dest,
+                                      src[0],
+                                      true,
+                                      &tctx->shader->data.cs.shmem);
+      break;
+
+   case nir_intrinsic_store_shared:
+      assert(tctx->stage == MESA_SHADER_COMPUTE);
+      instr = trans_store_common_store(tctx,
+                                       intr,
+                                       src[0],
+                                       src[1],
+                                       true,
+                                       &tctx->shader->data.cs.shmem);
       break;
 
    case nir_intrinsic_load_ubo:

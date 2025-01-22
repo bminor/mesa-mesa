@@ -1940,6 +1940,15 @@ static void pvr_alloc_cs_sysvals(pco_data *data, nir_shader *nir)
    assert(BITSET_IS_EMPTY(system_values_read));
 }
 
+static void pvr_alloc_cs_shmem(pco_data *data, nir_shader *nir)
+{
+   assert(!nir->info.cs.has_variable_shared_mem);
+   assert(!nir->info.zero_initialize_shared_memory);
+
+   data->cs.shmem.count = nir->info.shared_size >> 2;
+   data->common.coeffs += data->cs.shmem.count;
+}
+
 static void pvr_init_descriptors(pco_data *data,
                                  nir_shader *nir,
                                  struct vk_pipeline_layout *layout)
@@ -2122,6 +2131,7 @@ static void pvr_postprocess_shader_data(pco_data *data,
 
    case MESA_SHADER_COMPUTE: {
       pvr_alloc_cs_sysvals(data, nir);
+      pvr_alloc_cs_shmem(data, nir);
       break;
    }
 

@@ -94,6 +94,29 @@ static bool try_legalize_src_mappings(pco_instr *instr,
    return progress;
 }
 
+static inline bool xfer_op_mods(pco_instr *dest, pco_instr *src)
+{
+   bool all_xfered = true;
+
+   for (enum pco_op_mod mod = PCO_OP_MOD_NONE + 1; mod < _PCO_OP_MOD_COUNT;
+        ++mod) {
+      bool dest_has_mod = pco_instr_has_mod(dest, mod);
+      bool src_has_mod = pco_instr_has_mod(src, mod);
+
+      if (!dest_has_mod && !src_has_mod)
+         continue;
+
+      if (dest_has_mod != src_has_mod) {
+         all_xfered = false;
+         continue;
+      }
+
+      pco_instr_set_mod(dest, mod, pco_instr_get_mod(src, mod));
+   }
+
+   return all_xfered;
+}
+
 static bool legalize_pseudo(pco_instr *instr)
 {
    switch (instr->op) {
@@ -105,6 +128,33 @@ static bool legalize_pseudo(pco_instr *instr)
          instr->op = PCO_OP_MBYP;
 
       return true;
+
+   case PCO_OP_MOV_OFFSET: {
+      pco_builder b =
+         pco_builder_create(instr->parent_func, pco_cursor_before_instr(instr));
+
+      pco_ref dest = instr->dest[0];
+      pco_ref src = instr->src[0];
+      pco_ref offset = instr->src[1];
+
+      unsigned idx_reg_num = 0;
+      pco_ref idx_reg =
+         pco_ref_hwreg_idx(idx_reg_num, idx_reg_num, PCO_REG_CLASS_INDEX);
+
+      pco_mbyp(&b, idx_reg, offset, .exec_cnd = pco_instr_get_exec_cnd(instr));
+
+      if (pco_instr_get_offset_sd(instr) == PCO_OFFSET_SD_SRC)
+         src = pco_ref_hwreg_idx_from(idx_reg_num, src);
+      else
+         dest = pco_ref_hwreg_idx_from(idx_reg_num, dest);
+
+      pco_instr *mbyp = pco_mbyp(&b, dest, src);
+      xfer_op_mods(mbyp, instr);
+
+      pco_instr_delete(instr);
+
+      return true;
+   }
 
    default:
       break;

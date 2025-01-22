@@ -326,6 +326,11 @@ OM_MTX_OP = op_mod_enum('mtx_op', [
    ('lock', 'lock'),
 ])
 
+OM_OFFSET_SD = op_mod_enum('offset_sd', [
+   'src',
+   'dest',
+])
+
 # Ops.
 
 OM_ALU = [OM_OLCHK, OM_EXEC_CND, OM_END, OM_ATOM, OM_RPT]
@@ -448,6 +453,7 @@ O_FNEG = pseudo_op('fneg', OM_ALU, 1, 1)
 O_FABS = pseudo_op('fabs', OM_ALU, 1, 1)
 O_FFLR = pseudo_op('fflr', OM_ALU, 1, 1)
 O_MOV = pseudo_op('mov', OM_ALU, 1, 1)
+O_MOV_OFFSET = pseudo_op('mov.offset', OM_ALU + [OM_OFFSET_SD], 1, 2)
 O_VEC = pseudo_op('vec', [OM_EXEC_CND], 1, VARIABLE, [], [[RM_ABS, RM_NEG]])
 O_COMP = pseudo_op('comp', [], 1, 2)
 

@@ -2257,9 +2257,30 @@ static inline void pco_ref_hwreg_addr_comps(unsigned index,
    addr_comps[1] = pco_ref_hwreg(index + 1, reg_class);
 }
 
+static inline bool idx_reg_pointee_is_valid(pco_ref ref)
+{
+   assert(pco_ref_is_idx_reg(ref));
+
+   switch (pco_ref_get_reg_class(ref)) {
+   case PCO_REG_CLASS_TEMP:
+   case PCO_REG_CLASS_VTXIN:
+   case PCO_REG_CLASS_COEFF:
+   case PCO_REG_CLASS_SHARED:
+   case PCO_REG_CLASS_INDEX:
+   case PCO_REG_CLASS_PIXOUT:
+      return true;
+
+   default:
+      break;
+   }
+
+   return false;
+}
+
 /**
  * \brief Builds and returns an indexed vector hardware register reference.
  *
+ * \param[in] num Index register number.
  * \param[in] offset Pointee offset.
  * \param[in] reg_class Register class.
  * \param[in] chans Number of channels.
@@ -2288,15 +2309,43 @@ static inline pco_ref pco_ref_hwreg_idx_vec(unsigned num,
 /**
  * \brief Builds and returns an indexed scalar hardware register reference.
  *
+ * \param[in] num Index register number.
  * \param[in] offset Pointee offset.
  * \param[in] reg_class Register class.
- * \param[in] chans Number of channels.
  * \return Hardware register reference.
  */
 static inline pco_ref
 pco_ref_hwreg_idx(unsigned num, unsigned offset, enum pco_reg_class reg_class)
 {
    return pco_ref_hwreg_idx_vec(num, offset, reg_class, 1);
+}
+
+/**
+ * \brief Builds and returns an indexed hardware register reference using an
+ *        existing hardware register reference.
+ *
+ * \param[in] ref Base reference
+ * \param[in] reg_class Register class.
+ * \param[in] chans Number of channels.
+ * \return Hardware register reference.
+ */
+static inline pco_ref pco_ref_hwreg_idx_from(unsigned num, pco_ref ref)
+{
+   assert(pco_ref_is_reg(ref));
+
+   pco_ref idx_ref = {
+      .idx_reg = {
+         .num = num,
+         .offset = ref.val,
+      },
+      .chans = ref.chans,
+      .bits = ref.bits,
+      .type = PCO_REF_TYPE_IDX_REG,
+      .reg_class = ref.reg_class,
+   };
+
+   assert(idx_reg_pointee_is_valid(idx_ref));
+   return idx_ref;
 }
 
 /**
