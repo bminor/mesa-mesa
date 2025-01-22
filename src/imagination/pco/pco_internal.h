@@ -1420,6 +1420,17 @@ static inline bool pco_ref_is_idx_reg(pco_ref ref)
 }
 
 /**
+ * \brief Returns whether a reference is an index register pointing to itself.
+ *
+ * \param[in] ref PCO reference.
+ * \return True if the reference is an index register pointing to itself.
+ */
+static inline bool pco_ref_is_self_idx_reg(pco_ref ref)
+{
+   return pco_ref_is_idx_reg(ref) && ref.reg_class == PCO_REG_CLASS_INDEX;
+}
+
+/**
  * \brief Returns whether a reference is an immediate.
  *
  * \param[in] ref PCO reference.

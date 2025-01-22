@@ -218,7 +218,6 @@ static void pco_print_ref_color(pco_print_state *state, pco_ref ref)
 
    case PCO_REF_TYPE_SSA:
    case PCO_REF_TYPE_REG:
-   case PCO_REF_TYPE_IDX_REG:
       YELLOW(state);
       return;
 
@@ -229,6 +228,7 @@ static void pco_print_ref_color(pco_print_state *state, pco_ref ref)
    case PCO_REF_TYPE_IO:
    case PCO_REF_TYPE_PRED:
    case PCO_REF_TYPE_DRC:
+   case PCO_REF_TYPE_IDX_REG:
       WHITE(state);
       return;
 
@@ -262,11 +262,15 @@ static void _pco_print_ref(pco_print_state *state, pco_ref ref)
       pco_printf(state, "%s%u", pco_reg_class_str(ref.reg_class), ref.val);
       break;
 
-   case PCO_REF_TYPE_IDX_REG:
+   case PCO_REF_TYPE_IDX_REG: {
       _pco_print_ref(state, pco_ref_get_idx_pointee(ref));
+      if (pco_ref_is_self_idx_reg(ref))
+         break;
+
       pco_print_ref_color(state, ref);
       pco_printf(state, "[idx%u", ref.idx_reg.num);
       break;
+   }
 
    case PCO_REF_TYPE_IMM:
       assert(pco_ref_is_scalar(ref));
@@ -316,7 +320,7 @@ static void _pco_print_ref(pco_print_state *state, pco_ref ref)
    if (chans > 1 && !pco_ref_is_ssa(ref))
       pco_printf(state, "..%u", ref.val + chans - 1);
 
-   if (ref.type == PCO_REF_TYPE_IDX_REG)
+   if (ref.type == PCO_REF_TYPE_IDX_REG && !pco_ref_is_self_idx_reg(ref))
       pco_printf(state, "]");
 
    RESET(state);
