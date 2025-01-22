@@ -761,8 +761,7 @@ impl Device {
     }
 
     pub fn address_bits(&self) -> cl_uint {
-        self.screen
-            .compute_param(pipe_compute_cap::PIPE_COMPUTE_CAP_ADDRESS_BITS)
+        self.screen.compute_caps().address_bits
     }
 
     pub fn const_max_size(&self) -> cl_ulong {
@@ -921,8 +920,7 @@ impl Device {
             };
             memory * 1024
         } else {
-            self.screen
-                .compute_param(pipe_compute_cap::PIPE_COMPUTE_CAP_MAX_GLOBAL_SIZE)
+            self.screen.compute_caps().max_global_size
         }
     }
 
@@ -991,51 +989,37 @@ impl Device {
     }
 
     pub fn local_mem_size(&self) -> cl_ulong {
-        self.screen
-            .compute_param(pipe_compute_cap::PIPE_COMPUTE_CAP_MAX_LOCAL_SIZE)
+        self.screen.compute_caps().max_local_size as cl_ulong
     }
 
     pub fn max_block_sizes(&self) -> Vec<usize> {
-        let v: Vec<u64> = self
-            .screen
-            .compute_param(pipe_compute_cap::PIPE_COMPUTE_CAP_MAX_BLOCK_SIZE);
+        let v: [u32; 3] = self.screen.compute_caps().max_block_size;
         v.into_iter().map(|v| v as usize).collect()
     }
 
-    pub fn max_grid_size(&self) -> Vec<u64> {
-        let v: Vec<u64> = self
-            .screen
-            .compute_param(pipe_compute_cap::PIPE_COMPUTE_CAP_MAX_GRID_SIZE);
-
+    pub fn max_grid_size(&self) -> Vec<usize> {
+        let v: [u32; 3] = self.screen.compute_caps().max_grid_size;
         v.into_iter()
             .map(|a| min(a, Platform::dbg().max_grid_size))
+            .map(|v| v as usize)
             .collect()
     }
 
     pub fn max_clock_freq(&self) -> cl_uint {
-        self.screen
-            .compute_param(pipe_compute_cap::PIPE_COMPUTE_CAP_MAX_CLOCK_FREQUENCY)
+        self.screen.compute_caps().max_clock_frequency
     }
 
     pub fn max_compute_units(&self) -> cl_uint {
-        self.screen
-            .compute_param(pipe_compute_cap::PIPE_COMPUTE_CAP_MAX_COMPUTE_UNITS)
+        self.screen.compute_caps().max_compute_units
     }
 
     pub fn max_grid_dimensions(&self) -> cl_uint {
-        ComputeParam::<u64>::compute_param(
-            self.screen.as_ref(),
-            pipe_compute_cap::PIPE_COMPUTE_CAP_GRID_DIMENSION,
-        ) as cl_uint
+        self.screen.compute_caps().grid_dimension
     }
 
     pub fn max_mem_alloc(&self) -> cl_ulong {
         // TODO: at the moment gallium doesn't support bigger buffers
-        min(
-            self.screen
-                .compute_param(pipe_compute_cap::PIPE_COMPUTE_CAP_MAX_MEM_ALLOC_SIZE),
-            0x80000000,
-        )
+        min(self.screen.compute_caps().max_mem_alloc_size, 0x80000000)
     }
 
     pub fn max_samplers(&self) -> cl_uint {
@@ -1043,10 +1027,7 @@ impl Device {
     }
 
     pub fn max_threads_per_block(&self) -> usize {
-        ComputeParam::<u64>::compute_param(
-            self.screen.as_ref(),
-            pipe_compute_cap::PIPE_COMPUTE_CAP_MAX_THREADS_PER_BLOCK,
-        ) as usize
+        self.screen.compute_caps().max_threads_per_block as usize
     }
 
     pub fn param_max_size(&self) -> usize {
@@ -1096,10 +1077,7 @@ impl Device {
     }
 
     pub fn subgroup_sizes(&self) -> Vec<usize> {
-        let subgroup_size = ComputeParam::<u32>::compute_param(
-            self.screen.as_ref(),
-            pipe_compute_cap::PIPE_COMPUTE_CAP_SUBGROUP_SIZES,
-        );
+        let subgroup_size = self.screen.compute_caps().subgroup_sizes;
 
         SetBitIndices::from_msb(subgroup_size)
             .map(|bit| 1 << bit)
@@ -1107,10 +1085,7 @@ impl Device {
     }
 
     pub fn max_subgroups(&self) -> u32 {
-        ComputeParam::<u32>::compute_param(
-            self.screen.as_ref(),
-            pipe_compute_cap::PIPE_COMPUTE_CAP_MAX_SUBGROUPS,
-        )
+        self.screen.compute_caps().max_subgroups
     }
 
     pub fn subgroups_supported(&self) -> bool {

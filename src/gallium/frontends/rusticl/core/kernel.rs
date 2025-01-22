@@ -1324,14 +1324,7 @@ impl Kernel {
         self.optimize_local_size(q.device, &mut grid, &mut block);
 
         Ok(Box::new(move |q, ctx| {
-            let hw_max_grid: Vec<usize> = q
-                .device
-                .max_grid_size()
-                .into_iter()
-                .map(|val| val.try_into().unwrap_or(usize::MAX))
-                // clamped as pipe_launch_grid::grid is only u32
-                .map(|val| cmp::min(val, u32::MAX as usize))
-                .collect();
+            let hw_max_grid: Vec<usize> = q.device.max_grid_size();
 
             let variant = if offsets == [0; 3]
                 && grid[0] <= hw_max_grid[0]
