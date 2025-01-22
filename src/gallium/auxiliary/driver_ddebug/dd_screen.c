@@ -680,6 +680,8 @@ ddebug_screen_create(struct pipe_screen *screen)
 
    /* copy all caps */
    *(struct pipe_caps *)&dscreen->base.caps = screen->caps;
+   *(struct pipe_compute_caps *)&dscreen->base.compute_caps = screen->compute_caps;
+   memcpy((void *)dscreen->base.shader_caps, screen->shader_caps, sizeof(screen->shader_caps));
 
 #undef SCR_INIT
 

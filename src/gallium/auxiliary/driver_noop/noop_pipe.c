@@ -832,6 +832,8 @@ struct pipe_screen *noop_screen_create(struct pipe_screen *oscreen)
 
    /* copy all caps */
    *(struct pipe_caps *)&screen->caps = oscreen->caps;
+   *(struct pipe_compute_caps *)&screen->compute_caps = oscreen->compute_caps;
+   memcpy((void *)screen->shader_caps, oscreen->shader_caps, sizeof(screen->shader_caps));
 
    slab_create_parent(&noop_screen->pool_transfers,
                       sizeof(struct pipe_transfer), 64);
