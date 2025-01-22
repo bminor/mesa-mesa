@@ -1404,7 +1404,7 @@
         "description": "lavapipe: fix min_vertex_pipeline_param",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d91a549b67f3a13c4763d82e333e50395c300507",
         "notes": null
