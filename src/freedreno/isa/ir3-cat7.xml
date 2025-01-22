@@ -309,7 +309,7 @@ SOFTWARE.
 	</doc>
 	<gen min="700"/>
 	<display>
-		{SY}{SS}{JP}{NAME}.{SCOPE}.{TYPE}{TYPE_SIZE}.{UNK} {DST}, {SRC}
+		{SY}{SS}{JP}{NAME}.{SCOPE}.{TYPE}{TYPE_SIZE}.{UNK} {DST_HALF}{DST}, {SRC}
 	</display>
 
 	<override>
@@ -347,6 +347,9 @@ SOFTWARE.
 	<pattern low="61" high="63">111</pattern>  <!-- cat7 -->
 	<derived name="SCOPE" type="#alias-scope">
 		<expr>({SCOPE_HI} &lt;&lt; 1) | {SCOPE_LO}</expr>
+	</derived>
+	<derived name="DST_HALF" type="bool" display="h">
+		<expr>{TYPE_SIZE} == 0</expr>
 	</derived>
 	<encode>
 		<map name="SRC">src->srcs[0]</map>

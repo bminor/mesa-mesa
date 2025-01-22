@@ -505,6 +505,8 @@ static const struct test {
    INSTR_7XX(e44c0009_00000007, "alias.tex.f32.0 r2.y, c1.w"),
    /* dEQP-VK.binding_model.shader_access.primary_cmd_buf.storage_image.geometry.single_descriptor.2d_base_mip */
    INSTR_7XX(ec5501a0_00000006, "(jp)alias.tex.b32.1 r40.x, (0x6)"),
+   /* dEQP-VK.subgroups.quad.graphics.subgroupquadbroadcast_i16vec2 */
+   INSTR_7XX(e45100a0_00000002, "alias.tex.b16.0 hr40.x, h(0x2)"),
 
    INSTR_6XX(ffffffff_ffffffff, "raw 0xFFFFFFFFFFFFFFFF"),
    /* clang-format on */
