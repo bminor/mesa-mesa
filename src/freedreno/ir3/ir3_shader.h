@@ -1326,16 +1326,21 @@ ir3_link_shaders(struct ir3_shader_linkage *l,
 }
 
 static inline uint32_t
+ir3_get_output_regid(const struct ir3_shader_output *output)
+{
+   return output->regid | (output->half ? HALF_REG_ID : 0);
+}
+
+static inline uint32_t
 ir3_find_output_regid(const struct ir3_shader_variant *so, unsigned slot)
 {
-   for (unsigned j = 0; j < so->outputs_count; j++)
-      if (so->outputs[j].slot == slot) {
-         uint32_t regid = so->outputs[j].regid;
-         if (so->outputs[j].half)
-            regid |= HALF_REG_ID;
-         return regid;
-      }
-   return regid(63, 0);
+   int output_idx = ir3_find_output(so, (gl_varying_slot)slot);
+
+   if (output_idx < 0) {
+      return INVALID_REG;
+   }
+
+   return ir3_get_output_regid(&so->outputs[output_idx]);
 }
 
 void print_raw(FILE *out, const BITSET_WORD *data, size_t size);
