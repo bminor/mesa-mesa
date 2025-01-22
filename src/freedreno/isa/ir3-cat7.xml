@@ -298,6 +298,8 @@ SOFTWARE.
 
 <bitset name="alias" extends="#instruction">
 	<doc>
+		For alias.tex (and possibly alias.mem):
+
 		Add an entry to the scope-specific "alias table", when instruction
 		from that scope tries to access a source register it would search
 		its alias table first.
@@ -322,6 +324,20 @@ SOFTWARE.
 		In this case, the size of the table is bounded (max 16 entries)
 		and the number of entries in the table is indicated by
 		the first alias instruction in the TABLE_SIZE_MINUS_ONE field.
+
+		For alias.rt: create an entry into the alias table for a render
+		target. For example, this would map the 4th component of render
+		target 0 (FRAG_RESULT_DATA0) to the constant 0x0:
+			alias.rt.b32.0 rt0.w, (0x0)
+
+		alias.rt has to be executed in the preamble and can only map
+		const registers and immediates. Additionally, the register
+		SP_PS_ALIASED_COMPONENTS has to be set to a mask of render
+		target components that will be aliased.
+
+		In this case, the size of the table is only bounded by the
+		number of render targets/components and the TABLE_SIZE_MINUS_ONE
+		field is not used.
 	</doc>
 	<gen min="700"/>
 	<display>
