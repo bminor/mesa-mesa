@@ -234,6 +234,8 @@ virtio_device_finish(struct tu_device *dev)
 static int
 tu_drm_get_param(struct vdrm_device *vdrm, uint32_t param, uint64_t *value)
 {
+   MESA_TRACE_FUNC();
+
    /* Technically this requires a pipe, but the kernel only supports one pipe
     * anyway at the time of writing and most of these are clearly pipe
     * independent. */
@@ -302,6 +304,7 @@ tu_drm_get_uche_trap_base(struct vdrm_device *vdrm)
 static int
 virtio_device_get_gpu_timestamp(struct tu_device *dev, uint64_t *ts)
 {
+   MESA_TRACE_FUNC();
    return tu_drm_get_param(dev->vdev->vdrm, MSM_PARAM_TIMESTAMP, ts);
 }
 
@@ -352,6 +355,8 @@ virtio_submitqueue_new(struct tu_device *dev,
                        int priority,
                        uint32_t *queue_id)
 {
+   MESA_TRACE_FUNC();
+
    assert(priority >= 0 &&
           priority < dev->physical_device->submitqueue_priority_count);
 
@@ -373,6 +378,7 @@ virtio_submitqueue_new(struct tu_device *dev,
 static void
 virtio_submitqueue_close(struct tu_device *dev, uint32_t queue_id)
 {
+   MESA_TRACE_FUNC();
    virtio_simple_ioctl(dev->vdev->vdrm, DRM_IOCTL_MSM_SUBMITQUEUE_CLOSE, &queue_id);
 }
 
@@ -401,6 +407,7 @@ tu_wait_fence(struct tu_device *dev,
               uint64_t timeout_ns)
 {
    struct vdrm_device *vdrm = dev->vdev->vdrm;
+   MESA_TRACE_FUNC();
 
    if (!fence_before(dev->global_bo_map->userspace_fence, fence))
       return VK_SUCCESS;
@@ -443,6 +450,7 @@ VkResult
 virtio_queue_wait_fence(struct tu_queue *queue, uint32_t fence,
                         uint64_t timeout_ns)
 {
+   MESA_TRACE_FUNC();
    return tu_wait_fence(queue->device, queue->msm_queue_id, fence,
                         timeout_ns);
 }
@@ -451,6 +459,7 @@ static VkResult
 tu_free_zombie_vma_locked(struct tu_device *dev, bool wait)
 {
    struct tu_virtio_device *vdev = dev->vdev;
+   MESA_TRACE_FUNC();
 
    if (!u_vector_length(&dev->zombie_vmas))
       return VK_SUCCESS;
@@ -513,6 +522,7 @@ tu_restore_from_zombie_vma_locked(struct tu_device *dev,
                                   uint32_t gem_handle,
                                   uint64_t *iova)
 {
+   MESA_TRACE_FUNC();
    struct tu_zombie_vma *vma;
    u_vector_foreach (vma, &dev->zombie_vmas) {
       if (vma->gem_handle == gem_handle) {
@@ -536,6 +546,7 @@ virtio_allocate_userspace_iova_locked(struct tu_device *dev,
                                       uint64_t *iova)
 {
    VkResult result;
+   MESA_TRACE_FUNC();
 
    *iova = 0;
 
@@ -573,6 +584,7 @@ tu_bo_init(struct tu_device *dev,
            const char *name)
 {
    assert(dev->physical_device->has_set_iova);
+   MESA_TRACE_FUNC();
 
    name = tu_debug_bos_add(dev, size, name);
 
@@ -632,6 +644,7 @@ tu_bo_init(struct tu_device *dev,
 static void
 tu_bo_set_kernel_name(struct tu_device *dev, struct tu_bo *bo, const char *name)
 {
+   MESA_TRACE_FUNC();
    bool kernel_bo_names = dev->bo_sizes != NULL;
 #if MESA_DEBUG
    kernel_bo_names = true;
@@ -665,6 +678,7 @@ virtio_bo_init(struct tu_device *dev,
                enum tu_bo_alloc_flags flags,
                const char *name)
 {
+   MESA_TRACE_FUNC();
    struct tu_virtio_device *vdev = dev->vdev;
    struct msm_ccmd_gem_new_req req = {
          .hdr = MSM_CCMD(GEM_NEW, sizeof(req)),
@@ -767,6 +781,7 @@ virtio_bo_init_dmabuf(struct tu_device *dev,
                    uint64_t size,
                    int prime_fd)
 {
+   MESA_TRACE_FUNC();
    struct vdrm_device *vdrm = dev->vdev->vdrm;
    VkResult result;
    struct tu_bo* bo = NULL;
@@ -844,6 +859,7 @@ out_unlock:
 static VkResult
 virtio_bo_map(struct tu_device *dev, struct tu_bo *bo, void *placed_addr)
 {
+   MESA_TRACE_FUNC();
    bo->map = vdrm_bo_map(dev->vdev->vdrm, bo->gem_handle, bo->size, placed_addr);
    if (bo->map == MAP_FAILED)
       return vk_error(dev, VK_ERROR_MEMORY_MAP_FAILED);
@@ -862,6 +878,7 @@ virtio_bo_allow_dump(struct tu_device *dev, struct tu_bo *bo)
 static VkResult
 setup_fence_cmds(struct tu_device *dev)
 {
+   MESA_TRACE_FUNC();
    struct tu_virtio_device *vdev = dev->vdev;
    VkResult result;
 
@@ -907,6 +924,7 @@ virtio_queue_submit(struct tu_queue *queue, void *_submit,
                     struct vk_sync_signal *signals, uint32_t signal_count,
                     struct tu_u_trace_submission_data *u_trace_submission_data)
 {
+   MESA_TRACE_FUNC();
    VkResult result = VK_SUCCESS;
    int ret;
    struct tu_msm_queue_submit *submit =

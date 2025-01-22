@@ -249,6 +249,7 @@ drm_syncobj_wait(struct tu_device *device,
                  uint32_t *handles, uint32_t count_handles,
                  uint64_t timeout_nsec, bool wait_all)
 {
+   MESA_TRACE_FUNC();
    uint32_t syncobj_wait_flags = DRM_SYNCOBJ_WAIT_FLAGS_WAIT_FOR_SUBMIT;
    if (wait_all) syncobj_wait_flags |= DRM_SYNCOBJ_WAIT_FLAGS_WAIT_ALL;
 
@@ -277,6 +278,7 @@ tu_timeline_sync_wait(struct vk_device *vk_device,
                  enum vk_sync_wait_flags wait_flags,
                  uint64_t abs_timeout_ns)
 {
+   MESA_TRACE_FUNC();
    struct tu_device *dev = container_of(vk_device, struct tu_device, vk);
    bool wait_all = !(wait_flags & VK_SYNC_WAIT_ANY);
 
