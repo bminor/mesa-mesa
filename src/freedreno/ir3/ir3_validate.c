@@ -69,6 +69,21 @@ validate_src(struct ir3_validate_ctx *ctx, struct ir3_instruction *instr,
    if ((reg->flags & IR3_REG_IMMED) && !(reg->flags & IR3_REG_ALIAS))
       validate_assert(ctx, ir3_valid_immediate(instr, reg->iim_val));
 
+   if (reg->flags & IR3_REG_FIRST_ALIAS)
+      validate_assert(ctx, reg->flags & IR3_REG_ALIAS);
+
+   if (reg->flags & IR3_REG_ALIAS) {
+      unsigned valid_flags = IR3_REG_ALIAS | IR3_REG_FIRST_ALIAS |
+                             IR3_REG_HALF | IR3_REG_CONST | IR3_REG_IMMED |
+                             IR3_REG_SSA | IR3_REG_KILL | IR3_REG_FIRST_KILL;
+      validate_assert(ctx, !(reg->flags & ~valid_flags));
+   }
+
+   if (instr->opc == OPC_ALIAS && instr->cat7.alias_scope == ALIAS_RT) {
+      unsigned valid_flags = IR3_REG_HALF | IR3_REG_CONST | IR3_REG_IMMED;
+      validate_assert(ctx, !(reg->flags & ~valid_flags));
+   }
+
    if (!(reg->flags & IR3_REG_SSA) || !reg->def)
       return;
 
@@ -134,6 +149,13 @@ static void
 validate_dst(struct ir3_validate_ctx *ctx, struct ir3_instruction *instr,
              struct ir3_register *reg)
 {
+   if (reg->flags & IR3_REG_RT) {
+      validate_assert(ctx, instr->opc == OPC_ALIAS);
+      validate_assert(ctx, instr->cat7.alias_scope == ALIAS_RT);
+      validate_assert(ctx, !(reg->flags & ~IR3_REG_RT));
+      validate_assert(ctx, !reg->tied);
+   }
+
    if (reg->tied) {
       validate_assert(ctx, reg->tied->tied == reg);
       validate_assert(ctx, reg_class_flags(reg->tied) == reg_class_flags(reg));
@@ -499,6 +521,25 @@ validate_instr(struct ir3_validate_ctx *ctx, struct ir3_instruction *instr)
          validate_assert(ctx, !(instr->srcs[0]->flags & IR3_REG_HALF));
          if (instr->srcs_count > 1)
             validate_assert(ctx, !(instr->srcs[1]->flags & IR3_REG_HALF));
+         break;
+      }
+      break;
+   case 7:
+      switch (instr->opc) {
+      case OPC_ALIAS:
+         switch (instr->cat7.alias_scope) {
+         case ALIAS_RT:
+            validate_assert(ctx, instr->dsts[0]->flags & IR3_REG_RT);
+            validate_assert(ctx, instr->cat7.alias_table_size_minus_one == 0);
+            break;
+         case ALIAS_TEX:
+            validate_assert(ctx, instr->cat7.alias_table_size_minus_one < 16);
+            break;
+         case ALIAS_MEM:
+            break;
+         }
+         break;
+      default:
          break;
       }
    }
