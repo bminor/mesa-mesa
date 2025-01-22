@@ -3093,6 +3093,8 @@ static const enum mesa_vk_dynamic_graphics_state tu_rast_state[] = {
    MESA_VK_DYNAMIC_RS_RASTERIZATION_STREAM,
    MESA_VK_DYNAMIC_VP_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE,
    MESA_VK_DYNAMIC_RS_LINE_WIDTH,
+   MESA_VK_DYNAMIC_RS_CONSERVATIVE_MODE,
+   MESA_VK_DYNAMIC_RS_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE,
 };
 
 template <chip CHIP>
@@ -3106,7 +3108,7 @@ tu6_rast_size(struct tu_device *dev,
    if (CHIP == A6XX) {
       return 15 + (dev->physical_device->info->a6xx.has_legacy_pipeline_shading_rate ? 8 : 0);
    } else {
-      return 21;
+      return 25;
    }
 }
 
@@ -3168,10 +3170,36 @@ tu6_emit_rast(struct tu_cs *cs,
          .stream = rs->rasterization_stream,
          .discard = rs->rasterizer_discard_enable));
 
+      bool conservative_ras_en =
+         rs->conservative_mode ==
+         VK_CONSERVATIVE_RASTERIZATION_MODE_OVERESTIMATE_EXT;
+
       tu_cs_emit_regs(cs, RB_RENDER_CNTL(CHIP,
             .raster_mode = TYPE_TILED,
-            .raster_direction = LR_TB));
+            .raster_direction = LR_TB,
+            .conservativerasen = conservative_ras_en));
       tu_cs_emit_regs(cs, A7XX_GRAS_SU_RENDER_CNTL());
+      tu_cs_emit_regs(cs,
+                      A6XX_PC_DGEN_SU_CONSERVATIVE_RAS_CNTL(conservative_ras_en));
+
+      /* There are only two conservative rasterization modes:
+       * - shift_amount = 0 (NO_SHIFT) - normal rasterization
+       * - shift_amount = 1 (HALF_PIXEL_SHIFT) - overestimate by half a pixel
+       *   plus the rasterization grid size (1/256)
+       * - shift_amount = 2 (FULL_PIXEL_SHIFT) - overestimate by another half
+       *   a pixel
+       *
+       * We expose a max of 0.5 and a granularity of 0.5, so the app should
+       * only give us 0 or 0.5 which correspond to HALF_PIXEL_SHIFT and
+       * FULL_PIXEL_SHIFT respectively. If they give us anything else just
+       * assume they meant 0.5 as the most conservative choice.
+       */
+      enum a6xx_shift_amount shift_amount = conservative_ras_en ?
+         (rs->extra_primitive_overestimation_size != 0. ?
+            FULL_PIXEL_SHIFT : HALF_PIXEL_SHIFT) : NO_SHIFT;
+      tu_cs_emit_regs(cs, A6XX_GRAS_SU_CONSERVATIVE_RAS_CNTL(
+            .conservativerasen = conservative_ras_en,
+            .shiftamount = shift_amount));
    }
 
    /* move to hw ctx init? */

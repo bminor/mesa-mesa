@@ -254,6 +254,7 @@ get_device_extensions(const struct tu_physical_device *device,
       .EXT_calibrated_timestamps = device->info->a7xx.has_persistent_counter,
       .EXT_color_write_enable = true,
       .EXT_conditional_rendering = true,
+      .EXT_conservative_rasterization = device->info->chip >= 7,
       .EXT_custom_border_color = true,
       .EXT_depth_clamp_zero_one = true,
       .EXT_depth_clip_control = true,
@@ -609,8 +610,10 @@ tu_get_features(struct tu_physical_device *pdevice,
    features->extendedDynamicState3AlphaToOneEnable = true;
    features->extendedDynamicState3DepthClipNegativeOneToOne = true;
    features->extendedDynamicState3RasterizationStream = true;
-   features->extendedDynamicState3ConservativeRasterizationMode = false;
-   features->extendedDynamicState3ExtraPrimitiveOverestimationSize = false;
+   features->extendedDynamicState3ConservativeRasterizationMode =
+      pdevice->vk.supported_extensions.EXT_conservative_rasterization;
+   features->extendedDynamicState3ExtraPrimitiveOverestimationSize =
+      pdevice->vk.supported_extensions.EXT_conservative_rasterization;
    features->extendedDynamicState3LineRasterizationMode = true;
    features->extendedDynamicState3LineStippleEnable = false;
    features->extendedDynamicState3ProvokingVertexMode = true;
@@ -1122,7 +1125,7 @@ tu_get_properties(struct tu_physical_device *pdevice,
    props->fragmentShadingRateWithSampleMask = true;
    /* Has wrong gl_SampleMaskIn[0] values with VK_EXT_post_depth_coverage used. */
    props->fragmentShadingRateWithShaderSampleMask = false;
-   props->fragmentShadingRateWithConservativeRasterization = false;
+   props->fragmentShadingRateWithConservativeRasterization = true;
    props->fragmentShadingRateWithFragmentShaderInterlock = false;
    props->fragmentShadingRateWithCustomSampleLocations = true;
    props->fragmentShadingRateStrictMultiplyCombiner = true;
@@ -1340,6 +1343,17 @@ tu_get_properties(struct tu_physical_device *pdevice,
    props->maxDescriptorSetAccelerationStructures = max_descriptor_set_size;
    props->maxDescriptorSetUpdateAfterBindAccelerationStructures = max_descriptor_set_size;
    props->minAccelerationStructureScratchOffsetAlignment = 128;
+
+   /* VK_EXT_conservative_rasterization */
+   props->primitiveOverestimationSize = 0.5 + 1 / 256.;
+   props->maxExtraPrimitiveOverestimationSize = 0.5;
+   props->extraPrimitiveOverestimationSizeGranularity = 0.5;
+   props->primitiveUnderestimation = false;
+   props->conservativePointAndLineRasterization = false;
+   props->degenerateTrianglesRasterized = true;
+   props->degenerateLinesRasterized = false;
+   props->fullyCoveredFragmentShaderInputVariable = false;
+   props->conservativeRasterizationPostDepthCoverage = false;
 }
 
 static const struct vk_pipeline_cache_object_ops *const cache_import_ops[] = {

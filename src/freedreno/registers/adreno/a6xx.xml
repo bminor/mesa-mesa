@@ -3138,7 +3138,12 @@ to upconvert to 32b float internally?
 
 	<reg32 offset="0x8099" name="GRAS_SU_CONSERVATIVE_RAS_CNTL" usage="cmd">
 		<bitfield name="CONSERVATIVERASEN" pos="0" type="boolean"/>
-		<bitfield name="SHIFTAMOUNT" low="1" high="2"/>
+		<enum name="a6xx_shift_amount">
+			<value value="0" name="NO_SHIFT"/>
+			<value value="1" name="HALF_PIXEL_SHIFT"/>
+			<value value="2" name="FULL_PIXEL_SHIFT"/>
+		</enum>
+		<bitfield name="SHIFTAMOUNT" low="1" high="2" type="a6xx_shift_amount"/>
 		<bitfield name="INNERCONSERVATIVERASEN" pos="3" type="boolean"/>
 		<bitfield name="UNK4" low="4" high="5"/>
 	</reg32>
