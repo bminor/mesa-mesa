@@ -201,7 +201,7 @@ radv_dedicated_sparse_queue_enabled(const struct radv_physical_device *pdev)
 
    /* Dedicated sparse queue requires VK_QUEUE_SUBMIT_MODE_THREADED, which is incompatible with
     * VK_DEVICE_TIMELINE_MODE_EMULATED. */
-   return pdev->info.has_timeline_syncobj && !instance->drirc.legacy_sparse_binding;
+   return pdev->info.has_timeline_syncobj && !instance->drirc.disable_dedicated_sparse_queue;
 }
 
 static inline bool
