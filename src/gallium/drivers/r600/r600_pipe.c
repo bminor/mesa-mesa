@@ -229,105 +229,6 @@ fail:
  * pipe_screen
  */
 
-static int r600_get_shader_param(struct pipe_screen* pscreen,
-				 enum pipe_shader_type shader,
-				 enum pipe_shader_cap param)
-{
-	struct r600_screen *rscreen = (struct r600_screen *)pscreen;
-
-	switch(shader)
-	{
-	case PIPE_SHADER_FRAGMENT:
-	case PIPE_SHADER_VERTEX:
-		break;
-	case PIPE_SHADER_GEOMETRY:
-		break;
-	case PIPE_SHADER_TESS_CTRL:
-	case PIPE_SHADER_TESS_EVAL:
-	case PIPE_SHADER_COMPUTE:
-		if (rscreen->b.family >= CHIP_CEDAR)
-			break;
-		FALLTHROUGH;
-	default:
-		return 0;
-	}
-
-	switch (param) {
-	case PIPE_SHADER_CAP_MAX_INSTRUCTIONS:
-	case PIPE_SHADER_CAP_MAX_ALU_INSTRUCTIONS:
-	case PIPE_SHADER_CAP_MAX_TEX_INSTRUCTIONS:
-	case PIPE_SHADER_CAP_MAX_TEX_INDIRECTIONS:
-		return 16384;
-	case PIPE_SHADER_CAP_MAX_CONTROL_FLOW_DEPTH:
-		return 32;
-	case PIPE_SHADER_CAP_MAX_INPUTS:
-		return shader == PIPE_SHADER_VERTEX ? 16 : 32;
-	case PIPE_SHADER_CAP_MAX_OUTPUTS:
-		return shader == PIPE_SHADER_FRAGMENT ? 8 : 32;
-	case PIPE_SHADER_CAP_MAX_TEMPS:
-		return 256; /* Max native temporaries. */
-	case PIPE_SHADER_CAP_MAX_CONST_BUFFER0_SIZE:
-		if (shader == PIPE_SHADER_COMPUTE) {
-			uint64_t max_const_buffer_size;
-			pscreen->get_compute_param(pscreen,
-						   PIPE_COMPUTE_CAP_MAX_MEM_ALLOC_SIZE,
-						   &max_const_buffer_size);
-			return MIN2(max_const_buffer_size, INT_MAX);
-
-		} else {
-			return R600_MAX_CONST_BUFFER_SIZE;
-		}
-	case PIPE_SHADER_CAP_MAX_CONST_BUFFERS:
-		return R600_MAX_USER_CONST_BUFFERS;
-	case PIPE_SHADER_CAP_CONT_SUPPORTED:
-		return 1;
-	case PIPE_SHADER_CAP_TGSI_SQRT_SUPPORTED:
-		return 1;
-	case PIPE_SHADER_CAP_INDIRECT_TEMP_ADDR:
-	case PIPE_SHADER_CAP_INDIRECT_CONST_ADDR:
-		return 1;
-	case PIPE_SHADER_CAP_SUBROUTINES:
-	case PIPE_SHADER_CAP_INT64_ATOMICS:
-	case PIPE_SHADER_CAP_FP16:
-        case PIPE_SHADER_CAP_FP16_DERIVATIVES:
-	case PIPE_SHADER_CAP_FP16_CONST_BUFFERS:
-        case PIPE_SHADER_CAP_INT16:
-        case PIPE_SHADER_CAP_GLSL_16BIT_CONSTS:
-		return 0;
-	case PIPE_SHADER_CAP_INTEGERS:
-	case PIPE_SHADER_CAP_TGSI_ANY_INOUT_DECL_RANGE:
-		return 1;
-	case PIPE_SHADER_CAP_MAX_TEXTURE_SAMPLERS:
-	case PIPE_SHADER_CAP_MAX_SAMPLER_VIEWS:
-		return 16;
-	case PIPE_SHADER_CAP_SUPPORTED_IRS: {
-		int ir = 0;
-		if (shader == PIPE_SHADER_COMPUTE)
-			ir = 1 << PIPE_SHADER_IR_NATIVE;
-		ir |= 1 << PIPE_SHADER_IR_NIR;
-		return ir;
-	}
-	case PIPE_SHADER_CAP_MAX_SHADER_BUFFERS:
-	case PIPE_SHADER_CAP_MAX_SHADER_IMAGES:
-		if (rscreen->b.family >= CHIP_CEDAR &&
-		    (shader == PIPE_SHADER_FRAGMENT || shader == PIPE_SHADER_COMPUTE))
-		    return 8;
-		return 0;
-	case PIPE_SHADER_CAP_MAX_HW_ATOMIC_COUNTERS:
-		if (rscreen->b.family >= CHIP_CEDAR && rscreen->has_atomics)
-			return 8;
-		return 0;
-	case PIPE_SHADER_CAP_MAX_HW_ATOMIC_COUNTER_BUFFERS:
-		/* having to allocate the atomics out amongst shaders stages is messy,
-		   so give compute 8 buffers and all the others one */
-		if (rscreen->b.family >= CHIP_CEDAR && rscreen->has_atomics) {
-			return EG_MAX_ATOMIC_BUFFERS;
-		}
-		return 0;
-	}
-	return 0;
-}
-
 static void r600_init_shader_caps(struct r600_screen *rscreen)
 {
 	for (unsigned i = 0; i <= PIPE_SHADER_COMPUTE; i++) {
@@ -697,7 +598,6 @@ struct pipe_screen *r600_screen_create(struct radeon_winsys *ws,
 	/* Set functions first. */
 	rscreen->b.b.context_create = r600_create_context;
 	rscreen->b.b.destroy = r600_destroy_screen;
-	rscreen->b.b.get_shader_param = r600_get_shader_param;
 	rscreen->b.b.resource_create = r600_resource_create;
 
 	if (!r600_common_screen_init(&rscreen->b, ws)) {
