@@ -693,18 +693,6 @@ genX(CmdBuildAccelerationStructuresKHR)(
 }
 
 void
-genX(CmdBuildAccelerationStructuresIndirectKHR)(
-    VkCommandBuffer                             commandBuffer,
-    uint32_t                                    infoCount,
-    const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
-    const VkDeviceAddress*                      pIndirectDeviceAddresses,
-    const uint32_t*                             pIndirectStrides,
-    const uint32_t* const*                      ppMaxPrimitiveCounts)
-{
-   unreachable("Unimplemented");
-}
-
-void
 genX(CmdCopyAccelerationStructureKHR)(
     VkCommandBuffer                             commandBuffer,
     const VkCopyAccelerationStructureInfoKHR*   pInfo)
@@ -892,69 +880,6 @@ genX(CmdCopyMemoryToAccelerationStructureKHR)(
    anv_cmd_buffer_restore_state(cmd_buffer, &saved);
 
    trace_intel_end_as_copy(&cmd_buffer->trace);
-}
-
-/* TODO: Host commands */
-
-VkResult
-genX(BuildAccelerationStructuresKHR)(
-    VkDevice                                    _device,
-    VkDeferredOperationKHR                      deferredOperation,
-    uint32_t                                    infoCount,
-    const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
-    const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos)
-{
-   ANV_FROM_HANDLE(anv_device, device, _device);
-   unreachable("Unimplemented");
-   return vk_error(device, VK_ERROR_FEATURE_NOT_PRESENT);
-}
-
-VkResult
-genX(CopyAccelerationStructureKHR)(
-    VkDevice                                    _device,
-    VkDeferredOperationKHR                      deferredOperation,
-    const VkCopyAccelerationStructureInfoKHR*   pInfo)
-{
-   ANV_FROM_HANDLE(anv_device, device, _device);
-   unreachable("Unimplemented");
-   return vk_error(device, VK_ERROR_FEATURE_NOT_PRESENT);
-}
-
-VkResult
-genX(CopyAccelerationStructureToMemoryKHR)(
-    VkDevice                                    _device,
-    VkDeferredOperationKHR                      deferredOperation,
-    const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo)
-{
-   ANV_FROM_HANDLE(anv_device, device, _device);
-   unreachable("Unimplemented");
-   return vk_error(device, VK_ERROR_FEATURE_NOT_PRESENT);
-}
-
-VkResult
-genX(CopyMemoryToAccelerationStructureKHR)(
-    VkDevice                                    _device,
-    VkDeferredOperationKHR                      deferredOperation,
-    const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo)
-{
-   ANV_FROM_HANDLE(anv_device, device, _device);
-   unreachable("Unimplemented");
-   return vk_error(device, VK_ERROR_FEATURE_NOT_PRESENT);
-}
-
-VkResult
-genX(WriteAccelerationStructuresPropertiesKHR)(
-    VkDevice                                    _device,
-    uint32_t                                    accelerationStructureCount,
-    const VkAccelerationStructureKHR*           pAccelerationStructures,
-    VkQueryType                                 queryType,
-    size_t                                      dataSize,
-    void*                                       pData,
-    size_t                                      stride)
-{
-   ANV_FROM_HANDLE(anv_device, device, _device);
-   unreachable("Unimplemented");
-   return vk_error(device, VK_ERROR_FEATURE_NOT_PRESENT);
 }
 
 void
