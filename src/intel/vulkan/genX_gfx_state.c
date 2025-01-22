@@ -166,12 +166,9 @@ genX(streamout_prologue)(struct anv_cmd_buffer *cmd_buffer)
 
 #if GFX_VER >= 12 && GFX_VER < 30
 static uint32_t
-get_cps_state_offset(const struct anv_device *device, bool cps_enabled,
+get_cps_state_offset(const struct anv_device *device,
                      const struct vk_fragment_shading_rate_state *fsr)
 {
-   if (!cps_enabled)
-      return device->cps_states.offset;
-
    uint32_t offset;
    static const uint32_t size_index[] = {
       [1] = 0,
@@ -981,13 +978,6 @@ update_cps(struct anv_gfx_dynamic_state *hw_state,
            const struct vk_dynamic_graphics_state *dyn,
            const struct anv_graphics_pipeline *pipeline)
 {
-   const struct brw_wm_prog_data *wm_prog_data = get_wm_prog_data(pipeline);
-   if (!wm_prog_data)
-      return;
-
-   UNUSED const bool cps_enable =
-      brw_wm_prog_data_is_coarse(wm_prog_data, hw_state->fs_msaa_flags);
-
 #if GFX_VER >= 30
    SET(COARSE_PIXEL, coarse_pixel.CPSizeX,
        get_cps_size(dyn->fsr.fragment_size.width));
@@ -999,11 +989,10 @@ update_cps(struct anv_gfx_dynamic_state *hw_state,
        vk_to_intel_shading_rate_combiner_op[dyn->fsr.combiner_ops[1]]);
 #elif GFX_VER >= 12
    SET(CPS, cps.CoarsePixelShadingStateArrayPointer,
-       get_cps_state_offset(device, cps_enable, &dyn->fsr));
+       get_cps_state_offset(device, &dyn->fsr));
 #else
    STATIC_ASSERT(GFX_VER == 11);
-   SET(CPS, cps.CoarsePixelShadingMode,
-            cps_enable ? CPS_MODE_CONSTANT : CPS_MODE_NONE);
+   SET(CPS, cps.CoarsePixelShadingMode, CPS_MODE_CONSTANT);
    SET(CPS, cps.MinCPSizeX, dyn->fsr.fragment_size.width);
    SET(CPS, cps.MinCPSizeY, dyn->fsr.fragment_size.height);
 #endif
@@ -1841,9 +1830,7 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_gfx_dynamic_state *hw_state,
 
 #if GFX_VER >= 11
    if (device->vk.enabled_extensions.KHR_fragment_shading_rate &&
-       ((gfx->dirty & ANV_CMD_DIRTY_PIPELINE) ||
-        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_FSR) ||
-        BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_FS_MSAA_FLAGS)))
+       BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_FSR))
       update_cps(hw_state, device, dyn, pipeline);
 #endif /* GFX_VER >= 11 */
 
