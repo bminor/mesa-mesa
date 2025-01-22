@@ -69,7 +69,7 @@ void radv_nir_lower_io(struct radv_device *device, nir_shader *nir);
 
 bool radv_nir_lower_io_to_mem(struct radv_device *device, struct radv_shader_stage *stage);
 
-bool radv_nir_lower_cooperative_matrix(nir_shader *shader, unsigned wave_size);
+bool radv_nir_lower_cooperative_matrix(nir_shader *shader, enum amd_gfx_level gfx_level, unsigned wave_size);
 
 bool radv_nir_lower_draw_id_to_zero(nir_shader *shader);
 
