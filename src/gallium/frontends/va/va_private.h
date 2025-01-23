@@ -584,9 +584,8 @@ void vlVaAddRawHeader(struct util_dynarray *headers, uint8_t type, uint32_t size
                       bool is_slice, uint32_t emulation_bytes_start);
 void vlVaGetBufferFeedback(vlVaBuffer *buf);
 void vlVaSetSurfaceContext(vlVaDriver *drv, vlVaSurface *surf, vlVaContext *context);
-VAStatus vlVaPostProcCompositor(vlVaDriver *drv, const VARectangle *src_region, const VARectangle *dst_region,
-                                struct pipe_video_buffer *src, struct pipe_video_buffer *dst,
-                                enum vl_compositor_deinterlace deinterlace, VAProcPipelineParameterBuffer *param);
+VAStatus vlVaPostProcCompositor(vlVaDriver *drv, struct pipe_video_buffer *src, struct pipe_video_buffer *dst,
+                                enum vl_compositor_deinterlace deinterlace, struct pipe_vpp_desc *param);
 void vlVaGetReferenceFrame(vlVaDriver *drv, VASurfaceID surface_id, struct pipe_video_buffer **ref_frame);
 void vlVaHandlePictureParameterBufferMPEG12(vlVaDriver *drv, vlVaContext *context, vlVaBuffer *buf);
 void vlVaHandleIQMatrixBufferMPEG12(vlVaContext *context, vlVaBuffer *buf);

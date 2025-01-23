@@ -60,65 +60,22 @@ vlVaGetFullRange(enum pipe_format format, uint8_t va_range)
    return !util_format_is_yuv(format);
 }
 
-static unsigned
-vlVaGetChromaLocation(unsigned va_chroma_location, enum pipe_format format)
-{
-   unsigned ret = VL_COMPOSITOR_LOCATION_NONE;
-
-   if (util_format_get_plane_height(format, 1, 4) != 4) {
-      /* Bits 0-1 */
-      switch (va_chroma_location & 3) {
-      case VA_CHROMA_SITING_VERTICAL_TOP:
-         ret |= VL_COMPOSITOR_LOCATION_VERTICAL_TOP;
-         break;
-      case VA_CHROMA_SITING_VERTICAL_BOTTOM:
-         ret |= VL_COMPOSITOR_LOCATION_VERTICAL_BOTTOM;
-         break;
-      case VA_CHROMA_SITING_VERTICAL_CENTER:
-      default:
-         ret |= VL_COMPOSITOR_LOCATION_VERTICAL_CENTER;
-         break;
-      }
-   }
-
-   if (util_format_is_subsampled_422(format) ||
-       util_format_get_plane_width(format, 1, 4) != 4) {
-      /* Bits 2-3 */
-      switch (va_chroma_location & 12) {
-      case VA_CHROMA_SITING_HORIZONTAL_CENTER:
-         ret |= VL_COMPOSITOR_LOCATION_HORIZONTAL_CENTER;
-         break;
-      case VA_CHROMA_SITING_HORIZONTAL_LEFT:
-      default:
-         ret |= VL_COMPOSITOR_LOCATION_HORIZONTAL_LEFT;
-         break;
-      }
-   }
-
-   return ret;
-}
-
 VAStatus
 vlVaPostProcCompositor(vlVaDriver *drv,
-                       const VARectangle *src_region,
-                       const VARectangle *dst_region,
                        struct pipe_video_buffer *src,
                        struct pipe_video_buffer *dst,
                        enum vl_compositor_deinterlace deinterlace,
-                       VAProcPipelineParameterBuffer *param)
+                       struct pipe_vpp_desc *param)
 {
    struct pipe_surface *surfaces;
-   struct u_rect src_rect;
-   struct u_rect dst_rect;
    enum VL_CSC_COLOR_STANDARD color_standard;
    enum vl_compositor_rotation rotation;
    enum vl_compositor_mirror mirror;
    bool src_yuv = util_format_is_yuv(src->buffer_format);
    bool dst_yuv = util_format_is_yuv(dst->buffer_format);
-   bool src_full_range = vlVaGetFullRange(src->buffer_format,
-      param->input_color_properties.color_range);
-   bool dst_full_range = vlVaGetFullRange(dst->buffer_format,
-      param->output_color_properties.color_range);
+   bool dst_full_range =
+      param->out_color_range == PIPE_VIDEO_VPP_CHROMA_COLOR_RANGE_FULL ||
+      (param->out_color_range == PIPE_VIDEO_VPP_CHROMA_COLOR_RANGE_NONE && !dst_yuv);
 
    if (!drv->cstate.pipe)
       return VA_STATUS_ERROR_UNSUPPORTED_ENTRYPOINT;
@@ -131,28 +88,17 @@ vlVaPostProcCompositor(vlVaDriver *drv,
    if (!surfaces[0].texture)
       return VA_STATUS_ERROR_INVALID_SURFACE;
 
-   src_rect.x0 = src_region->x;
-   src_rect.y0 = src_region->y;
-   src_rect.x1 = src_region->x + src_region->width;
-   src_rect.y1 = src_region->y + src_region->height;
-
-   dst_rect.x0 = dst_region->x;
-   dst_rect.y0 = dst_region->y;
-   dst_rect.x1 = dst_region->x + dst_region->width;
-   dst_rect.y1 = dst_region->y + dst_region->height;
-
    if (src_yuv == dst_yuv) {
       color_standard = VL_CSC_COLOR_STANDARD_IDENTITY;
    } else if (src_yuv) {
-      switch (param->surface_color_standard) {
-      case VAProcColorStandardBT601:
+      switch (param->in_colors_standard) {
+      case PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_BT601:
          color_standard = VL_CSC_COLOR_STANDARD_BT_601;
          break;
-      case VAProcColorStandardBT709:
+      case PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_BT709:
       default:
-         color_standard = src_full_range ?
-            VL_CSC_COLOR_STANDARD_BT_709_FULL :
-            VL_CSC_COLOR_STANDARD_BT_709;
+         color_standard = param->in_color_range == PIPE_VIDEO_VPP_CHROMA_COLOR_RANGE_FULL ?
+            VL_CSC_COLOR_STANDARD_BT_709_FULL : VL_CSC_COLOR_STANDARD_BT_709;
          break;
       }
    } else {
@@ -165,43 +111,46 @@ vlVaPostProcCompositor(vlVaDriver *drv,
    vl_csc_get_matrix(color_standard, NULL, dst_full_range, &drv->csc);
    vl_compositor_set_csc_matrix(&drv->cstate, &drv->csc, 1.0f, 0.0f);
 
-   if (src_yuv)
-      drv->cstate.chroma_location =
-         vlVaGetChromaLocation(param->input_color_properties.chroma_sample_location,
-                               src->buffer_format);
-   else if (dst_yuv)
-      drv->cstate.chroma_location =
-         vlVaGetChromaLocation(param->output_color_properties.chroma_sample_location,
-                               dst->buffer_format);
+   if (src_yuv || dst_yuv) {
+      enum pipe_format format = src_yuv ? src->buffer_format : dst->buffer_format;
+      enum pipe_video_vpp_chroma_siting chroma_siting =
+         src_yuv ? param->in_chroma_siting : param->out_chroma_siting;
 
-   switch (param->rotation_state) {
-   default:
-   case VA_ROTATION_NONE:
-      rotation = VL_COMPOSITOR_ROTATE_0;
-      break;
-   case VA_ROTATION_90:
+      drv->cstate.chroma_location = VL_COMPOSITOR_LOCATION_NONE;
+
+      if (util_format_get_plane_height(format, 1, 4) != 4) {
+         if (chroma_siting & PIPE_VIDEO_VPP_CHROMA_SITING_VERTICAL_TOP)
+            drv->cstate.chroma_location |= VL_COMPOSITOR_LOCATION_VERTICAL_TOP;
+         else if (chroma_siting & PIPE_VIDEO_VPP_CHROMA_SITING_VERTICAL_BOTTOM)
+            drv->cstate.chroma_location |= VL_COMPOSITOR_LOCATION_VERTICAL_BOTTOM;
+         else
+            drv->cstate.chroma_location |= VL_COMPOSITOR_LOCATION_VERTICAL_CENTER;
+      }
+
+      if (util_format_is_subsampled_422(format) ||
+          util_format_get_plane_width(format, 1, 4) != 4) {
+         if (chroma_siting & PIPE_VIDEO_VPP_CHROMA_SITING_HORIZONTAL_CENTER)
+            drv->cstate.chroma_location |= VL_COMPOSITOR_LOCATION_HORIZONTAL_CENTER;
+         else
+            drv->cstate.chroma_location |= VL_COMPOSITOR_LOCATION_HORIZONTAL_LEFT;
+      }
+   }
+
+   if (param->orientation & PIPE_VIDEO_VPP_ROTATION_90)
       rotation = VL_COMPOSITOR_ROTATE_90;
-      break;
-   case VA_ROTATION_180:
+   else if (param->orientation & PIPE_VIDEO_VPP_ROTATION_180)
       rotation = VL_COMPOSITOR_ROTATE_180;
-      break;
-   case VA_ROTATION_270:
+   else if (param->orientation & PIPE_VIDEO_VPP_ROTATION_270)
       rotation = VL_COMPOSITOR_ROTATE_270;
-      break;
-   }
+   else
+      rotation = VL_COMPOSITOR_ROTATE_0;
 
-   switch (param->mirror_state) {
-   default:
-   case VA_MIRROR_NONE:
-      mirror = VL_COMPOSITOR_MIRROR_NONE;
-      break;
-   case VA_MIRROR_HORIZONTAL:
-      mirror = VL_COMPOSITOR_MIRROR_HORIZONTAL;
-      break;
-   case VA_MIRROR_VERTICAL:
+   if (param->orientation & PIPE_VIDEO_VPP_FLIP_VERTICAL)
       mirror = VL_COMPOSITOR_MIRROR_VERTICAL;
-      break;
-   }
+   else if (param->orientation & PIPE_VIDEO_VPP_FLIP_HORIZONTAL)
+      mirror = VL_COMPOSITOR_MIRROR_HORIZONTAL;
+   else
+      mirror = VL_COMPOSITOR_MIRROR_NONE;
 
    vl_compositor_clear_layers(&drv->cstate);
    vl_compositor_set_layer_rotation(&drv->cstate, 0, rotation);
@@ -213,19 +162,19 @@ vlVaPostProcCompositor(vlVaDriver *drv,
          if (src->interlaced == dst->interlaced)
             deinterlace = VL_COMPOSITOR_NONE;
          vl_compositor_yuv_deint_full(&drv->cstate, &drv->compositor,
-                                      src, dst, &src_rect, &dst_rect,
+                                      src, dst, &param->src_region, &param->dst_region,
                                       deinterlace);
       } else {
          /* RGB -> YUV */
          vl_compositor_convert_rgb_to_yuv(&drv->cstate, &drv->compositor, 0,
                                           ((struct vl_video_buffer *)src)->resources[0],
-                                          dst, &src_rect, &dst_rect);
+                                          dst, &param->src_region, &param->dst_region);
       }
    } else {
       /* YUV/RGB -> RGB */
       vl_compositor_set_buffer_layer(&drv->cstate, &drv->compositor, 0, src,
-                                     &src_rect, NULL, deinterlace);
-      vl_compositor_set_layer_dst_area(&drv->cstate, 0, &dst_rect);
+                                     &param->src_region, NULL, deinterlace);
+      vl_compositor_set_layer_dst_area(&drv->cstate, 0, &param->dst_region);
       vl_compositor_render(&drv->cstate, &drv->compositor, &surfaces[0], NULL, false);
    }
 
@@ -595,7 +544,7 @@ vlVaHandleVAProcPipelineParameterBufferType(vlVaDriver *drv, vlVaContext *contex
       return VA_STATUS_SUCCESS;
 
    VAStatus ret =
-      vlVaPostProcCompositor(drv, src_region, dst_region, src, context->target, deinterlace, param);
+      vlVaPostProcCompositor(drv, src, context->target, deinterlace, &vpp);
    vlVaSurfaceFlush(drv, dst_surface);
    return ret;
 }
