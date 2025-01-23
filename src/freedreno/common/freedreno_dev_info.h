@@ -369,6 +369,12 @@ struct fd_dev_info {
 
       /* On a750 the control register layout is rearranged. */
       bool new_control_regs;
+
+      /* a740+ support a per-view list of bin scales in GRAS which can be used
+       * to modify the viewport, rather than manually patching it in the
+       * driver.
+       */
+      bool has_hw_bin_scaling;
    } a7xx;
 };
 

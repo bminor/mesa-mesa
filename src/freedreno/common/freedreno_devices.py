@@ -944,6 +944,7 @@ a7xx_gen2 = A7XXProps(
         has_primitive_shading_rate = True,
         reading_shading_rate_requires_smask_quirk = True,
         has_ray_intersection = True,
+        has_hw_bin_scaling = True,
     )
 
 a7xx_gen3 = A7XXProps(
@@ -971,6 +972,7 @@ a7xx_gen3 = A7XXProps(
         has_alias_rt = True,
         has_abs_bin_mask = True,
         new_control_regs = True,
+        has_hw_bin_scaling = True,
     )
 
 a730_magic_regs = dict(
