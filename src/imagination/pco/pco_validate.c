@@ -132,10 +132,10 @@ static void pco_validate_ssa(struct val_state *state)
                                       BITSET_WORDS(func->next_ssa));
 
       /* Ensure sources have been defined before they're used. */
-      state->ref_cursor = REF_CURSOR_INSTR_SRC;
       pco_foreach_instr_in_func (instr, func) {
          state->cf_node = &instr->parent_block->cf_node;
          state->instr = instr;
+         state->ref_cursor = REF_CURSOR_INSTR_SRC;
          pco_foreach_instr_src_ssa (psrc, instr) {
             state->ref = psrc;
             PCO_ASSERT(state,
