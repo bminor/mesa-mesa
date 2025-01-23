@@ -1269,6 +1269,11 @@ static inline pco_instr *pco_next_instr(pco_instr *instr)
       return next_instr;
 
    pco_block *block = pco_next_block(instr->parent_block);
+
+   /* Skip over empty blocks. */
+   while (block && exec_list_is_empty(&block->instrs))
+      block = pco_next_block(block);
+
    return !block ? NULL : pco_first_instr(block);
 }
 
@@ -1289,6 +1294,11 @@ static inline pco_instr *pco_prev_instr(pco_instr *instr)
       return prev_instr;
 
    pco_block *block = pco_prev_block(instr->parent_block);
+
+   /* Skip over empty blocks. */
+   while (block && exec_list_is_empty(&block->instrs))
+      block = pco_prev_block(block);
+
    return !block ? NULL : pco_last_instr(block);
 }
 
