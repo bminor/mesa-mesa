@@ -53,11 +53,7 @@ _isel_err(isel_context* ctx, const char* file, unsigned line, const nir_instr* i
 struct loop_context {
    Block loop_exit;
 
-   unsigned header_idx_old;
-   Block* exit_old;
-   bool divergent_cont_old;
-   bool divergent_branch_old;
-   bool divergent_if_old;
+   cf_context cf_info_old;
 };
 
 static void visit_cf_list(struct isel_context* ctx, struct exec_list* list);
@@ -9734,11 +9730,9 @@ begin_loop(isel_context* ctx, loop_context* lc)
 
    append_logical_start(ctx->block);
 
-   lc->header_idx_old = std::exchange(ctx->cf_info.parent_loop.header_idx, loop_header->index);
-   lc->exit_old = std::exchange(ctx->cf_info.parent_loop.exit, &lc->loop_exit);
-   lc->divergent_cont_old = std::exchange(ctx->cf_info.parent_loop.has_divergent_continue, false);
-   lc->divergent_branch_old = std::exchange(ctx->cf_info.has_divergent_branch, false);
-   lc->divergent_if_old = std::exchange(ctx->cf_info.parent_if.is_divergent, false);
+   lc->cf_info_old = ctx->cf_info;
+   ctx->cf_info.parent_loop = {loop_header->index, &lc->loop_exit, false};
+   ctx->cf_info.parent_if.is_divergent = false;
 }
 
 void
@@ -9833,10 +9827,8 @@ end_loop(isel_context* ctx, loop_context* lc)
    ctx->block = ctx->program->insert_block(std::move(lc->loop_exit));
    append_logical_start(ctx->block);
 
-   ctx->cf_info.parent_loop.header_idx = lc->header_idx_old;
-   ctx->cf_info.parent_loop.exit = lc->exit_old;
-   ctx->cf_info.parent_loop.has_divergent_continue = lc->divergent_cont_old;
-   ctx->cf_info.parent_if.is_divergent = lc->divergent_if_old;
+   ctx->cf_info.parent_loop = lc->cf_info_old.parent_loop;
+   ctx->cf_info.parent_if = lc->cf_info_old.parent_if;
    update_exec_info(ctx);
 }
 
