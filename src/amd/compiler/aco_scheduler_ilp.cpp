@@ -388,12 +388,13 @@ add_entry(SchedILPContext& ctx, Instruction* const instr, const uint32_t idx)
       }
    }
 
+   mask_t write_dep_mask = 0;
    for (const Definition& def : instr->definitions) {
       for (unsigned i = 0; i < def.size(); i++) {
          RegisterInfo& reg_info = ctx.regs[def.physReg().reg() + i];
 
          /* Add all previous register reads and writes to the dependencies. */
-         entry.dependency_mask |= reg_info.read_mask;
+         write_dep_mask |= reg_info.read_mask;
          reg_info.read_mask = mask;
 
          /* This register write is a direct dependency for all following reads. */
@@ -423,19 +424,23 @@ add_entry(SchedILPContext& ctx, Instruction* const instr, const uint32_t idx)
       if (!is_memory_instr(instr) || instr->definitions.empty() ||
           get_sync_info(instr).semantics & semantic_volatile || ctx.is_vopd) {
          /* Add all previous instructions as dependencies. */
-         entry.dependency_mask = ctx.active_mask;
+         entry.dependency_mask = ctx.active_mask & ~ctx.non_reorder_mask;
       }
 
       /* Remove non-reorderable instructions from dependencies, since WaR dependencies can interfere
        * with clause formation. This should be fine, since these are always scheduled in-order and
        * any cases that are actually a concern for clause formation are added as transitive
        * dependencies. */
-      entry.dependency_mask &= ~ctx.non_reorder_mask;
+      write_dep_mask &= ~ctx.non_reorder_mask;
+      /* Ignore RaW for VINTERP. */
+      if (instr->isVINTRP())
+         entry.dependency_mask &= ~ctx.non_reorder_mask;
       ctx.potential_partial_clause = true;
    } else if (ctx.last_non_reorderable != UINT8_MAX) {
       ctx.potential_partial_clause = false;
    }
 
+   entry.dependency_mask |= write_dep_mask;
    entry.dependency_mask &= ~mask;
 
    for (unsigned i = 0; i < num_nodes; i++) {
