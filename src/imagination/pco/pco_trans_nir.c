@@ -481,7 +481,7 @@ static pco_instr *trans_load_common_store(trans_ctx *tctx,
       assert(offset < range->count);
 
       pco_ref src = pco_ref_hwreg_vec(range->start + offset, reg_class, chans);
-      return pco_mov(&tctx->b, dest, src, .rpt = chans);
+      return pco_mbyp(&tctx->b, dest, src, .rpt = chans);
    }
 
    pco_ref src_base = pco_ref_hwreg_vec(range->start, reg_class, chans);
@@ -515,7 +515,7 @@ static pco_instr *trans_store_common_store(trans_ctx *tctx,
       assert(offset < range->count);
 
       pco_ref dest = pco_ref_hwreg_vec(range->start + offset, reg_class, chans);
-      return pco_mov(&tctx->b, dest, data, .rpt = chans);
+      return pco_mbyp(&tctx->b, dest, data, .rpt = chans);
    }
 
    pco_ref dest_base = pco_ref_hwreg_vec(range->start, reg_class, chans);
@@ -1067,14 +1067,14 @@ static pco_instr *trans_reg_intr(trans_ctx *tctx,
       assert(!nir_intrinsic_legacy_fabs(intr));
       assert(!nir_intrinsic_legacy_fneg(intr));
 
-      return pco_mov(&tctx->b, dest, pco_ref_ssa_vreg(func, src0, reg_bits));
+      return pco_mbyp(&tctx->b, dest, pco_ref_ssa_vreg(func, src0, reg_bits));
 
    case nir_intrinsic_store_reg:
       assert(!nir_intrinsic_base(intr));
       assert(nir_intrinsic_write_mask(intr) == 1);
       assert(!nir_intrinsic_legacy_fsat(intr));
 
-      return pco_mov(&tctx->b, pco_ref_ssa_vreg(func, src1, reg_bits), src0);
+      return pco_mbyp(&tctx->b, pco_ref_ssa_vreg(func, src1, reg_bits), src0);
 
    default:
       break;
