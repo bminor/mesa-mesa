@@ -341,6 +341,9 @@ struct fd_dev_info {
 
       /* a750-specific HW bug workaround for ray tracing */
       bool has_rt_workaround;
+
+      /* Whether alias.rt is supported. */
+      bool has_alias_rt;
    } a7xx;
 };
 

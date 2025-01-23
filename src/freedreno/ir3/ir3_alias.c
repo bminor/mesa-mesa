@@ -152,7 +152,7 @@ alias_srcs(struct ir3_instruction *instr)
 bool
 ir3_create_alias_tex_regs(struct ir3 *ir)
 {
-   if (!ir->compiler->has_alias)
+   if (!ir->compiler->has_alias_tex)
       return false;
    if (ir3_shader_debug & IR3_DBG_NOALIASTEX)
       return false;
@@ -620,7 +620,7 @@ has_alias_srcs(struct ir3_instruction *instr)
 bool
 ir3_insert_alias_tex(struct ir3 *ir)
 {
-   if (!ir->compiler->has_alias)
+   if (!ir->compiler->has_alias_tex)
       return false;
    if (ir3_shader_debug & IR3_DBG_NOALIASTEX)
       return false;
@@ -747,7 +747,7 @@ create_output_aliases(struct ir3_shader_variant *v, struct ir3_instruction *end)
 bool
 ir3_create_alias_rt(struct ir3 *ir, struct ir3_shader_variant *v)
 {
-   if (!ir->compiler->has_alias)
+   if (!ir->compiler->has_alias_rt)
       return false;
    if (ir3_shader_debug & IR3_DBG_NOALIASRT)
       return false;

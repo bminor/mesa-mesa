@@ -912,6 +912,7 @@ a7xx_gen3 = A7XXProps(
         has_ray_intersection = True,
         has_sw_fuse = True,
         has_rt_workaround = True,
+        has_alias_rt=True,
     )
 
 a730_magic_regs = dict(
