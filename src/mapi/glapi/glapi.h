@@ -124,7 +124,7 @@ _GLAPI_EXPORT _glapi_proc
 _mesa_glapi_get_proc_address(const char *funcName);
 
 
-_GLAPI_EXPORT const char *
+const char *
 _glapi_get_proc_name(unsigned int offset);
 
 
@@ -137,11 +137,11 @@ _glapi_table_patch(struct _glapi_table *, const char *name, void *wrapper);
 #endif
 
 
-_GLAPI_EXPORT void
+void
 _glapi_set_nop_handler(_glapi_nop_handler_proc func);
 
 /** Return pointer to new dispatch table filled with no-op functions */
-_GLAPI_EXPORT struct _glapi_table *
+struct _glapi_table *
 _glapi_new_nop_table(unsigned num_entries);
 
 
