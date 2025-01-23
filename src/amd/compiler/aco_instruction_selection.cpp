@@ -10046,9 +10046,7 @@ begin_divergent_if_then(isel_context* ctx, if_context* ic, Temp cond,
    ic->BB_endif = Block();
    ic->BB_endif.kind |= (block_kind_merge | (ctx->block->kind & block_kind_top_level));
 
-   ic->exec_old = ctx->cf_info.exec;
-   ic->divergent_old = ctx->cf_info.parent_if.is_divergent;
-   ic->had_divergent_discard_old = ctx->cf_info.had_divergent_discard;
+   ic->cf_info_old = ctx->cf_info;
    ctx->cf_info.parent_if.is_divergent = true;
 
    /* divergent branches use cbranch_execz */
@@ -10103,12 +10101,11 @@ begin_divergent_if_else(isel_context* ctx, if_context* ic,
    branch->branch().never_taken = never_taken;
    ctx->block->instructions.push_back(std::move(branch));
 
-   ic->exec_old.combine(ctx->cf_info.exec);
+   ic->cf_info_old.exec.combine(ctx->cf_info.exec);
    /* divergent branches use cbranch_execz */
    ctx->cf_info.exec = exec_info();
 
-   ic->had_divergent_discard_then = ctx->cf_info.had_divergent_discard;
-   ctx->cf_info.had_divergent_discard = ic->had_divergent_discard_old;
+   std::swap(ic->cf_info_old.had_divergent_discard, ctx->cf_info.had_divergent_discard);
 
    /** emit logical else block */
    ctx->program->next_divergent_if_logical_depth++;
@@ -10152,10 +10149,10 @@ end_divergent_if(isel_context* ctx, if_context* ic)
    ctx->block = ctx->program->insert_block(std::move(ic->BB_endif));
    append_logical_start(ctx->block);
 
-   ctx->cf_info.parent_if.is_divergent = ic->divergent_old;
-   ctx->cf_info.exec.combine(ic->exec_old);
+   ctx->cf_info.parent_if = ic->cf_info_old.parent_if;
+   ctx->cf_info.had_divergent_discard |= ic->cf_info_old.had_divergent_discard;
+   ctx->cf_info.exec.combine(ic->cf_info_old.exec);
    update_exec_info(ctx);
-   ctx->cf_info.had_divergent_discard |= ic->had_divergent_discard_then;
 
    /* We shouldn't create unreachable blocks. */
    assert(!ctx->block->logical_preds.empty());
@@ -10187,10 +10184,7 @@ begin_uniform_if_then(isel_context* ctx, if_context* ic, Temp cond)
    ic->BB_endif = Block();
    ic->BB_endif.kind |= ctx->block->kind & block_kind_top_level;
    assert(!ctx->cf_info.has_branch && !ctx->cf_info.has_divergent_branch);
-
-   ic->had_divergent_discard_old = ctx->cf_info.had_divergent_discard;
-   ic->has_divergent_continue_old = ctx->cf_info.parent_loop.has_divergent_continue;
-   ic->exec_old = ctx->cf_info.exec;
+   ic->cf_info_old = ctx->cf_info;
 
    /** emit then block */
    if (ic->cond.id())
@@ -10220,14 +10214,7 @@ begin_uniform_if_else(isel_context* ctx, if_context* ic, bool logical_else)
 
    ctx->cf_info.has_branch = false;
    ctx->cf_info.has_divergent_branch = false;
-
-   ic->had_divergent_discard_then = ctx->cf_info.had_divergent_discard;
-   ctx->cf_info.had_divergent_discard = ic->had_divergent_discard_old;
-
-   ic->has_divergent_continue_then = ctx->cf_info.parent_loop.has_divergent_continue;
-   ctx->cf_info.parent_loop.has_divergent_continue = ic->has_divergent_continue_old;
-
-   std::swap(ctx->cf_info.exec, ic->exec_old);
+   std::swap(ic->cf_info_old, ctx->cf_info);
 
    /** emit else block */
    Block* BB_else = ctx->program->create_and_insert_block();
@@ -10260,9 +10247,10 @@ end_uniform_if(isel_context* ctx, if_context* ic, bool logical_else)
 
    ctx->cf_info.has_branch = false;
    ctx->cf_info.has_divergent_branch = false;
-   ctx->cf_info.had_divergent_discard |= ic->had_divergent_discard_then;
-   ctx->cf_info.parent_loop.has_divergent_continue |= ic->has_divergent_continue_then;
-   ctx->cf_info.exec.combine(ic->exec_old);
+   ctx->cf_info.had_divergent_discard |= ic->cf_info_old.had_divergent_discard;
+   ctx->cf_info.parent_loop.has_divergent_continue |=
+      ic->cf_info_old.parent_loop.has_divergent_continue;
+   ctx->cf_info.exec.combine(ic->cf_info_old.exec);
 
    /** emit endif merge block */
    if (ic->cond.id())

@@ -79,12 +79,7 @@ struct cf_context {
 struct if_context {
    Temp cond;
 
-   bool divergent_old;
-   bool had_divergent_discard_old;
-   bool had_divergent_discard_then;
-   bool has_divergent_continue_old;
-   bool has_divergent_continue_then;
-   struct exec_info exec_old;
+   cf_context cf_info_old;
 
    unsigned BB_if_idx;
    unsigned invert_idx;
