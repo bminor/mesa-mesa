@@ -189,6 +189,8 @@
     GPU_VERSION: panfrost-g57
     KERNEL_IMAGE_TYPE: ""
     RUNNER_TAG: mesa-ci-x86-64-lava-mt8192-asurada-spherion-r0
+    # Force fixed 6.6 kernel, we're not reliably getting a GPU on 6.13
+    EXTERNAL_KERNEL_TAG: "v6.6.21-mesa-f8ea"
 
 .lava-rk3288-veyron-jaq:arm32:
   variables:
