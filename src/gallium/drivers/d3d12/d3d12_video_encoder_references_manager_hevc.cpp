@@ -58,10 +58,7 @@ d3d12_video_encoder_references_manager_hevc::get_current_reference_frames()
       retVal.ppTexture2Ds = m_CurrentFrameReferencesData.ReferenceTextures.pResources.data();
 
       // D3D12 Encode expects null subresources for AoT
-      bool isAoT = (std::all_of(m_CurrentFrameReferencesData.ReferenceTextures.pSubresources.begin(),
-                                m_CurrentFrameReferencesData.ReferenceTextures.pSubresources.end(),
-                                [](UINT i) { return i == 0; }));
-      retVal.pSubresources = isAoT ? nullptr : m_CurrentFrameReferencesData.ReferenceTextures.pSubresources.data();
+      retVal.pSubresources = m_fArrayOfTextures ? nullptr : m_CurrentFrameReferencesData.ReferenceTextures.pSubresources.data();
    }
 
    return retVal;
