@@ -355,9 +355,6 @@ typedef struct {
    char vendor_string[256];
 
    bool has_external_handles;
-
-   int efc_count;
-   void *last_efc_surface;
 } vlVaDriver;
 
 typedef struct {
@@ -453,10 +450,8 @@ typedef struct vlVaSurface {
    struct util_dynarray subpics; /* vlVaSubpicture */
    vlVaContext *ctx;
    vlVaBuffer *coded_buf;
-   bool full_range;
    struct pipe_fence_handle *fence; /* pipe_video_codec fence */
    struct pipe_fence_handle *pipe_fence; /* pipe_context fence */
-   struct vlVaSurface *efc_surface; /* input surface for EFC */
    bool is_dpb;
    unsigned int strides[3];
    unsigned int offsets[3];

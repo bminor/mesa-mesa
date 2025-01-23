@@ -78,6 +78,8 @@ struct vpe_video_processor {
 
     struct pipe_surface src_surfaces[VL_MAX_SURFACES];
     struct pipe_surface dst_surfaces[VL_MAX_SURFACES];
+    struct pipe_video_buffer *src_buffer;
+    struct pipe_video_buffer *dst_buffer;
 
     /* For HDR content display */
     void *gm_handle;

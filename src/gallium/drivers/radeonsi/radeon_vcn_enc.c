@@ -442,7 +442,7 @@ static void radeon_vcn_enc_get_output_format_param(struct radeon_encoder *enc, b
 static void radeon_vcn_enc_get_input_format_param(struct radeon_encoder *enc,
                                                   struct pipe_picture_desc *pic_base)
 {
-   switch (pic_base->input_format) {
+   switch (enc->source->buffer_format) {
    case PIPE_FORMAT_P010:
       enc->enc_pic.enc_input_format.input_color_bit_depth = RENCODE_COLOR_BIT_DEPTH_10_BIT;
       enc->enc_pic.enc_input_format.input_color_packing_format = RENCODE_COLOR_PACKING_FORMAT_P010;
@@ -487,9 +487,8 @@ static void radeon_vcn_enc_get_input_format_param(struct radeon_encoder *enc,
    }
 
   enc->enc_pic.enc_input_format.input_color_volume = RENCODE_COLOR_VOLUME_G22_BT709;
-  enc->enc_pic.enc_input_format.input_color_range = pic_base->input_full_range ?
-     RENCODE_COLOR_RANGE_FULL : RENCODE_COLOR_RANGE_STUDIO;
-   enc->enc_pic.enc_input_format.input_chroma_location = RENCODE_CHROMA_LOCATION_INTERSTITIAL;
+  enc->enc_pic.enc_input_format.input_color_range = RENCODE_COLOR_RANGE_FULL;
+  enc->enc_pic.enc_input_format.input_chroma_location = RENCODE_CHROMA_LOCATION_INTERSTITIAL;
 }
 
 static void radeon_vcn_enc_h264_get_param(struct radeon_encoder *enc,

@@ -50,16 +50,6 @@ vlVaRegionDefault(const VARectangle *region, vlVaSurface *surf,
    return def;
 }
 
-static bool
-vlVaGetFullRange(enum pipe_format format, uint8_t va_range)
-{
-   if (va_range != VA_SOURCE_RANGE_UNKNOWN)
-      return va_range == VA_SOURCE_RANGE_FULL;
-
-   /* Assume limited for YUV, full for RGB */
-   return !util_format_is_yuv(format);
-}
-
 VAStatus
 vlVaPostProcCompositor(vlVaDriver *drv,
                        struct pipe_video_buffer *src,
@@ -278,7 +268,6 @@ vlVaHandleVAProcPipelineParameterBufferType(vlVaDriver *drv, vlVaContext *contex
    struct pipe_video_buffer *src;
    vlVaSurface *src_surface, *dst_surface;
    unsigned i;
-   struct pipe_screen *pscreen;
    struct pipe_vpp_desc vpp = {0};
 
    if (!drv || !context)
@@ -301,49 +290,8 @@ vlVaHandleVAProcPipelineParameterBufferType(vlVaDriver *drv, vlVaContext *contex
    if (!src_surface->buffer || !dst_surface->buffer)
       return VA_STATUS_ERROR_INVALID_SURFACE;
 
-   src_surface->full_range = vlVaGetFullRange(src_surface->buffer->buffer_format,
-      param->input_color_properties.color_range);
-   dst_surface->full_range = vlVaGetFullRange(dst_surface->buffer->buffer_format,
-      param->output_color_properties.color_range);
-
-   pscreen = drv->vscreen->pscreen;
-
    src_region = vlVaRegionDefault(param->surface_region, src_surface, &def_src_region);
    dst_region = vlVaRegionDefault(param->output_region, dst_surface, &def_dst_region);
-
-   /* EFC can only do one conversion, and it must be the last postproc
-    * operation immediately before encoding.
-    * Disable EFC completely if this is not the case. */
-   if (drv->last_efc_surface) {
-      vlVaSurface *surf = drv->last_efc_surface;
-      surf->efc_surface = NULL;
-      drv->last_efc_surface = NULL;
-      drv->efc_count = -1;
-   }
-
-   if (drv->efc_count >= 0 && !param->num_filters &&
-       src_region->width == dst_region->width &&
-       src_region->height == dst_region->height &&
-       src_region->x == dst_region->x &&
-       src_region->y == dst_region->y &&
-       pscreen->is_video_target_buffer_supported &&
-       pscreen->is_video_target_buffer_supported(pscreen,
-                                                 dst_surface->buffer->buffer_format,
-                                                 src_surface->buffer,
-                                                 PIPE_VIDEO_PROFILE_UNKNOWN,
-                                                 PIPE_VIDEO_ENTRYPOINT_ENCODE)) {
-
-      dst_surface->efc_surface = src_surface;
-      drv->last_efc_surface = dst_surface;
-
-      /* Do the blit for first few conversions as a fallback in case EFC
-       * could not be used (see above), after that assume EFC can always
-       * be used and skip the blit. */
-      if (drv->efc_count < 16)
-         drv->efc_count++;
-      else
-         return VA_STATUS_SUCCESS;
-   }
 
    src = src_surface->buffer;
 
@@ -397,9 +345,6 @@ vlVaHandleVAProcPipelineParameterBufferType(vlVaDriver *drv, vlVaContext *contex
    vpp.dst_region.y0 = dst_region->y;
    vpp.dst_region.x1 = dst_region->x + dst_region->width;
    vpp.dst_region.y1 = dst_region->y + dst_region->height;
-
-   vpp.base.input_format = src->buffer_format;
-   vpp.base.output_format = context->target->buffer_format;
 
    switch (param->rotation_state) {
    case VA_ROTATION_90:

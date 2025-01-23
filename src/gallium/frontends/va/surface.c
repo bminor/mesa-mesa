@@ -129,14 +129,6 @@ vlVaDestroySurfaces(VADriverContextP ctx, VASurfaceID *surface_list, int num_sur
          if (surf->is_dpb)
             vlVaRemoveDpbSurface(surf, surface_list[i]);
       }
-      if (drv->last_efc_surface) {
-         vlVaSurface *efc_surf = drv->last_efc_surface;
-         if (efc_surf == surf || efc_surf->efc_surface == surf) {
-            efc_surf->efc_surface = NULL;
-            drv->last_efc_surface = NULL;
-            drv->efc_count = -1;
-         }
-      }
       if (surf->coded_buf)
          surf->coded_buf->coded_surf = NULL;
       util_dynarray_fini(&surf->subpics);

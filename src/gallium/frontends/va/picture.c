@@ -1200,20 +1200,6 @@ vlVaEndPicture(VADriverContextP ctx, VAContextID context_id)
       if (u_reduce_video_profile(context->templat.profile) == PIPE_VIDEO_FORMAT_MPEG4_AVC)
          context->desc.h264enc.frame_num_cnt++;
 
-      if (surf->efc_surface) {
-         assert(surf == drv->last_efc_surface);
-         context->target = surf->efc_surface->buffer;
-         context->desc.base.input_format = surf->efc_surface->buffer->buffer_format;
-         context->desc.base.output_format = surf->buffer->buffer_format;
-         surf->efc_surface = NULL;
-         drv->last_efc_surface = NULL;
-      } else {
-         context->desc.base.input_format = surf->buffer->buffer_format;
-         context->desc.base.output_format = surf->buffer->buffer_format;
-      }
-      context->desc.base.input_full_range = surf->full_range;
-      target_format = context->desc.base.output_format;
-
       if (coded_buf->coded_surf)
          coded_buf->coded_surf->coded_buf = NULL;
       vlVaGetBufferFeedback(coded_buf);

@@ -233,7 +233,6 @@ struct pipe_picture_desc
    uint8_t *decrypt_key;
    uint32_t key_size;
    enum pipe_format input_format;
-   bool input_full_range;
    enum pipe_format output_format;
    /* Flush flags for pipe_video_codec::end_frame */
    unsigned flush_flags;

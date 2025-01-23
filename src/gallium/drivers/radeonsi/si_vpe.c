@@ -525,9 +525,9 @@ si_vpe_set_plane_info(struct vpe_video_processor *vpeproc,
    enum pipe_format format;
 
    if (which_surface == USE_SRC_SURFACE)
-      format = process_properties->base.input_format;
+      format = vpeproc->src_buffer->buffer_format;
    else
-      format = process_properties->base.output_format;
+      format = vpeproc->dst_buffer->buffer_format;
 
    /* Trusted memory not supported now */
    plane_address->tmz_surface = false;
@@ -977,6 +977,7 @@ si_vpe_processor_begin_frame(struct pipe_video_codec *codec,
 
    dst_surfaces = target->get_surfaces(target);
    memcpy(vpeproc->dst_surfaces, dst_surfaces, sizeof(vpeproc->dst_surfaces));
+   vpeproc->dst_buffer = target;
 }
 
 static void
@@ -1349,6 +1350,7 @@ si_vpe_processor_process_frame(struct pipe_video_codec *codec,
 
    /* Get input surface */
    memcpy(vpeproc->src_surfaces, input_texture->get_surfaces(input_texture), sizeof(vpeproc->src_surfaces));
+   vpeproc->src_buffer = input_texture;
 
    /* Get scaling ratio info */
    src_rect_width  = process_properties->src_region.x1 - process_properties->src_region.x0;
@@ -1439,8 +1441,6 @@ si_vpe_processor_process_frame(struct pipe_video_codec *codec,
        * Sould copy the source setting and destination setting from original command.
        * Complete the CSC at the first round.
        */
-      process_geoscl.base.input_format            = process_properties->base.input_format;
-      process_geoscl.base.output_format           = process_properties->base.output_format;
       process_geoscl.orientation                  = process_properties->orientation;
       process_geoscl.blend.mode                   = process_properties->blend.mode;
       process_geoscl.blend.global_alpha           = process_properties->blend.global_alpha;
@@ -1487,7 +1487,6 @@ si_vpe_processor_process_frame(struct pipe_video_codec *codec,
        * The source format should be reset to the format of DstFormat.
        * And other option should be cleaned.
        */
-      process_geoscl.base.input_format            = process_properties->base.output_format;
       process_geoscl.orientation                  = PIPE_VIDEO_VPP_ORIENTATION_DEFAULT;
       process_geoscl.blend.global_alpha           = 1.0f;
       process_geoscl.in_colors_standard           = process_properties->out_colors_standard;
