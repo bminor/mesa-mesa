@@ -47,11 +47,15 @@ trap 'exit 2' HUP INT PIPE TERM
 
 ulimit -S -n 32768
 
+VSOCK_BASE=10000 # greater than all the default vsock ports
+VSOCK_CID=$((VSOCK_BASE + (CI_JOB_ID & 0xfff)))
+
 HOME=/cuttlefish launch_cvd \
   -daemon \
   -verbosity=VERBOSE \
   -file_verbosity=VERBOSE \
   -use_overlay=false \
+  -vsock_guest_cid=$VSOCK_CID \
   -enable_audio=false \
   -enable_bootanimation=false \
   -enable_minimal_mode=true \
