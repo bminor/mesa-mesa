@@ -156,6 +156,64 @@ static bool legalize_pseudo(pco_instr *instr)
       return true;
    }
 
+   case PCO_OP_IADD32_ATOMIC_OFFSET: {
+      pco_builder b =
+         pco_builder_create(instr->parent_func, pco_cursor_before_instr(instr));
+
+      pco_ref dest = instr->dest[0];
+      pco_ref shmem_dest = instr->dest[1];
+      pco_ref shmem_src = instr->src[0];
+      pco_ref value = instr->src[1];
+      pco_ref pred = instr->src[2];
+      pco_ref offset = instr->src[3];
+
+      unsigned idx_reg_num = 0;
+      pco_ref idx_reg =
+         pco_ref_hwreg_idx(idx_reg_num, idx_reg_num, PCO_REG_CLASS_INDEX);
+
+      pco_mbyp(&b, idx_reg, offset, .exec_cnd = pco_instr_get_exec_cnd(instr));
+
+      shmem_dest = pco_ref_hwreg_idx_from(idx_reg_num, shmem_dest);
+      shmem_src = pco_ref_hwreg_idx_from(idx_reg_num, shmem_src);
+
+      pco_instr *repl =
+         pco_iadd32_atomic(&b, dest, shmem_dest, shmem_src, value, pred);
+
+      xfer_op_mods(repl, instr);
+
+      pco_instr_delete(instr);
+
+      return true;
+   }
+
+   case PCO_OP_XCHG_ATOMIC_OFFSET: {
+      pco_builder b =
+         pco_builder_create(instr->parent_func, pco_cursor_before_instr(instr));
+
+      pco_ref dest = instr->dest[0];
+      pco_ref shmem_dest = instr->dest[1];
+      pco_ref shmem_src = instr->src[0];
+      pco_ref value = instr->src[1];
+      pco_ref offset = instr->src[2];
+
+      unsigned idx_reg_num = 0;
+      pco_ref idx_reg =
+         pco_ref_hwreg_idx(idx_reg_num, idx_reg_num, PCO_REG_CLASS_INDEX);
+
+      pco_mbyp(&b, idx_reg, offset, .exec_cnd = pco_instr_get_exec_cnd(instr));
+
+      shmem_dest = pco_ref_hwreg_idx_from(idx_reg_num, shmem_dest);
+      shmem_src = pco_ref_hwreg_idx_from(idx_reg_num, shmem_src);
+
+      pco_instr *repl = pco_xchg_atomic(&b, dest, shmem_dest, shmem_src, value);
+
+      xfer_op_mods(repl, instr);
+
+      pco_instr_delete(instr);
+
+      return true;
+   }
+
    default:
       break;
    }

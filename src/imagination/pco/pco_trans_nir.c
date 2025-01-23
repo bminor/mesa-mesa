@@ -527,6 +527,83 @@ static pco_instr *trans_store_common_store(trans_ctx *tctx,
                          .rpt = chans);
 }
 
+static pco_instr *trans_atomic_shared(trans_ctx *tctx,
+                                      nir_intrinsic_instr *intr,
+                                      pco_ref dest,
+                                      pco_ref offset_src,
+                                      pco_ref value,
+                                      pco_ref value_swap)
+{
+   nir_src *noffset_src = &intr->src[0];
+
+   unsigned chans = pco_ref_get_chans(dest);
+   ASSERTED unsigned bits = pco_ref_get_bits(dest);
+
+   assert(bits == 32);
+   assert(chans == 1);
+
+   assert(tctx->shader->data.cs.shmem.count > 0);
+
+   pco_ref shmem_ref;
+   bool const_offset = nir_src_is_const(*noffset_src);
+   if (const_offset) {
+      unsigned offset = nir_src_as_uint(*noffset_src);
+      assert(offset < tctx->shader->data.cs.shmem.count);
+
+      shmem_ref = pco_ref_hwreg_vec(tctx->shader->data.cs.shmem.start + offset,
+                                    PCO_REG_CLASS_COEFF,
+                                    chans);
+   } else {
+      shmem_ref = pco_ref_hwreg_vec(tctx->shader->data.cs.shmem.start,
+                                    PCO_REG_CLASS_COEFF,
+                                    chans);
+   }
+
+   pco_instr *instr;
+   switch (nir_intrinsic_atomic_op(intr)) {
+   case nir_atomic_op_iadd:
+      if (const_offset) {
+         instr = pco_iadd32_atomic(&tctx->b,
+                                   dest,
+                                   shmem_ref,
+                                   shmem_ref,
+                                   value,
+                                   pco_ref_null(),
+                                   .s = true);
+      } else {
+         instr = pco_iadd32_atomic_offset(&tctx->b,
+                                          dest,
+                                          shmem_ref,
+                                          shmem_ref,
+                                          value,
+                                          pco_ref_null(),
+                                          offset_src,
+                                          .s = true);
+      }
+      break;
+
+   case nir_atomic_op_xchg:
+      if (const_offset) {
+         instr = pco_xchg_atomic(&tctx->b, dest, shmem_ref, shmem_ref, value);
+      } else {
+         instr = pco_xchg_atomic_offset(&tctx->b,
+                                        dest,
+                                        shmem_ref,
+                                        shmem_ref,
+                                        value,
+                                        offset_src);
+      }
+      break;
+
+   default:
+      UNREACHABLE("");
+   }
+
+   pco_instr_set_rpt(instr, chans);
+
+   return instr;
+}
+
 static pco_instr *trans_load_buffer(trans_ctx *tctx,
                                     nir_intrinsic_instr *intr,
                                     pco_ref dest,
@@ -1072,6 +1149,11 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
                                        src[1],
                                        true,
                                        &tctx->shader->data.cs.shmem);
+      break;
+
+   case nir_intrinsic_shared_atomic:
+   case nir_intrinsic_shared_atomic_swap:
+      instr = trans_atomic_shared(tctx, intr, dest, src[0], src[1], src[2]);
       break;
 
    case nir_intrinsic_load_ubo:

@@ -542,6 +542,9 @@ static inline bool instr_has_side_effects(pco_instr *instr)
    case PCO_OP_ATOMIC:
    case PCO_OP_FDSX:
    case PCO_OP_FDSY:
+
+   case PCO_OP_IADD32_ATOMIC:
+   case PCO_OP_XCHG_ATOMIC:
       return true;
 
    default:

@@ -2558,6 +2558,66 @@ group_map(O_ST32,
    ]
 )
 
+group_map(O_IADD32_ATOMIC,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'p0_p1'),
+      ('olchk', OM_OLCHK),
+      ('w1p', True),
+      ('w0p', True),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', True),
+      ('rpt', OM_RPT)
+   ]),
+   enc_ops=[
+      ('0', O_IMADD32, [DEST(1)], [SRC(0), 'pco_one', SRC(1), SRC(2)], [(OM_S, OM_S)]),
+      ('1', O_MBYP, [DEST(0)], [SRC(0)])
+   ],
+   srcs=[
+      ('s[0]', ('0', SRC(0)), 's0'),
+      ('s[1]', ('0', SRC(1)), 's1'),
+      ('s[2]', ('0', SRC(2)), 's2'),
+      ('s[3]', ('1', SRC(0)), 's3')
+   ],
+   iss=[
+      ('is[4]', 'ft1'),
+      ('is[5]', 'ft0'),
+   ],
+   dests=[
+      ('w[0]', ('1', DEST(0)), 'ft1'),
+      ('w[1]', ('0', DEST(0)), 'ft0'),
+   ]
+)
+
+group_map(O_XCHG_ATOMIC,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'p0_p1'),
+      ('olchk', OM_OLCHK),
+      ('w1p', True),
+      ('w0p', True),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', True),
+      ('rpt', OM_RPT)
+   ]),
+   enc_ops=[
+      ('0', O_MBYP, [DEST(1)], [SRC(1)]),
+      ('1', O_MBYP, [DEST(0)], [SRC(0)])
+   ],
+   srcs=[
+      ('s[0]', ('0', SRC(0)), 's0'),
+      ('s[3]', ('1', SRC(0)), 's3')
+   ],
+   iss=[
+      ('is[4]', 'ft1'),
+      ('is[5]', 'ft0'),
+   ],
+   dests=[
+      ('w[0]', ('1', DEST(0)), 'ft1'),
+      ('w[1]', ('0', DEST(0)), 'ft0'),
+   ]
+)
+
 group_map(O_UVSW_WRITE,
    hdr=(I_IGRP_HDR_MAIN, [
       ('oporg', 'be'),

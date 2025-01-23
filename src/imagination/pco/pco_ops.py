@@ -335,6 +335,7 @@ OM_OFFSET_SD = op_mod_enum('offset_sd', [
 
 OM_ALU = [OM_OLCHK, OM_EXEC_CND, OM_END, OM_ATOM, OM_RPT]
 OM_ALU_RPT1 = [OM_OLCHK, OM_EXEC_CND, OM_END, OM_ATOM]
+OM_ALU_ATOMEXT = [OM_OLCHK, OM_EXEC_CND, OM_END, OM_RPT]
 
 ## Main.
 O_FADD = hw_op('fadd', OM_ALU + [OM_SAT], 1, 2, [], [[RM_ABS, RM_NEG, RM_FLR], [RM_ABS]])
@@ -448,6 +449,9 @@ O_IMUL32 = hw_op('imul32', OM_ALU + [OM_S], 1, 3, [], [[RM_ABS, RM_NEG], [RM_ABS
 O_TSTZ = hw_op('tstz', OM_ALU + [OM_TST_TYPE_MAIN], 2, 1, [], [[RM_ELEM]])
 O_ST32 = hw_op('st32', OM_ALU_RPT1 + [OM_MCU_CACHE_MODE_ST], 0, 5)
 
+O_IADD32_ATOMIC = hw_op('iadd32.atomic', OM_ALU_ATOMEXT + [OM_S], 2, 3, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
+O_XCHG_ATOMIC = hw_op('xchg.atomic', OM_ALU_ATOMEXT, 2, 2, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
+
 # Pseudo-ops (unmapped).
 O_FNEG = pseudo_op('fneg', OM_ALU, 1, 1)
 O_FABS = pseudo_op('fabs', OM_ALU, 1, 1)
@@ -456,6 +460,9 @@ O_MOV = pseudo_op('mov', OM_ALU, 1, 1)
 O_MOV_OFFSET = pseudo_op('mov.offset', OM_ALU + [OM_OFFSET_SD], 1, 2)
 O_VEC = pseudo_op('vec', [OM_EXEC_CND], 1, VARIABLE, [], [[RM_ABS, RM_NEG]])
 O_COMP = pseudo_op('comp', [], 1, 2)
+
+O_IADD32_ATOMIC_OFFSET = pseudo_op('iadd32.atomic.offset', OM_ALU_ATOMEXT + [OM_S], 2, 4, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
+O_XCHG_ATOMIC_OFFSET = pseudo_op('xchg.atomic.offset', OM_ALU_ATOMEXT, 2, 3, [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
 
 O_BREAK = pseudo_op('break', [OM_EXEC_CND])
 O_CONTINUE = pseudo_op('continue', [OM_EXEC_CND])
