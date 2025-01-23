@@ -60,6 +60,22 @@ struct exec_info {
    }
 };
 
+struct cf_context {
+   struct {
+      unsigned header_idx;
+      Block* exit;
+      bool has_divergent_continue = false;
+      bool has_divergent_branch = false;
+   } parent_loop;
+   struct {
+      bool is_divergent = false;
+   } parent_if;
+
+   bool has_branch;
+   bool had_divergent_discard = false;
+   struct exec_info exec;
+};
+
 struct if_context {
    Temp cond;
 
@@ -87,24 +103,10 @@ struct isel_context {
    std::unordered_map<unsigned, std::array<Temp, NIR_MAX_VEC_COMPONENTS>> allocated_vec;
    std::vector<Temp> unended_linear_vgprs;
    Stage stage;
-   struct {
-      bool has_branch;
-      struct {
-         unsigned header_idx;
-         Block* exit;
-         bool has_divergent_continue = false;
-         bool has_divergent_branch = false;
-      } parent_loop;
-      struct {
-         bool is_divergent = false;
-      } parent_if;
-      bool had_divergent_discard = false;
 
-      struct exec_info exec;
-
-      bool skipping_empty_exec = false;
-      if_context empty_exec_skip;
-   } cf_info;
+   cf_context cf_info;
+   bool skipping_empty_exec = false;
+   if_context empty_exec_skip;
 
    /* NIR range analysis. */
    struct hash_table* range_ht;

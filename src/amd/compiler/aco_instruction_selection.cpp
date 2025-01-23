@@ -10277,10 +10277,10 @@ end_uniform_if(isel_context* ctx, if_context* ic, bool logical_else)
 static void
 end_empty_exec_skip(isel_context* ctx)
 {
-   if (ctx->cf_info.skipping_empty_exec) {
-      begin_uniform_if_else(ctx, &ctx->cf_info.empty_exec_skip, false);
-      end_uniform_if(ctx, &ctx->cf_info.empty_exec_skip, false);
-      ctx->cf_info.skipping_empty_exec = false;
+   if (ctx->skipping_empty_exec) {
+      begin_uniform_if_else(ctx, &ctx->empty_exec_skip, false);
+      end_uniform_if(ctx, &ctx->empty_exec_skip, false);
+      ctx->skipping_empty_exec = false;
    }
 }
 
@@ -10331,8 +10331,8 @@ begin_empty_exec_skip(isel_context* ctx, nir_instr* after_instr, nir_block* bloc
    /* Don't nest these skipping branches. It is not worth the complexity. */
    end_empty_exec_skip(ctx);
 
-   begin_uniform_if_then(ctx, &ctx->cf_info.empty_exec_skip, Temp());
-   ctx->cf_info.skipping_empty_exec = true;
+   begin_uniform_if_then(ctx, &ctx->empty_exec_skip, Temp());
+   ctx->skipping_empty_exec = true;
    ctx->cf_info.exec = exec_info();
 
    ctx->program->should_repair_ssa = true;
@@ -10415,9 +10415,9 @@ visit_cf_list(isel_context* ctx, struct exec_list* list)
    if (nir_cf_list_is_empty_block(list))
       return;
 
-   bool skipping_empty_exec_old = ctx->cf_info.skipping_empty_exec;
-   if_context empty_exec_skip_old = std::move(ctx->cf_info.empty_exec_skip);
-   ctx->cf_info.skipping_empty_exec = false;
+   bool skipping_empty_exec_old = ctx->skipping_empty_exec;
+   if_context empty_exec_skip_old = std::move(ctx->empty_exec_skip);
+   ctx->skipping_empty_exec = false;
 
    foreach_list_typed (nir_cf_node, node, node, list) {
       switch (node->type) {
@@ -10429,8 +10429,8 @@ visit_cf_list(isel_context* ctx, struct exec_list* list)
    }
 
    end_empty_exec_skip(ctx);
-   ctx->cf_info.skipping_empty_exec = skipping_empty_exec_old;
-   ctx->cf_info.empty_exec_skip = std::move(empty_exec_skip_old);
+   ctx->skipping_empty_exec = skipping_empty_exec_old;
+   ctx->empty_exec_skip = std::move(empty_exec_skip_old);
 }
 
 static void
