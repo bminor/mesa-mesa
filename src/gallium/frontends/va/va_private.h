@@ -405,7 +405,6 @@ typedef struct vlVaContext {
       struct pipe_h264_enc_picture_desc h264enc;
       struct pipe_h265_enc_picture_desc h265enc;
       struct pipe_av1_enc_picture_desc av1enc;
-      struct pipe_vpp_desc vidproc;
    } desc;
 
    struct {
