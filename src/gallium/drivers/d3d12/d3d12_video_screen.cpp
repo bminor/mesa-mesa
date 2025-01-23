@@ -312,10 +312,18 @@ d3d12_video_encode_supported_references_per_frame_structures(const D3D12_VIDEO_E
          uint32_t maxRefForL0 = std::min(capPictureControlData.PictureSupport.pH264Support->MaxL0ReferencesForP,
                                          MaxL0ReferencesForB ? MaxL0ReferencesForB : UINT_MAX);
          uint32_t maxRefForL1 = capPictureControlData.PictureSupport.pH264Support->MaxL1ReferencesForB;
-         supportedMaxRefFrames = (maxRefForL0 & 0xffff) | ((maxRefForL1 & 0xffff) << 16);
 
          maxLongTermReferences = capPictureControlData.PictureSupport.pH264Support->MaxLongTermReferences;
-         maxDPBCapacity = capPictureControlData.PictureSupport.pH264Support->MaxDPBCapacity;
+
+         //
+         // Workaround for D3D12 Runtime validation that counts MaxDPBCapacity without the current reconpic
+         //
+         maxDPBCapacity = std::min(15u, capPictureControlData.PictureSupport.pH264Support->MaxDPBCapacity);
+         maxRefForL0 = std::min(maxDPBCapacity, maxRefForL0);
+         maxRefForL1 = std::min(maxDPBCapacity, maxRefForL1);
+         maxLongTermReferences = std::min(maxDPBCapacity, maxLongTermReferences);
+
+         supportedMaxRefFrames = (maxRefForL0 & 0xffff) | ((maxRefForL1 & 0xffff) << 16);
       }
    } else if(codec == D3D12_VIDEO_ENCODER_CODEC_HEVC) {
       D3D12_VIDEO_ENCODER_CODEC_PICTURE_CONTROL_SUPPORT_HEVC hevcPictureControl = {};
@@ -341,10 +349,18 @@ d3d12_video_encode_supported_references_per_frame_structures(const D3D12_VIDEO_E
          uint32_t maxRefForL0 = std::min(capPictureControlData.PictureSupport.pHEVCSupport->MaxL0ReferencesForP,
                                          MaxL0ReferencesForB ? MaxL0ReferencesForB : UINT_MAX);
          uint32_t maxRefForL1 = capPictureControlData.PictureSupport.pHEVCSupport->MaxL1ReferencesForB;
-         supportedMaxRefFrames = (maxRefForL0 & 0xffff) | ((maxRefForL1 & 0xffff) << 16);
 
          maxLongTermReferences = capPictureControlData.PictureSupport.pHEVCSupport->MaxLongTermReferences;
-         maxDPBCapacity = capPictureControlData.PictureSupport.pHEVCSupport->MaxDPBCapacity;
+
+         //
+         // Workaround for D3D12 Runtime validation that counts MaxDPBCapacity without the current reconpic
+         //
+         maxDPBCapacity = std::min(14u, capPictureControlData.PictureSupport.pH264Support->MaxDPBCapacity);
+         maxRefForL0 = std::min(maxDPBCapacity, maxRefForL0);
+         maxRefForL1 = std::min(maxDPBCapacity, maxRefForL1);
+         maxLongTermReferences = std::min(maxDPBCapacity, maxLongTermReferences);
+
+         supportedMaxRefFrames = (maxRefForL0 & 0xffff) | ((maxRefForL1 & 0xffff) << 16);
       }
    }
    else if(codec == D3D12_VIDEO_ENCODER_CODEC_AV1){
