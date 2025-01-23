@@ -213,7 +213,8 @@ delay_calc(struct ir3_legalize_ctx *ctx,
 }
 
 static void
-delay_update(struct ir3_legalize_state *state,
+delay_update(struct ir3_legalize_ctx *ctx,
+             struct ir3_legalize_state *state,
              struct ir3_instruction *instr,
              unsigned cycle,
              bool mergedregs)
@@ -265,11 +266,13 @@ delay_update(struct ir3_legalize_state *state,
                   reset_ready_slot = true;
                } else if ((dst->flags & IR3_REG_PREDICATE) ||
                           reg_num(dst) == REG_A0) {
-                  delay = 6;
+                  delay = ctx->compiler->delay_slots.non_alu;
                   if (!matching_size)
                      continue;
                } else {
-                  delay = (consumer_alu && matching_size) ? 3 : 6;
+                  delay = (consumer_alu && matching_size)
+                             ? ctx->compiler->delay_slots.alu_to_alu
+                             : ctx->compiler->delay_slots.non_alu;
                }
 
                if (!matching_size) {
@@ -697,7 +700,7 @@ legalize_block(struct ir3_legalize_ctx *ctx, struct ir3_block *block)
       if (count)
          cycle += 1;
 
-      delay_update(state, n, cycle, mergedregs);
+      delay_update(ctx, state, n, cycle, mergedregs);
 
       if (count)
          cycle += n->repeat + n->nop;
