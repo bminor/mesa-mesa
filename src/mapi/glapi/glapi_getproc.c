@@ -88,18 +88,6 @@ get_static_proc_offset(const char *funcName)
  */
 
 /**
- * Initializes the glapi relocs table, and returns the offset of the given
- * function in the dispatch table.
- */
-int
-_glapi_add_dispatch(const char *funcName)
-{
-   init_glapi_relocs_once();
-
-   return get_static_proc_offset(funcName);
-}
-
-/**
  * Return offset of entrypoint for named function within dispatch table.
  */
 GLint

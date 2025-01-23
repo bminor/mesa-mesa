@@ -49,17 +49,6 @@
 #include "glapi/glapi_priv.h"
 
 
-void
-_glapi_noop_enable_warnings(unsigned char enable)
-{
-}
-
-void
-_glapi_set_warning_func(_glapi_proc func)
-{
-}
-
-
 /**
  * We'll jump though this function pointer whenever a no-op function
  * is called.

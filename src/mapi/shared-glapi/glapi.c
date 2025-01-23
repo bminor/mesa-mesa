@@ -29,15 +29,13 @@
 #include <string.h>
 #include <stdlib.h>
 #include "glapi/glapi.h"
-#include "u_current.h"
 #include "table.h" /* for MAPI_TABLE_NUM_SLOTS */
 #include "stub.h"
 
 /*
- * _mesa_glapi_Dispatch, _glapi_Context
+ * _mesa_glapi_Dispatch,
  * _mesa_glapi_tls_Dispatch, _mesa_glapi_tls_Context,
  * _mesa_glapi_set_context, _mesa_glapi_get_context,
- * _glapi_destroy_multithread, _glapi_check_multithread
  * _mesa_glapi_set_dispatch, and _mesa_glapi_get_dispatch
  * are defined in u_current.c.
  */
@@ -50,22 +48,6 @@ unsigned int
 _mesa_glapi_get_dispatch_table_size(void)
 {
    return MAPI_TABLE_NUM_SLOTS;
-}
-
-/**
- * Initializes the glapi relocs table (no-op for shared-glapi), and returns the
- * offset of the given function in the dispatch table.
- */
-int
-_glapi_add_dispatch( const char * function_name )
-{
-   assert(function_name[0] == 'g' && function_name[1] == 'l');
-
-   const struct mapi_stub *stub = stub_find_public(function_name + 2);
-   if (!stub)
-      return -1;
-
-   return stub_get_slot(stub);
 }
 
 static const struct mapi_stub *
@@ -131,24 +113,4 @@ void
 _glapi_set_nop_handler(_glapi_nop_handler_proc func)
 {
    table_set_noop_handler(func);
-}
-
-/**
- * This is a deprecated function which should not be used anymore.
- * It's only present to satisfy linking with older versions of libGL.
- */
-unsigned long
-_glthread_GetID(void)
-{
-   return 0;
-}
-
-void
-_glapi_noop_enable_warnings(unsigned char enable)
-{
-}
-
-void
-_glapi_set_warning_func(_glapi_proc func)
-{
 }

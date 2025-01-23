@@ -29,7 +29,7 @@
 #include <stdint.h>
 
 #include "entry.h"
-#include "u_current.h"
+#include "glapi/glapi.h"
 #include "util/u_endian.h"
 #include "util/u_thread.h"
 

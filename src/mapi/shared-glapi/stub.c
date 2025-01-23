@@ -32,7 +32,7 @@
 
 #include "util/macros.h"
 #include "util/simple_mtx.h"
-#include "u_current.h"
+#include "glapi/glapi.h"
 #include "entry.h"
 #include "stub.h"
 #include "table.h"

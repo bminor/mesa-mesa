@@ -4,7 +4,6 @@
 files_shared_glapi = files(
   '../entry.c',
   '../u_current.c',
-  '../u_current.h',
   'glapi.c',
   'stub.c',
   'stub.h',

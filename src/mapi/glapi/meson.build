@@ -39,12 +39,10 @@ if with_platform_windows
 endif
 static_glapi_files += files(
   '../u_current.c',
-  '../u_current.h',
   'glapi_dispatch.c',
   'glapi_entrypoint.c',
   'glapi_getproc.c',
   'glapi_nop.c',
-  'glapi.c',
   'glapi.h',
   'glapi_priv.h',
 )
