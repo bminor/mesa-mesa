@@ -711,7 +711,7 @@ legalize_block(struct ir3_legalize_ctx *ctx, struct ir3_block *block)
       delay_update(state, n, cycle, mergedregs);
 
       if (count)
-         cycle += n->repeat;
+         cycle += n->repeat + n->nop;
 
       if (ctx->early_input_release && is_input(n)) {
          last_input_needs_ss |= (n->opc == OPC_LDLV);
