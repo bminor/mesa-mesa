@@ -158,7 +158,7 @@ VkResult pvr_pds_fragment_program_create_and_upload(
    VkResult result;
 
    const pvr_dev_addr_t exec_addr =
-      PVR_DEV_ADDR_OFFSET(fragment_state->bo->dev_addr,
+      PVR_DEV_ADDR_OFFSET(fragment_state->shader_bo->dev_addr,
                           /* fs_data->common.entry_offset */ entry_offset);
 
    /* Note this is not strictly required to be done before calculating the
@@ -708,10 +708,19 @@ static void pvr_pds_compute_program_setup(
    program->kick_usc = true;
 
    pvr_pds_setup_doutu(&program->usc_task_control,
-                       compute_state->bo->dev_addr.addr,
+                       compute_state->shader_bo->dev_addr.addr,
                        cs_data->common.temps,
                        ROGUE_PDSINST_DOUTU_SAMPLE_RATE_INSTANCE,
                        false);
+
+   if (compute_state->coeff_update_shader_bo) {
+      program->has_coefficient_update_task = true;
+      pvr_pds_setup_doutu(&program->usc_task_control_coeff_update,
+                          compute_state->coeff_update_shader_bo->dev_addr.addr,
+                          compute_state->coeff_update_shader_temps,
+                          ROGUE_PDSINST_DOUTU_SAMPLE_RATE_INSTANCE,
+                          false);
+   }
 
    pvr_pds_compute_shader(program, NULL, PDS_GENERATE_SIZES, dev_info);
 }
@@ -944,9 +953,33 @@ static VkResult pvr_compute_pipeline_compile(
                                pco_shader_binary_data(cs),
                                pco_shader_binary_size(cs),
                                cache_line_size,
-                               &compute_pipeline->shader_state.bo);
+                               &compute_pipeline->shader_state.shader_bo);
    if (result != VK_SUCCESS)
       goto err_free_build_context;
+
+   if (compute_pipeline->cs_data.cs.zero_shmem) {
+      uint32_t start = compute_pipeline->cs_data.cs.shmem.start;
+      uint32_t count = start + compute_pipeline->cs_data.cs.shmem.count;
+      struct util_dynarray usc_program;
+
+      util_dynarray_init(&usc_program, NULL);
+      pvr_hard_code_get_zero_wgmem_program(
+         &device->pdevice->dev_info,
+         start,
+         count,
+         &usc_program,
+         &compute_state->coeff_update_shader_temps);
+
+      result = pvr_gpu_upload_usc(device,
+                                  usc_program.data,
+                                  usc_program.size,
+                                  cache_line_size,
+                                  &compute_state->coeff_update_shader_bo);
+      util_dynarray_fini(&usc_program);
+
+      if (result != VK_SUCCESS)
+         goto err_free_shader;
+   }
 
    result = pvr_pds_descriptor_program_create_and_upload(
       device,
@@ -956,7 +989,7 @@ static VkResult pvr_compute_pipeline_compile(
       &compute_pipeline->cs_data,
       &compute_pipeline->descriptor_state);
    if (result != VK_SUCCESS)
-      goto err_free_shader;
+      goto err_free_coeff_update_shader;
 
    result = pvr_pds_compute_program_create_and_upload(device,
                                                       allocator,
@@ -969,13 +1002,16 @@ static VkResult pvr_compute_pipeline_compile(
 
    return VK_SUCCESS;
 
+err_free_coeff_update_shader:
+   pvr_bo_suballoc_free(compute_pipeline->shader_state.coeff_update_shader_bo);
+
 err_free_descriptor_program:
    pvr_pds_descriptor_program_destroy(device,
                                       allocator,
                                       &compute_pipeline->descriptor_state);
 
 err_free_shader:
-   pvr_bo_suballoc_free(compute_pipeline->shader_state.bo);
+   pvr_bo_suballoc_free(compute_pipeline->shader_state.shader_bo);
 
 err_free_build_context:
    ralloc_free(shader_mem_ctx);
@@ -1057,7 +1093,8 @@ static void pvr_compute_pipeline_destroy(
    pvr_pds_descriptor_program_destroy(device,
                                       allocator,
                                       &compute_pipeline->descriptor_state);
-   pvr_bo_suballoc_free(compute_pipeline->shader_state.bo);
+   pvr_bo_suballoc_free(compute_pipeline->shader_state.coeff_update_shader_bo);
+   pvr_bo_suballoc_free(compute_pipeline->shader_state.shader_bo);
 
    pvr_pipeline_destroy_shader_data(&compute_pipeline->cs_data);
 
@@ -1135,8 +1172,8 @@ pvr_graphics_pipeline_destroy(struct pvr_device *const device,
    pvr_bo_suballoc_free(
       gfx_pipeline->shader_state.fragment.pds_coeff_program.pvr_bo);
 
-   pvr_bo_suballoc_free(gfx_pipeline->shader_state.fragment.bo);
-   pvr_bo_suballoc_free(gfx_pipeline->shader_state.vertex.bo);
+   pvr_bo_suballoc_free(gfx_pipeline->shader_state.fragment.shader_bo);
+   pvr_bo_suballoc_free(gfx_pipeline->shader_state.vertex.shader_bo);
 
    pvr_pipeline_finish(device, &gfx_pipeline->base);
 
@@ -1943,10 +1980,11 @@ static void pvr_alloc_cs_sysvals(pco_data *data, nir_shader *nir)
 static void pvr_alloc_cs_shmem(pco_data *data, nir_shader *nir)
 {
    assert(!nir->info.cs.has_variable_shared_mem);
-   assert(!nir->info.zero_initialize_shared_memory);
 
+   data->cs.shmem.start = data->common.coeffs;
    data->cs.shmem.count = nir->info.shared_size >> 2;
    data->common.coeffs += data->cs.shmem.count;
+   data->cs.zero_shmem = nir->info.zero_initialize_shared_memory;
 }
 
 static void pvr_init_descriptors(pco_data *data,
@@ -2274,7 +2312,7 @@ pvr_graphics_pipeline_compile(struct pvr_device *const device,
                                pco_shader_binary_data(*vs),
                                pco_shader_binary_size(*vs),
                                cache_line_size,
-                               &vertex_state->bo);
+                               &vertex_state->shader_bo);
    if (result != VK_SUCCESS)
       goto err_free_build_context;
 
@@ -2290,7 +2328,7 @@ pvr_graphics_pipeline_compile(struct pvr_device *const device,
                                   pco_shader_binary_data(*fs),
                                   pco_shader_binary_size(*fs),
                                   cache_line_size,
-                                  &fragment_state->bo);
+                                  &fragment_state->shader_bo);
       if (result != VK_SUCCESS)
          goto err_free_vertex_bo;
 
@@ -2372,9 +2410,9 @@ err_free_frag_program:
 err_free_coeff_program:
    pvr_bo_suballoc_free(fragment_state->pds_coeff_program.pvr_bo);
 err_free_fragment_bo:
-   pvr_bo_suballoc_free(fragment_state->bo);
+   pvr_bo_suballoc_free(fragment_state->shader_bo);
 err_free_vertex_bo:
-   pvr_bo_suballoc_free(vertex_state->bo);
+   pvr_bo_suballoc_free(vertex_state->shader_bo);
 err_free_build_context:
    ralloc_free(shader_mem_ctx);
    return result;

@@ -132,4 +132,11 @@ void pvr_hard_code_get_passthrough_rta_vertex_shader(
    const struct pvr_device_info *const dev_info,
    struct util_dynarray *program_out);
 
+void pvr_hard_code_get_zero_wgmem_program(
+   const struct pvr_device_info *const dev_info,
+   unsigned start,
+   unsigned count,
+   struct util_dynarray *program_out,
+   uint32_t *usc_temps_out);
+
 #endif /* PVR_HARDCODE_SHADERS_H */

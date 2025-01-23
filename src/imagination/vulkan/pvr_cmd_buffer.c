@@ -3363,7 +3363,7 @@ pvr_setup_vertex_buffers(struct pvr_cmd_buffer *cmd_buffer,
 
          const pco_data *const vs_data = &state->gfx_pipeline->vs_data;
          const pvr_dev_addr_t exec_addr =
-            PVR_DEV_ADDR_OFFSET(vertex_state->bo->dev_addr,
+            PVR_DEV_ADDR_OFFSET(vertex_state->shader_bo->dev_addr,
                                 vs_data->common.entry_offset);
          uint64_t addr = 0ULL;
 
@@ -4119,7 +4119,7 @@ static uint32_t pvr_calc_shared_regs_count(
 {
    uint32_t shared_regs = gfx_pipeline->vs_data.common.shareds;
 
-   if (gfx_pipeline->shader_state.fragment.bo) {
+   if (gfx_pipeline->shader_state.fragment.shader_bo) {
       uint32_t fragment_regs = gfx_pipeline->fs_data.common.shareds;
       shared_regs = MAX2(shared_regs, fragment_regs);
    }
@@ -4410,8 +4410,9 @@ pvr_setup_isp_faces_and_control(struct pvr_cmd_buffer *const cmd_buffer,
    pvr_csb_pack (&isp_control, TA_STATE_ISPCTL, ispctl) {
       ispctl.upass = pass_info->isp_userpass;
 
-      /* TODO: is bo ever NULL? Figure out what to do. */
-      ispctl.tagwritedisable = rasterizer_discard || !fragment_shader_state->bo;
+      /* TODO: is shader_bo ever NULL? Figure out what to do. */
+      ispctl.tagwritedisable = rasterizer_discard ||
+                               !fragment_shader_state->shader_bo;
 
       ispctl.two_sided = is_two_sided;
       ispctl.bpres = header->pres_ispctl_fb || header->pres_ispctl_bb;
@@ -5368,7 +5369,7 @@ pvr_emit_dirty_ppp_state(struct pvr_cmd_buffer *const cmd_buffer,
 
    if (!dynamic_state->rs.rasterizer_discard_enable &&
        state->dirty.fragment_descriptors &&
-       state->gfx_pipeline->shader_state.fragment.bo &&
+       state->gfx_pipeline->shader_state.fragment.shader_bo &&
        !state->gfx_pipeline->fs_data.common.uses.empty) {
       pvr_setup_fragment_state_pointers(cmd_buffer, sub_cmd);
    }

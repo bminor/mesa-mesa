@@ -859,12 +859,16 @@ struct pvr_pipeline_stage_state {
 
 struct pvr_compute_shader_state {
    /* Pointer to a buffer object that contains the shader binary. */
-   struct pvr_suballoc_bo *bo;
+   struct pvr_suballoc_bo *shader_bo;
+
+   /* Buffer object for the coefficient update shader binary. */
+   struct pvr_suballoc_bo *coeff_update_shader_bo;
+   uint32_t coeff_update_shader_temps;
 };
 
 struct pvr_vertex_shader_state {
    /* Pointer to a buffer object that contains the shader binary. */
-   struct pvr_suballoc_bo *bo;
+   struct pvr_suballoc_bo *shader_bo;
 
    struct pvr_pds_attrib_program
       pds_attrib_programs[PVR_PDS_VERTEX_ATTRIB_PROGRAM_COUNT];
@@ -876,7 +880,7 @@ struct pvr_vertex_shader_state {
 
 struct pvr_fragment_shader_state {
    /* Pointer to a buffer object that contains the shader binary. */
-   struct pvr_suballoc_bo *bo;
+   struct pvr_suballoc_bo *shader_bo;
 
    struct pvr_pipeline_stage_state stage_state;
    /* FIXME: Move this into stage_state? */

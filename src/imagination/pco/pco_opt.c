@@ -539,6 +539,7 @@ static inline bool instr_has_side_effects(pco_instr *instr)
       return true;
 
    switch (instr->op) {
+   case PCO_OP_ATOMIC:
    case PCO_OP_FDSX:
    case PCO_OP_FDSY:
       return true;

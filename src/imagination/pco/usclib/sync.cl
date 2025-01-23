@@ -1,0 +1,53 @@
+/*
+ * Copyright © 2025 Imagination Technologies Ltd.
+ * SPDX-License-Identifier: MIT
+ */
+
+#include "libcl.h"
+
+uint32_t
+usclib_emu_ssbo_atomic_comp_swap(uint2 ssbo_buffer, uint ssbo_offset, uint compare, uint data)
+{
+   uint32_t result;
+
+   nir_mutex_pco(PCO_MUTEX_ID_ATOMIC_EMU, PCO_MUTEX_OP_LOCK);
+   for (uint u = 0; u < ROGUE_MAX_INSTANCES_PER_TASK; ++u) {
+      if (u == nir_load_instance_num_pco()) {
+         uint32_t pre_val = nir_load_ssbo(ssbo_buffer, ssbo_offset, ACCESS_COHERENT, 4, 0, 0);
+         result = pre_val;
+
+         uint32_t post_val = (pre_val == compare) ? data : pre_val;
+         nir_store_ssbo(post_val, ssbo_buffer, ssbo_offset, 0x1, ACCESS_COHERENT, 4, 0, 0);
+      }
+   }
+   nir_mutex_pco(PCO_MUTEX_ID_ATOMIC_EMU, PCO_MUTEX_OP_RELEASE);
+
+   return result;
+}
+
+void
+usclib_barrier(uint num_slots, uint counter_offset)
+{
+   #define load_barrier_counter() nir_load_shared(counter_offset, 0, 4, 0)
+   #define store_barrier_counter(value) nir_store_shared(value, counter_offset, 0, 0x1, 4, 0)
+
+   bool is_inst_zero = !nir_load_instance_num_pco();
+
+   nir_mutex_pco(PCO_MUTEX_ID_BARRIER, PCO_MUTEX_OP_LOCK);
+
+   if (is_inst_zero)
+      store_barrier_counter(load_barrier_counter() + 1);
+
+   bool all_slots_done = load_barrier_counter() == num_slots;
+   if (all_slots_done) {
+      if (is_inst_zero)
+         store_barrier_counter(0);
+   } else {
+      do {
+         nir_mutex_pco(PCO_MUTEX_ID_BARRIER, PCO_MUTEX_OP_RELEASE_SLEEP);
+         nir_mutex_pco(PCO_MUTEX_ID_BARRIER, PCO_MUTEX_OP_LOCK);
+      } while (load_barrier_counter() != 0);
+   }
+
+   nir_mutex_pco(PCO_MUTEX_ID_BARRIER, PCO_MUTEX_OP_RELEASE_WAKEUP);
+}

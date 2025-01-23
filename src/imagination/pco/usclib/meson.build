@@ -3,6 +3,7 @@
 
 pco_usclib_shader_files = files(
   'common.cl',
+  'sync.cl',
 )
 
 # We need to set -fmacro-prefix-map properly for reproducability.

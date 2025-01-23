@@ -77,6 +77,7 @@ typedef struct _pco_cs_data {
    unsigned workgroup_size[3]; /** Workgroup size. */
 
    pco_range shmem;
+   bool zero_shmem;
 } pco_cs_data;
 
 /** PCO image descriptor metadata. */

@@ -189,6 +189,7 @@ static void pvr_physical_device_get_supported_extensions(
       .KHR_swapchain = PVR_USE_WSI_PLATFORM,
       .KHR_timeline_semaphore = true,
       .KHR_uniform_buffer_standard_layout = true,
+      .KHR_zero_initialize_workgroup_memory = false,
       .EXT_external_memory_dma_buf = true,
       .EXT_host_query_reset = true,
       .EXT_index_type_uint8 = false,
@@ -290,6 +291,9 @@ static void pvr_physical_device_get_supported_features(
 
       /* VK_KHR_present_wait2 */
       .presentWait2 = PVR_USE_WSI_PLATFORM,
+
+      /* Vulkan 1.3 / VK_KHR_zero_initialize_workgroup_memory */
+      .shaderZeroInitializeWorkgroupMemory = false,
    };
 }
 

@@ -312,7 +312,7 @@ pvr_generate_load_op_shader(struct pvr_device *device,
 
    /* TODO: amend this once the hardcoded shaders have been removed. */
    struct pvr_fragment_shader_state fragment_state = {
-      .bo = load_op->usc_frag_prog_bo,
+      .shader_bo = load_op->usc_frag_prog_bo,
       .sample_rate = ROGUE_PDSINST_DOUTU_SAMPLE_RATE_INSTANCE,
       .pds_fragment_program = load_op->pds_frag_prog,
    };
@@ -321,7 +321,7 @@ pvr_generate_load_op_shader(struct pvr_device *device,
                                                        allocator,
                                                        NULL,
                                                        &fragment_state);
-   load_op->usc_frag_prog_bo = fragment_state.bo;
+   load_op->usc_frag_prog_bo = fragment_state.shader_bo;
    load_op->pds_frag_prog = fragment_state.pds_fragment_program;
 
    if (result != VK_SUCCESS)
