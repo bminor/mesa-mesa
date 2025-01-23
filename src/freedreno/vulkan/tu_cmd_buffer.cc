@@ -1240,6 +1240,7 @@ tu6_emit_tile_select(struct tu_cmd_buffer *cmd,
 {
    struct tu_physical_device *phys_dev = cmd->device->physical_device;
    const struct tu_tiling_config *tiling = cmd->state.tiling;
+   const struct tu_framebuffer *fb = cmd->state.framebuffer;
    const struct tu_vsc_config *vsc = tu_vsc_config(cmd, tiling);
    bool hw_binning = use_hw_binning(cmd);
 
@@ -1250,6 +1251,24 @@ tu6_emit_tile_select(struct tu_cmd_buffer *cmd,
    if (CHIP == A6XX && cmd->device->physical_device->has_preemption) {
       tu_emit_vsc<CHIP>(cmd, &cmd->cs);
    }
+
+   unsigned views = tu_fdm_num_layers(cmd);
+   bool bin_is_scaled = false;
+
+   if (fdm) {
+      for (unsigned i = 0; i < views; i++) {
+         if (tile->frag_areas[i].width != 1 ||
+             tile->frag_areas[i].height != 1) {
+            bin_is_scaled = true;
+            break;
+         }
+      }
+   }
+
+   bool bin_scale_en =
+      cmd->device->physical_device->info->a7xx.has_hw_bin_scaling &&
+      views <= MAX_HW_SCALED_VIEWS && !cmd->state.rp.shared_viewport &&
+      bin_is_scaled;
 
    tu6_emit_bin_size<CHIP>(
       cs, tiling->tile0.width, tiling->tile0.height,
@@ -1272,7 +1291,22 @@ tu6_emit_tile_select(struct tu_cmd_buffer *cmd,
 
    const uint32_t x2 = MIN2(x1 + tiling->tile0.width, MAX_VIEWPORT_SIZE);
    const uint32_t y2 = MIN2(y1 + tiling->tile0.height, MAX_VIEWPORT_SIZE);
-   tu6_emit_window_scissor(cs, x1, y1, x2 - 1, y2 - 1);
+
+   if (bin_scale_en) {
+      /* It seems that the window scissor happens *before*
+       * GRAS_BIN_FOVEAT_OFFSET_* is applied to the fragment coordinates,
+       * unlike the window offset which happens after it is applied. This
+       * means that the window scissor cannot do its job and we have to
+       * disable it by setting it to the entire FB size (plus an extra tile
+       * size, in case GRAS_BIN_FOVEAT_OFFSET_* is not in use). With FDM it is
+       * effectively replaced by the user's scissor anyway.
+       */
+      uint32_t width = fb->width + tiling->tile0.width;
+      uint32_t height = fb->height + tiling->tile0.height;
+      tu6_emit_window_scissor(cs, 0, 0, width, height);
+   } else {
+      tu6_emit_window_scissor(cs, x1, y1, x2 - 1, y2 - 1);
+   }
    tu6_emit_window_offset<CHIP>(cs, x1, y1);
 
    unsigned slot = ffs(tile->slot_mask) - 1;
@@ -1308,13 +1342,15 @@ tu6_emit_tile_select(struct tu_cmd_buffer *cmd,
    tu_cs_emit(cs, 0x0);
 
    if (fdm) {
-      unsigned views = tu_fdm_num_layers(cmd);
       VkRect2D bin = {
          { x1, y1 },
          { (x2 - x1) * tile->extent.width, (y2 - y1) * tile->extent.height }
       };
       VkRect2D bins[views];
+      VkOffset2D frag_offsets[MAX_VIEWS];
       for (unsigned i = 0; i < views; i++) {
+         frag_offsets[i] = (VkOffset2D) { 0, 0 };
+
          if (!fdm_offsets || cmd->state.rp.shared_viewport) {
             bins[i] = bin;
             continue;
@@ -1330,12 +1366,67 @@ tu6_emit_tile_select(struct tu_cmd_buffer *cmd,
             MAX2(MIN2((int32_t)y1 + bin.extent.height - bin_offset.y, MAX_VIEWPORT_SIZE) - bins[i].offset.y, 0);
       }
 
+      if (cmd->device->physical_device->info->a7xx.has_hw_bin_scaling) {
+         if (bin_scale_en) {
+            VkExtent2D frag_areas[MAX_HW_SCALED_VIEWS];
+            for (unsigned i = 0; i < MAX_HW_SCALED_VIEWS; i++) {
+               if (i >= views) {
+                  /* Make sure unused views aren't garbage */
+                  frag_areas[i] = (VkExtent2D) {1, 1};
+                  frag_offsets[i] = (VkOffset2D) { 0, 0 };
+                  continue;
+               }
+
+               frag_areas[i] = tile->frag_areas[i];
+               frag_offsets[i].x = x1 - x1 / tile->frag_areas[i].width;
+               frag_offsets[i].y = y1 - y1 / tile->frag_areas[i].height;
+            }
+
+            tu_cs_emit_regs(cs, A7XX_GRAS_BIN_FOVEAT(
+                  .binscaleen = bin_scale_en,
+                  .xscale_0 = (enum a7xx_bin_scale)util_logbase2(frag_areas[0].width),
+                  .yscale_0 = (enum a7xx_bin_scale)util_logbase2(frag_areas[0].height),
+                  .xscale_1 = (enum a7xx_bin_scale)util_logbase2(frag_areas[1].width),
+                  .yscale_1 = (enum a7xx_bin_scale)util_logbase2(frag_areas[1].height),
+                  .xscale_2 = (enum a7xx_bin_scale)util_logbase2(frag_areas[2].width),
+                  .yscale_2 = (enum a7xx_bin_scale)util_logbase2(frag_areas[2].height),
+                  .xscale_3 = (enum a7xx_bin_scale)util_logbase2(frag_areas[3].width),
+                  .yscale_3 = (enum a7xx_bin_scale)util_logbase2(frag_areas[3].height),
+                  .xscale_4 = (enum a7xx_bin_scale)util_logbase2(frag_areas[4].width),
+                  .yscale_4 = (enum a7xx_bin_scale)util_logbase2(frag_areas[4].height),
+                  .xscale_5 = (enum a7xx_bin_scale)util_logbase2(frag_areas[5].width),
+                  .yscale_5 = (enum a7xx_bin_scale)util_logbase2(frag_areas[5].height)),
+               A7XX_GRAS_BIN_FOVEAT_OFFSET_0(
+                  .xoffset_0 = frag_offsets[0].x,
+                  .xoffset_1 = frag_offsets[1].x,
+                  .xoffset_2 = frag_offsets[2].x),
+               A7XX_GRAS_BIN_FOVEAT_OFFSET_1(
+                  .xoffset_3 = frag_offsets[3].x,
+                  .xoffset_4 = frag_offsets[4].x,
+                  .xoffset_5 = frag_offsets[5].x),
+               A7XX_GRAS_BIN_FOVEAT_OFFSET_2(
+                  .yoffset_0 = frag_offsets[0].y,
+                  .yoffset_1 = frag_offsets[1].y,
+                  .yoffset_2 = frag_offsets[2].y),
+               A7XX_GRAS_BIN_FOVEAT_OFFSET_3(
+                  .yoffset_3 = frag_offsets[3].y,
+                  .yoffset_4 = frag_offsets[4].y,
+                  .yoffset_5 = frag_offsets[5].y));
+
+            tu_cs_emit_regs(cs, A7XX_RB_BIN_FOVEAT(
+                  .binscaleen = bin_scale_en));
+         } else {
+            tu_cs_emit_regs(cs, A7XX_GRAS_BIN_FOVEAT());
+            tu_cs_emit_regs(cs, A7XX_RB_BIN_FOVEAT());
+         }
+      }
+
       util_dynarray_foreach (&cmd->fdm_bin_patchpoints,
                              struct tu_fdm_bin_patchpoint, patch) {
          tu_cs_emit_pkt7(cs, CP_MEM_WRITE, 2 + patch->size);
          tu_cs_emit_qw(cs, patch->iova);
-         patch->apply(cmd, cs, patch->data, (VkOffset2D) { x1, y1 }, views,
-                      tile->frag_areas, bins);
+         patch->apply(cmd, cs, patch->data, (VkOffset2D) { x1, y1 },
+                      frag_offsets, views, tile->frag_areas, bins);
       }
 
       /* Make the CP wait until the CP_MEM_WRITE's to the command buffers
@@ -1989,6 +2080,12 @@ tu6_emit_binning_pass(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
    const struct tu_framebuffer *fb = cmd->state.framebuffer;
    const struct tu_tiling_config *tiling = cmd->state.tiling;
 
+   /* Reset bin scaling. */
+   if (phys_dev->info->a7xx.has_hw_bin_scaling) {
+      tu_cs_emit_regs(cs, A7XX_GRAS_BIN_FOVEAT());
+      tu_cs_emit_regs(cs, A7XX_RB_BIN_FOVEAT());
+   }
+
    /* If this command buffer may be executed multiple times, then
     * viewports/scissor states may have been changed by previous executions
     * and we need to reset them before executing the binning IB. With FDM
@@ -2000,8 +2097,10 @@ tu6_emit_binning_pass(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
       unsigned num_views = tu_fdm_num_layers(cmd);
       VkExtent2D unscaled_frag_areas[num_views];
       VkRect2D bins[num_views];
+      VkOffset2D frag_offsets[num_views];
       for (unsigned i = 0; i < num_views; i++) {
          unscaled_frag_areas[i] = (VkExtent2D) { 1, 1 };
+         frag_offsets[i] = (VkOffset2D) { 0, 0 };
          if (fdm_offsets && !cmd->state.rp.shared_viewport) {
             /* We need to shift over the viewport and scissor during the
              * binning pass to match the shift applied when rendering. The way
@@ -2034,8 +2133,8 @@ tu6_emit_binning_pass(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
             continue;
          tu_cs_emit_pkt7(cs, CP_MEM_WRITE, 2 + patch->size);
          tu_cs_emit_qw(cs, patch->iova);
-         patch->apply(cmd, cs, patch->data, (VkOffset2D) {0, 0}, num_views,
-                      unscaled_frag_areas, bins);
+         patch->apply(cmd, cs, patch->data, (VkOffset2D) {0, 0}, frag_offsets,
+                      num_views, unscaled_frag_areas, bins);
       }
 
       tu_cs_emit_pkt7(cs, CP_WAIT_MEM_WRITES, 0);
@@ -2465,6 +2564,12 @@ tu6_sysmem_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
    tu_cs_emit_pkt7(cs, CP_SET_MODE, 1);
    tu_cs_emit(cs, 0x0);
 
+   /* Reset bin scaling. */
+   if (cmd->device->physical_device->info->a7xx.has_hw_bin_scaling) {
+      tu_cs_emit_regs(cs, A7XX_GRAS_BIN_FOVEAT());
+      tu_cs_emit_regs(cs, A7XX_RB_BIN_FOVEAT());
+   }
+
    tu_autotune_begin_renderpass<CHIP>(cmd, cs, autotune_result);
 
    tu_cs_sanity_check(cs);
@@ -2792,6 +2897,13 @@ tu_calc_frag_area(struct tu_cmd_buffer *cmd,
       if (fdm_offsets) {
          width = MIN2(width, TU_FDM_OFFSET_GRANULARITY);
          height = MIN2(height, TU_FDM_OFFSET_GRANULARITY);
+      }
+
+      /* HW viewport scaling supports a maximum fragment width/height of 4.
+       */
+      if (views <= MAX_HW_SCALED_VIEWS) {
+         width = MIN2(width, 4);
+         height = MIN2(height, 4);
       }
 
       /* Make sure that the width/height divides the tile width/height so
@@ -6451,6 +6563,7 @@ fdm_apply_fs_params(struct tu_cmd_buffer *cmd,
                     struct tu_cs *cs,
                     void *data,
                     VkOffset2D common_bin_offset,
+                    const VkOffset2D *hw_viewport_offsets,
                     unsigned views,
                     const VkExtent2D *frag_areas,
                     const VkRect2D *bins)
@@ -6466,7 +6579,10 @@ fdm_apply_fs_params(struct tu_cmd_buffer *cmd,
        */
       VkExtent2D area = frag_areas[MIN2(i, views - 1)];
       VkRect2D bin = bins[MIN2(i, views - 1)];
+      VkOffset2D hw_viewport_offset = hw_viewport_offsets[MIN2(i, views - 1)];
       VkOffset2D offset = tu_fdm_per_bin_offset(area, bin, common_bin_offset);
+      offset.x -= hw_viewport_offset.x;
+      offset.y -= hw_viewport_offset.y;
 
       tu_cs_emit(cs, area.width);
       tu_cs_emit(cs, area.height);

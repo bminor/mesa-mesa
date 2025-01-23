@@ -827,7 +827,7 @@ fd6_emit_static_non_context_regs(struct fd_context *ctx, fd_cs &cs)
 {
    struct fd_screen *screen = ctx->screen;
 
-   fd_ncrb<CHIP> ncrb(cs, 25 + ARRAY_SIZE(screen->info->a6xx.magic_raw));
+   fd_ncrb<CHIP> ncrb(cs, 27 + ARRAY_SIZE(screen->info->a6xx.magic_raw));
 
    if (CHIP >= A7XX) {
       /* On A7XX, RB_CCU_CNTL was broken into two registers, RB_CCU_CNTL which has
@@ -897,6 +897,11 @@ fd6_emit_static_non_context_regs(struct fd_context *ctx, fd_cs &cs)
       ncrb.add(TPL1_BICUBIC_WEIGHTS_TABLE_2(CHIP, 0x3fa0ebee));
       ncrb.add(TPL1_BICUBIC_WEIGHTS_TABLE_3(CHIP, 0x3f5193ed));
       ncrb.add(TPL1_BICUBIC_WEIGHTS_TABLE_4(CHIP, 0x3f0243f0));
+   }
+
+   if (screen->info->a7xx.has_hw_bin_scaling) {
+      ncrb.add(A7XX_GRAS_BIN_FOVEAT());
+      ncrb.add(A7XX_RB_BIN_FOVEAT());
    }
 }
 

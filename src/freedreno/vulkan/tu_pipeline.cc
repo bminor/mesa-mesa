@@ -2623,7 +2623,9 @@ tu_fdm_per_bin_offset(VkExtent2D frag_area, VkRect2D bin,
 
 static void
 fdm_apply_viewports(struct tu_cmd_buffer *cmd, struct tu_cs *cs, void *data,
-                    VkOffset2D common_bin_offset, unsigned views,
+                    VkOffset2D common_bin_offset,
+                    const VkOffset2D *hw_viewport_offsets,
+                    unsigned views,
                     const VkExtent2D *frag_areas, const VkRect2D *bins)
 {
    const struct apply_viewport_state *state =
@@ -2645,6 +2647,9 @@ fdm_apply_viewports(struct tu_cmd_buffer *cmd, struct tu_cs *cs, void *data,
          (state->share_scale || views == 1) ? frag_areas[0] : frag_areas[i];
       VkRect2D bin =
          (state->share_scale || views == 1) ? bins[0] : bins[i];
+      VkOffset2D hw_viewport_offset =
+         (state->share_scale || views == 1) ? hw_viewport_offsets[0] :
+         hw_viewport_offsets[i];
       /* Implement fake_single_viewport by replicating viewport 0 across all
        * views.
        */
@@ -2667,6 +2672,8 @@ fdm_apply_viewports(struct tu_cmd_buffer *cmd, struct tu_cs *cs, void *data,
 
       VkOffset2D offset = tu_fdm_per_bin_offset(frag_area, bin,
                                                 common_bin_offset);
+      offset.x -= hw_viewport_offset.x;
+      offset.y -= hw_viewport_offset.y;
 
       vp.viewports[i].x = scale_x * viewport.x + offset.x;
       vp.viewports[i].y = scale_y * viewport.y + offset.y;
@@ -2747,7 +2754,9 @@ tu6_emit_scissor(struct tu_cs *cs, const struct vk_viewport_state *vp)
 
 static void
 fdm_apply_scissors(struct tu_cmd_buffer *cmd, struct tu_cs *cs, void *data,
-                   VkOffset2D common_bin_offset, unsigned views,
+                   VkOffset2D common_bin_offset,
+                   const VkOffset2D *hw_viewport_offsets,
+                   unsigned views,
                    const VkExtent2D *frag_areas, const VkRect2D *bins)
 {
    const struct apply_viewport_state *state =
@@ -2762,6 +2771,9 @@ fdm_apply_scissors(struct tu_cmd_buffer *cmd, struct tu_cs *cs, void *data,
          (state->share_scale || views == 1) ? bins[0] : bins[i];
       VkRect2D scissor =
          state->fake_single_viewport ? state->vp.scissors[0] : state->vp.scissors[i];
+      VkOffset2D hw_viewport_offset =
+         (state->share_scale || views == 1) ? hw_viewport_offsets[0] :
+         hw_viewport_offsets[i];
 
       /* Transform the scissor following the viewport. It's unclear how this
        * is supposed to handle cases where the scissor isn't aligned to the
@@ -2771,6 +2783,8 @@ fdm_apply_scissors(struct tu_cmd_buffer *cmd, struct tu_cs *cs, void *data,
        */
       VkOffset2D offset = tu_fdm_per_bin_offset(frag_area, bin,
                                                 common_bin_offset);
+      offset.x -= hw_viewport_offset.x;
+      offset.y -= hw_viewport_offset.y;
       VkOffset2D min = {
          scissor.offset.x / frag_area.width + offset.x,
          scissor.offset.y / frag_area.width + offset.y,
@@ -2785,12 +2799,14 @@ fdm_apply_scissors(struct tu_cmd_buffer *cmd, struct tu_cs *cs, void *data,
        */
       uint32_t scaled_width = bin.extent.width / frag_area.width;
       uint32_t scaled_height = bin.extent.height / frag_area.height;
-      vp.scissors[i].offset.x = MAX2(min.x, common_bin_offset.x);
-      vp.scissors[i].offset.y = MAX2(min.y, common_bin_offset.y);
+      uint32_t bin_x = common_bin_offset.x - hw_viewport_offset.x;
+      uint32_t bin_y = common_bin_offset.y - hw_viewport_offset.y;
+      vp.scissors[i].offset.x = MAX2(min.x, bin_x);
+      vp.scissors[i].offset.y = MAX2(min.y, bin_y);
       vp.scissors[i].extent.width =
-         MIN2(max.x, common_bin_offset.x + scaled_width) - vp.scissors[i].offset.x;
+         MIN2(max.x, bin_x + scaled_width) - vp.scissors[i].offset.x;
       vp.scissors[i].extent.height =
-         MIN2(max.y, common_bin_offset.y + scaled_height) - vp.scissors[i].offset.y;
+         MIN2(max.y, bin_y + scaled_height) - vp.scissors[i].offset.y;
    }
 
    TU_CALLX(cs->device, tu6_emit_scissor)(cs, &vp);

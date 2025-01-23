@@ -105,6 +105,7 @@
 
 #define TU_MAX_DRM_DEVICES 8
 #define MAX_VIEWS 16
+#define MAX_HW_SCALED_VIEWS 6
 #define MAX_BIND_POINTS 2 /* compute + graphics */
 /* match the latest Qualcomm driver which is also a hw limit on later gens */
 #define MAX_STORAGE_BUFFER_RANGE (1u << 27)
