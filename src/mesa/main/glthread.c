@@ -302,7 +302,7 @@ void _mesa_glthread_enable(struct gl_context *ctx)
    ctx->st->pin_thread_counter = ST_THREAD_SCHEDULER_DISABLED;
 
    /* Update the dispatch only if the dispatch is current. */
-   if (_mesa_glapi_get_dispatch() == ctx->Dispatch.Current) {
+   if (GET_DISPATCH() == ctx->Dispatch.Current) {
        _mesa_glapi_set_dispatch(ctx->GLApi);
    }
 }
@@ -322,7 +322,7 @@ void _mesa_glthread_disable(struct gl_context *ctx)
       ctx->st->pin_thread_counter = 0;
 
    /* Update the dispatch only if the dispatch is current. */
-   if (_mesa_glapi_get_dispatch() == ctx->MarshalExec) {
+   if (GET_DISPATCH() == ctx->MarshalExec) {
        _mesa_glapi_set_dispatch(ctx->GLApi);
    }
 
@@ -418,7 +418,7 @@ _mesa_glthread_finish(struct gl_context *ctx)
       /* Since glthread_unmarshal_batch changes the dispatch to direct,
        * restore it after it's done.
        */
-      struct _glapi_table *dispatch = _mesa_glapi_get_dispatch();
+      struct _glapi_table *dispatch = GET_DISPATCH();
       glthread_unmarshal_batch(next, NULL, 0);
       _mesa_glapi_set_dispatch(dispatch);
 

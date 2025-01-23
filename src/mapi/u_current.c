@@ -63,9 +63,7 @@ extern void (*__glapi_noop_table[])(void);
  * \c _mesa_glapi_tls_Context are used. Having \c _mesa_glapi_Dispatch
  * be hardcoded to \c NULL maintains binary compatability between TLS enabled
  * loaders and non-TLS DRI drivers. When \c _mesa_glapi_Dispatch
- * are \c NULL, the thread state data \c ContextTSD are used. Drivers and the
- * static dispatch functions access these variables via \c _mesa_glapi_get_dispatch
- * and \c _mesa_glapi_get_context.
+ * are \c NULL, the thread state data \c ContextTSD are used.
  */
 /*@{*/
 

@@ -35,7 +35,6 @@
 /*
  * _mesa_glapi_Dispatch,
  * _mesa_glapi_tls_Dispatch, _mesa_glapi_tls_Context,
- * _mesa_glapi_set_context, _mesa_glapi_get_context,
  * _mesa_glapi_set_dispatch, and _mesa_glapi_get_dispatch
  * are defined in u_current.c.
  */

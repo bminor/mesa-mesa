@@ -1594,15 +1594,12 @@ _mesa_share_state(struct gl_context *ctx, struct gl_context *ctxToShare)
 
 /**
  * \return pointer to the current GL context for this thread.
- *
- * Calls _mesa_glapi_get_context(). This isn't the fastest way to get the current
- * context.  If you need speed, see the #GET_CURRENT_CONTEXT macro in
- * context.h.
  */
 struct gl_context *
 _mesa_get_current_context( void )
 {
-   return (struct gl_context *) _mesa_glapi_get_context();
+   GET_CURRENT_CONTEXT(ctx);
+   return ctx;
 }
 
 /*@}*/
