@@ -245,7 +245,7 @@ get_device_extensions(const struct panvk_physical_device *device,
       .EXT_sampler_filter_minmax = arch >= 10,
       .EXT_scalar_block_layout = true,
       .EXT_shader_module_identifier = true,
-      .EXT_subgroup_size_control = true,
+      .EXT_subgroup_size_control = arch >= 10, /* requires vk1.1 */
       .EXT_tooling_info = true,
       .GOOGLE_decorate_string = true,
       .GOOGLE_hlsl_functionality1 = true,
