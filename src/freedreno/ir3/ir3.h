@@ -2118,6 +2118,8 @@ struct log_stream;
 void ir3_print_instr_stream(struct log_stream *stream, struct ir3_instruction *instr);
 
 /* delay calculation: */
+unsigned ir3_src_read_delay(struct ir3_compiler *compiler,
+                            struct ir3_instruction *instr, unsigned src_n);
 int ir3_delayslots(struct ir3_compiler *compiler,
                    struct ir3_instruction *assigner,
                    struct ir3_instruction *consumer, unsigned n, bool soft);

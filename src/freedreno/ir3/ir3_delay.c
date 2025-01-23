@@ -23,6 +23,28 @@
  * src iterators work.
  */
 
+/* Return the number of cycles from the start of the instruction until src_n is
+ * read.
+ */
+unsigned
+ir3_src_read_delay(struct ir3_compiler *compiler, struct ir3_instruction *instr,
+                   unsigned src_n)
+{
+   /* gat and swz have scalar sources and each source is read in a subsequent
+    * cycle.
+    */
+   if (instr->opc == OPC_GAT || instr->opc == OPC_SWZ) {
+      return src_n;
+   }
+
+   /* cat3 instructions consume their last source one or two cycles later. */
+   if ((is_mad(instr->opc) || is_madsh(instr->opc)) && src_n == 2) {
+      return 2;
+   }
+
+   return 0;
+}
+
 /* calculate required # of delay slots between the instruction that
  * assigns a value and the one that consumes
  */
@@ -85,12 +107,7 @@ ir3_delayslots(struct ir3_compiler *compiler,
       bool mismatched_half = (assigner->dsts[0]->flags & IR3_REG_HALF) !=
                              (consumer->srcs[n]->flags & IR3_REG_HALF);
       unsigned penalty = mismatched_half ? 3 : 0;
-      if ((is_mad(consumer->opc) || is_madsh(consumer->opc)) && (n == 2)) {
-         /* special case, 3rd src to cat3 not required on first cycle */
-         return 1 + penalty;
-      } else {
-         return 3 + penalty;
-      }
+      return 3 + penalty - ir3_src_read_delay(compiler, consumer, n);
    }
 }
 
