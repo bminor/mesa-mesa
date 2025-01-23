@@ -57,6 +57,15 @@ struct tu_image
 };
 VK_DEFINE_NONDISP_HANDLE_CASTS(tu_image, vk.base, VkImage, VK_OBJECT_TYPE_IMAGE)
 
+VkResult
+tu_image_init(struct tu_device *device, struct tu_image *image,
+              const VkImageCreateInfo *pCreateInfo);
+
+template <chip CHIP>
+VkResult
+tu_image_update_layout(struct tu_device *device, struct tu_image *image,
+                       uint64_t modifier, const VkSubresourceLayout *plane_layouts);
+
 struct tu_image_view
 {
    struct vk_image_view vk;
@@ -79,6 +88,11 @@ struct tu_image_view
 };
 VK_DEFINE_NONDISP_HANDLE_CASTS(tu_image_view, vk.base, VkImageView,
                                VK_OBJECT_TYPE_IMAGE_VIEW);
+
+void
+tu_image_view_init(struct tu_device *device,
+                   struct tu_image_view *iview,
+                   const VkImageViewCreateInfo *pCreateInfo);
 
 uint32_t tu6_plane_count(VkFormat format);
 

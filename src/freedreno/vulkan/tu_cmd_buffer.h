@@ -18,6 +18,7 @@
 #include "tu_lrz.h"
 #include "tu_pass.h"
 #include "tu_pipeline.h"
+#include "tu_image.h"
 
 enum tu_draw_state_group_id
 {
@@ -633,12 +634,15 @@ struct tu_cmd_buffer
 
    struct tu_descriptor_state descriptors[MAX_BIND_POINTS];
 
-   struct tu_render_pass_attachment dynamic_rp_attachments[2 * (MAX_RTS + 1) + 2];
+   struct tu_render_pass_attachment dynamic_rp_attachments[3 * (MAX_RTS + 1) + 2];
    struct tu_subpass_attachment dynamic_color_attachments[MAX_RTS];
    struct tu_subpass_attachment dynamic_input_attachments[MAX_RTS + 1];
    struct tu_subpass_attachment dynamic_resolve_attachments[MAX_RTS + 1];
-   const struct tu_image_view *dynamic_attachments[2 * (MAX_RTS + 1) + 2];
-   VkClearValue dynamic_clear_values[2 * (MAX_RTS + 1)];
+   struct tu_subpass_attachment dynamic_unresolve_attachments[MAX_RTS + 1];
+   const struct tu_image_view *dynamic_attachments[3 * (MAX_RTS + 1) + 2];
+   VkClearValue dynamic_clear_values[3 * (MAX_RTS + 1)];
+   struct tu_image_view dynamic_msrtss_iviews[MAX_RTS + 1];
+   struct tu_image dynamic_msrtss_images[MAX_RTS + 1];
 
    struct tu_render_pass dynamic_pass;
    struct tu_subpass dynamic_subpass;
@@ -673,6 +677,12 @@ struct tu_cmd_buffer
       struct util_dynarray fdm_bin_patchpoints;
       void *patchpoints_ctx;
    } pre_chain;
+
+   /* The current MSRTSS temporary buffer. */
+   struct tu_bo *msrtt_temporary;
+
+   struct util_dynarray msrtss_color_temporaries;
+   struct util_dynarray msrtss_depth_temporaries;
 
    uint32_t vsc_draw_strm_pitch;
    uint32_t vsc_prim_strm_pitch;

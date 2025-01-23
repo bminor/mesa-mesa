@@ -371,6 +371,20 @@ tu_lrz_begin_renderpass(struct tu_cmd_buffer *cmd)
       tu6_write_lrz_cntl<CHIP>(cmd, &cmd->cs, {});
       tu6_emit_lrz_buffer<CHIP>(&cmd->cs, NULL);
    }
+
+   /* Multisample and single-sample LRZ layout are different, so when
+    * unresolving a depth image we have to disable LRZ for the entirety of the
+    * render pass.
+    */
+   for (unsigned i = 0; i < cmd->state.pass->subpass_count; i++) {
+      const struct tu_subpass *subpass = &cmd->state.pass->subpasses[i];
+      if (subpass->depth_stencil_attachment.attachment != VK_ATTACHMENT_UNUSED &&
+          subpass->unresolve_count > subpass->color_count &&
+          subpass->unresolve_attachments[subpass->color_count].attachment !=
+          VK_ATTACHMENT_UNUSED) {
+         tu_lrz_disable_during_renderpass<CHIP>(cmd, "multisampled_render_to_single_sample with LOAD_OP_LOAD");
+      }
+   }
 }
 TU_GENX(tu_lrz_begin_renderpass);
 

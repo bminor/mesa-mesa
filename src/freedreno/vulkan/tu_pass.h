@@ -97,6 +97,14 @@ struct tu_render_pass_attachment
    uint32_t cpp;
    VkImageAspectFlags clear_mask;
    uint32_t clear_views;
+   /* The internal MSRTSS attachment to clear when the user says to clear
+    * this attachment. Clear values must be remapped to this attachment.
+    */
+   uint32_t remapped_clear_att;
+   /* For internal attachments created for MSRTSS, the original user attachment
+    * which it is resolved/unresolved to.
+    */
+   uint32_t user_att;
    bool load;
    bool store;
    bool gmem;
@@ -120,7 +128,7 @@ struct tu_render_pass
 {
    struct vk_object_base base;
 
-   uint32_t attachment_count;
+   uint32_t attachment_count, user_attachment_count;
    uint32_t subpass_count;
    uint32_t gmem_pixels[TU_GMEM_LAYOUT_COUNT];
    uint32_t tile_align_w;

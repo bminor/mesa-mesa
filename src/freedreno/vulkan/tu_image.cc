@@ -185,7 +185,7 @@ tu_cs_image_flag_ref(struct tu_cs *cs, const struct fdl6_view *iview, uint32_t l
    tu_cs_emit(cs, iview->FLAG_BUFFER_PITCH);
 }
 
-static void
+void
 tu_image_view_init(struct tu_device *device,
                    struct tu_image_view *iview,
                    const VkImageViewCreateInfo *pCreateInfo)
@@ -646,7 +646,7 @@ format_list_ubwc_possible(struct tu_device *dev,
    return true;
 }
 
-static VkResult
+VkResult
 tu_image_init(struct tu_device *device, struct tu_image *image,
               const VkImageCreateInfo *pCreateInfo)
 {
