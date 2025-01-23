@@ -476,7 +476,7 @@ vec4_visitor::opt_copy_propagation(bool do_constant_prop)
        * src/glsl/opt_copy_propagation.cpp to track available copies.
        */
       if (!is_dominated_by_previous_instruction(inst)) {
-	 memset(&entries, 0, sizeof(copy_entry) * alloc.total_size);
+	 memset(entries, 0, sizeof(copy_entry) * alloc.total_size);
 	 continue;
       }
 
@@ -530,7 +530,7 @@ vec4_visitor::opt_copy_propagation(bool do_constant_prop)
 	  * our destination's updated channels, as the two are no longer equal.
 	  */
 	 if (inst->dst.reladdr)
-	    memset(&entries, 0, sizeof(copy_entry) * alloc.total_size);
+	    memset(entries, 0, sizeof(copy_entry) * alloc.total_size);
 	 else {
 	    for (unsigned i = 0; i < alloc.total_size; i++) {
 	       for (int j = 0; j < 4; j++) {
