@@ -119,8 +119,8 @@
       }, \
       .vk_format = __vk_fmt, \
       .n_planes = __n_planes, \
-      .can_ycbcr = __can_ycbcr, \
-      .can_video = __can_video, \
+      .flags = (__can_ycbcr ? ANV_FORMAT_FLAG_CAN_YCBCR : 0) | \
+               (__can_video ? ANV_FORMAT_FLAG_CAN_VIDEO : 0), \
    }
 
 /* HINT: For array formats, the ISL name should match the VK name.  For
@@ -594,7 +594,7 @@ anv_get_image_format_features2(const struct anv_physical_device *physical_device
 
    assert(aspects & VK_IMAGE_ASPECT_ANY_COLOR_BIT_ANV);
 
-   if (anv_format->can_video) {
+   if (anv_format->flags & ANV_FORMAT_FLAG_CAN_VIDEO) {
       flags |= physical_device->video_decode_enabled ?
                   VK_FORMAT_FEATURE_2_VIDEO_DECODE_OUTPUT_BIT_KHR |
                   VK_FORMAT_FEATURE_2_VIDEO_DECODE_DPB_BIT_KHR : 0;
@@ -715,7 +715,7 @@ anv_get_image_format_features2(const struct anv_physical_device *physical_device
       VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT |
       VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT;
 
-   if (anv_format->can_ycbcr) {
+   if (anv_format->flags & ANV_FORMAT_FLAG_CAN_YCBCR) {
       /* The sampler doesn't have support for mid point when it handles YUV on
        * its own.
        */
@@ -749,7 +749,7 @@ anv_get_image_format_features2(const struct anv_physical_device *physical_device
          flags |= VK_FORMAT_FEATURE_2_DISJOINT_BIT;
 
       flags &= ~disallowed_ycbcr_image_features;
-   } else if (anv_format->can_video) {
+   } else if (anv_format->flags & ANV_FORMAT_FLAG_CAN_VIDEO) {
       /* This format is for video decoding. */
       flags &= ~disallowed_ycbcr_image_features;
    }
@@ -894,7 +894,8 @@ get_buffer_format_features2(const struct intel_device_info *devinfo,
    if (anv_format->n_planes > 1)
       return 0;
 
-   if (anv_format->can_ycbcr || anv_format->can_video)
+   if ((anv_format->flags & ANV_FORMAT_FLAG_CAN_YCBCR) ||
+       (anv_format->flags & ANV_FORMAT_FLAG_CAN_VIDEO))
       return 0;
 
    if (vk_format_is_depth_or_stencil(vk_format))
