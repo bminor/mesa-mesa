@@ -5382,13 +5382,6 @@ visit_store_output(isel_context* ctx, nir_intrinsic_instr* instr)
    }
 }
 
-bool
-in_exec_divergent_or_in_loop(isel_context* ctx)
-{
-   return ctx->block->loop_nest_depth || ctx->cf_info.parent_if.is_divergent ||
-          ctx->cf_info.had_divergent_discard;
-}
-
 void
 emit_interp_instr_gfx11(isel_context* ctx, unsigned idx, unsigned component, Temp src, Temp dst,
                         Temp prim_mask, bool high_16bits)
@@ -5398,7 +5391,7 @@ emit_interp_instr_gfx11(isel_context* ctx, unsigned idx, unsigned component, Tem
 
    Builder bld(ctx->program, ctx->block);
 
-   if (in_exec_divergent_or_in_loop(ctx)) {
+   if (ctx->cf_info.in_divergent_cf || ctx->cf_info.had_divergent_discard) {
       bld.pseudo(aco_opcode::p_interp_gfx11, Definition(dst), Operand(v1.as_linear()),
                  Operand::c32(idx), Operand::c32(component), Operand::c32(high_16bits), coord1,
                  coord2, bld.m0(prim_mask));
@@ -5474,7 +5467,7 @@ emit_interp_mov_instr(isel_context* ctx, unsigned idx, unsigned component, unsig
    Temp tmp = dst.bytes() == 2 ? bld.tmp(v1) : dst;
    if (ctx->options->gfx_level >= GFX11) {
       uint16_t dpp_ctrl = dpp_quad_perm(vertex_id, vertex_id, vertex_id, vertex_id);
-      if (in_exec_divergent_or_in_loop(ctx)) {
+      if (ctx->cf_info.in_divergent_cf || ctx->cf_info.had_divergent_discard) {
          bld.pseudo(aco_opcode::p_interp_gfx11, Definition(tmp), Operand(v1.as_linear()),
                     Operand::c32(idx), Operand::c32(component), Operand::c32(dpp_ctrl),
                     bld.m0(prim_mask));
@@ -8635,7 +8628,7 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
       if (instr->intrinsic == nir_intrinsic_demote_if) {
          Temp src = get_ssa_temp(ctx, instr->src[0].ssa);
          assert(src.regClass() == bld.lm);
-         if (in_exec_divergent_or_in_loop(ctx)) {
+         if (ctx->cf_info.in_divergent_cf) {
             cond = bld.sop2(Builder::s_and, bld.def(bld.lm), bld.def(s1, scc), src,
                             Operand(exec, bld.lm));
          } else {
@@ -8648,7 +8641,7 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
       /* Perform the demote in WQM so that it doesn't make exec empty. WQM should last until at
        * least the next top-level block.
        */
-      if (ctx->block->loop_nest_depth || ctx->cf_info.parent_if.is_divergent)
+      if (ctx->cf_info.in_divergent_cf)
          set_wqm(ctx);
 
       ctx->block->kind |= block_kind_uses_discard;
@@ -8666,7 +8659,7 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
       if (instr->intrinsic == nir_intrinsic_terminate_if) {
          Temp src = get_ssa_temp(ctx, instr->src[0].ssa);
          assert(src.regClass() == bld.lm);
-         if (in_exec_divergent_or_in_loop(ctx)) {
+         if (ctx->cf_info.in_divergent_cf) {
             cond = bld.sop2(Builder::s_and, bld.def(bld.lm), bld.def(s1, scc), src,
                             Operand(exec, bld.lm));
          } else {
@@ -8679,11 +8672,11 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
       bld.pseudo(aco_opcode::p_discard_if, cond);
       ctx->block->kind |= block_kind_uses_discard;
 
-      if (ctx->block->loop_nest_depth || ctx->cf_info.parent_if.is_divergent) {
+      if (ctx->cf_info.in_divergent_cf) {
          ctx->cf_info.exec.potentially_empty_discard = true;
+         ctx->cf_info.had_divergent_discard = true;
          begin_empty_exec_skip(ctx, &instr->instr, instr->instr.block);
       }
-      ctx->cf_info.had_divergent_discard |= in_exec_divergent_or_in_loop(ctx);
       ctx->program->needs_exact = true;
       break;
    }
@@ -9741,7 +9734,7 @@ begin_loop(isel_context* ctx, loop_context* lc)
 void
 update_exec_info(isel_context* ctx)
 {
-   if (!ctx->block->loop_nest_depth && !ctx->cf_info.parent_if.is_divergent)
+   if (!ctx->cf_info.in_divergent_cf)
       ctx->cf_info.exec.potentially_empty_discard = false;
 
    if (!ctx->cf_info.parent_if.is_divergent && !ctx->cf_info.parent_loop.has_divergent_continue)
@@ -9840,6 +9833,7 @@ emit_loop_jump(isel_context* ctx, bool is_break)
          return;
       }
       ctx->cf_info.has_divergent_branch = true;
+      ctx->cf_info.parent_loop.has_divergent_break = true;
 
       if (!ctx->cf_info.exec.potentially_empty_break)
          ctx->cf_info.exec.potentially_empty_break = true;
@@ -9981,6 +9975,9 @@ visit_loop(isel_context* ctx, nir_loop* loop)
    assert(!nir_loop_has_continue_construct(loop));
    loop_context lc;
    begin_loop(ctx, &lc);
+   ctx->cf_info.parent_loop.has_divergent_break =
+      loop->divergent_break && nir_loop_first_block(loop)->predecessors->entries > 1;
+   ctx->cf_info.in_divergent_cf |= ctx->cf_info.parent_loop.has_divergent_break;
 
    visit_cf_list(ctx, &loop->body);
 
@@ -10014,6 +10011,7 @@ begin_divergent_if_then(isel_context* ctx, if_context* ic, Temp cond,
 
    ic->cf_info_old = ctx->cf_info;
    ctx->cf_info.parent_if.is_divergent = true;
+   ctx->cf_info.in_divergent_cf = true;
 
    /* Never enter an IF construct with empty exec mask. */
    assert(!ctx->cf_info.exec.empty());
@@ -10114,6 +10112,9 @@ end_divergent_if(isel_context* ctx, if_context* ic)
 
    ctx->cf_info.parent_if = ic->cf_info_old.parent_if;
    ctx->cf_info.had_divergent_discard |= ic->cf_info_old.had_divergent_discard;
+   ctx->cf_info.in_divergent_cf = ic->cf_info_old.in_divergent_cf ||
+                                  ctx->cf_info.parent_loop.has_divergent_break ||
+                                  ctx->cf_info.parent_loop.has_divergent_continue;
    ctx->cf_info.exec.combine(ic->cf_info_old.exec);
    update_exec_info(ctx);
 
@@ -10215,6 +10216,8 @@ end_uniform_if(isel_context* ctx, if_context* ic, bool logical_else)
    ctx->cf_info.had_divergent_discard |= ic->cf_info_old.had_divergent_discard;
    ctx->cf_info.parent_loop.has_divergent_continue |=
       ic->cf_info_old.parent_loop.has_divergent_continue;
+   ctx->cf_info.parent_loop.has_divergent_break |= ic->cf_info_old.parent_loop.has_divergent_break;
+   ctx->cf_info.in_divergent_cf |= ic->cf_info_old.in_divergent_cf;
    ctx->cf_info.exec.combine(ic->cf_info_old.exec);
 
    /** emit endif merge block */

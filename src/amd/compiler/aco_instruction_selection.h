@@ -36,7 +36,7 @@ struct shader_io_state {
 };
 
 struct exec_info {
-   /* Set to false when loop_nest_depth==0 && parent_if.is_divergent==false */
+   /* Set to false when in_divergent_cf==false */
    bool potentially_empty_discard = false;
 
    /* Set to false when leaving the loop, or if parent_if.is_divergent==false and
@@ -64,6 +64,7 @@ struct cf_context {
       unsigned header_idx;
       Block* exit;
       bool has_divergent_continue = false;
+      bool has_divergent_break = false;
    } parent_loop;
    struct {
       bool is_divergent = false;
@@ -72,6 +73,7 @@ struct cf_context {
    bool has_branch;
    bool has_divergent_branch = false;
    bool had_divergent_discard = false;
+   bool in_divergent_cf = false;
    struct exec_info exec;
 };
 
