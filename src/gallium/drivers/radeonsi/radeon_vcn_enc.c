@@ -40,7 +40,7 @@ static void radeon_vcn_enc_quality_modes(struct radeon_encoder *enc,
 
    /* Disabling 2pass encoding for VCN 5.0
     * This is a temporary limitation only for VCN 5.0 due to HW,
-    * once verified in future VCN 5.X versions, it will be enabled again. 
+    * once verified in future VCN 5.X versions, it will be enabled again.
     */
    if (sscreen->info.vcn_ip_version >= VCN_5_0_0)
       p->pre_encode_mode = RENCODE_PREENCODE_MODE_NONE;
@@ -1187,6 +1187,7 @@ error:
 static void pre_encode_size(struct radeon_encoder *enc,
                             uint32_t *offset)
 {
+   struct si_screen *sscreen = (struct si_screen *)enc->screen;
    bool is_h264 = u_reduce_video_profile(enc->base.profile)
                              == PIPE_VIDEO_FORMAT_MPEG4_AVC;
    uint32_t rec_alignment = is_h264 ? 16 : 64;
@@ -1200,10 +1201,18 @@ static void pre_encode_size(struct radeon_encoder *enc,
       DIV_ROUND_UP(aligned_height, rec_alignment);
 
    enc_pic->ctx_buf.two_pass_search_center_map_offset = *offset;
-   if (is_h264 && !has_b)
-      *offset += align((pre_size * 4 + full_size) * sizeof(uint32_t), enc->alignment);
-   else if (!is_h264)
-      *offset += align((pre_size * 52 + full_size) * sizeof(uint32_t), enc->alignment);
+
+   if (sscreen->info.vcn_ip_version < VCN_5_0_0) {
+      if (is_h264 && !has_b)
+         *offset += align((pre_size * 4 + full_size) * sizeof(uint32_t), enc->alignment);
+      else if (!is_h264)
+         *offset += align((pre_size * 52 + full_size) * sizeof(uint32_t), enc->alignment);
+   } else { /* only for vcn5.x rather than VCN5_0_0 */
+      if (is_h264 && !has_b)
+         *offset += align(full_size * 8, enc->alignment);
+      else if (!is_h264)
+         *offset += align(full_size * 24, enc->alignment);
+   }
 }
 
 static int setup_dpb(struct radeon_encoder *enc, uint32_t num_reconstructed_pictures)
