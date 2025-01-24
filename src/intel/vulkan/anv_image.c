@@ -394,13 +394,15 @@ image_may_use_r32_view(VkImageCreateFlags create_flags,
 }
 
 static bool
-formats_ccs_e_compatible(const struct intel_device_info *devinfo,
+formats_ccs_e_compatible(const struct anv_physical_device *physical_device,
                          VkImageCreateFlags create_flags,
                          VkImageAspectFlagBits aspect,
                          enum isl_format format, VkImageTiling vk_tiling,
                          const VkImageFormatListCreateInfo *fmt_list)
 {
-   if (!anv_format_supports_ccs_e(devinfo, format))
+   const struct intel_device_info *devinfo = &physical_device->info;
+
+   if (!anv_format_supports_ccs_e(physical_device, format))
       return false;
 
    /* For images created without MUTABLE_FORMAT_BIT set, we know that they will
@@ -418,7 +420,7 @@ formats_ccs_e_compatible(const struct intel_device_info *devinfo,
          continue;
 
       enum isl_format view_format =
-         anv_get_isl_format(devinfo, fmt_list->pViewFormats[i],
+         anv_get_isl_format(physical_device, fmt_list->pViewFormats[i],
                             aspect, vk_tiling);
 
       if (!isl_formats_are_ccs_e_compatible(devinfo, format, view_format))
@@ -429,7 +431,7 @@ formats_ccs_e_compatible(const struct intel_device_info *devinfo,
 }
 
 bool
-anv_format_supports_ccs_e(const struct intel_device_info *devinfo,
+anv_format_supports_ccs_e(const struct anv_physical_device *physical_device,
                           const enum isl_format format)
 {
    /* CCS_E for YCRCB_NORMAL and YCRCB_SWAP_UV is not currently supported by
@@ -438,22 +440,24 @@ anv_format_supports_ccs_e(const struct intel_device_info *devinfo,
    if (isl_format_is_yuv(format))
       return false;
 
-   return isl_format_supports_ccs_e(devinfo, format);
+   return isl_format_supports_ccs_e(&physical_device->info, format);
 }
 
 bool
-anv_formats_ccs_e_compatible(const struct intel_device_info *devinfo,
+anv_formats_ccs_e_compatible(const struct anv_physical_device *physical_device,
                              VkImageCreateFlags create_flags,
                              VkFormat vk_format, VkImageTiling vk_tiling,
                              VkImageUsageFlags vk_usage,
                              const VkImageFormatListCreateInfo *fmt_list)
 {
+   const struct intel_device_info *devinfo = &physical_device->info;
+
    u_foreach_bit(b, vk_format_aspects(vk_format)) {
       VkImageAspectFlagBits aspect = 1 << b;
       enum isl_format format =
-         anv_get_isl_format(devinfo, vk_format, aspect, vk_tiling);
+         anv_get_isl_format(physical_device, vk_format, aspect, vk_tiling);
 
-      if (!formats_ccs_e_compatible(devinfo, create_flags, aspect,
+      if (!formats_ccs_e_compatible(physical_device, create_flags, aspect,
                                     format, vk_tiling, fmt_list))
          return false;
    }
@@ -802,7 +806,7 @@ add_aux_surface_if_supported(struct anv_device *device,
       } else if (device->info->ver >= 12) {
          /* Support for CCS_E was already checked for in anv_image_init(). */
          image->planes[plane].aux_usage = ISL_AUX_USAGE_CCS_E;
-      } else if (anv_formats_ccs_e_compatible(device->info,
+      } else if (anv_formats_ccs_e_compatible(device->physical,
                                               image->vk.create_flags,
                                               image->vk.format,
                                               image->vk.tiling,
@@ -1203,7 +1207,6 @@ add_all_surfaces_implicit_layout(
    isl_tiling_flags_t isl_tiling_flags,
    isl_surf_usage_flags_t isl_extra_usage_flags)
 {
-   const struct intel_device_info *devinfo = device->info;
    VkResult result;
 
    const struct vk_format_ycbcr_info *ycbcr_info =
@@ -1236,7 +1239,8 @@ add_all_surfaces_implicit_layout(
       VkImageAspectFlagBits aspect = aspects[i];
       const uint32_t plane = anv_image_aspect_to_plane(image, aspect);
       const  struct anv_format_plane plane_format =
-         anv_get_format_plane(devinfo, image->vk.format, plane, image->vk.tiling);
+         anv_get_format_plane(device->physical, image->vk.format,
+                              plane, image->vk.tiling);
 
       enum isl_format isl_fmt = plane_format.isl_format;
       assert(isl_fmt != ISL_FORMAT_UNSUPPORTED);
@@ -1340,7 +1344,8 @@ add_all_surfaces_explicit_layout(
       const VkImageAspectFlagBits aspect = 1 << b;
       const uint32_t plane = anv_image_aspect_to_plane(image, aspect);
       const struct anv_format_plane format_plane =
-         anv_get_format_plane(devinfo, image->vk.format, plane, image->vk.tiling);
+         anv_get_format_plane(device->physical, image->vk.format,
+                              plane, image->vk.tiling);
       const VkSubresourceLayout *primary_layout = &drm_info->pPlaneLayouts[plane];
 
       result = add_primary_surface(device, image, plane,
@@ -1659,7 +1664,7 @@ anv_image_init(struct anv_device *device, struct anv_image *image,
       return VK_SUCCESS;
    }
 
-   image->n_planes = anv_get_format_planes(image->vk.format);
+   image->n_planes = anv_get_format_planes(device->physical, image->vk.format);
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
    /* In the case of gralloc-backed swap chain image, we don't know the
@@ -1773,7 +1778,8 @@ anv_image_init(struct anv_device *device, struct anv_image *image,
       }
 
       if (device->info->ver >= 12 &&
-          !anv_formats_ccs_e_compatible(device->info, image->vk.create_flags,
+          !anv_formats_ccs_e_compatible(device->physical,
+                                        image->vk.create_flags,
                                         image->vk.format, image->vk.tiling,
                                         image->vk.usage, fmt_list)) {
          /* CCS_E is the only aux-mode supported for single sampled color
@@ -1786,7 +1792,7 @@ anv_image_init(struct anv_device *device, struct anv_image *image,
 
    /* Fill out the list of view formats. */
    const enum isl_format image_format =
-      anv_get_format_plane(device->info, image->vk.format, 0,
+      anv_get_format_plane(device->physical, image->vk.format, 0,
                            image->vk.tiling).isl_format;
    add_image_view_format(image, image_format);
 
@@ -1811,7 +1817,7 @@ anv_image_init(struct anv_device *device, struct anv_image *image,
       } else {
          for (uint32_t i = 0; i < fmt_list->viewFormatCount; i++) {
             const enum isl_format fmt_list_format =
-               anv_get_format_plane(device->info,
+               anv_get_format_plane(device->physical,
                                     fmt_list->pViewFormats[i], 0,
                                     image->vk.tiling).isl_format;
             add_image_view_format(image, fmt_list_format);
@@ -1846,10 +1852,9 @@ anv_image_init(struct anv_device *device, struct anv_image *image,
       goto fail;
 
    if (image->emu_plane_format != VK_FORMAT_UNDEFINED) {
-      const struct intel_device_info *devinfo = device->info;
       const uint32_t plane = image->n_planes;
       const struct anv_format_plane plane_format = anv_get_format_plane(
-            devinfo, image->emu_plane_format, 0, image->vk.tiling);
+            device->physical, image->emu_plane_format, 0, image->vk.tiling);
 
       isl_surf_usage_flags_t isl_usage = anv_image_choose_isl_surf_usage(
          device->physical, image->vk.create_flags, image->vk.usage,
@@ -2097,7 +2102,7 @@ resolve_ahw_image(struct anv_device *device,
     * isl_surface for it.
     */
    vk_image_set_format(&image->vk, vk_format);
-   image->n_planes = anv_get_format_planes(image->vk.format);
+   image->n_planes = anv_get_format_planes(device->physical, image->vk.format);
 
    result = add_all_surfaces_implicit_layout(device, image, NULL, desc.stride,
                                              isl_tiling_flags,

@@ -271,7 +271,7 @@ anv_image_view_init(struct anv_device *device,
             anv_get_emulation_format(device->physical, view_format);
       }
       const struct anv_format_plane format = anv_get_format_plane(
-            device->info, view_format, vplane, image->vk.tiling);
+            device->physical, view_format, vplane, image->vk.tiling);
 
       iview->planes[vplane].isl = (struct isl_view) {
          .format = format.isl_format,

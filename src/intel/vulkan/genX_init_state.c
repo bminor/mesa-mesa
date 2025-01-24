@@ -1295,7 +1295,7 @@ VkResult genX(CreateSampler)(
 
       const struct anv_format *format_desc =
          sampler->vk.format != VK_FORMAT_UNDEFINED ?
-         anv_get_format(sampler->vk.format) : NULL;
+         anv_get_format(device->physical, sampler->vk.format) : NULL;
 
       if (format_desc && format_desc->n_planes == 1 &&
           !isl_swizzle_is_identity(format_desc->planes[0].swizzle)) {
@@ -1333,7 +1333,7 @@ VkResult genX(CreateSampler)(
        *   "Mip Mode Filter must be set to MIPFILTER_NONE for Planar YUV surfaces."
        */
       enum isl_format plane0_isl_format = sampler->vk.ycbcr_conversion ?
-         anv_get_format(sampler->vk.format)->planes[0].isl_format :
+         anv_get_format(device->physical, sampler->vk.format)->planes[0].isl_format :
          ISL_FORMAT_UNSUPPORTED;
       const bool isl_format_is_planar_yuv =
          plane0_isl_format != ISL_FORMAT_UNSUPPORTED &&

@@ -5268,37 +5268,38 @@ anv_aspect_to_plane(VkImageAspectFlags all_aspects,
    u_foreach_bit(b, vk_image_expand_aspect_mask(&(image)->vk, aspects))
 
 const struct anv_format *
-anv_get_format(VkFormat format);
+anv_get_format(const struct anv_physical_device *device, VkFormat format);
 
 static inline uint32_t
-anv_get_format_planes(VkFormat vk_format)
+anv_get_format_planes(const struct anv_physical_device *device,
+                      VkFormat vk_format)
 {
-   const struct anv_format *format = anv_get_format(vk_format);
+   const struct anv_format *format = anv_get_format(device, vk_format);
 
    return format != NULL ? format->n_planes : 0;
 }
 
 struct anv_format_plane
-anv_get_format_plane(const struct intel_device_info *devinfo,
+anv_get_format_plane(const struct anv_physical_device *device,
                      VkFormat vk_format, uint32_t plane,
                      VkImageTiling tiling);
 
 struct anv_format_plane
-anv_get_format_aspect(const struct intel_device_info *devinfo,
+anv_get_format_aspect(const struct anv_physical_device *device,
                       VkFormat vk_format,
                       VkImageAspectFlagBits aspect, VkImageTiling tiling);
 
 static inline enum isl_format
-anv_get_isl_format(const struct intel_device_info *devinfo, VkFormat vk_format,
+anv_get_isl_format(const struct anv_physical_device *device, VkFormat vk_format,
                    VkImageAspectFlags aspect, VkImageTiling tiling)
 {
-   return anv_get_format_aspect(devinfo, vk_format, aspect, tiling).isl_format;
+   return anv_get_format_aspect(device, vk_format, aspect, tiling).isl_format;
 }
 
-bool anv_format_supports_ccs_e(const struct intel_device_info *devinfo,
+bool anv_format_supports_ccs_e(const struct anv_physical_device *device,
                                const enum isl_format format);
 
-bool anv_formats_ccs_e_compatible(const struct intel_device_info *devinfo,
+bool anv_formats_ccs_e_compatible(const struct anv_physical_device *device,
                                   VkImageCreateFlags create_flags,
                                   VkFormat vk_format, VkImageTiling vk_tiling,
                                   VkImageUsageFlags vk_usage,

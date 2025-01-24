@@ -2998,7 +2998,7 @@ void anv_GetDescriptorEXT(
 
       if (!address_info_is_null(addr_info)) {
          struct anv_format_plane format =
-            anv_get_format_plane(device->info,
+            anv_get_format_plane(device->physical,
                                  addr_info->format,
                                  0, VK_IMAGE_TILING_LINEAR);
          const uint32_t format_bs =
@@ -3023,7 +3023,7 @@ void anv_GetDescriptorEXT(
 
       if (!address_info_is_null(addr_info)) {
          struct anv_format_plane format =
-            anv_get_format_plane(device->info,
+            anv_get_format_plane(device->physical,
                                  addr_info->format,
                                  0, VK_IMAGE_TILING_LINEAR);
          const uint32_t format_bs =
