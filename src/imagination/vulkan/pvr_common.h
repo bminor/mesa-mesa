@@ -193,8 +193,10 @@ enum pvr_query_type {
 
 struct pvr_buffer_descriptor {
    uint64_t addr;
+   uint32_t size;
+   uint32_t rsvd;
 } PACKED;
-static_assert(sizeof(struct pvr_buffer_descriptor) == 2 * sizeof(uint32_t),
+static_assert(sizeof(struct pvr_buffer_descriptor) == 4 * sizeof(uint32_t),
               "pvr_buffer_descriptor size is invalid.");
 
 struct pvr_sampler_descriptor {

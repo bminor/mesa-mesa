@@ -534,6 +534,28 @@ static pco_instr *trans_load_buffer(trans_ctx *tctx,
                  addr);
 }
 
+static pco_instr *
+trans_get_buffer_size(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
+{
+   const pco_common_data *common = &tctx->shader->data.common;
+
+   ASSERTED unsigned chans = pco_ref_get_chans(dest);
+   ASSERTED unsigned bits = pco_ref_get_bits(dest);
+
+   assert(chans == 1);
+   assert(bits == 32);
+
+   uint32_t packed_desc = nir_src_comp_as_uint(intr->src[0], 0);
+   unsigned elem = nir_src_comp_as_uint(intr->src[0], 1);
+   unsigned sh_index =
+      fetch_resource_base_reg_packed(common, packed_desc, elem, NULL);
+
+   pco_ref size_reg = pco_ref_hwreg(sh_index, PCO_REG_CLASS_SHARED);
+   size_reg = pco_ref_offset(size_reg, 2);
+
+   return pco_mov(&tctx->b, dest, size_reg);
+}
+
 static pco_instr *trans_store_buffer(trans_ctx *tctx,
                                      nir_intrinsic_instr *intr,
                                      pco_ref data_src,
@@ -932,6 +954,11 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
    case nir_intrinsic_load_ubo:
    case nir_intrinsic_load_ssbo:
       instr = trans_load_buffer(tctx, intr, dest, src[1]);
+      break;
+
+   case nir_intrinsic_get_ubo_size:
+   case nir_intrinsic_get_ssbo_size:
+      instr = trans_get_buffer_size(tctx, intr, dest);
       break;
 
    case nir_intrinsic_store_ssbo:

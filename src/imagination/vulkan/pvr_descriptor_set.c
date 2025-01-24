@@ -477,8 +477,12 @@ write_buffer(const struct pvr_descriptor_set *set,
    const pvr_dev_addr_t buffer_addr =
       PVR_DEV_ADDR_OFFSET(buffer->dev_addr, buffer_info->offset);
 
+   UNUSED uint32_t range =
+      vk_buffer_range(&buffer->vk, buffer_info->offset, buffer_info->range);
+
    const struct pvr_buffer_descriptor buffer_desc = {
       .addr = buffer_addr.addr,
+      .size = range,
    };
 
    memcpy(desc_mapping, &buffer_desc, sizeof(buffer_desc));
