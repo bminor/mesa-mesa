@@ -1063,7 +1063,7 @@ emit_begin_perf_query(struct tu_cmd_buffer *cmdbuf,
       const struct fd_perfcntr_counter *counter =
             &pool->perf_group[data->gid].counters[data->cntr_reg];
 
-      uint64_t begin_iova = perf_query_iova(pool, 0, begin, data->app_idx);
+      uint64_t begin_iova = perf_query_iova(pool, query, begin, data->app_idx);
 
       tu_cs_emit_pkt7(cs, CP_REG_TO_MEM, 3);
       tu_cs_emit(cs, CP_REG_TO_MEM_0_REG(counter->counter_reg_lo) |
@@ -1423,7 +1423,7 @@ emit_end_perf_query(struct tu_cmd_buffer *cmdbuf,
       const struct fd_perfcntr_counter *counter =
             &pool->perf_group[data->gid].counters[data->cntr_reg];
 
-      end_iova = perf_query_iova(pool, 0, end, data->app_idx);
+      end_iova = perf_query_iova(pool, query, end, data->app_idx);
 
       tu_cs_emit_pkt7(cs, CP_REG_TO_MEM, 3);
       tu_cs_emit(cs, CP_REG_TO_MEM_0_REG(counter->counter_reg_lo) |
@@ -1447,10 +1447,10 @@ emit_end_perf_query(struct tu_cmd_buffer *cmdbuf,
          emit_perfcntrs_pass_start(cs, data->pass);
       }
 
-      result_iova = query_result_iova(pool, 0, struct perfcntr_query_slot,
+      result_iova = query_result_iova(pool, query, struct perfcntr_query_slot,
              data->app_idx);
-      begin_iova = perf_query_iova(pool, 0, begin, data->app_idx);
-      end_iova = perf_query_iova(pool, 0, end, data->app_idx);
+      begin_iova = perf_query_iova(pool, query, begin, data->app_idx);
+      end_iova = perf_query_iova(pool, query, end, data->app_idx);
 
       /* result += end - begin */
       tu_cs_emit_pkt7(cs, CP_MEM_TO_MEM, 9);
