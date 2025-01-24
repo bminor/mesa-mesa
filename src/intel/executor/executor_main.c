@@ -547,10 +547,11 @@ executor_context_dispatch(executor_context *ec)
       struct drm_xe_sync bind_syncs[] = {
          {
             .type   = DRM_XE_SYNC_TYPE_SYNCOBJ,
-            .handle = sync_handles[0],
+            .addr   = 0,
             .flags  = DRM_XE_SYNC_FLAG_SIGNAL,
          },
       };
+      bind_syncs[0].handle = sync_handles[0];
 
       struct drm_xe_vm_bind bind = {
          .vm_id           = ec->xe.vm_id,
@@ -567,14 +568,16 @@ executor_context_dispatch(executor_context *ec)
       struct drm_xe_sync exec_syncs[] = {
          {
             .type   = DRM_XE_SYNC_TYPE_SYNCOBJ,
-            .handle = sync_handles[0],
+            .addr   = 0,
          },
          {
             .type   = DRM_XE_SYNC_TYPE_SYNCOBJ,
-            .handle = sync_handles[1],
+            .addr   = 0,
             .flags  = DRM_XE_SYNC_FLAG_SIGNAL,
          }
       };
+      exec_syncs[0].handle = sync_handles[0];
+      exec_syncs[1].handle = sync_handles[1];
 
       struct drm_xe_exec exec = {
          .exec_queue_id    = ec->xe.queue_id,

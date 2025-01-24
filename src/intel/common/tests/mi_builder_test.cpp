@@ -573,9 +573,10 @@ mi_builder_test::submit_batch()
          {
             .type   = DRM_XE_SYNC_TYPE_SYNCOBJ,
             .flags  = DRM_XE_SYNC_FLAG_SIGNAL,
-            .handle = sync_handles[0],
+            .addr   = 0,
          },
       };
+      bind_syncs[0].handle = sync_handles[0];
 
       struct drm_xe_vm_bind bind = {
          .vm_id           = xe.vm_id,
@@ -596,9 +597,10 @@ mi_builder_test::submit_batch()
          {
             .type   = DRM_XE_SYNC_TYPE_SYNCOBJ,
             .flags  = DRM_XE_SYNC_FLAG_SIGNAL,
-            .handle = sync_handles[1],
+            .addr   = 0,
          }
       };
+      exec_syncs[0].handle = sync_handles[1];
 
       struct drm_xe_exec exec = {
          .exec_queue_id    = xe.queue_id,
