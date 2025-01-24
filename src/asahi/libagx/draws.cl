@@ -128,7 +128,7 @@ libagx_draw_robust_index(global uint32_t *vdm,
                          ushort restart, enum agx_primitive topology,
                          enum agx_index_size index_size__3)
 {
-   uint tid = get_sub_group_id();
+   uint tid = get_sub_group_local_id();
    bool first = tid == 0;
    enum agx_index_size index_size = index_size__3;
 
