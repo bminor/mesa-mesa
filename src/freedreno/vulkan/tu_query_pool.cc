@@ -480,15 +480,45 @@ wait_for_available(struct tu_device *device, struct tu_query_pool *pool,
 
 /* Writes a query value to a buffer from the CPU. */
 static void
-write_query_value_cpu(char* base,
+write_query_value_cpu(char *base,
                       uint32_t offset,
-                      uint64_t value,
+                      uint64_t *query_value_address,
                       VkQueryResultFlags flags)
 {
    if (flags & VK_QUERY_RESULT_64_BIT) {
-      *(uint64_t*)(base + (offset * sizeof(uint64_t))) = value;
+      *(uint64_t*)(base + (offset * sizeof(uint64_t))) = *query_value_address;
    } else {
-      *(uint32_t*)(base + (offset * sizeof(uint32_t))) = value;
+      *(uint32_t*)(base + (offset * sizeof(uint32_t))) = *query_value_address;
+   }
+}
+
+static void
+write_performance_query_value_cpu(char *base,
+                                  uint32_t offset,
+                                  VkPerformanceCounterStorageKHR storage,
+                                  uint64_t *query_value_address)
+{
+   VkPerformanceCounterResultKHR *result = &((VkPerformanceCounterResultKHR *)base)[offset];
+
+   switch (storage) {
+   case VK_PERFORMANCE_COUNTER_STORAGE_INT32_KHR:
+      result->int32 = *((int32_t *)query_value_address);
+      break;
+   case VK_PERFORMANCE_COUNTER_STORAGE_INT64_KHR:
+      result->int64 = *((int64_t *)query_value_address);
+      break;
+   case VK_PERFORMANCE_COUNTER_STORAGE_UINT32_KHR:
+      result->uint32 = *((uint32_t *)query_value_address);
+      break;
+   case VK_PERFORMANCE_COUNTER_STORAGE_UINT64_KHR:
+      result->uint64 = *((uint64_t *)query_value_address);
+      break;
+   case VK_PERFORMANCE_COUNTER_STORAGE_FLOAT32_KHR:
+      result->float32 = *((float *)query_value_address);
+      break;
+   case VK_PERFORMANCE_COUNTER_STORAGE_FLOAT64_KHR:
+      result->float64 = *((double *)query_value_address);
+      break;
    }
 }
 
@@ -551,8 +581,15 @@ get_query_pool_results(struct tu_device *device,
                result = query_result_addr(pool, query, uint64_t, k);
             }
 
-            write_query_value_cpu(result_base, k, *result, flags);
-         } else if (flags & VK_QUERY_RESULT_PARTIAL_BIT)
+            if (pool->vk.query_type == VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR) {
+               struct tu_perf_query_data *data = &pool->perf_query_data[k];
+               VkPerformanceCounterStorageKHR storage =
+                  fd_perfcntr_type_to_vk_storage[pool->perf_group[data->gid].countables[data->cid].query_type];
+               write_performance_query_value_cpu(result_base, k, storage, result);
+            } else {
+               write_query_value_cpu(result_base, k, result, flags);
+            }
+         } else if (flags & VK_QUERY_RESULT_PARTIAL_BIT) {
              /* From the Vulkan 1.1.130 spec:
               *
               *   If VK_QUERY_RESULT_PARTIAL_BIT is set, VK_QUERY_RESULT_WAIT_BIT
@@ -562,17 +599,25 @@ get_query_pool_results(struct tu_device *device,
               *
               * Just return 0 here for simplicity since it's a valid result.
               */
-            write_query_value_cpu(result_base, k, 0, flags);
+            uint64_t result_value = 0;
+            if (pool->vk.query_type == VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR) {
+               write_performance_query_value_cpu(result_base, k, VK_PERFORMANCE_COUNTER_STORAGE_UINT64_KHR, &result_value);
+            } else {
+               write_query_value_cpu(result_base, k, &result_value, flags);
+            }
+         }
       }
 
-      if (flags & VK_QUERY_RESULT_WITH_AVAILABILITY_BIT)
+      if (flags & VK_QUERY_RESULT_WITH_AVAILABILITY_BIT) {
          /* From the Vulkan 1.1.130 spec:
           *
           *    If VK_QUERY_RESULT_WITH_AVAILABILITY_BIT is set, the final
           *    integer value written for each query is non-zero if the query’s
           *    status was available or zero if the status was unavailable.
           */
-         write_query_value_cpu(result_base, result_count, available, flags);
+         uint64_t available_value = available;
+         write_query_value_cpu(result_base, result_count, &available_value, flags);
+      }
 
       result_base += stride;
    }
