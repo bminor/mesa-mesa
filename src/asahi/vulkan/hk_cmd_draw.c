@@ -3077,12 +3077,11 @@ hk_needs_index_robustness(struct hk_cmd_buffer *cmd, struct agx_draw *draw)
        gfx->shaders[MESA_SHADER_TESS_EVAL])
       return false;
 
-   /* Soft fault does not cover the hardware index buffer fetch. So we can't
-    * simply use index buffers. However, we can use our 16-byte zero sink
-    * instead, using the hardware clamp. This does seem to work.
+   /* Soft fault does not cover the hardware index buffer fetch, use the zero
+    * page instead.
     */
    if (draw->index_buffer_range_B == 0) {
-      draw->index_buffer = dev->rodata.zero_sink;
+      draw->index_buffer = AGX_ZERO_PAGE_ADDRESS;
       draw->index_buffer_range_B = 4;
       draw->start = 0;
       return false;
