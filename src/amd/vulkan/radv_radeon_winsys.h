@@ -49,6 +49,7 @@ enum radeon_bo_flag { /* bitfield */
                       RADEON_FLAG_ZERO_VRAM = (1 << 10),
                       RADEON_FLAG_REPLAYABLE = (1 << 11),
                       RADEON_FLAG_DISCARDABLE = (1 << 12),
+                      RADEON_FLAG_GFX12_ALLOW_DCC = (1 << 13),
 };
 
 enum radeon_ctx_priority {
@@ -173,6 +174,7 @@ struct radeon_winsys_bo {
    bool vram_no_cpu_access;
    /* buffer is added to the BO list of all submissions */
    bool use_global_list;
+   bool gfx12_allow_dcc;
    enum radeon_bo_domain initial_domain;
 };
 
