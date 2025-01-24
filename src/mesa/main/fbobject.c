@@ -1000,6 +1000,11 @@ test_attachment_completeness(const struct gl_context *ctx, GLenum format,
             att->Complete = GL_FALSE;
             return;
          }
+         if (att->Zoffset + att->NumViews > texImage->Depth) {
+            att_incomplete("bad 2D-array view range");
+            att->Complete = GL_FALSE;
+            return;
+         }
          break;
       case GL_TEXTURE_CUBE_MAP_ARRAY:
          if (att->Zoffset >= texImage->Depth) {
