@@ -37,6 +37,7 @@ ForEachMacros:
   - foreach_instr
   - foreach_instr_rev
   - foreach_instr_safe
+  - foreach_instr_from
   - foreach_instr_from_safe
   - foreach_block
   - foreach_block_safe
@@ -53,3 +54,5 @@ ForEachMacros:
   - foreach_instr_rpt
   - foreach_instr_rpt_excl
   - foreach_instr_rpt_excl_safe
+  - foreach_bo
+  - foreach_bo_safe
