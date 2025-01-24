@@ -1752,7 +1752,10 @@ vk_graphics_pipeline_state_fill(const struct vk_device *device,
       vk_find_struct_const(info->pNext, PIPELINE_FRAGMENT_SHADING_RATE_STATE_CREATE_INFO_KHR);
 
    const VkRenderingInputAttachmentIndexInfoKHR *ial_info =
-      vk_find_struct_const(info->pNext, RENDERING_INPUT_ATTACHMENT_INDEX_INFO_KHR);
+      !driver_rp ? vk_get_pipeline_rendering_ial_info(info)
+                 : vk_find_struct_const(
+                      info->pNext, RENDERING_INPUT_ATTACHMENT_INDEX_INFO_KHR);
+
    const VkRenderingAttachmentLocationInfoKHR *cal_info =
       vk_find_struct_const(info->pNext, RENDERING_ATTACHMENT_LOCATION_INFO_KHR);
 
