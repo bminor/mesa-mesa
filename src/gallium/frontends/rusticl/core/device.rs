@@ -1333,7 +1333,11 @@ impl Device {
     }
 
     pub fn all() -> Vec<Device> {
+        #[cfg(not(test))]
         let mut devs: Vec<_> = load_screens().filter_map(Device::new).collect();
+
+        #[cfg(test)]
+        let mut devs: Vec<Device> = Vec::default();
 
         // Pick a default device. One must be the default one no matter what. And custom devices can
         // only be that one if they are the only devices available.
