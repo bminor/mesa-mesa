@@ -5213,6 +5213,8 @@ enum anv_format_flag {
    ANV_FORMAT_FLAG_CAN_YCBCR = BITFIELD_BIT(0),
    /* Format supports video API */
    ANV_FORMAT_FLAG_CAN_VIDEO = BITFIELD_BIT(1),
+   /* Format works if custom border colors without format is disabled */
+   ANV_FORMAT_FLAG_NO_CBCWF  = BITFIELD_BIT(2),
 };
 
 struct anv_format {

@@ -59,6 +59,18 @@
       .n_planes = 1, \
    }
 
+#define swiz_fmt1_flags(__vk_fmt, __hw_fmt, __swizzle, __flags) \
+   [VK_ENUM_OFFSET(__vk_fmt)] = { \
+      .planes = { \
+         { .isl_format = __hw_fmt, .swizzle = __swizzle, \
+           .aspect = VK_IMAGE_ASPECT_COLOR_BIT, \
+         }, \
+      }, \
+      .vk_format = __vk_fmt, \
+      .n_planes = 1, \
+      .flags = __flags, \
+   }
+
 #define fmt1(__vk_fmt, __hw_fmt) \
    swiz_fmt1(__vk_fmt, __hw_fmt, RGBA)
 
@@ -320,8 +332,9 @@ static const struct anv_format main_formats[] = {
 };
 
 static const struct anv_format _4444_formats[] = {
-   fmt1(VK_FORMAT_A4R4G4B4_UNORM_PACK16, ISL_FORMAT_B4G4R4A4_UNORM),
-   fmt_unsupported(VK_FORMAT_A4B4G4R4_UNORM_PACK16),
+   fmt1(VK_FORMAT_A4R4G4B4_UNORM_PACK16,            ISL_FORMAT_B4G4R4A4_UNORM),
+   swiz_fmt1_flags(VK_FORMAT_A4B4G4R4_UNORM_PACK16, ISL_FORMAT_B4G4R4A4_UNORM, BGRA,
+                                                    ANV_FORMAT_FLAG_NO_CBCWF),
 };
 
 static const struct anv_format _2plane_444_formats[] = {
@@ -446,6 +459,13 @@ anv_get_format(const struct anv_physical_device *device, VkFormat vk_format)
    const struct anv_format *format =
       &anv_formats[ext_number].formats[enum_offset];
    if (format->planes[0].isl_format == ISL_FORMAT_UNSUPPORTED)
+      return NULL;
+
+   /* This format is only available if custom border colors without format is
+    * disabled.
+    */
+   if ((format->flags & ANV_FORMAT_FLAG_NO_CBCWF) &&
+       device->instance->custom_border_colors_without_format)
       return NULL;
 
    return format;
