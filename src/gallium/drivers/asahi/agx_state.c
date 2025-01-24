@@ -4667,6 +4667,8 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
       agx_pool_upload_aligned(&batch->pool, &args, sizeof(args), 4);
 
    if (indirect) {
+      perf_debug(dev, "Indirect tessellation");
+
       uint32_t grid_stride = sizeof(uint32_t) * 6;
 
       uint64_t vertex_out_ptr = agx_pool_alloc_aligned(&batch->pool, 8, 8).gpu;
