@@ -53,6 +53,7 @@ static const driOptionDescription anv_dri_options[] = {
       DRI_CONF_ANV_MESH_CONV_PRIM_ATTRS_TO_VERT_ATTRS(-2)
       DRI_CONF_FORCE_VK_VENDOR()
       DRI_CONF_FAKE_SPARSE(false)
+      DRI_CONF_CUSTOM_BORDER_COLORS_WITHOUT_FORMAT(!DETECT_OS_ANDROID)
 #if DETECT_OS_ANDROID && ANDROID_API_LEVEL >= 34
       DRI_CONF_VK_REQUIRE_ASTC(true)
 #else
@@ -182,6 +183,9 @@ anv_init_dri_options(struct anv_instance *instance)
     instance->anv_upper_bound_descriptor_pool_sampler =
        driQueryOptionb(&instance->dri_options,
                        "anv_upper_bound_descriptor_pool_sampler");
+    instance->custom_border_colors_without_format =
+       driQueryOptionb(&instance->dri_options,
+                       "custom_border_colors_without_format");
 
     instance->stack_ids = driQueryOptioni(&instance->dri_options, "intel_stack_id");
     switch (instance->stack_ids) {
