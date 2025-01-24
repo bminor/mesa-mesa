@@ -65,13 +65,13 @@ struct cf_context {
       unsigned header_idx;
       Block* exit;
       bool has_divergent_continue = false;
-      bool has_divergent_branch = false;
    } parent_loop;
    struct {
       bool is_divergent = false;
    } parent_if;
 
    bool has_branch;
+   bool has_divergent_branch = false;
    bool had_divergent_discard = false;
    struct exec_info exec;
 };
