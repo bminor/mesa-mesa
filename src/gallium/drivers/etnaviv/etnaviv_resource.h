@@ -220,6 +220,9 @@ struct etna_resource {
    bool explicit_flush;
    /* resource is shared outside of the screen */
    bool shared;
+
+   struct pipe_box *damage;
+   unsigned num_damage;
 };
 
 /* returns TRUE if a is newer than b */

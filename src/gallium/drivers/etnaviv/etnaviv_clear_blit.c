@@ -189,8 +189,15 @@ etna_flush_resource(struct pipe_context *pctx, struct pipe_resource *prsc)
    struct etna_resource *rsc = etna_resource(prsc);
 
    if (rsc->render) {
-      if (etna_resource_older(rsc, etna_resource(rsc->render)))
-         etna_copy_resource(pctx, prsc, rsc->render, 0, 0);
+      if (etna_resource_older(rsc, etna_resource(rsc->render))) {
+         if (rsc->damage) {
+            for (unsigned i = 0; i < rsc->num_damage; i++) {
+               etna_copy_resource_box(pctx, prsc, rsc->render, 0, 0, &rsc->damage[i]);
+            }
+         } else {
+            etna_copy_resource(pctx, prsc, rsc->render, 0, 0);
+         }
+      }
    } else if (!etna_resource_ext_ts(rsc) && etna_resource_needs_flush(rsc)) {
       etna_copy_resource(pctx, prsc, prsc, 0, 0);
    }

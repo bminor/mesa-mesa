@@ -28,9 +28,11 @@
 
 #include "etnaviv_context.h"
 #include "etnaviv_debug.h"
+#include "etnaviv_rs.h"
 #include "etnaviv_screen.h"
 #include "etnaviv_translate.h"
 
+#include "util/box.h"
 #include "util/hash_table.h"
 #include "util/u_inlines.h"
 #include "util/u_memory.h"
@@ -599,6 +601,7 @@ etna_resource_destroy(struct pipe_screen *pscreen, struct pipe_resource *prsc)
    for (unsigned i = 0; i < ETNA_NUM_LOD; i++)
       FREE(rsc->levels[i].patch_offsets);
 
+   FREE(rsc->damage);
    FREE(rsc);
 }
 
@@ -915,6 +918,92 @@ etna_resource_needs_flush(struct etna_resource *rsc)
    return false;
 }
 
+static void
+etna_resource_set_damage_region(struct pipe_screen *pscreen,
+                                struct pipe_resource *prsc,
+                                unsigned int nrects,
+                                const struct pipe_box *rects)
+{
+   struct etna_resource *rsc = etna_resource(prsc);
+   struct etna_screen *screen = etna_screen(pscreen);
+   unsigned int i;
+
+   if (rsc->damage) {
+      FREE(rsc->damage);
+      rsc->damage = NULL;
+   }
+
+   /* Bail out if there is no render resource to blit from. */
+   if (!rsc->render)
+      return;
+
+   if (!nrects)
+      return;
+
+   /* Check for full damage. */
+   for (i = 0; i < nrects; i++) {
+      if (rects[i].x <= 0 && rects[i].y <= 0 &&
+          rects[i].x + rects[i].width >= prsc->width0 &&
+          rects[i].y + rects[i].height >= prsc->height0)
+         return;
+   }
+
+   rsc->damage = CALLOC(nrects, sizeof(*rsc->damage));
+   if (!rsc->damage)
+      return;
+
+   for (i = 0; i < nrects; i++) {
+      struct pipe_box *damage = &rsc->damage[i];
+
+      *damage = rects[i];
+
+      /* The damage we get from EGL uses a lower-left origin but the hardware
+       * uses upper-left so we need to flip it. */
+      damage->y = prsc->height0 - (damage->y + damage->height);
+
+      if (!screen->specs.use_blt)
+         etna_align_box_for_rs(screen, etna_resource(rsc->render), damage);
+   }
+
+   bool progress;
+
+   do {
+      progress = false;
+
+      for (unsigned i = 0; i < nrects; i++) {
+         for (unsigned j = i + 1; j < nrects; j++) {
+            if (u_box_test_intersection_2d(&rsc->damage[i], &rsc->damage[j])) {
+
+               /* Union them into the i-th slot */
+               u_box_union_2d(&rsc->damage[i],
+                              &rsc->damage[i],
+                              &rsc->damage[j]);
+
+               /* Remove the j-th rect by shifting everything above it down 1. */
+               if (j < (nrects - 1)) {
+                  memmove(&rsc->damage[j],
+                          &rsc->damage[j + 1],
+                          (nrects - (j + 1)) * sizeof(rsc->damage[0]));
+               }
+
+               /* We have merged one rect, so we have one less overall. */
+               nrects--;
+
+               /* We must restart because rsc->damage[i] has changed and
+                * might now intersect with some earlier rectangle. */
+               progress = true;
+               break;
+            }
+         }
+
+         if (progress)
+            break;
+      }
+   } while (progress);
+
+   rsc->num_damage = nrects;
+}
+
 void
 etna_resource_screen_init(struct pipe_screen *pscreen)
 {
@@ -926,4 +1015,5 @@ etna_resource_screen_init(struct pipe_screen *pscreen)
    pscreen->resource_get_param = etna_resource_get_param;
    pscreen->resource_changed = etna_resource_changed;
    pscreen->resource_destroy = etna_resource_destroy;
+   pscreen->set_damage_region = etna_resource_set_damage_region;
 }
