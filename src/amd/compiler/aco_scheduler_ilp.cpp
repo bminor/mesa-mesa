@@ -80,7 +80,7 @@ struct SchedILPContext {
 bool
 can_reorder(const Instruction* const instr)
 {
-   if (instr->isVALU())
+   if (instr->isVALU() || instr->isVINTRP())
       return true;
    if (!instr->isSALU() || instr->isSOPP())
       return false;
@@ -285,7 +285,7 @@ unsigned
 get_latency(const Instruction* const instr)
 {
    /* Note, that these are not accurate latency estimations. */
-   if (instr->isVALU())
+   if (instr->isVALU() || instr->isVINTRP())
       return 5;
    if (instr->isSALU())
       return 2;
@@ -432,9 +432,6 @@ add_entry(SchedILPContext& ctx, Instruction* const instr, const uint32_t idx)
        * any cases that are actually a concern for clause formation are added as transitive
        * dependencies. */
       write_dep_mask &= ~ctx.non_reorder_mask;
-      /* Ignore RaW for VINTERP. */
-      if (instr->isVINTRP())
-         entry.dependency_mask &= ~ctx.non_reorder_mask;
       ctx.potential_partial_clause = true;
    } else if (ctx.last_non_reorderable != UINT8_MAX) {
       ctx.potential_partial_clause = false;
@@ -558,8 +555,14 @@ select_instruction_ilp(const SchedILPContext& ctx)
       mask = collect_clause_dependencies(ctx, ctx.next_non_reorderable, 0);
    }
 
+   /* VINTRP(gfx6-10.3) can be handled like alu, but switching between VINTRP and other
+    * alu has a cost. So if the previous instr was VINTRP, try to keep selecting VINTRP.
+    */
+   bool prefer_vintrp = ctx.prev_info.instr && ctx.prev_info.instr->isVINTRP();
+
    /* Select the instruction with highest priority of all candidates. */
    unsigned idx = -1u;
+   bool idx_vintrp = false;
    int32_t priority = INT32_MIN;
    u_foreach_bit (i, mask) {
       const InstrInfo& candidate = ctx.nodes[i];
@@ -568,8 +571,12 @@ select_instruction_ilp(const SchedILPContext& ctx)
       if (candidate.dependency_mask)
          continue;
 
-      if (idx == -1u || candidate.priority > priority) {
+      bool is_vintrp = prefer_vintrp && candidate.instr->isVINTRP();
+
+      if (idx == -1u || (is_vintrp && !idx_vintrp) ||
+          (is_vintrp == idx_vintrp && candidate.priority > priority)) {
          idx = i;
+         idx_vintrp = is_vintrp;
          priority = candidate.priority;
       }
    }
