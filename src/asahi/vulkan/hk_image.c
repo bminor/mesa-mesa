@@ -1353,8 +1353,7 @@ hk_copy_memory_to_image(struct hk_device *device, struct hk_image *dst_image,
    bool tiled = ail_is_level_twiddled_uncompressed(
       layout, info->imageSubresource.mipLevel);
 
-   const char *src =
-      (const char *)info->pHostPointer + start_layer * dst_layer_stride;
+   const char *src = (const char *)info->pHostPointer;
    char *dst = (char *)dst_image->planes[plane].map + image_offset;
    for (unsigned layer = 0; layer < layers;
         layer++, src += src_layer_stride, dst += dst_layer_stride) {
@@ -1428,7 +1427,7 @@ hk_copy_image_to_memory(struct hk_device *device, struct hk_image *src_image,
       layout, info->imageSubresource.mipLevel);
 
    const char *src = (const char *)src_image->planes[plane].map + image_offset;
-   char *dst = (char *)info->pHostPointer + start_layer * dst_layer_stride;
+   char *dst = (char *)info->pHostPointer;
    for (unsigned layer = 0; layer < layers;
         layer++, src += src_layer_stride, dst += dst_layer_stride) {
 
