@@ -460,9 +460,8 @@ setup_unroll_for_draw(global struct agx_geometry_state *heap,
 KERNEL(1024)
 libagx_unroll_restart(global struct agx_geometry_state *heap,
                       uint64_t index_buffer, constant uint *in_draw,
-                      global uint32_t *out_draw, uint64_t zero_sink,
-                      uint32_t max_draws, uint32_t restart_index,
-                      uint32_t index_buffer_size_el,
+                      global uint32_t *out_draw, uint32_t max_draws,
+                      uint32_t restart_index, uint32_t index_buffer_size_el,
                       uint32_t index_size_log2__3, uint32_t flatshade_first,
                       uint mode__11)
 {
@@ -480,7 +479,7 @@ libagx_unroll_restart(global struct agx_geometry_state *heap,
    barrier(CLK_LOCAL_MEM_FENCE);
 
    uintptr_t in_ptr = (uintptr_t)(libagx_index_buffer(
-      index_buffer, index_buffer_size_el, in_draw[2], index_size_B, zero_sink));
+      index_buffer, index_buffer_size_el, in_draw[2], index_size_B));
 
    local uint scratch[32];
 
@@ -613,7 +612,7 @@ libagx_gs_setup_indirect(
    uint64_t index_buffer, constant uint *draw,
    global uintptr_t *vertex_buffer /* output */,
    global struct agx_ia_state *ia /* output */,
-   global struct agx_geometry_params *p /* output */, uint64_t zero_sink,
+   global struct agx_geometry_params *p /* output */,
    uint64_t vs_outputs /* Vertex (TES) output mask */,
    uint32_t index_size_B /* 0 if no index bffer */,
    uint32_t index_buffer_range_el,
@@ -645,7 +644,7 @@ libagx_gs_setup_indirect(
     */
    if (index_size_B) {
       ia->index_buffer = libagx_index_buffer(
-         index_buffer, index_buffer_range_el, draw[2], index_size_B, zero_sink);
+         index_buffer, index_buffer_range_el, draw[2], index_size_B);
 
       ia->index_buffer_range_el =
          libagx_index_buffer_range_el(index_buffer_range_el, draw[2]);

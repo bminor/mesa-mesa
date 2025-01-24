@@ -204,7 +204,7 @@ libagx_tess_setup_indirect(
    if (in_index_size_B) {
       ia->index_buffer =
          libagx_index_buffer(in_index_buffer, in_index_buffer_range_el,
-                             indirect[2], in_index_size_B, 0);
+                             indirect[2], in_index_size_B);
 
       ia->index_buffer_range_el =
          libagx_index_buffer_range_el(in_index_buffer_range_el, indirect[2]);

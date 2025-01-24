@@ -1063,7 +1063,6 @@ hk_geometry_state(struct hk_cmd_buffer *cmd)
 static uint64_t
 hk_upload_ia_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
 {
-   struct hk_device *dev = hk_cmd_buffer_device(cmd);
    assert(!agx_is_indirect(draw.b) && "indirect params written by GPU");
 
    struct agx_ia_state ia = {.verts_per_instance = draw.b.count[0]};
@@ -1072,9 +1071,8 @@ hk_upload_ia_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
       unsigned index_size_B = agx_index_size_to_B(draw.index_size);
       unsigned range_el = agx_draw_index_range_el(draw);
 
-      ia.index_buffer =
-         libagx_index_buffer(agx_draw_index_buffer(draw), range_el, 0,
-                             index_size_B, dev->rodata.zero_sink);
+      ia.index_buffer = libagx_index_buffer(agx_draw_index_buffer(draw),
+                                            range_el, 0, index_size_B);
 
       ia.index_buffer_range_el = range_el;
    }
@@ -1387,7 +1385,6 @@ hk_draw_without_restart(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
       .index_buffer_size_el = agx_draw_index_range_el(draw),
       .flatshade_first =
          dyn->rs.provoking_vertex == VK_PROVOKING_VERTEX_MODE_FIRST_VERTEX_EXT,
-      .zero_sink = dev->rodata.zero_sink,
    };
 
    libagx_unroll_restart_struct(cs, agx_1d(1024 * draw_count), AGX_BARRIER_ALL,
@@ -1439,7 +1436,6 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
    if (agx_is_indirect(draw.b)) {
       struct libagx_gs_setup_indirect_args gsi = {
          .index_buffer = draw.index_buffer,
-         .zero_sink = dev->rodata.zero_sink,
          .draw = draw.b.ptr,
          .ia = desc->root.draw.input_assembly,
          .p = desc->root.draw.geometry_params,

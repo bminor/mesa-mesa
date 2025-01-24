@@ -49,7 +49,7 @@ libagx_draw_without_adj(global VkDrawIndirectCommand *out,
       uint offs = in->firstVertex;
 
       ia->index_buffer = libagx_index_buffer(
-         index_buffer, index_buffer_range_el, offs, index_size_B, 0);
+         index_buffer, index_buffer_range_el, offs, index_size_B);
 
       ia->index_buffer_range_el =
          libagx_index_buffer_range_el(index_buffer_range_el, offs);
