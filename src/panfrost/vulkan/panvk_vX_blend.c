@@ -124,14 +124,15 @@ out:
 
 static void
 emit_blend_desc(const struct pan_shader_info *fs_info, uint64_t fs_code,
-                const struct pan_blend_state *state, unsigned rt_idx,
-                uint64_t blend_shader, uint16_t constant,
+                const struct pan_blend_state *state, unsigned blend_idx,
+                unsigned rt_idx, uint64_t blend_shader, uint16_t constant,
                 struct mali_blend_packed *bd)
 {
-   const struct pan_blend_rt_state *rt = &state->rts[rt_idx];
+   const struct pan_blend_rt_state *rt =
+      rt_idx != MESA_VK_ATTACHMENT_UNUSED ? &state->rts[rt_idx] : NULL;
 
    pan_pack(bd, BLEND, cfg) {
-      if (!state->rt_count || !rt->equation.color_mask) {
+      if (!state->rt_count || !rt || !rt->equation.color_mask) {
          cfg.enable = false;
          cfg.internal.mode = MALI_BLEND_MODE_OFF;
          continue;
@@ -154,7 +155,7 @@ emit_blend_desc(const struct pan_shader_info *fs_info, uint64_t fs_code,
          cfg.internal.shader.pc = (uint32_t)blend_shader;
 
 #if PAN_ARCH <= 7
-         uint32_t ret_offset = fs_info->bifrost.blend[rt_idx].return_offset;
+         uint32_t ret_offset = fs_info->bifrost.blend[blend_idx].return_offset;
 
          /* If ret_offset is zero, we assume the BLEND is a terminal
           * instruction and set return_value to zero, to let the
@@ -195,13 +196,13 @@ emit_blend_desc(const struct pan_shader_info *fs_info, uint64_t fs_code,
 
 #if PAN_ARCH <= 7
          if (fs_info->fs.untyped_color_outputs) {
-            nir_alu_type type = fs_info->bifrost.blend[rt_idx].type;
+            nir_alu_type type = fs_info->bifrost.blend[blend_idx].type;
 
             cfg.internal.fixed_function.conversion.register_format =
                GENX(pan_fixup_blend_type)(type, rt->format);
          } else {
             cfg.internal.fixed_function.conversion.register_format =
-               fs_info->bifrost.blend[rt_idx].format;
+               fs_info->bifrost.blend[blend_idx].format;
          }
 
          if (!opaque) {
@@ -302,6 +303,7 @@ panvk_per_arch(blend_emit_descs)(struct panvk_cmd_buffer *cmdbuf,
    const struct vk_dynamic_graphics_state *dyns =
       &cmdbuf->vk.dynamic_graphics_state;
    const struct vk_color_blend_state *cb = &dyns->cb;
+   const struct vk_color_attachment_location_state *cal = &dyns->cal;
    const struct panvk_shader *fs = cmdbuf->state.gfx.fs.shader;
    const struct pan_shader_info *fs_info = fs ? &fs->info : NULL;
    uint64_t fs_code = panvk_shader_get_dev_addr(fs);
@@ -325,10 +327,32 @@ panvk_per_arch(blend_emit_descs)(struct panvk_cmd_buffer *cmdbuf,
    uint64_t blend_shaders[8] = {};
    /* All bits set to one encodes unused fixed-function blend constant. */
    unsigned ff_blend_constant = ~0;
+   uint8_t remap_catts[MAX_RTS] = {
+      MESA_VK_ATTACHMENT_UNUSED, MESA_VK_ATTACHMENT_UNUSED,
+      MESA_VK_ATTACHMENT_UNUSED, MESA_VK_ATTACHMENT_UNUSED,
+      MESA_VK_ATTACHMENT_UNUSED, MESA_VK_ATTACHMENT_UNUSED,
+      MESA_VK_ATTACHMENT_UNUSED, MESA_VK_ATTACHMENT_UNUSED,
+   };
+   uint32_t blend_count = MAX2(cmdbuf->state.gfx.render.fb.info.rt_count, 1);
+
+   static_assert(ARRAY_SIZE(remap_catts) <= ARRAY_SIZE(cal->color_map),
+                 "vk_color_attachment_location_state::color_map is too small");
+
+   for (uint32_t i = 0; i < ARRAY_SIZE(remap_catts); i++) {
+      if (cal->color_map[i] != MESA_VK_ATTACHMENT_UNUSED) {
+         assert(cal->color_map[i] < MAX_RTS);
+         remap_catts[cal->color_map[i]] = i;
+      }
+   }
 
    memset(blend_info, 0, sizeof(*blend_info));
    for (uint8_t i = 0; i < cb->attachment_count; i++) {
       struct pan_blend_rt_state *rt = &bs.rts[i];
+
+      if (cal->color_map[i] == MESA_VK_ATTACHMENT_UNUSED) {
+         rt->equation.color_mask = 0;
+         continue;
+      }
 
       if (!(cb->color_write_enables & BITFIELD_BIT(i))) {
          rt->equation.color_mask = 0;
@@ -387,8 +411,8 @@ panvk_per_arch(blend_emit_descs)(struct panvk_cmd_buffer *cmdbuf,
          nir_alu_type src0_type = fs_info->bifrost.blend[i].type;
          nir_alu_type src1_type = fs_info->bifrost.blend_src1_type;
 
-         VkResult result = get_blend_shader(dev, &bs, src0_type, src1_type, i,
-                                            &blend_shaders[i]);
+         VkResult result = get_blend_shader(dev, &bs, src0_type, src1_type,
+                                            i, &blend_shaders[i]);
          if (result != VK_SUCCESS)
             return result;
 
@@ -403,9 +427,13 @@ panvk_per_arch(blend_emit_descs)(struct panvk_cmd_buffer *cmdbuf,
       ff_blend_constant = 0;
 
    /* Now that we've collected all the information, we can emit. */
-   for (uint8_t i = 0; i < MAX2(cb->attachment_count, 1); i++) {
-      emit_blend_desc(fs_info, fs_code, &bs, i, blend_shaders[i],
-                      ff_blend_constant, &bds[i]);
+   for (uint8_t i = 0; i < blend_count; i++) {
+      uint32_t catt_idx = remap_catts[i];
+      uint64_t blend_shader =
+         catt_idx != MESA_VK_ATTACHMENT_UNUSED ? blend_shaders[catt_idx] : 0;
+
+      emit_blend_desc(fs_info, fs_code, &bs, i, catt_idx,
+                      blend_shader, ff_blend_constant, &bds[i]);
    }
 
    if (blend_info->shader_loads_blend_const)

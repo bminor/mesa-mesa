@@ -354,4 +354,26 @@ void
 panvk_per_arch(cmd_prepare_draw_sysvals)(struct panvk_cmd_buffer *cmdbuf,
                                          const struct panvk_draw_info *info);
 
+static inline uint32_t
+color_attachment_written_mask(
+   const struct panvk_shader *fs,
+   const struct vk_color_attachment_location_state *cal)
+{
+   uint32_t written_by_shader =
+      (fs->info.outputs_written >> FRAG_RESULT_DATA0) & BITFIELD_MASK(8);
+   uint32_t catt_written_mask = 0;
+
+   for (uint32_t i = 0; i < MAX_RTS; i++) {
+      if (cal->color_map[i] == MESA_VK_ATTACHMENT_UNUSED)
+         continue;
+
+      uint32_t shader_rt = cal->color_map[i];
+
+      if (written_by_shader & BITFIELD_BIT(shader_rt))
+         catt_written_mask |= BITFIELD_BIT(i);
+   }
+
+   return catt_written_mask;
+}
+
 #endif

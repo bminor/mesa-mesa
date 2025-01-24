@@ -8,13 +8,17 @@
 
 #include <stdbool.h>
 
+#include "util/bitscan.h"
 #include "util/hash_table.h"
+#include "util/macros.h"
 #include "util/simple_mtx.h"
 
 #include "pan_blend.h"
 
 #include "panvk_macros.h"
 #include "panvk_mempool.h"
+
+#include "vk_graphics_state.h"
 
 struct panvk_cmd_buffer;
 
