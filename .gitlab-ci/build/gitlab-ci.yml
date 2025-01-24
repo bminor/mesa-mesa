@@ -133,6 +133,8 @@ debian-testing-asan:
   stage: build-for-tests
   variables:
     BUILD_JOB_TIMEOUT: 30m
+    VULKAN_DRIVERS: "swrast"
+    GALLIUM_DRIVERS: "llvmpipe,softpipe"
     C_ARGS: >
       -Wno-error=stringop-truncation
     EXTRA_OPTION: >
@@ -140,6 +142,9 @@ debian-testing-asan:
       -D valgrind=disabled
       -D tools=dlclose-skip
       -D mesa-clc=system
+      -D gallium-va=false
+      -D gallium-nine=false
+      -D gallium-rusticl=false
     S3_ARTIFACT_NAME: ""
     ARTIFACTS_DEBUG_SYMBOLS: 1
     RUN_MESON_TESTS: "false" # just too slow
@@ -149,6 +154,8 @@ debian-testing-asan:
       -D build-tests=false
       -D enable-glcpp-tests=false
       -D gallium-opencl=disabled
+      -D gallium-rusticl=false
+      -D gallium-nine=false
       -D gallium-drivers=
       -D vulkan-drivers=
       -D video-codecs=
@@ -204,9 +211,14 @@ debian-testing-ubsan:
       -Wno-error=stringop-truncation
     CPP_ARGS: >
       -Wno-error=array-bounds
+    GALLIUM_DRIVERS: "swrast"
+    VULKAN_DRIVERS: "swrast"
     EXTRA_OPTION: >
       -D b_sanitize=undefined
       -D mesa-clc=system
+      -D gallium-rusticl=false
+      -D gallium-va=false
+      -D gallium-nine=false
     S3_ARTIFACT_NAME: ""
     ARTIFACTS_DEBUG_SYMBOLS: 1
     RUN_MESON_TESTS: "false" # just too slow
@@ -214,6 +226,7 @@ debian-testing-ubsan:
       -D build-tests=false
       -D enable-glcpp-tests=false
       -D gallium-opencl=disabled
+      -D gallium-rusticl=false
       -D gallium-drivers=
       -D vulkan-drivers=
       -D video-codecs=
@@ -531,6 +544,7 @@ debian-arm32:
     EXTRA_OPTION: >
       -D llvm=disabled
       -D valgrind=disabled
+      -D gallium-rusticl=false
     S3_ARTIFACT_NAME: mesa-arm32-default-${BUILDTYPE}
     # The strip command segfaults, failing to strip the binary and leaving
     # tempfiles in our artifacts.
@@ -544,6 +558,8 @@ debian-arm32-asan:
     - debian-arm32
   stage: build-for-tests
   variables:
+    GALLIUM_DRIVERS: "etnaviv"
+    VULKAN_DRIVERS: ""
     DRI_LOADERS:
       -D glvnd=disabled
     EXTRA_OPTION: >
@@ -551,10 +567,10 @@ debian-arm32-asan:
       -D b_sanitize=address
       -D valgrind=disabled
       -D tools=dlclose-skip
+      -D gallium-rusticl=false
     ARTIFACTS_DEBUG_SYMBOLS: 1
     RUN_MESON_TESTS: "false" # just too slow
     S3_ARTIFACT_NAME: mesa-arm32-asan-${BUILDTYPE}
-    MESON_TEST_ARGS: "--no-suite mesa:compiler --no-suite mesa:util"
 
 debian-arm64:
   extends:
@@ -587,12 +603,15 @@ debian-arm64-asan:
     - debian-arm64
   stage: build-for-tests
   variables:
+    VULKAN_DRIVERS: "broadcom,freedreno"
+    GALLIUM_DRIVERS: "vc4,v3d,freedreno"
     DRI_LOADERS:
       -D glvnd=disabled
     EXTRA_OPTION: >
       -D b_sanitize=address
       -D valgrind=disabled
       -D tools=dlclose-skip
+      -D gallium-rusticl=false
     ARTIFACTS_DEBUG_SYMBOLS: 1
     RUN_MESON_TESTS: "false" # just too slow
     S3_ARTIFACT_NAME: mesa-arm64-asan-${BUILDTYPE}
@@ -602,6 +621,8 @@ debian-arm64-ubsan:
     - debian-arm64
   stage: build-for-tests
   variables:
+    VULKAN_DRIVERS: "broadcom"
+    GALLIUM_DRIVERS: "v3d,vc4"
     C_ARGS: >
       -Wno-error=array-bounds
       -Wno-error=stringop-overflow
@@ -613,6 +634,7 @@ debian-arm64-ubsan:
       -D glvnd=disabled
     EXTRA_OPTION: >
       -D b_sanitize=undefined
+      -D gallium-rusticl=false
     ARTIFACTS_DEBUG_SYMBOLS: 1
     RUN_MESON_TESTS: "false" # just too slow
     S3_ARTIFACT_NAME: mesa-arm64-ubsan-${BUILDTYPE}
