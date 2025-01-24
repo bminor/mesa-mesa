@@ -192,7 +192,9 @@ libagx_tess_setup_indirect(
    *vertex_output_buffer_ptr = (uintptr_t)(blob + vb_offs);
    p->counts = (global uint32_t *)(blob + count_offs);
 
-   ia->verts_per_instance = count;
+   if (ia) {
+      ia->verts_per_instance = count;
+   }
 
    /* If indexing is enabled, the third word is the offset into the index buffer
     * in elements. Apply that offset now that we have it. For a hardware
