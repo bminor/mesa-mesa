@@ -9840,14 +9840,6 @@ emit_loop_jump(isel_context* ctx, bool is_break)
    append_logical_end(ctx->block);
    unsigned idx = ctx->block->index;
 
-   /* If exec is empty inside uniform control flow in a loop, we can assume that all invocations
-    * of the loop are inactive. Breaking from the loop is the right thing to do in that case.
-    * We shouldn't perform a uniform continue, or else we might never reach a break.
-    */
-   bool potentially_empty_exec = ctx->cf_info.exec.potentially_empty_discard ||
-                                 ctx->cf_info.exec.potentially_empty_break ||
-                                 ctx->cf_info.exec.potentially_empty_continue;
-
    if (is_break) {
       logical_target = ctx->cf_info.parent_loop.exit;
       add_logical_edge(idx, logical_target);
@@ -9873,7 +9865,11 @@ emit_loop_jump(isel_context* ctx, bool is_break)
       add_logical_edge(idx, logical_target);
       ctx->block->kind |= block_kind_continue;
 
-      if (!ctx->cf_info.parent_if.is_divergent && !potentially_empty_exec) {
+      /* If exec is empty inside uniform control flow in a loop, we can assume that all invocations
+       * of the loop are inactive. Breaking from the loop is the right thing to do in that case.
+       * We shouldn't perform a uniform continue, or else we might never reach a break.
+       */
+      if (!ctx->cf_info.parent_if.is_divergent && !ctx->cf_info.exec.empty()) {
          /* uniform continue - directly jump to the loop header */
          ctx->block->kind |= block_kind_uniform;
          ctx->cf_info.has_branch = true;
@@ -10023,9 +10019,7 @@ begin_divergent_if_then(isel_context* ctx, if_context* ic, Temp cond,
    branch.reset(create_instruction(aco_opcode::p_cbranch_z, Format::PSEUDO_BRANCH, 1, 0));
    branch->operands[0] = Operand(cond);
    bool never_taken =
-      sel_ctrl == nir_selection_control_divergent_always_taken &&
-      !(ctx->cf_info.exec.potentially_empty_discard || ctx->cf_info.exec.potentially_empty_break ||
-        ctx->cf_info.exec.potentially_empty_continue);
+      sel_ctrl == nir_selection_control_divergent_always_taken && !ctx->cf_info.exec.empty();
    branch->branch().rarely_taken = sel_ctrl == nir_selection_control_flatten || never_taken;
    branch->branch().never_taken = never_taken;
    ctx->block->instructions.push_back(std::move(branch));
@@ -10086,9 +10080,7 @@ begin_divergent_if_else(isel_context* ctx, if_context* ic,
    /* branch to linear else block (skip else) */
    branch.reset(create_instruction(aco_opcode::p_branch, Format::PSEUDO_BRANCH, 0, 0));
    bool never_taken =
-      sel_ctrl == nir_selection_control_divergent_always_taken &&
-      !(ctx->cf_info.exec.potentially_empty_discard || ctx->cf_info.exec.potentially_empty_break ||
-        ctx->cf_info.exec.potentially_empty_continue);
+      sel_ctrl == nir_selection_control_divergent_always_taken && !ctx->cf_info.exec.empty();
    branch->branch().rarely_taken = sel_ctrl == nir_selection_control_flatten || never_taken;
    branch->branch().never_taken = never_taken;
    ctx->block->instructions.push_back(std::move(branch));
@@ -10286,8 +10278,7 @@ end_empty_exec_skip(isel_context* ctx)
 static void
 begin_empty_exec_skip(isel_context* ctx, nir_instr* after_instr, nir_block* block)
 {
-   if (!ctx->cf_info.exec.potentially_empty_discard && !ctx->cf_info.exec.potentially_empty_break &&
-       !ctx->cf_info.exec.potentially_empty_continue)
+   if (!ctx->cf_info.exec.empty())
       return;
 
    assert(!(ctx->block->kind & block_kind_top_level));

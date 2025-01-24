@@ -58,6 +58,11 @@ struct exec_info {
          std::min(potentially_empty_continue_depth, other.potentially_empty_continue_depth);
       potentially_empty_continue |= other.potentially_empty_continue;
    }
+
+   bool empty() const noexcept
+   {
+      return potentially_empty_discard || potentially_empty_break || potentially_empty_continue;
+   }
 };
 
 struct cf_context {
