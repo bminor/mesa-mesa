@@ -494,7 +494,7 @@
         "description": "brw/copy: Fix handling of offset in extract_imm",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "580e1c592d90392a30185d8059499498748909fd",
         "notes": null
