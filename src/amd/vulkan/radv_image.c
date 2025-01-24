@@ -120,7 +120,9 @@ radv_surface_has_scanout(struct radv_device *device, const struct radv_image_cre
    const struct radv_physical_device *pdev = radv_device_physical(device);
 
    if (info->bo_metadata) {
-      if (pdev->info.gfx_level >= GFX9)
+      if (pdev->info.gfx_level >= GFX12) {
+         return info->bo_metadata->u.gfx12.scanout;
+      } else if (pdev->info.gfx_level >= GFX9)
          return info->bo_metadata->u.gfx9.scanout;
       else
          return info->bo_metadata->u.legacy.scanout;
@@ -472,7 +474,12 @@ radv_patch_surface_from_metadata(struct radv_device *device, struct radeon_surf 
 
    surface->flags = RADEON_SURF_CLR(surface->flags, MODE);
 
-   if (pdev->info.gfx_level >= GFX9) {
+   if (pdev->info.gfx_level >= GFX12) {
+      surface->u.gfx9.swizzle_mode = md->u.gfx12.swizzle_mode;
+      surface->u.gfx9.color.dcc.max_compressed_block_size = md->u.gfx12.dcc_max_compressed_block;
+      surface->u.gfx9.color.dcc_data_format = md->u.gfx12.dcc_data_format;
+      surface->u.gfx9.color.dcc_number_type = md->u.gfx12.dcc_number_type;
+   } else if (pdev->info.gfx_level >= GFX9) {
       if (md->u.gfx9.swizzle_mode > 0)
          surface->flags |= RADEON_SURF_SET(RADEON_SURF_MODE_2D, MODE);
       else
@@ -784,7 +791,13 @@ radv_init_metadata(struct radv_device *device, struct radv_image *image, struct 
 
    memset(metadata, 0, sizeof(*metadata));
 
-   if (pdev->info.gfx_level >= GFX9) {
+   if (pdev->info.gfx_level >= GFX12) {
+      metadata->u.gfx12.swizzle_mode = surface->u.gfx9.swizzle_mode;
+      metadata->u.gfx12.dcc_max_compressed_block = surface->u.gfx9.color.dcc.max_compressed_block_size;
+      metadata->u.gfx12.dcc_number_type = surface->u.gfx9.color.dcc_number_type;
+      metadata->u.gfx12.dcc_data_format = surface->u.gfx9.color.dcc_data_format;
+      metadata->u.gfx12.scanout = (surface->flags & RADEON_SURF_SCANOUT) != 0;
+   } else if (pdev->info.gfx_level >= GFX9) {
       uint64_t dcc_offset =
          image->bindings[0].offset + (surface->display_dcc_offset ? surface->display_dcc_offset : surface->meta_offset);
       metadata->u.gfx9.swizzle_mode = surface->u.gfx9.swizzle_mode;
