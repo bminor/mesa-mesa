@@ -755,19 +755,53 @@ radv_compose_swizzle(const struct util_format_description *desc, const VkCompone
    }
 }
 
-static void
-radv_query_opaque_metadata(struct radv_device *device, struct radv_image *image, unsigned plane_id,
-                           struct radeon_bo_metadata *md)
+void
+radv_image_bo_set_metadata(struct radv_device *device, struct radv_image *image, struct radeon_winsys_bo *bo)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const struct radv_instance *instance = radv_physical_device_instance(pdev);
    static const VkComponentMapping fixedmapping;
+   const uint32_t plane_id = 0; /* Always plane 0 to follow RadeonSI. */
    const VkFormat plane_format = radv_image_get_plane_format(pdev, image, plane_id);
    const unsigned plane_width = vk_format_get_plane_width(image->vk.format, plane_id, image->vk.extent.width);
    const unsigned plane_height = vk_format_get_plane_height(image->vk.format, plane_id, image->vk.extent.height);
    struct radeon_surf *surface = &image->planes[plane_id].surface;
    const struct legacy_surf_level *base_level_info = pdev->info.gfx_level <= GFX8 ? &surface->u.legacy.level[0] : NULL;
+   struct radeon_bo_metadata md;
    uint32_t desc[8];
+
+   memset(&md, 0, sizeof(md));
+
+   if (pdev->info.gfx_level >= GFX12) {
+      md.u.gfx12.swizzle_mode = surface->u.gfx9.swizzle_mode;
+      md.u.gfx12.dcc_max_compressed_block = surface->u.gfx9.color.dcc.max_compressed_block_size;
+      md.u.gfx12.dcc_number_type = surface->u.gfx9.color.dcc_number_type;
+      md.u.gfx12.dcc_data_format = surface->u.gfx9.color.dcc_data_format;
+      md.u.gfx12.scanout = (surface->flags & RADEON_SURF_SCANOUT) != 0;
+   } else if (pdev->info.gfx_level >= GFX9) {
+      uint64_t dcc_offset =
+         image->bindings[0].offset + (surface->display_dcc_offset ? surface->display_dcc_offset : surface->meta_offset);
+      md.u.gfx9.swizzle_mode = surface->u.gfx9.swizzle_mode;
+      md.u.gfx9.dcc_offset_256b = dcc_offset >> 8;
+      md.u.gfx9.dcc_pitch_max = surface->u.gfx9.color.display_dcc_pitch_max;
+      md.u.gfx9.dcc_independent_64b_blocks = surface->u.gfx9.color.dcc.independent_64B_blocks;
+      md.u.gfx9.dcc_independent_128b_blocks = surface->u.gfx9.color.dcc.independent_128B_blocks;
+      md.u.gfx9.dcc_max_compressed_block_size = surface->u.gfx9.color.dcc.max_compressed_block_size;
+      md.u.gfx9.scanout = (surface->flags & RADEON_SURF_SCANOUT) != 0;
+   } else {
+      md.u.legacy.microtile =
+         surface->u.legacy.level[0].mode >= RADEON_SURF_MODE_1D ? RADEON_LAYOUT_TILED : RADEON_LAYOUT_LINEAR;
+      md.u.legacy.macrotile =
+         surface->u.legacy.level[0].mode >= RADEON_SURF_MODE_2D ? RADEON_LAYOUT_TILED : RADEON_LAYOUT_LINEAR;
+      md.u.legacy.pipe_config = surface->u.legacy.pipe_config;
+      md.u.legacy.bankw = surface->u.legacy.bankw;
+      md.u.legacy.bankh = surface->u.legacy.bankh;
+      md.u.legacy.tile_split = surface->u.legacy.tile_split;
+      md.u.legacy.mtilea = surface->u.legacy.mtilea;
+      md.u.legacy.num_banks = surface->u.legacy.num_banks;
+      md.u.legacy.stride = surface->u.legacy.level[0].nblk_x * surface->bpe;
+      md.u.legacy.scanout = (surface->flags & RADEON_SURF_SCANOUT) != 0;
+   }
 
    radv_make_texture_descriptor(device, image, false, (VkImageViewType)image->vk.image_type, plane_format,
                                 &fixedmapping, 0, image->vk.mip_levels - 1, 0, image->vk.array_layers - 1, plane_width,
@@ -776,52 +810,10 @@ radv_query_opaque_metadata(struct radv_device *device, struct radv_image *image,
    radv_set_mutable_tex_desc_fields(device, image, base_level_info, plane_id, 0, 0, surface->blk_w, false, false, false,
                                     false, desc, NULL, 0);
 
-   ac_surface_compute_umd_metadata(&pdev->info, surface, image->vk.mip_levels, desc, &md->size_metadata, md->metadata,
+   ac_surface_compute_umd_metadata(&pdev->info, surface, image->vk.mip_levels, desc, &md.size_metadata, md.metadata,
                                    instance->debug_flags & RADV_DEBUG_EXTRA_MD);
-}
 
-void
-radv_init_metadata(struct radv_device *device, struct radv_image *image, struct radeon_bo_metadata *metadata)
-{
-   const struct radv_physical_device *pdev = radv_device_physical(device);
-
-   /* use plane 0, even when there are multiple planes, to follow radeonsi */
-   const unsigned plane_id = 0;
-   struct radeon_surf *surface = &image->planes[plane_id].surface;
-
-   memset(metadata, 0, sizeof(*metadata));
-
-   if (pdev->info.gfx_level >= GFX12) {
-      metadata->u.gfx12.swizzle_mode = surface->u.gfx9.swizzle_mode;
-      metadata->u.gfx12.dcc_max_compressed_block = surface->u.gfx9.color.dcc.max_compressed_block_size;
-      metadata->u.gfx12.dcc_number_type = surface->u.gfx9.color.dcc_number_type;
-      metadata->u.gfx12.dcc_data_format = surface->u.gfx9.color.dcc_data_format;
-      metadata->u.gfx12.scanout = (surface->flags & RADEON_SURF_SCANOUT) != 0;
-   } else if (pdev->info.gfx_level >= GFX9) {
-      uint64_t dcc_offset =
-         image->bindings[0].offset + (surface->display_dcc_offset ? surface->display_dcc_offset : surface->meta_offset);
-      metadata->u.gfx9.swizzle_mode = surface->u.gfx9.swizzle_mode;
-      metadata->u.gfx9.dcc_offset_256b = dcc_offset >> 8;
-      metadata->u.gfx9.dcc_pitch_max = surface->u.gfx9.color.display_dcc_pitch_max;
-      metadata->u.gfx9.dcc_independent_64b_blocks = surface->u.gfx9.color.dcc.independent_64B_blocks;
-      metadata->u.gfx9.dcc_independent_128b_blocks = surface->u.gfx9.color.dcc.independent_128B_blocks;
-      metadata->u.gfx9.dcc_max_compressed_block_size = surface->u.gfx9.color.dcc.max_compressed_block_size;
-      metadata->u.gfx9.scanout = (surface->flags & RADEON_SURF_SCANOUT) != 0;
-   } else {
-      metadata->u.legacy.microtile =
-         surface->u.legacy.level[0].mode >= RADEON_SURF_MODE_1D ? RADEON_LAYOUT_TILED : RADEON_LAYOUT_LINEAR;
-      metadata->u.legacy.macrotile =
-         surface->u.legacy.level[0].mode >= RADEON_SURF_MODE_2D ? RADEON_LAYOUT_TILED : RADEON_LAYOUT_LINEAR;
-      metadata->u.legacy.pipe_config = surface->u.legacy.pipe_config;
-      metadata->u.legacy.bankw = surface->u.legacy.bankw;
-      metadata->u.legacy.bankh = surface->u.legacy.bankh;
-      metadata->u.legacy.tile_split = surface->u.legacy.tile_split;
-      metadata->u.legacy.mtilea = surface->u.legacy.mtilea;
-      metadata->u.legacy.num_banks = surface->u.legacy.num_banks;
-      metadata->u.legacy.stride = surface->u.legacy.level[0].nblk_x * surface->bpe;
-      metadata->u.legacy.scanout = (surface->flags & RADEON_SURF_SCANOUT) != 0;
-   }
-   radv_query_opaque_metadata(device, image, plane_id, metadata);
+   device->ws->buffer_set_metadata(device->ws, bo, &md);
 }
 
 void
