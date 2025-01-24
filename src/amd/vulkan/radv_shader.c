@@ -541,11 +541,7 @@ radv_shader_spirv_to_nir(struct radv_device *device, const struct radv_shader_st
    NIR_PASS(_, nir, nir_remove_dead_variables, nir_var_function_temp, NULL);
 
    bool gfx7minus = pdev->info.gfx_level <= GFX7;
-   bool has_inverse_ballot = true;
    bool use_llvm = radv_use_llvm_for_stage(pdev, nir->info.stage);
-#if AMD_LLVM_AVAILABLE
-   has_inverse_ballot = !use_llvm || LLVM_VERSION_MAJOR >= 17;
-#endif
 
    NIR_PASS(_, nir, nir_lower_subgroups,
             &(struct nir_lower_subgroups_options){
@@ -563,7 +559,6 @@ radv_shader_spirv_to_nir(struct radv_device *device, const struct radv_shader_st
                .lower_quad_broadcast_dynamic_to_const = gfx7minus,
                .lower_shuffle_to_swizzle_amd = 1,
                .lower_ballot_bit_count_to_mbcnt_amd = 1,
-               .lower_inverse_ballot = !has_inverse_ballot,
                .lower_boolean_reduce = !use_llvm,
                .lower_boolean_shuffle = true,
             });

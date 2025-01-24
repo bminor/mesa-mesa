@@ -1764,7 +1764,9 @@ amd_with_llvm = get_option('amd-use-llvm')
 llvm_has_mcjit = host_machine.cpu_family() in ['aarch64', 'arm', 'ppc', 'ppc64', 's390x', 'x86', 'x86_64']
 llvm_with_orcjit = get_option('llvm-orcjit') or not llvm_has_mcjit
 
-if with_amd_vk or with_gallium_radeonsi or with_clc or llvm_with_orcjit
+if with_amd_vk or with_gallium_radeonsi
+  _llvm_version = '>= 18.0.0'
+elif with_clc or llvm_with_orcjit
   _llvm_version = '>= 15.0.0'
 elif with_gallium_clover
   _llvm_version = '>= 11.0.0'
