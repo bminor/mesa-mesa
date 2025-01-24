@@ -2156,6 +2156,9 @@ struct pipe_vpp_desc
    enum pipe_video_vpp_orientation orientation;
    struct pipe_vpp_blend blend;
 
+   /* Only used for encode/decode processing */
+   struct pipe_video_buffer *dst;
+
    uint32_t background_color;
    enum pipe_video_vpp_color_standard_type in_colors_standard;
    enum pipe_video_vpp_color_range in_color_range;

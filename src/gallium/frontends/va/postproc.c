@@ -265,7 +265,7 @@ vlVaHandleVAProcPipelineParameterBufferType(vlVaDriver *drv, vlVaContext *contex
    VARectangle def_src_region, def_dst_region;
    const VARectangle *src_region, *dst_region;
    VAProcPipelineParameterBuffer *param;
-   struct pipe_video_buffer *src;
+   struct pipe_video_buffer *src, *dst;
    vlVaSurface *src_surface, *dst_surface;
    unsigned i;
    struct pipe_vpp_desc vpp = {0};
@@ -285,15 +285,23 @@ vlVaHandleVAProcPipelineParameterBufferType(vlVaDriver *drv, vlVaContext *contex
    dst_surface = handle_table_get(drv->htab, context->target_id);
    if (!src_surface || !dst_surface)
       return VA_STATUS_ERROR_INVALID_SURFACE;
-   vlVaGetSurfaceBuffer(drv, src_surface);
-   vlVaGetSurfaceBuffer(drv, dst_surface);
-   if (!src_surface->buffer || !dst_surface->buffer)
-      return VA_STATUS_ERROR_INVALID_SURFACE;
+
+   /* Encode/Decode processing */
+   if (context->templat.entrypoint == PIPE_VIDEO_ENTRYPOINT_ENCODE ||
+       context->templat.entrypoint == PIPE_VIDEO_ENTRYPOINT_BITSTREAM) {
+      if (param->num_additional_outputs < 1 || !param->additional_outputs)
+         return VA_STATUS_ERROR_INVALID_PARAMETER;
+
+      dst_surface = handle_table_get(drv->htab, param->additional_outputs[0]);
+   }
 
    src_region = vlVaRegionDefault(param->surface_region, src_surface, &def_src_region);
    dst_region = vlVaRegionDefault(param->output_region, dst_surface, &def_dst_region);
 
-   src = src_surface->buffer;
+   src = vlVaGetSurfaceBuffer(drv, src_surface);
+   dst = vlVaGetSurfaceBuffer(drv, dst_surface);
+   if (!src || !dst)
+      return VA_STATUS_ERROR_INVALID_SURFACE;
 
    for (i = 0; i < param->num_filters; i++) {
       vlVaBuffer *buf = handle_table_get(drv->htab, param->filters[i]);
@@ -462,7 +470,7 @@ vlVaHandleVAProcPipelineParameterBufferType(vlVaDriver *drv, vlVaContext *contex
       vpp.out_color_range = PIPE_VIDEO_VPP_CHROMA_COLOR_RANGE_FULL;
       break;
    default:
-      vpp.out_color_range = util_format_is_yuv(context->target->buffer_format) ?
+      vpp.out_color_range = util_format_is_yuv(dst->buffer_format) ?
          PIPE_VIDEO_VPP_CHROMA_COLOR_RANGE_REDUCED : PIPE_VIDEO_VPP_CHROMA_COLOR_RANGE_FULL;
       break;
    }
@@ -485,11 +493,22 @@ vlVaHandleVAProcPipelineParameterBufferType(vlVaDriver *drv, vlVaContext *contex
 
    vpp.base.in_fence = src_surface->fence;
 
-   if (vlVaVidEngineBlit(drv, context, src, context->target, deinterlace, &vpp) == VA_STATUS_SUCCESS)
+   /* Encode/Decode processing */
+   if (context->templat.entrypoint == PIPE_VIDEO_ENTRYPOINT_ENCODE ||
+       context->templat.entrypoint == PIPE_VIDEO_ENTRYPOINT_BITSTREAM) {
+      vpp.dst = dst;
+      vpp.base.out_fence = &dst_surface->fence;
+      context->proc.vpp = vpp;
+      context->proc.dst_surface = dst_surface;
+      vlVaSetSurfaceContext(drv, dst_surface, context);
+      return VA_STATUS_SUCCESS;
+   }
+
+   if (vlVaVidEngineBlit(drv, context, src, dst, deinterlace, &vpp) == VA_STATUS_SUCCESS)
       return VA_STATUS_SUCCESS;
 
    VAStatus ret =
-      vlVaPostProcCompositor(drv, src, context->target, deinterlace, &vpp);
+      vlVaPostProcCompositor(drv, src, dst, deinterlace, &vpp);
    vlVaSurfaceFlush(drv, dst_surface);
    return ret;
 }

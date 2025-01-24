@@ -261,6 +261,9 @@ vlVaGetConfigAttributes(VADriverContextP ctx, VAProfile profile, VAEntrypoint en
             }
          } break;
 #endif
+         case VAConfigAttribDecProcessing:
+            value = 1;
+            break;
          default:
             value = VA_ATTRIB_NOT_SUPPORTED;
             break;

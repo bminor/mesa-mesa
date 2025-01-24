@@ -405,6 +405,11 @@ typedef struct vlVaContext {
    } desc;
 
    struct {
+      struct pipe_vpp_desc vpp;
+      struct vlVaSurface *dst_surface;
+   } proc;
+
+   struct {
       unsigned long long int frame_num;
       unsigned int start_code_size;
       unsigned int vti_bits;

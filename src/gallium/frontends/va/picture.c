@@ -162,6 +162,7 @@ vlVaBeginPicture(VADriverContextP ctx, VAContextID context_id, VASurfaceID rende
 
    context->slice_data_offset = 0;
    context->have_slice_params = false;
+   context->proc.dst_surface = NULL;
 
    mtx_unlock(&drv->mutex);
    return VA_STATUS_SUCCESS;
@@ -1124,11 +1125,9 @@ vlVaEndPicture(VADriverContextP ctx, VAContextID context_id)
    vlVaBuffer *coded_buf;
    vlVaSurface *surf;
    void *feedback = NULL;
-   struct pipe_screen *screen;
    bool apply_av1_fg = false;
    struct pipe_video_buffer **out_target;
    int output_id;
-   enum pipe_format target_format;
 
    if (!ctx)
       return VA_STATUS_ERROR_INVALID_CONTEXT;
@@ -1185,14 +1184,10 @@ vlVaEndPicture(VADriverContextP ctx, VAContextID context_id)
 
    context->mpeg4.frame_num++;
 
-   screen = context->decoder->context->screen;
-
    if ((bool)(surf->templat.bind & PIPE_BIND_PROTECTED) != context->desc.base.protected_playback) {
       mtx_unlock(&drv->mutex);
       return VA_STATUS_ERROR_INVALID_SURFACE;
    }
-
-   target_format = context->target->buffer_format;
 
    if (context->decoder->entrypoint == PIPE_VIDEO_ENTRYPOINT_ENCODE) {
       coded_buf = context->coded_buf;
@@ -1217,6 +1212,19 @@ vlVaEndPicture(VADriverContextP ctx, VAContextID context_id)
          context->desc.av1enc.requested_metadata = driver_metadata_support;
 
       context->desc.base.in_fence = surf->fence;
+      if (context->proc.dst_surface) {
+         if (!context->decoder->process_frame ||
+             context->decoder->process_frame(context->decoder, context->target, &context->proc.vpp) != 0) {
+            VAStatus ret = vlVaPostProcCompositor(drv, context->target, context->proc.vpp.dst,
+                                                  VL_COMPOSITOR_NONE, &context->proc.vpp);
+            vlVaSurfaceFlush(drv, context->proc.dst_surface);
+            if (ret != VA_STATUS_SUCCESS) {
+               mtx_unlock(&drv->mutex);
+               return ret;
+            }
+         }
+         context->target = context->proc.vpp.dst;
+      }
       context->decoder->begin_frame(context->decoder, context->target, &context->desc.base);
       context->decoder->encode_bitstream(context->decoder, context->target,
                                          coded_buf->derived_surface.resource, &feedback);
@@ -1229,12 +1237,10 @@ vlVaEndPicture(VADriverContextP ctx, VAContextID context_id)
       context->desc.base.out_fence = &surf->fence;
    }
 
-   if (screen->is_video_target_buffer_supported &&
-       !screen->is_video_target_buffer_supported(screen,
-                                                 target_format,
-                                                 context->target,
-                                                 context->decoder->profile,
-                                                 context->decoder->entrypoint)) {
+   if (!drv->pipe->screen->is_video_format_supported(drv->pipe->screen,
+                                                     context->target->buffer_format,
+                                                     context->decoder->profile,
+                                                     context->decoder->entrypoint)) {
       mtx_unlock(&drv->mutex);
       return VA_STATUS_ERROR_INVALID_SURFACE;
    }
@@ -1254,7 +1260,21 @@ vlVaEndPicture(VADriverContextP ctx, VAContextID context_id)
                            PIPE_VIDEO_CAP_REQUIRES_FLUSH_ON_END_FRAME))
       context->decoder->flush(context->decoder);
 
-   if (context->decoder->entrypoint == PIPE_VIDEO_ENTRYPOINT_ENCODE) {
+
+   if (context->decoder->entrypoint == PIPE_VIDEO_ENTRYPOINT_BITSTREAM) {
+      if (context->proc.dst_surface) {
+         if (!context->decoder->process_frame ||
+             context->decoder->process_frame(context->decoder, context->target, &context->proc.vpp) != 0) {
+            VAStatus ret = vlVaPostProcCompositor(drv, context->target, context->proc.vpp.dst,
+                                                  VL_COMPOSITOR_NONE, &context->proc.vpp);
+            vlVaSurfaceFlush(drv, context->proc.dst_surface);
+            if (ret != VA_STATUS_SUCCESS) {
+               mtx_unlock(&drv->mutex);
+               return ret;
+            }
+         }
+      }
+   } else if (context->decoder->entrypoint == PIPE_VIDEO_ENTRYPOINT_ENCODE) {
       switch (u_reduce_video_profile(context->templat.profile)) {
       case PIPE_VIDEO_FORMAT_AV1:
          context->desc.av1enc.frame_num++;
