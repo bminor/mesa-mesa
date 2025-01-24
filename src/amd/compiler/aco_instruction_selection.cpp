@@ -10186,12 +10186,11 @@ begin_uniform_if_then(isel_context* ctx, if_context* ic, Temp cond)
    ic->BB_if_idx = ctx->block->index;
    ic->BB_endif = Block();
    ic->BB_endif.kind |= ctx->block->kind & block_kind_top_level;
-
-   ctx->cf_info.has_branch = false;
-   ctx->cf_info.parent_loop.has_divergent_branch = false;
+   assert(!ctx->cf_info.has_branch && !ctx->cf_info.parent_loop.has_divergent_branch);
 
    ic->had_divergent_discard_old = ctx->cf_info.had_divergent_discard;
    ic->has_divergent_continue_old = ctx->cf_info.parent_loop.has_divergent_continue;
+   ic->exec_old = ctx->cf_info.exec;
 
    /** emit then block */
    if (ic->cond.id())
@@ -10228,6 +10227,8 @@ begin_uniform_if_else(isel_context* ctx, if_context* ic, bool logical_else)
    ic->has_divergent_continue_then = ctx->cf_info.parent_loop.has_divergent_continue;
    ctx->cf_info.parent_loop.has_divergent_continue = ic->has_divergent_continue_old;
 
+   std::swap(ctx->cf_info.exec, ic->exec_old);
+
    /** emit else block */
    Block* BB_else = ctx->program->create_and_insert_block();
    if (logical_else) {
@@ -10261,6 +10262,7 @@ end_uniform_if(isel_context* ctx, if_context* ic, bool logical_else)
    ctx->cf_info.parent_loop.has_divergent_branch = false;
    ctx->cf_info.had_divergent_discard |= ic->had_divergent_discard_then;
    ctx->cf_info.parent_loop.has_divergent_continue |= ic->has_divergent_continue_then;
+   ctx->cf_info.exec.combine(ic->exec_old);
 
    /** emit endif merge block */
    if (ic->cond.id())
@@ -10279,8 +10281,6 @@ end_empty_exec_skip(isel_context* ctx)
       begin_uniform_if_else(ctx, &ctx->cf_info.empty_exec_skip, false);
       end_uniform_if(ctx, &ctx->cf_info.empty_exec_skip, false);
       ctx->cf_info.skipping_empty_exec = false;
-
-      ctx->cf_info.exec.combine(ctx->cf_info.empty_exec_skip.exec_old);
    }
 }
 
@@ -10333,8 +10333,6 @@ begin_empty_exec_skip(isel_context* ctx, nir_instr* after_instr, nir_block* bloc
 
    begin_uniform_if_then(ctx, &ctx->cf_info.empty_exec_skip, Temp());
    ctx->cf_info.skipping_empty_exec = true;
-
-   ctx->cf_info.empty_exec_skip.exec_old = ctx->cf_info.exec;
    ctx->cf_info.exec = exec_info();
 
    ctx->program->should_repair_ssa = true;

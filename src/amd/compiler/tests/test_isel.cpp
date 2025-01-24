@@ -1187,6 +1187,61 @@ END_TEST
 
 /*
  * if (divergent) {
+ *    if (uniform) {
+ *       terminate_if
+ *       // exec potentially empty
+ *    } else {
+ *    }
+ *    // exec potentially empty
+ * }
+ */
+BEGIN_TEST(isel.cf.empty_exec.nested_uniform_if)
+   if (!setup_nir_cs(GFX11))
+      return;
+
+   //>> BB0
+   //>> s2: %_ = p_unit_test 0
+   //>> p_cbranch_z %_
+   nir_push_if(nb, nir_unit_test_divergent_amd(nb, 1, 1, .base = 0));
+   {
+      //>> BB1
+      //>> s2: %_ = p_unit_test 1
+      //>> p_cbranch_z %_:scc
+      nir_push_if(nb, nir_unit_test_uniform_amd(nb, 1, 1, .base = 1));
+      {
+         //>> BB2
+         //>> s2: %_ = p_unit_test 2
+         //>> p_discard_if %_
+         nir_terminate_if(nb, nir_unit_test_divergent_amd(nb, 1, 1, .base = 2));
+
+         //>> p_cbranch_z %0:exec rarely_taken
+         //>> p_unit_test 3, %_
+         nir_unit_test_amd(nb, nir_undef(nb, 1, 32), .base = 3);
+      }
+      nir_push_else(nb, NULL);
+      {
+         //>> BB6
+         //>> p_unit_test 4, %_
+         nir_unit_test_amd(nb, nir_undef(nb, 1, 32), .base = 4);
+      }
+      nir_pop_if(nb, NULL);
+
+      //>> BB7
+      //>> p_cbranch_z %0:exec rarely_taken
+      //>> p_unit_test 5, %_
+      nir_unit_test_amd(nb, nir_undef(nb, 1, 32), .base = 5);
+   }
+   nir_pop_if(nb, NULL);
+   //>> BB15
+   //! /* logical preds: BB10, BB13, / linear preds: BB13, BB14, / kind: uniform, top-level, merge, */
+   //>> p_unit_test 6, %_
+   nir_unit_test_amd(nb, nir_undef(nb, 1, 32), .base = 6);
+
+   finish_isel_test();
+END_TEST
+
+/*
+ * if (divergent) {
  *   terminate_if
  *   //potentially empty
  *   if (divergent) {
