@@ -4652,7 +4652,7 @@ fdm_apply_load_coords(struct tu_cmd_buffer *cmd,
                       void *data,
                       VkRect2D bin,
                       unsigned views,
-                      VkExtent2D *frag_areas)
+                      const VkExtent2D *frag_areas)
 {
    const struct apply_load_coords_state *state =
       (const struct apply_load_coords_state *)data;
@@ -5117,7 +5117,7 @@ fdm_apply_store_coords(struct tu_cmd_buffer *cmd,
                        void *data,
                        VkRect2D bin,
                        unsigned views,
-                       VkExtent2D *frag_areas)
+                       const VkExtent2D *frag_areas)
 {
    const struct apply_store_coords_state *state =
       (const struct apply_store_coords_state *)data;

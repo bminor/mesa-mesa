@@ -5652,7 +5652,7 @@ fdm_apply_fs_params(struct tu_cmd_buffer *cmd,
                     void *data,
                     VkRect2D bin,
                     unsigned views,
-                    VkExtent2D *frag_areas)
+                    const VkExtent2D *frag_areas)
 {
    const struct apply_fs_params_state *state =
       (const struct apply_fs_params_state *)data;

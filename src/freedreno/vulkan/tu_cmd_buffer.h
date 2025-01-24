@@ -747,7 +747,7 @@ typedef void (*tu_fdm_bin_apply_t)(struct tu_cmd_buffer *cmd,
                                    void *data,
                                    VkRect2D bin,
                                    unsigned views,
-                                   VkExtent2D *frag_areas);
+                                   const VkExtent2D *frag_areas);
 
 struct tu_fdm_bin_patchpoint {
    uint64_t iova;
