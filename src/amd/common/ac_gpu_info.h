@@ -157,6 +157,7 @@ struct radeon_info {
    bool use_display_dcc_unaligned;
    /* Allocate both aligned and unaligned DCC and use the retile blit. */
    bool use_display_dcc_with_retile_blit;
+   bool gfx12_supports_display_dcc;
 
    /* Memory info. */
    uint32_t pte_fragment_size;
