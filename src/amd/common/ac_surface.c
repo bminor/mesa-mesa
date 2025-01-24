@@ -2781,9 +2781,9 @@ static unsigned gfx12_select_swizzle_mode(struct ac_addrlib *addrlib,
    get_in.numMipLevels = in->numMipLevels;
    get_in.numSamples = in->numSamples;
 
-   if (surf->flags & RADEON_SURF_PREFER_4K_ALIGNMENT) {
+   if (surf && surf->flags & RADEON_SURF_PREFER_4K_ALIGNMENT) {
       get_in.maxAlign = 4 * 1024;
-   } else if (surf->flags & RADEON_SURF_PREFER_64K_ALIGNMENT) {
+   } else if (surf && surf->flags & RADEON_SURF_PREFER_64K_ALIGNMENT) {
       get_in.maxAlign = 64 * 1024;
    } else {
       get_in.maxAlign = info->has_dedicated_vram ? (256 * 1024) : (64 * 1024);
