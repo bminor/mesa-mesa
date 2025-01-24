@@ -1293,7 +1293,7 @@ prepare_push_uniforms(struct panvk_cmd_buffer *cmdbuf)
 }
 
 static VkResult
-prepare_ds(struct panvk_cmd_buffer *cmdbuf)
+prepare_ds(struct panvk_cmd_buffer *cmdbuf, struct pan_earlyzs_state earlyzs)
 {
    bool dirty = dyn_gfx_state_dirty(cmdbuf, DS_DEPTH_TEST_ENABLE) ||
                 dyn_gfx_state_dirty(cmdbuf, DS_DEPTH_WRITE_ENABLE) ||
@@ -1307,7 +1307,9 @@ prepare_ds(struct panvk_cmd_buffer *cmdbuf)
                 dyn_gfx_state_dirty(cmdbuf, RS_DEPTH_CLIP_ENABLE) ||
                 dyn_gfx_state_dirty(cmdbuf, RS_DEPTH_BIAS_ENABLE) ||
                 dyn_gfx_state_dirty(cmdbuf, RS_DEPTH_BIAS_FACTORS) ||
-                fs_user_dirty(cmdbuf);
+                dyn_gfx_state_dirty(cmdbuf, MS_ALPHA_TO_COVERAGE_ENABLE) ||
+                dyn_gfx_state_dirty(cmdbuf, INPUT_ATTACHMENT_MAP) ||
+                fs_user_dirty(cmdbuf) || gfx_state_dirty(cmdbuf, OQ);
 
    if (!dirty)
       return VK_SUCCESS;
@@ -1356,8 +1358,11 @@ prepare_ds(struct panvk_cmd_buffer *cmdbuf)
       if (rs->depth_clamp_enable)
          cfg.depth_clamp_mode = MALI_DEPTH_CLAMP_MODE_BOUNDS;
 
-      if (fs)
+      if (fs) {
+         cfg.shader_read_only_z_s = earlyzs.shader_readonly_zs;
          cfg.depth_source = pan_depth_source(&fs->info);
+      }
+
       cfg.depth_write_enable = test_z && ds->depth.write_enable;
       cfg.depth_bias_enable = rs->depth_bias.enable;
       cfg.depth_function = test_z ? translate_compare_func(ds->depth.compare_op)
@@ -1454,7 +1459,8 @@ prepare_oq(struct panvk_cmd_buffer *cmdbuf)
 }
 
 static void
-prepare_dcd(struct panvk_cmd_buffer *cmdbuf)
+prepare_dcd(struct panvk_cmd_buffer *cmdbuf,
+            struct pan_earlyzs_state *earlyzs)
 {
    struct cs_builder *b =
       panvk_get_cs_builder(cmdbuf, PANVK_SUBQUEUE_VERTEX_TILER);
@@ -1478,6 +1484,7 @@ prepare_dcd(struct panvk_cmd_buffer *cmdbuf)
       dyn_gfx_state_dirty(cmdbuf, DS_STENCIL_WRITE_MASK) ||
       /* line mode needs primitive topology */
       dyn_gfx_state_dirty(cmdbuf, IA_PRIMITIVE_TOPOLOGY) ||
+      dyn_gfx_state_dirty(cmdbuf, INPUT_ATTACHMENT_MAP) ||
       fs_user_dirty(cmdbuf) || gfx_state_dirty(cmdbuf, RENDER_STATE) ||
       gfx_state_dirty(cmdbuf, OQ);
    bool dcd1_dirty = dyn_gfx_state_dirty(cmdbuf, MS_RASTERIZATION_SAMPLES) ||
@@ -1517,26 +1524,30 @@ prepare_dcd(struct panvk_cmd_buffer *cmdbuf)
       struct mali_dcd_flags_0_packed dcd0;
       pan_pack(&dcd0, DCD_FLAGS_0, cfg) {
          if (fs) {
-            uint8_t rt_written = color_attachment_written_mask(
-               fs, &cmdbuf->vk.dynamic_graphics_state.cal);
             uint8_t rt_mask = cmdbuf->state.gfx.render.bound_attachments &
                               MESA_VK_RP_ATTACHMENT_ANY_COLOR_BITS;
+            uint8_t rt_written = color_attachment_written_mask(
+               fs, &cmdbuf->vk.dynamic_graphics_state.cal);
+            uint8_t rt_read =
+               color_attachment_read_mask(fs, &dyns->ial, rt_mask);
+            bool zs_read = zs_attachment_read(fs, &dyns->ial);
 
             cfg.allow_forward_pixel_to_kill =
                fs->info.fs.can_fpk && !(rt_mask & ~rt_written) &&
-               !alpha_to_coverage && !cmdbuf->state.gfx.cb.info.any_dest_read;
+               !(rt_read & rt_written) && !alpha_to_coverage &&
+               !cmdbuf->state.gfx.cb.info.any_dest_read;
 
             bool writes_zs = writes_z || writes_s;
             bool zs_always_passes = ds_test_always_passes(cmdbuf);
             bool oq = cmdbuf->state.gfx.occlusion_query.mode !=
                       MALI_OCCLUSION_MODE_DISABLED;
 
-            struct pan_earlyzs_state earlyzs =
+            *earlyzs =
                pan_earlyzs_get(fs->fs.earlyzs_lut, writes_zs || oq,
-                               alpha_to_coverage, zs_always_passes, false);
+                               alpha_to_coverage, zs_always_passes, zs_read);
 
-            cfg.pixel_kill_operation = (enum mali_pixel_kill)earlyzs.kill;
-            cfg.zs_update_operation = (enum mali_pixel_kill)earlyzs.update;
+            cfg.pixel_kill_operation = (enum mali_pixel_kill)earlyzs->kill;
+            cfg.zs_update_operation = (enum mali_pixel_kill)earlyzs->update;
             cfg.evaluate_per_sample = fs->info.fs.sample_shading &&
                                       (dyns->ms.rasterization_samples > 1);
 
@@ -1748,7 +1759,11 @@ prepare_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
 
       cs_move32_to(b, cs_sr_reg32(b, IDVS, VARY_SIZE), varying_size);
 
-      result = prepare_ds(cmdbuf);
+      struct pan_earlyzs_state earlyzs = {0};
+
+      prepare_dcd(cmdbuf, &earlyzs);
+
+      result = prepare_ds(cmdbuf, earlyzs);
       if (result != VK_SUCCESS)
          return result;
 
@@ -1756,7 +1771,6 @@ prepare_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
       if (result != VK_SUCCESS)
          return result;
 
-      prepare_dcd(cmdbuf);
       prepare_vp(cmdbuf);
       prepare_tiler_primitive_size(cmdbuf);
    }

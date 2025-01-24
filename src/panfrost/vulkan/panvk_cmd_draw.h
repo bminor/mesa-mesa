@@ -16,6 +16,7 @@
 #include "panvk_image.h"
 #include "panvk_image_view.h"
 #include "panvk_physical_device.h"
+#include "panvk_shader.h"
 
 #include "vk_command_buffer.h"
 #include "vk_format.h"
@@ -374,6 +375,49 @@ color_attachment_written_mask(
    }
 
    return catt_written_mask;
+}
+
+static inline uint32_t
+color_attachment_read_mask(const struct panvk_shader *fs,
+                           const struct vk_input_attachment_location_state *ial,
+                           uint8_t color_attachment_mask)
+{
+   uint32_t color_attachment_count =
+      ial->color_attachment_count == MESA_VK_COLOR_ATTACHMENT_COUNT_UNKNOWN
+         ? util_last_bit(color_attachment_mask)
+         : ial->color_attachment_count;
+   uint32_t catt_read_mask = 0;
+
+   for (uint32_t i = 0; i < color_attachment_count; i++) {
+      if (ial->color_map[i] == MESA_VK_ATTACHMENT_UNUSED)
+         continue;
+
+      uint32_t catt_idx = ial->color_map[i] + 1;
+      if (fs->fs.input_attachment_read & BITFIELD_BIT(catt_idx)) {
+         assert(color_attachment_mask & BITFIELD_BIT(i));
+         catt_read_mask |= BITFIELD_BIT(i);
+      }
+   }
+
+   return catt_read_mask;
+}
+
+static inline bool
+zs_attachment_read(const struct panvk_shader *fs,
+                   const struct vk_input_attachment_location_state *ial)
+{
+   uint32_t depth_mask = ial->depth_att == MESA_VK_ATTACHMENT_NO_INDEX
+                            ? BITFIELD_BIT(0)
+                         : ial->depth_att != MESA_VK_ATTACHMENT_UNUSED
+                            ? BITFIELD_BIT(ial->depth_att + 1)
+                            : 0;
+   uint32_t stencil_mask = ial->stencil_att == MESA_VK_ATTACHMENT_NO_INDEX
+                              ? BITFIELD_BIT(0)
+                           : ial->stencil_att != MESA_VK_ATTACHMENT_UNUSED
+                              ? BITFIELD_BIT(ial->stencil_att + 1)
+                              : 0;
+
+   return (depth_mask | stencil_mask) & fs->fs.input_attachment_read;
 }
 
 #endif

@@ -539,6 +539,84 @@ panvk_per_arch(cmd_preload_render_area_border)(
       panvk_per_arch(cmd_force_fb_preload)(cmdbuf, render_info);
 }
 
+static void
+prepare_iam_sysvals(struct panvk_cmd_buffer *cmdbuf, BITSET_WORD *dirty_sysvals)
+{
+   const struct vk_input_attachment_location_state *ial =
+      &cmdbuf->vk.dynamic_graphics_state.ial;
+   struct panvk_input_attachment_info iam[INPUT_ATTACHMENT_MAP_SIZE];
+   uint32_t catt_count =
+      ial->color_attachment_count == MESA_VK_COLOR_ATTACHMENT_COUNT_UNKNOWN
+         ? MAX_RTS
+         : ial->color_attachment_count;
+
+   memset(iam, ~0, sizeof(iam));
+
+   assert(catt_count <= MAX_RTS);
+
+   for (uint32_t i = 0; i < catt_count; i++) {
+      if (ial->color_map[i] == MESA_VK_ATTACHMENT_UNUSED ||
+          !(cmdbuf->state.gfx.render.bound_attachments &
+            MESA_VK_RP_ATTACHMENT_COLOR_BIT(i)))
+         continue;
+
+      VkFormat fmt = cmdbuf->state.gfx.render.color_attachments.fmts[i];
+      enum pipe_format pfmt = vk_format_to_pipe_format(fmt);
+      struct mali_internal_conversion_packed conv;
+      uint32_t ia_idx = ial->color_map[i] + 1;
+      assert(ia_idx < ARRAY_SIZE(iam));
+
+      iam[ia_idx].target = PANVK_COLOR_ATTACHMENT(i);
+
+      pan_pack(&conv, INTERNAL_CONVERSION, cfg) {
+         cfg.memory_format =
+            GENX(panfrost_dithered_format_from_pipe_format)(pfmt, false);
+#if PAN_ARCH <= 7
+         cfg.register_format =
+            vk_format_is_uint(fmt)   ? MALI_REGISTER_FILE_FORMAT_U32
+            : vk_format_is_sint(fmt) ? MALI_REGISTER_FILE_FORMAT_I32
+                                     : MALI_REGISTER_FILE_FORMAT_F32;
+#endif
+      }
+
+      iam[ia_idx].conversion = conv.opaque[0];
+   }
+
+   if (ial->depth_att != MESA_VK_ATTACHMENT_UNUSED) {
+      uint32_t ia_idx =
+         ial->depth_att == MESA_VK_ATTACHMENT_NO_INDEX ? 0 : ial->depth_att + 1;
+
+      assert(ia_idx < ARRAY_SIZE(iam));
+      iam[ia_idx].target = PANVK_ZS_ATTACHMENT;
+
+#if PAN_ARCH <= 7
+      /* On v7, we need to pass the depth format around. If we use a conversion
+       * of zero, like we do on v9+, the GPU reports an INVALID_INSTR_ENC. */
+      VkFormat fmt = cmdbuf->state.gfx.render.z_attachment.fmt;
+      enum pipe_format pfmt = vk_format_to_pipe_format(fmt);
+      struct mali_internal_conversion_packed conv;
+
+      pan_pack(&conv, INTERNAL_CONVERSION, cfg) {
+         cfg.register_format = MALI_REGISTER_FILE_FORMAT_F32;
+         cfg.memory_format =
+            GENX(panfrost_dithered_format_from_pipe_format)(pfmt, false);
+      }
+      iam[ia_idx].conversion = conv.opaque[0];
+#endif
+   }
+
+   if (ial->stencil_att != MESA_VK_ATTACHMENT_UNUSED) {
+      uint32_t ia_idx =
+         ial->stencil_att == MESA_VK_ATTACHMENT_NO_INDEX ? 0 : ial->stencil_att + 1;
+
+      assert(ia_idx < ARRAY_SIZE(iam));
+      iam[ia_idx].target = PANVK_ZS_ATTACHMENT;
+   }
+
+   for (uint32_t i = 0; i < ARRAY_SIZE(iam); i++)
+      set_gfx_sysval(cmdbuf, dirty_sysvals, iam[i], iam[i]);
+}
+
 /* This value has been selected to get
  * dEQP-VK.draw.renderpass.inverted_depth_ranges.nodepthclamp_deltazero passing.
  */
@@ -646,6 +724,9 @@ panvk_per_arch(cmd_prepare_draw_sysvals)(struct panvk_cmd_buffer *cmdbuf,
                         CLAMP(z_offset, 0.0f, 1.0f));
       }
    }
+
+   if (dyn_gfx_state_dirty(cmdbuf, INPUT_ATTACHMENT_MAP))
+      prepare_iam_sysvals(cmdbuf, dirty_sysvals);
 
    const struct panvk_shader *vs = cmdbuf->state.gfx.vs.shader;
 

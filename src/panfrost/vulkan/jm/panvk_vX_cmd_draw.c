@@ -282,13 +282,16 @@ panvk_draw_prepare_fs_rsd(struct panvk_cmd_buffer *cmdbuf,
                                  8));
          }
 
-         uint8_t rt_written = color_attachment_written_mask(
-            fs, &cmdbuf->vk.dynamic_graphics_state.cal);
          uint8_t rt_mask = cmdbuf->state.gfx.render.bound_attachments &
                            MESA_VK_RP_ATTACHMENT_ANY_COLOR_BITS;
+         uint8_t rt_written = color_attachment_written_mask(
+            fs, &cmdbuf->vk.dynamic_graphics_state.cal);
+         uint8_t rt_read = color_attachment_read_mask(fs, &dyns->ial, rt_mask);
+         bool zs_read = zs_attachment_read(fs, &dyns->ial);
          cfg.properties.allow_forward_pixel_to_kill =
             fs_info->fs.can_fpk && !(rt_mask & ~rt_written) &&
-            !alpha_to_coverage && !binfo->any_dest_read;
+            !(rt_read & rt_written) && !alpha_to_coverage &&
+            !binfo->any_dest_read;
 
          bool writes_zs = writes_z || writes_s;
          bool zs_always_passes = ds_test_always_passes(cmdbuf);
@@ -297,7 +300,7 @@ panvk_draw_prepare_fs_rsd(struct panvk_cmd_buffer *cmdbuf,
 
          struct pan_earlyzs_state earlyzs =
             pan_earlyzs_get(fs->fs.earlyzs_lut, writes_zs || oq,
-                            alpha_to_coverage, zs_always_passes, false);
+                            alpha_to_coverage, zs_always_passes, zs_read);
 
          cfg.properties.pixel_kill_operation = earlyzs.kill;
          cfg.properties.zs_update_operation = earlyzs.update;

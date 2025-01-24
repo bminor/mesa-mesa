@@ -62,12 +62,18 @@
 #include "vk_shader.h"
 #include "vk_util.h"
 
+struct panvk_lower_sysvals_context {
+   struct panvk_shader *shader;
+   const struct vk_graphics_pipeline_state *state;
+};
+
 static bool
 panvk_lower_sysvals(nir_builder *b, nir_instr *instr, void *data)
 {
    if (instr->type != nir_instr_type_intrinsic)
       return false;
 
+   const struct panvk_lower_sysvals_context *ctx = data;
    nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
    unsigned bit_size = intr->def.bit_size;
    nir_def *val = NULL;
@@ -126,6 +132,52 @@ panvk_lower_sysvals(nir_builder *b, nir_instr *instr, void *data)
       else
          val = load_sysval(b, graphics, bit_size, printf_buffer_address);
       break;
+
+   case nir_intrinsic_load_input_attachment_target_pan: {
+      const struct vk_input_attachment_location_state *ial =
+         ctx->state ? ctx->state->ial : NULL;
+
+      if (ial) {
+         uint32_t index = nir_src_as_uint(intr->src[0]);
+         uint32_t depth_idx = ial->depth_att == MESA_VK_ATTACHMENT_NO_INDEX
+                                 ? 0
+                                 : ial->depth_att + 1;
+         uint32_t stencil_idx = ial->stencil_att == MESA_VK_ATTACHMENT_NO_INDEX
+                                   ? 0
+                                   : ial->stencil_att + 1;
+         uint32_t target = ~0;
+
+         if (depth_idx == index || stencil_idx == index) {
+            target = PANVK_ZS_ATTACHMENT;
+         } else {
+            for (unsigned i = 0; i < ial->color_attachment_count; i++) {
+               if (ial->color_map[i] == MESA_VK_ATTACHMENT_UNUSED)
+                  continue;
+
+               if (ial->color_map[i] + 1 == index) {
+                  target = PANVK_COLOR_ATTACHMENT(i);
+                  break;
+               }
+            }
+         }
+
+         val = nir_imm_int(b, target);
+      } else {
+         nir_def *ia_info =
+            load_sysval_entry(b, graphics, bit_size, iam, intr->src[0].ssa);
+
+         val = nir_channel(b, ia_info, 0);
+      }
+      break;
+   }
+
+   case nir_intrinsic_load_input_attachment_conv_pan: {
+      nir_def *ia_info =
+         load_sysval_entry(b, graphics, bit_size, iam, intr->src[0].ssa);
+
+      val = nir_channel(b, ia_info, 1);
+      break;
+   }
 
    default:
       return false;
@@ -326,15 +378,6 @@ panvk_preprocess_nir(UNUSED struct vk_physical_device *vk_pdev,
    NIR_PASS(_, nir, nir_opt_combine_stores, nir_var_all);
    NIR_PASS(_, nir, nir_opt_loop);
 
-   if (nir->info.stage == MESA_SHADER_FRAGMENT) {
-      struct nir_input_attachment_options lower_input_attach_opts = {
-         .use_fragcoord_sysval = true,
-         .use_layer_id_sysval = true,
-      };
-
-      NIR_PASS(_, nir, nir_lower_input_attachments, &lower_input_attach_opts);
-   }
-
    /* Do texture lowering here.  Yes, it's a duplication of the texture
     * lowering in bifrost_compile.  However, we need to lower texture stuff
     * now, before we call panvk_per_arch(nir_lower_descriptors)() because some
@@ -399,6 +442,9 @@ panvk_hash_graphics_state(struct vk_physical_device *device,
 
    _mesa_blake3_update(&blake3_ctx, &state->rp->view_mask,
                        sizeof(state->rp->view_mask));
+
+   if (state->ial)
+      _mesa_blake3_update(&blake3_ctx, state->ial, sizeof(*state->ial));
 
    _mesa_blake3_final(&blake3_ctx, blake3_out);
 }
@@ -677,6 +723,7 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
                 struct vk_descriptor_set_layout *const *set_layouts,
                 const struct vk_pipeline_robustness_state *rs,
                 uint32_t *noperspective_varyings,
+                const struct vk_graphics_pipeline_state *state,
                 const struct panfrost_compile_inputs *compile_input,
                 struct panvk_shader *shader)
 {
@@ -813,8 +860,13 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
       NIR_PASS(_, nir, pan_nir_lower_static_noperspective,
                *noperspective_varyings);
 
+   struct panvk_lower_sysvals_context lower_sysvals_ctx = {
+      .shader = shader,
+      .state = state,
+   };
+
    NIR_PASS(_, nir, nir_shader_instructions_pass, panvk_lower_sysvals,
-            nir_metadata_control_flow, NULL);
+            nir_metadata_control_flow, &lower_sysvals_ctx);
 
    lower_load_push_consts(nir, shader);
 }
@@ -1134,7 +1186,8 @@ panvk_compile_shader(struct panvk_device *dev,
       nir->info.fs.uses_sample_shading = true;
 
    panvk_lower_nir(dev, nir, info->set_layout_count, info->set_layouts,
-                   info->robustness, noperspective_varyings, &inputs, shader);
+                   info->robustness, noperspective_varyings, state, &inputs,
+                   shader);
 
 #if PAN_ARCH >= 9
    if (info->stage == MESA_SHADER_FRAGMENT)
@@ -1319,7 +1372,6 @@ panvk_deserialize_shader(struct vk_device *vk_dev, struct blob_reader *blob,
    VkResult result;
 
    blob_copy_bytes(blob, &info, sizeof(info));
-
    if (blob->overrun)
       return panvk_error(device, VK_ERROR_INCOMPATIBLE_SHADER_BINARY_EXT);
 
@@ -1340,6 +1392,8 @@ panvk_deserialize_shader(struct vk_device *vk_dev, struct blob_reader *blob,
 
    case MESA_SHADER_FRAGMENT:
       shader->fs.earlyzs_lut = pan_earlyzs_analyze(&shader->info, PAN_ARCH);
+      blob_copy_bytes(blob, &shader->fs.input_attachment_read,
+                      sizeof(shader->fs.input_attachment_read));
       break;
 
    default:
@@ -1439,6 +1493,11 @@ panvk_shader_serialize(struct vk_device *vk_dev,
    case MESA_SHADER_KERNEL:
       blob_write_bytes(blob, &shader->cs.local_size,
                        sizeof(shader->cs.local_size));
+      break;
+
+   case MESA_SHADER_FRAGMENT:
+      blob_write_bytes(blob, &shader->fs.input_attachment_read,
+                       sizeof(shader->fs.input_attachment_read));
       break;
 
    default:

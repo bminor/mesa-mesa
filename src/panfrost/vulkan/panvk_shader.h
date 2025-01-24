@@ -52,6 +52,18 @@ enum panvk_desc_table_id {
 };
 #endif
 
+#define PANVK_COLOR_ATTACHMENT(x) (x)
+#define PANVK_ZS_ATTACHMENT       255
+
+struct panvk_input_attachment_info {
+   uint32_t target;
+   uint32_t conversion;
+};
+
+/* One attachment per color, one for depth, one for stencil, and the last one
+ * for the attachment without an InputAttachmentIndex attribute. */
+#define INPUT_ATTACHMENT_MAP_SIZE 11
+
 #define FAU_WORD_SIZE sizeof(uint64_t)
 
 #define aligned_u64 __attribute__((aligned(sizeof(uint64_t)))) uint64_t
@@ -78,6 +90,8 @@ struct panvk_graphics_sysvals {
 
    aligned_u64 push_consts;
    aligned_u64 printf_buffer_address;
+
+   struct panvk_input_attachment_info iam[INPUT_ATTACHMENT_MAP_SIZE];
 
 #if PAN_ARCH <= 7
    /* gl_Layer on Bifrost is a bit of hack. We have to issue one draw per
@@ -265,6 +279,7 @@ struct panvk_shader {
 
       struct {
          struct pan_earlyzs_lut earlyzs_lut;
+         uint32_t input_attachment_read;
       } fs;
    };
 
