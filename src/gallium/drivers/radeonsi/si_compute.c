@@ -1237,7 +1237,7 @@ static void si_launch_grid(struct pipe_context *ctx, const struct pipe_grid_info
       }
    }
 
-   if (u_trace_perfetto_active(&sctx->ds.trace_context))
+   if (sctx->perfetto_enabled)
       trace_si_begin_compute(&sctx->trace);
 
    if (sctx->bo_list_add_all_compute_resources)
@@ -1310,7 +1310,7 @@ static void si_launch_grid(struct pipe_context *ctx, const struct pipe_grid_info
    sctx->compute_is_busy = true;
    sctx->num_compute_calls++;
 
-   if (u_trace_perfetto_active(&sctx->ds.trace_context))
+   if (sctx->perfetto_enabled)
       trace_si_end_compute(&sctx->trace, info->grid[0], info->grid[1], info->grid[2]);
 
    if (cs_regalloc_hang) {

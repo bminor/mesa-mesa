@@ -474,9 +474,8 @@ static void si_flush_all_queues(struct pipe_context *ctx,
          si_handle_sqtt(sctx, &sctx->gfx_cs);
       }
       
-      if (u_trace_perfetto_active(&sctx->ds.trace_context)) {
+      if (sctx->perfetto_enabled)
          u_trace_context_process(&sctx->ds.trace_context, flags & PIPE_FLUSH_END_OF_FRAME);
-      }
    } else {
       /* Instead of flushing, create a deferred fence. Constraints:
        * - the gallium frontend must allow a deferred flush.

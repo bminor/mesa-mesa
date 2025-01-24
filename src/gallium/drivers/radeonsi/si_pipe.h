@@ -1345,6 +1345,8 @@ struct si_context {
    enum rgp_sqtt_marker_event_type sqtt_next_event;
    bool sqtt_enabled;
 
+   bool perfetto_enabled;
+
    unsigned context_flags;
 
    /* Shaders. */
