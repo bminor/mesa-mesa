@@ -38,24 +38,18 @@ struct shader_io_state {
 struct exec_info {
    /* Set to false when loop_nest_depth==0 && parent_if.is_divergent==false */
    bool potentially_empty_discard = false;
-   uint16_t potentially_empty_break_depth = UINT16_MAX;
-   /* Set to false when loop_nest_depth==exec_potentially_empty_break_depth,
-    * parent_if.is_divergent==false and parent_loop.has_divergent_continue==false. Also set to
-    * false if loop_nest_depth<exec_potentially_empty_break_depth. */
+
+   /* Set to false when leaving the loop, or if parent_if.is_divergent==false and
+    * parent_loop.has_divergent_continue==false. */
    bool potentially_empty_break = false;
-   uint16_t potentially_empty_continue_depth = UINT16_MAX;
-   /* Set to false when loop_nest_depth==exec_potentially_empty_break_depth
-    * and parent_if.is_divergent==false. */
+
+   /* Set to false when leaving the loop, or if parent_if.is_divergent==false. */
    bool potentially_empty_continue = false;
 
    void combine(struct exec_info& other)
    {
       potentially_empty_discard |= other.potentially_empty_discard;
-      potentially_empty_break_depth =
-         std::min(potentially_empty_break_depth, other.potentially_empty_break_depth);
       potentially_empty_break |= other.potentially_empty_break;
-      potentially_empty_continue_depth =
-         std::min(potentially_empty_continue_depth, other.potentially_empty_continue_depth);
       potentially_empty_continue |= other.potentially_empty_continue;
    }
 

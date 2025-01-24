@@ -9744,24 +9744,11 @@ update_exec_info(isel_context* ctx)
    if (!ctx->block->loop_nest_depth && !ctx->cf_info.parent_if.is_divergent)
       ctx->cf_info.exec.potentially_empty_discard = false;
 
-   ctx->cf_info.exec.potentially_empty_break &=
-      ctx->block->loop_nest_depth >= ctx->cf_info.exec.potentially_empty_break_depth;
-   ctx->cf_info.exec.potentially_empty_continue &=
-      ctx->block->loop_nest_depth >= ctx->cf_info.exec.potentially_empty_continue_depth;
-
-   if (ctx->block->loop_nest_depth == ctx->cf_info.exec.potentially_empty_break_depth &&
-       !ctx->cf_info.parent_if.is_divergent && !ctx->cf_info.parent_loop.has_divergent_continue) {
+   if (!ctx->cf_info.parent_if.is_divergent && !ctx->cf_info.parent_loop.has_divergent_continue)
       ctx->cf_info.exec.potentially_empty_break = false;
-   }
-   if (ctx->block->loop_nest_depth == ctx->cf_info.exec.potentially_empty_continue_depth &&
-       !ctx->cf_info.parent_if.is_divergent) {
-      ctx->cf_info.exec.potentially_empty_continue = false;
-   }
 
-   if (!ctx->cf_info.exec.potentially_empty_break)
-      ctx->cf_info.exec.potentially_empty_break_depth = UINT16_MAX;
-   if (!ctx->cf_info.exec.potentially_empty_continue)
-      ctx->cf_info.exec.potentially_empty_continue_depth = UINT16_MAX;
+   if (!ctx->cf_info.parent_if.is_divergent)
+      ctx->cf_info.exec.potentially_empty_continue = false;
 }
 
 void
@@ -9777,11 +9764,7 @@ end_loop(isel_context* ctx, loop_context* lc)
       /* No need to check exec.potentially_empty_break/continue originating inside the loop. In the
        * only case where it's possible at this point (divergent break after divergent continue), we
        * should continue anyway. */
-      if (ctx->cf_info.exec.potentially_empty_discard ||
-          (ctx->cf_info.exec.potentially_empty_break &&
-           ctx->cf_info.exec.potentially_empty_break_depth < ctx->block->loop_nest_depth) ||
-          (ctx->cf_info.exec.potentially_empty_continue &&
-           ctx->cf_info.exec.potentially_empty_continue_depth < ctx->block->loop_nest_depth)) {
+      if (ctx->cf_info.exec.potentially_empty_discard) {
          /* Discards can result in code running with an empty exec mask.
           * This would result in divergent breaks not ever being taken. As a
           * workaround, break the loop when the loop mask is empty instead of
@@ -9822,16 +9805,15 @@ end_loop(isel_context* ctx, loop_context* lc)
       bld.branch(aco_opcode::p_branch);
    }
 
-   ctx->cf_info.has_branch = false;
-   ctx->cf_info.has_divergent_branch = false;
-   ctx->program->next_loop_depth--;
-
    /* emit loop successor block */
+   ctx->program->next_loop_depth--;
    ctx->block = ctx->program->insert_block(std::move(lc->loop_exit));
    append_logical_start(ctx->block);
 
-   ctx->cf_info.parent_loop = lc->cf_info_old.parent_loop;
-   ctx->cf_info.parent_if = lc->cf_info_old.parent_if;
+   /* Propagate information about discards and restore previous CF info. */
+   lc->cf_info_old.exec.potentially_empty_discard |= ctx->cf_info.exec.potentially_empty_discard;
+   lc->cf_info_old.had_divergent_discard |= ctx->cf_info.had_divergent_discard;
+   ctx->cf_info = lc->cf_info_old;
    update_exec_info(ctx);
 }
 
@@ -9859,10 +9841,8 @@ emit_loop_jump(isel_context* ctx, bool is_break)
       }
       ctx->cf_info.has_divergent_branch = true;
 
-      if (!ctx->cf_info.exec.potentially_empty_break) {
+      if (!ctx->cf_info.exec.potentially_empty_break)
          ctx->cf_info.exec.potentially_empty_break = true;
-         ctx->cf_info.exec.potentially_empty_break_depth = ctx->block->loop_nest_depth;
-      }
    } else {
       logical_target = &ctx->program->blocks[ctx->cf_info.parent_loop.header_idx];
       add_logical_edge(idx, logical_target);
@@ -9888,10 +9868,8 @@ emit_loop_jump(isel_context* ctx, bool is_break)
             we must ensure that they are handled correctly */
          ctx->cf_info.parent_loop.has_divergent_continue = true;
 
-         if (!ctx->cf_info.exec.potentially_empty_continue) {
+         if (!ctx->cf_info.exec.potentially_empty_continue)
             ctx->cf_info.exec.potentially_empty_continue = true;
-            ctx->cf_info.exec.potentially_empty_continue_depth = ctx->block->loop_nest_depth;
-         }
       }
    }
 
