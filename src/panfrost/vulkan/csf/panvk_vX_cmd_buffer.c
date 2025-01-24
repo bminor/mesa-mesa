@@ -539,6 +539,12 @@ panvk_per_arch(CmdPipelineBarrier2)(VkCommandBuffer commandBuffer,
    VK_FROM_HANDLE(panvk_cmd_buffer, cmdbuf, commandBuffer);
    struct panvk_cs_deps deps;
 
+   /* Intra render pass barriers can be skipped iff we're inside a render
+    * pass. */
+   if ((cmdbuf->state.gfx.render.tiler || inherits_render_ctx(cmdbuf)) &&
+       (pDependencyInfo->dependencyFlags & VK_DEPENDENCY_BY_REGION_BIT))
+      return;
+
    panvk_per_arch(get_cs_deps)(cmdbuf, pDependencyInfo, &deps);
 
    if (deps.needs_draw_flush)
