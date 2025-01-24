@@ -1253,7 +1253,9 @@ radv_image_create_layout(struct radv_device *device, struct radv_image_create_in
 
    assert(image->planes[0].surface.surf_size);
    assert(image->planes[0].surface.modifier == DRM_FORMAT_MOD_INVALID ||
-          ac_modifier_has_dcc(image->planes[0].surface.modifier) == radv_image_has_dcc(image));
+          ac_modifier_has_dcc(image->planes[0].surface.modifier) ==
+             (pdev->info.gfx_level >= GFX12 ? image->planes[0].surface.u.gfx9.gfx12_enable_dcc
+                                            : radv_image_has_dcc(image)));
    return VK_SUCCESS;
 }
 
