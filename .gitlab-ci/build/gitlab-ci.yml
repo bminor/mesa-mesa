@@ -11,6 +11,7 @@
     # instead timeout so that the retry mechanism can kick in.
     # A few exception are made, see overrides in the rest of this file.
     BUILD_JOB_TIMEOUT: 15m
+    RUN_MESON_TESTS: "true"
   timeout: 1h
   # We don't want to download any previous job's artifacts
   dependencies: []
@@ -118,6 +119,7 @@ debian-testing:
       -D tools=drm-shim
     S3_ARTIFACT_NAME: mesa-x86_64-default-${BUILDTYPE}
     LLVM_VERSION: 15
+    RUN_MESON_TESTS: "false" # debian-build-testing already runs these
   script:
     - *meson-build
     - .gitlab-ci/prepare-artifacts.sh
@@ -140,6 +142,7 @@ debian-testing-asan:
       -D mesa-clc=system
     S3_ARTIFACT_NAME: ""
     ARTIFACTS_DEBUG_SYMBOLS: 1
+    RUN_MESON_TESTS: "false" # just too slow
     # Do a host build for mesa-clc (asan complains not being loaded as
     # the first library)
     HOST_BUILD_OPTIONS: >
@@ -175,6 +178,7 @@ debian-testing-msan:
     MESON_TEST_ARGS: "--suite glcpp --suite format"
     GALLIUM_DRIVERS: "freedreno,iris,nouveau,r300,r600,llvmpipe,softpipe,svga,v3d,vc4,virgl,etnaviv,panfrost,lima,zink,radeonsi,tegra,d3d12,crocus"
     VULKAN_DRIVERS: intel,amd,broadcom,virtio
+    RUN_MESON_TESTS: "false" # just too slow
     # Do a host build for mesa-clc (msan complains about uninitialized
     # values in the LLVM libs)
     HOST_BUILD_OPTIONS: >
@@ -205,6 +209,7 @@ debian-testing-ubsan:
       -D mesa-clc=system
     S3_ARTIFACT_NAME: ""
     ARTIFACTS_DEBUG_SYMBOLS: 1
+    RUN_MESON_TESTS: "false" # just too slow
     HOST_BUILD_OPTIONS: >
       -D build-tests=false
       -D enable-glcpp-tests=false
@@ -547,6 +552,7 @@ debian-arm32-asan:
       -D valgrind=disabled
       -D tools=dlclose-skip
     ARTIFACTS_DEBUG_SYMBOLS: 1
+    RUN_MESON_TESTS: "false" # just too slow
     S3_ARTIFACT_NAME: mesa-arm32-asan-${BUILDTYPE}
     MESON_TEST_ARGS: "--no-suite mesa:compiler --no-suite mesa:util"
 
@@ -570,6 +576,7 @@ debian-arm64:
       -D teflon=true
     GALLIUM_ST:
       -D gallium-rusticl=true
+    RUN_MESON_TESTS: "false" # run by debian-arm64-build-testing
     S3_ARTIFACT_NAME: mesa-arm64-default-${BUILDTYPE}
   script:
     - *meson-build
@@ -587,8 +594,8 @@ debian-arm64-asan:
       -D valgrind=disabled
       -D tools=dlclose-skip
     ARTIFACTS_DEBUG_SYMBOLS: 1
+    RUN_MESON_TESTS: "false" # just too slow
     S3_ARTIFACT_NAME: mesa-arm64-asan-${BUILDTYPE}
-    MESON_TEST_ARGS: "--no-suite mesa:compiler"
 
 debian-arm64-ubsan:
   extends:
@@ -607,8 +614,8 @@ debian-arm64-ubsan:
     EXTRA_OPTION: >
       -D b_sanitize=undefined
     ARTIFACTS_DEBUG_SYMBOLS: 1
+    RUN_MESON_TESTS: "false" # just too slow
     S3_ARTIFACT_NAME: mesa-arm64-ubsan-${BUILDTYPE}
-    MESON_TEST_ARGS: "--no-suite mesa:compiler"
 
 debian-arm64-build-test:
   extends:
