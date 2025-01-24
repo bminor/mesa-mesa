@@ -34,8 +34,6 @@ ForEachMacros:
   - foreach_ssa_src
   - foreach_input_n
   - foreach_input
-  - foreach_output_n
-  - foreach_output
   - foreach_instr
   - foreach_instr_rev
   - foreach_instr_safe
@@ -45,10 +43,6 @@ ForEachMacros:
   - foreach_block_rev
   - foreach_array
   - foreach_array_safe
-  - foreach_name_n
-  - foreach_name
-  - foreach_def
-  - foreach_use
   - foreach_interval
   - foreach_interval_safe
   - foreach_interval_rev
