@@ -198,12 +198,14 @@ xe_vm_bind_op(struct anv_device *device,
                                 true);
    }
    if (signal_bind_timeline) {
-      xe_syncs[sync_idx++] = (struct drm_xe_sync) {
+      xe_syncs[sync_idx] = (struct drm_xe_sync) {
          .type = DRM_XE_SYNC_TYPE_TIMELINE_SYNCOBJ,
          .flags = DRM_XE_SYNC_FLAG_SIGNAL,
-         .handle = intel_bind_timeline_get_syncobj(&device->bind_timeline),
+         .addr = 0, /* init union to 0 before setting .handle */
          /* .timeline_value will be set later. */
       };
+      xe_syncs[sync_idx++].handle =
+         intel_bind_timeline_get_syncobj(&device->bind_timeline);
    }
    assert(sync_idx == num_syncs);
 

@@ -43,9 +43,10 @@ vk_sync_to_drm_xe_sync(struct vk_sync *vk_sync, uint64_t value, bool signal)
       .type = value ? DRM_XE_SYNC_TYPE_TIMELINE_SYNCOBJ :
                       DRM_XE_SYNC_TYPE_SYNCOBJ,
       .flags = signal ? DRM_XE_SYNC_FLAG_SIGNAL : 0,
-      .handle = syncobj->syncobj,
+      .addr = 0, /* init union to 0 before setting .handle */
       .timeline_value = value,
    };
+   drm_sync.handle = syncobj->syncobj;
 
    return drm_sync;
 }
@@ -103,12 +104,14 @@ xe_exec_process_syncs(struct anv_queue *queue,
       xe_syncs[count++] = vk_sync_to_drm_xe_sync(queue->sync, 0, TYPE_SIGNAL);
 
    /* vm bind sync */
-   xe_syncs[count++] = (struct drm_xe_sync) {
+   xe_syncs[count] = (struct drm_xe_sync) {
       .type = DRM_XE_SYNC_TYPE_TIMELINE_SYNCOBJ,
       .flags = 0 /* TYPE_WAIT */,
-      .handle = intel_bind_timeline_get_syncobj(&device->bind_timeline),
+      .addr = 0, /* init union to 0 before setting .handle */
       .timeline_value = intel_bind_timeline_get_last_point(&device->bind_timeline),
    };
+   xe_syncs[count++].handle =
+      intel_bind_timeline_get_syncobj(&device->bind_timeline);
 
    assert(count == num_syncs);
    *ret = xe_syncs;
@@ -163,12 +166,14 @@ xe_queue_exec_async(struct anv_async_submit *submit,
    if (queue->sync)
       xe_syncs[n_syncs++] = vk_sync_to_drm_xe_sync(queue->sync, 0, TYPE_SIGNAL);
 
-   xe_syncs[n_syncs++] = (struct drm_xe_sync) {
+   xe_syncs[n_syncs] = (struct drm_xe_sync) {
       .type = DRM_XE_SYNC_TYPE_TIMELINE_SYNCOBJ,
       .flags = 0 /* TYPE_WAIT */,
-      .handle = intel_bind_timeline_get_syncobj(&device->bind_timeline),
+      .addr = 0, /* init union to 0 before setting .handle */
       .timeline_value = intel_bind_timeline_get_last_point(&device->bind_timeline),
    };
+   xe_syncs[n_syncs++].handle =
+      intel_bind_timeline_get_syncobj(&device->bind_timeline);
 
 #ifdef SUPPORT_INTEL_INTEGRATED_GPUS
    if (device->physical->memory.need_flush &&
