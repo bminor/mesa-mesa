@@ -473,8 +473,8 @@ static void si_flush_all_queues(struct pipe_context *ctx,
       if (unlikely(sctx->sqtt && (flags & PIPE_FLUSH_END_OF_FRAME))) {
          si_handle_sqtt(sctx, &sctx->gfx_cs);
       }
-      
-      if (sctx->perfetto_enabled)
+
+      if (unlikely(sctx->perfetto_enabled))
          u_trace_context_process(&sctx->ds.trace_context, flags & PIPE_FLUSH_END_OF_FRAME);
    } else {
       /* Instead of flushing, create a deferred fence. Constraints:

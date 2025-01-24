@@ -2085,7 +2085,7 @@ static void si_draw(struct pipe_context *ctx,
 
    si_need_gfx_cs_space(sctx, num_draws, ALT_HIZ_LOGIC ? 8 : 0);
 
-   if (sctx->perfetto_enabled)
+   if (unlikely(sctx->perfetto_enabled))
       trace_si_begin_draw(&sctx->trace);
 
    unsigned instance_count = info->instance_count;
@@ -2437,7 +2437,7 @@ static void si_draw(struct pipe_context *ctx,
       zstex->depth_cleared_level_mask &= ~BITFIELD_BIT(sctx->framebuffer.state.zsbuf->u.tex.level);
    }
 
-   if (sctx->perfetto_enabled) {
+   if (unlikely(sctx->perfetto_enabled)) {
       /* Just use the draw[0] vertex count for perfetto. */
       trace_si_end_draw(&sctx->trace, draws[0].count);
    }
