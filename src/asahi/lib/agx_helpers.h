@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include "asahi/compiler/agx_compile.h"
 #include "asahi/layout/layout.h"
+#include "agx_abi.h"
 #include "agx_pack.h"
 #include "agx_ppp.h"
 #include "libagx_shaders.h"
@@ -219,8 +220,8 @@ agx_set_null_pbe(struct agx_pbe_packed *pbe, uint64_t sink)
  *    i <= floor((size - src_offset - elsize_B) / stride)
  */
 static inline uint32_t
-agx_calculate_vbo_clamp(uint64_t vbuf, uint64_t sink, enum pipe_format format,
-                        uint32_t size_B, uint32_t stride_B, uint32_t offset_B,
+agx_calculate_vbo_clamp(uint64_t vbuf, enum pipe_format format, uint32_t size_B,
+                        uint32_t stride_B, uint32_t offset_B,
                         uint64_t *vbuf_out)
 {
    unsigned elsize_B = util_format_get_blocksize(format);
@@ -238,7 +239,7 @@ agx_calculate_vbo_clamp(uint64_t vbuf, uint64_t sink, enum pipe_format format,
       else
          return UINT32_MAX;
    } else {
-      *vbuf_out = sink;
+      *vbuf_out = AGX_ZERO_PAGE_ADDRESS;
       return 0;
    }
 }

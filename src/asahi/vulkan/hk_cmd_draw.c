@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
+#include "agx_abi.h"
 #include "agx_bg_eot.h"
 #include "agx_bo.h"
 #include "agx_compile.h"
@@ -2611,8 +2612,6 @@ hk_flush_dynamic_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
    if (IS_DIRTY(VI) || IS_DIRTY(VI_BINDINGS_VALID) || vgt_dirty ||
        (gfx->dirty & HK_DIRTY_VB)) {
 
-      uint64_t sink = dev->rodata.zero_sink;
-
       unsigned slot = 0;
       u_foreach_bit(a, sw_vs->info.vs.attribs_read) {
          if (dyn->vi->attributes_valid & BITFIELD_BIT(a)) {
@@ -2620,11 +2619,11 @@ hk_flush_dynamic_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
             struct hk_addr_range vb = gfx->vb[attr.binding];
 
             desc->root.draw.attrib_clamps[slot] = agx_calculate_vbo_clamp(
-               vb.addr, sink, hk_format_to_pipe_format(attr.format), vb.range,
+               vb.addr, hk_format_to_pipe_format(attr.format), vb.range,
                dyn->vi_binding_strides[attr.binding], attr.offset,
                &desc->root.draw.attrib_base[slot]);
          } else {
-            desc->root.draw.attrib_base[slot] = sink;
+            desc->root.draw.attrib_base[slot] = AGX_ZERO_PAGE_ADDRESS;
             desc->root.draw.attrib_clamps[slot] = 0;
          }
 
