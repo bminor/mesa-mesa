@@ -103,14 +103,6 @@ hk_upload_rodata(struct hk_device *dev)
    dev->rodata.geometry_state = dev->rodata.bo->va->addr + offs;
    offs += sizeof(struct agx_geometry_state);
 
-   /* For null readonly buffers, we need to allocate 16 bytes of zeroes for
-    * robustness2 semantics on read.
-    */
-   offs = align(offs, 16);
-   dev->rodata.zero_sink = dev->rodata.bo->va->addr + offs;
-   memset(map + offs, 0, 16);
-   offs += 16;
-
    /* For null storage descriptors, we need to reserve 16 bytes to catch writes.
     * No particular content is required; we cannot get robustness2 semantics
     * without more work.
