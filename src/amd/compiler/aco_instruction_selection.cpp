@@ -9733,6 +9733,9 @@ begin_loop(isel_context* ctx, loop_context* lc)
    lc->cf_info_old = ctx->cf_info;
    ctx->cf_info.parent_loop = {loop_header->index, &lc->loop_exit, false};
    ctx->cf_info.parent_if.is_divergent = false;
+
+   /* Never enter a loop with empty exec mask. */
+   assert(!ctx->cf_info.exec.empty());
 }
 
 void
@@ -10018,8 +10021,7 @@ begin_divergent_if_then(isel_context* ctx, if_context* ic, Temp cond,
    aco_ptr<Instruction> branch;
    branch.reset(create_instruction(aco_opcode::p_cbranch_z, Format::PSEUDO_BRANCH, 1, 0));
    branch->operands[0] = Operand(cond);
-   bool never_taken =
-      sel_ctrl == nir_selection_control_divergent_always_taken && !ctx->cf_info.exec.empty();
+   bool never_taken = sel_ctrl == nir_selection_control_divergent_always_taken;
    branch->branch().rarely_taken = sel_ctrl == nir_selection_control_flatten || never_taken;
    branch->branch().never_taken = never_taken;
    ctx->block->instructions.push_back(std::move(branch));
@@ -10035,8 +10037,8 @@ begin_divergent_if_then(isel_context* ctx, if_context* ic, Temp cond,
    ic->cf_info_old = ctx->cf_info;
    ctx->cf_info.parent_if.is_divergent = true;
 
-   /* divergent branches use cbranch_execz */
-   ctx->cf_info.exec = exec_info();
+   /* Never enter an IF construct with empty exec mask. */
+   assert(!ctx->cf_info.exec.empty());
 
    /** emit logical then block */
    ctx->program->next_divergent_if_logical_depth++;
@@ -10079,15 +10081,14 @@ begin_divergent_if_else(isel_context* ctx, if_context* ic,
 
    /* branch to linear else block (skip else) */
    branch.reset(create_instruction(aco_opcode::p_branch, Format::PSEUDO_BRANCH, 0, 0));
-   bool never_taken =
-      sel_ctrl == nir_selection_control_divergent_always_taken && !ctx->cf_info.exec.empty();
+   bool never_taken = sel_ctrl == nir_selection_control_divergent_always_taken;
    branch->branch().rarely_taken = sel_ctrl == nir_selection_control_flatten || never_taken;
    branch->branch().never_taken = never_taken;
    ctx->block->instructions.push_back(std::move(branch));
 
-   ic->cf_info_old.exec.combine(ctx->cf_info.exec);
-   /* divergent branches use cbranch_execz */
-   ctx->cf_info.exec = exec_info();
+   /* We never enter an IF construct with empty exec mask. */
+   std::swap(ic->cf_info_old.exec, ctx->cf_info.exec);
+   assert(!ctx->cf_info.exec.empty());
 
    std::swap(ic->cf_info_old.had_divergent_discard, ctx->cf_info.had_divergent_discard);
 
@@ -10156,6 +10157,8 @@ begin_uniform_if_then(isel_context* ctx, if_context* ic, Temp cond)
    aco_opcode branch_opcode = aco_opcode::p_cbranch_z;
    branch.reset(create_instruction(branch_opcode, Format::PSEUDO_BRANCH, 1, 0));
    if (cond.id()) {
+      /* Never enter an IF construct with empty exec mask. */
+      assert(!ctx->cf_info.exec.empty());
       branch->operands[0] = Operand(cond);
       branch->operands[0].setPrecolored(scc);
    } else {
