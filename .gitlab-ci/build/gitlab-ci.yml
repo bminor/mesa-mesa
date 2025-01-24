@@ -206,6 +206,7 @@ debian-testing-ubsan:
   stage: build-for-tests
   timeout: 40m
   variables:
+    BUILD_JOB_TIMEOUT: 30m
     C_ARGS: >
       -Wno-error=stringop-overflow
       -Wno-error=stringop-truncation
@@ -558,6 +559,7 @@ debian-arm32-asan:
     - debian-arm32
   stage: build-for-tests
   variables:
+    BUILD_JOB_TIMEOUT: 30m
     GALLIUM_DRIVERS: "etnaviv"
     VULKAN_DRIVERS: ""
     DRI_LOADERS:
@@ -603,6 +605,7 @@ debian-arm64-asan:
     - debian-arm64
   stage: build-for-tests
   variables:
+    BUILD_JOB_TIMEOUT: 30m
     VULKAN_DRIVERS: "broadcom,freedreno"
     GALLIUM_DRIVERS: "vc4,v3d,freedreno"
     DRI_LOADERS:
@@ -621,6 +624,7 @@ debian-arm64-ubsan:
     - debian-arm64
   stage: build-for-tests
   variables:
+    BUILD_JOB_TIMEOUT: 30m
     VULKAN_DRIVERS: "broadcom"
     GALLIUM_DRIVERS: "v3d,vc4"
     C_ARGS: >
