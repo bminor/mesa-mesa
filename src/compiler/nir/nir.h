@@ -5406,18 +5406,21 @@ should_print_nir(UNUSED nir_shader *shader)
       }                                                                 \
    } while (0)
 
-#define NIR_PASS(progress, nir, pass, ...) _PASS(pass, nir, {   \
-   nir_metadata_set_validation_flag(nir);                       \
-   if (should_print_nir(nir))                                   \
-      printf("%s\n", #pass);                                    \
-   if (pass(nir, ##__VA_ARGS__)) {                              \
-      nir_validate_shader(nir, "after " #pass " in " __FILE__); \
-      UNUSED bool _;                                            \
-      progress = true;                                          \
-      if (should_print_nir(nir))                                \
-         nir_print_shader(nir, stdout);                         \
-      nir_metadata_check_validation_flag(nir);                  \
-   }                                                            \
+#define NIR_STRINGIZE_INNER(x) #x
+#define NIR_STRINGIZE(x)       NIR_STRINGIZE_INNER(x)
+
+#define NIR_PASS(progress, nir, pass, ...) _PASS(pass, nir, {                               \
+   nir_metadata_set_validation_flag(nir);                                                   \
+   if (should_print_nir(nir))                                                               \
+      printf("%s\n", #pass);                                                                \
+   if (pass(nir, ##__VA_ARGS__)) {                                                          \
+      nir_validate_shader(nir, "after " #pass " in " __FILE__ ":" NIR_STRINGIZE(__LINE__)); \
+      UNUSED bool _;                                                                        \
+      progress = true;                                                                      \
+      if (should_print_nir(nir))                                                            \
+         nir_print_shader(nir, stdout);                                                     \
+      nir_metadata_check_validation_flag(nir);                                              \
+   }                                                                                        \
 })
 
 #define NIR_PASS_V(nir, pass, ...) _PASS(pass, nir, {        \
