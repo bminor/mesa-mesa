@@ -1286,6 +1286,7 @@ static bool pvr_graphics_pipeline_requires_dynamic_blend_consts(
 static void pvr_graphics_pipeline_setup_vertex_dma(
    struct pvr_graphics_pipeline *gfx_pipeline,
    const VkPipelineVertexInputStateCreateInfo *const vertex_input_state,
+   const struct vk_vertex_input_state *vi,
    struct pvr_pds_vertex_dma *const dma_descriptions,
    uint32_t *const dma_count)
 {
@@ -1379,10 +1380,9 @@ static void pvr_graphics_pipeline_setup_vertex_dma(
        */
       dma_desc->stride = binding->stride;
 
+      dma_desc->flags = 0;
       if (binding->inputRate == VK_VERTEX_INPUT_RATE_INSTANCE)
-         dma_desc->flags = PVR_PDS_VERTEX_DMA_FLAGS_INSTANCE_RATE;
-      else
-         dma_desc->flags = 0;
+         dma_desc->flags |= PVR_PDS_VERTEX_DMA_FLAGS_INSTANCE_RATE;
 
       /* Size to DMA per vertex attribute. Used to setup src3 in the DDMAD. */
       dma_desc->size_in_dwords = attrib_range->count;
@@ -1399,7 +1399,6 @@ static void pvr_graphics_pipeline_setup_vertex_dma(
        * repeating of instance-rate vertex attributes needed. We should always
        * move on to the next vertex attribute.
        */
-      assert(binding->inputRate != VK_VERTEX_INPUT_RATE_INSTANCE);
       dma_desc->divisor = 1;
 
       /* Will be used to generate PDS code that takes care of robust buffer
@@ -2075,7 +2074,8 @@ pvr_graphics_pipeline_compile(struct pvr_device *const device,
                               struct vk_pipeline_cache *cache,
                               const VkGraphicsPipelineCreateInfo *pCreateInfo,
                               const VkAllocationCallbacks *const allocator,
-                              struct pvr_graphics_pipeline *const gfx_pipeline)
+                              struct pvr_graphics_pipeline *const gfx_pipeline,
+                              const struct vk_graphics_pipeline_state *state)
 {
    struct vk_pipeline_layout *layout = gfx_pipeline->base.layout;
    const uint32_t cache_line_size =
@@ -2187,6 +2187,7 @@ pvr_graphics_pipeline_compile(struct pvr_device *const device,
 
    pvr_graphics_pipeline_setup_vertex_dma(gfx_pipeline,
                                           pCreateInfo->pVertexInputState,
+                                          state->vi,
                                           vtx_dma_descriptions,
                                           &vtx_dma_count);
 
@@ -2413,7 +2414,8 @@ pvr_graphics_pipeline_init(struct pvr_device *device,
                                           cache,
                                           pCreateInfo,
                                           allocator,
-                                          gfx_pipeline);
+                                          gfx_pipeline,
+                                          &state);
    if (result != VK_SUCCESS)
       goto err_pipeline_finish;
 
