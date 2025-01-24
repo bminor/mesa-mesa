@@ -100,6 +100,29 @@ static inline pco_cursor pco_cursor_after_block(pco_block *block)
 }
 
 /**
+ * \brief Returns a cursor set to before an exec_list.
+ *
+ * \param[in] exec_list The exec_list.
+ * \return The cursor.
+ */
+static inline pco_cursor
+pco_cursor_before_exec_list(struct exec_list *exec_list)
+{
+   return pco_cursor_before_cf_node(pco_cf_node_head(exec_list));
+}
+
+/**
+ * \brief Returns a cursor set to after an exec_list.
+ *
+ * \param[in] block The exec_list.
+ * \return The exec_list.
+ */
+static inline pco_cursor pco_cursor_after_exec_list(struct exec_list *exec_list)
+{
+   return pco_cursor_after_cf_node(pco_cf_node_tail(exec_list));
+}
+
+/**
  * \brief Returns a cursor set to before an instruction.
  *
  * \param[in] instr The instruction.
@@ -441,7 +464,7 @@ static inline void pco_builder_insert_igrp(pco_builder *b, pco_igrp *igrp)
  * \param[in] instr The instruction.
  * \return True if the instruction has the default execution condition.
  */
-static inline bool pco_instr_default_exec(pco_instr *instr)
+static inline bool pco_instr_has_default_exec(pco_instr *instr)
 {
    if (!pco_instr_has_exec_cnd(instr))
       return true;

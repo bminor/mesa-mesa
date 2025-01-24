@@ -1596,6 +1596,39 @@ encode_map(O_CNDST,
    op_ref_maps=[('ctrl', ['pe', 'w0'], ['s0', 'imm'])]
 )
 
+encode_map(O_CNDEF,
+   encodings=[
+      (I_CND, [
+         ('adjust', ('pco_ref_get_imm', SRC(1))),
+         ('pcnd', OM_CND),
+         ('cndinst', 'ef')
+      ])
+   ],
+   op_ref_maps=[('ctrl', ['pe', 'w0'], ['s0', 'imm'])]
+)
+
+encode_map(O_CNDSM,
+   encodings=[
+      (I_CND, [
+         ('adjust', 0),
+         ('pcnd', OM_CND),
+         ('cndinst', 'sm')
+      ])
+   ],
+   op_ref_maps=[('ctrl', ['pe', 'w0'], ['s0', 's2'])]
+)
+
+encode_map(O_CNDLT,
+   encodings=[
+      (I_CND, [
+         ('adjust', ('pco_ref_get_imm', SRC(1))),
+         ('pcnd', OM_CND),
+         ('cndinst', 'lt')
+      ])
+   ],
+   op_ref_maps=[('ctrl', ['pe', 'w0', 'p0'], ['s0', 'imm'])]
+)
+
 encode_map(O_CNDEND,
    encodings=[
       (I_CND, [
@@ -2978,6 +3011,58 @@ group_map(O_CNDST,
       ('ctrlop', 'cnd')
    ]),
    enc_ops=[('ctrl', O_CNDST)],
+   srcs=[
+      ('s[0]', ('ctrl', SRC(0)), 's0'),
+      ('s[3]', 'pco_zero')
+   ],
+   dests=[('w[0]', ('ctrl', DEST(1)), 'w0')]
+)
+
+group_map(O_CNDEF,
+   hdr=(I_IGRP_HDR_CONTROL, [
+      ('olchk', False),
+      ('w1p', False),
+      ('w0p', True),
+      ('cc', OM_EXEC_CND),
+      ('miscctl', False),
+      ('ctrlop', 'cnd')
+   ]),
+   enc_ops=[('ctrl', O_CNDEF)],
+   srcs=[
+      ('s[0]', ('ctrl', SRC(0)), 's0'),
+      ('s[3]', 'pco_zero')
+   ],
+   dests=[('w[0]', ('ctrl', DEST(1)), 'w0')]
+)
+
+group_map(O_CNDSM,
+   hdr=(I_IGRP_HDR_CONTROL, [
+      ('olchk', False),
+      ('w1p', False),
+      ('w0p', True),
+      ('cc', OM_EXEC_CND),
+      ('miscctl', False),
+      ('ctrlop', 'cnd')
+   ]),
+   enc_ops=[('ctrl', O_CNDSM)],
+   srcs=[
+      ('s[0]', ('ctrl', SRC(0)), 's0'),
+      ('s[2]', ('ctrl', SRC(1)), 's2'),
+      ('s[3]', 'pco_zero')
+   ],
+   dests=[('w[0]', ('ctrl', DEST(1)), 'w0')]
+)
+
+group_map(O_CNDLT,
+   hdr=(I_IGRP_HDR_CONTROL, [
+      ('olchk', False),
+      ('w1p', False),
+      ('w0p', True),
+      ('cc', OM_EXEC_CND),
+      ('miscctl', False),
+      ('ctrlop', 'cnd')
+   ]),
+   enc_ops=[('ctrl', O_CNDLT)],
    srcs=[
       ('s[0]', ('ctrl', SRC(0)), 's0'),
       ('s[3]', 'pco_zero')

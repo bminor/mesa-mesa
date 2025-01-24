@@ -57,6 +57,7 @@ void pco_setup_nir_options(const struct pvr_device_info *dev_info,
 enum pco_debug {
    PCO_DEBUG_VAL_SKIP = BITFIELD64_BIT(0),
    PCO_DEBUG_REINDEX = BITFIELD64_BIT(1),
+   PCO_DEBUG_NO_PRED_CF = BITFIELD64_BIT(2),
 };
 
 extern uint64_t pco_debug;
@@ -296,6 +297,7 @@ typedef struct _pco_if {
    pco_cf_node cf_node; /** CF node. */
    pco_func *parent_func; /** Parent function. */
    pco_ref cond; /** If condition. */
+   bool pred_exec; /** Whether this if construct uses predicated execution. */
    struct exec_list prologue; /** List of pco_cf_nodes for if prologue. */
    struct exec_list then_body; /** List of pco_cf_nodes for if body. */
    struct exec_list interlogue; /** List of pco_cf_nodes for if interlogue. */
@@ -509,6 +511,14 @@ PCO_DEFINE_CAST(pco_cf_node_as_func,
 
 #define pco_foreach_cf_node_in_func(cf_node, func) \
    foreach_list_typed (pco_cf_node, cf_node, node, &(func)->body)
+
+#define pco_foreach_cf_node_in_func_structured(cf_node,           \
+                                               cf_node_completed, \
+                                               func)              \
+   for (pco_cf_node *cf_node = pco_first_func_cf_node(func),      \
+                    *cf_node_completed = NULL;                    \
+        cf_node != NULL;                                          \
+        cf_node = pco_next_cf_node(cf_node, &cf_node_completed))
 
 #define pco_foreach_block_in_func(block, func)                        \
    for (pco_block *block = pco_func_first_block(func); block != NULL; \
@@ -786,6 +796,34 @@ static inline unsigned pco_igrp_variant(const pco_igrp *igrp,
 /* Motions. */
 
 /**
+ * \brief Returns the first CF node in a PCO function.
+ *
+ * \param[in] func PCO function.
+ * \return The first CF node.
+ */
+static inline pco_cf_node *pco_first_func_cf_node(pco_func *func)
+{
+   if (!exec_list_is_empty(&func->body))
+      return pco_cf_node_head(&func->body);
+
+   UNREACHABLE("Empty function.");
+}
+
+/**
+ * \brief Returns the last CF node in a PCO function.
+ *
+ * \param[in] func PCO function.
+ * \return The last CF node.
+ */
+static inline pco_cf_node *pco_last_func_cf_node(pco_func *func)
+{
+   if (!exec_list_is_empty(&func->body))
+      return pco_cf_node_tail(&func->body);
+
+   UNREACHABLE("Empty function.");
+}
+
+/**
  * \brief Returns the first CF node in a PCO if.
  *
  * \param[in] pif PCO if.
@@ -1055,10 +1093,16 @@ static inline pco_cf_node *pco_prev_loop_cf_node(pco_cf_node *cf_node)
  * \brief Returns the next CF node.
  *
  * \param[in] cf_node The current CF node.
+ * \param[out] cf_node_completed The last parent CF node (function, if, loop)
+ *                               completed, or NULL if none/not a parent.
  * \return The next CF node.
  */
-static inline pco_cf_node *pco_next_cf_node(pco_cf_node *cf_node)
+static inline pco_cf_node *pco_next_cf_node(pco_cf_node *cf_node,
+                                            pco_cf_node **cf_node_completed)
 {
+   if (cf_node_completed)
+      *cf_node_completed = NULL;
+
    if (!cf_node)
       return NULL;
 
@@ -1104,11 +1148,17 @@ static inline pco_cf_node *pco_next_cf_node(pco_cf_node *cf_node)
 
    /* End of the function; return NULL. */
    case PCO_CF_NODE_TYPE_FUNC:
+      if (cf_node_completed)
+         *cf_node_completed = parent_cf_node;
+
       return NULL;
 
    default:
       UNREACHABLE("");
    }
+
+   if (cf_node_completed)
+      *cf_node_completed = parent_cf_node;
 
    return pco_cf_node_next(parent_cf_node);
 }
@@ -1117,10 +1167,16 @@ static inline pco_cf_node *pco_next_cf_node(pco_cf_node *cf_node)
  * \brief Returns the previous CF node.
  *
  * \param[in] cf_node The current CF node.
+ * \param[out] cf_node_completed The last parent CF node (function, if, loop)
+ *                               completed, or NULL if none/not a parent.
  * \return The previous CF node.
  */
-static inline pco_cf_node *pco_prev_cf_node(pco_cf_node *cf_node)
+static inline pco_cf_node *pco_prev_cf_node(pco_cf_node *cf_node,
+                                            pco_cf_node **cf_node_completed)
 {
+   if (cf_node_completed)
+      *cf_node_completed = NULL;
+
    if (!cf_node)
       return NULL;
 
@@ -1166,11 +1222,17 @@ static inline pco_cf_node *pco_prev_cf_node(pco_cf_node *cf_node)
 
    /* Start of the function; return NULL. */
    case PCO_CF_NODE_TYPE_FUNC:
+      if (cf_node_completed)
+         *cf_node_completed = parent_cf_node;
+
       return NULL;
 
    default:
       UNREACHABLE("");
    }
+
+   if (cf_node_completed)
+      *cf_node_completed = parent_cf_node;
 
    return pco_cf_node_prev(parent_cf_node);
 }
@@ -1186,7 +1248,7 @@ static inline pco_cf_node *pco_next_cf_node_type(pco_cf_node *cf_node,
                                                  enum pco_cf_node_type type)
 {
    do {
-      cf_node = pco_next_cf_node(cf_node);
+      cf_node = pco_next_cf_node(cf_node, NULL);
    } while (cf_node != NULL && cf_node->type != type);
 
    return cf_node;
@@ -1222,7 +1284,7 @@ static inline pco_cf_node *pco_prev_cf_node_type(pco_cf_node *cf_node,
                                                  enum pco_cf_node_type type)
 {
    do {
-      cf_node = pco_prev_cf_node(cf_node);
+      cf_node = pco_prev_cf_node(cf_node, NULL);
    } while (cf_node != NULL && cf_node->type != type);
 
    return cf_node;

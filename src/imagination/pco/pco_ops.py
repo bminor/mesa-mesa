@@ -410,6 +410,8 @@ O_DITRP_READ = hw_op('ditrp.read', [OM_EXEC_CND, OM_ITR_MODE, OM_SAT, OM_SCHED, 
 
 O_CNDST = hw_op('cndst', [OM_EXEC_CND, OM_CND], 2, 2)
 O_CNDEF = hw_op('cndef', [OM_EXEC_CND, OM_CND], 2, 2)
+O_CNDSM = hw_op('cndsm', [OM_EXEC_CND, OM_CND], 2, 2)
+O_CNDLT = hw_op('cndlt', [OM_EXEC_CND, OM_CND], 3, 2)
 O_CNDEND = hw_op('cndend', [OM_EXEC_CND], 2, 2)
 
 O_BR = hw_op('br', [OM_EXEC_CND, OM_BRANCH_CND, OM_LINK], has_target_cf_node=True)
@@ -437,5 +439,8 @@ O_FNEG = pseudo_op('fneg', OM_ALU, 1, 1)
 O_FABS = pseudo_op('fabs', OM_ALU, 1, 1)
 O_FFLR = pseudo_op('fflr', OM_ALU, 1, 1)
 O_MOV = pseudo_op('mov', OM_ALU, 1, 1)
-O_VEC = pseudo_op('vec', [], 1, VARIABLE, [], [[RM_ABS, RM_NEG]])
+O_VEC = pseudo_op('vec', [OM_EXEC_CND], 1, VARIABLE, [], [[RM_ABS, RM_NEG]])
 O_COMP = pseudo_op('comp', [], 1, 2)
+
+O_BREAK = pseudo_op('break', [OM_EXEC_CND])
+O_CONTINUE = pseudo_op('continue', [OM_EXEC_CND])

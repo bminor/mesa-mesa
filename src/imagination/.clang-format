@@ -244,6 +244,7 @@ ForEachMacros: [
   'pco_foreach_block_in_func_from_rev',
   'pco_foreach_block_in_func_rev',
   'pco_foreach_cf_node_in_func',
+  'pco_foreach_cf_node_in_func_structured',
   'pco_foreach_cf_node_in_if_else',
   'pco_foreach_cf_node_in_if_epilogue',
   'pco_foreach_cf_node_in_if_interlogue',

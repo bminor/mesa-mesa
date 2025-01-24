@@ -38,10 +38,12 @@ static void insert_mov_ref(pco_instr *instr, pco_ref *ref, bool needs_s124)
    pco_builder b =
       pco_builder_create(instr->parent_func, pco_cursor_before_instr(instr));
 
+   enum pco_exec_cnd exec_cnd = pco_instr_get_exec_cnd(instr);
+   pco_instr *mov_instr;
    if (needs_s124)
-      pco_movs1(&b, new_ref, *ref);
+      mov_instr = pco_movs1(&b, new_ref, *ref, .exec_cnd = exec_cnd);
    else
-      pco_mbyp(&b, new_ref, *ref);
+      mov_instr = pco_mbyp(&b, new_ref, *ref, .exec_cnd = exec_cnd);
 
    *ref = new_ref;
 }

@@ -349,6 +349,30 @@ static bool pco_ra_func(pco_func *func,
       pco_extend_live_range(src_vec, dest, instr, overrides, live_ranges);
    }
 
+   /* Extend lifetimes of vars in loops. */
+   pco_foreach_loop_in_func (loop, func) {
+      pco_block *prologue_block =
+         pco_cf_node_as_block(pco_cf_node_head(&loop->prologue));
+
+      pco_block *epilogue_block =
+         pco_cf_node_as_block(pco_cf_node_tail(&loop->epilogue));
+
+      unsigned loop_start_index = pco_first_instr(prologue_block)->index;
+      unsigned loop_end_index = pco_last_instr(epilogue_block)->index;
+
+      /* If a var is defined before a loop and stops being used during it,
+       * extend its lifetime to the end of the loop.
+       */
+
+      for (unsigned var = 0; var < num_vars; ++var) {
+         if (live_ranges[var].start < loop_start_index &&
+             live_ranges[var].end > loop_start_index &&
+             live_ranges[var].end < loop_end_index) {
+            live_ranges[var].end = loop_end_index;
+         }
+      }
+   }
+
    /* Build interference graph from overlapping live ranges. */
    for (unsigned var0 = 0; var0 < num_vars; ++var0) {
       for (unsigned var1 = var0 + 1; var1 < num_vars; ++var1) {

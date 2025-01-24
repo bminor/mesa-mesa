@@ -40,18 +40,6 @@ static pco_ref emc_ref(pco_func *func, pco_builder *b)
    return func->emc;
 }
 
-static inline bool can_pred_exec(pco_if *pif)
-{
-   /* TODO */
-   return false;
-}
-
-static inline void
-lower_if_pred_exec(pco_if *pif, bool has_else, bool invert_cond)
-{
-   /* TODO */
-}
-
 static inline pco_block *cf_section_create(pco_func *func,
                                            pco_cf_node *parent_cf_node,
                                            struct exec_list *cf_node_list,
@@ -69,10 +57,103 @@ static inline pco_block *cf_section_create(pco_func *func,
    return block;
 }
 
-static inline void lower_if(pco_if *pif, bool has_else, bool invert_cond)
+static inline bool body_has_non_preds(struct exec_list *body)
 {
-   pco_func *func = pif->parent_func;
+   if (exec_list_is_empty(body))
+      return false;
 
+   pco_block *block = pco_cf_node_as_block(pco_cf_node_head(body));
+   pco_instr *last_instr = NULL;
+   pco_foreach_instr_in_block (instr, block) {
+      /* Make sure there are no instructions that read/write predicates. */
+      pco_foreach_instr_src (psrc, instr) {
+         if (pco_ref_is_pred(*psrc))
+            return true;
+      }
+
+      pco_foreach_instr_dest (pdest, instr) {
+         if (pco_ref_is_pred(*pdest))
+            return true;
+      }
+
+      if (!pco_instr_has_exec_cnd(instr))
+         return true;
+
+      if (!pco_instr_has_default_exec(instr))
+         return true;
+
+      last_instr = instr;
+   }
+
+   assert(last_instr);
+   return last_instr->op == PCO_OP_BR;
+}
+
+static inline bool can_pred_exec(pco_if *pif)
+{
+   if (PCO_DEBUG(NO_PRED_CF))
+      return false;
+
+   /* Skip if there is any nesting. */
+   if (exec_list_length(&pif->then_body) > 1 ||
+       exec_list_length(&pif->else_body) > 1) {
+      return false;
+   }
+
+   /* Skip if then/else blocks end with a branch, or contain non-predicatable
+    * instructions.
+    * Note: WDFs can't be predicated and won't be inserted until the scheduling
+    * pass which comes after this one, but we don't have to worry about it as if
+    * there are no outstanding data fences it'll simply NOP.
+    */
+   if (body_has_non_preds(&pif->then_body) ||
+       body_has_non_preds(&pif->else_body))
+      return false;
+
+   return true;
+}
+
+static inline void set_body_exec_cnd(struct exec_list *body,
+                                     enum pco_exec_cnd exec_cnd)
+{
+   assert(!exec_list_is_empty(body));
+
+   pco_block *block = pco_cf_node_as_block(pco_cf_node_head(body));
+   pco_foreach_instr_in_block (instr, block) {
+      pco_instr_set_exec_cnd(instr, exec_cnd);
+   }
+}
+
+static inline void
+lower_if_pred_exec(pco_if *pif, pco_func *func, bool has_else, bool invert_cond)
+{
+   pco_block *prologue = cf_section_create(func,
+                                           &pif->cf_node,
+                                           &pif->prologue,
+                                           PCO_CF_NODE_FLAG_PROLOGUE);
+
+   /* Setup the prologue. */
+   pco_builder b = pco_builder_create(func, pco_cursor_after_block(prologue));
+
+   /* TODO: see if the cond producer can set p0 directly. */
+   pco_tstz(&b,
+            pco_ref_null(),
+            pco_ref_pred(PCO_PRED_P0),
+            pif->cond,
+            .tst_type_main = PCO_TST_TYPE_MAIN_U32);
+
+   set_body_exec_cnd(&pif->then_body,
+                     invert_cond ? PCO_EXEC_CND_E1_Z1 : PCO_EXEC_CND_E1_Z0);
+
+   if (has_else) {
+      set_body_exec_cnd(&pif->else_body,
+                        invert_cond ? PCO_EXEC_CND_E1_Z0 : PCO_EXEC_CND_E1_Z1);
+   }
+}
+
+static inline void
+lower_if_cond_exec(pco_if *pif, pco_func *func, bool has_else, bool invert_cond)
+{
    pco_block *prologue = cf_section_create(func,
                                            &pif->cf_node,
                                            &pif->prologue,
@@ -137,57 +218,276 @@ static inline void lower_if(pco_if *pif, bool has_else, bool invert_cond)
               emc,
               pco_ref_imm8(1),
               .exec_cnd = PCO_EXEC_CND_EX_ZX);
+}
+
+static inline void lower_if(pco_if *pif, pco_func *func)
+{
+   assert(!pco_ref_is_null(pif->cond));
+   assert(exec_list_is_empty(&pif->prologue));
+   assert(exec_list_is_empty(&pif->interlogue));
+   assert(exec_list_is_empty(&pif->epilogue));
+
+   bool has_then = !exec_list_is_empty(&pif->then_body);
+   bool has_else = !exec_list_is_empty(&pif->else_body);
+   assert(has_then || has_else);
+
+   /* If we only have an else body, invert the condition and bodies. */
+   bool invert_cond = false;
+   if (!has_then && has_else) {
+      struct exec_list temp;
+      memcpy(&temp, &pif->then_body, sizeof(pif->then_body));
+      memcpy(&pif->then_body, &pif->else_body, sizeof(pif->else_body));
+      memcpy(&pif->else_body, &pif->then_body, sizeof(pif->then_body));
+      invert_cond = true;
+
+      has_then = true;
+      has_else = false;
+   }
+
+   assert(has_then);
+
+   if (pif->pred_exec)
+      lower_if_pred_exec(pif, func, has_else, invert_cond);
+   else
+      lower_if_cond_exec(pif, func, has_else, invert_cond);
 
    pif->cond = pco_ref_null();
 }
 
-static inline bool lower_ifs(pco_func *func)
+static inline void lower_loop(pco_loop *loop, pco_func *func)
 {
-   bool progress = false;
+   assert(exec_list_is_empty(&loop->prologue));
+   assert(exec_list_is_empty(&loop->interlogue));
+   assert(exec_list_is_empty(&loop->epilogue));
 
-   pco_foreach_if_in_func (pif, func) {
-      assert(!pco_ref_is_null(pif->cond));
+   pco_block *prologue = cf_section_create(func,
+                                           &loop->cf_node,
+                                           &loop->prologue,
+                                           PCO_CF_NODE_FLAG_PROLOGUE);
 
-      assert(exec_list_is_empty(&pif->prologue));
-      assert(exec_list_is_empty(&pif->interlogue));
-      assert(exec_list_is_empty(&pif->epilogue));
+   pco_block *interlogue = cf_section_create(func,
+                                             &loop->cf_node,
+                                             &loop->interlogue,
+                                             PCO_CF_NODE_FLAG_INTERLOGUE);
 
-      bool has_then = !exec_list_is_empty(&pif->then_body);
-      bool has_else = !exec_list_is_empty(&pif->else_body);
-      assert(has_then || has_else);
+   pco_block *epilogue = cf_section_create(func,
+                                           &loop->cf_node,
+                                           &loop->epilogue,
+                                           PCO_CF_NODE_FLAG_EPILOGUE);
 
-      /* If we only have an else body, invert the condition and bodies. */
-      bool invert_cond = false;
-      if (!has_then && has_else) {
-         struct exec_list temp;
-         memcpy(&temp, &pif->then_body, sizeof(pif->then_body));
-         memcpy(&pif->then_body, &pif->else_body, sizeof(pif->else_body));
-         memcpy(&pif->else_body, &pif->then_body, sizeof(pif->then_body));
-         invert_cond = true;
+   /* Setup the prologue. */
+   pco_builder b = pco_builder_create(func, pco_cursor_after_block(prologue));
+   pco_ref emc = emc_ref(func, &b);
 
-         has_then = true;
-         has_else = false;
-      }
+   pco_cndst(&b,
+             pco_ref_pred(PCO_PRED_PE),
+             emc,
+             emc,
+             pco_ref_imm8(2), /* TODO: make this a define */
+             .exec_cnd = PCO_EXEC_CND_EX_ZX,
+             .cnd = PCO_CND_ALWAYS);
 
-      assert(has_then);
+   pco_br(&b, &epilogue->cf_node, .branch_cnd = PCO_BRANCH_CND_ALLINST);
 
-      if (can_pred_exec(pif))
-         lower_if_pred_exec(pif, has_else, invert_cond);
-      else
-         lower_if(pif, has_else, invert_cond);
+   /* Setup the interlogue. */
+   b.cursor = pco_cursor_after_block(interlogue);
 
-      progress = true;
+   pco_cndend(&b,
+              pco_ref_pred(PCO_PRED_PE),
+              emc,
+              emc,
+              pco_ref_imm8(1), /* TODO: make this a define */
+              .exec_cnd = PCO_EXEC_CND_EX_ZX);
+
+   pco_cndst(&b,
+             pco_ref_pred(PCO_PRED_PE),
+             emc,
+             emc,
+             pco_ref_imm8(1), /* TODO: make this a define */
+             .exec_cnd = PCO_EXEC_CND_EX_ZX,
+             .cnd = PCO_CND_ALWAYS);
+
+   /* Setup the epilogue. */
+   b.cursor = pco_cursor_after_block(epilogue);
+
+   pco_cndlt(&b,
+             pco_ref_pred(PCO_PRED_PE),
+             emc,
+             pco_ref_pred(PCO_PRED_P0),
+             emc,
+             pco_ref_imm8(2), /* TODO: make this a define */
+             .exec_cnd = PCO_EXEC_CND_EX_ZX,
+             .cnd = PCO_CND_ALWAYS);
+
+   pco_br(&b,
+          pco_cf_node_head(&loop->body),
+          .exec_cnd = PCO_EXEC_CND_E1_Z1,
+          .branch_cnd = PCO_BRANCH_CND_EXEC_COND);
+}
+
+static inline void lower_break_continue(pco_instr *instr,
+                                        pco_func *func,
+                                        pco_if *pif,
+                                        pco_loop *loop,
+                                        unsigned loop_nestings,
+                                        bool is_continue)
+{
+   pco_builder b = pco_builder_create(func, pco_cursor_before_instr(instr));
+   pco_ref emc = emc_ref(func, &b);
+   enum pco_exec_cnd exec_cnd = pco_instr_get_exec_cnd(instr);
+
+   pco_ref val = pco_ref_new_ssa32(func);
+   pco_movi32(&b,
+              val,
+              pco_ref_imm32(loop_nestings + (is_continue ? 1 : 2)),
+              .exec_cnd = exec_cnd);
+
+   enum pco_cnd cnd;
+   switch (exec_cnd) {
+   case PCO_CC_E1_ZX:
+      assert(!pif->pred_exec);
+      cnd = PCO_CND_ALWAYS;
+      break;
+
+   case PCO_CC_E1_Z1:
+      assert(pif->pred_exec);
+      cnd = PCO_CND_P0_TRUE;
+      break;
+
+   case PCO_CC_E1_Z0:
+      assert(pif->pred_exec);
+      cnd = PCO_CND_P0_FALSE;
+      break;
+
+   default:
+      UNREACHABLE("");
    }
 
-   return progress;
+   pco_cndsm(&b,
+             pco_ref_pred(PCO_PRED_PE),
+             emc,
+             emc,
+             val,
+             .exec_cnd = PCO_EXEC_CND_EX_ZX,
+             .cnd = cnd);
+
+   pco_instr_delete(instr);
 }
 
 static inline bool pco_lower_cf(pco_func *func)
 {
    bool progress = false;
 
-   progress |= lower_ifs(func);
-   /* TODO: lower_loops(func); */
+   void *mem_ctx = ralloc_context(NULL);
+   unsigned loop_nestings = 0;
+   struct util_dynarray loop_nestings_stack;
+   struct util_dynarray pif_stack;
+   struct util_dynarray loop_stack;
+
+   util_dynarray_init(&loop_nestings_stack, mem_ctx);
+   util_dynarray_init(&pif_stack, mem_ctx);
+   util_dynarray_init(&loop_stack, mem_ctx);
+
+   pco_foreach_cf_node_in_func_structured (cf_node, cf_node_completed, func) {
+      /* Handle the end of an if/loop. */
+      if (cf_node_completed) {
+         switch (cf_node_completed->type) {
+         case PCO_CF_NODE_TYPE_IF: {
+            pco_if *pif = pco_cf_node_as_if(cf_node_completed);
+
+            ASSERTED pco_if *last_pif = util_dynarray_pop(&pif_stack, pco_if *);
+            assert(pif == last_pif);
+
+            if (!pif->pred_exec)
+               --loop_nestings;
+
+            break;
+         }
+
+         case PCO_CF_NODE_TYPE_LOOP: {
+            ASSERTED pco_loop *loop = pco_cf_node_as_loop(cf_node_completed);
+            ASSERTED pco_loop *last_loop =
+               util_dynarray_pop(&loop_stack, pco_loop *);
+            assert(loop == last_loop);
+
+            assert(loop_nestings == 0);
+            loop_nestings = util_dynarray_pop(&loop_nestings_stack, unsigned);
+            break;
+         }
+
+         default:
+            break;
+         }
+      }
+
+      /* Handle the start of an if/loop, or lower break/continue for blocks. */
+      switch (cf_node->type) {
+      case PCO_CF_NODE_TYPE_IF: {
+         pco_if *pif = pco_cf_node_as_if(cf_node);
+         pif->pred_exec = can_pred_exec(pif);
+         util_dynarray_append(&pif_stack, pco_if *, pif);
+
+         if (!pif->pred_exec)
+            ++loop_nestings;
+
+         lower_if(pif, func);
+         progress = true;
+
+         break;
+      }
+
+      case PCO_CF_NODE_TYPE_LOOP: {
+         util_dynarray_append(&loop_nestings_stack, unsigned, loop_nestings);
+         loop_nestings = 0;
+
+         pco_loop *loop = pco_cf_node_as_loop(cf_node);
+         util_dynarray_append(&loop_stack, pco_loop *, loop);
+
+         lower_loop(loop, func);
+         progress = true;
+
+         break;
+      }
+
+      case PCO_CF_NODE_TYPE_BLOCK: {
+         pco_block *block = pco_cf_node_as_block(cf_node);
+         pco_foreach_instr_in_block_safe (instr, block) {
+            if (instr->op != PCO_OP_BREAK && instr->op != PCO_OP_CONTINUE)
+               continue;
+
+            /* This has to be the last instruction in the block. */
+            assert(instr == pco_last_instr(block));
+
+            pco_if *current_pif = util_dynarray_top(&pif_stack, pco_if *);
+            pco_loop *current_loop = util_dynarray_top(&loop_stack, pco_loop *);
+
+            assert(current_pif ==
+                   pco_cf_node_as_if(instr->parent_block->cf_node.parent));
+
+            lower_break_continue(instr,
+                                 func,
+                                 current_pif,
+                                 current_loop,
+                                 loop_nestings,
+                                 instr->op == PCO_OP_CONTINUE);
+
+            progress = true;
+         }
+
+         break;
+      }
+
+      default:
+         break;
+      }
+   }
+
+   assert(!util_dynarray_num_elements(&loop_stack, pco_loop *));
+   assert(!util_dynarray_num_elements(&pif_stack, pco_if *));
+   assert(!util_dynarray_num_elements(&loop_nestings_stack, unsigned));
+   assert(loop_nestings == 0);
+
+   ralloc_free(mem_ctx);
 
    return progress;
 }

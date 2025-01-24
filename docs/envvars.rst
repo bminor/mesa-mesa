@@ -2080,6 +2080,9 @@ PowerVR driver environment variables
    ``reindex``
       Reindex IR at the end of each pass.
 
+   ``no_pred_cf``
+      No predicated execution in CF.
+
 .. envvar:: PCO_SKIP_PASSES
 
    A comma-separated list of passes to skip.

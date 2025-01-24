@@ -2018,6 +2018,29 @@ static pco_instr *trans_const(trans_ctx *tctx, nir_load_const_instr *nconst)
 }
 
 /**
+ * \brief Translates a NIR jump instruction into PCO.
+ *
+ * \param[in] tctx Translation context.
+ * \param[in] jump The NIR jump instruction.
+ * \return The PCO instruction.
+ */
+static pco_instr *trans_jump(trans_ctx *tctx, nir_jump_instr *jump)
+{
+   switch (jump->type) {
+   case nir_jump_break:
+      return pco_break(&tctx->b);
+
+   case nir_jump_continue:
+      return pco_continue(&tctx->b);
+
+   default:
+      break;
+   }
+
+   UNREACHABLE("");
+}
+
+/**
  * \brief Translates a NIR instruction into PCO.
  *
  * \param[in] tctx Translation context.
@@ -2035,6 +2058,9 @@ static pco_instr *trans_instr(trans_ctx *tctx, nir_instr *ninstr)
 
    case nir_instr_type_alu:
       return trans_alu(tctx, nir_instr_as_alu(ninstr));
+
+   case nir_instr_type_jump:
+      return trans_jump(tctx, nir_instr_as_jump(ninstr));
 
    default:
       break;
@@ -2131,7 +2157,15 @@ static void trans_loop(trans_ctx *tctx,
    loop->cf_node.parent = parent_cf_node;
    exec_list_push_tail(cf_node_list, &loop->cf_node.node);
 
-   UNREACHABLE("finishme: trans_loop");
+   assert(!nir_cf_list_is_empty_block(&nloop->body));
+   assert(!nir_loop_has_continue_construct(nloop));
+
+   enum pco_cf_node_flag flag = tctx->flag;
+   tctx->flag = PCO_CF_NODE_FLAG_BODY;
+
+   trans_cf_nodes(tctx, &loop->cf_node, &loop->body, &nloop->body);
+
+   tctx->flag = flag;
 }
 
 /**
