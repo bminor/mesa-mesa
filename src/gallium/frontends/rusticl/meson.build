@@ -441,3 +441,30 @@ librusticl = static_library(
     rusticl_proc_macros,
   ],
 )
+
+if meson.version().version_compare('>= 1.9.0') and with_tests
+  # Tests may fail to build with versions of meson prior to 1.9 due to a bug
+  # involving parameters passed to the linker.
+  #
+  # See https://github.com/mesonbuild/meson/issues/14622
+  librusticl_test = static_library(
+    'rusticl_test',
+    'test/lib.rs',
+    rust_abi : 'c',
+  )
+
+  rust.test('rusticl_opencl_gen_test', rusticl_opencl_gen, suite : ['rusticl'])
+  rust.test('rusticl_llvm_gen_test', rusticl_llvm_gen, suite : ['rusticl'])
+  rust.test('rusticl_proc_macros_test', rusticl_proc_macros, suite : ['rusticl'])
+  rust.test('libc_rust_gen_test', libc_rust_gen, suite : ['rusticl'])
+  rust.test('libmesa_rust_gen_test', libmesa_rust_gen, suite : ['rusticl'])
+  rust.test('libmesa_rust_util_test', libmesa_rust_util, suite : ['rusticl'])
+  rust.test('libmesa_rust_test', libmesa_rust, suite : ['rusticl'])
+
+  rust.test('rusticl_test', librusticl,
+    link_with : [
+      librusticl_test,
+    ],
+    suite : ['rusticl'],
+  )
+endif
