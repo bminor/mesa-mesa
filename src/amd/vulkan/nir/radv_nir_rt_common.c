@@ -253,7 +253,7 @@ intersect_ray_amd_software_tri(struct radv_device *device, nir_builder *b, nir_d
    kz = nir_channel(b, k, 2);
 
    /* Calculate shear constants */
-   nir_def *sz = nir_frcp(b, nir_vector_extract(b, dir, kz));
+   nir_def *sz = nir_vector_extract(b, inv_dir, kz);
    nir_def *sx = nir_fmul(b, nir_vector_extract(b, dir, kx), sz);
    nir_def *sy = nir_fmul(b, nir_vector_extract(b, dir, ky), sz);
 
