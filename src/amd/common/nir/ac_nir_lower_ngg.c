@@ -328,67 +328,6 @@ pervertex_lds_addr(nir_builder *b, nir_def *vertex_idx, unsigned per_vtx_bytes)
 }
 
 static void
-alloc_vertices_and_primitives(nir_builder *b,
-                              nir_def *num_vtx,
-                              nir_def *num_prim)
-{
-   /* The caller should only call this conditionally on wave 0.
-    *
-    * Send GS Alloc Request message from the first wave of the group to SPI.
-    * Message payload (in the m0 register) is:
-    * - bits 0..10: number of vertices in group
-    * - bits 12..22: number of primitives in group
-    */
-
-   nir_def *m0 = nir_ior(b, nir_ishl_imm(b, num_prim, 12), num_vtx);
-   nir_sendmsg_amd(b, m0, .base = AC_SENDMSG_GS_ALLOC_REQ);
-}
-
-static void
-alloc_vertices_and_primitives_gfx10_workaround(nir_builder *b,
-                                               nir_def *num_vtx,
-                                               nir_def *num_prim)
-{
-   /* HW workaround for a GPU hang with 100% culling on GFX10.
-    * We always have to export at least 1 primitive.
-    * Export a degenerate triangle using vertex 0 for all 3 vertices.
-    *
-    * NOTE: We rely on the caller to set the vertex count also to 0 when the primitive count is 0.
-    */
-   nir_def *is_prim_cnt_0 = nir_ieq_imm(b, num_prim, 0);
-   nir_if *if_prim_cnt_0 = nir_push_if(b, is_prim_cnt_0);
-   {
-      nir_def *one = nir_imm_int(b, 1);
-      alloc_vertices_and_primitives(b, one, one);
-
-      nir_def *tid = nir_load_subgroup_invocation(b);
-      nir_def *is_thread_0 = nir_ieq_imm(b, tid, 0);
-      nir_if *if_thread_0 = nir_push_if(b, is_thread_0);
-      {
-         /* The vertex indices are 0, 0, 0. */
-         nir_export_amd(b, nir_imm_zero(b, 4, 32),
-                        .base = V_008DFC_SQ_EXP_PRIM,
-                        .flags = AC_EXP_FLAG_DONE,
-                        .write_mask = 1);
-
-         /* The HW culls primitives with NaN. -1 is also NaN and can save
-          * a dword in binary code by inlining constant.
-          */
-         nir_export_amd(b, nir_imm_ivec4(b, -1, -1, -1, -1),
-                        .base = V_008DFC_SQ_EXP_POS,
-                        .flags = AC_EXP_FLAG_DONE,
-                        .write_mask = 0xf);
-      }
-      nir_pop_if(b, if_thread_0);
-   }
-   nir_push_else(b, if_prim_cnt_0);
-   {
-      alloc_vertices_and_primitives(b, num_vtx, num_prim);
-   }
-   nir_pop_if(b, if_prim_cnt_0);
-}
-
-static void
 ngg_nogs_init_vertex_indices_vars(nir_builder *b, nir_function_impl *impl, lower_ngg_nogs_state *s)
 {
    for (unsigned v = 0; v < s->options->num_vertices_per_primitive; ++v) {
@@ -1609,14 +1548,7 @@ add_deferred_attribute_culling(nir_builder *b, nir_cf_list *original_extracted_c
 
       nir_if *if_wave_0 = nir_push_if(b, nir_ieq_imm(b, nir_load_subgroup_id(b), 0));
       {
-         /* Tell the final vertex and primitive count to the HW. */
-         if (s->options->gfx_level == GFX10) {
-            alloc_vertices_and_primitives_gfx10_workaround(
-               b, num_live_vertices_in_workgroup, num_exported_prims);
-         } else {
-            alloc_vertices_and_primitives(
-               b, num_live_vertices_in_workgroup, num_exported_prims);
-         }
+         ac_nir_ngg_alloc_vertices_and_primitives(b, num_live_vertices_in_workgroup, num_exported_prims, s->options->gfx_level == GFX10);
       }
       nir_pop_if(b, if_wave_0);
 
@@ -1635,7 +1567,7 @@ add_deferred_attribute_culling(nir_builder *b, nir_cf_list *original_extracted_c
       {
          nir_def *vtx_cnt = nir_load_workgroup_num_input_vertices_amd(b);
          nir_def *prim_cnt = nir_load_workgroup_num_input_primitives_amd(b);
-         alloc_vertices_and_primitives(b, vtx_cnt, prim_cnt);
+         ac_nir_ngg_alloc_vertices_and_primitives(b, vtx_cnt, prim_cnt, false);
       }
       nir_pop_if(b, if_wave_0);
       nir_store_var(b, s->prim_exp_arg_var, emit_ngg_nogs_prim_exp_arg(b, s), 0x1u);
@@ -2557,7 +2489,7 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
          {
             nir_def *vtx_cnt = nir_load_workgroup_num_input_vertices_amd(b);
             nir_def *prim_cnt = nir_load_workgroup_num_input_primitives_amd(b);
-            alloc_vertices_and_primitives(b, vtx_cnt, prim_cnt);
+            ac_nir_ngg_alloc_vertices_and_primitives(b, vtx_cnt, prim_cnt, false);
          }
          nir_pop_if(b, if_wave_0);
       }
@@ -3468,10 +3400,9 @@ ngg_gs_finale(nir_builder *b, lower_ngg_gs_state *s)
          if (b->shader->info.gs.vertices_out == 0)
             max_vtxcnt = max_prmcnt = nir_imm_int(b, 0);
 
-         if (s->options->gfx_level == GFX10)
-            alloc_vertices_and_primitives_gfx10_workaround(b, max_vtxcnt, max_prmcnt);
-         else
-            alloc_vertices_and_primitives(b, max_vtxcnt, max_prmcnt);
+         ac_nir_ngg_alloc_vertices_and_primitives(b, max_vtxcnt, max_prmcnt,
+                                                  b->shader->info.gs.vertices_out == 0 &&
+                                                  s->options->gfx_level == GFX10);
       }
       nir_pop_if(b, if_wave_0);
    }
@@ -3521,10 +3452,7 @@ ngg_gs_finale(nir_builder *b, lower_ngg_gs_state *s)
    /* Allocate export space. We currently don't compact primitives, just use the maximum number. */
    nir_if *if_wave_0 = nir_push_if(b, nir_ieq_imm(b, nir_load_subgroup_id(b), 0));
    {
-      if (s->options->gfx_level == GFX10)
-         alloc_vertices_and_primitives_gfx10_workaround(b, workgroup_num_vertices, max_prmcnt);
-      else
-         alloc_vertices_and_primitives(b, workgroup_num_vertices, max_prmcnt);
+      ac_nir_ngg_alloc_vertices_and_primitives(b, workgroup_num_vertices, max_prmcnt, s->options->gfx_level == GFX10);
    }
    nir_pop_if(b, if_wave_0);
 

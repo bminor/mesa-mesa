@@ -851,3 +851,71 @@ ac_nir_clamp_vertex_color_outputs(nir_builder *b, ac_nir_prerast_out *out)
       }
    }
 }
+
+static void
+ac_nir_ngg_alloc_vertices_fully_culled_workaround(nir_builder *b,
+                                                  nir_def *num_vtx,
+                                                  nir_def *num_prim)
+{
+   /* HW workaround for a GPU hang with 100% culling on GFX10.
+    * We always have to export at least 1 primitive.
+    * Export a degenerate triangle using vertex 0 for all 3 vertices.
+    *
+    * NOTE: We rely on the caller to set the vertex count also to 0 when the primitive count is 0.
+    */
+   nir_def *is_prim_cnt_0 = nir_ieq_imm(b, num_prim, 0);
+   nir_if *if_prim_cnt_0 = nir_push_if(b, is_prim_cnt_0);
+   {
+      nir_def *one = nir_imm_int(b, 1);
+      nir_sendmsg_amd(b, nir_ior(b, nir_ishl_imm(b, one, 12), one), .base = AC_SENDMSG_GS_ALLOC_REQ);
+
+      nir_def *tid = nir_load_subgroup_invocation(b);
+      nir_def *is_thread_0 = nir_ieq_imm(b, tid, 0);
+      nir_if *if_thread_0 = nir_push_if(b, is_thread_0);
+      {
+         /* The vertex indices are 0, 0, 0. */
+         nir_export_amd(b, nir_imm_zero(b, 4, 32),
+                        .base = V_008DFC_SQ_EXP_PRIM,
+                        .flags = AC_EXP_FLAG_DONE,
+                        .write_mask = 1);
+
+         /* The HW culls primitives with NaN. -1 is also NaN and can save
+          * a dword in binary code by inlining constant.
+          */
+         nir_export_amd(b, nir_imm_ivec4(b, -1, -1, -1, -1),
+                        .base = V_008DFC_SQ_EXP_POS,
+                        .flags = AC_EXP_FLAG_DONE,
+                        .write_mask = 0xf);
+      }
+      nir_pop_if(b, if_thread_0);
+   }
+   nir_push_else(b, if_prim_cnt_0);
+   {
+      nir_sendmsg_amd(b, nir_ior(b, nir_ishl_imm(b, num_prim, 12), num_vtx), .base = AC_SENDMSG_GS_ALLOC_REQ);
+   }
+   nir_pop_if(b, if_prim_cnt_0);
+}
+
+/**
+ * Emits code for allocating space for vertices and primitives for NGG shaders.
+ * The caller should only call this conditionally on wave 0.
+ * When either the vertex or primitive count is 0, both should be set to 0.
+ */
+void
+ac_nir_ngg_alloc_vertices_and_primitives(nir_builder *b,
+                                         nir_def *num_vtx,
+                                         nir_def *num_prim,
+                                         bool fully_culled_workaround)
+{
+   if (fully_culled_workaround) {
+      ac_nir_ngg_alloc_vertices_fully_culled_workaround(b, num_vtx, num_prim);
+      return;
+   }
+
+   /* Send GS Alloc Request message from the first wave of the group to SPI.
+    * Message payload (in the m0 register) is:
+    * - bits 0..10: number of vertices in group
+    * - bits 12..22: number of primitives in group
+    */
+   nir_sendmsg_amd(b, nir_ior(b, nir_ishl_imm(b, num_prim, 12), num_vtx), .base = AC_SENDMSG_GS_ALLOC_REQ);
+}

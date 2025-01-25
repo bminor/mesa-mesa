@@ -182,6 +182,12 @@ ac_nir_pack_ngg_prim_exp_arg(nir_builder *b, unsigned num_vertices_per_primitive
 void
 ac_nir_clamp_vertex_color_outputs(nir_builder *b, ac_nir_prerast_out *out);
 
+void
+ac_nir_ngg_alloc_vertices_and_primitives(nir_builder *b,
+                                         nir_def *num_vtx,
+                                         nir_def *num_prim,
+                                         bool fully_culled_workaround);
+
 #ifdef __cplusplus
 }
 #endif
