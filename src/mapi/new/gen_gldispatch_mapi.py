@@ -86,7 +86,6 @@ def generate_defines(functions):
 def generate_table(functions, allFunctions):
     text = "#ifdef MAPI_TMP_TABLE\n"
     text += "#define MAPI_TABLE_NUM_STATIC %d\n" % (len(allFunctions))
-    text += "#define MAPI_TABLE_NUM_DYNAMIC %d\n" % (genCommon.MAPI_TABLE_NUM_DYNAMIC,)
     text += "#undef MAPI_TMP_TABLE\n"
     text += "#endif /* MAPI_TMP_TABLE */\n"
     return text
@@ -111,15 +110,11 @@ def generate_noop_array(functions):
     text += "const mapi_func table_noop_array[] = {\n"
     for func in functions:
         text += "   (mapi_func) noop{f.basename},\n".format(f=func)
-    for i in range(genCommon.MAPI_TABLE_NUM_DYNAMIC - 1):
-        text += "   (mapi_func) noop_generic,\n"
-    text += "   (mapi_func) noop_generic\n"
     text += "};\n\n"
     text += "#else /* !MESA_DEBUG */\n\n"
     text += "const mapi_func table_noop_array[] = {\n"
-    for i in range(len(functions) + genCommon.MAPI_TABLE_NUM_DYNAMIC - 1):
+    for i in range(len(functions)):
         text += "   (mapi_func) noop_generic,\n"
-    text += "   (mapi_func) noop_generic\n"
 
     text += "};\n\n"
     text += "#endif /* MESA_DEBUG */\n"

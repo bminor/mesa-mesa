@@ -33,7 +33,7 @@
 #define MAPI_TMP_TABLE
 #include "mapi_tmp.h"
 
-#define MAPI_TABLE_NUM_SLOTS (MAPI_TABLE_NUM_STATIC + MAPI_TABLE_NUM_DYNAMIC)
+#define MAPI_TABLE_NUM_SLOTS MAPI_TABLE_NUM_STATIC
 
 struct _glapi_table;
 

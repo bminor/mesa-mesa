@@ -195,13 +195,6 @@ _glapi_proc DISPATCH_TABLE_NAME[] = {""")
         for f in api.functionIterateByOffset():
             print('   TABLE_ENTRY(%s),' % (f.dispatch_name()))
 
-        print('   /* A whole bunch of no-op functions.  These might be called')
-        print('    * when someone tries to call a dynamically-registered')
-        print('    * extension function without a current rendering context.')
-        print('    */')
-        for i in range(1, 100):
-            print('   TABLE_ENTRY(Unused),')
-
         print('};')
         print('#endif /* DISPATCH_TABLE_NAME */')
         print('')

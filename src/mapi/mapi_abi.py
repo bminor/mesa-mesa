@@ -37,9 +37,6 @@ import gl_XML
 import glX_XML
 
 
-# number of dynamic entries
-ABI_NUM_DYNAMIC_ENTRIES = 256
-
 class ABIEntry(object):
     """Represent an ABI entry."""
 
@@ -271,9 +268,7 @@ class ABIPrinter(object):
     def c_mapi_table(self):
         """Return defines of the dispatch table size."""
         num_static_entries = self.entries[-1].slot + 1
-        return ('#define MAPI_TABLE_NUM_STATIC %d\n' + \
-                '#define MAPI_TABLE_NUM_DYNAMIC %d') % (
-                        num_static_entries, ABI_NUM_DYNAMIC_ENTRIES)
+        return '#define MAPI_TABLE_NUM_STATIC %d' % (num_static_entries)
 
     def _c_function(self, ent, prefix, mangle=False, stringify=False):
         """Return the function name of an entry."""
@@ -430,8 +425,6 @@ class ABIPrinter(object):
                 for ent in self.entries if not ent.alias]
         if use_generic:
             entries = [self.noop_generic] * len(entries)
-
-        entries.extend([self.noop_generic] * ABI_NUM_DYNAMIC_ENTRIES)
 
         pre = self.indent + '(mapi_func) '
         return pre + (',\n' + pre).join(entries)
