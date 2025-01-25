@@ -188,6 +188,12 @@ ac_nir_ngg_alloc_vertices_and_primitives(nir_builder *b,
                                          nir_def *num_prim,
                                          bool fully_culled_workaround);
 
+void
+ac_nir_create_output_phis(nir_builder *b,
+                          const uint64_t outputs_written,
+                          const uint64_t outputs_written_16bit,
+                          ac_nir_prerast_out *out);
+
 #ifdef __cplusplus
 }
 #endif

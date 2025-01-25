@@ -2304,29 +2304,6 @@ ngg_nogs_gather_outputs(nir_builder *b, struct exec_list *cf_list, lower_ngg_nog
    }
 }
 
-static void
-create_output_phis(nir_builder *b, const uint64_t outputs_written, const uint64_t outputs_written_16bit, ac_nir_prerast_out *out)
-{
-   nir_def *undef = nir_undef(b, 1, 32); /* inserted at the start of the shader */
-
-   u_foreach_bit64(slot, outputs_written) {
-      for (unsigned j = 0; j < 4; j++) {
-         if (out->outputs[slot][j])
-            out->outputs[slot][j] = nir_if_phi(b, out->outputs[slot][j], undef);
-      }
-   }
-
-   u_foreach_bit64(i, outputs_written_16bit) {
-      for (unsigned j = 0; j < 4; j++) {
-         if (out->outputs_16bit_hi[i][j])
-            out->outputs_16bit_hi[i][j] = nir_if_phi(b, out->outputs_16bit_hi[i][j], undef);
-
-         if (out->outputs_16bit_lo[i][j])
-            out->outputs_16bit_lo[i][j] = nir_if_phi(b, out->outputs_16bit_lo[i][j], undef);
-      }
-   }
-}
-
 static bool must_wait_attr_ring(enum amd_gfx_level gfx_level, bool has_param_exports)
 {
    return (gfx_level == GFX11 || gfx_level == GFX11_5) && has_param_exports;
@@ -2630,8 +2607,8 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
    nir_if *if_pos_exports = NULL;
    if (state.streamout_enabled) {
       b->cursor = nir_after_cf_node(&if_es_thread->cf_node);
-      create_output_phis(b, b->shader->info.outputs_written, b->shader->info.outputs_written_16bit,
-                         &state.out);
+      ac_nir_create_output_phis(b, b->shader->info.outputs_written, b->shader->info.outputs_written_16bit,
+                                &state.out);
       phis_created = true;
 
       b->cursor = nir_after_impl(impl);
@@ -2651,8 +2628,8 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
 
    if (options->has_param_exports && options->gfx_level >= GFX11 && !phis_created) {
       b->cursor = nir_after_cf_node(&if_es_thread->cf_node);
-      create_output_phis(b, b->shader->info.outputs_written, b->shader->info.outputs_written_16bit,
-                         &state.out);
+      ac_nir_create_output_phis(b, b->shader->info.outputs_written, b->shader->info.outputs_written_16bit,
+                                &state.out);
    }
 
    b->cursor = nir_after_cf_list(&if_es_thread->then_list);
@@ -3113,7 +3090,7 @@ ngg_gs_export_vertices(nir_builder *b, nir_def *max_num_out_vtx, nir_def *tid_in
       /* Store vertex parameters to attribute ring.
        * For optimal attribute ring access, this should happen in top level CF.
        */
-      create_output_phis(b, b->shader->info.outputs_written, b->shader->info.outputs_written_16bit, &s->out);
+      ac_nir_create_output_phis(b, b->shader->info.outputs_written, b->shader->info.outputs_written_16bit, &s->out);
       ac_nir_store_parameters_to_attr_ring(b, s->options->vs_output_param_offset,
                                            b->shader->info.outputs_written,
                                            b->shader->info.outputs_written_16bit,

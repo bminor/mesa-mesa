@@ -919,3 +919,29 @@ ac_nir_ngg_alloc_vertices_and_primitives(nir_builder *b,
     */
    nir_sendmsg_amd(b, nir_ior(b, nir_ishl_imm(b, num_prim, 12), num_vtx), .base = AC_SENDMSG_GS_ALLOC_REQ);
 }
+
+void
+ac_nir_create_output_phis(nir_builder *b,
+                          const uint64_t outputs_written,
+                          const uint64_t outputs_written_16bit,
+                          ac_nir_prerast_out *out)
+{
+   nir_def *undef = nir_undef(b, 1, 32); /* inserted at the start of the shader */
+
+   u_foreach_bit64(slot, outputs_written) {
+      for (unsigned j = 0; j < 4; j++) {
+         if (out->outputs[slot][j])
+            out->outputs[slot][j] = nir_if_phi(b, out->outputs[slot][j], undef);
+      }
+   }
+
+   u_foreach_bit64(i, outputs_written_16bit) {
+      for (unsigned j = 0; j < 4; j++) {
+         if (out->outputs_16bit_hi[i][j])
+            out->outputs_16bit_hi[i][j] = nir_if_phi(b, out->outputs_16bit_hi[i][j], undef);
+
+         if (out->outputs_16bit_lo[i][j])
+            out->outputs_16bit_lo[i][j] = nir_if_phi(b, out->outputs_16bit_lo[i][j], undef);
+      }
+   }
+}
