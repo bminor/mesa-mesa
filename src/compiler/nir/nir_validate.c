@@ -1603,7 +1603,7 @@ validate_ssa_dominance(nir_function_impl *impl, validate_state *state)
 {
    nir_metadata_require(impl, nir_metadata_dominance);
 
-   nir_foreach_block(block, impl) {
+   nir_foreach_block_unstructured(block, impl) {
       state->block = block;
       nir_foreach_instr(instr, block) {
          state->instr = instr;
