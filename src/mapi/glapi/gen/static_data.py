@@ -1707,7 +1707,8 @@ offsets = {
     "FramebufferTextureMultisampleMultiviewOVR": 1677,
 }
 
-functions = [
+# Exported from libGL.so and libGLX_mesa.so (libEGL_mesa.so doesn't export any)
+libgl_public_functions = [
     "Accum",
     "ActiveShaderProgram",
     "ActiveTexture",

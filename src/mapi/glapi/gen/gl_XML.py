@@ -619,7 +619,7 @@ class gl_function( gl_item ):
         assert not alias or not element.get('marshal_call_after')
         assert not alias or not element.get('deprecated')
 
-        if name in static_data.functions:
+        if name in static_data.libgl_public_functions:
             self.static_entry_points.append(name)
 
         self.entry_points.append( name )
