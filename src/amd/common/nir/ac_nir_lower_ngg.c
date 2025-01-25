@@ -202,7 +202,7 @@ nogs_prim_gen_query(nir_builder *b, lower_ngg_nogs_state *s)
    nir_pop_if(b, if_shader_query);
 }
 
-static void
+static nir_if *
 emit_ngg_nogs_prim_export(nir_builder *b, lower_ngg_nogs_state *s, nir_def *arg)
 {
    nir_if *if_gs_thread = nir_push_if(b, nir_load_var(b, s->gs_exported_var));
@@ -260,6 +260,7 @@ emit_ngg_nogs_prim_export(nir_builder *b, lower_ngg_nogs_state *s, nir_def *arg)
       }
    }
    nir_pop_if(b, if_gs_thread);
+   return if_gs_thread;
 }
 
 static void
@@ -1690,33 +1691,6 @@ export_pos0_wait_attr_ring(nir_builder *b, nir_if *if_es_thread, nir_def *output
    nir_pop_if(b, if_export_empty_pos);
 }
 
-
-static void
-nogs_export_vertex_params(nir_builder *b, nir_function_impl *impl,
-                          nir_if *if_es_thread, nir_def *num_es_threads,
-                          lower_ngg_nogs_state *s)
-{
-   if (!s->options->has_param_exports)
-      return;
-
-   if (s->options->gfx_level >= GFX11) {
-      /* Export varyings for GFX11+ */
-      b->cursor = nir_after_impl(impl);
-      if (!num_es_threads)
-         num_es_threads = nir_load_merged_wave_info_amd(b);
-
-      ac_nir_store_parameters_to_attr_ring(b, s->options->vs_output_param_offset,
-                                           b->shader->info.outputs_written,
-                                           b->shader->info.outputs_written_16bit,
-                                           &s->out, NULL, num_es_threads);
-   } else {
-      ac_nir_export_parameters(b, s->options->vs_output_param_offset,
-                                 b->shader->info.outputs_written,
-                                 b->shader->info.outputs_written_16bit,
-                                 &s->out);
-   }
-}
-
 void
 ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *options)
 {
@@ -1923,6 +1897,7 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
    }
 
    /* Take care of late primitive export */
+   nir_if *if_late_prim_export = NULL;
    if (!state.early_prim_export) {
       b->cursor = nir_after_impl(impl);
 
@@ -1934,7 +1909,7 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
                         .memory_modes = nir_var_mem_ssbo | nir_var_shader_out | nir_var_mem_global | nir_var_image);
       }
 
-      emit_ngg_nogs_prim_export(b, &state, nir_load_var(b, prim_exp_arg_var));
+      if_late_prim_export = emit_ngg_nogs_prim_export(b, &state, nir_load_var(b, prim_exp_arg_var));
    }
 
    uint64_t export_outputs = shader->info.outputs_written | VARYING_BIT_POS;
@@ -1957,8 +1932,7 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
    nir_if *if_pos_exports = NULL;
    if (state.streamout_enabled) {
       b->cursor = nir_after_cf_node(&if_es_thread->cf_node);
-      ac_nir_create_output_phis(b, b->shader->info.outputs_written, b->shader->info.outputs_written_16bit,
-                                &state.out);
+      ac_nir_create_output_phis(b, b->shader->info.outputs_written, b->shader->info.outputs_written_16bit, &state.out);
       phis_created = true;
 
       b->cursor = nir_after_impl(impl);
@@ -1973,17 +1947,37 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
                           options->force_vrs, !wait_attr_ring,
                           export_outputs, &state.out, NULL);
 
+   if (options->has_param_exports && options->gfx_level <= GFX10_3) {
+      ac_nir_export_parameters(b, options->vs_output_param_offset,
+                               b->shader->info.outputs_written,
+                               b->shader->info.outputs_written_16bit,
+                               &state.out);
+   }
+
    if (if_pos_exports)
       nir_pop_if(b, if_pos_exports);
 
-   if (options->has_param_exports && options->gfx_level >= GFX11 && !phis_created) {
-      b->cursor = nir_after_cf_node(&if_es_thread->cf_node);
-      ac_nir_create_output_phis(b, b->shader->info.outputs_written, b->shader->info.outputs_written_16bit,
-                                &state.out);
-   }
+   if (options->has_param_exports && options->gfx_level >= GFX11) {
+      if (!phis_created) {
+         b->cursor = nir_after_cf_node(&if_es_thread->cf_node);
+         ac_nir_create_output_phis(b, b->shader->info.outputs_written, b->shader->info.outputs_written_16bit, &state.out);
+      }
 
-   b->cursor = nir_after_cf_list(&if_es_thread->then_list);
-   nogs_export_vertex_params(b, impl, if_es_thread, num_es_threads, &state);
+      if (!wait_attr_ring)
+         b->cursor = nir_after_impl(impl);
+      else if (if_late_prim_export)
+         b->cursor = nir_after_cf_node_and_phis(&if_late_prim_export->cf_node);
+      else
+         b->cursor = nir_after_cf_node_and_phis(&if_es_thread->cf_node);
+
+      if (!num_es_threads)
+         num_es_threads = nir_load_merged_wave_info_amd(b);
+
+      ac_nir_store_parameters_to_attr_ring(b, options->vs_output_param_offset,
+                                          b->shader->info.outputs_written,
+                                          b->shader->info.outputs_written_16bit,
+                                          &state.out, NULL, num_es_threads);
+   }
 
    if (wait_attr_ring)
       export_pos0_wait_attr_ring(b, if_es_thread, state.out.outputs, options);
