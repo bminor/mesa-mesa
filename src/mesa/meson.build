@@ -391,10 +391,10 @@ format_fallback_c = custom_target(
 
 get_hash_h = custom_target(
   'get_hash.h',
-  input : ['main/get_hash_generator.py', gl_and_es_api_files],
+  input : ['main/get_hash_generator.py', '../mapi/glapi/gen/gl_and_es_API.xml'],
   output : 'get_hash.h',
   command : [prog_python, '@INPUT0@', '-f', '@INPUT1@'],
-  depend_files : files('main/get_hash_params.py'),
+  depend_files : files('main/get_hash_params.py') + glapi_xml_py_deps,
   capture : true,
 )
 

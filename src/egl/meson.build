@@ -59,7 +59,7 @@ g_egldispatchstubs_c = custom_target(
   command : [
     prog_python, '@INPUT0@', 'source', '@INPUT1@', '@INPUT2@',
   ],
-  depend_files : [ files('generate/eglFunctionList.py'), genCommon_py, ],
+  depend_files : [ 'generate/eglFunctionList.py', glapi_xml_py_deps],
   capture : true,
 )
 
@@ -73,7 +73,7 @@ g_egldispatchstubs_h = custom_target(
   command : [
     prog_python, '@INPUT0@', 'header', '@INPUT1@', '@INPUT2@',
   ],
-  depend_files : [ files('generate/eglFunctionList.py'), genCommon_py, ],
+  depend_files : [ 'generate/eglFunctionList.py', glapi_xml_py_deps],
   capture : true,
 )
 

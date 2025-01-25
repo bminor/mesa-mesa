@@ -3,10 +3,10 @@
 
 es2_glapi_mapi_tmp_h = custom_target(
   'es2_glapi_mapi_tmp.h',
-  input : [glapi_gen_mapi_py, glapi_gen_gl_xml],
+  input : ['../new/gen_gldispatch_mapi.py', '../glapi/registry/gl.xml'],
   output : 'glapi_mapi_tmp.h',
   command : [prog_python, '@INPUT0@', 'glesv2', '@INPUT1@'],
-  depend_files : glapi_gen_mapi_deps,
+  depend_files : glapi_xml_py_deps,
   capture : true,
 )
 

@@ -3,19 +3,19 @@
 
 main_dispatch_h = custom_target(
   'dispatch.h',
-  input : [files('../../mapi/glapi/gen/gl_table.py'), gl_and_es_api_files],
+  input : ['../../mapi/glapi/gen/gl_table.py', '../../mapi/glapi/gen/gl_and_es_API.xml'],
   output : 'dispatch.h',
   command : [prog_python, '@INPUT0@', '-f', '@INPUT1@', '-m', 'dispatch'],
-  depend_files : glapi_gen_depends,
+  depend_files : glapi_xml_py_deps,
   capture : true,
 )
 
 main_marshal_generated_h = custom_target(
   'marshal_generated.h',
-  input : [files('../../mapi/glapi/gen/gl_marshal_h.py'), gl_and_es_api_files],
+  input : ['../../mapi/glapi/gen/gl_marshal_h.py', '../../mapi/glapi/gen/gl_and_es_API.xml'],
   output : 'marshal_generated.h',
   command : [prog_python, '@INPUT0@', '@INPUT1@', sizeof_pointer],
-  depend_files : files('../../mapi/glapi/gen/marshal_XML.py') + glapi_gen_depends,
+  depend_files : glapi_xml_py_deps,
   capture : true,
 )
 

@@ -13,10 +13,10 @@ files_shared_glapi = files(
 
 shared_glapi_mapi_tmp_h = custom_target(
   'shared_glapi_mapi_tmp.h',
-  input : [mapi_abi_py, gl_and_es_api_files],
+  input : ['../mapi_abi.py', '../glapi/gen/gl_and_es_API.xml'],
   output : 'glapi_mapi_tmp.h',
   command : [prog_python, '@INPUT0@', '--printer', 'shared-glapi', '@INPUT1@'],
-  depend_files : api_xml_files,
+  depend_files : glapi_xml_py_deps,
   capture : true,
 )
 
