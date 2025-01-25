@@ -204,7 +204,7 @@
         "description": "nak: lower_load_ssbo_descriptor modifies cf",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
