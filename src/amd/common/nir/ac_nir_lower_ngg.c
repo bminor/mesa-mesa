@@ -884,12 +884,7 @@ compact_vertices_after_culling(nir_builder *b,
                                unsigned pervertex_lds_bytes,
                                unsigned num_repacked_variables)
 {
-   nir_variable *es_accepted_var = s->es_accepted_var;
-   nir_variable *gs_accepted_var = s->gs_accepted_var;
-   nir_variable *position_value_var = s->position_value_var;
-   nir_variable *prim_exp_arg_var = s->prim_exp_arg_var;
-
-   nir_if *if_es_accepted = nir_push_if(b, nir_load_var(b, es_accepted_var));
+   nir_if *if_es_accepted = nir_push_if(b, nir_load_var(b, s->es_accepted_var));
    {
       nir_def *exporter_addr = pervertex_lds_addr(b, es_exporter_tid, pervertex_lds_bytes);
 
@@ -897,7 +892,7 @@ compact_vertices_after_culling(nir_builder *b,
       nir_store_shared(b, nir_u2u8(b, es_exporter_tid), es_vertex_lds_addr, .base = lds_es_exporter_tid);
 
       /* Store the current thread's position output to the exporter thread's LDS space */
-      nir_def *pos = nir_load_var(b, position_value_var);
+      nir_def *pos = nir_load_var(b, s->position_value_var);
       nir_store_shared(b, pos, exporter_addr, .base = lds_es_pos_x);
 
       /* Store the current thread's repackable arguments to the exporter thread's LDS space */
@@ -932,7 +927,7 @@ compact_vertices_after_culling(nir_builder *b,
    {
       /* Read position from the current ES thread's LDS space (written by the exported vertex's ES thread) */
       nir_def *exported_pos = nir_load_shared(b, 4, 32, es_vertex_lds_addr, .base = lds_es_pos_x);
-      nir_store_var(b, position_value_var, exported_pos, 0xfu);
+      nir_store_var(b, s->position_value_var, exported_pos, 0xfu);
 
       /* Read the repacked arguments */
       for (unsigned i = 0; i < num_repacked_variables; ++i) {
@@ -948,13 +943,13 @@ compact_vertices_after_culling(nir_builder *b,
    }
    nir_push_else(b, if_packed_es_thread);
    {
-      nir_store_var(b, position_value_var, nir_undef(b, 4, 32), 0xfu);
+      nir_store_var(b, s->position_value_var, nir_undef(b, 4, 32), 0xfu);
       for (unsigned i = 0; i < num_repacked_variables; ++i)
          nir_store_var(b, repacked_variables[i], nir_undef(b, 1, 32), 0x1u);
    }
    nir_pop_if(b, if_packed_es_thread);
 
-   nir_def *gs_accepted = nir_load_var(b, gs_accepted_var);
+   nir_def *gs_accepted = nir_load_var(b, s->gs_accepted_var);
    nir_if *if_gs_accepted = nir_push_if(b, gs_accepted);
    {
       nir_def *exporter_vtx_indices[3] = {0};
@@ -970,11 +965,11 @@ compact_vertices_after_culling(nir_builder *b,
       nir_def *prim_exp_arg =
          ac_nir_pack_ngg_prim_exp_arg(b, s->options->num_vertices_per_primitive,
                                     exporter_vtx_indices, NULL, s->options->gfx_level);
-      nir_store_var(b, prim_exp_arg_var, prim_exp_arg, 0x1u);
+      nir_store_var(b, s->prim_exp_arg_var, prim_exp_arg, 0x1u);
    }
    nir_pop_if(b, if_gs_accepted);
 
-   nir_store_var(b, es_accepted_var, es_survived, 0x1u);
+   nir_store_var(b, s->es_accepted_var, es_survived, 0x1u);
 
    if (s->options->compact_primitives) {
       /* For primitive compaction, re-use the same LDS space that we used for
@@ -988,7 +983,7 @@ compact_vertices_after_culling(nir_builder *b,
       if_gs_accepted = nir_push_if(b, gs_accepted);
       {
          nir_def *exporter_addr = pervertex_lds_addr(b, gs_exporter_tid, pervertex_lds_bytes);
-         nir_def *prim_exp_arg = nir_load_var(b, prim_exp_arg_var);
+         nir_def *prim_exp_arg = nir_load_var(b, s->prim_exp_arg_var);
 
          /* Store the primitive export argument into the address of the exporter thread. */
          nir_store_shared(b, prim_exp_arg, exporter_addr, .base = lds_es_pos_x);
@@ -1004,15 +999,15 @@ compact_vertices_after_culling(nir_builder *b,
          /* Load the primitive export argument that the current thread will export. */
          nir_def *prim_exp_arg = nir_load_shared(b, 1, 32, es_vertex_lds_addr, .base = lds_es_pos_x);
 
-         nir_store_var(b, prim_exp_arg_var, prim_exp_arg, 0x1u);
+         nir_store_var(b, s->prim_exp_arg_var, prim_exp_arg, 0x1u);
       }
       nir_push_else(b, if_packed_gs_thread);
       {
-         nir_store_var(b, prim_exp_arg_var, nir_undef(b, 1, 32), 0x1u);
+         nir_store_var(b, s->prim_exp_arg_var, nir_undef(b, 1, 32), 0x1u);
       }
       nir_pop_if(b, if_packed_gs_thread);
 
-      nir_store_var(b, gs_accepted_var, gs_survived, 0x1u);
+      nir_store_var(b, s->gs_accepted_var, gs_survived, 0x1u);
       nir_store_var(b, s->gs_exported_var, gs_survived, 0x1u);
    }
 }
