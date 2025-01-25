@@ -194,6 +194,27 @@ ac_nir_create_output_phis(nir_builder *b,
                           const uint64_t outputs_written_16bit,
                           ac_nir_prerast_out *out);
 
+void
+ac_nir_ngg_build_streamout_buffer_info(nir_builder *b,
+                                       nir_xfb_info *info,
+                                       enum amd_gfx_level gfx_level,
+                                       bool has_xfb_prim_query,
+                                       bool use_gfx12_xfb_intrinsic,
+                                       nir_def *scratch_base,
+                                       nir_def *tid_in_tg,
+                                       nir_def *gen_prim[4],
+                                       nir_def *so_buffer_ret[4],
+                                       nir_def *buffer_offsets_ret[4],
+                                       nir_def *emit_prim_ret[4]);
+
+void
+ac_nir_ngg_build_streamout_vertex(nir_builder *b, nir_xfb_info *info,
+                                  unsigned stream, nir_def *so_buffer[4],
+                                  nir_def *buffer_offsets[4],
+                                  unsigned vertex_index, nir_def *vtx_lds_addr,
+                                  ac_nir_prerast_out *pr_out,
+                                  bool skip_primitive_id);
+
 #ifdef __cplusplus
 }
 #endif
