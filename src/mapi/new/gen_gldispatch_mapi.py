@@ -62,7 +62,6 @@ def _main():
 
     print(generate_defines(functions))
     if target == "gldispatch":
-        print(generate_table(functions, allFunctions))
         print(generate_noop_array(functions))
         print(generate_public_stubs(functions))
     print(generate_public_entries(functions))
@@ -81,13 +80,6 @@ def generate_defines(functions):
         text += "GLAPI {f.rt} GLAPIENTRY {f.name}({f.decArgs});\n".format(f=func)
     text += "#undef MAPI_TMP_DEFINES\n"
     text += "#endif /* MAPI_TMP_DEFINES */\n"
-    return text
-
-def generate_table(functions, allFunctions):
-    text = "#ifdef MAPI_TMP_TABLE\n"
-    text += "#define MAPI_TABLE_NUM_STATIC %d\n" % (len(allFunctions))
-    text += "#undef MAPI_TMP_TABLE\n"
-    text += "#endif /* MAPI_TMP_TABLE */\n"
     return text
 
 def generate_noop_array(functions):

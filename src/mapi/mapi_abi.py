@@ -35,6 +35,7 @@ import re
 from optparse import OptionParser
 import gl_XML
 import glX_XML
+import static_data
 
 
 class ABIEntry(object):
@@ -232,7 +233,6 @@ class ABIPrinter(object):
 
         self.c_header = ''
 
-        self.lib_need_table_size = True
         self.lib_need_noop_array = True
         self.lib_need_stubs = True
         self.lib_need_all_entries = True
@@ -264,11 +264,6 @@ class ABIPrinter(object):
                 decls.append(self._c_decl(ent, prefix, True, export) + ';')
 
         return "\n".join(decls)
-
-    def c_mapi_table(self):
-        """Return defines of the dispatch table size."""
-        num_static_entries = self.entries[-1].slot + 1
-        return '#define MAPI_TABLE_NUM_STATIC %d' % (num_static_entries)
 
     def _c_function(self, ent, prefix, mangle=False, stringify=False):
         """Return the function name of an entry."""
@@ -468,6 +463,7 @@ class ABIPrinter(object):
             print()
             print(self.c_header)
 
+        print('#define _gloffset_COUNT %d' % (static_data.function_count))
         print()
         print('#ifdef MAPI_TMP_DEFINES')
         print(self.c_public_includes())
@@ -479,13 +475,6 @@ class ABIPrinter(object):
         print(self.c_public_declarations(self.prefix_lib))
         print('#undef MAPI_TMP_DEFINES')
         print('#endif /* MAPI_TMP_DEFINES */')
-
-        if self.lib_need_table_size:
-            print()
-            print('#ifdef MAPI_TMP_TABLE')
-            print(self.c_mapi_table())
-            print('#undef MAPI_TMP_TABLE')
-            print('#endif /* MAPI_TMP_TABLE */')
 
         if self.lib_need_noop_array:
             print()
@@ -577,7 +566,6 @@ class GLAPIPrinter(ABIPrinter):
         self.api_entry = 'GLAPIENTRY'
         self.api_attrs = ''
 
-        self.lib_need_table_size = False
         self.lib_need_noop_array = False
         self.lib_need_stubs = False
         self.lib_need_all_entries = False
@@ -612,7 +600,6 @@ class SharedGLAPIPrinter(GLAPIPrinter):
     def __init__(self, entries):
         super(SharedGLAPIPrinter, self).__init__(entries)
 
-        self.lib_need_table_size = True
         self.lib_need_noop_array = True
         self.lib_need_stubs = True
         self.lib_need_all_entries = True

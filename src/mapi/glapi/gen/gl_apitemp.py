@@ -27,6 +27,7 @@
 import argparse
 
 import gl_XML, glX_XML
+import static_data
 import license
 
 class PrintGlOffsets(gl_XML.gl_print_base):
@@ -274,6 +275,9 @@ _glapi_proc UNUSED_TABLE_NAME[] = {""")
             normal_ents, proto_ents = self.classifyEntryPoints(func)
             normal_entry_points.append((func, normal_ents))
             proto_entry_points.append((func, proto_ents))
+
+        print('#define _gloffset_COUNT %d' % static_data.function_count)
+        print('')
 
         print('#ifndef _GLAPI_SKIP_NORMAL_ENTRY_POINTS')
         print('')

@@ -29,7 +29,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "glapi/glapi.h"
-#include "table.h" /* for MAPI_TABLE_NUM_SLOTS */
+#include "table.h"
 #include "stub.h"
 
 /*
@@ -46,7 +46,7 @@
 unsigned int
 _mesa_glapi_get_dispatch_table_size(void)
 {
-   return MAPI_TABLE_NUM_SLOTS;
+   return _gloffset_COUNT;
 }
 
 static const struct mapi_stub *
@@ -94,16 +94,13 @@ _glapi_get_proc_name(unsigned int offset)
 
 /** Return pointer to new dispatch table filled with no-op functions */
 struct _glapi_table *
-_glapi_new_nop_table(unsigned num_entries)
+_glapi_new_nop_table(void)
 {
    struct _glapi_table *table;
 
-   if (num_entries > MAPI_TABLE_NUM_SLOTS)
-      num_entries = MAPI_TABLE_NUM_SLOTS;
-
-   table = malloc(num_entries * sizeof(mapi_func));
+   table = malloc(_gloffset_COUNT * sizeof(mapi_func));
    if (table) {
-      memcpy(table, table_noop_array, num_entries * sizeof(mapi_func));
+      memcpy(table, table_noop_array, _gloffset_COUNT * sizeof(mapi_func));
    }
    return table;
 }

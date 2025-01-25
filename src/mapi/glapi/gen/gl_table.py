@@ -28,6 +28,7 @@
 import argparse
 
 import gl_XML
+import static_data
 import license
 
 
@@ -116,7 +117,7 @@ class PrintRemapTable(gl_XML.gl_print_base):
         abi_functions = [f for f in api.functionIterateByOffset()]
 
         print('/* total number of offsets below */')
-        print('#define _gloffset_COUNT %d' % (len(abi_functions)))
+        print('#define _gloffset_COUNT %d' % (static_data.function_count))
         print('')
 
         for f in abi_functions:

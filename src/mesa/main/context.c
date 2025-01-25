@@ -783,13 +783,13 @@ glthread_nop(void)
  * call stack.  That's impossible with one generic no-op function.
  */
 struct _glapi_table *
-_mesa_new_nop_table(unsigned numEntries, bool glthread)
+_mesa_new_nop_table(bool glthread)
 {
-   struct _glapi_table *table = _glapi_new_nop_table(numEntries);
+   struct _glapi_table *table = _glapi_new_nop_table();
 
    if (glthread) {
       _glapi_proc *entry = (_glapi_proc *) table;
-      for (unsigned i = 0; i < numEntries; i++)
+      for (unsigned i = 0; i < _gloffset_COUNT; i++)
          entry[i] = (_glapi_proc)glthread_nop;
    }
 
@@ -805,14 +805,7 @@ _mesa_new_nop_table(unsigned numEntries, bool glthread)
 struct _glapi_table *
 _mesa_alloc_dispatch_table(bool glthread)
 {
-   /* Find the larger of Mesa's dispatch table and libGL's dispatch table.
-    * In practice, this'll be the same for stand-alone Mesa.  But for DRI
-    * Mesa we do this to accommodate different versions of libGL and various
-    * DRI drivers.
-    */
-   int numEntries = MAX2(_mesa_glapi_get_dispatch_table_size(), _gloffset_COUNT);
-
-   struct _glapi_table *table = _mesa_new_nop_table(numEntries, glthread);
+   struct _glapi_table *table = _mesa_new_nop_table(glthread);
 
 #if defined(_WIN32)
    if (table) {

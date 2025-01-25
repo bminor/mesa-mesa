@@ -92,7 +92,7 @@ extern bool
 _mesa_initialize_dispatch_tables(struct gl_context *ctx);
 
 extern struct _glapi_table *
-_mesa_new_nop_table(unsigned numEntries, bool glthread);
+_mesa_new_nop_table(bool glthread);
 
 extern void
 _mesa_free_context_data(struct gl_context *ctx, bool destroy_debug_output);

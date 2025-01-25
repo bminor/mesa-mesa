@@ -142,7 +142,7 @@ _glapi_set_nop_handler(_glapi_nop_handler_proc func);
 
 /** Return pointer to new dispatch table filled with no-op functions */
 struct _glapi_table *
-_glapi_new_nop_table(unsigned num_entries);
+_glapi_new_nop_table(void);
 
 
 #ifdef __cplusplus

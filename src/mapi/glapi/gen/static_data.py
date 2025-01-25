@@ -1676,6 +1676,8 @@ for name in all_functions:
     offsets[name] = i
     i += 1
 
+function_count = i
+
 # Exported from libGL.so and libGLX_mesa.so (libEGL_mesa.so doesn't export any)
 libgl_public_functions = [
     "Accum",
