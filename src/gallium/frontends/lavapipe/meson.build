@@ -28,7 +28,6 @@ liblvp_files = files(
     'lvp_util.c',
     'lvp_image.c',
     'lvp_formats.c',
-    'lvp_inline_uniforms.c',
     'lvp_pipe_sync.c',
     'lvp_pipeline.c',
     'lvp_pipeline_cache.c',
