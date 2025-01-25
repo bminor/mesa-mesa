@@ -73,6 +73,11 @@ typedef struct
    ac_nir_prerast_per_output_info infos_16bit_hi[16];
 } ac_nir_prerast_out;
 
+typedef struct {
+   nir_def *num_repacked_invocations;
+   nir_def *repacked_invocation_index;
+} ac_nir_wg_repack_result;
+
 /* Maps I/O semantics to the actual location used by the lowering pass. */
 typedef unsigned (*ac_nir_map_io_driver_location)(unsigned semantic);
 
@@ -214,6 +219,12 @@ ac_nir_ngg_build_streamout_vertex(nir_builder *b, nir_xfb_info *info,
                                   unsigned vertex_index, nir_def *vtx_lds_addr,
                                   ac_nir_prerast_out *pr_out,
                                   bool skip_primitive_id);
+
+void
+ac_nir_repack_invocations_in_workgroup(nir_builder *b, nir_def **input_bool,
+                                       ac_nir_wg_repack_result *results, const unsigned num_repacks,
+                                       nir_def *lds_addr_base, unsigned max_num_waves,
+                                       unsigned wave_size);
 
 #ifdef __cplusplus
 }
