@@ -36,9 +36,26 @@ typedef struct
 
    nir_variable *position_value_var;
    nir_variable *prim_exp_arg_var;
+
+   /**
+    * Whether the current invocation's vertex (if any) is accepted by the culling algorithm.
+    * Only used when culling is enabled.
+    */
    nir_variable *es_accepted_var;
+
+   /**
+    * hether the current invocation's primitive (if any) is accepted by the culling algorithm.
+    * Only used when culling is enabled.
+    */
    nir_variable *gs_accepted_var;
+
+   /**
+    * Whether the current invocation's primitive (if any) should be exported.
+    * Initially set to whether the invocation has a vertex, then set to false by the culling
+    * algorithm if the primitive is rejected.
+    */
    nir_variable *gs_exported_var;
+
    nir_variable *gs_vtx_indices_vars[3];
 
    nir_def *vtx_addr[3];
