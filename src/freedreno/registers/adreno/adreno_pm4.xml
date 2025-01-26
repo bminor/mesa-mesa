@@ -1134,6 +1134,15 @@ opcode: CP_LOAD_STATE4 (30) (4 dwords)
 
 <domain name="CP_SET_BIN_DATA5" width="32">
 	<reg32 offset="0" name="0">
+		<bitfield name="VSC_MASK" low="0" high="15" type="hex">
+			<doc>
+				A mask of bins, starting at VSC_N, whose
+				visibility is OR'd together. A value of 0 is
+				interpreted as 1 (i.e. just use VSC_N for
+				visbility) for backwards compatibility. Only
+				exists on a7xx.
+			</doc>
+		</bitfield>
 		<!-- equiv to PC_VSTREAM_CONTROL.SIZE on a3xx/a4xx: -->
 		<bitfield name="VSC_SIZE" low="16" high="21" type="uint"/>
 		<!-- equiv to PC_VSTREAM_CONTROL.N on a3xx/a4xx: -->
@@ -1175,6 +1184,7 @@ opcode: CP_LOAD_STATE4 (30) (4 dwords)
                 stream is recorded.
 	</doc>
 	<reg32 offset="0" name="0">
+		<bitfield name="VSC_MASK" low="0" high="15" type="hex"/>
 		<!-- equiv to PC_VSTREAM_CONTROL.SIZE on a3xx/a4xx: -->
 		<bitfield name="VSC_SIZE" low="16" high="21" type="uint"/>
 		<!-- equiv to PC_VSTREAM_CONTROL.N on a3xx/a4xx: -->
