@@ -2964,7 +2964,7 @@
         "description": "frontends/va: Fix decoding VC1 streams with multiple slices",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
