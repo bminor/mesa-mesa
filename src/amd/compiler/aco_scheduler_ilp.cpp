@@ -6,6 +6,7 @@
 #include "aco_ir.h"
 
 #include "util/bitscan.h"
+#include "util/bitset.h"
 #include "util/macros.h"
 
 #include <limits>
@@ -40,14 +41,15 @@ struct VOPDInfo {
 
 struct InstrInfo {
    Instruction* instr;
-   int32_t priority;
+   int16_t priority;
    mask_t dependency_mask;       /* bitmask of nodes which have to be scheduled before this node. */
+   mask_t write_for_read_mask;   /* bitmask of nodes in the DAG that have a RaW dependency. */
    uint8_t next_non_reorderable; /* index of next non-reorderable instruction node after this one. */
 };
 
 struct RegisterInfo {
    mask_t read_mask; /* bitmask of nodes which have to be scheduled before the next write. */
-   int8_t latency;   /* estimated latency of last register write. */
+   int8_t latency;   /* estimated outstanding latency of last register write outside the DAG. */
    uint8_t direct_dependency : 4;     /* node that has to be scheduled before any other access. */
    uint8_t has_direct_dependency : 1; /* whether there is an unscheduled direct dependency. */
    uint8_t padding : 3;
@@ -58,6 +60,7 @@ struct SchedILPContext {
    bool is_vopd = false;
    InstrInfo nodes[num_nodes];
    RegisterInfo regs[512];
+   BITSET_DECLARE(reg_has_latency, 512) = { 0 };
    mask_t non_reorder_mask = 0; /* bitmask of instruction nodes which should not be reordered. */
    mask_t active_mask = 0;      /* bitmask of valid instruction nodes. */
    uint8_t next_non_reorderable = UINT8_MAX; /* index of next node which should not be reordered. */
@@ -318,6 +321,7 @@ add_entry(SchedILPContext& ctx, Instruction* const instr, const uint32_t idx)
    InstrInfo& entry = ctx.nodes[idx];
    entry.instr = instr;
    entry.priority = 0;
+   entry.write_for_read_mask = 0;
    const mask_t mask = BITFIELD_BIT(idx);
    bool reorder = can_reorder(instr);
    ctx.active_mask |= mask;
@@ -346,28 +350,12 @@ add_entry(SchedILPContext& ctx, Instruction* const instr, const uint32_t idx)
          /* Add register reads. */
          reg_info.read_mask |= mask;
 
-         int cycles_since_reg_write = num_nodes;
          if (reg_info.has_direct_dependency) {
             /* A previous dependency is still part of the DAG. */
+            ctx.nodes[ctx.regs[reg].direct_dependency].write_for_read_mask |= mask;
             entry.dependency_mask |= BITFIELD_BIT(reg_info.direct_dependency);
-            cycles_since_reg_write = ctx.nodes[reg_info.direct_dependency].priority;
-         }
-
-         if (reg_info.latency) {
-            /* Ignore and reset register latencies for memory loads and other non-reorderable
-             * instructions. We schedule these as early as possible anyways.
-             */
-            if (reorder && reg_info.latency > cycles_since_reg_write) {
-               entry.priority = MIN2(entry.priority, cycles_since_reg_write - reg_info.latency);
-
-               /* If a previous register write created some latency, ensure that this
-                * is the first read of the register by making this instruction a direct
-                * dependency of all following register reads.
-                */
-               reg_info.has_direct_dependency = 1;
-               reg_info.direct_dependency = idx;
-            }
-            reg_info.latency = 0;
+         } else if (BITSET_TEST(ctx.reg_has_latency, reg + i)) {
+            entry.priority = MIN2(entry.priority, -reg_info.latency);
          }
       }
    }
@@ -375,15 +363,19 @@ add_entry(SchedILPContext& ctx, Instruction* const instr, const uint32_t idx)
    /* Check if this instructions reads implicit registers. */
    if (needs_exec_mask(instr)) {
       for (unsigned reg = exec_lo; reg <= exec_hi; reg++) {
-         if (ctx.regs[reg].has_direct_dependency)
+         if (ctx.regs[reg].has_direct_dependency) {
             entry.dependency_mask |= BITFIELD_BIT(ctx.regs[reg].direct_dependency);
+            ctx.nodes[ctx.regs[reg].direct_dependency].write_for_read_mask |= mask;
+         }
          ctx.regs[reg].read_mask |= mask;
       }
    }
    if (ctx.program->gfx_level < GFX10 && instr->isScratch()) {
       for (unsigned reg = flat_scr_lo; reg <= flat_scr_hi; reg++) {
-         if (ctx.regs[reg].has_direct_dependency)
+         if (ctx.regs[reg].has_direct_dependency) {
             entry.dependency_mask |= BITFIELD_BIT(ctx.regs[reg].direct_dependency);
+            ctx.nodes[ctx.regs[reg].direct_dependency].write_for_read_mask |= mask;
+         }
          ctx.regs[reg].read_mask |= mask;
       }
    }
@@ -400,11 +392,6 @@ add_entry(SchedILPContext& ctx, Instruction* const instr, const uint32_t idx)
          /* This register write is a direct dependency for all following reads. */
          reg_info.has_direct_dependency = 1;
          reg_info.direct_dependency = idx;
-
-         if (!ctx.is_vopd) {
-            /* Add latency information for the next register read. */
-            reg_info.latency = get_latency(instr);
-         }
       }
    }
 
@@ -447,9 +434,6 @@ add_entry(SchedILPContext& ctx, Instruction* const instr, const uint32_t idx)
       /* Add transitive dependencies. */
       if (entry.dependency_mask & BITFIELD_BIT(i))
          entry.dependency_mask |= ctx.nodes[i].dependency_mask;
-
-      /* increment base priority */
-      ctx.nodes[i].priority++;
    }
 }
 
@@ -459,6 +443,24 @@ remove_entry(SchedILPContext& ctx, const Instruction* const instr, const uint32_
    const mask_t mask = ~BITFIELD_BIT(idx);
    ctx.active_mask &= mask;
 
+   int stall = 1; /* Assume all instructions take one cycle to issue. */
+   if (ctx.nodes[idx].priority < 0) {
+      /* Add remaining latency stall. */
+      stall -= ctx.nodes[idx].priority;
+   }
+
+   if (!ctx.is_vopd) {
+      unsigned i;
+      BITSET_FOREACH_SET (i, ctx.reg_has_latency, 512) {
+         if (ctx.regs[i].latency <= stall) {
+            ctx.regs[i].latency = 0;
+            BITSET_CLEAR(ctx.reg_has_latency, i);
+         } else {
+            ctx.regs[i].latency -= stall;
+         }
+      }
+   }
+
    for (const Operand& op : instr->operands) {
       const unsigned reg = op.physReg();
       if (reg >= max_sgpr && reg != scc && reg < min_vgpr)
@@ -467,7 +469,6 @@ remove_entry(SchedILPContext& ctx, const Instruction* const instr, const uint32_
       for (unsigned i = 0; i < op.size(); i++) {
          RegisterInfo& reg_info = ctx.regs[reg + i];
          reg_info.read_mask &= mask;
-         reg_info.has_direct_dependency &= reg_info.direct_dependency != idx;
       }
    }
    if (needs_exec_mask(instr)) {
@@ -478,16 +479,30 @@ remove_entry(SchedILPContext& ctx, const Instruction* const instr, const uint32_
       ctx.regs[flat_scr_lo].read_mask &= mask;
       ctx.regs[flat_scr_hi].read_mask &= mask;
    }
+
+   const int8_t latency = get_latency(instr);
+
    for (const Definition& def : instr->definitions) {
       for (unsigned i = 0; i < def.size(); i++) {
          unsigned reg = def.physReg().reg() + i;
          ctx.regs[reg].read_mask &= mask;
-         ctx.regs[reg].has_direct_dependency &= ctx.regs[reg].direct_dependency != idx;
+         if (ctx.regs[reg].has_direct_dependency && ctx.regs[reg].direct_dependency == idx) {
+            ctx.regs[reg].has_direct_dependency = false;
+            if (!ctx.is_vopd) {
+               BITSET_SET(ctx.reg_has_latency, reg);
+               ctx.regs[reg].latency = latency;
+            }
+         }
       }
    }
 
-   for (unsigned i = 0; i < num_nodes; i++)
+   for (unsigned i = 0; i < num_nodes; i++) {
       ctx.nodes[i].dependency_mask &= mask;
+      ctx.nodes[i].priority += stall;
+      if (ctx.nodes[idx].write_for_read_mask & BITFIELD_BIT(i) && !ctx.is_vopd) {
+         ctx.nodes[i].priority = MIN2(ctx.nodes[i].priority, -latency);
+      }
+   }
 
    if (ctx.next_non_reorderable == idx) {
       ctx.non_reorder_mask &= mask;
@@ -782,10 +797,14 @@ schedule_ilp(Program* program)
    SchedILPContext ctx = {program};
 
    for (Block& block : program->blocks) {
+      if (block.instructions.empty())
+         continue;
       auto it = block.instructions.begin();
       auto insert_it = block.instructions.begin();
       do_schedule(ctx, insert_it, it, block.instructions.begin(), block.instructions.end());
       block.instructions.resize(insert_it - block.instructions.begin());
+      if (block.linear_succs.empty() || block.instructions.back()->opcode == aco_opcode::s_branch)
+         BITSET_ZERO(ctx.reg_has_latency);
    }
 }
 
