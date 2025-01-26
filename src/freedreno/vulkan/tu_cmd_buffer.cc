@@ -1119,15 +1119,20 @@ tu6_emit_tile_select(struct tu_cmd_buffer *cmd,
    unsigned slot = ffs(tile->slot_mask) - 1;
 
    if (hw_binning) {
+      bool abs_mask =
+         cmd->device->physical_device->info->a7xx.has_abs_bin_mask;
       tu_cs_emit_pkt7(cs, CP_WAIT_FOR_ME, 0);
 
       tu_cs_emit_pkt7(cs, CP_SET_MODE, 1);
       tu_cs_emit(cs, 0x0);
 
-      tu_cs_emit_pkt7(cs, CP_SET_BIN_DATA5_OFFSET, 4);
+      tu_cs_emit_pkt7(cs, CP_SET_BIN_DATA5_OFFSET, abs_mask ? 5 : 4);
       tu_cs_emit(cs, tiling->pipe_sizes[tile->pipe] |
                      CP_SET_BIN_DATA5_0_VSC_N(slot) |
-                     CP_SET_BIN_DATA5_0_VSC_MASK(tile->slot_mask >> slot));
+                     CP_SET_BIN_DATA5_0_VSC_MASK(tile->slot_mask >> slot) |
+                     COND(abs_mask, CP_SET_BIN_DATA5_0_ABS_MASK(ABS_MASK)));
+      if (abs_mask)
+         tu_cs_emit(cs, tile->slot_mask);
       tu_cs_emit(cs, tile->pipe * cmd->vsc_draw_strm_pitch);
       tu_cs_emit(cs, tile->pipe * 4);
       tu_cs_emit(cs, tile->pipe * cmd->vsc_prim_strm_pitch);
@@ -2380,7 +2385,7 @@ tu_calc_frag_area(struct tu_cmd_buffer *cmd,
 
 static bool
 try_merge_tiles(struct tu_tile_config *dst, const struct tu_tile_config *src,
-                unsigned views)
+                unsigned views, bool has_abs_bin_mask)
 {
    uint32_t slot_mask = dst->slot_mask | src->slot_mask;
 
@@ -2391,10 +2396,12 @@ try_merge_tiles(struct tu_tile_config *dst, const struct tu_tile_config *src,
          return false;
    }
 
-   /* The mask of the combined tile has to fit in 16 bits */
-   uint32_t hw_mask = slot_mask >> (ffs(slot_mask) - 1);
-   if ((hw_mask & 0xffff) != hw_mask)
-      return false;
+   if (!has_abs_bin_mask) {
+      /* The mask of the combined tile has to fit in 16 bits */
+      uint32_t hw_mask = slot_mask >> (ffs(slot_mask) - 1);
+      if ((hw_mask & 0xffff) != hw_mask)
+         return false;
+   }
 
    /* Note, this assumes that dst is below or to the right of src, which is
     * how we call this function below.
@@ -2435,6 +2442,8 @@ tu_render_pipe_fdm(struct tu_cmd_buffer *cmd, uint32_t pipe,
    uint32_t height = ty2 - ty1;
    unsigned views =
       cmd->state.pass->num_views ? cmd->state.pass->num_views : 1;
+   bool has_abs_mask =
+      cmd->device->physical_device->info->a7xx.has_abs_bin_mask;
 
    struct tu_tile_config tiles[width * height];
 
@@ -2458,14 +2467,14 @@ tu_render_pipe_fdm(struct tu_cmd_buffer *cmd, uint32_t pipe,
          struct tu_tile_config *tile = &tiles[width * y + x];
          if (x > 0) {
             struct tu_tile_config *prev_x_tile = &tiles[width * y + x - 1];
-            if (try_merge_tiles(tile, prev_x_tile, views)) {
+            if (try_merge_tiles(tile, prev_x_tile, views, has_abs_mask)) {
                merged_tiles |= prev_x_tile->slot_mask;
             }
          }
          if (y > 0) {
             struct tu_tile_config *prev_y_tile = &tiles[width * (y - 1) + x];
             if (!(merged_tiles & prev_y_tile->slot_mask) &&
-                try_merge_tiles(tile, prev_y_tile, views)) {
+                try_merge_tiles(tile, prev_y_tile, views, has_abs_mask)) {
                merged_tiles |= prev_y_tile->slot_mask;
             }
          }

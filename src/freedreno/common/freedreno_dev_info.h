@@ -346,6 +346,9 @@ struct fd_dev_info {
 
       /* Whether alias.rt is supported. */
       bool has_alias_rt;
+
+      /* Whether CP_SET_BIN_DATA5::ABS_MASK exists */
+      bool has_abs_bin_mask;
    } a7xx;
 };
 
