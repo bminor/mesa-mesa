@@ -870,10 +870,8 @@ etna_get_specs(struct etna_screen *screen)
       screen->specs.has_icache = true;
    } else if (VIV_FEATURE(screen, ETNA_FEATURE_INSTRUCTION_CACHE)) {
       /* GC3000 - this core is capable of loading shaders from
-       * memory. It can also run shaders from registers, as a fallback, but
-       * "max_instructions" does not have the correct value. It has place for
-       * 2*256 instructions just like GC2000, but the offsets are slightly
-       * different.
+       * memory. It can also run shaders from registers as a fallback, but the
+       * offsets are slightly different.
        */
       screen->specs.vs_offset = 0xC000;
       /* State 08000-0C000 mirrors 0C000-0E000, and the Vivante driver uses
