@@ -231,6 +231,11 @@ struct radeon_encoder {
    struct radeon_surf *luma;
    struct radeon_surf *chroma;
    struct pipe_video_buffer *source;
+   struct pipe_video_buffer *efc_source;
+   unsigned input_color_volume;
+   unsigned input_color_range;
+   unsigned output_color_volume;
+   unsigned output_color_range;
 
    struct pb_buffer_lean *bs_handle;
    unsigned bs_size;
