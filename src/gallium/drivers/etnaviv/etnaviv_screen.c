@@ -850,8 +850,7 @@ etna_get_specs(struct etna_screen *screen)
 
    screen->specs.vs_need_z_div =
       screen->info->model < 0x1000 && screen->info->model != 0x880;
-   screen->specs.has_shader_range_registers =
-      screen->info->model >= 0x1000 || screen->info->model == 0x880;
+   screen->specs.has_unified_instmem = instruction_count > 256;
    screen->specs.has_new_transcendentals =
       VIV_FEATURE(screen, ETNA_FEATURE_HAS_FAST_TRANSCENDENTALS);
    screen->specs.has_no_oneconst_limit =
@@ -869,8 +868,8 @@ etna_get_specs(struct etna_screen *screen)
       screen->specs.max_instructions = 0; /* Do not program shaders manually */
       screen->specs.has_icache = true;
    } else if (VIV_FEATURE(screen, ETNA_FEATURE_INSTRUCTION_CACHE)) {
-      /* GC3000 - this core is capable of loading shaders from
-       * memory. It can also run shaders from registers as a fallback, but the
+      /* GC3000 - this core is capable of loading shaders from memory. It can
+       * also run shaders from unified instruction states as a fallback, but the
        * offsets are slightly different.
        */
       screen->specs.vs_offset = 0xC000;
@@ -882,7 +881,8 @@ etna_get_specs(struct etna_screen *screen)
       screen->specs.max_instructions = 256; /* maximum number instructions for non-icache use */
       screen->specs.has_icache = true;
    } else {
-      if (instruction_count > 256) { /* unified instruction memory? */
+      if (instruction_count > 256) {
+         /* unified instruction states */
          screen->specs.vs_offset = 0xC000;
          screen->specs.ps_offset = 0xD000; /* like vivante driver */
          screen->specs.max_instructions = 256;

@@ -673,7 +673,7 @@ etna_emit_state(struct etna_context *ctx)
 
       } else if (ctx->shader_state.VS_INST_ADDR.bo || ctx->shader_state.PS_INST_ADDR.bo) {
          /* ICACHE (pre-HALTI5) */
-         assert(screen->specs.has_icache && screen->specs.has_shader_range_registers);
+         assert(screen->specs.has_icache && screen->specs.has_unified_instmem);
          /* Set icache (VS) */
          etna_set_state(stream, VIVS_VS_RANGE, (ctx->shader_state.vs_inst_mem_size / 4 - 1) << 16);
          etna_set_state(stream, VIVS_VS_ICACHE_CONTROL,
@@ -697,7 +697,7 @@ etna_emit_state(struct etna_context *ctx)
                   VIVS_VS_ICACHE_CONTROL_FLUSH_PS |
                   VIVS_VS_ICACHE_CONTROL_FLUSH_VS);
          }
-         if (screen->specs.has_shader_range_registers) {
+         if (screen->specs.has_unified_instmem) {
             etna_set_state(stream, VIVS_VS_RANGE, (ctx->shader_state.vs_inst_mem_size / 4 - 1) << 16);
             etna_set_state(stream, VIVS_PS_RANGE, ((ctx->shader_state.ps_inst_mem_size / 4 - 1 + 0x100) << 16) |
                                         0x100);
