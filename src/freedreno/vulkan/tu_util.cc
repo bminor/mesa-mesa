@@ -47,6 +47,7 @@ static const struct debug_control tu_debug_options[] = {
    { "noconcurrentresolves", TU_DEBUG_NO_CONCURRENT_RESOLVES },
    { "noconcurrentunresolves", TU_DEBUG_NO_CONCURRENT_UNRESOLVES },
    { "dumpas", TU_DEBUG_DUMPAS },
+   { "nobinmerging", TU_DEBUG_NO_BIN_MERGING },
    { NULL, 0 }
 };
 
@@ -62,7 +63,8 @@ const uint32_t tu_runtime_debug_flags =
    TU_DEBUG_PERF | TU_DEBUG_FLUSHALL | TU_DEBUG_SYNCDRAW |
    TU_DEBUG_RAST_ORDER | TU_DEBUG_UNALIGNED_STORE |
    TU_DEBUG_LOG_SKIP_GMEM_OPS | TU_DEBUG_3D_LOAD | TU_DEBUG_FDM |
-   TU_DEBUG_NO_CONCURRENT_RESOLVES | TU_DEBUG_NO_CONCURRENT_UNRESOLVES;
+   TU_DEBUG_NO_CONCURRENT_RESOLVES | TU_DEBUG_NO_CONCURRENT_UNRESOLVES |
+   TU_DEBUG_NO_BIN_MERGING;
 
 os_file_notifier_t tu_debug_notifier;
 struct tu_env tu_env;
@@ -317,10 +319,28 @@ tu_tiling_config_update_tile_layout(struct tu_framebuffer *fb,
 
 static void
 tu_tiling_config_update_pipe_layout(struct tu_tiling_config *tiling,
-                                    const struct tu_device *dev)
+                                    const struct tu_device *dev,
+                                    bool fdm)
 {
    const uint32_t max_pipe_count =
       dev->physical_device->info->num_vsc_pipes;
+
+   /* If there is a fragment density map and bin merging is enabled, we will
+    * likely be able to merge some bins. Bins can only be merged if they are
+    * in the same visibility stream, so making the pipes cover too small an
+    * area can prevent bin merging from happening. Maximize the size of each
+    * pipe instead of minimizing it.
+    */
+   if (fdm && dev->physical_device->info->a6xx.has_bin_mask &&
+       !TU_DEBUG(NO_BIN_MERGING)) {
+      tiling->pipe0.width = 4;
+      tiling->pipe0.height = 8;
+      tiling->pipe_count.width =
+         DIV_ROUND_UP(tiling->tile_count.width, tiling->pipe0.width);
+      tiling->pipe_count.height =
+         DIV_ROUND_UP(tiling->tile_count.height, tiling->pipe0.height);
+      return;
+   }
 
    /* start from 1 tile per pipe */
    tiling->pipe0 = (VkExtent2D) {
@@ -422,7 +442,7 @@ tu_framebuffer_tiling_config(struct tu_framebuffer *fb,
       if (!tiling->possible)
          continue;
 
-      tu_tiling_config_update_pipe_layout(tiling, device);
+      tu_tiling_config_update_pipe_layout(tiling, device, pass->has_fdm);
       tu_tiling_config_update_pipes(tiling, device);
       tu_tiling_config_update_binning(tiling, device);
    }

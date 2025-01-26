@@ -67,6 +67,7 @@ enum tu_debug_flags
    TU_DEBUG_NO_CONCURRENT_RESOLVES = 1 << 27,
    TU_DEBUG_NO_CONCURRENT_UNRESOLVES = 1 << 28,
    TU_DEBUG_DUMPAS = 1 << 29,
+   TU_DEBUG_NO_BIN_MERGING = 1 << 30,
 };
 
 struct tu_env {

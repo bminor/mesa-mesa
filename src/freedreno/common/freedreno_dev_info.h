@@ -234,6 +234,8 @@ struct fd_dev_info {
 
       float line_width_min;
       float line_width_max;
+
+      bool has_bin_mask;
    } a6xx;
 
    struct {

@@ -866,6 +866,7 @@ a7xx_base = A6XXProps(
         prede_nop_quirk = True,
         predtf_nop_quirk = True,
         has_sad = True,
+        has_bin_mask = True,
     )
 
 a7xx_gen1 = A7XXProps(
