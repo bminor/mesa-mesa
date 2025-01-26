@@ -174,7 +174,7 @@
         "description": "etnaviv: hwdb: fix lookup of GC3000 in i.MX6QP",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2192e620bb0c68b75ff45165d0b117c7ecb77268",
         "notes": null
