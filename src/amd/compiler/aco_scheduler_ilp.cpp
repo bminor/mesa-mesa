@@ -283,32 +283,32 @@ can_use_vopd(const SchedILPContext& ctx, unsigned idx)
    return true;
 }
 
-unsigned
-get_latency(const Instruction* const instr)
+Instruction_cycle_info
+get_cycle_info_with_mem_latency(const SchedILPContext& ctx, const Instruction* const instr)
 {
-   /* Note, that these are not accurate latency estimations. */
-   if (instr->isVALU() || instr->isVINTRP())
-      return 5;
-   if (instr->isSALU())
-      return 2;
-   /* Based on get_wait_counter_info in aco_statistics.cpp. */
-   if (instr->isVMEM() || instr->isFlatLike())
-      return 320;
-   if (instr->isSMEM()) {
-      if (instr->operands.empty())
-         return 1;
-      if (instr->operands[0].size() == 2 ||
-          (instr->operands[1].isConstant() &&
-           (instr->operands.size() < 3 || instr->operands[2].isConstant())))
-         return 30;
-      return 200;
-   }
-   if (instr->isLDSDIR())
-      return 13;
-   if (instr->isDS())
-      return 20;
+   Instruction_cycle_info cycle_info = get_cycle_info(*ctx.program, *instr);
 
-   return 0;
+   /* Based on get_wait_counter_info in aco_statistics.cpp. */
+   if (instr->isVMEM() || instr->isFlatLike()) {
+      cycle_info.latency = 320;
+   } else if (instr->isSMEM()) {
+      if (instr->operands.empty()) {
+         cycle_info.latency = 1;
+      } else if (instr->operands[0].size() == 2 ||
+                 (instr->operands[1].isConstant() &&
+                  (instr->operands.size() < 3 || instr->operands[2].isConstant()))) {
+         /* Likely cached. */
+         cycle_info.latency = 30;
+      } else {
+         cycle_info.latency = 200;
+      }
+   } else if (instr->isLDSDIR()) {
+      cycle_info.latency = 13;
+   } else if (instr->isDS()) {
+      cycle_info.latency = 20;
+   }
+
+   return cycle_info;
 }
 
 bool
@@ -452,13 +452,18 @@ remove_entry(SchedILPContext& ctx, const Instruction* const instr, const uint32_
    const mask_t mask = ~BITFIELD_BIT(idx);
    ctx.active_mask &= mask;
 
-   int stall = 1; /* Assume all instructions take one cycle to issue. */
-   if (ctx.nodes[idx].wait_cycles > 0) {
-      /* Add remaining latency stall. */
-      stall += ctx.nodes[idx].wait_cycles;
-   }
-
+   int latency = 0;
+   int stall = 1;
    if (!ctx.is_vopd) {
+      Instruction_cycle_info cycle_info = get_cycle_info_with_mem_latency(ctx, instr);
+      latency = cycle_info.latency;
+      stall = cycle_info.issue_cycles;
+
+      if (ctx.nodes[idx].wait_cycles > 0) {
+         /* Add remaining latency stall. */
+         stall += ctx.nodes[idx].wait_cycles;
+      }
+
       unsigned i;
       BITSET_FOREACH_SET (i, ctx.reg_has_latency, 512) {
          if (ctx.regs[i].latency <= stall) {
@@ -488,8 +493,6 @@ remove_entry(SchedILPContext& ctx, const Instruction* const instr, const uint32_
       ctx.regs[flat_scr_lo].read_mask &= mask;
       ctx.regs[flat_scr_hi].read_mask &= mask;
    }
-
-   const int latency = get_latency(instr);
 
    for (const Definition& def : instr->definitions) {
       for (unsigned i = 0; i < def.size(); i++) {

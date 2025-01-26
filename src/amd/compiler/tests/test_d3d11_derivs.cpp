@@ -473,9 +473,9 @@ BEGIN_TEST(d3d11_derivs.cube_array)
    //>> v_cubeid_f32 v#rf, v#_, v#_, v#_                                                      ; $_ $_
 
    //>> v_fmamk_f32 v#rlf_tmp, v#rl, 0x41000000, v#rf                                         ; $_ $_
+   //>> v_mov_b32_e32 v#rlf, v#rlf_tmp                                                        ; $_
    //>> v_fmaak_f32 v#rx_tmp, v#_, v#_, 0x3fc00000                                            ; $_ $_
    //>> v_fmaak_f32 v#ry_tmp, v#_, v#_, 0x3fc00000                                            ; $_ $_
-   //>> v_mov_b32_e32 v#rlf, v#rlf_tmp                                                        ; $_
    //>> v_lshrrev_b64 v[#rx:#ry], 0, v[#rx_tmp:#ry_tmp]                                       ; $_ $_
 
    //>> BB1:
