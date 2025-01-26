@@ -217,10 +217,8 @@ emit_pre_halti5_state(struct etna_context *ctx)
          /*00E40*/ EMIT_STATE(RA_CENTROID_TABLE(x), ctx->framebuffer.RA_CENTROID_TABLE[x]);
       }
    }
-   if (unlikely(dirty & (ETNA_DIRTY_SHADER | ETNA_DIRTY_FRAMEBUFFER))) {
+   if (unlikely(dirty & (ETNA_DIRTY_SHADER))) {
       /*01000*/ EMIT_STATE(PS_END_PC, ctx->shader_state.PS_END_PC);
-   }
-   if (unlikely(dirty & (ETNA_DIRTY_SHADER | ETNA_DIRTY_FRAMEBUFFER))) {
       /*01018*/ EMIT_STATE(PS_START_PC, ctx->shader_state.PS_START_PC);
    }
    if (unlikely(dirty & (ETNA_DIRTY_SHADER))) {
