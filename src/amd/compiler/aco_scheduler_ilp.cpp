@@ -49,10 +49,9 @@ struct InstrInfo {
 
 struct RegisterInfo {
    mask_t read_mask; /* bitmask of nodes which have to be scheduled before the next write. */
-   int8_t latency;   /* estimated outstanding latency of last register write outside the DAG. */
-   uint8_t direct_dependency : 4;     /* node that has to be scheduled before any other access. */
-   uint8_t has_direct_dependency : 1; /* whether there is an unscheduled direct dependency. */
-   uint8_t padding : 3;
+   uint16_t latency : 11; /* estimated outstanding latency of last register write outside the DAG. */
+   uint16_t direct_dependency : 4;     /* node that has to be scheduled before any other access. */
+   uint16_t has_direct_dependency : 1; /* whether there is an unscheduled direct dependency. */
 };
 
 struct SchedILPContext {
@@ -292,12 +291,22 @@ get_latency(const Instruction* const instr)
       return 5;
    if (instr->isSALU())
       return 2;
+   /* Based on get_wait_counter_info in aco_statistics.cpp. */
    if (instr->isVMEM() || instr->isFlatLike())
-      return 32;
-   if (instr->isSMEM())
-      return 5;
-   if (instr->accessesLDS())
-      return 2;
+      return 320;
+   if (instr->isSMEM()) {
+      if (instr->operands.empty())
+         return 1;
+      if (instr->operands[0].size() == 2 ||
+          (instr->operands[1].isConstant() &&
+           (instr->operands.size() < 3 || instr->operands[2].isConstant())))
+         return 30;
+      return 200;
+   }
+   if (instr->isLDSDIR())
+      return 13;
+   if (instr->isDS())
+      return 20;
 
    return 0;
 }
@@ -480,7 +489,7 @@ remove_entry(SchedILPContext& ctx, const Instruction* const instr, const uint32_
       ctx.regs[flat_scr_hi].read_mask &= mask;
    }
 
-   const int8_t latency = get_latency(instr);
+   const int latency = get_latency(instr);
 
    for (const Definition& def : instr->definitions) {
       for (unsigned i = 0; i < def.size(); i++) {
