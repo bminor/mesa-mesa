@@ -878,19 +878,19 @@ etna_get_specs(struct etna_screen *screen)
        * same.
        */
       screen->specs.ps_offset = 0x8000;
-      screen->specs.max_instructions = 256; /* maximum number instructions for non-icache use */
+      /* maximum number instructions for non-icache use */
+      screen->specs.max_instructions = instruction_count;
       screen->specs.has_icache = true;
    } else {
       if (instruction_count > 256) {
          /* unified instruction states */
          screen->specs.vs_offset = 0xC000;
          screen->specs.ps_offset = 0xC000;
-         screen->specs.max_instructions = 256;
       } else {
          screen->specs.vs_offset = 0x4000;
          screen->specs.ps_offset = 0x6000;
-         screen->specs.max_instructions = instruction_count;
       }
+      screen->specs.max_instructions = instruction_count;
       screen->specs.has_icache = false;
    }
 
