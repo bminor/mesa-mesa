@@ -877,14 +877,14 @@ etna_get_specs(struct etna_screen *screen)
        * this mirror for writing PS instructions, probably safest to do the
        * same.
        */
-      screen->specs.ps_offset = 0x8000 + 0x1000;
+      screen->specs.ps_offset = 0x8000;
       screen->specs.max_instructions = 256; /* maximum number instructions for non-icache use */
       screen->specs.has_icache = true;
    } else {
       if (instruction_count > 256) {
          /* unified instruction states */
          screen->specs.vs_offset = 0xC000;
-         screen->specs.ps_offset = 0xD000; /* like vivante driver */
+         screen->specs.ps_offset = 0xC000;
          screen->specs.max_instructions = 256;
       } else {
          screen->specs.vs_offset = 0x4000;

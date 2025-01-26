@@ -692,6 +692,8 @@ etna_emit_state(struct etna_context *ctx)
          assert(ctx->shader_state.PS_INST_ADDR.bo);
          etna_set_state_reloc(stream, VIVS_PS_INST_ADDR, &ctx->shader_state.PS_INST_ADDR);
       } else {
+         uint32_t ps_offset = screen->specs.ps_offset;
+
          /* Upload shader directly, first flushing and disabling icache if
           * supported on this hw */
          if (screen->specs.has_icache) {
@@ -703,13 +705,17 @@ etna_emit_state(struct etna_context *ctx)
             etna_set_state(stream, VIVS_VS_RANGE,
                            VIVS_VS_RANGE_HIGH(ctx->shader_state.vs_inst_mem_size / 4 - 1));
             etna_set_state(stream, VIVS_PS_RANGE,
-                           VIVS_PS_RANGE_HIGH(ctx->shader_state.ps_inst_mem_size / 4 - 1 + 0x100) |
-                           VIVS_PS_RANGE_LOW(0x100));
+                           VIVS_PS_RANGE_HIGH(ctx->shader_state.vs_inst_mem_size / 4 +
+                                              ctx->shader_state.ps_inst_mem_size / 4 - 1) |
+                           VIVS_PS_RANGE_LOW(ctx->shader_state.vs_inst_mem_size / 4));
+            ps_offset += ctx->shader_state.vs_inst_mem_size * 4;
          }
+
          etna_set_state_multi(stream, screen->specs.vs_offset,
                               ctx->shader_state.vs_inst_mem_size,
                               ctx->shader_state.VS_INST_MEM);
-         etna_set_state_multi(stream, screen->specs.ps_offset,
+
+         etna_set_state_multi(stream, ps_offset,
                               ctx->shader_state.ps_inst_mem_size,
                               ctx->shader_state.PS_INST_MEM);
       }
