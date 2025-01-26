@@ -49,8 +49,7 @@ etna_emit_load_state(struct etna_cmd_stream *stream, const uint16_t offset,
    v = VIV_FE_LOAD_STATE_HEADER_OP_LOAD_STATE |
        COND(fixp, VIV_FE_LOAD_STATE_HEADER_FIXP) |
        VIV_FE_LOAD_STATE_HEADER_OFFSET(offset) |
-       (VIV_FE_LOAD_STATE_HEADER_COUNT(count) &
-        VIV_FE_LOAD_STATE_HEADER_COUNT__MASK);
+       VIV_FE_LOAD_STATE_HEADER_COUNT(count);
 
    etna_cmd_stream_emit(stream, v);
 }
