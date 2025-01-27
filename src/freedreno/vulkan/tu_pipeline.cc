@@ -2637,6 +2637,7 @@ tu6_emit_viewport_fdm(struct tu_cs *cs, struct tu_cmd_buffer *cmd,
    unsigned size = TU_CALLX(cmd->device, tu6_viewport_size)(cmd->device, &state.vp, &state.rs);
    tu_cs_begin_sub_stream(&cmd->sub_cs, size, cs);
    tu_create_fdm_bin_patchpoint(cmd, cs, size, fdm_apply_viewports, state);
+   cmd->state.rp.shared_viewport |= !cmd->state.per_view_viewport;
 }
 
 static const enum mesa_vk_dynamic_graphics_state tu_scissor_state[] = {
