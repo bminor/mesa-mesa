@@ -1059,9 +1059,7 @@ agx_nir_create_pre_gs(struct lower_gs_state *state, bool indexed, bool restart,
 
    nir_def *emitted_prims = nir_imm_int(b, 0);
    u_foreach_bit(i, streams) {
-      emitted_prims =
-         nir_iadd(b, emitted_prims,
-                  previous_xfb_primitives(b, state, i, unrolled_in_prims));
+      emitted_prims = nir_iadd(b, emitted_prims, in_prims[i]);
    }
 
    add_counter(
