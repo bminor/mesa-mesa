@@ -434,7 +434,7 @@ get_features(const struct panvk_physical_device *device,
 }
 
 static uint32_t
-get_vk_version(unsigned arch)
+get_api_version(unsigned arch)
 {
    const uint32_t version_override = vk_get_version_override();
    if (version_override)
@@ -473,7 +473,7 @@ get_device_properties(const struct panvk_instance *instance,
    assert(arch > 8 || device->kmod.props.max_threads_per_wg <= 1024);
 
    *properties = (struct vk_properties){
-      .apiVersion = get_vk_version(arch),
+      .apiVersion = get_api_version(arch),
       .driverVersion = vk_get_driver_version(),
       .vendorID = ARM_VENDOR_ID,
 
