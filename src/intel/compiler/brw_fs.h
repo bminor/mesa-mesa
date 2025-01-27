@@ -245,16 +245,6 @@ struct bs_thread_payload : public thread_payload {
    void load_shader_type(const brw_builder &bld, brw_reg &dest) const;
 };
 
-enum instruction_scheduler_mode {
-   SCHEDULE_PRE,
-   SCHEDULE_PRE_NON_LIFO,
-   SCHEDULE_PRE_LIFO,
-   SCHEDULE_POST,
-   SCHEDULE_NONE,
-};
-
-class instruction_scheduler;
-
 enum brw_shader_phase {
    BRW_SHADER_PHASE_INITIAL = 0,
    BRW_SHADER_PHASE_AFTER_NIR,
