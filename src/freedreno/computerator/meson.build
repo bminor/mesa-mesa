@@ -11,8 +11,8 @@ computerator_files = [
 ]
 
 computerator_cpp_args = cpp.get_supported_arguments([
-  '-Wno-sign-compare',
   '-Wno-array-bounds',
+  '-Wno-sign-compare',
 ])
 
 computerator = executable(

@@ -230,28 +230,27 @@ freedreno_includes = [
 
 freedreno_c_args = [no_override_init_args]
 freedreno_c_args += cc.get_supported_arguments([
-  '-Wno-packed-bitfield-compat',
   '-Wno-array-bounds',
+  '-Wno-packed-bitfield-compat',
 ])
 
 freedreno_cpp_args = []
 freedreno_cpp_args += cpp.get_supported_arguments([
   '-fno-exceptions',
   '-fno-rtti',
-  '-Wno-packed-bitfield-compat',
-  '-Wno-c99-designator',
-  '-Wno-reorder-init-list',
-  '-Wno-address-of-temporary',
-  '-Wno-c++11-narrowing',
-  '-Wno-narrowing',
-  '-Wno-sign-compare',
-  '-Wno-missing-field-initializers',
-  '-Wno-reorder',
-  '-Wno-array-bounds',
-  '-Wno-overflow',
-  '-Wno-c++11-narrowing',
-  '-Wno-vla-cxx-extension',
   '-Wno-address-of-packed-member',
+  '-Wno-address-of-temporary',
+  '-Wno-array-bounds',
+  '-Wno-c++11-narrowing',
+  '-Wno-c99-designator',
+  '-Wno-missing-field-initializers',
+  '-Wno-narrowing',
+  '-Wno-overflow',
+  '-Wno-packed-bitfield-compat',
+  '-Wno-reorder',
+  '-Wno-reorder-init-list',
+  '-Wno-sign-compare',
+  '-Wno-vla-cxx-extension',
 ])
 
 libfreedreno_dependencies = [

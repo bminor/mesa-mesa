@@ -149,9 +149,9 @@ tu_cpp_args += cpp.get_supported_arguments([
   '-Wno-sign-compare',
   '-Wno-switch',
   '-Wno-unused-function',
+  '-Wno-vla-cxx-extension',
   '-Wno-writable-strings',
   '-Wno-write-strings',
-  '-Wno-vla-cxx-extension',
 ])
 
 libvulkan_freedreno = shared_library(
