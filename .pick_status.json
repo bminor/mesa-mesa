@@ -2984,7 +2984,7 @@
         "description": "radv: fix disabling logic op for srgb/float formats when blending is enabled",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "03b037a0e361ec984bebd032d1957122bdc08eb3",
         "notes": null
