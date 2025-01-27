@@ -2327,19 +2327,6 @@ ngg_gs_process_out_primitive(nir_builder *b,
 }
 
 static void
-ngg_gs_export_primitives(nir_builder *b, nir_def *max_num_out_prims, nir_def *tid_in_tg,
-                         nir_def *exporter_tid_in_tg, nir_def *primflag_0,
-                         lower_ngg_gs_state *s)
-{
-   nir_if *if_prim_export_thread = nir_push_if(b, nir_ilt(b, tid_in_tg, max_num_out_prims));
-   {
-      nir_def *arg = ngg_gs_process_out_primitive(b, exporter_tid_in_tg, primflag_0, s);
-      ac_nir_export_primitive(b, arg, NULL);
-   }
-   nir_pop_if(b, if_prim_export_thread);
-}
-
-static void
 ngg_gs_process_out_vertex(nir_builder *b, nir_def *out_vtx_lds_addr, lower_ngg_gs_state *s)
 {
    nir_def *exported_out_vtx_lds_addr = out_vtx_lds_addr;
@@ -2408,54 +2395,111 @@ ngg_gs_process_out_vertex(nir_builder *b, nir_def *out_vtx_lds_addr, lower_ngg_g
    ac_nir_clamp_vertex_color_outputs(b, &s->out);
 }
 
+/**
+ * Emit NGG GS output, including vertex and primitive exports and attribute ring stores (if any).
+ * The exact sequence emitted, depends on the current GPU and its workarounds.
+ *
+ * The order mainly depends on whether the current GPU has an attribute ring, and
+ * whether it has the bug that requires us to emit a wait for the attribute ring stores.
+ *
+ * The basic structure looks like this:
+ *
+ * if (has primitive) {
+ *    <per-primitive processing: calculation of the primitive export argument>
+ *
+ *    if (!(wait for attr ring)) {
+ *       <primitive export>
+ *    }
+ * }
+ * if (has vertex) {
+ *    <per-vertex processing: load each output from LDS, and perform necessary adjustments>
+ *
+ *    if (!(wait for attr ring)) {
+ *       <vertex position exports>
+ *       <vertex parameter exports>
+ *    }
+ * }
+ * <per-vertex attribute ring stores, if the current GPU has an attribute ring>
+ * if (wait for attr ring) {
+ *    <barrier to wait for attribute ring stores>
+ *    if (has primitive) {
+ *       <primitive export>
+ *    }
+ *    if (has vertex) {
+ *       <vertex position exports>
+ *       <vertex parameter exports>
+ *    }
+ * }
+ *
+ */
 static void
-ngg_gs_export_vertices(nir_builder *b, nir_def *max_num_out_vtx, nir_def *tid_in_tg,
-                       nir_def *out_vtx_lds_addr, lower_ngg_gs_state *s)
+ngg_gs_emit_output(nir_builder *b, nir_def *max_num_out_vtx, nir_def *max_num_out_prims,
+                   nir_def *tid_in_tg, nir_def *out_vtx_lds_addr, nir_def *prim_exporter_tid_in_tg,
+                   nir_def *primflag_0, lower_ngg_gs_state *s)
 {
-   nir_if *if_vtx_export_thread = nir_push_if(b, nir_ilt(b, tid_in_tg, max_num_out_vtx));
+   nir_def *undef = nir_undef(b, 1, 32);
 
-   ngg_gs_process_out_vertex(b, out_vtx_lds_addr, s);
-
-   uint64_t export_outputs = b->shader->info.outputs_written | VARYING_BIT_POS;
-   if (s->options->kill_pointsize)
-      export_outputs &= ~VARYING_BIT_PSIZ;
-   if (s->options->kill_layer)
-      export_outputs &= ~VARYING_BIT_LAYER;
-
-   const bool wait_attr_ring = s->options->has_param_exports && s->options->hw_info->has_attr_ring_wait_bug;
-   if (wait_attr_ring)
-      export_outputs &= ~VARYING_BIT_POS;
-
-   ac_nir_export_position(b, s->options->hw_info->gfx_level,
-                          s->options->clip_cull_dist_mask,
-                          !s->options->has_param_exports,
-                          s->options->force_vrs, !wait_attr_ring,
-                          export_outputs, &s->out, NULL);
-
-   if (s->options->has_param_exports && !s->options->hw_info->has_attr_ring) {
-      /* Emit vertex parameter exports.
-       * Only the vertex export threads should do this.
-       */
-      ac_nir_export_parameters(b, s->options->vs_output_param_offset,
-                               b->shader->info.outputs_written,
-                               b->shader->info.outputs_written_16bit,
-                               &s->out);
+   /* Primitive processing */
+   nir_def *prim_exp_arg = NULL;
+   nir_if *if_process_primitive = nir_push_if(b, nir_ilt(b, tid_in_tg, max_num_out_prims));
+   {
+      prim_exp_arg = ngg_gs_process_out_primitive(b, prim_exporter_tid_in_tg, primflag_0, s);
    }
+   nir_pop_if(b, if_process_primitive);
+   prim_exp_arg = nir_if_phi(b, prim_exp_arg, undef);
 
-   nir_pop_if(b, if_vtx_export_thread);
+   /* Vertex processing */
+   nir_if *if_process_vertex = nir_push_if(b, nir_ilt(b, tid_in_tg, max_num_out_vtx));
+   {
+      ngg_gs_process_out_vertex(b, out_vtx_lds_addr, s);
+   }
+   nir_pop_if(b, if_process_vertex);
+   ac_nir_create_output_phis(b, b->shader->info.outputs_written, b->shader->info.outputs_written_16bit, &s->out);
+
+   nir_if *if_export_primitive = nir_push_if(b, if_process_primitive->condition.ssa);
+   {
+      ac_nir_export_primitive(b, prim_exp_arg, NULL);
+   }
+   nir_pop_if(b, if_export_primitive);
+
+   nir_if *if_export_vertex = nir_push_if(b, if_process_vertex->condition.ssa);
+   {
+      uint64_t export_outputs = b->shader->info.outputs_written | VARYING_BIT_POS;
+      if (s->options->kill_pointsize)
+         export_outputs &= ~VARYING_BIT_PSIZ;
+      if (s->options->kill_layer)
+         export_outputs &= ~VARYING_BIT_LAYER;
+
+      ac_nir_export_position(b, s->options->hw_info->gfx_level,
+                             s->options->clip_cull_dist_mask,
+                             !s->options->has_param_exports,
+                             s->options->force_vrs, true,
+                             export_outputs, &s->out, NULL);
+
+      if (s->options->has_param_exports && !s->options->hw_info->has_attr_ring)
+         ac_nir_export_parameters(b, s->options->vs_output_param_offset,
+                                  b->shader->info.outputs_written,
+                                  b->shader->info.outputs_written_16bit,
+                                  &s->out);
+   }
+   nir_pop_if(b, if_export_vertex);
 
    if (s->options->has_param_exports && s->options->hw_info->has_attr_ring) {
-      /* Store vertex parameters to attribute ring.
-       * For optimal attribute ring access, this should happen in top level CF.
-       */
-      ac_nir_create_output_phis(b, b->shader->info.outputs_written, b->shader->info.outputs_written_16bit, &s->out);
+      if (s->options->hw_info->has_attr_ring_wait_bug)
+         b->cursor = nir_after_cf_node_and_phis(&if_export_primitive->cf_node);
+
       ac_nir_store_parameters_to_attr_ring(b, s->options->vs_output_param_offset,
                                            b->shader->info.outputs_written,
                                            b->shader->info.outputs_written_16bit,
                                            &s->out, tid_in_tg, max_num_out_vtx);
 
-      if (wait_attr_ring)
-         export_pos0_wait_attr_ring(b, if_vtx_export_thread, s->out.outputs, s->options);
+      if (s->options->hw_info->has_attr_ring_wait_bug) {
+         /* Wait for attribute ring stores to finish. */
+         nir_barrier(b, .execution_scope = SCOPE_SUBGROUP,
+                        .memory_scope = SCOPE_DEVICE,
+                        .memory_semantics = NIR_MEMORY_RELEASE,
+                        .memory_modes = nir_var_mem_ssbo | nir_var_shader_out | nir_var_mem_global | nir_var_image);
+      }
    }
 }
 
@@ -2746,9 +2790,8 @@ ngg_gs_finale(nir_builder *b, lower_ngg_gs_state *s)
 
    nir_def *out_vtx_primflag_0 = ngg_gs_load_out_vtx_primflag(b, 0, tid_in_tg, out_vtx_lds_addr, max_vtxcnt, s);
 
-   if (s->output_compile_time_known) {
-      ngg_gs_export_primitives(b, max_vtxcnt, tid_in_tg, tid_in_tg, out_vtx_primflag_0, s);
-      ngg_gs_export_vertices(b, max_vtxcnt, tid_in_tg, out_vtx_lds_addr, s);
+   if (s->output_compile_time_known && b->shader->info.gs.vertices_out) {
+      ngg_gs_emit_output(b, max_vtxcnt, max_prmcnt, tid_in_tg, out_vtx_lds_addr, tid_in_tg, out_vtx_primflag_0, s);
       return;
    }
 
@@ -2798,8 +2841,7 @@ ngg_gs_finale(nir_builder *b, lower_ngg_gs_state *s)
    nir_barrier(b, .execution_scope=SCOPE_WORKGROUP, .memory_scope=SCOPE_WORKGROUP,
                         .memory_semantics=NIR_MEMORY_ACQ_REL, .memory_modes=nir_var_mem_shared);
 
-   ngg_gs_export_primitives(b, max_prmcnt, tid_in_tg, exporter_tid_in_tg, out_vtx_primflag_0, s);
-   ngg_gs_export_vertices(b, workgroup_num_vertices, tid_in_tg, out_vtx_lds_addr, s);
+   ngg_gs_emit_output(b, workgroup_num_vertices, max_prmcnt, tid_in_tg, out_vtx_lds_addr, exporter_tid_in_tg, out_vtx_primflag_0, s);
 }
 
 void
@@ -2820,9 +2862,7 @@ ac_nir_lower_ngg_gs(nir_shader *shader, const ac_nir_lower_ngg_options *options)
    if (!options->can_cull) {
       nir_gs_count_vertices_and_primitives(shader, state.const_out_vtxcnt,
                                            state.const_out_prmcnt, NULL, 4u);
-      state.output_compile_time_known =
-         state.const_out_vtxcnt[0] == shader->info.gs.vertices_out &&
-         state.const_out_prmcnt[0] != -1;
+      state.output_compile_time_known = false;
    }
 
    if (shader->info.gs.output_primitive == MESA_PRIM_POINTS)
