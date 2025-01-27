@@ -298,8 +298,16 @@ read_xe_data_file(FILE *file,
          }
          break;
       }
-      default:
-            break;
+      default: {
+         enum xe_vm_topic_type type;
+         const char *value_ptr;
+         char binary_name[64];
+
+         if (error_decode_xe_binary_line(line, binary_name, sizeof(binary_name), &type, &value_ptr))
+            print_line = false;
+
+         break;
+      }
       }
 
       if (print_line)
