@@ -3660,6 +3660,42 @@ static VkResult pvr_setup_descriptor_mappings(
             break;
          }
 
+         case PVR_BUFFER_TYPE_POINT_SAMPLER: {
+            uint64_t point_sampler_words[ROGUE_NUM_TEXSTATE_SAMPLER_WORDS];
+            pvr_csb_pack (&point_sampler_words[0],
+                          TEXSTATE_SAMPLER_WORD0,
+                          sampler) {
+               sampler.addrmode_u = ROGUE_TEXSTATE_ADDRMODE_CLAMP_TO_BORDER;
+               sampler.addrmode_v = ROGUE_TEXSTATE_ADDRMODE_CLAMP_TO_BORDER;
+               sampler.addrmode_w = ROGUE_TEXSTATE_ADDRMODE_CLAMP_TO_BORDER;
+               sampler.dadjust = ROGUE_TEXSTATE_DADJUST_ZERO_UINT;
+               sampler.minfilter = ROGUE_TEXSTATE_FILTER_POINT;
+               sampler.magfilter = ROGUE_TEXSTATE_FILTER_POINT;
+               sampler.maxlod = ROGUE_TEXSTATE_CLAMP_MAX;
+               sampler.anisoctl = ROGUE_TEXSTATE_ANISOCTL_DISABLED;
+            }
+
+            pvr_csb_pack (&point_sampler_words[1],
+                          TEXSTATE_SAMPLER_WORD1,
+                          sampler) {
+            }
+
+            struct pvr_suballoc_bo *point_sampler_bo;
+            result = pvr_cmd_buffer_upload_general(cmd_buffer,
+                                                   point_sampler_words,
+                                                   sizeof(point_sampler_words),
+                                                   &point_sampler_bo);
+
+            if (result != VK_SUCCESS)
+               return result;
+
+            PVR_WRITE(qword_buffer,
+                      point_sampler_bo->dev_addr.addr,
+                      special_buff_entry->const_offset,
+                      pds_info->data_size_in_dwords);
+            break;
+         }
+
          default:
             UNREACHABLE("Unsupported special buffer type.");
          }

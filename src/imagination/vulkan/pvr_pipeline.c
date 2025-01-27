@@ -598,6 +598,14 @@ static VkResult pvr_pds_descriptor_program_create_and_upload(
       };
    }
 
+   if (data->common.point_sampler.count > 0) {
+      program.buffers[program.buffer_count++] = (struct pvr_pds_buffer){
+         .type = PVR_BUFFER_TYPE_POINT_SAMPLER,
+         .size_in_dwords = data->common.point_sampler.count,
+         .destination = data->common.point_sampler.start,
+      };
+   }
+
    pds_info->entries_size_in_bytes = const_entries_size_in_bytes;
 
    pvr_pds_generate_descriptor_upload_program(&program, NULL, pds_info);
@@ -2076,6 +2084,15 @@ static void pvr_setup_descriptors(pco_data *data,
       };
 
       data->common.shareds += count;
+   }
+
+   if (data->common.uses.point_sampler) {
+      data->common.point_sampler = (pco_range){
+         .start = data->common.shareds,
+         .count = ROGUE_NUM_TEXSTATE_DWORDS,
+      };
+
+      data->common.shareds += ROGUE_NUM_TEXSTATE_DWORDS;
    }
 
    assert(data->common.shareds < 256);

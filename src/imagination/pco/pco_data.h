@@ -20,6 +20,8 @@
 
 #include <stdbool.h>
 
+#define PCO_POINT_SAMPLER 0xffff
+
 /* Compiler-specific forward-declarations. */
 typedef struct _pco_shader pco_shader;
 
@@ -144,6 +146,8 @@ typedef struct _pco_common_data {
    /** Push constant data. */
    pco_push_const_data push_consts;
 
+   pco_range point_sampler;
+
    unsigned temps; /** Number of allocated temp registers. */
    unsigned vtxins; /** Number of allocated vertex input registers. */
    unsigned interns; /** Number of allocated internal registers. */
@@ -158,6 +162,7 @@ typedef struct _pco_common_data {
       bool barriers; /** Whether the shader uses barriers. */
       bool side_effects; /** Whether the shader has side effects. */
       bool empty; /** Whether the shader is empty. */
+      bool point_sampler; /** Whether the shader uses a point sampler. */
    } uses;
 } pco_common_data;
 
