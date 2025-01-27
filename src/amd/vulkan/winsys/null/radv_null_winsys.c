@@ -117,6 +117,7 @@ radv_null_winsys_query_info(struct radeon_winsys *rws, struct radeon_info *gpu_i
 
    gpu_info->has_3d_cube_border_color_mipmap = true;
    gpu_info->has_image_opcodes = true;
+   gpu_info->has_attr_ring = gpu_info->gfx_level >= GFX11;
    gpu_info->has_attr_ring_wait_bug = gpu_info->gfx_level == GFX11 || gpu_info->gfx_level == GFX11_5;
 
    if (gpu_info->family == CHIP_NAVI31 || gpu_info->family == CHIP_NAVI32)

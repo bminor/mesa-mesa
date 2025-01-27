@@ -285,6 +285,7 @@ struct radeon_info {
    uint32_t pos_ring_offset;              /* GFX12+ */
    uint32_t prim_ring_offset;             /* GFX12+ */
    uint32_t total_attribute_pos_prim_ring_size; /* GFX11+ */
+   bool has_attr_ring;
 
    /* Render backends (color + depth blocks). */
    uint32_t r300_num_gb_pipes;

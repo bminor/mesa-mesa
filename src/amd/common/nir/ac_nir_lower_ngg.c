@@ -245,10 +245,11 @@ emit_ngg_nogs_prim_export(nir_builder *b, lower_ngg_nogs_state *s, nir_def *arg)
 
       ac_nir_export_primitive(b, arg, NULL);
 
-      /* Store implicit primitive ID when configured as a per-primitive output on GFX10.3.
+      /* Store implicit primitive ID when configured as a per-primitive output on
+       * GPUs without an attribute ring.
        * Because this uses the export space, do it together with the primitive export.
        */
-      if (s->options->gfx_level == GFX10_3 && s->options->export_primitive_id_per_prim) {
+      if (!s->options->hw_info->has_attr_ring && s->options->export_primitive_id_per_prim) {
          const uint8_t offset = s->options->vs_output_param_offset[VARYING_SLOT_PRIMITIVE_ID];
          nir_def *prim_id = nir_load_primitive_id(b);
          nir_def *undef = nir_undef(b, 1, 32);
@@ -293,14 +294,15 @@ emit_ngg_nogs_prim_id_store_shared(nir_builder *b, lower_ngg_nogs_state *s)
    nir_pop_if(b, if_gs_thread);
 }
 
-/* Store implicit primitive ID when configured as a per-primitive output on GFX11+.
- * This is done separately from the primitive export on GFX11 in order to
+/* Store implicit primitive ID when configured as a per-primitive output
+ * on GPUs with an attribute ring.
+ * This is done separately from the primitive export in order to
  * optimize attribute ring access.
  */
 static void
 emit_ngg_nogs_prim_id_store_per_prim_to_attr_ring(nir_builder *b, lower_ngg_nogs_state *s)
 {
-   assert(s->options->gfx_level >= GFX11);
+   assert(s->options->hw_info->has_attr_ring);
 
    nir_def *is_gs_thread = nir_load_var(b, s->gs_exported_var);
    nir_def *highest_gs_thread = nir_ufind_msb(b, nir_ballot(b, 1, s->options->wave_size, is_gs_thread));
@@ -1826,7 +1828,7 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
       /* Wait for GS threads to store primitive ID in LDS. */
       nir_barrier(b, .execution_scope = SCOPE_WORKGROUP, .memory_scope = SCOPE_WORKGROUP,
                             .memory_semantics = NIR_MEMORY_ACQ_REL, .memory_modes = nir_var_mem_shared);
-   } else if (options->export_primitive_id_per_prim && options->gfx_level >= GFX11) {
+   } else if (options->export_primitive_id_per_prim && options->hw_info->has_attr_ring) {
       emit_ngg_nogs_prim_id_store_per_prim_to_attr_ring(b, &state);
    }
 
@@ -1837,7 +1839,7 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
     * scheduling.
     */
    nir_def *num_es_threads = NULL;
-   if (state.options->gfx_level >= GFX11 && options->can_cull) {
+   if (options->hw_info->has_attr_ring && options->can_cull) {
       nir_def *es_accepted_mask =
          nir_ballot(b, 1, options->wave_size, nir_load_var(b, es_accepted_var));
       num_es_threads = nir_bit_count(b, es_accepted_mask);
@@ -1943,7 +1945,7 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
                           options->force_vrs, !wait_attr_ring,
                           export_outputs, &state.out, NULL);
 
-   if (options->has_param_exports && options->gfx_level <= GFX10_3) {
+   if (options->has_param_exports && !options->hw_info->has_attr_ring) {
       ac_nir_export_parameters(b, options->vs_output_param_offset,
                                b->shader->info.outputs_written,
                                b->shader->info.outputs_written_16bit,
@@ -1953,7 +1955,7 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
    if (if_pos_exports)
       nir_pop_if(b, if_pos_exports);
 
-   if (options->has_param_exports && options->gfx_level >= GFX11) {
+   if (options->has_param_exports && options->hw_info->has_attr_ring) {
       if (!phis_created) {
          b->cursor = nir_after_cf_node(&if_es_thread->cf_node);
          ac_nir_create_output_phis(b, b->shader->info.outputs_written, b->shader->info.outputs_written_16bit, &state.out);
@@ -2414,7 +2416,7 @@ ngg_gs_export_vertices(nir_builder *b, nir_def *max_num_out_vtx, nir_def *tid_in
                           s->options->force_vrs, !wait_attr_ring,
                           export_outputs, &s->out, NULL);
 
-   if (s->options->has_param_exports && s->options->gfx_level < GFX11) {
+   if (s->options->has_param_exports && !s->options->hw_info->has_attr_ring) {
       /* Emit vertex parameter exports.
        * Only the vertex export threads should do this.
        */
@@ -2426,7 +2428,7 @@ ngg_gs_export_vertices(nir_builder *b, nir_def *max_num_out_vtx, nir_def *tid_in
 
    nir_pop_if(b, if_vtx_export_thread);
 
-   if (s->options->has_param_exports && s->options->gfx_level >= GFX11) {
+   if (s->options->has_param_exports && s->options->hw_info->has_attr_ring) {
       /* Store vertex parameters to attribute ring.
        * For optimal attribute ring access, this should happen in top level CF.
        */
