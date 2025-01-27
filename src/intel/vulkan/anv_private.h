@@ -1146,6 +1146,10 @@ struct anv_physical_device {
 
     struct {
        /**
+        * Unused
+        */
+       struct anv_va_range                      first_2mb;
+       /**
         * General state pool
         */
        struct anv_va_range                      general_state_pool;

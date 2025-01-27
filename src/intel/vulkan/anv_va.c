@@ -97,7 +97,9 @@ anv_physical_device_init_va_ranges(struct anv_physical_device *device)
    uint64_t _1Gb = 1ull * 1024 * 1024 * 1024;
    uint64_t _4Gb = 4ull * 1024 * 1024 * 1024;
 
-   uint64_t address = 0x000000200000ULL; /* 2MiB */
+   uint64_t address = 0;
+
+   address = va_add(&device->va.first_2mb, address, 2 * _1Mb);
 
    address = va_add(&device->va.general_state_pool, address,
                     2 * _1Gb - address);
