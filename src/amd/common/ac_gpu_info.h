@@ -115,6 +115,7 @@ struct radeon_info {
    bool has_sqtt_auto_flush_mode_bug;
    bool never_send_perfcounter_stop;
    bool discardable_allows_big_page;
+   bool has_ngg_fully_culled_bug;
    bool has_export_conflict_bug;
    bool has_attr_ring_wait_bug;
    bool has_vrs_ds_export_bug;

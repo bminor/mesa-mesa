@@ -1300,6 +1300,11 @@ bool ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
    info->has_taskmesh_indirect0_bug = info->gfx_level == GFX10_3 &&
                                       info->mec_fw_version < 100;
 
+   /* Some GFX10 chips can hang when NGG exports zero vertices and primitives.
+    * The workaround is to always export a single degenerate triangle.
+    */
+   info->has_ngg_fully_culled_bug = info->gfx_level == GFX10;
+
    info->has_export_conflict_bug = info->gfx_level == GFX11;
 
    /* The hw starts culling after all exports are finished,

@@ -1355,7 +1355,7 @@ add_deferred_attribute_culling(nir_builder *b, nir_cf_list *original_extracted_c
 
       nir_if *if_wave_0 = nir_push_if(b, nir_ieq_imm(b, nir_load_subgroup_id(b), 0));
       {
-         ac_nir_ngg_alloc_vertices_and_primitives(b, num_live_vertices_in_workgroup, num_exported_prims, s->options->gfx_level == GFX10);
+         ac_nir_ngg_alloc_vertices_and_primitives(b, num_live_vertices_in_workgroup, num_exported_prims, s->options->hw_info->has_ngg_fully_culled_bug);
       }
       nir_pop_if(b, if_wave_0);
 
@@ -2721,7 +2721,7 @@ ngg_gs_finale(nir_builder *b, lower_ngg_gs_state *s)
 
          ac_nir_ngg_alloc_vertices_and_primitives(b, max_vtxcnt, max_prmcnt,
                                                   b->shader->info.gs.vertices_out == 0 &&
-                                                  s->options->gfx_level == GFX10);
+                                                  s->options->hw_info->has_ngg_fully_culled_bug);
       }
       nir_pop_if(b, if_wave_0);
    }
@@ -2771,7 +2771,7 @@ ngg_gs_finale(nir_builder *b, lower_ngg_gs_state *s)
    /* Allocate export space. We currently don't compact primitives, just use the maximum number. */
    nir_if *if_wave_0 = nir_push_if(b, nir_ieq_imm(b, nir_load_subgroup_id(b), 0));
    {
-      ac_nir_ngg_alloc_vertices_and_primitives(b, workgroup_num_vertices, max_prmcnt, s->options->gfx_level == GFX10);
+      ac_nir_ngg_alloc_vertices_and_primitives(b, workgroup_num_vertices, max_prmcnt, s->options->hw_info->has_ngg_fully_culled_bug);
    }
    nir_pop_if(b, if_wave_0);
 
