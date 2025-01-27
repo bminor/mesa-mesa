@@ -711,14 +711,11 @@ create_output_aliases(struct ir3_shader_variant *v, struct ir3_instruction *end)
             alias->cat7.alias_type_float = type_float(src_instr->cat1.dst_type);
          }
 
-         if (comp_src->flags & IR3_REG_CONST) {
-            /* alias.rt seems to read const registers (as opposed to storing a
-             * reference in the alias table) so we have to make sure it's
-             * scheduled after const writes.
-             */
-            alias->barrier_class = alias->barrier_conflict =
-               IR3_BARRIER_CONST_W;
-         }
+         /* Scheduling an alias.rt right before an alias.tex causes a GPU hang.
+          * Follow the blob and schedule all alias.rt at the end of the
+          * preamble to prevent this from happening.
+          */
+         alias->barrier_class = alias->barrier_conflict = IR3_BARRIER_CONST_W;
 
          /* Nothing actually uses the alias.rt dst so make sure it doesn't get
           * DCE'd.
