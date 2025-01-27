@@ -227,14 +227,13 @@ read_xe_data_file(FILE *file,
       case XE_TOPIC_CONTEXT: {
          enum xe_vm_topic_type type;
          const char *value_ptr;
-         bool is_hw_ctx;
+         char binary_name[64];
 
          /* TODO: what to do with HWSP? */
-         type = error_decode_xe_read_hw_sp_or_ctx_line(line, &value_ptr, &is_hw_ctx);
-         if (type != XE_VM_TOPIC_TYPE_UNKNOWN) {
+         if (error_decode_xe_binary_line(line, binary_name, sizeof(binary_name), &type, &value_ptr)) {
             print_line = false;
 
-            if (!is_hw_ctx)
+            if (strncmp(binary_name, "HWCTX", strlen("HWCTX")) != 0)
                break;
 
             switch (type) {
@@ -251,8 +250,7 @@ read_xe_data_file(FILE *file,
                   goto cleanup;
                }
 
-               if (is_hw_ctx)
-                  error_decode_xe_vm_hw_ctx_set(&xe_vm, vm_entry_len, vm_entry_data);
+               error_decode_xe_vm_hw_ctx_set(&xe_vm, vm_entry_len, vm_entry_data);
                break;
             }
             case XE_VM_TOPIC_TYPE_ERROR:

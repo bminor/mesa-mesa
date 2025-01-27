@@ -136,54 +136,54 @@ error_decode_xe_read_vm_line(const char *line, uint64_t *address, const char **v
    return type;
 }
 
-/*
- * similar to read_xe_vm_line() but it parses '[HWCTX].data: ...'
+/* return true if line is a binary line.
+ * name is set with binary name, type is set with line binary type and
+ * value_ptr with line binary value(length, error or data).
  */
-enum xe_vm_topic_type
-error_decode_xe_read_hw_sp_or_ctx_line(const char *line, const char **value_ptr, bool *is_hw_ctx)
+bool
+error_decode_xe_binary_line(const char *line, char *name, int name_len, enum xe_vm_topic_type *type, const char **value_ptr)
 {
-   enum xe_vm_topic_type type;
-   char text_addr[64];
-   bool is_hw_sp;
-   int i;
+   const char *c = line;
 
-   if (*line != '\t')
-      return XE_VM_TOPIC_TYPE_UNKNOWN;
+   while (*c == '\t' || *c == 0)
+      c++;
 
-   line++;
-   if (*line != '[')
-      return XE_VM_TOPIC_TYPE_UNKNOWN;
+   if (*c != '[')
+      return false;
+   c++;
 
-   for (i = 0, line++; *line != ']'; i++, line++)
-      text_addr[i] = *line;
+   for (; *c != ']' && (name_len - 1) && *c != 0; c++, name++, name_len--)
+      *name = *c;
+   *name = 0;
 
-   text_addr[i] = 0;
-   *is_hw_ctx = strncmp(text_addr, "HWCTX", strlen("HWCTX")) == 0;
-   is_hw_sp =  strncmp(text_addr, "HWSP", strlen("HWSP")) == 0;
-   if (*is_hw_ctx == false && is_hw_sp == false)
-         return XE_VM_TOPIC_TYPE_UNKNOWN;
+   if (*c != ']' || c[1] != '.')
+      return false;
+   c += 2;
 
-   /* at this point line points to last address digit so +3 to point to type */
-   line += 2;
-   switch (*line) {
+   switch (*c) {
    case 'd':
-      type = XE_VM_TOPIC_TYPE_DATA;
-      break;
-   case 'l':
-      type = XE_VM_TOPIC_TYPE_LENGTH;
+      *type = XE_VM_TOPIC_TYPE_DATA;
       break;
    case 'e':
-      type = XE_VM_TOPIC_TYPE_ERROR;
+      *type = XE_VM_TOPIC_TYPE_ERROR;
+      break;
+   case 'l':
+      *type = XE_VM_TOPIC_TYPE_LENGTH;
       break;
    default:
       printf("type char: %c\n", *line);
-      return XE_VM_TOPIC_TYPE_UNKNOWN;
+      return false;
    }
 
-   for (; *line != ':'; line++);
+   while (*c != ':' && *c != 0)
+      c++;
 
-   *value_ptr = line + 2;
-   return type;
+   if (*c != ':' || c[1] != ' ')
+      return false;
+   c += 2;
+
+   *value_ptr = c;
+   return true;
 }
 
 void error_decode_xe_vm_init(struct xe_vm *xe_vm)

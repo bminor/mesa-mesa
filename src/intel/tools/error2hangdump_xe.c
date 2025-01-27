@@ -56,34 +56,34 @@ read_xe_data_file(FILE *dump_file, FILE *hang_dump_file, bool verbose)
       case XE_TOPIC_CONTEXT: {
          enum xe_vm_topic_type type;
          const char *value_ptr;
-         bool is_hw_ctx;
+         char binary_name[64];
 
-         type = error_decode_xe_read_hw_sp_or_ctx_line(line, &value_ptr, &is_hw_ctx);
-         if (type == XE_VM_TOPIC_TYPE_UNKNOWN || !is_hw_ctx) {
-            break;
-         }
+         if (error_decode_xe_binary_line(line, binary_name, sizeof(binary_name), &type, &value_ptr)) {
+            if (strncmp(binary_name, "HWCTX", strlen("HWCTX")) != 0)
+               break;
 
-         switch (type) {
-         case XE_VM_TOPIC_TYPE_DATA:
-            if (!error_decode_xe_ascii85_decode_allocated(value_ptr, vm_entry_data, vm_entry_len))
-               printf("Failed to parse HWCTX data\n");
-            break;
-         case XE_VM_TOPIC_TYPE_LENGTH: {
-            vm_entry_len = strtoul(value_ptr, NULL, 0);
-            vm_entry_data = calloc(1, vm_entry_len);
-            if (!vm_entry_data) {
-               printf("Out of memory to allocate a buffer to store content of HWCTX\n");
+            switch (type) {
+            case XE_VM_TOPIC_TYPE_DATA:
+               if (!error_decode_xe_ascii85_decode_allocated(value_ptr, vm_entry_data, vm_entry_len))
+                  printf("Failed to parse HWCTX data\n");
+               break;
+            case XE_VM_TOPIC_TYPE_LENGTH: {
+               vm_entry_len = strtoul(value_ptr, NULL, 0);
+               vm_entry_data = calloc(1, vm_entry_len);
+               if (!vm_entry_data) {
+                  printf("Out of memory to allocate a buffer to store content of HWCTX\n");
+                  break;
+               }
+
+               error_decode_xe_vm_hw_ctx_set(&xe_vm, vm_entry_len, vm_entry_data);
                break;
             }
-
-            error_decode_xe_vm_hw_ctx_set(&xe_vm, vm_entry_len, vm_entry_data);
-            break;
-         }
-         case XE_VM_TOPIC_TYPE_ERROR:
-            printf("HWCTX not present in dump, content will be zeroed: %s\n", line);
-            break;
-         default:
-            printf("Not expected line in HWCTX: %s", line);
+            case XE_VM_TOPIC_TYPE_ERROR:
+               printf("HWCTX not present in dump, content will be zeroed: %s\n", line);
+               break;
+            default:
+               printf("Not expected line in HWCTX: %s", line);
+            }
          }
 
          break;
