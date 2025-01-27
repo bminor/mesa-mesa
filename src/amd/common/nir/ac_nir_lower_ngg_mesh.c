@@ -73,8 +73,8 @@ typedef struct
       ms_out_part prm_attr;
    } scratch_ring;
 
-   /* VRAM attributes ring (GFX11 only) for all non-position outputs.
-    * GFX11 doesn't have to reload attributes from this ring at the end of the shader.
+   /* VRAM attributes ring (supported GPUs only) for all non-position outputs.
+    * We don't have to reload attributes from this ring at the end of the shader.
     */
    struct {
       ms_out_part vtx_attr;
@@ -123,11 +123,6 @@ typedef struct
    /* True if the lowering needs to insert shader query. */
    bool has_query;
 } lower_ngg_ms_state;
-
-static bool must_wait_attr_ring(enum amd_gfx_level gfx_level, bool has_param_exports)
-{
-   return (gfx_level == GFX11 || gfx_level == GFX11_5) && has_param_exports;
-}
 
 static void
 ms_store_prim_indices(nir_builder *b,
@@ -323,8 +318,7 @@ ms_store_arrayed_output(nir_builder *b,
                            .memory_modes = nir_var_shader_out,
                            .access = ACCESS_COHERENT);
    } else if (out_mode == ms_out_mode_attr_ring) {
-      /* GFX11+: Store params straight to the attribute ring.
-       *
+      /* Store params straight to the attribute ring.
        * Even though the access pattern may not be the most optimal,
        * this is still much better than reserving LDS and losing waves.
        * (Also much better than storing and reloading from the scratch ring.)
@@ -897,15 +891,13 @@ emit_ms_vertex(nir_builder *b, nir_def *index, nir_def *row, bool exports, bool 
    }
 
    if (parameters) {
-      /* Export generic attributes on GFX10.3
-       * (On GFX11 they are already stored in the attribute ring.)
-       */
-      if (s->has_param_exports && s->hw_info->gfx_level == GFX10_3) {
+      /* Export generic attributes when there is no attribute ring. */
+      if (s->has_param_exports && !s->hw_info->has_attr_ring) {
          ac_nir_export_parameters(b, s->vs_output_param_offset, per_vertex_outputs, 0, &s->out);
       }
 
-      /* GFX11+: also store special outputs to the attribute ring so PS can load them. */
-      if (s->hw_info->gfx_level >= GFX11 && (per_vertex_outputs & MS_VERT_ARG_EXP_MASK))
+      /* Also store special outputs to the attribute ring so PS can load them. */
+      if (s->hw_info->has_attr_ring && (per_vertex_outputs & MS_VERT_ARG_EXP_MASK))
          ms_emit_attribute_ring_output_stores(b, per_vertex_outputs & MS_VERT_ARG_EXP_MASK, index, s);
    }
 }
@@ -935,15 +927,13 @@ emit_ms_primitive(nir_builder *b, nir_def *index, nir_def *row, bool exports, bo
    }
 
    if (parameters) {
-      /* Export generic attributes on GFX10.3
-       * (On GFX11 they are already stored in the attribute ring.)
-       */
-      if (s->has_param_exports && s->hw_info->gfx_level == GFX10_3) {
+      /* Export generic attributes when there is no attribute ring. */
+      if (s->has_param_exports && !s->hw_info->has_attr_ring) {
          ac_nir_export_parameters(b, s->vs_output_param_offset, per_primitive_outputs, 0, &s->out);
       }
 
-      /* GFX11+: also store special outputs to the attribute ring so PS can load them. */
-      if (s->hw_info->gfx_level >= GFX11)
+      /* Also store special outputs to the attribute ring so PS can load them. */
+      if (s->hw_info->has_attr_ring)
          ms_emit_attribute_ring_output_stores(b, per_primitive_outputs & MS_PRIM_ARG_EXP_MASK, index, s);
    }
 }
@@ -1045,8 +1035,7 @@ emit_ms_finale(nir_builder *b, lower_ngg_ms_state *s)
    const bool has_special_param_exports =
       (per_vertex_outputs & MS_VERT_ARG_EXP_MASK) ||
       (per_primitive_outputs & MS_PRIM_ARG_EXP_MASK);
-
-   const bool wait_attr_ring = must_wait_attr_ring(s->hw_info->gfx_level, has_special_param_exports);
+   const bool wait_attr_ring = has_special_param_exports && s->hw_info->has_attr_ring_wait_bug;
 
    /* Export vertices. */
    if ((per_vertex_outputs & ~VARYING_BIT_POS) || !wait_attr_ring) {
@@ -1253,7 +1242,7 @@ ms_calculate_arrayed_output_layout(ms_out_mem_layout *l,
 }
 
 static ms_out_mem_layout
-ms_calculate_output_layout(enum amd_gfx_level gfx_level, unsigned api_shared_size,
+ms_calculate_output_layout(const struct radeon_info *hw_info, unsigned api_shared_size,
                            uint64_t per_vertex_output_mask, uint64_t per_primitive_output_mask,
                            uint64_t cross_invocation_output_access, unsigned max_vertices,
                            unsigned max_primitives, unsigned vertices_per_prim)
@@ -1266,7 +1255,7 @@ ms_calculate_output_layout(enum amd_gfx_level gfx_level, unsigned api_shared_siz
       BITFIELD64_BIT(VARYING_SLOT_PRIMITIVE_COUNT) |
       BITFIELD64_BIT(VARYING_SLOT_PRIMITIVE_INDICES) | BITFIELD64_BIT(VARYING_SLOT_CULL_PRIMITIVE);
 
-   const bool use_attr_ring = gfx_level >= GFX11;
+   const bool use_attr_ring = hw_info->has_attr_ring;
    const uint64_t attr_ring_per_vertex_output_mask =
       use_attr_ring ? per_vertex_output_mask & ~always_export_mask : 0;
    const uint64_t attr_ring_per_primitive_output_mask =
@@ -1287,7 +1276,7 @@ ms_calculate_output_layout(enum amd_gfx_level gfx_level, unsigned api_shared_siz
    /* Shared memory used by the API shader. */
    ms_out_mem_layout l = { .lds = { .total_size = api_shared_size } };
 
-   /* GFX11+: use attribute ring for all generic attributes. */
+   /* Use attribute ring for all generic attributes (on GPUs with an attribute ring). */
    l.attr_ring.vtx_attr.mask = attr_ring_per_vertex_output_mask;
    l.attr_ring.prm_attr.mask = attr_ring_per_primitive_output_mask;
 
@@ -1380,7 +1369,7 @@ ac_nir_lower_ngg_mesh(nir_shader *shader,
    unsigned max_primitives = shader->info.mesh.max_primitives_out;
 
    ms_out_mem_layout layout = ms_calculate_output_layout(
-      hw_info->gfx_level, shader->info.shared_size, per_vertex_outputs, per_primitive_outputs,
+      hw_info, shader->info.shared_size, per_vertex_outputs, per_primitive_outputs,
       cross_invocation_access, max_vertices, max_primitives, vertices_per_prim);
 
    shader->info.shared_size = layout.lds.total_size;
