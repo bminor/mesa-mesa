@@ -2340,10 +2340,8 @@ ngg_gs_export_primitives(nir_builder *b, nir_def *max_num_out_prims, nir_def *ti
 }
 
 static void
-ngg_gs_export_vertices(nir_builder *b, nir_def *max_num_out_vtx, nir_def *tid_in_tg,
-                       nir_def *out_vtx_lds_addr, lower_ngg_gs_state *s)
+ngg_gs_process_out_vertex(nir_builder *b, nir_def *out_vtx_lds_addr, lower_ngg_gs_state *s)
 {
-   nir_if *if_vtx_export_thread = nir_push_if(b, nir_ilt(b, tid_in_tg, max_num_out_vtx));
    nir_def *exported_out_vtx_lds_addr = out_vtx_lds_addr;
 
    if (!s->output_compile_time_known) {
@@ -2408,6 +2406,15 @@ ngg_gs_export_vertices(nir_builder *b, nir_def *max_num_out_vtx, nir_def *tid_in
 
    /* This should be after streamout and before exports. */
    ac_nir_clamp_vertex_color_outputs(b, &s->out);
+}
+
+static void
+ngg_gs_export_vertices(nir_builder *b, nir_def *max_num_out_vtx, nir_def *tid_in_tg,
+                       nir_def *out_vtx_lds_addr, lower_ngg_gs_state *s)
+{
+   nir_if *if_vtx_export_thread = nir_push_if(b, nir_ilt(b, tid_in_tg, max_num_out_vtx));
+
+   ngg_gs_process_out_vertex(b, out_vtx_lds_addr, s);
 
    uint64_t export_outputs = b->shader->info.outputs_written | VARYING_BIT_POS;
    if (s->options->kill_pointsize)
