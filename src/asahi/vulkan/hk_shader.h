@@ -10,6 +10,7 @@
 #include "asahi/compiler/agx_compile.h"
 #include "util/macros.h"
 #include "agx_linker.h"
+#include "agx_nir_lower_gs.h"
 #include "agx_nir_lower_vbo.h"
 #include "agx_pack.h"
 #include "agx_usc.h"
@@ -96,11 +97,7 @@ struct hk_shader_info {
          struct hk_tess_info info;
       } tess;
 
-      struct {
-         unsigned count_words;
-         enum mesa_prim out_prim;
-         uint8_t _pad[27];
-      } gs;
+      struct agx_gs_info gs;
 
       /* Used to initialize the union for other stages */
       uint8_t _pad[32];

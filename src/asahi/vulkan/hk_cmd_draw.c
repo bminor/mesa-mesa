@@ -1094,7 +1094,7 @@ hk_rast_prim(struct hk_cmd_buffer *cmd)
    struct vk_dynamic_graphics_state *dyn = &cmd->vk.dynamic_graphics_state;
 
    if (gs != NULL) {
-      return gs->variants[HK_GS_VARIANT_RAST].info.gs.out_prim;
+      return gs->variants[HK_GS_VARIANT_RAST].info.gs.mode;
    } else {
       switch (dyn->ia.primitive_topology) {
       case VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY:

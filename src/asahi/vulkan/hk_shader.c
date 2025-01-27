@@ -1131,6 +1131,7 @@ hk_compile_shader(struct hk_device *dev, struct vk_shader_compile_info *info,
    /* Compile all variants up front */
    if (sw_stage == MESA_SHADER_GEOMETRY) {
       for (unsigned rast_disc = 0; rast_disc < 2; ++rast_disc) {
+         struct hk_shader *main_variant = hk_main_gs_variant(obj, rast_disc);
          struct hk_shader *count_variant = hk_count_gs_variant(obj, rast_disc);
          bool last = (rast_disc + 1) == 2;
 
@@ -1138,19 +1139,19 @@ hk_compile_shader(struct hk_device *dev, struct vk_shader_compile_info *info,
           * original NIR for the last stage.
           */
          nir_shader *clone = last ? nir : nir_shader_clone(NULL, nir);
-
-         enum mesa_prim out_prim = MESA_PRIM_MAX;
          nir_shader *count = NULL, *rast = NULL, *pre_gs = NULL;
 
          NIR_PASS(_, clone, agx_nir_lower_gs, rast_disc, &count, &rast, &pre_gs,
-                  &out_prim, &count_variant->info.gs.count_words);
+                  &count_variant->info.gs);
 
          if (!rast_disc) {
             struct hk_shader *shader = &obj->variants[HK_GS_VARIANT_RAST];
 
             hk_lower_hw_vs(rast, shader);
-            shader->info.gs.out_prim = out_prim;
+            shader->info.gs = count_variant->info.gs;
          }
+
+         main_variant->info.gs = count_variant->info.gs;
 
          struct {
             nir_shader *in;

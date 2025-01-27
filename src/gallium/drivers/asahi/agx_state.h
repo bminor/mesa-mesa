@@ -33,6 +33,7 @@
 #include "util/u_range.h"
 #include "agx_bg_eot.h"
 #include "agx_helpers.h"
+#include "agx_nir_lower_gs.h"
 #include "agx_nir_texture.h"
 
 #ifdef __GLIBC__
@@ -248,11 +249,7 @@ struct agx_compiled_shader {
    struct agx_compiled_shader *gs_count, *pre_gs;
    struct agx_compiled_shader *gs_copy;
 
-   /* Output primitive mode for geometry shaders */
-   enum mesa_prim gs_output_mode;
-
-   /* Number of words per primitive in the count buffer */
-   unsigned gs_count_words;
+   struct agx_gs_info gs;
 
    /* Logical shader stage used for descriptor access. This may differ from the
     * physical shader stage of the compiled shader, for example when executing a

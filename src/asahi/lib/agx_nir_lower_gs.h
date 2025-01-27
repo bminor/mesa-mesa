@@ -30,10 +30,17 @@ bool agx_nir_lower_sw_vs(struct nir_shader *s, unsigned index_size_B);
 
 bool agx_nir_lower_vs_before_gs(struct nir_shader *vs);
 
+struct agx_gs_info {
+   /* Output primitive mode for geometry shaders */
+   enum mesa_prim mode;
+
+   /* Number of words per primitive in the count buffer */
+   unsigned count_words;
+};
+
 bool agx_nir_lower_gs(struct nir_shader *gs, bool rasterizer_discard,
                       struct nir_shader **gs_count, struct nir_shader **gs_copy,
-                      struct nir_shader **pre_gs, enum mesa_prim *out_mode,
-                      unsigned *out_count_words);
+                      struct nir_shader **pre_gs, struct agx_gs_info *info);
 
 bool agx_nir_lower_tcs(struct nir_shader *tcs);
 

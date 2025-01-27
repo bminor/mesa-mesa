@@ -1587,10 +1587,9 @@ agx_compile_variant(struct agx_device *dev, struct pipe_context *pctx,
    nir_shader *nir = nir_deserialize(NULL, &agx_nir_options, &reader);
 
    /* Auxiliary programs */
-   enum mesa_prim gs_out_prim = MESA_PRIM_MAX;
+   struct agx_gs_info gs_info = {0};
    uint64_t outputs = 0;
    struct agx_fs_epilog_link_info epilog_key = {false};
-   unsigned gs_out_count_words = 0;
    nir_shader *gs_count = NULL;
    nir_shader *gs_copy = NULL;
    nir_shader *pre_gs = NULL;
@@ -1638,7 +1637,7 @@ agx_compile_variant(struct agx_device *dev, struct pipe_context *pctx,
       struct asahi_gs_shader_key *key = &key_->gs;
 
       NIR_PASS(_, nir, agx_nir_lower_gs, key->rasterizer_discard, &gs_count,
-               &gs_copy, &pre_gs, &gs_out_prim, &gs_out_count_words);
+               &gs_copy, &pre_gs, &gs_info);
    } else if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       struct asahi_fs_shader_key *key = &key_->fs;
 
@@ -1733,8 +1732,7 @@ agx_compile_variant(struct agx_device *dev, struct pipe_context *pctx,
       compiled->gs_copy->uvs = uvs;
    }
 
-   compiled->gs_output_mode = gs_out_prim;
-   compiled->gs_count_words = gs_out_count_words;
+   compiled->gs = gs_info;
    compiled->b.info.outputs = outputs;
 
    ralloc_free(nir);
@@ -4039,7 +4037,7 @@ agx_batch_geometry_params(struct agx_batch *batch, uint64_t input_index_buffer,
     */
    batch->uniforms.vertex_outputs = batch->ctx->vs->b.info.outputs;
    params.input_mask = batch->uniforms.vertex_outputs;
-   params.count_buffer_stride = batch->ctx->gs->gs_count_words * 4;
+   params.count_buffer_stride = batch->ctx->gs->gs.count_words * 4;
 
    if (indirect) {
       batch->uniforms.vertex_output_buffer_ptr =
@@ -4171,7 +4169,7 @@ agx_launch_gs_prerast(struct agx_batch *batch,
       agx_launch(batch, grid_gs, wg, gs->gs_count, NULL, PIPE_SHADER_GEOMETRY,
                  0);
 
-      libagx_prefix_sum_geom(batch, agx_1d(1024 * gs->gs_count_words),
+      libagx_prefix_sum_geom(batch, agx_1d(1024 * gs->gs.count_words),
                              AGX_BARRIER_ALL, gp);
    }
 
@@ -5074,7 +5072,7 @@ agx_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
 
       /* Setup to rasterize the GS results */
       info_gs = (struct pipe_draw_info){
-         .mode = ctx->gs->gs_output_mode,
+         .mode = ctx->gs->gs.mode,
          .index_size = 4,
          .primitive_restart = true,
          .restart_index = ~0,

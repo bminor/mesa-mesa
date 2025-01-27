@@ -1193,7 +1193,7 @@ calculate_max_indices(enum mesa_prim prim, unsigned verts, signed static_verts,
 bool
 agx_nir_lower_gs(nir_shader *gs, bool rasterizer_discard, nir_shader **gs_count,
                  nir_shader **gs_copy, nir_shader **pre_gs,
-                 enum mesa_prim *out_mode, unsigned *out_count_words)
+                 struct agx_gs_info *info)
 {
    /* Lower I/O as assumed by the rest of GS lowering */
    if (gs->xfb_info != NULL) {
@@ -1386,8 +1386,11 @@ agx_nir_lower_gs(nir_shader *gs, bool rasterizer_discard, nir_shader **gs_count,
       gs->info.gs.invocations, gs_state.max_indices);
 
    /* Signal what primitive we want to draw the GS Copy VS with */
-   *out_mode = gs->info.gs.output_primitive;
-   *out_count_words = gs_state.count_stride_el;
+   *info = (struct agx_gs_info){
+      .mode = gs->info.gs.output_primitive,
+      .count_words = gs_state.count_stride_el,
+   };
+
    return true;
 }
 
