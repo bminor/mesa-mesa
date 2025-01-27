@@ -22,17 +22,10 @@
 #include "nir_xfb_info.h"
 #include "shader_enums.h"
 
-enum gs_counter {
-   GS_COUNTER_VERTICES = 0,
-   GS_COUNTER_PRIMITIVES,
-   GS_COUNTER_XFB_PRIMITIVES,
-   GS_NUM_COUNTERS
-};
-
 #define MAX_PRIM_OUT_SIZE 3
 
 struct lower_gs_state {
-   int static_count[GS_NUM_COUNTERS][MAX_VERTEX_STREAMS];
+   int static_count[MAX_VERTEX_STREAMS];
    nir_variable *outputs[NUM_TOTAL_VARYING_SLOTS][MAX_PRIM_OUT_SIZE];
 
    /* Per-input primitive stride of the output index buffer */
@@ -48,7 +41,7 @@ struct lower_gs_state {
     *
     * Invariant: count_stride_el == sum(count_index[i][j] >= 0).
     */
-   int count_index[MAX_VERTEX_STREAMS][GS_NUM_COUNTERS];
+   int count_index[MAX_VERTEX_STREAMS];
 
    bool rasterizer_discard;
 };
@@ -290,11 +283,10 @@ calc_unrolled_index_id(nir_builder *b)
 }
 
 static nir_def *
-load_count_address(nir_builder *b, struct lower_gs_state *state,
-                   nir_def *unrolled_id, unsigned stream,
-                   enum gs_counter counter)
+load_xfb_count_address(nir_builder *b, struct lower_gs_state *state,
+                       nir_def *unrolled_id, unsigned stream)
 {
-   int index = state->count_index[stream][counter];
+   int index = state->count_index[stream];
    if (index < 0)
       return NULL;
 
@@ -308,23 +300,15 @@ load_count_address(nir_builder *b, struct lower_gs_state *state,
 }
 
 static void
-write_counts(nir_builder *b, nir_intrinsic_instr *intr,
-             struct lower_gs_state *state)
+write_xfb_counts(nir_builder *b, nir_intrinsic_instr *intr,
+                 struct lower_gs_state *state)
 {
    /* Store each required counter */
-   nir_def *counts[GS_NUM_COUNTERS] = {
-      [GS_COUNTER_VERTICES] = intr->src[0].ssa,
-      [GS_COUNTER_PRIMITIVES] = intr->src[1].ssa,
-      [GS_COUNTER_XFB_PRIMITIVES] = intr->src[2].ssa,
-   };
+   nir_def *addr = load_xfb_count_address(b, state, calc_unrolled_id(b),
+                                          nir_intrinsic_stream_id(intr));
 
-   for (unsigned i = 0; i < GS_NUM_COUNTERS; ++i) {
-      nir_def *addr = load_count_address(b, state, calc_unrolled_id(b),
-                                         nir_intrinsic_stream_id(intr), i);
-
-      if (addr)
-         nir_store_global(b, addr, 4, counts[i], nir_component_mask(1));
-   }
+   if (addr)
+      nir_store_global(b, addr, 4, intr->src[2].ssa, nir_component_mask(1));
 }
 
 static bool
@@ -340,7 +324,7 @@ lower_gs_count_instr(nir_builder *b, nir_intrinsic_instr *intr, void *data)
 
    case nir_intrinsic_set_vertex_and_primitive_count:
       b->cursor = nir_instr_remove(&intr->instr);
-      write_counts(b, intr, data);
+      write_xfb_counts(b, intr, data);
       return true;
 
    default:
@@ -705,12 +689,11 @@ agx_nir_create_gs_rast_shader(const nir_shader *gs, bool *side_effects_for_rast)
 }
 
 static nir_def *
-previous_count(nir_builder *b, struct lower_gs_state *state, unsigned stream,
-               nir_def *unrolled_id, enum gs_counter counter)
+previous_xfb_primitives(nir_builder *b, struct lower_gs_state *state,
+                        unsigned stream, nir_def *unrolled_id)
 {
    assert(stream < MAX_VERTEX_STREAMS);
-   assert(counter < GS_NUM_COUNTERS);
-   int static_count = state->static_count[counter][stream];
+   int static_count = state->static_count[stream];
 
    if (static_count >= 0) {
       /* If the number of outputted vertices per invocation is known statically,
@@ -726,34 +709,11 @@ previous_count(nir_builder *b, struct lower_gs_state *state, unsigned stream,
        * TODO: Optimize this.
        */
       nir_def *prim_minus_1 = nir_usub_sat(b, unrolled_id, nir_imm_int(b, 1));
-      nir_def *addr =
-         load_count_address(b, state, prim_minus_1, stream, counter);
+      nir_def *addr = load_xfb_count_address(b, state, prim_minus_1, stream);
 
       return nir_bcsel(b, nir_ieq_imm(b, unrolled_id, 0), nir_imm_int(b, 0),
                        nir_load_global_constant(b, addr, 4, 1, 32));
    }
-}
-
-static nir_def *
-previous_vertices(nir_builder *b, struct lower_gs_state *state, unsigned stream,
-                  nir_def *unrolled_id)
-{
-   return previous_count(b, state, stream, unrolled_id, GS_COUNTER_VERTICES);
-}
-
-static nir_def *
-previous_primitives(nir_builder *b, struct lower_gs_state *state,
-                    unsigned stream, nir_def *unrolled_id)
-{
-   return previous_count(b, state, stream, unrolled_id, GS_COUNTER_PRIMITIVES);
-}
-
-static nir_def *
-previous_xfb_primitives(nir_builder *b, struct lower_gs_state *state,
-                        unsigned stream, nir_def *unrolled_id)
-{
-   return previous_count(b, state, stream, unrolled_id,
-                         GS_COUNTER_XFB_PRIMITIVES);
 }
 
 static void
@@ -1307,26 +1267,22 @@ agx_nir_lower_gs(nir_shader *gs, bool rasterizer_discard, nir_shader **gs_count,
       .rasterizer_discard = rasterizer_discard,
    };
 
-   nir_gs_count_vertices_and_primitives(
-      gs, gs_state.static_count[GS_COUNTER_VERTICES],
-      gs_state.static_count[GS_COUNTER_PRIMITIVES],
-      gs_state.static_count[GS_COUNTER_XFB_PRIMITIVES], 4);
+   int static_vertices[4] = {0}, static_primitives[4] = {0};
+   nir_gs_count_vertices_and_primitives(gs, static_vertices, static_primitives,
+                                        gs_state.static_count, 4);
 
    /* Anything we don't know statically will be tracked by the count buffer.
     * Determine the layout for it.
     */
    for (unsigned i = 0; i < MAX_VERTEX_STREAMS; ++i) {
-      for (unsigned c = 0; c < GS_NUM_COUNTERS; ++c) {
-         gs_state.count_index[i][c] =
-            (gs_state.static_count[c][i] < 0) ? gs_state.count_stride_el++ : -1;
-      }
+      gs_state.count_index[i] =
+         (gs_state.static_count[i] < 0) ? gs_state.count_stride_el++ : -1;
    }
 
    /* Using the gathered static counts, choose the index buffer stride. */
    gs_state.max_indices = calculate_max_indices(
       gs->info.gs.output_primitive, gs->info.gs.vertices_out,
-      gs_state.static_count[GS_COUNTER_VERTICES][0],
-      gs_state.static_count[GS_COUNTER_PRIMITIVES][0]);
+      static_vertices[0], static_primitives[0]);
 
    bool side_effects_for_rast = false;
    *gs_copy = agx_nir_create_gs_rast_shader(gs, &side_effects_for_rast);
@@ -1382,7 +1338,7 @@ agx_nir_lower_gs(nir_shader *gs, bool rasterizer_discard, nir_shader **gs_count,
     * rasterization shader.
     */
    bool rasterizes_at_least_one_vertex =
-      !rasterizer_discard && gs_state.static_count[0][0] > 0;
+      !rasterizer_discard && static_vertices[0] > 0;
 
    /* Clean up after all that lowering we did */
    nir_lower_global_vars_to_local(gs);
