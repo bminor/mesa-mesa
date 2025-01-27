@@ -1744,7 +1744,9 @@ isl_choose_miptail_start_level(const struct isl_device *dev,
       return 15;
    }
 
-   if (info->dim == ISL_SURF_DIM_3D &&
+   if ((ISL_GFX_VER(dev) == 9 ||
+        intel_needs_workaround(dev->info, 1207137018)) &&
+       info->dim == ISL_SURF_DIM_3D &&
        isl_tiling_is_std_y(tile_info->tiling) &&
        _isl_surf_info_supports_ccs(dev, info->format, info->usage)) {
       /* From the workarounds section in the SKL PRM:
