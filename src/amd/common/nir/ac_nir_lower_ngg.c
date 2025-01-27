@@ -6,6 +6,7 @@
 
 #include "ac_nir.h"
 #include "ac_nir_helpers.h"
+#include "ac_gpu_info.h"
 #include "amdgfxregs.h"
 #include "nir_builder.h"
 #include "nir_xfb_info.h"
@@ -1655,11 +1656,6 @@ ngg_nogs_gather_outputs(nir_builder *b, struct exec_list *cf_list, lower_ngg_nog
    }
 }
 
-static bool must_wait_attr_ring(enum amd_gfx_level gfx_level, bool has_param_exports)
-{
-   return (gfx_level == GFX11 || gfx_level == GFX11_5) && has_param_exports;
-}
-
 static void
 export_pos0_wait_attr_ring(nir_builder *b, nir_if *if_es_thread, nir_def *outputs[VARYING_SLOT_MAX][4], const ac_nir_lower_ngg_options *options)
 {
@@ -1707,7 +1703,7 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
       options->can_cull ? nir_local_variable_create(impl, glsl_bool_type(), "gs_accepted") : NULL;
    nir_variable *gs_exported_var = nir_local_variable_create(impl, glsl_bool_type(), "gs_exported");
 
-   const bool wait_attr_ring = must_wait_attr_ring(options->gfx_level, options->has_param_exports);
+   const bool wait_attr_ring = options->has_param_exports && options->hw_info->has_attr_ring_wait_bug;
    bool streamout_enabled = shader->xfb_info && !options->disable_streamout;
    bool has_user_edgeflags =
       options->use_edgeflags && (shader->info.outputs_written & VARYING_BIT_EDGE);
@@ -2408,7 +2404,7 @@ ngg_gs_export_vertices(nir_builder *b, nir_def *max_num_out_vtx, nir_def *tid_in
    if (s->options->kill_layer)
       export_outputs &= ~VARYING_BIT_LAYER;
 
-   const bool wait_attr_ring = must_wait_attr_ring(s->options->gfx_level, s->options->has_param_exports);
+   const bool wait_attr_ring = s->options->has_param_exports && s->options->hw_info->has_attr_ring_wait_bug;
    if (wait_attr_ring)
       export_outputs &= ~VARYING_BIT_POS;
 
