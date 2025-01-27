@@ -1817,6 +1817,7 @@ static void si_lower_ngg(struct si_shader *shader, nir_shader *nir)
    ac_nir_lower_ngg_options options = {
       .family = sel->screen->info.family,
       .gfx_level = sel->screen->info.gfx_level,
+      .hw_info = &sel->screen->info,
       .max_workgroup_size = si_get_max_workgroup_size(shader),
       .wave_size = shader->wave_size,
       .can_cull = si_shader_culling_enabled(shader),

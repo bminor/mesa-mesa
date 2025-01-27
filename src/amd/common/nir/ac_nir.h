@@ -144,6 +144,7 @@ ac_nir_lower_indirect_derefs(nir_shader *shader,
 typedef struct {
    enum radeon_family family;
    enum amd_gfx_level gfx_level;
+   const struct radeon_info *hw_info;
 
    unsigned max_workgroup_size;
    unsigned wave_size;
