@@ -1,0 +1,2 @@
+# New crash with Xe KMD
+dEQP-VK.sparse_resources.buffer.ssbo.sparse_residency.buffer_size_2_24,Crash
