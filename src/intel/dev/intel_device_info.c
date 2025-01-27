@@ -1923,8 +1923,10 @@ intel_get_device_info_from_fd(int fd, struct intel_device_info *devinfo, int min
       break;
    case INTEL_KMD_TYPE_XE:
       ret = intel_device_info_xe_get_info_from_fd(fd, devinfo);
-      if (devinfo->verx10 < 200)
-         mesa_logw("Support for this platform is experimental with Xe KMD, bug reports may be ignored.");
+      if (devinfo->verx10 < 200) {
+         if (!debug_get_bool_option("INTEL_XE_IGNORE_EXPERIMENTAL_WARNING", false))
+            mesa_logw("Support for this platform is experimental with Xe KMD, bug reports may be ignored.");
+      }
       break;
    default:
       ret = false;
