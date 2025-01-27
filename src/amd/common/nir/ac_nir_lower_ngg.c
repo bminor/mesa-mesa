@@ -1658,37 +1658,6 @@ ngg_nogs_gather_outputs(nir_builder *b, struct exec_list *cf_list, lower_ngg_nog
    }
 }
 
-static void
-export_pos0_wait_attr_ring(nir_builder *b, nir_if *if_es_thread, nir_def *outputs[VARYING_SLOT_MAX][4], const ac_nir_lower_ngg_options *options)
-{
-   b->cursor = nir_after_cf_node(&if_es_thread->cf_node);
-
-   /* Create phi for the position output values. */
-   ac_nir_prerast_out out = {
-      .outputs = {{outputs[VARYING_SLOT_POS][0], outputs[VARYING_SLOT_POS][1], outputs[VARYING_SLOT_POS][2], outputs[VARYING_SLOT_POS][3]}},
-      .infos = {{.components_mask = 0xf, .as_sysval_mask = 0xf}},
-   };
-
-   b->cursor = nir_after_cf_list(&b->impl->body);
-
-   /* Wait for attribute stores to finish. */
-   nir_barrier(b, .execution_scope = SCOPE_SUBGROUP,
-                  .memory_scope = SCOPE_DEVICE,
-                  .memory_semantics = NIR_MEMORY_RELEASE,
-                  .memory_modes = nir_var_mem_ssbo | nir_var_shader_out | nir_var_mem_global | nir_var_image);
-
-   /* Export just the pos0 output. */
-   nir_if *if_export_empty_pos = nir_push_if(b, if_es_thread->condition.ssa);
-   {
-      ac_nir_export_position(b, options->hw_info->gfx_level,
-                             options->clip_cull_dist_mask,
-                             !options->has_param_exports,
-                             options->force_vrs, true,
-                             VARYING_BIT_POS, &out, NULL);
-   }
-   nir_pop_if(b, if_export_empty_pos);
-}
-
 void
 ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *options)
 {
