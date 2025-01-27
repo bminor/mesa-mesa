@@ -58,7 +58,7 @@ foreach gen : intel_shaders_gens
       '-I' + join_paths(meson.project_build_root(), 'src/intel'),
       '-I' + join_paths(dir_source_root, 'src/intel/genxml'),
     ],
-    depends : [gen_cl_xml_pack],
+    depends : [gen_cl_xml_pack, intel_dev_wa_src],
   )
 
   intel_shaders += custom_target(
