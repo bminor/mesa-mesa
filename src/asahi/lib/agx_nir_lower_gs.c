@@ -44,6 +44,7 @@ struct lower_gs_state {
    int count_index[MAX_VERTEX_STREAMS];
 
    bool rasterizer_discard;
+   bool prefix_summing;
 };
 
 /* Helpers for loading from the geometry state buffer */
@@ -304,11 +305,20 @@ write_xfb_counts(nir_builder *b, nir_intrinsic_instr *intr,
                  struct lower_gs_state *state)
 {
    /* Store each required counter */
-   nir_def *addr = load_xfb_count_address(b, state, calc_unrolled_id(b),
-                                          nir_intrinsic_stream_id(intr));
+   nir_def *id =
+      state->prefix_summing ? calc_unrolled_id(b) : nir_imm_int(b, 0);
 
-   if (addr)
+   nir_def *addr =
+      load_xfb_count_address(b, state, id, nir_intrinsic_stream_id(intr));
+   if (!addr)
+      return;
+
+   if (state->prefix_summing) {
       nir_store_global(b, addr, 4, intr->src[2].ssa, nir_component_mask(1));
+   } else {
+      nir_global_atomic(b, 32, addr, intr->src[2].ssa,
+                        .atomic_op = nir_atomic_op_iadd);
+   }
 }
 
 static bool
@@ -700,7 +710,7 @@ previous_xfb_primitives(nir_builder *b, struct lower_gs_state *state,
        * we can calculate the base.
        */
       return nir_imul_imm(b, unrolled_id, static_count);
-   } else {
+   } else if (state->prefix_summing) {
       /* Otherwise, we need to load from the prefix sum buffer. Note that the
        * sums are inclusive, so index 0 is nonzero. This requires a little
        * fixup here. We use a saturating unsigned subtraction so we don't read
@@ -713,6 +723,12 @@ previous_xfb_primitives(nir_builder *b, struct lower_gs_state *state,
 
       return nir_bcsel(b, nir_ieq_imm(b, unrolled_id, 0), nir_imm_int(b, 0),
                        nir_load_global_constant(b, addr, 4, 1, 32));
+   } else {
+      /* If we aren't prefix summing, the count is the only element */
+      nir_def *addr =
+         load_xfb_count_address(b, state, nir_imm_int(b, 0), stream);
+
+      return nir_load_global_constant(b, addr, 4, 1, 32);
    }
 }
 
@@ -1282,6 +1298,9 @@ agx_nir_lower_gs(nir_shader *gs, bool rasterizer_discard, nir_shader **gs_count,
       gs->info.gs.output_primitive, gs->info.gs.vertices_out,
       static_vertices[0], static_primitives[0]);
 
+   gs_state.prefix_summing =
+      gs_state.count_stride_el > 0 && gs->xfb_info != NULL;
+
    bool side_effects_for_rast = false;
    *gs_copy = agx_nir_create_gs_rast_shader(gs, &side_effects_for_rast);
 
@@ -1387,6 +1406,7 @@ agx_nir_lower_gs(nir_shader *gs, bool rasterizer_discard, nir_shader **gs_count,
    *info = (struct agx_gs_info){
       .mode = gs->info.gs.output_primitive,
       .count_words = gs_state.count_stride_el,
+      .prefix_sum = gs_state.prefix_summing,
    };
 
    return true;

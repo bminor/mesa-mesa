@@ -632,7 +632,8 @@ libagx_gs_setup_indirect(
    uint64_t vs_outputs /* Vertex (TES) output mask */,
    uint32_t index_size_B /* 0 if no index bffer */,
    uint32_t index_buffer_range_el,
-   uint32_t prim /* Input primitive type, enum mesa_prim */)
+   uint32_t prim /* Input primitive type, enum mesa_prim */,
+   int is_prefix_summing)
 {
    /* Determine the (primitives, instances) grid size. */
    uint vertex_count = draw[0];
@@ -672,9 +673,11 @@ libagx_gs_setup_indirect(
    uint vertex_buffer_size =
       libagx_tcs_in_size(vertex_count * instance_count, vs_outputs);
 
-   p->count_buffer = (global uint *)(state->heap + state->heap_bottom);
-   state->heap_bottom +=
-      align(p->input_primitives * p->count_buffer_stride, 16);
+   if (is_prefix_summing) {
+      p->count_buffer = (global uint *)(state->heap + state->heap_bottom);
+      state->heap_bottom +=
+         align(p->input_primitives * p->count_buffer_stride, 16);
+   }
 
    p->input_buffer = (uintptr_t)(state->heap + state->heap_bottom);
    *vertex_buffer = p->input_buffer;

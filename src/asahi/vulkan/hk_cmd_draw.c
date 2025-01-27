@@ -1165,6 +1165,12 @@ hk_upload_geometry_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
     */
    params.count_buffer_stride = count->info.gs.count_words * 4;
 
+   if (!count->info.gs.prefix_sum && params.count_buffer_stride) {
+      struct agx_ptr T = hk_pool_alloc(cmd, 16, 4);
+      memset(T.cpu, 0, 16);
+      params.count_buffer = T.gpu;
+   }
+
    if (indirect) {
       params.vs_grid[2] = params.gs_grid[2] = 1;
    } else {
@@ -1177,7 +1183,7 @@ hk_upload_geometry_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
       params.input_primitives = params.gs_grid[0] * instances;
 
       unsigned size = params.input_primitives * params.count_buffer_stride;
-      if (size) {
+      if (count->info.gs.prefix_sum && size) {
          params.count_buffer = hk_pool_alloc(cmd, size, 4).gpu;
       }
    }
@@ -1433,6 +1439,7 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
          .p = desc->root.draw.geometry_params,
          .vs_outputs = vs->b.info.outputs,
          .prim = mode,
+         .is_prefix_summing = count->info.gs.prefix_sum,
       };
 
       if (cmd->state.gfx.shaders[MESA_SHADER_TESS_EVAL]) {
@@ -1476,8 +1483,10 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
       hk_dispatch_with_local_size(cmd, cs, count, grid_gs,
                                   agx_workgroup(1, 1, 1));
 
-      libagx_prefix_sum_geom(cmd, agx_1d(1024 * count_words),
-                             AGX_BARRIER_ALL | AGX_PREGFX, geometry_params);
+      if (count->info.gs.prefix_sum) {
+         libagx_prefix_sum_geom(cmd, agx_1d(1024 * count_words),
+                                AGX_BARRIER_ALL | AGX_PREGFX, geometry_params);
+      }
    }
 
    /* Pre-GS shader */

@@ -36,6 +36,9 @@ struct agx_gs_info {
 
    /* Number of words per primitive in the count buffer */
    unsigned count_words;
+
+   /* Whether a prefix sum is required on the count outputs */
+   bool prefix_sum;
 };
 
 bool agx_nir_lower_gs(struct nir_shader *gs, bool rasterizer_discard,

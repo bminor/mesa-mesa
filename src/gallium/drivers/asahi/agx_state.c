@@ -4039,6 +4039,13 @@ agx_batch_geometry_params(struct agx_batch *batch, uint64_t input_index_buffer,
    params.input_mask = batch->uniforms.vertex_outputs;
    params.count_buffer_stride = batch->ctx->gs->gs.count_words * 4;
 
+   bool prefix_sum = batch->ctx->gs->gs.prefix_sum;
+   if (!prefix_sum && params.count_buffer_stride) {
+      struct agx_ptr T = agx_pool_alloc_aligned(&batch->pool, 16, 4);
+      memset(T.cpu, 0, 16);
+      params.count_buffer = T.gpu;
+   }
+
    if (indirect) {
       batch->uniforms.vertex_output_buffer_ptr =
          agx_pool_alloc_aligned(&batch->pool, 8, 8).gpu;
@@ -4057,7 +4064,7 @@ agx_batch_geometry_params(struct agx_batch *batch, uint64_t input_index_buffer,
                                             batch->uniforms.vertex_outputs);
       unsigned size = params.input_primitives * params.count_buffer_stride;
 
-      if (size) {
+      if (size && prefix_sum) {
          params.count_buffer =
             agx_pool_alloc_aligned(&batch->pool, size, 4).gpu;
       }
@@ -4141,6 +4148,7 @@ agx_launch_gs_prerast(struct agx_batch *batch,
          .vs_outputs = batch->uniforms.vertex_outputs,
          .index_size_B = info->index_size,
          .prim = info->mode,
+         .is_prefix_summing = gs->gs.prefix_sum,
       };
 
       libagx_gs_setup_indirect_struct(batch, agx_1d(1), AGX_BARRIER_ALL, gsi);
@@ -4168,7 +4176,9 @@ agx_launch_gs_prerast(struct agx_batch *batch,
       perf_debug(dev, "Geometry shader count");
       agx_launch(batch, grid_gs, wg, gs->gs_count, NULL, PIPE_SHADER_GEOMETRY,
                  0);
+   }
 
+   if (gs->gs.prefix_sum) {
       libagx_prefix_sum_geom(batch, agx_1d(1024 * gs->gs.count_words),
                              AGX_BARRIER_ALL, gp);
    }
