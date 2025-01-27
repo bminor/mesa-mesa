@@ -594,17 +594,13 @@ libagx_build_gs_draw(global struct agx_geometry_params *p, uint vertices,
    p->output_index_buffer =
       (global uint *)(state->heap + index_buffer_offset_B);
    state->heap_bottom += (indices * 4);
+   assert(state->heap_bottom < state->heap_size);
 
    descriptor[0] = indices;                   /* count */
    descriptor[1] = 1;                         /* instance count */
    descriptor[2] = index_buffer_offset_B / 4; /* start */
    descriptor[3] = 0;                         /* index bias */
    descriptor[4] = 0;                         /* start instance */
-
-   if (state->heap_bottom > state->heap_size) {
-      global uint *foo = (global uint *)(uintptr_t)0xdeadbeef;
-      *foo = 0x1234;
-   }
 }
 
 KERNEL(1)
@@ -663,13 +659,9 @@ libagx_gs_setup_indirect(
    p->input_buffer = (uintptr_t)(state->heap + state->heap_bottom);
    *vertex_buffer = p->input_buffer;
    state->heap_bottom += align(vertex_buffer_size, 4);
+   assert(state->heap_bottom < state->heap_size);
 
    p->input_mask = vs_outputs;
-
-   if (state->heap_bottom > state->heap_size) {
-      global uint *foo = (global uint *)(uintptr_t)0x1deadbeef;
-      *foo = 0x1234;
-   }
 }
 
 /*
