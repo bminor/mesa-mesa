@@ -90,6 +90,9 @@ has_spirv_link_workaround = cpp.has_member(
   ],
   dependencies : dep_spirv_tools,
 )
+if dep_llvm.version().version_compare('>= 17.0') and not has_spirv_link_workaround
+  error('SPIRV-Tools doesn\'t contain https://github.com/KhronosGroup/SPIRV-Tools/pull/5534\n')
+endif
 
 if has_spirv_link_workaround
   _libmesaclc_c_args += ['-DHAS_SPIRV_LINK_LLVM_WORKAROUND=1']
