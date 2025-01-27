@@ -760,8 +760,6 @@ radv_lower_ngg(struct radv_device *device, struct radv_shader_stage *ngg_stage,
       nir->info.shared_size = info->ngg_info.lds_size;
 
    ac_nir_lower_ngg_options options = {0};
-   options.family = pdev->info.family;
-   options.gfx_level = pdev->info.gfx_level;
    options.hw_info = &pdev->info;
    options.max_workgroup_size = info->workgroup_size;
    options.wave_size = info->wave_size;
@@ -804,7 +802,7 @@ radv_lower_ngg(struct radv_device *device, struct radv_shader_stage *ngg_stage,
       unsigned hw_workgroup_size = ALIGN(info->workgroup_size, info->wave_size);
 
       bool scratch_ring = false;
-      NIR_PASS_V(nir, ac_nir_lower_ngg_mesh, options.gfx_level, options.clip_cull_dist_mask,
+      NIR_PASS_V(nir, ac_nir_lower_ngg_mesh, pdev->info.gfx_level, options.clip_cull_dist_mask,
                  options.vs_output_param_offset, options.has_param_exports, &scratch_ring, info->wave_size,
                  hw_workgroup_size, gfx_state->has_multiview_view_index, info->ms.has_query, pdev->mesh_fast_launch_2);
       ngg_stage->info.ms.needs_ms_scratch_ring = scratch_ring;
