@@ -26,12 +26,6 @@ typedef struct
 
 typedef struct
 {
-   gl_varying_slot slot;
-   nir_def *chan[4];
-} vs_output;
-
-typedef struct
-{
    const ac_nir_lower_ngg_options *options;
 
    nir_variable *position_value_var;
