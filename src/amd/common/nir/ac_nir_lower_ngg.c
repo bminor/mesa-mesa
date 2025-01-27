@@ -2288,13 +2288,11 @@ lower_ngg_gs_intrinsics(nir_shader *shader, lower_ngg_gs_state *s)
    nir_shader_intrinsics_pass(shader, lower_ngg_gs_intrinsic, nir_metadata_none, s);
 }
 
-static void
-ngg_gs_export_primitives(nir_builder *b, nir_def *max_num_out_prims, nir_def *tid_in_tg,
-                         nir_def *exporter_tid_in_tg, nir_def *primflag_0,
-                         lower_ngg_gs_state *s)
+static nir_def *
+ngg_gs_process_out_primitive(nir_builder *b,
+                             nir_def *exporter_tid_in_tg, nir_def *primflag_0,
+                             lower_ngg_gs_state *s)
 {
-   nir_if *if_prim_export_thread = nir_push_if(b, nir_ilt(b, tid_in_tg, max_num_out_prims));
-
    /* Only bit 0 matters here - set it to 1 when the primitive should be null */
    nir_def *is_null_prim = nir_ixor(b, primflag_0, nir_imm_int(b, -1u));
 
@@ -2324,9 +2322,20 @@ ngg_gs_export_primitives(nir_builder *b, nir_def *max_num_out_prims, nir_def *ti
                                  nir_isub(b, vtx_indices[2], is_odd), vtx_indices[2]);
    }
 
-   nir_def *arg = ac_nir_pack_ngg_prim_exp_arg(b, s->num_vertices_per_primitive, vtx_indices,
+   return ac_nir_pack_ngg_prim_exp_arg(b, s->num_vertices_per_primitive, vtx_indices,
                                              is_null_prim, s->options->hw_info->gfx_level);
-   ac_nir_export_primitive(b, arg, NULL);
+}
+
+static void
+ngg_gs_export_primitives(nir_builder *b, nir_def *max_num_out_prims, nir_def *tid_in_tg,
+                         nir_def *exporter_tid_in_tg, nir_def *primflag_0,
+                         lower_ngg_gs_state *s)
+{
+   nir_if *if_prim_export_thread = nir_push_if(b, nir_ilt(b, tid_in_tg, max_num_out_prims));
+   {
+      nir_def *arg = ngg_gs_process_out_primitive(b, exporter_tid_in_tg, primflag_0, s);
+      ac_nir_export_primitive(b, arg, NULL);
+   }
    nir_pop_if(b, if_prim_export_thread);
 }
 
