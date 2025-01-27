@@ -139,7 +139,7 @@ ngg_nogs_init_vertex_indices_vars(nir_builder *b, nir_function_impl *impl, lower
 
       nir_def *vtx;
 
-      if (s->options->gfx_level >= GFX12) {
+      if (s->options->hw_info->gfx_level >= GFX12) {
          vtx = nir_ubfe_imm(b, nir_load_packed_passthrough_primitive_amd(b), 9 * v, 8);
       } else if (s->options->passthrough) {
          vtx = nir_ubfe_imm(b, nir_load_packed_passthrough_primitive_amd(b), 10 * v, 9);
@@ -155,7 +155,7 @@ ngg_nogs_init_vertex_indices_vars(nir_builder *b, nir_function_impl *impl, lower
 static nir_def *
 emit_ngg_nogs_prim_exp_arg(nir_builder *b, lower_ngg_nogs_state *s)
 {
-   if (s->options->gfx_level >= GFX12 || s->options->passthrough) {
+   if (s->options->hw_info->gfx_level >= GFX12 || s->options->passthrough) {
       return nir_load_packed_passthrough_primitive_amd(b);
    } else {
       nir_def *vtx_idx[3] = {0};
@@ -164,7 +164,7 @@ emit_ngg_nogs_prim_exp_arg(nir_builder *b, lower_ngg_nogs_state *s)
          vtx_idx[v] = nir_load_var(b, s->gs_vtx_indices_vars[v]);
 
       return ac_nir_pack_ngg_prim_exp_arg(b, s->options->num_vertices_per_primitive, vtx_idx, NULL,
-                                        s->options->gfx_level);
+                                        s->options->hw_info->gfx_level);
    }
 }
 
@@ -219,7 +219,7 @@ emit_ngg_nogs_prim_export(nir_builder *b, lower_ngg_nogs_state *s, nir_def *arg)
                             .memory_semantics = NIR_MEMORY_ACQ_REL,
                             .memory_modes = nir_var_mem_shared);
 
-         unsigned edge_flag_bits = ac_get_all_edge_flag_bits(s->options->gfx_level);
+         unsigned edge_flag_bits = ac_get_all_edge_flag_bits(s->options->hw_info->gfx_level);
          nir_def *mask = nir_imm_intN_t(b, ~edge_flag_bits, 32);
 
          unsigned edge_flag_offset = 0;
@@ -235,7 +235,7 @@ emit_ngg_nogs_prim_export(nir_builder *b, lower_ngg_nogs_state *s, nir_def *arg)
             nir_def *addr = pervertex_lds_addr(b, vtx_idx, s->pervertex_lds_bytes);
             nir_def *edge = nir_load_shared(b, 1, 32, addr, .base = edge_flag_offset);
 
-            if (s->options->gfx_level >= GFX12)
+            if (s->options->hw_info->gfx_level >= GFX12)
                mask = nir_ior(b, mask, nir_ishl_imm(b, edge, 8 + i * 9));
             else
                mask = nir_ior(b, mask, nir_ishl_imm(b, edge, 9 + i * 10));
@@ -721,7 +721,7 @@ compact_vertices_after_culling(nir_builder *b,
 
       nir_def *prim_exp_arg =
          ac_nir_pack_ngg_prim_exp_arg(b, s->options->num_vertices_per_primitive,
-                                    exporter_vtx_indices, NULL, s->options->gfx_level);
+                                    exporter_vtx_indices, NULL, s->options->hw_info->gfx_level);
       nir_store_var(b, s->prim_exp_arg_var, prim_exp_arg, 0x1u);
    }
    nir_pop_if(b, if_gs_accepted);
@@ -1550,7 +1550,7 @@ ngg_nogs_build_streamout(nir_builder *b, lower_ngg_nogs_state *s)
    nir_def *buffer_offsets[4] = {0};
    nir_def *so_buffer[4] = {0};
    nir_def *tid_in_tg = nir_load_local_invocation_index(b);
-   ac_nir_ngg_build_streamout_buffer_info(b, info, s->options->gfx_level, s->options->has_xfb_prim_query,
+   ac_nir_ngg_build_streamout_buffer_info(b, info, s->options->hw_info->gfx_level, s->options->has_xfb_prim_query,
                                    s->options->use_gfx12_xfb_intrinsic, lds_scratch_base, tid_in_tg,
                                    gen_prim_per_stream,
                                    so_buffer, buffer_offsets,
@@ -1680,7 +1680,7 @@ export_pos0_wait_attr_ring(nir_builder *b, nir_if *if_es_thread, nir_def *output
    /* Export just the pos0 output. */
    nir_if *if_export_empty_pos = nir_push_if(b, if_es_thread->condition.ssa);
    {
-      ac_nir_export_position(b, options->gfx_level,
+      ac_nir_export_position(b, options->hw_info->gfx_level,
                              options->clip_cull_dist_mask,
                              !options->has_param_exports,
                              options->force_vrs, true,
@@ -1752,7 +1752,7 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
    if (options->export_primitive_id_per_prim) {
       /* The HW preloads the primitive ID to VGPRs of GS threads for VS, but not for TES. */
       assert(shader->info.stage == MESA_SHADER_VERTEX);
-      assert(options->gfx_level >= GFX10_3);
+      assert(options->hw_info->gfx_level >= GFX10_3);
    }
 
    nir_builder builder = nir_builder_create(impl);
@@ -1939,7 +1939,7 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
       b->cursor = nir_after_cf_list(&if_es_thread->then_list);
    }
 
-   ac_nir_export_position(b, options->gfx_level,
+   ac_nir_export_position(b, options->hw_info->gfx_level,
                           options->clip_cull_dist_mask,
                           !options->has_param_exports,
                           options->force_vrs, !wait_attr_ring,
@@ -2325,7 +2325,7 @@ ngg_gs_export_primitives(nir_builder *b, nir_def *max_num_out_prims, nir_def *ti
    }
 
    nir_def *arg = ac_nir_pack_ngg_prim_exp_arg(b, s->num_vertices_per_primitive, vtx_indices,
-                                             is_null_prim, s->options->gfx_level);
+                                             is_null_prim, s->options->hw_info->gfx_level);
    ac_nir_export_primitive(b, arg, NULL);
    nir_pop_if(b, if_prim_export_thread);
 }
@@ -2410,7 +2410,7 @@ ngg_gs_export_vertices(nir_builder *b, nir_def *max_num_out_vtx, nir_def *tid_in
    if (wait_attr_ring)
       export_outputs &= ~VARYING_BIT_POS;
 
-   ac_nir_export_position(b, s->options->gfx_level,
+   ac_nir_export_position(b, s->options->hw_info->gfx_level,
                           s->options->clip_cull_dist_mask,
                           !s->options->has_param_exports,
                           s->options->force_vrs, !wait_attr_ring,
@@ -2661,7 +2661,7 @@ ngg_gs_build_streamout(nir_builder *b, lower_ngg_gs_state *s)
    nir_def *emit_prim[4] = {0};
    nir_def *buffer_offsets[4] = {0};
    nir_def *so_buffer[4] = {0};
-   ac_nir_ngg_build_streamout_buffer_info(b, info, s->options->gfx_level, s->options->has_xfb_prim_query,
+   ac_nir_ngg_build_streamout_buffer_info(b, info, s->options->hw_info->gfx_level, s->options->has_xfb_prim_query,
                                    s->options->use_gfx12_xfb_intrinsic, s->lds_addr_gs_scratch, tid_in_tg,
                                    gen_prim, so_buffer, buffer_offsets, emit_prim);
 
