@@ -1305,6 +1305,12 @@ bool ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
     */
    info->has_ngg_fully_culled_bug = info->gfx_level == GFX10;
 
+   /* On newer chips, it is not necessary for NGG shaders to request
+    * the allocation of GS space in passthrough mode, when they set
+    * PRIMGEN_PASSTHRU_NO_MSG.
+    */
+   info->has_ngg_passthru_no_msg = info->family >= CHIP_NAVI23;
+
    info->has_export_conflict_bug = info->gfx_level == GFX11;
 
    /* The hw starts culling after all exports are finished,
