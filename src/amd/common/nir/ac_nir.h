@@ -183,16 +183,16 @@ ac_nir_lower_ngg_gs(nir_shader *shader, const ac_nir_lower_ngg_options *options)
 
 void
 ac_nir_lower_ngg_mesh(nir_shader *shader,
-                    enum amd_gfx_level gfx_level,
-                    uint32_t clipdist_enable_mask,
-                    const uint8_t *vs_output_param_offset,
-                    bool has_param_exports,
-                    bool *out_needs_scratch_ring,
-                    unsigned wave_size,
-                    unsigned workgroup_size,
-                    bool multiview,
-                    bool has_query,
-                    bool fast_launch_2);
+                      const struct radeon_info *hw_info,
+                      uint32_t clipdist_enable_mask,
+                      const uint8_t *vs_output_param_offset,
+                      bool has_param_exports,
+                      bool *out_needs_scratch_ring,
+                      unsigned wave_size,
+                      unsigned workgroup_size,
+                      bool multiview,
+                      bool has_query,
+                      bool fast_launch_2);
 
 void
 ac_nir_lower_task_outputs_to_mem(nir_shader *shader,

@@ -6,6 +6,7 @@
 
 #include "ac_nir.h"
 #include "ac_nir_helpers.h"
+#include "ac_gpu_info.h"
 
 #include "nir_builder.h"
 
@@ -89,7 +90,7 @@ typedef struct
 
 typedef struct
 {
-   enum amd_gfx_level gfx_level;
+   const struct radeon_info *hw_info;
    bool fast_launch_2;
    bool vert_multirow_export;
    bool prim_multirow_export;
@@ -799,7 +800,7 @@ ms_prim_exp_arg_ch1(nir_builder *b, nir_def *invocation_index, nir_def *num_vtx,
       indices[i] = nir_umin(b, indices[i], max_vtx_idx);
    }
 
-   return ac_nir_pack_ngg_prim_exp_arg(b, s->vertices_per_prim, indices, cull_flag, s->gfx_level);
+   return ac_nir_pack_ngg_prim_exp_arg(b, s->vertices_per_prim, indices, cull_flag, s->hw_info->gfx_level);
 }
 
 static nir_def *
@@ -826,7 +827,7 @@ ms_prim_exp_arg_ch2(nir_builder *b, uint64_t outputs_mask, lower_ngg_ms_state *s
 
       if (outputs_mask & VARYING_BIT_LAYER) {
          nir_def *layer =
-            nir_ishl_imm(b, s->out.outputs[VARYING_SLOT_LAYER][0], s->gfx_level >= GFX11 ? 0 : 17);
+            nir_ishl_imm(b, s->out.outputs[VARYING_SLOT_LAYER][0], s->hw_info->gfx_level >= GFX11 ? 0 : 17);
          prim_exp_arg_ch2 = nir_ior(b, prim_exp_arg_ch2, layer);
       }
 
@@ -890,7 +891,7 @@ emit_ms_vertex(nir_builder *b, nir_def *index, nir_def *row, bool exports, bool 
    ms_emit_arrayed_outputs(b, index, per_vertex_outputs, s);
 
    if (exports) {
-      ac_nir_export_position(b, s->gfx_level, s->clipdist_enable_mask,
+      ac_nir_export_position(b, s->hw_info->gfx_level, s->clipdist_enable_mask,
                              !s->has_param_exports, false, true,
                              s->per_vertex_outputs | VARYING_BIT_POS, &s->out, row);
    }
@@ -899,12 +900,12 @@ emit_ms_vertex(nir_builder *b, nir_def *index, nir_def *row, bool exports, bool 
       /* Export generic attributes on GFX10.3
        * (On GFX11 they are already stored in the attribute ring.)
        */
-      if (s->has_param_exports && s->gfx_level == GFX10_3) {
+      if (s->has_param_exports && s->hw_info->gfx_level == GFX10_3) {
          ac_nir_export_parameters(b, s->vs_output_param_offset, per_vertex_outputs, 0, &s->out);
       }
 
       /* GFX11+: also store special outputs to the attribute ring so PS can load them. */
-      if (s->gfx_level >= GFX11 && (per_vertex_outputs & MS_VERT_ARG_EXP_MASK))
+      if (s->hw_info->gfx_level >= GFX11 && (per_vertex_outputs & MS_VERT_ARG_EXP_MASK))
          ms_emit_attribute_ring_output_stores(b, per_vertex_outputs & MS_VERT_ARG_EXP_MASK, index, s);
    }
 }
@@ -937,12 +938,12 @@ emit_ms_primitive(nir_builder *b, nir_def *index, nir_def *row, bool exports, bo
       /* Export generic attributes on GFX10.3
        * (On GFX11 they are already stored in the attribute ring.)
        */
-      if (s->has_param_exports && s->gfx_level == GFX10_3) {
+      if (s->has_param_exports && s->hw_info->gfx_level == GFX10_3) {
          ac_nir_export_parameters(b, s->vs_output_param_offset, per_primitive_outputs, 0, &s->out);
       }
 
       /* GFX11+: also store special outputs to the attribute ring so PS can load them. */
-      if (s->gfx_level >= GFX11)
+      if (s->hw_info->gfx_level >= GFX11)
          ms_emit_attribute_ring_output_stores(b, per_primitive_outputs & MS_PRIM_ARG_EXP_MASK, index, s);
    }
 }
@@ -1045,7 +1046,7 @@ emit_ms_finale(nir_builder *b, lower_ngg_ms_state *s)
       (per_vertex_outputs & MS_VERT_ARG_EXP_MASK) ||
       (per_primitive_outputs & MS_PRIM_ARG_EXP_MASK);
 
-   const bool wait_attr_ring = must_wait_attr_ring(s->gfx_level, has_special_param_exports);
+   const bool wait_attr_ring = must_wait_attr_ring(s->hw_info->gfx_level, has_special_param_exports);
 
    /* Export vertices. */
    if ((per_vertex_outputs & ~VARYING_BIT_POS) || !wait_attr_ring) {
@@ -1350,16 +1351,16 @@ ms_calculate_output_layout(enum amd_gfx_level gfx_level, unsigned api_shared_siz
 
 void
 ac_nir_lower_ngg_mesh(nir_shader *shader,
-                    enum amd_gfx_level gfx_level,
-                    uint32_t clipdist_enable_mask,
-                    const uint8_t *vs_output_param_offset,
-                    bool has_param_exports,
-                    bool *out_needs_scratch_ring,
-                    unsigned wave_size,
-                    unsigned hw_workgroup_size,
-                    bool multiview,
-                    bool has_query,
-                    bool fast_launch_2)
+                      const struct radeon_info *hw_info,
+                      uint32_t clipdist_enable_mask,
+                      const uint8_t *vs_output_param_offset,
+                      bool has_param_exports,
+                      bool *out_needs_scratch_ring,
+                      unsigned wave_size,
+                      unsigned hw_workgroup_size,
+                      bool multiview,
+                      bool has_query,
+                      bool fast_launch_2)
 {
    unsigned vertices_per_prim =
       mesa_vertices_per_prim(shader->info.mesh.primitive_type);
@@ -1379,7 +1380,7 @@ ac_nir_lower_ngg_mesh(nir_shader *shader,
    unsigned max_primitives = shader->info.mesh.max_primitives_out;
 
    ms_out_mem_layout layout = ms_calculate_output_layout(
-      gfx_level, shader->info.shared_size, per_vertex_outputs, per_primitive_outputs,
+      hw_info->gfx_level, shader->info.shared_size, per_vertex_outputs, per_primitive_outputs,
       cross_invocation_access, max_vertices, max_primitives, vertices_per_prim);
 
    shader->info.shared_size = layout.lds.total_size;
@@ -1406,7 +1407,7 @@ ac_nir_lower_ngg_mesh(nir_shader *shader,
       .hw_workgroup_size = hw_workgroup_size,
       .insert_layer_output = multiview && !(shader->info.outputs_written & VARYING_BIT_LAYER),
       .uses_cull_flags = uses_cull,
-      .gfx_level = gfx_level,
+      .hw_info = hw_info,
       .fast_launch_2 = fast_launch_2,
       .vert_multirow_export = fast_launch_2 && max_vertices > hw_workgroup_size,
       .prim_multirow_export = fast_launch_2 && max_primitives > hw_workgroup_size,
