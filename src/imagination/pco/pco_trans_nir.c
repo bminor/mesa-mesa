@@ -755,12 +755,12 @@ static pco_instr *lower_load_tex_smp_state(trans_ctx *tctx,
    unsigned start_comp = nir_intrinsic_component(intr);
    unsigned chans = pco_ref_get_chans(dest);
    assert(start_comp + chans <= ROGUE_NUM_TEXSTATE_DWORDS);
+   unsigned elem = nir_src_as_uint(intr->src[0]);
 
-   /* TODO: array support. */
    const pco_common_data *common = &tctx->shader->data.common;
    bool is_img_smp;
    unsigned sh_index =
-      fetch_resource_base_reg(common, desc_set, binding, 0, &is_img_smp);
+      fetch_resource_base_reg(common, desc_set, binding, elem, &is_img_smp);
    pco_ref state_words =
       pco_ref_hwreg_vec(sh_index, PCO_REG_CLASS_SHARED, chans);
 
@@ -786,12 +786,12 @@ static pco_instr *lower_load_tex_smp_meta(trans_ctx *tctx,
    unsigned binding = nir_intrinsic_binding(intr);
    unsigned start_comp = nir_intrinsic_component(intr);
    unsigned chans = pco_ref_get_chans(dest);
+   unsigned elem = nir_src_as_uint(intr->src[0]);
 
-   /* TODO: array support. */
    const pco_common_data *common = &tctx->shader->data.common;
    bool is_img_smp;
    unsigned sh_index =
-      fetch_resource_base_reg(common, desc_set, binding, 0, &is_img_smp);
+      fetch_resource_base_reg(common, desc_set, binding, elem, &is_img_smp);
    pco_ref state_words =
       pco_ref_hwreg_vec(sh_index, PCO_REG_CLASS_SHARED, chans);
 

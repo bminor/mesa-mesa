@@ -62,7 +62,8 @@ static nir_def *lower_load_vulkan_descriptor(nir_builder *b,
    return nir_imm_ivec3(b, desc_set_binding, elem, 0);
 }
 
-static void lower_tex_deref_to_binding(nir_tex_instr *tex,
+static void lower_tex_deref_to_binding(nir_builder *b,
+                                       nir_tex_instr *tex,
                                        unsigned deref_index,
                                        pco_common_data *common)
 {
@@ -70,9 +71,19 @@ static void lower_tex_deref_to_binding(nir_tex_instr *tex,
    nir_deref_instr *deref =
       nir_instr_as_deref(deref_src->src.ssa->parent_instr);
 
-   assert(deref->deref_type == nir_deref_type_var);
+   b->cursor = nir_before_instr(&tex->instr);
 
-   /* TODO: array support */
+   unsigned array_elem = 0;
+   if (deref->deref_type != nir_deref_type_var) {
+      assert(deref->deref_type == nir_deref_type_array);
+
+      array_elem = nir_src_as_uint(deref->arr.index);
+
+      deref = nir_deref_instr_parent(deref);
+   }
+
+   nir_def *elem = nir_imm_int(b, array_elem);
+   assert(deref->deref_type == nir_deref_type_var);
 
    unsigned desc_set = deref->var->data.descriptor_set;
    unsigned binding = deref->var->data.binding;
@@ -80,25 +91,29 @@ static void lower_tex_deref_to_binding(nir_tex_instr *tex,
    set_resource_used(common, desc_set, binding);
 
    uint32_t desc_set_binding = pco_pack_desc(desc_set, binding);
-   if (deref_src->src_type == nir_tex_src_texture_deref)
+   if (deref_src->src_type == nir_tex_src_texture_deref) {
       tex->texture_index = desc_set_binding;
-   else
+      deref_src->src_type = nir_tex_src_backend1;
+   } else {
       tex->sampler_index = desc_set_binding;
+      deref_src->src_type = nir_tex_src_backend2;
+   }
 
-   nir_tex_instr_remove_src(tex, deref_index);
+   nir_src_rewrite(&deref_src->src, elem);
 }
 
-static inline void lower_tex_derefs(nir_tex_instr *tex, pco_common_data *common)
+static inline void
+lower_tex_derefs(nir_builder *b, nir_tex_instr *tex, pco_common_data *common)
 {
    int deref_index;
 
    deref_index = nir_tex_instr_src_index(tex, nir_tex_src_texture_deref);
    if (deref_index >= 0)
-      lower_tex_deref_to_binding(tex, deref_index, common);
+      lower_tex_deref_to_binding(b, tex, deref_index, common);
 
    deref_index = nir_tex_instr_src_index(tex, nir_tex_src_sampler_deref);
    if (deref_index >= 0)
-      lower_tex_deref_to_binding(tex, deref_index, common);
+      lower_tex_deref_to_binding(b, tex, deref_index, common);
 }
 
 /**
@@ -129,7 +144,7 @@ static nir_def *lower_vk(nir_builder *b, nir_instr *instr, void *cb_data)
 
    case nir_instr_type_tex: {
       nir_tex_instr *tex = nir_instr_as_tex(instr);
-      lower_tex_derefs(tex, common);
+      lower_tex_derefs(b, tex, common);
       return NIR_LOWER_INSTR_PROGRESS;
    }
 

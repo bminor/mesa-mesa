@@ -47,23 +47,12 @@ static inline nir_def *get_src_def(nir_tex_instr *tex,
  *
  * \param[in] b NIR builder.
  * \param[in] tex NIR texture instruction.
- * \param[in] tex_desc_set Texture descriptor set.
- * \param[in] tex_binding Texture binding.
- * \param[in] common Shader common data.
+ * \param[in] tex_state Texture state words.
  * \return The replacement/lowered def.
  */
-static nir_def *lower_tex_query_basic(nir_builder *b,
-                                      nir_tex_instr *tex,
-                                      unsigned tex_desc_set,
-                                      unsigned tex_binding,
-                                      pco_common_data *common)
+static nir_def *
+lower_tex_query_basic(nir_builder *b, nir_tex_instr *tex, nir_def *tex_state)
 {
-   /* Load texture state words. */
-   nir_def *tex_state = nir_load_tex_state_pco(b,
-                                               ROGUE_NUM_TEXSTATE_DWORDS,
-                                               .desc_set = tex_desc_set,
-                                               .binding = tex_binding);
-
    nir_def *tex_state_word[] = {
       [0] = nir_channel(b, tex_state, 0),
       [1] = nir_channel(b, tex_state, 1),
@@ -246,10 +235,10 @@ static inline void unpack_base_addr(nir_builder *b,
  * \param[in] cb_data User callback data.
  * \return The replacement/lowered def.
  */
-static nir_def *lower_tex(nir_builder *b, nir_instr *instr, void *cb_data)
+static nir_def *
+lower_tex(nir_builder *b, nir_instr *instr, UNUSED void *cb_data)
 {
    nir_tex_instr *tex = nir_instr_as_tex(instr);
-   pco_common_data *common = cb_data;
 
    unsigned tex_desc_set;
    unsigned tex_binding;
@@ -264,19 +253,6 @@ static nir_def *lower_tex(nir_builder *b, nir_instr *instr, void *cb_data)
 
    b->cursor = nir_before_instr(instr);
 
-   if (nir_tex_instr_is_query(tex) && tex->op != nir_texop_lod)
-      return lower_tex_query_basic(b, tex, tex_desc_set, tex_binding, common);
-
-   nir_def *tex_state = nir_load_tex_state_pco(b,
-                                               ROGUE_NUM_TEXSTATE_DWORDS,
-                                               .desc_set = tex_desc_set,
-                                               .binding = tex_binding);
-
-   nir_def *smp_state = nir_load_smp_state_pco(b,
-                                               ROGUE_NUM_TEXSTATE_DWORDS,
-                                               .desc_set = smp_desc_set,
-                                               .binding = smp_binding);
-
    /* Process tex sources, build up the smp flags and data words. */
    BITSET_DECLARE(tex_src_set, nir_num_tex_src_types) = { 0 };
    nir_def *tex_srcs[nir_num_tex_src_types];
@@ -290,6 +266,33 @@ static nir_def *lower_tex(nir_builder *b, nir_instr *instr, void *cb_data)
    for (unsigned s = 0; s < nir_num_tex_src_types; ++s)
       if ((tex_srcs[s] = get_src_def(tex, s)) != NULL)
          BITSET_SET(tex_src_set, s);
+
+   nir_def *tex_elem = nir_imm_int(b, 0);
+   if (BITSET_TEST(tex_src_set, nir_tex_src_backend1)) {
+      tex_elem = tex_srcs[nir_tex_src_backend1];
+      BITSET_CLEAR(tex_src_set, nir_tex_src_backend1);
+   }
+
+   nir_def *smp_elem = nir_imm_int(b, 0);
+   if (BITSET_TEST(tex_src_set, nir_tex_src_backend2)) {
+      smp_elem = tex_srcs[nir_tex_src_backend2];
+      BITSET_CLEAR(tex_src_set, nir_tex_src_backend2);
+   }
+
+   nir_def *tex_state = nir_load_tex_state_pco(b,
+                                               ROGUE_NUM_TEXSTATE_DWORDS,
+                                               tex_elem,
+                                               .desc_set = tex_desc_set,
+                                               .binding = tex_binding);
+
+   if (nir_tex_instr_is_query(tex) && tex->op != nir_texop_lod)
+      return lower_tex_query_basic(b, tex, tex_state);
+
+   nir_def *smp_state = nir_load_smp_state_pco(b,
+                                               ROGUE_NUM_TEXSTATE_DWORDS,
+                                               smp_elem,
+                                               .desc_set = smp_desc_set,
+                                               .binding = smp_binding);
 
    nir_def *float_coords;
    nir_def *int_coords;
@@ -416,6 +419,7 @@ static nir_def *lower_tex(nir_builder *b, nir_instr *instr, void *cb_data)
 
       nir_def *tex_meta = nir_load_tex_meta_pco(b,
                                                 PCO_IMAGE_META_COUNT,
+                                                tex_elem,
                                                 .desc_set = tex_desc_set,
                                                 .binding = tex_binding);
 
@@ -533,6 +537,7 @@ static nir_def *lower_tex(nir_builder *b, nir_instr *instr, void *cb_data)
       nir_def *compare_op =
          nir_load_smp_meta_pco(b,
                                1,
+                               smp_elem,
                                .desc_set = smp_desc_set,
                                .binding = smp_binding,
                                .component = PCO_SAMPLER_META_COMPARE_OP);
@@ -559,10 +564,9 @@ static bool is_tex(const nir_instr *instr, UNUSED const void *cb_data)
  * \brief Texture lowering pass.
  *
  * \param[in,out] shader NIR shader.
- * \param[in] common Shader common data.
  * \return True if the pass made progress.
  */
-bool pco_nir_lower_tex(nir_shader *shader, pco_common_data *common)
+bool pco_nir_lower_tex(nir_shader *shader)
 {
-   return nir_shader_lower_instructions(shader, is_tex, lower_tex, common);
+   return nir_shader_lower_instructions(shader, is_tex, lower_tex, NULL);
 }
