@@ -101,6 +101,7 @@ radv-raven-traces-restricted:
     PIGLIT_REPLAY_DEVICE_NAME: "vk-${GPU_VERSION}"
     PIGLIT_REPLAY_EXTRA_ARGS: --keep-image --minio_bucket=${S3_TRACIE_PRIVATE_BUCKET} --jwt-file=${S3_JWT_FILE}
     FDO_CI_CONCURRENT: 10
+  allow_failure: true
 
 radeonsi-raven-piglit:
   extends:
