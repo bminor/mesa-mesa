@@ -8074,7 +8074,7 @@
         "description": "anv: use the correct MOCS for depth destinations",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 3,
         "main_sha": null,
         "because_sha": null,
         "notes": null
