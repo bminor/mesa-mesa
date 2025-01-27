@@ -2194,7 +2194,7 @@
         "description": "radeonsi: disallow compute queues on Raven/Raven2 due to hangs",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "58b512ddd6ea4d9c39786de0e3b5c739e1351739",
         "notes": null
