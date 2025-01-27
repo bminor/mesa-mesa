@@ -1358,10 +1358,21 @@ update_blend_state(struct anv_gfx_dynamic_state *hw_state,
        *
        *   "Enabling LogicOp and Color Buffer Blending at the same time is
        *   UNDEFINED"
+       *
+       * The Vulkan spec also says:
+       *   "Logical operations are not applied to floating-point or sRGB format
+       *   color attachments."
+       * and
+       *   "Any attachments using color formats for which logical operations
+       *   are not supported simply pass through the color values unmodified."
        */
+      bool ignores_logic_op =
+         vk_format_is_float(gfx->color_att[att].vk_format) ||
+         vk_format_is_srgb(gfx->color_att[att].vk_format);
       SET(BLEND_STATE, blend.rts[rt].LogicOpFunction,
                        vk_to_intel_logic_op[dyn->cb.logic_op]);
-      SET(BLEND_STATE, blend.rts[rt].LogicOpEnable, dyn->cb.logic_op_enable);
+      SET(BLEND_STATE, blend.rts[rt].LogicOpEnable,
+                       dyn->cb.logic_op_enable && !ignores_logic_op);
 
       SET(BLEND_STATE, blend.rts[rt].ColorClampRange, COLORCLAMP_RTFORMAT);
       SET(BLEND_STATE, blend.rts[rt].PreBlendColorClampEnable, true);
