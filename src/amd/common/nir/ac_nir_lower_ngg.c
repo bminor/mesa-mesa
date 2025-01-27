@@ -1915,23 +1915,18 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
       export_outputs &= ~VARYING_BIT_PSIZ;
    if (options->kill_layer)
       export_outputs &= ~VARYING_BIT_LAYER;
-   if (wait_attr_ring)
-      export_outputs &= ~VARYING_BIT_POS;
 
-   bool phis_created = false;
-
-   /* Add position exports.
-    *
-    * If streamout is enabled, export positions after streamout. This increases streamout performance
+   /* If streamout is enabled, export positions after streamout. This increases streamout performance
     * for up to 4 vec4 xfb outputs on GFX12 because the streamout code doesn't have go through
     * the export allocation bottleneck. Adding more xfb outputs starts to be limited by the memory
     * bandwidth.
     */
+   const bool pos_exports_in_cf = state.streamout_enabled || wait_attr_ring;
+
    nir_if *if_pos_exports = NULL;
-   if (state.streamout_enabled) {
+   if (pos_exports_in_cf) {
       b->cursor = nir_after_cf_node(&if_es_thread->cf_node);
       ac_nir_create_output_phis(b, b->shader->info.outputs_written, b->shader->info.outputs_written_16bit, &state.out);
-      phis_created = true;
 
       b->cursor = nir_after_impl(impl);
       if_pos_exports = nir_push_if(b, es_thread);
@@ -1942,7 +1937,7 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
    ac_nir_export_position(b, options->hw_info->gfx_level,
                           options->clip_cull_dist_mask,
                           !options->has_param_exports,
-                          options->force_vrs, !wait_attr_ring,
+                          options->force_vrs, true,
                           export_outputs, &state.out, NULL);
 
    if (options->has_param_exports && !options->hw_info->has_attr_ring) {
@@ -1956,7 +1951,7 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
       nir_pop_if(b, if_pos_exports);
 
    if (options->has_param_exports && options->hw_info->has_attr_ring) {
-      if (!phis_created) {
+      if (!pos_exports_in_cf) {
          b->cursor = nir_after_cf_node(&if_es_thread->cf_node);
          ac_nir_create_output_phis(b, b->shader->info.outputs_written, b->shader->info.outputs_written_16bit, &state.out);
       }
@@ -1975,10 +1970,15 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
                                           b->shader->info.outputs_written,
                                           b->shader->info.outputs_written_16bit,
                                           &state.out, NULL, num_es_threads);
-   }
 
-   if (wait_attr_ring)
-      export_pos0_wait_attr_ring(b, if_es_thread, state.out.outputs, options);
+      if (wait_attr_ring) {
+         /* Wait for attribute ring stores to finish. */
+         nir_barrier(b, .execution_scope = SCOPE_SUBGROUP,
+                        .memory_scope = SCOPE_DEVICE,
+                        .memory_semantics = NIR_MEMORY_RELEASE,
+                        .memory_modes = nir_var_mem_ssbo | nir_var_shader_out | nir_var_mem_global | nir_var_image);
+      }
+   }
 
    nir_metadata_preserve(impl, nir_metadata_none);
    nir_validate_shader(shader, "after emitting NGG VS/TES");
