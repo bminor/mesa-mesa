@@ -105,7 +105,7 @@ read_xe_data_file(FILE *file,
    struct xe_vm xe_vm;
    char *line = NULL;
    size_t line_size;
-   enum xe_topic xe_topic = XE_TOPIC_INVALID;
+   enum xe_topic xe_topic = XE_TOPIC_UNKNOWN;
 
    error_decode_xe_vm_init(&xe_vm);
 

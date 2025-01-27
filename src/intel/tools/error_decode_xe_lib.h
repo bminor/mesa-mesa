@@ -15,7 +15,7 @@ enum xe_topic {
    XE_TOPIC_HW_ENGINES,
    XE_TOPIC_VM,
    XE_TOPIC_CONTEXT,
-   XE_TOPIC_INVALID,
+   XE_TOPIC_UNKNOWN,
 };
 
 enum xe_vm_topic_type {

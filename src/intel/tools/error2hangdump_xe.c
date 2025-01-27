@@ -18,7 +18,7 @@
 void
 read_xe_data_file(FILE *dump_file, FILE *hang_dump_file, bool verbose)
 {
-   enum  xe_topic xe_topic = XE_TOPIC_INVALID;
+   enum  xe_topic xe_topic = XE_TOPIC_UNKNOWN;
    uint32_t *vm_entry_data = NULL;
    uint32_t vm_entry_len = 0;
    struct xe_vm xe_vm;

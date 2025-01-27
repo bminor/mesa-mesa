@@ -81,11 +81,13 @@ error_decode_xe_decode_topic(const char *line, enum xe_topic *new_topic)
       "**** VM state ****",
       "**** Contexts ****",
    };
-   bool topic_changed = false;
+   const bool topic_changed = strncmp("**** ", line, strlen("**** ")) == 0;
+
+   if (topic_changed)
+      *new_topic = XE_TOPIC_UNKNOWN;
 
    for (int i = 0; i < ARRAY_SIZE(xe_topic_strings); i++) {
       if (strncmp(xe_topic_strings[i], line, strlen(xe_topic_strings[i])) == 0) {
-         topic_changed = true;
          *new_topic = i;
          break;
       }
