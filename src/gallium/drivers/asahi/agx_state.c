@@ -5076,7 +5076,7 @@ agx_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
       info_gs = (struct pipe_draw_info){
          .mode = ctx->gs->gs_output_mode,
          .index_size = 4,
-         .primitive_restart = ctx->gs->gs_output_mode != MESA_PRIM_POINTS,
+         .primitive_restart = true,
          .restart_index = ~0,
          .index.resource = ctx->heap,
          .instance_count = 1,

@@ -35,6 +35,9 @@ struct lower_gs_state {
    int static_count[GS_NUM_COUNTERS][MAX_VERTEX_STREAMS];
    nir_variable *outputs[NUM_TOTAL_VARYING_SLOTS][MAX_PRIM_OUT_SIZE];
 
+   /* Per-input primitive stride of the output index buffer */
+   unsigned max_indices;
+
    /* The count buffer contains `count_stride_el` 32-bit words in a row for each
     * input primitive, for `input_primitives * count_stride_el * 4` total bytes.
     */
@@ -772,8 +775,7 @@ lower_end_primitive(nir_builder *b, nir_intrinsic_instr *intr,
    libagx_end_primitive(
       b, load_geometry_param(b, output_index_buffer), intr->src[0].ssa,
       intr->src[1].ssa, intr->src[2].ssa,
-      previous_vertices(b, state, 0, calc_unrolled_id(b)),
-      previous_primitives(b, state, 0, calc_unrolled_id(b)),
+      nir_imul_imm(b, calc_unrolled_id(b), state->max_indices),
       calc_unrolled_index_id(b),
       nir_imm_bool(b, b->shader->info.gs.output_primitive != MESA_PRIM_POINTS));
 }
@@ -915,15 +917,24 @@ lower_gs_instr(nir_builder *b, nir_intrinsic_instr *intr, void *state)
    b->cursor = nir_before_instr(&intr->instr);
 
    switch (intr->intrinsic) {
-   case nir_intrinsic_set_vertex_and_primitive_count:
-      /* This instruction is mostly for the count shader, so just remove. But
-       * for points, we write the index buffer here so the rast shader can map.
+   case nir_intrinsic_set_vertex_and_primitive_count: {
+      /* Points write their index buffer here, other primitives write on end. We
+       * also pad the index buffer here for the rasterization stream.
        */
+      struct lower_gs_state *state_ = state;
       if (b->shader->info.gs.output_primitive == MESA_PRIM_POINTS) {
          lower_end_primitive(b, intr, state);
       }
 
+      if (nir_intrinsic_stream_id(intr) == 0 && !state_->rasterizer_discard) {
+         libagx_pad_index_gs(b, load_geometry_param(b, output_index_buffer),
+                             intr->src[0].ssa, intr->src[1].ssa,
+                             calc_unrolled_id(b),
+                             nir_imm_int(b, state_->max_indices));
+      }
+
       break;
+   }
 
    case nir_intrinsic_end_primitive_with_counter: {
       unsigned min = verts_in_output_prim(b->shader);
@@ -978,7 +989,8 @@ collect_components(nir_builder *b, nir_intrinsic_instr *intr, void *data)
 static nir_shader *
 agx_nir_create_pre_gs(struct lower_gs_state *state, bool indexed, bool restart,
                       struct nir_xfb_info *xfb, unsigned vertices_per_prim,
-                      uint8_t streams, unsigned invocations)
+                      uint8_t streams, unsigned invocations,
+                      unsigned index_buffer_allocation)
 {
    nir_builder b_ = nir_builder_init_simple_shader(
       MESA_SHADER_COMPUTE, &agx_nir_options, "Pre-GS patch up");
@@ -991,9 +1003,7 @@ agx_nir_create_pre_gs(struct lower_gs_state *state, bool indexed, bool restart,
    if (!state->rasterizer_discard) {
       libagx_build_gs_draw(
          b, nir_load_geometry_param_buffer_agx(b),
-         previous_vertices(b, state, 0, unrolled_in_prims),
-         restart ? previous_primitives(b, state, 0, unrolled_in_prims)
-                 : nir_imm_int(b, 0));
+         nir_imul_imm(b, unrolled_in_prims, index_buffer_allocation));
    }
 
    /* Determine the number of primitives generated in each stream */
@@ -1197,6 +1207,29 @@ agx_nir_lower_gs_instancing(nir_shader *gs)
                               nir_metadata_control_flow, index);
 }
 
+static unsigned
+calculate_max_indices(enum mesa_prim prim, unsigned verts, signed static_verts,
+                      signed static_prims)
+{
+   /* We always have a static max_vertices, but we might have a tighter bound.
+    * Use it if we have one
+    */
+   if (static_verts >= 0) {
+      verts = MIN2(verts, static_verts);
+   }
+
+   /* Points do not need primitive count added. Other topologies do. If we have
+    * a static primitive count, we use that. Otherwise, we use a worst case
+    * estimate that primitives are emitted one-by-one.
+    */
+   if (prim == MESA_PRIM_POINTS)
+      return verts;
+   else if (static_prims >= 0)
+      return verts + static_prims;
+   else
+      return verts + (verts / mesa_vertices_per_prim(prim));
+}
+
 bool
 agx_nir_lower_gs(nir_shader *gs, bool rasterizer_discard, nir_shader **gs_count,
                  nir_shader **gs_copy, nir_shader **pre_gs,
@@ -1288,6 +1321,12 @@ agx_nir_lower_gs(nir_shader *gs, bool rasterizer_discard, nir_shader **gs_count,
             (gs_state.static_count[c][i] < 0) ? gs_state.count_stride_el++ : -1;
       }
    }
+
+   /* Using the gathered static counts, choose the index buffer stride. */
+   gs_state.max_indices = calculate_max_indices(
+      gs->info.gs.output_primitive, gs->info.gs.vertices_out,
+      gs_state.static_count[GS_COUNTER_VERTICES][0],
+      gs_state.static_count[GS_COUNTER_PRIMITIVES][0]);
 
    bool side_effects_for_rast = false;
    *gs_copy = agx_nir_create_gs_rast_shader(gs, &side_effects_for_rast);
@@ -1388,7 +1427,7 @@ agx_nir_lower_gs(nir_shader *gs, bool rasterizer_discard, nir_shader **gs_count,
    *pre_gs = agx_nir_create_pre_gs(
       &gs_state, true, gs->info.gs.output_primitive != MESA_PRIM_POINTS,
       gs->xfb_info, verts_in_output_prim(gs), gs->info.gs.active_stream_mask,
-      gs->info.gs.invocations);
+      gs->info.gs.invocations, gs_state.max_indices);
 
    /* Signal what primitive we want to draw the GS Copy VS with */
    *out_mode = gs->info.gs.output_primitive;

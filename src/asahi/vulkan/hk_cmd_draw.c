@@ -1487,10 +1487,8 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
    /* Pre-rast geometry shader */
    hk_dispatch_with_local_size(cmd, cs, main, grid_gs, agx_workgroup(1, 1, 1));
 
-   bool restart = cmd->state.gfx.topology != AGX_PRIMITIVE_POINTS;
    return agx_draw_indexed_indirect(cmd->geom_indirect, dev->heap->va->addr,
-                                    dev->heap->size, AGX_INDEX_SIZE_U32,
-                                    restart);
+                                    dev->heap->size, AGX_INDEX_SIZE_U32, true);
 }
 
 static struct agx_draw
