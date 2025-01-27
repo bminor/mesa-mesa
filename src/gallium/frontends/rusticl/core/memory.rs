@@ -808,7 +808,7 @@ impl MemBase {
         Arc::new(Buffer {
             base: Self {
                 base: CLObjectBase::new(RusticlTypes::Buffer),
-                context: parent.context.clone(),
+                context: Arc::clone(&parent.context),
                 mem_type: CL_MEM_OBJECT_BUFFER,
                 flags: flags,
                 size: size,
@@ -967,8 +967,8 @@ impl MemBase {
             shadow
                 .iter()
                 .map(|(k, v)| {
-                    let gl_res = imported_gl_tex.get(k).unwrap().clone();
-                    res_map.insert(v.clone(), gl_res);
+                    let gl_res = Arc::clone(imported_gl_tex.get(k).unwrap());
+                    res_map.insert(Arc::clone(v), gl_res);
                 })
                 .for_each(drop);
 
