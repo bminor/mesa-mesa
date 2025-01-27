@@ -574,8 +574,6 @@ tu_bo_init(struct tu_device *dev,
 {
    assert(dev->physical_device->has_set_iova);
 
-   set_iova(dev, bo->res_id, iova);
-
    name = tu_debug_bos_add(dev, size, name);
 
    mtx_lock(&dev->bo_mutex);
@@ -834,6 +832,8 @@ virtio_bo_init_dmabuf(struct tu_device *dev,
    } else {
       *out_bo = bo;
    }
+
+   set_iova(dev, bo->res_id, iova);
 
 out_unlock:
    mtx_unlock(&dev->vma_mutex);
