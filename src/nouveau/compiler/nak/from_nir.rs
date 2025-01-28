@@ -2562,12 +2562,14 @@ impl<'a> ShaderFromNir<'a> {
                 let size_B =
                     (intrin.def.bit_size() / 8) * intrin.def.num_components();
                 assert!(u32::from(size_B) <= intrin.align());
-                let order =
-                    if intrin.intrinsic == nir_intrinsic_load_global_constant {
-                        MemOrder::Constant
-                    } else {
-                        MemOrder::Strong(MemScope::System)
-                    };
+                let order = if intrin.intrinsic
+                    == nir_intrinsic_load_global_constant
+                    || (intrin.access() & ACCESS_CAN_REORDER) != 0
+                {
+                    MemOrder::Constant
+                } else {
+                    MemOrder::Strong(MemScope::System)
+                };
                 let access = MemAccess {
                     mem_type: MemType::from_size(size_B, false),
                     space: MemSpace::Global(MemAddrType::A64),
