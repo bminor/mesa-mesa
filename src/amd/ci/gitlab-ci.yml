@@ -70,7 +70,7 @@ amd-raven-skqp:
   extends:
     - .lava-test-deqp:x86_64
     - .amd-raven-test:x86_64
-    - .lava-lenovo-TPad-C13-Yoga-zork:x86_64
+    - .lava-hp-x360-14a-cb0001xx-zork:x86_64
   variables:
     HWCI_START_WESTON: 1
     DEQP_SUITE: amd-raven-skqp
