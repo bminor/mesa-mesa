@@ -603,26 +603,6 @@ libagx_pad_index_gs(global int *index_buffer, uint total_verts,
    }
 }
 
-void
-libagx_build_gs_draw(global struct agx_geometry_params *p, uint indices)
-{
-   global VkDrawIndexedIndirectCommand *cmd = (global void *)p->indirect_desc;
-   global struct agx_geometry_state *state = p->state;
-
-   /* Allocate the index buffer */
-   uint index_buffer_offset_B = state->heap_bottom;
-   p->output_index_buffer =
-      (global uint *)(state->heap + index_buffer_offset_B);
-   state->heap_bottom += (indices * 4);
-   assert(state->heap_bottom < state->heap_size);
-
-   *cmd = (VkDrawIndexedIndirectCommand){
-      .indexCount = indices,
-      .instanceCount = 1,
-      .firstIndex = index_buffer_offset_B / 4,
-   };
-}
-
 KERNEL(1)
 libagx_gs_setup_indirect(
    uint64_t index_buffer, constant uint *draw,
@@ -686,7 +666,20 @@ libagx_gs_setup_indirect(
 
    p->input_mask = vs_outputs;
 
-   libagx_build_gs_draw(p, p->input_primitives * indices_per_in_prim);
+   /* Allocate the index buffer and write the draw consuming it */
+   global VkDrawIndexedIndirectCommand *cmd = (global void *)p->indirect_desc;
+   uint index_buffer_offset_B = state->heap_bottom;
+
+   *cmd = (VkDrawIndexedIndirectCommand){
+      .indexCount = p->input_primitives * indices_per_in_prim,
+      .instanceCount = 1,
+      .firstIndex = index_buffer_offset_B / 4,
+   };
+
+   p->output_index_buffer =
+      (global uint *)(state->heap + index_buffer_offset_B);
+   state->heap_bottom += (cmd->indexCount * 4);
+   assert(state->heap_bottom < state->heap_size);
 }
 
 /*
