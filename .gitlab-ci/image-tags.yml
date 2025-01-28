@@ -33,7 +33,7 @@ variables:
    KERNEL_ROOTFS_TAG: "20250128-llvm19-up"
 
    DEBIAN_PYUTILS_IMAGE: "debian/x86_64_pyutils"
-   DEBIAN_PYUTILS_TAG: "20241223-pyutils"
+   DEBIAN_PYUTILS_TAG: "20250129-lavacli"
 
    ALPINE_X86_64_BUILD_TAG: "20250128-llversionm"
    ALPINE_X86_64_LAVA_SSH_TAG: "20250124-spirv-tools"
