@@ -161,7 +161,7 @@ prepare_tex_descs(struct panvk_image_view *view)
    ptr.cpu += alloc_info.size / 2;
    ptr.gpu += alloc_info.size / 2;
 
-   GENX(panfrost_new_texture)(&pview, &view->descs.other_aspect_tex, &ptr);
+   GENX(panfrost_new_texture)(&pview, &view->descs.zs.other_aspect_tex, &ptr);
    return VK_SUCCESS;
 }
 

@@ -268,8 +268,8 @@ fill_textures(struct panvk_cmd_buffer *cmdbuf, struct pan_fb_info *fbinfo,
             ?: cmdbuf->state.gfx.render.s_attachment.iview;
 
       textures[idx++] = vk_format_has_depth(iview->vk.view_format)
-                           ? iview->descs.tex
-                           : iview->descs.other_aspect_tex;
+                           ? iview->descs.zs.tex
+                           : iview->descs.zs.other_aspect_tex;
    }
 
    if (key->aspects & VK_IMAGE_ASPECT_STENCIL_BIT) {
@@ -278,8 +278,8 @@ fill_textures(struct panvk_cmd_buffer *cmdbuf, struct pan_fb_info *fbinfo,
             ?: cmdbuf->state.gfx.render.z_attachment.iview;
 
       textures[idx++] = vk_format_has_depth(iview->vk.view_format)
-                           ? iview->descs.other_aspect_tex
-                           : iview->descs.tex;
+                           ? iview->descs.zs.other_aspect_tex
+                           : iview->descs.zs.tex;
    }
 }
 
