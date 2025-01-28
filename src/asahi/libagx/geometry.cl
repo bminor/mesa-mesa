@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+#include "compiler/libcl/libcl_vk.h"
 #include "geometry.h"
 #include "libagx_intrinsics.h"
 #include "query.h"
@@ -605,7 +606,7 @@ libagx_pad_index_gs(global int *index_buffer, uint total_verts,
 void
 libagx_build_gs_draw(global struct agx_geometry_params *p, uint indices)
 {
-   global uint *descriptor = p->indirect_desc;
+   global VkDrawIndexedIndirectCommand *cmd = (global void *)p->indirect_desc;
    global struct agx_geometry_state *state = p->state;
 
    /* Allocate the index buffer */
@@ -615,12 +616,11 @@ libagx_build_gs_draw(global struct agx_geometry_params *p, uint indices)
    state->heap_bottom += (indices * 4);
    assert(state->heap_bottom < state->heap_size);
 
-   /* Setup the indirect draw descriptor */
-   descriptor[0] = indices;                   /* count */
-   descriptor[1] = 1;                         /* instance count */
-   descriptor[2] = index_buffer_offset_B / 4; /* start */
-   descriptor[3] = 0;                         /* index bias */
-   descriptor[4] = 0;                         /* start instance */
+   *cmd = (VkDrawIndexedIndirectCommand){
+      .indexCount = indices,
+      .instanceCount = 1,
+      .firstIndex = index_buffer_offset_B / 4,
+   };
 }
 
 KERNEL(1)
