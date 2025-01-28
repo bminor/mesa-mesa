@@ -74,7 +74,7 @@
         "description": "i915: rework shader compile failures reporting",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "dae57e184aafdd7da562cb3120d530504a2426fc",
         "notes": null
