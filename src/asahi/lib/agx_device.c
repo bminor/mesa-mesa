@@ -11,6 +11,7 @@
 #include "util/macros.h"
 #include "util/ralloc.h"
 #include "util/timespec.h"
+#include "agx_abi.h"
 #include "agx_bo.h"
 #include "agx_compile.h"
 #include "agx_device_virtio.h"
@@ -678,6 +679,20 @@ agx_open_device(void *memctx, struct agx_device *dev)
       dev->chip = AGX_CHIP_G13X;
    } else {
       dev->chip = AGX_CHIP_G13G;
+   }
+
+   /* Bind read-only zero page at 2^32. This is in our reservation, and can be
+    * addressed with only small integers in the low/high. That lets us do some
+    * robustness optimization even without soft fault.
+    */
+   {
+      void *bo = agx_bo_create(dev, 16384, 0, 0, "Zero page");
+      int ret = dev->ops.bo_bind(dev, bo, AGX_ZERO_PAGE_ADDRESS, 16384, 0,
+                                 ASAHI_BIND_READ, false);
+      if (ret) {
+         fprintf(stderr, "Failed to bind zero page");
+         return false;
+      }
    }
 
    void *bo = agx_bo_create(dev, LIBAGX_PRINTF_BUFFER_SIZE, 0, AGX_BO_WRITEBACK,
