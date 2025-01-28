@@ -4184,8 +4184,28 @@ agx_launch_gs_prerast(struct agx_batch *batch,
    /* Launch the vertex shader first */
    agx_launch(batch, grid_vs, wg, ctx->vs, ctx->linked.vs, ctx->vs->stage, 0);
 
+   /* Transform feedback and various queries require extra dispatching,
+    * determine if we need that here.
+    */
+   enum pipe_statistics_query_index gs_queries[] = {
+      PIPE_STAT_QUERY_GS_INVOCATIONS,
+      PIPE_STAT_QUERY_GS_PRIMITIVES,
+      PIPE_STAT_QUERY_C_PRIMITIVES,
+      PIPE_STAT_QUERY_C_INVOCATIONS,
+   };
+
+   bool xfb_or_queries = ctx->stage[PIPE_SHADER_GEOMETRY].shader->has_xfb_info;
+
+   for (unsigned i = 0; i < ARRAY_SIZE(gs_queries); ++i) {
+      xfb_or_queries |= (ctx->pipeline_statistics[gs_queries[i]] != NULL);
+   }
+
+   for (unsigned i = 0; i < ARRAY_SIZE(ctx->prims_generated); ++i) {
+      xfb_or_queries |= (ctx->prims_generated[i] != NULL);
+   }
+
    /* If there is a count shader, launch it and prefix sum the results. */
-   if (gs->gs_count) {
+   if (gs->gs_count && xfb_or_queries) {
       perf_debug(dev, "Geometry shader count");
       agx_launch(batch, grid_gs, wg, gs->gs_count, NULL, PIPE_SHADER_GEOMETRY,
                  0);
@@ -4197,8 +4217,11 @@ agx_launch_gs_prerast(struct agx_batch *batch,
    }
 
    /* Pre-GS shader */
-   agx_launch(batch, agx_1d(1), agx_workgroup(1, 1, 1), gs->pre_gs, NULL,
-              PIPE_SHADER_COMPUTE, 0);
+   if (xfb_or_queries) {
+      perf_debug(dev, "Geometry shader transform feedback / query program");
+      agx_launch(batch, agx_1d(1), agx_workgroup(1, 1, 1), gs->pre_gs, NULL,
+                 PIPE_SHADER_COMPUTE, 0);
+   }
 
    /* Pre-rast geometry shader */
    agx_launch(batch, grid_gs, wg, gs, NULL, PIPE_SHADER_GEOMETRY, 0);
