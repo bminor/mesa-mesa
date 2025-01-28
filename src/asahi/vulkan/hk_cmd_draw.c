@@ -1490,20 +1490,38 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
                                                : vs->only_linked),
                         grid_vs, agx_workgroup(1, 1, 1));
 
-   /* If we need counts, launch the count shader and prefix sum the results. */
-   if (count_words) {
-      hk_dispatch_with_local_size(cmd, cs, count, grid_gs,
-                                  agx_workgroup(1, 1, 1));
+   /* Transform feedback and various queries require extra dispatching,
+    * determine if we need that here.
+    */
+   VkQueryPipelineStatisticFlagBits gs_queries =
+      VK_QUERY_PIPELINE_STATISTIC_GEOMETRY_SHADER_INVOCATIONS_BIT |
+      VK_QUERY_PIPELINE_STATISTIC_GEOMETRY_SHADER_PRIMITIVES_BIT |
+      VK_QUERY_PIPELINE_STATISTIC_CLIPPING_PRIMITIVES_BIT |
+      VK_QUERY_PIPELINE_STATISTIC_CLIPPING_INVOCATIONS_BIT;
+
+   struct hk_root_descriptor_table *root = &cmd->state.gfx.descriptors.root;
+   bool xfb_or_queries =
+      main->info.gs.xfb || (root->draw.pipeline_stats_flags & gs_queries);
+
+   if (xfb_or_queries) {
+      /* If we need counts, launch the count shader and prefix sum the results. */
+      if (count_words) {
+         perf_debug(dev, "Geometry shader count");
+         hk_dispatch_with_local_size(cmd, cs, count, grid_gs,
+                                     agx_workgroup(1, 1, 1));
+      }
 
       if (count->info.gs.prefix_sum) {
+         perf_debug(dev, "Geometry shader transform feedback prefix sum");
          libagx_prefix_sum_geom(cmd, agx_1d(1024 * count_words),
                                 AGX_BARRIER_ALL | AGX_PREGFX, geometry_params);
       }
-   }
 
-   /* Pre-GS shader */
-   hk_dispatch_with_local_size(cmd, cs, pre_gs, agx_1d(1),
-                               agx_workgroup(1, 1, 1));
+      /* Transform feedback / query program */
+      perf_debug(dev, "Transform feedback / geometry query");
+      hk_dispatch_with_local_size(cmd, cs, pre_gs, agx_1d(1),
+                                  agx_workgroup(1, 1, 1));
+   }
 
    /* Pre-rast geometry shader */
    hk_dispatch_with_local_size(cmd, cs, main, grid_gs, agx_workgroup(1, 1, 1));
