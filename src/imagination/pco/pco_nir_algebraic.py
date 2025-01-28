@@ -32,6 +32,19 @@ def lowered_fround_even(src):
 
 lower_algebraic.append((('fround_even', a), lowered_fround_even(a)))
 
+lower_insert_extract = [
+   (('insert_u8', 'a@32', b), ('bitfield_insert', 0, a, ('imul', b, 8), 8)),
+   (('insert_u16', 'a@32', b), ('bitfield_insert', 0, a, ('imul', b, 16), 16)),
+
+   (('extract_u8', 'a@32', b), ('ubitfield_extract', a, ('imul', b, 8), 8)),
+   (('extract_i8', 'a@32', b), ('ibitfield_extract', a, ('imul', b, 8), 8)),
+
+   (('extract_u16', 'a@32', b), ('ubitfield_extract', a, ('imul', b, 16), 16)),
+   (('extract_i16', 'a@32', b), ('ibitfield_extract', a, ('imul', b, 16), 16)),
+]
+
+lower_algebraic.extend(lower_insert_extract)
+
 lower_scmp = [
    # Float comparisons + bool conversions.
    (('b2f32', ('flt', a, b)), ('slt', a, 'b@32'), '!options->lower_scmp'),
