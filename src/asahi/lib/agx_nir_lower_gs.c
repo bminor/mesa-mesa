@@ -963,9 +963,9 @@ collect_components(nir_builder *b, nir_intrinsic_instr *intr, void *data)
  * transform feedback offsets and counters as applicable.
  */
 static nir_shader *
-agx_nir_create_pre_gs(struct lower_gs_state *state, bool indexed, bool restart,
-                      struct nir_xfb_info *xfb, unsigned vertices_per_prim,
-                      uint8_t streams, unsigned invocations)
+agx_nir_create_pre_gs(struct lower_gs_state *state, struct nir_xfb_info *xfb,
+                      unsigned vertices_per_prim, uint8_t streams,
+                      unsigned invocations)
 {
    nir_builder b_ = nir_builder_init_simple_shader(
       MESA_SHADER_COMPUTE, &agx_nir_options, "Pre-GS patch up");
@@ -1390,9 +1390,8 @@ agx_nir_lower_gs(nir_shader *gs, bool rasterizer_discard, nir_shader **gs_count,
 
    /* Create auxiliary programs */
    *pre_gs = agx_nir_create_pre_gs(
-      &gs_state, true, gs->info.gs.output_primitive != MESA_PRIM_POINTS,
-      gs->xfb_info, verts_in_output_prim(gs), gs->info.gs.active_stream_mask,
-      gs->info.gs.invocations);
+      &gs_state, gs->xfb_info, verts_in_output_prim(gs),
+      gs->info.gs.active_stream_mask, gs->info.gs.invocations);
 
    /* Signal what primitive we want to draw the GS Copy VS with */
    *info = (struct agx_gs_info){
