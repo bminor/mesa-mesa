@@ -71,8 +71,7 @@ struct hk_shader_info {
       struct {
          uint32_t attribs_read;
          BITSET_DECLARE(attrib_components_read, AGX_MAX_ATTRIBS * 4);
-         uint8_t cull_distance_array_size;
-         uint8_t _pad[7];
+         uint8_t _pad[8];
       } vs;
 
       struct {

@@ -1075,9 +1075,6 @@ hk_lower_hw_vs(nir_shader *nir, struct hk_shader *shader)
    NIR_PASS(_, nir, agx_nir_lower_cull_distance_vs);
 
    NIR_PASS(_, nir, agx_nir_lower_uvs, &shader->info.uvs);
-
-   shader->info.vs.cull_distance_array_size =
-      nir->info.cull_distance_array_size;
 }
 
 VkResult

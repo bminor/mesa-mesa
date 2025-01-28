@@ -2639,9 +2639,9 @@ hk_flush_dynamic_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
       unsigned api_sample_mask = dyn->ms.sample_mask & tib_sample_mask;
       bool has_sample_mask = api_sample_mask != tib_sample_mask;
 
-      if (hw_vs->info.vs.cull_distance_array_size) {
+      if (hw_vs->info.cull_distance_array_size) {
          perf_debug(cmd, "Emulating cull distance (size %u, %s a frag shader)",
-                    hw_vs->info.vs.cull_distance_array_size,
+                    hw_vs->info.cull_distance_array_size,
                     fs ? "with" : "without");
       }
 
@@ -2660,8 +2660,7 @@ hk_flush_dynamic_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
                cmd,
                VK_QUERY_PIPELINE_STATISTIC_FRAGMENT_SHADER_INVOCATIONS_BIT),
 
-            .prolog.cull_distance_size =
-               hw_vs->info.vs.cull_distance_array_size,
+            .prolog.cull_distance_size = hw_vs->info.cull_distance_array_size,
             .prolog.api_sample_mask = has_sample_mask ? api_sample_mask : 0xff,
             .nr_samples_shaded = samples_shaded,
          };
