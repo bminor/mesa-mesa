@@ -138,7 +138,6 @@ $ADB shell rm -f /vendor/lib/hw/vulkan.*
 # replace on /vendor/lib64
 
 $ADB push "$INSTALL/lib/libgallium_dri.so" /vendor/lib64/libgallium_dri.so
-$ADB push "$INSTALL/lib/libglapi.so" /vendor/lib64/libglapi.so
 $ADB push "$INSTALL/lib/libEGL.so" /vendor/lib64/egl/libEGL_mesa.so
 $ADB push "$INSTALL/lib/libGLESv1_CM.so" /vendor/lib64/egl/libGLESv1_CM_mesa.so
 $ADB push "$INSTALL/lib/libGLESv2.so" /vendor/lib64/egl/libGLESv2_mesa.so
