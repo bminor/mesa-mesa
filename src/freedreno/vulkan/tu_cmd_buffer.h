@@ -289,6 +289,13 @@ struct tu_render_pass_state
    bool has_zpass_done_sample_count_write_in_rp;
    bool disable_gmem;
    bool sysmem_single_prim_mode;
+
+   /* This is set if, at any point in the render pass, we were not able to
+    * duplicate the viewport per-view due to the user using multiple viewports
+    * and instead we used the state from view 0 to transform each viewport. If
+    * this happens at any point then all views must contain the same FDM
+    * fragment size.
+    */
    bool shared_viewport;
 
    /* Track whether conditional predicate for COND_REG_EXEC is changed in draw_cs */
@@ -447,7 +454,10 @@ struct tu_cmd_state
    uint32_t max_vbs_bound;
 
    bool has_fdm;
+   /* See tu_pipeline::per_view_viewport */
    bool per_view_viewport;
+   /* See tu_pipeline::fake_single_viewport */
+   bool fake_single_viewport;
 
    /* saved states to re-emit in TU_CMD_DIRTY_DRAW_STATE case */
    struct tu_draw_state dynamic_state[TU_DYNAMIC_STATE_COUNT];

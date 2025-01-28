@@ -2321,6 +2321,7 @@ tu_emit_program_state(struct tu_cs *sub_cs,
       !last_shader->writes_viewport &&
       shaders[MESA_SHADER_FRAGMENT]->fs.has_fdm &&
       dev->physical_device->info->a6xx.has_per_view_viewport;
+   prog->fake_single_viewport = prog->per_view_viewport;
    prog->writes_shading_rate = last_shader->writes_shading_rate;
    prog->reads_shading_rate = fs->reads_shading_rate;
    prog->accesses_smask = fs->reads_smask || fs->writes_smask;
@@ -2552,7 +2553,10 @@ tu6_emit_viewport(struct tu_cs *cs,
 struct apply_viewport_state {
    struct vk_viewport_state vp;
    struct vk_rasterization_state rs;
+   /* See tu_render_pass_state::shared_viewport */
    bool share_scale;
+   /* See tu_pipeline::fake_single_viewport */
+   bool fake_single_viewport;
 };
 
 /* It's a hardware restriction that the window offset (i.e. common_bin_offset)
@@ -2609,15 +2613,14 @@ fdm_apply_viewports(struct tu_cmd_buffer *cmd, struct tu_cs *cs, void *data,
        * same across all views, we can pick any view. However the number
        * of viewports and number of views is not guaranteed the same, so we
        * need to pick the 0'th view which always exists to be safe.
-       *
-       * Conversly, if we're not using shared scaling then the rasterizer in
-       * the original pipeline is using only the first viewport, so we need to
-       * replicate it across all viewports.
        */
       VkExtent2D frag_area = state->share_scale ? frag_areas[0] : frag_areas[i];
       VkRect2D bin = state->share_scale ? bins[0] : bins[i];
+      /* Implement fake_single_viewport by replicating viewport 0 across all
+       * views.
+       */
       VkViewport viewport =
-         state->share_scale ? state->vp.viewports[i] : state->vp.viewports[0];
+         state->fake_single_viewport ? state->vp.viewports[0] : state->vp.viewports[i];
       if (frag_area.width == 1 && frag_area.height == 1 &&
           common_bin_offset.x == bin.offset.x &&
           common_bin_offset.y == bin.offset.y) {
@@ -2653,6 +2656,7 @@ tu6_emit_viewport_fdm(struct tu_cs *cs, struct tu_cmd_buffer *cmd,
       .vp = *vp,
       .rs = *rs,
       .share_scale = !cmd->state.per_view_viewport,
+      .fake_single_viewport = cmd->state.fake_single_viewport,
    };
    if (!state.share_scale)
       state.vp.viewport_count = num_views;
@@ -2722,7 +2726,7 @@ fdm_apply_scissors(struct tu_cmd_buffer *cmd, struct tu_cs *cs, void *data,
       VkExtent2D frag_area = state->share_scale ? frag_areas[0] : frag_areas[i];
       VkRect2D bin = state->share_scale ? bins[0] : bins[i];
       VkRect2D scissor =
-         state->share_scale ? state->vp.scissors[i] : state->vp.scissors[0];
+         state->fake_single_viewport ? state->vp.scissors[0] : state->vp.scissors[i];
 
       /* Transform the scissor following the viewport. It's unclear how this
        * is supposed to handle cases where the scissor isn't aligned to the
@@ -2765,6 +2769,7 @@ tu6_emit_scissor_fdm(struct tu_cs *cs, struct tu_cmd_buffer *cmd,
    struct apply_viewport_state state = {
       .vp = *vp,
       .share_scale = !cmd->state.per_view_viewport,
+      .fake_single_viewport = cmd->state.fake_single_viewport,
    };
    if (!state.share_scale)
       state.vp.scissor_count = num_views;

@@ -4491,8 +4491,11 @@ tu_CmdBindPipeline(VkCommandBuffer commandBuffer,
          pipeline->shaders[MESA_SHADER_FRAGMENT]->fs.has_fdm;
    }
 
-   if (pipeline->program.per_view_viewport != cmd->state.per_view_viewport) {
+   if (pipeline->program.per_view_viewport != cmd->state.per_view_viewport ||
+       pipeline->program.fake_single_viewport != cmd->state.fake_single_viewport) {
       cmd->state.per_view_viewport = pipeline->program.per_view_viewport;
+      cmd->state.fake_single_viewport =
+         pipeline->program.fake_single_viewport;
       cmd->state.dirty |= TU_CMD_DIRTY_PER_VIEW_VIEWPORT;
    }
 
