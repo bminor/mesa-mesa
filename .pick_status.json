@@ -2494,7 +2494,7 @@
         "description": "ir3: rematerialize preamble defs in block dominated by sources",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "fdfe86aa529e9510171238cfc51bb31022e26ffc",
         "notes": null
