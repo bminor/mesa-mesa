@@ -371,6 +371,7 @@ schedule_node::set_latency(const struct brw_isa_info *isa)
             break;
 
          case GFX7_DATAPORT_RC_TYPED_ATOMIC_OP:
+         case GFX7_DATAPORT_RC_MEMORY_FENCE:
             /* See also SHADER_OPCODE_TYPED_ATOMIC */
             latency = 14000;
             break;
@@ -445,6 +446,10 @@ schedule_node::set_latency(const struct brw_isa_info *isa)
              * collisions between threads and favorable pipelining has been
              * seen to be reduced by a factor of 100.
              */
+            latency = 14000;
+            break;
+
+         case GFX7_DATAPORT_DC_MEMORY_FENCE:
             latency = 14000;
             break;
 
