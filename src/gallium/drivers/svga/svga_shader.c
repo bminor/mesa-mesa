@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2024 Broadcom. All Rights Reserved.
+ * Copyright (c) 2008-2025 Broadcom. All Rights Reserved.
  * The term “Broadcom” refers to Broadcom Inc.
  * and/or its subsidiaries.
  * SPDX-License-Identifier: MIT
@@ -929,10 +929,15 @@ svga_create_shader(struct pipe_context *pipe,
    shader->stage = stage;
 
    if (templ->type == PIPE_SHADER_IR_NIR) {
+      const struct nir_to_tgsi_options ntt_options = {
+         .keep_double_immediates = true,
+      };
       /* nir_to_tgsi requires lowered images */
       NIR_PASS_V(nir, gl_nir_lower_images, false);
+      shader->tokens = nir_to_tgsi_options(nir, pipe->screen, &ntt_options);
+   } else {
+      shader->tokens = pipe_shader_state_to_tgsi_tokens(pipe->screen, templ);
    }
-   shader->tokens = pipe_shader_state_to_tgsi_tokens(pipe->screen, templ);
    shader->type = PIPE_SHADER_IR_TGSI;
 
    /* Collect basic info of the shader */

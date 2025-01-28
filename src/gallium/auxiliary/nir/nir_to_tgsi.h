@@ -38,6 +38,7 @@ struct nir_to_tgsi_options {
    bool unoptimized_ra;
    bool lower_ssbo_bindings;
    bool non_compute_membar_needs_all_modes;
+   bool keep_double_immediates;
    uint32_t ubo_vec4_max;
 };
 
