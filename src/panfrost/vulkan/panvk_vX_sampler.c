@@ -14,6 +14,7 @@
 
 #include "vk_format.h"
 #include "vk_log.h"
+#include "vk_ycbcr_conversion.h"
 
 static enum mali_mipmap_mode
 panvk_translate_sampler_mipmap_mode(VkSamplerMipmapMode mode)
@@ -185,7 +186,7 @@ panvk_per_arch(CreateSampler)(VkDevice _device,
    if (!sampler)
       return panvk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
 
-   STATIC_ASSERT(sizeof(sampler->desc) >= pan_size(SAMPLER));
+   STATIC_ASSERT(sizeof(sampler->descs[0]) >= pan_size(SAMPLER));
 
    VkFormat fmt;
    VkClearColorValue border_color =
@@ -195,9 +196,26 @@ panvk_per_arch(CreateSampler)(VkDevice _device,
    panvk_afbc_reswizzle_border_color(&border_color, fmt);
 #endif
 
-   panvk_sampler_fill_desc(pCreateInfo, &sampler->desc, border_color,
+   sampler->desc_count = 1;
+   panvk_sampler_fill_desc(pCreateInfo, &sampler->descs[0], border_color,
                            pCreateInfo->minFilter, pCreateInfo->magFilter,
                            sampler->vk.reduction_mode);
+
+   /* In order to support CONVERSION_SEPARATE_RECONSTRUCTION_FILTER_BIT,
+    * we need multiple sampler planes: at minimum we will need one for
+    * luminance (the default), and one for chroma.
+    */
+   if (sampler->vk.ycbcr_conversion) {
+      const VkFilter chroma_filter =
+         sampler->vk.ycbcr_conversion->state.chroma_filter;
+      if (pCreateInfo->magFilter != chroma_filter ||
+          pCreateInfo->minFilter != chroma_filter) {
+         sampler->desc_count = 2;
+         panvk_sampler_fill_desc(pCreateInfo, &sampler->descs[1],
+                                 border_color, chroma_filter, chroma_filter,
+                                 sampler->vk.reduction_mode);
+      }
+   }
 
    *pSampler = panvk_sampler_to_handle(sampler);
    return VK_SUCCESS;

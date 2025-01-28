@@ -254,7 +254,7 @@ fill_textures(struct panvk_cmd_buffer *cmdbuf, struct pan_fb_info *fbinfo,
             cmdbuf->state.gfx.render.color_attachments.iviews[i];
 
          if (iview)
-            textures[i] = iview->descs.tex;
+            textures[i] = iview->descs.tex[0];
          else
             textures[i] = (struct mali_texture_packed){0};
       }

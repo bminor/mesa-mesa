@@ -17,6 +17,7 @@
 #include "pan_texture.h"
 
 #include "genxml/gen_macros.h"
+#include "panvk_image.h"
 
 struct panvk_priv_bo;
 
@@ -29,7 +30,7 @@ struct panvk_image_view {
 
    struct {
       union {
-         struct mali_texture_packed tex;
+         struct mali_texture_packed tex[PANVK_MAX_PLANES];
          struct {
             struct mali_texture_packed tex;
             struct mali_texture_packed other_aspect_tex;
