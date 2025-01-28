@@ -523,7 +523,8 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
       NIR_PASS(_, stage->nir, nir_opt_cse);
 
       nir_load_store_vectorize_options late_vectorize_opts = {
-         .modes = nir_var_mem_global, /* for descriptor loads */
+         .modes =
+            nir_var_mem_global | nir_var_mem_shared | nir_var_shader_out | nir_var_mem_task_payload | nir_var_shader_in,
          .callback = ac_nir_mem_vectorize_callback,
          .cb_data = &(struct ac_nir_config){gfx_level, !use_llvm},
          .robust_modes = 0,

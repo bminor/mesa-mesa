@@ -462,10 +462,12 @@ ac_nir_mem_vectorize_callback(unsigned align_mul, unsigned align_offset, unsigne
                     low->intrinsic == nir_intrinsic_load_smem_amd ||
                     low->intrinsic == nir_intrinsic_load_push_constant;
    bool is_store = !nir_intrinsic_infos[low->intrinsic].has_dest;
-   bool is_scratch = low->intrinsic == nir_intrinsic_load_stack ||
-                     low->intrinsic == nir_intrinsic_store_stack ||
-                     low->intrinsic == nir_intrinsic_load_scratch ||
-                     low->intrinsic == nir_intrinsic_store_scratch;
+   bool swizzled = low->intrinsic == nir_intrinsic_load_stack ||
+                    low->intrinsic == nir_intrinsic_store_stack ||
+                    low->intrinsic == nir_intrinsic_load_scratch ||
+                    low->intrinsic == nir_intrinsic_store_scratch ||
+                    (nir_intrinsic_has_access(low) &&
+                     nir_intrinsic_access(low) & ACCESS_IS_SWIZZLED_AMD);
    bool is_shared = low->intrinsic == nir_intrinsic_load_shared ||
                     low->intrinsic == nir_intrinsic_store_shared ||
                     low->intrinsic == nir_intrinsic_load_deref ||
@@ -500,6 +502,8 @@ ac_nir_mem_vectorize_callback(unsigned align_mul, unsigned align_offset, unsigne
    case nir_intrinsic_store_deref:
    case nir_intrinsic_load_shared:
    case nir_intrinsic_store_shared:
+   case nir_intrinsic_load_buffer_amd:
+   case nir_intrinsic_store_buffer_amd:
       break;
    default:
       return false;
@@ -521,7 +525,7 @@ ac_nir_mem_vectorize_callback(unsigned align_mul, unsigned align_offset, unsigne
          return false;
 
       /* GFX6-8 only support 32-bit scratch loads/stores. */
-      if (config->gfx_level <= GFX8 && is_scratch && aligned_new_size > 32)
+      if (config->gfx_level <= GFX8 && swizzled && aligned_new_size > 32)
          return false;
    }
 
