@@ -459,7 +459,8 @@ struct agx_batch {
    size_t result_off;
 
    /* Actual pointer in a uniform */
-   struct agx_bo *geom_params_bo;
+   struct agx_bo *geom_params_bo, *geom_index_bo;
+   uint64_t geom_index;
 
    /* Whether each stage uses scratch */
    bool vs_scratch;

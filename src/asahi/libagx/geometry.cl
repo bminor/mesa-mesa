@@ -633,7 +633,7 @@ libagx_gs_setup_indirect(
    uint32_t index_size_B /* 0 if no index bffer */,
    uint32_t index_buffer_range_el,
    uint32_t prim /* Input primitive type, enum mesa_prim */,
-   int is_prefix_summing)
+   int is_prefix_summing, uint indices_per_in_prim)
 {
    /* Determine the (primitives, instances) grid size. */
    uint vertex_count = draw[0];
@@ -685,6 +685,8 @@ libagx_gs_setup_indirect(
    assert(state->heap_bottom < state->heap_size);
 
    p->input_mask = vs_outputs;
+
+   libagx_build_gs_draw(p, p->input_primitives * indices_per_in_prim);
 }
 
 /*

@@ -4051,6 +4051,9 @@ agx_batch_geometry_params(struct agx_batch *batch, uint64_t input_index_buffer,
          agx_pool_alloc_aligned(&batch->pool, 8, 8).gpu;
 
       params.vs_grid[2] = params.gs_grid[2] = 1;
+
+      batch->geom_index_bo = agx_resource(batch->ctx->heap)->bo;
+      batch->geom_index = batch->geom_index_bo->va->addr;
    } else {
       params.vs_grid[0] = draw->count;
       params.gs_grid[0] =
@@ -4076,6 +4079,15 @@ agx_batch_geometry_params(struct agx_batch *batch, uint64_t input_index_buffer,
 
          params.input_buffer = addr;
       }
+
+      unsigned idx_size =
+         params.input_primitives * batch->ctx->gs->gs.max_indices;
+
+      params.output_index_buffer =
+         agx_pool_alloc_aligned_with_bo(&batch->pool, idx_size * 4, 4,
+                                        &batch->geom_index_bo)
+            .gpu;
+      batch->geom_index = params.output_index_buffer;
    }
 
    return agx_pool_upload_aligned_with_bo(&batch->pool, &params, sizeof(params),
@@ -4149,6 +4161,7 @@ agx_launch_gs_prerast(struct agx_batch *batch,
          .index_size_B = info->index_size,
          .prim = info->mode,
          .is_prefix_summing = gs->gs.prefix_sum,
+         .indices_per_in_prim = gs->gs.max_indices,
       };
 
       libagx_gs_setup_indirect_struct(batch, agx_1d(1), AGX_BARRIER_ALL, gsi);
@@ -5069,9 +5082,11 @@ agx_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
 
    struct pipe_draw_info info_gs;
    struct pipe_draw_indirect_info indirect_gs;
+   struct pipe_draw_start_count_bias draw_gs;
 
    /* Wrap the pool allocation in a fake resource for meta-Gallium use */
    struct agx_resource indirect_rsrc = {.bo = batch->geom_indirect_bo};
+   struct agx_resource index_rsrc = {.bo = batch->geom_index_bo};
 
    if (ctx->gs) {
       /* Launch the pre-rasterization parts of the geometry shader */
@@ -5086,30 +5101,38 @@ agx_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
          .index_size = 4,
          .primitive_restart = true,
          .restart_index = ~0,
-         .index.resource = ctx->heap,
+         .index.resource = &index_rsrc.base,
          .instance_count = 1,
       };
 
-      indirect_gs = (struct pipe_draw_indirect_info){
-         .draw_count = 1,
-         .buffer = &indirect_rsrc.base,
-         .offset = batch->geom_indirect - indirect_rsrc.bo->va->addr,
-      };
+      if (indirect) {
+         indirect_gs = (struct pipe_draw_indirect_info){
+            .draw_count = 1,
+            .buffer = &indirect_rsrc.base,
+            .offset = batch->geom_indirect - indirect_rsrc.bo->va->addr,
+         };
+
+         indirect = &indirect_gs;
+      } else {
+         unsigned unrolled_prims =
+            u_decomposed_prims_for_vertices(info->mode, draws->count) *
+            info->instance_count;
+
+         draw_gs = (struct pipe_draw_start_count_bias){
+            .count = ctx->gs->gs.max_indices * unrolled_prims,
+         };
+
+         draws = &draw_gs;
+      }
 
       info = &info_gs;
-      indirect = &indirect_gs;
 
       /* TODO: Deduplicate? */
       batch->reduced_prim = u_reduced_prim(info->mode);
       ctx->dirty |= AGX_DIRTY_PRIM;
 
-      if (info_gs.index_size) {
-         ib = agx_resource(ctx->heap)->bo->va->addr;
-         ib_extent = agx_resource(ctx->heap)->bo->size;
-      } else {
-         ib = 0;
-         ib_extent = 0;
-      }
+      ib = batch->geom_index;
+      ib_extent = index_rsrc.bo->size - (batch->geom_index - ib);
 
       /* We need to reemit geometry descriptors since the txf sampler may change
        * between the GS prepass and the GS rast program.

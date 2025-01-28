@@ -965,8 +965,7 @@ collect_components(nir_builder *b, nir_intrinsic_instr *intr, void *data)
 static nir_shader *
 agx_nir_create_pre_gs(struct lower_gs_state *state, bool indexed, bool restart,
                       struct nir_xfb_info *xfb, unsigned vertices_per_prim,
-                      uint8_t streams, unsigned invocations,
-                      unsigned index_buffer_allocation)
+                      uint8_t streams, unsigned invocations)
 {
    nir_builder b_ = nir_builder_init_simple_shader(
       MESA_SHADER_COMPUTE, &agx_nir_options, "Pre-GS patch up");
@@ -974,13 +973,6 @@ agx_nir_create_pre_gs(struct lower_gs_state *state, bool indexed, bool restart,
 
    /* Load the number of primitives input to the GS */
    nir_def *unrolled_in_prims = load_geometry_param(b, input_primitives);
-
-   /* Setup the draw from the rasterization stream (0). */
-   if (!state->rasterizer_discard) {
-      libagx_build_gs_draw(
-         b, nir_load_geometry_param_buffer_agx(b),
-         nir_imul_imm(b, unrolled_in_prims, index_buffer_allocation));
-   }
 
    /* Determine the number of primitives generated in each stream */
    nir_def *in_prims[MAX_VERTEX_STREAMS], *prims[MAX_VERTEX_STREAMS];
@@ -1400,13 +1392,14 @@ agx_nir_lower_gs(nir_shader *gs, bool rasterizer_discard, nir_shader **gs_count,
    *pre_gs = agx_nir_create_pre_gs(
       &gs_state, true, gs->info.gs.output_primitive != MESA_PRIM_POINTS,
       gs->xfb_info, verts_in_output_prim(gs), gs->info.gs.active_stream_mask,
-      gs->info.gs.invocations, gs_state.max_indices);
+      gs->info.gs.invocations);
 
    /* Signal what primitive we want to draw the GS Copy VS with */
    *info = (struct agx_gs_info){
       .mode = gs->info.gs.output_primitive,
       .count_words = gs_state.count_stride_el,
       .prefix_sum = gs_state.prefix_summing,
+      .max_indices = gs_state.max_indices,
    };
 
    return true;

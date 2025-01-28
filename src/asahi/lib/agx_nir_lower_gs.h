@@ -37,6 +37,9 @@ struct agx_gs_info {
    /* Number of words per primitive in the count buffer */
    unsigned count_words;
 
+   /* Per-input primitive stride of the output index buffer */
+   unsigned max_indices;
+
    /* Whether a prefix sum is required on the count outputs */
    bool prefix_sum;
 };

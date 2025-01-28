@@ -1132,7 +1132,6 @@ hk_upload_geometry_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
 
    struct agx_geometry_params params = {
       .state = hk_geometry_state(cmd),
-      .indirect_desc = cmd->geom_indirect,
       .flat_outputs = fs ? fs->info.fs.interp.flat : 0,
       .input_topology = mode,
 
@@ -1172,6 +1171,10 @@ hk_upload_geometry_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
    }
 
    if (indirect) {
+      /* TODO: size */
+      cmd->geom_indirect = hk_pool_alloc(cmd, 64, 4).gpu;
+
+      params.indirect_desc = cmd->geom_indirect;
       params.vs_grid[2] = params.gs_grid[2] = 1;
    } else {
       uint32_t verts = draw.b.count[0], instances = draw.b.count[1];
@@ -1186,6 +1189,14 @@ hk_upload_geometry_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
       if (count->info.gs.prefix_sum && size) {
          params.count_buffer = hk_pool_alloc(cmd, size, 4).gpu;
       }
+
+      cmd->geom_index_count =
+         params.input_primitives * count->info.gs.max_indices;
+
+      params.output_index_buffer =
+         hk_pool_alloc(cmd, cmd->geom_index_count * 4, 4).gpu;
+
+      cmd->geom_index_buffer = params.output_index_buffer;
    }
 
    desc->root_dirty = true;
@@ -1440,6 +1451,7 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
          .vs_outputs = vs->b.info.outputs,
          .prim = mode,
          .is_prefix_summing = count->info.gs.prefix_sum,
+         .indices_per_in_prim = count->info.gs.max_indices,
       };
 
       if (cmd->state.gfx.shaders[MESA_SHADER_TESS_EVAL]) {
@@ -1496,8 +1508,15 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
    /* Pre-rast geometry shader */
    hk_dispatch_with_local_size(cmd, cs, main, grid_gs, agx_workgroup(1, 1, 1));
 
-   return agx_draw_indexed_indirect(cmd->geom_indirect, dev->heap->va->addr,
-                                    dev->heap->size, AGX_INDEX_SIZE_U32, true);
+   if (agx_is_indirect(draw.b)) {
+      return agx_draw_indexed_indirect(cmd->geom_indirect, dev->heap->va->addr,
+                                       dev->heap->size, AGX_INDEX_SIZE_U32,
+                                       true);
+   } else {
+      return agx_draw_indexed(cmd->geom_index_count, 1, 0, 0, 0,
+                              cmd->geom_index_buffer, cmd->geom_index_count * 4,
+                              AGX_INDEX_SIZE_U32, true);
+   }
 }
 
 static struct agx_draw
@@ -2957,9 +2976,6 @@ hk_flush_dynamic_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
    }
 
    if (gfx->shaders[MESA_SHADER_GEOMETRY]) {
-      /* TODO: size */
-      cmd->geom_indirect = hk_pool_alloc(cmd, 64, 4).gpu;
-
       gfx->descriptors.root.draw.geometry_params =
          hk_upload_geometry_params(cmd, draw);
 
