@@ -896,7 +896,8 @@ static d3d12_video_encode_get_hevc_codec_support ( const D3D12_VIDEO_ENCODER_COD
 static
 union pipe_enc_cap_dirty_info
 get_dirty_rects_support(D3D12_VIDEO_ENCODER_INPUT_MAP_SESSION_INFO sessionInfo,
-                        ID3D12VideoDevice3* pD3D12VideoDevice)
+                        ID3D12VideoDevice3* pD3D12VideoDevice,
+                        D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE mapSource)
 {
    D3D12_FEATURE_DATA_VIDEO_ENCODER_DIRTY_REGIONS capDirtyRegions =
    {
@@ -904,7 +905,7 @@ get_dirty_rects_support(D3D12_VIDEO_ENCODER_INPUT_MAP_SESSION_INFO sessionInfo,
       0u,
       sessionInfo,
       // D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE MapSource;
-      D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_CPU_BUFFER,
+      mapSource,
       // D3D12_VIDEO_ENCODER_DIRTY_REGIONS_MAP_VALUES_MODE MapValuesType;
       D3D12_VIDEO_ENCODER_DIRTY_REGIONS_MAP_VALUES_MODE_DIRTY,
       // D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAGS SupportFlags;
@@ -1088,7 +1089,8 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
                                union pipe_enc_cap_gpu_stats_map &gpu_stats_qp,
                                union pipe_enc_cap_gpu_stats_map &gpu_stats_satd,
                                union pipe_enc_cap_gpu_stats_map &gpu_stats_rcbits,
-                               union pipe_enc_cap_sliced_notifications &sliced_encode_support)
+                               union pipe_enc_cap_sliced_notifications &sliced_encode_support,
+                               union pipe_enc_cap_dirty_info &dirty_rects_support_gpu)
 {
    ComPtr<ID3D12VideoDevice3> spD3D12VideoDevice;
    struct d3d12_screen *pD3D12Screen = (struct d3d12_screen *) pscreen;
@@ -1217,7 +1219,8 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
                capEncoderSupportData1.SubregionFrameEncodingData,
             };
 
-            dirty_rects_support = get_dirty_rects_support(sessionInfo, spD3D12VideoDevice.Get());
+            dirty_rects_support = get_dirty_rects_support(sessionInfo, spD3D12VideoDevice.Get(), D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_CPU_BUFFER);
+            dirty_rects_support_gpu = get_dirty_rects_support(sessionInfo, spD3D12VideoDevice.Get(), D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_GPU_TEXTURE);
             move_rects_support = get_move_rects_support(sessionInfo, spD3D12VideoDevice.Get());
             get_gpu_output_stats_support(sessionInfo, capEncoderSupportData1.SupportFlags, spD3D12VideoDevice.Get(), gpu_stats_qp, gpu_stats_satd, gpu_stats_rcbits);
             sliced_encode_support = get_sliced_encode_support(capEncoderSupportData1.SupportFlags);
@@ -1524,7 +1527,8 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
                   capEncoderSupportData1.SubregionFrameEncodingData,
                };
 
-               dirty_rects_support = get_dirty_rects_support(sessionInfo, spD3D12VideoDevice.Get());
+               dirty_rects_support = get_dirty_rects_support(sessionInfo, spD3D12VideoDevice.Get(), D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_CPU_BUFFER);
+               dirty_rects_support_gpu = get_dirty_rects_support(sessionInfo, spD3D12VideoDevice.Get(), D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_GPU_TEXTURE);
                move_rects_support = get_move_rects_support(sessionInfo, spD3D12VideoDevice.Get());
                get_gpu_output_stats_support(sessionInfo, capEncoderSupportData1.SupportFlags, spD3D12VideoDevice.Get(), gpu_stats_qp, gpu_stats_satd, gpu_stats_rcbits);
                sliced_encode_support = get_sliced_encode_support(capEncoderSupportData1.SupportFlags);
@@ -2108,6 +2112,7 @@ d3d12_screen_get_video_param_encode(struct pipe_screen *pscreen,
    uint32_t maxIRDuration = 0u;
    union pipe_enc_cap_roi roi_support = {};
    union pipe_enc_cap_dirty_info dirty_rects_support = {};
+   union pipe_enc_cap_dirty_info dirty_rects_support_gpu = {};
    union pipe_enc_cap_move_rect move_rects_support = {};
    struct d3d12_encode_codec_support codec_specific_support;
    union pipe_enc_cap_gpu_stats_map gpu_stats_qp = {};
@@ -2182,6 +2187,7 @@ d3d12_screen_get_video_param_encode(struct pipe_screen *pscreen,
       case PIPE_VIDEO_CAP_ENC_GPU_STATS_SATD_MAP:
       case PIPE_VIDEO_CAP_ENC_GPU_STATS_RATE_CONTROL_BITS_MAP:
       case PIPE_VIDEO_CAP_ENC_SLICED_NOTIFICATIONS:
+      case PIPE_VIDEO_CAP_ENC_DIRTY_MAPS:
       {
          if (d3d12_has_video_encode_support(pscreen,
                                             profile,
@@ -2207,7 +2213,8 @@ d3d12_screen_get_video_param_encode(struct pipe_screen *pscreen,
                                             gpu_stats_qp,
                                             gpu_stats_satd,
                                             gpu_stats_rcbits,
-                                            sliced_encode_support)) {
+                                            sliced_encode_support,
+                                            dirty_rects_support_gpu)) {
 
             DXGI_FORMAT format = d3d12_convert_pipe_video_profile_to_dxgi_format(profile);
             auto pipeFmt = d3d12_get_pipe_format(format);
@@ -2304,6 +2311,8 @@ d3d12_screen_get_video_param_encode(struct pipe_screen *pscreen,
                   return gpu_stats_rcbits.value;
                } else if (param == PIPE_VIDEO_CAP_ENC_SLICED_NOTIFICATIONS) {
                   return sliced_encode_support.value;
+               } else if (param == PIPE_VIDEO_CAP_ENC_DIRTY_MAPS) {
+                  return dirty_rects_support_gpu.value;
                }
             }
          } else if (param == PIPE_VIDEO_CAP_ENC_QUALITY_LEVEL) {
@@ -2373,6 +2382,7 @@ d3d12_video_encode_requires_texture_array_dpb(struct d3d12_screen* pScreen, enum
    struct d3d12_encode_codec_support codec_specific_support;
    memset(&codec_specific_support, 0, sizeof(codec_specific_support));
    union pipe_enc_cap_dirty_info dirty_rects_support = {};
+   union pipe_enc_cap_dirty_info dirty_rects_support_gpu = {};
    union pipe_enc_cap_move_rect move_rects_support = {};
    union pipe_enc_cap_gpu_stats_map gpu_stats_qp = {};
    union pipe_enc_cap_gpu_stats_map gpu_stats_satd = {};
@@ -2402,7 +2412,8 @@ d3d12_video_encode_requires_texture_array_dpb(struct d3d12_screen* pScreen, enum
                                       gpu_stats_qp,
                                       gpu_stats_satd,
                                       gpu_stats_rcbits,
-                                      sliced_encode_support))
+                                      sliced_encode_support,
+                                      dirty_rects_support_gpu))
    {
       return bVideoEncodeRequiresTextureArray;
    }

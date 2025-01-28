@@ -390,22 +390,47 @@ d3d12_video_encoder_update_dirty_rects(struct d3d12_video_encoder *pD3D12Enc,
                                        const struct pipe_enc_dirty_info& rects)
 {
 #if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
-   pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.SourceDPBFrameReference = rects.dpb_reference_index;
-   pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.FullFrameIdentical = rects.full_frame_skip;
-   pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapValuesType =
-      (rects.dirty_info_type == PIPE_ENC_DIRTY_INFO_TYPE_DIRTY) ? D3D12_VIDEO_ENCODER_DIRTY_REGIONS_MAP_VALUES_MODE_DIRTY :
-                                                                  D3D12_VIDEO_ENCODER_DIRTY_REGIONS_MAP_VALUES_MODE_SKIP;
+   memset(&pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc, 0, sizeof(pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc));
 
-   assert(rects.num_rects <= PIPE_ENC_DIRTY_RECTS_NUM_MAX);
-   pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.NumDirtyRects = std::min(rects.num_rects, static_cast<uint32_t>(PIPE_ENC_DIRTY_RECTS_NUM_MAX));
-   pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsArray.resize(pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.NumDirtyRects);
-   for (uint32_t i = 0; i < pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.NumDirtyRects; i++) {
-      pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsArray[i].top = rects.rects[i].top;
-      pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsArray[i].left = rects.rects[i].left;
-      pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsArray[i].right = rects.rects[i].right;
-      pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsArray[i].bottom = rects.rects[i].bottom;
+   pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapSource = rects.input_mode == PIPE_ENC_DIRTY_INFO_INPUT_MODE_RECTS ?
+      D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_CPU_BUFFER : D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_GPU_TEXTURE;
+
+   if(rects.input_mode == PIPE_ENC_DIRTY_INFO_INPUT_MODE_RECTS)
+   {
+      pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.RectsInfo.SourceDPBFrameReference = rects.dpb_reference_index;
+      pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.RectsInfo.FullFrameIdentical = rects.full_frame_skip;
+      pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.RectsInfo.MapValuesType =
+         (rects.dirty_info_type == PIPE_ENC_DIRTY_INFO_TYPE_DIRTY) ? D3D12_VIDEO_ENCODER_DIRTY_REGIONS_MAP_VALUES_MODE_DIRTY :
+                                                                     D3D12_VIDEO_ENCODER_DIRTY_REGIONS_MAP_VALUES_MODE_SKIP;
+
+      if (!pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.RectsInfo.FullFrameIdentical)
+      {
+         assert(rects.num_rects <= PIPE_ENC_DIRTY_RECTS_NUM_MAX);
+         pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.RectsInfo.NumDirtyRects = std::min(rects.num_rects, static_cast<uint32_t>(PIPE_ENC_DIRTY_RECTS_NUM_MAX));
+         pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsArray.resize(pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.RectsInfo.NumDirtyRects);
+         for (uint32_t i = 0; i < pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.RectsInfo.NumDirtyRects; i++) {
+            pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsArray[i].top = rects.rects[i].top;
+            pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsArray[i].left = rects.rects[i].left;
+            pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsArray[i].right = rects.rects[i].right;
+            pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsArray[i].bottom = rects.rects[i].bottom;
+         }
+         pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.RectsInfo.pDirtyRects = pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsArray.data();
+      }
    }
-   pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.pDirtyRects = pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsArray.data();
+   else if (rects.input_mode == PIPE_ENC_DIRTY_INFO_INPUT_MODE_MAP)
+   {
+      pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapInfo.SourceDPBFrameReference = rects.dpb_reference_index;
+      pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapInfo.FullFrameIdentical = rects.full_frame_skip;
+      pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapInfo.MapValuesType =
+         (rects.dirty_info_type == PIPE_ENC_DIRTY_INFO_TYPE_DIRTY) ? D3D12_VIDEO_ENCODER_DIRTY_REGIONS_MAP_VALUES_MODE_DIRTY :
+                                                                     D3D12_VIDEO_ENCODER_DIRTY_REGIONS_MAP_VALUES_MODE_SKIP;
+
+      assert(pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapInfo.FullFrameIdentical || rects.map);
+      pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapInfo.InputMap =
+         pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapInfo.FullFrameIdentical ? NULL : d3d12_resource(rects.map);
+      assert(pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapInfo.FullFrameIdentical ||
+         pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapInfo.InputMap);
+   }
 #endif
 }
 
@@ -512,7 +537,7 @@ d3d12_video_encoder_reconfigure_encoder_objects(struct d3d12_video_encoder *pD3D
                                         d3d12_video_encoder_config_dirty_flag_motion_precision_limit) != 0);
    bool irChanged = ((pD3D12Enc->m_currentEncodeConfig.m_ConfigDirtyFlags &
                                         d3d12_video_encoder_config_dirty_flag_intra_refresh) != 0);
-   bool dirtyRegionsChanged = ((pD3D12Enc->m_currentEncodeConfig.m_ConfigDirtyFlags &
+   [[maybe_unused]] bool dirtyRegionsChanged = ((pD3D12Enc->m_currentEncodeConfig.m_ConfigDirtyFlags &
                                         d3d12_video_encoder_config_dirty_flag_dirty_regions) != 0);
 
    // Events that that trigger a re-creation of the reference picture manager
@@ -639,7 +664,9 @@ d3d12_video_encoder_reconfigure_encoder_objects(struct d3d12_video_encoder *pD3D
                           0 /*checking the flag is NOT set*/))
        // || motionPrecisionLimitChanged // Only affects encoder
        // Re-create encoder heap if dirty regions changes and the current heap doesn't already support them
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
        || dirtyRegionsChanged && ((pD3D12Enc->m_spVideoEncoderHeap->GetEncoderHeapFlags() & D3D12_VIDEO_ENCODER_HEAP_FLAG_ALLOW_DIRTY_REGIONS) == 0)
+#endif // D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
    ) {
       if (!pD3D12Enc->m_spVideoEncoderHeap) {
          debug_printf("[d3d12_video_encoder] d3d12_video_encoder_reconfigure_encoder_objects - Creating "
@@ -1296,6 +1323,27 @@ d3d12_video_encoder_disable_rc_minmaxqp(struct D3D12EncodeRateControlState & rcS
    }
 }
 
+static bool d3d12_video_encoder_is_dirty_regions_feature_enabled(struct d3d12_video_encoder* pD3D12Enc, D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE mapSource)
+{
+   if (pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapSource != mapSource)
+   {
+      return false;
+   }
+
+   if (mapSource == D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_CPU_BUFFER)
+   {
+      return pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.RectsInfo.FullFrameIdentical ||
+            (pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.RectsInfo.NumDirtyRects > 0);
+   }
+   else if (mapSource == D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_GPU_TEXTURE)
+   {
+      return pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapInfo.FullFrameIdentical ||
+            (pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapInfo.InputMap != NULL);
+   }
+   return false;
+}
+#endif // D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+
 static void
 d3d12_video_encoder_disable_rc_extended1_to_legacy(struct D3D12EncodeRateControlState & rcState)
 {
@@ -1497,9 +1545,14 @@ bool d3d12_video_encoder_query_d3d12_driver_caps(struct d3d12_video_encoder *pD3
 
 #if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
    // Set dirty regions input info to cap
-   capEncoderSupportData1.DirtyRegions.Enabled = pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.FullFrameIdentical || (pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.NumDirtyRects > 0);
-   capEncoderSupportData1.DirtyRegions.MapSource = D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_CPU_BUFFER;
-   capEncoderSupportData1.DirtyRegions.MapValuesType = pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapValuesType;
+   capEncoderSupportData1.DirtyRegions.MapSource = pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapSource;
+   capEncoderSupportData1.DirtyRegions.Enabled = d3d12_video_encoder_is_dirty_regions_feature_enabled(pD3D12Enc, pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapSource);
+   if (capEncoderSupportData1.DirtyRegions.Enabled)
+   {
+      capEncoderSupportData1.DirtyRegions.MapValuesType = (capEncoderSupportData1.DirtyRegions.MapSource == D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_CPU_BUFFER) ?
+                                                            pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.RectsInfo.MapValuesType :
+                                                            pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapInfo.MapValuesType;
+   }
 #endif
 
    enum pipe_video_format codec = u_reduce_video_profile(pD3D12Enc->base.profile);
@@ -1619,6 +1672,45 @@ bool d3d12_video_encoder_query_d3d12_driver_caps(struct d3d12_video_encoder *pD3
 
    pD3D12Enc->m_currentEncodeCapabilities.m_SupportFlags    = capEncoderSupportData1.SupportFlags;
    pD3D12Enc->m_currentEncodeCapabilities.m_ValidationFlags = capEncoderSupportData1.ValidationFlags;
+
+   if ((capEncoderSupportData1.DirtyRegions.MapSource == D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_GPU_TEXTURE) &&
+       (capEncoderSupportData1.DirtyRegions.Enabled))
+   {
+      // Query specifics of staging resource for dirty regions
+      pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapInfo.capInputLayoutDirtyRegion =
+      {
+         // UINT NodeIndex;
+         0u,
+         // D3D12_VIDEO_ENCODER_INPUT_MAP_SESSION_INFO SessionInfo;
+         {
+            capEncoderSupportData1.Codec,
+            d3d12_video_encoder_get_current_profile_desc(pD3D12Enc),
+            d3d12_video_encoder_get_current_level_desc(pD3D12Enc),
+            pD3D12Enc->m_currentEncodeConfig.m_encodeFormatInfo.Format,
+            // D3D12_VIDEO_ENCODER_PICTURE_RESOLUTION_DESC
+            pD3D12Enc->m_currentEncodeConfig.m_currentResolution,
+            d3d12_video_encoder_get_current_codec_config_desc(pD3D12Enc),
+            capEncoderSupportData1.SubregionFrameEncoding,
+            capEncoderSupportData1.SubregionFrameEncodingData
+         },
+         // D3D12_VIDEO_ENCODER_INPUT_MAP_TYPE MapType;
+         D3D12_VIDEO_ENCODER_INPUT_MAP_TYPE_DIRTY_REGIONS,
+         // BOOL IsSupported;
+         FALSE,
+         // UINT64 MaxResolvedBufferAllocationSize;
+         0u,
+      };
+
+      hr = pD3D12Enc->m_spD3D12VideoDevice->CheckFeatureSupport(D3D12_FEATURE_VIDEO_ENCODER_RESOLVE_INPUT_PARAM_LAYOUT,
+                                                                &pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapInfo.capInputLayoutDirtyRegion,
+                                                                sizeof(pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapInfo.capInputLayoutDirtyRegion));
+
+      if (FAILED(hr)) {
+         debug_printf("CheckFeatureSupport D3D12_FEATURE_VIDEO_ENCODER_RESOLVE_INPUT_PARAM_LAYOUT failed with HR %x\n", hr);
+         return false;
+      }
+   }
+
    return true;
 }
 
@@ -2029,6 +2121,39 @@ d3d12_video_encoder_prepare_output_buffers(struct d3d12_video_encoder *pD3D12Enc
 }
 
 bool
+d3d12_video_encoder_prepare_input_buffers(struct d3d12_video_encoder *pD3D12Enc)
+{
+   // Go over any features that may need additional input buffers
+   // and create them on demand (if the previous allocation is not big enough)
+
+   HRESULT hr = S_OK;
+   D3D12_HEAP_PROPERTIES Properties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+   if (d3d12_video_encoder_is_dirty_regions_feature_enabled(pD3D12Enc, D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_GPU_TEXTURE))
+   {
+      bool bNeedsCreation = (pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].m_spDirtyRectsResolvedOpaqueMap == NULL) ||
+                            (GetDesc(pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].m_spDirtyRectsResolvedOpaqueMap.Get()).Width <
+                             pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapInfo.capInputLayoutDirtyRegion.MaxResolvedBufferAllocationSize);
+      if (bNeedsCreation)
+      {
+         pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].m_spDirtyRectsResolvedOpaqueMap.Reset();
+         CD3DX12_RESOURCE_DESC subregionOffsetsDesc = CD3DX12_RESOURCE_DESC::Buffer(pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapInfo.capInputLayoutDirtyRegion.MaxResolvedBufferAllocationSize);
+         hr = pD3D12Enc->m_pD3D12Screen->dev->CreateCommittedResource(&Properties,
+            D3D12_HEAP_FLAG_NONE,
+            &subregionOffsetsDesc,
+            D3D12_RESOURCE_STATE_COMMON,
+            nullptr,
+            IID_PPV_ARGS(&pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].m_spDirtyRectsResolvedOpaqueMap));
+         if (FAILED(hr))
+         {
+            debug_printf("CreateCommittedResource for m_spDirtyRectsResolvedOpaqueMap failed with HR %x\n", hr);
+         }
+      }
+   }
+
+   return SUCCEEDED(hr);
+}
+
+bool
 d3d12_video_encoder_reconfigure_session(struct d3d12_video_encoder *pD3D12Enc,
                                         struct pipe_video_buffer *  srcTexture,
                                         struct pipe_picture_desc *  picture)
@@ -2049,6 +2174,10 @@ d3d12_video_encoder_reconfigure_session(struct d3d12_video_encoder *pD3D12Enc,
    d3d12_video_encoder_update_picparams_tracking(pD3D12Enc, srcTexture, picture);
    if(!d3d12_video_encoder_prepare_output_buffers(pD3D12Enc, srcTexture, picture)) {
       debug_printf("d3d12_video_encoder_prepare_output_buffers failed!\n");
+      return false;
+   }
+   if(!d3d12_video_encoder_prepare_input_buffers(pD3D12Enc)) {
+      debug_printf("d3d12_video_encoder_prepare_input_buffers failed!\n");
       return false;
    }
 
@@ -2761,11 +2890,66 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
 #endif
 
 #if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+   std::vector<D3D12_RESOURCE_BARRIER> pResolveInputDataBarriers;
    D3D12_VIDEO_ENCODER_DIRTY_REGIONS dirtyRegions = { };
-   dirtyRegions.MapSource = D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_CPU_BUFFER;
-   dirtyRegions.pCPUBuffer = &pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc;
-   if (dirtyRegions.pCPUBuffer->NumDirtyRects > 0)
+   dirtyRegions.MapSource = pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapSource;
+
+   if (d3d12_video_encoder_is_dirty_regions_feature_enabled(pD3D12Enc, dirtyRegions.MapSource))
+   {
       picCtrlFlags |= D3D12_VIDEO_ENCODER_PICTURE_CONTROL_FLAG_ENABLE_DIRTY_REGIONS_INPUT;
+      if (dirtyRegions.MapSource == D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_CPU_BUFFER)
+      {
+         dirtyRegions.pCPUBuffer = &pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.RectsInfo;
+         if (pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapInfo.FullFrameIdentical)
+         {
+            // When this parameter is TRUE, pDirtyRects must be NULL and the driver will interpret it
+            // as a dirty regions map being present and an all-zero matrix in mode D3D12_VIDEO_ENCODER_DIRTY_REGIONS_MAP_VALUES_MODE_DIRTY.
+            dirtyRegions.pCPUBuffer->pDirtyRects = NULL;
+         }
+      }
+      else if (dirtyRegions.MapSource == D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_GPU_TEXTURE)
+      {
+         dirtyRegions.pOpaqueLayoutBuffer = pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].m_spDirtyRectsResolvedOpaqueMap.Get();
+
+         pResolveInputDataBarriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(dirtyRegions.pOpaqueLayoutBuffer,
+                                                                                  D3D12_RESOURCE_STATE_COMMON,
+                                                                                  D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE));
+
+         if (pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapInfo.InputMap)
+         {
+            assert(!pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapInfo.FullFrameIdentical); // When this parameter is TRUE, pDirtyRegionsMap must be NULL
+            pResolveInputDataBarriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(d3d12_resource_resource(pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapInfo.InputMap),
+                                                                                    D3D12_RESOURCE_STATE_COMMON,
+                                                                                    D3D12_RESOURCE_STATE_VIDEO_ENCODE_READ));
+         }
+
+         // see below std::warp for reversal to common after ResolveInputParamLayout is done
+         pD3D12Enc->m_spEncodeCommandList->ResourceBarrier(static_cast<uint32_t>(pResolveInputDataBarriers.size()),
+                                                                                 pResolveInputDataBarriers.data());
+         D3D12_VIDEO_ENCODER_INPUT_MAP_DATA ResolveInputData = {};
+         ResolveInputData.MapType = D3D12_VIDEO_ENCODER_INPUT_MAP_TYPE_DIRTY_REGIONS;
+         ResolveInputData.DirtyRegions.FullFrameIdentical = pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapInfo.FullFrameIdentical;
+         ResolveInputData.DirtyRegions.pDirtyRegionsMap = pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapInfo.FullFrameIdentical ? NULL : d3d12_resource_resource(pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapInfo.InputMap);
+         ResolveInputData.DirtyRegions.MapValuesType = pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapInfo.MapValuesType;
+         ResolveInputData.DirtyRegions.SourceDPBFrameReference = pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapInfo.SourceDPBFrameReference;
+         D3D12_VIDEO_ENCODER_RESOLVE_INPUT_PARAM_LAYOUT_INPUT_ARGUMENTS resolveInputParamLayoutInput =
+         {
+            pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapInfo.capInputLayoutDirtyRegion.SessionInfo,
+            ResolveInputData,
+         };
+         D3D12_VIDEO_ENCODER_RESOLVE_INPUT_PARAM_LAYOUT_OUTPUT_ARGUMENTS resolveInputParamLayoutOutput =
+         {
+            dirtyRegions.pOpaqueLayoutBuffer,
+         };
+
+         pD3D12Enc->m_spEncodeCommandList->ResolveInputParamLayout(&resolveInputParamLayoutInput, &resolveInputParamLayoutOutput);
+         for (auto &BarrierDesc : pResolveInputDataBarriers) {
+            std::swap(BarrierDesc.Transition.StateBefore, BarrierDesc.Transition.StateAfter);
+         }
+         pD3D12Enc->m_spEncodeCommandList->ResourceBarrier(static_cast<uint32_t>(pResolveInputDataBarriers.size()),
+                                                         pResolveInputDataBarriers.data());
+      }
+   }
 
    D3D12_VIDEO_ENCODER_FRAME_MOTION_VECTORS motionRegions = { };
    motionRegions.MapSource = D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_CPU_BUFFER;

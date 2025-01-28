@@ -323,7 +323,22 @@ struct D3D12EncodeConfiguration
    bool m_bUsedAsReference; // Set if frame will be used as reference frame
 
 #if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
-   D3D12_VIDEO_ENCODER_DIRTY_RECT_INFO m_DirtyRectsDesc = {};
+   struct{
+      D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE MapSource;
+      union {
+         // D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_CPU_BUFFER
+         D3D12_VIDEO_ENCODER_DIRTY_RECT_INFO RectsInfo;
+         // D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_GPU_TEXTURE
+         struct
+         {
+            BOOL FullFrameIdentical;
+            D3D12_VIDEO_ENCODER_DIRTY_REGIONS_MAP_VALUES_MODE MapValuesType;
+            struct d3d12_resource* InputMap;
+            D3D12_FEATURE_DATA_VIDEO_ENCODER_RESOLVE_INPUT_PARAM_LAYOUT capInputLayoutDirtyRegion;
+            UINT SourceDPBFrameReference;
+         } MapInfo;
+      };
+   } m_DirtyRectsDesc = {};
    std::vector<RECT> m_DirtyRectsArray;
    D3D12_VIDEO_ENCODER_MOVEREGION_INFO m_MoveRectsDesc = {};
    std::vector<D3D12_VIDEO_ENCODER_MOVE_RECT> m_MoveRectsArray;
@@ -505,6 +520,8 @@ struct d3d12_video_encoder
 
       /* Stores encode result for submission error control in the D3D12_VIDEO_ENC_ASYNC_DEPTH slots */
       enum pipe_video_feedback_encode_result_flags encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_OK;
+
+      ComPtr<ID3D12Resource> m_spDirtyRectsResolvedOpaqueMap; // output of ID3D12VideoEncodeCommandList::ResolveInputParamLayout
    };
 
    std::vector<InFlightEncodeResources> m_inflightResourcesPool;
@@ -642,6 +659,9 @@ d3d12_video_encoder_update_output_stats_resources(struct d3d12_video_encoder *pD
                                                   struct pipe_resource* qpmap,
                                                   struct pipe_resource* satdmap,
                                                   struct pipe_resource* rcbitsmap);
+
+bool
+d3d12_video_encoder_prepare_input_buffers(struct d3d12_video_encoder *pD3D12Enc);
 ///
 /// d3d12_video_encoder functions ends
 ///
