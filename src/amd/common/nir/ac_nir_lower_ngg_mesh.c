@@ -668,8 +668,7 @@ set_ms_final_output_counts(nir_builder *b,
 
    if (s->hw_workgroup_size <= s->wave_size) {
       /* Single-wave mesh shader workgroup. */
-      nir_def *m0 = nir_ior(b, nir_ishl_imm(b, num_prm, 12), num_vtx);
-      nir_sendmsg_amd(b, m0, .base = AC_SENDMSG_GS_ALLOC_REQ);
+      ac_nir_ngg_alloc_vertices_and_primitives(b, num_vtx, num_prm, false);
 
       *out_num_prm = num_prm;
       *out_num_vtx = num_vtx;
@@ -701,8 +700,7 @@ set_ms_final_output_counts(nir_builder *b,
                             .memory_semantics = NIR_MEMORY_ACQ_REL,
                             .memory_modes = nir_var_mem_shared);
 
-      nir_def *m0 = nir_ior(b, nir_ishl_imm(b, num_prm, 12), num_vtx);
-      nir_sendmsg_amd(b, m0, .base = AC_SENDMSG_GS_ALLOC_REQ);
+      ac_nir_ngg_alloc_vertices_and_primitives(b, num_vtx, num_prm, false);
    }
    nir_push_else(b, if_wave_0);
    {
