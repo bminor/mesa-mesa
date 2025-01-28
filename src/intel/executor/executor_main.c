@@ -703,7 +703,7 @@ l_execute(lua_State *L)
       uint32_t *data = ec.bo.data.map;
       const int n = ec.bo.data.size / 4;
       lua_createtable(L, n, 0);
-      for (int i = 0; i < 8; i++) {
+      for (int i = 0; i < n; i++) {
          lua_pushinteger(L, data[i]);
          lua_seti(L, -2, i);
       }

@@ -1634,7 +1634,7 @@
         "description": "intel/executor: Fix typo when copying result into Lua table",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e72bf2d02f5055cc352ea9cfba169237ef7a527f",
         "notes": null
