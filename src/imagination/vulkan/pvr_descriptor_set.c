@@ -589,5 +589,47 @@ void pvr_UpdateDescriptorSets(VkDevice _device,
       }
    }
 
-   assert(!descriptorCopyCount);
+   for (uint32_t i = 0; i < descriptorCopyCount; i++) {
+      const VkCopyDescriptorSet *copy = &pDescriptorCopies[i];
+      PVR_FROM_HANDLE(pvr_descriptor_set, src_set, copy->srcSet);
+      PVR_FROM_HANDLE(pvr_descriptor_set, dst_set, copy->dstSet);
+
+      const struct pvr_descriptor_set_layout *src_layout = src_set->layout;
+      const struct pvr_descriptor_set_layout *dst_layout = dst_set->layout;
+      const struct pvr_descriptor_set_layout_binding *src_binding;
+      const struct pvr_descriptor_set_layout_binding *dst_binding;
+
+      assert(copy->srcBinding < src_layout->binding_count);
+      assert(copy->dstBinding < dst_layout->binding_count);
+      src_binding = &src_layout->bindings[copy->srcBinding];
+      dst_binding = &dst_layout->bindings[copy->dstBinding];
+
+      vk_foreach_struct_const (ext, copy->pNext) {
+         vk_debug_ignored_stype(ext->sType);
+      }
+
+      assert(src_binding->stage_flags == dst_binding->stage_flags);
+      if (!src_binding->stage_flags)
+         continue;
+
+      assert(src_binding->stride == dst_binding->stride);
+
+      if (src_binding->stride > 0) {
+         for (uint32_t j = 0; j < copy->descriptorCount; j++) {
+            const unsigned src_desc_offset =
+               src_binding->offset +
+               ((copy->srcArrayElement + j) * src_binding->stride);
+            const void *src_desc_mapping =
+               (uint8_t *)src_set->mapping + src_desc_offset;
+
+            const unsigned dst_desc_offset =
+               dst_binding->offset +
+               ((copy->dstArrayElement + j) * dst_binding->stride);
+            void *dst_desc_mapping =
+               (uint8_t *)dst_set->mapping + dst_desc_offset;
+
+            memcpy(dst_desc_mapping, src_desc_mapping, src_binding->stride);
+         }
+      }
+   }
 }
