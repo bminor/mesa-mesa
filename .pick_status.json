@@ -1674,7 +1674,7 @@
         "description": "radeonsi: fix programming DCC for SDMA on GFX12",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3d05d86d88eb83b5c4846ea80d8b23a4271d7803",
         "notes": null
