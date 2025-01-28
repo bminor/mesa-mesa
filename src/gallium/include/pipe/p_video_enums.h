@@ -182,7 +182,7 @@ enum pipe_video_cap
     */
    PIPE_VIDEO_CAP_ENC_MAX_DPB_CAPACITY = 56,
    /*
-    * Support for dirty rects in encoder picture params pipe_enc_cap_dirty_rect
+    * Support for dirty rects in encoder picture params pipe_enc_cap_dirty_info
     */
    PIPE_VIDEO_CAP_ENC_DIRTY_RECTS = 57,
    /*
@@ -227,6 +227,10 @@ enum pipe_video_cap
     * The returned value is pipe_enc_cap_sliced_notifications
     */
    PIPE_VIDEO_CAP_ENC_SLICED_NOTIFICATIONS = 62,
+   /*
+    * Support for dirty maps in encoder picture params pipe_enc_cap_dirty_info
+    */
+   PIPE_VIDEO_CAP_ENC_DIRTY_MAPS = 63,
 };
 
 enum pipe_video_h264_enc_dbk_filter_mode_flags

@@ -894,7 +894,7 @@ static d3d12_video_encode_get_hevc_codec_support ( const D3D12_VIDEO_ENCODER_COD
 #if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
 
 static
-union pipe_enc_cap_dirty_rect
+union pipe_enc_cap_dirty_info
 get_dirty_rects_support(D3D12_VIDEO_ENCODER_INPUT_MAP_SESSION_INFO sessionInfo,
                         ID3D12VideoDevice3* pD3D12VideoDevice)
 {
@@ -913,18 +913,18 @@ get_dirty_rects_support(D3D12_VIDEO_ENCODER_INPUT_MAP_SESSION_INFO sessionInfo,
       0u
    };
 
-   union pipe_enc_cap_dirty_rect dirty_rects_support = {};
+   union pipe_enc_cap_dirty_info dirty_rects_support = {};
    if (SUCCEEDED(pD3D12VideoDevice->CheckFeatureSupport(D3D12_FEATURE_VIDEO_ENCODER_DIRTY_REGIONS, &capDirtyRegions, sizeof(capDirtyRegions))))
    {
       dirty_rects_support.bits.supports_full_frame_skip = (capDirtyRegions.SupportFlags & D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAG_REPEAT_FRAME) ? 1u : 0u;
-      dirty_rects_support.bits.supports_rect_type_dirty = (capDirtyRegions.SupportFlags & D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAG_DIRTY_REGIONS) ? 1u : 0u;
-      dirty_rects_support.bits.supports_require_full_row_rects = (capDirtyRegions.SupportFlags & D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAG_DIRTY_REGIONS_REQUIRE_FULL_ROW) ? 1u : 0u;
+      dirty_rects_support.bits.supports_info_type_dirty = (capDirtyRegions.SupportFlags & D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAG_DIRTY_REGIONS) ? 1u : 0u;
+      dirty_rects_support.bits.supports_require_full_row = (capDirtyRegions.SupportFlags & D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAG_DIRTY_REGIONS_REQUIRE_FULL_ROW) ? 1u : 0u;
    }
 
    capDirtyRegions.MapValuesType = D3D12_VIDEO_ENCODER_DIRTY_REGIONS_MAP_VALUES_MODE_SKIP;
    if (SUCCEEDED(pD3D12VideoDevice->CheckFeatureSupport(D3D12_FEATURE_VIDEO_ENCODER_DIRTY_REGIONS, &capDirtyRegions, sizeof(capDirtyRegions))))
    {
-      dirty_rects_support.bits.supports_rect_type_skip = (capDirtyRegions.SupportFlags & D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAG_DIRTY_REGIONS) ? 1u : 0u;
+      dirty_rects_support.bits.supports_info_type_skip = (capDirtyRegions.SupportFlags & D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAG_DIRTY_REGIONS) ? 1u : 0u;
    }
 
    return dirty_rects_support;
@@ -1083,7 +1083,7 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
                                uint32_t &maxIRDuration,
                                union pipe_enc_cap_roi &roi_support,
                                bool &bVideoEncodeRequiresTextureArray,
-                               union pipe_enc_cap_dirty_rect &dirty_rects_support,
+                               union pipe_enc_cap_dirty_info &dirty_rects_support,
                                union pipe_enc_cap_move_rect &move_rects_support,
                                union pipe_enc_cap_gpu_stats_map &gpu_stats_qp,
                                union pipe_enc_cap_gpu_stats_map &gpu_stats_satd,
@@ -2107,7 +2107,7 @@ d3d12_screen_get_video_param_encode(struct pipe_screen *pscreen,
    uint32_t max_tile_cols = 0u;
    uint32_t maxIRDuration = 0u;
    union pipe_enc_cap_roi roi_support = {};
-   union pipe_enc_cap_dirty_rect dirty_rects_support = {};
+   union pipe_enc_cap_dirty_info dirty_rects_support = {};
    union pipe_enc_cap_move_rect move_rects_support = {};
    struct d3d12_encode_codec_support codec_specific_support;
    union pipe_enc_cap_gpu_stats_map gpu_stats_qp = {};
@@ -2372,7 +2372,7 @@ d3d12_video_encode_requires_texture_array_dpb(struct d3d12_screen* pScreen, enum
    union pipe_enc_cap_roi roi_support = {};
    struct d3d12_encode_codec_support codec_specific_support;
    memset(&codec_specific_support, 0, sizeof(codec_specific_support));
-   union pipe_enc_cap_dirty_rect dirty_rects_support = {};
+   union pipe_enc_cap_dirty_info dirty_rects_support = {};
    union pipe_enc_cap_move_rect move_rects_support = {};
    union pipe_enc_cap_gpu_stats_map gpu_stats_qp = {};
    union pipe_enc_cap_gpu_stats_map gpu_stats_satd = {};

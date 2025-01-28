@@ -387,14 +387,14 @@ d3d12_video_encoder_update_move_rects(struct d3d12_video_encoder *pD3D12Enc,
 
 void
 d3d12_video_encoder_update_dirty_rects(struct d3d12_video_encoder *pD3D12Enc,
-                                       const struct pipe_enc_dirty_rects& rects)
+                                       const struct pipe_enc_dirty_info& rects)
 {
 #if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
    pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.SourceDPBFrameReference = rects.dpb_reference_index;
    pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.FullFrameIdentical = rects.full_frame_skip;
    pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapValuesType =
-      (rects.rects_type == PIPE_ENC_DIRTY_RECT_TYPE_DIRTY) ? D3D12_VIDEO_ENCODER_DIRTY_REGIONS_MAP_VALUES_MODE_DIRTY :
-                                                             D3D12_VIDEO_ENCODER_DIRTY_REGIONS_MAP_VALUES_MODE_SKIP;
+      (rects.dirty_info_type == PIPE_ENC_DIRTY_INFO_TYPE_DIRTY) ? D3D12_VIDEO_ENCODER_DIRTY_REGIONS_MAP_VALUES_MODE_DIRTY :
+                                                                  D3D12_VIDEO_ENCODER_DIRTY_REGIONS_MAP_VALUES_MODE_SKIP;
 
    assert(rects.num_rects <= PIPE_ENC_DIRTY_RECTS_NUM_MAX);
    pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.NumDirtyRects = std::min(rects.num_rects, static_cast<uint32_t>(PIPE_ENC_DIRTY_RECTS_NUM_MAX));
@@ -1741,7 +1741,7 @@ d3d12_video_encoder_update_current_encoder_config_state(struct d3d12_video_encod
                                                            ((struct pipe_h264_enc_picture_desc *)picture)->gpu_stats_rc_bitallocation_map);
 
          d3d12_video_encoder_update_move_rects(pD3D12Enc, ((struct pipe_h264_enc_picture_desc *)picture)->move_rects);
-         d3d12_video_encoder_update_dirty_rects(pD3D12Enc, ((struct pipe_h264_enc_picture_desc *)picture)->dirty_rects);
+         d3d12_video_encoder_update_dirty_rects(pD3D12Enc, ((struct pipe_h264_enc_picture_desc *)picture)->dirty_info);
          // ...encoder_config_state_h264 calls encoder support cap, set any state before this call
          bCodecUpdatesSuccess = d3d12_video_encoder_update_current_encoder_config_state_h264(pD3D12Enc, srcTextureDesc, picture);
       } break;
@@ -1755,7 +1755,7 @@ d3d12_video_encoder_update_current_encoder_config_state(struct d3d12_video_encod
                                                            ((struct pipe_h265_enc_picture_desc *)picture)->gpu_stats_rc_bitallocation_map);
 
          d3d12_video_encoder_update_move_rects(pD3D12Enc, ((struct pipe_h265_enc_picture_desc *)picture)->move_rects);
-         d3d12_video_encoder_update_dirty_rects(pD3D12Enc, ((struct pipe_h265_enc_picture_desc *)picture)->dirty_rects);
+         d3d12_video_encoder_update_dirty_rects(pD3D12Enc, ((struct pipe_h265_enc_picture_desc *)picture)->dirty_info);
          // ...encoder_config_state_hevc calls encoder support cap, set any state before this call
          bCodecUpdatesSuccess = d3d12_video_encoder_update_current_encoder_config_state_hevc(pD3D12Enc, srcTextureDesc, picture);
       } break;

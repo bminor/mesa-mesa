@@ -524,17 +524,30 @@ struct pipe_enc_roi
    struct pipe_enc_region_in_roi region[PIPE_ENC_ROI_REGION_NUM_MAX];
 };
 
-enum pipe_enc_dirty_rect_type
+enum pipe_enc_dirty_info_type
 {
-   PIPE_ENC_DIRTY_RECT_TYPE_DIRTY = 0,
-   PIPE_ENC_DIRTY_RECT_TYPE_SKIP = 1,
+   PIPE_ENC_DIRTY_INFO_TYPE_DIRTY = 0,
+   PIPE_ENC_DIRTY_INFO_TYPE_SKIP = 1,
 };
 
-struct pipe_enc_dirty_rects
+enum pipe_enc_dirty_info_input_mode
 {
-   uint8_t dpb_reference_index; /* index in dpb for the recon pic the rects refer to */
+   /* Requires PIPE_VIDEO_CAP_ENC_DIRTY_RECTS */
+   PIPE_ENC_DIRTY_INFO_INPUT_MODE_RECTS = 0,
+   /* Requires PIPE_VIDEO_CAP_ENC_DIRTY_MAPS */
+   PIPE_ENC_DIRTY_INFO_INPUT_MODE_MAP = 1,
+};
+
+struct pipe_enc_dirty_info
+{
+   uint8_t dpb_reference_index; /* index in dpb for the recon pic the info refers to */
    bool full_frame_skip;
-   enum pipe_enc_dirty_rect_type rects_type;
+   enum pipe_enc_dirty_info_type dirty_info_type;
+
+   /* Selects the input mode and app sets different params below */
+   enum pipe_enc_dirty_info_input_mode input_mode;
+
+   /* Used with PIPE_ENC_DIRTY_INFO_INPUT_MODE_RECTS */
    unsigned int num_rects;
    struct
    {
@@ -543,6 +556,9 @@ struct pipe_enc_dirty_rects
       uint32_t right;
       uint32_t bottom;
    } rects[PIPE_ENC_DIRTY_RECTS_NUM_MAX];
+
+   /* Used with PIPE_ENC_DIRTY_INFO_INPUT_MODE_MAP */
+   struct pipe_resource *map;
 };
 
 enum pipe_enc_move_rects_precision_unit
@@ -854,7 +870,7 @@ struct pipe_h264_enc_picture_desc
    struct pipe_enc_quality_modes quality_modes;
    struct pipe_enc_intra_refresh intra_refresh;
    struct pipe_enc_roi roi;
-   struct pipe_enc_dirty_rects dirty_rects;
+   struct pipe_enc_dirty_info dirty_info;
    struct pipe_enc_move_rects move_rects;
 
    /* See PIPE_VIDEO_CAP_ENC_GPU_STATS_QP_MAP */
@@ -1246,7 +1262,7 @@ struct pipe_h265_enc_picture_desc
    struct pipe_enc_quality_modes quality_modes;
    struct pipe_enc_intra_refresh intra_refresh;
    struct pipe_enc_roi roi;
-   struct pipe_enc_dirty_rects dirty_rects;
+   struct pipe_enc_dirty_info dirty_info;
    struct pipe_enc_move_rects move_rects;
 
    /* See PIPE_VIDEO_CAP_ENC_GPU_STATS_QP_MAP */
@@ -2592,24 +2608,25 @@ union pipe_h265_enc_cap_range_extension_flags {
 };
 
 /* Used with PIPE_VIDEO_CAP_ENC_DIRTY_RECTS */
-union pipe_enc_cap_dirty_rect {
+/* Used with PIPE_VIDEO_CAP_ENC_DIRTY_MAPS */
+union pipe_enc_cap_dirty_info {
    struct {
       /*
-       * Driver Output. Indicates support values for setting pipe_enc_dirty_rects.full_frame_skip
+       * Driver Output. Indicates support values for setting pipe_enc_dirty_info.full_frame_skip
        */
       uint32_t supports_full_frame_skip: 1;
       /*
-       * Driver Output. Indicates support values for setting pipe_enc_dirty_rects.rects_type = PIPE_ENC_DIRTY_RECT_TYPE_SKIP
+       * Driver Output. Indicates support values for setting pipe_enc_dirty_info.dirty_info_type = PIPE_ENC_DIRTY_INFO_TYPE_SKIP
        */
-      uint32_t supports_rect_type_skip: 1;
+      uint32_t supports_info_type_skip: 1;
       /*
-       * Driver Output. Indicates support values for setting pipe_enc_dirty_rects.rects_type = PIPE_ENC_DIRTY_RECT_TYPE_DIRTY
+       * Driver Output. Indicates support values for setting pipe_enc_dirty_info.dirty_info_type = PIPE_ENC_DIRTY_INFO_TYPE_DIRTY
        */
-      uint32_t supports_rect_type_dirty: 1;
+      uint32_t supports_info_type_dirty: 1;
       /*
-       * Driver Output. Indicates pipe_enc_dirty_rects.rects must cover an entire row of the frame
+       * Driver Output. Indicates pipe_enc_dirty_info.rects/input_map must cover an entire row of the frame
        */
-      uint32_t supports_require_full_row_rects: 1;
+      uint32_t supports_require_full_row: 1;
    } bits;
   uint32_t value;
 };
