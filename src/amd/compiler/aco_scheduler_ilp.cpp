@@ -41,7 +41,7 @@ struct VOPDInfo {
 
 struct InstrInfo {
    Instruction* instr;
-   int16_t priority;
+   int16_t wait_cycles;          /* estimated remaining cycles until instruction can be issued. */
    mask_t dependency_mask;       /* bitmask of nodes which have to be scheduled before this node. */
    mask_t write_for_read_mask;   /* bitmask of nodes in the DAG that have a RaW dependency. */
    uint8_t next_non_reorderable; /* index of next non-reorderable instruction node after this one. */
@@ -320,7 +320,7 @@ add_entry(SchedILPContext& ctx, Instruction* const instr, const uint32_t idx)
 {
    InstrInfo& entry = ctx.nodes[idx];
    entry.instr = instr;
-   entry.priority = 0;
+   entry.wait_cycles = 0;
    entry.write_for_read_mask = 0;
    const mask_t mask = BITFIELD_BIT(idx);
    bool reorder = can_reorder(instr);
@@ -355,7 +355,7 @@ add_entry(SchedILPContext& ctx, Instruction* const instr, const uint32_t idx)
             ctx.nodes[ctx.regs[reg].direct_dependency].write_for_read_mask |= mask;
             entry.dependency_mask |= BITFIELD_BIT(reg_info.direct_dependency);
          } else if (BITSET_TEST(ctx.reg_has_latency, reg + i)) {
-            entry.priority = MIN2(entry.priority, -reg_info.latency);
+            entry.wait_cycles = MAX2(entry.wait_cycles, reg_info.latency);
          }
       }
    }
@@ -444,9 +444,9 @@ remove_entry(SchedILPContext& ctx, const Instruction* const instr, const uint32_
    ctx.active_mask &= mask;
 
    int stall = 1; /* Assume all instructions take one cycle to issue. */
-   if (ctx.nodes[idx].priority < 0) {
+   if (ctx.nodes[idx].wait_cycles > 0) {
       /* Add remaining latency stall. */
-      stall -= ctx.nodes[idx].priority;
+      stall += ctx.nodes[idx].wait_cycles;
    }
 
    if (!ctx.is_vopd) {
@@ -498,9 +498,9 @@ remove_entry(SchedILPContext& ctx, const Instruction* const instr, const uint32_
 
    for (unsigned i = 0; i < num_nodes; i++) {
       ctx.nodes[i].dependency_mask &= mask;
-      ctx.nodes[i].priority += stall;
+      ctx.nodes[i].wait_cycles -= stall;
       if (ctx.nodes[idx].write_for_read_mask & BITFIELD_BIT(i) && !ctx.is_vopd) {
-         ctx.nodes[i].priority = MIN2(ctx.nodes[i].priority, -latency);
+         ctx.nodes[i].wait_cycles = MAX2(ctx.nodes[i].wait_cycles, latency);
       }
    }
 
@@ -575,10 +575,10 @@ select_instruction_ilp(const SchedILPContext& ctx)
     */
    bool prefer_vintrp = ctx.prev_info.instr && ctx.prev_info.instr->isVINTRP();
 
-   /* Select the instruction with highest priority of all candidates. */
+   /* Select the instruction with lowest wait_cycles of all candidates. */
    unsigned idx = -1u;
    bool idx_vintrp = false;
-   int32_t priority = INT32_MIN;
+   int32_t wait_cycles = INT32_MAX;
    u_foreach_bit (i, mask) {
       const InstrInfo& candidate = ctx.nodes[i];
 
@@ -589,10 +589,10 @@ select_instruction_ilp(const SchedILPContext& ctx)
       bool is_vintrp = prefer_vintrp && candidate.instr->isVINTRP();
 
       if (idx == -1u || (is_vintrp && !idx_vintrp) ||
-          (is_vintrp == idx_vintrp && candidate.priority > priority)) {
+          (is_vintrp == idx_vintrp && candidate.wait_cycles < wait_cycles)) {
          idx = i;
          idx_vintrp = is_vintrp;
-         priority = candidate.priority;
+         wait_cycles = candidate.wait_cycles;
       }
    }
 
@@ -641,7 +641,7 @@ compare_nodes_vopd(const SchedILPContext& ctx, int num_vopd_odd_minus_even, bool
       }
    }
 
-   return ctx.nodes[candidate].priority > ctx.nodes[current].priority;
+   return ctx.nodes[candidate].wait_cycles < ctx.nodes[current].wait_cycles;
 }
 
 unsigned
