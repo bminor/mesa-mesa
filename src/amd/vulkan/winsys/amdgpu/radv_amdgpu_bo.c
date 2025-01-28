@@ -96,28 +96,47 @@ radv_amdgpu_winsys_rebuild_bo_list(struct radv_amdgpu_winsys_bo *bo)
    return VK_SUCCESS;
 }
 
+static uint64_t
+radv_amdgpu_canonicalize_va(uint64_t va)
+{
+   /* Would be less hardcoded to use addr32_hi (0xffff8000) to generate a mask,
+    * but there are confusing differences between page fault reports from kernel where
+    * it seems to report the top 48 bits, where addr32_hi has 47-bits. */
+   return va & ((1ull << 48) - 1);
+}
+
 static void
 radv_amdgpu_log_va_op(struct radv_amdgpu_winsys *ws, struct radv_amdgpu_winsys_bo *bo, uint64_t offset, uint64_t size,
                       uint64_t virtual_va)
 {
-   struct radv_amdgpu_winsys_bo_log *bo_log = NULL;
+   const uint64_t timestamp = os_time_get_nano();
+   uint64_t mapped_va = bo ? (bo->base.va + offset) : 0;
 
-   if (!ws->debug_log_bos)
-      return;
+   if (ws->debug_log_bos) {
+      struct radv_amdgpu_winsys_bo_log *bo_log = NULL;
 
-   bo_log = calloc(1, sizeof(*bo_log));
-   if (!bo_log)
-      return;
+      bo_log = calloc(1, sizeof(*bo_log));
+      if (!bo_log)
+         return;
 
-   bo_log->va = virtual_va;
-   bo_log->size = size;
-   bo_log->timestamp = os_time_get_nano();
-   bo_log->virtual_mapping = 1;
-   bo_log->mapped_va = bo ? (bo->base.va + offset) : 0;
+      bo_log->va = virtual_va;
+      bo_log->size = size;
+      bo_log->timestamp = timestamp;
+      bo_log->virtual_mapping = 1;
+      bo_log->mapped_va = mapped_va;
 
-   u_rwlock_wrlock(&ws->log_bo_list_lock);
-   list_addtail(&bo_log->list, &ws->log_bo_list);
-   u_rwlock_wrunlock(&ws->log_bo_list_lock);
+      u_rwlock_wrlock(&ws->log_bo_list_lock);
+      list_addtail(&bo_log->list, &ws->log_bo_list);
+      u_rwlock_wrunlock(&ws->log_bo_list_lock);
+   }
+
+   if (ws->bo_history_logfile) {
+      fprintf(ws->bo_history_logfile, "timestamp=%llu, VA=%.16llx-%.16llx, mapped_to=%.16llx\n", (long long)timestamp,
+              (long long)radv_amdgpu_canonicalize_va(virtual_va),
+              (long long)radv_amdgpu_canonicalize_va(virtual_va + size),
+              (long long)radv_amdgpu_canonicalize_va(mapped_va));
+      fflush(ws->bo_history_logfile);
+   }
 }
 
 static int
@@ -309,24 +328,32 @@ radv_amdgpu_winsys_bo_virtual_bind(struct radeon_winsys *_ws, struct radeon_wins
 static void
 radv_amdgpu_log_bo(struct radv_amdgpu_winsys *ws, struct radv_amdgpu_winsys_bo *bo, bool destroyed)
 {
-   struct radv_amdgpu_winsys_bo_log *bo_log = NULL;
+   const uint64_t timestamp = os_time_get_nano();
 
-   if (!ws->debug_log_bos)
-      return;
+   if (ws->debug_log_bos) {
+      struct radv_amdgpu_winsys_bo_log *bo_log = NULL;
 
-   bo_log = calloc(1, sizeof(*bo_log));
-   if (!bo_log)
-      return;
+      bo_log = calloc(1, sizeof(*bo_log));
+      if (!bo_log)
+         return;
 
-   bo_log->va = bo->base.va;
-   bo_log->size = bo->base.size;
-   bo_log->timestamp = os_time_get_nano();
-   bo_log->is_virtual = bo->base.is_virtual;
-   bo_log->destroyed = destroyed;
+      bo_log->va = bo->base.va;
+      bo_log->size = bo->base.size;
+      bo_log->timestamp = timestamp;
+      bo_log->is_virtual = bo->base.is_virtual;
+      bo_log->destroyed = destroyed;
 
-   u_rwlock_wrlock(&ws->log_bo_list_lock);
-   list_addtail(&bo_log->list, &ws->log_bo_list);
-   u_rwlock_wrunlock(&ws->log_bo_list_lock);
+      u_rwlock_wrlock(&ws->log_bo_list_lock);
+      list_addtail(&bo_log->list, &ws->log_bo_list);
+      u_rwlock_wrunlock(&ws->log_bo_list_lock);
+   }
+
+   if (ws->bo_history_logfile) {
+      fprintf(ws->bo_history_logfile, "timestamp=%llu, VA=%.16llx-%.16llx, destroyed=%d, is_virtual=%d\n",
+              (long long)timestamp, (long long)radv_amdgpu_canonicalize_va(bo->base.va),
+              (long long)radv_amdgpu_canonicalize_va(bo->base.va + bo->base.size), destroyed, bo->base.is_virtual);
+      fflush(ws->bo_history_logfile);
+   }
 }
 
 static int
@@ -1200,15 +1227,6 @@ radv_amdgpu_bo_va_compare(const void *a, const void *b)
    const struct radv_amdgpu_winsys_bo *bo_a = *(const struct radv_amdgpu_winsys_bo *const *)a;
    const struct radv_amdgpu_winsys_bo *bo_b = *(const struct radv_amdgpu_winsys_bo *const *)b;
    return bo_a->base.va < bo_b->base.va ? -1 : bo_a->base.va > bo_b->base.va ? 1 : 0;
-}
-
-static uint64_t
-radv_amdgpu_canonicalize_va(uint64_t va)
-{
-   /* Would be less hardcoded to use addr32_hi (0xffff8000) to generate a mask,
-    * but there are confusing differences between page fault reports from kernel where
-    * it seems to report the top 48 bits, where addr32_hi has 47-bits. */
-   return va & ((1ull << 48) - 1);
 }
 
 static void

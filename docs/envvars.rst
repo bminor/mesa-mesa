@@ -1367,6 +1367,8 @@ RADV driver environment variables
       enable LLVM compiler backend
    ``allbos``
       force all allocated buffers to be referenced in submissions
+   ``bo_history``
+      dump the BO history to /tmp/radv_bo_history.log after each BO operations
    ``checkir``
       validate the LLVM IR before LLVM compiles the shader
    ``dump_trap_handler``

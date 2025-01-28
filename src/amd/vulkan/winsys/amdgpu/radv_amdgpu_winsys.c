@@ -151,6 +151,9 @@ radv_amdgpu_winsys_destroy(struct radeon_winsys *rws)
    if (ws->reserve_vmid)
       ac_drm_vm_unreserve_vmid(ws->dev, 0);
 
+   if (ws->bo_history_logfile)
+      fclose(ws->bo_history_logfile);
+
    u_rwlock_destroy(&ws->log_bo_list_lock);
    ac_drm_device_deinitialize(ws->dev);
    FREE(rws);
@@ -286,6 +289,12 @@ radv_amdgpu_winsys_create(int fd, uint64_t debug_flags, uint64_t perftest_flags,
    ws->debug_log_bos = debug_flags & RADV_DEBUG_HANG;
    if (debug_flags & RADV_DEBUG_NO_IBS)
       ws->use_ib_bos = false;
+
+   if (debug_flags & RADV_DEBUG_DUMP_BO_HISTORY) {
+      ws->bo_history_logfile = fopen("/tmp/radv_bo_history.log", "w+");
+      if (!ws->bo_history_logfile)
+         fprintf(stderr, "radv/amdgpu: Failed to create /tmp/radv_bo_history.log.\n");
+   }
 
    ws->reserve_vmid = reserve_vmid;
    if (ws->reserve_vmid) {
