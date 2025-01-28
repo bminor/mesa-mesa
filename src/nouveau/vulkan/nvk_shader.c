@@ -482,6 +482,10 @@ nvk_lower_nir(struct nvk_device *dev, nir_shader *nir,
       };
    }
 
+   nir_opt_access_options opt_access_options = {
+      .is_vulkan = true,
+   };
+   NIR_PASS(_, nir, nir_opt_access, &opt_access_options);
    NIR_PASS(_, nir, nvk_nir_lower_descriptors, pdev, shader_flags, rs,
             set_layout_count, set_layouts, cbuf_map);
    NIR_PASS(_, nir, nir_lower_explicit_io, nir_var_mem_global,
