@@ -1031,8 +1031,13 @@ cmd_buffer_emit_rt_dispatch_globals(struct anv_cmd_buffer *cmd_buffer,
          .bo = rt->scratch.bo,
          .offset = rt->scratch.layout.ray_stack_start,
       },
+#if GFX_VERx10 == 300
+      .CallStackHandler   = anv_shader_bin_get_handler(
+         cmd_buffer->device->rt_trivial_return, 0),
+#else
       .CallStackHandler   = anv_shader_bin_get_bsr(
          cmd_buffer->device->rt_trivial_return, 0),
+#endif
       .AsyncRTStackSize   = rt->scratch.layout.ray_stack_stride / 64,
       .NumDSSRTStacks     = rt->scratch.layout.stack_ids_per_dss,
       .MaxBVHLevels       = BRW_RT_MAX_BVH_LEVELS,
@@ -1079,8 +1084,13 @@ cmd_buffer_emit_rt_dispatch_globals_indirect(struct anv_cmd_buffer *cmd_buffer,
          .bo = rt->scratch.bo,
          .offset = rt->scratch.layout.ray_stack_start,
       },
+#if GFX_VERx10 == 300
+      .CallStackHandler   = anv_shader_bin_get_handler(
+         cmd_buffer->device->rt_trivial_return, 0),
+#else
       .CallStackHandler   = anv_shader_bin_get_bsr(
          cmd_buffer->device->rt_trivial_return, 0),
+#endif
       .AsyncRTStackSize   = rt->scratch.layout.ray_stack_stride / 64,
       .NumDSSRTStacks     = rt->scratch.layout.stack_ids_per_dss,
       .MaxBVHLevels       = BRW_RT_MAX_BVH_LEVELS,

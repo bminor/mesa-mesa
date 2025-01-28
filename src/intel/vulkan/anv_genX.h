@@ -275,6 +275,22 @@ void
 genX(ray_tracing_pipeline_emit)(struct anv_ray_tracing_pipeline *pipeline);
 
 #if GFX_VERx10 >= 300
+#define anv_shader_bin_get_handler(bin, local_arg_offset) ({         \
+   assert((local_arg_offset) % 8 == 0);                              \
+   const struct brw_bs_prog_data *prog_data =                        \
+      brw_bs_prog_data_const(bin->prog_data);                        \
+   assert(prog_data->simd_size == 16);                               \
+                                                                     \
+   (struct GENX(CALL_STACK_HANDLER)) {                               \
+      .OffsetToLocalArguments = (local_arg_offset) / 8,              \
+      .BindlessShaderDispatchMode = RT_SIMD16,                       \
+      .KernelStartPointer = bin->kernel.offset,                      \
+      .RegistersPerThread = ptl_register_blocks(prog_data->base.grf_used), \
+   };                                                                \
+})
+#endif
+
+#if GFX_VERx10 >= 300
 #define anv_shader_bin_get_bsr(bin, local_arg_offset) ({             \
    assert((local_arg_offset) % 8 == 0);                              \
    const struct brw_bs_prog_data *prog_data =                        \
