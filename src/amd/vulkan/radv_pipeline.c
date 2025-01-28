@@ -406,10 +406,6 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
    /* TODO: vectorize loads after this to vectorize loading adjacent descriptors */
    NIR_PASS_V(stage->nir, radv_nir_apply_pipeline_layout, device, stage);
 
-   if (!stage->key.optimisations_disabled) {
-      NIR_PASS(_, stage->nir, nir_opt_shrink_vectors, true);
-   }
-
    NIR_PASS(_, stage->nir, nir_lower_alu_width, opt_vectorize_callback, device);
 
    nir_move_options sink_opts = nir_move_const_undef | nir_move_copies;
@@ -517,6 +513,11 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
               radv_select_hw_stage(&stage->info, gfx_level), stage->info.wave_size, stage->info.workgroup_size,
               &stage->args.ac);
    NIR_PASS_V(stage->nir, radv_nir_lower_abi, gfx_level, stage, gfx_state, pdev->info.address32_hi);
+
+   if (!stage->key.optimisations_disabled) {
+      NIR_PASS(_, stage->nir, nir_opt_shrink_vectors, true);
+   }
+
    radv_optimize_nir_algebraic(
       stage->nir, io_to_mem || lowered_ngg || stage->stage == MESA_SHADER_COMPUTE || stage->stage == MESA_SHADER_TASK,
       gfx_level >= GFX8);
