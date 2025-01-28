@@ -38,7 +38,9 @@ traces:
       checksum: 17daf7dc20dd74186d04eb54497a1690
   PenumbraOverture/penumbra-ov-s0-2-864-f1500-v2.trace:
     gl-zink-anv-tgl:
+      label: [skip, broken]
       checksum: fff50b2eb306641d90b4249542d437d1
+      text: https://gitlab.freedesktop.org/mesa/mesa/-/issues/12465#note_2745831
   ShadowWarrior/ShadowWarrior-f3952-v2.trace:
     gl-zink-anv-tgl:
       label: [skip, flakes]
