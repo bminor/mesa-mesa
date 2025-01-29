@@ -119,8 +119,10 @@ Perfetto is enabled.  They use ``mesa.default`` and ``mesa.slow`` categories.
 Currently, only EGL and the following drivers have have CPU tracepoints.
 
 - Freedreno
+- Turnip
 - V3D
 - VC4
+- V3DV
 
 Vulkan data sources
 ~~~~~~~~~~~~~~~~~~~
