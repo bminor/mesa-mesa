@@ -8,12 +8,14 @@
 # DEBIAN_TEST_VK_TAG
 # KERNEL_ROOTFS_TAG
 
-set -uex -o pipefail
+set -ue -o pipefail
 
 # shellcheck disable=SC2153
 deqp_api=${DEQP_API,,}
 
 uncollapsed_section_start deqp-$deqp_api "Building dEQP $DEQP_API"
+
+set -x
 
 # See `deqp_build_targets` below for which release is used to produce which
 # binary. Unless this comment has bitrotten:
