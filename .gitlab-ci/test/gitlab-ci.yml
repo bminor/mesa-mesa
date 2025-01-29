@@ -421,6 +421,15 @@ yaml-toml-shell-py-test:
     - debian-testing
     - !reference [.required-for-hardware-jobs, needs]
 
+.b2c-x86_64-test-vk-manual:
+  extends:
+    - .use-debian/x86_64_test-vk
+    - .b2c-x86_64-test
+  needs:
+    - debian/x86_64_test-vk
+    - debian-build-testing
+    - !reference [.required-for-hardware-jobs, needs]
+
 .b2c-x86_64-test-gl:
   extends:
     - .use-debian/x86_64_test-gl
@@ -428,6 +437,15 @@ yaml-toml-shell-py-test:
   needs:
     - debian/x86_64_test-gl
     - debian-testing
+    - !reference [.required-for-hardware-jobs, needs]
+
+.b2c-x86_64-test-gl-manual:
+  extends:
+    - .use-debian/x86_64_test-gl
+    - .b2c-x86_64-test
+  needs:
+    - debian/x86_64_test-gl
+    - debian-build-testing
     - !reference [.required-for-hardware-jobs, needs]
 
 .b2c-arm64-test:

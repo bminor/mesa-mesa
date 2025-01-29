@@ -105,11 +105,11 @@ debian-testing:
       -D glx=dri
       -D platforms=x11,wayland
     GALLIUM_ST: >
-      -D gallium-nine=true
+      -D gallium-nine=false
       -D gallium-rusticl=true
       -D gallium-va=enabled
-    GALLIUM_DRIVERS: "llvmpipe,softpipe,virgl,radeonsi,zink,iris,r300,svga"
-    VULKAN_DRIVERS: "swrast,amd,intel,virtio,nouveau"
+    GALLIUM_DRIVERS: "llvmpipe,softpipe,virgl,radeonsi,zink,iris,svga"
+    VULKAN_DRIVERS: "swrast,amd,intel,virtio"
     BUILDTYPE: "debugoptimized"
     EXTRA_OPTION: >
       -D intel-elk=false
@@ -251,10 +251,11 @@ debian-build-testing:
       -D gallium-vdpau=enabled
       -D gallium-va=enabled
       -D gallium-xa=enabled
-      -D gallium-nine=false
+      -D gallium-nine=true
       -D gallium-rusticl=false
     GALLIUM_DRIVERS: "i915,iris,nouveau,r300,r600,freedreno,llvmpipe,softpipe,svga,v3d,vc4,virgl,etnaviv,panfrost,lima,zink,d3d12,asahi,crocus"
-    VULKAN_DRIVERS: "swrast,intel_hasvk,imagination-experimental,microsoft-experimental"
+    VULKAN_DRIVERS: "intel_hasvk,imagination-experimental,microsoft-experimental,nouveau,swrast"
+    BUILD_TYPE: "debugoptimized"
     EXTRA_OPTION: >
       -D spirv-to-dxil=true
       -D osmesa=true
