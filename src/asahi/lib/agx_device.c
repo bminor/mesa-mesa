@@ -106,6 +106,10 @@ static int
 agx_bo_bind(struct agx_device *dev, struct agx_bo *bo, uint64_t addr,
             size_t size_B, uint64_t offset_B, uint32_t flags, bool unbind)
 {
+   assert((size_B % 16384) == 0 && "alignment required");
+   assert((offset_B % 16384) == 0 && "alignment required");
+   assert((addr % 16384) == 0 && "alignment required");
+
    struct drm_asahi_gem_bind gem_bind = {
       .op = unbind ? ASAHI_BIND_OP_UNBIND : ASAHI_BIND_OP_BIND,
       .flags = flags,
