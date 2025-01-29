@@ -470,6 +470,8 @@ hk_flush_bind(struct hk_bind_builder *b)
       return b->result;
    }
 
+   perf_debug(b->dev, "Sparse bind");
+
    uint64_t va_addr = b->va->addr + b->resourceOffset;
 
    /* If we have an image with sparse residency, we have a userspace-managed
