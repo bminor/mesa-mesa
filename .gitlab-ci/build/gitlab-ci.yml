@@ -881,8 +881,8 @@ debian-ppc64el:
   variables:
     BUILDTYPE: debug
     CROSS: ppc64el
-    GALLIUM_DRIVERS: "nouveau,radeonsi,llvmpipe,softpipe,virgl,zink"
-    VULKAN_DRIVERS: "amd,swrast"
+    GALLIUM_DRIVERS: "nouveau,llvmpipe,softpipe,virgl,zink"
+    VULKAN_DRIVERS: "swrast"
     DRI_LOADERS:
       -D glvnd=disabled
 
