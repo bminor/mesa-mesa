@@ -374,7 +374,7 @@
         "description": "docs/android: drop libglapi.so now that it's gone",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "44bda7c258f5e1a7b476616a134931f923f252b8",
         "notes": null
