@@ -292,7 +292,7 @@ emit_ngg_nogs_prim_id_store_per_prim_to_attr_ring(nir_builder *b, lower_ngg_nogs
       .outputs = {{nir_load_primitive_id(b), NULL, NULL, NULL}}
    };
 
-   ac_nir_store_parameters_to_attr_ring(b, &offset, 1, 0, &out, NULL, max_num_gs_threads);
+   ac_nir_store_parameters_to_attr_ring(b, &offset, 1, 0, &out, max_num_gs_threads);
 }
 
 static void
@@ -1916,7 +1916,7 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
       ac_nir_store_parameters_to_attr_ring(b, options->vs_output_param_offset,
                                           b->shader->info.outputs_written,
                                           b->shader->info.outputs_written_16bit,
-                                          &state.out, NULL, num_es_threads);
+                                          &state.out, num_es_threads);
 
       if (wait_attr_ring) {
          /* Wait for attribute ring stores to finish. */

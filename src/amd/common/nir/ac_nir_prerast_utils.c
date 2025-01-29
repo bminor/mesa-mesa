@@ -469,7 +469,7 @@ ac_nir_store_parameters_to_attr_ring(nir_builder *b,
                                      const uint64_t outputs_written,
                                      const uint16_t outputs_written_16bit,
                                      ac_nir_prerast_out *out,
-                                     nir_def *export_tid, nir_def *num_export_threads)
+                                     nir_def *num_export_threads_in_wave)
 {
    nir_def *attr_rsrc = nir_load_ring_attr_amd(b);
 
@@ -477,12 +477,9 @@ ac_nir_store_parameters_to_attr_ring(nir_builder *b,
     * some of them are garbage or have unused components, so align the number of export threads
     * to 8.
     */
-   num_export_threads = nir_iand_imm(b, nir_iadd_imm(b, num_export_threads, 7), ~7);
+   nir_def *num_attr_ring_store_threads = nir_iand_imm(b, nir_iadd_imm(b, num_export_threads_in_wave, 7), ~7);
 
-   if (!export_tid)
-      nir_push_if(b, nir_is_subgroup_invocation_lt_amd(b, num_export_threads));
-   else
-      nir_push_if(b, nir_ult(b, export_tid, num_export_threads));
+   nir_if *if_attr_ring_store = nir_push_if(b, nir_is_subgroup_invocation_lt_amd(b, num_attr_ring_store_threads));
 
    nir_def *attr_offset = nir_load_ring_attr_offset_amd(b);
    nir_def *vindex = nir_load_local_invocation_index(b);
@@ -544,7 +541,7 @@ ac_nir_store_parameters_to_attr_ring(nir_builder *b,
       exported_params |= BITFIELD_BIT(offset);
    }
 
-   nir_pop_if(b, NULL);
+   nir_pop_if(b, if_attr_ring_store);
 }
 
 static int

@@ -515,10 +515,12 @@ ngg_gs_emit_output(nir_builder *b, nir_def *max_num_out_vtx, nir_def *max_num_ou
       if (s->options->hw_info->has_attr_ring_wait_bug)
          b->cursor = nir_after_cf_node_and_phis(&if_export_primitive->cf_node);
 
+      nir_def *vertices_in_wave = nir_bit_count(b, nir_ballot(b, 1, s->options->wave_size, if_process_vertex->condition.ssa));
+
       ac_nir_store_parameters_to_attr_ring(b, s->options->vs_output_param_offset,
                                            b->shader->info.outputs_written,
                                            b->shader->info.outputs_written_16bit,
-                                           &s->out, tid_in_tg, max_num_out_vtx);
+                                           &s->out, vertices_in_wave);
 
       if (s->options->hw_info->has_attr_ring_wait_bug) {
          /* Wait for attribute ring stores to finish. */
