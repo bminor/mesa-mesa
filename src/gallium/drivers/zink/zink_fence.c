@@ -212,6 +212,7 @@ fence_get_fd(struct pipe_screen *pscreen, struct pipe_fence_handle *pfence)
       return -1;
 
    struct zink_tc_fence *mfence = (struct zink_tc_fence *)pfence;
+   util_queue_fence_wait(&mfence->ready);
    if (!mfence->sem)
       return -1;
 
