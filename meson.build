@@ -1883,7 +1883,7 @@ endif
 dep_spirv_tools = dependency(
   'SPIRV-Tools',
   required : with_clc,
-  version : '>= 2022.1'
+  version : '>= 2024.1'
 )
 if dep_spirv_tools.found()
   pre_args += '-DHAVE_SPIRV_TOOLS'
