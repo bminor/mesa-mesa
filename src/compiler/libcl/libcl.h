@@ -68,6 +68,29 @@ typedef int int32_t;
 typedef short int16_t;
 typedef char int8_t;
 
+/* OpenCL C defines work-item functions to return a scalar for a particular
+ * dimension. This is a really annoying papercut, and is not what you want for
+ * either 1D or 3D dispatches.  In both cases, it's nicer to get vectors. For
+ * syntax, we opt to define uint3 "magic globals" for each work-item vector.
+ * This matches the GLSL convention, although retaining OpenCL names. For
+ * example, `gl_GlobalInvocationID.xy` is expressed here as `cl_global_id.xy`.
+ * That is much nicer than standard OpenCL C's syntax `(uint2)(get_global_id(0),
+ * get_global_id(1))`.
+ *
+ * We define the obvious mappings for each relevant function in "Work-Item
+ * Functions" in the OpenCL C specification.
+ */
+#define _CL_WORKITEM3(name) ((uint3)(name(0), name(1), name(2)))
+
+#define cl_global_size         _CL_WORKITEM3(get_global_size)
+#define cl_global_id           _CL_WORKITEM3(get_global_id)
+#define cl_local_size          _CL_WORKITEM3(get_local_size)
+#define cl_enqueued_local_size _CL_WORKITEM3(get_enqueued_local_size)
+#define cl_local_id            _CL_WORKITEM3(get_local_id)
+#define cl_num_groups          _CL_WORKITEM3(get_num_groups)
+#define cl_group_id            _CL_WORKITEM3(get_group_id)
+#define cl_global_offset       _CL_WORKITEM3(get_global_offset)
+
 /* OpenCL C lacks static_assert, a part of C11. This makes static_assert
  * available on both host and device. It is defined as variadic to handle also
  * no-message static_asserts (standardized in C23).
