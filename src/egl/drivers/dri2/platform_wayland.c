@@ -1162,6 +1162,8 @@ static void
 wait_for_free_buffer(struct dri2_egl_display *dri2_dpy,
                      struct dri2_egl_surface *dri2_surf)
 {
+   MESA_TRACE_FUNC();
+
    /* There might be a buffer release already queued that wasn't processed */
    wl_display_dispatch_queue_pending(dri2_dpy->wl_dpy, dri2_surf->wl_queue);
 
@@ -1537,6 +1539,8 @@ create_wl_buffer(struct dri2_egl_display *dri2_dpy,
    uint64_t modifier = DRM_FORMAT_MOD_INVALID;
    int mod_hi, mod_lo;
 
+   MESA_TRACE_FUNC();
+
    query = dri2_query_image(image, __DRI_IMAGE_ATTRIB_WIDTH, &width);
    query &=
       dri2_query_image(image, __DRI_IMAGE_ATTRIB_HEIGHT, &height);
@@ -1691,6 +1695,8 @@ static int
 throttle(struct dri2_egl_display *dri2_dpy,
          struct dri2_egl_surface *dri2_surf)
 {
+   MESA_TRACE_FUNC();
+
    while (dri2_surf->throttle_callback != NULL)
       if (loader_wayland_dispatch(dri2_dpy->wl_dpy, dri2_surf->wl_queue, NULL) ==
           -1)
