@@ -69,6 +69,7 @@ struct slot_info {
 };
 
 struct walk_varyings_data {
+   enum pan_mediump_vary mediump;
    struct pan_shader_info *info;
    struct slot_info *slots;
 };
@@ -128,19 +129,20 @@ walk_varyings(UNUSED nir_builder *b, nir_instr *instr, void *data)
    bool auto32 = !info->quirk_no_auto32;
    nir_alu_type type = (flat && auto32) ? nir_type_uint : nir_type_float;
 
-   /* Demote interpolated float varyings to fp16 where possible. We do not
-    * demote flat varyings, including integer varyings, due to various
-    * issues with the Midgard hardware behaviour and TGSI shaders, as well
-    * as having no demonstrable benefit in practice.
-    */
-   if (type == nir_type_float && sem.medium_precision)
-      size = 16;
-   else {
-      /* We never emit 16-bit user varyings except for lowered mediump floats */
-      if (sem.location >= VARYING_SLOT_VAR0)
-         assert(size == 32);
+   if (sem.medium_precision) {
+      /* Demote interpolated float varyings to fp16 where possible. We do not
+       * demote flat varyings, including integer varyings, due to various
+       * issues with the Midgard hardware behaviour and TGSI shaders, as well
+       * as having no demonstrable benefit in practice.
+       */
+      if (wv_data->mediump == PAN_MEDIUMP_VARY_SMOOTH_16BIT)
+         size = type == nir_type_float ? 16 : 32;
+
+      if (wv_data->mediump == PAN_MEDIUMP_VARY_32BIT)
+         size = 32;
    }
 
+   assert(size == 32 || size == 16);
    type |= size;
 
    /* Count currently contains the number of components accessed by this
@@ -206,14 +208,15 @@ pan_nir_collect_noperspective_varyings_fs(nir_shader *s)
 }
 
 void
-pan_nir_collect_varyings(nir_shader *s, struct pan_shader_info *info)
+pan_nir_collect_varyings(nir_shader *s, struct pan_shader_info *info,
+                         enum pan_mediump_vary mediump)
 {
    if (s->info.stage != MESA_SHADER_VERTEX &&
        s->info.stage != MESA_SHADER_FRAGMENT)
       return;
 
    struct slot_info slots[64] = {0};
-   struct walk_varyings_data wv_data = {info, slots};
+   struct walk_varyings_data wv_data = {mediump, info, slots};
    nir_shader_instructions_pass(s, walk_varyings, nir_metadata_all, &wv_data);
 
    struct pan_shader_varying *varyings = (s->info.stage == MESA_SHADER_VERTEX)

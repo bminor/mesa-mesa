@@ -197,31 +197,11 @@ emit_varying_descs(const struct panvk_cmd_buffer *cmdbuf,
       if (var->location < VARYING_SLOT_VAR0)
          continue;
 
-      /* We currently always write out F32 in the vertex shaders, so the format
-       * needs to reflect this. */
-      enum pipe_format f = var->format;
-      switch (f) {
-      case PIPE_FORMAT_R16_FLOAT:
-         f = PIPE_FORMAT_R32_FLOAT;
-         break;
-      case PIPE_FORMAT_R16G16_FLOAT:
-         f = PIPE_FORMAT_R32G32_FLOAT;
-         break;
-      case PIPE_FORMAT_R16G16B16_FLOAT:
-         f = PIPE_FORMAT_R32G32B32_FLOAT;
-         break;
-      case PIPE_FORMAT_R16G16B16A16_FLOAT:
-         f = PIPE_FORMAT_R32G32B32A32_FLOAT;
-         break;
-      default:
-         break;
-      }
-
       uint32_t loc = var->location - VARYING_SLOT_VAR0;
       pan_pack(&descs[i], ATTRIBUTE, cfg) {
          cfg.attribute_type = MALI_ATTRIBUTE_TYPE_VERTEX_PACKET;
          cfg.offset_enable = false;
-         cfg.format = GENX(panfrost_format_from_pipe_format)(f)->hw;
+         cfg.format = GENX(panfrost_format_from_pipe_format)(var->format)->hw;
          cfg.table = 61;
          cfg.frequency = MALI_ATTRIBUTE_FREQUENCY_VERTEX;
          cfg.offset = 1024 + (loc * 16);
