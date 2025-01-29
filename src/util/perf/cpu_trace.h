@@ -12,6 +12,12 @@
 
 #include "util/detect_os.h"
 #include "util/macros.h"
+#include "util/os_time.h"
+
+struct mesa_trace_flow {
+   uint64_t id;
+   int64_t start_time;
+};
 
 #if defined(HAVE_PERFETTO)
 
@@ -155,13 +161,17 @@ _mesa_trace_scope_begin(const char *format, ...)
 }
 
 static inline void *
-_mesa_trace_scope_flow_begin(const char *name, uint64_t *id)
+_mesa_trace_scope_flow_begin(const char *name,
+			     struct mesa_trace_flow *flow)
 {
    void *scope = NULL;
 
-   if (*id == 0)
-      *id = util_perfetto_next_id();
-   _MESA_TRACE_FLOW_BEGIN(name, *id);
+   if (flow->id == 0) {
+      flow->id = util_perfetto_next_id();
+      flow->start_time = os_time_get_nano();
+   }
+
+   _MESA_TRACE_FLOW_BEGIN(name, flow->id);
    _MESA_GPUVIS_TRACE_BEGIN(name);
    scope = _MESA_SYSPROF_TRACE_BEGIN(name);
    return scope;

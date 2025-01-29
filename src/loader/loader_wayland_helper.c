@@ -36,12 +36,11 @@
 struct loader_wayland_presentation_feedback_data {
    struct loader_wayland_presentation *presentation;
    bool tracing;
-   uint64_t flow_id;
+   struct mesa_trace_flow flow;
    /* We store copies of name and id, since buffers can be
     * destroyed before feedback is serviced */
    char *buffer_name;
    uint32_t buffer_id;
-   uint64_t buffer_acquisition_time;
    void *callback_data;
    struct wp_presentation_feedback *feedback;
    struct list_head link;
@@ -201,9 +200,8 @@ loader_wayland_wrap_buffer(struct loader_wayland_buffer *lwb,
 {
    lwb->buffer = wl_buffer;
    lwb->id = wl_proxy_get_id((struct wl_proxy *)wl_buffer);
-   lwb->flow_id = 0;
+   lwb->flow.id = 0;
    lwb->name = stringify_wayland_id(lwb->id);
-   lwb->acquisition_time = 0;
 }
 
 void
@@ -212,17 +210,16 @@ loader_wayland_buffer_destroy(struct loader_wayland_buffer *lwb)
    wl_buffer_destroy(lwb->buffer);
    lwb->buffer = NULL;
    lwb->id = 0;
-   lwb->flow_id = 0;
+   lwb->flow.id = 0;
    free(lwb->name);
    lwb->name = NULL;
-   lwb->acquisition_time = 0;
 }
 
 void
-loader_wayland_buffer_set_flow(struct loader_wayland_buffer *lwb, uint64_t flow_id)
+loader_wayland_buffer_set_flow(struct loader_wayland_buffer *lwb,
+                               struct mesa_trace_flow *flow)
 {
-  lwb->flow_id = flow_id;
-  lwb->acquisition_time = os_time_get_nano();
+  lwb->flow = *flow;
 }
 
 bool
@@ -275,7 +272,7 @@ loader_wayland_trace_present(struct loader_wayland_presentation_feedback_data *f
    clock = fd->presentation->clock_id;
 
    MESA_TRACE_SET_COUNTER(lws->analytics.latency_str,
-                          (presentation_time - fd->buffer_acquisition_time) / 1000000.0);
+                          (presentation_time - fd->flow.start_time) / 1000000.0);
 
    /* Close the previous image display interval first, if there is one. */
    if (lws->analytics.presenting) {
@@ -288,7 +285,7 @@ loader_wayland_trace_present(struct loader_wayland_presentation_feedback_data *f
 
    MESA_TRACE_TIMESTAMP_BEGIN(fd->buffer_name,
                               lws->analytics.presentation_track_id,
-                              fd->flow_id,
+                              fd->flow.id,
                               clock, presentation_time);
 }
 
@@ -323,7 +320,7 @@ presentation_handle_presented(void *data,
    struct timespec presentation_ts;
    uint64_t presentation_time;
 
-   MESA_TRACE_FUNC_FLOW(&fd->flow_id);
+   MESA_TRACE_FUNC_FLOW(&fd->flow);
 
    presentation_ts.tv_sec = ((uint64_t)tv_sec_hi << 32) + tv_sec_lo;
    presentation_ts.tv_nsec = tv_nsec;
@@ -344,7 +341,7 @@ presentation_handle_discarded(void *data,
    struct loader_wayland_presentation_feedback_data *fd = data;
    struct loader_wayland_presentation *pres = fd->presentation;
 
-   MESA_TRACE_FUNC_FLOW(&fd->flow_id);
+   MESA_TRACE_FUNC_FLOW(&fd->flow);
 
    if (pres->discarded_callback)
       pres->discarded_callback(fd->callback_data);
@@ -418,11 +415,10 @@ loader_wayland_presentation_feedback(struct loader_wayland_presentation *pres,
    fd = malloc(sizeof *fd);
    fd->presentation = pres;
    fd->tracing = tracing;
-   fd->flow_id = lwb->flow_id;
    if (tracing) {
       fd->buffer_name = strdup(lwb->name);
       fd->buffer_id = lwb->id;
-      fd->buffer_acquisition_time = lwb->acquisition_time;
+      fd->flow = lwb->flow;
    }
    fd->callback_data = callback_data;
    fd->feedback = wp_presentation_feedback(pres->presentation,

@@ -27,14 +27,14 @@
 #include <wayland-client.h>
 #include "presentation-time-client-protocol.h"
 #include "util/list.h"
+#include "util/perf/cpu_trace.h"
 
 struct loader_wayland_presentation_feedback_data;
 
 struct loader_wayland_buffer {
    struct wl_buffer *buffer;
    uint32_t id;
-   uint64_t flow_id;
-   uint64_t acquisition_time;
+   struct mesa_trace_flow flow;
    char *name;
 };
 
@@ -87,7 +87,8 @@ void
 loader_wayland_buffer_destroy(struct loader_wayland_buffer *lwb);
 
 void
-loader_wayland_buffer_set_flow(struct loader_wayland_buffer *lwb, uint64_t flow_id);
+loader_wayland_buffer_set_flow(struct loader_wayland_buffer *lwb,
+                               struct mesa_trace_flow *flow);
 
 bool
 loader_wayland_wrap_surface(struct loader_wayland_surface *lws,
