@@ -85,7 +85,6 @@ anv-jsl-angle:
   variables:
     DEQP_SUITE: anv-jsl-angle
     GPU_VERSION: angle-anv-jsl
-  parallel: 2
 
 anv-jsl-angle-full:
   extends:

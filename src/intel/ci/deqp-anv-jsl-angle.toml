@@ -9,7 +9,7 @@ deqp_args = [
 ]
 version_check = "GL ES 3.1"
 renderer_check = "ANGLE.*JSL"
-fraction = 3
+fraction = 15
 
 [[deqp]]
 deqp = "/deqp-gles/modules/gles3/deqp-gles3"
@@ -19,7 +19,7 @@ deqp_args = [
     "--deqp-surface-type=pbuffer", "--deqp-visibility=hidden",
     "--deqp-gl-config-name=rgba8888d24s8ms0",
 ]
-fraction = 6
+fraction = 15
 
 [[deqp]]
 deqp = "/deqp-gles/modules/gles31/deqp-gles31"
@@ -29,7 +29,7 @@ deqp_args = [
     "--deqp-surface-type=pbuffer", "--deqp-visibility=hidden",
     "--deqp-gl-config-name=rgba8888d24s8ms0",
 ]
-fraction = 6
+fraction = 15
 
 [[deqp]]
 deqp = "/deqp-gles/external/openglcts/modules/glcts"
@@ -43,7 +43,7 @@ deqp_args = [
     "--deqp-surface-type=pbuffer", "--deqp-visibility=hidden",
     "--deqp-gl-config-name=rgba8888d24s8ms0",
 ]
-fraction = 2
+fraction = 15
 
 # 565-no-depth-no-stencil: Not supported with angle on X11?
 
