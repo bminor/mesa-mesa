@@ -131,6 +131,20 @@ lower_intrinsic_instr(nir_builder *b, nir_intrinsic_instr *intrin,
                       unsigned bit_size)
 {
    switch (intrin->intrinsic) {
+   case nir_intrinsic_ballot:
+   case nir_intrinsic_ballot_relaxed: {
+      b->cursor = nir_before_instr(&intrin->instr);
+
+      nir_alu_type type = nir_type_uint;
+      if (intrin->src[0].ssa->bit_size == 1)
+         type = nir_type_bool;
+
+      nir_def *new_src = nir_convert_to_bit_size(b, intrin->src[0].ssa,
+                                                 type, bit_size);
+      nir_src_rewrite(&intrin->src[0], new_src);
+      break;
+   }
+
    case nir_intrinsic_read_invocation:
    case nir_intrinsic_read_first_invocation:
    case nir_intrinsic_shuffle:
