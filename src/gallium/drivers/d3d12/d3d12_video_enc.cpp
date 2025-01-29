@@ -385,6 +385,68 @@ d3d12_video_encoder_update_move_rects(struct d3d12_video_encoder *pD3D12Enc,
 #endif
 }
 
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+static void d3d12_video_encoder_is_gpu_qmap_input_feature_enabled(struct d3d12_video_encoder* pD3D12Enc, BOOL& isEnabled, D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE &outMapSourceEnabled)
+{
+   isEnabled = FALSE;
+
+   //
+   // Prefer GPU QP Map over CPU QP Delta Map if both are enabled
+   //
+
+   if (pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.CPUInput.AppRequested)
+   {
+      isEnabled = TRUE;
+      outMapSourceEnabled = D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_CPU_BUFFER;
+      assert(!pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.GPUInput.AppRequested); // When enabling CPU QP Map, GPU QP Delta must be disabled
+   }
+
+   if (pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.GPUInput.AppRequested)
+   {
+      isEnabled = TRUE;
+      outMapSourceEnabled = D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_GPU_TEXTURE;
+      assert(!pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.CPUInput.AppRequested); // When enabling GPU QP Map, CPU QP Delta must be disabled
+   }
+}
+#endif // D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+
+void
+d3d12_video_encoder_update_qpmap_input(struct d3d12_video_encoder *pD3D12Enc,
+                                       struct pipe_resource* qpmap,
+                                       struct pipe_enc_roi roi,
+                                       uint32_t temporal_id)
+{
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+   //
+   // Clear QPDelta context for this frame
+   //
+   memset(&pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc, 0, sizeof(pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc));
+   pD3D12Enc->m_currentEncodeConfig.m_encoderRateControlDesc[temporal_id].m_Flags = D3D12_VIDEO_ENCODER_RATE_CONTROL_FLAG_NONE;
+
+   //
+   // Check if CPU/GPU QP Maps are enabled and store it in the context
+   //
+   if (qpmap)
+   {
+      pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.GPUInput.AppRequested = true;
+      pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.GPUInput.InputMap = d3d12_resource(qpmap);
+      pD3D12Enc->m_currentEncodeConfig.m_encoderRateControlDesc[temporal_id].m_Flags |=
+         D3D12_VIDEO_ENCODER_RATE_CONTROL_FLAG_ENABLE_DELTA_QP;
+   }
+
+   if (roi.num > 0)
+   {
+      pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.CPUInput.AppRequested = true;
+      // pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.CPUInput.* QP matrices are copied over in
+      // d3d12_video_encoder_xxx.cpp by calling d3d12_video_encoder_update_picparams_region_of_interest_qpmap method
+      // from the different ROI structures/ranges passed by the application
+      pD3D12Enc->m_currentEncodeConfig.m_encoderRateControlDesc[temporal_id].m_Flags |=
+         D3D12_VIDEO_ENCODER_RATE_CONTROL_FLAG_ENABLE_DELTA_QP;
+   }
+
+#endif
+}
+
 void
 d3d12_video_encoder_update_dirty_rects(struct d3d12_video_encoder *pD3D12Enc,
                                        const struct pipe_enc_dirty_info& rects)
@@ -1553,6 +1615,9 @@ bool d3d12_video_encoder_query_d3d12_driver_caps(struct d3d12_video_encoder *pD3
                                                             pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.RectsInfo.MapValuesType :
                                                             pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapInfo.MapValuesType;
    }
+
+   d3d12_video_encoder_is_gpu_qmap_input_feature_enabled(pD3D12Enc, /*output param*/ capEncoderSupportData1.QPMap.Enabled, /*output param*/ capEncoderSupportData1.QPMap.MapSource);
+
 #endif
 
    enum pipe_video_format codec = u_reduce_video_profile(pD3D12Enc->base.profile);
@@ -1711,6 +1776,45 @@ bool d3d12_video_encoder_query_d3d12_driver_caps(struct d3d12_video_encoder *pD3
       }
    }
 
+   if ((capEncoderSupportData1.QPMap.MapSource == D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_GPU_TEXTURE) &&
+       (capEncoderSupportData1.QPMap.Enabled))
+   {
+      // Query specifics of staging resource for QPMap regions
+      pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.GPUInput.capInputLayoutQPMap =
+      {
+         // UINT NodeIndex;
+         0u,
+         // D3D12_VIDEO_ENCODER_INPUT_MAP_SESSION_INFO SessionInfo;
+         {
+            capEncoderSupportData1.Codec,
+            d3d12_video_encoder_get_current_profile_desc(pD3D12Enc),
+            d3d12_video_encoder_get_current_level_desc(pD3D12Enc),
+            pD3D12Enc->m_currentEncodeConfig.m_encodeFormatInfo.Format,
+            // D3D12_VIDEO_ENCODER_PICTURE_RESOLUTION_DESC
+            pD3D12Enc->m_currentEncodeConfig.m_currentResolution,
+            d3d12_video_encoder_get_current_codec_config_desc(pD3D12Enc),
+            capEncoderSupportData1.SubregionFrameEncoding,
+            capEncoderSupportData1.SubregionFrameEncodingData
+         },
+         // D3D12_VIDEO_ENCODER_INPUT_MAP_TYPE MapType;
+         D3D12_VIDEO_ENCODER_INPUT_MAP_TYPE_QUANTIZATION_MATRIX,
+         // BOOL IsSupported;
+         FALSE,
+         // UINT64 MaxResolvedBufferAllocationSize;
+         0u,
+      };
+
+      hr = pD3D12Enc->m_spD3D12VideoDevice->CheckFeatureSupport(D3D12_FEATURE_VIDEO_ENCODER_RESOLVE_INPUT_PARAM_LAYOUT,
+                                                                &pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.GPUInput.capInputLayoutQPMap,
+                                                                sizeof(pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.GPUInput.capInputLayoutQPMap));
+
+      if (FAILED(hr)) {
+         debug_printf("CheckFeatureSupport D3D12_FEATURE_VIDEO_ENCODER_RESOLVE_INPUT_PARAM_LAYOUT failed with HR %x\n", hr);
+         return false;
+      }
+   }
+
+
    return true;
 }
 
@@ -1834,6 +1938,9 @@ d3d12_video_encoder_update_current_encoder_config_state(struct d3d12_video_encod
 
          d3d12_video_encoder_update_move_rects(pD3D12Enc, ((struct pipe_h264_enc_picture_desc *)picture)->move_rects);
          d3d12_video_encoder_update_dirty_rects(pD3D12Enc, ((struct pipe_h264_enc_picture_desc *)picture)->dirty_info);
+         d3d12_video_encoder_update_qpmap_input(pD3D12Enc, ((struct pipe_h264_enc_picture_desc *)picture)->input_gpu_qpmap,
+                                                           ((struct pipe_h264_enc_picture_desc *)picture)->roi,
+                                                           ((struct pipe_h264_enc_picture_desc *)picture)->pic_ctrl.temporal_id);
          // ...encoder_config_state_h264 calls encoder support cap, set any state before this call
          bCodecUpdatesSuccess = d3d12_video_encoder_update_current_encoder_config_state_h264(pD3D12Enc, srcTextureDesc, picture);
       } break;
@@ -1848,6 +1955,9 @@ d3d12_video_encoder_update_current_encoder_config_state(struct d3d12_video_encod
 
          d3d12_video_encoder_update_move_rects(pD3D12Enc, ((struct pipe_h265_enc_picture_desc *)picture)->move_rects);
          d3d12_video_encoder_update_dirty_rects(pD3D12Enc, ((struct pipe_h265_enc_picture_desc *)picture)->dirty_info);
+         d3d12_video_encoder_update_qpmap_input(pD3D12Enc, ((struct pipe_h265_enc_picture_desc *)picture)->input_gpu_qpmap,
+                                                           ((struct pipe_h265_enc_picture_desc *)picture)->roi,
+                                                           ((struct pipe_h265_enc_picture_desc *)picture)->pic.temporal_id);
          // ...encoder_config_state_hevc calls encoder support cap, set any state before this call
          bCodecUpdatesSuccess = d3d12_video_encoder_update_current_encoder_config_state_hevc(pD3D12Enc, srcTextureDesc, picture);
       } break;
@@ -1855,6 +1965,10 @@ d3d12_video_encoder_update_current_encoder_config_state(struct d3d12_video_encod
 #if VIDEO_CODEC_AV1ENC
       case PIPE_VIDEO_FORMAT_AV1:
       {
+         d3d12_video_encoder_update_qpmap_input(pD3D12Enc, ((struct pipe_av1_enc_picture_desc *)picture)->input_gpu_qpmap,
+                                                           ((struct pipe_av1_enc_picture_desc *)picture)->roi,
+                                                           ((struct pipe_av1_enc_picture_desc *)picture)->temporal_id);
+         // ...encoder_config_state_av1 calls encoder support cap, set any state before this call
          bCodecUpdatesSuccess = d3d12_video_encoder_update_current_encoder_config_state_av1(pD3D12Enc, srcTextureDesc, picture);
       } break;
 #endif
@@ -2146,6 +2260,31 @@ d3d12_video_encoder_prepare_input_buffers(struct d3d12_video_encoder *pD3D12Enc)
          if (FAILED(hr))
          {
             debug_printf("CreateCommittedResource for m_spDirtyRectsResolvedOpaqueMap failed with HR %x\n", hr);
+         }
+      }
+   }
+
+   BOOL QPMapEnabled = FALSE;
+   D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE QPMapSource = D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_CPU_BUFFER;
+   d3d12_video_encoder_is_gpu_qmap_input_feature_enabled(pD3D12Enc, /*output param*/ QPMapEnabled, /*output param*/ QPMapSource);
+   if (QPMapEnabled && (QPMapSource == D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_GPU_TEXTURE))
+   {
+      bool bNeedsCreation = (pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].m_spQPMapResolvedOpaqueMap == NULL) ||
+                            (GetDesc(pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].m_spQPMapResolvedOpaqueMap.Get()).Width <
+                             pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.GPUInput.capInputLayoutQPMap.MaxResolvedBufferAllocationSize);
+      if (bNeedsCreation)
+      {
+         pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].m_spQPMapResolvedOpaqueMap.Reset();
+         CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Buffer(pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.GPUInput.capInputLayoutQPMap.MaxResolvedBufferAllocationSize);
+         hr = pD3D12Enc->m_pD3D12Screen->dev->CreateCommittedResource(&Properties,
+            D3D12_HEAP_FLAG_NONE,
+            &desc,
+            D3D12_RESOURCE_STATE_COMMON,
+            nullptr,
+            IID_PPV_ARGS(&pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].m_spQPMapResolvedOpaqueMap));
+         if (FAILED(hr))
+         {
+            debug_printf("CreateCommittedResource for m_spQPMapResolvedOpaqueMap failed with HR %x\n", hr);
          }
       }
    }
@@ -2951,6 +3090,47 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
       }
    }
 
+   D3D12_VIDEO_ENCODER_QUANTIZATION_OPAQUE_MAP QuantizationTextureMap = {};
+   BOOL QPMapEnabled = false;
+   D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE QPMapSource = D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_CPU_BUFFER;
+   d3d12_video_encoder_is_gpu_qmap_input_feature_enabled(pD3D12Enc, /*output param*/ QPMapEnabled, /*output param*/ QPMapSource);
+   if (QPMapEnabled && (QPMapSource == D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_GPU_TEXTURE))
+   {
+      picCtrlFlags |= D3D12_VIDEO_ENCODER_PICTURE_CONTROL_FLAG_ENABLE_QUANTIZATION_MATRIX_INPUT;
+      QuantizationTextureMap.pOpaqueQuantizationMap = pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].m_spQPMapResolvedOpaqueMap.Get();
+
+      pResolveInputDataBarriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(QuantizationTextureMap.pOpaqueQuantizationMap,
+                                                                               D3D12_RESOURCE_STATE_COMMON,
+                                                                               D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE));
+
+      pResolveInputDataBarriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(d3d12_resource_resource(pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.GPUInput.InputMap),
+                                                                               D3D12_RESOURCE_STATE_COMMON,
+                                                                               D3D12_RESOURCE_STATE_VIDEO_ENCODE_READ));
+
+      // see below std::warp for reversal to common after ResolveInputParamLayout is done
+      pD3D12Enc->m_spEncodeCommandList->ResourceBarrier(static_cast<uint32_t>(pResolveInputDataBarriers.size()),
+                                                                              pResolveInputDataBarriers.data());
+      D3D12_VIDEO_ENCODER_INPUT_MAP_DATA ResolveInputData = {};
+      ResolveInputData.MapType = D3D12_VIDEO_ENCODER_INPUT_MAP_TYPE_QUANTIZATION_MATRIX;
+      ResolveInputData.Quantization.pQuantizationMap = d3d12_resource_resource(pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.GPUInput.InputMap);
+      D3D12_VIDEO_ENCODER_RESOLVE_INPUT_PARAM_LAYOUT_INPUT_ARGUMENTS resolveInputParamLayoutInput =
+      {
+         pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.GPUInput.capInputLayoutQPMap.SessionInfo,
+         ResolveInputData,
+      };
+      D3D12_VIDEO_ENCODER_RESOLVE_INPUT_PARAM_LAYOUT_OUTPUT_ARGUMENTS resolveInputParamLayoutOutput =
+      {
+         QuantizationTextureMap.pOpaqueQuantizationMap,
+      };
+
+      pD3D12Enc->m_spEncodeCommandList->ResolveInputParamLayout(&resolveInputParamLayoutInput, &resolveInputParamLayoutOutput);
+      for (auto &BarrierDesc : pResolveInputDataBarriers) {
+         std::swap(BarrierDesc.Transition.StateBefore, BarrierDesc.Transition.StateAfter);
+      }
+      pD3D12Enc->m_spEncodeCommandList->ResourceBarrier(static_cast<uint32_t>(pResolveInputDataBarriers.size()),
+                                                      pResolveInputDataBarriers.data());
+   }
+
    D3D12_VIDEO_ENCODER_FRAME_MOTION_VECTORS motionRegions = { };
    motionRegions.MapSource = D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_CPU_BUFFER;
    motionRegions.pCPUBuffer = &pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc;
@@ -3026,7 +3206,7 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
          // D3D12_VIDEO_ENCODER_DIRTY_REGIONS DirtyRects;
          dirtyRegions,
          // D3D12_VIDEO_ENCODER_QUANTIZATION_OPAQUE_MAP QuantizationTextureMap;
-         {},
+         QuantizationTextureMap,
 #endif
       },
       pInputVideoD3D12Res,

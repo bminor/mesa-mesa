@@ -232,10 +232,6 @@ struct D3D12EncodeRateControlState
       D3D12_VIDEO_ENCODER_RATE_CONTROL_VBR1  m_Configuration_VBR1;
       D3D12_VIDEO_ENCODER_RATE_CONTROL_QVBR1 m_Configuration_QVBR1;  
    } m_Config;
-
-   // AV1 uses 16 bit integers, H26x uses 8 bit integers
-   std::vector<int8_t> m_pRateControlQPMap8Bit;
-   std::vector<int16_t> m_pRateControlQPMap16Bit;
 };
 
 struct D3D12EncodeConfiguration
@@ -339,6 +335,20 @@ struct D3D12EncodeConfiguration
          } MapInfo;
       };
    } m_DirtyRectsDesc = {};
+   struct
+   {
+      struct {
+         bool AppRequested;
+         struct d3d12_resource* InputMap;
+         D3D12_FEATURE_DATA_VIDEO_ENCODER_RESOLVE_INPUT_PARAM_LAYOUT capInputLayoutQPMap;
+      } GPUInput;
+      struct {
+         bool AppRequested;
+         // AV1 uses 16 bit integers, H26x uses 8 bit integers
+         std::vector<int8_t> m_pRateControlQPMap8Bit;
+         std::vector<int16_t> m_pRateControlQPMap16Bit;
+      } CPUInput;
+   } m_QuantizationMatrixDesc = {};
    std::vector<RECT> m_DirtyRectsArray;
    D3D12_VIDEO_ENCODER_MOVEREGION_INFO m_MoveRectsDesc = {};
    std::vector<D3D12_VIDEO_ENCODER_MOVE_RECT> m_MoveRectsArray;
@@ -522,6 +532,7 @@ struct d3d12_video_encoder
       enum pipe_video_feedback_encode_result_flags encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_OK;
 
       ComPtr<ID3D12Resource> m_spDirtyRectsResolvedOpaqueMap; // output of ID3D12VideoEncodeCommandList::ResolveInputParamLayout
+      ComPtr<ID3D12Resource> m_spQPMapResolvedOpaqueMap; // output of ID3D12VideoEncodeCommandList::ResolveInputParamLayout
    };
 
    std::vector<InFlightEncodeResources> m_inflightResourcesPool;
@@ -662,6 +673,12 @@ d3d12_video_encoder_update_output_stats_resources(struct d3d12_video_encoder *pD
 
 bool
 d3d12_video_encoder_prepare_input_buffers(struct d3d12_video_encoder *pD3D12Enc);
+
+void
+d3d12_video_encoder_update_qpmap_input(struct d3d12_video_encoder *pD3D12Enc,
+                                       struct pipe_resource* qpmap,
+                                       struct pipe_enc_roi roi,
+                                       uint32_t temporal_id);
 ///
 /// d3d12_video_encoder functions ends
 ///

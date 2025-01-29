@@ -1062,6 +1062,41 @@ get_sliced_encode_support(D3D12_VIDEO_ENCODER_SUPPORT_FLAGS capEncoderSupportFla
    return sliced_encode_support;
 }
 
+static
+union pipe_enc_cap_qpmap
+get_qpmap_gpuinput_support(D3D12_VIDEO_ENCODER_INPUT_MAP_SESSION_INFO sessionInfo,
+                           ID3D12VideoDevice3* pD3D12VideoDevice)
+{
+   D3D12_FEATURE_DATA_VIDEO_ENCODER_QPMAP_INPUT capQPInput =
+   {
+      //  UINT NodeIndex;
+      0u,
+      //  D3D12_VIDEO_ENCODER_INPUT_MAP_SESSION_INFO SessionInfo;
+      sessionInfo,
+      //  D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE MapSource;
+      D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_GPU_TEXTURE,
+      //  BOOL IsSupported;
+      FALSE,
+      //  UINT MapSourcePreferenceRanking;
+      0u,
+      //  UINT BlockSize;
+      0u,
+   };
+
+   union pipe_enc_cap_qpmap qpmap_gpu_support = {};
+   if (SUCCEEDED(pD3D12VideoDevice->CheckFeatureSupport(D3D12_FEATURE_VIDEO_ENCODER_QPMAP_INPUT, &capQPInput, sizeof(capQPInput))))
+   {
+      qpmap_gpu_support.bits.supported = capQPInput.IsSupported ? 1u : 0u;
+      if (qpmap_gpu_support.bits.supported)
+      {
+         qpmap_gpu_support.bits.pipe_pixel_format = PIPE_FORMAT_R8_UINT; // As per DX12 spec
+         qpmap_gpu_support.bits.log2_values_block_size = static_cast<uint32_t>(std::log2(capQPInput.BlockSize));
+      }
+   }
+
+   return qpmap_gpu_support;
+}
+
 #endif // D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
 
 static bool
@@ -1090,7 +1125,8 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
                                union pipe_enc_cap_gpu_stats_map &gpu_stats_satd,
                                union pipe_enc_cap_gpu_stats_map &gpu_stats_rcbits,
                                union pipe_enc_cap_sliced_notifications &sliced_encode_support,
-                               union pipe_enc_cap_dirty_info &dirty_rects_support_gpu)
+                               union pipe_enc_cap_dirty_info &dirty_rects_support_gpu,
+                               union pipe_enc_cap_qpmap &qpmap_support)
 {
    ComPtr<ID3D12VideoDevice3> spD3D12VideoDevice;
    struct d3d12_screen *pD3D12Screen = (struct d3d12_screen *) pscreen;
@@ -1224,6 +1260,7 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
             move_rects_support = get_move_rects_support(sessionInfo, spD3D12VideoDevice.Get());
             get_gpu_output_stats_support(sessionInfo, capEncoderSupportData1.SupportFlags, spD3D12VideoDevice.Get(), gpu_stats_qp, gpu_stats_satd, gpu_stats_rcbits);
             sliced_encode_support = get_sliced_encode_support(capEncoderSupportData1.SupportFlags);
+            qpmap_support = get_qpmap_gpuinput_support(sessionInfo, spD3D12VideoDevice.Get());
 #endif
          }
       } break;
@@ -2119,6 +2156,7 @@ d3d12_screen_get_video_param_encode(struct pipe_screen *pscreen,
    union pipe_enc_cap_gpu_stats_map gpu_stats_satd = {};
    union pipe_enc_cap_gpu_stats_map gpu_stats_rcbits = {};
    union pipe_enc_cap_sliced_notifications sliced_encode_support = {};
+   union pipe_enc_cap_qpmap gpu_qpmap_input = {};
    memset(&codec_specific_support, 0, sizeof(codec_specific_support));
    switch (param) {
       case PIPE_VIDEO_CAP_REQUIRES_FLUSH_ON_END_FRAME:
@@ -2188,6 +2226,7 @@ d3d12_screen_get_video_param_encode(struct pipe_screen *pscreen,
       case PIPE_VIDEO_CAP_ENC_GPU_STATS_RATE_CONTROL_BITS_MAP:
       case PIPE_VIDEO_CAP_ENC_SLICED_NOTIFICATIONS:
       case PIPE_VIDEO_CAP_ENC_DIRTY_MAPS:
+      case PIPE_VIDEO_CAP_ENC_QP_MAPS:
       {
          if (d3d12_has_video_encode_support(pscreen,
                                             profile,
@@ -2214,7 +2253,8 @@ d3d12_screen_get_video_param_encode(struct pipe_screen *pscreen,
                                             gpu_stats_satd,
                                             gpu_stats_rcbits,
                                             sliced_encode_support,
-                                            dirty_rects_support_gpu)) {
+                                            dirty_rects_support_gpu,
+                                            gpu_qpmap_input)) {
 
             DXGI_FORMAT format = d3d12_convert_pipe_video_profile_to_dxgi_format(profile);
             auto pipeFmt = d3d12_get_pipe_format(format);
@@ -2313,6 +2353,8 @@ d3d12_screen_get_video_param_encode(struct pipe_screen *pscreen,
                   return sliced_encode_support.value;
                } else if (param == PIPE_VIDEO_CAP_ENC_DIRTY_MAPS) {
                   return dirty_rects_support_gpu.value;
+               } else if (param == PIPE_VIDEO_CAP_ENC_QP_MAPS) {
+                  return gpu_qpmap_input.value;
                }
             }
          } else if (param == PIPE_VIDEO_CAP_ENC_QUALITY_LEVEL) {
@@ -2388,6 +2430,7 @@ d3d12_video_encode_requires_texture_array_dpb(struct d3d12_screen* pScreen, enum
    union pipe_enc_cap_gpu_stats_map gpu_stats_satd = {};
    union pipe_enc_cap_gpu_stats_map gpu_stats_rcbits = {};
    union pipe_enc_cap_sliced_notifications sliced_encode_support = {};
+   union pipe_enc_cap_qpmap gpu_qpmap_input = {};
    if (d3d12_has_video_encode_support(&pScreen->base,
                                       profile,
                                       maxLvlEncode,
@@ -2413,7 +2456,8 @@ d3d12_video_encode_requires_texture_array_dpb(struct d3d12_screen* pScreen, enum
                                       gpu_stats_satd,
                                       gpu_stats_rcbits,
                                       sliced_encode_support,
-                                      dirty_rects_support_gpu))
+                                      dirty_rects_support_gpu,
+                                      gpu_qpmap_input))
    {
       return bVideoEncodeRequiresTextureArray;
    }
