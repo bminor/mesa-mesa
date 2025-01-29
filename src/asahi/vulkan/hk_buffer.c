@@ -239,9 +239,13 @@ hk_BindBufferMemory2(VkDevice device, uint32_t bindInfoCount,
 
       if (buffer->va) {
          VK_FROM_HANDLE(hk_device, dev, device);
-         dev->dev.ops.bo_bind(&dev->dev, mem->bo, buffer->addr,
-                              buffer->va->size_B, pBindInfos[i].memoryOffset,
-                              ASAHI_BIND_READ | ASAHI_BIND_WRITE, false);
+         size_t size = MIN2(mem->bo->size, buffer->va->size_B);
+         int ret = dev->dev.ops.bo_bind(
+            &dev->dev, mem->bo, buffer->addr, size, pBindInfos[i].memoryOffset,
+            ASAHI_BIND_READ | ASAHI_BIND_WRITE, false);
+
+         if (ret)
+            return VK_ERROR_UNKNOWN;
       } else {
          buffer->addr = mem->bo->va->addr + pBindInfos[i].memoryOffset;
       }
