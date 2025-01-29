@@ -231,6 +231,10 @@ enum pipe_video_cap
     * Support for dirty maps in encoder picture params pipe_enc_cap_dirty_info
     */
    PIPE_VIDEO_CAP_ENC_DIRTY_MAPS = 63,
+   /*
+    * Support for QP maps in encoder picture params pipe_enc_cap_qpmap
+    */
+   PIPE_VIDEO_CAP_ENC_QP_MAPS = 64,
 };
 
 enum pipe_video_h264_enc_dbk_filter_mode_flags

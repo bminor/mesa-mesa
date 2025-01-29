@@ -880,6 +880,9 @@ struct pipe_h264_enc_picture_desc
    /* See PIPE_VIDEO_CAP_ENC_GPU_STATS_RATE_CONTROL_BITS_MAP */
    struct pipe_resource *gpu_stats_rc_bitallocation_map;
 
+   /* See PIPE_VIDEO_CAP_ENC_QP_MAPS */
+   struct pipe_resource *input_gpu_qpmap;
+
    bool not_referenced;
    bool is_ltr;
    unsigned ltr_index;
@@ -1272,6 +1275,9 @@ struct pipe_h265_enc_picture_desc
    /* See PIPE_VIDEO_CAP_ENC_GPU_STATS_RATE_CONTROL_BITS_MAP */
    struct pipe_resource *gpu_stats_rc_bitallocation_map;
 
+   /* See PIPE_VIDEO_CAP_ENC_QP_MAPS */
+   struct pipe_resource *input_gpu_qpmap;
+
    unsigned num_ref_idx_l0_active_minus1;
    unsigned num_ref_idx_l1_active_minus1;
    unsigned ref_idx_l0_list[PIPE_H265_MAX_NUM_LIST_REF];
@@ -1451,6 +1457,8 @@ struct pipe_av1_enc_picture_desc
    struct pipe_enc_quality_modes quality_modes;
    struct pipe_enc_intra_refresh intra_refresh;
    struct pipe_enc_roi roi;
+   /* See PIPE_VIDEO_CAP_ENC_QP_MAPS */
+   struct pipe_resource *input_gpu_qpmap;
    uint32_t tile_rows;
    uint32_t tile_cols;
    unsigned num_tile_groups;
@@ -2704,6 +2712,32 @@ union pipe_enc_cap_sliced_notifications {
        * of suballocating and calculating offsets within the single allocation
        */
       uint32_t multiple_buffers_required: 1;
+   } bits;
+  uint32_t value;
+};
+
+/* Used with PIPE_VIDEO_CAP_ENC_QP_MAPS */
+union pipe_enc_cap_qpmap {
+   struct {
+      /*
+       * Driver Output. Indicates support for accepting a QP map input_gpu_qpmap
+         as a GPU resource input during encode frame execution
+       */
+      uint32_t supported: 1;
+      /*
+       * Driver Output. Indicates the pipe_format required for
+         the pipe_resource allocation passed to the driver
+       */
+      uint32_t pipe_pixel_format: 9; /* 9 bits for pipe_format < PIPE_FORMAT_COUNT */
+      /*
+       * Driver Output. Indicates the pixel size of the blocks containing
+         the QP values. For example log2_values_block_size=4 indicates that
+         the QP blocks will correspond to 16x16 blocks. This also indicates
+         the dimensions of the pipe_resource allocation passed to the driver
+         as the encoded frame dimensions (rounded up to codec block size) divided
+         by 2^log2_values_block_size
+       */
+      uint32_t log2_values_block_size: 4;
    } bits;
   uint32_t value;
 };
