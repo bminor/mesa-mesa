@@ -1206,6 +1206,16 @@ radv_image_create_layout(struct radv_device *device, struct radv_image_create_in
             ac_surface_zero_dcc_fields(&image->planes[0].surface);
       }
 
+      if (pdev->info.gfx_level >= GFX12 &&
+          (!radv_surface_has_scanout(device, &create_info) || pdev->info.gfx12_supports_display_dcc)) {
+         const enum pipe_format format = vk_format_to_pipe_format(image->vk.format);
+
+         /* Set DCC tilings for both color and depth/stencil. */
+         image->planes[plane].surface.u.gfx9.color.dcc_number_type = ac_get_cb_number_type(format);
+         image->planes[plane].surface.u.gfx9.color.dcc_data_format = ac_get_cb_format(pdev->info.gfx_level, format);
+         image->planes[plane].surface.u.gfx9.color.dcc_write_compress_disable = false;
+      }
+
       if (create_info.bo_metadata && !mod_info &&
           !ac_surface_apply_umd_metadata(&pdev->info, &image->planes[plane].surface, image->vk.samples,
                                          image->vk.mip_levels, create_info.bo_metadata->size_metadata,
