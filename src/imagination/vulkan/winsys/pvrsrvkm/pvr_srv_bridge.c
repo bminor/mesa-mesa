@@ -242,7 +242,7 @@ VkResult pvr_srv_get_multicore_info(int fd,
                            ret);
    }
 
-   if (!num_cores)
+   if (num_cores)
       *num_cores = ret.num_cores;
 
    return VK_SUCCESS;
