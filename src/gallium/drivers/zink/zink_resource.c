@@ -1726,7 +1726,7 @@ add_resource_bind(struct zink_context *ctx, struct zink_resource *res, unsigned 
    assert((res->base.b.bind & bind) == 0);
    res->base.b.bind |= bind;
    struct zink_resource_object *old_obj = res->obj;
-   if (bind & ZINK_BIND_DMABUF && !res->modifiers_count && screen->info.have_EXT_image_drm_format_modifier) {
+   if (bind & ZINK_BIND_DMABUF && !res->modifiers_count && !res->obj->is_buffer && screen->info.have_EXT_image_drm_format_modifier) {
       res->modifiers_count = 1;
       res->modifiers = malloc(res->modifiers_count * sizeof(uint64_t));
       if (!res->modifiers) {
@@ -1981,10 +1981,12 @@ zink_resource_get_handle(struct pipe_screen *pscreen,
       uint64_t value;
       zink_resource_get_param(pscreen, context, tex, 0, 0, 0, PIPE_RESOURCE_PARAM_MODIFIER, 0, &value);
       whandle->modifier = value;
-      zink_resource_get_param(pscreen, context, tex, 0, 0, 0, PIPE_RESOURCE_PARAM_OFFSET, 0, &value);
-      whandle->offset = value;
-      zink_resource_get_param(pscreen, context, tex, 0, 0, 0, PIPE_RESOURCE_PARAM_STRIDE, 0, &value);
-      whandle->stride = value;
+      if (!res->obj->is_buffer) {
+         zink_resource_get_param(pscreen, context, tex, 0, 0, 0, PIPE_RESOURCE_PARAM_OFFSET, 0, &value);
+         whandle->offset = value;
+         zink_resource_get_param(pscreen, context, tex, 0, 0, 0, PIPE_RESOURCE_PARAM_STRIDE, 0, &value);
+         whandle->stride = value;
+      }
 #else
       return false;
 #endif
@@ -2009,14 +2011,18 @@ zink_resource_from_handle(struct pipe_screen *pscreen,
 
    uint64_t modifier = DRM_FORMAT_MOD_LINEAR;
    int modifier_count = 1;
-   if (whandle->modifier != DRM_FORMAT_MOD_INVALID)
-      modifier = whandle->modifier;
-   else {
-      if (!zink_screen(pscreen)->driver_workarounds.can_do_invalid_linear_modifier) {
-         mesa_loge("zink: display server doesn't support DRI3 modifiers and driver can't handle INVALID<->LINEAR!");
-         return NULL;
+   if (templ->target == PIPE_BUFFER) {
+      modifier_count = 0;
+   } else {
+      if (whandle->modifier != DRM_FORMAT_MOD_INVALID)
+         modifier = whandle->modifier;
+      else {
+         if (!zink_screen(pscreen)->driver_workarounds.can_do_invalid_linear_modifier) {
+            mesa_loge("zink: display server doesn't support DRI3 modifiers and driver can't handle INVALID<->LINEAR!");
+            return NULL;
+         }
+         whandle->modifier = modifier;
       }
-      whandle->modifier = modifier;
    }
    templ2.bind |= ZINK_BIND_DMABUF;
    struct pipe_resource *pres = resource_create(pscreen, &templ2, whandle, usage, &modifier, modifier_count, NULL, NULL);
@@ -2294,7 +2300,9 @@ zink_buffer_map(struct pipe_context *pctx,
    if (!(usage & (PIPE_MAP_UNSYNCHRONIZED | TC_TRANSFER_MAP_NO_INFER_UNSYNCHRONIZED)) &&
        usage & PIPE_MAP_WRITE && !res->base.is_shared &&
        !util_ranges_intersect(&res->valid_buffer_range, box->x, box->x + box->width) &&
-       !zink_resource_copy_box_intersects(res, 0, box)) {
+       !zink_resource_copy_box_intersects(res, 0, box) &&
+       /* never discard exported buffers */
+       res->obj->modifier == DRM_FORMAT_MOD_INVALID) {
       usage |= PIPE_MAP_UNSYNCHRONIZED;
    }
 
