@@ -135,10 +135,11 @@ section_end debian_setup
 ############### Download prebuilt kernel
 
 if [ "$DEBIAN_ARCH" = amd64 ]; then
-  uncollapsed_section_switch kernel "Downloading kernel"
+  uncollapsed_section_start kernel "Downloading kernel"
   export KERNEL_IMAGE_NAME=bzImage
   mkdir -p /lava-files/
   . .gitlab-ci/container/download-prebuilt-kernel.sh
+  section_end kernel
 fi
 
 ############### Build mold
