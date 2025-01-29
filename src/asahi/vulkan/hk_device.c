@@ -25,6 +25,7 @@
 #include "util/simple_mtx.h"
 #include "vulkan/vulkan_core.h"
 #include "vulkan/wsi/wsi_common.h"
+#include "layout.h"
 #include "vk_cmd_enqueue_entrypoints.h"
 #include "vk_common_entrypoints.h"
 #include "vk_debug_utils.h"
@@ -57,7 +58,10 @@ hk_upload_rodata(struct hk_device *dev)
    dev->rodata.bo =
       agx_bo_create(&dev->dev, AGX_SAMPLER_LENGTH, 0, 0, "Read only data");
 
-   if (!dev->rodata.bo)
+   dev->sparse.write =
+      agx_bo_create(&dev->dev, AIL_PAGESIZE, 0, 0, "Sparse write page");
+
+   if (!dev->rodata.bo || !dev->sparse.write)
       return VK_ERROR_OUT_OF_HOST_MEMORY;
 
    uint8_t *map = agx_bo_map(dev->rodata.bo);
@@ -481,6 +485,7 @@ fail_queue:
    hk_queue_finish(dev, &dev->queue);
 fail_rodata:
    agx_bo_unreference(&dev->dev, dev->rodata.bo);
+   agx_bo_unreference(&dev->dev, dev->sparse.write);
 fail_bg_eot:
    agx_bg_eot_cleanup(&dev->bg_eot);
 fail_internal_shaders_2:
@@ -533,6 +538,7 @@ hk_DestroyDevice(VkDevice _device, const VkAllocationCallbacks *pAllocator)
    hk_descriptor_table_finish(dev, &dev->images);
    hk_descriptor_table_finish(dev, &dev->occlusion_queries);
    agx_bo_unreference(&dev->dev, dev->rodata.bo);
+   agx_bo_unreference(&dev->dev, dev->sparse.write);
    agx_bo_unreference(&dev->dev, dev->heap);
    agx_bg_eot_cleanup(&dev->bg_eot);
    agx_close_device(&dev->dev);

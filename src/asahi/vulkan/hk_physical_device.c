@@ -212,6 +212,7 @@ hk_get_device_extensions(const struct hk_instance *instance,
 
 static void
 hk_get_device_features(
+   const struct agx_device *dev,
    const struct vk_device_extension_table *supported_extensions,
    struct vk_features *features)
 {
@@ -260,15 +261,28 @@ hk_get_device_features(
       .shaderFloat64 = false,
       .shaderInt64 = true,
       .shaderInt16 = true,
-      .shaderResourceResidency = false,
+      .shaderResourceResidency = true,
       .shaderResourceMinLod = true,
-      .sparseBinding = false,
+      .sparseBinding = true,
+
+      /* We probably could advertise multisampled sparse but we don't have a use
+       * case yet and it isn't trivial.
+       */
       .sparseResidency2Samples = false,
       .sparseResidency4Samples = false,
       .sparseResidency8Samples = false,
-      .sparseResidencyAliased = false,
-      .sparseResidencyBuffer = false,
-      .sparseResidencyImage2D = false,
+      .sparseResidencyAliased = true,
+      .sparseResidencyImage2D = true,
+
+      /* We depend on soft fault to implement sparse residency on buffers with
+       * the appropriate semantics. Lifting this requirement would be possible
+       * but challenging, given the requirements imposed by
+       * sparseResidencyNonResidentStrict.
+       */
+      .sparseResidencyBuffer =
+         (dev->params.feat_compat & DRM_ASAHI_FEAT_SOFT_FAULTS),
+
+      /* This needs investigation. */
       .sparseResidencyImage3D = false,
       .variableMultisampleRate = false,
       .inheritedQueries = true,
@@ -736,10 +750,18 @@ hk_get_device_properties(const struct agx_device *dev,
       .nonCoherentAtomSize = 64,
 
       /* Vulkan 1.0 sparse properties */
-      .sparseResidencyNonResidentStrict = false,
+      .sparseResidencyNonResidentStrict = true,
       .sparseResidencyAlignedMipSize = false,
-      .sparseResidencyStandard2DBlockShape = false,
+      .sparseResidencyStandard2DBlockShape = true,
+
+      /* We can implement the standard block size for MSAA 4x but maybe not MSAA
+       * 2x?
+       */
       .sparseResidencyStandard2DMultisampleBlockShape = false,
+
+      /* As far as I can tell, there is no way to implement this on G13. This
+       * is a shame because D3D12 requires it for FL12.2.
+       */
       .sparseResidencyStandard3DBlockShape = false,
 
       /* Vulkan 1.1 properties */
@@ -1166,7 +1188,8 @@ hk_create_drm_physical_device(struct vk_instance *_instance,
    hk_get_device_extensions(instance, &supported_extensions);
 
    struct vk_features supported_features;
-   hk_get_device_features(&supported_extensions, &supported_features);
+   hk_get_device_features(&pdev->dev, &supported_extensions,
+                          &supported_features);
 
    struct vk_properties properties;
    hk_get_device_properties(&pdev->dev, instance, &properties);
@@ -1216,10 +1239,9 @@ hk_create_drm_physical_device(struct vk_instance *_instance,
    assert(pdev->mem_heap_count <= ARRAY_SIZE(pdev->mem_heaps));
    assert(pdev->mem_type_count <= ARRAY_SIZE(pdev->mem_types));
 
-   /* TODO: VK_QUEUE_SPARSE_BINDING_BIT*/
    pdev->queue_families[pdev->queue_family_count++] = (struct hk_queue_family){
-      .queue_flags =
-         VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT,
+      .queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT |
+                     VK_QUEUE_TRANSFER_BIT | VK_QUEUE_SPARSE_BINDING_BIT,
 
       .queue_count = 1,
    };

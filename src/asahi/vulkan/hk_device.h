@@ -88,6 +88,14 @@ struct hk_device {
       uint64_t geometry_state;
    } rodata;
 
+   /* Pages for backing sparse resources */
+   struct {
+      /* Undefined content, should not be read (except for atomics where the
+       * result is already undefined).
+       */
+      struct agx_bo *write;
+   } sparse;
+
    struct hk_internal_shaders prolog_epilog;
    struct hk_internal_shaders kernels;
    struct hk_api_shader *write_shader;
