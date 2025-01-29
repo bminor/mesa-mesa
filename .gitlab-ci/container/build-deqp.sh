@@ -64,6 +64,7 @@ gl_cts_commits_to_backport=(
 
 # shellcheck disable=SC2034
 gl_cts_patch_files=(
+  build-deqp-gl_Build-Don-t-build-Vulkan-utilities-for-GL-builds.patch
 )
 
 if [ "${DEQP_TARGET}" = 'android' ]; then
@@ -85,6 +86,7 @@ gles_cts_commits_to_backport=(
 
 # shellcheck disable=SC2034
 gles_cts_patch_files=(
+  build-deqp-gl_Build-Don-t-build-Vulkan-utilities-for-GL-builds.patch
 )
 
 if [ "${DEQP_TARGET}" = 'android' ]; then
