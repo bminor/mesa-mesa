@@ -3444,7 +3444,16 @@ ngg_gs_finale(nir_builder *b, lower_ngg_gs_state *s)
        * The gs_alloc_req needs to happen on one wave only, otherwise the HW hangs.
        */
       nir_if *if_wave_0 = nir_push_if(b, nir_ieq_imm(b, nir_load_subgroup_id(b), 0));
-      alloc_vertices_and_primitives(b, max_vtxcnt, max_prmcnt);
+      {
+         /* When the GS outputs 0 vertices, make the vertex and primitive count compile-time zero. */
+         if (b->shader->info.gs.vertices_out == 0)
+            max_vtxcnt = max_prmcnt = nir_imm_int(b, 0);
+
+         if (s->options->gfx_level == GFX10)
+            alloc_vertices_and_primitives_gfx10_workaround(b, max_vtxcnt, max_prmcnt);
+         else
+            alloc_vertices_and_primitives(b, max_vtxcnt, max_prmcnt);
+      }
       nir_pop_if(b, if_wave_0);
    }
 
