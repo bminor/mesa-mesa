@@ -99,22 +99,23 @@ debian-testing:
     BUILD_JOB_TIMEOUT: 30m
     UNWIND: "enabled"
     DRI_LOADERS: >
-      -D glx=dri
-      -D gbm=enabled
       -D egl=enabled
+      -D gbm=enabled
       -D glvnd=disabled
+      -D glx=dri
       -D platforms=x11,wayland
     GALLIUM_ST: >
       -D gallium-nine=true
-      -D gallium-va=enabled
       -D gallium-rusticl=true
-    GALLIUM_DRIVERS: "llvmpipe,softpipe,virgl,radeonsi,zink,crocus,iris,i915,r300,svga"
-    VULKAN_DRIVERS: "swrast,amd,intel,intel_hasvk,virtio,nouveau"
+      -D gallium-va=enabled
+    GALLIUM_DRIVERS: "llvmpipe,softpipe,virgl,radeonsi,zink,iris,r300,svga"
+    VULKAN_DRIVERS: "swrast,amd,intel,virtio,nouveau"
     BUILDTYPE: "debugoptimized"
     EXTRA_OPTION: >
+      -D intel-elk=false
       -D spirv-to-dxil=true
-      -D valgrind=disabled
       -D tools=drm-shim
+      -D valgrind=disabled
     S3_ARTIFACT_NAME: mesa-x86_64-default-${BUILDTYPE}
     RUN_MESON_TESTS: "false" # debian-build-testing already runs these
   script:
@@ -136,12 +137,12 @@ debian-testing-asan:
       -Wno-error=stringop-truncation
     EXTRA_OPTION: >
       -D b_sanitize=address
-      -D valgrind=disabled
-      -D tools=dlclose-skip
-      -D mesa-clc=system
       -D gallium-va=false
       -D gallium-nine=false
       -D gallium-rusticl=false
+      -D mesa-clc=system
+      -D tools=dlclose-skip
+      -D valgrind=disabled
     S3_ARTIFACT_NAME: ""
     ARTIFACTS_DEBUG_SYMBOLS: 1
     RUN_MESON_TESTS: "false" # just too slow
@@ -154,12 +155,12 @@ debian-testing-asan:
       -D gallium-rusticl=false
       -D gallium-nine=false
       -D gallium-drivers=
-      -D vulkan-drivers=
-      -D video-codecs=
       -D glx=disabled
-      -D platforms=
-      -D mesa-clc=enabled
       -D install-mesa-clc=true
+      -D mesa-clc=enabled
+      -D platforms=
+      -D video-codecs=
+      -D vulkan-drivers=
 
 debian-testing-msan:
   # https://github.com/google/sanitizers/wiki/MemorySanitizerLibcxxHowTo
@@ -252,8 +253,8 @@ debian-build-testing:
       -D gallium-xa=enabled
       -D gallium-nine=false
       -D gallium-rusticl=false
-    GALLIUM_DRIVERS: "iris,nouveau,r300,r600,freedreno,llvmpipe,softpipe,svga,v3d,vc4,virgl,etnaviv,panfrost,lima,zink,d3d12,asahi,crocus"
-    VULKAN_DRIVERS: swrast
+    GALLIUM_DRIVERS: "i915,iris,nouveau,r300,r600,freedreno,llvmpipe,softpipe,svga,v3d,vc4,virgl,etnaviv,panfrost,lima,zink,d3d12,asahi,crocus"
+    VULKAN_DRIVERS: "swrast,intel_hasvk,imagination-experimental,microsoft-experimental"
     EXTRA_OPTION: >
       -D spirv-to-dxil=true
       -D osmesa=true
@@ -320,8 +321,8 @@ debian-release:
       -D gallium-nine=false
       -D gallium-rusticl=false
       -D llvm=enabled
-    GALLIUM_DRIVERS: "i915,iris,nouveau,freedreno,r300,svga,llvmpipe,softpipe,v3d,vc4,virgl,etnaviv,panfrost,lima,zink,d3d12,crocus"
-    VULKAN_DRIVERS: "amd,imagination-experimental,microsoft-experimental"
+    GALLIUM_DRIVERS: "i915,iris,nouveau,r300,freedreno,llvmpipe,softpipe,svga,v3d,vc4,virgl,etnaviv,panfrost,lima,zink,d3d12,asahi,crocus"
+    VULKAN_DRIVERS: "swrast,intel_hasvk,imagination-experimental,microsoft-experimental"
     EXTRA_OPTION: >
       -D spirv-to-dxil=true
       -D osmesa=true
@@ -518,7 +519,7 @@ debian-android:
   needs:
     - debian/arm64_build
   variables:
-    VULKAN_DRIVERS: asahi,freedreno,broadcom
+    VULKAN_DRIVERS: "asahi,broadcom,freedreno"
     GALLIUM_DRIVERS: "etnaviv,freedreno,lima,nouveau,panfrost,llvmpipe,softpipe,tegra,v3d,vc4,zink"
     BUILDTYPE: "debugoptimized"
   tags:
@@ -534,7 +535,7 @@ debian-arm32:
     DRI_LOADERS:
       -D glvnd=disabled
     # remove asahi & llvmpipe from the .meson-arm list because here we have llvm=disabled
-    VULKAN_DRIVERS: freedreno,broadcom
+    VULKAN_DRIVERS: "broadcom,freedreno"
     GALLIUM_DRIVERS: "etnaviv,freedreno,lima,nouveau,panfrost,softpipe,tegra,v3d,vc4,zink"
     EXTRA_OPTION: >
       -D llvm=disabled
@@ -577,7 +578,8 @@ debian-arm64:
     C_ARGS: >
       -Wno-error=array-bounds
       -Wno-error=stringop-truncation
-    VULKAN_DRIVERS: "asahi,freedreno,broadcom,panfrost,imagination-experimental"
+    GALLIUM_DRIVERS: "etnaviv,freedreno,lima,panfrost,v3d,vc4,zink"
+    VULKAN_DRIVERS: "broadcom,freedreno,panfrost"
     DRI_LOADERS:
       -D glvnd=disabled
     EXTRA_OPTION: >
@@ -600,7 +602,7 @@ debian-arm64-asan:
   variables:
     BUILD_JOB_TIMEOUT: 30m
     VULKAN_DRIVERS: "broadcom,freedreno"
-    GALLIUM_DRIVERS: "vc4,v3d,freedreno"
+    GALLIUM_DRIVERS: "freedreno,vc4,v3d"
     DRI_LOADERS:
       -D glvnd=disabled
     EXTRA_OPTION: >
@@ -644,7 +646,7 @@ debian-arm64-build-test:
     - !reference [.meson-arm, needs]
     - !reference [.build-for-tests-jobs]
   variables:
-    VULKAN_DRIVERS: "amd,nouveau"
+    VULKAN_DRIVERS: "amd,asahi,imagination-experimental,nouveau"
     DRI_LOADERS:
       -D glvnd=disabled
     EXTRA_OPTION: >
