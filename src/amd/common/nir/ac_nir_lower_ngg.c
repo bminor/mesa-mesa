@@ -2468,6 +2468,7 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
       options->can_cull ? nir_local_variable_create(impl, glsl_bool_type(), "gs_accepted") : NULL;
    nir_variable *gs_exported_var = nir_local_variable_create(impl, glsl_bool_type(), "gs_exported");
 
+   const bool wait_attr_ring = must_wait_attr_ring(options->gfx_level, options->has_param_exports);
    bool streamout_enabled = shader->xfb_info && !options->disable_streamout;
    bool has_user_edgeflags =
       options->use_edgeflags && (shader->info.outputs_written & VARYING_BIT_EDGE);
@@ -2478,9 +2479,14 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
     * Always use late prim export when user edge flags are enabled.
     * This is because edge flags are written by ES threads but they
     * are exported by GS threads as part of th primitive export.
+    *
+    * When the primitive ID output is configured as a per-primitive,
+    * and the shader must wait for attribute ring waits before exports,
+    * we must always use late primitive export.
     */
-   bool early_prim_export =
-      options->early_prim_export && !(streamout_enabled || has_user_edgeflags);
+   const bool early_prim_export =
+      options->early_prim_export && !(streamout_enabled || has_user_edgeflags) &&
+      !(wait_attr_ring && options->export_primitive_id_per_prim);
 
    lower_ngg_nogs_state state = {
       .options = options,
@@ -2654,6 +2660,15 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
    /* Take care of late primitive export */
    if (!state.early_prim_export) {
       b->cursor = nir_after_impl(impl);
+
+      if (wait_attr_ring && options->export_primitive_id_per_prim) {
+         /* Wait for the per-primitive primitive ID store to finish. */
+         nir_barrier(b, .execution_scope = SCOPE_SUBGROUP,
+                        .memory_scope = SCOPE_DEVICE,
+                        .memory_semantics = NIR_MEMORY_RELEASE,
+                        .memory_modes = nir_var_mem_ssbo | nir_var_shader_out | nir_var_mem_global | nir_var_image);
+      }
+
       emit_ngg_nogs_prim_export(b, &state, nir_load_var(b, prim_exp_arg_var));
    }
 
@@ -2662,8 +2677,6 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
       export_outputs &= ~VARYING_BIT_PSIZ;
    if (options->kill_layer)
       export_outputs &= ~VARYING_BIT_LAYER;
-
-   const bool wait_attr_ring = must_wait_attr_ring(options->gfx_level, options->has_param_exports);
    if (wait_attr_ring)
       export_outputs &= ~VARYING_BIT_POS;
 
