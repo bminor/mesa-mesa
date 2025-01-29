@@ -123,7 +123,6 @@ $ADB push "$INSTALL/deqp-$DEQP_SUITE.toml" /data/deqp
 
 # remove 32 bits libs from /vendor/lib
 
-$ADB shell rm -f /vendor/lib/libglapi.so
 $ADB shell rm -f /vendor/lib/egl/libGLES_mesa.so
 
 $ADB shell rm -f /vendor/lib/egl/libEGL_angle.so
