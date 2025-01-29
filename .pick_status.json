@@ -1244,7 +1244,7 @@
         "description": "radeonsi: update si_need_gfx_cs_space upper bound",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "cdecbee9225f98a5529a55964f1f9758c4f893b5",
         "notes": null
