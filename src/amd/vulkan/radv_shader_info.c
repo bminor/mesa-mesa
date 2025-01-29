@@ -1724,7 +1724,7 @@ radv_determine_ngg_settings(struct radv_device *device, struct radv_shader_stage
       radv_consider_culling(pdev, es_stage->nir, ps_inputs_read, num_vertices_per_prim, &es_stage->info);
 
    nir_function_impl *impl = nir_shader_get_entrypoint(es_stage->nir);
-   es_stage->info.has_ngg_early_prim_export = exec_list_is_singular(&impl->body);
+   es_stage->info.has_ngg_early_prim_export = pdev->info.gfx_level < GFX11 && exec_list_is_singular(&impl->body);
 
    /* NGG passthrough mode should be disabled when culling and when the vertex shader
     * exports the primitive ID.
