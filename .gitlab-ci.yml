@@ -267,6 +267,7 @@ include:
       - artifacts
       - _build/meson-logs/*.txt
       - _build/meson-logs/strace
+      - _build/.ninja_log
 
 # Git archive
 
