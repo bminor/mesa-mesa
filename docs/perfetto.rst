@@ -212,6 +212,17 @@ To run the producer, follow these two simple steps:
 
       ./build/pps-producer
 
+V3D / V3DV
+----------
+
+As we can only have one performance monitor active at a given time, we can only monitor
+32 performance counters. There is a need to define the performance counters of interest
+for pps_producer using the environment variable ``V3D_DS_COUNTER``.
+
+.. code-block:: sh
+
+   V3D_DS_COUNTER=cycle-count,CLE-bin-thread-active-cycles,CLE-render-thread-active-cycles,QPU-total-uniform-cache-hit ./src/tool/pps/pps-producer
+
 Troubleshooting
 ---------------
 
