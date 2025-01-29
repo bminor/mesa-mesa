@@ -1534,7 +1534,7 @@
         "description": "anv: dirty pipeline & push constants after internal CS shaders",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7ca5c84804fa33b26a0b4c3cb8ea2a8f66d46315",
         "notes": null

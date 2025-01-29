@@ -395,6 +395,11 @@ genX(emit_simpler_shader_init_compute)(struct anv_simple_shader *state)
       }
    }
 #endif
+
+   if (state->cmd_buffer) {
+      state->cmd_buffer->state.push_constants_dirty |= VK_SHADER_STAGE_COMPUTE_BIT;
+      state->cmd_buffer->state.compute.pipeline_dirty = true;
+   }
 }
 
 /** Initialize a simple shader emission */
