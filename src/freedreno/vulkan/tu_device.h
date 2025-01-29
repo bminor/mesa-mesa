@@ -462,29 +462,33 @@ struct tu_attachment_info
    struct tu_image_view *attachment;
 };
 
-struct tu_tiling_config {
-   /* size of the first tile */
-   VkExtent2D tile0;
+struct tu_vsc_config {
    /* number of tiles */
    VkExtent2D tile_count;
-
    /* size of the first VSC pipe */
    VkExtent2D pipe0;
    /* number of VSC pipes */
    VkExtent2D pipe_count;
 
-   /* Whether using GMEM is even possible with this configuration */
-   bool possible;
+   /* Whether binning could be used for gmem rendering using this framebuffer. */
+   bool binning_possible;
 
    /* Whether binning should be used for gmem rendering using this framebuffer. */
    bool binning;
 
-   /* Whether binning could be used for gmem rendering using this framebuffer. */
-   bool binning_possible;
-
    /* pipe register values */
    uint32_t pipe_config[MAX_VSC_PIPES];
    uint32_t pipe_sizes[MAX_VSC_PIPES];
+};
+
+struct tu_tiling_config {
+   /* size of the first tile */
+   VkExtent2D tile0;
+
+   /* Whether using GMEM is even possible with this configuration */
+   bool possible;
+
+   struct tu_vsc_config vsc;
 };
 
 struct tu_framebuffer

@@ -955,6 +955,7 @@ use_hw_binning(struct tu_cmd_buffer *cmd)
 {
    const struct tu_framebuffer *fb = cmd->state.framebuffer;
    const struct tu_tiling_config *tiling = &fb->tiling[cmd->state.gmem_layout];
+   const struct tu_vsc_config *vsc = &tiling->vsc;
 
    /* XFB commands are emitted for BINNING || SYSMEM, which makes it
     * incompatible with non-hw binning GMEM rendering. this is required because
@@ -963,7 +964,7 @@ use_hw_binning(struct tu_cmd_buffer *cmd)
     * XFB was used.
     */
    if (cmd->state.rp.xfb_used) {
-      assert(tiling->binning_possible);
+      assert(vsc->binning_possible);
       return true;
    }
 
@@ -974,11 +975,11 @@ use_hw_binning(struct tu_cmd_buffer *cmd)
     */
    if (cmd->state.rp.has_prim_generated_query_in_rp ||
        cmd->state.prim_generated_query_running_before_rp) {
-      assert(tiling->binning_possible);
+      assert(vsc->binning_possible);
       return true;
    }
 
-   return tiling->binning;
+   return vsc->binning;
 }
 
 static bool
@@ -1013,8 +1014,10 @@ use_sysmem_rendering(struct tu_cmd_buffer *cmd,
       return true;
    }
 
+   const struct tu_vsc_config *vsc = &cmd->state.tiling->vsc;
+
    /* XFB is incompatible with non-hw binning GMEM rendering, see use_hw_binning */
-   if (cmd->state.rp.xfb_used && !cmd->state.tiling->binning_possible) {
+   if (cmd->state.rp.xfb_used && !vsc->binning_possible) {
       cmd->state.rp.gmem_disable_reason =
          "XFB is incompatible with non-hw binning GMEM rendering";
       return true;
@@ -1025,7 +1028,7 @@ use_sysmem_rendering(struct tu_cmd_buffer *cmd,
     */
    if ((cmd->state.rp.has_prim_generated_query_in_rp ||
         cmd->state.prim_generated_query_running_before_rp) &&
-       !cmd->state.tiling->binning_possible) {
+       !vsc->binning_possible) {
       cmd->state.rp.gmem_disable_reason =
          "QUERY_TYPE_PRIMITIVES_GENERATED is incompatible with non-hw binning GMEM rendering";
       return true;
@@ -1056,7 +1059,9 @@ static void
 tu6_emit_cond_for_load_stores(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
                               uint32_t pipe, uint32_t slot, bool skip_wfm)
 {
-   if (cmd->state.tiling->binning_possible &&
+   const struct tu_vsc_config *vsc = &cmd->state.tiling->vsc;
+
+   if (vsc->binning_possible &&
        cmd->state.pass->has_cond_load_store) {
       tu_cs_emit_pkt7(cs, CP_REG_TEST, 1);
       tu_cs_emit(cs, A6XX_CP_REG_TEST_0_REG(REG_A6XX_VSC_STATE_REG(pipe)) |
@@ -1084,6 +1089,7 @@ tu6_emit_tile_select(struct tu_cmd_buffer *cmd,
 {
    struct tu_physical_device *phys_dev = cmd->device->physical_device;
    const struct tu_tiling_config *tiling = cmd->state.tiling;
+   const struct tu_vsc_config *vsc = &tiling->vsc;
    bool hw_binning = use_hw_binning(cmd);
 
    tu_cs_emit_pkt7(cs, CP_SET_MARKER, 1);
@@ -1128,7 +1134,7 @@ tu6_emit_tile_select(struct tu_cmd_buffer *cmd,
       tu_cs_emit(cs, 0x0);
 
       tu_cs_emit_pkt7(cs, CP_SET_BIN_DATA5_OFFSET, abs_mask ? 5 : 4);
-      tu_cs_emit(cs, tiling->pipe_sizes[tile->pipe] |
+      tu_cs_emit(cs, vsc->pipe_sizes[tile->pipe] |
                      CP_SET_BIN_DATA5_0_VSC_N(slot) |
                      CP_SET_BIN_DATA5_0_VSC_MASK(tile->slot_mask >> slot) |
                      COND(abs_mask, CP_SET_BIN_DATA5_0_ABS_MASK(ABS_MASK)));
@@ -1246,6 +1252,7 @@ tu6_emit_tile_store(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
    const struct tu_render_pass *pass = cmd->state.pass;
    const struct tu_subpass *subpass = &pass->subpasses[pass->subpass_count-1];
    const struct tu_framebuffer *fb = cmd->state.framebuffer;
+   const struct tu_vsc_config *vsc = &cmd->state.tiling->vsc;
 
    if (pass->has_fdm)
       tu_cs_set_writeable(cs, true);
@@ -1274,7 +1281,7 @@ tu6_emit_tile_store(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
 
    for (uint32_t a = 0; a < pass->attachment_count; ++a) {
       if (pass->attachments[a].gmem) {
-         const bool cond_exec_allowed = cmd->state.tiling->binning_possible &&
+         const bool cond_exec_allowed = vsc->binning_possible &&
                                         cmd->state.pass->has_cond_load_store;
          tu_store_gmem_attachment<CHIP>(cmd, cs, &resolve_group, a, a,
                                   fb->layers, subpass->multiview_mask,
@@ -1645,17 +1652,18 @@ update_vsc_pipe(struct tu_cmd_buffer *cmd,
                 uint32_t num_vsc_pipes)
 {
    const struct tu_tiling_config *tiling = cmd->state.tiling;
+   const struct tu_vsc_config *vsc = &tiling->vsc;
 
    tu_cs_emit_regs(cs,
                    A6XX_VSC_BIN_SIZE(.width = tiling->tile0.width,
                                      .height = tiling->tile0.height));
 
    tu_cs_emit_regs(cs,
-                   A6XX_VSC_BIN_COUNT(.nx = tiling->tile_count.width,
-                                      .ny = tiling->tile_count.height));
+                   A6XX_VSC_BIN_COUNT(.nx = vsc->tile_count.width,
+                                      .ny = vsc->tile_count.height));
 
    tu_cs_emit_pkt4(cs, REG_A6XX_VSC_PIPE_CONFIG_REG(0), num_vsc_pipes);
-   tu_cs_emit_array(cs, tiling->pipe_config, num_vsc_pipes);
+   tu_cs_emit_array(cs, vsc->pipe_config, num_vsc_pipes);
 
    tu_cs_emit_regs(cs,
                    A6XX_VSC_PRIM_STRM_PITCH(cmd->vsc_prim_strm_pitch),
@@ -1672,8 +1680,9 @@ static void
 emit_vsc_overflow_test(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
 {
    const struct tu_tiling_config *tiling = cmd->state.tiling;
+   const struct tu_vsc_config *vsc = &tiling->vsc;
    const uint32_t used_pipe_count =
-      tiling->pipe_count.width * tiling->pipe_count.height;
+      vsc->pipe_count.width * vsc->pipe_count.height;
 
    for (int i = 0; i < used_pipe_count; i++) {
       tu_cs_emit_pkt7(cs, CP_COND_WRITE5, 8);
@@ -2168,6 +2177,7 @@ tu6_tile_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
 {
    struct tu_physical_device *phys_dev = cmd->device->physical_device;
    const struct tu_tiling_config *tiling = cmd->state.tiling;
+   const struct tu_vsc_config *vsc = &tiling->vsc;
    tu_lrz_tiling_begin<CHIP>(cmd, cs);
 
    tu_cs_emit_pkt7(cs, CP_SKIP_IB2_ENABLE_GLOBAL, 1);
@@ -2226,18 +2236,18 @@ tu6_tile_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
       tu_cs_emit_pkt7(cs, CP_SKIP_IB2_ENABLE_LOCAL, 1);
       tu_cs_emit(cs, 0x1);
    } else {
-      if (tiling->binning_possible) {
+      if (vsc->binning_possible) {
          /* Mark all tiles as visible for tu6_emit_cond_for_load_stores(), since
           * the actual binner didn't run.
           */
-         int pipe_count = tiling->pipe_count.width * tiling->pipe_count.height;
+         int pipe_count = vsc->pipe_count.width * vsc->pipe_count.height;
          tu_cs_emit_pkt4(cs, REG_A6XX_VSC_STATE_REG(0), pipe_count);
          for (int i = 0; i < pipe_count; i++)
             tu_cs_emit(cs, ~0);
       }
    }
 
-   if (tiling->binning_possible) {
+   if (vsc->binning_possible) {
       /* Upload state regs to memory to be restored on skipsaverestore
        * preemption.
        */
@@ -2546,6 +2556,7 @@ tu_cmd_render_tiles(struct tu_cmd_buffer *cmd,
                     struct tu_renderpass_result *autotune_result)
 {
    const struct tu_tiling_config *tiling = cmd->state.tiling;
+   const struct tu_vsc_config *vsc = &tiling->vsc;
    const struct tu_image_view *fdm = NULL;
 
    if (cmd->state.pass->fragment_density_map.attachment != VK_ATTACHMENT_UNUSED) {
@@ -2572,19 +2583,19 @@ tu_cmd_render_tiles(struct tu_cmd_buffer *cmd,
    /* Note: we reverse the order of walking the pipes and tiles on every
     * other row, to improve texture cache locality compared to raster order.
     */
-   for (uint32_t py = 0; py < tiling->pipe_count.height; py++) {
-      uint32_t pipe_row = py * tiling->pipe_count.width;
-      for (uint32_t pipe_row_i = 0; pipe_row_i < tiling->pipe_count.width; pipe_row_i++) {
+   for (uint32_t py = 0; py < vsc->pipe_count.height; py++) {
+      uint32_t pipe_row = py * vsc->pipe_count.width;
+      for (uint32_t pipe_row_i = 0; pipe_row_i < vsc->pipe_count.width; pipe_row_i++) {
          uint32_t px;
          if (py & 1)
-            px = tiling->pipe_count.width - 1 - pipe_row_i;
+            px = vsc->pipe_count.width - 1 - pipe_row_i;
          else
             px = pipe_row_i;
          uint32_t pipe = pipe_row + px;
-         uint32_t tx1 = px * tiling->pipe0.width;
-         uint32_t ty1 = py * tiling->pipe0.height;
-         uint32_t tx2 = MIN2(tx1 + tiling->pipe0.width, tiling->tile_count.width);
-         uint32_t ty2 = MIN2(ty1 + tiling->pipe0.height, tiling->tile_count.height);
+         uint32_t tx1 = px * vsc->pipe0.width;
+         uint32_t ty1 = py * vsc->pipe0.height;
+         uint32_t tx2 = MIN2(tx1 + vsc->pipe0.width, vsc->tile_count.width);
+         uint32_t ty2 = MIN2(ty1 + vsc->pipe0.height, vsc->tile_count.height);
 
          if (merge_tiles) {
             tu_render_pipe_fdm<CHIP>(cmd, pipe, tx1, ty1, tx2, ty2, fdm);
@@ -4854,6 +4865,7 @@ tu_emit_subpass_begin_gmem(struct tu_cmd_buffer *cmd, struct tu_resolve_group *r
 {
    struct tu_cs *cs = &cmd->draw_cs;
    uint32_t subpass_idx = cmd->state.subpass - cmd->state.pass->subpasses;
+   const struct tu_vsc_config *vsc = &cmd->state.tiling->vsc;
 
    /* If we might choose to bin, then put the loads under a check for geometry
     * having been binned to this tile.  If we don't choose to bin in the end,
@@ -4863,7 +4875,7 @@ tu_emit_subpass_begin_gmem(struct tu_cmd_buffer *cmd, struct tu_resolve_group *r
     * (perf queries), then we can't do this optimization since the
     * start-of-the-CS geometry condition will have been overwritten.
     */
-   bool cond_load_allowed = cmd->state.tiling->binning &&
+   bool cond_load_allowed = vsc->binning &&
                             cmd->state.pass->has_cond_load_store &&
                             !cmd->state.rp.draw_cs_writes_to_cond_pred;
 

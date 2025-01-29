@@ -220,8 +220,10 @@ tu_tiling_config_update_tile_layout(struct tu_framebuffer *fb,
        * them, since you shouldn't be doing gmem work if gmem is not possible.
        */
       .tile0 = (VkExtent2D) { ~0, ~0 },
-      .tile_count = (VkExtent2D) { .width = 1, .height = 1 },
       .possible = false,
+      .vsc = {
+         .tile_count = (VkExtent2D) { .width = 1, .height = 1 },
+      },
    };
 
    /* From the Vulkan 1.3.232 spec, under VkFramebufferCreateInfo:
@@ -300,37 +302,37 @@ tu_tiling_config_update_tile_layout(struct tu_framebuffer *fb,
               abs((int)(tiling->tile0.width - tiling->tile0.height)))) {
          tiling->possible = true;
          tiling->tile0 = tile_size;
-         tiling->tile_count = tile_count;
+         tiling->vsc.tile_count = tile_count;
          best_tile_count = tile_count.width * tile_count.height;
       }
    }
 
    /* If forcing binning, try to get at least 2 tiles in each direction. */
    if (TU_DEBUG(FORCEBIN) && tiling->possible) {
-      if (tiling->tile_count.width == 1 && tiling->tile0.width != tile_align_w) {
+      if (tiling->vsc.tile_count.width == 1 && tiling->tile0.width != tile_align_w) {
          tiling->tile0.width = util_align_npot(DIV_ROUND_UP(tiling->tile0.width, 2), tile_align_w);
-         tiling->tile_count.width = 2;
+         tiling->vsc.tile_count.width = 2;
       }
-      if (tiling->tile_count.height == 1 && tiling->tile0.height != tile_align_h) {
+      if (tiling->vsc.tile_count.height == 1 && tiling->tile0.height != tile_align_h) {
          tiling->tile0.height = align(DIV_ROUND_UP(tiling->tile0.height, 2), tile_align_h);
-         tiling->tile_count.height = 2;
+         tiling->vsc.tile_count.height = 2;
       }
    }
 }
 
 static bool
-is_hw_binning_possible(const struct tu_tiling_config *tiling)
+is_hw_binning_possible(const struct tu_vsc_config *vsc)
 {
    /* Similar to older gens, # of tiles per pipe cannot be more than 32.
     * But there are no hangs with 16 or more tiles per pipe in either
     * X or Y direction, so that limit does not seem to apply.
     */
-   uint32_t tiles_per_pipe = tiling->pipe0.width * tiling->pipe0.height;
+   uint32_t tiles_per_pipe = vsc->pipe0.width * vsc->pipe0.height;
    return tiles_per_pipe <= 32;
 }
 
 static void
-tu_tiling_config_update_pipe_layout(struct tu_tiling_config *tiling,
+tu_tiling_config_update_pipe_layout(struct tu_vsc_config *vsc,
                                     const struct tu_device *dev,
                                     bool fdm)
 {
@@ -345,94 +347,94 @@ tu_tiling_config_update_pipe_layout(struct tu_tiling_config *tiling,
     */
    if (fdm && dev->physical_device->info->a6xx.has_bin_mask &&
        !TU_DEBUG(NO_BIN_MERGING)) {
-      tiling->pipe0.width = 4;
-      tiling->pipe0.height = 8;
-      tiling->pipe_count.width =
-         DIV_ROUND_UP(tiling->tile_count.width, tiling->pipe0.width);
-      tiling->pipe_count.height =
-         DIV_ROUND_UP(tiling->tile_count.height, tiling->pipe0.height);
-      tiling->binning_possible =
-         tiling->pipe_count.width * tiling->pipe_count.height <= max_pipe_count;
+      vsc->pipe0.width = 4;
+      vsc->pipe0.height = 8;
+      vsc->pipe_count.width =
+         DIV_ROUND_UP(vsc->tile_count.width, vsc->pipe0.width);
+      vsc->pipe_count.height =
+         DIV_ROUND_UP(vsc->tile_count.height, vsc->pipe0.height);
+      vsc->binning_possible =
+         vsc->pipe_count.width * vsc->pipe_count.height <= max_pipe_count;
       return;
    }
 
    /* start from 1 tile per pipe */
-   tiling->pipe0 = (VkExtent2D) {
+   vsc->pipe0 = (VkExtent2D) {
       .width = 1,
       .height = 1,
    };
-   tiling->pipe_count = tiling->tile_count;
+   vsc->pipe_count = vsc->tile_count;
 
-   while (tiling->pipe_count.width * tiling->pipe_count.height > max_pipe_count) {
-      if (tiling->pipe0.width < tiling->pipe0.height) {
-         tiling->pipe0.width += 1;
-         tiling->pipe_count.width =
-            DIV_ROUND_UP(tiling->tile_count.width, tiling->pipe0.width);
+   while (vsc->pipe_count.width * vsc->pipe_count.height > max_pipe_count) {
+      if (vsc->pipe0.width < vsc->pipe0.height) {
+         vsc->pipe0.width += 1;
+         vsc->pipe_count.width =
+            DIV_ROUND_UP(vsc->tile_count.width, vsc->pipe0.width);
       } else {
-         tiling->pipe0.height += 1;
-         tiling->pipe_count.height =
-            DIV_ROUND_UP(tiling->tile_count.height, tiling->pipe0.height);
+         vsc->pipe0.height += 1;
+         vsc->pipe_count.height =
+            DIV_ROUND_UP(vsc->tile_count.height, vsc->pipe0.height);
       }
    }
 
-   tiling->binning_possible = is_hw_binning_possible(tiling);
+   vsc->binning_possible = is_hw_binning_possible(vsc);
 }
 
 static void
-tu_tiling_config_update_pipes(struct tu_tiling_config *tiling,
+tu_tiling_config_update_pipes(struct tu_vsc_config *vsc,
                               const struct tu_device *dev)
 {
    const uint32_t max_pipe_count =
       dev->physical_device->info->num_vsc_pipes;
    const uint32_t used_pipe_count =
-      tiling->pipe_count.width * tiling->pipe_count.height;
+      vsc->pipe_count.width * vsc->pipe_count.height;
    const VkExtent2D last_pipe = {
-      .width = (tiling->tile_count.width - 1) % tiling->pipe0.width + 1,
-      .height = (tiling->tile_count.height - 1) % tiling->pipe0.height + 1,
+      .width = (vsc->tile_count.width - 1) % vsc->pipe0.width + 1,
+      .height = (vsc->tile_count.height - 1) % vsc->pipe0.height + 1,
    };
 
-   if (!tiling->binning_possible)
+   if (!vsc->binning_possible)
       return;
 
    assert(used_pipe_count <= max_pipe_count);
-   assert(max_pipe_count <= ARRAY_SIZE(tiling->pipe_config));
+   assert(max_pipe_count <= ARRAY_SIZE(vsc->pipe_config));
 
-   for (uint32_t y = 0; y < tiling->pipe_count.height; y++) {
-      for (uint32_t x = 0; x < tiling->pipe_count.width; x++) {
-         const uint32_t pipe_x = tiling->pipe0.width * x;
-         const uint32_t pipe_y = tiling->pipe0.height * y;
-         const uint32_t pipe_w = (x == tiling->pipe_count.width - 1)
+   for (uint32_t y = 0; y < vsc->pipe_count.height; y++) {
+      for (uint32_t x = 0; x < vsc->pipe_count.width; x++) {
+         const uint32_t pipe_x = vsc->pipe0.width * x;
+         const uint32_t pipe_y = vsc->pipe0.height * y;
+         const uint32_t pipe_w = (x == vsc->pipe_count.width - 1)
                                     ? last_pipe.width
-                                    : tiling->pipe0.width;
-         const uint32_t pipe_h = (y == tiling->pipe_count.height - 1)
+                                    : vsc->pipe0.width;
+         const uint32_t pipe_h = (y == vsc->pipe_count.height - 1)
                                     ? last_pipe.height
-                                    : tiling->pipe0.height;
-         const uint32_t n = tiling->pipe_count.width * y + x;
+                                    : vsc->pipe0.height;
+         const uint32_t n = vsc->pipe_count.width * y + x;
 
-         tiling->pipe_config[n] = A6XX_VSC_PIPE_CONFIG_REG_X(pipe_x) |
+         vsc->pipe_config[n] = A6XX_VSC_PIPE_CONFIG_REG_X(pipe_x) |
                                   A6XX_VSC_PIPE_CONFIG_REG_Y(pipe_y) |
                                   A6XX_VSC_PIPE_CONFIG_REG_W(pipe_w) |
                                   A6XX_VSC_PIPE_CONFIG_REG_H(pipe_h);
-         tiling->pipe_sizes[n] = CP_SET_BIN_DATA5_0_VSC_SIZE(pipe_w * pipe_h);
+         vsc->pipe_sizes[n] = CP_SET_BIN_DATA5_0_VSC_SIZE(pipe_w * pipe_h);
       }
    }
 
-   memset(tiling->pipe_config + used_pipe_count, 0,
+   memset(vsc->pipe_config + used_pipe_count, 0,
           sizeof(uint32_t) * (max_pipe_count - used_pipe_count));
 }
 
 static void
-tu_tiling_config_update_binning(struct tu_tiling_config *tiling, const struct tu_device *device)
+tu_tiling_config_update_binning(struct tu_vsc_config *vsc, const struct tu_device *device)
 {
-   if (tiling->binning_possible) {
-      tiling->binning = (tiling->tile_count.width * tiling->tile_count.height) > 2;
+   if (vsc->binning_possible) {
+      vsc->binning = (vsc->tile_count.width * vsc->tile_count.height) > 2;
 
       if (TU_DEBUG(FORCEBIN))
-         tiling->binning = true;
+         vsc->binning = true;
       if (TU_DEBUG(NOBIN))
-         tiling->binning = false;
+         vsc->binning = false;
    } else {
-      tiling->binning = false;
+      vsc->binning = false;
    }
 }
 
@@ -448,9 +450,10 @@ tu_framebuffer_tiling_config(struct tu_framebuffer *fb,
       if (!tiling->possible)
          continue;
 
-      tu_tiling_config_update_pipe_layout(tiling, device, pass->has_fdm);
-      tu_tiling_config_update_pipes(tiling, device);
-      tu_tiling_config_update_binning(tiling, device);
+      struct tu_vsc_config *vsc = &tiling->vsc;
+      tu_tiling_config_update_pipe_layout(vsc, device, pass->has_fdm);
+      tu_tiling_config_update_pipes(vsc, device);
+      tu_tiling_config_update_binning(vsc, device);
    }
 }
 
