@@ -152,6 +152,7 @@ struct radeon_decoder {
    bool error;
 
    struct pipe_context *ectx;
+   struct pipe_video_codec *vpe;
 };
 
 bool send_cmd_dec(struct radeon_decoder *dec, struct pipe_video_buffer *target,
