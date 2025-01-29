@@ -180,6 +180,12 @@ ail_initialize_twiddled(struct ail_layout *layout)
     */
    layout->mip_tail_first_lod = MIN2(pot_level, layout->levels);
 
+   /* Determine the stride of the miptail. Sparse arrayed images inherently
+    * require page-aligned layers to be able to bind individual layers.
+    */
+   unsigned tail_offset_B = layout->level_offsets_B[layout->mip_tail_first_lod];
+   layout->mip_tail_stride = align(offset_B - tail_offset_B, AIL_PAGESIZE);
+
    /* Align layer size if we have mipmaps and one miptree is larger than one
     * page */
    layout->page_aligned_layers = layout->levels != 1 && offset_B > AIL_PAGESIZE;

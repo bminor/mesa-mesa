@@ -124,6 +124,14 @@ struct ail_layout {
     */
    uint32_t mip_tail_first_lod;
 
+   /**
+    * If the image is bound sparsely, the layer stride of the miptail.
+    * Conceptually, this corresponds to Vulkan imageMipTailStride. However, it
+    * is not actually used for imageMipTailStride due to complications with
+    * standard sparse block sizes.
+    */
+   uint32_t mip_tail_stride;
+
    /* Offset of the start of the compression metadata buffer */
    uint32_t metadata_offset_B;
 
