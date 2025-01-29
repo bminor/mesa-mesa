@@ -46,6 +46,9 @@ The exact supported features vary per driver:
    * - V3D
      - ``gpu.counters.v3d``
      -
+   * - V3DV
+     - ``gpu.counters.v3d``
+     -
 
 Run
 ---
