@@ -114,7 +114,6 @@ debian-testing:
     EXTRA_OPTION: >
       -D spirv-to-dxil=true
       -D valgrind=disabled
-      -D perfetto=true
       -D tools=drm-shim
     S3_ARTIFACT_NAME: mesa-x86_64-default-${BUILDTYPE}
     RUN_MESON_TESTS: "false" # debian-build-testing already runs these
@@ -259,6 +258,7 @@ debian-build-testing:
       -D spirv-to-dxil=true
       -D osmesa=true
       -D tools=drm-shim,etnaviv,freedreno,glsl,intel,intel-ui,nir,nouveau,lima,panfrost,asahi
+      -D perfetto=true
     S3_ARTIFACT_NAME: debian-build-testing
   script:
     - *meson-build
@@ -583,7 +583,6 @@ debian-arm64:
     EXTRA_OPTION: >
       -D valgrind=disabled
       -D imagination-srv=true
-      -D perfetto=true
       -D freedreno-kmds=msm,virtio
       -D teflon=true
     GALLIUM_ST:
@@ -649,7 +648,8 @@ debian-arm64-build-test:
     DRI_LOADERS:
       -D glvnd=disabled
     EXTRA_OPTION: >
-      -Dtools=panfrost,imagination
+      -D tools=panfrost,imagination
+      -D perfetto=true
 
 debian-arm64-release:
   extends:
