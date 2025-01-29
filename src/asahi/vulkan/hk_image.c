@@ -345,6 +345,19 @@ hk_GetPhysicalDeviceImageFormatProperties2(
             pdev, plane_format, pImageFormatInfo->tiling);
       }
    }
+
+   /* Sparse + host-image-copy doesn't make sense. Forbid it. */
+   if (pImageFormatInfo->flags & (VK_IMAGE_CREATE_SPARSE_ALIASED_BIT |
+                                  VK_IMAGE_CREATE_SPARSE_BINDING_BIT |
+                                  VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT))
+      features &= ~VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT_EXT;
+
+   if (pImageFormatInfo->flags & (VK_IMAGE_CREATE_SPARSE_ALIASED_BIT |
+                                  VK_IMAGE_CREATE_SPARSE_BINDING_BIT |
+                                  VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) &&
+       (pImageFormatInfo->usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT))
+      return VK_ERROR_FORMAT_NOT_SUPPORTED;
+
    if (features == 0)
       return VK_ERROR_FORMAT_NOT_SUPPORTED;
 
