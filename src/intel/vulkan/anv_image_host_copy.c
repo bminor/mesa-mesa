@@ -268,7 +268,9 @@ anv_CopyMemoryToImageEXT(
       VkExtent3D extent_el =
          vk_extent3d_to_el(surf->format, region->imageExtent);
 
-      for (uint32_t a = 0; a < region->imageSubresource.layerCount; a++) {
+      uint32_t layer_count =
+         vk_image_subresource_layer_count(&image->vk, &region->imageSubresource);
+      for (uint32_t a = 0; a < layer_count; a++) {
          for (uint32_t z = 0; z < region->imageExtent.depth; z++) {
             if ((pCopyMemoryToImageInfo->flags &
                  VK_HOST_IMAGE_COPY_MEMCPY_EXT) &&
@@ -336,7 +338,9 @@ anv_CopyImageToMemoryEXT(
                                  region->memoryImageHeight,
                                  &region->imageExtent);
 
-      for (uint32_t a = 0; a < region->imageSubresource.layerCount; a++) {
+      uint32_t layer_count =
+         vk_image_subresource_layer_count(&image->vk, &region->imageSubresource);
+      for (uint32_t a = 0; a < layer_count; a++) {
          for (uint32_t z = 0; z < region->imageExtent.depth; z++) {
             if ((pCopyImageToMemoryInfo->flags &
                  VK_HOST_IMAGE_COPY_MEMCPY_EXT) &&
@@ -439,7 +443,9 @@ anv_CopyImageToImageEXT(
          tile_width_B = tile_width_el * src_tile.format_bpb / 8;
       }
 
-      for (uint32_t a = 0; a < region->srcSubresource.layerCount; a++) {
+      uint32_t layer_count =
+         vk_image_subresource_layer_count(&src_image->vk, &region->srcSubresource);
+      for (uint32_t a = 0; a < layer_count; a++) {
          for (uint32_t z = 0; z < region->extent.depth; z++) {
             for (uint32_t y_el = 0; y_el < extent_el.height; y_el += tile_height_el) {
                for (uint32_t x_el = 0; x_el < extent_el.width; x_el += tile_width_el) {
