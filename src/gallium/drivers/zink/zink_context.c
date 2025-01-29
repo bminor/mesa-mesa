@@ -5658,11 +5658,16 @@ add_implicit_feedback_loop(struct zink_context *ctx, struct zink_resource *res)
       VkPipelineStageFlags vkstagebit = BITFIELD_BIT(vkstage);
       if (vkstagebit < VK_PIPELINE_STAGE_VERTEX_SHADER_BIT || vkstagebit > VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
          continue;
+
       /* in-range VkPipelineStageFlagBits can be converted to VkShaderStageFlags with a bitshift */
       gl_shader_stage stage = vk_to_mesa_shader_stage((VkShaderStageFlagBits)(vkstagebit >> 3));
+      /* check against bound stages */
+      if (!ctx->gfx_stages[stage])
+         continue;
+
       /* check shader texture usage against resource's sampler binds */
       uint32_t texuse = res->sampler_binds[stage] & ctx->gfx_stages[stage]->info.textures_used[0];
-      if (!ctx->gfx_stages[stage] || !texuse)
+      if (!texuse)
          continue;
 
       /* check miplevel/layer: a feedback loop only exists if these overlap between fb and sampler */
