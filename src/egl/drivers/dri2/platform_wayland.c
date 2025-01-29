@@ -1656,6 +1656,18 @@ try_damage_buffer(struct dri2_egl_surface *dri2_surf, const EGLint *rects,
    return EGL_TRUE;
 }
 
+static int
+throttle(struct dri2_egl_display *dri2_dpy,
+         struct dri2_egl_surface *dri2_surf)
+{
+   while (dri2_surf->throttle_callback != NULL)
+      if (loader_wayland_dispatch(dri2_dpy->wl_dpy, dri2_surf->wl_queue, NULL) ==
+          -1)
+         return -1;
+
+   return 0;
+}
+
 /**
  * Called via eglSwapBuffers(), drv->SwapBuffers().
  */
@@ -1682,10 +1694,8 @@ dri2_wl_swap_buffers_with_damage(_EGLDisplay *disp, _EGLSurface *draw,
    dri2_flush_drawable_for_swapbuffers(disp, draw);
    dri_invalidate_drawable(dri2_surf->dri_drawable);
 
-   while (dri2_surf->throttle_callback != NULL)
-      if (loader_wayland_dispatch(dri2_dpy->wl_dpy, dri2_surf->wl_queue, NULL) ==
-          -1)
-         return -1;
+   if (dri2_surf->throttle_callback && throttle(dri2_dpy, dri2_surf) == -1)
+      return -1;
 
    for (int i = 0; i < ARRAY_SIZE(dri2_surf->color_buffers); i++)
       if (dri2_surf->color_buffers[i].age > 0)
