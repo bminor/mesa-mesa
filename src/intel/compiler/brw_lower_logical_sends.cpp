@@ -2214,6 +2214,14 @@ lower_btd_logical_send(const brw_builder &bld, fs_inst *inst)
       global_addr.type = BRW_TYPE_UD;
       global_addr.stride = 1;
       ubld.group(2, 0).MOV(header, global_addr);
+
+      /* XXX - There is a Registers Per Thread field in the BTD spawn
+       *       header starting on Xe3, it doesn't appear to be needed
+       *       by the hardware so we don't set it.  If it's ever
+       *       needed though we will need some sort of reloc since
+       *       we'll have to initialize it based on the prog_data
+       *       structure of the callee.
+       */
       break;
 
    case SHADER_OPCODE_BTD_RETIRE_LOGICAL:

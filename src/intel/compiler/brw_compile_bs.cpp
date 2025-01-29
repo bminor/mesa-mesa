@@ -18,13 +18,15 @@
 
 static uint64_t
 brw_bsr(const struct intel_device_info *devinfo,
-        uint32_t offset, uint8_t simd_size, uint8_t local_arg_offset)
+        uint32_t offset, uint8_t simd_size, uint8_t local_arg_offset,
+        uint8_t grf_used)
 {
    assert(offset % 64 == 0);
    assert(simd_size == 8 || simd_size == 16);
    assert(local_arg_offset % 8 == 0);
 
-   return offset |
+   return ((uint64_t)ptl_register_blocks(grf_used) << 60) |
+          offset |
           SET_BITS(simd_size == 8, 4, 4) |
           SET_BITS(local_arg_offset / 8, 2, 0);
 }
@@ -69,7 +71,8 @@ compile_single_bs(const struct brw_compiler *compiler,
                   nir_shader *shader,
                   brw_generator *g,
                   struct brw_compile_stats *stats,
-                  int *prog_offset)
+                  int *prog_offset,
+                  uint64_t *bsr)
 {
    const bool debug_enabled = brw_should_print_shader(shader, DEBUG_RT);
 
@@ -147,7 +150,10 @@ compile_single_bs(const struct brw_compiler *compiler,
    else
       assert(offset == 0);
 
-   if (!prog_offset)
+   if (bsr)
+      *bsr = brw_bsr(compiler->devinfo, offset, dispatch_width, 0,
+                     selected->grf_used);
+   else
       prog_data->base.grf_used = MAX2(prog_data->base.grf_used,
                                       selected->grf_used);
 
@@ -185,7 +191,7 @@ brw_compile_bs(const struct brw_compiler *compiler,
 
    prog_data->simd_size =
       compile_single_bs(compiler, params, params->key, prog_data,
-                        shader, &g, params->base.stats, NULL);
+                        shader, &g, params->base.stats, NULL, NULL);
    if (prog_data->simd_size == 0)
       return NULL;
 
@@ -206,12 +212,12 @@ brw_compile_bs(const struct brw_compiler *compiler,
       int offset = 0;
       uint8_t simd_size =
          compile_single_bs(compiler, params, params->key,
-                           prog_data, resume_shaders[i], &g, NULL, &offset);
+                           prog_data, resume_shaders[i], &g, NULL, &offset,
+                           &resume_sbt[i]);
       if (simd_size == 0)
          return NULL;
 
       assert(offset > 0);
-      resume_sbt[i] = brw_bsr(compiler->devinfo, offset, simd_size, 0);
    }
 
    /* We only have one constant data so we want to make sure they're all the
