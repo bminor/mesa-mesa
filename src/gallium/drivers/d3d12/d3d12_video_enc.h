@@ -349,8 +349,27 @@ struct D3D12EncodeConfiguration
          std::vector<int16_t> m_pRateControlQPMap16Bit;
       } CPUInput;
    } m_QuantizationMatrixDesc = {};
+   struct{
+      D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE MapSource;
+      struct { // union doesn't play well with std::vector
+         // D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_CPU_BUFFER
+         D3D12_VIDEO_ENCODER_MOVEREGION_INFO RectsInfo;
+         // D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_GPU_TEXTURE
+         struct
+         {
+            D3D12_VIDEO_ENCODER_FRAME_MOTION_SEARCH_MODE_CONFIG MotionSearchModeConfiguration;
+            UINT NumHintsPerPixel;
+            std::vector<ID3D12Resource*> ppMotionVectorMaps;
+            UINT*            pMotionVectorMapsSubresources;
+            std::vector<ID3D12Resource*> ppMotionVectorMapsMetadata;
+            UINT*            pMotionVectorMapsMetadataSubresources;
+            D3D12_VIDEO_ENCODER_FRAME_INPUT_MOTION_UNIT_PRECISION MotionUnitPrecision;
+            D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA PictureControlConfiguration;
+            D3D12_FEATURE_DATA_VIDEO_ENCODER_RESOLVE_INPUT_PARAM_LAYOUT capInputLayoutMotionVectors;
+         } MapInfo;
+      };
+   } m_MoveRectsDesc = {};
    std::vector<RECT> m_DirtyRectsArray;
-   D3D12_VIDEO_ENCODER_MOVEREGION_INFO m_MoveRectsDesc = {};
    std::vector<D3D12_VIDEO_ENCODER_MOVE_RECT> m_MoveRectsArray;
    struct d3d12_resource *m_GPUQPStatsResource = NULL;
    struct d3d12_resource *m_GPUSATDStatsResource = NULL;
@@ -533,6 +552,7 @@ struct d3d12_video_encoder
 
       ComPtr<ID3D12Resource> m_spDirtyRectsResolvedOpaqueMap; // output of ID3D12VideoEncodeCommandList::ResolveInputParamLayout
       ComPtr<ID3D12Resource> m_spQPMapResolvedOpaqueMap; // output of ID3D12VideoEncodeCommandList::ResolveInputParamLayout
+      ComPtr<ID3D12Resource> m_spMotionVectorsResolvedOpaqueMap; // output of ID3D12VideoEncodeCommandList::ResolveInputParamLayout
    };
 
    std::vector<InFlightEncodeResources> m_inflightResourcesPool;

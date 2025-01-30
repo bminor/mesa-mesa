@@ -337,50 +337,86 @@ d3d12_video_encoder_friendly_frame_type_h264(D3D12_VIDEO_ENCODER_FRAME_TYPE_H264
    }
 }
 
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+static D3D12_VIDEO_ENCODER_FRAME_INPUT_MOTION_UNIT_PRECISION
+d3d12_video_encoder_convert_move_precision(enum pipe_enc_move_info_precision_unit precision)
+{
+      switch (precision)
+      {
+         case PIPE_ENC_MOVE_INFO_PRECISION_UNIT_FULL_PIXEL:
+         {
+            return D3D12_VIDEO_ENCODER_FRAME_INPUT_MOTION_UNIT_PRECISION_FULL_PIXEL;
+         } break;
+         case PIPE_ENC_MOVE_INFO_PRECISION_UNIT_HALF_PIXEL:
+         {
+            return D3D12_VIDEO_ENCODER_FRAME_INPUT_MOTION_UNIT_PRECISION_HALF_PIXEL;
+         } break;
+         case PIPE_ENC_MOVE_INFO_PRECISION_UNIT_QUARTER_PIXEL:
+         {
+            return D3D12_VIDEO_ENCODER_FRAME_INPUT_MOTION_UNIT_PRECISION_QUARTER_PIXEL;
+         } break;
+         default:
+         {
+            unreachable("Unsupported pipe_enc_move_info");
+            return D3D12_VIDEO_ENCODER_FRAME_INPUT_MOTION_UNIT_PRECISION_FULL_PIXEL;
+         } break;
+      }
+}
+#endif // D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+
 void
 d3d12_video_encoder_update_move_rects(struct d3d12_video_encoder *pD3D12Enc,
                                       const struct pipe_enc_move_info& rects)
 {
 #if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
-   assert(rects.num_rects <= PIPE_ENC_MOVE_RECTS_NUM_MAX);
-   pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.NumMoveRegions = std::min(rects.num_rects, static_cast<uint32_t>(PIPE_ENC_MOVE_RECTS_NUM_MAX));
-   pD3D12Enc->m_currentEncodeConfig.m_MoveRectsArray.resize(pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.NumMoveRegions);
-   for (uint32_t i = 0; i < pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.NumMoveRegions; i++) {
-      pD3D12Enc->m_currentEncodeConfig.m_MoveRectsArray[i].SourcePoint.x = rects.rects[i].source_point.x;
-      pD3D12Enc->m_currentEncodeConfig.m_MoveRectsArray[i].SourcePoint.y = rects.rects[i].source_point.y;
-      pD3D12Enc->m_currentEncodeConfig.m_MoveRectsArray[i].DestRect.top = rects.rects[i].dest_rect.top;
-      pD3D12Enc->m_currentEncodeConfig.m_MoveRectsArray[i].DestRect.left = rects.rects[i].dest_rect.left;
-      pD3D12Enc->m_currentEncodeConfig.m_MoveRectsArray[i].DestRect.right = rects.rects[i].dest_rect.right;
-      pD3D12Enc->m_currentEncodeConfig.m_MoveRectsArray[i].DestRect.bottom = rects.rects[i].dest_rect.bottom;
-   }
-   pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.pMoveRegions = pD3D12Enc->m_currentEncodeConfig.m_MoveRectsArray.data();
+   memset(&pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc, 0, sizeof(pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc));
+      pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapSource = rects.input_mode == PIPE_ENC_MOVE_INFO_INPUT_MODE_RECTS ?
+         D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_CPU_BUFFER : D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_GPU_TEXTURE;
 
-   pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MotionSearchModeConfiguration.MotionSearchMode = D3D12_VIDEO_ENCODER_FRAME_MOTION_SEARCH_MODE_FULL_SEARCH;
-   pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MotionSearchModeConfiguration.SearchDeviationLimit = 0u;
 
-   pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.SourceDPBFrameReference = rects.dpb_reference_index;
-
-   pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.Flags = rects.overlapping_rects ? D3D12_VIDEO_ENCODER_MOVEREGION_INFO_FLAG_MULTIPLE_HINTS :
-                                                                                      D3D12_VIDEO_ENCODER_MOVEREGION_INFO_FLAG_NONE;
-
-   switch (rects.precision)
+   if (rects.input_mode == PIPE_ENC_MOVE_INFO_INPUT_MODE_RECTS)
    {
-      case PIPE_ENC_MOVE_INFO_PRECISION_UNIT_FULL_PIXEL:
+      assert(rects.num_rects <= PIPE_ENC_MOVE_RECTS_NUM_MAX);
+      pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.RectsInfo.NumMoveRegions = std::min(rects.num_rects, static_cast<uint32_t>(PIPE_ENC_MOVE_RECTS_NUM_MAX));
+      pD3D12Enc->m_currentEncodeConfig.m_MoveRectsArray.resize(pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.RectsInfo.NumMoveRegions);
+      for (uint32_t i = 0; i < pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.RectsInfo.NumMoveRegions; i++) {
+         pD3D12Enc->m_currentEncodeConfig.m_MoveRectsArray[i].SourcePoint.x = rects.rects[i].source_point.x;
+         pD3D12Enc->m_currentEncodeConfig.m_MoveRectsArray[i].SourcePoint.y = rects.rects[i].source_point.y;
+         pD3D12Enc->m_currentEncodeConfig.m_MoveRectsArray[i].DestRect.top = rects.rects[i].dest_rect.top;
+         pD3D12Enc->m_currentEncodeConfig.m_MoveRectsArray[i].DestRect.left = rects.rects[i].dest_rect.left;
+         pD3D12Enc->m_currentEncodeConfig.m_MoveRectsArray[i].DestRect.right = rects.rects[i].dest_rect.right;
+         pD3D12Enc->m_currentEncodeConfig.m_MoveRectsArray[i].DestRect.bottom = rects.rects[i].dest_rect.bottom;
+      }
+      pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.RectsInfo.pMoveRegions = pD3D12Enc->m_currentEncodeConfig.m_MoveRectsArray.data();
+
+      pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.RectsInfo.MotionSearchModeConfiguration.MotionSearchMode = D3D12_VIDEO_ENCODER_FRAME_MOTION_SEARCH_MODE_FULL_SEARCH;
+      pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.RectsInfo.MotionSearchModeConfiguration.SearchDeviationLimit = 0u;
+
+      pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.RectsInfo.SourceDPBFrameReference = rects.dpb_reference_index;
+
+      pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.RectsInfo.Flags = rects.overlapping_rects ? D3D12_VIDEO_ENCODER_MOVEREGION_INFO_FLAG_MULTIPLE_HINTS :
+                                                                                       D3D12_VIDEO_ENCODER_MOVEREGION_INFO_FLAG_NONE;
+
+      pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.RectsInfo.MotionUnitPrecision = d3d12_video_encoder_convert_move_precision(rects.precision);
+   }
+   else if (rects.input_mode == PIPE_ENC_MOVE_INFO_INPUT_MODE_MAP)
+   {
+      pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.MotionSearchModeConfiguration.MotionSearchMode = D3D12_VIDEO_ENCODER_FRAME_MOTION_SEARCH_MODE_FULL_SEARCH;
+      pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.MotionSearchModeConfiguration.SearchDeviationLimit = 0u;
+      pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.NumHintsPerPixel = rects.num_hints;
+      pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.ppMotionVectorMaps.resize(rects.num_hints);
+      pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.ppMotionVectorMapsMetadata.resize(rects.num_hints);
+      for (unsigned i = 0; i < rects.num_hints; i++)
       {
-         pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MotionUnitPrecision = D3D12_VIDEO_ENCODER_FRAME_INPUT_MOTION_UNIT_PRECISION_FULL_PIXEL;
-      } break;
-      case PIPE_ENC_MOVE_INFO_PRECISION_UNIT_HALF_PIXEL:
-      {
-         pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MotionUnitPrecision = D3D12_VIDEO_ENCODER_FRAME_INPUT_MOTION_UNIT_PRECISION_HALF_PIXEL;
-      } break;
-      case PIPE_ENC_MOVE_INFO_PRECISION_UNIT_QUARTER_PIXEL:
-      {
-         pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MotionUnitPrecision = D3D12_VIDEO_ENCODER_FRAME_INPUT_MOTION_UNIT_PRECISION_QUARTER_PIXEL;
-      } break;
-      default:
-      {
-         unreachable("Unsupported pipe_enc_move_info");
-      } break;
+         assert(i < PIPE_ENC_MOVE_MAP_MAX_HINTS);
+         pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.ppMotionVectorMaps[i] = d3d12_resource_resource(d3d12_resource(rects.gpu_motion_vectors_map[i]));
+         pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.pMotionVectorMapsSubresources = NULL;
+         pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.ppMotionVectorMapsMetadata[i] = d3d12_resource_resource(d3d12_resource(rects.gpu_motion_metadata_map[i]));
+         pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.pMotionVectorMapsMetadataSubresources = NULL;
+      }
+
+      pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.MotionUnitPrecision = d3d12_video_encoder_convert_move_precision(rects.precision);
+      // pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.PictureControlConfiguration is set later as not all the params are ready at this stage
    }
 #endif
 }
@@ -1385,6 +1421,24 @@ d3d12_video_encoder_disable_rc_minmaxqp(struct D3D12EncodeRateControlState & rcS
    }
 }
 
+static bool d3d12_video_encoder_is_move_regions_feature_enabled(struct d3d12_video_encoder* pD3D12Enc, D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE mapSource)
+{
+   if (pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapSource != mapSource)
+   {
+      return false;
+   }
+
+   if (mapSource == D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_CPU_BUFFER)
+   {
+      return pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.RectsInfo.NumMoveRegions > 0;
+   }
+   else if (mapSource == D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_GPU_TEXTURE)
+   {
+      return pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.NumHintsPerPixel > 0;
+   }
+   return false;
+}
+
 static bool d3d12_video_encoder_is_dirty_regions_feature_enabled(struct d3d12_video_encoder* pD3D12Enc, D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE mapSource)
 {
    if (pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapSource != mapSource)
@@ -1618,6 +1672,14 @@ bool d3d12_video_encoder_query_d3d12_driver_caps(struct d3d12_video_encoder *pD3
 
    d3d12_video_encoder_is_gpu_qmap_input_feature_enabled(pD3D12Enc, /*output param*/ capEncoderSupportData1.QPMap.Enabled, /*output param*/ capEncoderSupportData1.QPMap.MapSource);
 
+   capEncoderSupportData1.MotionSearch.MapSource = pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapSource;
+   capEncoderSupportData1.MotionSearch.Enabled = d3d12_video_encoder_is_move_regions_feature_enabled(pD3D12Enc, pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapSource);
+   if (capEncoderSupportData1.MotionSearch.Enabled)
+   {
+      capEncoderSupportData1.MotionSearch.MotionSearchMode = D3D12_VIDEO_ENCODER_FRAME_MOTION_SEARCH_MODE_FULL_SEARCH;
+      capEncoderSupportData1.MotionSearch.BidirectionalRefFrameEnabled = TRUE;
+   }
+
 #endif
 
    enum pipe_video_format codec = u_reduce_video_profile(pD3D12Enc->base.profile);
@@ -1814,6 +1876,43 @@ bool d3d12_video_encoder_query_d3d12_driver_caps(struct d3d12_video_encoder *pD3
       }
    }
 
+   if ((capEncoderSupportData1.MotionSearch.MapSource == D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_GPU_TEXTURE) &&
+       (capEncoderSupportData1.MotionSearch.Enabled))
+   {
+      // Query specifics of staging resource for move regions
+      pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.capInputLayoutMotionVectors =
+      {
+         // UINT NodeIndex;
+         0u,
+         // D3D12_VIDEO_ENCODER_INPUT_MAP_SESSION_INFO SessionInfo;
+         {
+            capEncoderSupportData1.Codec,
+            d3d12_video_encoder_get_current_profile_desc(pD3D12Enc),
+            d3d12_video_encoder_get_current_level_desc(pD3D12Enc),
+            pD3D12Enc->m_currentEncodeConfig.m_encodeFormatInfo.Format,
+            // D3D12_VIDEO_ENCODER_PICTURE_RESOLUTION_DESC
+            pD3D12Enc->m_currentEncodeConfig.m_currentResolution,
+            d3d12_video_encoder_get_current_codec_config_desc(pD3D12Enc),
+            capEncoderSupportData1.SubregionFrameEncoding,
+            capEncoderSupportData1.SubregionFrameEncodingData
+         },
+         // D3D12_VIDEO_ENCODER_INPUT_MAP_TYPE MapType;
+         D3D12_VIDEO_ENCODER_INPUT_MAP_TYPE_MOTION_VECTORS,
+         // BOOL IsSupported;
+         FALSE,
+         // UINT64 MaxResolvedBufferAllocationSize;
+         0u,
+      };
+
+      hr = pD3D12Enc->m_spD3D12VideoDevice->CheckFeatureSupport(D3D12_FEATURE_VIDEO_ENCODER_RESOLVE_INPUT_PARAM_LAYOUT,
+                                                                &pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.capInputLayoutMotionVectors,
+                                                                sizeof(pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.capInputLayoutMotionVectors));
+
+      if (FAILED(hr)) {
+         debug_printf("CheckFeatureSupport D3D12_FEATURE_VIDEO_ENCODER_RESOLVE_INPUT_PARAM_LAYOUT failed with HR %x\n", hr);
+         return false;
+      }
+   }
 
    return true;
 }
@@ -2285,6 +2384,28 @@ d3d12_video_encoder_prepare_input_buffers(struct d3d12_video_encoder *pD3D12Enc)
          if (FAILED(hr))
          {
             debug_printf("CreateCommittedResource for m_spQPMapResolvedOpaqueMap failed with HR %x\n", hr);
+         }
+      }
+   }
+
+   if (d3d12_video_encoder_is_move_regions_feature_enabled(pD3D12Enc, D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_GPU_TEXTURE))
+   {
+      bool bNeedsCreation = (pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].m_spMotionVectorsResolvedOpaqueMap == NULL) ||
+                            (GetDesc(pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].m_spMotionVectorsResolvedOpaqueMap.Get()).Width <
+                             pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.capInputLayoutMotionVectors.MaxResolvedBufferAllocationSize);
+      if (bNeedsCreation)
+      {
+         pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].m_spMotionVectorsResolvedOpaqueMap.Reset();
+         CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Buffer(pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.capInputLayoutMotionVectors.MaxResolvedBufferAllocationSize);
+         hr = pD3D12Enc->m_pD3D12Screen->dev->CreateCommittedResource(&Properties,
+            D3D12_HEAP_FLAG_NONE,
+            &desc,
+            D3D12_RESOURCE_STATE_COMMON,
+            nullptr,
+            IID_PPV_ARGS(&pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].m_spMotionVectorsResolvedOpaqueMap));
+         if (FAILED(hr))
+         {
+            debug_printf("CreateCommittedResource for m_spMotionVectorsResolvedOpaqueMap failed with HR %x\n", hr);
          }
       }
    }
@@ -3132,10 +3253,64 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
    }
 
    D3D12_VIDEO_ENCODER_FRAME_MOTION_VECTORS motionRegions = { };
-   motionRegions.MapSource = D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_CPU_BUFFER;
-   motionRegions.pCPUBuffer = &pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc;
-   if (motionRegions.pCPUBuffer->NumMoveRegions > 0)
+   motionRegions.MapSource = pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapSource;
+   if (d3d12_video_encoder_is_move_regions_feature_enabled(pD3D12Enc, motionRegions.MapSource))
+   {
       picCtrlFlags |= D3D12_VIDEO_ENCODER_PICTURE_CONTROL_FLAG_ENABLE_MOTION_VECTORS_INPUT;
+      if (motionRegions.MapSource == D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_CPU_BUFFER)
+      {
+         motionRegions.MapSource = D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_CPU_BUFFER;
+         motionRegions.pCPUBuffer = &pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.RectsInfo;
+      }
+      else if (motionRegions.MapSource == D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_GPU_TEXTURE)
+      {
+         motionRegions.pOpaqueLayoutBuffer = pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].m_spMotionVectorsResolvedOpaqueMap.Get();
+         pResolveInputDataBarriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(motionRegions.pOpaqueLayoutBuffer,
+                                                                                  D3D12_RESOURCE_STATE_COMMON,
+                                                                                  D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE));
+
+         for (unsigned i = 0; i < pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.NumHintsPerPixel; i++)
+         {
+            pResolveInputDataBarriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.ppMotionVectorMaps[i],
+                                                                                     D3D12_RESOURCE_STATE_COMMON,
+                                                                                     D3D12_RESOURCE_STATE_VIDEO_ENCODE_READ));
+            pResolveInputDataBarriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.ppMotionVectorMapsMetadata[i],
+                                                                                     D3D12_RESOURCE_STATE_COMMON,
+                                                                                     D3D12_RESOURCE_STATE_VIDEO_ENCODE_READ));
+         }
+
+         // see below std::swap for reversal to common after ResolveInputParamLayout is done
+         pD3D12Enc->m_spEncodeCommandList->ResourceBarrier(static_cast<uint32_t>(pResolveInputDataBarriers.size()),
+                                                                                 pResolveInputDataBarriers.data());
+         D3D12_VIDEO_ENCODER_INPUT_MAP_DATA ResolveInputData = {};
+         ResolveInputData.MapType = D3D12_VIDEO_ENCODER_INPUT_MAP_TYPE_MOTION_VECTORS;
+         ResolveInputData.MotionVectors.MotionSearchModeConfiguration = pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.MotionSearchModeConfiguration;
+         ResolveInputData.MotionVectors.NumHintsPerPixel = pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.NumHintsPerPixel;
+         ResolveInputData.MotionVectors.ppMotionVectorMaps = pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.ppMotionVectorMaps.data();
+         ResolveInputData.MotionVectors.ppMotionVectorMapsMetadata = pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.ppMotionVectorMapsMetadata.data();
+         ResolveInputData.MotionVectors.pMotionVectorMapsSubresources = pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.pMotionVectorMapsSubresources;
+         ResolveInputData.MotionVectors.pMotionVectorMapsMetadataSubresources = pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.pMotionVectorMapsMetadataSubresources;
+         ResolveInputData.MotionVectors.MotionUnitPrecision = pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.MotionUnitPrecision;
+         ResolveInputData.MotionVectors.PictureControlConfiguration = currentPicParams;
+
+         D3D12_VIDEO_ENCODER_RESOLVE_INPUT_PARAM_LAYOUT_INPUT_ARGUMENTS resolveInputParamLayoutInput =
+         {
+            pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.capInputLayoutMotionVectors.SessionInfo,
+            ResolveInputData,
+         };
+         D3D12_VIDEO_ENCODER_RESOLVE_INPUT_PARAM_LAYOUT_OUTPUT_ARGUMENTS resolveInputParamLayoutOutput =
+         {
+            motionRegions.pOpaqueLayoutBuffer,
+         };
+
+         pD3D12Enc->m_spEncodeCommandList->ResolveInputParamLayout(&resolveInputParamLayoutInput, &resolveInputParamLayoutOutput);
+         for (auto &BarrierDesc : pResolveInputDataBarriers) {
+            std::swap(BarrierDesc.Transition.StateBefore, BarrierDesc.Transition.StateAfter);
+         }
+         pD3D12Enc->m_spEncodeCommandList->ResourceBarrier(static_cast<uint32_t>(pResolveInputDataBarriers.size()),
+                                                           pResolveInputDataBarriers.data());
+      }
+   }
 
    ID3D12Resource* d12_gpu_stats_qp_map = NULL;
    D3D12_VIDEO_ENCODER_OPTIONAL_METADATA_ENABLE_FLAGS optionalMetadataFlags = D3D12_VIDEO_ENCODER_OPTIONAL_METADATA_ENABLE_FLAG_NONE;
