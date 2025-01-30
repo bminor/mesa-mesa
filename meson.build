@@ -833,7 +833,7 @@ with_driver_using_cl = with_gallium_iris or with_intel_vk or \
 
 if get_option('mesa-clc') == 'system'
   prog_mesa_clc = find_program('mesa_clc', native : true)
-  prog_vtn_bindgen = find_program('vtn_bindgen', native : true)
+  prog_vtn_bindgen2 = find_program('vtn_bindgen2', native : true)
   # Even with mesa-clc already built, rusticl still needs clc.
   with_clc = with_gallium_rusticl
 else
