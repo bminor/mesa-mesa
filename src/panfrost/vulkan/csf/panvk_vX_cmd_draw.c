@@ -1528,6 +1528,10 @@ prepare_dcd(struct panvk_cmd_buffer *cmdbuf)
             cfg.zs_update_operation = earlyzs.update;
             cfg.evaluate_per_sample = fs->info.fs.sample_shading &&
                                       (dyns->ms.rasterization_samples > 1);
+
+            cfg.shader_modifies_coverage = fs->info.fs.writes_coverage ||
+                                           fs->info.fs.can_discard ||
+                                           alpha_to_coverage;
          } else {
             cfg.allow_forward_pixel_to_kill = true;
             cfg.allow_forward_pixel_to_be_killed = true;
