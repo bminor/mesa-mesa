@@ -4234,13 +4234,17 @@ visit_load_image(struct lp_build_nir_soa_context *bld,
    params.coords = coords;
    params.outdata = result;
    lp_img_op_from_intrinsic(&params, instr);
+   params.packed_op = lp_packed_img_op_from_intrinsic(instr);
    if (nir_intrinsic_image_dim(instr) == GLSL_SAMPLER_DIM_MS ||
        nir_intrinsic_image_dim(instr) == GLSL_SAMPLER_DIM_SUBPASS_MS)
       params.ms_index = cast_type(bld, get_src(bld, &instr->src[2], 0),
                                   nir_type_uint, 32);
 
    img_params_init_resource(bld, &params, &instr->src[0]);
+
    params.format = nir_intrinsic_format(instr);
+   if (instr->def.bit_size == 64)
+      params.format = PIPE_FORMAT_R64G64B64A64_UINT;
 
    emit_image_op(bld, &params);
 }
@@ -4265,6 +4269,8 @@ visit_store_image(struct lp_build_nir_soa_context *bld,
    params.coords = coords;
 
    params.format = nir_intrinsic_format(instr);
+   if (nir_src_bit_size(instr->src[3]) == 64)
+      params.format = PIPE_FORMAT_R64G64B64A64_UINT;
 
    const struct util_format_description *desc = util_format_description(params.format);
    bool integer = desc->channel[util_format_get_first_non_void_channel(params.format)].pure_integer;
@@ -4272,14 +4278,20 @@ visit_store_image(struct lp_build_nir_soa_context *bld,
    for (unsigned i = 0; i < 4; i++) {
       params.indata[i] = in_val[i];
 
-      if (integer)
-         params.indata[i] = LLVMBuildBitCast(builder, params.indata[i], bld->int_bld.vec_type, "");
-      else
-         params.indata[i] = LLVMBuildBitCast(builder, params.indata[i], bld->base.vec_type, "");
+      if (nir_src_bit_size(instr->src[3]) == 64) {
+         assert(integer);
+         params.indata[i] = LLVMBuildBitCast(builder, params.indata[i], bld->int64_bld.vec_type, "");
+      } else {
+         if (integer)
+            params.indata[i] = LLVMBuildBitCast(builder, params.indata[i], bld->int_bld.vec_type, "");
+         else
+            params.indata[i] = LLVMBuildBitCast(builder, params.indata[i], bld->base.vec_type, "");
+      }
    }
    if (nir_intrinsic_image_dim(instr) == GLSL_SAMPLER_DIM_MS)
       params.ms_index = get_src(bld, &instr->src[2], 0);
    params.img_op = LP_IMG_STORE;
+   params.packed_op = lp_packed_img_op_from_intrinsic(instr);
 
    img_params_init_resource(bld, &params, &instr->src[0]);
 
@@ -4345,6 +4357,37 @@ lp_img_op_from_intrinsic(struct lp_img_params *params, nir_intrinsic_instr *inst
    }
 }
 
+uint32_t
+lp_packed_img_op_from_intrinsic(nir_intrinsic_instr *instr)
+{
+   struct lp_img_params params;
+   lp_img_op_from_intrinsic(&params, instr);
+
+   if (params.img_op == -1)
+      return -1;
+
+   uint32_t op = params.img_op;
+   if (op == LP_IMG_ATOMIC_CAS)
+      op--;
+   else if (op == LP_IMG_ATOMIC)
+      op = params.op + (LP_IMG_OP_COUNT - 1);
+
+   uint32_t flags = 0;
+   if (nir_intrinsic_image_dim(instr) == GLSL_SAMPLER_DIM_MS ||
+       nir_intrinsic_image_dim(instr) == GLSL_SAMPLER_DIM_SUBPASS_MS)
+      flags |= LP_IMAGE_OP_MS;
+
+   if (params.img_op == LP_IMG_LOAD || params.img_op == LP_IMG_LOAD_SPARSE) {
+      if (instr->def.bit_size == 64)
+         flags |= LP_IMAGE_OP_64;
+   } else {
+      if (nir_src_bit_size(instr->src[3]) == 64)
+         flags |= LP_IMAGE_OP_64;
+   }
+
+   return op + flags * LP_IMAGE_OP_COUNT;
+}
+
 static void
 visit_atomic_image(struct lp_build_nir_soa_context *bld,
                    nir_intrinsic_instr *instr,
@@ -4369,6 +4412,8 @@ visit_atomic_image(struct lp_build_nir_soa_context *bld,
    params.coords = coords;
 
    params.format = nir_intrinsic_format(instr);
+   if (nir_src_bit_size(instr->src[3]) == 64)
+      params.format = PIPE_FORMAT_R64G64B64A64_UINT;
 
    const struct util_format_description *desc = util_format_description(params.format);
    bool integer = desc->channel[util_format_get_first_non_void_channel(params.format)].pure_integer;
@@ -4376,28 +4421,33 @@ visit_atomic_image(struct lp_build_nir_soa_context *bld,
    if (nir_intrinsic_image_dim(instr) == GLSL_SAMPLER_DIM_MS)
       params.ms_index = get_src(bld, &instr->src[2], 0);
 
+   LLVMTypeRef indata_type = NULL;
+   if (nir_src_bit_size(instr->src[3]) == 64) {
+      assert(integer);
+      indata_type = bld->int64_bld.vec_type;
+   } else {
+      if (integer)
+         indata_type = bld->int_bld.vec_type;
+      else
+         indata_type = bld->base.vec_type;
+   }
+
    if (instr->intrinsic == nir_intrinsic_image_atomic_swap ||
        instr->intrinsic == nir_intrinsic_bindless_image_atomic_swap) {
       LLVMValueRef cas_val = get_src(bld, &instr->src[4], 0);
       params.indata[0] = in_val;
       params.indata2[0] = cas_val;
-
-      if (integer)
-         params.indata2[0] = LLVMBuildBitCast(builder, params.indata2[0], bld->int_bld.vec_type, "");
-      else
-         params.indata2[0] = LLVMBuildBitCast(builder, params.indata2[0], bld->base.vec_type, "");
+      params.indata2[0] = LLVMBuildBitCast(builder, params.indata2[0], indata_type, "");
    } else {
       params.indata[0] = in_val;
    }
 
-   if (integer)
-      params.indata[0] = LLVMBuildBitCast(builder, params.indata[0], bld->int_bld.vec_type, "");
-   else
-      params.indata[0] = LLVMBuildBitCast(builder, params.indata[0], bld->base.vec_type, "");
+   params.indata[0] = LLVMBuildBitCast(builder, params.indata[0], indata_type, "");
 
    params.outdata = result;
 
    lp_img_op_from_intrinsic(&params, instr);
+   params.packed_op = lp_packed_img_op_from_intrinsic(instr);
 
    img_params_init_resource(bld, &params, &instr->src[0]);
 

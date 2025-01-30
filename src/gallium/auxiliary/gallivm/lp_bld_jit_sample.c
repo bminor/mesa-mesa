@@ -472,7 +472,11 @@ lp_bld_llvm_image_soa_emit_op(const struct lp_build_image_soa *base,
          gallivm, params->resource, offsetof(struct lp_descriptor, functions),
          offsetof(struct lp_texture_functions, image_functions));
 
-      LLVMTypeRef image_function_type = lp_build_image_function_type(gallivm, params, params->ms_index);
+      uint32_t flags = params->packed_op / LP_IMAGE_OP_COUNT;
+      bool ms = flags & LP_IMAGE_OP_MS;
+      bool is64 = flags & LP_IMAGE_OP_64;
+
+      LLVMTypeRef image_function_type = lp_build_image_function_type(gallivm, params, ms, is64);
       LLVMTypeRef image_function_ptr_type = LLVMPointerType(image_function_type, 0);
       LLVMTypeRef image_functions_type = LLVMPointerType(image_function_ptr_type, 0);
       LLVMTypeRef image_base_type = LLVMPointerType(image_functions_type, 0);
@@ -480,16 +484,7 @@ lp_bld_llvm_image_soa_emit_op(const struct lp_build_image_soa *base,
       image_base_ptr = LLVMBuildIntToPtr(builder, image_base_ptr, image_base_type, "");
       LLVMValueRef image_functions = LLVMBuildLoad2(builder, image_functions_type, image_base_ptr, "");
 
-      uint32_t op = params->img_op;
-      if (op == LP_IMG_ATOMIC_CAS)
-         op--;
-      else if (op == LP_IMG_ATOMIC)
-         op = params->op + (LP_IMG_OP_COUNT - 1);
-
-      if (params->ms_index)
-         op += LP_TOTAL_IMAGE_OP_COUNT / 2;
-
-      LLVMValueRef function_index = lp_build_const_int32(gallivm, op);
+      LLVMValueRef function_index = lp_build_const_int32(gallivm, params->packed_op);
 
       LLVMValueRef image_function_ptr = LLVMBuildGEP2(builder, image_function_ptr_type, image_functions, &function_index, 1, "");
       LLVMValueRef image_function = LLVMBuildLoad2(builder, image_function_ptr_type, image_function_ptr, "");

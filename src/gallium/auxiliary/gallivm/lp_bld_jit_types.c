@@ -842,7 +842,7 @@ lp_build_size_function_type(struct gallivm_state *gallivm,
 
 LLVMTypeRef
 lp_build_image_function_type(struct gallivm_state *gallivm,
-                             const struct lp_img_params *params, bool ms)
+                             const struct lp_img_params *params, bool ms, bool is64)
 {
    struct lp_type type;
    memset(&type, 0, sizeof type);
@@ -871,7 +871,11 @@ lp_build_image_function_type(struct gallivm_state *gallivm,
    if (params->img_op == LP_IMG_ATOMIC_CAS)
       num_inputs = 8;
 
-   const struct util_format_description *desc = util_format_description(params->format);
+   enum pipe_format format = params->format;
+   if (is64 && format == PIPE_FORMAT_NONE)
+      format = PIPE_FORMAT_R64G64B64A64_UINT;
+
+   const struct util_format_description *desc = util_format_description(format);
    LLVMTypeRef component_type = lp_build_vec_type(gallivm, lp_build_texel_type(type, desc));
 
    for (uint32_t i = 0; i < num_inputs; i++)

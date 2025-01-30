@@ -314,8 +314,7 @@ lp_build_unpack_rgba_soa(struct gallivm_state *gallivm,
    assert(format_desc->block.width == 1);
    assert(format_desc->block.height == 1);
    assert(format_desc->block.bits <= type.width);
-   /* FIXME: Support more output types */
-   assert(type.width == 32);
+   assert(type.width >= 32);
 
    lp_build_context_init(&bld, gallivm, type);
 
@@ -426,6 +425,24 @@ lp_build_fetch_rgba_soa(struct gallivm_state *gallivm,
    LLVMBuilderRef builder = gallivm->builder;
    enum pipe_format format = format_desc->format;
    struct lp_type fetch_type;
+
+   if (util_format_is_int64(format_desc)) {
+      uint32_t c = 0;
+      for (; c < format_desc->nr_channels; c++) {
+         LLVMValueRef channel_offset =
+            LLVMBuildAdd(builder, offset, lp_build_const_int_vec(gallivm, lp_type_uint_vec(32, 32 * type.length), c * 8), "");
+         rgba_out[c] =
+            lp_build_gather(gallivm, type.length, format_desc->channel[c].size, lp_type_uint(type.width),
+                            aligned, base_ptr, channel_offset, false);
+      }
+      for (; c < 4; c++) {
+         if (c == 3)
+            rgba_out[c] = lp_build_one(gallivm, type);
+         else
+            rgba_out[c] = lp_build_zero(gallivm, type);
+      }
+      return;
+   }
 
    if (format_desc->layout == UTIL_FORMAT_LAYOUT_PLAIN &&
        (format_desc->colorspace == UTIL_FORMAT_COLORSPACE_RGB ||
@@ -992,7 +1009,6 @@ lp_build_pack_rgba_soa(struct gallivm_state *gallivm,
    assert(format_desc->block.width == 1);
    assert(format_desc->block.height == 1);
    assert(format_desc->block.bits <= type.width);
-   /* FIXME: Support more output types */
    assert(type.width == 32);
 
    lp_build_context_init(&bld, gallivm, type);
@@ -1024,7 +1040,11 @@ lp_build_store_rgba_soa(struct gallivm_state *gallivm,
    unsigned num_stores = 0;
 
    memset(packed, 0, sizeof(LLVMValueRef) * 4);
-   if (format_desc->layout == UTIL_FORMAT_LAYOUT_PLAIN &&
+
+   if (util_format_is_int64(format_desc)) {
+      memcpy(packed, rgba_in, sizeof(packed));
+      num_stores = format_desc->nr_channels;
+   } else if (format_desc->layout == UTIL_FORMAT_LAYOUT_PLAIN &&
        format_desc->colorspace == UTIL_FORMAT_COLORSPACE_RGB &&
        !util_format_is_alpha(format) &&
        format_desc->block.width == 1 &&
@@ -1096,6 +1116,7 @@ lp_build_store_rgba_soa(struct gallivm_state *gallivm,
 
    assert(exec_mask);
 
+   LLVMTypeRef int64_ptr_type = LLVMPointerType(LLVMInt64TypeInContext(gallivm->context), 0);
    LLVMTypeRef int32_ptr_type = LLVMPointerType(LLVMInt32TypeInContext(gallivm->context), 0);
    LLVMTypeRef int16_ptr_type = LLVMPointerType(LLVMInt16TypeInContext(gallivm->context), 0);
    LLVMTypeRef int8_ptr_type = LLVMPointerType(LLVMInt8TypeInContext(gallivm->context), 0);
@@ -1123,8 +1144,11 @@ lp_build_store_rgba_soa(struct gallivm_state *gallivm,
       } else if (format_desc->block.bits == 16) {
          this_offset = LLVMBuildBitCast(gallivm->builder, this_offset, int16_ptr_type, "");
          data = LLVMBuildTrunc(gallivm->builder, data, LLVMInt16TypeInContext(gallivm->context), "");
-      } else
+      } else if (format_desc->block.bits == 32) {
          this_offset = LLVMBuildBitCast(gallivm->builder, this_offset, int32_ptr_type, "");
+      } else {
+         this_offset = LLVMBuildBitCast(gallivm->builder, this_offset, int64_ptr_type, "");
+      }
       LLVMBuildStore(gallivm->builder, data, this_offset);
       lp_build_endif(&ifthen);
       lp_build_loop_end_cond(&loop_state, lp_build_const_int32(gallivm, type.length),

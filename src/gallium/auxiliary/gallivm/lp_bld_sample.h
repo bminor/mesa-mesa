@@ -156,6 +156,17 @@ struct lp_sampler_size_query_params
 #define LP_IMG_ATOMIC_CAS 4
 #define LP_IMG_OP_COUNT 5
 
+#if LLVM_VERSION_MAJOR >= 15
+#define LP_IMAGE_OP_COUNT (LP_IMG_OP_COUNT + LLVMAtomicRMWBinOpFMin)
+#else
+#define LP_IMAGE_OP_COUNT (LP_IMG_OP_COUNT + 14)
+#endif
+
+#define LP_IMAGE_OP_MS 1
+#define LP_IMAGE_OP_64 2
+
+#define LP_TOTAL_IMAGE_OP_COUNT (LP_IMAGE_OP_COUNT * 4)
+
 struct lp_img_params
 {
    struct lp_type type;
@@ -163,6 +174,7 @@ struct lp_img_params
    LLVMValueRef image_index_offset;
    unsigned img_op;
    unsigned target;
+   unsigned packed_op;
    LLVMAtomicRMWBinOp op;
    LLVMValueRef exec_mask;
    bool exec_mask_nz;

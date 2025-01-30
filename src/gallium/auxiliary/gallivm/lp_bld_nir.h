@@ -97,6 +97,8 @@ lp_build_nir_sample_key(gl_shader_stage stage, nir_tex_instr *instr);
 
 void lp_img_op_from_intrinsic(struct lp_img_params *params, nir_intrinsic_instr *instr);
 
+uint32_t lp_packed_img_op_from_intrinsic(nir_intrinsic_instr *instr);
+
 enum lp_nir_call_context_args {
    LP_NIR_CALL_CONTEXT_CONTEXT,
    LP_NIR_CALL_CONTEXT_RESOURCES,

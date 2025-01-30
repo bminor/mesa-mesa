@@ -278,30 +278,48 @@ compile_image_function(struct llvmpipe_context *ctx, struct lp_static_texture_st
    if (desc->colorspace != UTIL_FORMAT_COLORSPACE_ZS && !lp_storage_render_image_format_supported(texture->format))
       return NULL;
 
-   bool ms = op >= LP_TOTAL_IMAGE_OP_COUNT / 2;
-   if (ms)
-      op -= LP_TOTAL_IMAGE_OP_COUNT / 2;
+   uint32_t flags = op / LP_IMAGE_OP_COUNT;
+   bool ms = flags & LP_IMAGE_OP_MS;
+   bool is64 = flags & LP_IMAGE_OP_64;
 
    struct lp_img_params params = { 0 };
 
-   params.img_op = op;
-   if (op >= LP_IMG_OP_COUNT - 1) {
+   params.img_op = op % LP_IMAGE_OP_COUNT;
+   if (params.img_op >= LP_IMG_OP_COUNT - 1) {
+      params.op = params.img_op - (LP_IMG_OP_COUNT - 1);
       params.img_op = LP_IMG_ATOMIC;
-      params.op = op - (LP_IMG_OP_COUNT - 1);
-   } else if (op != LP_IMG_LOAD && op != LP_IMG_LOAD_SPARSE && op != LP_IMG_STORE) {
+   } else if (params.img_op != LP_IMG_LOAD && params.img_op != LP_IMG_LOAD_SPARSE && params.img_op != LP_IMG_STORE) {
       params.img_op = LP_IMG_ATOMIC_CAS;
+   }
+
+   struct lp_static_texture_state local_texture = *texture;
+   /* Rewrite rg32 stype formats as r64 for 64-bit atomics. */
+   if (params.img_op == LP_IMG_ATOMIC && is64) {
+      switch (local_texture.res_format) {
+      case PIPE_FORMAT_R32G32_SINT:
+         local_texture.format = PIPE_FORMAT_R64_SINT;
+         local_texture.res_format = PIPE_FORMAT_R64_SINT;
+         break;
+      case PIPE_FORMAT_R32G32_UINT:
+         local_texture.format = PIPE_FORMAT_R64_UINT;
+         local_texture.res_format = PIPE_FORMAT_R64_UINT;
+         break;
+      default:
+         /* Nothing to do. */
+         break;
+      }
    }
 
    /* Loads need to support a wider range of formats for input attachments. */
    if (params.img_op != LP_IMG_LOAD)
-      if (texture->format != PIPE_FORMAT_NONE && !lp_storage_image_format_supported(texture->format))
+      if (local_texture.format != PIPE_FORMAT_NONE && !lp_storage_image_format_supported(local_texture.format))
          return NULL;
 
    uint8_t cache_key[SHA1_DIGEST_LENGTH];
    struct mesa_sha1 hash_ctx;
    _mesa_sha1_init(&hash_ctx);
    _mesa_sha1_update(&hash_ctx, image_function_base_hash, strlen(image_function_base_hash));
-   _mesa_sha1_update(&hash_ctx, texture, sizeof(*texture));
+   _mesa_sha1_update(&hash_ctx, &local_texture, sizeof(local_texture));
    _mesa_sha1_update(&hash_ctx, &op, sizeof(op));
    _mesa_sha1_update(&hash_ctx, &ms, sizeof(ms));
    _mesa_sha1_final(&hash_ctx, cache_key);
@@ -313,7 +331,7 @@ compile_image_function(struct llvmpipe_context *ctx, struct lp_static_texture_st
    struct gallivm_state *gallivm = gallivm_create("sample_function", get_llvm_context(ctx), &cached);
 
    struct lp_image_static_state state = {
-      .image_state = *texture,
+      .image_state = local_texture,
    };
    struct lp_build_image_soa *image_soa = lp_bld_llvm_image_soa_create(&state, 1);
 
@@ -329,11 +347,11 @@ compile_image_function(struct llvmpipe_context *ctx, struct lp_static_texture_st
    lp_jit_init_cs_types(&cs);
 
    params.type = type;
-   params.target = texture->target;
+   params.target = local_texture.target;
    params.resources_type = cs.jit_resources_type;
-   params.format = texture->format;
+   params.format = local_texture.format;
 
-   LLVMTypeRef function_type = lp_build_image_function_type(gallivm, &params, ms);
+   LLVMTypeRef function_type = lp_build_image_function_type(gallivm, &params, ms, is64);
    if (!function_type) {
       free(image_soa);
       gallivm_destroy(gallivm);
@@ -373,7 +391,7 @@ compile_image_function(struct llvmpipe_context *ctx, struct lp_static_texture_st
    LLVMPositionBuilderAtEnd(gallivm->builder, block);
 
    LLVMValueRef outdata[5] = { 0 };
-   lp_build_img_op_soa(texture, lp_build_image_soa_dynamic_state(image_soa), gallivm, &params, outdata);
+   lp_build_img_op_soa(&local_texture, lp_build_image_soa_dynamic_state(image_soa), gallivm, &params, outdata);
 
    for (uint32_t i = 1; i < 4; i++)
       if (!outdata[i])
@@ -1027,23 +1045,9 @@ register_instr(nir_builder *b, nir_instr *instr, void *data)
    } else if (instr->type == nir_instr_type_intrinsic) {
       nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
 
-      struct lp_img_params params;
-      lp_img_op_from_intrinsic(&params, intrin);
-
-      if (params.img_op == -1)
-         return false;
-
-      uint32_t op = params.img_op;
-      if (op == LP_IMG_ATOMIC_CAS)
-         op--;
-      else if (op == LP_IMG_ATOMIC)
-         op = params.op + (LP_IMG_OP_COUNT - 1);
-
-      if (nir_intrinsic_image_dim(intrin) == GLSL_SAMPLER_DIM_MS ||
-          nir_intrinsic_image_dim(intrin) == GLSL_SAMPLER_DIM_SUBPASS_MS)
-         op += LP_TOTAL_IMAGE_OP_COUNT / 2;
-
-      register_image_op(ctx, op);
+      uint32_t op = lp_packed_img_op_from_intrinsic(intrin);
+      if (op != -1)
+         register_image_op(ctx, op);
    }
 
    return false;
