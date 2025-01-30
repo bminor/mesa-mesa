@@ -854,7 +854,7 @@
         "description": "pan/bi: Remove shift lanes invalid encodings",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f45654af5953d86b4b82760b51a502fb25244073",
         "notes": null
