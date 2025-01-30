@@ -877,12 +877,16 @@ bi_emit_blend_op(bi_builder *b, bi_index rgba, nir_alu_type T, bi_index rgba2,
 }
 
 /* Blend shaders do not need to run ATEST since they are dependent on a
- * fragment shader that runs it. */
+ * fragment shader that runs it. Blit shaders may not need to run ATEST, since
+ * ATEST is not needed if early-z is forced, alpha-to-coverage is disabled, and
+ * there are no writes to the coverage mask. The latter two are satisfied for
+ * all blit shaders, so we just care about early-z, which blit shaders force
+ * iff they do not write depth or stencil */
 
 static bool
-bi_skip_atest(bi_context *ctx)
+bi_skip_atest(bi_context *ctx, bool emit_zs)
 {
-   return ctx->inputs->is_blend;
+   return (ctx->inputs->is_blit && !emit_zs) || ctx->inputs->is_blend;
 }
 
 static void
@@ -946,7 +950,7 @@ bi_emit_fragment_out(bi_builder *b, nir_intrinsic_instr *instr)
     * alpha value is only used for alpha-to-coverage, a stage which is
     * skipped for pure integer framebuffers, so the issue is moot. */
 
-   if (!b->shader->emitted_atest && !bi_skip_atest(b->shader)) {
+   if (!b->shader->emitted_atest && !bi_skip_atest(b->shader, emit_zs)) {
       nir_alu_type T = nir_intrinsic_src_type(instr);
 
       bi_index rgba = bi_src_index(&instr->src[0]);
@@ -5538,7 +5542,7 @@ bi_compile_variant_nir(nir_shader *nir,
    /* If the shader doesn't write any colour or depth outputs, it may
     * still need an ATEST at the very end! */
    bool need_dummy_atest = (ctx->stage == MESA_SHADER_FRAGMENT) &&
-                           !ctx->emitted_atest && !bi_skip_atest(ctx);
+                           !ctx->emitted_atest && !bi_skip_atest(ctx, false);
 
    if (need_dummy_atest) {
       bi_block *end = list_last_entry(&ctx->blocks, bi_block, link);
