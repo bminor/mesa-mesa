@@ -472,8 +472,8 @@ va_pack_alu(const bi_instr *I)
       break;
 
    case BI_OPCODE_LEA_BUF_IMM:
-      /* Buffer table index */
-      hex |= 0xD << 8;
+      hex |= ((uint64_t)I->table) << 8;
+      hex |= ((uint64_t)I->index) << 12;
       break;
 
    case BI_OPCODE_LEA_ATTR_IMM:
