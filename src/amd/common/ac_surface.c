@@ -248,7 +248,7 @@ bool ac_is_modifier_supported(const struct radeon_info *info,
 
    if (util_format_is_compressed(format) ||
        util_format_is_depth_or_stencil(format) ||
-       util_format_get_blocksizebits(format) > 64)
+       (util_format_get_blocksizebits(format) > 64 && modifier != DRM_FORMAT_MOD_LINEAR))
       return false;
 
    if (info->gfx_level < GFX9)
