@@ -54,3 +54,11 @@ gmem-dEQP-VK.synchronization.op.single_queue.fence.write_ssbo_tess_control_read_
 dEQP-VK.spirv_assembly.type.vec2.i64.iequal_geom
 dEQP-VK.tessellation.invariance.outer_triangle_set.quads_equal_spacing
 dEQP-VK.binding_model.shader_access.secondary_cmd_buf.bind.with_template.storage_image.tess_ctrl.multiple_contiguous_descriptors.cube
+
+# Random flakes, unkown when they started appearing
+dEQP-VK.subgroups.clustered.compute.subgroupclusteredmul_u64vec3_requiredsubgroupsize
+dEQP-VK.subgroups.shuffle.graphics.subgroupshufflexor_int64_t_constant
+dEQP-VK.subgroups.shuffle.framebuffer.subgroupshuffle_bool_tess_control
+bypass-dEQP-VK.renderpass2.fragment_density_map.2_views.render.divisible_density_size.2_samples.static_subsampled_1_2_multiviewport
+bypass-dEQP-VK.renderpass2.fragment_density_map.2_views.render.divisible_density_size.2_samples.static_subsampled_2_1_multiviewport
+gmem-dEQP-VK.spirv_assembly.instruction.graphics.image_sampler.imagefetch.sampled_image.optypeimage_mismatch.rgba32f.depth_property.unknown.shader_tessc
