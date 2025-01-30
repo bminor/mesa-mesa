@@ -176,6 +176,7 @@ static const struct vk_device_extension_table lvp_device_extensions_supported = 
    .KHR_shader_integer_dot_product        = true,
    .KHR_shader_maximal_reconvergence      = true,
    .KHR_shader_non_semantic_info          = true,
+   .KHR_shader_quad_control               = true,
    .KHR_shader_relaxed_extended_instruction = true,
    .KHR_shader_subgroup_extended_types    = true,
    .KHR_shader_subgroup_rotate            = true,
@@ -759,6 +760,9 @@ lvp_get_features(const struct lvp_physical_device *pdevice,
       /* VK_KHR_compute_shader_derivatives */
       .computeDerivativeGroupQuads = true,
       .computeDerivativeGroupLinear = true,
+
+      /* VK_KHR_shader_quad_control */
+      .shaderQuadControl = true,
    };
 }
 

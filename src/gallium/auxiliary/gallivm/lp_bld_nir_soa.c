@@ -352,6 +352,15 @@ mask_vec_with_helpers(struct lp_build_nir_soa_context *bld)
                                  bld->uint_bld.type, -1);
 }
 
+static LLVMValueRef
+group_op_mask_vec(struct lp_build_nir_soa_context *bld)
+{
+   if (bld->shader->info.fs.require_full_quads)
+      return mask_vec_with_helpers(bld);
+   
+   return mask_vec(bld);
+}
+
 static bool
 lp_exec_mask_is_nz(struct lp_build_nir_soa_context *bld)
 {
@@ -2154,7 +2163,7 @@ static void emit_vote(struct lp_build_nir_soa_context *bld, LLVMValueRef src,
    struct gallivm_state * gallivm = bld->base.gallivm;
    LLVMBuilderRef builder = gallivm->builder;
    uint32_t bit_size = nir_src_bit_size(instr->src[0]);
-   LLVMValueRef exec_mask = mask_vec(bld);
+   LLVMValueRef exec_mask = group_op_mask_vec(bld);
    struct lp_build_loop_state loop_state;
    LLVMValueRef outer_cond = LLVMBuildICmp(builder, LLVMIntNE, exec_mask, bld->uint_bld.zero, "");
 
@@ -2225,7 +2234,7 @@ static void emit_ballot(struct lp_build_nir_soa_context *bld, LLVMValueRef src, 
 {
    struct gallivm_state * gallivm = bld->base.gallivm;
    LLVMBuilderRef builder = gallivm->builder;
-   LLVMValueRef exec_mask = mask_vec(bld);
+   LLVMValueRef exec_mask = group_op_mask_vec(bld);
    struct lp_build_loop_state loop_state;
    src = LLVMBuildSExt(builder, src, bld->int_bld.vec_type, "");
    src = LLVMBuildAnd(builder, src, exec_mask, "");
@@ -2249,7 +2258,7 @@ static void emit_elect(struct lp_build_nir_soa_context *bld, LLVMValueRef result
 {
    struct gallivm_state *gallivm = bld->base.gallivm;
    LLVMBuilderRef builder = gallivm->builder;
-   LLVMValueRef exec_mask = mask_vec(bld);
+   LLVMValueRef exec_mask = group_op_mask_vec(bld);
    struct lp_build_loop_state loop_state;
 
    LLVMValueRef idx_store = lp_build_alloca(gallivm, bld->int_bld.elem_type, "");
@@ -2289,7 +2298,7 @@ static void emit_reduce(struct lp_build_nir_soa_context *bld, LLVMValueRef src,
    LLVMBuilderRef builder = gallivm->builder;
    uint32_t bit_size = nir_src_bit_size(instr->src[0]);
    /* can't use llvm reduction intrinsics because of exec_mask */
-   LLVMValueRef exec_mask = mask_vec(bld);
+   LLVMValueRef exec_mask = group_op_mask_vec(bld);
    nir_op reduction_op = nir_intrinsic_reduction_op(instr);
 
    uint32_t cluster_size = 0;
