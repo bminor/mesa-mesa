@@ -78,6 +78,8 @@ const struct panfrost_model panfrost_model_list[] = {
         MODEL(0xac74, 4, "G310",   "TVAx", HAS_ANISO,         32768, 16384, {}),
 
         MODEL(0xc870, 4, "G720",   "TTIx", HAS_ANISO,         65536, 32768, {}),
+
+        MODEL(0xd830, 4, "G725",   "TKRx", HAS_ANISO,         65536, 65536, {}),
 };
 /* clang-format on */
 
