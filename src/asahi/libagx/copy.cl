@@ -26,3 +26,11 @@ libagx_copy_uchar(global uint8_t *dest, global uint8_t *src)
 {
    dest[cl_global_id.x] = src[cl_global_id.x];
 }
+
+KERNEL(32)
+libagx_fill_uint4(global uint4 *address, uint layer_stride_uint4, uint a,
+                  uint b, uint c, uint d)
+{
+   uint offs = cl_global_id.x + cl_global_id.y * layer_stride_uint4;
+   address[offs] = (uint4)(a, b, c, d);
+}
