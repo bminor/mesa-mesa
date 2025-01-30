@@ -82,6 +82,8 @@
     optional: true
   - job: debian-arm64-asan
     optional: true
+  - job: debain-android
+    optional: true
   # Windows runners don't have more than one build right now, so there is
   # no need to wait on the "first one" to be done.
   # - job: windows-msvc
@@ -429,9 +431,9 @@ debian-android:
     - .meson-cross
     - .use-debian/android_build
     - .ci-deqp-artifacts
+  stage: build-for-tests
   needs:
     - !reference [.use-debian/android_build, needs]
-    - !reference [.build-for-tests-jobs]
   variables:
     BUILDTYPE: debug
     UNWIND: "disabled"
