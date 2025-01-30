@@ -4162,10 +4162,16 @@ bi_emit_tex_valhall(bi_builder *b, nir_tex_instr *instr)
                        !narrow_indices, mask, sr_count);
       break;
    case nir_texop_txf:
-   case nir_texop_txf_ms:
+   case nir_texop_txf_ms: {
+      /* On Valhall, TEX_FETCH doesn't have CUBE support. This is not a problem
+       * as a cube is just a 2D array in any cases. */
+      if (dim == BI_DIMENSION_CUBE)
+         dim = BI_DIMENSION_2D;
+
       bi_tex_fetch_to(b, dest, idx, src0, src1, instr->is_array, dim, regfmt,
                       explicit_offset, !narrow_indices, mask, sr_count);
       break;
+   }
    case nir_texop_tg4:
       bi_tex_gather_to(b, dest, idx, src0, src1, instr->is_array, dim,
                        instr->component, false, regfmt, instr->is_shadow,
