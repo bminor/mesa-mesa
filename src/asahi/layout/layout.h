@@ -336,7 +336,8 @@ ail_metadata_height_tl(struct ail_layout *layout, unsigned level)
  * pointless. This queries this case.
  */
 static inline bool
-ail_is_level_compressed(const struct ail_layout *layout, unsigned level)
+ail_is_level_allocated_compressed(const struct ail_layout *layout,
+                                  unsigned level)
 {
    unsigned width_sa = ALIGN(
       ail_effective_width_sa(layout->width_px, layout->sample_count_sa), 16);
@@ -349,11 +350,25 @@ ail_is_level_compressed(const struct ail_layout *layout, unsigned level)
 }
 
 static inline bool
+ail_is_level_logically_compressed(const struct ail_layout *layout,
+                                  unsigned level)
+{
+   unsigned width_sa =
+      ail_effective_width_sa(layout->width_px, layout->sample_count_sa);
+
+   unsigned height_sa =
+      ail_effective_height_sa(layout->height_px, layout->sample_count_sa);
+
+   return layout->compressed &&
+          u_minify(MIN2(width_sa, height_sa), level) >= 16;
+}
+
+static inline bool
 ail_is_level_twiddled_uncompressed(const struct ail_layout *layout,
                                    unsigned level)
 {
    if (layout->compressed) {
-      return !ail_is_level_compressed(layout, level);
+      return !ail_is_level_logically_compressed(layout, level);
    } else {
       return layout->tiling != AIL_TILING_LINEAR;
    }

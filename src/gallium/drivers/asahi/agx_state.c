@@ -3392,7 +3392,7 @@ agx_batch_init_state(struct agx_batch *batch)
          struct ail_layout *layout = &rsrc->layout;
          unsigned level = surf->level;
 
-         if (!ail_is_level_compressed(layout, level))
+         if (!ail_is_level_logically_compressed(layout, level))
             continue;
 
          if (true || (rsrc->base.bind & PIPE_BIND_SHARED)) {

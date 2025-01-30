@@ -821,7 +821,9 @@ hk_CmdBeginRendering(VkCommandBuffer commandBuffer,
             uint8_t image_plane = view->planes[plane].image_plane;
             struct ail_layout *layout = &image->planes[image_plane].layout;
 
-            if (ail_is_level_compressed(layout, view->vk.base_mip_level)) {
+            if (ail_is_level_logically_compressed(layout,
+                                                  view->vk.base_mip_level)) {
+
                perf_debug(cmd, "Decompressing in-place");
 
                unsigned level = view->vk.base_mip_level;

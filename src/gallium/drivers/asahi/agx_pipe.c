@@ -921,7 +921,7 @@ agx_transfer_map(struct pipe_context *pctx, struct pipe_resource *resource,
     * compression in software. In some cases, we could use this path for
     * twiddled too, but we don't have a use case for that yet.
     */
-   bool staging_blit = ail_is_level_compressed(&rsrc->layout, level);
+   bool staging_blit = ail_is_level_logically_compressed(&rsrc->layout, level);
 
    agx_prepare_for_map(ctx, rsrc, level, usage, box, staging_blit);
 

@@ -287,9 +287,9 @@ ail_initialize_compression(struct ail_layout *layout)
 
    unsigned compbuf_B = 0;
 
-   for (unsigned l = 0; l < layout->levels; ++l) {
-      if (!ail_is_level_compressed(layout, l))
-         break;
+   for (unsigned l = 0;
+        l < layout->levels && ail_is_level_allocated_compressed(layout, l);
+        ++l) {
 
       layout->level_offsets_compressed_B[l] = compbuf_B;
 
