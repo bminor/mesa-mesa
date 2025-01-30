@@ -344,78 +344,6 @@ struct intel_clc_params {
 #include "compiler/spirv/nir_spirv.h"
 
 static int
-output_nir(const struct intel_clc_params *params, struct clc_binary *binary)
-{
-   const struct spirv_capabilities spirv_caps = {
-      .Addresses = true,
-      .Groups = true,
-      .StorageImageWriteWithoutFormat = true,
-      .Int8 = true,
-      .Int16 = true,
-      .Int64 = true,
-      .Int64Atomics = true,
-      .Kernel = true,
-      .Linkage = true, /* We receive linked kernel from clc */
-      .GenericPointer = true,
-      .GroupNonUniform = true,
-      .GroupNonUniformArithmetic = true,
-      .GroupNonUniformBallot = true,
-      .GroupNonUniformQuad = true,
-      .GroupNonUniformShuffle = true,
-      .GroupNonUniformVote = true,
-      .SubgroupDispatch = true,
-
-      .SubgroupShuffleINTEL = true,
-      .SubgroupBufferBlockIOINTEL = true,
-   };
-
-   struct spirv_to_nir_options spirv_options = {
-      .environment = NIR_SPIRV_OPENCL,
-      .capabilities = &spirv_caps,
-      .printf = true,
-      .shared_addr_format = nir_address_format_62bit_generic,
-      .global_addr_format = nir_address_format_62bit_generic,
-      .temp_addr_format = nir_address_format_62bit_generic,
-      .constant_addr_format = nir_address_format_64bit_global,
-      .create_library = true,
-   };
-
-   FILE *fp = params->outfile != NULL ?
-      fopen(params->outfile, "w") : stdout;
-   if (!fp) {
-      fprintf(stderr, "Failed to open %s\n", params->outfile);
-      return -1;
-   }
-
-   spirv_library_to_nir_builder(fp, binary->data, binary->size / 4,
-                                &spirv_options);
-
-   nir_shader *nir = params->gfx_version >= 9 ?
-      brw_nir_from_spirv(params->mem_ctx, params->gfx_version,
-                         binary->data, binary->size,
-                         params->llvm17_wa) :
-      elk_nir_from_spirv(params->mem_ctx, params->gfx_version,
-                         binary->data, binary->size,
-                         params->llvm17_wa);
-   if (!nir) {
-      fprintf(stderr, "Failed to generate NIR out of SPIRV\n");
-      fclose(fp);
-      return -1;
-   }
-
-   struct blob blob;
-   blob_init(&blob);
-   nir_serialize(&blob, nir, false /* strip */);
-   print_u8_data(fp, params->prefix, "nir", blob.data, blob.size);
-   blob_finish(&blob);
-
-   if (params->outfile)
-      fclose(fp);
-
-   return 0;
-}
-
-static int
 output_isa(const struct intel_clc_params *params, struct clc_binary *binary)
 {
    struct brw_kernel kernel = {};
@@ -501,9 +429,6 @@ int main(int argc, char **argv)
       {"out",          required_argument,   0, 'o'},
       {"spv",          required_argument,   0, 's'},
       {"text",         required_argument,   0, 't'},
-      {"gfx-version",  required_argument,   0, 'g'},
-      {"nir",          no_argument,         0, 'n'},
-      {"llvm17-wa",    no_argument,         0, 'L'},
       {"llvm-version", no_argument,         0, 'M'},
       {"verbose",      no_argument,         0, 'v'},
       {0, 0, 0, 0}
@@ -524,7 +449,7 @@ int main(int argc, char **argv)
    util_dynarray_init(&input_files, params.mem_ctx);
 
    int ch;
-   while ((ch = getopt_long(argc, argv, "he:p:s:t:i:no:MLvg:", long_options, NULL)) != -1)
+   while ((ch = getopt_long(argc, argv, "he:p:s:t:i:o:Mv", long_options, NULL)) != -1)
    {
       switch (ch)
       {
@@ -543,9 +468,6 @@ int main(int argc, char **argv)
       case 'i':
          util_dynarray_append(&input_files, char *, optarg);
 	 break;
-      case 'n':
-         params.output_nir = true;
-         break;
       case 's':
          params.spv_outfile = optarg;
          break;
@@ -555,15 +477,9 @@ int main(int argc, char **argv)
       case 'v':
          params.print_info = true;
          break;
-      case 'L':
-         params.llvm17_wa = true;
-         break;
       case 'M':
          print_llvm_version(stdout);
          return EXIT_SUCCESS;
-      case 'g':
-         params.gfx_version = strtoul(optarg, NULL, 10);
-         break;
       case OPT_PREFIX:
          params.prefix = optarg;
          break;
@@ -654,66 +570,50 @@ int main(int argc, char **argv)
 
    glsl_type_singleton_init_or_ref();
 
-   if (params.output_nir) {
-      if (params.gfx_version == 0) {
-         fprintf(stderr, "No target Gfx version specified.\n");
-         print_usage(argv[0], stderr);
-         goto fail;
-      }
-
-      exit_code = output_nir(&params, &spirv_obj);
-   } else {
-      if (params.platform == NULL) {
-         fprintf(stderr, "No target platform name specified.\n");
-         print_usage(argv[0], stderr);
-         goto fail;
-      }
-
-      int pci_id = intel_device_name_to_pci_device_id(params.platform);
-      if (pci_id < 0) {
-         fprintf(stderr, "Invalid target platform name: %s\n", params.platform);
-         goto fail;
-      }
-
-      if (!intel_get_device_info_for_build(pci_id, &params.devinfo)) {
-         fprintf(stderr, "Failed to get device information.\n");
-         goto fail;
-      }
-
-      if (params.devinfo.verx10 < 125) {
-         fprintf(stderr, "Platform currently not supported.\n");
-         goto fail;
-      }
-
-      if (params.gfx_version) {
-         fprintf(stderr, "WARNING: Ignorining unnecessary parameter for "
-                         "gfx version, using version based on platform.\n");
-         /* Keep going. */
-      }
-
-      if (params.entry_point == NULL) {
-         fprintf(stderr, "No entry-point name specified.\n");
-         print_usage(argv[0], stderr);
-         goto fail;
-      }
-
-      if (!clc_parse_spirv(&spirv_obj, &logger, &parsed_spirv_data))
-         goto fail;
-
-      const struct clc_kernel_info *kernel_info = NULL;
-      for (unsigned i = 0; i < parsed_spirv_data.num_kernels; i++) {
-         if (strcmp(parsed_spirv_data.kernels[i].name, params.entry_point) == 0) {
-            kernel_info = &parsed_spirv_data.kernels[i];
-            break;
-         }
-      }
-      if (kernel_info == NULL) {
-         fprintf(stderr, "Kernel entrypoint %s not found\n", params.entry_point);
-         goto fail;
-      }
-
-      exit_code = output_isa(&params, &spirv_obj);
+   if (params.platform == NULL) {
+      fprintf(stderr, "No target platform name specified.\n");
+      print_usage(argv[0], stderr);
+      goto fail;
    }
+
+   int pci_id = intel_device_name_to_pci_device_id(params.platform);
+   if (pci_id < 0) {
+      fprintf(stderr, "Invalid target platform name: %s\n", params.platform);
+      goto fail;
+   }
+
+   if (!intel_get_device_info_for_build(pci_id, &params.devinfo)) {
+      fprintf(stderr, "Failed to get device information.\n");
+      goto fail;
+   }
+
+   if (params.devinfo.verx10 < 125) {
+      fprintf(stderr, "Platform currently not supported.\n");
+      goto fail;
+   }
+
+   if (params.entry_point == NULL) {
+      fprintf(stderr, "No entry-point name specified.\n");
+      print_usage(argv[0], stderr);
+      goto fail;
+   }
+
+   if (!clc_parse_spirv(&spirv_obj, &logger, &parsed_spirv_data))
+      goto fail;
+
+   const struct clc_kernel_info *kernel_info = NULL;
+   for (unsigned i = 0; i < parsed_spirv_data.num_kernels; i++) {
+      if (strcmp(parsed_spirv_data.kernels[i].name, params.entry_point) == 0) {
+         kernel_info = &parsed_spirv_data.kernels[i];
+         break;
+      }
+   }
+   if (kernel_info == NULL) {
+      fprintf(stderr, "Kernel entrypoint %s not found\n", params.entry_point);
+      goto fail;
+   }
+
+   exit_code = output_isa(&params, &spirv_obj);
 
    glsl_type_singleton_decref();
 
