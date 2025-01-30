@@ -80,6 +80,12 @@ agx_1d(uint32_t x)
 }
 
 static struct agx_grid
+agx_2d(uint32_t x, uint32_t y)
+{
+   return agx_3d(x, y, 1);
+}
+
+static struct agx_grid
 agx_grid_indirect(uint64_t ptr)
 {
    return (struct agx_grid){.mode = AGX_CDM_MODE_INDIRECT_GLOBAL, .ptr = ptr};
