@@ -1779,7 +1779,7 @@ bi_emit_derivative(bi_builder *b, bi_index dst, nir_intrinsic_instr *instr,
     */
    if (nir_def_all_uses_ignore_sign_bit(&instr->def) && !coarse) {
       left = s0;
-      right = bi_clper(b, s0, bi_imm_u32(axis), BI_LANE_OP_XOR);
+      right = bi_clper(b, s0, bi_imm_u8(axis), BI_LANE_OP_XOR);
    } else {
       bi_index lane1, lane2;
       if (coarse) {
@@ -1792,8 +1792,8 @@ bi_emit_derivative(bi_builder *b, bi_index dst, nir_intrinsic_instr *instr,
          lane2 = bi_iadd_u32(b, lane1, bi_imm_u32(axis), false);
       }
 
-      left = bi_clper(b, s0, lane1, BI_LANE_OP_NONE);
-      right = bi_clper(b, s0, lane2, BI_LANE_OP_NONE);
+      left = bi_clper(b, s0, bi_byte(lane1, 0), BI_LANE_OP_NONE);
+      right = bi_clper(b, s0, bi_byte(lane2, 0), BI_LANE_OP_NONE);
    }
 
    bi_fadd_to(b, sz, dst, right, bi_neg(left));
@@ -2086,7 +2086,7 @@ bi_emit_intrinsic(bi_builder *b, nir_intrinsic_instr *instr)
          bi_subgroup_from_cluster_size(pan_subgroup_size(b->shader->arch));
       bi_clper_i32_to(b, dst,
                       bi_src_index(&instr->src[0]),
-                      bi_src_index(&instr->src[1]),
+                      bi_byte(bi_src_index(&instr->src[1]), 0),
                       inactive_result, lane_op, subgroup);
       break;
    }
