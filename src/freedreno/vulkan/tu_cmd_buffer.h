@@ -512,6 +512,8 @@ struct tu_cmd_state
       struct tu_lrz_state lrz;
    } suspended_pass;
 
+   bool fdm_enabled;
+
    bool tessfactor_addr_set;
    bool predication_active;
    bool msaa_disable;

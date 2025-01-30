@@ -2088,6 +2088,8 @@ tu_emit_renderpass_begin(struct tu_cmd_buffer *cmd)
     */
    BITSET_SET(cmd->vk.dynamic_graphics_state.dirty,
               MESA_VK_DYNAMIC_IA_PRIMITIVE_RESTART_ENABLE);
+
+   cmd->state.fdm_enabled = cmd->state.pass->has_fdm;
 }
 
 template <chip CHIP>
@@ -2967,10 +2969,18 @@ tu_BeginCommandBuffer(VkCommandBuffer commandBuffer,
                vk_common_CmdSetRenderingAttachmentLocationsKHR(commandBuffer,
                                                                location_info);
             }
+            /* Unfortunately with dynamic renderpasses we get no indication
+             * whether FDM is used in secondaries, so we have to assume it
+             * always might be enabled.
+             */
+            cmd_buffer->state.fdm_enabled = 
+               cmd_buffer->device->vk.enabled_features.fragmentDensityMap ||
+               TU_DEBUG(FDM);
          } else {
             cmd_buffer->state.pass = tu_render_pass_from_handle(pBeginInfo->pInheritanceInfo->renderPass);
             cmd_buffer->state.subpass =
                &cmd_buffer->state.pass->subpasses[pBeginInfo->pInheritanceInfo->subpass];
+            cmd_buffer->state.fdm_enabled = cmd_buffer->state.pass->has_fdm;
          }
          tu_fill_render_pass_state(&cmd_buffer->state.vk_rp,
                                    cmd_buffer->state.pass,
