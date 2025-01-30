@@ -322,9 +322,14 @@ struct panvk_shader {
    union {
       struct panvk_priv_mem spd;
       struct {
+#if PAN_ARCH < 12
          struct panvk_priv_mem pos_points;
          struct panvk_priv_mem pos_triangles;
          struct panvk_priv_mem var;
+#else
+         struct panvk_priv_mem all_points;
+         struct panvk_priv_mem all_triangles;
+#endif
       } spds;
    };
 #endif

@@ -205,7 +205,8 @@ emit_varying_descs(const struct panvk_cmd_buffer *cmdbuf,
          cfg.table = 61;
          cfg.frequency = MALI_ATTRIBUTE_FREQUENCY_VERTEX;
          cfg.offset = 1024 + (loc * 16);
-         cfg.buffer_index = 0;
+         /* On v12+, the hardware-controlled buffer is at index 1 for varyings */
+         cfg.buffer_index = PAN_ARCH >= 12 ? 1 : 0;
          cfg.attribute_stride = varying_size;
          cfg.packet_stride = varying_size + 16;
       }
@@ -402,8 +403,16 @@ update_tls(struct panvk_cmd_buffer *cmdbuf)
 
       cmdbuf->state.gfx.tsd = state->desc.gpu;
 
-      cs_update_vt_ctx(b)
+      cs_update_vt_ctx(b) {
+#if PAN_ARCH >= 12
+         cs_move64_to(b, cs_sr_reg64(b, IDVS, VERTEX_TSD),
+                      state->desc.gpu);
+         cs_move64_to(b, cs_sr_reg64(b, IDVS, FRAGMENT_TSD),
+                      state->desc.gpu);
+#else
          cs_move64_to(b, cs_sr_reg64(b, IDVS, TSD_0), state->desc.gpu);
+#endif
+      }
    }
 
    state->info.tls.size =
@@ -465,6 +474,86 @@ prepare_blend(struct panvk_cmd_buffer *cmdbuf)
    return VK_SUCCESS;
 }
 
+#if PAN_ARCH >= 12
+static void
+prepare_vp(struct panvk_cmd_buffer *cmdbuf)
+{
+   struct cs_builder *b =
+      panvk_get_cs_builder(cmdbuf, PANVK_SUBQUEUE_VERTEX_TILER);
+   const VkViewport *viewport =
+      &cmdbuf->vk.dynamic_graphics_state.vp.viewports[0];
+   const VkRect2D *scissor = &cmdbuf->vk.dynamic_graphics_state.vp.scissors[0];
+
+   /* XXX: Switch scissor_array_enable to true and use array based variant
+    * for future proofness */
+
+   if (dyn_gfx_state_dirty(cmdbuf, VP_SCISSORS)) {
+      struct mali_scissor_packed scissor_box;
+      pan_pack(&scissor_box, SCISSOR, cfg) {
+         assert(scissor->offset.x >= 0 && scissor->offset.y >= 0);
+
+         int minx = scissor->offset.x;
+         int miny = scissor->offset.y;
+         int maxx = scissor->offset.x + scissor->extent.width;
+         int maxy = scissor->offset.y + scissor->extent.height;
+
+         /* Make sure we don't end up with a max < min when width/height is 0 */
+         maxx = maxx > minx ? maxx - 1 : maxx;
+         maxy = maxy > miny ? maxy - 1 : maxy;
+
+         /* Clamp scissor to valid range */
+         cfg.scissor_minimum_x = CLAMP(minx, 0, UINT16_MAX);
+         cfg.scissor_minimum_y = CLAMP(miny, 0, UINT16_MAX);
+         cfg.scissor_maximum_x = CLAMP(maxx, 0, UINT16_MAX);
+         cfg.scissor_maximum_y = CLAMP(maxy, 0, UINT16_MAX);
+      }
+
+      struct mali_scissor_packed *scissor_box_ptr = &scissor_box;
+      cs_move64_to(b, cs_sr_reg64(b, IDVS, SCISSOR_BOX),
+                   *((uint64_t *)scissor_box_ptr));
+   }
+
+   if (dyn_gfx_state_dirty(cmdbuf, VP_VIEWPORTS) ||
+       dyn_gfx_state_dirty(cmdbuf, RS_DEPTH_CLIP_ENABLE) ||
+       dyn_gfx_state_dirty(cmdbuf, RS_DEPTH_CLAMP_ENABLE)) {
+      struct mali_viewport_packed mali_viewport;
+      pan_pack(&mali_viewport, VIEWPORT, cfg) {
+         /* The spec says "width must be greater than 0.0" */
+         assert(viewport->width >= 0);
+         int minx = (int)viewport->x;
+         int maxx = (int)(viewport->x + viewport->width);
+
+         /* Viewport height can be negative */
+         int miny =
+            MIN2((int)viewport->y, (int)(viewport->y + viewport->height));
+         int maxy =
+            MAX2((int)viewport->y, (int)(viewport->y + viewport->height));
+
+         /* Make sure we don't end up with a max < min when width/height is 0 */
+         maxx = maxx > minx ? maxx - 1 : maxx;
+         maxy = maxy > miny ? maxy - 1 : maxy;
+
+         /* Clamp viewport to valid range */
+         cfg.min_x = CLAMP(minx, 0, UINT16_MAX);
+         cfg.min_y = CLAMP(miny, 0, UINT16_MAX);
+         cfg.max_x = CLAMP(maxx, 0, UINT16_MAX);
+         cfg.max_y = CLAMP(maxy, 0, UINT16_MAX);
+
+         struct panvk_graphics_sysvals *sysvals = &cmdbuf->state.gfx.sysvals;
+         float z_min = sysvals->viewport.offset.z;
+         float z_max = z_min + sysvals->viewport.scale.z;
+         cfg.min_depth = CLAMP(z_min, 0.0f, 1.0f);
+         cfg.max_depth = CLAMP(z_max, 0.0f, 1.0f);
+      }
+
+      uint64_t *mali_viewport_ptr = (uint64_t *)&mali_viewport;
+      cs_move64_to(b, cs_sr_reg64(b, IDVS, VIEWPORT_HIGH),
+                   mali_viewport_ptr[0]);
+      cs_move64_to(b, cs_sr_reg64(b, IDVS, VIEWPORT_LOW),
+                   mali_viewport_ptr[1]);
+   }
+}
+#else
 static void
 prepare_vp(struct panvk_cmd_buffer *cmdbuf)
 {
@@ -525,9 +614,23 @@ prepare_vp(struct panvk_cmd_buffer *cmdbuf)
                    fui(MAX2(z_min, z_max)));
    }
 }
+#endif
 
+#if PAN_ARCH >= 12
 static inline uint64_t
-get_pos_spd(const struct panvk_cmd_buffer *cmdbuf)
+get_vs_all_spd(const struct panvk_cmd_buffer *cmdbuf)
+{
+   const struct panvk_shader *vs = cmdbuf->state.gfx.vs.shader;
+   assert(vs);
+   const struct vk_input_assembly_state *ia =
+      &cmdbuf->vk.dynamic_graphics_state.ia;
+   return ia->primitive_topology == VK_PRIMITIVE_TOPOLOGY_POINT_LIST
+             ? panvk_priv_mem_dev_addr(vs->spds.all_points)
+             : panvk_priv_mem_dev_addr(vs->spds.all_triangles);
+}
+#else
+static inline uint64_t
+get_vs_pos_spd(const struct panvk_cmd_buffer *cmdbuf)
 {
    const struct panvk_shader *vs = cmdbuf->state.gfx.vs.shader;
    assert(vs);
@@ -537,6 +640,7 @@ get_pos_spd(const struct panvk_cmd_buffer *cmdbuf)
              ? panvk_priv_mem_dev_addr(vs->spds.pos_points)
              : panvk_priv_mem_dev_addr(vs->spds.pos_triangles);
 }
+#endif
 
 static void
 prepare_tiler_primitive_size(struct panvk_cmd_buffer *cmdbuf)
@@ -713,6 +817,10 @@ get_tiler_desc(struct panvk_cmd_buffer *cmdbuf)
          panvk_select_tiler_hierarchy_mask(phys_dev, &cmdbuf->state.gfx);
       cfg.fb_width = fbinfo->width;
       cfg.fb_height = fbinfo->height;
+
+#if PAN_ARCH >= 12
+      cfg.effective_tile_size = fbinfo->tile_size;
+#endif
 
       cfg.sample_pattern = pan_sample_pattern(fbinfo->nr_samples);
 
@@ -1206,14 +1314,19 @@ prepare_vs(struct panvk_cmd_buffer *cmdbuf)
          cs_move64_to(b, cs_sr_reg64(b, IDVS, VERTEX_SRT),
                       vs_desc_state->res_table);
 
+#if PAN_ARCH >= 12
+      if (gfx_state_dirty(cmdbuf, VS))
+         cs_move64_to(b, cs_sr_reg64(b, IDVS, VERTEX_SPD), get_vs_all_spd(cmdbuf));
+#else
       if (gfx_state_dirty(cmdbuf, VS) ||
           dyn_gfx_state_dirty(cmdbuf, IA_PRIMITIVE_TOPOLOGY))
          cs_move64_to(b, cs_sr_reg64(b, IDVS, VERTEX_POS_SPD),
-                      get_pos_spd(cmdbuf));
+                      get_vs_pos_spd(cmdbuf));
 
       if (gfx_state_dirty(cmdbuf, VS))
          cs_move64_to(b, cs_sr_reg64(b, IDVS, VERTEX_VARY_SPD),
                       panvk_priv_mem_dev_addr(vs->spds.var));
+#endif
    }
 
    return VK_SUCCESS;
@@ -1706,8 +1819,14 @@ set_tiler_idvs_flags(struct cs_builder *b, struct panvk_cmd_buffer *cmdbuf,
          cfg.view_mask = cmdbuf->state.gfx.render.view_mask;
       }
 
-      cs_move32_to(b, cs_sr_reg32(b, IDVS, TILER_FLAGS),
-                   tiler_idvs_flags.opaque[0]);
+      cs_move32_to(b, cs_sr_reg32(b, IDVS, TILER_FLAGS), tiler_idvs_flags.opaque[0]);
+#if PAN_ARCH >= 11
+      struct mali_primitive_flags_2_packed tiler_flags_2;
+      pan_pack(&tiler_flags_2, PRIMITIVE_FLAGS_2, cfg) {
+      }
+      cs_move32_to(b, cs_sr_reg32(b, IDVS, TILER_FLAGS2),
+                   tiler_flags_2.opaque[0]);
+#endif
    }
 }
 
@@ -1880,10 +1999,16 @@ panvk_cmd_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
       cs_move32_to(b, counter_reg, idvs_count);
 
       cs_while(b, MALI_CS_CONDITION_GREATER, counter_reg) {
+#if PAN_ARCH >= 12
+         cs_trace_run_idvs2(b, tracing_ctx, cs_scratch_reg_tuple(b, 0, 4),
+                            flags_override.opaque[0], false, true, cs_undef(),
+                            MALI_IDVS_SHADING_MODE_EARLY);
+#else
          cs_trace_run_idvs(b, tracing_ctx, cs_scratch_reg_tuple(b, 0, 4),
                            flags_override.opaque[0], false, true,
                            cs_shader_res_sel(0, 0, 1, 0),
                            cs_shader_res_sel(2, 2, 2, 0), cs_undef());
+#endif
 
          cs_add32(b, counter_reg, counter_reg, -1);
          cs_update_vt_ctx(b) {
@@ -1897,10 +2022,16 @@ panvk_cmd_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
                   -(idvs_count * pan_size(TILER_CONTEXT)));
       }
    } else {
+#if PAN_ARCH >= 12
+      cs_trace_run_idvs2(b, tracing_ctx, cs_scratch_reg_tuple(b, 0, 4),
+                        flags_override.opaque[0], false, true, cs_undef(),
+                        MALI_IDVS_SHADING_MODE_EARLY);
+#else
       cs_trace_run_idvs(b, tracing_ctx, cs_scratch_reg_tuple(b, 0, 4),
                         flags_override.opaque[0], false, true,
                         cs_shader_res_sel(0, 0, 1, 0),
                         cs_shader_res_sel(2, 2, 2, 0), cs_undef());
+#endif
    }
    cs_req_res(b, 0);
 }
@@ -2067,10 +2198,16 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
       get_tiler_flags_override(draw);
 
    cs_req_res(b, CS_IDVS_RES);
+#if PAN_ARCH >= 12
+   cs_trace_run_idvs2(b, tracing_ctx, cs_scratch_reg_tuple(b, 0, 4),
+                     flags_override.opaque[0], false, true, cs_undef(),
+                     MALI_IDVS_SHADING_MODE_EARLY);
+#else
    cs_trace_run_idvs(b, tracing_ctx, cs_scratch_reg_tuple(b, 0, 4),
                      flags_override.opaque[0], false, true,
                      cs_shader_res_sel(0, 0, 1, 0),
                      cs_shader_res_sel(2, 2, 2, 0), cs_undef());
+#endif
    cs_req_res(b, 0);
 }
 

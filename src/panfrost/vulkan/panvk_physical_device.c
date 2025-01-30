@@ -1091,6 +1091,7 @@ panvk_physical_device_init(struct panvk_physical_device *device,
       break;
 
    case 10:
+   case 12:
       break;
 
    default:
@@ -1265,6 +1266,7 @@ panvk_GetPhysicalDeviceMemoryProperties2(
 DEVICE_PER_ARCH_FUNCS(6);
 DEVICE_PER_ARCH_FUNCS(7);
 DEVICE_PER_ARCH_FUNCS(10);
+DEVICE_PER_ARCH_FUNCS(12);
 
 VKAPI_ATTR VkResult VKAPI_CALL
 panvk_CreateDevice(VkPhysicalDevice physicalDevice,

@@ -411,7 +411,12 @@ init_subqueue(struct panvk_queue *queue, enum panvk_subqueue_id subqueue)
                 panvk_priv_mem_dev_addr(subq->context));
 
    /* Intialize scoreboard slots used for asynchronous operations. */
+#if PAN_ARCH >= 11
+   cs_set_state_imm32(&b, MALI_CS_SET_STATE_TYPE_SB_SEL_ENDPOINT, SB_ITER(0));
+   cs_set_state_imm32(&b, MALI_CS_SET_STATE_TYPE_SB_SEL_OTHER, SB_ID(LS));
+#else
    cs_set_scoreboard_entry(&b, SB_ITER(0), SB_ID(LS));
+#endif
 
    /* We do greater than test on sync objects, and given the reference seqno
     * registers are all zero at init time, we need to initialize all syncobjs
