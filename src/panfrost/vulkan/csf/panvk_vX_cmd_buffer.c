@@ -130,7 +130,8 @@ finish_cs(struct panvk_cmd_buffer *cmdbuf, uint32_t subqueue)
    cs_move32_to(b, flush_id, 0);
    cs_wait_slots(b, SB_ALL_MASK, false);
    cs_flush_caches(b, MALI_CS_FLUSH_MODE_CLEAN, MALI_CS_FLUSH_MODE_CLEAN,
-                   false, flush_id, cs_defer(SB_IMM_MASK, SB_ID(IMM_FLUSH)));
+                   MALI_CS_OTHER_FLUSH_MODE_NONE, flush_id,
+                   cs_defer(SB_IMM_MASK, SB_ID(IMM_FLUSH)));
    cs_wait_slot(b, SB_ID(IMM_FLUSH), false);
 
    /* If we're in sync/trace more, we signal the debug object. */
@@ -333,13 +334,13 @@ add_memory_dependency(struct panvk_cache_flush_info *cache_flush,
 
    /* visibility op */
    if (dst_access & ro_l1_access)
-      cache_flush->others |= true;
+      cache_flush->others |= MALI_CS_OTHER_FLUSH_MODE_INVALIDATE;
 
    /* host-to-device domain op */
    if (src_access & VK_ACCESS_2_HOST_WRITE_BIT) {
       cache_flush->l2 |= MALI_CS_FLUSH_MODE_CLEAN_AND_INVALIDATE;
       cache_flush->lsc |= MALI_CS_FLUSH_MODE_CLEAN_AND_INVALIDATE;
-      cache_flush->others |= true;
+      cache_flush->others |= MALI_CS_OTHER_FLUSH_MODE_INVALIDATE;
    }
 
    /* device-to-host domain op */
@@ -566,7 +567,8 @@ panvk_per_arch(CmdPipelineBarrier2)(VkCommandBuffer commandBuffer,
 
       struct panvk_cache_flush_info cache_flush = deps.src[i].cache_flush;
       if (cache_flush.l2 != MALI_CS_FLUSH_MODE_NONE ||
-          cache_flush.lsc != MALI_CS_FLUSH_MODE_NONE || cache_flush.others) {
+          cache_flush.lsc != MALI_CS_FLUSH_MODE_NONE ||
+          cache_flush.others != MALI_CS_OTHER_FLUSH_MODE_NONE) {
          struct cs_index flush_id = cs_scratch_reg32(b, 0);
 
          cs_move32_to(b, flush_id, 0);

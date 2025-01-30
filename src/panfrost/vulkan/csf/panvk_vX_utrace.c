@@ -163,8 +163,9 @@ panvk_per_arch(utrace_clone_finish_builder)(struct cs_builder *b)
    const struct cs_index flush_id = cs_scratch_reg32(b, 0);
 
    cs_move32_to(b, flush_id, 0);
-   cs_flush_caches(b, MALI_CS_FLUSH_MODE_CLEAN, MALI_CS_FLUSH_MODE_NONE, false,
-                   flush_id, cs_defer(SB_IMM_MASK, SB_ID(IMM_FLUSH)));
+   cs_flush_caches(b, MALI_CS_FLUSH_MODE_CLEAN, MALI_CS_FLUSH_MODE_NONE,
+                   MALI_CS_OTHER_FLUSH_MODE_NONE, flush_id,
+                   cs_defer(SB_IMM_MASK, SB_ID(IMM_FLUSH)));
    cs_wait_slot(b, SB_ID(IMM_FLUSH), false);
 
    cs_finish(b);

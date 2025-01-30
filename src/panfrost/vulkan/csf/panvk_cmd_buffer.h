@@ -118,7 +118,7 @@ struct panvk_cs_subqueue_context {
 struct panvk_cache_flush_info {
    enum mali_cs_flush_mode l2;
    enum mali_cs_flush_mode lsc;
-   bool others;
+   enum mali_cs_other_flush_mode others;
 };
 
 struct panvk_cs_deps {

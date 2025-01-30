@@ -485,6 +485,11 @@
     <value name="Clean and invalidate" value="3"/>
   </enum>
 
+  <enum name="CS Other Flush Mode">
+    <value name="None" value="0"/>
+    <value name="Invalidate" value="2"/>
+  </enum>
+
   <enum name="CS Sync scope">
     <value name="System" value="0"/>
     <value name="CSG" value="2"/>
@@ -713,7 +718,7 @@
   <struct name="CS FLUSH_CACHE2" size="2">
     <field name="L2 flush mode" size="4" start="0" type="CS Flush Mode"/>
     <field name="LSC flush mode" size="4" start="4" type="CS Flush Mode"/>
-    <field name="Other invalidate" size="1" start="9" type="bool"/>
+    <field name="Other flush mode" size="4" start="8" type="CS Other Flush Mode"/>
     <field name="Wait mask" size="16" start="16" type="hex"/>
     <field name="Latest Flush ID" size="8" start="40" type="uint"/>
     <field name="Signal slot" size="4" start="48" type="uint"/>

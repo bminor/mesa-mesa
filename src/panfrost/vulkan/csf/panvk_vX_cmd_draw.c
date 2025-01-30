@@ -2388,7 +2388,8 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
     * v13+. We don't do that in panvk, but we provide a debug flag to help
     * identify those issues. */
    if (unlikely(instance->debug_flags & PANVK_DEBUG_IMPLICIT_OTHERS_INV)) {
-      cs_flush_caches(b, 0, 0, true, length_reg,
+      cs_flush_caches(b, MALI_CS_FLUSH_MODE_NONE, MALI_CS_FLUSH_MODE_NONE,
+                      MALI_CS_OTHER_FLUSH_MODE_INVALIDATE, length_reg,
                       cs_defer(0x0, SB_ID(IMM_FLUSH)));
       cs_wait_slot(b, SB_ID(IMM_FLUSH), false);
    }
@@ -2478,7 +2479,8 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
          struct cs_index flush_id = oq_chain_lo;                               \
          cs_move32_to(b, flush_id, 0);                                         \
          cs_flush_caches(b, MALI_CS_FLUSH_MODE_CLEAN,                          \
-                         MALI_CS_FLUSH_MODE_CLEAN, false, flush_id,            \
+                         MALI_CS_FLUSH_MODE_CLEAN,                             \
+                         MALI_CS_OTHER_FLUSH_MODE_NONE, flush_id,              \
                          cs_defer(SB_WAIT_ITER(x), SB_ID(DEFERRED_FLUSH)));    \
          cs_load64_to(                                                         \
             b, oq_chain, cs_subqueue_ctx_reg(b),                               \

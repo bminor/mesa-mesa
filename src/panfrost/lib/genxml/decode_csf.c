@@ -301,10 +301,17 @@ print_cs_instr(FILE *fp, const uint64_t *instr)
          "clean_invalidate",
       };
 
-      fprintf(fp, "FLUSH_CACHE2.%s_l2.%s_lsc%s r%u, #%x, #%u",
+      static const char *other_mode[] = {
+         "nop_other",
+         "INVALID",
+         "invalidate_other",
+         "INVALID",
+      };
+
+      fprintf(fp, "FLUSH_CACHE2.%s_l2.%s_lsc.%s r%u, #%x, #%u",
               mode[I.l2_flush_mode], mode[I.lsc_flush_mode],
-              I.other_invalidate ? ".invalidate_other" : ".nop_other",
-              I.latest_flush_id, I.wait_mask, I.signal_slot);
+              other_mode[I.other_flush_mode], I.latest_flush_id, I.wait_mask,
+              I.signal_slot);
       break;
    }
 

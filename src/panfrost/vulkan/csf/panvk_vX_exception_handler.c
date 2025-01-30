@@ -133,7 +133,8 @@ generate_tiler_oom_handler(struct panvk_device *dev,
       /* We need to flush the texture caches so future preloads see the new
        * content. */
       cs_flush_caches(&b, MALI_CS_FLUSH_MODE_NONE, MALI_CS_FLUSH_MODE_NONE,
-                      true, flush_id, cs_defer(SB_IMM_MASK, SB_ID(IMM_FLUSH)));
+                      MALI_CS_OTHER_FLUSH_MODE_INVALIDATE, flush_id,
+                      cs_defer(SB_IMM_MASK, SB_ID(IMM_FLUSH)));
 
       cs_wait_slot(&b, SB_ID(IMM_FLUSH), false);
    }
