@@ -1802,6 +1802,38 @@ vn_GetPhysicalDeviceMemoryProperties2(
    pMemoryProperties->memoryProperties = physical_dev->memory_properties;
 }
 
+static inline void
+vn_sanitize_format_properties(VkFormat format,
+                              VkFormatProperties *props,
+                              VkFormatProperties3 *props3)
+{
+   // YCbCr formats only support a subset of format feature flags
+   static const VkFormatFeatureFlags allowed_ycbcr_feats =
+      VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT |
+      VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT |
+      VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT |
+      VK_FORMAT_FEATURE_TRANSFER_SRC_BIT |
+      VK_FORMAT_FEATURE_TRANSFER_DST_BIT |
+      VK_FORMAT_FEATURE_MIDPOINT_CHROMA_SAMPLES_BIT |
+      VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT |
+      VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_LINEAR_FILTER_BIT |
+      VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_SEPARATE_RECONSTRUCTION_FILTER_BIT |
+      VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_CHROMA_RECONSTRUCTION_EXPLICIT_BIT |
+      VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_CHROMA_RECONSTRUCTION_EXPLICIT_FORCEABLE_BIT |
+      VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_MINMAX_BIT |
+      VK_FORMAT_FEATURE_DISJOINT_BIT;
+
+   /* TODO drop this after supporting VK_EXT_rgba10x6_formats */
+   if (format == VK_FORMAT_R10X6G10X6B10X6A10X6_UNORM_4PACK16) {
+      props->linearTilingFeatures &= allowed_ycbcr_feats;
+      props->optimalTilingFeatures &= allowed_ycbcr_feats;
+      if (props3) {
+         props3->linearTilingFeatures &= allowed_ycbcr_feats;
+         props3->optimalTilingFeatures &= allowed_ycbcr_feats;
+      }
+   }
+}
+
 void
 vn_GetPhysicalDeviceFormatProperties2(VkPhysicalDevice physicalDevice,
                                       VkFormat format,
@@ -1843,6 +1875,8 @@ vn_GetPhysicalDeviceFormatProperties2(VkPhysicalDevice physicalDevice,
    vn_call_vkGetPhysicalDeviceFormatProperties2(ring, physicalDevice, format,
                                                 pFormatProperties);
 
+   vn_sanitize_format_properties(format, &pFormatProperties->formatProperties,
+                                 props3);
    if (entry) {
       vn_physical_device_add_format_properties(
          physical_dev, entry, &pFormatProperties->formatProperties, props3);
