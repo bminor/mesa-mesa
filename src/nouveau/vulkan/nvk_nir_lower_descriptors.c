@@ -1278,7 +1278,7 @@ lower_tex(nir_builder *b, nir_tex_instr *tex,
          load_resource_deref_desc(b, 1, 32, texture, plane_offset_B, ctx);
 
    nir_def *combined_handle;
-   if (texture == sampler) {
+   if (texture == sampler || !nir_tex_instr_need_sampler(tex)) {
       combined_handle = texture_desc;
    } else {
       combined_handle = nir_iand_imm(b, texture_desc,
