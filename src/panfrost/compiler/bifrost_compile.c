@@ -2748,6 +2748,10 @@ bi_emit_alu(bi_builder *b, nir_alu_instr *instr)
       if (!(src_sz == 32 && comps == 2))
          break;
 
+      /* Starting with v11, we don't have V2XXX_TO_V2F16, this should have been
+       * lowered before if there is more than one components */
+      assert(b->shader->arch < 11);
+
       nir_alu_src *src = &instr->src[0];
       bi_index idx = bi_src_index(&src->src);
       bi_index s0 = bi_extract(b, idx, src->swizzle[0]);
@@ -3027,6 +3031,9 @@ bi_emit_alu(bi_builder *b, nir_alu_instr *instr)
    }
 
    case nir_op_f2i32:
+      /* v11 removed F16_TO_S32 */
+      assert(src_sz == 32 || (b->shader->arch < 11 && src_sz == 16));
+
       if (src_sz == 32)
          bi_f32_to_s32_to(b, dst, s0);
       else
@@ -3035,6 +3042,9 @@ bi_emit_alu(bi_builder *b, nir_alu_instr *instr)
 
    /* Note 32-bit sources => no vectorization, so 32-bit works */
    case nir_op_f2u16:
+      /* v11 removed V2F16_TO_V2U16 */
+      assert(src_sz == 32 || (b->shader->arch < 11 && src_sz == 16));
+
       if (src_sz == 32)
          bi_f32_to_u32_to(b, dst, s0);
       else
@@ -3042,6 +3052,9 @@ bi_emit_alu(bi_builder *b, nir_alu_instr *instr)
       break;
 
    case nir_op_f2i16:
+      /* v11 removed V2F16_TO_V2S16 */
+      assert(src_sz == 32 || (b->shader->arch < 11 && src_sz == 16));
+
       if (src_sz == 32)
          bi_f32_to_s32_to(b, dst, s0);
       else
@@ -3049,6 +3062,9 @@ bi_emit_alu(bi_builder *b, nir_alu_instr *instr)
       break;
 
    case nir_op_f2u32:
+      /* v11 removed F16_TO_U32 */
+      assert(src_sz == 32 || (b->shader->arch < 11 && src_sz == 16));
+
       if (src_sz == 32)
          bi_f32_to_u32_to(b, dst, s0);
       else
@@ -3056,6 +3072,10 @@ bi_emit_alu(bi_builder *b, nir_alu_instr *instr)
       break;
 
    case nir_op_u2f16:
+      /* Starting with v11, we don't have V2XXX_TO_V2F16, this should have been
+       * lowered before by algebraic. */
+      assert(b->shader->arch < 11);
+
       if (src_sz == 32)
          bi_v2u16_to_v2f16_to(b, dst, bi_half(s0, false));
       else if (src_sz == 16)
@@ -3065,6 +3085,9 @@ bi_emit_alu(bi_builder *b, nir_alu_instr *instr)
       break;
 
    case nir_op_u2f32:
+      /* v11 removed U16_TO_F32 and U8_TO_F32 */
+      assert(src_sz == 32 || (b->shader->arch < 11 && (src_sz == 16 || src_sz == 8)));
+
       if (src_sz == 32)
          bi_u32_to_f32_to(b, dst, s0);
       else if (src_sz == 16)
@@ -3074,6 +3097,10 @@ bi_emit_alu(bi_builder *b, nir_alu_instr *instr)
       break;
 
    case nir_op_i2f16:
+      /* Starting with v11, we don't have V2XXX_TO_V2F16, this should have been
+       * lowered before by algebraic. */
+      assert(b->shader->arch < 11);
+
       if (src_sz == 32)
          bi_v2s16_to_v2f16_to(b, dst, bi_half(s0, false));
       else if (src_sz == 16)
@@ -3083,7 +3110,8 @@ bi_emit_alu(bi_builder *b, nir_alu_instr *instr)
       break;
 
    case nir_op_i2f32:
-      assert(src_sz == 32 || src_sz == 16 || src_sz == 8);
+      /* v11 removed S16_TO_F32 and S8_TO_F32 */
+      assert(src_sz == 32 || (b->shader->arch < 11 && (src_sz == 16 || src_sz == 8)));
 
       if (src_sz == 32)
          bi_s32_to_f32_to(b, dst, s0);
@@ -4883,6 +4911,8 @@ bi_vectorize_filter(const nir_instr *instr, const void *data)
    case nir_op_f2f16:
    case nir_op_f2f16_rtz:
    case nir_op_f2f16_rtne:
+   case nir_op_u2f16:
+   case nir_op_i2f16:
       if (pan_arch(gpu_id) >= 11)
          return 1;
 
@@ -5116,7 +5146,7 @@ bi_optimize_nir(nir_shader *nir, unsigned gpu_id, bool is_blend)
 
    /* Prepass to simplify instruction selection */
    late_algebraic = false;
-   NIR_PASS(late_algebraic, nir, bifrost_nir_lower_algebraic_late);
+   NIR_PASS(late_algebraic, nir, bifrost_nir_lower_algebraic_late, pan_arch(gpu_id));
 
    while (late_algebraic) {
       late_algebraic = false;
