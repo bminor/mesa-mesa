@@ -161,6 +161,15 @@ static inline void abort(void) { nir_printf_abort(); }
 #define assert(x)
 #endif
 
+/* This is the unreachable macro from macros.h that uses __builtin_unreachable,
+ * which is a clang builtin available in OpenCL C.
+ */
+#define unreachable(str)                                                       \
+   do {                                                                        \
+      assert(!"" str);                                                         \
+      __builtin_unreachable();                                                 \
+   } while (0)
+
 /* Core OpenCL C like likely/unlikely. We might be able to map to a clang built
  * in though...
  */
