@@ -1204,7 +1204,7 @@
         "description": "panfrost: Do not evaluate_per_sample for non-MSAA",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "26d339ef8ac7338a39aa5908d2dd38950933a474",
         "notes": null
