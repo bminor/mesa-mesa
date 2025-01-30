@@ -2444,6 +2444,10 @@ radv_emit_mesh_shader(struct radv_cmd_buffer *cmd_buffer)
       radeon_set_sh_reg_seq(cmd_buffer->cs, R_00B2B0_SPI_SHADER_GS_MESHLET_DIM, 2);
       radeon_emit(cmd_buffer->cs, ms->info.regs.ms.spi_shader_gs_meshlet_dim);
       radeon_emit(cmd_buffer->cs, ms->info.regs.ms.spi_shader_gs_meshlet_exp_alloc);
+
+      if (pdev->info.gfx_level >= GFX12)
+         radeon_set_sh_reg(cmd_buffer->cs, R_00B2B8_SPI_SHADER_GS_MESHLET_CTRL,
+                           ms->info.regs.ms.spi_shader_gs_meshlet_ctrl);
    }
 
    radv_emit_vgt_gs_out(cmd_buffer, gs_out);

@@ -482,8 +482,9 @@ radv_shader_spirv_to_nir(struct radv_device *device, const struct radv_shader_st
        */
       .lower_cs_local_id_to_index = nir->info.stage == MESA_SHADER_MESH && !pdev->mesh_fast_launch_2,
       .lower_local_invocation_index = nir->info.stage == MESA_SHADER_COMPUTE &&
-                                      ((nir->info.workgroup_size[0] == 1) + (nir->info.workgroup_size[1] == 1) +
-                                       (nir->info.workgroup_size[2] == 1)) == 2,
+                                      ((((nir->info.workgroup_size[0] == 1) + (nir->info.workgroup_size[1] == 1) +
+                                         (nir->info.workgroup_size[2] == 1)) == 2) ||
+                                       nir->info.derivative_group == DERIVATIVE_GROUP_QUADS),
    };
    NIR_PASS(_, nir, nir_lower_compute_system_values, &csv_options);
 
@@ -1659,6 +1660,13 @@ radv_precompute_registers_hw_ms(struct radv_device *device, struct radv_shader_b
 
    info->regs.ms.spi_shader_gs_meshlet_exp_alloc =
       S_00B2B4_MAX_EXP_VERTS(info->ngg_info.max_out_verts) | S_00B2B4_MAX_EXP_PRIMS(info->ngg_info.prim_amp_factor);
+
+   if (pdev->info.gfx_level >= GFX12) {
+      const bool derivative_group_quads = info->cs.derivative_group == DERIVATIVE_GROUP_QUADS;
+
+      info->regs.ms.spi_shader_gs_meshlet_ctrl =
+         S_00B2B8_INTERLEAVE_BITS_X(derivative_group_quads) | S_00B2B8_INTERLEAVE_BITS_Y(derivative_group_quads);
+   }
 }
 
 static void
@@ -1731,6 +1739,11 @@ radv_precompute_registers_hw_cs(struct radv_device *device, struct radv_shader_b
    if (pdev->info.gfx_level >= GFX12) {
       info->regs.cs.compute_num_thread_x = S_00B81C_NUM_THREAD_FULL_GFX12(info->cs.block_size[0]);
       info->regs.cs.compute_num_thread_y = S_00B820_NUM_THREAD_FULL_GFX12(info->cs.block_size[1]);
+
+      if (info->cs.derivative_group == DERIVATIVE_GROUP_QUADS) {
+         info->regs.cs.compute_num_thread_x |= S_00B81C_INTERLEAVE_BITS_X(1);
+         info->regs.cs.compute_num_thread_y |= S_00B820_INTERLEAVE_BITS_Y(1);
+      }
    } else {
       info->regs.cs.compute_num_thread_x = S_00B81C_NUM_THREAD_FULL_GFX6(info->cs.block_size[0]);
       info->regs.cs.compute_num_thread_y = S_00B820_NUM_THREAD_FULL_GFX6(info->cs.block_size[1]);

@@ -5169,6 +5169,8 @@ static void gfx12_init_gfx_preamble_state(struct si_context *sctx)
    ac_pm4_set_reg(&pm4->base, R_028C54_PA_SC_CONSERVATIVE_RASTERIZATION_CNTL,
                   S_028C54_NULL_SQUAD_AA_MASK_ENABLE(1));
 
+   ac_pm4_set_reg(&pm4->base, R_00B2B8_SPI_SHADER_GS_MESHLET_CTRL, 0);
+
 done:
    sctx->cs_preamble_state = pm4;
    sctx->cs_preamble_state_tmz = si_pm4_clone(sscreen, pm4); /* Make a copy of the preamble for TMZ. */
