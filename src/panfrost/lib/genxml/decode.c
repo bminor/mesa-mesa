@@ -470,6 +470,7 @@ GENX(pandecode_depth_stencil)(struct pandecode_context *ctx, uint64_t addr)
    DUMP_UNPACKED(ctx, DEPTH_STENCIL, desc, "Depth/stencil");
 }
 
+#if PAN_ARCH < 12
 void
 GENX(pandecode_shader_environment)(struct pandecode_context *ctx,
                                    const struct MALI_SHADER_ENVIRONMENT *p,
@@ -487,6 +488,7 @@ GENX(pandecode_shader_environment)(struct pandecode_context *ctx,
    if (p->fau)
       GENX(pandecode_fau)(ctx, p->fau, p->fau_count, "FAU");
 }
+#endif
 
 void
 GENX(pandecode_blend_descs)(struct pandecode_context *ctx, uint64_t blend,
@@ -515,7 +517,35 @@ GENX(pandecode_dcd)(struct pandecode_context *ctx, const struct MALI_DRAW *p,
    GENX(pandecode_depth_stencil)(ctx, p->depth_stencil);
    GENX(pandecode_blend_descs)
    (ctx, p->blend, p->blend_count, frag_shader, gpu_id);
+#if PAN_ARCH >= 12
+   if (p->vertex_shader)
+      GENX(pandecode_shader)(ctx, p->vertex_shader, "Vertex Shader", gpu_id);
+
+   if (p->vertex_resources)
+      GENX(pandecode_resource_tables)(ctx, p->vertex_resources,
+                                      "Vertex Resources");
+
+   if (p->vertex_fau.pointer)
+      GENX(pandecode_fau)(ctx, p->vertex_fau.pointer, p->vertex_fau.count,
+                          "Vertex FAU");
+
+   if (p->fragment_shader)
+      GENX(pandecode_shader)(ctx, p->fragment_shader, "Fragment Shader",
+                             gpu_id);
+
+   if (p->fragment_resources)
+      GENX(pandecode_resource_tables)(ctx, p->fragment_resources,
+                                      "Fragment Resources");
+
+   if (p->fragment_fau.pointer)
+      GENX(pandecode_fau)(ctx, p->fragment_fau.pointer, p->fragment_fau.count,
+                          "Fragment FAU");
+
+   if (p->thread_storage)
+      DUMP_ADDR(ctx, LOCAL_STORAGE, p->thread_storage, "Local Storage:\n");
+#else
    GENX(pandecode_shader_environment)(ctx, &p->shader, gpu_id);
+#endif
    DUMP_UNPACKED(ctx, DRAW, *p, "Draw:\n");
 }
 #endif

@@ -137,6 +137,13 @@ void pandecode_cs_binary_v10(struct pandecode_context *ctx, uint64_t bin,
 void pandecode_cs_trace_v10(struct pandecode_context *ctx, uint64_t trace,
                             uint32_t trace_size, unsigned gpu_id);
 
+void pandecode_interpret_cs_v12(struct pandecode_context *ctx, uint64_t queue,
+                                uint32_t size, unsigned gpu_id, uint32_t *regs);
+void pandecode_cs_binary_v12(struct pandecode_context *ctx, uint64_t bin,
+                             uint32_t bin_size, unsigned gpu_id);
+void pandecode_cs_trace_v12(struct pandecode_context *ctx, uint64_t trace,
+                            uint32_t trace_size, unsigned gpu_id);
+
 /* Logging infrastructure */
 static void
 pandecode_make_indent(struct pandecode_context *ctx)
@@ -256,9 +263,11 @@ void GENX(pandecode_tiler)(struct pandecode_context *ctx, uint64_t gpu_va,
 #endif
 
 #if PAN_ARCH >= 9
+#if PAN_ARCH < 12
 void GENX(pandecode_shader_environment)(struct pandecode_context *ctx,
                                         const struct MALI_SHADER_ENVIRONMENT *p,
                                         unsigned gpu_id);
+#endif
 
 void GENX(pandecode_resource_tables)(struct pandecode_context *ctx,
                                      uint64_t addr, const char *label);

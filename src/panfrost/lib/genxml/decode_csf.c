@@ -141,6 +141,7 @@ print_cs_instr(FILE *fp, const uint64_t *instr)
       break;
    }
 
+#if PAN_ARCH == 10
    case MALI_CS_OPCODE_RUN_TILING: {
       cs_unpack(instr, CS_RUN_TILING, I);
       fprintf(fp, "RUN_TILING%s.srt%d.spd%d.tsd%d.fau%d",
@@ -148,7 +149,9 @@ print_cs_instr(FILE *fp, const uint64_t *instr)
               I.spd_select, I.tsd_select, I.fau_select);
       break;
    }
+#endif
 
+#if PAN_ARCH < 12
    case MALI_CS_OPCODE_RUN_IDVS: {
       cs_unpack(instr, CS_RUN_IDVS, I);
       fprintf(
@@ -162,6 +165,130 @@ print_cs_instr(FILE *fp, const uint64_t *instr)
          I.flags_override);
       break;
    }
+#else
+   case MALI_CS_OPCODE_RUN_IDVS2: {
+      cs_unpack(instr, CS_RUN_IDVS2, I);
+
+      const char *vertex_shading_str[] = {
+         ".early",
+         ".deferred",
+         ".INVALID",
+         ".INVALID",
+      };
+
+      fprintf(fp, "RUN_IDVS2%s%s%s%s r%u, #%x",
+              I.progress_increment ? ".progress_inc" : "",
+              I.malloc_enable ? "" : ".no_malloc",
+              I.draw_id_register_enable ? ".draw_id_enable" : "",
+              vertex_shading_str[I.vertex_shading_mode], I.draw_id,
+              I.flags_override);
+      break;
+   }
+#endif
+
+#if PAN_ARCH >= 11
+   case MALI_CS_OPCODE_LOGIC_OP32: {
+      cs_unpack(instr, CS_LOGIC_OP32, I);
+
+      const char *mode_name[] = {
+         ".CLEAR", ".AND",     ".AND_A_NB", ".MOV_A", ".AND_NA_B", ".MOV_B",
+         ".XOR",   ".OR",      ".NOR",      ".XNOR",  ".NOT_B",    ".OR_A_NB",
+         ".NOT_A", ".OR_NA_B", ".NAND",     ".SET",
+      };
+
+      const char *index_name[] = {
+         ".direct",
+         ".index",
+      };
+
+      fprintf(fp, "LOGIC_OP32%s r%u, r%u, r%u%s", mode_name[I.mode],
+              I.destination, I.source_0, I.source_1, index_name[I.index]);
+
+      break;
+   }
+
+   case MALI_CS_OPCODE_NEXT_SB_ENTRY: {
+      cs_unpack(instr, CS_NEXT_SB_ENTRY, I);
+
+      const char *sb_type_name[] = {
+         ".no_change", ".endpoint", ".other",   ".deferred",
+         ".INVALID",   ".INVALID",  ".INVALID", ".INVALID",
+         ".INVALID",   ".INVALID",  ".INVALID", ".INVALID",
+         ".INVALID",   ".INVALID",  ".INVALID", ".INVALID",
+      };
+
+      const char *format_name[] = {".index", ".mask"};
+
+      fprintf(fp, "NEXT_SB_ENTR%s%s r%u", sb_type_name[I.sb_type],
+              format_name[I.format], I.destination);
+
+      break;
+   }
+
+   case MALI_CS_OPCODE_SET_STATE: {
+      cs_unpack(instr, CS_SET_STATE, I);
+
+      const char *state_name[] = {
+         ".sb_sel_endpoint", ".sb_sel_other", ".sb_sel_deferred", ".INVALID",
+         ".INVALID",         ".INVALID",      ".INVALID",         ".INVALID",
+         ".sb_mask_stream",  ".sb_mask_wait",
+      };
+
+      const char *state =
+         I.state <= sizeof(state_name) ? state_name[I.state] : ".INVALID";
+
+      fprintf(fp, "SET_STATE%s r%u", state, I.source);
+      break;
+   }
+
+   case MALI_CS_OPCODE_SET_STATE_IMM32: {
+      cs_unpack(instr, CS_SET_STATE_IMM32, I);
+
+      const char *state_name[] = {
+         ".sb_sel_endpoint", ".sb_sel_other", ".sb_sel_deferred", ".INVALID",
+         ".INVALID",         ".INVALID",      ".INVALID",         ".INVALID",
+         ".sb_mask_stream",  ".sb_mask_wait",
+      };
+
+      const char *state =
+         I.state <= sizeof(state_name) ? state_name[I.state] : ".INVALID";
+
+      fprintf(fp, "SET_STATE_IMM32%s #%u", state, I.value);
+      break;
+   }
+
+   case MALI_CS_OPCODE_SHARED_SB_INC: {
+      cs_unpack(instr, CS_SHARED_SB_INC, I);
+
+      const char *progress_increment_name[] = {
+         ".no_increment",
+         ".increment",
+      };
+
+      const char *defer_mode_name[] = {
+         ".defer_immediate",
+         ".defer_indirect",
+      };
+
+      fprintf(fp, "SHARED_SB_INC%s%s #%u, #%u",
+              progress_increment_name[I.progress_increment],
+              defer_mode_name[I.defer_mode], I.sb_mask, I.shared_entry);
+      break;
+   }
+
+   case MALI_CS_OPCODE_SHARED_SB_DEC: {
+      cs_unpack(instr, CS_SHARED_SB_DEC, I);
+
+      const char *progress_increment_name[] = {
+         ".no_increment",
+         ".increment",
+      };
+
+      fprintf(fp, "SHARED_SB_DEC%s #%u",
+              progress_increment_name[I.progress_increment], I.shared_entry);
+      break;
+   }
+#endif
 
    case MALI_CS_OPCODE_RUN_FRAGMENT: {
       static const char *tile_order[] = {
@@ -203,6 +330,7 @@ print_cs_instr(FILE *fp, const uint64_t *instr)
       break;
    }
 
+#if PAN_ARCH < 13
    case MALI_CS_OPCODE_ADD_IMMEDIATE32: {
       cs_unpack(instr, CS_ADD_IMM32, I);
 
@@ -226,6 +354,7 @@ print_cs_instr(FILE *fp, const uint64_t *instr)
               I.source_0);
       break;
    }
+#endif
 
    case MALI_CS_OPCODE_LOAD_MULTIPLE: {
       cs_unpack(instr, CS_LOAD_MULTIPLE, I);
@@ -536,6 +665,7 @@ pandecode_run_compute_indirect(struct pandecode_context *ctx, FILE *fp,
    ctx->indent--;
 }
 
+#if PAN_ARCH == 10
 static void
 pandecode_run_tiling(struct pandecode_context *ctx, FILE *fp,
                      struct queue_ctx *qctx, struct MALI_CS_RUN_TILING *I)
@@ -617,7 +747,137 @@ pandecode_run_tiling(struct pandecode_context *ctx, FILE *fp,
 
    ctx->indent--;
 }
+#endif
 
+#if PAN_ARCH >= 12
+static void
+pandecode_run_idvs2(struct pandecode_context *ctx, FILE *fp,
+                    struct queue_ctx *qctx, struct MALI_CS_RUN_IDVS2 *I)
+{
+   if (qctx->in_exception_handler)
+      return;
+
+   ctx->indent++;
+
+   uint64_t vert_srt = cs_get_u64(qctx, MALI_IDVS_SR_VERTEX_SRT);
+   uint64_t frag_srt = cs_get_u64(qctx, MALI_IDVS_SR_FRAGMENT_SRT);
+   uint64_t vert_fau = cs_get_u64(qctx, MALI_IDVS_SR_VERTEX_FAU);
+   uint64_t fragment_fau = cs_get_u64(qctx, MALI_IDVS_SR_FRAGMENT_FAU);
+   uint64_t vertex_spd = cs_get_u64(qctx, MALI_IDVS_SR_VERTEX_SPD);
+   uint64_t fragment_spd = cs_get_u64(qctx, MALI_IDVS_SR_FRAGMENT_SPD);
+   uint64_t vertex_tsd = cs_get_u64(qctx, MALI_IDVS_SR_VERTEX_TSD);
+   uint64_t fragment_tsd = cs_get_u64(qctx, MALI_IDVS_SR_FRAGMENT_TSD);
+   uint32_t global_attribute_offset =
+      cs_get_u32(qctx, MALI_IDVS_SR_GLOBAL_ATTRIBUTE_OFFSET);
+   uint32_t index_count = cs_get_u32(qctx, MALI_IDVS_SR_INDEX_COUNT);
+   uint32_t instance_count = cs_get_u32(qctx, MALI_IDVS_SR_INSTANCE_COUNT);
+   uint32_t index_offset = cs_get_u32(qctx, MALI_IDVS_SR_INDEX_OFFSET);
+   uint32_t vertex_offset = cs_get_u32(qctx, MALI_IDVS_SR_VERTEX_OFFSET);
+   uint32_t instance_offset = cs_get_u32(qctx, MALI_IDVS_SR_INSTANCE_OFFSET);
+   uint64_t tilder_descriptor_pointer =
+      cs_get_u64(qctx, MALI_IDVS_SR_TILER_CTX);
+   uint64_t vertex_index_array_pointer =
+      cs_get_u64(qctx, MALI_IDVS_SR_INDEX_BUFFER);
+   uint32_t index_array_size = cs_get_u32(qctx, MALI_IDVS_SR_INDEX_BUFFER_SIZE);
+   uint32_t varying_size = cs_get_u32(qctx, MALI_IDVS_SR_VARY_SIZE) & 0xffff;
+   uint64_t zsd_pointer = cs_get_u64(qctx, MALI_IDVS_SR_ZSD);
+   uint64_t blend = cs_get_u64(qctx, MALI_IDVS_SR_BLEND_DESC);
+   uint32_t raw_tiler_flags = cs_get_u32(qctx, MALI_IDVS_SR_TILER_FLAGS);
+   uint64_t occlusion_pointer = cs_get_u32(qctx, MALI_IDVS_SR_OQ);
+
+   /* Merge flag overrides with the register flags */
+   struct mali_primitive_flags_packed tiler_flags_packed = {
+      .opaque[0] = raw_tiler_flags | I->flags_override,
+   };
+   pan_unpack(&tiler_flags_packed, PRIMITIVE_FLAGS, tiler_flags);
+
+   if (vert_srt)
+      GENX(pandecode_resource_tables)(ctx, vert_srt, "Vertex resources");
+
+   if (frag_srt)
+      GENX(pandecode_resource_tables)(ctx, frag_srt, "Fragment resources");
+
+   if (vert_fau) {
+      uint64_t lo = vert_fau & BITFIELD64_MASK(48);
+      uint64_t hi = vert_fau >> 56;
+
+      GENX(pandecode_fau)(ctx, lo, hi, "Vertex FAU");
+   }
+
+   if (fragment_fau) {
+      uint64_t lo = fragment_fau & BITFIELD64_MASK(48);
+      uint64_t hi = fragment_fau >> 56;
+
+      GENX(pandecode_fau)(ctx, lo, hi, "Fragment FAU");
+   }
+
+   if (vertex_spd) {
+      GENX(pandecode_shader)
+      (ctx, vertex_spd, "Vertex shader", qctx->gpu_id);
+   }
+
+   if (fragment_spd) {
+      GENX(pandecode_shader)
+      (ctx, fragment_spd, "Fragment shader", qctx->gpu_id);
+   }
+
+   DUMP_ADDR(ctx, LOCAL_STORAGE, vertex_tsd,
+             "Vertex Local Storage @%" PRIx64 ":\n", vertex_tsd);
+   DUMP_ADDR(ctx, LOCAL_STORAGE, fragment_tsd,
+             "Fragment Local Storage @%" PRIx64 ":\n", fragment_tsd);
+
+   pandecode_log(ctx, "Global attribute offset: %u\n", global_attribute_offset);
+   pandecode_log(ctx, "Index count: %u\n", index_count);
+   pandecode_log(ctx, "Instance count: %u\n", instance_count);
+
+   if (tiler_flags.index_type)
+      pandecode_log(ctx, "Index offset: %u\n", index_offset);
+
+   pandecode_log(ctx, "Vertex offset: %u\n", vertex_offset);
+   pandecode_log(ctx, "Instance offset: %u\n", instance_offset);
+
+   GENX(pandecode_tiler)(ctx, tilder_descriptor_pointer, qctx->gpu_id);
+
+   /* If this is true, then the scissor is actually a pointer to an
+    * array of boxes; bottom 56 bits are the pointer and top 8 are
+    * the length */
+   assert(!tiler_flags.scissor_array_enable);
+
+   struct mali_viewport_packed viewport_packed = {
+      .opaque[0] = cs_get_u32(qctx, MALI_IDVS_SR_VIEWPORT_HIGH),
+      .opaque[1] = cs_get_u32(qctx, MALI_IDVS_SR_VIEWPORT_HIGH + 1),
+      .opaque[2] = cs_get_u32(qctx, MALI_IDVS_SR_VIEWPORT_LOW),
+      .opaque[3] = cs_get_u32(qctx, MALI_IDVS_SR_VIEWPORT_LOW + 1),
+   };
+   DUMP_CL(ctx, VIEWPORT, &viewport_packed, "Viewport\n");
+   DUMP_CL(ctx, SCISSOR, &qctx->regs[MALI_IDVS_SR_SCISSOR_BOX], "Scissor\n");
+
+   pandecode_log(ctx, "Per-vertex varying size: %u\n", varying_size);
+
+   DUMP_ADDR(ctx, DEPTH_STENCIL, zsd_pointer, "Depth/stencil");
+
+   GENX(pandecode_blend_descs)(ctx, blend & ~15, blend & 15, 0, qctx->gpu_id);
+
+   if (tiler_flags.index_type) {
+      pandecode_log(ctx, "Indices: %" PRIx64 "\n", vertex_index_array_pointer);
+      pandecode_log(ctx, "Index array size: %u\n", index_array_size);
+   }
+
+   DUMP_UNPACKED(ctx, PRIMITIVE_FLAGS, tiler_flags, "Primitive flags\n");
+   DUMP_CL(ctx, DCD_FLAGS_0, &qctx->regs[MALI_IDVS_SR_DCD0], "DCD Flags 0\n");
+   DUMP_CL(ctx, DCD_FLAGS_1, &qctx->regs[MALI_IDVS_SR_DCD1], "DCD Flags 1\n");
+   DUMP_CL(ctx, DCD_FLAGS_2, &qctx->regs[MALI_IDVS_SR_DCD2], "DCD Flags 2\n");
+
+   DUMP_CL(ctx, PRIMITIVE_SIZE, &qctx->regs[MALI_IDVS_SR_PRIMITIVE_SIZE],
+           "Primitive size\n");
+
+   DUMP_CL(ctx, PRIMITIVE_FLAGS_2, &qctx->regs[MALI_IDVS_SR_TILER_FLAGS2],
+           "Tiler flags 2\n");
+   pandecode_log(ctx, "Occlusion: %" PRIx64 "\n", occlusion_pointer);
+
+   ctx->indent--;
+}
+#else
 static void
 pandecode_run_idvs(struct pandecode_context *ctx, FILE *fp,
                    struct queue_ctx *qctx, struct MALI_CS_RUN_IDVS *I)
@@ -767,6 +1027,7 @@ pandecode_run_idvs(struct pandecode_context *ctx, FILE *fp,
 
    ctx->indent--;
 }
+#endif
 
 static void
 pandecode_run_fragment(struct pandecode_context *ctx, FILE *fp,
@@ -910,17 +1171,27 @@ interpret_cs_instr(struct pandecode_context *ctx, struct queue_ctx *qctx)
       break;
    }
 
+#if PAN_ARCH == 10
    case MALI_CS_OPCODE_RUN_TILING: {
       cs_unpack(bytes, CS_RUN_TILING, I);
       pandecode_run_tiling(ctx, fp, qctx, &I);
       break;
    }
+#endif
 
+#if PAN_ARCH >= 12
+   case MALI_CS_OPCODE_RUN_IDVS2: {
+      cs_unpack(bytes, CS_RUN_IDVS2, I);
+      pandecode_run_idvs2(ctx, fp, qctx, &I);
+      break;
+   }
+#else
    case MALI_CS_OPCODE_RUN_IDVS: {
       cs_unpack(bytes, CS_RUN_IDVS, I);
       pandecode_run_idvs(ctx, fp, qctx, &I);
       break;
    }
+#endif
 
    case MALI_CS_OPCODE_RUN_FRAGMENT: {
       cs_unpack(bytes, CS_RUN_FRAGMENT, I);
@@ -971,6 +1242,38 @@ interpret_cs_instr(struct pandecode_context *ctx, struct queue_ctx *qctx)
       break;
    }
 
+#if PAN_ARCH >= 11
+   case MALI_CS_OPCODE_LOGIC_OP32: {
+      cs_unpack(bytes, CS_LOGIC_OP32, I);
+
+      uint32_t *dest = &qctx->regs[I.destination];
+      uint32_t source_0 = qctx->regs[I.source_0];
+      uint32_t source_1 = qctx->regs[I.source_1];
+      uint32_t mode_0 = I.mode & 1;
+      uint32_t mode_1 = (I.mode >> 1) & 1;
+      uint32_t mode_2 = (I.mode >> 2) & 1;
+      uint32_t mode_3 = (I.mode >> 3) & 1;
+
+      if (I.index == MALI_CS_LOGIC_OP_INDEX_INDEX)
+         source_1 = (1 << source_1);
+
+      uint32_t result = 0;
+      for (int i = 0; i < 32; i++) {
+         uint32_t a_n = (source_0 >> i) & 1;
+         uint32_t b_n = (source_1 >> i) & 1;
+
+         uint32_t tmp = 0;
+         tmp |= mode_0 & a_n & b_n;
+         tmp |= mode_1 & a_n & ~b_n;
+         tmp |= mode_2 & ~a_n & b_n;
+         tmp |= mode_3 & ~a_n & ~b_n;
+         result |= tmp << i;
+      }
+
+      *dest = result;
+      break;
+   }
+#endif
    case MALI_CS_OPCODE_ADD_IMMEDIATE32: {
       cs_unpack(bytes, CS_ADD_IMM32, I);
 
@@ -1089,11 +1392,9 @@ GENX(pandecode_interpret_cs)(struct pandecode_context *ctx, uint64_t queue,
 
    uint64_t *cs = pandecode_fetch_gpu_mem(ctx, queue, size);
 
-   /* Mali-G610 has 96 registers. Other devices not yet supported, we can make
-    * this configurable later when we encounter new Malis.
-    */
+   /* v10 has 96 registers. v12+ have 128. */
    struct queue_ctx qctx = {
-      .nr_regs = 96,
+      .nr_regs = PAN_ARCH >= 12 ? 96 : 128,
       .regs = regs,
       .ip = cs,
       .end = cs + (size / 8),
@@ -1199,6 +1500,39 @@ record_indirect_branch_target(struct cs_code_cfg *cfg,
             reg_file.u32[I.destination] = I.immediate;
             break;
          }
+
+#if PAN_ARCH >= 11
+         case MALI_CS_OPCODE_LOGIC_OP32: {
+            cs_unpack(instr, CS_LOGIC_OP32, I);
+
+            uint32_t *dest = &reg_file.u32[I.destination];
+            uint32_t source_0 = reg_file.u32[I.source_0];
+            uint32_t source_1 = reg_file.u32[I.source_1];
+            uint32_t mode_0 = I.mode & 1;
+            uint32_t mode_1 = (I.mode >> 1) & 1;
+            uint32_t mode_2 = (I.mode >> 2) & 1;
+            uint32_t mode_3 = (I.mode >> 3) & 1;
+
+            if (I.index == MALI_CS_LOGIC_OP_INDEX_INDEX)
+               source_1 = (1 << source_1);
+
+            uint32_t result = 0;
+            for (int i = 0; i < 32; i++) {
+               uint32_t a_n = (source_0 >> i) & 1;
+               uint32_t b_n = (source_1 >> i) & 1;
+
+               uint32_t tmp = 0;
+               tmp |= mode_0 & a_n & b_n;
+               tmp |= mode_1 & a_n & ~b_n;
+               tmp |= mode_2 & ~a_n & b_n;
+               tmp |= mode_3 & ~a_n & ~b_n;
+               result |= tmp << i;
+            }
+
+            *dest = result;
+            break;
+         }
+#endif
 
          case MALI_CS_OPCODE_ADD_IMMEDIATE32: {
             cs_unpack(instr, CS_ADD_IMM32, I);
@@ -1551,7 +1885,11 @@ print_cs_binary(struct pandecode_context *ctx, uint64_t bin,
          break;
       }
 
+#if PAN_ARCH >= 12
+      case MALI_CS_OPCODE_RUN_IDVS2:
+#else
       case MALI_CS_OPCODE_RUN_IDVS:
+#endif
       case MALI_CS_OPCODE_RUN_FRAGMENT:
       case MALI_CS_OPCODE_RUN_COMPUTE:
       case MALI_CS_OPCODE_RUN_COMPUTE_INDIRECT:
@@ -1610,11 +1948,9 @@ GENX(pandecode_cs_trace)(struct pandecode_context *ctx, uint64_t trace,
 
       uint64_t *instr = pandecode_fetch_gpu_mem(ctx, *ip, sizeof(*instr));
 
-      /* Mali-G610 has 96 registers. Other devices not yet supported, we can
-       * make this configurable later when we encounter new Malis.
-       */
+      /* v10 has 96 registers. v12+ have 128. */
       struct queue_ctx qctx = {
-         .nr_regs = 96,
+         .nr_regs = PAN_ARCH >= 12 ? 96 : 128,
          .regs = regs,
          .ip = instr,
          .end = instr + 1,
@@ -1628,6 +1964,23 @@ GENX(pandecode_cs_trace)(struct pandecode_context *ctx, uint64_t trace,
       cs_unpack(instr, CS_BASE, base);
 
       switch (base.opcode) {
+#if PAN_ARCH >= 12
+      case MALI_CS_OPCODE_RUN_IDVS2: {
+         struct cs_run_idvs2_trace *idvs_trace = trace_data;
+
+         assert(trace_size >= sizeof(idvs_trace));
+         cs_unpack(instr, CS_RUN_IDVS2, I);
+         memcpy(regs, idvs_trace->sr, sizeof(idvs_trace->sr));
+
+         if (I.draw_id_register_enable)
+            regs[I.draw_id] = idvs_trace->draw_id;
+
+         pandecode_run_idvs2(ctx, ctx->dump_stream, &qctx, &I);
+         trace_data = idvs_trace + 1;
+         trace_size -= sizeof(*idvs_trace);
+         break;
+      }
+#else
       case MALI_CS_OPCODE_RUN_IDVS: {
          struct cs_run_idvs_trace *idvs_trace = trace_data;
 
@@ -1643,6 +1996,7 @@ GENX(pandecode_cs_trace)(struct pandecode_context *ctx, uint64_t trace,
          trace_size -= sizeof(*idvs_trace);
          break;
       }
+#endif
 
       case MALI_CS_OPCODE_RUN_FRAGMENT: {
          struct cs_run_fragment_trace *frag_trace = trace_data;

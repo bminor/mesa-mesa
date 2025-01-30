@@ -748,8 +748,15 @@ cs_instr_is_asynchronous(enum mali_cs_opcode opcode, uint16_t wait_mask)
    case MALI_CS_OPCODE_RUN_COMPUTE_INDIRECT:
    case MALI_CS_OPCODE_RUN_FRAGMENT:
    case MALI_CS_OPCODE_RUN_FULLSCREEN:
+#if PAN_ARCH >= 12
+   case MALI_CS_OPCODE_RUN_IDVS2:
+#else
    case MALI_CS_OPCODE_RUN_IDVS:
+#if PAN_ARCH == 10
    case MALI_CS_OPCODE_RUN_TILING:
+#endif
+#endif
+
       /* Always asynchronous. */
       return true;
 
@@ -761,6 +768,9 @@ cs_instr_is_asynchronous(enum mali_cs_opcode opcode, uint16_t wait_mask)
    case MALI_CS_OPCODE_STORE_STATE:
    case MALI_CS_OPCODE_TRACE_POINT:
    case MALI_CS_OPCODE_HEAP_OPERATION:
+#if PAN_ARCH >= 11
+   case MALI_CS_OPCODE_SHARED_SB_INC:
+#endif
       /* Asynchronous only if wait_mask != 0. */
       return wait_mask != 0;
 
@@ -1158,6 +1168,7 @@ cs_run_compute(struct cs_builder *b, unsigned task_increment,
    }
 }
 
+#if PAN_ARCH == 10
 static inline void
 cs_run_tiling(struct cs_builder *b, uint32_t flags_override, bool progress_inc,
               struct cs_shader_res_sel res_sel)
@@ -1171,7 +1182,29 @@ cs_run_tiling(struct cs_builder *b, uint32_t flags_override, bool progress_inc,
       I.fau_select = res_sel.fau;
    }
 }
+#endif
 
+#if PAN_ARCH >= 12
+static inline void
+cs_run_idvs2(struct cs_builder *b, uint32_t flags_override, bool progress_inc,
+             bool malloc_enable, struct cs_index draw_id,
+             enum mali_idvs_shading_mode vertex_shading_mode)
+{
+   cs_emit(b, RUN_IDVS2, I) {
+      I.flags_override = flags_override;
+      I.progress_increment = progress_inc;
+      I.malloc_enable = malloc_enable;
+      I.vertex_shading_mode = vertex_shading_mode;
+
+      if (draw_id.type == CS_INDEX_UNDEF) {
+         I.draw_id_register_enable = false;
+      } else {
+         I.draw_id_register_enable = true;
+         I.draw_id = cs_src32(b, draw_id);
+      }
+   }
+}
+#else
 static inline void
 cs_run_idvs(struct cs_builder *b, uint32_t flags_override, bool progress_inc,
             bool malloc_enable, struct cs_shader_res_sel varying_sel,
@@ -1205,6 +1238,7 @@ cs_run_idvs(struct cs_builder *b, uint32_t flags_override, bool progress_inc,
       I.fragment_tsd_select = frag_sel.tsd == 2;
    }
 }
+#endif
 
 static inline void
 cs_run_fragment(struct cs_builder *b, bool enable_tem,
@@ -1354,6 +1388,7 @@ cs_store64(struct cs_builder *b, struct cs_index data, struct cs_index address,
    cs_store(b, data, address, BITFIELD_MASK(2), offset);
 }
 
+#if PAN_ARCH < 11
 /*
  * Select which scoreboard entry will track endpoint tasks and other tasks
  * respectively. Pass to cs_wait to wait later.
@@ -1373,6 +1408,38 @@ cs_set_scoreboard_entry(struct cs_builder *b, unsigned ep, unsigned other)
     * simple. */
    if (unlikely(b->conf.ls_tracker))
       assert(b->conf.ls_tracker->sb_slot == other);
+}
+#else
+static inline void
+cs_set_state_imm32(struct cs_builder *b, enum mali_cs_set_state_type state,
+                   unsigned value)
+{
+   cs_emit(b, SET_STATE_IMM32, I) {
+      I.state = state;
+      I.value = value;
+   }
+
+   /* We assume the load/store scoreboard entry is static to keep things
+    * simple. */
+   if (state == MALI_CS_SET_STATE_TYPE_SB_SEL_OTHER &&
+       unlikely(b->conf.ls_tracker))
+      assert(b->conf.ls_tracker->sb_slot == value);
+}
+#endif
+
+/*
+ * Select which scoreboard entry will track endpoint tasks.
+ * On v10, this also set other endpoint to SB0.
+ * Pass to cs_wait to wait later.
+ */
+static inline void
+cs_select_sb_entries_for_async_ops(struct cs_builder *b, unsigned ep)
+{
+#if PAN_ARCH == 10
+   cs_set_scoreboard_entry(b, ep, 0);
+#else
+   cs_set_state_imm32(b, MALI_CS_SET_STATE_TYPE_SB_SEL_ENDPOINT, ep);
+#endif
 }
 
 static inline void
@@ -1967,6 +2034,51 @@ cs_trace_run_fragment(struct cs_builder *b, const struct cs_tracing_ctx *ctx,
    cs_wait_slot(b, ctx->ls_sb_slot, false);
 }
 
+#if PAN_ARCH >= 12
+struct cs_run_idvs2_trace {
+   uint64_t ip;
+   uint32_t draw_id;
+   uint32_t pad;
+   uint32_t sr[66];
+} __attribute__((aligned(64)));
+
+static inline void
+cs_trace_run_idvs2(struct cs_builder *b, const struct cs_tracing_ctx *ctx,
+                   struct cs_index scratch_regs, uint32_t flags_override,
+                   bool progress_inc, bool malloc_enable,
+                   struct cs_index draw_id,
+                   enum mali_idvs_shading_mode vertex_shading_mode)
+{
+   if (likely(!ctx->enabled)) {
+      cs_run_idvs2(b, flags_override, progress_inc, malloc_enable, draw_id,
+                   vertex_shading_mode);
+      return;
+   }
+
+   struct cs_index tracebuf_addr = cs_reg64(b, scratch_regs.reg);
+   struct cs_index data = cs_reg64(b, scratch_regs.reg + 2);
+
+   cs_trace_preamble(b, ctx, scratch_regs, sizeof(struct cs_run_idvs2_trace));
+
+   /* cs_run_xx() must immediately follow cs_load_ip_to() otherwise the IP
+    * won't point to the right instruction. */
+   cs_load_ip_to(b, data);
+   cs_run_idvs2(b, flags_override, progress_inc, malloc_enable, draw_id,
+                vertex_shading_mode);
+   cs_store64(b, data, tracebuf_addr, cs_trace_field_offset(run_idvs2, ip));
+
+   if (draw_id.type != CS_INDEX_UNDEF)
+      cs_store32(b, draw_id, tracebuf_addr,
+                 cs_trace_field_offset(run_idvs2, draw_id));
+
+   for (unsigned i = 0; i < 64; i += 16)
+      cs_store(b, cs_reg_tuple(b, i, 16), tracebuf_addr, BITFIELD_MASK(16),
+               cs_trace_field_offset(run_idvs2, sr[i]));
+   cs_store(b, cs_reg_tuple(b, 64, 2), tracebuf_addr, BITFIELD_MASK(2),
+            cs_trace_field_offset(run_idvs2, sr[64]));
+   cs_wait_slot(b, ctx->ls_sb_slot, false);
+}
+#else
 struct cs_run_idvs_trace {
    uint64_t ip;
    uint32_t draw_id;
@@ -2011,6 +2123,7 @@ cs_trace_run_idvs(struct cs_builder *b, const struct cs_tracing_ctx *ctx,
             cs_trace_field_offset(run_idvs, sr[48]));
    cs_wait_slot(b, ctx->ls_sb_slot, false);
 }
+#endif
 
 struct cs_run_compute_trace {
    uint64_t ip;
