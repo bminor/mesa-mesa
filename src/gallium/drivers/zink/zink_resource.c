@@ -1475,6 +1475,7 @@ resource_object_create(struct zink_screen *screen, const struct pipe_resource *t
    obj->unordered_read = true;
    obj->unordered_write = true;
    obj->unsync_access = true;
+   obj->modifier = DRM_FORMAT_MOD_INVALID;
    obj->last_dt_idx = obj->dt_idx = UINT32_MAX; //TODO: unionize
 
    struct mem_alloc_info alloc_info = {
@@ -1726,6 +1727,7 @@ add_resource_bind(struct zink_context *ctx, struct zink_resource *res, unsigned 
    assert((res->base.b.bind & bind) == 0);
    res->base.b.bind |= bind;
    struct zink_resource_object *old_obj = res->obj;
+   ASSERTED uint64_t mod = DRM_FORMAT_MOD_INVALID;
    if (bind & ZINK_BIND_DMABUF && !res->modifiers_count && !res->obj->is_buffer && screen->info.have_EXT_image_drm_format_modifier) {
       res->modifiers_count = 1;
       res->modifiers = malloc(res->modifiers_count * sizeof(uint64_t));
@@ -1734,7 +1736,7 @@ add_resource_bind(struct zink_context *ctx, struct zink_resource *res, unsigned 
          return false;
       }
 
-      res->modifiers[0] = DRM_FORMAT_MOD_LINEAR;
+      mod = res->modifiers[0] = DRM_FORMAT_MOD_LINEAR;
    }
    struct zink_resource_object *new_obj = resource_object_create(screen, &res->base.b, NULL, &res->linear, res->modifiers, res->modifiers_count, NULL, NULL);
    if (!new_obj) {
@@ -1742,6 +1744,7 @@ add_resource_bind(struct zink_context *ctx, struct zink_resource *res, unsigned 
       res->base.b.bind &= ~bind;
       return false;
    }
+   assert(mod == DRM_FORMAT_MOD_INVALID || new_obj->modifier == DRM_FORMAT_MOD_LINEAR);
    struct zink_resource staging = *res;
    staging.obj = old_obj;
    staging.all_binds = 0;
