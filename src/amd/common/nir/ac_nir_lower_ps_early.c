@@ -63,19 +63,19 @@ get_baryc_var(nir_builder *b, nir_intrinsic_op baryc_op, enum glsl_interp_mode m
    case nir_intrinsic_load_barycentric_centroid:
       if (mode == INTERP_MODE_NOPERSPECTIVE) {
          return get_baryc_var_common(b, s->options->ps_iter_samples > 1 ||
-                                     s->options->force_center_interp_no_msaa, &s->linear_centroid,
+                                     s->options->msaa_disabled, &s->linear_centroid,
                                      "linear_centroid");
       } else {
          return get_baryc_var_common(b, s->options->ps_iter_samples > 1 ||
-                                     s->options->force_center_interp_no_msaa, &s->persp_centroid,
+                                     s->options->msaa_disabled, &s->persp_centroid,
                                      "persp_centroid");
       }
    case nir_intrinsic_load_barycentric_sample:
       if (mode == INTERP_MODE_NOPERSPECTIVE) {
-         return get_baryc_var_common(b, s->options->force_center_interp_no_msaa, &s->linear_sample,
+         return get_baryc_var_common(b, s->options->msaa_disabled, &s->linear_sample,
                                      "linear_sample");
       } else {
-         return get_baryc_var_common(b, s->options->force_center_interp_no_msaa, &s->persp_sample,
+         return get_baryc_var_common(b, s->options->msaa_disabled, &s->persp_sample,
                                      "persp_sample");
       }
    default:
@@ -104,7 +104,7 @@ init_interp_param(nir_builder *b, lower_ps_early_state *s)
                       s->linear_center, s->linear_centroid);
    }
 
-   if (s->options->force_center_interp_no_msaa) {
+   if (s->options->msaa_disabled) {
       set_interp_vars(b, nir_load_barycentric_pixel(b, 32, .interp_mode = INTERP_MODE_SMOOTH),
                       s->persp_sample, s->persp_centroid);
       set_interp_vars(b, nir_load_barycentric_pixel(b, 32, .interp_mode = INTERP_MODE_NOPERSPECTIVE),
@@ -271,7 +271,7 @@ lower_ps_load_sample_mask_in(nir_builder *b, nir_intrinsic_instr *intrin, lower_
    /* Set ps_iter_samples=8 if full sample shading is enabled even for 2x and 4x MSAA
     * to get this fast path that fully replaces sample_mask_in with sample_id.
     */
-   if (s->options->force_center_interp_no_msaa && !s->options->uses_vrs_coarse_shading) {
+   if (s->options->msaa_disabled && !s->options->uses_vrs_coarse_shading) {
       replacement = nir_b2i32(b, nir_inot(b, get_load_helper_invocation(b->impl, s)));
    } else if (s->options->ps_iter_samples == 8) {
       replacement = nir_bcsel(b, get_load_helper_invocation(b->impl, s), nir_imm_int(b, 0),
@@ -412,7 +412,7 @@ lower_ps_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
       unsigned mode = nir_intrinsic_interp_mode(intrin);
       nir_def *sample_id = intrin->src[0].ssa;
 
-      if (s->options->force_center_interp_no_msaa) {
+      if (s->options->msaa_disabled) {
          nir_def_replace(&intrin->def, nir_load_barycentric_pixel(b, 32, .interp_mode = mode));
          return true;
       }
@@ -571,8 +571,7 @@ ac_nir_lower_ps_early(nir_shader *nir, const ac_nir_lower_ps_early_options *opti
     * an even number?
     */
    state.use_fragcoord = !options->frag_coord_is_center && state.options->ps_iter_samples != 1 &&
-                         !state.options->force_center_interp_no_msaa &&
-                         state.uses_fragcoord_xy_as_float;
+                         !state.options->msaa_disabled && state.uses_fragcoord_xy_as_float;
 
    bool progress = nir_shader_intrinsics_pass(nir, lower_ps_intrinsic,
                                               nir_metadata_control_flow, &state);

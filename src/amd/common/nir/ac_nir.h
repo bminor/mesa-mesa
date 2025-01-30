@@ -286,7 +286,7 @@ ac_nir_lower_legacy_gs(nir_shader *nir, ac_nir_lower_legacy_gs_options *options,
  */
 typedef struct {
    /* System values. */
-   bool force_center_interp_no_msaa; /* true if MSAA is disabled, false may mean that the state is unknown */
+   bool msaa_disabled; /* true if MSAA is disabled, false may mean that the state is unknown */
    bool uses_vrs_coarse_shading;
    bool load_sample_positions_always_loads_current_ones;
    bool dynamic_rasterization_samples;
@@ -295,8 +295,7 @@ typedef struct {
    bool frag_coord_is_center; /* GL requirement for sample shading */
 
    /* frag_coord/pixel_coord:
-    *    allow_pixel_coord && (frag_coord_is_center || ps_iter_samples == 1 ||
-    *                          force_center_interp_no_msaa ||
+    *    allow_pixel_coord && (frag_coord_is_center || ps_iter_samples == 1 || msaa_disabled ||
     *                          the fractional part of frag_coord.xy isn't used):
     *       * frag_coord.xy is replaced by u2f(pixel_coord) + 0.5.
     *    else:
@@ -304,7 +303,7 @@ typedef struct {
     *       * ps_iter_samples == 0 means the state is unknown.
     *
     * barycentrics:
-    *    force_center_interp_no_msaa:
+    *    msaa_disabled:
     *       * All barycentrics including at_sample but excluding at_offset are changed to
     *         barycentric_pixel
     *    ps_iter_samples >= 2:
@@ -312,7 +311,7 @@ typedef struct {
     *       * barycentric_at_sample(sample_id) is replaced by barycentric_sample.
     *
     * sample_mask_in:
-    *    force_center_interp_no_msaa && !uses_vrs_coarse_shading:
+    *    msaa_disabled && !uses_vrs_coarse_shading:
     *       * sample_mask_in is replaced by b2i32(!helper_invocation)
     *    ps_iter_samples == 2, 4:
     *       * sample_mask_in is changed to (sample_mask_in & (ps_iter_mask << sample_id))

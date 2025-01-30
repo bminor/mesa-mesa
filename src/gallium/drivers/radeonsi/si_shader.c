@@ -1403,10 +1403,10 @@ static void run_pre_link_optimization_passes(struct si_nir_shader_ctx *ctx)
 
          /* This eliminates system values and unused shader output components. */
          ac_nir_lower_ps_early_options early_options = {
-            .force_center_interp_no_msaa = key->ps.part.prolog.force_persp_center_interp ||
-                                           key->ps.part.prolog.force_linear_center_interp ||
-                                           key->ps.part.prolog.force_samplemask_to_helper_invocation ||
-                                           key->ps.mono.interpolate_at_sample_force_center,
+            .msaa_disabled = key->ps.part.prolog.force_persp_center_interp ||
+                             key->ps.part.prolog.force_linear_center_interp ||
+                             key->ps.part.prolog.force_samplemask_to_helper_invocation ||
+                             key->ps.mono.interpolate_at_sample_force_center,
             .load_sample_positions_always_loads_current_ones = true,
             .force_front_face = key->ps.opt.force_front_face_input,
             .optimize_frag_coord = true,
