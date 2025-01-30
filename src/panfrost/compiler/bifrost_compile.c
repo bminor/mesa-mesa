@@ -278,6 +278,19 @@ bi_collect_v2i32(bi_builder *b, bi_index s0, bi_index s1)
    return dst;
 }
 
+static inline bi_instr *
+bi_f32_to_f16_to(bi_builder *b, bi_index dest, bi_index src)
+{
+   /* Use V2F32_TO_V2F16 on Bifrost, FADD otherwise */
+   if (b->shader->arch < 9)
+      return bi_v2f32_to_v2f16_to(b, dest, src, src);
+
+   assert(dest.swizzle != BI_SWIZZLE_H01);
+
+   /* FADD with 0 and force convertion to F16 on Valhall and later */
+   return bi_fadd_f32_to(b, dest, src, bi_imm_u32(0));
+}
+
 static bi_index
 bi_varying_src0_for_barycentric(bi_builder *b, nir_intrinsic_instr *intr)
 {
@@ -319,7 +332,19 @@ bi_varying_src0_for_barycentric(bi_builder *b, nir_intrinsic_instr *intr)
                                   bi_imm_u32(8), BI_SPECIAL_NONE);
          }
 
-         f16 = bi_v2f32_to_v2f16(b, f[0], f[1]);
+         /* On v11+, V2F32_TO_V2F16 is gone */
+         if (b->shader->arch >= 11) {
+            bi_index tmp[2];
+
+            for (int i = 0; i < 2; i++) {
+               tmp[i] = bi_half(bi_temp(b->shader), false);
+               bi_f32_to_f16_to(b, tmp[i], f[i]);
+            }
+
+            f16 = bi_mkvec_v2i16(b, tmp[0], tmp[1]);
+         } else {
+            f16 = bi_v2f32_to_v2f16(b, f[0], f[1]);
+         }
       }
 
       return bi_v2f16_to_v2s16(b, f16);
@@ -2651,13 +2676,26 @@ bi_emit_alu(bi_builder *b, nir_alu_instr *instr)
    case nir_op_f2f16:
    case nir_op_f2f16_rtz:
    case nir_op_f2f16_rtne: {
+      /* Starting with v11, we don't have V2XXX_TO_V2F16, this should have been
+       * lowered before if there is more than one components */
+      assert(b->shader->arch < 11 || comps == 1);
       assert(src_sz == 32);
       bi_index idx = bi_src_index(&instr->src[0].src);
       bi_index s0 = bi_extract(b, idx, instr->src[0].swizzle[0]);
-      bi_index s1 =
-         comps > 1 ? bi_extract(b, idx, instr->src[0].swizzle[1]) : s0;
 
-      bi_instr *I = bi_v2f32_to_v2f16_to(b, dst, s0, s1);
+      bi_instr *I;
+
+      /* Use V2F32_TO_V2F16 if vectorized */
+      if (comps == 2) {
+         /* Starting with v11, we don't have V2F32_TO_V2F16, this should have
+          * been lowered before if there is more than one components */
+         assert(b->shader->arch < 11);
+         bi_index s1 = bi_extract(b, idx, instr->src[0].swizzle[1]);
+         I = bi_v2f32_to_v2f16_to(b, dst, s0, s1);
+      } else {
+         assert(comps == 1);
+         I = bi_f32_to_f16_to(b, dst, s0);
+      }
 
       /* Override rounding if explicitly requested. Otherwise, the
        * default rounding mode is selected by the builder. Depending
@@ -2952,7 +2990,8 @@ bi_emit_alu(bi_builder *b, nir_alu_instr *instr)
       break;
 
    case nir_op_fquantize2f16: {
-      bi_instr *f16 = bi_v2f32_to_v2f16_to(b, bi_temp(b->shader), s0, s0);
+      bi_instr *f16 =
+         bi_f32_to_f16_to(b, bi_half(bi_temp(b->shader), false), s0);
 
       if (b->shader->arch < 9) {
          /* Bifrost has psuedo-ftz on conversions, that is lowered to an ftz
@@ -2961,11 +3000,11 @@ bi_emit_alu(bi_builder *b, nir_alu_instr *instr)
       } else {
          /* Valhall doesn't have clauses, and uses a separate flush
           * instruction */
-         f16 = bi_flush_to(b, 16, bi_temp(b->shader), f16->dest[0]);
+         f16 = bi_flush_to(b, 16, bi_half(bi_temp(b->shader), false), f16->dest[0]);
          f16->ftz = true;
       }
 
-      bi_instr *f32 = bi_f16_to_f32_to(b, dst, bi_half(f16->dest[0], false));
+      bi_instr *f32 = bi_f16_to_f32_to(b, dst, f16->dest[0]);
 
       if (b->shader->arch < 9)
          f32->ftz = true;
@@ -4797,6 +4836,8 @@ bi_lower_bit_size(const nir_instr *instr, UNUSED void *data)
 static uint8_t
 bi_vectorize_filter(const nir_instr *instr, const void *data)
 {
+   unsigned gpu_id = *((unsigned *)data);
+
    /* Defaults work for everything else */
    if (instr->type != nir_instr_type_alu)
       return 0;
@@ -4817,6 +4858,14 @@ bi_vectorize_filter(const nir_instr *instr, const void *data)
    case nir_op_extract_i16:
    case nir_op_insert_u16:
       return 1;
+   /* On v11+, we lost all packed F16 conversions */
+   case nir_op_f2f16:
+   case nir_op_f2f16_rtz:
+   case nir_op_f2f16_rtne:
+      if (pan_arch(gpu_id) >= 11)
+         return 1;
+
+      break;
    default:
       break;
    }
@@ -5041,7 +5090,7 @@ bi_optimize_nir(nir_shader *nir, unsigned gpu_id, bool is_blend)
       NIR_PASS(progress, nir, bifrost_nir_opt_boolean_bitwise);
 
    NIR_PASS(progress, nir, nir_lower_alu_to_scalar, bi_scalarize_filter, NULL);
-   NIR_PASS(progress, nir, nir_opt_vectorize, bi_vectorize_filter, NULL);
+   NIR_PASS(progress, nir, nir_opt_vectorize, bi_vectorize_filter, &gpu_id);
    NIR_PASS(progress, nir, nir_lower_bool_to_bitsize);
 
    /* Prepass to simplify instruction selection */
