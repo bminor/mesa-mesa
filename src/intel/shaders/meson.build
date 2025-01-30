@@ -43,7 +43,7 @@ foreach gen : intel_shaders_gens
     output : 'intel_gfx@0@_shaders.spv'.format(gen[0]),
     command : [
       prog_mesa_clc,
-      intel_shader_files, '-o', '@OUTPUT@', '--',
+      intel_shader_files, '-o', '@OUTPUT@', '--depfile', '@DEPFILE@', '--',
       '-DNDEBUG=1',
       '-DGFX_VERx10=@0@'.format(gen[0]),
       '-I' + join_paths(meson.current_source_dir(), '.'),
@@ -54,6 +54,7 @@ foreach gen : intel_shaders_gens
       '-I' + join_paths(dir_source_root, 'src/intel/genxml'),
     ],
     depends : [gen_cl_xml_pack, intel_dev_wa_src],
+    depfile : 'intel_gfx@0@_shaders.spv.d'.format(gen[0]),
   )
 
   _intel_shaders = custom_target(
