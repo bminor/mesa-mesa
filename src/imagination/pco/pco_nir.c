@@ -429,7 +429,7 @@ static void pco_nir_opt(pco_ctx *ctx, nir_shader *nir)
       };
       NIR_PASS(progress, nir, nir_opt_load_store_vectorize, &vectorize_opts);
 
-      NIR_PASS(progress, nir, nir_opt_shrink_stores, true);
+      NIR_PASS(progress, nir, nir_opt_shrink_stores, false);
 
       NIR_PASS(progress, nir, nir_opt_loop);
       NIR_PASS(progress, nir, nir_lower_alu_to_scalar, NULL, NULL);

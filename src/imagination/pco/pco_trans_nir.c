@@ -1010,6 +1010,10 @@ static pco_instr *lower_smp(trans_ctx *tctx,
       /* Destination and chans should be correct. */
       break;
 
+   case nir_intrinsic_smp_write_pco:
+      chans = 4;
+      break;
+
    default:
       UNREACHABLE("");
    }
@@ -1035,7 +1039,8 @@ static pco_instr *lower_smp(trans_ctx *tctx,
                             .sno = smp_flags.sno,
                             .sb_mode = sb_mode,
                             .array = smp_flags.array,
-                            .integer = smp_flags.integer);
+                            .integer = smp_flags.integer,
+                            .wrt = smp_flags.wrt);
 
    return smp;
 }
@@ -1287,6 +1292,7 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
 
    case nir_intrinsic_smp_coeffs_pco:
    case nir_intrinsic_smp_pco:
+   case nir_intrinsic_smp_write_pco:
       instr = lower_smp(tctx, intr, &dest, src[0], src[1], src[2]);
       break;
 

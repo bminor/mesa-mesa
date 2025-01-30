@@ -1369,7 +1369,8 @@ encode_map(O_SMP,
          ('tao', OM_TAO),
          ('f16', OM_F16),
          ('swap', OM_SCHEDSWAP),
-         ('cachemode_ld', OM_MCU_CACHE_MODE_LD)
+         ('cachemode_ld', OM_MCU_CACHE_MODE_LD),
+         ('w', OM_WRT)
       ]),
       (I_SMP_EXTA, [
          ('fcnorm', OM_FCNORM),
@@ -1387,7 +1388,8 @@ encode_map(O_SMP,
       ], [
          (OM_F16, '== false'),
          (OM_SCHEDSWAP, '== PCO_SCHEDSWAP_NONE'),
-         (OM_MCU_CACHE_MODE_LD, '== PCO_CACHEMODE_LD_NORMAL')
+         (OM_MCU_CACHE_MODE_LD, '== PCO_CACHEMODE_LD_NORMAL'),
+         (OM_WRT, '== false')
       ]),
       (I_SMP_BRIEF, [
          ('fcnorm', OM_FCNORM),
@@ -1399,6 +1401,7 @@ encode_map(O_SMP,
          (OM_F16, '== false'),
          (OM_SCHEDSWAP, '== PCO_SCHEDSWAP_NONE'),
          (OM_MCU_CACHE_MODE_LD, '== PCO_CACHEMODE_LD_NORMAL'),
+         (OM_WRT, '== false'),
          (OM_PPLOD, '== false'),
          (OM_PROJ, '== false'),
          (OM_SB_MODE, '== PCO_SB_MODE_NONE'),

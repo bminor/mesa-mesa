@@ -170,6 +170,7 @@ static nir_def *lower_vk(nir_builder *b, nir_instr *instr, void *cb_data)
          return lower_load_vulkan_descriptor(b, intr, common);
 
       case nir_intrinsic_image_deref_load:
+      case nir_intrinsic_image_deref_store:
          return lower_image_derefs(b, intr, common);
 
       default:
@@ -207,6 +208,7 @@ static bool is_vk(const nir_instr *instr, UNUSED const void *cb_data)
       switch (intr->intrinsic) {
       case nir_intrinsic_load_vulkan_descriptor:
       case nir_intrinsic_image_deref_load:
+      case nir_intrinsic_image_deref_store:
          return true;
 
       default:

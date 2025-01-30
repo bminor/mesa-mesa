@@ -189,6 +189,7 @@ OM_PPLOD = op_mod('pplod', BaseType.bool)
 OM_TAO = op_mod('tao', BaseType.bool)
 OM_SOO = op_mod('soo', BaseType.bool)
 OM_SNO = op_mod('sno', BaseType.bool)
+OM_WRT = op_mod('wrt', BaseType.bool)
 OM_SB_MODE = op_mod_enum('sb_mode', [
    ('none', ''),
    ('rawdata', 'rawdata'),
@@ -384,7 +385,7 @@ O_ATOMIC = hw_op('atomic', [OM_OLCHK, OM_EXEC_CND, OM_END, OM_ATOM_OP], 1, 2)
 
 O_SMP = hw_op('smp', OM_ALU_RPT1 + [OM_DIM, OM_PROJ, OM_FCNORM, OM_NNCOORDS,
                                     OM_LOD_MODE, OM_PPLOD, OM_TAO, OM_SOO,
-                                    OM_SNO, OM_SB_MODE, OM_MCU_CACHE_MODE_LD,
+                                    OM_SNO, OM_WRT, OM_SB_MODE, OM_MCU_CACHE_MODE_LD,
                                     OM_ARRAY, OM_INTEGER, OM_SCHEDSWAP, OM_F16], 1, 6)
 
 O_ALPHATST = hw_op('alphatst', OM_ALU_RPT1, 1, 4)
