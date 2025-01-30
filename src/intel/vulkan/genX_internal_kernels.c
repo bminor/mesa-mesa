@@ -9,22 +9,16 @@
 #include "compiler/nir/nir_serialize.h"
 
 #if GFX_VERx10 == 90
-# include "intel_gfx90_shaders_spv.h"
 # include "intel_gfx90_shaders_binding.h"
 #elif GFX_VERx10 == 110
-# include "intel_gfx110_shaders_spv.h"
 # include "intel_gfx110_shaders_binding.h"
 #elif GFX_VERx10 == 120
-# include "intel_gfx120_shaders_spv.h"
 # include "intel_gfx120_shaders_binding.h"
 #elif GFX_VERx10 == 125
-# include "intel_gfx125_shaders_spv.h"
 # include "intel_gfx125_shaders_binding.h"
 #elif GFX_VERx10 == 200
-# include "intel_gfx200_shaders_spv.h"
 # include "intel_gfx200_shaders_binding.h"
 #elif GFX_VERx10 == 300
-# include "intel_gfx300_shaders_spv.h"
 # include "intel_gfx300_shaders_binding.h"
 #else
 # error "Unsupported generation"
@@ -36,13 +30,6 @@
    nir_load_uniform(b, 1, bit_size, nir_imm_int(b, 0),            \
                     .base = offsetof(struct_name, field_name),   \
                     .range = bit_size / 8)
-
-const uint32_t *
-genX(libanv_spv)(uint32_t *out_size)
-{
-   *out_size = sizeof(genX(shaders_spv));
-   return genX(shaders_spv);
-}
 
 static nir_def *
 load_fragment_index(nir_builder *b)

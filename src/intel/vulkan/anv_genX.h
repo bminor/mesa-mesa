@@ -52,8 +52,6 @@ VkResult genX(init_device_state)(struct anv_device *device);
 
 void genX(init_cps_device_state)(struct anv_device *device);
 
-const uint32_t *genX(libanv_spv)(uint32_t *out_size);
-
 uint32_t genX(call_internal_shader)(nir_builder *b,
                                     enum anv_internal_kernel_name shader_name);
 

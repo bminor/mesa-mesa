@@ -338,26 +338,6 @@ iris_destroy_program_cache(struct iris_context *ice)
    ralloc_free(ice->shaders.cache);
 }
 
-static void
-link_libintel_shaders(nir_shader *nir,
-                      const uint32_t *spv_code, uint32_t spv_size)
-{
-   nir_shader *libintel = brw_nir_from_spirv(nir, spv_code, spv_size);
-
-   nir_link_shader_functions(nir, libintel);
-   NIR_PASS_V(nir, nir_inline_functions);
-   NIR_PASS_V(nir, nir_remove_non_entrypoints);
-   NIR_PASS_V(nir, nir_lower_vars_to_explicit_types, nir_var_function_temp,
-              glsl_get_cl_type_size_align);
-   NIR_PASS_V(nir, nir_opt_deref);
-   NIR_PASS_V(nir, nir_lower_vars_to_ssa);
-   NIR_PASS_V(nir, nir_lower_explicit_io,
-              nir_var_shader_temp | nir_var_function_temp | nir_var_mem_shared |
-                 nir_var_mem_global,
-              nir_address_format_62bit_generic);
-   NIR_PASS_V(nir, nir_lower_scratch_to_var);
-}
-
 void
 iris_ensure_indirect_generation_shader(struct iris_batch *batch)
 {
@@ -389,12 +369,7 @@ iris_ensure_indirect_generation_shader(struct iris_batch *batch)
    uint32_t uniform_size =
       screen->vtbl.call_generation_shader(screen, &b);
 
-   uint32_t spv_size;
-   const uint32_t *spv_code = screen->vtbl.load_shader_lib_spv(&spv_size);
-
    nir_shader *nir = b.shader;
-
-   link_libintel_shaders(nir, spv_code, spv_size);
 
    NIR_PASS_V(nir, nir_lower_vars_to_ssa);
    NIR_PASS_V(nir, nir_opt_cse);
