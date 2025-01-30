@@ -181,7 +181,8 @@
 
   <enum name="Swizzles (8-bit)">
     <value default="true">b0123</value>
-    <value>b3210</value>
+    <!-- b3210 until v11 -->
+    <reserved/>
     <value>b0101</value>
     <value>b2323</value>
     <value>b0000</value>
