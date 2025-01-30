@@ -1505,6 +1505,10 @@ intrinsic("prefetch_ubo_ir3", [1], flags=[CAN_REORDER])
 # src[] = { vertex_id, instance_id, offset }
 load("attribute_pan", [1, 1, 1], [BASE, COMPONENT, DEST_TYPE, IO_SEMANTICS], [CAN_ELIMINATE, CAN_REORDER])
 
+# Panfrost-specific intrinsic to load the shader_output special-FAU value on Avalon.
+intrinsic("load_shader_output_pan", dest_comp=1, src_comp=[], bit_sizes=[32],
+          indices=[], flags=[CAN_REORDER, CAN_ELIMINATE])
+
 # Panfrost-specific intrinsics for accessing the raw vertex ID and the
 # associated offset such that
 #   vertex_id = raw_vertex_id_pan + raw_vertex_offset_pan
