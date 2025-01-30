@@ -26,6 +26,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+#include "drm-uapi/panthor_drm.h"
+
 #include "genxml/gen_macros.h"
 
 #include "panvk_buffer.h"
@@ -683,14 +685,17 @@ init_cs_builders(struct panvk_cmd_buffer *cmdbuf)
       [PANVK_SUBQUEUE_COMPUTE] = panvk_cs_compute_reg_perm,
    };
 
+   const struct drm_panthor_csif_info *csif_info =
+      panthor_kmod_get_csif_props(dev->kmod.dev);
+
    for (uint32_t i = 0; i < ARRAY_SIZE(cmdbuf->state.cs); i++) {
       struct cs_builder *b = &cmdbuf->state.cs[i].builder;
       /* Lazy allocation of the root CS. */
       struct cs_buffer root_cs = {0};
 
       struct cs_builder_conf conf = {
-         .nr_registers = 96,
-         .nr_kernel_registers = 4,
+         .nr_registers = csif_info->cs_reg_count,
+         .nr_kernel_registers = MAX2(csif_info->unpreserved_cs_reg_count, 4),
          .alloc_buffer = alloc_cs_buffer,
          .cookie = cmdbuf,
       };

@@ -149,8 +149,8 @@ panvk_per_arch(utrace_clone_init_builder)(struct cs_builder *b,
                                           struct panvk_pool *pool)
 {
    const struct cs_builder_conf builder_conf = {
-      .nr_registers = 96,
-      .nr_kernel_registers = 4,
+      .nr_registers = b->conf.nr_registers,
+      .nr_kernel_registers = b->conf.nr_kernel_registers,
       .alloc_buffer = alloc_clone_buffer,
       .cookie = pool,
    };

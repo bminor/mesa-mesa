@@ -4,6 +4,7 @@
  *
  * SPDX-License-Identifier: MIT
  */
+#include "drm-uapi/panthor_drm.h"
 
 #include "panvk_cmd_buffer.h"
 #include "panvk_device.h"
@@ -24,17 +25,20 @@ tiler_oom_reg_perm_cb(struct cs_builder *b, unsigned reg)
 }
 
 static size_t
-generate_tiler_oom_handler(struct cs_buffer handler_mem, bool has_zs_ext,
+generate_tiler_oom_handler(struct panvk_device *dev,
+                           struct cs_buffer handler_mem, bool has_zs_ext,
                            uint32_t rt_count, bool tracing_enabled,
                            uint32_t *dump_region_size)
 {
    assert(rt_count >= 1 && rt_count <= MAX_RTS);
    uint32_t fbd_size = get_fbd_size(has_zs_ext, rt_count);
+   const struct drm_panthor_csif_info *csif_info =
+      panthor_kmod_get_csif_props(dev->kmod.dev);
 
    struct cs_builder b;
    struct cs_builder_conf conf = {
-      .nr_registers = 96,
-      .nr_kernel_registers = 4,
+      .nr_registers = csif_info->cs_reg_count,
+      .nr_kernel_registers = MAX2(csif_info->unpreserved_cs_reg_count, 4),
       .reg_perm = tiler_oom_reg_perm_cb,
    };
    cs_builder_init(&b, &conf, handler_mem);
@@ -169,8 +173,9 @@ panvk_per_arch(init_tiler_oom)(struct panvk_device *device)
          };
 
          uint32_t dump_region_size;
-         size_t handler_length = generate_tiler_oom_handler(
-            handler_mem, zs_ext, rt_count, tracing_enabled, &dump_region_size);
+         size_t handler_length =
+            generate_tiler_oom_handler(device, handler_mem, zs_ext, rt_count,
+                                       tracing_enabled, &dump_region_size);
 
          /* All handlers must have the same length */
          assert(idx == 0 || handler_length == device->tiler_oom.handler_stride);

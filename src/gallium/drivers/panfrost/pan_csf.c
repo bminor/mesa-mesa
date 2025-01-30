@@ -98,6 +98,8 @@ csf_oom_handler_init(struct panfrost_context *ctx)
 {
    struct panfrost_bo *cs_bo = NULL, *reg_save_bo = NULL;
    struct panfrost_device *dev = pan_device(ctx->base.screen);
+   const struct drm_panthor_csif_info *csif_info =
+      panthor_kmod_get_csif_props(dev->kmod.dev);
 
    cs_bo =
       panfrost_bo_create(dev, 4096, 0, "Temporary CS buffer");
@@ -114,8 +116,8 @@ csf_oom_handler_init(struct panfrost_context *ctx)
    };
    struct cs_builder b;
    const struct cs_builder_conf conf = {
-      .nr_registers = 96,
-      .nr_kernel_registers = 4,
+      .nr_registers = csif_info->cs_reg_count,
+      .nr_kernel_registers = MAX2(csif_info->unpreserved_cs_reg_count, 4),
       .reg_perm = (dev->debug & PAN_DBG_CS) ? csf_reg_perm_cb : NULL,
    };
    cs_builder_init(&b, &conf, queue);
@@ -251,9 +253,12 @@ GENX(csf_init_batch)(struct panfrost_batch *batch)
    if (!queue.gpu)
       return -1;
 
+   const struct drm_panthor_csif_info *csif_info =
+      panthor_kmod_get_csif_props(dev->kmod.dev);
+
    const struct cs_builder_conf conf = {
-      .nr_registers = 96,
-      .nr_kernel_registers = 4,
+      .nr_registers = csif_info->cs_reg_count,
+      .nr_kernel_registers = MAX2(csif_info->unpreserved_cs_reg_count, 4),
       .alloc_buffer = csf_alloc_cs_buffer,
       .cookie = batch,
       .ls_tracker = batch->csf.cs.ls_tracker,
@@ -1473,8 +1478,11 @@ GENX(csf_init_context)(struct panfrost_context *ctx)
       .gpu = cs_bo->ptr.gpu,
       .capacity = panfrost_bo_size(cs_bo) / sizeof(uint64_t),
    };
+   const struct drm_panthor_csif_info *csif_info =
+      panthor_kmod_get_csif_props(dev->kmod.dev);
    const struct cs_builder_conf bconf = {
-      .nr_registers = 96,
+      .nr_registers = csif_info->cs_reg_count,
+      .nr_kernel_registers = MAX2(csif_info->unpreserved_cs_reg_count, 4),
       .nr_kernel_registers = 4,
    };
    struct cs_builder b;
