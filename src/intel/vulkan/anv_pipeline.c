@@ -4309,6 +4309,16 @@ VkResult anv_GetPipelineExecutableStatisticsKHR(
       stat->value.u64 = prog_data->total_scratch;
    }
 
+   if (pipeline->device->info->ver >= 30) {
+      vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
+         WRITE_STR(stat->name, "GRF registers");
+         WRITE_STR(stat->description,
+                   "Number of GRF registers required by the shader.");
+         stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
+         stat->value.u64 = prog_data->grf_used;
+      }
+   }
+
    vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
       WRITE_STR(stat->name, "Max dispatch width");
       WRITE_STR(stat->description,
