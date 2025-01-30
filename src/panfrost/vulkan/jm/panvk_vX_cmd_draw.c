@@ -251,6 +251,7 @@ panvk_draw_prepare_fs_rsd(struct panvk_cmd_buffer *cmdbuf,
 
    pan_pack(rsd, RENDERER_STATE, cfg) {
       bool alpha_to_coverage = dyns->ms.alpha_to_coverage_enable;
+      bool msaa = dyns->ms.rasterization_samples > 1;
 
       if (fs) {
          pan_shader_prepare_rsd(fs_info, fs_code, &cfg);
@@ -282,7 +283,8 @@ panvk_draw_prepare_fs_rsd(struct panvk_cmd_buffer *cmdbuf,
 
          cfg.properties.pixel_kill_operation = earlyzs.kill;
          cfg.properties.zs_update_operation = earlyzs.update;
-         cfg.multisample_misc.evaluate_per_sample = fs->info.fs.sample_shading;
+         cfg.multisample_misc.evaluate_per_sample =
+            (fs->info.fs.sample_shading && msaa);
       } else {
          cfg.properties.depth_source = MALI_DEPTH_SOURCE_FIXED_FUNCTION;
          cfg.properties.allow_forward_pixel_to_kill = true;
@@ -290,7 +292,6 @@ panvk_draw_prepare_fs_rsd(struct panvk_cmd_buffer *cmdbuf,
          cfg.properties.zs_update_operation = MALI_PIXEL_KILL_FORCE_EARLY;
       }
 
-      bool msaa = dyns->ms.rasterization_samples > 1;
       cfg.multisample_misc.multisample_enable = msaa;
       cfg.multisample_misc.sample_mask =
          msaa ? dyns->ms.sample_mask : UINT16_MAX;
