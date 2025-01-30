@@ -3237,18 +3237,26 @@ bi_emit_alu(bi_builder *b, nir_alu_instr *instr)
       break;
 
    case nir_op_ihadd:
+      /* v11 removed HADD */
+      assert(b->shader->arch < 11);
       bi_hadd_to(b, nir_type_int, sz, dst, s0, s1, BI_ROUND_RTN);
       break;
 
    case nir_op_irhadd:
+      /* v11 removed HADD */
+      assert(b->shader->arch < 11);
       bi_hadd_to(b, nir_type_int, sz, dst, s0, s1, BI_ROUND_RTP);
       break;
 
    case nir_op_uhadd:
+      /* v11 removed HADD */
+      assert(b->shader->arch < 11);
       bi_hadd_to(b, nir_type_uint, sz, dst, s0, s1, BI_ROUND_RTN);
       break;
 
    case nir_op_urhadd:
+      /* v11 removed HADD */
+      assert(b->shader->arch < 11);
       bi_hadd_to(b, nir_type_uint, sz, dst, s0, s1, BI_ROUND_RTP);
       break;
 
