@@ -124,7 +124,7 @@
         "description": "pan/bi: Use 2D dimension with TEX_FETCH with CUBE on Valhall",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ce52b6d35975c82077d5d2efe8430063fa2a4abc",
         "notes": null
