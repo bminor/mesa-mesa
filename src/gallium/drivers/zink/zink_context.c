@@ -1930,6 +1930,16 @@ create_image_surface(struct zink_context *ctx, const struct pipe_image_view *vie
 }
 
 static void
+bind_shaderimage_resource_stage(struct zink_context *ctx, const struct pipe_image_view *b, struct zink_resource *res, bool is_compute)
+{
+   update_res_bind_count(ctx, res, is_compute, false);
+   res->image_bind_count[is_compute]++;
+   /* always increment write_bind_count on new bind */
+   if (b->access & PIPE_IMAGE_ACCESS_WRITE)
+      res->write_bind_count[is_compute]++;
+}
+
+static void
 zink_set_shader_images(struct pipe_context *pctx,
                        gl_shader_stage shader_type,
                        unsigned start_slot, unsigned count,
@@ -1964,11 +1974,7 @@ zink_set_shader_images(struct pipe_context *pctx,
             /* this needs a full unbind+bind */
             changed = true;
             unbind_shader_image(ctx, shader_type, start_slot + i);
-            update_res_bind_count(ctx, res, is_compute, false);
-            res->image_bind_count[is_compute]++;
-            /* always increment write_bind_count on new bind */
-            if (b->access & PIPE_IMAGE_ACCESS_WRITE)
-               res->write_bind_count[is_compute]++;
+            bind_shaderimage_resource_stage(ctx, b, res, is_compute);
             /* db mode refcounts these */
             if (zink_descriptor_mode == ZINK_DESCRIPTOR_MODE_DB && b->resource->target == PIPE_BUFFER)
                pipe_resource_reference(&a->base.resource, b->resource);
