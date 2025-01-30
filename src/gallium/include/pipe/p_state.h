@@ -478,6 +478,12 @@ struct pipe_surface
    union pipe_surface_desc u;
 };
 
+struct pipe_tex2d_from_buf {
+   unsigned offset;  /**< offset in pixels */
+   uint16_t row_stride; /**< size of the image row_stride in pixels */
+   uint16_t width;      /**< width of image provided by application */
+   uint16_t height;     /**< height of image provided by application */
+};
 
 /**
  * A view into a texture that can be bound to a shader stage.
@@ -508,12 +514,7 @@ struct pipe_sampler_view
          unsigned offset;   /**< offset in bytes */
          unsigned size;     /**< size of the readable sub-range in bytes */
       } buf;
-      struct {
-         unsigned offset;  /**< offset in pixels */
-         uint16_t row_stride; /**< size of the image row_stride in pixels */
-         uint16_t width;      /**< width of image provided by application */
-         uint16_t height;     /**< height of image provided by application */
-      } tex2d_from_buf;      /**< used in cl extension cl_khr_image2d_from_buffer */
+      struct pipe_tex2d_from_buf tex2d_from_buf; /**< used in cl extension cl_khr_image2d_from_buffer */
    } u;
 };
 
@@ -544,12 +545,7 @@ struct pipe_image_view
          unsigned offset;   /**< offset in bytes */
          unsigned size;     /**< size of the accessible sub-range in bytes */
       } buf;
-      struct {
-         unsigned offset;   /**< offset in pixels */
-         uint16_t row_stride;     /**< size of the image row_stride in pixels */
-         uint16_t width;     /**< width of image provided by application */
-         uint16_t height;     /**< height of image provided by application */
-      } tex2d_from_buf;      /**< used in cl extension cl_khr_image2d_from_buffer */
+      struct pipe_tex2d_from_buf tex2d_from_buf; /**< used in cl extension cl_khr_image2d_from_buffer */
    } u;
 };
 
