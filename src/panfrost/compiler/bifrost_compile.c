@@ -1216,7 +1216,13 @@ bi_emit_store_vary(bi_builder *b, nir_intrinsic_instr *instr)
 
       if (index_offset != 0)
          index = bi_iadd_imm_i32(b, index, index_offset);
-      bi_index address = bi_lea_buf_imm(b, index);
+
+      /* On Valhall, with IDVS varying are stored in a hardware-controlled
+       * buffer through table 61 at index 0 */
+      bi_index address = bi_temp(b->shader);
+      bi_instr *I = bi_lea_buf_imm_to(b, address, index);
+      I->table = va_res_fold_table_idx(61);
+      I->index = 0;
       bi_emit_split_i32(b, a, address, 2);
 
       bi_store(b, nr * src_bit_sz, data, a[0], a[1],
