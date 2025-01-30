@@ -25,3 +25,7 @@ void nir_bindless_image_store(uint2 handle, int4 coord, uint sample,
                               uint4 datum, uint lod, uint image_dim,
                               uint image_array, uint format, uint access,
                               uint src_type);
+
+uint32_t libagx_twiddle_coordinates(ushort2 coord, uint16_t tile_w_px,
+                                    uint16_t tile_h_px,
+                                    uint32_t aligned_width_px);
