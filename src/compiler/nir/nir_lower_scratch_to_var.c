@@ -60,9 +60,12 @@ lower_scratch_to_var(nir_builder *b, nir_intrinsic_instr *intr, void *data)
       nir_def *index = nir_udiv_aligned_4(b, intr->src[1].ssa);
       nir_def *value = intr->src[0].ssa;
 
+      index = nir_u2uN(b, index, nir_get_ptr_bitsize(b->shader));
       nir_store_array_var(b, scratch, index, value, nir_component_mask(1));
    } else if (intr->intrinsic == nir_intrinsic_load_scratch) {
       nir_def *index = nir_udiv_aligned_4(b, intr->src[0].ssa);
+
+      index = nir_u2uN(b, index, nir_get_ptr_bitsize(b->shader));
       nir_def_rewrite_uses(&intr->def, nir_load_array_var(b, scratch, index));
    } else {
       return false;
