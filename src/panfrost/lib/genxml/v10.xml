@@ -643,7 +643,7 @@
 
   <struct name="CS UMIN32" size="2">
     <field name="Source 1" size="8" start="32" type="uint"/>
-    <field name="Source 2" size="8" start="40" type="uint"/>
+    <field name="Source 0" size="8" start="40" type="uint"/>
     <field name="Destination" size="8" start="48" type="uint"/>
     <field name="Opcode" size="8" start="56" type="CS Opcode" default="UMIN32"/>
   </struct>
