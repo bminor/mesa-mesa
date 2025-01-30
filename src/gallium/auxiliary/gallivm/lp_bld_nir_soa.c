@@ -5273,6 +5273,11 @@ lp_build_nir_sample_key(gl_shader_stage stage, nir_tex_instr *instr)
          explicit_lod = true;
          lod_src = i;
          break;
+      case nir_tex_src_min_lod:
+         sample_key |= LP_SAMPLER_MIN_LOD;
+         explicit_lod = true;
+         lod_src = i;
+         break;
       case nir_tex_src_offset:
          sample_key |= LP_SAMPLER_OFFSETS;
          break;
@@ -5363,6 +5368,9 @@ visit_tex(struct lp_build_nir_soa_context *bld, nir_tex_instr *instr)
             explicit_lod = cast_type(bld, get_src(bld, &instr->src[i].src, 0), nir_type_int, 32);
          else
             explicit_lod = cast_type(bld, get_src(bld, &instr->src[i].src, 0), nir_type_float, 32);
+         break;
+      case nir_tex_src_min_lod:
+         params.min_lod = cast_type(bld, get_src(bld, &instr->src[i].src, 0), nir_type_float, 32);
          break;
       case nir_tex_src_ddx: {
          int deriv_cnt = instr->coord_components;

@@ -807,6 +807,9 @@ lp_build_sample_function_type(struct gallivm_state *gallivm, uint32_t sample_key
    if (lod_control == LP_SAMPLER_LOD_BIAS || lod_control == LP_SAMPLER_LOD_EXPLICIT)
       arg_types[num_params++] = coord_type;
 
+   if (sample_key & LP_SAMPLER_MIN_LOD)
+      arg_types[num_params++] = coord_type;
+
    val_type[0] = val_type[1] = val_type[2] = val_type[3] = lp_build_vec_type(gallivm, type);
    val_type[4] = lp_build_int_vec_type(gallivm, type);
    ret_type = LLVMStructTypeInContext(gallivm->context, val_type, 5, 0);

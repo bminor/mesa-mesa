@@ -536,6 +536,10 @@ compile_sample_function(struct llvmpipe_context *ctx, struct lp_static_texture_s
    if (lod_control == LP_SAMPLER_LOD_BIAS || lod_control == LP_SAMPLER_LOD_EXPLICIT)
       lod = LLVMGetParam(function, arg_index++);
 
+   LLVMValueRef min_lod = NULL;
+   if (sample_key & LP_SAMPLER_MIN_LOD)
+      min_lod = LLVMGetParam(function, arg_index++);
+
    LLVMBuilderRef old_builder = gallivm->builder;
    LLVMBasicBlockRef block = LLVMAppendBasicBlockInContext(gallivm->context, function, "entry");
    gallivm->builder = LLVMCreateBuilderInContext(gallivm->context);
@@ -545,7 +549,7 @@ compile_sample_function(struct llvmpipe_context *ctx, struct lp_static_texture_s
    if (supported) {
       lp_build_sample_soa_code(gallivm, texture, sampler, lp_build_sampler_soa_dynamic_state(sampler_soa),
                                type, sample_key, 0, 0, cs.jit_resources_type, NULL, cs.jit_cs_thread_data_type,
-                               NULL, coords, offsets, NULL, lod, ms_index, texel_out);
+                               NULL, coords, offsets, NULL, lod, min_lod, ms_index, texel_out);
    } else {
       lp_build_sample_nop(gallivm, lp_build_texel_type(type, util_format_description(texture->format)), coords, texel_out);
    }

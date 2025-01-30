@@ -2354,6 +2354,7 @@ lp_build_sample_common(struct lp_build_sample_context *bld,
                        const struct lp_derivatives *derivs, /* optional */
                        LLVMValueRef lod_bias, /* optional */
                        LLVMValueRef explicit_lod, /* optional */
+                       LLVMValueRef min_lod, /* optional */
                        LLVMValueRef *lod_pos_or_zero,
                        LLVMValueRef *lod,
                        LLVMValueRef *lod_fpart,
@@ -2455,7 +2456,7 @@ lp_build_sample_common(struct lp_build_sample_context *bld,
                             first_level_vec,
                             coords[0], coords[1], coords[2],
                             derivs, lod_bias, explicit_lod,
-                            mip_filter, lod,
+                            min_lod, mip_filter, lod,
                             &lod_ipart, lod_fpart, lod_pos_or_zero,
                             aniso_values);
       if (is_lodq) {
@@ -3162,6 +3163,7 @@ lp_build_sample_soa_code(struct gallivm_state *gallivm,
                          const LLVMValueRef *offsets,
                          const struct lp_derivatives *derivs, /* optional */
                          LLVMValueRef lod, /* optional */
+                         LLVMValueRef min_lod, /* optional */
                          LLVMValueRef ms_index, /* optional */
                          LLVMValueRef *texel_out)
 {
@@ -3611,7 +3613,7 @@ lp_build_sample_soa_code(struct gallivm_state *gallivm,
 
       lp_build_sample_common(&bld, op_is_lodq, texture_index, sampler_index,
                              newcoords, derivs, lod_bias, explicit_lod,
-                             &lod_positive, &lod, &lod_fpart,
+                             min_lod, &lod_positive, &lod, &lod_fpart,
                              &ilevel0, &ilevel1, &aniso_values);
 
       if (op_is_lodq) {
@@ -3987,6 +3989,7 @@ lp_build_sample_gen_func(struct gallivm_state *gallivm,
                             offsets,
                             deriv_ptr,
                             lod,
+                            NULL,
                             ms_index,
                             texel_out);
 
@@ -4251,6 +4254,7 @@ lp_build_sample_soa(const struct lp_static_texture_state *static_texture_state,
                                params->offsets,
                                params->derivs,
                                params->lod,
+                               NULL,
                                params->ms_index,
                                params->texel);
    }
