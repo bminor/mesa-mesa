@@ -561,15 +561,35 @@ struct pipe_enc_dirty_info
    struct pipe_resource *map;
 };
 
-enum pipe_enc_move_rects_precision_unit
+enum pipe_enc_move_info_precision_unit
 {
-   PIPE_ENC_MOVE_RECTS_PRECISION_UNIT_FULL_PIXEL = 0,
-   PIPE_ENC_MOVE_RECTS_PRECISION_UNIT_HALF_PIXEL = 1,
-   PIPE_ENC_MOVE_RECTS_PRECISION_UNIT_QUARTER_PIXEL = 2,
+   PIPE_ENC_MOVE_INFO_PRECISION_UNIT_FULL_PIXEL = 0,
+   PIPE_ENC_MOVE_INFO_PRECISION_UNIT_HALF_PIXEL = 1,
+   PIPE_ENC_MOVE_INFO_PRECISION_UNIT_QUARTER_PIXEL = 2,
 };
 
-struct pipe_enc_move_rects
+enum pipe_enc_move_info_input_mode
 {
+   PIPE_ENC_MOVE_INFO_INPUT_MODE_DISABLED = 0,
+   /* Requires PIPE_VIDEO_CAP_ENC_MOVE_RECTS */
+   PIPE_ENC_MOVE_INFO_INPUT_MODE_RECTS = 1,
+   /* Requires PIPE_VIDEO_CAP_ENC_MOTION_VECTOR_MAPS */
+   PIPE_ENC_MOVE_INFO_INPUT_MODE_MAP = 2,
+};
+
+struct pipe_enc_move_info
+{
+   enum pipe_enc_move_info_input_mode input_mode;
+
+   /* Used with PIPE_ENC_MOVE_INFO_INPUT_MODE_MAP */
+   /* Contains the motion hints */
+   struct pipe_resource *gpu_motion_vectors_map[PIPE_ENC_MOVE_MAP_MAX_HINTS];
+   /* contains the DPB index the motion hints apply to, or 255 if no motion hint */
+   struct pipe_resource *gpu_motion_metadata_map[PIPE_ENC_MOVE_MAP_MAX_HINTS];
+   /* Indicates how many entries to gpu_motion_vectors_map and gpu_motion_metadata_map */
+   uint32_t num_hints;
+
+   /* Used with PIPE_ENC_MOVE_INFO_INPUT_MODE_RECTS */
    unsigned int num_rects;
    struct
    {
@@ -585,7 +605,7 @@ struct pipe_enc_move_rects
       } dest_rect;
    } rects[PIPE_ENC_MOVE_RECTS_NUM_MAX];
    uint8_t dpb_reference_index; /* index in dpb for the recon pic the rects refer to */
-   enum pipe_enc_move_rects_precision_unit precision;
+   enum pipe_enc_move_info_precision_unit precision;
    bool overlapping_rects;
 };
 
@@ -871,7 +891,7 @@ struct pipe_h264_enc_picture_desc
    struct pipe_enc_intra_refresh intra_refresh;
    struct pipe_enc_roi roi;
    struct pipe_enc_dirty_info dirty_info;
-   struct pipe_enc_move_rects move_rects;
+   struct pipe_enc_move_info move_info;
 
    /* See PIPE_VIDEO_CAP_ENC_GPU_STATS_QP_MAP */
    struct pipe_resource *gpu_stats_qp_map;
@@ -1266,7 +1286,7 @@ struct pipe_h265_enc_picture_desc
    struct pipe_enc_intra_refresh intra_refresh;
    struct pipe_enc_roi roi;
    struct pipe_enc_dirty_info dirty_info;
-   struct pipe_enc_move_rects move_rects;
+   struct pipe_enc_move_info move_info;
 
    /* See PIPE_VIDEO_CAP_ENC_GPU_STATS_QP_MAP */
    struct pipe_resource *gpu_stats_qp_map;
@@ -2643,23 +2663,23 @@ union pipe_enc_cap_dirty_info {
 union pipe_enc_cap_move_rect {
    struct {
       /*
-       * Driver Output. Indicates support for setting up to max_motion_hints in pipe_enc_move_rects.rects when max_motion_hints > 0.
+       * Driver Output. Indicates support for setting up to max_motion_hints in pipe_enc_move_info.rects when max_motion_hints > 0.
        */
       uint32_t max_motion_hints: 16;
       /*
-       * Driver Output. Indicates support for sending overlapped rects in pipe_enc_move_rects.rects
+       * Driver Output. Indicates support for sending overlapped rects in pipe_enc_move_info.rects
        */
       uint32_t supports_overlapped_rects: 1;
       /*
-       * Driver Output. Indicates support for setting in pipe_enc_move_rects.precision = PIPE_ENC_MOVE_RECTS_PRECISION_UNIT_FULL_PIXEL
+       * Driver Output. Indicates support for setting in pipe_enc_move_info.precision = PIPE_ENC_MOVE_INFO_PRECISION_UNIT_FULL_PIXEL
        */
       uint32_t supports_precision_full_pixel: 1;
       /*
-       * Driver Output. Indicates support for setting in pipe_enc_move_rects.precision = PIPE_ENC_MOVE_RECTS_PRECISION_UNIT_HALF_PIXEL
+       * Driver Output. Indicates support for setting in pipe_enc_move_info.precision = PIPE_ENC_MOVE_INFO_PRECISION_UNIT_HALF_PIXEL
        */
       uint32_t supports_precision_half_pixel: 1;
       /*
-       * Driver Output. Indicates support for setting in pipe_enc_move_rects.precision = PIPE_ENC_MOVE_RECTS_PRECISION_UNIT_QUARTER_PIXEL
+       * Driver Output. Indicates support for setting in pipe_enc_move_info.precision = PIPE_ENC_MOVE_INFO_PRECISION_UNIT_QUARTER_PIXEL
        */
       uint32_t supports_precision_quarter_pixel: 1;
    } bits;
@@ -2738,6 +2758,52 @@ union pipe_enc_cap_qpmap {
          by 2^log2_values_block_size
        */
       uint32_t log2_values_block_size: 4;
+   } bits;
+  uint32_t value;
+};
+
+/* Used with PIPE_VIDEO_CAP_ENC_MOTION_VECTOR_MAPS */
+union pipe_enc_cap_motion_vector_map {
+   struct {
+      /*
+       * Driver Output. Indicates how many hint maps are supported in the
+       * motion maps array. Zero indicates no support
+       * for the feature.
+       */
+      uint32_t max_motion_hints: 5; /* Max 31 hints. */
+      /*
+       * Driver Output. Indicates the precision of the motion vectors passed in the motion vectors map
+       */
+      /*
+       * Driver Output. Indicates support for setting in pipe_enc_move_info.precision = PIPE_ENC_MOVE_INFO_PRECISION_UNIT_FULL_PIXEL
+       */
+      uint32_t supports_precision_full_pixel: 1;
+      /*
+       * Driver Output. Indicates support for setting in pipe_enc_move_info.precision = PIPE_ENC_MOVE_INFO_PRECISION_UNIT_HALF_PIXEL
+       */
+      uint32_t supports_precision_half_pixel: 1;
+      /*
+       * Driver Output. Indicates support for setting in pipe_enc_move_info.precision = PIPE_ENC_MOVE_INFO_PRECISION_UNIT_QUARTER_PIXEL
+       */
+      uint32_t supports_precision_quarter_pixel: 1;
+      /*
+       * Driver Output. Indicates if the different motion vectors
+       * in the maps can point to different references in the DPB
+       *  or all must point to the same one on a given frame.
+       */
+      uint32_t support_multiple_dpb_refs: 1;
+      /*
+       * Driver Output. Indicates the pipe_format required for
+       * the pipe_resource allocation with the motion vectors map
+       *  passed to the driver
+       */
+      uint32_t pipe_pixel_vectors_map_format: 9; /* 9 bits for pipe_format < PIPE_FORMAT_COUNT */
+      /*
+       * Driver Output. Indicates the pipe_format required for
+       * the pipe_resource allocation with the motion vectors metadata map
+       * passed to the driver
+       */
+      uint32_t pipe_pixel_vectors_metadata_map_format: 9; /* 9 bits for pipe_format < PIPE_FORMAT_COUNT */
    } bits;
   uint32_t value;
 };

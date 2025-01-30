@@ -664,7 +664,7 @@ d3d12_video_encoder_update_dirty_rects(struct d3d12_video_encoder *pD3D12Enc,
                                        const struct pipe_enc_dirty_info& rects);
 void
 d3d12_video_encoder_update_move_rects(struct d3d12_video_encoder *pD3D12Enc,
-                                      const struct pipe_enc_move_rects& rects);
+                                      const struct pipe_enc_move_info& rects);
 void
 d3d12_video_encoder_update_output_stats_resources(struct d3d12_video_encoder *pD3D12Enc,
                                                   struct pipe_resource* qpmap,

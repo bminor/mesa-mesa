@@ -235,6 +235,10 @@ enum pipe_video_cap
     * Support for QP maps in encoder picture params pipe_enc_cap_qpmap
     */
    PIPE_VIDEO_CAP_ENC_QP_MAPS = 64,
+   /*
+    * Support for motion vector maps in encoder picture params pipe_enc_cap_motion_vector_map
+    */
+   PIPE_VIDEO_CAP_ENC_MOTION_VECTOR_MAPS = 65,
 };
 
 enum pipe_video_h264_enc_dbk_filter_mode_flags

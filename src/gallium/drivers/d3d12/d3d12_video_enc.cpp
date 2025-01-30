@@ -339,7 +339,7 @@ d3d12_video_encoder_friendly_frame_type_h264(D3D12_VIDEO_ENCODER_FRAME_TYPE_H264
 
 void
 d3d12_video_encoder_update_move_rects(struct d3d12_video_encoder *pD3D12Enc,
-                                      const struct pipe_enc_move_rects& rects)
+                                      const struct pipe_enc_move_info& rects)
 {
 #if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
    assert(rects.num_rects <= PIPE_ENC_MOVE_RECTS_NUM_MAX);
@@ -365,21 +365,21 @@ d3d12_video_encoder_update_move_rects(struct d3d12_video_encoder *pD3D12Enc,
 
    switch (rects.precision)
    {
-      case PIPE_ENC_MOVE_RECTS_PRECISION_UNIT_FULL_PIXEL:
+      case PIPE_ENC_MOVE_INFO_PRECISION_UNIT_FULL_PIXEL:
       {
          pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MotionUnitPrecision = D3D12_VIDEO_ENCODER_FRAME_INPUT_MOTION_UNIT_PRECISION_FULL_PIXEL;
       } break;
-      case PIPE_ENC_MOVE_RECTS_PRECISION_UNIT_HALF_PIXEL:
+      case PIPE_ENC_MOVE_INFO_PRECISION_UNIT_HALF_PIXEL:
       {
          pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MotionUnitPrecision = D3D12_VIDEO_ENCODER_FRAME_INPUT_MOTION_UNIT_PRECISION_HALF_PIXEL;
       } break;
-      case PIPE_ENC_MOVE_RECTS_PRECISION_UNIT_QUARTER_PIXEL:
+      case PIPE_ENC_MOVE_INFO_PRECISION_UNIT_QUARTER_PIXEL:
       {
          pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MotionUnitPrecision = D3D12_VIDEO_ENCODER_FRAME_INPUT_MOTION_UNIT_PRECISION_QUARTER_PIXEL;
       } break;
       default:
       {
-         unreachable("Unsupported pipe_enc_move_rects");
+         unreachable("Unsupported pipe_enc_move_info");
       } break;
    }
 #endif
@@ -1936,7 +1936,7 @@ d3d12_video_encoder_update_current_encoder_config_state(struct d3d12_video_encod
                                                            ((struct pipe_h264_enc_picture_desc *)picture)->gpu_stats_satd_map,
                                                            ((struct pipe_h264_enc_picture_desc *)picture)->gpu_stats_rc_bitallocation_map);
 
-         d3d12_video_encoder_update_move_rects(pD3D12Enc, ((struct pipe_h264_enc_picture_desc *)picture)->move_rects);
+         d3d12_video_encoder_update_move_rects(pD3D12Enc, ((struct pipe_h264_enc_picture_desc *)picture)->move_info);
          d3d12_video_encoder_update_dirty_rects(pD3D12Enc, ((struct pipe_h264_enc_picture_desc *)picture)->dirty_info);
          d3d12_video_encoder_update_qpmap_input(pD3D12Enc, ((struct pipe_h264_enc_picture_desc *)picture)->input_gpu_qpmap,
                                                            ((struct pipe_h264_enc_picture_desc *)picture)->roi,
@@ -1953,7 +1953,7 @@ d3d12_video_encoder_update_current_encoder_config_state(struct d3d12_video_encod
                                                            ((struct pipe_h265_enc_picture_desc *)picture)->gpu_stats_satd_map,
                                                            ((struct pipe_h265_enc_picture_desc *)picture)->gpu_stats_rc_bitallocation_map);
 
-         d3d12_video_encoder_update_move_rects(pD3D12Enc, ((struct pipe_h265_enc_picture_desc *)picture)->move_rects);
+         d3d12_video_encoder_update_move_rects(pD3D12Enc, ((struct pipe_h265_enc_picture_desc *)picture)->move_info);
          d3d12_video_encoder_update_dirty_rects(pD3D12Enc, ((struct pipe_h265_enc_picture_desc *)picture)->dirty_info);
          d3d12_video_encoder_update_qpmap_input(pD3D12Enc, ((struct pipe_h265_enc_picture_desc *)picture)->input_gpu_qpmap,
                                                            ((struct pipe_h265_enc_picture_desc *)picture)->roi,
