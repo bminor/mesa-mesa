@@ -288,4 +288,13 @@ util_sign_extend(uint64_t val, unsigned width)
    return (int64_t)(val << shift) >> shift;
 }
 
+/* To make u_foreach_bit work. TODO: Use clz? */
+#define ffs __builtin_ffs
+
+/* Duplicates bitscan.h... */
+#define u_foreach_bit(b, dword)                          \
+   for (uint32_t __dword = (dword), b;                     \
+        ((b) = ffs(__dword) - 1, __dword);      \
+        __dword &= ~(1 << (b)))
+
 #endif
