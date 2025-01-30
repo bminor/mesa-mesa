@@ -798,6 +798,10 @@ pvr_spm_setup_texture_state_words(struct pvr_device *device,
                                   uint64_t *image_state_ptr,
                                   uint64_t *mem_used_out)
 {
+   const uint64_t aligned_fb_width =
+      ALIGN_POT(framebuffer_size.width,
+                ROGUE_CR_PBE_WORD0_MRT0_LINESTRIDE_ALIGNMENT);
+
    /* We can ignore the framebuffer's layer count since we only support
     * writing to layer 0.
     */
@@ -815,13 +819,10 @@ pvr_spm_setup_texture_state_words(struct pvr_device *device,
       .mip_levels = 1,
 
       .sample_count = sample_count,
-      .stride = framebuffer_size.width,
+      .stride = aligned_fb_width,
 
       .addr = scratch_buffer_addr,
    };
-   const uint64_t aligned_fb_width =
-      ALIGN_POT(framebuffer_size.width,
-                ROGUE_CR_PBE_WORD0_MRT0_LINESTRIDE_ALIGNMENT);
    const uint64_t fb_area = aligned_fb_width * framebuffer_size.height;
    struct pvr_image_descriptor image_descriptor;
    const uint8_t *format_swizzle;
