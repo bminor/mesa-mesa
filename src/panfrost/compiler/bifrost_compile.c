@@ -1095,46 +1095,77 @@ bi_emit_fragment_out(bi_builder *b, nir_intrinsic_instr *instr)
    }
 }
 
-/**
- * In a vertex shader, is the specified variable a position output? These kinds
- * of outputs are written from position shaders when IDVS is enabled. All other
- * outputs are written from the varying shader.
- */
-static bool
-bi_should_remove_store(nir_intrinsic_instr *intr, enum bi_idvs_mode idvs)
+static enum va_shader_output
+va_shader_output_from_semantics(const nir_io_semantics *sem)
 {
-   nir_io_semantics sem = nir_intrinsic_io_semantics(intr);
-
-   switch (sem.location) {
+   switch (sem->location) {
    case VARYING_SLOT_POS:
+      return VA_SHADER_OUTPUT_POSITION;
    case VARYING_SLOT_PSIZ:
    case VARYING_SLOT_LAYER:
-      return idvs == BI_IDVS_VARYING;
+      return VA_SHADER_OUTPUT_ATTRIB;
    default:
-      return idvs == BI_IDVS_POSITION;
+      return VA_SHADER_OUTPUT_VARY;
    }
 }
 
 static bool
-bifrost_nir_specialize_idvs(nir_builder *b, nir_instr *instr, void *data)
+bifrost_nir_lower_shader_output_impl(struct nir_builder *b,
+                                     nir_intrinsic_instr *intr, void *data)
 {
-   enum bi_idvs_mode *idvs = data;
-
-   if (instr->type != nir_instr_type_intrinsic)
-      return false;
-
-   nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
-
    if (intr->intrinsic != nir_intrinsic_store_output &&
        intr->intrinsic != nir_intrinsic_store_per_view_output)
       return false;
 
-   if (bi_should_remove_store(intr, *idvs)) {
-      nir_instr_remove(instr);
-      return true;
+   nir_io_semantics sem = nir_intrinsic_io_semantics(intr);
+   unsigned mask = va_shader_output_from_semantics(&sem);
+
+   b->cursor = nir_instr_remove(&intr->instr);
+   nir_def *shader_output = nir_load_shader_output_pan(b);
+
+   nir_push_if(b, nir_i2b(b, nir_iand_imm(b, shader_output, mask)));
+   nir_builder_instr_insert(b, &intr->instr);
+   nir_pop_if(b, NULL);
+   return true;
+}
+
+static bool
+bifrost_nir_lower_shader_output(nir_shader *shader)
+{
+   return nir_shader_intrinsics_pass(shader,
+                                     bifrost_nir_lower_shader_output_impl,
+                                     nir_metadata_none, NULL);
+}
+
+static bool
+bifrost_nir_specialize_idvs_impl(nir_builder *b, nir_intrinsic_instr *intr,
+                                 void *data)
+{
+   enum bi_idvs_mode *idvs = data;
+
+   if (intr->intrinsic != nir_intrinsic_load_shader_output_pan)
+      return false;
+
+   unsigned shader_output_val = 0;
+
+   if (*idvs == BI_IDVS_POSITION) {
+      shader_output_val |= VA_SHADER_OUTPUT_POSITION;
+      shader_output_val |= VA_SHADER_OUTPUT_ATTRIB;
    }
 
-   return false;
+   if (*idvs == BI_IDVS_VARYING)
+      shader_output_val |= VA_SHADER_OUTPUT_VARY;
+
+   b->cursor = nir_before_instr(&intr->instr);
+   nir_def_replace(&intr->def, nir_imm_int(b, shader_output_val));
+   return true;
+}
+
+static bool
+bifrost_nir_specialize_idvs(nir_shader *shader, enum bi_idvs_mode idvs)
+{
+   return nir_shader_intrinsics_pass(shader, bifrost_nir_specialize_idvs_impl,
+                                     nir_metadata_control_flow, &idvs);
 }
 
 static void
@@ -5801,8 +5832,7 @@ bi_compile_variant_nir(nir_shader *nir,
       if (offset == 0)
          ctx->nir = nir = nir_shader_clone(ctx, nir);
 
-      NIR_PASS(_, nir, nir_shader_instructions_pass,
-               bifrost_nir_specialize_idvs, nir_metadata_control_flow, &idvs);
+      NIR_PASS(_, nir, bifrost_nir_specialize_idvs, idvs);
 
       /* After specializing, clean up the mess */
       bool progress = true;
@@ -5810,9 +5840,15 @@ bi_compile_variant_nir(nir_shader *nir,
       while (progress) {
          progress = false;
 
+         NIR_PASS(progress, nir, nir_opt_constant_folding);
          NIR_PASS(progress, nir, nir_opt_dce);
          NIR_PASS(progress, nir, nir_opt_dead_cf);
+         NIR_PASS(progress, nir, nir_opt_cse);
       }
+
+      /* opt_cse can vectorize load_const, we need to lower this to scalar */
+      NIR_PASS(progress, nir, nir_lower_load_const_to_scalar);
+      NIR_PASS(progress, nir, nir_opt_dce);
    }
 
    /* If nothing is pushed, all UBOs need to be uploaded */
@@ -6158,10 +6194,14 @@ bifrost_compile_shader_nir(nir_shader *nir,
     */
    NIR_PASS(_, nir, pan_nir_lower_zs_store);
 
+   info->vs.idvs = bi_should_idvs(nir, inputs);
+
+   if (info->vs.idvs)
+      NIR_PASS(_, nir, bifrost_nir_lower_shader_output);
+
    bi_optimize_nir(nir, inputs->gpu_id, inputs->is_blend);
 
    info->tls_size = nir->scratch_size;
-   info->vs.idvs = bi_should_idvs(nir, inputs);
 
    pan_nir_collect_varyings(nir, info, PAN_MEDIUMP_VARY_32BIT);
 

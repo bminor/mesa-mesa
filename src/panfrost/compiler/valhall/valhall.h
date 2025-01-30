@@ -28,6 +28,7 @@
 #define __VALHALL_H
 
 #include <stdint.h>
+#include "util/macros.h"
 #include "bi_opcodes.h"
 #include "valhall_enums.h"
 
@@ -194,6 +195,17 @@ va_op_dest_modifier_does_convert(enum bi_opcode op)
       return false;
    }
 }
+
+enum va_shader_output {
+   /* Output position data */
+   VA_SHADER_OUTPUT_POSITION = BITFIELD_BIT(0),
+
+   /* Output position FIFO attributes */
+   VA_SHADER_OUTPUT_ATTRIB = BITFIELD_BIT(1),
+
+   /* Output varying */
+   VA_SHADER_OUTPUT_VARY = BITFIELD_BIT(2),
+};
 
 #ifdef __cplusplus
 } /* extern C */
