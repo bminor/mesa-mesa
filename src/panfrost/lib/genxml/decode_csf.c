@@ -108,9 +108,9 @@ print_cs_instr(FILE *fp, const uint64_t *instr)
       break;
    }
 
-   case MALI_CS_OPCODE_MOVE: {
-      cs_unpack(instr, CS_MOVE, I);
-      fprintf(fp, "MOVE d%u, #0x%" PRIX64, I.destination, I.immediate);
+   case MALI_CS_OPCODE_MOVE48: {
+      cs_unpack(instr, CS_MOVE48, I);
+      fprintf(fp, "MOVE48 d%u, #0x%" PRIX64, I.destination, I.immediate);
       break;
    }
 
@@ -933,8 +933,8 @@ interpret_cs_instr(struct pandecode_context *ctx, struct queue_ctx *qctx)
       break;
    }
 
-   case MALI_CS_OPCODE_MOVE: {
-      cs_unpack(bytes, CS_MOVE, I);
+   case MALI_CS_OPCODE_MOVE48: {
+      cs_unpack(bytes, CS_MOVE48, I);
 
       qctx->regs[I.destination + 0] = (uint32_t)I.immediate;
       qctx->regs[I.destination + 1] = (uint32_t)(I.immediate >> 32);
@@ -1177,8 +1177,8 @@ record_indirect_branch_target(struct cs_code_cfg *cfg,
          const uint64_t *instr = &cfg->instrs[blk->start + blk_offs];
          cs_unpack(instr, CS_BASE, base);
          switch (base.opcode) {
-         case MALI_CS_OPCODE_MOVE: {
-            cs_unpack(instr, CS_MOVE, I);
+         case MALI_CS_OPCODE_MOVE48: {
+            cs_unpack(instr, CS_MOVE48, I);
 
             assert(I.destination % 2 == 0 &&
                    "Destination register should be aligned to 2");
@@ -1254,8 +1254,8 @@ collect_indirect_branch_targets_recurse(struct cs_code_cfg *cfg,
       const uint64_t *instr = &cfg->instrs[instr_ptr];
       cs_unpack(instr, CS_BASE, base);
       switch (base.opcode) {
-      case MALI_CS_OPCODE_MOVE: {
-         cs_unpack(instr, CS_MOVE, I);
+      case MALI_CS_OPCODE_MOVE48: {
+         cs_unpack(instr, CS_MOVE48, I);
          BITSET_CLEAR(track_map, I.destination);
          BITSET_CLEAR(track_map, I.destination + 1);
          break;

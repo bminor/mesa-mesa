@@ -515,7 +515,7 @@ cs_reserve_instrs(struct cs_builder *b, uint32_t num_instrs)
 
       uint64_t *ptr = b->cur_chunk.buffer.cpu + (b->cur_chunk.pos++);
 
-      pan_cast_and_pack(ptr, CS_MOVE, I) {
+      pan_cast_and_pack(ptr, CS_MOVE48, I) {
          I.destination = cs_overflow_address_reg(b);
          I.immediate = newbuf.gpu;
       }
@@ -791,7 +791,7 @@ cs_move32_to(struct cs_builder *b, struct cs_index dest, unsigned imm)
 static inline void
 cs_move48_to(struct cs_builder *b, struct cs_index dest, uint64_t imm)
 {
-   cs_emit(b, MOVE, I) {
+   cs_emit(b, MOVE48, I) {
       I.destination = cs_dst64(b, dest);
       I.immediate = imm;
    }

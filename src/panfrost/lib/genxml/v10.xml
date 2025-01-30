@@ -496,7 +496,7 @@
 
   <enum name="CS Opcode">
     <value name="NOP" value="0"/>
-    <value name="MOVE" value="1"/>
+    <value name="MOVE48" value="1"/>
     <value name="MOVE32" value="2"/>
     <value name="WAIT" value="3"/>
     <value name="RUN_COMPUTE" value="4"/>
@@ -546,10 +546,10 @@
     <field name="Opcode" size="8" start="56" type="CS Opcode" default="NOP"/>
   </struct>
 
-  <struct name="CS MOVE" size="2">
+  <struct name="CS MOVE48" size="2">
     <field name="Immediate" size="48" start="0" type="hex"/>
     <field name="Destination" size="8" start="48" type="uint"/>
-    <field name="Opcode" size="8" start="56" type="CS Opcode" default="MOVE"/>
+    <field name="Opcode" size="8" start="56" type="CS Opcode" default="MOVE48"/>
   </struct>
 
   <struct name="CS MOVE32" size="2">
