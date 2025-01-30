@@ -201,8 +201,14 @@ util_logbase2_ceil(uint32_t n)
 #define DIV_ROUND_UP(A, B)      (((A) + (B) - 1) / (B))
 #define CLAMP(X, MIN, MAX)      ((X) > (MIN) ? ((X) > (MAX) ? (MAX) : (X)) : (MIN))
 #define ALIGN_POT(x, pot_align) (((x) + (pot_align) - 1) & ~((pot_align) - 1))
+
+/* TODO: Should we define with OpenCL min/max? Do we want to match the host? */
 #define MAX2( A, B )   ( (A)>(B) ? (A) : (B) )
 #define MIN2( A, B )   ( (A)<(B) ? (A) : (B) )
+
+/* Less worried about these matching */
+#define MIN3(a, b, c)           min(min(a, b), c)
+#define MAX3(a, b, c)           max(max(a, b), c)
 
 static inline uint32_t
 fui(float f)
