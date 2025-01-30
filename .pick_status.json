@@ -614,7 +614,7 @@
         "description": "ac/gpu_info: add gfx12_supports_dcc_write_compress_disable",
         "nominated": false,
         "nomination_type": 0,
-        "resolution": 4,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
