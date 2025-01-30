@@ -135,3 +135,8 @@ hk_image_aspects_to_plane(const struct hk_image *image,
 
 struct agx_device;
 bool hk_can_compress_format(const struct agx_device *dev, VkFormat format);
+
+struct hk_cmd_buffer;
+void hk_clear_image(struct hk_cmd_buffer *cmd, struct hk_image *image,
+                    enum pipe_format view_format, const uint32_t *clear_value,
+                    const VkImageSubresourceRange *range, bool whole_3d);
