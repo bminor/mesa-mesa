@@ -2103,12 +2103,8 @@ update_feedback_loop_state(struct zink_context *ctx, unsigned idx, unsigned feed
 }
 
 ALWAYS_INLINE static void
-unbind_samplerview(struct zink_context *ctx, gl_shader_stage stage, unsigned slot)
+unbind_samplerview_res(struct zink_context *ctx, gl_shader_stage stage, unsigned slot, struct zink_resource *res)
 {
-   struct zink_sampler_view *sv = zink_sampler_view(ctx->sampler_views[stage][slot]);
-   if (!sv || !sv->base.texture)
-      return;
-   struct zink_resource *res = zink_resource(sv->base.texture);
    res->sampler_bind_count[stage == MESA_SHADER_COMPUTE]--;
    if (stage != MESA_SHADER_COMPUTE && !res->sampler_bind_count[0] && res->fb_bind_count) {
       u_foreach_bit(idx, res->fb_binds) {
@@ -2132,6 +2128,27 @@ unbind_samplerview(struct zink_context *ctx, gl_shader_stage stage, unsigned slo
    }
    assert(slot < 32);
    ctx->di.zs_swizzle[stage].mask &= ~BITFIELD_BIT(slot);
+}
+
+ALWAYS_INLINE static void
+unbind_samplerview(struct zink_context *ctx, gl_shader_stage stage, unsigned slot)
+{
+   struct zink_sampler_view *sv = zink_sampler_view(ctx->sampler_views[stage][slot]);
+   if (!sv || !sv->base.texture)
+      return;
+   struct zink_resource *res = zink_resource(sv->base.texture);
+   unbind_samplerview_res(ctx, stage, slot, res);
+   assert(slot < 32);
+   ctx->di.zs_swizzle[stage].mask &= ~BITFIELD_BIT(slot);
+}
+
+static void
+bind_samplerview_resource_stage(struct zink_context *ctx, struct zink_resource *res, gl_shader_stage shader_type)
+{
+   update_res_bind_count(ctx, res, shader_type == MESA_SHADER_COMPUTE, false);
+   res->sampler_bind_count[shader_type == MESA_SHADER_COMPUTE]++;
+   res->gfx_barrier |= zink_pipeline_flags_from_pipe_stage(shader_type);
+   res->barrier_access[shader_type == MESA_SHADER_COMPUTE] |= VK_ACCESS_SHADER_READ_BIT;
 }
 
 static void
@@ -2170,10 +2187,7 @@ zink_set_sampler_views(struct pipe_context *pctx,
             if (!a || zink_resource(a->base.texture) != res) {
                if (a)
                   unbind_samplerview(ctx, shader_type, start_slot + i);
-               update_res_bind_count(ctx, res, shader_type == MESA_SHADER_COMPUTE, false);
-               res->sampler_bind_count[shader_type == MESA_SHADER_COMPUTE]++;
-               res->gfx_barrier |= zink_pipeline_flags_from_pipe_stage(shader_type);
-               res->barrier_access[shader_type == MESA_SHADER_COMPUTE] |= VK_ACCESS_SHADER_READ_BIT;
+               bind_samplerview_resource_stage(ctx, res, shader_type);
             }
             if (res->base.b.target == PIPE_BUFFER) {
                if (zink_descriptor_mode == ZINK_DESCRIPTOR_MODE_DB) {
