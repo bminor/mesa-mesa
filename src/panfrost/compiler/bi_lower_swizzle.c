@@ -23,6 +23,7 @@
 
 #include "bi_builder.h"
 #include "compiler.h"
+#include "valhall.h"
 
 /* Not all 8-bit and 16-bit instructions support all swizzles on all sources.
  * These passes, intended to run after NIR->BIR but before scheduling/RA, lower
@@ -298,6 +299,11 @@ bi_lower_swizzle(bi_context *ctx)
          ins->op = BI_OPCODE_MOV_I32;
          ins->src[0].swizzle = BI_SWIZZLE_H01;
       }
+
+      /* On Valhall, if the instruction does some conversion depending on
+       * swizzle, we should not touch it. */
+      if (ctx->arch >= 9 && va_op_dest_modifier_does_convert(ins->op))
+         continue;
 
       /* The above passes rely on replicating destinations.  For
        * Valhall, we will want to optimize this. For now, default

@@ -88,6 +88,12 @@ va_fuse_add_imm(bi_instr *I)
       return;
    }
 
+   /* If the instruction does some conversion depending on swizzle, we should
+    * not touch it unless the swizzle is H01. */
+   if (va_op_dest_modifier_does_convert(I->op) &&
+       I->dest->swizzle != BI_SWIZZLE_H01)
+      return;
+
    enum bi_opcode op = va_op_add_imm(I->op);
    if (!op)
       return;
