@@ -327,7 +327,7 @@ impl Iterator for RegFileSet {
 ///
 /// This is used by several passes which need to replicate a data structure
 /// per-register-file.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct PerRegFile<T> {
     per_file: [T; NUM_REG_FILES],
 }
@@ -8264,6 +8264,167 @@ impl Op {
             _ => false,
         }
     }
+
+    pub fn is_virtual(&self) -> bool {
+        match self {
+            // Float ALU
+            Op::F2FP(_)
+            | Op::FAdd(_)
+            | Op::FFma(_)
+            | Op::FMnMx(_)
+            | Op::FMul(_)
+            | Op::FSet(_)
+            | Op::FSetP(_)
+            | Op::HAdd2(_)
+            | Op::HFma2(_)
+            | Op::HMul2(_)
+            | Op::HSet2(_)
+            | Op::HSetP2(_)
+            | Op::HMnMx2(_)
+            | Op::FSwz(_)
+            | Op::FSwzAdd(_) => false,
+
+            // Multi-function unit
+            Op::Rro(_) | Op::MuFu(_) => false,
+
+            // Double-precision float ALU
+            Op::DAdd(_)
+            | Op::DFma(_)
+            | Op::DMnMx(_)
+            | Op::DMul(_)
+            | Op::DSetP(_) => false,
+
+            // Matrix Multiply Add
+            Op::Imma(_) | Op::Hmma(_) | Op::Ldsm(_) | Op::Movm(_) => false,
+
+            // Integer ALU
+            Op::BRev(_)
+            | Op::Flo(_)
+            | Op::PopC(_)
+            | Op::IMad(_)
+            | Op::IMul(_)
+            | Op::BMsk(_)
+            | Op::IAbs(_)
+            | Op::IAdd2(_)
+            | Op::IAdd2X(_)
+            | Op::IAdd3(_)
+            | Op::IAdd3X(_)
+            | Op::IDp4(_)
+            | Op::IMad64(_)
+            | Op::IMnMx(_)
+            | Op::ISetP(_)
+            | Op::Lea(_)
+            | Op::LeaX(_)
+            | Op::Lop2(_)
+            | Op::Lop3(_)
+            | Op::SuClamp(_)
+            | Op::SuBfm(_)
+            | Op::SuEau(_)
+            | Op::IMadSp(_)
+            | Op::Shf(_)
+            | Op::Shl(_)
+            | Op::Shr(_)
+            | Op::Bfe(_) => false,
+
+            // Conversions
+            Op::F2F(_) | Op::F2I(_) | Op::I2F(_) | Op::I2I(_) | Op::FRnd(_) => {
+                false
+            }
+
+            // Move ops
+            Op::Mov(_)
+            | Op::Prmt(_)
+            | Op::Sel(_)
+            | Op::Sgxt(_)
+            | Op::Shfl(_) => false,
+
+            // Predicate ops
+            Op::PLop3(_) | Op::PSetP(_) => false,
+
+            // Uniform ops
+            Op::R2UR(op) => {
+                op.src.is_uniform() || op.dst.file() == Some(RegFile::UPred)
+            }
+            Op::Redux(_) => false,
+
+            // Texture ops
+            Op::Tex(_)
+            | Op::Tld(_)
+            | Op::Tld4(_)
+            | Op::Tmml(_)
+            | Op::Txd(_)
+            | Op::Txq(_) => false,
+
+            // Surface ops
+            Op::SuLd(_)
+            | Op::SuSt(_)
+            | Op::SuAtom(_)
+            | Op::SuLdGa(_)
+            | Op::SuStGa(_) => false,
+
+            // Memory ops
+            Op::Ld(_)
+            | Op::Ldc(_)
+            | Op::LdSharedLock(_)
+            | Op::St(_)
+            | Op::StSCheckUnlock(_)
+            | Op::Atom(_)
+            | Op::AL2P(_)
+            | Op::ALd(_)
+            | Op::ASt(_)
+            | Op::Ipa(_)
+            | Op::CCtl(_)
+            | Op::LdTram(_)
+            | Op::MemBar(_) => false,
+
+            // Control-flow ops
+            Op::BClear(_)
+            | Op::Break(_)
+            | Op::BSSy(_)
+            | Op::BSync(_)
+            | Op::SSy(_)
+            | Op::Sync(_)
+            | Op::Brk(_)
+            | Op::PBk(_)
+            | Op::Cont(_)
+            | Op::PCnt(_)
+            | Op::Bra(_)
+            | Op::Exit(_)
+            | Op::WarpSync(_) => false,
+
+            // Barrier
+            Op::BMov(_) => false,
+
+            // Geometry ops
+            Op::Out(_) | Op::OutFinal(_) => false,
+
+            // Miscellaneous ops
+            Op::Bar(_)
+            | Op::TexDepBar(_)
+            | Op::CS2R(_)
+            | Op::Isberd(_)
+            | Op::ViLd(_)
+            | Op::Kill(_)
+            | Op::PixLd(_)
+            | Op::S2R(_)
+            | Op::Match(_)
+            | Op::Nop(_)
+            | Op::Vote(_) => false,
+
+            // Virtual ops
+            Op::Undef(_)
+            | Op::SrcBar(_)
+            | Op::PhiSrcs(_)
+            | Op::PhiDsts(_)
+            | Op::Copy(_)
+            | Op::Pin(_)
+            | Op::Unpin(_)
+            | Op::Swap(_)
+            | Op::ParCopy(_)
+            | Op::RegOut(_)
+            | Op::Annotate(_) => true,
+        }
+    }
 }
 
 #[derive(Clone, Copy, Eq, Hash, PartialEq)]
@@ -8521,6 +8682,13 @@ impl Instr {
 
     pub fn src_types(&self) -> SrcTypeList {
         self.op.src_types()
+    }
+
+    pub fn ssa_uses(&self) -> impl Iterator<Item = &SSAValue> {
+        self.srcs()
+            .iter()
+            .flat_map(|src| src.iter_ssa())
+            .chain(self.pred.pred_ref.iter_ssa())
     }
 
     pub fn for_each_ssa_use(&self, mut f: impl FnMut(&SSAValue)) {
@@ -9435,6 +9603,7 @@ pub fn max_warps_per_sm(sm: &ShaderModelInfo, gprs: u32) -> u32 {
     // TODO: Take local_size and shared mem limit into account for compute
     let total_regs: u32 = 65536;
     // GPRs are allocated in multiples of 8
+    let gprs = max(gprs, 1);
     let gprs = gprs.next_multiple_of(8);
     let max_warps = prev_multiple_of((total_regs / 32) / gprs, 4);
     min(max_warps, sm.warps_per_sm.into())
