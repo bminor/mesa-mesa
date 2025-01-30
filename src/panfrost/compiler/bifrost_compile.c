@@ -1180,6 +1180,7 @@ bi_emit_store_vary(bi_builder *b, nir_intrinsic_instr *instr)
 
    ASSERTED nir_alu_type T = nir_intrinsic_src_type(instr);
    ASSERTED unsigned T_size = nir_alu_type_get_type_size(T);
+   nir_io_semantics sem = nir_intrinsic_io_semantics(instr);
    assert(T_size == 32 || T_size == 16);
    /* 16-bit varyings are always written and loaded as F16, regardless of
     * whether they are float or int */
@@ -1224,11 +1225,6 @@ bi_emit_store_vary(bi_builder *b, nir_intrinsic_instr *instr)
       data = tmp;
    }
 
-   bool psiz =
-      (nir_intrinsic_io_semantics(instr).location == VARYING_SLOT_PSIZ);
-   bool layer =
-      (nir_intrinsic_io_semantics(instr).location == VARYING_SLOT_LAYER);
-
    bi_index a[4] = {bi_null()};
 
    if (b->shader->arch <= 8 && b->shader->idvs == BI_IDVS_POSITION) {
@@ -1247,20 +1243,21 @@ bi_emit_store_vary(bi_builder *b, nir_intrinsic_instr *instr)
       unsigned pos_attr_offset = 0;
       unsigned src_bit_sz = nir_src_bit_size(instr->src[0]);
 
-      if (psiz || layer)
+      enum va_shader_output output_type = va_shader_output_from_semantics(&sem);
+      if (output_type == VA_SHADER_OUTPUT_ATTRIB)
          index_offset += 4;
 
-      if (layer) {
+      if (sem.location == VARYING_SLOT_LAYER) {
          assert(nr == 1 && src_bit_sz == 32);
          src_bit_sz = 8;
          pos_attr_offset = 2;
          data = bi_byte(data, 0);
       }
 
-      if (psiz)
+      if (sem.location == VARYING_SLOT_PSIZ)
          assert(T_size == 16 && "should've been lowered");
 
-      bool varying = (b->shader->idvs == BI_IDVS_VARYING);
+      bool varying = (output_type == VA_SHADER_OUTPUT_VARY);
 
       if (instr->intrinsic == nir_intrinsic_store_per_view_output) {
          unsigned view_index = nir_src_as_uint(instr->src[1]);
@@ -1287,6 +1284,13 @@ bi_emit_store_vary(bi_builder *b, nir_intrinsic_instr *instr)
       bi_instr *I = bi_lea_buf_imm_to(b, address, index);
       I->table = va_res_fold_table_idx(61);
       I->index = 0;
+
+      /* On Avalon, the hardware-controlled buffer is at index 1 for varyings */
+      if (pan_arch(b->shader->inputs->gpu_id) >= 12 &&
+          output_type == VA_SHADER_OUTPUT_VARY) {
+         I->index = 1;
+      }
+
       bi_emit_split_i32(b, a, address, 2);
 
       bi_store(b, nr * src_bit_sz, data, a[0], a[1],
@@ -2231,6 +2235,11 @@ bi_emit_intrinsic(bi_builder *b, nir_intrinsic_instr *instr)
        * us.
        */
       bi_mov_i32_to(b, dst, bi_src_index(&instr->src[0]));
+      break;
+
+   case nir_intrinsic_load_shader_output_pan:
+      assert(b->shader->arch >= 12 && "load_shader_output_pan should have been lowered!");
+      bi_mov_i32_to(b, dst, bi_fau(BIR_FAU_SHADER_OUTPUT, false));
       break;
 
    default:
@@ -5824,7 +5833,7 @@ bi_compile_variant_nir(nir_shader *nir,
    ctx->idvs = idvs;
    ctx->malloc_idvs = (ctx->arch >= 9) && !inputs->no_idvs;
 
-   if (idvs != BI_IDVS_NONE) {
+   if (idvs == BI_IDVS_POSITION || idvs == BI_IDVS_VARYING) {
       /* Specializing shaders for IDVS is destructive, so we need to
        * clone. However, the last (second) IDVS shader does not need
        * to be preserved so we can skip cloning that one.
@@ -6128,6 +6137,16 @@ bi_compile_variant(nir_shader *nir,
    } else {
       info->preload = preload;
       info->work_reg_count = ctx->info.work_reg_count;
+
+      if (idvs == BI_IDVS_ALL) {
+         /* Varying shader is only enabled if we can have any kind of varying
+          * written (that mean not position, layer or point size) */
+         info->vs.secondary_enable =
+            (nir->info.outputs_written &
+             ~(BITFIELD64_BIT(VARYING_SLOT_POS) |
+               BITFIELD64_BIT(VARYING_SLOT_LAYER) |
+               BITFIELD64_BIT(VARYING_SLOT_PSIZ))) != 0;
+      }
    }
 
    if (idvs == BI_IDVS_POSITION && !nir->info.internal &&
@@ -6205,7 +6224,10 @@ bifrost_compile_shader_nir(nir_shader *nir,
 
    pan_nir_collect_varyings(nir, info, PAN_MEDIUMP_VARY_32BIT);
 
-   if (info->vs.idvs) {
+   /* On Avalon, IDVS is only in one binary */
+   if (info->vs.idvs && pan_arch(inputs->gpu_id) >= 12) {
+      bi_compile_variant(nir, inputs, binary, info, BI_IDVS_ALL);
+   } else if (info->vs.idvs) {
       bi_compile_variant(nir, inputs, binary, info, BI_IDVS_POSITION);
       bi_compile_variant(nir, inputs, binary, info, BI_IDVS_VARYING);
    } else {

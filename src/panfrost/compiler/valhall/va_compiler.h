@@ -67,6 +67,7 @@ va_fau_page(enum bir_fau value)
       return 1;
    case BIR_FAU_LANE_ID:
    case BIR_FAU_CORE_ID:
+   case BIR_FAU_SHADER_OUTPUT:
    case BIR_FAU_PROGRAM_COUNTER:
       return 3;
    default:

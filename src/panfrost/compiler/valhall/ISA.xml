@@ -165,7 +165,7 @@
     <value desc="Lane ID">lane_id</value>
     <reserved/>
     <value desc="Core ID">core_id</value>
-    <reserved/>
+    <value desc="Shader Output">shader_output</value>
     <reserved/>
     <reserved/>
     <reserved/>

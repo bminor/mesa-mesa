@@ -851,6 +851,9 @@ enum bi_idvs_mode {
 
    /* IDVS in use. Compiling a varying shader */
    BI_IDVS_VARYING = 2,
+
+   /* IDVS2 in use. Compiling a deferred shader (v12+) */
+   BI_IDVS_ALL = 3,
 };
 
 typedef struct {
@@ -929,6 +932,9 @@ enum bir_fau {
    BIR_FAU_TLS_PTR = 16,
    BIR_FAU_WLS_PTR = 17,
    BIR_FAU_PROGRAM_COUNTER = 18,
+
+   /* Avalon only */
+   BIR_FAU_SHADER_OUTPUT = (1 << 9),
 
    BIR_FAU_UNIFORM = (1 << 7),
    /* Look up table on Valhall */

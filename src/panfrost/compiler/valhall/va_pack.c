@@ -104,6 +104,8 @@ va_pack_fau_special(const bi_instr *I, enum bir_fau fau)
       return VA_FAU_SPECIAL_PAGE_1_WORKGROUP_LOCAL_POINTER;
    case BIR_FAU_LANE_ID:
       return VA_FAU_SPECIAL_PAGE_3_LANE_ID;
+   case BIR_FAU_SHADER_OUTPUT:
+      return VA_FAU_SPECIAL_PAGE_3_SHADER_OUTPUT;
    case BIR_FAU_PROGRAM_COUNTER:
       return VA_FAU_SPECIAL_PAGE_3_PROGRAM_COUNTER;
    case BIR_FAU_SAMPLE_POS_ARRAY:
