@@ -184,7 +184,7 @@
         "description": "panfrost: Fix group priorities in drm-shim",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2237cff1af9096fffb691dd07930dd816907dc35",
         "notes": null
