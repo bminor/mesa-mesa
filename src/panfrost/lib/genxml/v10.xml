@@ -632,14 +632,14 @@
     <field name="Opcode" size="8" start="56" type="CS Opcode" default="FINISH_FRAGMENT"/>
   </struct>
 
-  <struct name="CS ADD_IMMEDIATE32" size="2">
+  <struct name="CS ADD_IMM32" size="2">
     <field name="Immediate" size="32" start="0" type="int"/>
     <field name="Source" size="8" start="40" type="uint"/>
     <field name="Destination" size="8" start="48" type="uint"/>
     <field name="Opcode" size="8" start="56" type="CS Opcode" default="ADD_IMMEDIATE32"/>
   </struct>
 
-  <struct name="CS ADD_IMMEDIATE64" size="2">
+  <struct name="CS ADD_IMM64" size="2">
     <field name="Immediate" size="32" start="0" type="int"/>
     <field name="Source" size="8" start="40" type="uint"/>
     <field name="Destination" size="8" start="48" type="uint"/>

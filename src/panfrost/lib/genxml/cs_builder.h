@@ -1253,7 +1253,7 @@ static inline void
 cs_add32(struct cs_builder *b, struct cs_index dest, struct cs_index src,
          unsigned imm)
 {
-   cs_emit(b, ADD_IMMEDIATE32, I) {
+   cs_emit(b, ADD_IMM32, I) {
       I.destination = cs_dst32(b, dest);
       I.source = cs_src32(b, src);
       I.immediate = imm;
@@ -1264,7 +1264,7 @@ static inline void
 cs_add64(struct cs_builder *b, struct cs_index dest, struct cs_index src,
          unsigned imm)
 {
-   cs_emit(b, ADD_IMMEDIATE64, I) {
+   cs_emit(b, ADD_IMM64, I) {
       I.destination = cs_dst64(b, dest);
       I.source = cs_src64(b, src);
       I.immediate = imm;

@@ -204,7 +204,7 @@ print_cs_instr(FILE *fp, const uint64_t *instr)
    }
 
    case MALI_CS_OPCODE_ADD_IMMEDIATE32: {
-      cs_unpack(instr, CS_ADD_IMMEDIATE32, I);
+      cs_unpack(instr, CS_ADD_IMM32, I);
 
       fprintf(fp, "ADD_IMMEDIATE32 r%u, r%u, #%d", I.destination, I.source,
               I.immediate);
@@ -212,7 +212,7 @@ print_cs_instr(FILE *fp, const uint64_t *instr)
    }
 
    case MALI_CS_OPCODE_ADD_IMMEDIATE64: {
-      cs_unpack(instr, CS_ADD_IMMEDIATE64, I);
+      cs_unpack(instr, CS_ADD_IMM64, I);
 
       fprintf(fp, "ADD_IMMEDIATE64 d%u, d%u, #%d", I.destination, I.source,
               I.immediate);
@@ -972,14 +972,14 @@ interpret_cs_instr(struct pandecode_context *ctx, struct queue_ctx *qctx)
    }
 
    case MALI_CS_OPCODE_ADD_IMMEDIATE32: {
-      cs_unpack(bytes, CS_ADD_IMMEDIATE32, I);
+      cs_unpack(bytes, CS_ADD_IMM32, I);
 
       qctx->regs[I.destination] = qctx->regs[I.source] + I.immediate;
       break;
    }
 
    case MALI_CS_OPCODE_ADD_IMMEDIATE64: {
-      cs_unpack(bytes, CS_ADD_IMMEDIATE64, I);
+      cs_unpack(bytes, CS_ADD_IMM64, I);
 
       int64_t value =
          (qctx->regs[I.source] | ((int64_t)qctx->regs[I.source + 1] << 32)) +
@@ -1201,13 +1201,13 @@ record_indirect_branch_target(struct cs_code_cfg *cfg,
          }
 
          case MALI_CS_OPCODE_ADD_IMMEDIATE32: {
-            cs_unpack(instr, CS_ADD_IMMEDIATE32, I);
+            cs_unpack(instr, CS_ADD_IMM32, I);
             reg_file.u32[I.destination] = reg_file.u32[I.source] + I.immediate;
             break;
          }
 
          case MALI_CS_OPCODE_ADD_IMMEDIATE64: {
-            cs_unpack(instr, CS_ADD_IMMEDIATE64, I);
+            cs_unpack(instr, CS_ADD_IMM64, I);
 
             assert(I.destination % 2 == 0 &&
                    "Destination register should be aligned to 2");
@@ -1275,7 +1275,7 @@ collect_indirect_branch_targets_recurse(struct cs_code_cfg *cfg,
       }
 
       case MALI_CS_OPCODE_ADD_IMMEDIATE32: {
-         cs_unpack(instr, CS_ADD_IMMEDIATE32, I);
+         cs_unpack(instr, CS_ADD_IMM32, I);
          if (BITSET_TEST(track_map, I.destination)) {
             BITSET_SET(track_map, I.source);
             BITSET_CLEAR(track_map, I.destination);
@@ -1284,7 +1284,7 @@ collect_indirect_branch_targets_recurse(struct cs_code_cfg *cfg,
       }
 
       case MALI_CS_OPCODE_ADD_IMMEDIATE64: {
-         cs_unpack(instr, CS_ADD_IMMEDIATE64, I);
+         cs_unpack(instr, CS_ADD_IMM64, I);
          if (BITSET_TEST(track_map, I.destination)) {
             BITSET_SET(track_map, I.source);
             BITSET_CLEAR(track_map, I.destination);
