@@ -87,54 +87,6 @@
 #define LLVMInsertBasicBlock ILLEGAL_LLVM_FUNCTION
 #define LLVMCreateBuilder ILLEGAL_LLVM_FUNCTION
 
-#if LLVM_VERSION_MAJOR >= 8
-#define GALLIVM_COROUTINES 1
-#else
-#define GALLIVM_COROUTINES 0
-#endif
-
-/* LLVM is transitioning to "opaque pointers", and as such deprecates
- * LLVMBuildGEP, LLVMBuildCall, LLVMBuildLoad, replacing them with
- * LLVMBuildGEP2, LLVMBuildCall2, LLVMBuildLoad2 respectivelly.
- * These new functions were added in LLVM 8.0; so for LLVM before 8.0 we
- * simply forward to the non-opaque-pointer variants.
- */
-#if LLVM_VERSION_MAJOR < 8
-
-static inline LLVMValueRef
-LLVMBuildGEP2(LLVMBuilderRef B, LLVMTypeRef Ty,
-              LLVMValueRef Pointer, LLVMValueRef *Indices,
-              unsigned NumIndices, const char *Name)
-{
-   return LLVMBuildGEP(B, Pointer, Indices, NumIndices, Name);
-}
-
-static inline LLVMValueRef
-LLVMBuildInBoundsGEP2(LLVMBuilderRef B, LLVMTypeRef Ty,
-                      LLVMValueRef Pointer, LLVMValueRef *Indices,
-                      unsigned NumIndices, const char *Name)
-{
-   return LLVMBuildInBoundsGEP(B, Pointer, Indices, NumIndices, Name);
-}
-
-static inline LLVMValueRef
-LLVMBuildLoad2(LLVMBuilderRef B, LLVMTypeRef Ty,
-               LLVMValueRef PointerVal, const char *Name)
-{
-  LLVMValueRef val = LLVMBuildLoad(B, PointerVal, Name);
-  return LLVMTypeOf(val) == Ty ? val : LLVMBuildBitCast(B, val, Ty, Name);
-}
-
-static inline LLVMValueRef
-LLVMBuildCall2(LLVMBuilderRef B, LLVMTypeRef Ty, LLVMValueRef Fn,
-               LLVMValueRef *Args, unsigned NumArgs,
-               const char *Name)
-{
-   return LLVMBuildCall(B, Fn, Args, NumArgs, Name);
-}
-
-#endif /* LLVM_VERSION_MAJOR < 8 */
-
 typedef struct lp_context_ref {
 #if GALLIVM_USE_ORCJIT
    LLVMOrcThreadSafeContextRef ref;

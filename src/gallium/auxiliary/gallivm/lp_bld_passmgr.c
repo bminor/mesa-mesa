@@ -32,24 +32,13 @@
 #include "lp_bld_passmgr.h"
 #include "lp_bld_init.h"
 
-#if LLVM_VERSION_MAJOR >= 15
-#define HAVE_CORO 0
-#define USE_NEW_PASS 1
-#elif LLVM_VERSION_MAJOR >= 8
-#define HAVE_CORO 1
-#define USE_NEW_PASS 0
-#else
-#define HAVE_CORO 0
-#define USE_NEW_PASS 0
-#endif
+#define USE_NEW_PASS (LLVM_VERSION_MAJOR >= 15)
 
 #if USE_NEW_PASS == 1
 #include <llvm-c/Transforms/PassBuilder.h>
-#elif HAVE_CORO == 1
+#else
 #include <llvm-c/Transforms/Scalar.h>
-#if LLVM_VERSION_MAJOR >= 7
 #include <llvm-c/Transforms/Utils.h>
-#endif
 #if LLVM_VERSION_MAJOR <= 8 && (DETECT_ARCH_AARCH64 || DETECT_ARCH_ARM || DETECT_ARCH_S390 || DETECT_ARCH_MIPS64)
 #include <llvm-c/Transforms/IPO.h>
 #endif
@@ -59,9 +48,7 @@
 #if USE_NEW_PASS == 0
 struct lp_passmgr {
    LLVMPassManagerRef passmgr;
-#if HAVE_CORO == 1
    LLVMPassManagerRef cgpassmgr;
-#endif
 };
 #else
 struct lp_passmgr;
@@ -82,16 +69,13 @@ lp_passmgr_create(LLVMModuleRef module, struct lp_passmgr **mgr_p)
       return false;
    }
 
-#if HAVE_CORO == 1
    mgr->cgpassmgr = LLVMCreatePassManager();
-#endif
    /*
     * TODO: some per module pass manager with IPO passes might be helpful -
     * the generated texture functions may benefit from inlining if they are
     * simple, or constant propagation into them, etc.
     */
 
-#if HAVE_CORO == 1
 #if LLVM_VERSION_MAJOR <= 8 && (DETECT_ARCH_AARCH64 || DETECT_ARCH_ARM || DETECT_ARCH_S390 || DETECT_ARCH_MIPS64)
    LLVMAddArgumentPromotionPass(mgr->cgpassmgr);
    LLVMAddFunctionAttrsPass(mgr->cgpassmgr);
@@ -99,7 +83,6 @@ lp_passmgr_create(LLVMModuleRef module, struct lp_passmgr **mgr_p)
    LLVMAddCoroEarlyPass(mgr->cgpassmgr);
    LLVMAddCoroSplitPass(mgr->cgpassmgr);
    LLVMAddCoroElidePass(mgr->cgpassmgr);
-#endif
 
    if ((gallivm_perf & GALLIVM_PERF_NO_OPT) == 0) {
       /*
@@ -138,9 +121,7 @@ lp_passmgr_create(LLVMModuleRef module, struct lp_passmgr **mgr_p)
        */
       LLVMAddPromoteMemoryToRegisterPass(mgr->passmgr);
    }
-#if HAVE_CORO == 1
    LLVMAddCoroCleanupPass(mgr->passmgr);
-#endif
 #endif
    *mgr_p = mgr;
    return true;
@@ -182,9 +163,7 @@ lp_passmgr_run(struct lp_passmgr *mgr,
    LLVMRunPasses(module, passes, tm, opts);
    LLVMDisposePassBuilderOptions(opts);
 #else
-#if HAVE_CORO == 1
    LLVMRunPassManager(mgr->cgpassmgr, module);
-#endif
    /* Run optimization passes */
    LLVMInitializeFunctionPassManager(mgr->passmgr);
    LLVMValueRef func;
@@ -206,6 +185,7 @@ lp_passmgr_run(struct lp_passmgr *mgr,
    }
    LLVMFinalizeFunctionPassManager(mgr->passmgr);
 #endif
+
    if (gallivm_debug & GALLIVM_DEBUG_PERF) {
       int64_t time_end = os_time_get();
       int time_msec = (int)((time_end - time_begin) / 1000);
@@ -224,12 +204,10 @@ lp_passmgr_dispose(struct lp_passmgr *mgr)
       mgr->passmgr = NULL;
    }
 
-#if HAVE_CORO == 1
    if (mgr->cgpassmgr) {
       LLVMDisposePassManager(mgr->cgpassmgr);
       mgr->cgpassmgr = NULL;
    }
-#endif
    FREE(mgr);
 #endif
 }

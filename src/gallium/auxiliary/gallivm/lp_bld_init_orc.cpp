@@ -30,9 +30,7 @@
 #include <llvm-c/Analysis.h>
 #if LLVM_VERSION_MAJOR < 17
 #include <llvm-c/Transforms/Scalar.h>
-#if LLVM_VERSION_MAJOR >= 7
 #include <llvm-c/Transforms/Utils.h>
-#endif
 #endif
 #include <llvm-c/BitWriter.h>
 

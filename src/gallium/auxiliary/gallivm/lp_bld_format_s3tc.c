@@ -467,36 +467,27 @@ lp_build_pavgb(struct lp_build_context *bld8,
    LLVMBuilderRef builder = gallivm->builder;
    assert(bld8->type.width == 8);
    assert(bld8->type.length == 16 || bld8->type.length == 32);
-   if (LLVM_VERSION_MAJOR < 6) {
-      LLVMValueRef intrargs[2];
-      char *intr_name = bld8->type.length == 32 ? "llvm.x86.avx2.pavg.b" :
-                                                  "llvm.x86.sse2.pavg.b";
-      intrargs[0] = v0;
-      intrargs[1] = v1;
-      return lp_build_intrinsic(builder, intr_name,
-                                bld8->vec_type, intrargs, 2, 0);
-   } else {
-      /*
-       * Must match llvm's autoupgrade of pavg.b intrinsic to be useful.
-       * You better hope the backend code manages to detect the pattern, and
-       * the pattern doesn't change there...
-       */
-      struct lp_type type_ext = bld8->type;
-      LLVMTypeRef vec_type_ext;
-      LLVMValueRef res;
-      LLVMValueRef ext_one;
-      type_ext.width = 16;
-      vec_type_ext = lp_build_vec_type(gallivm, type_ext);
-      ext_one = lp_build_const_vec(gallivm, type_ext, 1);
 
-      v0 = LLVMBuildZExt(builder, v0, vec_type_ext, "");
-      v1 = LLVMBuildZExt(builder, v1, vec_type_ext, "");
-      res = LLVMBuildAdd(builder, v0, v1, "");
-      res = LLVMBuildAdd(builder, res, ext_one, "");
-      res = LLVMBuildLShr(builder, res, ext_one, "");
-      res = LLVMBuildTrunc(builder, res, bld8->vec_type, "");
-      return res;
-   }
+   /*
+    * Must match llvm's autoupgrade of pavg.b intrinsic to be useful.
+    * You better hope the backend code manages to detect the pattern, and
+    * the pattern doesn't change there...
+    */
+   struct lp_type type_ext = bld8->type;
+   LLVMTypeRef vec_type_ext;
+   LLVMValueRef res;
+   LLVMValueRef ext_one;
+   type_ext.width = 16;
+   vec_type_ext = lp_build_vec_type(gallivm, type_ext);
+   ext_one = lp_build_const_vec(gallivm, type_ext, 1);
+
+   v0 = LLVMBuildZExt(builder, v0, vec_type_ext, "");
+   v1 = LLVMBuildZExt(builder, v1, vec_type_ext, "");
+   res = LLVMBuildAdd(builder, v0, v1, "");
+   res = LLVMBuildAdd(builder, res, ext_one, "");
+   res = LLVMBuildLShr(builder, res, ext_one, "");
+   res = LLVMBuildTrunc(builder, res, bld8->vec_type, "");
+   return res;
 }
 
 /**

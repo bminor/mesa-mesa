@@ -208,15 +208,9 @@ class DelegatingJITMemoryManager : public BaseMemoryManager {
       virtual void registerEHFrames(uint8_t *Addr, uint64_t LoadAddr, size_t Size) {
          mgr()->registerEHFrames(Addr, LoadAddr, Size);
       }
-#if LLVM_VERSION_MAJOR >= 5
       virtual void deregisterEHFrames() {
          mgr()->deregisterEHFrames();
       }
-#else
-      virtual void deregisterEHFrames(uint8_t *Addr, uint64_t LoadAddr, size_t Size) {
-         mgr()->deregisterEHFrames(Addr, LoadAddr, Size);
-      }
-#endif
       virtual void *getPointerToNamedFunction(const std::string &Name,
                                               bool AbortOnFailure=true) {
          return mgr()->getPointerToNamedFunction(Name, AbortOnFailure);

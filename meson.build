@@ -1736,7 +1736,7 @@ if with_amd_vk or with_gallium_radeonsi
 elif with_clc or llvm_with_orcjit
   _llvm_version = '>= 15.0.0'
 else
-  _llvm_version = '>= 5.0.0'
+  _llvm_version = '>= 8.0.0'
 endif
 
 _shared_llvm = get_option('shared-llvm') \

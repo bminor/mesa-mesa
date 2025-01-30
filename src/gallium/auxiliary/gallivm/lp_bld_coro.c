@@ -31,15 +31,6 @@
 #include "lp_bld_intr.h"
 #include "lp_bld_flow.h"
 
-#if LLVM_VERSION_MAJOR < 6
-/* not a wrapper, just lets it compile */
-static LLVMTypeRef LLVMTokenTypeInContext(LLVMContextRef C)
-{
-   assert(0);
-   return LLVMVoidTypeInContext(C);
-}
-#endif
-
 LLVMValueRef lp_build_coro_id(struct gallivm_state *gallivm)
 {
    LLVMValueRef coro_id_args[4];
