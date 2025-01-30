@@ -223,7 +223,9 @@ bi_opt_mod_prop_forward(bi_context *ctx)
 
          unsigned size = bi_opcode_props[I->op].size;
 
-         bi_fuse_small_int_to_f32(I, mod);
+         /* All small int instructions we were relying on here are gone on v11 */
+         if (ctx->arch < 11)
+            bi_fuse_small_int_to_f32(I, mod);
 
          if (bi_is_fabsneg(mod->op, size)) {
             if (mod->src[0].abs && !bi_takes_fabs(ctx->arch, I, mod->src[0], s))
