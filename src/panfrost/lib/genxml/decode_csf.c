@@ -1146,7 +1146,7 @@ record_indirect_branch_target(struct cs_code_cfg *cfg,
 {
    union {
       uint32_t u32[256];
-      uint32_t u64[256];
+      uint64_t u64[128];
    } reg_file = {0};
 
    list_add(&cur_blk->node, blk_stack);
@@ -1159,7 +1159,11 @@ record_indirect_branch_target(struct cs_code_cfg *cfg,
          switch (base.opcode) {
          case MALI_CS_OPCODE_MOVE: {
             cs_unpack(instr, CS_MOVE, I);
-            reg_file.u64[I.destination] = I.immediate;
+
+            assert(I.destination % 2 == 0 &&
+                   "Destination register should be aligned to 2");
+
+            reg_file.u64[I.destination / 2] = I.immediate;
             break;
          }
 
@@ -1177,7 +1181,14 @@ record_indirect_branch_target(struct cs_code_cfg *cfg,
 
          case MALI_CS_OPCODE_ADD_IMMEDIATE64: {
             cs_unpack(instr, CS_ADD_IMMEDIATE64, I);
-            reg_file.u64[I.destination] = reg_file.u64[I.source] + I.immediate;
+
+            assert(I.destination % 2 == 0 &&
+                   "Destination register should be aligned to 2");
+            assert(I.source % 2 == 0 &&
+                   "Source register should be aligned to 2");
+
+            reg_file.u64[I.destination / 2] =
+               reg_file.u64[I.source / 2] + I.immediate;
             break;
          }
 
@@ -1199,8 +1210,10 @@ record_indirect_branch_target(struct cs_code_cfg *cfg,
    uint64_t *instr = &cfg->instrs[ibranch->instr_idx];
    cs_unpack(instr, CS_JUMP, I);
 
+   assert(I.address % 2 == 0 && "Address register should be aligned to 2");
+
    struct cs_indirect_branch_target target = {
-      .address = reg_file.u64[I.address],
+      .address = reg_file.u64[I.address / 2],
       .length = reg_file.u32[I.length],
    };
 
