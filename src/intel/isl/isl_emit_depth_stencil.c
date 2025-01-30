@@ -99,7 +99,8 @@ isl_genX(emit_depth_stencil_hiz_s)(const struct isl_device *dev, void *batch,
    }
 
    if (info->stencil_surf) {
-      assert((info->stencil_surf->usage & ISL_SURF_USAGE_STENCIL_BIT));
+      assert(info->stencil_surf->usage & (ISL_SURF_USAGE_STENCIL_BIT |
+                                          ISL_SURF_USAGE_CPB_BIT));
       if (info->stencil_surf->dim == ISL_SURF_DIM_3D) {
          assert(info->view->base_array_layer + info->view->array_len <=
                 info->stencil_surf->logical_level0_px.depth);
@@ -264,9 +265,8 @@ isl_genX(emit_depth_stencil_hiz_s)(const struct isl_device *dev, void *batch,
       assert(info->stencil_aux_usage == ISL_AUX_USAGE_NONE ||
              info->stencil_aux_usage == ISL_AUX_USAGE_STC_CCS);
 #if GFX_VER < 20
-      sb.StencilCompressionEnable =
+      sb.ControlSurfaceEnable = sb.StencilCompressionEnable =
          info->stencil_aux_usage == ISL_AUX_USAGE_STC_CCS;
-      sb.ControlSurfaceEnable = sb.StencilCompressionEnable;
 #endif
 #elif GFX_VERx10 >= 75
       sb.StencilBufferEnable = true;
