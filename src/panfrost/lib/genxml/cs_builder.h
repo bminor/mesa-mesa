@@ -32,6 +32,19 @@
 #include "util/bitset.h"
 #include "util/u_dynarray.h"
 
+/* Before Avalon, RUN_IDVS could use a selector but as we only hardcode the same
+ * configuration, we match v12+ naming here */
+
+#if PAN_ARCH <= 11
+#define MALI_IDVS_SR_VERTEX_SRT      MALI_IDVS_SR_SRT_0
+#define MALI_IDVS_SR_FRAGMENT_SRT    MALI_IDVS_SR_SRT_2
+#define MALI_IDVS_SR_VERTEX_FAU      MALI_IDVS_SR_FAU_0
+#define MALI_IDVS_SR_FRAGMENT_FAU    MALI_IDVS_SR_FAU_2
+#define MALI_IDVS_SR_VERTEX_POS_SPD  MALI_IDVS_SR_SPD_0
+#define MALI_IDVS_SR_VERTEX_VARY_SPD MALI_IDVS_SR_SPD_1
+#define MALI_IDVS_SR_FRAGMENT_SPD    MALI_IDVS_SR_SPD_2
+#endif
+
 /*
  * cs_builder implements a builder for CSF command streams. It manages the
  * allocation and overflow behaviour of queues and provides helpers for emitting

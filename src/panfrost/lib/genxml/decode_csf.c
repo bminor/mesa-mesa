@@ -622,7 +622,8 @@ pandecode_run_idvs(struct pandecode_context *ctx, FILE *fp,
 
    /* Merge flag overrides with the register flags */
    struct mali_primitive_flags_packed tiler_flags_packed = {
-      .opaque[0] = cs_get_u32(qctx, 56) | I->flags_override,
+      .opaque[0] =
+         cs_get_u32(qctx, MALI_IDVS_SR_TILER_FLAGS) | I->flags_override,
    };
    pan_unpack(&tiler_flags_packed, PRIMITIVE_FLAGS, tiler_flags);
 
@@ -676,20 +677,22 @@ pandecode_run_idvs(struct pandecode_context *ctx, FILE *fp,
       GENX(pandecode_fau)(ctx, lo, hi, "Fragment FAU");
    }
 
-   if (cs_get_u64(qctx, 16)) {
+   if (cs_get_u64(qctx, MALI_IDVS_SR_VERTEX_POS_SPD)) {
       GENX(pandecode_shader)
-      (ctx, cs_get_u64(qctx, 16), "Position shader", qctx->gpu_id);
+      (ctx, cs_get_u64(qctx, MALI_IDVS_SR_VERTEX_POS_SPD), "Position shader",
+       qctx->gpu_id);
    }
 
    if (tiler_flags.secondary_shader) {
-      uint64_t ptr = cs_get_u64(qctx, 18);
+      uint64_t ptr = cs_get_u64(qctx, MALI_IDVS_SR_VERTEX_VARY_SPD);
 
       GENX(pandecode_shader)(ctx, ptr, "Varying shader", qctx->gpu_id);
    }
 
-   if (cs_get_u64(qctx, 20)) {
+   if (cs_get_u64(qctx, MALI_IDVS_SR_FRAGMENT_SPD)) {
       GENX(pandecode_shader)
-      (ctx, cs_get_u64(qctx, 20), "Fragment shader", qctx->gpu_id);
+      (ctx, cs_get_u64(qctx, MALI_IDVS_SR_FRAGMENT_SPD), "Fragment shader",
+       qctx->gpu_id);
    }
 
    DUMP_ADDR(ctx, LOCAL_STORAGE, cs_get_u64(qctx, reg_position_tsd),
@@ -702,42 +705,58 @@ pandecode_run_idvs(struct pandecode_context *ctx, FILE *fp,
              "Fragment Local Storage @%" PRIx64 ":\n",
              cs_get_u64(qctx, reg_frag_tsd));
 
-   pandecode_log(ctx, "Global attribute offset: %u\n", cs_get_u32(qctx, 32));
-   pandecode_log(ctx, "Index count: %u\n", cs_get_u32(qctx, 33));
-   pandecode_log(ctx, "Instance count: %u\n", cs_get_u32(qctx, 34));
+   pandecode_log(ctx, "Global attribute offset: %u\n",
+                 cs_get_u32(qctx, MALI_IDVS_SR_GLOBAL_ATTRIBUTE_OFFSET));
+   pandecode_log(ctx, "Index count: %u\n",
+                 cs_get_u32(qctx, MALI_IDVS_SR_INDEX_COUNT));
+   pandecode_log(ctx, "Instance count: %u\n",
+                 cs_get_u32(qctx, MALI_IDVS_SR_INSTANCE_COUNT));
 
    if (tiler_flags.index_type)
-      pandecode_log(ctx, "Index offset: %u\n", cs_get_u32(qctx, 35));
+      pandecode_log(ctx, "Index offset: %u\n",
+                    cs_get_u32(qctx, MALI_IDVS_SR_INDEX_OFFSET));
 
-   pandecode_log(ctx, "Vertex offset: %d\n", cs_get_u32(qctx, 36));
-   pandecode_log(ctx, "Instance offset: %u\n", cs_get_u32(qctx, 37));
-   pandecode_log(ctx, "Tiler DCD flags2: %X\n", cs_get_u32(qctx, 38));
+   pandecode_log(ctx, "Vertex offset: %d\n",
+                 cs_get_u32(qctx, MALI_IDVS_SR_VERTEX_OFFSET));
+   pandecode_log(ctx, "Instance offset: %u\n",
+                 cs_get_u32(qctx, MALI_IDVS_SR_INSTANCE_OFFSET));
+   pandecode_log(ctx, "Tiler DCD flags2: %X\n",
+                 cs_get_u32(qctx, MALI_IDVS_SR_DCD2));
 
    if (tiler_flags.index_type)
-      pandecode_log(ctx, "Index array size: %u\n", cs_get_u32(qctx, 39));
+      pandecode_log(ctx, "Index array size: %u\n",
+                    cs_get_u32(qctx, MALI_IDVS_SR_INDEX_BUFFER_SIZE));
 
-   GENX(pandecode_tiler)(ctx, cs_get_u64(qctx, 40), qctx->gpu_id);
+   GENX(pandecode_tiler)(ctx, cs_get_u64(qctx, MALI_IDVS_SR_TILER_CTX),
+                         qctx->gpu_id);
 
-   DUMP_CL(ctx, SCISSOR, &qctx->regs[42], "Scissor\n");
-   pandecode_log(ctx, "Low depth clamp: %f\n", uif(cs_get_u32(qctx, 44)));
-   pandecode_log(ctx, "High depth clamp: %f\n", uif(cs_get_u32(qctx, 45)));
-   pandecode_log(ctx, "Occlusion: %" PRIx64 "\n", cs_get_u64(qctx, 46));
+   DUMP_CL(ctx, SCISSOR, &qctx->regs[MALI_IDVS_SR_SCISSOR_BOX], "Scissor\n");
+   pandecode_log(ctx, "Low depth clamp: %f\n",
+                 uif(cs_get_u32(qctx, MALI_IDVS_SR_LOW_DEPTH_CLAMP)));
+   pandecode_log(ctx, "High depth clamp: %f\n",
+                 uif(cs_get_u32(qctx, MALI_IDVS_SR_HIGH_DEPTH_CLAMP)));
+   pandecode_log(ctx, "Occlusion: %" PRIx64 "\n",
+                 cs_get_u64(qctx, MALI_IDVS_SR_OQ));
 
    if (tiler_flags.secondary_shader)
-      pandecode_log(ctx, "Varying allocation: %u\n", cs_get_u32(qctx, 48));
+      pandecode_log(ctx, "Varying allocation: %u\n",
+                    cs_get_u32(qctx, MALI_IDVS_SR_VARY_SIZE));
 
-   uint64_t blend = cs_get_u64(qctx, 50);
+   uint64_t blend = cs_get_u64(qctx, MALI_IDVS_SR_BLEND_DESC);
    GENX(pandecode_blend_descs)(ctx, blend & ~15, blend & 15, 0, qctx->gpu_id);
 
-   DUMP_ADDR(ctx, DEPTH_STENCIL, cs_get_u64(qctx, 52), "Depth/stencil");
+   DUMP_ADDR(ctx, DEPTH_STENCIL, cs_get_u64(qctx, MALI_IDVS_SR_ZSD),
+             "Depth/stencil");
 
    if (tiler_flags.index_type)
-      pandecode_log(ctx, "Indices: %" PRIx64 "\n", cs_get_u64(qctx, 54));
+      pandecode_log(ctx, "Indices: %" PRIx64 "\n",
+                    cs_get_u64(qctx, MALI_IDVS_SR_INDEX_BUFFER));
 
    DUMP_UNPACKED(ctx, PRIMITIVE_FLAGS, tiler_flags, "Primitive flags\n");
-   DUMP_CL(ctx, DCD_FLAGS_0, &qctx->regs[57], "DCD Flags 0\n");
-   DUMP_CL(ctx, DCD_FLAGS_1, &qctx->regs[58], "DCD Flags 1\n");
-   DUMP_CL(ctx, PRIMITIVE_SIZE, &qctx->regs[60], "Primitive size\n");
+   DUMP_CL(ctx, DCD_FLAGS_0, &qctx->regs[MALI_IDVS_SR_DCD0], "DCD Flags 0\n");
+   DUMP_CL(ctx, DCD_FLAGS_1, &qctx->regs[MALI_IDVS_SR_DCD1], "DCD Flags 1\n");
+   DUMP_CL(ctx, PRIMITIVE_SIZE, &qctx->regs[MALI_IDVS_SR_PRIMITIVE_SIZE],
+           "Primitive size\n");
 
    ctx->indent--;
 }

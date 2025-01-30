@@ -403,7 +403,7 @@ update_tls(struct panvk_cmd_buffer *cmdbuf)
       cmdbuf->state.gfx.tsd = state->desc.gpu;
 
       cs_update_vt_ctx(b)
-         cs_move64_to(b, cs_sr_reg64(b, 24), state->desc.gpu);
+         cs_move64_to(b, cs_sr_reg64(b, MALI_IDVS_SR_TSD_0), state->desc.gpu);
    }
 
    state->info.tls.size =
@@ -462,7 +462,8 @@ prepare_blend(struct panvk_cmd_buffer *cmdbuf)
    panvk_per_arch(blend_emit_descs)(cmdbuf, bds);
 
    cs_update_vt_ctx(b)
-      cs_move64_to(b, cs_sr_reg64(b, 50), ptr.gpu | bd_count);
+      cs_move64_to(b, cs_sr_reg64(b, MALI_IDVS_SR_BLEND_DESC),
+                   ptr.gpu | bd_count);
 
    return VK_SUCCESS;
 }
@@ -510,7 +511,8 @@ prepare_vp(struct panvk_cmd_buffer *cmdbuf)
       }
 
       struct mali_scissor_packed *scissor_box_ptr = &scissor_box;
-      cs_move64_to(b, cs_sr_reg64(b, 42), *((uint64_t*)scissor_box_ptr));
+      cs_move64_to(b, cs_sr_reg64(b, MALI_IDVS_SR_SCISSOR_BOX),
+                   *((uint64_t *)scissor_box_ptr));
    }
 
    if (dyn_gfx_state_dirty(cmdbuf, VP_VIEWPORTS) ||
@@ -520,8 +522,10 @@ prepare_vp(struct panvk_cmd_buffer *cmdbuf)
 
       float z_min = sysvals->viewport.offset.z;
       float z_max = z_min + sysvals->viewport.scale.z;
-      cs_move32_to(b, cs_sr_reg32(b, 44), fui(MIN2(z_min, z_max)));
-      cs_move32_to(b, cs_sr_reg32(b, 45), fui(MAX2(z_min, z_max)));
+      cs_move32_to(b, cs_sr_reg32(b, MALI_IDVS_SR_LOW_DEPTH_CLAMP),
+                   fui(MIN2(z_min, z_max)));
+      cs_move32_to(b, cs_sr_reg32(b, MALI_IDVS_SR_HIGH_DEPTH_CLAMP),
+                   fui(MAX2(z_min, z_max)));
    }
 }
 
@@ -575,7 +579,8 @@ prepare_tiler_primitive_size(struct panvk_cmd_buffer *cmdbuf)
       return;
    }
 
-   cs_move32_to(b, cs_sr_reg32(b, 60), fui(primitive_size));
+   cs_move32_to(b, cs_sr_reg32(b, MALI_IDVS_SR_PRIMITIVE_SIZE),
+                fui(primitive_size));
 }
 
 static uint32_t
@@ -731,7 +736,7 @@ get_tiler_desc(struct panvk_cmd_buffer *cmdbuf)
    cmdbuf->state.gfx.render.tiler =
       simul_use ? 0xdeadbeefdeadbeefull : tiler_desc.gpu;
 
-   struct cs_index tiler_ctx_addr = cs_sr_reg64(b, 40);
+   struct cs_index tiler_ctx_addr = cs_sr_reg64(b, MALI_IDVS_SR_TILER_CTX);
 
    if (simul_use) {
       uint32_t descs_sz = calc_render_descs_size(cmdbuf);
@@ -1200,14 +1205,16 @@ prepare_vs(struct panvk_cmd_buffer *cmdbuf)
 
    cs_update_vt_ctx(b) {
       if (upd_res_table)
-         cs_move64_to(b, cs_sr_reg64(b, 0), vs_desc_state->res_table);
+         cs_move64_to(b, cs_sr_reg64(b, MALI_IDVS_SR_VERTEX_SRT),
+                      vs_desc_state->res_table);
 
       if (gfx_state_dirty(cmdbuf, VS) ||
           dyn_gfx_state_dirty(cmdbuf, IA_PRIMITIVE_TOPOLOGY))
-         cs_move64_to(b, cs_sr_reg64(b, 16), get_pos_spd(cmdbuf));
+         cs_move64_to(b, cs_sr_reg64(b, MALI_IDVS_SR_VERTEX_POS_SPD),
+                      get_pos_spd(cmdbuf));
 
       if (gfx_state_dirty(cmdbuf, VS))
-         cs_move64_to(b, cs_sr_reg64(b, 18),
+         cs_move64_to(b, cs_sr_reg64(b, MALI_IDVS_SR_VERTEX_VARY_SPD),
                       panvk_priv_mem_dev_addr(vs->spds.var));
    }
 
@@ -1237,9 +1244,10 @@ prepare_fs(struct panvk_cmd_buffer *cmdbuf)
 
    cs_update_vt_ctx(b) {
       if (fs_user_dirty(cmdbuf) || gfx_state_dirty(cmdbuf, DESC_STATE))
-         cs_move64_to(b, cs_sr_reg64(b, 4), fs ? fs_desc_state->res_table : 0);
+         cs_move64_to(b, cs_sr_reg64(b, MALI_IDVS_SR_FRAGMENT_SRT),
+                      fs ? fs_desc_state->res_table : 0);
       if (fs_user_dirty(cmdbuf))
-         cs_move64_to(b, cs_sr_reg64(b, 20),
+         cs_move64_to(b, cs_sr_reg64(b, MALI_IDVS_SR_FRAGMENT_SPD),
                       fs ? panvk_priv_mem_dev_addr(fs->spd) : 0);
    }
 
@@ -1261,7 +1269,7 @@ prepare_push_uniforms(struct panvk_cmd_buffer *cmdbuf)
          return result;
 
       cs_update_vt_ctx(b) {
-         cs_move64_to(b, cs_sr_reg64(b, 8),
+         cs_move64_to(b, cs_sr_reg64(b, MALI_IDVS_SR_VERTEX_FAU),
                       cmdbuf->state.gfx.vs.push_uniforms |
                          ((uint64_t)vs->fau.total_count << 56));
       }
@@ -1280,7 +1288,7 @@ prepare_push_uniforms(struct panvk_cmd_buffer *cmdbuf)
       }
 
       cs_update_vt_ctx(b)
-         cs_move64_to(b, cs_sr_reg64(b, 12), fau_ptr);
+         cs_move64_to(b, cs_sr_reg64(b, MALI_IDVS_SR_FRAGMENT_FAU), fau_ptr);
    }
 
    return VK_SUCCESS;
@@ -1362,7 +1370,7 @@ prepare_ds(struct panvk_cmd_buffer *cmdbuf)
    }
 
    cs_update_vt_ctx(b)
-      cs_move64_to(b, cs_sr_reg64(b, 52), zsd.gpu);
+      cs_move64_to(b, cs_sr_reg64(b, MALI_IDVS_SR_ZSD), zsd.gpu);
 
    return VK_SUCCESS;
 }
@@ -1439,7 +1447,8 @@ prepare_oq(struct panvk_cmd_buffer *cmdbuf)
 
    struct cs_builder *b =
       panvk_get_cs_builder(cmdbuf, PANVK_SUBQUEUE_VERTEX_TILER);
-   cs_move64_to(b, cs_sr_reg64(b, 46), cmdbuf->state.gfx.occlusion_query.ptr);
+   cs_move64_to(b, cs_sr_reg64(b, MALI_IDVS_SR_OQ),
+                cmdbuf->state.gfx.occlusion_query.ptr);
 
    cmdbuf->state.gfx.render.oq.last =
       cmdbuf->state.gfx.occlusion_query.syncobj;
@@ -1531,7 +1540,7 @@ prepare_dcd(struct panvk_cmd_buffer *cmdbuf)
       }
 
       cs_update_vt_ctx(b)
-         cs_move32_to(b, cs_sr_reg32(b, 57), dcd0.opaque[0]);
+         cs_move32_to(b, cs_sr_reg32(b, MALI_IDVS_SR_DCD0), dcd0.opaque[0]);
    }
 
    if (dcd1_dirty) {
@@ -1549,7 +1558,7 @@ prepare_dcd(struct panvk_cmd_buffer *cmdbuf)
       }
 
       cs_update_vt_ctx(b)
-         cs_move32_to(b, cs_sr_reg32(b, 58), dcd1.opaque[0]);
+         cs_move32_to(b, cs_sr_reg32(b, MALI_IDVS_SR_DCD1), dcd1.opaque[0]);
    }
 }
 
@@ -1565,9 +1574,9 @@ prepare_index_buffer(struct panvk_cmd_buffer *cmdbuf,
          panvk_buffer_range(cmdbuf->state.gfx.ib.buffer,
                             cmdbuf->state.gfx.ib.offset, VK_WHOLE_SIZE);
       assert(ib_size <= UINT32_MAX);
-      cs_move32_to(b, cs_sr_reg32(b, 39), ib_size);
+      cs_move32_to(b, cs_sr_reg32(b, MALI_IDVS_SR_INDEX_BUFFER_SIZE), ib_size);
 
-      cs_move64_to(b, cs_sr_reg64(b, 54),
+      cs_move64_to(b, cs_sr_reg64(b, MALI_IDVS_SR_INDEX_BUFFER),
                    panvk_buffer_gpu_ptr(cmdbuf->state.gfx.ib.buffer,
                                         cmdbuf->state.gfx.ib.offset));
    }
@@ -1627,7 +1636,8 @@ set_tiler_idvs_flags(struct cs_builder *b, struct panvk_cmd_buffer *cmdbuf,
          cfg.view_mask = cmdbuf->state.gfx.render.view_mask;
       }
 
-      cs_move32_to(b, cs_sr_reg32(b, 56), tiler_idvs_flags.opaque[0]);
+      cs_move32_to(b, cs_sr_reg32(b, MALI_IDVS_SR_TILER_FLAGS),
+                   tiler_idvs_flags.opaque[0]);
    }
 }
 
@@ -1707,13 +1717,13 @@ prepare_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
 
    cs_update_vt_ctx(b) {
       /* We don't use the resource dep system yet. */
-      cs_move32_to(b, cs_sr_reg32(b, 38), 0);
+      cs_move32_to(b, cs_sr_reg32(b, MALI_IDVS_SR_DCD2), 0);
 
       prepare_index_buffer(cmdbuf, draw);
 
       set_tiler_idvs_flags(b, cmdbuf, draw);
 
-      cs_move32_to(b, cs_sr_reg32(b, 48), varying_size);
+      cs_move32_to(b, cs_sr_reg32(b, MALI_IDVS_SR_VARY_SIZE), varying_size);
 
       result = prepare_ds(cmdbuf);
       if (result != VK_SUCCESS)
@@ -1772,16 +1782,21 @@ panvk_cmd_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
       return;
 
    cs_update_vt_ctx(b) {
-      cs_move32_to(b, cs_sr_reg32(b, 32), 0);
-      cs_move32_to(b, cs_sr_reg32(b, 33), draw->vertex.count);
-      cs_move32_to(b, cs_sr_reg32(b, 34), draw->instance.count);
-      cs_move32_to(b, cs_sr_reg32(b, 35), draw->index.offset);
-      cs_move32_to(b, cs_sr_reg32(b, 36), draw->vertex.base);
-      /* NIR expects zero-based instance ID, but even if it did have an intrinsic to
-       * load the absolute instance ID, we'd want to keep it zero-based to work around
-       * Mali's limitation on non-zero firstInstance when a instance divisor is used.
+      cs_move32_to(b, cs_sr_reg32(b, MALI_IDVS_SR_GLOBAL_ATTRIBUTE_OFFSET), 0);
+      cs_move32_to(b, cs_sr_reg32(b, MALI_IDVS_SR_INDEX_COUNT),
+                   draw->vertex.count);
+      cs_move32_to(b, cs_sr_reg32(b, MALI_IDVS_SR_INSTANCE_COUNT),
+                   draw->instance.count);
+      cs_move32_to(b, cs_sr_reg32(b, MALI_IDVS_SR_INDEX_OFFSET),
+                   draw->index.offset);
+      cs_move32_to(b, cs_sr_reg32(b, MALI_IDVS_SR_VERTEX_OFFSET),
+                   draw->vertex.base);
+      /* NIR expects zero-based instance ID, but even if it did have an
+       * intrinsic to load the absolute instance ID, we'd want to keep it
+       * zero-based to work around Mali's limitation on non-zero firstInstance
+       * when a instance divisor is used.
        */
-      cs_move32_to(b, cs_sr_reg32(b, 37), 0);
+      cs_move32_to(b, cs_sr_reg32(b, MALI_IDVS_SR_INSTANCE_OFFSET), 0);
    }
 
    struct mali_primitive_flags_packed flags_override =
@@ -1793,7 +1808,7 @@ panvk_cmd_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
    cs_req_res(b, CS_IDVS_RES);
    if (idvs_count > 1) {
       struct cs_index counter_reg = cs_scratch_reg32(b, 17);
-      struct cs_index tiler_ctx_addr = cs_sr_reg64(b, 40);
+      struct cs_index tiler_ctx_addr = cs_sr_reg64(b, MALI_IDVS_SR_TILER_CTX);
 
       cs_move32_to(b, counter_reg, idvs_count);
 
@@ -1942,10 +1957,11 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
    cs_move64_to(b, draw_params_addr, draw->indirect.buffer_dev_addr);
 
    cs_update_vt_ctx(b) {
-      cs_move32_to(b, cs_sr_reg32(b, 32), 0);
+      cs_move32_to(b, cs_sr_reg32(b, MALI_IDVS_SR_GLOBAL_ATTRIBUTE_OFFSET), 0);
       /* Load SR33-37 from indirect buffer. */
       unsigned reg_mask = draw->index.size ? 0b11111 : 0b11011;
-      cs_load_to(b, cs_sr_reg_tuple(b, 33, 5), draw_params_addr, reg_mask, 0);
+      cs_load_to(b, cs_sr_reg_tuple(b, MALI_IDVS_SR_INDEX_COUNT, 5),
+                 draw_params_addr, reg_mask, 0);
    }
 
    /* Wait for the SR33-37 indirect buffer load. */
@@ -1957,13 +1973,15 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
       cs_move64_to(b, fau_block_addr, cmdbuf->state.gfx.vs.push_uniforms);
 
       if (shader_uses_sysval(vs, graphics, vs.first_vertex)) {
-         cs_store32(b, cs_sr_reg32(b, 36), fau_block_addr,
+         cs_store32(b, cs_sr_reg32(b, MALI_IDVS_SR_VERTEX_OFFSET),
+                    fau_block_addr,
                     shader_remapped_sysval_offset(
                        vs, sysval_offset(graphics, vs.first_vertex)));
       }
 
       if (shader_uses_sysval(vs, graphics, vs.base_instance)) {
-         cs_store32(b, cs_sr_reg32(b, 37), fau_block_addr,
+         cs_store32(b, cs_sr_reg32(b, MALI_IDVS_SR_INSTANCE_OFFSET),
+                    fau_block_addr,
                     shader_remapped_sysval_offset(
                        vs, sysval_offset(graphics, vs.base_instance)));
       }
@@ -1978,7 +1996,7 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
     * Mali's limitation on non-zero firstInstance when a instance divisor is used.
     */
    cs_update_vt_ctx(b)
-      cs_move32_to(b, cs_sr_reg32(b, 37), 0);
+      cs_move32_to(b, cs_sr_reg32(b, MALI_IDVS_SR_INSTANCE_OFFSET), 0);
 
    struct mali_primitive_flags_packed flags_override =
       get_tiler_flags_override(draw);

@@ -1070,44 +1070,49 @@ csf_emit_draw_state(struct panfrost_batch *batch,
       csf_emit_shader_regs(batch, PIPE_SHADER_FRAGMENT,
                            batch->rsd[PIPE_SHADER_FRAGMENT]);
    } else {
-      cs_move64_to(b, cs_reg64(b, 4), 0);
-      cs_move64_to(b, cs_reg64(b, 12), 0);
-      cs_move64_to(b, cs_reg64(b, 20), 0);
+      cs_move64_to(b, cs_reg64(b, MALI_IDVS_SR_FRAGMENT_SRT), 0);
+      cs_move64_to(b, cs_reg64(b, MALI_IDVS_SR_FRAGMENT_FAU), 0);
+      cs_move64_to(b, cs_reg64(b, MALI_IDVS_SR_FRAGMENT_SPD), 0);
    }
 
    if (secondary_shader) {
-      cs_move64_to(b, cs_reg64(b, 18), panfrost_get_varying_shader(batch));
+      cs_move64_to(b, cs_reg64(b, MALI_IDVS_SR_VERTEX_VARY_SPD),
+                   panfrost_get_varying_shader(batch));
    }
 
-   cs_move64_to(b, cs_reg64(b, 24), batch->tls.gpu);
-   cs_move64_to(b, cs_reg64(b, 30), batch->tls.gpu);
-   cs_move32_to(b, cs_reg32(b, 32), 0);
-   cs_move32_to(b, cs_reg32(b, 37), 0);
-   cs_move32_to(b, cs_reg32(b, 38), 0);
+   cs_move64_to(b, cs_reg64(b, MALI_IDVS_SR_TSD_0), batch->tls.gpu);
+   cs_move64_to(b, cs_reg64(b, MALI_IDVS_SR_TSD_3), batch->tls.gpu);
+   cs_move32_to(b, cs_reg32(b, MALI_IDVS_SR_GLOBAL_ATTRIBUTE_OFFSET), 0);
+   cs_move32_to(b, cs_reg32(b, MALI_IDVS_SR_INSTANCE_OFFSET), 0);
+   cs_move32_to(b, cs_reg32(b, MALI_IDVS_SR_DCD2), 0);
 
-   cs_move64_to(b, cs_reg64(b, 40), csf_get_tiler_desc(batch));
+   cs_move64_to(b, cs_reg64(b, MALI_IDVS_SR_TILER_CTX),
+                csf_get_tiler_desc(batch));
 
    STATIC_ASSERT(sizeof(batch->scissor) == pan_size(SCISSOR));
    STATIC_ASSERT(sizeof(uint64_t) == pan_size(SCISSOR));
    uint64_t *sbd = (uint64_t *)&batch->scissor[0];
-   cs_move64_to(b, cs_reg64(b, 42), *sbd);
+   cs_move64_to(b, cs_reg64(b, MALI_IDVS_SR_SCISSOR_BOX), *sbd);
 
-   cs_move32_to(b, cs_reg32(b, 44), fui(batch->minimum_z));
-   cs_move32_to(b, cs_reg32(b, 45), fui(batch->maximum_z));
+   cs_move32_to(b, cs_reg32(b, MALI_IDVS_SR_LOW_DEPTH_CLAMP),
+                fui(batch->minimum_z));
+   cs_move32_to(b, cs_reg32(b, MALI_IDVS_SR_HIGH_DEPTH_CLAMP),
+                fui(batch->maximum_z));
 
    if (ctx->occlusion_query && ctx->active_queries) {
       struct panfrost_resource *rsrc = pan_resource(ctx->occlusion_query->rsrc);
-      cs_move64_to(b, cs_reg64(b, 46), rsrc->image.data.base);
+      cs_move64_to(b, cs_reg64(b, MALI_IDVS_SR_OQ), rsrc->image.data.base);
       panfrost_batch_write_rsrc(ctx->batch, rsrc, PIPE_SHADER_FRAGMENT);
    }
 
-   cs_move32_to(b, cs_reg32(b, 48), panfrost_vertex_attribute_stride(vs, fs));
-   cs_move64_to(b, cs_reg64(b, 50),
+   cs_move32_to(b, cs_reg32(b, MALI_IDVS_SR_VARY_SIZE),
+                panfrost_vertex_attribute_stride(vs, fs));
+   cs_move64_to(b, cs_reg64(b, MALI_IDVS_SR_BLEND_DESC),
                 batch->blend | MAX2(batch->key.nr_cbufs, 1));
-   cs_move64_to(b, cs_reg64(b, 52), batch->depth_stencil);
+   cs_move64_to(b, cs_reg64(b, MALI_IDVS_SR_ZSD), batch->depth_stencil);
 
    if (info->index_size)
-      cs_move64_to(b, cs_reg64(b, 54), batch->indices);
+      cs_move64_to(b, cs_reg64(b, MALI_IDVS_SR_INDEX_BUFFER), batch->indices);
 
    struct pipe_rasterizer_state *rast = &ctx->rasterizer->base;
 
@@ -1130,7 +1135,8 @@ csf_emit_draw_state(struct panfrost_batch *batch,
                                     : MALI_FIFO_FORMAT_BASIC;
    }
 
-   cs_move32_to(b, cs_reg32(b, 56), primitive_flags.opaque[0]);
+   cs_move32_to(b, cs_reg32(b, MALI_IDVS_SR_TILER_FLAGS),
+                primitive_flags.opaque[0]);
 
    struct mali_dcd_flags_0_packed dcd_flags0;
    struct mali_dcd_flags_1_packed dcd_flags1;
@@ -1240,14 +1246,15 @@ csf_emit_draw_state(struct panfrost_batch *batch,
       }
    }
 
-   cs_move32_to(b, cs_reg32(b, 57), dcd_flags0.opaque[0]);
-   cs_move32_to(b, cs_reg32(b, 58), dcd_flags1.opaque[0]);
+   cs_move32_to(b, cs_reg32(b, MALI_IDVS_SR_DCD0), dcd_flags0.opaque[0]);
+   cs_move32_to(b, cs_reg32(b, MALI_IDVS_SR_DCD1), dcd_flags1.opaque[0]);
 
    struct mali_primitive_size_packed primsize;
    panfrost_emit_primitive_size(ctx, info->mode == MESA_PRIM_POINTS, 0,
                                 &primsize);
    struct mali_primitive_size_packed *primsize_ptr = &primsize;
-   cs_move64_to(b, cs_reg64(b, 60), *((uint64_t*)primsize_ptr));
+   cs_move64_to(b, cs_reg64(b, MALI_IDVS_SR_PRIMITIVE_SIZE),
+                *((uint64_t *)primsize_ptr));
 
    struct mali_primitive_flags_packed flags_override;
    /* Pack with nodefaults so only explicitly set override fields affect the
@@ -1288,19 +1295,22 @@ GENX(csf_launch_draw)(struct panfrost_batch *batch,
    uint32_t flags_override = csf_emit_draw_state(batch, info, drawid_offset);
    struct cs_index drawid = csf_emit_draw_id_register(batch, drawid_offset);
 
-   cs_move32_to(b, cs_reg32(b, 33), draw->count);
-   cs_move32_to(b, cs_reg32(b, 34), info->instance_count);
-   cs_move32_to(b, cs_reg32(b, 35), 0);
+   cs_move32_to(b, cs_reg32(b, MALI_IDVS_SR_INDEX_COUNT), draw->count);
+   cs_move32_to(b, cs_reg32(b, MALI_IDVS_SR_INSTANCE_COUNT),
+                info->instance_count);
+   cs_move32_to(b, cs_reg32(b, MALI_IDVS_SR_INSTANCE_OFFSET), 0);
 
    /* Base vertex offset on Valhall is used for both indexed and
     * non-indexed draws, in a simple way for either. Handle both cases.
     */
    if (info->index_size) {
-      cs_move32_to(b, cs_reg32(b, 36), draw->index_bias);
-      cs_move32_to(b, cs_reg32(b, 39), info->index_size * draw->count);
+      cs_move32_to(b, cs_reg32(b, MALI_IDVS_SR_VERTEX_OFFSET),
+                   draw->index_bias);
+      cs_move32_to(b, cs_reg32(b, MALI_IDVS_SR_INDEX_BUFFER_SIZE),
+                   info->index_size * draw->count);
    } else {
-      cs_move32_to(b, cs_reg32(b, 36), draw->start);
-      cs_move32_to(b, cs_reg32(b, 39), 0);
+      cs_move32_to(b, cs_reg32(b, MALI_IDVS_SR_VERTEX_OFFSET), draw->start);
+      cs_move32_to(b, cs_reg32(b, MALI_IDVS_SR_INDEX_BUFFER_SIZE), 0);
    }
 
    cs_run_idvs(b, flags_override, false, true, cs_shader_res_sel(0, 0, 1, 0),
@@ -1328,16 +1338,20 @@ GENX(csf_launch_draw_indirect)(struct panfrost_batch *batch,
    cs_while(b, MALI_CS_CONDITION_GREATER, counter) {
       if (info->index_size) {
          /* loads vertex count, instance count, index offset, vertex offset */
-         cs_load_to(b, cs_reg_tuple(b, 33, 4), address, BITFIELD_MASK(4), 0);
-         cs_move32_to(b, cs_reg32(b, 39), info->index.resource->width0);
+         cs_load_to(b, cs_reg_tuple(b, MALI_IDVS_SR_INDEX_COUNT, 4), address,
+                    BITFIELD_MASK(4), 0);
+         cs_move32_to(b, cs_reg32(b, MALI_IDVS_SR_INDEX_BUFFER_SIZE),
+                      info->index.resource->width0);
       } else {
          /* vertex count, instance count */
-         cs_load_to(b, cs_reg_tuple(b, 33, 2), address, BITFIELD_MASK(2), 0);
-         cs_move32_to(b, cs_reg32(b, 35), 0);
-         cs_load_to(b, cs_reg_tuple(b, 36, 1), address, BITFIELD_MASK(1),
+         cs_load_to(b, cs_reg_tuple(b, MALI_IDVS_SR_INDEX_COUNT, 2), address,
+                    BITFIELD_MASK(2), 0);
+         cs_move32_to(b, cs_reg32(b, MALI_IDVS_SR_INDEX_OFFSET), 0);
+         cs_load_to(b, cs_reg_tuple(b, MALI_IDVS_SR_VERTEX_OFFSET, 1), address,
+                    BITFIELD_MASK(1),
                     2 * sizeof(uint32_t)); // instance offset
-         cs_move32_to(b, cs_reg32(b, 37), 0);
-         cs_move32_to(b, cs_reg32(b, 39), 0);
+         cs_move32_to(b, cs_reg32(b, MALI_IDVS_SR_INSTANCE_OFFSET), 0);
+         cs_move32_to(b, cs_reg32(b, MALI_IDVS_SR_INDEX_BUFFER_SIZE), 0);
       }
 
       cs_wait_slot(b, 0, false);

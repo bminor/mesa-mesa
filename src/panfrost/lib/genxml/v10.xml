@@ -840,6 +840,46 @@
     <field name="Opcode" size="8" start="56" type="CS Opcode" default="SYNC_WAIT64"/>
   </struct>
 
+  <enum name="IDVS SR">
+    <value name="SRT_0" value="0"/>
+    <value name="SRT_1" value="2"/>
+    <value name="SRT_2" value="4"/>
+    <value name="SRT_3" value="6"/>
+    <value name="FAU_0" value="8"/>
+    <value name="FAU_1" value="10"/>
+    <value name="FAU_2" value="12"/>
+    <value name="FAU_3" value="14"/>
+    <value name="SPD_0" value="16"/>
+    <value name="SPD_1" value="18"/>
+    <value name="SPD_2" value="20"/>
+    <value name="SPD_3" value="22"/>
+    <value name="TSD_0" value="24"/>
+    <value name="TSD_1" value="26"/>
+    <value name="TSD_2" value="28"/>
+    <value name="TSD_3" value="30"/>
+    <value name="GLOBAL_ATTRIBUTE_OFFSET" value="32"/>
+    <value name="INDEX_COUNT" value="33"/>
+    <value name="INSTANCE_COUNT" value="34"/>
+    <value name="INDEX_OFFSET" value="35"/>
+    <value name="VERTEX_OFFSET" value="36"/>
+    <value name="INSTANCE_OFFSET" value="37"/>
+    <value name="DCD2" value="38"/>
+    <value name="INDEX_BUFFER_SIZE" value="39"/>
+    <value name="TILER_CTX" value="40"/>
+    <value name="SCISSOR_BOX" value="42"/>
+    <value name="LOW_DEPTH_CLAMP" value="44"/>
+    <value name="HIGH_DEPTH_CLAMP" value="45"/>
+    <value name="OQ" value="46"/>
+    <value name="VARY_SIZE" value="48"/>
+    <value name="BLEND_DESC" value="50"/>
+    <value name="ZSD" value="52"/>
+    <value name="INDEX_BUFFER" value="54"/>
+    <value name="TILER_FLAGS" value="56"/>
+    <value name="DCD0" value="57"/>
+    <value name="DCD1" value="58"/>
+    <value name="PRIMITIVE_SIZE" value="60"/>
+  </enum>
+
   <struct name="Attribute" size="8" align="32">
     <field name="Type" size="4" start="0:0" type="Descriptor Type" default="Attribute"/>
     <field name="Attribute type" size="4" start="0:4" type="Attribute Type"/>
