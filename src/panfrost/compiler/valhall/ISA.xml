@@ -1793,6 +1793,7 @@
     <ins name="FADD.f32" opcode="0xA4"/>
     <ins name="FADD.v2f16" opcode="0xA5"/>
     <desc>$A + B$</desc>
+    <roundmode/>
     <clamp/>
     <src absneg="true" swizzle="true">A</src>
     <src absneg="true" swizzle="true">B</src>
