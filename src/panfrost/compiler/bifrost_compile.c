@@ -2071,11 +2071,19 @@ bi_emit_intrinsic(bi_builder *b, nir_intrinsic_instr *instr)
       bi_load_sample_id_to(b, dst);
       break;
 
-   case nir_intrinsic_load_front_face:
-      /* r58 == 0 means primitive is front facing */
-      bi_icmp_i32_to(b, dst, bi_preload(b, 58), bi_zero(), BI_CMPF_EQ,
+   case nir_intrinsic_load_front_face: {
+      /* (r58 & 1) == 0 means primitive is front facing */
+      bi_index primitive_facing = bi_preload(b, 58);
+
+      /* Starting with v11, there is more fields defined in the primitive flags */
+      if (b->shader->arch >= 11)
+         primitive_facing =
+            bi_lshift_and_i32(b, primitive_facing, bi_imm_u32(1), bi_imm_u8(0));
+
+      bi_icmp_i32_to(b, dst, primitive_facing, bi_zero(), BI_CMPF_EQ,
                      BI_RESULT_TYPE_M1);
       break;
+   }
 
    case nir_intrinsic_load_point_coord:
       bi_ld_var_special_to(b, dst, bi_zero(), BI_REGISTER_FORMAT_F32,
