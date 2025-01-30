@@ -5,7 +5,7 @@
 subdir('genxml')
 subdir('kmod')
 
-pixel_format_versions = ['5', '6', '7', '9', '10']
+pixel_format_versions = ['5', '6', '7', '9', '10', '12']
 libpanfrost_pixel_format = []
 
 deps_for_libpanfrost = [dep_libdrm, idep_pan_packers, idep_mesautil]
@@ -23,7 +23,7 @@ endforeach
 
 libpanfrost_per_arch = []
 
-foreach ver : ['4', '5', '6', '7', '9', '10']
+foreach ver : ['4', '5', '6', '7', '9', '10', '12']
   libpanfrost_per_arch += static_library(
     'pan-arch-v' + ver,
     [
