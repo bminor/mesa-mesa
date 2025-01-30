@@ -969,7 +969,7 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
       .depthClipEnable = true,
 
       /* VK_KHR_compute_shader_derivatives */
-      .computeDerivativeGroupQuads = false,
+      .computeDerivativeGroupQuads = pdev->info.gfx_level >= GFX12,
       .computeDerivativeGroupLinear = true,
 
       /* VK_EXT_ycbcr_image_arrays */
