@@ -1114,6 +1114,18 @@ zink_init_screen_caps(struct zink_screen *screen)
    caps->post_depth_coverage = screen->info.have_EXT_post_depth_coverage;
 
    caps->cl_gl_sharing = caps->dmabuf && screen->info.have_KHR_external_semaphore_fd;
+   switch (zink_driverid(screen)) {
+   case VK_DRIVER_ID_INTEL_OPEN_SOURCE_MESA:
+      caps->linear_image_pitch_alignment = 1;
+      break;
+   /* AMD requires 256 */
+   case VK_DRIVER_ID_AMD_PROPRIETARY:
+   case VK_DRIVER_ID_MESA_RADV:
+   default:
+      caps->linear_image_pitch_alignment = 256;
+      break;
+   }
+   caps->linear_image_base_address_alignment = 1;
 
    caps->string_marker = screen->instance_info->have_EXT_debug_utils;
 

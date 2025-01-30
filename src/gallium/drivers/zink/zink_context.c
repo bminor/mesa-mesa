@@ -1106,6 +1106,38 @@ viewtype_is_cube(const VkImageViewCreateInfo *ivci)
           ivci->viewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
 }
 
+static struct pipe_resource *
+rebind_buffer_as_image(struct pipe_context *pctx, struct pipe_resource *pres, enum pipe_format pformat, const struct pipe_tex2d_from_buf *tex2d, bool storage)
+{
+   struct winsys_handle whandle = {.type = WINSYS_HANDLE_TYPE_FD,};
+   unsigned bind = storage ? PIPE_BIND_SHADER_IMAGE : PIPE_BIND_SAMPLER_VIEW;
+   if (zink_resource_usage_is_unflushed(zink_resource(pres)))
+      pctx->flush(pctx, NULL, 0);
+   if (!pctx->screen->resource_get_handle(pctx->screen, pctx, pres, &whandle, 0))
+      abort();
+   struct pipe_resource tmpl = {
+      .format = pformat,
+      .target = PIPE_TEXTURE_2D,
+      .bind = PIPE_BIND_LINEAR | bind,
+      .width0 = tex2d->width,
+      .height0 = tex2d->height,
+      .depth0 = 1,
+      .array_size = 1,
+   };
+   whandle.offset = tex2d->offset;
+   whandle.stride = util_format_get_stride(pformat, tex2d->row_stride);
+   whandle.modifier = 0;
+
+   struct pipe_resource *import = pctx->screen->resource_from_handle(pctx->screen, &tmpl, &whandle, 0);
+   if (import)
+      /* this isn't actually used cross-process, so don't emit extra sync */
+      zink_resource(import)->obj->exportable = false;
+#if !defined(_WIN32)
+   close(whandle.handle);
+#endif
+   return import;
+}
+
 static struct pipe_sampler_view *
 zink_create_sampler_view(struct pipe_context *pctx, struct pipe_resource *pres,
                          const struct pipe_sampler_view *state)
@@ -1114,6 +1146,7 @@ zink_create_sampler_view(struct pipe_context *pctx, struct pipe_resource *pres,
    struct zink_resource *res = zink_resource(pres);
    struct zink_context *ctx = zink_context(pctx);
    struct zink_sampler_view *sampler_view = CALLOC_STRUCT_CL(zink_sampler_view);
+   enum pipe_texture_target target = state->is_tex2d_from_buf ? PIPE_TEXTURE_2D : state->target;
    bool err;
 
    if (!sampler_view) {
@@ -1127,16 +1160,24 @@ zink_create_sampler_view(struct pipe_context *pctx, struct pipe_resource *pres,
    sampler_view->base.reference.count = 1;
    sampler_view->base.context = pctx;
 
-   if (state->target != PIPE_BUFFER) {
+   if (target != PIPE_BUFFER) {
       VkImageViewCreateInfo ivci;
 
+      if (state->is_tex2d_from_buf) {
+         struct pipe_resource *import = rebind_buffer_as_image(pctx, pres, state->format, &state->u.tex2d_from_buf, false);
+         assert(import);
+         sampler_view->import2d = zink_resource(import);
+         res = sampler_view->import2d;
+         pres = import;
+      }
       struct pipe_surface templ = {0};
-      templ.u.tex.level = state->u.tex.first_level;
+      if (!state->is_tex2d_from_buf)
+         templ.u.tex.level = state->u.tex.first_level;
       templ.format = state->format;
       /* avoid needing mutable for depth/stencil sampling */
       if (util_format_is_depth_and_stencil(pres->format))
          templ.format = pres->format;
-      if (state->target != PIPE_TEXTURE_3D) {
+      if (target != PIPE_TEXTURE_3D && !state->is_tex2d_from_buf) {
          templ.u.tex.first_layer = state->u.tex.first_layer;
          templ.u.tex.last_layer = state->u.tex.last_layer;
       }
@@ -1148,8 +1189,8 @@ zink_create_sampler_view(struct pipe_context *pctx, struct pipe_resource *pres,
          }
       }
 
-      ivci = create_ivci(screen, res, &templ, state->target);
-      ivci.subresourceRange.levelCount = state->u.tex.last_level - state->u.tex.first_level + 1;
+      ivci = create_ivci(screen, res, &templ, target);
+      ivci.subresourceRange.levelCount = state->is_tex2d_from_buf ? 1 : (state->u.tex.last_level - state->u.tex.first_level + 1);
       ivci.subresourceRange.aspectMask = util_format_is_depth_or_stencil(state->format) ? sampler_aspect_from_format(state->format) : res->aspect;
       bool red_depth_sampler_view = false;
       /* samplers for stencil aspects of packed formats need to always use stencil swizzle */
@@ -1294,7 +1335,7 @@ zink_sampler_view_destroy(struct pipe_context *pctx,
                           struct pipe_sampler_view *pview)
 {
    struct zink_sampler_view *view = zink_sampler_view(pview);
-   if (pview->texture->target == PIPE_BUFFER) {
+   if (pview->texture->target == PIPE_BUFFER && !view->import2d) {
       if (zink_descriptor_mode != ZINK_DESCRIPTOR_MODE_DB)
          zink_buffer_view_reference(zink_screen(pctx->screen), &view->buffer_view, NULL);
    } else {
@@ -1302,6 +1343,7 @@ zink_sampler_view_destroy(struct pipe_context *pctx,
       zink_surface_reference(zink_screen(pctx->screen), &view->cube_array, NULL);
       zink_surface_reference(zink_screen(pctx->screen), &view->zs_view, NULL);
    }
+   zink_resource_reference(&view->import2d, NULL);
    pipe_resource_reference(&pview->texture, NULL);
    FREE_CL(view);
 }
@@ -1834,7 +1876,12 @@ unbind_shader_image(struct zink_context *ctx, gl_shader_stage stage, unsigned sl
    if (!res->write_bind_count[is_compute])
       res->barrier_access[stage == MESA_SHADER_COMPUTE] &= ~VK_ACCESS_SHADER_WRITE_BIT;
    
-   if (image_view->base.resource->target == PIPE_BUFFER) {
+   if (image_view->import2d) {
+      unbind_buffer_descriptor_stage(res, stage);
+      unbind_buffer_descriptor_reads(res, stage == MESA_SHADER_COMPUTE);
+      _mesa_set_remove_key(ctx->need_barriers[is_compute], image_view->import2d);
+      zink_surface_reference(zink_screen(ctx->base.screen), &image_view->surface, NULL);
+   } else if (image_view->base.resource->target == PIPE_BUFFER) {
       unbind_buffer_descriptor_stage(res, stage);
       unbind_buffer_descriptor_reads(res, stage == MESA_SHADER_COMPUTE);
       zink_buffer_view_reference(zink_screen(ctx->base.screen), &image_view->buffer_view, NULL);
@@ -1849,6 +1896,7 @@ unbind_shader_image(struct zink_context *ctx, gl_shader_stage stage, unsigned sl
    }
    image_view->base.resource = NULL;
    image_view->surface = NULL;
+   image_view->import2d = NULL;
 }
 
 static struct zink_buffer_view *
@@ -1886,15 +1934,25 @@ static struct zink_surface *
 create_image_surface(struct zink_context *ctx, const struct pipe_image_view *view, bool is_compute)
 {
    struct zink_screen *screen = zink_screen(ctx->base.screen);
-   struct zink_resource *res = zink_resource(view->resource);
+   struct pipe_resource *pres = view->resource;
+   struct zink_resource *res = zink_resource(pres);
    struct pipe_surface tmpl = {0};
-   enum pipe_texture_target target = res->base.b.target;
+   bool tex2d_from_buf = view->access & PIPE_IMAGE_ACCESS_TEX2D_FROM_BUFFER;
+   enum pipe_texture_target target = tex2d_from_buf ? PIPE_TEXTURE_2D : res->base.b.target;
+   unsigned depth = 1, z = 0;
    tmpl.format = view->format;
-   tmpl.u.tex.level = view->u.tex.level;
-   tmpl.u.tex.first_layer = view->u.tex.first_layer;
-   tmpl.u.tex.last_layer = view->u.tex.last_layer;
-   unsigned depth = 1 + tmpl.u.tex.last_layer - tmpl.u.tex.first_layer;
-   unsigned z = tmpl.u.tex.first_layer;
+   if (tex2d_from_buf) {
+      struct pipe_resource *import = rebind_buffer_as_image(&ctx->base, pres, view->format, &view->u.tex2d_from_buf, true);
+      assert(import);
+      res = zink_resource(import);
+      pres = import;
+   } else {
+      tmpl.u.tex.level = view->u.tex.level;
+      tmpl.u.tex.first_layer = view->u.tex.first_layer;
+      tmpl.u.tex.last_layer = view->u.tex.last_layer;
+      depth += tmpl.u.tex.last_layer - tmpl.u.tex.first_layer;
+      z = tmpl.u.tex.first_layer;
+   }
    switch (target) {
    case PIPE_TEXTURE_3D:
       if (depth < u_minify(res->base.b.depth0, view->u.tex.level)) {
@@ -1917,15 +1975,17 @@ create_image_surface(struct zink_context *ctx, const struct pipe_image_view *vie
       break;
    default: break;
    }
-   if (zink_format_needs_mutable(view->resource->format, view->format))
+   if (zink_format_needs_mutable(pres->format, view->format))
       /* mutable not set by default */
       zink_resource_object_init_mutable(ctx, res);
    VkImageViewCreateInfo ivci = create_ivci(screen, res, &tmpl, target);
-   struct zink_surface *surface = zink_get_surface(ctx, view->resource, &tmpl, &ivci);
+   struct zink_surface *surface = zink_get_surface(ctx, pres, &tmpl, &ivci);
    if (!surface)
       return NULL;
    if (is_compute)
       flush_pending_clears(ctx, res, z, depth);
+   if (tex2d_from_buf)
+      pipe_resource_reference(&pres, NULL);
    return surface;
 }
 
@@ -1955,6 +2015,7 @@ zink_set_shader_images(struct pipe_context *pctx,
       struct zink_image_view *a = &ctx->image_views[shader_type][start_slot + i];
       const struct pipe_image_view *b = images ? &images[i] : NULL;
       struct zink_resource *res = b ? zink_resource(b->resource) : NULL;
+      bool tex2d_from_buf = b && b->access & PIPE_IMAGE_ACCESS_TEX2D_FROM_BUFFER;
       if (b && b->resource) {
          if (!zink_resource_object_init_storage(ctx, res)) {
             debug_printf("couldn't create storage image!");
@@ -1975,8 +2036,11 @@ zink_set_shader_images(struct pipe_context *pctx,
             changed = true;
             unbind_shader_image(ctx, shader_type, start_slot + i);
             bind_shaderimage_resource_stage(ctx, b, res, is_compute);
-            /* db mode refcounts these */
-            if (zink_descriptor_mode == ZINK_DESCRIPTOR_MODE_DB && b->resource->target == PIPE_BUFFER)
+            if (b->resource->target == PIPE_BUFFER &&
+                 /* db mode refcounts these */
+                (zink_descriptor_mode == ZINK_DESCRIPTOR_MODE_DB ||
+                 /* this path refcounts the import2d resource but not the base */
+                 tex2d_from_buf))
                pipe_resource_reference(&a->base.resource, b->resource);
          } else {
             /* resource matches: check for write flag change and partial rebind */
@@ -1994,7 +2058,9 @@ zink_set_shader_images(struct pipe_context *pctx,
             /* this may need a partial rebind */
             changed = a->base.format != b->format || zink_resource(a->base.resource)->obj != res->obj;
             if (!changed) {
-               if (b->resource->target == PIPE_BUFFER) {
+               if (tex2d_from_buf) {
+                  changed = !!memcmp(&a->base.u.tex2d_from_buf, &b->u.tex2d_from_buf, sizeof(b->u.tex2d_from_buf));
+               } else if (b->resource->target == PIPE_BUFFER) {
                   /* db mode has no partial rebind */
                   if (zink_descriptor_mode != ZINK_DESCRIPTOR_MODE_DB)
                      changed = !!memcmp(&a->base.u.buf, &b->u.buf, sizeof(b->u.buf));
@@ -2009,7 +2075,7 @@ zink_set_shader_images(struct pipe_context *pctx,
 
          if (changed) {
             /* this is a partial rebind */
-            if (b->resource->target == PIPE_BUFFER) {
+            if (b->resource->target == PIPE_BUFFER && !tex2d_from_buf) {
                /* db has no partial rebind */
                if (zink_descriptor_mode != ZINK_DESCRIPTOR_MODE_DB) {
                   /* bufferview rebind: get updated bufferview and unref old one */
@@ -2026,6 +2092,10 @@ zink_set_shader_images(struct pipe_context *pctx,
                /* identical rebind was already checked above */
                assert(surface && surface != a->surface);
                zink_surface_reference(screen, &a->surface, NULL);
+               if (tex2d_from_buf) {
+                  a->import2d = zink_resource(surface->base.texture);
+                  bind_shaderimage_resource_stage(ctx, b, a->import2d, is_compute);
+               }
                /* ref already added by create */
                a->surface = surface;
             }
@@ -2034,7 +2104,20 @@ zink_set_shader_images(struct pipe_context *pctx,
          /* these operations occur regardless of binding/rebinding */
          res->gfx_barrier |= zink_pipeline_flags_from_pipe_stage(shader_type);
          res->barrier_access[is_compute] |= access;
-         if (b->resource->target == PIPE_BUFFER) {
+         if (tex2d_from_buf) {
+            a->import2d->gfx_barrier |= zink_pipeline_flags_from_pipe_stage(shader_type);
+            a->import2d->barrier_access[is_compute] |= access;
+            screen->buffer_barrier(ctx, res, access,
+                                         res->gfx_barrier);
+            zink_batch_resource_usage_set(ctx->bs, res,
+                                          zink_resource_access_is_write(access), true);
+            finalize_image_bind(ctx, a->import2d, is_compute);
+            zink_batch_resource_usage_set(ctx->bs, a->import2d,
+                                          zink_resource_access_is_write(access), false);
+            if (zink_resource_access_is_write(access))
+               res->obj->unordered_write = false;
+            res->obj->unordered_read = false;
+         } else if (b->resource->target == PIPE_BUFFER) {
             screen->buffer_barrier(ctx, res, access,
                                          res->gfx_barrier);
             zink_batch_resource_usage_set(ctx->bs, res,
@@ -2048,18 +2131,20 @@ zink_set_shader_images(struct pipe_context *pctx,
                                           zink_resource_access_is_write(access), false);
          }
          memcpy(&a->base, images + i, sizeof(struct pipe_image_view));
-         if (b->resource->target == PIPE_BUFFER) {
+         if (b->resource->target == PIPE_BUFFER && !tex2d_from_buf) {
             /* always enforce limit clamping */
             unsigned blocksize = util_format_get_blocksize(a->base.format);
             a->base.u.buf.size = MIN2(a->base.u.buf.size / blocksize, screen->info.props.limits.maxTexelBufferElements) * blocksize;
          }
          update = true;
          res->image_binds[shader_type] |= BITFIELD_BIT(start_slot + i);
+         if (tex2d_from_buf)
+            a->import2d->image_binds[shader_type] |= BITFIELD_BIT(start_slot + i);
       } else if (a->base.resource) {
          update = true;
          unbind_shader_image(ctx, shader_type, start_slot + i);
       }
-      update_descriptor_state_image(ctx, shader_type, start_slot + i, res);
+      update_descriptor_state_image(ctx, shader_type, start_slot + i, tex2d_from_buf ? a->import2d : res);
    }
    for (unsigned i = 0; i < unbind_num_trailing_slots; i++) {
       update |= !!ctx->image_views[shader_type][start_slot + count + i].base.resource;
@@ -2138,6 +2223,8 @@ unbind_samplerview(struct zink_context *ctx, gl_shader_stage stage, unsigned slo
       return;
    struct zink_resource *res = zink_resource(sv->base.texture);
    unbind_samplerview_res(ctx, stage, slot, res);
+   if (sv->import2d)
+      unbind_samplerview_res(ctx, stage, slot, sv->import2d);
    assert(slot < 32);
    ctx->di.zs_swizzle[stage].mask &= ~BITFIELD_BIT(slot);
 }
@@ -2188,8 +2275,15 @@ zink_set_sampler_views(struct pipe_context *pctx,
                if (a)
                   unbind_samplerview(ctx, shader_type, start_slot + i);
                bind_samplerview_resource_stage(ctx, res, shader_type);
+               if (b->import2d) {
+                  bind_samplerview_resource_stage(ctx, b->import2d, shader_type);
+                  zink_batch_resource_usage_set(ctx->bs, res, false, true);
+               }
             }
-            if (res->base.b.target == PIPE_BUFFER) {
+            /* switch to possible tex2d_from_buf resource: none of this buffer stuff matters */
+            if (b->import2d)
+               res = b->import2d;
+            if (res->base.b.target == PIPE_BUFFER && !b->import2d) {
                if (zink_descriptor_mode == ZINK_DESCRIPTOR_MODE_DB) {
                   if (!a || a->base.texture != b->base.texture || zink_resource(a->base.texture)->obj != res->obj ||
                      memcmp(&a->base.u.buf, &b->base.u.buf, sizeof(b->base.u.buf)))
