@@ -253,6 +253,7 @@ static const struct vk_device_extension_table lvp_device_extensions_supported = 
    .EXT_shader_atomic_float               = true,
    .EXT_shader_atomic_float2              = true,
    .EXT_shader_demote_to_helper_invocation= true,
+   .EXT_shader_image_atomic_int64         = true,
    .EXT_shader_object                     = true,
    .EXT_shader_replicated_composites      = true,
    .EXT_shader_stencil_export             = true,
@@ -701,6 +702,10 @@ lvp_get_features(const struct lvp_physical_device *pdevice,
       .shaderSharedFloat64AtomicMinMax = false,
       .shaderImageFloat32AtomicMinMax  = LLVM_VERSION_MAJOR >= 15,
       .sparseImageFloat32AtomicMinMax  = false,
+
+      /* VK_EXT_shader_image_atomic_int64 */
+      .shaderImageInt64Atomics = true,
+      .sparseImageInt64Atomics = true,
 
       /* VK_EXT_memory_priority */
       .memoryPriority = true,

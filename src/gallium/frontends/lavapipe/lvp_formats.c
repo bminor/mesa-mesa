@@ -65,6 +65,7 @@ lvp_physical_device_get_format_properties(struct lvp_physical_device *physical_d
                                           VkFormatProperties3 *out_properties)
 {
    const enum pipe_format pformat = lvp_vk_format_to_pipe_format(format);
+   const struct util_format_description *desc = util_format_description(pformat);
    struct pipe_screen *pscreen = physical_device->pscreen;
    VkFormatFeatureFlags2 features = 0, buffer_features = 0;
 
@@ -153,7 +154,6 @@ lvp_physical_device_get_format_properties(struct lvp_physical_device *physical_d
          }
 
          /* The subsampled formats have no support for linear filters. */
-         const struct util_format_description *desc = util_format_description(pformat);
          if (desc->layout != UTIL_FORMAT_LAYOUT_SUBSAMPLED)
             features |= VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_LINEAR_FILTER_BIT;
       }
@@ -176,6 +176,8 @@ lvp_physical_device_get_format_properties(struct lvp_physical_device *physical_d
 
    if (pformat == PIPE_FORMAT_R32_UINT ||
        pformat == PIPE_FORMAT_R32_SINT ||
+       pformat == PIPE_FORMAT_R64_UINT ||
+       pformat == PIPE_FORMAT_R64_SINT ||
        pformat == PIPE_FORMAT_R32_FLOAT) {
       features |= VK_FORMAT_FEATURE_2_STORAGE_IMAGE_ATOMIC_BIT;
       buffer_features |= VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_ATOMIC_BIT;
@@ -192,9 +194,10 @@ lvp_physical_device_get_format_properties(struct lvp_physical_device *physical_d
       features |= (VK_FORMAT_FEATURE_2_BLIT_SRC_BIT |
                    VK_FORMAT_FEATURE_2_BLIT_DST_BIT);
    }
+
    if ((pformat != PIPE_FORMAT_R9G9B9E5_FLOAT) &&
        util_format_get_nr_components(pformat) != 3 &&
-       !ycbcr_info &&
+       !ycbcr_info && !util_format_is_int64(desc) &&
        pformat != PIPE_FORMAT_R10G10B10A2_SNORM &&
        pformat != PIPE_FORMAT_B10G10R10A2_SNORM &&
        pformat != PIPE_FORMAT_B10G10R10A2_UNORM) {
@@ -539,6 +542,13 @@ VKAPI_ATTR void VKAPI_CALL lvp_GetPhysicalDeviceSparseImageFormatProperties2(
       *pPropertyCount = 0;
       return;
    }
+
+   const struct util_format_description *desc = vk_format_description(pFormatInfo->format);
+   if (util_format_is_int64(desc)) {
+      *pPropertyCount = 0;
+      return;
+   }
+
    const VkPhysicalDeviceImageFormatInfo2 fmt_info = {
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2,
       .format = pFormatInfo->format,
