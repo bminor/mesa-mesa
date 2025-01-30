@@ -479,6 +479,7 @@ radv_patch_surface_from_metadata(struct radv_device *device, struct radeon_surf 
       surface->u.gfx9.color.dcc.max_compressed_block_size = md->u.gfx12.dcc_max_compressed_block;
       surface->u.gfx9.color.dcc_data_format = md->u.gfx12.dcc_data_format;
       surface->u.gfx9.color.dcc_number_type = md->u.gfx12.dcc_number_type;
+      surface->u.gfx9.color.dcc_write_compress_disable = md->u.gfx12.dcc_write_compress_disable;
    } else if (pdev->info.gfx_level >= GFX9) {
       if (md->u.gfx9.swizzle_mode > 0)
          surface->flags |= RADEON_SURF_SET(RADEON_SURF_MODE_2D, MODE);
@@ -777,6 +778,7 @@ radv_image_bo_set_metadata(struct radv_device *device, struct radv_image *image,
       md.u.gfx12.dcc_max_compressed_block = surface->u.gfx9.color.dcc.max_compressed_block_size;
       md.u.gfx12.dcc_number_type = surface->u.gfx9.color.dcc_number_type;
       md.u.gfx12.dcc_data_format = surface->u.gfx9.color.dcc_data_format;
+      md.u.gfx12.dcc_write_compress_disable = surface->u.gfx9.color.dcc_write_compress_disable;
       md.u.gfx12.scanout = (surface->flags & RADEON_SURF_SCANOUT) != 0;
    } else if (pdev->info.gfx_level >= GFX9) {
       uint64_t dcc_offset =
