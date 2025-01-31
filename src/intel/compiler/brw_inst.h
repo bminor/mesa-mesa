@@ -25,7 +25,6 @@
 #pragma once
 
 #include <assert.h>
-#include "brw_ir_allocator.h"
 #include "brw_reg.h"
 #include "compiler/glsl/list.h"
 
@@ -378,8 +377,7 @@ bool is_identity_payload(const struct intel_device_info *devinfo,
 bool is_multi_copy_payload(const struct intel_device_info *devinfo,
                            const brw_inst *inst);
 
-bool is_coalescing_payload(const struct intel_device_info *devinfo,
-                           const brw::simple_allocator &alloc, const brw_inst *inst);
+bool is_coalescing_payload(const struct fs_visitor &s, const brw_inst *inst);
 
 bool has_bank_conflict(const struct brw_isa_info *isa, const brw_inst *inst);
 

@@ -4,6 +4,7 @@
  */
 
 #include "brw_eu.h"
+#include "brw_fs.h"
 #include "brw_cfg.h"
 #include "brw_compiler.h"
 #include "brw_inst.h"
@@ -1253,11 +1254,10 @@ is_multi_copy_payload(const struct intel_device_info *devinfo,
  * instruction.
  */
 bool
-is_coalescing_payload(const struct intel_device_info *devinfo,
-                      const brw::simple_allocator &alloc, const brw_inst *inst)
+is_coalescing_payload(const fs_visitor &s, const brw_inst *inst)
 {
-   return is_identity_payload(devinfo, VGRF, inst) &&
+   return is_identity_payload(s.devinfo, VGRF, inst) &&
           inst->src[0].offset == 0 &&
-          alloc.sizes[inst->src[0].nr] * REG_SIZE == inst->size_written;
+          s.alloc.sizes[inst->src[0].nr] * REG_SIZE == inst->size_written;
 }
 

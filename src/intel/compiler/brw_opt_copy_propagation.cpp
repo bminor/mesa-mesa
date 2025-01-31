@@ -657,15 +657,14 @@ instruction_requires_packed_data(brw_inst *inst)
 }
 
 static bool
-try_copy_propagate(const brw_compiler *compiler, brw_inst *inst,
+try_copy_propagate(fs_visitor &s, brw_inst *inst,
                    acp_entry *entry, int arg,
-                   const brw::simple_allocator &alloc,
                    uint8_t max_polygons)
 {
    if (inst->src[arg].file != VGRF)
       return false;
 
-   const struct intel_device_info *devinfo = compiler->devinfo;
+   const struct intel_device_info *devinfo = s.devinfo;
 
    assert(entry->src.file == VGRF || entry->src.file == UNIFORM ||
           entry->src.file == ATTR || entry->src.file == FIXED_GRF);
@@ -685,7 +684,7 @@ try_copy_propagate(const brw_compiler *compiler, brw_inst *inst,
     * temporaries which should match is_coalescing_payload().
     */
    if (entry->opcode == SHADER_OPCODE_LOAD_PAYLOAD &&
-       (is_coalescing_payload(devinfo, alloc, inst) ||
+       (is_coalescing_payload(s, inst) ||
         is_multi_copy_payload(devinfo, inst)))
       return false;
 
@@ -718,9 +717,9 @@ try_copy_propagate(const brw_compiler *compiler, brw_inst *inst,
           entry->src.file == VGRF) {
          int other_src = arg == 2 ? 3 : 2;
          unsigned other_size = inst->src[other_src].file == VGRF ?
-                               alloc.sizes[inst->src[other_src].nr] :
+                               s.alloc.sizes[inst->src[other_src].nr] :
                                inst->size_read(devinfo, other_src);
-         unsigned prop_src_size = alloc.sizes[entry->src.nr];
+         unsigned prop_src_size = s.alloc.sizes[entry->src.nr];
          if (other_size + prop_src_size > 15)
             return false;
       }
@@ -765,7 +764,7 @@ try_copy_propagate(const brw_compiler *compiler, brw_inst *inst,
     */
    if (!can_take_stride(inst, dst_type, arg,
                         entry_stride * inst->src[arg].stride,
-                        compiler))
+                        s.compiler))
       return false;
 
    /* From the Cherry Trail/Braswell PRMs, Volume 7: 3D Media GPGPU:
@@ -806,7 +805,7 @@ try_copy_propagate(const brw_compiler *compiler, brw_inst *inst,
    if (entry->src.file == ATTR && max_polygons > 1 &&
        (has_dst_aligned_region_restriction(devinfo, inst, dst_type) ||
 	instruction_requires_packed_data(inst) ||
-	(inst->is_3src(compiler) && arg == 2) ||
+	(inst->is_3src(s.compiler) && arg == 2) ||
 	entry->dst.type != inst->src[arg].type))
       return false;
 
@@ -1307,12 +1306,11 @@ commute_immediates(brw_inst *inst)
  * list.
  */
 static bool
-opt_copy_propagation_local(const brw_compiler *compiler, linear_ctx *lin_ctx,
+opt_copy_propagation_local(fs_visitor &s, linear_ctx *lin_ctx,
                            bblock_t *block, struct acp &acp,
-                           const brw::simple_allocator &alloc,
                            uint8_t max_polygons)
 {
-   const struct intel_device_info *devinfo = compiler->devinfo;
+   const struct intel_device_info *devinfo = s.devinfo;
    bool progress = false;
 
    foreach_inst_in_block(brw_inst, inst, block) {
@@ -1331,8 +1329,7 @@ opt_copy_propagation_local(const brw_compiler *compiler, linear_ctx *lin_ctx,
                   break;
                }
             } else {
-               if (try_copy_propagate(compiler, inst, *iter, i, alloc,
-                                      max_polygons)) {
+               if (try_copy_propagate(s, inst, *iter, i, max_polygons)) {
                   progress = true;
                   break;
                }
@@ -1342,7 +1339,7 @@ opt_copy_propagation_local(const brw_compiler *compiler, linear_ctx *lin_ctx,
 
       if (constant_progress) {
          commute_immediates(inst);
-         brw_opt_constant_fold_instruction(compiler->devinfo, inst);
+         brw_opt_constant_fold_instruction(devinfo, inst);
          progress = true;
       }
 
@@ -1428,8 +1425,8 @@ brw_opt_copy_propagation(fs_visitor &s)
     * the set of copies available at the end of the block.
     */
    foreach_block (block, s.cfg) {
-      progress = opt_copy_propagation_local(s.compiler, lin_ctx, block,
-                                            out_acp[block->num], s.alloc,
+      progress = opt_copy_propagation_local(s, lin_ctx, block,
+                                            out_acp[block->num],
                                             s.max_polygons) || progress;
 
       /* If the destination of an ACP entry exists only within this block,
@@ -1469,8 +1466,8 @@ brw_opt_copy_propagation(fs_visitor &s)
          }
       }
 
-      progress = opt_copy_propagation_local(s.compiler, lin_ctx, block,
-                                            in_acp, s.alloc, s.max_polygons) ||
+      progress = opt_copy_propagation_local(s, lin_ctx, block,
+                                            in_acp, s.max_polygons) ||
                  progress;
    }
 
@@ -1484,13 +1481,12 @@ brw_opt_copy_propagation(fs_visitor &s)
 }
 
 static bool
-try_copy_propagate_def(const brw_compiler *compiler,
-                       const brw::simple_allocator &alloc,
+try_copy_propagate_def(fs_visitor &s,
                        brw_inst *def, const brw_reg &val,
                        brw_inst *inst, int arg,
                        uint8_t max_polygons)
 {
-   const struct intel_device_info *devinfo = compiler->devinfo;
+   const struct intel_device_info *devinfo = s.devinfo;
 
    assert(val.file != BAD_FILE);
 
@@ -1546,9 +1542,9 @@ try_copy_propagate_def(const brw_compiler *compiler,
           val.file == VGRF) {
          int other_src = arg == 2 ? 3 : 2;
          unsigned other_size = inst->src[other_src].file == VGRF ?
-                               alloc.sizes[inst->src[other_src].nr] :
+                               s.alloc.sizes[inst->src[other_src].nr] :
                                inst->size_read(devinfo, other_src);
-         unsigned prop_src_size = alloc.sizes[val.nr];
+         unsigned prop_src_size = s.alloc.sizes[val.nr];
          if (other_size + prop_src_size > 15)
             return false;
       }
@@ -1582,7 +1578,7 @@ try_copy_propagate_def(const brw_compiler *compiler,
     */
    if (!can_take_stride(inst, dst_type, arg,
                         entry_stride * inst->src[arg].stride,
-                        compiler))
+                        s.compiler))
       return false;
 
    /* Bail if the source FIXED_GRF region of the copy cannot be trivially
@@ -1644,7 +1640,7 @@ try_copy_propagate_def(const brw_compiler *compiler,
    if (max_polygons > 1 && val.file == ATTR &&
        (has_dst_aligned_region_restriction(devinfo, inst, dst_type) ||
         instruction_requires_packed_data(inst) ||
-        (inst->is_3src(compiler) && arg == 2) ||
+        (inst->is_3src(s.compiler) && arg == 2) ||
         def->dst.type != inst->src[arg].type))
       return false;
 
@@ -1831,7 +1827,7 @@ brw_opt_copy_propagation_defs(fs_visitor &s)
                 def->src[0].file != BAD_FILE && def->src[0].file != IMM &&
                 is_identity_payload(s.devinfo, def->src[0].file, def)) {
                source_progress =
-                  try_copy_propagate_def(s.compiler, s.alloc, def, def->src[0],
+                  try_copy_propagate_def(s, def, def->src[0],
                                          inst, i, s.max_polygons);
 
                if (source_progress) {
@@ -1857,8 +1853,7 @@ brw_opt_copy_propagation_defs(fs_visitor &s)
                     val.file == ATTR || val.file == UNIFORM ||
                     (val.file == FIXED_GRF && val.is_contiguous())) {
             source_progress =
-               try_copy_propagate_def(s.compiler, s.alloc, def, val, inst, i,
-                                      s.max_polygons);
+               try_copy_propagate_def(s, def, val, inst, i, s.max_polygons);
          }
 
          if (source_progress) {

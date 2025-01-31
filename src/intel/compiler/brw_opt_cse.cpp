@@ -131,7 +131,7 @@ is_expression(const fs_visitor *v, const brw_inst *const inst)
    case SHADER_OPCODE_MEMORY_LOAD_LOGICAL:
       return inst->src[MEMORY_LOGICAL_MODE].ud == MEMORY_MODE_CONSTANT;
    case SHADER_OPCODE_LOAD_PAYLOAD:
-      return !is_coalescing_payload(v->devinfo, v->alloc, inst);
+      return !is_coalescing_payload(*v, inst);
    default:
       return inst->is_send_from_grf() && !inst->has_side_effects() &&
          !inst->is_volatile();

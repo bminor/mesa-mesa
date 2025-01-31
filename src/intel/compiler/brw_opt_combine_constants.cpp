@@ -1183,16 +1183,15 @@ struct register_allocation {
 };
 
 static brw_reg
-allocate_slots(const intel_device_info *devinfo,
+allocate_slots(fs_visitor &s,
                struct register_allocation *regs, unsigned num_regs,
-               unsigned bytes, unsigned align_bytes,
-               brw::simple_allocator &alloc)
+               unsigned bytes, unsigned align_bytes)
 {
    assert(bytes == 2 || bytes == 4 || bytes == 8);
    assert(align_bytes == 2 || align_bytes == 4 || align_bytes == 8);
 
    const unsigned slots_per_reg =
-      REG_SIZE * reg_unit(devinfo) / sizeof(uint16_t);
+      REG_SIZE * reg_unit(s.devinfo) / sizeof(uint16_t);
 
    const unsigned words = bytes / 2;
    const unsigned align_words = align_bytes / 2;
@@ -1204,7 +1203,7 @@ allocate_slots(const intel_device_info *devinfo,
 
          if ((x & mask) == mask) {
             if (regs[i].nr == UINT_MAX)
-               regs[i].nr = alloc.allocate(reg_unit(devinfo));
+               regs[i].nr = s.alloc.allocate(reg_unit(s.devinfo));
 
             regs[i].avail &= ~(mask << j);
 
@@ -1243,10 +1242,9 @@ deallocate_slots(const struct intel_device_info *devinfo,
 }
 
 static void
-parcel_out_registers(const intel_device_info *devinfo,
+parcel_out_registers(fs_visitor &s,
                      struct imm *imm, unsigned len, const bblock_t *cur_block,
-                     struct register_allocation *regs, unsigned num_regs,
-                     brw::simple_allocator &alloc)
+                     struct register_allocation *regs, unsigned num_regs)
 {
    /* Each basic block has two distinct set of constants.  There is the set of
     * constants that only have uses in that block, and there is the set of
@@ -1267,10 +1265,9 @@ parcel_out_registers(const intel_device_info *devinfo,
       for (unsigned i = 0; i < len; i++) {
          if (imm[i].block == cur_block &&
              imm[i].used_in_single_block == used_in_single_block) {
-            const brw_reg reg = allocate_slots(devinfo, regs, num_regs,
+            const brw_reg reg = allocate_slots(s, regs, num_regs,
                                                imm[i].size,
-                                               get_alignment_for_imm(&imm[i]),
-                                               alloc);
+                                               get_alignment_for_imm(&imm[i]));
 
             imm[i].nr = reg.nr;
             imm[i].subreg_offset = reg.offset;
@@ -1280,7 +1277,7 @@ parcel_out_registers(const intel_device_info *devinfo,
 
    for (unsigned i = 0; i < len; i++) {
       if (imm[i].block == cur_block && imm[i].used_in_single_block) {
-         deallocate_slots(devinfo, regs, num_regs, imm[i].nr,
+         deallocate_slots(s.devinfo, regs, num_regs, imm[i].nr,
                           imm[i].subreg_offset, imm[i].size);
       }
    }
@@ -1529,8 +1526,7 @@ brw_opt_combine_constants(fs_visitor &s)
    }
 
    foreach_block(block, s.cfg) {
-      parcel_out_registers(devinfo, table.imm, table.len, block, regs,
-                           table.len, s.alloc);
+      parcel_out_registers(s, table.imm, table.len, block, regs, table.len);
    }
 
    free(regs);
