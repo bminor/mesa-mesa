@@ -2081,6 +2081,7 @@ panvk_per_arch(cmd_inherit_render_state)(
       to_panvk_physical_device(dev->vk.physical);
    struct pan_fb_info *fbinfo = &cmdbuf->state.gfx.render.fb.info;
 
+   cmdbuf->state.gfx.render.suspended = false;
    cmdbuf->state.gfx.render.flags = inheritance_info->flags;
 
    gfx_state_set_dirty(cmdbuf, RENDER_STATE);
@@ -2614,6 +2615,7 @@ panvk_per_arch(CmdEndRendering)(VkCommandBuffer commandBuffer)
     * so any barrier encountered after EndRendering() doesn't try to flush
     * draws. */
    cmdbuf->state.gfx.render.flags = 0;
+   cmdbuf->state.gfx.render.suspended = suspending;
 
    /* If we're not suspending, we need to resolve attachments. */
    if (!suspending)
