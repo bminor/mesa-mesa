@@ -327,7 +327,7 @@ nir_const_value_for_raw_uint(uint64_t x, unsigned bit_size)
 
    /* clang-format off */
    switch (bit_size) {
-   case 1:  v.b   = x;  break;
+   case 1:  v.b   = (bool)x;  break;
    case 8:  v.u8  = (uint8_t)x;  break;
    case 16: v.u16 = (uint16_t)x;  break;
    case 32: v.u32 = (uint32_t)x;  break;
@@ -413,7 +413,7 @@ nir_const_value_as_bool(nir_const_value value, unsigned bit_size)
    /* Booleans of any size use 0/-1 convention */
    assert(i == 0 || i == -1);
 
-   return i;
+   return i != 0;
 }
 
 /* This one isn't inline because it requires half-float conversion */
@@ -1746,7 +1746,7 @@ nir_deref_mode_may_be(const nir_deref_instr *deref, nir_variable_mode modes)
 {
    assert(!(modes & ~nir_var_all));
    assert(deref->modes != 0);
-   return deref->modes & modes;
+   return (deref->modes & modes) != 0;
 }
 
 /** Returns true if deref must have one of the given modes
