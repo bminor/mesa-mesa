@@ -164,7 +164,7 @@ blorp_surface_info_init(struct blorp_batch *batch,
    info->addr = surf->addr;
 
    info->aux_usage = surf->aux_usage;
-   if (info->aux_usage != ISL_AUX_USAGE_NONE) {
+   if (!blorp_address_is_null(surf->aux_addr)) {
       info->aux_surf = *surf->aux_surf;
       info->aux_addr = surf->aux_addr;
    }
