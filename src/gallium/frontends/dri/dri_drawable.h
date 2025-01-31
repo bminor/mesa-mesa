@@ -33,6 +33,7 @@
 #include "frontend/api.h"
 #include "dri_util.h"
 
+struct pipe_context;
 struct dri_context;
 struct dri_screen;
 
