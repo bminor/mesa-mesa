@@ -316,7 +316,7 @@ namespace {
          return true;
       }
 
-      if (is_send(inst) || inst->is_control_source(i) ||
+      if (inst->is_send() || inst->is_control_source(i) ||
           inst->opcode == BRW_OPCODE_DPAS) {
          return false;
       }
@@ -360,7 +360,7 @@ namespace {
    has_invalid_dst_region(const intel_device_info *devinfo,
                           const brw_inst *inst)
    {
-      if (is_send(inst)) {
+      if (inst->is_send()) {
          return false;
 
       } else if (devinfo->has_bfloat16 && has_bfloat_operands(inst)) {

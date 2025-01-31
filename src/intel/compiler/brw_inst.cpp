@@ -168,7 +168,7 @@ brw_inst::resize_sources(uint8_t num_sources)
 }
 
 bool
-brw_inst::is_send_from_grf() const
+brw_inst::is_send() const
 {
    switch (opcode) {
    case SHADER_OPCODE_SEND:
@@ -259,7 +259,7 @@ brw_inst::is_payload(unsigned arg) const
 bool
 brw_inst::can_do_source_mods(const struct intel_device_info *devinfo) const
 {
-   if (is_send_from_grf())
+   if (is_send())
       return false;
 
    /* From TGL PRM Vol 2a Pg. 1053 and Pg. 1069 MAD and MUL Instructions:

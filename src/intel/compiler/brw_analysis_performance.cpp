@@ -946,7 +946,7 @@ namespace {
       execute_instruction(st, perf);
 
       /* Mark any source dependencies. */
-      if (inst->is_send_from_grf()) {
+      if (inst->is_send()) {
          for (unsigned i = 0; i < inst->sources; i++) {
             if (inst->is_payload(i)) {
                for (unsigned j = 0; j < regs_read(devinfo, inst, i); j++)

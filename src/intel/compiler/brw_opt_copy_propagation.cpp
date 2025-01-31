@@ -759,8 +759,7 @@ try_copy_propagate(brw_shader &s, brw_inst *inst,
 
    /* Reject cases that would violate register regioning restrictions. */
    if ((entry->src.file == UNIFORM || !entry->src.is_contiguous()) &&
-       (inst->is_send_from_grf() ||
-        inst->uses_indirect_addressing())) {
+       (inst->is_send() || inst->uses_indirect_addressing())) {
       return false;
    }
 
@@ -1655,7 +1654,7 @@ try_copy_propagate_def(brw_shader &s,
 
       assert(inst->src[arg].stride == 0);
    } else if ((val.file == UNIFORM || !val.is_contiguous()) &&
-       (inst->is_send_from_grf() || inst->uses_indirect_addressing())) {
+              (inst->is_send() || inst->uses_indirect_addressing())) {
       return false;
    }
 

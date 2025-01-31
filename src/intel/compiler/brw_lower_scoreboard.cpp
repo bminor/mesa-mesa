@@ -75,7 +75,7 @@ namespace {
          bool has_int_src = false, has_long_src = false;
          const bool has_long_pipe = !devinfo->has_64bit_float_via_math_pipe;
 
-         if (is_send(inst))
+         if (inst->is_send())
             return TGL_PIPE_NONE;
 
          for (unsigned i = 0; i < inst->sources; i++) {
@@ -992,7 +992,7 @@ namespace {
          return find_unordered_dependency(deps, TGL_SBID_SET, exec_all);
       else if (has_ordered && is_unordered(devinfo, inst))
          return TGL_SBID_NULL;
-      else if (is_send(inst) && devinfo->ver >= 20)
+      else if (inst->is_send() && devinfo->ver >= 20)
          return TGL_SBID_NULL;
       else if (find_unordered_dependency(deps, TGL_SBID_DST, exec_all) &&
                (!has_ordered || ordered_pipe == inferred_sync_pipe(devinfo, inst)))
@@ -1030,7 +1030,7 @@ namespace {
          return ordered_pipe == inferred_pipe &&
                 unordered_mode & (is_unordered(devinfo, inst) ? TGL_SBID_SET :
                                                                 TGL_SBID_DST);
-      else if (is_send(inst))
+      else if (inst->is_send())
          return unordered_mode & TGL_SBID_SET &&
                 (ordered_pipe == TGL_PIPE_FLOAT ||
                  ordered_pipe == TGL_PIPE_INT ||

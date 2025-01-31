@@ -64,7 +64,7 @@ public:
 
    void resize_sources(uint8_t num_sources);
 
-   bool is_send_from_grf() const;
+   bool is_send() const;
    bool is_payload(unsigned arg) const;
    bool is_partial_write(unsigned grf_size = REG_SIZE) const;
    unsigned components_read(unsigned i) const;
@@ -330,12 +330,6 @@ get_exec_type_size(const brw_inst *inst)
    return brw_type_size_bytes(get_exec_type(inst));
 }
 
-static inline bool
-is_send(const brw_inst *inst)
-{
-   return inst->is_send_from_grf();
-}
-
 /**
  * Return whether the instruction isn't an ALU instruction and cannot be
  * assumed to complete in-order.
@@ -343,7 +337,7 @@ is_send(const brw_inst *inst)
 static inline bool
 is_unordered(const intel_device_info *devinfo, const brw_inst *inst)
 {
-   return is_send(inst) || (devinfo->ver < 20 && inst->is_math()) ||
+   return inst->is_send() || (devinfo->ver < 20 && inst->is_math()) ||
           inst->opcode == BRW_OPCODE_DPAS ||
           (devinfo->has_64bit_float_via_math_pipe &&
            (get_exec_type(inst) == BRW_TYPE_DF ||
