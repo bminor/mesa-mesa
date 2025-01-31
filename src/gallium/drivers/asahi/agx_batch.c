@@ -300,6 +300,11 @@ agx_batch_print_stats(struct agx_device *dev, struct agx_batch *batch)
    if (!batch->result)
       return;
 
+   if (u_printf_check_abort(stdout, &dev->printf)) {
+      fprintf(stderr, "GPU abort");
+      abort();
+   }
+
    if (batch->cdm.bo) {
       agx_print_result(dev, batch->ctx, &batch->result[0].compute.info,
                        batch_idx, true);
