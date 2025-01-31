@@ -844,7 +844,7 @@
         "description": "zink: also refcount needs_present from frontbuffer flush",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4b0f2d1a2b30e5a288f909683203bfa3bbfacf50",
         "notes": null
