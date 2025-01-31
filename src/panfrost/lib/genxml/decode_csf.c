@@ -595,7 +595,7 @@ pandecode_run_tiling(struct pandecode_context *ctx, FILE *fp,
                  cs_get_u64(qctx, 48));
 
    uint64_t blend = cs_get_u64(qctx, 50);
-   GENX(pandecode_blend_descs)(ctx, blend & ~7, blend & 7, 0, qctx->gpu_id);
+   GENX(pandecode_blend_descs)(ctx, blend & ~15, blend & 15, 0, qctx->gpu_id);
 
    DUMP_ADDR(ctx, DEPTH_STENCIL, cs_get_u64(qctx, 52), "Depth/stencil");
 
@@ -610,6 +610,7 @@ pandecode_run_tiling(struct pandecode_context *ctx, FILE *fp,
 
    ctx->indent--;
 }
+
 static void
 pandecode_run_idvs(struct pandecode_context *ctx, FILE *fp,
                    struct queue_ctx *qctx, struct MALI_CS_RUN_IDVS *I)
@@ -726,7 +727,7 @@ pandecode_run_idvs(struct pandecode_context *ctx, FILE *fp,
       pandecode_log(ctx, "Varying allocation: %u\n", cs_get_u32(qctx, 48));
 
    uint64_t blend = cs_get_u64(qctx, 50);
-   GENX(pandecode_blend_descs)(ctx, blend & ~7, blend & 7, 0, qctx->gpu_id);
+   GENX(pandecode_blend_descs)(ctx, blend & ~15, blend & 15, 0, qctx->gpu_id);
 
    DUMP_ADDR(ctx, DEPTH_STENCIL, cs_get_u64(qctx, 52), "Depth/stencil");
 

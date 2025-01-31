@@ -814,7 +814,7 @@
         "description": "pan/decode: Fix the blend_count mask",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f2740ac69c93872910161e64e6d06a53a119634e",
         "notes": null
