@@ -1224,7 +1224,7 @@
         "description": "anv: Fix to set CDEF flter flag correctly for AV1 decoding",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8432b8b2828bca6fa19793b00b3a6e61a06ff650",
         "notes": null
