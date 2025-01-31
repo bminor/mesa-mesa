@@ -31,7 +31,6 @@
 #include "brw_cfg.h"
 #include "brw_compiler.h"
 #include "brw_inst.h"
-#include "brw_ir_allocator.h"
 #include "compiler/nir/nir.h"
 #include "brw_analysis.h"
 
@@ -226,7 +225,16 @@ public:
    gl_shader_stage stage;
    bool debug_enabled;
 
-   brw::simple_allocator alloc;
+   /* VGRF allocation. */
+   struct {
+      /** Array of sizes for each allocation, in REG_SIZE units. */
+      unsigned *sizes;
+
+      /** Total number of VGRFs allocated. */
+      unsigned count;
+
+      unsigned capacity;
+   } alloc;
 
    const brw_base_prog_key *const key;
 

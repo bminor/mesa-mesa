@@ -446,6 +446,10 @@ fs_visitor::init()
 
    this->gs.control_data_bits_per_vertex = 0;
    this->gs.control_data_header_size_bits = 0;
+
+   this->alloc.capacity = 0;
+   this->alloc.sizes = NULL;
+   this->alloc.count = 0;
 }
 
 fs_visitor::~fs_visitor()
