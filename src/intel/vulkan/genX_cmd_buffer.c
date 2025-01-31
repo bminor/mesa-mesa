@@ -3144,14 +3144,6 @@ genX(cmd_buffer_update_color_aux_op)(struct anv_cmd_buffer *cmd_buffer,
    } else {
       cmd_buffer->state.color_aux_op = next_aux_op;
    }
-
-   if (next_aux_op == ISL_AUX_OP_FAST_CLEAR) {
-      if (aux_op_clears(last_aux_op)) {
-         cmd_buffer->num_dependent_clears++;
-      } else {
-         cmd_buffer->num_independent_clears++;
-      }
-   }
 }
 
 static void

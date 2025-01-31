@@ -3548,21 +3548,6 @@ anv_can_fast_clear_color(const struct anv_cmd_buffer *cmd_buffer,
       return false;
    }
 
-   /* The fast-clear preamble and/or postamble flushes are more expensive than
-    * the flushes performed by BLORP during slow clears. Use a heuristic to
-    * determine if the cost of the flushes are worth fast-clearing. See
-    * genX(cmd_buffer_update_color_aux_op)() and blorp_exec_on_render().
-    * TODO: Tune for Xe2
-    */
-   if (cmd_buffer->device->info->verx10 <= 125 &&
-       cmd_buffer->num_independent_clears >= 16 &&
-       cmd_buffer->num_independent_clears >
-       cmd_buffer->num_dependent_clears * 2) {
-      anv_perf_warn(VK_LOG_OBJS(&image->vk.base),
-                    "Not enough back-to-back fast-clears. Slow clearing.");
-      return false;
-   }
-
    return true;
 }
 
