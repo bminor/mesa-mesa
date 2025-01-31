@@ -472,3 +472,6 @@ bool brw_workaround_source_arf_before_eot(fs_visitor &s);
 /* Helpers. */
 unsigned brw_get_lowered_simd_width(const fs_visitor *shader,
                                     const brw_inst *inst);
+
+brw_reg brw_allocate_vgrf(fs_visitor &s, brw_reg_type type, unsigned count);
+brw_reg brw_allocate_vgrf_units(fs_visitor &s, unsigned units_of_REGSIZE);

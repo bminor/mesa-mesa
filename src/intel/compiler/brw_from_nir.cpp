@@ -5023,7 +5023,7 @@ get_timestamp(const brw_builder &bld)
    brw_reg ts = brw_reg(retype(brw_vec4_reg(ARF,
                                           BRW_ARF_TIMESTAMP, 0), BRW_TYPE_UD));
 
-   brw_reg dst = brw_vgrf(s.alloc.allocate(1), BRW_TYPE_UD);
+   brw_reg dst = retype(brw_allocate_vgrf_units(s, 1), BRW_TYPE_UD);
 
    /* We want to read the 3 fields we care about even if it's not enabled in
     * the dispatch.
@@ -5084,8 +5084,8 @@ emit_urb_direct_vec4_write(const brw_builder &bld,
       brw_reg srcs[URB_LOGICAL_NUM_SRCS];
       srcs[URB_LOGICAL_SRC_HANDLE] = urb_handle;
       srcs[URB_LOGICAL_SRC_CHANNEL_MASK] = brw_imm_ud(mask << 16);
-      srcs[URB_LOGICAL_SRC_DATA] = brw_vgrf(bld.shader->alloc.allocate(length),
-                                            BRW_TYPE_F);
+      srcs[URB_LOGICAL_SRC_DATA] =
+         retype(brw_allocate_vgrf_units(*bld.shader, length), BRW_TYPE_F);
       srcs[URB_LOGICAL_SRC_COMPONENTS] = brw_imm_ud(length);
       bld8.LOAD_PAYLOAD(srcs[URB_LOGICAL_SRC_DATA], payload_srcs, length, 0);
 
@@ -5154,8 +5154,8 @@ emit_urb_direct_vec4_write_xe2(const brw_builder &bld,
       brw_reg srcs[URB_LOGICAL_NUM_SRCS];
       srcs[URB_LOGICAL_SRC_HANDLE] = urb_handle;
       srcs[URB_LOGICAL_SRC_CHANNEL_MASK] = brw_imm_ud(mask << 16);
-      int nr = bld.shader->alloc.allocate(comps * runit);
-      srcs[URB_LOGICAL_SRC_DATA] = brw_vgrf(nr, BRW_TYPE_F);
+      srcs[URB_LOGICAL_SRC_DATA] =
+         retype(brw_allocate_vgrf_units(*bld.shader, comps * runit), BRW_TYPE_F);
       srcs[URB_LOGICAL_SRC_COMPONENTS] = brw_imm_ud(comps);
       hbld.LOAD_PAYLOAD(srcs[URB_LOGICAL_SRC_DATA], payload_srcs, comps, 0);
 
@@ -5217,8 +5217,8 @@ emit_urb_indirect_vec4_write(const brw_builder &bld,
       srcs[URB_LOGICAL_SRC_HANDLE] = urb_handle;
       srcs[URB_LOGICAL_SRC_PER_SLOT_OFFSETS] = off;
       srcs[URB_LOGICAL_SRC_CHANNEL_MASK] = brw_imm_ud(mask << 16);
-      srcs[URB_LOGICAL_SRC_DATA] = brw_vgrf(bld.shader->alloc.allocate(length),
-                                            BRW_TYPE_F);
+      srcs[URB_LOGICAL_SRC_DATA] =
+         retype(brw_allocate_vgrf_units(*bld.shader, length), BRW_TYPE_F);
       srcs[URB_LOGICAL_SRC_COMPONENTS] = brw_imm_ud(length);
       bld8.LOAD_PAYLOAD(srcs[URB_LOGICAL_SRC_DATA], payload_srcs, length, 0);
 
@@ -5288,8 +5288,8 @@ emit_urb_indirect_writes_xe2(const brw_builder &bld, nir_intrinsic_instr *instr,
       brw_reg srcs[URB_LOGICAL_NUM_SRCS];
       srcs[URB_LOGICAL_SRC_HANDLE] = addr;
       srcs[URB_LOGICAL_SRC_CHANNEL_MASK] = brw_imm_ud(mask << 16);
-      int nr = bld.shader->alloc.allocate(comps * runit);
-      srcs[URB_LOGICAL_SRC_DATA] = brw_vgrf(nr, BRW_TYPE_F);
+      srcs[URB_LOGICAL_SRC_DATA] =
+         retype(brw_allocate_vgrf_units(*bld.shader, comps * runit), BRW_TYPE_F);
       srcs[URB_LOGICAL_SRC_COMPONENTS] = brw_imm_ud(comps);
       wbld.LOAD_PAYLOAD(srcs[URB_LOGICAL_SRC_DATA], payload_srcs, comps, 0);
 
@@ -5348,8 +5348,8 @@ emit_urb_indirect_writes(const brw_builder &bld, nir_intrinsic_instr *instr,
          srcs[URB_LOGICAL_SRC_HANDLE] = urb_handle;
          srcs[URB_LOGICAL_SRC_PER_SLOT_OFFSETS] = final_offset;
          srcs[URB_LOGICAL_SRC_CHANNEL_MASK] = mask;
-         srcs[URB_LOGICAL_SRC_DATA] = brw_vgrf(bld.shader->alloc.allocate(length),
-                                               BRW_TYPE_F);
+         srcs[URB_LOGICAL_SRC_DATA] =
+            retype(brw_allocate_vgrf_units(*bld.shader, length), BRW_TYPE_F);
          srcs[URB_LOGICAL_SRC_COMPONENTS] = brw_imm_ud(length);
          bld8.LOAD_PAYLOAD(srcs[URB_LOGICAL_SRC_DATA], payload_srcs, length, 0);
 
@@ -7525,8 +7525,8 @@ brw_from_nir_emit_texture(nir_to_brw_state &ntb,
    /* Allocate enough space for the components + one physical register for the
     * residency data.
     */
-   brw_reg dst = brw_vgrf(
-      bld.shader->alloc.allocate(total_regs * reg_unit(devinfo)),
+   brw_reg dst = retype(
+      brw_allocate_vgrf_units(*bld.shader, total_regs * reg_unit(devinfo)),
       dst_type);
 
    brw_inst *inst = bld.emit(opcode, dst, srcs, ARRAY_SIZE(srcs));

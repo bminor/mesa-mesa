@@ -1203,7 +1203,7 @@ allocate_slots(fs_visitor &s,
 
          if ((x & mask) == mask) {
             if (regs[i].nr == UINT_MAX)
-               regs[i].nr = s.alloc.allocate(reg_unit(s.devinfo));
+               regs[i].nr = brw_allocate_vgrf_units(s, reg_unit(s.devinfo)).nr;
 
             regs[i].avail &= ~(mask << j);
 

@@ -560,7 +560,7 @@ namespace {
                       inst->exec_size * stride *
                       brw_type_size_bytes(inst->src[i].type),
                       reg_unit(devinfo) * REG_SIZE) * reg_unit(devinfo);
-      brw_reg tmp = brw_vgrf(v->alloc.allocate(size), inst->src[i].type);
+      brw_reg tmp = retype(brw_allocate_vgrf_units(*v, size), inst->src[i].type);
       ibld.UNDEF(tmp);
       tmp = byte_offset(horiz_stride(tmp, stride),
                         required_src_byte_offset(devinfo, inst, i));

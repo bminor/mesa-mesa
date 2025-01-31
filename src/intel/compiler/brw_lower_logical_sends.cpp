@@ -45,8 +45,7 @@ lower_urb_read_logical_send(const brw_builder &bld, brw_inst *inst)
    if (per_slot_present)
       payload_sources[header_size++] = inst->src[URB_LOGICAL_SRC_PER_SLOT_OFFSETS];
 
-   brw_reg payload = brw_vgrf(bld.shader->alloc.allocate(header_size),
-                             BRW_TYPE_F);
+   brw_reg payload = retype(brw_allocate_vgrf_units(*bld.shader, header_size), BRW_TYPE_F);
    bld.LOAD_PAYLOAD(payload, payload_sources, header_size, header_size);
 
    inst->opcode = SHADER_OPCODE_SEND;
@@ -146,8 +145,8 @@ lower_urb_write_logical_send(const brw_builder &bld, brw_inst *inst)
                            inst->components_read(URB_LOGICAL_SRC_DATA);
 
    brw_reg *payload_sources = new brw_reg[length];
-   brw_reg payload = brw_vgrf(bld.shader->alloc.allocate(length),
-                             BRW_TYPE_F);
+   brw_reg payload = retype(brw_allocate_vgrf_units(*bld.shader, length),
+                            BRW_TYPE_F);
 
    unsigned header_size = 0;
    payload_sources[header_size++] = inst->src[URB_LOGICAL_SRC_HANDLE];
@@ -375,7 +374,7 @@ lower_fb_write_logical_send(const brw_builder &bld, brw_inst *inst,
 
    if (fs_payload.aa_dest_stencil_reg[0]) {
       assert(inst->group < 16);
-      sources[length] = brw_vgrf(bld.shader->alloc.allocate(1), BRW_TYPE_F);
+      sources[length] = retype(brw_allocate_vgrf_units(*bld.shader, 1), BRW_TYPE_F);
       bld.group(8, 0).exec_all().annotate("FB write stencil/AA alpha")
          .MOV(sources[length],
               brw_reg(brw_vec8_grf(fs_payload.aa_dest_stencil_reg[0], 0)));
@@ -394,8 +393,8 @@ lower_fb_write_logical_send(const brw_builder &bld, brw_inst *inst,
    }
 
    if (sample_mask.file != BAD_FILE) {
-      const brw_reg tmp = brw_vgrf(bld.shader->alloc.allocate(reg_unit(devinfo)),
-                                  BRW_TYPE_UD);
+      const brw_reg tmp = retype(brw_allocate_vgrf_units(*bld.shader, reg_unit(devinfo)),
+                                 BRW_TYPE_UD);
 
       /* Hand over gl_SampleMask.  Only the lower 16 bits of each channel are
        * relevant.  Since it's unsigned single words one vgrf is always
@@ -456,7 +455,7 @@ lower_fb_write_logical_send(const brw_builder &bld, brw_inst *inst,
    /* Send from the GRF */
    brw_reg payload = brw_vgrf(-1, BRW_TYPE_F);
    brw_inst *load = bld.LOAD_PAYLOAD(payload, sources, length, payload_header_size);
-   payload.nr = bld.shader->alloc.allocate(regs_written(load));
+   payload.nr = brw_allocate_vgrf_units(*bld.shader, regs_written(load)).nr;
    load->dst = payload;
 
    uint32_t msg_ctl = brw_fb_write_msg_control(inst, prog_data);
@@ -1093,8 +1092,8 @@ lower_sampler_logical_send(const brw_builder &bld, brw_inst *inst,
    }
 
    const brw_reg src_payload =
-      brw_vgrf(bld.shader->alloc.allocate(length * bld.dispatch_width() / 8),
-               BRW_TYPE_F);
+      retype(brw_allocate_vgrf_units(*bld.shader, length * bld.dispatch_width() / 8),
+             BRW_TYPE_F);
    /* In case of 16-bit payload each component takes one full register in
     * both SIMD8H and SIMD16H modes. In both cases one reg can hold 16
     * elements. In SIMD8H case hardware simply expects the components to be

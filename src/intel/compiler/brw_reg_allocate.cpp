@@ -1082,7 +1082,7 @@ brw_reg_alloc::choose_spill_reg()
 brw_reg
 brw_reg_alloc::alloc_spill_reg(unsigned size, int ip)
 {
-   int vgrf = fs->alloc.allocate(ALIGN(size, reg_unit(devinfo)));
+   int vgrf = brw_allocate_vgrf_units(*fs, ALIGN(size, reg_unit(devinfo))).nr;
    int class_idx = DIV_ROUND_UP(size, reg_unit(devinfo)) - 1;
    int n = ra_add_node(g, compiler->reg_set.classes[class_idx]);
    assert(n == first_vgrf_node + vgrf);
