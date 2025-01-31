@@ -315,7 +315,7 @@ if with_tests
     dependencies : [
       dep_thread, dep_dl, dep_m, anv_deps,
       idep_nir, idep_vulkan_util, idep_vulkan_wsi, idep_vulkan_runtime,
-      idep_mesautil, idep_intel_dev, idep_intel_shaders, idep_intel_blorp,
+      idep_mesautil, idep_intel_dev, idep_intel_blorp,
       idep_intel_compiler_brw, idep_intel_decoder_brw,
     ],
     c_args : anv_flags,
@@ -346,7 +346,7 @@ if with_tests
         idep_gtest, dep_libdrm, dep_thread, dep_m, dep_valgrind,
         idep_vulkan_util, idep_vulkan_wsi_headers,
         idep_vulkan_runtime, idep_intel_driver_ds, idep_intel_dev,
-        idep_intel_shaders,
+        anv_deps,
       ],
       include_directories : [
         inc_include, inc_src, inc_intel, inc_compiler, inc_nir
