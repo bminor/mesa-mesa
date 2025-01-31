@@ -1399,6 +1399,7 @@ agx_nir_lower_gs(nir_shader *gs, bool rasterizer_discard, nir_shader **gs_count,
       .count_words = gs_state.count_stride_el,
       .prefix_sum = gs_state.prefix_summing,
       .max_indices = gs_state.max_indices,
+      .xfb = gs->xfb_info != NULL,
    };
 
    return true;

@@ -40,7 +40,10 @@ struct agx_gs_info {
    /* Per-input primitive stride of the output index buffer */
    unsigned max_indices;
 
-   /* Whether a prefix sum is required on the count outputs */
+   /* Whether the GS includes transform feedback at a compile-time level */
+   bool xfb;
+
+   /* Whether a prefix sum is required on the count outputs. Implies xfb */
    bool prefix_sum;
 };
 
