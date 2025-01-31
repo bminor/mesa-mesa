@@ -360,5 +360,7 @@ mr-label-maker-test:
   needs:
     - job: rustfmt
       optional: true
+      artifacts: false
     - job: yaml-toml-shell-py-test
       optional: true
+      artifacts: false
