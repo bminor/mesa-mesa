@@ -1829,7 +1829,7 @@ zink_flush_frontbuffer(struct pipe_screen *pscreen,
    if (!zink_kopper_acquired(res->obj->dt, res->obj->dt_idx)) {
       /* swapbuffers to an undefined surface: acquire and present garbage */
       zink_kopper_acquire(ctx, res, UINT64_MAX);
-      ctx->needs_present = res;
+      zink_resource_reference(&ctx->needs_present, res);
       /* set batch usage to submit acquire semaphore */
       zink_batch_resource_usage_set(ctx->bs, res, true, false);
       /* ensure the resource is set up to present garbage */
