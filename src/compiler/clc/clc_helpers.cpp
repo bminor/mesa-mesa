@@ -83,7 +83,7 @@
 namespace fs = std::filesystem;
 
 /* Use the highest version of SPIRV supported by SPIRV-Tools. */
-constexpr spv_target_env spirv_target = SPV_ENV_UNIVERSAL_1_5;
+constexpr spv_target_env spirv_target = SPV_ENV_UNIVERSAL_1_6;
 
 constexpr SPIRV::VersionNumber invalid_spirv_trans_version = static_cast<SPIRV::VersionNumber>(0);
 
