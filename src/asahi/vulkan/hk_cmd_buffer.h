@@ -138,6 +138,9 @@ struct hk_attachment {
 
    VkResolveModeFlagBits resolve_mode;
    struct hk_image_view *resolve_iview;
+
+   bool clear;
+   uint32_t clear_colour[4];
 };
 
 struct hk_bg_eot {
@@ -670,15 +673,19 @@ hk_cmd_buffer_end_compute(struct hk_cmd_buffer *cmd)
    hk_cmd_buffer_end_compute_internal(cmd, &cmd->current_cs.cs);
 }
 
+void hk_optimize_empty_vdm(struct hk_cmd_buffer *cmd);
+
 static void
 hk_cmd_buffer_end_graphics(struct hk_cmd_buffer *cmd)
 {
    struct hk_cs *cs = cmd->current_cs.gfx;
 
-   if (cs) {
-      /* Scissor and depth bias arrays are staged to dynamic arrays on the CPU.
-       * When we end the control stream, they're done growing and are ready for
-       * upload.
+   if (cs && cs->stats.cmds == 0) {
+      hk_optimize_empty_vdm(cmd);
+   } else if (cs) {
+      /* Scissor and depth bias arrays are staged to dynamic arrays on the
+       * CPU. When we end the control stream, they're done growing and are
+       * ready for upload.
        */
       cs->uploaded_scissor =
          hk_pool_upload(cmd, cs->scissor.data, cs->scissor.size, 64);
@@ -687,15 +694,14 @@ hk_cmd_buffer_end_graphics(struct hk_cmd_buffer *cmd)
          hk_pool_upload(cmd, cs->depth_bias.data, cs->depth_bias.size, 64);
 
       /* TODO: maybe free scissor/depth_bias now? */
-
-      cmd->current_cs.gfx->current = agx_vdm_terminate(cs->current);
-      cmd->current_cs.gfx = NULL;
+      cs->current = agx_vdm_terminate(cs->current);
    }
+
+   cmd->current_cs.gfx = NULL;
 
    hk_cmd_buffer_end_compute_internal(cmd, &cmd->current_cs.pre_gfx);
    hk_cmd_buffer_end_compute_internal(cmd, &cmd->current_cs.post_gfx);
 
-   assert(cmd->current_cs.gfx == NULL);
    assert(cmd->current_cs.pre_gfx == NULL);
    assert(cmd->current_cs.post_gfx == NULL);
 

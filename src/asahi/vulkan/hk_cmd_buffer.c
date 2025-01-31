@@ -19,6 +19,7 @@
 #include "hk_device.h"
 #include "hk_device_memory.h"
 #include "hk_entrypoints.h"
+#include "hk_image.h"
 #include "hk_image_view.h"
 #include "hk_physical_device.h"
 #include "hk_shader.h"
@@ -269,19 +270,6 @@ hk_EndCommandBuffer(VkCommandBuffer commandBuffer)
    perf_debug(cmd, "End command buffer");
    hk_cmd_buffer_end_compute(cmd);
    hk_cmd_buffer_end_compute_internal(cmd, &cmd->current_cs.post_gfx);
-
-   /* With rasterizer discard, we might end up with empty VDM batches.
-    * It is difficult to avoid creating these empty batches, but it's easy to
-    * optimize them out at record-time. Do so now.
-    */
-   list_for_each_entry_safe(struct hk_cs, cs, &cmd->control_streams, node) {
-      if (cs->type == HK_CS_VDM && cs->stats.cmds == 0 &&
-          !cs->cr.process_empty_tiles) {
-
-         list_del(&cs->node);
-         hk_cs_destroy(cs);
-      }
-   }
 
    return vk_command_buffer_get_record_result(&cmd->vk);
 }
@@ -836,4 +824,62 @@ hk_ensure_cs_has_space(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
    cs->end = cs->current + size;
    cs->chunk = T;
    cs->stream_linked = true;
+}
+
+static void
+clear_attachment_as_image(struct hk_cmd_buffer *cmd,
+                          struct hk_rendering_state *render,
+                          struct hk_attachment *att, unsigned aspect)
+{
+   struct hk_image_view *view = att->iview;
+   if (!att->clear || !view || !(view->vk.aspects & aspect))
+      return;
+
+   const uint32_t layer_count = render->view_mask
+                                   ? util_last_bit(render->view_mask)
+                                   : render->layer_count;
+
+   const VkImageSubresourceRange range = {
+      .layerCount = layer_count,
+      .levelCount = 1,
+      .baseArrayLayer = view->vk.base_array_layer,
+      .baseMipLevel = view->vk.base_mip_level,
+      .aspectMask = view->vk.aspects & aspect,
+   };
+
+   assert(util_bitcount(range.aspectMask) == 1);
+   VkFormat format = att->vk_format;
+
+   if (aspect == VK_IMAGE_ASPECT_DEPTH_BIT) {
+      format = vk_format_depth_only(format);
+   } else if (aspect == VK_IMAGE_ASPECT_STENCIL_BIT) {
+      format = vk_format_stencil_only(format);
+   }
+
+   struct hk_image *image = container_of(view->vk.image, struct hk_image, vk);
+   hk_clear_image(cmd, image, vk_format_to_pipe_format(format),
+                  att->clear_colour, &range, false /* partially clear 3D */);
+}
+
+void
+hk_optimize_empty_vdm(struct hk_cmd_buffer *cmd)
+{
+   struct hk_cs *cs = cmd->current_cs.gfx;
+   struct hk_rendering_state *render = &cmd->state.gfx.render;
+
+   for (unsigned i = 0; i < render->color_att_count; ++i) {
+      clear_attachment_as_image(cmd, render, &render->color_att[i], ~0);
+   }
+
+   clear_attachment_as_image(cmd, render, &render->depth_att,
+                             VK_IMAGE_ASPECT_DEPTH_BIT);
+
+   clear_attachment_as_image(cmd, render, &render->stencil_att,
+                             VK_IMAGE_ASPECT_STENCIL_BIT);
+
+   /* Remove the VDM control stream from the command buffer, now that it is
+    * replaced by equivalent other operations.
+    */
+   list_del(&cs->node);
+   hk_cs_destroy(cs);
 }

@@ -864,6 +864,13 @@ hk_CmdBeginRendering(VkCommandBuffer commandBuffer,
          .clearValue = att_info->clearValue,
       };
 
+      render->color_att[i].clear = true;
+
+      static_assert(sizeof(render->color_att[i].clear_colour) ==
+                    sizeof(att_info->clearValue));
+      memcpy(render->color_att[i].clear_colour, &att_info->clearValue,
+             sizeof(att_info->clearValue));
+
       resolved_clear |= is_attachment_stored(att_info);
    }
 
@@ -877,6 +884,10 @@ hk_CmdBeginRendering(VkCommandBuffer commandBuffer,
       clear_att[clear_count].clearValue.depthStencil.depth =
          attach_z->clearValue.depthStencil.depth;
 
+      render->depth_att.clear = true;
+      render->depth_att.clear_colour[0] =
+         fui(attach_z->clearValue.depthStencil.depth);
+
       resolved_clear |= is_attachment_stored(attach_z);
    }
 
@@ -884,6 +895,10 @@ hk_CmdBeginRendering(VkCommandBuffer commandBuffer,
        attach_s->loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
       clear_att[clear_count].aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
       clear_att[clear_count].clearValue.depthStencil.stencil =
+         attach_s->clearValue.depthStencil.stencil;
+
+      render->stencil_att.clear = true;
+      render->stencil_att.clear_colour[1] =
          attach_s->clearValue.depthStencil.stencil;
 
       resolved_clear |= is_attachment_stored(attach_s);
