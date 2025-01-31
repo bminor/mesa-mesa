@@ -24,9 +24,10 @@ zink-venus-lvp:
     - .test-gl
     - .deqp-test
     - .zink-venus-lvp-test
-  timeout: 15min  # base run time = 5min, but it's on the shared runners so it can go up
+  timeout: 15min  # base run time = 8min, but it's on the shared runners so it can go up
   variables:
     DEQP_SUITE: zink-venus-lvp
+    DEQP_FRACTION: 2
     PIGLIT_NO_WINDOW: 1
     # Enable validation (except for on piglit, see deqp-zink-venus-lvp.toml), logging
     # to stdout and aborting on unknown failures.
@@ -38,6 +39,13 @@ zink-venus-lvp:
     export LD_LIBRARY_PATH="$CI_PROJECT_DIR/install/lib"
     export LIBGL_DRIVERS_PATH="$CI_PROJECT_DIR/install/lib/dri"
     xvfb-run --server-args='-noreset' bash -c "./install/crosvm-runner.sh ./install/deqp-runner.sh"
+
+zink-venus-lvp-full:
+  extends:
+    - zink-venus-lvp
+  timeout: 30m
+  variables:
+    DEQP_FRACTION: 1
 
 zink-anv-adl:
   extends:
