@@ -470,7 +470,7 @@ d3d12_init_screen_caps(struct d3d12_screen *screen)
    caps->min_point_size_aa = 1;
 
    caps->point_size_granularity =
-   caps->line_width_granularity = 0.1;
+   caps->line_width_granularity = 0.1f;
 
    caps->max_line_width =
    caps->max_line_width_aa = 1.0f; /* no clue */
