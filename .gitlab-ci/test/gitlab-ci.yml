@@ -417,7 +417,8 @@ yaml-toml-shell-py-test:
     - .use-debian/x86_64_test-vk
     - .b2c-x86_64-test
   needs:
-    - debian/x86_64_test-vk
+    - job: debian/x86_64_test-vk
+      artifacts: false
     - debian-testing
     - !reference [.required-for-hardware-jobs, needs]
 
@@ -435,7 +436,8 @@ yaml-toml-shell-py-test:
     - .use-debian/x86_64_test-gl
     - .b2c-x86_64-test
   needs:
-    - debian/x86_64_test-gl
+    - job: debian/x86_64_test-gl
+      artifacts: false
     - debian-testing
     - !reference [.required-for-hardware-jobs, needs]
 
@@ -444,7 +446,8 @@ yaml-toml-shell-py-test:
     - .use-debian/x86_64_test-gl
     - .b2c-x86_64-test
   needs:
-    - debian/x86_64_test-gl
+    - job: debian/x86_64_test-gl
+      artifacts: false
     - debian-build-testing
     - !reference [.required-for-hardware-jobs, needs]
 
@@ -460,7 +463,8 @@ yaml-toml-shell-py-test:
     - .use-debian/arm64_test-vk
     - .b2c-arm64-test
   needs:
-    - debian/arm64_test-vk
+    - job: debian/arm64_test-vk
+      artifacts: false
     - debian-arm64
     - !reference [.required-for-hardware-jobs, needs]
 
@@ -469,6 +473,7 @@ yaml-toml-shell-py-test:
     - .use-debian/arm64_test-gl
     - .b2c-arm64-test
   needs:
-    - debian/arm64_test-gl
+    - job: debian/arm64_test-gl
+      artifacts: false
     - debian-arm64
     - !reference [.required-for-hardware-jobs, needs]
