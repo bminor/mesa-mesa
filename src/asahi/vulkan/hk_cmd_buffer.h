@@ -370,7 +370,7 @@ struct hk_cs {
 
    /* Statistics */
    struct {
-      uint32_t calls, cmds, flushes;
+      uint32_t calls, cmds, flushes, merged;
    } stats;
 
    /* Timestamp writes. Currently just compute end / fragment end. We could
@@ -405,6 +405,32 @@ struct hk_cs {
     */
    uint32_t restart_index;
 };
+
+/*
+ * Helper to merge two compute control streams, concatenating the second control
+ * stream to the first one. Must sync with hk_cs.
+ */
+static inline void
+hk_cs_merge_cdm(struct hk_cs *a, const struct hk_cs *b)
+{
+   assert(a->type == HK_CS_CDM && b->type == HK_CS_CDM);
+   assert(a->cmd == b->cmd);
+   assert(!a->timestamp.end.handle);
+
+   agx_cdm_jump(a->current, b->addr);
+   a->current = b->current;
+   a->stream_linked = true;
+
+   a->scratch.cs.main |= b->scratch.cs.main;
+   a->scratch.cs.preamble |= b->scratch.cs.preamble;
+
+   a->timestamp = b->timestamp;
+
+   a->stats.calls += b->stats.calls;
+   a->stats.cmds += b->stats.cmds;
+   a->stats.flushes += b->stats.flushes;
+   a->stats.merged++;
+}
 
 static inline uint64_t
 hk_cs_current_addr(struct hk_cs *cs)
@@ -660,8 +686,6 @@ hk_cmd_buffer_end_compute_internal(struct hk_cmd_buffer *cmd,
       if (cs->imm_writes.size) {
          hk_dispatch_imm_writes(cmd, cs);
       }
-
-      cs->current = agx_cdm_terminate(cs->current);
    }
 
    *ptr = NULL;

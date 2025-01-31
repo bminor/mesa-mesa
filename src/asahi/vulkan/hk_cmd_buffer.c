@@ -259,6 +259,32 @@ hk_BeginCommandBuffer(VkCommandBuffer commandBuffer,
    return VK_SUCCESS;
 }
 
+/*
+ * Merge adjacent compute control streams. Except for reading timestamps, there
+ * is no reason to submit two CDM streams back-to-back in the same command
+ * buffer. However, it is challenging to avoid constructing such sequences due
+ * to the gymnastics required to reorder compute around graphics. Merging at
+ * EndCommandBuffer is cheap O(# of control streams) and lets us get away with
+ * the sloppiness.
+ */
+static void
+merge_control_streams(struct hk_cmd_buffer *cmd)
+{
+   struct hk_cs *last = NULL;
+
+   list_for_each_entry_safe(struct hk_cs, cs, &cmd->control_streams, node) {
+      if (cs->type == HK_CS_CDM && last && last->type == HK_CS_CDM &&
+          !last->timestamp.end.handle) {
+
+         hk_cs_merge_cdm(last, cs);
+         list_del(&cs->node);
+         hk_cs_destroy(cs);
+      } else {
+         last = cs;
+      }
+   }
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL
 hk_EndCommandBuffer(VkCommandBuffer commandBuffer)
 {
@@ -270,6 +296,21 @@ hk_EndCommandBuffer(VkCommandBuffer commandBuffer)
    perf_debug(cmd, "End command buffer");
    hk_cmd_buffer_end_compute(cmd);
    hk_cmd_buffer_end_compute_internal(cmd, &cmd->current_cs.post_gfx);
+
+   struct hk_device *dev = hk_cmd_buffer_device(cmd);
+   if (likely(!(dev->dev.debug & AGX_DBG_NOMERGE))) {
+      merge_control_streams(cmd);
+   }
+
+   /* We cannot terminate CDM control streams until after merging, since merging
+    * needs to append stream links late. Now that we've merged, insert all the
+    * missing stream terminates.
+    */
+   list_for_each_entry(struct hk_cs, cs, &cmd->control_streams, node) {
+      if (cs->type == HK_CS_CDM) {
+         cs->current = agx_cdm_terminate(cs->current);
+      }
+   }
 
    return vk_command_buffer_get_record_result(&cmd->vk);
 }
