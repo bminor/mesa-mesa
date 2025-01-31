@@ -704,7 +704,7 @@
         "description": "ci: fix the artifact name",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ef3091736c3ec63303e483d8f3cb0924b4a4fa4f",
         "notes": null
