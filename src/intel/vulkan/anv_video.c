@@ -715,25 +715,16 @@ anv_GetVideoSessionMemoryRequirementsKHR(VkDevice _device,
       (vid->vk.flags & VK_VIDEO_SESSION_CREATE_PROTECTED_CONTENT_BIT_KHR) ?
       device->physical->memory.protected_mem_types :
       device->physical->memory.default_buffer_mem_types;
+
    switch (vid->vk.op) {
    case VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR:
-      get_h264_video_session_mem_reqs(vid,
-                                      mem_reqs,
-                                      pVideoSessionMemoryRequirementsCount,
-                                      memory_types);
-      break;
-   case VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR:
-      get_h265_video_session_mem_reqs(vid,
-                                      mem_reqs,
-                                      pVideoSessionMemoryRequirementsCount,
-                                      memory_types);
-      break;
    case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR:
       get_h264_video_session_mem_reqs(vid,
                                       mem_reqs,
                                       pVideoSessionMemoryRequirementsCount,
                                       memory_types);
       break;
+   case VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR:
    case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR:
       get_h265_video_session_mem_reqs(vid,
                                       mem_reqs,
