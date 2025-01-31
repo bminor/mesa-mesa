@@ -97,6 +97,8 @@ deployment:
 {% endif %}
 
         http:
+          - path: "/install.tar.zst"
+            url: "{{ install_tarball_url }}"
           - path: "/b2c-extra-args"
             data: >
               b2c.pipefail b2c.poweroff_delay={{ poweroff_delay }}
@@ -107,7 +109,7 @@ deployment:
               {% endfor %}
               b2c.run_service="--privileged --tls-verify=false --pid=host {{ telegraf_image }}" b2c.hostname=dut-{{ '{{' }} machine.full_name }}
               b2c.run="-ti --tls-verify=false {{ machine_registration_image }} check"
-              b2c.run="-v {{ '{{' }} job_bucket }}-results:{{ working_dir }} -w {{ working_dir }} {% for mount_volume in mount_volumes %} -v {{ mount_volume }}{% endfor %} --tls-verify=false {{image_under_test}} {{ container_cmd | replace('"', '\\\"') }}"
+              b2c.run="-v {{ '{{' }} job_bucket }}-results:{{ working_dir }} -w {{ working_dir }} {% for mount_volume in mount_volumes %} -v {{ mount_volume }}{% endfor %} --tls-verify=false --entrypoint bash {{image_under_test}} -euc 'curl -q {{ '{{' }} job.http.url }}/install.tar.zst | tar --zstd -x; {{ container_cmd }}'"
     kernel:
 {% if kernel_url %}
       url: '{{ kernel_url }}'

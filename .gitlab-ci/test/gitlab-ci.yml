@@ -319,12 +319,18 @@ yaml-toml-shell-py-test:
     # we rename the MESA_IMAGE variable into IMAGE_UNDER_TEST.
     IMAGE_UNDER_TEST: "$MESA_IMAGE"
 
-    INSTALL_TARBALL_NAME: "install.tar"
-    INSTALL_TARBALL: "./artifacts/${INSTALL_TARBALL_NAME}"
+    B2C_INSTALL_TARBALL_URL: "https://${PIPELINE_ARTIFACTS_BASE}/${S3_ARTIFACT_NAME}.tar.zst"
+    B2C_CONTAINER_CMD: "./install/common/init-stage2.sh"
+
     CI_B2C_ARTIFACTS: "./artifacts/b2c"
     CI_COMMON_SCRIPTS: "./artifacts/ci-common"
     B2C_JOB_TEMPLATE: "${CI_B2C_ARTIFACTS}/b2c.yml.jinja2.jinja2"
     JOB_FOLDER: "job_folder"
+
+  needs:
+    - job: python-artifacts
+      artifacts: true
+    - !reference [.required-for-hardware-jobs, needs]
 
   before_script:
     # We don't want the tarball unpacking of .test, but will take the JWT bits.
@@ -350,11 +356,8 @@ yaml-toml-shell-py-test:
          fi
       fi
 
-      [ -s "$INSTALL_TARBALL" ] || exit 1
       [ -d "$CI_B2C_ARTIFACTS" ] || exit 1
       [ -d "$CI_COMMON_SCRIPTS" ] || exit 1
-
-      export B2C_CONTAINER_CMD="bash -euc 'tar xf ${INSTALL_TARBALL_NAME}; ./install/common/init-stage2.sh'"
 
       # The Valve CI gateway receives jobs in a YAML format. Create a
       # job description from the CI environment.
@@ -373,9 +376,6 @@ yaml-toml-shell-py-test:
       echo "Variables passed through:"
       cat ${JOB_FOLDER}/set-job-env-vars.sh
       set -x
-
-      # Copy the mesa install tarball to the job folder, for later extraction
-      mv "${INSTALL_TARBALL}" "${JOB_FOLDER}"
 
   script: |
       slugify () {
@@ -411,6 +411,7 @@ yaml-toml-shell-py-test:
   variables:
     B2C_KERNEL_URL: 'https://gitlab.freedesktop.org/gfx-ci/ci-tron/-/package_files/519/download'  # Linux 6.1
     B2C_INITRAMFS_URL: 'https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/${B2C_VERSION}/downloads/initramfs.linux_amd64.cpio.xz'
+    S3_ARTIFACT_NAME: "mesa-x86_64-default-debugoptimized"
 
 .b2c-x86_64-test-vk:
   extends:
@@ -419,17 +420,20 @@ yaml-toml-shell-py-test:
   needs:
     - job: debian/x86_64_test-vk
       artifacts: false
-    - debian-testing
-    - !reference [.required-for-hardware-jobs, needs]
+    - job: debian-testing
+      artifacts: false
+    - !reference [.b2c-test, needs]
 
 .b2c-x86_64-test-vk-manual:
   extends:
     - .use-debian/x86_64_test-vk
     - .b2c-x86_64-test
   needs:
-    - debian/x86_64_test-vk
-    - debian-build-testing
-    - !reference [.required-for-hardware-jobs, needs]
+    - job: debian/x86_64_test-vk
+      artifacts: false
+    - job: debian-build-testing
+      artifacts: false
+    - !reference [.b2c-test, needs]
 
 .b2c-x86_64-test-gl:
   extends:
@@ -438,8 +442,9 @@ yaml-toml-shell-py-test:
   needs:
     - job: debian/x86_64_test-gl
       artifacts: false
-    - debian-testing
-    - !reference [.required-for-hardware-jobs, needs]
+    - job: debian-testing
+      artifacts: false
+    - !reference [.b2c-test, needs]
 
 .b2c-x86_64-test-gl-manual:
   extends:
@@ -448,8 +453,9 @@ yaml-toml-shell-py-test:
   needs:
     - job: debian/x86_64_test-gl
       artifacts: false
-    - debian-build-testing
-    - !reference [.required-for-hardware-jobs, needs]
+    - job: debian-build-testing
+      artifacts: false
+    - !reference [.b2c-test, needs]
 
 .b2c-arm64-test:
   extends:
@@ -457,6 +463,7 @@ yaml-toml-shell-py-test:
   variables:
     B2C_INITRAMFS_URL: 'https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/${B2C_VERSION}/downloads/initramfs.linux_arm64.cpio.xz'
     B2C_KERNEL_URL: 'https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/${B2C_VERSION}/downloads/linux-arm64'
+    S3_ARTIFACT_NAME: "mesa-arm64-default-debugoptimized"
 
 .b2c-arm64-test-vk:
   extends:
@@ -465,8 +472,9 @@ yaml-toml-shell-py-test:
   needs:
     - job: debian/arm64_test-vk
       artifacts: false
-    - debian-arm64
-    - !reference [.required-for-hardware-jobs, needs]
+    - job: debian-arm64
+      artifacts: false
+    - !reference [.b2c-test, needs]
 
 .b2c-arm64-test-gl:
   extends:
@@ -475,8 +483,9 @@ yaml-toml-shell-py-test:
   needs:
     - job: debian/arm64_test-gl
       artifacts: false
-    - debian-arm64
-    - !reference [.required-for-hardware-jobs, needs]
+    - job: debian-arm64
+      artifacts: false
+    - !reference [.b2c-test, needs]
 
 .b2c-arm32-test:
   extends:
@@ -484,6 +493,7 @@ yaml-toml-shell-py-test:
   variables:
     B2C_INITRAMFS_URL: 'https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/${B2C_VERSION}/downloads/initramfs.linux_arm.cpio.xz'
     B2C_KERNEL_URL: 'https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/${B2C_VERSION}/downloads/linux-arm'
+    S3_ARTIFACT_NAME: "mesa-arm32-default-debugoptimized"
 
 .b2c-arm32-test-vk:
   extends:
@@ -492,8 +502,9 @@ yaml-toml-shell-py-test:
   needs:
     - job: debian/arm32_test-vk
       artifacts: false
-    - debian-arm32
-    - !reference [.required-for-hardware-jobs, needs]
+    - job: debian-arm32
+      artifacts: false
+    - !reference [.b2c-test, needs]
 
 .b2c-arm32-test-gl:
   extends:
@@ -502,17 +513,20 @@ yaml-toml-shell-py-test:
   needs:
     - job: debian/arm32_test-gl
       artifacts: false
-    - debian-arm32
-    - !reference [.required-for-hardware-jobs, needs]
+    - job: debian-arm32
+      artifacts: false
+    - !reference [.b2c-test, needs]
 
 .b2c-arm32-test-asan-gl:
   extends:
     - .use-debian/arm32_test-gl
     - .b2c-arm32-test
   variables:
+    S3_ARTIFACT_NAME: "mesa-arm32-asan-debugoptimized"
     DEQP_FORCE_ASAN: 1
   needs:
     - job: debian/arm32_test-gl
       artifacts: false
-    - debian-arm32-asan
-    - !reference [.required-for-hardware-jobs, needs]
+    - job: debian-arm32-asan
+      artifacts: false
+    - !reference [.b2c-test, needs]
