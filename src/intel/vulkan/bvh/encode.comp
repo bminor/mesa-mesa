@@ -29,7 +29,7 @@ layout(push_constant) uniform CONSTS {
    encode_args args;
 };
 
-uint64_t
+uint32_t
 get_instance_flag(uint32_t src)
 {
    uint32_t flags = src & 0xff;
@@ -129,20 +129,6 @@ encode_leaf_node(uint32_t type, uint64_t src_node, uint64_t dst_node, REF(anv_ac
       uint64_t start_node_ptr = uint64_t(src.base_ptr) + DEREF(blas_header).rootNodeOffset;
 
       uint32_t sbt_offset_and_flags = src.sbt_offset_and_flags;
-
-      uint32_t shader_index_and_geom_mask = 0;
-      shader_index_and_geom_mask |= (src.custom_instance_and_mask & 0xff000000);
-      DEREF(dst_instance).part0.shader_index_and_geom_mask = shader_index_and_geom_mask;
-
-      uint32_t instance_contribution_and_geom_flags = 0;
-      instance_contribution_and_geom_flags |= src.sbt_offset_and_flags & 0xffffff;
-      instance_contribution_and_geom_flags |= (1 << 29);
-      instance_contribution_and_geom_flags |=
-         (get_instance_flag(src.sbt_offset_and_flags >> 24) == ANV_INSTANCE_FLAG_FORCE_OPAQUE ?
-          ANV_GEOMETRY_FLAG_OPAQUE : 0) << 30;
-      DEREF(dst_instance).part0.instance_contribution_and_geom_flags =
-         instance_contribution_and_geom_flags;
-
       uint32_t instance_flags = DEREF(blas_header).instance_flags;
       if (((sbt_offset_and_flags >> 24) & (VK_GEOMETRY_INSTANCE_FORCE_OPAQUE_BIT_KHR |
                                            VK_GEOMETRY_INSTANCE_FORCE_NO_OPAQUE_BIT_KHR)) != 0) {
@@ -152,9 +138,39 @@ encode_leaf_node(uint32_t type, uint64_t src_node, uint64_t dst_node, REF(anv_ac
                                                            VK_GEOMETRY_INSTANCE_FORCE_NO_OPAQUE_BIT_KHR);
       }
 
-      DEREF(dst_instance).part0.start_node_ptr_and_inst_flags =
+#if GFX_VERx10 >= 300
+      DEREF(dst_instance).part0.QW_startNodePtr = start_node_ptr;
+      uint32_t instance_contribution_and_geom_mask = 0;
+      instance_contribution_and_geom_mask |= src.sbt_offset_and_flags & 0xffffff;
+      instance_contribution_and_geom_mask |= (src.custom_instance_and_mask & 0xff000000);
+      DEREF(dst_instance).part0.DW0 = instance_contribution_and_geom_mask;
+
+      uint32_t inst_flags_and_the_rest = 0;
+      inst_flags_and_the_rest |= get_instance_flag(instance_flags | (src.sbt_offset_and_flags >> 24));
+      inst_flags_and_the_rest |= (1 << 29);
+      inst_flags_and_the_rest |=
+         ((get_instance_flag(src.sbt_offset_and_flags >> 24) & ANV_INSTANCE_FLAG_FORCE_OPAQUE) != 0 ?
+          ANV_GEOMETRY_FLAG_OPAQUE : 0) << 30;
+
+      DEREF(dst_instance).part0.DW1 = inst_flags_and_the_rest;
+
+#else
+      uint32_t shader_index_and_geom_mask = 0;
+      shader_index_and_geom_mask |= (src.custom_instance_and_mask & 0xff000000);
+      DEREF(dst_instance).part0.DW0 = shader_index_and_geom_mask;
+
+      uint32_t instance_contribution_and_geom_flags = 0;
+      instance_contribution_and_geom_flags |= src.sbt_offset_and_flags & 0xffffff;
+      instance_contribution_and_geom_flags |= (1 << 29);
+      instance_contribution_and_geom_flags |=
+         ((get_instance_flag(src.sbt_offset_and_flags >> 24) & ANV_INSTANCE_FLAG_FORCE_OPAQUE) != 0 ?
+          ANV_GEOMETRY_FLAG_OPAQUE : 0) << 30;
+      DEREF(dst_instance).part0.DW1 = instance_contribution_and_geom_flags;
+
+      DEREF(dst_instance).part0.QW_startNodePtr =
          (start_node_ptr & ((1ul << 48) - 1)) |
-         (get_instance_flag(instance_flags | (src.sbt_offset_and_flags >> 24)) << 48);
+         (uint64_t(get_instance_flag(instance_flags | (src.sbt_offset_and_flags >> 24))) << 48);
+#endif
 
       mat4 transform = mat4(src.otw_matrix);
 

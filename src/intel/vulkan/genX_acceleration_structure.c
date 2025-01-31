@@ -229,16 +229,23 @@ debug_record_as_to_bvh_dump(struct anv_cmd_buffer *cmd_buffer,
    }
 }
 
+#define STRINGIFY_HELPER(x) #x
+#define STRINGIFY(x) STRINGIFY_HELPER(x)
+
+#define ENCODE_SPV_PATH STRINGIFY(bvh/genX(encode).spv.h)
+#define HEADER_SPV_PATH STRINGIFY(bvh/genX(header).spv.h)
+#define COPY_SPV_PATH STRINGIFY(bvh/genX(copy).spv.h)
+
 static const uint32_t encode_spv[] = {
-#include "bvh/encode.spv.h"
+#include ENCODE_SPV_PATH
 };
 
 static const uint32_t header_spv[] = {
-#include "bvh/header.spv.h"
+#include HEADER_SPV_PATH
 };
 
 static const uint32_t copy_spv[] = {
-#include "bvh/copy.spv.h"
+#include COPY_SPV_PATH
 };
 
 static VkResult

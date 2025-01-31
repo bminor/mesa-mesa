@@ -211,24 +211,46 @@ struct anv_internal_node {
 #define ANV_INSTANCE_ALL_AABB                               0x40
 
 struct instance_leaf_part0 {
-   /* shader index (24-bits) for software instancing
+   /* Xe1/2:
+    * shader index (24-bits) for software instancing
     * geometry mask (8-bits) used for ray masking
+    *
+    * Xe3+:
+    * instanceContribution: 24
+    * geometry mask (8-bits): 8
     */
-   uint32_t shader_index_and_geom_mask;
+   uint32_t DW0;
 
-   /* instance contribution to hit group index (24-bits)
+
+   /* Xe1/2:
+    * instance contribution to hit group index (24-bits)
     * Padding (5-bits)
     * DisableOpacityCull (1-bit)
     * OpaqueGeometry (1-bit)
     * Padding (1-bit)
+    *
+    * Xe3+:
+    * insFlags: 8
+    * ComparisonMode: 1
+    * ComparisonValue: 7
+    * pad0: 8
+    * subType: 4
+    * pad1: 1
+    * DisableOpacityCull: 1
+    * OpaqueGeometry: 1
+    * IgnoreRayMultiplier: 1
     */
-   uint32_t instance_contribution_and_geom_flags;
+   uint32_t DW1;
 
-   /* 48 bit start node of the instanced object
+   /* Xe1/2:
+    * 48 bit start node of the instanced object
     * instFlags (8-bits)
     * Padding (16-bits)
+    *
+    * Xe3+:
+    * 64 bit start node pointer
     */
-   uint64_t start_node_ptr_and_inst_flags;
+   uint64_t QW_startNodePtr;
 
    /* 1st row of Worl2Obj transform */
    float    world2obj_vx_x;

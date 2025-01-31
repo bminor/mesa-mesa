@@ -136,11 +136,15 @@ main(void)
             DEREF(instance_leaf).part1.bvh_ptr = blas_ptr;
 
             /* set the startNodePtr to blas_ptr + ANV_HEADER_SIZE */
-            uint64_t mask = 0x0000fffffffffffful;
             uint64_t new_startNodePtr = blas_ptr + ANV_RT_BVH_HEADER_SIZE;
+#if GFX_VERx10 >= 300
+            DEREF(instance_leaf).part0.QW_startNodePtr = new_startNodePtr;
+#else
+            uint64_t mask = 0x0000fffffffffffful;
             /* clear bits and set */
-            DEREF(instance_leaf).part0.start_node_ptr_and_inst_flags =
-               (DEREF(instance_leaf).part0.start_node_ptr_and_inst_flags & ~mask) | (new_startNodePtr & mask);
+            DEREF(instance_leaf).part0.QW_startNodePtr =
+               (DEREF(instance_leaf).part0.QW_startNodePtr & ~mask) | (new_startNodePtr & mask);
+#endif
          }
       }
    }
