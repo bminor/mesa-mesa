@@ -37,13 +37,12 @@ namespace brw {
    class simple_allocator {
    public:
       simple_allocator() :
-         sizes(NULL), offsets(NULL), count(0), total_size(0), capacity(0)
+         sizes(NULL), count(0), capacity(0)
       {
       }
 
       ~simple_allocator()
       {
-         free(offsets);
          free(sizes);
       }
 
@@ -54,12 +53,9 @@ namespace brw {
          if (capacity <= count) {
             capacity = MAX2(16, capacity * 2);
             sizes = (unsigned *)realloc(sizes, capacity * sizeof(unsigned));
-            offsets = (unsigned *)realloc(offsets, capacity * sizeof(unsigned));
          }
 
          sizes[count] = size;
-         offsets[count] = total_size;
-         total_size += size;
 
          return count++;
       }
@@ -71,17 +67,8 @@ namespace brw {
        */
       unsigned *sizes;
 
-      /**
-       * Array of offsets from the start of the VGRF space in allocation
-       * units.
-       */
-      unsigned *offsets;
-
       /** Total number of VGRFs allocated. */
       unsigned count;
-
-      /** Cumulative size in allocation units. */
-      unsigned total_size;
 
    private:
       unsigned capacity;
