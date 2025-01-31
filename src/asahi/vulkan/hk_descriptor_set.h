@@ -24,14 +24,16 @@ struct hk_descriptor_set_layout;
 struct hk_sampled_image_descriptor {
    uint32_t image_offset;
    uint16_t sampler_index;
-   uint16_t lod_bias_fp16;
-   /* TODO: This should probably be a heap! */
-   uint32_t border[4];
+
    /* Negative if there is no border colour, else the clamp=0 sampler index used
     * for custom border colour emulation.
     */
    int16_t clamp_0_sampler_index_or_negative;
+   uint16_t lod_bias_fp16;
+   uint16_t pad_;
    uint32_t pad;
+   /* TODO: This should probably be a heap! */
+   uint32_t border[4];
 };
 static_assert(sizeof(struct hk_sampled_image_descriptor) == 32,
               "hk_sampled_image_descriptor has no holes");
