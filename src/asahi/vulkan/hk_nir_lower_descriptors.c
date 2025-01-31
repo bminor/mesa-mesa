@@ -610,13 +610,14 @@ lower_tex(nir_builder *b, nir_tex_instr *tex,
    }
 
    if (tex->op == nir_texop_has_custom_border_color_agx) {
-      unsigned offs = offsetof(struct hk_sampled_image_descriptor, has_border);
+      unsigned offs = offsetof(struct hk_sampled_image_descriptor,
+                               clamp_0_sampler_index_or_negative);
 
       nir_def *res = load_resource_deref_desc(
          b, 1, 16, nir_src_as_deref(nir_src_for_ssa(sampler)),
          plane_offset_B + offs, ctx);
 
-      nir_def_replace(&tex->def, nir_ine_imm(b, res, 0));
+      nir_def_replace(&tex->def, nir_ige_imm(b, res, 0));
       return true;
    }
 
@@ -651,8 +652,8 @@ lower_tex(nir_builder *b, nir_tex_instr *tex,
          offsetof(struct hk_sampled_image_descriptor, sampler_index);
 
       if (tex->backend_flags & AGX_TEXTURE_FLAG_CLAMP_TO_0) {
-         offs =
-            offsetof(struct hk_sampled_image_descriptor, clamp_0_sampler_index);
+         offs = offsetof(struct hk_sampled_image_descriptor,
+                         clamp_0_sampler_index_or_negative);
       }
 
       nir_def *index = load_resource_deref_desc(
