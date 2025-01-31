@@ -50,6 +50,8 @@ static const struct debug_named_value nir_debug_control[] = {
      "Disable shader validation at each successful lowering/optimization call" },
    { "extended_validation", NIR_DEBUG_EXTENDED_VALIDATION,
      "Validate even if a pass does not make progress and test that it properly preserves all types of metadata. This can be very slow" },
+   { "invalidate_metadata", NIR_DEBUG_INVALIDATE_METADATA,
+     "Invalidate metadata before passes to try to find passes which don't require metadata that they use. This overrides NIR_DEBUG=extended_validation somewhat" },
    { "tgsi", NIR_DEBUG_TGSI,
      "Dump NIR/TGSI shaders when doing a NIR<->TGSI translation" },
    { "print", NIR_DEBUG_PRINT,

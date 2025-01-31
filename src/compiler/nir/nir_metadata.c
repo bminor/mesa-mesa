@@ -90,6 +90,51 @@ nir_shader_preserve_all_metadata(nir_shader *shader)
    }
 }
 
+void
+nir_metadata_invalidate(nir_shader *shader)
+{
+   nir_foreach_function_impl(impl, shader) {
+      unsigned instr_idx = UINT32_MAX;
+      unsigned block_idx = UINT32_MAX;
+
+      nir_foreach_block_unstructured(block, impl) {
+         /* This creates an index that is non-unique, backwards and very large. */
+         block->index = (block_idx-- & 0xf) + 0xfffffff0;
+
+         if (impl->valid_metadata & nir_metadata_live_defs) {
+            ralloc_free(block->live_in);
+            ralloc_free(block->live_out);
+         }
+         block->live_in = block->live_out = NULL;
+
+         if (impl->valid_metadata & nir_metadata_dominance)
+            ralloc_free(block->dom_children);
+         block->dom_children = NULL;
+         block->num_dom_children = 1;
+         block->dom_pre_index = block->dom_post_index = 0;
+         _mesa_set_clear(block->dom_frontier, NULL);
+
+         if (block->cf_node.parent->type == nir_cf_node_loop &&
+             nir_cf_node_is_first(&block->cf_node)) {
+            nir_loop *loop = nir_cf_node_as_loop(block->cf_node.parent);
+            if (impl->valid_metadata & nir_metadata_loop_analysis)
+               ralloc_free(loop->info);
+            loop->info = NULL;
+         }
+
+         block->start_ip = (instr_idx-- & 0xf) + 0xfffffff0;
+         nir_foreach_instr(instr, block)
+            instr->index = (instr_idx-- & 0xf) + 0xfffffff0;
+         block->end_ip = (instr_idx-- & 0xf) + 0xfffffff0;
+      }
+
+      impl->num_blocks = 0;
+      impl->end_block->index = 0xf;
+
+      impl->valid_metadata = 0;
+   }
+}
+
 #ifndef NDEBUG
 /**
  * Make sure passes properly invalidate metadata (part 1).

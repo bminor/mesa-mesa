@@ -93,6 +93,7 @@ extern bool nir_debug_print_shader[MESA_SHADER_KERNEL + 1];
 #define NIR_DEBUG_PRINT_NO_INLINE_CONSTS (1u << 20)
 #define NIR_DEBUG_PRINT_INTERNAL         (1u << 21)
 #define NIR_DEBUG_PRINT_PASS_FLAGS       (1u << 22)
+#define NIR_DEBUG_INVALIDATE_METADATA    (1u << 23)
 
 #define NIR_DEBUG_PRINT (NIR_DEBUG_PRINT_VS |  \
                          NIR_DEBUG_PRINT_TCS | \
@@ -4726,6 +4727,8 @@ void nir_metadata_require(nir_function_impl *impl, nir_metadata required, ...);
 void nir_metadata_preserve(nir_function_impl *impl, nir_metadata preserved);
 /** Preserves all metadata for the given shader */
 void nir_shader_preserve_all_metadata(nir_shader *shader);
+/** dirties all metadata and fills it with obviously wrong information */
+void nir_metadata_invalidate(nir_shader *shader);
 
 /** creates an instruction with default swizzle/writemask/etc. with NULL registers */
 nir_alu_instr *nir_alu_instr_create(nir_shader *shader, nir_op op);
@@ -5413,7 +5416,9 @@ should_print_nir(UNUSED nir_shader *shader)
          printf("skipping %s\n", #pass);                                \
          break;                                                         \
       }                                                                 \
-      if (NIR_DEBUG(EXTENDED_VALIDATION))                               \
+      if (NIR_DEBUG(INVALIDATE_METADATA))                               \
+         nir_metadata_invalidate(nir);                                  \
+      else if (NIR_DEBUG(EXTENDED_VALIDATION))                          \
          nir_metadata_require_all(nir);                                 \
       do_pass if (NIR_DEBUG(CLONE))                                     \
       {                                                                 \
