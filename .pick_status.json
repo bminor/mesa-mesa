@@ -504,7 +504,7 @@
         "description": "intel/vulkan: Add bvh build dependency",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "41baeb3810a44f1746e05d9556d1951e72527499",
         "notes": null
