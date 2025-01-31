@@ -495,7 +495,7 @@ d3d12_video_create_dpb_buffer(struct pipe_video_codec *codec,
          tmpl.bind |= PIPE_BIND_VIDEO_ENCODE_DPB;
 
       bTextureArray = (pD3D12Enc->m_currentEncodeCapabilities.m_SupportFlags &
-         D3D12_VIDEO_ENCODER_SUPPORT_FLAG_RECONSTRUCTED_FRAMES_REQUIRE_TEXTURE_ARRAYS);
+         D3D12_VIDEO_ENCODER_SUPPORT_FLAG_RECONSTRUCTED_FRAMES_REQUIRE_TEXTURE_ARRAYS) != 0;
    }
 
    if (bTextureArray)
