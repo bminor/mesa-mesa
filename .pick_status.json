@@ -24964,7 +24964,7 @@
         "description": "intel/dev: Add BMG PCI IDs (0xe210, 0xe215, 0xe216)",
         "nominated": false,
         "nomination_type": 0,
-        "resolution": 4,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
