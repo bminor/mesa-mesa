@@ -126,7 +126,7 @@ walk_varyings(UNUSED nir_builder *b, nir_instr *instr, void *data)
     * fragment shader instead.
     */
    bool flat = intr->intrinsic != nir_intrinsic_load_interpolated_input;
-   bool auto32 = !info->quirk_no_auto32;
+   bool auto32 = !info->quirk_no_auto32 && size == 32;
    nir_alu_type type = (flat && auto32) ? nir_type_uint : nir_type_float;
 
    if (sem.medium_precision) {
