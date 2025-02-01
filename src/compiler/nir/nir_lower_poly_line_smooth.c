@@ -26,7 +26,7 @@
 
 /**
  * This NIR lowers pass for polygon and line smoothing by modifying the alpha
- * value of fragment outputs using the sample coverage mask.
+ * value of the first fragment output using the sample coverage mask.
  */
 
 static bool
@@ -43,11 +43,11 @@ lower_polylinesmooth(nir_builder *b, nir_instr *instr, void *data)
       return false;
 
    int location = nir_intrinsic_io_semantics(intr).location;
+   int alpha_comp = 3 - nir_intrinsic_component(intr);
    if ((location != FRAG_RESULT_COLOR && location != FRAG_RESULT_DATA0) ||
-       nir_intrinsic_src_type(intr) != nir_type_float32)
+       nir_intrinsic_src_type(intr) != nir_type_float32 ||
+       !(nir_intrinsic_write_mask(intr) & BITFIELD_BIT(alpha_comp)))
       return false;
-
-   assert(intr->num_components == 4);
 
    b->cursor = nir_before_instr(&intr->instr);
 
@@ -59,11 +59,11 @@ lower_polylinesmooth(nir_builder *b, nir_instr *instr, void *data)
    coverage = nir_fmul_imm(b, coverage, 1.0 / *num_smooth_aa_sample);
 
    nir_def *smooth_enabled = nir_load_poly_line_smooth_enabled(b);
-   nir_def *alpha = nir_channel(b, intr->src[0].ssa, 3);
+   nir_def *alpha = nir_channel(b, intr->src[0].ssa, alpha_comp);
    nir_def *smooth_alpha = nir_fmul(b, alpha, coverage);
    nir_def *new_alpha = nir_bcsel(b, smooth_enabled, smooth_alpha, alpha);
 
-   nir_def *new_src = nir_vector_insert_imm(b, intr->src[0].ssa, new_alpha, 3);
+   nir_def *new_src = nir_vector_insert_imm(b, intr->src[0].ssa, new_alpha, alpha_comp);
 
    nir_src_rewrite(&intr->src[0], new_src);
    return true;
