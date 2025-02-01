@@ -45,7 +45,7 @@ lower_polylinesmooth(nir_builder *b, nir_instr *instr, void *data)
    int location = nir_intrinsic_io_semantics(intr).location;
    int alpha_comp = 3 - nir_intrinsic_component(intr);
    if ((location != FRAG_RESULT_COLOR && location != FRAG_RESULT_DATA0) ||
-       nir_intrinsic_src_type(intr) != nir_type_float32 ||
+       nir_alu_type_get_base_type(nir_intrinsic_src_type(intr)) != nir_type_float ||
        !(nir_intrinsic_write_mask(intr) & BITFIELD_BIT(alpha_comp)))
       return false;
 
@@ -55,7 +55,7 @@ lower_polylinesmooth(nir_builder *b, nir_instr *instr, void *data)
 
    /* coverage = (coverage) / num_smooth_aa_sample */
    coverage = nir_bit_count(b, coverage);
-   coverage = nir_u2f32(b, coverage);
+   coverage = nir_u2fN(b, coverage, intr->src[0].ssa->bit_size);
    coverage = nir_fmul_imm(b, coverage, 1.0 / *num_smooth_aa_sample);
 
    nir_def *smooth_enabled = nir_load_poly_line_smooth_enabled(b);
