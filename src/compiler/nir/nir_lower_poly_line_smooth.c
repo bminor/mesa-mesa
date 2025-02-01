@@ -51,30 +51,21 @@ lower_polylinesmooth(nir_builder *b, nir_instr *instr, void *data)
 
    b->cursor = nir_before_instr(&intr->instr);
 
-   nir_def *res1, *res2;
+   nir_def *coverage = nir_load_sample_mask_in(b);
 
-   nir_if *if_enabled = nir_push_if(b, nir_load_poly_line_smooth_enabled(b));
-   {
-      nir_def *coverage = nir_load_sample_mask_in(b);
+   /* coverage = (coverage) / num_smooth_aa_sample */
+   coverage = nir_bit_count(b, coverage);
+   coverage = nir_u2f32(b, coverage);
+   coverage = nir_fmul_imm(b, coverage, 1.0 / *num_smooth_aa_sample);
 
-      /* coverage = (coverage) / SI_NUM_SMOOTH_AA_SAMPLES */
-      coverage = nir_bit_count(b, coverage);
-      coverage = nir_u2f32(b, coverage);
-      coverage = nir_fmul_imm(b, coverage, 1.0 / *num_smooth_aa_sample);
+   nir_def *smooth_enabled = nir_load_poly_line_smooth_enabled(b);
+   nir_def *alpha = nir_channel(b, intr->src[0].ssa, 3);
+   nir_def *smooth_alpha = nir_fmul(b, alpha, coverage);
+   nir_def *new_alpha = nir_bcsel(b, smooth_enabled, smooth_alpha, alpha);
 
-      /* Write out the fragment color*vec4(1, 1, 1, alpha) */
-      nir_def *one = nir_imm_float(b, 1.0f);
-      res1 = nir_fmul(b, nir_vec4(b, one, one, one, coverage), intr->src[0].ssa);
-   }
-   nir_push_else(b, if_enabled);
-   {
-      res2 = intr->src[0].ssa;
-   }
-   nir_pop_if(b, if_enabled);
+   nir_def *new_src = nir_vector_insert_imm(b, intr->src[0].ssa, new_alpha, 3);
 
-   nir_def *new_dest = nir_if_phi(b, res1, res2);
-
-   nir_src_rewrite(&intr->src[0], new_dest);
+   nir_src_rewrite(&intr->src[0], new_src);
    return true;
 }
 
@@ -82,6 +73,7 @@ bool
 nir_lower_poly_line_smooth(nir_shader *shader, unsigned num_smooth_aa_sample)
 {
    assert(shader->info.stage == MESA_SHADER_FRAGMENT);
-   return nir_shader_instructions_pass(shader, lower_polylinesmooth, 0,
+   return nir_shader_instructions_pass(shader, lower_polylinesmooth,
+                                       nir_metadata_control_flow,
                                        &num_smooth_aa_sample);
 }
