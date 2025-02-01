@@ -8,8 +8,6 @@
 #include "brw_builder.h"
 #include "brw_cfg.h"
 
-using namespace brw;
-
 class cse_test : public ::testing::Test {
 protected:
    cse_test();

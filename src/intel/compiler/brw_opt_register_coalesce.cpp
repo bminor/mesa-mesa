@@ -44,8 +44,6 @@
 #include "brw_fs.h"
 #include "brw_cfg.h"
 
-using namespace brw;
-
 static bool
 is_nop_mov(const brw_inst *inst)
 {

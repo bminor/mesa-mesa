@@ -24,8 +24,6 @@
 #include "brw_fs.h"
 #include "brw_builder.h"
 
-using namespace brw;
-
 vs_thread_payload::vs_thread_payload(const fs_visitor &v)
 {
    unsigned r = 0;

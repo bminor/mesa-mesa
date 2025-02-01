@@ -33,8 +33,6 @@
 #include "brw_cfg.h"
 #include "util/half_float.h"
 
-using namespace brw;
-
 static const bool debug = false;
 
 enum PACKED interpreted_type {

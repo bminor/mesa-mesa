@@ -25,8 +25,6 @@
 #include "brw_fs.h"
 #include "brw_cfg.h"
 
-using namespace brw;
-
 /** @file
  *
  * Implements a pass that propagates the SAT modifier from a MOV.SAT into the

@@ -8,8 +8,6 @@
 #include "brw_builder.h"
 #include "brw_cfg.h"
 
-using namespace brw;
-
 struct FSCombineConstantsTest : public ::testing::Test {
    FSCombineConstantsTest() {
       mem_ctx = ralloc_context(NULL);

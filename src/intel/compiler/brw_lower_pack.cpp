@@ -26,8 +26,6 @@
 #include "brw_cfg.h"
 #include "brw_builder.h"
 
-using namespace brw;
-
 bool
 brw_lower_pack(fs_visitor &s)
 {

@@ -7,8 +7,6 @@
 #include "brw_builder.h"
 #include "util/half_float.h"
 
-using namespace brw;
-
 static uint64_t
 src_as_uint(const brw_reg &src)
 {

@@ -34,8 +34,6 @@
 
 #include <memory>
 
-using namespace brw;
-
 static inline int
 type_size_scalar_dwords(const struct glsl_type *type, bool bindless)
 {

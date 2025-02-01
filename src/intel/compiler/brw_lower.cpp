@@ -6,8 +6,6 @@
 #include "brw_fs.h"
 #include "brw_builder.h"
 
-using namespace brw;
-
 /**
  * Align16 3-source instructions cannot have scalar stride w/64-bit types.
  *

@@ -40,8 +40,6 @@
 #include "brw_cfg.h"
 #include "brw_eu.h"
 
-using namespace brw;
-
 namespace { /* avoid conflict with opt_copy_propagation_elements */
 struct acp_entry {
    struct rb_node by_dst;

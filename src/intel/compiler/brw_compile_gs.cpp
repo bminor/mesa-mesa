@@ -12,8 +12,6 @@
 #include "brw_private.h"
 #include "dev/intel_debug.h"
 
-using namespace brw;
-
 static const GLuint gl_prim_to_hw_prim[MESA_PRIM_TRIANGLE_STRIP_ADJACENCY+1] = {
    [MESA_PRIM_POINTS] =_3DPRIM_POINTLIST,
    [MESA_PRIM_LINES] = _3DPRIM_LINELIST,

@@ -20,8 +20,6 @@
  *    add(1)   a0.4:UD, vgrf63+0.0<0>:UD, 192u
  */
 
-using namespace brw;
-
 static bool
 opt_address_reg_load_local(fs_visitor &s, bblock_t *block, const brw_def_analysis &defs)
 {

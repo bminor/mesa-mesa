@@ -9,8 +9,6 @@
 
 #include "dev/intel_debug.h"
 
-using namespace brw;
-
 void
 brw_optimize(fs_visitor &s)
 {

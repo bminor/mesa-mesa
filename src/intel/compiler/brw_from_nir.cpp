@@ -34,8 +34,6 @@
 
 #include <vector>
 
-using namespace brw;
-
 struct brw_bind_info {
    bool valid;
    bool bindless;

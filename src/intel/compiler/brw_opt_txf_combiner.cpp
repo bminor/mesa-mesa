@@ -7,8 +7,6 @@
 #include "brw_fs.h"
 #include "brw_builder.h"
 
-using namespace brw;
-
 static unsigned
 dest_comps_for_txf(const fs_visitor &s, const brw_inst *txf)
 {

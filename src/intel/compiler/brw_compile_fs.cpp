@@ -18,8 +18,6 @@
 
 #include <memory>
 
-using namespace brw;
-
 static brw_inst *
 brw_emit_single_fb_write(fs_visitor &s, const brw_builder &bld,
                          brw_reg color0, brw_reg color1,

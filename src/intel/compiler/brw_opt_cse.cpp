@@ -33,8 +33,6 @@
  * Support for SSA-based global Common Subexpression Elimination (CSE).
  */
 
-using namespace brw;
-
 struct remap_entry {
    brw_inst *inst;
    bblock_t *block;

@@ -10,8 +10,6 @@
 #include "dev/intel_debug.h"
 #include "util/half_float.h"
 
-using namespace brw;
-
 void
 brw_print_instructions(const fs_visitor &s, FILE *file)
 {

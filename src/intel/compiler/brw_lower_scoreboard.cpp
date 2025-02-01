@@ -58,8 +58,6 @@
 #include "brw_builder.h"
 #include "brw_cfg.h"
 
-using namespace brw;
-
 namespace {
    /**
     * In-order instruction accounting.

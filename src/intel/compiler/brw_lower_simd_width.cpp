@@ -6,8 +6,6 @@
 #include "brw_fs.h"
 #include "brw_builder.h"
 
-using namespace brw;
-
 static bool
 is_mixed_float_with_fp32_dst(const brw_inst *inst)
 {

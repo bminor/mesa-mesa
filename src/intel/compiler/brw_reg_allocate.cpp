@@ -32,8 +32,6 @@
 #include "util/set.h"
 #include "util/register_allocate.h"
 
-using namespace brw;
-
 static void
 assign_reg(const struct intel_device_info *devinfo,
            unsigned *reg_hw_locations, brw_reg *reg)

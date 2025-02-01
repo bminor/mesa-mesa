@@ -35,8 +35,6 @@
  * blocks with successor/predecessor edges connecting them.
  */
 
-using namespace brw;
-
 static bblock_t *
 pop_stack(exec_list *list)
 {

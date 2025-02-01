@@ -12,8 +12,6 @@
 #include "brw_private.h"
 #include "dev/intel_debug.h"
 
-using namespace brw;
-
 /**
  * Return the number of patches to accumulate before a MULTI_PATCH mode thread is
  * launched.  In cases with a large number of input control points and a large

@@ -31,8 +31,6 @@
 #include "brw_cfg.h"
 #include <new>
 
-using namespace brw;
-
 /** @file
  *
  * List scheduling of FS instructions.

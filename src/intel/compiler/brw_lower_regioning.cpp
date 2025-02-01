@@ -25,8 +25,6 @@
 #include "brw_cfg.h"
 #include "brw_builder.h"
 
-using namespace brw;
-
 namespace {
    /* From the SKL PRM Vol 2a, "Move":
     *

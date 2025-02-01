@@ -10,8 +10,6 @@
 #include "brw_private.h"
 #include "dev/intel_debug.h"
 
-using namespace brw;
-
 static void
 brw_assign_vs_urb_setup(fs_visitor &s)
 {

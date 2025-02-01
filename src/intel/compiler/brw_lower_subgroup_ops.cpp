@@ -9,8 +9,6 @@
 #include "brw_fs.h"
 #include "brw_builder.h"
 
-using namespace brw;
-
 struct brw_reduction_info {
    brw_reg             identity;
    enum opcode         op;

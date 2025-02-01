@@ -34,8 +34,6 @@
 #include "compiler/glsl_types.h"
 #include "dev/intel_device_info.h"
 
-using namespace brw;
-
 void
 fs_visitor::emit_urb_writes(const brw_reg &gs_vertex_count)
 {

@@ -17,8 +17,6 @@
 
 #include <memory>
 
-using namespace brw;
-
 static void
 fill_push_const_block_info(struct brw_push_const_block *block, unsigned dwords)
 {

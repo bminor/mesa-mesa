@@ -44,8 +44,6 @@
 #include "compiler/nir/nir_builder.h"
 #include "util/u_math.h"
 
-using namespace brw;
-
 void
 fs_visitor::vfail(const char *format, va_list va)
 {

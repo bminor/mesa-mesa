@@ -6,8 +6,6 @@
 #include "brw_fs.h"
 #include "brw_builder.h"
 
-using namespace brw;
-
 /* Wa_14015360517
  *
  * The first instruction of any kernel should have non-zero emask.

@@ -26,8 +26,6 @@
 #include "brw_builder.h"
 #include "brw_cfg.h"
 
-using namespace brw;
-
 class copy_propagation_test : public ::testing::Test {
 protected:
    copy_propagation_test();

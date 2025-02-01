@@ -29,8 +29,6 @@
 #include "brw_fs.h"
 #include "brw_builder.h"
 
-using namespace brw;
-
 static void
 lower_urb_read_logical_send(const brw_builder &bld, brw_inst *inst)
 {

@@ -34,8 +34,6 @@
  * yet in the tail end of this block.
  */
 
-using namespace brw;
-
 /**
  * Is it safe to eliminate the instruction?
  */
