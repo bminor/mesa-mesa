@@ -43,7 +43,7 @@ lower_polylinesmooth(nir_builder *b, nir_instr *instr, void *data)
       return false;
 
    int location = nir_intrinsic_io_semantics(intr).location;
-   if ((location != FRAG_RESULT_COLOR && location < FRAG_RESULT_DATA0) ||
+   if ((location != FRAG_RESULT_COLOR && location != FRAG_RESULT_DATA0) ||
        nir_intrinsic_src_type(intr) != nir_type_float32)
       return false;
 
