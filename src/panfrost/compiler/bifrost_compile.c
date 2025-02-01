@@ -556,6 +556,7 @@ bi_emit_load_vary(bi_builder *b, nir_intrinsic_instr *instr)
    enum bi_sample sample = BI_SAMPLE_CENTER;
    enum bi_update update = BI_UPDATE_STORE;
    enum bi_register_format regfmt = BI_REGISTER_FORMAT_AUTO;
+   enum bi_source_format source_format;
    bool smooth = instr->intrinsic == nir_intrinsic_load_interpolated_input;
    bi_index src0 = bi_null();
 
@@ -575,9 +576,11 @@ bi_emit_load_vary(bi_builder *b, nir_intrinsic_instr *instr)
 
       assert(sz == 16 || sz == 32);
       regfmt = (sz == 16) ? BI_REGISTER_FORMAT_F16 : BI_REGISTER_FORMAT_F32;
+      source_format = BI_SOURCE_FORMAT_F32;
    } else {
       assert(sz == 32);
       regfmt = BI_REGISTER_FORMAT_U32;
+      source_format = BI_SOURCE_FORMAT_FLAT32;
 
       /* Valhall can't have bi_null() here, although the source is
        * logically unused for flat varyings
@@ -601,9 +604,6 @@ bi_emit_load_vary(bi_builder *b, nir_intrinsic_instr *instr)
       b->shader->malloc_idvs && b->shader->inputs->valhall.use_ld_var_buf;
 
    if (use_ld_var_buf) {
-      enum bi_source_format source_format =
-         smooth ? BI_SOURCE_FORMAT_F32 : BI_SOURCE_FORMAT_FLAT32;
-
       if (immediate) {
          /* Immediate index given in bytes. */
          bi_ld_var_buf_imm_to(b, sz, dest, src0, regfmt, sample, source_format,

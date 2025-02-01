@@ -48,6 +48,7 @@ varying_format(nir_alu_type t, unsigned ncomps)
       VARYING_FORMAT(float, 32, FLOAT, 32),
       VARYING_FORMAT(uint, 32, UINT, 32),
       VARYING_FORMAT(float, 16, FLOAT, 16),
+      VARYING_FORMAT(uint, 16, UINT, 16),
    };
 #undef VARYING_FORMAT
 
@@ -84,6 +85,7 @@ walk_varyings(UNUSED nir_builder *b, nir_instr *instr, void *data)
 
    nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
    unsigned count;
+   unsigned size;
 
    /* Only consider intrinsics that access varyings */
    switch (intr->intrinsic) {
@@ -92,6 +94,7 @@ walk_varyings(UNUSED nir_builder *b, nir_instr *instr, void *data)
          return false;
 
       count = nir_src_num_components(intr->src[0]);
+      size = nir_alu_type_get_type_size(nir_intrinsic_src_type(intr));
       break;
 
    case nir_intrinsic_load_input:
@@ -100,6 +103,7 @@ walk_varyings(UNUSED nir_builder *b, nir_instr *instr, void *data)
          return false;
 
       count = intr->def.num_components;
+      size = intr->def.bit_size;
       break;
 
    default:
@@ -130,9 +134,14 @@ walk_varyings(UNUSED nir_builder *b, nir_instr *instr, void *data)
     * as having no demonstrable benefit in practice.
     */
    if (type == nir_type_float && sem.medium_precision)
-      type |= 16;
-   else
-      type |= 32;
+      size = 16;
+   else {
+      /* We never emit 16-bit user varyings except for lowered mediump floats */
+      if (sem.location >= VARYING_SLOT_VAR0)
+         assert(size == 32);
+   }
+
+   type |= size;
 
    /* Count currently contains the number of components accessed by this
     * intrinsics. However, we may be accessing a fractional location,
