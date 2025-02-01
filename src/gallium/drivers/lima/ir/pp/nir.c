@@ -1090,6 +1090,10 @@ bool ppir_compile_nir(struct lima_fs_compiled_shader *prog, struct nir_shader *n
    if (!ppir_regalloc_prog(comp))
       goto err_out0;
 
+   /* all the deps are invalid after compacting */
+   if (!ppir_compact_prog(comp))
+      goto err_out0;
+
    if (!ppir_codegen_prog(comp))
       goto err_out0;
 
