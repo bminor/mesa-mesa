@@ -39,9 +39,7 @@ void pco_postprocess_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data);
 pco_shader *
 pco_trans_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data, void *mem_ctx);
 void pco_process_ir(pco_ctx *ctx, pco_shader *shader);
-
 void pco_encode_ir(pco_ctx *ctx, pco_shader *shader);
-void pco_shader_finalize(pco_ctx *ctx, pco_shader *shader);
 
 pco_data *pco_shader_data(pco_shader *shader);
 

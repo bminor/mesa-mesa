@@ -2203,7 +2203,6 @@ pvr_graphics_pipeline_compile(struct pvr_device *const device,
 
       pco_process_ir(pco_ctx, *pco);
       pco_encode_ir(pco_ctx, *pco);
-      pco_shader_finalize(pco_ctx, *pco);
    }
 
    pvr_graphics_pipeline_setup_vertex_dma(*vs,

@@ -342,16 +342,7 @@ typedef struct _pco_shader {
    unsigned next_func; /** Next function index. */
 
    pco_data data; /** Shader data. */
-
-   struct {
-      struct util_dynarray buf; /** Shader binary. */
-
-      /** Binary patch info. */
-      unsigned num_patches;
-      struct {
-         unsigned offset;
-      } * patch;
-   } binary;
+   struct util_dynarray binary; /** Shader binary. */
 } pco_shader;
 
 /** Op info. */

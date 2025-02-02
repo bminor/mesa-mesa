@@ -116,37 +116,20 @@ void pco_encode_ir(pco_ctx *ctx, pco_shader *shader)
 {
    assert(shader->is_grouped);
 
-   util_dynarray_init(&shader->binary.buf, shader);
+   util_dynarray_init(&shader->binary, shader);
 
    unsigned bytes_encoded = 0;
    pco_foreach_func_in_shader (func, shader) {
       func->enc_offset = bytes_encoded;
       pco_foreach_block_in_func (block, func) {
          pco_foreach_igrp_in_block (igrp, block) {
-            bytes_encoded += pco_encode_igrp(&shader->binary.buf, igrp);
+            bytes_encoded += pco_encode_igrp(&shader->binary, igrp);
          }
       }
    }
 
    if (pco_should_print_binary(shader))
       pco_print_binary(shader, stdout, "after encoding");
-}
-
-/**
- * \brief Finalizes a PCO shader binary.
- *
- * \param[in] ctx PCO compiler context.
- * \param[in,out] shader PCO shader.
- */
-void pco_shader_finalize(pco_ctx *ctx, pco_shader *shader)
-{
-   puts("finishme: pco_shader_finalize");
-
-   pco_func *entry = pco_entrypoint(shader);
-   shader->data.common.entry_offset = entry->enc_offset;
-
-   if (pco_should_print_binary(shader))
-      pco_print_binary(shader, stdout, "after finalizing");
 }
 
 /**
@@ -157,7 +140,7 @@ void pco_shader_finalize(pco_ctx *ctx, pco_shader *shader)
  */
 unsigned pco_shader_binary_size(pco_shader *shader)
 {
-   return shader->binary.buf.size;
+   return shader->binary.size;
 }
 
 /**
@@ -168,5 +151,5 @@ unsigned pco_shader_binary_size(pco_shader *shader)
  */
 const void *pco_shader_binary_data(pco_shader *shader)
 {
-   return shader->binary.buf.data;
+   return shader->binary.data;
 }
