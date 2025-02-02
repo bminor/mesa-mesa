@@ -1024,7 +1024,6 @@ out:
 
 /**
  * Create a new pipe_screen object
- * Note: we're not presently subclassing pipe_screen (no llvmpipe_screen).
  */
 struct pipe_screen *
 llvmpipe_create_screen(struct sw_winsys *winsys)
