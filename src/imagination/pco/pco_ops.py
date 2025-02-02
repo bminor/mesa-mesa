@@ -390,6 +390,9 @@ O_SMP = hw_op('smp', OM_ALU_RPT1 + [OM_DIM, OM_PROJ, OM_FCNORM, OM_NNCOORDS,
 
 O_ALPHATST = hw_op('alphatst', OM_ALU_RPT1, 1, 4)
 
+O_ALPHAF = hw_op('alphaf', OM_ALU_RPT1, 1, 4)
+O_DEPTHF = hw_op('depthf', OM_ALU_RPT1, 0, 2)
+
 ## Bitwise.
 O_MOVI32 = hw_op('movi32', OM_ALU, 1, 1)
 

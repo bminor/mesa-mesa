@@ -2724,3 +2724,7 @@ index("unsigned", "mutex_op_pco")
 
 # Perform a mutex operation (slot granularity).
 intrinsic("mutex_pco", indices=[MUTEX_ID_PCO, MUTEX_OP_PCO])
+
+# depthf_pco(depth value)
+# Perform an ISP depth feedback operation.
+intrinsic("depthf_pco", src_comp=[1], bit_sizes=[32])

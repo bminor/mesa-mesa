@@ -2921,6 +2921,12 @@ static inline bool pco_should_skip_pass(const char *pass)
 /** Integer one. */
 #define pco_one pco_ref_hwreg(1, PCO_REG_CLASS_CONST)
 
+/** Integer 2. */
+#define pco_2 pco_ref_hwreg(2, PCO_REG_CLASS_CONST)
+
+/** Integer 5. */
+#define pco_5 pco_ref_hwreg(5, PCO_REG_CLASS_CONST)
+
 /** Integer 31. */
 #define pco_31 pco_ref_hwreg(31, PCO_REG_CLASS_CONST)
 

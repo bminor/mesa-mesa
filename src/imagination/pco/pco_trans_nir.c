@@ -1300,6 +1300,28 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
       instr = lower_alphatst(tctx, dest, src[0], src[1], src[2]);
       break;
 
+   case nir_intrinsic_depthf_pco:
+      instr = pco_depthf(&tctx->b, pco_ref_drc(PCO_DRC_0), src[0]);
+      break;
+
+   case nir_intrinsic_terminate:
+      instr = pco_alphaf(&tctx->b,
+                         pco_ref_null(),
+                         pco_ref_drc(PCO_DRC_0),
+                         pco_zero,
+                         pco_zero,
+                         pco_zero);
+      break;
+
+   case nir_intrinsic_terminate_if:
+      instr = pco_alphaf(&tctx->b,
+                         pco_ref_null(),
+                         pco_ref_drc(PCO_DRC_0),
+                         pco_zero,
+                         src[0],
+                         pco_2);
+      break;
+
    case nir_intrinsic_mutex_pco:
       instr = pco_mutex(&tctx->b,
                         pco_ref_imm8(nir_intrinsic_mutex_id_pco(intr)),

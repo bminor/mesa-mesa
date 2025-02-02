@@ -78,6 +78,8 @@ typedef struct _pco_fs_data {
       bool pntc; /** Whether the shader uses point coord. */
       bool phase_change; /** Whether the shader does a phase change. */
       bool fbfetch; /** Whether the shader fetches from the framebuffer. */
+      bool depth_feedback;
+      bool discard;
    } uses;
 } pco_fs_data;
 

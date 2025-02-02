@@ -29,6 +29,15 @@
 struct pfo_state {
    struct util_dynarray loads; /** List of fragment loads. */
    struct util_dynarray stores; /** List of fragment stores. */
+
+   /* Src for depth feedback (NULL if unused). */
+   nir_def *depth_feedback_src;
+
+   nir_def *discard_cond_reg;
+   bool has_discards;
+
+   /* nir_instr *terminate; */
+
    pco_fs_data *fs; /** Fragment-specific data. */
 };
 
@@ -858,6 +867,8 @@ static bool is_pfo(const nir_instr *instr, UNUSED const void *cb_data)
    switch (intr->intrinsic) {
    case nir_intrinsic_store_output:
    case nir_intrinsic_load_output:
+   case nir_intrinsic_terminate:
+   case nir_intrinsic_terminate_if:
       return true;
 
    default:
@@ -881,17 +892,70 @@ static nir_def *lower_pfo(nir_builder *b, nir_instr *instr, void *cb_data)
    nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
 
    switch (intr->intrinsic) {
-   case nir_intrinsic_store_output:
-      return lower_pfo_store(b, intr, state);
+   case nir_intrinsic_store_output: {
+      nir_io_semantics sem = nir_intrinsic_io_semantics(intr);
+      if (sem.location >= FRAG_RESULT_DATA0)
+         return lower_pfo_store(b, intr, state);
+
+      if (sem.location == FRAG_RESULT_DEPTH) {
+         assert(!state->depth_feedback_src);
+         state->depth_feedback_src = nir_mov(b, intr->src[0].ssa);
+
+         return NIR_LOWER_INSTR_PROGRESS_REPLACE;
+      }
+
+      UNREACHABLE("");
+   }
 
    case nir_intrinsic_load_output:
       return lower_pfo_load(b, intr, state);
+
+   case nir_intrinsic_terminate:
+      state->has_discards = true;
+      nir_store_reg(b, nir_imm_true(b), state->discard_cond_reg);
+      return NIR_LOWER_INSTR_PROGRESS_REPLACE;
+
+   case nir_intrinsic_terminate_if: {
+      state->has_discards = true;
+      nir_def *val = nir_load_reg(b, state->discard_cond_reg);
+      val = nir_ior(b, val, intr->src[0].ssa);
+      nir_store_reg(b, val, state->discard_cond_reg);
+      return NIR_LOWER_INSTR_PROGRESS_REPLACE;
+   }
 
    default:
       break;
    }
 
    return false;
+}
+
+static bool lower_isp_fb(nir_builder *b, struct pfo_state *state)
+{
+   bool has_depth_feedback = !!state->depth_feedback_src;
+
+   assert(!(has_depth_feedback && state->has_discards));
+
+   /* Insert isp feedback instruction before the first store,
+    * or if there are no stores, at the end.
+    */
+   if (state->stores.size > 0)
+      b->cursor = nir_before_instr(
+         &(*(nir_intrinsic_instr **)util_dynarray_begin(&state->stores))->instr);
+   else
+      b->cursor = nir_after_block(
+         nir_impl_last_block(nir_shader_get_entrypoint(b->shader)));
+
+   if (has_depth_feedback) {
+      nir_depthf_pco(b, state->depth_feedback_src);
+      state->fs->uses.depth_feedback = true;
+   } else if (state->has_discards) {
+      nir_def *val = nir_load_reg(b, state->discard_cond_reg);
+      nir_terminate_if(b, val);
+      state->fs->uses.discard = true;
+   }
+
+   return true;
 }
 
 static bool sink_outputs(nir_shader *shader, struct pfo_state *state)
@@ -922,12 +986,23 @@ bool pco_nir_pfo(nir_shader *shader, pco_fs_data *fs)
 {
    assert(shader->info.stage == MESA_SHADER_FRAGMENT);
 
-   struct pfo_state state = { .fs = fs };
+   nir_builder b = nir_builder_create(nir_shader_get_entrypoint(shader));
+   b.cursor =
+      nir_before_block(nir_start_block(nir_shader_get_entrypoint(shader)));
+
+   struct pfo_state state = {
+      .fs = fs,
+      .discard_cond_reg = nir_decl_reg(&b, 1, 1, 0),
+   };
+   nir_store_reg(&b, nir_imm_false(&b), state.discard_cond_reg);
+
    util_dynarray_init(&state.loads, NULL);
    util_dynarray_init(&state.stores, NULL);
 
    bool progress =
       nir_shader_lower_instructions(shader, is_pfo, lower_pfo, &state);
+
+   progress |= lower_isp_fb(&b, &state);
 
    progress |= sink_outputs(shader, &state);
 

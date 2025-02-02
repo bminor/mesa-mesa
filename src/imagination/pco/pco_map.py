@@ -1424,6 +1424,21 @@ encode_map(O_ALPHATST,
    op_ref_maps=[('backend', [['p0', '_']], ['drc', 's0', 's1', 's2'])]
 )
 
+encode_map(O_ALPHAF,
+   encodings=[
+      (I_VISTEST_ATST, [
+         ('pwen', ('!pco_ref_is_null', DEST(0))),
+         ('ifb', False)
+      ])
+   ],
+   op_ref_maps=[('backend', [['p0', '_']], ['drc', 's0', 's1', 's2'])]
+)
+
+encode_map(O_DEPTHF,
+   encodings=[(I_VISTEST_DEPTHF, [])],
+   op_ref_maps=[('backend', [], ['drc', 'w0'])]
+)
+
 encode_map(O_BBYP0BM,
    encodings=[
       (I_PHASE0_SRC, [
@@ -2811,6 +2826,44 @@ group_map(O_ALPHATST,
       ('s[0]', ('backend', SRC(1)), 's0'),
       ('s[1]', ('backend', SRC(2)), 's1'),
       ('s[2]', ('backend', SRC(3)), 's2'),
+   ]
+)
+
+group_map(O_ALPHAF,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'be'),
+      ('olchk', OM_OLCHK),
+      ('w1p', False),
+      ('w0p', False),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', 1)
+   ]),
+   enc_ops=[('backend', O_ALPHAF)],
+   srcs=[
+      ('s[0]', ('backend', SRC(1)), 's0'),
+      ('s[1]', ('backend', SRC(2)), 's1'),
+      ('s[2]', ('backend', SRC(3)), 's2'),
+   ]
+)
+
+group_map(O_DEPTHF,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'be'),
+      ('olchk', OM_OLCHK),
+      ('w1p', False),
+      ('w0p', False),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', 1)
+   ]),
+   enc_ops=[('backend', O_DEPTHF)],
+   srcs=[('s[0]', ('backend', SRC(1)), 'w0')],
+   iss=[
+      ('is[0]', 's0'),
+      ('is[4]', 'fte')
    ]
 )
 
