@@ -1576,7 +1576,8 @@ void pvr_pds_generate_descriptor_upload_program(
       switch (buffer->type) {
       case PVR_BUFFER_TYPE_PUSH_CONSTS:
       case PVR_BUFFER_TYPE_BLEND_CONSTS:
-      case PVR_BUFFER_TYPE_POINT_SAMPLER: {
+      case PVR_BUFFER_TYPE_POINT_SAMPLER:
+      case PVR_BUFFER_TYPE_IA_SAMPLER: {
          struct pvr_const_map_entry_special_buffer *special_buffer_entry;
 
          special_buffer_entry =

@@ -122,9 +122,8 @@ lower_tex_derefs(nir_builder *b, nir_tex_instr *tex, pco_common_data *common)
       lower_tex_deref_to_binding(b, tex, deref_index, common);
 }
 
-static nir_def *lower_image_derefs(nir_builder *b,
-                                   nir_intrinsic_instr *intr,
-                                   pco_common_data *common)
+static nir_def *
+lower_image_derefs(nir_builder *b, nir_intrinsic_instr *intr, pco_data *data)
 {
    nir_src *deref_src = &intr->src[0];
    nir_deref_instr *deref = nir_src_as_deref(*deref_src);
@@ -132,16 +131,42 @@ static nir_def *lower_image_derefs(nir_builder *b,
 
    nir_variable *var = nir_deref_instr_get_variable(deref);
    assert(var);
+
    unsigned desc_set = var->data.descriptor_set;
    unsigned binding = var->data.binding;
-   nir_def *elem = array_elem_from_deref(b, deref);
-
-   set_resource_used(common, desc_set, binding);
-   common->uses.point_sampler = true;
+   set_resource_used(&data->common, desc_set, binding);
 
    if (nir_intrinsic_format(intr) == PIPE_FORMAT_NONE)
       nir_intrinsic_set_format(intr, var->data.image.format);
 
+   enum glsl_sampler_dim image_dim = nir_intrinsic_image_dim(intr);
+   bool ia = image_dim == GLSL_SAMPLER_DIM_SUBPASS ||
+             image_dim == GLSL_SAMPLER_DIM_SUBPASS_MS;
+
+   if (ia) {
+      unsigned ia_idx = var->data.index;
+      bool onchip = data->fs.ias_onchip[ia_idx].count > 0;
+
+      if (onchip) {
+         nir_def *elem = array_elem_from_deref(b, deref);
+         nir_def *index = nir_vec4(b,
+                                   nir_imm_int(b, desc_set),
+                                   nir_imm_int(b, binding),
+                                   elem,
+                                   nir_imm_int(b, ia_idx));
+
+         nir_src_rewrite(deref_src, index);
+
+         return NIR_LOWER_INSTR_PROGRESS;
+      }
+
+      /* Sampler not needed for on-chip input attachments. */
+      data->common.uses.ia_sampler = true;
+   } else {
+      data->common.uses.point_sampler = true;
+   }
+
+   nir_def *elem = array_elem_from_deref(b, deref);
    nir_def *index =
       nir_vec3(b, nir_imm_int(b, desc_set), nir_imm_int(b, binding), elem);
 
@@ -160,7 +185,8 @@ static nir_def *lower_image_derefs(nir_builder *b,
  */
 static nir_def *lower_vk(nir_builder *b, nir_instr *instr, void *cb_data)
 {
-   pco_common_data *common = cb_data;
+   pco_data *data = cb_data;
+   pco_common_data *common = &data->common;
 
    switch (instr->type) {
    case nir_instr_type_intrinsic: {
@@ -171,7 +197,7 @@ static nir_def *lower_vk(nir_builder *b, nir_instr *instr, void *cb_data)
 
       case nir_intrinsic_image_deref_load:
       case nir_intrinsic_image_deref_store:
-         return lower_image_derefs(b, intr, common);
+         return lower_image_derefs(b, intr, data);
 
       default:
          break;
@@ -239,14 +265,14 @@ static bool is_vk(const nir_instr *instr, UNUSED const void *cb_data)
  * \brief Vulkan lowering pass.
  *
  * \param[in,out] shader NIR shader.
- * \param[in,out] common Common shader data.
+ * \param[in,out] data Shader data.
  * \return True if the pass made progress.
  */
-bool pco_nir_lower_vk(nir_shader *shader, pco_common_data *common)
+bool pco_nir_lower_vk(nir_shader *shader, pco_data *data)
 {
    bool progress = false;
 
-   progress |= nir_shader_lower_instructions(shader, is_vk, lower_vk, common);
+   progress |= nir_shader_lower_instructions(shader, is_vk, lower_vk, data);
 
    return progress;
 }

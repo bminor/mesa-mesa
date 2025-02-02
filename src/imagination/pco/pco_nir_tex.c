@@ -763,13 +763,15 @@ static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
                           ? nir_intrinsic_dest_type(intr)
                           : nir_intrinsic_src_type(intr);
 
+   bool msaa = image_dim == GLSL_SAMPLER_DIM_MS ||
+               image_dim == GLSL_SAMPLER_DIM_SUBPASS_MS;
+
    unsigned desc_set = nir_src_comp_as_uint(intr->src[0], 0);
    unsigned binding = nir_src_comp_as_uint(intr->src[0], 1);
    nir_def *elem = nir_channel(b, intr->src[0].ssa, 2);
 
-   nir_def *coords = !nir_src_is_undef(intr->src[1]) ? intr->src[1].ssa : NULL;
-   nir_def *sample_index = !nir_src_is_undef(intr->src[2]) ? intr->src[2].ssa
-                                                           : NULL;
+   nir_def *coords = intr->src[1].ssa;
+   nir_def *sample_index = msaa ? intr->src[2].ssa : NULL;
 
    nir_def *write_data = intr->intrinsic == nir_intrinsic_image_deref_store
                             ? intr->src[3].ssa
@@ -780,9 +782,30 @@ static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
       assert(write_data->num_components == 4);
    }
 
-   ASSERTED bool msaa = image_dim == GLSL_SAMPLER_DIM_MS ||
-                        image_dim == GLSL_SAMPLER_DIM_SUBPASS_MS;
-   assert(!!sample_index == msaa);
+   bool ia = image_dim == GLSL_SAMPLER_DIM_SUBPASS ||
+             image_dim == GLSL_SAMPLER_DIM_SUBPASS_MS;
+
+   if (ia) {
+      nir_load_const_instr *load =
+         nir_instr_as_load_const(intr->src[0].ssa->parent_instr);
+      bool onchip = load->def.num_components == 4;
+
+      if (onchip) {
+         unsigned ia_idx = nir_src_comp_as_uint(intr->src[0], 3);
+         return nir_load_output(b,
+                      intr->def.num_components,
+                      intr->def.bit_size,
+                      nir_imm_int(b, 0),
+                      .base = ia_idx,
+                      .component = 0,
+                      .dest_type = nir_intrinsic_dest_type(intr),
+                      .io_semantics.location = FRAG_RESULT_COLOR,
+                      .io_semantics.num_slots = 1/*,
+                      .io_semantics.fb_fetch_output = true*/);
+      }
+   }
+
+   unsigned smp_desc = ia ? PCO_IA_SAMPLER : PCO_POINT_SAMPLER;
 
    nir_def *tex_state = nir_load_tex_state_pco(b,
                                                ROGUE_NUM_TEXSTATE_DWORDS,
@@ -793,8 +816,8 @@ static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
    nir_def *smp_state = nir_load_smp_state_pco(b,
                                                ROGUE_NUM_TEXSTATE_DWORDS,
                                                nir_imm_int(b, 0),
-                                               .desc_set = PCO_POINT_SAMPLER,
-                                               .binding = PCO_POINT_SAMPLER);
+                                               .desc_set = smp_desc,
+                                               .binding = smp_desc);
 
    unsigned num_coord_comps = nir_image_intrinsic_coord_components(intr);
    if (coords)
@@ -859,7 +882,7 @@ static bool is_image(const nir_instr *instr, UNUSED const void *cb_data)
    return false;
 }
 
-bool pco_nir_lower_images(nir_shader *shader)
+bool pco_nir_lower_images(nir_shader *shader, pco_data *data)
 {
-   return nir_shader_lower_instructions(shader, is_image, lower_image, NULL);
+   return nir_shader_lower_instructions(shader, is_image, lower_image, data);
 }

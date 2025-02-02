@@ -85,6 +85,7 @@ static unsigned pvr_descriptor_size(VkDescriptorType type)
    case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
    case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
    case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+   case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
       return sizeof(struct pvr_image_descriptor);
 
    default:
@@ -515,6 +516,23 @@ write_image_sampler(const struct pvr_descriptor_set *set,
 }
 
 static void
+write_input_attachment(const struct pvr_descriptor_set *set,
+                       const VkDescriptorImageInfo *image_info,
+                       const struct pvr_descriptor_set_layout_binding *binding,
+                       uint32_t elem)
+{
+   PVR_FROM_HANDLE(pvr_image_view, image_view, image_info->imageView);
+
+   const unsigned desc_offset = binding->offset + (elem * binding->stride);
+   void *desc_mapping = (uint8_t *)set->mapping + desc_offset;
+
+   struct pvr_image_descriptor image_desc =
+      image_view->image_state[PVR_TEXTURE_STATE_ATTACHMENT];
+
+   memcpy(desc_mapping, &image_desc, sizeof(image_desc));
+}
+
+static void
 write_storage_image(const struct pvr_descriptor_set *set,
                     const VkDescriptorImageInfo *image_info,
                     const struct pvr_descriptor_set_layout_binding *binding,
@@ -640,6 +658,15 @@ void pvr_UpdateDescriptorSets(VkDevice _device,
                               write->descriptorType ==
                                  VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,
                               dev_info);
+         }
+         break;
+
+      case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+         for (uint32_t j = 0; j < write->descriptorCount; j++) {
+            write_input_attachment(set,
+                                   &write->pImageInfo[j],
+                                   binding,
+                                   write->dstArrayElement + j);
          }
          break;
 

@@ -819,7 +819,16 @@ static nir_def *lower_pfo_load(nir_builder *b,
    struct nir_io_semantics io_semantics = nir_intrinsic_io_semantics(intr);
    gl_frag_result location = io_semantics.location;
 
-   enum pipe_format format = state->fs->output_formats[location];
+   enum pipe_format format;
+   /* Special case for input attachments. */
+   if (location == FRAG_RESULT_COLOR) {
+      format = state->fs->ia_formats[base];
+   } else {
+      assert(location >= FRAG_RESULT_DATA0);
+      assert(!base);
+      format = state->fs->output_formats[location];
+   }
+
    if (format == PIPE_FORMAT_NONE)
       return nir_undef(b, intr->def.num_components, intr->def.bit_size);
 

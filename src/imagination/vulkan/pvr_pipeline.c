@@ -606,6 +606,14 @@ static VkResult pvr_pds_descriptor_program_create_and_upload(
       };
    }
 
+   if (data->common.ia_sampler.count > 0) {
+      program.buffers[program.buffer_count++] = (struct pvr_pds_buffer){
+         .type = PVR_BUFFER_TYPE_IA_SAMPLER,
+         .size_in_dwords = data->common.ia_sampler.count,
+         .destination = data->common.ia_sampler.start,
+      };
+   }
+
    pds_info->entries_size_in_bytes = const_entries_size_in_bytes;
 
    pvr_pds_generate_descriptor_upload_program(&program, NULL, pds_info);
@@ -1799,11 +1807,7 @@ pvr_setup_fs_outputs(pco_data *data,
                      const struct pvr_render_subpass *const subpass,
                      const struct pvr_renderpass_hwsetup_subpass *hw_subpass)
 {
-   ASSERTED unsigned num_outputs = hw_subpass->setup.num_render_targets;
-   assert(num_outputs == subpass->color_count);
-
    uint64_t outputs_written = nir->info.outputs_written;
-   assert(util_bitcount64(outputs_written) == num_outputs);
 
    for (unsigned u = 0; u < subpass->color_count; ++u) {
       gl_frag_result location = FRAG_RESULT_DATA0 + u;
@@ -1846,10 +1850,44 @@ pvr_setup_fs_outputs(pco_data *data,
 
 static void pvr_init_fs_input_attachments(
    pco_data *data,
+   const struct pvr_render_pass *pass,
    const struct pvr_render_subpass *const subpass,
    const struct pvr_renderpass_hwsetup_subpass *hw_subpass)
 {
-   pvr_finishme("pvr_init_fs_input_attachments");
+   for (unsigned u = 0; u < subpass->input_count; ++u) {
+      unsigned idx = subpass->input_attachments[u];
+      if (idx == VK_ATTACHMENT_UNUSED)
+         continue;
+
+      bool onchip = hw_subpass->input_access[u].type !=
+                    PVR_RENDERPASS_HWSETUP_INPUT_ACCESS_OFFCHIP;
+      if (!onchip)
+         continue;
+
+      /* TODO: z-replicate. */
+      assert(hw_subpass->input_access[u].type !=
+             PVR_RENDERPASS_HWSETUP_INPUT_ACCESS_ONCHIP_ZREPLICATE);
+
+      VkFormat vk_format = pass->attachments[idx].vk_format;
+      data->fs.ia_formats[u] = vk_format_to_pipe_format(vk_format);
+
+      unsigned mrt_idx = hw_subpass->input_access[u].on_chip_rt;
+      const struct usc_mrt_resource *mrt_resource =
+         &hw_subpass->setup.mrt_resources[mrt_idx];
+
+      ASSERTED bool output_reg = mrt_resource->type ==
+                                 USC_MRT_RESOURCE_TYPE_OUTPUT_REG;
+      assert(output_reg);
+      /* TODO: tile buffer support. */
+
+      unsigned format_bits =
+         util_format_get_blocksizebits(data->fs.ia_formats[u]);
+
+      data->fs.ias_onchip[u] = (pco_range){
+         .start = mrt_resource->reg.output_reg,
+         .count = DIV_ROUND_UP(format_bits, 32),
+      };
+   }
 }
 
 static void pvr_init_fs_blend(pco_data *data,
@@ -1903,7 +1941,7 @@ static void pvr_setup_fs_input_attachments(
    const struct pvr_render_subpass *const subpass,
    const struct pvr_renderpass_hwsetup_subpass *hw_subpass)
 {
-   pvr_finishme("pvr_setup_fs_input_attachments");
+   /* pvr_finishme("pvr_setup_fs_input_attachments"); */
 }
 
 static void pvr_setup_fs_blend(pco_data *data)
@@ -2088,6 +2126,15 @@ static void pvr_setup_descriptors(pco_data *data,
       data->common.shareds += ROGUE_NUM_TEXSTATE_DWORDS;
    }
 
+   if (data->common.uses.ia_sampler) {
+      data->common.ia_sampler = (pco_range){
+         .start = data->common.shareds,
+         .count = ROGUE_NUM_TEXSTATE_DWORDS,
+      };
+
+      data->common.shareds += ROGUE_NUM_TEXSTATE_DWORDS;
+   }
+
    assert(data->common.shareds < 256);
 }
 
@@ -2120,7 +2167,7 @@ pvr_preprocess_shader_data(pco_data *data,
              .subpasses[subpass_map->subpass];
 
       pvr_init_fs_outputs(data, pass, subpass, hw_subpass);
-      pvr_init_fs_input_attachments(data, subpass, hw_subpass);
+      pvr_init_fs_input_attachments(data, pass, subpass, hw_subpass);
       pvr_init_fs_blend(data, state->cb);
 
       /* TODO: push consts, dynamic state, etc. */

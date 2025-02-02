@@ -512,6 +512,9 @@ void pco_preprocess_nir(pco_ctx *ctx, nir_shader *nir)
    NIR_PASS(_, nir, nir_lower_flrp, 32, true);
 
    NIR_PASS(_, nir, nir_remove_dead_derefs);
+   NIR_PASS(_, nir, nir_opt_undef);
+   NIR_PASS(_, nir, nir_lower_undef_to_zero);
+   NIR_PASS(_, nir, nir_opt_cse);
    NIR_PASS(_, nir, nir_opt_dce);
    NIR_PASS(_,
             nir,
@@ -685,7 +688,7 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
             nir_address_format_32bit_offset);
    NIR_PASS(_, nir, nir_lower_io_to_scalar, nir_var_mem_shared, NULL, NULL);
 
-   NIR_PASS(_, nir, pco_nir_lower_vk, &data->common);
+   NIR_PASS(_, nir, pco_nir_lower_vk, data);
    NIR_PASS(_, nir, pco_nir_lower_io);
    NIR_PASS(_, nir, pco_nir_lower_atomics, &uses_usclib);
 
@@ -711,7 +714,7 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
             nir_io_add_const_offset_to_base,
             nir_var_shader_in | nir_var_shader_out);
 
-   NIR_PASS(_, nir, pco_nir_lower_images);
+   NIR_PASS(_, nir, pco_nir_lower_images, data);
    NIR_PASS(_, nir, nir_lower_tex, &(nir_lower_tex_options){});
    NIR_PASS(_, nir, pco_nir_lower_tex);
 

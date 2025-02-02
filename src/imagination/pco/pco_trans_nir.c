@@ -406,7 +406,7 @@ trans_store_output_fs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref src)
    ASSERTED const nir_src offset = intr->src[1];
    assert(nir_src_as_uint(offset) == 0);
 
-   gl_varying_slot location = nir_intrinsic_io_semantics(intr).location;
+   gl_frag_result location = nir_intrinsic_io_semantics(intr).location;
 
    const pco_range *range = &tctx->shader->data.fs.outputs[location];
    assert(component < range->count);
@@ -429,6 +429,12 @@ static unsigned fetch_resource_base_reg(const pco_common_data *common,
    if (desc_set == PCO_POINT_SAMPLER && binding == PCO_POINT_SAMPLER) {
       assert(common->uses.point_sampler);
       range = &common->point_sampler;
+
+      if (is_img_smp)
+         *is_img_smp = false;
+   } else if (desc_set == PCO_IA_SAMPLER && binding == PCO_IA_SAMPLER) {
+      assert(common->uses.ia_sampler);
+      range = &common->ia_sampler;
 
       if (is_img_smp)
          *is_img_smp = false;
@@ -477,22 +483,32 @@ static unsigned fetch_resource_base_reg_packed(const pco_common_data *common,
 static pco_instr *
 trans_load_output_fs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
 {
-   ASSERTED unsigned base = nir_intrinsic_base(intr);
-   assert(!base);
-
+   unsigned base = nir_intrinsic_base(intr);
    unsigned component = nir_intrinsic_component(intr);
 
    ASSERTED const nir_src offset = intr->src[0];
    assert(nir_src_as_uint(offset) == 0);
 
-   gl_varying_slot location = nir_intrinsic_io_semantics(intr).location;
+   gl_frag_result location = nir_intrinsic_io_semantics(intr).location;
 
-   const pco_range *range = &tctx->shader->data.fs.outputs[location];
+   const pco_range *range;
+   if (location >= FRAG_RESULT_DATA0) {
+      assert(!base);
+
+      range = &tctx->shader->data.fs.outputs[location];
+
+      ASSERTED bool output_reg = tctx->shader->data.fs.output_reg[location];
+      assert(output_reg);
+      /* TODO: tile buffer support. */
+   } else if (location == FRAG_RESULT_COLOR) {
+      /* Special case for on-chip input attachments. */
+      assert(base < ARRAY_SIZE(tctx->shader->data.fs.ias_onchip));
+      range = &tctx->shader->data.fs.ias_onchip[base];
+   } else {
+      UNREACHABLE("");
+   }
+
    assert(component < range->count);
-
-   ASSERTED bool output_reg = tctx->shader->data.fs.output_reg[location];
-   assert(output_reg);
-   /* TODO: tile buffer support. */
 
    pco_ref src = pco_ref_hwreg(range->start + component, PCO_REG_CLASS_PIXOUT);
    return pco_mov(&tctx->b, dest, src, .olchk = true);
