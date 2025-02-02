@@ -14,7 +14,7 @@
         "description": "r600: fix evergreen_emit_vertex_buffers() related cl regression",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "81889f4d5c1ffbd048cd3781f2e99e62853cd6fe",
         "notes": null
