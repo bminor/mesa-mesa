@@ -282,53 +282,11 @@ spec@!opengl 1.5@depth-tex-compare,Fail
 
 spec@!opengl 2.0@max-samplers,Fail
 spec@!opengl 2.0@max-samplers border,Fail
-spec@!opengl 2.0@vertex-program-two-side,Fail
-spec@!opengl 2.0@vertex-program-two-side back front2,Fail
-spec@!opengl 2.0@vertex-program-two-side back front2@vs and fs,Fail
-spec@!opengl 2.0@vertex-program-two-side back front2 back2,Fail
-spec@!opengl 2.0@vertex-program-two-side back front2 back2@vs and fs,Fail
-spec@!opengl 2.0@vertex-program-two-side enabled,Fail
-spec@!opengl 2.0@vertex-program-two-side enabled back,Fail
-spec@!opengl 2.0@vertex-program-two-side enabled back@vs and fs,Fail
-spec@!opengl 2.0@vertex-program-two-side enabled back back2,Fail
-spec@!opengl 2.0@vertex-program-two-side enabled back back2@vs and fs,Fail
-spec@!opengl 2.0@vertex-program-two-side enabled back front2,Fail
-spec@!opengl 2.0@vertex-program-two-side enabled back front2@vs and fs,Fail
-spec@!opengl 2.0@vertex-program-two-side enabled back front2 back2,Fail
-spec@!opengl 2.0@vertex-program-two-side enabled back front2 back2@vs and fs,Fail
-spec@!opengl 2.0@vertex-program-two-side enabled back2,Fail
-spec@!opengl 2.0@vertex-program-two-side enabled back2@vs and fs,Fail
-spec@!opengl 2.0@vertex-program-two-side enabled front back back2,Fail
-spec@!opengl 2.0@vertex-program-two-side enabled front back back2@vs and fs,Fail
-spec@!opengl 2.0@vertex-program-two-side enabled front back front2,Fail
-spec@!opengl 2.0@vertex-program-two-side enabled front back front2@vs and fs,Fail
-spec@!opengl 2.0@vertex-program-two-side enabled front back front2 back2,Fail
-spec@!opengl 2.0@vertex-program-two-side enabled front back front2 back2@vs and fs,Fail
-spec@!opengl 2.0@vertex-program-two-side enabled front back2,Fail
-spec@!opengl 2.0@vertex-program-two-side enabled front back2@vs and fs,Fail
-spec@!opengl 2.0@vertex-program-two-side enabled front front2,Fail
-spec@!opengl 2.0@vertex-program-two-side enabled front front2@vs and fs,Fail
-spec@!opengl 2.0@vertex-program-two-side enabled front front2 back2,Fail
-spec@!opengl 2.0@vertex-program-two-side enabled front front2 back2@vs and fs,Fail
-spec@!opengl 2.0@vertex-program-two-side enabled front2,Fail
-spec@!opengl 2.0@vertex-program-two-side enabled front2@vs and fs,Fail
-spec@!opengl 2.0@vertex-program-two-side enabled front2 back2,Fail
-spec@!opengl 2.0@vertex-program-two-side enabled front2 back2@vs and fs,Fail
-spec@!opengl 2.0@vertex-program-two-side front back front2,Fail
-spec@!opengl 2.0@vertex-program-two-side front back front2@vs and fs,Fail
-spec@!opengl 2.0@vertex-program-two-side front back front2 back2,Fail
-spec@!opengl 2.0@vertex-program-two-side front back front2 back2@vs and fs,Fail
-spec@!opengl 2.0@vertex-program-two-side front front2,Fail
-spec@!opengl 2.0@vertex-program-two-side front front2@vs and fs,Fail
-spec@!opengl 2.0@vertex-program-two-side front front2 back2,Fail
-spec@!opengl 2.0@vertex-program-two-side front front2 back2@vs and fs,Fail
-spec@!opengl 2.0@vertex-program-two-side front2,Fail
-spec@!opengl 2.0@vertex-program-two-side front2@vs and fs,Fail
-spec@!opengl 2.0@vertex-program-two-side front2 back2,Fail
-spec@!opengl 2.0@vertex-program-two-side front2 back2@vs and fs,Fail
 spec@!opengl 2.1@pbo,Fail
 spec@!opengl 2.1@pbo@test_polygon_stip,Fail
 spec@!opengl 2.1@polygon-stipple-fs,Fail
+spec@!opengl 2.0@vertex-program-two-side,Fail
+spec@!opengl 2.0@vertex-program-two-side enabled,Fail
 
 spec@arb_clear_texture@arb_clear_texture-sized-formats,Fail
 
@@ -786,7 +744,6 @@ spec@glsl-1.10@execution@fs-frontfacing-ternary-neg-1.0-1.0,Fail
 spec@glsl-1.10@execution@fs-frontfacing-ternary-neg-1.0-1.0-alt,Fail
 spec@glsl-1.10@execution@fs-frontfacing-ternary-vec4-neg-1.0-1.0,Fail
 
-spec@glsl-1.10@execution@fs-notequal-of-expression,Fail
 spec@glsl-1.10@execution@fs-sign-times-abs,Fail
 spec@glsl-1.10@execution@fs-sign-times-neg,Fail
 spec@glsl-1.10@execution@fs-sign-times-neg-abs,Fail
@@ -794,7 +751,6 @@ spec@glsl-1.10@execution@fs-sign-times-sign,Fail
 spec@glsl-1.10@execution@gl_lightsource_indirect,Fail
 spec@glsl-1.10@execution@glsl-1.10-built-in-matrix-state,Fail
 spec@glsl-1.10@execution@glsl-1.10-built-in-uniform-state,Fail
-spec@glsl-1.10@execution@glsl-clamp-vertex-color,Fail
 spec@glsl-1.10@execution@glsl-fs-convolution-1,Fail
 spec@glsl-1.10@execution@glsl-fs-convolution-2,Fail
 spec@glsl-1.10@execution@glsl-fs-if-nested-loop,Fail
@@ -848,27 +804,14 @@ spec@glsl-1.10@execution@temp-array-indexing@glsl-fs-vec4-indexing-temp-src-in-l
 spec@glsl-1.10@execution@temp-array-indexing@glsl-fs-vec4-indexing-temp-src-in-nested-loop-combined,Fail
 spec@glsl-1.10@execution@temp-array-indexing@glsl-fs-vec4-indexing-temp-src-in-nested-loop-inner,Fail
 spec@glsl-1.10@execution@temp-array-indexing@glsl-fs-vec4-indexing-temp-src-in-nested-loop-outer,Fail
-spec@glsl-1.10@execution@variable-indexing@fs-input-array-vec2-index-rd,Fail
-spec@glsl-1.10@execution@variable-indexing@fs-input-array-vec3-index-rd,Fail
-spec@glsl-1.10@execution@variable-indexing@fs-input-array-vec4-index-rd,Fail
-spec@glsl-1.10@execution@variable-indexing@fs-temp-array-mat3-index-col-row-wr,Fail
-spec@glsl-1.10@execution@variable-indexing@fs-temp-array-mat3-index-col-wr,Fail
 spec@glsl-1.10@execution@variable-indexing@fs-temp-array-mat4-index-col-row-rd,Fail
 spec@glsl-1.10@execution@variable-indexing@fs-temp-array-mat4-index-col-row-wr,Fail
 spec@glsl-1.10@execution@variable-indexing@fs-temp-array-mat4-index-col-wr,Fail
 spec@glsl-1.10@execution@variable-indexing@fs-uniform-array-mat4-index-col-row-rd,Fail
-spec@glsl-1.10@execution@variable-indexing@fs-varying-array-mat3-index-col-rd,Fail
-spec@glsl-1.10@execution@variable-indexing@fs-varying-array-mat3-index-col-row-rd,Fail
 spec@glsl-1.10@execution@variable-indexing@vs-output-array-vec2-index-wr,Fail
 spec@glsl-1.10@execution@variable-indexing@vs-output-array-vec2-index-wr-no-unroll,Fail
 spec@glsl-1.10@execution@variable-indexing@vs-output-array-vec3-index-wr,Fail
 spec@glsl-1.10@execution@variable-indexing@vs-output-array-vec4-index-wr,Fail
-spec@glsl-1.10@execution@variable-indexing@vs-varying-array-mat3-index-col-rd,Fail
-spec@glsl-1.10@execution@variable-indexing@vs-varying-array-mat3-index-col-row-rd,Fail
-spec@glsl-1.10@execution@variable-indexing@vs-varying-array-mat3-index-col-row-wr,Fail
-spec@glsl-1.10@execution@variable-indexing@vs-varying-array-mat3-index-col-wr,Fail
-spec@glsl-1.10@execution@variable-indexing@vs-varying-array-mat3-index-row-wr,Fail
-spec@glsl-1.10@execution@variable-indexing@vs-varying-array-mat3-index-wr,Fail
 spec@glsl-1.10@execution@varying-packing@simple float array,Fail
 spec@glsl-1.10@execution@varying-packing@simple float separate,Fail
 spec@glsl-1.10@execution@varying-packing@simple mat2 array,Fail
@@ -1050,20 +993,10 @@ spec@glsl-1.20@execution@uniform-initializer@fs-mat4,Fail
 spec@glsl-1.20@execution@uniform-initializer@fs-mat4-array,Fail
 spec@glsl-1.20@execution@uniform-initializer@fs-mat4-from-const,Fail
 spec@glsl-1.20@execution@uniform-initializer@fs-mat4-set-by-other-stage,Fail
-spec@glsl-1.20@execution@variable-indexing@fs-temp-array-mat3-index-col-row-wr,Fail
-spec@glsl-1.20@execution@variable-indexing@fs-temp-array-mat3-index-col-wr,Fail
 spec@glsl-1.20@execution@variable-indexing@fs-temp-array-mat4-index-col-row-rd,Fail
 spec@glsl-1.20@execution@variable-indexing@fs-temp-array-mat4-index-col-row-wr,Fail
 spec@glsl-1.20@execution@variable-indexing@fs-temp-array-mat4-index-col-wr,Fail
 spec@glsl-1.20@execution@variable-indexing@fs-uniform-array-mat4-index-col-row-rd,Fail
-spec@glsl-1.20@execution@variable-indexing@fs-varying-array-mat3-index-col-rd,Fail
-spec@glsl-1.20@execution@variable-indexing@fs-varying-array-mat3-index-col-row-rd,Fail
-spec@glsl-1.20@execution@variable-indexing@vs-varying-array-mat3-index-col-rd,Fail
-spec@glsl-1.20@execution@variable-indexing@vs-varying-array-mat3-index-col-row-rd,Fail
-spec@glsl-1.20@execution@variable-indexing@vs-varying-array-mat3-index-col-row-wr,Fail
-spec@glsl-1.20@execution@variable-indexing@vs-varying-array-mat3-index-col-wr,Fail
-spec@glsl-1.20@execution@variable-indexing@vs-varying-array-mat3-index-row-wr,Fail
-spec@glsl-1.20@execution@variable-indexing@vs-varying-array-mat3-index-wr,Fail
 
 # regression between 81971118 and e26a383e
 spec@glsl-1.10@execution@variable-indexing@fs-temp-array-mat4-col-row-wr,Fail
