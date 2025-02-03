@@ -2479,6 +2479,9 @@ pvr_create_renderpass_state(const VkGraphicsPipelineCreateInfo *const info)
    assert(info->subpass < pass->subpass_count);
 
    for (uint32_t i = 0; i < subpass->color_count; i++) {
+      if (subpass->color_attachments[i] == VK_ATTACHMENT_UNUSED)
+         continue;
+
       if (pass->attachments[subpass->color_attachments[i]].aspects)
          attachments |= MESA_VK_RP_ATTACHMENT_COLOR_0_BIT << i;
    }
