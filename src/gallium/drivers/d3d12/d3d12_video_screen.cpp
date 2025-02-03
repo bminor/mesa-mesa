@@ -902,9 +902,9 @@ static d3d12_video_encode_get_hevc_codec_support ( const D3D12_VIDEO_ENCODER_COD
 
 static
 union pipe_enc_cap_dirty_info
-get_dirty_rects_support(D3D12_VIDEO_ENCODER_INPUT_MAP_SESSION_INFO sessionInfo,
-                        ID3D12VideoDevice3* pD3D12VideoDevice,
-                        D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE mapSource)
+query_dirty_rects_support(D3D12_VIDEO_ENCODER_INPUT_MAP_SESSION_INFO sessionInfo,
+                          ID3D12VideoDevice3* pD3D12VideoDevice,
+                          D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE mapSource)
 {
    D3D12_FEATURE_DATA_VIDEO_ENCODER_DIRTY_REGIONS capDirtyRegions =
    {
@@ -936,6 +936,35 @@ get_dirty_rects_support(D3D12_VIDEO_ENCODER_INPUT_MAP_SESSION_INFO sessionInfo,
    }
 
    return dirty_rects_support;
+}
+
+static
+union pipe_enc_cap_dirty_info
+get_dirty_rects_support(D3D12_VIDEO_ENCODER_INPUT_MAP_SESSION_INFO sessionInfo,
+                        ID3D12VideoDevice3* pD3D12VideoDevice,
+                        D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE mapSource)
+{
+   // Check first with the usual subregion partitioning mode passed by caller
+   union pipe_enc_cap_dirty_info support = {};
+   support = query_dirty_rects_support(sessionInfo, pD3D12VideoDevice, mapSource);
+
+   // If there is no support, check if there is with AUTO slice mode
+   if(!support.bits.supports_info_type_dirty)
+   {
+      // Try with the other subregion partitioning mode
+      sessionInfo.SubregionFrameEncoding = D3D12_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE_AUTO;
+      sessionInfo.SubregionFrameEncodingData.DataSize = 0u;
+      sessionInfo.SubregionFrameEncodingData.pSlicesPartition_H264 = NULL;
+      sessionInfo.SubregionFrameEncodingData.pSlicesPartition_HEVC = NULL;
+      sessionInfo.SubregionFrameEncodingData.pTilesPartition_AV1 = NULL;
+      support = query_dirty_rects_support(sessionInfo, pD3D12VideoDevice, mapSource);
+      if (support.bits.supports_info_type_dirty)
+      {
+         support.bits.supports_require_auto_slice_mode = 1u;
+      }
+   }
+
+   return support;
 }
 
 static
