@@ -1281,6 +1281,8 @@ add_deferred_attribute_culling(nir_builder *b, nir_cf_list *original_extracted_c
             }
             /* primitive is culled if any plane's clipdist of all vertices are negative */
             accepted_by_clipdist = nir_ieq_imm(b, clipdist_neg_mask, 0);
+
+            b->shader->info.bit_sizes_int |= 8;
          } else {
             accepted_by_clipdist = nir_imm_true(b);
          }
