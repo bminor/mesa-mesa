@@ -1772,6 +1772,9 @@ print_tex_instr(nir_tex_instr *instr, print_state *state)
    case nir_texop_lod_bias_agx:
       fprintf(fp, "lod_bias_agx ");
       break;
+   case nir_texop_image_min_lod_agx:
+      fprintf(fp, "image_min_lod_agx ");
+      break;
    case nir_texop_has_custom_border_color_agx:
       fprintf(fp, "has_custom_border_color_agx ");
       break;
