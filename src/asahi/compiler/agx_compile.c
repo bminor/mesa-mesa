@@ -2173,8 +2173,7 @@ agx_emit_tex(agx_builder *b, nir_tex_instr *instr)
    agx_index coords = agx_null(), bindless = agx_immediate(0),
              texture = agx_immediate(instr->texture_index),
              sampler = agx_immediate(0), lod = agx_immediate(0),
-             compare = agx_null(), packed_offset = agx_null(),
-             min_lod = agx_null();
+             compare = agx_null(), packed_offset = agx_null();
 
    bool lod_is_zero = true;
 
@@ -2197,9 +2196,9 @@ agx_emit_tex(agx_builder *b, nir_tex_instr *instr)
                        nir_src_as_uint(instr->src[i].src) == 0;
          break;
 
-      case nir_tex_src_min_lod:
-         assert(index.size == AGX_SIZE_16);
-         min_lod = index;
+      case nir_tex_src_lod_bias_min_agx:
+         assert(index.size == AGX_SIZE_32);
+         lod = index;
          break;
 
       case nir_tex_src_comparator:
@@ -2217,6 +2216,10 @@ agx_emit_tex(agx_builder *b, nir_tex_instr *instr)
       case nir_tex_src_texture_handle:
          texture =
             agx_translate_bindless_handle(b, &instr->src[i].src, &bindless);
+         break;
+
+      case nir_tex_src_min_lod:
+         assert(instr->op == nir_texop_txd && "other cases lowered");
          break;
 
       case nir_tex_src_ddx: {
@@ -2264,16 +2267,19 @@ agx_emit_tex(agx_builder *b, nir_tex_instr *instr)
       }
    }
 
-   enum agx_lod_mode lod_mode = agx_lod_mode_for_nir(
-      instr->op, nir_tex_instr_src_index(instr, nir_tex_src_bias) >= 0,
-      nir_tex_instr_src_index(instr, nir_tex_src_min_lod) >= 0, lod_is_zero);
+   bool has_min_lod =
+      nir_tex_instr_src_index(instr, nir_tex_src_lod_bias_min_agx) >= 0 ||
+      nir_tex_instr_src_index(instr, nir_tex_src_min_lod) >= 0;
+
+   bool has_bias = (has_min_lod && instr->op != nir_texop_txd) ||
+                   (nir_tex_instr_src_index(instr, nir_tex_src_bias) >= 0);
+
+   enum agx_lod_mode lod_mode =
+      agx_lod_mode_for_nir(instr->op, has_bias, has_min_lod, lod_is_zero);
 
    if (lod_mode == AGX_LOD_MODE_AUTO_LOD) {
       /* Ignored logically but asserted 0 */
       lod = agx_immediate(0);
-   } else if (lod_mode == AGX_LOD_MODE_AUTO_LOD_BIAS_MIN) {
-      /* Combine min with lod */
-      lod = agx_vec2(b, lod, min_lod);
    }
 
    agx_index dst = agx_def_index(&instr->def);

@@ -321,6 +321,15 @@ lower_regular_texture(nir_builder *b, nir_instr *instr, UNUSED void *data)
       nir_tex_instr_add_src(tex, nir_tex_src_backend2, packed);
    }
 
+   if (nir_tex_instr_src_index(tex, nir_tex_src_bias) >= 0 &&
+       nir_tex_instr_src_index(tex, nir_tex_src_min_lod) >= 0) {
+
+      nir_def *bias = nir_steal_tex_src(tex, nir_tex_src_bias);
+      nir_def *min_lod = nir_steal_tex_src(tex, nir_tex_src_min_lod);
+      nir_def *packed = nir_pack_32_2x16_split(b, bias, min_lod);
+      nir_tex_instr_add_src(tex, nir_tex_src_lod_bias_min_agx, packed);
+   }
+
    /* We reserve bound sampler #0, so we offset bound samplers by 1 and
     * otherwise map bound samplers as-is.
     */
