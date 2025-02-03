@@ -29,8 +29,11 @@
 #include "util/slab.h"
 #include "d3d12_descriptor_pool.h"
 
-#include "nir.h"
+#include "util/list.h"
+#include "util/set.h"
 #ifdef HAVE_GALLIUM_D3D12_GRAPHICS
+#include "compiler/glsl_types.h"
+#include "nir.h"
 #include "dxil_versions.h"
 #endif // HAVE_GALLIUM_D3D12_GRAPHICS
 
@@ -122,6 +125,7 @@ struct d3d12_screen {
    D3D_FEATURE_LEVEL max_feature_level;
 #ifdef HAVE_GALLIUM_D3D12_GRAPHICS
    enum dxil_shader_model max_shader_model;
+   nir_shader_compiler_options nir_options;
 #endif // HAVE_GALLIUM_D3D12_GRAPHICS
    D3D12_FEATURE_DATA_ARCHITECTURE architecture;
    D3D12_FEATURE_DATA_D3D12_OPTIONS opts;
@@ -134,8 +138,6 @@ struct d3d12_screen {
 #ifndef _GAMING_XBOX
    D3D12_FEATURE_DATA_D3D12_OPTIONS19 opts19;
 #endif
-
-   nir_shader_compiler_options nir_options;
 
    /* description */
    uint32_t vendor_id;

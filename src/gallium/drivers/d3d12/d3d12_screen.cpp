@@ -670,7 +670,9 @@ d3d12_destroy_screen(struct d3d12_screen *screen)
 
    if (screen->d3d12_mod)
       util_dl_close(screen->d3d12_mod);
+#ifdef HAVE_GALLIUM_D3D12_GRAPHICS
    glsl_type_singleton_decref();
+#endif // HAVE_GALLIUM_D3D12_GRAPHICS
    FREE(screen);
 }
 
@@ -1248,7 +1250,9 @@ d3d12_query_memory_info(struct pipe_screen *pscreen, struct pipe_memory_info *in
 bool
 d3d12_init_screen_base(struct d3d12_screen *screen, struct sw_winsys *winsys, LUID *adapter_luid)
 {
+#ifdef HAVE_GALLIUM_D3D12_GRAPHICS
    glsl_type_singleton_init_or_ref();
+#endif // HAVE_GALLIUM_D3D12_GRAPHICS
    d3d12_debug = static_cast<uint32_t>(debug_get_option_d3d12_debug());
 
    screen->winsys = winsys;
