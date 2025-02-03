@@ -17,8 +17,10 @@
 #include "vk_meta.h"
 #include "vk_pipeline.h"
 
+#include "cl/nvk_query.h"
 #include "compiler/nir/nir.h"
 #include "compiler/nir/nir_builder.h"
+#include "nvkcl.h"
 
 #include "util/os_time.h"
 
@@ -26,11 +28,6 @@
 #include "nv_push_cl9097.h"
 #include "nv_push_cla0c0.h"
 #include "nv_push_clc597.h"
-
-struct nvk_query_report {
-   uint64_t value;
-   uint64_t timestamp;
-};
 
 VKAPI_ATTR VkResult VKAPI_CALL
 nvk_CreateQueryPool(VkDevice device,
@@ -118,14 +115,6 @@ nvk_query_available_addr(struct nvk_query_pool *pool, uint32_t query)
    return pool->mem->va->addr + query * sizeof(uint32_t);
 }
 
-static nir_def *
-nvk_nir_available_addr(nir_builder *b, nir_def *pool_addr,
-                       nir_def *query)
-{
-   nir_def *offset = nir_imul_imm(b, query, sizeof(uint32_t));
-   return nir_iadd(b, pool_addr, nir_u2u64(b, offset));
-}
-
 static uint32_t *
 nvk_query_available_map(struct nvk_query_pool *pool, uint32_t query)
 {
@@ -144,16 +133,6 @@ static uint64_t
 nvk_query_report_addr(struct nvk_query_pool *pool, uint32_t query)
 {
    return pool->mem->va->addr + nvk_query_offset(pool, query);
-}
-
-static nir_def *
-nvk_nir_query_report_addr(nir_builder *b, nir_def *pool_addr,
-                          nir_def *query_start, nir_def *query_stride,
-                          nir_def *query)
-{
-   nir_def *offset =
-      nir_iadd(b, query_start, nir_umul_2x32_64(b, query, query_stride));
-   return nir_iadd(b, pool_addr, offset);
 }
 
 static struct nvk_query_report *
@@ -715,135 +694,6 @@ load_struct_var(nir_builder *b, nir_variable *var, uint32_t field)
    return nir_load_deref(b, deref);
 }
 
-static void
-nir_write_query_result(nir_builder *b, nir_def *dst_addr,
-                       nir_def *idx, nir_def *flags,
-                       nir_def *result)
-{
-   assert(result->num_components == 1);
-   assert(result->bit_size == 64);
-
-   nir_push_if(b, nir_test_mask(b, flags, VK_QUERY_RESULT_64_BIT));
-   {
-      nir_def *offset = nir_i2i64(b, nir_imul_imm(b, idx, 8));
-      nir_store_global(b, nir_iadd(b, dst_addr, offset), 8, result, 0x1);
-   }
-   nir_push_else(b, NULL);
-   {
-      nir_def *result32 = nir_u2u32(b, result);
-      nir_def *offset = nir_i2i64(b, nir_imul_imm(b, idx, 4));
-      nir_store_global(b, nir_iadd(b, dst_addr, offset), 4, result32, 0x1);
-   }
-   nir_pop_if(b, NULL);
-}
-
-static void
-nir_get_query_delta(nir_builder *b, nir_def *dst_addr,
-                    nir_def *report_addr, nir_def *idx,
-                    nir_def *flags)
-{
-   nir_def *offset =
-      nir_imul_imm(b, idx, 2 * sizeof(struct nvk_query_report));
-   nir_def *begin_addr =
-      nir_iadd(b, report_addr, nir_i2i64(b, offset));
-   nir_def *end_addr =
-      nir_iadd_imm(b, begin_addr, sizeof(struct nvk_query_report));
-
-   /* nvk_query_report::timestamp is the first uint64_t */
-   nir_def *begin = nir_load_global(b, begin_addr, 16, 1, 64);
-   nir_def *end = nir_load_global(b, end_addr, 16, 1, 64);
-
-   nir_def *delta = nir_isub(b, end, begin);
-
-   nir_write_query_result(b, dst_addr, idx, flags, delta);
-}
-
-static void
-nvk_nir_copy_query(nir_builder *b, nir_variable *push, nir_def *i)
-{
-   nir_def *pool_addr = load_struct_var(b, push, 0);
-   nir_def *query_start = nir_u2u64(b, load_struct_var(b, push, 1));
-   nir_def *query_stride = load_struct_var(b, push, 2);
-   nir_def *first_query = load_struct_var(b, push, 3);
-   nir_def *dst_addr = load_struct_var(b, push, 5);
-   nir_def *dst_stride = load_struct_var(b, push, 6);
-   nir_def *flags = load_struct_var(b, push, 7);
-
-   nir_def *query = nir_iadd(b, first_query, i);
-
-   nir_def *avail_addr = nvk_nir_available_addr(b, pool_addr, query);
-   nir_def *available =
-      nir_i2b(b, nir_load_global(b, avail_addr, 4, 1, 32));
-
-   nir_def *partial = nir_test_mask(b, flags, VK_QUERY_RESULT_PARTIAL_BIT);
-   nir_def *write_results = nir_ior(b, available, partial);
-
-   nir_def *report_addr =
-      nvk_nir_query_report_addr(b, pool_addr, query_start, query_stride,
-                                query);
-   nir_def *dst_offset = nir_imul(b, nir_u2u64(b, i), dst_stride);
-
-   /* Timestamp queries are the only ones use a single report */
-   nir_def *is_timestamp =
-      nir_ieq_imm(b, query_stride, sizeof(struct nvk_query_report));
-
-   nir_def *one = nir_imm_int(b, 1);
-   nir_def *num_reports;
-   nir_push_if(b, is_timestamp);
-   {
-      nir_push_if(b, write_results);
-      {
-         /* This is the timestamp case.  We add 8 because we're loading
-          * nvk_query_report::timestamp.
-          */
-         nir_def *timestamp =
-            nir_load_global(b, nir_iadd_imm(b, report_addr, 8), 8, 1, 64);
-
-         nir_write_query_result(b, nir_iadd(b, dst_addr, dst_offset),
-                                nir_imm_int(b, 0), flags, timestamp);
-      }
-      nir_pop_if(b, NULL);
-   }
-   nir_push_else(b, NULL);
-   {
-      /* Everything that isn't a timestamp has the invariant that the
-       * number of destination entries is equal to the query stride divided
-       * by the size of two reports.
-       */
-      num_reports = nir_udiv_imm(b, query_stride,
-                                 2 * sizeof(struct nvk_query_report));
-
-      nir_push_if(b, write_results);
-      {
-         nir_variable *r =
-            nir_local_variable_create(b->impl, glsl_uint_type(), "r");
-         nir_store_var(b, r, nir_imm_int(b, 0), 0x1);
-
-         nir_push_loop(b);
-         {
-            nir_break_if(b, nir_ige(b, nir_load_var(b, r), num_reports));
-
-            nir_get_query_delta(b, nir_iadd(b, dst_addr, dst_offset),
-                                report_addr, nir_load_var(b, r), flags);
-
-            nir_store_var(b, r, nir_iadd_imm(b, nir_load_var(b, r), 1), 0x1);
-         }
-         nir_pop_loop(b, NULL);
-      }
-      nir_pop_if(b, NULL);
-   }
-   nir_pop_if(b, NULL);
-
-   num_reports = nir_if_phi(b, one, num_reports);
-
-   nir_push_if(b, nir_test_mask(b, flags, VK_QUERY_RESULT_WITH_AVAILABILITY_BIT));
-   {
-      nir_write_query_result(b, nir_iadd(b, dst_addr, dst_offset),
-                             num_reports, flags, nir_b2i64(b, available));
-   }
-   nir_pop_if(b, NULL);
-}
-
 static nir_shader *
 build_copy_queries_shader(void)
 {
@@ -870,16 +720,11 @@ build_copy_queries_shader(void)
                                             push_iface_type, "push");
 
    b->shader->info.workgroup_size[0] = 32;
-   nir_def *wg_id = nir_load_workgroup_id(b);
-   nir_def *i = nir_iadd(b, nir_load_subgroup_invocation(b),
-                            nir_imul_imm(b, nir_channel(b, wg_id, 0), 32));
 
-   nir_def *query_count = load_struct_var(b, push, 4);
-   nir_push_if(b, nir_ilt(b, i, query_count));
-   {
-      nvk_nir_copy_query(b, push, i);
-   }
-   nir_pop_if(b, NULL);
+   nvk_copy_queries(b, load_struct_var(b, push, 0), load_struct_var(b, push, 1),
+                    load_struct_var(b, push, 2), load_struct_var(b, push, 3),
+                    load_struct_var(b, push, 4), load_struct_var(b, push, 5),
+                    load_struct_var(b, push, 6), load_struct_var(b, push, 7));
 
    return build.shader;
 }

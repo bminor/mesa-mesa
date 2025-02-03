@@ -75,6 +75,10 @@ nvk_files = files(
   'nvkmd/nvkmd.h',
 )
 
+nvkcl_files = files(
+  'cl/nvk_query.cl',
+)
+
 nvk_entrypoints = custom_target(
   'nvk_entrypoints',
   input : [vk_entrypoints_gen, vk_api_xml],
@@ -85,6 +89,26 @@ nvk_entrypoints = custom_target(
     '--beta', with_vulkan_beta.to_string(),
   ],
   depend_files : vk_entrypoints_gen_depend_files,
+)
+
+relative_dir = fs.relative_to(meson.global_source_root(), meson.global_build_root())
+
+nvkcl_spv = custom_target(
+  input : nvkcl_files,
+  output : 'nvkcl.spv',
+  command : [
+    prog_mesa_clc, '-o', '@OUTPUT@', '--depfile', '@DEPFILE@', nvkcl_files, '--',
+    '-I' + join_paths(meson.current_source_dir(), '.'),
+    '-I' + join_paths(meson.project_source_root(), 'src'),
+    '-fmacro-prefix-map=@0@/='.format(relative_dir),
+    ],
+  depfile : '@PLAINNAME@.d',
+)
+
+nvkcl = custom_target(
+  input : nvkcl_spv,
+  output : ['nvkcl.cpp', 'nvkcl.h'],
+  command : [prog_vtn_bindgen2, '@INPUT@', '@OUTPUT@'],
 )
 
 nvk_deps = [
@@ -116,6 +140,7 @@ libnvk = static_library(
     nvk_entrypoints,
     cl_generated,
     nvk_files,
+    nvkcl,
     sha1_h,
   ],
   include_directories : [
