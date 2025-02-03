@@ -2493,10 +2493,10 @@ zink_image_map(struct pipe_context *pctx,
    if (!(usage & PIPE_MAP_UNSYNCHRONIZED)) {
       if (usage & PIPE_MAP_WRITE && !(usage & PIPE_MAP_READ))
          /* this is like a blit, so we can potentially dump some clears or maybe we have to  */
-         zink_fb_clears_apply_or_discard(ctx, pres, zink_rect_from_box(box), false);
+         zink_fb_clears_apply_or_discard(ctx, pres, zink_rect_from_box(box), box->z, box->depth, false);
       else if (usage & PIPE_MAP_READ)
          /* if the map region intersects with any clears then we have to apply them */
-         zink_fb_clears_apply_region(ctx, pres, zink_rect_from_box(box));
+         zink_fb_clears_apply_region(ctx, pres, zink_rect_from_box(box),box->z, box->depth);
    }
    if (!res->linear || !res->obj->host_visible) {
       enum pipe_format format = pres->format;
@@ -2616,7 +2616,7 @@ zink_image_subdata(struct pipe_context *pctx,
    /* flush clears to avoid subdata conflict */
    if (!(usage & TC_TRANSFER_MAP_THREADED_UNSYNC) &&
        (res->obj->vkusage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT))
-      zink_fb_clears_apply_or_discard(ctx, pres, zink_rect_from_box(box), false);
+      zink_fb_clears_apply_or_discard(ctx, pres, zink_rect_from_box(box), box->z, box->depth, false);
    /* only use HIC if supported on image and no pending usage */
    while (res->obj->vkusage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT &&
           zink_resource_usage_check_completion(screen, res, ZINK_RESOURCE_ACCESS_RW)) {
@@ -3084,7 +3084,7 @@ resource_object_add_bind(struct zink_context *ctx, struct zink_resource *res, un
       return true;
    }
    assert(!res->obj->dt);
-   zink_fb_clears_apply_region(ctx, &res->base.b, (struct u_rect){0, res->base.b.width0, 0, res->base.b.height0});
+   zink_fb_clears_apply(ctx, &res->base.b, 0, INT32_MAX);
    bool ret = add_resource_bind(ctx, res, bind);
    if (ret)
       zink_resource_rebind(ctx, res);
