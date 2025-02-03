@@ -1,4 +1,4 @@
-From 4f53bcbb597a91bab715bc8d555cfd6c81263ac1 Mon Sep 17 00:00:00 2001
+From bcb1110cc00398dfb501aac83eddbd66d8fae425 Mon Sep 17 00:00:00 2001
 From: Daniel Stone <daniels@collabora.com>
 Date: Wed, 29 Jan 2025 12:50:33 +0000
 Subject: [PATCH] Build: Don't build Vulkan utilities for GL builds
@@ -7,10 +7,11 @@ Change-Id: Ie412f914bb6264ffbd502deea57d80cc11a9948e
 Signed-off-by: Daniel Stone <daniels@collabora.com>
 ---
  framework/platform/CMakeLists.txt             |   9 --
- .../platform/android/tcuAndroidPlatform.cpp   | 118 ------------------
+ .../platform/android/tcuAndroidPlatform.cpp   | 126 +-----------------
+ .../platform/android/tcuAndroidPlatform.hpp   |  14 +-
  framework/platform/lnx/tcuLnxPlatform.cpp     |   9 +-
  .../surfaceless/tcuSurfacelessPlatform.cpp    |  54 --------
- 4 files changed, 1 insertion(+), 189 deletions(-)
+ 5 files changed, 3 insertions(+), 209 deletions(-)
 
 diff --git a/framework/platform/CMakeLists.txt b/framework/platform/CMakeLists.txt
 index ec1deb5c2..49fe412a7 100644
@@ -54,7 +55,7 @@ index ec1deb5c2..49fe412a7 100644
  
  # Always link to glutil as some platforms such as Win32 always support GL
 diff --git a/framework/platform/android/tcuAndroidPlatform.cpp b/framework/platform/android/tcuAndroidPlatform.cpp
-index 0472fa615..87033ad56 100644
+index 0472fa615..40f523ee2 100644
 --- a/framework/platform/android/tcuAndroidPlatform.cpp
 +++ b/framework/platform/android/tcuAndroidPlatform.cpp
 @@ -31,7 +31,6 @@
@@ -168,7 +169,17 @@ index 0472fa615..87033ad56 100644
  static size_t getTotalSystemMemory(ANativeActivity *activity)
  {
      const size_t MiB = (size_t)(1 << 20);
-@@ -355,11 +258,6 @@ bool Platform::processEvents(void)
+@@ -338,8 +241,7 @@ static size_t getTotalSystemMemory(ANativeActivity *activity)
+ // Platform
+ 
+ Platform::Platform(NativeActivity &activity)
+-    : m_activity(activity)
+-    , m_totalSystemMemory(getTotalSystemMemory(activity.getNativeActivity()))
++    : m_totalSystemMemory(getTotalSystemMemory(activity.getNativeActivity()))
+ {
+     m_nativeDisplayFactoryRegistry.registerFactory(new NativeDisplayFactory(m_windowRegistry));
+     m_contextFactoryRegistry.registerFactory(new eglu::GLContextFactory(m_nativeDisplayFactoryRegistry));
+@@ -355,16 +257,6 @@ bool Platform::processEvents(void)
      return true;
  }
  
@@ -177,10 +188,15 @@ index 0472fa615..87033ad56 100644
 -    return new VulkanLibrary(libraryPath);
 -}
 -
- void Platform::describePlatform(std::ostream &dst) const
+-void Platform::describePlatform(std::ostream &dst) const
+-{
+-    tcu::Android::describePlatform(m_activity.getNativeActivity(), dst);
+-}
+-
+ void Platform::getMemoryLimits(tcu::PlatformMemoryLimits &limits) const
  {
-     tcu::Android::describePlatform(m_activity.getNativeActivity(), dst);
-@@ -398,21 +296,5 @@ void Platform::getMemoryLimits(tcu::PlatformMemoryLimits &limits) const
+     // Worst-case estimates
+@@ -398,21 +290,5 @@ void Platform::getMemoryLimits(tcu::PlatformMemoryLimits &limits) const
      limits.devicePageTableHierarchyLevels    = 3;
  }
  
@@ -202,6 +218,53 @@ index 0472fa615..87033ad56 100644
 -
  } // namespace Android
  } // namespace tcu
+diff --git a/framework/platform/android/tcuAndroidPlatform.hpp b/framework/platform/android/tcuAndroidPlatform.hpp
+index 32cc9068c..3c3f02d98 100644
+--- a/framework/platform/android/tcuAndroidPlatform.hpp
++++ b/framework/platform/android/tcuAndroidPlatform.hpp
+@@ -27,7 +27,6 @@
+ #include "tcuPlatform.hpp"
+ #include "egluPlatform.hpp"
+ #include "gluPlatform.hpp"
+-#include "vkPlatform.hpp"
+ #include "tcuAndroidWindow.hpp"
+ #include "tcuAndroidNativeActivity.hpp"
+ 
+@@ -36,7 +35,7 @@ namespace tcu
+ namespace Android
+ {
+ 
+-class Platform : public tcu::Platform, private eglu::Platform, private glu::Platform, private vk::Platform
++class Platform : public tcu::Platform, private eglu::Platform, private glu::Platform
+ {
+ public:
+     Platform(NativeActivity &activity);
+@@ -52,10 +51,6 @@ public:
+     {
+         return static_cast<const eglu::Platform &>(*this);
+     }
+-    virtual const vk::Platform &getVulkanPlatform(void) const
+-    {
+-        return static_cast<const vk::Platform &>(*this);
+-    }
+     virtual void getMemoryLimits(tcu::PlatformMemoryLimits &limits) const;
+ 
+     WindowRegistry &getWindowRegistry(void)
+@@ -63,14 +58,7 @@ public:
+         return m_windowRegistry;
+     }
+ 
+-    // Vulkan Platform API
+-    vk::Library *createLibrary(const char *libraryPath) const;
+-    void describePlatform(std::ostream &dst) const;
+-    vk::wsi::Display *createWsiDisplay(vk::wsi::Type wsiType) const;
+-    bool hasDisplay(vk::wsi::Type wsiType) const;
+-
+ private:
+-    NativeActivity &m_activity;
+     WindowRegistry m_windowRegistry;
+     const size_t m_totalSystemMemory;
+ };
 diff --git a/framework/platform/lnx/tcuLnxPlatform.cpp b/framework/platform/lnx/tcuLnxPlatform.cpp
 index 8c0a3ef06..6b1a4985a 100644
 --- a/framework/platform/lnx/tcuLnxPlatform.cpp
@@ -324,5 +387,5 @@ index 1cea9dd97..3d5bd8b62 100644
  
  class ContextFactory : public glu::ContextFactory
 -- 
-2.48.1
+2.47.2
 
