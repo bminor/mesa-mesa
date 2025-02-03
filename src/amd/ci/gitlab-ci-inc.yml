@@ -81,12 +81,20 @@
     - !reference [.collabora-farm-rules, rules]
     - !reference [.radv-rules, rules]
 
-.radv-collabora-rules-restricted:
+.radv-collabora-restricted-rules:
   stage: amd
   rules:
     - !reference [.test, rules]
     - !reference [.restricted-rules, rules]
     - !reference [.radv-collabora-rules, rules]
+
+.radv-collabora-manual-rules:
+  stage: amd-postmerge
+  extends: .no-auto-retry
+  rules:
+    - !reference [.test, rules]
+    - !reference [.collabora-farm-manual-rules, rules]
+    - !reference [.radv-manual-rules, rules]
 
 .radv-valve-rules:
   stage: amd
