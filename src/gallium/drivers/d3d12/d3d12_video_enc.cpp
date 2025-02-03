@@ -909,45 +909,43 @@ d3d12_video_encoder_create_reference_picture_manager(struct d3d12_video_encoder 
 D3D12_VIDEO_ENCODER_PICTURE_CONTROL_SUBREGIONS_LAYOUT_DATA
 d3d12_video_encoder_get_current_slice_param_settings(struct d3d12_video_encoder *pD3D12Enc)
 {
+   D3D12_VIDEO_ENCODER_PICTURE_CONTROL_SUBREGIONS_LAYOUT_DATA subregionData = {};
+   if (pD3D12Enc->m_currentEncodeConfig.m_encoderSliceConfigMode ==
+             D3D12_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE_FULL_FRAME) {
+      return subregionData;
+   }
+
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+   if (pD3D12Enc->m_currentEncodeConfig.m_encoderSliceConfigMode ==
+             D3D12_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE_AUTO) {
+      return subregionData;
+   }
+#endif // D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+
    enum pipe_video_format codec = u_reduce_video_profile(pD3D12Enc->base.profile);
    switch (codec) {
 #if VIDEO_CODEC_H264ENC
       case PIPE_VIDEO_FORMAT_MPEG4_AVC:
       {
-         D3D12_VIDEO_ENCODER_PICTURE_CONTROL_SUBREGIONS_LAYOUT_DATA subregionData = {};
-         if (pD3D12Enc->m_currentEncodeConfig.m_encoderSliceConfigMode !=
-             D3D12_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE_FULL_FRAME) {
-            subregionData.pSlicesPartition_H264 =
-               &pD3D12Enc->m_currentEncodeConfig.m_encoderSliceConfigDesc.m_SlicesPartition_H264;
-            subregionData.DataSize = sizeof(D3D12_VIDEO_ENCODER_PICTURE_CONTROL_SUBREGIONS_LAYOUT_DATA_SLICES);
-         }
-         return subregionData;
+      subregionData.pSlicesPartition_H264 =
+         &pD3D12Enc->m_currentEncodeConfig.m_encoderSliceConfigDesc.m_SlicesPartition_H264;
+      subregionData.DataSize = sizeof(D3D12_VIDEO_ENCODER_PICTURE_CONTROL_SUBREGIONS_LAYOUT_DATA_SLICES);
       } break;
 #endif
 #if VIDEO_CODEC_H265ENC
       case PIPE_VIDEO_FORMAT_HEVC:
       {
-         D3D12_VIDEO_ENCODER_PICTURE_CONTROL_SUBREGIONS_LAYOUT_DATA subregionData = {};
-         if (pD3D12Enc->m_currentEncodeConfig.m_encoderSliceConfigMode !=
-             D3D12_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE_FULL_FRAME) {
-            subregionData.pSlicesPartition_HEVC =
-               &pD3D12Enc->m_currentEncodeConfig.m_encoderSliceConfigDesc.m_SlicesPartition_HEVC;
-            subregionData.DataSize = sizeof(D3D12_VIDEO_ENCODER_PICTURE_CONTROL_SUBREGIONS_LAYOUT_DATA_SLICES);
-         }
-         return subregionData;
+         subregionData.pSlicesPartition_HEVC =
+            &pD3D12Enc->m_currentEncodeConfig.m_encoderSliceConfigDesc.m_SlicesPartition_HEVC;
+         subregionData.DataSize = sizeof(D3D12_VIDEO_ENCODER_PICTURE_CONTROL_SUBREGIONS_LAYOUT_DATA_SLICES);
       } break;
 #endif
 #if VIDEO_CODEC_AV1ENC
       case PIPE_VIDEO_FORMAT_AV1:
       {
-         D3D12_VIDEO_ENCODER_PICTURE_CONTROL_SUBREGIONS_LAYOUT_DATA subregionData = {};
-         if (pD3D12Enc->m_currentEncodeConfig.m_encoderSliceConfigMode !=
-             D3D12_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE_FULL_FRAME) {
-            subregionData.pTilesPartition_AV1 =
-               &pD3D12Enc->m_currentEncodeConfig.m_encoderSliceConfigDesc.m_TilesConfig_AV1.TilesPartition;
-            subregionData.DataSize = sizeof(D3D12_VIDEO_ENCODER_AV1_PICTURE_CONTROL_SUBREGIONS_LAYOUT_DATA_TILES);
-         }
-         return subregionData;
+         subregionData.pTilesPartition_AV1 =
+            &pD3D12Enc->m_currentEncodeConfig.m_encoderSliceConfigDesc.m_TilesConfig_AV1.TilesPartition;
+         subregionData.DataSize = sizeof(D3D12_VIDEO_ENCODER_AV1_PICTURE_CONTROL_SUBREGIONS_LAYOUT_DATA_TILES);
       } break;
 #endif
       default:
@@ -955,6 +953,8 @@ d3d12_video_encoder_get_current_slice_param_settings(struct d3d12_video_encoder 
          unreachable("Unsupported pipe_video_format");
       } break;
    }
+
+   return subregionData;
 }
 
 D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA
@@ -2560,6 +2560,9 @@ d3d12_video_encoder_calculate_max_slices_count_in_output(
          maxSlices = 1u;
       } break;
       case D3D12_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE_BYTES_PER_SUBREGION:
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+      case D3D12_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE_AUTO:
+#endif // D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
       {
          maxSlices = MaxSubregionsNumberFromCaps;
       } break;

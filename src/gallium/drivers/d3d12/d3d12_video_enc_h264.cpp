@@ -520,7 +520,25 @@ d3d12_video_encoder_negotiate_current_h264_slices_configuration(struct d3d12_vid
                          "D3D12_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE_BYTES_PER_SUBREGION.\n");
          return false;
       }
-   } else {
+   }
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+   else if(picture->slice_mode == PIPE_VIDEO_SLICE_MODE_AUTO) {
+      if (d3d12_video_encoder_check_subregion_mode_support(
+         pD3D12Enc,
+         D3D12_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE_AUTO)) {
+            requestedSlicesMode =
+               D3D12_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE_AUTO;
+            requestedSlicesConfig = {};
+            debug_printf("[d3d12_video_encoder_h264] Using multi slice encoding mode: "
+                           "D3D12_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE_AUTO");
+      } else {
+         debug_printf("[d3d12_video_encoder_h264] Requested slice control mode is not supported: No HW support for "
+                         "D3D12_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE_AUTO.\n");
+         return false;
+      }
+   }
+#endif // D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+   else {
       requestedSlicesMode = D3D12_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE_FULL_FRAME;
       requestedSlicesConfig.NumberOfSlicesPerFrame = 1;
       debug_printf("[d3d12_video_encoder_h264] Requested slice control mode is full frame. m_SlicesPartition_H264.NumberOfSlicesPerFrame = %d - m_encoderSliceConfigMode = %d \n",
