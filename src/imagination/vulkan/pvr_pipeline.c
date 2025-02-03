@@ -1232,7 +1232,7 @@ static void pvr_fragment_state_save(struct pvr_graphics_pipeline *gfx_pipeline,
 
    /* TODO: add selection for other values of pass type and sample rate. */
 
-   if (shader_data->fs.uses.depth_feedback)
+   if (shader_data->fs.uses.depth_feedback && !shader_data->fs.uses.early_frag)
       fragment_state->pass_type = ROGUE_TA_PASSTYPE_DEPTH_FEEDBACK;
    else if (shader_data->fs.uses.discard)
       fragment_state->pass_type = ROGUE_TA_PASSTYPE_PUNCH_THROUGH;

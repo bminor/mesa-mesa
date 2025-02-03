@@ -1317,7 +1317,13 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
       break;
 
    case nir_intrinsic_depthf_pco:
-      instr = pco_depthf(&tctx->b, pco_ref_drc(PCO_DRC_0), src[0]);
+      assert(tctx->stage == MESA_SHADER_FRAGMENT);
+      if (tctx->shader->data.fs.uses.depth_feedback &&
+          !tctx->shader->data.fs.uses.early_frag) {
+         instr = pco_depthf(&tctx->b, pco_ref_drc(PCO_DRC_0), src[0]);
+      } else {
+         return NULL;
+      }
       break;
 
    case nir_intrinsic_terminate:

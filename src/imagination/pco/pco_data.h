@@ -87,6 +87,7 @@ typedef struct _pco_fs_data {
       bool fbfetch; /** Whether the shader fetches from the framebuffer. */
       bool depth_feedback;
       bool discard;
+      bool early_frag;
    } uses;
 } pco_fs_data;
 
