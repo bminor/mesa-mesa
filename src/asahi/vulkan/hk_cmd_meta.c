@@ -4,6 +4,7 @@
  * Copyright 2022-2023 Collabora Ltd. and Red Hat Inc.
  * SPDX-License-Identifier: MIT
  */
+#include "asahi/compiler/agx_nir_texture.h"
 #include "util/format/u_format.h"
 #include "util/format/u_formats.h"
 #include "util/u_math.h"
@@ -560,6 +561,9 @@ build_image_copy_shader(const struct vk_meta_image_copy_key *key)
             } else {
                value1 = nir_txf_deref(b, deref, src_coord, NULL);
             }
+
+            nir_instr_as_tex(value1->parent_instr)->backend_flags =
+               AGX_TEXTURE_FLAG_NO_CLAMP;
 
             /* Munge according to the implicit conversions so we get a bit copy */
             if (key->src_format != key->dst_format) {
