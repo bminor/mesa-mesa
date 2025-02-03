@@ -205,7 +205,6 @@ spec@ext_packed_depth_stencil@texwrap formats offset,Fail
 spec@ext_packed_depth_stencil@texwrap formats offset@GL_DEPTH24_STENCIL8- NPOT,Fail
 spec@ext_packed_depth_stencil@texwrap formats,Fail
 spec@ext_packed_depth_stencil@texwrap formats@GL_DEPTH24_STENCIL8- NPOT,Fail
-spec@ext_packed_float@query-rgba-signed-components,Fail
 spec@ext_texture_integer@fbo-blending,Fail
 spec@ext_texture_integer@getteximage-clamping gl_arb_texture_rg,Fail
 spec@ext_texture_integer@getteximage-clamping,Fail

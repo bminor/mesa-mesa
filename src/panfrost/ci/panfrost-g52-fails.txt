@@ -102,7 +102,6 @@ spec@ext_framebuffer_object@fbo-blending-formats@GL_LUMINANCE,Fail
 spec@ext_framebuffer_object@fbo-blending-snorm,Fail
 spec@ext_framebuffer_object@getteximage-formats init-by-clear-and-render,Fail
 spec@ext_framebuffer_object@getteximage-formats init-by-rendering,Fail
-spec@ext_packed_float@query-rgba-signed-components,Fail
 spec@ext_transform_feedback2@draw-auto,Fail
 spec@ext_transform_feedback@builtin-varyings gl_clipdistance,Fail
 spec@ext_transform_feedback@change-size base-shrink,Fail
