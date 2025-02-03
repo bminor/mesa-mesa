@@ -492,6 +492,10 @@ enum pipe_video_slice_mode
     * Partitions the frame using max slice size per coded slice
    */
    PIPE_VIDEO_SLICE_MODE_MAX_SLICE_SIZE = 1,
+   /*
+    * Partitions the frame are decided by gallium driver
+   */
+   PIPE_VIDEO_SLICE_MODE_AUTO = 2,
 };
 
 enum pipe_video_entrypoint
