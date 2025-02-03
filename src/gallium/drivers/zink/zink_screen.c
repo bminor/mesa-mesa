@@ -3412,6 +3412,8 @@ zink_internal_create_screen(const struct pipe_screen_config *config, int64_t dev
          }
       }
    }
+
+   bool maybe_has_rebar = true;
    /* iterate again to check for missing heaps */
    for (enum zink_heap i = 0; i < ZINK_HEAP_MAX; i++) {
       /* not found: use compatible heap */
@@ -3425,10 +3427,12 @@ zink_internal_create_screen(const struct pipe_screen_config *config, int64_t dev
          } else {
             memcpy(screen->heap_map[i], screen->heap_map[ZINK_HEAP_DEVICE_LOCAL], screen->heap_count[ZINK_HEAP_DEVICE_LOCAL]);
             screen->heap_count[i] = screen->heap_count[ZINK_HEAP_DEVICE_LOCAL];
+            if (i == ZINK_HEAP_DEVICE_LOCAL_VISIBLE)
+               maybe_has_rebar = false;
          }
       }
    }
-   {
+   if (maybe_has_rebar) {
       uint64_t biggest_vis_vram = 0;
       for (unsigned i = 0; i < screen->heap_count[ZINK_HEAP_DEVICE_LOCAL_VISIBLE]; i++)
          biggest_vis_vram = MAX2(biggest_vis_vram, screen->info.mem_props.memoryHeaps[screen->info.mem_props.memoryTypes[screen->heap_map[ZINK_HEAP_DEVICE_LOCAL_VISIBLE][i]].heapIndex].size);
