@@ -289,6 +289,7 @@ files_libnir = files(
   'nir_search_helpers.h',
   'nir_serialize.c',
   'nir_serialize.h',
+  'nir_shader_compiler_options.h',
   'nir_split_64bit_vec3_and_vec4.c',
   'nir_split_per_member_structs.c',
   'nir_split_var_copies.c',
