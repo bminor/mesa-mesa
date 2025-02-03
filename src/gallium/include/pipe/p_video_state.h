@@ -2655,6 +2655,11 @@ union pipe_enc_cap_dirty_info {
        * Driver Output. Indicates pipe_enc_dirty_info.rects/input_map must cover an entire row of the frame
        */
       uint32_t supports_require_full_row: 1;
+      /*
+       * Driver Output. Indicates that to use pipe_enc_dirty_info.rects/input_map the frame must be encoded with PIPE_VIDEO_SLICE_MODE_AUTO
+       * where the driver decides the slice partition for the frame.
+       */
+      uint32_t supports_require_auto_slice_mode: 1;
    } bits;
   uint32_t value;
 };
