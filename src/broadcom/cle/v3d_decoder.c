@@ -198,6 +198,7 @@ get_group_offset_count(const char **atts, uint32_t *offset, uint32_t *count,
         int i;
 
         for (i = 0; atts[i]; i += 2) {
+                assert(atts[i + 1]);
                 if (strcmp(atts[i], "count") == 0) {
                         *count = strtoul(atts[i + 1], &p, 0);
                         if (*count == 0)
@@ -261,8 +262,10 @@ get_register_offset(const char **atts, uint32_t *offset)
         int i;
 
         for (i = 0; atts[i]; i += 2) {
-                if (strcmp(atts[i], "num") == 0)
+                if (strcmp(atts[i], "num") == 0) {
+                        assert(atts[i + 1]);
                         *offset = strtoul(atts[i + 1], &p, 0);
+                }
         }
         return;
 }
@@ -313,6 +316,7 @@ create_field(struct parser_context *ctx, const char **atts)
         field = xzalloc(sizeof(*field));
 
         for (i = 0; atts[i]; i += 2) {
+                assert(atts[i + 1]);
                 if (strcmp(atts[i], "name") == 0)
                         field->name = xstrdup(atts[i + 1]);
                 else if (strcmp(atts[i], "start") == 0) {
@@ -350,6 +354,7 @@ create_value(struct parser_context *ctx, const char **atts)
         struct v3d_value *value = xzalloc(sizeof(*value));
 
         for (int i = 0; atts[i]; i += 2) {
+                assert(atts[i + 1]);
                 if (strcmp(atts[i], "name") == 0)
                         value->name = xstrdup(atts[i + 1]);
                 else if (strcmp(atts[i], "value") == 0)
@@ -381,8 +386,10 @@ set_group_opcode(struct v3d_group *group, const char **atts)
         int i;
 
         for (i = 0; atts[i]; i += 2) {
-                if (strcmp(atts[i], "code") == 0)
+                if (strcmp(atts[i], "code") == 0) {
+                        assert(atts[i + 1]);
                         group->opcode = strtoul(atts[i + 1], &p, 0);
+                }
         }
         return;
 }
@@ -419,6 +426,7 @@ start_element(void *data, const char *element_name, const char **atts)
         ctx->loc.line_number = XML_GetCurrentLineNumber(ctx->parser);
 
         for (i = 0; atts[i]; i += 2) {
+                assert(atts[i + 1]);
                 if (strcmp(atts[i], "shortname") == 0)
                         name = atts[i + 1];
                 else if (strcmp(atts[i], "name") == 0 && !name)
