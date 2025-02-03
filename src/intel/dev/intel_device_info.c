@@ -447,6 +447,14 @@ static const struct intel_device_info intel_device_info_hsw_gt3 = {
    .timestamp_frequency = 12500000,                 \
    .max_constant_urb_size_kb = 32
 
+#define GFX8_URB_MIN_ENTRIES                          \
+   .min_entries = {                                   \
+      [MESA_SHADER_VERTEX]    = 64,                   \
+      [MESA_SHADER_TESS_CTRL] = 1,                    \
+      [MESA_SHADER_TESS_EVAL] = 34,                   \
+      [MESA_SHADER_GEOMETRY]  = 2,                    \
+   }
+
 static const struct intel_device_info intel_device_info_bdw_gt1 = {
    GFX8_FEATURES, .gt = 1,
    .platform = INTEL_PLATFORM_BDW,
@@ -456,10 +464,7 @@ static const struct intel_device_info intel_device_info_bdw_gt1 = {
    .l3_banks = 2,
    .max_cs_threads = 42,
    .urb = {
-      .min_entries = {
-         [MESA_SHADER_VERTEX]    = 64,
-         [MESA_SHADER_TESS_EVAL] = 34,
-      },
+      GFX8_URB_MIN_ENTRIES,
       .max_entries = {
          [MESA_SHADER_VERTEX]    = 2560,
          [MESA_SHADER_TESS_CTRL] = 504,
@@ -480,10 +485,7 @@ static const struct intel_device_info intel_device_info_bdw_gt2 = {
    .l3_banks = 4,
    .max_cs_threads = 56,
    .urb = {
-      .min_entries = {
-         [MESA_SHADER_VERTEX]    = 64,
-         [MESA_SHADER_TESS_EVAL] = 34,
-      },
+      GFX8_URB_MIN_ENTRIES,
       .max_entries = {
          [MESA_SHADER_VERTEX]    = 2560,
          [MESA_SHADER_TESS_CTRL] = 504,
@@ -503,10 +505,7 @@ static const struct intel_device_info intel_device_info_bdw_gt3 = {
    .l3_banks = 8,
    .max_cs_threads = 56,
    .urb = {
-      .min_entries = {
-         [MESA_SHADER_VERTEX]    = 64,
-         [MESA_SHADER_TESS_EVAL] = 34,
-      },
+      GFX8_URB_MIN_ENTRIES,
       .max_entries = {
          [MESA_SHADER_VERTEX]    = 2560,
          [MESA_SHADER_TESS_CTRL] = 504,
@@ -556,10 +555,7 @@ static const struct intel_device_info intel_device_info_chv = {
    .max_cs_threads = 56,                            \
    .timestamp_frequency = 12000000,                 \
    .urb = {                                         \
-      .min_entries = {                              \
-         [MESA_SHADER_VERTEX]    = 64,              \
-         [MESA_SHADER_TESS_EVAL] = 34,              \
-      },                                            \
+      GFX8_URB_MIN_ENTRIES,                         \
       .max_entries = {                              \
          [MESA_SHADER_VERTEX]    = 1856,            \
          [MESA_SHADER_TESS_CTRL] = 672,             \
@@ -867,10 +863,7 @@ static const struct intel_device_info intel_device_info_cfl_gt3 = {
    }
 
 #define GFX11_URB_MIN_MAX_ENTRIES                     \
-   .min_entries = {                                   \
-      [MESA_SHADER_VERTEX]    = 64,                   \
-      [MESA_SHADER_TESS_EVAL] = 34,                   \
-   },                                                 \
+   GFX8_URB_MIN_ENTRIES,                              \
    .max_entries = {                                   \
       [MESA_SHADER_VERTEX]    = 2384,                 \
       [MESA_SHADER_TESS_CTRL] = 1032,                 \
@@ -965,10 +958,7 @@ static const struct intel_device_info intel_device_info_ehl_2x4 = {
    .max_cs_threads = 112, /* threads per DSS */     \
    .urb = {                                         \
       .size = 512, /* For intel_stub_gpu */         \
-      .min_entries = {                              \
-         [MESA_SHADER_VERTEX]    = 64,              \
-         [MESA_SHADER_TESS_EVAL] = 34,              \
-      },                                            \
+      GFX8_URB_MIN_ENTRIES,                         \
       .max_entries = {                              \
          [MESA_SHADER_VERTEX]    = 3576,            \
          [MESA_SHADER_TESS_CTRL] = 1548,            \
@@ -1082,10 +1072,7 @@ static const struct intel_device_info intel_device_info_sg1 = {
 };
 
 #define XEHP_URB_MIN_MAX_ENTRIES                        \
-   .min_entries = {                                     \
-      [MESA_SHADER_VERTEX]    = 64,                     \
-      [MESA_SHADER_TESS_EVAL] = 34,                     \
-   },                                                   \
+   GFX8_URB_MIN_ENTRIES,                                \
    .max_entries = {                                     \
       [MESA_SHADER_VERTEX]    = 3832, /* BSpec 47138 */ \
       [MESA_SHADER_TESS_CTRL] = 1548, /* BSpec 47137 */ \
