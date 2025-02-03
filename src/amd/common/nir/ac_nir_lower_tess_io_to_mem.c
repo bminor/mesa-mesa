@@ -8,6 +8,7 @@
 #include "ac_nir.h"
 #include "ac_nir_helpers.h"
 #include "nir_builder.h"
+#include "nir_tcs_info.h"
 #include "util/u_math.h"
 
 /*

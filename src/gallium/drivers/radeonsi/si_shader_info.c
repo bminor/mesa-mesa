@@ -9,6 +9,7 @@
 #include "util/mesa-sha1.h"
 #include "sid.h"
 #include "nir.h"
+#include "nir_tcs_info.h"
 #include "nir_xfb_info.h"
 #include "aco_interface.h"
 #include "ac_nir.h"

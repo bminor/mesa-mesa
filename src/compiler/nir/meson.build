@@ -295,6 +295,7 @@ files_libnir = files(
   'nir_split_vars.c',
   'nir_sweep.c',
   'nir_to_lcssa.c',
+  'nir_tcs_info.h',
   'nir_trivialize_registers.c',
   'nir_use_dominance.c',
   'nir_validate.c',

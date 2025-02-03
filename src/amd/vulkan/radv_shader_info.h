@@ -15,6 +15,7 @@
 #include <stdbool.h>
 
 #include "nir.h"
+#include "nir_tcs_info.h"
 #include "radv_constants.h"
 #include "radv_shader_args.h"
 
