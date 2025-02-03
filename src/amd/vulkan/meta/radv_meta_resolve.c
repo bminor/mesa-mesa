@@ -40,13 +40,19 @@ get_pipeline(struct radv_device *device, unsigned fs_key, VkPipeline *pipeline_o
    struct radv_resolve_key key;
    VkResult result;
 
+   result = radv_meta_get_noop_pipeline_layout(device, layout_out);
+   if (result != VK_SUCCESS)
+      return result;
+
    memset(&key, 0, sizeof(key));
    key.type = RADV_META_OBJECT_KEY_RESOLVE_HW;
    key.fs_key = fs_key;
 
-   result = radv_meta_get_noop_pipeline_layout(device, layout_out);
-   if (result != VK_SUCCESS)
-      return result;
+   VkPipeline pipeline_from_cache = vk_meta_lookup_pipeline(&device->meta_state.device, &key, sizeof(key));
+   if (pipeline_from_cache != VK_NULL_HANDLE) {
+      *pipeline_out = pipeline_from_cache;
+      return VK_SUCCESS;
+   }
 
    nir_shader *vs_module = radv_meta_build_nir_vs_generate_vertices(device);
    nir_shader *fs_module = build_nir_fs(device);

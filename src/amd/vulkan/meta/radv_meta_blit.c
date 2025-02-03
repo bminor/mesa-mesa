@@ -217,6 +217,12 @@ get_pipeline(struct radv_device *device, const struct radv_image_view *src_iview
    if (src_image->vk.aspects == VK_IMAGE_ASPECT_COLOR_BIT)
       key.fs_key = radv_format_meta_fs_key(device, dst_image->vk.format);
 
+   VkPipeline pipeline_from_cache = vk_meta_lookup_pipeline(&device->meta_state.device, &key, sizeof(key));
+   if (pipeline_from_cache != VK_NULL_HANDLE) {
+      *pipeline_out = pipeline_from_cache;
+      return VK_SUCCESS;
+   }
+
    nir_shader *fs;
    nir_shader *vs = build_nir_vertex_shader(device);
 
