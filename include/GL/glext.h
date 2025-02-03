@@ -32,7 +32,7 @@ extern "C" {
 #define GLAPI extern
 #endif
 
-#define GL_GLEXT_VERSION 20230309
+#define GL_GLEXT_VERSION 20250203
 
 #include <KHR/khrplatform.h>
 
@@ -9409,6 +9409,11 @@ GLAPI void APIENTRY glResizeBuffersMESA (void);
 #define GL_MESA_shader_integer_functions 1
 #endif /* GL_MESA_shader_integer_functions */
 
+#ifndef GL_MESA_texture_const_bandwidth
+#define GL_MESA_texture_const_bandwidth 1
+#define GL_CONST_BW_TILING_MESA           0x8BBE
+#endif /* GL_MESA_texture_const_bandwidth */
+
 #ifndef GL_MESA_tile_raster_order
 #define GL_MESA_tile_raster_order 1
 #define GL_TILE_RASTER_ORDER_FIXED_MESA   0x8BB8
@@ -11464,6 +11469,10 @@ GLAPI void APIENTRY glDrawTransformFeedbackNV (GLenum mode, GLuint id);
 #endif
 #endif /* GL_NV_transform_feedback2 */
 
+#ifndef GL_NV_uniform_buffer_std430_layout
+#define GL_NV_uniform_buffer_std430_layout 1
+#endif /* GL_NV_uniform_buffer_std430_layout */
+
 #ifndef GL_NV_uniform_buffer_unified_memory
 #define GL_NV_uniform_buffer_unified_memory 1
 #define GL_UNIFORM_BUFFER_UNIFIED_NV      0x936E
@@ -11979,8 +11988,10 @@ GLAPI void APIENTRY glViewportSwizzleNV (GLuint index, GLenum swizzlex, GLenum s
 #define GL_MAX_VIEWS_OVR                  0x9631
 #define GL_FRAMEBUFFER_INCOMPLETE_VIEW_TARGETS_OVR 0x9633
 typedef void (APIENTRYP PFNGLFRAMEBUFFERTEXTUREMULTIVIEWOVRPROC) (GLenum target, GLenum attachment, GLuint texture, GLint level, GLint baseViewIndex, GLsizei numViews);
+typedef void (APIENTRYP PFNGLNAMEDFRAMEBUFFERTEXTUREMULTIVIEWOVRPROC) (GLuint framebuffer, GLenum attachment, GLuint texture, GLint level, GLint baseViewIndex, GLsizei numViews);
 #ifdef GL_GLEXT_PROTOTYPES
 GLAPI void APIENTRY glFramebufferTextureMultiviewOVR (GLenum target, GLenum attachment, GLuint texture, GLint level, GLint baseViewIndex, GLsizei numViews);
+GLAPI void APIENTRY glNamedFramebufferTextureMultiviewOVR (GLuint framebuffer, GLenum attachment, GLuint texture, GLint level, GLint baseViewIndex, GLsizei numViews);
 #endif
 #endif /* GL_OVR_multiview */
 
@@ -12905,11 +12916,6 @@ GLAPI void APIENTRY glReplacementCodeuiTexCoord2fColor4fNormal3fVertex3fvSUN (co
 #define GL_WIN_specular_fog 1
 #define GL_FOG_SPECULAR_TEXTURE_WIN       0x80EC
 #endif /* GL_WIN_specular_fog */
-
-#ifndef GL_MESA_texture_const_bandwidth
-#define GL_MESA_texture_const_bandwidth 1
-#define GL_CONST_BW_TILING_MESA           0x8BBE
-#endif
 
 #ifdef __cplusplus
 }
