@@ -281,6 +281,7 @@ EXT(EXT_pixel_buffer_object                 , dummy_true                        
 EXT(EXT_point_parameters                    , dummy_true                             , GLL,  x ,  x ,  x , 1997)
 EXT(EXT_polygon_offset_clamp                , ARB_polygon_offset_clamp               , GLL, GLC, ES1, ES2, 2014)
 EXT(EXT_primitive_bounding_box              , OES_primitive_bounding_box             ,  x ,  x ,  x ,  31, 2014)
+EXT(EXT_protected_textures                  , EXT_protected_textures                 ,  x ,  x ,  x ,  30, 2017)
 EXT(EXT_provoking_vertex                    , EXT_provoking_vertex                   , GLL, GLC,  x ,  x , 2009)
 EXT(EXT_read_format_bgra                    , dummy_true                             ,  x ,  x , ES1, ES2, 2009)
 EXT(EXT_render_snorm                        , EXT_render_snorm                       ,  x ,  x ,  x,   30, 2014)

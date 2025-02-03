@@ -1821,4 +1821,6 @@ void st_init_extensions(struct pipe_screen *screen,
        screen->caps.doubles &&
        !(nir_options->lower_doubles_options & nir_lower_fp64_full_software))
       extensions->NV_copy_depth_to_color = true;
+   if (screen->caps.device_protected_surface || screen->caps.device_protected_context)
+      extensions->EXT_protected_textures = true;
 }
