@@ -511,6 +511,12 @@ get_color_pipeline(struct radv_device *device, enum blit2d_src_type src_type, Vk
    key.log2_samples = log2_samples;
    key.fs_key = radv_format_meta_fs_key(device, format);
 
+   VkPipeline pipeline_from_cache = vk_meta_lookup_pipeline(&device->meta_state.device, &key, sizeof(key));
+   if (pipeline_from_cache != VK_NULL_HANDLE) {
+      *pipeline_out = pipeline_from_cache;
+      return VK_SUCCESS;
+   }
+
    texel_fetch_build_func src_func;
    switch (src_type) {
    case BLIT2D_SRC_TYPE_IMAGE:
@@ -644,6 +650,12 @@ get_depth_only_pipeline(struct radv_device *device, enum blit2d_src_type src_typ
    key.type = RADV_META_OBJECT_KEY_BLIT2D_DEPTH;
    key.src_type = src_type;
    key.log2_samples = log2_samples;
+
+   VkPipeline pipeline_from_cache = vk_meta_lookup_pipeline(&device->meta_state.device, &key, sizeof(key));
+   if (pipeline_from_cache != VK_NULL_HANDLE) {
+      *pipeline_out = pipeline_from_cache;
+      return VK_SUCCESS;
+   }
 
    texel_fetch_build_func src_func;
    switch (src_type) {
@@ -796,6 +808,12 @@ get_stencil_only_pipeline(struct radv_device *device, enum blit2d_src_type src_t
    key.type = RADV_META_OBJECT_KEY_BLIT2D_STENCIL;
    key.src_type = src_type;
    key.log2_samples = log2_samples;
+
+   VkPipeline pipeline_from_cache = vk_meta_lookup_pipeline(&device->meta_state.device, &key, sizeof(key));
+   if (pipeline_from_cache != VK_NULL_HANDLE) {
+      *pipeline_out = pipeline_from_cache;
+      return VK_SUCCESS;
+   }
 
    texel_fetch_build_func src_func;
    switch (src_type) {
