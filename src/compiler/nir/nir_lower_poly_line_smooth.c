@@ -30,14 +30,9 @@
  */
 
 static bool
-lower_polylinesmooth(nir_builder *b, nir_instr *instr, void *data)
+lower_polylinesmooth(nir_builder *b, nir_intrinsic_instr *intr, void *data)
 {
    unsigned *num_smooth_aa_sample = data;
-
-   if (instr->type != nir_instr_type_intrinsic)
-      return false;
-
-   nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
 
    if (intr->intrinsic != nir_intrinsic_store_output)
       return false;
@@ -73,7 +68,7 @@ bool
 nir_lower_poly_line_smooth(nir_shader *shader, unsigned num_smooth_aa_sample)
 {
    assert(shader->info.stage == MESA_SHADER_FRAGMENT);
-   return nir_shader_instructions_pass(shader, lower_polylinesmooth,
-                                       nir_metadata_control_flow,
-                                       &num_smooth_aa_sample);
+   return nir_shader_intrinsics_pass(shader, lower_polylinesmooth,
+                                     nir_metadata_control_flow,
+                                     &num_smooth_aa_sample);
 }
