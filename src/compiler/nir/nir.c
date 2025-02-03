@@ -3338,6 +3338,7 @@ nir_tex_instr_src_type(const nir_tex_instr *instr, unsigned src)
    case nir_tex_src_sampler_deref_intrinsic:
    case nir_tex_src_texture_deref_intrinsic:
    case nir_tex_src_ms_mcs_intel:
+   case nir_tex_src_lod_bias_min_agx:
    case nir_tex_src_texture_deref:
    case nir_tex_src_sampler_deref:
    case nir_tex_src_texture_offset:

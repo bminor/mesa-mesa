@@ -1835,6 +1835,9 @@ print_tex_instr(nir_tex_instr *instr, print_state *state)
       case nir_tex_src_ms_mcs_intel:
          fprintf(fp, "(ms_mcs_intel)");
          break;
+      case nir_tex_src_lod_bias_min_agx:
+         fprintf(fp, "(lod_bias_min_agx)");
+         break;
       case nir_tex_src_ddx:
          fprintf(fp, "(ddx)");
          break;
