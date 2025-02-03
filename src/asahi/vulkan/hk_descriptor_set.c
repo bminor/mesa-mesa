@@ -6,6 +6,7 @@
  */
 #include "hk_descriptor_set.h"
 #include "asahi/lib/agx_bo.h"
+#include "util/half_float.h"
 #include "vulkan/vulkan_core.h"
 
 #include "hk_buffer.h"
@@ -73,6 +74,11 @@ write_sampled_image_view_desc(struct hk_descriptor_set *set,
 
          assert(index < (1 << 20));
          desc[plane].image_offset = index * HK_IMAGE_STRIDE;
+
+         float min_lod = MAX2(view->vk.min_lod - view->vk.base_mip_level, 0.0);
+
+         desc[plane].min_lod_fp16 = _mesa_float_to_half(min_lod);
+         desc[plane].min_lod_uint16 = min_lod;
       }
    }
 

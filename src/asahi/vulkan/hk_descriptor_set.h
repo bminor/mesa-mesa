@@ -29,9 +29,17 @@ struct hk_sampled_image_descriptor {
     * for custom border colour emulation.
     */
    int16_t clamp_0_sampler_index_or_negative;
+
+   /* We want LOD bias and min LOD together as fp16 in this order and 32-bit
+    * aligned. This lets us keep everything vectorized on the shader side, since
+    * this matches the AGX2 lod_bias + min_lod descriptor.
+    */
    uint16_t lod_bias_fp16;
-   uint16_t pad_;
-   uint32_t pad;
+   uint16_t min_lod_fp16;
+
+   /* This is only used for txf, it can be separate from the other stuff */
+   uint16_t min_lod_uint16;
+   uint16_t pad;
    /* TODO: This should probably be a heap! */
    uint32_t border[4];
 };

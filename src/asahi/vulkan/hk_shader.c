@@ -11,6 +11,7 @@
 #include "agx_helpers.h"
 #include "agx_nir_lower_gs.h"
 #include "glsl_types.h"
+#include "libagx.h"
 #include "nir.h"
 #include "nir_builder.h"
 
@@ -535,6 +536,82 @@ agx_nir_lower_custom_border(nir_shader *nir)
    return nir_shader_instructions_pass(nir, lower, nir_metadata_none, NULL);
 }
 
+static nir_def *
+query_min_lod(nir_builder *b, nir_tex_instr *tex, bool int_coords)
+{
+   nir_alu_type T = int_coords ? nir_type_uint16 : nir_type_float16;
+   return nir_build_texture_query(b, tex, nir_texop_image_min_lod_agx, 1, T,
+                                  false, false);
+}
+
+static bool
+lower_min_lod(nir_builder *b, nir_instr *instr, UNUSED void *_data)
+{
+   if (instr->type != nir_instr_type_tex)
+      return false;
+
+   nir_tex_instr *tex = nir_instr_as_tex(instr);
+   if (nir_tex_instr_is_query(tex))
+      return false;
+
+   /* Buffer textures don't have levels-of-detail */
+   if (tex->sampler_dim == GLSL_SAMPLER_DIM_BUF)
+      return false;
+
+   if (tex->backend_flags & AGX_TEXTURE_FLAG_NO_CLAMP)
+      return false;
+
+   bool int_coords = tex->op == nir_texop_txf || tex->op == nir_texop_txf_ms ||
+                     tex->op == nir_texop_tg4;
+
+   b->cursor = nir_before_instr(&tex->instr);
+   nir_def *min_lod = query_min_lod(b, tex, int_coords);
+   nir_def *other_min_lod = nir_steal_tex_src(tex, nir_tex_src_min_lod);
+
+   if (tex->op == nir_texop_tg4) {
+      b->cursor = nir_after_instr(&tex->instr);
+
+      /* The Vulkan spec section "Texel Gathering" says:
+       *
+       *    If levelbase < minLodIntegerimageView, then any values fetched are
+       *    zero if the robustImageAccess2 feature is enabled.
+       *
+       * We currently always enable robustImageAccess2, so implement that
+       * semantic here.
+       *
+       * We could probably optimize this with a special descriptor for this case
+       * but tg4 is rare enough I'm not bothered.
+       */
+      nir_def *old = &tex->def;
+      nir_def *oob = nir_ine_imm(b, min_lod, 0);
+      nir_def *zero = nir_imm_zero(b, old->num_components, old->bit_size);
+      nir_def *new_ = nir_bcsel(b, oob, zero, old);
+      nir_def_rewrite_uses_after(old, new_, new_->parent_instr);
+   } else if (tex->op == nir_texop_txl) {
+      assert(other_min_lod == NULL && "txl doesn't have an API min lod");
+
+      nir_def *lod = nir_steal_tex_src(tex, nir_tex_src_lod);
+      lod = lod ? nir_fmax(b, lod, min_lod) : min_lod;
+      nir_tex_instr_add_src(tex, nir_tex_src_lod, lod);
+   } else {
+      if (other_min_lod) {
+         assert(!int_coords && "no API min lod");
+         min_lod = nir_fmax(b, min_lod, nir_f2f16(b, other_min_lod));
+      }
+
+      nir_tex_instr_add_src(tex, nir_tex_src_min_lod, min_lod);
+   }
+
+   return true;
+}
+
+static bool
+agx_nir_lower_image_view_min_lod(nir_shader *nir)
+{
+   return nir_shader_instructions_pass(nir, lower_min_lod, nir_metadata_none,
+                                       NULL);
+}
+
 /*
  * In Vulkan, the VIEWPORT should read 0 in the fragment shader if it is not
  * written by the vertex shader, but in our implementation, the varying would
@@ -650,6 +727,8 @@ hk_lower_nir(struct hk_device *dev, nir_shader *nir,
     * create lod_bias_agx instructions.
     */
    NIR_PASS(_, nir, agx_nir_lower_texture_early, true /* support_lod_bias */);
+
+   NIR_PASS(_, nir, agx_nir_lower_image_view_min_lod);
 
    if (!HK_PERF(dev, NOBORDER)) {
       NIR_PASS(_, nir, agx_nir_lower_custom_border);
