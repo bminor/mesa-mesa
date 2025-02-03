@@ -494,7 +494,7 @@
         "description": "intel/brw, lp: enable lower_pack_64_4x16",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b1bc691b0ff44e0acfb0ede759d4d1cf7636fca2",
         "notes": null
