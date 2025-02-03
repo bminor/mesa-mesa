@@ -118,15 +118,6 @@ extern bool nir_debug_print_shader[MESA_SHADER_KERNEL + 1];
 #define NIR_STREAM_PACKED      (1 << 8)
 typedef uint16_t nir_component_mask_t;
 
-static inline bool
-nir_num_components_valid(unsigned num_components)
-{
-   return (num_components >= 1 &&
-           num_components <= 5) ||
-          num_components == 8 ||
-          num_components == 16;
-}
-
 /*
  * Round up a vector size to a vector size that's valid in NIR. At present, NIR
  * supports only vec2-5, vec8, and vec16. Attempting to generate other sizes
@@ -181,61 +172,6 @@ nir_component_mask_reinterpret(nir_component_mask_t mask,
 typedef struct nir_state_slot {
    gl_state_index16 tokens[STATE_LENGTH];
 } nir_state_slot;
-
-/* clang-format off */
-typedef enum {
-   nir_var_system_value          = (1 << 0),
-   nir_var_uniform               = (1 << 1),
-   nir_var_shader_in             = (1 << 2),
-   nir_var_shader_out            = (1 << 3),
-   nir_var_image                 = (1 << 4),
-   /** Incoming call or ray payload data for ray-tracing shaders */
-   nir_var_shader_call_data      = (1 << 5),
-   /** Ray hit attributes */
-   nir_var_ray_hit_attrib        = (1 << 6),
-
-   /* Modes named nir_var_mem_* have explicit data layout */
-   nir_var_mem_ubo               = (1 << 7),
-   nir_var_mem_push_const        = (1 << 8),
-   nir_var_mem_ssbo              = (1 << 9),
-   nir_var_mem_constant          = (1 << 10),
-   nir_var_mem_task_payload      = (1 << 11),
-   nir_var_mem_node_payload      = (1 << 12),
-   nir_var_mem_node_payload_in   = (1 << 13),
-
-   nir_var_function_in           = (1 << 14),
-   nir_var_function_out          = (1 << 15),
-   nir_var_function_inout        = (1 << 16),
-
-   /* Generic modes intentionally come last. See encode_dref_modes() in
-    * nir_serialize.c for more details.
-    */
-   nir_var_shader_temp           = (1 << 17),
-   nir_var_function_temp         = (1 << 18),
-   nir_var_mem_shared            = (1 << 19),
-   nir_var_mem_global            = (1 << 20),
-
-   nir_var_mem_generic           = (nir_var_shader_temp |
-                                    nir_var_function_temp |
-                                    nir_var_mem_shared |
-                                    nir_var_mem_global),
-
-   nir_var_read_only_modes       = nir_var_shader_in | nir_var_uniform |
-                                   nir_var_system_value | nir_var_mem_constant |
-                                   nir_var_mem_ubo,
-   /* Modes where vector derefs can be indexed as arrays. nir_var_shader_out
-    * is only for mesh stages. nir_var_system_value is only for kernel stages.
-    */
-   nir_var_vec_indexable_modes   = nir_var_shader_temp | nir_var_function_temp |
-                                 nir_var_mem_ubo | nir_var_mem_ssbo |
-                                 nir_var_mem_shared | nir_var_mem_global |
-                                 nir_var_mem_push_const | nir_var_mem_task_payload |
-                                 nir_var_shader_out | nir_var_system_value,
-   nir_num_variable_modes        = 21,
-   nir_var_all                   = (1 << nir_num_variable_modes) - 1,
-} nir_variable_mode;
-MESA_DEFINE_CPP_ENUM_BITFIELD_OPERATORS(nir_variable_mode)
-/* clang-format on */
 
 /**
  * Rounding modes.
@@ -294,20 +230,6 @@ typedef enum {
    NIR_CMAT_C_SIGNED = 1u << 2,
    NIR_CMAT_RESULT_SIGNED = 1u << 3,
 } nir_cmat_signed;
-
-typedef union {
-   bool b;
-   float f32;
-   double f64;
-   int8_t i8;
-   uint8_t u8;
-   int16_t i16;
-   uint16_t u16;
-   int32_t i32;
-   uint32_t u32;
-   int64_t i64;
-   uint64_t u64;
-} nir_const_value;
 
 #define nir_const_value_to_array(arr, c, components, m) \
    do {                                                 \
@@ -5852,102 +5774,6 @@ nir_gather_explicit_io_initializers(nir_shader *shader,
                                     nir_variable_mode mode);
 
 bool nir_lower_vec3_to_vec4(nir_shader *shader, nir_variable_mode modes);
-
-typedef enum {
-   /**
-    * An address format which is a simple 32-bit global GPU address.
-    */
-   nir_address_format_32bit_global,
-
-   /**
-    * An address format which is a simple 64-bit global GPU address.
-    */
-   nir_address_format_64bit_global,
-
-   /**
-    * An address format which is a 64-bit global GPU address encoded as a
-    * 2x32-bit vector.
-    */
-   nir_address_format_2x32bit_global,
-
-   /**
-    * An address format which is a 64-bit global base address and a 32-bit
-    * offset.
-    *
-    * This is identical to 64bit_bounded_global except that bounds checking
-    * is not applied when lowering to global access.  Even though the size is
-    * never used for an actual bounds check, it needs to be valid so we can
-    * lower deref_buffer_array_length properly.
-    */
-   nir_address_format_64bit_global_32bit_offset,
-
-   /**
-    * An address format which is a bounds-checked 64-bit global GPU address.
-    *
-    * The address is comprised as a 32-bit vec4 where .xy are a uint64_t base
-    * address stored with the low bits in .x and high bits in .y, .z is a
-    * size, and .w is an offset.  When the final I/O operation is lowered, .w
-    * is checked against .z and the operation is predicated on the result.
-    */
-   nir_address_format_64bit_bounded_global,
-
-   /**
-    * An address format which is comprised of a vec2 where the first
-    * component is a buffer index and the second is an offset.
-    */
-   nir_address_format_32bit_index_offset,
-
-   /**
-    * An address format which is a 64-bit value, where the high 32 bits
-    * are a buffer index, and the low 32 bits are an offset.
-    */
-   nir_address_format_32bit_index_offset_pack64,
-
-   /**
-    * An address format which is comprised of a vec3 where the first two
-    * components specify the buffer and the third is an offset.
-    */
-   nir_address_format_vec2_index_32bit_offset,
-
-   /**
-    * An address format which represents generic pointers with a 62-bit
-    * pointer and a 2-bit enum in the top two bits.  The top two bits have
-    * the following meanings:
-    *
-    *  - 0x0: Global memory
-    *  - 0x1: Shared memory
-    *  - 0x2: Scratch memory
-    *  - 0x3: Global memory
-    *
-    * The redundancy between 0x0 and 0x3 is because of Intel sign-extension of
-    * addresses.  Valid global memory addresses may naturally have either 0 or
-    * ~0 as their high bits.
-    *
-    * Shared and scratch pointers are represented as 32-bit offsets with the
-    * top 32 bits only being used for the enum.  This allows us to avoid
-    * 64-bit address calculations in a bunch of cases.
-    */
-   nir_address_format_62bit_generic,
-
-   /**
-    * An address format which is a simple 32-bit offset.
-    */
-   nir_address_format_32bit_offset,
-
-   /**
-    * An address format which is a simple 32-bit offset cast to 64-bit.
-    */
-   nir_address_format_32bit_offset_as_64bit,
-
-   /**
-    * An address format representing a purely logical addressing model.  In
-    * this model, all deref chains must be complete from the dereference
-    * operation to the variable.  Cast derefs are not allowed.  These
-    * addresses will be 32-bit scalars but the format is immaterial because
-    * you can always chase the chain.
-    */
-   nir_address_format_logical,
-} nir_address_format;
 
 unsigned
 nir_address_format_bit_size(nir_address_format addr_format);
