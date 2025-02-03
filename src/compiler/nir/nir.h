@@ -173,12 +173,6 @@ nir_component_mask_reinterpret(nir_component_mask_t mask,
       return exec_node_data(out_type, parent, field);     \
    }
 
-struct nir_function;
-struct nir_shader;
-struct nir_instr;
-struct nir_builder;
-struct nir_xfb_info;
-
 /**
  * Description of built-in state associated with a uniform
  *

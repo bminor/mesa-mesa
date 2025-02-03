@@ -15,6 +15,36 @@
 extern "C" {
 #endif
 
+typedef struct shader_info shader_info;
+
+typedef struct nir_shader nir_shader;
+typedef struct nir_shader_compiler_options nir_shader_compiler_options;
+typedef struct nir_builder nir_builder;
+typedef struct nir_def nir_def;
+typedef struct nir_variable nir_variable;
+
+typedef struct nir_cf_node nir_cf_node;
+typedef struct nir_block nir_block;
+typedef struct nir_if nir_if;
+typedef struct nir_loop nir_loop;
+typedef struct nir_function nir_function;
+typedef struct nir_function_impl nir_function_impl;
+
+typedef struct nir_instr nir_instr;
+typedef struct nir_alu_instr nir_alu_instr;
+typedef struct nir_deref_instr nir_deref_instr;
+typedef struct nir_call_instr nir_call_instr;
+typedef struct nir_jump_instr nir_jump_instr;
+typedef struct nir_tex_instr nir_tex_instr;
+typedef struct nir_intrinsic_instr nir_intrinsic_instr;
+typedef struct nir_load_const_instr nir_load_const_instr;
+typedef struct nir_undef_instr nir_undef_instr;
+typedef struct nir_phi_instr nir_phi_instr;
+typedef struct nir_parallel_copy_instr nir_parallel_copy_instr;
+
+typedef struct nir_xfb_info nir_xfb_info;
+typedef struct nir_tcs_info nir_tcs_info;
+
 /** NIR sized and unsized types
  *
  * The values in this enum are carefully chosen so that the sized type is
