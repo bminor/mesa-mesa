@@ -147,6 +147,7 @@ ac_nir_map_io_location(unsigned location,
 nir_def *
 ac_nir_cull_primitive(nir_builder *b,
                       bool skip_viewport_culling,
+                      bool use_point_tri_intersection,
                       nir_def *initially_accepted,
                       nir_def *pos[3][4],
                       unsigned num_vertices,

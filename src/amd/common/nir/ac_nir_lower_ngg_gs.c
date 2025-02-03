@@ -632,6 +632,7 @@ ngg_gs_cull_primitive(nir_builder *b, nir_def *tid_in_tg, nir_def *max_vtxcnt,
       nir_def *accepted_by_clipdist = nir_imm_true(b);
 
       nir_def *accepted = ac_nir_cull_primitive(b, s->options->skip_viewport_culling,
+                                                s->options->use_point_tri_intersection,
                                                 accepted_by_clipdist, pos,
                                                 s->num_vertices_per_primitive, NULL, NULL);
 

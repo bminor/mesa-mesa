@@ -164,6 +164,8 @@ typedef struct {
     * culling. Set this when the shader writes the viewport index.
     */
    bool skip_viewport_culling;
+   /* Use the point-triangle intersection to cull small triangles. */
+   bool use_point_tri_intersection;
 
    /* VS */
    unsigned num_vertices_per_primitive;

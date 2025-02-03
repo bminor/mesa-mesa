@@ -88,30 +88,192 @@ cull_frustrum(nir_builder *b, nir_def *bbox_min[2], nir_def *bbox_max[2])
 }
 
 static nir_def *
-cull_small_primitive_triangle(nir_builder *b, nir_def *bbox_min[2], nir_def *bbox_max[2])
+cross(nir_builder *b, nir_def *p[2], nir_def *q[2])
+{
+   nir_def *left = nir_fmul(b, p[0], q[1]);
+   nir_def *right = nir_fmul(b, q[0], p[1]);
+   return nir_fsub(b, left, right);
+}
+
+/* Return whether the distance between the point and the triangle is greater than the given
+ * distance.
+ */
+static nir_def *
+point_outside_triangle(nir_builder *b, nir_def *p[2], nir_def *pos[3][2], nir_def *distance)
+{
+   nir_def **vtx_a = pos[0], **vtx_b = pos[1], **vtx_c = pos[2];
+   nir_def *a_b[2] = { nir_fsub(b, vtx_b[0], vtx_a[0]), nir_fsub(b, vtx_b[1], vtx_a[1]) };
+   nir_def *a_c[2] = { nir_fsub(b, vtx_c[0], vtx_a[0]), nir_fsub(b, vtx_c[1], vtx_a[1]) };
+   nir_def *b_c[2] = { nir_fsub(b, vtx_c[0], vtx_b[0]), nir_fsub(b, vtx_c[1], vtx_b[1]) };
+   nir_def *a_p[2] = { nir_fsub(b, p[0], vtx_a[0]), nir_fsub(b, p[1], vtx_a[1]) };
+   nir_def *b_p[2] = { nir_fsub(b, p[0], vtx_b[0]), nir_fsub(b, p[1], vtx_b[1]) };
+
+   /* Compute 2D cross products, which we need for computing distances from lines. */
+   nir_def *crosses[3] = { cross(b, a_p, a_c), cross(b, a_b, a_p), cross(b, b_c, b_p) };
+
+   /* These are distances from the 3 infinite lines going through triangle edges.
+    *
+    * A distance is positive if the point is on one side of the half space, and negative
+    * if the point is on the other side of the half space. That's because the distance is
+    * a normalized 2D cross product, which is always scalar and signed.
+    */
+   nir_def *line_distances[3] = {
+      nir_fmul(b, crosses[0], nir_frsq(b, nir_fdot2(b, nir_vec(b, a_c, 2), nir_vec(b, a_c, 2)))),
+      nir_fmul(b, crosses[1], nir_frsq(b, nir_fdot2(b, nir_vec(b, a_b, 2), nir_vec(b, a_b, 2)))),
+      nir_fmul(b, crosses[2], nir_frsq(b, nir_fdot2(b, nir_vec(b, b_c, 2), nir_vec(b, b_c, 2)))),
+   };
+
+   nir_def *max_distance =
+      nir_fmax(b, line_distances[0], nir_fmax(b, line_distances[1], line_distances[2]));
+   nir_def *min_distance =
+      nir_fmin(b, line_distances[0], nir_fmin(b, line_distances[1], line_distances[2]));
+
+   /* If max_distance > distance && min_distance < -distance, the point is outside the triangle.
+    *
+    * Explanation:
+    *
+    * If the point it outside the triangle, 2 distances are positive and 1 is negative, or 2 distances
+    * are negative and 1 is positive (depending on winding and where the point is). max_distance > distance
+    * will pass because at least 1 distance is positive, and min_distance < -distance will pass because at
+    * least 1 distance is negative.
+    *
+    * However, if the point is inside the triangle, either all distances are positive (min_distance < -distance
+    * will fail) or all distances are negative (max_distance > distance will fail), depending on winding.
+    *
+    * Note that min/max_distance are not distances from the triangle, but they are distances from
+    * the lines. This can falsely return that the distance between the point and the triangle is
+    * less than than the given distance if 2 infinite lines are sticking out of 1 vertex, are
+    * pointing in the direction of the point, and there is a very small angle between them.
+    * Most of these cases should be eliminated by the rounding-based small prim culling.
+    */
+   return nir_iand(b, nir_flt(b, distance, max_distance),
+                   nir_flt(b, min_distance, nir_fneg(b, distance)));
+}
+
+static nir_def *
+cull_small_primitive_triangle(nir_builder *b, bool use_point_tri_intersection,
+                              nir_def *bbox_min[2], nir_def *bbox_max[2], nir_def *pos[3][4])
 {
    nir_def *vp = nir_load_cull_triangle_viewport_xy_scale_and_offset_amd(b);
    nir_def *small_prim_precision = nir_load_cull_small_triangle_precision_amd(b);
    nir_def *rejected = nir_imm_false(b);
 
+   nir_def *bbox_pixel_min[2], *bbox_pixel_max[2], *vp_scale[2], *vp_translate[2];
+
    for (unsigned chan = 0; chan < 2; ++chan) {
-      nir_def *vp_scale = nir_channel(b, vp, chan);
-      nir_def *vp_translate = nir_channel(b, vp, 2 + chan);
+      vp_scale[chan] = nir_channel(b, vp, chan);
+      vp_translate[chan] = nir_channel(b, vp, 2 + chan);
 
       /* Convert the position to screen-space coordinates. */
-      nir_def *min = nir_ffma(b, bbox_min[chan], vp_scale, vp_translate);
-      nir_def *max = nir_ffma(b, bbox_max[chan], vp_scale, vp_translate);
+      nir_def *min = nir_ffma(b, bbox_min[chan], vp_scale[chan], vp_translate[chan]);
+      nir_def *max = nir_ffma(b, bbox_max[chan], vp_scale[chan], vp_translate[chan]);
 
       /* Scale the bounding box according to precision. */
       min = nir_fsub(b, min, small_prim_precision);
       max = nir_fadd(b, max, small_prim_precision);
 
       /* Determine if the bbox intersects the sample point, by checking if the min and max round to the same int. */
-      min = nir_fround_even(b, min);
-      max = nir_fround_even(b, max);
+      bbox_pixel_min[chan] = nir_fround_even(b, min);
+      bbox_pixel_max[chan] = nir_fround_even(b, max);
 
-      nir_def *rounded_to_eq = nir_feq(b, min, max);
+      nir_def *rounded_to_eq = nir_feq(b, bbox_pixel_min[chan], bbox_pixel_max[chan]);
       rejected = nir_ior(b, rejected, rounded_to_eq);
+   }
+
+   /* If the triangle hasn't been filtered out yet, try another way.
+    * Only execute this code if this subgroup has culled at least 1 small triangle, which indicates
+    * that there are probably more small triangles that could be culled.
+    */
+   if (use_point_tri_intersection) {
+      nir_def *outside_center = NULL;
+      nir_if *if_passed = nir_push_if(b, nir_inot(b, rejected));
+      {
+         /* Calculate rounded bounding box dimensions. */
+         nir_def *bbox_pixel_w = nir_fsub(b, bbox_pixel_max[0], bbox_pixel_min[0]);
+         nir_def *bbox_pixel_h = nir_fsub(b, bbox_pixel_max[1], bbox_pixel_min[1]);
+
+         /* The largest bounding box (rounded to integer coordinates) that contains the triangle
+          * that we accept has 1x1 pixel area and looks like this:
+          *
+          *    X         X         X
+          *
+          *         ┌─────────┐
+          *         │         │
+          *    X    │    X    │    X
+          *         │         │
+          *         └─────────┘
+          *
+          *    X         X         X
+          *
+          * However, the largest bounding box before the rounding that contains the triangle can be
+          * this:
+          *
+          *    X         X         X
+          *     ┌─────────────────┐
+          *     │                 │
+          *     │                 │
+          *    X│        X        │X
+          *     │                 │
+          *     │                 │
+          *     └─────────────────┘
+          *    X         X         X
+          *
+          * which is the largest area that has 1 pixel center in the middle and 8 pixel centers
+          * outside. Therefore, a 1x1 pixels-large rounded bounding box represents an area that's
+          * slightly smaller than 2x2 pixels and has only a single pixel in the center. Thanks to
+          * that and given that the triangle is always inside the bounding box, we only have to
+          * compute a single point-triangle intersection.
+          *
+          * Check if the triangle's rounded bounding box is a single pixel, which means the triangle
+          * can only potentially affect this pixel.
+          *
+          * 1.01 is used to prevent possible FP precision issues.
+          */
+         nir_def *w_1px = nir_flt_imm(b, bbox_pixel_w, 1.01);
+         nir_def *h_1px = nir_flt_imm(b, bbox_pixel_h, 1.01);
+         nir_def *fals = nir_imm_false(b);
+         nir_if *if_tri_1px = nir_push_if(b, nir_iand(b, w_1px, h_1px));
+         {
+            /* The coordinates of the pixel center in screen space. */
+            nir_def *pix_center[] = {
+               nir_fadd_imm(b, bbox_pixel_min[0], 0.5),
+               nir_fadd_imm(b, bbox_pixel_min[1], 0.5),
+            };
+
+            /* These are the X, Y coordinates of the 3 points of the triangle. */
+            nir_def *screen_pos[3][2] = {{0}};
+
+            /* Transform the coordinates to screen space. */
+            for (unsigned vtx = 0; vtx < 3; ++vtx) {
+               for (unsigned chan = 0; chan < 2; ++chan)
+                  screen_pos[vtx][chan] = nir_ffma(b, pos[vtx][chan], vp_scale[chan], vp_translate[chan]);
+            }
+
+            /* small_prim_precision is the rasterization precision in X an Y axes, meaning it's the size of
+             * one cell in the fixed-point grid that vertex positions are snapped to. When floating-point
+             * coordinates are snapped (rounded) to fixed-point, vertex positions can be shifted by
+             * +-small_prim_precision.
+             *
+             * We need a precision value that works in all directions. Compute the worst-case
+             * omnidirectional precision, which is the length of the hypotenuse where
+             * small_prim_precision is the length of the catheti.
+             *
+             * x = small_prim_precision
+             * sqrt(x*x + x*x) = sqrt(x*x*2) = x * sqrt(2)
+             */
+            nir_def *precision_distance = nir_fmul_imm(b, small_prim_precision, sqrt(2));
+
+            /* Check if the pixel center is outside the triangle. If it is, the triangle can be
+             * safely removed.
+             */
+            outside_center = point_outside_triangle(b, pix_center, screen_pos, precision_distance);
+         }
+         nir_pop_if(b, if_tri_1px);
+
+         outside_center = nir_if_phi(b, outside_center, fals);
+      }
+      nir_pop_if(b, if_passed);
+      rejected = nir_if_phi(b, outside_center, rejected);
    }
 
    return rejected;
@@ -135,6 +297,7 @@ call_accept_func(nir_builder *b, nir_def *accepted, ac_nir_cull_accepted accept_
 static nir_def *
 ac_nir_cull_triangle(nir_builder *b,
                      bool skip_viewport_culling,
+                     bool use_point_tri_intersection,
                      nir_def *initially_accepted,
                      nir_def *pos[3][4],
                      position_w_info *w_info,
@@ -162,7 +325,8 @@ ac_nir_cull_triangle(nir_builder *b,
 
       nir_if *if_cull_small_prims = nir_push_if(b, nir_load_cull_small_triangles_enabled_amd(b));
       {
-         nir_def *small_prim_rejected = cull_small_primitive_triangle(b, bbox_min, bbox_max);
+         nir_def *small_prim_rejected = cull_small_primitive_triangle(b, use_point_tri_intersection,
+                                                                      bbox_min, bbox_max, pos);
          bbox_rejected = nir_ior(b, bbox_rejected, small_prim_rejected);
       }
       nir_pop_if(b, if_cull_small_prims);
@@ -349,6 +513,7 @@ ac_nir_cull_line(nir_builder *b,
 nir_def *
 ac_nir_cull_primitive(nir_builder *b,
                       bool skip_viewport_culling,
+                      bool use_point_tri_intersection,
                       nir_def *initially_accepted,
                       nir_def *pos[3][4],
                       unsigned num_vertices,
@@ -359,8 +524,8 @@ ac_nir_cull_primitive(nir_builder *b,
    analyze_position_w(b, pos, num_vertices, &w_info);
 
    if (num_vertices == 3) {
-      return ac_nir_cull_triangle(b, skip_viewport_culling, initially_accepted, pos, &w_info,
-                                  accept_func, state);
+      return ac_nir_cull_triangle(b, skip_viewport_culling, use_point_tri_intersection,
+                                  initially_accepted, pos, &w_info, accept_func, state);
    } else if (num_vertices == 2) {
       return ac_nir_cull_line(b, skip_viewport_culling, initially_accepted, pos, &w_info,
                               accept_func, state);
