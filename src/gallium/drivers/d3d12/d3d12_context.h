@@ -28,7 +28,9 @@
 #include "d3d12_descriptor_pool.h"
 #include "d3d12_pipeline_state.h"
 
+#ifdef HAVE_GALLIUM_D3D12_GRAPHICS
 #include "dxil_nir_lower_int_samplers.h"
+#endif // HAVE_GALLIUM_D3D12_GRAPHICS
 
 #include "pipe/p_context.h"
 #include "pipe/p_state.h"

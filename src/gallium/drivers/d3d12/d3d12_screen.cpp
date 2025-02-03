@@ -24,7 +24,12 @@
 #include "d3d12_screen.h"
 
 #include "d3d12_bufmgr.h"
+#ifdef HAVE_GALLIUM_D3D12_GRAPHICS
 #include "d3d12_compiler.h"
+#include "d3d12_nir_passes.h"
+#include "nir.h"
+#include "nir_to_dxil.h"
+#endif // HAVE_GALLIUM_D3D12_GRAPHICS
 #include "d3d12_context.h"
 #include "d3d12_debug.h"
 #include "d3d12_fence.h"
@@ -35,8 +40,6 @@
 #include "d3d12_interop_public.h"
 #include "d3d12_residency.h"
 #include "d3d12_resource.h"
-#include "d3d12_nir_passes.h"
-
 #include "pipebuffer/pb_bufmgr.h"
 #include "util/u_debug.h"
 #include "util/u_math.h"
@@ -45,10 +48,8 @@
 #include "util/u_dl.h"
 #include "util/mesa-sha1.h"
 
-#include "nir.h"
 #include "frontend/sw_winsys.h"
 
-#include "nir_to_dxil.h"
 #include "git_sha1.h"
 
 #ifndef _GAMING_XBOX
@@ -427,8 +428,10 @@ d3d12_init_screen_caps(struct d3d12_screen *screen)
    caps->max_line_width =
    caps->max_line_width_aa = 1.0f; /* no clue */
 
+#ifdef HAVE_GALLIUM_D3D12_GRAPHICS
    caps->max_point_size =
    caps->max_point_size_aa = D3D12_MAX_POINT_SIZE;
+#endif // HAVE_GALLIUM_D3D12_GRAPHICS
 
    caps->max_texture_anisotropy = D3D12_MAX_MAXANISOTROPY;
 

@@ -148,12 +148,17 @@ if is_xbox == false
   files_libd3d12 += files('d3d12_dxcore_screen.cpp')
 endif
 
+libd3d12_deps = [idep_nir_headers, dep_dxheaders, idep_mesautil]
+if with_gallium_d3d12_graphics
+  libd3d12_deps += [idep_libdxil_compiler]
+endif
+
 libd3d12 = static_library(
   'd3d12',
   [files_libd3d12, sha1_h],
   gnu_symbol_visibility : 'hidden',
   include_directories : [inc_include, inc_src, inc_mesa, inc_gallium, inc_gallium_aux],
-  dependencies: [idep_nir_headers, idep_libdxil_compiler, dep_dxheaders, idep_mesautil],
+  dependencies: libd3d12_deps,
   c_args: libd3d12_compiler_args,
   cpp_args: libd3d12_compiler_args,
 )

@@ -22,7 +22,6 @@
  */
 
 #include "d3d12_context.h"
-#include "d3d12_compiler.h"
 #include "d3d12_debug.h"
 #include "d3d12_format.h"
 #include "d3d12_query.h"
@@ -31,9 +30,6 @@
 
 #include "util/u_blitter.h"
 #include "util/format/u_format.h"
-
-#include "nir_to_dxil.h"
-#include "nir_builder.h"
 
 static void
 copy_buffer_region_no_barriers(struct d3d12_context *ctx,
