@@ -3407,6 +3407,15 @@ v3dv_cmd_buffer_emit_pipeline_barrier(struct v3dv_cmd_buffer *cmd_buffer,
                      true, true, &state);
    }
 
+   if (unlikely(V3D_DBG(SYNC))) {
+      state.src_mask_compute = V3DV_BARRIER_ALL;
+      state.src_mask_graphics = V3DV_BARRIER_ALL;
+      state.src_mask_transfer = V3DV_BARRIER_ALL;
+      state.dst_mask = V3DV_BARRIER_ALL;
+      state.bcl_image_access = ~0;
+      state.bcl_buffer_access = ~0;
+   }
+
    /* Bail if we don't relevant barriers */
    if (!state.dst_mask)
       return;
