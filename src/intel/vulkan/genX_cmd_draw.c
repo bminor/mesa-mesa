@@ -191,7 +191,7 @@ get_push_range_address(struct anv_cmd_buffer *cmd_buffer,
          gfx_state->base.push_constants_state =
             anv_cmd_buffer_gfx_push_constants(cmd_buffer);
       }
-      return anv_cmd_buffer_temporary_state_address(
+      return anv_cmd_buffer_gfx_push_constants_state_address(
          cmd_buffer, gfx_state->base.push_constants_state);
    }
 
