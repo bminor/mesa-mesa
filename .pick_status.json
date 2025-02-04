@@ -234,7 +234,7 @@
         "description": "vulkan/runtime: ensure robustness state is fully initialized",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9308e8d90d26fca678fe72380d899cdae77415b5",
         "notes": null
