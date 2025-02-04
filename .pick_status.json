@@ -214,7 +214,7 @@
         "description": "panvk/ci: add back incorrectly removed crash",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f93a48e4e3462ac214b8f5d1217cbe640d0cd34b",
         "notes": null
