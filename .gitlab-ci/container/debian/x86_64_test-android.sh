@@ -46,6 +46,13 @@ curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
 unzip -d / "$ndk.zip"
 rm "$ndk.zip"
 
+############### Build ANGLE
+
+ANGLE_TARGET=android \
+ANGLE_ARCH=x64 \
+DEBIAN_ARCH=amd64 \
+. .gitlab-ci/container/build-angle.sh
+
 ############### Build dEQP runner
 
 export ANDROID_NDK_HOME=/$ndk

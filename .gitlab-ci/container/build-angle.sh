@@ -2,6 +2,7 @@
 
 # When changing this file, you need to bump the following
 # .gitlab-ci/image-tags.yml tags:
+# DEBIAN_TEST_ANDROID_TAG
 # KERNEL_ROOTFS_TAG
 
 set -uex
