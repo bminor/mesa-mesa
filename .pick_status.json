@@ -94,7 +94,7 @@
         "description": "panvk: Disallow unknown GPU models early in physical device init",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c95ef9e3232ef35da3b3d7a77d0726d0cde3fe23",
         "notes": null
