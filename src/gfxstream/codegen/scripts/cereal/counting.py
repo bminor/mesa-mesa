@@ -78,6 +78,7 @@ class VulkanCountingCodegen(VulkanTypeIterator):
                 makeVulkanTypeSimple(False, "uint64_t", 1, paramName=handle64Var)
         else:
             self.cgen.stmt("uint64_t %s" % handle64Var)
+            self.cgen.stmt("(void)%s" % handle64Var)
             handle64VarAccess = "&%s" % handle64Var
             handle64VarType = \
                 makeVulkanTypeSimple(False, "uint64_t", 0, paramName=handle64Var)
