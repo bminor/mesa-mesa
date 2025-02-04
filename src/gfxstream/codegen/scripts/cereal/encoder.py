@@ -367,7 +367,6 @@ def emit_parameter_encode_write_packet_info(typeInfo, api, cgen):
         cgen.stmt("if (queueSubmitWithCommandsEnabled) packetSize_%s -= 8" % api.name)
 
     cgen.stmt("uint8_t* streamPtr = %s->reserve(packetSize_%s)" % (STREAM, api.name))
-    cgen.stmt("uint8_t* packetBeginPtr = streamPtr")
     cgen.stmt("uint8_t** streamPtrPtr = &streamPtr")
     cgen.stmt("uint32_t opcode_%s = OP_%s" % (api.name, api.name))
 
