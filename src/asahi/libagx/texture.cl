@@ -200,7 +200,7 @@ libagx_image_texel_address(constant const struct agx_pbe_packed *ptr,
       return total_sa;
    else
       return (d.buffer + (is_msaa ? 0 : d.level_offset_sw)) +
-             (uint64_t)(total_sa * bytes_per_sample_B);
+             (uint64_t)total_sa * bytes_per_sample_B;
 }
 
 uint64_t
