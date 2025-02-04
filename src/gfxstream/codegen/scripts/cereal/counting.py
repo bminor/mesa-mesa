@@ -372,7 +372,6 @@ class VulkanCountingCodegen(VulkanTypeIterator):
         if lenAccessGuard is not None:
             self.cgen.beginIf(lenAccessGuard)
         self.cgen.beginFor("uint32_t i = 0", "i < %s" % lenAccess, "++i")
-        self.cgen.stmt("size_t l = %s[i] ? strlen(%s[i]) : 0" % (access, access))
         self.genCount("sizeof(uint32_t) + (%s[i] ? strlen(%s[i]) : 0)" % (access, access))
         self.cgen.endFor()
         if lenAccessGuard is not None:
