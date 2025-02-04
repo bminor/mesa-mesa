@@ -3305,7 +3305,7 @@ nvk_mme_bind_cbuf_desc(struct mme_builder *b)
 
    struct mme_value cb = mme_alloc_reg(b);
    mme_if(b, ieq, size, mme_zero()) {
-      /* Bottim bit is the valid bit, 8:4 are shader slot */
+      /* Bottom bit is the valid bit, 8:4 are shader slot */
       mme_merge_to(b, cb, mme_zero(), group_slot, 4, 5, 4);
    }
 
