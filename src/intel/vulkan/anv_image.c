@@ -235,8 +235,16 @@ anv_image_choose_isl_surf_usage(struct anv_physical_device *device,
    if (vk_usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
       isl_usage |= ISL_SURF_USAGE_RENDER_TARGET_BIT;
 
-   if (vk_usage & VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)
+   if (vk_usage & VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR) {
       isl_usage |= ISL_SURF_USAGE_CPB_BIT;
+
+      /* The CPS compression scheme matches STC_CCS. So, we can allow
+       * compression for BLORP writes, but not for general rendering
+       * nor image stores.
+       */
+      if (vk_usage & (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT))
+         isl_usage |= ISL_SURF_USAGE_DISABLE_AUX_BIT;
+   }
 
    /* TODO: consider whether compression with sparse is workable. */
    if (vk_create_flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT)
