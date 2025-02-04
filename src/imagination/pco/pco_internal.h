@@ -2887,6 +2887,14 @@ static inline unsigned pco_branch_rel_offset(pco_igrp *br, pco_cf_node *cf_node)
    return pco_cf_node_offset(cf_node) - pco_igrp_offset(br);
 }
 
+static inline unsigned pco_branch_rel_offset_next_igrp(pco_igrp *br)
+{
+   pco_igrp *next_igrp = pco_next_igrp(br);
+   assert(next_igrp);
+
+   return pco_igrp_offset(next_igrp) - pco_igrp_offset(br);
+}
+
 static inline bool pco_should_skip_pass(const char *pass)
 {
    return comma_separated_list_contains(pco_skip_passes, pass);
@@ -2913,7 +2921,7 @@ static inline bool pco_should_skip_pass(const char *pass)
       }                                                       \
    } while (0)
 
-/* Common hw constants. */
+/* Common hw constants/references. */
 
 /** Integer/float zero. */
 #define pco_zero pco_ref_hwreg(0, PCO_REG_CLASS_CONST)
@@ -2944,6 +2952,8 @@ static inline bool pco_should_skip_pass(const char *pass)
 
 /** Float infinity. */
 #define pco_finf pco_ref_hwreg(142, PCO_REG_CLASS_CONST)
+
+#define pco_p0 pco_ref_pred(PCO_PRED_P0)
 
 /* Printing. */
 void pco_print_ref(pco_shader *shader, pco_ref ref);

@@ -42,6 +42,13 @@ static pco_block *trans_cf_nodes(trans_ctx *tctx,
                                  struct exec_list *cf_node_list,
                                  struct exec_list *nir_cf_node_list);
 
+static inline void pco_fence(pco_builder *b)
+{
+   pco_flush_p0(b);
+   pco_br_next(b, .exec_cnd = PCO_EXEC_CND_E1_Z1);
+   pco_br_next(b, .exec_cnd = PCO_EXEC_CND_E1_Z0);
+}
+
 /**
  * \brief Splits a vector destination into scalar components.
  *
@@ -341,6 +348,9 @@ trans_load_input_fs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
                                           PCO_REG_CLASS_COEFF,
                                           ROGUE_USC_COEFFICIENT_SET_SIZE);
 
+      if (usc_itrsmp_enhanced)
+         pco_fence(&tctx->b);
+
       return usc_itrsmp_enhanced ? pco_ditrp(&tctx->b,
                                              dest,
                                              pco_ref_drc(PCO_DRC_0),
@@ -367,6 +377,9 @@ trans_load_input_fs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
    }
 
    case INTERP_MODE_NOPERSPECTIVE:
+      if (usc_itrsmp_enhanced)
+         pco_fence(&tctx->b);
+
       return usc_itrsmp_enhanced ? pco_ditr(&tctx->b,
                                             dest,
                                             pco_ref_drc(PCO_DRC_0),

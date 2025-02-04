@@ -435,6 +435,8 @@ O_CNDEND = hw_op('cndend', [OM_EXEC_CND], 2, 2)
 
 O_BR = hw_op('br', [OM_EXEC_CND, OM_BRANCH_CND, OM_LINK], has_target_cf_node=True)
 
+O_BR_NEXT = hw_op('br.next', [OM_EXEC_CND])
+
 O_MUTEX = hw_op('mutex', [OM_MTX_OP], 0, 1)
 
 # Combination (> 1 instructions per group).
@@ -457,6 +459,8 @@ O_ST32 = hw_op('st32', OM_ALU_RPT1 + [OM_MCU_CACHE_MODE_ST], 0, 5)
 
 O_IADD32_ATOMIC = hw_op('iadd32.atomic', OM_ALU_ATOMEXT + [OM_S], 2, 3, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
 O_XCHG_ATOMIC = hw_op('xchg.atomic', OM_ALU_ATOMEXT, 2, 2, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
+
+O_FLUSH_P0 = hw_op('flush.p0', [OM_EXEC_CND, OM_END])
 
 # Pseudo-ops (unmapped).
 O_FNEG = pseudo_op('fneg', OM_ALU, 1, 1)

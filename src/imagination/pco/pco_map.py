@@ -402,6 +402,8 @@ def encode_map(op, encodings, op_ref_maps):
                assert op.has_target_cf_node
 
                encode_variant += f'pco_branch_rel_offset({{1}}->parent_igrp, {{1}}->target_cf_node)'
+            elif val_spec == 'target_next_igrp':
+               encode_variant += f'pco_branch_rel_offset_next_igrp({{1}}->parent_igrp)'
             else:
                assert struct_field.type.base_type == BaseType.enum
 
@@ -1690,6 +1692,18 @@ encode_map(O_BR,
    op_ref_maps=[('ctrl', [], [])]
 )
 
+encode_map(O_BR_NEXT,
+   encodings=[
+      (I_BRANCH, [
+         ('link', False),
+         ('bpred', 'cc'),
+         ('abs', False),
+         ('offset', 'target_next_igrp')
+      ])
+   ],
+   op_ref_maps=[('ctrl', [], [])]
+)
+
 encode_map(O_MUTEX,
    encodings=[
       (I_MUTEX, [
@@ -2649,6 +2663,31 @@ group_map(O_XCHG_ATOMIC,
    ]
 )
 
+group_map(O_FLUSH_P0,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'p0_p2'),
+      ('olchk', False),
+      ('w1p', False),
+      ('w0p', False),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', False),
+      ('rpt', 1)
+   ]),
+   enc_ops=[
+      ('0', O_IMADD32, ['ft0'], ['pco_zero', 'pco_zero', 'pco_zero', 'pco_p0'], [(OM_S, False)]),
+      ('2_tst', O_TST, ['ftt', 'pco_p0'], ['is1', '_'], [(OM_TST_OP_MAIN, 'gzero'), (OM_TST_TYPE_MAIN, 'u32'), (OM_PHASE2END, True)]),
+   ],
+   srcs=[
+      ('s[0]', ('0', SRC(0)), 's0'),
+      ('s[1]', ('0', SRC(1)), 's1'),
+      ('s[2]', ('0', SRC(2)), 's2')
+   ],
+   iss=[
+      ('is[1]', 'ft0'),
+   ]
+)
+
 group_map(O_UVSW_WRITE,
    hdr=(I_IGRP_HDR_MAIN, [
       ('oporg', 'be'),
@@ -3261,6 +3300,18 @@ group_map(O_BR,
       ('ctrlop', 'b')
    ]),
    enc_ops=[('ctrl', O_BR)]
+)
+
+group_map(O_BR_NEXT,
+   hdr=(I_IGRP_HDR_CONTROL, [
+      ('olchk', False),
+      ('w1p', False),
+      ('w0p', False),
+      ('cc', OM_EXEC_CND),
+      ('miscctl', False),
+      ('ctrlop', 'b')
+   ]),
+   enc_ops=[('ctrl', O_BR_NEXT)]
 )
 
 group_map(O_MUTEX,
