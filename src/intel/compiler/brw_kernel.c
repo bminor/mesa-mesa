@@ -320,13 +320,6 @@ brw_kernel_from_spirv(struct brw_compiler *compiler,
       nir_print_shader(nir, stderr);
    }
 
-   nir_lower_printf_options printf_opts = {
-      .ptr_bit_size               = 64,
-      .max_buffer_size            = 1024 * 1024,
-      .use_printf_base_identifier = true,
-   };
-   NIR_PASS_V(nir, nir_lower_printf, &printf_opts);
-
    NIR_PASS_V(nir, implement_intel_builtins);
    NIR_PASS_V(nir, nir_link_shader_functions, spirv_options.clc_shader);
 

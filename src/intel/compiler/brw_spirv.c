@@ -105,11 +105,6 @@ brw_nir_from_spirv(void *mem_ctx, const uint32_t *spirv, size_t spirv_size)
    NIR_PASS(_, nir, nir_lower_system_values);
    NIR_PASS(_, nir, nir_lower_calls_to_builtins);
 
-   NIR_PASS_V(nir, nir_lower_printf, &(const struct nir_lower_printf_options) {
-         .ptr_bit_size               = 64,
-         .use_printf_base_identifier = true,
-      });
-
    NIR_PASS(_, nir, nir_lower_variable_initializers, nir_var_function_temp);
    NIR_PASS(_, nir, nir_lower_returns);
    NIR_PASS(_, nir, nir_inline_functions);
