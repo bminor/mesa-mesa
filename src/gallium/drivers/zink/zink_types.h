@@ -37,7 +37,7 @@
 #include "pipe/p_state.h"
 
 #include "pipebuffer/pb_cache.h"
-#include "pipebuffer/pb_slab.h"
+#include "util/pb_slab.h"
 
 #include "util/blob.h"
 #include "util/disk_cache.h"

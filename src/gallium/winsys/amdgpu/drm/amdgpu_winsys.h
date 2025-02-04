@@ -9,7 +9,7 @@
 #define AMDGPU_WINSYS_H
 
 #include "pipebuffer/pb_cache.h"
-#include "pipebuffer/pb_slab.h"
+#include "util/pb_slab.h"
 #include "winsys/radeon_winsys.h"
 #include "util/simple_mtx.h"
 #include "util/u_queue.h"

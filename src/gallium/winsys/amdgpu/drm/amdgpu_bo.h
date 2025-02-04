@@ -10,7 +10,7 @@
 #define AMDGPU_BO_H
 
 #include "amdgpu_winsys.h"
-#include "pipebuffer/pb_slab.h"
+#include "util/pb_slab.h"
 
 #ifdef __cplusplus
 extern "C" {

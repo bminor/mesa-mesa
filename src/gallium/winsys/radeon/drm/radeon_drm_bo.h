@@ -10,7 +10,7 @@
 
 #include "radeon_drm_winsys.h"
 #include "util/u_thread.h"
-#include "pipebuffer/pb_slab.h"
+#include "util/pb_slab.h"
 
 struct radeon_bo {
    struct pb_buffer_lean base;

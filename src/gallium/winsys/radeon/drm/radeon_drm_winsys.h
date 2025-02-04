@@ -9,7 +9,7 @@
 
 #include "winsys/radeon_winsys.h"
 #include "pipebuffer/pb_cache.h"
-#include "pipebuffer/pb_slab.h"
+#include "util/pb_slab.h"
 #include "util/u_queue.h"
 #include "util/list.h"
 #include "drm-uapi/radeon_drm.h"

@@ -38,7 +38,7 @@
 #include "util/list.h"
 #include "util/simple_mtx.h"
 #include "pipe/p_defines.h"
-#include "pipebuffer/pb_slab.h"
+#include "util/pb_slab.h"
 #include "intel/dev/intel_device_info.h"
 
 struct intel_device_info;

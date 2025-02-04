@@ -118,8 +118,6 @@ files_libgallium = files(
   'pipebuffer/pb_bufmgr_slab.c',
   'pipebuffer/pb_cache.c',
   'pipebuffer/pb_cache.h',
-  'pipebuffer/pb_slab.c',
-  'pipebuffer/pb_slab.h',
   'pipebuffer/pb_validate.c',
   'pipebuffer/pb_validate.h',
   'postprocess/filters.h',
