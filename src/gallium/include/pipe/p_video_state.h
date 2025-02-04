@@ -2660,6 +2660,16 @@ union pipe_enc_cap_dirty_info {
        * where the driver decides the slice partition for the frame.
        */
       uint32_t supports_require_auto_slice_mode: 1;
+      /*
+       * Driver Output. Indicates that to use pipe_enc_dirty_info.rects/input_map the frame must be encoded with SAO filter disabled
+       * For example for HEVC would correspond to pipe_h265_enc_picture_desc.seq.sample_adaptive_offset_enabled_flag)
+       */
+      uint32_t supports_require_sao_filter_disabled: 1;
+      /*
+       * Driver Output. Indicates that to use pipe_enc_dirty_info.rects/input_map the frame must be encoded with LOOP filter disabled
+       * For example for HEVC would correspond to pipe_h265_enc_picture_desc.pic.pps_loop_filter_across_slices_enabled_flag)
+       */
+      uint32_t supports_require_loop_filter_disabled: 1;
    } bits;
   uint32_t value;
 };
