@@ -1,5 +1,205 @@
 [
     {
+        "sha": "e49df902b4c1b98569921d8b858e6e3855bf10e0",
+        "description": "panvk: report strictLines as true",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1d64095410db40d79b7a4bb44febbe8e57518eea",
+        "description": "panvk: fix line-rasterization of bifrost",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "d970fe2e9d6a8e9997a0ce212146d62013b3b455",
+        "notes": null
+    },
+    {
+        "sha": "4ea4b6c98b8bf29e15930dc1c7851deb45ccdf29",
+        "description": "gfxstream: Replace pre-processor (LINUX && !ANDROID) checks with LINUX_GUEST_BUILD",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bb6d371c0ebb84405c0d095c554ea08bcab181aa",
+        "description": "rusticl: support SPIR-V 1.5 and 1.6",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2f4931353fd5cd635c33f306e1016331e07e3934",
+        "description": "rusticl/kernel: call nir_lower_variable_initializers earlier",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "48f93e7313b2c376494c04acdf4a9d30014d5863",
+        "description": "clc: bump SPIR-V target to 1.6",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7f493b45ae8e0c671fb52214a011fa2f0322a728",
+        "description": "mesa: Fix FramebufferTextureMultiviewOVR num_views check",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "328c29d6007ed7677d5c5307bd6997d84a32104a",
+        "notes": null
+    },
+    {
+        "sha": "39491da1b6358efebd6d48da6f5454c73409db67",
+        "description": "mesa: Fix multiview attachment completeness check",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "328c29d6007ed7677d5c5307bd6997d84a32104a",
+        "notes": null
+    },
+    {
+        "sha": "b774b615d273f2948f2d9a9d13fe5ca1c3d04119",
+        "description": "glsl: Expose gl_ViewID_OVR back to GLSL 1.30",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "328c29d6007ed7677d5c5307bd6997d84a32104a",
+        "notes": null
+    },
+    {
+        "sha": "bf88b9b324f8149908a43c98d270f52022b321d5",
+        "description": "kopper: implement to get sync values.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e8d335d496755e827291f223fd9fbcba35f646bf",
+        "description": "dri: fix a build error",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cf3647696125595a44cd0e08d2f819c3dd6f6f54",
+        "description": "svga/ci: disable vmware farm",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4a41564619319fe3b4e5d46e43607cb3748775df",
+        "description": "intel/common: fix mi_builder_test issue",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "bb31287d240388925b09f791861a883ae3909d88",
+        "notes": null
+    },
+    {
+        "sha": "c1510ad72e229a1e347afecfc6cb8f6cca1587c3",
+        "description": "nak: Optimize bindless to cbuf textures on Volta+",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "272e8ec461a637ed41b1bb5a23f792d07a2eca01",
+        "description": "nak: Add support for bound and cbuf textures",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "16b6ea415fcd247a1a41067ec0ccc86b1998dc24",
+        "description": "nvk: Only pass sampler handles when needed",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2be01df8dfb08aaf3af349babd39dfcd5ffa74b9",
+        "description": "nvk,nak: Only use u64 texture handles with codegen",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "60e1bc55bf5945a24d1cff619ef61fec26d612fa",
+        "description": "ci: fix debian-build-testing BUILDTYPE",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "5b291c7ce652c27800624808f6bfef513d7ac3de",
+        "notes": null
+    },
+    {
+        "sha": "4064b5546bba9aa879958883c220fdba4fe5ecf7",
+        "description": "intel/dev: reduce warning noise from urb settings",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4e80045ae047c6ea3b5a82105e63e5f541a3a15e",
+        "description": "intel/genxml/anv: fix the layout of call stack handler struct",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "5b856a741d6dc18d409a0c06ad6492cc3ee9a6bd",
         "description": "radv: advertise computeDerivativeGroupQuads on GFX12",
         "nominated": false,
