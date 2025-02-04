@@ -40,12 +40,6 @@ lower_printf_intrinsics(nir_builder *b, nir_intrinsic_instr *intrin, void *_)
             nir_load_reloc_const_intel(b, BRW_SHADER_RELOC_PRINTF_BUFFER_ADDR_HIGH)));
       return true;
 
-   case nir_intrinsic_load_printf_base_identifier:
-      nir_def_replace(
-         &intrin->def,
-         nir_load_reloc_const_intel(b, BRW_SHADER_RELOC_PRINTF_BASE_IDENTIFIER));
-      return true;
-
    case nir_intrinsic_load_printf_buffer_size:
       nir_def_replace(
          &intrin->def,

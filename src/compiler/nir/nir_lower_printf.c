@@ -69,11 +69,7 @@ lower_printf_intrin(nir_builder *b, nir_intrinsic_instr *prntf, void *_options)
    }
 
    nir_def *fmt_str_id = prntf->src[0].ssa;
-   if (options->use_printf_base_identifier) {
-      fmt_str_id = nir_iadd(b,
-                            nir_load_printf_base_identifier(b),
-                            fmt_str_id);
-   } else if (options->hash_format_strings) {
+   if (options->hash_format_strings) {
       /* Rather than store the index of the format string, instead store the
        * hash of the format string itself. This is invariant across shaders
        * which may be more convenient.

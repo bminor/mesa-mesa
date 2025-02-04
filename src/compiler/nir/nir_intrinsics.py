@@ -1285,10 +1285,6 @@ intrinsic("printf", src_comp=[1, 1], dest_comp=1, bit_sizes=[32])
 # the driver to at least provide a base location and size
 system_value("printf_buffer_address", 1, bit_sizes=[32,64])
 system_value("printf_buffer_size", 1, bit_sizes=[32])
-# If driver wants to have all printfs from various shaders merged into a
-# single output buffer, it needs each shader to have its own base identifier
-# from which each printf is indexed.
-system_value("printf_base_identifier", 1, bit_sizes=[32])
 # Abort the program, triggering device fault. The invoking thread halts
 # immediately. Other threads eventually terminate.
 #

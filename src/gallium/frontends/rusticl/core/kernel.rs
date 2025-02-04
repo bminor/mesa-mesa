@@ -669,7 +669,6 @@ fn compile_nir_to_args(
 
     let printf_opts = nir_lower_printf_options {
         ptr_bit_size: 0,
-        use_printf_base_identifier: false,
         hash_format_strings: false,
         max_buffer_size: dev.printf_buffer_size() as u32,
     };
