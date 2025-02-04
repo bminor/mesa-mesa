@@ -408,6 +408,39 @@ nir_intrinsic_instr *pco_emit_nir_smp(nir_builder *b, pco_smp_params *params)
    return nir_instr_as_intrinsic(def->parent_instr);
 }
 
+static nir_def *
+lower_tex_gather(nir_builder *b, nir_tex_instr *tex, nir_def *raw_data)
+{
+   unsigned swiz[ARRAY_SIZE(tex->tg4_offsets)];
+   for (unsigned u = 0; u < ARRAY_SIZE(tex->tg4_offsets); ++u) {
+      unsigned offset = ARRAY_SIZE(*tex->tg4_offsets) * tex->tg4_offsets[u][0];
+      offset += tex->tg4_offsets[u][1];
+      offset *= ARRAY_SIZE(tex->tg4_offsets);
+      offset += tex->component;
+
+      swiz[u] = offset;
+   }
+
+   nir_def *result = nir_swizzle(b, raw_data, swiz, ARRAY_SIZE(swiz));
+
+   return result;
+}
+
+static nir_def *lower_tex_shadow(nir_builder *b,
+                                 nir_def *data,
+                                 nir_def *comparator,
+                                 nir_def *compare_op)
+{
+   nir_def *result_comps[NIR_MAX_VEC_COMPONENTS];
+
+   for (unsigned u = 0; u < data->num_components; ++u) {
+      result_comps[u] =
+         nir_alphatst_pco(b, nir_channel(b, data, u), comparator, compare_op);
+   }
+
+   return nir_vec(b, result_comps, data->num_components);
+}
+
 /**
  * \brief Lowers a texture instruction.
  *
@@ -469,11 +502,13 @@ lower_tex(nir_builder *b, nir_instr *instr, UNUSED void *cb_data)
    if (nir_tex_instr_is_query(tex) && tex->op != nir_texop_lod)
       return lower_tex_query_basic(b, tex, tex_state);
 
-   nir_def *smp_state = nir_load_smp_state_pco(b,
-                                               ROGUE_NUM_TEXSTATE_DWORDS,
-                                               smp_elem,
-                                               .desc_set = smp_desc_set,
-                                               .binding = smp_binding);
+   nir_def *smp_state =
+      nir_load_smp_state_pco(b,
+                             ROGUE_NUM_TEXSTATE_DWORDS,
+                             smp_elem,
+                             .desc_set = smp_desc_set,
+                             .binding = smp_binding,
+                             .flags = tex->op == nir_texop_tg4);
 
    nir_def *float_coords;
    nir_def *int_coords;
@@ -569,6 +604,14 @@ lower_tex(nir_builder *b, nir_instr *instr, UNUSED void *cb_data)
       lod_set = true;
       BITSET_CLEAR(tex_src_set, nir_tex_src_ddx);
       BITSET_CLEAR(tex_src_set, nir_tex_src_ddy);
+   }
+
+   if (tex->op == nir_texop_tg4) {
+      assert(!lod_set);
+      smp_data_comps[smp_data_comp_count++] = nir_imm_int(b, 0);
+      smp_flags.pplod = true;
+      smp_flags.lod_mode = PCO_LOD_MODE_REPLACE;
+      lod_set = true;
    }
 
    if (!hw_array_support && int_array_index) {
@@ -707,13 +750,26 @@ lower_tex(nir_builder *b, nir_instr *instr, UNUSED void *cb_data)
                            .range = smp_data_comp_count);
       break;
 
+   case nir_texop_tg4:
+      smp_flags.integer = use_int_coords;
+      smp_flags.fcnorm = nir_alu_type_get_base_type(tex->dest_type) ==
+                         nir_type_float;
+
+      result = nir_smp_raw_pco(b,
+                               smp_data,
+                               tex_state,
+                               smp_state,
+                               .smp_flags_pco = smp_flags._,
+                               .range = smp_data_comp_count);
+
+      result = lower_tex_gather(b, tex, result);
+      break;
+
    default:
       UNREACHABLE("");
    }
 
    if (tex->is_shadow) {
-      assert(result->num_components == 1);
-
       nir_def *compare_op =
          nir_load_smp_meta_pco(b,
                                1,
@@ -722,7 +778,7 @@ lower_tex(nir_builder *b, nir_instr *instr, UNUSED void *cb_data)
                                .binding = smp_binding,
                                .component = PCO_SAMPLER_META_COMPARE_OP);
 
-      result = nir_alphatst_pco(b, result, comparator, compare_op);
+      result = lower_tex_shadow(b, result, comparator, compare_op);
    }
 
    return result;

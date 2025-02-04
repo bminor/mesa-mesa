@@ -2685,7 +2685,7 @@ intrinsic("finalize_incoming_node_payload", src_comp=[-1], dest_comp=1)
 # load_{tex,smp}_state_pco(array element)
 # Loads the texture/sampler state words for a given descriptor.
 intrinsic("load_tex_state_pco", src_comp=[1], dest_comp=0, indices=[DESC_SET, BINDING, COMPONENT], flags=[CAN_ELIMINATE, CAN_REORDER], bit_sizes=[32])
-intrinsic("load_smp_state_pco", src_comp=[1], dest_comp=0, indices=[DESC_SET, BINDING, COMPONENT], flags=[CAN_ELIMINATE, CAN_REORDER], bit_sizes=[32])
+intrinsic("load_smp_state_pco", src_comp=[1], dest_comp=0, indices=[DESC_SET, BINDING, COMPONENT, FLAGS], flags=[CAN_ELIMINATE, CAN_REORDER], bit_sizes=[32])
 
 # load_{tex,smp}_meta_pco(array element)
 # Loads the texture/sampler metadata for a given descriptor.

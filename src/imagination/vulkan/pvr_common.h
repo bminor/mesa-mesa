@@ -202,9 +202,10 @@ static_assert(sizeof(struct pvr_buffer_descriptor) == 4 * sizeof(uint32_t),
 struct pvr_sampler_descriptor {
    uint64_t words[ROGUE_NUM_TEXSTATE_SAMPLER_WORDS];
    uint32_t meta[PCO_SAMPLER_META_COUNT];
+   uint64_t gather_words[ROGUE_NUM_TEXSTATE_SAMPLER_WORDS];
 } PACKED;
 static_assert(sizeof(struct pvr_sampler_descriptor) ==
-                 ROGUE_NUM_TEXSTATE_SAMPLER_WORDS * sizeof(uint64_t) +
+                 ROGUE_NUM_TEXSTATE_SAMPLER_WORDS * sizeof(uint64_t) * 2 +
                     PCO_SAMPLER_META_COUNT * sizeof(uint32_t),
               "pvr_sampler_descriptor size is invalid.");
 
@@ -223,7 +224,7 @@ struct pvr_combined_image_sampler_descriptor {
 } PACKED;
 static_assert(
    sizeof(struct pvr_combined_image_sampler_descriptor) ==
-      (ROGUE_NUM_TEXSTATE_IMAGE_WORDS + ROGUE_NUM_TEXSTATE_SAMPLER_WORDS) *
+      (ROGUE_NUM_TEXSTATE_IMAGE_WORDS + ROGUE_NUM_TEXSTATE_SAMPLER_WORDS * 2) *
             sizeof(uint64_t) +
          (PCO_IMAGE_META_COUNT + PCO_SAMPLER_META_COUNT) * sizeof(uint32_t),
    "pvr_combined_image_sampler_descriptor size is invalid.");

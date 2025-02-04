@@ -961,6 +961,12 @@ static pco_instr *lower_load_tex_smp_state(trans_ctx *tctx,
       state_words = pco_ref_offset(state_words, PCO_IMAGE_META_COUNT);
    }
 
+   /* Gather sampler words come after standard sampler state and metadata. */
+   if (smp && nir_intrinsic_flags(intr)) {
+      state_words = pco_ref_offset(state_words, ROGUE_NUM_TEXSTATE_DWORDS);
+      state_words = pco_ref_offset(state_words, PCO_SAMPLER_META_COUNT);
+   }
+
    state_words = pco_ref_offset(state_words, start_comp);
 
    return pco_mov(&tctx->b, dest, state_words, .rpt = chans);
@@ -1020,6 +1026,11 @@ static pco_instr *lower_smp(trans_ctx *tctx,
       chans = 1; /* Chans must be 1 for coeff mode. */
 
       sb_mode = PCO_SB_MODE_COEFFS;
+      break;
+
+   case nir_intrinsic_smp_raw_pco:
+      chans = 4;
+      sb_mode = PCO_SB_MODE_RAWDATA;
       break;
 
    case nir_intrinsic_smp_pco:
@@ -1307,6 +1318,7 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
       break;
 
    case nir_intrinsic_smp_coeffs_pco:
+   case nir_intrinsic_smp_raw_pco:
    case nir_intrinsic_smp_pco:
    case nir_intrinsic_smp_write_pco:
       instr = lower_smp(tctx, intr, &dest, src[0], src[1], src[2]);

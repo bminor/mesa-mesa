@@ -3231,6 +3231,20 @@ VkResult pvr_CreateSampler(VkDevice _device,
    pvr_csb_pack (&sampler->descriptor.words[1], TEXSTATE_SAMPLER_WORD1, word) {
    }
 
+   /* Setup gather sampler. */
+
+   struct ROGUE_TEXSTATE_SAMPLER_WORD0 word0;
+   ROGUE_TEXSTATE_SAMPLER_WORD0_unpack(&sampler->descriptor.words[0], &word0);
+   word0.mipfilter = false;
+   word0.minfilter = ROGUE_TEXSTATE_FILTER_LINEAR;
+   word0.magfilter = ROGUE_TEXSTATE_FILTER_LINEAR;
+   ROGUE_TEXSTATE_SAMPLER_WORD0_pack(&sampler->descriptor.gather_words[0],
+                                     &word0);
+
+   memcpy(&sampler->descriptor.gather_words[1],
+          &sampler->descriptor.words[1],
+          sizeof(sampler->descriptor.words[1]));
+
    *pSampler = pvr_sampler_to_handle(sampler);
 
    return VK_SUCCESS;
