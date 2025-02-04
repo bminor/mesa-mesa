@@ -56,16 +56,11 @@ export RUST_TARGET=x86_64-linux-android
 rm -rf /root/.cargo
 rm -rf /root/.rustup
 
-############### Build dEQP GL
+############### Build dEQP
 
 DEQP_API=tools \
 DEQP_TARGET="android" \
 EXTRA_CMAKE_ARGS="-DDEQP_ANDROID_EXE=ON -DDEQP_TARGET_TOOLCHAIN=ndk-modern -DANDROID_NDK_PATH=/$ndk -DANDROID_ABI=x86_64 -DDE_ANDROID_API=$ANDROID_SDK_VERSION" \
-. .gitlab-ci/container/build-deqp.sh
-
-DEQP_API=GL \
-DEQP_TARGET="android" \
-EXTRA_CMAKE_ARGS="-DDEQP_TARGET_TOOLCHAIN=ndk-modern -DANDROID_NDK_PATH=/$ndk -DANDROID_ABI=x86_64 -DDE_ANDROID_API=$ANDROID_SDK_VERSION" \
 . .gitlab-ci/container/build-deqp.sh
 
 DEQP_API=GLES \
