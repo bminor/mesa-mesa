@@ -2728,3 +2728,6 @@ intrinsic("mutex_pco", indices=[MUTEX_ID_PCO, MUTEX_OP_PCO])
 # depthf_pco(depth value)
 # Perform an ISP depth feedback operation.
 intrinsic("depthf_pco", src_comp=[1], bit_sizes=[32])
+
+# Loads the valid mask.
+intrinsic("load_savmsk_vm_pco", src_comp=[], dest_comp=1, indices=[], flags=[CAN_ELIMINATE, CAN_REORDER], bit_sizes=[32])

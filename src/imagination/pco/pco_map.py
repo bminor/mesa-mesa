@@ -342,6 +342,14 @@ enum_map(OM_MTX_OP.t, F_LR, [
    ('lock', 'lock'),
 ])
 
+enum_map(OM_SAVMSK_MODE.t, F_MSK_MODE, [
+   ('vm', 'vm'),
+   ('icm', 'icm'),
+   ('icmoc', 'icmoc'),
+   ('icmi', 'icmi'),
+   ('caxy', 'caxy'),
+])
+
 class OpRef(object):
    def __init__(self, ref_type, index, mods):
       self.type = ref_type
@@ -1437,6 +1445,11 @@ encode_map(O_ALPHAF,
 encode_map(O_DEPTHF,
    encodings=[(I_VISTEST_DEPTHF, [])],
    op_ref_maps=[('backend', [], ['drc', 'w0'])]
+)
+
+encode_map(O_SAVMSK,
+   encodings=[(I_SAVMSK, [('msk_mode', OM_SAVMSK_MODE)])],
+   op_ref_maps=[('backend', [['w0', '_'], ['w1', '_']], [])]
 )
 
 encode_map(O_BBYP0BM,
@@ -2864,6 +2877,24 @@ group_map(O_DEPTHF,
    iss=[
       ('is[0]', 's0'),
       ('is[4]', 'fte')
+   ]
+)
+
+group_map(O_SAVMSK,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'be'),
+      ('olchk', OM_OLCHK),
+      ('w1p', ('!pco_ref_is_null', DEST(1))),
+      ('w0p', ('!pco_ref_is_null', DEST(0))),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', 1)
+   ]),
+   enc_ops=[('backend', O_SAVMSK)],
+   dests=[
+      ('w[0]', ('backend', DEST(0)), 'w0'),
+      ('w[1]', ('backend', DEST(1)), 'w1')
    ]
 )
 

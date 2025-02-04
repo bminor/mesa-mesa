@@ -1356,6 +1356,19 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
                       pco_ref_hwreg(PCO_SR_INST_NUM, PCO_REG_CLASS_SPEC));
       break;
 
+   case nir_intrinsic_load_sample_id:
+      instr = pco_mov(&tctx->b,
+                      dest,
+                      pco_ref_hwreg(PCO_SR_SAMP_NUM, PCO_REG_CLASS_SPEC));
+      break;
+
+   case nir_intrinsic_load_savmsk_vm_pco:
+      instr = pco_savmsk(&tctx->b,
+                         dest,
+                         pco_ref_null(),
+                         .savmsk_mode = PCO_SAVMSK_MODE_VM);
+      break;
+
    case nir_intrinsic_decl_reg:
    case nir_intrinsic_load_reg:
    case nir_intrinsic_store_reg:

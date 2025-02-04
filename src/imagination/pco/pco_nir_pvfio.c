@@ -913,6 +913,21 @@ static nir_def *lower_pfo(nir_builder *b, nir_instr *instr, void *cb_data)
          return NIR_LOWER_INSTR_PROGRESS_REPLACE;
       }
 
+      if (sem.location == FRAG_RESULT_SAMPLE_MASK) {
+         nir_def *smp_msk =
+            nir_ishl(b, nir_imm_int(b, 1), nir_load_sample_id(b));
+
+         smp_msk = nir_iand(b, smp_msk, intr->src[0].ssa);
+         smp_msk = nir_iand(b, smp_msk, nir_load_savmsk_vm_pco(b));
+         nir_def *cond = nir_ieq_imm(b, smp_msk, 0);
+
+         state->has_discards = true;
+         nir_def *val = nir_load_reg(b, state->discard_cond_reg);
+         val = nir_ior(b, val, cond);
+         nir_store_reg(b, val, state->discard_cond_reg);
+         return NIR_LOWER_INSTR_PROGRESS_REPLACE;
+      }
+
       UNREACHABLE("");
    }
 
