@@ -347,6 +347,12 @@ type_scalar_size_bytes(const struct glsl_type *type)
    return glsl_type_is_boolean(type) ? 4u : glsl_get_bit_size(type) / 8u;
 }
 
+static bool
+cmp_scalar(nir_scalar a, nir_scalar b)
+{
+   return a.def == b.def ? a.comp > b.comp : a.def->index > b.def->index;
+}
+
 static unsigned
 add_to_entry_key(nir_scalar *offset_defs, uint64_t *offset_defs_mul,
                  unsigned offset_def_count, nir_scalar def, uint64_t mul)
@@ -354,7 +360,7 @@ add_to_entry_key(nir_scalar *offset_defs, uint64_t *offset_defs_mul,
    mul = util_mask_sign_extend(mul, def.def->bit_size);
 
    for (unsigned i = 0; i <= offset_def_count; i++) {
-      if (i == offset_def_count || def.def->index > offset_defs[i].def->index) {
+      if (i == offset_def_count || cmp_scalar(def, offset_defs[i])) {
          /* insert before i */
          memmove(offset_defs + i + 1, offset_defs + i,
                  (offset_def_count - i) * sizeof(nir_scalar));
