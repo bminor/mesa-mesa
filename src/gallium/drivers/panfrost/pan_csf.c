@@ -1183,11 +1183,11 @@ csf_emit_draw_state(struct panfrost_batch *batch,
          (rast->multisample &&
           ((ctx->min_samples > 1) || ctx->valhall_has_blend_shader));
 
-      cfg.single_sampled_lines = !rast->multisample;
+      cfg.aligned_line_ends = !rast->multisample;
 
       if (lines && rast->line_smooth) {
          cfg.multisample_enable = true;
-         cfg.single_sampled_lines = false;
+         cfg.aligned_line_ends = false;
       }
 
       bool has_oq = ctx->occlusion_query && ctx->active_queries;

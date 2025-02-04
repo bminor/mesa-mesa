@@ -1880,7 +1880,7 @@
     <field name="Clean Fragment Write" size="1" start="9" type="bool"/>
     <field name="Primitive Barrier" size="1" start="10" type="bool"/>
     <field name="Evaluate per-sample" size="1" start="11" type="bool"/>
-    <field name="Single-sampled lines" size="1" start="13" type="bool"/>
+    <field name="Aligned line-ends" size="1" start="13" type="bool"/>
     <field name="Occlusion query" size="2" start="14" type="Occlusion Mode" default="Disabled"/>
     <field name="Front face CCW" size="1" start="16" type="bool"/>
     <field name="Cull front face" size="1" start="17" type="bool"/>
