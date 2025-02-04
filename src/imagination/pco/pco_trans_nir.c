@@ -1316,33 +1316,39 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
       instr = lower_alphatst(tctx, dest, src[0], src[1], src[2]);
       break;
 
-   case nir_intrinsic_depthf_pco:
+   case nir_intrinsic_isp_feedback_pco: {
       assert(tctx->stage == MESA_SHADER_FRAGMENT);
-      if (tctx->shader->data.fs.uses.depth_feedback &&
-          !tctx->shader->data.fs.uses.early_frag) {
-         instr = pco_depthf(&tctx->b, pco_ref_drc(PCO_DRC_0), src[0]);
-      } else {
-         return NULL;
+      bool does_discard = !nir_src_is_undef(intr->src[0]);
+      bool does_depthf = !nir_src_is_undef(intr->src[1]);
+
+      assert(does_depthf == (tctx->shader->data.fs.uses.depth_feedback &&
+                             !tctx->shader->data.fs.uses.early_frag));
+
+      if (does_discard) {
+         pco_tstz(&tctx->b,
+                  pco_ref_null(),
+                  pco_ref_pred(PCO_PRED_P0),
+                  src[0],
+                  .tst_type_main = PCO_TST_TYPE_MAIN_U32);
       }
-      break;
 
-   case nir_intrinsic_terminate:
-      instr = pco_alphaf(&tctx->b,
-                         pco_ref_null(),
-                         pco_ref_drc(PCO_DRC_0),
-                         pco_zero,
-                         pco_zero,
-                         pco_zero);
-      break;
+      instr = does_depthf ? pco_depthf(&tctx->b,
+                                       pco_ref_drc(PCO_DRC_0),
+                                       src[1],
+                                       .olchk = true)
+                          : pco_alphaf(&tctx->b,
+                                       pco_ref_null(),
+                                       pco_ref_drc(PCO_DRC_0),
+                                       pco_zero,
+                                       pco_zero,
+                                       pco_7,
+                                       .olchk = true);
 
-   case nir_intrinsic_terminate_if:
-      instr = pco_alphaf(&tctx->b,
-                         pco_ref_null(),
-                         pco_ref_drc(PCO_DRC_0),
-                         pco_zero,
-                         src[0],
-                         pco_2);
+      if (does_discard)
+         pco_instr_set_exec_cnd(instr, PCO_EXEC_CND_E1_Z1);
+
       break;
+   }
 
    case nir_intrinsic_mutex_pco:
       instr = pco_mutex(&tctx->b,

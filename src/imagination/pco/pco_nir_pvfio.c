@@ -36,6 +36,8 @@ struct pfo_state {
    nir_def *discard_cond_reg;
    bool has_discards;
 
+   bool has_sample_check;
+
    /* nir_instr *terminate; */
 
    pco_fs_data *fs; /** Fragment-specific data. */
@@ -922,6 +924,7 @@ static nir_def *lower_pfo(nir_builder *b, nir_instr *instr, void *cb_data)
          nir_def *cond = nir_ieq_imm(b, smp_msk, 0);
 
          state->has_discards = true;
+         state->has_sample_check = true;
          nir_def *val = nir_load_reg(b, state->discard_cond_reg);
          val = nir_ior(b, val, cond);
          nir_store_reg(b, val, state->discard_cond_reg);
@@ -958,7 +961,8 @@ static bool lower_isp_fb(nir_builder *b, struct pfo_state *state)
 {
    bool has_depth_feedback = !!state->depth_feedback_src;
 
-   assert(!(has_depth_feedback && state->has_discards));
+   if (!has_depth_feedback && !state->has_discards)
+      return false;
 
    /* Insert isp feedback instruction before the first store,
     * or if there are no stores, at the end.
@@ -970,14 +974,16 @@ static bool lower_isp_fb(nir_builder *b, struct pfo_state *state)
       b->cursor = nir_after_block(
          nir_impl_last_block(nir_shader_get_entrypoint(b->shader)));
 
-   if (has_depth_feedback) {
-      nir_depthf_pco(b, state->depth_feedback_src);
-      state->fs->uses.depth_feedback = true;
-   } else if (state->has_discards) {
-      nir_def *val = nir_load_reg(b, state->discard_cond_reg);
-      nir_terminate_if(b, val);
-      state->fs->uses.discard = true;
-   }
+   nir_def *undef = nir_undef(b, 1, 32);
+
+   nir_isp_feedback_pco(
+      b,
+      state->has_discards ? nir_i2b(b, nir_load_reg(b, state->discard_cond_reg))
+                          : undef,
+      state->depth_feedback_src ? state->depth_feedback_src : undef);
+
+   state->fs->uses.discard = state->has_discards;
+   state->fs->uses.depth_feedback = has_depth_feedback;
 
    return true;
 }
