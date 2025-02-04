@@ -592,7 +592,7 @@ mi_builder_test::submit_batch()
       struct drm_xe_sync exec_syncs[] = {
          {
             .type   = DRM_XE_SYNC_TYPE_SYNCOBJ,
-            .handle = sync_handles[0],
+            .addr   = 0,
          },
          {
             .type   = DRM_XE_SYNC_TYPE_SYNCOBJ,
@@ -600,7 +600,8 @@ mi_builder_test::submit_batch()
             .addr   = 0,
          }
       };
-      exec_syncs[0].handle = sync_handles[1];
+      exec_syncs[0].handle = sync_handles[0];
+      exec_syncs[1].handle = sync_handles[1];
 
       struct drm_xe_exec exec = {
          .exec_queue_id    = xe.queue_id,
