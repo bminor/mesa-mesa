@@ -335,9 +335,11 @@ if [ "$BUILD_VK" == "ON" ]; then
   DEQP_TARGET=default \
   . .gitlab-ci/container/build-deqp.sh
 
-  DEQP_API=VK-main \
-  DEQP_TARGET=default \
-  . .gitlab-ci/container/build-deqp.sh
+  if [ "$DEBIAN_ARCH" == "amd64" ]; then
+    DEQP_API=VK-main \
+    DEQP_TARGET=default \
+    . .gitlab-ci/container/build-deqp.sh
+  fi
 fi
 
 rm -rf /VK-GL-CTS
