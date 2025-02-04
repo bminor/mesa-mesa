@@ -2138,20 +2138,7 @@ struct anv_device {
        struct hash_table                        *map;
     }                                            embedded_samplers;
 
-    struct {
-       /**
-        * Mutex for the printfs array
-        */
-       simple_mtx_t                              mutex;
-       /**
-        * Buffer in which the shader printfs are stored
-        */
-       struct anv_bo                            *bo;
-       /**
-        * Array of pointers to u_printf_info
-        */
-       struct util_dynarray                      prints;
-    } printf;
+    struct u_printf_ctx printf;
 
     struct {
        simple_mtx_t  mutex;
@@ -2321,7 +2308,6 @@ VkResult anv_device_wait(struct anv_device *device, struct anv_bo *bo,
 
 VkResult anv_device_print_init(struct anv_device *device);
 void anv_device_print_fini(struct anv_device *device);
-void anv_device_print_shader_prints(struct anv_device *device);
 
 void anv_dump_bvh_to_files(struct anv_device *device);
 
@@ -2349,9 +2335,6 @@ anv_queue_post_submit(struct anv_queue *queue, VkResult submit_result)
       if (result != VK_SUCCESS)
          result = vk_queue_set_lost(&queue->vk, "sync wait failed");
    }
-
-   if (INTEL_DEBUG(DEBUG_SHADER_PRINT))
-      anv_device_print_shader_prints(queue->device);
 
 #if ANV_SUPPORT_RT && !ANV_SUPPORT_RT_GRL
    /* The recorded bvh is dumped to files upon command buffer completion */

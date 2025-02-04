@@ -22,6 +22,7 @@
 
 #include "i915/anv_device.h"
 #include "anv_private.h"
+#include "vk_debug_utils.h"
 
 #include "common/i915/intel_defines.h"
 #include "common/i915/intel_gem.h"
@@ -373,6 +374,12 @@ anv_i915_device_check_status(struct vk_device *vk_device)
    } else {
       result = anv_gem_context_get_reset_stats(device, device->context_id);
    }
+
+   if (result != VK_SUCCESS)
+      return result;
+
+   if (INTEL_DEBUG(DEBUG_SHADER_PRINT))
+      result = vk_check_printf_status(vk_device, &device->printf);
 
    return result;
 }

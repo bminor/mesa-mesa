@@ -22,6 +22,7 @@
 
 #include "xe/anv_device.h"
 #include "anv_private.h"
+#include "vk_debug_utils.h"
 
 #include "drm-uapi/gpu_scheduler.h"
 #include "drm-uapi/xe_drm.h"
@@ -207,6 +208,12 @@ anv_xe_device_check_status(struct vk_device *vk_device)
             return result;
       }
    }
+
+   if (result != VK_SUCCESS)
+      return result;
+
+   if (INTEL_DEBUG(DEBUG_SHADER_PRINT))
+      result = vk_check_printf_status(vk_device, &device->printf);
 
    return result;
 }
