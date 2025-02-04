@@ -44,7 +44,6 @@
 #ifndef PB_SLAB_H
 #define PB_SLAB_H
 
-#include "pb_buffer.h"
 #include "util/simple_mtx.h"
 #include "util/list.h"
 #include "util/u_thread.h"

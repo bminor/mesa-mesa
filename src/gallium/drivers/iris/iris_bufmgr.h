@@ -31,6 +31,7 @@
 
 #include "c11/threads.h"
 #include "common/intel_bind_timeline.h"
+#include "util/format/u_formats.h"
 #include "util/macros.h"
 #include "util/u_atomic.h"
 #include "util/u_dynarray.h"
