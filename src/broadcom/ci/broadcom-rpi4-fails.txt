@@ -589,16 +589,6 @@ arm32-KHR-GL31.transform_feedback3.multiple_streams,Fail
 arm32-KHR-GL31.transform_feedback3.skip_components,Fail
 arm32-KHR-GL31.transform_feedback3.skip_multiple_buffers,Fail
 
-# New fails since uprev VK-CTS 1.3.10.0
-dEQP-VK.draw.renderpass.non_line_with_params.vtx_lines_geom_points_mode_fill_line_raster_smooth,Fail
-dEQP-VK.draw.renderpass.non_line_with_params.vtx_lines_geom_points_mode_line_line_raster_smooth,Fail
-dEQP-VK.draw.renderpass.non_line_with_params.vtx_lines_geom_points_mode_point_line_raster_smooth,Fail
-dEQP-VK.draw.renderpass.non_line_with_params.vtx_lines_geom_triangles_mode_fill_line_raster_smooth,Fail
-dEQP-VK.draw.renderpass.non_line_with_params.vtx_lines_geom_triangles_mode_point_line_raster_smooth,Fail
-
-# New fails in 1.4.1.0
-asan-dEQP-VK.draw.renderpass.non_line_with_params.vtx_lines_geom_points_mode_point_line_raster_smooth,Fail
-
 ubsan-KHR-GL31.transform_feedback3.multiple_streams,Fail
 
 # This seems to be working with upstream
