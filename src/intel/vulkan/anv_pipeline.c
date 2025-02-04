@@ -946,6 +946,12 @@ lower_non_tg4_non_uniform_offsets(const nir_tex_instr *tex,
    return false;
 }
 
+static nir_def *
+build_tcs_input_vertices(nir_builder *b, nir_instr *instr, void *data)
+{
+   return anv_load_driver_uniform(b, 1, gfx.tcs_input_vertices);
+}
+
 static void
 anv_pipeline_lower_nir(struct anv_pipeline *pipeline,
                        void *mem_ctx,
@@ -996,9 +1002,11 @@ anv_pipeline_lower_nir(struct anv_pipeline *pipeline,
    /* The patch control points are delivered through a push constant when
     * dynamic.
     */
-   if (nir->info.stage == MESA_SHADER_TESS_CTRL &&
-       stage->key.tcs.input_vertices == 0)
-      NIR_PASS(_, nir, anv_nir_lower_load_patch_vertices_in);
+   if (nir->info.stage == MESA_SHADER_TESS_CTRL) {
+      NIR_PASS(_, nir, intel_nir_lower_patch_vertices_in,
+               stage->key.tcs.input_vertices,
+               build_tcs_input_vertices, NULL);
+   }
 
    nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
 
