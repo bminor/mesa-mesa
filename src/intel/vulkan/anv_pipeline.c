@@ -897,7 +897,7 @@ print_ubo_load(nir_builder *b,
       return false;
 
    b->cursor = nir_after_instr(&intrin->instr);
-   nir_printf_fmt(b, true, 64,
+   nir_printf_fmt(b, 64,
                   "uniform<= pos=%02.2fx%02.2f offset=0x%08x val=0x%08x\n",
                   nir_channel(b, nir_load_frag_coord(b), 0),
                   nir_channel(b, nir_load_frag_coord(b), 1),

@@ -2337,9 +2337,7 @@ nir_gen_rect_vertices(nir_builder *b, nir_def *z, nir_def *w);
 /* Emits a printf in the same way nir_lower_printf(). Each of the variadic
  * argument is a pointer to a nir_def value.
  */
-void nir_printf_fmt(nir_builder *b,
-                    bool use_printf_base_identifier,
-                    unsigned ptr_bit_size,
+void nir_printf_fmt(nir_builder *b, unsigned ptr_bit_size,
                     const char *fmt, ...);
 
 /* Call a serialized function. This is used internally by vtn_bindgen, it is not
