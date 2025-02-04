@@ -40,6 +40,9 @@ done
   git log --reverse --oneline $ANGLE_REV.. --format='- %s'
 } > /angle/version
 
+# Save the current git hash to /angle/hash after applying local patches
+git rev-parse HEAD > /angle/hash
+
 GCLIENT_CUSTOM_VARS=()
 GCLIENT_CUSTOM_VARS+=('--custom-var=angle_enable_cl=False')
 GCLIENT_CUSTOM_VARS+=('--custom-var=angle_enable_cl_testing=False')

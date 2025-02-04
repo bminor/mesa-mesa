@@ -170,10 +170,19 @@ $ADB shell start
 # Check what GLES implementation Surfaceflinger is using after copying the new mesa libraries
 while [ "$($ADB shell dumpsys SurfaceFlinger | grep GLES:)" = "" ] ; do sleep 1; done
 MESA_RUNTIME_VERSION="$($ADB shell dumpsys SurfaceFlinger | grep GLES:)"
-MESA_BUILD_VERSION=$(cat "$INSTALL/VERSION")
-if ! printf "%s" "$MESA_RUNTIME_VERSION" | grep "${MESA_BUILD_VERSION}$"; then
-    echo "Fatal: Android is loading a wrong version of the Mesa3D libs: ${MESA_RUNTIME_VERSION}" 1>&2
+
+if [ "$USE_ANGLE" = 1 ]; then
+  ANGLE_HASH=$(head -c 12 /angle/hash)
+  if ! printf "%s" "$MESA_RUNTIME_VERSION" | grep --quiet "${ANGLE_HASH}"; then
+    echo "Fatal: Android is loading a wrong version of the ANGLE libs: ${ANGLE_HASH}" 1>&2
     exit 1
+  fi
+else
+  MESA_BUILD_VERSION=$(cat "$INSTALL/VERSION")
+  if ! printf "%s" "$MESA_RUNTIME_VERSION" | grep --quiet "${MESA_BUILD_VERSION}$"; then
+     echo "Fatal: Android is loading a wrong version of the Mesa3D libs: ${MESA_RUNTIME_VERSION}" 1>&2
+     exit 1
+  fi
 fi
 
 BASELINE=""
