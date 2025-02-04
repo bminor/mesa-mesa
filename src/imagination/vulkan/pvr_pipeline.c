@@ -532,6 +532,7 @@ static VkResult pvr_pds_descriptor_program_create_and_upload(
       const pco_descriptor_set_data *desc_set_data =
          &data->common.desc_sets[desc_set];
       const pco_range *desc_set_range = &desc_set_data->range;
+      const pco_range *desc_set_dynamic_range = &desc_set_data->dynamic_range;
 
       /* If the descriptor set isn't for this stage or is unused, skip it. */
       if (!(BITFIELD_BIT(stage) & set_layout->stage_flags)) {
@@ -542,14 +543,23 @@ static VkResult pvr_pds_descriptor_program_create_and_upload(
       if (!desc_set_data->used)
          continue;
 
-      program.descriptor_sets[program.descriptor_set_count] =
-         (struct pvr_pds_descriptor_set){
-            .descriptor_set = desc_set,
-            .size_in_dwords = desc_set_range->count,
-            .destination = desc_set_range->start,
-         };
+      if (desc_set_range->count > 0) {
+         program.descriptor_sets[program.descriptor_set_count++] =
+            (struct pvr_pds_descriptor_set){
+               .descriptor_set = desc_set,
+               .size_in_dwords = desc_set_range->count,
+               .destination = desc_set_range->start,
+            };
+      }
 
-      program.descriptor_set_count++;
+      if (desc_set_dynamic_range->count > 0) {
+         program.buffers[program.buffer_count++] = (struct pvr_pds_buffer){
+            .type = PVR_BUFFER_TYPE_DYNAMIC,
+            .size_in_dwords = desc_set_dynamic_range->count,
+            .destination = desc_set_dynamic_range->start,
+            .desc_set = desc_set,
+         };
+      }
    }
 
    pds_info->entries = vk_alloc2(&device->vk.alloc,
@@ -2136,9 +2146,64 @@ static void pvr_setup_descriptors(pco_data *data,
             &set_layout->bindings[binding];
          pco_binding_data *binding_data = &desc_set_data->bindings[binding];
 
+         /* Skip dynamic buffer bindings. */
+         if (layout_binding->offset == ~0)
+            continue;
+
          binding_data->range = (pco_range){
             .start = desc_set_range->start +
                      (layout_binding->offset / sizeof(uint32_t)),
+            .count =
+               (layout_binding->stride * layout_binding->descriptor_count) /
+               sizeof(uint32_t),
+            .stride = layout_binding->stride / sizeof(uint32_t),
+         };
+      }
+   }
+
+   /* Allocate shareds for the dynamic descriptors. */
+   for (unsigned desc_set = 0; desc_set < layout->set_count; ++desc_set) {
+      const struct pvr_descriptor_set_layout *set_layout =
+         vk_to_pvr_descriptor_set_layout(layout->set_layouts[desc_set]);
+      const unsigned desc_set_dynamic_size_dw =
+         (set_layout->dynamic_buffer_count *
+          sizeof(struct pvr_buffer_descriptor)) /
+         sizeof(uint32_t);
+      pco_descriptor_set_data *desc_set_data =
+         &data->common.desc_sets[desc_set];
+      pco_range *desc_set_dynamic_range = &desc_set_data->dynamic_range;
+
+      if (!desc_set_dynamic_size_dw)
+         continue;
+
+      /* If the descriptor set isn't for this stage or is unused, skip it. */
+      if (!(BITFIELD_BIT(stage) & set_layout->stage_flags)) {
+         assert(!desc_set_data->used);
+         continue;
+      }
+
+      if (!desc_set_data->used)
+         continue;
+
+      desc_set_dynamic_range->start = data->common.shareds;
+      desc_set_dynamic_range->count = desc_set_dynamic_size_dw;
+      data->common.shareds += desc_set_dynamic_size_dw;
+
+      for (unsigned binding = 0; binding < set_layout->binding_count;
+           ++binding) {
+         const struct pvr_descriptor_set_layout_binding *layout_binding =
+            &set_layout->bindings[binding];
+         pco_binding_data *binding_data = &desc_set_data->bindings[binding];
+
+         /* Skip non-dynamic bindings. */
+         if (layout_binding->dynamic_buffer_idx == ~0)
+            continue;
+
+         binding_data->range = (pco_range){
+            .start = desc_set_dynamic_range->start +
+                     ((layout_binding->dynamic_buffer_idx *
+                       sizeof(struct pvr_buffer_descriptor)) /
+                      sizeof(uint32_t)),
             .count =
                (layout_binding->stride * layout_binding->descriptor_count) /
                sizeof(uint32_t),

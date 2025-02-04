@@ -2610,6 +2610,11 @@ void pvr_CmdBindDescriptorSets2KHR(
    const VkBindDescriptorSetsInfoKHR *pBindDescriptorSetsInfo)
 {
    PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(vk_pipeline_layout,
+                  pipeline_layout,
+                  pBindDescriptorSetsInfo->layout);
+   unsigned dyn_off = 0;
+   const bool has_dyn_offs = pBindDescriptorSetsInfo->dynamicOffsetCount > 0;
 
    PVR_CHECK_COMMAND_BUFFER_BUILDING_STATE(cmd_buffer);
 
@@ -2623,6 +2628,16 @@ void pvr_CmdBindDescriptorSets2KHR(
                      set,
                      pBindDescriptorSetsInfo->pDescriptorSets[u]);
       unsigned desc_set = u + pBindDescriptorSetsInfo->firstSet;
+
+      const struct pvr_descriptor_set_layout *set_layout =
+         vk_to_pvr_descriptor_set_layout(
+            pipeline_layout->set_layouts[desc_set]);
+
+      for (unsigned u = 0; u < set_layout->dynamic_buffer_count; ++u) {
+         set->dynamic_buffers[u].offset =
+            has_dyn_offs ? pBindDescriptorSetsInfo->pDynamicOffsets[dyn_off++]
+                         : 0;
+      }
 
       if (pBindDescriptorSetsInfo->stageFlags & VK_SHADER_STAGE_ALL_GRAPHICS) {
          if (graphics_desc_state->sets[desc_set] != set) {
@@ -2638,6 +2653,8 @@ void pvr_CmdBindDescriptorSets2KHR(
          }
       }
    }
+
+   assert(dyn_off == pBindDescriptorSetsInfo->dynamicOffsetCount);
 
    if (pBindDescriptorSetsInfo->stageFlags & VK_SHADER_STAGE_ALL_GRAPHICS)
       cmd_buffer->state.dirty.gfx_desc_dirty = true;
@@ -3650,6 +3667,32 @@ static VkResult pvr_setup_descriptor_mappings(
             (struct pvr_const_map_entry_special_buffer *)entries;
 
          switch (special_buff_entry->buffer_type) {
+         case PVR_BUFFER_TYPE_DYNAMIC: {
+            unsigned desc_set = special_buff_entry->data;
+            const struct pvr_descriptor_set *descriptor_set;
+            struct pvr_suballoc_bo *dynamic_desc_bo;
+
+            assert(desc_set < PVR_MAX_DESCRIPTOR_SETS);
+
+            descriptor_set = desc_state->sets[desc_set];
+            assert(descriptor_set);
+
+            result = pvr_cmd_buffer_upload_general(
+               cmd_buffer,
+               descriptor_set->dynamic_buffers,
+               special_buff_entry->size_in_dwords * sizeof(uint32_t),
+               &dynamic_desc_bo);
+
+            if (result != VK_SUCCESS)
+               return result;
+
+            PVR_WRITE(qword_buffer,
+                      dynamic_desc_bo->dev_addr.addr,
+                      special_buff_entry->const_offset,
+                      pds_info->data_size_in_dwords);
+            break;
+         }
+
          case PVR_BUFFER_TYPE_PUSH_CONSTS: {
             struct pvr_cmd_buffer_state *state = &cmd_buffer->state;
 

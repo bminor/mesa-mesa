@@ -143,6 +143,7 @@ typedef struct _pco_binding_data {
 /** PCO descriptor set data. */
 typedef struct _pco_descriptor_set_data {
    pco_range range; /** Descriptor location range. */
+   pco_range dynamic_range; /** Dynamic descriptor location range. */
 
    unsigned binding_count; /** Number of bindings. */
    pco_binding_data *bindings; /** Descriptor set bindings. */

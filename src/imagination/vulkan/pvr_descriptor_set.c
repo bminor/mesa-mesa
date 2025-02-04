@@ -77,6 +77,8 @@ static unsigned pvr_descriptor_size(VkDescriptorType type)
    switch (type) {
    case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
    case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+   case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
+   case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
       return sizeof(struct pvr_buffer_descriptor);
 
    case VK_DESCRIPTOR_TYPE_SAMPLER:
@@ -178,6 +180,7 @@ VkResult pvr_CreateDescriptorSetLayout(
    assert(!binding_flags_create_info ||
           binding_flags_create_info->bindingCount == binding_count);
 
+   unsigned dynamic_buffer_idx = 0;
    for (unsigned b = 0; b < pCreateInfo->bindingCount; ++b) {
       const VkDescriptorSetLayoutBinding *binding = &bindings[b];
 
@@ -187,10 +190,19 @@ VkResult pvr_CreateDescriptorSetLayout(
       struct pvr_descriptor_set_layout_binding *layout_binding =
          &layout_bindings[binding->binding];
 
-      layout_binding->offset = layout->size;
       layout_binding->stride = pvr_descriptor_size(binding->descriptorType);
 
-      layout->size += binding->descriptorCount * layout_binding->stride;
+      if (vk_descriptor_type_is_dynamic(binding->descriptorType)) {
+         layout_binding->offset = ~0;
+         layout_binding->dynamic_buffer_idx = dynamic_buffer_idx;
+
+         dynamic_buffer_idx += binding->descriptorCount;
+      } else {
+         layout_binding->dynamic_buffer_idx = ~0;
+         layout_binding->offset = layout->size;
+
+         layout->size += binding->descriptorCount * layout_binding->stride;
+      }
 
       layout_binding->type = binding->descriptorType;
 
@@ -216,6 +228,8 @@ VkResult pvr_CreateDescriptorSetLayout(
          }
       }
    }
+
+   assert(dynamic_buffer_count == dynamic_buffer_idx);
 
    free(bindings);
 
@@ -264,6 +278,9 @@ VkResult pvr_CreateDescriptorPool(VkDevice _device,
          const VkDescriptorType type = pCreateInfo->pPoolSizes[i].type;
          const uint32_t descriptor_count =
             pCreateInfo->pPoolSizes[i].descriptorCount;
+
+         if (vk_descriptor_type_is_dynamic(type))
+            continue;
 
          bo_size += descriptor_count * pvr_descriptor_size(type);
       }
@@ -368,6 +385,12 @@ VkResult pvr_ResetDescriptorPool(VkDevice _device,
    return VK_SUCCESS;
 }
 
+static void
+write_sampler(const struct pvr_descriptor_set *set,
+              const VkDescriptorImageInfo *image_info,
+              const struct pvr_descriptor_set_layout_binding *binding,
+              uint32_t elem);
+
 static VkResult
 pvr_descriptor_set_create(struct pvr_device *device,
                           struct pvr_descriptor_pool *pool,
@@ -375,13 +398,18 @@ pvr_descriptor_set_create(struct pvr_device *device,
                           struct pvr_descriptor_set **const descriptor_set_out)
 {
    struct pvr_descriptor_set *set;
+   unsigned set_alloc_size;
    VkResult result;
 
    *descriptor_set_out = NULL;
 
+   set_alloc_size = sizeof(*set);
+   set_alloc_size +=
+      layout->dynamic_buffer_count * sizeof(*set->dynamic_buffers);
+
    set = vk_object_zalloc(&device->vk,
                           &pool->alloc,
-                          sizeof(*set),
+                          set_alloc_size,
                           VK_OBJECT_TYPE_DESCRIPTOR_SET);
    if (!set)
       return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
@@ -398,6 +426,19 @@ pvr_descriptor_set_create(struct pvr_device *device,
    set->pool = pool;
 
    list_addtail(&set->link, &pool->desc_sets);
+
+   /* Setup immutable samplers. */
+   for (unsigned u = 0; u < layout->binding_count; ++u) {
+      const struct pvr_descriptor_set_layout_binding *binding =
+         &layout->bindings[u];
+
+      if (binding->type == VK_DESCRIPTOR_TYPE_SAMPLER &&
+          binding->immutable_samplers) {
+         for (uint32_t j = 0; j < binding->descriptor_count; j++) {
+            write_sampler(set, NULL, binding, j);
+         }
+      }
+   }
 
    *descriptor_set_out = set;
 
@@ -496,19 +537,44 @@ write_buffer(const struct pvr_descriptor_set *set,
 }
 
 static void
+write_dynamic_buffer(struct pvr_descriptor_set *set,
+                     const VkDescriptorBufferInfo *buffer_info,
+                     const struct pvr_descriptor_set_layout_binding *binding,
+                     uint32_t elem)
+{
+   VK_FROM_HANDLE(pvr_buffer, buffer, buffer_info->buffer);
+   assert(binding->dynamic_buffer_idx != ~0);
+   const unsigned desc_offset = binding->dynamic_buffer_idx + elem;
+   struct pvr_buffer_descriptor *desc_mapping =
+      &set->dynamic_buffers[desc_offset];
+
+   const pvr_dev_addr_t buffer_addr =
+      PVR_DEV_ADDR_OFFSET(buffer->dev_addr, buffer_info->offset);
+
+   UNUSED uint32_t range =
+      vk_buffer_range(&buffer->vk, buffer_info->offset, buffer_info->range);
+
+   desc_mapping->addr = buffer_addr.addr;
+   desc_mapping->size = range;
+}
+
+static void
 write_sampler(const struct pvr_descriptor_set *set,
               const VkDescriptorImageInfo *image_info,
               const struct pvr_descriptor_set_layout_binding *binding,
               uint32_t elem)
 {
-   PVR_FROM_HANDLE(pvr_sampler, info_sampler, image_info->sampler);
-
    const unsigned desc_offset = binding->offset + (elem * binding->stride);
    void *desc_mapping = (uint8_t *)set->mapping + desc_offset;
+   struct pvr_sampler *sampler;
 
-   struct pvr_sampler *sampler = binding->immutable_sampler_count
-                                    ? binding->immutable_samplers[elem]
-                                    : info_sampler;
+   if (binding->immutable_sampler_count) {
+      sampler = binding->immutable_samplers[elem];
+   } else {
+      assert(image_info);
+      PVR_FROM_HANDLE(pvr_sampler, info_sampler, image_info->sampler);
+      sampler = info_sampler;
+   }
 
    struct pvr_sampler_descriptor sampler_desc = sampler->descriptor;
    memcpy(desc_mapping, &sampler_desc, sizeof(sampler_desc));
@@ -670,6 +736,16 @@ void pvr_UpdateDescriptorSets(VkDevice _device,
          }
          break;
 
+      case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
+      case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
+         for (uint32_t j = 0; j < write->descriptorCount; j++) {
+            write_dynamic_buffer(set,
+                                 &write->pBufferInfo[j],
+                                 binding,
+                                 write->dstArrayElement + j);
+         }
+         break;
+
       case VK_DESCRIPTOR_TYPE_SAMPLER:
          for (uint32_t j = 0; j < write->descriptorCount; j++) {
             write_sampler(set,
@@ -759,6 +835,19 @@ void pvr_UpdateDescriptorSets(VkDevice _device,
          continue;
 
       assert(src_binding->stride == dst_binding->stride);
+
+      if (vk_descriptor_type_is_dynamic(src_binding->type)) {
+         const unsigned src_desc_offset =
+            src_binding->dynamic_buffer_idx + copy->srcArrayElement;
+         const unsigned dst_desc_offset =
+            dst_binding->dynamic_buffer_idx + copy->dstArrayElement;
+
+         memcpy(&dst_set->dynamic_buffers[dst_desc_offset],
+                &src_set->dynamic_buffers[src_desc_offset],
+                sizeof(*src_set->dynamic_buffers) * copy->descriptorCount);
+
+         continue;
+      }
 
       if (src_binding->stride > 0) {
          for (uint32_t j = 0; j < copy->descriptorCount; j++) {

@@ -1075,6 +1075,9 @@ struct pvr_const_map_entry_special_buffer {
 
    uint8_t buffer_type;
    uint32_t buffer_index;
+
+   uint32_t size_in_dwords;
+   uint32_t data;
 } PVR_PACKED;
 
 struct pvr_const_map_entry_doutu_address {

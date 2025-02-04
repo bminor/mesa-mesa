@@ -194,7 +194,7 @@ enum pvr_query_type {
 struct pvr_buffer_descriptor {
    uint64_t addr;
    uint32_t size;
-   uint32_t rsvd;
+   uint32_t offset;
 } PACKED;
 static_assert(sizeof(struct pvr_buffer_descriptor) == 4 * sizeof(uint32_t),
               "pvr_buffer_descriptor size is invalid.");
@@ -245,6 +245,7 @@ struct pvr_descriptor_set_layout_binding {
    struct pvr_sampler **immutable_samplers;
 
    unsigned offset; /** Offset within the descriptor set. */
+   unsigned dynamic_buffer_idx;
    unsigned stride; /** Stride of each descriptor in this binding. */
 };
 
@@ -302,6 +303,7 @@ struct pvr_descriptor {
 
 struct pvr_descriptor_set {
    struct vk_object_base base;
+   struct list_head link; /** Link in pvr_descriptor_pool::desc_sets. */
 
    struct pvr_descriptor_set_layout *layout;
    struct pvr_descriptor_pool *pool;
@@ -310,7 +312,7 @@ struct pvr_descriptor_set {
    pvr_dev_addr_t dev_addr; /** Descriptor set device address. */
    void *mapping; /** Descriptor set CPU mapping. */
 
-   struct list_head link; /** Link in pvr_descriptor_pool::desc_sets. */
+   struct pvr_buffer_descriptor dynamic_buffers[];
 };
 
 struct pvr_event {

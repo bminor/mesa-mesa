@@ -720,8 +720,23 @@ static pco_instr *trans_load_buffer(trans_ctx *tctx,
                 pco_ref_null(),
                 .s = true);
 
+   pco_ref addr_comps_dyn_off[2];
+   pco_ref_new_ssa_addr_comps(tctx->func, addr_comps_dyn_off);
+
+   pco_ref dyn_off_reg = pco_ref_hwreg(sh_index, PCO_REG_CLASS_SHARED);
+   dyn_off_reg = pco_ref_offset(dyn_off_reg, 3);
+
+   pco_add64_32(&tctx->b,
+                addr_comps_dyn_off[0],
+                addr_comps_dyn_off[1],
+                addr_comps[0],
+                addr_comps[1],
+                dyn_off_reg,
+                pco_ref_null(),
+                .s = true);
+
    pco_ref addr = pco_ref_new_ssa_addr(tctx->func);
-   pco_vec(&tctx->b, addr, ARRAY_SIZE(addr_comps), addr_comps);
+   pco_vec(&tctx->b, addr, ARRAY_SIZE(addr_comps_dyn_off), addr_comps_dyn_off);
 
    return pco_ld(&tctx->b,
                  dest,
@@ -770,22 +785,40 @@ static pco_instr *trans_store_buffer(trans_ctx *tctx,
    pco_ref base_addr[2];
    pco_ref_hwreg_addr_comps(sh_index, PCO_REG_CLASS_SHARED, base_addr);
 
-   pco_ref addr_data_comps[3] = {
-      [2] = data_src,
-   };
-   pco_ref_new_ssa_addr_comps(tctx->func, addr_data_comps);
+   pco_ref addr_comps[2];
+   pco_ref_new_ssa_addr_comps(tctx->func, addr_comps);
 
    pco_add64_32(&tctx->b,
-                addr_data_comps[0],
-                addr_data_comps[1],
+                addr_comps[0],
+                addr_comps[1],
                 base_addr[0],
                 base_addr[1],
                 offset_src,
                 pco_ref_null(),
                 .s = true);
 
+   pco_ref addr_data_comps_dyn_off[3] = {
+      [2] = data_src,
+   };
+   pco_ref_new_ssa_addr_comps(tctx->func, addr_data_comps_dyn_off);
+
+   pco_ref dyn_off_reg = pco_ref_hwreg(sh_index, PCO_REG_CLASS_SHARED);
+   dyn_off_reg = pco_ref_offset(dyn_off_reg, 3);
+
+   pco_add64_32(&tctx->b,
+                addr_data_comps_dyn_off[0],
+                addr_data_comps_dyn_off[1],
+                addr_comps[0],
+                addr_comps[1],
+                dyn_off_reg,
+                pco_ref_null(),
+                .s = true);
+
    pco_ref addr_data = pco_ref_new_ssa_addr_data(tctx->func, chans);
-   pco_vec(&tctx->b, addr_data, ARRAY_SIZE(addr_data_comps), addr_data_comps);
+   pco_vec(&tctx->b,
+           addr_data,
+           ARRAY_SIZE(addr_data_comps_dyn_off),
+           addr_data_comps_dyn_off);
 
    pco_ref data_comp = pco_ref_new_ssa(tctx->func,
                                        pco_ref_get_bits(data_src),
@@ -866,22 +899,40 @@ static pco_instr *trans_atomic_buffer(trans_ctx *tctx,
    pco_ref base_addr[2];
    pco_ref_hwreg_addr_comps(sh_index, PCO_REG_CLASS_SHARED, base_addr);
 
-   pco_ref addr_data_comps[3] = {
-      [2] = data_src,
-   };
-   pco_ref_new_ssa_addr_comps(tctx->func, addr_data_comps);
+   pco_ref addr_comps[2];
+   pco_ref_new_ssa_addr_comps(tctx->func, addr_comps);
 
    pco_add64_32(&tctx->b,
-                addr_data_comps[0],
-                addr_data_comps[1],
+                addr_comps[0],
+                addr_comps[1],
                 base_addr[0],
                 base_addr[1],
                 offset_src,
                 pco_ref_null(),
                 .s = true);
 
+   pco_ref addr_data_comps_dyn_off[3] = {
+      [2] = data_src,
+   };
+   pco_ref_new_ssa_addr_comps(tctx->func, addr_data_comps_dyn_off);
+
+   pco_ref dyn_off_reg = pco_ref_hwreg(sh_index, PCO_REG_CLASS_SHARED);
+   dyn_off_reg = pco_ref_offset(dyn_off_reg, 3);
+
+   pco_add64_32(&tctx->b,
+                addr_data_comps_dyn_off[0],
+                addr_data_comps_dyn_off[1],
+                addr_comps[0],
+                addr_comps[1],
+                dyn_off_reg,
+                pco_ref_null(),
+                .s = true);
+
    pco_ref addr_data = pco_ref_new_ssa_addr_data(tctx->func, chans);
-   pco_vec(&tctx->b, addr_data, ARRAY_SIZE(addr_data_comps), addr_data_comps);
+   pco_vec(&tctx->b,
+           addr_data,
+           ARRAY_SIZE(addr_data_comps_dyn_off),
+           addr_data_comps_dyn_off);
 
    switch (bits) {
    case 32:
