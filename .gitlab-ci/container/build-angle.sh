@@ -39,23 +39,43 @@ done
   git log --reverse --oneline $ANGLE_REV.. --format='- %s'
 } > /angle/version
 
+GCLIENT_CUSTOM_VARS=()
+GCLIENT_CUSTOM_VARS+=('--custom-var=angle_enable_cl=False')
+GCLIENT_CUSTOM_VARS+=('--custom-var=angle_enable_cl_testing=False')
+GCLIENT_CUSTOM_VARS+=('--custom-var=angle_enable_vulkan_validation_layers=False')
+GCLIENT_CUSTOM_VARS+=('--custom-var=angle_enable_wgpu=False')
+GCLIENT_CUSTOM_VARS+=('--custom-var=build_allow_regenerate=False')
+GCLIENT_CUSTOM_VARS+=('--custom-var=build_angle_deqp_tests=False')
+GCLIENT_CUSTOM_VARS+=('--custom-var=build_angle_perftests=False')
+GCLIENT_CUSTOM_VARS+=('--custom-var=build_with_catapult=False')
+GCLIENT_CUSTOM_VARS+=('--custom-var=build_with_swiftshader=False')
+if [[ "$ANGLE_TARGET" == "android" ]]; then
+  GCLIENT_CUSTOM_VARS+=('--custom-var=checkout_android=True')
+fi
+
 # source preparation
 gclient config --name REPLACE-WITH-A-DOT --unmanaged \
-  --custom-var='angle_enable_cl=False' \
-  --custom-var='angle_enable_cl_testing=False' \
-  --custom-var='angle_enable_vulkan_validation_layers=False' \
-  --custom-var='angle_enable_wgpu=False' \
-  --custom-var='build_allow_regenerate=False' \
-  --custom-var='build_angle_deqp_tests=False' \
-  --custom-var='build_angle_perftests=False' \
-  --custom-var='build_with_catapult=False' \
-  --custom-var='build_with_swiftshader=False' \
+  "${GCLIENT_CUSTOM_VARS[@]}" \
   https://chromium.googlesource.com/angle/angle.git
 sed -e 's/REPLACE-WITH-A-DOT/./;' -i .gclient
 gclient sync -j"${FDO_CI_CONCURRENT:-4}"
 
+# TODO: The following patch seems necessary to avoid some errors when running
+# `gn gen out/Release` for Android, investigate and see if there is a better
+# way to handle this.
+angle_build_patch_files=(
+  build-angle-build_deps_fix-build-error.patch
+)
+pushd build/
+for patch in "${angle_build_patch_files[@]}"; do
+  echo "Apply patch to ANGLE build from ${patch}"
+  GIT_COMMITTER_DATE="$(LC_TIME=C date -d@0)" git am < "${ANGLE_PATCH_DIR}/${patch}"
+done
+popd
+
 mkdir -p out/Release
-echo '
+cat > out/Release/args.gn <<EOF
+angle_assert_always_on=false
 angle_build_all=false
 angle_build_tests=false
 angle_enable_cl=false
@@ -71,14 +91,31 @@ angle_enable_vulkan_api_dump_layer=false
 angle_enable_vulkan_validation_layers=false
 angle_has_frame_capture=false
 angle_has_histograms=false
+angle_has_rapidjson=false
 angle_use_custom_libvulkan=false
-angle_egl_extension="so.1"
-angle_glesv2_extension="so.2"
 build_angle_deqp_tests=false
 dcheck_always_on=true
 enable_expensive_dchecks=false
+is_component_build=false
 is_debug=false
-' > out/Release/args.gn
+target_cpu="${ANGLE_ARCH}"
+EOF
+
+case "$ANGLE_TARGET" in
+  linux) cat >> out/Release/args.gn <<EOF
+angle_egl_extension="so.1"
+angle_glesv2_extension="so.2"
+EOF
+    ;;
+  android) cat >> out/Release/args.gn <<EOF
+target_os="android"
+android_ndk_version="${ANDROID_NDK_VERSION}"
+android64_ndk_api_level=${ANDROID_SDK_VERSION}
+android32_ndk_api_level=${ANDROID_SDK_VERSION}
+EOF
+    ;;
+    *) echo "Unexpected ANGLE_TARGET value: $ANGLE_TARGET"; exit 1;;
+esac
 
 if [[ "$DEBIAN_ARCH" = "arm64" ]]; then
   build/linux/sysroot_scripts/install-sysroot.py --arch=arm64
@@ -87,12 +124,15 @@ fi
 gn gen out/Release
 # depot_tools overrides ninja with a version that doesn't work.  We want
 # ninja with FDO_CI_CONCURRENT anyway.
-/usr/local/bin/ninja -C out/Release/ libEGL libGLESv2
+/usr/local/bin/ninja -C out/Release/ libEGL libGLESv1_CM libGLESv2
 
-rm -f out/Release/libvulkan.so* out/Release/*.so.TOC
+rm -f out/Release/libvulkan.so* out/Release/*.so*.TOC
 cp out/Release/lib*.so* /angle/
-ln -s libEGL.so.1 /angle/libEGL.so
-ln -s libGLESv2.so.2 /angle/libGLESv2.so
+
+if [[ "$ANGLE_TARGET" == "linux" ]]; then
+  ln -s libEGL.so.1 /angle/libEGL.so
+  ln -s libGLESv2.so.2 /angle/libGLESv2.so
+fi
 
 rm -rf out
 
