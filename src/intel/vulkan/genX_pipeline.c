@@ -1598,7 +1598,6 @@ emit_3dstate_ps(struct anv_graphics_pipeline *pipeline,
       ps.BindingTableEntryCount     = fs_bin->bind_map.surface_count;
 #if GFX_VER < 20
       ps.PushConstantEnable         =
-         devinfo->needs_null_push_constant_tbimr_workaround ||
          wm_prog_data->base.nr_params > 0 ||
          wm_prog_data->base.ubo_ranges[0].length;
 #endif
