@@ -2310,6 +2310,17 @@ vn_image_store_format_in_cache(
    simple_mtx_unlock(&cache->mutex);
 }
 
+static inline void
+vn_sanitize_image_format_properties(
+   const VkPhysicalDeviceImageFormatInfo2 *info,
+   VkImageFormatProperties2 *props)
+{
+   /* TODO drop this after supporting VK_EXT_rgba10x6_formats */
+   if (info->format == VK_FORMAT_R10X6G10X6B10X6A10X6_UNORM_4PACK16) {
+      props->imageFormatProperties.sampleCounts = VK_SAMPLE_COUNT_1_BIT;
+   }
+}
+
 VkResult
 vn_GetPhysicalDeviceImageFormatProperties2(
    VkPhysicalDevice physicalDevice,
@@ -2448,6 +2459,11 @@ vn_GetPhysicalDeviceImageFormatProperties2(
                                          &result, key))) {
       result = vn_call_vkGetPhysicalDeviceImageFormatProperties2(
          ring, physicalDevice, pImageFormatInfo, pImageFormatProperties);
+
+      if (result == VK_SUCCESS) {
+         vn_sanitize_image_format_properties(pImageFormatInfo,
+                                             pImageFormatProperties);
+      }
 
       /* If cacheable, cache successful and unsupported results. */
       if (cacheable &&
