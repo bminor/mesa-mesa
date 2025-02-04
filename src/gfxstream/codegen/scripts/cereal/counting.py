@@ -568,10 +568,10 @@ class VulkanCounting(VulkanWrapperGenerator):
             def structCountingDef(cgen):
                 self.countingCodegen.cgen = cgen
                 self.countingCodegen.currentStructInfo = structInfo
-                cgen.stmt("(void)%s" % self.featureBitsVar);
-                cgen.stmt("(void)%s" % self.rootTypeVar);
-                cgen.stmt("(void)%s" % self.countVars[0]);
-                cgen.stmt("(void)%s" % self.countVars[1]);
+                cgen.stmt("(void)%s" % self.featureBitsVar)
+                cgen.stmt("(void)%s" % self.rootTypeVar)
+                cgen.stmt("(void)%s" % self.countVars[0])
+                cgen.stmt("(void)%s" % self.countVars[1])
 
                 if category == "struct":
                     # marshal 'let' parameters first
@@ -587,10 +587,10 @@ class VulkanCounting(VulkanWrapperGenerator):
                 self.countingCodegen.cgen = cgen
                 self.countingCodegen.currentStructInfo = structInfo
                 self.countingCodegen.doFiltering = False
-                cgen.stmt("(void)%s" % self.featureBitsVar);
-                cgen.stmt("(void)%s" % self.rootTypeVar);
-                cgen.stmt("(void)%s" % self.countVars[0]);
-                cgen.stmt("(void)%s" % self.countVars[1]);
+                cgen.stmt("(void)%s" % self.featureBitsVar)
+                cgen.stmt("(void)%s" % self.rootTypeVar)
+                cgen.stmt("(void)%s" % self.countVars[0])
+                cgen.stmt("(void)%s" % self.countVars[1])
 
                 if category == "struct":
                     # marshal 'let' parameters first
