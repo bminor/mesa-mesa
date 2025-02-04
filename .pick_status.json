@@ -274,7 +274,7 @@
         "description": "Revert \"st/mesa: move VS & TES output stores to the end before unlowering IO\"",
         "nominated": true,
         "nomination_type": 3,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "3290222a1a56169c5187e85e0ce61b3da861a820",
         "notes": null
