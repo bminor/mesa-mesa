@@ -964,6 +964,25 @@ get_dirty_rects_support(D3D12_VIDEO_ENCODER_INPUT_MAP_SESSION_INFO sessionInfo,
       }
    }
 
+   // If still there is no support, check if for HEVC there is also a need to disable SAO/LOOP filters
+   if(!support.bits.supports_info_type_dirty &&
+      (sessionInfo.Codec == D3D12_VIDEO_ENCODER_CODEC_HEVC))
+   {
+      // Turn on disabling loop filter flag
+      sessionInfo.CodecConfiguration.pHEVCConfig->ConfigurationFlags |= D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION_HEVC_FLAG_DISABLE_LOOP_FILTER_ACROSS_SLICES;
+      // Turn off enabling SAO filter flag
+      sessionInfo.CodecConfiguration.pHEVCConfig->ConfigurationFlags &= ~D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION_HEVC_FLAG_ENABLE_SAO_FILTER;
+      support = query_dirty_rects_support(sessionInfo, pD3D12VideoDevice, mapSource);
+      if (support.bits.supports_info_type_dirty)
+      {
+         // If there is support, mark it as requiring special configuration
+         support.bits.supports_require_auto_slice_mode = 1u; // This was included in the changes to sessionInfo above.
+         support.bits.supports_require_sao_filter_disabled = 1u;
+         support.bits.supports_require_loop_filter_disabled = 1u;
+
+      }
+   }
+
    return support;
 }
 
