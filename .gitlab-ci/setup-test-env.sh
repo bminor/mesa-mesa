@@ -86,6 +86,12 @@ function _uncollapsed_section_switch {
     x_restore
 }
 
+_error_msg() (
+    x_off
+    RED="\e[0;31m"
+    ENDCOLOR="\e[0m"
+    echo -e "${RED}$*${ENDCOLOR}"
+)
 
 function x_store_state {
     _x_store_state >/dev/null 2>/dev/null
@@ -142,6 +148,7 @@ export -f x_store_state
 
 export -f _build_section_end
 export -f _build_section_start
+export -f _error_msg
 export -f _section_end
 export -f _section_start
 export -f _section_switch
@@ -151,7 +158,6 @@ export -f _x_off
 export -f _x_restore
 export -f _x_store_state
 export -f get_current_minsec
-
 # Freedesktop requirement (needed for Wayland)
 [ -n "${XDG_RUNTIME_DIR:-}" ] || export XDG_RUNTIME_DIR="$(mktemp -p "$PWD" -d xdg-runtime-XXXXXX)"
 
@@ -164,8 +170,6 @@ if [ -z "${RESULTS_DIR:-}" ]; then
 fi
 
 function error {
-    RED="\e[0;31m"
-    ENDCOLOR="\e[0m"
     # we force the following to be not in a section
     if [ -n "${CURRENT_SECTION:-}" ]; then
       section_end $CURRENT_SECTION
@@ -173,7 +177,8 @@ function error {
     fi
 
     CURR_MINSEC=$(get_current_minsec)
-    echo -e "\n${RED}[${CURR_MINSEC}] ERROR: $*${ENDCOLOR}\n"
+    echo -e "\n"
+    _error_msg "[$CURR_MINSEC] ERROR: $*"
     x_restore
 }
 
