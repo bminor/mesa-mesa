@@ -335,7 +335,7 @@ struct vk_meta_push_data {
       nir_imm_int(b, offsetof(struct vk_meta_push_data, name)))
 
 struct vk_meta_image_copy_key {
-   enum hk_meta_object_key_type key_type;
+   enum vk_meta_object_key_type key_type;
    enum copy_type type;
    enum pipe_format src_format, dst_format;
    unsigned block_size;
@@ -624,14 +624,14 @@ get_image_copy_descriptor_set_layout(struct vk_device *device,
                                      VkDescriptorSetLayout *layout_out,
                                      enum copy_type type)
 {
-   enum hk_meta_object_key_type keys[] = {
-      [IMG2BUF] = HK_META_OBJECT_KEY_COPY_IMAGE_TO_BUFFER,
-      [BUF2IMG] = HK_META_OBJECT_KEY_COPY_BUFFER_TO_IMAGE,
-      [IMG2IMG] = HK_META_OBJECT_KEY_COPY_IMAGE,
+   const char *keys[] = {
+      [IMG2BUF] = "vk-meta-copy-image-to-buffer-descriptor-set-layout",
+      [BUF2IMG] = "vk-meta-copy-buffer-to-image-descriptor-set-layout",
+      [IMG2IMG] = "vk-meta-copy-image-to-image-descriptor-set-layout",
    };
 
    VkDescriptorSetLayout from_cache = vk_meta_lookup_descriptor_set_layout(
-      meta, keys[type], sizeof(keys[type]));
+      meta, keys[type], strlen(keys[type]));
    if (from_cache != VK_NULL_HANDLE) {
       *layout_out = from_cache;
       return VK_SUCCESS;
@@ -659,7 +659,7 @@ get_image_copy_descriptor_set_layout(struct vk_device *device,
    };
 
    return vk_meta_create_descriptor_set_layout(device, meta, &info, keys[type],
-                                               sizeof(keys[type]), layout_out);
+                                               strlen(keys[type]), layout_out);
 }
 
 static VkResult
@@ -670,14 +670,14 @@ get_image_copy_pipeline_layout(struct vk_device *device,
                                VkPipelineLayout *layout_out,
                                enum copy_type type)
 {
-   enum hk_meta_object_key_type keys[] = {
-      [IMG2BUF] = HK_META_OBJECT_KEY_COPY_IMAGE_TO_BUFFER,
-      [BUF2IMG] = HK_META_OBJECT_KEY_COPY_BUFFER_TO_IMAGE,
-      [IMG2IMG] = HK_META_OBJECT_KEY_COPY_IMAGE,
+   const char *keys[] = {
+      [IMG2BUF] = "vk-meta-copy-image-to-buffer-pipeline-layout",
+      [BUF2IMG] = "vk-meta-copy-buffer-to-image-pipeline-layout",
+      [IMG2IMG] = "vk-meta-copy-image-to-image-pipeline-layout",
    };
 
    VkPipelineLayout from_cache =
-      vk_meta_lookup_pipeline_layout(meta, keys[type], sizeof(keys[type]));
+      vk_meta_lookup_pipeline_layout(meta, keys[type], strlen(keys[type]));
    if (from_cache != VK_NULL_HANDLE) {
       *layout_out = from_cache;
       return VK_SUCCESS;
@@ -699,7 +699,7 @@ get_image_copy_pipeline_layout(struct vk_device *device,
    info.pPushConstantRanges = &push_range;
 
    return vk_meta_create_pipeline_layout(device, meta, &info, keys[type],
-                                         sizeof(keys[type]), layout_out);
+                                         strlen(keys[type]), layout_out);
 }
 
 static VkResult
@@ -797,7 +797,7 @@ hk_meta_copy_image_to_buffer2(struct vk_command_buffer *cmd,
          bool is_3d = region->imageExtent.depth > 1;
 
          struct vk_meta_image_copy_key key = {
-            .key_type = HK_META_OBJECT_KEY_COPY_IMAGE_TO_BUFFER,
+            .key_type = VK_META_OBJECT_KEY_COPY_IMAGE_TO_BUFFER,
             .type = IMG2BUF,
             .block_size = blocksize_B,
             .nr_samples = image->samples,
@@ -982,7 +982,7 @@ hk_meta_copy_buffer_to_image2(struct vk_command_buffer *cmd,
          bool is_3d = region->imageExtent.depth > 1;
 
          struct vk_meta_image_copy_key key = {
-            .key_type = HK_META_OBJECT_KEY_COPY_IMAGE_TO_BUFFER,
+            .key_type = VK_META_OBJECT_KEY_COPY_IMAGE_TO_BUFFER,
             .type = BUF2IMG,
             .block_size = blocksize_B,
             .nr_samples = image->samples,
@@ -1141,7 +1141,7 @@ hk_meta_copy_image2(struct vk_command_buffer *cmd, struct vk_meta_device *meta,
                   : (1 << aspect);
 
             struct vk_meta_image_copy_key key = {
-               .key_type = HK_META_OBJECT_KEY_COPY_IMAGE_TO_BUFFER,
+               .key_type = VK_META_OBJECT_KEY_COPY_IMAGE_TO_BUFFER,
                .type = IMG2IMG,
                .block_size = blocksize_B,
                .nr_samples = dst_image->samples,

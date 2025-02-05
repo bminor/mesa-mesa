@@ -811,9 +811,3 @@ void hk_dispatch_precomp(struct hk_cs *cs, struct agx_grid grid,
 
 void hk_queue_write(struct hk_cmd_buffer *cmd, uint64_t address, uint32_t value,
                     bool after_gfx);
-
-enum hk_meta_object_key_type {
-   HK_META_OBJECT_KEY_COPY_IMAGE_TO_BUFFER = VK_META_OBJECT_KEY_DRIVER_OFFSET,
-   HK_META_OBJECT_KEY_COPY_BUFFER_TO_IMAGE,
-   HK_META_OBJECT_KEY_COPY_IMAGE,
-};
