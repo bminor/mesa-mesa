@@ -1897,7 +1897,7 @@ ntt_emit_load_ubo(struct ntt_compile *c, nir_intrinsic_instr *instr)
        * subtracting it off here.
        */
       addr_temp = ntt_temp(c);
-      ntt_UADD(c, addr_temp, ntt_get_src(c, instr->src[0]), ureg_imm1i(c->ureg, -c->first_ubo));
+      ntt_UADD(c, addr_temp, ntt_get_src(c, instr->src[0]), ureg_imm1i(c->ureg, (0 - c->first_ubo)));
       src = ureg_src_dimension_indirect(src,
                                          ntt_reladdr(c, ureg_src(addr_temp), 1),
                                          c->first_ubo);
