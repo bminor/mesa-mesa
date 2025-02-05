@@ -16,7 +16,7 @@ tex_handle_as_cbuf(nir_def *tex_h, uint32_t *cbuf_out)
       return false;
 
    nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(tex_h->parent_instr);
-   if (intrin->intrinsic != nir_intrinsic_load_ubo)
+   if (intrin->intrinsic != nir_intrinsic_ldc_nv)
       return false;
 
    if (!nir_src_is_const(intrin->src[1]))
