@@ -50,3 +50,5 @@ spec@arb_query_buffer_object@coherency@indirect-draw-GL_GEOMETRY_SHADER_PRIMITIV
 spec@arb_query_buffer_object@coherency@indirect-draw-count-GL_GEOMETRY_SHADER_INVOCATIONS
 spec@arb_query_buffer_object@coherency@indirect-draw-count-GL_GEOMETRY_SHADER_PRIMITIVES_EMITTED
 spec@ext_timer_query@time-elapsed
+
+spec@arb_shader_texture_lod@execution@glsl-fs-shadow2dgradarb-cumulative
