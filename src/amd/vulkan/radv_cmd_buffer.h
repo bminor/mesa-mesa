@@ -478,6 +478,7 @@ struct radv_cmd_state {
    uint8_t vtx_emit_num;
    bool uses_drawid;
    bool uses_baseinstance;
+   bool can_use_simple_vertex_input;
 
    bool uses_out_of_order_rast;
    bool uses_vrs;
