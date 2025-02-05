@@ -4871,8 +4871,8 @@ lookup_vs_prolog(struct radv_cmd_buffer *cmd_buffer, const struct radv_shader *v
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const struct radv_vertex_input_state *vi_state = &cmd_buffer->state.vertex_input;
 
-   unsigned num_attributes = util_last_bit(vs_shader->info.vs.vb_desc_usage_mask);
-   uint32_t attribute_mask = BITFIELD_MASK(num_attributes);
+   unsigned num_attributes = vs_shader->info.vs.num_attributes;
+   uint32_t attribute_mask = vs_shader->info.vs.vb_desc_usage_mask;
 
    uint32_t instance_rate_inputs = vi_state->instance_rate_inputs & attribute_mask;
    uint32_t zero_divisors = vi_state->zero_divisors & attribute_mask;
