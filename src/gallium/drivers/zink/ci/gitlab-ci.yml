@@ -43,6 +43,7 @@ zink-venus-lvp:
 zink-venus-lvp-full:
   extends:
     - zink-venus-lvp
+    - .zink-venus-lvp-manual-rules
   timeout: 30m
   variables:
     DEQP_FRACTION: 1
