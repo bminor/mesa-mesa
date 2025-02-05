@@ -75,6 +75,14 @@ yaml-toml-shell-py-test:
         - .gitlab-ci/tests/**/*
         - bin/ci/**/*
       when: on_success
+    # direct pushes that bypassed the CI
+    - if: $CI_PROJECT_NAMESPACE == "mesa" && $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+      changes: *lint_files
+      when: on_success
+    # direct pushes from release manager
+    - if: $CI_PROJECT_NAMESPACE == "mesa" && $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME =~ /^staging\//
+      changes: *lint_files
+      when: on_success
     - changes: *lint_files
       when: manual
   tags:
