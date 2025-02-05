@@ -12170,12 +12170,9 @@ radv_CmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer _buffer, VkDevi
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
    VK_FROM_HANDLE(radv_buffer, buffer, _buffer);
-   struct radv_dispatch_info info = {0};
+   const uint64_t va = radv_buffer_get_va(buffer->bo) + buffer->offset + offset;
 
-   info.indirect = buffer->bo;
-   info.va = radv_buffer_get_va(buffer->bo) + buffer->offset + offset;
-
-   radv_compute_dispatch(cmd_buffer, &info);
+   radv_indirect_dispatch(cmd_buffer, buffer->bo, va);
 }
 
 void
