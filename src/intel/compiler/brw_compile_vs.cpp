@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include "brw_fs.h"
+#include "brw_shader.h"
 #include "brw_generator.h"
 #include "brw_eu.h"
 #include "brw_nir.h"

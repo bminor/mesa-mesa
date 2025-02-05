@@ -54,7 +54,7 @@
  *  - tdr0 thread dependency register
  */
 
-#include "brw_fs.h"
+#include "brw_shader.h"
 #include "brw_builder.h"
 #include "brw_cfg.h"
 

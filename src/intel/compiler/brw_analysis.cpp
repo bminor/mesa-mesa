@@ -5,7 +5,7 @@
 
 #include "brw_analysis.h"
 #include "brw_cfg.h"
-#include "brw_fs.h"
+#include "brw_shader.h"
 
 /* Calculates the immediate dominator of each block, according to "A Simple,
  * Fast Dominance Algorithm" by Keith D. Cooper, Timothy J. Harvey, and Ken

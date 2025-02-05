@@ -25,7 +25,7 @@
  *
  */
 
-#include "brw_fs.h"
+#include "brw_shader.h"
 #include "brw_analysis.h"
 
 #define MAX_INSTRUCTION (1 << 30)

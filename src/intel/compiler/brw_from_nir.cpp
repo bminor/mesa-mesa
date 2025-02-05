@@ -21,7 +21,7 @@
  * IN THE SOFTWARE.
  */
 
-#include "brw_fs.h"
+#include "brw_shader.h"
 #include "brw_builder.h"
 #include "brw_nir.h"
 #include "brw_eu.h"

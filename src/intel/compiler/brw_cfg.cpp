@@ -27,7 +27,7 @@
 
 #include "brw_cfg.h"
 #include "util/u_dynarray.h"
-#include "brw_fs.h"
+#include "brw_shader.h"
 
 /** @file
  *

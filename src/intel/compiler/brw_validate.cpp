@@ -27,7 +27,7 @@
  * pass only validates that GRF's uses are sane.  More can be added later.
  */
 
-#include "brw_fs.h"
+#include "brw_shader.h"
 #include "brw_cfg.h"
 #include "brw_eu.h"
 

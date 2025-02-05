@@ -48,7 +48,7 @@
  * cubic term within reasonable bounds for m close to its theoretical maximum.
  */
 
-#include "brw_fs.h"
+#include "brw_shader.h"
 #include "brw_cfg.h"
 
 #ifdef __SSE2__

@@ -22,7 +22,7 @@
  */
 
 #include "brw_analysis.h"
-#include "brw_fs.h"
+#include "brw_shader.h"
 #include "brw_cfg.h"
 
 /** @file

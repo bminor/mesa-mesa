@@ -35,7 +35,7 @@
 #include "util/bitset.h"
 #include "util/u_math.h"
 #include "util/rb_tree.h"
-#include "brw_fs.h"
+#include "brw_shader.h"
 #include "brw_analysis.h"
 #include "brw_cfg.h"
 #include "brw_eu.h"

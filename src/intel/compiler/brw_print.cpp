@@ -5,7 +5,7 @@
 
 #include "brw_cfg.h"
 #include "brw_disasm.h"
-#include "brw_fs.h"
+#include "brw_shader.h"
 #include "brw_private.h"
 #include "dev/intel_debug.h"
 #include "util/half_float.h"

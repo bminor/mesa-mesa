@@ -25,7 +25,7 @@
 #pragma once
 
 #include "brw_eu.h"
-#include "brw_fs.h"
+#include "brw_shader.h"
 #include "brw_inst.h"
 
 static inline brw_reg offset(const brw_reg &, const brw_builder &,

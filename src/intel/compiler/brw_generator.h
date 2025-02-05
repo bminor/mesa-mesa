@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "brw_fs.h"
+#include "brw_shader.h"
 
 /* Translates BRW IR to actual EU assembly code. */
 class brw_generator

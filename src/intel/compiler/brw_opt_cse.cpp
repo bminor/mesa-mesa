@@ -24,7 +24,7 @@
 #define XXH_INLINE_ALL
 #include "util/xxhash.h"
 
-#include "brw_fs.h"
+#include "brw_shader.h"
 #include "brw_builder.h"
 #include "brw_cfg.h"
 

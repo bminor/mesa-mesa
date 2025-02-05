@@ -21,7 +21,7 @@
  * IN THE SOFTWARE.
  */
 
-#include "brw_fs.h"
+#include "brw_shader.h"
 #include "brw_builder.h"
 
 brw_vs_thread_payload::brw_vs_thread_payload(const fs_visitor &v)
