@@ -659,7 +659,7 @@ impl CopyPropPass {
                         use SrcType::{ALU, I32};
                         let [src0, src1, src2] = &mut add.srcs;
                         if add.overflow[0].is_none()
-                            && add.overflow[0].is_none()
+                            && add.overflow[1].is_none()
                         {
                             self.prop_to_src(I32, &cbuf_rule, src0);
                             self.prop_to_src(I32, &cbuf_rule, src1);
