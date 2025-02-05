@@ -2356,7 +2356,7 @@ impl SM70Op for OpTex {
         e.set_bit(76, self.offset);
         e.set_bit(77, false); // ToDo: NDV
         e.set_bit(78, self.z_cmpr);
-        e.set_field(84..87, 1);
+        e.set_field(84..87, 1); // 0=.EF, 1=, 2=.EL, 3=.LU, 4=.EU, 5=.NA
         e.set_tex_lod_mode(87..90, self.lod_mode);
         e.set_bit(90, false); // TODO: .NODEP
     }
@@ -2403,6 +2403,7 @@ impl SM70Op for OpTld {
             self.lod_mode == TexLodMode::Zero
                 || self.lod_mode == TexLodMode::Lod
         );
+        e.set_field(84..87, 1); // 0=.EF, 1=, 2=.EL, 3=.LU, 4=.EU, 5=.NA
         e.set_tex_lod_mode(87..90, self.lod_mode);
         e.set_bit(90, false); // TODO: .NODEP
     }
@@ -2451,7 +2452,7 @@ impl SM70Op for OpTld4 {
         );
         // bit 77: .CL
         e.set_bit(78, self.z_cmpr);
-        e.set_bit(84, true); // !.EF
+        e.set_field(84..87, 1); // 0=.EF, 1=, 2=.EL, 3=.LU, 4=.EU, 5=.NA
         e.set_field(87..89, self.comp);
         e.set_bit(90, false); // TODO: .NODEP
     }
@@ -2529,6 +2530,7 @@ impl SM70Op for OpTxd {
         e.set_field(72..76, self.mask);
         e.set_bit(76, self.offset);
         e.set_bit(77, false); // ToDo: NDV
+        e.set_field(84..87, 1); // 0=.EF, 1=, 2=.EL, 3=.LU, 4=.EU, 5=.NA
         e.set_bit(90, false); // TODO: .NODEP
     }
 }
