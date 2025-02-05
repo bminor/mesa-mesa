@@ -1509,11 +1509,7 @@ anv_bo_vma_alloc_or_close(struct anv_device *device,
    assert(bo->vma_heap == NULL);
    assert(explicit_address == intel_48b_address(explicit_address));
 
-   const bool is_small_heap =
-      alloc_flags & (ANV_BO_ALLOC_DESCRIPTOR_POOL |
-                     ANV_BO_ALLOC_DYNAMIC_VISIBLE_POOL |
-                     ANV_BO_ALLOC_32BIT_ADDRESS);
-
+   const bool is_small_heap = anv_bo_is_small_heap(alloc_flags);
    uint32_t align = device->physical->info.mem_alignment;
 
    /* If it's big enough to store a tiled resource, we need 64K alignment */

@@ -2396,6 +2396,14 @@ void anv_vma_free(struct anv_device *device,
                   struct util_vma_heap *vma_heap,
                   uint64_t address, uint64_t size);
 
+static inline bool
+anv_bo_is_small_heap(enum anv_bo_alloc_flags alloc_flags)
+{
+   return alloc_flags & (ANV_BO_ALLOC_DESCRIPTOR_POOL |
+                         ANV_BO_ALLOC_DYNAMIC_VISIBLE_POOL |
+                         ANV_BO_ALLOC_32BIT_ADDRESS);
+}
+
 struct anv_reloc_list {
    bool                                         uses_relocs;
    uint32_t                                     dep_words;
