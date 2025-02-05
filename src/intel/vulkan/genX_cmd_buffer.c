@@ -4616,26 +4616,6 @@ genX(flush_pipeline_select)(struct anv_cmd_buffer *cmd_buffer,
    if (cmd_buffer->state.current_pipeline == pipeline)
       return;
 
-#if GFX_VER >= 20
-   /* While PIPELINE_SELECT is not needed on Xe2+, our current assumption
-    * is that the pipelined flushes in the 3D pipeline are not getting
-    * synchronized with the compute dispatches (and vice versa). So we need
-    * a CS_STALL prior the next set of commands to ensure the flushes have
-    * completed.
-    *
-    * The new RESOURCE_BARRIER instruction has support for synchronizing
-    * 3D/Compute and once we switch to that we should be able to get rid of
-    * this CS_STALL.
-    */
-   anv_add_pending_pipe_bits(cmd_buffer, ANV_PIPE_CS_STALL_BIT, "pipeline switch stall");
-
-   /* Since we are not stalling/flushing caches explicitly while switching
-    * between the pipelines, we need to apply data dependency flushes recorded
-    * previously on the resource.
-    */
-   genX(cmd_buffer_apply_pipe_flushes)(cmd_buffer);
-#else
-
 #if GFX_VER == 9
    /* From the Broadwell PRM, Volume 2a: Instructions, PIPELINE_SELECT:
     *
@@ -4803,7 +4783,6 @@ genX(flush_pipeline_select)(struct anv_cmd_buffer *cmd_buffer,
    if (pipeline == GPGPU)
       cmd_buffer->state.push_constants_dirty |= VK_SHADER_STAGE_COMPUTE_BIT;
 #endif
-#endif /* else of if GFX_VER >= 20 */
    cmd_buffer->state.current_pipeline = pipeline;
 }
 
