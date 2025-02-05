@@ -75,9 +75,9 @@ vsplit_clear_cache(struct vsplit_frontend *vsplit)
 
 
 static void
-vsplit_flush_cache(struct vsplit_frontend *vsplit, unsigned flags)
+vsplit_flush_cache(struct vsplit_frontend *vsplit, unsigned start, unsigned flags)
 {
-   vsplit->middle->run(vsplit->middle,
+   vsplit->middle->run(vsplit->middle, start,
          vsplit->fetch_elts, vsplit->cache.num_fetch_elts,
          vsplit->draw_elts, vsplit->cache.num_draw_elts, flags);
 }

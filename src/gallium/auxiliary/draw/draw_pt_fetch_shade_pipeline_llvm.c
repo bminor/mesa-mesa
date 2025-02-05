@@ -753,6 +753,7 @@ prim_type(enum mesa_prim prim, unsigned flags)
 
 static void
 llvm_middle_end_run(struct draw_pt_middle_end *middle,
+                    unsigned start,
                     const unsigned *fetch_elts,
                     unsigned fetch_count,
                     const uint16_t *draw_elts,
@@ -764,12 +765,12 @@ llvm_middle_end_run(struct draw_pt_middle_end *middle,
    struct draw_prim_info prim_info;
 
    fetch_info.linear = false;
-   fetch_info.start = 0;
+   fetch_info.start = start;
    fetch_info.elts = fetch_elts;
    fetch_info.count = fetch_count;
 
    prim_info.linear = false;
-   prim_info.start = 0;
+   prim_info.start = start - fpme->draw->start_index;
    prim_info.count = draw_count;
    prim_info.elts = draw_elts;
    prim_info.prim = prim_type(fpme->input_prim, prim_flags);
@@ -797,7 +798,7 @@ llvm_middle_end_linear_run(struct draw_pt_middle_end *middle,
    fetch_info.elts = NULL;
 
    prim_info.linear = true;
-   prim_info.start = start;
+   prim_info.start = start - fpme->draw->start_index;
    prim_info.count = count;
    prim_info.elts = NULL;
    prim_info.prim = prim_type(fpme->input_prim, prim_flags);
@@ -827,7 +828,7 @@ llvm_middle_end_linear_run_elts(struct draw_pt_middle_end *middle,
    fetch_info.elts = NULL;
 
    prim_info.linear = false;
-   prim_info.start = 0;
+   prim_info.start = start - fpme->draw->start_index;
    prim_info.count = draw_count;
    prim_info.elts = draw_elts;
    prim_info.prim = prim_type(fpme->input_prim, prim_flags);

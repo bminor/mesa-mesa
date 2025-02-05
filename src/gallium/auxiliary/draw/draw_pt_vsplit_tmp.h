@@ -160,7 +160,7 @@ CONCAT2(vsplit_segment_cache_, ELT_TYPE)(struct vsplit_frontend *vsplit,
          ADD_CACHE(vsplit, ib, 0, iclose, ibias);
    }
 
-   vsplit_flush_cache(vsplit, flags);
+   vsplit_flush_cache(vsplit, istart, flags);
 }
 
 
@@ -241,7 +241,7 @@ vsplit_segment_loop_linear(struct vsplit_frontend *vsplit, unsigned flags,
          vsplit->fetch_elts[nr] = istart + nr;
       vsplit->fetch_elts[nr++] = i0;
 
-      vsplit->middle->run(vsplit->middle, vsplit->fetch_elts, nr,
+      vsplit->middle->run(vsplit->middle, istart, vsplit->fetch_elts, nr,
             vsplit->identity_draw_elts, nr, flags);
    } else {
       vsplit->middle->run_linear(vsplit->middle, istart, icount, flags);
@@ -264,7 +264,7 @@ vsplit_segment_fan_linear(struct vsplit_frontend *vsplit, unsigned flags,
       for (unsigned i = 1 ; i < icount; i++)
          vsplit->fetch_elts[nr++] = istart + i;
 
-      vsplit->middle->run(vsplit->middle, vsplit->fetch_elts, nr,
+      vsplit->middle->run(vsplit->middle, istart, vsplit->fetch_elts, nr,
             vsplit->identity_draw_elts, nr, flags);
    } else {
       vsplit->middle->run_linear(vsplit->middle, istart, icount, flags);

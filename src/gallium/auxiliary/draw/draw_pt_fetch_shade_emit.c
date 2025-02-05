@@ -242,6 +242,7 @@ fail:
 
 static void
 fse_run(struct draw_pt_middle_end *middle,
+        unsigned start,
         const unsigned *fetch_elts,
         unsigned fetch_count,
         const uint16_t *draw_elts,
