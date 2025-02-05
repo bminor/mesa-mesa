@@ -1036,9 +1036,8 @@ radv_get_line_mode(const struct radv_cmd_buffer *cmd_buffer)
 
    const unsigned rast_prim = radv_get_rasterization_prim(cmd_buffer);
 
-   bool draw_lines = radv_rast_prim_is_line(rast_prim) || radv_polygon_mode_is_line(d->vk.rs.polygon_mode);
-   draw_lines &= !radv_rast_prim_is_point(rast_prim);
-   draw_lines &= !radv_polygon_mode_is_point(d->vk.rs.polygon_mode);
+   const bool draw_lines = (radv_rast_prim_is_line(rast_prim) && !radv_polygon_mode_is_point(d->vk.rs.polygon_mode)) ||
+                           (radv_polygon_mode_is_line(d->vk.rs.polygon_mode) && !radv_rast_prim_is_point(rast_prim));
    if (draw_lines)
       return d->vk.rs.line.mode;
 
