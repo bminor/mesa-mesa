@@ -13622,7 +13622,8 @@ radv_CmdEndTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCou
 }
 
 static void
-radv_emit_strmout_buffer(struct radv_cmd_buffer *cmd_buffer, const struct radv_draw_info *draw_info)
+radv_emit_strmout_buffer(struct radv_cmd_buffer *cmd_buffer, const struct radv_draw_info *draw_info,
+                         uint32_t counter_offset)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
@@ -13655,6 +13656,8 @@ radv_emit_strmout_buffer(struct radv_cmd_buffer *cmd_buffer, const struct radv_d
       radeon_emit(cs, 0); /* unused */
    }
 
+   radeon_set_context_reg(cs, R_028B28_VGT_STRMOUT_DRAW_OPAQUE_OFFSET, counter_offset);
+
    radv_cs_add_buffer(device->ws, cs, draw_info->strmout_buffer->bo);
 }
 
@@ -13681,7 +13684,7 @@ radv_CmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanc
    if (!radv_before_draw(cmd_buffer, &info, 1, false))
       return;
    struct VkMultiDrawInfoEXT minfo = {0, 0};
-   radv_emit_strmout_buffer(cmd_buffer, &info);
+   radv_emit_strmout_buffer(cmd_buffer, &info, counterOffset);
    radv_emit_direct_draw_packets(cmd_buffer, &info, 1, &minfo, S_0287F0_USE_OPAQUE(1), 0);
 
    if (pdev->info.gfx_level == GFX12) {
