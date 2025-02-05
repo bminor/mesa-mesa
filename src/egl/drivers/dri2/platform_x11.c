@@ -1765,7 +1765,7 @@ check_xshm(struct dri2_egl_display *dri2_dpy)
    shm_cookie = xcb_query_extension(dri2_dpy->conn, 7, "MIT-SHM");
    shm_reply = xcb_query_extension_reply(dri2_dpy->conn, shm_cookie, NULL);
 
-   has_mit_shm = shm_reply->present;
+   has_mit_shm = shm_reply && shm_reply->present;
    free(shm_reply);
    if (!has_mit_shm)
       return false;
