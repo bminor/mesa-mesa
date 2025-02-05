@@ -604,7 +604,7 @@
         "description": "ci/debian/test-vk: remove software-properties-common",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "85dace1c0b7c1839d12171c2c9d63f8e4a002f35",
         "notes": null
