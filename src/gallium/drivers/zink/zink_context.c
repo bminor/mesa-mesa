@@ -1351,9 +1351,10 @@ update_existing_vbo(struct zink_context *ctx, unsigned slot)
 }
 
 static void
-zink_set_vertex_buffers(struct pipe_context *pctx,
-                        unsigned num_buffers,
-                        const struct pipe_vertex_buffer *buffers)
+zink_set_vertex_buffers_internal(struct pipe_context *pctx,
+                                 unsigned num_buffers,
+                                 const struct pipe_vertex_buffer *buffers,
+                                 bool optimal)
 {
    struct zink_context *ctx = zink_context(pctx);
    const bool have_input_state = zink_screen(pctx->screen)->info.have_EXT_vertex_input_dynamic_state;
@@ -1392,16 +1393,34 @@ zink_set_vertex_buffers(struct pipe_context *pctx,
       update_existing_vbo(ctx, i);
       pipe_resource_reference(&ctx->vertex_buffers[i].buffer.resource, NULL);
    }
-   if (need_state_change)
-      ctx->vertex_state_changed = true;
-   else if (!have_input_state && ctx->gfx_pipeline_state.vertex_buffers_enabled_mask != enabled_buffers)
-      ctx->vertex_state_changed = true;
+   if (!optimal) {
+      if (need_state_change)
+         ctx->vertex_state_changed = true;
+      else if (!have_input_state && ctx->gfx_pipeline_state.vertex_buffers_enabled_mask != enabled_buffers)
+         ctx->vertex_state_changed = true;
+   }
    ctx->gfx_pipeline_state.vertex_buffers_enabled_mask = enabled_buffers;
    ctx->vertex_buffers_dirty = num_buffers > 0;
 #ifndef NDEBUG
    u_foreach_bit(b, enabled_buffers)
       assert(ctx->vertex_buffers[b].buffer.resource);
 #endif
+}
+
+static void
+zink_set_vertex_buffers(struct pipe_context *pctx,
+                        unsigned num_buffers,
+                        const struct pipe_vertex_buffer *buffers)
+{
+   zink_set_vertex_buffers_internal(pctx, num_buffers, buffers, false);
+}
+
+static void
+zink_set_vertex_buffers_optimal(struct pipe_context *pctx,
+                                 unsigned num_buffers,
+                                 const struct pipe_vertex_buffer *buffers)
+{
+   zink_set_vertex_buffers_internal(pctx, num_buffers, buffers, true);
 }
 
 static void
@@ -5332,7 +5351,10 @@ zink_context_create(struct pipe_screen *pscreen, void *priv, unsigned flags)
       ctx->base.set_shader_buffers = zink_set_shader_buffers_lazy;
    }
    ctx->base.set_polygon_stipple = zink_set_polygon_stipple;
-   ctx->base.set_vertex_buffers = zink_set_vertex_buffers;
+   if (screen->info.have_EXT_vertex_input_dynamic_state && screen->info.have_EXT_extended_dynamic_state)
+      ctx->base.set_vertex_buffers = zink_set_vertex_buffers_optimal;
+   else
+      ctx->base.set_vertex_buffers = zink_set_vertex_buffers;
    ctx->base.set_viewport_states = zink_set_viewport_states;
    ctx->base.set_scissor_states = zink_set_scissor_states;
    ctx->base.set_inlinable_constants = zink_set_inlinable_constants;
