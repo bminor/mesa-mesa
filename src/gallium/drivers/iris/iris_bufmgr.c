@@ -2456,7 +2456,7 @@ iris_bufmgr_create(struct intel_device_info *devinfo, int fd, bool bo_reuse)
                          iris_get_heap_max(bufmgr), true, bufmgr,
                          iris_can_reclaim_slab,
                          iris_slab_alloc,
-                         (void *) iris_slab_free)) {
+                         iris_slab_free)) {
          goto error_slabs_init;
       }
       min_slab_order = max_order + 1;
