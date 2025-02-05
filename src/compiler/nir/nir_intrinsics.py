@@ -486,7 +486,7 @@ intrinsic("read_invocation", src_comp=[0, 1], dest_comp=0, bit_sizes=src0, flags
 intrinsic("read_first_invocation", src_comp=[0], dest_comp=0, bit_sizes=src0, flags=SUBGROUP_FLAGS)
 
 # Same as ballot, but inactive invocations contribute undefined bits.
-intrinsic("ballot_relaxed", src_comp=[1], dest_comp=0, flags=[CAN_ELIMINATE])
+intrinsic("ballot_relaxed", src_comp=[1], dest_comp=0, flags=SUBGROUP_FLAGS)
 
 # Allows the backend compiler to move this value to an uniform register.
 # Result is undefined if src is not uniform.
@@ -495,12 +495,12 @@ intrinsic("as_uniform", src_comp=[0], dest_comp=0, bit_sizes=src0, flags=[CAN_EL
 
 # Returns the value of the first source for the lane where the second source is
 # true. The second source must be true for exactly one lane.
-intrinsic("read_invocation_cond_ir3", src_comp=[0, 1], dest_comp=0, flags=[CAN_ELIMINATE])
+intrinsic("read_invocation_cond_ir3", src_comp=[0, 1], dest_comp=0, flags=SUBGROUP_FLAGS)
 
 # Like read_first_invocation but using the getlast instruction instead of
 # getone. More specifically, this will read the value from the last active
 # invocation of the first cluster of 8 invocations with an active invocation.
-intrinsic("read_getlast_ir3", src_comp=[0], dest_comp=0, bit_sizes=src0, flags=[CAN_ELIMINATE])
+intrinsic("read_getlast_ir3", src_comp=[0], dest_comp=0, bit_sizes=src0, flags=SUBGROUP_FLAGS)
 
 # Additional SPIR-V ballot intrinsics
 #
