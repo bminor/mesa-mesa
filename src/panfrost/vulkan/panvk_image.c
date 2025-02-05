@@ -251,46 +251,47 @@ static void
 panvk_image_pre_mod_select_meta_adjustments(struct panvk_image *image)
 {
    const VkImageAspectFlags aspects = vk_format_aspects(image->vk.format);
+   const VkImageUsageFlags all_usage =
+      image->vk.usage | image->vk.stencil_usage;
 
    /* We do image blit/resolve with vk_meta, so when an image is flagged as
     * being a potential transfer source, we also need to add the sampled usage.
     */
-   if (image->vk.usage & VK_IMAGE_USAGE_TRANSFER_SRC_BIT) {
+   if (image->vk.usage & VK_IMAGE_USAGE_TRANSFER_SRC_BIT)
       image->vk.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
-      if (aspects & VK_IMAGE_ASPECT_STENCIL_BIT)
-         image->vk.stencil_usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
-   }
+   if (image->vk.stencil_usage & VK_IMAGE_USAGE_TRANSFER_SRC_BIT)
+      image->vk.stencil_usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
 
+   /* Similarly, image that can be a transfer destination can be attached
+    * as a color or depth-stencil attachment by vk_meta. */
    if (image->vk.usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT) {
-      /* Similarly, image that can be a transfer destination can be attached
-       * as a color or depth-stencil attachment by vk_meta. */
       if (aspects & VK_IMAGE_ASPECT_DEPTH_BIT)
          image->vk.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-
-      if (aspects & VK_IMAGE_ASPECT_STENCIL_BIT)
-         image->vk.stencil_usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
       if (aspects & VK_IMAGE_ASPECT_COLOR_BIT) {
          image->vk.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
          image->vk.usage |= VK_IMAGE_USAGE_STORAGE_BIT;
       }
-
-      /* vk_meta creates 2D array views of 3D images. */
-      if (image->vk.image_type == VK_IMAGE_TYPE_3D)
-         image->vk.create_flags |= VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
    }
+
+   if (image->vk.stencil_usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT)
+      image->vk.stencil_usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+
+   /* vk_meta creates 2D array views of 3D images. */
+   if (all_usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT &&
+       image->vk.image_type == VK_IMAGE_TYPE_3D)
+      image->vk.create_flags |= VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
 
    /* Needed for resolve operations. */
    if (image->vk.usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
       image->vk.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
 
-   if (image->vk.usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
-      if (aspects & VK_IMAGE_ASPECT_DEPTH_BIT)
-         image->vk.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
+   if (image->vk.usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT &&
+       aspects & VK_IMAGE_ASPECT_DEPTH_BIT)
+      image->vk.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
 
-      if (aspects & VK_IMAGE_ASPECT_STENCIL_BIT)
-         image->vk.stencil_usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
-   }
+   if (image->vk.stencil_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
+      image->vk.stencil_usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
 
    if ((image->vk.usage &
         (VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT)) &&

@@ -246,6 +246,7 @@ get_device_extensions(const struct panvk_physical_device *device,
       .EXT_queue_family_foreign = true,
       .EXT_sampler_filter_minmax = arch >= 10,
       .EXT_scalar_block_layout = true,
+      .EXT_separate_stencil_usage = true,
       .EXT_shader_module_identifier = true,
       .EXT_subgroup_size_control = arch >= 10, /* requires vk1.1 */
       .EXT_tooling_info = true,
@@ -1272,6 +1273,12 @@ get_image_format_properties(struct panvk_physical_device *physical_device,
 
    get_format_properties(physical_device, info->format, &format_props);
 
+   const VkImageStencilUsageCreateInfo *stencil_usage_info =
+      vk_find_struct_const(info->pNext, IMAGE_STENCIL_USAGE_CREATE_INFO);
+   VkImageUsageFlags stencil_usage =
+      stencil_usage_info ? stencil_usage_info->stencilUsage : info->usage;
+   VkImageUsageFlags all_usage = info->usage | stencil_usage;
+
    switch (info->tiling) {
    case VK_IMAGE_TILING_LINEAR:
       format_feature_flags = format_props.linearTilingFeatures;
@@ -1339,7 +1346,7 @@ get_image_format_properties(struct panvk_physical_device *physical_device,
         (VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT |
          VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)) &&
        !(info->flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) &&
-       !(info->usage & VK_IMAGE_USAGE_STORAGE_BIT)) {
+       !(all_usage & VK_IMAGE_USAGE_STORAGE_BIT)) {
       sampleCounts |= VK_SAMPLE_COUNT_4_BIT;
    }
 
@@ -1355,28 +1362,28 @@ get_image_format_properties(struct panvk_physical_device *physical_device,
    * There is one exception to this below for storage.
    */
    if (!(info->flags & VK_IMAGE_CREATE_EXTENDED_USAGE_BIT)) {
-      if (info->usage & VK_IMAGE_USAGE_SAMPLED_BIT) {
+      if (all_usage & VK_IMAGE_USAGE_SAMPLED_BIT) {
          if (!(format_feature_flags & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
             goto unsupported;
          }
       }
 
-      if (info->usage & VK_IMAGE_USAGE_STORAGE_BIT) {
+      if (all_usage & VK_IMAGE_USAGE_STORAGE_BIT) {
          if (!(format_feature_flags & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT)) {
             goto unsupported;
          }
       }
 
-      if (info->usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT ||
-          ((info->usage & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) &&
+      if (all_usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT ||
+          ((all_usage & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) &&
            !vk_format_is_depth_or_stencil(info->format))) {
          if (!(format_feature_flags & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT)) {
             goto unsupported;
          }
       }
 
-      if ((info->usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) ||
-          ((info->usage & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) &&
+      if ((all_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) ||
+          ((all_usage & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) &&
            vk_format_is_depth_or_stencil(info->format))) {
          if (!(format_feature_flags &
                VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)) {

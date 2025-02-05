@@ -3,3 +3,4 @@ storagePushConstant16 on panvk
 storageInputOutput16 on panvk
 VK_KHR_depth_stencil_resolve on panvk
 VK_KHR_separate_depth_stencil_layouts on panvk
+VK_EXT_separate_stencil_usage on panvk
