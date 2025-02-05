@@ -30,6 +30,10 @@ workflow:
     # do not duplicate pipelines on merge pipelines
     - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS && $CI_PIPELINE_SOURCE == "push"
       when: never
+    # tag pipelines are disabled as it's too late to run all the tests by
+    # then, the release has been made based on the staging pipelines results
+    - if: $CI_COMMIT_TAG
+      when: never
     # merge pipeline
     - if: &is-merge-attempt $GITLAB_USER_LOGIN == "marge-bot" && $CI_PIPELINE_SOURCE == "merge_request_event"
       variables:
