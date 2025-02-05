@@ -1471,25 +1471,36 @@ impl Buffer {
         dst_row_pitch: usize,
         dst_slice_pitch: usize,
     ) -> CLResult<()> {
-        let src = src.as_ptr();
-        let (offset, size) =
-            CLVec::calc_offset_size(dst_origin, region, [1, dst_row_pitch, dst_slice_pitch]);
-        let tx = self.tx(ctx, offset, size, RWFlags::WR)?;
+        let mut src = src.as_ptr();
+        let src_offset = CLVec::calc_offset(src_origin, [1, src_row_pitch, src_slice_pitch]);
+        src = unsafe { src.byte_add(src_offset) };
 
-        perf_warning!("clEnqueueWriteBufferRect stalls the GPU");
+        let dst_offset = CLVec::calc_offset(dst_origin, [1, dst_row_pitch, dst_slice_pitch]);
+        let mut dst_offset = self.apply_offset(dst_offset)?;
+        let dst_res = self.get_res_for_access(ctx, RWFlags::WR)?;
 
-        sw_copy(
-            src,
-            tx.ptr(),
-            region,
-            src_origin,
-            src_row_pitch,
-            src_slice_pitch,
-            &CLVec::default(),
-            dst_row_pitch,
-            dst_slice_pitch,
-            1,
-        );
+        if src_row_pitch == dst_row_pitch && region[1] == src_row_pitch {
+            let slice_size = (region[0] * region[1]).try_into_with_err(CL_OUT_OF_RESOURCES)?;
+            for _ in 0..region[2] {
+                ctx.buffer_subdata(dst_res, dst_offset as u32, src, slice_size);
+
+                src = unsafe { src.byte_add(src_slice_pitch) };
+                dst_offset += dst_slice_pitch;
+            }
+        } else {
+            let row_size = region[0].try_into_with_err(CL_OUT_OF_RESOURCES)?;
+            for _ in 0..region[2] {
+                for _ in 0..region[1] {
+                    ctx.buffer_subdata(dst_res, dst_offset as u32, src, row_size);
+
+                    src = unsafe { src.byte_add(src_row_pitch) };
+                    dst_offset += dst_row_pitch;
+                }
+
+                src = unsafe { src.byte_add(src_slice_pitch - (src_row_pitch * region[1])) };
+                dst_offset += dst_slice_pitch - (dst_row_pitch * region[1]);
+            }
+        }
 
         Ok(())
     }
