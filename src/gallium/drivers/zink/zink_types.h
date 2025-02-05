@@ -604,7 +604,6 @@ struct zink_batch_state {
    struct util_dynarray tracked_semaphores; //semaphores which are just tracked
    VkSemaphore sparse_semaphore; //current sparse wait semaphore
    struct util_dynarray fences; //zink_tc_fence refs
-   simple_mtx_t ref_lock;
 
    VkSemaphore present;
    struct zink_resource *swapchain;
@@ -634,8 +633,10 @@ struct zink_batch_state {
    struct zink_batch_obj_list real_objs;
    struct zink_batch_obj_list slab_objs;
    struct zink_batch_obj_list sparse_objs;
+   struct zink_batch_obj_list unsync_objs;
    struct zink_resource_object *last_added_obj;
    struct util_dynarray swapchain_obj; //this doesn't have a zink_bo and must be handled differently
+   struct util_dynarray swapchain_obj_unsync; //this doesn't have a zink_bo and must be handled differently
 
    struct util_dynarray unref_resources;
    struct util_dynarray bindless_releases[2];

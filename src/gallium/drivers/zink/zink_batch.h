@@ -71,6 +71,9 @@ zink_batch_reference_resource(struct zink_context *ctx, struct zink_resource *re
 bool
 zink_batch_reference_resource_move(struct zink_context *ctx, struct zink_resource *res);
 
+bool
+zink_batch_reference_resource_move_unsync(struct zink_context *ctx, struct zink_resource *res);
+
 void
 zink_batch_reference_program(struct zink_context *ctx,
                              struct zink_program *pg);

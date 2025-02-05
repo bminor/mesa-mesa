@@ -97,6 +97,11 @@ zink_reset_batch_state(struct zink_context *ctx, struct zink_batch_state *bs)
    reset_obj_list(screen, bs, &bs->real_objs);
    reset_obj_list(screen, bs, &bs->slab_objs);
    reset_obj_list(screen, bs, &bs->sparse_objs);
+   reset_obj_list(screen, bs, &bs->unsync_objs);
+   while (util_dynarray_contains(&bs->swapchain_obj_unsync, struct zink_resource_object*)) {
+      struct zink_resource_object *obj = util_dynarray_pop(&bs->swapchain_obj_unsync, struct zink_resource_object*);
+      reset_obj(screen, bs, obj);
+   }
    while (util_dynarray_contains(&bs->swapchain_obj, struct zink_resource_object*)) {
       struct zink_resource_object *obj = util_dynarray_pop(&bs->swapchain_obj, struct zink_resource_object*);
       reset_obj(screen, bs, obj);
@@ -295,10 +300,12 @@ zink_batch_state_destroy(struct zink_screen *screen, struct zink_batch_state *bs
       VKSCR(DestroyCommandPool)(screen->dev, bs->unsynchronized_cmdpool, NULL);
    free(bs->real_objs.objs);
    free(bs->slab_objs.objs);
+   free(bs->unsync_objs.objs);
    free(bs->sparse_objs.objs);
    util_dynarray_fini(&bs->freed_sparse_backing_bos);
    util_dynarray_fini(&bs->dead_querypools);
    util_dynarray_fini(&bs->swapchain_obj);
+   util_dynarray_fini(&bs->swapchain_obj_unsync);
    util_dynarray_fini(&bs->zombie_samplers);
    util_dynarray_fini(&bs->unref_resources);
    util_dynarray_fini(&bs->bindless_releases[0]);
@@ -403,11 +410,11 @@ create_batch_state(struct zink_context *ctx)
    util_dynarray_init(&bs->bindless_releases[0], NULL);
    util_dynarray_init(&bs->bindless_releases[1], NULL);
    util_dynarray_init(&bs->swapchain_obj, NULL);
+   util_dynarray_init(&bs->swapchain_obj_unsync, NULL);
    util_dynarray_init(&bs->fence.mfences, NULL);
 
    cnd_init(&bs->usage.flush);
    mtx_init(&bs->usage.mtx, mtx_plain);
-   simple_mtx_init(&bs->ref_lock, mtx_plain);
    simple_mtx_init(&bs->exportable_lock, mtx_plain);
    memset(&bs->buffer_indices_hashlist, -1, sizeof(bs->buffer_indices_hashlist));
 
@@ -986,49 +993,12 @@ zink_batch_reference_resource(struct zink_context *ctx, struct zink_resource *re
 }
 
 /* this adds batch usage */
-bool
-zink_batch_reference_resource_move(struct zink_context *ctx, struct zink_resource *res)
+ALWAYS_INLINE static bool
+batch_reference_resource_move_internal(struct zink_batch_state *bs, struct zink_batch_obj_list *list, struct zink_resource *res)
 {
-   struct zink_batch_state *bs = ctx->bs;
-
-   simple_mtx_lock(&bs->ref_lock);
-   /* swapchains are special */
-   if (zink_is_swapchain(res)) {
-      struct zink_resource_object **swapchains = bs->swapchain_obj.data;
-      unsigned count = util_dynarray_num_elements(&bs->swapchain_obj, struct zink_resource_object*);
-      for (unsigned i = 0; i < count; i++) {
-         if (swapchains[i] == res->obj) {
-            simple_mtx_unlock(&bs->ref_lock);
-            return true;
-         }
-      }
-      util_dynarray_append(&bs->swapchain_obj, struct zink_resource_object*, res->obj);
-      simple_mtx_unlock(&bs->ref_lock);
-      return false;
-   }
-   /* Fast exit for no-op calls.
-    * This is very effective with suballocators and linear uploaders that
-    * are outside of the winsys.
-    */
-   if (res->obj == bs->last_added_obj) {
-      simple_mtx_unlock(&bs->ref_lock);
-      return true;
-   }
-
    struct zink_bo *bo = res->obj->bo;
-   struct zink_batch_obj_list *list;
-   if (!(res->base.b.flags & PIPE_RESOURCE_FLAG_SPARSE)) {
-      if (!bo->mem) {
-         list = &bs->slab_objs;
-      } else {
-         list = &bs->real_objs;
-      }
-   } else {
-      list = &bs->sparse_objs;
-   }
    int idx = batch_find_resource(bs, res->obj, list);
    if (idx >= 0) {
-      simple_mtx_unlock(&bs->ref_lock);
       return true;
    }
 
@@ -1063,8 +1033,68 @@ zink_batch_reference_resource_move(struct zink_context *ctx, struct zink_resourc
        */
    }
    check_oom_flush(bs->ctx);
-   simple_mtx_unlock(&bs->ref_lock);
    return false;
+}
+
+bool
+zink_batch_reference_resource_move(struct zink_context *ctx, struct zink_resource *res)
+{
+   struct zink_batch_state *bs = ctx->bs;
+
+   /* swapchains are special */
+   if (zink_is_swapchain(res)) {
+      struct zink_resource_object **swapchains = bs->swapchain_obj.data;
+      unsigned count = util_dynarray_num_elements(&bs->swapchain_obj, struct zink_resource_object*);
+      for (unsigned i = 0; i < count; i++) {
+         if (swapchains[i] == res->obj) {
+            return true;
+         }
+      }
+      util_dynarray_append(&bs->swapchain_obj, struct zink_resource_object*, res->obj);
+      return false;
+   }
+   /* Fast exit for no-op calls.
+    * This is very effective with suballocators and linear uploaders that
+    * are outside of the winsys.
+    */
+   if (res->obj == bs->last_added_obj) {
+      return true;
+   }
+
+   struct zink_bo *bo = res->obj->bo;
+   struct zink_batch_obj_list *list;
+   if (!(res->base.b.flags & PIPE_RESOURCE_FLAG_SPARSE)) {
+      if (!bo->mem) {
+         list = &bs->slab_objs;
+      } else {
+         list = &bs->real_objs;
+      }
+   } else {
+      list = &bs->sparse_objs;
+   }
+   return batch_reference_resource_move_internal(bs, list, res);
+}
+
+bool
+zink_batch_reference_resource_move_unsync(struct zink_context *ctx, struct zink_resource *res)
+{
+   struct zink_batch_state *bs = ctx->bs;
+
+   /* swapchains are special */
+   if (zink_is_swapchain(res)) {
+      struct zink_resource_object **swapchains = bs->swapchain_obj_unsync.data;
+      unsigned count = util_dynarray_num_elements(&bs->swapchain_obj_unsync, struct zink_resource_object*);
+      for (unsigned i = 0; i < count; i++) {
+         if (swapchains[i] == res->obj) {
+            return true;
+         }
+      }
+      util_dynarray_append(&bs->swapchain_obj_unsync, struct zink_resource_object*, res->obj);
+      return false;
+   }
+
+   /* unsync is not as common, skip LRU */
+   return batch_reference_resource_move_internal(bs, &bs->unsync_objs, res);
 }
 
 /* this is how programs achieve deferred deletion */

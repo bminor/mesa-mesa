@@ -4771,11 +4771,18 @@ zink_copy_image_buffer(struct zink_context *ctx, struct zink_resource *dst, stru
                             needs_present_readback ?
                             ctx->bs->cmdbuf :
                             buf2img ? zink_get_cmdbuf(ctx, buf, use_img) : zink_get_cmdbuf(ctx, use_img, buf);
-   zink_batch_reference_resource_rw(ctx, use_img, buf2img);
-   zink_batch_reference_resource_rw(ctx, buf, !buf2img);
    if (unsync) {
+      zink_batch_resource_usage_set(ctx->bs, use_img, buf2img, use_img->obj->is_buffer);
+      if (!zink_batch_reference_resource_move_unsync(ctx, use_img))
+         zink_resource_object_reference(NULL, NULL, use_img->obj);
+      zink_batch_resource_usage_set(ctx->bs, buf, !buf2img, buf->obj->is_buffer);
+      if (!zink_batch_reference_resource_move_unsync(ctx, buf))
+         zink_resource_object_reference(NULL, NULL, buf->obj);
       ctx->bs->has_unsync = true;
       use_img->obj->unsync_access = true;
+   } else {
+      zink_batch_reference_resource_rw(ctx, use_img, buf2img);
+      zink_batch_reference_resource_rw(ctx, buf, !buf2img);
    }
 
    /* we're using u_transfer_helper_deinterleave, which means we'll be getting PIPE_MAP_* usage
