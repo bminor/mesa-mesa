@@ -57,7 +57,7 @@ workflow:
         # Note: 0 = infinity = gitlab's job `timeout:` applies, which is 1h
         BUILD_JOB_TIMEOUT_OVERRIDE: 0
     # pipeline for direct pushes that bypassed the CI
-    - if: &is-direct-push $CI_PROJECT_NAMESPACE == "mesa" && $CI_PIPELINE_SOURCE == "push" && $GITLAB_USER_LOGIN != "marge-bot"
+    - if: &is-direct-push $CI_PROJECT_NAMESPACE == "mesa" && $CI_PIPELINE_SOURCE == "push"
       variables:
         JOB_PRIORITY: 70
 
