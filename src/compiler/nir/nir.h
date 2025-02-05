@@ -1979,6 +1979,18 @@ typedef enum {
     * intrinsic are due to the register reads/writes.
     */
    NIR_INTRINSIC_CAN_REORDER = BITFIELD_BIT(1),
+
+   /**
+    * Identifies any subgroup-like operation whose behaviour depends on other
+    * logical threads. This is incompatible with CAN_REORDER.
+    */
+   NIR_INTRINSIC_SUBGROUP = BITFIELD_BIT(2),
+
+   /**
+    * Identifies an operation whose behaviour depends (only) on the local quad.
+    * Any QUADGROUP intrinsic is also SUBGROUP.
+    */
+   NIR_INTRINSIC_QUADGROUP = BITFIELD_BIT(3),
 } nir_intrinsic_semantic_flag;
 
 /**
