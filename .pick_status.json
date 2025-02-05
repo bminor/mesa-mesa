@@ -174,7 +174,7 @@
         "description": "nak/opt_copy_prop: Force alu src for IAdd2X/IAdd3X",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
