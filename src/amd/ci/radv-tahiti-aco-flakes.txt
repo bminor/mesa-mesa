@@ -14,6 +14,8 @@ dEQP-VK.pipeline.monolithic.sampler.view_type.2d_array.format.r8_srgb.min_reduce
 dEQP-VK.pipeline.monolithic.sampler.view_type.3d.format.r8_unorm.min_reduce.comp_identity_zero_zero_zero.min
 dEQP-VK.pipeline.monolithic.sampler.view_type.cube_array.format.r16_snorm.min_reduce.comp_identity_zero_zero_zero.max
 dEQP-VK.pipeline.monolithic.sampler.view_type.cube.format.d32_sfloat.min_reduce.comp_identity_zero_zero_zero.max
+dEQP-VK.pipeline.monolithic.sampler.view_type.cube.format.d32_sfloat.mag_reduce.comp_identity_zero_zero_zero.min
+dEQP-VK.pipeline.monolithic.sampler.view_type.cube.format.d32_sfloat.min_reduce.comp_r_zero_zero_zero.min
 dEQP-VK.pipeline.monolithic.sampler.view_type.cube.format.r8_snorm.min_reduce.comp_r_zero_zero_zero.max
 dEQP-VK.pipeline.monolithic.sampler.view_type.cube.format.r8_snorm.min_reduce.comp_r_zero_zero_zero.min
 
