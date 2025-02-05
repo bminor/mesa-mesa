@@ -692,14 +692,9 @@ zink_draw(struct pipe_context *pctx,
       ctx->line_width_changed = false;
    }
 
-   if (BATCH_CHANGED || mode_changed ||
-       ctx->gfx_pipeline_state.modules_changed ||
-       rast_state_changed) {
-      bool depth_bias =
-         zink_prim_type(ctx, dinfo) == MESA_PRIM_TRIANGLES &&
-         rast_state->offset_fill;
-
-      if (depth_bias) {
+   bool using_depth_bias = zink_prim_type(ctx, dinfo) == MESA_PRIM_TRIANGLES && rast_state->offset_fill;
+   if (BATCH_CHANGED || using_depth_bias != ctx->was_using_depth_bias || ctx->depth_bias_changed) {
+      if (using_depth_bias) {
          if (rast_state->base.offset_units_unscaled) {
             VKCTX(CmdSetDepthBias)(bs->cmdbuf, rast_state->offset_units * ctx->depth_bias_scale_factor, rast_state->offset_clamp, rast_state->offset_scale);
          } else {
@@ -709,7 +704,9 @@ zink_draw(struct pipe_context *pctx,
          VKCTX(CmdSetDepthBias)(bs->cmdbuf, 0.0f, 0.0f, 0.0f);
       }
    }
+   ctx->was_using_depth_bias = using_depth_bias;
    ctx->rast_state_changed = false;
+   ctx->depth_bias_changed = false;
 
    if (DYNAMIC_STATE != ZINK_NO_DYNAMIC_STATE) {
       if (ctx->sample_locations_changed) {

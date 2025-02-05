@@ -769,6 +769,15 @@ zink_bind_rasterizer_state(struct pipe_context *pctx, void *cso)
       if (ctx->rast_state->base.half_pixel_center != half_pixel_center)
          ctx->vp_state_changed = true;
 
+#define FLT_DIFF(a) (fabs(prev_state->a - ctx->rast_state->a) > FLT_EPSILON)
+      if (prev_state)
+         ctx->depth_bias_changed = prev_state->offset_fill != ctx->rast_state->offset_fill ||
+                                   FLT_DIFF(offset_units) ||
+                                   FLT_DIFF(offset_clamp) ||
+                                   FLT_DIFF(offset_scale);
+      else
+         ctx->depth_bias_changed = true;
+
       if (!screen->optimal_keys)
          zink_update_gs_key_rectangular_line(ctx);
    }

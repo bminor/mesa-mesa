@@ -1923,6 +1923,7 @@ struct zink_context {
    bool disable_fs;
    bool disable_color_writes;
    bool was_line_loop;
+   bool was_using_depth_bias;
    bool fs_query_active;
    bool occlusion_query_active;
    bool primitives_generated_active;
@@ -2036,6 +2037,7 @@ struct zink_context {
    bool blend_color_changed : 1;
    bool sample_mask_changed : 1;
    bool rast_state_changed : 1;
+   bool depth_bias_changed : 1;
    bool line_width_changed : 1;
    bool dsa_state_changed : 1;
    bool stencil_ref_changed : 1;

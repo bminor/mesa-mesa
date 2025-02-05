@@ -3903,7 +3903,7 @@ zink_set_framebuffer_state(struct pipe_context *pctx,
    }
    if (depth_bias_scale_factor != ctx->depth_bias_scale_factor &&
        ctx->rast_state && ctx->rast_state->base.offset_units_unscaled)
-      ctx->rast_state_changed = true;
+      ctx->depth_bias_changed = true;
    rebind_fb_state(ctx, NULL, true);
    ctx->fb_state.samples = MAX2(samples, 1);
    zink_update_framebuffer_state(ctx);
