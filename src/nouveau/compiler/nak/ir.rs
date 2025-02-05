@@ -4836,6 +4836,7 @@ pub struct OpTex {
     pub z_cmpr: bool,
     pub offset: bool,
     pub mem_eviction_priority: MemEvictionPriority,
+    pub nodep: bool,
     pub mask: u8,
 }
 
@@ -4852,6 +4853,9 @@ impl DisplayOp for OpTex {
             write!(f, ".dc")?;
         }
         write!(f, "{}", self.mem_eviction_priority)?;
+        if self.nodep {
+            write!(f, ".nodep")?;
+        }
         write!(f, " {} {} {}", self.tex, self.srcs[0], self.srcs[1])
     }
 }
@@ -4873,6 +4877,7 @@ pub struct OpTld {
     pub lod_mode: TexLodMode,
     pub offset: bool,
     pub mem_eviction_priority: MemEvictionPriority,
+    pub nodep: bool,
     pub mask: u8,
 }
 
@@ -4889,6 +4894,9 @@ impl DisplayOp for OpTld {
             write!(f, ".ms")?;
         }
         write!(f, "{}", self.mem_eviction_priority)?;
+        if self.nodep {
+            write!(f, ".nodep")?;
+        }
         write!(f, " {} {} {}", self.tex, self.srcs[0], self.srcs[1])
     }
 }
@@ -4910,6 +4918,7 @@ pub struct OpTld4 {
     pub offset_mode: Tld4OffsetMode,
     pub z_cmpr: bool,
     pub mem_eviction_priority: MemEvictionPriority,
+    pub nodep: bool,
     pub mask: u8,
 }
 
@@ -4923,6 +4932,9 @@ impl DisplayOp for OpTld4 {
             write!(f, ".dc")?;
         }
         write!(f, "{}", self.mem_eviction_priority)?;
+        if self.nodep {
+            write!(f, ".nodep")?;
+        }
         write!(f, " {} {} {}", self.tex, self.srcs[0], self.srcs[1])
     }
 }
@@ -4939,16 +4951,17 @@ pub struct OpTmml {
     pub srcs: [Src; 2],
 
     pub dim: TexDim,
+    pub nodep: bool,
     pub mask: u8,
 }
 
 impl DisplayOp for OpTmml {
     fn fmt_op(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "tmml.lod{} {} {} {}",
-            self.dim, self.tex, self.srcs[0], self.srcs[1]
-        )
+        write!(f, "tmml.lod{}", self.dim)?;
+        if self.nodep {
+            write!(f, ".nodep")?;
+        }
+        write!(f, " {} {} {}", self.tex, self.srcs[0], self.srcs[1])
     }
 }
 impl_display_for_op!(OpTmml);
@@ -4967,6 +4980,7 @@ pub struct OpTxd {
     pub dim: TexDim,
     pub offset: bool,
     pub mem_eviction_priority: MemEvictionPriority,
+    pub nodep: bool,
     pub mask: u8,
 }
 
@@ -4977,6 +4991,9 @@ impl DisplayOp for OpTxd {
             write!(f, ".aoffi")?;
         }
         write!(f, "{}", self.mem_eviction_priority)?;
+        if self.nodep {
+            write!(f, ".nodep")?;
+        }
         write!(f, " {} {} {}", self.tex, self.srcs[0], self.srcs[1])
     }
 }
@@ -4993,12 +5010,17 @@ pub struct OpTxq {
     pub src: Src,
 
     pub query: TexQuery,
+    pub nodep: bool,
     pub mask: u8,
 }
 
 impl DisplayOp for OpTxq {
     fn fmt_op(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "txq {} {} {}", self.tex, self.src, self.query)
+        write!(f, "txq")?;
+        if self.nodep {
+            write!(f, ".nodep")?;
+        }
+        write!(f, " {} {} {}", self.tex, self.src, self.query)
     }
 }
 impl_display_for_op!(OpTxq);

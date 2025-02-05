@@ -184,7 +184,8 @@ struct nak_nir_tex_flags {
    enum nak_nir_offset_mode offset_mode:2;
    bool has_z_cmpr:1;
    bool is_sparse:1;
-   uint32_t pad:23;
+   bool nodep:1;
+   uint32_t pad:22;
 };
 PRAGMA_DIAGNOSTIC_POP
 static_assert(sizeof(struct nak_nir_tex_flags) == 4,

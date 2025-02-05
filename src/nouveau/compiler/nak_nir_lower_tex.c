@@ -250,6 +250,7 @@ lower_tex(nir_builder *b, nir_tex_instr *tex, const struct nak_compiler *nak)
       .offset_mode = offset_mode,
       .has_z_cmpr = tex->is_shadow,
       .is_sparse = tex->is_sparse,
+      .nodep = tex->skip_helpers,
    };
    STATIC_ASSERT(sizeof(flags) == sizeof(tex->backend_flags));
    memcpy(&tex->backend_flags, &flags, sizeof(flags));

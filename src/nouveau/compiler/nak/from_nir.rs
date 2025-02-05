@@ -1812,6 +1812,7 @@ impl<'a> ShaderFromNir<'a> {
                 tex: tex_ref,
                 src: src,
                 query: TexQuery::Dimension,
+                nodep: flags.nodep(),
                 mask: mask,
             });
         } else if tex.op == nir_texop_tex_type_nv {
@@ -1822,6 +1823,7 @@ impl<'a> ShaderFromNir<'a> {
                 tex: tex_ref,
                 src: src,
                 query: TexQuery::TextureType,
+                nodep: flags.nodep(),
                 mask: mask,
             });
         } else {
@@ -1862,6 +1864,7 @@ impl<'a> ShaderFromNir<'a> {
                     dim: dim,
                     offset: offset_mode == Tld4OffsetMode::AddOffI,
                     mem_eviction_priority: MemEvictionPriority::Normal,
+                    nodep: flags.nodep(),
                     mask: mask,
                 });
             } else if tex.op == nir_texop_lod {
@@ -1871,6 +1874,7 @@ impl<'a> ShaderFromNir<'a> {
                     tex: tex_ref,
                     srcs: srcs,
                     dim: dim,
+                    nodep: flags.nodep(),
                     mask: mask,
                 });
             } else if tex.op == nir_texop_txf || tex.op == nir_texop_txf_ms {
@@ -1885,6 +1889,7 @@ impl<'a> ShaderFromNir<'a> {
                     is_ms: tex.op == nir_texop_txf_ms,
                     offset: offset_mode == Tld4OffsetMode::AddOffI,
                     mem_eviction_priority: MemEvictionPriority::Normal,
+                    nodep: flags.nodep(),
                     mask: mask,
                 });
             } else if tex.op == nir_texop_tg4 {
@@ -1898,6 +1903,7 @@ impl<'a> ShaderFromNir<'a> {
                     offset_mode: offset_mode,
                     z_cmpr: flags.has_z_cmpr(),
                     mem_eviction_priority: MemEvictionPriority::Normal,
+                    nodep: flags.nodep(),
                     mask: mask,
                 });
             } else {
@@ -1912,6 +1918,7 @@ impl<'a> ShaderFromNir<'a> {
                     z_cmpr: flags.has_z_cmpr(),
                     offset: offset_mode == Tld4OffsetMode::AddOffI,
                     mem_eviction_priority: MemEvictionPriority::Normal,
+                    nodep: flags.nodep(),
                     mask: mask,
                 });
             }
