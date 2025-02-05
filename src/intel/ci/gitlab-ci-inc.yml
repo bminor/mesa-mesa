@@ -370,6 +370,7 @@
 .anv-angle-test:
   extends:
     - .anv-test
+    - .test-angle
   variables:
     VK_DRIVER: intel
     USE_ANGLE: 1

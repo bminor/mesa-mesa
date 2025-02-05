@@ -7,6 +7,12 @@
 section_start cuttlefish_setup "cuttlefish: setup"
 set -xe
 
+# Structured tagging check for angle
+if [ -n "$USE_ANGLE" ]; then
+    # Bail out if the ANGLE_TAG differs from what is offered in the system
+    ci_tag_test_time_check "ANGLE_TAG"
+fi
+
 export HOME=/cuttlefish
 export PATH=/cuttlefish/bin:$PATH
 export LD_LIBRARY_PATH=/cuttlefish/lib64:${CI_PROJECT_DIR}/install/lib:$LD_LIBRARY_PATH
@@ -168,6 +174,8 @@ $ADB shell stop
 $ADB shell start
 
 # Check what GLES implementation Surfaceflinger is using after copying the new mesa libraries
+# Note: we are injecting the ANGLE libs in the vendor partition, so we need to check if the
+#       ANGLE libs are being used after the shell restart
 while [ "$($ADB shell dumpsys SurfaceFlinger | grep GLES:)" = "" ] ; do sleep 1; done
 MESA_RUNTIME_VERSION="$($ADB shell dumpsys SurfaceFlinger | grep GLES:)"
 

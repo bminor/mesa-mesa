@@ -26,6 +26,8 @@ export VK_DRIVER_FILES="$PWD"/install/share/vulkan/icd.d/"$VK_DRIVER"_icd."$ARCH
 export OCL_ICD_VENDORS="$PWD"/install/etc/OpenCL/vendors/
 
 if [ -n "$USE_ANGLE" ]; then
+  # Are we using the right angle version?
+  ci_tag_test_time_check "ANGLE_TAG"
   export LD_LIBRARY_PATH=/angle:$LD_LIBRARY_PATH
 fi
 
