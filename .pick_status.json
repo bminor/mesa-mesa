@@ -694,7 +694,7 @@
         "description": "ir3: fix emitting descriptor prefetches at end of preamble",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e7ac1094f69830cb76e622525629ace68b757a10",
         "notes": null
