@@ -5799,8 +5799,6 @@ radv_get_vbo_info(const struct radv_cmd_buffer *cmd_buffer, uint32_t idx, struct
    const struct radv_vertex_input_state *vi_state = &cmd_buffer->state.vertex_input;
    const uint32_t binding = vi_state->bindings[idx];
 
-   memset(vbo_info, 0, sizeof(*vbo_info));
-
    vbo_info->binding = binding;
    vbo_info->va = cmd_buffer->vertex_bindings[binding].addr;
    vbo_info->size = cmd_buffer->vertex_bindings[binding].size;
@@ -5817,11 +5815,13 @@ radv_get_vbo_info(const struct radv_cmd_buffer *cmd_buffer, uint32_t idx, struct
       const uint32_t hw_format = vtx_info->hw_format[vtx_info->num_channels - 1];
 
       if (pdev->info.gfx_level >= GFX10) {
-         vbo_info->non_trivial_format |= vtx_info->dst_sel | S_008F0C_FORMAT_GFX10(hw_format);
+         vbo_info->non_trivial_format = vtx_info->dst_sel | S_008F0C_FORMAT_GFX10(hw_format);
       } else {
-         vbo_info->non_trivial_format |=
+         vbo_info->non_trivial_format =
             vtx_info->dst_sel | S_008F0C_NUM_FORMAT((hw_format >> 4) & 0x7) | S_008F0C_DATA_FORMAT(hw_format & 0xf);
       }
+   } else {
+      vbo_info->non_trivial_format = 0;
    }
 }
 
