@@ -256,6 +256,10 @@ def native_to_constant(type, value):
             return "%.1ff" % float(value)
         else:
             return "%.1f" % float(value)
+    elif value == -2147483648:
+        return "INT_MIN"
+    elif value == -9223372036854775808:
+        return "INT64_MIN"
     else:
         return str(int(value))
 

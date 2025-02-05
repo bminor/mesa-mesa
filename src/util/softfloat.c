@@ -96,7 +96,7 @@ uint64_t _mesa_short_shift_right_jam64(uint64_t a, uint8_t dist)
  * From softfloat_shiftRightJam64()
  */
 static inline
-uint64_t _mesa_shift_right_jam64(uint64_t a, uint32_t dist)
+uint64_t _mesa_shift_right_jam64(uint64_t a, int32_t dist)
 {
     return
         (dist < 63) ? a >> dist | ((uint64_t) (a << (-dist & 63)) != 0) : (a != 0);
@@ -1339,7 +1339,7 @@ _mesa_float_fma_rtz(float a, float b, float c)
             }
             if (m_64 & 0x8000000000000000) {
                 s = !s;
-                m_64 = -m_64;
+                m_64 = (uint64_t)(-(int64_t)m_64);
             }
         } else {
             m_64 -= _mesa_shift_right_jam64(c_flt_m_64, exp_diff);
