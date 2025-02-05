@@ -1626,6 +1626,12 @@ validate_ssa_dominance(nir_function_impl *impl, validate_state *state)
          }
          nir_foreach_def(instr, validate_ssa_def_dominance, state);
       }
+
+      nir_if *nif = nir_block_get_following_if(block);
+      if (nif) {
+         validate_assert(state, nir_block_dominates(nif->condition.ssa->parent_instr->block,
+                                                    block));
+      }
    }
 }
 
