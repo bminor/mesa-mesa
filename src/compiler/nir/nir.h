@@ -2165,6 +2165,13 @@ bool nir_intrinsic_can_reorder(nir_intrinsic_instr *instr);
 bool nir_intrinsic_writes_external_memory(const nir_intrinsic_instr *instr);
 
 static inline bool
+nir_intrinsic_has_semantic(const nir_intrinsic_instr *intr,
+                           nir_intrinsic_semantic_flag flag)
+{
+   return nir_intrinsic_infos[intr->intrinsic].flags & flag;
+}
+
+static inline bool
 nir_intrinsic_is_ray_query(nir_intrinsic_op intrinsic)
 {
    switch (intrinsic) {
