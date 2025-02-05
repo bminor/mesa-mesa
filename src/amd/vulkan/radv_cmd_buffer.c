@@ -2877,8 +2877,13 @@ radv_emit_graphics_pipeline(struct radv_cmd_buffer *cmd_buffer)
           radv_rast_prim_is_points_or_lines(pipeline->rast_prim))
          cmd_buffer->state.dirty |= RADV_CMD_DIRTY_GUARDBAND;
 
-      if (cmd_buffer->state.emitted_graphics_pipeline->rast_prim != pipeline->rast_prim)
-         cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_PRIMITIVE_TOPOLOGY | RADV_DYNAMIC_RASTERIZATION_SAMPLES;
+      if (cmd_buffer->state.emitted_graphics_pipeline->rast_prim != pipeline->rast_prim) {
+         cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_PRIMITIVE_TOPOLOGY;
+
+         if (radv_rast_prim_is_line(cmd_buffer->state.emitted_graphics_pipeline->rast_prim) !=
+             radv_rast_prim_is_line(pipeline->rast_prim))
+            cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_RASTERIZATION_SAMPLES;
+      }
 
       if (cmd_buffer->state.emitted_graphics_pipeline->ms.min_sample_shading != pipeline->ms.min_sample_shading ||
           cmd_buffer->state.emitted_graphics_pipeline->uses_out_of_order_rast != pipeline->uses_out_of_order_rast ||
@@ -5551,13 +5556,13 @@ radv_cmd_buffer_flush_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const ui
       radv_emit_color_blend(cmd_buffer);
 
    if (states & (RADV_DYNAMIC_RASTERIZATION_SAMPLES | RADV_DYNAMIC_LINE_RASTERIZATION_MODE |
-                 RADV_DYNAMIC_PRIMITIVE_TOPOLOGY | RADV_DYNAMIC_POLYGON_MODE | RADV_DYNAMIC_SAMPLE_LOCATIONS_ENABLE))
+                 RADV_DYNAMIC_POLYGON_MODE | RADV_DYNAMIC_SAMPLE_LOCATIONS_ENABLE))
       radv_emit_rasterization_samples(cmd_buffer);
 
    if (states &
        (RADV_DYNAMIC_LINE_STIPPLE_ENABLE | RADV_DYNAMIC_CONSERVATIVE_RAST_MODE | RADV_DYNAMIC_SAMPLE_LOCATIONS |
         RADV_DYNAMIC_SAMPLE_LOCATIONS_ENABLE | RADV_DYNAMIC_RASTERIZATION_SAMPLES |
-        RADV_DYNAMIC_LINE_RASTERIZATION_MODE | RADV_DYNAMIC_PRIMITIVE_TOPOLOGY | RADV_DYNAMIC_POLYGON_MODE))
+        RADV_DYNAMIC_LINE_RASTERIZATION_MODE | RADV_DYNAMIC_POLYGON_MODE))
       radv_emit_msaa_state(cmd_buffer);
 
    /* RADV_DYNAMIC_ATTACHMENT_FEEDBACK_LOOP_ENABLE is handled by radv_emit_db_shader_control. */
@@ -8150,6 +8155,11 @@ radv_CmdSetPrimitiveTopology(VkCommandBuffer commandBuffer, VkPrimitiveTopology 
    if (radv_prim_is_points_or_lines(state->dynamic.vk.ia.primitive_topology) !=
        radv_prim_is_points_or_lines(primitive_topology))
       state->dirty |= RADV_CMD_DIRTY_GUARDBAND;
+
+   /* for line stipple/mode */
+   if (radv_prim_is_lines(state->dynamic.vk.ia.primitive_topology) !=
+       radv_prim_is_lines(primitive_topology))
+      state->dirty |= RADV_DYNAMIC_RASTERIZATION_SAMPLES;
 
    state->dynamic.vk.ia.primitive_topology = primitive_topology;
 
