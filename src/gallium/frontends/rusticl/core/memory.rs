@@ -1137,29 +1137,48 @@ impl Buffer {
         dst_row_pitch: usize,
         dst_slice_pitch: usize,
     ) -> CLResult<()> {
-        let (offset, size) =
-            CLVec::calc_offset_size(src_origin, region, [1, src_row_pitch, src_slice_pitch]);
-        let tx_src = self.tx(ctx, offset, size, RWFlags::RD)?;
+        let src_offset = CLVec::calc_offset(src_origin, [1, src_row_pitch, src_slice_pitch]);
+        let mut src_offset = self.apply_offset(src_offset)?;
+        let src_res = self.get_res_for_access(ctx, RWFlags::RD)?;
 
-        let (offset, size) =
-            CLVec::calc_offset_size(dst_origin, region, [1, dst_row_pitch, dst_slice_pitch]);
-        let tx_dst = dst.tx(ctx, offset, size, RWFlags::WR)?;
+        let dst_offset = CLVec::calc_offset(dst_origin, [1, dst_row_pitch, dst_slice_pitch]);
+        let mut dst_offset = self.apply_offset(dst_offset)?;
+        let dst_res = dst.get_res_for_access(ctx, RWFlags::WR)?;
 
-        perf_warning!("clEnqueueCopyBufferRect stalls the GPU");
+        if src_row_pitch == dst_row_pitch && region[1] == src_row_pitch {
+            let slice_size = (region[0] * region[1]).try_into_with_err(CL_OUT_OF_RESOURCES)?;
+            for _ in 0..region[2] {
+                ctx.resource_copy_buffer(
+                    src_res,
+                    src_offset as i32,
+                    dst_res,
+                    dst_offset as u32,
+                    slice_size,
+                );
 
-        // TODO check to use hw accelerated paths (e.g. resource_copy_region or blits)
-        sw_copy(
-            tx_src.ptr(),
-            tx_dst.ptr(),
-            region,
-            &CLVec::default(),
-            src_row_pitch,
-            src_slice_pitch,
-            &CLVec::default(),
-            dst_row_pitch,
-            dst_slice_pitch,
-            1,
-        );
+                src_offset += src_slice_pitch;
+                dst_offset += dst_slice_pitch;
+            }
+        } else {
+            let row_size = region[0].try_into_with_err(CL_OUT_OF_RESOURCES)?;
+            for _ in 0..region[2] {
+                for _ in 0..region[1] {
+                    ctx.resource_copy_buffer(
+                        src_res,
+                        src_offset as i32,
+                        dst_res,
+                        dst_offset as u32,
+                        row_size,
+                    );
+
+                    src_offset += src_row_pitch;
+                    dst_offset += dst_row_pitch;
+                }
+
+                src_offset += src_slice_pitch - (src_row_pitch * region[1]);
+                dst_offset += dst_slice_pitch - (dst_row_pitch * region[1]);
+            }
+        }
 
         Ok(())
     }
