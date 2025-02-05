@@ -2874,6 +2874,46 @@ nir_get_io_offset_src(nir_intrinsic_instr *instr)
 }
 
 /**
+ * Return the index or handle source number for a load/store intrinsic or -1
+ * if there's no index or handle.
+ */
+int
+nir_get_io_index_src_number(const nir_intrinsic_instr *instr)
+{
+   switch (instr->intrinsic) {
+   case nir_intrinsic_load_ubo:
+   case nir_intrinsic_load_ssbo:
+   case nir_intrinsic_load_input_vertex:
+   case nir_intrinsic_load_per_vertex_input:
+   case nir_intrinsic_load_per_vertex_output:
+   case nir_intrinsic_load_per_view_output:
+   case nir_intrinsic_load_per_primitive_output:
+   case nir_intrinsic_load_interpolated_input:
+   case nir_intrinsic_load_smem_amd:
+   case nir_intrinsic_ldc_nv:
+   case nir_intrinsic_ldcx_nv:
+      return 0;
+   case nir_intrinsic_store_ssbo:
+   case nir_intrinsic_store_per_vertex_output:
+   case nir_intrinsic_store_per_view_output:
+   case nir_intrinsic_store_per_primitive_output:
+      return 1;
+   default:
+      return -1;
+   }
+}
+
+/**
+ * Return the offset or handle source for a load/store intrinsic.
+ */
+nir_src *
+nir_get_io_index_src(nir_intrinsic_instr *instr)
+{
+   const int idx = nir_get_io_index_src_number(instr);
+   return idx >= 0 ? &instr->src[idx] : NULL;
+}
+
+/**
  * Return the array index source number for an arrayed load/store intrinsic or -1 if there's no offset.
  */
 int
