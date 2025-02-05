@@ -594,7 +594,7 @@
         "description": "venus: enable VK_EXT_external_memory_acquire_unmodified if needed",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "969cb02de73f3b06c36428d6bbda51e52e64f910",
         "notes": null
