@@ -28,7 +28,7 @@
 
 #include "util/simple_mtx.h"
 
-#include "compiler/nir/nir.h"
+#include "compiler/shader_enums.h"
 
 #ifdef __cplusplus
 extern "C" {
