@@ -7,9 +7,9 @@
  * SPDX-License-Identifier: MIT
  */
 
-#define AC_SURFACE_INCLUDE_NIR
-#include "ac_surface.h"
 
+#include "ac_surface.h"
+#include "ac_nir_surface.h"
 #include "nir/nir_format_convert.h"
 #include "nir_builder.h"
 #include "radv_meta_nir.h"

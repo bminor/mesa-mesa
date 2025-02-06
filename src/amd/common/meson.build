@@ -121,6 +121,8 @@ amd_common_files = files(
   'nir/ac_nir_opt_pack_half.c',
   'nir/ac_nir_opt_shared_append.c',
   'nir/ac_nir_prerast_utils.c',
+  'nir/ac_nir_surface.c',
+  'nir/ac_nir_surface.h',
 )
 
 if not with_platform_windows
