@@ -25,7 +25,7 @@
 #define _NIR_SPIRV_H_
 
 #include "util/disk_cache.h"
-#include "compiler/nir/nir.h"
+#include "compiler/nir/nir_defines.h"
 #include "compiler/shader_info.h"
 
 #ifdef __cplusplus
