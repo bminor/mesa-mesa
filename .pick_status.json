@@ -7404,7 +7404,7 @@
         "description": "panvk: correct number of read bytes for dynamic buffers",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "27beadcbdb51681a4eb3aaab990763d829009aef",
         "notes": null
