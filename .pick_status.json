@@ -554,7 +554,7 @@
         "description": "panfrost: avoid potential divide by 0 calculating timer_resolution",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "205669e3a93a373fee2f4d0c8994b62c9faa371f",
         "notes": null
