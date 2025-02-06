@@ -1197,10 +1197,6 @@ format_is_supported(struct panvk_physical_device *physical_device,
          return false;
    }
 
-   /* 3byte formats are not supported by the buffer <-> image copy helpers. */
-   if (util_format_get_blocksize(pfmt) == 3)
-      return false;
-
    return true;
 }
 
