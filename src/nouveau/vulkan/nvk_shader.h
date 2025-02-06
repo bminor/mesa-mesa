@@ -11,7 +11,7 @@
 #include "vk_pipeline_cache.h"
 
 #include "nak.h"
-#include "nir.h"
+#include "nir_defines.h"
 
 #include "vk_shader.h"
 
