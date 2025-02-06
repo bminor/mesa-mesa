@@ -229,14 +229,15 @@ def define_tracepoints(args):
                  tp_args=[Arg(type='uint32_t', var='count', c_format='%u'),],
                  need_cs_param=True)
 
-    begin_end_tp('as_build')
-    begin_end_tp('as_build_leaves', maybe_compute=True)
-    begin_end_tp('as_morton_generate', maybe_compute=True)
-    begin_end_tp('as_morton_sort', maybe_compute=True)
-    begin_end_tp('as_lbvh_build_internal', maybe_compute=True)
-    begin_end_tp('as_ploc_build_internal', maybe_compute=True)
-    begin_end_tp('as_encode', maybe_compute=True)
-    begin_end_tp('as_copy', maybe_compute=True)
+    rt_args = [Arg(type='uint32_t', var='cs_hash', c_format='%u')]
+    begin_end_tp('as_build', tp_args=rt_args)
+    begin_end_tp('as_build_leaves', tp_args=rt_args, maybe_compute=True)
+    begin_end_tp('as_morton_generate', tp_args=rt_args, maybe_compute=True)
+    begin_end_tp('as_morton_sort', tp_args=rt_args, maybe_compute=True)
+    begin_end_tp('as_lbvh_build_internal', tp_args=rt_args, maybe_compute=True)
+    begin_end_tp('as_ploc_build_internal', tp_args=rt_args, maybe_compute=True)
+    begin_end_tp('as_encode', tp_args=rt_args, maybe_compute=True)
+    begin_end_tp('as_copy', tp_args=rt_args, maybe_compute=True)
 
     begin_end_tp('rays',
                  tp_args=[Arg(type='uint32_t', var='group_x', c_format='%u'),
