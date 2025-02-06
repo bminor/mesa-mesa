@@ -20,7 +20,8 @@
 #include "ac_vcn_enc.h"
 #include "wsi_common.h"
 
-#include "nir.h"
+#include "nir_shader_compiler_options.h"
+#include "compiler/shader_enums.h"
 
 #include "vk_physical_device.h"
 

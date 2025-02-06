@@ -19,6 +19,7 @@
 #include "vk_log.h"
 #include "vk_util.h"
 
+#include "util/compiler.h"
 #include "util/format_r11g11b10f.h"
 #include "util/format_rgb9e5.h"
 #include "util/format_srgb.h"

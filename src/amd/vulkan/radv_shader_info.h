@@ -14,13 +14,14 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
-#include "nir.h"
 #include "nir_tcs_info.h"
 #include "radv_constants.h"
 #include "radv_shader_args.h"
+#include "util/set.h"
 
 struct radv_device;
 struct nir_shader;
+typedef struct nir_shader nir_shader;
 struct radv_shader_layout;
 struct radv_shader_stage_key;
 enum radv_pipeline_type;

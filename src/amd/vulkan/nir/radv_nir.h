@@ -10,7 +10,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "amd_family.h"
-#include "nir.h"
+#include "nir_defines.h"
 
 #ifdef __cplusplus
 extern "C" {

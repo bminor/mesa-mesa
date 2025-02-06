@@ -39,6 +39,8 @@
 
 #include "aco_interface.h"
 
+#include "compiler/shader_info.h"
+#include "util/compiler.h"
 #include "util/fast_idiv_by_const.h"
 
 enum {

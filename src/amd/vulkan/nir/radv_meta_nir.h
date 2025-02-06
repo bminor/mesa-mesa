@@ -11,7 +11,8 @@
 #define RADV_META_NIR_H
 
 #include "vulkan/vulkan_core.h"
-#include "nir_builder.h"
+#include "compiler/shader_enums.h"
+#include "nir_defines.h"
 
 #ifdef __cplusplus
 extern "C" {
