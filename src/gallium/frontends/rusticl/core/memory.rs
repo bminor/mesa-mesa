@@ -1548,92 +1548,76 @@ impl Image {
         &self,
         ctx: &QueueContext,
         dst: &Image,
-        src_origin: CLVec<usize>,
-        dst_origin: CLVec<usize>,
+        mut src_origin: CLVec<usize>,
+        mut dst_origin: CLVec<usize>,
         region: &CLVec<usize>,
     ) -> CLResult<()> {
-        let src_res = self.get_res_for_access(ctx, RWFlags::RD)?;
-        let dst_res = dst.get_res_for_access(ctx, RWFlags::WR)?;
+        let bpp = self.image_format.pixel_size().unwrap().into();
+        let src_parent = self.parent();
+        let dst_parent = dst.parent();
 
-        // We just want to use sw_copy if mem objects have different types or if copy can have
-        // custom strides (image2d from buff/images)
-        if self.is_parent_buffer() || dst.is_parent_buffer() {
-            let bpp = self.image_format.pixel_size().unwrap().into();
+        let src_pitch = [
+            bpp,
+            self.image_desc.row_pitch()? as usize,
+            self.image_desc.slice_pitch(),
+        ];
 
-            let tx_src;
-            let tx_dst;
-            let dst_pitch;
-            let src_pitch;
-            if let Some(Mem::Buffer(buffer)) = self.parent() {
-                src_pitch = [
-                    bpp,
-                    self.image_desc.row_pitch()? as usize,
-                    self.image_desc.slice_pitch(),
-                ];
+        let dst_pitch = [
+            bpp,
+            dst.image_desc.row_pitch()? as usize,
+            dst.image_desc.slice_pitch(),
+        ];
 
-                let (offset, size) = CLVec::calc_offset_size(src_origin, region, src_pitch);
-                tx_src = buffer.tx(ctx, offset, size, RWFlags::RD)?;
-            } else {
-                tx_src = self.tx_image(
+        // We lower this operation depending on the parent object. Only if both the src and dst are
+        // images we use the resource_copy_texture path.
+        match (src_parent, dst_parent) {
+            (Some(Mem::Buffer(src_buffer)), Some(Mem::Buffer(dst_buffer))) => {
+                let mut region = *region;
+
+                region[0] *= bpp;
+                src_origin[0] *= bpp;
+                dst_origin[0] *= bpp;
+
+                src_buffer.copy_rect(
+                    dst_buffer,
                     ctx,
-                    &create_pipe_box(src_origin, *region, self.mem_type)?,
-                    RWFlags::RD,
-                )?;
-
-                src_pitch = [1, tx_src.row_pitch() as usize, tx_src.slice_pitch()];
+                    &region,
+                    &src_origin,
+                    src_pitch[1],
+                    src_pitch[2],
+                    &dst_origin,
+                    dst_pitch[1],
+                    dst_pitch[2],
+                )
             }
-
-            if let Some(Mem::Buffer(buffer)) = dst.parent() {
-                // If image is created from a buffer, use image's slice and row pitch instead
-                dst_pitch = [
-                    bpp,
-                    dst.image_desc.row_pitch()? as usize,
-                    dst.image_desc.slice_pitch(),
-                ];
-
-                let (offset, size) = CLVec::calc_offset_size(dst_origin, region, dst_pitch);
-                tx_dst = buffer.tx(ctx, offset, size, RWFlags::WR)?;
-            } else {
-                tx_dst = dst.tx_image(
-                    ctx,
-                    &create_pipe_box(dst_origin, *region, dst.mem_type)?,
-                    RWFlags::WR,
-                )?;
-
-                dst_pitch = [1, tx_dst.row_pitch() as usize, tx_dst.slice_pitch()];
-            }
-
-            // Those pitch values cannot have 0 value in its coordinates
-            debug_assert!(src_pitch[0] != 0 && src_pitch[1] != 0 && src_pitch[2] != 0);
-            debug_assert!(dst_pitch[0] != 0 && dst_pitch[1] != 0 && dst_pitch[2] != 0);
-
-            perf_warning!(
-                "clEnqueueCopyImage stalls the GPU when src or dst are created from a buffer"
-            );
-
-            sw_copy(
-                tx_src.ptr(),
-                tx_dst.ptr(),
+            (Some(Mem::Buffer(src)), _) => src.copy_to_image(
+                ctx,
+                dst,
+                CLVec::calc_offset(src_origin, src_pitch),
+                dst_origin,
                 region,
-                &CLVec::default(),
-                src_pitch[1],
-                src_pitch[2],
-                &CLVec::default(),
-                dst_pitch[1],
-                dst_pitch[2],
-                bpp as u8,
-            )
-        } else {
-            let bx = create_pipe_box(src_origin, *region, self.mem_type)?;
-            let mut dst_origin: [u32; 3] = dst_origin.try_into()?;
+            ),
+            (_, Some(Mem::Buffer(dst))) => self.copy_to_buffer(
+                ctx,
+                dst,
+                src_origin,
+                CLVec::calc_offset(dst_origin, dst_pitch),
+                region,
+            ),
+            _ => {
+                let src_res = self.get_res_for_access(ctx, RWFlags::RD)?;
+                let dst_res = dst.get_res_for_access(ctx, RWFlags::WR)?;
+                let bx = create_pipe_box(src_origin, *region, self.mem_type)?;
+                let mut dst_origin: [u32; 3] = dst_origin.try_into()?;
 
-            if self.mem_type == CL_MEM_OBJECT_IMAGE1D_ARRAY {
-                (dst_origin[1], dst_origin[2]) = (dst_origin[2], dst_origin[1]);
+                if self.mem_type == CL_MEM_OBJECT_IMAGE1D_ARRAY {
+                    (dst_origin[1], dst_origin[2]) = (dst_origin[2], dst_origin[1]);
+                }
+
+                ctx.resource_copy_texture(src_res, dst_res, &dst_origin, &bx);
+                Ok(())
             }
-
-            ctx.resource_copy_texture(src_res, dst_res, &dst_origin, &bx);
         }
-        Ok(())
     }
 
     pub fn fill(
