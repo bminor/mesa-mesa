@@ -964,7 +964,7 @@
         "description": "llvmpipe/tests: include math.h for INFINITY",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d366520e8553f4a16151ee946d6e8136cab3de5e",
         "notes": null
