@@ -11,7 +11,7 @@
 #include "ac_shader_args.h"
 #include "ac_shader_util.h"
 #include "amd_family.h"
-#include "compiler/nir/nir.h"
+#include "nir_opcodes.h"
 #include <llvm-c/Core.h>
 
 #include <stdbool.h>
