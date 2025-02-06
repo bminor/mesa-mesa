@@ -59,7 +59,7 @@
 #include "pvr_robustness.h"
 #include "pvr_tex_state.h"
 #include "pvr_types.h"
-#include "usc/pvr_uscgen.h"
+#include "pvr_usc.h"
 #include "pvr_util.h"
 #include "pvr_winsys.h"
 #include "rogue/rogue.h"
@@ -1722,26 +1722,29 @@ static VkResult pvr_device_init_nop_program(struct pvr_device *device)
    const uint32_t cache_line_size =
       rogue_get_slc_cache_line_size(&device->pdevice->dev_info);
    struct pvr_pds_kickusc_program program = { 0 };
-   struct util_dynarray nop_usc_bin;
+   pco_shader *nop;
    uint32_t staging_buffer_size;
    uint32_t *staging_buffer;
+   unsigned usc_temp_count;
    VkResult result;
 
-   pvr_uscgen_nop(&nop_usc_bin);
+   nop = pvr_usc_nop(device->pdevice->pco_ctx, MESA_SHADER_FRAGMENT);
+   usc_temp_count = pco_shader_data(nop)->common.temps;
+   assert(!usc_temp_count);
 
    result = pvr_gpu_upload_usc(device,
-                               util_dynarray_begin(&nop_usc_bin),
-                               nop_usc_bin.size,
+                               pco_shader_binary_data(nop),
+                               pco_shader_binary_size(nop),
                                cache_line_size,
                                &device->nop_program.usc);
-   util_dynarray_fini(&nop_usc_bin);
+   ralloc_free(nop);
    if (result != VK_SUCCESS)
       return result;
 
    /* Setup a PDS program that kicks the static USC program. */
    pvr_pds_setup_doutu(&program.usc_task_control,
                        device->nop_program.usc->dev_addr.addr,
-                       0U,
+                       usc_temp_count,
                        ROGUE_PDSINST_DOUTU_SAMPLE_RATE_INSTANCE,
                        false);
 
