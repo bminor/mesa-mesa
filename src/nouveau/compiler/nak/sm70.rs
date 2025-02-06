@@ -2622,7 +2622,7 @@ impl SM70Encoder<'_> {
                 MemEvictionPriority::First => 0_u8,
                 MemEvictionPriority::Normal => 1_u8,
                 MemEvictionPriority::Last => 2_u8,
-                MemEvictionPriority::Unchanged => 3_u8,
+                MemEvictionPriority::LastUse => 3_u8,
             },
         );
     }
