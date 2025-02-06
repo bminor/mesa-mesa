@@ -647,7 +647,7 @@ struct zink_batch_state {
    struct util_dynarray swapchain_obj; //this doesn't have a zink_bo and must be handled differently
    struct util_dynarray swapchain_obj_unsync; //this doesn't have a zink_bo and must be handled differently
 
-   struct util_dynarray unref_resources;
+   struct util_dynarray unref_resource_objs;
    struct util_dynarray bindless_releases[2];
 
    struct util_dynarray zombie_samplers;
