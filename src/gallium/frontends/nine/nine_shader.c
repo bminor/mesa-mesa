@@ -19,6 +19,7 @@
 #include "tgsi/tgsi_ureg.h"
 #include "tgsi/tgsi_dump.h"
 #include "nir/tgsi_to_nir.h"
+#include "nir.h"
 
 #define DBG_CHANNEL DBG_SHADER
 

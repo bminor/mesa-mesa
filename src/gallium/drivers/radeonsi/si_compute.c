@@ -13,6 +13,7 @@
 #include "util/u_memory.h"
 #include "util/u_upload_mgr.h"
 #include "si_tracepoints.h"
+#include "nir.h"
 
 #define COMPUTE_DBG(sscreen, fmt, args...)                                                         \
    do {                                                                                            \
