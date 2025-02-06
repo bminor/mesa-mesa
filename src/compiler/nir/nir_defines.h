@@ -11,6 +11,10 @@
 #ifndef NIR_DEFINES_H
 #define NIR_DEFINES_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** NIR sized and unsized types
  *
  * The values in this enum are carefully chosen so that the sized type is
@@ -57,5 +61,9 @@ nir_alu_type_get_base_type(nir_alu_type type)
 {
    return (nir_alu_type)(type & NIR_ALU_TYPE_BASE_TYPE_MASK);
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
