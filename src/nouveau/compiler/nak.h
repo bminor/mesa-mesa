@@ -7,7 +7,7 @@
 #define NAK_H
 
 #include "compiler/shader_enums.h"
-#include "nir.h"
+#include "nir_defines.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -20,7 +20,6 @@ extern "C" {
 #define NAK_SUBGROUP_SIZE 32
 
 struct nak_compiler;
-struct nir_shader_compiler_options;
 struct nv_device_info;
 
 struct nak_compiler *nak_compiler_create(const struct nv_device_info *dev);
