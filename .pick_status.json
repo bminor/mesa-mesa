@@ -1,5 +1,505 @@
 [
     {
+        "sha": "fdaf7c7b9647874e66e79653050f9d0999dc9134",
+        "description": "nir: add a high precision conversion unorm->float",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9b827556f52748976e76667a83a667d3673f0b21",
+        "description": "radv: fix adding the BO to cmdbuf list when starting conditional rendering",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "76bd7f92654908185e8c013dae69c9aca31e7d1b",
+        "description": "blorp: Enable SimpleFloatBlendEnable on Xe3+",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0b462c8b9e3d7272d9b5a2d6ab958d2283cf118a",
+        "description": "iris: Enable simpleFloatBlendEnable on Xe3+",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "046b8717af850582bd7a226468804b51ea66829b",
+        "description": "anv: Enable simpleFloatBlendEnable on Xe3+",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "efeeae392622cdcb3d34b6f3a97bf702656cbb35",
+        "description": "intel/genxml: Update BLEND_STATE_ENTRY structure",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d1237cf6f7698c3a22d9cdd00fc2daf329f72be3",
+        "description": "freedreno/ci: update expectations",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "562bc5697fbcb0324c024c485c1bbc9c2f7edd52",
+        "description": "radv/ci: update expectations",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b432f03c8aa3a88ed525524aea2f8fd2579ac1b3",
+        "description": "radv/ci: bump tahiti's cpu cores",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "66d0498872d934c380283a459fb2b6b2b6eea537",
+        "description": "zink/ci: update the radv expectations",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a55613ce8d97a47c438cd758ca392c4baa269397",
+        "description": "zink/ci: use the debian-built-testing for nvk",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "5b291c7ce652c27800624808f6bfef513d7ac3de",
+        "notes": null
+    },
+    {
+        "sha": "30b616244cf312cc2cdd035505e45781efd3e151",
+        "description": "radv: print stringname for VkExternalMemoryHandleTypeFlagBits error",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "20013a1774f234ff8cd487cd3e2bf4db5b12846e",
+        "description": "radv: stop blocking non-2D import/export ops",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ca8a740e3b44f8683f32d1728d143bf6e1fa03c3",
+        "description": "radv: fix error reporting for VkExternalMemoryTypeFlagBitsKHR",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "602f19bad8c293c442af6b54540f5e31906c09f5",
+        "description": "ac/surface: always allow LINEAR modifier for color formats",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1ade9a05d8ba07e1f2a5493694d01fa18b70914c",
+        "description": "intel/brw: Use brw prefix instead of namespace for analysis implementations",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2b92eb0b2c5a4f3f1874358a9f64f5b6795ebf76",
+        "description": "intel/brw: Use brw prefix instead of namespace for dep analysis enum",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e2f354587ddeb67c1184efb50dba2d88d4b447f6",
+        "description": "intel/brw: Merge brw_ir_analysis.h into brw_analysis.h",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c943fb0c20c7bf931503083f1b4df525e04c935e",
+        "description": "intel/brw: Move analysis passes without own file to brw_analysis.cpp",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0f7eb96af80607c5dc0459a5724f8304ff0bde9b",
+        "description": "intel/brw: Move idom_tree declaration to brw_analysis.h",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0ebb75743d5993494dd6a1e20a1622158a77473f",
+        "description": "intel/brw: Use brw_analysis prefix for performance analysis files",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6a23749332578a1ca1b2e8172d323e4f0ed58fb0",
+        "description": "intel/brw: Use brw_analysis prefix for def analysis file",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e0614e8ea1b78c8490afe7f1f13ffa64e50ce2df",
+        "description": "intel/brw: Use brw_analysis prefix for liveness analysis files",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e5369540ea27b478c754ea38a98ae61679e88e41",
+        "description": "intel/brw: Add brw_analysis.h",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bf48eae1f983d927618d1ff6da6dc9563da57952",
+        "description": "nir: drop printf_base_identifier",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e3bc6eafc823ff4fc6db2a015be80a2f6bfaa086",
+        "description": "nir/lower_printf: hash format strings in nir_printf_fmt",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "41eabbadfab33df519470c6ce076b7b02d214c52",
+        "description": "intel: port to u_printf context + singleton",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9429d001b9b4fed77b8ff82611c59bf40761c4de",
+        "description": "intel/nir_lower_printf: modernize nir",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "03ff5b2c03ee5d78baa7cc28e92985f44cf23856",
+        "description": "intel: drop nir_lower_printf calls",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "07ccaa3118bf6e1e5d3aae847cdccec05519bd8a",
+        "description": "Revert \"hk: Stop using strings or common key types for meta keys\"",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "32e0e8c8c58c1ad10f0510a80a6457588cd12543",
+        "notes": null
+    },
+    {
+        "sha": "cb53c83a5eb1f1f3f158972714975b740d1682b9",
+        "description": "docs: update calendar for 25.0.0-rc2",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "93a720f81a32d501c5a9d47c063b2fee4ea8a325",
+        "description": "gfxstream: mark unused variables as such",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b2b37cb1deba957ef1c109c704d8de374ba2d00a",
+        "description": "gfxstream: use `range` variable for its intended purpose",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "96c183c759353adde01e169eae71a504e731679d",
+        "description": "gfxstream: drop dead variables",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "74d0a8cdd62a03c77e27a17d837b3ad12c09db71",
+        "description": "gfxstream: fix signedness of shifts",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "58938f7348655e2e37ab665abb48176b44f27e9f",
+        "description": "gfxstream: drop unnecessary semi-colons",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5f54beb30728f6510ce50071ddaef5f9157b16ef",
+        "description": "ci/cuttlefish: drop `rm libglapi.so` now that it's no longer loaded",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "44bda7c258f5e1a7b476616a134931f923f252b8",
+        "notes": null
+    },
+    {
+        "sha": "4bbbbb96be4702ff60610ab8d44c319125d3ce56",
+        "description": "docs/android: drop libglapi.so now that it's gone",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "44bda7c258f5e1a7b476616a134931f923f252b8",
+        "notes": null
+    },
+    {
+        "sha": "0ce0b7c7b06a09c934684e5dfde688d58e5b79eb",
+        "description": "hk: advertise EXT_image_view_min_lod",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "157ffa5b437f0711c88ac28735ece0465b0f4bd7",
+        "description": "hk: emulate EXT_image_view_min_lod",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8e1ce5331b16a90289746547a997003363777262",
+        "description": "hk: rearrange sampler image desc",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7ed6aa68ad4777a9a3d462ae1a492577073b3e7d",
+        "description": "hk: pack has_border with clamp_0_sampler_index",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6e29a2c8d54b301402fa37eb500633f7bf035cc9",
+        "description": "agx: switch to nir_tex_src_lod_bias_min_agx",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "932d8a68ebb991819f148bf8514916ad098e26ab",
+        "description": "agx: lower min LOD for txf",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "780b814354b74d28d863325cfa2fe90fc5681913",
+        "description": "nir: add lod_bias_min_agx tex src",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c5de33e48e4054fb7ff62d1d5e990ba6a46df71d",
+        "description": "nir: add image_min_lod_agx",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4fc856af98ecee00f07a039b68dd82fb47b4e6da",
+        "description": "radv: fix caching on-demand meta shaders",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9d03c1afe0adc9c68a284928cea1457337686e94",
+        "description": "vulkan/runtime: allow to use a different disk cache",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "30961b2bfec63eb6fed834301efc7f875354b29b",
+        "description": "util/disk_cache: add a new helper to create a disk cache",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8404e7428b6c25a32f8cbc3eb218dec5725bb5ff",
+        "description": "ir3: fix emitting descriptor prefetches at end of preamble",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "e7ac1094f69830cb76e622525629ace68b757a10",
+        "notes": null
+    },
+    {
         "sha": "e192d7d615dec9c9c04447c4b9ab0244d6380944",
         "description": "intel/ci: Update expectations for Xe",
         "nominated": false,
