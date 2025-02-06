@@ -364,7 +364,7 @@
         "description": "ci/cuttlefish: drop `rm libglapi.so` now that it's no longer loaded",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "44bda7c258f5e1a7b476616a134931f923f252b8",
         "notes": null
