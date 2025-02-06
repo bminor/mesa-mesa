@@ -1481,35 +1481,45 @@ impl Image {
         &self,
         ctx: &QueueContext,
         dst: &Buffer,
-        src_origin: CLVec<usize>,
+        mut src_origin: CLVec<usize>,
         dst_offset: usize,
         region: &CLVec<usize>,
     ) -> CLResult<()> {
         let bpp = self.image_format.pixel_size().unwrap().into();
 
-        let src_pitch;
-        let tx_src;
+        // the result is linear without any gaps because it's a plain buffer.
+        let dst_pitch = [bpp, bpp * region[0], bpp * region[0] * region[1]];
+        let mut dst_origin: CLVec<usize> = [dst_offset, 0, 0].into();
+
+        // if the parent object of this image is a buffer, we can simply do a rect copy between
+        // buffers here while taking the bpp into account.
         if let Some(Mem::Buffer(buffer)) = self.parent() {
-            src_pitch = [
-                bpp,
+            let mut region = *region;
+
+            region[0] *= bpp;
+            src_origin[0] *= bpp;
+            dst_origin[0] *= bpp;
+
+            return buffer.copy_rect(
+                dst,
+                ctx,
+                &region,
+                &src_origin,
                 self.image_desc.row_pitch()? as usize,
                 self.image_desc.slice_pitch(),
-            ];
-            let (offset, size) = CLVec::calc_offset_size(src_origin, region, src_pitch);
-            tx_src = buffer.tx(ctx, offset, size, RWFlags::RD)?;
-        } else {
-            tx_src = self.tx_image(
-                ctx,
-                &create_pipe_box(src_origin, *region, self.mem_type)?,
-                RWFlags::RD,
-            )?;
-            src_pitch = [1, tx_src.row_pitch() as usize, tx_src.slice_pitch()];
+                &dst_origin,
+                dst_pitch[1],
+                dst_pitch[2],
+            );
         }
 
-        // If image is created from a buffer, use image's slice and row pitch instead
-        let dst_pitch = [bpp, bpp * region[0], bpp * region[0] * region[1]];
+        let tx_src = self.tx_image(
+            ctx,
+            &create_pipe_box(src_origin, *region, self.mem_type)?,
+            RWFlags::RD,
+        )?;
 
-        let dst_origin: CLVec<usize> = [dst_offset, 0, 0].into();
+        let src_pitch = [1, tx_src.row_pitch() as usize, tx_src.slice_pitch()];
         let (offset, size) = CLVec::calc_offset_size(dst_origin, region, dst_pitch);
         let tx_dst = dst.tx(ctx, offset, size, RWFlags::WR)?;
 
