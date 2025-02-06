@@ -58,7 +58,7 @@ static bool instance_extension_table_initialized = false;
 static struct vk_instance_extension_table gfxstream_vk_instance_extensions_supported = {};
 
 // Provided by Mesa components only; never encoded/decoded through gfxstream
-static const char* const kMesaOnlyInstanceExtension[] = {
+static const char* const kGuestOnlyInstanceExtension[] = {
     VK_KHR_SURFACE_EXTENSION_NAME,
 #if defined(GFXSTREAM_VK_WAYLAND)
     VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME,
@@ -69,7 +69,7 @@ static const char* const kMesaOnlyInstanceExtension[] = {
     VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
 };
 
-static const char* const kMesaOnlyDeviceExtensions[] = {
+static const char* const kGuestOnlyDeviceExtensions[] = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 };
 
@@ -108,15 +108,15 @@ static VkResult SetupInstanceForProcess(void) {
     return VK_SUCCESS;
 }
 
-static bool isMesaOnlyInstanceExtension(const char* name) {
-    for (auto mesaExt : kMesaOnlyInstanceExtension) {
+static bool isGuestOnlyInstanceExtension(const char* name) {
+    for (auto mesaExt : kGuestOnlyInstanceExtension) {
         if (!strncmp(mesaExt, name, VK_MAX_EXTENSION_NAME_SIZE)) return true;
     }
     return false;
 }
 
-static bool isMesaOnlyDeviceExtension(const char* name) {
-    for (auto mesaExt : kMesaOnlyDeviceExtensions) {
+static bool isGuestOnlyDeviceExtension(const char* name) {
+    for (auto mesaExt : kGuestOnlyDeviceExtensions) {
         if (!strncmp(mesaExt, name, VK_MAX_EXTENSION_NAME_SIZE)) return true;
     }
     return false;
@@ -128,7 +128,7 @@ static std::vector<const char*> filteredInstanceExtensionNames(uint32_t count,
     std::vector<const char*> retList;
     for (uint32_t i = 0; i < count; ++i) {
         auto extName = extNames[i];
-        if (!isMesaOnlyInstanceExtension(extName)) {
+        if (!isGuestOnlyInstanceExtension(extName)) {
             retList.push_back(extName);
         }
     }
@@ -140,7 +140,7 @@ static std::vector<const char*> filteredDeviceExtensionNames(uint32_t count,
     std::vector<const char*> retList;
     for (uint32_t i = 0; i < count; ++i) {
         auto extName = extNames[i];
-        if (!isMesaOnlyDeviceExtension(extName)) {
+        if (!isGuestOnlyDeviceExtension(extName)) {
             retList.push_back(extName);
         }
     }
@@ -173,7 +173,7 @@ static void get_device_extensions(VkPhysicalDevice physDevInternal,
             }
             // device extensions from Mesa
             for (uint32_t j = 0; j < VK_DEVICE_EXTENSION_COUNT; j++) {
-                if (isMesaOnlyDeviceExtension(vk_device_extensions[j].extensionName)) {
+                if (isGuestOnlyDeviceExtension(vk_device_extensions[j].extensionName)) {
                     deviceExts->extensions[j] = true;
                     break;
                 }
@@ -295,7 +295,7 @@ static struct vk_instance_extension_table* get_instance_extensions() {
                     }
                     // instance extensions from Mesa
                     for (uint32_t j = 0; j < VK_INSTANCE_EXTENSION_COUNT; j++) {
-                        if (isMesaOnlyInstanceExtension(vk_instance_extensions[j].extensionName)) {
+                        if (isGuestOnlyInstanceExtension(vk_instance_extensions[j].extensionName)) {
                             gfxstream_vk_instance_extensions_supported.extensions[j] = true;
                         }
                     }
