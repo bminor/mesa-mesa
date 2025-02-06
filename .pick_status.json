@@ -1154,7 +1154,7 @@
         "description": "pan/ci: add fail from llvm 19 upgrade",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "101065642d2bf6ae07b72139d13011f5dcc3125a",
         "notes": null
