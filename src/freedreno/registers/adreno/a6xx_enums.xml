@@ -320,14 +320,14 @@ to upconvert to 32b float internally?
 16b float:   3
  -->
 <enum name="a6xx_2d_ifmt">
-	<value value="0x10" name="R2D_UNORM8"/>
 	<value value="0x7"  name="R2D_INT32"/>
 	<value value="0x6"  name="R2D_INT16"/>
 	<value value="0x5"  name="R2D_INT8"/>
 	<value value="0x4"  name="R2D_FLOAT32"/>
 	<value value="0x3"  name="R2D_FLOAT16"/>
+	<value value="0x2"  name="R2D_SNORM8"/>
 	<value value="0x1"  name="R2D_UNORM8_SRGB"/>
-	<value value="0x0"  name="R2D_RAW"/>
+	<value value="0x0"  name="R2D_UNORM8"/>
 </enum>
 
 <enum name="a6xx_tex_type">

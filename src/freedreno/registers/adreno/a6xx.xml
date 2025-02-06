@@ -1265,9 +1265,11 @@ by a particular renderpass/blit.
 		<bitfield name="D24S8" pos="19" type="boolean"/>
 		<!-- some sort of channel mask, disabled channels are set to zero ? -->
 		<bitfield name="MASK" low="20" high="23"/>
-		<bitfield name="IFMT" low="24" high="28" type="a6xx_2d_ifmt"/>
+		<bitfield name="IFMT" low="24" high="26" type="a6xx_2d_ifmt"/>
+		<bitfield name="UNK27" pos="27" type="boolean"/>
+		<bitfield name="UNK28" pos="28" type="boolean"/>
 		<bitfield name="RASTER_MODE" pos="29" type="a6xx_raster_mode"/>
-		<bitfield name="UNK30" pos="30" type="boolean" variants="A7XX-"/>
+		<bitfield name="COPY" pos="30" type="boolean" variants="A7XX-"/>
 	</bitset>
 
 	<reg32 offset="0x8400" name="GRAS_A2D_BLT_CNTL" type="a6xx_a2d_bit_cntl" usage="rp_blit"/>
@@ -3104,10 +3106,15 @@ by a particular renderpass/blit.
 
 	<reg32 offset="0xab22" name="SP_UNKNOWN_AB22" variants="A7XX-" usage="cmd"/>
 
+	<enum name="a6xx_sp_a2d_output_ifmt_type">
+		<value name="OUTPUT_IFMT_2D_FLOAT" value="0"/>
+		<value name="OUTPUT_IFMT_2D_SINT" value="1"/>
+		<value name="OUTPUT_IFMT_2D_UINT" value="2"/>
+	</enum>
+
 	<bitset name="a6xx_sp_a2d_output_info" inline="yes">
-		<bitfield name="NORM" pos="0" type="boolean"/>
-		<bitfield name="SINT" pos="1" type="boolean"/>
-		<bitfield name="UINT" pos="2" type="boolean"/>
+		<bitfield name="HALF_PRECISION" pos="0" type="boolean"/>
+		<bitfield name="IFMT_TYPE" low="1" high="2" type="a6xx_sp_a2d_output_ifmt_type"/>
 		<!-- looks like HW only cares about the base type of this format,
 		     which matches the ifmt? -->
 		<bitfield name="COLOR_FORMAT" low="3" high="10" type="a6xx_format"/>

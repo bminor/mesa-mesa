@@ -509,9 +509,16 @@ r2d_setup_common(struct tu_cmd_buffer *cmd,
    if (fmt == FMT6_10_10_10_2_UNORM_DEST)
       fmt = FMT6_16_16_16_16_FLOAT;
 
+   enum a6xx_sp_a2d_output_ifmt_type output_ifmt_type;
+   if (util_format_is_pure_uint(dst_format))
+      output_ifmt_type = OUTPUT_IFMT_2D_UINT;
+   else if (util_format_is_pure_sint(dst_format))
+      output_ifmt_type = OUTPUT_IFMT_2D_SINT;
+   else
+      output_ifmt_type = OUTPUT_IFMT_2D_FLOAT;
+
    tu_cs_emit_regs(cs, SP_A2D_OUTPUT_INFO(CHIP,
-         .sint = util_format_is_pure_sint(dst_format),
-         .uint = util_format_is_pure_uint(dst_format),
+         .ifmt_type = output_ifmt_type,
          .color_format = fmt,
          .srgb = util_format_is_srgb(dst_format),
          .mask = 0xf));
