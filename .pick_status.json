@@ -6864,7 +6864,7 @@
         "description": "radeonsi: fix has_non_uniform_tex_access info",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f859436b55711684602336f8d9a8dc498ad5fe16",
         "notes": null
