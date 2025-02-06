@@ -1191,36 +1191,39 @@ impl Buffer {
         ctx: &QueueContext,
         dst: &Image,
         src_offset: usize,
-        dst_origin: CLVec<usize>,
+        mut dst_origin: CLVec<usize>,
         region: &CLVec<usize>,
     ) -> CLResult<()> {
-        let src_offset = self.apply_offset(src_offset)?;
         let bpp = dst.image_format.pixel_size().unwrap().into();
         let src_pitch = [bpp, bpp * region[0], bpp * region[0] * region[1]];
-        let size = CLVec::calc_size(region, src_pitch);
-        let tx_src = self.tx(ctx, src_offset, size, RWFlags::RD)?;
 
-        // If image is created from a buffer, use image's slice and row pitch instead
-        let tx_dst;
-        let dst_pitch;
+        // If image is created from a buffer do a simple rect copy.
         if let Some(Mem::Buffer(buffer)) = dst.parent() {
-            dst_pitch = [
-                bpp,
+            // need to update the dst origin to account for the pixel size.
+            dst_origin[0] *= bpp;
+            return self.copy_rect(
+                buffer,
+                ctx,
+                region,
+                &CLVec::new([src_offset, 0, 0]),
+                src_pitch[1],
+                src_pitch[2],
+                &dst_origin,
                 dst.image_desc.row_pitch()? as usize,
                 dst.image_desc.slice_pitch(),
-            ];
-
-            let (offset, size) = CLVec::calc_offset_size(dst_origin, region, dst_pitch);
-            tx_dst = buffer.tx(ctx, offset, size, RWFlags::WR)?;
-        } else {
-            tx_dst = dst.tx_image(
-                ctx,
-                &create_pipe_box(dst_origin, *region, dst.mem_type)?,
-                RWFlags::WR,
-            )?;
-
-            dst_pitch = [1, tx_dst.row_pitch() as usize, tx_dst.slice_pitch()];
+            );
         }
+
+        let size = CLVec::calc_size(region, src_pitch);
+        let src_offset = self.apply_offset(src_offset)?;
+        let tx_src = self.tx(ctx, src_offset, size, RWFlags::RD)?;
+        let tx_dst = dst.tx_image(
+            ctx,
+            &create_pipe_box(dst_origin, *region, dst.mem_type)?,
+            RWFlags::WR,
+        )?;
+
+        let dst_pitch = [1, tx_dst.row_pitch() as usize, tx_dst.slice_pitch()];
 
         // Those pitch values cannot have 0 value in its coordinates
         debug_assert!(src_pitch[0] != 0 && src_pitch[1] != 0 && src_pitch[2] != 0);
