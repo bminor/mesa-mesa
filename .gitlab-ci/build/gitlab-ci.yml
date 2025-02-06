@@ -550,6 +550,21 @@ debian-arm32:
       -D llvm=disabled
       -D valgrind=disabled
       -D gallium-rusticl=false
+      -D mesa-clc=system
+      -D precomp-compiler=system
+    HOST_BUILD_OPTIONS: >
+      -D build-tests=false
+      -D enable-glcpp-tests=false
+      -D gallium-opencl=disabled
+      -D gallium-drivers=panfrost
+      -D vulkan-drivers=
+      -D video-codecs=
+      -D glx=disabled
+      -D platforms=
+      -D mesa-clc=enabled
+      -D install-mesa-clc=true
+      -D precomp-compiler=enabled
+      -D install-precomp-compiler=true
     S3_ARTIFACT_NAME: mesa-arm32-default-${BUILDTYPE}
     # The strip command segfaults, failing to strip the binary and leaving
     # tempfiles in our artifacts.
