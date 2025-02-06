@@ -1832,6 +1832,7 @@ impl<'a> ShaderFromNir<'a> {
                     srcs: srcs,
                     dim: dim,
                     offset: offset_mode == Tld4OffsetMode::AddOffI,
+                    mem_eviction_priority: MemEvictionPriority::Normal,
                     mask: mask,
                 });
             } else if tex.op == nir_texop_lod {
@@ -1854,6 +1855,7 @@ impl<'a> ShaderFromNir<'a> {
                     lod_mode: lod_mode,
                     is_ms: tex.op == nir_texop_txf_ms,
                     offset: offset_mode == Tld4OffsetMode::AddOffI,
+                    mem_eviction_priority: MemEvictionPriority::Normal,
                     mask: mask,
                 });
             } else if tex.op == nir_texop_tg4 {
@@ -1866,6 +1868,7 @@ impl<'a> ShaderFromNir<'a> {
                     comp: tex.component().try_into().unwrap(),
                     offset_mode: offset_mode,
                     z_cmpr: flags.has_z_cmpr(),
+                    mem_eviction_priority: MemEvictionPriority::Normal,
                     mask: mask,
                 });
             } else {
@@ -1879,6 +1882,7 @@ impl<'a> ShaderFromNir<'a> {
                     lod_mode: lod_mode,
                     z_cmpr: flags.has_z_cmpr(),
                     offset: offset_mode == Tld4OffsetMode::AddOffI,
+                    mem_eviction_priority: MemEvictionPriority::Normal,
                     mask: mask,
                 });
             }
