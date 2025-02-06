@@ -1892,35 +1892,31 @@ impl Image {
         mut src_slice_pitch: usize,
         dst_origin: &CLVec<usize>,
     ) -> CLResult<()> {
-        let src = src.as_ptr();
-        let dst_row_pitch = self.image_desc.image_row_pitch;
-        let dst_slice_pitch = self.image_desc.image_slice_pitch;
-
         // texture_subdata most likely maps the resource anyway
         perf_warning!("clEnqueueWriteImage and clEnqueueUnmapMemObject stall the GPU");
 
         if let Some(Mem::Buffer(buffer)) = self.parent() {
-            let pixel_size = self.image_format.pixel_size().unwrap();
-            let (offset, size) = CLVec::calc_offset_size(
-                dst_origin,
-                region,
-                [pixel_size.into(), dst_row_pitch, dst_slice_pitch],
-            );
-            let tx = buffer.tx(ctx, offset, size, RWFlags::WR)?;
+            let bpp: usize = self.image_format.pixel_size().unwrap().into();
 
-            sw_copy(
+            let mut region = *region;
+            let mut dst_origin = *dst_origin;
+
+            dst_origin[0] *= bpp;
+            region[0] *= bpp;
+
+            buffer.write_rect(
                 src,
-                tx.ptr(),
-                region,
+                ctx,
+                &region,
                 &CLVec::default(),
                 src_row_pitch,
                 src_slice_pitch,
-                &CLVec::default(),
-                dst_row_pitch,
-                dst_slice_pitch,
-                pixel_size,
-            );
+                &dst_origin,
+                self.image_desc.image_row_pitch,
+                self.image_desc.image_slice_pitch,
+            )
         } else {
+            let src = src.as_ptr();
             let res = self.get_res_for_access(ctx, RWFlags::WR)?;
             let bx = create_pipe_box(*dst_origin, *region, self.mem_type)?;
 
@@ -1935,8 +1931,8 @@ impl Image {
                 src_row_pitch.try_into_with_err(CL_OUT_OF_HOST_MEMORY)?,
                 src_slice_pitch,
             );
+            Ok(())
         }
-        Ok(())
     }
 
     /// Creates metadata when an 2D image or sampler view is created over a buffer resource.
