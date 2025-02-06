@@ -67,6 +67,9 @@ class LinuxVirtGpuDevice : public VirtGpuDevice {
     virtual VirtGpuResourcePtr importBlob(const struct VirtGpuExternalHandle& handle);
     virtual int execBuffer(struct VirtGpuExecBuffer& execbuffer, const VirtGpuResource* blob);
 
+    virtual bool getDrmInfo(VirtGpuDrmInfo* drmInfo) override;
+    virtual bool getPciBusInfo(VirtGpuPciBusInfo* pciBusInfo) override;
+
    private:
     int64_t mDeviceHandle;
     struct VirtGpuCaps mCaps;

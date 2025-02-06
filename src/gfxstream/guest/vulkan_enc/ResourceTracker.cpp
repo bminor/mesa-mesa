@@ -2101,6 +2101,42 @@ void ResourceTracker::on_vkGetPhysicalDeviceProperties2(void* context,
                                                         VkPhysicalDeviceProperties2* pProperties) {
     if (pProperties) {
         on_vkGetPhysicalDeviceProperties(context, physicalDevice, &pProperties->properties);
+
+        VkPhysicalDeviceDrmPropertiesEXT* drmProps =
+            vk_find_struct(pProperties, PHYSICAL_DEVICE_DRM_PROPERTIES_EXT);
+        if (drmProps) {
+            VirtGpuDrmInfo drmInfo;
+            if (VirtGpuDevice::getInstance()->getDrmInfo(&drmInfo)) {
+                drmProps->hasPrimary = drmInfo.hasPrimary;
+                drmProps->hasRender = drmInfo.hasRender;
+                drmProps->primaryMajor = drmInfo.primaryMajor;
+                drmProps->primaryMinor = drmInfo.primaryMinor;
+                drmProps->renderMajor = drmInfo.renderMajor;
+                drmProps->renderMinor = drmInfo.renderMinor;
+            } else {
+                mesa_logd(
+                    "%s: encountered VkPhysicalDeviceDrmPropertiesEXT in pProperties::pNext chain, "
+                    "but failed to query DrmInfo from the VirtGpuDevice",
+                    __func__);
+            }
+        }
+
+        VkPhysicalDevicePCIBusInfoPropertiesEXT* pciBusInfoProps =
+            vk_find_struct(pProperties, PHYSICAL_DEVICE_PCI_BUS_INFO_PROPERTIES_EXT);
+        if (pciBusInfoProps) {
+            VirtGpuPciBusInfo pciBusInfo;
+            if (VirtGpuDevice::getInstance()->getPciBusInfo(&pciBusInfo)) {
+                pciBusInfoProps->pciDomain = pciBusInfo.domain;
+                pciBusInfoProps->pciBus = pciBusInfo.bus;
+                pciBusInfoProps->pciDevice = pciBusInfo.device;
+                pciBusInfoProps->pciFunction = pciBusInfo.function;
+            } else {
+                mesa_logd(
+                    "%s: encountered VkPhysicalDevicePCIBusInfoPropertiesEXT in pProperties::pNext "
+                    "chain, but failed to query PciBusInfo from the VirtGpuDevice",
+                    __func__);
+            }
+        }
     }
 }
 
