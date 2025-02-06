@@ -29,6 +29,7 @@
 #include "tgsi/tgsi_parse.h"
 
 #include "compiler/nir/nir_serialize.h"
+#include "compiler/nir/nir.h"
 
 #include "util/blob.h"
 #include "util/hash_table.h"

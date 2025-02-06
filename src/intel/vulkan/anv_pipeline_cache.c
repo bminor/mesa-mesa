@@ -27,6 +27,7 @@
 #include "util/disk_cache.h"
 #include "util/mesa-sha1.h"
 #include "nir/nir_serialize.h"
+#include "nir/nir.h"
 #include "anv_private.h"
 #include "nir/nir_xfb_info.h"
 #include "vk_util.h"
