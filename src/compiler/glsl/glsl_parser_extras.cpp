@@ -33,6 +33,7 @@
 #include "util/u_atomic.h" /* for p_atomic_cmpxchg */
 #include "util/ralloc.h"
 #include "util/disk_cache.h"
+#include "util/log.h"
 #include "util/mesa-blake3.h"
 #include "ast.h"
 #include "glsl_parser_extras.h"
