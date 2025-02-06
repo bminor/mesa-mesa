@@ -4754,6 +4754,9 @@ impl DisplayOp for OpTld4 {
         if self.offset_mode != Tld4OffsetMode::None {
             write!(f, ".{}", self.offset_mode)?;
         }
+        if self.z_cmpr {
+            write!(f, ".dc")?;
+        }
         write!(f, " {} {} {}", self.tex, self.srcs[0], self.srcs[1])
     }
 }
