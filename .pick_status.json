@@ -1254,7 +1254,7 @@
         "description": "loader/wayland: Fix missing timespec.h include",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "90effcceab797ffdd439427c32427d9328900a99",
         "notes": null
