@@ -707,20 +707,13 @@ static bool amdgpu_ib_new_buffer(struct amdgpu_winsys *aws,
    unsigned flags = RADEON_FLAG_NO_INTERPROCESS_SHARING |
                     RADEON_FLAG_GL2_BYPASS;
 
-   if (acs->ip_type == AMD_IP_GFX ||
-       acs->ip_type == AMD_IP_COMPUTE ||
-       acs->ip_type == AMD_IP_SDMA) {
-      /* Avoids hangs with "rendercheck -t cacomposite -f a8r8g8b8" via glamor
-       * on Navi 14
-       */
-      flags |= RADEON_FLAG_32BIT;
-   }
-
    pb = amdgpu_bo_create(aws, buffer_size,
                          aws->info.gart_page_size,
                          domain, (radeon_bo_flag)flags);
-   if (!pb)
+   if (!pb) {
+      fprintf(stderr, "amdgpu: failed to create IB buffer: size=%u\n", buffer_size);
       return false;
+   }
 
    mapped = (uint8_t*)amdgpu_bo_map(&aws->dummy_sws.base, pb, NULL, PIPE_MAP_WRITE);
    if (!mapped) {
