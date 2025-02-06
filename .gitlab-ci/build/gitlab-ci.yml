@@ -82,7 +82,7 @@
     optional: true
   - job: debian-arm64-asan
     optional: true
-  - job: debain-android
+  - job: debian-android
     optional: true
   # Windows runners don't have more than one build right now, so there is
   # no need to wait on the "first one" to be done.
