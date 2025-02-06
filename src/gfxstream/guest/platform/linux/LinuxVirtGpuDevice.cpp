@@ -356,3 +356,26 @@ int LinuxVirtGpuDevice::execBuffer(struct VirtGpuExecBuffer& execbuffer,
 VirtGpuDevice* osCreateVirtGpuDevice(enum VirtGpuCapset capset, int32_t descriptor) {
     return new LinuxVirtGpuDevice(capset, descriptor);
 }
+
+bool LinuxVirtGpuDevice::getDrmInfo(VirtGpuDrmInfo* drmInfo) {
+    drmInfo->hasPrimary = mHasPrimary;
+    drmInfo->hasRender = true;
+    drmInfo->primaryMajor = mPrimaryMajor;
+    drmInfo->primaryMinor = mPrimaryMinor;
+    drmInfo->renderMajor = mRenderMajor;
+    drmInfo->renderMinor = mRenderMinor;
+    return true;
+}
+
+bool LinuxVirtGpuDevice::getPciBusInfo(VirtGpuPciBusInfo* pciBusInfo) {
+    if (mBusType != DRM_BUS_PCI) {
+        return false;
+    }
+
+    pciBusInfo->domain = mPciBusInfo.domain;
+    pciBusInfo->bus = mPciBusInfo.bus;
+    pciBusInfo->device = mPciBusInfo.dev;
+    pciBusInfo->function = mPciBusInfo.func;
+
+    return true;
+}
