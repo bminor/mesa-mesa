@@ -26,6 +26,7 @@
 #include "si_pipe.h"
 #include "ac_hw_stage.h"
 #include "aco_interface.h"
+#include "nir.h"
 
 static void
 si_aco_compiler_debug(void *private_data, enum aco_compiler_debug_level level,
