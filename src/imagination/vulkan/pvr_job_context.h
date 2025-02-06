@@ -149,6 +149,7 @@ struct pvr_transfer_ctx {
    struct pvr_transfer_frag_store frag_store;
 
    struct pvr_suballoc_bo *usc_eot_bos[PVR_TRANSFER_MAX_RENDER_TARGETS];
+   unsigned usc_eot_usc_temps[PVR_TRANSFER_MAX_RENDER_TARGETS];
 
    struct pvr_pds_upload pds_unitex_code[PVR_TRANSFER_MAX_TEXSTATE_DMA]
                                         [PVR_TRANSFER_MAX_UNIFORM_DMA];

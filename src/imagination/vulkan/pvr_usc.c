@@ -77,7 +77,42 @@ pco_shader *pvr_usc_nop(pco_ctx *ctx, mesa_shader_stage stage)
  */
 pco_shader *pvr_usc_eot(pco_ctx *ctx, struct pvr_eot_props *props)
 {
-   UNREACHABLE("finishme: pvr_usc_eot");
+   nir_builder b =
+      nir_builder_init_simple_shader(MESA_SHADER_FRAGMENT,
+                                     pco_nir_options(),
+                                     "eot%u.%s",
+                                     props->emit_count,
+                                     props->shared_words ? "sh" : "imm");
+
+   /* TODO: tile buffer support. */
+
+   nir_intrinsic_instr *last_emit = NULL;
+   for (unsigned u = 0; u < props->emit_count; ++u) {
+      if (u > 0)
+         nir_wop_pco(&b);
+
+      nir_def *state0;
+      nir_def *state1;
+      if (props->shared_words) {
+         state0 = nir_load_preamble(&b, 1, 32, .base = props->state_regs[u]);
+         state1 =
+            nir_load_preamble(&b, 1, 32, .base = props->state_regs[u] + 1);
+      } else {
+         unsigned state_off = u * ROGUE_NUM_PBESTATE_STATE_WORDS;
+         state0 = nir_imm_int(&b, props->state_words[state_off]);
+         state1 = nir_imm_int(&b, props->state_words[state_off + 1]);
+      }
+
+      last_emit = nir_emitpix_pco(&b, state0, state1);
+   }
+
+   assert(last_emit);
+   nir_intrinsic_set_freep(last_emit, true);
+
+   /* Just return. */
+   nir_jump(&b, nir_jump_return);
+
+   return build_shader(ctx, b.shader, &(pco_data){ 0 });
 }
 
 /**

@@ -1454,6 +1454,11 @@ encode_map(O_SAVMSK,
    op_ref_maps=[('backend', [['w0', '_'], ['w1', '_']], [])]
 )
 
+encode_map(O_EMITPIX,
+   encodings=[(I_EMITPIX, [('freep', OM_FREEP)])],
+   op_ref_maps=[('backend', [], ['s0', 's2'])]
+)
+
 encode_map(O_BBYP0BM,
    encodings=[
       (I_PHASE0_SRC, [
@@ -2934,6 +2939,24 @@ group_map(O_SAVMSK,
    dests=[
       ('w[0]', ('backend', DEST(0)), 'w0'),
       ('w[1]', ('backend', DEST(1)), 'w1')
+   ]
+)
+
+group_map(O_EMITPIX,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'be'),
+      ('olchk', OM_OLCHK),
+      ('w1p', False),
+      ('w0p', False),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', 1)
+   ]),
+   enc_ops=[('backend', O_EMITPIX)],
+   srcs=[
+      ('s[0]', ('backend', SRC(0)), 's0'),
+      ('s[2]', ('backend', SRC(1)), 's2')
    ]
 )
 

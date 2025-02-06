@@ -207,6 +207,7 @@ void pvr_uscgen_tq_frag(const struct pvr_tq_shader_properties *shader_props,
    ralloc_free(shader);
 }
 
+#if 0
 void pvr_uscgen_tq_eot(unsigned rt_count,
                        const uint64_t *pbe_regs,
                        struct util_dynarray *binary)
@@ -240,3 +241,4 @@ void pvr_uscgen_tq_eot(unsigned rt_count,
 
    ralloc_free(shader);
 }
+#endif

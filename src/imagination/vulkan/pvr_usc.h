@@ -23,6 +23,13 @@ pco_shader *pvr_usc_nop(pco_ctx *ctx, mesa_shader_stage stage);
 
 /* EOT shader generation. */
 struct pvr_eot_props {
+   unsigned emit_count;
+
+   bool shared_words;
+   union {
+      const uint32_t *state_words;
+      const unsigned *state_regs;
+   };
 };
 
 pco_shader *pvr_usc_eot(pco_ctx *ctx, struct pvr_eot_props *props);

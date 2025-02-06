@@ -38,6 +38,7 @@
 #include "pvr_private.h"
 #include "pvr_transfer_frag_store.h"
 #include "pvr_types.h"
+#include "pvr_usc.h"
 #include "usc/pvr_uscgen.h"
 #include "usc/programs/pvr_vdm_load_sr.h"
 #include "usc/programs/pvr_vdm_store_sr.h"
@@ -1206,7 +1207,7 @@ static void pvr_transfer_ctx_ws_create_info_init(
 static VkResult pvr_transfer_eot_shaders_init(struct pvr_device *device,
                                               struct pvr_transfer_ctx *ctx)
 {
-   uint64_t rt_pbe_regs[PVR_TRANSFER_MAX_RENDER_TARGETS];
+   unsigned rt_pbe_regs[PVR_TRANSFER_MAX_RENDER_TARGETS];
 
    /* Setup start indexes of the shared registers that will contain the PBE
     * state words for each render target. These must match the indexes used in
@@ -1220,26 +1221,31 @@ static VkResult pvr_transfer_eot_shaders_init(struct pvr_device *device,
     * indexes and number of shared registers hard coded in
     * pvr_pds_generate_pixel_event().
     */
-   for (uint32_t i = 0; i < ARRAY_SIZE(rt_pbe_regs); i++)
+   for (unsigned i = 0; i < ARRAY_SIZE(rt_pbe_regs); i++)
       rt_pbe_regs[i] = i * PVR_STATE_PBE_DWORDS;
-
-   STATIC_ASSERT(ARRAY_SIZE(rt_pbe_regs) == ARRAY_SIZE(ctx->usc_eot_bos));
 
    for (uint32_t i = 0; i < ARRAY_SIZE(ctx->usc_eot_bos); i++) {
       const uint32_t cache_line_size =
          rogue_get_slc_cache_line_size(&device->pdevice->dev_info);
-      const unsigned rt_count = i + 1;
-      struct util_dynarray eot_bin;
+      struct pvr_eot_props props = {
+         .emit_count = i + 1,
+         .shared_words = true,
+         .state_regs = rt_pbe_regs,
+      };
+      pco_shader *eot;
       VkResult result;
 
-      pvr_uscgen_tq_eot(rt_count, rt_pbe_regs, &eot_bin);
+      eot = pvr_usc_eot(device->pdevice->pco_ctx, &props);
 
       result = pvr_gpu_upload_usc(device,
-                                  util_dynarray_begin(&eot_bin),
-                                  eot_bin.size,
+                                  pco_shader_binary_data(eot),
+                                  pco_shader_binary_size(eot),
                                   cache_line_size,
                                   &ctx->usc_eot_bos[i]);
-      util_dynarray_fini(&eot_bin);
+
+      ctx->usc_eot_usc_temps[i] = pco_shader_data(eot)->common.temps;
+      ralloc_free(eot);
+
       if (result != VK_SUCCESS) {
          for (uint32_t j = 0; j < i; j++)
             pvr_bo_suballoc_free(ctx->usc_eot_bos[j]);

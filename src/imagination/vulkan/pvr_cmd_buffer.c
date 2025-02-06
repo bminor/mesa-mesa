@@ -48,6 +48,7 @@
 #include "pvr_private.h"
 #include "pvr_tex_state.h"
 #include "pvr_types.h"
+#include "pvr_usc.h"
 #include "usc/pvr_uscgen.h"
 #include "pvr_winsys.h"
 #include "util/bitscan.h"
@@ -500,26 +501,26 @@ static VkResult pvr_sub_cmd_gfx_per_job_fragment_programs_create_and_upload(
    const VkAllocationCallbacks *const allocator = &cmd_buffer->vk.pool->alloc;
    struct pvr_device *const device = cmd_buffer->device;
    struct pvr_suballoc_bo *usc_eot_program = NULL;
-   struct util_dynarray eot_program_bin;
+   struct pvr_eot_props props = {
+      .emit_count = emit_count,
+      .shared_words = false,
+      .state_words = pbe_cs_words,
+   };
    uint32_t *staging_buffer;
    uint32_t usc_temp_count;
+   pco_shader *eot;
    VkResult result;
 
-   assert(emit_count > 0);
-
-   pvr_uscgen_eot("per-job EOT",
-                  emit_count,
-                  pbe_cs_words,
-                  &usc_temp_count,
-                  &eot_program_bin);
+   eot = pvr_usc_eot(cmd_buffer->device->pdevice->pco_ctx, &props);
+   usc_temp_count = pco_shader_data(eot)->common.temps;
 
    result = pvr_cmd_buffer_upload_usc(cmd_buffer,
-                                      eot_program_bin.data,
-                                      eot_program_bin.size,
+                                      pco_shader_binary_data(eot),
+                                      pco_shader_binary_size(eot),
                                       4,
                                       &usc_eot_program);
 
-   util_dynarray_fini(&eot_program_bin);
+   ralloc_free(eot);
 
    if (result != VK_SUCCESS)
       return result;
@@ -556,15 +557,10 @@ static VkResult pvr_sub_cmd_gfx_per_job_fragment_programs_create_and_upload(
       cmd_buffer->device->pixel_event_data_size_in_dwords,
       4,
       pds_upload_out);
-   if (result != VK_SUCCESS)
-      goto err_free_pixel_event_staging_buffer;
 
    vk_free(allocator, staging_buffer);
 
-   return VK_SUCCESS;
-
-err_free_pixel_event_staging_buffer:
-   vk_free(allocator, staging_buffer);
+   return result;
 
 err_free_usc_pixel_program:
    list_del(&usc_eot_program->link);

@@ -1093,7 +1093,7 @@ static VkResult pvr_pbe_setup_emit(const struct pvr_transfer_cmd *transfer_cmd,
 
    pvr_pds_setup_doutu(&program.task_control,
                        addr.addr,
-                       0U,
+                       ctx->usc_eot_usc_temps[rt_count - 1U],
                        ROGUE_PDSINST_DOUTU_SAMPLE_RATE_INSTANCE,
                        false);
 

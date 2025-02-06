@@ -395,6 +395,8 @@ O_DEPTHF = hw_op('depthf', OM_ALU_RPT1, 0, 2)
 
 O_SAVMSK = hw_op('savmsk', OM_ALU_RPT1 + [OM_SAVMSK_MODE], 2)
 
+O_EMITPIX = hw_op('emitpix', OM_ALU_RPT1 + [OM_FREEP], 0, 2)
+
 ## Bitwise.
 O_MOVI32 = hw_op('movi32', OM_ALU, 1, 1)
 

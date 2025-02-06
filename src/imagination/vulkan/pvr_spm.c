@@ -42,6 +42,7 @@
 #include "usc/programs/pvr_static_shaders.h"
 #include "pvr_tex_state.h"
 #include "pvr_types.h"
+#include "pvr_usc.h"
 #include "usc/pvr_uscgen.h"
 #include "util/bitscan.h"
 #include "util/macros.h"
@@ -626,8 +627,9 @@ pvr_spm_init_eot_state(struct pvr_device *device,
    const struct pvr_device_info *dev_info = &device->pdevice->dev_info;
    uint32_t total_render_target_used = 0;
    struct pvr_pds_upload pds_eot_program;
-   struct util_dynarray usc_shader_binary;
+   struct pvr_eot_props props;
    uint32_t usc_temp_count;
+   pco_shader *eot;
    VkResult result;
 
    pvr_dev_addr_t next_scratch_buffer_addr =
@@ -726,20 +728,23 @@ pvr_spm_init_eot_state(struct pvr_device *device,
       }
    }
 
-   pvr_uscgen_eot("SPM EOT",
-                  total_render_target_used,
-                  pbe_state_words[0],
-                  &usc_temp_count,
-                  &usc_shader_binary);
+   props = (struct pvr_eot_props){
+      .emit_count = total_render_target_used,
+      .shared_words = false,
+      .state_words = pbe_state_words[0],
+   };
+
+   eot = pvr_usc_eot(device->pdevice->pco_ctx, &props);
+   usc_temp_count = pco_shader_data(eot)->common.temps;
 
    /* TODO: Create a #define in the compiler code to replace the 16. */
    result = pvr_gpu_upload_usc(device,
-                               usc_shader_binary.data,
-                               usc_shader_binary.size,
+                               pco_shader_binary_data(eot),
+                               pco_shader_binary_size(eot),
                                16,
                                &spm_eot_state->usc_eot_program);
 
-   util_dynarray_fini(&usc_shader_binary);
+   ralloc_free(eot);
 
    if (result != VK_SUCCESS)
       return result;

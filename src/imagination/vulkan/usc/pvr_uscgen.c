@@ -29,6 +29,7 @@
 
 #include <stdbool.h>
 
+#if 0
 /* Expects emit_count ROGUE_NUM_PBESTATE_STATE_WORDS entries */
 void pvr_uscgen_eot(const char *name,
                     uint32_t emit_count,
@@ -72,6 +73,7 @@ void pvr_uscgen_eot(const char *name,
 
    ralloc_free(shader);
 }
+#endif
 
 void pvr_uscgen_nop(struct util_dynarray *binary)
 {

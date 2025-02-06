@@ -2731,3 +2731,7 @@ intrinsic("isp_feedback_pco", src_comp=[1, 1])
 
 # Loads the valid mask.
 intrinsic("load_savmsk_vm_pco", src_comp=[], dest_comp=1, indices=[], flags=[CAN_ELIMINATE, CAN_REORDER], bit_sizes=[32])
+
+index("bool", "freep")
+intrinsic("emitpix_pco", src_comp=[1, 1], indices=[FREEP], bit_sizes=[32])
+intrinsic("wop_pco")

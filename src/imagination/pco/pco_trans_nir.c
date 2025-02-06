@@ -1406,6 +1406,17 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
       instr = trans_reg_intr(tctx, intr, dest, src[0], src[1]);
       break;
 
+   case nir_intrinsic_emitpix_pco:
+      instr = pco_emitpix(&tctx->b,
+                          src[0],
+                          src[1],
+                          .freep = nir_intrinsic_freep(intr));
+      break;
+
+   case nir_intrinsic_wop_pco:
+      instr = pco_wop(&tctx->b);
+      break;
+
    default:
       printf("Unsupported intrinsic: \"");
       nir_print_instr(&intr->instr, stdout);
