@@ -2403,6 +2403,8 @@ pub enum MemEvictionPriority {
     Normal,
     Last,
     LastUse,
+    Unchanged,
+    NoAllocate,
 }
 
 impl fmt::Display for MemEvictionPriority {
@@ -2412,6 +2414,8 @@ impl fmt::Display for MemEvictionPriority {
             MemEvictionPriority::Normal => Ok(()),
             MemEvictionPriority::Last => write!(f, ".el"),
             MemEvictionPriority::LastUse => write!(f, ".lu"),
+            MemEvictionPriority::Unchanged => write!(f, ".eu"),
+            MemEvictionPriority::NoAllocate => write!(f, ".na"),
         }
     }
 }

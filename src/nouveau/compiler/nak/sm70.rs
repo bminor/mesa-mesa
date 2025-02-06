@@ -2617,12 +2617,14 @@ impl SM70Encoder<'_> {
 
     fn set_eviction_priority(&mut self, pri: &MemEvictionPriority) {
         self.set_field(
-            84..86,
+            84..87,
             match pri {
                 MemEvictionPriority::First => 0_u8,
                 MemEvictionPriority::Normal => 1_u8,
                 MemEvictionPriority::Last => 2_u8,
                 MemEvictionPriority::LastUse => 3_u8,
+                MemEvictionPriority::Unchanged => 4_u8,
+                MemEvictionPriority::NoAllocate => 5_u8,
             },
         );
     }
