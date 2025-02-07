@@ -44,7 +44,6 @@
 #include "util/ralloc.h"
 #include "util/set.h"
 #include "util/u_math.h"
-#include "util/u_printf.h"
 #include "nir_defines.h"
 #include "nir_shader_compiler_options.h"
 #include <stdio.h>
@@ -59,6 +58,7 @@
 extern "C" {
 #endif
 
+typedef struct u_printf_info u_printf_info;
 extern uint32_t nir_debug;
 extern bool nir_debug_print_shader[MESA_SHADER_KERNEL + 1];
 

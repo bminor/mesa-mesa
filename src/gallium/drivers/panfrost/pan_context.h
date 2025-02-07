@@ -46,6 +46,7 @@
 #include "util/hash_table.h"
 #include "util/simple_mtx.h"
 #include "util/u_blitter.h"
+#include "util/u_printf.h"
 
 #include "compiler/shader_enums.h"
 #include "midgard/midgard_compile.h"

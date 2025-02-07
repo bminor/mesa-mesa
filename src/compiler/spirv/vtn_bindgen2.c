@@ -341,6 +341,7 @@ main(int argc, char **argv)
 
       fprintf(fp, "#include \"compiler/nir/nir.h\"\n");
       fprintf(fp, "#include \"compiler/nir/nir_builder.h\"\n\n");
+      fprintf(fp, "#include \"util/u_printf.h\"\n\n");
 
       fprintf(fp, "#ifdef __cplusplus\n");
       fprintf(fp, "extern \"C\" {\n");

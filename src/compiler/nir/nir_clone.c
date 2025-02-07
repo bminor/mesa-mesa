@@ -24,6 +24,7 @@
 #include "nir.h"
 #include "nir_control_flow.h"
 #include "nir_xfb_info.h"
+#include "util/u_printf.h"
 
 /* Secret Decoder Ring:
  *   clone_foo():

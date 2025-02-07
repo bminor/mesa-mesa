@@ -24,6 +24,7 @@
 #include "nir_serialize.h"
 #include "util/u_dynarray.h"
 #include "util/u_math.h"
+#include "util/u_printf.h"
 #include "nir_control_flow.h"
 #include "nir_xfb_info.h"
 

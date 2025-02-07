@@ -25,6 +25,7 @@
 #include "nir_builder.h"
 #include "nir_control_flow.h"
 #include "nir_vla.h"
+#include "util/u_printf.h"
 
 /*
  * TODO: write a proper inliner for GPUs.
