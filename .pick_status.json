@@ -7334,7 +7334,7 @@
         "description": "crocus: Add missing nir_metadata_preserve in crocus_lower_storage_image_derefs",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f3630548f1da904ec6c63b43ece7e68afdb8867e",
         "notes": null
