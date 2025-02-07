@@ -1363,12 +1363,10 @@ zink_screen_init_compiler(struct zink_screen *screen)
    screen->nir_options.support_indirect_outputs = (uint8_t)BITFIELD_MASK(PIPE_SHADER_TYPES);
 }
 
-const void *
+const struct nir_shader_compiler_options *
 zink_get_compiler_options(struct pipe_screen *pscreen,
-                          enum pipe_shader_ir ir,
                           gl_shader_stage shader)
 {
-   assert(ir == PIPE_SHADER_IR_NIR);
    return &zink_screen(pscreen)->nir_options;
 }
 

@@ -4013,14 +4013,12 @@ iris_shader_perf_log(void *data, unsigned *id, const char *fmt, ...)
    va_end(args);
 }
 
-const void *
+const struct nir_shader_compiler_options *
 iris_get_compiler_options(struct pipe_screen *pscreen,
-                          enum pipe_shader_ir ir,
                           enum pipe_shader_type pstage)
 {
    struct iris_screen *screen = (struct iris_screen *) pscreen;
    gl_shader_stage stage = stage_from_pipe(pstage);
-   assert(ir == PIPE_SHADER_IR_NIR);
 
 #ifdef INTEL_USE_ELK
    return screen->brw ? screen->brw->nir_options[stage]

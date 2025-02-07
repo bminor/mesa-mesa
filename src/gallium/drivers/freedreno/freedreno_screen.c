@@ -676,8 +676,8 @@ fd_init_screen_caps(struct fd_screen *screen)
    caps->shader_clock = is_a6xx(screen);
 }
 
-static const void *
-fd_get_compiler_options(struct pipe_screen *pscreen, enum pipe_shader_ir ir,
+static const struct nir_shader_compiler_options *
+fd_get_compiler_options(struct pipe_screen *pscreen,
                         enum pipe_shader_type shader)
 {
    struct fd_screen *screen = fd_screen(pscreen);

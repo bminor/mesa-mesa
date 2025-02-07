@@ -2293,8 +2293,8 @@ agx_destroy_screen(struct pipe_screen *pscreen)
    ralloc_free(screen);
 }
 
-static const void *
-agx_get_compiler_options(struct pipe_screen *pscreen, enum pipe_shader_ir ir,
+static const struct nir_shader_compiler_options *
+agx_get_compiler_options(struct pipe_screen *pscreen,
                          enum pipe_shader_type shader)
 {
    return &agx_nir_options;

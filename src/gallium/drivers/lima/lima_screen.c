@@ -352,9 +352,8 @@ lima_screen_is_format_supported(struct pipe_screen *pscreen,
    return true;
 }
 
-static const void *
+static const struct nir_shader_compiler_options *
 lima_screen_get_compiler_options(struct pipe_screen *pscreen,
-                                 enum pipe_shader_ir ir,
                                  enum pipe_shader_type shader)
 {
    return lima_program_get_compiler_options(shader);

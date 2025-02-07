@@ -33,7 +33,7 @@ create_deint_shader(struct vl_deint_filter *filter, unsigned field)
    const struct glsl_type *image_type =
       glsl_image_type(GLSL_SAMPLER_DIM_2D, false, GLSL_TYPE_FLOAT);
    const nir_shader_compiler_options *options =
-      filter->pipe->screen->get_compiler_options(filter->pipe->screen, PIPE_SHADER_IR_NIR, PIPE_SHADER_COMPUTE);
+      filter->pipe->screen->get_compiler_options(filter->pipe->screen, PIPE_SHADER_COMPUTE);
 
    nir_builder b = nir_builder_init_simple_shader(MESA_SHADER_COMPUTE, options, "vl:deint");
    b.shader->info.workgroup_size[0] = 8;

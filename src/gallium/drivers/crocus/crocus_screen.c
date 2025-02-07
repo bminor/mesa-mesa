@@ -481,14 +481,12 @@ crocus_query_memory_info(struct pipe_screen *pscreen,
 {
 }
 
-static const void *
+static const struct nir_shader_compiler_options *
 crocus_get_compiler_options(struct pipe_screen *pscreen,
-                            enum pipe_shader_ir ir,
                             enum pipe_shader_type pstage)
 {
    struct crocus_screen *screen = (struct crocus_screen *) pscreen;
    gl_shader_stage stage = stage_from_pipe(pstage);
-   assert(ir == PIPE_SHADER_IR_NIR);
 
    return screen->compiler->nir_options[stage];
 }

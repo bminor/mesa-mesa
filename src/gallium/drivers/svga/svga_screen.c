@@ -183,15 +183,12 @@ static const nir_shader_compiler_options svga_gl4_compiler_options = {
    VGPU10_OPTIONS,
 };
 
-static const void *
+static const struct nir_shader_compiler_options *
 svga_get_compiler_options(struct pipe_screen *pscreen,
-                          enum pipe_shader_ir ir,
                           enum pipe_shader_type shader)
 {
    struct svga_screen *svgascreen = svga_screen(pscreen);
    struct svga_winsys_screen *sws = svgascreen->sws;
-
-   assert(ir == PIPE_SHADER_IR_NIR);
 
    if (sws->have_gl43 || sws->have_sm5)
       return &svga_gl4_compiler_options;

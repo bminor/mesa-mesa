@@ -56,12 +56,11 @@ si_is_compute_copy_faster(struct pipe_screen *pscreen,
    return false;
 }
 
-static const void *si_get_compiler_options(struct pipe_screen *screen, enum pipe_shader_ir ir,
-                                           enum pipe_shader_type shader)
+static const struct nir_shader_compiler_options *si_get_compiler_options(
+   struct pipe_screen *screen, enum pipe_shader_type shader)
 {
    struct si_screen *sscreen = (struct si_screen *)screen;
 
-   assert(ir == PIPE_SHADER_IR_NIR);
    return sscreen->nir_options;
 }
 

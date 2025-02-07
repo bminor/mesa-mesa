@@ -482,12 +482,10 @@ llvmpipe_finalize_nir(struct pipe_screen *screen,
 }
 
 
-static inline const void *
+static inline const struct nir_shader_compiler_options *
 llvmpipe_get_compiler_options(struct pipe_screen *screen,
-                              enum pipe_shader_ir ir,
                               enum pipe_shader_type shader)
 {
-   assert(ir == PIPE_SHADER_IR_NIR);
    return &gallivm_nir_options;
 }
 

@@ -56,14 +56,13 @@ dd_screen_get_device_vendor(struct pipe_screen *_screen)
    return screen->get_device_vendor(screen);
 }
 
-static const void *
+static const struct nir_shader_compiler_options *
 dd_screen_get_compiler_options(struct pipe_screen *_screen,
-                               enum pipe_shader_ir ir,
                                enum pipe_shader_type shader)
 {
    struct pipe_screen *screen = dd_screen(_screen)->screen;
 
-   return screen->get_compiler_options(screen, ir, shader);
+   return screen->get_compiler_options(screen, shader);
 }
 
 static struct disk_cache *

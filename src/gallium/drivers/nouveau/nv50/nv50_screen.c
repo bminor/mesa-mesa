@@ -697,14 +697,11 @@ int nv50_tls_realloc(struct nv50_screen *screen, unsigned tls_space)
    return 1;
 }
 
-static const void *
+static const struct nir_shader_compiler_options *
 nv50_screen_get_compiler_options(struct pipe_screen *pscreen,
-                                 enum pipe_shader_ir ir,
                                  enum pipe_shader_type shader)
 {
-   if (ir == PIPE_SHADER_IR_NIR)
-      return nv50_ir_nir_shader_compiler_options(NVISA_G80_CHIPSET, shader);
-   return NULL;
+   return nv50_ir_nir_shader_compiler_options(NVISA_G80_CHIPSET, shader);
 }
 
 struct nouveau_screen *

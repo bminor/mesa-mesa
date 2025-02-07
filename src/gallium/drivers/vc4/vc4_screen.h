@@ -120,9 +120,8 @@ struct pipe_screen *vc4_screen_create(int fd,
                                       const struct pipe_screen_config *config,
                                       struct renderonly *ro);
 
-const void *
+const struct nir_shader_compiler_options *
 vc4_screen_get_compiler_options(struct pipe_screen *pscreen,
-                                enum pipe_shader_ir ir,
                                 enum pipe_shader_type shader);
 
 void

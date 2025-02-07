@@ -414,14 +414,7 @@ impl PipeScreen {
         &self,
         shader: pipe_shader_type,
     ) -> *const nir_shader_compiler_options {
-        unsafe {
-            self.screen().get_compiler_options.unwrap()(
-                self.screen.as_ptr(),
-                pipe_shader_ir::PIPE_SHADER_IR_NIR,
-                shader,
-            )
-            .cast()
-        }
+        unsafe { self.screen().get_compiler_options.unwrap()(self.screen.as_ptr(), shader) }
     }
 
     pub fn shader_cache(&self) -> Option<DiskCacheBorrowed> {

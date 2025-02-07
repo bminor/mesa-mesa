@@ -358,13 +358,11 @@ static const nir_shader_compiler_options nv30_base_compiler_options = {
    .no_integers = true,
 };
 
-static const void *
+static const struct nir_shader_compiler_options *
 nv30_screen_get_compiler_options(struct pipe_screen *pscreen,
-                                 enum pipe_shader_ir ir,
                                  enum pipe_shader_type shader)
 {
    struct nv30_screen *screen = nv30_screen(pscreen);
-   assert(ir == PIPE_SHADER_IR_NIR);
 
    /* The FS compiler options are different between nv30 and nv40, and are set
     * up at screen creation time.

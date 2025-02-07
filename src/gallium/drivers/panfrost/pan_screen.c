@@ -890,9 +890,8 @@ panfrost_destroy_screen(struct pipe_screen *pscreen)
    ralloc_free(pscreen);
 }
 
-static const void *
+static const struct nir_shader_compiler_options *
 panfrost_screen_get_compiler_options(struct pipe_screen *pscreen,
-                                     enum pipe_shader_ir ir,
                                      enum pipe_shader_type shader)
 {
    return pan_shader_get_compiler_options(pan_screen(pscreen)->dev.arch);

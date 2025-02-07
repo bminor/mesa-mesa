@@ -212,14 +212,11 @@ static const nir_shader_compiler_options gallivm_compiler_options = {
    .support_indirect_outputs = (uint8_t)BITFIELD_MASK(PIPE_SHADER_TYPES),
 };
 
-static const void *
+static const struct nir_shader_compiler_options *
 r300_get_compiler_options(struct pipe_screen *pscreen,
-                          enum pipe_shader_ir ir,
                           enum pipe_shader_type shader)
 {
    struct r300_screen* r300screen = r300_screen(pscreen);
-
-   assert(ir == PIPE_SHADER_IR_NIR);
 
    if (shader == PIPE_SHADER_VERTEX && !r300screen->caps.has_tcl) {
       return &gallivm_compiler_options;

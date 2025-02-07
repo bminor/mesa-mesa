@@ -206,7 +206,7 @@ void st_init_limits(struct pipe_screen *screen,
       struct gl_program_constants *pc = &c->Program[stage];
 
       if (screen->get_compiler_options)
-         options->NirOptions = screen->get_compiler_options(screen, PIPE_SHADER_IR_NIR, sh);
+         options->NirOptions = screen->get_compiler_options(screen, sh);
 
       if (!options->NirOptions) {
          options->NirOptions =

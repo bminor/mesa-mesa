@@ -571,13 +571,12 @@ static struct disk_cache *noop_get_disk_shader_cache(struct pipe_screen *pscreen
    return screen->get_disk_shader_cache(screen);
 }
 
-static const void *noop_get_compiler_options(struct pipe_screen *pscreen,
-                                             enum pipe_shader_ir ir,
-                                             enum pipe_shader_type shader)
+static const struct nir_shader_compiler_options *noop_get_compiler_options(
+   struct pipe_screen *pscreen, enum pipe_shader_type shader)
 {
    struct pipe_screen *screen = ((struct noop_pipe_screen*)pscreen)->oscreen;
 
-   return screen->get_compiler_options(screen, ir, shader);
+   return screen->get_compiler_options(screen, shader);
 }
 
 static char *noop_finalize_nir(struct pipe_screen *pscreen, struct nir_shader *nir)

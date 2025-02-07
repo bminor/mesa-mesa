@@ -49,9 +49,8 @@ clamp_stage(const shader_info *info)
    return info->stage == MESA_SHADER_KERNEL ? MESA_SHADER_COMPUTE : info->stage;
 }
 
-const void *
+const struct nir_shader_compiler_options *
 zink_get_compiler_options(struct pipe_screen *screen,
-                          enum pipe_shader_ir ir,
                           gl_shader_stage shader);
 
 struct nir_shader *

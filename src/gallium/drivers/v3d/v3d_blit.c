@@ -615,7 +615,6 @@ v3d_get_sand8_vs(struct pipe_context *pctx)
 
         const struct nir_shader_compiler_options *options =
                 pscreen->get_compiler_options(pscreen,
-                                              PIPE_SHADER_IR_NIR,
                                               PIPE_SHADER_VERTEX);
 
         nir_builder b = nir_builder_init_simple_shader(MESA_SHADER_VERTEX,
@@ -664,7 +663,6 @@ v3d_get_sand8_fs(struct pipe_context *pctx, int cpp)
 
         const struct nir_shader_compiler_options *options =
                 pscreen->get_compiler_options(pscreen,
-                                              PIPE_SHADER_IR_NIR,
                                               PIPE_SHADER_FRAGMENT);
 
         nir_builder b = nir_builder_init_simple_shader(MESA_SHADER_FRAGMENT,
@@ -896,7 +894,6 @@ v3d_get_sand30_vs(struct pipe_context *pctx)
 
         const struct nir_shader_compiler_options *options =
                 pscreen->get_compiler_options(pscreen,
-                                              PIPE_SHADER_IR_NIR,
                                               PIPE_SHADER_VERTEX);
 
         nir_builder b = nir_builder_init_simple_shader(MESA_SHADER_VERTEX,
@@ -973,7 +970,6 @@ v3d_get_sand30_fs(struct pipe_context *pctx)
 
         const struct nir_shader_compiler_options *options =
                 pscreen->get_compiler_options(pscreen,
-                                              PIPE_SHADER_IR_NIR,
                                               PIPE_SHADER_FRAGMENT);
 
         nir_builder b = nir_builder_init_simple_shader(MESA_SHADER_FRAGMENT,

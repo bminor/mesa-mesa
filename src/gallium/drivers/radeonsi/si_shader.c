@@ -1188,7 +1188,7 @@ static void si_lower_ngg(struct si_shader *shader, nir_shader *nir,
 struct nir_shader *si_deserialize_shader(struct si_shader_selector *sel)
 {
    struct pipe_screen *screen = &sel->screen->b;
-   const void *options = screen->get_compiler_options(screen, PIPE_SHADER_IR_NIR, sel->stage);
+   const void *options = screen->get_compiler_options(screen, sel->stage);
 
    struct blob_reader blob_reader;
    blob_reader_init(&blob_reader, sel->nir_binary, sel->nir_size);

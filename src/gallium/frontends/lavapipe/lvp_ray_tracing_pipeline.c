@@ -1044,7 +1044,7 @@ lvp_compile_ray_tracing_pipeline(struct lvp_pipeline *pipeline,
 {
    nir_builder _b = nir_builder_init_simple_shader(
       MESA_SHADER_COMPUTE,
-      pipeline->device->pscreen->get_compiler_options(pipeline->device->pscreen, PIPE_SHADER_IR_NIR, MESA_SHADER_COMPUTE),
+      pipeline->device->pscreen->get_compiler_options(pipeline->device->pscreen, MESA_SHADER_COMPUTE),
       "ray tracing pipeline");
    nir_builder *b = &_b;
 

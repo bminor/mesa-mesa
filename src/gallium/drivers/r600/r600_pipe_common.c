@@ -933,13 +933,10 @@ struct pipe_resource *r600_resource_create_common(struct pipe_screen *screen,
 	}
 }
 
-static const void *
+static const struct nir_shader_compiler_options *
 r600_get_compiler_options(struct pipe_screen *screen,
-			  enum pipe_shader_ir ir,
 			  enum pipe_shader_type shader)
 {
-       assert(ir == PIPE_SHADER_IR_NIR);
-
        struct r600_common_screen *rscreen = (struct r600_common_screen *)screen;
        return &rscreen->nir_options;
 }

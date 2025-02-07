@@ -974,9 +974,8 @@ fixup_renderer(union virgl_caps *caps)
    memcpy(caps->v2.renderer, renderer, renderer_len + 1);
 }
 
-static const void *
+static const struct nir_shader_compiler_options *
 virgl_get_compiler_options(struct pipe_screen *pscreen,
-                           enum pipe_shader_ir ir,
                            enum pipe_shader_type shader)
 {
    struct virgl_screen *vscreen = virgl_screen(pscreen);

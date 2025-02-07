@@ -98,12 +98,10 @@ static const nir_shader_compiler_options sp_compiler_options = {
    .support_indirect_outputs = (uint8_t)BITFIELD_MASK(PIPE_SHADER_TYPES),
 };
 
-static const void *
+static const struct nir_shader_compiler_options *
 softpipe_get_compiler_options(struct pipe_screen *pscreen,
-                              enum pipe_shader_ir ir,
                               enum pipe_shader_type shader)
 {
-   assert(ir == PIPE_SHADER_IR_NIR);
    return &sp_compiler_options;
 }
 

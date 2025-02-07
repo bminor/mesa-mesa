@@ -57,8 +57,7 @@ static void *
 asahi_blit_compute_shader(struct pipe_context *ctx, struct asahi_blit_key *key)
 {
    const nir_shader_compiler_options *options =
-      ctx->screen->get_compiler_options(ctx->screen, PIPE_SHADER_IR_NIR,
-                                        PIPE_SHADER_COMPUTE);
+      ctx->screen->get_compiler_options(ctx->screen, PIPE_SHADER_COMPUTE);
 
    nir_builder b_ =
       nir_builder_init_simple_shader(MESA_SHADER_COMPUTE, options, "blit_cs");

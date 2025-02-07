@@ -532,9 +532,8 @@ v3d_screen_is_format_supported(struct pipe_screen *pscreen,
         return true;
 }
 
-static const void *
+static const struct nir_shader_compiler_options *
 v3d_screen_get_compiler_options(struct pipe_screen *pscreen,
-                                enum pipe_shader_ir ir,
                                 enum pipe_shader_type shader)
 {
         struct v3d_screen *screen = v3d_screen(pscreen);

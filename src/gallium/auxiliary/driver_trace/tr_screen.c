@@ -105,22 +105,20 @@ trace_screen_get_device_vendor(struct pipe_screen *_screen)
 }
 
 
-static const void *
+static const struct nir_shader_compiler_options *
 trace_screen_get_compiler_options(struct pipe_screen *_screen,
-                                  enum pipe_shader_ir ir,
                                   enum pipe_shader_type shader)
 {
    struct trace_screen *tr_scr = trace_screen(_screen);
    struct pipe_screen *screen = tr_scr->screen;
-   const void *result;
+   const struct nir_shader_compiler_options *result;
 
    trace_dump_call_begin("pipe_screen", "get_compiler_options");
 
    trace_dump_arg(ptr, screen);
-   trace_dump_arg_enum(pipe_shader_ir, ir);
    trace_dump_arg_enum(pipe_shader_type, shader);
 
-   result = screen->get_compiler_options(screen, ir, shader);
+   result = screen->get_compiler_options(screen, shader);
 
    trace_dump_ret(ptr, result);
 

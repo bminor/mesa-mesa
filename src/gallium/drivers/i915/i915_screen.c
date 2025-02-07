@@ -175,11 +175,10 @@ static const struct nir_shader_compiler_options gallivm_nir_options = {
    .no_integers = true,
 };
 
-static const void *
-i915_get_compiler_options(struct pipe_screen *pscreen, enum pipe_shader_ir ir,
+static const struct nir_shader_compiler_options *
+i915_get_compiler_options(struct pipe_screen *pscreen,
                           enum pipe_shader_type shader)
 {
-   assert(ir == PIPE_SHADER_IR_NIR);
    if (shader == PIPE_SHADER_FRAGMENT)
       return &i915_compiler_options;
    else

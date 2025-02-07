@@ -407,16 +407,15 @@ tegra_screen_query_memory_info(struct pipe_screen *pscreen,
    screen->gpu->query_memory_info(screen->gpu, info);
 }
 
-static const void *
+static const struct nir_shader_compiler_options *
 tegra_screen_get_compiler_options(struct pipe_screen *pscreen,
-                                  enum pipe_shader_ir ir,
                                   enum pipe_shader_type shader)
 {
    struct tegra_screen *screen = to_tegra_screen(pscreen);
-   const void *options = NULL;
+   const struct nir_shader_compiler_options *options = NULL;
 
    if (screen->gpu->get_compiler_options)
-      options = screen->gpu->get_compiler_options(screen->gpu, ir, shader);
+      options = screen->gpu->get_compiler_options(screen->gpu, shader);
 
    return options;
 }

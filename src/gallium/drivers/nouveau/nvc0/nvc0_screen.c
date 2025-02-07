@@ -756,15 +756,12 @@ nvc0_screen_bind_cb_3d(struct nvc0_screen *screen, struct nouveau_pushbuf *push,
    IMMED_NVC0(push, NVC0_3D(CB_BIND(stage)), (index << 4) | (size >= 0));
 }
 
-static const void *
+static const struct nir_shader_compiler_options *
 nvc0_screen_get_compiler_options(struct pipe_screen *pscreen,
-                                 enum pipe_shader_ir ir,
                                  enum pipe_shader_type shader)
 {
    struct nvc0_screen *screen = nvc0_screen(pscreen);
-   if (ir == PIPE_SHADER_IR_NIR)
-      return nv50_ir_nir_shader_compiler_options(screen->base.device->chipset, shader);
-   return NULL;
+   return nv50_ir_nir_shader_compiler_options(screen->base.device->chipset, shader);
 }
 
 #define FAIL_SCREEN_INIT(str, err)                    \
