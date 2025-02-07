@@ -2479,7 +2479,7 @@ radv_shader_dma_get_submission(struct radv_device *device, struct radeon_winsys_
          goto fail;
    }
 
-   radv_sdma_copy_buffer(device, cs, radv_buffer_get_va(submission->bo), va, size);
+   radv_sdma_copy_memory(device, cs, radv_buffer_get_va(submission->bo), va, size);
    radv_cs_add_buffer(ws, cs, submission->bo);
    radv_cs_add_buffer(ws, cs, bo);
 

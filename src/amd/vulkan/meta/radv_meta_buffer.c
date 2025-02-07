@@ -121,7 +121,7 @@ get_copy_pipeline(struct radv_device *device, VkPipeline *pipeline_out, VkPipeli
 }
 
 static void
-fill_buffer_shader(struct radv_cmd_buffer *cmd_buffer, uint64_t va, uint64_t size, uint32_t data)
+radv_compute_fill_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t va, uint64_t size, uint32_t data)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    struct radv_meta_saved_state saved_state;
@@ -156,7 +156,7 @@ fill_buffer_shader(struct radv_cmd_buffer *cmd_buffer, uint64_t va, uint64_t siz
 }
 
 static void
-copy_buffer_shader(struct radv_cmd_buffer *cmd_buffer, uint64_t src_va, uint64_t dst_va, uint64_t size)
+radv_compute_copy_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t src_va, uint64_t dst_va, uint64_t size)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    struct radv_meta_saved_state saved_state;
@@ -204,15 +204,15 @@ radv_fill_buffer(struct radv_cmd_buffer *cmd_buffer, const struct radv_image *im
       radv_cs_add_buffer(device->ws, cmd_buffer->cs, bo);
 
    if (cmd_buffer->qf == RADV_QUEUE_TRANSFER) {
-      radv_sdma_fill_buffer(device, cmd_buffer->cs, va, size, value);
+      radv_sdma_fill_memory(device, cmd_buffer->cs, va, size, value);
    } else if (size >= RADV_BUFFER_OPS_CS_THRESHOLD) {
-      fill_buffer_shader(cmd_buffer, va, size, value);
+      radv_compute_fill_memory(cmd_buffer, va, size, value);
 
       flush_bits = RADV_CMD_FLAG_CS_PARTIAL_FLUSH | RADV_CMD_FLAG_INV_VCACHE |
                    radv_src_access_flush(cmd_buffer, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
                                          VK_ACCESS_2_SHADER_WRITE_BIT, 0, image, NULL);
    } else if (size)
-      radv_cp_dma_clear_buffer(cmd_buffer, va, size, value);
+      radv_cp_dma_fill_memory(cmd_buffer, va, size, value);
 
    return flush_bits;
 }
@@ -228,11 +228,11 @@ radv_copy_buffer(struct radv_cmd_buffer *cmd_buffer, struct radeon_winsys_bo *sr
    radv_cs_add_buffer(device->ws, cmd_buffer->cs, dst_bo);
 
    if (cmd_buffer->qf == RADV_QUEUE_TRANSFER)
-      radv_sdma_copy_buffer(device, cmd_buffer->cs, src_va, dst_va, size);
+      radv_sdma_copy_memory(device, cmd_buffer->cs, src_va, dst_va, size);
    else if (use_compute)
-      copy_buffer_shader(cmd_buffer, src_va, dst_va, size);
+      radv_compute_copy_memory(cmd_buffer, src_va, dst_va, size);
    else if (size)
-      radv_cp_dma_buffer_copy(cmd_buffer, src_va, dst_va, size);
+      radv_cp_dma_copy_memory(cmd_buffer, src_va, dst_va, size);
 }
 
 VKAPI_ATTR void VKAPI_CALL
