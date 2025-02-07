@@ -31,6 +31,7 @@
 
 #include "anv_private.h"
 #include "anv_measure.h"
+#include "anv_slab_bo.h"
 #include "util/u_debug.h"
 #include "util/os_file.h"
 #include "util/os_misc.h"
@@ -485,9 +486,12 @@ VkResult anv_CreateDevice(
    list_inithead(&device->image_private_objects);
    list_inithead(&device->bvh_dumps);
 
+   if (!anv_slab_bo_init(device))
+      goto fail_vmas;
+
    if (pthread_mutex_init(&device->mutex, NULL) != 0) {
       result = vk_error(device, VK_ERROR_INITIALIZATION_FAILED);
-      goto fail_vmas;
+      goto fail_slab;
    }
 
    pthread_condattr_t condattr;
@@ -1126,6 +1130,8 @@ VkResult anv_CreateDevice(
    pthread_cond_destroy(&device->queue_submit);
  fail_mutex:
    pthread_mutex_destroy(&device->mutex);
+fail_slab:
+   anv_slab_bo_deinit(device);
  fail_vmas:
    util_vma_heap_finish(&device->vma_trtt);
    util_vma_heap_finish(&device->vma_dynamic_visible);
@@ -1278,6 +1284,7 @@ void anv_DestroyDevice(
       anv_bo_pool_finish(&device->bvh_bo_pool);
    anv_bo_pool_finish(&device->batch_bo_pool);
 
+   anv_slab_bo_deinit(device);
    anv_bo_cache_finish(&device->bo_cache);
 
    util_vma_heap_finish(&device->vma_trtt);
@@ -1898,7 +1905,7 @@ VkResult anv_MapMemory2KHR(
    }
 
    uint64_t map_offset, map_size;
-   anv_sanitize_map_params(device, offset, size, &map_offset, &map_size);
+   anv_sanitize_map_params(device, mem->bo, offset, size, &map_offset, &map_size);
 
    void *map;
    VkResult result = anv_device_map_bo(device, mem->bo, map_offset,

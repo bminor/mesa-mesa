@@ -28,6 +28,7 @@
 #include <sys/mman.h>
 
 #include "anv_private.h"
+#include "anv_slab_bo.h"
 
 #include "common/intel_aux_map.h"
 #include "util/anon_file.h"
@@ -1616,9 +1617,14 @@ anv_device_alloc_bo(struct anv_device *device,
    if (device->info->has_llc && ((alloc_flags & not_allowed_promotion) == 0))
       alloc_flags |= ANV_BO_ALLOC_HOST_COHERENT;
 
-   const uint32_t bo_flags =
-         device->kmd_backend->bo_alloc_flags_to_bo_flags(device, alloc_flags);
    uint32_t alignment = anv_bo_vma_calc_alignment_requirement(device, alloc_flags, size);
+
+   /* calling in here to avoid the 4k size promotion but we can only do that
+    * because ANV_BO_ALLOC_AUX_CCS is not supported by slab
+    */
+   *bo_out = anv_slab_bo_alloc(device, name, size, alignment, alloc_flags);
+   if (*bo_out)
+      return VK_SUCCESS;
 
    /* The kernel is going to give us whole pages anyway. */
    size = align64(size, 4096);
@@ -1673,7 +1679,7 @@ anv_device_alloc_bo(struct anv_device *device,
       .size = size,
       .ccs_offset = ccs_offset,
       .actual_size = actual_size,
-      .flags = bo_flags,
+      .flags = device->kmd_backend->bo_alloc_flags_to_bo_flags(device, alloc_flags),
       .alloc_flags = alloc_flags,
    };
 
@@ -1726,6 +1732,25 @@ anv_device_map_bo(struct anv_device *device,
    assert(!bo->from_host_ptr);
    assert(size > 0);
 
+   struct anv_bo *real = anv_bo_get_real(bo);
+   uint64_t offset_adjustment = 0;
+   if (real != bo) {
+      offset += (bo->offset - real->offset);
+
+      /* KMD rounds munmap() to whole pages, so here doing some adjustments */
+      const uint64_t munmap_offset = ROUND_DOWN_TO(offset, 4096);
+      if (munmap_offset != offset) {
+         offset_adjustment = offset - munmap_offset;
+         size += offset_adjustment;
+         offset = munmap_offset;
+
+         if (placed_addr)
+            placed_addr -= offset_adjustment;
+      }
+
+      assert((offset & (4096 - 1)) == 0);
+   }
+
    void *map = device->kmd_backend->gem_mmap(device, bo, offset, size, placed_addr);
    if (unlikely(map == MAP_FAILED))
       return vk_errorf(device, VK_ERROR_MEMORY_MAP_FAILED, "mmap failed: %m");
@@ -1736,7 +1761,7 @@ anv_device_map_bo(struct anv_device *device,
    VG(VALGRIND_MALLOCLIKE_BLOCK(map, size, 0, 1));
 
    if (map_out)
-      *map_out = map;
+      *map_out = map + offset_adjustment;
 
    return VK_SUCCESS;
 }
@@ -1748,6 +1773,18 @@ anv_device_unmap_bo(struct anv_device *device,
                     bool replace)
 {
    assert(!bo->from_host_ptr);
+
+   struct anv_bo *real = anv_bo_get_real(bo);
+   if (real != bo) {
+      uint64_t slab_offset = bo->offset - real->offset;
+
+      if (ROUND_DOWN_TO(slab_offset, 4096) != slab_offset) {
+         slab_offset -= ROUND_DOWN_TO(slab_offset, 4096);
+         map -= slab_offset;
+         map_size += slab_offset;
+      }
+      assert(((uintptr_t)map & (4096 - 1)) == 0);
+   }
 
    if (replace) {
       map = mmap(map, map_size, PROT_NONE,
@@ -2014,6 +2051,7 @@ anv_device_set_bo_tiling(struct anv_device *device,
                          uint32_t row_pitch_B,
                          enum isl_tiling tiling)
 {
+   assert(bo->slab_parent == NULL);
    int ret = anv_gem_set_tiling(device, bo->gem_handle, row_pitch_B,
                                 isl_tiling_to_i915_tiling(tiling));
    if (ret) {
@@ -2049,8 +2087,6 @@ anv_device_release_bo(struct anv_device *device,
    struct anv_bo_cache *cache = &device->bo_cache;
    const bool bo_is_xe_userptr = device->info->kmd_type == INTEL_KMD_TYPE_XE &&
                                  bo->from_host_ptr;
-   assert(bo_is_xe_userptr ||
-          anv_device_lookup_bo(device, bo->gem_handle) == bo);
 
    /* Try to decrement the counter but don't go below one.  If this succeeds
     * then the refcount has been decremented and we are not the last
@@ -2058,8 +2094,6 @@ anv_device_release_bo(struct anv_device *device,
     */
    if (atomic_dec_not_one(&bo->refcount))
       return;
-
-   ANV_RMV(bo_destroy, device, bo);
 
    pthread_mutex_lock(&cache->mutex);
 
@@ -2074,6 +2108,17 @@ anv_device_release_bo(struct anv_device *device,
       return;
    }
    assert(bo->refcount == 0);
+
+   if (bo->slab_parent) {
+      pthread_mutex_unlock(&cache->mutex);
+      anv_slab_bo_free(device, bo);
+      return;
+   }
+
+   assert(bo_is_xe_userptr ||
+          anv_device_lookup_bo(device, bo->gem_handle) == bo);
+
+   ANV_RMV(bo_destroy, device, bo);
 
    /* Memset the BO just in case.  The refcount being zero should be enough to
     * prevent someone from assuming the data is valid but it's safer to just

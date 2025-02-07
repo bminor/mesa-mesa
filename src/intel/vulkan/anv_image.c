@@ -2609,7 +2609,7 @@ anv_image_bind_address(struct anv_device *device,
       uint64_t offset = image->bindings[binding].address.offset +
                         image->bindings[binding].memory_range.offset;
       uint64_t map_offset, map_size;
-      anv_sanitize_map_params(device, offset,
+      anv_sanitize_map_params(device, image->bindings[binding].address.bo, offset,
                               image->bindings[binding].memory_range.size,
                               &map_offset, &map_size);
 

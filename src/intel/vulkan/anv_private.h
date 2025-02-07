@@ -61,6 +61,7 @@
 #include "util/macros.h"
 #include "util/hash_table.h"
 #include "util/list.h"
+#include "util/pb_slab.h"
 #include "util/perf/u_trace.h"
 #include "util/set.h"
 #include "util/sparse_array.h"
@@ -514,12 +515,23 @@ struct anv_bo {
 
    enum anv_bo_alloc_flags alloc_flags;
 
+   /** If slab_parent is set, this bo is a slab */
+   struct anv_bo *slab_parent;
+   struct pb_slab_entry slab_entry;
+
    /** True if this BO wraps a host pointer */
    bool from_host_ptr:1;
 
    /** True if this BO is mapped in the GTT (only used for RMV) */
    bool gtt_mapped:1;
 };
+
+/* If bo is a slab, return the real/slab_parent bo */
+static inline struct anv_bo *
+anv_bo_get_real(struct anv_bo *bo)
+{
+   return bo->slab_parent ? bo->slab_parent : bo;
+}
 
 static inline bool
 anv_bo_is_external(const struct anv_bo *bo)
@@ -2172,6 +2184,8 @@ struct anv_device {
    } accel_struct_build;
 
    struct vk_meta_device meta_device;
+
+   struct pb_slabs bo_slabs[3];
 };
 
 static inline uint32_t
@@ -2260,6 +2274,7 @@ void anv_device_finish_blorp(struct anv_device *device);
 
 static inline void
 anv_sanitize_map_params(struct anv_device *device,
+                        struct anv_bo *bo,
                         uint64_t in_offset,
                         uint64_t in_size,
                         uint64_t *out_offset,
@@ -2272,6 +2287,12 @@ anv_sanitize_map_params(struct anv_device *device,
       *out_offset = 0;
    assert(in_offset >= *out_offset);
    *out_size = (in_offset + in_size) - *out_offset;
+
+   /* Don't round up slab bos to not fail mmap() of slabs at the end of slab
+    * parent, all the adjustment for slabs will be done in anv_device_map_bo().
+    */
+   if (anv_bo_get_real(bo) != bo)
+      return;
 
    /* Let's map whole pages */
    *out_size = align64(*out_size, 4096);

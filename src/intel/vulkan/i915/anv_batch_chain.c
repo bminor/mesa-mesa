@@ -95,6 +95,7 @@ anv_execbuf_add_bo(struct anv_device *device,
 {
    struct drm_i915_gem_exec_object2 *obj = NULL;
 
+   bo = anv_bo_get_real(bo);
    if (bo->exec_obj_index < exec->bo_count &&
        exec->bos[bo->exec_obj_index] == bo)
       obj = &exec->objects[bo->exec_obj_index];
