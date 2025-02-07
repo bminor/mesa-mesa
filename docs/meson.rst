@@ -169,7 +169,7 @@ To review the options which Meson chose, run:
 Recent version of Meson can print the available options and their
 default values by running ``meson configure`` in the source directory.
 If your Meson version is too old, you can always look in the
-`meson_options.txt <https://gitlab.freedesktop.org/mesa/mesa/-/blob/main/meson_options.txt>`__
+`meson.options <https://gitlab.freedesktop.org/mesa/mesa/-/blob/main/meson.options>`__
 file at the root of the project.
 
 With additional arguments ``meson configure`` can be used to change
