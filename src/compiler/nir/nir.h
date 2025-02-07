@@ -36,7 +36,6 @@
 #include "util/bitset.h"
 #include "util/compiler.h"
 #include "util/enum_operators.h"
-#include "util/format/u_format.h"
 #include "util/hash_table.h"
 #include "util/list.h"
 #include "util/log.h"
