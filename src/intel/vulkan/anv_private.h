@@ -456,6 +456,9 @@ enum anv_bo_alloc_flags {
 
    /** Compressed buffer, only supported in Xe2+ */
    ANV_BO_ALLOC_COMPRESSED =              (1 << 21),
+
+   /** Specifies that this bo is a slab parent */
+   ANV_BO_ALLOC_SLAB_PARENT =             (1 << 22),
 };
 
 /** Specifies that the BO should be cached and coherent. */
@@ -1312,6 +1315,7 @@ enum anv_debug {
    ANV_DEBUG_VIDEO_DECODE      = BITFIELD_BIT(5),
    ANV_DEBUG_VIDEO_ENCODE      = BITFIELD_BIT(6),
    ANV_DEBUG_SHADER_HASH       = BITFIELD_BIT(7),
+   ANV_DEBUG_NO_SLAB           = BITFIELD_BIT(8),
 };
 
 struct anv_instance {
@@ -2420,6 +2424,8 @@ void anv_vma_free(struct anv_device *device,
 static inline bool
 anv_bo_is_small_heap(enum anv_bo_alloc_flags alloc_flags)
 {
+   if (alloc_flags & ANV_BO_ALLOC_SLAB_PARENT)
+      return false;
    return alloc_flags & (ANV_BO_ALLOC_DESCRIPTOR_POOL |
                          ANV_BO_ALLOC_DYNAMIC_VISIBLE_POOL |
                          ANV_BO_ALLOC_32BIT_ADDRESS);

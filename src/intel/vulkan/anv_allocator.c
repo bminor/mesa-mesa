@@ -1613,7 +1613,8 @@ anv_device_alloc_bo(struct anv_device *device,
    /* In platforms with LLC we can promote all bos to cached+coherent for free */
    const enum anv_bo_alloc_flags not_allowed_promotion = ANV_BO_ALLOC_SCANOUT |
                                                          ANV_BO_ALLOC_EXTERNAL |
-                                                         ANV_BO_ALLOC_PROTECTED;
+                                                         ANV_BO_ALLOC_PROTECTED |
+                                                         ANV_BO_ALLOC_SLAB_PARENT;
    if (device->info->has_llc && ((alloc_flags & not_allowed_promotion) == 0))
       alloc_flags |= ANV_BO_ALLOC_HOST_COHERENT;
 
@@ -1683,7 +1684,8 @@ anv_device_alloc_bo(struct anv_device *device,
       .alloc_flags = alloc_flags,
    };
 
-   if (alloc_flags & ANV_BO_ALLOC_MAPPED) {
+   if ((alloc_flags & ANV_BO_ALLOC_MAPPED) &&
+       ((alloc_flags & ANV_BO_ALLOC_SLAB_PARENT) == 0)) {
       VkResult result = anv_device_map_bo(device, &new_bo, 0, size,
                                           NULL, &new_bo.map);
       if (unlikely(result != VK_SUCCESS)) {
