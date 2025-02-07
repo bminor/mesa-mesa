@@ -50,6 +50,9 @@
 
 #include <stdlib.h>
 
+#define XXH_INLINE_ALL
+#include "util/xxhash.h"
+
 struct intrinsic_info {
    nir_variable_mode mode; /* 0 if the mode is obtained from the deref. */
    nir_intrinsic_op op;

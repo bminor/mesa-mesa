@@ -48,9 +48,7 @@
 #include "util/u_printf.h"
 #include "nir_defines.h"
 #include "nir_shader_compiler_options.h"
-#define XXH_INLINE_ALL
 #include <stdio.h>
-#include "util/xxhash.h"
 
 #ifndef NDEBUG
 #include "util/u_debug.h"
