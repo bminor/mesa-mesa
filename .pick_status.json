@@ -154,7 +154,7 @@
         "description": "ci/b2c: fix the S3 artifact for amd64 manual vk/gl",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5b291c7ce652c27800624808f6bfef513d7ac3de",
         "notes": null
