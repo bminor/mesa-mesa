@@ -7344,7 +7344,7 @@
         "description": "iris: Add missing nir_metadata_preserve in iris_lower_storage_image_derefs",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "26a54ae4b26fc221e869af2c615ce0e8138e41d6",
         "notes": null
