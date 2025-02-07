@@ -534,8 +534,9 @@ struct si_screen {
    bool use_aco;
 
    /* Force a single shader to use ACO, debug usage. */
-   bool force_shader_use_aco;
-   blake3_hash use_aco_shader_blake;
+   blake3_hash *use_aco_shader_blakes;
+   unsigned num_use_aco_shader_blakes;
+   enum pipe_shader_type use_aco_shader_type;
 
    struct {
 #define OPT_BOOL(name, dflt, description) bool name : 1;
