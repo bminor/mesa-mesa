@@ -138,6 +138,38 @@ rm -rf android-cuttlefish
 addgroup --system kvm
 usermod -a -G kvm,cvdnetwork root
 
+############### Downloading Android CTS - Build tools - Platform tools ...
+
+ANDROID_CTS_VERSION="${ANDROID_VERSION}_r1"
+ANDROID_CTS_DEVICE_ARCH="x86"
+
+mkdir /android-tools
+pushd /android-tools
+
+curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
+  -o "android-cts-${ANDROID_CTS_VERSION}-linux_x86-${ANDROID_CTS_DEVICE_ARCH}.zip" \
+  "https://dl.google.com/dl/android/cts/android-cts-${ANDROID_CTS_VERSION}-linux_x86-${ANDROID_CTS_DEVICE_ARCH}.zip"
+unzip "android-cts-${ANDROID_CTS_VERSION}-linux_x86-${ANDROID_CTS_DEVICE_ARCH}.zip"
+rm "android-cts-${ANDROID_CTS_VERSION}-linux_x86-${ANDROID_CTS_DEVICE_ARCH}.zip"
+
+# Keep only the interesting tests to save space
+# shellcheck disable=SC2086 # we want word splitting
+ANDROID_CTS_MODULES_KEEP_EXPRESSION=$(printf "%s|" $ANDROID_CTS_MODULES | sed -e 's/|$//g')
+find android-cts/testcases/ -mindepth 1 -type d | grep -v -E "$ANDROID_CTS_MODULES_KEEP_EXPRESSION" | xargs rm -rf
+
+curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
+  -o "build-tools_r${ANDROID_SDK_VERSION}-linux.zip" "https://dl.google.com/android/repository/build-tools_r${ANDROID_SDK_VERSION}-linux.zip"
+unzip "build-tools_r${ANDROID_SDK_VERSION}-linux.zip"
+rm "build-tools_r${ANDROID_SDK_VERSION}-linux.zip"
+mv "android-$ANDROID_VERSION" build-tools
+
+curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
+  -o "platform-tools_r${ANDROID_SDK_VERSION}.0.0-linux.zip" "https://dl.google.com/android/repository/platform-tools_r${ANDROID_SDK_VERSION}.0.0-linux.zip"
+unzip "platform-tools_r${ANDROID_SDK_VERSION}.0.0-linux.zip"
+rm "platform-tools_r${ANDROID_SDK_VERSION}.0.0-linux.zip"
+
+popd
+
 ############### Uninstall the build software
 
 rm -rf "/${ndk:?}"
