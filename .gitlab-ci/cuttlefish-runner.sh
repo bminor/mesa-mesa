@@ -49,11 +49,6 @@ trap 'exit 2' HUP INT PIPE TERM
 
 ulimit -S -n 32768
 
-# Clean up state of previous run
-rm -rf  /cuttlefish/cuttlefish
-rm -rf  /cuttlefish/.cache
-rm -rf  /cuttlefish/.cuttlefish_config.json
-
 launch_cvd \
   -daemon \
   -verbosity=VERBOSE \
