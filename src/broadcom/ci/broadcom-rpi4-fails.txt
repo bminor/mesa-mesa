@@ -2,7 +2,6 @@ glx@glx-make-current,Fail
 glx@glx-multi-window-single-context,Fail
 glx@glx-swap-pixmap-bad,Fail
 glx@glx-visuals-stencil -pixmap,Fail
-glx@glx_arb_create_context_no_error@no error,Fail
 shaders@point-vertex-id divisor,Fail
 shaders@point-vertex-id gl_instanceid divisor,Fail
 shaders@point-vertex-id gl_instanceid,Fail
@@ -601,3 +600,6 @@ dEQP-VK.draw.renderpass.non_line_with_params.vtx_lines_geom_triangles_mode_point
 asan-dEQP-VK.draw.renderpass.non_line_with_params.vtx_lines_geom_points_mode_point_line_raster_smooth,Fail
 
 ubsan-KHR-GL31.transform_feedback3.multiple_streams,Fail
+
+# This seems to be working with upstream
+program@execute@vector-conversion,Fail
