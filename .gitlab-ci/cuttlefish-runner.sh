@@ -94,16 +94,6 @@ $ADB shell mount -t overlay -o "$opts" none /vendor
 
 $ADB shell setenforce 0
 
-# deqp
-
-$ADB shell mkdir -p /data/deqp
-$ADB push /deqp-gles/modules/egl/deqp-egl-android /data/deqp
-$ADB push /deqp-gles/mustpass/egl-main.txt.zst /data/deqp
-$ADB push /deqp-vk/external/vulkancts/modules/vulkan/* /data/deqp
-$ADB push /deqp-vk/mustpass/vk-main.txt.zst /data/deqp
-$ADB push /deqp-tools/* /data/deqp
-$ADB push /deqp-runner/deqp-runner /data/deqp
-
 # download Android Mesa from S3
 MESA_ANDROID_ARTIFACT_URL=https://${PIPELINE_ARTIFACTS_BASE}/${S3_ANDROID_ARTIFACT_NAME}.tar.zst
 curl -L --retry 4 -f --retry-all-errors --retry-delay 60 -o ${S3_ANDROID_ARTIFACT_NAME}.tar.zst ${MESA_ANDROID_ARTIFACT_URL}
@@ -112,19 +102,6 @@ tar -C /mesa-android -xvf ${S3_ANDROID_ARTIFACT_NAME}.tar.zst
 rm "${S3_ANDROID_ARTIFACT_NAME}.tar.zst" &
 
 INSTALL="/mesa-android/install"
-
-$ADB push "$INSTALL/all-skips.txt" /data/deqp
-$ADB push "$INSTALL/angle-skips.txt" /data/deqp
-if [ -e "$INSTALL/$GPU_VERSION-flakes.txt" ]; then
-  $ADB push "$INSTALL/$GPU_VERSION-flakes.txt" /data/deqp
-fi
-if [ -e "$INSTALL/$GPU_VERSION-fails.txt" ]; then
-  $ADB push "$INSTALL/$GPU_VERSION-fails.txt" /data/deqp
-fi
-if [ -e "$INSTALL/$GPU_VERSION-skips.txt" ]; then
-  $ADB push "$INSTALL/$GPU_VERSION-skips.txt" /data/deqp
-fi
-$ADB push "$INSTALL/deqp-$DEQP_SUITE.toml" /data/deqp
 
 # replace on /vendor/lib64
 
@@ -178,6 +155,29 @@ else
      exit 1
   fi
 fi
+
+# deqp
+
+$ADB shell mkdir -p /data/deqp
+$ADB push /deqp-gles/modules/egl/deqp-egl-android /data/deqp
+$ADB push /deqp-gles/mustpass/egl-main.txt.zst /data/deqp
+$ADB push /deqp-vk/external/vulkancts/modules/vulkan/* /data/deqp
+$ADB push /deqp-vk/mustpass/vk-main.txt.zst /data/deqp
+$ADB push /deqp-tools/* /data/deqp
+$ADB push /deqp-runner/deqp-runner /data/deqp
+
+$ADB push "$INSTALL/all-skips.txt" /data/deqp
+$ADB push "$INSTALL/angle-skips.txt" /data/deqp
+if [ -e "$INSTALL/$GPU_VERSION-flakes.txt" ]; then
+  $ADB push "$INSTALL/$GPU_VERSION-flakes.txt" /data/deqp
+fi
+if [ -e "$INSTALL/$GPU_VERSION-fails.txt" ]; then
+  $ADB push "$INSTALL/$GPU_VERSION-fails.txt" /data/deqp
+fi
+if [ -e "$INSTALL/$GPU_VERSION-skips.txt" ]; then
+  $ADB push "$INSTALL/$GPU_VERSION-skips.txt" /data/deqp
+fi
+$ADB push "$INSTALL/deqp-$DEQP_SUITE.toml" /data/deqp
 
 BASELINE=""
 if [ -e "$INSTALL/$GPU_VERSION-fails.txt" ]; then
