@@ -40,7 +40,7 @@ variables:
    DEBIAN_TEST_ANDROID_TAG: "20250217-wrappers"
    DEBIAN_TEST_GL_TAG: "20250223-way-prot"
    DEBIAN_TEST_VK_TAG: "20250223-way-prot"
-   KERNEL_ROOTFS_TAG: "20250215-tag-file"
+   KERNEL_ROOTFS_TAG: "20250215-buildtags"
 
    DEBIAN_PYUTILS_IMAGE: "debian/x86_64_pyutils"
    DEBIAN_PYUTILS_TAG: "20250129-lavacli"
