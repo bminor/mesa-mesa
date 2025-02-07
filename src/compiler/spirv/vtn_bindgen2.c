@@ -437,7 +437,7 @@ main(int argc, char **argv)
    blob_init(&blob);
    u_printf_serialize_info(&blob, nir->printf_info, nir->printf_info_count);
    nir_precomp_print_blob(fp_c, "printf", "blob", 0,
-                          (const uint32_t *)blob.data, blob.size, true);
+                          (const uint32_t *)blob.data, blob.size, false);
    blob_finish(&blob);
 
    fprintf(fp_c, "      u_printf_singleton_init_or_ref();\n");
