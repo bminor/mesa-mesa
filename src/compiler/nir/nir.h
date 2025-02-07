@@ -33,7 +33,6 @@
 #include "compiler/glsl/list.h"
 #include "compiler/shader_enums.h"
 #include "compiler/shader_info.h"
-#include "util/bitscan.h"
 #include "util/bitset.h"
 #include "util/compiler.h"
 #include "util/enum_operators.h"
