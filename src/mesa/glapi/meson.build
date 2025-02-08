@@ -96,6 +96,7 @@ glapi_xml_py_deps = files(
   'glapi/gen/EXT_external_objects_win32.xml',
   'glapi/gen/EXT_framebuffer_object.xml',
   'glapi/gen/EXT_gpu_shader4.xml',
+  'glapi/gen/EXT_mesh_shader.xml',
   'glapi/gen/EXT_multisampled_render_to_texture.xml',
   'glapi/gen/EXT_packed_depth_stencil.xml',
   'glapi/gen/EXT_provoking_vertex.xml',

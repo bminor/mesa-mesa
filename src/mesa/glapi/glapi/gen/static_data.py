@@ -1632,6 +1632,10 @@ all_functions = [
     "CreateSemaphoresNV",
     "GetSemaphoreParameterivNV",
     "SemaphoreParameterivNV",
+    "DrawMeshTasksEXT",
+    "DrawMeshTasksIndirectEXT",
+    "MultiDrawMeshTasksIndirectEXT",
+    "MultiDrawMeshTasksIndirectCountEXT",
 
     # Keep these last. They are never used by any app.
     "ColorTable",
