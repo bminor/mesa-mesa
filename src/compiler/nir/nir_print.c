@@ -210,19 +210,12 @@ print_hex_terse_const_value(const nir_const_value *value, unsigned bit_size, FIL
 static void
 print_float_const_value(const nir_const_value *value, unsigned bit_size, FILE *fp)
 {
-   switch (bit_size) {
-   case 64:
-      fprintf(fp, "%f", value->f64);
-      break;
-   case 32:
-      fprintf(fp, "%f", value->f32);
-      break;
-   case 16:
-      fprintf(fp, "%f", _mesa_half_to_float(value->u16));
-      break;
-   default:
-      unreachable("unhandled bit size");
-   }
+   double dval = nir_const_value_as_float(*value, bit_size);
+
+   if (fabs(dval) >= 1000000.0)
+      fprintf(fp, "%e", dval);
+   else
+      fprintf(fp, "%f", dval);
 }
 
 static void
