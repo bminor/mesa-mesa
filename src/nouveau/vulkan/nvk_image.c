@@ -412,6 +412,33 @@ nvk_GetPhysicalDeviceImageFormatProperties2(
        pImageFormatInfo->type != VK_IMAGE_TYPE_2D)
       return VK_ERROR_FORMAT_NOT_SUPPORTED;
 
+   if ((pImageFormatInfo->usage & (VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR |
+                                   VK_IMAGE_USAGE_VIDEO_DECODE_SRC_BIT_KHR |
+                                   VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR |
+                                   VK_IMAGE_USAGE_VIDEO_ENCODE_DST_BIT_KHR |
+                                   VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR |
+                                   VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR)) &&
+       (pImageFormatInfo->flags & (VK_IMAGE_CREATE_SPARSE_ALIASED_BIT |
+                                   VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT)))
+      return VK_ERROR_FORMAT_NOT_SUPPORTED;
+
+   /* With disjoint, the client is allowed to create another image with a format
+    * equal to the plane format and alias them. That only works if creating a
+    * single plane image is equivalent to the given YCbCr plane. However, due
+    * to video engine limitations, we have to create video YCbCr planes with
+    * knowledge of all planes for block size calculations, so this won't work
+    * since it wouldn't know the other planes.
+    * See comment in nvk_image_init() below for more details.
+    */
+   if ((pImageFormatInfo->usage & (VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR |
+                                   VK_IMAGE_USAGE_VIDEO_DECODE_SRC_BIT_KHR |
+                                   VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR |
+                                   VK_IMAGE_USAGE_VIDEO_ENCODE_DST_BIT_KHR |
+                                   VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR |
+                                   VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR)) &&
+       (pImageFormatInfo->flags & VK_IMAGE_CREATE_DISJOINT_BIT))
+      return VK_ERROR_FORMAT_NOT_SUPPORTED;
+
    const uint32_t max_dim =
       nvk_image_max_dimension(&pdev->info, VK_IMAGE_TYPE_1D);
    VkExtent3D maxExtent;
@@ -755,6 +782,14 @@ nvk_image_init(struct nvk_device *dev,
       usage |= NIL_IMAGE_USAGE_SPARSE_RESIDENCY_BIT;
    }
 
+   if (image->vk.usage & (VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR |
+                          VK_IMAGE_USAGE_VIDEO_DECODE_SRC_BIT_KHR |
+                          VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR |
+                          VK_IMAGE_USAGE_VIDEO_ENCODE_DST_BIT_KHR |
+                          VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR |
+                          VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR))
+      usage |= NIL_IMAGE_USAGE_VIDEO_BIT;
+
    uint32_t explicit_row_stride_B = 0;
 
    /* This section is removed by the optimizer for non-ANDROID builds */
@@ -823,8 +858,14 @@ nvk_image_init(struct nvk_device *dev,
       }
    }
 
+   /* The video decode engine needs the block size to be the same across chroma
+    * and luma planes, so in order to work around this limitation we gather all
+    * the info for NIL early, which would give it enough information to get and
+    * use the smallest block size for all planes.
+    */
    const struct vk_format_ycbcr_info *ycbcr_info =
       vk_format_get_ycbcr_info(pCreateInfo->format);
+   struct nil_image_init_info nil_info[NVK_MAX_IMAGE_PLANES];
    for (uint8_t plane = 0; plane < image->plane_count; plane++) {
       VkFormat format = ycbcr_info ?
          ycbcr_info->planes[plane].format : pCreateInfo->format;
@@ -832,7 +873,8 @@ nvk_image_init(struct nvk_device *dev,
          ycbcr_info->planes[plane].denominator_scales[0] : 1;
       const uint8_t height_scale = ycbcr_info ?
          ycbcr_info->planes[plane].denominator_scales[1] : 1;
-      struct nil_image_init_info nil_info = {
+
+      nil_info[plane] = (struct nil_image_init_info) {
          .dim = vk_image_type_to_nil_dim(pCreateInfo->imageType),
          .format = nil_format(nvk_format_to_pipe_format(format)),
          .modifier = image->vk.drm_format_mod,
@@ -845,10 +887,21 @@ nvk_image_init(struct nvk_device *dev,
          .levels = pCreateInfo->mipLevels,
          .samples = pCreateInfo->samples,
          .usage = usage,
-         .explicit_row_stride_B = explicit_row_stride_B,
+         .explicit_row_stride_B = explicit_row_stride_B, 
       };
+   }
 
-      image->planes[plane].nil = nil_image_new(&pdev->info, &nil_info);
+   if (usage & NIL_IMAGE_USAGE_VIDEO_BIT) {
+      assert(!image->disjoint);
+      for (uint8_t plane = 0; plane < image->plane_count; plane++) {
+         image->planes[plane].nil =
+            nil_image_new_planar(&pdev->info, nil_info, plane, image->plane_count);
+      }
+   } else {
+      for (uint8_t plane = 0; plane < image->plane_count; plane++) {
+         image->planes[plane].nil =
+            nil_image_new(&pdev->info, &nil_info[plane]);
+      }
    }
 
    if (image->vk.format == VK_FORMAT_D32_SFLOAT_S8_UINT) {
