@@ -6033,6 +6033,7 @@ typedef bool (*nir_combine_barrier_cb)(
 bool nir_opt_combine_barriers(nir_shader *shader,
                               nir_combine_barrier_cb combine_cb,
                               void *data);
+bool nir_opt_acquire_release_barriers(nir_shader *shader, mesa_scope max_scope);
 bool nir_opt_barrier_modes(nir_shader *shader);
 
 bool nir_minimize_call_live_states(nir_shader *shader);
