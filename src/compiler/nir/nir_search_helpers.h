@@ -810,6 +810,30 @@ is_const_bitmask(UNUSED struct hash_table *ht, const nir_alu_instr *instr,
 }
 
 /**
+ * Returns whether an operand is a non zero constant
+ * that can be created by nir_op_bfm.
+ */
+static inline bool
+is_const_bfm(UNUSED struct hash_table *ht, const nir_alu_instr *instr,
+                 unsigned src, unsigned num_components,
+                 const uint8_t *swizzle)
+{
+   if (nir_src_as_const_value(instr->src[src].src) == NULL)
+      return false;
+
+   for (unsigned i = 0; i < num_components; i++) {
+      const unsigned bit_size = instr->src[src].src.ssa->bit_size;
+      const uint64_t c = nir_src_comp_as_uint(instr->src[src].src, swizzle[i]);
+      const unsigned num_bits = util_bitcount64(c);
+      const unsigned offset = ffsll(c) - 1;
+      if (c == 0 || c != (BITFIELD64_MASK(num_bits) << offset)  || num_bits == bit_size)
+         return false;
+   }
+
+   return true;
+}
+
+/**
  * Returns whether the 5 LSBs of an operand are non-zero.
  */
 static inline bool

@@ -595,6 +595,12 @@ optimizations.extend([
     (('ushr', ('iand', a, ('bfm', c, b)), b),
      ('ubfe', a, b, c), 'options->has_bfe'),
 
+    (('ushr@32', ('iand(is_used_once)', a, '#b(is_const_bfm)'), '#c'),
+     ('bcsel', ('ilt', ('find_lsb', b), ('iand', c, 0x1f)),
+      ('ushr', ('ubfe', a, ('find_lsb', b), ('bit_count', b)), ('isub', c, ('find_lsb', b))),
+      ('ishl', ('ubfe', a, ('find_lsb', b), ('bit_count', b)), ('isub', ('find_lsb', b), c))),
+     'options->has_bfe && !options->avoid_ternary_with_two_constants'),
+
     # Collapse two bitfield extracts with constant operands into a single one.
     (('ubfe', ('ubfe', a, '#b', '#c'), '#d', '#e'),
      ubfe_ubfe(a, b, c, d, e)),
