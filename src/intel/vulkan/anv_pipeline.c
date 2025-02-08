@@ -2070,6 +2070,8 @@ anv_pipeline_nir_preprocess(struct anv_pipeline *pipeline,
    brw_preprocess_nir(compiler, stage->nir, &opts);
 
    NIR_PASS(_, stage->nir, nir_opt_barrier_modes);
+   NIR_PASS(_, stage->nir, nir_opt_acquire_release_barriers,
+                           SCOPE_QUEUE_FAMILY);
 
    nir_shader_gather_info(stage->nir, nir_shader_get_entrypoint(stage->nir));
 }
