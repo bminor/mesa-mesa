@@ -188,13 +188,28 @@ impl Image {
         dev: &nil_rs_bindings::nv_device_info,
         info: &ImageInitInfo,
     ) -> Self {
-        Self::new(dev, info)
+        Self::new(dev, std::slice::from_ref(info), 0)
+    }
+
+    #[no_mangle]
+    pub extern "C" fn nil_image_new_planar(
+        dev: &nil_rs_bindings::nv_device_info,
+        info: *const ImageInitInfo,
+        plane: usize,
+        plane_count: usize,
+    ) -> Self {
+        assert!(plane < plane_count);
+        let infos = unsafe { std::slice::from_raw_parts(info, plane_count) };
+
+        Self::new(dev, infos, plane)
     }
 
     pub fn new(
         dev: &nil_rs_bindings::nv_device_info,
-        info: &ImageInitInfo,
+        infos: &[ImageInitInfo],
+        plane: usize,
     ) -> Self {
+        let info = &infos[plane];
         match info.dim {
             ImageDim::_1D => {
                 assert!(info.extent_px.height == 1);
