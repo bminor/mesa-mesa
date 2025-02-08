@@ -134,7 +134,7 @@
         "description": "turnip/ci: re-introduce the `multiviewport` flakes",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5f3cad00269794819049952257c358c8cae3f2ab",
         "notes": null
