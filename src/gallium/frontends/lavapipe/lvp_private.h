@@ -382,8 +382,6 @@ struct lvp_descriptor_pool {
    struct list_head sets;
 };
 
-uint32_t lvp_descriptor_update_template_entry_size(VkDescriptorType type);
-
 VkResult
 lvp_descriptor_set_create(struct lvp_device *device,
                           struct lvp_descriptor_set_layout *layout,
