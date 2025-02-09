@@ -801,6 +801,8 @@ spec@arb_texture_buffer_object@texture-buffer-size-clamp@rg8ui_texture_buffer_si
 spec@arb_texture_buffer_object@texture-buffer-size-clamp@rgba8ui_texture_buffer_size_via_sampler,Fail
 
 # uprev Piglit in Mesa
+spec@arb_texture_rg@fbo-blending-formats,Fail
+spec@arb_texture_rg@fbo-blending-formats@GL_R8,Fail
 spec@glsl-1.40@uniform_buffer@two-stages,Fail
 
 # new failures since 2023/02/08 (CTS uprevs, regressions etc.)

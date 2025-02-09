@@ -222,7 +222,10 @@ KHR-GLES31.core.shader_multisample_interpolation.render.interpolate_at_offset_ch
 KHR-GLES31.core.tessellation_shader.tessellation_shader_tc_barriers.barrier_guarded_read_calls
 glx@glx-visuals-depth -pixmap
 glx@glx-visuals-stencil -pixmap
-
+glx@glx_arb_create_context_no_error@no error
+spec@arb_gpu_shader_fp64@execution@arb_gpu_shader_fp64-fs-getuniformdv
+spec@arb_program_interface_query@arb_program_interface_query-getprogramresourceindex@'vs_input2[1][0]' on GL_PROGRAM_INPUT
+spec@ext_packed_float@query-rgba-signed-components
 
 # Nightly run expectations update
 dEQP-VK.binding_model.shader_access.primary_cmd_buf.storage_buffer.tess_eval.multiple_contiguous_descriptors.offset_view_nonzero
@@ -259,12 +262,6 @@ gmem-dEQP-VK.binding_model.shader_access.primary_cmd_buf.bind.sampler_immutable.
 
 # SKQP test which seems to flake out
 SRGBReadWritePixels
-
-# uprev Piglit in Mesa
-spec@arb_gpu_shader_fp64@execution@arb_gpu_shader_fp64-fs-getuniformdv
-spec@arb_gpu_shader_fp64@execution@built-in-functions@fs-op-div-dmat4-dmat4
-spec@arb_gpu_shader_fp64@execution@built-in-functions@fs-op-div-double-dmat4
-spec@glsl-4.00@execution@built-in-functions@fs-inverse-dmat4
 
 # glcts update
 KHR-GL46.packed_pixels.varied_rectangle.rgba32i
