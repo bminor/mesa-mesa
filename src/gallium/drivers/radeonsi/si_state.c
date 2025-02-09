@@ -1076,8 +1076,6 @@ static void *si_create_rs_state(struct pipe_context *ctx, const struct pipe_rast
       (state->fill_back != PIPE_POLYGON_MODE_FILL && !(state->cull_face & PIPE_FACE_BACK));
 
    rs->pa_su_sc_mode_cntl = S_028814_PROVOKING_VTX_LAST(!state->flatshade_first) |
-                            S_028814_CULL_FRONT((state->cull_face & PIPE_FACE_FRONT) ? 1 : 0) |
-                            S_028814_CULL_BACK((state->cull_face & PIPE_FACE_BACK) ? 1 : 0) |
                             S_028814_FACE(!state->front_ccw) |
                             S_028814_POLY_OFFSET_FRONT_ENABLE(util_get_offset(state, state->fill_front)) |
                             S_028814_POLY_OFFSET_BACK_ENABLE(util_get_offset(state, state->fill_back)) |
@@ -1090,6 +1088,9 @@ static void *si_create_rs_state(struct pipe_context *ctx, const struct pipe_rast
                                                           sscreen->info.gfx_level < GFX12 ?
                                                              polygon_mode_enabled ||
                                                              rs->perpendicular_end_caps : 0);
+   rs->pa_su_cull_bits = S_028814_CULL_FRONT((state->cull_face & PIPE_FACE_FRONT) ? 1 : 0) |
+                         S_028814_CULL_BACK((state->cull_face & PIPE_FACE_BACK) ? 1 : 0);
+
    if (sscreen->info.gfx_level >= GFX10) {
       rs->pa_cl_ngg_cntl = S_028838_INDEX_BUF_EDGE_FLAG_ENA(rs->polygon_mode_is_points ||
                                                             rs->polygon_mode_is_lines) |
@@ -1147,6 +1148,22 @@ static void *si_create_rs_state(struct pipe_context *ctx, const struct pipe_rast
 static void si_pm4_emit_rasterizer(struct si_context *sctx, unsigned index)
 {
    struct si_state_rasterizer *state = sctx->queued.named.rasterizer;
+   const unsigned cull_bits = S_028814_CULL_FRONT(1) | S_028814_CULL_BACK(1);
+   unsigned last_pa_su_sc_mode_nctl = sctx->tracked_regs.reg_value[SI_TRACKED_PA_SU_SC_MODE_CNTL];
+   unsigned pa_su_sc_mode_cntl;
+
+   if (!sctx->fixed_func_face_culling_has_effect &&
+       (last_pa_su_sc_mode_nctl & ~cull_bits) == state->pa_su_sc_mode_cntl) {
+      /* Keep the previous cull bits because they have no effect. */
+      pa_su_sc_mode_cntl = last_pa_su_sc_mode_nctl;
+   } else if (sctx->fixed_func_face_culling_needed) {
+      pa_su_sc_mode_cntl = state->pa_su_sc_mode_cntl | state->pa_su_cull_bits;
+   } else {
+      pa_su_sc_mode_cntl = state->pa_su_sc_mode_cntl;
+   }
+
+   if (sctx->fixed_func_face_culling_needed)
+      pa_su_sc_mode_cntl |= state->pa_su_cull_bits;
 
    if (sctx->screen->info.gfx_level >= GFX12) {
       radeon_begin(&sctx->gfx_cs);
@@ -1167,7 +1184,7 @@ static void si_pm4_emit_rasterizer(struct si_context *sctx, unsigned index)
       gfx12_opt_set_context_reg(R_028A48_PA_SC_MODE_CNTL_0, SI_TRACKED_PA_SC_MODE_CNTL_0,
                                 state->pa_sc_mode_cntl_0);
       gfx12_opt_set_context_reg(R_02881C_PA_SU_SC_MODE_CNTL, SI_TRACKED_PA_SU_SC_MODE_CNTL,
-                                state->pa_su_sc_mode_cntl);
+                                pa_su_sc_mode_cntl);
       gfx12_opt_set_context_reg(R_028838_PA_CL_NGG_CNTL, SI_TRACKED_PA_CL_NGG_CNTL,
                                 state->pa_cl_ngg_cntl);
       gfx12_opt_set_context_reg(R_028230_PA_SC_EDGERULE, SI_TRACKED_PA_SC_EDGERULE,
@@ -1212,7 +1229,7 @@ static void si_pm4_emit_rasterizer(struct si_context *sctx, unsigned index)
       gfx11_opt_set_context_reg(R_028A48_PA_SC_MODE_CNTL_0, SI_TRACKED_PA_SC_MODE_CNTL_0,
                                 state->pa_sc_mode_cntl_0);
       gfx11_opt_set_context_reg(R_028814_PA_SU_SC_MODE_CNTL, SI_TRACKED_PA_SU_SC_MODE_CNTL,
-                                state->pa_su_sc_mode_cntl);
+                                pa_su_sc_mode_cntl);
       gfx11_opt_set_context_reg(R_028838_PA_CL_NGG_CNTL, SI_TRACKED_PA_CL_NGG_CNTL,
                                 state->pa_cl_ngg_cntl);
       gfx11_opt_set_context_reg(R_028230_PA_SC_EDGERULE, SI_TRACKED_PA_SC_EDGERULE,
@@ -1257,7 +1274,7 @@ static void si_pm4_emit_rasterizer(struct si_context *sctx, unsigned index)
       radeon_opt_set_context_reg(R_028A48_PA_SC_MODE_CNTL_0, SI_TRACKED_PA_SC_MODE_CNTL_0,
                                  state->pa_sc_mode_cntl_0);
       radeon_opt_set_context_reg(R_028814_PA_SU_SC_MODE_CNTL,
-                                 SI_TRACKED_PA_SU_SC_MODE_CNTL, state->pa_su_sc_mode_cntl);
+                                 SI_TRACKED_PA_SU_SC_MODE_CNTL, pa_su_sc_mode_cntl);
       if (sctx->gfx_level >= GFX10) {
          radeon_opt_set_context_reg(R_028838_PA_CL_NGG_CNTL, SI_TRACKED_PA_CL_NGG_CNTL,
                                     state->pa_cl_ngg_cntl);

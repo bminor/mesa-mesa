@@ -249,6 +249,17 @@ static bool si_update_shaders(struct si_context *sctx)
 
    struct si_shader *hw_vs = si_get_vs_inline(sctx, HAS_TESS, HAS_GS)->current;
 
+   bool fixed_func_face_culling_needed = !NGG || !si_shader_culling_enabled(hw_vs);
+   bool fixed_func_face_culling_has_effect = (!HAS_TESS && !HAS_GS) ||
+                                             hw_vs->selector->rast_prim == MESA_PRIM_TRIANGLES;
+
+   if (sctx->fixed_func_face_culling_needed != fixed_func_face_culling_needed ||
+       sctx->fixed_func_face_culling_has_effect != fixed_func_face_culling_has_effect) {
+      sctx->fixed_func_face_culling_needed = fixed_func_face_culling_needed;
+      sctx->fixed_func_face_culling_has_effect = fixed_func_face_culling_has_effect;
+      sctx->dirty_atoms |= SI_STATE_BIT(rasterizer);
+   }
+
    if (old_pa_cl_vs_out_cntl != hw_vs->pa_cl_vs_out_cntl)
       si_mark_atom_dirty(sctx, &sctx->atoms.s.clip_regs);
 

@@ -62,6 +62,7 @@ struct si_state_rasterizer {
    unsigned pa_su_line_cntl;
    unsigned pa_sc_mode_cntl_0;
    unsigned pa_su_sc_mode_cntl;
+   unsigned pa_su_cull_bits;
    unsigned pa_cl_ngg_cntl;
    unsigned pa_sc_edgerule;
    unsigned pa_su_poly_offset_db_fmt_cntl[3];

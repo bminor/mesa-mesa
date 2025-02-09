@@ -1166,6 +1166,8 @@ struct si_context {
    /* Emitted draw state. */
    bool ngg : 1;
    bool disable_instance_packing : 1;
+   bool fixed_func_face_culling_needed : 1;
+   bool fixed_func_face_culling_has_effect : 1;
    uint16_t ngg_culling;
    unsigned last_index_size;
    unsigned last_instance_count;
