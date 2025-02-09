@@ -1806,6 +1806,7 @@ static void si_lower_ngg(struct si_shader *shader, nir_shader *nir)
       .kill_layer = key->ge.opt.kill_layer,
       .force_vrs = sel->screen->options.vrs2x2,
       .use_gfx12_xfb_intrinsic = !nir->info.use_aco_amd,
+      .skip_viewport_culling = sel->info.writes_viewport_index,
    };
 
    if (nir->info.stage == MESA_SHADER_VERTEX ||

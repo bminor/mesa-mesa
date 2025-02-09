@@ -3657,7 +3657,6 @@ static void *si_create_shader_selector(struct pipe_context *ctx,
       sscreen->info.gfx_level >= GFX10 &&
       sscreen->use_ngg_culling &&
       sel->info.writes_position &&
-      !sel->info.writes_viewport_index && /* cull only against viewport 0 */
       !sel->nir->info.writes_memory &&
       /* NGG GS supports culling with streamout because it culls after streamout. */
       (sel->stage == MESA_SHADER_GEOMETRY || !sel->info.enabled_streamout_buffer_mask) &&
