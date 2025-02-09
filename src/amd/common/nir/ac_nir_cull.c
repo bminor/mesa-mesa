@@ -134,6 +134,7 @@ call_accept_func(nir_builder *b, nir_def *accepted, ac_nir_cull_accepted accept_
 
 static nir_def *
 ac_nir_cull_triangle(nir_builder *b,
+                     bool skip_viewport_culling,
                      nir_def *initially_accepted,
                      nir_def *pos[3][4],
                      position_w_info *w_info,
@@ -143,6 +144,11 @@ ac_nir_cull_triangle(nir_builder *b,
    nir_def *accepted = initially_accepted;
    accepted = nir_iand(b, accepted, nir_inot(b, w_info->all_w_negative_or_zero_or_nan));
    accepted = nir_iand(b, accepted, nir_inot(b, cull_face_triangle(b, pos, w_info)));
+
+   if (skip_viewport_culling) {
+      call_accept_func(b, accepted, accept_func, state);
+      return accepted;
+   }
 
    nir_def *bbox_accepted = NULL;
 
@@ -305,6 +311,7 @@ cull_small_primitive_line(nir_builder *b, nir_def *pos[3][4],
 
 static nir_def *
 ac_nir_cull_line(nir_builder *b,
+                 bool skip_viewport_culling,
                  nir_def *initially_accepted,
                  nir_def *pos[3][4],
                  position_w_info *w_info,
@@ -313,6 +320,11 @@ ac_nir_cull_line(nir_builder *b,
 {
    nir_def *accepted = initially_accepted;
    accepted = nir_iand(b, accepted, nir_inot(b, w_info->all_w_negative_or_zero_or_nan));
+
+   if (skip_viewport_culling) {
+      call_accept_func(b, accepted, accept_func, state);
+      return accepted;
+   }
 
    nir_def *bbox_accepted = NULL;
 
@@ -336,6 +348,7 @@ ac_nir_cull_line(nir_builder *b,
 
 nir_def *
 ac_nir_cull_primitive(nir_builder *b,
+                      bool skip_viewport_culling,
                       nir_def *initially_accepted,
                       nir_def *pos[3][4],
                       unsigned num_vertices,
@@ -345,12 +358,15 @@ ac_nir_cull_primitive(nir_builder *b,
    position_w_info w_info = {0};
    analyze_position_w(b, pos, num_vertices, &w_info);
 
-   if (num_vertices == 3)
-      return ac_nir_cull_triangle(b, initially_accepted, pos, &w_info, accept_func, state);
-   else if (num_vertices == 2)
-      return ac_nir_cull_line(b, initially_accepted, pos, &w_info, accept_func, state);
-   else
+   if (num_vertices == 3) {
+      return ac_nir_cull_triangle(b, skip_viewport_culling, initially_accepted, pos, &w_info,
+                                  accept_func, state);
+   } else if (num_vertices == 2) {
+      return ac_nir_cull_line(b, skip_viewport_culling, initially_accepted, pos, &w_info,
+                              accept_func, state);
+   } else {
       unreachable("point culling not implemented");
+   }
 
    return NULL;
 }
