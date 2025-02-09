@@ -117,6 +117,21 @@ cull_small_primitive_triangle(nir_builder *b, nir_def *bbox_min[2], nir_def *bbo
    return rejected;
 }
 
+static void
+call_accept_func(nir_builder *b, nir_def *accepted, ac_nir_cull_accepted accept_func,
+                 void *state)
+{
+   if (!accept_func)
+      return;
+
+   nir_if *if_accepted = nir_push_if(b, accepted);
+   if_accepted->control = nir_selection_control_divergent_always_taken;
+   {
+      accept_func(b, state);
+   }
+   nir_pop_if(b, if_accepted);
+}
+
 static nir_def *
 ac_nir_cull_triangle(nir_builder *b,
                      nir_def *initially_accepted,
@@ -149,15 +164,7 @@ ac_nir_cull_triangle(nir_builder *b,
       bbox_rejected = nir_if_phi(b, bbox_rejected, prim_outside_view);
       bbox_accepted = nir_ior(b, nir_inot(b, bbox_rejected), w_info->any_w_negative);
 
-      /* for caller which need to react when primitive is accepted */
-      if (accept_func) {
-         nir_if *if_still_accepted = nir_push_if(b, bbox_accepted);
-         if_still_accepted->control = nir_selection_control_divergent_always_taken;
-         {
-            accept_func(b, state);
-         }
-         nir_pop_if(b, if_still_accepted);
-      }
+      call_accept_func(b, bbox_accepted, accept_func, state);
    }
    nir_pop_if(b, if_accepted);
 
@@ -320,15 +327,7 @@ ac_nir_cull_line(nir_builder *b,
          cull_small_primitive_line(b, pos, bbox_min, bbox_max, prim_outside_view);
 
       bbox_accepted = nir_ior(b, nir_inot(b, prim_invisible), w_info->any_w_negative);
-
-      /* for caller which need to react when primitive is accepted */
-      if (accept_func) {
-         nir_if *if_still_accepted = nir_push_if(b, bbox_accepted);
-         {
-            accept_func(b, state);
-         }
-         nir_pop_if(b, if_still_accepted);
-      }
+      call_accept_func(b, bbox_accepted, accept_func, state);
    }
    nir_pop_if(b, if_accepted);
 
