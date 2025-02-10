@@ -34,6 +34,7 @@ radv_buffer_init(struct radv_buffer *buffer, struct radv_device *device, struct 
 
    buffer->bo = bo;
    buffer->offset = offset;
+   buffer->addr = radv_buffer_get_va(bo) + offset;
 }
 
 void
@@ -52,7 +53,7 @@ radv_destroy_buffer(struct radv_device *device, const VkAllocationCallbacks *pAl
       radv_bo_destroy(device, &buffer->vk.base, buffer->bo);
 
    if (buffer->addr)
-      vk_address_binding_report(&instance->vk, &buffer->vk.base, buffer->addr + buffer->offset, buffer->range,
+      vk_address_binding_report(&instance->vk, &buffer->vk.base, buffer->addr, buffer->range,
                                 VK_DEVICE_ADDRESS_BINDING_TYPE_UNBIND_EXT);
 
    radv_rmv_log_resource_destroy(device, (uint64_t)radv_buffer_to_handle(buffer));
@@ -175,13 +176,13 @@ radv_BindBufferMemory2(VkDevice _device, uint32_t bindInfoCount, const VkBindBuf
 
       buffer->bo = mem->bo;
       buffer->offset = pBindInfos[i].memoryOffset;
-      buffer->addr = radv_buffer_get_va(mem->bo);
+      buffer->addr = radv_buffer_get_va(mem->bo) + pBindInfos[i].memoryOffset;
       buffer->range = reqs.memoryRequirements.size;
 
       radv_rmv_log_buffer_bind(device, pBindInfos[i].buffer);
 
-      vk_address_binding_report(&instance->vk, &buffer->vk.base, radv_buffer_get_va(buffer->bo) + buffer->offset,
-                                buffer->range, VK_DEVICE_ADDRESS_BINDING_TYPE_BIND_EXT);
+      vk_address_binding_report(&instance->vk, &buffer->vk.base, buffer->addr, buffer->range,
+                                VK_DEVICE_ADDRESS_BINDING_TYPE_BIND_EXT);
    }
    return VK_SUCCESS;
 }
@@ -257,14 +258,14 @@ VKAPI_ATTR VkDeviceAddress VKAPI_CALL
 radv_GetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo *pInfo)
 {
    VK_FROM_HANDLE(radv_buffer, buffer, pInfo->buffer);
-   return buffer->addr + buffer->offset;
+   return buffer->addr;
 }
 
 VKAPI_ATTR uint64_t VKAPI_CALL
 radv_GetBufferOpaqueCaptureAddress(VkDevice device, const VkBufferDeviceAddressInfo *pInfo)
 {
    VK_FROM_HANDLE(radv_buffer, buffer, pInfo->buffer);
-   return buffer->addr + buffer->offset;
+   return buffer->addr;
 }
 
 VkResult
