@@ -1971,14 +1971,14 @@ typedef enum {
     * whether the intrinsic can be safely eliminated if none of its output
     * value is not being used.
     */
-   NIR_INTRINSIC_CAN_ELIMINATE = (1 << 0),
+   NIR_INTRINSIC_CAN_ELIMINATE = BITFIELD_BIT(0),
 
    /**
     * Whether the intrinsic can be reordered with respect to any other
     * intrinsic, i.e. whether the only reordering dependencies of the
     * intrinsic are due to the register reads/writes.
     */
-   NIR_INTRINSIC_CAN_REORDER = (1 << 1),
+   NIR_INTRINSIC_CAN_REORDER = BITFIELD_BIT(1),
 } nir_intrinsic_semantic_flag;
 
 /**
