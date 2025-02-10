@@ -355,8 +355,8 @@ gfx10_init_graphics_preamble_state(const struct ac_preamble_state *state,
                                   struct ac_pm4_state *pm4)
 {
    const struct radeon_info *info = pm4->info;
-   unsigned meta_write_policy, meta_read_policy, color_write_policy, color_read_policy;
-   unsigned zs_write_policy, zs_read_policy;
+   unsigned dcc_write_policy, dcc_read_policy, color_write_policy, color_read_policy;
+   unsigned htile_write_policy, htile_read_policy, zs_write_policy, zs_read_policy;
    unsigned cache_no_alloc = info->gfx_level >= GFX11 ? V_02807C_CACHE_NOA_GFX11:
                                                         V_02807C_CACHE_NOA_GFX10;
 
@@ -365,8 +365,10 @@ gfx10_init_graphics_preamble_state(const struct ac_preamble_state *state,
       color_read_policy = V_028410_CACHE_LRU_RD;
       zs_write_policy = V_02807C_CACHE_LRU_WR;
       zs_read_policy = V_02807C_CACHE_LRU_RD;
-      meta_write_policy = V_02807C_CACHE_LRU_WR;
-      meta_read_policy = V_02807C_CACHE_LRU_RD;
+      dcc_write_policy = V_02807C_CACHE_LRU_WR;
+      dcc_read_policy = V_02807C_CACHE_LRU_RD;
+      htile_write_policy = V_02807C_CACHE_LRU_WR;
+      htile_read_policy = V_02807C_CACHE_LRU_RD;
    } else {
       color_write_policy = V_028410_CACHE_STREAM;
       color_read_policy = cache_no_alloc;
@@ -375,11 +377,15 @@ gfx10_init_graphics_preamble_state(const struct ac_preamble_state *state,
 
       /* Enable CMASK/HTILE/DCC caching in L2 for small chips. */
       if (info->max_render_backends <= 4) {
-         meta_write_policy = V_02807C_CACHE_LRU_WR; /* cache writes */
-         meta_read_policy = V_02807C_CACHE_LRU_RD;  /* cache reads */
+         dcc_write_policy = V_02807C_CACHE_LRU_WR; /* cache writes */
+         dcc_read_policy = V_02807C_CACHE_LRU_RD;  /* cache reads */
+         htile_write_policy = V_02807C_CACHE_LRU_WR; /* cache writes */
+         htile_read_policy = V_02807C_CACHE_LRU_RD;  /* cache reads */
       } else {
-         meta_write_policy = V_02807C_CACHE_STREAM; /* write combine */
-         meta_read_policy = cache_no_alloc; /* don't cache reads that miss */
+         dcc_write_policy = V_02807C_CACHE_STREAM; /* write combine */
+         dcc_read_policy = cache_no_alloc; /* don't cache reads that miss */
+         htile_write_policy = V_02807C_CACHE_STREAM; /* write combine */
+         htile_read_policy = cache_no_alloc; /* don't cache reads that miss */
       }
    }
 
@@ -446,11 +452,11 @@ gfx10_init_graphics_preamble_state(const struct ac_preamble_state *state,
    ac_pm4_set_reg(pm4, R_02807C_DB_RMI_L2_CACHE_CONTROL,
                   S_02807C_Z_WR_POLICY(zs_write_policy) |
                   S_02807C_S_WR_POLICY(zs_write_policy) |
-                  S_02807C_HTILE_WR_POLICY(meta_write_policy) |
+                  S_02807C_HTILE_WR_POLICY(htile_write_policy) |
                   S_02807C_ZPCPSD_WR_POLICY(V_02807C_CACHE_STREAM) | /* occlusion query writes */
                   S_02807C_Z_RD_POLICY(zs_read_policy) |
                   S_02807C_S_RD_POLICY(zs_read_policy) |
-                  S_02807C_HTILE_RD_POLICY(meta_read_policy));
+                  S_02807C_HTILE_RD_POLICY(htile_read_policy));
    ac_pm4_set_reg(pm4, R_028080_TA_BC_BASE_ADDR, state->border_color_va >> 8);
    ac_pm4_set_reg(pm4, R_028084_TA_BC_BASE_ADDR_HI, S_028084_ADDRESS(state->border_color_va >> 40));
 
@@ -458,17 +464,17 @@ gfx10_init_graphics_preamble_state(const struct ac_preamble_state *state,
                   (info->gfx_level >= GFX11 ?
                       S_028410_COLOR_WR_POLICY_GFX11(color_write_policy) |
                       S_028410_COLOR_RD_POLICY(color_read_policy) |
-                      S_028410_DCC_WR_POLICY_GFX11(meta_write_policy) |
-                      S_028410_DCC_RD_POLICY(meta_read_policy)
+                      S_028410_DCC_WR_POLICY_GFX11(dcc_write_policy) |
+                      S_028410_DCC_RD_POLICY(dcc_read_policy)
                     :
                       S_028410_COLOR_WR_POLICY_GFX10(color_write_policy) |
                       S_028410_COLOR_RD_POLICY(color_read_policy)) |
                       S_028410_FMASK_WR_POLICY(color_write_policy) |
                       S_028410_FMASK_RD_POLICY(color_read_policy) |
-                      S_028410_CMASK_WR_POLICY(meta_write_policy) |
-                      S_028410_CMASK_RD_POLICY(meta_read_policy) |
-                      S_028410_DCC_WR_POLICY_GFX10(meta_write_policy) |
-                      S_028410_DCC_RD_POLICY(meta_read_policy));
+                      S_028410_CMASK_WR_POLICY(dcc_write_policy) |
+                      S_028410_CMASK_RD_POLICY(dcc_read_policy) |
+                      S_028410_DCC_WR_POLICY_GFX10(dcc_write_policy) |
+                      S_028410_DCC_RD_POLICY(dcc_read_policy));
 
    if (info->gfx_level >= GFX10_3)
       ac_pm4_set_reg(pm4, R_028750_SX_PS_DOWNCONVERT_CONTROL, 0xff);
