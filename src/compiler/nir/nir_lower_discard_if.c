@@ -22,7 +22,80 @@
  */
 
 #include "compiler/nir/nir_builder.h"
+#include "util/set.h"
 #include "nir.h"
+
+/**
+ * Moves terminate{_if} intrinsics out of loops.
+ *
+ * This lowering turns:
+ *
+ *     loop {
+ *        ...
+ *        terminate_if(cond);
+ *        ...
+ *     }
+ *
+ * into:
+ *
+ *     reg = false
+ *     loop {
+ *        ...
+ *        if (cond) {
+ *           reg = true;
+ *           break;
+ *        }
+ *        ...
+ *     }
+ *     terminate_if(reg);
+ */
+static bool
+move_out_of_loop(nir_builder *b, nir_intrinsic_instr *instr)
+{
+   nir_cf_node *node = instr->instr.block->cf_node.parent;
+   while (node && node->type != nir_cf_node_loop)
+      node = node->parent;
+
+   if (node == NULL)
+      return false;
+
+   /* Lower the loop to LCSSA form, so that we don't break SSA. */
+   nir_convert_loop_to_lcssa(nir_cf_node_as_loop(node));
+
+   /* Create phi instruction for the terminate condition. */
+   nir_phi_instr *phi_instr = nir_phi_instr_create(b->shader);
+   nir_def_init(&phi_instr->instr, &phi_instr->def, 1, 1);
+
+   /* Set phi-src to 'false' for existing break conditions. */
+   b->cursor = nir_before_cf_node(node);
+   nir_def *false_val = nir_imm_false(b);
+   nir_block *after_loop = nir_cf_node_cf_tree_next(node);
+   set_foreach(after_loop->predecessors, entry) {
+      nir_phi_instr_add_src(phi_instr, (nir_block *)entry->key, false_val);
+   }
+
+   /* Break if terminate. */
+   b->cursor = nir_instr_remove(&instr->instr);
+   nir_def *cond = instr->intrinsic == nir_intrinsic_terminate_if
+                      ? instr->src[0].ssa
+                      : nir_imm_true(b);
+   nir_push_if(b, cond);
+
+   nir_jump(b, nir_jump_break);
+   nir_block *break_block = nir_cursor_current_block(b->cursor);
+   nir_pop_if(b, NULL);
+
+   /* Add undef for existing phis and terminate condition for the new phi. */
+   nir_insert_phi_undef(after_loop, break_block);
+   nir_phi_instr_add_src(phi_instr, break_block, cond);
+
+   /* Insert phi and new terminate instruction. */
+   b->cursor = nir_after_phis(after_loop);
+   nir_builder_instr_insert(b, &phi_instr->instr);
+   nir_terminate_if(b, &phi_instr->def);
+
+   return true;
+}
 
 static bool
 lower_discard_if(nir_builder *b, nir_intrinsic_instr *instr, void *cb_data)
@@ -34,7 +107,13 @@ lower_discard_if(nir_builder *b, nir_intrinsic_instr *instr, void *cb_data)
       if (!(options & nir_lower_demote_if_to_cf))
          return false;
       break;
+   case nir_intrinsic_terminate:
+      return (options & nir_move_terminate_out_of_loops) &&
+             move_out_of_loop(b, instr);
    case nir_intrinsic_terminate_if:
+      if ((options & nir_move_terminate_out_of_loops) &&
+          move_out_of_loop(b, instr))
+         return true;
       if (!(options & nir_lower_terminate_if_to_cf))
          return false;
       break;
