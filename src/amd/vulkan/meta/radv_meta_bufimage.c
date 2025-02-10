@@ -904,40 +904,6 @@ create_bview(struct radv_cmd_buffer *cmd_buffer, struct radv_buffer *buffer, uns
 }
 
 static void
-create_buffer_from_image(struct radv_cmd_buffer *cmd_buffer, struct radv_meta_blit2d_surf *surf,
-                         VkBufferUsageFlagBits2 usage, VkBuffer *buffer)
-{
-   struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   struct radv_device_memory mem;
-
-   radv_device_memory_init(&mem, device, surf->image->bindings[0].bo);
-
-   radv_create_buffer(device,
-                      &(VkBufferCreateInfo){
-                         .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-                         .pNext =
-                            &(VkBufferUsageFlags2CreateInfo){
-                               .sType = VK_STRUCTURE_TYPE_BUFFER_USAGE_FLAGS_2_CREATE_INFO,
-                               .usage = usage,
-                            },
-                         .flags = 0,
-                         .size = surf->image->size,
-                         .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-                      },
-                      NULL, buffer, true);
-
-   radv_BindBufferMemory2(radv_device_to_handle(device), 1,
-                          (VkBindBufferMemoryInfo[]){{
-                             .sType = VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO,
-                             .buffer = *buffer,
-                             .memory = radv_device_memory_to_handle(&mem),
-                             .memoryOffset = surf->image->bindings[0].offset,
-                          }});
-
-   radv_device_memory_finish(&mem);
-}
-
-static void
 create_bview_for_r32g32b32(struct radv_cmd_buffer *cmd_buffer, struct radv_buffer *buffer, unsigned offset,
                            VkFormat src_format, struct radv_buffer_view *bview)
 {
@@ -1127,11 +1093,11 @@ radv_meta_buffer_to_image_cs_r32g32b32(struct radv_cmd_buffer *cmd_buffer, struc
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    struct radv_buffer_view src_view, dst_view;
+   struct radv_buffer buffer;
    unsigned dst_offset = 0;
    VkPipelineLayout layout;
    VkPipeline pipeline;
    unsigned stride;
-   VkBuffer buffer;
    VkResult result;
 
    result = get_btoi_r32g32b32_pipeline(device, &pipeline, &layout);
@@ -1144,10 +1110,10 @@ radv_meta_buffer_to_image_cs_r32g32b32(struct radv_cmd_buffer *cmd_buffer, struc
     * image as a buffer with the same underlying memory. The compute
     * shader will copy all components separately using a R32 format.
     */
-   create_buffer_from_image(cmd_buffer, dst, VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT, &buffer);
+   radv_buffer_init(&buffer, device, dst->image->bindings[0].bo, dst->image->size, dst->image->bindings[0].offset);
 
    create_bview(cmd_buffer, src->buffer, src->offset, src->format, &src_view);
-   create_bview_for_r32g32b32(cmd_buffer, radv_buffer_from_handle(buffer), dst_offset, dst->format, &dst_view);
+   create_bview_for_r32g32b32(cmd_buffer, &buffer, dst_offset, dst->format, &dst_view);
 
    radv_meta_push_descriptor_set(
       cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, layout, 0, 2,
@@ -1186,7 +1152,7 @@ radv_meta_buffer_to_image_cs_r32g32b32(struct radv_cmd_buffer *cmd_buffer, struc
 
    radv_buffer_view_finish(&src_view);
    radv_buffer_view_finish(&dst_view);
-   radv_DestroyBuffer(radv_device_to_handle(device), buffer, NULL);
+   radv_buffer_finish(&buffer);
 }
 
 void
@@ -1262,9 +1228,9 @@ radv_meta_image_to_image_cs_r32g32b32(struct radv_cmd_buffer *cmd_buffer, struct
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    struct radv_buffer_view src_view, dst_view;
+   struct radv_buffer src_buffer, dst_buffer;
    unsigned src_offset = 0, dst_offset = 0;
    unsigned src_stride, dst_stride;
-   VkBuffer src_buffer, dst_buffer;
    VkPipelineLayout layout;
    VkPipeline pipeline;
    VkResult result;
@@ -1283,11 +1249,11 @@ radv_meta_image_to_image_cs_r32g32b32(struct radv_cmd_buffer *cmd_buffer, struct
     * image as a buffer with the same underlying memory. The compute
     * shader will copy all components separately using a R32 format.
     */
-   create_buffer_from_image(cmd_buffer, src, VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT, &src_buffer);
-   create_buffer_from_image(cmd_buffer, dst, VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT, &dst_buffer);
+   radv_buffer_init(&src_buffer, device, src->image->bindings[0].bo, src->image->size, src->image->bindings[0].offset);
+   radv_buffer_init(&dst_buffer, device, dst->image->bindings[0].bo, dst->image->size, dst->image->bindings[0].offset);
 
-   create_bview_for_r32g32b32(cmd_buffer, radv_buffer_from_handle(src_buffer), src_offset, src->format, &src_view);
-   create_bview_for_r32g32b32(cmd_buffer, radv_buffer_from_handle(dst_buffer), dst_offset, dst->format, &dst_view);
+   create_bview_for_r32g32b32(cmd_buffer, &src_buffer, src_offset, src->format, &src_view);
+   create_bview_for_r32g32b32(cmd_buffer, &dst_buffer, dst_offset, dst->format, &dst_view);
 
    radv_meta_push_descriptor_set(
       cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, layout, 0, 2,
@@ -1323,8 +1289,8 @@ radv_meta_image_to_image_cs_r32g32b32(struct radv_cmd_buffer *cmd_buffer, struct
 
    radv_buffer_view_finish(&src_view);
    radv_buffer_view_finish(&dst_view);
-   radv_DestroyBuffer(radv_device_to_handle(device), src_buffer, NULL);
-   radv_DestroyBuffer(radv_device_to_handle(device), dst_buffer, NULL);
+   radv_buffer_finish(&src_buffer);
+   radv_buffer_finish(&dst_buffer);
 }
 
 void
@@ -1429,10 +1395,10 @@ radv_meta_clear_image_cs_r32g32b32(struct radv_cmd_buffer *cmd_buffer, struct ra
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    struct radv_buffer_view dst_view;
+   struct radv_buffer buffer;
    VkPipelineLayout layout;
    VkPipeline pipeline;
    unsigned stride;
-   VkBuffer buffer;
    VkResult result;
 
    result = get_cleari_r32g32b32_pipeline(device, &pipeline, &layout);
@@ -1445,9 +1411,9 @@ radv_meta_clear_image_cs_r32g32b32(struct radv_cmd_buffer *cmd_buffer, struct ra
     * image as a buffer with the same underlying memory. The compute
     * shader will clear all components separately using a R32 format.
     */
-   create_buffer_from_image(cmd_buffer, dst, VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT, &buffer);
+   radv_buffer_init(&buffer, device, dst->image->bindings[0].bo, dst->image->size, dst->image->bindings[0].offset);
 
-   create_bview_for_r32g32b32(cmd_buffer, radv_buffer_from_handle(buffer), 0, dst->format, &dst_view);
+   create_bview_for_r32g32b32(cmd_buffer, &buffer, 0, dst->format, &dst_view);
 
    radv_meta_push_descriptor_set(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, layout, 0, 1,
                                  (VkWriteDescriptorSet[]){{
@@ -1476,7 +1442,7 @@ radv_meta_clear_image_cs_r32g32b32(struct radv_cmd_buffer *cmd_buffer, struct ra
    radv_unaligned_dispatch(cmd_buffer, dst->image->vk.extent.width, dst->image->vk.extent.height, 1);
 
    radv_buffer_view_finish(&dst_view);
-   radv_DestroyBuffer(radv_device_to_handle(device), buffer, NULL);
+   radv_buffer_finish(&buffer);
 }
 
 void
