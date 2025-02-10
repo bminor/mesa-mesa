@@ -49,7 +49,6 @@ rm "$ndk.zip"
 ############### Build ANGLE
 
 ANGLE_TARGET=android \
-ANGLE_ARCH=x64 \
 DEBIAN_ARCH=amd64 \
 . .gitlab-ci/container/build-angle.sh
 

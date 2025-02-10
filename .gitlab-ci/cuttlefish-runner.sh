@@ -172,7 +172,7 @@ while [ "$($ADB shell dumpsys SurfaceFlinger | grep GLES:)" = "" ] ; do sleep 1;
 MESA_RUNTIME_VERSION="$($ADB shell dumpsys SurfaceFlinger | grep GLES:)"
 
 if [ "$USE_ANGLE" = 1 ]; then
-  ANGLE_HASH=$(head -c 12 /angle/hash)
+  ANGLE_HASH=$(head -c 12 /angle/version)
   if ! printf "%s" "$MESA_RUNTIME_VERSION" | grep --quiet "${ANGLE_HASH}"; then
     echo "Fatal: Android is loading a wrong version of the ANGLE libs: ${ANGLE_HASH}" 1>&2
     exit 1

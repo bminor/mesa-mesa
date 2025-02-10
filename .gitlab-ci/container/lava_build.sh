@@ -306,7 +306,6 @@ rm -rf /apitrace
 ############### Build ANGLE
 if [[ "$DEBIAN_ARCH" = "amd64" ]]; then
   ANGLE_TARGET=linux \
-  ANGLE_ARCH=x64 \
   . .gitlab-ci/container/build-angle.sh
   mv /angle $ROOTFS/.
   rm -rf /angle
