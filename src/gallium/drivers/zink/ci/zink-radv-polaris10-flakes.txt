@@ -11,6 +11,7 @@ dEQP-GLES31.functional.texture.specification.texsubimage3d_depth.depth32f_stenci
 dEQP-GLES3.functional.fbo.multiview.samples_1
 dEQP-GLES3.functional.fbo.multiview.samples_4
 dEQP-GLES3.functional.texture.shadow.2d_array.linear_mipmap_linear.equal_depth24_stencil8
+dEQP-GLES3.functional.texture.shadow.2d_array.linear_mipmap_linear.not_equal_depth24_stencil8
 dEQP-GLES3.functional.texture.shadow.2d_array.linear_mipmap_nearest.equal_depth24_stencil8
 dEQP-GLES3.functional.texture.shadow.2d_array.linear_mipmap_nearest.greater_depth24_stencil8
 dEQP-GLES3.functional.texture.shadow.2d_array.linear_mipmap_nearest.greater_or_equal_depth24_stencil8
@@ -53,4 +54,5 @@ spec@arb_query_buffer_object@coherency@indirect-draw-count-GL_GEOMETRY_SHADER_IN
 spec@arb_query_buffer_object@coherency@indirect-draw-count-GL_GEOMETRY_SHADER_PRIMITIVES_EMITTED
 spec@ext_timer_query@time-elapsed
 
+spec@arb_shader_storage_buffer_object@execution@ssbo-atomicexchange-int
 spec@arb_shader_texture_lod@execution@glsl-fs-shadow2dgradarb-cumulative
