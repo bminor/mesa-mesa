@@ -4441,6 +4441,7 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       add_opt(s_add_i32, v_add3_u32, 0x3, "012", nullptr, true);
       add_opt(v_lshlrev_b32, v_lshl_add_u32, 0x3, "210", nullptr, true);
       add_opt(s_lshl_b32, v_lshl_add_u32, 0x3, "120", nullptr, true);
+      add_opt(s_mul_i32, v_mad_u32_u24, 0x3, "120", check_mul_u24_cb, true);
       /* v_add_u32(a, v_cndmask_b32(0, 1, cond)) -> v_addc_co_u32(a, 0, cond) */
       add_opt(v_cndmask_b32, v_addc_co_u32, 0x3, "0132",
               and_cb<and_cb<check_const_cb<1, 0>, remove_const_cb<1>>, add_lm_def_cb>, true);
@@ -4466,6 +4467,7 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
                  and_cb<and_cb<shift_to_mad_cb<32>, check_mul_u24_cb>, pop_def_cb>);
          add_opt(s_lshl_b32, v_mad_u32_u24, 0x3, "120",
                  and_cb<and_cb<shift_to_mad_cb<32>, check_mul_u24_cb>, pop_def_cb>);
+         add_opt(s_mul_i32, v_mad_u32_u24, 0x3, "120", and_cb<check_mul_u24_cb, pop_def_cb>);
       }
    } else if (info.opcode == aco_opcode::v_sub_u32 && !info.clamp) {
       assert(ctx.program->gfx_level >= GFX9);
@@ -4480,6 +4482,8 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
               and_cb<shift_to_mad_cb<32>, neg_mul_to_i24_cb>);
       add_opt(s_lshl_b32, v_mad_i32_i24, 0x2, "120",
               and_cb<shift_to_mad_cb<32>, neg_mul_to_i24_cb>);
+      add_opt(v_mul_u32_u24, v_mad_i32_i24, 0x2, "120", neg_mul_to_i24_cb);
+      add_opt(s_mul_i32, v_mad_i32_i24, 0x2, "120", neg_mul_to_i24_cb);
    } else if ((info.opcode == aco_opcode::v_sub_co_u32 ||
                info.opcode == aco_opcode::v_sub_co_u32_e64) &&
               !info.clamp) {
@@ -4498,6 +4502,8 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
                  and_cb<and_cb<shift_to_mad_cb<32>, neg_mul_to_i24_cb>, pop_def_cb>);
          add_opt(s_lshl_b32, v_mad_i32_i24, 0x2, "120",
                  and_cb<and_cb<shift_to_mad_cb<32>, neg_mul_to_i24_cb>, pop_def_cb>);
+         add_opt(v_mul_u32_u24, v_mad_i32_i24, 0x2, "120", and_cb<neg_mul_to_i24_cb, pop_def_cb>);
+         add_opt(s_mul_i32, v_mad_i32_i24, 0x2, "120", and_cb<neg_mul_to_i24_cb, pop_def_cb>);
       }
    } else if ((info.opcode == aco_opcode::s_add_u32 ||
                (info.opcode == aco_opcode::s_add_i32 && !ctx.uses[info.defs[1].tempId()])) &&

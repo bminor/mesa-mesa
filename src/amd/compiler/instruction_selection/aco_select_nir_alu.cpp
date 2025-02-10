@@ -1765,7 +1765,7 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
             emit_vop3a_instruction(ctx, instr, aco_opcode::v_mul_lo_u32, dst);
          }
       } else if (dst.regClass() == s1) {
-         emit_sop2_instruction(ctx, instr, aco_opcode::s_mul_i32, dst, false);
+         emit_sop2_instruction(ctx, instr, aco_opcode::s_mul_i32, dst, false, 0x3);
       } else {
          isel_err(&instr->instr, "Unimplemented NIR instr bit size");
       }
@@ -1773,7 +1773,7 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
    }
    case nir_op_imul24_relaxed: {
       if (dst.regClass() == s1) {
-         emit_sop2_instruction(ctx, instr, aco_opcode::s_mul_i32, dst, false);
+         emit_sop2_instruction(ctx, instr, aco_opcode::s_mul_i32, dst, false, 0x3);
       } else if (dst.regClass() == v1) {
          emit_vop2_instruction(ctx, instr, aco_opcode::v_mul_i32_i24, dst, true);
       } else {
