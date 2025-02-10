@@ -5835,12 +5835,7 @@ radv_get_vbo_info(const struct radv_cmd_buffer *cmd_buffer, uint32_t idx, struct
    const uint32_t offset = cmd_buffer->vertex_bindings[binding].offset;
 
    vbo_info->va = buffer->addr + offset;
-
-   if (cmd_buffer->vertex_bindings[binding].size) {
-      vbo_info->size = cmd_buffer->vertex_bindings[binding].size;
-   } else {
-      vbo_info->size = vk_buffer_range(&buffer->vk, offset, VK_WHOLE_SIZE);
-   }
+   vbo_info->size = cmd_buffer->vertex_bindings[binding].size;
 }
 
 static void
@@ -6993,7 +6988,7 @@ radv_CmdBindVertexBuffers2(VkCommandBuffer commandBuffer, uint32_t firstBinding,
    for (uint32_t i = 0; i < bindingCount; i++) {
       VK_FROM_HANDLE(radv_buffer, buffer, pBuffers[i]);
       uint32_t idx = firstBinding + i;
-      VkDeviceSize size = pSizes ? pSizes[i] : 0;
+      VkDeviceSize size = pSizes ? pSizes[i] : VK_WHOLE_SIZE;
       /* if pStrides=NULL, it shouldn't overwrite the strides specified by CmdSetVertexInputEXT */
       VkDeviceSize stride = pStrides ? pStrides[i] : vb[idx].stride;
 
@@ -7004,7 +6999,7 @@ radv_CmdBindVertexBuffers2(VkCommandBuffer commandBuffer, uint32_t firstBinding,
 
       cmd_buffer->vertex_binding_buffers[idx] = buffer;
       vb[idx].offset = pOffsets[i];
-      vb[idx].size = buffer ? vk_buffer_range(&buffer->vk, pOffsets[i], size) : size;
+      vb[idx].size = buffer ? vk_buffer_range(&buffer->vk, pOffsets[i], size) : 0;
       vb[idx].stride = stride;
 
       uint32_t bit = BITFIELD_BIT(idx);
