@@ -5854,7 +5854,7 @@
         "description": "ci: run containers builds on staging branches",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7152f343d6d73d2fbc05629c8a31215b2d31c3a6",
         "notes": null
