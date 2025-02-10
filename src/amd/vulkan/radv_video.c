@@ -1071,15 +1071,12 @@ set_reg(struct radv_cmd_buffer *cmd_buffer, unsigned reg, uint32_t val)
 }
 
 static void
-send_cmd(struct radv_cmd_buffer *cmd_buffer, unsigned cmd, struct radeon_winsys_bo *bo, uint32_t offset)
+send_cmd(struct radv_cmd_buffer *cmd_buffer, unsigned cmd, struct radeon_winsys_bo *bo, uint64_t addr)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   uint64_t addr;
 
    radv_cs_add_buffer(device->ws, cmd_buffer->cs, bo);
-   addr = radv_buffer_get_va(bo);
-   addr += offset;
 
    if (pdev->vid_decode_ip != AMD_IP_VCN_UNIFIED) {
       radeon_check_space(device->ws, cmd_buffer->cs, 6);
@@ -2572,8 +2569,10 @@ radv_vcn_cmd_reset(struct radv_cmd_buffer *cmd_buffer)
       radv_vcn_sq_start(cmd_buffer);
 
    rvcn_dec_message_create(vid, ptr, size);
-   send_cmd(cmd_buffer, RDECODE_CMD_SESSION_CONTEXT_BUFFER, vid->sessionctx.mem->bo, vid->sessionctx.offset);
-   send_cmd(cmd_buffer, RDECODE_CMD_MSG_BUFFER, cmd_buffer->upload.upload_bo, out_offset);
+   send_cmd(cmd_buffer, RDECODE_CMD_SESSION_CONTEXT_BUFFER, vid->sessionctx.mem->bo,
+            radv_buffer_get_va(vid->sessionctx.mem->bo) + vid->sessionctx.offset);
+   send_cmd(cmd_buffer, RDECODE_CMD_MSG_BUFFER, cmd_buffer->upload.upload_bo,
+            radv_buffer_get_va(cmd_buffer->upload.upload_bo) + out_offset);
    /* pad out the IB to the 16 dword boundary - otherwise the fw seems to be unhappy */
 
    if (pdev->vid_decode_ip != AMD_IP_VCN_UNIFIED) {
@@ -2596,8 +2595,10 @@ radv_uvd_cmd_reset(struct radv_cmd_buffer *cmd_buffer)
 
    ruvd_dec_message_create(vid, ptr);
    if (vid->sessionctx.mem)
-      send_cmd(cmd_buffer, RDECODE_CMD_SESSION_CONTEXT_BUFFER, vid->sessionctx.mem->bo, vid->sessionctx.offset);
-   send_cmd(cmd_buffer, RDECODE_CMD_MSG_BUFFER, cmd_buffer->upload.upload_bo, out_offset);
+      send_cmd(cmd_buffer, RDECODE_CMD_SESSION_CONTEXT_BUFFER, vid->sessionctx.mem->bo,
+               radv_buffer_get_va(vid->sessionctx.mem->bo) + vid->sessionctx.offset);
+   send_cmd(cmd_buffer, RDECODE_CMD_MSG_BUFFER, cmd_buffer->upload.upload_bo,
+            radv_buffer_get_va(cmd_buffer->upload.upload_bo) + out_offset);
 
    /* pad out the IB to the 16 dword boundary - otherwise the fw seems to be unhappy */
    int padsize = vid->sessionctx.mem ? 4 : 6;
@@ -2664,28 +2665,33 @@ radv_uvd_decode_video(struct radv_cmd_buffer *cmd_buffer, const VkVideoDecodeInf
    ruvd_dec_message_decode(device, vid, params, ptr, it_probs_ptr, &slice_offset, frame_info);
    rvcn_dec_message_feedback(fb_ptr);
    if (vid->sessionctx.mem)
-      send_cmd(cmd_buffer, RDECODE_CMD_SESSION_CONTEXT_BUFFER, vid->sessionctx.mem->bo, vid->sessionctx.offset);
-   send_cmd(cmd_buffer, RDECODE_CMD_MSG_BUFFER, msg_bo, out_offset);
+      send_cmd(cmd_buffer, RDECODE_CMD_SESSION_CONTEXT_BUFFER, vid->sessionctx.mem->bo,
+               radv_buffer_get_va(vid->sessionctx.mem->bo) + vid->sessionctx.offset);
+   send_cmd(cmd_buffer, RDECODE_CMD_MSG_BUFFER, msg_bo, radv_buffer_get_va(msg_bo) + out_offset);
 
    if (vid->dpb_type != DPB_DYNAMIC_TIER_2) {
       struct radv_image_view *dpb_iv =
          radv_image_view_from_handle(frame_info->pSetupReferenceSlot->pPictureResource->imageViewBinding);
       struct radv_image *dpb = dpb_iv->image;
-      send_cmd(cmd_buffer, RDECODE_CMD_DPB_BUFFER, dpb->bindings[0].bo, dpb->bindings[0].offset);
+      send_cmd(cmd_buffer, RDECODE_CMD_DPB_BUFFER, dpb->bindings[0].bo,
+               radv_buffer_get_va(dpb->bindings[0].bo) + dpb->bindings[0].offset);
    }
 
    if (vid->ctx.mem)
-      send_cmd(cmd_buffer, RDECODE_CMD_CONTEXT_BUFFER, vid->ctx.mem->bo, vid->ctx.offset);
+      send_cmd(cmd_buffer, RDECODE_CMD_CONTEXT_BUFFER, vid->ctx.mem->bo,
+               radv_buffer_get_va(vid->ctx.mem->bo) + vid->ctx.offset);
 
    send_cmd(cmd_buffer, RDECODE_CMD_BITSTREAM_BUFFER, src_buffer->bo,
-            src_buffer->offset + frame_info->srcBufferOffset + slice_offset);
+            radv_buffer_get_va(src_buffer->bo) + src_buffer->offset + frame_info->srcBufferOffset + slice_offset);
 
    struct radv_image_view *dst_iv = radv_image_view_from_handle(frame_info->dstPictureResource.imageViewBinding);
    struct radv_image *img = dst_iv->image;
-   send_cmd(cmd_buffer, RDECODE_CMD_DECODING_TARGET_BUFFER, img->bindings[0].bo, img->bindings[0].offset);
-   send_cmd(cmd_buffer, RDECODE_CMD_FEEDBACK_BUFFER, fb_bo, fb_offset);
+   send_cmd(cmd_buffer, RDECODE_CMD_DECODING_TARGET_BUFFER, img->bindings[0].bo,
+            radv_buffer_get_va(img->bindings[0].bo) + img->bindings[0].offset);
+   send_cmd(cmd_buffer, RDECODE_CMD_FEEDBACK_BUFFER, fb_bo, radv_buffer_get_va(fb_bo) + fb_offset);
    if (have_it(vid))
-      send_cmd(cmd_buffer, RDECODE_CMD_IT_SCALING_TABLE_BUFFER, it_probs_bo, it_probs_offset);
+      send_cmd(cmd_buffer, RDECODE_CMD_IT_SCALING_TABLE_BUFFER, it_probs_bo,
+               radv_buffer_get_va(it_probs_bo) + it_probs_offset);
 
    radeon_check_space(device->ws, cmd_buffer->cs, 2);
    set_reg(cmd_buffer, pdev->vid_dec_reg.cntl, 1);
@@ -2744,30 +2750,35 @@ radv_vcn_decode_video(struct radv_cmd_buffer *cmd_buffer, const VkVideoDecodeInf
    uint32_t slice_offset;
    rvcn_dec_message_decode(cmd_buffer, vid, params, ptr, it_probs_ptr, &slice_offset, frame_info);
    rvcn_dec_message_feedback(fb_ptr);
-   send_cmd(cmd_buffer, RDECODE_CMD_SESSION_CONTEXT_BUFFER, vid->sessionctx.mem->bo, vid->sessionctx.offset);
-   send_cmd(cmd_buffer, RDECODE_CMD_MSG_BUFFER, msg_bo, out_offset);
+   send_cmd(cmd_buffer, RDECODE_CMD_SESSION_CONTEXT_BUFFER, vid->sessionctx.mem->bo,
+            radv_buffer_get_va(vid->sessionctx.mem->bo) + vid->sessionctx.offset);
+   send_cmd(cmd_buffer, RDECODE_CMD_MSG_BUFFER, msg_bo, radv_buffer_get_va(msg_bo) + out_offset);
 
    if (vid->dpb_type != DPB_DYNAMIC_TIER_2) {
       struct radv_image_view *dpb_iv =
          radv_image_view_from_handle(frame_info->pSetupReferenceSlot->pPictureResource->imageViewBinding);
       struct radv_image *dpb = dpb_iv->image;
-      send_cmd(cmd_buffer, RDECODE_CMD_DPB_BUFFER, dpb->bindings[0].bo, dpb->bindings[0].offset);
+      send_cmd(cmd_buffer, RDECODE_CMD_DPB_BUFFER, dpb->bindings[0].bo,
+               radv_buffer_get_va(dpb->bindings[0].bo) + dpb->bindings[0].offset);
    }
 
    if (vid->ctx.mem)
-      send_cmd(cmd_buffer, RDECODE_CMD_CONTEXT_BUFFER, vid->ctx.mem->bo, vid->ctx.offset);
+      send_cmd(cmd_buffer, RDECODE_CMD_CONTEXT_BUFFER, vid->ctx.mem->bo,
+               radv_buffer_get_va(vid->ctx.mem->bo) + vid->ctx.offset);
 
    send_cmd(cmd_buffer, RDECODE_CMD_BITSTREAM_BUFFER, src_buffer->bo,
-            src_buffer->offset + frame_info->srcBufferOffset + slice_offset);
+            radv_buffer_get_va(src_buffer->bo) + src_buffer->offset + frame_info->srcBufferOffset + slice_offset);
 
    struct radv_image_view *dst_iv = radv_image_view_from_handle(frame_info->dstPictureResource.imageViewBinding);
    struct radv_image *img = dst_iv->image;
-   send_cmd(cmd_buffer, RDECODE_CMD_DECODING_TARGET_BUFFER, img->bindings[0].bo, img->bindings[0].offset);
-   send_cmd(cmd_buffer, RDECODE_CMD_FEEDBACK_BUFFER, fb_bo, fb_offset);
+   send_cmd(cmd_buffer, RDECODE_CMD_DECODING_TARGET_BUFFER, img->bindings[0].bo,
+            radv_buffer_get_va(img->bindings[0].bo) + img->bindings[0].offset);
+   send_cmd(cmd_buffer, RDECODE_CMD_FEEDBACK_BUFFER, fb_bo, radv_buffer_get_va(fb_bo) + fb_offset);
    if (have_it(vid))
-      send_cmd(cmd_buffer, RDECODE_CMD_IT_SCALING_TABLE_BUFFER, it_probs_bo, it_probs_offset);
+      send_cmd(cmd_buffer, RDECODE_CMD_IT_SCALING_TABLE_BUFFER, it_probs_bo,
+               radv_buffer_get_va(it_probs_bo) + it_probs_offset);
    else if (have_probs(vid))
-      send_cmd(cmd_buffer, RDECODE_CMD_PROB_TBL_BUFFER, it_probs_bo, it_probs_offset);
+      send_cmd(cmd_buffer, RDECODE_CMD_PROB_TBL_BUFFER, it_probs_bo, radv_buffer_get_va(it_probs_bo) + it_probs_offset);
 
    if (pdev->vid_decode_ip != AMD_IP_VCN_UNIFIED) {
       radeon_check_space(device->ws, cmd_buffer->cs, 2);
