@@ -1039,6 +1039,7 @@ emit_perfcntrs_pass_start(struct tu_cs *cs, uint32_t pass)
    tu_cond_exec_start(cs, CP_COND_REG_EXEC_0_MODE(PRED_TEST));
 }
 
+template <chip CHIP>
 static void
 emit_begin_perf_query(struct tu_cmd_buffer *cmdbuf,
                            struct tu_query_pool *pool,
@@ -1069,6 +1070,16 @@ emit_begin_perf_query(struct tu_cmd_buffer *cmdbuf,
     */
 
    tu_cs_emit_wfi(cs);
+
+   /* Keep preemption disabled for the duration of this query. This way
+    * changes in perfcounter values should only apply to work done during
+    * this query.
+    */
+   if (CHIP == A7XX) {
+      tu_cs_emit_pkt7(cs, CP_SCOPE_CNTL, 1);
+      tu_cs_emit(cs, CP_SCOPE_CNTL_0(.disable_preemption = true,
+                                     .scope = INTERRUPTS).value);
+   }
 
    for (uint32_t i = 0; i < pool->counter_index_count; i++) {
       struct tu_perf_query_data *data = &pool->perf_query_data[i];
@@ -1200,7 +1211,7 @@ tu_CmdBeginQueryIndexedEXT(VkCommandBuffer commandBuffer,
       emit_begin_prim_generated_query<CHIP>(cmdbuf, pool, query);
       break;
    case VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR:
-      emit_begin_perf_query(cmdbuf, pool, query);
+      emit_begin_perf_query<CHIP>(cmdbuf, pool, query);
       break;
    case VK_QUERY_TYPE_PIPELINE_STATISTICS:
       emit_begin_stat_query<CHIP>(cmdbuf, pool, query);
@@ -1442,6 +1453,7 @@ emit_end_stat_query(struct tu_cmd_buffer *cmdbuf,
    tu_cs_emit_qw(cs, 0x1);
 }
 
+template <chip CHIP>
 static void
 emit_end_perf_query(struct tu_cmd_buffer *cmdbuf,
                          struct tu_query_pool *pool,
@@ -1511,6 +1523,15 @@ emit_end_perf_query(struct tu_cmd_buffer *cmdbuf,
    tu_cond_exec_end(cs);
 
    tu_cs_emit_pkt7(cs, CP_WAIT_MEM_WRITES, 0);
+
+   /* This reverts the preemption disablement done at the start
+    * of the query.
+    */
+   if (CHIP == A7XX) {
+      tu_cs_emit_pkt7(cs, CP_SCOPE_CNTL, 1);
+      tu_cs_emit(cs, CP_SCOPE_CNTL_0(.disable_preemption = false,
+                                     .scope = INTERRUPTS).value);
+   }
 
    if (cmdbuf->state.pass)
       cs = &cmdbuf->draw_epilogue_cs;
@@ -1691,7 +1712,7 @@ tu_CmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer,
       emit_end_prim_generated_query<CHIP>(cmdbuf, pool, query);
       break;
    case VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR:
-      emit_end_perf_query(cmdbuf, pool, query);
+      emit_end_perf_query<CHIP>(cmdbuf, pool, query);
       break;
    case VK_QUERY_TYPE_PIPELINE_STATISTICS:
       emit_end_stat_query<CHIP>(cmdbuf, pool, query);

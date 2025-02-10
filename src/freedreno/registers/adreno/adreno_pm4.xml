@@ -661,6 +661,8 @@ xsi:schemaLocation="https://gitlab.freedesktop.org/freedreno/ rules-fd.xsd">
 
 	<doc>Invalidates the "CCHE" introduced on a740</doc>
 	<value name="CP_CCHE_INVALIDATE" value="0x3a" variants="A7XX-"/>
+
+	<value name="CP_SCOPE_CNTL" value="0x6c" variants="A7XX-"/>
 </enum>
 
 
@@ -2369,6 +2371,16 @@ opcode: CP_LOAD_STATE4 (30) (4 dwords)
 		<bitfield name="CLEAR_RESOURCE_TABLE" pos="1" type="boolean"/>
 		<bitfield name="CLEAR_GLOBAL_LOCAL_TS" pos="2" type="boolean"/>
 		<bitfield name="RESET_CONTEXT_STATE" pos="3" type="boolean"/>
+	</reg32>
+</domain>
+
+<domain name="CP_SCOPE_CNTL" width="32">
+	<enum name="cp_scope">
+		<value value="0" name="INTERRUPTS"/>
+	</enum>
+	<reg32 offset="0" name="0">
+		<bitfield name="DISABLE_PREEMPTION" pos="0" type="boolean"/>
+		<bitfield low="28" high="31" name="SCOPE" type="cp_scope"/>
 	</reg32>
 </domain>
 
