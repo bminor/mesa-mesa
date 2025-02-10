@@ -18,6 +18,7 @@
 #include "util/u_resource.h"
 #include "util/u_upload_mgr.h"
 #include "util/u_blend.h"
+#include "util/u_process.h"
 
 #include "ac_cmdbuf.h"
 #include "ac_descriptors.h"
@@ -4941,6 +4942,16 @@ static void si_init_compute_preamble_state(struct si_context *sctx,
    ac_init_compute_preamble_state(&preamble_state, &pm4->base);
 }
 
+static bool is_process_name_param(const char *name, const char *param)
+{
+   if (!strstr(util_get_process_name(), name))
+      return false;
+
+   char cmdline[1024];
+   util_get_command_line(cmdline, sizeof(cmdline));
+   return strstr(cmdline, param) != NULL;
+}
+
 static void si_init_graphics_preamble_state(struct si_context *sctx,
                                             struct si_pm4_state *pm4)
 {
@@ -4950,8 +4961,9 @@ static void si_init_graphics_preamble_state(struct si_context *sctx,
 
    const struct ac_preamble_state preamble_state = {
       .border_color_va = border_color_va,
-      .gfx10.cache_cb_gl2 = sctx->gfx_level >= GFX10 && sscreen->options.cache_rb_gl2,
-      .gfx10.cache_db_gl2 = sctx->gfx_level >= GFX10 && sscreen->options.cache_rb_gl2,
+      .gfx10.cache_cb_gl2 = sctx->gfx_level >= GFX10 && sscreen->options.cache_cb_gl2,
+      .gfx10.cache_db_gl2 = sctx->gfx_level >= GFX10 && sscreen->options.cache_db_gl2 &&
+                            !is_process_name_param("GpuTest", "fur"),
    };
 
    ac_init_graphics_preamble_state(&preamble_state, &pm4->base);

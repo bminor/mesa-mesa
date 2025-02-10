@@ -19,7 +19,8 @@ OPT_BOOL(force_use_fma32, false, "Force use fma32 instruction for GPU family new
 OPT_BOOL(dcc_msaa, true, "Enable DCC for MSAA for GFX10-10.3")
 OPT_BOOL(zerovram, false, "Zero all VRAM allocations")
 OPT_BOOL(clear_lds, false, "Clear LDS at the end of shaders. Might decrease performance.")
-OPT_BOOL(cache_rb_gl2, false, "Enable GL2 caching for CB and DB.")
+OPT_BOOL(cache_cb_gl2, false, "Enable GL2 caching for CB.")
+OPT_BOOL(cache_db_gl2, true, "Enable GL2 caching for DB.")
 OPT_BOOL(alt_hiz_logic, true, "Enable alternative HiZ logic")
 
 #undef OPT_BOOL
