@@ -7,3 +7,4 @@ VK_EXT_separate_stencil_usage on panvk
 samplerYcbcrConversion on panvk/v10+
 ycbcr2plane444Formats on panvk/v10+
 ycbcrImageArrays on panvk/v10+
+VK_KHR_imageless_framebuffer on panvk
