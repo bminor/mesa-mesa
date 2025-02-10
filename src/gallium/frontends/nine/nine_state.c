@@ -1261,8 +1261,10 @@ nine_update_state(struct NineDevice9 *device)
             prepare_dsa(device);
         if (group & NINE_STATE_VIEWPORT)
             update_viewport(device);
-        if (group & (NINE_STATE_VDECL | NINE_STATE_VS | NINE_STATE_STREAMFREQ))
+        if (group & (NINE_STATE_VDECL | NINE_STATE_VS | NINE_STATE_STREAMFREQ)) {
             update_vertex_elements(device);
+            context->changed.vtxbuf_dirty = true;
+        }
     }
 
     if (likely(group & (NINE_STATE_FREQUENT | NINE_STATE_VS | NINE_STATE_PS | NINE_STATE_SWVP))) {
