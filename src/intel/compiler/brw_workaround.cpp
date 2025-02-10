@@ -236,7 +236,7 @@ brw_workaround_nomask_control_flow(brw_shader &s)
                 * and restore the flag register if it's live.
                 */
                const bool save_flag = flag_liveout &
-                                      brw_fs_flag_mask(flag, s.dispatch_width / 8);
+                                      brw_flag_mask(flag, s.dispatch_width / 8);
                const brw_reg tmp = ubld.group(8, 0).vgrf(flag.type);
 
                if (save_flag) {

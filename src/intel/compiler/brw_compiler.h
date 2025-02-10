@@ -1486,11 +1486,11 @@ brw_stage_has_packed_dispatch(ASSERTED const struct intel_device_info *devinfo,
 {
    /* The code below makes assumptions about the hardware's thread dispatch
     * behavior that could be proven wrong in future generations -- Make sure
-    * to do a full test run with brw_fs_test_dispatch_packing() hooked up to
+    * to do a full test run with brw_test_dispatch_packing() hooked up to
     * the NIR front-end before changing this assertion. It can be temporarily
     * enabled by setting the macro below to true.
     */
-   #define ENABLE_FS_TEST_DISPATCH_PACKING false
+   #define ENABLE_TEST_DISPATCH_PACKING false
    assert(devinfo->ver <= 30);
 
    switch (stage) {

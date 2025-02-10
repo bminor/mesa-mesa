@@ -30,8 +30,8 @@
 extern "C" {
 #endif
 
-/* brw_fs_reg_allocate.cpp */
-void brw_fs_alloc_reg_sets(struct brw_compiler *compiler);
+/* brw_reg_allocate.cpp */
+void brw_alloc_reg_sets(struct brw_compiler *compiler);
 
 /* brw_disasm.c */
 extern const char *const conditional_modifier[16];

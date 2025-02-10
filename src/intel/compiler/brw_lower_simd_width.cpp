@@ -481,7 +481,7 @@ needs_src_copy(const brw_builder &lbld, const brw_inst *inst, unsigned i)
              (inst->components_read(i) == 1 &&
               lbld.dispatch_width() <= inst->exec_size)) ||
            (inst->flags_written(lbld.shader->devinfo) &
-            brw_fs_flag_mask(inst->src[i], brw_type_size_bytes(inst->src[i].type))));
+            brw_flag_mask(inst->src[i], brw_type_size_bytes(inst->src[i].type))));
 }
 
 /**

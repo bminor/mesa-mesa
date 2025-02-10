@@ -77,7 +77,7 @@ brw_assign_regs_trivial(brw_shader &s)
 }
 
 extern "C" void
-brw_fs_alloc_reg_sets(struct brw_compiler *compiler)
+brw_alloc_reg_sets(struct brw_compiler *compiler)
 {
    const struct intel_device_info *devinfo = compiler->devinfo;
    int base_reg_count = (devinfo->ver >= 30 ? XE3_MAX_GRF / reg_unit(devinfo) :

@@ -382,7 +382,7 @@ bool has_bank_conflict(const struct brw_isa_info *isa, const brw_inst *inst);
  * subregister number of the instruction.
  */
 static inline unsigned
-brw_fs_flag_mask(const brw_inst *inst, unsigned width)
+brw_flag_mask(const brw_inst *inst, unsigned width)
 {
    assert(util_is_power_of_two_nonzero(width));
    const unsigned start = (inst->flag_subreg * 16 + inst->group) &
@@ -392,18 +392,18 @@ brw_fs_flag_mask(const brw_inst *inst, unsigned width)
 }
 
 static inline unsigned
-brw_fs_bit_mask(unsigned n)
+brw_bit_mask(unsigned n)
 {
-   return (n >= CHAR_BIT * sizeof(brw_fs_bit_mask(n)) ? ~0u : (1u << n) - 1);
+   return (n >= CHAR_BIT * sizeof(brw_bit_mask(n)) ? ~0u : (1u << n) - 1);
 }
 
 static inline unsigned
-brw_fs_flag_mask(const brw_reg &r, unsigned sz)
+brw_flag_mask(const brw_reg &r, unsigned sz)
 {
    if (r.file == ARF) {
       const unsigned start = (r.nr - BRW_ARF_FLAG) * 4 + r.subnr;
       const unsigned end = start + sz;
-      return brw_fs_bit_mask(end) & ~brw_fs_bit_mask(start);
+      return brw_bit_mask(end) & ~brw_bit_mask(start);
    } else {
       return 0;
    }

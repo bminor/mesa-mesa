@@ -643,13 +643,13 @@ brw_inst::flags_read(const intel_device_info *devinfo) const
        * f0.0 and f1.0 on Gfx7+.
        */
       const unsigned shift = 4;
-      return brw_fs_flag_mask(this, 1) << shift | brw_fs_flag_mask(this, 1);
+      return brw_flag_mask(this, 1) << shift | brw_flag_mask(this, 1);
    } else if (predicate) {
-      return brw_fs_flag_mask(this, predicate_width(devinfo, predicate));
+      return brw_flag_mask(this, predicate_width(devinfo, predicate));
    } else {
       unsigned mask = 0;
       for (int i = 0; i < sources; i++) {
-         mask |= brw_fs_flag_mask(src[i], size_read(devinfo, i));
+         mask |= brw_flag_mask(src[i], size_read(devinfo, i));
       }
       return mask;
    }
@@ -662,15 +662,15 @@ brw_inst::flags_written(const intel_device_info *devinfo) const
                            opcode != BRW_OPCODE_CSEL &&
                            opcode != BRW_OPCODE_IF &&
                            opcode != BRW_OPCODE_WHILE)) {
-      return brw_fs_flag_mask(this, 1);
+      return brw_flag_mask(this, 1);
    } else if (opcode == FS_OPCODE_LOAD_LIVE_CHANNELS ||
               opcode == SHADER_OPCODE_BALLOT ||
               opcode == SHADER_OPCODE_VOTE_ANY ||
               opcode == SHADER_OPCODE_VOTE_ALL ||
               opcode == SHADER_OPCODE_VOTE_EQUAL) {
-      return brw_fs_flag_mask(this, 32);
+      return brw_flag_mask(this, 32);
    } else {
-      return brw_fs_flag_mask(dst, size_written);
+      return brw_flag_mask(dst, size_written);
    }
 }
 

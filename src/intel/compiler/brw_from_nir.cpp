@@ -7789,7 +7789,7 @@ emit_shader_float_controls_execution_mode(nir_to_brw_state &ntb)
  * executed with an unexpected dispatch mask.
  */
 static UNUSED void
-brw_fs_test_dispatch_packing(const brw_builder &bld)
+brw_test_dispatch_packing(const brw_builder &bld)
 {
    const brw_shader *shader = bld.shader;
    const gl_shader_stage stage = shader->stage;
@@ -7830,8 +7830,8 @@ brw_from_nir(brw_shader *s)
    if (INTEL_DEBUG(DEBUG_ANNOTATION))
       ntb.annotate = true;
 
-   if (ENABLE_FS_TEST_DISPATCH_PACKING)
-      brw_fs_test_dispatch_packing(ntb.bld);
+   if (ENABLE_TEST_DISPATCH_PACKING)
+      brw_test_dispatch_packing(ntb.bld);
 
    for (unsigned i = 0; i < s->nir->printf_info_count; i++) {
       brw_stage_prog_data_add_printf(s->prog_data,
