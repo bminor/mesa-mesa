@@ -26,6 +26,7 @@ dEQP-VK.shader_object.rendering.color_attachment_count_4.extra_attachment_after_
 
 dEQP-VK.sparse_resources.image_sparse_binding.cube_array.rg16ui.256_256_6
 dEQP-VK.sparse_resources.image_sparse_binding.cube_array.rgba32i.256_256_6
+dEQP-VK.sparse_resources.image_sparse_binding.multiple_sparse_memory_bind.cube_array.rgba32ui.256_256_6
 dEQP-VK.sparse_resources.transfer_queue.cube_array.rgba32ui.256_256_6
 
 # New flakes in 1.4.1.0
