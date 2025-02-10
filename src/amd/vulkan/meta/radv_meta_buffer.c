@@ -275,14 +275,11 @@ radv_fill_buffer(struct radv_cmd_buffer *cmd_buffer, const struct radv_image *im
 
 void
 radv_copy_buffer(struct radv_cmd_buffer *cmd_buffer, struct radeon_winsys_bo *src_bo, struct radeon_winsys_bo *dst_bo,
-                 uint64_t src_offset, uint64_t dst_offset, uint64_t size)
+                 uint64_t src_va, uint64_t dst_va, uint64_t size)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    bool use_compute =
-      !(size & 3) && !(src_offset & 3) && !(dst_offset & 3) && radv_prefer_compute_dma(device, size, src_bo, dst_bo);
-
-   uint64_t src_va = radv_buffer_get_va(src_bo) + src_offset;
-   uint64_t dst_va = radv_buffer_get_va(dst_bo) + dst_offset;
+      !(size & 3) && !(src_va & 3) && !(dst_va & 3) && radv_prefer_compute_dma(device, size, src_bo, dst_bo);
 
    radv_cs_add_buffer(device->ws, cmd_buffer->cs, src_bo);
    radv_cs_add_buffer(device->ws, cmd_buffer->cs, dst_bo);
@@ -320,8 +317,10 @@ copy_buffer(struct radv_cmd_buffer *cmd_buffer, struct radv_buffer *src_buffer, 
    old_predicating = cmd_buffer->state.predicating;
    cmd_buffer->state.predicating = false;
 
-   radv_copy_buffer(cmd_buffer, src_buffer->bo, dst_buffer->bo, src_buffer->offset + region->srcOffset,
-                    dst_buffer->offset + region->dstOffset, region->size);
+   const uint64_t src_va = radv_buffer_get_va(src_buffer->bo) + src_buffer->offset + region->srcOffset;
+   const uint64_t dst_va = radv_buffer_get_va(dst_buffer->bo) + dst_buffer->offset + region->dstOffset;
+
+   radv_copy_buffer(cmd_buffer, src_buffer->bo, dst_buffer->bo, src_va, dst_va, region->size);
 
    /* Restore conditional rendering. */
    cmd_buffer->state.predicating = old_predicating;
@@ -384,7 +383,9 @@ radv_CmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDevice
    } else {
       uint32_t buf_offset;
       radv_cmd_buffer_upload_data(cmd_buffer, dataSize, pData, &buf_offset);
-      radv_copy_buffer(cmd_buffer, cmd_buffer->upload.upload_bo, dst_buffer->bo, buf_offset,
-                       dstOffset + dst_buffer->offset, dataSize);
+
+      const uint64_t src_va = radv_buffer_get_va(cmd_buffer->upload.upload_bo) + buf_offset;
+
+      radv_copy_buffer(cmd_buffer, cmd_buffer->upload.upload_bo, dst_buffer->bo, src_va, va, dataSize);
    }
 }

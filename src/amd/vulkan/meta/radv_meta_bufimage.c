@@ -1001,14 +1001,14 @@ fixup_gfx9_cs_copy(struct radv_cmd_buffer *cmd_buffer, const struct radv_meta_bl
                                                     coordY, img_bsurf->layer, image->vk.image_type == VK_IMAGE_TYPE_3D);
          struct radeon_winsys_bo *img_bo = image->bindings[0].bo;
          struct radeon_winsys_bo *mem_bo = buf_bsurf->buffer->bo;
-         const uint64_t img_offset = image->bindings[0].offset + addr;
+         const uint64_t img_va = radv_buffer_get_va(img_bo) + image->bindings[0].offset + addr;
          /* buf_bsurf->offset already includes the layer offset */
-         const uint64_t mem_offset =
-            buf_bsurf->buffer->offset + buf_bsurf->offset + y * buf_bsurf->pitch * surf->bpe + x * surf->bpe;
+         const uint64_t mem_va = radv_buffer_get_va(mem_bo) + buf_bsurf->buffer->offset + buf_bsurf->offset +
+                                 y * buf_bsurf->pitch * surf->bpe + x * surf->bpe;
          if (to_image) {
-            radv_copy_buffer(cmd_buffer, mem_bo, img_bo, mem_offset, img_offset, surf->bpe);
+            radv_copy_buffer(cmd_buffer, mem_bo, img_bo, mem_va, img_va, surf->bpe);
          } else {
-            radv_copy_buffer(cmd_buffer, img_bo, mem_bo, img_offset, mem_offset, surf->bpe);
+            radv_copy_buffer(cmd_buffer, img_bo, mem_bo, img_va, mem_va, surf->bpe);
          }
       }
    }

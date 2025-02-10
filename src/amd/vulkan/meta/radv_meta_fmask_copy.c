@@ -167,7 +167,7 @@ static void
 radv_fixup_copy_dst_metadata(struct radv_cmd_buffer *cmd_buffer, const struct radv_image *src_image,
                              const struct radv_image *dst_image)
 {
-   uint64_t src_offset, dst_offset, size;
+   uint64_t src_va, dst_va, size;
 
    assert(src_image->planes[0].surface.cmask_size == dst_image->planes[0].surface.cmask_size &&
           src_image->planes[0].surface.fmask_size == dst_image->planes[0].surface.fmask_size);
@@ -178,10 +178,12 @@ radv_fixup_copy_dst_metadata(struct radv_cmd_buffer *cmd_buffer, const struct ra
 
    /* Copy CMASK+FMASK. */
    size = src_image->planes[0].surface.cmask_size + src_image->planes[0].surface.fmask_size;
-   src_offset = src_image->bindings[0].offset + src_image->planes[0].surface.fmask_offset;
-   dst_offset = dst_image->bindings[0].offset + dst_image->planes[0].surface.fmask_offset;
+   src_va = radv_buffer_get_va(src_image->bindings[0].bo) + src_image->bindings[0].offset +
+            src_image->planes[0].surface.fmask_offset;
+   dst_va = radv_buffer_get_va(dst_image->bindings[0].bo) + dst_image->bindings[0].offset +
+            dst_image->planes[0].surface.fmask_offset;
 
-   radv_copy_buffer(cmd_buffer, src_image->bindings[0].bo, dst_image->bindings[0].bo, src_offset, dst_offset, size);
+   radv_copy_buffer(cmd_buffer, src_image->bindings[0].bo, dst_image->bindings[0].bo, src_va, dst_va, size);
 }
 
 bool
