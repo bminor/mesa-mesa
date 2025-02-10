@@ -54,8 +54,18 @@ blorp_params_get_clear_kernel_fs(struct blorp_batch *batch,
                                  bool want_replicated_data,
                                  bool clear_rgb_as_red)
 {
+   /* From the BSpec: 47719 (TGL/DG2/MTL) Replicate Data:
+    *
+    * "Replicate Data Render Target Write message should not be used
+    *  on all projects TGL+."
+    *
+    * See 14017879046, 14017880152 for additional information.
+    *
+    * Replicated clears don't work before gfx6.
+    */
    const bool use_replicated_data = want_replicated_data &&
-      batch->blorp->isl_dev->info->ver < 20;
+      batch->blorp->isl_dev->info->ver >= 6 &&
+      batch->blorp->isl_dev->info->ver < 12;
    struct blorp_context *blorp = batch->blorp;
 
    const struct blorp_const_color_prog_key blorp_key = {
@@ -630,23 +640,6 @@ blorp_clear(struct blorp_batch *batch,
     *      (untiled) memory is UNDEFINED."
     */
    if (surf->surf->tiling == ISL_TILING_LINEAR)
-      use_simd16_replicated_data = false;
-
-   /* Replicated clears don't work before gfx6 */
-   if (batch->blorp->isl_dev->info->ver < 6)
-      use_simd16_replicated_data = false;
-
-   /* From the BSpec: 47719 (TGL/DG2/MTL) Replicate Data:
-    *
-    * "Replicate Data Render Target Write message should not be used
-    *  on all projects TGL+."
-    *
-    * Xe2 spec (57350) does not mention this restriction.
-    *
-    *  See 14017879046, 14017880152 for additional information.
-    */
-   if (batch->blorp->isl_dev->info->ver >= 12 &&
-       batch->blorp->isl_dev->info->ver < 20)
       use_simd16_replicated_data = false;
 
    if (compute)
