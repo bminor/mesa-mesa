@@ -597,17 +597,17 @@ build_clear_htile_mask_shader(struct radv_device *dev)
    nir_def *offset = nir_imul_imm(&b, global_id, 16);
    offset = nir_channel(&b, offset, 0);
 
-   nir_def *buf = radv_meta_load_descriptor(&b, 0, 0);
+   nir_def *constants = nir_load_push_constant(&b, 4, 32, nir_imm_int(&b, 0), .range = 16);
+   nir_def *va = nir_pack_64_2x32(&b, nir_channels(&b, constants, 0x3));
+   va = nir_iadd(&b, va, nir_u2u64(&b, offset));
 
-   nir_def *constants = nir_load_push_constant(&b, 2, 32, nir_imm_int(&b, 0), .range = 8);
-
-   nir_def *load = nir_load_ssbo(&b, 4, 32, buf, offset, .align_mul = 16);
+   nir_def *load = nir_build_load_global(&b, 4, 32, va, .align_mul = 16);
 
    /* data = (data & ~htile_mask) | (htile_value & htile_mask) */
-   nir_def *data = nir_iand(&b, load, nir_channel(&b, constants, 1));
-   data = nir_ior(&b, data, nir_channel(&b, constants, 0));
+   nir_def *data = nir_iand(&b, load, nir_channel(&b, constants, 3));
+   data = nir_ior(&b, data, nir_channel(&b, constants, 2));
 
-   nir_store_ssbo(&b, data, buf, offset, .access = ACCESS_NON_READABLE, .align_mul = 16);
+   nir_build_store_global(&b, data, va, .access = ACCESS_NON_READABLE, .align_mul = 16);
 
    return b.shader;
 }
@@ -618,27 +618,13 @@ get_clear_htile_mask_pipeline(struct radv_device *device, VkPipeline *pipeline_o
    enum radv_meta_object_key_type key = RADV_META_OBJECT_KEY_CLEAR_HTILE;
    VkResult result;
 
-   const VkDescriptorSetLayoutBinding binding = {
-      .binding = 0,
-      .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-      .descriptorCount = 1,
-      .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-   };
-
-   const VkDescriptorSetLayoutCreateInfo desc_info = {
-      .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-      .flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT,
-      .bindingCount = 1,
-      .pBindings = &binding,
-   };
-
    const VkPushConstantRange pc_range = {
       .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-      .size = 8,
+      .size = 16,
    };
 
-   result = vk_meta_get_pipeline_layout(&device->vk, &device->meta_state.device, &desc_info, &pc_range, &key,
-                                        sizeof(key), layout_out);
+   result = vk_meta_get_pipeline_layout(&device->vk, &device->meta_state.device, NULL, &pc_range, &key, sizeof(key),
+                                        layout_out);
    if (result != VK_SUCCESS)
       return result;
 
@@ -677,9 +663,9 @@ clear_htile_mask(struct radv_cmd_buffer *cmd_buffer, const struct radv_image *im
                  uint64_t offset, uint64_t size, uint32_t htile_value, uint32_t htile_mask)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   const uint64_t va = radv_buffer_get_va(bo) + offset;
    uint64_t block_count = DIV_ROUND_UP(size, 1024);
    struct radv_meta_saved_state saved_state;
-   struct radv_buffer dst_buffer;
    VkPipelineLayout layout;
    VkPipeline pipeline;
    VkResult result;
@@ -690,35 +676,23 @@ clear_htile_mask(struct radv_cmd_buffer *cmd_buffer, const struct radv_image *im
       return 0;
    }
 
-   radv_meta_save(&saved_state, cmd_buffer,
-                  RADV_META_SAVE_COMPUTE_PIPELINE | RADV_META_SAVE_CONSTANTS | RADV_META_SAVE_DESCRIPTORS);
+   radv_cs_add_buffer(device->ws, cmd_buffer->cs, bo);
 
-   radv_buffer_init(&dst_buffer, device, bo, size, offset);
+   radv_meta_save(&saved_state, cmd_buffer, RADV_META_SAVE_COMPUTE_PIPELINE | RADV_META_SAVE_CONSTANTS);
 
    radv_CmdBindPipeline(radv_cmd_buffer_to_handle(cmd_buffer), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 
-   radv_meta_push_descriptor_set(
-      cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, layout, 0, 1,
-      (VkWriteDescriptorSet[]){
-         {.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-          .dstBinding = 0,
-          .dstArrayElement = 0,
-          .descriptorCount = 1,
-          .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-          .pBufferInfo =
-             &(VkDescriptorBufferInfo){.buffer = radv_buffer_to_handle(&dst_buffer), .offset = 0, .range = size}}});
-
-   const unsigned constants[2] = {
+   const unsigned constants[4] = {
+      va,
+      va >> 32,
       htile_value & htile_mask,
       ~htile_mask,
    };
 
-   vk_common_CmdPushConstants(radv_cmd_buffer_to_handle(cmd_buffer), layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, 8,
-                              constants);
+   vk_common_CmdPushConstants(radv_cmd_buffer_to_handle(cmd_buffer), layout, VK_SHADER_STAGE_COMPUTE_BIT, 0,
+                              sizeof(constants), constants);
 
    vk_common_CmdDispatch(radv_cmd_buffer_to_handle(cmd_buffer), block_count, 1, 1);
-
-   radv_buffer_finish(&dst_buffer);
 
    radv_meta_restore(&saved_state, cmd_buffer);
 
