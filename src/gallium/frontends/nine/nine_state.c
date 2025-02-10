@@ -924,9 +924,9 @@ update_vertex_elements(struct NineDevice9 *device)
 
     if (context->dummy_vbo_bound_at != dummy_vbo_stream) {
         if (context->dummy_vbo_bound_at >= 0)
-            context->changed.vtxbuf |= 1 << context->dummy_vbo_bound_at;
+            context->changed.vtxbuf_dirty = true;
         if (dummy_vbo_stream >= 0)
-            context->changed.vtxbuf |= 1 << dummy_vbo_stream;
+            context->changed.vtxbuf_dirty = true;
         context->dummy_vbo_bound_at = dummy_vbo_stream;
     }
 
@@ -965,7 +965,7 @@ update_vertex_buffers(struct NineDevice9 *device)
         pipe->set_vertex_buffers(pipe, 0, NULL);
 
     context->last_vtxbuf_count = vtxbuf_count;
-    context->changed.vtxbuf = 0;
+    context->changed.vtxbuf_dirty = false;
 }
 
 static inline bool
@@ -1278,7 +1278,7 @@ nine_update_state(struct NineDevice9 *device)
             prepare_ps_constants_userbuf(device);
     }
 
-    if (context->changed.vtxbuf)
+    if (context->changed.vtxbuf_dirty)
         update_vertex_buffers(device);
 
     if (context->commit & NINE_STATE_COMMIT_BLEND)
@@ -1605,7 +1605,7 @@ CSMT_ITEM_NO_WAIT(nine_context_set_stream_source_apply,
     context->vtxbuf[i].buffer_offset = OffsetInBytes;
     pipe_resource_reference(&context->vtxbuf[i].buffer.resource, res);
 
-    context->changed.vtxbuf |= 1 << StreamNumber;
+    context->changed.vtxbuf_dirty = true;
     if (res)
         context->vtxbuf_mask |= 1 << StreamNumber;
     else
@@ -2525,7 +2525,7 @@ CSMT_ITEM_NO_WAIT(nine_context_draw_indexed_primitive_from_vtxbuf_idxbuf,
         info.index.user = user_ibuf;
 
     util_set_vertex_buffers(context->pipe, 1, false, vbuf);
-    context->changed.vtxbuf |= 1;
+    context->changed.vtxbuf_dirty = true;
 
     context->pipe->draw_vbo(context->pipe, &info, 0, NULL, &draw, 1);
 }
@@ -2907,7 +2907,7 @@ void nine_state_restore_non_cso(struct NineDevice9 *device)
     struct nine_context *context = &device->context;
 
     context->changed.group = NINE_STATE_ALL; /* TODO: we can remove states that have prepared commits */
-    context->changed.vtxbuf = (1ULL << device->caps.MaxStreams) - 1;
+    context->changed.vtxbuf_dirty = true;
     context->changed.ucp = true;
     context->commit |= 0xffffffff; /* re-commit everything */
     context->enabled_sampler_count_vs = 0;
@@ -2972,7 +2972,7 @@ nine_state_set_defaults(struct NineDevice9 *device, const D3DCAPS9 *caps,
     /* Set changed flags to initialize driver.
      */
     context->changed.group = NINE_STATE_ALL;
-    context->changed.vtxbuf = (1ULL << device->caps.MaxStreams) - 1;
+    context->changed.vtxbuf_dirty = true;
     context->changed.ucp = true;
 
     context->ff.changed.transform[0] = ~0;

@@ -219,7 +219,7 @@ struct nine_context {
     struct {
         uint32_t group;
         uint16_t sampler[NINE_MAX_SAMPLERS];
-        uint32_t vtxbuf;
+        bool vtxbuf_dirty;
         BOOL vs_const_f;
         BOOL vs_const_i;
         BOOL vs_const_b;
