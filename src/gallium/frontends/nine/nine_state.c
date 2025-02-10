@@ -897,6 +897,8 @@ update_vertex_elements(struct NineDevice9 *device)
     u_foreach_bit(bit, vtxbuf_mask)
         vtxbuf_holes_map[bit] = i++;
 
+    context->num_vertex_buffers = 0;
+
     for (n = 0; n < vs->num_inputs; ++n) {
         index = vdecl_index_map[n];
         if (index >= 0) {
@@ -920,6 +922,8 @@ update_vertex_elements(struct NineDevice9 *device)
             ve.velems[n].instance_divisor = 0;
             ve.velems[n].dual_slot = false;
         }
+        context->num_vertex_buffers = MAX2(context->num_vertex_buffers,
+                                           ve.velems[n].vertex_buffer_index + 1);
     }
 
     if (context->dummy_vbo_bound_at != dummy_vbo_stream) {
@@ -940,12 +944,11 @@ update_vertex_buffers(struct NineDevice9 *device)
     struct nine_context *context = &device->context;
     struct pipe_context *pipe = context->pipe;
     struct pipe_vertex_buffer vbuffer[PIPE_MAX_ATTRIBS];
-    unsigned vtxbuf_count;
+    unsigned num_vertex_buffers = context->num_vertex_buffers;
     unsigned mask, i, vtxbuf_i;
 
     mask = context->vtxbuf_mask |
         ((context->dummy_vbo_bound_at >= 0) ? BITFIELD_BIT(context->dummy_vbo_bound_at) : 0);
-    vtxbuf_count = util_bitcount(mask);
 
     DBG("mask=%x\n", mask);
     for (i = 0; mask; i++) {
@@ -959,8 +962,14 @@ update_vertex_buffers(struct NineDevice9 *device)
         }
     }
 
-    if (vtxbuf_count)
-        util_set_vertex_buffers(pipe, vtxbuf_count, false, vbuffer);
+    /* Gallium requires that we bind exactly the number of vertex buffers that's
+     * used by vertex elements.
+     */
+    if (i < num_vertex_buffers)
+       memset(&vbuffer[i], 0, sizeof(vbuffer[i]) * (num_vertex_buffers - i));
+
+    if (num_vertex_buffers)
+        util_set_vertex_buffers(pipe, num_vertex_buffers, false, vbuffer);
     else
         pipe->set_vertex_buffers(pipe, 0, NULL);
 

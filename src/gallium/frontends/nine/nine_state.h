@@ -268,6 +268,7 @@ struct nine_context {
 
     struct NineVertexDeclaration9 *vdecl;
 
+    unsigned num_vertex_buffers;
     struct pipe_vertex_buffer vtxbuf[PIPE_MAX_ATTRIBS];
     uint32_t vtxbuf_mask; /* i bit set for context->vtxbuf[i].buffer.resource not NULL */
     uint16_t vtxstride[PIPE_MAX_ATTRIBS];
