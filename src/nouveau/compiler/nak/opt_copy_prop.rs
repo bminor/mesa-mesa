@@ -651,6 +651,7 @@ impl CopyPropPass {
                         !add.overflow[0].is_none() || !add.overflow[1].is_none()
                     }
                     Op::Lea(lea) => !lea.overflow.is_none(),
+                    Op::LeaX(lea) => !lea.overflow.is_none(),
                     _ => false,
                 };
 
