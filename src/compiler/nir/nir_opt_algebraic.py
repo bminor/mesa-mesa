@@ -798,9 +798,9 @@ optimizations.extend([
    (('fneu', ('u2f', a), 0.0), ('ine', a, 0)),
    (('feq', ('u2f', a), 0.0), ('ieq', a, 0)),
    (('fge', ('u2f', a), 0.0), True),
-   (('fge', 0.0, ('u2f', a)), ('uge', 0, a)),    # ieq instead?
+   (('fge', 0.0, ('u2f', a)), ('ieq', 0, a)),
    (('flt', ('u2f', a), 0.0), False),
-   (('flt', 0.0, ('u2f', a)), ('ult', 0, a)),    # ine instead?
+   (('flt', 0.0, ('u2f', a)), ('ine', 0, a)),
    (('fneu', ('i2f', a), 0.0), ('ine', a, 0)),
    (('feq', ('i2f', a), 0.0), ('ieq', a, 0)),
    (('fge', ('i2f', a), 0.0), ('ige', a, 0)),
@@ -1286,6 +1286,8 @@ optimizations.extend([
 
    (('uge', a, 1), ('ine', a, 0)),
    (('ult', a, 1), ('ieq', a, 0)),
+   (('uge', 0, a), ('ieq', a, 0)),
+   (('ult', 0, a), ('ine', a, 0)),
 
    (('b2i', ('ine', 'a@1', 'b@1')), ('b2i', ('ixor', a, b))),
 
@@ -1456,7 +1458,6 @@ for s in [8, 16, 32, 64]:
 optimizations.extend([
    (('ige', ('ineg', ('b2i', 'a@1')), 0), ('inot', a)),
    (('ilt', ('ineg', ('b2i', 'a@1')), 0), a),
-   (('ult', 0, ('ineg', ('b2i', 'a@1'))), a),
    (('iand', ('ineg', ('b2i', a)), 1.0), ('b2f', a)),
    (('iand', ('ineg', ('b2i', a)), 1),   ('b2i', a)),
 ])
