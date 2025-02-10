@@ -2627,12 +2627,14 @@ radv_get_max_waves(const struct radv_device *device, const struct ac_shader_conf
       max_simd_waves = MIN2(max_simd_waves, physical_vgprs / vgprs);
    }
 
+   bool wgp_mode = radv_should_use_wgp_mode(device, stage, info);
    unsigned simd_per_cu_wgp = gpu_info->num_simd_per_compute_unit;
-   if (gfx_level >= GFX10)
-      simd_per_cu_wgp *= 2; /* like lds_size_per_workgroup, assume WGP on GFX10+ */
+   if (wgp_mode)
+      simd_per_cu_wgp *= 2;
 
    if (lds_per_workgroup) {
-      unsigned max_cu_wgp_waves = gpu_info->lds_size_per_workgroup / lds_per_workgroup * waves_per_workgroup;
+      unsigned lds_per_cu_wgp = gpu_info->lds_size_per_workgroup / (gfx_level >= GFX10 && !wgp_mode ? 2 : 1);
+      unsigned max_cu_wgp_waves = lds_per_cu_wgp / lds_per_workgroup * waves_per_workgroup;
       max_simd_waves = MIN2(max_simd_waves, DIV_ROUND_UP(max_cu_wgp_waves, simd_per_cu_wgp));
    }
 
