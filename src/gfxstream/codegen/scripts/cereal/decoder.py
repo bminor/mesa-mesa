@@ -745,6 +745,8 @@ custom_decodes = {
     "vkDestroySemaphore" : emit_global_state_wrapped_decoding,
 
     "vkCreateFence" : emit_global_state_wrapped_decoding,
+    "vkGetFenceStatus" : emit_global_state_wrapped_decoding,
+    "vkWaitForFences" : emit_global_state_wrapped_decoding,
     "vkResetFences" : emit_global_state_wrapped_decoding,
     "vkDestroyFence" : emit_global_state_wrapped_decoding,
 
