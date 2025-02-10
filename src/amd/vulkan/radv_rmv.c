@@ -554,8 +554,7 @@ radv_rmv_log_buffer_bind(struct radv_device *device, VkBuffer _buffer)
 
    VK_FROM_HANDLE(radv_buffer, buffer, _buffer);
    simple_mtx_lock(&device->vk.memory_trace_data.token_mtx);
-   log_resource_bind_locked(device, (uint64_t)_buffer, buffer->bo->initial_domain,
-                            radv_buffer_get_va(buffer->bo) + buffer->offset, buffer->vk.size);
+   log_resource_bind_locked(device, (uint64_t)_buffer, buffer->bo->initial_domain, buffer->addr, buffer->vk.size);
    simple_mtx_unlock(&device->vk.memory_trace_data.token_mtx);
 }
 

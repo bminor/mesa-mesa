@@ -179,7 +179,7 @@ radv_sdma_get_buf_surf(const struct radv_buffer *const buffer, const struct radv
    const uint32_t bpe = radv_sdma_get_bpe(image, region->imageSubresource.aspectMask);
 
    const struct radv_sdma_surf info = {
-      .va = radv_buffer_get_va(buffer->bo) + buffer->offset + region->bufferOffset,
+      .va = buffer->addr + region->bufferOffset,
       .pitch = pitch,
       .slice_pitch = slice_pitch,
       .bpp = bpe,

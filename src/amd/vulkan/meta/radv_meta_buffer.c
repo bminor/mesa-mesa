@@ -301,8 +301,7 @@ radv_CmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSi
 
    fillSize = vk_buffer_range(&dst_buffer->vk, dstOffset, fillSize) & ~3ull;
 
-   radv_fill_buffer(cmd_buffer, NULL, dst_buffer->bo,
-                    radv_buffer_get_va(dst_buffer->bo) + dst_buffer->offset + dstOffset, fillSize, data);
+   radv_fill_buffer(cmd_buffer, NULL, dst_buffer->bo, dst_buffer->addr + dstOffset, fillSize, data);
 }
 
 static void
@@ -317,8 +316,8 @@ copy_buffer(struct radv_cmd_buffer *cmd_buffer, struct radv_buffer *src_buffer, 
    old_predicating = cmd_buffer->state.predicating;
    cmd_buffer->state.predicating = false;
 
-   const uint64_t src_va = radv_buffer_get_va(src_buffer->bo) + src_buffer->offset + region->srcOffset;
-   const uint64_t dst_va = radv_buffer_get_va(dst_buffer->bo) + dst_buffer->offset + region->dstOffset;
+   const uint64_t src_va = src_buffer->addr + region->srcOffset;
+   const uint64_t dst_va = dst_buffer->addr + region->dstOffset;
 
    radv_copy_buffer(cmd_buffer, src_buffer->bo, dst_buffer->bo, src_va, dst_va, region->size);
 
@@ -368,24 +367,23 @@ radv_CmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDevice
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
    VK_FROM_HANDLE(radv_buffer, dst_buffer, dstBuffer);
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   uint64_t va = radv_buffer_get_va(dst_buffer->bo);
-   va += dstOffset + dst_buffer->offset;
+   const uint64_t dst_va = dst_buffer->addr + dstOffset;
 
    assert(!(dataSize & 3));
-   assert(!(va & 3));
+   assert(!(dst_va & 3));
 
    if (!dataSize)
       return;
 
    if (dataSize < RADV_BUFFER_UPDATE_THRESHOLD && cmd_buffer->qf != RADV_QUEUE_TRANSFER) {
       radv_cs_add_buffer(device->ws, cmd_buffer->cs, dst_buffer->bo);
-      radv_update_buffer_cp(cmd_buffer, va, pData, dataSize);
+      radv_update_buffer_cp(cmd_buffer, dst_va, pData, dataSize);
    } else {
       uint32_t buf_offset;
       radv_cmd_buffer_upload_data(cmd_buffer, dataSize, pData, &buf_offset);
 
       const uint64_t src_va = radv_buffer_get_va(cmd_buffer->upload.upload_bo) + buf_offset;
 
-      radv_copy_buffer(cmd_buffer, cmd_buffer->upload.upload_bo, dst_buffer->bo, src_va, va, dataSize);
+      radv_copy_buffer(cmd_buffer, cmd_buffer->upload.upload_bo, dst_buffer->bo, src_va, dst_va, dataSize);
    }
 }

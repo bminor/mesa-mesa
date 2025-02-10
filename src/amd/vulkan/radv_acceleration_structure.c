@@ -588,8 +588,8 @@ radv_update_as(VkCommandBuffer commandBuffer, const VkAccelerationStructureBuild
       radv_get_acceleration_structure_layout(device, leaf_count, build_info, &layout);
 
       /* Copy header/metadata */
-      const uint64_t src_va = radv_buffer_get_va(src_as_buffer->bo) + src_as_buffer->offset + src->offset;
-      const uint64_t dst_va = radv_buffer_get_va(dst_as_buffer->bo) + dst_as_buffer->offset + dst->offset;
+      const uint64_t src_va = src_as_buffer->addr + src->offset;
+      const uint64_t dst_va = dst_as_buffer->addr + dst->offset;
 
       radv_copy_buffer(cmd_buffer, src_as_buffer->bo, dst_as_buffer->bo, src_va, dst_va, layout.bvh_offset);
    }

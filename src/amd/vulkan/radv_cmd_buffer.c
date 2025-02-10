@@ -5832,7 +5832,7 @@ radv_get_vbo_info(const struct radv_cmd_buffer *cmd_buffer, uint32_t idx, struct
 
    const uint32_t offset = cmd_buffer->vertex_bindings[binding].offset;
 
-   vbo_info->va = radv_buffer_get_va(buffer->bo) + buffer->offset + offset;
+   vbo_info->va = buffer->addr + offset;
 
    if (cmd_buffer->vertex_bindings[binding].size) {
       vbo_info->size = cmd_buffer->vertex_bindings[binding].size;
@@ -7067,8 +7067,7 @@ radv_CmdBindIndexBuffer2(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDevic
    cmd_buffer->state.index_type = vk_to_index_type(indexType);
 
    if (index_buffer) {
-      cmd_buffer->state.index_va = radv_buffer_get_va(index_buffer->bo);
-      cmd_buffer->state.index_va += index_buffer->offset + offset;
+      cmd_buffer->state.index_va = index_buffer->addr + offset;
 
       int index_size = radv_get_vgt_index_size(vk_to_index_type(indexType));
       cmd_buffer->state.max_index_count = (vk_buffer_range(&index_buffer->vk, offset, size)) / index_size;
@@ -11308,7 +11307,7 @@ radv_CmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer _buffer, VkDeviceSi
    struct radv_draw_info info;
 
    info.count = drawCount;
-   info.indirect_va = radv_buffer_get_va(buffer->bo) + buffer->offset + offset;
+   info.indirect_va = buffer->addr + offset;
    info.stride = stride;
    info.strmout_va = 0;
    info.count_va = 0;
@@ -11334,7 +11333,7 @@ radv_CmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer _buffer, VkD
 
    info.indexed = true;
    info.count = drawCount;
-   info.indirect_va = radv_buffer_get_va(buffer->bo) + buffer->offset + offset;
+   info.indirect_va = buffer->addr + offset;
    info.stride = stride;
    info.count_va = 0;
    info.strmout_va = 0;
@@ -11359,8 +11358,8 @@ radv_CmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer _buffer, VkDev
    struct radv_draw_info info;
 
    info.count = maxDrawCount;
-   info.indirect_va = radv_buffer_get_va(buffer->bo) + buffer->offset + offset;
-   info.count_va = radv_buffer_get_va(count_buffer->bo) + count_buffer->offset + countBufferOffset;
+   info.indirect_va = buffer->addr + offset;
+   info.count_va = count_buffer->addr + countBufferOffset;
    info.stride = stride;
    info.strmout_va = 0;
    info.indexed = false;
@@ -11388,8 +11387,8 @@ radv_CmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer _buffer
 
    info.indexed = true;
    info.count = maxDrawCount;
-   info.indirect_va = radv_buffer_get_va(buffer->bo) + buffer->offset + offset;
-   info.count_va = radv_buffer_get_va(count_buffer->bo) + count_buffer->offset + countBufferOffset;
+   info.indirect_va = buffer->addr + offset;
+   info.count_va = count_buffer->addr + countBufferOffset;
    info.stride = stride;
    info.strmout_va = 0;
    info.instance_count = 0;
@@ -11440,7 +11439,7 @@ radv_CmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer, VkBuffer _buffer
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    struct radv_draw_info info;
 
-   info.indirect_va = radv_buffer_get_va(buffer->bo) + buffer->offset + offset;
+   info.indirect_va = buffer->addr + offset;
    info.stride = stride;
    info.count = drawCount;
    info.strmout_va = 0;
@@ -11476,11 +11475,11 @@ radv_CmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer _b
    const struct radv_physical_device *pdev = radv_device_physical(device);
    struct radv_draw_info info;
 
-   info.indirect_va = radv_buffer_get_va(buffer->bo) + buffer->offset + offset;
+   info.indirect_va = buffer->addr + offset;
    info.stride = stride;
    info.count = maxDrawCount;
    info.strmout_va = 0;
-   info.count_va = radv_buffer_get_va(count_buffer->bo) + count_buffer->offset + countBufferOffset;
+   info.count_va = count_buffer->addr + countBufferOffset;
    info.indexed = false;
    info.instance_count = 0;
 
@@ -12137,7 +12136,7 @@ radv_CmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer _buffer, VkDevi
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
    VK_FROM_HANDLE(radv_buffer, buffer, _buffer);
-   const uint64_t va = radv_buffer_get_va(buffer->bo) + buffer->offset + offset;
+   const uint64_t va = buffer->addr + offset;
 
    radv_indirect_dispatch(cmd_buffer, buffer->bo, va);
 }
@@ -13218,7 +13217,7 @@ radv_CmdBeginConditionalRenderingEXT(VkCommandBuffer commandBuffer,
    bool draw_visible = true;
    uint64_t va;
 
-   va = radv_buffer_get_va(buffer->bo) + buffer->offset + pConditionalRenderingBegin->offset;
+   va = buffer->addr + pConditionalRenderingBegin->offset;
 
    radv_cs_add_buffer(device->ws, cmd_buffer->cs, buffer->bo);
 
@@ -13258,7 +13257,7 @@ radv_CmdBindTransformFeedbackBuffersEXT(VkCommandBuffer commandBuffer, uint32_t 
       VK_FROM_HANDLE(radv_buffer, buffer, pBuffers[i]);
       uint32_t idx = firstBinding + i;
 
-      sb[idx].va = radv_buffer_get_va(buffer->bo) + buffer->offset + pOffsets[i];
+      sb[idx].va = buffer->addr + pOffsets[i];
 
       if (!pSizes || pSizes[i] == VK_WHOLE_SIZE) {
          sb[idx].size = buffer->vk.size - pOffsets[i];
@@ -13418,8 +13417,7 @@ radv_CmdBeginTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstC
          if (pCounterBufferOffsets)
             counter_buffer_offset = pCounterBufferOffsets[counter_buffer_idx];
 
-         va += radv_buffer_get_va(buffer->bo);
-         va += buffer->offset + counter_buffer_offset;
+         va += buffer->addr + counter_buffer_offset;
 
          radv_cs_add_buffer(device->ws, cs, buffer->bo);
       }
@@ -13528,8 +13526,7 @@ radv_CmdEndTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCou
          if (pCounterBufferOffsets)
             counter_buffer_offset = pCounterBufferOffsets[counter_buffer_idx];
 
-         va += radv_buffer_get_va(buffer->bo);
-         va += buffer->offset + counter_buffer_offset;
+         va += buffer->addr + counter_buffer_offset;
 
          radv_cs_add_buffer(device->ws, cs, buffer->bo);
       }
@@ -13631,7 +13628,7 @@ radv_CmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanc
    info.count = 0;
    info.instance_count = instanceCount;
    info.first_instance = firstInstance;
-   info.strmout_va = radv_buffer_get_va(counterBuffer->bo) + counterBuffer->offset + counterBufferOffset;
+   info.strmout_va = counterBuffer->addr + counterBufferOffset;
    info.stride = vertexStride;
    info.indexed = false;
    info.indirect_va = 0;
@@ -13665,7 +13662,7 @@ radv_CmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlag
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
    struct radeon_cmdbuf *cs = cmd_buffer->cs;
-   const uint64_t va = radv_buffer_get_va(buffer->bo) + buffer->offset + dstOffset;
+   const uint64_t va = buffer->addr + dstOffset;
 
    radv_cs_add_buffer(device->ws, cs, buffer->bo);
 

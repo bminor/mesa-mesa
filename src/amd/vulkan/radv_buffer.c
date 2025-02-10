@@ -33,7 +33,6 @@ radv_buffer_init(struct radv_buffer *buffer, struct radv_device *device, struct 
    vk_buffer_init(&device->vk, &buffer->vk, &createInfo);
 
    buffer->bo = bo;
-   buffer->offset = offset;
    buffer->addr = radv_buffer_get_va(bo) + offset;
 }
 
@@ -83,7 +82,6 @@ radv_create_buffer(struct radv_device *device, const VkBufferCreateInfo *pCreate
 
    vk_buffer_init(&device->vk, &buffer->vk, pCreateInfo);
    buffer->bo = NULL;
-   buffer->offset = 0;
    buffer->addr = 0;
    buffer->range = 0;
 
@@ -175,7 +173,6 @@ radv_BindBufferMemory2(VkDevice _device, uint32_t bindInfoCount, const VkBindBuf
       }
 
       buffer->bo = mem->bo;
-      buffer->offset = pBindInfos[i].memoryOffset;
       buffer->addr = radv_buffer_get_va(mem->bo) + pBindInfos[i].memoryOffset;
       buffer->range = reqs.memoryRequirements.size;
 
