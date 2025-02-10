@@ -1006,6 +1006,52 @@ get_programiv(struct gl_context *ctx, GLuint program, GLenum pname,
             Program->info.tess.point_mode ? GL_TRUE : GL_FALSE;
       }
       return;
+
+   /* GL_EXT_mesh_shader */
+   case GL_TASK_WORK_GROUP_SIZE_EXT:
+   case GL_MESH_WORK_GROUP_SIZE_EXT:
+   case GL_MESH_VERTICES_OUT_EXT:
+   case GL_MESH_PRIMITIVES_OUT_EXT:
+   case GL_MESH_OUTPUT_TYPE_EXT: {
+      if (!_mesa_has_EXT_mesh_shader(ctx))
+         break;
+
+      if (!shProg->data->LinkStatus) {
+         _mesa_error(ctx, GL_INVALID_OPERATION, "glGetProgramiv(program not linked)");
+         return;
+      }
+
+      unsigned stage = pname == GL_TASK_WORK_GROUP_SIZE_EXT ?
+         MESA_SHADER_TASK : MESA_SHADER_MESH;
+
+      if (shProg->_LinkedShaders[stage] == NULL) {
+         _mesa_error(ctx, GL_INVALID_OPERATION, "glGetProgramiv(no %s shader)",
+                     stage == MESA_SHADER_TASK ? "task" : "mesh");
+         return;
+      }
+
+      switch (pname) {
+      case GL_TASK_WORK_GROUP_SIZE_EXT:
+      case GL_MESH_WORK_GROUP_SIZE_EXT:
+         for (unsigned i = 0; i < 3; i++)
+            params[i] = shProg->_LinkedShaders[stage]->Program->info.workgroup_size[i];
+         break;
+      case GL_MESH_VERTICES_OUT_EXT:
+         *params = shProg->_LinkedShaders[stage]->Program->info.mesh.max_vertices_out;
+         break;
+      case GL_MESH_PRIMITIVES_OUT_EXT:
+         *params = shProg->_LinkedShaders[stage]->Program->info.mesh.max_primitives_out;
+         break;
+      case GL_MESH_OUTPUT_TYPE_EXT:
+         *params = shProg->_LinkedShaders[stage]->Program->info.mesh.primitive_type;
+         break;
+      default:
+         break;
+      }
+
+      return;
+   }
+
    default:
       break;
    }
