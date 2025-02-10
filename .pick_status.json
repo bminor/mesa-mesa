@@ -6064,7 +6064,7 @@
         "description": "panvk: Initialize device virtual address space after the VM creation",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "53fb1d99cac9ab318c251aa3e448d26e0c94641c",
         "notes": null
