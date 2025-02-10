@@ -6824,7 +6824,7 @@
         "description": "v3dv: fix crash on 32-bit builds",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
