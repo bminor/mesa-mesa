@@ -1460,6 +1460,17 @@ optimizations.extend([
    (('ilt', ('ineg', ('b2i', 'a@1')), 0), a),
    (('iand', ('ineg', ('b2i', a)), 1.0), ('b2f', a)),
    (('iand', ('ineg', ('b2i', a)), 1),   ('b2i', a)),
+   (('bcsel', a, ('b2i', 'b@1'), ('b2i', 'c@1')), ('b2i', ('bcsel', a, b, c))),
+   (('bcsel', a, ('b2i', 'b@1'), 0), ('b2i', ('bcsel', a, b, False))),
+   (('bcsel', a, ('b2i', 'b@1'), 1), ('b2i', ('bcsel', a, b, True))),
+   (('bcsel', a, 0, ('b2i', 'b@1')), ('b2i', ('bcsel', a, False, b))),
+   (('bcsel', a, 1, ('b2i', 'b@1')), ('b2i', ('bcsel', a, True, b))),
+
+   (('bcsel', a, ('ineg', ('b2i', 'b@1')), ('ineg', ('b2i', 'c@1'))), ('ineg', ('b2i', ('bcsel', a, b, c)))),
+   (('bcsel', a, ('ineg', ('b2i', 'b@1')), 0), ('ineg', ('b2i', ('bcsel', a, b, False)))),
+   (('bcsel', a, ('ineg', ('b2i', 'b@1')), -1), ('ineg', ('b2i', ('bcsel', a, b, True)))),
+   (('bcsel', a, 0, ('ineg', ('b2i', 'b@1'))), ('ineg', ('b2i', ('bcsel', a, False, b)))),
+   (('bcsel', a, -1, ('ineg', ('b2i', 'b@1'))), ('ineg', ('b2i', ('bcsel', a, True, b)))),
 ])
 
 for op in ('ior', 'iand', 'ixor'):
@@ -2086,7 +2097,6 @@ optimizations.extend([
    # lets iand(b2i1(...), 1) get simplified. Backends can usually fuse iand/inot
    # so this should be no worse when it isn't strictly better.
    (('bcsel', a, 0, ('b2i16', 'b@1')), ('b2i16', ('iand', ('inot', a), b))),
-   (('bcsel', a, ('b2i16', 'b@1'), ('b2i16', 'c@1')), ('b2i16', ('bcsel', a, b, c))),
 
    # Lowered pack followed by lowered unpack, for the high bits
    (('u2u32', ('ushr', ('ior', ('ishl', a, 32), ('u2u64', 'b@8')), 32)), ('u2u32', a)),
