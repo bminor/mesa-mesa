@@ -237,6 +237,7 @@ vkcts-renoir-valve:
     B2C_TIMEOUT_BOOT_MINUTES: 130
     B2C_TIMEOUT_OVERALL_MINUTES: 130
     RADV_PERFTEST: transfer_queue
+    FDO_CI_CONCURRENT: 12  # HACK: Reduce the memory pressure
 
 vkcts-navi10-valve:
   parallel: 2
