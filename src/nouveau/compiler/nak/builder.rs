@@ -630,6 +630,54 @@ pub trait SSABuilder: Builder {
         dst
     }
 
+    fn lea64(&mut self, a: Src, b: Src, shift: u8) -> SSARef {
+        assert!(self.sm() >= 70);
+        assert!(a.src_mod.is_none());
+        assert!(b.src_mod.is_none());
+
+        let a = a.as_ssa().unwrap();
+        let b = b.as_ssa().unwrap();
+        let dst = self.alloc_ssa(RegFile::GPR, 2);
+        let shift = shift % 64;
+        if shift >= 32 {
+            self.copy_to(dst[0].into(), b[0].into());
+            self.push_op(OpLea {
+                dst: dst[1].into(),
+                overflow: Dst::None,
+                a: a[0].into(),
+                b: b[1].into(),
+                a_high: 0.into(),
+                dst_high: false,
+                shift: shift - 32,
+                intermediate_mod: SrcMod::None,
+            });
+        } else {
+            let carry = self.alloc_ssa(RegFile::Pred, 1);
+            self.push_op(OpLea {
+                dst: dst[0].into(),
+                overflow: carry.into(),
+                a: a[0].into(),
+                b: b[0].into(),
+                a_high: 0.into(),
+                dst_high: false,
+                shift: shift,
+                intermediate_mod: SrcMod::None,
+            });
+            self.push_op(OpLeaX {
+                dst: dst[1].into(),
+                overflow: Dst::None,
+                a: a[0].into(),
+                b: b[1].into(),
+                a_high: a[1].into(),
+                carry: carry.into(),
+                dst_high: true,
+                shift: shift,
+                intermediate_mod: SrcMod::None,
+            });
+        }
+        dst
+    }
+
     fn lop2(&mut self, op: LogicOp2, x: Src, y: Src) -> SSARef {
         let dst = if x.is_predicate() {
             self.alloc_ssa(RegFile::Pred, 1)

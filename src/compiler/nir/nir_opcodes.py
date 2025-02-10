@@ -1414,7 +1414,7 @@ opcode("prmt_nv", 0, tuint32, [0, 0, 0], [tuint32, tuint32, tuint32],
 
 # Address arithmetic instructions: shift and add
 # Shift must be a constant.
-opcode("lea_nv", 0, tuint32, [0, 0, 0], [tuint32, tuint32, tuint32], False,
+opcode("lea_nv", 0, tuint, [0, 0, 0], [tuint, tuint, tuint32], False,
        "", "src0 + (src1 << (src2 % bit_size))")
 
 # 24b multiply into 32b result (with sign extension)

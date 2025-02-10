@@ -42,6 +42,8 @@ algebraic_lowering = [
 
     (('iadd(is_used_by_non_ldc_nv)', 'a@32', ('ishl', 'b@32', '#s@32')),
         ('lea_nv', a, b, s), 'nak->sm >= 70'),
+    (('iadd', 'a@64', ('ishl', 'b@64', '#s@32')),
+        ('lea_nv', a, b, s), 'nak->sm >= 70'),
 ]
 
 def main():

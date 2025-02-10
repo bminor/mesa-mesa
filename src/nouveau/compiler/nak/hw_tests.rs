@@ -789,6 +789,55 @@ fn test_op_leax() {
 }
 
 #[test]
+fn test_lea64() {
+    let run = RunSingleton::get();
+    let invocations = 100;
+
+    for shift in 0..64 {
+        let mut b = TestShaderBuilder::new(run.sm.as_ref());
+
+        let x = Src::from([
+            b.ld_test_data(0, MemType::B32)[0],
+            b.ld_test_data(4, MemType::B32)[0],
+        ]);
+
+        let y = Src::from([
+            b.ld_test_data(8, MemType::B32)[0],
+            b.ld_test_data(12, MemType::B32)[0],
+        ]);
+
+        let dst = b.lea64(x, y, shift);
+        b.st_test_data(16, MemType::B32, dst[0].into());
+        b.st_test_data(20, MemType::B32, dst[1].into());
+
+        let bin = b.compile();
+
+        let mut a = Acorn::new();
+        let mut data = Vec::new();
+        for _ in 0..invocations {
+            data.push([
+                get_iadd_int(&mut a),
+                get_iadd_int(&mut a),
+                get_iadd_int(&mut a),
+                get_iadd_int(&mut a),
+                0,
+                0,
+            ]);
+        }
+
+        run.run.run(&bin, &mut data).unwrap();
+
+        for d in &data {
+            let x = u64::from(d[0]) | (u64::from(d[1]) << 32);
+            let y = u64::from(d[2]) | (u64::from(d[3]) << 32);
+            let dst = (x << shift).wrapping_add(y);
+            assert_eq!(d[4], dst as u32);
+            assert_eq!(d[5], (dst >> 32) as u32);
+        }
+    }
+}
+
+#[test]
 fn test_op_lop2() {
     if RunSingleton::get().sm.sm() < 70 {
         let logic_ops =
