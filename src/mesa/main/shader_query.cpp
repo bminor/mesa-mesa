@@ -1247,6 +1247,10 @@ stage_from_enum(GLenum ref)
       return MESA_SHADER_FRAGMENT;
    case GL_REFERENCED_BY_COMPUTE_SHADER:
       return MESA_SHADER_COMPUTE;
+   case GL_REFERENCED_BY_TASK_SHADER_EXT:
+      return MESA_SHADER_TASK;
+   case GL_REFERENCED_BY_MESH_SHADER_EXT:
+      return MESA_SHADER_MESH;
    default:
       assert(!"shader stage not supported");
       return MESA_SHADER_MESH_STAGES;
@@ -1549,15 +1553,22 @@ _mesa_program_resource_prop(struct gl_shader_program *shProg,
    case GL_NUM_ACTIVE_VARIABLES:
    case GL_ACTIVE_VARIABLES:
       return get_buffer_property(shProg, res, prop, val, glthread, caller);
-   case GL_REFERENCED_BY_COMPUTE_SHADER:
-      if (!_mesa_has_compute_shaders(ctx))
-         goto invalid_enum;
-      FALLTHROUGH;
    case GL_REFERENCED_BY_VERTEX_SHADER:
    case GL_REFERENCED_BY_TESS_CONTROL_SHADER:
    case GL_REFERENCED_BY_TESS_EVALUATION_SHADER:
    case GL_REFERENCED_BY_GEOMETRY_SHADER:
    case GL_REFERENCED_BY_FRAGMENT_SHADER:
+   case GL_REFERENCED_BY_COMPUTE_SHADER:
+   case GL_REFERENCED_BY_TASK_SHADER_EXT:
+   case GL_REFERENCED_BY_MESH_SHADER_EXT:
+      if (prop == GL_REFERENCED_BY_COMPUTE_SHADER) {
+         if (!_mesa_has_compute_shaders(ctx))
+            goto invalid_enum;
+      } else if (prop == GL_REFERENCED_BY_TASK_SHADER_EXT ||
+                 prop == GL_REFERENCED_BY_MESH_SHADER_EXT) {
+         if (!_mesa_has_EXT_mesh_shader(ctx))
+            goto invalid_enum;
+      }
       switch (res->Type) {
       case GL_UNIFORM:
       case GL_PROGRAM_INPUT:
