@@ -360,33 +360,41 @@ gfx10_init_graphics_preamble_state(const struct ac_preamble_state *state,
    unsigned cache_no_alloc = info->gfx_level >= GFX11 ? V_02807C_CACHE_NOA_GFX11:
                                                         V_02807C_CACHE_NOA_GFX10;
 
-   if (state->gfx10.cache_rb_gl2) {
+   if (state->gfx10.cache_cb_gl2) {
       color_write_policy = V_028410_CACHE_LRU_WR;
       color_read_policy = V_028410_CACHE_LRU_RD;
-      zs_write_policy = V_02807C_CACHE_LRU_WR;
-      zs_read_policy = V_02807C_CACHE_LRU_RD;
       dcc_write_policy = V_02807C_CACHE_LRU_WR;
       dcc_read_policy = V_02807C_CACHE_LRU_RD;
-      htile_write_policy = V_02807C_CACHE_LRU_WR;
-      htile_read_policy = V_02807C_CACHE_LRU_RD;
    } else {
       color_write_policy = V_028410_CACHE_STREAM;
       color_read_policy = cache_no_alloc;
-      zs_write_policy = V_02807C_CACHE_STREAM;
-      zs_read_policy = cache_no_alloc;
 
-      /* Enable CMASK/HTILE/DCC caching in L2 for small chips. */
+      /* Enable CMASK/DCC caching in L2 for small chips. */
       if (info->max_render_backends <= 4) {
          dcc_write_policy = V_02807C_CACHE_LRU_WR; /* cache writes */
          dcc_read_policy = V_02807C_CACHE_LRU_RD;  /* cache reads */
-         htile_write_policy = V_02807C_CACHE_LRU_WR; /* cache writes */
-         htile_read_policy = V_02807C_CACHE_LRU_RD;  /* cache reads */
       } else {
          dcc_write_policy = V_02807C_CACHE_STREAM; /* write combine */
          dcc_read_policy = cache_no_alloc; /* don't cache reads that miss */
-         htile_write_policy = V_02807C_CACHE_STREAM; /* write combine */
-         htile_read_policy = cache_no_alloc; /* don't cache reads that miss */
       }
+   }
+
+   if (state->gfx10.cache_db_gl2) {
+      /* Enable caching Z/S surfaces in GL2. It improves performance for GpuTest/Plot3D
+       * by 3.2% (no AA) and 3.9% (8x MSAA) on Navi31. This seems to be a good default.
+       */
+      zs_write_policy = V_028410_CACHE_LRU_WR;
+      zs_read_policy = V_028410_CACHE_LRU_RD;
+      htile_write_policy = V_028410_CACHE_LRU_WR;
+      htile_read_policy = V_028410_CACHE_LRU_RD;
+   } else {
+      /* Disable caching Z/S surfaces in GL2. It improves performance for GpuTest/FurMark
+       * by 1.9%, but not much else.
+       */
+      zs_write_policy = V_02807C_CACHE_STREAM;
+      zs_read_policy = cache_no_alloc;
+      htile_write_policy = V_02807C_CACHE_STREAM;
+      htile_read_policy = cache_no_alloc;
    }
 
    const unsigned cu_mask_ps = info->gfx_level >= GFX10_3 ? ac_gfx103_get_cu_mask_ps(info) : ~0u;
@@ -561,18 +569,22 @@ gfx12_init_graphics_preamble_state(const struct ac_preamble_state *state,
    enum gfx12_store_temporal_hint color_write_temporal_hint, zs_write_temporal_hint;
    enum gfx12_load_temporal_hint color_read_temporal_hint, zs_read_temporal_hint;
 
-   if (state->gfx10.cache_rb_gl2) {
+   if (state->gfx10.cache_cb_gl2) {
       color_write_policy = V_028410_CACHE_LRU_WR;
       color_read_policy = V_028410_CACHE_LRU_RD;
       color_write_temporal_hint = gfx12_store_regular_temporal;
       color_read_temporal_hint = gfx12_load_regular_temporal;
-      zs_write_temporal_hint = gfx12_store_regular_temporal;
-      zs_read_temporal_hint = gfx12_load_regular_temporal;
    } else {
       color_write_policy = V_028410_CACHE_STREAM;
       color_read_policy = V_02807C_CACHE_NOA_GFX11;
       color_write_temporal_hint = gfx12_store_near_non_temporal_far_regular_temporal;
       color_read_temporal_hint = gfx12_load_near_non_temporal_far_regular_temporal;
+   }
+
+   if (state->gfx10.cache_db_gl2) {
+      zs_write_temporal_hint = gfx12_store_regular_temporal;
+      zs_read_temporal_hint = gfx12_load_regular_temporal;
+   } else {
       zs_write_temporal_hint = gfx12_store_near_non_temporal_far_regular_temporal;
       zs_read_temporal_hint = gfx12_load_near_non_temporal_far_regular_temporal;
    }

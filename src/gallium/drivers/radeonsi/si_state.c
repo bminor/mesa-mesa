@@ -4950,7 +4950,8 @@ static void si_init_graphics_preamble_state(struct si_context *sctx,
 
    const struct ac_preamble_state preamble_state = {
       .border_color_va = border_color_va,
-      .gfx10.cache_rb_gl2 = sctx->gfx_level >= GFX10 && sscreen->options.cache_rb_gl2,
+      .gfx10.cache_cb_gl2 = sctx->gfx_level >= GFX10 && sscreen->options.cache_rb_gl2,
+      .gfx10.cache_db_gl2 = sctx->gfx_level >= GFX10 && sscreen->options.cache_rb_gl2,
    };
 
    ac_init_graphics_preamble_state(&preamble_state, &pm4->base);

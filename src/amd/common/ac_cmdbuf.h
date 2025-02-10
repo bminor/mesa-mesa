@@ -19,7 +19,8 @@ struct ac_preamble_state {
    uint64_t border_color_va;
 
    struct {
-      bool cache_rb_gl2;
+      bool cache_cb_gl2;
+      bool cache_db_gl2;
    } gfx10;
 
    struct {
