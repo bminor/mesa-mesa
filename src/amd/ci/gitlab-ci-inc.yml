@@ -416,6 +416,15 @@
     - amdgpu:codename:VANGOGH
     - $VALVE_INFRA_VANGOGH_JOB_PRIORITY
 
+.raphael-test-valve:
+  variables:
+    RUNNER_FARM_LOCATION: keywords
+    FDO_CI_CONCURRENT: 32
+    B2C_KERNEL_CMDLINE_EXTRAS: 'b2c.swap=16g'
+  tags:
+    - farm:$RUNNER_FARM_LOCATION
+    - amdgpu:codename:RAPHAEL
+
 .navi31-test-valve:
   variables:
     RUNNER_FARM_LOCATION: keywords

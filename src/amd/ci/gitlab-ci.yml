@@ -305,6 +305,18 @@ glcts-vangogh-full-valve:
     - .radeonsi-valve-manual-rules
   timeout: 90m
 
+vkcts-raphael-valve:
+  extends:
+    - .vkcts-test-valve
+    - .raphael-test-valve
+    - .radv-valve-manual-rules
+  timeout: 45m
+  variables:
+    GPU_VERSION: radv-raphael-aco
+    B2C_TIMEOUT_BOOT_MINUTES: 35
+    B2C_TIMEOUT_OVERALL_MINUTES: 40
+    RADV_PERFTEST: transfer_queue
+
 vkcts-navi31-valve:
   parallel: 2
   extends:
@@ -426,6 +438,17 @@ vkd3d-vangogh-valve:
     - .radv-valve-manual-rules
   variables:
     GPU_VERSION: radv-vangogh
+    # Random tests fail/crash when trying to run them in parallel
+    FDO_CI_CONCURRENT: 1
+
+vkd3d-raphael-valve:
+  extends:
+    - .b2c-test-radv-vk
+    - .b2c-vkd3d-proton-test
+    - .raphael-test-valve
+    - .radv-valve-manual-rules
+  variables:
+    GPU_VERSION: radv-raphael
     # Random tests fail/crash when trying to run them in parallel
     FDO_CI_CONCURRENT: 1
 
