@@ -5181,6 +5181,7 @@ cmd_buffer_emit_cps_control_buffer(struct anv_cmd_buffer *cmd_buffer,
 
       info.view = &fsr_iview->planes[0].isl;
       info.surf = &fsr_iview->image->planes[0].primary_surface.isl;
+      info.aux_usage = fsr_iview->image->planes[0].aux_usage;
       info.address = anv_address_physical(addr);
       info.mocs =
          anv_mocs(device, fsr_iview->image->bindings[0].address.bo,

@@ -634,7 +634,7 @@
     <field name="Command SubType" start="27" end="28" type="uint" default="3" />
     <field name="Command Type" start="29" end="31" type="uint" default="3" />
     <field name="Surface Pitch" start="32" end="48" type="uint" />
-    <field name="CPCB Compression Enable" start="57" end="57" type="bool" />
+    <field name="Lossless Compression Enable" start="57" end="57" type="bool" />
     <field name="Surface Type" start="61" end="63" type="uint" />
     <field name="Surface Base Address" start="64" end="127" type="address" />
     <field name="Width" start="129" end="142" type="uint" />
