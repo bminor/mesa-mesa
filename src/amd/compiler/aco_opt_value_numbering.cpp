@@ -461,8 +461,6 @@ value_numbering(Program* program)
       if (block.kind & block_kind_branch || block.kind & block_kind_loop_preheader ||
           block.kind & block_kind_break || block.kind & block_kind_continue)
          ctx.exec_id++;
-      else if (block.kind & block_kind_continue_or_break)
-         ctx.exec_id += 2;
    }
 
    /* rename loop header phi operands */

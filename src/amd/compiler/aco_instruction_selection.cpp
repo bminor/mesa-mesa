@@ -9898,52 +9898,24 @@ update_exec_info(isel_context* ctx)
 void
 end_loop(isel_context* ctx, loop_context* lc)
 {
-   // TODO: what if a loop ends with a unconditional or uniformly branched continue
-   //       and this branch is never taken?
+   /* No need to check exec.potentially_empty_break/continue originating inside the loop. In the
+    * only case where it's possible at this point (divergent break after divergent continue), we
+    * should continue anyway. Terminate instructions cannot appear inside loops and demote inside
+    * divergent control flow requires WQM.
+    */
+   assert(!ctx->cf_info.exec.potentially_empty_discard);
+
+   /* Add the trivial continue. */
    if (!ctx->cf_info.has_branch) {
       unsigned loop_header_idx = ctx->cf_info.parent_loop.header_idx;
       Builder bld(ctx->program, ctx->block);
       append_logical_end(ctx->block);
 
-      /* No need to check exec.potentially_empty_break/continue originating inside the loop. In the
-       * only case where it's possible at this point (divergent break after divergent continue), we
-       * should continue anyway. */
-      if (ctx->cf_info.exec.potentially_empty_discard) {
-         /* Discards can result in code running with an empty exec mask.
-          * This would result in divergent breaks not ever being taken. As a
-          * workaround, break the loop when the loop mask is empty instead of
-          * always continuing. */
-         ctx->block->kind |= (block_kind_continue_or_break | block_kind_uniform);
-         unsigned block_idx = ctx->block->index;
-
-         /* create helper blocks to avoid critical edges */
-         Block* break_block = ctx->program->create_and_insert_block();
-         break_block->kind = block_kind_uniform;
-         bld.reset(break_block);
-         bld.branch(aco_opcode::p_branch);
-         add_linear_edge(block_idx, break_block);
-         add_linear_edge(break_block->index, &lc->loop_exit);
-
-         Block* continue_block = ctx->program->create_and_insert_block();
-         continue_block->kind = block_kind_uniform;
-         bld.reset(continue_block);
-         bld.branch(aco_opcode::p_branch);
-         add_linear_edge(block_idx, continue_block);
-         add_linear_edge(continue_block->index, &ctx->program->blocks[loop_header_idx]);
-
-         if (!ctx->cf_info.has_divergent_branch)
-            add_logical_edge(block_idx, &ctx->program->blocks[loop_header_idx]);
-         ctx->block = &ctx->program->blocks[block_idx];
-
-         /* SGPR temporaries might need loop exit phis to be created. */
-         ctx->program->should_repair_ssa = true;
-      } else {
-         ctx->block->kind |= (block_kind_continue | block_kind_uniform);
-         if (!ctx->cf_info.has_divergent_branch)
-            add_edge(ctx->block->index, &ctx->program->blocks[loop_header_idx]);
-         else
-            add_linear_edge(ctx->block->index, &ctx->program->blocks[loop_header_idx]);
-      }
+      ctx->block->kind |= (block_kind_continue | block_kind_uniform);
+      if (!ctx->cf_info.has_divergent_branch)
+         add_edge(ctx->block->index, &ctx->program->blocks[loop_header_idx]);
+      else
+         add_linear_edge(ctx->block->index, &ctx->program->blocks[loop_header_idx]);
 
       bld.reset(ctx->block);
       bld.branch(aco_opcode::p_branch);

@@ -89,7 +89,8 @@ create_phis(repair_state* state, Temp tmp, uint32_t use_block, uint32_t def_bloc
       /* If a logical dominator has a temporary, we don't need to create a phi and can just use
        * that temporary instead. For linear temporaries, we also need to check if it dominates in
        * the linear CFG, because logical dominators do not necessarily dominate a block in the
-       * linear CFG (for example, because of continue_or_break or empty exec skips). */
+       * linear CFG (for example, because of empty exec skips).
+       */
       uint32_t dom = block.index;
       bool skip_phis = false;
       do {

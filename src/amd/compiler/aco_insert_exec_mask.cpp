@@ -643,23 +643,6 @@ add_branch_code(exec_ctx& ctx, Block* block)
 
       Pseudo_branch_instruction& branch = block->instructions.back()->branch();
       branch.target[0] = block->linear_succs[0];
-   } else if (block->kind & block_kind_continue_or_break) {
-      assert(ctx.program->blocks[ctx.program->blocks[block->linear_succs[1]].linear_succs[0]].kind &
-             block_kind_loop_header);
-      assert(ctx.program->blocks[ctx.program->blocks[block->linear_succs[0]].linear_succs[0]].kind &
-             block_kind_loop_exit);
-      assert(block->instructions.back()->opcode == aco_opcode::p_branch);
-      block->instructions.pop_back();
-
-      while (!(ctx.info[idx].exec.back().type & mask_type_loop))
-         ctx.info[idx].exec.pop_back();
-
-      Temp cond = bld.sop2(Builder::s_or, bld.def(bld.lm), bld.def(s1, scc),
-                           ctx.info[idx].exec.back().op, Operand::zero(bld.lm.bytes()))
-                     .def(1)
-                     .getTemp();
-      bld.branch(aco_opcode::p_cbranch_nz, Operand(cond, scc), block->linear_succs[1],
-                 block->linear_succs[0]);
    } else if (block->kind & block_kind_uniform) {
       Pseudo_branch_instruction& branch = block->instructions.back()->branch();
       if (branch.opcode == aco_opcode::p_branch) {

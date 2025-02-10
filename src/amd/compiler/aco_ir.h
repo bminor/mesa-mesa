@@ -1955,15 +1955,14 @@ enum block_kind {
    block_kind_loop_exit = 1 << 4,
    block_kind_continue = 1 << 5,
    block_kind_break = 1 << 6,
-   block_kind_continue_or_break = 1 << 7,
-   block_kind_branch = 1 << 8,
-   block_kind_merge = 1 << 9,
-   block_kind_invert = 1 << 10,
-   block_kind_discard_early_exit = 1 << 11,
-   block_kind_uses_discard = 1 << 12,
-   block_kind_resume = 1 << 13,
-   block_kind_export_end = 1 << 14,
-   block_kind_end_with_regs = 1 << 15,
+   block_kind_branch = 1 << 7,
+   block_kind_merge = 1 << 8,
+   block_kind_invert = 1 << 9,
+   block_kind_discard_early_exit = 1 << 10,
+   block_kind_uses_discard = 1 << 11,
+   block_kind_resume = 1 << 12,
+   block_kind_export_end = 1 << 13,
+   block_kind_end_with_regs = 1 << 14,
 };
 
 /* CFG */
