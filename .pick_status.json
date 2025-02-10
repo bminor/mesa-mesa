@@ -324,7 +324,7 @@
         "description": "panvk/csf: Don't free the resources twice when init_render_desc_ringbuf() fails",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5544d39f4420da88c53aaf8dd48d86ac92bd0eaa",
         "notes": null
