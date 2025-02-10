@@ -83,6 +83,8 @@ rm -rf /VK-GL-CTS
 
 ############### Downloading Cuttlefish resources ...
 
+uncollapsed_section_start cuttlefish "Downloading, building and installing Cuttlefish"
+
 CUTTLEFISH_PROJECT_PATH=ao2/aosp-manifest
 CUTTLEFISH_BUILD_VERSION_TAGS=mesa-venus
 CUTTLEFISH_BUILD_NUMBER=20250115.001
@@ -127,6 +129,8 @@ git checkout FETCH_HEAD
 ./tools/buildutils/build_packages.sh
 
 apt-get install -y --allow-downgrades ./cuttlefish-base_*.deb ./cuttlefish-user_*.deb
+
+section_end cuttlefish
 
 popd
 rm -rf android-cuttlefish
