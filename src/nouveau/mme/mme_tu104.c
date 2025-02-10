@@ -561,6 +561,7 @@ mme_tu104_dump(FILE *fp, uint32_t *encoded, size_t encoded_size)
    for (uint32_t i = 0; i < inst_count; i++) {
       struct mme_tu104_inst inst;
       mme_tu104_decode(&inst, &encoded[i * 3], 1);
+      fprintf(fp, "%u:\n", i);
       mme_tu104_print_inst(fp, 1, &inst);
    }
 }
