@@ -256,6 +256,9 @@ include:
     # Build everything after someone bypassed the CI
     - if: *is-direct-push
       when: on_success
+    # Build everything when pushing to staging branches
+    - if: *is-staging-push
+      when: on_success
     # Build everything in scheduled pipelines
     - if: *is-scheduled-pipeline
       when: on_success
