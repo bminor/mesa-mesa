@@ -1537,9 +1537,20 @@ void anv_CmdClearColorImage(
                vk_image_subresource_layer_count(&image->vk, &pRanges[r]);
          }
 
-         if (anv_can_fast_clear_color(cmd_buffer, image, level, &clear_rect,
-                                      imageLayout, src_format.isl_format,
-                                      clear_color)) {
+         if (image->planes[0].aux_usage == ISL_AUX_USAGE_STC_CCS) {
+            assert(image->vk.usage & VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
+            blorp_hiz_clear_depth_stencil(&batch, NULL, &surf, level,
+                                          clear_rect.baseArrayLayer,
+                                          clear_rect.layerCount,
+                                          clear_rect.rect.offset.x,
+                                          clear_rect.rect.offset.y,
+                                          clear_rect.rect.extent.width,
+                                          clear_rect.rect.extent.height,
+                                          false /* depth clear */, 0 /* depth value */,
+                                          true /* stencil_clear */, clear_color.u32[0] /* stencil_value */);
+         } else if (anv_can_fast_clear_color(cmd_buffer, image, level, &clear_rect,
+                                             imageLayout, src_format.isl_format,
+                                             clear_color)) {
             assert(level == 0);
             assert(clear_rect.baseArrayLayer == 0);
             if (image->vk.samples == 1) {
