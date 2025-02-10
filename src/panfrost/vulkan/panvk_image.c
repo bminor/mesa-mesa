@@ -46,32 +46,6 @@
 #include "vk_util.h"
 
 static bool
-can_be_aliased_to_yuv_plane(const struct panvk_image *image)
-{
-   if (!(image->vk.create_flags & VK_IMAGE_CREATE_ALIAS_BIT))
-      return false;
-
-   VkFormat format = image->vk.format;
-
-   if (vk_format_is_depth_or_stencil(format) ||
-       vk_format_is_alpha(format) ||
-       vk_format_get_blockwidth(format) != 1 ||
-       vk_format_get_blockheight(format) != 1)
-      return false;
-
-   unsigned block_size = vk_format_get_blocksize(format);
-
-   switch (block_size) {
-   case 1:
-   case 2:
-   case 4:
-      return true;
-   }
-
-   return false;
-}
-
-static bool
 panvk_image_can_use_mod(struct panvk_image *image, uint64_t mod)
 {
    struct panvk_physical_device *phys_dev =
@@ -134,7 +108,7 @@ panvk_image_can_use_mod(struct panvk_image *image, uint64_t mod)
        * don't allow U-interleaving for those either.
        */
       if (vk_format_get_plane_count(image->vk.format) > 1 ||
-          can_be_aliased_to_yuv_plane(image))
+          vk_image_can_be_aliased_to_yuv_plane(&image->vk))
          return false;
 
       /* If we're dealing with a compressed format that requires non-compressed
