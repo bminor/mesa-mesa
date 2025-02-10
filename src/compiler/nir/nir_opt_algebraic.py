@@ -871,6 +871,8 @@ optimizations.extend([
    (('bcsel', a, a, b), ('ior', a, b)),
    (('bcsel', a, b, False), ('iand', a, b)),
    (('bcsel', a, b, a), ('iand', a, b)),
+   (('bcsel', a, b, True), ('ior', ('inot', a), b)),
+   (('bcsel', a, False, b), ('iand', ('inot', a), b)),
    (('~fmin', a, a), a),
    (('~fmax', a, a), a),
    (('imin', a, a), a),
@@ -2092,11 +2094,6 @@ optimizations.extend([
    # Redundant trip through 8-bit
    (('i2i16', ('u2u8', ('iand', 'a@16', 1))), ('iand', 'a@16', 1)),
    (('u2u16', ('u2u8', ('iand', 'a@16', 1))), ('iand', 'a@16', 1)),
-
-   # Reduce 16-bit integers to 1-bit booleans, hit with OpenCL. In turn, this
-   # lets iand(b2i1(...), 1) get simplified. Backends can usually fuse iand/inot
-   # so this should be no worse when it isn't strictly better.
-   (('bcsel', a, 0, ('b2i16', 'b@1')), ('b2i16', ('iand', ('inot', a), b))),
 
    # Lowered pack followed by lowered unpack, for the high bits
    (('u2u32', ('ushr', ('ior', ('ishl', a, 32), ('u2u64', 'b@8')), 32)), ('u2u32', a)),
