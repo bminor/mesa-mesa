@@ -9914,7 +9914,7 @@
         "description": "kmsro: look for graphics capable screen as renderonly device",
         "nominated": false,
         "nomination_type": 0,
-        "resolution": 4,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
