@@ -270,7 +270,6 @@ struct nine_context {
 
     struct pipe_vertex_buffer vtxbuf[PIPE_MAX_ATTRIBS];
     uint32_t vtxbuf_mask; /* i bit set for context->vtxbuf[i].buffer.resource not NULL */
-    uint32_t last_vtxbuf_count;
     uint16_t vtxstride[PIPE_MAX_ATTRIBS];
     UINT stream_freq[PIPE_MAX_ATTRIBS];
     uint32_t stream_instancedata_mask; /* derived from stream_freq */

@@ -964,7 +964,6 @@ update_vertex_buffers(struct NineDevice9 *device)
     else
         pipe->set_vertex_buffers(pipe, 0, NULL);
 
-    context->last_vtxbuf_count = vtxbuf_count;
     context->changed.vtxbuf_dirty = false;
 }
 
