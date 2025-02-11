@@ -309,6 +309,13 @@ nir_shader *radv_meta_nir_build_blit2d_copy_fragment_shader_stencil(struct radv_
                                                                     radv_meta_nir_texel_fetch_build_func txf_func,
                                                                     const char *name, bool is_3d, bool is_multisampled);
 
+void radv_meta_nir_build_clear_color_shaders(struct radv_device *dev, struct nir_shader **out_vs,
+                                             struct nir_shader **out_fs, uint32_t frag_output);
+void radv_meta_nir_build_clear_depthstencil_shaders(struct radv_device *dev, struct nir_shader **out_vs,
+                                                    struct nir_shader **out_fs, bool unrestricted);
+nir_shader *radv_meta_nir_build_clear_htile_mask_shader(struct radv_device *dev);
+nir_shader *radv_meta_nir_build_clear_dcc_comp_to_single_shader(struct radv_device *dev, bool is_msaa);
+
 uint32_t radv_fill_buffer(struct radv_cmd_buffer *cmd_buffer, const struct radv_image *image,
                           struct radeon_winsys_bo *bo, uint64_t va, uint64_t size, uint32_t value);
 
