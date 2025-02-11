@@ -342,6 +342,8 @@ nir_shader *radv_meta_nir_build_depth_stencil_resolve_fragment_shader(struct rad
                                                                       enum radv_meta_resolve_type index,
                                                                       VkResolveModeFlagBits resolve_mode);
 
+nir_shader *radv_meta_nir_build_resolve_fs(struct radv_device *dev);
+
 uint32_t radv_fill_buffer(struct radv_cmd_buffer *cmd_buffer, const struct radv_image *image,
                           struct radeon_winsys_bo *bo, uint64_t va, uint64_t size, uint32_t value);
 

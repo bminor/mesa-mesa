@@ -1386,3 +1386,18 @@ radv_meta_nir_build_depth_stencil_resolve_fragment_shader(struct radv_device *de
 
    return b.shader;
 }
+
+nir_shader *
+radv_meta_nir_build_resolve_fs(struct radv_device *dev)
+{
+   const struct glsl_type *vec4 = glsl_vec4_type();
+   nir_variable *f_color;
+
+   nir_builder b = radv_meta_init_shader(dev, MESA_SHADER_FRAGMENT, "meta_resolve_fs");
+
+   f_color = nir_variable_create(b.shader, nir_var_shader_out, vec4, "f_color");
+   f_color->data.location = FRAG_RESULT_DATA0;
+   nir_store_var(&b, f_color, nir_imm_vec4(&b, 0.0, 0.0, 0.0, 1.0), 0xf);
+
+   return b.shader;
+}

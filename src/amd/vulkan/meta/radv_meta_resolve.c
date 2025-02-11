@@ -7,26 +7,9 @@
 #include <assert.h>
 #include <stdbool.h>
 
-#include "nir/nir_builder.h"
 #include "radv_entrypoints.h"
 #include "radv_meta.h"
-#include "sid.h"
 #include "vk_format.h"
-
-static nir_shader *
-build_nir_fs(struct radv_device *dev)
-{
-   const struct glsl_type *vec4 = glsl_vec4_type();
-   nir_variable *f_color;
-
-   nir_builder b = radv_meta_init_shader(dev, MESA_SHADER_FRAGMENT, "meta_resolve_fs");
-
-   f_color = nir_variable_create(b.shader, nir_var_shader_out, vec4, "f_color");
-   f_color->data.location = FRAG_RESULT_DATA0;
-   nir_store_var(&b, f_color, nir_imm_vec4(&b, 0.0, 0.0, 0.0, 1.0), 0xf);
-
-   return b.shader;
-}
 
 struct radv_resolve_key {
    enum radv_meta_object_key_type type;
@@ -55,7 +38,7 @@ get_pipeline(struct radv_device *device, unsigned fs_key, VkPipeline *pipeline_o
    }
 
    nir_shader *vs_module = radv_meta_build_nir_vs_generate_vertices(device);
-   nir_shader *fs_module = build_nir_fs(device);
+   nir_shader *fs_module = radv_meta_nir_build_resolve_fs(device);
 
    const VkGraphicsPipelineCreateInfoRADV radv_info = {
       .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO_RADV,
