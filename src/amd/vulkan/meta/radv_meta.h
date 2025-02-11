@@ -284,6 +284,23 @@ nir_shader *radv_meta_nir_build_blit_copy_fragment_shader_depth(struct radv_devi
 nir_shader *radv_meta_nir_build_blit_copy_fragment_shader_stencil(struct radv_device *dev,
                                                                   enum glsl_sampler_dim tex_dim);
 
+typedef nir_def *(*radv_meta_nir_texel_fetch_build_func)(struct nir_builder *, struct radv_device *, nir_def *, bool,
+                                                         bool);
+nir_def *radv_meta_nir_build_blit2d_texel_fetch(struct nir_builder *b, struct radv_device *device, nir_def *tex_pos,
+                                                bool is_3d, bool is_multisampled);
+nir_def *radv_meta_nir_build_blit2d_buffer_fetch(struct nir_builder *b, struct radv_device *device, nir_def *tex_pos,
+                                                 bool is_3d, bool is_multisampled);
+nir_shader *radv_meta_nir_build_blit2d_vertex_shader(struct radv_device *device);
+nir_shader *radv_meta_nir_build_blit2d_copy_fragment_shader(struct radv_device *device,
+                                                            radv_meta_nir_texel_fetch_build_func txf_func,
+                                                            const char *name, bool is_3d, bool is_multisampled);
+nir_shader *radv_meta_nir_build_blit2d_copy_fragment_shader_depth(struct radv_device *device,
+                                                                  radv_meta_nir_texel_fetch_build_func txf_func,
+                                                                  const char *name, bool is_3d, bool is_multisampled);
+nir_shader *radv_meta_nir_build_blit2d_copy_fragment_shader_stencil(struct radv_device *device,
+                                                                    radv_meta_nir_texel_fetch_build_func txf_func,
+                                                                    const char *name, bool is_3d, bool is_multisampled);
+
 uint32_t radv_fill_buffer(struct radv_cmd_buffer *cmd_buffer, const struct radv_image *image,
                           struct radeon_winsys_bo *bo, uint64_t va, uint64_t size, uint32_t value);
 
