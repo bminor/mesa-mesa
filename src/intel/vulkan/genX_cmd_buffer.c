@@ -5856,7 +5856,7 @@ void genX(CmdBeginRendering)(
     * with this edge case, we just dirty the pipeline at the start of every
     * subpass.
     */
-   gfx->dirty |= ANV_CMD_DIRTY_PIPELINE;
+   gfx->dirty |= ANV_CMD_DIRTY_ALL_SHADERS(cmd_buffer->device);
 
 #if GFX_VER >= 11
    if (render_target_change) {

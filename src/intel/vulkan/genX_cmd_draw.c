@@ -768,7 +768,7 @@ cmd_buffer_flush_gfx_state(struct anv_cmd_buffer *cmd_buffer)
 
    genX(flush_pipeline_select_3d)(cmd_buffer);
 
-   if (cmd_buffer->state.gfx.dirty & ANV_CMD_DIRTY_PIPELINE) {
+   if (cmd_buffer->state.gfx.dirty & ANV_CMD_DIRTY_PRERASTER_SHADERS) {
       /* Wa_14015814527
        *
        * Apply task URB workaround when switching from task to primitive.
@@ -778,9 +778,11 @@ cmd_buffer_flush_gfx_state(struct anv_cmd_buffer *cmd_buffer)
       } else if (anv_pipeline_has_stage(pipeline, MESA_SHADER_TASK)) {
          cmd_buffer->state.gfx.used_task_shader = true;
       }
-
-      cmd_buffer_maybe_flush_rt_writes(cmd_buffer, pipeline);
    }
+
+   if (BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_COLOR_ATTACHMENT_MAP) ||
+       (cmd_buffer->state.gfx.dirty & ANV_CMD_DIRTY_PS))
+      cmd_buffer_maybe_flush_rt_writes(cmd_buffer, pipeline);
 
    /* Apply any pending pipeline flushes we may have.  We want to apply them
     * now because, if any of those flushes are for things like push constants,
@@ -793,7 +795,7 @@ cmd_buffer_flush_gfx_state(struct anv_cmd_buffer *cmd_buffer)
     */
    uint32_t vb_emit = cmd_buffer->state.gfx.vb_dirty & dyn->vi->bindings_valid;
    /* If the pipeline changed, the we have to consider all the valid bindings. */
-   if ((cmd_buffer->state.gfx.dirty & ANV_CMD_DIRTY_PIPELINE) ||
+   if ((cmd_buffer->state.gfx.dirty & ANV_CMD_DIRTY_VS) ||
        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_VI_BINDINGS_VALID) ||
        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_VI_BINDING_STRIDES))
       vb_emit |= dyn->vi->bindings_valid;
@@ -887,7 +889,7 @@ cmd_buffer_flush_gfx_state(struct anv_cmd_buffer *cmd_buffer)
    /* If the pipeline changed, we may need to re-allocate push constant space
     * in the URB.
     */
-   if (cmd_buffer->state.gfx.dirty & ANV_CMD_DIRTY_PIPELINE) {
+   if (cmd_buffer->state.gfx.dirty & ANV_CMD_DIRTY_PUSH_CONSTANT_SHADERS) {
       cmd_buffer_alloc_gfx_push_constants(cmd_buffer);
 
       /* Also add the relocations (scratch buffers) */

@@ -1915,14 +1915,14 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_gfx_dynamic_state *hw_state,
                                    VkCommandBufferLevel cmd_buffer_level)
 {
    UNUSED bool fs_msaa_changed = false;
-   if ((gfx->dirty & ANV_CMD_DIRTY_PIPELINE) ||
+   if ((gfx->dirty & ANV_CMD_DIRTY_PS) ||
        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_MS_ALPHA_TO_COVERAGE_ENABLE) ||
        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_MS_RASTERIZATION_SAMPLES) ||
        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_RS_PROVOKING_VERTEX) ||
        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_FSR))
       update_fs_msaa_flags(hw_state, dyn, pipeline);
 
-   if ((gfx->dirty & ANV_CMD_DIRTY_PIPELINE) ||
+   if ((gfx->dirty & ANV_CMD_DIRTY_PS) ||
        BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_FS_MSAA_FLAGS)) {
       update_ps(hw_state, device, dyn, pipeline);
       update_ps_extra_wm(hw_state, pipeline);
@@ -1930,14 +1930,14 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_gfx_dynamic_state *hw_state,
 
    if (gfx->dirty &
 #if GFX_VERx10 >= 125
-       ANV_CMD_DIRTY_PIPELINE
+       ANV_CMD_DIRTY_PS
 #else
-       (ANV_CMD_DIRTY_PIPELINE | ANV_CMD_DIRTY_OCCLUSION_QUERY_ACTIVE)
+       (ANV_CMD_DIRTY_PS | ANV_CMD_DIRTY_OCCLUSION_QUERY_ACTIVE)
 #endif
       )
       update_ps_extra_has_uav(hw_state, gfx, pipeline);
 
-   if ((gfx->dirty & ANV_CMD_DIRTY_PIPELINE) ||
+   if ((gfx->dirty & ANV_CMD_DIRTY_PS) ||
        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_ATTACHMENT_FEEDBACK_LOOP_ENABLE))
       update_ps_extra_kills_pixel(hw_state, dyn, gfx, pipeline);
 
@@ -1949,16 +1949,16 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_gfx_dynamic_state *hw_state,
    if (
 #if GFX_VERx10 >= 200
       /* Xe2+ might need to update this if the FS changed */
-      (gfx->dirty & ANV_CMD_DIRTY_PIPELINE) ||
+      (gfx->dirty & ANV_CMD_DIRTY_PS) ||
 #endif
        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_RS_PROVOKING_VERTEX))
       update_provoking_vertex(hw_state, dyn, pipeline);
 
-   if ((gfx->dirty & ANV_CMD_DIRTY_PIPELINE) ||
+   if ((gfx->dirty & ANV_CMD_DIRTY_DS) ||
        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_IA_PRIMITIVE_TOPOLOGY))
       update_topology(hw_state, dyn, pipeline);
 
-   if ((gfx->dirty & ANV_CMD_DIRTY_PIPELINE) ||
+   if ((gfx->dirty & ANV_CMD_DIRTY_VS) ||
        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_VI) ||
        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_VI_BINDINGS_VALID) ||
        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_VI_BINDING_STRIDES))
@@ -1970,7 +1970,7 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_gfx_dynamic_state *hw_state,
       update_cps(hw_state, device, dyn, pipeline);
 #endif /* GFX_VER >= 11 */
 
-   if ((gfx->dirty & ANV_CMD_DIRTY_PIPELINE) ||
+   if ((gfx->dirty & ANV_CMD_DIRTY_DS) ||
        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_TS_DOMAIN_ORIGIN))
       update_te(hw_state, dyn, pipeline);
 
@@ -1986,7 +1986,7 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_gfx_dynamic_state *hw_state,
    if (BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_VP_VIEWPORT_COUNT))
       update_clip_max_viewport(hw_state, dyn);
 
-   if ((gfx->dirty & ANV_CMD_DIRTY_PIPELINE) ||
+   if ((gfx->dirty & ANV_CMD_DIRTY_PRERASTER_SHADERS) ||
        (gfx->dirty & ANV_CMD_DIRTY_RENDER_TARGETS) ||
        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_IA_PRIMITIVE_TOPOLOGY) ||
        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_RS_CULL_MODE) ||
@@ -2010,7 +2010,7 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_gfx_dynamic_state *hw_state,
    if ((gfx->dirty & ANV_CMD_DIRTY_RENDER_TARGETS) ||
 #if GFX_VER == 9
        /* For the PMA fix */
-       (gfx->dirty & ANV_CMD_DIRTY_PIPELINE) ||
+       (gfx->dirty & ANV_CMD_DIRTY_PS) ||
 #endif
        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_DS_DEPTH_TEST_ENABLE) ||
        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_DS_DEPTH_WRITE_ENABLE) ||
@@ -2050,7 +2050,7 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_gfx_dynamic_state *hw_state,
         BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_MS_SAMPLE_LOCATIONS_ENABLE)))
       BITSET_SET(hw_state->dirty, ANV_GFX_STATE_SAMPLE_PATTERN);
 
-   if ((gfx->dirty & ANV_CMD_DIRTY_PIPELINE) ||
+   if ((gfx->dirty & ANV_CMD_DIRTY_PS) ||
        (gfx->dirty & ANV_CMD_DIRTY_RENDER_TARGETS) ||
        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_CB_LOGIC_OP) ||
        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_CB_COLOR_WRITE_ENABLES) ||
@@ -2090,7 +2090,7 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_gfx_dynamic_state *hw_state,
 
 #if INTEL_WA_14018283232_GFX_VER
    if (intel_needs_workaround(device->info, 14018283232) &&
-       ((gfx->dirty & ANV_CMD_DIRTY_PIPELINE) ||
+       ((gfx->dirty & ANV_CMD_DIRTY_PS) ||
         BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_DS_DEPTH_BOUNDS_TEST_ENABLE))) {
       const struct brw_wm_prog_data *wm_prog_data = get_wm_prog_data(pipeline);
       SET(WA_14018283232, wa_14018283232_toggle,
@@ -2106,7 +2106,7 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_gfx_dynamic_state *hw_state,
     */
    const struct brw_tcs_prog_data *tcs_prog_data = get_tcs_prog_data(pipeline);
    if (tcs_prog_data && tcs_prog_data->input_vertices == 0 &&
-       ((gfx->dirty & ANV_CMD_DIRTY_PIPELINE) ||
+       ((gfx->dirty & ANV_CMD_DIRTY_HS) ||
         BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_TS_PATCH_CONTROL_POINTS)))
       SET(TCS_INPUT_VERTICES, tcs_input_vertices, dyn->ts.patch_control_points);
 
@@ -2117,7 +2117,7 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_gfx_dynamic_state *hw_state,
       mesh_prog_data &&
       (mesh_prog_data->map.vue_map.slots_valid & (VARYING_BIT_CLIP_DIST0 |
                                                   VARYING_BIT_CLIP_DIST1)) &&
-      ((gfx->dirty & ANV_CMD_DIRTY_PIPELINE) ||
+      ((gfx->dirty & ANV_CMD_DIRTY_MESH) ||
        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_RS_PROVOKING_VERTEX));
    if (mesh_provoking_vertex_update) {
       SET(MESH_PROVOKING_VERTEX, mesh_provoking_vertex,

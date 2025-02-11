@@ -358,9 +358,10 @@ genX(emit_so_memcpy_fini)(struct anv_memcpy_state *state)
          BITSET_SET(hw_state->dirty, ANV_GFX_STATE_TASK_CONTROL);
       }
 
-      state->cmd_buffer->state.gfx.dirty |= ~(ANV_CMD_DIRTY_PIPELINE |
-                                              ANV_CMD_DIRTY_INDEX_BUFFER |
-                                              ANV_CMD_DIRTY_INDEX_TYPE);
+      state->cmd_buffer->state.gfx.dirty |=
+         ~(ANV_CMD_DIRTY_ALL_SHADERS(state->device) |
+           ANV_CMD_DIRTY_INDEX_BUFFER |
+           ANV_CMD_DIRTY_INDEX_TYPE);
 
       memcpy(&state->cmd_buffer->state.gfx.urb_cfg, &state->urb_cfg,
              sizeof(struct intel_urb_config));

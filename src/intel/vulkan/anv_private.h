@@ -3527,16 +3527,45 @@ anv_buffer_is_sparse(const struct anv_buffer *buffer)
 }
 
 enum anv_cmd_dirty_bits {
-   ANV_CMD_DIRTY_PIPELINE                            = 1 << 0,
-   ANV_CMD_DIRTY_INDEX_BUFFER                        = 1 << 1,
-   ANV_CMD_DIRTY_RENDER_AREA                         = 1 << 2,
-   ANV_CMD_DIRTY_RENDER_TARGETS                      = 1 << 3,
-   ANV_CMD_DIRTY_XFB_ENABLE                          = 1 << 4,
-   ANV_CMD_DIRTY_INDEX_TYPE                          = 1 << 5,
-   ANV_CMD_DIRTY_OCCLUSION_QUERY_ACTIVE              = 1 << 6,
-   ANV_CMD_DIRTY_INDIRECT_DATA_STRIDE                = 1 << 7,
+   ANV_CMD_DIRTY_VS                     = BITFIELD_BIT(0),
+   ANV_CMD_DIRTY_HS                     = BITFIELD_BIT(1),
+   ANV_CMD_DIRTY_DS                     = BITFIELD_BIT(2),
+   ANV_CMD_DIRTY_GS                     = BITFIELD_BIT(3),
+   ANV_CMD_DIRTY_TASK                   = BITFIELD_BIT(4),
+   ANV_CMD_DIRTY_MESH                   = BITFIELD_BIT(5),
+   ANV_CMD_DIRTY_PS                     = BITFIELD_BIT(6),
+   ANV_CMD_DIRTY_INDEX_BUFFER           = BITFIELD_BIT(7),
+   ANV_CMD_DIRTY_INDEX_TYPE             = BITFIELD_BIT(8),
+   ANV_CMD_DIRTY_RENDER_AREA            = BITFIELD_BIT(9),
+   ANV_CMD_DIRTY_RENDER_TARGETS         = BITFIELD_BIT(10),
+   ANV_CMD_DIRTY_XFB_ENABLE             = BITFIELD_BIT(11),
+   ANV_CMD_DIRTY_OCCLUSION_QUERY_ACTIVE = BITFIELD_BIT(12),
+   ANV_CMD_DIRTY_INDIRECT_DATA_STRIDE   = BITFIELD_BIT(13),
 };
 typedef enum anv_cmd_dirty_bits anv_cmd_dirty_mask_t;
+
+#define ANV_CMD_DIRTY_PUSH_CONSTANT_SHADERS (     \
+      ANV_CMD_DIRTY_VS |                          \
+      ANV_CMD_DIRTY_HS |                          \
+      ANV_CMD_DIRTY_DS |                          \
+      ANV_CMD_DIRTY_GS |                          \
+      ANV_CMD_DIRTY_PS)
+#define ANV_CMD_DIRTY_PRERASTER_SHADERS (         \
+      ANV_CMD_DIRTY_VS |                          \
+      ANV_CMD_DIRTY_HS |                          \
+      ANV_CMD_DIRTY_DS |                          \
+      ANV_CMD_DIRTY_GS |                          \
+      ANV_CMD_DIRTY_TASK |                        \
+      ANV_CMD_DIRTY_MESH)
+#define ANV_CMD_DIRTY_ALL_SHADERS(device)               \
+   (((device)->vk.enabled_features.meshShader ?         \
+     (ANV_CMD_DIRTY_TASK | ANV_CMD_DIRTY_MESH) : 0) |   \
+    ANV_CMD_DIRTY_VS |                                  \
+    ANV_CMD_DIRTY_HS |                                  \
+    ANV_CMD_DIRTY_DS |                                  \
+    ANV_CMD_DIRTY_GS |                                  \
+    ANV_CMD_DIRTY_PS)
+
 
 enum anv_pipe_bits {
    ANV_PIPE_DEPTH_CACHE_FLUSH_BIT            = (1 << 0),

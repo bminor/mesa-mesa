@@ -614,6 +614,37 @@ anv_cmd_buffer_flush_pipeline_state(struct anv_cmd_buffer *cmd_buffer,
     */
 }
 
+static enum anv_cmd_dirty_bits
+get_pipeline_dirty_stages(struct anv_device *device,
+                          struct anv_graphics_pipeline *old_pipeline,
+                          struct anv_graphics_pipeline *new_pipeline)
+{
+   if (!old_pipeline)
+      return ANV_CMD_DIRTY_ALL_SHADERS(device);
+
+   enum anv_cmd_dirty_bits bits = 0;
+#define STAGE_CHANGED(_name) \
+   (old_pipeline->base.shaders[MESA_SHADER_##_name] != \
+    new_pipeline->base.shaders[MESA_SHADER_##_name])
+   if (STAGE_CHANGED(VERTEX))
+      bits |= ANV_CMD_DIRTY_VS;
+   if (STAGE_CHANGED(TESS_CTRL))
+      bits |= ANV_CMD_DIRTY_HS;
+   if (STAGE_CHANGED(TESS_EVAL))
+      bits |= ANV_CMD_DIRTY_DS;
+   if (STAGE_CHANGED(GEOMETRY))
+      bits |= ANV_CMD_DIRTY_GS;
+   if (STAGE_CHANGED(TASK))
+      bits |= ANV_CMD_DIRTY_TASK;
+   if (STAGE_CHANGED(MESH))
+      bits |= ANV_CMD_DIRTY_MESH;
+   if (STAGE_CHANGED(FRAGMENT))
+      bits |= ANV_CMD_DIRTY_PS;
+#undef STAGE_CHANGED
+
+   return bits;
+}
+
 void anv_CmdBindPipeline(
     VkCommandBuffer                             commandBuffer,
     VkPipelineBindPoint                         pipelineBindPoint,
@@ -658,7 +689,9 @@ void anv_CmdBindPipeline(
          anv_pipeline_to_graphics(cmd_buffer->state.gfx.base.pipeline);
 
       cmd_buffer->state.gfx.base.pipeline = pipeline;
-      cmd_buffer->state.gfx.dirty |= ANV_CMD_DIRTY_PIPELINE;
+      cmd_buffer->state.gfx.dirty |=
+         get_pipeline_dirty_stages(cmd_buffer->device,
+                                   old_pipeline, new_pipeline);
 
       anv_foreach_stage(stage, new_pipeline->base.base.active_stages) {
          set_dirty_for_bind_map(cmd_buffer, stage,
