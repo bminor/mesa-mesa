@@ -1231,7 +1231,7 @@ radv_enc_ctx(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoKHR *inf
       dpb_image_sizes(dpb, &luma_pitch, &luma_size, &chroma_size, &colloc_bytes);
 
       radv_cs_add_buffer(device->ws, cs, dpb->bindings[0].bo);
-      va = radv_buffer_get_va(dpb->bindings[0].bo);
+      va = radv_buffer_get_va(dpb->bindings[0].bo) + dpb->bindings[0].offset;
    }
 
    uint32_t swizzle_mode = 0;
