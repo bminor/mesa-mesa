@@ -43,7 +43,7 @@ needs_dummy_fence(const intel_device_info *devinfo, brw_inst *inst)
    /* This workaround is about making sure that any instruction writing
     * through UGM has completed before we hit EOT.
     */
-   if (inst->sfid != GFX12_SFID_UGM)
+   if (inst->sfid != BRW_SFID_UGM)
       return false;
 
    /* Any UGM, non-Scratch-surface Stores (not including Atomic) messages,
@@ -106,7 +106,7 @@ brw_workaround_memory_fence_before_eot(brw_shader &s)
       brw_inst *dummy_fence = ubld.emit(SHADER_OPCODE_MEMORY_FENCE,
                                        dst, brw_vec8_grf(0, 0),
                                        /* commit enable */ brw_imm_ud(1));
-      dummy_fence->sfid = GFX12_SFID_UGM;
+      dummy_fence->sfid = BRW_SFID_UGM;
       dummy_fence->desc = lsc_fence_msg_desc(s.devinfo, LSC_FENCE_TILE,
                                              LSC_FLUSH_TYPE_NONE_6, false);
       dummy_fence->size_written = REG_SIZE * reg_unit(s.devinfo);

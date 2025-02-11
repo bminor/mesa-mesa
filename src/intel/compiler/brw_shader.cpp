@@ -700,7 +700,7 @@ brw_shader::assign_curb_setup()
                               BRW_TYPE_UD);
          brw_inst *send = ubld.emit(SHADER_OPCODE_SEND, dest, srcs, 4);
 
-         send->sfid = GFX12_SFID_UGM;
+         send->sfid = BRW_SFID_UGM;
          uint32_t desc = lsc_msg_desc(devinfo, LSC_OP_LOAD,
                                       LSC_ADDR_SURFTYPE_FLAT,
                                       pull_constants_a64 ?

@@ -705,13 +705,12 @@ brw_reg_alloc::build_ex_desc(const brw_builder &bld, unsigned reg_size, bool uns
    } else {
       if (unspill) {
          inst = bld.exec_all().group(1, 0).OR(
-            ex_desc, ex_desc, brw_imm_ud(GFX12_SFID_UGM));
+            ex_desc, ex_desc, brw_imm_ud(BRW_SFID_UGM));
          _mesa_set_add(spill_insts, inst);
       } else {
          inst = bld.exec_all().group(1, 0).OR(
             ex_desc, ex_desc,
-            brw_imm_ud(brw_message_ex_desc(devinfo, reg_size) |
-                       GFX12_SFID_UGM));
+            brw_imm_ud(brw_message_ex_desc(devinfo, reg_size) | BRW_SFID_UGM));
          _mesa_set_add(spill_insts, inst);
       }
    }
@@ -841,7 +840,7 @@ brw_reg_alloc::emit_unspill(const brw_builder &bld,
 
          unspill_inst = ubld.emit(SHADER_OPCODE_SEND, dst,
                                   srcs, ARRAY_SIZE(srcs));
-         unspill_inst->sfid = GFX12_SFID_UGM;
+         unspill_inst->sfid = BRW_SFID_UGM;
          unspill_inst->header_size = 0;
          unspill_inst->mlen = lsc_msg_addr_len(devinfo, LSC_ADDR_SIZE_A32,
                                                unspill_inst->exec_size);
@@ -874,7 +873,7 @@ brw_reg_alloc::emit_unspill(const brw_builder &bld,
          unspill_inst->size_written = reg_size * REG_SIZE;
          unspill_inst->send_has_side_effects = false;
          unspill_inst->send_is_volatile = true;
-         unspill_inst->sfid = GFX7_SFID_DATAPORT_DATA_CACHE;
+         unspill_inst->sfid = BRW_SFID_HDC0;
 
          unspill_inst->src[0] = brw_imm_ud(
             brw_dp_desc(devinfo, bti,
@@ -918,7 +917,7 @@ brw_reg_alloc::emit_spill(const brw_builder &bld,
          };
          spill_inst = bld.emit(SHADER_OPCODE_SEND, bld.null_reg_f(),
                                srcs, ARRAY_SIZE(srcs));
-         spill_inst->sfid = GFX12_SFID_UGM;
+         spill_inst->sfid = BRW_SFID_UGM;
          uint32_t desc = lsc_msg_desc(devinfo, LSC_OP_STORE,
                                       LSC_ADDR_SURFTYPE_SS,
                                       LSC_ADDR_SIZE_A32,
@@ -958,7 +957,7 @@ brw_reg_alloc::emit_spill(const brw_builder &bld,
          spill_inst->header_size = 1;
          spill_inst->send_has_side_effects = true;
          spill_inst->send_is_volatile = false;
-         spill_inst->sfid = GFX7_SFID_DATAPORT_DATA_CACHE;
+         spill_inst->sfid = BRW_SFID_HDC0;
 
          spill_inst->src[0] = brw_imm_ud(
             brw_dp_desc(devinfo, bti,

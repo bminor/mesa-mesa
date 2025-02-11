@@ -53,8 +53,6 @@ namespace {
       EU_UNIT_GATEWAY,
       /** Thread Spawner shared function. */
       EU_UNIT_SPAWNER,
-      /* EU_UNIT_VME, */
-      /* EU_UNIT_CRE, */
       /** Number of asynchronous units currently tracked. */
       EU_NUM_UNITS,
       /** Dummy unit for instructions that don't consume runtime from the above. */
@@ -584,11 +582,11 @@ namespace {
       case SHADER_OPCODE_SEND:
       case SHADER_OPCODE_SEND_GATHER:
          switch (info.sfid) {
-         case GFX6_SFID_DATAPORT_CONSTANT_CACHE:
+         case BRW_SFID_HDC_READ_ONLY:
             /* See FS_OPCODE_UNIFORM_PULL_CONSTANT_LOAD */
             return calculate_desc(info, EU_UNIT_DP_CC, 2, 0, 0, 0, 16 /* XXX */,
                                   10 /* XXX */, 100 /* XXX */, 0, 0, 0, 0);
-         case GFX6_SFID_DATAPORT_RENDER_CACHE:
+         case BRW_SFID_RENDER_CACHE:
             switch (brw_dp_desc_msg_type(devinfo, info.desc)) {
             case GFX7_DATAPORT_RC_TYPED_ATOMIC_OP:
                return calculate_desc(info, EU_UNIT_DP_RC, 2, 0, 0,
@@ -609,7 +607,7 @@ namespace {
             return calculate_desc(info, EU_UNIT_SAMPLER, 2, 0, 0, 0, 16,
                                   8, 750, 0, 0, 2, 0);
          }
-         case GFX7_SFID_DATAPORT_DATA_CACHE:
+         case BRW_SFID_HDC0:
             switch (brw_dp_desc_msg_type(devinfo, info.desc)) {
             case GFX7_DATAPORT_DC_MEMORY_FENCE:
                return calculate_desc(info, EU_UNIT_DP_DC, 2, 0, 0,
@@ -622,7 +620,7 @@ namespace {
                                      0, 0);
             }
 
-         case HSW_SFID_DATAPORT_DATA_CACHE_1:
+         case BRW_SFID_HDC1:
             switch (brw_dp_desc_msg_type(devinfo, info.desc)) {
             case HSW_DATAPORT_DC_PORT1_UNTYPED_ATOMIC_OP:
             case HSW_DATAPORT_DC_PORT1_UNTYPED_ATOMIC_OP_SIMD4X2:
@@ -640,13 +638,13 @@ namespace {
                                      0, 0);
             }
 
-         case GFX7_SFID_PIXEL_INTERPOLATOR:
+         case BRW_SFID_PIXEL_INTERPOLATOR:
             return calculate_desc(info, EU_UNIT_PI, 2, 0, 0, 14 /* XXX */, 0,
                                   0, 90 /* XXX */, 0, 0, 0, 0);
 
-         case GFX12_SFID_UGM:
-         case GFX12_SFID_TGM:
-         case GFX12_SFID_SLM:
+         case BRW_SFID_UGM:
+         case BRW_SFID_TGM:
+         case BRW_SFID_SLM:
             switch (lsc_msg_desc_opcode(devinfo, info.desc)) {
             case LSC_OP_LOAD:
             case LSC_OP_STORE:
@@ -690,8 +688,8 @@ namespace {
             }
 
          case BRW_SFID_MESSAGE_GATEWAY:
-         case GEN_RT_SFID_BINDLESS_THREAD_DISPATCH: /* or THREAD_SPAWNER */
-         case GEN_RT_SFID_RAY_TRACE_ACCELERATOR:
+         case BRW_SFID_BINDLESS_THREAD_DISPATCH: /* or THREAD_SPAWNER */
+         case BRW_SFID_RAY_TRACE_ACCELERATOR:
             return calculate_desc(info, EU_UNIT_SPAWNER, 2, 0, 0, 0 /* XXX */, 0,
                                   10 /* XXX */, 0, 0, 0, 0, 0);
 

@@ -4755,7 +4755,7 @@ emit_rt_lsc_fence(const brw_builder &bld,
                              brw_imm_ud(0) /* desc */,
                              brw_imm_ud(0) /* ex_desc */,
                              brw_vec8_grf(0, 0) /* payload */);
-   send->sfid = GFX12_SFID_UGM;
+   send->sfid = BRW_SFID_UGM;
    send->desc = lsc_fence_msg_desc(devinfo, scope, flush_type, true);
    send->mlen = reg_unit(devinfo); /* g0 header */
    send->ex_mlen = 0;
@@ -6001,13 +6001,13 @@ brw_from_nir_emit_intrinsic(nir_to_brw_state &ntb,
             lsc_fence_descriptor_for_intrinsic(devinfo, instr);
          if (ugm_fence) {
             fence_regs[fence_regs_count++] =
-               emit_fence(ubld1, opcode, GFX12_SFID_UGM, desc,
+               emit_fence(ubld1, opcode, BRW_SFID_UGM, desc,
                           true /* commit_enable */);
          }
 
          if (tgm_fence) {
             fence_regs[fence_regs_count++] =
-               emit_fence(ubld1, opcode, GFX12_SFID_TGM, desc,
+               emit_fence(ubld1, opcode, BRW_SFID_TGM, desc,
                           true /* commit_enable */);
          }
 
@@ -6022,7 +6022,7 @@ brw_from_nir_emit_intrinsic(nir_to_brw_state &ntb,
                ubld1.SYNC(TGL_SYNC_ALLWR);
             }
             fence_regs[fence_regs_count++] =
-               emit_fence(ubld1, opcode, GFX12_SFID_SLM, desc,
+               emit_fence(ubld1, opcode, BRW_SFID_SLM, desc,
                           true /* commit_enable */);
          }
 
@@ -6035,7 +6035,7 @@ brw_from_nir_emit_intrinsic(nir_to_brw_state &ntb,
       } else if (devinfo->ver >= 11) {
          if (tgm_fence || ugm_fence || urb_fence) {
             fence_regs[fence_regs_count++] =
-               emit_fence(ubld1, opcode, GFX7_SFID_DATAPORT_DATA_CACHE, 0,
+               emit_fence(ubld1, opcode, BRW_SFID_HDC0, 0,
                           true /* commit_enable HSD ES # 1404612949 */);
          }
 
@@ -6046,7 +6046,7 @@ brw_from_nir_emit_intrinsic(nir_to_brw_state &ntb,
              * special binding table index and the normal DATA_CACHE SFID.
              */
             fence_regs[fence_regs_count++] =
-               emit_fence(ubld1, opcode, GFX12_SFID_SLM, 0,
+               emit_fence(ubld1, opcode, BRW_SFID_SLM, 0,
                           true /* commit_enable HSD ES # 1404612949 */);
          }
       } else {
@@ -6058,8 +6058,7 @@ brw_from_nir_emit_intrinsic(nir_to_brw_state &ntb,
 
          if (tgm_fence || ugm_fence || slm_fence || urb_fence) {
             fence_regs[fence_regs_count++] =
-               emit_fence(ubld1, opcode, GFX7_SFID_DATAPORT_DATA_CACHE, 0,
-                          commit_enable);
+               emit_fence(ubld1, opcode, BRW_SFID_HDC0, 0, commit_enable);
          }
       }
 

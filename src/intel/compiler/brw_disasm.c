@@ -293,23 +293,22 @@ static const char *const end_of_thread[2] = {
    [1] = "EOT"
 };
 
-static const char *const gfx6_sfid[16] = {
-   [BRW_SFID_NULL]                     = "null",
-   [BRW_SFID_SAMPLER]                  = "sampler",
-   [BRW_SFID_MESSAGE_GATEWAY]          = "gateway",
-   [BRW_SFID_URB]                      = "urb",
-   [BRW_SFID_THREAD_SPAWNER]           = "thread_spawner",
-   [GFX6_SFID_DATAPORT_SAMPLER_CACHE]  = "dp_sampler",
-   [GFX6_SFID_DATAPORT_RENDER_CACHE]   = "render",
-   [GFX6_SFID_DATAPORT_CONSTANT_CACHE] = "const",
-   [GFX7_SFID_DATAPORT_DATA_CACHE]     = "data",
-   [GFX7_SFID_PIXEL_INTERPOLATOR]      = "pixel interp",
-   [HSW_SFID_DATAPORT_DATA_CACHE_1]    = "dp data 1",
-   [HSW_SFID_CRE]                      = "cre",
-   [GEN_RT_SFID_RAY_TRACE_ACCELERATOR] = "rt accel",
-   [GFX12_SFID_SLM]                    = "slm",
-   [GFX12_SFID_TGM]                    = "tgm",
-   [GFX12_SFID_UGM]                    = "ugm",
+static const char *const brw_sfid[16] = {
+   [BRW_SFID_NULL]                  = "null",
+   [BRW_SFID_SAMPLER]               = "sampler",
+   [BRW_SFID_MESSAGE_GATEWAY]       = "gateway",
+   [BRW_SFID_HDC2]                  = "hdc2",
+   [BRW_SFID_RENDER_CACHE]          = "render",
+   [BRW_SFID_URB]                   = "urb",
+   [BRW_SFID_THREAD_SPAWNER]        = "ts/btd",
+   [BRW_SFID_RAY_TRACE_ACCELERATOR] = "rt accel",
+   [BRW_SFID_HDC_READ_ONLY]         = "hdc:ro",
+   [BRW_SFID_HDC0]                  = "hdc0",
+   [BRW_SFID_PIXEL_INTERPOLATOR]    = "pi",
+   [BRW_SFID_HDC1]                  = "hdc1",
+   [BRW_SFID_SLM]                   = "slm",
+   [BRW_SFID_TGM]                   = "tgm",
+   [BRW_SFID_UGM]                   = "ugm",
 };
 
 static const char *const gfx7_gateway_subfuncid[8] = {
@@ -1958,9 +1957,9 @@ static inline bool
 brw_sfid_is_lsc(unsigned sfid)
 {
    switch (sfid) {
-   case GFX12_SFID_UGM:
-   case GFX12_SFID_SLM:
-   case GFX12_SFID_TGM:
+   case BRW_SFID_UGM:
+   case BRW_SFID_SLM:
+   case BRW_SFID_TGM:
       return true;
    default:
       break;
@@ -2120,7 +2119,7 @@ brw_disassemble_inst(FILE *file, const struct brw_isa_info *isa,
    }
 
    if (is_send(opcode)) {
-      enum brw_message_target sfid = brw_eu_inst_sfid(devinfo, inst);
+      enum brw_sfid sfid = brw_eu_inst_sfid(devinfo, inst);
 
       bool has_imm_desc = false, has_imm_ex_desc = false;
       uint32_t imm_desc = 0, imm_ex_desc = 0;
@@ -2168,7 +2167,7 @@ brw_disassemble_inst(FILE *file, const struct brw_isa_info *isa,
       space = 0;
 
       fprintf(file, "            ");
-      err |= control(file, "SFID", gfx6_sfid, sfid, &space);
+      err |= control(file, "SFID", brw_sfid, sfid, &space);
       string(file, " MsgDesc:");
 
       if (!has_imm_desc) {
@@ -2207,16 +2206,15 @@ brw_disassemble_inst(FILE *file, const struct brw_isa_info *isa,
                       brw_sampler_desc_sampler(devinfo, imm_desc));
             }
             break;
-         case GFX6_SFID_DATAPORT_SAMPLER_CACHE:
-         case GFX6_SFID_DATAPORT_CONSTANT_CACHE:
+         case BRW_SFID_HDC2:
+         case BRW_SFID_HDC_READ_ONLY:
             format(file, " (bti %u, msg_ctrl %u, msg_type %u)",
                    brw_dp_desc_binding_table_index(devinfo, imm_desc),
                    brw_dp_desc_msg_control(devinfo, imm_desc),
                    brw_dp_desc_msg_type(devinfo, imm_desc));
             break;
 
-         case GFX6_SFID_DATAPORT_RENDER_CACHE: {
-            /* aka BRW_SFID_DATAPORT_WRITE on Gfx4-5 */
+         case BRW_SFID_RENDER_CACHE: {
             unsigned msg_type = brw_fb_desc_msg_type(devinfo, imm_desc);
 
             err |= control(file, "DP rc message type",
@@ -2340,9 +2338,9 @@ brw_disassemble_inst(FILE *file, const struct brw_isa_info *isa,
                    gfx7_gateway_subfuncid[brw_eu_inst_gateway_subfuncid(devinfo, inst)]);
             break;
 
-         case GFX12_SFID_SLM:
-         case GFX12_SFID_TGM:
-         case GFX12_SFID_UGM: {
+         case BRW_SFID_SLM:
+         case BRW_SFID_TGM:
+         case BRW_SFID_UGM: {
             assert(devinfo->has_lsc);
             format(file, " (");
             const enum lsc_opcode op = lsc_msg_desc_opcode(devinfo, imm_desc);
@@ -2423,7 +2421,7 @@ brw_disassemble_inst(FILE *file, const struct brw_isa_info *isa,
             break;
          }
 
-         case GFX7_SFID_DATAPORT_DATA_CACHE:
+         case BRW_SFID_HDC0:
             format(file, " (");
             space = 0;
 
@@ -2455,7 +2453,7 @@ brw_disassemble_inst(FILE *file, const struct brw_isa_info *isa,
             format(file, ")");
             break;
 
-         case HSW_SFID_DATAPORT_DATA_CACHE_1: {
+         case BRW_SFID_HDC1: {
             format(file, " (");
             space = 0;
 
@@ -2512,14 +2510,14 @@ brw_disassemble_inst(FILE *file, const struct brw_isa_info *isa,
             break;
          }
 
-         case GFX7_SFID_PIXEL_INTERPOLATOR:
+         case BRW_SFID_PIXEL_INTERPOLATOR:
             format(file, " (%s, %s, 0x%02"PRIx64")",
                    brw_eu_inst_pi_nopersp(devinfo, inst) ? "linear" : "persp",
                    pixel_interpolator_msg_types[brw_eu_inst_pi_message_type(devinfo, inst)],
                    brw_eu_inst_pi_message_data(devinfo, inst));
             break;
 
-         case GEN_RT_SFID_RAY_TRACE_ACCELERATOR:
+         case BRW_SFID_RAY_TRACE_ACCELERATOR:
             if (devinfo->has_ray_tracing) {
                format(file, " SIMD%d,",
                       brw_rt_trace_ray_desc_exec_size(devinfo, imm_desc));

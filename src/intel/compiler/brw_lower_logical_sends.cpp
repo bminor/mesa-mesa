@@ -491,7 +491,7 @@ lower_fb_write_logical_send(const brw_builder &bld, brw_inst *inst,
 
    inst->opcode = SHADER_OPCODE_SEND;
    inst->resize_sources(3);
-   inst->sfid = GFX6_SFID_DATAPORT_RENDER_CACHE;
+   inst->sfid = BRW_SFID_RENDER_CACHE;
    inst->src[0] = desc;
    inst->src[1] = brw_imm_ud(0);
    inst->src[2] = payload;
@@ -562,7 +562,7 @@ lower_fb_read_logical_send(const brw_builder &bld, brw_inst *inst,
    inst->src[3] = brw_reg();
    inst->mlen = length;
    inst->header_size = length;
-   inst->sfid = GFX6_SFID_DATAPORT_RENDER_CACHE;
+   inst->sfid = BRW_SFID_RENDER_CACHE;
    inst->check_tdr = true;
    inst->desc =
       (inst->group / 16) << 11 | /* rt slot group */
@@ -1401,7 +1401,7 @@ setup_lsc_surface_descriptors(const brw_builder &bld, brw_inst *inst,
        */
       inst->src[1] = retype(surface, BRW_TYPE_UD);
       /* Gfx20+ assumes ExBSO with UGM */
-      if (devinfo->ver >= 20 && inst->sfid == GFX12_SFID_UGM)
+      if (devinfo->ver >= 20 && inst->sfid == BRW_SFID_UGM)
          inst->send_ex_bso = true;
       break;
 
@@ -1547,13 +1547,13 @@ lower_lsc_memory_logical_send(const brw_builder &bld, brw_inst *inst)
    case MEMORY_MODE_UNTYPED:
    case MEMORY_MODE_CONSTANT:
    case MEMORY_MODE_SCRATCH:
-      inst->sfid = GFX12_SFID_UGM;
+      inst->sfid = BRW_SFID_UGM;
       break;
    case MEMORY_MODE_TYPED:
-      inst->sfid = GFX12_SFID_TGM;
+      inst->sfid = BRW_SFID_TGM;
       break;
    case MEMORY_MODE_SHARED_LOCAL:
-      inst->sfid = GFX12_SFID_SLM;
+      inst->sfid = BRW_SFID_SLM;
       break;
    }
    assert(inst->sfid);
@@ -1562,7 +1562,7 @@ lower_lsc_memory_logical_send(const brw_builder &bld, brw_inst *inst)
     * shaders. (see HSD 18038444588)
     */
    if (devinfo->ver >= 20 && gl_shader_stage_is_rt(bld.shader->stage) &&
-       inst->sfid == GFX12_SFID_TGM &&
+       inst->sfid == BRW_SFID_TGM &&
        !lsc_opcode_is_atomic(op)) {
       if (lsc_opcode_is_store(op)) {
          cache_mode = (unsigned) LSC_CACHE(devinfo, STORE, L1UC_L3WB);
@@ -1785,7 +1785,7 @@ lower_hdc_memory_logical_send(const brw_builder &bld, brw_inst *inst)
       assert(addr_size == LSC_ADDR_SIZE_A32);
       assert(!block);
 
-      sfid = HSW_SFID_DATAPORT_DATA_CACHE_1;
+      sfid = BRW_SFID_HDC1;
 
       if (lsc_opcode_is_atomic(op)) {
          desc = brw_dp_typed_atomic_desc(devinfo, inst->exec_size, inst->group,
@@ -1798,13 +1798,13 @@ lower_hdc_memory_logical_send(const brw_builder &bld, brw_inst *inst)
    } else if (mode == MEMORY_MODE_CONSTANT) {
       assert(block); /* non-block loads not yet handled */
 
-      sfid = GFX6_SFID_DATAPORT_CONSTANT_CACHE;
+      sfid = BRW_SFID_HDC_READ_ONLY;
       desc = brw_dp_oword_block_rw_desc(devinfo, false, components, !has_dest);
    } else if (addr_size == LSC_ADDR_SIZE_A64) {
       assert(binding_type == LSC_ADDR_SURFTYPE_FLAT);
       assert(!dword_scattered);
 
-      sfid = HSW_SFID_DATAPORT_DATA_CACHE_1;
+      sfid = BRW_SFID_HDC1;
 
       if (lsc_opcode_is_atomic(op)) {
          unsigned aop = lsc_op_to_legacy_atomic(op);
@@ -1830,8 +1830,7 @@ lower_hdc_memory_logical_send(const brw_builder &bld, brw_inst *inst)
    } else {
       assert(binding_type != LSC_ADDR_SURFTYPE_FLAT);
 
-      sfid = surface_access ? HSW_SFID_DATAPORT_DATA_CACHE_1
-                            : GFX7_SFID_DATAPORT_DATA_CACHE;
+      sfid = surface_access ? BRW_SFID_HDC1 : BRW_SFID_HDC0;
 
       if (lsc_opcode_is_atomic(op)) {
          unsigned aop = lsc_op_to_legacy_atomic(op);
@@ -1942,7 +1941,7 @@ lower_lsc_varying_pull_constant_logical_send(const brw_builder &bld,
    unsigned alignment = alignment_B.ud;
 
    inst->opcode = SHADER_OPCODE_SEND;
-   inst->sfid = GFX12_SFID_UGM;
+   inst->sfid = BRW_SFID_UGM;
    inst->resize_sources(3);
    inst->send_ex_bso = surf_type == LSC_ADDR_SURFTYPE_BSS &&
                        compiler->extended_bindless_surface_offset;
@@ -2046,7 +2045,7 @@ lower_varying_pull_constant_logical_send(const brw_builder &bld, brw_inst *inst)
                                         4, /* num_channels */
                                         false   /* write */);
 
-      inst->sfid = HSW_SFID_DATAPORT_DATA_CACHE_1;
+      inst->sfid = BRW_SFID_HDC1;
       setup_surface_descriptors(bld, inst, desc, surface, surface_handle);
    } else {
       const uint32_t desc =
@@ -2054,7 +2053,7 @@ lower_varying_pull_constant_logical_send(const brw_builder &bld, brw_inst *inst)
                                        32,     /* bit_size */
                                        false   /* write */);
 
-      inst->sfid = GFX7_SFID_DATAPORT_DATA_CACHE;
+      inst->sfid = BRW_SFID_HDC0;
       setup_surface_descriptors(bld, inst, desc, surface, surface_handle);
 
       /* The byte scattered messages can only read one dword at a time so
@@ -2193,7 +2192,7 @@ lower_interpolator_logical_send(const brw_builder &bld, brw_inst *inst,
    }
 
    inst->opcode = SHADER_OPCODE_SEND;
-   inst->sfid = GFX7_SFID_PIXEL_INTERPOLATOR;
+   inst->sfid = BRW_SFID_PIXEL_INTERPOLATOR;
    inst->desc = desc_imm;
    inst->ex_desc = 0;
    inst->mlen = mlen;
@@ -2277,7 +2276,7 @@ lower_btd_logical_send(const brw_builder &bld, brw_inst *inst)
    inst->send_is_volatile = false;
 
    /* Set up SFID and descriptors */
-   inst->sfid = GEN_RT_SFID_BINDLESS_THREAD_DISPATCH;
+   inst->sfid = BRW_SFID_BINDLESS_THREAD_DISPATCH;
    inst->desc = brw_btd_spawn_desc(devinfo, inst->exec_size,
                                    GEN_RT_BTD_MESSAGE_SPAWN);
    inst->resize_sources(4);
@@ -2375,7 +2374,7 @@ lower_trace_ray_logical_send(const brw_builder &bld, brw_inst *inst)
    inst->send_is_volatile = false;
 
    /* Set up SFID and descriptors */
-   inst->sfid = GEN_RT_SFID_RAY_TRACE_ACCELERATOR;
+   inst->sfid = BRW_SFID_RAY_TRACE_ACCELERATOR;
    inst->desc = brw_rt_trace_ray_desc(devinfo, inst->exec_size);
    inst->resize_sources(4);
    inst->src[0] = brw_imm_ud(0); /* desc */
@@ -2457,7 +2456,7 @@ lower_lsc_memory_fence_and_interlock(const brw_builder &bld, brw_inst *inst)
       enum lsc_flush_type flush_type =
          lsc_fence_msg_desc_flush_type(devinfo, inst->desc);
 
-      if (inst->sfid == GFX12_SFID_TGM) {
+      if (inst->sfid == BRW_SFID_TGM) {
          scope = LSC_FENCE_TILE;
          flush_type = LSC_FLUSH_TYPE_EVICT;
       }
@@ -2495,14 +2494,14 @@ lower_hdc_memory_fence_and_interlock(const brw_builder &bld, brw_inst *inst)
    const bool commit_enable = inst->src[1].ud;
 
    bool slm = false;
-   if (inst->sfid == GFX12_SFID_SLM) {
+   if (inst->sfid == BRW_SFID_SLM) {
       assert(devinfo->ver >= 11);
 
       /* This SFID doesn't exist on Gfx11-12.0, but we use it to represent
        * SLM fences, and map back here to the way Gfx11 represented that:
        * a special "SLM" binding table index and the data cache SFID.
        */
-      inst->sfid = GFX7_SFID_DATAPORT_DATA_CACHE;
+      inst->sfid = BRW_SFID_HDC0;
       slm = true;
    }
 
@@ -2522,9 +2521,8 @@ lower_hdc_memory_fence_and_interlock(const brw_builder &bld, brw_inst *inst)
    inst->header_size = 1;
 
    const unsigned msg_type =
-      inst->sfid == GFX6_SFID_DATAPORT_RENDER_CACHE ?
-      GFX7_DATAPORT_RC_MEMORY_FENCE :
-      GFX7_DATAPORT_DC_MEMORY_FENCE;
+      inst->sfid == BRW_SFID_RENDER_CACHE ? GFX7_DATAPORT_RC_MEMORY_FENCE :
+                                            GFX7_DATAPORT_DC_MEMORY_FENCE;
 
    inst->desc = brw_dp_desc(devinfo, slm ? GFX7_BTI_SLM : 0, msg_type,
                             commit_enable ? 1 << 5 : 0);
@@ -2691,7 +2689,7 @@ brw_lower_uniform_pull_constant_loads(brw_shader &s)
          const brw_reg payload = ubld.vgrf(BRW_TYPE_UD);
          ubld.MOV(payload, offset_B);
 
-         inst->sfid = GFX12_SFID_UGM;
+         inst->sfid = BRW_SFID_UGM;
          inst->desc = lsc_msg_desc(devinfo, LSC_OP_LOAD,
                                    surface_handle.file == BAD_FILE ?
                                    LSC_ADDR_SURFTYPE_BTI :
@@ -2732,7 +2730,7 @@ brw_lower_uniform_pull_constant_loads(brw_shader &s)
          ubld.group(1, 0).MOV(component(header, 2),
                               brw_imm_ud(offset_B.ud / 16));
 
-         inst->sfid = GFX6_SFID_DATAPORT_CONSTANT_CACHE;
+         inst->sfid = BRW_SFID_HDC_READ_ONLY;
          inst->opcode = SHADER_OPCODE_SEND;
          inst->header_size = 1;
          inst->mlen = 1;

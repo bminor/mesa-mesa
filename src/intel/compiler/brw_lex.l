@@ -163,19 +163,17 @@ bar             { yylval.integer = TGL_SYNC_BAR; return BAR; }
 host            { yylval.integer = TGL_SYNC_HOST; return HOST; }
 
  /* shared functions for send instruction */
-sampler                 { return SAMPLER; }
-dp_sampler              { return DP_SAMPLER; }
 gateway                 { return GATEWAY; }
-urb                     { return URB; }
-thread_spawner          { return THREAD_SPAWNER; }
+hdc0                    { return HDC0; }
+hdc1                    { return HDC1; }
+hdc2                    { return HDC2; }
+"hdc:ro"                { return HDC_RO; }
+pi                      { return PIXEL_INTERP; }
 render                  { return RENDER; }
-const                   { return CONST; }
-data                    { return DATA; }
-cre                     { return CRE; }
-vme                     { return VME; }
-"pixel interp"          { return PIXEL_INTERP; }
-"dp data 1"             { return DP_DATA_1; }
 "rt accel"              { return RT_ACCEL; }
+sampler                 { return SAMPLER; }
+"ts/btd"                { return TS_BTD; }
+urb                     { return URB; }
 slm                     { return SLM; }
 tgm                     { return TGM; }
 ugm                     { return UGM; }

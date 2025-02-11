@@ -23,7 +23,7 @@ send(1)         g10UD           g0UD            nullUD          0x0210011f      
 send(1)         g23UD           g117UD          nullUD          0x2210c500                a0.1<0>UD
                             ugm MsgDesc: ( load, a32, d32, V8, transpose, L1STATE_L3MOCS dst_len = 1, src0_len = 1, bss )  src1_len = 0 ex_bso surface_state_index 0  { align1 WE_all 1N @1 $10 };
 send(8)         nullUD          g14UD           g24UD           0x040350fc                a0.1<0>UD
-                            dp data 1 MsgDesc: (DC typed surface write, Surface = 252, SIMD16, Mask = 0x0)  src1_len = 4 ex_bso mlen 2 rlen 0 { align1 1Q @1 $5 };
+                            hdc1 MsgDesc: (DC typed surface write, Surface = 252, SIMD16, Mask = 0x0)  src1_len = 4 ex_bso mlen 2 rlen 0 { align1 1Q @1 $5 };
 send(8)         nullUD          g51UD           g52UD           0x02000000                0x00000040
                             rt accel MsgDesc: SIMD8,  mlen 1 ex_mlen 1 rlen 0 { align1 1Q $2 };
 send(16)        nullUD          g88UD           g98UD           0x02000100                0x00000080

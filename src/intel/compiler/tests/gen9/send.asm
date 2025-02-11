@@ -5,11 +5,11 @@ send(8)         null<1>F        g13<8,8,1>F     0x12080007
 send(8)         null<1>F        g123<8,8,1>F    0x8a080027
                             urb MsgDesc: 2 SIMD8 write mlen 5 rlen 0        { align1 1Q EOT };
 send(16)        g9<1>UD         g2<0,1,0>UD     0x02280300
-                            const MsgDesc: (0, 3, 0, 0) mlen 1 rlen 2       { align1 WE_all 1H };
+                            hdc:ro MsgDesc: (0, 3, 0, 0) mlen 1 rlen 2       { align1 WE_all 1H };
 send(8)         null<1>F        g119<8,8,1>F    0x92080017
                             urb MsgDesc: 1 SIMD8 write mlen 9 rlen 0        { align1 1Q EOT };
 send(16)        null<1>UW       g127<8,8,1>UW   0x82000010
-                            thread_spawner MsgDesc: mlen 1 rlen 0           { align1 WE_all 1H EOT };
+                            ts/btd MsgDesc: mlen 1 rlen 0           { align1 WE_all 1H EOT };
 send(8)         g124<1>UW       g13<8,8,1>UD    0x0643a001
                             sampler MsgDesc: ld_lz SIMD8 Surface = 1 Sampler = 0 mlen 3 rlen 4 { align1 1Q };
 send(16)        g120<1>UW       g23<8,8,1>UD    0x0c85a001
@@ -93,9 +93,9 @@ send(8)         null<1>F        g123<8,8,1>F    0x8a080037
 send(8)         g6<1>UW         g11<8,8,1>UD    0x144a4001
                             sampler MsgDesc: sample_d SIMD8 Surface = 1 Sampler = 0 mlen 10 rlen 4 { align1 1Q };
 (+f1.0) send(8) g125<1>UW       g3<8,8,1>UD     0x0210b501
-                            dp data 1 MsgDesc: ( DC untyped atomic op, Surface = 1, SIMD8, inc) mlen 1 rlen 1 { align1 1Q };
+                            hdc1 MsgDesc: ( DC untyped atomic op, Surface = 1, SIMD8, inc) mlen 1 rlen 1 { align1 1Q };
 (+f1.0) send(16) g122<1>UW      g4<8,8,1>UD     0x0420a501
-                            dp data 1 MsgDesc: ( DC untyped atomic op, Surface = 1, SIMD16, inc) mlen 2 rlen 2 { align1 1H };
+                            hdc1 MsgDesc: ( DC untyped atomic op, Surface = 1, SIMD16, inc) mlen 2 rlen 2 { align1 1H };
 send(8)         g6<1>UW         g12<8,8,1>UD    0x084a4001
                             sampler MsgDesc: sample_d SIMD8 Surface = 1 Sampler = 0 mlen 4 rlen 4 { align1 1Q };
 send(8)         g98<1>UW        g17<8,8,1>UD    0x0c43c001
@@ -333,7 +333,7 @@ send(16)        g120<1>UW       g2<8,8,1>UD     0x08449001
 send(16)        g32<1>UW        g44<8,8,1>UD    0x0865a001
                             sampler MsgDesc: ld_lz SIMD16 Surface = 1 Sampler = 0 mlen 4 rlen 6 { align1 1H };
 send(16)        null<1>UW       g5<8,8,1>UD     0x04008502
-                            dp data 1 MsgDesc: ( DC untyped atomic op, Surface = 2, SIMD16, inc) mlen 2 rlen 0 { align1 1H };
+                            hdc1 MsgDesc: ( DC untyped atomic op, Surface = 2, SIMD16, inc) mlen 2 rlen 0 { align1 1H };
 send(8)         g5<1>UW         g3<8,8,1>UD     0x02427001
                             sampler MsgDesc: ld SIMD8 Surface = 1 Sampler = 0 mlen 1 rlen 4 { align1 1Q };
 send(16)        g8<1>UW         g5<8,8,1>UD     0x04847001
@@ -411,9 +411,9 @@ send(8)         g98<1>UD        g1<8,8,1>UD     0x02180208
 send(8)         null<1>F        g12<8,8,1>UD    0x0c0a0027
                             urb MsgDesc: 2 SIMD8 write per-slot mlen 6 rlen 0 { align1 1Q };
 send(8)         null<1>UW       g126<0,1,0>UD   0x040a02fd
-                            data MsgDesc: ( DC OWORD block write, 253, 2) mlen 2 rlen 0 { align1 1Q };
+                            hdc0 MsgDesc: ( DC OWORD block write, 253, 2) mlen 2 rlen 0 { align1 1Q };
 send(8)         g115<1>UW       g115<0,1,0>UD   0x021802fd
-                            data MsgDesc: ( DC OWORD block read, 253, 2) mlen 1 rlen 1 { align1 WE_all 1Q };
+                            hdc0 MsgDesc: ( DC OWORD block read, 253, 2) mlen 1 rlen 1 { align1 WE_all 1Q };
 send(8)         null<1>F        g25<8,8,1>F     0x12080057
                             urb MsgDesc: 5 SIMD8 write mlen 9 rlen 0        { align1 1Q };
 send(8)         null<1>F        g34<8,8,1>F     0x12080077
@@ -449,7 +449,7 @@ send(16)        g120<1>UW       g11<8,8,1>UD    0x04449001
 send(8)         g124<1>UW       g3<8,8,1>UD     0x08427000
                             sampler MsgDesc: ld SIMD8 Surface = 0 Sampler = 0 mlen 4 rlen 4 { align1 1Q };
 send(16)        null<1>UW       g40<8,8,1>UD    0x04008501
-                            dp data 1 MsgDesc: ( DC untyped atomic op, Surface = 1, SIMD16, inc) mlen 2 rlen 0 { align1 1H };
+                            hdc1 MsgDesc: ( DC untyped atomic op, Surface = 1, SIMD16, inc) mlen 2 rlen 0 { align1 1H };
 send(8)         null<1>F        g127<8,8,1>UD   0x82080007
                             urb MsgDesc: 0 SIMD8 write mlen 1 rlen 0        { align1 1Q EOT };
 send(8)         g124<1>UW       g9<8,8,1>UD     0x0a4a8000
@@ -461,7 +461,7 @@ send(16)        g4<1>UW         g12<8,8,1>UD    0x0c65a001
 send(8)         g2<1>UW         g16<8,8,1>UD    0x0e434001
                             sampler MsgDesc: sample_d_c SIMD8 Surface = 1 Sampler = 0 mlen 7 rlen 4 { align1 2Q };
 (+f1.0) send(8) null<1>UW       g4<8,8,1>UD     0x02009501
-                            dp data 1 MsgDesc: ( DC untyped atomic op, Surface = 1, SIMD8, inc) mlen 1 rlen 0 { align1 1Q };
+                            hdc1 MsgDesc: ( DC untyped atomic op, Surface = 1, SIMD8, inc) mlen 1 rlen 0 { align1 1Q };
 send(8)         g6<1>UW         g9<8,8,1>UD     0x08434001
                             sampler MsgDesc: sample_d_c SIMD8 Surface = 1 Sampler = 0 mlen 4 rlen 4 { align1 1Q };
 send(8)         null<1>F        g102<8,8,1>F    0x120801f7
@@ -471,7 +471,7 @@ send(8)         null<1>F        g121<8,8,1>F    0x8a080217
 send(16)        null<1>UW       g3<0,1,0>UD     0x02008004
                             gateway MsgDesc: (barrier msg) mlen 1 rlen 0    { align1 WE_all 1H };
 send(16)        g3<1>UW         g14<8,8,1>UD    0x04205efe
-                            dp data 1 MsgDesc: ( untyped surface read, Surface = 254, SIMD16, Mask = 0xe) mlen 2 rlen 2 { align1 1H };
+                            hdc1 MsgDesc: ( untyped surface read, Surface = 254, SIMD16, Mask = 0xe) mlen 2 rlen 2 { align1 1H };
 send(8)         null<1>F        g30<8,8,1>F     0x140a0027
                             urb MsgDesc: 2 SIMD8 write per-slot mlen 10 rlen 0 { align1 1Q };
 send(8)         null<1>F        g40<8,8,1>F     0x0c0a0047
@@ -479,9 +479,9 @@ send(8)         null<1>F        g40<8,8,1>F     0x0c0a0047
 send(8)         null<1>F        g126<8,8,1>UD   0x84080007
                             urb MsgDesc: 0 SIMD8 write mlen 2 rlen 0        { align1 1Q EOT };
 send(8)         g5<1>UW         g11<8,8,1>UD    0x04415001
-                            dp data 1 MsgDesc: ( DC typed surface read, Surface = 1, SIMD16, Mask = 0x0) mlen 2 rlen 4 { align1 1Q };
+                            hdc1 MsgDesc: ( DC typed surface read, Surface = 1, SIMD16, Mask = 0x0) mlen 2 rlen 4 { align1 1Q };
 send(8)         g2<1>UW         g3<8,8,1>UD     0x04416001
-                            dp data 1 MsgDesc: ( DC typed surface read, Surface = 1, SIMD8, Mask = 0x0) mlen 2 rlen 4 { align1 2Q };
+                            hdc1 MsgDesc: ( DC typed surface read, Surface = 1, SIMD8, Mask = 0x0) mlen 2 rlen 4 { align1 2Q };
 send(8)         g13<1>UD        g3<8,8,1>UD     0x02480038
                             urb MsgDesc: 3 SIMD8 read mlen 1 rlen 4         { align1 1Q };
 send(8)         null<1>F        g7<8,8,1>F      0x140a0037
@@ -519,9 +519,9 @@ send(8)         null<1>F        g119<8,8,1>F    0x920800b7
 send(8)         g6<1>UW         g8<8,8,1>UD     0x084b0000
                             sampler MsgDesc: gather4_c SIMD8 Surface = 0 Sampler = 0 mlen 4 rlen 4 { align1 1Q };
 send(8)         g7<1>UW         g0<8,8,1>UD     0x02200008
-                            pixel interp MsgDesc: (persp, per_message_offset, 0x08) mlen 1 rlen 2 { align1 1Q };
+                            pi MsgDesc: (persp, per_message_offset, 0x08) mlen 1 rlen 2 { align1 1Q };
 send(16)        g9<1>UW         g0<8,8,1>UD     0x02410008
-                            pixel interp MsgDesc: (persp, per_message_offset, 0x08) mlen 1 rlen 4 { align1 1H };
+                            pi MsgDesc: (persp, per_message_offset, 0x08) mlen 1 rlen 4 { align1 1H };
 send(8)         g2<1>UW         g11<8,8,1>UD    0x0443d001
                             sampler MsgDesc: ld_mcs SIMD8 Surface = 1 Sampler = 0 mlen 2 rlen 4 { align1 1Q };
 send(8)         g2<1>UW         g9<8,8,1>UD     0x0843e001
@@ -607,7 +607,7 @@ send(8)         g3<1>UW         g11<8,8,1>UD    0x0a43c001
 send(16)        g16<1>UW        g5<8,8,1>UD     0x1485c001
                             sampler MsgDesc: ld2dms_w SIMD16 Surface = 1 Sampler = 0 mlen 10 rlen 8 { align1 1H };
 send(16)        g4<1>UD         g13<0,1,0>UD    0x02280301
-                            const MsgDesc: (1, 3, 0, 0) mlen 1 rlen 2       { align1 WE_all 1H };
+                            hdc:ro MsgDesc: (1, 3, 0, 0) mlen 1 rlen 2       { align1 WE_all 1H };
 send(8)         g2<1>UW         g2<8,8,1>UD     0x0443a001
                             sampler MsgDesc: ld_lz SIMD8 Surface = 1 Sampler = 0 mlen 2 rlen 4 { align1 1Q };
 send(16)        g2<1>UW         g10<8,8,1>UD    0x0885a001
@@ -677,9 +677,9 @@ send(8)         null<1>F        g6<8,8,1>F      0x0a080017
 send(8)         null<1>F        g7<8,8,1>F      0x0a080057
                             urb MsgDesc: 5 SIMD8 write mlen 5 rlen 0        { align1 1Q };
 send(8)         g4<1>UW         g2<8,8,1>UD     0x02406001
-                            dp data 1 MsgDesc: ( untyped surface read, Surface = 1, SIMD8, Mask = 0x0) mlen 1 rlen 4 { align1 1Q };
+                            hdc1 MsgDesc: ( untyped surface read, Surface = 1, SIMD8, Mask = 0x0) mlen 1 rlen 4 { align1 1Q };
 send(16)        g5<1>UW         g2<8,8,1>UD     0x04805001
-                            dp data 1 MsgDesc: ( untyped surface read, Surface = 1, SIMD16, Mask = 0x0) mlen 2 rlen 8 { align1 1H };
+                            hdc1 MsgDesc: ( untyped surface read, Surface = 1, SIMD16, Mask = 0x0) mlen 2 rlen 8 { align1 1H };
 send(8)         g124<1>UW       g13<8,8,1>UD    0x084b0001
                             sampler MsgDesc: gather4_c SIMD8 Surface = 1 Sampler = 0 mlen 4 rlen 4 { align1 1Q };
 send(16)        g120<1>UW       g7<8,8,1>UD     0x0e8d0001
@@ -711,9 +711,9 @@ send(8)         g64<1>UD        g113<8,8,1>UD   0x02380058
 send(8)         null<1>F        g119<8,8,1>F    0x92080047
                             urb MsgDesc: 4 SIMD8 write mlen 9 rlen 0        { align1 1Q EOT };
 send(8)         g5<1>UW         g4<8,8,1>UD     0x06415001
-                            dp data 1 MsgDesc: ( DC typed surface read, Surface = 1, SIMD16, Mask = 0x0) mlen 3 rlen 4 { align1 1Q };
+                            hdc1 MsgDesc: ( DC typed surface read, Surface = 1, SIMD16, Mask = 0x0) mlen 3 rlen 4 { align1 1Q };
 send(8)         g2<1>UW         g10<8,8,1>UD    0x06416001
-                            dp data 1 MsgDesc: ( DC typed surface read, Surface = 1, SIMD8, Mask = 0x0) mlen 3 rlen 4 { align1 2Q };
+                            hdc1 MsgDesc: ( DC typed surface read, Surface = 1, SIMD8, Mask = 0x0) mlen 3 rlen 4 { align1 2Q };
 send(8)         null<1>F        g119<8,8,1>F    0x92080077
                             urb MsgDesc: 7 SIMD8 write mlen 9 rlen 0        { align1 1Q EOT };
 send(8)         g12<1>UD        g8<4,4,1>UD     0x044a0038
@@ -749,9 +749,9 @@ send(16)        g20<1>UW        g22<8,8,1>UD    0x0c246001
 send(16)        g22<1>UW        g28<8,8,1>UD    0x0c246102
                             sampler MsgDesc: sample_l_c SIMD16 Surface = 2 Sampler = 1 mlen 6 rlen 2 { align1 1H };
 send(8)         g4<1>UW         g0<8,8,1>UD     0x02201000
-                            pixel interp MsgDesc: (persp, sample_position, 0x00) mlen 1 rlen 2 { align1 1Q };
+                            pi MsgDesc: (persp, sample_position, 0x00) mlen 1 rlen 2 { align1 1Q };
 send(16)        g6<1>UW         g0<8,8,1>UD     0x02411000
-                            pixel interp MsgDesc: (persp, sample_position, 0x00) mlen 1 rlen 4 { align1 1H };
+                            pi MsgDesc: (persp, sample_position, 0x00) mlen 1 rlen 4 { align1 1H };
 send(8)         g124<1>UW       g19<8,8,1>UD    0x0a4b0001
                             sampler MsgDesc: gather4_c SIMD8 Surface = 1 Sampler = 0 mlen 5 rlen 4 { align1 1Q };
 send(16)        g120<1>UW       g7<8,8,1>UD     0x128d0001
@@ -905,7 +905,7 @@ send(16)        g10<1>UW        g26<8,8,1>UD    0x128c8304
 send(8)         g6<1>UW         g15<8,8,1>UD    0x0e4a4001
                             sampler MsgDesc: sample_d SIMD8 Surface = 1 Sampler = 0 mlen 7 rlen 4 { align1 1Q };
 send(16)        null<1>UW       g2<8,8,1>UD     0x04008601
-                            dp data 1 MsgDesc: ( DC untyped atomic op, Surface = 1, SIMD16, dec) mlen 2 rlen 0 { align1 1H };
+                            hdc1 MsgDesc: ( DC untyped atomic op, Surface = 1, SIMD16, dec) mlen 2 rlen 0 { align1 1H };
 send(8)         g124<1>UW       g2<8,8,1>UD     0x08422001
                             sampler MsgDesc: sample_l SIMD8 Surface = 1 Sampler = 0 mlen 4 rlen 4 { align1 1Q };
 send(16)        g120<1>UW       g2<8,8,1>UD     0x10842001
@@ -997,19 +997,19 @@ send(8)         g124<1>UW       g6<8,8,1>UD     0x06320001
 send(16)        g120<1>UW       g8<8,8,1>UD     0x0c640001
                             sampler MsgDesc: sample SIMD16 Surface = 1 Sampler = 0 mlen 6 rlen 6 { align1 1H };
 send(8)         g124<1>UW       g2<8,8,1>UD     0x02406000
-                            dp data 1 MsgDesc: ( untyped surface read, Surface = 0, SIMD8, Mask = 0x0) mlen 1 rlen 4 { align1 1Q };
+                            hdc1 MsgDesc: ( untyped surface read, Surface = 0, SIMD8, Mask = 0x0) mlen 1 rlen 4 { align1 1Q };
 send(8)         g127<1>UW       g6<8,8,1>UD     0x06120001
                             sampler MsgDesc: sample SIMD8 Surface = 1 Sampler = 0 mlen 3 rlen 1 { align1 1Q };
 send(16)        g126<1>UW       g8<8,8,1>UD     0x0c240001
                             sampler MsgDesc: sample SIMD16 Surface = 1 Sampler = 0 mlen 6 rlen 2 { align1 1H };
 send(8)         g23<1>UW        g2<8,8,1>UD     0x04115e01
-                            dp data 1 MsgDesc: ( DC typed surface read, Surface = 1, SIMD16, Mask = 0xe) mlen 2 rlen 1 { align1 1Q };
+                            hdc1 MsgDesc: ( DC typed surface read, Surface = 1, SIMD16, Mask = 0xe) mlen 2 rlen 1 { align1 1Q };
 send(8)         g39<1>UW        g45<8,8,1>UD    0x04116e01
-                            dp data 1 MsgDesc: ( DC typed surface read, Surface = 1, SIMD8, Mask = 0xe) mlen 2 rlen 1 { align1 2Q };
+                            hdc1 MsgDesc: ( DC typed surface read, Surface = 1, SIMD8, Mask = 0xe) mlen 2 rlen 1 { align1 2Q };
 (+f1.0) send(8) null<1>UW       g2<8,8,1>UD     0x04018501
-                            dp data 1 MsgDesc: ( DC typed atomic, Surface = 1, SIMD16, inc) mlen 2 rlen 0 { align1 1Q };
+                            hdc1 MsgDesc: ( DC typed atomic, Surface = 1, SIMD16, inc) mlen 2 rlen 0 { align1 1Q };
 (+f1.0) send(8) null<1>UW       g42<8,8,1>UD    0x04019501
-                            dp data 1 MsgDesc: ( DC typed atomic, Surface = 1, SIMD8, inc) mlen 2 rlen 0 { align1 2Q };
+                            hdc1 MsgDesc: ( DC typed atomic, Surface = 1, SIMD8, inc) mlen 2 rlen 0 { align1 2Q };
 send(8)         g2<1>UW         g6<8,8,1>UD     0x04423001
                             sampler MsgDesc: sample_c SIMD8 Surface = 1 Sampler = 0 mlen 2 rlen 4 { align1 1Q };
 send(8)         g6<1>UW         g8<8,8,1>UD     0x04423102
@@ -1161,17 +1161,17 @@ send(8)         g5<1>UW         g15<8,8,1>UD    0x04420203
 send(16)        g7<1>UW         g27<8,8,1>UD    0x08840203
                             sampler MsgDesc: sample SIMD16 Surface = 3 Sampler = 2 mlen 4 rlen 8 { align1 1H };
 send(16)        g4<1>UW         g17<8,8,1>UD    0x0420a503
-                            dp data 1 MsgDesc: ( DC untyped atomic op, Surface = 3, SIMD16, inc) mlen 2 rlen 2 { align1 1H };
+                            hdc1 MsgDesc: ( DC untyped atomic op, Surface = 3, SIMD16, inc) mlen 2 rlen 2 { align1 1H };
 send(16)        null<1>UW       g18<8,8,1>UD    0x04008504
-                            dp data 1 MsgDesc: ( DC untyped atomic op, Surface = 4, SIMD16, inc) mlen 2 rlen 0 { align1 1H };
+                            hdc1 MsgDesc: ( DC untyped atomic op, Surface = 4, SIMD16, inc) mlen 2 rlen 0 { align1 1H };
 send(16)        g11<1>UW        g19<8,8,1>UD    0x0420a602
-                            dp data 1 MsgDesc: ( DC untyped atomic op, Surface = 2, SIMD16, dec) mlen 2 rlen 2 { align1 1H };
+                            hdc1 MsgDesc: ( DC untyped atomic op, Surface = 2, SIMD16, dec) mlen 2 rlen 2 { align1 1H };
 send(16)        null<1>UW       g20<8,8,1>UD    0x04008505
-                            dp data 1 MsgDesc: ( DC untyped atomic op, Surface = 5, SIMD16, inc) mlen 2 rlen 0 { align1 1H };
+                            hdc1 MsgDesc: ( DC untyped atomic op, Surface = 5, SIMD16, inc) mlen 2 rlen 0 { align1 1H };
 send(16)        g16<1>UW        g21<8,8,1>UD    0x04205e01
-                            dp data 1 MsgDesc: ( untyped surface read, Surface = 1, SIMD16, Mask = 0xe) mlen 2 rlen 2 { align1 1H };
+                            hdc1 MsgDesc: ( untyped surface read, Surface = 1, SIMD16, Mask = 0xe) mlen 2 rlen 2 { align1 1H };
 send(16)        null<1>UW       g22<8,8,1>UD    0x04008506
-                            dp data 1 MsgDesc: ( DC untyped atomic op, Surface = 6, SIMD16, inc) mlen 2 rlen 0 { align1 1H };
+                            hdc1 MsgDesc: ( DC untyped atomic op, Surface = 6, SIMD16, inc) mlen 2 rlen 0 { align1 1H };
 send(8)         g26<1>UW        g26<8,8,1>UD    0x0242a203
                             sampler MsgDesc: resinfo SIMD8 Surface = 3 Sampler = 2 mlen 1 rlen 4 { align1 1Q };
 send(8)         g30<1>UW        g30<8,8,1>UD    0x0242a304
@@ -1221,7 +1221,7 @@ send(16)        g66<1>UW        g74<8,8,1>UD    0x0484a809
 send(16)        g74<1>UW        g108<8,8,1>UD   0x0484a90a
                             sampler MsgDesc: resinfo SIMD16 Surface = 10 Sampler = 9 mlen 2 rlen 8 { align1 1H };
 send(16)        null<1>UW       g3<8,8,1>UD     0x040085fe
-                            dp data 1 MsgDesc: ( DC untyped atomic op, Surface = 254, SIMD16, inc) mlen 2 rlen 0 { align1 1H };
+                            hdc1 MsgDesc: ( DC untyped atomic op, Surface = 254, SIMD16, inc) mlen 2 rlen 0 { align1 1H };
 send(8)         null<1>F        g119<8,8,1>F    0x92080067
                             urb MsgDesc: 6 SIMD8 write mlen 9 rlen 0        { align1 1Q EOT };
 send(8)         g6<1>UW         g20<8,8,1>UD    0x12424001
@@ -1233,9 +1233,9 @@ send(16)        g2<1>UW         g7<8,8,1>UD     0x0825a001
 send(8)         g9<1>UW         g17<8,8,1>UD    0x06422000
                             sampler MsgDesc: sample_l SIMD8 Surface = 0 Sampler = 0 mlen 3 rlen 4 { align1 1Q };
 send(16)        null<1>UW       g123<0,1,0>UD   0x060a03fd
-                            data MsgDesc: ( DC OWORD block write, 253, 3) mlen 3 rlen 0 { align1 1H };
+                            hdc0 MsgDesc: ( DC OWORD block write, 253, 3) mlen 3 rlen 0 { align1 1H };
 send(16)        g114<1>UW       g114<0,1,0>UD   0x022803fd
-                            data MsgDesc: ( DC OWORD block read, 253, 3) mlen 1 rlen 2 { align1 WE_all 1H };
+                            hdc0 MsgDesc: ( DC OWORD block read, 253, 3) mlen 1 rlen 2 { align1 WE_all 1H };
 send(8)         null<1>F        g12<8,8,1>UD    0x0c0a0127
                             urb MsgDesc: 18 SIMD8 write per-slot mlen 6 rlen 0 { align1 1Q };
 send(8)         g2<1>UW         g11<8,8,1>UD    0x04420405
@@ -1373,9 +1373,9 @@ send(8)         g5<1>UW         g10<8,8,1>UD    0x06420001
 send(16)        g7<1>UW         g19<8,8,1>UD    0x0c840001
                             sampler MsgDesc: sample SIMD16 Surface = 1 Sampler = 0 mlen 6 rlen 8 { align1 1H };
 send(8)         g1<1>UW         g125<8,8,1>UD   0x02106e02
-                            dp data 1 MsgDesc: ( untyped surface read, Surface = 2, SIMD8, Mask = 0xe) mlen 1 rlen 1 { align1 1Q };
+                            hdc1 MsgDesc: ( untyped surface read, Surface = 2, SIMD8, Mask = 0xe) mlen 1 rlen 1 { align1 1Q };
 send(8)         g8<1>UW         g22<8,8,1>UD    0x02106efe
-                            dp data 1 MsgDesc: ( untyped surface read, Surface = 254, SIMD8, Mask = 0xe) mlen 1 rlen 1 { align1 1Q };
+                            hdc1 MsgDesc: ( untyped surface read, Surface = 254, SIMD8, Mask = 0xe) mlen 1 rlen 1 { align1 1Q };
 send(8)         null<1>F        g123<8,8,1>F    0x8a080097
                             urb MsgDesc: 9 SIMD8 write mlen 5 rlen 0        { align1 1Q EOT };
 send(8)         g29<1>UW        g5<8,8,1>UD     0x0e4b2001
@@ -1459,7 +1459,7 @@ send(16)        g85<1>UW        g2<8,8,1>UD     0x0885a60e
 send(16)        g77<1>UW        g2<8,8,1>UD     0x0885a70f
                             sampler MsgDesc: ld_lz SIMD16 Surface = 15 Sampler = 7 mlen 4 rlen 8 { align1 1H };
 send(16)        g83<1>UW        g86<8,8,1>UD    0x04205e00
-                            dp data 1 MsgDesc: ( untyped surface read, Surface = 0, SIMD16, Mask = 0xe) mlen 2 rlen 2 { align1 1H };
+                            hdc1 MsgDesc: ( untyped surface read, Surface = 0, SIMD16, Mask = 0xe) mlen 2 rlen 2 { align1 1H };
 send(8)         null<1>F        g122<8,8,1>F    0x8c0a0047
                             urb MsgDesc: 4 SIMD8 write per-slot mlen 6 rlen 0 { align1 1Q EOT };
 send(8)         g14<1>UW        g11<8,8,1>UD    0x084b0202
@@ -1725,11 +1725,11 @@ send(8)         null<1>F        g40<8,8,1>UD    0x0c0a8207
 send(8)         null<1>F        g41<8,8,1>UD    0x0c0a8217
                             urb MsgDesc: 33 SIMD8 write per-slot masked mlen 6 rlen 0 { align1 1Q };
 send(8)         g124<1>UW       g2<8,8,1>UD     0x02106e01
-                            dp data 1 MsgDesc: ( untyped surface read, Surface = 1, SIMD8, Mask = 0xe) mlen 1 rlen 1 { align1 1Q };
+                            hdc1 MsgDesc: ( untyped surface read, Surface = 1, SIMD8, Mask = 0xe) mlen 1 rlen 1 { align1 1Q };
 send(16)        g11<1>UW        g19<8,8,1>UD    0x0420a601
-                            dp data 1 MsgDesc: ( DC untyped atomic op, Surface = 1, SIMD16, dec) mlen 2 rlen 2 { align1 1H };
+                            hdc1 MsgDesc: ( DC untyped atomic op, Surface = 1, SIMD16, dec) mlen 2 rlen 2 { align1 1H };
 send(16)        null<1>UW       g20<8,8,1>UD    0x04008503
-                            dp data 1 MsgDesc: ( DC untyped atomic op, Surface = 3, SIMD16, inc) mlen 2 rlen 0 { align1 1H };
+                            hdc1 MsgDesc: ( DC untyped atomic op, Surface = 3, SIMD16, inc) mlen 2 rlen 0 { align1 1H };
 send(8)         g17<1>UW        g11<8,8,1>UD    0x0813e001
                             sampler MsgDesc: ld2dms SIMD8 Surface = 1 Sampler = 0 mlen 4 rlen 1 { align1 1Q };
 send(16)        g22<1>UW        g2<8,8,1>UD     0x1025e001
@@ -1763,9 +1763,9 @@ send(8)         g2<1>UW         g8<8,8,1>UD     0x02420001
 send(16)        g2<1>UW         g15<8,8,1>UD    0x04840001
                             sampler MsgDesc: sample SIMD16 Surface = 1 Sampler = 0 mlen 2 rlen 8 { align1 1H };
 send(8)         g7<1>UW         g44<8,8,1>UD    0x02106e00
-                            dp data 1 MsgDesc: ( untyped surface read, Surface = 0, SIMD8, Mask = 0xe) mlen 1 rlen 1 { align1 1Q };
+                            hdc1 MsgDesc: ( untyped surface read, Surface = 0, SIMD8, Mask = 0xe) mlen 1 rlen 1 { align1 1Q };
 send(8)         null<1>UW       g44<8,8,1>UD    0x02009500
-                            dp data 1 MsgDesc: ( DC untyped atomic op, Surface = 0, SIMD8, inc) mlen 1 rlen 0 { align1 1Q };
+                            hdc1 MsgDesc: ( DC untyped atomic op, Surface = 0, SIMD8, inc) mlen 1 rlen 0 { align1 1Q };
 send(8)         g7<1>UD         g37<8,8,1>UD    0x02480438
                             urb MsgDesc: 67 SIMD8 read mlen 1 rlen 4        { align1 1Q };
 send(8)         g11<1>UD        g37<8,8,1>UD    0x02480638
@@ -1909,9 +1909,9 @@ send(16)        g2<1>UW         g11<8,8,1>UD    0x10846001
 send(16)        g10<1>UW        g19<8,8,1>UD    0x10846102
                             sampler MsgDesc: sample_l_c SIMD16 Surface = 2 Sampler = 1 mlen 8 rlen 8 { align1 1H };
 (+f1.0) send(8) g4<1>UW         g10<8,8,1>UD    0x0210b502
-                            dp data 1 MsgDesc: ( DC untyped atomic op, Surface = 2, SIMD8, inc) mlen 1 rlen 1 { align1 1Q };
+                            hdc1 MsgDesc: ( DC untyped atomic op, Surface = 2, SIMD8, inc) mlen 1 rlen 1 { align1 1Q };
 (+f1.0) send(16) g5<1>UW        g13<8,8,1>UD    0x0420a502
-                            dp data 1 MsgDesc: ( DC untyped atomic op, Surface = 2, SIMD16, inc) mlen 2 rlen 2 { align1 1H };
+                            hdc1 MsgDesc: ( DC untyped atomic op, Surface = 2, SIMD16, inc) mlen 2 rlen 2 { align1 1H };
 send(8)         g8<1>UW         g9<8,8,1>UD     0x06321001
                             sampler MsgDesc: sample_b SIMD8 Surface = 1 Sampler = 0 mlen 3 rlen 3 { align1 1Q };
 send(16)        g2<1>UW         g14<8,8,1>UD    0x0c641001
@@ -1933,7 +1933,7 @@ send(8)         null<1>F        g12<8,8,1>UD    0x0e0a80a7
 send(16)        g9<1>UW         g17<8,8,1>UD    0x04847002
                             sampler MsgDesc: ld SIMD16 Surface = 2 Sampler = 0 mlen 2 rlen 8 { align1 1H };
 send(16)        g23<1>UW        g32<8,8,1>UD    0x04205e02
-                            dp data 1 MsgDesc: ( untyped surface read, Surface = 2, SIMD16, Mask = 0xe) mlen 2 rlen 2 { align1 1H };
+                            hdc1 MsgDesc: ( untyped surface read, Surface = 2, SIMD16, Mask = 0xe) mlen 2 rlen 2 { align1 1H };
 send(8)         g8<1>UD         g1<8,8,1>UD     0x02280068
                             urb MsgDesc: 6 SIMD8 read mlen 1 rlen 2         { align1 1Q };
 send(8)         g8<1>UD         g1<8,8,1>UD     0x02280088
@@ -1985,21 +1985,21 @@ send(8)         g8<1>UD         g1<8,8,1>UD     0x022801f8
 send(8)         g8<1>UD         g1<8,8,1>UD     0x02280208
                             urb MsgDesc: 32 SIMD8 read mlen 1 rlen 2        { align1 1Q };
 send(8)         g2<1>UW         g3<8,8,1>UD     0x04203000
-                            pixel interp MsgDesc: (persp, per_slot_offset, 0x00) mlen 2 rlen 2 { align1 1Q };
+                            pi MsgDesc: (persp, per_slot_offset, 0x00) mlen 2 rlen 2 { align1 1Q };
 send(16)        g2<1>UW         g11<8,8,1>UD    0x08413000
-                            pixel interp MsgDesc: (persp, per_slot_offset, 0x00) mlen 4 rlen 4 { align1 1H };
+                            pi MsgDesc: (persp, per_slot_offset, 0x00) mlen 4 rlen 4 { align1 1H };
 send(8)         g2<1>UW         g0<8,8,1>UD     0x02201010
-                            pixel interp MsgDesc: (persp, sample_position, 0x10) mlen 1 rlen 2 { align1 1Q };
+                            pi MsgDesc: (persp, sample_position, 0x10) mlen 1 rlen 2 { align1 1Q };
 send(16)        g2<1>UW         g0<8,8,1>UD     0x02411010
-                            pixel interp MsgDesc: (persp, sample_position, 0x10) mlen 1 rlen 4 { align1 1H };
+                            pi MsgDesc: (persp, sample_position, 0x10) mlen 1 rlen 4 { align1 1H };
 send(8)         g2<1>UW         g0<8,8,1>UD     0x02201020
-                            pixel interp MsgDesc: (persp, sample_position, 0x20) mlen 1 rlen 2 { align1 1Q };
+                            pi MsgDesc: (persp, sample_position, 0x20) mlen 1 rlen 2 { align1 1Q };
 send(16)        g2<1>UW         g0<8,8,1>UD     0x02411020
-                            pixel interp MsgDesc: (persp, sample_position, 0x20) mlen 1 rlen 4 { align1 1H };
+                            pi MsgDesc: (persp, sample_position, 0x20) mlen 1 rlen 4 { align1 1H };
 send(8)         g2<1>UW         g0<8,8,1>UD     0x02201030
-                            pixel interp MsgDesc: (persp, sample_position, 0x30) mlen 1 rlen 2 { align1 1Q };
+                            pi MsgDesc: (persp, sample_position, 0x30) mlen 1 rlen 2 { align1 1Q };
 send(16)        g2<1>UW         g0<8,8,1>UD     0x02411030
-                            pixel interp MsgDesc: (persp, sample_position, 0x30) mlen 1 rlen 4 { align1 1H };
+                            pi MsgDesc: (persp, sample_position, 0x30) mlen 1 rlen 4 { align1 1H };
 send(8)         g20<1>UW        g15<8,8,1>UD    0x04320203
                             sampler MsgDesc: sample SIMD8 Surface = 3 Sampler = 2 mlen 2 rlen 3 { align1 1Q };
 send(8)         g11<1>UW        g26<8,8,1>UD    0x04320405
@@ -2013,15 +2013,15 @@ send(16)        g12<1>UW        g48<8,8,1>UD    0x08640405
 send(16)        g38<1>UW        g44<8,8,1>UD    0x08640304
                             sampler MsgDesc: sample SIMD16 Surface = 4 Sampler = 3 mlen 4 rlen 6 { align1 1H };
 (+f1.0) send(8) null<1>UW       g94<8,8,1>UD    0x02009601
-                            dp data 1 MsgDesc: ( DC untyped atomic op, Surface = 1, SIMD8, dec) mlen 1 rlen 0 { align1 1Q };
+                            hdc1 MsgDesc: ( DC untyped atomic op, Surface = 1, SIMD8, dec) mlen 1 rlen 0 { align1 1Q };
 (+f1.0) send(8) g47<1>UW        g94<8,8,1>UD    0x0210b601
-                            dp data 1 MsgDesc: ( DC untyped atomic op, Surface = 1, SIMD8, dec) mlen 1 rlen 1 { align1 1Q };
+                            hdc1 MsgDesc: ( DC untyped atomic op, Surface = 1, SIMD8, dec) mlen 1 rlen 1 { align1 1Q };
 send(16)        g4<1>UW         g1<8,8,1>UD     0x04405c02
-                            dp data 1 MsgDesc: ( untyped surface read, Surface = 2, SIMD16, Mask = 0xc) mlen 2 rlen 4 { align1 1H };
+                            hdc1 MsgDesc: ( untyped surface read, Surface = 2, SIMD16, Mask = 0xc) mlen 2 rlen 4 { align1 1H };
 send(8)         null<1>UW       g100<8,8,1>UD   0x02009600
-                            dp data 1 MsgDesc: ( DC untyped atomic op, Surface = 0, SIMD8, dec) mlen 1 rlen 0 { align1 1Q };
+                            hdc1 MsgDesc: ( DC untyped atomic op, Surface = 0, SIMD8, dec) mlen 1 rlen 0 { align1 1Q };
 send(8)         g51<1>UW        g100<8,8,1>UD   0x0210b600
-                            dp data 1 MsgDesc: ( DC untyped atomic op, Surface = 0, SIMD8, dec) mlen 1 rlen 1 { align1 1Q };
+                            hdc1 MsgDesc: ( DC untyped atomic op, Surface = 0, SIMD8, dec) mlen 1 rlen 1 { align1 1Q };
 send(8)         g5<1>UW         g11<8,8,1>UD    0x064a0001
                             sampler MsgDesc: sample SIMD8 Surface = 1 Sampler = 0 mlen 3 rlen 4 { align1 1Q };
 send(16)        g7<1>UW         g19<8,8,1>UD    0x0a8c0001
@@ -2029,11 +2029,11 @@ send(16)        g7<1>UW         g19<8,8,1>UD    0x0a8c0001
 send(8)         null<1>F        g123<8,8,1>F    0x8a080117
                             urb MsgDesc: 17 SIMD8 write mlen 5 rlen 0       { align1 1Q EOT };
 send(8)         g3<1>UW         g3<8,8,1>UD     0x02415002
-                            dp data 1 MsgDesc: ( DC typed surface read, Surface = 2, SIMD16, Mask = 0x0) mlen 1 rlen 4 { align1 1Q };
+                            hdc1 MsgDesc: ( DC typed surface read, Surface = 2, SIMD16, Mask = 0x0) mlen 1 rlen 4 { align1 1Q };
 send(8)         g5<1>UW         g4<8,8,1>UD     0x02416002
-                            dp data 1 MsgDesc: ( DC typed surface read, Surface = 2, SIMD8, Mask = 0x0) mlen 1 rlen 4 { align1 2Q };
+                            hdc1 MsgDesc: ( DC typed surface read, Surface = 2, SIMD8, Mask = 0x0) mlen 1 rlen 4 { align1 2Q };
 send(8)         g6<1>UW         g16<8,8,1>UD    0x0210b500
-                            dp data 1 MsgDesc: ( DC untyped atomic op, Surface = 0, SIMD8, inc) mlen 1 rlen 1 { align1 1Q };
+                            hdc1 MsgDesc: ( DC untyped atomic op, Surface = 0, SIMD8, inc) mlen 1 rlen 1 { align1 1Q };
 send(8)         null<1>F        g119<8,8,1>F    0x92080097
                             urb MsgDesc: 9 SIMD8 write mlen 9 rlen 0        { align1 1Q EOT };
 send(8)         null<1>F        g4<8,8,1>F      0x120800c7
@@ -2063,7 +2063,7 @@ send(8)         g14<1>UW        g18<8,8,1>UD    0x08123102
 send(16)        g24<1>UW        g32<8,8,1>UD    0x10243102
                             sampler MsgDesc: sample_c SIMD16 Surface = 2 Sampler = 1 mlen 8 rlen 2 { align1 1H };
 send(8)         g5<1>UW         g5<8,8,1>UD     0x04415000
-                            dp data 1 MsgDesc: ( DC typed surface read, Surface = 0, SIMD16, Mask = 0x0) mlen 2 rlen 4 { align1 1Q };
+                            hdc1 MsgDesc: ( DC typed surface read, Surface = 0, SIMD16, Mask = 0x0) mlen 2 rlen 4 { align1 1Q };
 send(8)         g2<1>UD         g9<8,8,1>UD     0x043a0028
                             urb MsgDesc: 2 SIMD8 read per-slot mlen 2 rlen 3 { align1 1Q };
 send(8)         g13<1>UD        g1<8,8,1>UD     0x02380098
@@ -2087,9 +2087,9 @@ send(8)         null<1>F        g60<8,8,1>F     0x120800a7
 send(8)         null<1>F        g119<8,8,1>F    0x92080107
                             urb MsgDesc: 16 SIMD8 write mlen 9 rlen 0       { align1 1Q EOT };
 send(8)         g3<1>UW         g7<8,8,1>UD     0x02115e01
-                            dp data 1 MsgDesc: ( DC typed surface read, Surface = 1, SIMD16, Mask = 0xe) mlen 1 rlen 1 { align1 1Q };
+                            hdc1 MsgDesc: ( DC typed surface read, Surface = 1, SIMD16, Mask = 0xe) mlen 1 rlen 1 { align1 1Q };
 send(8)         g5<1>UW         g11<8,8,1>UD    0x02116e01
-                            dp data 1 MsgDesc: ( DC typed surface read, Surface = 1, SIMD8, Mask = 0xe) mlen 1 rlen 1 { align1 2Q };
+                            hdc1 MsgDesc: ( DC typed surface read, Surface = 1, SIMD8, Mask = 0xe) mlen 1 rlen 1 { align1 2Q };
 send(8)         null<1>F        g123<8,8,1>F    0x8a080067
                             urb MsgDesc: 6 SIMD8 write mlen 5 rlen 0        { align1 1Q EOT };
 send(8)         null<1>F        g80<8,8,1>F     0x140a00b7
@@ -2363,7 +2363,7 @@ send(8)         null<1>F        g38<8,8,1>UD    0x080a8207
 send(8)         null<1>F        g39<8,8,1>UD    0x080a8217
                             urb MsgDesc: 33 SIMD8 write per-slot masked mlen 4 rlen 0 { align1 1Q };
 send(8)         g18<1>UW        g19<8,8,1>UD    0x04115e00
-                            dp data 1 MsgDesc: ( DC typed surface read, Surface = 0, SIMD16, Mask = 0xe) mlen 2 rlen 1 { align1 1Q };
+                            hdc1 MsgDesc: ( DC typed surface read, Surface = 0, SIMD16, Mask = 0xe) mlen 2 rlen 1 { align1 1Q };
 send(8)         g2<1>UW         g6<8,8,1>UD     0x0623d001
                             sampler MsgDesc: ld_mcs SIMD8 Surface = 1 Sampler = 0 mlen 3 rlen 2 { align1 1Q };
 send(16)        g2<1>UW         g8<8,8,1>UD     0x0c45d001
@@ -2593,21 +2593,21 @@ send(8)         null<1>F        g38<8,8,1>UD    0x0c0a01e7
 send(8)         null<1>F        g39<8,8,1>UD    0x0c0a01f7
                             urb MsgDesc: 31 SIMD8 write per-slot mlen 6 rlen 0 { align1 1Q };
 send(16)        g46<1>UD        g12<0,1,0>UD    0x02280302
-                            const MsgDesc: (2, 3, 0, 0) mlen 1 rlen 2       { align1 WE_all 1H };
+                            hdc:ro MsgDesc: (2, 3, 0, 0) mlen 1 rlen 2       { align1 WE_all 1H };
 send(16)        g50<1>UD        g15<0,1,0>UD    0x02280304
-                            const MsgDesc: (4, 3, 0, 0) mlen 1 rlen 2       { align1 WE_all 1H };
+                            hdc:ro MsgDesc: (4, 3, 0, 0) mlen 1 rlen 2       { align1 WE_all 1H };
 send(16)        g34<1>UD        g20<0,1,0>UD    0x02280303
-                            const MsgDesc: (3, 3, 0, 0) mlen 1 rlen 2       { align1 WE_all 1H };
+                            hdc:ro MsgDesc: (3, 3, 0, 0) mlen 1 rlen 2       { align1 WE_all 1H };
 send(16)        g16<1>UD        g21<0,1,0>UD    0x02280306
-                            const MsgDesc: (6, 3, 0, 0) mlen 1 rlen 2       { align1 WE_all 1H };
+                            hdc:ro MsgDesc: (6, 3, 0, 0) mlen 1 rlen 2       { align1 WE_all 1H };
 send(8)         g5<1>UW         g19<8,8,1>UD    0x02106e03
-                            dp data 1 MsgDesc: ( untyped surface read, Surface = 3, SIMD8, Mask = 0xe) mlen 1 rlen 1 { align1 1Q };
+                            hdc1 MsgDesc: ( untyped surface read, Surface = 3, SIMD8, Mask = 0xe) mlen 1 rlen 1 { align1 1Q };
 send(8)         g8<1>UW         g21<8,8,1>UD    0x02106e04
-                            dp data 1 MsgDesc: ( untyped surface read, Surface = 4, SIMD8, Mask = 0xe) mlen 1 rlen 1 { align1 1Q };
+                            hdc1 MsgDesc: ( untyped surface read, Surface = 4, SIMD8, Mask = 0xe) mlen 1 rlen 1 { align1 1Q };
 send(16)        g8<1>UW         g34<8,8,1>UD    0x04205e03
-                            dp data 1 MsgDesc: ( untyped surface read, Surface = 3, SIMD16, Mask = 0xe) mlen 2 rlen 2 { align1 1H };
+                            hdc1 MsgDesc: ( untyped surface read, Surface = 3, SIMD16, Mask = 0xe) mlen 2 rlen 2 { align1 1H };
 send(16)        g14<1>UW        g37<8,8,1>UD    0x04205e04
-                            dp data 1 MsgDesc: ( untyped surface read, Surface = 4, SIMD16, Mask = 0xe) mlen 2 rlen 2 { align1 1H };
+                            hdc1 MsgDesc: ( untyped surface read, Surface = 4, SIMD16, Mask = 0xe) mlen 2 rlen 2 { align1 1H };
 send(8)         g15<1>UD        g12<8,8,1>UD    0x041a0038
                             urb MsgDesc: 3 SIMD8 read per-slot mlen 2 rlen 1 { align1 1Q };
 send(8)         g2<1>UW         g54<8,8,1>UD    0x0242a707
@@ -2725,9 +2725,9 @@ send(8)         g8<1>UD         g9<8,8,1>UD     0x02480008
 send(8)         null<1>F        g123<8,8,1>F    0x8a080007
                             urb MsgDesc: 0 SIMD8 write mlen 5 rlen 0        { align1 1Q EOT };
 send(8)         g4<1>UW         g2<8,8,1>UD     0x04215c01
-                            dp data 1 MsgDesc: ( DC typed surface read, Surface = 1, SIMD16, Mask = 0xc) mlen 2 rlen 2 { align1 1Q };
+                            hdc1 MsgDesc: ( DC typed surface read, Surface = 1, SIMD16, Mask = 0xc) mlen 2 rlen 2 { align1 1Q };
 send(8)         g40<1>UW        g38<8,8,1>UD    0x04216c01
-                            dp data 1 MsgDesc: ( DC typed surface read, Surface = 1, SIMD8, Mask = 0xc) mlen 2 rlen 2 { align1 2Q };
+                            hdc1 MsgDesc: ( DC typed surface read, Surface = 1, SIMD8, Mask = 0xc) mlen 2 rlen 2 { align1 2Q };
 send(8)         g6<1>UW         g11<8,8,1>UD    0x104a4001
                             sampler MsgDesc: sample_d SIMD8 Surface = 1 Sampler = 0 mlen 8 rlen 4 { align1 1Q };
 send(8)         g124<1>UW       g2<8,8,1>UD     0x04422001
@@ -2745,17 +2745,17 @@ send(16)        g10<1>UW        g18<8,8,1>UD    0x0c845102
 send(8)         null<1>F        g121<8,8,1>F    0x8a080197
                             urb MsgDesc: 25 SIMD8 write mlen 5 rlen 0       { align1 1Q EOT };
 send(8)         g124<1>UW       g6<8,8,1>UD     0x02415000
-                            dp data 1 MsgDesc: ( DC typed surface read, Surface = 0, SIMD16, Mask = 0x0) mlen 1 rlen 4 { align1 1Q };
+                            hdc1 MsgDesc: ( DC typed surface read, Surface = 0, SIMD16, Mask = 0x0) mlen 1 rlen 4 { align1 1Q };
 send(8)         g124<1>UW       g6<8,8,1>UD     0x06415000
-                            dp data 1 MsgDesc: ( DC typed surface read, Surface = 0, SIMD16, Mask = 0x0) mlen 3 rlen 4 { align1 1Q };
+                            hdc1 MsgDesc: ( DC typed surface read, Surface = 0, SIMD16, Mask = 0x0) mlen 3 rlen 4 { align1 1Q };
 send(8)         g124<1>UW       g6<8,8,1>UD     0x02215c00
-                            dp data 1 MsgDesc: ( DC typed surface read, Surface = 0, SIMD16, Mask = 0xc) mlen 1 rlen 2 { align1 1Q };
+                            hdc1 MsgDesc: ( DC typed surface read, Surface = 0, SIMD16, Mask = 0xc) mlen 1 rlen 2 { align1 1Q };
 send(8)         g17<1>UW        g27<8,8,1>UD    0x02115e00
-                            dp data 1 MsgDesc: ( DC typed surface read, Surface = 0, SIMD16, Mask = 0xe) mlen 1 rlen 1 { align1 1Q };
+                            hdc1 MsgDesc: ( DC typed surface read, Surface = 0, SIMD16, Mask = 0xe) mlen 1 rlen 1 { align1 1Q };
 send(8)         g124<1>UW       g2<8,8,1>UD     0x02415001
-                            dp data 1 MsgDesc: ( DC typed surface read, Surface = 1, SIMD16, Mask = 0x0) mlen 1 rlen 4 { align1 1Q };
+                            hdc1 MsgDesc: ( DC typed surface read, Surface = 1, SIMD16, Mask = 0x0) mlen 1 rlen 4 { align1 1Q };
 send(8)         g2<1>UW         g29<8,8,1>UD    0x02416001
-                            dp data 1 MsgDesc: ( DC typed surface read, Surface = 1, SIMD8, Mask = 0x0) mlen 1 rlen 4 { align1 2Q };
+                            hdc1 MsgDesc: ( DC typed surface read, Surface = 1, SIMD8, Mask = 0x0) mlen 1 rlen 4 { align1 2Q };
 send(8)         g9<1>UW         g19<8,8,1>UD    0x0843e102
                             sampler MsgDesc: ld2dms SIMD8 Surface = 2 Sampler = 1 mlen 4 rlen 4 { align1 1Q };
 send(16)        g23<1>UW        g7<8,8,1>UD     0x1085e102
@@ -2811,9 +2811,9 @@ send(16)        g2<1>UW         g11<8,8,1>UD    0x10845001
 send(16)        g10<1>UW        g19<8,8,1>UD    0x10845102
                             sampler MsgDesc: sample_b_c SIMD16 Surface = 2 Sampler = 1 mlen 8 rlen 8 { align1 1H };
 send(8)         g124<1>UW       g2<8,8,1>UD     0x02306801
-                            dp data 1 MsgDesc: ( untyped surface read, Surface = 1, SIMD8, Mask = 0x8) mlen 1 rlen 3 { align1 1Q };
+                            hdc1 MsgDesc: ( untyped surface read, Surface = 1, SIMD8, Mask = 0x8) mlen 1 rlen 3 { align1 1Q };
 send(16)        g120<1>UW       g2<8,8,1>UD     0x04605801
-                            dp data 1 MsgDesc: ( untyped surface read, Surface = 1, SIMD16, Mask = 0x8) mlen 2 rlen 6 { align1 1H };
+                            hdc1 MsgDesc: ( untyped surface read, Surface = 1, SIMD16, Mask = 0x8) mlen 2 rlen 6 { align1 1H };
 send(8)         g8<1>UD         g7<8,8,1>UD     0x043a0128
                             urb MsgDesc: 18 SIMD8 read per-slot mlen 2 rlen 3 { align1 1Q };
 send(8)         g12<1>UW        g5<8,8,1>UD     0x0833e001
@@ -2971,9 +2971,9 @@ send(8)         g5<1>UW         g2<8,8,1>UD     0x04129001
 send(16)        g6<1>UW         g2<8,8,1>UD     0x08249001
                             sampler MsgDesc: lod SIMD16 Surface = 1 Sampler = 0 mlen 4 rlen 2 { align1 1H };
 send(8)         g11<1>UW        g4<8,8,1>UD     0x04415002
-                            dp data 1 MsgDesc: ( DC typed surface read, Surface = 2, SIMD16, Mask = 0x0) mlen 2 rlen 4 { align1 1Q };
+                            hdc1 MsgDesc: ( DC typed surface read, Surface = 2, SIMD16, Mask = 0x0) mlen 2 rlen 4 { align1 1Q };
 send(8)         g7<1>UW         g5<8,8,1>UD     0x04416002
-                            dp data 1 MsgDesc: ( DC typed surface read, Surface = 2, SIMD8, Mask = 0x0) mlen 2 rlen 4 { align1 2Q };
+                            hdc1 MsgDesc: ( DC typed surface read, Surface = 2, SIMD8, Mask = 0x0) mlen 2 rlen 4 { align1 2Q };
 send(8)         null<1>F        g16<8,8,1>UD    0x0e0a8057
                             urb MsgDesc: 5 SIMD8 write per-slot masked mlen 7 rlen 0 { align1 1Q };
 send(8)         g6<1>UD         g18<8,8,1>UD    0x043a0318
@@ -3183,9 +3183,9 @@ send(8)         g9<1>UW         g5<8,8,1>UD     0x04420002
 send(16)        g13<1>UW        g7<8,8,1>UD     0x08840002
                             sampler MsgDesc: sample SIMD16 Surface = 2 Sampler = 0 mlen 4 rlen 8 { align1 1H };
 (+f1.0) send(8) g124<1>UW       g2<8,8,1>UD     0x0211a501
-                            dp data 1 MsgDesc: ( DC typed atomic, Surface = 1, SIMD16, inc) mlen 1 rlen 1 { align1 1Q };
+                            hdc1 MsgDesc: ( DC typed atomic, Surface = 1, SIMD16, inc) mlen 1 rlen 1 { align1 1Q };
 (+f1.0) send(8) g121<1>UW       g3<8,8,1>UD     0x0211b501
-                            dp data 1 MsgDesc: ( DC typed atomic, Surface = 1, SIMD8, inc) mlen 1 rlen 1 { align1 2Q };
+                            hdc1 MsgDesc: ( DC typed atomic, Surface = 1, SIMD8, inc) mlen 1 rlen 1 { align1 2Q };
 send(8)         g22<1>UD        g32<8,8,1>UD    0x02280238
                             urb MsgDesc: 35 SIMD8 read mlen 1 rlen 2        { align1 1Q };
 send(8)         g24<1>UD        g32<8,8,1>UD    0x02280438

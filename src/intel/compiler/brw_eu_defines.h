@@ -1164,37 +1164,29 @@ enum tgl_sync_function {
 };
 
 /**
- * Message target: Shared Function ID for where to SEND a message.
+ * Shared Function ID - which unit a SEND message targets.
  *
- * These are enumerated in the ISA reference under "send - Send Message".
- * In particular, see the following tables:
- * - G45 PRM, Volume 4, Table 14-15 "Message Descriptor Definition"
- * - Sandybridge PRM, Volume 4 Part 2, Table 8-16 "Extended Message Descriptor"
- * - Ivybridge PRM, Volume 1 Part 1, section 3.2.7 "GPE Function IDs"
+ * See the Tigerlake and Alchemist PRMs, Volume 2b: Command Reference:
+ * Enumerations, in the table under "SFID":
  */
-enum brw_message_target {
+enum brw_sfid {
    BRW_SFID_NULL                     = 0,
    BRW_SFID_SAMPLER                  = 2,
    BRW_SFID_MESSAGE_GATEWAY          = 3,
+   BRW_SFID_HDC2                     = 4,  /* Legacy Data Port 2 */
+   BRW_SFID_RENDER_CACHE             = 5,
    BRW_SFID_URB                      = 6,
-   BRW_SFID_THREAD_SPAWNER           = 7,
-   BRW_SFID_VME                      = 8,
+   BRW_SFID_THREAD_SPAWNER           = 7,  /* Gfx12.0 and earlier only */
+   BRW_SFID_BINDLESS_THREAD_DISPATCH = 7,
+   BRW_SFID_RAY_TRACE_ACCELERATOR    = 8,
+   BRW_SFID_HDC_READ_ONLY            = 9,  /* Read Only/Constant Data Cache */
+   BRW_SFID_HDC0                     = 10, /* Legacy Data Port 0 */
+   BRW_SFID_PIXEL_INTERPOLATOR       = 11,
+   BRW_SFID_HDC1                     = 12, /* Legacy Data Port 1 */
 
-   GFX6_SFID_DATAPORT_SAMPLER_CACHE  = 4,
-   GFX6_SFID_DATAPORT_RENDER_CACHE   = 5,
-   GFX6_SFID_DATAPORT_CONSTANT_CACHE = 9,
-
-   GFX7_SFID_DATAPORT_DATA_CACHE     = 10,
-   GFX7_SFID_PIXEL_INTERPOLATOR      = 11,
-   HSW_SFID_DATAPORT_DATA_CACHE_1    = 12,
-   HSW_SFID_CRE                      = 13,
-
-   GFX12_SFID_TGM                      = 13, /* Typed Global Memory */
-   GFX12_SFID_SLM                      = 14, /* Shared Local Memory */
-   GFX12_SFID_UGM                      = 15, /* Untyped Global Memory */
-
-   GEN_RT_SFID_BINDLESS_THREAD_DISPATCH = 7,
-   GEN_RT_SFID_RAY_TRACE_ACCELERATOR = 8,
+   BRW_SFID_TGM                      = 13, /* LSC: Typed Global Memory */
+   BRW_SFID_SLM                      = 14, /* LSC: Shared Local Memory */
+   BRW_SFID_UGM                      = 15, /* LSC: Untyped Global Memory */
 };
 
 #define GFX7_MESSAGE_TARGET_DP_DATA_CACHE     10

@@ -53,7 +53,7 @@ sendc(8)        null<1>UW       g123<8,8,1>UD   0x8a0a1001
 sendc(16)       null<1>UW       g119<8,8,1>UD   0x920c1001
                             sampler MsgDesc: sample_b SIMD16 Surface = 1 Sampler = 0 mlen 9 rlen 0 { align1 1H EOT };
 sendc(1)        g2<1>UW         g2<0,1,0>UW     0x0209c000
-                            data MsgDesc: ( DC mfence, 0, 0) mlen 1 rlen 0  { align1 WE_all 1N };
+                            hdc0 MsgDesc: ( DC mfence, 0, 0) mlen 1 rlen 0  { align1 WE_all 1N };
 sendc(8)        null<1>UW       g120<8,8,1>UD   0x900b4001
                             sampler MsgDesc: sample_d_c SIMD8 Surface = 1 Sampler = 0 mlen 8 rlen 0 { align1 1Q EOT };
 sendc(8)        null<1>UW       g123<8,8,1>UD   0x8a0b4001

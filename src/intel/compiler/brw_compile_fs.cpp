@@ -638,7 +638,7 @@ brw_emit_repclear_shader(brw_shader &s)
       write->header_size = i == 0 ? 0 : 2;
       write->mlen = 1 + write->header_size;
 
-      write->sfid = GFX6_SFID_DATAPORT_RENDER_CACHE;
+      write->sfid = BRW_SFID_RENDER_CACHE;
       write->src[0] = brw_imm_ud(
          brw_fb_write_desc(
             s.devinfo, i,

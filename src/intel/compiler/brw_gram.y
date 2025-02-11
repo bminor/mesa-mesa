@@ -409,8 +409,8 @@ add_label(struct brw_codegen *p, const char* label_name, enum instr_label_type t
 %type <reg> sync_arg
 
 /* shared functions for send */
-%token CONST CRE DATA DP_DATA_1 GATEWAY PIXEL_INTERP RENDER SAMPLER
-%token THREAD_SPAWNER URB VME DP_SAMPLER RT_ACCEL SLM TGM UGM
+%token HDC0 HDC1 HDC2 HDC_RO GATEWAY PIXEL_INTERP RENDER SAMPLER
+%token TS_BTD URB RT_ACCEL SLM TGM UGM
 
 /* message details for send */
 %token MSGDESC_BEGIN SRC1_LEN EX_BSO MSGDESC_END
@@ -1036,20 +1036,18 @@ sharedfunction:
    NULL_TOKEN          { $$ = BRW_SFID_NULL; }
    | GATEWAY           { $$ = BRW_SFID_MESSAGE_GATEWAY; }
    | URB               { $$ = BRW_SFID_URB; }
-   | THREAD_SPAWNER    { $$ = BRW_SFID_THREAD_SPAWNER; }
-   | VME               { $$ = BRW_SFID_VME; }
-   | RENDER            { $$ = GFX6_SFID_DATAPORT_RENDER_CACHE; }
-   | CONST             { $$ = GFX6_SFID_DATAPORT_CONSTANT_CACHE; }
-   | DATA              { $$ = GFX7_SFID_DATAPORT_DATA_CACHE; }
-   | PIXEL_INTERP      { $$ = GFX7_SFID_PIXEL_INTERPOLATOR; }
-   | DP_DATA_1         { $$ = HSW_SFID_DATAPORT_DATA_CACHE_1; }
-   | CRE               { $$ = HSW_SFID_CRE; }
+   | TS_BTD            { $$ = BRW_SFID_BINDLESS_THREAD_DISPATCH; }
+   | RENDER            { $$ = BRW_SFID_RENDER_CACHE; }
+   | HDC_RO            { $$ = BRW_SFID_HDC_READ_ONLY; }
+   | HDC0              { $$ = BRW_SFID_HDC0; }
+   | PIXEL_INTERP      { $$ = BRW_SFID_PIXEL_INTERPOLATOR; }
+   | HDC1              { $$ = BRW_SFID_HDC1; }
    | SAMPLER           { $$ = BRW_SFID_SAMPLER; }
-   | DP_SAMPLER        { $$ = GFX6_SFID_DATAPORT_SAMPLER_CACHE; }
-   | RT_ACCEL          { $$ = GEN_RT_SFID_RAY_TRACE_ACCELERATOR; }
-   | SLM               { $$ = GFX12_SFID_SLM; }
-   | TGM               { $$ = GFX12_SFID_TGM; }
-   | UGM               { $$ = GFX12_SFID_UGM; }
+   | HDC2              { $$ = BRW_SFID_HDC2; }
+   | RT_ACCEL          { $$ = BRW_SFID_RAY_TRACE_ACCELERATOR; }
+   | SLM               { $$ = BRW_SFID_SLM; }
+   | TGM               { $$ = BRW_SFID_TGM; }
+   | UGM               { $$ = BRW_SFID_UGM; }
    ;
 
 exp2:

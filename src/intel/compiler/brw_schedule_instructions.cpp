@@ -357,12 +357,12 @@ schedule_node::set_latency(const struct brw_isa_info *isa)
          break;
       }
 
-      case GFX6_SFID_DATAPORT_CONSTANT_CACHE:
+      case BRW_SFID_HDC_READ_ONLY:
          /* See FS_OPCODE_UNIFORM_PULL_CONSTANT_LOAD */
          latency = 200;
          break;
 
-      case GFX6_SFID_DATAPORT_RENDER_CACHE:
+      case BRW_SFID_RENDER_CACHE:
          switch (brw_fb_desc_msg_type(isa->devinfo, inst->desc)) {
          case GFX7_DATAPORT_RC_TYPED_SURFACE_WRITE:
          case GFX7_DATAPORT_RC_TYPED_SURFACE_READ:
@@ -386,7 +386,7 @@ schedule_node::set_latency(const struct brw_isa_info *isa)
          }
          break;
 
-      case GFX7_SFID_DATAPORT_DATA_CACHE:
+      case BRW_SFID_HDC0:
          switch ((inst->desc >> 14) & 0x1f) {
          case BRW_DATAPORT_READ_MESSAGE_OWORD_BLOCK_READ:
          case GFX7_DATAPORT_DC_UNALIGNED_OWORD_BLOCK_READ:
@@ -458,7 +458,7 @@ schedule_node::set_latency(const struct brw_isa_info *isa)
          }
          break;
 
-      case HSW_SFID_DATAPORT_DATA_CACHE_1:
+      case BRW_SFID_HDC1:
          switch (brw_dp_desc_msg_type(isa->devinfo, inst->desc)) {
          case HSW_DATAPORT_DC_PORT1_UNTYPED_SURFACE_READ:
          case HSW_DATAPORT_DC_PORT1_UNTYPED_SURFACE_WRITE:
@@ -492,13 +492,13 @@ schedule_node::set_latency(const struct brw_isa_info *isa)
          }
          break;
 
-      case GFX7_SFID_PIXEL_INTERPOLATOR:
+      case BRW_SFID_PIXEL_INTERPOLATOR:
          latency = 50; /* TODO */
          break;
 
-      case GFX12_SFID_UGM:
-      case GFX12_SFID_TGM:
-      case GFX12_SFID_SLM:
+      case BRW_SFID_UGM:
+      case BRW_SFID_TGM:
+      case BRW_SFID_SLM:
          switch (lsc_msg_desc_opcode(isa->devinfo, inst->desc)) {
          case LSC_OP_LOAD:
          case LSC_OP_STORE:
@@ -534,8 +534,8 @@ schedule_node::set_latency(const struct brw_isa_info *isa)
          break;
 
       case BRW_SFID_MESSAGE_GATEWAY:
-      case GEN_RT_SFID_BINDLESS_THREAD_DISPATCH: /* or THREAD_SPAWNER */
-      case GEN_RT_SFID_RAY_TRACE_ACCELERATOR:
+      case BRW_SFID_BINDLESS_THREAD_DISPATCH: /* or THREAD_SPAWNER */
+      case BRW_SFID_RAY_TRACE_ACCELERATOR:
          /* TODO.
           *
           * We'll assume for the moment that this is pretty quick as it
