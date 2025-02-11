@@ -81,10 +81,6 @@ transfer_copy_buffer_image(struct radv_cmd_buffer *cmd_buffer, struct radv_buffe
    const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    struct radeon_cmdbuf *cs = cmd_buffer->cs;
    const VkImageAspectFlags aspect_mask = region->imageSubresource.aspectMask;
-   const unsigned binding_idx = image->disjoint ? radv_plane_from_aspect(aspect_mask) : 0;
-
-   radv_cs_add_buffer(device->ws, cs, image->bindings[binding_idx].bo);
-   radv_cs_add_buffer(device->ws, cs, buffer->bo);
 
    struct radv_sdma_surf buf = radv_sdma_get_buf_surf(buffer, image, region, aspect_mask);
    const struct radv_sdma_surf img =
@@ -227,9 +223,16 @@ radv_CmdCopyBufferToImage2(VkCommandBuffer commandBuffer, const VkCopyBufferToIm
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
 
+   radv_cs_add_buffer(device->ws, cmd_buffer->cs, src_buffer->bo);
+
    for (unsigned r = 0; r < pCopyBufferToImageInfo->regionCount; r++) {
-      copy_buffer_to_image(cmd_buffer, src_buffer, dst_image, pCopyBufferToImageInfo->dstImageLayout,
-                           &pCopyBufferToImageInfo->pRegions[r]);
+      const VkBufferImageCopy2 *region = &pCopyBufferToImageInfo->pRegions[r];
+      const VkImageAspectFlags aspect_mask = region->imageSubresource.aspectMask;
+      const unsigned bind_idx = dst_image->disjoint ? radv_plane_from_aspect(aspect_mask) : 0;
+
+      radv_cs_add_buffer(device->ws, cmd_buffer->cs, dst_image->bindings[bind_idx].bo);
+
+      copy_buffer_to_image(cmd_buffer, src_buffer, dst_image, pCopyBufferToImageInfo->dstImageLayout, region);
    }
 
    if (radv_is_format_emulated(pdev, dst_image->vk.format)) {
@@ -365,10 +368,18 @@ radv_CmdCopyImageToBuffer2(VkCommandBuffer commandBuffer, const VkCopyImageToBuf
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
    VK_FROM_HANDLE(radv_image, src_image, pCopyImageToBufferInfo->srcImage);
    VK_FROM_HANDLE(radv_buffer, dst_buffer, pCopyImageToBufferInfo->dstBuffer);
+   struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+
+   radv_cs_add_buffer(device->ws, cmd_buffer->cs, dst_buffer->bo);
 
    for (unsigned r = 0; r < pCopyImageToBufferInfo->regionCount; r++) {
-      copy_image_to_buffer(cmd_buffer, dst_buffer, src_image, pCopyImageToBufferInfo->srcImageLayout,
-                           &pCopyImageToBufferInfo->pRegions[r]);
+      const VkBufferImageCopy2 *region = &pCopyImageToBufferInfo->pRegions[r];
+      const VkImageAspectFlags aspect_mask = region->imageSubresource.aspectMask;
+      const unsigned bind_idx = src_image->disjoint ? radv_plane_from_aspect(aspect_mask) : 0;
+
+      radv_cs_add_buffer(device->ws, cmd_buffer->cs, src_image->bindings[bind_idx].bo);
+
+      copy_image_to_buffer(cmd_buffer, dst_buffer, src_image, pCopyImageToBufferInfo->srcImageLayout, region);
    }
 }
 
@@ -383,11 +394,6 @@ transfer_copy_image(struct radv_cmd_buffer *cmd_buffer, struct radv_image *src_i
    u_foreach_bit (b, region->srcSubresource.aspectMask) {
       const VkImageAspectFlags src_aspect_mask = BITFIELD_BIT(b);
       const VkImageAspectFlags dst_aspect_mask = BITFIELD_BIT(u_bit_scan(&dst_aspect_mask_remaining));
-      const unsigned src_binding_idx = src_image->disjoint ? radv_plane_from_aspect(src_aspect_mask) : 0;
-      const unsigned dst_binding_idx = dst_image->disjoint ? radv_plane_from_aspect(dst_aspect_mask) : 0;
-
-      radv_cs_add_buffer(device->ws, cs, src_image->bindings[src_binding_idx].bo);
-      radv_cs_add_buffer(device->ws, cs, dst_image->bindings[dst_binding_idx].bo);
 
       const struct radv_sdma_surf src =
          radv_sdma_get_surf(device, src_image, region->srcSubresource, region->srcOffset, src_aspect_mask);
@@ -608,8 +614,17 @@ radv_CmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2 *pCopyI
    const struct radv_physical_device *pdev = radv_device_physical(device);
 
    for (unsigned r = 0; r < pCopyImageInfo->regionCount; r++) {
+      const VkImageCopy2 *region = &pCopyImageInfo->pRegions[r];
+      const VkImageAspectFlags src_aspect_mask = region->srcSubresource.aspectMask;
+      const unsigned src_bind_idx = src_image->disjoint ? radv_plane_from_aspect(src_aspect_mask) : 0;
+      const VkImageAspectFlags dst_aspect_mask = region->dstSubresource.aspectMask;
+      const unsigned dst_bind_idx = dst_image->disjoint ? radv_plane_from_aspect(dst_aspect_mask) : 0;
+
+      radv_cs_add_buffer(device->ws, cmd_buffer->cs, src_image->bindings[src_bind_idx].bo);
+      radv_cs_add_buffer(device->ws, cmd_buffer->cs, dst_image->bindings[dst_bind_idx].bo);
+
       copy_image(cmd_buffer, src_image, pCopyImageInfo->srcImageLayout, dst_image, pCopyImageInfo->dstImageLayout,
-                 &pCopyImageInfo->pRegions[r]);
+                 region);
    }
 
    if (radv_is_format_emulated(pdev, dst_image->vk.format)) {

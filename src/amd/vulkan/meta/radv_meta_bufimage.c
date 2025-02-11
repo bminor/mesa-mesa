@@ -714,8 +714,6 @@ radv_meta_image_to_buffer(struct radv_cmd_buffer *cmd_buffer, struct radv_meta_b
 
    create_iview(cmd_buffer, src, &src_view, VK_FORMAT_UNDEFINED, src->aspect_mask);
 
-   radv_cs_add_buffer(device->ws, cmd_buffer->cs, dst->buffer->bo);
-
    radv_meta_bind_descriptors(
       cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, layout, 2,
       (VkDescriptorGetInfoEXT[]){{
@@ -767,9 +765,6 @@ radv_meta_buffer_to_image_cs_r32g32b32(struct radv_cmd_buffer *cmd_buffer, struc
       vk_command_buffer_set_error(&cmd_buffer->vk, result);
       return;
    }
-
-   radv_cs_add_buffer(device->ws, cmd_buffer->cs, src->buffer->bo);
-   radv_cs_add_buffer(device->ws, cmd_buffer->cs, dst->image->bindings[0].bo);
 
    radv_meta_bind_descriptors(
       cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, layout, 2,
@@ -838,8 +833,6 @@ radv_meta_buffer_to_image_cs(struct radv_cmd_buffer *cmd_buffer, struct radv_met
 
    create_iview(cmd_buffer, dst, &dst_view, VK_FORMAT_UNDEFINED, dst->aspect_mask);
 
-   radv_cs_add_buffer(device->ws, cmd_buffer->cs, src->buffer->bo);
-
    radv_meta_bind_descriptors(
       cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, layout, 2,
       (VkDescriptorGetInfoEXT[]){{
@@ -899,9 +892,6 @@ radv_meta_image_to_image_cs_r32g32b32(struct radv_cmd_buffer *cmd_buffer, struct
    /* 96-bit formats are only compatible to themselves. */
    assert(dst->format == VK_FORMAT_R32G32B32_UINT || dst->format == VK_FORMAT_R32G32B32_SINT ||
           dst->format == VK_FORMAT_R32G32B32_SFLOAT);
-
-   radv_cs_add_buffer(device->ws, cmd_buffer->cs, src->image->bindings[0].bo);
-   radv_cs_add_buffer(device->ws, cmd_buffer->cs, dst->image->bindings[0].bo);
 
    radv_meta_bind_descriptors(
       cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, layout, 2,
