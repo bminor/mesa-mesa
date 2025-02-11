@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <stdbool.h>
 
+#include "nir/radv_meta_nir.h"
 #include "radv_meta.h"
 #include "sid.h"
 
@@ -36,8 +37,8 @@ get_pipeline_gfx(struct radv_device *device, struct radv_image *image, VkPipelin
       return VK_SUCCESS;
    }
 
-   nir_shader *vs_module = radv_meta_build_nir_vs_generate_vertices(device);
-   nir_shader *fs_module = radv_meta_build_nir_fs_noop(device);
+   nir_shader *vs_module = radv_meta_nir_build_vs_generate_vertices(device);
+   nir_shader *fs_module = radv_meta_nir_build_fs_noop(device);
 
    const VkPipelineSampleLocationsStateCreateInfoEXT sample_locs_create_info = {
       .sType = VK_STRUCTURE_TYPE_PIPELINE_SAMPLE_LOCATIONS_STATE_CREATE_INFO_EXT,

@@ -1,6 +1,7 @@
 #include "radv_cp_dma.h"
 #include "radv_debug.h"
 #include "radv_meta.h"
+#include "nir/radv_meta_nir.h"
 #include "radv_sdma.h"
 
 #include "radv_cs.h"

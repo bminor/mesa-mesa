@@ -10,12 +10,14 @@
 #define AC_SURFACE_INCLUDE_NIR
 #include "ac_surface.h"
 
-#include "../meta/radv_meta.h"
 #include "nir/nir_format_convert.h"
 #include "nir_builder.h"
+#include "radv_meta_nir.h"
+#include "radv_device.h"
+#include "radv_physical_device.h"
 
 nir_builder PRINTFLIKE(3, 4)
-   radv_meta_init_shader(struct radv_device *dev, gl_shader_stage stage, const char *name, ...)
+   radv_meta_nir_init_shader(struct radv_device *dev, gl_shader_stage stage, const char *name, ...)
 {
    const struct radv_physical_device *pdev = radv_device_physical(dev);
    nir_builder b = nir_builder_init_simple_shader(stage, NULL, NULL);
@@ -35,13 +37,13 @@ nir_builder PRINTFLIKE(3, 4)
 
 /* vertex shader that generates vertices */
 nir_shader *
-radv_meta_build_nir_vs_generate_vertices(struct radv_device *dev)
+radv_meta_nir_build_vs_generate_vertices(struct radv_device *dev)
 {
    const struct glsl_type *vec4 = glsl_vec4_type();
 
    nir_variable *v_position;
 
-   nir_builder b = radv_meta_init_shader(dev, MESA_SHADER_VERTEX, "meta_vs_gen_verts");
+   nir_builder b = radv_meta_nir_init_shader(dev, MESA_SHADER_VERTEX, "meta_vs_gen_verts");
 
    nir_def *outvec = nir_gen_rect_vertices(&b, NULL, NULL);
 
@@ -54,13 +56,13 @@ radv_meta_build_nir_vs_generate_vertices(struct radv_device *dev)
 }
 
 nir_shader *
-radv_meta_build_nir_fs_noop(struct radv_device *dev)
+radv_meta_nir_build_fs_noop(struct radv_device *dev)
 {
-   return radv_meta_init_shader(dev, MESA_SHADER_FRAGMENT, "meta_noop_fs").shader;
+   return radv_meta_nir_init_shader(dev, MESA_SHADER_FRAGMENT, "meta_noop_fs").shader;
 }
 
-void
-radv_meta_build_resolve_shader_core(struct radv_device *device, nir_builder *b, bool is_integer, int samples,
+static void
+radv_meta_nir_build_resolve_shader_core(struct radv_device *device, nir_builder *b, bool is_integer, int samples,
                                     nir_variable *input_img, nir_variable *color, nir_def *img_coord)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
@@ -94,7 +96,7 @@ radv_meta_build_resolve_shader_core(struct radv_device *device, nir_builder *b, 
 }
 
 nir_def *
-radv_meta_load_descriptor(nir_builder *b, unsigned desc_set, unsigned binding)
+radv_meta_nir_load_descriptor(nir_builder *b, unsigned desc_set, unsigned binding)
 {
    nir_def *rsrc = nir_vulkan_resource_index(b, 3, 32, nir_imm_int(b, 0), .desc_set = desc_set, .binding = binding);
    return nir_trim_vector(b, rsrc, 2);
@@ -117,7 +119,7 @@ get_global_ids(nir_builder *b, unsigned num_components)
 }
 
 void
-radv_break_on_count(nir_builder *b, nir_variable *var, nir_def *count)
+radv_meta_nir_break_on_count(nir_builder *b, nir_variable *var, nir_def *count)
 {
    nir_def *counter = nir_load_var(b, var);
 
@@ -130,7 +132,7 @@ radv_break_on_count(nir_builder *b, nir_variable *var, nir_def *count)
 nir_shader *
 radv_meta_nir_build_buffer_fill_shader(struct radv_device *dev)
 {
-   nir_builder b = radv_meta_init_shader(dev, MESA_SHADER_COMPUTE, "meta_buffer_fill");
+   nir_builder b = radv_meta_nir_init_shader(dev, MESA_SHADER_COMPUTE, "meta_buffer_fill");
    b.shader->info.workgroup_size[0] = 64;
 
    nir_def *pconst = nir_load_push_constant(&b, 4, 32, nir_imm_int(&b, 0), .range = 16);
@@ -152,7 +154,7 @@ radv_meta_nir_build_buffer_fill_shader(struct radv_device *dev)
 nir_shader *
 radv_meta_nir_build_buffer_copy_shader(struct radv_device *dev)
 {
-   nir_builder b = radv_meta_init_shader(dev, MESA_SHADER_COMPUTE, "meta_buffer_copy");
+   nir_builder b = radv_meta_nir_init_shader(dev, MESA_SHADER_COMPUTE, "meta_buffer_copy");
    b.shader->info.workgroup_size[0] = 64;
 
    nir_def *pconst = nir_load_push_constant(&b, 4, 32, nir_imm_int(&b, 0), .range = 16);
@@ -176,7 +178,7 @@ nir_shader *
 radv_meta_nir_build_blit_vertex_shader(struct radv_device *dev)
 {
    const struct glsl_type *vec4 = glsl_vec4_type();
-   nir_builder b = radv_meta_init_shader(dev, MESA_SHADER_VERTEX, "meta_blit_vs");
+   nir_builder b = radv_meta_nir_init_shader(dev, MESA_SHADER_VERTEX, "meta_blit_vs");
 
    nir_variable *pos_out = nir_variable_create(b.shader, nir_var_shader_out, vec4, "gl_Position");
    pos_out->data.location = VARYING_SLOT_POS;
@@ -218,7 +220,7 @@ nir_shader *
 radv_meta_nir_build_blit_copy_fragment_shader(struct radv_device *dev, enum glsl_sampler_dim tex_dim)
 {
    const struct glsl_type *vec4 = glsl_vec4_type();
-   nir_builder b = radv_meta_init_shader(dev, MESA_SHADER_FRAGMENT, "meta_blit_fs.%d", tex_dim);
+   nir_builder b = radv_meta_nir_init_shader(dev, MESA_SHADER_FRAGMENT, "meta_blit_fs.%d", tex_dim);
 
    nir_variable *tex_pos_in = nir_variable_create(b.shader, nir_var_shader_in, vec4, "v_tex_pos");
    tex_pos_in->data.location = VARYING_SLOT_VAR0;
@@ -250,7 +252,7 @@ nir_shader *
 radv_meta_nir_build_blit_copy_fragment_shader_depth(struct radv_device *dev, enum glsl_sampler_dim tex_dim)
 {
    const struct glsl_type *vec4 = glsl_vec4_type();
-   nir_builder b = radv_meta_init_shader(dev, MESA_SHADER_FRAGMENT, "meta_blit_depth_fs.%d", tex_dim);
+   nir_builder b = radv_meta_nir_init_shader(dev, MESA_SHADER_FRAGMENT, "meta_blit_depth_fs.%d", tex_dim);
 
    nir_variable *tex_pos_in = nir_variable_create(b.shader, nir_var_shader_in, vec4, "v_tex_pos");
    tex_pos_in->data.location = VARYING_SLOT_VAR0;
@@ -282,7 +284,7 @@ nir_shader *
 radv_meta_nir_build_blit_copy_fragment_shader_stencil(struct radv_device *dev, enum glsl_sampler_dim tex_dim)
 {
    const struct glsl_type *vec4 = glsl_vec4_type();
-   nir_builder b = radv_meta_init_shader(dev, MESA_SHADER_FRAGMENT, "meta_blit_stencil_fs.%d", tex_dim);
+   nir_builder b = radv_meta_nir_init_shader(dev, MESA_SHADER_FRAGMENT, "meta_blit_stencil_fs.%d", tex_dim);
 
    nir_variable *tex_pos_in = nir_variable_create(b.shader, nir_var_shader_in, vec4, "v_tex_pos");
    tex_pos_in->data.location = VARYING_SLOT_VAR0;
@@ -315,7 +317,7 @@ radv_meta_nir_build_blit2d_vertex_shader(struct radv_device *device)
 {
    const struct glsl_type *vec4 = glsl_vec4_type();
    const struct glsl_type *vec2 = glsl_vector_type(GLSL_TYPE_FLOAT, 2);
-   nir_builder b = radv_meta_init_shader(device, MESA_SHADER_VERTEX, "meta_blit2d_vs");
+   nir_builder b = radv_meta_nir_init_shader(device, MESA_SHADER_VERTEX, "meta_blit2d_vs");
 
    nir_variable *pos_out = nir_variable_create(b.shader, nir_var_shader_out, vec4, "gl_Position");
    pos_out->data.location = VARYING_SLOT_POS;
@@ -411,7 +413,7 @@ radv_meta_nir_build_blit2d_copy_fragment_shader(struct radv_device *device,
 {
    const struct glsl_type *vec4 = glsl_vec4_type();
    const struct glsl_type *vec2 = glsl_vector_type(GLSL_TYPE_FLOAT, 2);
-   nir_builder b = radv_meta_init_shader(device, MESA_SHADER_FRAGMENT, "%s", name);
+   nir_builder b = radv_meta_nir_init_shader(device, MESA_SHADER_FRAGMENT, "%s", name);
 
    nir_variable *tex_pos_in = nir_variable_create(b.shader, nir_var_shader_in, vec2, "v_tex_pos");
    tex_pos_in->data.location = VARYING_SLOT_VAR0;
@@ -437,7 +439,7 @@ radv_meta_nir_build_blit2d_copy_fragment_shader_depth(struct radv_device *device
 {
    const struct glsl_type *vec4 = glsl_vec4_type();
    const struct glsl_type *vec2 = glsl_vector_type(GLSL_TYPE_FLOAT, 2);
-   nir_builder b = radv_meta_init_shader(device, MESA_SHADER_FRAGMENT, "%s", name);
+   nir_builder b = radv_meta_nir_init_shader(device, MESA_SHADER_FRAGMENT, "%s", name);
 
    nir_variable *tex_pos_in = nir_variable_create(b.shader, nir_var_shader_in, vec2, "v_tex_pos");
    tex_pos_in->data.location = VARYING_SLOT_VAR0;
@@ -463,7 +465,7 @@ radv_meta_nir_build_blit2d_copy_fragment_shader_stencil(struct radv_device *devi
 {
    const struct glsl_type *vec4 = glsl_vec4_type();
    const struct glsl_type *vec2 = glsl_vector_type(GLSL_TYPE_FLOAT, 2);
-   nir_builder b = radv_meta_init_shader(device, MESA_SHADER_FRAGMENT, "%s", name);
+   nir_builder b = radv_meta_nir_init_shader(device, MESA_SHADER_FRAGMENT, "%s", name);
 
    nir_variable *tex_pos_in = nir_variable_create(b.shader, nir_var_shader_in, vec2, "v_tex_pos");
    tex_pos_in->data.location = VARYING_SLOT_VAR0;
@@ -488,7 +490,7 @@ radv_meta_nir_build_itob_compute_shader(struct radv_device *dev, bool is_3d)
    enum glsl_sampler_dim dim = is_3d ? GLSL_SAMPLER_DIM_3D : GLSL_SAMPLER_DIM_2D;
    const struct glsl_type *sampler_type = glsl_sampler_type(dim, false, false, GLSL_TYPE_FLOAT);
    const struct glsl_type *img_type = glsl_image_type(GLSL_SAMPLER_DIM_BUF, false, GLSL_TYPE_FLOAT);
-   nir_builder b = radv_meta_init_shader(dev, MESA_SHADER_COMPUTE, is_3d ? "meta_itob_cs_3d" : "meta_itob_cs");
+   nir_builder b = radv_meta_nir_init_shader(dev, MESA_SHADER_COMPUTE, is_3d ? "meta_itob_cs_3d" : "meta_itob_cs");
    b.shader->info.workgroup_size[0] = 8;
    b.shader->info.workgroup_size[1] = 8;
    nir_variable *input_img = nir_variable_create(b.shader, nir_var_uniform, sampler_type, "s_tex");
@@ -528,7 +530,7 @@ radv_meta_nir_build_btoi_compute_shader(struct radv_device *dev, bool is_3d)
    enum glsl_sampler_dim dim = is_3d ? GLSL_SAMPLER_DIM_3D : GLSL_SAMPLER_DIM_2D;
    const struct glsl_type *buf_type = glsl_sampler_type(GLSL_SAMPLER_DIM_BUF, false, false, GLSL_TYPE_FLOAT);
    const struct glsl_type *img_type = glsl_image_type(dim, false, GLSL_TYPE_FLOAT);
-   nir_builder b = radv_meta_init_shader(dev, MESA_SHADER_COMPUTE, is_3d ? "meta_btoi_cs_3d" : "meta_btoi_cs");
+   nir_builder b = radv_meta_nir_init_shader(dev, MESA_SHADER_COMPUTE, is_3d ? "meta_btoi_cs_3d" : "meta_btoi_cs");
    b.shader->info.workgroup_size[0] = 8;
    b.shader->info.workgroup_size[1] = 8;
    nir_variable *input_img = nir_variable_create(b.shader, nir_var_uniform, buf_type, "s_tex");
@@ -568,7 +570,7 @@ radv_meta_nir_build_btoi_r32g32b32_compute_shader(struct radv_device *dev)
 {
    const struct glsl_type *buf_type = glsl_sampler_type(GLSL_SAMPLER_DIM_BUF, false, false, GLSL_TYPE_FLOAT);
    const struct glsl_type *img_type = glsl_image_type(GLSL_SAMPLER_DIM_BUF, false, GLSL_TYPE_FLOAT);
-   nir_builder b = radv_meta_init_shader(dev, MESA_SHADER_COMPUTE, "meta_btoi_r32g32b32_cs");
+   nir_builder b = radv_meta_nir_init_shader(dev, MESA_SHADER_COMPUTE, "meta_btoi_r32g32b32_cs");
    b.shader->info.workgroup_size[0] = 8;
    b.shader->info.workgroup_size[1] = 8;
    nir_variable *input_img = nir_variable_create(b.shader, nir_var_uniform, buf_type, "s_tex");
@@ -622,7 +624,7 @@ radv_meta_nir_build_itoi_compute_shader(struct radv_device *dev, bool src_3d, bo
                                                      : GLSL_SAMPLER_DIM_2D;
    const struct glsl_type *buf_type = glsl_sampler_type(src_dim, false, false, GLSL_TYPE_FLOAT);
    const struct glsl_type *img_type = glsl_image_type(dst_dim, false, GLSL_TYPE_FLOAT);
-   nir_builder b = radv_meta_init_shader(dev, MESA_SHADER_COMPUTE, "meta_itoi_cs-%dd-%dd-%d", src_3d ? 3 : 2,
+   nir_builder b = radv_meta_nir_init_shader(dev, MESA_SHADER_COMPUTE, "meta_itoi_cs-%dd-%dd-%d", src_3d ? 3 : 2,
                                          dst_3d ? 3 : 2, samples);
    b.shader->info.workgroup_size[0] = 8;
    b.shader->info.workgroup_size[1] = 8;
@@ -669,7 +671,7 @@ radv_meta_nir_build_itoi_r32g32b32_compute_shader(struct radv_device *dev)
 {
    const struct glsl_type *type = glsl_sampler_type(GLSL_SAMPLER_DIM_BUF, false, false, GLSL_TYPE_FLOAT);
    const struct glsl_type *img_type = glsl_image_type(GLSL_SAMPLER_DIM_BUF, false, GLSL_TYPE_FLOAT);
-   nir_builder b = radv_meta_init_shader(dev, MESA_SHADER_COMPUTE, "meta_itoi_r32g32b32_cs");
+   nir_builder b = radv_meta_nir_init_shader(dev, MESA_SHADER_COMPUTE, "meta_itoi_r32g32b32_cs");
    b.shader->info.workgroup_size[0] = 8;
    b.shader->info.workgroup_size[1] = 8;
    nir_variable *input_img = nir_variable_create(b.shader, nir_var_uniform, type, "input_img");
@@ -723,7 +725,7 @@ radv_meta_nir_build_cleari_compute_shader(struct radv_device *dev, bool is_3d, i
                                                  : GLSL_SAMPLER_DIM_2D;
    const struct glsl_type *img_type = glsl_image_type(dim, false, GLSL_TYPE_FLOAT);
    nir_builder b =
-      radv_meta_init_shader(dev, MESA_SHADER_COMPUTE, is_3d ? "meta_cleari_cs_3d-%d" : "meta_cleari_cs-%d", samples);
+      radv_meta_nir_init_shader(dev, MESA_SHADER_COMPUTE, is_3d ? "meta_cleari_cs_3d-%d" : "meta_cleari_cs-%d", samples);
    b.shader->info.workgroup_size[0] = 8;
    b.shader->info.workgroup_size[1] = 8;
 
@@ -756,7 +758,7 @@ nir_shader *
 radv_meta_nir_build_cleari_r32g32b32_compute_shader(struct radv_device *dev)
 {
    const struct glsl_type *img_type = glsl_image_type(GLSL_SAMPLER_DIM_BUF, false, GLSL_TYPE_FLOAT);
-   nir_builder b = radv_meta_init_shader(dev, MESA_SHADER_COMPUTE, "meta_cleari_r32g32b32_cs");
+   nir_builder b = radv_meta_nir_init_shader(dev, MESA_SHADER_COMPUTE, "meta_cleari_r32g32b32_cs");
    b.shader->info.workgroup_size[0] = 8;
    b.shader->info.workgroup_size[1] = 8;
 
@@ -790,8 +792,8 @@ void
 radv_meta_nir_build_clear_color_shaders(struct radv_device *dev, struct nir_shader **out_vs, struct nir_shader **out_fs,
                                         uint32_t frag_output)
 {
-   nir_builder vs_b = radv_meta_init_shader(dev, MESA_SHADER_VERTEX, "meta_clear_color_vs");
-   nir_builder fs_b = radv_meta_init_shader(dev, MESA_SHADER_FRAGMENT, "meta_clear_color_fs-%d", frag_output);
+   nir_builder vs_b = radv_meta_nir_init_shader(dev, MESA_SHADER_VERTEX, "meta_clear_color_vs");
+   nir_builder fs_b = radv_meta_nir_init_shader(dev, MESA_SHADER_FRAGMENT, "meta_clear_color_fs-%d", frag_output);
 
    const struct glsl_type *position_type = glsl_vec4_type();
    const struct glsl_type *color_type = glsl_vec4_type();
@@ -827,10 +829,10 @@ void
 radv_meta_nir_build_clear_depthstencil_shaders(struct radv_device *dev, struct nir_shader **out_vs,
                                                struct nir_shader **out_fs, bool unrestricted)
 {
-   nir_builder vs_b = radv_meta_init_shader(
+   nir_builder vs_b = radv_meta_nir_init_shader(
       dev, MESA_SHADER_VERTEX, unrestricted ? "meta_clear_depthstencil_unrestricted_vs" : "meta_clear_depthstencil_vs");
    nir_builder fs_b =
-      radv_meta_init_shader(dev, MESA_SHADER_FRAGMENT,
+      radv_meta_nir_init_shader(dev, MESA_SHADER_FRAGMENT,
                             unrestricted ? "meta_clear_depthstencil_unrestricted_fs" : "meta_clear_depthstencil_fs");
 
    const struct glsl_type *position_out_type = glsl_vec4_type();
@@ -871,7 +873,7 @@ radv_meta_nir_build_clear_depthstencil_shaders(struct radv_device *dev, struct n
 nir_shader *
 radv_meta_nir_build_clear_htile_mask_shader(struct radv_device *dev)
 {
-   nir_builder b = radv_meta_init_shader(dev, MESA_SHADER_COMPUTE, "meta_clear_htile_mask");
+   nir_builder b = radv_meta_nir_init_shader(dev, MESA_SHADER_COMPUTE, "meta_clear_htile_mask");
    b.shader->info.workgroup_size[0] = 64;
 
    nir_def *global_id = get_global_ids(&b, 1);
@@ -904,7 +906,7 @@ radv_meta_nir_build_clear_dcc_comp_to_single_shader(struct radv_device *dev, boo
    enum glsl_sampler_dim dim = is_msaa ? GLSL_SAMPLER_DIM_MS : GLSL_SAMPLER_DIM_2D;
    const struct glsl_type *img_type = glsl_image_type(dim, true, GLSL_TYPE_FLOAT);
 
-   nir_builder b = radv_meta_init_shader(dev, MESA_SHADER_COMPUTE, "meta_clear_dcc_comp_to_single-%s",
+   nir_builder b = radv_meta_nir_init_shader(dev, MESA_SHADER_COMPUTE, "meta_clear_dcc_comp_to_single-%s",
                                          is_msaa ? "multisampled" : "singlesampled");
    b.shader->info.workgroup_size[0] = 8;
    b.shader->info.workgroup_size[1] = 8;
@@ -942,7 +944,7 @@ nir_shader *
 radv_meta_nir_build_copy_vrs_htile_shader(struct radv_device *device, struct radeon_surf *surf)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   nir_builder b = radv_meta_init_shader(device, MESA_SHADER_COMPUTE, "meta_copy_vrs_htile");
+   nir_builder b = radv_meta_nir_init_shader(device, MESA_SHADER_COMPUTE, "meta_copy_vrs_htile");
    b.shader->info.workgroup_size[0] = 8;
    b.shader->info.workgroup_size[1] = 8;
 
@@ -1026,7 +1028,7 @@ radv_meta_nir_build_dcc_retile_compute_shader(struct radv_device *dev, struct ra
    const struct radv_physical_device *pdev = radv_device_physical(dev);
    enum glsl_sampler_dim dim = GLSL_SAMPLER_DIM_BUF;
    const struct glsl_type *buf_type = glsl_image_type(dim, false, GLSL_TYPE_UINT);
-   nir_builder b = radv_meta_init_shader(dev, MESA_SHADER_COMPUTE, "dcc_retile_compute");
+   nir_builder b = radv_meta_nir_init_shader(dev, MESA_SHADER_COMPUTE, "dcc_retile_compute");
 
    b.shader->info.workgroup_size[0] = 8;
    b.shader->info.workgroup_size[1] = 8;
@@ -1074,7 +1076,7 @@ radv_meta_nir_build_expand_depth_stencil_compute_shader(struct radv_device *dev)
 {
    const struct glsl_type *img_type = glsl_image_type(GLSL_SAMPLER_DIM_2D, false, GLSL_TYPE_FLOAT);
 
-   nir_builder b = radv_meta_init_shader(dev, MESA_SHADER_COMPUTE, "expand_depth_stencil_compute");
+   nir_builder b = radv_meta_nir_init_shader(dev, MESA_SHADER_COMPUTE, "expand_depth_stencil_compute");
 
    /* We need at least 8/8/1 to cover an entire HTILE block in a single workgroup. */
    b.shader->info.workgroup_size[0] = 8;
@@ -1114,7 +1116,7 @@ radv_meta_nir_build_dcc_decompress_compute_shader(struct radv_device *dev)
 {
    const struct glsl_type *img_type = glsl_image_type(GLSL_SAMPLER_DIM_2D, false, GLSL_TYPE_FLOAT);
 
-   nir_builder b = radv_meta_init_shader(dev, MESA_SHADER_COMPUTE, "dcc_decompress_compute");
+   nir_builder b = radv_meta_nir_init_shader(dev, MESA_SHADER_COMPUTE, "dcc_decompress_compute");
 
    /* We need at least 16/16/1 to cover an entire DCC block in a single workgroup. */
    b.shader->info.workgroup_size[0] = 16;
@@ -1152,7 +1154,7 @@ radv_meta_nir_build_fmask_copy_compute_shader(struct radv_device *dev, int sampl
    const struct glsl_type *sampler_type = glsl_sampler_type(GLSL_SAMPLER_DIM_MS, false, false, GLSL_TYPE_FLOAT);
    const struct glsl_type *img_type = glsl_image_type(GLSL_SAMPLER_DIM_MS, false, GLSL_TYPE_FLOAT);
 
-   nir_builder b = radv_meta_init_shader(dev, MESA_SHADER_COMPUTE, "meta_fmask_copy_cs_-%d", samples);
+   nir_builder b = radv_meta_nir_init_shader(dev, MESA_SHADER_COMPUTE, "meta_fmask_copy_cs_-%d", samples);
 
    b.shader->info.workgroup_size[0] = 8;
    b.shader->info.workgroup_size[1] = 8;
@@ -1214,7 +1216,7 @@ radv_meta_nir_build_fmask_copy_compute_shader(struct radv_device *dev, int sampl
       nir_image_deref_store(&b, &nir_build_deref_var(&b, output_img)->def, dst_coord, sample_id, outval,
                             nir_imm_int(&b, 0), .image_dim = GLSL_SAMPLER_DIM_MS);
 
-      radv_break_on_count(&b, counter, max_sample_index);
+      radv_meta_nir_break_on_count(&b, counter, max_sample_index);
    }
    nir_pop_loop(&b, loop);
 
@@ -1227,7 +1229,7 @@ radv_meta_nir_build_fmask_expand_compute_shader(struct radv_device *device, int 
    const struct glsl_type *type = glsl_sampler_type(GLSL_SAMPLER_DIM_MS, false, true, GLSL_TYPE_FLOAT);
    const struct glsl_type *img_type = glsl_image_type(GLSL_SAMPLER_DIM_MS, true, GLSL_TYPE_FLOAT);
 
-   nir_builder b = radv_meta_init_shader(device, MESA_SHADER_COMPUTE, "meta_fmask_expand_cs-%d", samples);
+   nir_builder b = radv_meta_nir_init_shader(device, MESA_SHADER_COMPUTE, "meta_fmask_expand_cs-%d", samples);
    b.shader->info.workgroup_size[0] = 8;
    b.shader->info.workgroup_size[1] = 8;
 
@@ -1278,7 +1280,7 @@ radv_meta_nir_build_resolve_compute_shader(struct radv_device *dev, bool is_inte
    enum glsl_base_type img_base_type = is_integer ? GLSL_TYPE_UINT : GLSL_TYPE_FLOAT;
    const struct glsl_type *sampler_type = glsl_sampler_type(GLSL_SAMPLER_DIM_MS, false, false, img_base_type);
    const struct glsl_type *img_type = glsl_image_type(GLSL_SAMPLER_DIM_2D, false, img_base_type);
-   nir_builder b = radv_meta_init_shader(dev, MESA_SHADER_COMPUTE, "meta_resolve_cs-%d-%s", samples,
+   nir_builder b = radv_meta_nir_init_shader(dev, MESA_SHADER_COMPUTE, "meta_resolve_cs-%d-%s", samples,
                                          is_integer ? "int" : (is_srgb ? "srgb" : "float"));
    b.shader->info.workgroup_size[0] = 8;
    b.shader->info.workgroup_size[1] = 8;
@@ -1301,7 +1303,7 @@ radv_meta_nir_build_resolve_compute_shader(struct radv_device *dev, bool is_inte
 
    nir_variable *color = nir_local_variable_create(b.impl, glsl_vec4_type(), "color");
 
-   radv_meta_build_resolve_shader_core(dev, &b, is_integer, samples, input_img, color, src_coord);
+   radv_meta_nir_build_resolve_shader_core(dev, &b, is_integer, samples, input_img, color, src_coord);
 
    nir_def *outval = nir_load_var(&b, color);
    if (is_srgb)
@@ -1341,7 +1343,7 @@ radv_meta_nir_build_depth_stencil_resolve_compute_shader(struct radv_device *dev
    const struct glsl_type *sampler_type = glsl_sampler_type(GLSL_SAMPLER_DIM_MS, false, true, img_base_type);
    const struct glsl_type *img_type = glsl_image_type(GLSL_SAMPLER_DIM_2D, true, img_base_type);
 
-   nir_builder b = radv_meta_init_shader(dev, MESA_SHADER_COMPUTE, "meta_resolve_cs_%s-%s-%d",
+   nir_builder b = radv_meta_nir_init_shader(dev, MESA_SHADER_COMPUTE, "meta_resolve_cs_%s-%s-%d",
                                          index == RADV_META_DEPTH_RESOLVE ? "depth" : "stencil",
                                          get_resolve_mode_str(resolve_mode), samples);
    b.shader->info.workgroup_size[0] = 8;
@@ -1412,7 +1414,7 @@ radv_meta_nir_build_resolve_fragment_shader(struct radv_device *dev, bool is_int
    const struct glsl_type *sampler_type = glsl_sampler_type(GLSL_SAMPLER_DIM_MS, false, false, img_base_type);
 
    nir_builder b =
-      radv_meta_init_shader(dev, MESA_SHADER_FRAGMENT, "meta_resolve_fs-%d-%s", samples, is_integer ? "int" : "float");
+      radv_meta_nir_init_shader(dev, MESA_SHADER_FRAGMENT, "meta_resolve_fs-%d-%s", samples, is_integer ? "int" : "float");
 
    nir_variable *input_img = nir_variable_create(b.shader, nir_var_uniform, sampler_type, "s_tex");
    input_img->data.descriptor_set = 0;
@@ -1429,7 +1431,7 @@ radv_meta_nir_build_resolve_fragment_shader(struct radv_device *dev, bool is_int
    nir_def *img_coord = nir_trim_vector(&b, nir_iadd(&b, pos_int, src_offset), 2);
    nir_variable *color = nir_local_variable_create(b.impl, glsl_vec4_type(), "color");
 
-   radv_meta_build_resolve_shader_core(dev, &b, is_integer, samples, input_img, color, img_coord);
+   radv_meta_nir_build_resolve_shader_core(dev, &b, is_integer, samples, input_img, color, img_coord);
 
    nir_def *outval = nir_load_var(&b, color);
    nir_store_var(&b, color_out, outval, 0xf);
@@ -1445,7 +1447,7 @@ radv_meta_nir_build_depth_stencil_resolve_fragment_shader(struct radv_device *de
    const struct glsl_type *vec4 = glsl_vec4_type();
    const struct glsl_type *sampler_type = glsl_sampler_type(GLSL_SAMPLER_DIM_MS, false, false, img_base_type);
 
-   nir_builder b = radv_meta_init_shader(dev, MESA_SHADER_FRAGMENT, "meta_resolve_fs_%s-%s-%d",
+   nir_builder b = radv_meta_nir_init_shader(dev, MESA_SHADER_FRAGMENT, "meta_resolve_fs_%s-%s-%d",
                                          index == RADV_META_DEPTH_RESOLVE ? "depth" : "stencil",
                                          get_resolve_mode_str(resolve_mode), samples);
 
@@ -1506,7 +1508,7 @@ radv_meta_nir_build_resolve_fs(struct radv_device *dev)
    const struct glsl_type *vec4 = glsl_vec4_type();
    nir_variable *f_color;
 
-   nir_builder b = radv_meta_init_shader(dev, MESA_SHADER_FRAGMENT, "meta_resolve_fs");
+   nir_builder b = radv_meta_nir_init_shader(dev, MESA_SHADER_FRAGMENT, "meta_resolve_fs");
 
    f_color = nir_variable_create(b.shader, nir_var_shader_out, vec4, "f_color");
    f_color->data.location = FRAG_RESULT_DATA0;

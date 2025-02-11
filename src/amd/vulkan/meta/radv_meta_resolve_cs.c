@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <stdbool.h>
 
+#include "nir/radv_meta_nir.h"
 #include "radv_entrypoints.h"
 #include "radv_formats.h"
 #include "radv_meta.h"

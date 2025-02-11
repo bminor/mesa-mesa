@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <stdbool.h>
 
+#include "nir/radv_meta_nir.h"
 #include "radv_entrypoints.h"
 #include "radv_meta.h"
 #include "vk_common_entrypoints.h"
@@ -73,7 +74,7 @@ get_depth_stencil_resolve_pipeline(struct radv_device *device, int samples, VkIm
 
    nir_shader *fs_module =
       radv_meta_nir_build_depth_stencil_resolve_fragment_shader(device, samples, index, resolve_mode);
-   nir_shader *vs_module = radv_meta_build_nir_vs_generate_vertices(device);
+   nir_shader *vs_module = radv_meta_nir_build_vs_generate_vertices(device);
 
    const VkStencilOp stencil_op = index == RADV_META_DEPTH_RESOLVE ? VK_STENCIL_OP_KEEP : VK_STENCIL_OP_REPLACE;
 
@@ -225,7 +226,7 @@ get_color_resolve_pipeline(struct radv_device *device, struct radv_image_view *s
       return VK_SUCCESS;
    }
 
-   nir_shader *vs_module = radv_meta_build_nir_vs_generate_vertices(device);
+   nir_shader *vs_module = radv_meta_nir_build_vs_generate_vertices(device);
    nir_shader *fs_module = radv_meta_nir_build_resolve_fragment_shader(device, is_integer, samples);
 
    const VkGraphicsPipelineCreateInfo pipeline_create_info = {

@@ -6,6 +6,7 @@
 
 #include "radv_dgc.h"
 #include "meta/radv_meta.h"
+#include "nir/radv_meta_nir.h"
 #include "radv_entrypoints.h"
 #include "radv_pipeline_rt.h"
 
@@ -2470,7 +2471,7 @@ static nir_shader *
 build_dgc_prepare_shader(struct radv_device *dev, struct radv_indirect_command_layout *layout)
 {
    const struct radv_physical_device *pdev = radv_device_physical(dev);
-   nir_builder b = radv_meta_init_shader(dev, MESA_SHADER_COMPUTE, "meta_dgc_prepare");
+   nir_builder b = radv_meta_nir_init_shader(dev, MESA_SHADER_COMPUTE, "meta_dgc_prepare");
    b.shader->info.workgroup_size[0] = 64;
 
    nir_def *global_id = get_global_ids(&b, 1);

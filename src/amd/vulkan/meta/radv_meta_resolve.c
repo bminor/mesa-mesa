@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <stdbool.h>
 
+#include "nir/radv_meta_nir.h"
 #include "radv_entrypoints.h"
 #include "radv_meta.h"
 #include "vk_format.h"
@@ -37,7 +38,7 @@ get_pipeline(struct radv_device *device, unsigned fs_key, VkPipeline *pipeline_o
       return VK_SUCCESS;
    }
 
-   nir_shader *vs_module = radv_meta_build_nir_vs_generate_vertices(device);
+   nir_shader *vs_module = radv_meta_nir_build_vs_generate_vertices(device);
    nir_shader *fs_module = radv_meta_nir_build_resolve_fs(device);
 
    const VkGraphicsPipelineCreateInfoRADV radv_info = {
