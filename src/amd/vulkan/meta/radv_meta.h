@@ -328,6 +328,16 @@ nir_shader *radv_meta_nir_build_fmask_copy_compute_shader(struct radv_device *de
 
 nir_shader *radv_meta_nir_build_fmask_expand_compute_shader(struct radv_device *device, int samples);
 
+enum radv_meta_resolve_type {
+   RADV_META_DEPTH_RESOLVE,
+   RADV_META_STENCIL_RESOLVE,
+};
+nir_shader *radv_meta_nir_build_resolve_compute_shader(struct radv_device *dev, bool is_integer, bool is_srgb,
+                                                       int samples);
+nir_shader *radv_meta_nir_build_depth_stencil_resolve_compute_shader(struct radv_device *dev, int samples,
+                                                                     enum radv_meta_resolve_type index,
+                                                                     VkResolveModeFlagBits resolve_mode);
+
 uint32_t radv_fill_buffer(struct radv_cmd_buffer *cmd_buffer, const struct radv_image *image,
                           struct radeon_winsys_bo *bo, uint64_t va, uint64_t size, uint32_t value);
 
