@@ -1294,8 +1294,8 @@ radv_destroy_image(struct radv_device *device, const VkAllocationCallbacks *pAll
       if (!image->bindings[i].addr)
          continue;
 
-      vk_address_binding_report(&instance->vk, &image->vk.base, image->bindings[i].addr + image->bindings[i].offset,
-                                image->bindings[i].range, VK_DEVICE_ADDRESS_BINDING_TYPE_UNBIND_EXT);
+      vk_address_binding_report(&instance->vk, &image->vk.base, image->bindings[i].addr, image->bindings[i].range,
+                                VK_DEVICE_ADDRESS_BINDING_TYPE_UNBIND_EXT);
    }
 
    radv_rmv_log_resource_destroy(device, (uint64_t)radv_image_to_handle(image));
@@ -1450,6 +1450,8 @@ radv_image_create(VkDevice _device, const struct radv_image_create_info *create_
          radv_destroy_image(device, alloc, image);
          return vk_error(device, result);
       }
+
+      image->bindings[0].addr = radv_buffer_get_va(image->bindings[0].bo);
    }
 
    if (instance->debug_flags & RADV_DEBUG_IMG) {
@@ -1745,13 +1747,12 @@ radv_bind_image_memory(struct radv_device *device, struct radv_image *image, uin
 
    image->bindings[bind_idx].bo = bo;
    image->bindings[bind_idx].offset = offset;
-   image->bindings[bind_idx].addr = radv_buffer_get_va(bo);
+   image->bindings[bind_idx].addr = radv_buffer_get_va(bo) + offset;
    image->bindings[bind_idx].range = range;
 
    radv_rmv_log_image_bind(device, bind_idx, radv_image_to_handle(image));
 
-   vk_address_binding_report(&instance->vk, &image->vk.base,
-                             image->bindings[bind_idx].addr + image->bindings[bind_idx].offset,
+   vk_address_binding_report(&instance->vk, &image->vk.base, image->bindings[bind_idx].addr,
                              image->bindings[bind_idx].range, VK_DEVICE_ADDRESS_BINDING_TYPE_BIND_EXT);
 }
 

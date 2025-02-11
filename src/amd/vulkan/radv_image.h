@@ -78,7 +78,7 @@ VK_DEFINE_NONDISP_HANDLE_CASTS(radv_image, vk.base, VkImage, VK_OBJECT_TYPE_IMAG
 static inline uint64_t
 radv_image_get_va(const struct radv_image *image, uint32_t bind_idx)
 {
-   return radv_buffer_get_va(image->bindings[bind_idx].bo) + image->bindings[bind_idx].offset;
+   return image->bindings[bind_idx].addr;
 }
 
 static inline bool
