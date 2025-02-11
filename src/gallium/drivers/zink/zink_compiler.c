@@ -4025,7 +4025,7 @@ zink_shader_compile(struct zink_screen *screen, bool can_shobj, struct zink_shad
 
          if (zink_fs_key(key)->lower_point_smooth) {
             NIR_PASS_V(nir, nir_lower_point_smooth, false);
-            NIR_PASS_V(nir, nir_lower_discard_if, nir_lower_discard_if_to_cf);
+            NIR_PASS_V(nir, nir_lower_discard_if, nir_lower_demote_if_to_cf | nir_lower_terminate_if_to_cf);
             nir->info.fs.uses_discard = true;
             need_optimize = true;
          }
@@ -6256,9 +6256,7 @@ zink_shader_init(struct zink_screen *screen, struct zink_shader *zs)
 
    optimize_nir(nir, NULL, true);
    NIR_PASS_V(nir, nir_remove_dead_variables, nir_var_function_temp, NULL);
-   NIR_PASS_V(nir, nir_lower_discard_if, (nir_lower_discard_if_to_cf |
-                                          nir_lower_demote_if_to_cf |
-                                          nir_lower_terminate_if_to_cf));
+   NIR_PASS_V(nir, nir_lower_discard_if, nir_lower_demote_if_to_cf | nir_lower_terminate_if_to_cf);
 
    bool needs_size = analyze_io(zs, nir);
    NIR_PASS_V(nir, unbreak_bos, zs, needs_size);
