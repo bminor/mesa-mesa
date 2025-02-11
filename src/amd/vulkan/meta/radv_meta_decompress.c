@@ -10,46 +10,6 @@
 #include "radv_meta.h"
 #include "sid.h"
 
-static nir_shader *
-build_expand_depth_stencil_compute_shader(struct radv_device *dev)
-{
-   const struct glsl_type *img_type = glsl_image_type(GLSL_SAMPLER_DIM_2D, false, GLSL_TYPE_FLOAT);
-
-   nir_builder b = radv_meta_init_shader(dev, MESA_SHADER_COMPUTE, "expand_depth_stencil_compute");
-
-   /* We need at least 8/8/1 to cover an entire HTILE block in a single workgroup. */
-   b.shader->info.workgroup_size[0] = 8;
-   b.shader->info.workgroup_size[1] = 8;
-   nir_variable *input_img = nir_variable_create(b.shader, nir_var_image, img_type, "in_img");
-   input_img->data.descriptor_set = 0;
-   input_img->data.binding = 0;
-
-   nir_variable *output_img = nir_variable_create(b.shader, nir_var_image, img_type, "out_img");
-   output_img->data.descriptor_set = 0;
-   output_img->data.binding = 1;
-
-   nir_def *invoc_id = nir_load_local_invocation_id(&b);
-   nir_def *wg_id = nir_load_workgroup_id(&b);
-   nir_def *block_size = nir_imm_ivec4(&b, b.shader->info.workgroup_size[0], b.shader->info.workgroup_size[1],
-                                       b.shader->info.workgroup_size[2], 0);
-
-   nir_def *global_id = nir_iadd(&b, nir_imul(&b, wg_id, block_size), invoc_id);
-
-   nir_def *data = nir_image_deref_load(&b, 4, 32, &nir_build_deref_var(&b, input_img)->def, global_id,
-                                        nir_undef(&b, 1, 32), nir_imm_int(&b, 0), .image_dim = GLSL_SAMPLER_DIM_2D);
-
-   /* We need a SCOPE_DEVICE memory_scope because ACO will avoid
-    * creating a vmcnt(0) because it expects the L1 cache to keep memory
-    * operations in-order for the same workgroup. The vmcnt(0) seems
-    * necessary however. */
-   nir_barrier(&b, .execution_scope = SCOPE_WORKGROUP, .memory_scope = SCOPE_DEVICE,
-               .memory_semantics = NIR_MEMORY_ACQ_REL, .memory_modes = nir_var_mem_ssbo);
-
-   nir_image_deref_store(&b, &nir_build_deref_var(&b, output_img)->def, global_id, nir_undef(&b, 1, 32), data,
-                         nir_imm_int(&b, 0), .image_dim = GLSL_SAMPLER_DIM_2D);
-   return b.shader;
-}
-
 struct radv_htile_expand_key {
    enum radv_meta_object_key_type type;
    uint32_t samples;
@@ -355,7 +315,7 @@ get_pipeline_cs(struct radv_device *device, VkPipeline *pipeline_out, VkPipeline
       return VK_SUCCESS;
    }
 
-   nir_shader *cs = build_expand_depth_stencil_compute_shader(device);
+   nir_shader *cs = radv_meta_nir_build_expand_depth_stencil_compute_shader(device);
 
    const VkPipelineShaderStageCreateInfo stage_info = {
       .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
