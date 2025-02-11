@@ -119,7 +119,6 @@ zink_bind_vertex_buffers(struct zink_context *ctx)
    VkBuffer buffers[PIPE_MAX_ATTRIBS];
    VkDeviceSize buffer_offsets[PIPE_MAX_ATTRIBS];
    struct zink_vertex_elements_state *elems = ctx->element_state;
-   struct zink_screen *screen = zink_screen(ctx->base.screen);
 
    for (unsigned i = 0; i < elems->hw_state.num_bindings; i++) {
       struct pipe_vertex_buffer *vb = ctx->vertex_buffers + elems->hw_state.binding_map[i];
@@ -140,12 +139,12 @@ zink_bind_vertex_buffers(struct zink_context *ctx)
        DYNAMIC_STATE != ZINK_DYNAMIC_VERTEX_INPUT) {
       if (elems->hw_state.num_bindings)
          VKCTX(CmdBindVertexBuffers2)(ctx->bs->cmdbuf, 0,
-                                             elems->hw_state.num_bindings,
-                                             buffers, buffer_offsets, NULL, elems->hw_state.b.strides);
+                                      elems->hw_state.num_bindings,
+                                      buffers, buffer_offsets, NULL, elems->hw_state.b.strides);
    } else if (elems->hw_state.num_bindings)
-      VKSCR(CmdBindVertexBuffers)(ctx->bs->cmdbuf, 0,
-                             elems->hw_state.num_bindings,
-                             buffers, buffer_offsets);
+      VKCTX(CmdBindVertexBuffers)(ctx->bs->cmdbuf, 0,
+                                  elems->hw_state.num_bindings,
+                                  buffers, buffer_offsets);
 
    ctx->vertex_buffers_dirty = false;
 }
