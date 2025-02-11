@@ -5849,9 +5849,8 @@ bool nir_lower_interpolation(nir_shader *shader,
                              nir_lower_interpolation_options options);
 
 typedef enum {
-   nir_lower_discard_if_to_cf = (1 << 0),
-   nir_lower_demote_if_to_cf = (1 << 1),
-   nir_lower_terminate_if_to_cf = (1 << 2),
+   nir_lower_demote_if_to_cf = (1 << 0),
+   nir_lower_terminate_if_to_cf = (1 << 1),
 } nir_lower_discard_if_options;
 
 bool nir_lower_discard_if(nir_shader *shader, nir_lower_discard_if_options options);
