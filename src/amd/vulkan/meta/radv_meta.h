@@ -316,6 +316,8 @@ void radv_meta_nir_build_clear_depthstencil_shaders(struct radv_device *dev, str
 nir_shader *radv_meta_nir_build_clear_htile_mask_shader(struct radv_device *dev);
 nir_shader *radv_meta_nir_build_clear_dcc_comp_to_single_shader(struct radv_device *dev, bool is_msaa);
 
+nir_shader *radv_meta_nir_build_copy_vrs_htile_shader(struct radv_device *device, struct radeon_surf *surf);
+
 uint32_t radv_fill_buffer(struct radv_cmd_buffer *cmd_buffer, const struct radv_image *image,
                           struct radeon_winsys_bo *bo, uint64_t va, uint64_t size, uint32_t value);
 
