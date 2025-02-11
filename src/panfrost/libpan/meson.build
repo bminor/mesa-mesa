@@ -8,7 +8,7 @@ libpan_shader_files = files(
 
 idep_libpan_per_arch = {}
 
-foreach ver : ['4', '5', '6', '7', '9', '10']
+foreach ver : ['4', '5', '6', '7', '9', '10', '12']
   libpan_spv = custom_target(
     input : libpan_shader_files,
     output : 'libpan_v' + ver + '.spv',
