@@ -321,6 +321,8 @@ struct tu_render_pass_state
 
    const char *lrz_disable_reason;
    uint32_t lrz_disabled_at_draw;
+
+   const char *gmem_disable_reason;
 };
 
 /* These are the states of the suspend/resume state machine. In addition to

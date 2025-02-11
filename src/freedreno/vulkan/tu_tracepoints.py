@@ -92,6 +92,7 @@ begin_end_tp('render_pass',
                Arg(type='uint16_t', name='binHeight',           var='tiling->tile0.height',                                 c_format='%u'),],
     # Args known only at the end of the renderpass:
     end_args=[Arg(type='bool',                                  var='tiledRender',                                          c_format='%s', to_prim_type='({} ? "true" : "false")'),
+              Arg(type='const char *',                          var='tilingDisableReason',                                  c_format='%s'),
               Arg(type='uint32_t',                              var='drawCount',                                            c_format='%u'),
               Arg(type='uint32_t',                              var='avgPerSampleBandwidth',                                c_format='%u'),
               Arg(type='bool',                                  var='lrz',                                                  c_format='%s', to_prim_type='({} ? "true" : "false")'),

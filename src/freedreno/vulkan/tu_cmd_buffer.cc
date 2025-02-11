@@ -983,38 +983,56 @@ static bool
 use_sysmem_rendering(struct tu_cmd_buffer *cmd,
                      struct tu_renderpass_result **autotune_result)
 {
-   if (TU_DEBUG(SYSMEM))
+   if (TU_DEBUG(SYSMEM)) {
+      cmd->state.rp.gmem_disable_reason = "TU_DEBUG(SYSMEM)";
       return true;
+   }
 
    /* can't fit attachments into gmem */
-   if (!cmd->state.tiling->possible)
+   if (!cmd->state.tiling->possible) {
+      cmd->state.rp.gmem_disable_reason = "Can't fit attachments into gmem";
       return true;
+   }
 
-   if (cmd->state.framebuffer->layers > 1)
+   if (cmd->state.framebuffer->layers > 1) {
+      cmd->state.rp.gmem_disable_reason = "Framebuffer has more than 1 layer";
       return true;
+   }
 
    /* Use sysmem for empty render areas */
    if (cmd->state.render_area.extent.width == 0 ||
-       cmd->state.render_area.extent.height == 0)
+       cmd->state.render_area.extent.height == 0) {
+      cmd->state.rp.gmem_disable_reason = "Render area is empty";
       return true;
+   }
 
-   if (cmd->state.rp.has_tess)
+   if (cmd->state.rp.has_tess) {
+      cmd->state.rp.gmem_disable_reason = "Uses tessellation shaders";
       return true;
+   }
 
-   if (cmd->state.rp.disable_gmem)
+   if (cmd->state.rp.disable_gmem) {
+      /* gmem_disable_reason is set where disable_gmem is set. */
       return true;
+   }
 
    /* XFB is incompatible with non-hw binning GMEM rendering, see use_hw_binning */
-   if (cmd->state.rp.xfb_used && !cmd->state.tiling->binning_possible)
+   if (cmd->state.rp.xfb_used && !cmd->state.tiling->binning_possible) {
+      cmd->state.rp.gmem_disable_reason =
+         "XFB is incompatible with non-hw binning GMEM rendering";
       return true;
+   }
 
    /* QUERY_TYPE_PRIMITIVES_GENERATED is incompatible with non-hw binning
     * GMEM rendering, see use_hw_binning.
     */
    if ((cmd->state.rp.has_prim_generated_query_in_rp ||
         cmd->state.prim_generated_query_running_before_rp) &&
-       !cmd->state.tiling->binning_possible)
+       !cmd->state.tiling->binning_possible) {
+      cmd->state.rp.gmem_disable_reason =
+         "QUERY_TYPE_PRIMITIVES_GENERATED is incompatible with non-hw binning GMEM rendering";
       return true;
+   }
 
    if (TU_DEBUG(GMEM))
       return false;
@@ -1023,6 +1041,10 @@ use_sysmem_rendering(struct tu_cmd_buffer *cmd,
                                             cmd, autotune_result);
    if (*autotune_result) {
       list_addtail(&(*autotune_result)->node, &cmd->renderpass_autotune_results);
+   }
+
+   if (use_sysmem) {
+      cmd->state.rp.gmem_disable_reason = "Autotune selected sysmem";
    }
 
    return use_sysmem;
@@ -2060,6 +2082,7 @@ tu_trace_end_render_pass(struct tu_cmd_buffer *cmd, bool gmem)
    }
 
    trace_end_render_pass(&cmd->trace, &cmd->cs, gmem,
+                         cmd->state.rp.gmem_disable_reason,
                          cmd->state.rp.drawcall_count,
                          avg_per_sample_bandwidth, cmd->state.lrz.valid,
                          cmd->state.rp.lrz_disable_reason,
@@ -3645,6 +3668,8 @@ tu_pipeline_update_rp_state(struct tu_cmd_state *cmd_state)
          cmd->device,
          "Disabling gmem due to VK_EXT_attachment_feedback_loop_layout");
       cmd_state->rp.disable_gmem = true;
+      cmd_state->rp.gmem_disable_reason =
+         "VK_EXT_attachment_feedback_loop_layout may involve textures";
    }
 
    if (cmd_state->pipeline_sysmem_single_prim_mode &&
@@ -4270,6 +4295,9 @@ tu_render_pass_state_merge(struct tu_render_pass_state *dst,
       dst->lrz_disable_reason = src->lrz_disable_reason;
       dst->lrz_disabled_at_draw =
          dst->drawcall_count + src->lrz_disabled_at_draw;
+   }
+   if (!dst->gmem_disable_reason && src->gmem_disable_reason) {
+      dst->gmem_disable_reason = src->gmem_disable_reason;
    }
 }
 
@@ -5931,6 +5959,8 @@ tu6_draw_common(struct tu_cmd_buffer *cmd,
             cmd->device,
             "Disabling gmem due to VK_EXT_attachment_feedback_loop_layout");
          cmd->state.rp.disable_gmem = true;
+         cmd->state.rp.gmem_disable_reason =
+            "MESA_VK_DYNAMIC_ATTACHMENT_FEEDBACK_LOOP_ENABLE";
       }
    }
 
@@ -7313,6 +7343,7 @@ tu_barrier(struct tu_cmd_buffer *cmd,
       if ((srcStage & ~framebuffer_space_stages) ||
           (dstStage & ~framebuffer_space_stages)) {
          cmd->state.rp.disable_gmem = true;
+         cmd->state.rp.gmem_disable_reason = "Non-framebuffer-space barrier";
       }
    }
 
