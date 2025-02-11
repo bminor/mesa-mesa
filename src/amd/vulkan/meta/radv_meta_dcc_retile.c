@@ -4,60 +4,9 @@
  * SPDX-License-Identifier: MIT
  */
 
-#define AC_SURFACE_INCLUDE_NIR
 #include "ac_surface.h"
-
 #include "radv_meta.h"
 #include "vk_common_entrypoints.h"
-
-static nir_shader *
-build_dcc_retile_compute_shader(struct radv_device *dev, struct radeon_surf *surf)
-{
-   const struct radv_physical_device *pdev = radv_device_physical(dev);
-   enum glsl_sampler_dim dim = GLSL_SAMPLER_DIM_BUF;
-   const struct glsl_type *buf_type = glsl_image_type(dim, false, GLSL_TYPE_UINT);
-   nir_builder b = radv_meta_init_shader(dev, MESA_SHADER_COMPUTE, "dcc_retile_compute");
-
-   b.shader->info.workgroup_size[0] = 8;
-   b.shader->info.workgroup_size[1] = 8;
-
-   nir_def *src_dcc_size = nir_load_push_constant(&b, 2, 32, nir_imm_int(&b, 0), .range = 8);
-   nir_def *src_dcc_pitch = nir_channels(&b, src_dcc_size, 1);
-   nir_def *src_dcc_height = nir_channels(&b, src_dcc_size, 2);
-
-   nir_def *dst_dcc_size = nir_load_push_constant(&b, 2, 32, nir_imm_int(&b, 8), .range = 8);
-   nir_def *dst_dcc_pitch = nir_channels(&b, dst_dcc_size, 1);
-   nir_def *dst_dcc_height = nir_channels(&b, dst_dcc_size, 2);
-   nir_variable *input_dcc = nir_variable_create(b.shader, nir_var_uniform, buf_type, "dcc_in");
-   input_dcc->data.descriptor_set = 0;
-   input_dcc->data.binding = 0;
-   nir_variable *output_dcc = nir_variable_create(b.shader, nir_var_uniform, buf_type, "dcc_out");
-   output_dcc->data.descriptor_set = 0;
-   output_dcc->data.binding = 1;
-
-   nir_def *input_dcc_ref = &nir_build_deref_var(&b, input_dcc)->def;
-   nir_def *output_dcc_ref = &nir_build_deref_var(&b, output_dcc)->def;
-
-   nir_def *coord = get_global_ids(&b, 2);
-   nir_def *zero = nir_imm_int(&b, 0);
-   coord =
-      nir_imul(&b, coord, nir_imm_ivec2(&b, surf->u.gfx9.color.dcc_block_width, surf->u.gfx9.color.dcc_block_height));
-
-   nir_def *src = ac_nir_dcc_addr_from_coord(&b, &pdev->info, surf->bpe, &surf->u.gfx9.color.dcc_equation,
-                                             src_dcc_pitch, src_dcc_height, zero, nir_channel(&b, coord, 0),
-                                             nir_channel(&b, coord, 1), zero, zero, zero);
-   nir_def *dst = ac_nir_dcc_addr_from_coord(&b, &pdev->info, surf->bpe, &surf->u.gfx9.color.display_dcc_equation,
-                                             dst_dcc_pitch, dst_dcc_height, zero, nir_channel(&b, coord, 0),
-                                             nir_channel(&b, coord, 1), zero, zero, zero);
-
-   nir_def *dcc_val = nir_image_deref_load(&b, 1, 32, input_dcc_ref, nir_vec4(&b, src, src, src, src),
-                                           nir_undef(&b, 1, 32), nir_imm_int(&b, 0), .image_dim = dim);
-
-   nir_image_deref_store(&b, output_dcc_ref, nir_vec4(&b, dst, dst, dst, dst), nir_undef(&b, 1, 32), dcc_val,
-                         nir_imm_int(&b, 0), .image_dim = dim);
-
-   return b.shader;
-}
 
 static VkResult
 get_pipeline_layout(struct radv_device *device, VkPipelineLayout *layout_out)
@@ -131,7 +80,7 @@ get_pipeline(struct radv_device *device, struct radv_image *image, VkPipeline *p
       return VK_SUCCESS;
    }
 
-   nir_shader *cs = build_dcc_retile_compute_shader(device, &image->planes[0].surface);
+   nir_shader *cs = radv_meta_nir_build_dcc_retile_compute_shader(device, &image->planes[0].surface);
 
    const VkPipelineShaderStageCreateInfo stage_info = {
       .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
