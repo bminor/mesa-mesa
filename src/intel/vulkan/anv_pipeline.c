@@ -2877,8 +2877,10 @@ anv_graphics_pipeline_emit(struct anv_graphics_pipeline *pipeline,
    pipeline->view_mask = state->rp->view_mask;
 
    if (anv_pipeline_is_primitive(pipeline)) {
-      const struct brw_vs_prog_data *vs_prog_data = get_vs_prog_data(pipeline);
-      const struct brw_wm_prog_data *wm_prog_data = get_wm_prog_data(pipeline);
+      const struct brw_vs_prog_data *vs_prog_data =
+         get_pipeline_vs_prog_data(pipeline);
+      const struct brw_wm_prog_data *wm_prog_data =
+         get_pipeline_wm_prog_data(pipeline);
 
       /* The total number of vertex elements we need to program. We might need
        * a couple more to implement some of the draw parameters.

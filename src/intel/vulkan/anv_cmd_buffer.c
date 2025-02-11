@@ -503,9 +503,9 @@ anv_cmd_buffer_set_ray_query_buffer(struct anv_cmd_buffer *cmd_buffer,
  * state appropriately.
  */
 static void
-anv_cmd_buffer_flush_pipeline_state(struct anv_cmd_buffer *cmd_buffer,
-                                    struct anv_graphics_pipeline *old_pipeline,
-                                    struct anv_graphics_pipeline *new_pipeline)
+anv_cmd_buffer_flush_pipeline_hw_state(struct anv_cmd_buffer *cmd_buffer,
+                                       struct anv_graphics_pipeline *old_pipeline,
+                                       struct anv_graphics_pipeline *new_pipeline)
 {
    struct anv_cmd_graphics_state *gfx = &cmd_buffer->state.gfx;
    struct anv_gfx_dynamic_state *hw_state = &gfx->dyn_state;
@@ -681,11 +681,12 @@ void anv_CmdBindPipeline(
       if (cmd_buffer->state.compute.base.pipeline == pipeline)
          return;
 
-      cmd_buffer->state.compute.base.pipeline = pipeline;
-      cmd_buffer->state.compute.pipeline_dirty = true;
-
       struct anv_compute_pipeline *compute_pipeline =
          anv_pipeline_to_compute(pipeline);
+
+      cmd_buffer->state.compute.shader = compute_pipeline->cs;
+      cmd_buffer->state.compute.pipeline_dirty = true;
+
       set_dirty_for_bind_map(cmd_buffer, MESA_SHADER_COMPUTE,
                              &compute_pipeline->cs->bind_map);
 
@@ -711,10 +712,16 @@ void anv_CmdBindPipeline(
          cmd_buffer->state.gfx.base.pipeline == NULL ? NULL :
          anv_pipeline_to_graphics(cmd_buffer->state.gfx.base.pipeline);
 
-      cmd_buffer->state.gfx.base.pipeline = pipeline;
       cmd_buffer->state.gfx.dirty |=
          get_pipeline_dirty_stages(cmd_buffer->device,
                                    old_pipeline, new_pipeline);
+
+      STATIC_ASSERT(sizeof(cmd_buffer->state.gfx.shaders) ==
+                    sizeof(new_pipeline->base.shaders));
+      memcpy(cmd_buffer->state.gfx.shaders,
+             new_pipeline->base.shaders,
+             sizeof(cmd_buffer->state.gfx.shaders));
+      cmd_buffer->state.gfx.active_stages = pipeline->active_stages;
 
       anv_foreach_stage(stage, new_pipeline->base.base.active_stages) {
          set_dirty_for_bind_map(cmd_buffer, stage,
@@ -757,7 +764,13 @@ void anv_CmdBindPipeline(
          }
       }
 
-      anv_cmd_buffer_flush_pipeline_state(cmd_buffer, old_pipeline, new_pipeline);
+      cmd_buffer->state.gfx.min_sample_shading = new_pipeline->min_sample_shading;
+      cmd_buffer->state.gfx.sample_shading_enable = new_pipeline->sample_shading_enable;
+      cmd_buffer->state.gfx.instance_multiplier = new_pipeline->instance_multiplier;
+      cmd_buffer->state.gfx.primitive_id_index = new_pipeline->primitive_id_index;
+      cmd_buffer->state.gfx.first_vue_slot = new_pipeline->first_vue_slot;
+
+      anv_cmd_buffer_flush_pipeline_hw_state(cmd_buffer, old_pipeline, new_pipeline);
       break;
    }
 
@@ -765,7 +778,6 @@ void anv_CmdBindPipeline(
       if (cmd_buffer->state.rt.base.pipeline == pipeline)
          return;
 
-      cmd_buffer->state.rt.base.pipeline = pipeline;
       cmd_buffer->state.rt.pipeline_dirty = true;
 
       struct anv_ray_tracing_pipeline *rt_pipeline =
@@ -787,6 +799,8 @@ void anv_CmdBindPipeline(
       UNREACHABLE("invalid bind point");
       break;
    }
+
+   state->pipeline = pipeline;
 
    if (pipeline->ray_queries > 0)
       anv_cmd_buffer_set_ray_query_buffer(cmd_buffer, state, pipeline, stages);
@@ -1332,12 +1346,11 @@ struct anv_state
 anv_cmd_buffer_cs_push_constants(struct anv_cmd_buffer *cmd_buffer)
 {
    const struct intel_device_info *devinfo = cmd_buffer->device->info;
-   struct anv_cmd_pipeline_state *pipe_state = &cmd_buffer->state.compute.base;
+   struct anv_cmd_compute_state *comp_state = &cmd_buffer->state.compute;
+   struct anv_cmd_pipeline_state *pipe_state = &comp_state->base;
    struct anv_push_constants *data = &pipe_state->push_constants;
-   struct anv_compute_pipeline *pipeline =
-      anv_pipeline_to_compute(cmd_buffer->state.compute.base.pipeline);
-   const struct brw_cs_prog_data *cs_prog_data = get_cs_prog_data(pipeline);
-   const struct anv_push_range *range = &pipeline->cs->bind_map.push_ranges[0];
+   const struct brw_cs_prog_data *cs_prog_data = get_cs_prog_data(comp_state);
+   const struct anv_push_range *range = &comp_state->shader->bind_map.push_ranges[0];
 
    const struct intel_cs_dispatch_info dispatch =
       brw_cs_get_dispatch_info(devinfo, cs_prog_data, NULL);

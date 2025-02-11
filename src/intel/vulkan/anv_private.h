@@ -4107,6 +4107,26 @@ enum anv_depth_reg_mode {
 struct anv_cmd_graphics_state {
    struct anv_cmd_pipeline_state base;
 
+   /* Shaders bound */
+   struct anv_shader_bin *shaders[ANV_GRAPHICS_SHADER_STAGE_COUNT];
+
+   /* Bitfield of valid entries in the shaders array */
+   VkShaderStageFlags active_stages;
+
+   uint32_t vs_source_hash;
+   uint32_t fs_source_hash;
+
+   /* Pipeline information */
+   uint32_t instance_multiplier;
+
+   bool kill_pixel;
+   bool uses_xfb;
+   bool sample_shading_enable;
+   float min_sample_shading;
+   uint32_t primitive_id_index;
+   uint32_t first_vue_slot;
+
+   /* Render pass information */
    VkRenderingFlags rendering_flags;
    VkRect2D render_area;
    uint32_t layer_count;
@@ -4199,6 +4219,8 @@ struct anv_cmd_graphics_state {
  */
 struct anv_cmd_compute_state {
    struct anv_cmd_pipeline_state base;
+
+   struct anv_shader_bin *shader;
 
    bool pipeline_dirty;
 
@@ -4596,6 +4618,13 @@ anv_cmd_buffer_descriptor_buffer_address(struct anv_cmd_buffer *cmd_buffer,
       return cmd_buffer->device->physical->va.push_descriptor_buffer_pool.addr;
 
    return cmd_buffer->state.descriptor_buffers.address[buffer_index];
+}
+
+static inline bool
+anv_cmd_buffer_has_gfx_stage(struct anv_cmd_buffer *cmd_buffer,
+                             gl_shader_stage stage)
+{
+   return cmd_buffer->state.gfx.shaders[stage] != NULL;
 }
 
 VkResult anv_cmd_buffer_init_batch_bo_chain(struct anv_cmd_buffer *cmd_buffer);
@@ -5278,6 +5307,13 @@ anv_pipeline_is_mesh(const struct anv_graphics_pipeline *pipeline)
 }
 
 static inline bool
+anv_gfx_has_stage(const struct anv_cmd_graphics_state *gfx,
+                  gl_shader_stage stage)
+{
+   return (gfx->active_stages & mesa_to_vk_shader_stage(stage)) != 0;
+}
+
+static inline bool
 anv_gfx_all_color_write_masked(const struct anv_cmd_graphics_state *gfx,
                                const struct vk_dynamic_graphics_state *dyn)
 {
@@ -5310,11 +5346,24 @@ anv_cmd_graphic_state_update_has_uint_rt(struct anv_cmd_graphics_state *state)
 
 #define ANV_DECL_GET_GRAPHICS_PROG_DATA_FUNC(prefix, stage)             \
 static inline const struct brw_##prefix##_prog_data *                   \
-get_##prefix##_prog_data(const struct anv_graphics_pipeline *pipeline)  \
+get_pipeline_##prefix##_prog_data(                                      \
+   const struct anv_graphics_pipeline *pipeline)                        \
 {                                                                       \
    if (anv_pipeline_has_stage(pipeline, stage)) {                       \
       return (const struct brw_##prefix##_prog_data *)                  \
          pipeline->base.shaders[stage]->prog_data;                      \
+   } else {                                                             \
+      return NULL;                                                      \
+   }                                                                    \
+}                                                                       \
+                                                                        \
+static inline const struct brw_##prefix##_prog_data *                   \
+get_gfx_##prefix##_prog_data(                                           \
+   const struct anv_cmd_graphics_state *gfx)                            \
+{                                                                       \
+   if (anv_gfx_has_stage(gfx, stage)) {                                 \
+      return (const struct brw_##prefix##_prog_data *)                  \
+         (gfx)->shaders[stage]->prog_data;                              \
    } else {                                                             \
       return NULL;                                                      \
    }                                                                    \
@@ -5329,21 +5378,21 @@ ANV_DECL_GET_GRAPHICS_PROG_DATA_FUNC(mesh, MESA_SHADER_MESH)
 ANV_DECL_GET_GRAPHICS_PROG_DATA_FUNC(task, MESA_SHADER_TASK)
 
 static inline const struct brw_cs_prog_data *
-get_cs_prog_data(const struct anv_compute_pipeline *pipeline)
+get_cs_prog_data(const struct anv_cmd_compute_state *comp_state)
 {
-   assert(pipeline->cs);
-   return (const struct brw_cs_prog_data *) pipeline->cs->prog_data;
+   assert(comp_state->shader);
+   return (const struct brw_cs_prog_data *) comp_state->shader->prog_data;
 }
 
 static inline const struct brw_vue_prog_data *
 anv_pipeline_get_last_vue_prog_data(const struct anv_graphics_pipeline *pipeline)
 {
    if (anv_pipeline_has_stage(pipeline, MESA_SHADER_GEOMETRY))
-      return &get_gs_prog_data(pipeline)->base;
+      return &get_pipeline_gs_prog_data(pipeline)->base;
    else if (anv_pipeline_has_stage(pipeline, MESA_SHADER_TESS_EVAL))
-      return &get_tes_prog_data(pipeline)->base;
+      return &get_pipeline_tes_prog_data(pipeline)->base;
    else
-      return &get_vs_prog_data(pipeline)->base;
+      return &get_pipeline_vs_prog_data(pipeline)->base;
 }
 
 VkResult

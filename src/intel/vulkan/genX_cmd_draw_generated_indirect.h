@@ -64,9 +64,8 @@ genX(cmd_buffer_emit_generate_draws)(struct anv_cmd_buffer *cmd_buffer,
    if (push_data_state.map == NULL)
       return ANV_STATE_NULL;
 
-   struct anv_graphics_pipeline *pipeline =
-      anv_pipeline_to_graphics(cmd_buffer->state.gfx.base.pipeline);
-   const struct brw_vs_prog_data *vs_prog_data = get_vs_prog_data(pipeline);
+   const struct anv_cmd_graphics_state *gfx = &cmd_buffer->state.gfx;
+   const struct brw_vs_prog_data *vs_prog_data = get_gfx_vs_prog_data(gfx);
    const bool use_tbimr = cmd_buffer->state.gfx.dyn_state.use_tbimr;
 
    struct anv_address draw_count_addr;
@@ -80,10 +79,10 @@ genX(cmd_buffer_emit_generate_draws)(struct anv_cmd_buffer *cmd_buffer,
 
    const bool wa_16011107343 =
       intel_needs_workaround(device->info, 16011107343) &&
-      anv_pipeline_has_stage(pipeline, MESA_SHADER_TESS_CTRL);
+      anv_cmd_buffer_has_gfx_stage(cmd_buffer, MESA_SHADER_TESS_CTRL);
    const bool wa_22018402687 =
       intel_needs_workaround(device->info, 22018402687) &&
-      anv_pipeline_has_stage(pipeline, MESA_SHADER_TESS_EVAL);
+      anv_cmd_buffer_has_gfx_stage(cmd_buffer, MESA_SHADER_TESS_EVAL);
 
    const uint32_t wa_insts_size =
       ((wa_16011107343 ? GENX(3DSTATE_HS_length) : 0) +
@@ -96,6 +95,11 @@ genX(cmd_buffer_emit_generate_draws)(struct anv_cmd_buffer *cmd_buffer,
       anv_cmd_buffer_alloc_temporary_state(cmd_buffer, wa_insts_size, 4) :
       ANV_STATE_NULL;
    UNUSED uint32_t wa_insts_offset = 0;
+
+#if INTEL_WA_16011107343_GFX_VER || INTEL_WA_22018402687_GFX_VER
+   struct anv_graphics_pipeline *pipeline =
+      anv_pipeline_to_graphics(gfx->base.pipeline);
+#endif
 
 #if INTEL_WA_16011107343_GFX_VER
    if (wa_16011107343) {
@@ -145,7 +149,7 @@ genX(cmd_buffer_emit_generate_draws)(struct anv_cmd_buffer *cmd_buffer,
       .draw_base              = item_base,
       .max_draw_count         = max_count,
       .ring_count             = ring_count,
-      .instance_multiplier    = pipeline->instance_multiplier,
+      .instance_multiplier    = gfx->instance_multiplier,
       .draw_count             = anv_address_is_null(count_addr) ? max_count : 0,
       .generated_cmds_addr    = anv_address_physical(generated_cmds_addr),
       .draw_count_addr        = anv_address_physical(draw_count_addr),
@@ -212,9 +216,8 @@ genX(cmd_buffer_get_draw_id_addr)(struct anv_cmd_buffer *cmd_buffer,
 #if GFX_VER >= 11
    return ANV_NULL_ADDRESS;
 #else
-   struct anv_graphics_pipeline *pipeline =
-      anv_pipeline_to_graphics(cmd_buffer->state.gfx.base.pipeline);
-   const struct brw_vs_prog_data *vs_prog_data = get_vs_prog_data(pipeline);
+   const struct anv_cmd_graphics_state *gfx = &cmd_buffer->state.gfx;
+   const struct brw_vs_prog_data *vs_prog_data = get_gfx_vs_prog_data(gfx);
    if (!vs_prog_data->uses_drawid)
       return ANV_NULL_ADDRESS;
 
@@ -234,9 +237,8 @@ genX(cmd_buffer_get_generated_draw_stride)(struct anv_cmd_buffer *cmd_buffer)
 #if GFX_VER >= 11
    return 4 * GENX(3DPRIMITIVE_EXTENDED_length);
 #else
-   struct anv_graphics_pipeline *pipeline =
-      anv_pipeline_to_graphics(cmd_buffer->state.gfx.base.pipeline);
-   const struct brw_vs_prog_data *vs_prog_data = get_vs_prog_data(pipeline);
+   const struct anv_cmd_graphics_state *gfx = &cmd_buffer->state.gfx;
+   const struct brw_vs_prog_data *vs_prog_data = get_gfx_vs_prog_data(gfx);
 
    uint32_t len = 0;
 
@@ -303,9 +305,8 @@ genX(cmd_buffer_emit_indirect_generated_draws_inplace)(struct anv_cmd_buffer *cm
          device->physical->va.dynamic_state_pool.size);
    }
 
-   struct anv_graphics_pipeline *pipeline =
-      anv_pipeline_to_graphics(cmd_buffer->state.gfx.base.pipeline);
-   const struct brw_vs_prog_data *vs_prog_data = get_vs_prog_data(pipeline);
+   const struct anv_cmd_graphics_state *gfx = &cmd_buffer->state.gfx;
+   const struct brw_vs_prog_data *vs_prog_data = get_gfx_vs_prog_data(gfx);
 
    if (vs_prog_data->uses_baseinstance ||
        vs_prog_data->uses_firstvertex) {
@@ -485,9 +486,8 @@ genX(cmd_buffer_emit_indirect_generated_draws_inring)(struct anv_cmd_buffer *cmd
       },
       cmd_buffer->generation.ring_bo->size);
 
-   struct anv_graphics_pipeline *pipeline =
-      anv_pipeline_to_graphics(cmd_buffer->state.gfx.base.pipeline);
-   const struct brw_vs_prog_data *vs_prog_data = get_vs_prog_data(pipeline);
+   const struct anv_cmd_graphics_state *gfx = &cmd_buffer->state.gfx;
+   const struct brw_vs_prog_data *vs_prog_data = get_gfx_vs_prog_data(gfx);
 
    if (vs_prog_data->uses_baseinstance ||
        vs_prog_data->uses_firstvertex) {
