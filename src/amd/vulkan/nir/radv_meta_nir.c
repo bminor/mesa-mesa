@@ -1290,3 +1290,99 @@ radv_meta_nir_build_depth_stencil_resolve_compute_shader(struct radv_device *dev
                          nir_imm_int(&b, 0), .image_dim = GLSL_SAMPLER_DIM_2D, .image_array = true);
    return b.shader;
 }
+
+nir_shader *
+radv_meta_nir_build_resolve_fragment_shader(struct radv_device *dev, bool is_integer, int samples)
+{
+   enum glsl_base_type img_base_type = is_integer ? GLSL_TYPE_UINT : GLSL_TYPE_FLOAT;
+   const struct glsl_type *vec4 = glsl_vec4_type();
+   const struct glsl_type *sampler_type = glsl_sampler_type(GLSL_SAMPLER_DIM_MS, false, false, img_base_type);
+
+   nir_builder b =
+      radv_meta_init_shader(dev, MESA_SHADER_FRAGMENT, "meta_resolve_fs-%d-%s", samples, is_integer ? "int" : "float");
+
+   nir_variable *input_img = nir_variable_create(b.shader, nir_var_uniform, sampler_type, "s_tex");
+   input_img->data.descriptor_set = 0;
+   input_img->data.binding = 0;
+
+   nir_variable *color_out = nir_variable_create(b.shader, nir_var_shader_out, vec4, "f_color");
+   color_out->data.location = FRAG_RESULT_DATA0;
+
+   nir_def *pos_in = nir_trim_vector(&b, nir_load_frag_coord(&b), 2);
+   nir_def *src_offset = nir_load_push_constant(&b, 2, 32, nir_imm_int(&b, 0), .range = 8);
+
+   nir_def *pos_int = nir_f2i32(&b, pos_in);
+
+   nir_def *img_coord = nir_trim_vector(&b, nir_iadd(&b, pos_int, src_offset), 2);
+   nir_variable *color = nir_local_variable_create(b.impl, glsl_vec4_type(), "color");
+
+   radv_meta_build_resolve_shader_core(dev, &b, is_integer, samples, input_img, color, img_coord);
+
+   nir_def *outval = nir_load_var(&b, color);
+   nir_store_var(&b, color_out, outval, 0xf);
+   return b.shader;
+}
+
+nir_shader *
+radv_meta_nir_build_depth_stencil_resolve_fragment_shader(struct radv_device *dev, int samples,
+                                                          enum radv_meta_resolve_type index,
+                                                          VkResolveModeFlagBits resolve_mode)
+{
+   enum glsl_base_type img_base_type = index == RADV_META_DEPTH_RESOLVE ? GLSL_TYPE_FLOAT : GLSL_TYPE_UINT;
+   const struct glsl_type *vec4 = glsl_vec4_type();
+   const struct glsl_type *sampler_type = glsl_sampler_type(GLSL_SAMPLER_DIM_MS, false, false, img_base_type);
+
+   nir_builder b = radv_meta_init_shader(dev, MESA_SHADER_FRAGMENT, "meta_resolve_fs_%s-%s-%d",
+                                         index == RADV_META_DEPTH_RESOLVE ? "depth" : "stencil",
+                                         get_resolve_mode_str(resolve_mode), samples);
+
+   nir_variable *input_img = nir_variable_create(b.shader, nir_var_uniform, sampler_type, "s_tex");
+   input_img->data.descriptor_set = 0;
+   input_img->data.binding = 0;
+
+   nir_variable *fs_out = nir_variable_create(b.shader, nir_var_shader_out, vec4, "f_out");
+   fs_out->data.location = index == RADV_META_DEPTH_RESOLVE ? FRAG_RESULT_DEPTH : FRAG_RESULT_STENCIL;
+
+   nir_def *pos_in = nir_trim_vector(&b, nir_load_frag_coord(&b), 2);
+
+   nir_def *pos_int = nir_f2i32(&b, pos_in);
+
+   nir_def *img_coord = nir_trim_vector(&b, pos_int, 2);
+
+   nir_deref_instr *input_img_deref = nir_build_deref_var(&b, input_img);
+   nir_def *outval = nir_txf_ms_deref(&b, input_img_deref, img_coord, nir_imm_int(&b, 0));
+
+   if (resolve_mode != VK_RESOLVE_MODE_SAMPLE_ZERO_BIT) {
+      for (int i = 1; i < samples; i++) {
+         nir_def *si = nir_txf_ms_deref(&b, input_img_deref, img_coord, nir_imm_int(&b, i));
+
+         switch (resolve_mode) {
+         case VK_RESOLVE_MODE_AVERAGE_BIT:
+            assert(index == RADV_META_DEPTH_RESOLVE);
+            outval = nir_fadd(&b, outval, si);
+            break;
+         case VK_RESOLVE_MODE_MIN_BIT:
+            if (index == RADV_META_DEPTH_RESOLVE)
+               outval = nir_fmin(&b, outval, si);
+            else
+               outval = nir_umin(&b, outval, si);
+            break;
+         case VK_RESOLVE_MODE_MAX_BIT:
+            if (index == RADV_META_DEPTH_RESOLVE)
+               outval = nir_fmax(&b, outval, si);
+            else
+               outval = nir_umax(&b, outval, si);
+            break;
+         default:
+            unreachable("invalid resolve mode");
+         }
+      }
+
+      if (resolve_mode == VK_RESOLVE_MODE_AVERAGE_BIT)
+         outval = nir_fdiv_imm(&b, outval, samples);
+   }
+
+   nir_store_var(&b, fs_out, outval, 0x1);
+
+   return b.shader;
+}
