@@ -284,6 +284,14 @@ nir_shader *radv_meta_nir_build_blit_copy_fragment_shader_depth(struct radv_devi
 nir_shader *radv_meta_nir_build_blit_copy_fragment_shader_stencil(struct radv_device *dev,
                                                                   enum glsl_sampler_dim tex_dim);
 
+nir_shader *radv_meta_nir_build_itob_compute_shader(struct radv_device *dev, bool is_3d);
+nir_shader *radv_meta_nir_build_btoi_compute_shader(struct radv_device *dev, bool is_3d);
+nir_shader *radv_meta_nir_build_btoi_r32g32b32_compute_shader(struct radv_device *dev);
+nir_shader *radv_meta_nir_build_itoi_compute_shader(struct radv_device *dev, bool src_3d, bool dst_3d, int samples);
+nir_shader *radv_meta_nir_build_itoi_r32g32b32_compute_shader(struct radv_device *dev);
+nir_shader *radv_meta_nir_build_cleari_compute_shader(struct radv_device *dev, bool is_3d, int samples);
+nir_shader *radv_meta_nir_build_cleari_r32g32b32_compute_shader(struct radv_device *dev);
+
 typedef nir_def *(*radv_meta_nir_texel_fetch_build_func)(struct nir_builder *, struct radv_device *, nir_def *, bool,
                                                          bool);
 nir_def *radv_meta_nir_build_blit2d_texel_fetch(struct nir_builder *b, struct radv_device *device, nir_def *tex_pos,
