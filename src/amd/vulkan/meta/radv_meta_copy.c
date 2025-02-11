@@ -75,14 +75,14 @@ alloc_transfer_temp_bo(struct radv_cmd_buffer *cmd_buffer)
 }
 
 static void
-transfer_copy_buffer_image(struct radv_cmd_buffer *cmd_buffer, struct radv_buffer *buffer, struct radv_image *image,
+transfer_copy_buffer_image(struct radv_cmd_buffer *cmd_buffer, uint64_t buffer_va, struct radv_image *image,
                            const VkBufferImageCopy2 *region, bool to_image)
 {
    const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    struct radeon_cmdbuf *cs = cmd_buffer->cs;
    const VkImageAspectFlags aspect_mask = region->imageSubresource.aspectMask;
 
-   struct radv_sdma_surf buf = radv_sdma_get_buf_surf(buffer, image, region, aspect_mask);
+   struct radv_sdma_surf buf = radv_sdma_get_buf_surf(buffer_va, image, region, aspect_mask);
    const struct radv_sdma_surf img =
       radv_sdma_get_surf(device, image, region->imageSubresource, region->imageOffset, aspect_mask);
    const VkExtent3D extent = radv_sdma_get_copy_extent(image, region->imageSubresource, region->imageExtent);
@@ -103,7 +103,7 @@ copy_buffer_to_image(struct radv_cmd_buffer *cmd_buffer, struct radv_buffer *buf
                      VkImageLayout layout, const VkBufferImageCopy2 *region)
 {
    if (cmd_buffer->qf == RADV_QUEUE_TRANSFER) {
-      transfer_copy_buffer_image(cmd_buffer, buffer, image, region, true);
+      transfer_copy_buffer_image(cmd_buffer, buffer->addr, image, region, true);
       return;
    }
 
@@ -265,7 +265,7 @@ copy_image_to_buffer(struct radv_cmd_buffer *cmd_buffer, struct radv_buffer *buf
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    if (cmd_buffer->qf == RADV_QUEUE_TRANSFER) {
-      transfer_copy_buffer_image(cmd_buffer, buffer, image, region, false);
+      transfer_copy_buffer_image(cmd_buffer, buffer->addr, image, region, false);
       return;
    }
 

@@ -10,7 +10,6 @@
 #include "radv_sdma.h"
 #include "util/macros.h"
 #include "util/u_memory.h"
-#include "radv_buffer.h"
 #include "radv_cs.h"
 #include "radv_formats.h"
 
@@ -165,8 +164,8 @@ radv_sdma_get_bpe(const struct radv_image *const image, VkImageAspectFlags aspec
 }
 
 struct radv_sdma_surf
-radv_sdma_get_buf_surf(const struct radv_buffer *const buffer, const struct radv_image *const image,
-                       const VkBufferImageCopy2 *const region, const VkImageAspectFlags aspect_mask)
+radv_sdma_get_buf_surf(uint64_t buffer_va, const struct radv_image *const image, const VkBufferImageCopy2 *const region,
+                       const VkImageAspectFlags aspect_mask)
 {
    assert(util_bitcount(aspect_mask) == 1);
 
@@ -179,7 +178,7 @@ radv_sdma_get_buf_surf(const struct radv_buffer *const buffer, const struct radv
    const uint32_t bpe = radv_sdma_get_bpe(image, region->imageSubresource.aspectMask);
 
    const struct radv_sdma_surf info = {
-      .va = buffer->addr + region->bufferOffset,
+      .va = buffer_va + region->bufferOffset,
       .pitch = pitch,
       .slice_pitch = slice_pitch,
       .bpp = bpe,
