@@ -1738,7 +1738,7 @@ radv_DestroyImage(VkDevice _device, VkImage _image, const VkAllocationCallbacks 
 
 static void
 radv_bind_image_memory(struct radv_device *device, struct radv_image *image, uint32_t bind_idx,
-                       struct radeon_winsys_bo *bo, uint64_t offset, uint64_t range)
+                       struct radeon_winsys_bo *bo, uint64_t addr, uint64_t range)
 {
    struct radv_physical_device *pdev = radv_device_physical(device);
    struct radv_instance *instance = radv_physical_device_instance(pdev);
@@ -1746,8 +1746,7 @@ radv_bind_image_memory(struct radv_device *device, struct radv_image *image, uin
    assert(bind_idx < 3);
 
    image->bindings[bind_idx].bo = bo;
-   image->bindings[bind_idx].offset = offset;
-   image->bindings[bind_idx].addr = radv_buffer_get_va(bo) + offset;
+   image->bindings[bind_idx].addr = addr;
    image->bindings[bind_idx].range = range;
 
    radv_rmv_log_image_bind(device, bind_idx, radv_image_to_handle(image));
@@ -1778,8 +1777,7 @@ radv_BindImageMemory2(VkDevice _device, uint32_t bindInfoCount, const VkBindImag
          struct radv_image *swapchain_img =
             radv_image_from_handle(wsi_common_get_image(swapchain_info->swapchain, swapchain_info->imageIndex));
 
-         radv_bind_image_memory(device, image, 0,
-                                swapchain_img->bindings[0].bo, swapchain_img->bindings[0].offset,
+         radv_bind_image_memory(device, image, 0, swapchain_img->bindings[0].bo, swapchain_img->bindings[0].addr,
                                 swapchain_img->bindings[0].range);
          continue;
       }
@@ -1816,8 +1814,9 @@ radv_BindImageMemory2(VkDevice _device, uint32_t bindInfoCount, const VkBindImag
          }
       }
 
-      radv_bind_image_memory(device, image, bind_idx, mem->bo, pBindInfos[i].memoryOffset,
-                             reqs.memoryRequirements.size);
+      const uint64_t addr = radv_buffer_get_va(mem->bo) + pBindInfos[i].memoryOffset;
+
+      radv_bind_image_memory(device, image, bind_idx, mem->bo, addr, reqs.memoryRequirements.size);
    }
    return VK_SUCCESS;
 }

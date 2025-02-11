@@ -104,10 +104,8 @@ radv_fixup_copy_dst_metadata(struct radv_cmd_buffer *cmd_buffer, const struct ra
 
    /* Copy CMASK+FMASK. */
    size = src_image->planes[0].surface.cmask_size + src_image->planes[0].surface.fmask_size;
-   src_va = radv_buffer_get_va(src_image->bindings[0].bo) + src_image->bindings[0].offset +
-            src_image->planes[0].surface.fmask_offset;
-   dst_va = radv_buffer_get_va(dst_image->bindings[0].bo) + dst_image->bindings[0].offset +
-            dst_image->planes[0].surface.fmask_offset;
+   src_va = src_image->bindings[0].addr + src_image->planes[0].surface.fmask_offset;
+   dst_va = dst_image->bindings[0].addr + dst_image->planes[0].surface.fmask_offset;
 
    radv_copy_buffer(cmd_buffer, src_image->bindings[0].bo, dst_image->bindings[0].bo, src_va, dst_va, size);
 }

@@ -134,7 +134,7 @@ radv_retile_dcc(struct radv_cmd_buffer *cmd_buffer, struct radv_image *image)
 
    radv_CmdBindPipeline(radv_cmd_buffer_to_handle(cmd_buffer), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 
-   const uint64_t va = radv_buffer_get_va(image->bindings[0].bo) + image->bindings[0].offset;
+   const uint64_t va = image->bindings[0].addr;
 
    radv_cs_add_buffer(device->ws, cmd_buffer->cs, image->bindings[0].bo);
 

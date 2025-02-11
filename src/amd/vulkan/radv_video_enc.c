@@ -1231,7 +1231,7 @@ radv_enc_ctx(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoKHR *inf
       dpb_image_sizes(dpb, &luma_pitch, &luma_size, &chroma_size, &colloc_bytes);
 
       radv_cs_add_buffer(device->ws, cs, dpb->bindings[0].bo);
-      va = radv_buffer_get_va(dpb->bindings[0].bo) + dpb->bindings[0].offset;
+      va = dpb->bindings[0].addr;
    }
 
    uint32_t swizzle_mode = 0;
@@ -1437,7 +1437,7 @@ radv_enc_params(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoKHR *
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
    struct radeon_cmdbuf *cs = cmd_buffer->cs;
-   uint64_t va = radv_buffer_get_va(src_img->bindings[0].bo) + src_img->bindings[0].offset;
+   uint64_t va = src_img->bindings[0].addr;
    uint64_t luma_va = va + src_img->planes[0].surface.u.gfx9.surf_offset;
    uint64_t chroma_va = va + src_img->planes[1].surface.u.gfx9.surf_offset;
    uint32_t pic_type;

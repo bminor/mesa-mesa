@@ -4619,7 +4619,7 @@ radv_emit_framebuffer_state(struct radv_cmd_buffer *cmd_buffer)
 
          radv_cs_add_buffer(device->ws, cmd_buffer->cs, vrs_image->bindings[0].bo);
 
-         va = radv_image_get_va(vrs_image, 0);
+         va = vrs_image->bindings[0].addr;
          va |= vrs_image->planes[0].surface.tile_swizzle << 8;
 
          xmax = vrs_iview->vk.extent.width - 1;
@@ -9275,9 +9275,9 @@ radv_CmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRe
          uint32_t level = ds_iview->vk.base_mip_level;
 
          /* HTILE buffer */
-         uint64_t htile_offset = ds_image->bindings[0].offset + ds_image->planes[0].surface.meta_offset +
-                                 ds_image->planes[0].surface.u.gfx9.meta_levels[level].offset;
-         const uint64_t htile_va = radv_buffer_get_va(ds_image->bindings[0].bo) + htile_offset;
+         uint64_t htile_offset =
+            ds_image->planes[0].surface.meta_offset + ds_image->planes[0].surface.u.gfx9.meta_levels[level].offset;
+         const uint64_t htile_va = ds_image->bindings[0].addr + htile_offset;
 
          assert(render->area.offset.x + render->area.extent.width <= ds_image->vk.extent.width &&
                 render->area.offset.x + render->area.extent.height <= ds_image->vk.extent.height);
@@ -12501,7 +12501,7 @@ radv_init_dcc(struct radv_cmd_buffer *cmd_buffer, struct radv_image *image, cons
       /* Initialize the mipmap levels without DCC. */
       if (size != image->planes[0].surface.meta_size) {
          flush_bits |= radv_fill_buffer(cmd_buffer, image, image->bindings[0].bo,
-                                        radv_image_get_va(image, 0) + image->planes[0].surface.meta_offset + size,
+                                        image->bindings[0].addr + image->planes[0].surface.meta_offset + size,
                                         image->planes[0].surface.meta_size - size, 0xffffffff);
       }
    }

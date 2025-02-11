@@ -271,7 +271,7 @@ radv_sdma_get_surf(const struct radv_device *const device, const struct radv_ima
    const unsigned plane_idx = radv_plane_from_aspect(aspect_mask);
    const unsigned binding_idx = image->disjoint ? plane_idx : 0;
    const struct radeon_surf *const surf = &image->planes[plane_idx].surface;
-   const uint64_t va = radv_image_get_va(image, binding_idx);
+   const uint64_t va = image->bindings[binding_idx].addr;
    const uint32_t bpe = radv_sdma_get_bpe(image, aspect_mask);
    struct radv_sdma_surf info = {
       .extent =
