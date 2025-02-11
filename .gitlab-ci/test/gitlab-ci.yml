@@ -167,7 +167,7 @@ yaml-toml-shell-py-test:
     HWCI_TEST_SCRIPT: "/install/piglit/piglit-runner.sh"
   script:
     - section_start variables "Variables passed through:"
-    - install/common/generate-env.sh
+    - install/common/export-gitlab-job-env-for-dut.sh
     - section_end variables
     - install/piglit/piglit-traces.sh
 
@@ -380,7 +380,7 @@ yaml-toml-shell-py-test:
       # Create a script to regenerate the CI environment when this job
       # begins running on the remote DUT.
       set +x
-      "$CI_COMMON_SCRIPTS"/generate-env.sh > ${JOB_FOLDER}/set-job-env-vars.sh
+      "$CI_COMMON_SCRIPTS"/export-gitlab-job-env-for-dut.sh > ${JOB_FOLDER}/set-job-env-vars.sh
       echo "export SCRIPTS_DIR=./install" >> ${JOB_FOLDER}/set-job-env-vars.sh
       echo "Variables passed through:"
       cat ${JOB_FOLDER}/set-job-env-vars.sh
