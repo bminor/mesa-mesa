@@ -278,6 +278,12 @@ void radv_break_on_count(nir_builder *b, nir_variable *var, nir_def *count);
 nir_shader *radv_meta_nir_build_buffer_fill_shader(struct radv_device *dev);
 nir_shader *radv_meta_nir_build_buffer_copy_shader(struct radv_device *dev);
 
+nir_shader *radv_meta_nir_build_blit_vertex_shader(struct radv_device *dev);
+nir_shader *radv_meta_nir_build_blit_copy_fragment_shader(struct radv_device *dev, enum glsl_sampler_dim tex_dim);
+nir_shader *radv_meta_nir_build_blit_copy_fragment_shader_depth(struct radv_device *dev, enum glsl_sampler_dim tex_dim);
+nir_shader *radv_meta_nir_build_blit_copy_fragment_shader_stencil(struct radv_device *dev,
+                                                                  enum glsl_sampler_dim tex_dim);
+
 uint32_t radv_fill_buffer(struct radv_cmd_buffer *cmd_buffer, const struct radv_image *image,
                           struct radeon_winsys_bo *bo, uint64_t va, uint64_t size, uint32_t value);
 
