@@ -69,7 +69,9 @@ def begin_end_tp(name, args=[], tp_struct=None, tp_print=None,
                tp_markers='tu_cs_trace_end' if marker_tp else None)
 
 begin_end_tp('cmd_buffer',
-    args=[ArgStruct(type='const struct tu_cmd_buffer *', var='cmd')],
+    args=[ArgStruct(type='const struct tu_cmd_buffer *', var='cmd'),
+          Arg(type='str',                       var='TUdebugFlags', c_format='%s', length_arg='96', copy_func='strncpy'),
+          Arg(type='str',                       var='IR3debugFlags', c_format='%s', length_arg='96', copy_func='strncpy')],
     tp_struct=[Arg(type='const char *',         name='appName',              var='cmd->device->instance->vk.app_info.app_name', c_format='%s'),
                Arg(type='const char *',         name='engineName',           var='cmd->device->instance->vk.app_info.engine_name', c_format='%s'),
                Arg(type='VkCommandBufferLevel', name='level',                var='cmd->vk.level', c_format='%s', to_prim_type='vk_CommandBufferLevel_to_str({})'),

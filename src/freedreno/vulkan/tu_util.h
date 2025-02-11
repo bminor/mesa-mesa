@@ -82,6 +82,10 @@ extern struct tu_env tu_env;
 void
 tu_env_init(void);
 
+/* Returns a pointer to the internal static tmp buffer, do not free. */
+const char *
+tu_env_debug_as_string(void);
+
 /* Whenever we generate an error, pass it through this function. Useful for
  * debugging, where we can break on it. Only call at error site, not when
  * propagating errors. Might be useful to plug in a stack trace here.

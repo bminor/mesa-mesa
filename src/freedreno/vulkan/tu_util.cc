@@ -153,6 +153,16 @@ tu_env_init(void)
    call_once(&once, tu_env_init_once);
 }
 
+const char *
+tu_env_debug_as_string(void)
+{
+   static thread_local char debug_string[96];
+   dump_debug_control_string(debug_string, sizeof(debug_string),
+                             tu_debug_options,
+                             tu_env.debug.load(std::memory_order_acquire));
+   return debug_string;
+}
+
 void PRINTFLIKE(3, 4)
    __tu_finishme(const char *file, int line, const char *format, ...)
 {
