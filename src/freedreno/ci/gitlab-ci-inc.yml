@@ -343,12 +343,6 @@
 
 # CI-tron
 
-.b2c-freedreno-vk-test:
-  extends:
-    - .b2c-arm64-test-vk
-  variables:
-    VK_DRIVER: freedreno
-
 .a750-mupuf:
   variables:
     FDO_CI_CONCURRENT: 8
@@ -366,6 +360,7 @@
     B2C_BOOT_WD_START_REGEX: 'VB: RWDeviceState: Succeed using devinfo!'  # A line repeated during firmware boot
     B2C_BOOT_WD_STOP_REGEX: 'CPU features: detected:'                     # A line repeated during Linux boot
     GPU_VERSION: freedreno-a750
+    VK_DRIVER: freedreno
   tags:
     - farm:$RUNNER_FARM_LOCATION
     - $B2C_MARS_SETUP_TAGS
