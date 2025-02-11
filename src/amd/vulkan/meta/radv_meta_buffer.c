@@ -1,3 +1,12 @@
+/* Based on anv:
+ * Copyright © 2015 Intel Corporation
+ *
+ * Copyright © 2016 Red Hat Inc.
+ * Copyright © 2025 Valve Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 #include "radv_cp_dma.h"
 #include "radv_debug.h"
 #include "radv_meta.h"
