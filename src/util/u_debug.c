@@ -501,3 +501,39 @@ comma_separated_list_contains(const char *list, const char *s)
 
    return false;
 }
+
+void
+dump_debug_control_string(char *output,
+                          size_t max_size,
+                          const struct debug_control *control,
+                          uint64_t flags)
+{
+   size_t pos = 0;
+   int ret;
+   bool first = true;
+
+   for (const struct debug_control *c = control; c->string != NULL; c++) {
+      if (!(flags & c->flag))
+         continue;
+      ret = snprintf(output + pos, max_size - pos,
+                     first ? "%s" : "|%s", c->string);
+      if (ret < 0 || ret >= max_size - pos) {
+         output[max_size-3] = output[max_size-2] = '.';
+         output[max_size-1] = '\0';
+         return;
+      }
+
+      pos += ret;
+      first = false;
+      flags &= ~(c->flag);
+   }
+
+   if (flags) {
+      ret = snprintf(output + pos, max_size - pos,
+                     first ? "0x%" PRIx64 : "|0x%" PRIx64, flags);
+      if (ret < 0 || ret >= max_size - pos) {
+         output[max_size-3] = output[max_size-2] = '.';
+         output[max_size-1] = '\0';
+      }
+   }
+}
