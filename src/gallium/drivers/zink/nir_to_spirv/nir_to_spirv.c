@@ -3167,9 +3167,6 @@ emit_is_helper_invocation(struct ntv_context *ctx, nir_intrinsic_instr *intr)
 {
    SpvId result;
    if (!ctx->have_spirv16 && ctx->nir->options->discard_is_demote) {
-      spirv_builder_emit_extension(&ctx->builder,
-                                   "SPV_EXT_demote_to_helper_invocation");
-      spirv_builder_emit_cap(&ctx->builder, SpvCapabilityDemoteToHelperInvocation);
       result = spirv_is_helper_invocation(&ctx->builder);
    } else {
       SpvId var_type = spirv_builder_type_bool(&ctx->builder);
@@ -3448,7 +3445,6 @@ emit_intrinsic(struct ntv_context *ctx, nir_intrinsic_instr *intr)
       break;
 
    case nir_intrinsic_demote:
-      spirv_builder_emit_cap(&ctx->builder, SpvCapabilityDemoteToHelperInvocation);
       spirv_builder_emit_demote(&ctx->builder);
       break;
 
@@ -4628,10 +4624,19 @@ nir_to_spirv(struct nir_shader *s, const struct zink_shader_info *sinfo, const s
    case MESA_SHADER_FRAGMENT:
       if (s->info.fs.uses_sample_shading)
          spirv_builder_emit_cap(&ctx.builder, SpvCapabilitySampleRateShading);
-      if (s->info.fs.uses_discard && spirv_version < SPIRV_VERSION(1, 6) &&
-          screen->info.have_EXT_shader_demote_to_helper_invocation)
-         spirv_builder_emit_extension(&ctx.builder,
-                                      "SPV_EXT_demote_to_helper_invocation");
+
+      if (s->info.fs.uses_discard && screen->info.have_EXT_shader_demote_to_helper_invocation) {
+         if (!ctx.have_spirv16)
+            spirv_builder_emit_extension(&ctx.builder, "SPV_EXT_demote_to_helper_invocation");
+         spirv_builder_emit_cap(&ctx.builder, SpvCapabilityDemoteToHelperInvocation);
+      }
+
+      if (BITSET_TEST(s->info.system_values_read, SYSTEM_VALUE_HELPER_INVOCATION) &&
+          screen->info.have_EXT_shader_demote_to_helper_invocation && !ctx.have_spirv16) {
+         spirv_builder_emit_extension(&ctx.builder, "SPV_EXT_demote_to_helper_invocation");
+         spirv_builder_emit_cap(&ctx.builder, SpvCapabilityDemoteToHelperInvocation);
+      }
+
       break;
 
    case MESA_SHADER_VERTEX:
