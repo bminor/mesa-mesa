@@ -275,6 +275,9 @@ nir_def *get_global_ids(nir_builder *b, unsigned num_components);
 
 void radv_break_on_count(nir_builder *b, nir_variable *var, nir_def *count);
 
+nir_shader *radv_meta_nir_build_buffer_fill_shader(struct radv_device *dev);
+nir_shader *radv_meta_nir_build_buffer_copy_shader(struct radv_device *dev);
+
 uint32_t radv_fill_buffer(struct radv_cmd_buffer *cmd_buffer, const struct radv_image *image,
                           struct radeon_winsys_bo *bo, uint64_t va, uint64_t size, uint32_t value);
 

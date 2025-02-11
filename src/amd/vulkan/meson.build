@@ -62,6 +62,7 @@ libradv_files = files(
   'meta/radv_meta_resolve.c',
   'meta/radv_meta_resolve_cs.c',
   'meta/radv_meta_resolve_fs.c',
+  'nir/radv_meta_nir.c',
   'nir/radv_nir.h',
   'nir/radv_nir_apply_pipeline_layout.c',
   'nir/radv_nir_export_multiview.c',
