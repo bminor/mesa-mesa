@@ -8,50 +8,12 @@
 #include <stdbool.h>
 
 #include "radv_meta.h"
-#include "sid.h"
 
 enum radv_color_op {
    FAST_CLEAR_ELIMINATE,
    FMASK_DECOMPRESS,
    DCC_DECOMPRESS,
 };
-
-static nir_shader *
-build_dcc_decompress_compute_shader(struct radv_device *dev)
-{
-   const struct glsl_type *img_type = glsl_image_type(GLSL_SAMPLER_DIM_2D, false, GLSL_TYPE_FLOAT);
-
-   nir_builder b = radv_meta_init_shader(dev, MESA_SHADER_COMPUTE, "dcc_decompress_compute");
-
-   /* We need at least 16/16/1 to cover an entire DCC block in a single workgroup. */
-   b.shader->info.workgroup_size[0] = 16;
-   b.shader->info.workgroup_size[1] = 16;
-   nir_variable *input_img = nir_variable_create(b.shader, nir_var_image, img_type, "in_img");
-   input_img->data.descriptor_set = 0;
-   input_img->data.binding = 0;
-
-   nir_variable *output_img = nir_variable_create(b.shader, nir_var_image, img_type, "out_img");
-   output_img->data.descriptor_set = 0;
-   output_img->data.binding = 1;
-
-   nir_def *global_id = get_global_ids(&b, 2);
-   nir_def *img_coord = nir_vec4(&b, nir_channel(&b, global_id, 0), nir_channel(&b, global_id, 1), nir_undef(&b, 1, 32),
-                                 nir_undef(&b, 1, 32));
-
-   nir_def *data = nir_image_deref_load(&b, 4, 32, &nir_build_deref_var(&b, input_img)->def, img_coord,
-                                        nir_undef(&b, 1, 32), nir_imm_int(&b, 0), .image_dim = GLSL_SAMPLER_DIM_2D);
-
-   /* We need a SCOPE_DEVICE memory_scope because ACO will avoid
-    * creating a vmcnt(0) because it expects the L1 cache to keep memory
-    * operations in-order for the same workgroup. The vmcnt(0) seems
-    * necessary however. */
-   nir_barrier(&b, .execution_scope = SCOPE_WORKGROUP, .memory_scope = SCOPE_DEVICE,
-               .memory_semantics = NIR_MEMORY_ACQ_REL, .memory_modes = nir_var_mem_ssbo);
-
-   nir_image_deref_store(&b, &nir_build_deref_var(&b, output_img)->def, img_coord, nir_undef(&b, 1, 32), data,
-                         nir_imm_int(&b, 0), .image_dim = GLSL_SAMPLER_DIM_2D);
-   return b.shader;
-}
 
 static VkResult
 get_dcc_decompress_compute_pipeline(struct radv_device *device, VkPipeline *pipeline_out, VkPipelineLayout *layout_out)
@@ -92,7 +54,7 @@ get_dcc_decompress_compute_pipeline(struct radv_device *device, VkPipeline *pipe
       return VK_SUCCESS;
    }
 
-   nir_shader *cs = build_dcc_decompress_compute_shader(device);
+   nir_shader *cs = radv_meta_nir_build_dcc_decompress_compute_shader(device);
 
    const VkPipelineShaderStageCreateInfo stage_info = {
       .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,

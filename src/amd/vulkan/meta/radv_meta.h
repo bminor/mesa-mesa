@@ -322,6 +322,8 @@ nir_shader *radv_meta_nir_build_dcc_retile_compute_shader(struct radv_device *de
 
 nir_shader *radv_meta_nir_build_expand_depth_stencil_compute_shader(struct radv_device *dev);
 
+nir_shader *radv_meta_nir_build_dcc_decompress_compute_shader(struct radv_device *dev);
+
 uint32_t radv_fill_buffer(struct radv_cmd_buffer *cmd_buffer, const struct radv_image *image,
                           struct radeon_winsys_bo *bo, uint64_t va, uint64_t size, uint32_t value);
 
