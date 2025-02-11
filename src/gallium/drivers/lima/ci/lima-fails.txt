@@ -565,15 +565,6 @@ spec@!opengl 2.1@pbo@test_polygon_stip,Fail
 spec@!opengl 2.1@polygon-stipple-fs,Fail
 spec@!opengl es 2.0@glsl-fs-pointcoord,Fail
 
-# Regression from https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/33053, maybe others
-spec@!opengl 1.1@two-sided-lighting,Fail
-spec@!opengl 1.0@gl-1.0-spot-light,Fail
-spec@!opengl 1.1@infinite-spot-light,Fail
-spec@!opengl 1.2@draw-elements-vs-inputs,Fail
-spec@!opengl 1.2@two-sided-lighting-separate-specular,Fail
-spec@!opengl 1.5@normal3b3s-invariance-byte,Fail
-spec@!opengl 1.5@normal3b3s-invariance-short,Fail
-
 # see https://gitlab.freedesktop.org/mesa/piglit/-/merge_requests/730
 # and https://gitlab.freedesktop.org/mesa/mesa/-/issues/7208
 spec@ext_texture_compression_s3tc@compressedteximage gl_compressed_rgb_s3tc_dxt1_ext,Fail
