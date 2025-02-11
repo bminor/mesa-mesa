@@ -723,6 +723,10 @@ gather_intrinsic_info(nir_intrinsic_instr *instr, nir_shader *shader,
                  nir_system_value_from_intrinsic(instr->intrinsic));
       break;
 
+   case nir_intrinsic_is_helper_invocation:
+      BITSET_SET(shader->info.system_values_read, SYSTEM_VALUE_HELPER_INVOCATION);
+      break;
+
    case nir_intrinsic_load_barycentric_pixel:
       if (nir_intrinsic_interp_mode(instr) == INTERP_MODE_SMOOTH ||
           nir_intrinsic_interp_mode(instr) == INTERP_MODE_NONE) {
