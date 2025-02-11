@@ -755,9 +755,17 @@ typedef void (*tu_fdm_bin_apply_t)(struct tu_cmd_buffer *cmd,
                                    unsigned views,
                                    const VkExtent2D *frag_areas);
 
+enum tu_fdm_flags {
+   TU_FDM_NONE = 0,
+
+   /* Skip applying this patchpoint when binning */
+   TU_FDM_SKIP_BINNING = 1,
+};
+
 struct tu_fdm_bin_patchpoint {
    uint64_t iova;
    uint32_t size;
+   enum tu_fdm_flags flags;
    void *data;
    tu_fdm_bin_apply_t apply;
 };
@@ -777,6 +785,7 @@ static inline void
 _tu_create_fdm_bin_patchpoint(struct tu_cmd_buffer *cmd,
                               struct tu_cs *cs,
                               unsigned size,
+                              enum tu_fdm_flags flags,
                               tu_fdm_bin_apply_t apply,
                               void *state,
                               unsigned state_size)
@@ -788,6 +797,7 @@ _tu_create_fdm_bin_patchpoint(struct tu_cmd_buffer *cmd,
    struct tu_fdm_bin_patchpoint patch = {
       .iova = tu_cs_get_cur_iova(cs),
       .size = size,
+      .flags = flags,
       .data = data,
       .apply = apply,
    };
@@ -811,8 +821,8 @@ _tu_create_fdm_bin_patchpoint(struct tu_cmd_buffer *cmd,
                         patch);
 }
 
-#define tu_create_fdm_bin_patchpoint(cmd, cs, size, apply, state) \
-   _tu_create_fdm_bin_patchpoint(cmd, cs, size, apply, &state, sizeof(state))
+#define tu_create_fdm_bin_patchpoint(cmd, cs, size, flags, apply, state) \
+   _tu_create_fdm_bin_patchpoint(cmd, cs, size, flags, apply, &state, sizeof(state))
 
 VkResult tu_init_bin_preamble(struct tu_device *device);
 

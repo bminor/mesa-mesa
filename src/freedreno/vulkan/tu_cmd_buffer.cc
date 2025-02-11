@@ -1729,6 +1729,8 @@ tu6_emit_binning_pass(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
       VkRect2D bin = { { 0, 0 }, { fb->width, fb->height } };
       util_dynarray_foreach (&cmd->fdm_bin_patchpoints,
                              struct tu_fdm_bin_patchpoint, patch) {
+         if (patch->flags & TU_FDM_SKIP_BINNING)
+            continue;
          tu_cs_emit_pkt7(cs, CP_MEM_WRITE, 2 + patch->size);
          tu_cs_emit_qw(cs, patch->iova);
          patch->apply(cmd, cs, patch->data, bin, num_views, unscaled_frag_areas);
@@ -5946,6 +5948,7 @@ tu_emit_fdm_params(struct tu_cmd_buffer *cmd,
             .num_consts = num_units - 1,
          };
          tu_create_fdm_bin_patchpoint(cmd, cs, 4 * (num_units - 1),
+                                      TU_FDM_SKIP_BINNING,
                                       fdm_apply_fs_params, state);
       } else {
          for (unsigned i = 1; i < num_units; i++) {

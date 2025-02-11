@@ -4105,7 +4105,7 @@ tu_clear_sysmem_attachments(struct tu_cmd_buffer *cmd,
                .z_clear_val = z_clear_val,
                .rect = rects[i].rect,
             };
-            tu_create_fdm_bin_patchpoint(cmd, cs, 4,
+            tu_create_fdm_bin_patchpoint(cmd, cs, 4, TU_FDM_NONE,
                                          fdm_apply_sysmem_clear_coords,
                                          state);
          } else {
@@ -4237,7 +4237,7 @@ tu_emit_clear_gmem_attachment(struct tu_cmd_buffer *cmd,
                .view = layer,
                .rect = *fdm_rect,
             };
-            tu_create_fdm_bin_patchpoint(cmd, cs, 3,
+            tu_create_fdm_bin_patchpoint(cmd, cs, 3, TU_FDM_SKIP_BINNING,
                                          fdm_apply_gmem_clear_coords, state);
       }
       if (att->format == VK_FORMAT_D32_SFLOAT_S8_UINT) {
@@ -4295,7 +4295,7 @@ tu_clear_gmem_attachments(struct tu_cmd_buffer *cmd,
                .view = 0,
                .rect = rects[i].rect,
             };
-            tu_create_fdm_bin_patchpoint(cmd, cs, 3,
+            tu_create_fdm_bin_patchpoint(cmd, cs, 3, TU_FDM_SKIP_BINNING,
                                          fdm_apply_gmem_clear_coords, state);
          } else {
             /* We need to patch the clear rectangle for each view. */
@@ -4413,7 +4413,7 @@ tu7_clear_attachment_generic_single_rect(
                .view = 0,
                .rect = rect->rect,
             };
-            tu_create_fdm_bin_patchpoint(cmd, cs, 3,
+            tu_create_fdm_bin_patchpoint(cmd, cs, 3, TU_FDM_SKIP_BINNING,
                                          fdm_apply_gmem_clear_coords, state);
       }
    } else {
@@ -4441,7 +4441,7 @@ tu7_clear_attachment_generic_single_rect(
                .view = layer,
                .rect = rect->rect,
             };
-            tu_create_fdm_bin_patchpoint(cmd, cs, 3,
+            tu_create_fdm_bin_patchpoint(cmd, cs, 3, TU_FDM_SKIP_BINNING,
                                          fdm_apply_gmem_clear_coords, state);
       }
 
@@ -4877,7 +4877,8 @@ load_3d_blit(struct tu_cmd_buffer *cmd,
          struct apply_load_coords_state state = {
             .view = att->clear_views ? i : 0,
          };
-         tu_create_fdm_bin_patchpoint(cmd, cs, 4, fdm_apply_load_coords, state);
+         tu_create_fdm_bin_patchpoint(cmd, cs, 4, TU_FDM_SKIP_BINNING,
+                                      fdm_apply_load_coords, state);
       }
 
       r3d_dst_gmem<CHIP>(cmd, cs, iview, att, separate_stencil, i);
@@ -5436,8 +5437,8 @@ tu_store_gmem_attachment(struct tu_cmd_buffer *cmd,
             struct apply_store_coords_state state = {
                .view = view,
             };
-            tu_create_fdm_bin_patchpoint(cmd, cs, 8, fdm_apply_store_coords,
-                                         state);
+            tu_create_fdm_bin_patchpoint(cmd, cs, 8, TU_FDM_SKIP_BINNING,
+                                         fdm_apply_store_coords, state);
          }
          if (store_common) {
             store_cp_blit<CHIP>(cmd, cs, src_iview, dst_iview, src->samples, false, src_format,
