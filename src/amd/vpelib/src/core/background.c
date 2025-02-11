@@ -30,9 +30,10 @@ void vpe_create_bg_segments(
     struct vpe_priv *vpe_priv, struct vpe_rect *gaps, uint16_t gaps_cnt, enum vpe_cmd_ops ops)
 {
     uint16_t            gap_index;
+    uint16_t            bg_index    = vpe_priv->resource.get_bg_stream_idx(vpe_priv);
     struct vpe_cmd_info cmd_info    = {0};
     struct scaler_data *scaler_data = &(cmd_info.inputs[0].scaler_data);
-    struct stream_ctx  *stream_ctx = &(vpe_priv->stream_ctx[0]);
+    struct stream_ctx  *stream_ctx  = &(vpe_priv->stream_ctx[bg_index]);
     int32_t             vp_x       = stream_ctx->stream.scaling_info.src_rect.x;
     int32_t             vp_y       = stream_ctx->stream.scaling_info.src_rect.y;
     uint16_t            src_h_div  = vpe_is_yuv420(stream_ctx->stream.surface_info.format) ? 2 : 1;
@@ -153,12 +154,13 @@ uint16_t vpe_find_bg_gaps(struct vpe_priv *vpe_priv, const struct vpe_rect *targ
     struct vpe_rect *gaps, uint16_t max_gaps)
 {
     uint16_t            num_gaps = 0;
+    uint16_t            bg_index = vpe_priv->resource.get_bg_stream_idx(vpe_priv);
     uint16_t            num_segs;
     struct vpe_rect    *dst_viewport_rect;
     bool                full_bg       = false;
     const uint32_t      max_seg_width = vpe_priv->pub.caps->plane_caps.max_viewport_width;
     const uint16_t      num_multiple  = vpe_priv->vpe_num_instance ? vpe_priv->vpe_num_instance : 1;
-    struct stream_ctx*  ctx           = &vpe_priv->stream_ctx[0];
+    struct stream_ctx *ctx = &vpe_priv->stream_ctx[bg_index];
 
     num_segs          = ctx->num_segments;
     dst_viewport_rect = &(ctx->segment_ctx[0].scaler_data.dst_viewport);

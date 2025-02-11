@@ -51,6 +51,8 @@ bool vpe10_check_h_mirror_support(bool *input_mirror, bool *output_mirror);
 
 enum vpe_status vpe10_check_bg_color_support(struct vpe_priv* vpe_priv, struct vpe_color* bg_color);
 
+uint16_t vpe10_get_bg_stream_idx(struct vpe_priv *vpe_priv);
+
 enum vpe_status vpe10_calculate_segments(
     struct vpe_priv *vpe_priv, const struct vpe_build_param *params);
 

@@ -84,6 +84,8 @@ struct resource {
     void (*calculate_dst_viewport_and_active)(
         struct segment_ctx *segment_ctx, uint32_t max_seg_width);
 
+    uint16_t (*get_bg_stream_idx)(struct vpe_priv *vpe_priv);
+
     uint16_t (*find_bg_gaps)(struct vpe_priv *vpe_priv, const struct vpe_rect *target_rect,
         struct vpe_rect *gaps, uint16_t max_gaps);
 

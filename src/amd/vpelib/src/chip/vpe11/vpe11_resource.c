@@ -187,6 +187,7 @@ enum vpe_status vpe11_construct_resource(struct vpe_priv *vpe_priv, struct resou
     res->set_num_segments                  = vpe11_set_num_segments;
     res->split_bg_gap                      = vpe10_split_bg_gap;
     res->calculate_dst_viewport_and_active = vpe10_calculate_dst_viewport_and_active;
+    res->get_bg_stream_idx                 = vpe10_get_bg_stream_idx;
     res->find_bg_gaps                      = vpe_find_bg_gaps;
     res->create_bg_segments                = vpe_create_bg_segments;
     res->populate_cmd_info                 = vpe10_populate_cmd_info;
