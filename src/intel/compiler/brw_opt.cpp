@@ -75,8 +75,7 @@ brw_optimize(brw_shader &s)
 
       OPT(brw_opt_algebraic);
       OPT(brw_opt_cse_defs);
-      if (!OPT(brw_opt_copy_propagation_defs))
-         OPT(brw_opt_copy_propagation);
+      OPT(brw_opt_copy_propagation_defs);
       OPT(brw_opt_cmod_propagation);
       OPT(brw_opt_dead_code_eliminate);
       OPT(brw_opt_saturate_propagation);
