@@ -14,6 +14,119 @@
 #include "nir/nir_format_convert.h"
 #include "nir_builder.h"
 
+nir_builder PRINTFLIKE(3, 4)
+   radv_meta_init_shader(struct radv_device *dev, gl_shader_stage stage, const char *name, ...)
+{
+   const struct radv_physical_device *pdev = radv_device_physical(dev);
+   nir_builder b = nir_builder_init_simple_shader(stage, NULL, NULL);
+   if (name) {
+      va_list args;
+      va_start(args, name);
+      b.shader->info.name = ralloc_vasprintf(b.shader, name, args);
+      va_end(args);
+   }
+
+   b.shader->options = &pdev->nir_options[stage];
+
+   radv_device_associate_nir(dev, b.shader);
+
+   return b;
+}
+
+/* vertex shader that generates vertices */
+nir_shader *
+radv_meta_build_nir_vs_generate_vertices(struct radv_device *dev)
+{
+   const struct glsl_type *vec4 = glsl_vec4_type();
+
+   nir_variable *v_position;
+
+   nir_builder b = radv_meta_init_shader(dev, MESA_SHADER_VERTEX, "meta_vs_gen_verts");
+
+   nir_def *outvec = nir_gen_rect_vertices(&b, NULL, NULL);
+
+   v_position = nir_variable_create(b.shader, nir_var_shader_out, vec4, "gl_Position");
+   v_position->data.location = VARYING_SLOT_POS;
+
+   nir_store_var(&b, v_position, outvec, 0xf);
+
+   return b.shader;
+}
+
+nir_shader *
+radv_meta_build_nir_fs_noop(struct radv_device *dev)
+{
+   return radv_meta_init_shader(dev, MESA_SHADER_FRAGMENT, "meta_noop_fs").shader;
+}
+
+void
+radv_meta_build_resolve_shader_core(struct radv_device *device, nir_builder *b, bool is_integer, int samples,
+                                    nir_variable *input_img, nir_variable *color, nir_def *img_coord)
+{
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+   nir_deref_instr *input_img_deref = nir_build_deref_var(b, input_img);
+   nir_def *sample0 = nir_txf_ms_deref(b, input_img_deref, img_coord, nir_imm_int(b, 0));
+
+   if (is_integer || samples <= 1) {
+      nir_store_var(b, color, sample0, 0xf);
+      return;
+   }
+
+   if (pdev->use_fmask) {
+      nir_def *all_same = nir_samples_identical_deref(b, input_img_deref, img_coord);
+      nir_push_if(b, nir_inot(b, all_same));
+   }
+
+   nir_def *accum = sample0;
+   for (int i = 1; i < samples; i++) {
+      nir_def *sample = nir_txf_ms_deref(b, input_img_deref, img_coord, nir_imm_int(b, i));
+      accum = nir_fadd(b, accum, sample);
+   }
+
+   accum = nir_fdiv_imm(b, accum, samples);
+   nir_store_var(b, color, accum, 0xf);
+
+   if (pdev->use_fmask) {
+      nir_push_else(b, NULL);
+      nir_store_var(b, color, sample0, 0xf);
+      nir_pop_if(b, NULL);
+   }
+}
+
+nir_def *
+radv_meta_load_descriptor(nir_builder *b, unsigned desc_set, unsigned binding)
+{
+   nir_def *rsrc = nir_vulkan_resource_index(b, 3, 32, nir_imm_int(b, 0), .desc_set = desc_set, .binding = binding);
+   return nir_trim_vector(b, rsrc, 2);
+}
+
+nir_def *
+get_global_ids(nir_builder *b, unsigned num_components)
+{
+   unsigned mask = BITFIELD_MASK(num_components);
+
+   nir_def *local_ids = nir_channels(b, nir_load_local_invocation_id(b), mask);
+   nir_def *block_ids = nir_channels(b, nir_load_workgroup_id(b), mask);
+   nir_def *block_size =
+      nir_channels(b,
+                   nir_imm_ivec4(b, b->shader->info.workgroup_size[0], b->shader->info.workgroup_size[1],
+                                 b->shader->info.workgroup_size[2], 0),
+                   mask);
+
+   return nir_iadd(b, nir_imul(b, block_ids, block_size), local_ids);
+}
+
+void
+radv_break_on_count(nir_builder *b, nir_variable *var, nir_def *count)
+{
+   nir_def *counter = nir_load_var(b, var);
+
+   nir_break_if(b, nir_uge(b, counter, count));
+
+   counter = nir_iadd_imm(b, counter, 1);
+   nir_store_var(b, var, counter, 0x1);
+}
+
 nir_shader *
 radv_meta_nir_build_buffer_fill_shader(struct radv_device *dev)
 {
