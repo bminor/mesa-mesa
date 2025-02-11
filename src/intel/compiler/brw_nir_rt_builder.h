@@ -867,39 +867,6 @@ brw_nir_rt_load_bvh_instance_leaf(nir_builder *b,
       brw_nir_rt_load(b, nir_iadd_imm(b, leaf_addr, 116), 4, 3, 32);
 }
 
-struct brw_nir_rt_bvh_primitive_leaf_defs {
-   nir_def *shader_index;
-   nir_def *geom_mask;
-   nir_def *geom_index;
-   nir_def *type;
-   nir_def *geom_flags;
-};
-
-static inline void
-brw_nir_rt_load_bvh_primitive_leaf(nir_builder *b,
-                                   struct brw_nir_rt_bvh_primitive_leaf_defs *defs,
-                                   nir_def *leaf_addr)
-{
-   nir_def *desc = brw_nir_rt_load(b, leaf_addr, 4, 2, 32);
-
-   defs->shader_index =
-      nir_ubitfield_extract(b, nir_channel(b, desc, 0),
-                            nir_imm_int(b, 23), nir_imm_int(b, 0));
-   defs->geom_mask =
-      nir_ubitfield_extract(b, nir_channel(b, desc, 0),
-                            nir_imm_int(b, 31), nir_imm_int(b, 24));
-
-   defs->geom_index =
-      nir_ubitfield_extract(b, nir_channel(b, desc, 1),
-                            nir_imm_int(b, 28), nir_imm_int(b, 0));
-   defs->type =
-      nir_ubitfield_extract(b, nir_channel(b, desc, 1),
-                            nir_imm_int(b, 29), nir_imm_int(b, 29));
-   defs->geom_flags =
-      nir_ubitfield_extract(b, nir_channel(b, desc, 1),
-                            nir_imm_int(b, 31), nir_imm_int(b, 30));
-}
-
 struct brw_nir_rt_bvh_primitive_leaf_positions_defs {
    nir_def *positions[3];
 };
