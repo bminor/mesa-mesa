@@ -255,6 +255,7 @@ files_libnir = files(
   'nir_opt_offsets.c',
   'nir_opt_peephole_select.c',
   'nir_opt_phi_precision.c',
+  'nir_opt_phi_to_bool.c',
   'nir_opt_preamble.c',
   'nir_opt_ray_queries.c',
   'nir_opt_reassociate_bfi.c',
