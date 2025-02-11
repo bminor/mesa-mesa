@@ -22,20 +22,23 @@ build_copy_vrs_htile_shader(struct radv_device *device, struct radeon_surf *surf
    /* Get coordinates. */
    nir_def *global_id = get_global_ids(&b, 2);
 
-   nir_def *offset = nir_load_push_constant(&b, 2, 32, nir_imm_int(&b, 0), .range = 8);
+   nir_def *addr = nir_load_push_constant(&b, 2, 32, nir_imm_int(&b, 0), .range = 8);
+   nir_def *htile_va = nir_pack_64_2x32(&b, nir_channels(&b, addr, 0x3));
+
+   nir_def *offset = nir_load_push_constant(&b, 2, 32, nir_imm_int(&b, 8), .range = 16);
 
    /* Multiply the coordinates by the HTILE block size. */
    nir_def *coord = nir_iadd(&b, nir_imul_imm(&b, global_id, 8), offset);
 
    /* Load constants. */
-   nir_def *constants = nir_load_push_constant(&b, 3, 32, nir_imm_int(&b, 8), .range = 20);
+   nir_def *constants = nir_load_push_constant(&b, 3, 32, nir_imm_int(&b, 16), .range = 28);
    nir_def *htile_pitch = nir_channel(&b, constants, 0);
    nir_def *htile_slice_size = nir_channel(&b, constants, 1);
    nir_def *read_htile_value = nir_channel(&b, constants, 2);
 
    /* Get the HTILE addr from coordinates. */
    nir_def *zero = nir_imm_int(&b, 0);
-   nir_def *htile_addr =
+   nir_def *htile_offset =
       ac_nir_htile_addr_from_coord(&b, &pdev->info, &surf->u.gfx9.zs.htile_equation, htile_pitch, htile_slice_size,
                                    nir_channel(&b, coord, 0), nir_channel(&b, coord, 1), zero, zero);
 
@@ -63,16 +66,13 @@ build_copy_vrs_htile_shader(struct radv_device *device, struct radeon_surf *surf
    /* Compute the final VRS rate. */
    nir_def *vrs_rates = nir_ior(&b, nir_ishl_imm(&b, y_rate, 10), nir_ishl_imm(&b, x_rate, 6));
 
-   /* Load the HTILE buffer descriptor. */
-   nir_def *htile_buf = radv_meta_load_descriptor(&b, 0, 1);
-
    /* Load the HTILE value if requested, otherwise use the default value. */
    nir_variable *htile_value = nir_local_variable_create(b.impl, glsl_int_type(), "htile_value");
 
    nir_push_if(&b, nir_ieq_imm(&b, read_htile_value, 1));
    {
       /* Load the existing HTILE 32-bit value for this 8x8 pixels area. */
-      nir_def *input_value = nir_load_ssbo(&b, 1, 32, htile_buf, htile_addr);
+      nir_def *input_value = nir_build_load_global(&b, 1, 32, nir_iadd(&b, htile_va, nir_u2u64(&b, htile_offset)));
 
       /* Clear the 4-bit VRS rates. */
       nir_store_var(&b, htile_value, nir_iand_imm(&b, input_value, 0xfffff33f), 0x1);
@@ -87,7 +87,8 @@ build_copy_vrs_htile_shader(struct radv_device *device, struct radeon_surf *surf
    nir_def *output_value = nir_ior(&b, nir_load_var(&b, htile_value), vrs_rates);
 
    /* Store the updated HTILE 32-bit which contains the VRS rates. */
-   nir_store_ssbo(&b, output_value, htile_buf, htile_addr, .access = ACCESS_NON_READABLE);
+   nir_build_store_global(&b, output_value, nir_iadd(&b, htile_va, nir_u2u64(&b, htile_offset)),
+                          .access = ACCESS_NON_READABLE);
 
    return b.shader;
 }
@@ -106,24 +107,18 @@ get_pipeline(struct radv_device *device, struct radv_image *image, VkPipeline *p
          .descriptorCount = 1,
          .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
       },
-      {
-         .binding = 1,
-         .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-         .descriptorCount = 1,
-         .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-      },
    };
 
    const VkDescriptorSetLayoutCreateInfo desc_info = {
       .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
       .flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT,
-      .bindingCount = 2,
+      .bindingCount = 1,
       .pBindings = bindings,
    };
 
    const VkPushConstantRange pc_range = {
       .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-      .size = 20,
+      .size = 28,
    };
 
    result = vk_meta_get_pipeline_layout(&device->vk, &device->meta_state.device, &desc_info, &pc_range, &key,
@@ -163,7 +158,7 @@ get_pipeline(struct radv_device *device, struct radv_image *image, VkPipeline *p
 
 void
 radv_copy_vrs_htile(struct radv_cmd_buffer *cmd_buffer, struct radv_image_view *vrs_iview, const VkRect2D *rect,
-                    struct radv_image *dst_image, struct radv_buffer *htile_buffer, bool read_htile_value)
+                    struct radv_image *dst_image, uint64_t htile_va, bool read_htile_value)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    struct radv_meta_saved_state saved_state;
@@ -190,31 +185,23 @@ radv_copy_vrs_htile(struct radv_cmd_buffer *cmd_buffer, struct radv_image_view *
 
    radv_CmdBindPipeline(radv_cmd_buffer_to_handle(cmd_buffer), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 
-   radv_meta_push_descriptor_set(
-      cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, layout, 0, 2,
-      (VkWriteDescriptorSet[]){{.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-                                .dstBinding = 0,
-                                .dstArrayElement = 0,
-                                .descriptorCount = 1,
-                                .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-                                .pImageInfo =
-                                   (VkDescriptorImageInfo[]){
-                                      {
-                                         .sampler = VK_NULL_HANDLE,
-                                         .imageView = radv_image_view_to_handle(vrs_iview),
-                                         .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
-                                      },
-                                   }},
-                               {.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-                                .dstBinding = 1,
-                                .dstArrayElement = 0,
-                                .descriptorCount = 1,
-                                .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                                .pBufferInfo = &(VkDescriptorBufferInfo){.buffer = radv_buffer_to_handle(htile_buffer),
-                                                                         .offset = 0,
-                                                                         .range = htile_buffer->vk.size}}});
+   radv_meta_push_descriptor_set(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, layout, 0, 1,
+                                 (VkWriteDescriptorSet[]){{.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                                                           .dstBinding = 0,
+                                                           .dstArrayElement = 0,
+                                                           .descriptorCount = 1,
+                                                           .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                                           .pImageInfo = (VkDescriptorImageInfo[]){
+                                                              {
+                                                                 .sampler = VK_NULL_HANDLE,
+                                                                 .imageView = radv_image_view_to_handle(vrs_iview),
+                                                                 .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
+                                                              },
+                                                           }}});
 
-   const unsigned constants[5] = {
+   const unsigned constants[7] = {
+      htile_va,
+      htile_va >> 32,
       rect->offset.x,
       rect->offset.y,
       dst_image->planes[0].surface.meta_pitch,
@@ -222,8 +209,8 @@ radv_copy_vrs_htile(struct radv_cmd_buffer *cmd_buffer, struct radv_image_view *
       read_htile_value,
    };
 
-   vk_common_CmdPushConstants(radv_cmd_buffer_to_handle(cmd_buffer), layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, 20,
-                              constants);
+   vk_common_CmdPushConstants(radv_cmd_buffer_to_handle(cmd_buffer), layout, VK_SHADER_STAGE_COMPUTE_BIT, 0,
+                              sizeof(constants), constants);
 
    uint32_t width = DIV_ROUND_UP(rect->extent.width, 8);
    uint32_t height = DIV_ROUND_UP(rect->extent.height, 8);

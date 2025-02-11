@@ -9325,18 +9325,13 @@ radv_CmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRe
          /* HTILE buffer */
          uint64_t htile_offset = ds_image->bindings[0].offset + ds_image->planes[0].surface.meta_offset +
                                  ds_image->planes[0].surface.u.gfx9.meta_levels[level].offset;
-         uint64_t htile_size = ds_image->planes[0].surface.u.gfx9.meta_levels[level].size;
-         struct radv_buffer htile_buffer;
-
-         radv_buffer_init(&htile_buffer, device, ds_image->bindings[0].bo, htile_size, htile_offset);
+         const uint64_t htile_va = radv_buffer_get_va(ds_image->bindings[0].bo) + htile_offset;
 
          assert(render->area.offset.x + render->area.extent.width <= ds_image->vk.extent.width &&
                 render->area.offset.x + render->area.extent.height <= ds_image->vk.extent.height);
 
          /* Copy the VRS rates to the HTILE buffer. */
-         radv_copy_vrs_htile(cmd_buffer, render->vrs_att.iview, &render->area, ds_image, &htile_buffer, true);
-
-         radv_buffer_finish(&htile_buffer);
+         radv_copy_vrs_htile(cmd_buffer, render->vrs_att.iview, &render->area, ds_image, htile_va, true);
       } else {
          /* When a subpass uses a VRS attachment without binding a depth/stencil attachment, or when
           * HTILE isn't enabled, we use a fallback that copies the VRS rates to our internal HTILE buffer.
@@ -9347,13 +9342,14 @@ radv_CmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRe
              render->area.offset.y < ds_image->vk.extent.height) {
             /* HTILE buffer */
             struct radv_buffer *htile_buffer = device->vrs.buffer;
+            const uint64_t htile_va = htile_buffer->addr;
 
             VkRect2D area = render->area;
             area.extent.width = MIN2(area.extent.width, ds_image->vk.extent.width - area.offset.x);
             area.extent.height = MIN2(area.extent.height, ds_image->vk.extent.height - area.offset.y);
 
             /* Copy the VRS rates to the HTILE buffer. */
-            radv_copy_vrs_htile(cmd_buffer, render->vrs_att.iview, &area, ds_image, htile_buffer, false);
+            radv_copy_vrs_htile(cmd_buffer, render->vrs_att.iview, &area, ds_image, htile_va, false);
          }
       }
    }
