@@ -79,6 +79,15 @@ a530-piglit:
     DEQP_SUITE: freedreno-a530-piglit
     HWCI_START_WESTON: 1
 
+a618-angle:
+  extends:
+    - .lava-test-deqp:arm64
+    - .lava-sc7180-trogdor-kingoftown:arm64
+    - .collabora-turnip-manual-rules
+  variables:
+    DEQP_SUITE: tu-angle
+    USE_ANGLE: 1
+
 a618-vk:
   extends:
     - .lava-test-deqp:arm64
@@ -217,6 +226,15 @@ a618-traces-performance:
   needs:
     - !reference [a618-traces, needs]
     - !reference [.piglit-performance:arm64, needs]
+
+a660-angle:
+  extends:
+    - .lava-test-deqp:arm64
+    - .lava-sm8350-hdk:arm64
+    - .collabora-turnip-manual-rules
+  variables:
+    DEQP_SUITE: tu-angle
+    USE_ANGLE: 1
 
 a660-piglit-cl:
   extends:
