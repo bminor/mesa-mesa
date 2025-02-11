@@ -26,7 +26,7 @@ nir_builder PRINTFLIKE(3, 4)
 nir_shader *radv_meta_nir_build_vs_generate_vertices(struct radv_device *dev);
 nir_shader *radv_meta_nir_build_fs_noop(struct radv_device *dev);
 
-nir_def *get_global_ids(nir_builder *b, unsigned num_components);
+nir_def *radv_meta_nir_get_global_ids(nir_builder *b, unsigned num_components);
 
 void radv_meta_nir_break_on_count(nir_builder *b, nir_variable *var, nir_def *count);
 

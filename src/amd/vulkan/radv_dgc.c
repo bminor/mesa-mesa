@@ -929,7 +929,7 @@ build_dgc_buffer_tail(nir_builder *b, nir_def *cmd_buf_offset, nir_def *cmd_buf_
    const struct radv_physical_device *pdev = radv_device_physical(device);
    nir_def *is_compute_queue = nir_ior_imm(b, nir_ieq_imm(b, load_param8(b, queue_family), RADV_QUEUE_COMPUTE), is_ace);
 
-   nir_def *global_id = get_global_ids(b, 1);
+   nir_def *global_id = radv_meta_nir_get_global_ids(b, 1);
 
    nir_push_if(b, nir_ieq_imm(b, global_id, 0));
    {
@@ -1018,7 +1018,7 @@ build_dgc_buffer_trailer(nir_builder *b, nir_def *cmd_buf_offset, unsigned trail
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
 
-   nir_def *global_id = get_global_ids(b, 1);
+   nir_def *global_id = radv_meta_nir_get_global_ids(b, 1);
 
    nir_push_if(b, nir_ieq_imm(b, global_id, 0));
    {
@@ -1071,7 +1071,7 @@ build_dgc_buffer_preamble(nir_builder *b, nir_def *cmd_buf_preamble_offset, nir_
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
 
-   nir_def *global_id = get_global_ids(b, 1);
+   nir_def *global_id = radv_meta_nir_get_global_ids(b, 1);
    nir_def *use_preamble = nir_ine_imm(b, load_param8(b, use_preamble), 0);
 
    nir_push_if(b, nir_iand(b, nir_ieq_imm(b, global_id, 0), use_preamble));
@@ -2474,7 +2474,7 @@ build_dgc_prepare_shader(struct radv_device *dev, struct radv_indirect_command_l
    nir_builder b = radv_meta_nir_init_shader(dev, MESA_SHADER_COMPUTE, "meta_dgc_prepare");
    b.shader->info.workgroup_size[0] = 64;
 
-   nir_def *global_id = get_global_ids(&b, 1);
+   nir_def *global_id = radv_meta_nir_get_global_ids(&b, 1);
 
    nir_def *sequence_id = global_id;
 

@@ -173,7 +173,7 @@ build_occlusion_query_shader(struct radv_device *device)
 
    nir_def *flags = nir_load_push_constant(&b, 1, 32, nir_imm_int(&b, 16), .range = 20);
 
-   nir_def *global_id = get_global_ids(&b, 1);
+   nir_def *global_id = radv_meta_nir_get_global_ids(&b, 1);
 
    nir_def *input_stride = nir_imm_int(&b, db_count * 16);
    nir_def *input_base = nir_imul(&b, input_stride, global_id);
@@ -464,7 +464,7 @@ build_pipeline_statistics_query_shader(struct radv_device *device)
    nir_def *avail_offset = nir_load_push_constant(&b, 1, 32, nir_imm_int(&b, 28), .range = 32);
    nir_def *uses_emulated_queries = nir_load_push_constant(&b, 1, 32, nir_imm_int(&b, 32), .range = 36);
 
-   nir_def *global_id = get_global_ids(&b, 1);
+   nir_def *global_id = radv_meta_nir_get_global_ids(&b, 1);
 
    nir_def *input_stride =
       nir_bcsel(&b, nir_ine_imm(&b, uses_emulated_queries, 0), nir_imm_int(&b, pipelinestat_block_size * 2 + 8 * 2),
@@ -860,7 +860,7 @@ build_tfb_query_shader(struct radv_device *device)
    nir_def *dst_va = nir_pack_64_2x32(&b, nir_channels(&b, addrs, 0xc));
 
    /* Compute global ID. */
-   nir_def *global_id = get_global_ids(&b, 1);
+   nir_def *global_id = radv_meta_nir_get_global_ids(&b, 1);
 
    /* Compute src/dst strides. */
    nir_def *input_stride = nir_imm_int(&b, 32);
@@ -1123,7 +1123,7 @@ build_timestamp_query_shader(struct radv_device *device)
    nir_def *dst_va = nir_pack_64_2x32(&b, nir_channels(&b, addrs, 0xc));
 
    /* Compute global ID. */
-   nir_def *global_id = get_global_ids(&b, 1);
+   nir_def *global_id = radv_meta_nir_get_global_ids(&b, 1);
 
    /* Compute src/dst strides. */
    nir_def *input_stride = nir_imm_int(&b, 8);
@@ -1267,7 +1267,7 @@ build_pg_query_shader(struct radv_device *device)
    nir_def *dst_va = nir_pack_64_2x32(&b, nir_channels(&b, addrs, 0xc));
 
    /* Compute global ID. */
-   nir_def *global_id = get_global_ids(&b, 1);
+   nir_def *global_id = radv_meta_nir_get_global_ids(&b, 1);
 
    /* Determine if the query pool uses emulated queries for NGG. */
    nir_def *uses_emulated_queries = nir_i2b(&b, nir_load_push_constant(&b, 1, 32, nir_imm_int(&b, 32), .range = 36));
@@ -1548,7 +1548,7 @@ build_ms_prim_gen_query_shader(struct radv_device *device)
    nir_def *dst_va = nir_pack_64_2x32(&b, nir_channels(&b, addrs, 0xc));
 
    /* Compute global ID. */
-   nir_def *global_id = get_global_ids(&b, 1);
+   nir_def *global_id = radv_meta_nir_get_global_ids(&b, 1);
 
    /* Compute src/dst strides. */
    nir_def *input_base = nir_imul_imm(&b, global_id, 16);
