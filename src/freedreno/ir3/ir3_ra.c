@@ -2294,13 +2294,14 @@ handle_block(struct ra_ctx *ctx, struct ir3_block *block)
    }
 
    foreach_instr (instr, &block->instr_list) {
-      if (instr->opc == OPC_META_PHI)
+      if (instr->opc == OPC_META_PHI) {
          handle_phi(ctx, instr->dsts[0]);
-      else if (instr->opc == OPC_META_INPUT ||
-               instr->opc == OPC_META_TEX_PREFETCH)
+      } else if (instr->opc == OPC_META_INPUT ||
+                 instr->opc == OPC_META_TEX_PREFETCH) {
          handle_input(ctx, instr);
-      else
+      } else {
          break;
+      }
    }
 
    /* After this point, every live-in/phi/input has an interval assigned to
