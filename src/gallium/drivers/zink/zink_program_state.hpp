@@ -166,7 +166,6 @@ zink_get_gfx_pipeline(struct zink_context *ctx,
    state->modules_changed = false;
    state->uses_dynamic_stride = uses_dynamic_stride;
    state->idx = idx;
-   ctx->vertex_state_changed = false;
 
    const int rp_idx = state->render_pass ? 1 : 0;
    /* shortcut for reusing previous pipeline across program changes */

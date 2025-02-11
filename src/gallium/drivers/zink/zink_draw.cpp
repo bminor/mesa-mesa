@@ -147,11 +147,6 @@ zink_bind_vertex_buffers(struct zink_context *ctx)
                              elems->hw_state.num_bindings,
                              buffers, buffer_offsets);
 
-   if (DYNAMIC_STATE == ZINK_DYNAMIC_VERTEX_INPUT2 || DYNAMIC_STATE == ZINK_DYNAMIC_VERTEX_INPUT)
-      VKCTX(CmdSetVertexInputEXT)(ctx->bs->cmdbuf,
-                                      elems->hw_state.num_bindings, elems->hw_state.dynbindings,
-                                      elems->hw_state.num_attribs, elems->hw_state.dynattribs);
-
    ctx->vertex_buffers_dirty = false;
 }
 
@@ -730,6 +725,10 @@ zink_draw(struct pipe_context *pctx,
          else
             zink_bind_vertex_buffers<ZINK_NO_DYNAMIC_STATE>(ctx);
       }
+      if ((DYNAMIC_STATE == ZINK_DYNAMIC_VERTEX_INPUT2 || DYNAMIC_STATE == ZINK_DYNAMIC_VERTEX_INPUT) && (BATCH_CHANGED || ctx->vertex_state_changed))
+         VKCTX(CmdSetVertexInputEXT)(ctx->bs->cmdbuf,
+                                     ctx->element_state->hw_state.num_bindings, ctx->element_state->hw_state.dynbindings,
+                                     ctx->element_state->hw_state.num_attribs, ctx->element_state->hw_state.dynattribs);
    }
 
    if (BATCH_CHANGED) {
@@ -830,6 +829,7 @@ zink_draw(struct pipe_context *pctx,
       }
       VKCTX(CmdBeginTransformFeedbackEXT)(bs->cmdbuf, 0, ctx->num_so_targets, counter_buffers, counter_buffer_offsets);
    }
+   ctx->vertex_state_changed = false;
 
    bool marker = false;
    if (unlikely(zink_tracing)) {
