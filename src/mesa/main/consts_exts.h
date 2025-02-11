@@ -460,6 +460,9 @@ struct gl_constants
       GLuint ComputeInvocations;
       GLuint ClInPrimitives;
       GLuint ClOutPrimitives;
+      GLuint TsInvocations;
+      GLuint MsInvocations;
+      GLuint MeshPrimitivesGenerated;
    } QueryCounterBits;
 
    GLuint MaxDrawBuffers;    /**< GL_ARB_draw_buffers */

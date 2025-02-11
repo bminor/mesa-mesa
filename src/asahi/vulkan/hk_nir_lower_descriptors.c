@@ -383,9 +383,9 @@ translate_pipeline_stat_bit(enum pipe_statistics_query_index pipe)
       return VK_QUERY_PIPELINE_STATISTIC_TASK_SHADER_INVOCATIONS_BIT_EXT;
    case PIPE_STAT_QUERY_MS_INVOCATIONS:
       return VK_QUERY_PIPELINE_STATISTIC_MESH_SHADER_INVOCATIONS_BIT_EXT;
+   default:
+      UNREACHABLE("invalid statistic");
    }
-
-   UNREACHABLE("invalid statistic");
 }
 
 static bool

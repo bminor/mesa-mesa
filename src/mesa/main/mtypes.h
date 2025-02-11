@@ -2365,6 +2365,11 @@ struct gl_query_state
    /** GL_ARB_pipeline_statistics_query */
    struct gl_query_object *pipeline_stats[MAX_PIPELINE_STATISTICS];
 
+   /** GL_EXT_mesh_shader */
+   struct gl_query_object *task_shader_invocations;
+   struct gl_query_object *mesh_shader_invocations;
+   struct gl_query_object *mesh_primitives_generated;
+
    GLenum16 CondRenderMode;
 };
 

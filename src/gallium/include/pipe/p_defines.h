@@ -588,6 +588,8 @@ enum pipe_statistics_query_index {
    PIPE_STAT_QUERY_CS_INVOCATIONS,
    PIPE_STAT_QUERY_TS_INVOCATIONS,
    PIPE_STAT_QUERY_MS_INVOCATIONS,
+   PIPE_STAT_QUERY_MS_PRIMITIVES,
+   PIPE_STAT_QUERY_COUNT,
 };
 
 /**
@@ -1219,8 +1221,9 @@ struct pipe_query_data_pipeline_statistics
          uint64_t cs_invocations; /**< Num compute shader invocations. */
          uint64_t ts_invocations; /**< Num task shader invocations. */
          uint64_t ms_invocations; /**< Num mesh shader invocations. */
+         uint64_t ms_primitives;  /**< Num primitives sent to rasterizer by mesh shader */
       };
-      uint64_t counters[13];
+      uint64_t counters[PIPE_STAT_QUERY_COUNT];
    };
 };
 
