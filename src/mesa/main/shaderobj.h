@@ -181,6 +181,10 @@ _mesa_shader_stage_from_subroutine_uniform(GLenum subuniform)
       return MESA_SHADER_TESS_CTRL;
    case GL_TESS_EVALUATION_SUBROUTINE_UNIFORM:
       return MESA_SHADER_TESS_EVAL;
+   case GL_TASK_SUBROUTINE_UNIFORM_EXT:
+      return MESA_SHADER_TASK;
+   case GL_MESH_SUBROUTINE_UNIFORM_EXT:
+      return MESA_SHADER_MESH;
    }
    UNREACHABLE("not reached");
 }
@@ -201,6 +205,10 @@ _mesa_shader_stage_from_subroutine(GLenum subroutine)
       return MESA_SHADER_TESS_CTRL;
    case GL_TESS_EVALUATION_SUBROUTINE:
       return MESA_SHADER_TESS_EVAL;
+   case GL_TASK_SUBROUTINE_EXT:
+      return MESA_SHADER_TASK;
+   case GL_MESH_SUBROUTINE_EXT:
+      return MESA_SHADER_MESH;
    default:
       UNREACHABLE("not reached");
    }
@@ -222,6 +230,10 @@ _mesa_shader_stage_to_subroutine(mesa_shader_stage stage)
       return GL_TESS_CONTROL_SUBROUTINE;
    case MESA_SHADER_TESS_EVAL:
       return GL_TESS_EVALUATION_SUBROUTINE;
+   case MESA_SHADER_TASK:
+      return GL_TASK_SUBROUTINE_EXT;
+   case MESA_SHADER_MESH:
+      return GL_MESH_SUBROUTINE_EXT;
    default:
       UNREACHABLE("not reached");
    }
@@ -243,6 +255,10 @@ _mesa_shader_stage_to_subroutine_uniform(mesa_shader_stage stage)
       return GL_TESS_CONTROL_SUBROUTINE_UNIFORM;
    case MESA_SHADER_TESS_EVAL:
       return GL_TESS_EVALUATION_SUBROUTINE_UNIFORM;
+   case MESA_SHADER_TASK:
+      return GL_TASK_SUBROUTINE_UNIFORM_EXT;
+   case MESA_SHADER_MESH:
+      return GL_MESH_SUBROUTINE_UNIFORM_EXT;
    default:
       UNREACHABLE("not reached");
    }

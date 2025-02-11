@@ -841,6 +841,8 @@ write_program_resource_data(struct blob *metadata,
    case GL_COMPUTE_SUBROUTINE_UNIFORM:
    case GL_TESS_CONTROL_SUBROUTINE_UNIFORM:
    case GL_TESS_EVALUATION_SUBROUTINE_UNIFORM:
+   case GL_TASK_SUBROUTINE_UNIFORM_EXT:
+   case GL_MESH_SUBROUTINE_UNIFORM_EXT:
    case GL_UNIFORM:
       if (((gl_uniform_storage *)res->Data)->builtin ||
           res->Type != GL_UNIFORM) {
@@ -888,6 +890,8 @@ write_program_resource_data(struct blob *metadata,
    case GL_GEOMETRY_SUBROUTINE:
    case GL_FRAGMENT_SUBROUTINE:
    case GL_COMPUTE_SUBROUTINE:
+   case GL_TASK_SUBROUTINE_EXT:
+   case GL_MESH_SUBROUTINE_EXT:
       sh =
          prog->_LinkedShaders[_mesa_shader_stage_from_subroutine(res->Type)];
       write_shader_subroutine_index(metadata, sh, res);
@@ -938,6 +942,8 @@ read_program_resource_data(struct blob_reader *metadata,
    case GL_COMPUTE_SUBROUTINE_UNIFORM:
    case GL_TESS_CONTROL_SUBROUTINE_UNIFORM:
    case GL_TESS_EVALUATION_SUBROUTINE_UNIFORM:
+   case GL_TASK_SUBROUTINE_UNIFORM_EXT:
+   case GL_MESH_SUBROUTINE_UNIFORM_EXT:
    case GL_UNIFORM: {
       enum uniform_type type = (enum uniform_type) blob_read_uint32(metadata);
       if (type == uniform_not_remapped) {
@@ -964,6 +970,8 @@ read_program_resource_data(struct blob_reader *metadata,
    case GL_GEOMETRY_SUBROUTINE:
    case GL_FRAGMENT_SUBROUTINE:
    case GL_COMPUTE_SUBROUTINE:
+   case GL_TASK_SUBROUTINE_EXT:
+   case GL_MESH_SUBROUTINE_EXT:
       sh =
          prog->_LinkedShaders[_mesa_shader_stage_from_subroutine(res->Type)];
       res->Data =
