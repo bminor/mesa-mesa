@@ -243,7 +243,8 @@ TU_DECL_PIPELINE_DOWNCAST(graphics, TU_PIPELINE_GRAPHICS)
 TU_DECL_PIPELINE_DOWNCAST(graphics_lib, TU_PIPELINE_GRAPHICS_LIB)
 TU_DECL_PIPELINE_DOWNCAST(compute, TU_PIPELINE_COMPUTE)
 
-VkOffset2D tu_fdm_per_bin_offset(VkExtent2D frag_area, VkRect2D bin);
+VkOffset2D tu_fdm_per_bin_offset(VkExtent2D frag_area, VkRect2D bin,
+                                 VkOffset2D common_bin_offset);
 
 template <chip CHIP>
 uint32_t tu_emit_draw_state(struct tu_cmd_buffer *cmd);

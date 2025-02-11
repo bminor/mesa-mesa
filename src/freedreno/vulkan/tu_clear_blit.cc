@@ -1363,6 +1363,22 @@ r3d_src_gmem(struct tu_cmd_buffer *cmd,
    if (!iview->view.is_mutable)
       desc[0] &= ~A6XX_TEX_CONST_0_SWAP__MASK;
    desc[0] |= A6XX_TEX_CONST_0_TILE_MODE(TILE6_2);
+
+   /* If FDM offset is used, the last row and column extend beyond the
+    * framebuffer but are shifted over when storing. Expand the width and
+    * height to account for that.
+    */
+   if (tu_enable_fdm_offset(cmd)) {
+      uint32_t width = desc[1] & A6XX_TEX_CONST_1_WIDTH__MASK;
+      uint32_t height = (desc[1] & A6XX_TEX_CONST_1_HEIGHT__MASK) >>
+         A6XX_TEX_CONST_1_HEIGHT__SHIFT;
+      width += cmd->state.tiling->tile0.width;
+      height += cmd->state.tiling->tile0.height;
+      desc[1] = (desc[1] & ~(A6XX_TEX_CONST_1_WIDTH__MASK |
+                            A6XX_TEX_CONST_1_HEIGHT__MASK)) |
+         A6XX_TEX_CONST_1_WIDTH(width) | A6XX_TEX_CONST_1_HEIGHT(height);
+   }
+
    desc[2] =
       A6XX_TEX_CONST_2_TYPE(A6XX_TEX_2D) |
       A6XX_TEX_CONST_2_PITCH(cmd->state.tiling->tile0.width * cpp);
@@ -3910,17 +3926,19 @@ static void
 fdm_apply_sysmem_clear_coords(struct tu_cmd_buffer *cmd,
                               struct tu_cs *cs,
                               void *data,
-                              VkRect2D bin,
+                              VkOffset2D common_bin_offset,
                               unsigned views,
-                              const VkExtent2D *frag_areas)
+                              const VkExtent2D *frag_areas,
+                              const VkRect2D *bins)
 {
    const struct apply_sysmem_clear_coords_state *state =
       (const struct apply_sysmem_clear_coords_state *)data;
    assert(state->view < views);
 
    VkExtent2D frag_area = frag_areas[state->view];
+   VkRect2D bin = bins[state->view];
 
-   VkOffset2D offset = tu_fdm_per_bin_offset(frag_area, bin);
+   VkOffset2D offset = tu_fdm_per_bin_offset(frag_area, bin, common_bin_offset);
 
    unsigned x1 = state->rect.offset.x / frag_area.width + offset.x;
    unsigned x2 = DIV_ROUND_UP(state->rect.offset.x + state->rect.extent.width,
@@ -4182,17 +4200,19 @@ static void
 fdm_apply_gmem_clear_coords(struct tu_cmd_buffer *cmd,
                             struct tu_cs *cs,
                             void *data,
-                            VkRect2D bin,
+                            VkOffset2D common_bin_offset,
                             unsigned views,
-                            const VkExtent2D *frag_areas)
+                            const VkExtent2D *frag_areas,
+                            const VkRect2D *bins)
 {
    const struct apply_gmem_clear_coords_state *state =
       (const struct apply_gmem_clear_coords_state *)data;
    assert(state->view < views);
 
    VkExtent2D frag_area = frag_areas[state->view];
+   VkRect2D bin = bins[state->view];
 
-   VkOffset2D offset = tu_fdm_per_bin_offset(frag_area, bin);
+   VkOffset2D offset = tu_fdm_per_bin_offset(frag_area, bin, common_bin_offset);
 
    unsigned x1 = state->rect.offset.x / frag_area.width + offset.x;
    unsigned x2 = DIV_ROUND_UP(state->rect.offset.x + state->rect.extent.width,
@@ -4816,14 +4836,16 @@ static void
 fdm_apply_load_coords(struct tu_cmd_buffer *cmd,
                       struct tu_cs *cs,
                       void *data,
-                      VkRect2D bin,
+                      VkOffset2D common_bin_offset,
                       unsigned views,
-                      const VkExtent2D *frag_areas)
+                      const VkExtent2D *frag_areas,
+                      const VkRect2D *bins)
 {
    const struct apply_load_coords_state *state =
       (const struct apply_load_coords_state *)data;
    assert(state->view < views);
    VkExtent2D frag_area = frag_areas[state->view];
+   VkRect2D bin = bins[state->view];
 
    assert(bin.extent.width % frag_area.width == 0);
    assert(bin.extent.height % frag_area.height == 0);
@@ -4831,10 +4853,10 @@ fdm_apply_load_coords(struct tu_cmd_buffer *cmd,
    uint32_t scaled_height = bin.extent.height / frag_area.height;
 
    const float coords[] = {
-      bin.offset.x,                    bin.offset.y,
-      bin.offset.x,                    bin.offset.y,
-      bin.offset.x + scaled_width,     bin.offset.y + scaled_height,
-      bin.offset.x + bin.extent.width, bin.offset.y + bin.extent.height,
+      common_bin_offset.x,                common_bin_offset.y,
+      bin.offset.x,                       bin.offset.y,
+      common_bin_offset.x + scaled_width, common_bin_offset.y + scaled_height,
+      bin.offset.x + bin.extent.width,    bin.offset.y + bin.extent.height,
    };
    r3d_coords_raw(cmd, cs, coords);
 }
@@ -5050,6 +5072,19 @@ store_cp_blit(struct tu_cmd_buffer *cmd,
    enum a6xx_format format = fmt.fmt;
    fixup_src_format(&src_format, dst_format, &format);
 
+   uint32_t src_width = dst_iview->vk.extent.width;
+   uint32_t src_height = dst_iview->vk.extent.height;
+
+   /* With FDM offset, we may blit from an extra row/column of tiles whose
+    * source coordinates are outside of the attachment. Add an extra tile
+    * width/height to the size to avoid clipping the source.
+    */
+   if (tu_enable_fdm_offset(cmd)) {
+      const struct tu_tiling_config *tiling = cmd->state.tiling;
+      src_width += tiling->tile0.width;
+      src_height += tiling->tile0.height;
+   }
+
    tu_cs_emit_regs(cs,
                    SP_PS_2D_SRC_INFO(CHIP,
                       .color_format = format,
@@ -5063,8 +5098,8 @@ store_cp_blit(struct tu_cmd_buffer *cmd,
                       .unk22 = 1,
                       .mutableen = src_iview->view.is_mutable),
                    SP_PS_2D_SRC_SIZE(CHIP,
-                      .width = dst_iview->vk.extent.width,
-                      .height = dst_iview->vk.extent.height),
+                      .width = src_width,
+                      .height = src_height),
                    SP_PS_2D_SRC(CHIP, .qword = cmd->device->physical_device->gmem_base + gmem_offset),
                    SP_PS_2D_SRC_PITCH(CHIP, .pitch = cmd->state.tiling->tile0.width * cpp));
 
@@ -5274,14 +5309,16 @@ static void
 fdm_apply_store_coords(struct tu_cmd_buffer *cmd,
                        struct tu_cs *cs,
                        void *data,
-                       VkRect2D bin,
+                       VkOffset2D common_bin_offset,
                        unsigned views,
-                       const VkExtent2D *frag_areas)
+                       const VkExtent2D *frag_areas,
+                       const VkRect2D *bins)
 {
    const struct apply_store_coords_state *state =
       (const struct apply_store_coords_state *)data;
    assert(state->view < views);
    VkExtent2D frag_area = frag_areas[state->view];
+   VkRect2D bin = bins[state->view];
 
    /* The bin width/height must be a multiple of the frag_area to make sure
     * that the scaling happens correctly. This means there may be some
@@ -5299,10 +5336,10 @@ fdm_apply_store_coords(struct tu_cmd_buffer *cmd,
       A6XX_GRAS_2D_DST_BR(.x = bin.offset.x + bin.extent.width - 1,
                           .y = bin.offset.y + bin.extent.height - 1));
    tu_cs_emit_regs(cs,
-                   A6XX_GRAS_2D_SRC_TL_X(bin.offset.x),
-                   A6XX_GRAS_2D_SRC_BR_X(bin.offset.x + scaled_width - 1),
-                   A6XX_GRAS_2D_SRC_TL_Y(bin.offset.y),
-                   A6XX_GRAS_2D_SRC_BR_Y(bin.offset.y + scaled_height - 1));
+                   A6XX_GRAS_2D_SRC_TL_X(common_bin_offset.x),
+                   A6XX_GRAS_2D_SRC_BR_X(common_bin_offset.x + scaled_width - 1),
+                   A6XX_GRAS_2D_SRC_TL_Y(common_bin_offset.y),
+                   A6XX_GRAS_2D_SRC_BR_Y(common_bin_offset.y + scaled_height - 1));
 }
 
 template <chip CHIP>

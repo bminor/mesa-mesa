@@ -157,7 +157,7 @@ tu6_write_lrz_cntl(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
                    struct A6XX_GRAS_LRZ_CNTL cntl)
 {
    if (CHIP >= A7XX) {
-      // A7XX split LRZ_CNTL into two seperate registers.
+      /* A7XX split LRZ_CNTL into two seperate registers. */
       struct tu_reg_value cntl2 = A7XX_GRAS_LRZ_CNTL2(
          .disable_on_wrong_dir = cntl.disable_on_wrong_dir,
          .fc_enable = cntl.fc_enable,

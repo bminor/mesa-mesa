@@ -695,7 +695,7 @@ tu_restore_suspended_pass(struct tu_cmd_buffer *cmd,
                           struct tu_cmd_buffer *suspended);
 
 template <chip CHIP>
-void tu_cmd_render(struct tu_cmd_buffer *cmd);
+void tu_cmd_render(struct tu_cmd_buffer *cmd, const VkOffset2D *fdm_offsets);
 
 void tu_dispatch_unaligned(VkCommandBuffer commandBuffer,
                            uint32_t x, uint32_t y, uint32_t z);
@@ -748,12 +748,15 @@ void tu_disable_draw_states(struct tu_cmd_buffer *cmd, struct tu_cs *cs);
 void tu6_apply_depth_bounds_workaround(struct tu_device *device,
                                        uint32_t *rb_depth_cntl);
 
+bool tu_enable_fdm_offset(struct tu_cmd_buffer *cmd);
+
 typedef void (*tu_fdm_bin_apply_t)(struct tu_cmd_buffer *cmd,
                                    struct tu_cs *cs,
                                    void *data,
-                                   VkRect2D bin,
+                                   VkOffset2D common_bin_offset,
                                    unsigned views,
-                                   const VkExtent2D *frag_areas);
+                                   const VkExtent2D *frag_areas,
+                                   const VkRect2D *bins);
 
 enum tu_fdm_flags {
    TU_FDM_NONE = 0,
@@ -807,13 +810,15 @@ _tu_create_fdm_bin_patchpoint(struct tu_cmd_buffer *cmd,
     */
    unsigned num_views = MAX2(cmd->state.pass->num_views, 1);
    VkExtent2D unscaled_frag_areas[num_views];
+   VkRect2D bins[num_views];
    for (unsigned i = 0; i < num_views; i++) {
       unscaled_frag_areas[i] = (VkExtent2D) { 1, 1 };
-   }
-   apply(cmd, cs, state, (VkRect2D) {
+      bins[i] = (VkRect2D) {
          { 0, 0 },
          { MAX_VIEWPORT_SIZE, MAX_VIEWPORT_SIZE },
-        }, num_views, unscaled_frag_areas);
+      };
+   }
+   apply(cmd, cs, state, (VkOffset2D) {0, 0}, num_views, unscaled_frag_areas, bins);
    assert(tu_cs_get_cur_iova(cs) == patch.iova + patch.size * sizeof(uint32_t));
 
    util_dynarray_append(&cmd->fdm_bin_patchpoints,

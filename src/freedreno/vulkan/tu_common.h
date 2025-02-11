@@ -138,6 +138,18 @@
 #define MAX_FDM_TEXEL_SIZE_LOG2 10
 #define MAX_FDM_TEXEL_SIZE (1u << MAX_FDM_TEXEL_SIZE_LOG2)
 
+/* This granularity is arbitrary, but there are two competing concerns here:
+ * 
+ * - The fragment area has to always divide the offset, and we don't want the
+ *   fragment area changing with the offset, so we have to clamp the fragment
+ *   area to this granularity. Therefore larger granularities lead to lower
+ *   minimum resolution.
+ * - The larger the offset granularity, the choppier the motion is.
+ *
+ * Choose 8 as a compromise between the two.
+ */
+#define TU_FDM_OFFSET_GRANULARITY 8
+
 #define TU_GENX(FUNC_NAME) FD_GENX(FUNC_NAME)
 
 #define TU_CALLX(device, thing) FD_CALLX((device)->physical_device->info, thing)

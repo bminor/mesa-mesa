@@ -2548,44 +2548,49 @@ struct apply_viewport_state {
    bool share_scale;
 };
 
-/* It's a hardware restriction that the window offset (i.e. bin.offset) must
- * be the same for all views. This means that GMEM coordinates cannot be a
- * simple scaling of framebuffer coordinates, because this would require us to
- * scale the window offset and the scale may be different per view. Instead we
- * have to apply a per-bin offset to the GMEM coordinate transform to make
- * sure that the window offset maps to itself. Specifically we need an offset
- * o to the transform:
+/* It's a hardware restriction that the window offset (i.e. common_bin_offset)
+ * must be the same for all views. This means that GMEM coordinates cannot be
+ * a simple scaling of framebuffer coordinates, because this would require us
+ * to scale the window offset and the scale may be different per view. Instead
+ * we have to apply a per-bin offset to the GMEM coordinate transform to make
+ * sure that the window offset maps to the per-view bin coordinate, which will
+ * be the same if there is no offset. Specifically we need an offset o to the
+ * transform:
  *
  * x' = s * x + o
  *
- * so that when we plug in the bin start b_s:
+ * so that when we plug in the per-view bin start b_s and the common window
+ * offset b_cs:
  * 
- * b_s = s * b_s + o
+ * b_cs = s * b_s + o
  *
  * and we get:
  *
- * o = b_s - s * b_s
+ * o = b_cs - s * b_s
  *
- * We use this form exactly, because we know the bin offset is a multiple of
+ * We use this form exactly, because we know the bin start is a multiple of
  * the frag area so s * b_s is an integer and we can compute an exact result
- * easily.
+ * easily. We also have to make sure that the bin offset is a multiple of the
+ * frag area by restricting the frag area.
  */
 
 VkOffset2D
-tu_fdm_per_bin_offset(VkExtent2D frag_area, VkRect2D bin)
+tu_fdm_per_bin_offset(VkExtent2D frag_area, VkRect2D bin,
+                      VkOffset2D common_bin_offset)
 {
    assert(bin.offset.x % frag_area.width == 0);
    assert(bin.offset.y % frag_area.height == 0);
 
    return (VkOffset2D) {
-      bin.offset.x - bin.offset.x / frag_area.width,
-      bin.offset.y - bin.offset.y / frag_area.height
+      common_bin_offset.x - bin.offset.x / frag_area.width,
+      common_bin_offset.y - bin.offset.y / frag_area.height
    };
 }
 
 static void
 fdm_apply_viewports(struct tu_cmd_buffer *cmd, struct tu_cs *cs, void *data,
-                    VkRect2D bin, unsigned views, const VkExtent2D *frag_areas)
+                    VkOffset2D common_bin_offset, unsigned views,
+                    const VkExtent2D *frag_areas, const VkRect2D *bins)
 {
    const struct apply_viewport_state *state =
       (const struct apply_viewport_state *)data;
@@ -2603,9 +2608,12 @@ fdm_apply_viewports(struct tu_cmd_buffer *cmd, struct tu_cs *cs, void *data,
        * replicate it across all viewports.
        */
       VkExtent2D frag_area = state->share_scale ? frag_areas[0] : frag_areas[i];
+      VkRect2D bin = state->share_scale ? bins[0] : bins[i];
       VkViewport viewport =
          state->share_scale ? state->vp.viewports[i] : state->vp.viewports[0];
-      if (frag_area.width == 1 && frag_area.height == 1) {
+      if (frag_area.width == 1 && frag_area.height == 1 &&
+          common_bin_offset.x == bin.offset.x &&
+          common_bin_offset.y == bin.offset.y) {
          vp.viewports[i] = viewport;
          continue;
       }
@@ -2618,7 +2626,8 @@ fdm_apply_viewports(struct tu_cmd_buffer *cmd, struct tu_cs *cs, void *data,
       vp.viewports[i].width = viewport.width * scale_x;
       vp.viewports[i].height = viewport.height * scale_y;
 
-      VkOffset2D offset = tu_fdm_per_bin_offset(frag_area, bin);
+      VkOffset2D offset = tu_fdm_per_bin_offset(frag_area, bin,
+                                                common_bin_offset);
 
       vp.viewports[i].x = scale_x * viewport.x + offset.x;
       vp.viewports[i].y = scale_y * viewport.y + offset.y;
@@ -2694,7 +2703,8 @@ tu6_emit_scissor(struct tu_cs *cs, const struct vk_viewport_state *vp)
 
 static void
 fdm_apply_scissors(struct tu_cmd_buffer *cmd, struct tu_cs *cs, void *data,
-                   VkRect2D bin, unsigned views, const VkExtent2D *frag_areas)
+                   VkOffset2D common_bin_offset, unsigned views,
+                   const VkExtent2D *frag_areas, const VkRect2D *bins)
 {
    const struct apply_viewport_state *state =
       (const struct apply_viewport_state *)data;
@@ -2703,12 +2713,9 @@ fdm_apply_scissors(struct tu_cmd_buffer *cmd, struct tu_cs *cs, void *data,
 
    for (unsigned i = 0; i < vp.scissor_count; i++) {
       VkExtent2D frag_area = state->share_scale ? frag_areas[0] : frag_areas[i];
+      VkRect2D bin = state->share_scale ? bins[0] : bins[i];
       VkRect2D scissor =
          state->share_scale ? state->vp.scissors[i] : state->vp.scissors[0];
-      if (frag_area.width == 1 && frag_area.height == 1) {
-         vp.scissors[i] = scissor;
-         continue;
-      }
 
       /* Transform the scissor following the viewport. It's unclear how this
        * is supposed to handle cases where the scissor isn't aligned to the
@@ -2716,7 +2723,8 @@ fdm_apply_scissors(struct tu_cmd_buffer *cmd, struct tu_cs *cs, void *data,
        * fragments if the scissor size equals the framebuffer size and it
        * isn't aligned to the fragment area.
        */
-      VkOffset2D offset = tu_fdm_per_bin_offset(frag_area, bin);
+      VkOffset2D offset = tu_fdm_per_bin_offset(frag_area, bin,
+                                                common_bin_offset);
       VkOffset2D min = {
          scissor.offset.x / frag_area.width + offset.x,
          scissor.offset.y / frag_area.width + offset.y,
@@ -2731,12 +2739,12 @@ fdm_apply_scissors(struct tu_cmd_buffer *cmd, struct tu_cs *cs, void *data,
        */
       uint32_t scaled_width = bin.extent.width / frag_area.width;
       uint32_t scaled_height = bin.extent.height / frag_area.height;
-      vp.scissors[i].offset.x = MAX2(min.x, bin.offset.x);
-      vp.scissors[i].offset.y = MAX2(min.y, bin.offset.y);
+      vp.scissors[i].offset.x = MAX2(min.x, common_bin_offset.x);
+      vp.scissors[i].offset.y = MAX2(min.y, common_bin_offset.y);
       vp.scissors[i].extent.width =
-         MIN2(max.x, bin.offset.x + scaled_width) - vp.scissors[i].offset.x;
+         MIN2(max.x, common_bin_offset.x + scaled_width) - vp.scissors[i].offset.x;
       vp.scissors[i].extent.height =
-         MIN2(max.y, bin.offset.y + scaled_height) - vp.scissors[i].offset.y;
+         MIN2(max.y, common_bin_offset.y + scaled_height) - vp.scissors[i].offset.y;
    }
 
    TU_CALLX(cs->device, tu6_emit_scissor)(cs, &vp);

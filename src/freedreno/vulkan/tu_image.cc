@@ -1163,10 +1163,10 @@ tu_DestroyImageView(VkDevice _device,
  */
 void
 tu_fragment_density_map_sample(const struct tu_image_view *fdm,
-                               uint32_t x, uint32_t y,
+                               int32_t x, int32_t y,
                                uint32_t width, uint32_t height,
-                               uint32_t layers,
-                               struct tu_frag_area *areas)
+                               uint32_t layer,
+                               struct tu_frag_area *area)
 {
    assert(fdm->image->layout[0].tile_mode == TILE6_LINEAR);
 
@@ -1176,20 +1176,19 @@ tu_fragment_density_map_sample(const struct tu_image_view *fdm,
    fdm_shift_x = CLAMP(fdm_shift_x, MIN_FDM_TEXEL_SIZE_LOG2, MAX_FDM_TEXEL_SIZE_LOG2);
    fdm_shift_y = CLAMP(fdm_shift_y, MIN_FDM_TEXEL_SIZE_LOG2, MAX_FDM_TEXEL_SIZE_LOG2);
 
-   uint32_t i = x >> fdm_shift_x;
-   uint32_t j = y >> fdm_shift_y;
+   int32_t i = x >> fdm_shift_x;
+   int32_t j = y >> fdm_shift_y;
+
+   i = CLAMP(i, 0, fdm->vk.extent.width - 1);
+   j = CLAMP(j, 0, fdm->vk.extent.height - 1);
 
    unsigned cpp = fdm->image->layout[0].cpp;
    unsigned pitch = fdm->view.pitch;
 
-   void *pixel = (char *)fdm->image->map + fdm->view.offset + cpp * i + pitch * j;
-   for (unsigned i = 0; i < layers; i++) {
-      float density_src[4], density[4];
-      util_format_unpack_rgba(fdm->view.format, density_src, pixel, 1);
-      pipe_swizzle_4f(density, density_src, fdm->swizzle);
-      areas[i].width = 1.0f / density[0];
-      areas[i].height = 1.0f / density[1];
-
-      pixel = (char *)pixel + fdm->view.layer_size;
-   }
+   void *pixel = (char *)fdm->image->map + fdm->view.offset + fdm->view.layer_size * layer + cpp * i + pitch * j;
+   float density_src[4], density[4];
+   util_format_unpack_rgba(fdm->view.format, density_src, pixel, 1);
+   pipe_swizzle_4f(density, density_src, fdm->swizzle);
+   area->width = 1.0f / density[0];
+   area->height = 1.0f / density[1];
 }

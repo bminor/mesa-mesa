@@ -488,7 +488,7 @@ struct tu_tiling_config {
    /* Whether using GMEM is even possible with this configuration */
    bool possible;
 
-   struct tu_vsc_config vsc;
+   struct tu_vsc_config vsc, fdm_offset_vsc;
 };
 
 struct tu_framebuffer

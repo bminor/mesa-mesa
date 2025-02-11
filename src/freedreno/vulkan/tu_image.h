@@ -129,9 +129,9 @@ struct tu_frag_area {
 
 void
 tu_fragment_density_map_sample(const struct tu_image_view *fdm,
-                               uint32_t x, uint32_t y,
+                               int32_t x, int32_t y,
                                uint32_t width, uint32_t height,
-                               uint32_t layers, struct tu_frag_area *areas);
+                               uint32_t layer, struct tu_frag_area *area);
 
 VkResult
 tu_image_update_layout(struct tu_device *device, struct tu_image *image,
