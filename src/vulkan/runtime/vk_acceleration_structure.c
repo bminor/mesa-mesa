@@ -64,7 +64,7 @@ static const uint32_t ploc_spv[] = {
 };
 
 VkDeviceAddress
-vk_acceleration_structure_get_va(struct vk_acceleration_structure *accel_struct)
+vk_acceleration_structure_get_va(const struct vk_acceleration_structure *accel_struct)
 {
    VkBufferDeviceAddressInfo info = {
       .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,

@@ -52,7 +52,7 @@ struct vk_acceleration_structure {
    uint64_t size;
 };
 
-VkDeviceAddress vk_acceleration_structure_get_va(struct vk_acceleration_structure *accel_struct);
+VkDeviceAddress vk_acceleration_structure_get_va(const struct vk_acceleration_structure *accel_struct);
 
 VK_DEFINE_NONDISP_HANDLE_CASTS(vk_acceleration_structure, base, VkAccelerationStructureKHR,
                                VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR)
