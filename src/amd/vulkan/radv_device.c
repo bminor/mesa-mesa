@@ -1663,7 +1663,6 @@ radv_GetMemoryFdKHR(VkDevice _device, const VkMemoryGetFdInfoKHR *pGetFdInfo, in
    if (memory->image) {
       struct radv_image *image = memory->image;
 
-      assert(memory->image->bindings[0].offset == 0);
       radv_image_bo_set_metadata(device, image, memory->bo);
    }
 

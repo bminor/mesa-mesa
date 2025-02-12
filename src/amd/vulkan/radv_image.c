@@ -781,8 +781,7 @@ radv_image_bo_set_metadata(struct radv_device *device, struct radv_image *image,
       md.u.gfx12.dcc_write_compress_disable = surface->u.gfx9.color.dcc_write_compress_disable;
       md.u.gfx12.scanout = (surface->flags & RADEON_SURF_SCANOUT) != 0;
    } else if (pdev->info.gfx_level >= GFX9) {
-      uint64_t dcc_offset =
-         image->bindings[0].offset + (surface->display_dcc_offset ? surface->display_dcc_offset : surface->meta_offset);
+      const uint64_t dcc_offset = surface->display_dcc_offset ? surface->display_dcc_offset : surface->meta_offset;
       md.u.gfx9.swizzle_mode = surface->u.gfx9.swizzle_mode;
       md.u.gfx9.dcc_offset_256b = dcc_offset >> 8;
       md.u.gfx9.dcc_pitch_max = surface->u.gfx9.color.display_dcc_pitch_max;
