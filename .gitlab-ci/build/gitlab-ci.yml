@@ -58,7 +58,6 @@
 .meson-build:
   extends:
     - .build-linux
-    - .use-debian/x86_64_build
   stage: build-only
   script:
     - &meson-build timeout --verbose ${BUILD_JOB_TIMEOUT_OVERRIDE:-$BUILD_JOB_TIMEOUT} bash --login .gitlab-ci/meson/build.sh
@@ -97,6 +96,7 @@
 debian-testing:
   extends:
     - .meson-build
+    - .use-debian/x86_64_build
     - .ci-deqp-artifacts
   stage: build-for-tests
   variables:
@@ -242,7 +242,9 @@ debian-testing-ubsan:
       -D install-mesa-clc=true
 
 debian-build-testing:
-  extends: .meson-build
+  extends:
+    - .meson-build
+    - .use-debian/x86_64_build
   stage: build-for-tests
   variables:
     UNWIND: "enabled"
@@ -274,9 +276,11 @@ debian-build-testing:
 
 # Test a release build with -Werror so new warnings don't sneak in.
 debian-release:
-  extends: .meson-build
+  extends:
+    - .meson-build
+    - .use-debian/x86_64_build
   needs:
-    - !reference [.meson-build, needs]
+    - !reference [.use-debian/x86_64_build, needs]
     - !reference [.build-for-tests-jobs]
   variables:
     UNWIND: "enabled"
@@ -475,6 +479,7 @@ debian-android:
 .meson-cross:
   extends:
     - .meson-build
+    - .use-debian/x86_64_build
   variables:
     UNWIND: "disabled"
     DRI_LOADERS: >
@@ -683,9 +688,11 @@ debian-no-libdrm:
       -D egl=disabled
 
 debian-clang:
-  extends: .meson-build
+  extends:
+    - .meson-build
+    - .use-debian/x86_64_build
   needs:
-    - !reference [.meson-build, needs]
+    - !reference [.use-debian/x86_64_build, needs]
     - !reference [.build-for-tests-jobs]
   variables:
     BUILDTYPE: debug
@@ -773,9 +780,11 @@ windows-msvc:
       - _install/
 
 debian-vulkan:
-  extends: .meson-build
+  extends:
+    - .meson-build
+    - .use-debian/x86_64_build
   needs:
-    - !reference [.meson-build, needs]
+    - !reference [.use-debian/x86_64_build, needs]
     - !reference [.build-for-tests-jobs]
   variables:
     BUILD_JOB_TIMEOUT: 30m
