@@ -510,6 +510,7 @@ vn_physical_device_init_properties(struct vn_physical_device *physical_dev)
       VkPhysicalDevicePCIBusInfoPropertiesEXT pci_bus_info;
       VkPhysicalDeviceProvokingVertexPropertiesEXT provoking_vertex;
       VkPhysicalDeviceRobustness2PropertiesEXT robustness_2;
+      VkPhysicalDeviceSampleLocationsPropertiesEXT sample_locations;
       VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback;
       VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT
          vertex_attribute_divisor;
@@ -568,6 +569,7 @@ vn_physical_device_init_properties(struct vn_physical_device *physical_dev)
    VN_ADD_PNEXT_EXT(props2, PCI_BUS_INFO_PROPERTIES_EXT, local_props.pci_bus_info, exts->EXT_pci_bus_info);
    VN_ADD_PNEXT_EXT(props2, PROVOKING_VERTEX_PROPERTIES_EXT, local_props.provoking_vertex, exts->EXT_provoking_vertex);
    VN_ADD_PNEXT_EXT(props2, ROBUSTNESS_2_PROPERTIES_EXT, local_props.robustness_2, exts->EXT_robustness2);
+   VN_ADD_PNEXT_EXT(props2, SAMPLE_LOCATIONS_PROPERTIES_EXT, local_props.sample_locations, exts->EXT_sample_locations);
    VN_ADD_PNEXT_EXT(props2, TRANSFORM_FEEDBACK_PROPERTIES_EXT, local_props.transform_feedback, exts->EXT_transform_feedback);
    VN_ADD_PNEXT_EXT(props2, VERTEX_ATTRIBUTE_DIVISOR_PROPERTIES_EXT, local_props.vertex_attribute_divisor, exts->EXT_vertex_attribute_divisor);
 
@@ -630,6 +632,7 @@ vn_physical_device_init_properties(struct vn_physical_device *physical_dev)
    VN_SET_VK_PROPS_EXT(props, &local_props.pci_bus_info, exts->EXT_pci_bus_info);
    VN_SET_VK_PROPS_EXT(props, &local_props.provoking_vertex, exts->EXT_provoking_vertex);
    VN_SET_VK_PROPS_EXT(props, &local_props.robustness_2, exts->EXT_robustness2);
+   VN_SET_VK_PROPS_EXT(props, &local_props.sample_locations, exts->EXT_sample_locations);
    VN_SET_VK_PROPS_EXT(props, &local_props.transform_feedback, exts->EXT_transform_feedback);
    VN_SET_VK_PROPS_EXT(props, &local_props.vertex_attribute_divisor, exts->EXT_vertex_attribute_divisor);
 
@@ -1121,6 +1124,7 @@ vn_physical_device_get_passthrough_extensions(
       .EXT_queue_family_foreign = true,
       .EXT_rasterization_order_attachment_access = true,
       .EXT_robustness2 = true,
+      .EXT_sample_locations = true,
       .EXT_shader_stencil_export = true,
       .EXT_shader_subgroup_ballot = true,
       .EXT_transform_feedback = true,
@@ -2742,4 +2746,19 @@ vn_GetPhysicalDeviceFragmentShadingRatesKHR(
 
    return vn_call_vkGetPhysicalDeviceFragmentShadingRatesKHR(
       ring, physicalDevice, pFragmentShadingRateCount, pFragmentShadingRates);
+}
+
+void
+vn_GetPhysicalDeviceMultisamplePropertiesEXT(
+   VkPhysicalDevice physicalDevice,
+   VkSampleCountFlagBits samples,
+   VkMultisamplePropertiesEXT *pMultisampleProperties)
+{
+   struct vn_physical_device *physical_dev =
+      vn_physical_device_from_handle(physicalDevice);
+   struct vn_ring *ring = physical_dev->instance->ring.ring;
+
+   /* TODO per-device cache */
+   vn_call_vkGetPhysicalDeviceMultisamplePropertiesEXT(
+      ring, physicalDevice, samples, pMultisampleProperties);
 }

@@ -65,6 +65,10 @@ struct vn_graphics_pipeline_info_self {
 
          /** VkPipelineMultisampleStateCreateInfo::pSampleMask */
          bool multisample_state_sample_mask : 1;
+         /** VkPipelineMultisampleStateCreateInfo::pNext
+          *  VkPipelineSampleLocationsStateCreateInfoEXT::sampleLocationsInfo
+          */
+         bool multisample_state_sample_locations : 1;
       };
    };
 };
@@ -158,6 +162,10 @@ struct vn_graphics_dynamic_state {
          bool scissor_with_count : 1;
          /** VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE */
          bool rasterizer_discard_enable : 1;
+         /** VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT */
+         bool sample_locations : 1;
+         /** VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT */
+         bool sample_locations_enable : 1;
       };
    };
 };
@@ -201,6 +209,14 @@ struct vn_graphics_pipeline_state {
     * Valid if and only if gpl.pre_raster_shaders is set.
     */
    bool rasterizer_discard_enable;
+
+   /** VkPipelineMultisampleStateCreateInfo::pNext
+    *  - VkPipelineSampleLocationsStateCreateInfoEXT::sampleLocationsEnable
+    *
+    * Valid if and only if multisample_state is valid along with a valid
+    * sample location state chained in its pNext.
+    */
+   bool sample_locations_enable;
 };
 
 struct vn_graphics_pipeline {
@@ -216,6 +232,7 @@ struct vn_graphics_pipeline {
 struct vn_graphics_pipeline_fix_tmp {
    VkGraphicsPipelineCreateInfo *infos;
    VkPipelineMultisampleStateCreateInfo *multisample_state_infos;
+   VkPipelineSampleLocationsStateCreateInfoEXT *sl_infos;
    VkPipelineViewportStateCreateInfo *viewport_state_infos;
 
    /* Fixing the pNext chain
@@ -637,6 +654,7 @@ vn_graphics_pipeline_fix_tmp_alloc(const VkAllocationCallbacks *alloc,
    struct vn_graphics_pipeline_fix_tmp *tmp;
    VkGraphicsPipelineCreateInfo *infos;
    VkPipelineMultisampleStateCreateInfo *multisample_state_infos;
+   VkPipelineSampleLocationsStateCreateInfoEXT *sl_infos;
    VkPipelineViewportStateCreateInfo *viewport_state_infos;
 
    /* for pNext */
@@ -652,6 +670,7 @@ vn_graphics_pipeline_fix_tmp_alloc(const VkAllocationCallbacks *alloc,
    vk_multialloc_add(&ma, &infos, __typeof__(*infos), info_count);
    vk_multialloc_add(&ma, &multisample_state_infos,
                      __typeof__(*multisample_state_infos), info_count);
+   vk_multialloc_add(&ma, &sl_infos, __typeof__(*sl_infos), info_count);
    vk_multialloc_add(&ma, &viewport_state_infos,
                      __typeof__(*viewport_state_infos), info_count);
 
@@ -673,6 +692,7 @@ vn_graphics_pipeline_fix_tmp_alloc(const VkAllocationCallbacks *alloc,
 
    tmp->infos = infos;
    tmp->multisample_state_infos = multisample_state_infos;
+   tmp->sl_infos = sl_infos;
    tmp->viewport_state_infos = viewport_state_infos;
 
    if (alloc_pnext) {
@@ -771,6 +791,12 @@ vn_graphics_dynamic_state_update(
       case VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE:
          raw.rasterizer_discard_enable = true;
          break;
+      case VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT:
+         raw.sample_locations = true;
+         break;
+      case VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT:
+         raw.sample_locations_enable = true;
+         break;
       default:
          break;
       }
@@ -805,9 +831,13 @@ vn_graphics_dynamic_state_update(
    }
    if (direct_gpl.fragment_shader) {
       dynamic->sample_mask |= raw.sample_mask;
+      dynamic->sample_locations |= raw.sample_locations;
+      dynamic->sample_locations_enable |= raw.sample_locations_enable;
    }
    if (direct_gpl.fragment_output) {
       dynamic->sample_mask |= raw.sample_mask;
+      dynamic->sample_locations |= raw.sample_locations;
+      dynamic->sample_locations_enable |= raw.sample_locations_enable;
    }
 }
 
@@ -1038,6 +1068,13 @@ vn_graphics_pipeline_state_fill(
       vk_find_struct_const(info->pNext, PIPELINE_LIBRARY_CREATE_INFO_KHR);
    const uint32_t lib_count = lib_info ? lib_info->libraryCount : 0;
 
+   const VkPipelineSampleLocationsStateCreateInfoEXT *sl_info = NULL;
+   if (info->pMultisampleState) {
+      sl_info = vk_find_struct_const(
+         info->pMultisampleState->pNext,
+         PIPELINE_SAMPLE_LOCATIONS_STATE_CREATE_INFO_EXT);
+   }
+
    /* This tracks which fields have valid values in the
     * VkGraphicsPipelineCreateInfo pNext chain.
     *
@@ -1193,6 +1230,25 @@ vn_graphics_pipeline_state_fill(
          valid.self.multisample_state_sample_mask =
             !state->dynamic.sample_mask;
 
+         /* If VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT is used, the static
+          * sampleLocationsInfo is ignored. Whether custom sample locations
+          * have been enabled depends on if
+          * VkPipelineSampleLocationsStateCreateInfoEXT has been chained and if
+          * VkPipelineSampleLocationsStateCreateInfoEXT::sampleLocationsEnable
+          * is VK_TRUE.
+          *
+          * If VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT is not used, the static
+          * sampleLocationsInfo validity depends on whether
+          * VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT dynamic state is used
+          * or the static sampleLocationsEnable is true.
+          */
+         if (!state->dynamic.sample_locations) {
+            if (state->dynamic.sample_locations_enable)
+               valid.self.multisample_state_sample_locations = true;
+            else if (sl_info && sl_info->sampleLocationsEnable == VK_TRUE)
+               valid.self.multisample_state_sample_locations = true;
+         }
+
          if (state->render_pass.attachment_aspects &
              (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT))
             valid.self.depth_stencil_state = true;
@@ -1302,6 +1358,10 @@ vn_graphics_pipeline_state_fill(
             valid.self.multisample_state &&
             info->pMultisampleState &&
             info->pMultisampleState->pSampleMask,
+         .multisample_state_sample_locations =
+            !valid.self.multisample_state_sample_locations &&
+            valid.self.multisample_state &&
+            sl_info && sl_info->sampleLocationsInfo.sampleLocationsCount,
          .depth_stencil_state =
             !valid.self.depth_stencil_state &&
             info->pDepthStencilState,
@@ -1329,6 +1389,37 @@ vn_graphics_pipeline_state_fill(
          /* clang-format on */
       },
    };
+}
+
+static void
+vn_multisample_info_pnext_init(
+   const VkPipelineMultisampleStateCreateInfo *info,
+   struct vn_graphics_pipeline_fix_tmp *fix_tmp,
+   uint32_t index)
+{
+   VkPipelineSampleLocationsStateCreateInfoEXT *sl =
+      &fix_tmp->sl_infos[index];
+
+   VkBaseOutStructure *cur = (void *)&fix_tmp->infos[index].pMultisampleState;
+
+   vk_foreach_struct_const(src, info->pNext) {
+      void *next = NULL;
+      switch (src->sType) {
+      case VK_STRUCTURE_TYPE_PIPELINE_SAMPLE_LOCATIONS_STATE_CREATE_INFO_EXT:
+         memcpy(sl, src, sizeof(*sl));
+         next = sl;
+         break;
+      default:
+         break;
+      }
+
+      if (next) {
+         cur->pNext = next;
+         cur = next;
+      }
+   }
+
+   cur->pNext = NULL;
 }
 
 static void
@@ -1365,13 +1456,22 @@ vn_fix_graphics_pipeline_create_info_self(
       fix_tmp->infos[index].basePipelineHandle = VK_NULL_HANDLE;
 
    /* VkPipelineMultisampleStateCreateInfo */
-   if (ignore->multisample_state_sample_mask) {
+   if (ignore->multisample_state_sample_mask ||
+       ignore->multisample_state_sample_locations) {
       /* Swap original pMultisampleState with temporary state. */
       fix_tmp->multisample_state_infos[index] = *info->pMultisampleState;
       fix_tmp->infos[index].pMultisampleState =
          &fix_tmp->multisample_state_infos[index];
 
-      fix_tmp->multisample_state_infos[index].pSampleMask = NULL;
+      if (ignore->multisample_state_sample_mask)
+         fix_tmp->multisample_state_infos[index].pSampleMask = NULL;
+      if (ignore->multisample_state_sample_locations) {
+         /* initialize pNext chain with allocated tmp storage */
+         vn_multisample_info_pnext_init(info->pMultisampleState, fix_tmp,
+                                        index);
+         fix_tmp->sl_infos[index].sampleLocationsInfo.sampleLocationsCount =
+            0;
+      }
    }
 
    /* VkPipelineViewportStateCreateInfo */
