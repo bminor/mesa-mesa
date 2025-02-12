@@ -1443,7 +1443,6 @@ radv_image_create(VkDevice _device, const struct radv_image_create_info *create_
    if (image->vk.create_flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) {
       image->alignment = MAX2(image->alignment, 4096);
       image->size = align64(image->size, image->alignment);
-      image->bindings[0].offset = 0;
 
       result = radv_bo_create(device, &image->vk.base, image->size, image->alignment, 0, RADEON_FLAG_VIRTUAL,
                               RADV_BO_PRIORITY_VIRTUAL, 0, true, &image->bindings[0].bo);
