@@ -249,9 +249,10 @@ enum vpe_status vpe10_set_num_segments(struct vpe_priv *vpe_priv, struct stream_
     struct scaler_data *scl_data, struct vpe_rect *src_rect, struct vpe_rect *dst_rect,
     uint32_t *max_seg_width, uint32_t recout_width_alignment)
 {
-    uint16_t       num_segs;
-    struct dpp    *dpp         = vpe_priv->resource.dpp[0];
-    const uint32_t max_lb_size = dpp->funcs->get_line_buffer_size();
+    uint16_t        num_segs;
+    struct dpp     *dpp         = vpe_priv->resource.dpp[0];
+    const uint32_t  max_lb_size = dpp->funcs->get_line_buffer_size();
+    enum vpe_status res         = VPE_STATUS_OK;
 
     (void)recout_width_alignment;
 
@@ -259,13 +260,13 @@ enum vpe_status vpe10_set_num_segments(struct vpe_priv *vpe_priv, struct stream_
 
     num_segs = vpe_get_num_segments(vpe_priv, src_rect, dst_rect, *max_seg_width);
 
-    stream_ctx->segment_ctx = vpe_alloc_segment_ctx(vpe_priv, num_segs);
-    if (!stream_ctx->segment_ctx)
-        return VPE_STATUS_NO_MEMORY;
+    res = vpe_alloc_segment_ctx(vpe_priv, stream_ctx, num_segs);
 
-    stream_ctx->num_segments = num_segs;
+    if (res == VPE_STATUS_OK) {
+        stream_ctx->num_segments = num_segs;
+    }
 
-    return VPE_STATUS_OK;
+    return res;
 }
 
 bool vpe10_get_dcc_compression_output_cap(const struct vpe *vpe, const struct vpe_dcc_surface_param *params, struct vpe_surface_dcc_cap *cap)

@@ -136,16 +136,28 @@ void vpe_destroy_resource(struct vpe_priv *vpe_priv, struct resource *res)
     }
 }
 
-struct segment_ctx *vpe_alloc_segment_ctx(struct vpe_priv *vpe_priv, uint16_t num_segments)
+enum vpe_status vpe_alloc_segment_ctx(
+    struct vpe_priv *vpe_priv, struct stream_ctx *stream_ctx, uint16_t num_segments)
 {
-    struct segment_ctx *segment_ctx_base;
+    // If segment_ctx is already allocated, check if re-allocation needed
+    if (stream_ctx->segment_ctx) {
+        if (num_segments != stream_ctx->num_segments) {
+            // Need to re-allocate segment_ctx. Free it first
+            vpe_free(stream_ctx->segment_ctx);
+            stream_ctx->segment_ctx = NULL;
+        } else {
+            // No need for re-allocation. Return
+            return VPE_STATUS_OK;
+        }
+    }
 
-    segment_ctx_base = (struct segment_ctx *)vpe_zalloc(sizeof(struct segment_ctx) * num_segments);
+    stream_ctx->segment_ctx =
+        (struct segment_ctx *)vpe_zalloc(sizeof(struct segment_ctx) * num_segments);
+    if (!stream_ctx->segment_ctx) {
+        return VPE_STATUS_NO_MEMORY;
+    }
 
-    if (!segment_ctx_base)
-        return NULL;
-
-    return segment_ctx_base;
+    return VPE_STATUS_OK;
 }
 
 static enum vpe_status create_input_config_vector(struct stream_ctx *stream_ctx)

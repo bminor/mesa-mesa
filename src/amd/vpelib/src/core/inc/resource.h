@@ -133,7 +133,8 @@ enum vpe_status vpe_construct_resource(
 void vpe_destroy_resource(struct vpe_priv *vpe_priv, struct resource *res);
 
 /** alloc segment ctx*/
-struct segment_ctx *vpe_alloc_segment_ctx(struct vpe_priv *vpe_priv, uint16_t num_segments);
+enum vpe_status vpe_alloc_segment_ctx(
+    struct vpe_priv *vpe_priv, struct stream_ctx *stream_ctx, uint16_t num_segments);
 
 /** stream ctx */
 struct stream_ctx *vpe_alloc_stream_ctx(struct vpe_priv *vpe_priv, uint32_t num_streams);
