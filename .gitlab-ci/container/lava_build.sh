@@ -392,12 +392,16 @@ if [ "$DEBIAN_ARCH" = "amd64" ]; then
 fi
 
 ############### Fill rootfs
+export DEBIAN_FRONTEND=noninteractive
 cp .gitlab-ci/setup-test-env.sh $ROOTFS/.
+pip3 install --break-system-packages yq
 cp .gitlab-ci/container/setup-rootfs.sh $ROOTFS/.
 cp .gitlab-ci/container/strip-rootfs.sh $ROOTFS/.
 cp .gitlab-ci/container/debian/llvm-snapshot.gpg.key $ROOTFS/.
 cp .gitlab-ci/container/debian/winehq.gpg.key $ROOTFS/.
+chroot $ROOTFS bash /setup-test-env.sh
 chroot $ROOTFS bash /setup-rootfs.sh
+chroot $ROOTFS bash /strip-rootfs.sh
 rm $ROOTFS/{llvm-snapshot,winehq}.gpg.key
 rm "$ROOTFS/setup-test-env.sh"
 rm "$ROOTFS/setup-rootfs.sh"
