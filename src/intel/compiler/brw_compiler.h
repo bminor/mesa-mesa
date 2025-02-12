@@ -238,7 +238,28 @@ struct brw_base_prog_key {
 #define BRW_SVGS_VE_INDEX (32)
 #define BRW_DRAWID_VE_INDEX (33)
 
-/** The program key for Vertex Shaders. */
+/** The program key for Vertex Shaders.
+ *
+ * Notes about slot compaction & component packing:
+ *
+ * VF slot compaction is our default compiler behavior. The compiler looks at
+ * used inputs locations, for example [0, 2, 3], and will arrange things such
+ * that the payload only includes 3 vec4 in that case. Location 1 is
+ * completely dropped. The driver is expected to program
+ * 3DSTATE_VERTEX_ELEMENTS to match this. So even if the location 1 is
+ * described in the API input, the driver will not program it in
+ * 3DSTATE_VERTEX_ELEMENTS because it sees the compiler is not using it.
+ *
+ * Component compaction is a HW feature that removes unused components (for
+ * whatever slot [0, 31]) from the payload. Those values are stored in the URB
+ * by the VF but they get scrapped when the payload is generated. For example
+ * with input locations [ 0 vec2, 1 vec1, 2 vec4 ], the register payload for
+ * VF inputs will be made up of 7 GRFs (2 + 1 + 4). Without component
+ * compaction, the payload would be 12 GRFs (3 * 4).
+ *
+ * The HW component compaction feature only works on first 32 slots, so
+ * anything after that will deliver the full vec4.
+ */
 struct brw_vs_prog_key {
    struct brw_base_prog_key base;
 
