@@ -55,12 +55,20 @@
     paths:
       - subprojects/packagecache
 
-.meson-build:
+.meson-build-for-tests:
   extends:
     - .build-linux
-  stage: build-only
+  stage: build-for-tests
   script:
     - &meson-build timeout --verbose ${BUILD_JOB_TIMEOUT_OVERRIDE:-$BUILD_JOB_TIMEOUT} bash --login .gitlab-ci/meson/build.sh
+    - .gitlab-ci/prepare-artifacts.sh
+
+.meson-build-only:
+  extends:
+    - .meson-build-for-tests
+  stage: build-only
+  script:
+    - *meson-build
 
 
 # Make sure this list stays the same as all the jobs with
@@ -95,10 +103,9 @@
 
 debian-testing:
   extends:
-    - .meson-build
+    - .meson-build-for-tests
     - .use-debian/x86_64_build
     - .ci-deqp-artifacts
-  stage: build-for-tests
   variables:
     BUILD_JOB_TIMEOUT: 30m
     UNWIND: "enabled"
@@ -122,9 +129,6 @@ debian-testing:
       -D valgrind=disabled
     S3_ARTIFACT_NAME: mesa-x86_64-default-${BUILDTYPE}
     RUN_MESON_TESTS: "false" # debian-build-testing already runs these
-  script:
-    - *meson-build
-    - .gitlab-ci/prepare-artifacts.sh
   artifacts:
     reports:
       junit: artifacts/ci_scripts_report.xml
@@ -132,7 +136,7 @@ debian-testing:
 debian-testing-asan:
   extends:
     - debian-testing
-  stage: build-for-tests
+    - .meson-build-for-tests
   variables:
     BUILD_JOB_TIMEOUT: 30m
     VULKAN_DRIVERS: "swrast"
@@ -208,7 +212,7 @@ debian-testing-msan:
 debian-testing-ubsan:
   extends:
     - debian-testing
-  stage: build-for-tests
+    - .meson-build-for-tests
   timeout: 40m
   variables:
     BUILD_JOB_TIMEOUT: 30m
@@ -243,9 +247,8 @@ debian-testing-ubsan:
 
 debian-build-testing:
   extends:
-    - .meson-build
+    - .meson-build-for-tests
     - .use-debian/x86_64_build
-  stage: build-for-tests
   variables:
     UNWIND: "enabled"
     DRI_LOADERS: >
@@ -270,14 +273,11 @@ debian-build-testing:
       -D tools=drm-shim,etnaviv,freedreno,glsl,intel,intel-ui,nir,nouveau,lima,panfrost,asahi
       -D perfetto=true
     S3_ARTIFACT_NAME: debian-build-testing
-  script:
-    - *meson-build
-    - .gitlab-ci/prepare-artifacts.sh
 
 # Test a release build with -Werror so new warnings don't sneak in.
 debian-release:
   extends:
-    - .meson-build
+    - .meson-build-only
     - .use-debian/x86_64_build
   needs:
     - !reference [.use-debian/x86_64_build, needs]
@@ -318,7 +318,7 @@ debian-release:
 
 alpine-build-testing:
   extends:
-    - .meson-build
+    - .meson-build-only
     - .use-alpine/x86_64_build
   needs:
     - !reference [.use-alpine/x86_64_build, needs]
@@ -356,7 +356,7 @@ alpine-build-testing:
 
 fedora-release:
   extends:
-    - .meson-build
+    - .meson-build-only
     - .use-fedora/x86_64_build
   needs:
     - !reference [.use-fedora/x86_64_build, needs]
@@ -409,7 +409,7 @@ debian-android:
     - .meson-cross
     - .use-debian/android_build
     - .ci-deqp-artifacts
-  stage: build-for-tests
+    - .meson-build-for-tests
   variables:
     BUILDTYPE: debug
     UNWIND: "disabled"
@@ -478,7 +478,7 @@ debian-android:
 
 .meson-cross:
   extends:
-    - .meson-build
+    - .meson-build-only
     - .use-debian/x86_64_build
   variables:
     UNWIND: "disabled"
@@ -509,7 +509,7 @@ debian-arm32:
   extends:
     - .meson-arm
     - .ci-deqp-artifacts
-  stage: build-for-tests
+    - .meson-build-for-tests
   variables:
     CROSS: armhf
     DRI_LOADERS:
@@ -540,14 +540,11 @@ debian-arm32:
     # The strip command segfaults, failing to strip the binary and leaving
     # tempfiles in our artifacts.
     ARTIFACTS_DEBUG_SYMBOLS: 1
-  script:
-    - *meson-build
-    - .gitlab-ci/prepare-artifacts.sh
 
 debian-arm32-asan:
   extends:
     - debian-arm32
-  stage: build-for-tests
+    - .meson-build-for-tests
   variables:
     BUILD_JOB_TIMEOUT: 30m
     GALLIUM_DRIVERS: "etnaviv"
@@ -568,7 +565,7 @@ debian-arm64:
   extends:
     - .meson-arm
     - .ci-deqp-artifacts
-  stage: build-for-tests
+    - .meson-build-for-tests
   variables:
     C_ARGS: >
       -Wno-error=array-bounds
@@ -586,14 +583,11 @@ debian-arm64:
       -D gallium-rusticl=true
     RUN_MESON_TESTS: "false" # run by debian-arm64-build-testing
     S3_ARTIFACT_NAME: mesa-arm64-default-${BUILDTYPE}
-  script:
-    - *meson-build
-    - .gitlab-ci/prepare-artifacts.sh
 
 debian-arm64-asan:
   extends:
     - debian-arm64
-  stage: build-for-tests
+    - .meson-build-for-tests
   variables:
     BUILD_JOB_TIMEOUT: 30m
     VULKAN_DRIVERS: "broadcom,freedreno"
@@ -612,7 +606,7 @@ debian-arm64-asan:
 debian-arm64-ubsan:
   extends:
     - debian-arm64
-  stage: build-for-tests
+    - .meson-build-for-tests
   variables:
     BUILD_JOB_TIMEOUT: 30m
     VULKAN_DRIVERS: "broadcom"
@@ -651,7 +645,7 @@ debian-arm64-build-test:
 debian-arm64-release:
   extends:
     - debian-arm64
-  stage: build-only
+    - .meson-build-only
   needs:
     - !reference [debian-arm64, needs]
     - !reference [.build-for-tests-jobs]
@@ -669,7 +663,7 @@ debian-arm64-release:
 debian-no-libdrm:
   extends:
     - .meson-arm
-  stage: build-only
+    - .meson-build-only
   needs:
     - !reference [.meson-arm, needs]
     - !reference [.build-for-tests-jobs]
@@ -689,7 +683,7 @@ debian-no-libdrm:
 
 debian-clang:
   extends:
-    - .meson-build
+    - .meson-build-only
     - .use-debian/x86_64_build
   needs:
     - !reference [.use-debian/x86_64_build, needs]
@@ -781,7 +775,7 @@ windows-msvc:
 
 debian-vulkan:
   extends:
-    - .meson-build
+    - .meson-build-only
     - .use-debian/x86_64_build
   needs:
     - !reference [.use-debian/x86_64_build, needs]
