@@ -4,7 +4,7 @@
         "description": "ci: debian-testing-ubsan is used by tests",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "37ee035e42c9c979394b970a633e6db9232bdc85",
         "notes": null
