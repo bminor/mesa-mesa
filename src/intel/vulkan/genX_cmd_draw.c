@@ -1131,8 +1131,8 @@ void genX(CmdDraw)(
    cmd_buffer_post_draw_wa(cmd_buffer, vertexCount, SEQUENTIAL);
 
    trace_intel_end_draw(&cmd_buffer->trace, count,
-                        pipeline->base.source_hashes[MESA_SHADER_VERTEX],
-                        pipeline->base.source_hashes[MESA_SHADER_FRAGMENT]);
+                        pipeline->vs_source_hash,
+                        pipeline->fs_source_hash);
 }
 
 void genX(CmdDrawMultiEXT)(
@@ -1188,8 +1188,8 @@ void genX(CmdDrawMultiEXT)(
                               SEQUENTIAL);
 
       trace_intel_end_draw_multi(&cmd_buffer->trace, count,
-                                 pipeline->base.source_hashes[MESA_SHADER_VERTEX],
-                                 pipeline->base.source_hashes[MESA_SHADER_FRAGMENT]);
+                                 pipeline->vs_source_hash,
+                                 pipeline->fs_source_hash);
    }
 #else
    vk_foreach_multi_draw(draw, i, pVertexInfo, drawCount, stride) {
@@ -1224,8 +1224,8 @@ void genX(CmdDrawMultiEXT)(
                               SEQUENTIAL);
 
       trace_intel_end_draw_multi(&cmd_buffer->trace, count,
-                                 pipeline->base.source_hashes[MESA_SHADER_VERTEX],
-                                 pipeline->base.source_hashes[MESA_SHADER_FRAGMENT]);
+                                 pipeline->vs_source_hash,
+                                 pipeline->fs_source_hash);
    }
 #endif
 }
@@ -1296,8 +1296,8 @@ void genX(CmdDrawIndexed)(
    cmd_buffer_post_draw_wa(cmd_buffer, indexCount, RANDOM);
 
    trace_intel_end_draw_indexed(&cmd_buffer->trace, count,
-                                pipeline->base.source_hashes[MESA_SHADER_VERTEX],
-                                pipeline->base.source_hashes[MESA_SHADER_FRAGMENT]);
+                                pipeline->vs_source_hash,
+                                pipeline->fs_source_hash);
 }
 
 void genX(CmdDrawMultiIndexedEXT)(
@@ -1369,8 +1369,8 @@ void genX(CmdDrawMultiIndexedEXT)(
                                     RANDOM);
 
             trace_intel_end_draw_indexed_multi(&cmd_buffer->trace, count,
-                                               pipeline->base.source_hashes[MESA_SHADER_VERTEX],
-                                               pipeline->base.source_hashes[MESA_SHADER_FRAGMENT]);
+                                               pipeline->vs_source_hash,
+                                               pipeline->fs_source_hash);
             emitted = false;
          }
       } else {
@@ -1409,8 +1409,8 @@ void genX(CmdDrawMultiIndexedEXT)(
                                     RANDOM);
 
             trace_intel_end_draw_indexed_multi(&cmd_buffer->trace, count,
-                                               pipeline->base.source_hashes[MESA_SHADER_VERTEX],
-                                               pipeline->base.source_hashes[MESA_SHADER_FRAGMENT]);
+                                               pipeline->vs_source_hash,
+                                               pipeline->fs_source_hash);
          }
       }
    } else {
@@ -1445,8 +1445,8 @@ void genX(CmdDrawMultiIndexedEXT)(
                                  RANDOM);
 
          trace_intel_end_draw_indexed_multi(&cmd_buffer->trace, count,
-                                             pipeline->base.source_hashes[MESA_SHADER_VERTEX],
-                                             pipeline->base.source_hashes[MESA_SHADER_FRAGMENT]);
+                                            pipeline->vs_source_hash,
+                                            pipeline->fs_source_hash);
       }
    }
 #else
@@ -1484,8 +1484,8 @@ void genX(CmdDrawMultiIndexedEXT)(
                               RANDOM);
 
       trace_intel_end_draw_indexed_multi(&cmd_buffer->trace, count,
-                                         pipeline->base.source_hashes[MESA_SHADER_VERTEX],
-                                         pipeline->base.source_hashes[MESA_SHADER_FRAGMENT]);
+                                         pipeline->vs_source_hash,
+                                         pipeline->fs_source_hash);
    }
 #endif
 }
@@ -1606,8 +1606,8 @@ void genX(CmdDrawIndirectByteCountEXT)(
 
    trace_intel_end_draw_indirect_byte_count(&cmd_buffer->trace,
                                             instanceCount * pipeline->instance_multiplier,
-                                            pipeline->base.source_hashes[MESA_SHADER_VERTEX],
-                                            pipeline->base.source_hashes[MESA_SHADER_FRAGMENT]);
+                                            pipeline->vs_source_hash,
+                                            pipeline->fs_source_hash);
 }
 
 static void
@@ -1941,8 +1941,8 @@ void genX(CmdDrawIndirect)(
    }
 
    trace_intel_end_draw_indirect(&cmd_buffer->trace, drawCount,
-                                 pipeline->base.source_hashes[MESA_SHADER_VERTEX],
-                                 pipeline->base.source_hashes[MESA_SHADER_FRAGMENT]);
+                                 pipeline->vs_source_hash,
+                                 pipeline->fs_source_hash);
 }
 
 void genX(CmdDrawIndexedIndirect)(
@@ -1994,8 +1994,8 @@ void genX(CmdDrawIndexedIndirect)(
    }
 
    trace_intel_end_draw_indexed_indirect(&cmd_buffer->trace, drawCount,
-                                         pipeline->base.source_hashes[MESA_SHADER_VERTEX],
-                                         pipeline->base.source_hashes[MESA_SHADER_FRAGMENT]);
+                                         pipeline->vs_source_hash,
+                                         pipeline->fs_source_hash);
 }
 
 #define MI_PREDICATE_SRC0    0x2400
@@ -2203,8 +2203,8 @@ void genX(CmdDrawIndirectCount)(
 
    trace_intel_end_draw_indirect_count(&cmd_buffer->trace,
                                        anv_address_utrace(count_address),
-                                       pipeline->base.source_hashes[MESA_SHADER_VERTEX],
-                                       pipeline->base.source_hashes[MESA_SHADER_FRAGMENT]);
+                                       pipeline->vs_source_hash,
+                                       pipeline->fs_source_hash);
 }
 
 void genX(CmdDrawIndexedIndirectCount)(
@@ -2264,9 +2264,8 @@ void genX(CmdDrawIndexedIndirectCount)(
 
    trace_intel_end_draw_indexed_indirect_count(&cmd_buffer->trace,
                                                anv_address_utrace(count_address),
-                                               pipeline->base.source_hashes[MESA_SHADER_VERTEX],
-                                               pipeline->base.source_hashes[MESA_SHADER_FRAGMENT]);
-
+                                               pipeline->vs_source_hash,
+                                               pipeline->fs_source_hash);
 }
 
 void genX(CmdBeginTransformFeedbackEXT)(

@@ -4819,11 +4819,6 @@ struct anv_graphics_base_pipeline {
    /* Shaders */
    struct anv_shader_bin *                      shaders[ANV_GRAPHICS_SHADER_STAGE_COUNT];
 
-   /* A small hash based of shader_info::source_sha1 for identifying
-    * shaders in renderdoc/shader-db.
-    */
-   uint32_t                                     source_hashes[ANV_GRAPHICS_SHADER_STAGE_COUNT];
-
    /* Feedback index in
     * VkPipelineCreationFeedbackCreateInfo::pPipelineStageCreationFeedbacks
     *
@@ -4890,6 +4885,9 @@ struct anv_gfx_state_ptr {
  */
 struct anv_graphics_pipeline {
    struct anv_graphics_base_pipeline            base;
+
+   uint32_t                                     vs_source_hash;
+   uint32_t                                     fs_source_hash;
 
    struct vk_vertex_input_state                 vertex_input;
    struct vk_sample_locations_state             sample_locations;
@@ -5039,11 +5037,6 @@ struct anv_compute_pipeline {
          uint32_t                               compute_walker[40];
       } gfx125;
    };
-
-   /* A small hash based of shader_info::source_sha1 for identifying shaders
-    * in renderdoc/shader-db.
-    */
-   uint32_t                                     source_hash;
 };
 
 struct anv_rt_shader_group {

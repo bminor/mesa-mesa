@@ -1871,7 +1871,6 @@ anv_graphics_pipeline_load_cached_shaders(struct anv_graphics_base_pipeline *pip
 
          stages[s].bin = stages[s].imported.bin;
          pipeline->shaders[s] = anv_shader_bin_ref(stages[s].imported.bin);
-         pipeline->source_hashes[s] = stages[s].source_hash;
          imported++;
       }
    }
@@ -1892,7 +1891,6 @@ anv_graphics_pipeline_load_cached_shaders(struct anv_graphics_base_pipeline *pip
           */
          if (stages[s].imported.bin == NULL || link_optimize)
             anv_pipeline_add_executables(&pipeline->base, &stages[s]);
-         pipeline->source_hashes[s] = stages[s].source_hash;
       }
       return true;
    } else if (found > 0) {
@@ -2446,7 +2444,6 @@ anv_graphics_pipeline_compile(struct anv_graphics_base_pipeline *pipeline,
       }
 
       anv_pipeline_add_executables(&pipeline->base, stage);
-      pipeline->source_hashes[s] = stage->source_hash;
       pipeline->shaders[s] = stage->bin;
 
       ralloc_free(stage_ctx);
@@ -2471,7 +2468,6 @@ anv_graphics_pipeline_compile(struct anv_graphics_base_pipeline *pipeline,
 
       struct anv_pipeline_stage *stage = &stages[s];
 
-      pipeline->source_hashes[s] = stage->source_hash;
       pipeline->shaders[s] = anv_shader_bin_ref(stage->imported.bin);
    }
 
@@ -2638,7 +2634,6 @@ anv_pipeline_compile_cs(struct anv_compute_pipeline *pipeline,
 
    anv_pipeline_account_shader(&pipeline->base, stage.bin);
    anv_pipeline_add_executables(&pipeline->base, &stage);
-   pipeline->source_hash = stage.source_hash;
 
    ralloc_free(mem_ctx);
 
@@ -2795,6 +2790,7 @@ anv_graphics_pipeline_emit(struct anv_graphics_pipeline *pipeline,
 
    if (anv_pipeline_is_primitive(pipeline)) {
       const struct brw_vs_prog_data *vs_prog_data = get_vs_prog_data(pipeline);
+      const struct brw_wm_prog_data *wm_prog_data = get_wm_prog_data(pipeline);
 
       /* The total number of vertex elements we need to program. We might need
        * a couple more to implement some of the draw parameters.
@@ -2823,6 +2819,9 @@ anv_graphics_pipeline_emit(struct anv_graphics_pipeline *pipeline,
       pipeline->instance_multiplier = 1;
       if (pipeline->view_mask && !uses_primitive_replication)
          pipeline->instance_multiplier = util_bitcount(pipeline->view_mask);
+
+      pipeline->vs_source_hash = vs_prog_data->base.base.source_hash;
+      pipeline->fs_source_hash = wm_prog_data ? wm_prog_data->base.source_hash : 0;
    } else {
       assert(anv_pipeline_is_mesh(pipeline));
       /* TODO(mesh): Mesh vs. Multiview with Instancing. */
@@ -2951,7 +2950,7 @@ anv_graphics_pipeline_import_lib(struct anv_graphics_base_pipeline *pipeline,
       /* Always import the shader sha1, this will be used for cache lookup. */
       memcpy(stages[s].shader_sha1, lib->retained_shaders[s].shader_sha1,
              sizeof(stages[s].shader_sha1));
-      stages[s].source_hash = lib->base.source_hashes[s];
+      stages[s].source_hash = lib->base.shaders[s]->prog_data->source_hash;
 
       stages[s].subgroup_size_type = lib->retained_shaders[s].subgroup_size_type;
       stages[s].imported.nir = lib->retained_shaders[s].nir;
@@ -4359,10 +4358,11 @@ VkResult anv_GetPipelineExecutableStatisticsKHR(
 
    vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
       uint32_t hash = pipeline->type == ANV_PIPELINE_COMPUTE ?
-                      anv_pipeline_to_compute(pipeline)->source_hash :
+                      anv_pipeline_to_compute(pipeline)->cs->prog_data->source_hash :
                       (pipeline->type == ANV_PIPELINE_GRAPHICS_LIB ||
                        pipeline->type == ANV_PIPELINE_GRAPHICS) ?
-                      anv_pipeline_to_graphics_base(pipeline)->source_hashes[exe->stage] :
+                      anv_pipeline_to_graphics_base(pipeline)->shaders[
+                         exe->stage]->prog_data->source_hash:
                       0 /* No source hash for ray tracing */;
       WRITE_STR(stat->name, "Source hash");
       WRITE_STR(stat->description,
