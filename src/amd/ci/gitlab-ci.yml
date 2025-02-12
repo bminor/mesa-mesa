@@ -319,6 +319,7 @@ vkcts-raphael-valve:
     RADV_PERFTEST: transfer_queue
 
 vkcts-navi31-valve:
+  timeout: 25m
   parallel: 2
   extends:
     - .vkcts-test-valve
@@ -328,6 +329,8 @@ vkcts-navi31-valve:
     GPU_VERSION: radv-navi31-aco
     RADV_DEBUG: nomeshshader # Disable mesh shaders until task shaders stop hanging
     RADV_PERFTEST: transfer_queue
+    B2C_TIMEOUT_BOOT_MINUTES: 20
+    B2C_TIMEOUT_OVERALL_MINUTES: 20
 
 ############### Fossilize
 radv-fossils:
