@@ -9965,12 +9965,10 @@ emit_loop_jump(isel_context* ctx, bool is_break)
       add_logical_edge(idx, logical_target);
       ctx->block->kind |= block_kind_continue;
 
-      /* If exec is empty inside uniform control flow in a loop, we can assume that all invocations
-       * of the loop are inactive. Breaking from the loop is the right thing to do in that case.
-       * We shouldn't perform a uniform continue, or else we might never reach a break.
-       */
-      if (!ctx->cf_info.parent_if.is_divergent && !ctx->cf_info.exec.empty()) {
+      if (!ctx->cf_info.parent_if.is_divergent) {
          /* uniform continue - directly jump to the loop header */
+         assert(!ctx->cf_info.exec.potentially_empty_continue &&
+                !ctx->cf_info.exec.potentially_empty_discard);
          ctx->block->kind |= block_kind_uniform;
          ctx->cf_info.has_branch = true;
          bld.branch(aco_opcode::p_branch);
@@ -9980,14 +9978,12 @@ emit_loop_jump(isel_context* ctx, bool is_break)
 
       ctx->cf_info.has_divergent_branch = true;
 
-      if (ctx->cf_info.parent_if.is_divergent) {
-         /* for potential uniform breaks after this continue,
-            we must ensure that they are handled correctly */
-         ctx->cf_info.parent_loop.has_divergent_continue = true;
+      /* for potential uniform breaks after this continue,
+         we must ensure that they are handled correctly */
+      ctx->cf_info.parent_loop.has_divergent_continue = true;
 
-         if (!ctx->cf_info.exec.potentially_empty_continue)
-            ctx->cf_info.exec.potentially_empty_continue = true;
-      }
+      if (!ctx->cf_info.exec.potentially_empty_continue)
+         ctx->cf_info.exec.potentially_empty_continue = true;
    }
 
    /* remove critical edges from linear CFG */
