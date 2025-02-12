@@ -140,7 +140,6 @@ panvk_per_arch(dispatch_precomp)(struct panvk_precomp_ctx *ctx,
 
    panvk_per_arch(cs_pick_iter_sb)(cmdbuf, PANVK_SUBQUEUE_COMPUTE);
 
-   cs_req_res(b, CS_COMPUTE_RES);
    unsigned task_axis = MALI_TASK_AXIS_X;
    unsigned task_increment = 0;
    panvk_per_arch(calculate_task_axis_and_increment)(
@@ -148,7 +147,6 @@ panvk_per_arch(dispatch_precomp)(struct panvk_precomp_ctx *ctx,
    cs_trace_run_compute(b, tracing_ctx, cs_scratch_reg_tuple(b, 0, 4),
                         task_increment, task_axis,
                         cs_shader_res_sel(0, 0, 0, 0));
-   cs_req_res(b, 0);
 
    struct cs_index sync_addr = cs_scratch_reg64(b, 0);
    struct cs_index iter_sb = cs_scratch_reg32(b, 2);

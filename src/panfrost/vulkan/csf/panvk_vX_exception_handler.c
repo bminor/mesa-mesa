@@ -89,14 +89,12 @@ generate_tiler_oom_handler(struct panvk_device *dev,
                    TILER_OOM_CTX_FIELD_OFFSET(layer_count));
       cs_wait_slot(&b, SB_ID(LS));
 
-      cs_req_res(&b, CS_FRAG_RES);
       cs_while(&b, MALI_CS_CONDITION_GREATER, layer_count) {
          cs_trace_run_fragment(&b, &tracing_ctx, cs_scratch_reg_tuple(&b, 8, 4),
                                false, MALI_TILE_RENDER_ORDER_Z_ORDER);
          cs_add32(&b, layer_count, layer_count, -1);
          cs_add64(&b, fbd_ptr, fbd_ptr, fbd_size);
       }
-      cs_req_res(&b, 0);
       /* Wait for all iter scoreboards for simplicity. */
       cs_wait_slots(&b, SB_ALL_ITERS_MASK);
 

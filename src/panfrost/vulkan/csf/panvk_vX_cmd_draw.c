@@ -2074,7 +2074,6 @@ panvk_cmd_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
    uint32_t idvs_count = DIV_ROUND_UP(cmdbuf->state.gfx.render.layer_count,
                                       MAX_LAYERS_PER_TILER_DESC);
 
-   cs_req_res(b, CS_IDVS_RES);
    if (idvs_count > 1) {
       struct cs_index counter_reg = cs_scratch_reg32(b, 17);
       struct cs_index tiler_ctx_addr = cs_sr_reg64(b, IDVS, TILER_CTX);
@@ -2116,7 +2115,6 @@ panvk_cmd_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
                         cs_shader_res_sel(2, 2, 2, 0), cs_undef());
 #endif
    }
-   cs_req_res(b, 0);
 }
 
 VkResult
@@ -2276,8 +2274,6 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
    cs_move64_to(b, draw_params_addr, draw->indirect.buffer_dev_addr);
    cs_move32_to(b, draw_id, 0);
 
-   cs_req_res(b, CS_IDVS_RES);
-
    cs_while(b, MALI_CS_CONDITION_GREATER, draw_count) {
       cs_update_vt_ctx(b) {
          cs_move32_to(b, cs_sr_reg32(b, IDVS, GLOBAL_ATTRIBUTE_OFFSET), 0);
@@ -2400,8 +2396,6 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
          }
       }
    }
-
-   cs_req_res(b, 0);
 }
 
 VKAPI_ATTR void VKAPI_CALL
@@ -2625,9 +2619,7 @@ flush_tiling(struct panvk_cmd_buffer *cmdbuf)
 
    if (cmdbuf->state.gfx.render.tiler || inherits_render_ctx(cmdbuf)) {
       /* Flush the tiling operations and signal the internal sync object. */
-      cs_req_res(b, CS_TILER_RES);
       cs_finish_tiling(b);
-      cs_req_res(b, 0);
 
       struct cs_index sync_addr = cs_scratch_reg64(b, 0);
       struct cs_index iter_sb = cs_scratch_reg32(b, 2);
@@ -2856,7 +2848,6 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
       cs_wait_slot(b, SB_ID(IMM_FLUSH));
    }
 
-   cs_req_res(b, CS_FRAG_RES);
    if (cmdbuf->state.gfx.render.layer_count > 1) {
       struct cs_index layer_count = cs_reg32(b, 47);
 
@@ -2874,7 +2865,6 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
       cs_trace_run_fragment(b, tracing_ctx, cs_scratch_reg_tuple(b, 0, 4),
                             false, MALI_TILE_RENDER_ORDER_Z_ORDER);
    }
-   cs_req_res(b, 0);
 
    struct cs_index sync_addr = cs_scratch_reg64(b, 0);
    struct cs_index iter_sb = cs_scratch_reg32(b, 2);

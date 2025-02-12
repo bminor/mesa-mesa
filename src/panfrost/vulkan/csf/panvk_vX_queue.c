@@ -446,6 +446,23 @@ init_subqueue(struct panvk_queue *queue, enum panvk_subqueue_id subqueue)
       cs_heap_set(&b, heap_ctx_addr);
    }
 
+   /* Request resources for each subqueue during initialization, as the req_res
+    * is an expensive operation which should be called sparingly. */
+   switch (subqueue) {
+   case PANVK_SUBQUEUE_VERTEX_TILER:
+      cs_req_res(&b, CS_IDVS_RES | CS_TILER_RES);
+      break;
+   case PANVK_SUBQUEUE_FRAGMENT:
+      cs_req_res(&b, CS_FRAG_RES);
+      break;
+   case PANVK_SUBQUEUE_COMPUTE:
+      cs_req_res(&b, CS_COMPUTE_RES);
+      break;
+   default:
+      unreachable("Unknown subqueue");
+      break;
+   }
+
    cs_finish(&b);
 
    assert(cs_is_valid(&b));

@@ -315,7 +315,6 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
 
    panvk_per_arch(cs_pick_iter_sb)(cmdbuf, PANVK_SUBQUEUE_COMPUTE);
 
-   cs_req_res(b, CS_COMPUTE_RES);
    if (indirect) {
       /* Use run_compute with a set task axis instead of run_compute_indirect as
        * run_compute_indirect has been found to cause intermittent hangs. This
@@ -337,7 +336,6 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
                            task_increment, task_axis,
                            cs_shader_res_sel(0, 0, 0, 0));
    }
-   cs_req_res(b, 0);
 
    struct cs_index sync_addr = cs_scratch_reg64(b, 0);
    struct cs_index iter_sb = cs_scratch_reg32(b, 2);
