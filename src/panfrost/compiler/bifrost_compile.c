@@ -5401,6 +5401,7 @@ bifrost_preprocess_nir(nir_shader *nir, unsigned gpu_id)
       (gpu_id >= 0x9000) ? glsl_get_vec4_size_align_bytes
                          : glsl_get_natural_size_align_bytes;
    /* Lower large arrays to scratch and small arrays to bcsel */
+   NIR_PASS(_, nir, nir_lower_scratch_to_var);
    NIR_PASS(_, nir, nir_lower_vars_to_scratch, nir_var_function_temp, 256,
             vars_to_scratch_size_align_func, vars_to_scratch_size_align_func);
    NIR_PASS(_, nir, nir_lower_indirect_derefs, nir_var_function_temp, ~0);
@@ -5448,13 +5449,6 @@ bifrost_preprocess_nir(nir_shader *nir, unsigned gpu_id)
       .callback = mem_access_size_align_cb,
    };
    NIR_PASS(_, nir, nir_lower_mem_access_bit_sizes, &mem_size_options);
-
-   /* Optimize scratch access */
-   NIR_PASS(_, nir, nir_lower_scratch_to_var);
-   NIR_PASS(_, nir, nir_lower_vars_to_scratch, nir_var_function_temp, 256,
-            vars_to_scratch_size_align_func,
-            vars_to_scratch_size_align_func);
-   NIR_PASS(_, nir, nir_lower_indirect_derefs, nir_var_function_temp, ~0);
 
    nir_lower_ssbo_options ssbo_opts = {
       .native_loads = pan_arch(gpu_id) >= 9,
