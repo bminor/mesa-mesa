@@ -20,7 +20,7 @@ struct nvk_sampler {
 
    struct {
       uint32_t desc_index;
-   } planes[2];
+   } planes[NVK_MAX_SAMPLER_PLANES];
 };
 
 VK_DEFINE_NONDISP_HANDLE_CASTS(nvk_sampler, vk.base, VkSampler,
@@ -29,7 +29,7 @@ VK_DEFINE_NONDISP_HANDLE_CASTS(nvk_sampler, vk.base, VkSampler,
 struct nvk_sampler_capture {
    struct {
       uint32_t desc_index;
-   } planes[2];
+   } planes[NVK_MAX_SAMPLER_PLANES];
 };
 
 static void

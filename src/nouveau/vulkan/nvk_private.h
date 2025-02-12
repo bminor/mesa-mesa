@@ -36,6 +36,7 @@
 #define NVK_MAX_CBUF_SIZE (1u << 16)
 
 #define NVK_MAX_IMAGE_PLANES 3
+#define NVK_MAX_SAMPLER_PLANES 2
 
 struct nvk_addr_range {
    uint64_t addr;
