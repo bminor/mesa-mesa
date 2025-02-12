@@ -224,7 +224,7 @@
         "description": "venus: fix to handle pipeline flags2 from maint5",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "be6fece6e1ef46567808d4895558519e39086a8b",
         "notes": null
