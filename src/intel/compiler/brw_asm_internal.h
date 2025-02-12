@@ -31,9 +31,6 @@ extern int errors;
 extern bool compaction_warning_given;
 extern const char *input_filename;
 
-extern struct list_head instr_labels;
-extern struct list_head target_labels;
-
 struct condition {
    unsigned cond_modifier:4;
    unsigned flag_reg_nr:1;
@@ -83,22 +80,6 @@ struct msgdesc {
    unsigned src1_len:5;
 };
 
-enum instr_label_type {
-   INSTR_LABEL_JIP,
-   INSTR_LABEL_UIP,
-};
-
-struct instr_label {
-   struct list_head link;
-
-   char *name;
-   int offset;
-   enum instr_label_type type;
-};
-
-struct target_label {
-   struct list_head link;
-
-   char *name;
-   int offset;
-};
+void brw_asm_label_set(const char *name);
+void brw_asm_label_use_jip(const char *name);
+void brw_asm_label_use_uip(const char *name);
