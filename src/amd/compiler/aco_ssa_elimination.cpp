@@ -18,16 +18,13 @@ struct phi_info {
 };
 
 struct ssa_elimination_ctx {
-   /* The outer vectors should be indexed by block index. The inner vectors store phi information
-    * for each block. */
-   std::vector<phi_info> logical_phi_info;
-   std::vector<phi_info> linear_phi_info;
+   /* The outer vectors should be indexed by block index.
+    * The inner vectors store phi information for each block.
+    */
+   std::vector<phi_info> phi_infos;
    Program* program;
 
-   ssa_elimination_ctx(Program* program_)
-       : logical_phi_info(program_->blocks.size()), linear_phi_info(program_->blocks.size()),
-         program(program_)
-   {}
+   ssa_elimination_ctx(Program* program_) : phi_infos(program_->blocks.size()), program(program_) {}
 };
 
 void
@@ -48,9 +45,7 @@ collect_phi_info(ssa_elimination_ctx& ctx)
 
             Block::edge_vec& preds =
                phi->opcode == aco_opcode::p_phi ? block.logical_preds : block.linear_preds;
-            uint32_t pred_idx = preds[i];
-            auto& info = phi->opcode == aco_opcode::p_phi ? ctx.logical_phi_info[pred_idx]
-                                                          : ctx.linear_phi_info[pred_idx];
+            auto& info = ctx.phi_infos[preds[i]];
             info.copies.emplace_back(phi->definitions[0], phi->operands[i]);
             if (phi->pseudo().needs_scratch_reg) {
                info.needs_scratch_reg = true;
@@ -64,45 +59,23 @@ collect_phi_info(ssa_elimination_ctx& ctx)
 void
 insert_parallelcopies(ssa_elimination_ctx& ctx)
 {
-   /* insert the parallelcopies from logical phis before branch */
+   /* insert parallelcopies for the phis at the end of blocks just before the branch */
    for (unsigned block_idx = 0; block_idx < ctx.program->blocks.size(); ++block_idx) {
-      auto& logical_phi_info = ctx.logical_phi_info[block_idx];
-      if (logical_phi_info.copies.empty())
+      auto& phi_info = ctx.phi_infos[block_idx];
+      if (phi_info.copies.empty())
          continue;
 
       Block& block = ctx.program->blocks[block_idx];
       aco_ptr<Instruction> pc{create_instruction(aco_opcode::p_parallelcopy, Format::PSEUDO,
-                                                 logical_phi_info.copies.size(),
-                                                 logical_phi_info.copies.size())};
+                                                 phi_info.copies.size(), phi_info.copies.size())};
       unsigned i = 0;
-      for (auto& pair : logical_phi_info.copies) {
+      for (auto& pair : phi_info.copies) {
          pc->definitions[i] = pair.first;
          pc->operands[i] = pair.second;
          i++;
       }
-      pc->pseudo().needs_scratch_reg = false;
-      auto it = std::prev(block.instructions.end());
-      block.instructions.insert(it, std::move(pc));
-   }
-
-   /* insert parallelcopies for the linear phis at the end of blocks just before the branch */
-   for (unsigned block_idx = 0; block_idx < ctx.program->blocks.size(); ++block_idx) {
-      auto& linear_phi_info = ctx.linear_phi_info[block_idx];
-      if (linear_phi_info.copies.empty())
-         continue;
-
-      Block& block = ctx.program->blocks[block_idx];
-      aco_ptr<Instruction> pc{create_instruction(aco_opcode::p_parallelcopy, Format::PSEUDO,
-                                                 linear_phi_info.copies.size(),
-                                                 linear_phi_info.copies.size())};
-      unsigned i = 0;
-      for (auto& pair : linear_phi_info.copies) {
-         pc->definitions[i] = pair.first;
-         pc->operands[i] = pair.second;
-         i++;
-      }
-      pc->pseudo().scratch_sgpr = linear_phi_info.scratch_sgpr;
-      pc->pseudo().needs_scratch_reg = linear_phi_info.needs_scratch_reg;
+      pc->pseudo().scratch_sgpr = phi_info.scratch_sgpr;
+      pc->pseudo().needs_scratch_reg = phi_info.needs_scratch_reg;
       auto it = std::prev(block.instructions.end());
       block.instructions.insert(it, std::move(pc));
    }
