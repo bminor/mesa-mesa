@@ -13,7 +13,7 @@
 
 variables:
    DEBIAN_X86_64_BUILD_BASE_IMAGE: "debian/x86_64_build-base"
-   DEBIAN_BASE_TAG: "20250204-arm32"
+   DEBIAN_BASE_TAG: "20250213-rustup"
 
    DEBIAN_X86_64_BUILD_IMAGE_PATH: "debian/x86_64_build"
    DEBIAN_BUILD_TAG: "20250210-android-drm"

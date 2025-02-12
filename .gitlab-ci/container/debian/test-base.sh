@@ -220,7 +220,8 @@ uncollapsed_section_switch debian_cleanup "Cleaning up base Debian system"
 
 apt-get purge -y "${EPHEMERAL[@]}"
 
-rm -rf /root/.rustup
+# Properly uninstall rustup including cargo and init scripts on shells
+rustup self uninstall -y
 
 . .gitlab-ci/container/container_post_build.sh
 
