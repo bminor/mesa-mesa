@@ -221,10 +221,10 @@ struct vn_graphics_pipeline_fix_tmp {
    /* Fixing the pNext chain
     *
     * TODO: extend when below or more extensions are supported:
-    * - VK_KHR_maintenance5
     * - VK_EXT_pipeline_robustness
     */
    VkGraphicsPipelineLibraryCreateInfoEXT *gpl_infos;
+   VkPipelineCreateFlags2CreateInfo *flags2_infos;
    VkPipelineCreationFeedbackCreateInfo *feedback_infos;
    VkPipelineFragmentShadingRateStateCreateInfoKHR *fsr_infos;
    VkPipelineLibraryCreateInfoKHR *library_infos;
@@ -641,6 +641,7 @@ vn_graphics_pipeline_fix_tmp_alloc(const VkAllocationCallbacks *alloc,
 
    /* for pNext */
    VkGraphicsPipelineLibraryCreateInfoEXT *gpl_infos;
+   VkPipelineCreateFlags2CreateInfo *flags2_infos;
    VkPipelineCreationFeedbackCreateInfo *feedback_infos;
    VkPipelineFragmentShadingRateStateCreateInfoKHR *fsr_infos;
    VkPipelineLibraryCreateInfoKHR *library_infos;
@@ -656,6 +657,8 @@ vn_graphics_pipeline_fix_tmp_alloc(const VkAllocationCallbacks *alloc,
 
    if (alloc_pnext) {
       vk_multialloc_add(&ma, &gpl_infos, __typeof__(*gpl_infos), info_count);
+      vk_multialloc_add(&ma, &flags2_infos, __typeof__(*flags2_infos),
+                        info_count);
       vk_multialloc_add(&ma, &feedback_infos, __typeof__(*feedback_infos),
                         info_count);
       vk_multialloc_add(&ma, &fsr_infos, __typeof__(*fsr_infos), info_count);
@@ -674,6 +677,7 @@ vn_graphics_pipeline_fix_tmp_alloc(const VkAllocationCallbacks *alloc,
 
    if (alloc_pnext) {
       tmp->gpl_infos = gpl_infos;
+      tmp->flags2_infos = flags2_infos;
       tmp->feedback_infos = feedback_infos;
       tmp->fsr_infos = fsr_infos;
       tmp->library_infos = library_infos;
@@ -1393,6 +1397,7 @@ vn_graphics_pipeline_create_info_pnext_init(
    uint32_t index)
 {
    VkGraphicsPipelineLibraryCreateInfoEXT *gpl = &fix_tmp->gpl_infos[index];
+   VkPipelineCreateFlags2CreateInfo *flags2 = &fix_tmp->flags2_infos[index];
    VkPipelineCreationFeedbackCreateInfo *feedback =
       &fix_tmp->feedback_infos[index];
    VkPipelineFragmentShadingRateStateCreateInfoKHR *fsr =
@@ -1409,6 +1414,10 @@ vn_graphics_pipeline_create_info_pnext_init(
       case VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_LIBRARY_CREATE_INFO_EXT:
          memcpy(gpl, src, sizeof(*gpl));
          next = gpl;
+         break;
+      case VK_STRUCTURE_TYPE_PIPELINE_CREATE_FLAGS_2_CREATE_INFO:
+         memcpy(flags2, src, sizeof(*flags2));
+         next = flags2;
          break;
       case VK_STRUCTURE_TYPE_PIPELINE_CREATION_FEEDBACK_CREATE_INFO:
          memcpy(feedback, src, sizeof(*feedback));
