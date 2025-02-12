@@ -500,18 +500,39 @@ fn exec_latency(sm: u8, op: &Op) -> u32 {
     }
 }
 
-fn instr_latency(op: &Op, dst_idx: usize) -> u32 {
+fn instr_latency(sm: u8, op: &Op, dst_idx: usize) -> u32 {
     let file = match op.dsts_as_slice()[dst_idx] {
         Dst::None => return 0,
         Dst::SSA(vec) => vec.file().unwrap(),
         Dst::Reg(reg) => reg.file(),
     };
 
+    let (gpr_latency, pred_latency) = if sm < 80 {
+        match op {
+            // Double-precision float ALU
+            Op::DAdd(_)
+            | Op::DFma(_)
+            | Op::DMnMx(_)
+            | Op::DMul(_)
+            | Op::DSetP(_)
+            // Half-precision float ALU
+            | Op::HAdd2(_)
+            | Op::HFma2(_)
+            | Op::HMul2(_)
+            | Op::HSet2(_)
+            | Op::HSetP2(_)
+            | Op::HMnMx2(_) => (13, 14),
+            _ => (6, 13)
+        }
+    } else {
+        (6, 13)
+    };
+
     // This is BS and we know it
     match file {
-        RegFile::GPR => 6,
+        RegFile::GPR => gpr_latency,
         RegFile::UGPR => 12,
-        RegFile::Pred => 13,
+        RegFile::Pred => pred_latency,
         RegFile::UPred => 11,
         RegFile::Bar => 0, // Barriers have a HW scoreboard
         RegFile::Carry => 6,
@@ -521,13 +542,13 @@ fn instr_latency(op: &Op, dst_idx: usize) -> u32 {
 
 /// Read-after-write latency
 fn raw_latency(
-    _sm: u8,
+    sm: u8,
     write: &Op,
     dst_idx: usize,
     _read: &Op,
     _src_idx: usize,
 ) -> u32 {
-    instr_latency(write, dst_idx)
+    instr_latency(sm, write, dst_idx)
 }
 
 /// Write-after-read latency
@@ -545,7 +566,7 @@ fn war_latency(
 
 /// Write-after-write latency
 fn waw_latency(
-    _sm: u8,
+    sm: u8,
     a: &Op,
     a_dst_idx: usize,
     _b: &Op,
@@ -553,7 +574,7 @@ fn waw_latency(
 ) -> u32 {
     // We know our latencies are wrong so assume the wrote could happen anywhere
     // between 0 and instr_latency(a) cycles
-    instr_latency(a, a_dst_idx)
+    instr_latency(sm, a, a_dst_idx)
 }
 
 /// Predicate read-after-write latency
@@ -591,7 +612,7 @@ fn calc_delays(f: &mut Function, sm: &dyn ShaderModel) {
                     // We don't know how it will be used but it may be used in
                     // the next block so we need at least assume the maximum
                     // destination latency from the end of the block.
-                    let s = instr_latency(&instr.op, i);
+                    let s = instr_latency(sm.sm(), &instr.op, i);
                     min_start = max(min_start, s);
                 }
                 RegUse::Write((w_ip, w_dst_idx)) => {
