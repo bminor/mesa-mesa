@@ -464,7 +464,7 @@
         "description": "panfrost: fix YUV center information for 422",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "23aa784c05cdac361c9518e6e7c00c198841c4d0",
         "notes": null
