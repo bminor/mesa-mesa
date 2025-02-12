@@ -94,10 +94,10 @@
         "description": "radv/video: fix missing image offset when computing VA",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": null,
-        "notes": null
+        "notes": "fixes a regression that happened after the 25.0 branchpoint, so there's nothing to backport (see https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/33496#note_2776720)"
     },
     {
         "sha": "b08f9a2dbd57057648e03d4441cbce24f675a201",
