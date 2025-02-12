@@ -373,9 +373,7 @@ brw_compile_task(const struct brw_compiler *compiler,
 
    NIR_PASS(_, nir, brw_nir_lower_launch_mesh_workgroups);
 
-   prog_data->base.base.stage = MESA_SHADER_TASK;
-   prog_data->base.base.total_shared = nir->info.shared_size;
-   prog_data->base.base.total_scratch = 0;
+   brw_prog_data_init(&prog_data->base.base, &params->base);
 
    prog_data->base.local_size[0] = nir->info.workgroup_size[0];
    prog_data->base.local_size[1] = nir->info.workgroup_size[1];
@@ -1657,9 +1655,7 @@ brw_compile_mesh(const struct brw_compiler *compiler,
    struct brw_mesh_prog_data *prog_data = params->prog_data;
    const bool debug_enabled = brw_should_print_shader(nir, DEBUG_MESH);
 
-   prog_data->base.base.stage = MESA_SHADER_MESH;
-   prog_data->base.base.total_shared = nir->info.shared_size;
-   prog_data->base.base.total_scratch = 0;
+   brw_prog_data_init(&prog_data->base.base, &params->base);
 
    prog_data->base.local_size[0] = nir->info.workgroup_size[0];
    prog_data->base.local_size[1] = nir->info.workgroup_size[1];

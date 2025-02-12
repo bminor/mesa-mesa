@@ -76,3 +76,6 @@ private:
    gl_shader_stage stage;
    void *mem_ctx;
 };
+
+void brw_prog_data_init(struct brw_stage_prog_data *prog_data,
+                        const struct brw_compile_params *params);

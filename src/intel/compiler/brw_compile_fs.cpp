@@ -1541,9 +1541,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
       brw_should_print_shader(nir, params->base.debug_flag ?
                                    params->base.debug_flag : DEBUG_WM);
 
-   prog_data->base.stage = MESA_SHADER_FRAGMENT;
-   prog_data->base.ray_queries = nir->info.ray_queries;
-   prog_data->base.total_scratch = 0;
+   brw_prog_data_init(&prog_data->base, &params->base);
 
    const struct intel_device_info *devinfo = compiler->devinfo;
    const unsigned max_subgroup_size = 32;

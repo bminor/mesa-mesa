@@ -72,8 +72,7 @@ brw_compile_tes(const struct brw_compiler *compiler,
 
    const bool debug_enabled = brw_should_print_shader(nir, DEBUG_TES);
 
-   prog_data->base.base.stage = MESA_SHADER_TESS_EVAL;
-   prog_data->base.base.ray_queries = nir->info.ray_queries;
+   brw_prog_data_init(&prog_data->base.base, &params->base);
 
    nir->info.inputs_read = key->inputs_read;
    nir->info.patch_inputs_read = key->patch_inputs_read;
@@ -184,4 +183,3 @@ brw_compile_tes(const struct brw_compiler *compiler,
 
    return g.get_assembly();
 }
-

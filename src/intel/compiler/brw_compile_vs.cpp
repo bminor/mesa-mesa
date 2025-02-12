@@ -246,9 +246,7 @@ brw_compile_vs(const struct brw_compiler *compiler,
     */
    assert(!key->no_vf_slot_compaction || key->vf_component_packing);
 
-   prog_data->base.base.stage = MESA_SHADER_VERTEX;
-   prog_data->base.base.ray_queries = nir->info.ray_queries;
-   prog_data->base.base.total_scratch = 0;
+   brw_prog_data_init(&prog_data->base.base, &params->base);
 
    brw_nir_apply_key(nir, compiler, &key->base, dispatch_width);
 
