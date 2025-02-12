@@ -2916,14 +2916,12 @@ radv_prepare_dgc_graphics(struct radv_cmd_buffer *cmd_buffer, const VkGeneratedC
       uint8_t *ptr = (uint8_t *)((char *)*upload_data);
 
       for (uint32_t i = 0; i < MAX_VBS; i++) {
-         struct radv_vbo_info vbo_info;
-         radv_get_vbo_info(state_cmd_buffer, i, &vbo_info);
+         struct radv_vbo_info *vbo_info = (void *)ptr;
 
-         const uint32_t vbo_offset = get_dgc_vertex_binding_offset(layout, vbo_info.binding);
-
-         memcpy(ptr, &vbo_info, sizeof(vbo_info));
+         radv_get_vbo_info(state_cmd_buffer, i, vbo_info);
          ptr += sizeof(struct radv_vbo_info);
 
+         const uint32_t vbo_offset = get_dgc_vertex_binding_offset(layout, vbo_info->binding);
          memcpy(ptr, &vbo_offset, sizeof(uint32_t));
          ptr += sizeof(uint32_t);
       }
