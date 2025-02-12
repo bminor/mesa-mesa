@@ -1,5 +1,365 @@
 [
     {
+        "sha": "30a3d567c8b996fde86b07d2bad018013a54ff44",
+        "description": "tu/a750: invalidate vertex state before CP_DRAW_INDIRECT_MULTI",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f887ae2f3ce845e496634d1a5873ecc1b1b0d625",
+        "description": "driconf: force_vk_vendor on Deep Rock Galactic+NVK",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ffdfb0539b1db48c787135b9617e26bc98709b10",
+        "description": "ci/android: Add build section for Cuttlefish",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9707746b2da6f7689cc3f59b2d3c71985de4b7f3",
+        "description": "ci/lava: Build ANGLE for arm64",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "05021a178662c11075a31b76bde9d487d86a55c1",
+        "description": "ci/angle: Rework building ANGLE (again)",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f535d5d59137693c52c27d4a3faf2de1eec9946d",
+        "description": "ci/angle: Use native toolchain for builds",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4306831a4a1fc97958495f10d866c7b0d6037681",
+        "description": "radv: use BDA for the uploaded parameters with DGC",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "990244f7e20201755000b4bec03bfada808118c5",
+        "description": "radv/meta: use BDA for copying VRS rates to HTILE",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e3cd101c1716fd7bcc22ed96f40d6f1235e3d057",
+        "description": "radv/meta: use BDA for clear HTILE mask",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "13e987669ccee373948753e113e9ce7e9bdbef55",
+        "description": "radv/video: fix missing image offset when computing VA",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b08f9a2dbd57057648e03d4441cbce24f675a201",
+        "description": "ci: run containers builds on staging branches",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "7152f343d6d73d2fbc05629c8a31215b2d31c3a6",
+        "notes": null
+    },
+    {
+        "sha": "c6a932d4b3783943ae06a1c0a6460e1dbd43d89c",
+        "description": "ir3/ra: handle phis with preferred regs first",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "922bfe4b6eb883a439b8f2d7469671e9adb64e2a",
+        "description": "ir3: add braces around complex if/else block",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2e0d5ccd91e54c22a10e943a3db076efa92a1f83",
+        "description": "intel/compiler: Drop primitive leaf desc load code",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "52dfe1e955101163eab10de462f0b71fe5999804",
+        "description": "zink: never try to oom flush during unsync texture upload",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "23040782614bed020156d2a43eadd47fa06ad387",
+        "description": "zink: only enable unsynchronized_texture_subdata with HIC",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "873ad6b6d511185df91dd8fb5fc299da28104912",
+        "description": "anv: Fix missing Perfetto trace for as build",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "441252e9e1b71acd6c142a47b02e1532ecc1c284",
+        "description": "radeonsi/uvd: Set correct chroma format for H264 decode",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "110d406302122df84fbeb82dab015591dc1b985e",
+        "description": "radeonsi/vcn: Set correct chroma format for H264 decode",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c28702c35a5815dfe97dc661d671f80cb970f62d",
+        "description": "frontends/vdpau: Set H264 chroma_format_idc",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d946a753e33da51d0d0541d74386f7de0dd40cec",
+        "description": "aco/ra: unconditionally call undo_renames",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b94b4188a6a7580e0560b5e24e46d60227e668ad",
+        "description": "aco/ra: reverse renaming of operands outside update_renames",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ebc7355962d44f18087569ad6e5da6e56e536ae3",
+        "description": "aco: validate operands fixed to definitions",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4864c0a5fc33ebc34f906e6a3ee87dd49c252d7f",
+        "description": "anv,driconf: Add sampler coordinate precision workaround for Dynasty Warriors",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "57efd752fb49110c10e4547c1b100a558d630d56",
+        "description": "anv: support protected surfaces with display platform",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "53762e75e833d51c87d50af723a965f5ddf02b70",
+        "description": "vulkan: allow support for protected surfaces",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e722665d654a9fc8a104d45669fa360a43bfcffb",
+        "description": "vulkan/wsi: propagate protected swapchain to images",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "513ba040fc3d44ec07b50e0db31f60c7e7d7907f",
+        "description": "docs: Add perfetto driver specifics for V3D",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9b6525809e4cf3eef810c9cf5e4d959d82aa1f55",
+        "description": "docs: Update the list of drivers with CPU tracepoints",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5880a4bb55186e5f5482349044da6d6434761a83",
+        "description": "docs: Update perfetto with the latest status",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "68db5481f4ec080de462aaf5b2c0b49db28e9ae9",
+        "description": "v3dv/ci: disable rpi5 job",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4ae12cc6ff1e3cad5e255bd42aa98bdb937ca2be",
+        "description": "panvk: Initialize device virtual address space after the VM creation",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "53fb1d99cac9ab318c251aa3e448d26e0c94641c",
+        "notes": null
+    },
+    {
+        "sha": "5f3c6a0f272733ae226a9cc0f0d551b081961b0d",
+        "description": "panvk/csf: Don't free the resources twice when init_render_desc_ringbuf() fails",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "5544d39f4420da88c53aaf8dd48d86ac92bd0eaa",
+        "notes": null
+    },
+    {
+        "sha": "a4f3ec207da41e1b73185157c03507e4cb5a09ac",
+        "description": "nak/repair_ssa: Use a worklist for get_ssa_or_phi()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "dc82d7edff2b843e3fe97ac0ea9f43f14f958fe9",
+        "description": "nvk: Fix a typo in a comment",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6f64962f273c901fd92ef1e012171e5fe2abbf7d",
+        "description": "nvk: Fix scissor bounds",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "18f0807408425da11cb1d8cd1d73de369317440d",
         "description": "radeonsi/video: Fix creating video buffers with AMD_DEBUG=tmz",
         "nominated": false,
