@@ -2224,7 +2224,7 @@
         "description": "aco/ssa_elimination: insert parallelcopies for p_phi immediately before branch",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
