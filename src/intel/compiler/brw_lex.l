@@ -365,13 +365,8 @@ sr[0-9]+        { yylval.integer = atoi(yytext + 2); return STATEREG; }
 ".u"    { yylval.integer = BRW_CONDITIONAL_U; return UNORDERED; }
 ".z"    { yylval.integer = BRW_CONDITIONAL_Z; return ZERO; }
 
- /* Eat up JIP and UIP token, their values will be parsed
-  * in numeric section
-  */
-"JIP: "         { BEGIN(LABEL); }
-"UIP: "         { BEGIN(LABEL); }
-"Jump: "        { }
-"Pop: "         { }
+"JIP: "         { BEGIN(LABEL); return JIP; }
+"UIP: "         { BEGIN(LABEL); return UIP; }
 [ \t]+          { }
 
 "MsgDesc: "             { BEGIN(MSGDESC); return MSGDESC_BEGIN; }
