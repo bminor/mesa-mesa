@@ -190,30 +190,11 @@ copy_buffer_shader(struct radv_cmd_buffer *cmd_buffer, uint64_t src_va, uint64_t
    radv_meta_restore(&saved_state, cmd_buffer);
 }
 
-static bool
-radv_prefer_compute_dma(const struct radv_device *device, uint64_t size, struct radeon_winsys_bo *src_bo,
-                        struct radeon_winsys_bo *dst_bo)
-{
-   const struct radv_physical_device *pdev = radv_device_physical(device);
-   bool use_compute = size >= RADV_BUFFER_OPS_CS_THRESHOLD;
-
-   if (pdev->info.gfx_level >= GFX10 && pdev->info.has_dedicated_vram) {
-      if ((src_bo && !(src_bo->initial_domain & RADEON_DOMAIN_VRAM)) ||
-          (dst_bo && !(dst_bo->initial_domain & RADEON_DOMAIN_VRAM))) {
-         /* Prefer CP DMA for GTT on dGPUS due to slow PCIe. */
-         use_compute = false;
-      }
-   }
-
-   return use_compute;
-}
-
 uint32_t
 radv_fill_buffer(struct radv_cmd_buffer *cmd_buffer, const struct radv_image *image, struct radeon_winsys_bo *bo,
                  uint64_t va, uint64_t size, uint32_t value)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   bool use_compute = radv_prefer_compute_dma(device, size, NULL, bo);
    uint32_t flush_bits = 0;
 
    assert(!(va & 3));
@@ -224,7 +205,7 @@ radv_fill_buffer(struct radv_cmd_buffer *cmd_buffer, const struct radv_image *im
 
    if (cmd_buffer->qf == RADV_QUEUE_TRANSFER) {
       radv_sdma_fill_buffer(device, cmd_buffer->cs, va, size, value);
-   } else if (use_compute) {
+   } else if (size >= RADV_BUFFER_OPS_CS_THRESHOLD) {
       fill_buffer_shader(cmd_buffer, va, size, value);
 
       flush_bits = RADV_CMD_FLAG_CS_PARTIAL_FLUSH | RADV_CMD_FLAG_INV_VCACHE |
@@ -241,8 +222,7 @@ radv_copy_buffer(struct radv_cmd_buffer *cmd_buffer, struct radeon_winsys_bo *sr
                  uint64_t src_va, uint64_t dst_va, uint64_t size)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   bool use_compute =
-      !(size & 3) && !(src_va & 3) && !(dst_va & 3) && radv_prefer_compute_dma(device, size, src_bo, dst_bo);
+   bool use_compute = !(size & 3) && !(src_va & 3) && !(dst_va & 3) && size >= RADV_BUFFER_OPS_CS_THRESHOLD;
 
    radv_cs_add_buffer(device->ws, cmd_buffer->cs, src_bo);
    radv_cs_add_buffer(device->ws, cmd_buffer->cs, dst_bo);
