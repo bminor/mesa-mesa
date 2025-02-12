@@ -1169,8 +1169,10 @@ vn_graphics_pipeline_state_fill(
       !state->dynamic.rasterizer_discard_enable &&
       state->rasterizer_discard_enable;
 
-   /* Collect remaining fragment shader state. */
-   if (direct_gpl.fragment_shader) {
+   /* Collect remaining states shared by fragment shader and fragment output
+    * interface, just to avoid duplicate codes.
+    */
+   if (direct_gpl.fragment_shader || direct_gpl.fragment_output) {
       if (!is_raster_statically_disabled) {
          /* Validity of pMultisampleState is easy here.
           *
@@ -1179,18 +1181,30 @@ vn_graphics_pipeline_state_fill(
           *    If the pipeline requires fragment shader state
           *    pMultisampleState must be NULL or a valid pointer to a valid
           *    VkPipelineMultisampleStateCreateInfo structure
+          *
+          *    VUID-VkGraphicsPipelineCreateInfo-rasterizerDiscardEnable-00751
+          *
+          *    If the pipeline requires fragment output interface state,
+          *    pMultisampleState must be a valid pointer to a valid
+          *    VkPipelineMultisampleStateCreateInfo structure
           */
          valid.self.multisample_state = true;
 
          valid.self.multisample_state_sample_mask =
             !state->dynamic.sample_mask;
 
-         if ((state->render_pass.attachment_aspects &
-              (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT))) {
+         if (state->render_pass.attachment_aspects &
+             (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT))
             valid.self.depth_stencil_state = true;
-         } else if (state->render_pass.attachment_aspects ==
-                       VK_IMAGE_ASPECT_METADATA_BIT &&
-                    (info->flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR)) {
+      }
+   }
+
+   /* Collect remaining fragment shader state. */
+   if (direct_gpl.fragment_shader) {
+      if (!is_raster_statically_disabled) {
+         if (state->render_pass.attachment_aspects ==
+                VK_IMAGE_ASPECT_METADATA_BIT &&
+             (info->flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR)) {
             /* The app has not yet provided render pass info, neither directly
              * in this VkGraphicsPipelineCreateInfo nor in any linked pipeline
              * libraries. Therefore we do not know if the final complete
@@ -1213,25 +1227,9 @@ vn_graphics_pipeline_state_fill(
    /* Collect remaining fragment output interface state. */
    if (direct_gpl.fragment_output) {
       if (!is_raster_statically_disabled) {
-         /* Validity of pMultisampleState is easy here.
-          *
-          *    VUID-VkGraphicsPipelineCreateInfo-rasterizerDiscardEnable-00751
-          *
-          *    If the pipeline requires fragment output interface state,
-          *    pMultisampleState must be a valid pointer to a valid
-          *    VkPipelineMultisampleStateCreateInfo structure
-          */
-         valid.self.multisample_state = true;
-
-         valid.self.multisample_state_sample_mask =
-            !state->dynamic.sample_mask;
-
-         valid.self.color_blend_state |=
-            (bool)(state->render_pass.attachment_aspects &
-                   VK_IMAGE_ASPECT_COLOR_BIT);
-         valid.self.depth_stencil_state |=
-            (bool)(state->render_pass.attachment_aspects &
-                   (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT));
+         if (state->render_pass.attachment_aspects &
+             VK_IMAGE_ASPECT_COLOR_BIT)
+            valid.self.color_blend_state = true;
       }
 
       /* Defer setting the flag until all its state is filled. */
