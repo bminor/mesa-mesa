@@ -175,6 +175,7 @@ debian-testing-msan:
   # msan cannot fully work until it's used together with msan libc
   extends:
     - debian-clang
+    - .meson-build-only
   # `needs:` inherited from debian-clang
   variables:
     BUILD_JOB_TIMEOUT: 30m
@@ -631,6 +632,7 @@ debian-arm64-build-test:
   extends:
     - .meson-arm
     - .ci-deqp-artifacts
+    - .meson-build-only
   needs:
     - !reference [.meson-arm, needs]
     - !reference [.build-for-tests-jobs]
@@ -739,7 +741,9 @@ debian-clang:
     CXX: clang++-${LLVM_VERSION}
 
 debian-clang-release:
-  extends: debian-clang
+  extends:
+    - debian-clang
+    - .meson-build-only
   # `needs:` inherited from debian-clang
   variables:
     BUILD_JOB_TIMEOUT: 30m
@@ -815,6 +819,7 @@ debian-x86_32:
   extends:
     - .meson-cross
     - .use-debian/x86_32_build
+    - .meson-build-only
   needs:
     - !reference [.use-debian/x86_32_build, needs]
     - !reference [.build-for-tests-jobs]
@@ -851,6 +856,7 @@ debian-s390x:
   extends:
     - .meson-cross
     - .use-debian/s390x_build
+    - .meson-build-only
   needs:
     - !reference [.use-debian/s390x_build, needs]
     - !reference [.build-for-tests-jobs]
@@ -868,6 +874,7 @@ debian-ppc64el:
   extends:
     - .meson-cross
     - .use-debian/ppc64el_build
+    - .meson-build-only
   needs:
     - !reference [.use-debian/ppc64el_build, needs]
     - !reference [.build-for-tests-jobs]
@@ -886,6 +893,7 @@ python-artifacts:
   extends:
     - .use-debian/x86_64_pyutils
     - .build-common
+    - .meson-build-for-tests
   variables:
     GIT_STRATEGY: fetch
     S3_ARTIFACT_NAME: mesa-python-ci-artifacts
