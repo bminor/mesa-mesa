@@ -406,8 +406,6 @@ debian-android:
     - .use-debian/android_build
     - .ci-deqp-artifacts
   stage: build-for-tests
-  needs:
-    - !reference [.use-debian/android_build, needs]
   variables:
     BUILDTYPE: debug
     UNWIND: "disabled"
@@ -495,8 +493,6 @@ debian-android:
   extends:
     - .meson-cross
     - .use-debian/arm64_build
-  needs:
-    - debian/arm64_build
   variables:
     VULKAN_DRIVERS: "asahi,broadcom,freedreno"
     GALLIUM_DRIVERS: "etnaviv,freedreno,lima,nouveau,panfrost,llvmpipe,softpipe,tegra,v3d,vc4,zink"
