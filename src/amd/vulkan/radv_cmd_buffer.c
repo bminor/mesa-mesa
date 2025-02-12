@@ -5794,8 +5794,6 @@ radv_flush_constants(struct radv_cmd_buffer *cmd_buffer, VkShaderStageFlags stag
 ALWAYS_INLINE void
 radv_get_vbo_info(const struct radv_cmd_buffer *cmd_buffer, uint32_t idx, struct radv_vbo_info *vbo_info)
 {
-   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   const struct radv_physical_device *pdev = radv_device_physical(device);
    const struct radv_vertex_input_state *vi_state = &cmd_buffer->state.vertex_input;
    const uint32_t binding = vi_state->bindings[idx];
 
@@ -5807,22 +5805,7 @@ radv_get_vbo_info(const struct radv_cmd_buffer *cmd_buffer, uint32_t idx, struct
    vbo_info->attrib_offset = vi_state->offsets[idx];
    vbo_info->attrib_index_offset = vi_state->attrib_index_offset[idx];
    vbo_info->attrib_format_size = vi_state->format_sizes[idx];
-
-   if (!(vi_state->nontrivial_formats & BITFIELD_BIT(idx))) {
-      const struct ac_vtx_format_info *vtx_info_table =
-         ac_get_vtx_format_info_table(pdev->info.gfx_level, pdev->info.family);
-      const struct ac_vtx_format_info *vtx_info = &vtx_info_table[vi_state->formats[idx]];
-      const uint32_t hw_format = vtx_info->hw_format[vtx_info->num_channels - 1];
-
-      if (pdev->info.gfx_level >= GFX10) {
-         vbo_info->non_trivial_format = vtx_info->dst_sel | S_008F0C_FORMAT_GFX10(hw_format);
-      } else {
-         vbo_info->non_trivial_format =
-            vtx_info->dst_sel | S_008F0C_NUM_FORMAT((hw_format >> 4) & 0x7) | S_008F0C_DATA_FORMAT(hw_format & 0xf);
-      }
-   } else {
-      vbo_info->non_trivial_format = 0;
-   }
+   vbo_info->non_trivial_format = vi_state->non_trivial_format[idx];
 }
 
 ALWAYS_INLINE static void
@@ -8435,8 +8418,19 @@ radv_CmdSetVertexInputEXT(VkCommandBuffer commandBuffer, uint32_t vertexBindingD
       if (G_008F0C_DST_SEL_X(vtx_info->dst_sel) == V_008F0C_SQ_SEL_Z)
          vi_state->post_shuffle |= BITFIELD_BIT(loc);
 
-      if (!(vtx_info->has_hw_format & BITFIELD_BIT(vtx_info->num_channels - 1)))
+      if (vtx_info->has_hw_format & BITFIELD_BIT(vtx_info->num_channels - 1)) {
+         const uint32_t hw_format = vtx_info->hw_format[vtx_info->num_channels - 1];
+
+         if (pdev->info.gfx_level >= GFX10) {
+            vi_state->non_trivial_format[loc] = vtx_info->dst_sel | S_008F0C_FORMAT_GFX10(hw_format);
+         } else {
+            vi_state->non_trivial_format[loc] =
+               vtx_info->dst_sel | S_008F0C_NUM_FORMAT((hw_format >> 4) & 0x7) | S_008F0C_DATA_FORMAT(hw_format & 0xf);
+         }
+      } else {
+         vi_state->non_trivial_format[loc] = 0;
          vi_state->nontrivial_formats |= BITFIELD_BIT(loc);
+      }
 
       if (state->vbo_bound_mask & BITFIELD_BIT(attrib->binding)) {
          uint32_t stride = binding->stride;

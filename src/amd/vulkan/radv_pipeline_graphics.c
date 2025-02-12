@@ -3195,6 +3195,7 @@ radv_pipeline_init_vertex_input_state(const struct radv_device *device, struct r
 
          enum pipe_format format = radv_format_to_pipe_format(state->vi->attributes[i].format);
          const struct ac_vtx_format_info *vtx_info = &vtx_info_table[format];
+         const uint32_t hw_format = vtx_info->hw_format[vtx_info->num_channels - 1];
 
          pipeline->vertex_input.formats[i] = format;
          uint8_t format_align_req_minus_1 = vtx_info->chan_byte_size >= 4 ? 3 : (vtx_info->element_size - 1);
@@ -3209,7 +3210,14 @@ radv_pipeline_init_vertex_input_state(const struct radv_device *device, struct r
             pipeline->vertex_input.post_shuffle |= BITFIELD_BIT(i);
          }
 
-         if (!(vtx_info->has_hw_format & BITFIELD_BIT(vtx_info->num_channels - 1))) {
+         if (vtx_info->has_hw_format & BITFIELD_BIT(vtx_info->num_channels - 1)) {
+            if (pdev->info.gfx_level >= GFX10) {
+               pipeline->vertex_input.non_trivial_format[i] = vtx_info->dst_sel | S_008F0C_FORMAT_GFX10(hw_format);
+            } else {
+               pipeline->vertex_input.non_trivial_format[i] =
+                  vtx_info->dst_sel | S_008F0C_NUM_FORMAT((hw_format >> 4) & 0x7) | S_008F0C_DATA_FORMAT(hw_format & 0xf);
+            }
+         } else {
             pipeline->vertex_input.nontrivial_formats |= BITFIELD_BIT(i);
          }
       }
