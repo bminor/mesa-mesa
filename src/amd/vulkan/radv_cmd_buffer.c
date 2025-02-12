@@ -358,8 +358,6 @@ radv_destroy_cmd_buffer(struct vk_command_buffer *vk_cmd_buffer)
             vk_descriptor_set_layout_unref(&device->vk, &set->layout->vk);
          vk_object_base_finish(&set->base);
       }
-
-      vk_object_base_finish(&cmd_buffer->meta_push_descriptors.base);
    }
 
    vk_command_buffer_finish(&cmd_buffer->vk);
@@ -402,8 +400,6 @@ radv_create_cmd_buffer(struct vk_command_pool *pool, VkCommandBufferLevel level,
          radv_destroy_cmd_buffer(&cmd_buffer->vk);
          return vk_error(device, VK_ERROR_OUT_OF_DEVICE_MEMORY);
       }
-
-      vk_object_base_init(&device->vk, &cmd_buffer->meta_push_descriptors.base, VK_OBJECT_TYPE_DESCRIPTOR_SET);
 
       for (unsigned i = 0; i < MAX_BIND_POINTS; i++)
          vk_object_base_init(&device->vk, &cmd_buffer->descriptors[i].push_set.set.base, VK_OBJECT_TYPE_DESCRIPTOR_SET);
@@ -7189,35 +7185,6 @@ radv_init_push_descriptor_set(struct radv_cmd_buffer *cmd_buffer, struct radv_de
    }
 
    return true;
-}
-
-void
-radv_meta_push_descriptor_set(struct radv_cmd_buffer *cmd_buffer, VkPipelineBindPoint pipelineBindPoint,
-                              VkPipelineLayout _layout, uint32_t set, uint32_t descriptorWriteCount,
-                              const VkWriteDescriptorSet *pDescriptorWrites)
-{
-   VK_FROM_HANDLE(radv_pipeline_layout, layout, _layout);
-   struct radv_descriptor_set *push_set = (struct radv_descriptor_set *)&cmd_buffer->meta_push_descriptors;
-   struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   unsigned bo_offset;
-
-   assert(set == 0);
-   assert(layout->set[set].layout->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
-
-   push_set->header.size = layout->set[set].layout->size;
-   push_set->header.layout = layout->set[set].layout;
-
-   if (!radv_cmd_buffer_upload_alloc(cmd_buffer, push_set->header.size, &bo_offset,
-                                     (void **)&push_set->header.mapped_ptr))
-      return;
-
-   push_set->header.va = radv_buffer_get_va(cmd_buffer->upload.upload_bo);
-   push_set->header.va += bo_offset;
-
-   radv_cmd_update_descriptor_sets(device, cmd_buffer, radv_descriptor_set_to_handle(push_set), descriptorWriteCount,
-                                   pDescriptorWrites, 0, NULL);
-
-   radv_set_descriptor_set(cmd_buffer, pipelineBindPoint, push_set, set);
 }
 
 static void

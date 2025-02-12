@@ -46,6 +46,10 @@ struct radv_meta_saved_state {
    uint32_t flags;
 
    struct radv_descriptor_set *old_descriptor_set0;
+   bool old_descriptor_set0_valid;
+   uint64_t old_descriptor_buffer_addr0;
+   uint64_t old_descriptor_buffer0;
+
    struct radv_graphics_pipeline *old_graphics_pipeline;
    struct radv_compute_pipeline *old_compute_pipeline;
    struct radv_dynamic_state dynamic;
@@ -284,6 +288,10 @@ void radv_depth_stencil_resolve_rendering_fs(struct radv_cmd_buffer *cmd_buffer,
                                              VkResolveModeFlagBits resolve_mode);
 
 VkResult radv_meta_get_noop_pipeline_layout(struct radv_device *device, VkPipelineLayout *layout_out);
+
+void radv_meta_bind_descriptors(struct radv_cmd_buffer *cmd_buffer, VkPipelineBindPoint bind_point,
+                                VkPipelineLayout _layout, uint32_t num_descriptors,
+                                const VkDescriptorGetInfoEXT *descriptors);
 
 #ifdef __cplusplus
 }

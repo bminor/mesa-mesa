@@ -208,28 +208,22 @@ radv_fmask_copy(struct radv_cmd_buffer *cmd_buffer, struct radv_meta_blit2d_surf
                         },
                         NULL);
 
-   radv_meta_push_descriptor_set(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, layout, 0, 2,
-                                 (VkWriteDescriptorSet[]){{.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-                                                           .dstBinding = 0,
-                                                           .dstArrayElement = 0,
-                                                           .descriptorCount = 1,
-                                                           .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-                                                           .pImageInfo =
-                                                              (VkDescriptorImageInfo[]){
-                                                                 {.sampler = VK_NULL_HANDLE,
-                                                                  .imageView = radv_image_view_to_handle(&src_iview),
-                                                                  .imageLayout = VK_IMAGE_LAYOUT_GENERAL},
-                                                              }},
-                                                          {.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-                                                           .dstBinding = 1,
-                                                           .dstArrayElement = 0,
-                                                           .descriptorCount = 1,
-                                                           .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-                                                           .pImageInfo = (VkDescriptorImageInfo[]){
-                                                              {.sampler = VK_NULL_HANDLE,
-                                                               .imageView = radv_image_view_to_handle(&dst_iview),
-                                                               .imageLayout = VK_IMAGE_LAYOUT_GENERAL},
-                                                           }}});
+   radv_meta_bind_descriptors(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, layout, 2,
+                              (VkDescriptorGetInfoEXT[]){{.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT,
+                                                          .type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                                          .data.pSampledImage =
+                                                             (VkDescriptorImageInfo[]){
+                                                                {.sampler = VK_NULL_HANDLE,
+                                                                 .imageView = radv_image_view_to_handle(&src_iview),
+                                                                 .imageLayout = VK_IMAGE_LAYOUT_GENERAL},
+                                                             }},
+                                                         {.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT,
+                                                          .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                                                          .data.pStorageImage = (VkDescriptorImageInfo[]){
+                                                             {.sampler = VK_NULL_HANDLE,
+                                                              .imageView = radv_image_view_to_handle(&dst_iview),
+                                                              .imageLayout = VK_IMAGE_LAYOUT_GENERAL},
+                                                          }}});
 
    radv_unaligned_dispatch(cmd_buffer, src->image->vk.extent.width, src->image->vk.extent.height, 1);
 

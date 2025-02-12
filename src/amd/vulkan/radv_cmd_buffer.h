@@ -526,7 +526,6 @@ struct radv_cmd_buffer {
 
    uint8_t push_constants[MAX_PUSH_CONSTANTS_SIZE];
    VkShaderStageFlags push_constant_stages;
-   struct radv_descriptor_set_header meta_push_descriptors;
 
    struct radv_descriptor_state descriptors[MAX_BIND_POINTS];
 
@@ -755,10 +754,6 @@ struct radv_resolve_barrier {
 };
 
 void radv_emit_resolve_barrier(struct radv_cmd_buffer *cmd_buffer, const struct radv_resolve_barrier *barrier);
-
-void radv_meta_push_descriptor_set(struct radv_cmd_buffer *cmd_buffer, VkPipelineBindPoint pipelineBindPoint,
-                                   VkPipelineLayout _layout, uint32_t set, uint32_t descriptorWriteCount,
-                                   const VkWriteDescriptorSet *pDescriptorWrites);
 
 struct radv_dispatch_info {
    /**
