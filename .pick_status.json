@@ -604,7 +604,7 @@
         "description": "brw: Fix size in assembler when compacting",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6267585778fac35c89dc6784e175dd88d39672f2",
         "notes": null
