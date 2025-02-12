@@ -737,46 +737,48 @@ v3dv_job_type_is_gpu(struct v3dv_job *job)
    }
 }
 
-static void
-cmd_buffer_serialize_job_if_needed(struct v3dv_cmd_buffer *cmd_buffer,
-                                   struct v3dv_job *job)
+bool
+v3dv_job_apply_barrier_state(struct v3dv_job *job,
+                             struct v3dv_barrier_state *barrier)
 {
-   assert(cmd_buffer && job);
+   assert(barrier && job);
 
    /* Serialization only affects GPU jobs, CPU jobs are always automatically
     * serialized.
     */
    if (!v3dv_job_type_is_gpu(job))
-      return;
+      return false;
 
-   uint8_t barrier_mask = cmd_buffer->state.barrier.dst_mask;
+   uint8_t barrier_mask = barrier->dst_mask;
    if (barrier_mask == 0)
-      return;
+      return false;
 
    uint8_t bit = 0;
    uint8_t *src_mask;
    if (job->type == V3DV_JOB_TYPE_GPU_CSD) {
       assert(!job->is_transfer);
       bit = V3DV_BARRIER_COMPUTE_BIT;
-      src_mask = &cmd_buffer->state.barrier.src_mask_compute;
+      src_mask = &barrier->src_mask_compute;
    } else if (job->is_transfer) {
       assert(job->type == V3DV_JOB_TYPE_GPU_CL ||
              job->type == V3DV_JOB_TYPE_GPU_CL_INCOMPLETE ||
              job->type == V3DV_JOB_TYPE_GPU_TFU);
       bit = V3DV_BARRIER_TRANSFER_BIT;
-      src_mask = &cmd_buffer->state.barrier.src_mask_transfer;
+      src_mask = &barrier->src_mask_transfer;
    } else {
       assert(job->type == V3DV_JOB_TYPE_GPU_CL ||
              job->type == V3DV_JOB_TYPE_GPU_CL_INCOMPLETE);
       bit = V3DV_BARRIER_GRAPHICS_BIT;
-      src_mask = &cmd_buffer->state.barrier.src_mask_graphics;
+      src_mask = &barrier->src_mask_graphics;
    }
 
    if (barrier_mask & bit) {
-      job->serialize = *src_mask;
+      job->serialize |= *src_mask;
       *src_mask = 0;
-      cmd_buffer->state.barrier.dst_mask &= ~bit;
+      barrier->dst_mask &= ~bit;
    }
+
+   return true;
 }
 
 void
@@ -844,7 +846,7 @@ v3dv_job_init(struct v3dv_job *job,
 
       job->is_transfer = cmd_buffer->state.is_transfer;
 
-      cmd_buffer_serialize_job_if_needed(cmd_buffer, job);
+      v3dv_job_apply_barrier_state(job, &cmd_buffer->state.barrier);
 
       job->perf = cmd_buffer->state.query.active_query.perf;
    }
