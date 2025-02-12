@@ -55,6 +55,9 @@ wsi_metal_surface_get_capabilities(VkIcdSurfaceBase *surface,
       &caps->currentExtent.width,
       &caps->currentExtent.height);
 
+   if (!caps->currentExtent.width && !caps->currentExtent.height)
+      caps->currentExtent.width = caps->currentExtent.height = UINT32_MAX;
+
    caps->minImageCount = 2;
    caps->maxImageCount = 3;
 
