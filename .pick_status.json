@@ -34,7 +34,7 @@
         "description": "tu: Get correct src view when storing gmem attachment",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a104a7ca1acf7793b78c1d885326eaed6ff91c69",
         "notes": null

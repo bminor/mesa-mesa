@@ -5161,7 +5161,7 @@ tu_store_gmem_attachment(struct tu_cmd_buffer *cmd,
    struct tu_render_pass_attachment *dst = &cmd->state.pass->attachments[a];
    const struct tu_image_view *dst_iview = cmd->state.attachments[a];
    struct tu_render_pass_attachment *src = &cmd->state.pass->attachments[gmem_a];
-   const struct tu_image_view *src_iview = cmd->state.attachments[a];
+   const struct tu_image_view *src_iview = cmd->state.attachments[gmem_a];
    const VkClearValue *clear_value = &cmd->state.clear_values[gmem_a];
    bool resolve = a != gmem_a;
    if (resolve)
