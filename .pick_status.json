@@ -1,5 +1,385 @@
 [
     {
+        "sha": "e41438275e005bbb20fc9c8115d7d29343c292d8",
+        "description": "ci: debian-testing-ubsan is used by tests",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "37ee035e42c9c979394b970a633e6db9232bdc85",
+        "notes": null
+    },
+    {
+        "sha": "dc7660d852d626023dc1d0de17faf1a40673ef4b",
+        "description": "zink/ci: document more GA106 flakes",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3c370aa5722ae87b7ec5d00981398eb59113b584",
+        "description": "zink/ci: document more radv flakes",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c70a2526debd18bea9086688ce5d8750f7a20d49",
+        "description": "radv/ci: document more flakes",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8097c002d1e472a738c257b45add083312ec1f41",
+        "description": "radv/ci: set a tight timeout on vkcts-navi31",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7f75ad546df6e7791c01edddfe7cd97045f3ec42",
+        "description": "radv/ci: reduce Renoir concurrency in vkcts",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "82a41bb8e31d78c8b386eed3fcf4a8de296e75ad",
+        "description": "radv/ci: add testing on RAPHAEL",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c56835e4707663504a114a1026e443688afcab70",
+        "description": "docs: update calendar for 25.0.0-rc3",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "154c7b0d2381a9cdba17761247d60b1007282e8d",
+        "description": "pan/bi: Fix scratch access optimization",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "1619fc596a9d438451e68206c18e72c1c794f40b",
+        "notes": null
+    },
+    {
+        "sha": "55bd96d038e744b445c5ca5e4c99aed407673b6f",
+        "description": "ci: rename generate-env.sh to export-gitlab-job-env-for-dut.sh",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "49a04bb41e8826f2a77acea749ee81f546de940e",
+        "description": "ci: finish sorting vars",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7b018945e8bbfc5d0cd965ed9fcb5153c2ff08ba",
+        "description": "ci/yaml-toml-shell-py-test: run on direct push pipelines",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c8ad134d4671851cb053846cf4331c5fa707e1b9",
+        "description": "ci/yaml-toml-shell-py-test: don't run on post-merge pipelines",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "45f9208cca1a5b87f778ed96bf1d791740c9f162",
+        "description": "v3dv: improve handling of trailing barriers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c6264c641db0929bce1e2ad1527a826e3f1d018a",
+        "description": "v3dv: make cmd_buffer_serialize_job_if_needed take a barrier state",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "71b711ad82fb7b619ed303f7aa221c97d1c0f791",
+        "description": "v3dv: rename v3dv_cmd_buffer_merge_barrier_state",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "df0798a40cc1639da85eaeb7f77e6ab509cadee0",
+        "description": "radv: Add missing copyright info to radv_meta_buffer.c",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6b57cc2fbf2b9a38b7dfcf67b8d63a048a42c8cc",
+        "description": "radv: Rename get_global_ids to radv_meta_nir_get_global_ids.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "09db738c9a2f941d3727df9351f341ef1172b37c",
+        "description": "radv: Move NIR specific function declarations to radv_meta_nir.h",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f6a02d034bcf94848ee63a0281ad8adf5325ad86",
+        "description": "radv: Move NIR helpers from radv_meta.c to radv_meta_nir.c",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c093b03213b0a80204bede3c577c6569a136bf5c",
+        "description": "radv: Move resolve NIR fs to radv_meta_nir.c",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b3604748211f1aae139bec1c234c3184cd8cafb7",
+        "description": "radv: Move resolve NIR fragment shaders to radv_meta_nir.c",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "16f6123c1ea597b595bdbea3945ea10653ca8d92",
+        "description": "radv: Move resolve NIR compute shaders to radv_meta_nir.c",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "538c39102283162e7317d4569dc1a884bcece8c7",
+        "description": "radv: Move FMASK expand NIR shader to radv_nir_meta.c",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "dccf698e1b413336f7722ec26919c5b32c570ba0",
+        "description": "radv: Move FMASK copy NIR shader to radv_meta_nir.c",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6ceafe2afa48b46fda8f3b858120fc0d1267fb5d",
+        "description": "radv: Move DCC decompress NIR shader to radv_meta_nir.c",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b6eb2f52cea5c7d714a0584c0459c22535ea934b",
+        "description": "radv: Move expand depth stencil NIR shader to radv_meta_nir.c",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4837d1c457fb204f7ee23b40a07d07578fb70b42",
+        "description": "radv: Move DCC retile NIR shader to radv_meta_nir.c",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "113c8d0e7788abb490f87c3be917e420d38c80b8",
+        "description": "radv: Move VRS HTILE copy NIR shader to radv_meta_nir.c",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ea182f797ae1025b51d2fe2c07bf17e698806e99",
+        "description": "radv: Move clear NIR shaders to radv_meta_nir.c",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "59517d9aa65a49d071b46cd4be26714c875f2206",
+        "description": "radv: Move buffer-image copy and clear NIR shaders to radv_meta_nir.c",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1c3585021c74e71ed1e9a250183a708135b69d16",
+        "description": "radv: Move blit2d NIR shaders to radv_meta_nir.c",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f599a2e435d8a4805909df46dc741bbf6d16e662",
+        "description": "radv: Move blit NIR shaders to radv_meta_nir.c",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c8842d19edd89e01a685f514a002dd4fee12e72e",
+        "description": "radv: Move buffer related NIR meta shaders to radv_meta_nir.c",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "85b5eec159648d6bdee3f0d46a7164a577d5f9c2",
+        "description": "tu: Add info about debug options to command buffer tracepoint",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d9f054320a9d59aabbe73915463b010b667373aa",
+        "description": "tu: Add gmem disable reason to renderpass tracepoint",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5c87616d96cb1533ed3392d9257b75f10b30e304",
+        "description": "util: Add dump_debug_control_string to dump debug_control",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0886eda4f1ac1a8af115607b88325d1ccdaca906",
+        "description": "util: Make debug_dump_flags thread safe",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "30a3d567c8b996fde86b07d2bad018013a54ff44",
         "description": "tu/a750: invalidate vertex state before CP_DRAW_INDIRECT_MULTI",
         "nominated": false,
