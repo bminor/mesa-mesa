@@ -551,6 +551,13 @@ atomic_uint     TYPE_WITH_ALT(420, 300, 420, 310, yyextra->ARB_shader_atomic_cou
 
 shared          KEYWORD_WITH_ALT(430, 310, 430, 310, yyextra->ARB_compute_shader_enable, SHARED);
 
+taskPayloadSharedEXT {
+		    if (yyextra->EXT_mesh_shader_enable)
+		         return TASKPAYLOAD;
+		    else
+		         return classify_identifier(yyextra, yytext, yyleng, yylval);
+		}
+
 struct		return STRUCT;
 void		return VOID_TOK;
 

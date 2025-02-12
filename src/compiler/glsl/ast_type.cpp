@@ -98,6 +98,7 @@ ast_type_qualifier::has_storage() const
           || this->flags.q.out
           || this->flags.q.uniform
           || this->flags.q.buffer
+          || this->flags.q.task_payload
           || this->flags.q.shared_storage;
 }
 
@@ -950,6 +951,7 @@ ast_type_qualifier::validate_flags(YYLTYPE *loc,
    Q(sample_interlock_ordered);
    Q(sample_interlock_unordered);
    Q2(non_coherent, noncoherent);
+   Q(task_payload);
 
 #undef Q
 #undef Q2

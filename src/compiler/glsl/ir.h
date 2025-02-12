@@ -319,6 +319,7 @@ enum ir_variable_mode {
    ir_var_uniform,              /**< Variable declared as a uniform. */
    ir_var_shader_storage,       /**< Variable declared as an ssbo. */
    ir_var_shader_shared,        /**< Variable declared as shared. */
+   ir_var_shader_task_payload,
    ir_var_shader_in,
    ir_var_shader_out,
    ir_var_function_in,

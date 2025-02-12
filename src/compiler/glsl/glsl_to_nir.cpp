@@ -525,6 +525,10 @@ nir_visitor::visit(ir_variable *ir)
       var->data.mode = nir_var_mem_shared;
       break;
 
+   case ir_var_shader_task_payload:
+      var->data.mode = nir_var_mem_task_payload;
+      break;
+
    default:
       UNREACHABLE("not reached");
    }

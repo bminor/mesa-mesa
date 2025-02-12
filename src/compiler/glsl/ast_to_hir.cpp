@@ -4222,6 +4222,8 @@ apply_type_qualifier_to_variable(const struct ast_type_qualifier *qual,
       var->data.mode = ir_var_shader_storage;
    else if (qual->flags.q.shared_storage)
       var->data.mode = ir_var_shader_shared;
+   else if (qual->flags.q.task_payload)
+      var->data.mode = ir_var_shader_task_payload;
 
    if (!is_parameter && state->stage == MESA_SHADER_FRAGMENT) {
       if (state->has_framebuffer_fetch()) {
@@ -4402,6 +4404,13 @@ apply_type_qualifier_to_variable(const struct ast_type_qualifier *qual,
       _mesa_glsl_error(loc, state,
                        "the shared storage qualifiers can only be used with "
                        "compute shaders");
+   }
+
+   if (qual->flags.q.task_payload && state->stage != MESA_SHADER_TASK &&
+       state->stage != MESA_SHADER_MESH) {
+      _mesa_glsl_error(loc, state,
+                       "the taskPayloadSharedEXT storage qualifier can only be used "
+                       "with task and mesh shaders");
    }
 
    apply_image_qualifier_to_variable(qual, var, state, loc);

@@ -677,6 +677,9 @@ struct ast_type_qualifier {
           * qualifier is used.
           */
          unsigned viewport_relative:1;
+
+         /** GL_EXT_mesh_shader */
+         unsigned task_payload:1;
       }
       /** \brief Set of flags, accessed by name. */
       q;

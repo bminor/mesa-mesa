@@ -368,6 +368,7 @@ tree_grafting_basic_block(ir_instruction *bb_first,
           lhs_var->data.mode == ir_var_function_inout ||
           lhs_var->data.mode == ir_var_shader_out ||
           lhs_var->data.mode == ir_var_shader_storage ||
+          lhs_var->data.mode == ir_var_shader_task_payload ||
           lhs_var->data.mode == ir_var_shader_shared)
          continue;
 
