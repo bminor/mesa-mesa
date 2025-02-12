@@ -257,10 +257,12 @@ radv_CmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSi
    cmd_buffer->state.predicating = old_predicating;
 }
 
-static void
-copy_buffer(struct radv_cmd_buffer *cmd_buffer, struct radv_buffer *src_buffer, struct radv_buffer *dst_buffer,
-            const VkBufferCopy2 *region)
+VKAPI_ATTR void VKAPI_CALL
+radv_CmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2 *pCopyBufferInfo)
 {
+   VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(radv_buffer, src_buffer, pCopyBufferInfo->srcBuffer);
+   VK_FROM_HANDLE(radv_buffer, dst_buffer, pCopyBufferInfo->dstBuffer);
    bool old_predicating;
 
    /* VK_EXT_conditional_rendering says that copy commands should not be
@@ -269,25 +271,16 @@ copy_buffer(struct radv_cmd_buffer *cmd_buffer, struct radv_buffer *src_buffer, 
    old_predicating = cmd_buffer->state.predicating;
    cmd_buffer->state.predicating = false;
 
-   const uint64_t src_va = src_buffer->addr + region->srcOffset;
-   const uint64_t dst_va = dst_buffer->addr + region->dstOffset;
+   for (unsigned r = 0; r < pCopyBufferInfo->regionCount; r++) {
+      const VkBufferCopy2 *region = &pCopyBufferInfo->pRegions[r];
+      const uint64_t src_va = src_buffer->addr + region->srcOffset;
+      const uint64_t dst_va = dst_buffer->addr + region->dstOffset;
 
-   radv_copy_buffer(cmd_buffer, src_buffer->bo, dst_buffer->bo, src_va, dst_va, region->size);
+      radv_copy_buffer(cmd_buffer, src_buffer->bo, dst_buffer->bo, src_va, dst_va, region->size);
+   }
 
    /* Restore conditional rendering. */
    cmd_buffer->state.predicating = old_predicating;
-}
-
-VKAPI_ATTR void VKAPI_CALL
-radv_CmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2 *pCopyBufferInfo)
-{
-   VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   VK_FROM_HANDLE(radv_buffer, src_buffer, pCopyBufferInfo->srcBuffer);
-   VK_FROM_HANDLE(radv_buffer, dst_buffer, pCopyBufferInfo->dstBuffer);
-
-   for (unsigned r = 0; r < pCopyBufferInfo->regionCount; r++) {
-      copy_buffer(cmd_buffer, src_buffer, dst_buffer, &pCopyBufferInfo->pRegions[r]);
-   }
 }
 
 void
