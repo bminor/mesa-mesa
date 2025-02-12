@@ -617,6 +617,7 @@ static const struct opcode_desc opcode_descs[] = {
    { BRW_OPCODE_CALL,     44,  "call",    0,    0,    GFX_ALL },
    { BRW_OPCODE_RET,      45,  "ret",     0,    0,    GFX_ALL },
    { BRW_OPCODE_GOTO,     46,  "goto",    0,    0,    GFX_ALL },
+   { BRW_OPCODE_JOIN,     47,  "join",    0,    0,    GFX_ALL },
    { BRW_OPCODE_WAIT,     48,  "wait",    0,    1,    GFX_LT(GFX12) },
    { BRW_OPCODE_SEND,     49,  "send",    1,    1,    GFX_LT(GFX12) },
    { BRW_OPCODE_SENDC,    50,  "sendc",   1,    1,    GFX_LT(GFX12) },

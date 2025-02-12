@@ -2250,7 +2250,8 @@ update_uip_jip(const struct brw_isa_info *isa, brw_eu_inst *insn,
    brw_eu_inst_set_jip(devinfo, insn, (uint32_t)jip_compacted << shift);
 
    if (brw_eu_inst_opcode(isa, insn) == BRW_OPCODE_ENDIF ||
-       brw_eu_inst_opcode(isa, insn) == BRW_OPCODE_WHILE)
+       brw_eu_inst_opcode(isa, insn) == BRW_OPCODE_WHILE ||
+       brw_eu_inst_opcode(isa, insn) == BRW_OPCODE_JOIN)
       return;
 
    int32_t uip_compacted = brw_eu_inst_uip(devinfo, insn) >> shift;
@@ -2417,6 +2418,8 @@ brw_compact_instructions(struct brw_codegen *p, int start_offset,
       case BRW_OPCODE_ELSE:
       case BRW_OPCODE_ENDIF:
       case BRW_OPCODE_WHILE:
+      case BRW_OPCODE_GOTO:
+      case BRW_OPCODE_JOIN:
          if (brw_eu_inst_cmpt_control(devinfo, insn)) {
             brw_eu_inst uncompacted;
             uncompact_instruction(&c, &uncompacted,

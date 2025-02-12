@@ -2500,6 +2500,7 @@ brw_hw_decode_inst(const struct brw_isa_info *isa,
    case BRW_OPCODE_CALLA:
    case BRW_OPCODE_CALL:
    case BRW_OPCODE_GOTO:
+   case BRW_OPCODE_JOIN:
       inst->format = FORMAT_BRANCH;
       break;
 

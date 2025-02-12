@@ -44,6 +44,8 @@ i965_postprocess_labels()
                case BRW_OPCODE_ELSE:
                case BRW_OPCODE_ENDIF:
                case BRW_OPCODE_WHILE:
+               case BRW_OPCODE_GOTO:
+               case BRW_OPCODE_JOIN:
                   brw_eu_inst_set_jip(p->devinfo, inst, relative_offset);
                   break;
                case BRW_OPCODE_BREAK:
@@ -59,6 +61,7 @@ i965_postprocess_labels()
                switch (opcode) {
                case BRW_OPCODE_IF:
                case BRW_OPCODE_ELSE:
+               case BRW_OPCODE_GOTO:
                   brw_eu_inst_set_uip(p->devinfo, inst, relative_offset);
                   break;
                case BRW_OPCODE_WHILE:

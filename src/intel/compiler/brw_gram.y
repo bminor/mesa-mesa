@@ -664,6 +664,7 @@ relocatableinstruction:
    | branchinstruction
    | breakinstruction
    | loopinstruction
+   | joininstruction
    ;
 
 illegalinstruction:
@@ -1135,6 +1136,30 @@ branchinstruction:
       brw_set_dest(p, brw_last_inst, vec1(retype(brw_null_reg(), BRW_TYPE_D)));
       if (p->devinfo->ver < 12)
          brw_set_src0(p, brw_last_inst, brw_imm_d(0x0));
+
+      brw_pop_insn_state(p);
+   }
+   | predicate GOTO execsize JIP JUMP_LABEL UIP JUMP_LABEL instoptions
+   {
+      add_label(p, $5, INSTR_LABEL_JIP);
+      add_label(p, $7, INSTR_LABEL_UIP);
+
+      brw_next_insn(p, $2);
+      i965_asm_set_instruction_options(p, $8);
+      brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $3);
+
+      brw_pop_insn_state(p);
+   }
+   ;
+
+joininstruction:
+   predicate JOIN execsize JIP JUMP_LABEL instoptions
+   {
+      add_label(p, $5, INSTR_LABEL_JIP);
+
+      brw_next_insn(p, $2);
+      i965_asm_set_instruction_options(p, $6);
+      brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $3);
 
       brw_pop_insn_state(p);
    }

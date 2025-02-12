@@ -86,6 +86,7 @@ goto            { yylval.integer = BRW_OPCODE_GOTO; return GOTO; }
 halt            { yylval.integer = BRW_OPCODE_HALT; return HALT; }
 if              { yylval.integer = BRW_OPCODE_IF; return IF; }
 illegal         { yylval.integer = BRW_OPCODE_ILLEGAL; return ILLEGAL; }
+join            { yylval.integer = BRW_OPCODE_JOIN; return JOIN; }
 jmpi            { yylval.integer = BRW_OPCODE_JMPI; return JMPI; }
 line            { yylval.integer = BRW_OPCODE_LINE; return LINE; }
 lrp             { yylval.integer = BRW_OPCODE_LRP; return LRP; }
