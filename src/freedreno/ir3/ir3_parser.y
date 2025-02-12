@@ -320,6 +320,15 @@ static void yyerror(const char *error)
 	fprintf(stderr, "error at line %d: %s\n%s\n", ir3_yyget_lineno(), error, current_line);
 }
 
+/* Needs to be a macro to use YYERROR */
+#define illegal_syntax_from(gen_from, error)              \
+	do {                                              \
+		if (variant->compiler->gen >= gen_from) { \
+			yyerror(error);                   \
+			YYERROR;                          \
+		}                                         \
+	} while (0)
+
 struct ir3 * ir3_parse(struct ir3_shader_variant *v,
 		struct ir3_kernel_info *k, FILE *f)
 {
