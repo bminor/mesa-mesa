@@ -703,7 +703,7 @@ bi_impacted_t_modifiers(bi_instr *I, unsigned src)
    case BI_OPCODE_S8_TO_S32:
    case BI_OPCODE_U8_TO_F32:
    case BI_OPCODE_U8_TO_U32:
-      return (swizzle != BI_SWIZZLE_B0000);
+      return (swizzle != BI_SWIZZLE_B0);
 
    case BI_OPCODE_V2S8_TO_V2F16:
    case BI_OPCODE_V2S8_TO_V2S16:

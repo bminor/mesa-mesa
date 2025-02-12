@@ -231,9 +231,9 @@ va_pack_widen_f32(const bi_instr *I, enum bi_swizzle swz)
    switch (swz) {
    case BI_SWIZZLE_H01:
       return VA_WIDEN_NONE;
-   case BI_SWIZZLE_H00:
+   case BI_SWIZZLE_H0:
       return VA_WIDEN_H0;
-   case BI_SWIZZLE_H11:
+   case BI_SWIZZLE_H1:
       return VA_WIDEN_H1;
    default:
       invalid_instruction(I, "widen");
@@ -262,11 +262,11 @@ va_pack_widen(const bi_instr *I, enum bi_swizzle swz, enum va_size size)
 {
    if (size == VA_SIZE_8) {
       switch (swz) {
-      case BI_SWIZZLE_H01:
+      case BI_SWIZZLE_B0123:
          return VA_SWIZZLES_8_BIT_B0123;
-      case BI_SWIZZLE_H00:
+      case BI_SWIZZLE_B0101:
          return VA_SWIZZLES_8_BIT_B0101;
-      case BI_SWIZZLE_H11:
+      case BI_SWIZZLE_B2323:
          return VA_SWIZZLES_8_BIT_B2323;
       case BI_SWIZZLE_B0000:
          return VA_SWIZZLES_8_BIT_B0000;
@@ -289,13 +289,13 @@ va_pack_widen(const bi_instr *I, enum bi_swizzle swz, enum va_size size)
          return VA_SWIZZLES_16_BIT_H01;
       case BI_SWIZZLE_H11:
          return VA_SWIZZLES_16_BIT_H11;
-      case BI_SWIZZLE_B0000:
+      case BI_SWIZZLE_B00:
          return VA_SWIZZLES_16_BIT_B00;
-      case BI_SWIZZLE_B1111:
+      case BI_SWIZZLE_B11:
          return VA_SWIZZLES_16_BIT_B11;
-      case BI_SWIZZLE_B2222:
+      case BI_SWIZZLE_B22:
          return VA_SWIZZLES_16_BIT_B22;
-      case BI_SWIZZLE_B3333:
+      case BI_SWIZZLE_B33:
          return VA_SWIZZLES_16_BIT_B33;
       default:
          invalid_instruction(I, "16-bit widen");
@@ -304,17 +304,17 @@ va_pack_widen(const bi_instr *I, enum bi_swizzle swz, enum va_size size)
       switch (swz) {
       case BI_SWIZZLE_H01:
          return VA_SWIZZLES_32_BIT_NONE;
-      case BI_SWIZZLE_H00:
+      case BI_SWIZZLE_H0:
          return VA_SWIZZLES_32_BIT_H0;
-      case BI_SWIZZLE_H11:
+      case BI_SWIZZLE_H1:
          return VA_SWIZZLES_32_BIT_H1;
-      case BI_SWIZZLE_B0000:
+      case BI_SWIZZLE_B0:
          return VA_SWIZZLES_32_BIT_B0;
-      case BI_SWIZZLE_B1111:
+      case BI_SWIZZLE_B1:
          return VA_SWIZZLES_32_BIT_B1;
-      case BI_SWIZZLE_B2222:
+      case BI_SWIZZLE_B2:
          return VA_SWIZZLES_32_BIT_B2;
-      case BI_SWIZZLE_B3333:
+      case BI_SWIZZLE_B3:
          return VA_SWIZZLES_32_BIT_B3;
       default:
          invalid_instruction(I, "32-bit widen");
@@ -328,19 +328,19 @@ static enum va_half_swizzles_8_bit
 va_pack_halfswizzle(const bi_instr *I, enum bi_swizzle swz)
 {
    switch (swz) {
-   case BI_SWIZZLE_B0000:
+   case BI_SWIZZLE_B00:
       return VA_HALF_SWIZZLES_8_BIT_B00;
-   case BI_SWIZZLE_B1111:
+   case BI_SWIZZLE_B11:
       return VA_HALF_SWIZZLES_8_BIT_B11;
-   case BI_SWIZZLE_B2222:
+   case BI_SWIZZLE_B22:
       return VA_HALF_SWIZZLES_8_BIT_B22;
-   case BI_SWIZZLE_B3333:
+   case BI_SWIZZLE_B33:
       return VA_HALF_SWIZZLES_8_BIT_B33;
-   case BI_SWIZZLE_B0011:
+   case BI_SWIZZLE_B01:
       return VA_HALF_SWIZZLES_8_BIT_B01;
-   case BI_SWIZZLE_B2233:
+   case BI_SWIZZLE_B23:
       return VA_HALF_SWIZZLES_8_BIT_B23;
-   case BI_SWIZZLE_B0022:
+   case BI_SWIZZLE_B02:
       return VA_HALF_SWIZZLES_8_BIT_B02;
    default:
       invalid_instruction(I, "v2u8 swizzle");
@@ -351,13 +351,13 @@ static enum va_lanes_8_bit
 va_pack_shift_lanes(const bi_instr *I, enum bi_swizzle swz)
 {
    switch (swz) {
-   case BI_SWIZZLE_B0000:
+   case BI_SWIZZLE_B00:
       return VA_LANES_8_BIT_B00;
-   case BI_SWIZZLE_B1111:
+   case BI_SWIZZLE_B11:
       return VA_LANES_8_BIT_B11;
-   case BI_SWIZZLE_B2222:
+   case BI_SWIZZLE_B22:
       return VA_LANES_8_BIT_B22;
-   case BI_SWIZZLE_B3333:
+   case BI_SWIZZLE_B33:
       return VA_LANES_8_BIT_B33;
    default:
       invalid_instruction(I, "lane shift");
@@ -370,9 +370,9 @@ va_pack_combine(const bi_instr *I, enum bi_swizzle swz)
    switch (swz) {
    case BI_SWIZZLE_H01:
       return VA_COMBINE_NONE;
-   case BI_SWIZZLE_H00:
+   case BI_SWIZZLE_H0:
       return VA_COMBINE_H0;
-   case BI_SWIZZLE_H11:
+   case BI_SWIZZLE_H1:
       return VA_COMBINE_H1;
    default:
       invalid_instruction(I, "branch lane");
@@ -618,10 +618,10 @@ va_pack_alu(const bi_instr *I, unsigned arch)
             (I->op == BI_OPCODE_MKVEC_V2I8) ? ((i == 0) ? 38 : 36) : 28;
 
          if (src_info.size == VA_SIZE_16) {
-            hex |= (src.swizzle == BI_SWIZZLE_H11 ? 1 : 0) << offs;
+            hex |= (src.swizzle == BI_SWIZZLE_H1 ? 1 : 0) << offs;
          } else {
             pack_assert(I, src_info.size == VA_SIZE_8);
-            unsigned comp = src.swizzle - BI_SWIZZLE_B0000;
+            unsigned comp = src.swizzle - BI_SWIZZLE_B0;
             pack_assert(I, comp < 4);
             hex |= (uint64_t)comp << offs;
          }

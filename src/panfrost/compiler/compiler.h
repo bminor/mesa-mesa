@@ -51,25 +51,56 @@ extern "C" {
  */
 
 enum bi_swizzle {
-   /* 16-bit swizzle ordering deliberate for fast compute */
-   BI_SWIZZLE_H00 = 0, /* = B0101 */
-   BI_SWIZZLE_H01 = 1, /* = B0123 = W0 */
-   BI_SWIZZLE_H10 = 2, /* = B2301 */
-   BI_SWIZZLE_H11 = 3, /* = B2323 */
+   /* 16-bit swizzles, ordered sequentially for fast compute */
+   BI_SWIZZLE_H00 = 0,
+   BI_SWIZZLE_H01 = 1,
+   BI_SWIZZLE_H10 = 2,
+   BI_SWIZZLE_H11 = 3,
 
-   /* replication order should be maintained for fast compute */
+   /* 8-bit swizzle equivalents */
+   BI_SWIZZLE_B0101 = BI_SWIZZLE_H00,
+   BI_SWIZZLE_B0123 = BI_SWIZZLE_H01,
+   BI_SWIZZLE_B2301 = BI_SWIZZLE_H10,
+   BI_SWIZZLE_B2323 = BI_SWIZZLE_H11,
+
+   /* 8-bit replication swizzles, ordered sequentially for fast compute */
    BI_SWIZZLE_B0000 = 4, /* single channel (replicate) */
    BI_SWIZZLE_B1111 = 5,
    BI_SWIZZLE_B2222 = 6,
    BI_SWIZZLE_B3333 = 7,
 
-   /* totally special for explicit pattern matching */
+   /* remaining 8-bit swizzles in arbitrary order */
    BI_SWIZZLE_B0011 = 8,  /* +SWZ.v4i8 */
    BI_SWIZZLE_B2233 = 9,  /* +SWZ.v4i8 */
    BI_SWIZZLE_B1032 = 10, /* +SWZ.v4i8 */
    BI_SWIZZLE_B3210 = 11, /* +SWZ.v4i8 */
 
-   BI_SWIZZLE_B0022 = 12, /* for b02 lanes */
+   /* 8-bit swizzles that only exist in HW as 8-bit half swizzles */
+   BI_SWIZZLE_B0022 = 12,
+
+   /* 16-bit single-lane, values ordered sequentially */
+   BI_SWIZZLE_H0 = BI_SWIZZLE_H00,
+   BI_SWIZZLE_H1 = BI_SWIZZLE_H11,
+
+   /* 8-bit single-lane, values order sequentially */
+   BI_SWIZZLE_B0 = BI_SWIZZLE_B0000,
+   BI_SWIZZLE_B1 = BI_SWIZZLE_B1111,
+   BI_SWIZZLE_B2 = BI_SWIZZLE_B2222,
+   BI_SWIZZLE_B3 = BI_SWIZZLE_B3333,
+
+   /* 8-bit half-swizzle
+    *
+    * Values for replication are sequential. Other half-swizzles have
+    * arbitrary value ordering.
+    *
+    * TODO: rest of these */
+   BI_SWIZZLE_B00 = BI_SWIZZLE_B0000,
+   BI_SWIZZLE_B01 = BI_SWIZZLE_B0011,
+   BI_SWIZZLE_B11 = BI_SWIZZLE_B1111,
+   BI_SWIZZLE_B02 = BI_SWIZZLE_B0022,
+   BI_SWIZZLE_B22 = BI_SWIZZLE_B2222,
+   BI_SWIZZLE_B23 = BI_SWIZZLE_B2233,
+   BI_SWIZZLE_B33 = BI_SWIZZLE_B3333,
 };
 
 /* Given a packed i16vec2/i8vec4 constant, apply a swizzle. Useful for constant
@@ -232,9 +263,9 @@ bi_half(bi_index idx, bool upper)
 static inline bi_index
 bi_byte(bi_index idx, unsigned lane)
 {
-   assert(idx.swizzle == BI_SWIZZLE_H01);
+   assert(idx.swizzle == BI_SWIZZLE_B0123);
    assert(lane < 4);
-   idx.swizzle = (enum bi_swizzle)(BI_SWIZZLE_B0000 + lane);
+   idx.swizzle = (enum bi_swizzle)(BI_SWIZZLE_B0 + lane);
    return idx;
 }
 
