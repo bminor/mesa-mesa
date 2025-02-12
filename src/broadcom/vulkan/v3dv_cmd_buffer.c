@@ -2003,8 +2003,8 @@ v3dv_job_clone_in_cmd_buffer(struct v3dv_job *job,
 }
 
 void
-v3dv_cmd_buffer_merge_barrier_state(struct v3dv_barrier_state *dst,
-                                    struct v3dv_barrier_state *src)
+v3dv_merge_barrier_state(struct v3dv_barrier_state *dst,
+                         struct v3dv_barrier_state *src)
 {
    dst->dst_mask |= src->dst_mask;
 
@@ -2074,10 +2074,9 @@ cmd_buffer_execute_outside_pass(struct v3dv_cmd_buffer *primary,
       pending_barrier = secondary->state.barrier;
    }
 
-   if (pending_barrier.dst_mask) {
-      v3dv_cmd_buffer_merge_barrier_state(&primary->state.barrier,
-                                          &pending_barrier);
-   }
+   if (pending_barrier.dst_mask)
+      v3dv_merge_barrier_state(&primary->state.barrier, &pending_barrier);
+
 }
 
 VKAPI_ATTR void VKAPI_CALL
@@ -3426,7 +3425,7 @@ v3dv_cmd_buffer_emit_pipeline_barrier(struct v3dv_cmd_buffer *cmd_buffer,
       v3dv_cmd_buffer_finish_job(cmd_buffer);
 
    /* Update barrier state in the command buffer */
-   v3dv_cmd_buffer_merge_barrier_state(&cmd_buffer->state.barrier, &state);
+   v3dv_merge_barrier_state(&cmd_buffer->state.barrier, &state);
 }
 
 VKAPI_ATTR void VKAPI_CALL

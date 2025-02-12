@@ -1834,8 +1834,8 @@ void v3dv_cmd_buffer_add_private_obj(struct v3dv_cmd_buffer *cmd_buffer,
                                      uint64_t obj,
                                      v3dv_cmd_buffer_private_obj_destroy_cb destroy_cb);
 
-void v3dv_cmd_buffer_merge_barrier_state(struct v3dv_barrier_state *dst,
-                                         struct v3dv_barrier_state *src);
+void v3dv_merge_barrier_state(struct v3dv_barrier_state *dst,
+                              struct v3dv_barrier_state *src);
 
 void v3dv_cmd_buffer_consume_bcl_sync(struct v3dv_cmd_buffer *cmd_buffer,
                                       struct v3dv_job *job);
