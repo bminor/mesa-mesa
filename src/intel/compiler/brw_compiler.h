@@ -228,6 +228,7 @@ struct brw_base_prog_key {
  */
 #define MAX_GL_VERT_ATTRIB     VERT_ATTRIB_MAX
 #define MAX_VK_VERT_ATTRIB     (VERT_ATTRIB_GENERIC0 + 29)
+#define MAX_HW_VERT_ATTRIB     (VERT_ATTRIB_GENERIC0 + 34)
 
 /** The program key for Vertex Shaders. */
 struct brw_vs_prog_key {
