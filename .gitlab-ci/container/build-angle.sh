@@ -133,7 +133,7 @@ fi
   export HOST_AR="$AR"
   export NM="nm"
   export HOST_NM="$NM"
-  export LDFLAGS="-lpthread -ldl"
+  export LDFLAGS="-fuse-ld=lld-${LLVM_VERSION} -lpthread -ldl"
   export HOST_LDFLAGS="$LDFLAGS"
 
   gn gen out/Release

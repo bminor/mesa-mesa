@@ -161,7 +161,7 @@ CONTAINER_EPHEMERAL=(
     libxcb-dri2-0-dev
     libxkbcommon-dev
     libwayland-dev
-    lld
+    "lld-${LLVM_VERSION}"
     ninja-build
     openssh-server
     patch

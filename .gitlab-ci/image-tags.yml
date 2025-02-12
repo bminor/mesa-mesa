@@ -33,7 +33,7 @@ variables:
    DEBIAN_TEST_ANDROID_TAG: "20250212-re-angle"
    DEBIAN_TEST_GL_TAG: "20250204-fix-deqp"
    DEBIAN_TEST_VK_TAG: "20250204-fix-deqp"
-   KERNEL_ROOTFS_TAG: "20250212-arm-angle"
+   KERNEL_ROOTFS_TAG: "20250212-fix-angle"
 
    DEBIAN_PYUTILS_IMAGE: "debian/x86_64_pyutils"
    DEBIAN_PYUTILS_TAG: "20250129-lavacli"
