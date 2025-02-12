@@ -101,3 +101,6 @@ dEQP-GLES2.functional.fbo.render.recreate_colorbuffer.rebind_rbo_bgra_depth_comp
 dEQP-GLES2.functional.fbo.render.recreate_depthbuffer.rebind_rbo_bgra_depth_component16,Fail
 dEQP-GLES2.functional.fbo.render.resize.rbo_bgra_depth_component16,Fail
 dEQP-GLES2.functional.fbo.render.shared_colorbuffer.rbo_bgra_depth_component16,Fail
+
+# New failure with ANGLE 2025-02-12
+KHR-GLES3.framebuffer_blit.framebuffer_blit_functionality_multisampled_to_singlesampled_blit,Crash

@@ -9,7 +9,7 @@ set -uex
 
 uncollapsed_section_start angle "Building ANGLE"
 
-ANGLE_REV="76025caa1a059f464a2b0e8f879dbd4746f092b9"
+ANGLE_REV="6abdc11741c4932e8e64ec055e67f556a7cbb5b1"
 
 # Set ANGLE_ARCH based on DEBIAN_ARCH if it hasn't been explicitly defined
 if [[ -z "${ANGLE_ARCH:-}" ]]; then
