@@ -30,7 +30,6 @@
 #include "util/mesa-sha1.h"
 #include "util/os_time.h"
 #include "common/intel_compute_slm.h"
-#include "common/intel_l3_config.h"
 #include "common/intel_sample_positions.h"
 #include "compiler/brw_disasm.h"
 #include "anv_private.h"
@@ -2856,24 +2855,6 @@ VkResult anv_CreateComputePipelines(
    return result;
 }
 
-/**
- * Calculate the desired L3 partitioning based on the current state of the
- * pipeline.  For now this simply returns the conservative defaults calculated
- * by get_default_l3_weights(), but we could probably do better by gathering
- * more statistics from the pipeline state (e.g. guess of expected URB usage
- * and bound surfaces), or by using feed-back from performance counters.
- */
-void
-anv_pipeline_setup_l3_config(struct anv_pipeline *pipeline, bool needs_slm)
-{
-   const struct intel_device_info *devinfo = pipeline->device->info;
-
-   const struct intel_l3_weights w =
-      intel_get_default_l3_weights(devinfo, true, needs_slm);
-
-   pipeline->l3_config = intel_get_l3_config(devinfo, w);
-}
-
 static uint32_t
 get_vs_input_elements(const struct brw_vs_prog_data *vs_prog_data)
 {
@@ -2894,8 +2875,6 @@ anv_graphics_pipeline_emit(struct anv_graphics_pipeline *pipeline,
                            const struct vk_graphics_pipeline_state *state)
 {
    pipeline->view_mask = state->rp->view_mask;
-
-   anv_pipeline_setup_l3_config(&pipeline->base.base, false);
 
    if (anv_pipeline_is_primitive(pipeline)) {
       const struct brw_vs_prog_data *vs_prog_data = get_vs_prog_data(pipeline);
@@ -4087,8 +4066,6 @@ anv_ray_tracing_pipeline_init(struct anv_ray_tracing_pipeline *pipeline,
 
    ANV_FROM_HANDLE(vk_pipeline_layout, pipeline_layout, pCreateInfo->layout);
    anv_pipeline_init_layout(&pipeline->base, pipeline_layout);
-
-   anv_pipeline_setup_l3_config(&pipeline->base, /* needs_slm */ false);
 }
 
 static void

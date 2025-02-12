@@ -2128,6 +2128,7 @@ struct anv_device {
     struct intel_aux_map_context                *aux_map_ctx;
 
     const struct intel_l3_config                *l3_config;
+    const struct intel_l3_config                *l3_slm_config;
 
     struct intel_debug_block_frame              *debug_frame_desc;
 
@@ -4938,8 +4939,6 @@ struct anv_pipeline {
    struct anv_pipeline_sets_layout              layout;
 
    struct util_dynarray                         executables;
-
-   const struct intel_l3_config *               l3_config;
 };
 
 /* The base graphics pipeline object only hold shaders. */
@@ -5496,9 +5495,6 @@ anv_swizzle_for_render(struct isl_swizzle swizzle)
 
    return swizzle;
 }
-
-void
-anv_pipeline_setup_l3_config(struct anv_pipeline *pipeline, bool needs_slm);
 
 /**
  * Describes how each part of anv_image will be bound to memory.

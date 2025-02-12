@@ -2085,7 +2085,7 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_gfx_dynamic_state *hw_state,
 
 #if GFX_VERx10 == 125
    if ((gfx->dirty & ANV_CMD_DIRTY_RENDER_TARGETS))
-      update_tbimr_info(hw_state, device, gfx, pipeline->base.base.l3_config);
+      update_tbimr_info(hw_state, device, gfx, device->l3_config);
 #endif
 
 #if INTEL_WA_14018283232_GFX_VER

@@ -200,7 +200,14 @@ init_common_queue_state(struct anv_queue *queue, struct anv_batch *batch)
     */
    const struct intel_l3_config *cfg = intel_get_default_l3_config(device->info);
    genX(emit_l3_config)(batch, device, cfg);
-   device->l3_config = cfg;
+   device->l3_config = device->l3_slm_config = cfg;
+#else
+   device->l3_config = intel_get_l3_config(
+      device->info,
+      intel_get_default_l3_weights(device->info, true, false /* slm */));
+   device->l3_slm_config = intel_get_l3_config(
+      device->info,
+      intel_get_default_l3_weights(device->info, true, true /* slm */));
 #endif
 
 #if GFX_VERx10 == 125

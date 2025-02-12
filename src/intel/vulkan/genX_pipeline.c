@@ -530,7 +530,7 @@ emit_urb_setup_mesh(struct anv_graphics_pipeline *pipeline,
    const struct brw_mesh_prog_data *mesh_prog_data = get_mesh_prog_data(pipeline);
 
    const struct intel_mesh_urb_allocation alloc =
-      intel_get_mesh_urb_config(devinfo, pipeline->base.base.l3_config,
+      intel_get_mesh_urb_config(devinfo, pipeline->base.base.device->l3_config,
                                 task_prog_data ? task_prog_data->map.size_dw : 0,
                                 mesh_prog_data->map.size / 4);
 
@@ -593,7 +593,7 @@ emit_urb_setup(struct anv_graphics_pipeline *pipeline,
 
    bool constrained;
    intel_get_urb_config(devinfo,
-                        pipeline->base.base.l3_config,
+                        pipeline->base.base.device->l3_config,
                         pipeline->base.base.active_stages &
                            VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
                         pipeline->base.base.active_stages &
@@ -2043,8 +2043,6 @@ void
 genX(compute_pipeline_emit)(struct anv_compute_pipeline *pipeline)
 {
    const struct brw_cs_prog_data *prog_data = get_cs_prog_data(pipeline);
-   anv_pipeline_setup_l3_config(&pipeline->base, prog_data->base.total_shared > 0);
-
    const struct intel_device_info *devinfo = pipeline->base.device->info;
    const struct intel_cs_dispatch_info dispatch =
       brw_cs_get_dispatch_info(devinfo, prog_data, NULL);
@@ -2103,8 +2101,6 @@ genX(compute_pipeline_emit)(struct anv_compute_pipeline *pipeline)
    struct anv_device *device = pipeline->base.device;
    const struct intel_device_info *devinfo = device->info;
    const struct brw_cs_prog_data *cs_prog_data = get_cs_prog_data(pipeline);
-
-   anv_pipeline_setup_l3_config(&pipeline->base, cs_prog_data->base.total_shared > 0);
 
    const struct intel_cs_dispatch_info dispatch =
       brw_cs_get_dispatch_info(devinfo, cs_prog_data, NULL);
