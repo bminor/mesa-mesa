@@ -1545,6 +1545,7 @@ void brw_prog_data_init(struct brw_stage_prog_data *prog_data,
     */
    prog_data->ray_queries = params->nir->info.ray_queries;
    prog_data->stage = params->nir->info.stage;
+   prog_data->source_hash = params->source_hash;
    prog_data->total_scratch = 0;
    prog_data->total_shared = params->nir->info.shared_size;
 }

@@ -602,6 +602,8 @@ struct brw_stage_prog_data {
 
    bool use_alt_mode; /**< Use ALT floating point mode?  Otherwise, IEEE. */
 
+   uint32_t source_hash;
+
    /* 32-bit identifiers for all push/pull parameters.  These can be anything
     * the driver wishes them to be; the core of the back-end compiler simply
     * re-arranges them.  The one restriction is that the bottom 2^16 values
