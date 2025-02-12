@@ -954,7 +954,7 @@ nvk_get_device_properties(const struct nvk_instance *instance,
       .nonStrictSinglePixelWideLinesUseParallelogram = false,
       .nonStrictWideLinesUseParallelogram = false,
       .blockTexelViewCompatibleMultipleLayers = true,
-      .maxCombinedImageSamplerDescriptorCount = 3,
+      .maxCombinedImageSamplerDescriptorCount = NVK_MAX_IMAGE_PLANES,
       .fragmentShadingRateClampCombinerInputs = false, /* TODO */
       .defaultRobustnessStorageBuffers =
          VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED_EXT,

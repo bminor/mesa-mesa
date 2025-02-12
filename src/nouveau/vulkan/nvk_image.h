@@ -80,7 +80,7 @@ struct nvk_image {
    bool disjoint;
 
    uint8_t plane_count;
-   struct nvk_image_plane planes[3];
+   struct nvk_image_plane planes[NVK_MAX_IMAGE_PLANES];
 
    /* In order to support D32_SFLOAT_S8_UINT, a temp area is
     * needed. The stencil plane can't be a copied using the DMA
