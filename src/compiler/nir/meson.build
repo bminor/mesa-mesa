@@ -264,6 +264,7 @@ files_libnir = files(
   'nir_opt_shrink_stores.c',
   'nir_opt_shrink_vectors.c',
   'nir_opt_sink.c',
+  'nir_opt_tex_skip_helpers.c',
   'nir_opt_undef.c',
   'nir_opt_uniform_atomics.c',
   'nir_opt_uniform_subgroup.c',

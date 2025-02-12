@@ -963,6 +963,12 @@ visit_tex(nir_tex_instr *instr, struct divergence_state *state)
       }
    }
 
+   /* If the texture instruction skips helpers, that may add divergence even
+    * if none of the sources of the texture op diverge.
+    */
+   if (instr->skip_helpers)
+      is_divergent = true;
+
    instr->def.divergent = is_divergent;
    return is_divergent;
 }
