@@ -3517,7 +3517,6 @@ stall(struct zink_context *ctx)
    struct zink_screen *screen = zink_screen(ctx->base.screen);
    sync_flush(ctx, ctx->last_batch_state);
    zink_screen_timeline_wait(screen, ctx->last_batch_state->fence.batch_id, OS_TIMEOUT_INFINITE);
-   zink_batch_reset_all(ctx);
 }
 
 void
