@@ -326,6 +326,7 @@ bo_create_internal(struct zink_screen *screen,
    bo->base.vtbl = &bo_vtbl;
    bo->base.base.placement = mem_type_idx;
    bo->base.base.usage = flags;
+   bo->unique_id = p_atomic_inc_return(&screen->pb.next_bo_unique_id);
 
    return bo;
 
