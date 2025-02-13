@@ -2490,8 +2490,13 @@ tu_render_pipe_fdm(struct tu_cmd_buffer *cmd, uint32_t pipe,
             }
          }
          if (y > 0) {
-            struct tu_tile_config *prev_y_tile = &tiles[width * (y - 1) + x];
-            if (!(merged_tiles & prev_y_tile->slot_mask) &&
+            unsigned prev_y_idx = width * (y - 1) + x;
+            struct tu_tile_config *prev_y_tile = &tiles[prev_y_idx];
+
+            /* We can't merge prev_y_tile into tile if it's already been
+             * merged horizontally into its neighbor in the previous row.
+             */
+            if (!(merged_tiles & (1u << prev_y_idx)) &&
                 try_merge_tiles(tile, prev_y_tile, views, has_abs_mask)) {
                merged_tiles |= prev_y_tile->slot_mask;
             }
