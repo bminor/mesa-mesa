@@ -41,6 +41,9 @@
         r300_mark_atom_dirty(r300, &(atom));   \
     }
 
+static void r300_delete_vs_state(struct pipe_context* pipe, void* shader);
+static void r300_delete_fs_state(struct pipe_context* pipe, void* shader);
+
 static bool blend_discard_if_src_alpha_0(unsigned srcRGB, unsigned srcA,
                                          unsigned dstRGB, unsigned dstA)
 {
@@ -1073,6 +1076,19 @@ static void* r300_create_fs_state(struct pipe_context* pipe,
     }
     r300_pick_fragment_shader(r300, fs, &precompile_state);
 
+    if (fs->shader->error) {
+        if (shader->report_compile_error && !DBG_ON(r300, DBG_DUMMYSH)) {
+            fprintf(stderr, "r300 FP: Compiler error: %s\n"
+                    "r300 FP: Use RADEON_DEBUG=dummysh to force dummy shader instead.\n",
+                    fs->shader->error);
+            ((struct pipe_shader_state *)shader)->error_message = strdup(fs->shader->error);
+            r300_delete_fs_state(pipe, fs);
+            return NULL;
+        }
+        fprintf(stderr, "r300 FP: Compiler error: %s\n"
+                "r300 FP: Using a dummy shader instead.\n", fs->shader->error);
+    }
+
     return (void *)fs;
 }
 
@@ -1127,6 +1143,7 @@ static void r300_delete_fs_state(struct pipe_context* pipe, void* shader)
         ptr = ptr->next;
         rc_constants_destroy(&tmp->code.constants);
         FREE(tmp->cb_code);
+        free(tmp->error);
         FREE(tmp);
     }
     if (fs->state.type == PIPE_SHADER_IR_NIR) {
@@ -1972,6 +1989,19 @@ static void* r300_create_vs_state(struct pipe_context* pipe,
         r300_draw_init_vertex_shader(r300, vs);
     }
 
+    if (r300->screen->caps.has_tcl && vs->shader->error) {
+        if (shader->report_compile_error && !DBG_ON(r300, DBG_DUMMYSH)) {
+            fprintf(stderr, "r300 VP: Compiler error: %s\n"
+                    "r300 VP: Use RADEON_DEBUG=dummysh to silently skip instead.\n",
+                    vs->shader->error);
+            ((struct pipe_shader_state *)shader)->error_message = strdup(vs->shader->error);
+            r300_delete_vs_state(pipe, vs);
+            return NULL;
+        }
+        fprintf(stderr, "r300 VP: Compiler error: %s\n"
+                "r300 VP: Corresponding draws will be skipped.\n", vs->shader->error);
+    }
+
     return vs;
 }
 
@@ -2023,6 +2053,7 @@ static void r300_delete_vs_state(struct pipe_context* pipe, void* shader)
         while (vs->shader) {
             rc_constants_destroy(&vs->shader->code.constants);
             FREE(vs->shader->code.constants_remap_table);
+            free(vs->shader->error);
             vs->shader = vs->shader->next;
             FREE(vs->first);
             vs->first = vs->shader;
