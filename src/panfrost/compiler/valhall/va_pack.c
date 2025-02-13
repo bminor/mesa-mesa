@@ -297,6 +297,18 @@ va_pack_widen(const bi_instr *I, enum bi_swizzle swz, enum va_size size)
          return VA_SWIZZLES_16_BIT_B22;
       case BI_SWIZZLE_B33:
          return VA_SWIZZLES_16_BIT_B33;
+      case BI_SWIZZLE_B01:
+         return VA_SWIZZLES_16_BIT_B01;
+      case BI_SWIZZLE_B20:
+         return VA_SWIZZLES_16_BIT_B20;
+      case BI_SWIZZLE_B02:
+         return VA_SWIZZLES_16_BIT_B02;
+      case BI_SWIZZLE_B31:
+         return VA_SWIZZLES_16_BIT_B31;
+      case BI_SWIZZLE_B13:
+         return VA_SWIZZLES_16_BIT_B13;
+      case BI_SWIZZLE_B23:
+         return VA_SWIZZLES_16_BIT_B23;
       default:
          invalid_instruction(I, "16-bit widen");
       }
@@ -330,18 +342,36 @@ va_pack_halfswizzle(const bi_instr *I, enum bi_swizzle swz)
    switch (swz) {
    case BI_SWIZZLE_B00:
       return VA_HALF_SWIZZLES_8_BIT_B00;
-   case BI_SWIZZLE_B11:
-      return VA_HALF_SWIZZLES_8_BIT_B11;
-   case BI_SWIZZLE_B22:
-      return VA_HALF_SWIZZLES_8_BIT_B22;
-   case BI_SWIZZLE_B33:
-      return VA_HALF_SWIZZLES_8_BIT_B33;
+   case BI_SWIZZLE_B10:
+      return VA_HALF_SWIZZLES_8_BIT_B10;
+   case BI_SWIZZLE_B20:
+      return VA_HALF_SWIZZLES_8_BIT_B20;
+   case BI_SWIZZLE_B30:
+      return VA_HALF_SWIZZLES_8_BIT_B30;
    case BI_SWIZZLE_B01:
       return VA_HALF_SWIZZLES_8_BIT_B01;
-   case BI_SWIZZLE_B23:
-      return VA_HALF_SWIZZLES_8_BIT_B23;
+   case BI_SWIZZLE_B11:
+      return VA_HALF_SWIZZLES_8_BIT_B11;
+   case BI_SWIZZLE_B21:
+      return VA_HALF_SWIZZLES_8_BIT_B21;
+   case BI_SWIZZLE_B31:
+      return VA_HALF_SWIZZLES_8_BIT_B31;
    case BI_SWIZZLE_B02:
       return VA_HALF_SWIZZLES_8_BIT_B02;
+   case BI_SWIZZLE_B12:
+      return VA_HALF_SWIZZLES_8_BIT_B12;
+   case BI_SWIZZLE_B22:
+      return VA_HALF_SWIZZLES_8_BIT_B22;
+   case BI_SWIZZLE_B32:
+      return VA_HALF_SWIZZLES_8_BIT_B32;
+   case BI_SWIZZLE_B03:
+      return VA_HALF_SWIZZLES_8_BIT_B03;
+   case BI_SWIZZLE_B13:
+      return VA_HALF_SWIZZLES_8_BIT_B13;
+   case BI_SWIZZLE_B23:
+      return VA_HALF_SWIZZLES_8_BIT_B23;
+   case BI_SWIZZLE_B33:
+      return VA_HALF_SWIZZLES_8_BIT_B33;
    default:
       invalid_instruction(I, "v2u8 swizzle");
    }

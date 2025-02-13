@@ -45,9 +45,8 @@ extern "C" {
  * To express widen, use the correpsonding replicated form, i.e. H01 = identity
  * for widen = none, H00 for widen = h0, B1111 for widen = b1. For lane, also
  * use the replicated form (interpretation is governed by the opcode). For
- * 8-bit lanes with two channels, use replicated forms for replicated forms
- * (TODO: what about others?). For 8-bit lanes with four channels using
- * matching form (TODO: what about others?).
+ * 8-bit lanes with two channels, use replicated forms for replicated forms.
+ * For 8-bit lanes with four channels using matching form.
  */
 
 enum bi_swizzle {
@@ -77,6 +76,16 @@ enum bi_swizzle {
 
    /* 8-bit swizzles that only exist in HW as 8-bit half swizzles */
    BI_SWIZZLE_B0022 = 12,
+   BI_SWIZZLE_B1100 = 13,
+   BI_SWIZZLE_B2200 = 14,
+   BI_SWIZZLE_B3300 = 15,
+   BI_SWIZZLE_B2211 = 16,
+   BI_SWIZZLE_B3311 = 17,
+   BI_SWIZZLE_B1122 = 18,
+   BI_SWIZZLE_B3322 = 19,
+   BI_SWIZZLE_B0033 = 20,
+   BI_SWIZZLE_B1133 = 21,
+   BI_SWIZZLE_B1123 = 22,
 
    /* 16-bit single-lane, values ordered sequentially */
    BI_SWIZZLE_H0 = BI_SWIZZLE_H00,
@@ -91,14 +100,21 @@ enum bi_swizzle {
    /* 8-bit half-swizzle
     *
     * Values for replication are sequential. Other half-swizzles have
-    * arbitrary value ordering.
-    *
-    * TODO: rest of these */
+    * arbitrary value ordering. */
    BI_SWIZZLE_B00 = BI_SWIZZLE_B0000,
+   BI_SWIZZLE_B10 = BI_SWIZZLE_B1100,
+   BI_SWIZZLE_B20 = BI_SWIZZLE_B2200,
+   BI_SWIZZLE_B30 = BI_SWIZZLE_B3300,
    BI_SWIZZLE_B01 = BI_SWIZZLE_B0011,
    BI_SWIZZLE_B11 = BI_SWIZZLE_B1111,
+   BI_SWIZZLE_B21 = BI_SWIZZLE_B2211,
+   BI_SWIZZLE_B31 = BI_SWIZZLE_B3311,
    BI_SWIZZLE_B02 = BI_SWIZZLE_B0022,
+   BI_SWIZZLE_B12 = BI_SWIZZLE_B1122,
    BI_SWIZZLE_B22 = BI_SWIZZLE_B2222,
+   BI_SWIZZLE_B32 = BI_SWIZZLE_B3322,
+   BI_SWIZZLE_B03 = BI_SWIZZLE_B0033,
+   BI_SWIZZLE_B13 = BI_SWIZZLE_B1133,
    BI_SWIZZLE_B23 = BI_SWIZZLE_B2233,
    BI_SWIZZLE_B33 = BI_SWIZZLE_B3333,
 };
@@ -109,41 +125,37 @@ enum bi_swizzle {
 static inline uint32_t
 bi_apply_swizzle(uint32_t value, enum bi_swizzle swz)
 {
-   const uint16_t *h = (const uint16_t *)&value;
    const uint8_t *b = (const uint8_t *)&value;
 
-#define H(h0, h1) (h[h0] | ((uint32_t)h[h1] << 16))
 #define B(b0, b1, b2, b3)                                                      \
-   (b[b0] | ((uint32_t)b[b1] << 8) | ((uint32_t)b[b2] << 16) |                 \
-    ((uint32_t)b[b3] << 24))
+   case BI_SWIZZLE_B##b0##b1##b2##b3:                                          \
+      return (b[b0] | ((uint32_t)b[b1] << 8) | ((uint32_t)b[b2] << 16) |       \
+              ((uint32_t)b[b3] << 24));
 
    switch (swz) {
-   case BI_SWIZZLE_H00:
-      return H(0, 0);
-   case BI_SWIZZLE_H01:
-      return H(0, 1);
-   case BI_SWIZZLE_H10:
-      return H(1, 0);
-   case BI_SWIZZLE_H11:
-      return H(1, 1);
-   case BI_SWIZZLE_B0000:
-      return B(0, 0, 0, 0);
-   case BI_SWIZZLE_B1111:
-      return B(1, 1, 1, 1);
-   case BI_SWIZZLE_B2222:
-      return B(2, 2, 2, 2);
-   case BI_SWIZZLE_B3333:
-      return B(3, 3, 3, 3);
-   case BI_SWIZZLE_B0011:
-      return B(0, 0, 1, 1);
-   case BI_SWIZZLE_B2233:
-      return B(2, 2, 3, 3);
-   case BI_SWIZZLE_B1032:
-      return B(1, 0, 3, 2);
-   case BI_SWIZZLE_B3210:
-      return B(3, 2, 1, 0);
-   case BI_SWIZZLE_B0022:
-      return B(0, 0, 2, 2);
+      B(0, 1, 0, 1);
+      B(0, 1, 2, 3);
+      B(2, 3, 0, 1);
+      B(2, 3, 2, 3);
+      B(0, 0, 0, 0);
+      B(1, 1, 1, 1);
+      B(2, 2, 2, 2);
+      B(3, 3, 3, 3);
+      B(0, 0, 1, 1);
+      B(2, 2, 3, 3);
+      B(1, 0, 3, 2);
+      B(3, 2, 1, 0);
+      B(0, 0, 2, 2);
+      B(1, 1, 0, 0);
+      B(2, 2, 0, 0);
+      B(3, 3, 0, 0);
+      B(2, 2, 1, 1);
+      B(3, 3, 1, 1);
+      B(1, 1, 2, 2);
+      B(3, 3, 2, 2);
+      B(0, 0, 3, 3);
+      B(1, 1, 3, 3);
+      B(1, 1, 2, 3);
    }
 
 #undef H
@@ -177,12 +189,12 @@ typedef struct {
    /* For a source, the swizzle. For a destination, acts a bit like a
     * write mask. Identity for the full 32-bit, H00 for only caring about
     * the lower half, other values unused. */
-   enum bi_swizzle swizzle : 4;
+   enum bi_swizzle swizzle : 5;
    uint32_t offset         : 3;
    enum bi_index_type type : 3;
 
    /* Must be zeroed so we can hash the whole 64-bits at a time */
-   unsigned padding : (32 - 13);
+   unsigned padding : (32 - 14);
 } bi_index;
 
 static inline bi_index
