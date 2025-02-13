@@ -53,6 +53,7 @@ HOME=/cuttlefish launch_cvd \
   -verbosity=VERBOSE \
   -file_verbosity=VERBOSE \
   -use_overlay=false \
+  -enable_audio=false \
   -enable_bootanimation=false \
   -enable_minimal_mode=true \
   -guest_enforce_security=false \
