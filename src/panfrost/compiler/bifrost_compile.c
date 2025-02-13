@@ -347,7 +347,21 @@ bi_varying_src0_for_barycentric(bi_builder *b, nir_intrinsic_instr *intr)
          }
       }
 
-      return bi_v2f16_to_v2s16(b, f16);
+      /* v11 removed V2F16_TO_V2S16 */
+      if (b->shader->arch >= 11) {
+         bi_index f[2];
+
+         for (int i = 0; i < 2; i++) {
+            bi_index tmp = bi_half(f16, i == 1);
+            tmp = bi_f16_to_f32(b, tmp);
+            tmp = bi_f32_to_s32(b, tmp);
+            f[i] = bi_half(tmp, false);
+         }
+
+         return bi_mkvec_v2i16(b, f[0], f[1]);
+      } else {
+         return bi_v2f16_to_v2s16(b, f16);
+      }
    }
 
    case nir_intrinsic_load_barycentric_pixel:
