@@ -1,2 +1,31 @@
 # New crash with Xe KMD
 dEQP-VK.sparse_resources.buffer.ssbo.sparse_residency.buffer_size_2_24,Crash
+
+# At least some print:
+# "MESA: warning: INTEL_HWCONFIG_MIN_HS_URB_ENTRIES (0) != devinfo->urb.min_entries[MESA_SHADER_TESS_CTRL] (1)"
+# and some assertion fail with:
+# "deqp-vk: ../src/util/bitpack_helpers.h:65: util_bitpack_uint: Assertion `v <= max' failed."
+# and others with:
+# "deqp-vk: ../src/intel/vulkan/anv_device.c:1404: anv_AllocateMemory: Assertion `pAllocateInfo->memoryTypeIndex < pdevice->memory.type_count' failed."
+# while other crashes are just segfaults.
+dEQP-VK.video.decode.av1.argon_filmgrain_10_test1019_layered_dpb,Crash
+dEQP-VK.video.decode.av1.filmgrain_8_layered_dpb,Crash
+dEQP-VK.video.decode.av1.forwardkeyframe_10_layered_dpb,Crash
+dEQP-VK.video.decode.av1.i_layered_dpb,Crash
+dEQP-VK.video.decode.av1.i_p_separated_dpb,Crash
+dEQP-VK.video.decode.av1.superres_8_separated_dpb,Crash
+dEQP-VK.video.decode.h264.h265_interleaved_layered_dpb,Fail
+dEQP-VK.video.decode.h264.i_p_b_13_layered_dpb,Crash
+dEQP-VK.video.decode.h265.i_p_b_13_layered_dpb,Crash
+dEQP-VK.video.decode.h265.slist_a_layered_dpb,Fail
+dEQP-VK.video.formats.decode_av1_g10x6_b10x6r10x6_2plane_420_unorm_3pack16_encode_src_420_10bit,Crash
+dEQP-VK.video.formats.decode_av1_g8_b8r8_2plane_420_unorm_encode_src_420_8bit,Crash
+dEQP-VK.video.formats.decode_h264_g8_b8r8_2plane_420_unorm_encode_dpb_420_8bit,Crash
+dEQP-VK.video.formats.decode_h264_g8_b8r8_2plane_420_unorm_encode_src_420_8bit,Crash
+dEQP-VK.video.formats.decode_h265_g10x6_b10x6r10x6_2plane_420_unorm_3pack16_decode_dpb_420_10bit,Crash
+dEQP-VK.video.formats.decode_h265_g10x6_b10x6r10x6_2plane_420_unorm_3pack16_encode_src_420_10bit,Crash
+dEQP-VK.video.formats.decode_h265_g8_b8r8_2plane_420_unorm_encode_src_monochrome_8bit,Crash
+dEQP-VK.video.formats.encode_h264_g10x6_b10x6r10x6_2plane_420_unorm_3pack16_decode_dst_420_10bit,Crash
+dEQP-VK.video.formats.encode_h264_g8_b8r8_2plane_420_unorm_decode_dpb_420_8bit,Crash
+dEQP-VK.video.formats.encode_h264_g8_b8r8_2plane_420_unorm_decode_dst_420_8bit,Crash
+dEQP-VK.video.formats.encode_h264_g8_b8r8_2plane_420_unorm_decode_dst_monochrome_8bit,Crash

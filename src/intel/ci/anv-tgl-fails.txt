@@ -1,0 +1,16 @@
+# "anv_AllocateMemory: Assertion `pAllocateInfo->memoryTypeIndex <
+# pdevice->memory.type_count' failed. "  appears before some crashes.
+dEQP-VK.video.decode.av1.allintra_nosetup_8_layered_dpb,Crash
+dEQP-VK.video.decode.av1.cdef_10_separated_dpb,Crash
+dEQP-VK.video.decode.av1.filmgrain_8_layered_dpb,Crash
+dEQP-VK.video.decode.av1.i_p_not_matching_order_separated_dpb,Crash
+dEQP-VK.video.decode.av1.i_p_separated_dpb,Crash
+dEQP-VK.video.decode.av1.lossless_10_separated_dpb,Crash
+dEQP-VK.video.decode.av1.sizeup_8_layered_dpb,Crash
+dEQP-VK.video.decode.h265.420_8bit_main_176x144_30frames_layered_dpb,Fail
+dEQP-VK.video.formats.decode_av1_g8_b8r8_2plane_420_unorm_encode_src_420_8bit,Crash
+dEQP-VK.video.formats.decode_h264_g8_b8r8_2plane_420_unorm_decode_dst_420_8bit,Crash
+dEQP-VK.video.formats.decode_h265_g10x6_b10x6r10x6_2plane_420_unorm_3pack16_encode_src_monochrome_10bit,Crash
+dEQP-VK.video.formats.decode_h265_g8_b8r8_2plane_420_unorm_decode_dst_monochrome_8bit,Crash
+dEQP-VK.video.formats.decode_h265_g8_b8r8_2plane_420_unorm_encode_src_monochrome_8bit,Crash
+dEQP-VK.video.formats.encode_h265_g10x6_b10x6r10x6_2plane_420_unorm_3pack16_decode_dst_420_10bit,Crash
