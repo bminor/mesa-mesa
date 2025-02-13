@@ -22,6 +22,7 @@
  */
 
 #include "bi_builder.h"
+#include "bi_swizzles.h"
 #include "compiler.h"
 #include "valhall.h"
 
@@ -48,94 +49,9 @@ bi_swizzle_replicates_8(enum bi_swizzle swz)
 static void
 lower_swizzle(bi_context *ctx, bi_instr *ins, unsigned src)
 {
-   /* TODO: Use the opcode table and be a lot more methodical about this... */
-   switch (ins->op) {
-   /* Some instructions used with 16-bit data never have swizzles */
-   case BI_OPCODE_CSEL_V2F16:
-   case BI_OPCODE_CSEL_V2I16:
-   case BI_OPCODE_CSEL_V2S16:
-   case BI_OPCODE_CSEL_V2U16:
-      break;
-
-   /* Despite ostensibly being 32-bit instructions, CLPER does not
-    * inherently interpret the data, so it can be used for v2f16
-    * derivatives, which might require swizzle lowering */
-   case BI_OPCODE_CLPER_I32:
-   case BI_OPCODE_CLPER_OLD_I32:
-      if (src == 0)
-         break;
-      else
-         return;
-
-   /* Similarly, CSEL.i32 consumes a boolean as a 32-bit argument. If the
-    * boolean is implemented as a 16-bit integer, the swizzle is needed
-    * for correct operation if the instruction producing the 16-bit
-    * boolean does not replicate to both halves of the containing 32-bit
-    * register. As such, we may need to lower a swizzle.
-    *
-    * This is a silly hack. Ideally, code gen would be smart enough to
-    * avoid this case (by replicating). In practice, silly hardware design
-    * decisions force our hand here.
-    */
-   case BI_OPCODE_MUX_I32:
-   case BI_OPCODE_CSEL_I32:
-      break;
-
-   case BI_OPCODE_IADD_V2S16:
-   case BI_OPCODE_IADD_V2U16:
-   case BI_OPCODE_ISUB_V2S16:
-   case BI_OPCODE_ISUB_V2U16:
-      if (src == 0 && ins->src[src].swizzle != BI_SWIZZLE_H10)
-         break;
-      else
-         return;
-   case BI_OPCODE_LSHIFT_AND_V2I16:
-   case BI_OPCODE_LSHIFT_OR_V2I16:
-   case BI_OPCODE_LSHIFT_XOR_V2I16:
-   case BI_OPCODE_RSHIFT_AND_V2I16:
-   case BI_OPCODE_RSHIFT_OR_V2I16:
-   case BI_OPCODE_RSHIFT_XOR_V2I16:
-      if (src == 2)
-         return;
-      else
-         break;
-
-   /* For some reason MUX.v2i16 allows swaps but not replication */
-   case BI_OPCODE_MUX_V2I16:
-      if (ins->src[src].swizzle == BI_SWIZZLE_H10)
-         return;
-      else
-         break;
-
-   /* No swizzles supported */
-   case BI_OPCODE_LDEXP_V2F16:
-   case BI_OPCODE_HADD_V4U8:
-   case BI_OPCODE_HADD_V4S8:
-   case BI_OPCODE_CLZ_V4U8:
-   case BI_OPCODE_IDP_V4I8:
-   case BI_OPCODE_IABS_V4S8:
-   case BI_OPCODE_ICMP_V4I8:
-   case BI_OPCODE_ICMP_V4U8:
-   case BI_OPCODE_MUX_V4I8:
-   case BI_OPCODE_IADD_IMM_V4I8:
-      break;
-
-   case BI_OPCODE_LSHIFT_AND_V4I8:
-   case BI_OPCODE_LSHIFT_OR_V4I8:
-   case BI_OPCODE_LSHIFT_XOR_V4I8:
-   case BI_OPCODE_RSHIFT_AND_V4I8:
-   case BI_OPCODE_RSHIFT_OR_V4I8:
-   case BI_OPCODE_RSHIFT_XOR_V4I8:
-      /* Last source allows identity or replication */
-      if (src == 2 && bi_swizzle_replicates_8(ins->src[src].swizzle))
-         return;
-
-      /* Others do not allow swizzles */
-      break;
-
    /* We don't want to deal with reswizzling logic in modifier prop. Move
     * the swizzle outside, it's easier for clamp propagation. */
-   case BI_OPCODE_FCLAMP_V2F16: {
+   if (ins->op == BI_OPCODE_FCLAMP_V2F16) {
       bi_builder b = bi_init_builder(ctx, bi_after_instr(ins));
       bi_index dest = ins->dest[0];
       bi_index tmp = bi_temp(ctx);
@@ -147,9 +63,9 @@ lower_swizzle(bi_context *ctx, bi_instr *ins, unsigned src)
       return;
    }
 
-   default:
+   uint32_t supported_swizzles = bi_op_swizzles[ins->op][src];
+   if (supported_swizzles & (1 << ins->src[src].swizzle))
       return;
-   }
 
    /* First, try to apply a given swizzle to a constant to clear the
     * runtime swizzle. This is less heavy-handed than ignoring the

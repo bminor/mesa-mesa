@@ -360,9 +360,6 @@ dEQP-VK.memory.pipeline_barrier.host_write_index_buffer.1048576,Fail
 dEQP-VK.memory.pipeline_barrier.host_write_index_buffer.65536,Fail
 dEQP-VK.memory.pipeline_barrier.host_write_index_buffer.8192,Fail
 
-# src/panfrost/compiler/bi_packer.c:1116: bi_pack_fma_imul_v4i8: Assertion `replicate0 < 8' failed
-dEQP-VK.spirv_assembly.instruction.compute.mul_extended.unsigned_8bit,Crash
-dEQP-VK.spirv_assembly.instruction.compute.mul_extended.signed_8bit,Crash
 
 # New with vk_clear
 dEQP-VK.api.copy_and_blit.dedicated_allocation.resolve_image.whole_copy_before_resolving_no_cab.4_bit,Fail
