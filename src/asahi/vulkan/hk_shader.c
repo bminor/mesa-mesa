@@ -106,29 +106,13 @@ hk_get_spirv_options(struct vk_physical_device *vk_pdev,
    };
 }
 
-static bool
-lower_halt_to_return(nir_builder *b, nir_instr *instr, UNUSED void *_data)
-{
-   if (instr->type != nir_instr_type_jump)
-      return false;
-
-   nir_jump_instr *jump = nir_instr_as_jump(instr);
-   if (jump->type != nir_jump_halt)
-      return false;
-
-   assert(b->impl == nir_shader_get_entrypoint(b->shader));
-   jump->type = nir_jump_return;
-   return true;
-}
-
 void
 hk_preprocess_nir_internal(struct vk_physical_device *vk_pdev, nir_shader *nir)
 {
    /* Must lower before io to temps */
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       NIR_PASS(_, nir, nir_lower_terminate_to_demote);
-      NIR_PASS(_, nir, nir_shader_instructions_pass, lower_halt_to_return,
-               nir_metadata_all, NULL);
+      NIR_PASS(_, nir, nir_lower_halt_to_return);
       NIR_PASS(_, nir, nir_lower_returns);
    }
 

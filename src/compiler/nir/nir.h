@@ -5848,6 +5848,8 @@ typedef enum {
 
 bool nir_lower_gs_intrinsics(nir_shader *shader, nir_lower_gs_intrinsics_flags options);
 
+bool nir_lower_halt_to_return(nir_shader *nir);
+
 bool nir_lower_tess_coord_z(nir_shader *shader, bool triangles);
 
 typedef struct nir_lower_task_shader_options {
