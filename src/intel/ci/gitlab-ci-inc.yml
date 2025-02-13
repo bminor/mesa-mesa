@@ -191,6 +191,7 @@
 
 .intel-manual-rules:
   stage: intel-postmerge
+  extends: .no-auto-retry
   rules:
     - !reference [.test, rules]
     - !reference [.iris-manual-rules, rules]
