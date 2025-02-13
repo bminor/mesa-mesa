@@ -4169,7 +4169,14 @@ bi_emit_tex_valhall(bi_builder *b, nir_tex_instr *instr)
          I->force_delta_enable = true;
          I->lod_clamp_disable = i != 0;
          I->register_format = BI_REGISTER_FORMAT_U32;
-         bi_index lod = bi_s16_to_f32(b, bi_half(grdesc, 0));
+         bi_index lod;
+
+         /* v11 removed S16_TO_F32 */
+         if (b->shader->arch >= 11) {
+            lod = bi_s32_to_f32(b, bi_s16_to_s32(b, bi_half(grdesc, 0)));
+         } else {
+            lod = bi_s16_to_f32(b, bi_half(grdesc, 0));
+         }
 
          lod = bi_fmul_f32(b, lod, bi_imm_f32(1.0f / 256));
 
