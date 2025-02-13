@@ -34,8 +34,17 @@ lower(bi_builder *b, bi_instr *I)
    case BI_OPCODE_SWZ_V2I16:
       return bi_iadd_v2u16_to(b, I->dest[0], I->src[0], bi_zero(), false);
 
-   case BI_OPCODE_SWZ_V4I8:
+   case BI_OPCODE_SWZ_V4I8: {
+      /* IADD.v4u8 is gone on v11 */
+      if (b->shader->arch >= 11) {
+         assert(I->src[0].swizzle >= BI_SWIZZLE_B0000 &&
+                I->src[0].swizzle <= BI_SWIZZLE_B3333);
+         bi_index tmp = bi_mkvec_v2i8(b, I->src[0], I->src[0], bi_zero());
+         return bi_mkvec_v2i8_to(b, I->dest[0], I->src[0], I->src[0], tmp);
+      }
+
       return bi_iadd_v4u8_to(b, I->dest[0], I->src[0], bi_zero(), false);
+   }
 
    case BI_OPCODE_ICMP_I32:
       return bi_icmp_or_u32_to(b, I->dest[0], I->src[0], I->src[1], bi_zero(),
