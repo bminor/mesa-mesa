@@ -1925,6 +1925,9 @@ struct zink_context {
    uint32_t ds3_states;
    unsigned work_count;
 
+   struct pipe_resource *index_buffer; //last index buffer
+   unsigned index_size;
+
    uint32_t num_so_targets;
    struct pipe_stream_output_target *so_targets[PIPE_MAX_SO_BUFFERS];
    bool dirty_so_targets;

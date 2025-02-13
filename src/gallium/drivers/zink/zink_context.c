@@ -3726,6 +3726,7 @@ flush_batch(struct zink_context *ctx, bool sync)
       ctx->oom_stall = false;
       ctx->dd.bindless_bound = false;
       ctx->di.bindless_refs_dirty = true;
+      ctx->index_buffer = NULL;
       ctx->sample_locations_changed = ctx->gfx_pipeline_state.sample_locations_enabled;
       if (zink_screen(ctx->base.screen)->info.dynamic_state2_feats.extendedDynamicState2PatchControlPoints) {
          VKCTX(CmdSetPatchControlPointsEXT)(ctx->bs->cmdbuf, ctx->gfx_pipeline_state.dyn_state2.vertices_per_patch);
@@ -5346,6 +5347,8 @@ zink_context_replace_buffer_storage(struct pipe_context *pctx, struct pipe_resou
    unsigned rebind_count = num_rebinds ? rebind_buffer(ctx, d, rebind_mask, num_rebinds) : 0;
    if (rebind_count != d->bind_count[0] + d->bind_count[1])
       ctx->buffer_rebind_counter = p_atomic_inc_return(&screen->buffer_rebind_counter);
+   if (ctx->index_buffer == dst)
+      ctx->index_buffer = NULL;
 }
 
 static bool

@@ -387,12 +387,15 @@ zink_draw(struct pipe_context *pctx,
             zink_batch_reference_resource_move(ctx, zink_resource(index_buffer));
          else
             zink_batch_reference_resource(ctx, zink_resource(index_buffer));
-      } else {
-         index_buffer = dinfo->index.resource;
+      } else if (BATCH_CHANGED || ctx->index_buffer != dinfo->index.resource || ctx->index_size != dinfo->index_size) {
+         ctx->index_buffer = index_buffer = dinfo->index.resource;
+         ctx->index_size = dinfo->index_size;
          zink_batch_resource_usage_set(ctx->bs, zink_resource(index_buffer), false, true);
       }
       assert(index_size <= 4 && index_size != 3);
       assert(index_size != 1 || screen->info.have_EXT_index_type_uint8);
+   } else {
+      ctx->index_buffer = NULL;
    }
 
    ctx->was_line_loop = dinfo->was_line_loop;
@@ -503,7 +506,7 @@ zink_draw(struct pipe_context *pctx,
       zink_set_primitive_emulation_keys(ctx);
    }
 
-   if (index_size) {
+   if (index_buffer) {
       const VkIndexType index_type[3] = {
          VK_INDEX_TYPE_UINT8_EXT,
          VK_INDEX_TYPE_UINT16,
