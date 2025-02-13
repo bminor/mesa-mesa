@@ -314,7 +314,7 @@
         "description": "llvmpipe: Fix overflow issues calculating loop iterations for aniso",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "350a0fe63298d72593c473a0aae83afcd84de9b8",
         "notes": null
