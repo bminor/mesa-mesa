@@ -113,12 +113,21 @@ lower_legacy_gs_emit_vertex_with_counter(nir_builder *b, nir_intrinsic_instr *in
          /* extend 8/16 bit to 32 bit, 64 bit has been lowered */
          nir_def *data = nir_u2uN(b, output, 32);
 
+         unsigned align_mul = 4;
+         unsigned align_offset = 0;
+         if (nir_src_is_const(intrin->src[0])) {
+            unsigned v_const_offset = base + nir_src_as_uint(intrin->src[0]) * 4;
+            align_mul = 16;
+            align_offset = v_const_offset % align_mul;
+         }
+
          nir_store_buffer_amd(b, data, gsvs_ring, voffset, soffset, nir_imm_int(b, 0),
                               .access = ACCESS_COHERENT | ACCESS_NON_TEMPORAL |
                                         ACCESS_IS_SWIZZLED_AMD,
                               .base = base,
                               /* For ACO to not reorder this store around EmitVertex/EndPrimitve */
-                              .memory_modes = nir_var_shader_out);
+                              .memory_modes = nir_var_shader_out,
+                              .align_mul = align_mul, .align_offset = align_offset);
       }
    }
 

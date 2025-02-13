@@ -330,7 +330,8 @@ ms_store_arrayed_output(nir_builder *b,
                            .base = const_off + param_offset * 16,
                            .write_mask = write_mask,
                            .memory_modes = nir_var_shader_out,
-                           .access = ACCESS_COHERENT | ACCESS_IS_SWIZZLED_AMD);
+                           .access = ACCESS_COHERENT | ACCESS_IS_SWIZZLED_AMD,
+                           .align_mul = 16, .align_offset = const_off % 16u);
    } else if (out_mode == ms_out_mode_var) {
       unsigned write_mask_32 = write_mask;
       if (store_val->bit_size > 32) {
@@ -754,7 +755,8 @@ ms_emit_attribute_ring_output_stores(nir_builder *b, const uint64_t outputs_mask
       store_val = nir_trim_vector(b, store_val, store_val_components);
       nir_store_buffer_amd(b, store_val, ring, zero, soffset, idx,
                            .memory_modes = nir_var_shader_out,
-                           .access = ACCESS_COHERENT | ACCESS_IS_SWIZZLED_AMD);
+                           .access = ACCESS_COHERENT | ACCESS_IS_SWIZZLED_AMD,
+                           .align_mul = 16, .align_offset = 0);
    }
 }
 
