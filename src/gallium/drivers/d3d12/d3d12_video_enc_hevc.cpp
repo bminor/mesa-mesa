@@ -895,7 +895,7 @@ d3d12_video_encoder_convert_hevc_codec_configuration(struct d3d12_video_encoder 
    if (picture->seq.sample_adaptive_offset_enabled_flag)
       config.ConfigurationFlags |= D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION_HEVC_FLAG_ENABLE_SAO_FILTER;
 
-   if (picture->pic.pps_loop_filter_across_slices_enabled_flag)
+   if (!picture->pic.pps_loop_filter_across_slices_enabled_flag)
       config.ConfigurationFlags |= D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION_HEVC_FLAG_DISABLE_LOOP_FILTER_ACROSS_SLICES;
 
    if (picture->pic.transform_skip_enabled_flag)
