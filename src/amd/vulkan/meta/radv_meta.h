@@ -182,7 +182,8 @@ struct radv_meta_blit2d_surf {
 };
 
 struct radv_meta_blit2d_buffer {
-   struct radv_buffer *buffer;
+   uint64_t addr;
+   uint64_t size;
    uint32_t offset;
    uint32_t pitch;
    uint8_t bs;

@@ -99,11 +99,11 @@ transfer_copy_buffer_image(struct radv_cmd_buffer *cmd_buffer, uint64_t buffer_v
 }
 
 static void
-copy_buffer_to_image(struct radv_cmd_buffer *cmd_buffer, struct radv_buffer *buffer, struct radv_image *image,
-                     VkImageLayout layout, const VkBufferImageCopy2 *region)
+copy_buffer_to_image(struct radv_cmd_buffer *cmd_buffer, uint64_t buffer_addr, uint64_t buffer_size,
+                     struct radv_image *image, VkImageLayout layout, const VkBufferImageCopy2 *region)
 {
    if (cmd_buffer->qf == RADV_QUEUE_TRANSFER) {
-      transfer_copy_buffer_image(cmd_buffer, buffer->addr, image, region, true);
+      transfer_copy_buffer_image(cmd_buffer, buffer_addr, image, region, true);
       return;
    }
 
@@ -172,9 +172,10 @@ copy_buffer_to_image(struct radv_cmd_buffer *cmd_buffer, struct radv_buffer *buf
 
    const struct vk_image_buffer_layout buf_layout = vk_image_buffer_copy_layout(&image->vk, region);
    struct radv_meta_blit2d_buffer buf_bsurf = {
+      .addr = buffer_addr,
+      .size = buffer_size,
       .bs = img_bsurf.bs,
       .format = img_bsurf.format,
-      .buffer = buffer,
       .offset = region->bufferOffset,
       .pitch = buf_layout.row_stride_B / buf_layout.element_size_B,
    };
@@ -232,7 +233,8 @@ radv_CmdCopyBufferToImage2(VkCommandBuffer commandBuffer, const VkCopyBufferToIm
 
       radv_cs_add_buffer(device->ws, cmd_buffer->cs, dst_image->bindings[bind_idx].bo);
 
-      copy_buffer_to_image(cmd_buffer, src_buffer, dst_image, pCopyBufferToImageInfo->dstImageLayout, region);
+      copy_buffer_to_image(cmd_buffer, src_buffer->addr, src_buffer->vk.size, dst_image,
+                           pCopyBufferToImageInfo->dstImageLayout, region);
    }
 
    if (radv_is_format_emulated(pdev, dst_image->vk.format)) {
@@ -260,12 +262,12 @@ radv_CmdCopyBufferToImage2(VkCommandBuffer commandBuffer, const VkCopyBufferToIm
 }
 
 static void
-copy_image_to_buffer(struct radv_cmd_buffer *cmd_buffer, struct radv_buffer *buffer, struct radv_image *image,
-                     VkImageLayout layout, const VkBufferImageCopy2 *region)
+copy_image_to_buffer(struct radv_cmd_buffer *cmd_buffer, uint64_t buffer_addr, uint64_t buffer_size,
+                     struct radv_image *image, VkImageLayout layout, const VkBufferImageCopy2 *region)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    if (cmd_buffer->qf == RADV_QUEUE_TRANSFER) {
-      transfer_copy_buffer_image(cmd_buffer, buffer->addr, image, region, false);
+      transfer_copy_buffer_image(cmd_buffer, buffer_addr, image, region, false);
       return;
    }
 
@@ -329,9 +331,10 @@ copy_image_to_buffer(struct radv_cmd_buffer *cmd_buffer, struct radv_buffer *buf
    }
 
    struct radv_meta_blit2d_buffer buf_info = {
+      .addr = buffer_addr,
+      .size = buffer_size,
       .bs = img_info.bs,
       .format = img_info.format,
-      .buffer = buffer,
       .offset = region->bufferOffset,
       .pitch = buf_extent_el.width,
    };
@@ -379,7 +382,8 @@ radv_CmdCopyImageToBuffer2(VkCommandBuffer commandBuffer, const VkCopyImageToBuf
 
       radv_cs_add_buffer(device->ws, cmd_buffer->cs, src_image->bindings[bind_idx].bo);
 
-      copy_image_to_buffer(cmd_buffer, dst_buffer, src_image, pCopyImageToBufferInfo->srcImageLayout, region);
+      copy_image_to_buffer(cmd_buffer, dst_buffer->addr, dst_buffer->vk.size, src_image,
+                           pCopyImageToBufferInfo->srcImageLayout, region);
    }
 }
 

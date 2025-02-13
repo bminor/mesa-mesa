@@ -668,8 +668,7 @@ fixup_gfx9_cs_copy(struct radv_cmd_buffer *cmd_buffer, const struct radv_meta_bl
          struct radeon_winsys_bo *img_bo = image->bindings[0].bo;
          const uint64_t img_va = radv_buffer_get_va(img_bo) + image->bindings[0].offset + addr;
          /* buf_bsurf->offset already includes the layer offset */
-         const uint64_t mem_va =
-            buf_bsurf->buffer->addr + buf_bsurf->offset + y * buf_bsurf->pitch * surf->bpe + x * surf->bpe;
+         const uint64_t mem_va = buf_bsurf->addr + buf_bsurf->offset + y * buf_bsurf->pitch * surf->bpe + x * surf->bpe;
          if (to_image) {
             radv_copy_memory(cmd_buffer, mem_va, img_va, surf->bpe);
          } else {
@@ -731,8 +730,8 @@ radv_meta_image_to_buffer(struct radv_cmd_buffer *cmd_buffer, struct radv_meta_b
                                     .data.pStorageTexelBuffer =
                                        &(VkDescriptorAddressInfoEXT){
                                           .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT,
-                                          .address = dst->buffer->addr + dst->offset,
-                                          .range = vk_buffer_range(&dst->buffer->vk, dst->offset, VK_WHOLE_SIZE),
+                                          .address = dst->addr + dst->offset,
+                                          .range = dst->size - dst->offset,
                                           .format = dst->format,
                                        },
                                  }});
@@ -774,8 +773,8 @@ radv_meta_buffer_to_image_cs_r32g32b32(struct radv_cmd_buffer *cmd_buffer, struc
             .data.pUniformTexelBuffer =
                &(VkDescriptorAddressInfoEXT){
                   .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT,
-                  .address = src->buffer->addr + src->offset,
-                  .range = vk_buffer_range(&src->buffer->vk, src->offset, VK_WHOLE_SIZE),
+                  .address = src->addr + src->offset,
+                  .range = src->size - src->offset,
                   .format = src->format,
                },
          },
@@ -840,8 +839,8 @@ radv_meta_buffer_to_image_cs(struct radv_cmd_buffer *cmd_buffer, struct radv_met
                                     .data.pStorageTexelBuffer =
                                        &(VkDescriptorAddressInfoEXT){
                                           .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT,
-                                          .address = src->buffer->addr + src->offset,
-                                          .range = vk_buffer_range(&src->buffer->vk, src->offset, VK_WHOLE_SIZE),
+                                          .address = src->addr + src->offset,
+                                          .range = src->size - src->offset,
                                           .format = src->format,
                                        },
                                  },

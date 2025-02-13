@@ -76,8 +76,8 @@ blit2d_bind_src(struct radv_cmd_buffer *cmd_buffer, VkPipelineLayout layout, str
             .data.pUniformTexelBuffer =
                &(VkDescriptorAddressInfoEXT){
                   .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT,
-                  .address = src_buf->buffer->addr + src_buf->offset,
-                  .range = vk_buffer_range(&src_buf->buffer->vk, src_buf->offset, VK_WHOLE_SIZE),
+                  .address = src_buf->addr + src_buf->offset,
+                  .range = src_buf->size - src_buf->offset,
                   .format = depth_format ? depth_format : src_buf->format},
          }});
 
