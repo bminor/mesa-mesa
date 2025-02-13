@@ -2174,7 +2174,7 @@ emit_binding_table(struct anv_cmd_buffer *cmd_buffer,
          /* If the shader doesn't access the set buffer, just put the null
           * surface.
           */
-         if (set->is_push && !shader->push_desc_info.used_set_buffer) {
+         if (set->is_push && shader->push_desc_info.push_set_buffer == 0) {
             bt_map[s] = 0;
             break;
          }

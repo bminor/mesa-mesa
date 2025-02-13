@@ -644,6 +644,28 @@ get_pipeline_dirty_stages(struct anv_device *device,
    return bits;
 }
 
+static void
+update_push_descriptor_flags(struct anv_cmd_pipeline_state *state,
+                             struct anv_shader_bin **shaders,
+                             uint32_t shader_count)
+{
+   state->push_buffer_stages = 0;
+   state->push_descriptor_stages = 0;
+
+   for (uint32_t i = 0; i < shader_count; i++) {
+      if (shaders[i] == NULL)
+         continue;
+
+      VkShaderStageFlags stage = mesa_to_vk_shader_stage(shaders[i]->stage);
+
+      if (shaders[i]->push_desc_info.used_descriptors)
+         state->push_descriptor_stages |= stage;
+
+      if (shaders[i]->push_desc_info.push_set_buffer)
+         state->push_buffer_stages |= stage;
+   }
+}
+
 void anv_CmdBindPipeline(
     VkCommandBuffer                             commandBuffer,
     VkPipelineBindPoint                         pipelineBindPoint,
@@ -669,6 +691,8 @@ void anv_CmdBindPipeline(
 
       state = &cmd_buffer->state.compute.base;
       stages = VK_SHADER_STAGE_COMPUTE_BIT;
+
+      update_push_descriptor_flags(state, &compute_pipeline->cs, 1);
       break;
    }
 
@@ -700,6 +724,9 @@ void anv_CmdBindPipeline(
       state = &cmd_buffer->state.gfx.base;
       stages = new_pipeline->base.base.active_stages;
 
+      update_push_descriptor_flags(state,
+                                   new_pipeline->base.shaders,
+                                   ARRAY_SIZE(new_pipeline->base.shaders));
 
       /* When the pipeline is using independent states and dynamic buffers,
        * this will trigger an update of anv_push_constants::dynamic_base_index
@@ -749,6 +776,10 @@ void anv_CmdBindPipeline(
       }
 
       state = &cmd_buffer->state.rt.base;
+
+      state->push_buffer_stages = pipeline->use_push_descriptor_buffer;
+      state->push_descriptor_stages = pipeline->use_push_descriptor_buffer;
+      state->push_descriptor_index = pipeline->layout.push_descriptor_set_index;
       break;
    }
 
@@ -931,6 +962,12 @@ anv_cmd_buffer_bind_descriptor_set(struct anv_cmd_buffer *cmd_buffer,
          *dynamic_offset_count -= set_layout->vk.dynamic_descriptor_count;
       }
    }
+
+   /* Update the push descriptor index tracking */
+   if (anv_descriptor_set_is_push(set))
+      pipe_state->push_descriptor_index = set_index;
+   else if (pipe_state->push_descriptor_index == set_index)
+      pipe_state->push_descriptor_index = UINT8_MAX;
 
    if (set->is_push)
       cmd_buffer->state.push_descriptors_dirty |= dirty_stages;

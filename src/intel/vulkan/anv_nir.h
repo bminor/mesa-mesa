@@ -140,10 +140,10 @@ uint32_t anv_nir_compute_used_push_descriptors(nir_shader *shader,
                                                struct anv_descriptor_set_layout * const *set_layouts,
                                                uint32_t set_count);
 
-bool anv_nir_loads_push_desc_buffer(nir_shader *nir,
-                                    struct anv_descriptor_set_layout * const *set_layouts,
-                                    uint32_t set_count,
-                                    const struct anv_pipeline_bind_map *bind_map);
+uint8_t anv_nir_loads_push_desc_buffer(nir_shader *nir,
+                                       struct anv_descriptor_set_layout * const *set_layouts,
+                                       uint32_t set_count,
+                                       const struct anv_pipeline_bind_map *bind_map);
 
 uint32_t anv_nir_push_desc_ubo_fully_promoted(nir_shader *nir,
                                               struct anv_descriptor_set_layout * const *set_layouts,

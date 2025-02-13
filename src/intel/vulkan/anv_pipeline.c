@@ -1165,7 +1165,7 @@ anv_pipeline_lower_nir(struct anv_pipeline *pipeline,
                &stage->prog_data.cs);
    }
 
-   stage->push_desc_info.used_set_buffer =
+   stage->push_desc_info.push_set_buffer =
       anv_nir_loads_push_desc_buffer(nir,
                                      layout->set_layouts,
                                      layout->num_sets,
@@ -1781,7 +1781,7 @@ anv_pipeline_account_shader(struct anv_pipeline *pipeline,
    pipeline->ray_queries = MAX2(pipeline->ray_queries,
                                 shader->prog_data->ray_queries);
 
-   if (shader->push_desc_info.used_set_buffer) {
+   if (shader->push_desc_info.push_set_buffer) {
       pipeline->use_push_descriptor_buffer |=
          mesa_to_vk_shader_stage(shader->stage);
    }

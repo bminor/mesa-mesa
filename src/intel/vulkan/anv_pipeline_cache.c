@@ -325,7 +325,7 @@ anv_shader_bin_serialize(struct vk_pipeline_cache_object *object,
 
    blob_write_uint32(blob, shader->push_desc_info.used_descriptors);
    blob_write_uint32(blob, shader->push_desc_info.fully_promoted_ubo_descriptors);
-   blob_write_uint8(blob, shader->push_desc_info.used_set_buffer);
+   blob_write_uint8(blob, shader->push_desc_info.push_set_buffer);
 
    blob_write_bytes(blob, shader->bind_map.surface_sha1,
                     sizeof(shader->bind_map.surface_sha1));
@@ -392,7 +392,7 @@ anv_shader_bin_deserialize(struct vk_pipeline_cache *cache,
    struct anv_push_descriptor_info push_desc_info = {};
    push_desc_info.used_descriptors = blob_read_uint32(blob);
    push_desc_info.fully_promoted_ubo_descriptors = blob_read_uint32(blob);
-   push_desc_info.used_set_buffer = blob_read_uint8(blob);
+   push_desc_info.push_set_buffer = blob_read_uint8(blob);
 
    struct anv_pipeline_bind_map bind_map = {};
    blob_copy_bytes(blob, bind_map.surface_sha1, sizeof(bind_map.surface_sha1));

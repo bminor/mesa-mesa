@@ -104,10 +104,11 @@ anv_nir_compute_used_push_descriptors(nir_shader *shader,
    return used_push_bindings;
 }
 
-/* This function checks whether the shader accesses the push descriptor
- * buffer. This function must be called after anv_nir_compute_push_layout().
+/* This function returns a bit field with one bit set to 1 indicating the push
+ * descriptor set used. This function must be called after
+ * anv_nir_compute_push_layout().
  */
-bool
+uint8_t
 anv_nir_loads_push_desc_buffer(nir_shader *nir,
                                struct anv_descriptor_set_layout * const *set_layouts,
                                uint32_t set_count,
@@ -117,7 +118,7 @@ anv_nir_loads_push_desc_buffer(nir_shader *nir,
    const struct anv_descriptor_set_layout *push_set_layout =
       anv_pipeline_layout_get_push_set(set_layouts, set_count, &push_set);
    if (push_set_layout == NULL)
-      return false;
+      return 0;
 
    nir_foreach_function_impl(impl, nir) {
       nir_foreach_block(block, impl) {
@@ -139,13 +140,13 @@ anv_nir_loads_push_desc_buffer(nir_shader *nir,
             if ((binding->set == ANV_DESCRIPTOR_SET_DESCRIPTORS ||
                  binding->set == ANV_DESCRIPTOR_SET_DESCRIPTORS_BUFFER) &&
                 binding->index == push_set) {
-               return true;
+               return BITFIELD_BIT(push_set);
             }
          }
       }
    }
 
-   return false;
+   return 0;
 }
 
 /* This function computes a bitfield of all the UBOs bindings in the push

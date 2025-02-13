@@ -4071,6 +4071,21 @@ struct anv_cmd_pipeline_state {
    }                                            dynamic_offsets[MAX_SETS];
 
    /**
+    * The current stages using push descriptor buffer.
+    */
+   VkShaderStageFlags push_buffer_stages;
+
+   /**
+    * The current stages using push descriptors.
+    */
+   VkShaderStageFlags push_descriptor_stages;
+
+   /**
+    * Push descriptor index for currently bound shaders (UINT8_MAX if unused).
+    */
+   uint8_t push_descriptor_index;
+
+   /**
     * The current bound pipeline.
     */
    struct anv_pipeline      *pipeline;
@@ -4814,8 +4829,8 @@ struct anv_push_descriptor_info {
    /* A bitfield of UBOs bindings fully promoted to push constants. */
    uint32_t fully_promoted_ubo_descriptors;
 
-   /* */
-   uint8_t used_set_buffer;
+   /* A bitfield with one bit set indicating the push descriptor set used. */
+   uint8_t push_set_buffer;
 };
 
 struct anv_shader_upload_params {
