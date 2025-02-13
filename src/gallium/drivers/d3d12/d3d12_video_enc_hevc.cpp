@@ -1341,18 +1341,18 @@ d3d12_video_encoder_update_current_encoder_config_state_hevc(struct d3d12_video_
       pD3D12Enc->m_currentEncodeConfig.m_encoderSliceConfigMode =
          D3D12_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE_FULL_FRAME;
 
+   // Set slices config  (configure before calling d3d12_video_encoder_calculate_max_slices_count_in_output)
+   if(!d3d12_video_encoder_negotiate_current_hevc_slices_configuration(pD3D12Enc, hevcPic)) {
+      debug_printf("d3d12_video_encoder_negotiate_current_hevc_slices_configuration failed!\n");
+      return false;
+   }
+
    if (!d3d12_video_encoder_negotiate_requested_features_and_d3d12_driver_caps(pD3D12Enc, capEncoderSupportData1)) {
       debug_printf("[d3d12_video_encoder_hevc] After negotiating caps, D3D12_FEATURE_VIDEO_ENCODER_SUPPORT1 "
                       "arguments are not supported - "
                       "ValidationFlags: 0x%x - SupportFlags: 0x%x\n",
                       capEncoderSupportData1.ValidationFlags,
                       capEncoderSupportData1.SupportFlags);
-      return false;
-   }
-
-   // Set slices config  (configure before calling d3d12_video_encoder_calculate_max_slices_count_in_output)
-   if(!d3d12_video_encoder_negotiate_current_hevc_slices_configuration(pD3D12Enc, hevcPic)) {
-      debug_printf("d3d12_video_encoder_negotiate_current_hevc_slices_configuration failed!\n");
       return false;
    }
 
