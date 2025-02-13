@@ -3379,9 +3379,7 @@ bifrost_tex_format(enum glsl_sampler_dim dim)
       return 0;
 
    default:
-      DBG("Unknown sampler dim type\n");
-      assert(0);
-      return 0;
+      unreachable("Unknown sampler dim type\n");
    }
 }
 
