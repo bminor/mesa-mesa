@@ -77,7 +77,9 @@ lava_ssh_test_case() {
     shift
     lava-test-case \"${test_case}\" --shell \\
         ssh ${SSH_PTY_ARGS:--T} \\
-        -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \\
+        -o StrictHostKeyChecking=no \\
+        -o UserKnownHostsFile=/dev/null \\
+        -o ConnectTimeout=60 \\
         root@$(lava-target-ip) \"${@}\"
 }""",
 ]
