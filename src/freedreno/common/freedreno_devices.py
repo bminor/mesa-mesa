@@ -537,6 +537,7 @@ add_gpus([
 
 add_gpus([
         GPUId(chip_id=0xffff06020100, name="FD621"),
+        GPUId(chip_id=0xffff06020300, name="Adreno623"),
     ], A6xxGPUInfo(
         CHIP.A6XX,
         [a6xx_base, a6xx_gen3, A6XXProps(lrz_track_quirk = False)],
