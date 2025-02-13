@@ -2401,6 +2401,19 @@ try_merge_tiles(struct tu_tile_config *dst, const struct tu_tile_config *src,
          return false;
    }
 
+   /* The tiles must be vertically or horizontally adjacent and have the
+    * compatible width/height.
+    */
+   if (dst->pos.x == src->pos.x) {
+      if (dst->extent.height != src->extent.height)
+         return false;
+   } else if (dst->pos.y == src->pos.y) {
+      if (dst->extent.width != src->extent.width)
+         return false;
+   } else {
+      return false;
+   }
+
    if (!has_abs_bin_mask) {
       /* The mask of the combined tile has to fit in 16 bits */
       uint32_t hw_mask = slot_mask >> (ffs(slot_mask) - 1);
