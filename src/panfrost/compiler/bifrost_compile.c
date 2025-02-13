@@ -42,7 +42,6 @@
 
 /* clang-format off */
 static const struct debug_named_value bifrost_debug_options[] = {
-   {"msgs",       BIFROST_DBG_MSGS,		   "Print debug messages"},
    {"shaders",    BIFROST_DBG_SHADERS,	   "Dump shaders in NIR and MIR"},
    {"shaderdb",   BIFROST_DBG_SHADERDB,	"Print statistics"},
    {"verbose",    BIFROST_DBG_VERBOSE,	   "Disassemble verbosely"},
@@ -68,12 +67,6 @@ DEBUG_GET_ONCE_FLAGS_OPTION(bifrost_debug, "BIFROST_MESA_DEBUG",
 #define BIFROST_SHADER_PREFETCH 128
 
 int bifrost_debug = 0;
-
-#define DBG(fmt, ...)                                                          \
-   do {                                                                        \
-      if (bifrost_debug & BIFROST_DBG_MSGS)                                    \
-         fprintf(stderr, "%s:%d: " fmt, __func__, __LINE__, ##__VA_ARGS__);    \
-   } while (0)
 
 static bi_block *emit_cf_list(bi_context *ctx, struct exec_list *list);
 
