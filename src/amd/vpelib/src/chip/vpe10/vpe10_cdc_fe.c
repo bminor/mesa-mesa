@@ -159,7 +159,6 @@ void vpe10_cdc_program_surface_config(struct cdc_fe *cdc_fe, enum vpe_surface_pi
         surf_format = 119;
         break;
     case VPE_SURFACE_PIXEL_FORMAT_GRPH_RGBE:
-    case VPE_SURFACE_PIXEL_FORMAT_GRPH_RGBE_ALPHA:
     default:
         vpe_log("cdc: invalid pixel format %d\n", (int)format);
         break;
