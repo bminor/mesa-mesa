@@ -39,11 +39,7 @@ reset_obj(struct zink_screen *screen, struct zink_batch_state *bs, struct zink_r
       if (obj->dt)
          zink_kopper_prune_batch_usage(obj->dt, &bs->usage);
    }
-   /* resource objects are not unrefed here;
-    * this is typically the last ref on a resource object, and destruction will
-    * usually trigger an ioctl, so defer deletion to the submit thread to avoid blocking
-    */
-   util_dynarray_append(&bs->unref_resource_objs, struct zink_resource_object*, obj);
+   zink_resource_object_reference(screen, &obj, NULL);
 }
 
 /* reset all the resource objects in a given batch object list */
@@ -183,24 +179,12 @@ reset_batch_state_ctx(struct zink_context *ctx, struct zink_batch_state *bs)
    }
 }
 
-/* this is where deferred resource unrefs occur */
-static void
-unref_resource_objs(struct zink_screen *screen, struct zink_batch_state *bs)
-{
-   while (util_dynarray_contains(&bs->unref_resource_objs, struct zink_resource_object*)) {
-      struct zink_resource_object *obj = util_dynarray_pop(&bs->unref_resource_objs, struct zink_resource_object*);
-      /* this is typically where resource objects get destroyed */
-      zink_resource_object_reference(screen, &obj, NULL);
-   }
-}
-
 void
 zink_reset_batch_state(struct zink_context *ctx, struct zink_batch_state *bs)
 {
    struct zink_screen *screen = zink_screen(ctx->base.screen);
    reset_batch_state_ctx(ctx, bs);
    reset_batch_state_internal(screen, bs);
-   unref_resource_objs(screen, bs);
 }
 
 /* utility for resetting a batch state; called on context destruction */
@@ -209,7 +193,6 @@ zink_clear_batch_state(struct zink_context *ctx, struct zink_batch_state *bs)
 {
    bs->fence.completed = true;
    zink_reset_batch_state(ctx, bs);
-   unref_resource_objs(zink_screen(ctx->base.screen), bs);
 }
 
 /* utility for managing the singly-linked batch state list */
@@ -269,7 +252,6 @@ zink_batch_state_destroy(struct zink_screen *screen, struct zink_batch_state *bs
    util_dynarray_fini(&bs->swapchain_obj);
    util_dynarray_fini(&bs->swapchain_obj_unsync);
    util_dynarray_fini(&bs->zombie_samplers);
-   util_dynarray_fini(&bs->unref_resource_objs);
    util_dynarray_fini(&bs->bindless_releases[0]);
    util_dynarray_fini(&bs->bindless_releases[1]);
    util_dynarray_fini(&bs->acquires);
@@ -390,7 +372,6 @@ create_batch_state(struct zink_context *ctx)
    util_dynarray_init(&bs->fd_wait_semaphore_stages, NULL);
    util_dynarray_init(&bs->zombie_samplers, NULL);
    util_dynarray_init(&bs->freed_sparse_backing_bos, NULL);
-   util_dynarray_init(&bs->unref_resource_objs, NULL);
    util_dynarray_init(&bs->acquires, NULL);
    util_dynarray_init(&bs->acquire_flags, NULL);
    util_dynarray_init(&bs->bindless_releases[0], NULL);
@@ -825,7 +806,6 @@ end:
    simple_mtx_lock(&screen->free_batch_states_lock);
    for (struct zink_batch_state *i = screen->active_batch_states, *j = i ? i->next : NULL; i; i = j, j = j ? j->next : NULL) {
       reset_batch_state_internal(screen, i);
-      unref_resource_objs(screen, i);
       zink_batch_state_append(&screen->free_batch_states, &screen->last_free_batch_state, i);
    }
    screen->active_batch_states = NULL;
