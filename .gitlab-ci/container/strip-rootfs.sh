@@ -38,7 +38,6 @@ UNNEEDED_PACKAGES=(
   udev
   init-system-helpers
   cpio
-  passwd
   libsemanage1 libsemanage-common
   libsepol1
   gpgv
