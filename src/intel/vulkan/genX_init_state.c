@@ -1359,7 +1359,8 @@ VkResult genX(CreateSampler)(
          .TextureBorderColorMode = DX10OGL,
 
 #if GFX_VER >= 11
-         .CPSLODCompensationEnable = true,
+         /* This field is marked as disabled on Gfx20+ */
+         .CPSLODCompensationEnable = device->info->ver < 20,
 #endif
 
          .LODPreClampMode = CLAMP_MODE_OGL,
