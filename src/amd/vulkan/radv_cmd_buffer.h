@@ -144,6 +144,7 @@ enum radv_cmd_flush_bits {
 };
 
 struct radv_vertex_binding {
+   uint64_t addr;
    VkDeviceSize offset;
    VkDeviceSize size;
    VkDeviceSize stride;

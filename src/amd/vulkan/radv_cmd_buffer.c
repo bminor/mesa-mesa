@@ -5807,6 +5807,8 @@ radv_get_vbo_info(const struct radv_cmd_buffer *cmd_buffer, uint32_t idx, struct
    memset(vbo_info, 0, sizeof(*vbo_info));
 
    vbo_info->binding = binding;
+   vbo_info->va = cmd_buffer->vertex_bindings[binding].addr;
+   vbo_info->size = cmd_buffer->vertex_bindings[binding].size;
    vbo_info->stride = cmd_buffer->vertex_bindings[binding].stride;
 
    vbo_info->attrib_offset = vi_state->offsets[idx];
@@ -5826,16 +5828,6 @@ radv_get_vbo_info(const struct radv_cmd_buffer *cmd_buffer, uint32_t idx, struct
             vtx_info->dst_sel | S_008F0C_NUM_FORMAT((hw_format >> 4) & 0x7) | S_008F0C_DATA_FORMAT(hw_format & 0xf);
       }
    }
-
-   const struct radv_buffer *buffer = cmd_buffer->vertex_binding_buffers[binding];
-
-   if (!buffer)
-      return;
-
-   const uint32_t offset = cmd_buffer->vertex_bindings[binding].offset;
-
-   vbo_info->va = buffer->addr + offset;
-   vbo_info->size = cmd_buffer->vertex_bindings[binding].size;
 }
 
 static void
@@ -6999,6 +6991,7 @@ radv_CmdBindVertexBuffers2(VkCommandBuffer commandBuffer, uint32_t firstBinding,
 
       cmd_buffer->vertex_binding_buffers[idx] = buffer;
       vb[idx].offset = pOffsets[i];
+      vb[idx].addr = buffer ? buffer->addr + pOffsets[i] : 0;
       vb[idx].size = buffer ? vk_buffer_range(&buffer->vk, pOffsets[i], size) : 0;
       vb[idx].stride = stride;
 
