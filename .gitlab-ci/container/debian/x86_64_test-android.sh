@@ -87,7 +87,7 @@ uncollapsed_section_start cuttlefish "Downloading, building and installing Cuttl
 
 CUTTLEFISH_PROJECT_PATH=ao2/aosp-manifest
 CUTTLEFISH_BUILD_VERSION_TAGS=mesa-venus
-CUTTLEFISH_BUILD_NUMBER=20250115.001
+CUTTLEFISH_BUILD_NUMBER=20250215.001
 
 mkdir /cuttlefish
 pushd /cuttlefish
