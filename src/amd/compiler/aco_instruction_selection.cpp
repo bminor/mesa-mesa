@@ -8804,6 +8804,7 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
    }
    case nir_intrinsic_terminate:
    case nir_intrinsic_terminate_if: {
+      assert(ctx->cf_info.parent_loop.exit == NULL && "Terminate must not appear in loops.");
       Operand cond = Operand::c32(-1u);
       if (instr->intrinsic == nir_intrinsic_terminate_if) {
          Temp src = get_ssa_temp(ctx, instr->src[0].ssa);

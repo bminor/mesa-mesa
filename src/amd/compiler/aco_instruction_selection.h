@@ -61,8 +61,8 @@ struct exec_info {
 
 struct cf_context {
    struct {
-      unsigned header_idx;
-      Block* exit;
+      unsigned header_idx = 0;
+      Block* exit = NULL;
       bool has_divergent_continue = false;
       bool has_divergent_break = false;
    } parent_loop;
