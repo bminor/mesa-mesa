@@ -1914,7 +1914,7 @@
         "description": "zink: Use persistent semaphores for PIPE_FD_TYPE_SYNCOBJ",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "32597e116d7317127ef8a7caf8dc75b50f48b8e1",
         "notes": null
