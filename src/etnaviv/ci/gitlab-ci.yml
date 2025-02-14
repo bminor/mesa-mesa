@@ -62,6 +62,19 @@
     - cpu:cores:4
     - $B2C_MARS_SETUP_TAGS
 
+# 2 devices (2025-02-28)
+.austriancoder-imx6qp-nitrogen6_max:arm32:
+  variables:
+    FDO_CI_CONCURRENT: 4
+    RUNNER_FARM_LOCATION: austriancoder
+    B2C_TIMEOUT_FIRST_CONSOLE_ACTIVITY_SECONDS: 30
+    B2C_TIMEOUT_FIRST_CONSOLE_ACTIVITY_RETRIES: 3
+    B2C_IMAGESTORE_PLATFORM: linux/arm/v7
+    B2C_MARS_SETUP_TAGS: "vivante:model:3000,vivante:revision:5450"
+    GPU_VERSION: "etnaviv-gc3000"
+  tags:
+    - farm:$RUNNER_FARM_LOCATION
+    - $B2C_MARS_SETUP_TAGS
 
 # 1 devices (2025-02-26)
 .austriancoder-imx8mq-nitrogen:arm64:
@@ -112,6 +125,18 @@ gc2000-piglit:
     DEQP_SUITE: etnaviv-gc2000-piglit
     B2C_TIMEOUT_OVERALL_MINUTES: 25
   parallel: 2
+  timeout: 30m
+
+gc3000-gles2:
+  extends:
+    - .b2c-arm32-test-gl
+    - .austriancoder-imx6qp-nitrogen6_max:arm32
+    - .etnaviv-manual-rules
+  variables:
+    DEQP_SUITE: etnaviv-gc3000
+    FLAKES_CHANNEL: ""
+    HWCI_TEST_SCRIPT: "/install/deqp-runner.sh"
+    B2C_TIMEOUT_OVERALL_MINUTES: 28
   timeout: 30m
 
 gc7000-gles2:
