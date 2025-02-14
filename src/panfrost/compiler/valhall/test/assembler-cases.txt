@@ -49,7 +49,7 @@ e6 00 00 00 00 c1 91 06    MOV.i32 r1, core_id.w0
 40 c0 00 28 90 c0 a5 48    FADD.v2f16.wait r0, ^r0.abs, 0x0.neg
 c0 00 00 00 00 f6 10 01    IADD_IMM.i32 r54, 0x0, #0x0
 3c d0 ea 00 02 bc 7d 68    ATEST.discard @r60, r60, 0x3F800000, atest_datum.w0
-40 db 05 04 00 c1 a1 00    MKVEC.v2i16 r1, ^r0.h00, 0x3C000000.h10
+40 db 05 04 00 c1 a1 00    MKVEC.v2i16 r1, ^r0.h0, 0x3C000000.h1
 f0 00 3c 33 04 40 7f 78    BLEND.slot0.v4.f16.end @r0:r1, blend_descriptor_0.w0, r60, target:0x0
 7b 0d 00 40 04 84 5e 08    LEA_BUF_IMM.slot1.wait0 @r4:r5, ^r59, table:0xD, index:0x0
 00 dd c0 08 14 c2 b2 00    FMA.f32 r2, r0, 0x44000000.neg.h1, 0x0.neg
@@ -139,11 +139,11 @@ c0 01 00 00 00 c4 10 51    IADD_IMM.i32.reconverge r4, 0x0, #0x1
 00 c9 00 20 10 81 a1 00    IADD.v2u16 r1.h1, r0.h10, 0x7060504.b11
 40 c0 00 08 10 41 a1 00    IADD.v2u16 r1.h0, ^r0.h10, 0x0
 02 02 00 04 20 42 a1 00    IADD.v2u16 r2.h0, r2, r2.h10
-42 c0 05 00 00 c2 a1 00    MKVEC.v2i16 r2, ^r2.h00, 0x0.h00
-77 c0 05 00 00 c2 a1 00    MKVEC.v2i16 r2, ^r55.h00, 0x0.h00
-77 c0 05 10 00 c2 a1 00    MKVEC.v2i16 r2, ^r55.h10, 0x0.h00
-c0 77 05 00 00 c2 a1 00    MKVEC.v2i16 r2, 0x0.h00, ^r55.h00
-c0 77 05 04 00 c2 a1 00    MKVEC.v2i16 r2, 0x0.h00, ^r55.h10
+42 c0 05 00 00 c2 a1 00    MKVEC.v2i16 r2, ^r2.h0, 0x0.h0
+77 c0 05 00 00 c2 a1 00    MKVEC.v2i16 r2, ^r55.h0, 0x0.h0
+77 c0 05 10 00 c2 a1 00    MKVEC.v2i16 r2, ^r55.h1, 0x0.h0
+c0 77 05 00 00 c2 a1 00    MKVEC.v2i16 r2, 0x0.h0, ^r55.h0
+c0 77 05 04 00 c2 a1 00    MKVEC.v2i16 r2, 0x0.h0, ^r55.h1
 77 00 14 00 00 c2 90 00    U16_TO_U32 r2, ^r55.h00
 77 00 14 10 00 c2 90 00    U16_TO_U32 r2, ^r55.h10
 77 00 15 00 00 c2 90 00    U16_TO_F32 r2, ^r55.h00

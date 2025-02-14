@@ -644,8 +644,8 @@ va_pack_alu(const bi_instr *I, unsigned arch)
          unsigned offs = (i == 1) ? 26 : 36;
          hex |= (uint64_t)va_pack_widen(I, src.swizzle, src_info.size) << offs;
       } else if (src_info.lane) {
-         unsigned offs =
-            (I->op == BI_OPCODE_MKVEC_V2I8) ? ((i == 0) ? 38 : 36) : 28;
+         unsigned offs = (I->op == BI_OPCODE_MKVEC_V2I8) ?
+            ((i == 0) ? 38 : 36) : ((i == 0) ? 28 : 26);
 
          if (src_info.size == VA_SIZE_16) {
             hex |= (src.swizzle == BI_SWIZZLE_H1 ? 1 : 0) << offs;

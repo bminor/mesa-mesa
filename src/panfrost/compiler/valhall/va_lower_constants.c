@@ -233,15 +233,18 @@ va_lower_constants(bi_context *ctx, bi_instr *I)
          cons.neg ^= I->src[s].neg;
          I->src[s] = cons;
 
-         /* If we're selecting a single 8-bit lane, we should return a single
-          * 8-bit lane to ensure the result is encodeable. By convention,
-          * applying the lane select puts the desired constant (at least) in the
-          * bottom byte, so we can always select the bottom byte.
+         /* If we're selecting a single lane, we should return a single lane
+          * to ensure the result is encodeable. By convention, applying the
+          * lane select puts the desired constant (at least) in the bottom
+          * byte/half, so we can always select the bottom byte/half.
           */
          if ((info.lane || info.lanes || info.halfswizzle) &&
              I->src[s].swizzle == BI_SWIZZLE_H01) {
-            assert(info.size == VA_SIZE_8);
-            I->src[s] = bi_byte(I->src[s], 0);
+            assert(info.size == VA_SIZE_8 || info.size == VA_SIZE_16);
+            if (info.size == VA_SIZE_8)
+               I->src[s] = bi_byte(I->src[s], 0);
+            else if (info.size == VA_SIZE_16)
+               I->src[s] = bi_half(I->src[s], false);
          }
       }
    }
