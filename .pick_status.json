@@ -174,7 +174,7 @@
         "description": "mesa/main: wire up glapi bits for EXT_multi_draw_indirect",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9f5af689952e9b71082e8b1ff4dec77512909fbf",
         "notes": null
