@@ -788,7 +788,6 @@ radv_CmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer, const VkCopy
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
    VK_FROM_HANDLE(vk_acceleration_structure, src, pInfo->src);
    VK_FROM_HANDLE(vk_acceleration_structure, dst, pInfo->dst);
-   VK_FROM_HANDLE(radv_buffer, src_buffer, src->buffer);
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    struct radv_meta_saved_state saved_state;
 
@@ -817,9 +816,9 @@ radv_CmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer, const VkCopy
    cmd_buffer->state.flush_bits |= radv_dst_access_flush(cmd_buffer, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT,
                                                          VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT, 0, NULL, NULL);
 
-   radv_indirect_dispatch(
-      cmd_buffer, src_buffer->bo,
-      vk_acceleration_structure_get_va(src) + offsetof(struct radv_accel_struct_header, copy_dispatch_size));
+   radv_CmdDispatchIndirect(commandBuffer, src->buffer,
+                            src->offset + offsetof(struct radv_accel_struct_header, copy_dispatch_size));
+
    radv_meta_restore(&saved_state, cmd_buffer);
 }
 
@@ -877,7 +876,6 @@ radv_CmdCopyAccelerationStructureToMemoryKHR(VkCommandBuffer commandBuffer,
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
    VK_FROM_HANDLE(vk_acceleration_structure, src, pInfo->src);
-   VK_FROM_HANDLE(radv_buffer, src_buffer, src->buffer);
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
    struct radv_meta_saved_state saved_state;
@@ -907,9 +905,9 @@ radv_CmdCopyAccelerationStructureToMemoryKHR(VkCommandBuffer commandBuffer,
    cmd_buffer->state.flush_bits |= radv_dst_access_flush(cmd_buffer, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT,
                                                          VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT, 0, NULL, NULL);
 
-   radv_indirect_dispatch(
-      cmd_buffer, src_buffer->bo,
-      vk_acceleration_structure_get_va(src) + offsetof(struct radv_accel_struct_header, copy_dispatch_size));
+   radv_CmdDispatchIndirect(commandBuffer, src->buffer,
+                            src->offset + offsetof(struct radv_accel_struct_header, copy_dispatch_size));
+
    radv_meta_restore(&saved_state, cmd_buffer);
 
    /* Set the header of the serialized data. */

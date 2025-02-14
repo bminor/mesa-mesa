@@ -12084,9 +12084,12 @@ radv_CmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer _buffer, VkDevi
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
    VK_FROM_HANDLE(radv_buffer, buffer, _buffer);
-   const uint64_t va = buffer->addr + offset;
+   struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   struct radv_dispatch_info info = {.indirect_va = buffer->addr + offset};
 
-   radv_indirect_dispatch(cmd_buffer, buffer->bo, va);
+   radv_cs_add_buffer(device->ws, cmd_buffer->cs, buffer->bo);
+
+   radv_compute_dispatch(cmd_buffer, &info);
 }
 
 void
@@ -12098,17 +12101,6 @@ radv_unaligned_dispatch(struct radv_cmd_buffer *cmd_buffer, uint32_t x, uint32_t
    info.blocks[1] = y;
    info.blocks[2] = z;
    info.unaligned = 1;
-
-   radv_compute_dispatch(cmd_buffer, &info);
-}
-
-void
-radv_indirect_dispatch(struct radv_cmd_buffer *cmd_buffer, struct radeon_winsys_bo *bo, uint64_t va)
-{
-   struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   struct radv_dispatch_info info = {.indirect_va = va};
-
-   radv_cs_add_buffer(device->ws, cmd_buffer->cs, bo);
 
    radv_compute_dispatch(cmd_buffer, &info);
 }
