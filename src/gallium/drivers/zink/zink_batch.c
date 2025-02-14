@@ -619,6 +619,8 @@ typedef enum {
    ZINK_SUBMIT_MAX
 } zink_submit;
 
+#define ZINK_MAX_SIGNALS 3
+
 static void
 submit_queue(void *data, void *gdata, int thread_index)
 {
@@ -685,12 +687,12 @@ submit_queue(void *data, void *gdata, int thread_index)
    si[ZINK_SUBMIT_CMDBUF].pSignalSemaphores = bs->signal_semaphores.data;
 
    /* then the signal submit with the timeline (fence) semaphore */
-   VkSemaphore signals[3];
+   VkSemaphore signals[ZINK_MAX_SIGNALS];
    si[ZINK_SUBMIT_SIGNAL].signalSemaphoreCount = !!bs->signal_semaphore;
    signals[0] = bs->signal_semaphore;
    si[ZINK_SUBMIT_SIGNAL].pSignalSemaphores = signals;
    VkTimelineSemaphoreSubmitInfo tsi = {0};
-   uint64_t signal_values[2] = {0};
+   uint64_t signal_values[ZINK_MAX_SIGNALS] = {0};
    tsi.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
    si[ZINK_SUBMIT_SIGNAL].pNext = &tsi;
    tsi.pSignalSemaphoreValues = signal_values;
@@ -702,6 +704,8 @@ submit_queue(void *data, void *gdata, int thread_index)
       signals[si[ZINK_SUBMIT_SIGNAL].signalSemaphoreCount++] = bs->present;
    tsi.signalSemaphoreValueCount = si[ZINK_SUBMIT_SIGNAL].signalSemaphoreCount;
 
+   assert(si[ZINK_SUBMIT_SIGNAL].signalSemaphoreCount <= ZINK_MAX_SIGNALS);
+   assert(tsi.signalSemaphoreValueCount <= ZINK_MAX_SIGNALS);
 
    VkResult result;
    if (bs->has_work) {
