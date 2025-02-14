@@ -2461,28 +2461,58 @@ static void cayman_convert_border_color(union pipe_color_union *in,
                                         union pipe_color_union *out,
                                         struct pipe_sampler_view *view)
 {
-   enum  pipe_format format = view->format;
-   const struct util_format_description *d = util_format_description(format);
+	const enum pipe_format format = view->format;
+	const struct util_format_description *d = util_format_description(format);
 
-   if ((!util_format_is_alpha(format) &&
-        !util_format_is_luminance(format) &&
-        !util_format_is_luminance_alpha(format) &&
-        !util_format_is_intensity(format) &&
-        //!util_format_is_depth_or_stencil(format) &&
-        (format != PIPE_FORMAT_RGTC1_SNORM) &&
-        (format != PIPE_FORMAT_RGTC1_UNORM) &&
-        (format != PIPE_FORMAT_RGTC2_SNORM) &&
-        (format != PIPE_FORMAT_RGTC2_UNORM) &&
-        !(d->channel[0].size < 8) &&
-        (d->nr_channels > 2)) ||
-       (util_format_is_srgb(format) ||
-        util_format_is_s3tc(format))
-       ) {
-                const float values[PIPE_SWIZZLE_MAX] = {
-                   in->f[0], in->f[1], in->f[2], in->f[3], 0.0f, 1.0f, 0.0f /* none */
-                };
+	if (unlikely((d->nr_channels <= 2 &&
+		      !util_format_is_compressed(format)) ||
+		     format == PIPE_FORMAT_RGTC1_UNORM ||
+		     format == PIPE_FORMAT_RGTC1_SNORM ||
+		     format == PIPE_FORMAT_RGTC2_UNORM ||
+		     format == PIPE_FORMAT_RGTC2_SNORM)) {
+		const unsigned swizzle[4] = { view->swizzle_r, view->swizzle_g,
+					      view->swizzle_b, view->swizzle_a };
+		unsigned output_swz[4];
 
-                STATIC_ASSERT(PIPE_SWIZZLE_0 == 4);
+		if ((d->nr_channels == 2 &&
+		     (swizzle[PIPE_SWIZZLE_X] > PIPE_SWIZZLE_Y ||
+		      swizzle[PIPE_SWIZZLE_Y] > PIPE_SWIZZLE_Y)) ||
+		    format == PIPE_FORMAT_RGTC2_UNORM ||
+		    format == PIPE_FORMAT_RGTC2_SNORM) {
+			border_swizzle_nr_channels_2(swizzle, output_swz);
+		} else if (d->nr_channels == 1 && swizzle[PIPE_SWIZZLE_X] != PIPE_SWIZZLE_X) {
+			memcpy(output_swz, neutral_swz, sizeof(output_swz));
+			for (unsigned i = PIPE_SWIZZLE_Y; i <= PIPE_SWIZZLE_W; ++i) {
+				if (swizzle[i] == PIPE_SWIZZLE_X) {
+					output_swz[PIPE_SWIZZLE_W] = i;
+					output_swz[i] = PIPE_SWIZZLE_W;
+					break;
+				}
+			}
+		} else {
+			memcpy(output_swz, neutral_swz, sizeof(output_swz));
+		}
+		out->f[output_swz[0]] = in->f[0];
+		out->f[output_swz[1]] = in->f[1];
+		out->f[output_swz[2]] = in->f[2];
+		out->f[output_swz[3]] = in->f[3];
+	} else if ((!util_format_is_alpha(format) &&
+		    !util_format_is_luminance(format) &&
+		    !util_format_is_luminance_alpha(format) &&
+		    !util_format_is_intensity(format) &&
+		    //!util_format_is_depth_or_stencil(format) &&
+		    !(d->channel[0].size < 8) &&
+		    (d->nr_channels > 2)) ||
+		   (util_format_is_srgb(format) ||
+		    util_format_is_s3tc(format) ||
+		    format == PIPE_FORMAT_BPTC_RGBA_UNORM ||
+		    format == PIPE_FORMAT_BPTC_RGB_FLOAT ||
+		    format == PIPE_FORMAT_BPTC_RGB_UFLOAT)) {
+		const float values[PIPE_SWIZZLE_MAX] = {
+			in->f[0], in->f[1], in->f[2], in->f[3], 0.0f, 1.0f, 0.0f /* none */
+		};
+
+		STATIC_ASSERT(PIPE_SWIZZLE_0 == 4);
                 STATIC_ASSERT(PIPE_SWIZZLE_1 == 5);
                 STATIC_ASSERT(PIPE_SWIZZLE_NONE == 6);
                 STATIC_ASSERT(PIPE_SWIZZLE_MAX == 7);
@@ -2491,9 +2521,9 @@ static void cayman_convert_border_color(union pipe_color_union *in,
                 out->f[1] = values[view->swizzle_g];
                 out->f[2] = values[view->swizzle_b];
                 out->f[3] = values[view->swizzle_a];
-   } else {
-      memcpy(out->f, in->f, 4 * sizeof(float));
-   }
+	} else {
+		memcpy(out->f, in->f, 4 * sizeof(float));
+	}
 }
 
 static void evergreen_convert_border_color(union pipe_color_union *in,
