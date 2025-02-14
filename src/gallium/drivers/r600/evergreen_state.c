@@ -20,6 +20,9 @@
 
 #include <assert.h>
 
+static const unsigned neutral_swz[4] = { PIPE_SWIZZLE_X, PIPE_SWIZZLE_Y,
+					 PIPE_SWIZZLE_Z, PIPE_SWIZZLE_W };
+
 static inline unsigned evergreen_array_mode(unsigned mode)
 {
 	switch (mode) {
@@ -2407,6 +2410,53 @@ static void evergreen_emit_cs_sampler_views(struct r600_context *rctx, struct r6
 	                             EG_FETCH_CONSTANTS_OFFSET_CS + R600_MAX_CONST_BUFFERS, RADEON_CP_PACKET3_COMPUTE_MODE);
 }
 
+static void border_swizzle_nr_channels_2(const unsigned *swizzle,
+					 unsigned *output_swz)
+{
+	memcpy(output_swz, neutral_swz, sizeof(neutral_swz));
+
+	if (swizzle[PIPE_SWIZZLE_X] < PIPE_SWIZZLE_Z &&
+	    swizzle[PIPE_SWIZZLE_Z] < PIPE_SWIZZLE_Z) {
+		output_swz[PIPE_SWIZZLE_Z] = PIPE_SWIZZLE_W;
+		output_swz[PIPE_SWIZZLE_W] = PIPE_SWIZZLE_Z;
+	} else if (swizzle[PIPE_SWIZZLE_Y] < PIPE_SWIZZLE_Z &&
+		   swizzle[PIPE_SWIZZLE_Z] < PIPE_SWIZZLE_Z) {
+		const bool inverted =
+			(swizzle[PIPE_SWIZZLE_Y] == PIPE_SWIZZLE_X) ^
+			(swizzle[PIPE_SWIZZLE_W] == PIPE_SWIZZLE_1);
+		output_swz[PIPE_SWIZZLE_Y] = inverted ?
+			PIPE_SWIZZLE_W : PIPE_SWIZZLE_X;
+		output_swz[PIPE_SWIZZLE_Z] = inverted ?
+			PIPE_SWIZZLE_X : PIPE_SWIZZLE_W;
+		output_swz[PIPE_SWIZZLE_X] = PIPE_SWIZZLE_Z;
+		output_swz[PIPE_SWIZZLE_W] = PIPE_SWIZZLE_Y;
+	} else if (swizzle[PIPE_SWIZZLE_Z] < PIPE_SWIZZLE_Z &&
+		   swizzle[PIPE_SWIZZLE_W] < PIPE_SWIZZLE_Z) {
+		const bool inverted =
+			(swizzle[PIPE_SWIZZLE_W] == PIPE_SWIZZLE_X) ^
+			(swizzle[PIPE_SWIZZLE_X] == PIPE_SWIZZLE_1);
+		output_swz[PIPE_SWIZZLE_Z] = inverted ?
+			PIPE_SWIZZLE_W : PIPE_SWIZZLE_X;
+		output_swz[PIPE_SWIZZLE_W] = inverted ?
+			PIPE_SWIZZLE_X : PIPE_SWIZZLE_W;
+		output_swz[PIPE_SWIZZLE_X] = PIPE_SWIZZLE_Z;
+	} else if (swizzle[PIPE_SWIZZLE_X] < PIPE_SWIZZLE_Z &&
+		   swizzle[PIPE_SWIZZLE_W] < PIPE_SWIZZLE_Z) {
+		output_swz[PIPE_SWIZZLE_W] = PIPE_SWIZZLE_Y;
+		output_swz[PIPE_SWIZZLE_Y] = PIPE_SWIZZLE_W;
+	} else if (swizzle[PIPE_SWIZZLE_Y] < PIPE_SWIZZLE_Z &&
+		   swizzle[PIPE_SWIZZLE_W] < PIPE_SWIZZLE_Z) {
+		const bool inverted =
+			(swizzle[PIPE_SWIZZLE_Y] == PIPE_SWIZZLE_X) ^
+			(swizzle[PIPE_SWIZZLE_Z] == PIPE_SWIZZLE_1);
+		output_swz[PIPE_SWIZZLE_Y] = inverted ?
+			PIPE_SWIZZLE_Y : PIPE_SWIZZLE_X;
+		output_swz[PIPE_SWIZZLE_W] = inverted ?
+			PIPE_SWIZZLE_X : PIPE_SWIZZLE_Y;
+		output_swz[PIPE_SWIZZLE_X] = PIPE_SWIZZLE_W;
+	}
+}
+
 static void cayman_convert_border_color(union pipe_color_union *in,
                                         union pipe_color_union *out,
                                         struct pipe_sampler_view *view)
@@ -2450,52 +2500,86 @@ static void evergreen_convert_border_color(union pipe_color_union *in,
                                            union pipe_color_union *out,
                                            struct pipe_sampler_view *view)
 {
-   enum  pipe_format format = view->format;
-   const struct util_format_description *d = util_format_description(format);
+	const enum pipe_format format = view->format;
+	const struct util_format_description *d = util_format_description(format);
+	unsigned swizzle[4] = { view->swizzle_r, view->swizzle_g,
+				view->swizzle_b, view->swizzle_a };
+	const unsigned *input_swz = swizzle;
+	const unsigned *output_swz = neutral_swz;
+	unsigned misc_swz[4];
+	const bool is_luminance_or_alpha =
+		util_format_is_alpha(format) ||
+		util_format_is_luminance(format) ||
+		util_format_is_luminance_alpha(format);
+	const bool is_lai =
+		is_luminance_or_alpha ||
+		util_format_is_intensity(format) ||
+		d->channel[0].size < 8;
 
-   int swizzle[4] = { view->swizzle_r, view->swizzle_g, view->swizzle_b,
-                      view->swizzle_a };
+	if (is_lai)
+		memcpy(swizzle, neutral_swz, sizeof(swizzle));
 
-   bool is_lai = util_format_is_alpha(format) ||
-                 util_format_is_luminance(format) ||
-                 util_format_is_luminance_alpha(format) ||
-                 util_format_is_intensity(format) ||
-                 d->channel[0].size < 8;
+	if (!util_format_is_depth_or_stencil(format)) {
+		const bool is_pure_integer = util_format_is_pure_integer(format);
 
-   if (is_lai) {
-         for (int i = 0; i < 4; ++i) {
-            swizzle[i] = i;
-         }
-   }
+		if (unlikely((d->nr_channels <= 2 && !util_format_is_compressed(format)) ||
+			     format == PIPE_FORMAT_RGTC1_UNORM ||
+			     format == PIPE_FORMAT_RGTC1_SNORM ||
+			     format == PIPE_FORMAT_RGTC2_UNORM ||
+			     format == PIPE_FORMAT_RGTC2_SNORM)) {
+			if ((d->nr_channels == 2 &&
+			     (swizzle[PIPE_SWIZZLE_X] > PIPE_SWIZZLE_Y ||
+			      swizzle[PIPE_SWIZZLE_Y] > PIPE_SWIZZLE_Y)) ||
+			    format == PIPE_FORMAT_RGTC2_UNORM ||
+			    format == PIPE_FORMAT_RGTC2_SNORM) {
+				border_swizzle_nr_channels_2(swizzle, misc_swz);
+				input_swz = neutral_swz;
+				output_swz = misc_swz;
+			} else if (d->nr_channels == 1 && swizzle[PIPE_SWIZZLE_X] != PIPE_SWIZZLE_X) {
+				for (unsigned i = PIPE_SWIZZLE_Y; i <= PIPE_SWIZZLE_W; ++i) {
+					if (swizzle[i] == PIPE_SWIZZLE_X) {
+						memcpy(misc_swz, neutral_swz, sizeof(misc_swz));
+						misc_swz[PIPE_SWIZZLE_W] = i;
+						misc_swz[i] = PIPE_SWIZZLE_W;
+						input_swz = neutral_swz;
+						output_swz = misc_swz;
+						break;
+					}
+				}
+			}
+		}
 
-   if (!util_format_is_depth_or_stencil(format)) {
+		for (unsigned i = 0; i <= PIPE_SWIZZLE_W; ++i) {
+			unsigned swz = swizzle[i];
 
-      for (int i = 0; i < 4; ++i) {
+			if (swz == PIPE_SWIZZLE_0) {
+				out->f[output_swz[i]] = 0.0f;
+				continue;
+			}
 
-         if (swizzle[i] == 4) {
-            out->f[i] = 0.0f;
-            continue;
-         }
+			if (swz == PIPE_SWIZZLE_1) {
+				out->f[output_swz[i]] = 1.0f;
+				continue;
+			}
 
-         if (swizzle[i] == 5) {
-            out->f[i] = 1.0f;
-            continue;
-         }
-
-         if (util_format_is_pure_integer(format)) {
-            int cs = d->channel[d->swizzle[i]].size;
-            if (d->channel[d->swizzle[i]].type == UTIL_FORMAT_TYPE_SIGNED)
-               out->f[i] = ((double)(in->i[swizzle[i]])) / ((1ul << (cs - 1)) - 1 );
-            else if (d->channel[d->swizzle[i]].type == UTIL_FORMAT_TYPE_UNSIGNED)
-               out->f[i] = ((double)(in->ui[swizzle[i]])) / ((1ul << cs) - 1 );
-            else
-               out->f[i] = 0;
-         } else {
-            out->f[i] = in->f[swizzle[i]];
-         }
-      }
-
-   } else {
+			if (is_pure_integer) {
+				if (is_luminance_or_alpha)
+					swz = d->swizzle[i];
+				{
+					const unsigned cs = d->channel[swz].size;
+					const unsigned type = d->channel[swz].type;
+					if (type == UTIL_FORMAT_TYPE_SIGNED)
+						out->f[output_swz[i]] = ((double)(in->i[input_swz[i]])) / ((1ul << (cs - 1)) - 1 );
+					else if (type == UTIL_FORMAT_TYPE_UNSIGNED)
+						out->f[output_swz[i]] = ((double)(in->ui[input_swz[i]])) / ((1ul << cs) - 1 );
+					else
+						out->f[output_swz[i]] = 0;
+				}
+			} else {
+				out->f[output_swz[i]] = in->f[input_swz[i]];
+			}
+		}
+	} else {
 		switch (format) {
 		case PIPE_FORMAT_X24S8_UINT:
 		case PIPE_FORMAT_X32_S8X24_UINT:
