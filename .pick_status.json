@@ -564,7 +564,7 @@
         "description": "tc: add missing TC_SENTINEL for TC_END_BATCH",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c2983d93dac554da3b7ad7e87021e8c94d0f1cf4",
         "notes": null
