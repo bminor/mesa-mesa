@@ -2739,7 +2739,7 @@
     <field name="SFC Input Chroma Sub-Sampling" start="36" end="39" type="uint">
       <value name="4:0:0" value="0" />
       <value name="4:2:0" value="1" />
-      <value name="4:2:2 Horizonatal" value="2" />
+      <value name="4:2:2 Horizontal" value="2" />
       <value name="4:4:4 Progressive/Interleaved" value="4" />
     </field>
     <field name="VD/VE Input Ordering Mode" start="40" end="42" type="uint" />

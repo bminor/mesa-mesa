@@ -293,7 +293,7 @@ genX(emit_simpler_shader_init_fragment)(struct anv_simple_shader *state)
    /* Allocate a binding table for Gfx9 for 2 reason :
     *
     *   1. we need a to emit a 3DSTATE_BINDING_TABLE_POINTERS_PS to make the
-    *      HW apply the preceeding 3DSTATE_CONSTANT_PS
+    *      HW apply the preceding 3DSTATE_CONSTANT_PS
     *
     *   2. Emitting an empty 3DSTATE_BINDING_TABLE_POINTERS_PS would cause RT
     *      writes (even though they're empty) to disturb later writes
