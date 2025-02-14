@@ -304,7 +304,7 @@
         "description": "zink: Use the correct array size for signal_values[]",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7f56fd965504b4c21417e6f54267f7c7b8470caf",
         "notes": null
