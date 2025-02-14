@@ -713,6 +713,7 @@ namespace {
       case SHADER_OPCODE_UNDEF:
       case SHADER_OPCODE_HALT_TARGET:
       case FS_OPCODE_SCHEDULING_FENCE:
+      case SHADER_OPCODE_FLOW:
          return calculate_desc(info, EU_UNIT_NULL, 0, 0, 0, 0, 0,
                                0, 0, 0, 0, 0, 0);
 

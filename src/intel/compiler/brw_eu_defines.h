@@ -553,6 +553,9 @@ enum opcode {
    SHADER_OPCODE_MEMORY_LOAD_LOGICAL,
    SHADER_OPCODE_MEMORY_STORE_LOGICAL,
    SHADER_OPCODE_MEMORY_ATOMIC_LOGICAL,
+
+   /* Ends a block moving to the next one.  See brw_cfg for details. */
+   SHADER_OPCODE_FLOW,
 };
 
 enum fb_write_logical_srcs {

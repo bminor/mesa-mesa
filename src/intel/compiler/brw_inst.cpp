@@ -808,6 +808,7 @@ brw_inst::is_control_flow_end() const
    case BRW_OPCODE_ELSE:
    case BRW_OPCODE_WHILE:
    case BRW_OPCODE_ENDIF:
+   case SHADER_OPCODE_FLOW:
       return true;
    default:
       return false;
@@ -825,6 +826,7 @@ brw_inst::is_control_flow() const
    case BRW_OPCODE_ENDIF:
    case BRW_OPCODE_BREAK:
    case BRW_OPCODE_CONTINUE:
+   case SHADER_OPCODE_FLOW:
       return true;
    default:
       return false;

@@ -847,11 +847,21 @@ public:
    brw_shader *shader;
 
    brw_inst *BREAK()    const { return emit(BRW_OPCODE_BREAK); }
-   brw_inst *DO()       const { return emit(BRW_OPCODE_DO); }
    brw_inst *ENDIF()    const { return emit(BRW_OPCODE_ENDIF); }
    brw_inst *NOP()      const { return emit(BRW_OPCODE_NOP); }
    brw_inst *WHILE()    const { return emit(BRW_OPCODE_WHILE); }
    brw_inst *CONTINUE() const { return emit(BRW_OPCODE_CONTINUE); }
+
+   void DO() const {
+      emit(BRW_OPCODE_DO);
+      /* Ensure that there'll always be a block after DO to add
+       * instructions and serve as sucessor for predicated WHILE
+       * and CONTINUE.
+       *
+       * See more details in brw_cfg::validate().
+       */
+      emit(SHADER_OPCODE_FLOW);
+   }
 
    bool has_writemask_all() const {
       return force_writemask_all;

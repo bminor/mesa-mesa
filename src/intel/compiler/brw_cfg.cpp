@@ -215,6 +215,13 @@ cfg_t::cfg_t(const brw_shader *s, exec_list *instructions) :
       inst->exec_node::remove();
 
       switch (inst->opcode) {
+      case SHADER_OPCODE_FLOW:
+         cur->instructions.push_tail(inst);
+         next = new_block();
+         cur->add_successor(mem_ctx, next, bblock_link_logical);
+         set_next_block(&cur, next, ip);
+         break;
+
       case BRW_OPCODE_IF:
          cur->instructions.push_tail(inst);
 
@@ -736,6 +743,8 @@ cfg_t::validate(const char *stage_abbrev)
          }
       }
 
+      cfgv_assert(!block->instructions.is_empty());
+
       brw_inst *first_inst = block->start();
       if (first_inst->opcode == BRW_OPCODE_DO) {
          /* DO instructions both begin and end a block, so the DO instruction
@@ -763,6 +772,24 @@ cfg_t::validate(const char *stage_abbrev)
 
          cfgv_assert(logical_block != nullptr);
          cfgv_assert(physical_block != nullptr);
+
+         /* A flow block (block ending with SHADER_OPCODE_FLOW) is
+          * used to ensure that the block right after DO is always
+          * present even if it doesn't have actual instructions.
+          *
+          * This way predicated WHILE and CONTINUE don't need to be
+          * repaired when adding instructions right after the DO.
+          * They will point to the flow block whether is empty or not.
+          */
+         cfgv_assert(logical_block->end()->opcode == SHADER_OPCODE_FLOW);
+      }
+
+      brw_inst *last_inst = block->end();
+      if (last_inst->opcode == SHADER_OPCODE_FLOW) {
+         /* A flow block only has one successor -- the instruction disappears
+          * when generating code.
+          */
+         cfgv_assert(block->children.length() == 1);
       }
    }
 }

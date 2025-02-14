@@ -214,7 +214,8 @@ bblock_ends_with_control_flow(const struct bblock_t *block)
           op == BRW_OPCODE_ELSE ||
           op == BRW_OPCODE_WHILE ||
           op == BRW_OPCODE_BREAK ||
-          op == BRW_OPCODE_CONTINUE;
+          op == BRW_OPCODE_CONTINUE ||
+          op == SHADER_OPCODE_FLOW;
 }
 
 static inline brw_inst *

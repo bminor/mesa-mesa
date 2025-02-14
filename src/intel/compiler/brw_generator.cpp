@@ -1083,6 +1083,10 @@ brw_generator::generate_code(const cfg_t *cfg, int dispatch_width,
 	 brw_DO(p, brw_get_default_exec_size(p));
 	 break;
 
+      case SHADER_OPCODE_FLOW:
+         /* Do nothing. */
+         break;
+
       case BRW_OPCODE_BREAK:
 	 brw_BREAK(p);
 	 break;

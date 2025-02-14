@@ -294,6 +294,9 @@ brw_instruction_name(const struct brw_isa_info *isa, enum opcode op)
       return "read_from_live_channel";
    case SHADER_OPCODE_READ_FROM_CHANNEL:
       return "read_from_channel";
+
+   case SHADER_OPCODE_FLOW:
+      return "flow";
    }
 
    unreachable("not reached");
