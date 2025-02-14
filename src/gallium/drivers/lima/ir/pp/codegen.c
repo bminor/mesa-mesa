@@ -226,6 +226,9 @@ static void ppir_codegen_encode_vec_mul(ppir_node *node, void *code)
    ppir_alu_node *alu = ppir_node_to_alu(node);
 
    ppir_dest *dest = &alu->dest;
+
+   assert(!(dest->type == ppir_target_pipeline && dest->pipeline == ppir_pipeline_reg_fmul));
+
    int dest_shift = 0;
    if (dest->type != ppir_target_pipeline) {
       int index = ppir_target_get_dest_reg_index(dest);
@@ -299,6 +302,9 @@ static void ppir_codegen_encode_scl_mul(ppir_node *node, void *code)
    ppir_alu_node *alu = ppir_node_to_alu(node);
 
    ppir_dest *dest = &alu->dest;
+
+   assert(!(dest->type == ppir_target_pipeline && dest->pipeline == ppir_pipeline_reg_vmul));
+
    int dest_component = ffs(dest->write_mask) - 1;
    assert(dest_component >= 0);
 
@@ -368,6 +374,7 @@ static void ppir_codegen_encode_vec_add(ppir_node *node, void *code)
    ppir_alu_node *alu = ppir_node_to_alu(node);
 
    ppir_dest *dest = &alu->dest;
+
    int index = ppir_target_get_dest_reg_index(dest);
    int dest_shift = index & 0x3;
    f->dest = index >> 2;
