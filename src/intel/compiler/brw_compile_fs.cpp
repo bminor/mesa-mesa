@@ -1911,33 +1911,26 @@ brw_compile_fs(const struct brw_compiler *compiler,
    if (vmulti) {
       prog_data->dispatch_multi = vmulti->dispatch_width;
       prog_data->max_polygons = vmulti->max_polygons;
-      g.generate_code(vmulti->cfg, vmulti->dispatch_width, vmulti->shader_stats,
-                      vmulti->performance_analysis.require(),
-                      stats, vmulti->max_polygons);
+      g.generate_code(*vmulti, stats);
       stats = stats ? stats + 1 : NULL;
       max_dispatch_width = vmulti->dispatch_width;
    } else if (v8) {
       prog_data->dispatch_8 = true;
-      g.generate_code(v8->cfg, 8, v8->shader_stats,
-                      v8->performance_analysis.require(), stats, 1);
+      g.generate_code(*v8, stats);
       stats = stats ? stats + 1 : NULL;
       max_dispatch_width = 8;
    }
 
    if (v16) {
       prog_data->dispatch_16 = true;
-      prog_data->prog_offset_16 = g.generate_code(
-         v16->cfg, 16, v16->shader_stats,
-         v16->performance_analysis.require(), stats, 1);
+      prog_data->prog_offset_16 = g.generate_code(*v16, stats);
       stats = stats ? stats + 1 : NULL;
       max_dispatch_width = 16;
    }
 
    if (v32) {
       prog_data->dispatch_32 = true;
-      prog_data->prog_offset_32 = g.generate_code(
-         v32->cfg, 32, v32->shader_stats,
-         v32->performance_analysis.require(), stats, 1);
+      prog_data->prog_offset_32 = g.generate_code(*v32, stats);
       stats = stats ? stats + 1 : NULL;
       max_dispatch_width = 32;
    }

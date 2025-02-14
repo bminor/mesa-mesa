@@ -109,8 +109,7 @@ compile_single_bs(const struct brw_compiler *compiler,
       return 0;
    }
 
-   int offset = g->generate_code(s.cfg, s.dispatch_width, s.shader_stats,
-                                 s.performance_analysis.require(), stats);
+   int offset = g->generate_code(s, stats);
    if (prog_offset)
       *prog_offset = offset;
    else

@@ -18,11 +18,8 @@ public:
    ~brw_generator();
 
    void enable_debug(const char *shader_name);
-   int generate_code(const cfg_t *cfg, int dispatch_width,
-                     struct brw_shader_stats shader_stats,
-                     const brw_performance &perf,
-                     struct brw_compile_stats *stats,
-                     unsigned max_polygons = 0);
+   int generate_code(const brw_shader &s,
+                     struct brw_compile_stats *stats);
    void add_const_data(void *data, unsigned size);
    void add_resume_sbt(unsigned num_resume_shaders, uint64_t *sbt);
    const unsigned *get_assembly();

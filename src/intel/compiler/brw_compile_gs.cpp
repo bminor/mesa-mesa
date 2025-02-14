@@ -384,8 +384,7 @@ brw_compile_gs(const struct brw_compiler *compiler,
                                       label, nir->info.name);
          g.enable_debug(name);
       }
-      g.generate_code(v.cfg, v.dispatch_width, v.shader_stats,
-                      v.performance_analysis.require(), params->base.stats);
+      g.generate_code(v, params->base.stats);
       g.add_const_data(nir->constant_data, nir->constant_data_size);
       return g.get_assembly();
    }

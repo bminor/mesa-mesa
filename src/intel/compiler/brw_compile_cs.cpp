@@ -285,9 +285,7 @@ brw_compile_cs(const struct brw_compiler *compiler,
    for (unsigned simd = 0; simd < 3; simd++) {
       if (prog_data->prog_mask & (1u << simd)) {
          assert(v[simd]);
-         prog_data->prog_offset[simd] =
-            g.generate_code(v[simd]->cfg, 8u << simd, v[simd]->shader_stats,
-                            v[simd]->performance_analysis.require(), stats);
+         prog_data->prog_offset[simd] = g.generate_code(*v[simd], stats);
          if (stats)
             stats->max_dispatch_width = max_dispatch_width;
          stats = stats ? stats + 1 : NULL;
