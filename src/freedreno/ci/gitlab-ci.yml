@@ -446,7 +446,7 @@ a750-vk:
   extends:
     - .b2c-freedreno-vk-test
     - .a750-mupuf
-    - .valve-freedreno-turnip-manual-rules
+    - .valve-turnip-manual-rules
   timeout: 75m  # base runtime 54min total, 51min of testing
   variables:
     B2C_TIMEOUT_BOOT_MINUTES: 65
@@ -458,7 +458,7 @@ a750-vkd3d:
   extends:
     - .b2c-freedreno-vk-test
     - .a750-mupuf
-    - .valve-freedreno-turnip-manual-rules
+    - .valve-turnip-manual-rules
   timeout: 15m  # base runtime 3min
   variables:
     B2C_TIMEOUT_OVERALL_MINUTES: 12

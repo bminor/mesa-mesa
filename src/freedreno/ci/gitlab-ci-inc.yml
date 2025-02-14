@@ -165,7 +165,7 @@
     - !reference [.valve-farm-manual-rules, rules]
     - !reference [.freedreno-manual-rules, rules]
 
-.valve-freedreno-turnip-manual-rules:
+.valve-turnip-manual-rules:
   stage: freedreno-postmerge
   extends: .no-auto-retry
   rules:
