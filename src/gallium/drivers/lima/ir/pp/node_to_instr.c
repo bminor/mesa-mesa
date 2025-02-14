@@ -111,7 +111,14 @@ static bool ppir_do_one_node_to_instr(ppir_block *block, ppir_node *node)
                   alu->dest.ssa.num_components == 1) {
             node->instr_pos = PPIR_INSTR_SLOT_ALU_SCL_MUL;
             ppir_instr_insert_mul_node(succ, node);
+         } else if (succ->instr_pos == PPIR_INSTR_SLOT_ALU_COMBINE ||
+                    succ->instr_pos == PPIR_INSTR_SLOT_BRANCH) {
+            /* Successor is combiner, we can try scheduling ALU node
+             * into fmul/smul/fadd/sadd slots */
+            if (succ->instr)
+               ppir_instr_insert_node(succ->instr, node);
          }
+
       }
 
       /* can't inserted to any existing instr, create one */

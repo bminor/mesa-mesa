@@ -58,6 +58,7 @@ const ppir_op_info ppir_op_infos[] = {
    [ppir_op_mul] = {
       .name = "mul",
       .slots = (int []) {
+         PPIR_INSTR_SLOT_ALU_COMBINE,
          PPIR_INSTR_SLOT_ALU_SCL_MUL, PPIR_INSTR_SLOT_ALU_VEC_MUL,
          PPIR_INSTR_SLOT_END
       },
