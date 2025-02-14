@@ -1531,8 +1531,6 @@ brw_opt_combine_constants(brw_shader &s)
 
    free(regs);
 
-   bool rebuild_cfg = false;
-
    /* Insert MOVs to load the constant values into GRFs. */
    for (int i = 0; i < table.len; i++) {
       struct imm *imm = &table.imm[i];
@@ -1543,48 +1541,20 @@ brw_opt_combine_constants(brw_shader &s)
       exec_node *n;
       bblock_t *insert_block;
       if (imm->inst != nullptr) {
-         n = imm->inst;
          insert_block = imm->block;
+         n = imm->inst;
       } else {
-         if (imm->block->start()->opcode == BRW_OPCODE_DO) {
+         insert_block = imm->block;
+         if (insert_block->start()->opcode == BRW_OPCODE_DO) {
             /* DO blocks are weird. They can contain only the single DO
              * instruction. As a result, MOV instructions cannot be added to
-             * the DO block.
+             * the DO block, so add to the next block which is guaranteed
+             * to not be a DO block.
              */
-            bblock_t *next_block = imm->block->next();
-            if (next_block->starts_with_control_flow()) {
-               /* This is the difficult case. This occurs for code like
-                *
-                *    do {
-                *       do {
-                *          ...
-                *       } while (...);
-                *    } while (...);
-                *
-                * when the MOV instructions need to be inserted between the
-                * two DO instructions.
-                *
-                * To properly handle this scenario, a new block would need to
-                * be inserted. Doing so would require modifying arbitrary many
-                * CONTINUE, BREAK, and WHILE instructions to point to the new
-                * block.
-                *
-                * It is unlikely that this would ever be correct. Instead,
-                * insert the MOV instructions in the known wrong place and
-                * rebuild the CFG at the end of the pass.
-                */
-               insert_block = imm->block;
-               n = insert_block->last_non_control_flow_inst()->next;
-
-               rebuild_cfg = true;
-            } else {
-               insert_block = next_block;
-               n = insert_block->start();
-            }
-         } else {
-            insert_block = imm->block;
-            n = insert_block->last_non_control_flow_inst()->next;
+            insert_block = insert_block->next();
+            assert(insert_block->start()->opcode != BRW_OPCODE_DO);
          }
+         n = insert_block->last_non_control_flow_inst()->next;
       }
 
       /* From the BDW and CHV PRM, 3D Media GPGPU, Special Restrictions:
@@ -1770,26 +1740,9 @@ brw_opt_combine_constants(brw_shader &s)
       }
    }
 
-   if (rebuild_cfg) {
-      /* When the CFG is initially built, the instructions are removed from
-       * the list of instructions stored in brw_shader -- the same exec_node
-       * is used for membership in that list and in a block list.  So we need
-       * to pull them back before rebuilding the CFG.
-       */
-      assert(exec_list_length(&s.instructions) == 0);
-      foreach_block(block, s.cfg) {
-         exec_list_append(&s.instructions, &block->instructions);
-      }
-
-      delete s.cfg;
-      s.cfg = NULL;
-      brw_calculate_cfg(s);
-   }
-
    ralloc_free(const_ctx);
 
-   s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTIONS | BRW_DEPENDENCY_VARIABLES |
-                         (rebuild_cfg ? BRW_DEPENDENCY_BLOCKS : BRW_DEPENDENCY_NOTHING));
+   s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTIONS | BRW_DEPENDENCY_VARIABLES);
 
    return true;
 }
