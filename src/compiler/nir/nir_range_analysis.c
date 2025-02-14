@@ -594,6 +594,7 @@ process_fp_query(struct analysis_state *state, struct analysis_query *aq, uint32
       case nir_op_fabs:
       case nir_op_fexp2:
       case nir_op_frcp:
+      case nir_op_fsqrt:
       case nir_op_frsq:
       case nir_op_fneg:
       case nir_op_fsat:
@@ -1122,9 +1123,23 @@ process_fp_query(struct analysis_state *state, struct analysis_query *aq, uint32
       };
       break;
 
-   case nir_op_fsqrt:
-      r = (struct ssa_result_range){ ge_zero, false, false, false };
+   case nir_op_fsqrt: {
+      const struct ssa_result_range left = unpack_data(src_res[0]);
+
+      /* sqrt(NaN) and sqrt(< 0) is NaN. */
+      if (left.range == eq_zero || left.range == ge_zero || left.range == gt_zero) {
+         r.is_a_number = left.is_a_number;
+         /* Only sqrt(Inf) is Inf. */
+         r.is_finite = left.is_finite;
+      }
+
+      if (left.range == gt_zero || left.range == ne_zero)
+         r.range = gt_zero;
+      else
+         r.range = ge_zero;
+
       break;
+   }
 
    case nir_op_frsq: {
       const struct ssa_result_range left = unpack_data(src_res[0]);
