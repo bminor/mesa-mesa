@@ -505,7 +505,7 @@ TEST_F(scoreboard_test, loop1)
    brw_reg x = bld.vgrf(BRW_TYPE_D);
    bld.XOR(   x, g[1], g[2]);
 
-   bld.emit(BRW_OPCODE_DO);
+   bld.DO();
 
    bld.ADD(   x, g[1], g[2]);
    bld.emit(BRW_OPCODE_WHILE)->predicate = BRW_PREDICATE_NORMAL;
@@ -538,7 +538,7 @@ TEST_F(scoreboard_test, loop2)
    bld.XOR(g[4], g[1], g[2]);
    bld.XOR(g[5], g[1], g[2]);
 
-   bld.emit(BRW_OPCODE_DO);
+   bld.DO();
 
    bld.ADD(   x, g[1], g[2]);
    bld.emit(BRW_OPCODE_WHILE)->predicate = BRW_PREDICATE_NORMAL;
@@ -570,7 +570,7 @@ TEST_F(scoreboard_test, loop3)
    brw_reg x = bld.vgrf(BRW_TYPE_D);
    bld.XOR(   x, g[1], g[2]);
 
-   bld.emit(BRW_OPCODE_DO);
+   bld.DO();
 
    /* For the ADD in the loop body this extra distance will always apply. */
    bld.XOR(g[3], g[1], g[2]);

@@ -469,7 +469,7 @@ brw_from_nir_emit_loop(nir_to_brw_state &ntb, nir_loop *loop)
    const brw_builder &bld = ntb.bld;
 
    assert(!nir_loop_has_continue_construct(loop));
-   bld.emit(BRW_OPCODE_DO);
+   bld.DO();
 
    brw_from_nir_emit_cf_list(ntb, &loop->body);
 
@@ -7818,7 +7818,7 @@ brw_test_dispatch_packing(const brw_builder &bld)
       /* This will loop forever if the dispatch mask doesn't have the expected
        * form '2^n-1', in which case tmp will be non-zero.
        */
-      bld.emit(BRW_OPCODE_DO);
+      bld.DO();
       bld.CMP(bld.null_reg_ud(), tmp, brw_imm_ud(0), BRW_CONDITIONAL_NZ);
       set_predicate(BRW_PREDICATE_NORMAL, bld.emit(BRW_OPCODE_WHILE));
    }

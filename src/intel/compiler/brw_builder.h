@@ -846,12 +846,12 @@ public:
 
    brw_shader *shader;
 
-   brw_inst *BREAK()    { return emit(BRW_OPCODE_BREAK); }
-   brw_inst *DO()       { return emit(BRW_OPCODE_DO); }
-   brw_inst *ENDIF()    { return emit(BRW_OPCODE_ENDIF); }
-   brw_inst *NOP()      { return emit(BRW_OPCODE_NOP); }
-   brw_inst *WHILE()    { return emit(BRW_OPCODE_WHILE); }
-   brw_inst *CONTINUE() { return emit(BRW_OPCODE_CONTINUE); }
+   brw_inst *BREAK()    const { return emit(BRW_OPCODE_BREAK); }
+   brw_inst *DO()       const { return emit(BRW_OPCODE_DO); }
+   brw_inst *ENDIF()    const { return emit(BRW_OPCODE_ENDIF); }
+   brw_inst *NOP()      const { return emit(BRW_OPCODE_NOP); }
+   brw_inst *WHILE()    const { return emit(BRW_OPCODE_WHILE); }
+   brw_inst *CONTINUE() const { return emit(BRW_OPCODE_CONTINUE); }
 
    bool has_writemask_all() const {
       return force_writemask_all;
