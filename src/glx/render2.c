@@ -48,7 +48,7 @@ __indirect_glMap1d(GLenum target, GLdouble u1, GLdouble u2, GLint stride,
       __GLX_PUT_LONG(24, order);
       /*
        ** NOTE: the doubles that follow are not aligned because of 3
-       ** longs preceeding
+       ** longs preceding
        */
       __glFillMap1d(k, order, stride, pnts, (pc + 28));
       __GLX_END(cmdlen);
@@ -63,7 +63,7 @@ __indirect_glMap1d(GLenum target, GLdouble u1, GLdouble u2, GLint stride,
 
       /*
        ** NOTE: the doubles that follow are not aligned because of 3
-       ** longs preceeding
+       ** longs preceding
        */
       if (stride != k) {
          GLubyte *buf;
@@ -183,7 +183,7 @@ __indirect_glMap2d(GLenum target, GLdouble u1, GLdouble u2, GLint ustr,
       /*
        ** Pack into a u-major ordering.
        ** NOTE: the doubles that follow are not aligned because of 5
-       ** longs preceeding
+       ** longs preceding
        */
       __glFillMap2d(k, uord, vord, ustr, vstr, pnts, (GLdouble *) (pc + 48));
       __GLX_END(cmdlen);
@@ -201,7 +201,7 @@ __indirect_glMap2d(GLenum target, GLdouble u1, GLdouble u2, GLint ustr,
 
       /*
        ** NOTE: the doubles that follow are not aligned because of 5
-       ** longs preceeding
+       ** longs preceding
        */
       if ((vstr != k) || (ustr != k * vord)) {
          GLdouble *buf;
