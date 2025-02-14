@@ -1368,6 +1368,14 @@ optimizations.extend([
    (('uge', '#a', ('umax', '#b', c)), ('iand', ('uge', a, b), ('uge', a, c))),
    (('uge', ('umin', '#a', b), '#c'), ('iand', ('uge', a, c), ('uge', b, c))),
 
+   # These follow from the preceeding uge and ult patterns if various patterns
+   # like uge(0, a) or ult(a, 1) are replaced with ieq or ine comparisons with
+   # zero.
+   (('ieq', ('umin', '#a', b), 0), ('ior', ('ieq', a, 0), ('ieq', b, 0))),
+   (('ine', ('umax', '#a', b), 0), ('ior', ('ine', a, 0), ('ine', b, 0))),
+   (('ieq', ('umax', '#a', b), 0), ('iand', ('ieq', a, 0), ('ieq', b, 0))),
+   (('ine', ('umin', '#a', b), 0), ('iand', ('ine', a, 0), ('ine', b, 0))),
+
    # Thanks to sign extension, the ishr(a, b) is negative if and only if a is
    # negative.
    (('bcsel', ('ilt', a, 0), ('ineg', ('ishr', a, b)), ('ishr', a, b)),
