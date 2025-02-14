@@ -664,18 +664,6 @@ struct brw_stage_prog_data {
  */
 unsigned ptl_register_blocks(unsigned grf_used);
 
-static inline uint32_t *
-brw_stage_prog_data_add_params(struct brw_stage_prog_data *prog_data,
-                               unsigned nr_new_params)
-{
-   unsigned old_nr_params = prog_data->nr_params;
-   prog_data->nr_params += nr_new_params;
-   prog_data->param = reralloc(ralloc_parent(prog_data->param),
-                               prog_data->param, uint32_t,
-                               prog_data->nr_params);
-   return prog_data->param + old_nr_params;
-}
-
 void
 brw_stage_prog_data_add_printf(struct brw_stage_prog_data *prog_data,
                                void *mem_ctx,

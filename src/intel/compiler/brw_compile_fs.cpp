@@ -1713,8 +1713,6 @@ brw_compile_fs(const struct brw_compiler *compiler,
          shader_params.num_polygons   = 1;
 
          v32 = std::make_unique<brw_shader>(&shader_params);
-         if (vbase)
-            v32->import_uniforms(vbase);
 
          if (!run_fs(*v32, false, false)) {
             brw_shader_perf_log(compiler, params->base.log_data,
@@ -1763,8 +1761,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
          shader_params.num_polygons   = 1;
 
          v16 = std::make_unique<brw_shader>(&shader_params);
-         if (v8)
-            v16->import_uniforms(v8.get());
+
          if (!run_fs(*v16, allow_spilling, params->use_rep_send)) {
             brw_shader_perf_log(compiler, params->base.log_data,
                                 "SIMD16 shader failed to compile: %s\n",
@@ -1798,10 +1795,6 @@ brw_compile_fs(const struct brw_compiler *compiler,
          shader_params.num_polygons   = 1;
 
          v32 = std::make_unique<brw_shader>(&shader_params);
-         if (v8)
-            v32->import_uniforms(v8.get());
-         else if (v16)
-            v32->import_uniforms(v16.get());
 
          if (!run_fs(*v32, allow_spilling, false)) {
             brw_shader_perf_log(compiler, params->base.log_data,
@@ -1842,7 +1835,6 @@ brw_compile_fs(const struct brw_compiler *compiler,
             shader_params.num_polygons   = 4;
             vmulti = std::make_unique<brw_shader>(&shader_params);
 
-            vmulti->import_uniforms(vbase);
             if (!run_fs(*vmulti, false, params->use_rep_send)) {
                brw_shader_perf_log(compiler, params->base.log_data,
                                    "Quad-SIMD8 shader failed to compile: %s\n",
@@ -1863,7 +1855,6 @@ brw_compile_fs(const struct brw_compiler *compiler,
             shader_params.num_polygons   = 2;
 
             vmulti = std::make_unique<brw_shader>(&shader_params);
-            vmulti->import_uniforms(vbase);
             if (!run_fs(*vmulti, false, params->use_rep_send)) {
                brw_shader_perf_log(compiler, params->base.log_data,
                                    "Dual-SIMD16 shader failed to compile: %s\n",
@@ -1883,7 +1874,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
             shader_params.num_polygons   = 2;
 
             vmulti = std::make_unique<brw_shader>(&shader_params);
-            vmulti->import_uniforms(vbase);
+
             if (!run_fs(*vmulti, allow_spilling, params->use_rep_send)) {
                brw_shader_perf_log(compiler, params->base.log_data,
                                    "Dual-SIMD8 shader failed to compile: %s\n",

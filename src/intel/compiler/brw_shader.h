@@ -85,8 +85,6 @@ public:
    brw_shader(const brw_shader_params *params);
    ~brw_shader();
 
-   void import_uniforms(brw_shader *v);
-
    void assign_curb_setup();
    void convert_attr_sources_to_hw_regs(brw_inst *inst);
    void calculate_payload_ranges(bool allow_spilling,

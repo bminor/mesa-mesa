@@ -142,31 +142,6 @@ brw_from_nir_setup_outputs(nir_to_brw_state &ntb)
    }
 }
 
-static void
-brw_from_nir_setup_uniforms(brw_shader &s)
-{
-   const intel_device_info *devinfo = s.devinfo;
-
-   /* Only the first compile gets to set up uniforms. */
-   if (s.uniforms)
-      return;
-
-   s.uniforms = s.nir->num_uniforms / 4;
-
-   if (mesa_shader_stage_is_compute(s.stage) && devinfo->verx10 < 125) {
-      /* Add uniforms for builtins after regular NIR uniforms. */
-      assert(s.uniforms == s.prog_data->nr_params);
-
-      /* Subgroup ID must be the last uniform on the list.  This will make
-       * easier later to split between cross thread and per thread
-       * uniforms.
-       */
-      uint32_t *param = brw_stage_prog_data_add_params(s.prog_data, 1);
-      *param = BRW_PARAM_BUILTIN_SUBGROUP_ID;
-      s.uniforms++;
-   }
-}
-
 static brw_reg
 emit_work_group_id_setup(nir_to_brw_state &ntb)
 {
@@ -8066,7 +8041,6 @@ brw_from_nir(brw_shader *s)
     * be converted to reads/writes of these arrays
     */
    brw_from_nir_setup_outputs(ntb);
-   brw_from_nir_setup_uniforms(ntb.s);
    brw_from_nir_emit_system_values(ntb);
    ntb.s.last_scratch = ALIGN(ntb.nir->scratch_size, 4) * ntb.s.dispatch_width;
 

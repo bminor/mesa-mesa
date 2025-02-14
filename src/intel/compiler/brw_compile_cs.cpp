@@ -120,6 +120,41 @@ brw_nir_uses_sampler(nir_shader *shader)
                                        NULL);
 }
 
+static inline uint32_t *
+brw_stage_prog_data_add_params(struct brw_stage_prog_data *prog_data,
+                               unsigned nr_new_params)
+{
+   unsigned old_nr_params = prog_data->nr_params;
+   prog_data->nr_params += nr_new_params;
+   prog_data->param = reralloc(ralloc_parent(prog_data->param),
+                               prog_data->param, uint32_t,
+                               prog_data->nr_params);
+   return prog_data->param + old_nr_params;
+}
+
+static void
+brw_adjust_uniforms(brw_shader &s)
+{
+   if (s.devinfo->verx10 >= 125)
+      return;
+
+   assert(mesa_shader_stage_is_compute(s.stage));
+
+   if (brw_get_subgroup_id_param_index(s.devinfo, s.prog_data) == -1) {
+      /* Add uniforms for builtins after regular NIR uniforms. */
+      assert(s.uniforms == s.prog_data->nr_params);
+
+      /* Subgroup ID must be the last uniform on the list.  This will make
+       * easier later to split between cross thread and per thread
+       * uniforms.
+       */
+      uint32_t *param = brw_stage_prog_data_add_params(s.prog_data, 1);
+      *param = BRW_PARAM_BUILTIN_SUBGROUP_ID;
+   }
+
+   s.uniforms = s.prog_data->nr_params;
+}
+
 const unsigned *
 brw_compile_cs(const struct brw_compiler *compiler,
                struct brw_compile_cs_params *params)
@@ -188,15 +223,14 @@ brw_compile_cs(const struct brw_compiler *compiler,
          .debug_enabled           = debug_enabled,
       };
       v[simd] = std::make_unique<brw_shader>(&shader_params);
+      brw_adjust_uniforms(*v[simd]);
 
       const bool allow_spilling = simd == 0 ||
          (!simd_state.compiled[simd - 1] && !brw_simd_should_compile(simd_state, simd - 1)) ||
          nir->info.workgroup_size_variable;
 
       if (devinfo->ver < 30 || nir->info.workgroup_size_variable) {
-         const int first = brw_simd_first_compiled(simd_state);
-         if (first >= 0)
-            v[simd]->import_uniforms(v[first].get());
+         ASSERTED const int first = brw_simd_first_compiled(simd_state);
          assert(allow_spilling == (first < 0 || nir->info.workgroup_size_variable));
       }
 

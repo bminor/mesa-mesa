@@ -419,11 +419,6 @@ brw_compile_task(const struct brw_compiler *compiler,
       };
       v[simd] = std::make_unique<brw_shader>(&shader_params);
 
-      if (prog_data->base.prog_mask) {
-         unsigned first = ffs(prog_data->base.prog_mask) - 1;
-         v[simd]->import_uniforms(v[first].get());
-      }
-
       const bool allow_spilling = simd == 0 ||
          (!simd_state.compiled[simd - 1] && !brw_simd_should_compile(simd_state, simd - 1));
       if (run_task_mesh(*v[simd], allow_spilling)) {
@@ -1278,11 +1273,6 @@ brw_compile_mesh(const struct brw_compiler *compiler,
          .debug_enabled           = debug_enabled,
       };
       v[simd] = std::make_unique<brw_shader>(&shader_params);
-
-      if (prog_data->base.prog_mask) {
-         unsigned first = ffs(prog_data->base.prog_mask) - 1;
-         v[simd]->import_uniforms(v[first].get());
-      }
 
       const bool allow_spilling = simd == 0 ||
          (!simd_state.compiled[simd - 1] && !brw_simd_should_compile(simd_state, simd - 1));
