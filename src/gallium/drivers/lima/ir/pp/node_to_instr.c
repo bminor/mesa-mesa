@@ -285,8 +285,10 @@ static bool ppir_do_node_to_instr(ppir_block *block, ppir_node *root)
 
       /* first try pipeline sched, if that didn't succeed try normal sched */
       if (!ppir_do_node_to_instr_try_insert(block, node))
-         if (!ppir_do_one_node_to_instr(block, node))
+         if (!ppir_do_one_node_to_instr(block, node)) {
+            ppir_debug("%s failed on node %d\n", __func__, node->index);
             return false;
+         }
 
       /* The node writes output register. We can't stop at this exact
        * instruction because there may be another node that writes another
