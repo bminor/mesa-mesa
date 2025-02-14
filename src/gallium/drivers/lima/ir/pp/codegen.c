@@ -547,6 +547,7 @@ static void ppir_codegen_encode_combine(ppir_node *node, void *code)
    case ppir_op_sqrt:
    case ppir_op_sin:
    case ppir_op_cos:
+   case ppir_op_mov:
    {
       f->scalar.dest_vec = false;
       f->scalar.src_vec = false;
@@ -584,9 +585,35 @@ static void ppir_codegen_encode_combine(ppir_node *node, void *code)
       case ppir_op_cos:
          f->scalar.op = ppir_codegen_combine_scalar_op_cos;
          break;
+      case ppir_op_mov:
+         f->scalar.op = ppir_codegen_combine_scalar_op_mov;
+         break;
       default:
          break;
       }
+      break;
+   }
+   case ppir_op_mul:
+   {
+      f->scalar.dest_vec = true;
+      f->scalar.src_vec = true;
+
+      ppir_dest *dest = &alu->dest;
+      int index = ppir_target_get_dest_reg_index(dest);
+      int dest_shift = index & 0x3;
+
+      f->vector.dest = index >> 2;
+      f->vector.mask = dest->write_mask << dest_shift;
+
+      ppir_src *src = alu->src;
+      f->scalar.arg0_src = get_scl_reg_index(src, 0);
+      f->scalar.arg0_absolute = src->absolute;
+      f->scalar.arg0_negate = src->negate;
+
+      src = alu->src + 1;
+      index = ppir_target_get_src_reg_index(src);
+      f->vector.arg1_source = index >> 2;
+      f->vector.arg1_swizzle = encode_swizzle(src->swizzle, index & 0x3, dest_shift);
       break;
    }
    default:
