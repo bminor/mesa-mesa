@@ -166,7 +166,7 @@ TEST_F(nir_opt_loop_test, opt_loop_merge_terminators_break_in_then)
                               // succs: b4
               }
               block b4:   // preds: b2 b3
-              1      %9 = phi b3: %8, b2: %4
+              1      %9 = phi b2: %4, b3: %8
               1     %10 = ior %9, %3
                           // succs: b5 b6
               if %10 {
@@ -294,7 +294,7 @@ TEST_F(nir_opt_loop_test, opt_loop_merge_terminators_deref_after_first_if)
                               // succs: b4
               }
               block b4:   // preds: b2 b3
-              1      %9 = phi b3: %8, b2: %4
+              1      %9 = phi b2: %4, b3: %8
               1     %10 = ior %9, %3
                           // succs: b5 b6
               if %10 {
@@ -376,8 +376,8 @@ TEST_F(nir_opt_loop_test, opt_loop_merge_terminators_deref_phi_index)
                               // succs: b4
               }
               block b4:   // preds: b2 b3
-              1     %12 = phi b3: %11, b2: %4
-              32    %13 = phi b3: %6 (0x3), b2: %5
+              1     %12 = phi b2: %4, b3: %11
+              32    %13 = phi b2: %5, b3: %6 (0x3)
               1     %14 = ior %12, %3
                           // succs: b5 b6
               if %14 {
