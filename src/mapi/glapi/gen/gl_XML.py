@@ -364,7 +364,7 @@ class gl_enum( gl_item ):
         """Calculate a 'priority' for this enum name.
 
         When an enum is looked up by number, there may be many
-        possible names, but only one is the 'prefered' name.  The
+        possible names, but only one is the 'preferred' name.  The
         priority is used to select which name is the 'best'.
 
         Highest precedence is given to core GL name.  ARB extension
