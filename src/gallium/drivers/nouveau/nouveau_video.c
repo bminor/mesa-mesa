@@ -856,7 +856,7 @@ nouveau_screen_get_video_param(struct pipe_screen *pscreen,
    case PIPE_VIDEO_CAP_MAX_WIDTH:
    case PIPE_VIDEO_CAP_MAX_HEIGHT:
       return vl_video_buffer_max_size(pscreen);
-   case PIPE_VIDEO_CAP_PREFERED_FORMAT:
+   case PIPE_VIDEO_CAP_PREFERRED_FORMAT:
       return PIPE_FORMAT_NV12;
    case PIPE_VIDEO_CAP_PREFERS_INTERLACED:
       return false;
