@@ -1048,14 +1048,25 @@ process_fp_query(struct analysis_state *state, struct analysis_query *aq, uint32
       break;
    }
 
-   case nir_op_frcp:
-      r = (struct ssa_result_range){
-         unpack_data(src_res[0]).range,
-         false,
-         false, /* Various cases can result in NaN, so assume the worst. */
-         false  /*    "      "    "     "    "  "    "    "    "    "    */
-      };
+   case nir_op_frcp: {
+      const struct ssa_result_range left = unpack_data(src_res[0]);
+
+      /* Only rcp(NaN) is NaN. */
+      r.is_a_number = left.is_a_number;
+
+      /* rcp can be zero for large values if denorms are flushed, or for Inf.
+       * Also, rcp(-0) is -Inf and rcp(+0) is Inf.
+       */
+      if (left.range == gt_zero)
+         r.range = ge_zero;
+      else if (left.range == lt_zero)
+         r.range = le_zero;
+
+      if (left.range == gt_zero || left.range == lt_zero || left.range == ne_zero)
+         r.is_finite = left.is_a_number;
+
       break;
+   }
 
    case nir_op_mov:
       r = unpack_data(src_res[0]);
