@@ -239,6 +239,8 @@ static_assert(sizeof(struct nvk_ies_cs_qmd) % QMD_ALIGN == 0,
               "QMD size is not properly algined");
 static_assert(sizeof(struct nvk_root_descriptor_table) % QMD_ALIGN == 0,
               "Root descriptor table size is not aligned");
+static_assert(NVK_DGC_ALIGN >= QMD_ALIGN,
+              "QMD alignment requirement is a lower bound of DGC alignment");
 
 static void
 copy_repl_global_dw(nir_builder *b, nir_def *dst_addr, nir_def *src_addr,
