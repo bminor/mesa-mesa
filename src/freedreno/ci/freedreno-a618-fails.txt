@@ -13,8 +13,6 @@ KHR-GL46.texture_cube_map_array.color_depth_attachments,Fail
 #
 
 
-glx@glx_arb_create_context_no_error@no error,Fail
-
 spec@arb_depth_buffer_float@fbo-generatemipmap-formats,Fail
 spec@arb_depth_buffer_float@fbo-generatemipmap-formats@GL_DEPTH_COMPONENT32F,Fail
 spec@arb_depth_buffer_float@fbo-generatemipmap-formats@GL_DEPTH_COMPONENT32F NPOT,Fail
@@ -111,7 +109,6 @@ spec@ext_framebuffer_multisample@sample-alpha-to-coverage 4 color,Fail
 spec@ext_framebuffer_multisample@sample-alpha-to-coverage 4 depth,Fail
 spec@ext_framebuffer_object@fbo-alphatest-nocolor,Fail
 spec@ext_framebuffer_object@fbo-alphatest-nocolor-ff,Fail
-spec@ext_packed_float@query-rgba-signed-components,Fail
 
 # These failures go away with FD_MESA_DEBUG=noblit, but don't seem to be related
 # to the actual mipmap generation blits (which we do fall back on)
@@ -298,7 +295,7 @@ api@clgetextensionfunctionaddressforplatform,Fail
 #
 ## Not our problem:
 #
-# CL_DEVICE_MAX_READ_IMAGE_ARGS: failed, expected at least 128, got 16 
+# CL_DEVICE_MAX_READ_IMAGE_ARGS: failed, expected at least 128, got 16
 api@clgetdeviceinfo,Fail
 
 # CL_QUEUE_SIZE Unexpected CL error: CL_INVALID_COMMAND_QUEUE -36

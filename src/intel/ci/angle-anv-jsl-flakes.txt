@@ -13,3 +13,6 @@ dEQP-GLES3.functional.multisample.fbo_max_samples.constancy_both
 
 KHR-GLES31.core.tessellation_shader.vertex.vertex_ordering
 KHR-GLES31.core.tessellation_shader.vertex.vertex_spacing
+
+# Seen in https://gitlab.freedesktop.org/mesa/mesa/-/pipelines/1364513
+dEQP-GLES3.functional.multisample.fbo_8_samples.constancy_both

@@ -76,7 +76,6 @@ KHR-GL46.sparse_texture2_tests.SparseTexture2Commitment_texture_2d_multisample_r
 KHR-GL46.sparse_texture2_tests.SparseTexture2Commitment_texture_2d_multisample_rgb10_a2,Fail
 
 glx@glx-multi-window-single-context,Fail
-glx@glx_arb_create_context_no_error@no error,Fail
 glx@glx_arb_sync_control@swapbuffersmsc-divisor-zero,Fail
 glx@glx_arb_sync_control@swapbuffersmsc-return swap_interval 0,Fail
 glx@glx_arb_sync_control@swapbuffersmsc-return swap_interval 1,Fail
@@ -675,7 +674,6 @@ dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_out_of_bounds_min_revers
 spec@ext_framebuffer_multisample@interpolation 6 non-centroid-deriv-disabled,Fail
 
 glx@glx-tfp,Fail
-glx@glx-visuals-depth -pixmap,Fail
 spec@arb_sample_shading@samplemask 4,Fail
 spec@ext_framebuffer_multisample@interpolation 6 centroid-deriv-disabled,Fail
 spec@ext_framebuffer_multisample@interpolation 8 non-centroid-deriv-disabled,Fail
