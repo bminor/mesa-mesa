@@ -162,9 +162,11 @@ brw_nir_pack_vs_input(nir_shader *nir, struct brw_vs_prog_data *prog_data)
       }
    }
 
-   /* Generate the packing array */
+   /* Generate the packing array, we start from the first application
+    * attribute : VERT_ATTRIB_GENERIC0
+    */
    unsigned vf_element_count = 0;
-   for (unsigned a = 0; a < ARRAY_SIZE(attributes) && vf_element_count < 32; a++) {
+   for (unsigned a = VERT_ATTRIB_GENERIC0; a < ARRAY_SIZE(attributes) && vf_element_count < 32; a++) {
       /* Consider all attributes used when no slot compaction is active */
       if (!attributes[a].is_used && !prog_data->no_vf_slot_compaction)
          continue;
