@@ -3183,11 +3183,6 @@ zink_batch_rp(struct zink_context *ctx)
       if (ctx->render_condition.query)
          zink_start_conditional_render(ctx);
       zink_clear_framebuffer(ctx, clear_buffers);
-      if (ctx->pipeline_changed[0]) {
-         for (unsigned i = 0; i < ctx->fb_state.nr_cbufs; i++)
-            batch_ref_fb_surface(ctx, ctx->fb_state.cbufs[i]);
-         batch_ref_fb_surface(ctx, ctx->fb_state.zsbuf);
-      }
    }
    /* unable to previously determine that queries didn't split renderpasses: ensure queries start inside renderpass */
    if (!ctx->queries_disabled && maybe_has_query_ends) {
@@ -3665,6 +3660,7 @@ unbind_fb_surface(struct zink_context *ctx, struct pipe_surface *surf, unsigned 
       }
    }
    res->fb_binds &= ~BITFIELD_BIT(idx);
+   batch_ref_fb_surface(ctx, surf);
    /* this is called just before the resource loses a reference, so a refcount==1 means the resource will be destroyed */
    if (!res->fb_bind_count && res->base.b.reference.count > 1) {
       if (ctx->track_renderpasses && !ctx->blitting) {
@@ -3863,7 +3859,6 @@ zink_set_framebuffer_state(struct pipe_context *pctx,
          }
          res->fb_bind_count++;
          res->fb_binds |= BITFIELD_BIT(i);
-         batch_ref_fb_surface(ctx, ctx->fb_state.cbufs[i]);
          if (util_format_has_alpha1(psurf->format)) {
             if (!res->valid && !zink_fb_clear_full_exists(ctx, i))
                ctx->void_clears |= (PIPE_CLEAR_COLOR0 << i);
@@ -3875,7 +3870,6 @@ zink_set_framebuffer_state(struct pipe_context *pctx,
       struct pipe_surface *psurf = ctx->fb_state.zsbuf;
       struct zink_surface *transient = zink_transient_surface(psurf);
       check_framebuffer_surface_mutable(pctx, psurf);
-      batch_ref_fb_surface(ctx, ctx->fb_state.zsbuf);
       if (transient || psurf->nr_samples)
          ctx->transient_attachments |= BITFIELD_BIT(PIPE_MAX_COLOR_BUFS);
       if (!samples)
