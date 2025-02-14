@@ -993,7 +993,7 @@ struct zink_shader_module {
 };
 
 struct zink_program {
-   struct pipe_reference reference;
+   EXCLUSIVE_CACHELINE(struct pipe_reference reference);
    struct zink_context *ctx;
    void *ralloc_ctx;
    blake3_hash blake3;

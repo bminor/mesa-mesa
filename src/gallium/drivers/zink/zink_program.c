@@ -994,7 +994,7 @@ zink_pipeline_layout_create(struct zink_screen *screen, VkDescriptorSetLayout *d
 static void *
 create_program(struct zink_context *ctx, bool is_compute)
 {
-   struct zink_program *pg = rzalloc_size(NULL, is_compute ? sizeof(struct zink_compute_program) : sizeof(struct zink_gfx_program));
+   struct zink_program *pg = is_compute ? (void*)CALLOC_STRUCT_CL(zink_compute_program) : (void*)CALLOC_STRUCT_CL(zink_gfx_program);
    if (!pg)
       return NULL;
 
@@ -1690,7 +1690,7 @@ zink_destroy_gfx_program(struct zink_screen *screen,
       zink_gfx_lib_cache_unref(screen, prog->libs);
 
    ralloc_free(prog->base.ralloc_ctx);
-   ralloc_free(prog);
+   FREE_CL(prog);
 }
 
 void
@@ -1717,7 +1717,7 @@ zink_destroy_compute_program(struct zink_screen *screen,
    zink_destroy_shader_module(screen, comp->module);
 
    ralloc_free(comp->base.ralloc_ctx);
-   ralloc_free(comp);
+   FREE_CL(comp);
 }
 
 ALWAYS_INLINE static bool
