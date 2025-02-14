@@ -38,6 +38,9 @@
 #define NVK_MAX_IMAGE_PLANES 3
 #define NVK_MAX_SAMPLER_PLANES 2
 
+/* Device Generated Commands */
+#define NVK_DGC_ALIGN 0x100
+
 struct nvk_addr_range {
    uint64_t addr;
    uint64_t range;
