@@ -10,7 +10,7 @@
 
 #include "vn_protocol_driver_defines.h"
 
-#define VN_INFO_EXTENSION_MAX_NUMBER (544)
+#define VN_INFO_EXTENSION_MAX_NUMBER (546)
 
 struct vn_info_extension {
    const char *name;
@@ -19,8 +19,8 @@ struct vn_info_extension {
 };
 
 /* sorted by extension names for bsearch */
-static const uint32_t _vn_info_extension_count = 125;
-static const struct vn_info_extension _vn_info_extensions[125] = {
+static const uint32_t _vn_info_extension_count = 137;
+static const struct vn_info_extension _vn_info_extensions[137] = {
    { "VK_EXT_4444_formats", 341, 1 },
    { "VK_EXT_attachment_feedback_loop_layout", 340, 2 },
    { "VK_EXT_blend_operation_advanced", 149, 2 },
@@ -41,7 +41,10 @@ static const struct vn_info_extension _vn_info_extensions[125] = {
    { "VK_EXT_external_memory_acquire_unmodified", 454, 1 },
    { "VK_EXT_external_memory_dma_buf", 126, 1 },
    { "VK_EXT_fragment_shader_interlock", 252, 1 },
+   { "VK_EXT_global_priority", 175, 2 },
+   { "VK_EXT_global_priority_query", 389, 1 },
    { "VK_EXT_graphics_pipeline_library", 321, 1 },
+   { "VK_EXT_host_image_copy", 271, 1 },
    { "VK_EXT_host_query_reset", 262, 1 },
    { "VK_EXT_image_2d_view_of_3d", 394, 1 },
    { "VK_EXT_image_drm_format_modifier", 159, 2 },
@@ -58,6 +61,8 @@ static const struct vn_info_extension _vn_info_extensions[125] = {
    { "VK_EXT_pci_bus_info", 213, 2 },
    { "VK_EXT_pipeline_creation_cache_control", 298, 3 },
    { "VK_EXT_pipeline_creation_feedback", 193, 1 },
+   { "VK_EXT_pipeline_protected_access", 467, 1 },
+   { "VK_EXT_pipeline_robustness", 69, 1 },
    { "VK_EXT_primitive_topology_list_restart", 357, 1 },
    { "VK_EXT_primitives_generated_query", 383, 1 },
    { "VK_EXT_private_data", 296, 1 },
@@ -96,6 +101,7 @@ static const struct vn_info_extension _vn_info_extensions[125] = {
    { "VK_KHR_draw_indirect_count", 170, 1 },
    { "VK_KHR_driver_properties", 197, 1 },
    { "VK_KHR_dynamic_rendering", 45, 1 },
+   { "VK_KHR_dynamic_rendering_local_read", 233, 1 },
    { "VK_KHR_external_fence", 114, 1 },
    { "VK_KHR_external_fence_capabilities", 113, 1 },
    { "VK_KHR_external_fence_fd", 116, 1 },
@@ -109,6 +115,7 @@ static const struct vn_info_extension _vn_info_extensions[125] = {
    { "VK_KHR_fragment_shading_rate", 227, 2 },
    { "VK_KHR_get_memory_requirements2", 147, 1 },
    { "VK_KHR_get_physical_device_properties2", 60, 2 },
+   { "VK_KHR_global_priority", 189, 1 },
    { "VK_KHR_image_format_list", 148, 1 },
    { "VK_KHR_imageless_framebuffer", 109, 1 },
    { "VK_KHR_index_type_uint8", 534, 1 },
@@ -119,6 +126,8 @@ static const struct vn_info_extension _vn_info_extensions[125] = {
    { "VK_KHR_maintenance3", 169, 1 },
    { "VK_KHR_maintenance4", 414, 2 },
    { "VK_KHR_maintenance5", 471, 1 },
+   { "VK_KHR_maintenance6", 546, 1 },
+   { "VK_KHR_map_memory2", 272, 1 },
    { "VK_KHR_multiview", 54, 1 },
    { "VK_KHR_pipeline_library", 291, 1 },
    { "VK_KHR_push_descriptor", 81, 2 },
@@ -129,11 +138,14 @@ static const struct vn_info_extension _vn_info_extensions[125] = {
    { "VK_KHR_shader_atomic_int64", 181, 1 },
    { "VK_KHR_shader_clock", 182, 1 },
    { "VK_KHR_shader_draw_parameters", 64, 1 },
+   { "VK_KHR_shader_expect_assume", 545, 1 },
    { "VK_KHR_shader_float16_int8", 83, 1 },
    { "VK_KHR_shader_float_controls", 198, 4 },
+   { "VK_KHR_shader_float_controls2", 529, 1 },
    { "VK_KHR_shader_integer_dot_product", 281, 1 },
    { "VK_KHR_shader_non_semantic_info", 294, 1 },
    { "VK_KHR_shader_subgroup_extended_types", 176, 1 },
+   { "VK_KHR_shader_subgroup_rotate", 417, 2 },
    { "VK_KHR_shader_terminate_invocation", 216, 1 },
    { "VK_KHR_spirv_1_4", 237, 1 },
    { "VK_KHR_storage_buffer_storage_class", 132, 1 },
@@ -157,7 +169,7 @@ vn_info_wire_format_version(void)
 static inline uint32_t
 vn_info_vk_xml_version(void)
 {
-    return VK_MAKE_API_VERSION(0, 1, 3, 302);
+    return VK_MAKE_API_VERSION(0, 1, 4, 307);
 }
 
 static inline int

@@ -1252,14 +1252,14 @@ vn_CmdBindIndexBuffer(VkCommandBuffer commandBuffer,
 }
 
 void
-vn_CmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer,
-                          VkBuffer buffer,
-                          VkDeviceSize offset,
-                          VkDeviceSize size,
-                          VkIndexType indexType)
+vn_CmdBindIndexBuffer2(VkCommandBuffer commandBuffer,
+                       VkBuffer buffer,
+                       VkDeviceSize offset,
+                       VkDeviceSize size,
+                       VkIndexType indexType)
 {
-   VN_CMD_ENQUEUE(vkCmdBindIndexBuffer2KHR, commandBuffer, buffer, offset,
-                  size, indexType);
+   VN_CMD_ENQUEUE(vkCmdBindIndexBuffer2, commandBuffer, buffer, offset, size,
+                  indexType);
 }
 
 void
@@ -2005,11 +2005,11 @@ vn_CmdDispatchBase(VkCommandBuffer commandBuffer,
 }
 
 void
-vn_CmdSetLineStippleKHR(VkCommandBuffer commandBuffer,
-                        uint32_t lineStippleFactor,
-                        uint16_t lineStipplePattern)
+vn_CmdSetLineStipple(VkCommandBuffer commandBuffer,
+                     uint32_t lineStippleFactor,
+                     uint16_t lineStipplePattern)
 {
-   VN_CMD_ENQUEUE(vkCmdSetLineStippleKHR, commandBuffer, lineStippleFactor,
+   VN_CMD_ENQUEUE(vkCmdSetLineStipple, commandBuffer, lineStippleFactor,
                   lineStipplePattern);
 }
 
@@ -2275,12 +2275,12 @@ vn_CmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffer,
 }
 
 void
-vn_CmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer,
-                           VkPipelineBindPoint pipelineBindPoint,
-                           VkPipelineLayout layout,
-                           uint32_t set,
-                           uint32_t descriptorWriteCount,
-                           const VkWriteDescriptorSet *pDescriptorWrites)
+vn_CmdPushDescriptorSet(VkCommandBuffer commandBuffer,
+                        VkPipelineBindPoint pipelineBindPoint,
+                        VkPipelineLayout layout,
+                        uint32_t set,
+                        uint32_t descriptorWriteCount,
+                        const VkWriteDescriptorSet *pDescriptorWrites)
 {
    const uint32_t img_info_count = vn_descriptor_set_count_write_images(
       descriptorWriteCount, pDescriptorWrites);
@@ -2294,7 +2294,7 @@ vn_CmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer,
    pDescriptorWrites = vn_descriptor_set_get_writes(
       descriptorWriteCount, pDescriptorWrites, layout, &local);
 
-   VN_CMD_ENQUEUE(vkCmdPushDescriptorSetKHR, commandBuffer, pipelineBindPoint,
+   VN_CMD_ENQUEUE(vkCmdPushDescriptorSet, commandBuffer, pipelineBindPoint,
                   layout, set, descriptorWriteCount, pDescriptorWrites);
 
    STACK_ARRAY_FINISH(writes);
@@ -2302,7 +2302,7 @@ vn_CmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer,
 }
 
 void
-vn_CmdPushDescriptorSetWithTemplateKHR(
+vn_CmdPushDescriptorSetWithTemplate(
    VkCommandBuffer commandBuffer,
    VkDescriptorUpdateTemplate descriptorUpdateTemplate,
    VkPipelineLayout layout,
@@ -2328,7 +2328,7 @@ vn_CmdPushDescriptorSetWithTemplateKHR(
    vn_descriptor_set_fill_update_with_template(templ, VK_NULL_HANDLE, pData,
                                                &update);
 
-   VN_CMD_ENQUEUE(vkCmdPushDescriptorSetKHR, commandBuffer,
+   VN_CMD_ENQUEUE(vkCmdPushDescriptorSet, commandBuffer,
                   templ->push.pipeline_bind_point, layout, set,
                   update.write_count, update.writes);
 

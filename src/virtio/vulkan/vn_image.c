@@ -1159,28 +1159,29 @@ vn_GetDeviceImageSparseMemoryRequirements(
 }
 
 void
-vn_GetDeviceImageSubresourceLayoutKHR(VkDevice device,
-                                      const VkDeviceImageSubresourceInfoKHR *pInfo,
-                                      VkSubresourceLayout2KHR *pLayout)
+vn_GetDeviceImageSubresourceLayout(
+   VkDevice device,
+   const VkDeviceImageSubresourceInfoKHR *pInfo,
+   VkSubresourceLayout2 *pLayout)
 {
    struct vn_device *dev = vn_device_from_handle(device);
 
    /* TODO per-device cache */
-   vn_call_vkGetDeviceImageSubresourceLayoutKHR(
-      dev->primary_ring, device, pInfo, pLayout);
+   vn_call_vkGetDeviceImageSubresourceLayout(dev->primary_ring, device, pInfo,
+                                             pLayout);
 }
 
 void
-vn_GetImageSubresourceLayout2KHR(VkDevice device,
-                                 VkImage image,
-                                 const VkImageSubresource2KHR *pSubresource,
-                                 VkSubresourceLayout2KHR *pLayout)
+vn_GetImageSubresourceLayout2(VkDevice device,
+                              VkImage image,
+                              const VkImageSubresource2 *pSubresource,
+                              VkSubresourceLayout2 *pLayout)
 {
    struct vn_device *dev = vn_device_from_handle(device);
    struct vn_image *img = vn_image_from_handle(image);
 
    /* override aspect mask for wsi/ahb images with tiling modifier */
-   VkImageSubresource2KHR local_subresource;
+   VkImageSubresource2 local_subresource;
    if ((img->wsi.is_wsi && img->wsi.tiling_override ==
                               VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) ||
        img->deferred_info) {
@@ -1210,6 +1211,6 @@ vn_GetImageSubresourceLayout2KHR(VkDevice device,
       }
    }
 
-   vn_call_vkGetImageSubresourceLayout2KHR(
-      dev->primary_ring, device, image, pSubresource, pLayout);
+   vn_call_vkGetImageSubresourceLayout2(dev->primary_ring, device, image,
+                                        pSubresource, pLayout);
 }
