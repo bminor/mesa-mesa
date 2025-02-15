@@ -614,8 +614,6 @@ va_pack_alu(const bi_instr *I, unsigned arch)
 
          if (src_info.size == VA_SIZE_16) {
             hex |= (src.swizzle == BI_SWIZZLE_H11 ? 1 : 0) << offs;
-         } else if (I->op == BI_OPCODE_BRANCHZ_I16) {
-            hex |= ((uint64_t)va_pack_combine(I, src.swizzle) << 37);
          } else {
             pack_assert(I, src_info.size == VA_SIZE_8);
             unsigned comp = src.swizzle - BI_SWIZZLE_B0000;
