@@ -558,8 +558,6 @@ anv_cmd_buffer_flush_pipeline_hw_state(struct anv_cmd_buffer *cmd_buffer,
    if (cmd_buffer->device->info->ver >= 11)
       diff_fix_state(VF_SGVS_2,             final.vf_sgvs_2);
    diff_fix_state(VF_COMPONENT_PACKING,     final.vf_component_packing);
-   if (cmd_buffer->device->info->ver >= 12)
-      diff_fix_state(PRIMITIVE_REPLICATION, final.primitive_replication);
    diff_fix_state(SBE,                      final.sbe);
    diff_fix_state(SBE_SWIZ,                 final.sbe_swiz);
    diff_fix_state(VS,                       final.vs);

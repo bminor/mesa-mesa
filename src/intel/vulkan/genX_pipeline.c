@@ -1507,44 +1507,6 @@ compute_kill_pixel(struct anv_graphics_pipeline *pipeline,
       (ms && ms->alpha_to_coverage_enable);
 }
 
-#if GFX_VER >= 12
-static void
-emit_3dstate_primitive_replication(struct anv_graphics_pipeline *pipeline,
-                                   const struct vk_render_pass_state *rp)
-{
-   if (anv_pipeline_is_mesh(pipeline)) {
-      anv_pipeline_emit(pipeline, final.primitive_replication,
-                        GENX(3DSTATE_PRIMITIVE_REPLICATION), pr);
-      return;
-   }
-
-   const int replication_count =
-      anv_pipeline_get_last_vue_prog_data(pipeline)->vue_map.num_pos_slots;
-
-   assert(replication_count >= 1);
-   if (replication_count == 1) {
-      anv_pipeline_emit(pipeline, final.primitive_replication,
-                        GENX(3DSTATE_PRIMITIVE_REPLICATION), pr);
-      return;
-   }
-
-   assert(replication_count == util_bitcount(rp->view_mask));
-   assert(replication_count <= MAX_VIEWS_FOR_PRIMITIVE_REPLICATION);
-
-   anv_pipeline_emit(pipeline, final.primitive_replication,
-                     GENX(3DSTATE_PRIMITIVE_REPLICATION), pr) {
-      pr.ReplicaMask = (1 << replication_count) - 1;
-      pr.ReplicationCount = replication_count - 1;
-
-      int i = 0;
-      u_foreach_bit(view_index, rp->view_mask) {
-         pr.RTAIOffset[i] = view_index;
-         i++;
-      }
-   }
-}
-#endif
-
 #if GFX_VERx10 >= 125
 static void
 emit_task_state(struct anv_graphics_pipeline *pipeline)
@@ -1739,10 +1701,6 @@ genX(graphics_pipeline_emit)(struct anv_graphics_pipeline *pipeline,
    compute_kill_pixel(pipeline, state->ms, state);
 
    emit_3dstate_clip(pipeline, state->ia, state->vp, state->rs);
-
-#if GFX_VER >= 12
-   emit_3dstate_primitive_replication(pipeline, state->rp);
-#endif
 
 #if GFX_VERx10 >= 125
    bool needs_instance_granularity =

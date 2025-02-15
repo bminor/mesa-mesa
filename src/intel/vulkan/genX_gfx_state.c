@@ -1150,6 +1150,26 @@ update_te(struct anv_gfx_dynamic_state *hw_state,
 }
 
 ALWAYS_INLINE static void
+update_primitive_replication(struct anv_gfx_dynamic_state *hw_state,
+                             const struct anv_cmd_graphics_state *gfx)
+{
+   const struct intel_vue_map *vue_map = get_gfx_last_vue_map(gfx);
+
+   uint32_t count = vue_map ? vue_map->num_pos_slots : 0;
+
+   SET(PRIMITIVE_REPLICATION, pr.ReplicaMask, (1u << count) - 1);
+   SET(PRIMITIVE_REPLICATION, pr.ReplicationCount, count - 1);
+
+   if (count) {
+      int i = 0;
+      u_foreach_bit(view_index, gfx->view_mask) {
+         SET(PRIMITIVE_REPLICATION, pr.RTAIOffset[i], view_index);
+         i++;
+      }
+   }
+}
+
+ALWAYS_INLINE static void
 update_line_width(struct anv_gfx_dynamic_state *hw_state,
                   const struct vk_dynamic_graphics_state *dyn)
 {
@@ -2021,6 +2041,12 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_gfx_dynamic_state *hw_state,
        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_TS_DOMAIN_ORIGIN))
       update_te(hw_state, dyn, gfx);
 
+#if GFX_VER >= 12
+   if ((gfx->dirty & ANV_CMD_DIRTY_PRERASTER_SHADERS) ||
+       (gfx->dirty & ANV_CMD_DIRTY_RENDER_TARGETS))
+      update_primitive_replication(hw_state, gfx);
+#endif
+
    if (BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_RS_LINE_WIDTH))
       update_line_width(hw_state, dyn);
 
@@ -2424,6 +2450,14 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
    .name = hw_state->category.name
 #define SET(s, category, name) \
    s.name = hw_state->category.name
+#define SET_ARRAY(s, category, name)            \
+   do {                                         \
+      assert(sizeof(s.name) ==                  \
+             sizeof(hw_state->category.name));  \
+      memcpy(&s.name,                           \
+             &hw_state->category.name,          \
+             sizeof(s.name));                   \
+   } while (0)
 
    if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_URB)) {
 #if INTEL_NEEDS_WA_16014912113
@@ -2439,9 +2473,6 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
 
       genX(emit_urb_setup)(&cmd_buffer->batch, device, &hw_state->urb_cfg);
    }
-
-   if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_PRIMITIVE_REPLICATION))
-      anv_batch_emit_pipeline_state(&cmd_buffer->batch, pipeline, final.primitive_replication);
 
    if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_VF_SGVS_INSTANCING))
       anv_batch_emit_pipeline_state(&cmd_buffer->batch, pipeline, final.vf_sgvs_instancing);
@@ -2966,6 +2997,16 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
       }
    }
 
+#if GFX_VER >= 12
+   if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_PRIMITIVE_REPLICATION)) {
+      anv_batch_emit(&cmd_buffer->batch, GENX(3DSTATE_PRIMITIVE_REPLICATION), pr) {
+         SET(pr, pr, ReplicaMask);
+         SET(pr, pr, ReplicationCount);
+         SET_ARRAY(pr, pr, RTAIOffset);
+      }
+   }
+#endif
+
    if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_INDEX_BUFFER)) {
       anv_batch_emit(&cmd_buffer->batch, GENX(3DSTATE_INDEX_BUFFER), ib) {
          ib.IndexFormat           = vk_to_intel_index_type(gfx->index_type);
@@ -3110,6 +3151,7 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
 
 #undef INIT
 #undef SET
+#undef SET_ARRAY
 #undef DEBUG_SHADER_HASH
 
    BITSET_ZERO(hw_state->dirty);

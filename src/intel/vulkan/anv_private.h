@@ -1704,6 +1704,13 @@ struct anv_gfx_dynamic_state {
       uint32_t NumberofMultisamples;
    } ms;
 
+   /* 3DSTATE_PRIMITIVE_REPLICATION */
+   struct {
+      uint32_t ReplicaMask;
+      uint32_t ReplicationCount;
+      uint32_t RTAIOffset[16];
+   } pr;
+
    /* 3DSTATE_PS */
    struct {
       uint32_t PositionXYOffsetSelect;
@@ -5138,7 +5145,6 @@ struct anv_graphics_pipeline {
       struct anv_gfx_state_ptr                  vf_sgvs_instancing;
       struct anv_gfx_state_ptr                  vf_instancing;
       struct anv_gfx_state_ptr                  vf_component_packing;
-      struct anv_gfx_state_ptr                  primitive_replication;
       struct anv_gfx_state_ptr                  sbe;
       struct anv_gfx_state_ptr                  sbe_swiz;
       struct anv_gfx_state_ptr                  so_decl_list;
@@ -5373,6 +5379,28 @@ ANV_DECL_GET_GRAPHICS_PROG_DATA_FUNC(gs, MESA_SHADER_GEOMETRY)
 ANV_DECL_GET_GRAPHICS_PROG_DATA_FUNC(wm, MESA_SHADER_FRAGMENT)
 ANV_DECL_GET_GRAPHICS_PROG_DATA_FUNC(mesh, MESA_SHADER_MESH)
 ANV_DECL_GET_GRAPHICS_PROG_DATA_FUNC(task, MESA_SHADER_TASK)
+
+static inline const struct intel_vue_map *
+get_gfx_last_vue_map(const struct anv_cmd_graphics_state *gfx)
+{
+   if (gfx->shaders[MESA_SHADER_MESH] != NULL) {
+      return &((const struct brw_mesh_prog_data *)
+               gfx->shaders[MESA_SHADER_MESH]->prog_data)->map.vue_map;
+   }
+   if (gfx->shaders[MESA_SHADER_GEOMETRY] != NULL) {
+      return &((const struct brw_gs_prog_data *)
+               gfx->shaders[MESA_SHADER_GEOMETRY]->prog_data)->base.vue_map;
+   }
+   if (gfx->shaders[MESA_SHADER_TESS_EVAL] != NULL) {
+      return &((const struct brw_tes_prog_data *)
+               gfx->shaders[MESA_SHADER_TESS_EVAL]->prog_data)->base.vue_map;
+   }
+   if (gfx->shaders[MESA_SHADER_VERTEX] != NULL) {
+      return &((const struct brw_vs_prog_data *)
+               gfx->shaders[MESA_SHADER_VERTEX]->prog_data)->base.vue_map;
+   }
+   return NULL;
+}
 
 static inline const struct brw_cs_prog_data *
 get_cs_prog_data(const struct anv_cmd_compute_state *comp_state)
