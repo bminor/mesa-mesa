@@ -513,9 +513,9 @@ Vulkan 1.4 -- all DONE: anv, lvp, nvk, radv/gfx8+, tu/a7xx+
 
   VK_KHR_dynamic_rendering_local_read                   DONE (anv, lvp, nvk, radv, tu)
   VK_KHR_global_priority                                DONE (anv, lvp, nvk, panvk, radv, tu)
-  VK_KHR_index_type_uint8                               DONE (anv, lvp, nvk, panvk, pvr, radv, tu, v3dv)
-  VK_KHR_line_rasterization                             DONE (anv, lvp, nvk, radv, tu, v3dv)
-  VK_KHR_load_store_op_none                             DONE (anv, lvp, nvk, radv, tu, v3dv)
+  VK_KHR_index_type_uint8                               DONE (anv, lvp, nvk, panvk, pvr, radv, tu, v3dv, vn)
+  VK_KHR_line_rasterization                             DONE (anv, lvp, nvk, radv, tu, v3dv, vn)
+  VK_KHR_load_store_op_none                             DONE (anv, lvp, nvk, radv, tu, v3dv, vn)
   VK_KHR_maintenance5                                   DONE (anv, lvp, nvk, radv, tu, v3dv, vn)
   VK_KHR_maintenance6                                   DONE (anv, lvp, nvk, radv, tu)
   VK_KHR_map_memory2                                    DONE (anv, lvp, nvk, panvk, radv, tu)
@@ -523,7 +523,7 @@ Vulkan 1.4 -- all DONE: anv, lvp, nvk, radv/gfx8+, tu/a7xx+
   VK_KHR_shader_expect_assume                           DONE (anv, dzn, hasvk, lvp, nvk, panvk, pvr, radv, tu, v3dv, vn)
   VK_KHR_shader_float_controls2                         DONE (anv, lvp, nvk, radv, tu)
   VK_KHR_shader_subgroup_rotate                         DONE (anv, lvp, nvk, radv, tu)
-  VK_KHR_vertex_attribute_divisor                       DONE (anv, lvp, nvk, panvk, radv, tu, v3dv)
+  VK_KHR_vertex_attribute_divisor                       DONE (anv, lvp, nvk, panvk, radv, tu, v3dv, vn)
   VK_EXT_host_image_copy                                DONE (anv, lvp, nvk/Turing+, tu)
   VK_EXT_pipeline_protected_access                      DONE (anv/gfx12+)
   VK_EXT_pipeline_robustness                            DONE (anv, lvp, nvk, panvk, radv, v3dv, tu)
@@ -532,7 +532,7 @@ Khronos extensions that are not part of any Vulkan version:
 
   VK_KHR_acceleration_structure                         DONE (anv/gfx12.5+, lvp, radv/gfx10.3+, tu/a740+)
   VK_KHR_android_surface                                not started
-  VK_KHR_calibrated_timestamps                          DONE (anv, nvk, radv, tu/a750+)
+  VK_KHR_calibrated_timestamps                          DONE (anv, nvk, radv, tu/a750+, vn)
   VK_KHR_compute_shader_derivatives                     DONE (anv, nvk, radv, tu/a7xx+)
   VK_KHR_cooperative_matrix                             DONE (anv, radv/gfx11+)
   VK_KHR_deferred_host_operations                       DONE (anv, hasvk, lvp, radv)
