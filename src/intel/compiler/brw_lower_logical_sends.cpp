@@ -706,7 +706,8 @@ emit_load_payload_with_padding(const brw_builder &bld, const brw_reg &dst,
 }
 
 static bool
-shader_opcode_needs_header(opcode op)
+shader_opcode_needs_header(opcode op,
+                           const struct intel_device_info *devinfo)
 {
    switch (op) {
    case SHADER_OPCODE_TG4_LOGICAL:
@@ -718,6 +719,9 @@ shader_opcode_needs_header(opcode op)
    case SHADER_OPCODE_TG4_IMPLICIT_LOD_LOGICAL:
    case SHADER_OPCODE_SAMPLEINFO_LOGICAL:
       return true;
+   case SHADER_OPCODE_TXF_LOGICAL:
+      /* Xe3 HW does not seem to work unless we force a header. */
+      return devinfo->ver >= 30;
    default:
       break;
    }
@@ -764,7 +768,7 @@ lower_sampler_logical_send(const brw_builder &bld, brw_inst *inst,
    assert((surface.file == BAD_FILE) != (surface_handle.file == BAD_FILE));
    assert((sampler.file == BAD_FILE) != (sampler_handle.file == BAD_FILE));
 
-   if (shader_opcode_needs_header(op) || inst->offset != 0 ||
+   if (shader_opcode_needs_header(op, devinfo) || inst->offset != 0 ||
        sampler_handle.file != BAD_FILE ||
        is_high_sampler(devinfo, sampler) ||
        residency) {
