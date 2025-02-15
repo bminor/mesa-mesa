@@ -2454,7 +2454,7 @@ vn_CmdSetExtraPrimitiveOverestimationSizeEXT(
 void
 vn_CmdSetLineRasterizationModeEXT(
    VkCommandBuffer commandBuffer,
-   VkLineRasterizationModeEXT lineRasterizationMode)
+   VkLineRasterizationMode lineRasterizationMode)
 {
    VN_CMD_ENQUEUE(vkCmdSetLineRasterizationModeEXT, commandBuffer,
                   lineRasterizationMode);

@@ -1159,10 +1159,9 @@ vn_GetDeviceImageSparseMemoryRequirements(
 }
 
 void
-vn_GetDeviceImageSubresourceLayout(
-   VkDevice device,
-   const VkDeviceImageSubresourceInfoKHR *pInfo,
-   VkSubresourceLayout2 *pLayout)
+vn_GetDeviceImageSubresourceLayout(VkDevice device,
+                                   const VkDeviceImageSubresourceInfo *pInfo,
+                                   VkSubresourceLayout2 *pLayout)
 {
    struct vn_device *dev = vn_device_from_handle(device);
 
