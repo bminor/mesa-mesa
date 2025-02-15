@@ -2005,11 +2005,11 @@ vn_CmdDispatchBase(VkCommandBuffer commandBuffer,
 }
 
 void
-vn_CmdSetLineStippleEXT(VkCommandBuffer commandBuffer,
+vn_CmdSetLineStippleKHR(VkCommandBuffer commandBuffer,
                         uint32_t lineStippleFactor,
                         uint16_t lineStipplePattern)
 {
-   VN_CMD_ENQUEUE(vkCmdSetLineStippleEXT, commandBuffer, lineStippleFactor,
+   VN_CMD_ENQUEUE(vkCmdSetLineStippleKHR, commandBuffer, lineStippleFactor,
                   lineStipplePattern);
 }
 

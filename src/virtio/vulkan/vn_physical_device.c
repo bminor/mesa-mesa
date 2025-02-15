@@ -2709,16 +2709,16 @@ vn_GetPhysicalDeviceExternalSemaphoreProperties(
 }
 
 VkResult
-vn_GetPhysicalDeviceCalibrateableTimeDomainsEXT(
+vn_GetPhysicalDeviceCalibrateableTimeDomainsKHR(
    VkPhysicalDevice physicalDevice,
    uint32_t *pTimeDomainCount,
-   VkTimeDomainEXT *pTimeDomains)
+   VkTimeDomainKHR *pTimeDomains)
 {
    struct vn_physical_device *physical_dev =
       vn_physical_device_from_handle(physicalDevice);
    struct vn_ring *ring = physical_dev->instance->ring.ring;
 
-   return vn_call_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT(
+   return vn_call_vkGetPhysicalDeviceCalibrateableTimeDomainsKHR(
       ring, physicalDevice, pTimeDomainCount, pTimeDomains);
 }
 

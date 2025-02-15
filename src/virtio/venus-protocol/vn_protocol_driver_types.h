@@ -1363,6 +1363,27 @@ vn_decode_VkQueryPipelineStatisticFlagBits(struct vn_cs_decoder *dec, VkQueryPip
     vn_decode_int32_t(dec, (int32_t *)val);
 }
 
+/* enum VkMemoryMapFlagBits */
+
+static inline size_t
+vn_sizeof_VkMemoryMapFlagBits(const VkMemoryMapFlagBits *val)
+{
+    assert(sizeof(*val) == sizeof(int32_t));
+    return vn_sizeof_int32_t((const int32_t *)val);
+}
+
+static inline void
+vn_encode_VkMemoryMapFlagBits(struct vn_cs_encoder *enc, const VkMemoryMapFlagBits *val)
+{
+    vn_encode_int32_t(enc, (const int32_t *)val);
+}
+
+static inline void
+vn_decode_VkMemoryMapFlagBits(struct vn_cs_decoder *dec, VkMemoryMapFlagBits *val)
+{
+    vn_decode_int32_t(dec, (int32_t *)val);
+}
+
 /* enum VkImageAspectFlagBits */
 
 static inline size_t
@@ -3040,41 +3061,41 @@ vn_decode_VkPointClippingBehavior(struct vn_cs_decoder *dec, VkPointClippingBeha
     vn_decode_int32_t(dec, (int32_t *)val);
 }
 
-/* enum VkTimeDomainEXT */
+/* enum VkTimeDomainKHR */
 
 static inline size_t
-vn_sizeof_VkTimeDomainEXT(const VkTimeDomainEXT *val)
+vn_sizeof_VkTimeDomainKHR(const VkTimeDomainKHR *val)
 {
     assert(sizeof(*val) == sizeof(int32_t));
     return vn_sizeof_int32_t((const int32_t *)val);
 }
 
 static inline void
-vn_encode_VkTimeDomainEXT(struct vn_cs_encoder *enc, const VkTimeDomainEXT *val)
+vn_encode_VkTimeDomainKHR(struct vn_cs_encoder *enc, const VkTimeDomainKHR *val)
 {
     vn_encode_int32_t(enc, (const int32_t *)val);
 }
 
 static inline void
-vn_decode_VkTimeDomainEXT(struct vn_cs_decoder *dec, VkTimeDomainEXT *val)
+vn_decode_VkTimeDomainKHR(struct vn_cs_decoder *dec, VkTimeDomainKHR *val)
 {
     vn_decode_int32_t(dec, (int32_t *)val);
 }
 
 static inline size_t
-vn_sizeof_VkTimeDomainEXT_array(const VkTimeDomainEXT *val, uint32_t count)
+vn_sizeof_VkTimeDomainKHR_array(const VkTimeDomainKHR *val, uint32_t count)
 {
     return vn_sizeof_int32_t_array((const int32_t *)val, count);
 }
 
 static inline void
-vn_encode_VkTimeDomainEXT_array(struct vn_cs_encoder *enc, const VkTimeDomainEXT *val, uint32_t count)
+vn_encode_VkTimeDomainKHR_array(struct vn_cs_encoder *enc, const VkTimeDomainKHR *val, uint32_t count)
 {
     vn_encode_int32_t_array(enc, (const int32_t *)val, count);
 }
 
 static inline void
-vn_decode_VkTimeDomainEXT_array(struct vn_cs_decoder *dec, VkTimeDomainEXT *val, uint32_t count)
+vn_decode_VkTimeDomainKHR_array(struct vn_cs_decoder *dec, VkTimeDomainKHR *val, uint32_t count)
 {
     vn_decode_int32_t_array(dec, (int32_t *)val, count);
 }
@@ -3121,23 +3142,23 @@ vn_decode_VkSemaphoreType(struct vn_cs_decoder *dec, VkSemaphoreType *val)
     vn_decode_int32_t(dec, (int32_t *)val);
 }
 
-/* enum VkLineRasterizationModeEXT */
+/* enum VkLineRasterizationModeKHR */
 
 static inline size_t
-vn_sizeof_VkLineRasterizationModeEXT(const VkLineRasterizationModeEXT *val)
+vn_sizeof_VkLineRasterizationModeKHR(const VkLineRasterizationModeKHR *val)
 {
     assert(sizeof(*val) == sizeof(int32_t));
     return vn_sizeof_int32_t((const int32_t *)val);
 }
 
 static inline void
-vn_encode_VkLineRasterizationModeEXT(struct vn_cs_encoder *enc, const VkLineRasterizationModeEXT *val)
+vn_encode_VkLineRasterizationModeKHR(struct vn_cs_encoder *enc, const VkLineRasterizationModeKHR *val)
 {
     vn_encode_int32_t(enc, (const int32_t *)val);
 }
 
 static inline void
-vn_decode_VkLineRasterizationModeEXT(struct vn_cs_decoder *dec, VkLineRasterizationModeEXT *val)
+vn_decode_VkLineRasterizationModeKHR(struct vn_cs_decoder *dec, VkLineRasterizationModeKHR *val)
 {
     vn_decode_int32_t(dec, (int32_t *)val);
 }

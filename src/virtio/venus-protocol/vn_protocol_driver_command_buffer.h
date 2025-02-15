@@ -3026,7 +3026,7 @@ vn_sizeof_VkRenderingInfo_pnext(const void *val)
             size += vn_sizeof_VkDeviceGroupRenderPassBeginInfo_self((const VkDeviceGroupRenderPassBeginInfo *)pnext);
             return size;
         case VK_STRUCTURE_TYPE_RENDERING_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR:
-            if (!(vn_cs_renderer_protocol_has_extension(45 /* VK_KHR_dynamic_rendering */) && vn_cs_renderer_protocol_has_extension(227 /* VK_KHR_fragment_shading_rate */)))
+            if (!(vn_cs_renderer_protocol_has_extension(227 /* VK_KHR_fragment_shading_rate */) && vn_cs_renderer_protocol_has_extension(45 /* VK_KHR_dynamic_rendering */)))
                 break;
             size += vn_sizeof_simple_pointer(pnext);
             size += vn_sizeof_VkStructureType(&pnext->sType);
@@ -3095,7 +3095,7 @@ vn_encode_VkRenderingInfo_pnext(struct vn_cs_encoder *enc, const void *val)
             vn_encode_VkDeviceGroupRenderPassBeginInfo_self(enc, (const VkDeviceGroupRenderPassBeginInfo *)pnext);
             return;
         case VK_STRUCTURE_TYPE_RENDERING_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR:
-            if (!(vn_cs_renderer_protocol_has_extension(45 /* VK_KHR_dynamic_rendering */) && vn_cs_renderer_protocol_has_extension(227 /* VK_KHR_fragment_shading_rate */)))
+            if (!(vn_cs_renderer_protocol_has_extension(227 /* VK_KHR_fragment_shading_rate */) && vn_cs_renderer_protocol_has_extension(45 /* VK_KHR_dynamic_rendering */)))
                 break;
             vn_encode_simple_pointer(enc, pnext);
             vn_encode_VkStructureType(enc, &pnext->sType);
@@ -7335,9 +7335,9 @@ static inline void vn_decode_vkCmdDrawIndirectByteCountEXT_reply(struct vn_cs_de
     /* skip vertexStride */
 }
 
-static inline size_t vn_sizeof_vkCmdSetLineStippleEXT(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern)
+static inline size_t vn_sizeof_vkCmdSetLineStippleKHR(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern)
 {
-    const VkCommandTypeEXT cmd_type = VK_COMMAND_TYPE_vkCmdSetLineStippleEXT_EXT;
+    const VkCommandTypeEXT cmd_type = VK_COMMAND_TYPE_vkCmdSetLineStippleKHR_EXT;
     const VkFlags cmd_flags = 0;
     size_t cmd_size = vn_sizeof_VkCommandTypeEXT(&cmd_type) + vn_sizeof_VkFlags(&cmd_flags);
 
@@ -7348,9 +7348,9 @@ static inline size_t vn_sizeof_vkCmdSetLineStippleEXT(VkCommandBuffer commandBuf
     return cmd_size;
 }
 
-static inline void vn_encode_vkCmdSetLineStippleEXT(struct vn_cs_encoder *enc, VkCommandFlagsEXT cmd_flags, VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern)
+static inline void vn_encode_vkCmdSetLineStippleKHR(struct vn_cs_encoder *enc, VkCommandFlagsEXT cmd_flags, VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern)
 {
-    const VkCommandTypeEXT cmd_type = VK_COMMAND_TYPE_vkCmdSetLineStippleEXT_EXT;
+    const VkCommandTypeEXT cmd_type = VK_COMMAND_TYPE_vkCmdSetLineStippleKHR_EXT;
 
     vn_encode_VkCommandTypeEXT(enc, &cmd_type);
     vn_encode_VkFlags(enc, &cmd_flags);
@@ -7360,9 +7360,9 @@ static inline void vn_encode_vkCmdSetLineStippleEXT(struct vn_cs_encoder *enc, V
     vn_encode_uint16_t(enc, &lineStipplePattern);
 }
 
-static inline size_t vn_sizeof_vkCmdSetLineStippleEXT_reply(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern)
+static inline size_t vn_sizeof_vkCmdSetLineStippleKHR_reply(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern)
 {
-    const VkCommandTypeEXT cmd_type = VK_COMMAND_TYPE_vkCmdSetLineStippleEXT_EXT;
+    const VkCommandTypeEXT cmd_type = VK_COMMAND_TYPE_vkCmdSetLineStippleKHR_EXT;
     size_t cmd_size = vn_sizeof_VkCommandTypeEXT(&cmd_type);
 
     /* skip commandBuffer */
@@ -7372,11 +7372,11 @@ static inline size_t vn_sizeof_vkCmdSetLineStippleEXT_reply(VkCommandBuffer comm
     return cmd_size;
 }
 
-static inline void vn_decode_vkCmdSetLineStippleEXT_reply(struct vn_cs_decoder *dec, VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern)
+static inline void vn_decode_vkCmdSetLineStippleKHR_reply(struct vn_cs_decoder *dec, VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern)
 {
     VkCommandTypeEXT command_type;
     vn_decode_VkCommandTypeEXT(dec, &command_type);
-    assert(command_type == VK_COMMAND_TYPE_vkCmdSetLineStippleEXT_EXT);
+    assert(command_type == VK_COMMAND_TYPE_vkCmdSetLineStippleKHR_EXT);
 
     /* skip commandBuffer */
     /* skip lineStippleFactor */
@@ -9181,19 +9181,19 @@ static inline void vn_decode_vkCmdSetProvokingVertexModeEXT_reply(struct vn_cs_d
     /* skip provokingVertexMode */
 }
 
-static inline size_t vn_sizeof_vkCmdSetLineRasterizationModeEXT(VkCommandBuffer commandBuffer, VkLineRasterizationModeEXT lineRasterizationMode)
+static inline size_t vn_sizeof_vkCmdSetLineRasterizationModeEXT(VkCommandBuffer commandBuffer, VkLineRasterizationModeKHR lineRasterizationMode)
 {
     const VkCommandTypeEXT cmd_type = VK_COMMAND_TYPE_vkCmdSetLineRasterizationModeEXT_EXT;
     const VkFlags cmd_flags = 0;
     size_t cmd_size = vn_sizeof_VkCommandTypeEXT(&cmd_type) + vn_sizeof_VkFlags(&cmd_flags);
 
     cmd_size += vn_sizeof_VkCommandBuffer(&commandBuffer);
-    cmd_size += vn_sizeof_VkLineRasterizationModeEXT(&lineRasterizationMode);
+    cmd_size += vn_sizeof_VkLineRasterizationModeKHR(&lineRasterizationMode);
 
     return cmd_size;
 }
 
-static inline void vn_encode_vkCmdSetLineRasterizationModeEXT(struct vn_cs_encoder *enc, VkCommandFlagsEXT cmd_flags, VkCommandBuffer commandBuffer, VkLineRasterizationModeEXT lineRasterizationMode)
+static inline void vn_encode_vkCmdSetLineRasterizationModeEXT(struct vn_cs_encoder *enc, VkCommandFlagsEXT cmd_flags, VkCommandBuffer commandBuffer, VkLineRasterizationModeKHR lineRasterizationMode)
 {
     const VkCommandTypeEXT cmd_type = VK_COMMAND_TYPE_vkCmdSetLineRasterizationModeEXT_EXT;
 
@@ -9201,10 +9201,10 @@ static inline void vn_encode_vkCmdSetLineRasterizationModeEXT(struct vn_cs_encod
     vn_encode_VkFlags(enc, &cmd_flags);
 
     vn_encode_VkCommandBuffer(enc, &commandBuffer);
-    vn_encode_VkLineRasterizationModeEXT(enc, &lineRasterizationMode);
+    vn_encode_VkLineRasterizationModeKHR(enc, &lineRasterizationMode);
 }
 
-static inline size_t vn_sizeof_vkCmdSetLineRasterizationModeEXT_reply(VkCommandBuffer commandBuffer, VkLineRasterizationModeEXT lineRasterizationMode)
+static inline size_t vn_sizeof_vkCmdSetLineRasterizationModeEXT_reply(VkCommandBuffer commandBuffer, VkLineRasterizationModeKHR lineRasterizationMode)
 {
     const VkCommandTypeEXT cmd_type = VK_COMMAND_TYPE_vkCmdSetLineRasterizationModeEXT_EXT;
     size_t cmd_size = vn_sizeof_VkCommandTypeEXT(&cmd_type);
@@ -9215,7 +9215,7 @@ static inline size_t vn_sizeof_vkCmdSetLineRasterizationModeEXT_reply(VkCommandB
     return cmd_size;
 }
 
-static inline void vn_decode_vkCmdSetLineRasterizationModeEXT_reply(struct vn_cs_decoder *dec, VkCommandBuffer commandBuffer, VkLineRasterizationModeEXT lineRasterizationMode)
+static inline void vn_decode_vkCmdSetLineRasterizationModeEXT_reply(struct vn_cs_decoder *dec, VkCommandBuffer commandBuffer, VkLineRasterizationModeKHR lineRasterizationMode)
 {
     VkCommandTypeEXT command_type;
     vn_decode_VkCommandTypeEXT(dec, &command_type);
@@ -11575,21 +11575,21 @@ static inline void vn_submit_vkCmdDrawIndirectByteCountEXT(struct vn_ring *vn_ri
     }
 }
 
-static inline void vn_submit_vkCmdSetLineStippleEXT(struct vn_ring *vn_ring, VkCommandFlagsEXT cmd_flags, VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern, struct vn_ring_submit_command *submit)
+static inline void vn_submit_vkCmdSetLineStippleKHR(struct vn_ring *vn_ring, VkCommandFlagsEXT cmd_flags, VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern, struct vn_ring_submit_command *submit)
 {
     uint8_t local_cmd_data[VN_SUBMIT_LOCAL_CMD_SIZE];
     void *cmd_data = local_cmd_data;
-    size_t cmd_size = vn_sizeof_vkCmdSetLineStippleEXT(commandBuffer, lineStippleFactor, lineStipplePattern);
+    size_t cmd_size = vn_sizeof_vkCmdSetLineStippleKHR(commandBuffer, lineStippleFactor, lineStipplePattern);
     if (cmd_size > sizeof(local_cmd_data)) {
         cmd_data = malloc(cmd_size);
         if (!cmd_data)
             cmd_size = 0;
     }
-    const size_t reply_size = cmd_flags & VK_COMMAND_GENERATE_REPLY_BIT_EXT ? vn_sizeof_vkCmdSetLineStippleEXT_reply(commandBuffer, lineStippleFactor, lineStipplePattern) : 0;
+    const size_t reply_size = cmd_flags & VK_COMMAND_GENERATE_REPLY_BIT_EXT ? vn_sizeof_vkCmdSetLineStippleKHR_reply(commandBuffer, lineStippleFactor, lineStipplePattern) : 0;
 
     struct vn_cs_encoder *enc = vn_ring_submit_command_init(vn_ring, submit, cmd_data, cmd_size, reply_size);
     if (cmd_size) {
-        vn_encode_vkCmdSetLineStippleEXT(enc, cmd_flags, commandBuffer, lineStippleFactor, lineStipplePattern);
+        vn_encode_vkCmdSetLineStippleKHR(enc, cmd_flags, commandBuffer, lineStippleFactor, lineStipplePattern);
         vn_ring_submit_command(vn_ring, submit);
         if (cmd_data != local_cmd_data)
             free(cmd_data);
@@ -12352,7 +12352,7 @@ static inline void vn_submit_vkCmdSetProvokingVertexModeEXT(struct vn_ring *vn_r
     }
 }
 
-static inline void vn_submit_vkCmdSetLineRasterizationModeEXT(struct vn_ring *vn_ring, VkCommandFlagsEXT cmd_flags, VkCommandBuffer commandBuffer, VkLineRasterizationModeEXT lineRasterizationMode, struct vn_ring_submit_command *submit)
+static inline void vn_submit_vkCmdSetLineRasterizationModeEXT(struct vn_ring *vn_ring, VkCommandFlagsEXT cmd_flags, VkCommandBuffer commandBuffer, VkLineRasterizationModeKHR lineRasterizationMode, struct vn_ring_submit_command *submit)
 {
     uint8_t local_cmd_data[VN_SUBMIT_LOCAL_CMD_SIZE];
     void *cmd_data = local_cmd_data;
@@ -14055,23 +14055,23 @@ static inline void vn_async_vkCmdDrawIndirectByteCountEXT(struct vn_ring *vn_rin
     vn_submit_vkCmdDrawIndirectByteCountEXT(vn_ring, 0, commandBuffer, instanceCount, firstInstance, counterBuffer, counterBufferOffset, counterOffset, vertexStride, &submit);
 }
 
-static inline void vn_call_vkCmdSetLineStippleEXT(struct vn_ring *vn_ring, VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern)
+static inline void vn_call_vkCmdSetLineStippleKHR(struct vn_ring *vn_ring, VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern)
 {
     VN_TRACE_FUNC();
 
     struct vn_ring_submit_command submit;
-    vn_submit_vkCmdSetLineStippleEXT(vn_ring, VK_COMMAND_GENERATE_REPLY_BIT_EXT, commandBuffer, lineStippleFactor, lineStipplePattern, &submit);
+    vn_submit_vkCmdSetLineStippleKHR(vn_ring, VK_COMMAND_GENERATE_REPLY_BIT_EXT, commandBuffer, lineStippleFactor, lineStipplePattern, &submit);
     struct vn_cs_decoder *dec = vn_ring_get_command_reply(vn_ring, &submit);
     if (dec) {
-        vn_decode_vkCmdSetLineStippleEXT_reply(dec, commandBuffer, lineStippleFactor, lineStipplePattern);
+        vn_decode_vkCmdSetLineStippleKHR_reply(dec, commandBuffer, lineStippleFactor, lineStipplePattern);
         vn_ring_free_command_reply(vn_ring, &submit);
     }
 }
 
-static inline void vn_async_vkCmdSetLineStippleEXT(struct vn_ring *vn_ring, VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern)
+static inline void vn_async_vkCmdSetLineStippleKHR(struct vn_ring *vn_ring, VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern)
 {
     struct vn_ring_submit_command submit;
-    vn_submit_vkCmdSetLineStippleEXT(vn_ring, 0, commandBuffer, lineStippleFactor, lineStipplePattern, &submit);
+    vn_submit_vkCmdSetLineStippleKHR(vn_ring, 0, commandBuffer, lineStippleFactor, lineStipplePattern, &submit);
 }
 
 static inline void vn_call_vkCmdSetCullMode(struct vn_ring *vn_ring, VkCommandBuffer commandBuffer, VkCullModeFlags cullMode)
@@ -14758,7 +14758,7 @@ static inline void vn_async_vkCmdSetProvokingVertexModeEXT(struct vn_ring *vn_ri
     vn_submit_vkCmdSetProvokingVertexModeEXT(vn_ring, 0, commandBuffer, provokingVertexMode, &submit);
 }
 
-static inline void vn_call_vkCmdSetLineRasterizationModeEXT(struct vn_ring *vn_ring, VkCommandBuffer commandBuffer, VkLineRasterizationModeEXT lineRasterizationMode)
+static inline void vn_call_vkCmdSetLineRasterizationModeEXT(struct vn_ring *vn_ring, VkCommandBuffer commandBuffer, VkLineRasterizationModeKHR lineRasterizationMode)
 {
     VN_TRACE_FUNC();
 
@@ -14771,7 +14771,7 @@ static inline void vn_call_vkCmdSetLineRasterizationModeEXT(struct vn_ring *vn_r
     }
 }
 
-static inline void vn_async_vkCmdSetLineRasterizationModeEXT(struct vn_ring *vn_ring, VkCommandBuffer commandBuffer, VkLineRasterizationModeEXT lineRasterizationMode)
+static inline void vn_async_vkCmdSetLineRasterizationModeEXT(struct vn_ring *vn_ring, VkCommandBuffer commandBuffer, VkLineRasterizationModeKHR lineRasterizationMode)
 {
     struct vn_ring_submit_command submit;
     vn_submit_vkCmdSetLineRasterizationModeEXT(vn_ring, 0, commandBuffer, lineRasterizationMode, &submit);
