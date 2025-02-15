@@ -1,5 +1,335 @@
 [
     {
+        "sha": "06d8afff640c66e51517bf4bebd2a58abb2fa055",
+        "description": "vulkan: Fix typos",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "da6971f865852ba8af858a821d7249d87f8030f0",
+        "description": "mapi: Fix typos",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "49bc323866c26d70d567589843b536159cd26ebe",
+        "description": "intel: Fix typos",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "388e9e6b33b9abad3eb28ec398264c48f1c610f1",
+        "description": "glx: Fix typos",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a9139e0f978dbae098b8cb3d27bb0cfe0b696812",
+        "description": "glsl: Fix typos",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ec9c7a1ef8cefc54069699ed23523c7748cdba91",
+        "description": "gallium: Fix typos",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d75849aaeae451a5673b078d54cf5e25b88b56a3",
+        "description": "anv: make compute state flush helper visible",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ed18353e2a19b03236bd6e780a4ffa87b5941789",
+        "description": "anv: make gfx state flushing available externally",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9aef4ceb13daff2f3200deb5a26c43b1af77cc00",
+        "description": "anv: hold a prepacked COMPUTE_WALKER instruction on CS pipelines",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "82b6a6f0b972cd4406c95f0897d8ae7868947ccc",
+        "description": "anv: move reg_mask push constant field to gfx",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "456d691310950d6245e4971bc01f8f55e384ad50",
+        "description": "anv: move RT stage bits to main header",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "71050f63147905064e49e539390f87910786da20",
+        "description": "r300g/ci: opt-in the new mars setup command",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9a491a2c3f226fd7b208a335eed5e75c2911fab2",
+        "description": "i915g/ci: opt-in the new mars setup command",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "88377ed295c776e6c50925aa2a3ea3058f810ae7",
+        "description": "freedreno/ci: opt-in the new mars setup command",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3ebe512f1fdbeee886bad6ee396c85dce07b22d9",
+        "description": "nvk/ci: opt-in the new mars setup command",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a5b5942276c189a230d825f3d2630e4e3a5be027",
+        "description": "etnaviv/ci: opt-in the new mars setup command",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0a3a2f278e387dce300327469e864c3f714b01a3",
+        "description": "radv/ci: opt-in the new mars setup command",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "06b5aa9965a7f670ac392bdccffae8d73c3ea687",
+        "description": "ci/b2c: allow jobs to opt-in into the new mars setup command",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "81d55e0866e13f64500ffeacdd083885666a66be",
+        "description": "zink/ci: document more NVK GA106 flakes",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c6d40205e6aaccdcb088994027b61acd956a58e3",
+        "description": "zink/ci: document more RADV flakes",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e9bb49732ea92fcebc0abdbe58f15e5c2ce19007",
+        "description": "radv/ci: mark a whole subset of tests as flaky on tahiti",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "94b8430e8ea340002388c98efa3f2a16ce53d8b7",
+        "description": "zink/ci: increase the a750 job's timeout to 18 minutes",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8621d036c19b1c21508bfe4faf86c8e68cacdd4f",
+        "description": "nouveau/mme: Print ip in mme_tu104_dump",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0ff66fe1be88fb3c3e0bfbcc9f0d71515b220471",
+        "description": "lavapipe: Use the common BVH framework",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2f823a54ea98afce1ced9df9f935af31d768811b",
+        "description": "lavapipe: Implement some functions required by the common BVH framework",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ac0f643d4b03d6290e0c69e778a3e90769a6f9fb",
+        "description": "gallivm: Remove loop limiting",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d6244049a18b935eded6d67ee458bd1616b49ffb",
+        "description": "vulkan/radix_sort: Stop force-unrolling loops",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c387699c7b2a3f7b25650fa9605d57a6fd113749",
+        "description": "vulkan/cmd_queue: Add VK_CMD_TYPE_COUNT",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5543272ceb087fdcf7edeadd91c3f800dc0a85ca",
+        "description": "vulkan/cmd_queue: Simplify freeing cmd_queue entries",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "55f4da7bbf99d05ef1cc605d1eec95caf5eacb77",
+        "description": "panvk: Use vk_image_can_be_aliased_to_yuv_plane() helper",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f419a0bc4efe4075e300fe7bfc9583f8d8890f6f",
+        "description": "vk/image: Add vk_image_can_be_aliased_to_yuv_plane() helper",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "24076eb3f9d1518710df7b534c863dc85668a5fe",
+        "description": "llvmpipe: Fix overflow issues calculating loop iterations for aniso",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "350a0fe63298d72593c473a0aae83afcd84de9b8",
+        "notes": null
+    },
+    {
+        "sha": "cc30e3530694bc662a05297e2a311b3d5cdd6b27",
+        "description": "nvk: fix preprocess buffer alignment",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "976f22a5da30c503b05e2873e4d265fb0d4ecb07",
+        "notes": null
+    },
+    {
         "sha": "a9b6a54a8cce0aab44c81ea4821ee564b939ea51",
         "description": "brw: fix component packing starting index",
         "nominated": false,
