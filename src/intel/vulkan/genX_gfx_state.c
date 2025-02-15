@@ -2638,8 +2638,8 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
    }
 
    if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_VERTEX_INPUT)) {
-      genX(batch_emit_vertex_input)(&cmd_buffer->batch, device,
-                                    pipeline, dyn->vi);
+      genX(batch_emit_pipeline_vertex_input)(&cmd_buffer->batch, device,
+                                             pipeline, dyn->vi);
    }
 
    if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_TE)) {

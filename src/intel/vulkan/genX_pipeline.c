@@ -277,10 +277,10 @@ emit_ves_vf_instancing(struct anv_batch *batch,
 }
 
 void
-genX(batch_emit_vertex_input)(struct anv_batch *batch,
-                              struct anv_device *device,
-                              struct anv_graphics_pipeline *pipeline,
-                              const struct vk_vertex_input_state *vi)
+genX(batch_emit_pipeline_vertex_input)(struct anv_batch *batch,
+                                       struct anv_device *device,
+                                       struct anv_graphics_pipeline *pipeline,
+                                       const struct vk_vertex_input_state *vi)
 {
    const uint32_t ve_count =
       pipeline->vs_input_elements + pipeline->svgs_count;
