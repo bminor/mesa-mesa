@@ -195,11 +195,11 @@ vkcts-tahiti-valve:
     - .vkcts-test-valve
     - .tahiti-test-valve
     - .radv-valve-manual-rules  # Make sure this job is *always* run manually
-  timeout: 6h
+  timeout: 1h
   variables:
     GPU_VERSION: radv-tahiti-aco
-    B2C_TIMEOUT_BOOT_MINUTES: 350
-    B2C_TIMEOUT_OVERALL_MINUTES: 350
+    B2C_TIMEOUT_BOOT_MINUTES: 50
+    B2C_TIMEOUT_OVERALL_MINUTES: 50
     B2C_TIMEOUT_BOOT_RETRIES: 0
 
 vkcts-polaris10-valve:
