@@ -674,8 +674,11 @@ unaryinstruction:
 		i965_asm_unary_instruction($2, p, $6, $7);
 		brw_pop_insn_state(p);
 		i965_asm_set_instruction_options(p, $8);
-		brw_eu_inst_set_cond_modifier(p->devinfo, brw_last_inst,
-					   $4.cond_modifier);
+		if ($4.cond_modifier) {
+			brw_eu_inst_set_cond_modifier(p->devinfo,
+						      brw_last_inst,
+						      $4.cond_modifier);
+		}
 
 		if (!brw_eu_inst_flag_reg_nr(p->devinfo, brw_last_inst)) {
 			brw_eu_inst_set_flag_reg_nr(p->devinfo,
@@ -719,8 +722,11 @@ binaryinstruction:
 		brw_set_default_access_mode(p, $9.access_mode);
 		i965_asm_binary_instruction($2, p, $6, $7, $8);
 		i965_asm_set_instruction_options(p, $9);
-		brw_eu_inst_set_cond_modifier(p->devinfo, brw_last_inst,
-					   $4.cond_modifier);
+		if ($4.cond_modifier) {
+			brw_eu_inst_set_cond_modifier(p->devinfo,
+						      brw_last_inst,
+						      $4.cond_modifier);
+		}
 
 		if (!brw_eu_inst_flag_reg_nr(p->devinfo, brw_last_inst)) {
 			brw_eu_inst_set_flag_reg_nr(p->devinfo, brw_last_inst,
@@ -762,8 +768,11 @@ binaryaccinstruction:
 		i965_asm_binary_instruction($2, p, $6, $7, $8);
 		brw_pop_insn_state(p);
 		i965_asm_set_instruction_options(p, $9);
-		brw_eu_inst_set_cond_modifier(p->devinfo, brw_last_inst,
-					   $4.cond_modifier);
+		if ($4.cond_modifier) {
+			brw_eu_inst_set_cond_modifier(p->devinfo,
+						      brw_last_inst,
+						      $4.cond_modifier);
+		}
 
 		if (!brw_eu_inst_flag_reg_nr(p->devinfo, brw_last_inst)) {
 			brw_eu_inst_set_flag_reg_nr(p->devinfo,
@@ -842,8 +851,11 @@ ternaryinstruction:
 		i965_asm_ternary_instruction($2, p, $6, $7, $8, $9);
 		brw_pop_insn_state(p);
 		i965_asm_set_instruction_options(p, $10);
-		brw_eu_inst_set_cond_modifier(p->devinfo, brw_last_inst,
-					   $4.cond_modifier);
+		if ($4.cond_modifier) {
+			brw_eu_inst_set_cond_modifier(p->devinfo,
+						      brw_last_inst,
+						      $4.cond_modifier);
+		}
 
 		if (p->devinfo->ver < 12) {
 			brw_eu_inst_set_3src_a16_flag_reg_nr(p->devinfo, brw_last_inst,
