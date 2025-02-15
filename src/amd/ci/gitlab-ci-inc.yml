@@ -322,6 +322,16 @@
     - farm:$RUNNER_FARM_LOCATION
     - $B2C_MARS_SETUP_TAGS
 
+.hawaii-test-valve:
+  variables:
+    FDO_CI_CONCURRENT: 24
+    RUNNER_FARM_LOCATION: mupuf
+    B2C_MARS_SETUP_TAGS: amdgpu:codename:HAWAII
+    B2C_KERNEL_CMDLINE_EXTRAS: 'b2c.swap=16g'
+  tags:
+    - farm:$RUNNER_FARM_LOCATION
+    - $B2C_MARS_SETUP_TAGS
+
 .kabini-test-valve:
   variables:
     RUNNER_FARM_LOCATION: mupuf
