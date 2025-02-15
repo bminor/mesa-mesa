@@ -318,9 +318,6 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
 
    /* Disable unsupported ExtendedDynamicState3Features */
    if (exts->EXT_extended_dynamic_state3) {
-      /* TODO: Add support for VK_EXT_sample_locations */
-      VN_SET_CORE_VALUE(feats, extendedDynamicState3SampleLocationsEnable,
-                        false);
       /* VK_NV_* extensions required */
       VN_SET_CORE_VALUE(feats, extendedDynamicState3ViewportWScalingEnable,
                         false);
@@ -383,8 +380,6 @@ static void
 vn_physical_device_sanitize_properties(struct vn_physical_device *physical_dev)
 {
    struct vn_instance *instance = physical_dev->instance;
-   const struct vk_device_extension_table *exts =
-      &physical_dev->renderer_extensions;
    struct vk_properties *props = &physical_dev->base.base.properties;
 
    const uint32_t version_override = vk_get_version_override();
@@ -442,13 +437,6 @@ vn_physical_device_sanitize_properties(struct vn_physical_device *physical_dev)
    VN_SET_CORE_VALUE(props, conformanceVersion.patch, 0);
 
    vn_physical_device_init_uuids(physical_dev);
-
-   /* Disable unsupported VkPhysicalDeviceFragmentShadingRatePropertiesKHR */
-   if (exts->KHR_fragment_shading_rate) {
-      /* TODO: Add support for VK_EXT_sample_locations */
-      VN_SET_CORE_VALUE(props, fragmentShadingRateWithCustomSampleLocations,
-                        false);
-   }
 }
 
 static void
