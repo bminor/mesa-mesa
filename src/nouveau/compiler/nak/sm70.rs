@@ -4,6 +4,7 @@
 use crate::ir::*;
 use crate::legalize::LegalizeBuilder;
 use crate::sm70_encode::*;
+use crate::sm75_instr_latencies::SM75Latency;
 
 pub struct ShaderModel70 {
     sm: u8,
@@ -144,6 +145,18 @@ impl ShaderModel for ShaderModel70 {
         }
     }
 
+    fn op_needs_scoreboard(&self, op: &Op) -> bool {
+        if op.no_scoreboard() {
+            return false;
+        }
+
+        if self.is_turing() {
+            SM75Latency::needs_scoreboards(op)
+        } else {
+            !op.has_fixed_latency(self.sm())
+        }
+    }
+
     fn exec_latency(&self, op: &Op) -> u32 {
         match op {
             Op::Bar(_) | Op::MemBar(_) => {
@@ -166,39 +179,53 @@ impl ShaderModel for ShaderModel70 {
         &self,
         write: &Op,
         dst_idx: usize,
-        _read: &Op,
-        _src_idx: usize,
+        read: &Op,
+        src_idx: usize,
     ) -> u32 {
-        self.instr_latency(write, dst_idx)
+        if self.is_turing() {
+            SM75Latency::raw(write, dst_idx, Some(read), src_idx)
+        } else {
+            self.instr_latency(write, dst_idx)
+        }
     }
 
     fn war_latency(
         &self,
-        _read: &Op,
-        _src_idx: usize,
-        _write: &Op,
-        _dst_idx: usize,
+        read: &Op,
+        src_idx: usize,
+        write: &Op,
+        dst_idx: usize,
     ) -> u32 {
-        // We assume the source gets read in the first 4 cycles.  We don't know
-        // how quickly the write will happen.  This is all a guess.
-        4
+        if self.is_turing() {
+            SM75Latency::war(read, src_idx, write, dst_idx)
+        } else {
+            // We assume the source gets read in the first 4 cycles.  We don't
+            // know how quickly the write will happen.  This is all a guess.
+            4
+        }
     }
 
     fn waw_latency(
         &self,
         a: &Op,
         a_dst_idx: usize,
-        _a_has_pred: bool,
-        _b: &Op,
-        _b_dst_idx: usize,
+        a_has_pred: bool,
+        b: &Op,
+        b_dst_idx: usize,
     ) -> u32 {
-        // We know our latencies are wrong so assume the wrote could happen
-        // anywhere between 0 and instr_latency(a) cycles
-        self.instr_latency(a, a_dst_idx)
+        if self.is_turing() {
+            SM75Latency::waw(a, a_dst_idx, b, b_dst_idx, a_has_pred)
+        } else {
+            // We know our latencies are wrong so assume the wrote could happen
+            // anywhere between 0 and instr_latency(a) cycles
+            self.instr_latency(a, a_dst_idx)
+        }
     }
 
-    fn paw_latency(&self, write: &Op, _dst_idx: usize) -> u32 {
-        if self.is_volta() {
+    fn paw_latency(&self, write: &Op, dst_idx: usize) -> u32 {
+        if self.is_turing() {
+            SM75Latency::raw(write, dst_idx, None, 0)
+        } else if self.is_volta() {
             match write {
                 Op::DSetP(_) | Op::HSetP2(_) => 15,
                 _ => 13,
@@ -209,7 +236,11 @@ impl ShaderModel for ShaderModel70 {
     }
 
     fn worst_latency(&self, write: &Op, dst_idx: usize) -> u32 {
-        self.instr_latency(write, dst_idx)
+        if self.is_turing() {
+            SM75Latency::raw(write, dst_idx, None, 0)
+        } else {
+            self.instr_latency(write, dst_idx)
+        }
     }
 
     fn legalize_op(&self, b: &mut LegalizeBuilder, op: &mut Op) {

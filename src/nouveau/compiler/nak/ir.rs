@@ -801,6 +801,16 @@ impl SrcRef {
         }
     }
 
+    pub fn is_bindless_cbuf(&self) -> bool {
+        match self {
+            SrcRef::CBuf(cbuf) => match cbuf.buf {
+                CBuf::BindlessSSA(_) | CBuf::BindlessUGPR(_) => true,
+                _ => false,
+            },
+            _ => false,
+        }
+    }
+
     pub fn is_predicate(&self) -> bool {
         match self {
             SrcRef::Zero | SrcRef::Imm32(_) | SrcRef::CBuf(_) => false,
@@ -1286,6 +1296,10 @@ impl Src {
             SrcRef::SSA(ssa) => ssa.is_uniform(),
             SrcRef::Reg(reg) => reg.is_uniform(),
         }
+    }
+
+    pub fn is_bindless_cbuf(&self) -> bool {
+        self.src_ref.is_bindless_cbuf()
     }
 
     pub fn is_predicate(&self) -> bool {

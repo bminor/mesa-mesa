@@ -29,6 +29,7 @@ mod repair_ssa;
 mod sm50;
 mod sm70;
 mod sm70_encode;
+mod sm75_instr_latencies;
 mod sph;
 mod spill_values;
 mod to_cssa;
