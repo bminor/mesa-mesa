@@ -1611,7 +1611,7 @@ anv_sparse_image_check_support(struct anv_physical_device *pdevice,
       /* ISL_TILING_64_XE2_BIT's block shapes are not always Vulkan's standard
        * block shapes, so exclude what's non-standard.
        */
-      if (pdevice->info.ver == 20) {
+      if (pdevice->info.ver >= 20) {
          switch (samples) {
          case VK_SAMPLE_COUNT_2_BIT:
             if (isl_layout->bpb == 128)
