@@ -24,7 +24,9 @@ struct nvk_descriptor_pool {
 
    struct list_head sets;
 
+   uint64_t mem_size_B;
    struct nvkmd_mem *mem;
+   void *host_mem;
    struct util_vma_heap heap;
 };
 
