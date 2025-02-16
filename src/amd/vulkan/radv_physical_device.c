@@ -103,7 +103,14 @@ radv_compute_queue_enabled(const struct radv_physical_device *pdev)
 {
    const struct radv_instance *instance = radv_physical_device_instance(pdev);
 
-   return pdev->info.ip[AMD_IP_COMPUTE].num_queues > 0 && !(instance->debug_flags & RADV_DEBUG_NO_COMPUTE_QUEUE);
+   return pdev->info.ip[AMD_IP_COMPUTE].num_queues > 0 &&
+          (!(instance->debug_flags & RADV_DEBUG_NO_COMPUTE_QUEUE) || !pdev->info.has_graphics);
+}
+
+static bool
+radv_graphics_queue_enabled(const struct radv_physical_device *pdev)
+{
+   return pdev->info.ip[AMD_IP_GFX].num_queues > 0;
 }
 
 static bool
@@ -257,11 +264,14 @@ static void
 radv_physical_device_init_queue_table(struct radv_physical_device *pdev)
 {
    int idx = 0;
-   pdev->vk_queue_to_radv[idx] = RADV_QUEUE_GENERAL;
-   idx++;
 
-   for (unsigned i = 1; i < RADV_MAX_QUEUE_FAMILIES; i++)
+   for (unsigned i = 0; i < RADV_MAX_QUEUE_FAMILIES; i++)
       pdev->vk_queue_to_radv[i] = RADV_MAX_QUEUE_FAMILIES + 1;
+
+   if (radv_graphics_queue_enabled(pdev)) {
+      pdev->vk_queue_to_radv[idx] = RADV_QUEUE_GENERAL;
+      idx++;
+   }
 
    if (radv_compute_queue_enabled(pdev)) {
       pdev->vk_queue_to_radv[idx] = RADV_QUEUE_COMPUTE;
@@ -2433,8 +2443,11 @@ static void
 radv_get_physical_device_queue_family_properties(struct radv_physical_device *pdev, uint32_t *pCount,
                                                  VkQueueFamilyProperties **pQueueFamilyProperties)
 {
-   int num_queue_families = 1;
+   int num_queue_families = 0;
    int idx;
+
+   if (radv_graphics_queue_enabled(pdev))
+      num_queue_families++;
 
    if (radv_compute_queue_enabled(pdev))
       num_queue_families++;
@@ -2462,16 +2475,18 @@ radv_get_physical_device_queue_family_properties(struct radv_physical_device *pd
       return;
 
    idx = 0;
-   if (*pCount >= 1) {
-      VkQueueFlags gfx_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT |
-                               VK_QUEUE_TRANSFER_BIT | VK_QUEUE_SPARSE_BINDING_BIT;
-      *pQueueFamilyProperties[idx] = (VkQueueFamilyProperties){
-         .queueFlags = gfx_flags,
-         .queueCount = 1,
-         .timestampValidBits = 64,
-         .minImageTransferGranularity = (VkExtent3D){1, 1, 1},
-      };
-      idx++;
+   if (radv_graphics_queue_enabled(pdev)) {
+      if (*pCount >= 1) {
+         VkQueueFlags gfx_flags =
+            VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT | VK_QUEUE_SPARSE_BINDING_BIT;
+         *pQueueFamilyProperties[idx] = (VkQueueFamilyProperties){
+            .queueFlags = gfx_flags,
+            .queueCount = 1,
+            .timestampValidBits = 64,
+            .minImageTransferGranularity = (VkExtent3D){1, 1, 1},
+         };
+         idx++;
+      }
    }
 
    if (radv_compute_queue_enabled(pdev)) {
