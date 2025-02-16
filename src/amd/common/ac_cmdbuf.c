@@ -124,13 +124,53 @@ gfx12_init_compute_preamble_state(const struct ac_preamble_state *state,
    ac_pm4_set_reg(pm4, R_00B9F4_COMPUTE_DISPATCH_TUNNEL, 0);
 }
 
+static void
+cdna_init_compute_preamble_state(const struct ac_preamble_state *state,
+                                  struct ac_pm4_state *pm4)
+{
+   const struct radeon_info *info = pm4->info;
+   const uint32_t compute_cu_en = S_00B858_SH0_CU_EN(info->spi_cu_en) |
+                                  S_00B858_SH1_CU_EN(info->spi_cu_en);
+
+   /* Compute registers. */
+   /* Disable profiling on compute chips. */
+   ac_pm4_set_reg(pm4, R_00B82C_COMPUTE_PERFCOUNT_ENABLE, 0);
+   ac_pm4_set_reg(pm4, R_00B834_COMPUTE_PGM_HI, S_00B834_DATA(info->address32_hi >> 8));
+   ac_pm4_set_reg(pm4, R_00B858_COMPUTE_STATIC_THREAD_MGMT_SE0, compute_cu_en);
+   ac_pm4_set_reg(pm4, R_00B85C_COMPUTE_STATIC_THREAD_MGMT_SE1, compute_cu_en);
+   ac_pm4_set_reg(pm4, R_00B864_COMPUTE_STATIC_THREAD_MGMT_SE2, compute_cu_en);
+   ac_pm4_set_reg(pm4, R_00B868_COMPUTE_STATIC_THREAD_MGMT_SE3, compute_cu_en);
+   ac_pm4_set_reg(pm4, R_00B878_COMPUTE_THREAD_TRACE_ENABLE, 0);
+
+   if (info->family >= CHIP_GFX940) {
+      ac_pm4_set_reg(pm4, R_00B89C_COMPUTE_TG_CHUNK_SIZE, 0);
+      ac_pm4_set_reg(pm4, R_00B8B4_COMPUTE_PGM_RSRC3, 0);
+   } else {
+      ac_pm4_set_reg(pm4, R_00B894_COMPUTE_STATIC_THREAD_MGMT_SE4, compute_cu_en);
+      ac_pm4_set_reg(pm4, R_00B898_COMPUTE_STATIC_THREAD_MGMT_SE5, compute_cu_en);
+      ac_pm4_set_reg(pm4, R_00B89C_COMPUTE_STATIC_THREAD_MGMT_SE6, compute_cu_en);
+      ac_pm4_set_reg(pm4, R_00B8A0_COMPUTE_STATIC_THREAD_MGMT_SE7, compute_cu_en);
+   }
+
+   ac_pm4_set_reg(pm4, R_0301EC_CP_COHER_START_DELAY, 0);
+
+   /* Set the pointer to border colors. Only MI100 supports border colors. */
+   if (info->family == CHIP_MI100) {
+      ac_pm4_set_reg(pm4, R_030E00_TA_CS_BC_BASE_ADDR, state->border_color_va >> 8);
+      ac_pm4_set_reg(pm4, R_030E04_TA_CS_BC_BASE_ADDR_HI,
+                     S_030E04_ADDRESS(state->border_color_va >> 40));
+   }
+}
+
 void
 ac_init_compute_preamble_state(const struct ac_preamble_state *state,
                                struct ac_pm4_state *pm4)
 {
    const struct radeon_info *info = pm4->info;
 
-   if (info->gfx_level >= GFX12) {
+   if (!info->has_graphics) {
+      cdna_init_compute_preamble_state(state, pm4);
+   } else if (info->gfx_level >= GFX12) {
       gfx12_init_compute_preamble_state(state, pm4);
    } else if (info->gfx_level >= GFX10) {
       gfx10_init_compute_preamble_state(state, pm4);
