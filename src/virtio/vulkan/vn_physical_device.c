@@ -481,6 +481,7 @@ vn_physical_device_init_properties(struct vn_physical_device *physical_dev)
 
       /* KHR */
       VkPhysicalDeviceLineRasterizationPropertiesKHR line_rasterization;
+      VkPhysicalDeviceMaintenance5PropertiesKHR maintenance_5;
       VkPhysicalDevicePushDescriptorPropertiesKHR push_descriptor;
       VkPhysicalDeviceFragmentShadingRatePropertiesKHR fragment_shading_rate;
       VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR
@@ -546,6 +547,7 @@ vn_physical_device_init_properties(struct vn_physical_device *physical_dev)
 
    /* KHR */
    VN_ADD_PNEXT_EXT(props2, LINE_RASTERIZATION_PROPERTIES_KHR, local_props.line_rasterization, exts->KHR_line_rasterization || exts->EXT_line_rasterization);
+   VN_ADD_PNEXT_EXT(props2, MAINTENANCE_5_PROPERTIES_KHR, local_props.maintenance_5, exts->KHR_maintenance5);
    VN_ADD_PNEXT_EXT(props2, FRAGMENT_SHADING_RATE_PROPERTIES_KHR, local_props.fragment_shading_rate, exts->KHR_fragment_shading_rate);
    VN_ADD_PNEXT_EXT(props2, PUSH_DESCRIPTOR_PROPERTIES_KHR, local_props.push_descriptor, exts->KHR_push_descriptor);
    VN_ADD_PNEXT_EXT(props2, VERTEX_ATTRIBUTE_DIVISOR_PROPERTIES_KHR, local_props.vertex_attribute_divisor, exts->KHR_vertex_attribute_divisor);
@@ -611,6 +613,7 @@ vn_physical_device_init_properties(struct vn_physical_device *physical_dev)
    /* KHR */
    VN_SET_VK_PROPS_EXT(props, &local_props.fragment_shading_rate, exts->KHR_fragment_shading_rate);
    VN_SET_VK_PROPS_EXT(props, &local_props.line_rasterization, exts->KHR_line_rasterization || exts->EXT_line_rasterization);
+   VN_SET_VK_PROPS_EXT(props, &local_props.maintenance_5, exts->KHR_maintenance5);
    VN_SET_VK_PROPS_EXT(props, &local_props.push_descriptor, exts->KHR_push_descriptor);
    VN_SET_VK_PROPS_EXT(props, &local_props.vertex_attribute_divisor, exts->KHR_vertex_attribute_divisor);
 
