@@ -38,7 +38,7 @@ struct nvk_descriptor_set {
    struct list_head link;
 
    struct nvk_descriptor_set_layout *layout;
-   void *mapped_ptr;
+   void *map;
    uint64_t addr;
    uint32_t size;
 

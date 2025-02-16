@@ -37,7 +37,7 @@ desc_ubo_data(struct nvk_descriptor_set *set, uint32_t binding,
    if (size_out != NULL)
       *size_out = set->size - offset;
 
-   return (char *)set->mapped_ptr + offset;
+   return (char *)set->map + offset;
 }
 
 static void
@@ -451,7 +451,7 @@ nvk_push_descriptor_set_update(struct nvk_device *dev,
    struct nvk_descriptor_set set = {
       .layout = layout,
       .size = sizeof(push_set->data),
-      .mapped_ptr = push_set->data,
+      .map = push_set->data,
    };
 
    for (uint32_t w = 0; w < write_count; w++) {
@@ -693,7 +693,7 @@ nvk_descriptor_set_create(struct nvk_device *dev,
 
    if (set->size > 0) {
       result = nvk_descriptor_pool_alloc(pool, set->size, alignment,
-                                         &set->addr, &set->mapped_ptr);
+                                         &set->addr, &set->map);
       if (result != VK_SUCCESS) {
          vk_object_free(&dev->vk, NULL, set);
          return result;
@@ -954,7 +954,7 @@ nvk_push_descriptor_set_update_template(
    struct nvk_descriptor_set tmp_set = {
       .layout = layout,
       .size = sizeof(push_set->data),
-      .mapped_ptr = push_set->data,
+      .map = push_set->data,
    };
    nvk_descriptor_set_write_template(dev, &tmp_set, template, data);
 }
