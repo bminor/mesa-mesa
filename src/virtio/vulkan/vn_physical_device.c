@@ -164,7 +164,8 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
       VkPhysicalDeviceIndexTypeUint8Features index_type_uint8;
       VkPhysicalDeviceLineRasterizationFeatures line_rasterization;
       VkPhysicalDeviceMaintenance5Features maintenance5;
-      VkPhysicalDeviceShaderExpectAssumeFeatures expect_assume;
+      VkPhysicalDeviceShaderExpectAssumeFeatures shader_expect_assume;
+      VkPhysicalDeviceShaderSubgroupRotateFeatures shader_subgroup_rotate;
       VkPhysicalDeviceVertexAttributeDivisorFeatures vertex_attribute_divisor;
 
       /* KHR */
@@ -273,7 +274,8 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
    VN_ADD_PNEXT_EXT(feats2, INDEX_TYPE_UINT8_FEATURES, local_feats.index_type_uint8, exts->KHR_index_type_uint8 || exts->EXT_index_type_uint8);
    VN_ADD_PNEXT_EXT(feats2, LINE_RASTERIZATION_FEATURES, local_feats.line_rasterization, exts->KHR_line_rasterization || exts->EXT_line_rasterization);
    VN_ADD_PNEXT_EXT(feats2, MAINTENANCE_5_FEATURES, local_feats.maintenance5, exts->KHR_maintenance5);
-   VN_ADD_PNEXT_EXT(feats2, SHADER_EXPECT_ASSUME_FEATURES, local_feats.expect_assume, exts->KHR_shader_expect_assume);
+   VN_ADD_PNEXT_EXT(feats2, SHADER_EXPECT_ASSUME_FEATURES, local_feats.shader_expect_assume, exts->KHR_shader_expect_assume);
+   VN_ADD_PNEXT_EXT(feats2, SHADER_SUBGROUP_ROTATE_FEATURES, local_feats.shader_subgroup_rotate, exts->KHR_shader_subgroup_rotate);
    VN_ADD_PNEXT_EXT(feats2, VERTEX_ATTRIBUTE_DIVISOR_FEATURES, local_feats.vertex_attribute_divisor, exts->KHR_vertex_attribute_divisor || exts->EXT_vertex_attribute_divisor);
 
    /* KHR */
@@ -1094,6 +1096,7 @@ vn_physical_device_get_passthrough_extensions(
       .KHR_maintenance5 = true,
       .KHR_push_descriptor = true,
       .KHR_shader_expect_assume = true,
+      .KHR_shader_subgroup_rotate = true,
       .KHR_vertex_attribute_divisor = true,
 
       /* KHR */
