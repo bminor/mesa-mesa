@@ -209,14 +209,6 @@ struct vn_graphics_pipeline_state {
     * Valid if and only if gpl.pre_raster_shaders is set.
     */
    bool rasterizer_discard_enable;
-
-   /** VkPipelineMultisampleStateCreateInfo::pNext
-    *  - VkPipelineSampleLocationsStateCreateInfoEXT::sampleLocationsEnable
-    *
-    * Valid if and only if multisample_state is valid along with a valid
-    * sample location state chained in its pNext.
-    */
-   bool sample_locations_enable;
 };
 
 struct vn_graphics_pipeline {
