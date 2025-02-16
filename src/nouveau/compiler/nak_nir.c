@@ -906,6 +906,15 @@ type_size_vec4(const struct glsl_type *type, bool bindless)
    return glsl_count_vec4_slots(type, false, bindless);
 }
 
+static bool
+atomic_supported(const nir_instr *instr, const void *data)
+{
+   /* Shared atomics don't support 64-bit arithmetic */
+   const nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
+   return !(intr->intrinsic == nir_intrinsic_shared_atomic &&
+            intr->def.bit_size == 64);
+}
+
 void
 nak_postprocess_nir(nir_shader *nir,
                     const struct nak_compiler *nak,
@@ -930,6 +939,7 @@ nak_postprocess_nir(nir_shader *nir,
       .lower_rotate_to_shuffle = true
    };
    OPT(nir, nir_lower_subgroups, &subgroups_options);
+   OPT(nir, nir_lower_atomics, atomic_supported);
    OPT(nir, nak_nir_lower_scan_reduce);
 
    if (nir_shader_has_local_variables(nir)) {

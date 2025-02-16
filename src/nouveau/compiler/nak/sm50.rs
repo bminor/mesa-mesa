@@ -2653,6 +2653,11 @@ impl SM50Op for OpAtom {
                         _ => panic!("Unsupported data type"),
                     };
                     e.set_field(28..30, data_type);
+                    assert!(
+                        self.atom_type != AtomType::U64
+                            || self.atom_op == AtomOp::Exch,
+                        "64-bit Shared atomics only support CmpExch or Exch"
+                    );
                     e.set_atom_op(52..56, self.atom_op);
                 }
 

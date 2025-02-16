@@ -3077,6 +3077,11 @@ impl SM70Op for OpAtom {
                     e.set_opcode(0x38c);
 
                     e.set_reg_src(32..40, self.data);
+                    assert!(
+                        self.atom_type != AtomType::U64
+                            || self.atom_op == AtomOp::Exch,
+                        "64-bit Shared atomics only support CmpExch or Exch"
+                    );
                     e.set_atom_op(87..91, self.atom_op);
                 }
 
