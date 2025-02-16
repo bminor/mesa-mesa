@@ -324,7 +324,7 @@
         "description": "venus: fix maintenance5 props init and create flags2",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "be6fece6e1ef46567808d4895558519e39086a8b",
         "notes": null
