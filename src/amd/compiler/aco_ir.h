@@ -2356,6 +2356,9 @@ RegisterDemand get_addr_regs_from_waves(Program* program, uint16_t waves);
 
 bool uses_scratch(Program* program);
 
+Temp load_scratch_resource(Program* program, Builder& bld, unsigned resume_idx,
+                           bool apply_scratch_offset);
+
 inline bool
 dominates_logical(const Block& parent, const Block& child)
 {
