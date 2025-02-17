@@ -641,7 +641,8 @@ perform_hazard_query(hazard_query* query, Instruction* instr, bool upwards)
        instr->opcode == aco_opcode::s_sendmsg_rtn_b32 ||
        instr->opcode == aco_opcode::s_sendmsg_rtn_b64 ||
        instr->opcode == aco_opcode::p_end_with_regs || instr->opcode == aco_opcode::s_nop ||
-       instr->opcode == aco_opcode::s_sleep || instr->opcode == aco_opcode::s_trap)
+       instr->opcode == aco_opcode::s_sleep || instr->opcode == aco_opcode::s_trap ||
+       instr->opcode == aco_opcode::p_call)
       return hazard_fail_unreorderable;
 
    memory_event_set instr_set;
