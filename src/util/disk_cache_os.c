@@ -1005,23 +1005,25 @@ disk_cache_generate_cache_dir(void *mem_ctx, const char *gpu_name,
 bool
 disk_cache_enabled()
 {
-   /* Disk cache is not enabled for android, but android's EGL layer
-    * uses EGL_ANDROID_blob_cache to manage the cache itself:
-    */
-   if (DETECT_OS_ANDROID)
-      return false;
-
    /* If running as a users other than the real user disable cache */
    if (!__normal_user())
       return false;
 
-   /* At user request, disable shader cache entirely. */
-#ifdef SHADER_CACHE_DISABLE_BY_DEFAULT
+   /* At user request, disable shader cache entirely.
+    * Disk cache is not enabled by default for android, for most
+    * applications the EGL layer uses EGL_ANDROID_blob_cache to manage
+    * the cache itself, however those that wish to use the cache directly
+    * can set `mesa.shader.cache.disable=false` property.
+    * Don't forget to also set the shader cache path to something readable
+    * and writable by the application via `mesa.shader.cache.dir`.
+    */
+#if defined(SHADER_CACHE_DISABLE_BY_DEFAULT) || DETECT_OS_ANDROID
    bool disable_by_default = true;
 #else
    bool disable_by_default = false;
 #endif
    char *envvar_name = "MESA_SHADER_CACHE_DISABLE";
+#if !DETECT_OS_ANDROID
    if (!getenv(envvar_name)) {
       envvar_name = "MESA_GLSL_CACHE_DISABLE";
       if (getenv(envvar_name))
@@ -1029,6 +1031,7 @@ disk_cache_enabled()
                  "*** MESA_GLSL_CACHE_DISABLE is deprecated; "
                  "use MESA_SHADER_CACHE_DISABLE instead ***\n");
    }
+#endif
 
    if (debug_get_bool_option(envvar_name, disable_by_default) ||
        /* MESA_GLSL_DISABLE_IO_OPT must disable the cache to get expected

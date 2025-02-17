@@ -46,6 +46,7 @@
 #include "util/perf/cpu_trace.h"
 #include "util/ralloc.h"
 #include "util/compiler.h"
+#include "util/log.h"
 
 #include "disk_cache.h"
 #include "disk_cache_os.h"
@@ -325,9 +326,9 @@ void
 disk_cache_destroy(struct disk_cache *cache)
 {
    if (unlikely(cache && cache->stats.enabled)) {
-      printf("disk shader cache:  hits = %u, misses = %u\n",
-             cache->stats.hits,
-             cache->stats.misses);
+      mesa_logi("disk shader cache:  hits = %u, misses = %u\n",
+                cache->stats.hits,
+                cache->stats.misses);
    }
 
    if (cache && util_queue_is_initialized(&cache->cache_queue)) {
