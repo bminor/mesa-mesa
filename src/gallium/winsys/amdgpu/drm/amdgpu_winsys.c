@@ -307,7 +307,7 @@ static bool kms_handle_equals(const void *a, const void *b)
 static bool amdgpu_cs_is_secure(struct radeon_cmdbuf *rcs)
 {
    struct amdgpu_cs *cs = amdgpu_cs(rcs);
-   return cs->csc->secure;
+   return amdgpu_csc_get_current(cs)->secure;
 }
 
 static uint32_t
