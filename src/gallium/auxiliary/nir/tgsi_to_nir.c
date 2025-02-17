@@ -2454,7 +2454,12 @@ ttn_optimize_nir(nir_shader *nir)
       }
 
       NIR_PASS(progress, nir, nir_opt_undef);
-      NIR_PASS(progress, nir, nir_opt_conditional_discard);
+
+      nir_opt_peephole_select_options peephole_discard_options = {
+         .limit = 0,
+         .discard_ok = true,
+      };
+      NIR_PASS(progress, nir, nir_opt_peephole_select, &peephole_discard_options);
       if (nir->options->max_unroll_iterations) {
          NIR_PASS(progress, nir, nir_opt_loop_unroll);
       }

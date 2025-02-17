@@ -920,7 +920,12 @@ brw_nir_optimize(nir_shader *nir,
          LOOP_OPT(nir_opt_dce);
       }
       LOOP_OPT_NOT_IDEMPOTENT(nir_opt_if, nir_opt_if_optimize_phi_true_false);
-      LOOP_OPT(nir_opt_conditional_discard);
+
+      nir_opt_peephole_select_options peephole_discard_options = {
+         .limit = 0,
+         .discard_ok = true,
+      };
+      LOOP_OPT(nir_opt_peephole_select, &peephole_discard_options);
       if (nir->options->max_unroll_iterations != 0) {
          LOOP_OPT_NOT_IDEMPOTENT(nir_opt_loop_unroll);
       }

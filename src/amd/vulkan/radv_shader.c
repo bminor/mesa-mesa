@@ -208,7 +208,11 @@ radv_optimize_nir(struct nir_shader *shader, bool optimize_conservatively)
             nir_var_function_temp | nir_var_shader_in | nir_var_shader_out | nir_var_mem_shared, NULL);
 
    if (shader->info.stage == MESA_SHADER_FRAGMENT && shader->info.fs.uses_discard) {
-      NIR_PASS(progress, shader, nir_opt_conditional_discard);
+      nir_opt_peephole_select_options peephole_select_options = {
+         .limit = 0,
+         .discard_ok = true,
+      };
+      NIR_PASS(progress, shader, nir_opt_peephole_select, &peephole_select_options);
       NIR_PASS(progress, shader, nir_opt_move_discards_to_top);
    }
 

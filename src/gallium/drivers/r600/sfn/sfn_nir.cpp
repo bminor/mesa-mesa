@@ -646,7 +646,11 @@ optimize_once(nir_shader *shader)
    };
    NIR_PASS(progress, shader, nir_opt_peephole_select, &peephole_select_options);
 
-   NIR_PASS(progress, shader, nir_opt_conditional_discard);
+   nir_opt_peephole_select_options peephole_discard_options = {
+      .limit = 0,
+      .discard_ok = true,
+   };
+   NIR_PASS(progress, shader, nir_opt_peephole_select, &peephole_discard_options);
    NIR_PASS(progress, shader, nir_opt_dce);
    NIR_PASS(progress, shader, nir_opt_undef);
    NIR_PASS(progress, shader, nir_opt_loop_unroll);

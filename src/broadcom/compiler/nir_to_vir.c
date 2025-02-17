@@ -2188,7 +2188,11 @@ v3d_optimize_nir(struct v3d_compile *c, struct nir_shader *s)
                    NIR_PASS(progress, s, nir_opt_dce);
                 }
 
-                NIR_PASS(progress, s, nir_opt_conditional_discard);
+                peephole_select_options = (nir_opt_peephole_select_options){
+                        .limit = 0,
+                        .discard_ok = true,
+                };
+                NIR_PASS(progress, s, nir_opt_peephole_select, &peephole_select_options);
 
                 NIR_PASS(progress, s, nir_opt_remove_phis);
                 NIR_PASS(progress, s, nir_opt_if, false);

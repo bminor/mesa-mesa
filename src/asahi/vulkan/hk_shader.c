@@ -811,7 +811,12 @@ hk_lower_nir(struct hk_device *dev, nir_shader *nir,
    NIR_PASS(_, nir, agx_nir_lower_multisampled_image_store);
 
    agx_preprocess_nir(nir);
-   NIR_PASS(_, nir, nir_opt_conditional_discard);
+
+   nir_opt_peephole_select_options peephole_select_options = {
+      .limit = 0,
+      .discard_ok = true,
+   };
+   NIR_PASS(_, nir, nir_opt_peephole_select, &peephole_select_options);
    NIR_PASS(_, nir, nir_opt_if,
             nir_opt_if_optimize_phi_true_false | nir_opt_if_avoid_64bit_phis);
 }

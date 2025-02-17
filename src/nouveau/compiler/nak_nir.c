@@ -138,6 +138,7 @@ optimize_nir(nir_shader *nir, const struct nak_compiler *nak, bool allow_copies)
 
       nir_opt_peephole_select_options peephole_select_options = {
          .limit = 0,
+         .discard_ok = true,
       };
       OPT(nir, nir_opt_peephole_select, &peephole_select_options);
       OPT(nir, nir_opt_intrinsics);
@@ -163,7 +164,6 @@ optimize_nir(nir_shader *nir, const struct nak_compiler *nak, bool allow_copies)
          OPT(nir, nir_opt_dce);
       }
       OPT(nir, nir_opt_if, nir_opt_if_optimize_phi_true_false);
-      OPT(nir, nir_opt_conditional_discard);
       if (nir->options->max_unroll_iterations != 0) {
          OPT(nir, nir_opt_loop_unroll);
       }

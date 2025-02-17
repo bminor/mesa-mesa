@@ -710,7 +710,12 @@ elk_nir_optimize(nir_shader *nir, bool is_scalar,
          OPT(nir_opt_dce);
       }
       OPT(nir_opt_if, nir_opt_if_optimize_phi_true_false);
-      OPT(nir_opt_conditional_discard);
+
+      nir_opt_peephole_select_options peephole_discard_options = {
+         .limit = 0,
+         .discard_ok = true,
+      };
+      OPT(nir_opt_peephole_select, &peephole_discard_options);
       if (nir->options->max_unroll_iterations != 0) {
          OPT(nir_opt_loop_unroll);
       }

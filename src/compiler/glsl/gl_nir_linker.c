@@ -128,7 +128,12 @@ gl_nir_opts(nir_shader *nir)
       }
 
       NIR_PASS(progress, nir, nir_opt_undef);
-      NIR_PASS(progress, nir, nir_opt_conditional_discard);
+
+      peephole_select_options = (nir_opt_peephole_select_options){
+         .limit = 0,
+         .discard_ok = true,
+      };
+      NIR_PASS(progress, nir, nir_opt_peephole_select, &peephole_select_options);
       if (nir->options->max_unroll_iterations ||
             (nir->options->max_unroll_iterations_fp64 &&
                (nir->options->lower_doubles_options & nir_lower_fp64_full_software))) {
