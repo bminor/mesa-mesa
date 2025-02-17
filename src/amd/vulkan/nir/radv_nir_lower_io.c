@@ -182,8 +182,8 @@ radv_nir_lower_io(struct radv_device *device, nir_shader *nir)
       radv_recompute_fs_input_bases(nir);
    }
 
-   NIR_PASS_V(nir, nir_opt_dce);
-   NIR_PASS_V(nir, nir_remove_dead_variables, nir_var_shader_in | nir_var_shader_out, NULL);
+   NIR_PASS(_, nir, nir_opt_dce);
+   NIR_PASS(_, nir, nir_remove_dead_variables, nir_var_shader_in | nir_var_shader_out, NULL);
 }
 
 /* IO slot layout for stages that aren't linked. */

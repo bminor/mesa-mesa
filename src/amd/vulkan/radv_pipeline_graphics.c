@@ -1065,7 +1065,7 @@ radv_remove_point_size(const struct radv_graphics_state_key *gfx_state, nir_shad
    var->data.mode = nir_var_shader_temp;
 
    producer->info.outputs_written &= ~VARYING_BIT_PSIZ;
-   NIR_PASS_V(producer, nir_fixup_deref_modes);
+   NIR_PASS(_, producer, nir_fixup_deref_modes);
    NIR_PASS(_, producer, nir_remove_dead_variables, nir_var_shader_temp, NULL);
    NIR_PASS(_, producer, nir_opt_dce);
 }
@@ -1108,7 +1108,7 @@ radv_remove_color_exports(const struct radv_graphics_state_key *gfx_state, nir_s
    }
 
    if (fixup_derefs) {
-      NIR_PASS_V(nir, nir_fixup_deref_modes);
+      NIR_PASS(_, nir, nir_fixup_deref_modes);
       NIR_PASS(_, nir, nir_remove_dead_variables, nir_var_shader_temp, NULL);
       NIR_PASS(_, nir, nir_opt_dce);
    }
@@ -1411,7 +1411,7 @@ radv_remove_varyings(nir_shader *nir)
    }
 
    if (fixup_derefs) {
-      NIR_PASS_V(nir, nir_fixup_deref_modes);
+      NIR_PASS(_, nir, nir_fixup_deref_modes);
       NIR_PASS(_, nir, nir_remove_dead_variables, nir_var_shader_temp, NULL);
       NIR_PASS(_, nir, nir_opt_dce);
    }

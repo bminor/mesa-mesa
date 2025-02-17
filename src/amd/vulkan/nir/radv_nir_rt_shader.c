@@ -1742,8 +1742,8 @@ radv_build_traversal_shader(struct radv_device *device, struct radv_ray_tracing_
    nir_metadata_preserve(nir_shader_get_entrypoint(b.shader), nir_metadata_none);
 
    /* Lower and cleanup variables */
-   NIR_PASS_V(b.shader, nir_lower_global_vars_to_local);
-   NIR_PASS_V(b.shader, nir_lower_vars_to_ssa);
+   NIR_PASS(_, b.shader, nir_lower_global_vars_to_local);
+   NIR_PASS(_, b.shader, nir_lower_vars_to_ssa);
 
    return b.shader;
 }
@@ -2070,8 +2070,8 @@ radv_nir_lower_rt_abi(nir_shader *shader, const VkRayTracingPipelineCreateInfoKH
    nir_metadata_preserve(impl, nir_metadata_none);
 
    /* cleanup passes */
-   NIR_PASS_V(shader, nir_lower_global_vars_to_local);
-   NIR_PASS_V(shader, nir_lower_vars_to_ssa);
+   NIR_PASS(_, shader, nir_lower_global_vars_to_local);
+   NIR_PASS(_, shader, nir_lower_vars_to_ssa);
    if (shader->info.stage == MESA_SHADER_CLOSEST_HIT || shader->info.stage == MESA_SHADER_INTERSECTION)
       NIR_PASS_V(shader, lower_hit_attribs, NULL, info->wave_size);
 }
