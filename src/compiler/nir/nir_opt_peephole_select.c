@@ -400,7 +400,7 @@ nir_opt_collapse_if(nir_if *if_stmt, nir_shader *shader, unsigned limit,
    /* check if the block before the nested if matches the requirements */
    nir_block *first = nir_if_first_then_block(parent_if);
    unsigned count = 0;
-   if (!block_check_for_allowed_instrs(first, &count, limit != 0,
+   if (!block_check_for_allowed_instrs(first, &count, limit,
                                        indirect_load_ok, expensive_alu_ok))
       return false;
 
