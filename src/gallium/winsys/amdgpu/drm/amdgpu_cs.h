@@ -247,24 +247,24 @@ static inline void amdgpu_fence_drop_reference(struct pipe_fence_handle *dst)
 }
 
 struct amdgpu_cs_buffer *
-amdgpu_lookup_buffer_any_type(struct amdgpu_cs_context *cs, struct amdgpu_winsys_bo *bo);
+amdgpu_lookup_buffer_any_type(struct amdgpu_cs_context *csc, struct amdgpu_winsys_bo *bo);
 
 static inline struct amdgpu_cs *
 amdgpu_cs(struct radeon_cmdbuf *rcs)
 {
-   struct amdgpu_cs *cs = (struct amdgpu_cs*)rcs->priv;
-   assert(cs);
-   return cs;
+   struct amdgpu_cs *acs = (struct amdgpu_cs*)rcs->priv;
+   assert(acs);
+   return acs;
 }
 
 #define get_container(member_ptr, container_type, container_member) \
    (container_type *)((char *)(member_ptr) - offsetof(container_type, container_member))
 
 static inline bool
-amdgpu_bo_is_referenced_by_cs(struct amdgpu_cs *cs,
+amdgpu_bo_is_referenced_by_cs(struct amdgpu_cs *acs,
                               struct amdgpu_winsys_bo *bo)
 {
-   return amdgpu_lookup_buffer_any_type(amdgpu_csc_get_current(cs), bo) != NULL;
+   return amdgpu_lookup_buffer_any_type(amdgpu_csc_get_current(acs), bo) != NULL;
 }
 
 static inline unsigned get_buf_list_idx(struct amdgpu_winsys_bo *bo)
@@ -275,11 +275,11 @@ static inline unsigned get_buf_list_idx(struct amdgpu_winsys_bo *bo)
 }
 
 static inline bool
-amdgpu_bo_is_referenced_by_cs_with_usage(struct amdgpu_cs *cs,
+amdgpu_bo_is_referenced_by_cs_with_usage(struct amdgpu_cs *acs,
                                          struct amdgpu_winsys_bo *bo,
                                          unsigned usage)
 {
-   struct amdgpu_cs_buffer *buffer = amdgpu_lookup_buffer_any_type(amdgpu_csc_get_current(cs), bo);
+   struct amdgpu_cs_buffer *buffer = amdgpu_lookup_buffer_any_type(amdgpu_csc_get_current(acs), bo);
 
    return buffer && (buffer->usage & usage) != 0;
 }
