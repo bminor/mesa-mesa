@@ -1762,6 +1762,11 @@ radv_vcn_encode_video(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInf
       return;
    }
 
+   radeon_check_space(device->ws, cmd_buffer->cs, 1024);
+
+   if (pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_4)
+      radv_vcn_sq_header(cmd_buffer->cs, &cmd_buffer->video.sq, RADEON_VCN_ENGINE_TYPE_ENCODE, false);
+
    const struct VkVideoInlineQueryInfoKHR *inline_queries = NULL;
    if (vid->vk.flags & VK_VIDEO_SESSION_CREATE_INLINE_QUERIES_BIT_KHR) {
       inline_queries = vk_find_struct_const(enc_info->pNext, VIDEO_INLINE_QUERY_INFO_KHR);
@@ -1835,6 +1840,9 @@ radv_vcn_encode_video(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInf
    radv_enc_op_enc(cmd_buffer);
 
    radeon_emit_direct(cmd_buffer->cs, enc->task_size_offset, enc->total_task_size);
+
+   if (pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_4)
+      radv_vcn_sq_tail(cmd_buffer->cs, &cmd_buffer->video.sq);
 }
 
 static void
@@ -2115,26 +2123,6 @@ radv_GetEncodedVideoSessionParametersKHR(VkDevice device,
 
    *pDataSize = total_size;
    return VK_SUCCESS;
-}
-
-void
-radv_video_enc_begin_coding(struct radv_cmd_buffer *cmd_buffer)
-{
-   struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   const struct radv_physical_device *pdev = radv_device_physical(device);
-   radeon_check_space(device->ws, cmd_buffer->cs, 1024);
-
-   if (pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_4)
-      radv_vcn_sq_header(cmd_buffer->cs, &cmd_buffer->video.sq, RADEON_VCN_ENGINE_TYPE_ENCODE, false);
-}
-
-void
-radv_video_enc_end_coding(struct radv_cmd_buffer *cmd_buffer)
-{
-   struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   const struct radv_physical_device *pdev = radv_device_physical(device);
-   if (pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_4)
-      radv_vcn_sq_tail(cmd_buffer->cs, &cmd_buffer->video.sq);
 }
 
 #define VCN_ENC_SESSION_SIZE 128 * 1024
