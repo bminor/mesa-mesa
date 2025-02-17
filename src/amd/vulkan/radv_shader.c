@@ -184,7 +184,13 @@ radv_optimize_nir(struct nir_shader *shader, bool optimize_conservatively)
       }
       NIR_LOOP_PASS_NOT_IDEMPOTENT(progress, skip, shader, nir_opt_if, nir_opt_if_optimize_phi_true_false);
       NIR_LOOP_PASS(progress, skip, shader, nir_opt_cse);
-      NIR_LOOP_PASS(progress, skip, shader, nir_opt_peephole_select, 8, true, true);
+
+      nir_opt_peephole_select_options peephole_select_options = {
+         .limit = 8,
+         .indirect_load_ok = true,
+         .expensive_alu_ok = true,
+      };
+      NIR_LOOP_PASS(progress, skip, shader, nir_opt_peephole_select, &peephole_select_options);
       NIR_LOOP_PASS(progress, skip, shader, nir_opt_constant_folding);
       NIR_LOOP_PASS(progress, skip, shader, nir_opt_intrinsics);
       NIR_LOOP_PASS_NOT_IDEMPOTENT(progress, skip, shader, nir_opt_algebraic);
@@ -219,7 +225,13 @@ radv_optimize_nir_algebraic(nir_shader *nir, bool opt_offsets, bool opt_mqsad)
       NIR_PASS(_, nir, nir_opt_dce);
       NIR_PASS(_, nir, nir_opt_constant_folding);
       NIR_PASS(_, nir, nir_opt_cse);
-      NIR_PASS(_, nir, nir_opt_peephole_select, 3, true, true);
+
+      nir_opt_peephole_select_options peephole_select_options = {
+         .limit = 3,
+         .indirect_load_ok = true,
+         .expensive_alu_ok = true,
+      };
+      NIR_PASS(_, nir, nir_opt_peephole_select, &peephole_select_options);
       NIR_PASS(more_algebraic, nir, nir_opt_algebraic);
       NIR_PASS(_, nir, nir_opt_generate_bfi);
       NIR_PASS(_, nir, nir_opt_remove_phis);

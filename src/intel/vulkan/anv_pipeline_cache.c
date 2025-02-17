@@ -693,7 +693,11 @@ anv_load_fp64_shader(struct anv_device *device)
    NIR_PASS_V(nir, nir_opt_dce);
    NIR_PASS_V(nir, nir_opt_cse);
    NIR_PASS_V(nir, nir_opt_gcm, true);
-   NIR_PASS_V(nir, nir_opt_peephole_select, 1, false, false);
+
+   nir_opt_peephole_select_options peephole_select_options = {
+      .limit = 1,
+   };
+   NIR_PASS_V(nir, nir_opt_peephole_select, &peephole_select_options);
    NIR_PASS_V(nir, nir_opt_dce);
 
    NIR_PASS_V(nir, nir_lower_explicit_io, nir_var_function_temp,

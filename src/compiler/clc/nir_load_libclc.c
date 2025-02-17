@@ -381,7 +381,10 @@ nir_load_libclc_shader(unsigned ptr_bit_size,
          /* drivers run this pass, so don't be too aggressive. More aggressive
           * values only increase effectiveness by <5%
           */
-         NIR_PASS(progress, nir, nir_opt_peephole_select, 0, false, false);
+         nir_opt_peephole_select_options peephole_select_options = {
+            .limit = 0,
+         };
+         NIR_PASS(progress, nir, nir_opt_peephole_select, &peephole_select_options);
          NIR_PASS(progress, nir, nir_opt_algebraic);
          NIR_PASS(progress, nir, nir_opt_constant_folding);
          NIR_PASS(progress, nir, nir_opt_undef);

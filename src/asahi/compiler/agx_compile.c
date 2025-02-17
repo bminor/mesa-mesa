@@ -2834,7 +2834,12 @@ agx_optimize_loop_nir(nir_shader *nir)
       NIR_PASS(progress, nir, nir_opt_dce);
       NIR_PASS(progress, nir, nir_opt_dead_cf);
       NIR_PASS(progress, nir, nir_opt_cse);
-      NIR_PASS(progress, nir, nir_opt_peephole_select, 64, false, true);
+
+      nir_opt_peephole_select_options peephole_select_options = {
+         .limit = 64,
+         .expensive_alu_ok = true,
+      };
+      NIR_PASS(progress, nir, nir_opt_peephole_select, &peephole_select_options);
       NIR_PASS(progress, nir, nir_opt_phi_precision);
       NIR_PASS(progress, nir, nir_opt_algebraic);
       NIR_PASS(progress, nir, nir_opt_constant_folding);
@@ -3011,7 +3016,11 @@ agx_optimize_nir(nir_shader *nir, bool soft_fault, uint16_t *preamble_size)
     *
     * XXX: Set indirect_load_ok once we can investigate CTS flakes.
     */
-   NIR_PASS(_, nir, nir_opt_peephole_select, 64, false, true);
+   nir_opt_peephole_select_options peephole_select_options = {
+      .limit = 64,
+      .expensive_alu_ok = true,
+   };
+   NIR_PASS(_, nir, nir_opt_peephole_select, &peephole_select_options);
 
    NIR_PASS(_, nir, nir_opt_load_store_vectorize,
             &(const nir_load_store_vectorize_options){
@@ -3102,7 +3111,7 @@ agx_optimize_nir(nir_shader *nir, bool soft_fault, uint16_t *preamble_size)
     *
     * We need to lower int64 again to deal with the resulting 64-bit csels.
     */
-   NIR_PASS(_, nir, nir_opt_peephole_select, 64, false, true);
+   NIR_PASS(_, nir, nir_opt_peephole_select, &peephole_select_options);
    NIR_PASS(_, nir, nir_lower_int64);
 
    /* We need to lower fmin/fmax again after nir_opt_algebraic_late due to f2fmp

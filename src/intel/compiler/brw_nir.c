@@ -877,8 +877,15 @@ brw_nir_optimize(nir_shader *nir,
        * indices will nearly always be in bounds and the cost of the load is
        * low.  Therefore there shouldn't be a performance benefit to avoid it.
        */
-      LOOP_OPT(nir_opt_peephole_select, 0, true, false);
-      LOOP_OPT(nir_opt_peephole_select, 8, true, true);
+      nir_opt_peephole_select_options peephole_select_options = {
+         .limit = 0,
+         .indirect_load_ok = true,
+      };
+      LOOP_OPT(nir_opt_peephole_select, &peephole_select_options);
+
+      peephole_select_options.limit = 8;
+      peephole_select_options.expensive_alu_ok = true;
+      LOOP_OPT(nir_opt_peephole_select, &peephole_select_options);
 
       LOOP_OPT(nir_opt_intrinsics);
       LOOP_OPT(nir_opt_idiv_const, 32);
@@ -1839,8 +1846,14 @@ brw_postprocess_nir(nir_shader *nir, const struct brw_compiler *compiler,
        * instruction from one of the branches of the if-statement, so now it
        * might be under the threshold of conversion to bcsel.
        */
-      OPT(nir_opt_peephole_select, 0, false, false);
-      OPT(nir_opt_peephole_select, 1, false, true);
+      nir_opt_peephole_select_options peephole_select_options = {
+         .limit = 0,
+      };
+      OPT(nir_opt_peephole_select, &peephole_select_options);
+
+      peephole_select_options.limit = 1;
+      peephole_select_options.expensive_alu_ok = true;
+      OPT(nir_opt_peephole_select, &peephole_select_options);
    }
 
    do {

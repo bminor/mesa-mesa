@@ -143,7 +143,10 @@ shader_only_allowed_outputs_use_view_index(nir_shader *shader,
       /* Peephole select will drop if-blocks that have then and else empty,
        * which will remove the usage of an SSA in the condition.
        */
-      progress |= nir_opt_peephole_select(shader_no_position, 0, false, false);
+      nir_opt_peephole_select_options peephole_select_options = {
+         .limit = 0,
+      };
+      progress |= nir_opt_peephole_select(shader_no_position, &peephole_select_options);
 
       progress |= nir_opt_dce(shader_no_position);
    } while (progress);

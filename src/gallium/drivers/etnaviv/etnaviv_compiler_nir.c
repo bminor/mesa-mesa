@@ -160,7 +160,13 @@ etna_optimize_loop(nir_shader *s)
       progress |= OPT(s, nir_copy_prop);
       progress |= OPT(s, nir_opt_dce);
       progress |= OPT(s, nir_opt_cse);
-      progress |= OPT(s, nir_opt_peephole_select, 16, true, true);
+
+      nir_opt_peephole_select_options peephole_select_options = {
+         .limit = 16,
+         .indirect_load_ok = true,
+         .expensive_alu_ok = true,
+      };
+      progress |= OPT(s, nir_opt_peephole_select, &peephole_select_options);
       progress |= OPT(s, nir_opt_intrinsics);
       progress |= OPT(s, nir_opt_algebraic);
       progress |= OPT(s, nir_opt_constant_folding);

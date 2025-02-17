@@ -136,7 +136,10 @@ optimize_nir(nir_shader *nir, const struct nak_compiler *nak, bool allow_copies)
       OPT(nir, nir_opt_dce);
       OPT(nir, nir_opt_cse);
 
-      OPT(nir, nir_opt_peephole_select, 0, false, false);
+      nir_opt_peephole_select_options peephole_select_options = {
+         .limit = 0,
+      };
+      OPT(nir, nir_opt_peephole_select, &peephole_select_options);
       OPT(nir, nir_opt_intrinsics);
       OPT(nir, nir_opt_idiv_const, 32);
       OPT(nir, nir_opt_algebraic);

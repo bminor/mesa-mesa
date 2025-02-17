@@ -6058,8 +6058,14 @@ typedef struct nir_opt_offsets_options {
 
 bool nir_opt_offsets(nir_shader *shader, const nir_opt_offsets_options *options);
 
-bool nir_opt_peephole_select(nir_shader *shader, unsigned limit,
-                             bool indirect_load_ok, bool expensive_alu_ok);
+typedef struct nir_opt_peephole_select_options {
+   unsigned limit; /* Set to max to flatten all control flow. */
+   bool indirect_load_ok;
+   bool expensive_alu_ok;
+} nir_opt_peephole_select_options;
+
+bool nir_opt_peephole_select(nir_shader *shader,
+                             const nir_opt_peephole_select_options *options);
 
 bool nir_opt_reassociate_bfi(nir_shader *shader);
 

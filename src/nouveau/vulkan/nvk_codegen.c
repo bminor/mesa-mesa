@@ -164,7 +164,12 @@ nvk_cg_optimize_nir(nir_shader *nir)
        * but a bunch of tessellation shaders blow up.
        * we should revisit this when NAK is merged.
        */
-      NIR_PASS(progress, nir, nir_opt_peephole_select, 2, true, true);
+      nir_opt_peephole_select_options peephole_select_options = {
+         .limit = 2,
+         .indirect_load_ok = true,
+         .expensive_alu_ok = true,
+      };
+      NIR_PASS(progress, nir, nir_opt_peephole_select, &peephole_select_options);
       NIR_PASS(progress, nir, nir_opt_constant_folding);
       NIR_PASS(progress, nir, nir_opt_algebraic);
 

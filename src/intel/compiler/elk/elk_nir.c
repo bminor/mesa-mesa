@@ -663,9 +663,16 @@ elk_nir_optimize(nir_shader *nir, bool is_scalar,
       const bool is_vec4_tessellation = !is_scalar &&
          (nir->info.stage == MESA_SHADER_TESS_CTRL ||
           nir->info.stage == MESA_SHADER_TESS_EVAL);
-      OPT(nir_opt_peephole_select, 0, !is_vec4_tessellation, false);
-      OPT(nir_opt_peephole_select, 8, !is_vec4_tessellation,
-          devinfo->ver >= 6);
+
+      nir_opt_peephole_select_options peephole_select_options = {
+         .limit = 0,
+         .indirect_load_ok = !is_vec4_tessellation,
+      };
+      OPT(nir_opt_peephole_select, &peephole_select_options);
+
+      peephole_select_options.limit = 8;
+      peephole_select_options.expensive_alu_ok = devinfo->ver >= 6;
+      OPT(nir_opt_peephole_select, &peephole_select_options);
 
       OPT(nir_opt_intrinsics);
       OPT(nir_opt_idiv_const, 32);
@@ -1421,9 +1428,16 @@ elk_postprocess_nir(nir_shader *nir, const struct elk_compiler *compiler,
       const bool is_vec4_tessellation = !is_scalar &&
          (nir->info.stage == MESA_SHADER_TESS_CTRL ||
           nir->info.stage == MESA_SHADER_TESS_EVAL);
-      OPT(nir_opt_peephole_select, 0, is_vec4_tessellation, false);
-      OPT(nir_opt_peephole_select, 1, is_vec4_tessellation,
-          compiler->devinfo->ver >= 6);
+
+      nir_opt_peephole_select_options peephole_select_options = {
+         .limit = 0,
+         .indirect_load_ok = !is_vec4_tessellation,
+      };
+      OPT(nir_opt_peephole_select, &peephole_select_options);
+
+      peephole_select_options.limit = 1;
+      peephole_select_options.expensive_alu_ok = compiler->devinfo->ver >= 6;
+      OPT(nir_opt_peephole_select, &peephole_select_options);
    }
 
    do {

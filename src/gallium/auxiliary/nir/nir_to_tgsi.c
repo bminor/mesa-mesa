@@ -3339,8 +3339,13 @@ ntt_optimize_nir(struct nir_shader *s, struct pipe_screen *screen,
       NIR_PASS(progress, s, nir_opt_dead_write_vars);
 
       NIR_PASS(progress, s, nir_opt_if, nir_opt_if_optimize_phi_true_false);
-      NIR_PASS(progress, s, nir_opt_peephole_select,
-               control_flow_depth == 0 ? ~0 : 8, true, true);
+
+      nir_opt_peephole_select_options peephole_select_options = {
+         .limit = control_flow_depth == 0 ? ~0 : 8,
+         .indirect_load_ok = true,
+         .expensive_alu_ok = true,
+      };
+      NIR_PASS(progress, s, nir_opt_peephole_select, &peephole_select_options);
       NIR_PASS(progress, s, nir_opt_algebraic);
       NIR_PASS(progress, s, nir_opt_constant_folding);
       nir_load_store_vectorize_options vectorize_opts = {
