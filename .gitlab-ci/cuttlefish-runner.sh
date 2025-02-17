@@ -122,19 +122,6 @@ if [ -e "$INSTALL/$GPU_VERSION-skips.txt" ]; then
 fi
 $ADB push "$INSTALL/deqp-$DEQP_SUITE.toml" /data/deqp
 
-# remove 32 bits libs from /vendor/lib
-
-$ADB shell rm -f /vendor/lib/egl/libGLES_mesa.so
-
-$ADB shell rm -f /vendor/lib/egl/libEGL_angle.so
-$ADB shell rm -f /vendor/lib/egl/libEGL_emulation.so
-$ADB shell rm -f /vendor/lib/egl/libGLESv1_CM_angle.so
-$ADB shell rm -f /vendor/lib/egl/libGLESv1_CM_emulation.so
-$ADB shell rm -f /vendor/lib/egl/libGLESv2_angle.so
-$ADB shell rm -f /vendor/lib/egl/libGLESv2_emulation.so
-
-$ADB shell rm -f /vendor/lib/hw/vulkan.*
-
 # replace on /vendor/lib64
 
 $ADB push "$INSTALL/lib/libgallium_dri.so" /vendor/lib64/libgallium_dri.so
