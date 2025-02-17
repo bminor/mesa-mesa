@@ -398,7 +398,7 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
       NIR_PASS(_, stage->nir, nir_opt_constant_folding);
 
    /* TODO: vectorize loads after this to vectorize loading adjacent descriptors */
-   NIR_PASS_V(stage->nir, radv_nir_apply_pipeline_layout, device, stage);
+   NIR_PASS(_, stage->nir, radv_nir_apply_pipeline_layout, device, stage);
 
    NIR_PASS(_, stage->nir, nir_lower_alu_width, opt_vectorize_callback, device);
 
