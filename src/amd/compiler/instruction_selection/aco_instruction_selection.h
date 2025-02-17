@@ -18,6 +18,31 @@
 
 namespace aco {
 
+struct parameter_info {
+   bool discardable;
+   bool is_reg;
+   union {
+      Definition def;
+      unsigned scratch_offset;
+   };
+};
+
+struct call_info {
+   nir_call_instr* nir_instr;
+   Instruction* aco_instr;
+   std::vector<parameter_info> return_info;
+   unsigned scratch_param_size;
+};
+
+struct callee_info {
+   std::vector<parameter_info> param_infos;
+   parameter_info return_address;
+   parameter_info stack_ptr;
+   unsigned reg_param_count = 0;
+   unsigned reg_discardable_param_count = 0;
+   unsigned scratch_param_size = 0;
+};
+
 enum aco_color_output_type {
    ACO_TYPE_ANY32,
    ACO_TYPE_FLOAT16,
@@ -135,6 +160,13 @@ struct isel_context {
    uint32_t wqm_instruction_idx;
 
    BITSET_DECLARE(output_args, AC_MAX_ARGS);
+
+   /* Function information */
+   ABI callee_abi;
+   struct callee_info callee_info;
+   std::vector<call_info> call_infos;
+   Temp next_divergent_pc;
+   Temp next_pc;
 };
 
 inline Temp
@@ -256,6 +288,10 @@ Temp lanecount_to_mask(isel_context* ctx, Temp count, unsigned bit_offset);
 void build_end_with_regs(isel_context* ctx, std::vector<Operand>& regs);
 Instruction* add_startpgm(struct isel_context* ctx);
 void finish_program(isel_context* ctx);
+
+struct callee_info get_callee_info(amd_gfx_level gfx_level, const ABI& abi, unsigned param_count,
+                                   const nir_parameter* parameters, Program* program,
+                                   RegisterDemand reg_limit);
 
 #define isel_err(...) _isel_err(ctx, __FILE__, __LINE__, __VA_ARGS__)
 

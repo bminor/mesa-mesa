@@ -414,6 +414,8 @@ init_context(isel_context* ctx, nir_shader* shader)
    ctx->program->allocateRange(impl->ssa_alloc);
    RegClass* regclasses = ctx->program->temp_rc.data() + ctx->first_temp_id;
 
+   unsigned call_count = 0;
+
    /* TODO: make this recursive to improve compile times */
    bool done = false;
    while (!done) {
@@ -702,11 +704,17 @@ init_context(isel_context* ctx, nir_shader* shader)
                regclasses[phi->def.index] = rc;
                break;
             }
+            case nir_instr_type_call: {
+               ++call_count;
+               break;
+            }
             default: break;
             }
          }
       }
    }
+
+   ctx->call_infos.reserve(call_count);
 
    ctx->program->config->spi_ps_input_ena = ctx->program->info.ps.spi_ps_input_ena;
    ctx->program->config->spi_ps_input_addr = ctx->program->info.ps.spi_ps_input_addr;
