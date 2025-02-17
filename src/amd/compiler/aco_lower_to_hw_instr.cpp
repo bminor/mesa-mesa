@@ -2956,6 +2956,35 @@ lower_to_hw_instr(Program* program)
          } else if (instr->isMIMG() && instr->mimg().strict_wqm) {
             lower_image_sample(&ctx, instr);
             ctx.instructions.emplace_back(std::move(instr));
+         } else if (instr->isCall()) {
+            unsigned extra_param_count = 2;
+            PhysReg stack_reg = instr->operands[0].physReg();
+
+            if (instr->operands[1].constantValue()) {
+               bld.sop2(aco_opcode::s_add_u32, Definition(stack_reg, s1), Definition(scc, s1),
+                        Operand(stack_reg, s1), instr->operands[1]);
+               if (program->gfx_level < GFX9) {
+                  /* The callee's VGPR spill buffer resource needs to be based at the
+                   * start of callee scratch.
+                   */
+                  PhysReg rsrc_dword1 = stack_reg.advance(4);
+                  bld.sop2(aco_opcode::s_addc_u32, Definition(rsrc_dword1, s1), Definition(scc, s1),
+                           Operand(rsrc_dword1, s1), Operand::c32(0), Operand(scc, s1));
+               }
+            }
+
+            bld.sop1(aco_opcode::s_swappc_b64, Definition(instr->definitions[0].physReg(), s2),
+                     Operand(instr->operands[extra_param_count + 1].physReg(), s2));
+
+            if (instr->operands[1].constantValue()) {
+               bld.sop2(aco_opcode::s_sub_u32, Definition(stack_reg, s1), Definition(scc, s1),
+                        Operand(stack_reg, s1), instr->operands[1]);
+               if (program->gfx_level < GFX9) {
+                  PhysReg rsrc_dword1 = stack_reg.advance(4);
+                  bld.sop2(aco_opcode::s_subb_u32, Definition(rsrc_dword1, s1), Definition(scc, s1),
+                           Operand(rsrc_dword1, s1), Operand::c32(0), Operand(scc, s1));
+               }
+            }
          } else {
             ctx.instructions.emplace_back(std::move(instr));
          }
