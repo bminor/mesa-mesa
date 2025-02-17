@@ -290,6 +290,18 @@ vk_common_CmdNextSubpass(VkCommandBuffer commandBuffer,
       commandBuffer, &begin_info, &end_info);
 }
 
+VKAPI_ATTR void VKAPI_CALL
+vk_common_CmdEndRendering(VkCommandBuffer commandBuffer)
+{
+   VK_FROM_HANDLE(vk_command_buffer, cmd_buffer, commandBuffer);
+
+   VkRenderingEndInfoEXT info = {
+      .sType = VK_STRUCTURE_TYPE_RENDERING_END_INFO_EXT,
+   };
+
+   cmd_buffer->base.device->dispatch_table.CmdEndRendering2EXT(commandBuffer, &info);
+}
+
 static unsigned
 num_subpass_attachments2(const VkSubpassDescription2 *desc)
 {
