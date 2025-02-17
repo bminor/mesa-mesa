@@ -454,7 +454,7 @@
         "description": "llvmpipe: Fix alpha-to-coverage without dithering",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ad4635d6ef05ce6c825c4457a5cba1dd645348d4",
         "notes": null
