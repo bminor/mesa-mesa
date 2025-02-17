@@ -964,8 +964,10 @@ is_edb_buffer_view(nir_deref_instr *deref,
    nir_variable *var = nir_deref_instr_get_variable(deref);
    uint8_t set = var->data.descriptor_set;
 
-   return ctx->set_layouts[set]->flags &
-          VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+   return (ctx->set_layouts[set]->flags &
+           VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) &&
+          !(ctx->set_layouts[set]->flags &
+            VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
 }
 
 static nir_def *
