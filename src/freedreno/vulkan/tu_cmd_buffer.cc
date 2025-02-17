@@ -1093,6 +1093,10 @@ tu6_emit_tile_select(struct tu_cmd_buffer *cmd,
    tu_cs_emit(cs, A6XX_CP_SET_MARKER_0_MODE(RM6_BIN_RENDER_START) |
                   A6XX_CP_SET_MARKER_0_USES_GMEM);
 
+   if (CHIP == A6XX && cmd->device->physical_device->has_preemption) {
+      tu_emit_vsc<CHIP>(cmd, &cmd->cs);
+   }
+
    tu6_emit_bin_size<CHIP>(
       cs, tiling->tile0.width, tiling->tile0.height,
       {
@@ -2183,7 +2187,8 @@ tu6_tile_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
        * these registers, because CP_SET_BIN_DATA5_OFFSET will use the
        * register instead of the pseudo register and its value won't survive
        * across preemptions. The blob seems to take the second approach and
-       * emits the preamble lazily.
+       * emits the preamble lazily. We chose the per-bin approach but blob's
+       * should be a better one.
        */
       tu_emit_vsc<CHIP>(cmd, cs);
 
