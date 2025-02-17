@@ -1504,6 +1504,13 @@ radv_enc_op_preset(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoKH
    struct radv_video_session *vid = cmd_buffer->video.vid;
    uint32_t preset_mode;
 
+   if (vid->enc_preset_mode == RENCODE_PRESET_MODE_QUALITY)
+      preset_mode = RENCODE_IB_OP_SET_QUALITY_ENCODING_MODE;
+   else if (vid->enc_preset_mode == RENCODE_PRESET_MODE_BALANCE)
+      preset_mode = RENCODE_IB_OP_SET_BALANCE_ENCODING_MODE;
+   else
+      preset_mode = RENCODE_IB_OP_SET_SPEED_ENCODING_MODE;
+
    switch (vid->vk.op) {
    case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR: {
       const struct VkVideoEncodeH265PictureInfoKHR *h265_picture_info =
@@ -1511,22 +1518,14 @@ radv_enc_op_preset(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoKH
       const StdVideoEncodeH265PictureInfo *pic = h265_picture_info->pStdPictureInfo;
       const StdVideoH265SequenceParameterSet *sps =
          vk_video_find_h265_enc_std_sps(&cmd_buffer->video.params->vk, pic->pps_seq_parameter_set_id);
-      if (sps->flags.sample_adaptive_offset_enabled_flag && vid->enc_preset_mode == RENCODE_PRESET_MODE_SPEED) {
+      if (sps->flags.sample_adaptive_offset_enabled_flag && vid->enc_preset_mode == RENCODE_PRESET_MODE_SPEED)
          preset_mode = RENCODE_IB_OP_SET_BALANCE_ENCODING_MODE;
-         return;
-      }
       break;
    }
    default:
       break;
    }
 
-   if (vid->enc_preset_mode == RENCODE_PRESET_MODE_QUALITY)
-      preset_mode = RENCODE_IB_OP_SET_QUALITY_ENCODING_MODE;
-   else if (vid->enc_preset_mode == RENCODE_PRESET_MODE_BALANCE)
-      preset_mode = RENCODE_IB_OP_SET_BALANCE_ENCODING_MODE;
-   else
-      preset_mode = RENCODE_IB_OP_SET_SPEED_ENCODING_MODE;
    ENC_BEGIN;
    radeon_emit(cs, preset_mode);
    ENC_END;
