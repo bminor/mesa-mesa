@@ -4400,10 +4400,11 @@ apply_type_qualifier_to_variable(const struct ast_type_qualifier *qual,
                        "`out' or `varying' variables between shader stages");
    }
 
-   if (qual->flags.q.shared_storage && state->stage != MESA_SHADER_COMPUTE) {
+   if (qual->flags.q.shared_storage && state->stage != MESA_SHADER_COMPUTE &&
+       state->stage != MESA_SHADER_TASK && state->stage != MESA_SHADER_MESH) {
       _mesa_glsl_error(loc, state,
                        "the shared storage qualifiers can only be used with "
-                       "compute shaders");
+                       "compute, task, or mesh shaders");
    }
 
    if (qual->flags.q.task_payload && state->stage != MESA_SHADER_TASK &&
