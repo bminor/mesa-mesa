@@ -5,6 +5,7 @@
  */
 
 #include "compiler/libcl/libcl_vk.h"
+#include "util/u_math.h"
 #include "geometry.h"
 #include "libagx_intrinsics.h"
 #include "query.h"

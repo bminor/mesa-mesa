@@ -87,6 +87,11 @@
 #define UTIL_ARCH_LITTLE_ENDIAN 1
 #define UTIL_ARCH_BIG_ENDIAN 0
 
+#elif defined(__OPENCL_VERSION__)
+
+#define UTIL_ARCH_LITTLE_ENDIAN 1
+#define UTIL_ARCH_BIG_ENDIAN 0
+
 #endif
 
 #if !defined(UTIL_ARCH_LITTLE_ENDIAN) || !defined(UTIL_ARCH_BIG_ENDIAN)

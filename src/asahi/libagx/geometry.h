@@ -8,8 +8,10 @@
 #include "compiler/libcl/libcl.h"
 #include "compiler/shader_enums.h"
 
-#ifndef __OPENCL_VERSION__
 #include "util/bitscan.h"
+#include "util/u_math.h"
+
+#ifndef __OPENCL_VERSION__
 #define libagx_popcount(x)   util_bitcount64(x)
 #define libagx_sub_sat(x, y) ((x >= y) ? (x - y) : 0)
 #else

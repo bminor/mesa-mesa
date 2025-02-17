@@ -98,6 +98,7 @@ nvkcl_spv = custom_target(
   output : 'nvkcl.spv',
   command : [
     prog_mesa_clc, '-o', '@OUTPUT@', '--depfile', '@DEPFILE@', nvkcl_files, '--',
+    '-I' + join_paths(meson.project_source_root(), 'src/compiler/libcl'),
     '-I' + join_paths(meson.current_source_dir(), '.'),
     '-I' + join_paths(meson.project_source_root(), 'src'),
     cl_args,

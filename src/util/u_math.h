@@ -284,7 +284,7 @@ util_half_inf_sign(int16_t x)
    return (x < 0) ? -1 : 1;
 }
 
-
+#ifndef __OPENCL_VERSION__
 /**
  * Return float bits.
  */
@@ -296,20 +296,34 @@ fui( float f )
    return fi.ui;
 }
 
-static inline uint64_t
-dui( double f )
-{
-   union di di;
-   di.d = f;
-   return di.ui;
-}
-
 static inline float
 uif(uint32_t ui)
 {
    union fi fi;
    fi.ui = ui;
    return fi.f;
+}
+
+#else
+static inline uint32_t
+fui(float f)
+{
+   return as_uint(f);
+}
+
+static inline float
+uif(uint32_t ui)
+{
+   return as_float(ui);
+}
+#endif
+
+static inline uint64_t
+dui( double f )
+{
+   union di di;
+   di.d = f;
+   return di.ui;
 }
 
 static inline double

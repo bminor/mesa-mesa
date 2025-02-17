@@ -16,6 +16,8 @@ foreach ver : ['4', '5', '6', '7', '9', '10']
         prog_mesa_clc, '-o', '@OUTPUT@',  '--depfile', '@DEPFILE@',
         libpan_shader_files, '--',
         '-DPAN_ARCH=@0@'.format(ver),
+        '-I' + join_paths(meson.project_source_root(), 'include'),
+        '-I' + join_paths(meson.project_source_root(), 'src/compiler/libcl'),
         '-I' + join_paths(meson.current_source_dir(), '.'),
         '-I' + join_paths(meson.current_source_dir(), '../../'),
         '-I' + join_paths(meson.current_source_dir(), '../lib/'),

@@ -20,6 +20,7 @@
    SOFTWARE.
 */
 
+#include "util/u_math.h"
 #include "geometry.h"
 #include "tessellator.h"
 

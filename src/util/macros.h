@@ -403,10 +403,10 @@ do {                       \
    (BITFIELD_MASK((b) + (count)) & ~BITFIELD_MASK(b))
 
 /** Set a single bit */
-#define BITFIELD64_BIT(b)      (1ull << (b))
+#define BITFIELD64_BIT(b)      (UINT64_C(1) << (b))
 /** Set all bits up to excluding bit b */
 #define BITFIELD64_MASK(b)      \
-   ((b) == 64 ? (~0ull) : BITFIELD64_BIT((b) & 63) - 1)
+   ((b) == 64 ? (~UINT64_C(0)) : BITFIELD64_BIT((b) & 63) - 1)
 /** Set count bits starting from bit b  */
 #define BITFIELD64_RANGE(b, count) \
    (BITFIELD64_MASK((b) + (count)) & ~BITFIELD64_MASK(b))

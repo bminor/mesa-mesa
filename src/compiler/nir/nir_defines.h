@@ -18,13 +18,9 @@
 #ifndef NIR_DEFINES_H
 #define NIR_DEFINES_H
 
-#ifndef __OPENCL_VERSION__
 #include <stdbool.h>
 #include <stdint.h>
 #include "util/macros.h"
-#else
-#include "compiler/libcl/libcl.h"
-#endif
 #include "util/enum_operators.h"
 
 #ifdef __cplusplus

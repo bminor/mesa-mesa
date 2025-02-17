@@ -24,7 +24,6 @@
 #ifndef UTIL_BITPACK_HELPERS_H
 #define UTIL_BITPACK_HELPERS_H
 
-#ifndef __OPENCL_VERSION__
 #include <math.h>
 #include <stdbool.h>
 
@@ -38,9 +37,6 @@
 #define util_bitpack_validate_value(x) \
    VALGRIND_CHECK_MEM_IS_DEFINED(&(x), sizeof(x))
 #endif
-#endif
-#else
-#include "compiler/libcl/libcl.h"
 #endif
 
 #ifndef util_bitpack_validate_value
