@@ -2144,9 +2144,6 @@ resolve_anb_image(struct anv_device *device,
 static bool
 anv_image_is_pat_compressible(struct anv_device *device, struct anv_image *image)
 {
-   if (INTEL_DEBUG(DEBUG_NO_CCS))
-      return false;
-
    if (device->info->ver < 20)
       return false;
 

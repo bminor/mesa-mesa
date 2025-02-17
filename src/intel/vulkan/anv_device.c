@@ -1552,7 +1552,9 @@ VkResult anv_AllocateMemory(
    /* TODO: Disabling compression on external bos will cause problems once we
     * have a modifier that supports compression (Xe2+).
     */
-   if (!(alloc_flags & ANV_BO_ALLOC_EXTERNAL) && mem_type->compressed)
+   if (!(alloc_flags & ANV_BO_ALLOC_EXTERNAL) &&
+       mem_type->compressed &&
+       !INTEL_DEBUG(DEBUG_NO_CCS))
       alloc_flags |= ANV_BO_ALLOC_COMPRESSED;
 
    if (mem_type->dynamic_visible)
