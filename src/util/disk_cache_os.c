@@ -1126,8 +1126,15 @@ disk_cache_mmap_cache_index(void *mem_ctx, struct disk_cache *cache)
       /* posix_fallocate() ensures disk space is allocated otherwise it
        * fails if there is not enough space on the disk.
        */
-      if (posix_fallocate(fd, 0, size) != 0)
-         goto path_fail;
+      int ret = posix_fallocate(fd, 0, size);
+      if (ret != 0) {
+         if (ret == EOPNOTSUPP) {
+            if (ftruncate(fd, size) == -1)
+               goto path_fail;
+         } else {
+            goto path_fail;
+         }
+      }
 #else
       /* ftruncate() allocates disk space lazily. If the disk is full
        * and it is unable to allocate disk space when accessed via
