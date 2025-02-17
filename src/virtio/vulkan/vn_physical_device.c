@@ -166,6 +166,7 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
       VkPhysicalDeviceMaintenance5Features maintenance5;
       VkPhysicalDevicePipelineProtectedAccessFeatures
          pipeline_protected_access;
+      VkPhysicalDevicePipelineRobustnessFeatures pipeline_robustness;
       VkPhysicalDeviceShaderExpectAssumeFeatures shader_expect_assume;
       VkPhysicalDeviceShaderFloatControls2Features shader_float_controls_2;
       VkPhysicalDeviceShaderSubgroupRotateFeatures shader_subgroup_rotate;
@@ -278,6 +279,7 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
    VN_ADD_PNEXT_EXT(feats2, LINE_RASTERIZATION_FEATURES, local_feats.line_rasterization, exts->KHR_line_rasterization || exts->EXT_line_rasterization);
    VN_ADD_PNEXT_EXT(feats2, MAINTENANCE_5_FEATURES, local_feats.maintenance5, exts->KHR_maintenance5);
    VN_ADD_PNEXT_EXT(feats2, PIPELINE_PROTECTED_ACCESS_FEATURES, local_feats.pipeline_protected_access, exts->EXT_pipeline_protected_access);
+   VN_ADD_PNEXT_EXT(feats2, PIPELINE_ROBUSTNESS_FEATURES, local_feats.pipeline_robustness, exts->EXT_pipeline_robustness);
    VN_ADD_PNEXT_EXT(feats2, SHADER_EXPECT_ASSUME_FEATURES, local_feats.shader_expect_assume, exts->KHR_shader_expect_assume);
    VN_ADD_PNEXT_EXT(feats2, SHADER_FLOAT_CONTROLS_2_FEATURES, local_feats.shader_float_controls_2, exts->KHR_shader_float_controls2);
    VN_ADD_PNEXT_EXT(feats2, SHADER_SUBGROUP_ROTATE_FEATURES, local_feats.shader_subgroup_rotate, exts->KHR_shader_subgroup_rotate);
@@ -492,6 +494,7 @@ vn_physical_device_init_properties(struct vn_physical_device *physical_dev)
       /* Vulkan 1.4 */
       VkPhysicalDeviceLineRasterizationProperties line_rasterization;
       VkPhysicalDeviceMaintenance5Properties maintenance_5;
+      VkPhysicalDevicePipelineRobustnessProperties pipeline_robustness;
       VkPhysicalDevicePushDescriptorProperties push_descriptor;
       VkPhysicalDeviceVertexAttributeDivisorProperties
          vertex_attribute_divisor;
@@ -560,6 +563,7 @@ vn_physical_device_init_properties(struct vn_physical_device *physical_dev)
    /* Vulkan 1.4 */
    VN_ADD_PNEXT_EXT(props2, LINE_RASTERIZATION_PROPERTIES, local_props.line_rasterization, exts->KHR_line_rasterization || exts->EXT_line_rasterization);
    VN_ADD_PNEXT_EXT(props2, MAINTENANCE_5_PROPERTIES, local_props.maintenance_5, exts->KHR_maintenance5);
+   VN_ADD_PNEXT_EXT(props2, PIPELINE_ROBUSTNESS_PROPERTIES, local_props.pipeline_robustness, exts->EXT_pipeline_robustness);
    VN_ADD_PNEXT_EXT(props2, PUSH_DESCRIPTOR_PROPERTIES, local_props.push_descriptor, exts->KHR_push_descriptor);
    VN_ADD_PNEXT_EXT(props2, VERTEX_ATTRIBUTE_DIVISOR_PROPERTIES, local_props.vertex_attribute_divisor, exts->KHR_vertex_attribute_divisor);
 
@@ -627,6 +631,7 @@ vn_physical_device_init_properties(struct vn_physical_device *physical_dev)
    /* Vulkan 1.4 */
    VN_SET_VK_PROPS_EXT(props, &local_props.line_rasterization, exts->KHR_line_rasterization || exts->EXT_line_rasterization);
    VN_SET_VK_PROPS_EXT(props, &local_props.maintenance_5, exts->KHR_maintenance5);
+   VN_SET_VK_PROPS_EXT(props, &local_props.pipeline_robustness, exts->EXT_pipeline_robustness);
    VN_SET_VK_PROPS_EXT(props, &local_props.push_descriptor, exts->KHR_push_descriptor);
    VN_SET_VK_PROPS_EXT(props, &local_props.vertex_attribute_divisor, exts->KHR_vertex_attribute_divisor);
 
@@ -1105,6 +1110,7 @@ vn_physical_device_get_passthrough_extensions(
       .KHR_shader_subgroup_rotate = true,
       .KHR_vertex_attribute_divisor = true,
       .EXT_pipeline_protected_access = true,
+      .EXT_pipeline_robustness = true,
 
       /* KHR */
       .KHR_calibrated_timestamps = true,

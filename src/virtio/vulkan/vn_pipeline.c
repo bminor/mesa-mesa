@@ -229,8 +229,7 @@ struct vn_graphics_pipeline_fix_tmp {
 
    /* Fixing the pNext chain
     *
-    * TODO: extend when below or more extensions are supported:
-    * - VK_EXT_pipeline_robustness
+    * Extend when more extensions are supported.
     */
    VkGraphicsPipelineLibraryCreateInfoEXT *gpl_infos;
    VkPipelineCreateFlags2CreateInfo *flags2_infos;
@@ -238,6 +237,7 @@ struct vn_graphics_pipeline_fix_tmp {
    VkPipelineFragmentShadingRateStateCreateInfoKHR *fsr_infos;
    VkPipelineLibraryCreateInfoKHR *library_infos;
    VkPipelineRenderingCreateInfo *rendering_infos;
+   VkPipelineRobustnessCreateInfo *robustness_infos;
 };
 
 /* shader module commands */
@@ -656,6 +656,7 @@ vn_graphics_pipeline_fix_tmp_alloc(const VkAllocationCallbacks *alloc,
    VkPipelineFragmentShadingRateStateCreateInfoKHR *fsr_infos;
    VkPipelineLibraryCreateInfoKHR *library_infos;
    VkPipelineRenderingCreateInfo *rendering_infos;
+   VkPipelineRobustnessCreateInfo *robustness_infos;
 
    VK_MULTIALLOC(ma);
    vk_multialloc_add(&ma, &tmp, __typeof__(*tmp), 1);
@@ -677,6 +678,8 @@ vn_graphics_pipeline_fix_tmp_alloc(const VkAllocationCallbacks *alloc,
                         info_count);
       vk_multialloc_add(&ma, &rendering_infos, __typeof__(*rendering_infos),
                         info_count);
+      vk_multialloc_add(&ma, &robustness_infos, __typeof__(*robustness_infos),
+                        info_count);
    }
 
    if (!vk_multialloc_zalloc(&ma, alloc, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND))
@@ -694,6 +697,7 @@ vn_graphics_pipeline_fix_tmp_alloc(const VkAllocationCallbacks *alloc,
       tmp->fsr_infos = fsr_infos;
       tmp->library_infos = library_infos;
       tmp->rendering_infos = rendering_infos;
+      tmp->robustness_infos = robustness_infos;
    }
 
    return tmp;
@@ -1497,6 +1501,8 @@ vn_graphics_pipeline_create_info_pnext_init(
    VkPipelineLibraryCreateInfoKHR *library = &fix_tmp->library_infos[index];
    VkPipelineRenderingCreateInfo *rendering =
       &fix_tmp->rendering_infos[index];
+   VkPipelineRobustnessCreateInfo *robustness =
+      &fix_tmp->robustness_infos[index];
 
    VkBaseOutStructure *cur = (void *)&fix_tmp->infos[index];
 
@@ -1526,6 +1532,10 @@ vn_graphics_pipeline_create_info_pnext_init(
       case VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO:
          memcpy(rendering, src, sizeof(*rendering));
          next = rendering;
+         break;
+      case VK_STRUCTURE_TYPE_PIPELINE_ROBUSTNESS_CREATE_INFO:
+         memcpy(robustness, src, sizeof(*robustness));
+         next = robustness;
          break;
       default:
          break;
