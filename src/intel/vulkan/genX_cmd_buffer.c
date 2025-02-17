@@ -1138,6 +1138,10 @@ transition_color_buffer(struct anv_cmd_buffer *cmd_buffer,
 
    const uint32_t plane = anv_image_aspect_to_plane(image, aspect);
 
+   /* Early return for CPB surfaces, nothing to do */
+   if (isl_surf_usage_is_cpb(image->planes[plane].primary_surface.isl.usage))
+      return;
+
    if (base_layer >= anv_image_aux_layers(image, aspect, base_level))
       return;
 
