@@ -95,7 +95,7 @@ init_program(Program* program, Stage stage, const struct aco_shader_info* info,
    /* apparently gfx702 also has 16-bank LDS but I can't find a family for that */
    program->dev.has_16bank_lds = family == CHIP_KABINI || family == CHIP_STONEY;
 
-   program->dev.vgpr_limit = stage == raytracing_cs ? 128 : 256;
+   program->dev.vgpr_limit = 256;
    program->dev.physical_vgprs = 256;
    program->dev.vgpr_alloc_granule = 4;
 
@@ -127,6 +127,9 @@ init_program(Program* program, Stage stage, const struct aco_shader_info* info,
       program->dev.sgpr_alloc_granule = 8;
       program->dev.sgpr_limit = 104;
    }
+
+   if (program->stage == raytracing_cs)
+      program->dev.vgpr_limit = util_align_npot(128, program->dev.vgpr_alloc_granule);
 
    program->dev.scratch_alloc_granule = gfx_level >= GFX11 ? 256 : 1024;
 
