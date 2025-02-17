@@ -88,6 +88,7 @@ struct spill_ctx {
    unsigned sgpr_spill_slots;
    unsigned vgpr_spill_slots;
    Temp scratch_rsrc;
+   unsigned scratch_rsrc_block = -1u;
 
    unsigned extra_vgprs;
 
@@ -1217,19 +1218,37 @@ setup_vgpr_spill_reload(spill_ctx& ctx, Block& block,
    bool overflow = (ctx.vgpr_spill_slots - 1) * 4 > offset_range;
 
    Builder rsrc_bld(ctx.program);
+   unsigned bld_block = block.index;
    if (block.kind & block_kind_top_level) {
       rsrc_bld.reset(&instructions);
    } else if (ctx.scratch_rsrc == Temp() && (!overflow || ctx.program->gfx_level < GFX9)) {
-      Block* tl_block = &block;
-      while (!(tl_block->kind & block_kind_top_level))
-         tl_block = &ctx.program->blocks[tl_block->linear_idom];
+      Block* tl_block = nullptr;
+      for (int i = block.index; i >= 0; i--) {
+         if (ctx.program->blocks[i].kind & block_kind_contains_call)
+            break;
+         /* If we're in a loop, there may be calls later in the loop where a scratch_rsrc may
+          * not be present, so we can't create any outside of the loop and use them here.
+          */
+         if (ctx.program->has_call && block.loop_nest_depth > 0 &&
+             (ctx.program->blocks[i].kind & block_kind_loop_header))
+            break;
+         if (ctx.program->blocks[i].kind & block_kind_top_level) {
+            tl_block = &ctx.program->blocks[i];
+            break;
+         }
+      }
 
-      /* find p_logical_end */
-      std::vector<aco_ptr<Instruction>>& prev_instructions = tl_block->instructions;
-      unsigned idx = prev_instructions.size() - 1;
-      while (prev_instructions[idx]->opcode != aco_opcode::p_logical_end)
-         idx--;
-      rsrc_bld.reset(&prev_instructions, std::next(prev_instructions.begin(), idx));
+      if (tl_block) {
+         /* find p_logical_end */
+         std::vector<aco_ptr<Instruction>>& prev_instructions = tl_block->instructions;
+         unsigned idx = prev_instructions.size() - 1;
+         while (prev_instructions[idx]->opcode != aco_opcode::p_logical_end)
+            idx--;
+         rsrc_bld.reset(&prev_instructions, std::next(prev_instructions.begin(), idx));
+         bld_block = tl_block->index;
+      } else {
+         rsrc_bld.reset(&instructions);
+      }
    }
 
    /* If spilling overflows the constant offset range at any point, we need to emit the soffset
@@ -1258,10 +1277,13 @@ setup_vgpr_spill_reload(spill_ctx& ctx, Block& block,
                                Operand(ctx.program->stack_ptr), Operand::c32(saddr));
          else
             ctx.scratch_rsrc = offset_bld.copy(offset_bld.def(s1), Operand::c32(saddr));
+         ctx.scratch_rsrc_block = bld_block;
       }
    } else {
-      if (ctx.scratch_rsrc == Temp())
+      if (ctx.scratch_rsrc == Temp()) {
          ctx.scratch_rsrc = load_scratch_resource(ctx.program, rsrc_bld, ctx.resume_idx, overflow);
+         ctx.scratch_rsrc_block = bld_block;
+      }
 
       if (overflow) {
          uint32_t soffset =
@@ -1553,6 +1575,22 @@ assign_spill_slots(spill_ctx& ctx, unsigned spills_to_vgpr)
    unsigned last_top_level_block_idx = 0;
    for (Block& block : ctx.program->blocks) {
 
+      if (ctx.scratch_rsrc_block < ctx.program->blocks.size() &&
+          !(ctx.program->blocks[ctx.scratch_rsrc_block].kind & block_kind_top_level))
+         ctx.scratch_rsrc = Temp();
+
+      if (block.kind & block_kind_loop_header) {
+         for (unsigned index = block.index;
+              index < ctx.program->blocks.size() &&
+              ctx.program->blocks[index].loop_nest_depth >= block.loop_nest_depth;
+              ++index) {
+            if (ctx.program->blocks[index].kind & block_kind_contains_call) {
+               ctx.scratch_rsrc = Temp();
+               break;
+            }
+         }
+      }
+
       if (block.kind & block_kind_top_level) {
          last_top_level_block_idx = block.index;
 
@@ -1571,6 +1609,10 @@ assign_spill_slots(spill_ctx& ctx, unsigned spills_to_vgpr)
       instructions.reserve(block.instructions.size());
       Builder bld(ctx.program, &instructions);
       for (it = block.instructions.begin(); it != block.instructions.end(); ++it) {
+
+         /* Recreate the scratch_rsrc after calls, since we don't spill it. */
+         if ((*it)->isCall())
+            ctx.scratch_rsrc = Temp();
 
          if ((*it)->opcode == aco_opcode::p_spill) {
             uint32_t spill_id = (*it)->operands[1].constantValue();
