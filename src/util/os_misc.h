@@ -92,6 +92,13 @@ os_get_option(const char *name);
 
 /*
  * Get an option. Should return NULL if specified option is not set.
+ * Same as `os_get_option()` but uses `secure_getenv()` instead of `getenv()`
+ */
+const char *
+os_get_option_secure(const char *name);
+
+/*
+ * Get an option. Should return NULL if specified option is not set.
  * It's will save the option into hash table for the first time, and
  * for latter calling, it's will return the value comes from hash table
  * directly, and the returned value will always be valid before program exit

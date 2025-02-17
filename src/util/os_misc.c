@@ -32,6 +32,7 @@
 #include "os_file.h"
 #include "ralloc.h"
 #include "simple_mtx.h"
+#include "u_debug.h"
 
 #include <stdarg.h>
 
@@ -222,6 +223,18 @@ os_get_option(const char *name)
 }
 
 #endif
+
+const char *
+os_get_option_secure(const char *name)
+{
+   const char *opt = secure_getenv(name);
+#if DETECT_OS_ANDROID
+   if (!opt) {
+      opt = os_get_android_option(name);
+   }
+#endif
+   return opt;
+}
 
 static struct hash_table *options_tbl;
 static bool options_tbl_exited = false;
