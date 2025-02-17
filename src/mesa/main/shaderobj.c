@@ -98,15 +98,6 @@ _mesa_reference_shader(struct gl_context *ctx, struct gl_shader **ptr,
    _reference_shader(ctx, ptr, sh, false);
 }
 
-static void
-_mesa_init_shader(struct gl_shader *shader)
-{
-   shader->RefCount = 1;
-   shader->info.Geom.VerticesOut = -1;
-   shader->info.Geom.InputType = MESA_PRIM_TRIANGLES;
-   shader->info.Geom.OutputType = MESA_PRIM_TRIANGLE_STRIP;
-}
-
 /**
  * Allocate a new gl_shader object, initialize it.
  */
@@ -118,7 +109,7 @@ _mesa_new_shader(GLuint name, gl_shader_stage stage)
    if (shader) {
       shader->Stage = stage;
       shader->Name = name;
-      _mesa_init_shader(shader);
+      shader->RefCount = 1;
    }
    return shader;
 }
