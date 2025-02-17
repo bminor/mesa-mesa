@@ -186,7 +186,8 @@ process_live_temps_per_block(live_ctx& ctx, Block* block)
          break;
 
       ctx.program->needs_vcc |= instr_needs_vcc(insn);
-      insn->register_demand = RegisterDemand(new_demand.vgpr, new_demand.sgpr);
+      RegisterDemand demand_after_instr = RegisterDemand(new_demand.vgpr, new_demand.sgpr);
+      insn->register_demand = demand_after_instr;
 
       bool has_vgpr_def = false;
 
@@ -368,6 +369,45 @@ process_live_temps_per_block(live_ctx& ctx, Block* block)
             new_demand += temp;
          } else if (operand.isClobbered()) {
             operand_demand += temp;
+         }
+      }
+
+      if (insn->isCall()) {
+         /* For call instructions, definitions are live at the time s_setpc finishes,
+          * which continues execution in the callee. This means that all definitions are
+          * live concurrently with operands.
+          */
+         operand_demand += insn->definitions[0].getTemp();
+         if (insn->definitions[1].physReg() == vcc)
+            operand_demand += insn->definitions[1].getTemp();
+
+         RegisterDemand limit = get_addr_regs_from_waves(ctx.program, ctx.program->min_waves);
+         insn->call().callee_preserved_limit = RegisterDemand();
+
+         BITSET_DECLARE(preserved_regs, 512);
+         insn->call().abi.preservedRegisters(preserved_regs, limit);
+         for (auto& op : insn->operands) {
+            if (!op.isTemp() || !op.isPrecolored() || op.isClobbered())
+               continue;
+
+            if (op.isKill())
+               insn->call().callee_preserved_limit -= op.getTemp();
+            for (unsigned i = 0; i < op.size(); ++i)
+               BITSET_SET(preserved_regs, op.physReg().reg() + i);
+         }
+
+         RegisterDemand preserved_reg_demand;
+         preserved_reg_demand.sgpr =
+            __bitset_prefix_sum(preserved_regs, limit.sgpr, 256 / BITSET_WORDBITS);
+         preserved_reg_demand.vgpr = __bitset_prefix_sum(preserved_regs + 256 / BITSET_WORDBITS,
+                                                         limit.vgpr, 256 / BITSET_WORDBITS);
+         insn->call().callee_preserved_limit += preserved_reg_demand;
+
+         insn->call().caller_preserved_demand = demand_after_instr;
+
+         for (unsigned i = 0; i < insn->definitions.size(); ++i) {
+            if (!insn->definitions[i].isKill())
+               insn->call().caller_preserved_demand -= insn->definitions[i].getTemp();
          }
       }
 
