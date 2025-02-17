@@ -349,8 +349,6 @@
   variables:
     VK_DRIVER: intel
     USE_ANGLE: 1
-    # ANGLE requires X11 running for some reason.
-    HWCI_START_XORG: 1
 
 ## Iris only
 .iris-apl-test:
