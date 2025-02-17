@@ -3249,12 +3249,21 @@ visit_load_scratch(isel_context* ctx, nir_intrinsic_instr* instr)
    info.sync = memory_sync_info(storage_scratch, semantic_private);
    if (ctx->program->gfx_level >= GFX9) {
       if (nir_src_is_const(instr->src[0])) {
-         uint32_t max = ctx->program->dev.scratch_global_offset_max + 1;
-         info.offset =
-            bld.copy(bld.def(s1), Operand::c32(ROUND_DOWN_TO(nir_src_as_uint(instr->src[0]), max)));
-         info.const_offset = nir_src_as_uint(instr->src[0]) % max;
+         info.const_offset = nir_src_as_uint(instr->src[0]);
+         if (ctx->program->stack_ptr.id())
+            info.offset = Operand(ctx->program->stack_ptr);
+         else
+            info.offset = Operand::zero(4);
       } else {
          info.offset = Operand(get_ssa_temp(ctx, instr->src[0].ssa));
+         if (ctx->program->stack_ptr.id()) {
+            if (info.offset.regClass().type() == RegType::sgpr) {
+               info.offset = bld.sop2(aco_opcode::s_add_u32, bld.def(s1), bld.def(s1, scc),
+                                      ctx->program->stack_ptr, info.offset);
+            } else {
+               info.offset = bld.vadd32(bld.def(v1), ctx->program->stack_ptr, info.offset);
+            }
+         }
       }
       EmitLoadParameters params = scratch_flat_load_params;
       params.max_const_offset = ctx->program->dev.scratch_global_offset_max;
@@ -3291,6 +3300,16 @@ visit_store_scratch(isel_context* ctx, nir_intrinsic_instr* instr)
       uint32_t base_const_offset =
          nir_src_is_const(instr->src[1]) ? nir_src_as_uint(instr->src[1]) : 0;
 
+      if (ctx->program->stack_ptr.id()) {
+         if (offset.id() == 0)
+            offset = ctx->program->stack_ptr;
+         else if (offset.type() == RegType::sgpr)
+            offset = bld.sop2(aco_opcode::s_add_u32, bld.def(s1), bld.def(s1, scc),
+                              Operand(ctx->program->stack_ptr), Operand(offset));
+         else
+            offset = bld.vadd32(bld.def(v1), Operand(ctx->program->stack_ptr), Operand(offset));
+      }
+
       for (unsigned i = 0; i < write_count; i++) {
          aco_opcode op;
          switch (write_datas[i].bytes()) {
@@ -3304,12 +3323,17 @@ visit_store_scratch(isel_context* ctx, nir_intrinsic_instr* instr)
          }
 
          uint32_t const_offset = base_const_offset + offsets[i];
-         assert(const_offset < max || offset.id() == 0);
 
          Operand addr = offset.regClass() == s1 ? Operand(v1) : Operand(offset);
          Operand saddr = offset.regClass() == s1 ? Operand(offset) : Operand(s1);
-         if (offset.id() == 0)
+         if (offset.id() && const_offset >= max) {
+            assert(offset == ctx->program->stack_ptr);
+            saddr =
+               bld.sop2(aco_opcode::s_add_u32, bld.def(s1), bld.def(s1, scc),
+                        ctx->program->stack_ptr, Operand::c32(ROUND_DOWN_TO(const_offset, max)));
+         } else if (offset.id() == 0) {
             saddr = bld.copy(bld.def(s1), Operand::c32(ROUND_DOWN_TO(const_offset, max)));
+         }
 
          bld.scratch(op, addr, saddr, write_datas[i], const_offset % max,
                      memory_sync_info(storage_scratch, semantic_private));
