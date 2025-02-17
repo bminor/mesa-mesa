@@ -470,7 +470,7 @@ select_ps_epilog(Program* program, void* pinfo, ac_shader_config* config,
 
    program->config->float_mode = program->blocks[0].fp_mode.val;
 
-   append_logical_end(ctx.block);
+   append_logical_end(&ctx);
    ctx.block->kind |= block_kind_export_end;
    bld.reset(ctx.block);
    bld.sopp(aco_opcode::s_endpgm);

@@ -262,7 +262,8 @@ process_live_temps_per_block(live_ctx& ctx, Block* block)
          insn->operands[5].setLateKill(true); /* we re-use the destination reg in the middle */
       } else if (insn->opcode == aco_opcode::v_interp_p1_f32 && ctx.program->dev.has_16bank_lds) {
          insn->operands[0].setLateKill(true);
-      } else if (insn->opcode == aco_opcode::p_init_scratch) {
+      } else if (insn->opcode == aco_opcode::p_init_scratch ||
+                 insn->opcode == aco_opcode::p_reload_preserved) {
          insn->operands.back().setLateKill(true);
       } else if (instr_info.classes[(int)insn->opcode] == instr_class::wmma) {
          insn->operands[0].setLateKill(true);

@@ -251,7 +251,7 @@ void end_empty_exec_skip(isel_context* ctx);
 
 /* aco_isel_helpers.cpp */
 void append_logical_start(Block* b);
-void append_logical_end(Block* b);
+void append_logical_end(isel_context* ctx, bool append_reload_preserved = true);
 Temp get_ssa_temp_tex(struct isel_context* ctx, nir_def* def, bool is_16bit);
 Temp bool_to_vector_condition(isel_context* ctx, Temp val, Temp dst = Temp(0, s2));
 Temp bool_to_scalar_condition(isel_context* ctx, Temp val, Temp dst = Temp(0, s1));

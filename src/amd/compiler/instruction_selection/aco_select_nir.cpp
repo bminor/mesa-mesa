@@ -1200,7 +1200,7 @@ select_program_rt(isel_context& ctx, unsigned shader_count, struct nir_shader* c
       append_logical_start(ctx.block);
       split_arguments(&ctx, startpgm);
       visit_cf_list(&ctx, &nir_shader_get_entrypoint(nir)->body);
-      append_logical_end(ctx.block);
+      append_logical_end(&ctx);
       ctx.block->kind |= block_kind_uniform;
 
       /* Fix output registers and jump to next shader. We can skip this when dealing with a raygen
@@ -1359,7 +1359,7 @@ select_shader(isel_context& ctx, nir_shader* nir, const bool need_startpgm, cons
    if (need_endpgm) {
       program->config->float_mode = program->blocks[0].fp_mode.val;
 
-      append_logical_end(ctx.block);
+      append_logical_end(&ctx);
       ctx.block->kind |= block_kind_uniform;
 
       if ((!program->info.ps.has_epilog && !is_first_stage_of_merged_shader) ||

@@ -41,9 +41,21 @@ append_logical_start(Block* b)
 }
 
 void
-append_logical_end(Block* b)
+append_logical_end(isel_context* ctx, bool append_reload_preserved)
 {
-   Builder(NULL, b).pseudo(aco_opcode::p_logical_end);
+   Builder bld(ctx->program, ctx->block);
+
+   if (append_reload_preserved && ctx->program->is_callee) {
+      Operand stack_ptr_op;
+      if (ctx->program->gfx_level >= GFX9)
+         stack_ptr_op = Operand(ctx->callee_info.stack_ptr.def.getTemp());
+      else
+         stack_ptr_op = Operand(load_scratch_resource(ctx->program, bld, -1u, false));
+      bld.pseudo(aco_opcode::p_reload_preserved, bld.def(s1), bld.def(bld.lm), bld.def(s1, scc),
+                 stack_ptr_op);
+   }
+
+   bld.pseudo(aco_opcode::p_logical_end);
 }
 
 Temp

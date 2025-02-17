@@ -488,7 +488,8 @@ is_reorderable(const Instruction* instr)
           instr->opcode != aco_opcode::p_end_with_regs && instr->opcode != aco_opcode::s_nop &&
           instr->opcode != aco_opcode::s_sleep && instr->opcode != aco_opcode::s_trap &&
           instr->opcode != aco_opcode::p_call && instr->opcode != aco_opcode::p_logical_start &&
-          instr->opcode != aco_opcode::p_logical_end;
+          instr->opcode != aco_opcode::p_logical_end &&
+          instr->opcode != aco_opcode::p_reload_preserved;
 }
 
 struct memory_event_set {

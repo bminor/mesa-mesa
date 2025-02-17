@@ -1998,7 +1998,8 @@ is_dead(const std::vector<uint16_t>& uses, const Instruction* instr)
 {
    if (instr->definitions.empty() || instr->isBranch() || instr->isCall() ||
        instr->opcode == aco_opcode::p_startpgm || instr->opcode == aco_opcode::p_init_scratch ||
-       instr->opcode == aco_opcode::p_dual_src_export_gfx11)
+       instr->opcode == aco_opcode::p_dual_src_export_gfx11 ||
+       instr->opcode == aco_opcode::p_reload_preserved)
       return false;
 
    if (std::any_of(instr->definitions.begin(), instr->definitions.end(),
