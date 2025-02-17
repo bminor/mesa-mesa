@@ -2283,7 +2283,7 @@ radv_create_gs_copy_shader(struct radv_device *device, struct vk_pipeline_cache 
 
    NIR_PASS_V(nir, ac_nir_lower_intrinsics_to_args, pdev->info.gfx_level, pdev->info.has_ls_vgpr_init_bug,
               AC_HW_VERTEX_SHADER, 64, 64, &gs_copy_stage.args.ac);
-   NIR_PASS_V(nir, radv_nir_lower_abi, pdev->info.gfx_level, &gs_copy_stage, gfx_state, pdev->info.address32_hi);
+   NIR_PASS(_, nir, radv_nir_lower_abi, pdev->info.gfx_level, &gs_copy_stage, gfx_state, pdev->info.address32_hi);
 
    struct radv_graphics_pipeline_key key = {0};
    bool dump_shader = radv_can_dump_shader(device, nir);
