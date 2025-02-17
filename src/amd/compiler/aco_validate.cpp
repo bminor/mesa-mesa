@@ -974,6 +974,62 @@ validate_ir(Program* program)
             }
             break;
          }
+         case Format::PSEUDO_CALL: {
+            /* Call instructions need one definition for the return address and at least four
+             * operands:
+             * 1. Stack pointer
+             * 2. Parameter stack size (constant)
+             * 3. Divergent callee address (future s_setpc targets for divergent lanes)
+             * 4. Uniform callee address (s_setpc target)
+             */
+            check(!instr->definitions.empty() && instr->operands.size() >= 4,
+                  "Call instructions must have a definition and at least four operands",
+                  instr.get());
+            if (instr->definitions.empty() || instr->operands.size() < 4)
+               break;
+
+            check(instr->definitions[0].regClass() == RegClass::s2,
+                  "The first definition of a call instruction must be the return address",
+                  instr.get());
+
+            /* On gfx6-8 the stack pointer is part of the scratch resource descriptor */
+            if (program->gfx_level >= GFX9) {
+               check(instr->operands[0].regClass() == s1,
+                     "The first operand of a call instruction must be the stack pointer",
+                     instr.get());
+            } else {
+               check(instr->operands[0].regClass() == s4,
+                     "The first operand of a call instruction must be the stack pointer",
+                     instr.get());
+            }
+
+            check(instr->operands[1].isConstant(),
+                  "The second operand of a call instruction must be a constant", instr.get());
+            check(instr->operands[2].regClass() == v2,
+                  "The third operand of a call instruction must be a VGPR call target address",
+                  instr.get());
+            check(instr->operands[3].regClass() == s2,
+                  "The fourth operand of a call instruction must be a uniform call target address",
+                  instr.get());
+
+            unsigned first_discardable_def = 1;
+            if (instr->definitions.size() > 1 && instr->definitions[1].physReg() == vcc)
+               first_discardable_def = 2;
+
+            check(instr->operands.size() - 2u >= instr->definitions.size() - first_discardable_def,
+                  "There must be an operand for each parameter definition in a call instruction",
+                  instr.get());
+
+            for (unsigned def_idx = 0; def_idx < instr->definitions.size(); ++def_idx) {
+               check(instr->definitions[def_idx].isPrecolored(),
+                     "Call instruction definitions must be precolored", instr.get());
+            }
+            for (unsigned op_idx = 2; op_idx < instr->operands.size(); ++op_idx) {
+               check(instr->operands[op_idx].isPrecolored(),
+                     "Call parameter operands must be precolored", instr.get());
+            }
+            break;
+         }
          default: break;
          }
       }
@@ -1078,18 +1134,23 @@ validate_live_vars(Program* program)
    std::vector<RegisterDemand> block_demands(program->blocks.size());
    std::vector<RegisterDemand> live_in_demands(program->blocks.size());
    std::vector<std::vector<RegisterDemand>> register_demands(program->blocks.size());
+   std::vector<RegisterDemand> call_preserved_demands;
 
    for (unsigned i = 0; i < program->blocks.size(); i++) {
       Block& b = program->blocks[i];
       block_demands[i] = b.register_demand;
       live_in_demands[i] = b.live_in_demand;
       register_demands[i].reserve(b.instructions.size());
-      for (unsigned j = 0; j < b.instructions.size(); j++)
+      for (unsigned j = 0; j < b.instructions.size(); j++) {
          register_demands[i].emplace_back(b.instructions[j]->register_demand);
+         if (b.instructions[j]->isCall())
+            call_preserved_demands.push_back(b.instructions[j]->call().caller_preserved_demand);
+      }
    }
 
    aco::live_var_analysis(program);
 
+   unsigned call_instr_idx = 0;
    /* Validate RegisterDemand calculation */
    for (unsigned i = 0; i < program->blocks.size(); i++) {
       Block& b = program->blocks[i];
@@ -1112,7 +1173,9 @@ validate_live_vars(Program* program)
       }
 
       for (unsigned j = 0; j < b.instructions.size(); j++) {
-         if (b.instructions[j]->register_demand == register_demands[i][j])
+         if (b.instructions[j]->register_demand == register_demands[i][j] &&
+             (!b.instructions[j]->isCall() || b.instructions[j]->call().caller_preserved_demand ==
+                                                 call_preserved_demands[call_instr_idx++]))
             continue;
 
          char* out;
@@ -1121,11 +1184,23 @@ validate_live_vars(Program* program)
          u_memstream_open(&mem, &out, &outsize);
          FILE* const memf = u_memstream_get(&mem);
 
-         fprintf(memf,
-                 "Register Demand not updated correctly: got (%3u vgpr, %3u sgpr), but should be "
-                 "(%3u vgpr, %3u sgpr): \n\t",
-                 register_demands[i][j].vgpr, register_demands[i][j].sgpr,
-                 b.instructions[j]->register_demand.vgpr, b.instructions[j]->register_demand.sgpr);
+         if (b.instructions[j]->register_demand == register_demands[i][j]) {
+            fprintf(memf,
+                    "Caller-Preserved Register Demand not updated correctly: got (%3u vgpr, %3u "
+                    "sgpr), but should be "
+                    "(%3u vgpr, %3u sgpr): \n\t",
+                    call_preserved_demands[call_instr_idx - 1].vgpr,
+                    call_preserved_demands[call_instr_idx - 1].sgpr,
+                    b.instructions[j]->call().caller_preserved_demand.vgpr,
+                    b.instructions[j]->call().caller_preserved_demand.sgpr);
+         } else {
+            fprintf(
+               memf,
+               "Register Demand not updated correctly: got (%3u vgpr, %3u sgpr), but should be "
+               "(%3u vgpr, %3u sgpr): \n\t",
+               register_demands[i][j].vgpr, register_demands[i][j].sgpr,
+               b.instructions[j]->register_demand.vgpr, b.instructions[j]->register_demand.sgpr);
+         }
          aco_print_instr(program->gfx_level, b.instructions[j].get(), memf, print_kill);
          u_memstream_close(&mem);
 
