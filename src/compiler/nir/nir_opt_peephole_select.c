@@ -282,6 +282,39 @@ block_check_for_allowed_instrs(nir_block *block, unsigned *count,
    return true;
 }
 
+/* If we're moving discards out of the if for non-CF hardware, we need to add
+ * the if's condition to it
+ */
+static void
+rewrite_discard_conds(nir_instr *instr, nir_def *if_cond, bool is_else)
+{
+   if (instr->type != nir_instr_type_intrinsic)
+      return;
+   nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
+
+   if (intr->intrinsic != nir_intrinsic_terminate_if &&
+       intr->intrinsic != nir_intrinsic_terminate &&
+       intr->intrinsic != nir_intrinsic_demote_if &&
+       intr->intrinsic != nir_intrinsic_demote)
+      return;
+
+   nir_builder b = nir_builder_at(nir_before_instr(instr));
+
+   if (is_else)
+      if_cond = nir_inot(&b, if_cond);
+
+   if (intr->intrinsic == nir_intrinsic_terminate_if ||
+       intr->intrinsic == nir_intrinsic_demote_if) {
+      nir_src_rewrite(&intr->src[0], nir_iand(&b, intr->src[0].ssa, if_cond));
+   } else {
+      if (intr->intrinsic == nir_intrinsic_terminate)
+         nir_terminate_if(&b, if_cond);
+      else
+         nir_demote_if(&b, if_cond);
+      nir_instr_remove(instr);
+   }
+}
+
 /**
  * Try to collapse nested ifs:
  * This optimization turns
@@ -388,7 +421,11 @@ nir_opt_collapse_if(nir_if *if_stmt, nir_shader *shader, unsigned limit,
       }
    }
 
-   /* combine the conditions */
+   /* combine condition with potential demote/terminate */
+   nir_foreach_instr_safe(instr, first)
+      rewrite_discard_conds(instr, parent_if->condition.ssa, false);
+
+   /* combine the if conditions */
    struct nir_builder b = nir_builder_at(nir_before_cf_node(&if_stmt->cf_node));
    nir_def *cond = nir_iand(&b, if_stmt->condition.ssa,
                             parent_if->condition.ssa);
@@ -402,39 +439,6 @@ nir_opt_collapse_if(nir_if *if_stmt, nir_shader *shader, unsigned limit,
 
    /* The now empty parent if will be cleaned up by other passes */
    return true;
-}
-
-/* If we're moving discards out of the if for non-CF hardware, we need to add
- * the if's condition to it
- */
-static void
-rewrite_discard_conds(nir_instr *instr, nir_def *if_cond, bool is_else)
-{
-   if (instr->type != nir_instr_type_intrinsic)
-      return;
-   nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
-
-   if (intr->intrinsic != nir_intrinsic_terminate_if &&
-       intr->intrinsic != nir_intrinsic_terminate &&
-       intr->intrinsic != nir_intrinsic_demote_if &&
-       intr->intrinsic != nir_intrinsic_demote)
-      return;
-
-   nir_builder b = nir_builder_at(nir_before_instr(instr));
-
-   if (is_else)
-      if_cond = nir_inot(&b, if_cond);
-
-   if (intr->intrinsic == nir_intrinsic_terminate_if ||
-       intr->intrinsic == nir_intrinsic_demote_if) {
-      nir_src_rewrite(&intr->src[0], nir_iand(&b, intr->src[0].ssa, if_cond));
-   } else {
-      if (intr->intrinsic == nir_intrinsic_terminate)
-         nir_terminate_if(&b, if_cond);
-      else
-         nir_demote_if(&b, if_cond);
-      nir_instr_remove(instr);
-   }
 }
 
 static bool
