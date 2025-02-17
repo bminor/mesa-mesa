@@ -1704,6 +1704,7 @@ get_instr_data_size(Format format)
    case Format::PSEUDO_BARRIER: return sizeof(Pseudo_barrier_instruction);
    case Format::PSEUDO_REDUCTION: return sizeof(Pseudo_reduction_instruction);
    case Format::PSEUDO_BRANCH: return sizeof(Pseudo_branch_instruction);
+   case Format::PSEUDO_CALL: return sizeof(Pseudo_call_instruction);
    case Format::DS: return sizeof(DS_instruction);
    case Format::FLAT:
    case Format::GLOBAL:

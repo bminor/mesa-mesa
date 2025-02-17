@@ -50,6 +50,7 @@ class Format(IntEnum):
    PSEUDO_BRANCH = auto()
    PSEUDO_BARRIER = auto()
    PSEUDO_REDUCTION = auto()
+   PSEUDO_CALL = auto()
    # Scalar ALU & Control Formats
    SOP1 = auto()
    SOP2 = auto()
@@ -93,7 +94,7 @@ class Format(IntEnum):
          return "salu"
       elif self in [Format.FLAT, Format.GLOBAL, Format.SCRATCH]:
          return "flatlike"
-      elif self in [Format.PSEUDO_BRANCH, Format.PSEUDO_REDUCTION, Format.PSEUDO_BARRIER]:
+      elif self in [Format.PSEUDO_BRANCH, Format.PSEUDO_REDUCTION, Format.PSEUDO_BARRIER, Format.PSEUDO_CALL]:
          return self.name.split("_")[-1].lower()
       else:
          return self.name.lower()
@@ -163,6 +164,8 @@ class Format(IntEnum):
       elif self == Format.PSEUDO_BARRIER:
          return [('memory_sync_info', 'sync', None),
                  ('sync_scope', 'exec_scope', 'scope_invocation')]
+      elif self == Format.PSEUDO_CALL:
+         return [('ABI', 'abi', None)]
       elif self == Format.VINTRP:
          return [('unsigned', 'attribute', None),
                  ('unsigned', 'component', None),
@@ -375,6 +378,8 @@ insn("p_cbranch_z", format=Format.PSEUDO_BRANCH)
 insn("p_cbranch_nz", format=Format.PSEUDO_BRANCH)
 
 insn("p_barrier", format=Format.PSEUDO_BARRIER)
+
+insn("p_call", format=Format.PSEUDO_CALL)
 
 # Primitive Ordered Pixel Shading pseudo-instructions.
 

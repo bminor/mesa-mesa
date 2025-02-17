@@ -11,6 +11,7 @@
 #include "aco_shader_info.h"
 #include "aco_util.h"
 
+#include "util/bitset.h"
 #include "util/compiler.h"
 #include "util/shader_stats.h"
 
@@ -1114,6 +1115,74 @@ struct RegisterDemand {
    }
 };
 
+struct ABI {
+   struct GPRRange {
+      uint16_t sgpr;
+      uint16_t vgpr;
+   };
+
+   struct RegisterBlock {
+      GPRRange clobbered_size;
+      GPRRange preserved_size;
+      bool clobbered_first;
+   };
+
+   RegisterBlock block_size;
+   /* Maximum number of registers allowed to be used by parameters */
+   RegisterDemand max_param_demand;
+
+   void preservedRegisters(BITSET_DECLARE(regs, 512),
+                           RegisterDemand reg_limit = RegisterDemand(256, 256)) const
+   {
+      unsigned size = DIV_ROUND_UP(512, BITSET_WORDBITS) * sizeof(BITSET_WORD);
+      memset(regs, 0, size);
+
+      /* Fill out preserved ranges by repeating the register block across the register file */
+
+      /* SGPR ranges */
+      unsigned gpr_offset = block_size.clobbered_first ? block_size.clobbered_size.sgpr : 0;
+      while (gpr_offset < (unsigned)reg_limit.sgpr) {
+         unsigned end = MIN2((unsigned)reg_limit.sgpr, gpr_offset + block_size.preserved_size.sgpr);
+         BITSET_SET_RANGE(regs, gpr_offset, end - 1);
+         gpr_offset = end + block_size.clobbered_size.sgpr;
+      }
+      /* VGPR ranges */
+      gpr_offset = block_size.clobbered_first ? block_size.clobbered_size.vgpr : 0;
+      while (gpr_offset < (unsigned)reg_limit.vgpr) {
+         unsigned end = MIN2((unsigned)reg_limit.vgpr, gpr_offset + block_size.preserved_size.vgpr);
+         BITSET_SET_RANGE(regs, 256 + gpr_offset, 256 + end - 1);
+         gpr_offset = end + block_size.clobbered_size.vgpr;
+      }
+   }
+};
+
+static constexpr ABI rtRaygenABI = {
+   ABI::RegisterBlock{
+      ABI::GPRRange{128u, 256u}, /* clobbered_size */
+      ABI::GPRRange{0u, 0u},     /* preserved_size */
+      true,                      /* preserved_first */
+   },
+   RegisterDemand(32, 32), /* max_param_demand */
+};
+
+static constexpr ABI rtTraversalABI = {
+   ABI::RegisterBlock{
+      ABI::GPRRange{128u, 256u}, /* clobbered_size */
+      ABI::GPRRange{0u, 0u},     /* preserved_size */
+      true,                      /* preserved_first */
+   },
+   RegisterDemand(32, 32), /* max_param_demand */
+};
+
+static constexpr ABI rtAnyHitABI = {
+   ABI::RegisterBlock{
+      ABI::GPRRange{128u, 256u}, /* clobbered_size */
+      ABI::GPRRange{80u, 80u},   /* preserved_size */
+      false,                     /* preserved_first */
+   },
+   RegisterDemand(32, 32), /* max_param_demand */
+};
+
 struct Block;
 struct Instruction;
 struct Pseudo_instruction;
@@ -1129,6 +1198,7 @@ struct FLAT_instruction;
 struct Pseudo_branch_instruction;
 struct Pseudo_barrier_instruction;
 struct Pseudo_reduction_instruction;
+struct Pseudo_call_instruction;
 struct VALU_instruction;
 struct VINTERP_inreg_instruction;
 struct VINTRP_instruction;
@@ -1329,6 +1399,17 @@ struct Instruction {
       return *(Pseudo_reduction_instruction*)this;
    }
    constexpr bool isReduction() const noexcept { return format == Format::PSEUDO_REDUCTION; }
+   Pseudo_call_instruction& call() noexcept
+   {
+      assert(isCall());
+      return *(Pseudo_call_instruction*)this;
+   }
+   const Pseudo_call_instruction& call() const noexcept
+   {
+      assert(isCall());
+      return *(Pseudo_call_instruction*)this;
+   }
+   constexpr bool isCall() const noexcept { return format == Format::PSEUDO_CALL; }
    constexpr bool isVOP3P() const noexcept { return (uint16_t)format & (uint16_t)Format::VOP3P; }
    VINTERP_inreg_instruction& vinterp_inreg() noexcept
    {
@@ -1816,6 +1897,27 @@ struct Pseudo_reduction_instruction : public Instruction {
 static_assert(sizeof(Pseudo_reduction_instruction) == sizeof(Instruction) + 4,
               "Unexpected padding");
 
+struct Pseudo_call_instruction : public Instruction {
+   /* The amount of "free" preserved registers we can use to stash caller-owned temporaries instead
+    * of needing to spill them. This is equal to the amount of preserved registers given by the ABI,
+    * minus the amount of preserved registers already occupied by call parameters.
+    */
+   RegisterDemand callee_preserved_limit;
+   /* Register demand of caller-owned temporaries we need to preserve a copy of throughout the
+    * callee. This includes all live variables not used by the call instruction as well as clobbered
+    * Operand temporaries (unless the call kills the operand - we don't need to preserve a copy in
+    * that case). Non-clobbered Operand temporaries are not included in this demand - they occupy a
+    * preserved register, which is accounted for in the calculation of callee_preserved_limit
+    * already.
+    *
+    * Iff this demand is higher than callee_preserved_limit, some of the temporaries need to be
+    * spilled to scratch.
+    */
+   RegisterDemand caller_preserved_demand;
+
+   ABI abi;
+};
+
 inline bool
 Instruction::accessesLDS() const noexcept
 {
@@ -1894,8 +1996,8 @@ memory_sync_info get_sync_info(const Instruction* instr);
 inline bool
 is_dead(const std::vector<uint16_t>& uses, const Instruction* instr)
 {
-   if (instr->definitions.empty() || instr->isBranch() || instr->opcode == aco_opcode::p_startpgm ||
-       instr->opcode == aco_opcode::p_init_scratch ||
+   if (instr->definitions.empty() || instr->isBranch() || instr->isCall() ||
+       instr->opcode == aco_opcode::p_startpgm || instr->opcode == aco_opcode::p_init_scratch ||
        instr->opcode == aco_opcode::p_dual_src_export_gfx11)
       return false;
 
