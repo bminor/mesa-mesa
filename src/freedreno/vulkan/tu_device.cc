@@ -275,6 +275,7 @@ get_device_extensions(const struct tu_physical_device *device,
       .EXT_external_memory_dma_buf = true,
       .EXT_filter_cubic = device->info->a6xx.has_tex_filter_cubic,
       .EXT_fragment_density_map = true,
+      .EXT_fragment_density_map_offset = true,
       .EXT_global_priority = true,
       .EXT_global_priority_query = true,
       .EXT_graphics_pipeline_library = true,
@@ -755,7 +756,7 @@ tu_get_features(struct tu_physical_device *pdevice,
    features->shaderSubgroupRotate = true;
    features->shaderSubgroupRotateClustered = true;
 
-   /* VK_QCOM_fragment_density_map_offset */
+   /* VK_EXT_fragment_density_map_offset */
    features->fragmentDensityMapOffset = true;
 }
 

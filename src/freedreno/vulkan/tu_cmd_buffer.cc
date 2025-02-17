@@ -1757,7 +1757,7 @@ tu_enable_fdm_offset(struct tu_cmd_buffer *cmd)
 
    const struct tu_image_view *fdm = cmd->state.attachments[fdm_a];
    return fdm->image->vk.create_flags &
-      VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_QCOM;
+      VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT;
 }
 
 static void
@@ -4841,6 +4841,13 @@ tu_append_pre_chain(struct tu_cmd_buffer *cmd,
          secondary->pre_chain.trace_renderpass_end);
    util_dynarray_append_dynarray(&cmd->fdm_bin_patchpoints,
                                  &secondary->pre_chain.fdm_bin_patchpoints);
+
+   cmd->pre_chain.fdm_offset = secondary->pre_chain.fdm_offset;
+   if (secondary->pre_chain.fdm_offset) {
+      memcpy(cmd->pre_chain.fdm_offsets,
+             secondary->pre_chain.fdm_offsets,
+             sizeof(cmd->pre_chain.fdm_offsets));
+   }
 }
 
 /* Take the saved post-chain in "secondary" and copy it to "cmd".
@@ -5011,7 +5018,7 @@ tu_CmdExecuteCommands(VkCommandBuffer commandBuffer,
                   cmd->state.suspend_resume = SR_AFTER_PRE_CHAIN;
                   break;
                case SR_IN_CHAIN:
-               case SR_IN_CHAIN_AFTER_PRE_CHAIN:
+               case SR_IN_CHAIN_AFTER_PRE_CHAIN: {
                   /* The renderpass ends in the secondary and starts somewhere
                    * earlier in this primary. Since the last render pass in
                    * the chain is in the secondary, we are technically outside
@@ -5021,12 +5028,16 @@ tu_CmdExecuteCommands(VkCommandBuffer commandBuffer,
                    */
                   tu_restore_suspended_pass(cmd, cmd);
 
-                  TU_CALLX(cmd->device, tu_cmd_render)(cmd, NULL);
+                  const struct VkOffset2D *fdm_offsets =
+                     cmd->pre_chain.fdm_offset ?
+                     cmd->pre_chain.fdm_offsets : NULL;
+                  TU_CALLX(cmd->device, tu_cmd_render)(cmd, fdm_offsets);
                   if (cmd->state.suspend_resume == SR_IN_CHAIN)
                      cmd->state.suspend_resume = SR_NONE;
                   else
                      cmd->state.suspend_resume = SR_AFTER_PRE_CHAIN;
                   break;
+               }
                case SR_AFTER_PRE_CHAIN:
                   unreachable("resuming render pass is not preceded by suspending one");
                }
@@ -7695,9 +7706,9 @@ tu_CmdEndRenderPass2(VkCommandBuffer commandBuffer,
       return;
    }
 
-   const VkSubpassFragmentDensityMapOffsetEndInfoQCOM *fdm_offset_info =
+   const VkRenderPassFragmentDensityMapOffsetEndInfoEXT *fdm_offset_info =
       vk_find_struct_const(pSubpassEndInfo->pNext,
-                           SUBPASS_FRAGMENT_DENSITY_MAP_OFFSET_END_INFO_QCOM);
+                           RENDER_PASS_FRAGMENT_DENSITY_MAP_OFFSET_END_INFO_EXT);
    const VkOffset2D *fdm_offsets =
       (fdm_offset_info && fdm_offset_info->fragmentDensityOffsetCount > 0) ?
       fdm_offset_info->pFragmentDensityOffsets : NULL;
@@ -7725,7 +7736,8 @@ tu_CmdEndRenderPass2(VkCommandBuffer commandBuffer,
 }
 
 VKAPI_ATTR void VKAPI_CALL
-tu_CmdEndRendering(VkCommandBuffer commandBuffer)
+tu_CmdEndRendering2EXT(VkCommandBuffer commandBuffer,
+                       const VkRenderingEndInfoEXT *pRenderingEndInfo)
 {
    VK_FROM_HANDLE(tu_cmd_buffer, cmd_buffer, commandBuffer);
 
@@ -7738,6 +7750,22 @@ tu_CmdEndRendering(VkCommandBuffer commandBuffer)
          (cmd_buffer, &cmd_buffer->draw_cs);
    }
 
+   const VkRenderPassFragmentDensityMapOffsetEndInfoEXT *fdm_offset_info =
+      vk_find_struct_const(pRenderingEndInfo->pNext,
+                           RENDER_PASS_FRAGMENT_DENSITY_MAP_OFFSET_END_INFO_EXT);
+   const VkOffset2D *fdm_offsets =
+      (fdm_offset_info && fdm_offset_info->fragmentDensityOffsetCount > 0) ?
+      fdm_offset_info->pFragmentDensityOffsets : NULL;
+
+   VkOffset2D test_offsets[MAX_VIEWS];
+   if (TU_DEBUG(FDM) && TU_DEBUG(FDM_OFFSET)) {
+      for (unsigned i = 0;
+           i < MAX2(cmd_buffer->state.pass->num_views, 1); i++) {
+         test_offsets[i] = { 64, 64 };
+      }
+      fdm_offsets = test_offsets;
+   }
+
    if (!cmd_buffer->state.suspending) {
       tu_cs_end(&cmd_buffer->draw_cs);
       tu_cs_end(&cmd_buffer->draw_epilogue_cs);
@@ -7745,21 +7773,18 @@ tu_CmdEndRendering(VkCommandBuffer commandBuffer)
       if (cmd_buffer->state.suspend_resume == SR_IN_PRE_CHAIN) {
          cmd_buffer->trace_renderpass_end = u_trace_end_iterator(&cmd_buffer->trace);
          tu_save_pre_chain(cmd_buffer);
+         cmd_buffer->pre_chain.fdm_offset = !!fdm_offsets;
+         if (fdm_offsets) {
+            memcpy(cmd_buffer->pre_chain.fdm_offsets,
+                   fdm_offsets, sizeof(VkOffset2D) *
+                   MAX2(cmd_buffer->state.pass->num_views, 1));
+         }
 
          /* Even we don't call tu_cmd_render here, renderpass is finished
           * and draw states should be disabled.
           */
          tu_disable_draw_states(cmd_buffer, &cmd_buffer->cs);
       } else {
-         VkOffset2D test_offsets[MAX_VIEWS];
-         const VkOffset2D *fdm_offsets = NULL;
-         if (TU_DEBUG(FDM) && TU_DEBUG(FDM_OFFSET)) {
-            for (unsigned i = 0;
-                 i < MAX2(cmd_buffer->state.pass->num_views, 1); i++) {
-               test_offsets[i] = { 64, 64 };
-            }
-            fdm_offsets = test_offsets;
-         }
          TU_CALLX(cmd_buffer->device, tu_cmd_render)(cmd_buffer, fdm_offsets);
       }
 

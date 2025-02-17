@@ -152,7 +152,10 @@ tu_insert_dynamic_cmdbufs(struct tu_device *dev,
                                         old_cmds[i]->pre_chain.trace_renderpass_end);
          }
 
-         TU_CALLX(dev, tu_cmd_render)(cmd_buffer, NULL);
+         const struct VkOffset2D *fdm_offsets =
+            cmd_buffer->pre_chain.fdm_offset ?
+            cmd_buffer->pre_chain.fdm_offsets : NULL;
+         TU_CALLX(dev, tu_cmd_render)(cmd_buffer, fdm_offsets);
 
          tu_cs_emit_pkt7(&cmd_buffer->cs, CP_MEM_WRITE, 3);
          tu_cs_emit_qw(&cmd_buffer->cs,

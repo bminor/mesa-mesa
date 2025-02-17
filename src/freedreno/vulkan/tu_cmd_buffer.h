@@ -618,6 +618,9 @@ struct tu_cmd_buffer
       struct tu_cs draw_cs;
       struct tu_cs draw_epilogue_cs;
 
+      bool fdm_offset;
+      VkOffset2D fdm_offsets[MAX_VIEWS];
+
       struct u_trace_iterator trace_renderpass_start, trace_renderpass_end;
 
       struct tu_render_pass_state state;
