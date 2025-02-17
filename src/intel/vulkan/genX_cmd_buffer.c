@@ -4327,7 +4327,12 @@ cmd_buffer_accumulate_barrier_bits(struct anv_cmd_buffer *cmd_buffer,
           * barriers within renderpass are operating with consistent layouts.
           */
          if (!cmd_buffer->vk.runtime_rp_barrier &&
-             cmd_buffer->vk.render_pass != NULL) {
+             cmd_buffer->vk.render_pass != NULL &&
+             old_layout == VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT) {
+            /* Those assert are here to recognize the changes made by the
+             * runtime. If we fail them, we need to investigate what is going
+             * on.
+             */
             assert(anv_cmd_graphics_state_has_image_as_attachment(&cmd_buffer->state.gfx,
                                                                   image));
             VkImageLayout subpass_att_layout, subpass_stencil_att_layout;
