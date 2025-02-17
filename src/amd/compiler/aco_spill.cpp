@@ -289,6 +289,19 @@ get_rematerialize_info(spill_ctx& ctx)
    }
 }
 
+bool
+is_spillable(spill_ctx& ctx, Temp var)
+{
+   if (var.regClass().is_linear_vgpr())
+      return false;
+   auto is_current_var = [var](const Temp& test) { return var == test; };
+   return var != ctx.program->stack_ptr && var != ctx.program->static_scratch_rsrc &&
+          std::none_of(ctx.program->scratch_offsets.begin(), ctx.program->scratch_offsets.end(),
+                       is_current_var) &&
+          std::none_of(ctx.program->private_segment_buffers.begin(),
+                       ctx.program->private_segment_buffers.end(), is_current_var);
+}
+
 RegisterDemand
 init_live_in_vars(spill_ctx& ctx, Block* block, unsigned block_idx)
 {
@@ -353,7 +366,7 @@ init_live_in_vars(spill_ctx& ctx, Block* block, unsigned block_idx)
          for (unsigned t : live_in) {
             Temp var = Temp(t, ctx.program->temp_rc[t]);
             if (var.type() != type || ctx.spills_entry[block_idx].count(var) ||
-                var.regClass().is_linear_vgpr())
+                !is_spillable(ctx, var))
                continue;
 
             unsigned can_remat = ctx.remat.count(var);
@@ -399,7 +412,7 @@ init_live_in_vars(spill_ctx& ctx, Block* block, unsigned block_idx)
                continue;
             Temp var = phi->definitions[0].getTemp();
             if (var.type() == type && !ctx.spills_entry[block_idx].count(var) &&
-                ctx.ssa_infos[var.id()].score() > score) {
+                ctx.ssa_infos[var.id()].score() > score && is_spillable(ctx, var)) {
                to_spill = var;
                score = ctx.ssa_infos[var.id()].score();
             }
@@ -534,7 +547,7 @@ init_live_in_vars(spill_ctx& ctx, Block* block, unsigned block_idx)
       while (it != partial_spills.end()) {
          assert(!ctx.spills_entry[block_idx].count(it->first));
 
-         if (it->first.type() == type && !it->first.regClass().is_linear_vgpr() &&
+         if (it->first.type() == type && is_spillable(ctx, it->first) &&
              ((it->second && !is_partial_spill) ||
               (it->second == is_partial_spill && ctx.ssa_infos[it->first.id()].score() > score))) {
             score = ctx.ssa_infos[it->first.id()].score();
@@ -940,7 +953,8 @@ process_block(spill_ctx& ctx, unsigned block_idx, Block* block, RegisterDemand s
             for (unsigned t : ctx.program->live.live_in[block_idx]) {
                RegClass rc = ctx.program->temp_rc[t];
                Temp var = Temp(t, rc);
-               if (rc.type() != type || current_spills.count(var) || rc.is_linear_vgpr())
+               if (rc.type() != type || current_spills.count(var) || rc.is_linear_vgpr() ||
+                   !is_spillable(ctx, var))
                   continue;
 
                unsigned can_rematerialize = ctx.remat.count(var);
