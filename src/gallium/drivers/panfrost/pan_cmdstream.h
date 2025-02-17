@@ -256,11 +256,13 @@ panfrost_get_position_shader(struct panfrost_batch *batch,
    return vs_ptr;
 }
 
+#if PAN_ARCH < 12
 static inline uint64_t
 panfrost_get_varying_shader(struct panfrost_batch *batch)
 {
    return batch->rsd[PIPE_SHADER_VERTEX] + (2 * pan_size(SHADER_PROGRAM));
 }
+#endif
 
 static inline unsigned
 panfrost_vertex_attribute_stride(struct panfrost_compiled_shader *vs,

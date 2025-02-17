@@ -139,6 +139,13 @@ csf_oom_handler_init(struct panfrost_context *ctx)
       struct cs_index completed_bottom = cs_reg64(&b, 54);
       struct cs_index completed_chunks = cs_reg_tuple(&b, 52, 4);
 
+      /* Ensure that the OTHER endpoint is valid */
+#if PAN_ARCH >= 11
+      cs_set_state_imm32(&b, MALI_CS_SET_STATE_TYPE_SB_SEL_OTHER, 0);
+#else
+      cs_set_scoreboard_entry(&b, 0, 0);
+#endif
+
       /* Use different framebuffer descriptor depending on whether incremental
        * rendering has already been triggered */
       cs_load32_to(&b, counter, tiler_oom_ctx, FIELD_OFFSET(counter));
@@ -161,7 +168,7 @@ csf_oom_handler_init(struct panfrost_context *ctx)
       cs_wait_slot(&b, 0, false);
 
       /* Run the fragment job and wait */
-      cs_set_scoreboard_entry(&b, 3, 0);
+      cs_select_sb_entries_for_async_ops(&b, 3);
       cs_run_fragment(&b, false, MALI_TILE_RENDER_ORDER_Z_ORDER, false);
       cs_wait_slot(&b, 3, false);
 
@@ -191,7 +198,7 @@ csf_oom_handler_init(struct panfrost_context *ctx)
 
       cs_wait_slot(&b, 0, false);
 
-      cs_set_scoreboard_entry(&b, 2, 0);
+      cs_select_sb_entries_for_async_ops(&b, 2);
    }
 
    assert(cs_is_valid(&b));
@@ -274,7 +281,7 @@ GENX(csf_init_batch)(struct panfrost_batch *batch)
 
    /* Set up entries */
    struct cs_builder *b = batch->csf.cs.builder;
-   cs_set_scoreboard_entry(b, 2, 0);
+   cs_select_sb_entries_for_async_ops(b, 2);
 
    batch->framebuffer = alloc_fbd(batch);
    if (!batch->framebuffer.gpu)
@@ -698,6 +705,10 @@ csf_emit_tiler_desc(struct panfrost_batch *batch, const struct pan_fb_info *fb)
          ;
       tiler.hierarchy_mask &= ~BITFIELD_MASK(disable_hierarchies);
 
+#if PAN_ARCH >= 12
+      tiler.effective_tile_size = fb->tile_size;
+#endif
+
       tiler.fb_width = batch->key.width;
       tiler.fb_height = batch->key.height;
       tiler.heap = batch->ctx->csf.heap.desc_bo->ptr.gpu;
@@ -873,7 +884,12 @@ csf_emit_shader_regs(struct panfrost_batch *batch, enum pipe_shader_type stage,
    assert(stage == PIPE_SHADER_VERTEX || stage == PIPE_SHADER_FRAGMENT ||
           stage == PIPE_SHADER_COMPUTE);
 
+#if PAN_ARCH >= 12
+   unsigned offset = (stage == PIPE_SHADER_FRAGMENT) ? 2 : 0;
+#else
    unsigned offset = (stage == PIPE_SHADER_FRAGMENT) ? 4 : 0;
+#endif
+
    unsigned fau_count = DIV_ROUND_UP(batch->nr_push_uniforms[stage], 2);
 
    struct cs_builder *b = batch->csf.cs.builder;
@@ -1092,7 +1108,7 @@ csf_emit_draw_state(struct panfrost_batch *batch,
    }
 
    csf_emit_shader_regs(batch, PIPE_SHADER_VERTEX,
-                        panfrost_get_position_shader(batch, info));
+      panfrost_get_position_shader(batch, info));
 
    if (fs_required) {
       csf_emit_shader_regs(batch, PIPE_SHADER_FRAGMENT,
@@ -1103,12 +1119,18 @@ csf_emit_draw_state(struct panfrost_batch *batch,
       cs_move64_to(b, cs_sr_reg64(b, IDVS, FRAGMENT_SPD), 0);
    }
 
+#if PAN_ARCH >= 12
+   cs_move64_to(b, cs_reg64(b, MALI_IDVS_SR_VERTEX_TSD), batch->tls.gpu);
+   cs_move64_to(b, cs_reg64(b, MALI_IDVS_SR_FRAGMENT_TSD), batch->tls.gpu);
+#else
    if (secondary_shader) {
       cs_move64_to(b, cs_sr_reg64(b, IDVS, VERTEX_VARY_SPD),
                    panfrost_get_varying_shader(batch));
    }
 
    cs_move64_to(b, cs_sr_reg64(b, IDVS, TSD_0), batch->tls.gpu);
+#endif
+
    cs_move32_to(b, cs_sr_reg32(b, IDVS, GLOBAL_ATTRIBUTE_OFFSET), 0);
    cs_move32_to(b, cs_sr_reg32(b, IDVS, INSTANCE_OFFSET), 0);
    cs_move32_to(b, cs_sr_reg32(b, IDVS, DCD2), 0);
@@ -1120,10 +1142,16 @@ csf_emit_draw_state(struct panfrost_batch *batch,
    uint64_t *sbd = (uint64_t *)&batch->scissor[0];
    cs_move64_to(b, cs_sr_reg64(b, IDVS, SCISSOR_BOX), *sbd);
 
+#if PAN_ARCH >= 12
+   uint64_t *avalon_viewport = (uint64_t *)batch->avalon_viewport;
+   cs_move64_to(b, cs_sr_reg64(b, IDVS, VIEWPORT_HIGH), avalon_viewport[0]);
+   cs_move64_to(b, cs_sr_reg64(b, IDVS, VIEWPORT_LOW), avalon_viewport[1]);
+#else
    cs_move32_to(b, cs_sr_reg32(b, IDVS, LOW_DEPTH_CLAMP),
                 fui(batch->minimum_z));
    cs_move32_to(b, cs_sr_reg32(b, IDVS, HIGH_DEPTH_CLAMP),
                 fui(batch->maximum_z));
+#endif
 
    if (ctx->occlusion_query && ctx->active_queries) {
       struct panfrost_resource *rsrc = pan_resource(ctx->occlusion_query->rsrc);
@@ -1336,8 +1364,13 @@ GENX(csf_launch_draw)(struct panfrost_batch *batch,
       cs_move32_to(b, cs_sr_reg32(b, IDVS, INDEX_BUFFER_SIZE), 0);
    }
 
+#if PAN_ARCH >= 12
+   cs_run_idvs2(b, flags_override, false, true, drawid,
+                MALI_IDVS_SHADING_MODE_EARLY);
+#else
    cs_run_idvs(b, flags_override, false, true, cs_shader_res_sel(0, 0, 1, 0),
                cs_shader_res_sel(2, 2, 2, 0), drawid);
+#endif
 }
 
 void
@@ -1378,8 +1411,13 @@ GENX(csf_launch_draw_indirect)(struct panfrost_batch *batch,
       }
 
       cs_wait_slot(b, 0, false);
+#if PAN_ARCH >= 12
+      cs_run_idvs2(b, flags_override, false, true, drawid,
+                  MALI_IDVS_SHADING_MODE_EARLY);
+#else
       cs_run_idvs(b, flags_override, false, true, cs_shader_res_sel(0, 0, 1, 0),
                   cs_shader_res_sel(2, 2, 2, 0), drawid);
+#endif
 
       cs_add64(b, address, address, indirect->stride);
       cs_add32(b, counter, counter, (unsigned int)-1);

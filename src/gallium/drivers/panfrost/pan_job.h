@@ -151,6 +151,9 @@ struct panfrost_batch {
    unsigned scissor[2];
    float minimum_z, maximum_z;
 
+   /* Avalon: struct mali_viewport_packed */
+   unsigned avalon_viewport[4];
+
    /* Used on Valhall only. Midgard includes attributes in-band with
     * attributes, wildly enough.
     */

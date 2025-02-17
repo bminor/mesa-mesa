@@ -1204,11 +1204,18 @@ pan_preload_emit_dcd(struct pan_fb_preload_cache *cache, struct pan_pool *pool,
       cfg.flags_1.sample_mask = 0xFFFF;
       cfg.flags_0.multisample_enable = ms;
       cfg.flags_0.evaluate_per_sample = ms;
-      cfg.maximum_z = 1.0;
       cfg.flags_0.clean_fragment_write = clean_fragment_write;
+
+#if PAN_ARCH >= 12
+      cfg.fragment_resources = T.gpu | nr_tables;
+      cfg.fragment_shader = spd.gpu;
+      cfg.thread_storage = tsd;
+#else
+      cfg.maximum_z = 1.0;
       cfg.shader.resources = T.gpu | nr_tables;
       cfg.shader.shader = spd.gpu;
       cfg.shader.thread_storage = tsd;
+#endif
    }
 #endif
 }
