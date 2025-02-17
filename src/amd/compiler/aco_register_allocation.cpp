@@ -329,6 +329,14 @@ public:
       return res;
    }
 
+   unsigned count_zero_or_blocked(PhysRegInterval reg_interval) const
+   {
+      unsigned res = 0;
+      for (PhysReg reg : reg_interval)
+         res += !regs[reg] || regs[reg] == 0xFFFFFFFF;
+      return res;
+   }
+
    /* Returns true if any of the bytes in the given range are allocated or blocked */
    bool test(PhysReg start, unsigned num_bytes) const
    {
@@ -3877,8 +3885,8 @@ register_allocation(Program* program, ra_test_policy policy)
 
          ASSERTED PhysRegInterval vgpr_bounds = get_reg_bounds(ctx, RegType::vgpr, false);
          ASSERTED PhysRegInterval sgpr_bounds = get_reg_bounds(ctx, RegType::sgpr, false);
-         assert(register_file.count_zero(vgpr_bounds) == ctx.vgpr_bounds);
-         assert(register_file.count_zero(sgpr_bounds) == ctx.sgpr_bounds);
+         assert(register_file.count_zero_or_blocked(vgpr_bounds) == ctx.vgpr_bounds);
+         assert(register_file.count_zero_or_blocked(sgpr_bounds) == ctx.sgpr_bounds);
       } else if (should_compact_linear_vgprs(ctx, register_file)) {
          aco_ptr<Instruction> br = std::move(instructions.back());
          instructions.pop_back();
