@@ -165,6 +165,7 @@ anv_shader_bin_destroy(struct vk_device *_device,
    for (uint32_t i = 0; i < shader->bind_map.embedded_sampler_count; i++)
       anv_embedded_sampler_unref(device, shader->embedded_samplers[i]);
 
+   ANV_DMR_SP_FREE(&device->vk.base, &device->instruction_state_pool, shader->kernel);
    anv_state_pool_free(&device->instruction_state_pool, shader->kernel);
    vk_pipeline_cache_object_finish(&shader->base);
    vk_free(&device->vk.alloc, shader);
@@ -252,12 +253,14 @@ anv_shader_bin_create(struct anv_device *device,
 
    shader->kernel =
       anv_state_pool_alloc(&device->instruction_state_pool, kernel_size, 64);
+   ANV_DMR_SP_ALLOC(&device->vk.base, &device->instruction_state_pool, shader->kernel);
    memcpy(shader->kernel.map, kernel_data, kernel_size);
    shader->kernel_size = kernel_size;
 
    if (bind_map->embedded_sampler_count > 0) {
       shader->embedded_samplers = embedded_samplers;
       if (anv_shader_bin_get_embedded_samplers(device, shader, bind_map) != VK_SUCCESS) {
+         ANV_DMR_SP_FREE(&device->vk.base, &device->instruction_state_pool, shader->kernel);
          anv_state_pool_free(&device->instruction_state_pool, shader->kernel);
          vk_free(&device->vk.alloc, shader);
          return NULL;

@@ -425,6 +425,9 @@ genX(cmd_buffer_emit_indirect_generated_draws_inring)(struct anv_cmd_buffer *cmd
          4096);
       VkResult result = anv_bo_pool_alloc(&device->batch_bo_pool, bo_size,
                                           &cmd_buffer->generation.ring_bo);
+      ANV_DMR_BO_ALLOC(&cmd_buffer->vk.base,
+                       cmd_buffer->generation.ring_bo,
+                       result);
       if (result != VK_SUCCESS) {
          anv_batch_set_error(&cmd_buffer->batch, result);
          return;

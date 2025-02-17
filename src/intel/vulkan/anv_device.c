@@ -80,6 +80,7 @@ anv_device_init_trivial_batch(struct anv_device *device)
                                          ANV_BO_ALLOC_CAPTURE,
                                          0 /* explicit_address */,
                                          &device->trivial_batch_bo);
+   ANV_DMR_BO_ALLOC(&device->vk.base, device->trivial_batch_bo, result);
    if (result != VK_SUCCESS)
       return result;
 
@@ -298,8 +299,11 @@ anv_device_finish_trtt(struct anv_device *device)
    vk_free(&device->vk.alloc, trtt->l3_mirror);
    vk_free(&device->vk.alloc, trtt->l2_mirror);
 
-   for (int i = 0; i < trtt->num_page_table_bos; i++)
+   for (int i = 0; i < trtt->num_page_table_bos; i++) {
+      struct anv_bo *bo = trtt->page_table_bos[i];
+      ANV_DMR_BO_FREE(&device->vk.base, bo);
       anv_device_release_bo(device, trtt->page_table_bos[i]);
+   }
 
    vk_free(&device->vk.alloc, trtt->page_table_bos);
 }
@@ -699,6 +703,7 @@ VkResult anv_CreateDevice(
                                 ANV_BO_ALLOC_INTERNAL,
                                 0 /* explicit_address */,
                                 &device->workaround_bo);
+   ANV_DMR_BO_ALLOC(&device->vk.base, device->workaround_bo, result);
    if (result != VK_SUCCESS)
       goto fail_surface_aux_map_pool;
 
@@ -707,6 +712,7 @@ VkResult anv_CreateDevice(
                                    0 /* alloc_flags */,
                                    0 /* explicit_address */,
                                    &device->dummy_aux_bo);
+      ANV_DMR_BO_ALLOC(&device->vk.base, device->dummy_aux_bo, result);
       if (result != VK_SUCCESS)
          goto fail_alloc_device_bo;
 
@@ -724,6 +730,7 @@ VkResult anv_CreateDevice(
       result = anv_device_alloc_bo(device, "mem_fence", 4096,
                                    ANV_BO_ALLOC_NO_LOCAL_MEM, 0,
                                    &device->mem_fence_bo);
+      ANV_DMR_BO_ALLOC(&device->vk.base, device->mem_fence_bo, result);
       if (result != VK_SUCCESS)
          goto fail_alloc_device_bo;
    }
@@ -776,6 +783,7 @@ VkResult anv_CreateDevice(
                                    ANV_BO_ALLOC_INTERNAL,
                                    0 /* explicit_address */,
                                    &device->ray_query_bo[0]);
+      ANV_DMR_BO_ALLOC(&device->vk.base, device->ray_query_bo[0], result);
       if (result != VK_SUCCESS)
          goto fail_alloc_device_bo;
 
@@ -787,6 +795,7 @@ VkResult anv_CreateDevice(
                                       ANV_BO_ALLOC_INTERNAL,
                                       0 /* explicit_address */,
                                       &device->ray_query_bo[1]);
+         ANV_DMR_BO_ALLOC(&device->vk.base, device->ray_query_bo[1], result);
          if (result != VK_SUCCESS)
             goto fail_ray_query_bo;
       }
@@ -865,6 +874,7 @@ VkResult anv_CreateDevice(
                                    ANV_BO_ALLOC_INTERNAL,
                                    0 /* explicit_address */,
                                    &device->btd_fifo_bo);
+      ANV_DMR_BO_ALLOC(&device->vk.base, device->btd_fifo_bo, result);
       if (result != VK_SUCCESS)
          goto fail_trivial_batch_bo_and_scratch_pool;
    }
@@ -1047,23 +1057,33 @@ VkResult anv_CreateDevice(
  fail_default_pipeline_cache:
    vk_pipeline_cache_destroy(device->vk.mem_cache, NULL);
  fail_btd_fifo_bo:
-   if (ANV_SUPPORT_RT && device->info->has_ray_tracing)
+   if (ANV_SUPPORT_RT && device->info->has_ray_tracing) {
+      ANV_DMR_BO_FREE(&device->vk.base, device->btd_fifo_bo);
       anv_device_release_bo(device, device->btd_fifo_bo);
+   }
  fail_trivial_batch_bo_and_scratch_pool:
    anv_scratch_pool_finish(device, &device->scratch_pool);
    anv_scratch_pool_finish(device, &device->protected_scratch_pool);
  fail_trivial_batch:
+   ANV_DMR_BO_FREE(&device->vk.base, device->trivial_batch_bo);
    anv_device_release_bo(device, device->trivial_batch_bo);
  fail_ray_query_bo:
    for (unsigned i = 0; i < ARRAY_SIZE(device->ray_query_bo); i++) {
-      if (device->ray_query_bo[i])
+      if (device->ray_query_bo[i]) {
+         ANV_DMR_BO_FREE(&device->vk.base, device->ray_query_bo[i]);
          anv_device_release_bo(device, device->ray_query_bo[i]);
+      }
    }
  fail_alloc_device_bo:
-   if (device->mem_fence_bo)
+   if (device->mem_fence_bo) {
+      ANV_DMR_BO_FREE(&device->vk.base, device->mem_fence_bo);
       anv_device_release_bo(device, device->mem_fence_bo);
-   if (device->dummy_aux_bo)
+   }
+   if (device->dummy_aux_bo) {
+      ANV_DMR_BO_FREE(&device->vk.base, device->dummy_aux_bo);
       anv_device_release_bo(device, device->dummy_aux_bo);
+   }
+   ANV_DMR_BO_FREE(&device->vk.base, device->workaround_bo);
    anv_device_release_bo(device, device->workaround_bo);
  fail_surface_aux_map_pool:
    if (device->info->has_aux_map) {
@@ -1176,8 +1196,10 @@ void anv_DestroyDevice(
 
    anv_device_finish_embedded_samplers(device);
 
-   if (ANV_SUPPORT_RT && device->info->has_ray_tracing)
+   if (ANV_SUPPORT_RT && device->info->has_ray_tracing) {
+      ANV_DMR_BO_FREE(&device->vk.base, device->btd_fifo_bo);
       anv_device_release_bo(device, device->btd_fifo_bo);
+   }
 
    if (device->info->verx10 >= 125) {
       vk_common_DestroyCommandPool(anv_device_to_handle(device),
@@ -1196,8 +1218,11 @@ void anv_DestroyDevice(
 #endif
 
    for (unsigned i = 0; i < ARRAY_SIZE(device->rt_scratch_bos); i++) {
-      if (device->rt_scratch_bos[i] != NULL)
-         anv_device_release_bo(device, device->rt_scratch_bos[i]);
+      if (device->rt_scratch_bos[i] != NULL) {
+         struct anv_bo *bo = device->rt_scratch_bos[i];
+         ANV_DMR_BO_FREE(&device->vk.base, bo);
+         anv_device_release_bo(device, bo);
+      }
    }
 
    anv_scratch_pool_finish(device, &device->scratch_pool);
@@ -1206,18 +1231,28 @@ void anv_DestroyDevice(
    if (device->vk.enabled_extensions.KHR_ray_query) {
       for (unsigned i = 0; i < ARRAY_SIZE(device->ray_query_bo); i++) {
          for (unsigned j = 0; j < ARRAY_SIZE(device->ray_query_shadow_bos[0]); j++) {
-            if (device->ray_query_shadow_bos[i][j] != NULL)
+            if (device->ray_query_shadow_bos[i][j] != NULL) {
+               ANV_DMR_BO_FREE(&device->vk.base, device->ray_query_shadow_bos[i][j]);
                anv_device_release_bo(device, device->ray_query_shadow_bos[i][j]);
+            }
          }
-         if (device->ray_query_bo[i])
+         if (device->ray_query_bo[i]) {
+            ANV_DMR_BO_FREE(&device->vk.base, device->ray_query_bo[i]);
             anv_device_release_bo(device, device->ray_query_bo[i]);
+         }
       }
    }
+   ANV_DMR_BO_FREE(&device->vk.base, device->workaround_bo);
    anv_device_release_bo(device, device->workaround_bo);
-   if (device->dummy_aux_bo)
+   if (device->dummy_aux_bo) {
+      ANV_DMR_BO_FREE(&device->vk.base, device->dummy_aux_bo);
       anv_device_release_bo(device, device->dummy_aux_bo);
-   if (device->mem_fence_bo)
+   }
+   if (device->mem_fence_bo) {
+      ANV_DMR_BO_FREE(&device->vk.base, device->mem_fence_bo);
       anv_device_release_bo(device, device->mem_fence_bo);
+   }
+   ANV_DMR_BO_FREE(&device->vk.base, device->trivial_batch_bo);
    anv_device_release_bo(device, device->trivial_batch_bo);
 
    if (device->info->has_aux_map) {
@@ -1688,12 +1723,16 @@ VkResult anv_AllocateMemory(
    pthread_mutex_unlock(&device->mutex);
 
    ANV_RMV(heap_create, device, mem, false, 0);
+   ANV_DMR_BO_ALLOC_IMPORT(&mem->vk.base, mem->bo, result,
+                           mem->vk.import_handle_type);
 
    *pMem = anv_device_memory_to_handle(mem);
 
    return VK_SUCCESS;
 
  fail:
+   ANV_DMR_BO_ALLOC_IMPORT(&mem->vk.base, mem->bo, result,
+                           mem->vk.import_handle_type);
    vk_device_memory_destroy(&device->vk, pAllocator, &mem->vk);
 
    return result;
@@ -1791,6 +1830,9 @@ void anv_FreeMemory(
 
    p_atomic_add(&device->physical->memory.heaps[mem->type->heapIndex].used,
                 -mem->bo->size);
+
+   ANV_DMR_BO_FREE_IMPORT(&mem->vk.base, mem->bo,
+                          mem->vk.import_handle_type);
 
    anv_device_release_bo(device, mem->bo);
 

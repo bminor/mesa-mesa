@@ -210,6 +210,7 @@ destroy_cmd_buffer(struct anv_cmd_buffer *cmd_buffer)
 
    while (u_vector_length(&cmd_buffer->dynamic_bos) > 0) {
       struct anv_bo **bo = u_vector_remove(&cmd_buffer->dynamic_bos);
+      ANV_DMR_BO_FREE(&cmd_buffer->vk.base, *bo);
       anv_bo_pool_free((*bo)->map != NULL ?
                        &cmd_buffer->device->batch_bo_pool :
                        &cmd_buffer->device->bvh_bo_pool, *bo);
@@ -458,6 +459,7 @@ anv_cmd_buffer_set_ray_query_buffer(struct anv_cmd_buffer *cmd_buffer,
                                                ANV_BO_ALLOC_INTERNAL, /* alloc_flags */
                                                0, /* explicit_address */
                                                &new_bo);
+         ANV_DMR_BO_ALLOC(&cmd_buffer->vk.base, new_bo, result);
          if (result != VK_SUCCESS) {
             anv_batch_set_error(&cmd_buffer->batch, result);
             return;
@@ -465,6 +467,7 @@ anv_cmd_buffer_set_ray_query_buffer(struct anv_cmd_buffer *cmd_buffer,
 
          bo = p_atomic_cmpxchg(&device->ray_query_shadow_bos[idx][bucket], NULL, new_bo);
          if (bo != NULL) {
+            ANV_DMR_BO_FREE(&device->vk.base, new_bo);
             anv_device_release_bo(device, new_bo);
          } else {
             bo = new_bo;
@@ -1445,6 +1448,7 @@ void anv_CmdSetRayTracingPipelineStackSizeKHR(
                                             ANV_BO_ALLOC_INTERNAL, /* alloc_flags */
                                             0, /* explicit_address */
                                             &new_bo);
+      ANV_DMR_BO_ALLOC(&device->vk.base, new_bo, result);
       if (result != VK_SUCCESS) {
          rt->scratch.layout.total_size = 0;
          anv_batch_set_error(&cmd_buffer->batch, result);
@@ -1453,6 +1457,7 @@ void anv_CmdSetRayTracingPipelineStackSizeKHR(
 
       bo = p_atomic_cmpxchg(&device->rt_scratch_bos[bucket], NULL, new_bo);
       if (bo != NULL) {
+         ANV_DMR_BO_FREE(&device->vk.base, new_bo);
          anv_device_release_bo(device, new_bo);
       } else {
          bo = new_bo;

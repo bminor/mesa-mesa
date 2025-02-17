@@ -256,6 +256,7 @@ VkResult genX(CreateQueryPool)(
                                 ANV_BO_ALLOC_CAPTURE,
                                 0 /* explicit_address */,
                                 &pool->bo);
+   ANV_DMR_BO_ALLOC(&pool->vk.base, pool->bo, result);
    if (result != VK_SUCCESS)
       goto fail;
 
@@ -299,7 +300,7 @@ void genX(DestroyQueryPool)(
       return;
 
    ANV_RMV(resource_destroy, device, pool);
-
+   ANV_DMR_BO_FREE(&pool->vk.base, pool->bo);
    anv_device_release_bo(device, pool->bo);
    vk_object_free(&device->vk, pAllocator, pool);
 }

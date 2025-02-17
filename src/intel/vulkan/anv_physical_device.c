@@ -578,6 +578,9 @@ get_features(const struct anv_physical_device *pdevice,
       /* VK_EXT_depth_clip_enable */
       .depthClipEnable = true,
 
+      /* VK_EXT_device_memory_report */
+      .deviceMemoryReport = true,
+
       /* VK_EXT_fragment_shader_interlock */
       .fragmentShaderSampleInterlock = true,
       .fragmentShaderPixelInterlock = true,
