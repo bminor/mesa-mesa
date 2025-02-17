@@ -893,7 +893,7 @@ disk_cache_write_item_to_disk(struct disk_cache_put_job *dc_job,
  * If the mkdir param is set we create the directory if it doesn't already
  * exist, if it does not exist and the param is false NULL will be returned.
  */
-char *
+const char *
 disk_cache_generate_cache_dir(void *mem_ctx, const char *gpu_name,
                               const char *driver_id,
                               const char *cache_dir_name_custom,
@@ -913,10 +913,10 @@ disk_cache_generate_cache_dir(void *mem_ctx, const char *gpu_name,
          cache_dir_name = CACHE_DIR_NAME_DB;
    }
 
-   char *path = secure_getenv("MESA_SHADER_CACHE_DIR");
+   const char *path = os_get_option_secure("MESA_SHADER_CACHE_DIR");
 
    if (!path) {
-      path = secure_getenv("MESA_GLSL_CACHE_DIR");
+      path = os_get_option_secure("MESA_GLSL_CACHE_DIR");
       if (path)
          fprintf(stderr,
                  "*** MESA_GLSL_CACHE_DIR is deprecated; "
@@ -1102,13 +1102,12 @@ disk_cache_touch_cache_user_marker(char *path)
 }
 
 bool
-disk_cache_mmap_cache_index(void *mem_ctx, struct disk_cache *cache,
-                            char *path)
+disk_cache_mmap_cache_index(void *mem_ctx, struct disk_cache *cache)
 {
    int fd = -1;
    bool mapped = false;
 
-   path = ralloc_asprintf(mem_ctx, "%s/index", cache->path);
+   char *path = ralloc_asprintf(mem_ctx, "%s/index", cache->path);
    if (path == NULL)
       goto path_fail;
 
@@ -1256,8 +1255,8 @@ void
 disk_cache_delete_old_cache(void)
 {
    void *ctx = ralloc_context(NULL);
-   char *dirname = disk_cache_generate_cache_dir(ctx, NULL, NULL, NULL,
-                                                 DISK_CACHE_MULTI_FILE, false);
+   const char *dirname = disk_cache_generate_cache_dir(ctx, NULL, NULL, NULL,
+                                                       DISK_CACHE_MULTI_FILE, false);
    if (!dirname)
       goto finish;
 
