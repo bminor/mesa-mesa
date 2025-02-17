@@ -195,6 +195,14 @@ block_check_for_allowed_instrs(nir_block *block, unsigned *count,
                return false;
             break;
 
+         case nir_intrinsic_terminate:
+         case nir_intrinsic_terminate_if:
+         case nir_intrinsic_demote:
+         case nir_intrinsic_demote_if:
+            if (!options->discard_ok)
+               return false;
+            break;
+
          default:
             return false;
          }
@@ -296,9 +304,7 @@ get_options_for_if(nir_if *if_stmt,
    return if_options;
 }
 
-/* If we're moving discards out of the if for non-CF hardware, we need to add
- * the if's condition to it
- */
+/* If we're moving discards out of the if we need to add the if's condition to it */
 static void
 rewrite_discard_conds(nir_instr *instr, nir_def *if_cond, bool is_else)
 {

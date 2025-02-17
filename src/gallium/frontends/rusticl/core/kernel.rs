@@ -592,6 +592,7 @@ fn opt_nir(nir: &mut NirShader, dev: &Device, has_explicit_types: bool) {
             limit: 8,
             indirect_load_ok: true,
             expensive_alu_ok: true,
+            discard_ok: false,
         };
         progress |= nir_pass!(nir, nir_opt_peephole_select, &peephole_select_options);
         progress |= nir_pass!(
