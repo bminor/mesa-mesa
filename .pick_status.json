@@ -384,7 +384,7 @@
         "description": "anv: tighten condition for changing barrier layouts",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "eed788213bd70ad5e2996d6b285eb802c15f4e77",
         "notes": null
