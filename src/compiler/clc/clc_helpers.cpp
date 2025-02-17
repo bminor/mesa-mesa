@@ -840,7 +840,7 @@ clc_compile_to_llvm_module(LLVMContext &llvm_ctx,
    if (!clang::CompilerInvocation::CreateFromArgs(c->getInvocation(),
                                                   clang_opts,
                                                   diag)) {
-      clc_error(logger, "Couldn't create Clang invocation.\n");
+      clc_error(logger, "Couldn't create Clang invocation.\n%s\n", diag_log_str.c_str());
       return {};
    }
 
