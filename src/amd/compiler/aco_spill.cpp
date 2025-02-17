@@ -1727,6 +1727,64 @@ spill(Program* program)
 
    program->progress = CompilationProgress::after_spilling;
 
+   const RegisterDemand limit = get_addr_regs_from_waves(program, program->min_waves);
+   if (program->is_callee) {
+      BITSET_DECLARE(preserved_regs, 512);
+      RegisterDemand callee_limit = RegisterDemand();
+      program->callee_abi.preservedRegisters(preserved_regs);
+      for (int16_t i = 0; i < 512; ++i) {
+         if (i < 256 && i >= limit.sgpr)
+            i = 256;
+         if (i >= 256 + limit.vgpr)
+            break;
+         if (BITSET_TEST(preserved_regs, i))
+            continue;
+         if (i < 256)
+            ++callee_limit.sgpr;
+         else
+            ++callee_limit.vgpr;
+      }
+
+      auto return_it = std::find_if(
+         program->blocks.back().instructions.rbegin(), program->blocks.back().instructions.rend(),
+         [](const auto& instruction) { return instruction->opcode == aco_opcode::p_return; });
+
+      if (limit.sgpr > callee_limit.sgpr && return_it != program->blocks.back().instructions.rend()) {
+         aco_ptr<Instruction>& old_startpgm = program->blocks.front().instructions.front();
+         Instruction* new_startpgm = create_instruction(aco_opcode::p_startpgm, Format::PSEUDO, 0,
+                                                        old_startpgm->definitions.size() + 1);
+         for (unsigned i = 0; i < old_startpgm->definitions.size(); ++i)
+            new_startpgm->definitions[i] = old_startpgm->definitions[i];
+
+         unsigned abi_sgpr_spills = limit.sgpr - callee_limit.sgpr;
+         Temp abi_sgpr_spill_space = program->allocateTmp(
+            RegClass(RegType::vgpr, DIV_ROUND_UP(abi_sgpr_spills, program->wave_size)).as_linear());
+
+         new_startpgm->definitions.back() = Definition(abi_sgpr_spill_space);
+         old_startpgm = aco_ptr<Instruction>(new_startpgm);
+
+         for (auto& block : program->blocks) {
+            auto reload = std::find_if(block.instructions.rbegin(), block.instructions.rend(),
+                                       [](const auto& instr)
+                                       {
+                                          return instr->opcode == aco_opcode::p_return ||
+                                                 instr->opcode == aco_opcode::p_reload_preserved ||
+                                                 instr->opcode == aco_opcode::p_logical_end;
+                                       });
+            /* If we encounter p_logical_end, we know there is no reload in the block so we can
+             * skip searching the other instructions.
+             */
+            if (reload == block.instructions.rend() ||
+                (*reload)->opcode == aco_opcode::p_logical_end)
+               continue;
+            (*reload)->operands[0] = Operand(abi_sgpr_spill_space);
+         }
+
+         /* TODO: update live var analysis in-place */
+         live_var_analysis(program);
+       }
+   }
+
    /* no spilling when register pressure is low enough */
    if (program->num_waves > 0)
       return;
@@ -1736,7 +1794,6 @@ spill(Program* program)
 
    /* calculate target register demand */
    const RegisterDemand demand = program->max_reg_demand; /* current max */
-   const RegisterDemand limit = get_addr_regs_from_waves(program, program->min_waves);
    uint16_t extra_vgprs = 0;
    uint16_t extra_sgprs = 0;
 
