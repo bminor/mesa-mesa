@@ -299,6 +299,9 @@ get_options_for_if(nir_if *if_stmt,
       if_options.limit = UINT_MAX - 1; /* Maximum without unsafe flattening. */
       if_options.indirect_load_ok = true;
       if_options.expensive_alu_ok = true;
+   } else if (if_stmt->control == nir_selection_control_dont_flatten) {
+      if_options.limit = 0;
+      if_options.indirect_load_ok = false;
    }
 
    return if_options;
@@ -366,8 +369,6 @@ nir_opt_collapse_if(nir_if *if_stmt, nir_shader *shader,
       return false;
 
    nir_if *parent_if = nir_cf_node_as_if(if_stmt->cf_node.parent);
-   if (parent_if->control == nir_selection_control_dont_flatten)
-      return false;
 
    /* check if the else block is empty */
    if (!nir_cf_list_is_empty_block(&if_stmt->else_list))
@@ -482,9 +483,6 @@ nir_opt_peephole_select_block(nir_block *block, nir_shader *shader,
    /* first, try to collapse the if */
    if (nir_opt_collapse_if(if_stmt, shader, options))
       return true;
-
-   if (if_stmt->control == nir_selection_control_dont_flatten)
-      return false;
 
    nir_block *then_block = nir_if_first_then_block(if_stmt);
    nir_block *else_block = nir_if_first_else_block(if_stmt);
