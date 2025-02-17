@@ -1487,7 +1487,7 @@ get_reg_impl(ra_ctx& ctx, const RegisterFile& reg_file, std::vector<parallelcopy
             }
             continue;
          }
-         if (is_precolored[j & 0xFF]) {
+         if (is_precolored[j & 0xFF] || reg_file[j] == 0xFFFFFFFF) {
             found = false;
             break;
          }
