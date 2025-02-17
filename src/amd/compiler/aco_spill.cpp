@@ -1245,7 +1245,12 @@ setup_vgpr_spill_reload(spill_ctx& ctx, Block& block,
          }
 
          /* GFX9+ uses scratch_* instructions, which don't use a resource. */
-         ctx.scratch_rsrc = offset_bld.copy(offset_bld.def(s1), Operand::c32(saddr));
+         if (ctx.program->stack_ptr.id())
+            ctx.scratch_rsrc =
+               offset_bld.sop2(aco_opcode::s_add_u32, offset_bld.def(s1), Definition(scc, s1),
+                               Operand(ctx.program->stack_ptr), Operand::c32(saddr));
+         else
+            ctx.scratch_rsrc = offset_bld.copy(offset_bld.def(s1), Operand::c32(saddr));
       }
    } else {
       if (ctx.scratch_rsrc == Temp())
@@ -1690,7 +1695,8 @@ spill(Program* program)
    /* add extra SGPRs required for spilling VGPRs */
    if (demand.vgpr + extra_vgprs > limit.vgpr) {
       if (program->gfx_level >= GFX9)
-         extra_sgprs = 1; /* SADDR */
+         extra_sgprs =
+            program->stack_ptr.id() ? 2 : 1; /* SADDR + scc for stack pointer additions */
       else
          extra_sgprs = 5; /* scratch_resource (s4) + scratch_offset (s1) */
       if (demand.sgpr + extra_sgprs > limit.sgpr) {
