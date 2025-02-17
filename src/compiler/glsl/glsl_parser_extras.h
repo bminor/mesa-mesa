@@ -383,6 +383,7 @@ struct _mesa_glsl_parse_state {
    struct gl_context *const ctx; /* only to be used for debug callback. */
    const struct gl_extensions *exts;
    const struct gl_constants *consts;
+   const struct pipe_caps *caps;
    gl_api api;
    void *scanner;
    ir_exec_list translation_unit;

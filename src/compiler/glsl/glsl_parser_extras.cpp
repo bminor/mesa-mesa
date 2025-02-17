@@ -63,7 +63,7 @@ static const unsigned known_desktop_gl_versions[] =
 _mesa_glsl_parse_state::_mesa_glsl_parse_state(struct gl_context *_ctx,
 					       mesa_shader_stage stage,
                                                void *mem_ctx)
-   : ctx(_ctx), exts(&_ctx->Extensions), consts(&_ctx->Const),
+   : ctx(_ctx), exts(&_ctx->Extensions), consts(&_ctx->Const), caps(&_ctx->screen->caps),
      api(_ctx->API), cs_input_local_size_specified(false), cs_input_local_size(),
      switch_state(), warnings_enabled(true)
 {
