@@ -2244,7 +2244,7 @@
         "description": "aco/insert_exec_mask: don't restore exec in continue_or_break blocks",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null

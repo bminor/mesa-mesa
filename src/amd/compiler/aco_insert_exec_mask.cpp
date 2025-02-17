@@ -642,15 +642,12 @@ add_branch_code(exec_ctx& ctx, Block* block)
       assert(block->instructions.back()->opcode == aco_opcode::p_branch);
       block->instructions.pop_back();
 
-      bool need_parallelcopy = false;
-      while (!(ctx.info[idx].exec.back().type & mask_type_loop)) {
+      while (!(ctx.info[idx].exec.back().type & mask_type_loop))
          ctx.info[idx].exec.pop_back();
-         need_parallelcopy = true;
-      }
 
-      if (need_parallelcopy)
-         bld.copy(Definition(exec, bld.lm), ctx.info[idx].exec.back().op);
-      bld.branch(aco_opcode::p_cbranch_nz, Operand(exec, bld.lm), block->linear_succs[1],
+      Temp cond = bld.sopc(Builder::s_cmp_lg, bld.def(s1, scc), ctx.info[idx].exec.back().op,
+                           Operand::zero(bld.lm.bytes()));
+      bld.branch(aco_opcode::p_cbranch_nz, Operand(cond, scc), block->linear_succs[1],
                  block->linear_succs[0]);
    } else if (block->kind & block_kind_uniform) {
       Pseudo_branch_instruction& branch = block->instructions.back()->branch();
