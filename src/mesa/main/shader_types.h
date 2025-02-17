@@ -1170,6 +1170,11 @@ struct gl_shader_variable
     * Precision qualifier.
     */
    unsigned precision:2;
+
+   /**
+    * Per-primitive qualifier
+    */
+   unsigned per_primitive:1;
 };
 
 #endif

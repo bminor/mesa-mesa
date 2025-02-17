@@ -689,6 +689,7 @@ create_shader_variable(struct gl_shader_program *shProg,
    out->interpolation = in->data.interpolation;
    out->precision = in->data.precision;
    out->explicit_location = in->data.explicit_location;
+   out->per_primitive = in->data.per_primitive;
 
    return out;
 }

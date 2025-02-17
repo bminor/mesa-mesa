@@ -294,6 +294,7 @@ create_or_update_packed_varying(struct lower_packed_varyings_state *state,
       packed_var->data.centroid = unpacked_var->data.centroid;
       packed_var->data.sample = unpacked_var->data.sample;
       packed_var->data.patch = unpacked_var->data.patch;
+      packed_var->data.per_primitive = unpacked_var->data.per_primitive;
       packed_var->data.interpolation = is_interpolation_flat ?
          (unsigned) INTERP_MODE_FLAT : unpacked_var->data.interpolation;
       packed_var->data.location = location;

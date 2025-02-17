@@ -2020,6 +2020,7 @@ ir_variable::ir_variable(const struct glsl_type *type, const char *name,
    this->data.xfb_buffer = -1;
    this->data.xfb_stride = -1;
    this->data.implicit_conversion_prohibited = false;
+   this->data.per_primitive = false;
 
    this->interface_type = NULL;
 
@@ -2115,6 +2116,7 @@ ir_function_signature::qualifiers_match(ir_exec_list *params)
 	  a->data.centroid != b->data.centroid ||
           a->data.sample != b->data.sample ||
           a->data.patch != b->data.patch ||
+          a->data.per_primitive != b->data.per_primitive ||
           a->data.memory_read_only != b->data.memory_read_only ||
           a->data.memory_write_only != b->data.memory_write_only ||
           a->data.memory_coherent != b->data.memory_coherent ||

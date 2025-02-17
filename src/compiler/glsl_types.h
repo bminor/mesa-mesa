@@ -484,6 +484,12 @@ struct glsl_struct_field {
          unsigned explicit_xfb_buffer:1;
 
          unsigned implicit_sized_array:1;
+
+         /**
+          * For interface blocks, 1 if this variable is a per-primitive input or output
+          * (as in ir_variable::patch). 0 otherwise.
+          */
+         unsigned per_primitive:1;
       };
       unsigned flags;
    };

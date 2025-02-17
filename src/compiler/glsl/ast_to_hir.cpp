@@ -4413,6 +4413,28 @@ apply_type_qualifier_to_variable(const struct ast_type_qualifier *qual,
                        "with task and mesh shaders");
    }
 
+   if (qual->flags.q.per_primitive) {
+      if (state->stage == MESA_SHADER_MESH) {
+         if (var->data.mode != ir_var_shader_out) {
+            _mesa_glsl_error(loc, state,
+                             "the perprimitiveEXT auxiliary storage qualifier can only be "
+                             "used on `out` variables with mesh shader");
+         }
+      } else if (state->stage == MESA_SHADER_FRAGMENT) {
+         if (var->data.mode != ir_var_shader_in) {
+            _mesa_glsl_error(loc, state,
+                             "the perprimitiveEXT auxiliary storage qualifier can only be "
+                             "used on `in` variables with fragment shader");
+         }
+      } else {
+         _mesa_glsl_error(loc, state,
+                          "the perprimitiveEXT auxiliary storage qualifier can only be "
+                          "used with mesh and fragment shaders");
+      }
+
+      var->data.per_primitive = 1;
+   }
+
    apply_image_qualifier_to_variable(qual, var, state, loc);
 }
 
@@ -7732,6 +7754,7 @@ ast_process_struct_or_iface_block_members(ir_exec_list *instructions,
          fields[i].centroid = qual->flags.q.centroid ? 1 : 0;
          fields[i].sample = qual->flags.q.sample ? 1 : 0;
          fields[i].patch = qual->flags.q.patch ? 1 : 0;
+         fields[i].per_primitive = qual->flags.q.per_primitive ? 1 : 0;
          fields[i].offset = -1;
          fields[i].explicit_xfb_buffer = explicit_xfb_buffer;
          fields[i].xfb_buffer = xfb_buffer;
@@ -8161,14 +8184,17 @@ ast_interface_block::hir(ir_exec_list *instructions,
          if (state->stage == MESA_SHADER_GEOMETRY) {
             allowed_blk_qualifiers.flags.q.stream = 1;
             allowed_blk_qualifiers.flags.q.explicit_stream = 1;
-         }
-         if (state->stage == MESA_SHADER_TESS_CTRL) {
+         } else if (state->stage == MESA_SHADER_TESS_CTRL) {
             allowed_blk_qualifiers.flags.q.patch = 1;
+         } else if (state->stage == MESA_SHADER_MESH) {
+            allowed_blk_qualifiers.flags.q.per_primitive = 1;
          }
       } else {
          allowed_blk_qualifiers.flags.q.in = 1;
          if (state->stage == MESA_SHADER_TESS_EVAL) {
             allowed_blk_qualifiers.flags.q.patch = 1;
+         } else if (state->stage == MESA_SHADER_FRAGMENT) {
+            allowed_blk_qualifiers.flags.q.per_primitive = 1;
          }
       }
    }
@@ -8414,6 +8440,8 @@ ast_interface_block::hir(ir_exec_list *instructions,
                earlier_per_vertex->fields.structure[j].sample;
             fields[i].patch =
                earlier_per_vertex->fields.structure[j].patch;
+            fields[i].per_primitive =
+               earlier_per_vertex->fields.structure[j].per_primitive;
             fields[i].precision =
                earlier_per_vertex->fields.structure[j].precision;
             fields[i].explicit_xfb_buffer =
@@ -8660,6 +8688,7 @@ ast_interface_block::hir(ir_exec_list *instructions,
          var->data.read_only = true;
 
       var->data.patch = this->layout.flags.q.patch;
+      var->data.per_primitive = this->layout.flags.q.per_primitive;
 
       if (state->stage == MESA_SHADER_GEOMETRY && var_mode == ir_var_shader_in)
          handle_geometry_shader_input_decl(state, loc, var);
@@ -8715,6 +8744,7 @@ ast_interface_block::hir(ir_exec_list *instructions,
          var->data.patch = fields[i].patch;
          var->data.stream = qual_stream;
          var->data.location = fields[i].location;
+         var->data.per_primitive = fields[i].per_primitive;
 
          if (fields[i].location != -1)
             var->data.explicit_location = true;

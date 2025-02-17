@@ -286,6 +286,9 @@ interstage_member_mismatch(struct gl_shader_program *prog,
       if (c->fields.structure[i].patch !=
           p->fields.structure[i].patch)
          return true;
+      if (c->fields.structure[i].per_primitive !=
+          p->fields.structure[i].per_primitive)
+         return true;
 
       /* From Section 4.5 (Interpolation Qualifiers) of the GLSL 4.40 spec:
        *

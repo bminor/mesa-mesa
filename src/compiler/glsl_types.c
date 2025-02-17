@@ -1506,6 +1506,9 @@ glsl_record_compare(const glsl_type *a, const glsl_type *b, bool match_name,
       if (a->fields.structure[i].xfb_stride
           != b->fields.structure[i].xfb_stride)
          return false;
+      if (a->fields.structure[i].per_primitive
+          != b->fields.structure[i].per_primitive)
+         return false;
    }
 
    return true;

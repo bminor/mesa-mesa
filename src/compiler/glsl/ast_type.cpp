@@ -107,7 +107,8 @@ ast_type_qualifier::has_auxiliary_storage() const
 {
    return this->flags.q.centroid
           || this->flags.q.sample
-          || this->flags.q.patch;
+          || this->flags.q.patch
+          || this->flags.q.per_primitive;
 }
 
 bool ast_type_qualifier::has_memory() const
@@ -295,6 +296,7 @@ ast_type_qualifier::merge_qualifier(YYLTYPE *loc,
    input_layout_mask.flags.q.smooth = 1;
    input_layout_mask.flags.q.non_coherent = 1;
    input_layout_mask.flags.q.explicit_numviews = 1;
+   input_layout_mask.flags.q.per_primitive = 1;
 
    if (state->has_bindless()) {
       /* Allow to use image qualifiers with shader inputs/outputs. */
@@ -952,6 +954,7 @@ ast_type_qualifier::validate_flags(YYLTYPE *loc,
    Q(sample_interlock_unordered);
    Q2(non_coherent, noncoherent);
    Q(task_payload);
+   Q(per_primitive);
 
 #undef Q
 #undef Q2

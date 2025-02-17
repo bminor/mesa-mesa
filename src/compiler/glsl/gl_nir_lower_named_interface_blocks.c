@@ -289,6 +289,7 @@ lower_named_interface_blocks(struct gl_linked_shader *sh)
             new_var->data.centroid = field_data->centroid;
             new_var->data.sample = field_data->sample;
             new_var->data.patch = field_data->patch;
+            new_var->data.per_primitive = field_data->per_primitive;
             new_var->data.stream = var->data.stream;
             new_var->data.how_declared = var->data.how_declared;
             new_var->data.from_named_ifc_block = 1;

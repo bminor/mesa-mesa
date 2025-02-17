@@ -212,17 +212,18 @@ void ir_print_visitor::visit(ir_variable *ir)
                                 "shader_shared ", "task_payload ", "shader_in ", "shader_out ",
                                 "in ", "out ", "inout ",
 			        "const_in ", "sys ", "temporary " };
+   const char *const per_primitive = (ir->data.per_primitive) ? "per_primitive " : "";
    STATIC_ASSERT(ARRAY_SIZE(mode) == ir_var_mode_count);
    const char *const interp[] = { "", "smooth", "flat", "noperspective", "explicit" };
    STATIC_ASSERT(ARRAY_SIZE(interp) == INTERP_MODE_COUNT);
    const char *const precision[] = { "", "highp ", "mediump ", "lowp "};
 
-   fprintf(f, "(%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s) ",
+   fprintf(f, "(%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s) ",
            binding, loc, component, cent, bindless, bound,
            image_format, memory_read_only, memory_write_only,
            memory_coherent, memory_volatile, memory_restrict,
-           samp, patc, inv, explicit_inv, prec, mode[ir->data.mode],
-           stream,
+           samp, patc, inv, explicit_inv, prec, per_primitive,
+           mode[ir->data.mode], stream,
            interp[ir->data.interpolation], precision[ir->data.precision]);
 
    glsl_print_type(f, ir->type);

@@ -680,6 +680,7 @@ struct ast_type_qualifier {
 
          /** GL_EXT_mesh_shader */
          unsigned task_payload:1;
+         unsigned per_primitive:1;
       }
       /** \brief Set of flags, accessed by name. */
       q;

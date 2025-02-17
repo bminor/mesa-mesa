@@ -558,6 +558,13 @@ taskPayloadSharedEXT {
 		         return classify_identifier(yyextra, yytext, yyleng, yylval);
 		}
 
+perprimitiveEXT {
+		    if (yyextra->EXT_mesh_shader_enable)
+		         return PERPRIMITIVE;
+		    else
+		         return classify_identifier(yyextra, yytext, yyleng, yylval);
+		}
+
 struct		return STRUCT;
 void		return VOID_TOK;
 

@@ -1217,6 +1217,7 @@ _mesa_ast_process_interface_block(YYLTYPE *locp,
    temp_type_qualifier.flags.q.out = true;
    temp_type_qualifier.flags.q.buffer = true;
    temp_type_qualifier.flags.q.patch = true;
+   temp_type_qualifier.flags.q.per_primitive = true;
    interface_type_mask = temp_type_qualifier.flags.i;
 
    /* Get the block's interface qualifier.  The interface_qualifier
@@ -1325,6 +1326,8 @@ _mesa_ast_type_qualifier_print(const struct ast_type_qualifier *q)
       printf("flat ");
    if (q->flags.q.noperspective)
       printf("noperspective ");
+   if (q->flags.q.per_primitive)
+      printf("per_primitive ");
 }
 
 

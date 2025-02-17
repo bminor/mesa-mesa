@@ -859,6 +859,11 @@ public:
       unsigned implicit_conversion_prohibited:1;
 
       /**
+       * Non-zero if the variable is per-primitive as defined by EXT_mesh_shader
+       */
+      unsigned per_primitive:1;
+
+      /**
        * Emit a warning if this variable is accessed.
        */
    private:
