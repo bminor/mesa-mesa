@@ -840,12 +840,12 @@ static void radeon_pin_threads_to_L3_cache(struct radeon_winsys *ws,
    }
 }
 
-static bool radeon_cs_is_secure(struct radeon_cmdbuf* cs)
+static bool radeon_cs_is_secure(struct radeon_cmdbuf* rcs)
 {
     return false;
 }
 
-static bool radeon_cs_set_pstate(struct radeon_cmdbuf* cs, enum radeon_ctx_pstate state)
+static bool radeon_cs_set_pstate(struct radeon_cmdbuf* rcs, enum radeon_ctx_pstate state)
 {
     return false;
 }
