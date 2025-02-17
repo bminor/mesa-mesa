@@ -347,6 +347,8 @@ insn("p_boolean_phi")
 insn("p_as_uniform")
 insn("p_unit_test")
 
+insn("p_callee_stack_ptr")
+
 insn("p_create_vector")
 insn("p_extract_vector")
 insn("p_split_vector")
