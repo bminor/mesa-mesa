@@ -4818,7 +4818,7 @@ bool nir_lower_var_copies(nir_shader *shader);
 bool nir_opt_memcpy(nir_shader *shader);
 bool nir_lower_memcpy(nir_shader *shader);
 
-void nir_fixup_deref_modes(nir_shader *shader);
+bool nir_fixup_deref_modes(nir_shader *shader);
 void nir_fixup_deref_types(nir_shader *shader);
 
 bool nir_lower_global_vars_to_local(nir_shader *shader);

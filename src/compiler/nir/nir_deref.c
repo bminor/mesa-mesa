@@ -448,14 +448,14 @@ nir_fixup_deref_modes_instr(UNUSED struct nir_builder *b, nir_instr *instr, UNUS
    return true;
 }
 
-void
+bool
 nir_fixup_deref_modes(nir_shader *shader)
 {
-   nir_shader_instructions_pass(shader, nir_fixup_deref_modes_instr,
-                                nir_metadata_control_flow |
-                                nir_metadata_live_defs |
-                                nir_metadata_instr_index,
-                                NULL);
+   return nir_shader_instructions_pass(shader, nir_fixup_deref_modes_instr,
+                                       nir_metadata_control_flow |
+                                       nir_metadata_live_defs |
+                                       nir_metadata_instr_index,
+                                       NULL);
 }
 
 static bool
