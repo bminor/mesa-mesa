@@ -2099,6 +2099,15 @@ set_shader_inout_layout(struct gl_shader *shader,
       shader->BlendSupport = state->fs_blend_support;
       break;
 
+   case MESA_SHADER_MESH:
+      if (state->out_qualifier->flags.q.prim_type) {
+         shader->info.Mesh.OutputType =
+            gl_to_mesa_prim(state->out_qualifier->prim_type);
+      } else {
+         shader->info.Mesh.OutputType = MESA_PRIM_UNKNOWN;
+      }
+      break;
+
    default:
       /* Nothing to do. */
       break;

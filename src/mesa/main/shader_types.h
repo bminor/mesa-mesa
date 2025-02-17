@@ -132,6 +132,13 @@ struct gl_shader_info
        */
       enum gl_derivative_group DerivativeGroup;
    } Comp;
+
+   /**
+    * Mesh shader state from EXT_mesh_shader
+    */
+   struct {
+      enum mesa_prim OutputType;
+   } Mesh;
 };
 
 /**

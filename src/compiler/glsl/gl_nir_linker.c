@@ -2558,6 +2558,40 @@ link_cs_input_layout_qualifiers(struct gl_shader_program *prog,
 }
 
 
+static void
+link_ms_inout_layout_qualifiers(struct gl_shader_program *prog,
+                                struct gl_program *gl_prog,
+                                struct gl_shader **shader_list,
+                                unsigned num_shaders)
+{
+   if (gl_prog->info.stage != MESA_SHADER_MESH)
+      return;
+
+   enum mesa_prim prim_type = MESA_PRIM_UNKNOWN;
+
+   for (unsigned i = 0; i < num_shaders; i++) {
+      struct gl_shader *shader = shader_list[i];
+
+      if (shader->info.Mesh.OutputType != MESA_PRIM_UNKNOWN) {
+         if (prim_type != MESA_PRIM_UNKNOWN &&
+             prim_type != shader->info.Mesh.OutputType) {
+            linker_error(prog, "mesh shader defined with conflicting "
+                         "output types\n");
+            return;
+         }
+         prim_type = shader->info.Mesh.OutputType;
+      }
+   }
+
+   if (prim_type == MESA_PRIM_UNKNOWN) {
+      linker_error(prog, "mesh shader didn't declare primitive output type\n");
+      return;
+   } else {
+      gl_prog->nir->info.mesh.primitive_type = prim_type;
+   }
+}
+
+
 /**
  * Combine a group of shaders for a single stage to generate a linked shader
  *
@@ -2689,6 +2723,7 @@ link_intrastage_shaders(void *mem_ctx,
    link_tes_in_layout_qualifiers(prog, gl_prog, shader_list, num_shaders);
    link_gs_inout_layout_qualifiers(prog, gl_prog, shader_list, num_shaders);
    link_cs_input_layout_qualifiers(prog, gl_prog, shader_list, num_shaders);
+   link_ms_inout_layout_qualifiers(prog, gl_prog, shader_list, num_shaders);
 
    if (linked->Stage != MESA_SHADER_FRAGMENT)
       link_xfb_stride_layout_qualifiers(&ctx->Const, prog, shader_list, num_shaders);

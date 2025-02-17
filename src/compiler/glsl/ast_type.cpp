@@ -588,6 +588,23 @@ ast_type_qualifier::validate_out_qualifier(YYLTYPE *loc,
    case MESA_SHADER_FRAGMENT:
       valid_out_mask.flags.q.blend_support = 1;
       break;
+   case MESA_SHADER_MESH:
+      if (this->flags.q.prim_type) {
+         /* Make sure this is a valid output primitive type. */
+         switch (this->prim_type) {
+         case GL_POINTS:
+         case GL_LINES:
+         case GL_TRIANGLES:
+            break;
+         default:
+            r = false;
+            _mesa_glsl_error(loc, state, "invalid mesh shader output "
+                             "primitive type");
+            break;
+         }
+      }
+      valid_out_mask.flags.q.prim_type = 1;
+      break;
    default:
       r = false;
       _mesa_glsl_error(loc, state,

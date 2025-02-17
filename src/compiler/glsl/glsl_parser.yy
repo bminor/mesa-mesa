@@ -1328,7 +1328,7 @@ layout_qualifier_id:
          }
 
          if ($$.flags.i && !state->has_geometry_shader() &&
-             !state->has_tessellation_shader()) {
+             !state->has_tessellation_shader() && !state->EXT_mesh_shader_enable) {
             _mesa_glsl_error(& @1, state, "#version 150 layout "
                              "qualifier `%s' used", $1);
          }
