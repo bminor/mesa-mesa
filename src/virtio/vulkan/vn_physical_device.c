@@ -1011,6 +1011,7 @@ vn_physical_device_get_native_extensions(
       physical_dev->renderer_extensions.EXT_pci_bus_info;
 #endif
 
+   exts->KHR_map_memory2 = true;
    exts->EXT_physical_device_drm = true;
    /* use common implementation */
    exts->EXT_tooling_info = true;
