@@ -1,5 +1,365 @@
 [
     {
+        "sha": "2361ed27f34774f0a73324915a9ddb57f43e112a",
+        "description": "runtime: sort push constant layouts",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "97f851e7c51945c9b6a0179792a9e9234b9aa2cf",
+        "description": "tu: Handle mismatched mutability when resolving from GMEM",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "a104a7ca1acf7793b78c1d885326eaed6ff91c69",
+        "notes": null
+    },
+    {
+        "sha": "4c918603e09666ad5c73e0d7eab0eb91dba1149e",
+        "description": "freedreno/fdl: Log mutability when dumping layout",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bdf0f61d4aaab5eda2974751e56b55739659ebb8",
+        "description": "tu: Get correct src view when storing gmem attachment",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "a104a7ca1acf7793b78c1d885326eaed6ff91c69",
+        "notes": null
+    },
+    {
+        "sha": "7b5efb4c0bb809c07a89f5a7ab37103db12dd4fd",
+        "description": "radv: remove radv_buffer_view_{init,finish}() helpers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3c98a336cf790b7e1cc1df1a74c2084594db82db",
+        "description": "radv: remove radv_buffer_{init,finish}() helpers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "84ba15eb0526e1093d8efa1dd7cdbba8ce4caf61",
+        "description": "radv/meta: switch to descriptor buffers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bb7f86a9e414eff521cd045a238a6878ddf38a34",
+        "description": "vulkan: add descriptor buffer support to compute astc decoder",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e65c1473ded8e278b2253b7939af7a2fbfc72714",
+        "description": "nir: Eliminate dead writes to shared memory at the end of the program",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9af11bf306c4b67c434044a7ba2907a5c6df5542",
+        "description": "radv: add initial DCC support on GFX12",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "827cef7f7f0f965a7706156b7d2c872ec2699805",
+        "description": "ac/gpu_info: add gfx12_supports_dcc_write_compress_disable",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "53c1b15f53b93b047bb48163405fa1cb4eb01036",
+        "description": "anv/ci: Don't start X11 for ANGLE",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "72b8ba4851fb43bca3514c041d1c38e8efff4049",
+        "description": "radv/ci: Don't start X11 for ANGLE",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0b908bb27e2c3f74ca8595a99331bfd15938717b",
+        "description": "venus: updated to use core types for promoted extensions",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "207c9ec65a75c54d56916f2db3c0ded172ed369b",
+        "description": "venus: sync protocol for v1.4.307 release and update promoted entries",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ae2830e520827598eedb9a4b4a8d0c5fe22fb841",
+        "description": "venus: drop unused codes",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "af375c675601f2ab6f3871145312355682a2b2d0",
+        "description": "radv: Optimize fs builtins using static gfx state",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bbfbd1658041a76267669229482f032f7580eb3f",
+        "description": "turnip/ci: Add a nightly ANGLE job on a750",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bd2563eb02c96134a2d2fd851a7a0b202f6ce4a8",
+        "description": "turnip/ci: Rename valve-freedreno-turnip-manual-rules",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "612f56cb5eae91a197b278f6d85b164851be09d1",
+        "description": "ci/container: Include ANGLE in the arm64 test-gl container",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "45fe200222f8ca369567a6ff320729839cf63764",
+        "description": "turnip/ci: Add nightly ANGLE jobs on a618 and a660",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f828695e465d2dd3ed346e1b156b45c3f3faf395",
+        "description": "radv: stop relying on VkBuffer for VBO",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "06e47e8776c89b8167a9d765a8e2ecbfc0b5c8b2",
+        "description": "radv: compute VBO addr at bind time",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "464c97b58847c871b92457b8521ccd8691b7051a",
+        "description": "ci: Update expectations from latest nightly",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d2348daf55bafeb533ff87040cf2f85c45f5376a",
+        "description": "llvmpipe/ci: change for oes_egl_image_external_essl3",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "42068643e9b99dda1daef7cbfd0047965341ecb5",
+        "description": "dri,egl,glx: remove redundant usage of HAVE_X11_DRM",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a52d4876d92f402052e874d51dbca568cd2b9c9a",
+        "description": "kopper: remove unused function definition",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2a1ae6d94b317791cb97e2fc4af5b9fe9b955216",
+        "description": "glx/egl/x11: fix x11_dri3_check_multibuffer",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "746381f870cc79e1b1331bac75dcb82ac7b0d6b3",
+        "description": "dri: dmabuf cap does not rely on winsys multibuffer support",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "354dc800d2e143a3999f6233d698c1193ca259d7",
+        "description": "egl: decouple dmabuf import/export cap from xserver support",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "607686f6bfb17d03d3ba77eddbb3c28fbd080d99",
+        "description": "nvk: Respect VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b8508726f09140afef18613f19cd7cd3f5654a0a",
+        "description": "nvk: Rename nvk_descriptor_set::mapped_ptr",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8741be3365ea0e69aaed86b62ab8bda61d93fca6",
+        "description": "venus: fix maintenance5 props init and create flags2",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "be6fece6e1ef46567808d4895558519e39086a8b",
+        "notes": null
+    },
+    {
+        "sha": "dfd2af5da11eca3678c0b34a24776114950fb6dc",
+        "description": "Support 5 more promoted extensions",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5603b7877937d1c66d49268cf7164c21b5fcc4ad",
+        "description": "venus: sync protocol to v1.3.302",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2026e4a26296014093a3565f588d5202f27f9294",
+        "description": "venus: fix sampler locations feats and props scrub",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "ff64092ff341ccd2e861a740c00ef6baa0c39beb",
+        "notes": null
+    },
+    {
         "sha": "06d8afff640c66e51517bf4bebd2a58abb2fa055",
         "description": "vulkan: Fix typos",
         "nominated": false,
