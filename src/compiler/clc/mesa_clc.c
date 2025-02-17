@@ -133,6 +133,7 @@ main(int argc, char **argv)
          .source.value = map,
          .args = util_dynarray_begin(&clang_args),
          .num_args = util_dynarray_num_elements(&clang_args, char *),
+         .c_compatible = true,
       };
 
       /* Enable all features, we don't know the target here and it is the

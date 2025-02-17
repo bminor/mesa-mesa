@@ -945,6 +945,9 @@ clc_compile_to_llvm_module(LLVMContext &llvm_ctx,
    c->getTargetOpts().OpenCLExtensionsAsWritten.push_back("+cl_khr_global_int32_extended_atomics");
    c->getTargetOpts().OpenCLExtensionsAsWritten.push_back("+cl_khr_local_int32_base_atomics");
    c->getTargetOpts().OpenCLExtensionsAsWritten.push_back("+cl_khr_local_int32_extended_atomics");
+   if (args->c_compatible) {
+      c->getTargetOpts().OpenCLExtensionsAsWritten.push_back("+__cl_clang_bitfields");
+   }
    c->getPreprocessorOpts().addMacroDef("cl_khr_expect_assume=1");
 
    bool needs_opencl_c_h = false;

@@ -151,6 +151,7 @@ impl SPIRVBin {
             features: features,
             use_llvm_spirv_target: false,
             allowed_spirv_extensions: spirv_extensions.as_ptr(),
+            c_compatible: false,
             address_bits: address_bits,
         };
         let mut msgs: Vec<String> = Vec::new();

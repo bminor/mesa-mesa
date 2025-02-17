@@ -92,6 +92,11 @@ struct clc_compile_args {
     */
    const char * const *allowed_spirv_extensions;
 
+   /* Indicate that the input file tries to be compatible with C code. This
+    * means that for example the bit-field clang extension is enabled.
+    */
+   bool c_compatible;
+
    unsigned address_bits;
 };
 
