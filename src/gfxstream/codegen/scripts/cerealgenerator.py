@@ -74,6 +74,7 @@ SUPPORTED_FEATURES = [
     "VK_KHR_descriptor_update_template",
     "VK_EXT_depth_clip_enable",
     "VK_EXT_robustness2",
+    "VK_KHR_multiview",
     # see aosp/2736079 + b/268351352
     "VK_EXT_swapchain_maintenance1",
     "VK_KHR_maintenance5",
