@@ -225,7 +225,7 @@ class glx_enum_function(object):
 
 
     def Print(self, name):
-        print('PURE FASTCALL GLint')
+        print('GLint')
         print('__gl%s_size( GLenum e )' % (name))
         print('{')
 
@@ -264,19 +264,15 @@ class PrintGlxSizeStubs_c(PrintGlxSizeStubs_common):
         print('#include "indirect_size.h"')
 
         print('')
-        self.printPure()
-        print('')
-        self.printFastcall()
-        print('')
         print('')
         print('#ifdef HAVE_FUNC_ATTRIBUTE_ALIAS')
         print('#  define ALIAS2(from,to) \\')
-        print('    PURE FASTCALL GLint __gl ## from ## _size( GLenum e ) \\')
+        print('    GLint __gl ## from ## _size( GLenum e ) \\')
         print('        __attribute__ ((alias( # to )));')
         print('#  define ALIAS(from,to) ALIAS2( from, __gl ## to ## _size )')
         print('#else')
         print('#  define ALIAS(from,to) \\')
-        print('    PURE FASTCALL GLint __gl ## from ## _size( GLenum e ) \\')
+        print('    GLint __gl ## from ## _size( GLenum e ) \\')
         print('    { return __gl ## to ## _size( e ); }')
         print('#endif')
         print('')
@@ -318,10 +314,6 @@ class PrintGlxSizeStubs_h(PrintGlxSizeStubs_common):
 """)
         print('#include <X11/Xfuncproto.h>')
         print('')
-        self.printPure();
-        print('')
-        self.printFastcall();
-        print('')
 
 
     def printBody(self, api):
@@ -331,7 +323,7 @@ class PrintGlxSizeStubs_h(PrintGlxSizeStubs_common):
                 continue
 
             if (ef.is_set() and self.emit_set) or (not ef.is_set() and self.emit_get):
-                print('extern PURE FASTCALL GLint __gl%s_size(GLenum);' % (func.name))
+                print('extern GLint __gl%s_size(GLenum);' % (func.name))
 
 
 class PrintGlxReqSize_common(gl_XML.gl_print_base):

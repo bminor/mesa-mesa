@@ -176,7 +176,6 @@ class PrintGlxProtoStubs(glX_proto_common.glx_print_proto):
         print('#include <limits.h>')
 
         print('')
-        self.printFastcall()
         self.printNoinline()
         print('')
 
@@ -283,7 +282,7 @@ __glXReadPixelReply( Display *dpy, struct glx_context * gc, unsigned max_dim,
 
 #define X_GLXSingle 0
 
-NOINLINE FASTCALL GLubyte *
+NOINLINE GLubyte *
 __glXSetupSingleRequest( struct glx_context * gc, GLint sop, GLint cmdlen )
 {
     xGLXSingleReq * req;
@@ -298,7 +297,7 @@ __glXSetupSingleRequest( struct glx_context * gc, GLint sop, GLint cmdlen )
     return (GLubyte *)(req) + sz_xGLXSingleReq;
 }
 
-NOINLINE FASTCALL GLubyte *
+NOINLINE GLubyte *
 __glXSetupVendorRequest( struct glx_context * gc, GLint code, GLint vop, GLint cmdlen )
 {
     xGLXVendorPrivateReq * req;
@@ -425,7 +424,7 @@ const GLuint __glXDefaultPixelStore[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 1 };
 
     def print_generic_function(self, n):
         size = (n + 3) & ~3
-        print("""static FASTCALL NOINLINE void
+        print("""static NOINLINE void
 generic_%u_byte( GLint rop, const void * ptr )
 {
     struct glx_context * const gc = __glXGetCurrentContext();
@@ -1011,7 +1010,6 @@ class PrintGlxProtoInit_h(gl_XML.gl_print_base):
  * \\author Ian Romanick <idr@us.ibm.com>
  */
 """)
-        self.printFastcall()
         self.printNoinline()
 
         print("""
@@ -1026,10 +1024,10 @@ extern NOINLINE void __glXReadPixelReply( Display *dpy,
     GLint depth, GLenum format, GLenum type, void * dest,
     GLboolean dimensions_in_reply );
 
-extern NOINLINE FASTCALL GLubyte * __glXSetupSingleRequest(
+extern NOINLINE GLubyte * __glXSetupSingleRequest(
     struct glx_context * gc, GLint sop, GLint cmdlen );
 
-extern NOINLINE FASTCALL GLubyte * __glXSetupVendorRequest(
+extern NOINLINE GLubyte * __glXSetupVendorRequest(
     struct glx_context * gc, GLint code, GLint vop, GLint cmdlen );
 """)
 
