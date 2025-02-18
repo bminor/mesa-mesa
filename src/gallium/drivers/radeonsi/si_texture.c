@@ -1304,10 +1304,12 @@ static struct si_texture *si_texture_create_object(struct pipe_screen *screen,
 
    /* Execute the clears. */
    if (num_clears) {
-      struct si_context *sctx = si_get_aux_context(&sscreen->aux_context.compute_resource_init);
+      struct si_aux_context *auxctx = tex->buffer.flags & RADEON_FLAG_ENCRYPTED ?
+         &sscreen->aux_context.general : &sscreen->aux_context.compute_resource_init;
+      struct si_context *sctx = si_get_aux_context(auxctx);
 
       si_execute_clears(sctx, clears, num_clears, false);
-      si_put_aux_context_flush(&sscreen->aux_context.compute_resource_init);
+      si_put_aux_context_flush(auxctx);
    }
 
    /* Initialize the CMASK base register value. */
