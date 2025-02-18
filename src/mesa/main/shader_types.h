@@ -138,6 +138,9 @@ struct gl_shader_info
     */
    struct {
       enum mesa_prim OutputType;
+
+      GLint MaxVertices;
+      GLint MaxPrimitives;
    } Mesh;
 };
 

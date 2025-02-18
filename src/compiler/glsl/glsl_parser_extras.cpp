@@ -2106,6 +2106,42 @@ set_shader_inout_layout(struct gl_shader *shader,
       } else {
          shader->info.Mesh.OutputType = MESA_PRIM_UNKNOWN;
       }
+
+      shader->info.Mesh.MaxVertices = -1;
+      if (state->out_qualifier->flags.q.max_vertices) {
+         unsigned qual_max_vertices;
+         if (state->out_qualifier->max_vertices->
+               process_qualifier_constant(state, "max_vertices",
+                                          &qual_max_vertices, true)) {
+
+            if (qual_max_vertices > state->caps->mesh.max_mesh_output_vertices) {
+               YYLTYPE loc = state->out_qualifier->max_vertices->get_location();
+               _mesa_glsl_error(&loc, state,
+                                "maximum output vertices (%d) exceeds "
+                                "GL_MAX_MESH_OUTPUT_VERTICES_EXT",
+                                qual_max_vertices);
+            }
+            shader->info.Mesh.MaxVertices = qual_max_vertices;
+         }
+      }
+
+      shader->info.Mesh.MaxPrimitives = -1;
+      if (state->out_qualifier->flags.q.max_primitives) {
+         unsigned qual_max_primitives;
+         if (state->out_qualifier->max_primitives->
+               process_qualifier_constant(state, "max_primitives",
+                                          &qual_max_primitives, true)) {
+
+            if (qual_max_primitives > state->caps->mesh.max_mesh_output_primitives) {
+               YYLTYPE loc = state->out_qualifier->max_primitives->get_location();
+               _mesa_glsl_error(&loc, state,
+                                "maximum output primitives (%d) exceeds "
+                                "GL_MAX_MESH_OUTPUT_PRIMITIVES_EXT",
+                                qual_max_primitives);
+            }
+            shader->info.Mesh.MaxPrimitives = qual_max_primitives;
+         }
+      }
       break;
 
    default:

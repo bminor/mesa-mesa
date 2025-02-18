@@ -354,6 +354,16 @@ ast_type_qualifier::merge_qualifier(YYLTYPE *loc,
       }
    }
 
+   if (q.flags.q.max_primitives) {
+      if (this->flags.q.max_primitives
+          && !is_single_layout_merge && !is_multiple_layouts_merge) {
+         this->max_primitives->merge_qualifier(q.max_primitives);
+      } else {
+         this->flags.q.max_primitives = 1;
+         this->max_primitives = q.max_primitives;
+      }
+   }
+
    if (q.subroutine_list) {
       if (this->subroutine_list) {
          _mesa_glsl_error(loc, state,
@@ -603,6 +613,8 @@ ast_type_qualifier::validate_out_qualifier(YYLTYPE *loc,
             break;
          }
       }
+      valid_out_mask.flags.q.max_vertices = 1;
+      valid_out_mask.flags.q.max_primitives = 1;
       valid_out_mask.flags.q.prim_type = 1;
       break;
    default:
@@ -972,6 +984,7 @@ ast_type_qualifier::validate_flags(YYLTYPE *loc,
    Q2(non_coherent, noncoherent);
    Q(task_payload);
    Q(per_primitive);
+   Q(max_primitives);
 
 #undef Q
 #undef Q2

@@ -1816,10 +1816,18 @@ layout_qualifier_id:
       if (match_layout_qualifier("max_vertices", $1, state) == 0) {
          $$.flags.q.max_vertices = 1;
          $$.max_vertices = new(ctx) ast_layout_expression(@1, $3);
-         if (!state->has_geometry_shader()) {
+         if (!state->has_geometry_shader() && !state->EXT_mesh_shader_enable) {
             _mesa_glsl_error(& @3, state,
-                             "#version 150 max_vertices qualifier "
-                             "specified");
+                             "max_vertices qualifier specified");
+         }
+      }
+
+      if (match_layout_qualifier("max_primitives", $1, state) == 0) {
+         $$.flags.q.max_primitives = 1;
+         $$.max_primitives = new(ctx) ast_layout_expression(@1, $3);
+         if (!state->EXT_mesh_shader_enable) {
+            _mesa_glsl_error(& @3, state,
+                             "max_primitives qualifier specified");
          }
       }
 

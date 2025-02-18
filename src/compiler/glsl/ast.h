@@ -681,6 +681,7 @@ struct ast_type_qualifier {
          /** GL_EXT_mesh_shader */
          unsigned task_payload:1;
          unsigned per_primitive:1;
+         unsigned max_primitives:1;
       }
       /** \brief Set of flags, accessed by name. */
       q;
@@ -728,6 +729,9 @@ struct ast_type_qualifier {
 
    /** Maximum output vertices in GLSL 1.50 geometry shaders. */
    ast_layout_expression *max_vertices;
+
+   /** Maximum output primitives in mesh shader. */
+   ast_layout_expression *max_primitives;
 
    /** Stream in GLSL 1.50 geometry shaders. */
    ast_expression *stream;

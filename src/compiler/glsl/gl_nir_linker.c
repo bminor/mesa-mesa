@@ -2567,6 +2567,8 @@ link_ms_inout_layout_qualifiers(struct gl_shader_program *prog,
    if (gl_prog->info.stage != MESA_SHADER_MESH)
       return;
 
+   int max_vertices = -1;
+   int max_primitives = -1;
    enum mesa_prim prim_type = MESA_PRIM_UNKNOWN;
 
    for (unsigned i = 0; i < num_shaders; i++) {
@@ -2581,6 +2583,28 @@ link_ms_inout_layout_qualifiers(struct gl_shader_program *prog,
          }
          prim_type = shader->info.Mesh.OutputType;
       }
+
+      if (shader->info.Mesh.MaxVertices != -1) {
+         if (max_vertices != -1 &&
+             max_vertices != shader->info.Mesh.MaxVertices) {
+            linker_error(prog, "mesh shader defined with conflicting "
+                         "max_vertices count (%d and %d)\n",
+                         max_vertices, shader->info.Mesh.MaxVertices);
+            return;
+         }
+         max_vertices = shader->info.Mesh.MaxVertices;
+      }
+
+      if (shader->info.Mesh.MaxPrimitives != -1) {
+         if (max_primitives != -1 &&
+             max_primitives != shader->info.Mesh.MaxPrimitives) {
+            linker_error(prog, "mesh shader defined with conflicting "
+                         "max_primitives count (%d and %d)\n",
+                         max_primitives, shader->info.Mesh.MaxPrimitives);
+            return;
+         }
+         max_primitives = shader->info.Mesh.MaxPrimitives;
+      }
    }
 
    if (prim_type == MESA_PRIM_UNKNOWN) {
@@ -2588,6 +2612,20 @@ link_ms_inout_layout_qualifiers(struct gl_shader_program *prog,
       return;
    } else {
       gl_prog->nir->info.mesh.primitive_type = prim_type;
+   }
+
+   if (max_vertices == -1) {
+      linker_error(prog, "mesh shader didn't declare max_vertices\n");
+      return;
+   } else {
+      gl_prog->nir->info.mesh.max_vertices_out = max_vertices;
+   }
+
+   if (max_primitives == -1) {
+      linker_error(prog, "mesh shader didn't declare max_primitives\n");
+      return;
+   } else {
+      gl_prog->nir->info.mesh.max_primitives_out = max_primitives;
    }
 }
 
