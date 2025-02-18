@@ -124,7 +124,7 @@ ac_nir_compute_tess_wg_info(const struct radeon_info *info, const struct shader_
                             unsigned num_mem_tcs_outputs, unsigned num_mem_tcs_patch_outputs,
                             unsigned *num_patches_per_wg, unsigned *hw_lds_size);
 
-void
+bool
 ac_nir_lower_es_outputs_to_mem(nir_shader *shader,
                                ac_nir_map_io_driver_location map,
                                enum amd_gfx_level gfx_level,
