@@ -3028,7 +3028,8 @@ tu_CmdCopyImage2(VkCommandBuffer commandBuffer,
    VK_FROM_HANDLE(tu_image, dst_image, pCopyImageInfo->dstImage);
 
    for (uint32_t i = 0; i < pCopyImageInfo->regionCount; ++i) {
-      if (src_image->vk.format == VK_FORMAT_D32_SFLOAT_S8_UINT) {
+      if (src_image->vk.format == VK_FORMAT_D32_SFLOAT_S8_UINT &&
+          dst_image->vk.format == VK_FORMAT_D32_SFLOAT_S8_UINT) {
          VkImageCopy2 info = pCopyImageInfo->pRegions[i];
          u_foreach_bit(b, info.dstSubresource.aspectMask) {
             info.srcSubresource.aspectMask = BIT(b);
