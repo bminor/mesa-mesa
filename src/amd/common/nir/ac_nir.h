@@ -251,7 +251,7 @@ ac_nir_lower_legacy_vs(nir_shader *nir,
                        bool kill_layer,
                        bool force_vrs);
 
-void
+bool
 ac_nir_lower_legacy_gs(nir_shader *nir,
                        bool has_gen_prim_query,
                        bool has_pipeline_stats_query,

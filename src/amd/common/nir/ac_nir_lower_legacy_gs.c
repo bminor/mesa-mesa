@@ -229,7 +229,7 @@ lower_legacy_gs_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin, void *sta
    return false;
 }
 
-void
+bool
 ac_nir_lower_legacy_gs(nir_shader *nir,
                        bool has_gen_prim_query,
                        bool has_pipeline_stats_query,
@@ -286,4 +286,6 @@ ac_nir_lower_legacy_gs(nir_shader *nir,
 
    if (progress)
       nir_metadata_preserve(impl, nir_metadata_none);
+
+   return true;
 }
