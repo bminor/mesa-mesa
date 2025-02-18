@@ -172,6 +172,55 @@ BEGIN_TEST(regalloc.precolor.different_regs)
    finish_ra_test(ra_test_policy());
 END_TEST
 
+BEGIN_TEST(regalloc.precolor.different_regs_src)
+   //>> v1: %tmp0:v[0] = p_startpgm
+   if (!setup_cs("v1", GFX10))
+      return;
+
+   //! v1: %tmp1:v[1], v1: %tmp2:v[2] = p_parallelcopy %tmp0:v[0], %tmp0:v[0]
+   //! p_unit_test %tmp1:v[1], %tmp0:v[0], %tmp2:v[2]
+   bld.pseudo(aco_opcode::p_unit_test, Operand(inputs[0], PhysReg(256 + 1)),
+              Operand(inputs[0], PhysReg(256 + 0)), Operand(inputs[0], PhysReg(256 + 2)));
+   //! p_unit_test %tmp0:v[0]
+   bld.pseudo(aco_opcode::p_unit_test, Operand(inputs[0]));
+
+   finish_ra_test(ra_test_policy());
+END_TEST
+
+BEGIN_TEST(regalloc.precolor.different_regs_def_interference)
+   //>> v1: %tmp0:v[0] = p_startpgm
+   if (!setup_cs("v1", GFX10))
+      return;
+
+   Temp def = bld.tmp(v2);
+   //! v1: %tmp1:v[1], v1: %tmp2:v[2] = p_parallelcopy %tmp0:v[0], %tmp0:v[0]
+   //! v2: %tmp3:v[0-1] = p_unit_test %tmp0:v[0], %tmp1:v[1], %tmp2:v[2]
+   bld.pseudo(aco_opcode::p_unit_test, Definition(def, PhysReg(256 + 0)),
+              Operand(inputs[0], PhysReg(256 + 0)), Operand(inputs[0], PhysReg(256 + 1)),
+              Operand(inputs[0], PhysReg(256 + 2)));
+   //! p_unit_test %tmp2:v[2]
+   bld.pseudo(aco_opcode::p_unit_test, Operand(inputs[0]));
+
+   finish_ra_test(ra_test_policy());
+END_TEST
+
+BEGIN_TEST(regalloc.precolor.different_regs_def_all_clobbered)
+   //>> v1: %tmp0:v[0] = p_startpgm
+   if (!setup_cs("v1", GFX10))
+      return;
+
+   Temp def = bld.tmp(v3);
+   //! v1: %tmp1:v[1], v1: %tmp2:v[2], v1: %tmp3:v[3] = p_parallelcopy %tmp0:v[0], %tmp0:v[0], %tmp0:v[0]
+   //! v3: %tmp4:v[0-2] = p_unit_test %tmp0:v[0], %tmp1:v[1], %tmp2:v[2]
+   bld.pseudo(aco_opcode::p_unit_test, Definition(def, PhysReg(256 + 0)),
+              Operand(inputs[0], PhysReg(256 + 0)), Operand(inputs[0], PhysReg(256 + 1)),
+              Operand(inputs[0], PhysReg(256 + 2)));
+   //! p_unit_test %tmp3:v[3]
+   bld.pseudo(aco_opcode::p_unit_test, Operand(inputs[0]));
+
+   finish_ra_test(ra_test_policy());
+END_TEST
+
 BEGIN_TEST(regalloc.branch_def_phis_at_merge_block)
    //>> p_startpgm
    if (!setup_cs("", GFX10))
