@@ -1221,17 +1221,33 @@ lower_edb_buffer_tex_instr(nir_builder *b, nir_tex_instr *tex,
       nir_def *in_bounds = edb_buffer_view_coord_is_in_bounds(b, desc, coord);
 
       nir_def *index = edb_buffer_view_index(b, desc, in_bounds);
-      nir_src_rewrite(&tex->src[texture_src_idx].src, index);
-      tex->src[texture_src_idx].src_type = nir_tex_src_texture_handle;
-
       nir_def *new_coord = adjust_edb_buffer_view_coord(b, desc, coord);
-      nir_src_rewrite(&tex->src[coord_src_idx].src, new_coord);
+      nir_def *u = nir_undef(b, 1, 32);
 
-      b->cursor = nir_after_instr(&tex->instr);
-      nir_def *res = &tex->def;
+      /* The tricks we play for EDB use very large texel buffer views.  These
+       * don't seem to play nicely with the tld instruction which thinks
+       * buffers are a 1D texture.  However, suld seems fine with it so we'll
+       * rewrite to use that.
+       */
+      nir_def *res = nir_bindless_image_load(b, tex->def.num_components,
+                                             tex->def.bit_size,
+                                             index,
+                                             nir_vec4(b, new_coord, u, u, u),
+                                             u, /* sample_id */
+                                             nir_imm_int(b, 0), /* LOD */
+                                             .image_dim = GLSL_SAMPLER_DIM_BUF,
+                                             .image_array = false,
+                                             .format = PIPE_FORMAT_NONE,
+                                             .dest_type = tex->dest_type);
+      if (tex->is_sparse) {
+         nir_intrinsic_instr *intr = nir_instr_as_intrinsic(res->parent_instr);
+         intr->intrinsic = nir_intrinsic_bindless_image_sparse_load;
+      }
+
       res = fixup_edb_buffer_view_result(b, desc, in_bounds,
                                          res, tex->dest_type);
-      nir_def_rewrite_uses_after(&tex->def, res, res->parent_instr);
+
+      nir_def_rewrite_uses(&tex->def, res);
       break;
    }
 
