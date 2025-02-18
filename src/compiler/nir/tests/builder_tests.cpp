@@ -82,7 +82,7 @@ TEST_F(nir_extract_bits_test, DISABLED_unaligned8)
 
    store_test_val(nir_extract_bits(b, srcs, 2, 24, 1, 64));
 
-   NIR_PASS_V(b->shader, nir_opt_constant_folding);
+   NIR_PASS(_, b->shader, nir_opt_constant_folding);
 
    nir_src val = nir_src_for_ssa(test_val(0));
 
@@ -98,7 +98,7 @@ TEST_F(nir_extract_bits_test, unaligned16_disabled)
 
    store_test_val(nir_extract_bits(b, srcs, 2, 16, 1, 64));
 
-   NIR_PASS_V(b->shader, nir_opt_constant_folding);
+   NIR_PASS(_, b->shader, nir_opt_constant_folding);
 
    nir_src val = nir_src_for_ssa(test_val(0));
 
@@ -117,7 +117,7 @@ TEST_F(nir_extract_bits_test, mixed_bit_sizes)
 
    store_test_val(nir_extract_bits(b, srcs, 4, 24, 2, 32));
 
-   NIR_PASS_V(b->shader, nir_opt_constant_folding);
+   NIR_PASS(_, b->shader, nir_opt_constant_folding);
 
    nir_src val = nir_src_for_ssa(test_val(0));
 

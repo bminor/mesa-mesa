@@ -128,7 +128,7 @@ append_launch_mesh_workgroups_to_nv_task(nir_builder *b,
  * We lower this output to a shared variable and then we emit
  * the new launch_mesh_workgroups intrinsic at the end of the shader.
  */
-static void
+static bool
 nir_lower_nv_task_count(nir_shader *shader)
 {
    lower_task_nv_state state = {
@@ -144,6 +144,8 @@ nir_lower_nv_task_count(nir_shader *shader)
 
    append_launch_mesh_workgroups_to_nv_task(&builder, &state);
    nir_metadata_preserve(impl, nir_metadata_none);
+
+   return true;
 }
 
 static nir_intrinsic_op
@@ -434,7 +436,7 @@ nir_lower_task_shader(nir_shader *shader,
        * If the shader writes TASK_COUNT, lower that to emit
        * the new launch_mesh_workgroups intrinsic instead.
        */
-      NIR_PASS_V(shader, nir_lower_nv_task_count);
+      NIR_PASS(_, shader, nir_lower_nv_task_count);
    } else {
       /* To make sure that task shaders always have a code path that
        * executes a launch_mesh_workgroups, let's add one at the end.
