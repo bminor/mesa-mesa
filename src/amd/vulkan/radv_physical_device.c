@@ -574,6 +574,7 @@ radv_physical_device_get_supported_extensions(const struct radv_physical_device 
       .KHR_ray_tracing_pipeline = radv_enable_rt(pdev),
       .KHR_ray_tracing_position_fetch = radv_enable_rt(pdev),
       .KHR_relaxed_block_layout = true,
+      .KHR_robustness2 = true,
       .KHR_sampler_mirror_clamp_to_edge = true,
       .KHR_sampler_ycbcr_conversion = true,
       .KHR_separate_depth_stencil_layouts = true,
@@ -969,7 +970,7 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
       .stippledBresenhamLines = true,
       .stippledSmoothLines = false,
 
-      /* VK_EXT_robustness2 */
+      /* VK_KHR_robustness2 */
       .robustBufferAccess2 = true,
       .robustImageAccess2 = true,
       .nullDescriptor = true,
@@ -1742,7 +1743,7 @@ radv_get_physical_device_properties(struct radv_physical_device *pdev)
       .sampleLocationSubPixelBits = 4,
       .variableSampleLocations = true,
 
-      /* VK_EXT_robustness2 */
+      /* VK_KHR_robustness2 */
       .robustStorageBufferAccessSizeAlignment = 4,
       .robustUniformBufferAccessSizeAlignment = 4,
 
