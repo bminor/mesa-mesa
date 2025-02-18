@@ -178,7 +178,7 @@ typedef struct {
 bool
 ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *options);
 
-void
+bool
 ac_nir_lower_ngg_gs(nir_shader *shader, const ac_nir_lower_ngg_options *options);
 
 void
