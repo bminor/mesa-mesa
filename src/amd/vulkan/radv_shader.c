@@ -797,7 +797,7 @@ radv_lower_ngg(struct radv_device *device, struct radv_shader_stage *ngg_stage,
       options.export_primitive_id_per_prim = info->outinfo.export_prim_id_per_primitive;
       options.instance_rate_inputs = gfx_state->vi.instance_rate_inputs << VERT_ATTRIB_GENERIC0;
 
-      NIR_PASS_V(nir, ac_nir_lower_ngg_nogs, &options);
+      NIR_PASS(_, nir, ac_nir_lower_ngg_nogs, &options);
 
       /* Increase ESGS ring size so the LLVM binary contains the correct LDS size. */
       ngg_stage->info.ngg_info.esgs_ring_size = nir->info.shared_size;
@@ -806,13 +806,13 @@ radv_lower_ngg(struct radv_device *device, struct radv_shader_stage *ngg_stage,
 
       options.gs_out_vtx_bytes = info->gs.gsvs_vertex_size;
 
-      NIR_PASS_V(nir, ac_nir_lower_ngg_gs, &options);
+      NIR_PASS(_, nir, ac_nir_lower_ngg_gs, &options);
    } else if (nir->info.stage == MESA_SHADER_MESH) {
       /* ACO aligns the workgroup size to the wave size. */
       unsigned hw_workgroup_size = ALIGN(info->workgroup_size, info->wave_size);
 
       bool scratch_ring = false;
-      NIR_PASS_V(nir, ac_nir_lower_ngg_mesh, &pdev->info, options.clip_cull_dist_mask,
+      NIR_PASS(_, nir, ac_nir_lower_ngg_mesh, &pdev->info, options.clip_cull_dist_mask,
                  options.vs_output_param_offset, options.has_param_exports, &scratch_ring, info->wave_size,
                  hw_workgroup_size, gfx_state->has_multiview_view_index, info->ms.has_query, pdev->mesh_fast_launch_2);
       ngg_stage->info.ms.needs_ms_scratch_ring = scratch_ring;

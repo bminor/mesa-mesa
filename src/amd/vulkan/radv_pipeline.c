@@ -428,7 +428,7 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
       radv_lower_ngg(device, stage, gfx_state);
    } else if (is_last_vgt_stage) {
       if (stage->stage != MESA_SHADER_GEOMETRY) {
-         NIR_PASS_V(stage->nir, ac_nir_lower_legacy_vs, gfx_level,
+         NIR_PASS(_, stage->nir, ac_nir_lower_legacy_vs, gfx_level,
                     stage->info.outinfo.clip_dist_mask | stage->info.outinfo.cull_dist_mask,
                     stage->info.outinfo.vs_output_param_offset, stage->info.outinfo.param_exports,
                     stage->info.outinfo.export_prim_id, false, false, false, stage->info.force_vrs_per_vertex);
@@ -439,7 +439,7 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
             .sysval_mask = stage->info.gs.output_usage_mask,
             .varying_mask = stage->info.gs.output_usage_mask,
          };
-         NIR_PASS_V(stage->nir, ac_nir_lower_legacy_gs, false, false, &gs_out_info);
+         NIR_PASS(_, stage->nir, ac_nir_lower_legacy_gs, false, false, &gs_out_info);
       }
    } else if (stage->stage == MESA_SHADER_FRAGMENT) {
       ac_nir_lower_ps_late_options late_options = {
@@ -502,7 +502,7 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
             });
 
    NIR_PASS(_, stage->nir, ac_nir_lower_global_access);
-   NIR_PASS_V(stage->nir, ac_nir_lower_intrinsics_to_args, gfx_level,
+   NIR_PASS(_, stage->nir, ac_nir_lower_intrinsics_to_args, gfx_level,
               pdev->info.has_ls_vgpr_init_bug && gfx_state && !gfx_state->vs.has_prolog,
               radv_select_hw_stage(&stage->info, gfx_level), stage->info.wave_size, stage->info.workgroup_size,
               &stage->args.ac);
