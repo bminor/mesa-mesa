@@ -75,7 +75,7 @@ alloc_transfer_temp_bo(struct radv_cmd_buffer *cmd_buffer)
 }
 
 static void
-transfer_copy_buffer_image(struct radv_cmd_buffer *cmd_buffer, uint64_t buffer_va, struct radv_image *image,
+transfer_copy_memory_image(struct radv_cmd_buffer *cmd_buffer, uint64_t buffer_va, struct radv_image *image,
                            const VkBufferImageCopy2 *region, bool to_image)
 {
    const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
@@ -99,11 +99,11 @@ transfer_copy_buffer_image(struct radv_cmd_buffer *cmd_buffer, uint64_t buffer_v
 }
 
 static void
-copy_buffer_to_image(struct radv_cmd_buffer *cmd_buffer, uint64_t buffer_addr, uint64_t buffer_size,
+copy_memory_to_image(struct radv_cmd_buffer *cmd_buffer, uint64_t buffer_addr, uint64_t buffer_size,
                      struct radv_image *image, VkImageLayout layout, const VkBufferImageCopy2 *region)
 {
    if (cmd_buffer->qf == RADV_QUEUE_TRANSFER) {
-      transfer_copy_buffer_image(cmd_buffer, buffer_addr, image, region, true);
+      transfer_copy_memory_image(cmd_buffer, buffer_addr, image, region, true);
       return;
    }
 
@@ -233,7 +233,7 @@ radv_CmdCopyBufferToImage2(VkCommandBuffer commandBuffer, const VkCopyBufferToIm
 
       radv_cs_add_buffer(device->ws, cmd_buffer->cs, dst_image->bindings[bind_idx].bo);
 
-      copy_buffer_to_image(cmd_buffer, src_buffer->addr, src_buffer->vk.size, dst_image,
+      copy_memory_to_image(cmd_buffer, src_buffer->addr, src_buffer->vk.size, dst_image,
                            pCopyBufferToImageInfo->dstImageLayout, region);
    }
 
@@ -262,12 +262,12 @@ radv_CmdCopyBufferToImage2(VkCommandBuffer commandBuffer, const VkCopyBufferToIm
 }
 
 static void
-copy_image_to_buffer(struct radv_cmd_buffer *cmd_buffer, uint64_t buffer_addr, uint64_t buffer_size,
+copy_image_to_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t buffer_addr, uint64_t buffer_size,
                      struct radv_image *image, VkImageLayout layout, const VkBufferImageCopy2 *region)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    if (cmd_buffer->qf == RADV_QUEUE_TRANSFER) {
-      transfer_copy_buffer_image(cmd_buffer, buffer_addr, image, region, false);
+      transfer_copy_memory_image(cmd_buffer, buffer_addr, image, region, false);
       return;
    }
 
@@ -382,7 +382,7 @@ radv_CmdCopyImageToBuffer2(VkCommandBuffer commandBuffer, const VkCopyImageToBuf
 
       radv_cs_add_buffer(device->ws, cmd_buffer->cs, src_image->bindings[bind_idx].bo);
 
-      copy_image_to_buffer(cmd_buffer, dst_buffer->addr, dst_buffer->vk.size, src_image,
+      copy_image_to_memory(cmd_buffer, dst_buffer->addr, dst_buffer->vk.size, src_image,
                            pCopyImageToBufferInfo->srcImageLayout, region);
    }
 }
