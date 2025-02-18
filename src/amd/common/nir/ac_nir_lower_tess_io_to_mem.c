@@ -1224,7 +1224,7 @@ ac_nir_lower_hs_inputs_to_mem(nir_shader *shader,
                                         &state);
 }
 
-void
+bool
 ac_nir_lower_hs_outputs_to_mem(nir_shader *shader, const nir_tcs_info *info,
                                ac_nir_map_io_driver_location map,
                                enum amd_gfx_level gfx_level,
@@ -1265,6 +1265,8 @@ ac_nir_lower_hs_outputs_to_mem(nir_shader *shader, const nir_tcs_info *info,
       NIR_PASS(_, shader, nir_lower_alu_to_scalar, NULL, NULL);
       NIR_PASS(_, shader, nir_lower_phis_to_scalar, true);
    }
+
+   return true;
 }
 
 void
