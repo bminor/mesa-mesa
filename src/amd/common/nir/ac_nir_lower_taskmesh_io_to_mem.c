@@ -338,7 +338,7 @@ lower_mesh_intrinsics(nir_builder *b,
       unreachable("unsupported mesh shader intrinsic");
 }
 
-void
+bool
 ac_nir_lower_mesh_inputs_to_mem(nir_shader *shader,
                                 unsigned task_payload_entry_bytes,
                                 unsigned task_num_entries)
@@ -351,8 +351,8 @@ ac_nir_lower_mesh_inputs_to_mem(nir_shader *shader,
       .num_entries = task_num_entries,
    };
 
-   nir_shader_lower_instructions(shader,
-                                 filter_mesh_input_load,
-                                 lower_mesh_intrinsics,
-                                 &state);
+   return nir_shader_lower_instructions(shader,
+                                        filter_mesh_input_load,
+                                        lower_mesh_intrinsics,
+                                        &state);
 }
