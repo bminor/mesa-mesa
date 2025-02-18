@@ -429,6 +429,7 @@ public:
    void generate_gs_special_vars();
    void generate_fs_special_vars();
    void generate_cs_special_vars();
+   void generate_ms_special_vars();
    void generate_varyings();
 
 private:
@@ -1506,6 +1507,29 @@ builtin_variable_generator::generate_cs_special_vars()
 
 
 /**
+ * Generate variables which only exist in task and mesh shaders.
+ */
+void
+builtin_variable_generator::generate_ms_special_vars()
+{
+   add_system_value(SYSTEM_VALUE_LOCAL_INVOCATION_ID, uvec3_t,
+                    "gl_LocalInvocationID");
+   add_system_value(SYSTEM_VALUE_WORKGROUP_ID, uvec3_t, "gl_WorkGroupID");
+   add_system_value(SYSTEM_VALUE_NUM_WORKGROUPS, uvec3_t, "gl_NumWorkGroups");
+
+   add_system_value(SYSTEM_VALUE_GLOBAL_INVOCATION_ID,
+                    uvec3_t, "gl_GlobalInvocationID");
+   add_system_value(SYSTEM_VALUE_LOCAL_INVOCATION_INDEX,
+                    uint_t, "gl_LocalInvocationIndex");
+
+   if (state->is_version(460, 0))
+      add_system_value(SYSTEM_VALUE_DRAW_ID, int_t, "gl_DrawID");
+   if (state->ARB_shader_draw_parameters_enable)
+      add_system_value(SYSTEM_VALUE_DRAW_ID, int_t, "gl_DrawIDARB");
+}
+
+
+/**
  * Add a single "varying" variable.  The variable's type and direction (input
  * or output) are adjusted as appropriate for the type of shader being
  * compiled.
@@ -1708,6 +1732,10 @@ _mesa_glsl_initialize_variables(ir_exec_list *instructions,
       break;
    case MESA_SHADER_COMPUTE:
       gen.generate_cs_special_vars();
+      break;
+   case MESA_SHADER_TASK:
+   case MESA_SHADER_MESH:
+      gen.generate_ms_special_vars();
       break;
    default:
       break;
