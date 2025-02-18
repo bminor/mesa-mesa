@@ -160,7 +160,7 @@ hk_preprocess_nir_internal(struct vk_physical_device *vk_pdev, nir_shader *nir)
     */
    nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
 
-   NIR_PASS_V(nir, nir_lower_io_to_temporaries, nir_shader_get_entrypoint(nir),
+   NIR_PASS(_, nir, nir_lower_io_to_temporaries, nir_shader_get_entrypoint(nir),
               true, false);
 
    NIR_PASS(_, nir, nir_lower_global_vars_to_local);
@@ -679,7 +679,7 @@ hk_lower_nir(struct hk_device *dev, nir_shader *nir,
    const nir_opt_access_options access_options = {
       .is_vulkan = true,
    };
-   NIR_PASS_V(nir, nir_opt_access, &access_options);
+   NIR_PASS(_, nir, nir_opt_access, &access_options);
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       NIR_PASS(_, nir, nir_lower_input_attachments,
@@ -1142,7 +1142,7 @@ hk_compile_shader(struct hk_device *dev, struct vk_shader_compile_info *info,
 
       NIR_PASS(_, nir, agx_nir_lower_sample_intrinsics, false);
    } else if (sw_stage == MESA_SHADER_TESS_CTRL) {
-      NIR_PASS_V(nir, agx_nir_lower_tcs);
+      NIR_PASS(_, nir, agx_nir_lower_tcs);
    }
 
    /* Compile all variants up front */
