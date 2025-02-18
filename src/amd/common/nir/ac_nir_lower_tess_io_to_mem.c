@@ -1269,7 +1269,7 @@ ac_nir_lower_hs_outputs_to_mem(nir_shader *shader, const nir_tcs_info *info,
    return true;
 }
 
-void
+bool
 ac_nir_lower_tes_inputs_to_mem(nir_shader *shader,
                                ac_nir_map_io_driver_location map)
 {
@@ -1281,10 +1281,10 @@ ac_nir_lower_tes_inputs_to_mem(nir_shader *shader,
       .tes_patch_inputs_read = shader->info.patch_inputs_read,
    };
 
-   nir_shader_lower_instructions(shader,
-                                 filter_any_input_access,
-                                 lower_tes_input_load,
-                                 &state);
+   return nir_shader_lower_instructions(shader,
+                                        filter_any_input_access,
+                                        lower_tes_input_load,
+                                        &state);
 }
 
 void
