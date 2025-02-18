@@ -1015,6 +1015,13 @@ private:
 struct RegisterDemand {
    constexpr RegisterDemand() = default;
    constexpr RegisterDemand(const int16_t v, const int16_t s) noexcept : vgpr{v}, sgpr{s} {}
+   constexpr RegisterDemand(Temp t) noexcept
+   {
+      if (t.regClass().type() == RegType::sgpr)
+         sgpr = t.size();
+      else
+         vgpr = t.size();
+   }
    int16_t vgpr = 0;
    int16_t sgpr = 0;
 
