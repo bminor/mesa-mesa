@@ -362,14 +362,19 @@ add_coupling_code(exec_ctx& ctx, Block* block, std::vector<aco_ptr<Instruction>>
    }
 
    if (ctx.handle_wqm) {
-      /* End WQM handling if not needed anymore */
       if (block->kind & block_kind_top_level && ctx.info[idx].exec.size() == 2) {
+         /* End WQM handling if not needed anymore */
          if (block->instructions[i]->opcode == aco_opcode::p_end_wqm) {
             ctx.info[idx].exec.back().type |= mask_type_global;
             transition_to_Exact(ctx, bld, idx);
             ctx.handle_wqm = false;
             restore_exec = false;
             i++;
+         } else if (restore_exec && ctx.info[idx].exec[1].type & mask_type_global) {
+            /* Use s_wqm to restore exec after divergent CF in order to disable dead quads. */
+            bld.sop1(Builder::s_wqm, Definition(exec, bld.lm), bld.def(s1, scc),
+                     ctx.info[idx].exec[0].op);
+            restore_exec = false;
          }
       }
    }
