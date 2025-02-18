@@ -3211,6 +3211,8 @@ bi_emit_alu(bi_builder *b, nir_alu_instr *instr)
    case nir_op_fceil:
    case nir_op_ffloor:
    case nir_op_ftrunc:
+      /* On v11+, FROUND.v2s16 is gone, we lower this in nir_lower_bit_size */
+      assert(sz != 16 || b->shader->arch < 11);
       bi_fround_to(b, sz, dst, s0, bi_nir_round(instr->op));
       break;
 
@@ -4856,11 +4858,12 @@ should_split_wrmask(const nir_instr *instr, UNUSED const void *data)
  * 16-bit instructions, however, are lowered here.
  */
 static unsigned
-bi_lower_bit_size(const nir_instr *instr, UNUSED void *data)
+bi_lower_bit_size(const nir_instr *instr, void *data)
 {
    if (instr->type != nir_instr_type_alu)
       return 0;
 
+   unsigned gpu_id = *((unsigned *)data);
    nir_alu_instr *alu = nir_instr_as_alu(instr);
 
    switch (alu->op) {
@@ -4871,6 +4874,14 @@ bi_lower_bit_size(const nir_instr *instr, UNUSED void *data)
    case nir_op_fcos:
    case nir_op_bit_count:
    case nir_op_bitfield_reverse:
+      return (nir_src_bit_size(alu->src[0].src) == 32) ? 0 : 32;
+   case nir_op_fround_even:
+   case nir_op_fceil:
+   case nir_op_ffloor:
+   case nir_op_ftrunc:
+      if (pan_arch(gpu_id) < 11)
+         return 0;
+      /* On v11+, FROUND.v2s16 is gone */
       return (nir_src_bit_size(alu->src[0].src) == 32) ? 0 : 32;
    default:
       return 0;
@@ -5557,7 +5568,7 @@ bifrost_preprocess_nir(nir_shader *nir, unsigned gpu_id)
    NIR_PASS(_, nir, nir_lower_ssbo, &ssbo_opts);
 
    NIR_PASS(_, nir, pan_lower_sample_pos);
-   NIR_PASS(_, nir, nir_lower_bit_size, bi_lower_bit_size, NULL);
+   NIR_PASS(_, nir, nir_lower_bit_size, bi_lower_bit_size, &gpu_id);
    NIR_PASS(_, nir, nir_lower_64bit_phis);
    NIR_PASS(_, nir, pan_lower_helper_invocation);
    NIR_PASS(_, nir, nir_lower_int64);
