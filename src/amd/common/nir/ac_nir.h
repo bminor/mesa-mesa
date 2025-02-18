@@ -181,7 +181,7 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
 bool
 ac_nir_lower_ngg_gs(nir_shader *shader, const ac_nir_lower_ngg_options *options);
 
-void
+bool
 ac_nir_lower_ngg_mesh(nir_shader *shader,
                       const struct radeon_info *hw_info,
                       uint32_t clipdist_enable_mask,

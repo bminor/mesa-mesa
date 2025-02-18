@@ -1340,7 +1340,7 @@ ms_calculate_output_layout(const struct radeon_info *hw_info, unsigned api_share
    return l;
 }
 
-void
+bool
 ac_nir_lower_ngg_mesh(nir_shader *shader,
                       const struct radeon_info *hw_info,
                       uint32_t clipdist_enable_mask,
@@ -1423,12 +1423,14 @@ ac_nir_lower_ngg_mesh(nir_shader *shader,
    if (!fast_launch_2)
       ms_emit_legacy_workgroup_index(b, &state);
    ms_create_same_invocation_vars(b, &state);
-   nir_metadata_preserve(impl, nir_metadata_none);
 
    lower_ms_intrinsics(shader, &state);
 
    emit_ms_finale(b, &state);
+
+   /* Take care of metadata and validation before calling other passes */
    nir_metadata_preserve(impl, nir_metadata_none);
+   nir_validate_shader(shader, "after emitting NGG MS");
 
    /* Cleanup */
    nir_lower_vars_to_ssa(shader);
@@ -1449,5 +1451,6 @@ ac_nir_lower_ngg_mesh(nir_shader *shader,
       nir_lower_compute_system_values(shader, &csv_options);
    }
 
-   nir_validate_shader(shader, "after emitting NGG MS");
+
+   return true;
 }
