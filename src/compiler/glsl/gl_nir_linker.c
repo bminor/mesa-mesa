@@ -1571,7 +1571,7 @@ gl_nir_lower_optimize_varyings(const struct gl_constants *consts,
        * optimizations and compaction. Do that for all inputs and outputs,
        * including VS inputs because those could have been removed too.
        */
-      NIR_PASS_V(nir, nir_recompute_io_bases,
+      NIR_PASS(_, nir, nir_recompute_io_bases,
                  nir_var_shader_in | nir_var_shader_out);
 
       /* Regenerate transform feedback info because compaction in
