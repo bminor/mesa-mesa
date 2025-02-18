@@ -40,6 +40,7 @@ rustfmt:
     - .lint-rustfmt-rules
   before_script:
     - shopt -s globstar
+    - source "$HOME/.cargo/env"
     - rustfmt --version
     - rustfmt --verbose src/**/lib.rs
 

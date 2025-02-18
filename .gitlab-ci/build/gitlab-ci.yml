@@ -61,7 +61,7 @@
     - .use-debian/x86_64_build
   stage: build-only
   script:
-    - &meson-build timeout --verbose ${BUILD_JOB_TIMEOUT_OVERRIDE:-$BUILD_JOB_TIMEOUT} .gitlab-ci/meson/build.sh
+    - &meson-build timeout --verbose ${BUILD_JOB_TIMEOUT_OVERRIDE:-$BUILD_JOB_TIMEOUT} bash --login .gitlab-ci/meson/build.sh
 
 
 # Make sure this list stays the same as all the jobs with
