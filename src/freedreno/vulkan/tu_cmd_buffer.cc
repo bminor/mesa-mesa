@@ -4185,7 +4185,8 @@ gfx_write_access(VkAccessFlags2 flags, VkPipelineStageFlags2 stages,
 }
 
 static enum tu_cmd_access_mask
-vk2tu_access(VkAccessFlags2 flags, VkPipelineStageFlags2 stages, bool image_only, bool gmem)
+vk2tu_access(VkAccessFlags2 flags, VkAccessFlags3KHR flags2,
+             VkPipelineStageFlags2 stages, bool image_only, bool gmem)
 {
    BITMASK_ENUM(tu_cmd_access_mask) mask = 0;
 
@@ -4800,9 +4801,11 @@ tu_subpass_barrier(struct tu_cmd_buffer *cmd_buffer,
    VkPipelineStageFlags2 dst_stage_vk =
       sanitize_dst_stage(barrier->dst_stage_mask);
    BITMASK_ENUM(tu_cmd_access_mask) src_flags =
-      vk2tu_access(barrier->src_access_mask, src_stage_vk, false, false);
+      vk2tu_access(barrier->src_access_mask, barrier->src_access_mask2,
+                   src_stage_vk, false, false);
    BITMASK_ENUM(tu_cmd_access_mask) dst_flags =
-      vk2tu_access(barrier->dst_access_mask, dst_stage_vk, false, false);
+      vk2tu_access(barrier->dst_access_mask, barrier->dst_access_mask2,
+                   dst_stage_vk, false, false);
 
    if (barrier->incoherent_ccu_color)
       src_flags |= TU_ACCESS_CCU_COLOR_INCOHERENT_WRITE;
@@ -7462,33 +7465,57 @@ tu_barrier(struct tu_cmd_buffer *cmd,
       const VkDependencyInfo *dep_info = &dep_infos[dep_idx];
 
       for (uint32_t i = 0; i < dep_info->memoryBarrierCount; i++) {
+         const VkMemoryBarrier2 *barrier = &dep_info->pMemoryBarriers[i];
          VkPipelineStageFlags2 sanitized_src_stage =
-            sanitize_src_stage(dep_info->pMemoryBarriers[i].srcStageMask);
+            sanitize_src_stage(barrier->srcStageMask);
          VkPipelineStageFlags2 sanitized_dst_stage =
-            sanitize_dst_stage(dep_info->pMemoryBarriers[i].dstStageMask);
-         src_flags |= vk2tu_access(dep_info->pMemoryBarriers[i].srcAccessMask,
+            sanitize_dst_stage(barrier->dstStageMask);
+
+         VkAccessFlags3KHR src_access_mask2 = 0, dst_access_mask2 = 0;
+         const VkMemoryBarrierAccessFlags3KHR *access3 =
+            vk_find_struct_const(barrier->pNext, MEMORY_BARRIER_ACCESS_FLAGS_3_KHR);
+         if (access3) {
+            src_access_mask2 = access3->srcAccessMask3;
+            dst_access_mask2 = access3->dstAccessMask3;
+         }
+
+         src_flags |= vk2tu_access(barrier->srcAccessMask, src_access_mask2,
                                    sanitized_src_stage, false, gmem);
-         dst_flags |= vk2tu_access(dep_info->pMemoryBarriers[i].dstAccessMask,
+         dst_flags |= vk2tu_access(barrier->dstAccessMask, dst_access_mask2,
                                    sanitized_dst_stage, false, gmem);
          srcStage |= sanitized_src_stage;
          dstStage |= sanitized_dst_stage;
       }
 
       for (uint32_t i = 0; i < dep_info->bufferMemoryBarrierCount; i++) {
+         const VkBufferMemoryBarrier2 *barrier =
+            &dep_info->pBufferMemoryBarriers[i];
          VkPipelineStageFlags2 sanitized_src_stage =
-            sanitize_src_stage(dep_info->pBufferMemoryBarriers[i].srcStageMask);
+            sanitize_src_stage(barrier->srcStageMask);
          VkPipelineStageFlags2 sanitized_dst_stage =
-            sanitize_dst_stage(dep_info->pBufferMemoryBarriers[i].dstStageMask);
-         src_flags |= vk2tu_access(dep_info->pBufferMemoryBarriers[i].srcAccessMask,
+            sanitize_dst_stage(barrier->dstStageMask);
+
+         VkAccessFlags3KHR src_access_mask2 = 0, dst_access_mask2 = 0;
+         const VkMemoryBarrierAccessFlags3KHR *access3 =
+            vk_find_struct_const(barrier->pNext, MEMORY_BARRIER_ACCESS_FLAGS_3_KHR);
+         if (access3) {
+            src_access_mask2 = access3->srcAccessMask3;
+            dst_access_mask2 = access3->dstAccessMask3;
+         }
+
+         src_flags |= vk2tu_access(barrier->srcAccessMask, src_access_mask2,
                                    sanitized_src_stage, false, gmem);
-         dst_flags |= vk2tu_access(dep_info->pBufferMemoryBarriers[i].dstAccessMask,
+         dst_flags |= vk2tu_access(barrier->dstAccessMask, dst_access_mask2,
                                    sanitized_dst_stage, false, gmem);
          srcStage |= sanitized_src_stage;
          dstStage |= sanitized_dst_stage;
       }
 
       for (uint32_t i = 0; i < dep_info->imageMemoryBarrierCount; i++) {
-         VkImageLayout old_layout = dep_info->pImageMemoryBarriers[i].oldLayout;
+         const VkImageMemoryBarrier2 *barrier =
+            &dep_info->pImageMemoryBarriers[i];
+
+         VkImageLayout old_layout = barrier->oldLayout;
          if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED) {
             /* The underlying memory for this image may have been used earlier
              * within the same queue submission for a different image, which
@@ -7497,7 +7524,7 @@ tu_barrier(struct tu_cmd_buffer *cmd,
              * to the image. We don't want these entries being flushed later and
              * overwriting the actual image, so we need to flush the CCU.
              */
-            VK_FROM_HANDLE(tu_image, image, dep_info->pImageMemoryBarriers[i].image);
+            VK_FROM_HANDLE(tu_image, image, barrier->image);
 
             if (vk_format_is_depth_or_stencil(image->vk.format)) {
                src_flags |= TU_ACCESS_CCU_DEPTH_INCOHERENT_WRITE;
@@ -7506,12 +7533,21 @@ tu_barrier(struct tu_cmd_buffer *cmd,
             }
          }
          VkPipelineStageFlags2 sanitized_src_stage =
-            sanitize_src_stage(dep_info->pImageMemoryBarriers[i].srcStageMask);
+            sanitize_src_stage(barrier->srcStageMask);
          VkPipelineStageFlags2 sanitized_dst_stage =
-            sanitize_dst_stage(dep_info->pImageMemoryBarriers[i].dstStageMask);
-         src_flags |= vk2tu_access(dep_info->pImageMemoryBarriers[i].srcAccessMask,
+            sanitize_dst_stage(barrier->dstStageMask);
+
+         VkAccessFlags3KHR src_access_mask2 = 0, dst_access_mask2 = 0;
+         const VkMemoryBarrierAccessFlags3KHR *access3 =
+            vk_find_struct_const(barrier->pNext, MEMORY_BARRIER_ACCESS_FLAGS_3_KHR);
+         if (access3) {
+            src_access_mask2 = access3->srcAccessMask3;
+            dst_access_mask2 = access3->dstAccessMask3;
+         }
+
+         src_flags |= vk2tu_access(barrier->srcAccessMask, src_access_mask2,
                                    sanitized_src_stage, true, gmem);
-         dst_flags |= vk2tu_access(dep_info->pImageMemoryBarriers[i].dstAccessMask,
+         dst_flags |= vk2tu_access(barrier->dstAccessMask, dst_access_mask2,
                                    sanitized_dst_stage, true, gmem);
          srcStage |= sanitized_src_stage;
          dstStage |= sanitized_dst_stage;

@@ -26,7 +26,9 @@ struct tu_subpass_barrier {
    VkPipelineStageFlags2 src_stage_mask;
    VkPipelineStageFlags2 dst_stage_mask;
    VkAccessFlags2 src_access_mask;
+   VkAccessFlags3KHR src_access_mask2;
    VkAccessFlags2 dst_access_mask;
+   VkAccessFlags3KHR dst_access_mask2;
    bool incoherent_ccu_color, incoherent_ccu_depth;
 };
 

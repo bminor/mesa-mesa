@@ -48,6 +48,15 @@ tu_render_pass_add_subpass_dep(struct tu_render_pass *pass,
    VkAccessFlags2 src_access_mask = barrier ? barrier->srcAccessMask : dep->srcAccessMask;
    VkPipelineStageFlags2 dst_stage_mask = barrier ? barrier->dstStageMask : dep->dstStageMask;
    VkAccessFlags2 dst_access_mask = barrier ? barrier->dstAccessMask : dep->dstAccessMask;
+   VkAccessFlags3KHR src_access_mask2 = 0, dst_access_mask2 = 0;
+   if (barrier) {
+      const VkMemoryBarrierAccessFlags3KHR *access3 =
+         vk_find_struct_const(dep->pNext, MEMORY_BARRIER_ACCESS_FLAGS_3_KHR);
+      if (access3) {
+         src_access_mask2 = access3->srcAccessMask3;
+         dst_access_mask2 = access3->dstAccessMask3;
+      }
+   }
 
    /* We can conceptually break down the process of rewriting a sysmem
     * renderpass into a gmem one into two parts:
@@ -89,6 +98,8 @@ tu_render_pass_add_subpass_dep(struct tu_render_pass *pass,
    dst_barrier->dst_stage_mask |= dst_stage_mask;
    dst_barrier->src_access_mask |= src_access_mask;
    dst_barrier->dst_access_mask |= dst_access_mask;
+   dst_barrier->src_access_mask2 |= src_access_mask2;
+   dst_barrier->dst_access_mask2 |= dst_access_mask2;
 }
 
 /* We currently only care about undefined layouts, because we have to
