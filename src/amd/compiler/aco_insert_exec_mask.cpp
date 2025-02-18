@@ -210,16 +210,13 @@ add_coupling_code(exec_ctx& ctx, Block* block, std::vector<aco_ptr<Instruction>>
       loop_info& info = ctx.loop.back();
       assert(ctx.info[idx].exec.size() == info.num_exec_masks);
 
-      /* create ssa names for outer exec masks */
-      if (info.has_discard && preds.size() > 1) {
-         aco_ptr<Instruction> phi;
-         for (int i = 0; i < info.num_exec_masks - 1; i++) {
-            phi.reset(
-               create_instruction(aco_opcode::p_linear_phi, Format::PSEUDO, preds.size(), 1));
-            phi->definitions[0] = bld.def(bld.lm);
-            phi->operands[0] = ctx.info[preds[0]].exec[i].op;
-            ctx.info[idx].exec[i].op = bld.insert(std::move(phi));
-         }
+      /* Create phi for global exact mask in case of demote. */
+      if (info.has_discard && preds.size() > 1 && info.num_exec_masks > 1) {
+         aco_ptr<Instruction> phi(
+            create_instruction(aco_opcode::p_linear_phi, Format::PSEUDO, preds.size(), 1));
+         phi->definitions[0] = bld.def(bld.lm);
+         phi->operands[0] = ctx.info[preds[0]].exec[0].op;
+         ctx.info[idx].exec[0].op = bld.insert(std::move(phi));
       }
 
       ctx.info[idx].exec.back().type |= mask_type_loop;
@@ -247,14 +244,11 @@ add_coupling_code(exec_ctx& ctx, Block* block, std::vector<aco_ptr<Instruction>>
       /* fill the loop header phis */
       Block::edge_vec& header_preds = header->linear_preds;
       int instr_idx = 0;
-      if (info.has_discard && header_preds.size() > 1) {
-         while (instr_idx < info.num_exec_masks - 1) {
-            aco_ptr<Instruction>& phi = header->instructions[instr_idx];
-            assert(phi->opcode == aco_opcode::p_linear_phi);
-            for (unsigned i = 1; i < phi->operands.size(); i++)
-               phi->operands[i] = ctx.info[header_preds[i]].exec[instr_idx].op;
-            instr_idx++;
-         }
+      if (info.has_discard && header_preds.size() > 1 && info.num_exec_masks > 1) {
+         aco_ptr<Instruction>& phi = header->instructions[instr_idx++];
+         assert(phi->opcode == aco_opcode::p_linear_phi);
+         for (unsigned i = 1; i < phi->operands.size(); i++)
+            phi->operands[i] = ctx.info[header_preds[i]].exec[0].op;
       }
 
       if (info.has_divergent_continue) {
