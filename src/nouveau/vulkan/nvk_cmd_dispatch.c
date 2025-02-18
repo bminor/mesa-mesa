@@ -202,13 +202,14 @@ nvk_cmd_upload_qmd(struct nvk_cmd_buffer *cmd,
 
 VkResult
 nvk_cmd_flush_cs_qmd(struct nvk_cmd_buffer *cmd,
+                     const struct nvk_cmd_state *state,
                      uint32_t global_size[3],
                      uint64_t *qmd_addr_out,
                      uint64_t *root_desc_addr_out)
 {
-   struct nvk_descriptor_state *desc = &cmd->state.cs.descriptors;
+   const struct nvk_descriptor_state *desc = &state->cs.descriptors;
 
-   return nvk_cmd_upload_qmd(cmd, cmd->state.cs.shader,
+   return nvk_cmd_upload_qmd(cmd, state->cs.shader,
                              desc, (void *)desc->root, global_size,
                              qmd_addr_out, root_desc_addr_out);
 }
@@ -257,7 +258,8 @@ nvk_CmdDispatchBase(VkCommandBuffer commandBuffer,
    nvk_flush_compute_state(cmd, base_workgroup, global_size);
 
    uint64_t qmd_addr = 0;
-   VkResult result = nvk_cmd_flush_cs_qmd(cmd, global_size, &qmd_addr, NULL);
+   VkResult result = nvk_cmd_flush_cs_qmd(cmd, &cmd->state, global_size,
+                                          &qmd_addr, NULL);
    if (result != VK_SUCCESS) {
       vk_command_buffer_set_error(&cmd->vk, result);
       return;
@@ -496,8 +498,8 @@ nvk_CmdDispatchIndirect(VkCommandBuffer commandBuffer,
    nvk_flush_compute_state(cmd, base_workgroup, global_size);
 
    uint64_t qmd_addr = 0, root_desc_addr = 0;
-   VkResult result = nvk_cmd_flush_cs_qmd(cmd, global_size, &qmd_addr,
-                                          &root_desc_addr);
+   VkResult result = nvk_cmd_flush_cs_qmd(cmd, &cmd->state, global_size,
+                                          &qmd_addr, &root_desc_addr);
    if (result != VK_SUCCESS) {
       vk_command_buffer_set_error(&cmd->vk, result);
       return;
