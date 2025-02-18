@@ -3074,7 +3074,7 @@
         "description": "nvk: Allow sparse loads on EDB buffers",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3b94c5c22a6219521f66fff075252cfa06642a4e",
         "notes": null

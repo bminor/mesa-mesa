@@ -1047,6 +1047,7 @@ lower_edb_buffer_image_intrin(nir_builder *b, nir_intrinsic_instr *intrin,
 
    switch (intrin->intrinsic) {
    case nir_intrinsic_image_deref_load:
+   case nir_intrinsic_image_deref_sparse_load:
    case nir_intrinsic_image_deref_store:
    case nir_intrinsic_image_deref_atomic:
    case nir_intrinsic_image_deref_atomic_swap: {
@@ -1060,7 +1061,8 @@ lower_edb_buffer_image_intrin(nir_builder *b, nir_intrinsic_instr *intrin,
       pos = nir_vector_insert_imm(b, pos, new_x, 0);
       nir_src_rewrite(&intrin->src[1], pos);
 
-      if (intrin->intrinsic == nir_intrinsic_image_deref_load) {
+      if (intrin->intrinsic == nir_intrinsic_image_deref_load ||
+          intrin->intrinsic == nir_intrinsic_image_deref_sparse_load) {
          b->cursor = nir_after_instr(&intrin->instr);
          nir_def *res = &intrin->def;
          res = fixup_edb_buffer_view_result(b, desc, in_bounds, res,
