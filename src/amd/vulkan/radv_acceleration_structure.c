@@ -588,17 +588,14 @@ radv_update_as(VkCommandBuffer commandBuffer, const VkAccelerationStructureBuild
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
 
    if (src != dst) {
-      VK_FROM_HANDLE(radv_buffer, src_as_buffer, src->buffer);
-      VK_FROM_HANDLE(radv_buffer, dst_as_buffer, dst->buffer);
-
       struct acceleration_structure_layout layout;
       radv_get_acceleration_structure_layout(device, leaf_count, build_info, &layout);
 
       /* Copy header/metadata */
-      const uint64_t src_va = src_as_buffer->addr + src->offset;
-      const uint64_t dst_va = dst_as_buffer->addr + dst->offset;
+      const uint64_t src_va = vk_acceleration_structure_get_va(src);
+      const uint64_t dst_va = vk_acceleration_structure_get_va(dst);
 
-      radv_copy_buffer(cmd_buffer, src_as_buffer->bo, dst_as_buffer->bo, src_va, dst_va, layout.bvh_offset);
+      radv_copy_memory(cmd_buffer, src_va, dst_va, layout.bvh_offset);
    }
 
    struct scratch_layout layout;
