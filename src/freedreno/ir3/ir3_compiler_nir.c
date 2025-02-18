@@ -5574,6 +5574,8 @@ ir3_compile_shader_nir(struct ir3_compiler *compiler,
    int ret = 0, max_bary;
    bool progress;
 
+   ir3_shader_bisect_dump_id(so);
+
    MESA_TRACE_FUNC();
 
    assert(!so->ir);

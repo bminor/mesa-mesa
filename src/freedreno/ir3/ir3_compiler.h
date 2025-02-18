@@ -449,6 +449,12 @@ ir3_shader_debug_hash_key()
 const char *
 ir3_shader_debug_as_string(void);
 
+void ir3_shader_bisect_init(void);
+bool ir3_shader_bisect_need_shader_key(void);
+void ir3_shader_bisect_dump_id(struct ir3_shader_variant *v);
+bool ir3_shader_bisect_select(struct ir3_shader_variant *v);
+bool ir3_shader_bisect_disasm_select(struct ir3_shader_variant *v);
+
 ENDC;
 
 #endif /* IR3_COMPILER_H_ */

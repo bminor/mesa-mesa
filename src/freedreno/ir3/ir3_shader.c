@@ -406,7 +406,8 @@ assemble_variant(struct ir3_shader_variant *v, bool internal)
    _mesa_sha1_final(&ctx, sha1);
    _mesa_sha1_format(v->sha1_str, sha1);
 
-   bool dbg_enabled = shader_debug_enabled(v->type, internal);
+   bool dbg_enabled = shader_debug_enabled(v->type, internal) ||
+                      ir3_shader_bisect_disasm_select(v);
    if (dbg_enabled || ir3_shader_override_path || v->disasm_info.write_disasm) {
       bool shader_overridden =
          ir3_shader_override_path && try_override_shader_variant(v, v->sha1_str);
