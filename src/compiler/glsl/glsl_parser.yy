@@ -1867,10 +1867,10 @@ layout_qualifier_id:
       for (int i = 0; i < 3; i++) {
          if (match_layout_qualifier(local_size_qualifiers[i], $1,
                                     state) == 0) {
-            if (!state->has_compute_shader()) {
+            if (!state->has_compute_shader() && !state->EXT_mesh_shader_enable) {
                _mesa_glsl_error(& @3, state,
                                 "%s qualifier requires GLSL 4.30 or "
-                                "GLSL ES 3.10 or ARB_compute_shader",
+                                "GLSL ES 3.10 or ARB_compute_shader or EXT_mesh_shader",
                                 local_size_qualifiers[i]);
                YYERROR;
             } else {

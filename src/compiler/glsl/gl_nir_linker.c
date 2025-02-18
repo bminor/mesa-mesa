@@ -2564,6 +2564,41 @@ link_ms_inout_layout_qualifiers(struct gl_shader_program *prog,
                                 struct gl_shader **shader_list,
                                 unsigned num_shaders)
 {
+   /* handle task and mesh shader in layout */
+   if (gl_prog->info.stage != MESA_SHADER_MESH &&
+       gl_prog->info.stage != MESA_SHADER_TASK)
+      return;
+
+   for (int i = 0; i < 3; i++)
+      gl_prog->nir->info.workgroup_size[i] = 0;
+
+   for (unsigned sh = 0; sh < num_shaders; sh++) {
+      struct gl_shader *shader = shader_list[sh];
+
+      if (shader->info.Mesh.LocalSize[0] != 0) {
+         if (gl_prog->nir->info.workgroup_size[0] != 0) {
+            for (int i = 0; i < 3; i++) {
+               if (gl_prog->nir->info.workgroup_size[i] !=
+                   shader->info.Mesh.LocalSize[i]) {
+                  linker_error(prog, "%s shader defined with conflicting local sizes\n",
+                               gl_prog->info.stage == MESA_SHADER_TASK ? "task" : "mesh");
+                  return;
+               }
+            }
+         }
+         for (int i = 0; i < 3; i++) {
+            gl_prog->nir->info.workgroup_size[i] = shader->info.Mesh.LocalSize[i];
+         }
+      }
+   }
+
+   if (gl_prog->nir->info.workgroup_size[0] == 0) {
+      linker_error(prog, "%s shader must contain local group size\n",
+                   gl_prog->info.stage == MESA_SHADER_TASK ? "task" : "mesh");
+      return;
+   }
+
+   /* handle mesh shader out layout */
    if (gl_prog->info.stage != MESA_SHADER_MESH)
       return;
 

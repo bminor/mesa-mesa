@@ -732,11 +732,16 @@ ast_type_qualifier::validate_in_qualifier(YYLTYPE *loc,
       valid_in_mask.flags.q.local_size_variable = 1;
       valid_in_mask.flags.q.derivative_group = 1;
       break;
+   case MESA_SHADER_TASK:
+   case MESA_SHADER_MESH:
+      valid_in_mask.flags.q.local_size = 7;
+      break;
    default:
       r = false;
       _mesa_glsl_error(loc, state,
                        "input layout qualifiers only valid in "
-                       "geometry, tessellation, fragment and compute shaders");
+                       "geometry, tessellation, fragment, task, mesh "
+                       "and compute shaders");
       break;
    }
 
@@ -847,8 +852,8 @@ ast_type_qualifier::merge_into_in_qualifier(YYLTYPE *loc,
     * into HIR.
     */
    if (state->in_qualifier->flags.q.local_size) {
-      node = new(lin_ctx) ast_cs_input_layout(*loc,
-                                              state->in_qualifier->local_size);
+      node = new(lin_ctx) ast_cs_ms_input_layout(*loc,
+                                                 state->in_qualifier->local_size);
       state->in_qualifier->flags.q.local_size = 0;
       for (int i = 0; i < 3; i++)
          state->in_qualifier->local_size[i] = NULL;

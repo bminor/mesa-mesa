@@ -450,19 +450,19 @@ struct _mesa_glsl_parse_state {
    struct ast_type_qualifier *in_qualifier;
 
    /**
-    * True if a compute shader input local size was specified using a layout
-    * directive.
+    * True if a compute, task or mesh shader input local size was specified
+    * using a layout directive.
     *
     * Note: this value is computed at ast_to_hir time rather than at parse
     * time.
     */
-   bool cs_input_local_size_specified;
+   bool cs_ms_input_local_size_specified;
 
    /**
-    * If cs_input_local_size_specified is true, the local size that was
+    * If cs_ms_input_local_size_specified is true, the local size that was
     * specified.  Otherwise ignored.
     */
-   unsigned cs_input_local_size[3];
+   unsigned cs_ms_input_local_size[3];
 
    /**
     * True if a compute shader input local variable size was specified using

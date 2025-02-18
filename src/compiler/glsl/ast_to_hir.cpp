@@ -139,7 +139,7 @@ _mesa_ast_to_hir(ir_exec_list *instructions, struct _mesa_glsl_parse_state *stat
 
    state->gs_input_prim_type_specified = false;
    state->tcs_output_vertices_specified = false;
-   state->cs_input_local_size_specified = false;
+   state->cs_ms_input_local_size_specified = false;
 
    /* Section 4.2 of the GLSL 1.20 specification states:
     * "The built-in functions are scoped in a scope outside the global scope
@@ -9002,8 +9002,8 @@ ast_gs_input_layout::hir(ir_exec_list *instructions,
 
 
 ir_rvalue *
-ast_cs_input_layout::hir(ir_exec_list *instructions,
-                         struct _mesa_glsl_parse_state *state)
+ast_cs_ms_input_layout::hir(ir_exec_list *instructions,
+                            struct _mesa_glsl_parse_state *state)
 {
    YYLTYPE loc = this->get_location();
 
@@ -9018,6 +9018,26 @@ ast_cs_input_layout::hir(ir_exec_list *instructions,
     * MAX_COMPUTE_WORK_GROUP_INVOCATIONS, but it seems reasonable to
     * report it at compile time as well.
     */
+
+   const unsigned *max_work_group_size;
+   unsigned max_work_group_invocations;
+   switch (state->stage) {
+   case MESA_SHADER_COMPUTE:
+      max_work_group_size = state->consts->MaxComputeWorkGroupSize;
+      max_work_group_invocations = state->consts->MaxComputeWorkGroupInvocations;
+      break;
+   case MESA_SHADER_TASK:
+      max_work_group_size = state->caps->mesh.max_task_work_group_size;
+      max_work_group_invocations = state->caps->mesh.max_task_work_group_invocations;
+      break;
+   case MESA_SHADER_MESH:
+      max_work_group_size = state->caps->mesh.max_mesh_work_group_size;
+      max_work_group_invocations = state->caps->mesh.max_mesh_work_group_invocations;
+      break;
+   default:
+      UNREACHABLE("invalid shader stage");
+   }
+
    GLuint64 total_invocations = 1;
    unsigned qual_local_size[3];
    for (int i = 0; i < 3; i++) {
@@ -9035,20 +9055,19 @@ ast_cs_input_layout::hir(ir_exec_list *instructions,
       }
       ralloc_free(local_size_str);
 
-      if (qual_local_size[i] > state->consts->MaxComputeWorkGroupSize[i]) {
+      if (qual_local_size[i] > max_work_group_size[i]) {
          _mesa_glsl_error(&loc, state,
-                          "local_size_%c exceeds MAX_COMPUTE_WORK_GROUP_SIZE"
+                          "local_size_%c exceeds max work group size"
                           " (%d)", 'x' + i,
-                          state->consts->MaxComputeWorkGroupSize[i]);
+                          max_work_group_size[i]);
          break;
       }
       total_invocations *= qual_local_size[i];
-      if (total_invocations >
-          state->consts->MaxComputeWorkGroupInvocations) {
+      if (total_invocations > max_work_group_invocations) {
          _mesa_glsl_error(&loc, state,
                           "product of local_sizes exceeds "
-                          "MAX_COMPUTE_WORK_GROUP_INVOCATIONS (%d)",
-                          state->consts->MaxComputeWorkGroupInvocations);
+                          "max work group invocations (%d)",
+                          max_work_group_invocations);
          break;
       }
    }
@@ -9056,11 +9075,11 @@ ast_cs_input_layout::hir(ir_exec_list *instructions,
    /* If any compute input layout declaration preceded this one, make sure it
     * was consistent with this one.
     */
-   if (state->cs_input_local_size_specified) {
+   if (state->cs_ms_input_local_size_specified) {
       for (int i = 0; i < 3; i++) {
-         if (state->cs_input_local_size[i] != qual_local_size[i]) {
+         if (state->cs_ms_input_local_size[i] != qual_local_size[i]) {
             _mesa_glsl_error(&loc, state,
-                             "compute shader input layout does not match"
+                             "shader input layout does not match"
                              " previous declaration");
             return NULL;
          }
@@ -9081,9 +9100,9 @@ ast_cs_input_layout::hir(ir_exec_list *instructions,
       return NULL;
    }
 
-   state->cs_input_local_size_specified = true;
+   state->cs_ms_input_local_size_specified = true;
    for (int i = 0; i < 3; i++)
-      state->cs_input_local_size[i] = qual_local_size[i];
+      state->cs_ms_input_local_size[i] = qual_local_size[i];
 
    /* We may now declare the built-in constant gl_WorkGroupSize (see
     * builtin_variable_generator::generate_constants() for why we didn't

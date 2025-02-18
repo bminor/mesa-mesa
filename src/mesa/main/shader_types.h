@@ -137,6 +137,8 @@ struct gl_shader_info
     * Mesh shader state from EXT_mesh_shader
     */
    struct {
+      unsigned LocalSize[3];
+
       enum mesa_prim OutputType;
 
       GLint MaxVertices;

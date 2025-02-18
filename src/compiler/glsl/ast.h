@@ -1353,14 +1353,14 @@ private:
 
 
 /**
- * AST node representing a decalaration of the input layout for compute
- * shaders.
+ * AST node representing a decalaration of the input layout for compute,
+ * task and mesh shaders.
  */
-class ast_cs_input_layout : public ast_node
+class ast_cs_ms_input_layout : public ast_node
 {
 public:
-   ast_cs_input_layout(const struct YYLTYPE &locp,
-                       ast_layout_expression *const *local_size)
+   ast_cs_ms_input_layout(const struct YYLTYPE &locp,
+                          ast_layout_expression *const *local_size)
    {
       for (int i = 0; i < 3; i++) {
          this->local_size[i] = local_size[i];

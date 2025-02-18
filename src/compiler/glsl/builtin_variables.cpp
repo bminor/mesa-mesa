@@ -941,7 +941,7 @@ builtin_variable_generator::generate_constants()
        *
        * To prevent the shader from trying to refer to gl_WorkGroupSize before
        * the layout declaration, we don't define it here.  Intead we define it
-       * in ast_cs_input_layout::hir().
+       * in ast_cs_ms_input_layout::hir().
        */
    }
 

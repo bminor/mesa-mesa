@@ -64,7 +64,7 @@ _mesa_glsl_parse_state::_mesa_glsl_parse_state(struct gl_context *_ctx,
 					       mesa_shader_stage stage,
                                                void *mem_ctx)
    : ctx(_ctx), exts(&_ctx->Extensions), consts(&_ctx->Const), caps(&_ctx->screen->caps),
-     api(_ctx->API), cs_input_local_size_specified(false), cs_input_local_size(),
+     api(_ctx->API), cs_ms_input_local_size_specified(false), cs_ms_input_local_size(),
      switch_state(), warnings_enabled(true)
 {
    assert(stage < MESA_SHADER_MESH_STAGES);
@@ -1904,13 +1904,20 @@ set_shader_inout_layout(struct gl_shader *shader,
    /* Should have been prevented by the parser. */
    if (shader->Stage != MESA_SHADER_GEOMETRY &&
        shader->Stage != MESA_SHADER_TESS_EVAL &&
-       shader->Stage != MESA_SHADER_COMPUTE) {
+       shader->Stage != MESA_SHADER_COMPUTE &&
+       shader->Stage != MESA_SHADER_TASK &&
+       shader->Stage != MESA_SHADER_MESH) {
       assert(!state->in_qualifier->flags.i);
+   }
+
+   if (shader->Stage != MESA_SHADER_COMPUTE &&
+       shader->Stage != MESA_SHADER_TASK &&
+       shader->Stage != MESA_SHADER_MESH) {
+      assert(!state->cs_ms_input_local_size_specified);
    }
 
    if (shader->Stage != MESA_SHADER_COMPUTE) {
       /* Should have been prevented by the parser. */
-      assert(!state->cs_input_local_size_specified);
       assert(!state->cs_input_local_size_variable_specified);
       assert(state->cs_derivative_group == DERIVATIVE_GROUP_NONE);
    }
@@ -2040,9 +2047,9 @@ set_shader_inout_layout(struct gl_shader *shader,
       break;
 
    case MESA_SHADER_COMPUTE:
-      if (state->cs_input_local_size_specified) {
+      if (state->cs_ms_input_local_size_specified) {
          for (int i = 0; i < 3; i++)
-            shader->info.Comp.LocalSize[i] = state->cs_input_local_size[i];
+            shader->info.Comp.LocalSize[i] = state->cs_ms_input_local_size[i];
       } else {
          for (int i = 0; i < 3; i++)
             shader->info.Comp.LocalSize[i] = 0;
@@ -2141,6 +2148,16 @@ set_shader_inout_layout(struct gl_shader *shader,
             }
             shader->info.Mesh.MaxPrimitives = qual_max_primitives;
          }
+      }
+
+      FALLTHROUGH;
+   case MESA_SHADER_TASK:
+      if (state->cs_ms_input_local_size_specified) {
+         for (int i = 0; i < 3; i++)
+            shader->info.Mesh.LocalSize[i] = state->cs_ms_input_local_size[i];
+      } else {
+         for (int i = 0; i < 3; i++)
+            shader->info.Mesh.LocalSize[i] = 0;
       }
       break;
 
