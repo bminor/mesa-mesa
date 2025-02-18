@@ -8644,6 +8644,11 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
       if (ctx->shader->info.maximally_reconverges)
          ctx->program->needs_wqm = true;
 
+      if (ctx->cf_info.in_divergent_cf) {
+         ctx->cf_info.exec.potentially_empty_discard = true;
+         begin_empty_exec_skip(ctx, &instr->instr, instr->instr.block);
+      }
+
       break;
    }
    case nir_intrinsic_terminate:
