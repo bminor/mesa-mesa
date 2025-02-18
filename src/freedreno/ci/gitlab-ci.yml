@@ -87,7 +87,6 @@ a618-angle:
     - .test-angle
   variables:
     DEQP_SUITE: tu-angle
-    USE_ANGLE: 1
 
 a618-vk:
   extends:
@@ -236,7 +235,6 @@ a660-angle:
     - .test-angle
   variables:
     DEQP_SUITE: tu-angle
-    USE_ANGLE: 1
 
 a660-piglit-cl:
   extends:
@@ -425,7 +423,6 @@ a750-angle:
     - .test-angle
   timeout: 25m  # base runtime 10min total, 7min of testing
   variables:
-    USE_ANGLE: 1
     B2C_TIMEOUT_BOOT_MINUTES: 17
     B2C_TIMEOUT_OVERALL_MINUTES: 20
     DEQP_SUITE: tu-angle

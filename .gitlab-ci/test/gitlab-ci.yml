@@ -182,12 +182,6 @@ yaml-toml-shell-py-test:
   variables:
     ANGLE_TAG: ${CONDITIONAL_BUILD_ANGLE_TAG}
 
-.test-angle:
-  extends:
-    - .tag-check-angle
-  variables:
-    USE_ANGLE: 1
-
 .b2c-vkd3d-proton-test:
   variables:
     HWCI_TEST_SCRIPT: install/vkd3d-runner.sh
