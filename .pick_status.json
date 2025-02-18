@@ -1,5 +1,515 @@
 [
     {
+        "sha": "56aac9fdecad0f7d335f82653832927486f07d44",
+        "description": "nir/opt_algebraic: optimize ffract(ffract(a))",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "317d07484e69fa7dc6a13d5f873ec9fe14fdc790",
+        "description": "nir: improve fsqrt range analysis",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "81b4629636ae0d6c96697a1cab52f27882f5b404",
+        "description": "nir: fix frsq range analysis",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "25300ac18af85a2f38fd7d7fccf4d22c29d66fe6",
+        "description": "nir: fix range analysis for frcp",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1f3494b886b54a47dce14bd7b57b6cba826b08f4",
+        "description": "nir: range analysis for ffract",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "030c8b57b0c60011555e451f076f0c230f020188",
+        "description": "gfxstream: Add reference counting for GEM handles in LinuxVirtGpuBlob",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a630efb6451bb3db0d6bf1251b8c148e1f247bd7",
+        "description": "gfxstream: Fix precedence and ownership issues on Linux for imported FD and the VirtGpuResource",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "927d7b322b2252d9cc84f49a8ec7897a399b806e",
+        "description": "brw: increase brw_reg::subnr size to 6 bits",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "e9f63df2f2c0dafe0997dd69b60b7da99b5d91f4",
+        "notes": null
+    },
+    {
+        "sha": "cf3a343800cfdd34e4fbc0bd0e937abc2cde2eb6",
+        "description": "anv: fixup compute walker storage length",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "9aef4ceb13daff2f3200deb5a26c43b1af77cc00",
+        "notes": null
+    },
+    {
+        "sha": "66bbb79df9564fdeb3c61cf7032d90d20dcf1961",
+        "description": "anv/ci/adl: update fail expectation for video",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "765f3b78d567ebeac39016e1518d81a6a5df9053",
+        "description": "anv: apply cache flushes on pipeline select with gfx20",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "252cac1e5c4a4197d49ae29123e78ffe602a5ac9",
+        "description": "anv: avoid memory type changes with INTEL_DEBUG=noccs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "891132c3ec20d891f2e8bd8acf8fcd7479f39e33",
+        "description": "ir3/legalize: use (sy) for ray_intersection WAR hazards",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3f0894df8d3db84db7f3f469155b389b5fb934b9",
+        "description": "ir3: don't create SRC2 for isam without .v",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f39679199b2d72b6d890ae515b9f3473c37b4d6b",
+        "description": "tu: Fix vertical tile merging check",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "928a857496e188d464e8cfe6eeae64229c49aa9f",
+        "description": "tu: Make sure tiles being merged are adjacent",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "3fdaad0948c035c23beca3410a5fef4be7561f97",
+        "notes": null
+    },
+    {
+        "sha": "f01623ea759d1dc2fe10251582f1b9e8eda9c811",
+        "description": "radv/bvh: Add custom leaf node builder",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "90c3450621e079f8d5f5870142ae1bca0649c1e7",
+        "description": "radv/bvh: Prefix RADV-specific node functions with radv_",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "444bd0225519964b93eb3d43fc60da5d672e9d09",
+        "description": "radv/bvh: Remove unused build_instance helper",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b1f6d3b6b72632497ac0a1fc21cb75ac323790a6",
+        "description": "radv/bvh, vulkan/bvh: Move AccelerationStructureInstance to vk_build_helpers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "28ed283e81664d9ab599148d4d5b5d1248aacf9d",
+        "description": "vulkan/bvh: Add optional fine-grained instance node bounds calculation",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e39994088abb42f97171608bbdb28f486a694c01",
+        "description": "vulkan/bvh: Add option to override leaf builder SPIR-Vs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "40b0ad0f45d252f79d0ad13307592ab5905443e5",
+        "description": "vulkan/bvh: Move leaf builder code to header",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d2907d271e837a1a9389d426d2c9ba9b2138ff40",
+        "description": "ac/nir: set higher alignment for some swizzled store_buffer_amd",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8fd862499ae84e1a79db7adf29f1e48f8f35bd27",
+        "description": "ac/nir: don't cross swizzle elements when vectorizing buffer_amd intrinsic",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "c3d27906d8cb25a4e24f92b6c7557d686ab5aefe",
+        "notes": null
+    },
+    {
+        "sha": "ebd88937109dea3029b0bf11cf65971254f5181a",
+        "description": "radv/video: Move IB header from begin/end to encode_video",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "77ff18aa3bd769811885bfb9bb6b0337d3ff5567",
+        "description": "radv/video: Fix setting balanced preset for HEVC encode with SAO enabled",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "49191f46e605e2aa7257cd7327f55f20d7202720",
+        "description": "tu/a6xx: Emit VSC addresses for each bin to restore after preemption",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9427df23b4820054c42351871da8264e00d9b746",
+        "description": "radv: use radv_image::bindings::addr more",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "066467cf98415ec486f4575fa3dc634a2e734827",
+        "description": "radv: compute radv_image::bindings::addr at bind time",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f234099d6d7e47bee2ebf5960471fff7d5ca7d82",
+        "description": "radv: rename radv_image::bindings::bo_va to addr",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0f8b3bf4892448b329e92a19c6356b49fff70de7",
+        "description": "radv: remove redundant zero initialization when creating images",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "63b5bce396887d2bd257a2311d38162aff09f573",
+        "description": "radv: stop using image binding offset when exporting BO metadata",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "50851f17d1cfdb9cc05a49ab051af7b7707ca9fe",
+        "description": "radv/meta: remove the buffer dependency for image copy operations",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ae5d2bfd36d4007bfa4853ec1669c350a6746dc7",
+        "description": "radv/meta: use radv_copy_memory() instead of radv_copy_buffer()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "70bd4fe621df70bff7dde390a4914d2b9be1e4ba",
+        "description": "radv/meta: pass the buffer addr to SDMA image buffer copy operations",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6e2da49e92cf16dfe633ab5d155c168c5508126e",
+        "description": "radv/meta: add BOs to cmdbuf list earlier for image copy operations",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e0070bc68bc61d215c9749a8b7f7b3e884a7667d",
+        "description": "radv: fix adding the VRS image BO to the cmdbuf list on GFX11",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d8381415a6a271f5ed273014f4ff6cc4e8802f24",
+        "description": "anv: tighten condition for changing barrier layouts",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "eed788213bd70ad5e2996d6b285eb802c15f4e77",
+        "notes": null
+    },
+    {
+        "sha": "b6fba15bd7cc1ebb072176cb3b5fa1e9a7370c06",
+        "description": "lima: ppir: duplicate fneg and fabs if its source is an intrinsic",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "86e217e7dfb0e5360840ebe9a6bfc02014ed6479",
+        "description": "nvk: Implement descriptorBufferPushDescriptors",
+        "nominated": true,
+        "nomination_type": 4,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7d4c91efef3851664a44110012947f9d15251499",
+        "description": "intel/dev: Call intel_device_info_update_after_hwconfig() from common code",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e170252d974a81aa31d12688d1a513505094f424",
+        "description": "intel/dev: Improve max_cs_threads documentation",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "dde084d68820e50b43694029c39711492c052eb3",
+        "description": "lima: ppir: use combiner unit for mul",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bc9fca2fb14ee46a839ce6e1d66fa895c014c92e",
+        "description": "lima: ppir: add codegen for mov and mul on combiner unit",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5937d12d293bf7631da7c692ba085cfdb58f1b13",
+        "description": "lima: ppir: assert on unexpected pipeline dest for fmul and vmul",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c6c37b516d6dcdae0546159668f0d92dd6694eb3",
+        "description": "lima: ppir: fix diassembling atan and combiner codegen definition",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f90df9a39e8b23828931f20291b5c4ae3114f747",
+        "description": "lima: ppir: print index of the node that breaks node_to_instr",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7621f9beda038f2c3368b3d082c7c992ea987e6e",
+        "description": "lima: ppir: fixup src node when replacing src for select and load_reg",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2ea27f41e3f0d5d8085b646fb4d34614d3e830f4",
+        "description": "lima: ppir: improve readability of ppir represantation dump",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8771762bcd83f570a660c45bc06e1bb81d28296d",
+        "description": "llvmpipe/ci: drop fraction for asan tests that takes 1.5 min without fraction",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "2361ed27f34774f0a73324915a9ddb57f43e112a",
         "description": "runtime: sort push constant layouts",
         "nominated": false,
