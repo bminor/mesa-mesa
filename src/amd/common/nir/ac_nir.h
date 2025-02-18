@@ -175,7 +175,7 @@ typedef struct {
    unsigned gs_out_vtx_bytes;
 } ac_nir_lower_ngg_options;
 
-void
+bool
 ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *options);
 
 void
