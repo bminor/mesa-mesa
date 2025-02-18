@@ -62,8 +62,14 @@ VkResult nvk_device_ensure_slm(struct nvk_device *dev,
                                uint32_t slm_bytes_per_lane,
                                uint32_t crs_bytes_per_warp);
 
+static inline const struct nvk_physical_device *
+nvk_device_physical(const struct nvk_device *dev)
+{
+   return (struct nvk_physical_device *)dev->vk.physical;
+}
+
 static inline struct nvk_physical_device *
-nvk_device_physical(struct nvk_device *dev)
+nvk_device_physical_mut(struct nvk_device *dev)
 {
    return (struct nvk_physical_device *)dev->vk.physical;
 }

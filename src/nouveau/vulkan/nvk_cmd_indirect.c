@@ -260,7 +260,7 @@ static void
 build_process_cs_cmd_seq(nir_builder *b, struct nvk_nir_push *p,
                          nir_def *in_addr, nir_def *seq_idx,
                          struct process_cmd_in *in,
-                         struct nvk_physical_device *pdev,
+                         const struct nvk_physical_device *pdev,
                          const VkIndirectCommandsLayoutCreateInfoEXT *info,
                          uint32_t *qmd_size_per_seq_B_out)
 {
@@ -416,7 +416,7 @@ build_process_cs_cmd_seq(nir_builder *b, struct nvk_nir_push *p,
 static void
 build_gfx_set_exec(nir_builder *b, struct nvk_nir_push *p, nir_def *token_addr,
                    struct process_cmd_in *in,
-                   struct nvk_physical_device *pdev,
+                   const struct nvk_physical_device *pdev,
                    const VkIndirectCommandsExecutionSetTokenEXT *token)
 {
    switch (token->type) {
@@ -622,7 +622,7 @@ static void
 build_process_gfx_cmd_seq(nir_builder *b, struct nvk_nir_push *p,
                           nir_def *in_addr, nir_def *seq_idx,
                           struct process_cmd_in *in,
-                          struct nvk_physical_device *pdev,
+                          const struct nvk_physical_device *pdev,
                           const VkIndirectCommandsLayoutCreateInfoEXT *info)
 {
    for (uint32_t t = 0; t < info->tokenCount; t++) {
@@ -721,7 +721,7 @@ build_process_shader(struct nvk_device *dev,
                      uint32_t *cmd_seq_stride_B_out,
                      uint32_t *qmd_size_per_seq_B_out)
 {
-   struct nvk_physical_device *pdev = nvk_device_physical(dev);
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
 
    nir_builder build =
       nir_builder_init_simple_shader(MESA_SHADER_COMPUTE, NULL,
@@ -912,7 +912,7 @@ nvk_GetGeneratedCommandsMemoryRequirementsEXT(
    VK_FROM_HANDLE(nvk_device, dev, _device);
    VK_FROM_HANDLE(nvk_indirect_commands_layout, layout,
                   pInfo->indirectCommandsLayout);
-   struct nvk_physical_device *pdev = nvk_device_physical(dev);
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
 
    uint64_t size = layout->cmd_seq_stride_B * (uint64_t)pInfo->maxSequenceCount;
    if (layout->qmd_size_per_seq_B > 0) {

@@ -102,7 +102,7 @@ nvk_image_view_init(struct nvk_device *dev,
                     bool driver_internal,
                     const VkImageViewCreateInfo *pCreateInfo)
 {
-   struct nvk_physical_device *pdev = nvk_device_physical(dev);
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
    VK_FROM_HANDLE(nvk_image, image, pCreateInfo->image);
    VkResult result;
 

@@ -18,7 +18,7 @@ nvk_ies_map(struct nvk_indirect_execution_set *ies, uint32_t index)
 }
 
 void
-nvk_ies_cs_qmd_init(struct nvk_physical_device *pdev,
+nvk_ies_cs_qmd_init(const struct nvk_physical_device *pdev,
                     struct nvk_ies_cs_qmd *qmd,
                     struct nvk_shader *shader)
 {
@@ -73,7 +73,7 @@ nvk_ies_set_cs(struct nvk_device *dev,
 }
 
 uint16_t
-nvk_ies_gfx_pipeline_max_dw_count(struct nvk_physical_device *pdev,
+nvk_ies_gfx_pipeline_max_dw_count(const struct nvk_physical_device *pdev,
                                   VkShaderStageFlags stages)
 {
    gl_shader_stage last_vtgm = MESA_SHADER_VERTEX;
@@ -93,7 +93,7 @@ nvk_ies_gfx_pipeline_max_dw_count(struct nvk_physical_device *pdev,
 }
 
 static uint32_t
-nvk_ies_stride_gfx_pipeline(struct nvk_physical_device *pdev,
+nvk_ies_stride_gfx_pipeline(const struct nvk_physical_device *pdev,
                             VkShaderStageFlags stages)
 {
    return sizeof(struct nvk_ies_gfx_pipeline) +
@@ -145,7 +145,7 @@ nvk_ies_set_gfx_pipeline(struct nvk_device *dev,
 }
 
 uint16_t
-nvk_ies_gfx_shader_max_dw_count(struct nvk_physical_device *pdev,
+nvk_ies_gfx_shader_max_dw_count(const struct nvk_physical_device *pdev,
                                 VkShaderStageFlags stages,
                                 bool last_vtgm)
 {
@@ -161,7 +161,7 @@ nvk_ies_gfx_shader_max_dw_count(struct nvk_physical_device *pdev,
 }
 
 static uint32_t
-nvk_ies_stride_gfx_shader(struct nvk_physical_device *pdev,
+nvk_ies_stride_gfx_shader(const struct nvk_physical_device *pdev,
                           VkShaderStageFlags stages)
 {
    return sizeof(struct nvk_ies_gfx_shader) +
@@ -238,7 +238,7 @@ nvk_CreateIndirectExecutionSetEXT(VkDevice _device,
                                   VkIndirectExecutionSetEXT *pIndirectExecutionSet)
 {
    VK_FROM_HANDLE(nvk_device, dev, _device);
-   struct nvk_physical_device *pdev = nvk_device_physical(dev);
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
    VkResult result;
 
    struct nvk_indirect_execution_set *ies =

@@ -80,7 +80,7 @@ struct nvk_cbuf_map {
 };
 
 uint16_t
-nvk_max_shader_push_dw(struct nvk_physical_device *pdev,
+nvk_max_shader_push_dw(const struct nvk_physical_device *pdev,
                        gl_shader_stage stage, bool last_vtgm);
 
 struct nvk_shader {
@@ -167,7 +167,8 @@ nvk_cg_nir_options(const struct nvk_physical_device *pdev,
 void nvk_cg_preprocess_nir(nir_shader *nir);
 void nvk_cg_optimize_nir(nir_shader *nir);
 
-VkResult nvk_cg_compile_nir(struct nvk_physical_device *pdev, nir_shader *nir,
+VkResult nvk_cg_compile_nir(const struct nvk_physical_device *pdev,
+                            nir_shader *nir,
                             const struct nak_fs_key *fs_key,
                             struct nvk_shader *shader);
 

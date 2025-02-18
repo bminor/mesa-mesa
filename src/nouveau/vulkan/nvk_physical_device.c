@@ -1198,7 +1198,7 @@ nvk_get_device_properties(const struct nvk_instance *instance,
 static void
 nvk_physical_device_init_pipeline_cache(struct nvk_physical_device *pdev)
 {
-   struct nvk_instance *instance = nvk_physical_device_instance(pdev);
+   const struct nvk_instance *instance = nvk_physical_device_instance(pdev);
 
    struct mesa_sha1 sha_ctx;
    _mesa_sha1_init(&sha_ctx);

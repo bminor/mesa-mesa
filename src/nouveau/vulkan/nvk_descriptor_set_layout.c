@@ -134,7 +134,7 @@ nvk_CreateDescriptorSetLayout(VkDevice device,
                               VkDescriptorSetLayout *pSetLayout)
 {
    VK_FROM_HANDLE(nvk_device, dev, device);
-   struct nvk_physical_device *pdev = nvk_device_physical(dev);
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
 
    uint32_t num_bindings = 0;
    uint32_t immutable_sampler_count = 0;
@@ -386,7 +386,7 @@ nvk_GetDescriptorSetLayoutSupport(VkDevice device,
                                   VkDescriptorSetLayoutSupport *pSupport)
 {
    VK_FROM_HANDLE(nvk_device, dev, device);
-   struct nvk_physical_device *pdev = nvk_device_physical(dev);
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
 
    const VkMutableDescriptorTypeCreateInfoEXT *mutable_info =
       vk_find_struct_const(pCreateInfo->pNext,

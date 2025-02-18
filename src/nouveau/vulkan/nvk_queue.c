@@ -46,7 +46,7 @@ nvk_queue_state_update(struct nvk_queue *queue,
                        struct nvk_queue_state *qs)
 {
    struct nvk_device *dev = nvk_queue_device(queue);
-   struct nvk_physical_device *pdev = nvk_device_physical(dev);
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
    struct nvkmd_mem *mem;
    uint32_t alloc_count, bytes_per_warp, bytes_per_tpc;
    bool dirty = false;
@@ -271,7 +271,7 @@ nvk_queue_submit_exec(struct nvk_queue *queue,
                       struct vk_queue_submit *submit)
 {
    struct nvk_device *dev = nvk_queue_device(queue);
-   struct nvk_physical_device *pdev = nvk_device_physical(dev);
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
    VkResult result;
 
    const bool sync = pdev->debug_flags & NVK_DEBUG_PUSH_SYNC;
@@ -388,7 +388,7 @@ nvk_queue_submit_simple(struct nvk_queue *queue,
                         uint32_t dw_count, const uint32_t *dw)
 {
    struct nvk_device *dev = nvk_queue_device(queue);
-   struct nvk_physical_device *pdev = nvk_device_physical(dev);
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
    VkResult result;
 
    if (vk_queue_is_lost(&queue->vk))
@@ -434,7 +434,7 @@ static VkResult
 nvk_queue_init_context_state(struct nvk_queue *queue)
 {
    struct nvk_device *dev = nvk_queue_device(queue);
-   struct nvk_physical_device *pdev = nvk_device_physical(dev);
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
    VkResult result;
 
    uint32_t push_data[4096];
@@ -486,7 +486,7 @@ nvk_queue_init(struct nvk_device *dev, struct nvk_queue *queue,
                const VkDeviceQueueCreateInfo *pCreateInfo,
                uint32_t index_in_family)
 {
-   struct nvk_physical_device *pdev = nvk_device_physical(dev);
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
    VkResult result;
 
    assert(pCreateInfo->queueFamilyIndex < pdev->queue_family_count);

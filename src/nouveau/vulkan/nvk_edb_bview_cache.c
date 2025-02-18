@@ -125,7 +125,7 @@ VkResult
 nvk_edb_bview_cache_init(struct nvk_device *dev,
                          struct nvk_edb_bview_cache *cache)
 {
-   struct nvk_physical_device *pdev = nvk_device_physical(dev);
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
    VkResult result;
 
    cache->cache = _mesa_hash_table_create(NULL, _mesa_hash_pointer,

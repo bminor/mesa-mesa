@@ -55,7 +55,7 @@ nvk_slm_area_ensure(struct nvk_device *dev,
                     uint32_t slm_bytes_per_lane,
                     uint32_t crs_bytes_per_warp)
 {
-   struct nvk_physical_device *pdev = nvk_device_physical(dev);
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
    VkResult result;
 
    assert(slm_bytes_per_lane < (1 << 24));

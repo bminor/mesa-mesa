@@ -74,8 +74,8 @@ nvk_use_edb_buffer_views(const struct nvk_physical_device *pdev)
    return pdev->debug_flags & NVK_DEBUG_FORCE_EDB_BVIEW;
 }
 
-static inline struct nvk_instance *
-nvk_physical_device_instance(struct nvk_physical_device *pdev)
+static inline const struct nvk_instance *
+nvk_physical_device_instance(const struct nvk_physical_device *pdev)
 {
    return (struct nvk_instance *)pdev->vk.instance;
 }

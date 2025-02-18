@@ -28,7 +28,7 @@ VkResult
 nvk_push_dispatch_state_init(struct nvk_queue *queue, struct nv_push *p)
 {
    struct nvk_device *dev = nvk_queue_device(queue);
-   struct nvk_physical_device *pdev = nvk_device_physical(dev);
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
 
    P_MTHD(p, NV90C0, SET_OBJECT);
    P_NV90C0_SET_OBJECT(p, {
@@ -55,7 +55,7 @@ static inline uint16_t
 nvk_cmd_buffer_compute_cls(struct nvk_cmd_buffer *cmd)
 {
    struct nvk_device *dev = nvk_cmd_buffer_device(cmd);
-   struct nvk_physical_device *pdev = nvk_device_physical(dev);
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
    return pdev->info.cls_compute;
 }
 
@@ -125,7 +125,7 @@ nvk_cmd_upload_qmd(struct nvk_cmd_buffer *cmd,
                    uint64_t *root_desc_addr_out)
 {
    struct nvk_device *dev = nvk_cmd_buffer_device(cmd);
-   struct nvk_physical_device *pdev = nvk_device_physical(dev);
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
    const uint32_t min_cbuf_alignment = nvk_min_cbuf_alignment(&pdev->info);
    VkResult result;
 

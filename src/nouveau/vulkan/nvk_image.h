@@ -42,12 +42,12 @@ struct nvkmd_mem;
 struct nvkmd_va;
 
 VkFormatFeatureFlags2
-nvk_get_image_format_features(struct nvk_physical_device *pdev,
+nvk_get_image_format_features(const struct nvk_physical_device *pdev,
                               VkFormat format, VkImageTiling tiling,
                               uint64_t drm_format_mod);
 
 void
-nvk_get_drm_format_modifier_properties_list(struct nvk_physical_device *pdev,
+nvk_get_drm_format_modifier_properties_list(const struct nvk_physical_device *pdev,
                                             VkFormat vk_format,
                                             VkBaseOutStructure *ext);
 

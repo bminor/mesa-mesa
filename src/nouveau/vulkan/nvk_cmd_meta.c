@@ -38,7 +38,7 @@ nvk_cmd_bind_map_buffer(struct vk_command_buffer *vk_cmd,
 VkResult
 nvk_device_init_meta(struct nvk_device *dev)
 {
-   struct nvk_physical_device *pdev = nvk_device_physical(dev);
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
 
    VkResult result = vk_meta_device_init(&dev->vk, &dev->meta);
    if (result != VK_SUCCESS)

@@ -25,7 +25,7 @@
 #include "clc597.h"
 
 static VkFormatFeatureFlags2
-nvk_get_image_plane_format_features(struct nvk_physical_device *pdev,
+nvk_get_image_plane_format_features(const struct nvk_physical_device *pdev,
                                     VkFormat vk_format, VkImageTiling tiling,
                                     uint64_t drm_format_mod)
 {
@@ -100,7 +100,7 @@ nvk_get_image_plane_format_features(struct nvk_physical_device *pdev,
 }
 
 VkFormatFeatureFlags2
-nvk_get_image_format_features(struct nvk_physical_device *pdev,
+nvk_get_image_format_features(const struct nvk_physical_device *pdev,
                               VkFormat vk_format, VkImageTiling tiling,
                               uint64_t drm_format_mod)
 {
@@ -164,7 +164,7 @@ nvk_get_image_format_features(struct nvk_physical_device *pdev,
 }
 
 void
-nvk_get_drm_format_modifier_properties_list(struct nvk_physical_device *pdev,
+nvk_get_drm_format_modifier_properties_list(const struct nvk_physical_device *pdev,
                                             VkFormat vk_format,
                                             VkBaseOutStructure *ext)
 {
@@ -740,7 +740,7 @@ nvk_image_init(struct nvk_device *dev,
                struct nvk_image *image,
                const VkImageCreateInfo *pCreateInfo)
 {
-   struct nvk_physical_device *pdev = nvk_device_physical(dev);
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
 
    vk_image_init(&dev->vk, &image->vk, pCreateInfo);
 
@@ -934,7 +934,7 @@ nvk_image_plane_size_align_B(struct nvk_device *dev,
                              const struct nvk_image_plane *plane,
                              uint64_t *size_B_out, uint64_t *align_B_out)
 {
-   struct nvk_physical_device *pdev = nvk_device_physical(dev);
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
    const bool sparse_bound =
       image->vk.create_flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
 
@@ -1019,7 +1019,7 @@ nvk_CreateImage(VkDevice _device,
                 VkImage *pImage)
 {
    VK_FROM_HANDLE(nvk_device, dev, _device);
-   struct nvk_physical_device *pdev = nvk_device_physical(dev);
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
    struct nvk_image *image;
    VkResult result;
 
@@ -1135,14 +1135,13 @@ nvk_get_image_memory_requirements(struct nvk_device *dev,
                                   VkImageAspectFlags aspects,
                                   VkMemoryRequirements2 *pMemoryRequirements)
 {
-   struct nvk_physical_device *pdev = nvk_device_physical(dev);
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
    uint32_t memory_types = (1 << pdev->mem_type_count) - 1;
 
    /* Remove non host visible heaps from the types for host image copy in case
     * of potential issues. This should be removed when we get ReBAR.
     */
    if (image->vk.usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT) {
-      struct nvk_physical_device *pdev = nvk_device_physical(dev);
       for (uint32_t i = 0; i < pdev->mem_type_count; i++) {
          if (!(pdev->mem_types[i].propertyFlags &
              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT))

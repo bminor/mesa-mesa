@@ -520,7 +520,7 @@ nvk_cmd_invalidate_deps(struct nvk_cmd_buffer *cmd,
                         const VkDependencyInfo *deps)
 {
    struct nvk_device *dev = nvk_cmd_buffer_device(cmd);
-   struct nvk_physical_device *pdev = nvk_device_physical(dev);
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
 
    enum nvk_barrier barriers = 0;
 
@@ -662,7 +662,7 @@ nvk_bind_descriptor_sets(struct nvk_cmd_buffer *cmd,
 {
    VK_FROM_HANDLE(vk_pipeline_layout, pipeline_layout, info->layout);
    struct nvk_device *dev = nvk_cmd_buffer_device(cmd);
-   struct nvk_physical_device *pdev = nvk_device_physical(dev);
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
 
    union nvk_buffer_descriptor dynamic_buffers[NVK_MAX_DYNAMIC_BUFFERS];
    uint8_t set_dynamic_buffer_start[NVK_MAX_SETS];
@@ -977,7 +977,7 @@ nvk_cmd_buffer_flush_push_descriptors(struct nvk_cmd_buffer *cmd,
                                       struct nvk_descriptor_state *desc)
 {
    struct nvk_device *dev = nvk_cmd_buffer_device(cmd);
-   struct nvk_physical_device *pdev = nvk_device_physical(dev);
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
    const uint32_t min_cbuf_alignment = nvk_min_cbuf_alignment(&pdev->info);
    VkResult result;
 
@@ -1012,7 +1012,7 @@ nvk_cmd_buffer_get_cbuf_addr(struct nvk_cmd_buffer *cmd,
                              struct nvk_buffer_address *addr_out)
 {
    struct nvk_device *dev = nvk_cmd_buffer_device(cmd);
-   struct nvk_physical_device *pdev = nvk_device_physical(dev);
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
 
    switch (cbuf->type) {
    case NVK_CBUF_TYPE_INVALID:
@@ -1090,7 +1090,7 @@ void
 nvk_cmd_buffer_dump(struct nvk_cmd_buffer *cmd, FILE *fp)
 {
    struct nvk_device *dev = nvk_cmd_buffer_device(cmd);
-   struct nvk_physical_device *pdev = nvk_device_physical(dev);
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
 
    util_dynarray_foreach(&cmd->pushes, struct nvk_cmd_push, p) {
       if (p->map) {

@@ -793,7 +793,8 @@ nvk_fill_transform_feedback_state(struct nak_xfb_info *xfb,
 }
 
 VkResult
-nvk_cg_compile_nir(struct nvk_physical_device *pdev, nir_shader *nir,
+nvk_cg_compile_nir(const struct nvk_physical_device *pdev,
+                   nir_shader *nir,
                    const struct nak_fs_key *fs_key,
                    struct nvk_shader *shader)
 {

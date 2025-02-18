@@ -65,7 +65,7 @@ nvk_GetMemoryFdPropertiesKHR(VkDevice device,
                              VkMemoryFdPropertiesKHR *pMemoryFdProperties)
 {
    VK_FROM_HANDLE(nvk_device, dev, device);
-   struct nvk_physical_device *pdev = nvk_device_physical(dev);
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
    struct nvkmd_mem *mem;
    VkResult result;
 
@@ -109,7 +109,7 @@ nvk_AllocateMemory(VkDevice device,
                    VkDeviceMemory *pMem)
 {
    VK_FROM_HANDLE(nvk_device, dev, device);
-   struct nvk_physical_device *pdev = nvk_device_physical(dev);
+   struct nvk_physical_device *pdev = nvk_device_physical_mut(dev);
    struct nvk_device_memory *mem;
    VkResult result = VK_SUCCESS;
 
@@ -246,7 +246,7 @@ nvk_FreeMemory(VkDevice device,
 {
    VK_FROM_HANDLE(nvk_device, dev, device);
    VK_FROM_HANDLE(nvk_device_memory, mem, _mem);
-   struct nvk_physical_device *pdev = nvk_device_physical(dev);
+   struct nvk_physical_device *pdev = nvk_device_physical_mut(dev);
 
    if (!mem)
       return;

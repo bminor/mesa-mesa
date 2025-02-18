@@ -16,7 +16,7 @@
 #include "clb097.h"
 
 VkFormatFeatureFlags2
-nvk_get_buffer_format_features(struct nvk_physical_device *pdev,
+nvk_get_buffer_format_features(const struct nvk_physical_device *pdev,
                                VkFormat vk_format)
 {
    VkFormatFeatureFlags2 features = 0;
@@ -50,7 +50,7 @@ nvk_CreateBufferView(VkDevice _device,
 {
    VK_FROM_HANDLE(nvk_device, dev, _device);
    VK_FROM_HANDLE(nvk_buffer, buffer, pCreateInfo->buffer);
-   struct nvk_physical_device *pdev = nvk_device_physical(dev);
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
    struct nvk_buffer_view *view;
    VkResult result;
 
@@ -97,7 +97,7 @@ nvk_DestroyBufferView(VkDevice _device,
 {
    VK_FROM_HANDLE(nvk_device, dev, _device);
    VK_FROM_HANDLE(nvk_buffer_view, view, bufferView);
-   struct nvk_physical_device *pdev = nvk_device_physical(dev);
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
 
    if (!view)
       return;

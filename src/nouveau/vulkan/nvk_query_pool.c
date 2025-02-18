@@ -39,7 +39,7 @@ nvk_CreateQueryPool(VkDevice device,
                     VkQueryPool *pQueryPool)
 {
    VK_FROM_HANDLE(nvk_device, dev, device);
-   struct nvk_physical_device *pdev = nvk_device_physical(dev);
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
    struct nvk_query_pool *pool;
    VkResult result;
 

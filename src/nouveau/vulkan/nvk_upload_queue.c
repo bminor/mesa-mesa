@@ -62,7 +62,7 @@ VkResult
 nvk_upload_queue_init(struct nvk_device *dev,
                       struct nvk_upload_queue *queue)
 {
-   struct nvk_physical_device *pdev = nvk_device_physical(dev);
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
    VkResult result;
 
    memset(queue, 0, sizeof(*queue));

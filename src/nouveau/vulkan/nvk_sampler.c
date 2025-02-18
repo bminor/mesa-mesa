@@ -289,7 +289,7 @@ nvk_CreateSampler(VkDevice device,
                   VkSampler *pSampler)
 {
    VK_FROM_HANDLE(nvk_device, dev, device);
-   struct nvk_physical_device *pdev = nvk_device_physical(dev);
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
    struct nvk_sampler *sampler;
    VkResult result;
 

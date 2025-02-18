@@ -14,7 +14,7 @@
 struct nvk_physical_device;
 
 VkFormatFeatureFlags2
-nvk_get_buffer_format_features(struct nvk_physical_device *pdev,
+nvk_get_buffer_format_features(const struct nvk_physical_device *pdev,
                                VkFormat format);
 
 struct nvk_buffer_view {
