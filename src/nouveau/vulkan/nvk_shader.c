@@ -184,7 +184,7 @@ nvk_preprocess_nir(struct vk_physical_device *vk_pdev, nir_shader *nir)
    const struct nvk_physical_device *pdev =
       container_of(vk_pdev, struct nvk_physical_device, vk);
 
-   NIR_PASS_V(nir, nir_lower_io_to_temporaries,
+   NIR_PASS(_, nir, nir_lower_io_to_temporaries,
               nir_shader_get_entrypoint(nir), true, false);
 
    if (use_nak(pdev, nir->info.stage))
