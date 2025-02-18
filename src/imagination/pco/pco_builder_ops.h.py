@@ -127,9 +127,10 @@ static
 pco_instr *_${op.bname}_(${op.builder_params[0]})
 {
    pco_instr *instr = pco_instr_create(func,
-                                       ${op.cname.upper()},
                                        ${'num_dests' if op.num_dests == VARIABLE else op.num_dests},
                                        ${'num_srcs' if op.num_srcs == VARIABLE else op.num_srcs});
+
+   instr->op = ${op.cname.upper()};
 
    % if op.has_target_cf_node:
    instr->target_cf_node = target_cf_node;

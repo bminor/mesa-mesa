@@ -250,6 +250,43 @@ trans_store_output_vs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref src)
    return pco_uvsw_write(&tctx->b, src, vtxout_addr, .rpt = chans);
 }
 
+static inline pco_instr *build_itr(pco_builder *b,
+                                   pco_ref dest,
+                                   enum pco_drc drc,
+                                   pco_ref coeffs,
+                                   pco_ref wcoeffs,
+                                   unsigned _itr_count,
+                                   enum pco_itr_mode itr_mode,
+                                   bool d)
+{
+   pco_func *func = pco_cursor_func(b->cursor);
+   pco_ref itr_count = pco_ref_val16(_itr_count);
+   bool p = !pco_ref_is_null(wcoeffs);
+   pco_instr *instr = pco_instr_create(func, 1, 3 + p);
+
+   instr->op = d ? (p ? PCO_OP_DITRP : PCO_OP_DITR)
+                 : (p ? PCO_OP_FITRP : PCO_OP_FITR);
+
+   instr->dest[0] = dest;
+   instr->src[0] = pco_ref_drc(drc);
+   instr->src[1] = coeffs;
+   instr->src[2] = p ? wcoeffs : itr_count;
+   if (p)
+      instr->src[3] = itr_count;
+
+   pco_instr_set_itr_mode(instr, itr_mode);
+
+   if (d)
+      pco_fence(b);
+
+   pco_builder_insert_instr(b, instr);
+
+   if (d)
+      pco_fence(b);
+
+   return instr;
+}
+
 /**
  * \brief Translates a NIR fs load_input intrinsic into PCO.
  *
@@ -332,7 +369,6 @@ trans_load_input_fs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
    pco_ref coeffs = pco_ref_hwreg_vec(coeffs_index,
                                       PCO_REG_CLASS_COEFF,
                                       ROGUE_USC_COEFFICIENT_SET_SIZE * chans);
-   pco_ref itr_count = pco_ref_val16(chans);
 
    bool usc_itrsmp_enhanced =
       PVR_HAS_FEATURE(tctx->pco_ctx->dev_info, usc_itrsmp_enhanced);
@@ -348,23 +384,14 @@ trans_load_input_fs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
                                           PCO_REG_CLASS_COEFF,
                                           ROGUE_USC_COEFFICIENT_SET_SIZE);
 
-      if (usc_itrsmp_enhanced)
-         pco_fence(&tctx->b);
-
-      return usc_itrsmp_enhanced ? pco_ditrp(&tctx->b,
-                                             dest,
-                                             pco_ref_drc(PCO_DRC_0),
-                                             coeffs,
-                                             wcoeffs,
-                                             itr_count,
-                                             .itr_mode = itr_mode)
-                                 : pco_fitrp(&tctx->b,
-                                             dest,
-                                             pco_ref_drc(PCO_DRC_0),
-                                             coeffs,
-                                             wcoeffs,
-                                             itr_count,
-                                             .itr_mode = itr_mode);
+      return build_itr(&tctx->b,
+                       dest,
+                       PCO_DRC_0,
+                       coeffs,
+                       wcoeffs,
+                       chans,
+                       itr_mode,
+                       usc_itrsmp_enhanced);
    }
 
    case INTERP_MODE_FLAT: {
@@ -377,21 +404,14 @@ trans_load_input_fs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
    }
 
    case INTERP_MODE_NOPERSPECTIVE:
-      if (usc_itrsmp_enhanced)
-         pco_fence(&tctx->b);
-
-      return usc_itrsmp_enhanced ? pco_ditr(&tctx->b,
-                                            dest,
-                                            pco_ref_drc(PCO_DRC_0),
-                                            coeffs,
-                                            itr_count,
-                                            .itr_mode = itr_mode)
-                                 : pco_fitr(&tctx->b,
-                                            dest,
-                                            pco_ref_drc(PCO_DRC_0),
-                                            coeffs,
-                                            itr_count,
-                                            .itr_mode = itr_mode);
+      return build_itr(&tctx->b,
+                       dest,
+                       PCO_DRC_0,
+                       coeffs,
+                       pco_ref_null(),
+                       chans,
+                       itr_mode,
+                       usc_itrsmp_enhanced);
 
    default:
       /* Should have been previously lowered. */

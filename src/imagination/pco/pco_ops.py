@@ -376,8 +376,8 @@ O_UVSW_ENDTASK = hw_op('uvsw.endtask', [OM_END])
 O_UVSW_EMIT_ENDTASK = hw_op('uvsw.emit.endtask', [OM_END])
 O_UVSW_WRITE_EMIT_ENDTASK = hw_op('uvsw.write.emit.endtask', [OM_END], 0, 2)
 
-O_FITR = hw_op('fitr', OM_ALU + [OM_ITR_MODE, OM_SAT], 1, 3)
-O_FITRP = hw_op('fitrp', OM_ALU + [OM_ITR_MODE, OM_SAT], 1, 4)
+O_FITR = hw_op('fitr', [OM_EXEC_CND, OM_END, OM_ITR_MODE, OM_SAT], 1, 3)
+O_FITRP = hw_op('fitrp', [OM_EXEC_CND, OM_END, OM_ITR_MODE, OM_SAT], 1, 4)
 
 O_LD = hw_op('ld', OM_ALU_RPT1 + [OM_MCU_CACHE_MODE_LD], 1, 3)
 O_ST = hw_direct_op('st', [OM_MCU_CACHE_MODE_ST], 0, 6)

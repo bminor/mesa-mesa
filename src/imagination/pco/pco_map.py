@@ -2776,13 +2776,13 @@ group_map(O_UVSW_WRITE_EMIT_ENDTASK,
 group_map(O_FITR,
    hdr=(I_IGRP_HDR_MAIN, [
       ('oporg', 'be'),
-      ('olchk', OM_OLCHK),
+      ('olchk', False),
       ('w1p', False),
       ('w0p', False),
       ('cc', OM_EXEC_CND),
       ('end', OM_END),
-      ('atom', OM_ATOM),
-      ('rpt', OM_RPT)
+      ('atom', False),
+      ('rpt', 1)
    ]),
    enc_ops=[('backend', O_FITR)],
    srcs=[
@@ -2794,13 +2794,13 @@ group_map(O_FITR,
 group_map(O_FITRP,
    hdr=(I_IGRP_HDR_MAIN, [
       ('oporg', 'be'),
-      ('olchk', OM_OLCHK),
+      ('olchk', False),
       ('w1p', False),
       ('w0p', False),
       ('cc', OM_EXEC_CND),
       ('end', OM_END),
-      ('atom', OM_ATOM),
-      ('rpt', OM_RPT)
+      ('atom', False),
+      ('rpt', 1)
    ]),
    enc_ops=[('backend', O_FITRP)],
    srcs=[

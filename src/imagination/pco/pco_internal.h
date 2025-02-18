@@ -430,10 +430,8 @@ pco_func *pco_func_create(pco_shader *shader,
 pco_block *pco_block_create(pco_func *func);
 pco_if *pco_if_create(pco_func *func);
 pco_loop *pco_loop_create(pco_func *func);
-pco_instr *pco_instr_create(pco_func *func,
-                            enum pco_op op,
-                            unsigned num_dests,
-                            unsigned num_srcs);
+pco_instr *
+pco_instr_create(pco_func *func, unsigned num_dests, unsigned num_srcs);
 pco_igrp *pco_igrp_create(pco_func *func);
 
 void pco_instr_delete(pco_instr *instr);
