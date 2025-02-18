@@ -175,7 +175,7 @@ ubo_desc(struct nvk_physical_device *pdev,
    assert(addr_range.addr % min_cbuf_alignment == 0);
    assert(addr_range.range <= NVK_MAX_CBUF_SIZE);
 
-   addr_range.addr = align64(addr_range.addr, min_cbuf_alignment);
+   addr_range.addr = ROUND_DOWN_TO(addr_range.addr, min_cbuf_alignment);
    addr_range.range = align(addr_range.range, min_cbuf_alignment);
 
    if (nvk_use_bindless_cbuf(&pdev->info)) {
@@ -227,7 +227,7 @@ ssbo_desc(struct nvk_addr_range addr_range)
    assert(addr_range.addr % NVK_MIN_SSBO_ALIGNMENT == 0);
    assert(addr_range.range <= UINT32_MAX);
 
-   addr_range.addr = align64(addr_range.addr, NVK_MIN_SSBO_ALIGNMENT);
+   addr_range.addr = ROUND_DOWN_TO(addr_range.addr, NVK_MIN_SSBO_ALIGNMENT);
    addr_range.range = align(addr_range.range, NVK_SSBO_BOUNDS_CHECK_ALIGNMENT);
 
    return (union nvk_buffer_descriptor) { .addr = {
