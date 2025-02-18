@@ -9172,6 +9172,17 @@ attachment_initial_layout(const VkRenderingAttachmentInfo *att)
    return att->imageLayout;
 }
 
+static VkImageLayout
+get_image_layout(const VkRenderingAttachmentInfo *att)
+{
+   const VkAttachmentFeedbackLoopInfoEXT *feedback_loop_info =
+      vk_find_struct_const(att->pNext, ATTACHMENT_FEEDBACK_LOOP_INFO_EXT);
+   if (feedback_loop_info && feedback_loop_info->feedbackLoopEnable)
+      return VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT;
+
+   return att->imageLayout;
+}
+
 VKAPI_ATTR void VKAPI_CALL
 radv_CmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRenderingInfo)
 {
@@ -9215,9 +9226,10 @@ radv_CmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRe
          continue;
 
       VK_FROM_HANDLE(radv_image_view, iview, att_info->imageView);
+
       color_att[i].format = iview->vk.format;
       color_att[i].iview = iview;
-      color_att[i].layout = att_info->imageLayout;
+      color_att[i].layout = get_image_layout(att_info);
       radv_initialise_color_surface(device, &color_att[i].cb, iview);
 
       if (att_info->resolveMode != VK_RESOLVE_MODE_NONE && att_info->resolveImageView != VK_NULL_HANDLE) {
@@ -9263,7 +9275,7 @@ radv_CmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRe
       if (d_att_info != NULL && d_att_info->imageView != VK_NULL_HANDLE) {
          d_iview = radv_image_view_from_handle(d_att_info->imageView);
          initial_depth_layout = attachment_initial_layout(d_att_info);
-         ds_att.layout = d_att_info->imageLayout;
+         ds_att.layout = get_image_layout(d_att_info);
 
          if (d_att_info->resolveMode != VK_RESOLVE_MODE_NONE && d_att_info->resolveImageView != VK_NULL_HANDLE) {
             d_res_iview = radv_image_view_from_handle(d_att_info->resolveImageView);
@@ -9275,7 +9287,7 @@ radv_CmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRe
       if (s_att_info != NULL && s_att_info->imageView != VK_NULL_HANDLE) {
          s_iview = radv_image_view_from_handle(s_att_info->imageView);
          initial_stencil_layout = attachment_initial_layout(s_att_info);
-         ds_att.stencil_layout = s_att_info->imageLayout;
+         ds_att.stencil_layout = get_image_layout(s_att_info);
 
          if (s_att_info->resolveMode != VK_RESOLVE_MODE_NONE && s_att_info->resolveImageView != VK_NULL_HANDLE) {
             s_res_iview = radv_image_view_from_handle(s_att_info->resolveImageView);
