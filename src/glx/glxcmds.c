@@ -321,8 +321,10 @@ CreateContext(Display *dpy, int generic_id, struct glx_config *config,
 #else
    if (allowDirect && psc->vtable->create_context)
       gc = psc->vtable->create_context(psc, config, shareList, renderType);
+#ifdef GLX_INDIRECT_RENDERING
    if (!gc)
       gc = indirect_create_context(psc, config, shareList, renderType);
+#endif
 #endif
    if (!gc)
       return NULL;
@@ -1318,7 +1320,9 @@ glXImportContextEXT(Display *dpy, GLXContextID contextID)
    if (mode == NULL)
       return NULL;
 
+#ifdef GLX_INDIRECT_RENDERING
    ctx = indirect_create_context(psc, mode, NULL, renderType);
+#endif
    if (ctx == NULL)
       return NULL;
 

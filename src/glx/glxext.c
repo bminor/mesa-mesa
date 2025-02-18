@@ -916,7 +916,9 @@ AllocAndFetchScreenConfigs(Display * dpy, struct glx_display * priv, enum glx_dr
 #else
       if (psc == NULL && !zink)
       {
+#ifdef GLX_INDIRECT_RENDERING
          psc = indirect_create_screen(i, priv);
+#endif
          indirect = true;
       }
 #endif
