@@ -550,6 +550,16 @@ PCO_DEFINE_CAST(pco_cf_node_as_func,
         pif = pco_next_if(pif))                             \
       if (pco_ref_is_ssa(pif->cond) && pco_ref_get_bits(pif->cond) == 1)
 
+#define pco_foreach_vreg_if_in_func(pif, func)              \
+   for (pco_if *pif = pco_func_first_if(func); pif != NULL; \
+        pif = pco_next_if(pif))                             \
+      if (pco_ref_is_vreg(pif->cond))
+
+#define pco_foreach_vreg_ssa_if_in_func(pif, func)          \
+   for (pco_if *pif = pco_func_first_if(func); pif != NULL; \
+        pif = pco_next_if(pif))                             \
+      if (pco_ref_is_vreg(pif->cond) || pco_ref_is_ssa(pif->cond))
+
 #define pco_foreach_if_in_func_from(pif, from) \
    for (pco_if *pif = pco_next_if(from); pif != NULL; pif = pco_next_if(pif))
 

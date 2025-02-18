@@ -304,6 +304,8 @@ ForEachMacros: [
   'pco_foreach_phase_in_igrp_rev',
   'pco_foreach_phase_rev',
   'pco_foreach_phi_src_in_instr',
+  'pco_foreach_vreg_if_in_func',
+  'pco_foreach_vreg_ssa_if_in_func',
   'pvr_foreach_supported_tex_format',
   'pvr_foreach_supported_tex_format_',
   'pvr_foreach_supported_tex_format_compressed',

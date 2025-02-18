@@ -573,41 +573,56 @@ bool pco_dce(pco_shader *shader)
 {
    bool progress = false;
    BITSET_WORD *ssa_used;
+   BITSET_WORD *vreg_used;
 
    pco_foreach_func_in_shader (func, shader) {
       ssa_used = rzalloc_array_size(NULL,
                                     sizeof(*ssa_used),
                                     BITSET_WORDS(func->next_ssa));
 
-      /* Collect used SSA sources. */
+      vreg_used = rzalloc_array_size(NULL,
+                                     sizeof(*vreg_used),
+                                     BITSET_WORDS(func->next_vreg));
+
+      /* Collect used SSA/vreg sources. */
       pco_foreach_instr_in_func (instr, func) {
-         pco_foreach_instr_src_ssa (psrc, instr) {
-            BITSET_SET(ssa_used, psrc->val);
+         pco_foreach_instr_src_vreg_ssa (psrc, instr) {
+            if (pco_ref_is_ssa(*psrc))
+               BITSET_SET(ssa_used, psrc->val);
+            else
+               BITSET_SET(vreg_used, psrc->val);
          }
       }
 
-      pco_foreach_ssa_if_in_func (pif, func) {
-         BITSET_SET(ssa_used, pif->cond.val);
+      pco_foreach_vreg_ssa_if_in_func (pif, func) {
+         if (pco_ref_is_ssa(pif->cond))
+            BITSET_SET(ssa_used, pif->cond.val);
+         else
+            BITSET_SET(vreg_used, pif->cond.val);
       }
 
-      /* Remove instructions with unused SSA destinations (if they also have no
-       * side-effects).
+      /* Remove instructions with unused SSA/vreg destinations (if they also
+       * have no side-effects).
        */
       pco_foreach_instr_in_func_safe (instr, func) {
-         bool has_ssa_dests = false;
+         bool has_dce_dests = false;
          bool dests_used = false;
 
-         pco_foreach_instr_dest_ssa (pdest, instr) {
-            has_ssa_dests = true;
-            dests_used |= BITSET_TEST(ssa_used, pdest->val);
+         pco_foreach_instr_dest_vreg_ssa (pdest, instr) {
+            has_dce_dests = true;
+            if (pco_ref_is_ssa(*pdest))
+               dests_used |= BITSET_TEST(ssa_used, pdest->val);
+            else
+               dests_used |= BITSET_TEST(vreg_used, pdest->val);
          }
 
-         if (has_ssa_dests && !dests_used && !instr_has_side_effects(instr)) {
+         if (has_dce_dests && !dests_used && !instr_has_side_effects(instr)) {
             pco_instr_delete(instr);
             progress = true;
          }
       }
 
+      ralloc_free(vreg_used);
       ralloc_free(ssa_used);
    }
 
