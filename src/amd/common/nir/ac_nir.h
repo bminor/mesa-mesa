@@ -239,7 +239,7 @@ ac_nir_create_gs_copy_shader(const nir_shader *gs_nir,
                              bool force_vrs,
                              ac_nir_gs_output_info *output_info);
 
-void
+bool
 ac_nir_lower_legacy_vs(nir_shader *nir,
                        enum amd_gfx_level gfx_level,
                        uint32_t clip_cull_mask,
