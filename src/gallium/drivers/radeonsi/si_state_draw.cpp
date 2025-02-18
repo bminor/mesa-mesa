@@ -542,6 +542,7 @@ static void si_cp_dma_prefetch_inline(struct si_context *sctx, uint64_t address,
    assert(size % SI_CPDMA_ALIGNMENT == 0);
    assert(address % SI_CPDMA_ALIGNMENT == 0);
    assert(size < S_415_BYTE_COUNT_GFX6(~0u));
+   assert(address || size == 0);
 
    uint32_t header = S_411_SRC_SEL(V_411_SRC_ADDR_TC_L2);
    uint32_t command = S_415_BYTE_COUNT_GFX6(size);

@@ -1317,6 +1317,7 @@ static void si_set_shader_buffer(struct si_context *sctx, struct si_buffer_resou
    assert(sbuffer->buffer_offset + sbuffer->buffer_size <= align(buf->bo_size, 4));
    uint64_t va = buf->gpu_address + sbuffer->buffer_offset;
 
+   assert(va);
    desc[0] = va;
    desc[1] = S_008F04_BASE_ADDRESS_HI(va >> 32) | S_008F04_STRIDE(0);
    desc[2] = sbuffer->buffer_size;

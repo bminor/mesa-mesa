@@ -46,6 +46,7 @@ static void si_emit_cp_dma(struct si_context *sctx, struct radeon_cmdbuf *cs, ui
 
    assert(sctx->screen->info.has_cp_dma);
    assert(size <= cp_dma_max_byte_count(sctx));
+   assert(size == 0 || (src_va && dst_va));
 
    if (sctx->gfx_level >= GFX9)
       command |= S_415_BYTE_COUNT_GFX9(size);
