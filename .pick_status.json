@@ -3064,7 +3064,7 @@
         "description": "nak: Handle sparse texops with unused color destinations",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b17f139281b1f1419d7705d200480771fb43a958",
         "notes": null
