@@ -649,7 +649,7 @@ static unsigned amdgpu_cs_add_buffer(struct radeon_cmdbuf *rcs,
    /* Don't use the "domains" parameter. Amdgpu doesn't support changing
     * the buffer placement during command submission.
     */
-   struct amdgpu_cs_context *cs = (struct amdgpu_cs_context*)rcs->csc;
+   struct amdgpu_cs_context *cs = amdgpu_cs(rcs)->csc;
    struct amdgpu_winsys_bo *bo = (struct amdgpu_winsys_bo*)buf;
    struct amdgpu_cs_buffer *buffer;
 
@@ -978,7 +978,7 @@ amdgpu_cs_create(struct radeon_cmdbuf *rcs,
    memset(cs->buffer_indices_hashlist, -1, sizeof(cs->buffer_indices_hashlist));
 
    /* Set the first submission context as current. */
-   rcs->csc = cs->csc = &cs->csc1;
+   cs->csc = &cs->csc1;
    cs->cst = &cs->csc2;
 
    /* Assign to both amdgpu_cs_context; only csc will use it. */
@@ -989,6 +989,7 @@ amdgpu_cs_create(struct radeon_cmdbuf *rcs,
    cs->csc2.aws = ctx->aws;
 
    p_atomic_inc(&ctx->aws->num_cs);
+   rcs->priv = cs;
 
    if (!amdgpu_get_new_ib(ctx->aws, rcs, &cs->main_ib, cs))
       goto fail;
@@ -999,9 +1000,9 @@ amdgpu_cs_create(struct radeon_cmdbuf *rcs,
          goto fail;
    }
 
-   rcs->priv = cs;
    return true;
 fail:
+   rcs->priv = NULL;
    amdgpu_cs_destroy(rcs);
    return false;
 }
@@ -2165,7 +2166,7 @@ static int amdgpu_cs_flush(struct radeon_cmdbuf *rcs,
       }
 
       /* Swap command streams. "cst" is going to be submitted. */
-      rcs->csc = cs->csc = cs->cst;
+      cs->csc = cs->cst;
       cs->cst = cur;
 
       /* only gfx, compute and sdma queues are supported in userqueues. */
