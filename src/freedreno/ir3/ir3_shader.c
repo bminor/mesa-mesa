@@ -510,6 +510,7 @@ alloc_variant(struct ir3_shader *shader, const struct ir3_shader_key *key,
       return NULL;
 
    v->id = ++shader->variant_count;
+   v->shader = shader;
    v->shader_id = shader->id;
    v->binning_pass = !!nonbinning;
    v->nonbinning = nonbinning;

@@ -633,6 +633,7 @@ struct ir3_shader_variant {
 
    /* id of the shader the variant came from (for debug) */
    uint32_t shader_id;
+   struct ir3_shader *shader;
 
    struct ir3_shader_key key;
 
