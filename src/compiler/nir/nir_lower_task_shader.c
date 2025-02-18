@@ -446,6 +446,7 @@ nir_lower_task_shader(nir_shader *shader,
       nir_block *last_block = nir_impl_last_block(impl);
       builder.cursor = nir_after_block_before_jump(last_block);
       nir_launch_mesh_workgroups(&builder, nir_imm_zero(&builder, 3, 32));
+      nir_metadata_preserve(impl, nir_metadata_control_flow);
    }
 
    bool atomics = options.payload_to_shared_for_atomics;

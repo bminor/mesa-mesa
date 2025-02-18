@@ -194,7 +194,7 @@ ac_nir_lower_ngg_mesh(nir_shader *shader,
                       bool has_query,
                       bool fast_launch_2);
 
-void
+bool
 ac_nir_lower_task_outputs_to_mem(nir_shader *shader,
                                  unsigned task_payload_entry_bytes,
                                  unsigned task_num_entries,
