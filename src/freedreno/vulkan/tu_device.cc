@@ -196,6 +196,7 @@ get_device_extensions(const struct tu_physical_device *device,
       .KHR_maintenance4 = true,
       .KHR_maintenance5 = true,
       .KHR_maintenance6 = true,
+      .KHR_maintenance7 = true,
       .KHR_map_memory2 = true,
       .KHR_multiview = TU_DEBUG(NOCONFORM) ? true : device->info->a6xx.has_hw_multiview,
       .KHR_performance_query = TU_DEBUG(PERFC) || TU_DEBUG(PERFCRAW),
@@ -515,6 +516,9 @@ tu_get_features(struct tu_physical_device *pdevice,
 
    /* VK_KHR_maintenance6 */
    features->maintenance6 = true;
+
+   /* VK_KHR_maintenance7 */
+   features->maintenance7 = true;
 
    /* VK_KHR_performance_query */
    features->performanceCounterQueryPools = true;
@@ -1277,6 +1281,28 @@ tu_get_properties(struct tu_physical_device *pdevice,
    props->blockTexelViewCompatibleMultipleLayers = true;
    props->maxCombinedImageSamplerDescriptorCount = 1;
    props->fragmentShadingRateClampCombinerInputs = true;
+
+   /* VK_KHR_maintenance7 */
+   props->robustFragmentShadingRateAttachmentAccess = true;
+   /* For D24S8, storing depth or stencil forces a load and store of the other
+    * component.
+    */
+   props->separateDepthStencilAttachmentAccess = false;
+   /* Uniform and storage buffers are different sizes, so we can't allow the
+    * user to freely mix them and count both against a shared limit. We have
+    * to force the user to use at most MAX_DYNAMIC_UNIFORM_BUFFERS uniform
+    * buffers and MAX_DYNAMIC_STORAGE_BUFFERS storage buffers and set the
+    * combined limit to the sum (which makes it redundant since the user will
+    * always hit the other limits first).
+    */
+   props->maxDescriptorSetTotalUniformBuffersDynamic = MAX_DYNAMIC_UNIFORM_BUFFERS;
+   props->maxDescriptorSetTotalStorageBuffersDynamic = MAX_DYNAMIC_STORAGE_BUFFERS;
+   props->maxDescriptorSetTotalBuffersDynamic =
+      MAX_DYNAMIC_UNIFORM_BUFFERS + MAX_DYNAMIC_STORAGE_BUFFERS;
+   props->maxDescriptorSetUpdateAfterBindTotalUniformBuffersDynamic = MAX_DYNAMIC_UNIFORM_BUFFERS;
+   props->maxDescriptorSetUpdateAfterBindTotalStorageBuffersDynamic = MAX_DYNAMIC_STORAGE_BUFFERS;
+   props->maxDescriptorSetUpdateAfterBindTotalBuffersDynamic =
+      MAX_DYNAMIC_UNIFORM_BUFFERS + MAX_DYNAMIC_STORAGE_BUFFERS;
 
    /* VK_EXT_host_image_copy */
 
