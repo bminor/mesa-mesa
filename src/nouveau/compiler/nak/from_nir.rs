@@ -1749,6 +1749,13 @@ impl<'a> ShaderFromNir<'a> {
         let mut mask = u8::try_from(mask).unwrap();
         if flags.is_sparse() {
             mask &= !(1 << (tex.def.num_components - 1));
+            if mask == 0 {
+                // This can happen if only the sparse predicate is used.  In
+                // that case, we need at least one result register.
+                mask = 1;
+            }
+        } else {
+            debug_assert!(mask != 0);
         }
 
         let dst_comps = u8::try_from(mask.count_ones()).unwrap();
