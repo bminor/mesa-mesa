@@ -145,53 +145,55 @@ nvk_cmd_upload_qmd(struct nvk_cmd_buffer *cmd,
 
    memcpy(root_desc_map, root, sizeof(*root));
 
-   struct nak_qmd_info qmd_info = {
-      .addr = shader->hdr_addr,
-      .smem_size = shader->info.cs.smem_size,
-      .smem_max = NVK_MAX_SHARED_SIZE,
-      .global_size = {
-         global_size[0],
-         global_size[1],
-         global_size[2],
-      },
-   };
+   uint64_t qmd_addr = 0;
+   if (shader != NULL) {
+      struct nak_qmd_info qmd_info = {
+         .addr = shader->hdr_addr,
+         .smem_size = shader->info.cs.smem_size,
+         .smem_max = NVK_MAX_SHARED_SIZE,
+         .global_size = {
+            global_size[0],
+            global_size[1],
+            global_size[2],
+         },
+      };
 
-   assert(shader->cbuf_map.cbuf_count <= ARRAY_SIZE(qmd_info.cbufs));
-   for (uint32_t c = 0; c < shader->cbuf_map.cbuf_count; c++) {
-      const struct nvk_cbuf *cbuf = &shader->cbuf_map.cbufs[c];
+      assert(shader->cbuf_map.cbuf_count <= ARRAY_SIZE(qmd_info.cbufs));
+      for (uint32_t c = 0; c < shader->cbuf_map.cbuf_count; c++) {
+         const struct nvk_cbuf *cbuf = &shader->cbuf_map.cbufs[c];
 
-      struct nvk_buffer_address ba;
-      if (cbuf->type == NVK_CBUF_TYPE_ROOT_DESC) {
-         ba = (struct nvk_buffer_address) {
-            .base_addr = root_desc_addr,
-            .size = sizeof(*root),
-         };
-      } else {
-         ASSERTED bool direct_descriptor =
-            nvk_cmd_buffer_get_cbuf_addr(cmd, desc, shader, cbuf, &ba);
-         assert(direct_descriptor);
+         struct nvk_buffer_address ba;
+         if (cbuf->type == NVK_CBUF_TYPE_ROOT_DESC) {
+            ba = (struct nvk_buffer_address) {
+               .base_addr = root_desc_addr,
+               .size = sizeof(*root),
+            };
+         } else {
+            ASSERTED bool direct_descriptor =
+               nvk_cmd_buffer_get_cbuf_addr(cmd, desc, shader, cbuf, &ba);
+            assert(direct_descriptor);
+         }
+
+         if (ba.size > 0) {
+            assert(ba.base_addr % min_cbuf_alignment == 0);
+            ba.size = align(ba.size, min_cbuf_alignment);
+            ba.size = MIN2(ba.size, NVK_MAX_CBUF_SIZE);
+
+            qmd_info.cbufs[qmd_info.num_cbufs++] = (struct nak_qmd_cbuf) {
+               .index = c,
+               .addr = ba.base_addr,
+               .size = ba.size,
+            };
+         }
       }
 
-      if (ba.size > 0) {
-         assert(ba.base_addr % min_cbuf_alignment == 0);
-         ba.size = align(ba.size, min_cbuf_alignment);
-         ba.size = MIN2(ba.size, NVK_MAX_CBUF_SIZE);
+      uint32_t qmd[64];
+      nak_fill_qmd(&pdev->info, &shader->info, &qmd_info, qmd, sizeof(qmd));
 
-         qmd_info.cbufs[qmd_info.num_cbufs++] = (struct nak_qmd_cbuf) {
-            .index = c,
-            .addr = ba.base_addr,
-            .size = ba.size,
-         };
-      }
+      result = nvk_cmd_buffer_upload_data(cmd, qmd, sizeof(qmd), 0x100, &qmd_addr);
+      if (unlikely(result != VK_SUCCESS))
+         return result;
    }
-
-   uint32_t qmd[64];
-   nak_fill_qmd(&pdev->info, &shader->info, &qmd_info, qmd, sizeof(qmd));
-
-   uint64_t qmd_addr;
-   result = nvk_cmd_buffer_upload_data(cmd, qmd, sizeof(qmd), 0x100, &qmd_addr);
-   if (unlikely(result != VK_SUCCESS))
-      return result;
 
    *qmd_addr_out = qmd_addr;
    if (root_desc_addr_out != NULL)
