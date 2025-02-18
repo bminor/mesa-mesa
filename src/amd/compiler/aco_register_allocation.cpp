@@ -3064,18 +3064,18 @@ emit_parallel_copy(ra_ctx& ctx, std::vector<std::pair<Operand, Definition>>& par
 
    std::vector<std::pair<Operand, Definition>> linear_vgpr;
    if (ctx.num_linear_vgprs) {
-      unsigned next = 0;
-      for (unsigned i = 0; i < parallelcopy.size(); i++) {
-         if (parallelcopy[i].first.regClass().is_linear_vgpr()) {
-            linear_vgpr.push_back(parallelcopy[i]);
+      auto next = parallelcopy.begin();
+      for (auto it = parallelcopy.begin(); it != parallelcopy.end(); ++it) {
+         if (it->first.regClass().is_linear_vgpr()) {
+            linear_vgpr.push_back(*it);
             continue;
          }
 
-         if (next != i)
-            parallelcopy[next] = parallelcopy[i];
-         next++;
+         if (next != it)
+            *next = *it;
+         ++next;
       }
-      parallelcopy.resize(next);
+      parallelcopy.erase(next, parallelcopy.end());
    }
 
    /* Because of how linear VGPRs are allocated, we should never have to move a linear VGPR into the
