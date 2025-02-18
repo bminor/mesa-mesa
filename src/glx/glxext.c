@@ -59,7 +59,7 @@
 #define __GLX_TOTAL_CONFIG \
    (__GLX_MIN_CONFIG_PROPS + 2 * __GLX_EXT_CONFIG_PROPS)
 
-_X_HIDDEN void
+void
 glx_message(int level, const char *f, ...)
 {
    va_list args;
@@ -86,7 +86,7 @@ glx_message(int level, const char *f, ...)
 ** You can set this cell to 1 to force the gl drawing stuff to be
 ** one command per packet
 */
-_X_HIDDEN int __glXDebug = 0;
+int __glXDebug = 0;
 
 /* Extension required boiler plate */
 
@@ -375,7 +375,7 @@ convert_from_x_visual_type(int visualType)
  * getVisualConfigs uses the !tagged_only path.
  * getFBConfigs uses the tagged_only path.
  */
-_X_HIDDEN void
+void
 __glXInitializeVisualConfigFromTags(struct glx_config * config, int count,
                                     const INT32 * bp, Bool tagged_only,
                                     Bool fbconfig_style_tags)
@@ -710,7 +710,7 @@ getFBConfigs(struct glx_screen *psc, struct glx_display *priv, int screen)
    return psc->configs != NULL;
 }
 
-_X_HIDDEN Bool
+Bool
 glx_screen_init(struct glx_screen *psc,
 		 int screen, struct glx_display * priv)
 {
@@ -729,7 +729,7 @@ glx_screen_init(struct glx_screen *psc,
    return GL_TRUE;
 }
 
-_X_HIDDEN void
+void
 glx_screen_cleanup(struct glx_screen *psc)
 {
    if (psc->configs) {
@@ -940,7 +940,7 @@ AllocAndFetchScreenConfigs(Display * dpy, struct glx_display * priv, enum glx_dr
 /*
 ** Initialize the client side extension code.
 */
- _X_HIDDEN struct glx_display *
+struct glx_display *
 __glXInitialize(Display * dpy)
 {
    XExtCodes *codes;
@@ -1129,7 +1129,7 @@ __glXInitialize(Display * dpy)
 ** Setup for sending a GLX command on dpy.  Make sure the extension is
 ** initialized.  Try to avoid calling __glXInitialize as its kinda slow.
 */
-_X_HIDDEN CARD8
+CARD8
 __glXSetupForCommand(Display * dpy)
 {
     struct glx_context *gc;
@@ -1171,7 +1171,7 @@ __glXSetupForCommand(Display * dpy)
  * Modify this function to use \c ctx->pc instead of the explicit
  * \c pc parameter.
  */
-_X_HIDDEN GLubyte *
+GLubyte *
 __glXFlushRenderBuffer(struct glx_context * ctx, GLubyte * pc)
 {
    Display *const dpy = ctx->currentDpy;
@@ -1205,7 +1205,7 @@ __glXFlushRenderBuffer(struct glx_context * ctx, GLubyte * pc)
  * \param data           Command data.
  * \param dataLen        Size, in bytes, of the command data.
  */
-_X_HIDDEN void
+void
 __glXSendLargeChunk(struct glx_context * gc, GLint requestNumber,
                     GLint totalRequests, const GLvoid * data, GLint dataLen)
 {
@@ -1231,7 +1231,7 @@ __glXSendLargeChunk(struct glx_context * gc, GLint requestNumber,
  * \param data       Command data.
  * \param dataLen    Size, in bytes, of the command data.
  */
-_X_HIDDEN void
+void
 __glXSendLargeCommand(struct glx_context * ctx,
                       const GLvoid * header, GLint headerLen,
                       const GLvoid * data, GLint dataLen)

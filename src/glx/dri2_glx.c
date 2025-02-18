@@ -619,7 +619,7 @@ static const __DRIdri2LoaderExtension dri2LoaderExtension = {
    .getBuffersWithFormat    = dri2GetBuffersWithFormat,
 };
 
-_X_HIDDEN void
+void
 dri2InvalidateBuffers(Display *dpy, XID drawable)
 {
    __GLXDRIdrawable *pdraw =
@@ -750,7 +750,7 @@ handle_error:
    return NULL;
 }
 
-_X_HIDDEN __GLXDRIdrawable *
+__GLXDRIdrawable *
 dri2GetGlxDrawableFromXDrawableId(Display *dpy, XID id)
 {
    struct glx_display *d = __glXInitialize(dpy);

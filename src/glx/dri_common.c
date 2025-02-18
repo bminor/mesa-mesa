@@ -209,7 +209,7 @@ createDriMode(struct glx_config *config, const struct dri_config **driConfigs)
    return &driConfig->base;
 }
 
-_X_HIDDEN struct glx_config *
+struct glx_config *
 driConvertConfigs(struct glx_config *configs, const struct dri_config **driConfigs)
 {
    struct glx_config head, *tail, *m;
@@ -230,7 +230,7 @@ driConvertConfigs(struct glx_config *configs, const struct dri_config **driConfi
    return head.next;
 }
 
-_X_HIDDEN void
+void
 driDestroyConfigs(const struct dri_config **configs)
 {
    int i;
@@ -273,7 +273,7 @@ driInferDrawableConfig(struct glx_screen *psc, GLXDrawable draw)
    return NULL;
 }
 
-_X_HIDDEN __GLXDRIdrawable *
+__GLXDRIdrawable *
 driFetchDrawable(struct glx_context *gc, GLXDrawable glxDrawable)
 {
    Display *dpy = gc->psc->dpy;
@@ -424,7 +424,7 @@ releaseDrawable(const struct glx_display *priv, GLXDrawable drawable)
    }
 }
 
-_X_HIDDEN void
+void
 driReleaseDrawables(struct glx_context *gc)
 {
    const struct glx_display *priv = gc->psc->display;
@@ -437,7 +437,7 @@ driReleaseDrawables(struct glx_context *gc)
 
 }
 
-_X_HIDDEN int
+int
 dri_convert_glx_attribs(unsigned num_attribs, const uint32_t *attribs,
                         struct dri_ctx_attribs *dca)
 {

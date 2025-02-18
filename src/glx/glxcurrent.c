@@ -42,7 +42,7 @@ struct glx_context dummyContext = {
  * Current context management and locking
  */
 
-_X_HIDDEN pthread_mutex_t __glXmutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t __glXmutex = PTHREAD_MUTEX_INITIALIZER;
 
 /**
  * Per-thread GLX context pointer.
@@ -53,13 +53,13 @@ _X_HIDDEN pthread_mutex_t __glXmutex = PTHREAD_MUTEX_INITIALIZER;
  */
 __THREAD_INITIAL_EXEC void *__glX_tls_Context = &dummyContext;
 
-_X_HIDDEN void
+void
 __glXSetCurrentContext(struct glx_context * c)
 {
    __glX_tls_Context = (c != NULL) ? c : &dummyContext;
 }
 
-_X_HIDDEN void
+void
 __glXSetCurrentContextNull(void)
 {
    __glXSetCurrentContext(&dummyContext);

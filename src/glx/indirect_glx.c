@@ -211,7 +211,7 @@ static const struct glx_context_vtable indirect_context_vtable = {
    .wait_x              = indirect_wait_x,
 };
 
-_X_HIDDEN struct glx_context *
+struct glx_context *
 indirect_create_context(struct glx_screen *psc,
          struct glx_config *mode,
          struct glx_context *shareList, int renderType)
@@ -228,7 +228,7 @@ indirect_create_context(struct glx_screen *psc,
  * function called \c __glXAllocateClientState that allocates the memory and
  * does all the initialization (including the pixel pack / unpack).
  */
-_X_HIDDEN struct glx_context *
+struct glx_context *
 indirect_create_context_attribs(struct glx_screen *psc,
             struct glx_config *mode,
             struct glx_context *shareList,
@@ -360,7 +360,7 @@ static const struct glx_screen_vtable indirect_screen_vtable = {
    .query_renderer_string  = NULL,
 };
 
-_X_HIDDEN struct glx_screen *
+struct glx_screen *
 indirect_create_screen(int screen, struct glx_display * priv)
 {
    struct glx_screen *psc;

@@ -170,7 +170,7 @@ static const struct glx_screen_vtable applegl_screen_vtable = {
    .query_renderer_string  = NULL,
 };
 
-_X_HIDDEN struct glx_screen *
+struct glx_screen *
 applegl_create_screen(int screen, struct glx_display * priv)
 {
    struct glx_screen *psc;
@@ -185,7 +185,7 @@ applegl_create_screen(int screen, struct glx_display * priv)
    return psc;
 }
 
-_X_HIDDEN int
+int
 applegl_create_display(struct glx_display *glx_dpy)
 {
    if(!apple_init_glx(glx_dpy->dpy))

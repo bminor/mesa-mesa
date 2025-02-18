@@ -43,7 +43,7 @@ void __glXSendError(Display * dpy, int_fast8_t errorCode,
           uint_fast32_t resourceID, uint_fast16_t minorCode,
           bool coreX11error);
 
-_X_HIDDEN void __glXSendErrorForXcb(Display * dpy,
+void __glXSendErrorForXcb(Display * dpy,
                 const xcb_generic_error_t *err);
 
 #ifdef __cplusplus

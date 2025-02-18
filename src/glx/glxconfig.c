@@ -48,7 +48,7 @@
  * \return  If \c attribute is a valid attribute of \c mode, zero is
  *          returned.  Otherwise \c GLX_BAD_ATTRIBUTE is returned.
  */
-_X_HIDDEN int
+int
 glx_config_get(struct glx_config * mode, int attribute, int *value_return)
 {
    switch (attribute) {
@@ -214,7 +214,7 @@ glx_config_get(struct glx_config * mode, int attribute, int *value_return)
  * \returns A pointer to the first element in a linked list of \c count
  *          structures on success, or \c NULL on failure.
  */
-_X_HIDDEN struct glx_config *
+struct glx_config *
 glx_config_create_list(unsigned count)
 {
    const size_t size = sizeof(struct glx_config);
@@ -255,7 +255,7 @@ glx_config_create_list(unsigned count)
    return base;
 }
 
-_X_HIDDEN void
+void
 glx_config_destroy_list(struct glx_config *configs)
 {
    while (configs != NULL) {
@@ -276,7 +276,7 @@ glx_config_destroy_list(struct glx_config *configs)
  *          the list, or \c NULL if it was not.
  */
 
-_X_HIDDEN struct glx_config *
+struct glx_config *
 glx_config_find_visual(struct glx_config *configs, int vid)
 {
    struct glx_config *c;
@@ -288,7 +288,7 @@ glx_config_find_visual(struct glx_config *configs, int vid)
    return NULL;
 }
 
-_X_HIDDEN struct glx_config *
+struct glx_config *
 glx_config_find_fbconfig(struct glx_config *configs, int fbid)
 {
    struct glx_config *c;

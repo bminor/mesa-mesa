@@ -75,7 +75,7 @@ __glXQueryRendererInteger(struct glx_screen *psc, int attribute,
    return err == 0;
 }
 
-_X_HIDDEN Bool
+Bool
 glXQueryRendererIntegerMESA(Display *dpy, int screen,
                             int renderer, int attribute,
                             unsigned int *value)
@@ -101,7 +101,7 @@ glXQueryRendererIntegerMESA(Display *dpy, int screen,
    return __glXQueryRendererInteger(psc, attribute, value);
 }
 
-_X_HIDDEN Bool
+Bool
 glXQueryCurrentRendererIntegerMESA(int attribute, unsigned int *value)
 {
    struct glx_context *gc = __glXGetCurrentContext();
@@ -136,7 +136,7 @@ __glXQueryRendererString(struct glx_screen *psc, int attribute)
    return (err == 0) ? value : NULL;
 }
 
-_X_HIDDEN const char *
+const char *
 glXQueryRendererStringMESA(Display *dpy, int screen,
                            int renderer, int attribute)
 {
@@ -161,7 +161,7 @@ glXQueryRendererStringMESA(Display *dpy, int screen,
    return __glXQueryRendererString(psc, attribute);
 }
 
-_X_HIDDEN const char *
+const char *
 glXQueryCurrentRendererStringMESA(int attribute)
 {
    struct glx_context *gc = __glXGetCurrentContext();
