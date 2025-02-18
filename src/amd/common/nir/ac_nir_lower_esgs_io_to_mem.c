@@ -344,7 +344,7 @@ ac_nir_lower_es_outputs_to_mem(nir_shader *shader,
                                      &state);
 }
 
-void
+bool
 ac_nir_lower_gs_inputs_to_mem(nir_shader *shader,
                               ac_nir_map_io_driver_location map,
                               enum amd_gfx_level gfx_level,
@@ -357,8 +357,8 @@ ac_nir_lower_gs_inputs_to_mem(nir_shader *shader,
       .gs_inputs_read = shader->info.inputs_read,
    };
 
-   nir_shader_lower_instructions(shader,
-                                 filter_load_per_vertex_input,
-                                 lower_gs_per_vertex_input_load,
-                                 &state);
+   return nir_shader_lower_instructions(shader,
+                                        filter_load_per_vertex_input,
+                                        lower_gs_per_vertex_input_load,
+                                        &state);
 }
