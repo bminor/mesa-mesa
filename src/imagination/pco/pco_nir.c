@@ -500,6 +500,12 @@ void pco_preprocess_nir(pco_ctx *ctx, nir_shader *nir)
 
    NIR_PASS(_, nir, nir_lower_vars_to_ssa);
 
+   NIR_PASS(_,
+            nir,
+            nir_lower_indirect_derefs,
+            nir_var_function_temp,
+            UINT32_MAX);
+
    NIR_PASS(_, nir, nir_opt_idiv_const, 32);
    NIR_PASS(_,
             nir,
