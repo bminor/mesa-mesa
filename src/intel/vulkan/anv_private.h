@@ -5036,7 +5036,7 @@ struct anv_compute_pipeline {
          uint32_t                               gpgpu_walker[15];
       } gfx9;
       struct {
-         uint32_t                               compute_walker[39];
+         uint32_t                               compute_walker[40];
       } gfx125;
    };
 

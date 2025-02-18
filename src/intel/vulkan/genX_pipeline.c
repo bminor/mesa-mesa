@@ -2119,6 +2119,7 @@ genX(compute_pipeline_emit)(struct anv_compute_pipeline *pipeline)
       },
    };
 
+   assert(ARRAY_SIZE(pipeline->gfx125.compute_walker) >= GENX(COMPUTE_WALKER_length));
    GENX(COMPUTE_WALKER_pack)(NULL, pipeline->gfx125.compute_walker, &walker);
 }
 
