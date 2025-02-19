@@ -46,6 +46,7 @@
 #include "program/prog_instruction.h"
 #include "util/compiler.h"
 #include "builtin_functions.h"
+#include "ast.h"
 
 using namespace ir_builder;
 
@@ -361,7 +362,7 @@ public:
    per_vertex_accumulator();
    void add_field(int slot, const glsl_type *type, int precision,
                   const char *name, enum glsl_interp_mode interp);
-   const glsl_type *construct_interface_instance() const;
+   const glsl_type *construct_interface_instance(const char *name = "gl_PerVertex") const;
 
 private:
    glsl_struct_field fields[14];
@@ -406,12 +407,11 @@ per_vertex_accumulator::add_field(int slot, const glsl_type *type,
 
 
 const glsl_type *
-per_vertex_accumulator::construct_interface_instance() const
+per_vertex_accumulator::construct_interface_instance(const char *name) const
 {
    return glsl_interface_type(this->fields, this->num_fields,
                               GLSL_INTERFACE_PACKING_STD140,
-                              false,
-                              "gl_PerVertex");
+                              false, name);
 }
 
 
@@ -431,6 +431,7 @@ public:
    void generate_cs_special_vars();
    void generate_ms_special_vars();
    void generate_varyings();
+   void generate_ms_varyings();
 
 private:
    const glsl_type *array(const glsl_type *base, unsigned elements)
@@ -531,6 +532,7 @@ private:
    const glsl_type * const vec2_t;
    const glsl_type * const vec3_t;
    const glsl_type * const vec4_t;
+   const glsl_type * const uvec2_t;
    const glsl_type * const uvec3_t;
    const glsl_type * const uvec4_t;
    const glsl_type * const mat3_t;
@@ -550,6 +552,7 @@ builtin_variable_generator::builtin_variable_generator(
      uint64_t(&glsl_type_builtin_uint64_t),
      float_t(&glsl_type_builtin_float), vec2_t(&glsl_type_builtin_vec2),
      vec3_t(&glsl_type_builtin_vec3), vec4_t(&glsl_type_builtin_vec4),
+     uvec2_t(&glsl_type_builtin_uvec2),
      uvec3_t(&glsl_type_builtin_uvec3), uvec4_t(&glsl_type_builtin_uvec4),
      mat3_t(&glsl_type_builtin_mat3), mat4_t(&glsl_type_builtin_mat4)
 {
@@ -1545,6 +1548,7 @@ builtin_variable_generator::add_varying(int slot, const glsl_type *type,
    case MESA_SHADER_GEOMETRY:
       this->per_vertex_in.add_field(slot, type, precision, name, interp);
       FALLTHROUGH;
+   case MESA_SHADER_MESH:
    case MESA_SHADER_VERTEX:
       this->per_vertex_out.add_field(slot, type, precision, name, interp);
       break;
@@ -1699,6 +1703,66 @@ builtin_variable_generator::generate_varyings()
 }
 
 
+void
+builtin_variable_generator::generate_ms_varyings()
+{
+   add_varying(VARYING_SLOT_POS, vec4_t, GLSL_PRECISION_NONE, "gl_Position");
+   add_varying(VARYING_SLOT_PSIZ, float_t, GLSL_PRECISION_NONE, "gl_PointSize");
+   add_varying(VARYING_SLOT_CLIP_DIST0, array(float_t, 0), GLSL_PRECISION_NONE,
+               "gl_ClipDistance");
+   add_varying(VARYING_SLOT_CULL_DIST0, array(float_t, 0), GLSL_PRECISION_NONE,
+               "gl_CullDistance");
+
+   const glsl_type *per_vertex_out_type =
+      this->per_vertex_out.construct_interface_instance("gl_MeshPerVertexEXT");
+   add_variable("gl_MeshVerticesEXT", array(per_vertex_out_type, 0),
+                GLSL_PRECISION_NONE, ir_var_shader_out, -1);
+
+   per_vertex_accumulator per_primitive_out;
+   per_primitive_out.add_field(VARYING_SLOT_PRIMITIVE_ID, int_t, GLSL_PRECISION_NONE,
+                               "gl_PrimitiveID", INTERP_MODE_NONE);
+   per_primitive_out.add_field(VARYING_SLOT_LAYER, int_t, GLSL_PRECISION_NONE,
+                               "gl_Layer", INTERP_MODE_NONE);
+   per_primitive_out.add_field(VARYING_SLOT_VIEW_INDEX, int_t, GLSL_PRECISION_NONE,
+                               "gl_ViewportIndex", INTERP_MODE_NONE);
+   per_primitive_out.add_field(VARYING_SLOT_CULL_PRIMITIVE, bool_t, GLSL_PRECISION_NONE,
+                               "gl_CullPrimitiveEXT", INTERP_MODE_NONE);
+
+   const glsl_type *per_primitive_out_type =
+      per_primitive_out.construct_interface_instance("gl_MeshPerPrimitiveEXT");
+   ir_variable *var = add_variable("gl_MeshPrimitivesEXT",
+                                   array(per_primitive_out_type, 0),
+                                   GLSL_PRECISION_NONE, ir_var_shader_out, -1);
+   var->data.per_primitive = 1;
+
+   if (state->out_qualifier->flags.q.prim_type) {
+      switch (state->out_qualifier->prim_type) {
+      case MESA_PRIM_POINTS:
+         var = add_variable("gl_PrimitivePointIndicesEXT", array(uint_t, 0),
+                            GLSL_PRECISION_NONE, ir_var_shader_out,
+                            VARYING_SLOT_PRIMITIVE_INDICES);
+         break;
+      case MESA_PRIM_LINES:
+         var = add_variable("gl_PrimitiveLineIndicesEXT", array(uvec2_t, 0),
+                            GLSL_PRECISION_NONE, ir_var_shader_out,
+                            VARYING_SLOT_PRIMITIVE_INDICES);
+         break;
+      case MESA_PRIM_TRIANGLES:
+         var = add_variable("gl_PrimitiveTriangleIndicesEXT", array(uvec3_t, 0),
+                            GLSL_PRECISION_NONE, ir_var_shader_out,
+                            VARYING_SLOT_PRIMITIVE_INDICES);
+         break;
+      default:
+         UNREACHABLE("invalid mesh shader primitive");
+      }
+      /* This is not decalared as per primitive in GLSL spec, but it behaves like
+       * a per primitive variable. So handle it as a per primitive variable.
+       */
+      var->data.per_primitive = 1;
+   }
+}
+
+
 }; /* Anonymous namespace */
 
 
@@ -1712,7 +1776,10 @@ _mesa_glsl_initialize_variables(ir_exec_list *instructions,
    gen.generate_uniforms();
    gen.generate_special_vars();
 
-   gen.generate_varyings();
+   if (state->stage <= MESA_SHADER_FRAGMENT)
+      gen.generate_varyings();
+   else if (state->stage == MESA_SHADER_MESH)
+      gen.generate_ms_varyings();
 
    switch (state->stage) {
    case MESA_SHADER_VERTEX:
