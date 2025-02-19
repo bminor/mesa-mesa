@@ -5802,7 +5802,7 @@ bool nir_legalize_16bit_sampler_srcs(nir_shader *nir,
 
 bool nir_lower_point_size(nir_shader *shader, float min, float max);
 
-void nir_lower_texcoord_replace(nir_shader *s, unsigned coord_replace,
+bool nir_lower_texcoord_replace(nir_shader *s, unsigned coord_replace,
                                 bool point_coord_is_sysval, bool yinvert);
 
 bool nir_lower_texcoord_replace_late(nir_shader *s, unsigned coord_replace,
