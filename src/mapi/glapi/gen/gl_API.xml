@@ -2400,7 +2400,7 @@
     </function>
 
     <function name="Flush" es1="1.0" es2="2.0"
-              marshal_call_after="_mesa_glthread_flush_batch(ctx); if (ctx->Shared->HasExternallySharedImages) _mesa_glthread_finish(ctx);">
+              marshal_call_after="if (ctx->Shared->HasExternallySharedImages) _mesa_glthread_finish(ctx); else _mesa_glthread_flush_batch(ctx);">
         <glx sop="142" handcode="true"/>
     </function>
 
