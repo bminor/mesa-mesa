@@ -4851,7 +4851,7 @@ bool nir_lower_vars_to_scratch(nir_shader *shader,
 
 bool nir_lower_scratch_to_var(nir_shader *nir);
 
-void nir_lower_clip_halfz(nir_shader *shader);
+bool nir_lower_clip_halfz(nir_shader *shader);
 
 void nir_shader_gather_info(nir_shader *shader, nir_function_impl *entrypoint);
 
