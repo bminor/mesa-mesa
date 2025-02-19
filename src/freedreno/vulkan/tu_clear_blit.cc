@@ -2828,7 +2828,6 @@ tu_copy_image_to_image(struct tu_cmd_buffer *cmd,
    if (dst_image->layout[0].nr_samples > 1)
       ops = &r3d_ops<CHIP>;
 
-   enum pipe_format format = PIPE_FORMAT_NONE;
    VkOffset3D src_offset = info->srcOffset;
    VkOffset3D dst_offset = info->dstOffset;
    VkExtent3D extent = info->extent;
@@ -2874,14 +2873,27 @@ tu_copy_image_to_image(struct tu_cmd_buffer *cmd,
       /* Images that share a format can always be copied directly because it's
        * the same as a blit.
        */
-      format = src_format;
+   } else if (src_format == PIPE_FORMAT_Z24_UNORM_S8_UINT &&
+              util_format_get_blocksize(dst_format) == 1) {
+      /* If we're doing a narrowing copy from D24S8 to some R8 format we don't
+       * need a staging buffer but we need separate source and destination
+       * formats. Override the destination format to S8 so that we don't have
+       * to do this copy-specific reinterpretation deeper down the stack.
+       */
+      dst_format = PIPE_FORMAT_S8_UINT;
+   } else if (dst_format == PIPE_FORMAT_Z24_UNORM_S8_UINT &&
+              util_format_get_blocksize(src_format) == 1) {
+      /* Same as above but for widening copies from R8_* to D24S8 stencil
+       * aspect.
+       */
+      src_format = PIPE_FORMAT_S8_UINT;
    } else if (!src_image->layout[0].tile_mode) {
       /* If an image is linear, we can always safely reinterpret it with the
        * other image's format and then do a regular blit.
        */
-      format = dst_format;
+      src_format = dst_format;
    } else if (!dst_image->layout[0].tile_mode) {
-      format = src_format;
+      dst_format = src_format;
    } else if (image_is_r8g8(src_image) != image_is_r8g8(dst_image)) {
       /* We can't currently copy r8g8 images to/from other cpp=2 images,
        * due to the different tile layout.
@@ -2896,9 +2908,9 @@ tu_copy_image_to_image(struct tu_cmd_buffer *cmd,
        */
       use_staging_blit = true;
    } else if (!src_image->layout[0].ubwc || src_image->layout[0].is_mutable) {
-      format = dst_format;
+      src_format = dst_format;
    } else if (!dst_image->layout[0].ubwc || src_image->layout[0].is_mutable) {
-      format = src_format;
+      dst_format = src_format;
    } else {
       /* Both formats use UBWC and so neither can be reinterpreted.
        * TODO: We could do an in-place decompression of the dst instead.
@@ -3000,17 +3012,17 @@ tu_copy_image_to_image(struct tu_cmd_buffer *cmd,
          ops->run(cmd, cs);
       }
    } else {
-      tu_image_view_copy<CHIP>(&dst, dst_image, format, &info->dstSubresource, dst_offset.z);
-      tu_image_view_copy<CHIP>(&src, src_image, format, &info->srcSubresource, src_offset.z);
+      tu_image_view_copy<CHIP>(&dst, dst_image, dst_format, &info->dstSubresource, dst_offset.z);
+      tu_image_view_copy<CHIP>(&src, src_image, src_format, &info->srcSubresource, src_offset.z);
 
-      ops->setup(cmd, cs, format, format, info->dstSubresource.aspectMask,
+      ops->setup(cmd, cs, src_format, dst_format, info->dstSubresource.aspectMask,
                  blit_param, false, dst_image->layout[0].ubwc,
                  (VkSampleCountFlagBits) dst_image->layout[0].nr_samples);
       coords(ops, cmd, cs, dst_offset, src_offset, extent);
 
       for (uint32_t i = 0; i < layers_to_copy; i++) {
-         ops->src(cmd, cs, &src, i, VK_FILTER_NEAREST, format);
-         ops->dst(cs, &dst, i, format);
+         ops->src(cmd, cs, &src, i, VK_FILTER_NEAREST, dst_format);
+         ops->dst(cs, &dst, i, src_format);
          ops->run(cmd, cs);
       }
    }
