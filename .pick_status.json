@@ -2534,7 +2534,7 @@
         "description": "nvk: Fix MSAA sparse residency lowering crash",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7604697ec61dffcf59bb390ddb85fa6c77915bfc",
         "notes": null
