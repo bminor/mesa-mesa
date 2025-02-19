@@ -1251,6 +1251,19 @@ brw_allocate_registers(brw_shader &s, bool allow_spilling)
 
    ralloc_free(scheduler_ctx);
 
+#define OPT(pass, ...) ({                                               \
+      pass_num++;                                                       \
+      bool this_progress = pass(s, ##__VA_ARGS__);                      \
+                                                                        \
+      if (this_progress)                                                \
+         s.debug_optimizer(nir, #pass, iteration, pass_num);            \
+                                                                        \
+      this_progress;                                                    \
+   })
+
+   int pass_num = 0;
+   int iteration = 95;
+
    if (!allocated) {
       if (0) {
          fprintf(stderr, "Spilling - using lowest-pressure mode \"%s\"\n",
@@ -1258,6 +1271,9 @@ brw_allocate_registers(brw_shader &s, bool allow_spilling)
       }
       restore_instruction_order(s, orders[best_press_idx]);
       s.shader_stats.scheduler_mode = scheduler_mode_name[pre_modes[best_press_idx]];
+
+      if (OPT(brw_opt_cmod_propagation))
+         OPT(brw_opt_dead_code_eliminate);
 
       allocated = brw_assign_regs(s, allow_spilling, spill_all);
    }
@@ -1280,24 +1296,14 @@ brw_allocate_registers(brw_shader &s, bool allow_spilling)
    if (s.failed)
       return;
 
-#define OPT(pass, ...) ({                                               \
-      pass_num++;                                                       \
-      bool this_progress = pass(s, ##__VA_ARGS__);                      \
-                                                                        \
-      if (this_progress)                                                \
-         s.debug_optimizer(nir, #pass, iteration, pass_num);            \
-                                                                        \
-      this_progress;                                                    \
-   })
-
 #define OPT_V(pass, ...) do {                                           \
       pass_num++;                                                       \
       pass(s, ##__VA_ARGS__);                                           \
       s.debug_optimizer(nir, #pass, iteration, pass_num);               \
    } while (false)
 
-   int pass_num = 0;
-   int iteration = 96;
+   pass_num = 0;
+   iteration++;
 
    s.debug_optimizer(nir, "post_ra_alloc", iteration, pass_num);
 
