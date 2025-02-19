@@ -193,8 +193,7 @@ pco_ref_nir_alu_src_t(const nir_alu_instr *alu, unsigned src, trans_ctx *tctx)
 static pco_instr *
 trans_load_input_vs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
 {
-   ASSERTED unsigned base = nir_intrinsic_base(intr);
-   assert(!base);
+   UNUSED unsigned base = nir_intrinsic_base(intr);
 
    /* TODO: f16 support. */
 
@@ -224,9 +223,7 @@ trans_load_input_vs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
 static pco_instr *
 trans_store_output_vs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref src)
 {
-   ASSERTED unsigned base = nir_intrinsic_base(intr);
-   assert(!base);
-
+   UNUSED unsigned base = nir_intrinsic_base(intr);
    ASSERTED nir_alu_type type = nir_intrinsic_src_type(intr);
    assert(type == nir_type_float32 || type == nir_type_uint32 ||
           type == nir_type_int32);
@@ -299,8 +296,7 @@ static pco_instr *
 trans_load_input_fs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
 {
    pco_fs_data *fs_data = &tctx->shader->data.fs;
-   ASSERTED unsigned base = nir_intrinsic_base(intr);
-   assert(!base);
+   UNUSED unsigned base = nir_intrinsic_base(intr);
 
    unsigned component = nir_intrinsic_component(intr);
    unsigned chans = pco_ref_get_chans(dest);
