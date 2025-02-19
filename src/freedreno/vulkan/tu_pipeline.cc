@@ -2051,7 +2051,7 @@ done:
    if (creation_feedback) {
       *creation_feedback->pPipelineCreationFeedback = pipeline_feedback;
 
-      for (uint32_t i = 0; i < builder->create_info->stageCount; i++) {
+      for (uint32_t i = 0; i < creation_feedback->pipelineStageCreationFeedbackCount; i++) {
          gl_shader_stage s =
             vk_to_mesa_shader_stage(builder->create_info->pStages[i].stage);
          creation_feedback->pPipelineStageCreationFeedbacks[i] = stage_feedbacks[s];
@@ -4562,8 +4562,10 @@ tu_compute_pipeline_create(VkDevice device,
 
    if (creation_feedback) {
       *creation_feedback->pPipelineCreationFeedback = pipeline_feedback;
-      assert(creation_feedback->pipelineStageCreationFeedbackCount == 1);
-      creation_feedback->pPipelineStageCreationFeedbacks[0] = pipeline_feedback;
+      if (creation_feedback->pipelineStageCreationFeedbackCount > 0) {
+         assert(creation_feedback->pipelineStageCreationFeedbackCount == 1);
+         creation_feedback->pPipelineStageCreationFeedbacks[0] = pipeline_feedback;
+      }
    }
 
    pipeline->base.active_desc_sets = shader->active_desc_sets;
