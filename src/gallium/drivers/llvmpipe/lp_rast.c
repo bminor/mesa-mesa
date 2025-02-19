@@ -168,7 +168,7 @@ lp_rast_clear_color(struct lp_rasterizer_task *task,
                     0,
                     task->width,
                     task->height,
-                    scene->fb_max_layer + 1,
+                    scene->cbufs[cbuf].layer_count,
                     &uc);
    }
 
