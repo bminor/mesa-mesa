@@ -1,5 +1,485 @@
 [
     {
+        "sha": "6b20b0658489afe745a28b8f09c57067e45b47f3",
+        "description": "radeonsi: disable dcc when external shader stores are used",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "666a6eb871d5dec79362bdc5d16f15915eb52f96",
+        "notes": null
+    },
+    {
+        "sha": "18c3b296a6c39d91cdc4e41e14696b6a386f5dbe",
+        "description": "vulkan: don't leak debug utils label name",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7c4a919f191c76d7213af3bb295d5885b68e87b5",
+        "description": "radv/meta: rename image<->buffer copies helpers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "89ea983df9ad4dbeb77b57b745323487b254d79d",
+        "description": "radv/meta: inline radv_copy_buffer()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0323ed1022a24e30b35e4d8228de3e7e0b86fea4",
+        "description": "radv: use radv_copy_memory() for accel structure updates",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a659771e68db5a10991af17300093451beabec97",
+        "description": "radv/meta: use radv_copy_memory() for the FMASK copy",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "361a598b4c6d2319249e1c842314b0c8bfdf534e",
+        "description": "radv: use radv_CmdDispatchIndirect() in the accel struct path",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a03e391aa3a56cbc76226d43cf071646fd868b7f",
+        "description": "vulkan: constify vk_acceleration_structure_get_va()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e93592dc62decb2ce746cff8b6ab8f955e77a39a",
+        "description": "lavapipe: Remove uniform inlining",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "00e98d74b1861d36043dec65c7631f4460279254",
+        "description": "gallivm/nir/soa: Properly skip empty else branches",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "08b972781a20ffb5db67e658d7ec451e6c073463",
+        "description": "gallivm/nir/soa: Skip bounds checking for in-bounds access",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bd88edcf8146502ba5e22a74de91091d239d958f",
+        "description": "gallivm: Only guard tex/image ops if the exec mask can be zero",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d9db40208ddc1e25ac9b4ee787fed30ece446f5b",
+        "description": "lavapipe: Lower push constants in NIR",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a57e8b2e97205cc2bff752fa2fc377f6f48d931f",
+        "description": "gallivm/nir/soa: Use divergence analysis",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8225ad3c895efa62e5fe738f977fa05350810dff",
+        "description": "nir/divergence_analysis: Handle load_const_buf_base_addr_lvp",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b5a3caf17c54a62d108cbf79b589477f4a9f7cf9",
+        "description": "gallivm/nir/soa: Do not lower vectors to llvm arrays",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a576e7ca9c7a79854d3013bab90becfadff4636f",
+        "description": "lavapipe: Optimize buffer robustness",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c60b39d8aca64c3f098cf40f9cac3faf96d57583",
+        "description": "nir: Do not emit amul if it is unsupported",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "790502962928c35b696f189f60aa8f2870316621",
+        "description": "nir: Rename in-bounds-agx to in-bounds",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "92083fc70d6d2cdeacebef7c8a984fd585074b5c",
+        "description": "llvmpipe: Do not use coroutines when they are unnecessary",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "28c594701ed14b769688f61d8b8a7fb4b025b676",
+        "description": "lavapipe: Initialize the compiler options of the noop fs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cc6e43c04964f1ab3460a70c8ccb82a91ea708c5",
+        "description": "lavapipe: Lower descriptor sets in NIR",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "66b3879618d54e4c752b5807bf4df3ad9cf8c03a",
+        "description": "lavapipe: Move nir passes to a new directory",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "22083796286366e55bbf51fb692d8d03f4a179bc",
+        "description": "gallivm/nir/soa: Select more IO to gather/scatter intrinsics",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "29a4886cc8402d60ded4102cd510737feea44ab9",
+        "description": "gallivm/nir/soa: Implement robusst uniform loads without controlflow",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "178e91956cfe42f9d1cc128e005a90303094350f",
+        "description": "gallivm/nir/soa: Lower bools to i1",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ce0d8b70380c2e2d8a511de79062639e3b34b24c",
+        "description": "gallivm/nir/soa: Remove the dependency on lp_bld_nir.c",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e88190a09f1dd749c2298f79430c7758aa1aa8fb",
+        "description": "gallivm/nir/aos: Remove the dependency on lp_bld_nir.c",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "daad0f8a919b1b4c35552a02dd251277042778bd",
+        "description": "gallivm: Split nir prepasses into aos/soa",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "efa23ef664dcb21e049d063eddad081fae8a0242",
+        "description": "radv: fix adding the BO for unaligned SDMA copies to the cmdbuf list",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8af7f8b7feeaeb52909adab6e0141a695bf15ac6",
+        "description": "ci: Remove cargo symlink workaround",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a663f97d2d52cba7058077aa51a037aaafccc1b9",
+        "description": "ci: Properly clean up rustup",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e488b5e45e256cb5f3ca2b83947b3df281474801",
+        "description": "venus: support VK_KHR_global_priority",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "696ee859ef737f86c0bbf838b4e65eafcb7aea5a",
+        "description": "venus: support VK_KHR_map_memory2",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f69a0201dadaf40d5cc3480ebe1bf12fa59d3c5b",
+        "description": "venus: support VK_EXT_pipeline_robustness",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e027f2afc100e62beca9ef2b218cc6999d4a0ed8",
+        "description": "venus: support VK_EXT_pipeline_protected_access",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ea8a396b9140ca8a076d1dbd1e80a648006d4660",
+        "description": "venus: support VK_KHR_shader_float_controls2",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "82408f81b43b2fbde567c9b30df47a5a7205f28c",
+        "description": "venus: support VK_KHR_shader_subgroup_rotate",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "eb27cbf25abc821a9d20e3fcc8ab13644f276432",
+        "description": "nvk: Use suld.constant for EDB uniform texel buffers",
+        "nominated": true,
+        "nomination_type": 4,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ffdc0d8e98eeb68abcfff3c48b3691b999305004",
+        "description": "nak: Use suld.constant when ACCESS_CAN_REORDER is set",
+        "nominated": true,
+        "nomination_type": 4,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5762586c6db50f9b38266c9e89387e1b4cf2bccf",
+        "description": "nvk: Align UBO/SSBO addresses down rather than up",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2183bc73a65b7bff697e702e52ae8ae8ffd29935",
+        "description": "nvk: Use suld for EDB uniform texel buffers",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "3b94c5c22a6219521f66fff075252cfa06642a4e",
+        "notes": null
+    },
+    {
+        "sha": "1c7a4c4f38ef837473da6ab78e9eeb2f7c154bb7",
+        "description": "nak: Handle sparse texops with unused color destinations",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "b17f139281b1f1419d7705d200480771fb43a958",
+        "notes": null
+    },
+    {
+        "sha": "0ec760af6609484bae72b52b3ad4bced8297f7f5",
+        "description": "nvk: Allow sparse loads on EDB buffers",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "3b94c5c22a6219521f66fff075252cfa06642a4e",
+        "notes": null
+    },
+    {
+        "sha": "ca06a57702d99939641f70d3bff12b35476e832b",
+        "description": "nvk: Handle shader==NULL in nvk_cmd_upload_qmd()",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "976f22a5da30c503b05e2873e4d265fb0d4ecb07",
+        "notes": null
+    },
+    {
+        "sha": "39ae06e153250fe4871aecaafaa2583de24af268",
+        "description": "nvk: Pull shaders from the state command buffer in nvk_cmd_process_cmds()",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "976f22a5da30c503b05e2873e4d265fb0d4ecb07",
+        "notes": null
+    },
+    {
+        "sha": "55bdae03ccf0a5f49df2eb570a326ba28c573964",
+        "description": "brw: don't always set cond_modifier on parsed assembly instructions",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fb512529533401db46c09f93f5c5586353f372eb",
+        "description": "panvk: Advertise support for VK_EXT_border_color_swizzle",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "56aac9fdecad0f7d335f82653832927486f07d44",
         "description": "nir/opt_algebraic: optimize ffract(ffract(a))",
         "nominated": false,
