@@ -929,7 +929,6 @@ lp_build_nir_aos(struct gallivm_state *gallivm,
       _mesa_hash_table_insert(bld.regs, reg, reg_alloc);
    }
    nir_index_ssa_defs(impl);
-   nir_print_shader(shader, stdout);
    bld.ssa_defs = calloc(impl->ssa_alloc, sizeof(LLVMValueRef));
    visit_cf_list(&bld, &impl->body);
 
