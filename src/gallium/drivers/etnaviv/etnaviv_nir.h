@@ -28,7 +28,7 @@
 #include "compiler/nir/nir_builder.h"
 #include "etnaviv_compiler.h"
 
-void
+bool
 etna_lower_io(nir_shader *shader, struct etna_shader_variant *v);
 
 bool
