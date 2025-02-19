@@ -197,6 +197,7 @@ get_device_extensions(const struct tu_physical_device *device,
       .KHR_maintenance5 = true,
       .KHR_maintenance6 = true,
       .KHR_maintenance7 = true,
+      .KHR_maintenance8 = true,
       .KHR_map_memory2 = true,
       .KHR_multiview = TU_DEBUG(NOCONFORM) ? true : device->info->a6xx.has_hw_multiview,
       .KHR_performance_query = TU_DEBUG(PERFC) || TU_DEBUG(PERFCRAW),
@@ -519,6 +520,9 @@ tu_get_features(struct tu_physical_device *pdevice,
 
    /* VK_KHR_maintenance7 */
    features->maintenance7 = true;
+
+   /* VK_KHR_maintenance8 */
+   features->maintenance8 = true;
 
    /* VK_KHR_performance_query */
    features->performanceCounterQueryPools = true;
