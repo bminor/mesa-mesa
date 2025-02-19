@@ -10793,6 +10793,17 @@ emit_atomic(struct svga_shader_emitter_v10 *emit,
 
    emit->cur_atomic_opcode = opcode;
 
+   /* Float types are only supported for image atomic exchange instruction,
+    * if this check fails then don't emit any intruction.
+    */
+   if (resourceType == TGSI_FILE_IMAGE &&
+      emit->key.images[resourceIndex].return_type == VGPU10_RETURN_TYPE_FLOAT &&
+      opcode != VGPU10_OPCODE_IMM_ATOMIC_EXCH) {
+      debug_printf("Unexpected atomic TGSI opcode %s with float type image.",
+                   tgsi_get_opcode_name(inst->Instruction.Opcode));
+      return true;
+   }
+
    /* If the resource register has indirect index, we will need
     * to expand it since SM5 device does not support indirect indexing
     * for uav.
