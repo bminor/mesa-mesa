@@ -554,7 +554,7 @@
         "description": "mesa/st: call _mesa_glthread_finish before _mesa_make_current",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "08d97aadd14e4ba66a21939b0ad7ed6e24824745",
         "notes": null
