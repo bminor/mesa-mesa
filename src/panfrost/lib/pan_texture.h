@@ -252,7 +252,8 @@ pan_image_view_get_zs_plane(const struct pan_image_view *iview)
    return pan_image_view_get_plane(iview, 0);
 }
 
-unsigned panfrost_compute_checksum_size(struct pan_image_slice_layout *slice,
+unsigned panfrost_compute_checksum_size(unsigned arch,
+                                        struct pan_image_slice_layout *slice,
                                         unsigned width, unsigned height);
 
 /* AFBC format mode. The ordering is intended to match the Valhall hardware enum
