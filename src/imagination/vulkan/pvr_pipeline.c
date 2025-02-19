@@ -1240,6 +1240,8 @@ static void pvr_fragment_state_save(struct pvr_graphics_pipeline *gfx_pipeline,
       fragment_state->pass_type = ROGUE_TA_PASSTYPE_OPAQUE;
 
    fragment_state->sample_rate = ROGUE_PDSINST_DOUTU_SAMPLE_RATE_INSTANCE;
+   if (shader_data->fs.uses.sample_shading)
+      fragment_state->sample_rate = ROGUE_PDSINST_DOUTU_SAMPLE_RATE_FULL;
 
    /* We can't initialize it yet since we still need to generate the PDS
     * programs so set it to `~0` to make sure that we set this up later on.

@@ -238,6 +238,7 @@ static void gather_fs_data(nir_shader *nir, pco_data *data)
 
    data->fs.uses.fbfetch = nir->info.fs.uses_fbfetch_output;
    data->fs.uses.early_frag = nir->info.fs.early_fragment_tests;
+   data->fs.uses.sample_shading |= nir->info.fs.uses_sample_shading;
 }
 
 /**

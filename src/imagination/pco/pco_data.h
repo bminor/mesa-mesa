@@ -88,6 +88,7 @@ typedef struct _pco_fs_data {
       bool depth_feedback;
       bool discard;
       bool early_frag;
+      bool sample_shading;
    } uses;
 } pco_fs_data;
 
