@@ -718,11 +718,9 @@ get_device_properties(const struct panvk_instance *instance,
        * be observed through subgroup ops (though the user can observe them
        * through infinte loops anyway), so subgroup ops can't be supported in
        * VS.
-       *
-       * In FS, voting and potentially other subgroup ops are currently broken,
-       * so we don't report support for this stage either.
        */
-      .subgroupSupportedStages = VK_SHADER_STAGE_COMPUTE_BIT,
+      .subgroupSupportedStages =
+         VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
       .subgroupSupportedOperations =
          VK_SUBGROUP_FEATURE_BASIC_BIT |
          VK_SUBGROUP_FEATURE_VOTE_BIT |
