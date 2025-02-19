@@ -805,6 +805,15 @@ nvk_image_init(struct nvk_device *dev,
       explicit_row_stride_B = eci.pPlaneLayouts[0].rowPitch;
    }
 
+   uint32_t max_alignment_B = 0;
+   const VkImageAlignmentControlCreateInfoMESA *alignment =
+      vk_find_struct_const(pCreateInfo->pNext,
+                           IMAGE_ALIGNMENT_CONTROL_CREATE_INFO_MESA);
+   if (alignment && alignment->maximumRequestedAlignment) {
+      assert(util_is_power_of_two_or_zero(alignment->maximumRequestedAlignment));
+      max_alignment_B = alignment->maximumRequestedAlignment;
+   }
+
    if (image->vk.tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
       /* Modifiers are not supported with YCbCr */
       assert(image->plane_count == 1);
@@ -852,6 +861,7 @@ nvk_image_init(struct nvk_device *dev,
             .samples = pCreateInfo->samples,
             .usage = usage & ~NIL_IMAGE_USAGE_LINEAR_BIT,
             .explicit_row_stride_B = 0,
+            .max_alignment_B = 0,
          };
          image->linear_tiled_shadow.nil =
             nil_image_new(&pdev->info, &tiled_shadow_nil_info);
@@ -887,7 +897,8 @@ nvk_image_init(struct nvk_device *dev,
          .levels = pCreateInfo->mipLevels,
          .samples = pCreateInfo->samples,
          .usage = usage,
-         .explicit_row_stride_B = explicit_row_stride_B, 
+         .explicit_row_stride_B = explicit_row_stride_B,
+         .max_alignment_B = max_alignment_B,
       };
    }
 
@@ -919,6 +930,7 @@ nvk_image_init(struct nvk_device *dev,
          .samples = pCreateInfo->samples,
          .usage = usage,
          .explicit_row_stride_B = 0,
+         .max_alignment_B = 0,
       };
 
       image->stencil_copy_temp.nil =

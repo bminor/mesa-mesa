@@ -690,7 +690,7 @@ Khronos extensions that are not part of any Vulkan version:
   VK_EXT_depth_clamp_zero_one                           DONE (anv, nvk, radv, tu, v3dv/vc7+)
   VK_INTEL_shader_integer_functions2                    DONE (anv, hasvk, radv)
   VK_EXT_map_memory_placed                              DONE (anv, nvk, radv, tu)
-  VK_MESA_image_alignment_control                       DONE (anv, radv)
+  VK_MESA_image_alignment_control                       DONE (anv, nvk, radv)
   VK_EXT_legacy_dithering                               DONE (anv, tu)
 
 

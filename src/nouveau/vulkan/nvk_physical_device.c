@@ -287,6 +287,7 @@ nvk_get_device_extensions(const struct nvk_instance *instance,
       .GOOGLE_decorate_string = true,
       .GOOGLE_hlsl_functionality1 = true,
       .GOOGLE_user_type = true,
+      .MESA_image_alignment_control = true,
       .NV_compute_shader_derivatives = nvk_use_nak(info),
       .NV_shader_sm_builtins = true,
       .VALVE_mutable_descriptor_type = true,
@@ -690,6 +691,9 @@ nvk_get_device_features(const struct nv_device_info *info,
 
       /* VK_EXT_ycbcr_image_arrays */
       .ycbcrImageArrays = true,
+
+      /* VK_MESA_image_alignment_control */
+      .imageAlignmentControl = true,
 
       /* VK_NV_shader_sm_builtins */
       .shaderSMBuiltins = true,
@@ -1127,6 +1131,9 @@ nvk_get_device_properties(const struct nvk_instance *instance,
       //.fragmentShadingRateWithFragmentShaderInterlock = true,
       .fragmentShadingRateWithCustomSampleLocations = true,
       .fragmentShadingRateStrictMultiplyCombiner = true,
+
+      /* VK_MESA_image_alignment_control */
+      .supportedImageAlignmentMask = (4 * 1024) | (16 * 1024) | (64 * 1024),
 
       /* VK_NV_shader_sm_builtins */
       .shaderSMCount = (uint32_t)info->tpc_count * info->mp_per_tpc,

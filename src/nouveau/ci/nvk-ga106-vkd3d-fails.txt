@@ -8,5 +8,4 @@ test_multisample_rendering,Crash
 test_uav_counter_null_behavior_dxbc,Crash
 test_uav_counter_null_behavior_dxil,Crash
 
-test_suballocate_small_textures_size,Fail
 test_sampler_feedback_implicit_lod_aniso,Fail
