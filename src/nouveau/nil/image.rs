@@ -154,6 +154,7 @@ pub struct ImageInitInfo {
     pub usage: ImageUsageFlags,
     pub modifier: u64,
     pub explicit_row_stride_B: u32,
+    pub max_alignment_B: u32,
 }
 
 /// Represents the data layout of a single slice (level + lod) of an image.
@@ -255,6 +256,7 @@ impl Image {
                 info.format,
                 sample_layout,
                 info.usage,
+                info.max_alignment_B,
             );
             for p in 0..infos.len() {
                 let plane_tiling = Tiling::choose(
@@ -262,6 +264,7 @@ impl Image {
                     infos[p].format,
                     sample_layout,
                     infos[p].usage,
+                    info.max_alignment_B,
                 );
                 min_tiling.x_log2 =
                     std::cmp::min(min_tiling.x_log2, plane_tiling.x_log2);
@@ -277,6 +280,7 @@ impl Image {
                 info.format,
                 sample_layout,
                 info.usage,
+                info.max_alignment_B,
             )
         };
 
