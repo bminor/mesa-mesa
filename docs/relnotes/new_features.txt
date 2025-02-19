@@ -13,3 +13,4 @@ VK_EXT_border_color_swizzle on panvk
 VK_MESA_image_alignment_control on NVK
 shaderFloat16 on panvk
 VK_KHR_shader_subgroup_uniform_control_flow on panvk/v10+
+VK_KHR_shader_maximal_reconvergence on panvk/v10+
