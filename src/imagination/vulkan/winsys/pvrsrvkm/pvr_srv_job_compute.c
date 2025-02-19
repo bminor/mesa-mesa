@@ -174,6 +174,11 @@ pvr_srv_compute_cmd_stream_load(struct rogue_fwif_cmd_compute *const cmd,
       stream_ptr += pvr_cmd_length(CR_COMPUTE_CLUSTER);
    }
 
+   if (PVR_HAS_FEATURE(dev_info, tpu_dm_global_registers)) {
+      regs->tpu_tag_cdm_ctrl = *stream_ptr;
+      stream_ptr++;
+   }
+
    if (PVR_HAS_FEATURE(dev_info, gpu_multicore_support)) {
       cmd->execute_count = *stream_ptr;
       stream_ptr++;
