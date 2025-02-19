@@ -16,6 +16,7 @@ struct list_head target_labels;
 struct brw_codegen *p;
 const char *input_filename;
 int errors;
+bool compaction_warning_given;
 
 static bool
 i965_postprocess_labels()
@@ -107,6 +108,7 @@ brw_assemble(void *mem_ctx, const struct intel_device_info *devinfo,
    yyin = f;
    input_filename = filename;
 
+   compaction_warning_given = false;
    int err = yyparse();
    if (err || errors)
       goto end;

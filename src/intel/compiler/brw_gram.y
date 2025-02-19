@@ -610,7 +610,17 @@ add_instruction_option(struct options *options, struct instoption opt)
 		options->mask_control |= BRW_WE_ALL;
 		break;
 	case CMPTCTRL:
-		options->compaction = true;
+		/* Don't set the compaction flag to true, we're just reading
+		 * text assembly, not instruction bits. The code that will
+		 * assemble things later will set the flag if it decides to
+		 * compact instructions.
+		 */
+		if (!compaction_warning_given) {
+			compaction_warning_given = true;
+			fprintf(stderr, "%s: ignoring 'compacted' "
+			        "annotations for text assembly "
+				"instructions\n", input_filename);
+		}
 		break;
 	case ACCWREN:
 		options->acc_wr_control = true;

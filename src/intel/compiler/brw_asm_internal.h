@@ -28,6 +28,7 @@ char *lex_text(void);
 
 extern struct brw_codegen *p;
 extern int errors;
+extern bool compaction_warning_given;
 extern const char *input_filename;
 
 extern struct list_head instr_labels;
