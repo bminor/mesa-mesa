@@ -75,10 +75,7 @@ static VkResult
 anv_device_init_trivial_batch(struct anv_device *device)
 {
    VkResult result = anv_device_alloc_bo(device, "trivial-batch", 4096,
-                                         ANV_BO_ALLOC_MAPPED |
-                                         ANV_BO_ALLOC_HOST_COHERENT |
-                                         ANV_BO_ALLOC_INTERNAL |
-                                         ANV_BO_ALLOC_CAPTURE,
+                                         ANV_BO_ALLOC_BATCH_BUFFER_INTERNAL_FLAGS,
                                          0 /* explicit_address */,
                                          &device->trivial_batch_bo);
    ANV_DMR_BO_ALLOC(&device->vk.base, device->trivial_batch_bo, result);
@@ -519,9 +516,7 @@ VkResult anv_CreateDevice(
       goto fail_queue_cond;
 
    anv_bo_pool_init(&device->batch_bo_pool, device, "batch",
-                    ANV_BO_ALLOC_MAPPED |
-                    ANV_BO_ALLOC_HOST_CACHED_COHERENT |
-                    ANV_BO_ALLOC_CAPTURE);
+                    ANV_BO_ALLOC_BATCH_BUFFER_FLAGS);
    if (device->vk.enabled_extensions.KHR_acceleration_structure) {
       anv_bo_pool_init(&device->bvh_bo_pool, device, "bvh build",
                        0 /* alloc_flags */);

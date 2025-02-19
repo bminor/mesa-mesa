@@ -475,6 +475,15 @@ enum anv_bo_alloc_flags {
                                             ANV_BO_ALLOC_HOST_CACHED_COHERENT | \
                                             ANV_BO_ALLOC_DESCRIPTOR_POOL)
 
+#define ANV_BO_ALLOC_BATCH_BUFFER_FLAGS (ANV_BO_ALLOC_MAPPED |               \
+                                         ANV_BO_ALLOC_HOST_CACHED_COHERENT | \
+                                         ANV_BO_ALLOC_CAPTURE)
+
+#define ANV_BO_ALLOC_BATCH_BUFFER_INTERNAL_FLAGS (ANV_BO_ALLOC_MAPPED |        \
+                                                  ANV_BO_ALLOC_HOST_COHERENT | \
+                                                  ANV_BO_ALLOC_INTERNAL |      \
+                                                  ANV_BO_ALLOC_CAPTURE)
+
 struct anv_bo {
    const char *name;
 

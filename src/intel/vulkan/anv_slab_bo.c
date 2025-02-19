@@ -5,6 +5,7 @@
 #include "anv_slab_bo.h"
 
 enum anv_bo_slab_heap {
+   ANV_BO_SLAB_HEAP_CACHED_COHERENT_CAPTURE, /* main usage is batch buffers but other buffers also matches */
    ANV_BO_SLAB_HEAP_DYNAMIC_VISIBLE_POOL,
    ANV_BO_SLAB_HEAP_DESCRIPTOR_POOL,
    ANV_BO_SLAB_HEAP_SMEM_CACHED_COHERENT,
@@ -47,6 +48,12 @@ anv_bo_alloc_flags_to_slab_heap(struct anv_device *device,
       not_supported |= (ANV_BO_ALLOC_IMPLICIT_SYNC |
                         ANV_BO_ALLOC_IMPLICIT_WRITE);
    }
+
+   /* TODO: add i915 support  */
+   if ((alloc_flags == ANV_BO_ALLOC_BATCH_BUFFER_FLAGS ||
+        alloc_flags == ANV_BO_ALLOC_BATCH_BUFFER_INTERNAL_FLAGS) &&
+       (device->info->kmd_type == INTEL_KMD_TYPE_XE))
+      return ANV_BO_SLAB_HEAP_CACHED_COHERENT_CAPTURE;
 
    if (alloc_flags == ANV_BO_ALLOC_DYNAMIC_VISIBLE_POOL_FLAGS)
       return ANV_BO_SLAB_HEAP_DYNAMIC_VISIBLE_POOL;
@@ -232,6 +239,9 @@ anv_slab_alloc(void *priv,
       alloc_flags |= ANV_BO_ALLOC_MAPPED;
       break;
    case ANV_BO_SLAB_HEAP_LMEM_ONLY:
+      break;
+   case ANV_BO_SLAB_HEAP_CACHED_COHERENT_CAPTURE:
+      alloc_flags |= ANV_BO_ALLOC_BATCH_BUFFER_FLAGS;
       break;
    case ANV_BO_SLAB_HEAP_DYNAMIC_VISIBLE_POOL:
       alloc_flags |= ANV_BO_ALLOC_DYNAMIC_VISIBLE_POOL_FLAGS;
