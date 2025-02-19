@@ -1237,6 +1237,8 @@ lower_edb_buffer_tex_instr(nir_builder *b, nir_tex_instr *tex,
                                              .image_dim = GLSL_SAMPLER_DIM_BUF,
                                              .image_array = false,
                                              .format = PIPE_FORMAT_NONE,
+                                             .access = ACCESS_NON_WRITEABLE |
+                                                       ACCESS_CAN_REORDER,
                                              .dest_type = tex->dest_type);
       if (tex->is_sparse) {
          nir_intrinsic_instr *intr = nir_instr_as_intrinsic(res->parent_instr);
