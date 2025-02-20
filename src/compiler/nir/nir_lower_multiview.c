@@ -306,7 +306,7 @@ nir_lower_multiview(nir_shader *shader, nir_lower_multiview_options options)
 
          case nir_intrinsic_load_deref: {
             nir_variable *var = nir_intrinsic_get_var(intrin, 0);
-            if (_mesa_hash_table_search(out_derefs, var)) {
+            if (var && _mesa_hash_table_search(out_derefs, var)) {
                unreachable("Should have lowered I/O to temporaries "
                            "so no load_deref on output is expected.");
             }
