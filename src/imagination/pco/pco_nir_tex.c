@@ -226,42 +226,7 @@ static inline void unpack_base_addr(nir_builder *b,
    *base_addr_hi = STATE_UNPACK(b, tex_state_word, 3, 14, 8);
 }
 
-typedef struct _pco_smp_params {
-   nir_def *tex_state;
-   nir_def *smp_state;
-
-   nir_alu_type dest_type;
-
-   enum glsl_sampler_dim sampler_dim;
-
-   bool nncoords;
-   nir_def *coords;
-   nir_def *array_index;
-
-   nir_def *proj;
-
-   nir_def *lod_bias;
-   nir_def *lod_replace;
-   nir_def *lod_ddx;
-   nir_def *lod_ddy;
-
-   nir_def *addr_lo;
-   nir_def *addr_hi;
-
-   nir_def *offset;
-   nir_def *ms_index;
-
-   nir_def *write_data;
-
-   bool sample_coeffs;
-   bool sample_raw;
-   unsigned sample_components;
-
-   bool int_mode;
-} pco_smp_params;
-
-static nir_intrinsic_instr *pco_emit_nir_smp(nir_builder *b,
-                                             pco_smp_params *params)
+nir_intrinsic_instr *pco_emit_nir_smp(nir_builder *b, pco_smp_params *params)
 {
    nir_def *comps[NIR_MAX_VEC_COMPONENTS];
    unsigned count = 0;
@@ -427,8 +392,10 @@ static nir_intrinsic_instr *pco_emit_nir_smp(nir_builder *b,
 
    assert(!params->sample_coeffs);
    assert(!params->sample_raw);
-   assert(params->sample_components > 0);
    assert(!params->write_data);
+
+   if (!params->sample_components)
+      params->sample_components = 4;
 
    nir_def *def = nir_smp_pco(b,
                               params->sample_components,

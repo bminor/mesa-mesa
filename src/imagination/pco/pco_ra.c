@@ -472,8 +472,14 @@ static bool pco_ra_func(pco_func *func,
 
                   pco_ref_xfer_mods(&src, psrc, false);
 
-                  if (!pco_refs_are_equal(src, dest, true))
-                     pco_mbyp(&b, dest, src, .exec_cnd = exec_cnd);
+                  if (!pco_refs_are_equal(src, dest, true)) {
+                     if (pco_ref_is_reg(src) &&
+                         pco_ref_get_reg_class(src) == PCO_REG_CLASS_SPEC) {
+                        pco_movs1(&b, dest, src, .exec_cnd = exec_cnd);
+                     } else {
+                        pco_mbyp(&b, dest, src, .exec_cnd = exec_cnd);
+                     }
+                  }
                }
 
                temps = MAX2(temps, temp_dest_base + offset + chans);

@@ -1166,6 +1166,15 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
       instr = trans_load_output_fs(tctx, intr, dest);
       break;
 
+   case nir_intrinsic_load_preamble:
+      instr = pco_mov(&tctx->b,
+                      dest,
+                      pco_ref_hwreg_vec(nir_intrinsic_base(intr),
+                                        PCO_REG_CLASS_SHARED,
+                                        pco_ref_get_chans(dest)),
+                      .rpt = pco_ref_get_chans(dest));
+      break;
+
    case nir_intrinsic_load_push_constant:
       instr =
          trans_load_common_store(tctx,

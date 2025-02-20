@@ -137,6 +137,9 @@ void pco_encode_ir(pco_ctx *ctx, pco_shader *shader)
  */
 unsigned pco_shader_binary_size(pco_shader *shader)
 {
+   if (!shader)
+      return 0;
+
    return shader->binary.size;
 }
 
@@ -148,5 +151,7 @@ unsigned pco_shader_binary_size(pco_shader *shader)
  */
 const void *pco_shader_binary_data(pco_shader *shader)
 {
+   if (!shader)
+      return NULL;
    return shader->binary.data;
 }

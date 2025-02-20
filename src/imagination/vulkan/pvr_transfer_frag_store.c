@@ -35,6 +35,7 @@
 #include "pvr_private.h"
 #include "pvr_transfer_frag_store.h"
 #include "pvr_types.h"
+#include "pvr_usc.h"
 #include "usc/pvr_uscgen.h"
 #include "util/hash_table.h"
 #include "util/macros.h"
@@ -187,7 +188,6 @@ static VkResult pvr_transfer_frag_store_entry_data_compile(
 
    struct pvr_tq_frag_sh_reg_layout *sh_reg_layout = &entry_data->sh_reg_layout;
    uint32_t next_free_sh_reg = 0;
-   struct util_dynarray shader;
    VkResult result;
 
    /* TODO: Allocate all combined image samplers if needed? Otherwise change the
@@ -208,17 +208,19 @@ static VkResult pvr_transfer_frag_store_entry_data_compile(
 
    sh_reg_layout->driver_total = next_free_sh_reg;
 
-   pvr_uscgen_tq_frag(shader_props,
-                      &entry_data->sh_reg_layout,
-                      num_usc_temps_out,
-                      &shader);
+   pco_shader *tq =
+      pvr_uscgen_tq(device->pdevice->pco_ctx, shader_props, sh_reg_layout);
+
+   *num_usc_temps_out = pco_shader_data(tq)->common.temps;
 
    result = pvr_gpu_upload_usc(device,
-                               util_dynarray_begin(&shader),
-                               util_dynarray_num_elements(&shader, uint8_t),
+                               pco_shader_binary_data(tq),
+                               pco_shader_binary_size(tq),
                                cache_line_size,
                                &entry_data->usc_upload);
-   util_dynarray_fini(&shader);
+
+   ralloc_free(tq);
+
    if (result != VK_SUCCESS)
       return result;
 

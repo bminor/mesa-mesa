@@ -53,4 +53,41 @@ void pco_validate_shader(pco_shader *shader, const char *when);
 
 void pco_print_shader(pco_shader *shader, FILE *fp, const char *when);
 void pco_print_binary(pco_shader *shader, FILE *fp, const char *when);
+
+#include "compiler/nir/nir_builder.h"
+
+typedef struct _pco_smp_params {
+   nir_def *tex_state;
+   nir_def *smp_state;
+
+   nir_alu_type dest_type;
+
+   enum glsl_sampler_dim sampler_dim;
+
+   bool nncoords;
+   nir_def *coords;
+   nir_def *array_index;
+
+   nir_def *proj;
+
+   nir_def *lod_bias;
+   nir_def *lod_replace;
+   nir_def *lod_ddx;
+   nir_def *lod_ddy;
+
+   nir_def *addr_lo;
+   nir_def *addr_hi;
+
+   nir_def *offset;
+   nir_def *ms_index;
+
+   nir_def *write_data;
+
+   bool sample_coeffs;
+   bool sample_raw;
+   unsigned sample_components;
+
+   bool int_mode;
+} pco_smp_params;
+nir_intrinsic_instr *pco_emit_nir_smp(nir_builder *b, pco_smp_params *params);
 #endif /* PCO_H */
