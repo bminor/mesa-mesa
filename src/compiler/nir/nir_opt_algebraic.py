@@ -487,7 +487,7 @@ optimizations.extend([
    (('~ffma@64', a, b, c), ('fadd', ('fmul', a, b), c), 'options->fuse_ffma64'),
    (('~ffmaz', a, b, c), ('fadd', ('fmulz', a, b), c), 'options->fuse_ffma32'),
 
-   (('~fmul', ('fadd', ('iand', ('ineg', ('b2i', 'a@bool')), ('fmul', b, c)), '#d'), '#e'),
+   (('~fmul', ('fadd', ('bcsel', a, ('fmul', b, c), 0), '#d'), '#e'),
     ('bcsel', a, ('fmul', ('fadd', ('fmul', b, c), d), e), ('fmul', d, e))),
 
    (('fdph', a, b), ('fdot4', ('vec4', 'a.x', 'a.y', 'a.z', 1.0), b), 'options->lower_fdph'),
@@ -1473,10 +1473,12 @@ for s in [8, 16, 32, 64]:
    ])
 
 optimizations.extend([
+   (('iand', ('ineg', ('b2i', 'a@1')), b),
+    ('bcsel', a, b, 0)),
+   (('ior', ('ineg', ('b2i','a@1')), ('ineg', ('b2i', 'b@1'))),
+    ('ineg', ('b2i', ('ior', a, b)))),
    (('ige', ('ineg', ('b2i', 'a@1')), 0), ('inot', a)),
    (('ilt', ('ineg', ('b2i', 'a@1')), 0), a),
-   (('iand', ('ineg', ('b2i', a)), 1.0), ('b2f', a)),
-   (('iand', ('ineg', ('b2i', a)), 1),   ('b2i', a)),
    (('bcsel', a, ('b2i', 'b@1'), ('b2i', 'c@1')), ('b2i', ('bcsel', a, b, c))),
    (('bcsel', a, ('b2i', 'b@1'), 0), ('b2i', ('bcsel', a, b, False))),
    (('bcsel', a, ('b2i', 'b@1'), 1), ('b2i', ('bcsel', a, b, True))),
@@ -1509,12 +1511,6 @@ for op in ('ior', 'iand', 'ixor'):
         # algebraic optimizations of masking.
         (('iand', (op, ('b2i', 'a@1'), ('ineg', ('b2i', 'b@1'))), 1),       ('b2i', (op, a, b)) ),
     ])
-
-# One extra rule for iand.  Since one of the sources is missing ineg, the
-# final result can only be 0 or 1.  Omit the final ineg.
-optimizations.extend([
-    (('iand', ('ineg', ('b2i', 'a@1')), ('b2i', 'b@1')), ('b2i', ('iand', a, b)))
-])
 
 optimizations.extend([
    (('feq', ('seq', a, b), 1.0), ('feq', a, b)),
