@@ -855,18 +855,19 @@ get_device_properties(const struct panvk_instance *instance,
       /* VK_KHR_driver_properties */
       .driverID = VK_DRIVER_ID_MESA_PANVK,
       .conformanceVersion = get_conformance_version(arch),
-      /* XXX: VK_KHR_shader_float_controls */
-      .denormBehaviorIndependence = VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_ALL,
+      .denormBehaviorIndependence = arch >= 9 ?
+         VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_NONE :
+         VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_ALL,
       .roundingModeIndependence = VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_ALL,
       .shaderSignedZeroInfNanPreserveFloat16 = true,
       .shaderSignedZeroInfNanPreserveFloat32 = true,
       .shaderSignedZeroInfNanPreserveFloat64 = false,
       .shaderDenormPreserveFloat16 = true,
       .shaderDenormPreserveFloat32 = true,
-      .shaderDenormPreserveFloat64 = false,
+      .shaderDenormPreserveFloat64 = true,
       .shaderDenormFlushToZeroFloat16 = true,
       .shaderDenormFlushToZeroFloat32 = true,
-      .shaderDenormFlushToZeroFloat64 = false,
+      .shaderDenormFlushToZeroFloat64 = true,
       .shaderRoundingModeRTEFloat16 = true,
       .shaderRoundingModeRTEFloat32 = true,
       .shaderRoundingModeRTEFloat64 = false,

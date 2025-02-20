@@ -215,6 +215,17 @@ GENX(pan_shader_compile)(nir_shader *s, struct panfrost_compile_inputs *inputs,
    info->ftz_fp16 = nir_is_denorm_flush_to_zero(execution_mode, 16);
    info->ftz_fp32 = nir_is_denorm_flush_to_zero(execution_mode, 32);
 
+#if PAN_ARCH >= 9
+   /* Valhall hardware doesn't have a "flush FP16, preserve FP32" mode, and we
+    * don't advertise independent FP16/FP32 denorm modes in panvk, but it's
+    * still possible to have shaders that don't specify any denorm mode for
+    * FP32. In that case, default to flush FP32. */
+   if (info->ftz_fp16 && !info->ftz_fp32) {
+      assert(!nir_is_denorm_preserve(execution_mode, 32));
+      info->ftz_fp32 = true;
+   }
+#endif
+
 #if PAN_ARCH >= 6
    /* This is "redundant" information, but is needed in a draw-time hot path */
    for (unsigned i = 0; i < ARRAY_SIZE(info->bifrost.blend); ++i) {
