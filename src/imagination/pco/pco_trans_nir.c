@@ -151,18 +151,21 @@ pco_ref_nir_alu_src_t(const nir_alu_instr *alu, unsigned src, trans_ctx *tctx)
 
    pco_vec_info *vec_info =
       _mesa_hash_table_u64_search(tctx->func->vec_infos, ref.val);
-   assert(vec_info);
+   ASSERTED bool replicated_scalar =
+      nir_is_same_comp_swizzle((uint8_t *)alu_src->swizzle, chans) &&
+      !swizzle0 && pco_ref_get_chans(ref) == 1;
+   assert(!!vec_info != replicated_scalar);
 
    /* One channel; just return its component. */
    if (chans == 1)
-      return vec_info->comps[swizzle0]->dest[0];
+      return vec_info ? vec_info->comps[swizzle0]->dest[0] : ref;
 
    /* Multiple channels, either a partial vec and/or swizzling; we need to build
     * a new vec for this.
     */
    pco_ref comps[NIR_MAX_VEC_COMPONENTS] = { 0 };
    for (unsigned u = 0; u < chans; ++u)
-      comps[u] = vec_info->comps[alu_src->swizzle[u]]->dest[0];
+      comps[u] = vec_info ? vec_info->comps[alu_src->swizzle[u]]->dest[0] : ref;
 
    pco_ref vec = pco_ref_new_ssa(tctx->func, pco_ref_get_bits(ref), chans);
    pco_instr *instr = pco_vec(&tctx->b, vec, chans, comps);
