@@ -15,6 +15,7 @@
 
 #include "compiler/shader_enums.h"
 #include "pco/pco.h"
+#include "pvr_private.h"
 #include "usc/pvr_uscgen.h"
 
 /* NOP shader generation. */
@@ -35,5 +36,7 @@ pco_shader *pvr_usc_tq(pco_ctx *ctx, struct pvr_tq_props *props);
 pco_shader *pvr_uscgen_tq(pco_ctx *ctx,
                           const struct pvr_tq_shader_properties *shader_props,
                           struct pvr_tq_frag_sh_reg_layout *sh_reg_layout);
+
+pco_shader *pvr_uscgen_loadop(pco_ctx *ctx, struct pvr_load_op *load_op);
 
 #endif /* PVR_USC_H */

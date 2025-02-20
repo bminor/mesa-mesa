@@ -673,18 +673,14 @@ pvr_load_op_constants_create_and_upload(struct pvr_cmd_buffer *cmd_buffer,
    bool has_depth_load;
    VkResult result;
 
-   /* These are only setup and never used for now. These will need to be
-    * uploaded into a buffer based on some compiler info.
-    */
-   /* TODO: Remove the above comment once the compiler is hooked up and we're
-    * setting up + uploading the buffer.
-    */
    struct pvr_combined_image_sampler_descriptor
       texture_states[PVR_LOAD_OP_CLEARS_LOADS_MAX_RTS];
    uint32_t texture_count = 0;
    uint32_t hw_clear_value[PVR_LOAD_OP_CLEARS_LOADS_MAX_RTS *
                            PVR_CLEAR_COLOR_ARRAY_SIZE];
    uint32_t next_clear_consts = 0;
+   unsigned buffer_size;
+   uint8_t *buffer;
 
    if (load_op->is_hw_object)
       attachment_count = load_op->hw_render->color_init_count;
@@ -780,12 +776,28 @@ pvr_load_op_constants_create_and_upload(struct pvr_cmd_buffer *cmd_buffer,
       hw_clear_value[next_clear_consts++] = fui(clear_value.depthStencil.depth);
    }
 
-   result = pvr_cmd_buffer_upload_general(cmd_buffer,
-                                          &hw_clear_value[0],
-                                          sizeof(hw_clear_value),
-                                          &clear_bo);
+   buffer_size = next_clear_consts * sizeof(hw_clear_value[0]);
+   if (texture_count > 0)
+      buffer_size = ALIGN_POT(buffer_size, 4 * sizeof(uint32_t));
+   unsigned words = buffer_size;
+   buffer_size +=
+      texture_count * sizeof(struct pvr_combined_image_sampler_descriptor);
+
+   result = pvr_cmd_buffer_alloc_mem(cmd_buffer,
+                                     cmd_buffer->device->heaps.general_heap,
+                                     buffer_size,
+                                     &clear_bo);
    if (result != VK_SUCCESS)
       return result;
+
+   buffer = (uint8_t *)pvr_bo_suballoc_get_map_addr(clear_bo);
+   memcpy(&buffer[0],
+          hw_clear_value,
+          next_clear_consts * sizeof(hw_clear_value[0]));
+
+   memcpy(&buffer[words],
+          texture_states,
+          texture_count * sizeof(struct pvr_combined_image_sampler_descriptor));
 
    *addr_out = clear_bo->dev_addr;
 

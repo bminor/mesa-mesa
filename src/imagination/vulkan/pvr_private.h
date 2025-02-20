@@ -1146,6 +1146,8 @@ struct pvr_load_op {
 #define PVR_NO_DEPTH_CLEAR_TO_REG (-1)
       /* If >= 0, write a depth clear value to the specified pixel output. */
       int32_t depth_clear_to_reg;
+
+      const struct usc_mrt_setup *mrt_setup;
    } clears_loads_state;
 };
 

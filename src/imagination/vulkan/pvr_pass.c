@@ -32,6 +32,7 @@
 #include "pvr_pds.h"
 #include "pvr_private.h"
 #include "pvr_types.h"
+#include "pvr_usc.h"
 #include "usc/programs/pvr_usc_fragment_shader.h"
 #include "util/macros.h"
 #include "rogue/rogue.h"
@@ -245,6 +246,7 @@ pvr_create_subpass_load_op(struct pvr_device *device,
 
    load_op->is_hw_object = false;
    load_op->subpass = subpass;
+   load_op->clears_loads_state.mrt_setup = &hw_subpass->setup;
 
    *load_op_out = load_op;
 
@@ -287,6 +289,7 @@ pvr_create_render_load_op(struct pvr_device *device,
 
    load_op->is_hw_object = true;
    load_op->hw_render = hw_render;
+   load_op->clears_loads_state.mrt_setup = &hw_render->init_setup;
 
    *load_op_out = load_op;
 
@@ -302,31 +305,48 @@ pvr_generate_load_op_shader(struct pvr_device *device,
    const struct pvr_device_info *dev_info = &device->pdevice->dev_info;
    const uint32_t cache_line_size = rogue_get_slc_cache_line_size(dev_info);
 
+   pco_shader *loadop = pvr_uscgen_loadop(device->pdevice->pco_ctx, load_op);
+
    VkResult result = pvr_gpu_upload_usc(device,
-                                        pvr_usc_fragment_shader,
-                                        sizeof(pvr_usc_fragment_shader),
+                                        pco_shader_binary_data(loadop),
+                                        pco_shader_binary_size(loadop),
                                         cache_line_size,
                                         &load_op->usc_frag_prog_bo);
-   if (result != VK_SUCCESS)
+
+   if (result != VK_SUCCESS) {
+      ralloc_free(loadop);
       return result;
+   }
+
+   const bool msaa = load_op->clears_loads_state.unresolved_msaa_mask &
+                     load_op->clears_loads_state.rt_load_mask;
 
    /* TODO: amend this once the hardcoded shaders have been removed. */
    struct pvr_fragment_shader_state fragment_state = {
       .shader_bo = load_op->usc_frag_prog_bo,
-      .sample_rate = ROGUE_PDSINST_DOUTU_SAMPLE_RATE_INSTANCE,
+      .sample_rate = msaa ? ROGUE_PDSINST_DOUTU_SAMPLE_RATE_FULL
+                          : ROGUE_PDSINST_DOUTU_SAMPLE_RATE_INSTANCE,
       .pds_fragment_program = load_op->pds_frag_prog,
    };
 
    result = pvr_pds_fragment_program_create_and_upload(device,
                                                        allocator,
-                                                       NULL,
+                                                       loadop,
                                                        &fragment_state);
+
+   load_op->temps_count = pco_shader_data(loadop)->common.temps;
+   ralloc_free(loadop);
+
    load_op->usc_frag_prog_bo = fragment_state.shader_bo;
    load_op->pds_frag_prog = fragment_state.pds_fragment_program;
 
    if (result != VK_SUCCESS)
       goto err_free_usc_frag_prog_bo;
 
+   /* Manually hard coding `texture_kicks` to 1 since we'll pack everything into
+    * one buffer to be DMAed. See `pvr_load_op_data_create_and_upload()`, where
+    * we upload the buffer and upload the code section.
+    */
    result = pvr_pds_unitex_state_program_create_and_upload(
       device,
       allocator,
@@ -335,14 +355,6 @@ pvr_generate_load_op_shader(struct pvr_device *device,
       &load_op->pds_tex_state_prog);
    if (result != VK_SUCCESS)
       goto err_free_pds_frag_prog;
-
-   /* FIXME: These should be based on the USC and PDS programs, but are hard
-    * coded for now.
-    */
-   load_op->const_shareds_count = 1;
-   load_op->shareds_dest_offset = 0;
-   load_op->shareds_count = 1;
-   load_op->temps_count = 1;
 
    return VK_SUCCESS;
 

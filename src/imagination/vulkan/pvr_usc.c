@@ -892,3 +892,243 @@ pco_shader *pvr_uscgen_tq(pco_ctx *ctx,
 
    return build_shader(ctx, b.shader, &data);
 }
+
+static inline VkFormat pvr_uscgen_format_for_accum(VkFormat vk_format)
+{
+   if (!vk_format_has_depth(vk_format))
+      return vk_format;
+
+   switch (vk_format) {
+   case VK_FORMAT_D16_UNORM:
+   case VK_FORMAT_X8_D24_UNORM_PACK32:
+   case VK_FORMAT_D32_SFLOAT:
+   case VK_FORMAT_D24_UNORM_S8_UINT:
+      return VK_FORMAT_R32_SFLOAT;
+
+   case VK_FORMAT_D32_SFLOAT_S8_UINT:
+      return VK_FORMAT_R32G32_SFLOAT;
+
+   default:
+      break;
+   }
+
+   UNREACHABLE("");
+}
+
+pco_shader *pvr_uscgen_loadop(pco_ctx *ctx, struct pvr_load_op *load_op)
+{
+   unsigned rt_mask = load_op->clears_loads_state.rt_clear_mask |
+                      load_op->clears_loads_state.rt_load_mask;
+   bool depth_to_reg = load_op->clears_loads_state.depth_clear_to_reg !=
+                       PVR_NO_DEPTH_CLEAR_TO_REG;
+   const struct usc_mrt_setup *mrt_setup =
+      load_op->clears_loads_state.mrt_setup;
+
+   pco_data data = { 0 };
+
+   nir_builder b = nir_builder_init_simple_shader(MESA_SHADER_FRAGMENT,
+                                                  pco_nir_options(),
+                                                  "loadop");
+
+   u_foreach_bit (rt_idx, rt_mask) {
+      bool is_clear = BITFIELD_BIT(rt_idx) &
+                      load_op->clears_loads_state.rt_clear_mask;
+
+      VkFormat vk_format = pvr_uscgen_format_for_accum(
+         load_op->clears_loads_state.dest_vk_format[rt_idx]);
+      unsigned accum_size_dwords =
+         DIV_ROUND_UP(pvr_get_pbe_accum_format_size_in_bytes(vk_format),
+                      sizeof(uint32_t));
+
+      const glsl_type *type;
+      if (is_clear) {
+         type = glsl_vec_type(accum_size_dwords);
+
+         if (vk_format_is_int(vk_format))
+            type = glsl_ivec_type(accum_size_dwords);
+         else if (vk_format_is_uint(vk_format))
+            type = glsl_uvec_type(accum_size_dwords);
+
+         switch (accum_size_dwords) {
+         case 1:
+            data.fs.output_formats[FRAG_RESULT_DATA0 + rt_idx] =
+               PIPE_FORMAT_R32_UINT;
+            break;
+
+         case 2:
+            data.fs.output_formats[FRAG_RESULT_DATA0 + rt_idx] =
+               PIPE_FORMAT_R32G32_UINT;
+            break;
+
+         case 3:
+            data.fs.output_formats[FRAG_RESULT_DATA0 + rt_idx] =
+               PIPE_FORMAT_R32G32B32_UINT;
+            break;
+
+         case 4:
+            data.fs.output_formats[FRAG_RESULT_DATA0 + rt_idx] =
+               PIPE_FORMAT_R32G32B32A32_UINT;
+            break;
+
+         default:
+            UNREACHABLE("");
+         }
+      } else {
+         data.fs.output_formats[FRAG_RESULT_DATA0 + rt_idx] =
+            vk_format_to_pipe_format(
+               load_op->clears_loads_state.dest_vk_format[rt_idx]);
+
+         type = glsl_vec4_type();
+         if (util_format_is_pure_sint(
+                data.fs.output_formats[FRAG_RESULT_DATA0 + rt_idx])) {
+            type = glsl_ivec4_type();
+         } else if (util_format_is_pure_uint(
+                       data.fs.output_formats[FRAG_RESULT_DATA0 + rt_idx])) {
+            type = glsl_uvec4_type();
+         }
+      }
+
+      struct usc_mrt_resource *mrt_resource = &mrt_setup->mrt_resources[rt_idx];
+      /* TODO: tile buffer support */
+      assert(mrt_resource->type == USC_MRT_RESOURCE_TYPE_OUTPUT_REG);
+
+      data.fs.outputs[FRAG_RESULT_DATA0 + rt_idx] = (pco_range){
+         .start = mrt_resource->reg.output_reg,
+         .count = accum_size_dwords,
+      };
+
+      data.fs.output_reg[FRAG_RESULT_DATA0 + rt_idx] = true;
+
+      nir_create_variable_with_location(b.shader,
+                                        nir_var_shader_out,
+                                        FRAG_RESULT_DATA0 + rt_idx,
+                                        type);
+   }
+
+   unsigned shared_regs = 0;
+   u_foreach_bit (rt_idx, load_op->clears_loads_state.rt_clear_mask) {
+      for (unsigned u = 0;
+           u < data.fs.outputs[FRAG_RESULT_DATA0 + rt_idx].count;
+           ++u) {
+         nir_def *chan = nir_load_preamble(&b, 1, 32, .base = shared_regs++);
+
+         nir_store_output(&b,
+                          chan,
+                          nir_imm_int(&b, 0),
+                          .base = 0,
+                          .component = u,
+                          .src_type = nir_type_invalid | 32,
+                          .write_mask = 1,
+                          .io_semantics.location = FRAG_RESULT_DATA0 + rt_idx,
+                          .io_semantics.num_slots = 1);
+      }
+   }
+
+   if (depth_to_reg) {
+      int32_t depth_idx = load_op->clears_loads_state.depth_clear_to_reg;
+
+      struct usc_mrt_resource *mrt_resource =
+         &mrt_setup->mrt_resources[depth_idx];
+      /* TODO: tile buffer support */
+      assert(mrt_resource->type == USC_MRT_RESOURCE_TYPE_OUTPUT_REG);
+
+      assert(DIV_ROUND_UP(mrt_resource->intermediate_size, sizeof(uint32_t)) ==
+             1);
+
+      data.fs.output_formats[FRAG_RESULT_DATA0 + depth_idx] =
+         PIPE_FORMAT_R32_FLOAT;
+
+      const glsl_type *type = glsl_float_type();
+
+      data.fs.outputs[FRAG_RESULT_DATA0 + depth_idx] = (pco_range){
+         .start = mrt_resource->reg.output_reg,
+         .count = 1,
+      };
+
+      data.fs.output_reg[FRAG_RESULT_DATA0 + depth_idx] = true;
+
+      nir_create_variable_with_location(b.shader,
+                                        nir_var_shader_out,
+                                        FRAG_RESULT_DATA0 + depth_idx,
+                                        type);
+
+      nir_def *chan = nir_load_preamble(&b, 1, 32, .base = shared_regs++);
+
+      nir_store_output(&b,
+                       chan,
+                       nir_imm_int(&b, 0),
+                       .base = 0,
+                       .component = 0,
+                       .src_type = nir_type_invalid | 32,
+                       .write_mask = 1,
+                       .io_semantics.location = FRAG_RESULT_DATA0 + depth_idx,
+                       .io_semantics.num_slots = 1);
+   }
+
+   if (load_op->clears_loads_state.rt_load_mask) {
+      nir_variable *pos = nir_get_variable_with_location(b.shader,
+                                                         nir_var_shader_in,
+                                                         VARYING_SLOT_POS,
+                                                         glsl_vec4_type());
+      pos->data.interpolation = INTERP_MODE_NOPERSPECTIVE;
+      nir_def *coords = nir_channels(&b, nir_load_var(&b, pos), 0b11);
+
+      const bool msaa = load_op->clears_loads_state.unresolved_msaa_mask &
+                        load_op->clears_loads_state.rt_load_mask;
+
+      b.shader->info.fs.uses_sample_shading = msaa;
+
+      shared_regs = ALIGN_POT(shared_regs, 4);
+
+      u_foreach_bit (rt_idx, load_op->clears_loads_state.rt_load_mask) {
+         nir_def *tex_state = nir_load_preamble(&b, 4, 32, .base = shared_regs);
+         shared_regs += sizeof(struct pvr_image_descriptor) / sizeof(uint32_t);
+
+         nir_def *smp_state = nir_load_preamble(&b, 4, 32, .base = shared_regs);
+         shared_regs +=
+            sizeof(struct pvr_sampler_descriptor) / sizeof(uint32_t);
+
+         nir_variable *var =
+            nir_find_variable_with_location(b.shader,
+                                            nir_var_shader_out,
+                                            FRAG_RESULT_DATA0 + rt_idx);
+         assert(var);
+         unsigned chans = glsl_get_vector_elements(var->type);
+
+         pco_smp_params params = {
+            .tex_state = tex_state,
+            .smp_state = smp_state,
+
+            .dest_type = nir_get_nir_type_for_glsl_type(var->type),
+
+            .nncoords = true,
+            .coords = coords,
+
+            .sampler_dim = msaa ? GLSL_SAMPLER_DIM_MS : GLSL_SAMPLER_DIM_2D,
+
+            .ms_index = msaa ? nir_load_sample_id(&b) : NULL,
+         };
+
+         nir_intrinsic_instr *smp = pco_emit_nir_smp(&b, &params);
+         nir_def *smp_data = nir_channels(&b, &smp->def, nir_component_mask(chans));
+
+         nir_store_output(&b,
+                          smp_data,
+                          nir_imm_int(&b, 0),
+                          .base = 0,
+                          .component = 0,
+                          .src_type = params.dest_type,
+                          .write_mask = BITFIELD_MASK(chans),
+                          .io_semantics.location = FRAG_RESULT_DATA0 + rt_idx,
+                          .io_semantics.num_slots = 1);
+      }
+   }
+
+   nir_jump(&b, nir_jump_return);
+
+   load_op->const_shareds_count = shared_regs;
+   load_op->shareds_count = shared_regs;
+   load_op->shareds_dest_offset = 0;
+
+   return build_shader(ctx, b.shader, &data);
+}
