@@ -395,7 +395,7 @@ brw_inst::can_change_types() const
  * it.
  */
 bool
-brw_inst::is_partial_write() const
+brw_inst::is_partial_write(unsigned grf_size) const
 {
    if (this->predicate && !this->predicate_trivial &&
        this->opcode != BRW_OPCODE_SEL)
@@ -404,10 +404,10 @@ brw_inst::is_partial_write() const
    if (!this->dst.is_contiguous())
       return true;
 
-   if (this->dst.offset % REG_SIZE != 0)
+   if (this->dst.offset % grf_size != 0)
       return true;
 
-   return this->size_written % REG_SIZE != 0;
+   return this->size_written % grf_size != 0;
 }
 
 unsigned
@@ -1239,4 +1239,3 @@ is_coalescing_payload(const brw_shader &s, const brw_inst *inst)
           inst->src[0].offset == 0 &&
           s.alloc.sizes[inst->src[0].nr] * REG_SIZE == inst->size_written;
 }
-
