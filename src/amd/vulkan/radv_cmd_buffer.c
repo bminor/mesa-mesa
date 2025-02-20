@@ -3736,6 +3736,9 @@ radv_emit_fb_color_state(struct radv_cmd_buffer *cmd_buffer, int index, struct r
       cb_color_info &= C_028C70_COMPRESSION;
    }
 
+   if (pdev->info.gfx_level >= GFX8 && pdev->info.gfx_level < GFX11 && iview->disable_tc_compat_cmask_mrt)
+      cb_color_info &= C_028C70_FMASK_COMPRESS_1FRAG_ONLY;
+
    if (pdev->info.gfx_level >= GFX12) {
       radeon_set_context_reg(cmd_buffer->cs, R_028C60_CB_COLOR0_BASE + index * 0x24, cb->ac.cb_color_base);
       radeon_set_context_reg(cmd_buffer->cs, R_028C64_CB_COLOR0_VIEW + index * 0x24, cb->ac.cb_color_view);

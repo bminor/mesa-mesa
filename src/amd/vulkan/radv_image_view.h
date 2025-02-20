@@ -36,6 +36,7 @@ struct radv_image_view {
    bool support_fast_clear;
 
    bool disable_dcc_mrt;
+   bool disable_tc_compat_cmask_mrt;
 
    union radv_descriptor descriptor;
 
@@ -54,6 +55,7 @@ struct radv_image_view_extra_create_info {
    bool disable_compression;
    bool enable_compression;
    bool disable_dcc_mrt;
+   bool disable_tc_compat_cmask_mrt;
    bool from_client; /**< Set only if this came from vkCreateImage */
 };
 

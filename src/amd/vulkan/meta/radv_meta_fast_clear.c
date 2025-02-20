@@ -238,7 +238,7 @@ radv_emit_set_predication_state_from_image(struct radv_cmd_buffer *cmd_buffer, s
 
 static void
 radv_process_color_image_layer(struct radv_cmd_buffer *cmd_buffer, struct radv_image *image,
-                               const VkImageSubresourceRange *range, int level, int layer, bool flush_cb)
+                               const VkImageSubresourceRange *range, int level, int layer, enum radv_color_op op)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    struct radv_image_view iview;
@@ -247,22 +247,28 @@ radv_process_color_image_layer(struct radv_cmd_buffer *cmd_buffer, struct radv_i
    width = u_minify(image->vk.extent.width, range->baseMipLevel + level);
    height = u_minify(image->vk.extent.height, range->baseMipLevel + level);
 
-   radv_image_view_init(&iview, device,
-                        &(VkImageViewCreateInfo){
-                           .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-                           .image = radv_image_to_handle(image),
-                           .viewType = radv_meta_get_view_type(image),
-                           .format = image->vk.format,
-                           .subresourceRange =
-                              {
-                                 .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-                                 .baseMipLevel = range->baseMipLevel + level,
-                                 .levelCount = 1,
-                                 .baseArrayLayer = range->baseArrayLayer + layer,
-                                 .layerCount = 1,
-                              },
-                        },
-                        NULL);
+   /* TC-compatible CMASK must be disabled (ie. FMASK_COMPRESS_1FRAG_ONLY must be 0), otherwise the
+    * FMASK decompress operation doesn't happen (DCC_DECOMPRESS implicitly uses FMASK_DECOMPRESS).
+    */
+   const bool disable_tc_compat_cmask_mrt = op == FMASK_DECOMPRESS || op == DCC_DECOMPRESS;
+
+   radv_image_view_init(
+      &iview, device,
+      &(VkImageViewCreateInfo){
+         .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+         .image = radv_image_to_handle(image),
+         .viewType = radv_meta_get_view_type(image),
+         .format = image->vk.format,
+         .subresourceRange =
+            {
+               .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+               .baseMipLevel = range->baseMipLevel + level,
+               .levelCount = 1,
+               .baseArrayLayer = range->baseArrayLayer + layer,
+               .layerCount = 1,
+            },
+      },
+      &(struct radv_image_view_extra_create_info){.disable_tc_compat_cmask_mrt = disable_tc_compat_cmask_mrt});
 
    const VkRenderingAttachmentInfo color_att = {
       .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
@@ -283,13 +289,14 @@ radv_process_color_image_layer(struct radv_cmd_buffer *cmd_buffer, struct radv_i
 
    radv_CmdBeginRendering(radv_cmd_buffer_to_handle(cmd_buffer), &rendering_info);
 
-   if (flush_cb)
+   /* Flushing CB is required before/after {FMASK,DCC}_DECOMPRESS. */
+   if (op == FMASK_DECOMPRESS || op == DCC_DECOMPRESS)
       cmd_buffer->state.flush_bits |= radv_dst_access_flush(cmd_buffer, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
                                                             VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT, 0, image, range);
 
    radv_CmdDraw(radv_cmd_buffer_to_handle(cmd_buffer), 3, 1, 0, 0);
 
-   if (flush_cb)
+   if (op == FMASK_DECOMPRESS || op == DCC_DECOMPRESS)
       cmd_buffer->state.flush_bits |= radv_src_access_flush(cmd_buffer, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
                                                             VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT, 0, image, range);
 
@@ -305,7 +312,6 @@ radv_process_color_image(struct radv_cmd_buffer *cmd_buffer, struct radv_image *
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    struct radv_meta_saved_state saved_state;
    bool old_predicating = false;
-   bool flush_cb = false;
    uint64_t pred_offset;
    VkPipelineLayout layout;
    VkPipeline pipeline;
@@ -323,15 +329,9 @@ radv_process_color_image(struct radv_cmd_buffer *cmd_buffer, struct radv_image *
       break;
    case FMASK_DECOMPRESS:
       pred_offset = 0; /* FMASK_DECOMPRESS is never predicated. */
-
-      /* Flushing CB is required before and after FMASK_DECOMPRESS. */
-      flush_cb = true;
       break;
    case DCC_DECOMPRESS:
       pred_offset = image->dcc_pred_offset;
-
-      /* Flushing CB is required before and after DCC_DECOMPRESS. */
-      flush_cb = true;
       break;
    default:
       unreachable("Invalid color op");
@@ -381,7 +381,7 @@ radv_process_color_image(struct radv_cmd_buffer *cmd_buffer, struct radv_image *
                          });
 
       for (uint32_t s = 0; s < vk_image_subresource_layer_count(&image->vk, subresourceRange); s++) {
-         radv_process_color_image_layer(cmd_buffer, image, subresourceRange, l, s, flush_cb);
+         radv_process_color_image_layer(cmd_buffer, image, subresourceRange, l, s, op);
       }
    }
 
