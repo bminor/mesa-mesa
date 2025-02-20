@@ -282,7 +282,7 @@ iris-kbl-traces-performance:
 intel-adl-cl:
   extends:
     - .intel-adl-test
-    - .lava-acer-cbv514-1h-34uz-brya:x86_64
+    - .lava-acer-n20q11-r856ltn-p1s2-nissa:x86_64
     - .intel-rules
   rules:
     - !reference [.intel-adl-test, rules]
@@ -294,11 +294,12 @@ intel-adl-cl:
     VK_DRIVER: intel
     HWCI_START_WESTON: 1
   timeout: 20m
+  parallel: 2
 
 intel-adl-skqp:
   extends:
     - .intel-adl-test
-    - .lava-acer-cbv514-1h-34uz-brya:x86_64
+    - .lava-acer-n20q11-r856ltn-p1s2-nissa:x86_64
   variables:
     DEQP_SUITE: intel-adl-skqp
     VK_DRIVER: intel
