@@ -278,6 +278,27 @@
     - !reference [.ondracka-farm-rules, rules]
 
 
+.pengutronix-farm-rules:
+  rules:
+    - exists: [ .ci-farms-disabled/pengutronix ]
+      when: never
+    - if: '$CI_PIPELINE_SOURCE != "schedule"'
+      changes: [ .ci-farms-disabled/pengutronix ]
+      when: on_success
+    - if: '$CI_PIPELINE_SOURCE != "schedule"'
+      changes: [ .ci-farms-disabled/* ]
+      when: never
+
+.pengutronix-farm-manual-rules:
+  rules:
+    - exists: [ .ci-farms-disabled/pengutronix ]
+      when: never
+    - if: '$CI_PIPELINE_SOURCE != "schedule"'
+      changes: [ .ci-farms-disabled/pengutronix ]
+      when: never
+    - !reference [.pengutronix-farm-rules, rules]
+
+
 # Skip container & build jobs when disabling any farm, and run them if any
 # farm gets re-enabled.
 # Only apply these rules in MR context, because otherwise we get a false
@@ -333,6 +354,10 @@
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       changes: [ .ci-farms-disabled/vmware ]
       exists: [ .ci-farms-disabled/vmware ]
+      when: never
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes: [ .ci-farms-disabled/pengutronix ]
+      exists: [ .ci-farms-disabled/pengutronix ]
       when: never
     # Any other change to ci-farms/* means some farm is getting re-enabled.
     # Run jobs in Marge pipelines (and let it fallback to manual otherwise)
