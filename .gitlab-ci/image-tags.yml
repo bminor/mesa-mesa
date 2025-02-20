@@ -38,7 +38,7 @@ variables:
    DEBIAN_PYUTILS_IMAGE: "debian/x86_64_pyutils"
    DEBIAN_PYUTILS_TAG: "20250129-lavacli"
 
-   ALPINE_X86_64_BUILD_TAG: "20250128-llversionm"
+   ALPINE_X86_64_BUILD_TAG: "20250221-wlproto"
    ALPINE_X86_64_LAVA_SSH_TAG: "20250124-spirv-tools"
    FEDORA_X86_64_BUILD_TAG: "20250128-llversionm"
 
