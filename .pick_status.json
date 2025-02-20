@@ -104,7 +104,7 @@
         "description": "panvk: Initialize out array with the correct length",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "252ddaf51be72dc84ad1f26311d5403920ff119c",
         "notes": null
