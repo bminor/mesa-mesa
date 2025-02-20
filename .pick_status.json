@@ -2134,7 +2134,7 @@
         "description": "ac/nir: fix tess factor optimization when workgroup barriers are reduced",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b49eab68a8676cf2c10aa27907b38991f61bd4f5",
         "notes": null
