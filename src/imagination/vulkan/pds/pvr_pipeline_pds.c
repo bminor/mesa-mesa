@@ -1574,7 +1574,8 @@ void pvr_pds_generate_descriptor_upload_program(
       bool halt = last_dma && !input_program->secondary_program_present;
 
       switch (buffer->type) {
-      case PVR_BUFFER_TYPE_PUSH_CONSTS: {
+      case PVR_BUFFER_TYPE_PUSH_CONSTS:
+      case PVR_BUFFER_TYPE_BLEND_CONSTS: {
          struct pvr_const_map_entry_special_buffer *special_buffer_entry;
 
          special_buffer_entry =

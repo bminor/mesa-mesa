@@ -3640,6 +3640,26 @@ static VkResult pvr_setup_descriptor_mappings(
             break;
          }
 
+         case PVR_BUFFER_TYPE_BLEND_CONSTS: {
+            const struct vk_color_blend_state *cb =
+               &cmd_buffer->vk.dynamic_graphics_state.cb;
+
+            struct pvr_suballoc_bo *blend_consts_bo;
+            result = pvr_cmd_buffer_upload_general(cmd_buffer,
+                                                   cb->blend_constants,
+                                                   sizeof(cb->blend_constants),
+                                                   &blend_consts_bo);
+
+            if (result != VK_SUCCESS)
+               return result;
+
+            PVR_WRITE(qword_buffer,
+                      blend_consts_bo->dev_addr.addr,
+                      special_buff_entry->const_offset,
+                      pds_info->data_size_in_dwords);
+            break;
+         }
+
          default:
             UNREACHABLE("Unsupported special buffer type.");
          }

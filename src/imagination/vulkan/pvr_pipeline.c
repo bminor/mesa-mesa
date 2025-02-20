@@ -33,6 +33,7 @@
 #include "compiler/shader_enums.h"
 #include "hwdef/rogue_hw_utils.h"
 #include "nir/nir.h"
+#include "nir/nir_lower_blend.h"
 #include "pco/pco.h"
 #include "pco/pco_data.h"
 #include "pvr_bo.h"
@@ -51,6 +52,7 @@
 #include "util/u_dynarray.h"
 #include "util/u_math.h"
 #include "vk_alloc.h"
+#include "vk_blend.h"
 #include "vk_format.h"
 #include "vk_graphics_state.h"
 #include "vk_log.h"
@@ -588,6 +590,14 @@ static VkResult pvr_pds_descriptor_program_create_and_upload(
       };
    }
 
+   if (stage == MESA_SHADER_FRAGMENT && data->fs.blend_consts.count > 0) {
+      program.buffers[program.buffer_count++] = (struct pvr_pds_buffer){
+         .type = PVR_BUFFER_TYPE_BLEND_CONSTS,
+         .size_in_dwords = data->fs.blend_consts.count,
+         .destination = data->fs.blend_consts.start,
+      };
+   }
+
    pds_info->entries_size_in_bytes = const_entries_size_in_bytes;
 
    pvr_pds_generate_descriptor_upload_program(&program, NULL, pds_info);
@@ -871,16 +881,12 @@ static void pvr_pipeline_finish(struct pvr_device *device,
    vk_object_base_finish(&pipeline->base);
 }
 
-/* How many shared regs it takes to store a pvr_dev_addr_t.
- * Each shared reg is 32 bits.
- */
-#define PVR_DEV_ADDR_SIZE_IN_SH_REGS \
-   DIV_ROUND_UP(sizeof(pvr_dev_addr_t), sizeof(uint32_t))
-
-static void pvr_preprocess_shader_data(pco_data *data,
-                                       nir_shader *nir,
-                                       const void *pCreateInfo,
-                                       struct vk_pipeline_layout *layout);
+static void
+pvr_preprocess_shader_data(pco_data *data,
+                           nir_shader *nir,
+                           const void *pCreateInfo,
+                           struct vk_pipeline_layout *layout,
+                           const struct vk_graphics_pipeline_state *state);
 
 static void pvr_postprocess_shader_data(pco_data *data,
                                         nir_shader *nir,
@@ -933,7 +939,7 @@ static VkResult pvr_compute_pipeline_compile(
       goto err_free_build_context;
 
    pco_preprocess_nir(pco_ctx, nir);
-   pvr_preprocess_shader_data(&shader_data, nir, pCreateInfo, layout);
+   pvr_preprocess_shader_data(&shader_data, nir, pCreateInfo, layout, NULL);
    pco_lower_nir(pco_ctx, nir, &shader_data);
    pco_postprocess_nir(pco_ctx, nir, &shader_data);
    pvr_postprocess_shader_data(&shader_data, nir, pCreateInfo, layout);
@@ -1209,7 +1215,11 @@ static void pvr_fragment_state_save(struct pvr_graphics_pipeline *gfx_pipeline,
    memcpy(&gfx_pipeline->fs_data, shader_data, sizeof(*shader_data));
 
    /* TODO: add selection for other values of pass type and sample rate. */
-   fragment_state->pass_type = ROGUE_TA_PASSTYPE_OPAQUE;
+   if (shader_data->fs.uses.fbfetch)
+      fragment_state->pass_type = ROGUE_TA_PASSTYPE_TRANSLUCENT;
+   else
+      fragment_state->pass_type = ROGUE_TA_PASSTYPE_OPAQUE;
+
    fragment_state->sample_rate = ROGUE_PDSINST_DOUTU_SAMPLE_RATE_INSTANCE;
 
    /* We can't initialize it yet since we still need to generate the PDS
@@ -1217,81 +1227,6 @@ static void pvr_fragment_state_save(struct pvr_graphics_pipeline *gfx_pipeline,
     */
    fragment_state->stage_state.pds_temps_count = ~0;
 }
-
-static bool pvr_blend_factor_requires_consts(VkBlendFactor factor)
-{
-   switch (factor) {
-   case VK_BLEND_FACTOR_CONSTANT_COLOR:
-   case VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR:
-   case VK_BLEND_FACTOR_CONSTANT_ALPHA:
-   case VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA:
-      return true;
-
-   default:
-      return false;
-   }
-}
-
-/**
- * \brief Indicates whether dynamic blend constants are needed.
- *
- * If the user has specified the blend constants to be dynamic, they might not
- * necessarily be using them. This function makes sure that they are being used
- * in order to determine whether we need to upload them later on for the shader
- * to access them.
- */
-static bool pvr_graphics_pipeline_requires_dynamic_blend_consts(
-   const struct pvr_graphics_pipeline *gfx_pipeline)
-{
-   const struct vk_dynamic_graphics_state *const state =
-      &gfx_pipeline->dynamic_state;
-
-   if (BITSET_TEST(state->set, MESA_VK_DYNAMIC_CB_BLEND_CONSTANTS))
-      return false;
-
-   for (uint32_t i = 0; i < state->cb.attachment_count; i++) {
-      const struct vk_color_blend_attachment_state *attachment =
-         &state->cb.attachments[i];
-
-      const bool has_color_write =
-         attachment->write_mask &
-         (VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
-          VK_COLOR_COMPONENT_B_BIT);
-      const bool has_alpha_write = attachment->write_mask &
-                                   VK_COLOR_COMPONENT_A_BIT;
-
-      if (!attachment->blend_enable || attachment->write_mask == 0)
-         continue;
-
-      if (has_color_write) {
-         const uint8_t src_color_blend_factor =
-            attachment->src_color_blend_factor;
-         const uint8_t dst_color_blend_factor =
-            attachment->dst_color_blend_factor;
-
-         if (pvr_blend_factor_requires_consts(src_color_blend_factor) ||
-             pvr_blend_factor_requires_consts(dst_color_blend_factor)) {
-            return true;
-         }
-      }
-
-      if (has_alpha_write) {
-         const uint8_t src_alpha_blend_factor =
-            attachment->src_alpha_blend_factor;
-         const uint8_t dst_alpha_blend_factor =
-            attachment->dst_alpha_blend_factor;
-
-         if (pvr_blend_factor_requires_consts(src_alpha_blend_factor) ||
-             pvr_blend_factor_requires_consts(dst_alpha_blend_factor)) {
-            return true;
-         }
-      }
-   }
-
-   return false;
-}
-
-#undef PVR_DEV_ADDR_SIZE_IN_SH_REGS
 
 static void pvr_graphics_pipeline_setup_vertex_dma(
    struct pvr_graphics_pipeline *gfx_pipeline,
@@ -1916,6 +1851,51 @@ static void pvr_init_fs_input_attachments(
    pvr_finishme("pvr_init_fs_input_attachments");
 }
 
+static void pvr_init_fs_blend(pco_data *data,
+                              const struct vk_color_blend_state *cb)
+{
+   nir_lower_blend_options *blend_opts = &data->fs.blend_opts;
+   if (!cb)
+      return;
+
+   blend_opts->logicop_enable = cb->logic_op_enable;
+   blend_opts->logicop_func = vk_logic_op_to_pipe(cb->logic_op);
+
+   unsigned count = cb->attachment_count;
+   for (unsigned u = 0; u < count; ++u) {
+      const struct vk_color_blend_attachment_state *rt = &cb->attachments[u];
+      gl_frag_result location = FRAG_RESULT_DATA0 + u;
+      blend_opts->format[u] = data->fs.output_formats[location];
+
+      if (cb->logic_op_enable) {
+         /* No blending, but we get the colour mask below */
+      } else if (!rt->blend_enable) {
+         const nir_lower_blend_channel replace = {
+            .func = PIPE_BLEND_ADD,
+            .src_factor = PIPE_BLENDFACTOR_ONE,
+            .dst_factor = PIPE_BLENDFACTOR_ZERO,
+         };
+
+         blend_opts->rt[u].rgb = replace;
+         blend_opts->rt[u].alpha = replace;
+      } else {
+         blend_opts->rt[u].rgb.func = vk_blend_op_to_pipe(rt->color_blend_op);
+         blend_opts->rt[u].rgb.src_factor =
+            vk_blend_factor_to_pipe(rt->src_color_blend_factor);
+         blend_opts->rt[u].rgb.dst_factor =
+            vk_blend_factor_to_pipe(rt->dst_color_blend_factor);
+
+         blend_opts->rt[u].alpha.func = vk_blend_op_to_pipe(rt->alpha_blend_op);
+         blend_opts->rt[u].alpha.src_factor =
+            vk_blend_factor_to_pipe(rt->src_alpha_blend_factor);
+         blend_opts->rt[u].alpha.dst_factor =
+            vk_blend_factor_to_pipe(rt->dst_alpha_blend_factor);
+      }
+
+      blend_opts->rt[u].colormask = rt->write_mask;
+   }
+}
+
 static void pvr_setup_fs_input_attachments(
    pco_data *data,
    nir_shader *nir,
@@ -1923,6 +1903,20 @@ static void pvr_setup_fs_input_attachments(
    const struct pvr_renderpass_hwsetup_subpass *hw_subpass)
 {
    pvr_finishme("pvr_setup_fs_input_attachments");
+}
+
+static void pvr_setup_fs_blend(pco_data *data)
+{
+   unsigned num_blend_consts = util_bitcount(data->fs.blend_consts_needed);
+   if (!num_blend_consts)
+      return;
+
+   data->fs.blend_consts = (pco_range){
+      .start = data->common.shareds,
+      .count = num_blend_consts,
+   };
+
+   data->common.shareds += num_blend_consts;
 }
 
 static void pvr_alloc_cs_sysvals(pco_data *data, nir_shader *nir)
@@ -2087,10 +2081,12 @@ static void pvr_setup_descriptors(pco_data *data,
    assert(data->common.shareds < 256);
 }
 
-static void pvr_preprocess_shader_data(pco_data *data,
-                                       nir_shader *nir,
-                                       const void *pCreateInfo,
-                                       struct vk_pipeline_layout *layout)
+static void
+pvr_preprocess_shader_data(pco_data *data,
+                           nir_shader *nir,
+                           const void *pCreateInfo,
+                           struct vk_pipeline_layout *layout,
+                           const struct vk_graphics_pipeline_state *state)
 {
    const VkGraphicsPipelineCreateInfo *pGraphicsCreateInfo = pCreateInfo;
 
@@ -2115,8 +2111,9 @@ static void pvr_preprocess_shader_data(pco_data *data,
 
       pvr_init_fs_outputs(data, pass, subpass, hw_subpass);
       pvr_init_fs_input_attachments(data, subpass, hw_subpass);
+      pvr_init_fs_blend(data, state->cb);
 
-      /* TODO: push consts, blend consts, dynamic state, etc. */
+      /* TODO: push consts, dynamic state, etc. */
       break;
    }
 
@@ -2162,6 +2159,7 @@ static void pvr_postprocess_shader_data(pco_data *data,
       pvr_alloc_fs_varyings(data, nir);
       pvr_setup_fs_outputs(data, nir, subpass, hw_subpass);
       pvr_setup_fs_input_attachments(data, nir, subpass, hw_subpass);
+      pvr_setup_fs_blend(data);
 
       /* TODO: push consts, blend consts, dynamic state, etc. */
       break;
@@ -2268,7 +2266,8 @@ pvr_graphics_pipeline_compile(struct pvr_device *const device,
       pvr_preprocess_shader_data(&shader_data[stage],
                                  nir_shaders[stage],
                                  pCreateInfo,
-                                 layout);
+                                 layout,
+                                 state);
 
       pco_lower_nir(pco_ctx, nir_shaders[stage], &shader_data[stage]);
 

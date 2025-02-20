@@ -11,6 +11,7 @@
  */
 
 #include "nir/nir_builder.h"
+#include "nir/nir_lower_blend.h"
 #include "pco.h"
 #include "pco_internal.h"
 #include "pvr_limits.h"
@@ -185,22 +186,31 @@ static bool gather_fs_data_pass(UNUSED struct nir_builder *b,
                                 nir_intrinsic_instr *intr,
                                 void *cb_data)
 {
-   /* Check whether the shader accesses z/w. */
-   if (intr->intrinsic != nir_intrinsic_load_input)
-      return false;
-
-   struct nir_io_semantics io_semantics = nir_intrinsic_io_semantics(intr);
-   if (io_semantics.location != VARYING_SLOT_POS)
-      return false;
-
-   unsigned component = nir_intrinsic_component(intr);
-   unsigned chans = intr->def.num_components;
-   assert(component == 2 || chans == 1);
-
    pco_data *data = cb_data;
 
-   data->fs.uses.z |= (component == 2);
-   data->fs.uses.w |= (component + chans > 3);
+   switch (intr->intrinsic) {
+   /* Check whether the shader accesses z/w. */
+   case nir_intrinsic_load_input: {
+      struct nir_io_semantics io_semantics = nir_intrinsic_io_semantics(intr);
+      if (io_semantics.location != VARYING_SLOT_POS)
+         return false;
+
+      unsigned component = nir_intrinsic_component(intr);
+      unsigned chans = intr->def.num_components;
+      assert(component == 2 || chans == 1);
+
+      data->fs.uses.z |= (component == 2);
+      data->fs.uses.w |= (component + chans > 3);
+      break;
+   }
+
+   case nir_intrinsic_load_blend_const_color_rgba:
+      data->fs.blend_consts_needed |= PIPE_MASK_RGBA;
+      break;
+
+   default:
+      break;
+   }
 
    return false;
 }
@@ -225,6 +235,8 @@ static void gather_fs_data(nir_shader *nir, pco_data *data)
          break;
       }
    }
+
+   data->fs.uses.fbfetch = nir->info.fs.uses_fbfetch_output;
 }
 
 /**
@@ -704,6 +716,7 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
    NIR_PASS(_, nir, pco_nir_lower_tex);
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
+      NIR_PASS(_, nir, nir_lower_blend, &data->fs.blend_opts);
       NIR_PASS(_, nir, pco_nir_pfo, &data->fs);
    } else if (nir->info.stage == MESA_SHADER_VERTEX) {
       NIR_PASS(_,

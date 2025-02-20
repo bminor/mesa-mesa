@@ -15,6 +15,7 @@
 
 #include "common/pvr_limits.h"
 #include "compiler/shader_enums.h"
+#include "nir/nir_lower_blend.h"
 #include "util/format/u_format.h"
 
 #include <stdbool.h>
@@ -64,11 +65,17 @@ typedef struct _pco_fs_data {
    /** Fragment output formats. */
    enum pipe_format output_formats[FRAG_RESULT_MAX];
 
+   /* Blend options. */
+   nir_lower_blend_options blend_opts;
+   pco_range blend_consts;
+   uint8_t blend_consts_needed;
+
    struct {
       bool w; /** Whether the shader uses pos.w. */
       bool z; /** Whether the shader uses pos.z */
       bool pntc; /** Whether the shader uses point coord. */
       bool phase_change; /** Whether the shader does a phase change. */
+      bool fbfetch; /** Whether the shader fetches from the framebuffer. */
    } uses;
 } pco_fs_data;
 

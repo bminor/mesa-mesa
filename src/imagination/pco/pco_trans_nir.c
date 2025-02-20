@@ -1131,6 +1131,16 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
                                  &tctx->shader->data.common.push_consts.range);
       break;
 
+   case nir_intrinsic_load_blend_const_color_rgba:
+      assert(tctx->stage == MESA_SHADER_FRAGMENT);
+      instr = trans_load_common_store(tctx,
+                                      intr,
+                                      dest,
+                                      pco_ref_null(),
+                                      false,
+                                      &tctx->shader->data.fs.blend_consts);
+      break;
+
    case nir_intrinsic_load_shared:
       assert(tctx->stage == MESA_SHADER_COMPUTE);
       instr = trans_load_common_store(tctx,
