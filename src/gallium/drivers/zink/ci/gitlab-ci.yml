@@ -58,7 +58,7 @@ zink-anv-adl:
     # We use gbm because its a copy of tgl job
     PIGLIT_PLATFORM: gbm
   timeout: 30m
-  parallel: 2
+  parallel: 4
 
 # Manual full run when you want to double-check the full status.
 zink-anv-adl-full:
@@ -67,8 +67,9 @@ zink-anv-adl-full:
     - .zink-anv-manual-rules
   variables:
     DEQP_SUITE: zink-anv-adl-full
-    HWCI_START_WESTON: 1
+    FDO_CI_CONCURRENT: 6 # higher is too much, and leads to OOM
   timeout: 2h
+  parallel: 5
 
 zink-anv-tgl:
   extends:
@@ -91,7 +92,6 @@ zink-anv-tgl-full:
     - .zink-anv-manual-rules
   variables:
     DEQP_SUITE: zink-anv-tgl-full
-    HWCI_START_WESTON: 1
   timeout: 1h 45m
   parallel: 3
 
