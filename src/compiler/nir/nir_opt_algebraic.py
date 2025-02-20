@@ -734,18 +734,12 @@ optimizations.extend([
    (('fge', ('fneg', ('b2f', 'a@1')), 0.0), ('inot', a)),
 
    (('fneu', ('fadd', ('b2f', 'a@1'), ('b2f', 'b@1')), 0.0), ('ior', a, b)),
-   (('fneu', ('bcsel', a, 1.0, ('b2f', 'b@1'))   , 0.0), ('ior', a, b)),
    (('fneu', ('b2f', 'a@1'), ('fneg', ('b2f', 'b@1'))),      ('ior', a, b)),
-   (('fneu', ('fmul', ('b2f', 'a@1'), ('b2f', 'b@1')), 0.0), ('iand', a, b)),
-   (('fneu', ('bcsel', a, ('b2f', 'b@1'), 0.0)   , 0.0), ('iand', a, b)),
    (('fneu', ('fadd', ('b2f', 'a@1'), ('fneg', ('b2f', 'b@1'))), 0.0), ('ixor', a, b)),
    (('fneu',          ('b2f', 'a@1') ,          ('b2f', 'b@1') ),      ('ixor', a, b)),
    (('fneu', ('fneg', ('b2f', 'a@1')), ('fneg', ('b2f', 'b@1'))),      ('ixor', a, b)),
    (('feq', ('fadd', ('b2f', 'a@1'), ('b2f', 'b@1')), 0.0), ('inot', ('ior', a, b))),
-   (('feq', ('bcsel', a, 1.0, ('b2f', 'b@1'))   , 0.0), ('inot', ('ior', a, b))),
    (('feq', ('b2f', 'a@1'), ('fneg', ('b2f', 'b@1'))),      ('inot', ('ior', a, b))),
-   (('feq', ('fmul', ('b2f', 'a@1'), ('b2f', 'b@1')), 0.0), ('inot', ('iand', a, b))),
-   (('feq', ('bcsel', a, ('b2f', 'b@1'), 0.0)   , 0.0), ('inot', ('iand', a, b))),
    (('feq', ('fadd', ('b2f', 'a@1'), ('fneg', ('b2f', 'b@1'))), 0.0), ('ieq', a, b)),
    (('feq',          ('b2f', 'a@1') ,          ('b2f', 'b@1') ),      ('ieq', a, b)),
    (('feq', ('fneg', ('b2f', 'a@1')), ('fneg', ('b2f', 'b@1'))),      ('ieq', a, b)),
@@ -846,6 +840,11 @@ optimizations.extend([
    (('fmax', ('fneg(is_used_once)', ('b2f(is_used_once)', 'a@1')), ('fneg', ('b2f', 'b@1'))), ('fneg', ('b2f', ('iand', a, b)))),
    (('fmin',                        ('b2f(is_used_once)', 'a@1'),           ('b2f', 'b@1')),           ('b2f', ('iand', a, b))),
    (('fmin', ('fneg(is_used_once)', ('b2f(is_used_once)', 'a@1')), ('fneg', ('b2f', 'b@1'))), ('fneg', ('b2f', ('ior', a, b)))),
+
+   (('bcsel', a, ('b2f', 'b@1'), 0), ('b2f', ('bcsel', a, b, False))),
+   (('bcsel', a, ('b2f', 'b@1'), 1.0), ('b2f', ('bcsel', a, b, True))),
+   (('bcsel', a, 0, ('b2f', 'b@1')), ('b2f', ('bcsel', a, False, b))),
+   (('bcsel', a, 1.0, ('b2f', 'b@1')), ('b2f', ('bcsel', a, True, b))),
 
    # fmin(b2f(a), b)
    # bcsel(a, fmin(b2f(a), b), fmin(b2f(a), b))
