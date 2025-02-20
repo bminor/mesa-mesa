@@ -9,7 +9,7 @@ set -uex
 
 uncollapsed_section_start vulkan-validation "Building Vulkan validation layers"
 
-VALIDATION_TAG="snapshot-2024wk39"
+VALIDATION_TAG="snapshot-2025wk15"
 
 git clone -b "$VALIDATION_TAG" --single-branch --depth 1 https://github.com/KhronosGroup/Vulkan-ValidationLayers.git
 pushd Vulkan-ValidationLayers
