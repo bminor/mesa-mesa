@@ -12705,11 +12705,7 @@ radv_handle_color_image_transition(struct radv_cmd_buffer *cmd_buffer, struct ra
    }
 
    if (dst_fmask_comp == RADV_FMASK_COMPRESSION_NONE) {
-      struct radv_barrier_data barrier = {0};
-      barrier.layout_transitions.fmask_color_expand = 1;
-      radv_describe_layout_transition(cmd_buffer, &barrier);
-
-      radv_expand_fmask_image_inplace(cmd_buffer, image, range);
+      radv_fmask_color_expand(cmd_buffer, image, range);
    }
 }
 

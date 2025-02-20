@@ -91,9 +91,9 @@ get_pipeline(struct radv_device *device, uint32_t samples_log2, VkPipeline *pipe
    return result;
 }
 
-void
-radv_expand_fmask_image_inplace(struct radv_cmd_buffer *cmd_buffer, struct radv_image *image,
-                                const VkImageSubresourceRange *subresourceRange)
+static void
+radv_process_color_image(struct radv_cmd_buffer *cmd_buffer, struct radv_image *image,
+                         const VkImageSubresourceRange *subresourceRange)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    struct radv_meta_saved_state saved_state;
@@ -166,4 +166,16 @@ radv_expand_fmask_image_inplace(struct radv_cmd_buffer *cmd_buffer, struct radv_
 
    /* Re-initialize FMASK in fully expanded mode. */
    cmd_buffer->state.flush_bits |= radv_init_fmask(cmd_buffer, image, subresourceRange);
+}
+
+void
+radv_fmask_color_expand(struct radv_cmd_buffer *cmd_buffer, struct radv_image *image,
+                        const VkImageSubresourceRange *subresourceRange)
+{
+   struct radv_barrier_data barrier = {0};
+
+   barrier.layout_transitions.fmask_color_expand = 1;
+   radv_describe_layout_transition(cmd_buffer, &barrier);
+
+   radv_process_color_image(cmd_buffer, image, subresourceRange);
 }
