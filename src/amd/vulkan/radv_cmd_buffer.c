@@ -12643,7 +12643,8 @@ radv_handle_color_image_transition(struct radv_cmd_buffer *cmd_buffer, struct ra
                                    unsigned dst_queue_mask, const VkImageSubresourceRange *range)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   bool dcc_decompressed = false, fast_clear_flushed = false;
+   bool needs_dcc_decompress = false, needs_dcc_retile = false;
+   bool needs_fast_clear_flush = false, needs_fmask_color_expand = false;
 
    if (!radv_image_has_cmask(image) && !radv_image_has_fmask(image) && !radv_dcc_enabled(image, range->baseMipLevel))
       return;
@@ -12661,52 +12662,51 @@ radv_handle_color_image_transition(struct radv_cmd_buffer *cmd_buffer, struct ra
          cmd_buffer->state.flush_bits |= radv_init_dcc(cmd_buffer, image, range, 0xffffffffu);
       } else if (radv_layout_dcc_compressed(device, image, range->baseMipLevel, src_layout, src_queue_mask) &&
                  !radv_layout_dcc_compressed(device, image, range->baseMipLevel, dst_layout, dst_queue_mask)) {
-         radv_decompress_dcc(cmd_buffer, image, range);
-         dcc_decompressed = true;
-      } else if (radv_layout_can_fast_clear(device, image, range->baseMipLevel, src_layout, src_queue_mask) &&
-                 !radv_layout_can_fast_clear(device, image, range->baseMipLevel, dst_layout, dst_queue_mask)) {
-         radv_fast_clear_flush_image_inplace(cmd_buffer, image, range);
-         fast_clear_flushed = true;
+         needs_dcc_decompress = true;
       }
 
       if (radv_image_need_retile(cmd_buffer, image))
-         radv_retile_transition(cmd_buffer, image, src_layout, dst_layout, dst_queue_mask);
-   } else if (radv_image_has_cmask(image) || radv_image_has_fmask(image)) {
-      if (radv_layout_can_fast_clear(device, image, range->baseMipLevel, src_layout, src_queue_mask) &&
-          !radv_layout_can_fast_clear(device, image, range->baseMipLevel, dst_layout, dst_queue_mask)) {
-         radv_fast_clear_flush_image_inplace(cmd_buffer, image, range);
-         fast_clear_flushed = true;
-      }
+         needs_dcc_retile = true;
    }
 
-   /* MSAA color decompress. */
+   if (radv_layout_can_fast_clear(device, image, range->baseMipLevel, src_layout, src_queue_mask) &&
+       !radv_layout_can_fast_clear(device, image, range->baseMipLevel, dst_layout, dst_queue_mask)) {
+      needs_fast_clear_flush = true;
+   }
+
    const enum radv_fmask_compression src_fmask_comp =
       radv_layout_fmask_compression(device, image, src_layout, src_queue_mask);
    const enum radv_fmask_compression dst_fmask_comp =
       radv_layout_fmask_compression(device, image, dst_layout, dst_queue_mask);
-   if (src_fmask_comp <= dst_fmask_comp)
-      return;
 
-   if (src_fmask_comp == RADV_FMASK_COMPRESSION_FULL) {
-      if (radv_dcc_enabled(image, range->baseMipLevel) && !radv_image_use_dcc_image_stores(device, image) &&
-          !dcc_decompressed) {
-         /* A DCC decompress is required before expanding FMASK
-          * when DCC stores aren't supported to avoid being in
-          * a state where DCC is compressed and the main
-          * surface is uncompressed.
-          */
-         radv_decompress_dcc(cmd_buffer, image, range);
-      } else if (!fast_clear_flushed) {
-         /* A FMASK decompress is required before expanding
-          * FMASK.
-          */
-         radv_fast_clear_flush_image_inplace(cmd_buffer, image, range);
+   if (src_fmask_comp > dst_fmask_comp) {
+      if (src_fmask_comp == RADV_FMASK_COMPRESSION_FULL) {
+         if (radv_dcc_enabled(image, range->baseMipLevel) && !radv_image_use_dcc_image_stores(device, image)) {
+            /* A DCC decompress is required before expanding FMASK when DCC stores aren't supported to
+             * avoid being in a state where DCC is compressed and the main surface is uncompressed.
+             */
+            needs_dcc_decompress = true;
+         } else {
+            /* FMASK_DECOMPRESS is required before expanding FMASK. */
+            needs_fast_clear_flush = true;
+         }
       }
+
+      if (dst_fmask_comp == RADV_FMASK_COMPRESSION_NONE)
+         needs_fmask_color_expand = true;
    }
 
-   if (dst_fmask_comp == RADV_FMASK_COMPRESSION_NONE) {
-      radv_fmask_color_expand(cmd_buffer, image, range);
+   if (needs_dcc_decompress) {
+      radv_decompress_dcc(cmd_buffer, image, range);
+   } else if (needs_fast_clear_flush) {
+      radv_fast_clear_flush_image_inplace(cmd_buffer, image, range);
    }
+
+   if (needs_fmask_color_expand)
+      radv_fmask_color_expand(cmd_buffer, image, range);
+
+   if (needs_dcc_retile)
+      radv_retile_transition(cmd_buffer, image, src_layout, dst_layout, dst_queue_mask);
 }
 
 static void
