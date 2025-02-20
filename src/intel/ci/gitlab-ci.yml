@@ -3,8 +3,8 @@ include:
 
 anv-jsl:
   extends:
-    - .lava-acer-cb317-1h-c3z6-dedede:x86_64
     - .anv-test
+    - .lava-acer-cb317-1h-c3z6-dedede:x86_64
   variables:
     DEQP_SUITE: anv-jsl
     VK_DRIVER: intel
@@ -23,8 +23,8 @@ anv-jsl-full:
 
 anv-adl:
   extends:
-    - .lava-acer-cbv514-1h-34uz-brya:x86_64
     - .anv-test
+    - .lava-acer-cbv514-1h-34uz-brya:x86_64
   variables:
     DEQP_SUITE: anv-adl
     VK_DRIVER: intel
@@ -42,8 +42,8 @@ anv-adl-full:
 
 anv-tgl:
   extends:
-    - .lava-acer-cp514-2h-1160g7-volteer:x86_64
     - .anv-test
+    - .lava-acer-cp514-2h-1160g7-volteer:x86_64
   variables:
     DEQP_SUITE: anv-tgl
     VK_DRIVER: intel
@@ -80,8 +80,8 @@ hasvk-hsw:
 
 anv-jsl-angle:
   extends:
-    - .lava-acer-cb317-1h-c3z6-dedede:x86_64
     - .anv-angle-test
+    - .lava-acer-cb317-1h-c3z6-dedede:x86_64
   variables:
     DEQP_SUITE: anv-jsl-angle
     GPU_VERSION: angle-anv-jsl
@@ -96,9 +96,8 @@ anv-jsl-angle-full:
 
 anv-adl-angle:
   extends:
-    - .lava-acer-cbv514-1h-34uz-brya:x86_64
-    - .anv-test
     - .anv-angle-test
+    - .lava-acer-cbv514-1h-34uz-brya:x86_64
   variables:
     DEQP_SUITE: anv-adl-angle
     GPU_VERSION: angle-anv-adl
@@ -114,9 +113,8 @@ anv-adl-angle-full:
 
 anv-tgl-angle:
   extends:
-    - .lava-acer-cp514-2h-1130g7-volteer:x86_64
-    - .anv-test
     - .anv-angle-test
+    - .lava-acer-cp514-2h-1130g7-volteer:x86_64
   variables:
     DEQP_SUITE: anv-tgl-angle
     GPU_VERSION: angle-anv-tgl
@@ -187,8 +185,8 @@ iris-cml-deqp:
 
 iris-jsl-deqp:
   extends:
-    - .lava-acer-cb317-1h-c3z6-dedede:x86_64
     - .iris-test
+    - .lava-acer-cb317-1h-c3z6-dedede:x86_64
   variables:
     DEQP_SUITE: iris-jsl
     GPU_VERSION: iris-jsl
@@ -282,8 +280,8 @@ iris-kbl-traces-performance:
 
 intel-adl-cl:
   extends:
-    - .lava-acer-cbv514-1h-34uz-brya:x86_64
     - .intel-adl-test
+    - .lava-acer-cbv514-1h-34uz-brya:x86_64
     - .intel-rules
   rules:
     - !reference [.intel-adl-test, rules]
@@ -291,14 +289,15 @@ intel-adl-cl:
     - !reference [.rusticl-rules, rules]
   variables:
     DEQP_SUITE: intel-adl-cl
+    GPU_VERSION: intel-adl
     VK_DRIVER: intel
     HWCI_START_WESTON: 1
   timeout: 20m
 
 intel-adl-skqp:
   extends:
-    - .lava-acer-cbv514-1h-34uz-brya:x86_64
     - .intel-adl-test
+    - .lava-acer-cbv514-1h-34uz-brya:x86_64
   variables:
     DEQP_SUITE: intel-adl-skqp
     VK_DRIVER: intel
@@ -307,8 +306,8 @@ intel-adl-skqp:
 
 intel-tgl-skqp:
   extends:
-    - .lava-acer-cp514-2h-1130g7-volteer:x86_64
     - .intel-tgl-test
+    - .lava-acer-cp514-2h-1130g7-volteer:x86_64
   variables:
     DEQP_SUITE: intel-tgl-skqp
     VK_DRIVER: intel
