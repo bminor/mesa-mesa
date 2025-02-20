@@ -1799,6 +1799,12 @@ optimizations.extend([
 
    (('ine', ('umin', ('ineg', ('b2i', 'a@1')), b), 0), ('iand', a, ('ine', b, 0))),
    (('ine', ('umax', ('ineg', ('b2i', 'a@1')), b), 0), ('ior' , a, ('ine', b, 0))),
+   (('ine', ('umin', ('b2i', 'a@1'), b), 0), ('iand', a, ('ine', b, 0))),
+   (('ine', ('umax', ('b2i', 'a@1'), b), 0), ('ior' , a, ('ine', b, 0))),
+   (('ieq', ('umin', ('ineg', ('b2i', 'a@1')), b), 0), ('ior', ('inot', a), ('ieq', b, 0))),
+   (('ieq', ('umax', ('ineg', ('b2i', 'a@1')), b), 0), ('iand' , ('inot', a), ('ieq', b, 0))),
+   (('ieq', ('umin', ('b2i', 'a@1'), b), 0), ('ior', ('inot', a), ('ieq', b, 0))),
+   (('ieq', ('umax', ('b2i', 'a@1'), b), 0), ('iand' , ('inot', a), ('ieq', b, 0))),
 
    # Conversions
    (('f2i', ('ftrunc', a)), ('f2i', a)),
