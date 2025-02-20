@@ -12699,7 +12699,27 @@ radv_handle_color_image_transition(struct radv_cmd_buffer *cmd_buffer, struct ra
    if (needs_dcc_decompress) {
       radv_decompress_dcc(cmd_buffer, image, range);
    } else if (needs_fast_clear_flush) {
-      radv_fast_clear_flush_image_inplace(cmd_buffer, image, range);
+      /* FMASK_DECOMPRESS is only required for MSAA images that don't support TC-compat CMASK. */
+      const bool needs_fmask_decompress = radv_image_has_fmask(image) && !image->tc_compatible_cmask;
+
+      /* FCE is only required for color images that don't support comp-to-single fast clears. */
+      const bool needs_fce = !image->support_comp_to_single;
+
+      if (needs_fmask_decompress) {
+         /* MSAA images with DCC and CMASK might have been fast-cleared and might require a FCE but
+          * FMASK_DECOMPRESS can't eliminate DCC fast clears. Only GFX10 is affected because it has few
+          * restrictions related to comp-to-single.
+          */
+         const bool needs_dcc_fce =
+            radv_image_has_dcc(image) && radv_image_has_cmask(image) && !image->support_comp_to_single;
+
+         if (needs_dcc_fce)
+            radv_fast_clear_eliminate(cmd_buffer, image, range);
+
+         radv_fmask_decompress(cmd_buffer, image, range);
+      } else if (needs_fce) {
+         radv_fast_clear_eliminate(cmd_buffer, image, range);
+      }
    }
 
    if (needs_fmask_color_expand)
