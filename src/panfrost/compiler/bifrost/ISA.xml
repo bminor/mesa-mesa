@@ -1122,6 +1122,9 @@
     <src start="3" mask="0xfb"/>
     <src start="6"/>
     <src start="9"/>
+    <!-- Float controls round mode is not applied to this instruction by the
+         builder, because .round=ftz is only valid with .special=n. It should
+         only be used in cases where correct rounding is not required. -->
     <mod name="round" size="1" opt="rtz"/>
     <mod name="clamp" size="2">
       <opt>none</opt>
@@ -1210,6 +1213,9 @@
     <src start="3" mask="0xfb"/>
     <src start="6"/>
     <src start="9"/>
+    <!-- Float controls round mode is not applied to this instruction by the
+         builder, because .round=ftz is only valid with .special=n. It should
+         only be used in cases where correct rounding is not required. -->
     <mod name="round" size="1" opt="rtz"/>
     <mod name="clamp" size="2">
       <opt>none</opt>
@@ -4102,6 +4108,9 @@
     <src start="6"/>
     <mod name="clamp" size="1" opt="clamp_0_1"/>
     <mod name="special" size="1" opt="n"/>
+    <!-- Float controls round mode is not applied to this instruction by the
+         builder, because .round=ftz is only valid with .special=n. It should
+         only be used in cases where correct rounding is not required. -->
     <mod name="round" size="3">
       <opt>none</opt>
       <opt>rtp</opt>

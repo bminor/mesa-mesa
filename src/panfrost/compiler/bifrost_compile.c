@@ -282,7 +282,12 @@ bi_f32_to_f16_to(bi_builder *b, bi_index dest, bi_index src)
    assert(dest.swizzle != BI_SWIZZLE_H01);
 
    /* FADD with 0 and force convertion to F16 on Valhall and later */
-   return bi_fadd_f32_to(b, dest, src, bi_imm_u32(0));
+   bi_instr *I =  bi_fadd_f32_to(b, dest, src, bi_imm_u32(0));
+
+   /* The builder defaults to 32-bit rounding mode */
+   I->round = bi_round_mode(b->shader, 16);
+
+   return I;
 }
 
 static bi_index
@@ -5869,6 +5874,10 @@ bi_compile_variant_nir(nir_shader *nir,
    ctx->info = info;
    ctx->idvs = idvs;
    ctx->malloc_idvs = (ctx->arch >= 9) && !inputs->no_idvs;
+
+   unsigned execution_mode = nir->info.float_controls_execution_mode;
+   ctx->rtz_fp16 = nir_is_rounding_mode_rtz(execution_mode, 16);
+   ctx->rtz_fp32 = nir_is_rounding_mode_rtz(execution_mode, 32);
 
    if (idvs == BI_IDVS_POSITION || idvs == BI_IDVS_VARYING) {
       /* Specializing shaders for IDVS is destructive, so we need to

@@ -871,6 +871,10 @@ typedef struct {
    enum bi_idvs_mode idvs;
    unsigned num_blocks;
 
+   /* Floating point rounding mode controls */
+   bool rtz_fp16;
+   bool rtz_fp32;
+
    /* In any graphics shader, whether the "IDVS with memory
     * allocation" flow is used. This affects how varyings are loaded and
     * stored. Ignore for compute.
@@ -913,6 +917,14 @@ typedef struct {
    unsigned spills;
    unsigned fills;
 } bi_context;
+
+static inline enum bi_round
+bi_round_mode(bi_context *ctx, unsigned bit_size)
+{
+   assert(bit_size == 16 || bit_size == 32);
+   bool rtz = bit_size == 16 ? ctx->rtz_fp16 : ctx->rtz_fp32;
+   return rtz ? BI_ROUND_RTZ : BI_ROUND_NONE;
+}
 
 static inline void
 bi_remove_instruction(bi_instr *ins)
