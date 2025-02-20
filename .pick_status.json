@@ -54,7 +54,7 @@
         "description": "panfrost: fix large int32->float16 conversions",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "be74b84e6f81c6a75e8488c0757ac7f911f4931d",
         "notes": null
