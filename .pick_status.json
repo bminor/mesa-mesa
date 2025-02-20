@@ -444,7 +444,7 @@
         "description": "nak: Only use suld.constant on Ampere+",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ffdc0d8e98eeb68abcfff3c48b3691b999305004",
         "notes": null
