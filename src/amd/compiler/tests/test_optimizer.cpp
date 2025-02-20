@@ -254,56 +254,6 @@ BEGIN_TEST(optimize.output_modifiers)
    finish_opt_test();
 END_TEST
 
-Temp
-create_subbrev_co(Operand op0, Operand op1, Operand op2)
-{
-   return bld.vop2_e64(aco_opcode::v_subbrev_co_u32, bld.def(v1), bld.def(bld.lm), op0, op1, op2);
-}
-
-BEGIN_TEST(optimize.cndmask)
-   for (unsigned i = GFX9; i <= GFX10; i++) {
-      //>> v1: %a, s1: %b, s2: %c = p_startpgm
-      if (!setup_cs("v1 s1 s2", (amd_gfx_level)i))
-         continue;
-
-      Temp subbrev;
-
-      //! v1: %res0 = v_cndmask_b32 0, %a, %c
-      //! p_unit_test 0, %res0
-      subbrev = create_subbrev_co(Operand::zero(), Operand::zero(), Operand(inputs[2]));
-      writeout(0, bld.vop2(aco_opcode::v_and_b32, bld.def(v1), inputs[0], subbrev));
-
-      //! v1: %res1 = v_cndmask_b32 0, 42, %c
-      //! p_unit_test 1, %res1
-      subbrev = create_subbrev_co(Operand::zero(), Operand::zero(), Operand(inputs[2]));
-      writeout(1, bld.vop2(aco_opcode::v_and_b32, bld.def(v1), Operand::c32(42u), subbrev));
-
-      //~gfx9! v1: %subbrev, s2: %_ = v_subbrev_co_u32 0, 0, %c
-      //~gfx9! v1: %res2 = v_and_b32 %b, %subbrev
-      //~gfx10! v1: %res2 = v_cndmask_b32 0, %b, %c
-      //! p_unit_test 2, %res2
-      subbrev = create_subbrev_co(Operand::zero(), Operand::zero(), Operand(inputs[2]));
-      writeout(2, bld.vop2(aco_opcode::v_and_b32, bld.def(v1), inputs[1], subbrev));
-
-      //! v1: %subbrev1, s2: %_ = v_subbrev_co_u32 0, 0, %c
-      //! v1: %xor = v_xor_b32 %a, %subbrev1
-      //! v1: %res3 = v_cndmask_b32 0, %xor, %c
-      //! p_unit_test 3, %res3
-      subbrev = create_subbrev_co(Operand::zero(), Operand::zero(), Operand(inputs[2]));
-      Temp xor_a = bld.vop2(aco_opcode::v_xor_b32, bld.def(v1), inputs[0], subbrev);
-      writeout(3, bld.vop2(aco_opcode::v_and_b32, bld.def(v1), xor_a, subbrev));
-
-      //! v1: %res4 = v_cndmask_b32 0, %a, %c
-      //! p_unit_test 4, %res4
-      Temp cndmask = bld.vop2_e64(aco_opcode::v_cndmask_b32, bld.def(v1), Operand::zero(),
-                                  Operand::c32(1u), Operand(inputs[2]));
-      Temp sub = bld.vsub32(bld.def(v1), Operand::zero(), cndmask);
-      writeout(4, bld.vop2(aco_opcode::v_and_b32, bld.def(v1), Operand(inputs[0]), sub));
-
-      finish_opt_test();
-   }
-END_TEST
-
 BEGIN_TEST(optimize.add_lshl)
    for (unsigned i = GFX8; i <= GFX10; i++) {
       //>> s1: %a, v1: %b = p_startpgm
