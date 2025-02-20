@@ -442,7 +442,7 @@ radv_fast_clear_flush_image_inplace(struct radv_cmd_buffer *cmd_buffer, struct r
                                     const VkImageSubresourceRange *subresourceRange)
 {
    if (radv_image_has_fmask(image) && !image->tc_compatible_cmask) {
-      if (radv_image_has_dcc(image) && radv_image_has_cmask(image)) {
+      if (radv_image_has_dcc(image) && radv_image_has_cmask(image) && !image->support_comp_to_single) {
          /* MSAA images with DCC and CMASK might have been fast-cleared and might require a FCE but
           * FMASK_DECOMPRESS can't eliminate DCC fast clears.
           */
