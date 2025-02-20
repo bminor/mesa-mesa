@@ -2911,6 +2911,12 @@ bi_emit_alu(bi_builder *b, nir_alu_instr *instr)
       break;
 
    case nir_op_ldexp:
+      assert(sz == 32 && "should be lowered");
+      bi_ldexp_to(b, sz, dst, s0, s1);
+      break;
+
+   case nir_op_ldexp16_pan:
+      assert(sz == 16);
       bi_ldexp_to(b, sz, dst, s0, s1);
       break;
 
@@ -5484,6 +5490,49 @@ bi_lower_halt_to_return(nir_builder *b, nir_instr *instr, UNUSED void *_data)
    return true;
 }
 
+/* Bifrost LDEXP.v2f16 takes i16 exponent, while nir_op_ldexp takes i32. Lower
+ * to nir_op_ldexp16_pan. */
+static bool
+bi_lower_ldexp16(nir_builder *b, nir_alu_instr *alu, UNUSED void *data)
+{
+   if (alu->op != nir_op_ldexp || alu->def.bit_size != 16)
+      return false;
+
+   b->cursor = nir_before_instr(&alu->instr);
+
+   nir_def *x = nir_ssa_for_alu_src(b, alu, 0);
+   nir_def *exp32 = nir_ssa_for_alu_src(b, alu, 1);
+
+   /* From the GLSL 4.60 spec (section 8.3):
+    *
+    *    "If exp is greater than +128 (single-precision) or +1024
+    *     (double-precision), the value returned is undefined. If exp is less
+    *     than -126 (single- precision) or -1022 (double-precision), the value
+    *     returned may be flushed to zero."
+    *
+    * So we can't just truncate the exponent. Overflow is undefined behavior,
+    * but we need to return signed zero on underflow. If exp32 < INT16_MIN, we
+    * can use any 16-bit exponent that's sufficiently small to send all f16
+    * values to zero.
+    *
+    * If we test exp32 < INT16_MIN directly, the comparison could not be
+    * vectorized, so instead we test the upper half.
+    */
+   nir_def *exp16_high = nir_unpack_32_2x16_split_y(b, exp32);
+   nir_def *underflow = nir_ilt16(b, exp16_high, nir_imm_intN_t(b, -1, 16));
+
+   /* TODO: some possible values for this constant can be encoded as small
+    * immediates on valhall. None of the usable immediates have replicated i16
+    * lanes, but for example 0xFAFCFDFE would be {-1284,-514}, both of which
+    * are small enough. */
+   nir_def *min_exp = nir_imm_intN_t(b, -127, 16);
+   nir_def *exp16 = nir_b16csel(b, underflow, min_exp, nir_i2i16(b, exp32));
+
+   nir_def_replace(&alu->def, nir_ldexp16_pan(b, x, exp16));
+
+   return true;
+}
+
 void
 bifrost_preprocess_nir(nir_shader *nir, unsigned gpu_id)
 {
@@ -5642,6 +5691,8 @@ bifrost_preprocess_nir(nir_shader *nir, unsigned gpu_id)
 
    NIR_PASS(_, nir, nir_shader_intrinsics_pass, bi_lower_subgroups,
             nir_metadata_control_flow, &gpu_id);
+   NIR_PASS(_, nir, nir_shader_alu_pass, bi_lower_ldexp16,
+            nir_metadata_control_flow, NULL);
 
    NIR_PASS(_, nir, nir_lower_alu_to_scalar, bi_scalarize_filter, NULL);
    NIR_PASS(_, nir, nir_lower_load_const_to_scalar);
