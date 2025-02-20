@@ -2326,7 +2326,7 @@ impl<'a> ShaderFromNir<'a> {
                     atom_op: atom_op,
                     atom_type: atom_type,
                     image_dim: dim,
-                    mem_order: MemOrder::Strong(MemScope::System),
+                    mem_order: MemOrder::Strong(MemScope::GPU),
                     mem_eviction_priority: self
                         .get_eviction_priority(intrin.access()),
                 });
@@ -2345,7 +2345,7 @@ impl<'a> ShaderFromNir<'a> {
                         MemOrder::Weak
                     }
                 } else {
-                    MemOrder::Strong(MemScope::System)
+                    MemOrder::Strong(MemScope::GPU)
                 };
 
                 let comps = intrin.num_components;
@@ -2380,7 +2380,7 @@ impl<'a> ShaderFromNir<'a> {
                         MemOrder::Weak
                     }
                 } else {
-                    MemOrder::Strong(MemScope::System)
+                    MemOrder::Strong(MemScope::GPU)
                 };
 
                 let comps = intrin.num_components;
@@ -2423,7 +2423,7 @@ impl<'a> ShaderFromNir<'a> {
 
                 b.push_op(OpSuSt {
                     image_dim: dim,
-                    mem_order: MemOrder::Strong(MemScope::System),
+                    mem_order: MemOrder::Strong(MemScope::GPU),
                     mem_eviction_priority: self
                         .get_eviction_priority(intrin.access()),
                     mask: (1 << comps) - 1,
@@ -2518,7 +2518,7 @@ impl<'a> ShaderFromNir<'a> {
                     atom_type: atom_type,
                     addr_offset: offset,
                     mem_space: MemSpace::Global(MemAddrType::A64),
-                    mem_order: MemOrder::Strong(MemScope::System),
+                    mem_order: MemOrder::Strong(MemScope::GPU),
                     mem_eviction_priority: MemEvictionPriority::Normal, // Note: no intrinic access
                 });
                 self.set_dst(&intrin.def, dst);
@@ -2543,7 +2543,7 @@ impl<'a> ShaderFromNir<'a> {
                     atom_type: atom_type,
                     addr_offset: offset,
                     mem_space: MemSpace::Global(MemAddrType::A64),
-                    mem_order: MemOrder::Strong(MemScope::System),
+                    mem_order: MemOrder::Strong(MemScope::GPU),
                     mem_eviction_priority: MemEvictionPriority::Normal, // Note: no intrinic access
                 });
                 self.set_dst(&intrin.def, dst);
@@ -2628,7 +2628,7 @@ impl<'a> ShaderFromNir<'a> {
                 {
                     MemOrder::Constant
                 } else {
-                    MemOrder::Strong(MemScope::System)
+                    MemOrder::Strong(MemScope::GPU)
                 };
                 let access = MemAccess {
                     mem_type: MemType::from_size(size_B, false),
@@ -3072,7 +3072,7 @@ impl<'a> ShaderFromNir<'a> {
                 let access = MemAccess {
                     mem_type: MemType::from_size(size_B, false),
                     space: MemSpace::Global(MemAddrType::A64),
-                    order: MemOrder::Strong(MemScope::System),
+                    order: MemOrder::Strong(MemScope::GPU),
                     eviction_priority: self
                         .get_eviction_priority(intrin.access()),
                 };
