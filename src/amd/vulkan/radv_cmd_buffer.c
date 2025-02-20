@@ -12644,7 +12644,7 @@ radv_handle_color_image_transition(struct radv_cmd_buffer *cmd_buffer, struct ra
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    bool needs_dcc_decompress = false, needs_dcc_retile = false;
-   bool needs_fast_clear_flush = false, needs_fmask_color_expand = false;
+   bool needs_fce = false, needs_fmask_decompress = false, needs_fmask_color_expand = false;
 
    if (!radv_image_has_cmask(image) && !radv_image_has_fmask(image) && !radv_dcc_enabled(image, range->baseMipLevel))
       return;
@@ -12671,7 +12671,13 @@ radv_handle_color_image_transition(struct radv_cmd_buffer *cmd_buffer, struct ra
 
    if (radv_layout_can_fast_clear(device, image, range->baseMipLevel, src_layout, src_queue_mask) &&
        !radv_layout_can_fast_clear(device, image, range->baseMipLevel, dst_layout, dst_queue_mask)) {
-      needs_fast_clear_flush = true;
+      /* FCE is only required for color images that don't support comp-to-single fast clears. */
+      if (!image->support_comp_to_single)
+         needs_fce = true;
+
+      /* FMASK_DECOMPRESS is only required for color images that don't support TC-compatible CMASK. */
+      if (radv_image_has_fmask(image) && !image->tc_compatible_cmask)
+         needs_fmask_decompress = true;
    }
 
    const enum radv_fmask_compression src_fmask_comp =
@@ -12687,8 +12693,8 @@ radv_handle_color_image_transition(struct radv_cmd_buffer *cmd_buffer, struct ra
              */
             needs_dcc_decompress = true;
          } else {
-            /* FMASK_DECOMPRESS is required before expanding FMASK. */
-            needs_fast_clear_flush = true;
+            /* FMASK_DECOMPRESS is always required before expanding FMASK. */
+            needs_fmask_decompress = true;
          }
       }
 
@@ -12698,28 +12704,20 @@ radv_handle_color_image_transition(struct radv_cmd_buffer *cmd_buffer, struct ra
 
    if (needs_dcc_decompress) {
       radv_decompress_dcc(cmd_buffer, image, range);
-   } else if (needs_fast_clear_flush) {
-      /* FMASK_DECOMPRESS is only required for MSAA images that don't support TC-compat CMASK. */
-      const bool needs_fmask_decompress = radv_image_has_fmask(image) && !image->tc_compatible_cmask;
+   } else if (needs_fmask_decompress) {
+      /* MSAA images with DCC and CMASK might have been fast-cleared and might require a FCE but
+       * FMASK_DECOMPRESS can't eliminate DCC fast clears. Only GFX10 is affected because it has few
+       * restrictions related to comp-to-single.
+       */
+      const bool needs_dcc_fce =
+         radv_image_has_dcc(image) && radv_image_has_cmask(image) && !image->support_comp_to_single;
 
-      /* FCE is only required for color images that don't support comp-to-single fast clears. */
-      const bool needs_fce = !image->support_comp_to_single;
-
-      if (needs_fmask_decompress) {
-         /* MSAA images with DCC and CMASK might have been fast-cleared and might require a FCE but
-          * FMASK_DECOMPRESS can't eliminate DCC fast clears. Only GFX10 is affected because it has few
-          * restrictions related to comp-to-single.
-          */
-         const bool needs_dcc_fce =
-            radv_image_has_dcc(image) && radv_image_has_cmask(image) && !image->support_comp_to_single;
-
-         if (needs_dcc_fce)
-            radv_fast_clear_eliminate(cmd_buffer, image, range);
-
-         radv_fmask_decompress(cmd_buffer, image, range);
-      } else if (needs_fce) {
+      if (needs_dcc_fce)
          radv_fast_clear_eliminate(cmd_buffer, image, range);
-      }
+
+      radv_fmask_decompress(cmd_buffer, image, range);
+   } else if (needs_fce) {
+      radv_fast_clear_eliminate(cmd_buffer, image, range);
    }
 
    if (needs_fmask_color_expand)
