@@ -909,6 +909,15 @@ optimizations.extend([
    (('imax', ('imin', a, b), a), a),
 ])
 
+for op in ['ine', 'ieq', 'ilt', 'ige', 'ult', 'uge', 'bitz', 'bitnz',
+           'fneu', 'feq', 'flt', 'fge', 'fneo', 'fequ']:
+    optimizations.extend([
+        ((op, ('bcsel(is_used_once)', a, b, '#c'), '#d'), ('bcsel', a, (op, b, d), (op, c, d))),
+        ((op, ('bcsel(is_used_once)', a, '#b', c), '#d'), ('bcsel', a, (op, b, d), (op, c, d))),
+        ((op, '#d', ('bcsel(is_used_once)', a, b, '#c')), ('bcsel', a, (op, d, b), (op, d, c))),
+        ((op, '#d', ('bcsel(is_used_once)', a, '#b', c)), ('bcsel', a, (op, d, b), (op, d, c))),
+    ])
+
 for N in [8, 16, 32, 64]:
     b2iN = 'b2i{0}'.format(N)
     optimizations.extend([
