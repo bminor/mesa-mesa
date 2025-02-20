@@ -304,6 +304,10 @@ _mesa_glsl_parse_state::_mesa_glsl_parse_state(struct gl_context *_ctx,
 
    this->gs_input_prim_type_specified = false;
    this->tcs_output_vertices_specified = false;
+   this->ms_output_max_vertices_specified = false;
+   this->ms_output_max_primitives_specified = false;
+   this->ms_per_vertex_output_size = 0;
+   this->ms_per_primitive_output_size = 0;
    this->gs_input_size = 0;
    this->in_qualifier = new(this) ast_type_qualifier();
    this->out_qualifier = new(this) ast_type_qualifier();

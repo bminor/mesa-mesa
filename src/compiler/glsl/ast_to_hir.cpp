@@ -140,6 +140,8 @@ _mesa_ast_to_hir(ir_exec_list *instructions, struct _mesa_glsl_parse_state *stat
    state->gs_input_prim_type_specified = false;
    state->tcs_output_vertices_specified = false;
    state->cs_ms_input_local_size_specified = false;
+   state->ms_output_max_vertices_specified = false;
+   state->ms_output_max_primitives_specified = false;
 
    /* Section 4.2 of the GLSL 1.20 specification states:
     * "The built-in functions are scoped in a scope outside the global scope
@@ -4971,6 +4973,44 @@ handle_tess_ctrl_shader_output_decl(struct _mesa_glsl_parse_state *state,
                                           "tessellation control shader output");
 }
 
+static void
+handle_mesh_shader_output_decl(struct _mesa_glsl_parse_state *state,
+                               YYLTYPE loc, ir_variable *var)
+{
+   unsigned max_vertices = 0;
+   if (state->ms_output_max_vertices_specified) {
+      if (!state->out_qualifier->max_vertices->
+          process_qualifier_constant(state, "max_vertices", &max_vertices, false)) {
+         return;
+      }
+   }
+
+   unsigned max_primitives = 0;
+   if (state->ms_output_max_primitives_specified) {
+      if (!state->out_qualifier->max_primitives->
+          process_qualifier_constant(state, "max_primitives", &max_primitives, false)) {
+         return;
+      }
+   }
+
+   if (!glsl_type_is_array(var->type)) {
+      _mesa_glsl_error(&loc, state, "mesh shader outputs must be arrays");
+
+      /* To avoid cascading failures, short circuit the checks below. */
+      return;
+   }
+
+   if (var->data.per_primitive) {
+      validate_layout_qualifier_vertex_count(state, loc, var, max_primitives,
+                                             &state->ms_per_primitive_output_size,
+                                             "mesh shader per primitive output");
+   } else {
+      validate_layout_qualifier_vertex_count(state, loc, var, max_vertices,
+                                             &state->ms_per_vertex_output_size,
+                                             "mesh shader per vertex output");
+   }
+}
+
 /**
  * Do additional processing necessary for tessellation control/evaluation shader
  * input declarations. This covers both interface block arrays and bare input
@@ -5776,6 +5816,8 @@ ast_declarator_list::hir(ir_exec_list *instructions,
 
          if (state->stage == MESA_SHADER_TESS_CTRL) {
             handle_tess_ctrl_shader_output_decl(state, loc, var);
+         } else if (state->stage == MESA_SHADER_MESH) {
+            handle_mesh_shader_output_decl(state, loc, var);
          }
       } else if (glsl_contains_subroutine(var->type)) {
          /* declare subroutine uniforms as hidden */
@@ -8698,6 +8740,8 @@ ast_interface_block::hir(ir_exec_list *instructions,
          handle_tess_shader_input_decl(state, loc, var);
       else if (state->stage == MESA_SHADER_TESS_CTRL && var_mode == ir_var_shader_out)
          handle_tess_ctrl_shader_output_decl(state, loc, var);
+      else if (state->stage == MESA_SHADER_MESH && var_mode == ir_var_shader_out)
+         handle_mesh_shader_output_decl(state, loc, var);
 
       for (unsigned i = 0; i < num_variables; i++) {
          if (var->data.mode == ir_var_shader_storage)
@@ -8938,6 +8982,101 @@ ast_tcs_output_layout::hir(ir_exec_list *instructions,
       } else {
          var->type = glsl_array_type(var->type->fields.array,
                                      num_vertices, 0);
+      }
+   }
+
+   return NULL;
+}
+
+
+ir_rvalue *
+ast_ms_output_layout::hir(ir_exec_list *instructions,
+                          struct _mesa_glsl_parse_state *state)
+{
+   YYLTYPE loc = this->get_location();
+
+   unsigned max_vertices;
+   bool max_vertices_specified = state->out_qualifier->max_vertices->
+      process_qualifier_constant(state, "max_vertices", &max_vertices, false);
+   if (max_vertices_specified) {
+      /* If any shader outputs occurred before this declaration and specified an
+       * array size, make sure the size they specified is consistent with the
+       * layout qualifier.
+       */
+      if (state->ms_per_vertex_output_size != 0 &&
+          state->ms_per_vertex_output_size != max_vertices) {
+         _mesa_glsl_error(&loc, state,
+                          "this mesh shader output layout "
+                          "specifies %u max_vertices, but a previous output "
+                          "is declared with size %u",
+                          max_vertices, state->ms_per_vertex_output_size);
+         return NULL;
+      }
+
+      state->ms_output_max_vertices_specified = true;
+   }
+
+   unsigned max_primitives;
+   bool max_primitives_specified = state->out_qualifier->max_primitives->
+      process_qualifier_constant(state, "max_primitives", &max_primitives, false);
+   if (max_primitives_specified) {
+      /* If any shader outputs occurred before this declaration and specified an
+       * array size, make sure the size they specified is consistent with the
+       * layout qualifier.
+       */
+      if (state->ms_per_primitive_output_size != 0 &&
+          state->ms_per_primitive_output_size != max_primitives) {
+         _mesa_glsl_error(&loc, state,
+                          "this mesh shader output layout "
+                          "specifies %u max_primitives, but a previous output "
+                          "is declared with size %u",
+                          max_primitives, state->ms_per_primitive_output_size);
+         return NULL;
+      }
+
+      state->ms_output_max_primitives_specified = true;
+   }
+
+   if (!max_vertices_specified && !max_primitives_specified)
+      return NULL;
+
+   /* If any shader outputs occurred before this declaration and did not
+    * specify an array size, their size is determined now.
+    */
+   ir_foreach_in_list (ir_instruction, node, instructions) {
+      ir_variable *var = node->as_variable();
+      if (var == NULL || var->data.mode != ir_var_shader_out)
+         continue;
+
+      if (!glsl_type_is_unsized_array(var->type))
+         continue;
+
+      if (var->data.per_primitive) {
+         if (!max_primitives_specified)
+            continue;
+
+         if (var->data.max_array_access >= (int)max_primitives) {
+            _mesa_glsl_error(&loc, state,
+                             "this mesh shader output layout "
+                             "specifies %u max_primitives, but an access to element "
+                             "%u of output `%s' already exists", max_primitives,
+                             var->data.max_array_access, var->name);
+         } else {
+            var->type = glsl_array_type(var->type->fields.array, max_primitives, 0);
+         }
+      } else {
+         if (!max_vertices_specified)
+            continue;
+
+         if (var->data.max_array_access >= (int)max_vertices) {
+            _mesa_glsl_error(&loc, state,
+                             "this mesh shader output layout "
+                             "specifies %u vertices, but an access to element "
+                             "%u of output `%s' already exists", max_vertices,
+                             var->data.max_array_access, var->name);
+         } else {
+            var->type = glsl_array_type(var->type->fields.array, max_vertices, 0);
+         }
       }
    }
 

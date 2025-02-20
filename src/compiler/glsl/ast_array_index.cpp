@@ -228,6 +228,9 @@ _mesa_ast_array_index_to_hir(struct _mesa_glsl_parse_state *state,
              * "gl_InvocationID"). The array size will be determined
              * by the linker.
              */
+         } else if (state->stage == MESA_SHADER_MESH &&
+                    array->variable_referenced()->data.mode == ir_var_shader_out) {
+            /* Mesh shader output arrays are initially unsized. */
          }
          else if (array->variable_referenced()->data.mode !=
                   ir_var_shader_storage) {

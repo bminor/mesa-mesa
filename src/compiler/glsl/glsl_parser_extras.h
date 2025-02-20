@@ -487,6 +487,13 @@ struct _mesa_glsl_parse_state {
    bool bound_image_specified;
 
    /**
+    * True if mesh shader max_vertices or max_primitives was specified
+    * using a layout directive.
+    */
+   bool ms_output_max_vertices_specified;
+   bool ms_output_max_primitives_specified;
+
+   /**
     * Output layout qualifiers from GLSL 1.50 (geometry shader controls),
     * and GLSL 4.00 (tessellation control shader).
     */
@@ -985,6 +992,16 @@ struct _mesa_glsl_parse_state {
     * Unused for other shader types.
     */
    unsigned tcs_output_size;
+
+   /**
+    * For mesh shaders, size of the most recently seen per-vertex/primitive output
+    * declaration that was a sized array, or 0 if no sized output array
+    * declarations have been seen.
+    *
+    * Unused for other shader types.
+    */
+   unsigned ms_per_vertex_output_size;
+   unsigned ms_per_primitive_output_size;
 
    /** Atomic counter offsets by binding */
    unsigned atomic_counter_offsets[MAX_COMBINED_ATOMIC_BUFFERS];

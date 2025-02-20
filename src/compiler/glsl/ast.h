@@ -1332,6 +1332,22 @@ public:
 
 
 /**
+ * AST node representing a declaration of the output layout for mesh shaders.
+ */
+class ast_ms_output_layout : public ast_node
+{
+public:
+   ast_ms_output_layout(const struct YYLTYPE &locp)
+   {
+      set_location(locp);
+   }
+
+   virtual ir_rvalue *hir(ir_exec_list *instructions,
+                          struct _mesa_glsl_parse_state *state);
+};
+
+
+/**
  * AST node representing a declaration of the input layout for geometry
  * shaders.
  */

@@ -649,6 +649,9 @@ ast_type_qualifier::merge_into_out_qualifier(YYLTYPE *loc,
    case MESA_SHADER_TESS_CTRL:
       node = new(state->linalloc) ast_tcs_output_layout(*loc);
       break;
+   case MESA_SHADER_MESH:
+      node = new(state->linalloc) ast_ms_output_layout(*loc);
+      break;
    default:
       break;
    }
