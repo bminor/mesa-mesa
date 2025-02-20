@@ -1818,6 +1818,7 @@
     <desc>$A + B$</desc>
     <roundmode/>
     <clamp/>
+    <roundmode/>
     <src absneg="true" swizzle="true">A</src>
     <src absneg="true" swizzle="true">B</src>
   </group>
@@ -2038,6 +2039,7 @@
     <ins name="FMA.v2f16" opcode="0xB3"/>
     <desc>$A \cdot B + C$</desc>
     <clamp/>
+    <roundmode/>
     <src absneg="true" swizzle="true">A</src>
     <src absneg="true" swizzle="true">B</src>
     <src absneg="true" swizzle="true">C</src>
