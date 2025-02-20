@@ -10,7 +10,6 @@
 #include "common/amdgfxregs.h"
 
 #include <algorithm>
-#include <unordered_set>
 #include <vector>
 
 #define SMEM_WINDOW_SIZE    (350 - ctx.num_waves * 35)
