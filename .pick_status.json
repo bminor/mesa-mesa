@@ -514,7 +514,7 @@
         "description": "broadcom/simulator: use string copy instead of memcpy",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3e8b2fe053a7686df54c62acdd92382a088fda70",
         "notes": null
