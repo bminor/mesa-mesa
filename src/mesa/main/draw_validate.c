@@ -160,6 +160,26 @@ _mesa_update_valid_to_render_state(struct gl_context *ctx)
       }
    }
 
+   /**
+    * OVR_multiview
+
+      INVALID_OPERATION is generated if a rendering command is issued and the the
+      number of views in the current draw framebuffer is not equal to the number
+      of views declared in the currently bound program.
+    */
+   struct gl_program *vp = ctx->_Shader->CurrentProgram[MESA_SHADER_VERTEX];
+   if (vp) {
+      unsigned num_views = util_bitcount(vp->info.view_mask);
+      for (int i = 0; i < ctx->DrawBuffer->_NumColorDrawBuffers; i++) {
+         gl_buffer_index buf = ctx->DrawBuffer->_ColorDrawBufferIndexes[i];
+         if (buf != BUFFER_NONE) {
+            struct gl_renderbuffer *rb = ctx->DrawBuffer->Attachment[buf].Renderbuffer;
+            if (rb && rb->rtt_numviews != num_views)
+               return;
+         }
+      }
+   }
+
    /* DrawPixels/CopyPixels/Bitmap is valid after this point. */
    ctx->DrawPixValid = true;
 

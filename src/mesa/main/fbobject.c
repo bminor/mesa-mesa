@@ -4401,7 +4401,7 @@ _mesa_FramebufferTextureMultiviewOVR_no_error(GLenum target, GLenum attachment,
                                               GLint baseViewIndex, GLsizei numViews)
 {
    frame_buffer_texture(0, target, attachment, texture, level, 0, baseViewIndex,
-                        "glFramebufferTexture", false, true, false, true, numViews);
+                        "glFramebufferTextureMultiviewOVR", false, true, false, true, numViews);
 }
 
 
@@ -4411,7 +4411,7 @@ _mesa_FramebufferTextureMultiviewOVR(GLenum target, GLenum attachment,
                                      GLint baseViewIndex, GLsizei numViews)
 {
    frame_buffer_texture(0, target, attachment, texture, level, 0, baseViewIndex,
-                        "glFramebufferTexture", false, false, false, true, numViews);
+                        "glFramebufferTextureMultiviewOVR", false, false, false, true, numViews);
 }
 
 
