@@ -10,10 +10,3 @@ test_uav_counter_null_behavior_dxil,Crash
 
 test_suballocate_small_textures_size,Fail
 test_sampler_feedback_implicit_lod_aniso,Fail
-
-test_execute_indirect_multi_dispatch_root_constants,Crash
-test_execute_indirect_multi_dispatch_root_descriptors,Crash
-test_execute_indirect_state_predication,Crash
-test_execute_indirect_state_tier_11,Crash
-
-test_sparse_default_mapping,Crash
