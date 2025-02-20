@@ -454,11 +454,10 @@ iris_init_screen_caps(struct iris_screen *screen)
 
    caps->frontend_noop = true;
 
-   // XXX: don't hardcode 00:00:02.0 PCI here
-   caps->pci_group = 0;
-   caps->pci_bus = 0;
-   caps->pci_device = 2;
-   caps->pci_function = 0;
+   caps->pci_group = devinfo->pci_domain;
+   caps->pci_bus = devinfo->pci_bus;
+   caps->pci_device = devinfo->pci_dev;
+   caps->pci_function = devinfo->pci_func;
 
    caps->opencl_integer_functions =
    caps->integer_multiply_32x16 = true;
