@@ -1591,7 +1591,7 @@ bool ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
     * We can decrease the number to make it fit into the infinity cache.
     */
    const unsigned max_waves_per_tg = 32; /* 1024 threads in Wave32 */
-   info->max_scratch_waves = MAX2(32 * info->min_good_cu_per_sa * info->max_sa_per_se * info->num_se,
+   info->max_scratch_waves = MAX2(32 * info->max_good_cu_per_sa * info->max_sa_per_se * info->num_se,
                                   max_waves_per_tg);
    info->has_scratch_base_registers = info->gfx_level >= GFX11 ||
                                       (!info->has_graphics && info->family >= CHIP_GFX940);
