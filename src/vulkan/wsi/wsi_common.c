@@ -1644,14 +1644,15 @@ wsi_GetDeviceGroupSurfacePresentModesKHR(VkDevice device,
 bool
 wsi_common_vk_instance_supports_present_wait(const struct vk_instance *instance)
 {
+#if DETECT_OS_ANDROID
+   /* Android's Vulkan loader does not provide KHR_present_wait or
+    * KHR_present_id for KHR_android_surface. */
+   return false;
+#else
    /* We can only expose KHR_present_wait and KHR_present_id
     * if we are guaranteed support on all potential VkSurfaceKHR objects. */
-   if (instance->enabled_extensions.KHR_win32_surface ||
-       instance->enabled_extensions.KHR_android_surface) {
-      return false;
-   }
-
-   return true;
+   return !instance->enabled_extensions.KHR_win32_surface;
+#endif
 }
 
 VkResult
