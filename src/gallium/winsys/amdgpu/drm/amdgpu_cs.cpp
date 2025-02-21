@@ -1637,7 +1637,7 @@ static void amdgpu_cs_submit_ib(void *job, void *gdata, int thread_index)
    struct amdgpu_seq_no_fences seq_no_dependencies;
    memcpy(&seq_no_dependencies, &csc->seq_no_dependencies, sizeof(seq_no_dependencies));
 
-   if (queue_type != KERNELQ_ALT_FENCE) {
+   if (queue_type == KERNELQ) {
       /* Add a fence dependency on the previous IB if the IP has multiple physical queues to
        * make it appear as if it had only 1 queue, or if the previous IB comes from a different
        * context. The reasons are:
@@ -1652,8 +1652,7 @@ static void amdgpu_cs_submit_ib(void *job, void *gdata, int thread_index)
        */
       if (prev_fence) {
          bool same_ctx = queue->last_ctx == acs->ctx;
-         /* userqueue submission mode uses a single queue per process. */
-         bool same_queue = queue_type == USERQ || aws->info.ip[acs->ip_type].num_queues == 1;
+         bool same_queue = aws->info.ip[acs->ip_type].num_queues == 1;
 
          if (!same_ctx || !same_queue)
             add_seq_no_to_list(aws, &seq_no_dependencies, queue_index, prev_seq_no);
