@@ -16,6 +16,7 @@
 #include <xcb/xcb.h>
 #include <xcb/glx.h>
 #include <X11/Xlib-xcb.h>
+#include "mesa/main/dispatch.h"
 
 #if !defined(__GNUC__)
 #  define __builtin_expect(x, y) x
@@ -854,11 +855,7 @@ glAreTexturesResidentEXT(GLsizei n, const GLuint * textures,
    struct glx_context *const gc = __glXGetCurrentContext();
 
    if (gc->isDirect) {
-      const _glapi_proc *const table = (_glapi_proc *) GET_DISPATCH();
-      PFNGLARETEXTURESRESIDENTEXTPROC p =
-         (PFNGLARETEXTURESRESIDENTEXTPROC) table[332];
-
-      return p(n, textures, residences);
+      return CALL_AreTexturesResident(GET_DISPATCH(), (n, textures, residences));
    }
    else {
       struct glx_context *const gc = __glXGetCurrentContext();
