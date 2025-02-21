@@ -131,7 +131,7 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
       VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering;
       VkPhysicalDeviceImageRobustnessFeatures image_robustness;
       VkPhysicalDeviceInlineUniformBlockFeatures inline_uniform_block;
-      VkPhysicalDeviceMaintenance4Features maintenance4;
+      VkPhysicalDeviceMaintenance4Features maintenance_4;
       VkPhysicalDevicePipelineCreationCacheControlFeatures
          pipeline_creation_cache_control;
       VkPhysicalDevicePrivateDataFeatures private_data;
@@ -166,7 +166,7 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
       VkPhysicalDeviceGlobalPriorityQueryFeatures global_priority_query;
       VkPhysicalDeviceIndexTypeUint8Features index_type_uint8;
       VkPhysicalDeviceLineRasterizationFeatures line_rasterization;
-      VkPhysicalDeviceMaintenance5Features maintenance5;
+      VkPhysicalDeviceMaintenance5Features maintenance_5;
       VkPhysicalDevicePipelineProtectedAccessFeatures
          pipeline_protected_access;
       VkPhysicalDevicePipelineRobustnessFeatures pipeline_robustness;
@@ -256,7 +256,7 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
       VN_ADD_PNEXT_EXT(feats2, DYNAMIC_RENDERING_FEATURES, local_feats.dynamic_rendering, exts->KHR_dynamic_rendering);
       VN_ADD_PNEXT_EXT(feats2, IMAGE_ROBUSTNESS_FEATURES, local_feats.image_robustness, exts->EXT_image_robustness);
       VN_ADD_PNEXT_EXT(feats2, INLINE_UNIFORM_BLOCK_FEATURES, local_feats.inline_uniform_block, exts->EXT_inline_uniform_block);
-      VN_ADD_PNEXT_EXT(feats2, MAINTENANCE_4_FEATURES, local_feats.maintenance4, exts->KHR_maintenance4);
+      VN_ADD_PNEXT_EXT(feats2, MAINTENANCE_4_FEATURES, local_feats.maintenance_4, exts->KHR_maintenance4);
       VN_ADD_PNEXT_EXT(feats2, PIPELINE_CREATION_CACHE_CONTROL_FEATURES, local_feats.pipeline_creation_cache_control, exts->EXT_pipeline_creation_cache_control);
       VN_ADD_PNEXT_EXT(feats2, PRIVATE_DATA_FEATURES, local_feats.private_data, exts->EXT_private_data);
       VN_ADD_PNEXT_EXT(feats2, SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES, local_feats.shader_demote_to_helper_invocation, exts->EXT_shader_demote_to_helper_invocation);
@@ -282,7 +282,7 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
    VN_ADD_PNEXT_EXT(feats2, GLOBAL_PRIORITY_QUERY_FEATURES, local_feats.global_priority_query, exts->KHR_global_priority || exts->EXT_global_priority_query);
    VN_ADD_PNEXT_EXT(feats2, INDEX_TYPE_UINT8_FEATURES, local_feats.index_type_uint8, exts->KHR_index_type_uint8 || exts->EXT_index_type_uint8);
    VN_ADD_PNEXT_EXT(feats2, LINE_RASTERIZATION_FEATURES, local_feats.line_rasterization, exts->KHR_line_rasterization || exts->EXT_line_rasterization);
-   VN_ADD_PNEXT_EXT(feats2, MAINTENANCE_5_FEATURES, local_feats.maintenance5, exts->KHR_maintenance5);
+   VN_ADD_PNEXT_EXT(feats2, MAINTENANCE_5_FEATURES, local_feats.maintenance_5, exts->KHR_maintenance5);
    VN_ADD_PNEXT_EXT(feats2, PIPELINE_PROTECTED_ACCESS_FEATURES, local_feats.pipeline_protected_access, exts->EXT_pipeline_protected_access);
    VN_ADD_PNEXT_EXT(feats2, PIPELINE_ROBUSTNESS_FEATURES, local_feats.pipeline_robustness, exts->EXT_pipeline_robustness);
    VN_ADD_PNEXT_EXT(feats2, SHADER_EXPECT_ASSUME_FEATURES, local_feats.shader_expect_assume, exts->KHR_shader_expect_assume);
@@ -490,7 +490,7 @@ vn_physical_device_init_properties(struct vn_physical_device *physical_dev)
       /* Vulkan 1.3 */
       VkPhysicalDeviceVulkan13Properties vulkan_1_3;
       VkPhysicalDeviceInlineUniformBlockProperties inline_uniform_block;
-      VkPhysicalDeviceMaintenance4Properties maintenance4;
+      VkPhysicalDeviceMaintenance4Properties maintenance_4;
       VkPhysicalDeviceShaderIntegerDotProductProperties
          shader_integer_dot_product;
       VkPhysicalDeviceSubgroupSizeControlProperties subgroup_size_control;
@@ -559,7 +559,7 @@ vn_physical_device_init_properties(struct vn_physical_device *physical_dev)
       VN_ADD_PNEXT(props2, VULKAN_1_3_PROPERTIES, local_props.vulkan_1_3);
    } else {
       VN_ADD_PNEXT_EXT(props2, INLINE_UNIFORM_BLOCK_PROPERTIES, local_props.inline_uniform_block, exts->EXT_inline_uniform_block);
-      VN_ADD_PNEXT_EXT(props2, MAINTENANCE_4_PROPERTIES, local_props.maintenance4, exts->KHR_maintenance4);
+      VN_ADD_PNEXT_EXT(props2, MAINTENANCE_4_PROPERTIES, local_props.maintenance_4, exts->KHR_maintenance4);
       VN_ADD_PNEXT_EXT(props2, SHADER_INTEGER_DOT_PRODUCT_PROPERTIES, local_props.shader_integer_dot_product, exts->KHR_shader_integer_dot_product);
       VN_ADD_PNEXT_EXT(props2, SUBGROUP_SIZE_CONTROL_PROPERTIES, local_props.subgroup_size_control, exts->EXT_subgroup_size_control);
       VN_ADD_PNEXT_EXT(props2, TEXEL_BUFFER_ALIGNMENT_PROPERTIES, local_props.texel_buffer_alignment, exts->EXT_texel_buffer_alignment);
@@ -630,7 +630,7 @@ vn_physical_device_init_properties(struct vn_physical_device *physical_dev)
       VN_SET_VK_PROPS_EXT(props, &local_props.inline_uniform_block, exts->EXT_inline_uniform_block);
       VN_SET_VK_PROPS_EXT(props, &local_props.shader_integer_dot_product, exts->KHR_shader_integer_dot_product);
       VN_SET_VK_PROPS_EXT(props, &local_props.texel_buffer_alignment, exts->EXT_texel_buffer_alignment);
-      VN_SET_VK_PROPS_EXT(props, &local_props.maintenance4, exts->KHR_maintenance4);
+      VN_SET_VK_PROPS_EXT(props, &local_props.maintenance_4, exts->KHR_maintenance4);
    }
 
    /* Vulkan 1.4 */
