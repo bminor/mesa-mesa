@@ -393,7 +393,6 @@ public:
    elk_fs_reg uw_pixel_y;
    elk_fs_reg pixel_z;
    elk_fs_reg wpos_w;
-   elk_fs_reg pixel_w;
    elk_fs_reg delta_xy[ELK_BARYCENTRIC_MODE_COUNT];
    elk_fs_reg final_gs_vertex_count;
    elk_fs_reg control_data_bits;

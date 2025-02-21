@@ -3941,8 +3941,6 @@ fs_nir_emit_fs_intrinsic(nir_to_elk_state &ntb,
       nir_intrinsic_instr *bary_intrinsic =
          nir_instr_as_intrinsic(instr->src[0].ssa->parent_instr);
       nir_intrinsic_op bary_intrin = bary_intrinsic->intrinsic;
-      enum glsl_interp_mode interp_mode =
-         (enum glsl_interp_mode) nir_intrinsic_interp_mode(bary_intrinsic);
       elk_fs_reg dst_xy;
 
       if (bary_intrin == nir_intrinsic_load_barycentric_at_offset ||
@@ -3962,13 +3960,7 @@ fs_nir_emit_fs_intrinsic(nir_to_elk_state &ntb,
          interp.type = ELK_REGISTER_TYPE_F;
          dest.type = ELK_REGISTER_TYPE_F;
 
-         if (devinfo->ver < 6 && interp_mode == INTERP_MODE_SMOOTH) {
-            elk_fs_reg tmp = s.vgrf(glsl_float_type());
-            bld.emit(ELK_FS_OPCODE_LINTERP, tmp, dst_xy, interp);
-            bld.MUL(offset(dest, bld, i), tmp, s.pixel_w);
-         } else {
-            bld.emit(ELK_FS_OPCODE_LINTERP, offset(dest, bld, i), dst_xy, interp);
-         }
+         bld.emit(ELK_FS_OPCODE_LINTERP, offset(dest, bld, i), dst_xy, interp);
       }
       break;
    }

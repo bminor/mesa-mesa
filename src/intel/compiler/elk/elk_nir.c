@@ -489,6 +489,49 @@ lower_barycentric_at_offset(nir_builder *b, nir_intrinsic_instr *intrin,
 }
 
 static bool
+elk_nir_lower_fs_smooth_interp_gfx4_instr(nir_builder *b, nir_intrinsic_instr *intr, void *_data)
+{
+   if (intr->intrinsic != nir_intrinsic_load_deref)
+      return false;
+
+   nir_deref_instr *deref = nir_instr_as_deref(intr->src[0].ssa->parent_instr);
+   nir_variable *var = nir_deref_instr_get_variable(deref);
+
+   if (var->data.interpolation != INTERP_MODE_SMOOTH)
+      return false;
+
+   /* If we haven't computed pixel_w yet, do so now (once, at the start of the
+    * shader).  CSE could do this, but this makes things more legible and saves
+    * followup optimization.
+    */
+   nir_def **pixel_w = _data;
+   if (!*pixel_w) {
+      b->cursor = nir_before_block(nir_start_block(b->impl));
+
+      nir_def *w = nir_load_frag_coord_w(b);
+      BITSET_SET(b->shader->info.system_values_read, SYSTEM_VALUE_FRAG_COORD_W);
+      *pixel_w = nir_frcp(b, w);
+   }
+
+   b->cursor = nir_after_instr(&intr->instr);
+   nir_def *result = nir_fmul(b, &intr->def, *pixel_w);
+
+   nir_def_rewrite_uses_after(&intr->def, result, result->parent_instr);
+   return true;
+}
+
+/* Multiplies all smooth interpolation outputs by 1/frag_w. */
+static bool
+elk_nir_lower_fs_smooth_interp_gfx4(nir_shader *shader)
+{
+   nir_def *pixel_w = NULL;
+   return nir_shader_intrinsics_pass(shader, elk_nir_lower_fs_smooth_interp_gfx4_instr,
+                                     nir_metadata_block_index | nir_metadata_dominance,
+                                     &pixel_w);
+}
+
+
+static bool
 elk_nir_lower_load_frag_coord_w_gfx4_instr(nir_builder *b, nir_intrinsic_instr *intr, void *_data)
 {
    if (intr->intrinsic != nir_intrinsic_load_frag_coord_w)
@@ -553,6 +596,7 @@ elk_nir_lower_fs_inputs(nir_shader *nir,
    NIR_PASS(_, nir, nir_lower_frag_coord_to_pixel_coord);
    if (devinfo->ver < 6) {
       /* Needs to be run before nir_lower_io. */
+      NIR_PASS(_, nir, elk_nir_lower_fs_smooth_interp_gfx4);
       NIR_PASS(_, nir, elk_nir_lower_load_frag_coord_w_gfx4);
    }
 
