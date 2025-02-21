@@ -212,7 +212,7 @@ hk_get_device_extensions(const struct hk_instance *instance,
 
 static void
 hk_get_device_features(
-   const struct agx_device *dev,
+   const struct agx_device *dev, const struct hk_instance *instance,
    const struct vk_device_extension_table *supported_extensions,
    struct vk_features *features)
 {
@@ -331,7 +331,7 @@ hk_get_device_features(
       .descriptorBindingPartiallyBound = true,
       .descriptorBindingVariableDescriptorCount = true,
       .runtimeDescriptorArray = true,
-      .samplerFilterMinmax = false,
+      .samplerFilterMinmax = instance->fake_minmax,
       .scalarBlockLayout = true,
       .imagelessFramebuffer = true,
       .uniformBufferStandardLayout = true,
@@ -838,7 +838,7 @@ hk_get_device_properties(const struct agx_device *dev,
       .maxDescriptorSetUpdateAfterBindSampledImages = HK_MAX_DESCRIPTORS,
       .maxDescriptorSetUpdateAfterBindStorageImages = HK_MAX_DESCRIPTORS,
       .maxDescriptorSetUpdateAfterBindInputAttachments = HK_MAX_DESCRIPTORS,
-      .filterMinmaxSingleComponentFormats = false,
+      .filterMinmaxSingleComponentFormats = instance->fake_minmax,
       .filterMinmaxImageComponentMapping = false,
       .maxTimelineSemaphoreValueDifference = UINT64_MAX,
       .framebufferIntegerColorSampleCounts = sample_counts,
@@ -1188,7 +1188,7 @@ hk_create_drm_physical_device(struct vk_instance *_instance,
    hk_get_device_extensions(instance, &supported_extensions);
 
    struct vk_features supported_features;
-   hk_get_device_features(&pdev->dev, &supported_extensions,
+   hk_get_device_features(&pdev->dev, instance, &supported_extensions,
                           &supported_features);
 
    struct vk_properties properties;
