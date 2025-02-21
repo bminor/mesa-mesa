@@ -298,10 +298,6 @@ class gl_type( gl_item ):
         return
 
 
-    def get_type_expression(self):
-        return self.type_expr
-
-
 class gl_enum( gl_item ):
     def __init__(self, element, context, category):
         gl_item.__init__(self, element, context, category)
@@ -915,16 +911,6 @@ class gl_api(object):
         return self.functions_by_name.values()
 
 
-    def enumIterateByName(self):
-        keys = sorted(self.enums_by_name.keys())
-
-        list = []
-        for enum in keys:
-            list.append( self.enums_by_name[ enum ] )
-
-        return iter(list)
-
-
     def categoryIterate(self):
         """Iterate over categories.
 
@@ -948,10 +934,6 @@ class gl_api(object):
             return self.category_dict[name]
         else:
             return ["<unknown category>", None]
-
-
-    def typeIterate(self):
-        return self.types_by_name.values()
 
 
     def find_type( self, type_name ):

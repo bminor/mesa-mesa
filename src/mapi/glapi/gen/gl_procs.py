@@ -124,7 +124,7 @@ typedef struct {
             categories = {}
             for func in api.functionIterateByOffset():
                 for n in func.entry_points:
-                    cat, num = api.get_category_for_name(n)
+                    cat, _ = api.get_category_for_name(n)
                     if (cat.startswith("es") or cat.startswith("GL_OES")):
                         if cat not in categories:
                             categories[cat] = []

@@ -95,7 +95,6 @@ class glx_function(gl_XML.gl_function):
         self.dimensions_in_reply = 0
         self.img_reset = None
 
-        self.server_handcode = 0
         self.client_handcode = 0
         self.ignore = 0
 
@@ -154,16 +153,12 @@ class glx_function(gl_XML.gl_function):
 
                 handcode = child.get( 'handcode', 'false' )
                 if handcode == "false":
-                    self.server_handcode = 0
                     self.client_handcode = 0
                 elif handcode == "true":
-                    self.server_handcode = 1
                     self.client_handcode = 1
                 elif handcode == "client":
-                    self.server_handcode = 0
                     self.client_handcode = 1
                 elif handcode == "server":
-                    self.server_handcode = 1
                     self.client_handcode = 0
                 else:
                     raise RuntimeError('Invalid handcode mode "%s" in function "%s".' % (handcode, self.name))
@@ -185,40 +180,6 @@ class glx_function(gl_XML.gl_function):
         return
 
 
-    def has_variable_size_request(self):
-        """Determine if the GLX request packet is variable sized.
-
-        The GLX request packet is variable sized in several common
-        situations.
-
-        1. The function has a non-output parameter that is counted
-           by another parameter (e.g., the 'textures' parameter of
-           glDeleteTextures).
-
-        2. The function has a non-output parameter whose count is
-           determined by another parameter that is an enum (e.g., the
-           'params' parameter of glLightfv).
-
-        3. The function has a non-output parameter that is an
-           image.
-
-        4. The function must be hand-coded on the server.
-        """
-
-        if self.glx_rop == 0:
-            return 0
-
-        if self.server_handcode or self.images:
-            return 1
-
-        for param in self.parameters:
-            if not param.is_output:
-                if param.counter or len(param.count_parameter_list):
-                    return 1
-
-        return 0
-
-
     def variable_length_parameter(self):
         for param in self.parameters:
             if not param.is_output:
@@ -238,7 +199,7 @@ class glx_function(gl_XML.gl_function):
             # number of dimensions of the pixel data.
 
             if len(self.images) and not self.images[0].is_output:
-                [dim, junk, junk, junk, junk] = self.images[0].get_dimensions()
+                [dim, _, _, _, _] = self.images[0].get_dimensions()
 
                 # The base size is the size of the pixel pack info
                 # header used by images with the specified number
@@ -268,11 +229,6 @@ class glx_function(gl_XML.gl_function):
 
             self.offsets_calculated = 1
         return
-
-
-    def offset_of(self, param_name):
-        self.calculate_offsets()
-        return self.parameters_by_name[ param_name ].offset
 
 
     def parameterIterateGlxSend(self, include_variable_parameters = 1):
@@ -370,26 +326,6 @@ class glx_function(gl_XML.gl_function):
 
         size = ((size + 3) & ~3)
         return "%u%s" % (size, self.command_variable_length())
-
-
-    def opcode_real_value(self):
-        """Get the true numeric value of the GLX opcode
-
-        Behaves similarly to opcode_value, except for
-        X_GLXVendorPrivate and X_GLXVendorPrivateWithReply commands.
-        In these cases the value for the GLX opcode field (i.e.,
-        16 for X_GLXVendorPrivate or 17 for
-        X_GLXVendorPrivateWithReply) is returned.  For other 'single'
-        commands, the opcode for the command (e.g., 101 for
-        X_GLsop_NewList) is returned."""
-
-        if self.glx_vendorpriv != 0:
-            if self.needs_reply():
-                return 17
-            else:
-                return 16
-        else:
-            return self.opcode_value()
 
 
     def opcode_value(self):

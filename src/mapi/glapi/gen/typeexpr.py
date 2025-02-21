@@ -225,10 +225,6 @@ class type_expression(object):
         return s
 
 
-    def get_base_type_node(self):
-        return self.expr[0]
-
-
     def get_base_name(self):
         if len(self.expr):
             return self.expr[0].name

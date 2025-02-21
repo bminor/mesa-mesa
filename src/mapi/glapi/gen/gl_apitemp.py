@@ -94,7 +94,7 @@ class PrintGlOffsets(gl_XML.gl_print_base):
         if name not in static_data.libgl_public_functions:
             need_proto = True
         elif self.es:
-            cat, num = api.get_category_for_name(name)
+            cat, _ = api.get_category_for_name(name)
             if (cat.startswith("es") or cat.startswith("GL_OES")):
                 need_proto = True
         if need_proto:

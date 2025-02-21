@@ -109,82 +109,6 @@ class glx_enum_function(object):
         return self.mode
 
 
-    def PrintUsingTable(self):
-        """Emit the body of the __gl*_size function using a pair
-        of look-up tables and a mask.  The mask is calculated such
-        that (e & mask) is unique for all the valid values of e for
-        this function.  The result of (e & mask) is used as an index
-        into the first look-up table.  If it matches e, then the
-        same entry of the second table is returned.  Otherwise zero
-        is returned.
-
-        It seems like this should cause better code to be generated.
-        However, on x86 at least, the resulting .o file is about 20%
-        larger then the switch-statment version.  I am leaving this
-        code in because the results may be different on other
-        platforms (e.g., PowerPC or x86-64)."""
-
-        return 0
-        count = 0
-        for a in self.enums:
-            count += 1
-
-        if -1 in self.count:
-            return 0
-
-        # Determine if there is some mask M, such that M = (2^N) - 1,
-        # that will generate unique values for all of the enums.
-
-        mask = 0
-        for i in [1, 2, 3, 4, 5, 6, 7, 8]:
-            mask = (1 << i) - 1
-
-            fail = 0;
-            for a in self.enums:
-                for b in self.enums:
-                    if a != b:
-                        if (a & mask) == (b & mask):
-                            fail = 1;
-
-            if not fail:
-                break;
-            else:
-                mask = 0
-
-        if (mask != 0) and (mask < (2 * count)):
-            masked_enums = {}
-            masked_count = {}
-
-            for i in range(0, mask + 1):
-                masked_enums[i] = "0";
-                masked_count[i] = 0;
-
-            for c in self.count:
-                for e in self.count[c]:
-                    i = e & mask
-                    enum_obj = self.enums[e][0]
-                    masked_enums[i] = '0x%04x /* %s */' % (e, enum_obj.name )
-                    masked_count[i] = c
-
-
-            print('    static const GLushort a[%u] = {' % (mask + 1))
-            for e in masked_enums:
-                print('        %s, ' % (masked_enums[e]))
-            print('    };')
-
-            print('    static const GLubyte b[%u] = {' % (mask + 1))
-            for c in masked_count:
-                print('        %u, ' % (masked_count[c]))
-            print('    };')
-
-            print('    const unsigned idx = (e & 0x%02xU);' % (mask))
-            print('')
-            print('    return (e == a[idx]) ? (GLint) b[idx] : 0;')
-            return 1;
-        else:
-            return 0;
-
-
     def PrintUsingSwitch(self, name):
         """Emit the body of the __gl*_size function using a 
         switch-statement."""
@@ -228,10 +152,7 @@ class glx_enum_function(object):
         print('GLint')
         print('__gl%s_size( GLenum e )' % (name))
         print('{')
-
-        if not self.PrintUsingTable():
-            self.PrintUsingSwitch(name)
-
+        self.PrintUsingSwitch(name)
         print('}')
         print('')
 
@@ -324,20 +245,6 @@ class PrintGlxSizeStubs_h(PrintGlxSizeStubs_common):
 
             if (ef.is_set() and self.emit_set) or (not ef.is_set() and self.emit_get):
                 print('extern GLint __gl%s_size(GLenum);' % (func.name))
-
-
-class PrintGlxReqSize_common(gl_XML.gl_print_base):
-    """Common base class for PrintGlxSizeReq_h and PrintGlxSizeReq_h.
-
-    The main purpose of this common base class is to provide the infrastructure
-    for the derrived classes to iterate over the same set of functions.
-    """
-
-    def __init__(self):
-        gl_XML.gl_print_base.__init__(self)
-
-        self.name = "glX_proto_size.py (from Mesa)"
-        self.license = license.bsd_license_template % ( "(C) Copyright IBM Corporation 2005", "IBM")
 
 
 def _parser():

@@ -27,21 +27,6 @@
 import gl_XML, glX_XML
 
 
-class glx_proto_item_factory(glX_XML.glx_item_factory):
-    """Factory to create GLX protocol oriented objects derived from gl_item."""
-
-    def create_type(self, element, context, category):
-        return glx_proto_type(element, context, category)
-
-
-class glx_proto_type(gl_XML.gl_type):
-    def __init__(self, element, context, category):
-        gl_XML.gl_type.__init__(self, element, context, category)
-
-        self.glx_name = element.get( "glx_name" )
-        return
-
-
 class glx_print_proto(gl_XML.gl_print_base):
     def size_call(self, func, outputs_also = 0):
         """Create C code to calculate 'compsize'.
@@ -55,7 +40,7 @@ class glx_print_proto(gl_XML.gl_print_base):
         for param in func.parameterIterator():
             if outputs_also or not param.is_output:
                 if param.is_image():
-                    [dim, w, h, d, junk] = param.get_dimensions()
+                    [dim, w, h, d, _] = param.get_dimensions()
 
                     compsize = '__glImageSize(%s, %s, %s, %s, %s, %s)' % (w, h, d, param.img_format, param.img_type, param.img_target)
                     if not param.img_send_null:
