@@ -73,11 +73,8 @@ public:
              m_state(VkDecoderGlobalState::get()),
              m_vkStream(nullptr, m_state->getFeatures()),
              m_vkMemReadingStream(nullptr, m_state->getFeatures()),
-             m_boxedHandleUnwrapMapping(m_state),
              m_boxedHandleCreateMapping(m_state),
-             m_boxedHandleDestroyMapping(m_state),
-             m_boxedHandleUnwrapAndDeleteMapping(m_state),
-             m_boxedHandleUnwrapAndDeletePreserveBoxedMapping(m_state),
+             m_boxedHandleUnwrapMapping(m_state),
              m_prevSeqno(std::nullopt),
              m_queueSubmitWithCommandsEnabled(m_state->getFeatures().VulkanQueueSubmitWithCommands.enabled),
              m_snapshotsEnabled(m_state->snapshotsEnabled()) {}
@@ -98,12 +95,9 @@ private:
     VkDecoderGlobalState* m_state;
     %s m_vkStream;
     VulkanMemReadingStream m_vkMemReadingStream;
-    BoxedHandleUnwrapMapping m_boxedHandleUnwrapMapping;
     BoxedHandleCreateMapping m_boxedHandleCreateMapping;
-    BoxedHandleDestroyMapping m_boxedHandleDestroyMapping;
-    BoxedHandleUnwrapAndDeleteMapping m_boxedHandleUnwrapAndDeleteMapping;
+    BoxedHandleUnwrapMapping m_boxedHandleUnwrapMapping;
     android::base::BumpPool m_pool;
-    BoxedHandleUnwrapAndDeletePreserveBoxedMapping m_boxedHandleUnwrapAndDeletePreserveBoxedMapping;
     std::optional<uint32_t> m_prevSeqno;
     bool m_queueSubmitWithCommandsEnabled = false;
     const bool m_snapshotsEnabled = false;
