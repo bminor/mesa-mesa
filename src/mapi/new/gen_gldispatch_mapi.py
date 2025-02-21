@@ -133,7 +133,7 @@ def generate_public_entries(functions):
         text += r"""
 GLAPI {f.rt} GLAPIENTRY {f.name}({f.decArgs})
 {{
-   const struct _glapi_table *_tbl = entry_current_get();
+   const struct _glapi_table *_tbl = GET_DISPATCH();
    mapi_func _func = ((const mapi_func *) _tbl)[{f.slot}];
    {retStr}(({f.rt} (GLAPIENTRY *)({f.decArgs})) _func)({f.callArgs});
 }}

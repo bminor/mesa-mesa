@@ -223,7 +223,6 @@ class ABIPrinter(object):
         self.indent = ' ' * 3
         self.noop_warn = 'noop_warn'
         self.noop_generic = 'noop_generic'
-        self.current_get = 'entry_current_get'
 
         self.api_defines = []
         self.api_headers = ['"KHR/khrplatform.h"']
@@ -327,8 +326,7 @@ class ABIPrinter(object):
             if ent.ret:
                 ret = 'return '
             stmt1 = self.indent
-            stmt1 += 'const struct _glapi_table *_tbl = %s();' % (
-                    self.current_get)
+            stmt1 += 'const struct _glapi_table *_tbl = GET_DISPATCH();'
             stmt2 = self.indent
             stmt2 += 'mapi_func _func = ((const mapi_func *) _tbl)[%d];' % (
                     ent.slot)

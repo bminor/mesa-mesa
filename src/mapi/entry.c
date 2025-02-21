@@ -45,12 +45,6 @@
 #include "entry_ppc64le_tls.h"
 #else
 
-static inline const struct _glapi_table *
-entry_current_get(void)
-{
-   return GET_DISPATCH();
-}
-
 /* C version of the public entries */
 #define MAPI_TMP_DEFINES
 #define MAPI_TMP_PUBLIC_DECLARES
