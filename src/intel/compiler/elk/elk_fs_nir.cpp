@@ -1545,32 +1545,6 @@ fs_nir_emit_alu(nir_to_elk_state &ntb, nir_alu_instr *instr,
       }
       break;
 
-   case nir_op_fquantize2f16: {
-      elk_fs_reg tmp16 = bld.vgrf(ELK_REGISTER_TYPE_D);
-      elk_fs_reg tmp32 = bld.vgrf(ELK_REGISTER_TYPE_F);
-      elk_fs_reg zero = bld.vgrf(ELK_REGISTER_TYPE_F);
-
-      /* The destination stride must be at least as big as the source stride. */
-      tmp16 = subscript(tmp16, ELK_REGISTER_TYPE_HF, 0);
-
-      /* Check for denormal */
-      elk_fs_reg abs_src0 = op[0];
-      abs_src0.abs = true;
-      bld.CMP(bld.null_reg_f(), abs_src0, elk_imm_f(ldexpf(1.0, -14)),
-              ELK_CONDITIONAL_L);
-      /* Get the appropriately signed zero */
-      bld.AND(retype(zero, ELK_REGISTER_TYPE_UD),
-              retype(op[0], ELK_REGISTER_TYPE_UD),
-              elk_imm_ud(0x80000000));
-      /* Do the actual F32 -> F16 -> F32 conversion */
-      bld.F32TO16(tmp16, op[0]);
-      bld.F16TO32(tmp32, tmp16);
-      /* Select that or zero based on normal status */
-      inst = bld.SEL(result, zero, tmp32);
-      inst->predicate = ELK_PREDICATE_NORMAL;
-      break;
-   }
-
    case nir_op_imin:
    case nir_op_umin:
    case nir_op_fmin:

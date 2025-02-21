@@ -1508,30 +1508,6 @@ brw_from_nir_emit_alu(nir_to_brw_state &ntb, nir_alu_instr *instr,
       bld.RNDE(result, op[0]);
       break;
 
-   case nir_op_fquantize2f16: {
-      brw_reg tmp16 = bld.vgrf(BRW_TYPE_D);
-      brw_reg tmp32 = bld.vgrf(BRW_TYPE_F);
-
-      /* The destination stride must be at least as big as the source stride. */
-      tmp16 = subscript(tmp16, BRW_TYPE_HF, 0);
-
-      /* Check for denormal */
-      brw_reg abs_src0 = op[0];
-      abs_src0.abs = true;
-      bld.CMP(bld.null_reg_f(), abs_src0, brw_imm_f(ldexpf(1.0, -14)),
-              BRW_CONDITIONAL_L);
-      /* Get the appropriately signed zero */
-      brw_reg zero = retype(bld.AND(retype(op[0], BRW_TYPE_UD),
-                                   brw_imm_ud(0x80000000)), BRW_TYPE_F);
-      /* Do the actual F32 -> F16 -> F32 conversion */
-      bld.MOV(tmp16, op[0]);
-      bld.MOV(tmp32, tmp16);
-      /* Select that or zero based on normal status */
-      inst = bld.SEL(result, zero, tmp32);
-      inst->predicate = BRW_PREDICATE_NORMAL;
-      break;
-   }
-
    case nir_op_imin:
    case nir_op_umin:
    case nir_op_fmin:

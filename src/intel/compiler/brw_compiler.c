@@ -55,6 +55,7 @@ const struct nir_shader_compiler_options brw_scalar_nir_options = {
    .lower_flrp16 = true,
    .lower_flrp64 = true,
    .lower_fmod = true,
+   .lower_fquantize2f16 = true,
    .lower_hadd64 = true,
    .lower_insert_byte = true,
    .lower_insert_word = true,
