@@ -462,12 +462,8 @@ has_custom_border(nir_builder *b, nir_tex_instr *tex)
 }
 
 static bool
-lower(nir_builder *b, nir_instr *instr, UNUSED void *_data)
+lower(nir_builder *b, nir_tex_instr *tex, UNUSED void *_data)
 {
-   if (instr->type != nir_instr_type_tex)
-      return false;
-
-   nir_tex_instr *tex = nir_instr_as_tex(instr);
    if (!nir_tex_instr_need_sampler(tex) || nir_tex_instr_is_query(tex))
       return false;
 
@@ -533,7 +529,7 @@ lower(nir_builder *b, nir_instr *instr, UNUSED void *_data)
 static bool
 agx_nir_lower_custom_border(nir_shader *nir)
 {
-   return nir_shader_instructions_pass(nir, lower, nir_metadata_none, NULL);
+   return nir_shader_tex_pass(nir, lower, nir_metadata_none, NULL);
 }
 
 static nir_def *
@@ -545,12 +541,8 @@ query_min_lod(nir_builder *b, nir_tex_instr *tex, bool int_coords)
 }
 
 static bool
-lower_min_lod(nir_builder *b, nir_instr *instr, UNUSED void *_data)
+lower_min_lod(nir_builder *b, nir_tex_instr *tex, UNUSED void *_data)
 {
-   if (instr->type != nir_instr_type_tex)
-      return false;
-
-   nir_tex_instr *tex = nir_instr_as_tex(instr);
    if (nir_tex_instr_is_query(tex))
       return false;
 
@@ -608,8 +600,7 @@ lower_min_lod(nir_builder *b, nir_instr *instr, UNUSED void *_data)
 static bool
 agx_nir_lower_image_view_min_lod(nir_shader *nir)
 {
-   return nir_shader_instructions_pass(nir, lower_min_lod, nir_metadata_none,
-                                       NULL);
+   return nir_shader_tex_pass(nir, lower_min_lod, nir_metadata_none, NULL);
 }
 
 /*
@@ -639,12 +630,8 @@ lower_viewport_fs(nir_builder *b, nir_intrinsic_instr *intr, UNUSED void *data)
 }
 
 static bool
-lower_subpass_dim(nir_builder *b, nir_instr *instr, UNUSED void *_data)
+lower_subpass_dim(nir_builder *b, nir_tex_instr *tex, UNUSED void *_data)
 {
-   if (instr->type != nir_instr_type_tex)
-      return false;
-
-   nir_tex_instr *tex = nir_instr_as_tex(instr);
    if (tex->sampler_dim == GLSL_SAMPLER_DIM_SUBPASS)
       tex->sampler_dim = GLSL_SAMPLER_DIM_2D;
    else if (tex->sampler_dim == GLSL_SAMPLER_DIM_SUBPASS_MS)
@@ -689,8 +676,8 @@ hk_lower_nir(struct hk_device *dev, nir_shader *nir,
                   .use_view_id_for_layer = is_multiview,
                });
 
-      NIR_PASS(_, nir, nir_shader_instructions_pass, lower_subpass_dim,
-               nir_metadata_all, NULL);
+      NIR_PASS(_, nir, nir_shader_tex_pass, lower_subpass_dim, nir_metadata_all,
+               NULL);
       NIR_PASS(_, nir, nir_lower_wpos_center);
    }
 

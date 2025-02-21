@@ -2132,16 +2132,13 @@ bool si_should_clear_lds(struct si_screen *sscreen, const struct nir_shader *sha
       shader->info.shared_size > 0 && sscreen->options.clear_lds;
 }
 
-static bool clamp_shadow_comparison_value(nir_builder *b, nir_instr *instr, void *state)
+static bool clamp_shadow_comparison_value(nir_builder *b, nir_tex_instr *tex,
+                                          void *state)
 {
-   if (instr->type != nir_instr_type_tex)
-      return false;
-
-   nir_tex_instr *tex = nir_instr_as_tex(instr);
    if (!tex->is_shadow)
       return false;
 
-   b->cursor = nir_before_instr(instr);
+   b->cursor = nir_before_instr(&tex->instr);
 
    int samp_index = nir_tex_instr_src_index(tex, nir_tex_src_sampler_handle);
    int comp_index = nir_tex_instr_src_index(tex, nir_tex_src_comparator);
@@ -2176,9 +2173,8 @@ static bool si_nir_clamp_shadow_comparison_value(nir_shader *nir)
     * Z24 anymore. Do it manually here for GFX8-9; GFX10 has
     * an explicitly clamped 32-bit float format.
     */
-   return nir_shader_instructions_pass(nir, clamp_shadow_comparison_value,
-                                       nir_metadata_control_flow,
-                                       NULL);
+   return nir_shader_tex_pass(nir, clamp_shadow_comparison_value,
+                              nir_metadata_control_flow, NULL);
 }
 
 static void
