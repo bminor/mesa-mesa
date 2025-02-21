@@ -366,8 +366,19 @@ hk_GetPhysicalDeviceImageFormatProperties2(
    /* Sparse + host-image-copy doesn't make sense. Forbid it. */
    if (pImageFormatInfo->flags & (VK_IMAGE_CREATE_SPARSE_ALIASED_BIT |
                                   VK_IMAGE_CREATE_SPARSE_BINDING_BIT |
-                                  VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT))
+                                  VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT)) {
       features &= ~VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT_EXT;
+
+      /* We also do not support sparse RGB32 uniform texel buffers, as we do not
+       * have residency query support for this interaction and there are no
+       * known use cases.
+       */
+      if (!util_is_power_of_two_nonzero(
+             vk_format_get_blocksize(pImageFormatInfo->format))) {
+
+         return VK_ERROR_FORMAT_NOT_SUPPORTED;
+      }
+   }
 
    if (pImageFormatInfo->flags & (VK_IMAGE_CREATE_SPARSE_ALIASED_BIT |
                                   VK_IMAGE_CREATE_SPARSE_BINDING_BIT |
