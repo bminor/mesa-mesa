@@ -113,7 +113,7 @@ if with_platform_windows
 endif
 libglx = static_library(
   'glx',
-  [files_libglx, glx_generated],
+  [files_libglx, glx_generated, main_dispatch_h],
   include_directories : [inc_include, inc_src, inc_glapi, inc_loader, inc_loader_x11,
                          inc_gallium, inc_mesa, inc_st_dri, inc_gallium_aux],
   c_args : [
