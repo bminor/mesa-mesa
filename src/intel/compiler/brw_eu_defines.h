@@ -115,14 +115,14 @@ enum ENUM_PACKED brw_horizontal_stride {
    BRW_HORIZONTAL_STRIDE_4 = 3,
 };
 
-enum ENUM_PACKED gfx10_align1_3src_src_horizontal_stride {
+enum ENUM_PACKED brw_align1_3src_src_horizontal_stride {
    BRW_ALIGN1_3SRC_SRC_HORIZONTAL_STRIDE_0 = 0,
    BRW_ALIGN1_3SRC_SRC_HORIZONTAL_STRIDE_1 = 1,
    BRW_ALIGN1_3SRC_SRC_HORIZONTAL_STRIDE_2 = 2,
    BRW_ALIGN1_3SRC_SRC_HORIZONTAL_STRIDE_4 = 3,
 };
 
-enum ENUM_PACKED gfx10_align1_3src_dst_horizontal_stride {
+enum ENUM_PACKED brw_align1_3src_dst_horizontal_stride {
    BRW_ALIGN1_3SRC_DST_HORIZONTAL_STRIDE_1 = 0,
    BRW_ALIGN1_3SRC_DST_HORIZONTAL_STRIDE_2 = 1,
 };
@@ -798,12 +798,12 @@ enum ENUM_PACKED brw_reg_file {
    UNIFORM, /* prog_data->params[reg] */
 };
 
-/* CNL adds Align1 support for 3-src instructions. Bit 35 of the instruction
+/* Align1 support for 3-src instructions. Bit 35 of the instruction
  * word is "Execution Datatype" which controls whether the instruction operates
  * on float or integer types. The register arguments have fields that offer
  * more fine control their respective types.
  */
-enum ENUM_PACKED gfx10_align1_3src_exec_type {
+enum ENUM_PACKED brw_align1_3src_exec_type {
    BRW_ALIGN1_3SRC_EXEC_TYPE_INT   = 0,
    BRW_ALIGN1_3SRC_EXEC_TYPE_FLOAT = 1,
 };
@@ -843,7 +843,7 @@ enum ENUM_PACKED brw_vertical_stride {
    BRW_VERTICAL_STRIDE_ONE_DIMENSIONAL = 0xF,
 };
 
-enum ENUM_PACKED gfx10_align1_3src_vertical_stride {
+enum ENUM_PACKED brw_align1_3src_vertical_stride {
    BRW_ALIGN1_3SRC_VERTICAL_STRIDE_0 = 0,
    BRW_ALIGN1_3SRC_VERTICAL_STRIDE_1 = 1,
    BRW_ALIGN1_3SRC_VERTICAL_STRIDE_2 = 1,

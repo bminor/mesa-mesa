@@ -508,7 +508,7 @@ brw_alu2(struct brw_codegen *p, unsigned opcode,
    return insn;
 }
 
-static enum gfx10_align1_3src_vertical_stride
+static enum brw_align1_3src_vertical_stride
 to_3src_align1_vstride(const struct intel_device_info *devinfo,
                        enum brw_vertical_stride vstride)
 {
@@ -531,7 +531,7 @@ to_3src_align1_vstride(const struct intel_device_info *devinfo,
    }
 }
 
-static enum gfx10_align1_3src_dst_horizontal_stride
+static enum brw_align1_3src_dst_horizontal_stride
 to_3src_align1_dst_hstride(enum brw_horizontal_stride hstride)
 {
    switch (hstride) {
@@ -544,7 +544,7 @@ to_3src_align1_dst_hstride(enum brw_horizontal_stride hstride)
    }
 }
 
-static enum gfx10_align1_3src_src_horizontal_stride
+static enum brw_align1_3src_src_horizontal_stride
 to_3src_align1_hstride(enum brw_horizontal_stride hstride)
 {
    switch (hstride) {

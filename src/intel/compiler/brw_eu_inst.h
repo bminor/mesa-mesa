@@ -532,8 +532,8 @@ brw_eu_inst_set_3src_a1_##reg##_type(const struct intel_device_info *devinfo, \
                                      brw_eu_inst *inst,                       \
                                      enum brw_reg_type type)                  \
 {                                                                             \
-   UNUSED enum gfx10_align1_3src_exec_type exec_type =                        \
-      (enum gfx10_align1_3src_exec_type)                                      \
+   UNUSED enum brw_align1_3src_exec_type exec_type =                          \
+      (enum brw_align1_3src_exec_type)                                        \
           brw_eu_inst_3src_a1_exec_type(devinfo, inst);                       \
    if (brw_type_is_float(type)) {                                             \
       assert(exec_type == BRW_ALIGN1_3SRC_EXEC_TYPE_FLOAT);                   \
@@ -548,8 +548,8 @@ static inline enum brw_reg_type                                               \
 brw_eu_inst_3src_a1_##reg##_type(const struct intel_device_info *devinfo,     \
                                  const brw_eu_inst *inst)                     \
 {                                                                             \
-   enum gfx10_align1_3src_exec_type exec_type =                               \
-      (enum gfx10_align1_3src_exec_type)                                      \
+   enum brw_align1_3src_exec_type exec_type =                                 \
+      (enum brw_align1_3src_exec_type)                                        \
          brw_eu_inst_3src_a1_exec_type(devinfo, inst);                        \
    unsigned hw_type = brw_eu_inst_3src_a1_##reg##_hw_type(devinfo, inst);     \
    return brw_type_decode_for_3src(devinfo, hw_type, exec_type);              \
@@ -643,8 +643,8 @@ brw_eu_inst_set_dpas_3src_##reg##_type(const struct intel_device_info *devinfo, 
                                        brw_eu_inst *inst,                     \
                                        enum brw_reg_type type)                \
 {                                                                             \
-   UNUSED enum gfx10_align1_3src_exec_type exec_type =                        \
-      (enum gfx10_align1_3src_exec_type)                                      \
+   UNUSED enum brw_align1_3src_exec_type exec_type =                          \
+      (enum brw_align1_3src_exec_type)                                        \
          brw_eu_inst_dpas_3src_exec_type(devinfo, inst);                      \
    if (brw_type_is_float(type)) {                                             \
       assert(exec_type == BRW_ALIGN1_3SRC_EXEC_TYPE_FLOAT);                   \
@@ -659,8 +659,8 @@ static inline enum brw_reg_type                                               \
 brw_eu_inst_dpas_3src_##reg##_type(const struct intel_device_info *devinfo,   \
                                    const brw_eu_inst *inst)                   \
 {                                                                             \
-   enum gfx10_align1_3src_exec_type exec_type =                               \
-      (enum gfx10_align1_3src_exec_type)                                      \
+   enum brw_align1_3src_exec_type exec_type =                                 \
+      (enum brw_align1_3src_exec_type)                                        \
          brw_eu_inst_dpas_3src_exec_type(devinfo, inst);                      \
    unsigned hw_type = brw_eu_inst_dpas_3src_##reg##_hw_type(devinfo, inst);   \
    return brw_type_decode_for_3src(devinfo, hw_type, exec_type);              \
