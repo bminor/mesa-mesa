@@ -3926,7 +3926,7 @@ fs_nir_emit_fs_intrinsic(nir_to_elk_state &ntb,
    case nir_intrinsic_load_frag_coord_w:
       /* Lowered to interpolation pre-gen6. */
       assert(devinfo->ver >= 6);
-      bld.MOV(dest, s.wpos_w);
+      bld.emit(ELK_SHADER_OPCODE_RCP, dest, fetch_payload_reg(bld, s.fs_payload().source_w_reg));
       break;
 
    case nir_intrinsic_load_interpolated_input: {

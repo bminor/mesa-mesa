@@ -140,12 +140,6 @@ elk_fs_visitor::emit_interpolation_setup_gfx4()
       this->delta_xy[ELK_BARYCENTRIC_PERSPECTIVE_PIXEL];
 
    abld = bld.annotate("compute pos.w and 1/pos.w");
-   /* Compute wpos.w.  It's always in our setup, since it's needed to
-    * interpolate the other attributes.
-    */
-   this->wpos_w = vgrf(glsl_float_type());
-   abld.emit(ELK_FS_OPCODE_LINTERP, wpos_w, delta_xy,
-             interp_reg(abld, VARYING_SLOT_POS, 3, 0));
 }
 
 /** Emits the interpolation for the varying inputs. */
@@ -272,13 +266,6 @@ elk_fs_visitor::emit_interpolation_setup_gfx6()
    abld = bld.annotate("compute pos.z");
    if (wm_prog_data->uses_src_depth)
       this->pixel_z = fetch_payload_reg(bld, fs_payload().source_depth_reg);
-
-   if (wm_prog_data->uses_src_w) {
-      abld = bld.annotate("compute pos.w");
-      this->wpos_w = vgrf(glsl_float_type());
-      abld.emit(ELK_SHADER_OPCODE_RCP, this->wpos_w,
-                fetch_payload_reg(abld, fs_payload().source_w_reg));
-   }
 
    if (wm_key->persample_interp == ELK_SOMETIMES) {
       assert(!elk_needs_unlit_centroid_workaround(devinfo));
