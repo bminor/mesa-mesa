@@ -1678,7 +1678,7 @@ for name in all_functions:
 
 function_count = i
 
-# Exported from libGL.so and libGLX_mesa.so (libEGL_mesa.so doesn't export any)
+# Exported from libGL.so
 libgl_public_functions = {
     "Accum",
     "ActiveShaderProgram",

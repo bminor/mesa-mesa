@@ -424,7 +424,20 @@ static const __DRIextension *kopper_extensions_noshm[] = {
 static void
 drisw_wait_gl(struct glx_context *context)
 {
+   /* TODO: Calling glFinish directly is the only thing that causes libGL.so
+    * to export all GL functions. This is fragile and needs a proper solution.
+    *
+    * On top of that, this code is only compiled with GLX_DIRECT_RENDERING,
+    * which means that indirect-only libGL (-Dglx-direct=false) doesn't export
+    * any GL functions.
+    *
+    * TODO: Always use CALL_Finish instead of glFinish.
+    */
+#if USE_LIBGLVND
+   CALL_Finish(GET_DISPATCH(), ());
+#else
    glFinish();
+#endif
 }
 
 static void
