@@ -11,7 +11,7 @@
 static bool
 lower_frag_coord_zw(nir_builder *b, nir_intrinsic_instr *intrin, void *data)
 {
-   if (intrin->intrinsic != nir_intrinsic_load_frag_coord_zw)
+   if (intrin->intrinsic != nir_intrinsic_load_frag_coord_z && intrin->intrinsic != nir_intrinsic_load_frag_coord_w)
       return false;
 
    b->cursor = nir_before_instr(&intrin->instr);
@@ -19,7 +19,7 @@ lower_frag_coord_zw(nir_builder *b, nir_intrinsic_instr *intrin, void *data)
    nir_def *bary = nir_load_barycentric_pixel(b, 32,
       .interp_mode = INTERP_MODE_NOPERSPECTIVE
    );
-   unsigned component = nir_intrinsic_component(intrin);
+   unsigned component = intrin->intrinsic == nir_intrinsic_load_frag_coord_z ? 2 : 3;
    nir_def *new = nir_load_frag_coord_zw_pan(b, bary, .component = component);
    nir_def_replace(&intrin->def, new);
 

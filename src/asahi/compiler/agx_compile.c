@@ -146,9 +146,12 @@ gather_cf(nir_builder *b, nir_intrinsic_instr *intr, void *data)
 {
    /* First handle frag coord loads */
    struct coefficient_info *info = data;
-   if (intr->intrinsic == nir_intrinsic_load_frag_coord_zw) {
-      BITSET_SET(info->noperspective,
-                 VARYING_SLOT_POS + nir_intrinsic_component(intr));
+   if (intr->intrinsic == nir_intrinsic_load_frag_coord_z) {
+      BITSET_SET(info->noperspective, VARYING_SLOT_POS + 2);
+      return false;
+   }
+   if (intr->intrinsic == nir_intrinsic_load_frag_coord_w) {
+      BITSET_SET(info->noperspective, VARYING_SLOT_POS + 3);
       return false;
    }
 
@@ -1380,9 +1383,14 @@ agx_emit_intrinsic(agx_builder *b, nir_intrinsic_instr *instr)
             agx_get_sr(b, 16, AGX_SR_THREAD_POSITION_IN_GRID_Y),
          });
 
-   case nir_intrinsic_load_frag_coord_zw: {
-      agx_index cf = agx_get_cf(b->shader, VARYING_SLOT_POS,
-                                nir_intrinsic_component(instr));
+   case nir_intrinsic_load_frag_coord_z: {
+      agx_index cf = agx_get_cf(b->shader, VARYING_SLOT_POS, 2);
+
+      return agx_iter_to(b, dst, cf, agx_zero(), 1, AGX_INTERPOLATION_CENTER);
+   }
+
+   case nir_intrinsic_load_frag_coord_w: {
+      agx_index cf = agx_get_cf(b->shader, VARYING_SLOT_POS, 3);
 
       return agx_iter_to(b, dst, cf, agx_zero(), 1, AGX_INTERPOLATION_CENTER);
    }
