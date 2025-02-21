@@ -3268,6 +3268,8 @@ for b2t, xne, xeq, zero, one in (('b2i', 'ine', 'ieq', 0, 1),
         ((xeq, (b2t, 'a@1'), one),  a),
         ((xne, (b2t, 'a@1'), zero), a),
         ((xne, (b2t, 'a@1'), one),  ('inot', a)),
+        ((xeq, (b2t, 'a@1'), '#b'), ('bcsel', (xeq, b, zero), ('inot', a), ('bcsel', (xeq, b, one), a, False))),
+        ((xne, (b2t, 'a@1'), '#b'), ('bcsel', (xeq, b, zero), a, ('bcsel', (xeq, b, one), ('inot', a), True))),
     ]
 
 # This section contains "late" optimizations that should be run before
