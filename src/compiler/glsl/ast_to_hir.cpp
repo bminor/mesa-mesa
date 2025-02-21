@@ -8286,6 +8286,15 @@ ast_interface_block::hir(ir_exec_list *instructions,
       matrix_layout = GLSL_MATRIX_LAYOUT_COLUMN_MAJOR;
 
    bool redeclaring_per_vertex = strcmp(this->block_name, "gl_PerVertex") == 0;
+   bool redeclaring_mesh_per_vertex =
+      strcmp(this->block_name, "gl_MeshPerVertexEXT") == 0;
+   bool redeclaring_mesh_per_primitive =
+      strcmp(this->block_name, "gl_MeshPerPrimitiveEXT") == 0;
+   bool redeclaring =
+      redeclaring_per_vertex ||
+      redeclaring_mesh_per_vertex ||
+      redeclaring_mesh_per_primitive;
+
    ir_exec_list declared_variables;
    glsl_struct_field *fields;
 
@@ -8365,7 +8374,7 @@ ast_interface_block::hir(ir_exec_list *instructions,
                                                 &fields,
                                                 true,
                                                 matrix_layout,
-                                                redeclaring_per_vertex,
+                                                redeclaring,
                                                 var_mode,
                                                 &this->layout,
                                                 qual_stream,
@@ -8374,7 +8383,7 @@ ast_interface_block::hir(ir_exec_list *instructions,
                                                 expl_location,
                                                 expl_align);
 
-   if (!redeclaring_per_vertex) {
+   if (!redeclaring) {
       validate_identifier(this->block_name, loc, state);
 
       /* From section 4.3.9 ("Interface Blocks") of the GLSL 4.50 spec:
@@ -8391,7 +8400,7 @@ ast_interface_block::hir(ir_exec_list *instructions,
       }
    }
 
-   const glsl_type *earlier_per_vertex = NULL;
+   const glsl_type *earlier_redeclaring = NULL;
    if (redeclaring_per_vertex) {
       /* Find the previous declaration of gl_PerVertex.  If we're redeclaring
        * the named interface block gl_in, we can find it by looking at the
@@ -8406,7 +8415,7 @@ ast_interface_block::hir(ir_exec_list *instructions,
       case ir_var_shader_in:
          if (ir_variable *earlier_gl_in =
              state->symbols->get_variable("gl_in")) {
-            earlier_per_vertex = earlier_gl_in->get_interface_type();
+            earlier_redeclaring = earlier_gl_in->get_interface_type();
          } else {
             _mesa_glsl_error(&loc, state,
                              "redeclaration of gl_PerVertex input not allowed "
@@ -8424,10 +8433,10 @@ ast_interface_block::hir(ir_exec_list *instructions,
       case ir_var_shader_out:
          if (ir_variable *earlier_gl_Position =
              state->symbols->get_variable("gl_Position")) {
-            earlier_per_vertex = earlier_gl_Position->get_interface_type();
+            earlier_redeclaring = earlier_gl_Position->get_interface_type();
          } else if (ir_variable *earlier_gl_out =
                state->symbols->get_variable("gl_out")) {
-            earlier_per_vertex = earlier_gl_out->get_interface_type();
+            earlier_redeclaring = earlier_gl_out->get_interface_type();
          } else {
             _mesa_glsl_error(&loc, state,
                              "redeclaration of gl_PerVertex output not "
@@ -8455,44 +8464,78 @@ ast_interface_block::hir(ir_exec_list *instructions,
                           "output");
          break;
       }
+   } else if (redeclaring_mesh_per_vertex || redeclaring_mesh_per_primitive) {
+      const char *instance_name = redeclaring_mesh_per_vertex ?
+         "gl_MeshVerticesEXT" : "gl_MeshPrimitivesEXT";
+      ir_variable *earlier_var = state->symbols->get_variable(instance_name);
+      if (earlier_var) {
+         earlier_redeclaring = earlier_var->get_interface_type();
+      } else {
+         _mesa_glsl_error(&loc, state,
+                          "redeclaration of %s output not allowed "
+                          "in the %s shader", this->block_name,
+                          _mesa_shader_stage_to_string(state->stage));
+      }
 
-      if (earlier_per_vertex == NULL) {
+      if (var_mode == ir_var_shader_out) {
+         if (this->instance_name == NULL ||
+             strcmp(this->instance_name, instance_name) != 0 ||
+             this->array_specifier == NULL) {
+            _mesa_glsl_error(&loc, state,
+                             "%s output must be redeclared as %s[]",
+                             this->block_name, instance_name);
+         }
+      } else {
+         _mesa_glsl_error(&loc, state,
+                          "%s must be declared as an output", this->block_name);
+      }
+
+      if (redeclaring_mesh_per_primitive && !this->layout.flags.q.per_primitive) {
+         _mesa_glsl_error(&loc, state,
+                          "gl_MeshPerPrimitiveEXT must be declared with "
+                          "perprimitiveEXT");
+      }
+   }
+
+   if (redeclaring) {
+      if (earlier_redeclaring == NULL) {
          /* An error has already been reported.  Bail out to avoid null
           * dereferences later in this function.
           */
          return NULL;
       }
 
-      /* Copy locations from the old gl_PerVertex interface block. */
+      /* Copy locations from the old interface block. */
       for (unsigned i = 0; i < num_variables; i++) {
-         int j = glsl_get_field_index(earlier_per_vertex, fields[i].name);
+         int j = glsl_get_field_index(earlier_redeclaring, fields[i].name);
          if (j == -1) {
             _mesa_glsl_error(&loc, state,
-                             "redeclaration of gl_PerVertex must be a subset "
-                             "of the built-in members of gl_PerVertex");
+                             "redeclaration of %s must be a subset "
+                             "of the built-in members of %s",
+                             this->block_name, this->block_name);
          } else {
             fields[i].location =
-               earlier_per_vertex->fields.structure[j].location;
+               earlier_redeclaring->fields.structure[j].location;
             fields[i].offset =
-               earlier_per_vertex->fields.structure[j].offset;
+               earlier_redeclaring->fields.structure[j].offset;
             fields[i].interpolation =
-               earlier_per_vertex->fields.structure[j].interpolation;
+               earlier_redeclaring->fields.structure[j].interpolation;
             fields[i].centroid =
-               earlier_per_vertex->fields.structure[j].centroid;
+               earlier_redeclaring->fields.structure[j].centroid;
             fields[i].sample =
-               earlier_per_vertex->fields.structure[j].sample;
+               earlier_redeclaring->fields.structure[j].sample;
             fields[i].patch =
-               earlier_per_vertex->fields.structure[j].patch;
+               earlier_redeclaring->fields.structure[j].patch;
             fields[i].per_primitive =
-               earlier_per_vertex->fields.structure[j].per_primitive;
+               earlier_redeclaring->fields.structure[j].per_primitive;
             fields[i].precision =
-               earlier_per_vertex->fields.structure[j].precision;
+               earlier_redeclaring->fields.structure[j].precision;
             fields[i].explicit_xfb_buffer =
-               earlier_per_vertex->fields.structure[j].explicit_xfb_buffer;
+               earlier_redeclaring->fields.structure[j].explicit_xfb_buffer;
             fields[i].xfb_buffer =
-               earlier_per_vertex->fields.structure[j].xfb_buffer;
+               earlier_redeclaring->fields.structure[j].xfb_buffer;
             fields[i].xfb_stride =
-               earlier_per_vertex->fields.structure[j].xfb_stride;
+               earlier_redeclaring->fields.structure[j].xfb_stride;
          }
       }
 
@@ -8507,7 +8550,7 @@ ast_interface_block::hir(ir_exec_list *instructions,
        * gl_PerVertex by GLSL 1.50, therefore we implement this behaviour
        * regardless of GLSL version.
        */
-      interface_block_usage_visitor v(var_mode, earlier_per_vertex);
+      interface_block_usage_visitor v(var_mode, earlier_redeclaring);
       v.run(instructions);
       if (v.usage_found()) {
          _mesa_glsl_error(&loc, state,
@@ -8565,6 +8608,10 @@ ast_interface_block::hir(ir_exec_list *instructions,
               this->array_specifier == NULL &&
               var_mode == ir_var_shader_out) {
       _mesa_glsl_error(&loc, state, "tessellation control shader outputs must be arrays");
+   } else if (state->stage == MESA_SHADER_MESH &&
+              this->array_specifier == NULL &&
+              var_mode == ir_var_shader_out) {
+      _mesa_glsl_error(&loc, state, "mesh shader outputs must be arrays");
    }
 
 
@@ -8576,7 +8623,7 @@ ast_interface_block::hir(ir_exec_list *instructions,
     *     field selector ( . ) operator (analogously to structures)."
     */
    if (this->instance_name) {
-      if (redeclaring_per_vertex) {
+      if (redeclaring) {
          /* When a built-in in an unnamed interface block is redeclared,
           * get_variable_being_redeclared() calls
           * check_builtin_array_max_size() to make sure that built-in array
@@ -8624,7 +8671,7 @@ ast_interface_block::hir(ir_exec_list *instructions,
           *     per-vertex-arrays as required for tessellation, it is an error
           *     to declare a member of the block with a location qualifier."
           */
-         if (!redeclaring_per_vertex &&
+         if (!redeclaring &&
              (state->has_enhanced_layouts() || state->has_shader_io_blocks())) {
             bool allow_location;
             switch (state->stage)
@@ -8636,6 +8683,10 @@ ast_interface_block::hir(ir_exec_list *instructions,
             case MESA_SHADER_GEOMETRY:
                allow_location = (this->array_specifier->is_single_dimension()
                                  && var_mode == ir_var_shader_in);
+               break;
+            case MESA_SHADER_MESH:
+               allow_location = (this->array_specifier->is_single_dimension()
+                                 && var_mode == ir_var_shader_out);
                break;
             default:
                allow_location = false;
@@ -8681,7 +8732,8 @@ ast_interface_block::hir(ir_exec_list *instructions,
             bool allow_inputs = state->stage == MESA_SHADER_GEOMETRY ||
                                 state->stage == MESA_SHADER_TESS_CTRL ||
                                 state->stage == MESA_SHADER_TESS_EVAL;
-            bool allow_outputs = state->stage == MESA_SHADER_TESS_CTRL;
+            bool allow_outputs = state->stage == MESA_SHADER_TESS_CTRL ||
+                                 state->stage == MESA_SHADER_MESH;
 
             if (this->layout.flags.q.in) {
                if (!allow_inputs)
@@ -8750,7 +8802,7 @@ ast_interface_block::hir(ir_exec_list *instructions,
 
       if (ir_variable *earlier =
           state->symbols->get_variable(this->instance_name)) {
-         if (!redeclaring_per_vertex) {
+         if (!redeclaring) {
             _mesa_glsl_error(&loc, state, "`%s' redeclared",
                              this->instance_name);
          }
@@ -8888,7 +8940,7 @@ ast_interface_block::hir(ir_exec_list *instructions,
          instructions->push_tail(var);
       }
 
-      if (redeclaring_per_vertex && block_type != earlier_per_vertex) {
+      if (redeclaring_per_vertex && block_type != earlier_redeclaring) {
          /* From section 7.1 ("Built-in Language Variables") of the GLSL 4.10 spec:
           *
           *     It is also a compilation error ... to redeclare a built-in
@@ -8913,7 +8965,7 @@ ast_interface_block::hir(ir_exec_list *instructions,
          ir_foreach_in_list_safe(ir_instruction, node, instructions) {
             ir_variable *const var = node->as_variable();
             if (var != NULL &&
-                var->get_interface_type() == earlier_per_vertex &&
+                var->get_interface_type() == earlier_redeclaring &&
                 var->data.mode == var_mode) {
                if (var->data.how_declared == ir_var_declared_normally) {
                   _mesa_glsl_error(&loc, state,
