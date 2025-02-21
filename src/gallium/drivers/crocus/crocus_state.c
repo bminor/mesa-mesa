@@ -1045,7 +1045,7 @@ emit:
    const struct shader_info *fs_info =
       crocus_get_shader_info(ice, MESA_SHADER_FRAGMENT);
 
-   if (BITSET_TEST(fs_info->system_values_read, SYSTEM_VALUE_FRAG_COORD)) {
+   if (BITSET_TEST(fs_info->system_values_read, SYSTEM_VALUE_FRAG_COORD_Z)) {
       ice->state.global_depth_offset_clamp = 0;
       crocus_emit_cmd(batch, GENX(3DSTATE_GLOBAL_DEPTH_OFFSET_CLAMP), clamp);
    }

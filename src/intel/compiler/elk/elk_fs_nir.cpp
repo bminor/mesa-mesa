@@ -3317,37 +3317,6 @@ emit_is_helper_invocation(nir_to_elk_state &ntb, elk_fs_reg result)
    }
 }
 
-static void
-emit_fragcoord_interpolation(nir_to_elk_state &ntb, elk_fs_reg wpos)
-{
-   const intel_device_info *devinfo = ntb.devinfo;
-   const fs_builder &bld = ntb.bld;
-   elk_fs_visitor &s = ntb.s;
-
-   assert(s.stage == MESA_SHADER_FRAGMENT);
-
-   /* gl_FragCoord.x */
-   bld.MOV(wpos, s.pixel_x);
-   wpos = offset(wpos, bld, 1);
-
-   /* gl_FragCoord.y */
-   bld.MOV(wpos, s.pixel_y);
-   wpos = offset(wpos, bld, 1);
-
-   /* gl_FragCoord.z */
-   if (devinfo->ver >= 6) {
-      bld.MOV(wpos, s.pixel_z);
-   } else {
-      bld.emit(ELK_FS_OPCODE_LINTERP, wpos,
-               s.delta_xy[ELK_BARYCENTRIC_PERSPECTIVE_PIXEL],
-               s.interp_reg(bld, VARYING_SLOT_POS, 2, 0));
-   }
-   wpos = offset(wpos, bld, 1);
-
-   /* gl_FragCoord.w: Already set up in emit_interpolation */
-   bld.MOV(wpos, s.wpos_w);
-}
-
 static elk_fs_reg
 emit_frontfacing_interpolation(nir_to_elk_state &ntb)
 {
@@ -3939,7 +3908,29 @@ fs_nir_emit_fs_intrinsic(nir_to_elk_state &ntb,
    }
 
    case nir_intrinsic_load_frag_coord:
-      emit_fragcoord_interpolation(ntb, dest);
+      unreachable("should be lowered by elk_nir_lower_frag_coord");
+
+   case nir_intrinsic_load_pixel_coord:
+      /* gl_FragCoord.xy: Just load the pixel xy from the payload, or more
+      * complicated emit_interpolation_setup_gfx6 setup
+      */
+      dest = retype(dest, ELK_REGISTER_TYPE_UW);
+      bld.MOV(dest, s.uw_pixel_x);
+      bld.MOV(offset(dest, bld, 1), s.uw_pixel_y);
+      break;
+
+   case nir_intrinsic_load_frag_coord_z:
+      if (devinfo->ver >= 6) {
+         bld.MOV(dest, s.pixel_z);
+      } else {
+         bld.emit(ELK_FS_OPCODE_LINTERP, dest,
+                  s.delta_xy[ELK_BARYCENTRIC_PERSPECTIVE_PIXEL],
+                  s.interp_reg(bld, VARYING_SLOT_POS, 2, 0));
+      }
+      break;
+
+   case nir_intrinsic_load_frag_coord_w:
+      bld.MOV(dest, s.wpos_w);
       break;
 
    case nir_intrinsic_load_interpolated_input: {

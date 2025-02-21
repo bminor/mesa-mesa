@@ -1551,7 +1551,6 @@ region_alignment_rules(const struct elk_isa_info *isa,
     * float destination type as well. We emit such instructions from
     *
     *    elk_fs_visitor::emit_interpolation_setup_gfx6
-    *    elk_fs_visitor::emit_fragcoord_interpolation
     *
     * and have for years with no ill effects.
     *

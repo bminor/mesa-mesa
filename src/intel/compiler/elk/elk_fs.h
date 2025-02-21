@@ -389,6 +389,8 @@ public:
    bool source_depth_to_render_target;
    bool runtime_check_aads_emit;
 
+   elk_fs_reg uw_pixel_x;
+   elk_fs_reg uw_pixel_y;
    elk_fs_reg pixel_x;
    elk_fs_reg pixel_y;
    elk_fs_reg pixel_z;

@@ -1374,6 +1374,11 @@ elk_postprocess_nir(nir_shader *nir, const struct elk_compiler *compiler,
 
    OPT(intel_nir_lower_sparse_intrinsics);
 
+   if (nir->info.stage == MESA_SHADER_FRAGMENT) {
+      /* This needs to run late, after lower_wpos_center and lower_input_attachments. */
+      OPT(nir_lower_frag_coord_to_pixel_coord);
+   }
+
    OPT(nir_lower_bit_size, lower_bit_size_callback, (void *)compiler);
 
    OPT(nir_opt_combine_barriers, combine_all_memory_barriers, NULL);

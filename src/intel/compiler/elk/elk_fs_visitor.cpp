@@ -216,8 +216,8 @@ elk_fs_visitor::emit_interpolation_setup_gfx6()
    elk_fs_reg half_int_pixel_offset_x = half_int_sample_offset_x;
    elk_fs_reg half_int_pixel_offset_y = half_int_sample_offset_y;
 
-   elk_fs_reg uw_pixel_x = abld.vgrf(ELK_REGISTER_TYPE_UW);
-   elk_fs_reg uw_pixel_y = abld.vgrf(ELK_REGISTER_TYPE_UW);
+   uw_pixel_x = abld.vgrf(ELK_REGISTER_TYPE_UW);
+   uw_pixel_y = abld.vgrf(ELK_REGISTER_TYPE_UW);
 
    for (unsigned i = 0; i < DIV_ROUND_UP(dispatch_width, 16); i++) {
       const fs_builder hbld = abld.group(MIN2(16, dispatch_width), i);
