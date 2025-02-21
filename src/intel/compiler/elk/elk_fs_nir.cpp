@@ -3187,8 +3187,8 @@ emit_non_coherent_fb_read(nir_to_elk_state &ntb, const fs_builder &bld, const el
 
    /* Calculate the fragment coordinates. */
    const elk_fs_reg coords = bld.vgrf(ELK_REGISTER_TYPE_UD, 3);
-   bld.MOV(offset(coords, bld, 0), s.pixel_x);
-   bld.MOV(offset(coords, bld, 1), s.pixel_y);
+   bld.MOV(offset(coords, bld, 0), s.uw_pixel_x);
+   bld.MOV(offset(coords, bld, 1), s.uw_pixel_y);
    bld.MOV(offset(coords, bld, 2), fetch_render_target_array_index(bld));
 
    /* Calculate the sample index and MCS payload when multisampling.  Luckily
