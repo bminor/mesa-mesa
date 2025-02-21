@@ -127,7 +127,7 @@ agx_bo_bind(struct agx_device *dev, struct agx_bo *bo, uint64_t addr,
    int ret = drmIoctl(dev->fd, DRM_IOCTL_ASAHI_GEM_BIND, &gem_bind);
    if (ret) {
       fprintf(stderr, "DRM_IOCTL_ASAHI_GEM_BIND failed: %m (handle=%d)\n",
-              bo->handle);
+              bo ? bo->handle : 0);
    }
 
    return ret;
