@@ -765,23 +765,6 @@ calculate_urb_setup(const struct intel_device_info *devinfo,
 
    brw_compute_urb_setup_index(prog_data);
 }
-static bool
-is_used_in_not_interp_frag_coord(nir_def *def)
-{
-   nir_foreach_use_including_if(src, def) {
-      if (nir_src_is_if(src))
-         return true;
-
-      if (nir_src_parent_instr(src)->type != nir_instr_type_intrinsic)
-         return true;
-
-      nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(nir_src_parent_instr(src));
-      if (intrin->intrinsic != nir_intrinsic_load_frag_coord)
-         return true;
-   }
-
-   return false;
-}
 
 /**
  * Return a bitfield where bit n is set if barycentric interpolation mode n
@@ -815,10 +798,6 @@ brw_compute_barycentric_interp_modes(const struct intel_device_info *devinfo,
             default:
                continue;
             }
-
-            /* Ignore WPOS; it doesn't require interpolation. */
-            if (!is_used_in_not_interp_frag_coord(&intrin->def))
-               continue;
 
             enum intel_barycentric_mode bary =
                brw_barycentric_mode(key, intrin);
