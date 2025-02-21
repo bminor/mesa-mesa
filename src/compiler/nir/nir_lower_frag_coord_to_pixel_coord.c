@@ -18,9 +18,12 @@ lower(nir_builder *b, nir_intrinsic_instr *intr, UNUSED void *data)
     */
    b->cursor = nir_before_instr(&intr->instr);
    nir_def *xy = nir_u2f32(b, nir_load_pixel_coord(b));
+   BITSET_SET(b->shader->info.system_values_read, SYSTEM_VALUE_PIXEL_COORD);
    nir_def *vec = nir_vec4(b, nir_channel(b, xy, 0), nir_channel(b, xy, 1),
                            nir_load_frag_coord_z(b),
                            nir_load_frag_coord_w(b));
+   BITSET_SET(b->shader->info.system_values_read, SYSTEM_VALUE_FRAG_COORD_Z);
+   BITSET_SET(b->shader->info.system_values_read, SYSTEM_VALUE_FRAG_COORD_W);
    nir_def_rewrite_uses(&intr->def, vec);
    return true;
 }
