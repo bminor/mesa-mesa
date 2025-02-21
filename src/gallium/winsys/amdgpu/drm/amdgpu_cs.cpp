@@ -1202,20 +1202,23 @@ static void amdgpu_cs_add_fence_dependency(struct radeon_cmdbuf *rcs,
                                            struct pipe_fence_handle *pfence)
 {
    struct amdgpu_cs *acs = amdgpu_cs(rcs);
+   struct amdgpu_winsys *aws = acs->aws;
    struct amdgpu_cs_context *csc = amdgpu_csc_get_current(acs);
    struct amdgpu_fence *fence = (struct amdgpu_fence*)pfence;
 
    util_queue_fence_wait(&fence->submitted);
 
    if (!fence->imported) {
-      /* Ignore idle fences. This will only check the user fence in memory. */
-      if (!amdgpu_fence_wait((struct pipe_fence_handle *)fence, 0, false)) {
-         add_seq_no_to_list(acs->aws, &csc->seq_no_dependencies, fence->queue_index,
-                            fence->queue_seq_no);
+      if (!aws->info.use_userq || fence->ip_type != acs->ip_type || acs->ip_type > AMD_IP_SDMA) {
+         /* Ignore idle fences. This will only check the user fence in memory. */
+         if (!amdgpu_fence_wait((struct pipe_fence_handle *)fence, 0, false)) {
+            add_seq_no_to_list(acs->aws, &csc->seq_no_dependencies, fence->queue_index,
+                               fence->queue_seq_no);
+         }
       }
-   }
-   else
+   } else {
       add_fence_to_list(&csc->syncobj_dependencies, fence);
+   }
 }
 
 static void amdgpu_add_fences_to_dependencies(struct amdgpu_winsys *ws,
