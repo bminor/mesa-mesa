@@ -1161,11 +1161,11 @@ check_drm_format_mod(const struct anv_device *device,
    assert(isl_drm_modifier_get_score(device->info, isl_mod_info->modifier));
 
    /* Enforced by us, not the Vulkan spec. */
-   assert(image->vk.image_type == VK_IMAGE_TYPE_2D);
+   assert(image->vk.image_type == VK_IMAGE_TYPE_2D || image->vk.drm_format_mod == DRM_FORMAT_MOD_LINEAR);
    assert(!(image->vk.aspects & VK_IMAGE_ASPECT_DEPTH_BIT));
    assert(!(image->vk.aspects & VK_IMAGE_ASPECT_STENCIL_BIT));
    assert(image->vk.mip_levels == 1);
-   assert(image->vk.array_layers == 1);
+   assert(image->vk.array_layers == 1 || image->vk.drm_format_mod == DRM_FORMAT_MOD_LINEAR);
    assert(image->vk.samples == 1);
 
    for (int i = 0; i < image->n_planes; ++i) {
@@ -2896,8 +2896,8 @@ anv_get_image_subresource_layout(struct anv_device *device,
              image->planes[0].primary_surface.memory_range.binding);
 
       /* We are working with a non-arrayed 2D image. */
-      assert(image->vk.image_type == VK_IMAGE_TYPE_2D);
-      assert(image->vk.array_layers == 1);
+      assert(image->vk.image_type == VK_IMAGE_TYPE_2D || image->vk.drm_format_mod == DRM_FORMAT_MOD_LINEAR);
+      assert(image->vk.array_layers == 1 || image->vk.drm_format_mod == DRM_FORMAT_MOD_LINEAR);
    } else {
       const uint32_t plane =
          anv_image_aspect_to_plane(image,

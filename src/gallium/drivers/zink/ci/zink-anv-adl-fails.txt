@@ -684,6 +684,3 @@ spec@ext_framebuffer_multisample@interpolation 2 centroid-deriv-disabled,Fail
 
 # New crash with Xe KMD
 spec@!opengl 1.1@streaming-texture-leak,Crash
-
-# ANV doesn't support 3D dmabufs
-spec@egl 1.4@egl-ext_egl_image_storage,Crash

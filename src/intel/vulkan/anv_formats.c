@@ -864,7 +864,8 @@ anv_get_image_format_features2(const struct anv_physical_device *physical_device
           * has no type suffix) or sfloat (if it has suffix F). No format
           * contains mixed types. (as of 2021-06-14)
           */
-         if (isl_layout->uniform_channel_type != ISL_UNORM &&
+         if (isl_mod_info->modifier != DRM_FORMAT_MOD_LINEAR &&
+             isl_layout->uniform_channel_type != ISL_UNORM &&
              isl_layout->uniform_channel_type != ISL_SFLOAT)
             return 0;
          break;
@@ -1639,14 +1640,15 @@ anv_get_image_format_properties(
       /* We support modifiers only for "simple" (that is, non-array
        * non-mipmapped single-sample) 2D images.
        */
-      if (info->type != VK_IMAGE_TYPE_2D) {
+      if (info->type != VK_IMAGE_TYPE_2D && isl_mod_info->modifier != DRM_FORMAT_MOD_LINEAR) {
          vk_errorf(physical_device, VK_ERROR_FORMAT_NOT_SUPPORTED,
-                   "VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT "
+                   "non-linear VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT "
                    "requires VK_IMAGE_TYPE_2D");
          goto unsupported;
       }
-
-      maxArraySize = 1;
+ 
+      if (isl_mod_info->modifier != DRM_FORMAT_MOD_LINEAR)
+         maxArraySize = 1;
       maxMipLevels = 1;
       sampleCounts = VK_SAMPLE_COUNT_1_BIT;
 
