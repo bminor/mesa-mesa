@@ -30,6 +30,7 @@ import argparse
 
 import gl_XML, glX_XML, glX_proto_common, license
 import copy
+import static_data
 
 def convertStringForXCB(str):
     tmp = ""
@@ -1041,7 +1042,7 @@ extern NOINLINE GLubyte * __glXSetupVendorRequest(
             for n in func.entry_points:
                 if func.has_different_protocol(n):
                     asdf = func.static_glx_name(n)
-                    if asdf not in func.static_entry_points:
+                    if asdf not in static_data.libgl_public_functions:
                         print('extern %s gl%s(%s);' % (func.return_type, asdf, params))
                         # give it a easy-to-remember name
                         if func.client_handcode:

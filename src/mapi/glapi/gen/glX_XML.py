@@ -27,6 +27,7 @@
 import gl_XML
 import license
 import sys, getopt, string
+import static_data
 
 
 class glx_item_factory(gl_XML.gl_item_factory):
@@ -522,7 +523,7 @@ class glx_function(gl_XML.gl_function):
     def static_glx_name(self, name):
         if self.has_different_protocol(name):
             for n in self.glx_vendorpriv_names:
-                if n in self.static_entry_points:
+                if n in static_data.libgl_public_functions:
                     return n
 
         return self.static_name(name)

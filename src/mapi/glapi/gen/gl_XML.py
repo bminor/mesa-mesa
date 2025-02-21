@@ -588,8 +588,6 @@ class gl_function( gl_item ):
         # Decimal('1.1') }.
         self.api_map = {}
 
-        self.static_entry_points = []
-
         # Track the parameter string (for the function prototype)
         # for each entry-point.  This is done because some functions
         # change their prototype slightly when promoted from extension
@@ -618,9 +616,6 @@ class gl_function( gl_item ):
         assert not alias or not element.get('marshal_call_before')
         assert not alias or not element.get('marshal_call_after')
         assert not alias or not element.get('deprecated')
-
-        if name in static_data.libgl_public_functions:
-            self.static_entry_points.append(name)
 
         self.entry_points.append( name )
 
@@ -719,29 +714,6 @@ class gl_function( gl_item ):
 
         return
 
-    def filter_entry_points(self, entry_point_list):
-        """Filter out entry points not in entry_point_list."""
-        if not self.initialized:
-            raise RuntimeError('%s is not initialized yet' % self.name)
-
-        entry_points = []
-        for ent in self.entry_points:
-            if ent not in entry_point_list:
-                if ent in self.static_entry_points:
-                    self.static_entry_points.remove(ent)
-                self.entry_point_parameters.pop(ent)
-            else:
-                entry_points.append(ent)
-
-        if not entry_points:
-            raise RuntimeError('%s has no entry point after filtering' % self.name)
-
-        self.entry_points = entry_points
-        if self.name not in entry_points:
-            # use the first remaining entry point
-            self.name = entry_points[0]
-            self.parameters = self.entry_point_parameters[entry_points[0]]
-
     def get_images(self):
         """Return potentially empty list of input images."""
         return self.images
@@ -775,16 +747,16 @@ class gl_function( gl_item ):
         return p_string
 
     def is_static_entry_point(self, name):
-        return name in self.static_entry_points
+        return name in static_data.libgl_public_functions
 
     def dispatch_name(self):
-        if self.name in self.static_entry_points:
+        if self.name in static_data.libgl_public_functions:
             return self.name
         else:
             return "_dispatch_stub_%u" % (self.offset)
 
     def static_name(self, name):
-        if name in self.static_entry_points:
+        if name in static_data.libgl_public_functions:
             return name
         else:
             return "_dispatch_stub_%u" % (self.offset)
