@@ -614,7 +614,7 @@
         "description": "r600: update the software fp64 support",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "aed6a39c10c328c32e6009e6f5c00cfdd9257e73",
         "notes": null
