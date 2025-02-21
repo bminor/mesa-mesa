@@ -488,6 +488,35 @@ lower_barycentric_at_offset(nir_builder *b, nir_intrinsic_instr *intrin,
    return true;
 }
 
+static bool
+elk_nir_lower_load_frag_coord_w_gfx4_instr(nir_builder *b, nir_intrinsic_instr *intr, void *_data)
+{
+   if (intr->intrinsic != nir_intrinsic_load_frag_coord_w)
+      return false;
+
+   nir_variable *pos = nir_get_variable_with_location(b->shader, nir_var_shader_in,
+                                                      VARYING_SLOT_POS, glsl_vec4_type());
+
+   /* See elk_nir_lower_fs_inputs(), which did this for other vars already. */
+   pos->data.driver_location = VARYING_SLOT_POS;
+
+   b->cursor = nir_instr_remove(&intr->instr);
+   nir_def_rewrite_uses(&intr->def, nir_channel(b, nir_load_var(b, pos), 3));
+
+   return true;
+}
+
+/* No actual sysval for gl_FragCoord.w on this hardware, promote it to a varying
+ * interpolation.
+ */
+static bool
+elk_nir_lower_load_frag_coord_w_gfx4(nir_shader *shader)
+{
+   return nir_shader_intrinsics_pass(shader, elk_nir_lower_load_frag_coord_w_gfx4_instr,
+                                     nir_metadata_block_index | nir_metadata_dominance,
+                                     NULL);
+}
+
 void
 elk_nir_lower_fs_inputs(nir_shader *nir,
                         const struct intel_device_info *devinfo,
@@ -518,6 +547,13 @@ elk_nir_lower_fs_inputs(nir_shader *nir,
          var->data.centroid = false;
          var->data.sample = false;
       }
+   }
+
+   /* This needs to run late, after lower_wpos_center and lower_input_attachments. */
+   NIR_PASS(_, nir, nir_lower_frag_coord_to_pixel_coord);
+   if (devinfo->ver < 6) {
+      /* Needs to be run before nir_lower_io. */
+      NIR_PASS(_, nir, elk_nir_lower_load_frag_coord_w_gfx4);
    }
 
    nir_lower_io(nir, nir_var_shader_in, elk_type_size_vec4,
@@ -1373,11 +1409,6 @@ elk_postprocess_nir(nir_shader *nir, const struct elk_compiler *compiler,
    UNUSED bool progress; /* Written by OPT */
 
    OPT(intel_nir_lower_sparse_intrinsics);
-
-   if (nir->info.stage == MESA_SHADER_FRAGMENT) {
-      /* This needs to run late, after lower_wpos_center and lower_input_attachments. */
-      OPT(nir_lower_frag_coord_to_pixel_coord);
-   }
 
    OPT(nir_lower_bit_size, lower_bit_size_callback, (void *)compiler);
 

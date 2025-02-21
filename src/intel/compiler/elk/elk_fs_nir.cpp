@@ -3930,6 +3930,8 @@ fs_nir_emit_fs_intrinsic(nir_to_elk_state &ntb,
       break;
 
    case nir_intrinsic_load_frag_coord_w:
+      /* Lowered to interpolation pre-gen6. */
+      assert(devinfo->ver >= 6);
       bld.MOV(dest, s.wpos_w);
       break;
 
