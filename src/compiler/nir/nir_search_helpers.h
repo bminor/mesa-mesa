@@ -595,7 +595,9 @@ is_only_used_as_float_impl(const nir_alu_instr *instr, unsigned depth)
        * in SSA. However, we limit the search depth regardless to avoid stack
        * overflows in patholgical shaders and to reduce the worst-case time.
        */
-      if (user_alu->op == nir_op_bcsel && index != 0 && depth < 8) {
+      bool is_mov = (user_alu->op == nir_op_bcsel && index != 0) ||
+                    nir_op_is_vec_or_mov(user_alu->op);
+      if (is_mov && depth < 8) {
          if (is_only_used_as_float_impl(user_alu, depth + 1))
             continue;
       }
