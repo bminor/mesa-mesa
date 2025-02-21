@@ -18,6 +18,9 @@
 #include "nir_intrinsics_indices.h"
 #include "shader_enums.h"
 
+/* Residency flags are inverted from NIR */
+#define AGX_RESIDENT (0)
+
 static bool
 fence_image(struct nir_builder *b, nir_intrinsic_instr *intr, void *data)
 {
@@ -156,7 +159,18 @@ lower_buffer_texture(nir_builder *b, nir_tex_instr *tex)
 
    nir_def *rgb32 = nir_trim_vector(
       b, libagx_texture_load_rgb32(b, desc, coord, nir_imm_bool(b, is_float)),
-      nir_tex_instr_dest_size(tex));
+      nir_tex_instr_result_size(tex));
+
+   /* Raw loads do not return residency information, but residency queries are
+    * supported on buffer textures. Fortunately, we do not need to support
+    * sparse RGB32 buffers, so we simply claim all RGB32 loads were resident.
+    * Nothing should hit this in practice, but if we don't do *something* here
+    * we'll get vector size mismatches which blow up in vkd3d-proton.
+    */
+   if (tex->is_sparse) {
+      rgb32 = nir_pad_vector_imm_int(b, rgb32, AGX_RESIDENT,
+                                     rgb32->num_components + 1);
+   }
 
    nir_push_else(b, nif);
 
@@ -658,8 +672,9 @@ lower_images(nir_builder *b, nir_intrinsic_instr *intr, UNUSED void *data)
       /* Residency information is in bit 0, so we need to mask. Unclear what's
        * in the upper bits. For now, let's match the blob.
        */
-      nir_def_replace(&intr->def,
-                      nir_ieq_imm(b, nir_iand_imm(b, intr->src[0].ssa, 1), 0));
+      nir_def_replace(
+         &intr->def,
+         nir_ieq_imm(b, nir_iand_imm(b, intr->src[0].ssa, 1), AGX_RESIDENT));
       return true;
 
    case nir_intrinsic_sparse_residency_code_and:
