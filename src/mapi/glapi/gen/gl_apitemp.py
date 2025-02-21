@@ -58,7 +58,7 @@ class PrintGlOffsets(gl_XML.gl_print_base):
         t_string = ""
         comma = ""
 
-        if f.is_static_entry_point(name):
+        if name in static_data.libgl_public_functions:
             keyword = "KEYWORD1"
         else:
             keyword = "KEYWORD1_ALT"
@@ -91,7 +91,7 @@ class PrintGlOffsets(gl_XML.gl_print_base):
             dispatch = "DISPATCH"
 
         need_proto = False
-        if not f.is_static_entry_point(name):
+        if name not in static_data.libgl_public_functions:
             need_proto = True
         elif self.es:
             cat, num = api.get_category_for_name(name)
@@ -251,12 +251,12 @@ _glapi_proc UNUSED_TABLE_NAME[] = {""")
         # classify the entry points
         for name in func.entry_points:
             if func.has_different_protocol(name):
-                if func.is_static_entry_point(name):
+                if name in static_data.libgl_public_functions:
                     proto_names.append(name)
                 else:
                     proto_stubs.append(name)
             else:
-                if func.is_static_entry_point(name):
+                if name in static_data.libgl_public_functions:
                     normal_names.append(name)
                 else:
                     normal_stubs.append(name)

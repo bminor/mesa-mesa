@@ -162,7 +162,7 @@ class PrintGenericStubs(gl_XML.gl_print_base):
 
             print('\tGL_STUB(%s, %d, %s)' % (name, f.offset, alt))
 
-            if not f.is_static_entry_point(f.name):
+            if f.name not in static_data.libgl_public_functions:
                 print('\tHIDDEN(GL_PREFIX(%s, %s))' % (name, alt))
 
 
@@ -172,7 +172,7 @@ class PrintGenericStubs(gl_XML.gl_print_base):
             alt = "%s@%u" % (name, stack)
 
             for n in f.entry_points:
-                if f.is_static_entry_point(n):
+                if n in static_data.libgl_public_functions:
                     if n != f.name:
                         alt2 = "%s@%u" % (n, stack)
                         text = '\tGL_STUB_ALIAS(%s, %d, %s, %s, %s)' % (n, f.offset, alt2, name, alt)

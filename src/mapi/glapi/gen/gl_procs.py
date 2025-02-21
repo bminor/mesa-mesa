@@ -29,6 +29,7 @@ import argparse
 import license
 import gl_XML
 import glX_XML
+import static_data
 
 
 class PrintGlProcs(gl_XML.gl_print_base):
@@ -114,7 +115,8 @@ typedef struct {
         print('#if defined(NEED_FUNCTION_POINTER) || defined(GLX_INDIRECT_RENDERING)')
         for func in api.functionIterateByOffset():
             for n in func.entry_points:
-                if (not func.is_static_entry_point(func.name)) or (func.has_different_protocol(n) and not func.is_static_entry_point(n)):
+                if (func.name not in static_data.libgl_public_functions or
+                    (func.has_different_protocol(n) and n not in static_data.libgl_public_functions)):
                     print('%s GLAPIENTRY gl_dispatch_stub_%u(%s);' % (func.return_type, func.offset, func.get_parameter_string()))
                     break
 

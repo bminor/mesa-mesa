@@ -29,6 +29,7 @@ import copy
 
 import license
 import gl_XML, glX_XML
+import static_data
 
 def should_use_push(registers):
     for [reg, offset] in registers:
@@ -197,7 +198,7 @@ class PrintGenericStubs(gl_XML.gl_print_base):
         print('\t.p2align\t4,,15')
         print('\t.globl\tGL_PREFIX(%s)' % (name))
         print('\t.type\tGL_PREFIX(%s), @function' % (name))
-        if not f.is_static_entry_point(f.name):
+        if f.name not in static_data.libgl_public_functions:
             print('\tHIDDEN(GL_PREFIX(%s))' % (name))
         print('GL_PREFIX(%s):' % (name))
         print('\tcall\t_x86_64_get_dispatch@PLT')
@@ -218,7 +219,7 @@ class PrintGenericStubs(gl_XML.gl_print_base):
             dispatch = f.dispatch_name()
             for n in f.entry_points:
                 if n != f.name:
-                    if f.is_static_entry_point(n):
+                    if n in static_data.libgl_public_functions:
                         text = '\t.globl GL_PREFIX(%s) ; .set GL_PREFIX(%s), GL_PREFIX(%s)' % (n, n, dispatch)
 
                         if f.has_different_protocol(n):

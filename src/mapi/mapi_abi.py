@@ -145,7 +145,7 @@ def abi_parse_xml(xml):
         for name in entry_points:
             attrs = {
                     'slot': func.offset,
-                    'hidden': not func.is_static_entry_point(name),
+                    'hidden': name not in static_data.libgl_public_functions,
                     'alias': None if name == func.name else func.name,
                     'handcode': bool(func.has_different_protocol(name)),
             }

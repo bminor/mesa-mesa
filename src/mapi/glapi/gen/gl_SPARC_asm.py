@@ -28,6 +28,7 @@ import argparse
 
 import license
 import gl_XML, glX_XML
+import static_data
 
 class PrintGenericStubs(gl_XML.gl_print_base):
     def __init__(self):
@@ -145,13 +146,13 @@ class PrintGenericStubs(gl_XML.gl_print_base):
 
             print('\tGL_STUB(gl%s, %d)' % (name, f.offset))
 
-            if not f.is_static_entry_point(f.name):
+            if f.name not in static_data.libgl_public_functions:
                 print('\tHIDDEN(gl%s)' % (name))
 
         for f in api.functionIterateByOffset():
             name = f.dispatch_name()
 
-            if f.is_static_entry_point(f.name):
+            if f.name in static_data.libgl_public_functions:
                 for n in f.entry_points:
                     if n != f.name:
                         text = '\tGL_STUB_ALIAS(gl%s, gl%s)' % (n, f.name)

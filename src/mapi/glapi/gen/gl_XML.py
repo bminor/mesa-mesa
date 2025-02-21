@@ -746,9 +746,6 @@ class gl_function( gl_item ):
 
         return p_string
 
-    def is_static_entry_point(self, name):
-        return name in static_data.libgl_public_functions
-
     def dispatch_name(self):
         if self.name in static_data.libgl_public_functions:
             return self.name
