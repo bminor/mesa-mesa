@@ -933,6 +933,7 @@ struct vn_command_buffer_begin_info {
    VkCommandBufferBeginInfo begin;
    VkCommandBufferInheritanceInfo inheritance;
    VkCommandBufferInheritanceConditionalRenderingInfoEXT conditional_rendering;
+   VkRenderingInputAttachmentIndexInfo riai;
 
    bool has_inherited_pass;
    bool in_render_pass;
@@ -988,7 +989,8 @@ vn_fix_command_buffer_begin_info(struct vn_command_buffer *cmd,
       local->has_inherited_pass = true;
    }
 
-   /* Per spec, about VkCommandBufferInheritanceRenderingInfo:
+   /* Per spec, about VkCommandBufferInheritanceRenderingInfo and
+    * VkRenderingAttachmentLocationInfo:
     *
     * If VkCommandBufferInheritanceInfo::renderPass is not VK_NULL_HANDLE, or
     * VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT is not specified in
@@ -1006,7 +1008,13 @@ vn_fix_command_buffer_begin_info(struct vn_command_buffer *cmd,
             sizeof(VkCommandBufferInheritanceConditionalRenderingInfoEXT));
          pnext = &local->conditional_rendering;
          break;
+      case VK_STRUCTURE_TYPE_RENDERING_INPUT_ATTACHMENT_INDEX_INFO:
+         memcpy(&local->riai, src,
+                sizeof(VkRenderingInputAttachmentIndexInfo));
+         pnext = &local->riai;
+         break;
       case VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO:
+      case VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_LOCATION_INFO:
       default:
          break;
       }
@@ -2547,4 +2555,22 @@ vn_CmdSetSampleLocationsEXT(
 {
    VN_CMD_ENQUEUE(vkCmdSetSampleLocationsEXT, commandBuffer,
                   pSampleLocationsInfo);
+}
+
+void
+vn_CmdSetRenderingAttachmentLocations(
+   VkCommandBuffer commandBuffer,
+   const VkRenderingAttachmentLocationInfo *pLocationInfo)
+{
+   VN_CMD_ENQUEUE(vkCmdSetRenderingAttachmentLocations, commandBuffer,
+                  pLocationInfo);
+}
+
+void
+vn_CmdSetRenderingInputAttachmentIndices(
+   VkCommandBuffer commandBuffer,
+   const VkRenderingInputAttachmentIndexInfo *pInputAttachmentIndexInfo)
+{
+   VN_CMD_ENQUEUE(vkCmdSetRenderingInputAttachmentIndices, commandBuffer,
+                  pInputAttachmentIndexInfo);
 }

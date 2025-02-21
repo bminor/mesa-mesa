@@ -161,6 +161,8 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
          ycbcr_2plane_444_formats;
 
       /* Vulkan 1.4 */
+      VkPhysicalDeviceDynamicRenderingLocalReadFeatures
+         dynamic_rendering_local_read;
       VkPhysicalDeviceGlobalPriorityQueryFeatures global_priority_query;
       VkPhysicalDeviceIndexTypeUint8Features index_type_uint8;
       VkPhysicalDeviceLineRasterizationFeatures line_rasterization;
@@ -276,6 +278,7 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
    VN_ADD_PNEXT_EXT(feats2, YCBCR_2_PLANE_444_FORMATS_FEATURES_EXT, local_feats.ycbcr_2plane_444_formats, exts->EXT_ycbcr_2plane_444_formats);
 
    /* Vulkan 1.4 */
+   VN_ADD_PNEXT_EXT(feats2, DYNAMIC_RENDERING_LOCAL_READ_FEATURES, local_feats.dynamic_rendering_local_read, exts->KHR_dynamic_rendering_local_read);
    VN_ADD_PNEXT_EXT(feats2, GLOBAL_PRIORITY_QUERY_FEATURES, local_feats.global_priority_query, exts->KHR_global_priority || exts->EXT_global_priority_query);
    VN_ADD_PNEXT_EXT(feats2, INDEX_TYPE_UINT8_FEATURES, local_feats.index_type_uint8, exts->KHR_index_type_uint8 || exts->EXT_index_type_uint8);
    VN_ADD_PNEXT_EXT(feats2, LINE_RASTERIZATION_FEATURES, local_feats.line_rasterization, exts->KHR_line_rasterization || exts->EXT_line_rasterization);
@@ -1115,6 +1118,7 @@ vn_physical_device_get_passthrough_extensions(
       .EXT_ycbcr_2plane_444_formats = true,
 
       /* promoted to VK_VERSION_1_4 */
+      .KHR_dynamic_rendering_local_read = true,
       .KHR_global_priority = true,
       .KHR_index_type_uint8 = true,
       .KHR_line_rasterization = true,

@@ -238,6 +238,8 @@ struct vn_graphics_pipeline_fix_tmp {
    VkPipelineLibraryCreateInfoKHR *library_infos;
    VkPipelineRenderingCreateInfo *rendering_infos;
    VkPipelineRobustnessCreateInfo *robustness_infos;
+   VkRenderingAttachmentLocationInfo *ral_infos;
+   VkRenderingInputAttachmentIndexInfo *riai_infos;
 };
 
 /* shader module commands */
@@ -657,6 +659,8 @@ vn_graphics_pipeline_fix_tmp_alloc(const VkAllocationCallbacks *alloc,
    VkPipelineLibraryCreateInfoKHR *library_infos;
    VkPipelineRenderingCreateInfo *rendering_infos;
    VkPipelineRobustnessCreateInfo *robustness_infos;
+   VkRenderingAttachmentLocationInfo *ral_infos;
+   VkRenderingInputAttachmentIndexInfo *riai_infos;
 
    VK_MULTIALLOC(ma);
    vk_multialloc_add(&ma, &tmp, __typeof__(*tmp), 1);
@@ -680,6 +684,9 @@ vn_graphics_pipeline_fix_tmp_alloc(const VkAllocationCallbacks *alloc,
                         info_count);
       vk_multialloc_add(&ma, &robustness_infos, __typeof__(*robustness_infos),
                         info_count);
+      vk_multialloc_add(&ma, &ral_infos, __typeof__(*ral_infos), info_count);
+      vk_multialloc_add(&ma, &riai_infos, __typeof__(*riai_infos),
+                        info_count);
    }
 
    if (!vk_multialloc_zalloc(&ma, alloc, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND))
@@ -698,6 +705,8 @@ vn_graphics_pipeline_fix_tmp_alloc(const VkAllocationCallbacks *alloc,
       tmp->library_infos = library_infos;
       tmp->rendering_infos = rendering_infos;
       tmp->robustness_infos = robustness_infos;
+      tmp->ral_infos = ral_infos;
+      tmp->riai_infos = riai_infos;
    }
 
    return tmp;
@@ -1503,6 +1512,8 @@ vn_graphics_pipeline_create_info_pnext_init(
       &fix_tmp->rendering_infos[index];
    VkPipelineRobustnessCreateInfo *robustness =
       &fix_tmp->robustness_infos[index];
+   VkRenderingAttachmentLocationInfo *ral = &fix_tmp->ral_infos[index];
+   VkRenderingInputAttachmentIndexInfo *riai = &fix_tmp->riai_infos[index];
 
    VkBaseOutStructure *cur = (void *)&fix_tmp->infos[index];
 
@@ -1536,6 +1547,14 @@ vn_graphics_pipeline_create_info_pnext_init(
       case VK_STRUCTURE_TYPE_PIPELINE_ROBUSTNESS_CREATE_INFO:
          memcpy(robustness, src, sizeof(*robustness));
          next = robustness;
+         break;
+      case VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_LOCATION_INFO:
+         memcpy(ral, src, sizeof(*ral));
+         next = ral;
+         break;
+      case VK_STRUCTURE_TYPE_RENDERING_INPUT_ATTACHMENT_INDEX_INFO:
+         memcpy(riai, src, sizeof(*riai));
+         next = riai;
          break;
       default:
          break;
