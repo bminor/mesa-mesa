@@ -2549,7 +2549,7 @@ static bool
 bi_nir_is_replicated(nir_alu_src *src)
 {
    for (unsigned i = 1; i < nir_src_num_components(src->src); ++i) {
-      if (src->swizzle[0] == src->swizzle[i])
+      if (src->swizzle[0] != src->swizzle[i])
          return false;
    }
 
