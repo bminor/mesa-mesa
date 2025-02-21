@@ -804,7 +804,7 @@
         "description": "winsys/amdgpu: same_queue variable should be set if there is only one queue",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "45fa34284fd46a48d99f1f62bbbef0b5c1326fcb",
         "notes": null
