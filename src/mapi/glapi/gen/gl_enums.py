@@ -61,7 +61,7 @@ class PrintGlEnums(gl_XML.gl_print_base):
         return
 
     def print_code(self):
-        print("""
+        print(r"""
 typedef int (*cfunc)(const void *, const void *);
 
 /**
@@ -102,7 +102,7 @@ _mesa_enum_to_string(int nr)
    else {
       /* this is not re-entrant safe, no big deal here */
       snprintf(token_tmp, sizeof(token_tmp) - 1, "0x%x", nr);
-      token_tmp[sizeof(token_tmp) - 1] = '\\0';
+      token_tmp[sizeof(token_tmp) - 1] = '\0';
       return token_tmp;
    }
 }

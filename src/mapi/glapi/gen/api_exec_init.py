@@ -40,8 +40,8 @@ exec_flavor_map = {
     }
 
 
-header = """/**
- * \\file api_exec_init.c
+header = r"""/**
+ * \file api_exec_init.c
  * Initialize dispatch table.
  */
 
