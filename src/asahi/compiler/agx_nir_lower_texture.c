@@ -542,11 +542,10 @@ lower_buffer_image(nir_builder *b, nir_intrinsic_instr *intr)
    nir_def *coord_vector = intr->src[1].ssa;
    nir_def *coord = nir_channel(b, coord_vector, 0);
 
-   assert(intr->intrinsic != nir_intrinsic_bindless_image_sparse_load &&
-          "sparse buffer textures not expected");
-
    /* If we're not bindless, assume we don't need an offset (GL driver) */
-   if (intr->intrinsic == nir_intrinsic_bindless_image_load) {
+   if (intr->intrinsic == nir_intrinsic_bindless_image_load ||
+       intr->intrinsic == nir_intrinsic_bindless_image_sparse_load) {
+
       nir_def *desc = nir_load_from_texture_handle_agx(b, intr->src[0].ssa);
       coord = libagx_buffer_texture_offset(b, desc, coord);
    } else if (intr->intrinsic == nir_intrinsic_bindless_image_store) {
