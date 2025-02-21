@@ -651,6 +651,8 @@ class gl_function( gl_item ):
 
         if alias:
             true_name = alias
+            if name in static_data.offsets:
+                raise RuntimeError("Aliased entry-point %s shouldn't be in static_data.py." % (name))
         else:
             true_name = name
 
