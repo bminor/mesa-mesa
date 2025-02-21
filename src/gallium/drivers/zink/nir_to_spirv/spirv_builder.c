@@ -485,6 +485,12 @@ spirv_builder_emit_load_aligned(struct spirv_builder *b, SpvId result_type, SpvI
    }
 }
 
+SpvId
+spirv_builder_emit_load_volatile(struct spirv_builder *b, SpvId result_type, SpvId pointer)
+{
+   return spirv_builder_emit_binop(b, SpvOpLoad, result_type, pointer, SpvMemoryAccessVolatileMask);
+}
+
 void
 spirv_builder_emit_store(struct spirv_builder *b, SpvId pointer, SpvId object)
 {
