@@ -35,6 +35,3 @@ To add a new GL extension to Mesa you have to do at least the following.
 -  To determine if the new extension is active in the current context,
    use the auto-generated ``_mesa_has_##name_str()`` function defined in
    ``src/mesa/main/extensions.h``.
--  The dispatch tests ``check_table.cpp`` and ``dispatch_sanity.cpp``
-   should be updated with details about the new extensions functions.
-   These tests are run using ``meson test``.

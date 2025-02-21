@@ -79,20 +79,3 @@ else
     build_by_default : false,
   )
 endif
-
-# TODO: this test doesn't compile on windows with mingw or msvc due to
-# undefined symbols from libglapi_static, but that should be fixable.
-if with_any_opengl and not with_shared_glapi and with_tests and not with_platform_windows
-  test(
-    'glapi_static_check_table',
-    executable(
-      'glapi_static_check_table',
-      ['tests/check_table.cpp', glapitable_h],
-      include_directories : [inc_include, inc_src, inc_mesa, inc_mapi, inc_gallium],
-      link_with : [libglapi_static],
-      dependencies : [idep_gtest, dep_thread],
-    ),
-    suite : ['mapi'],
-    protocol : 'gtest',
-  )
-endif
