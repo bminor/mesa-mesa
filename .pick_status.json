@@ -34,7 +34,7 @@
         "description": "panfrost: fix condition in bi_nir_is_replicated",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "21bdee7bccd2b9b4b4f3b8b2eefce0466fc4b621",
         "notes": null
