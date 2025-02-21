@@ -33,7 +33,7 @@ libosmesa = shared_library(
     inc_gallium_drivers,
   ],
   link_depends : osmesa_link_deps,
-  link_whole : [libosmesa_st, libglapi_static],
+  link_whole : [libosmesa_st, (with_shared_glapi ? libglapi_bridge : libglapi_static)],
   link_with : [
     libmesa, libgallium, libws_null, osmesa_link_with,
   ],

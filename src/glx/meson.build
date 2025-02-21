@@ -130,10 +130,18 @@ libglx = static_library(
   ],
 )
 
+if with_shared_glapi
+  # libglapi_bridge contains GL functions that we need to export from libGL.so.
+  # Other than that, we don't need it.
+  libgl_link = with_glvnd ? [] : [libglapi_bridge]
+else
+  libgl_link = libglapi_static
+endif
+
 libgl = shared_library(
   gl_lib_name,
   [],
-  link_with : [libglapi_static],
+  link_with : libgl_link,
   link_whole : libglx,
   link_args : [ld_args_bsymbolic, ld_args_gc_sections, extra_ld_args_libgl],
   dependencies : [
