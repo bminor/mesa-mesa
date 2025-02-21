@@ -216,8 +216,15 @@ elk_fs_visitor::emit_interpolation_setup_gfx6()
    elk_fs_reg half_int_pixel_offset_x = half_int_sample_offset_x;
    elk_fs_reg half_int_pixel_offset_y = half_int_sample_offset_y;
 
+   elk_fs_reg uw_pixel_x = abld.vgrf(ELK_REGISTER_TYPE_UW);
+   elk_fs_reg uw_pixel_y = abld.vgrf(ELK_REGISTER_TYPE_UW);
+
    for (unsigned i = 0; i < DIV_ROUND_UP(dispatch_width, 16); i++) {
       const fs_builder hbld = abld.group(MIN2(16, dispatch_width), i);
+
+      elk_fs_reg int_pixel_x = offset(uw_pixel_x, hbld, i);
+      elk_fs_reg int_pixel_y = offset(uw_pixel_y, hbld, i);
+
       /* According to the "PS Thread Payload for Normal Dispatch"
        * pages on the BSpec, subspan X/Y coordinates are stored in
        * R1.2-R1.5/R2.2-R2.5 on gfx6+, and on R0.10-R0.13/R1.10-R1.13
@@ -246,10 +253,13 @@ elk_fs_visitor::emit_interpolation_setup_gfx6()
                   elk_fs_reg(stride(suboffset(gi_uw, 4), 1, 4, 0)),
                   int_pixel_offset_xy);
 
-         hbld.emit(ELK_FS_OPCODE_PIXEL_X, offset(pixel_x, hbld, i), int_pixel_xy,
+         hbld.emit(ELK_FS_OPCODE_PIXEL_X, int_pixel_x, int_pixel_xy,
                                       horiz_stride(half_int_pixel_offset_x, 0));
-         hbld.emit(ELK_FS_OPCODE_PIXEL_Y, offset(pixel_y, hbld, i), int_pixel_xy,
+         hbld.emit(ELK_FS_OPCODE_PIXEL_Y, int_pixel_y, int_pixel_xy,
                                       horiz_stride(half_int_pixel_offset_y, 0));
+
+         hbld.MOV(offset(pixel_x, hbld, i), int_pixel_x);
+         hbld.MOV(offset(pixel_y, hbld, i), int_pixel_y);
       } else {
          /* The "Register Region Restrictions" page says for SNB, IVB, HSW:
           *
@@ -259,9 +269,6 @@ elk_fs_visitor::emit_interpolation_setup_gfx6()
           * Since the GRF source of the ADD will only read a single register,
           * we must do two separate ADDs in SIMD16.
           */
-         const elk_fs_reg int_pixel_x = hbld.vgrf(ELK_REGISTER_TYPE_UW);
-         const elk_fs_reg int_pixel_y = hbld.vgrf(ELK_REGISTER_TYPE_UW);
-
          hbld.ADD(int_pixel_x,
                   elk_fs_reg(stride(suboffset(gi_uw, 4), 2, 4, 0)),
                   elk_fs_reg(elk_imm_v(0x10101010)));
