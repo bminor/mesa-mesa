@@ -3032,6 +3032,8 @@ init_driver_workarounds(struct zink_screen *screen)
       abort();
    }
 
+   screen->driver_workarounds.srgb_dmabufs = zink_driverid(screen) != VK_DRIVER_ID_INTEL_OPEN_SOURCE_MESA;
+
    /* these drivers benefit from renderpass optimization */
    switch (zink_driverid(screen)) {
    case VK_DRIVER_ID_MESA_LLVMPIPE:
