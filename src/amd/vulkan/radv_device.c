@@ -1612,7 +1612,7 @@ radv_initialise_ds_surface(const struct radv_device *device, struct radv_ds_buff
    const struct ac_mutable_ds_state mutable_ds_state = {
       .ds = &ds->ac,
       .format = radv_format_to_pipe_format(iview->image->vk.format),
-      .tc_compat_htile_enabled = radv_htile_enabled(iview->image, level) && radv_image_is_tc_compat_htile(iview->image),
+      .tc_compat_htile_enabled = radv_tc_compat_htile_enabled(iview->image, level),
       .zrange_precision = true,
       .no_d16_compression = true,
    };

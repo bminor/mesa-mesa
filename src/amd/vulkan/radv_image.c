@@ -1506,8 +1506,8 @@ radv_get_aspect_format(struct radv_image *image, VkImageAspectFlags mask)
 }
 
 bool
-radv_layout_is_htile_compressed(const struct radv_device *device, const struct radv_image *image, VkImageLayout layout,
-                                unsigned queue_mask)
+radv_layout_is_htile_compressed(const struct radv_device *device, const struct radv_image *image, unsigned level,
+                                VkImageLayout layout, unsigned queue_mask)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const struct radv_instance *instance = radv_physical_device_instance(pdev);
@@ -1523,10 +1523,10 @@ radv_layout_is_htile_compressed(const struct radv_device *device, const struct r
    case VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL:
    case VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL:
    case VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL:
-      return radv_image_has_htile(image);
+      return radv_htile_enabled(image, level);
    case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
-      return radv_image_is_tc_compat_htile(image) ||
-             (radv_image_has_htile(image) && queue_mask == (1u << RADV_QUEUE_GENERAL));
+      return radv_tc_compat_htile_enabled(image, level) ||
+             (radv_htile_enabled(image, level) && queue_mask == (1u << RADV_QUEUE_GENERAL));
    case VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR:
    case VK_IMAGE_LAYOUT_GENERAL:
       /* It should be safe to enable TC-compat HTILE with
@@ -1536,7 +1536,7 @@ radv_layout_is_htile_compressed(const struct radv_device *device, const struct r
        * depth pass because this allows compression and this reduces
        * the number of decompressions from/to GENERAL.
        */
-      if (radv_image_is_tc_compat_htile(image) && queue_mask & (1u << RADV_QUEUE_GENERAL) &&
+      if (radv_tc_compat_htile_enabled(image, level) && queue_mask & (1u << RADV_QUEUE_GENERAL) &&
           !instance->drirc.disable_tc_compat_htile_in_general) {
          return true;
       } else {
@@ -1549,8 +1549,8 @@ radv_layout_is_htile_compressed(const struct radv_device *device, const struct r
       return false;
    case VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL:
    case VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL:
-      if (radv_image_is_tc_compat_htile(image) ||
-          (radv_image_has_htile(image) &&
+      if (radv_tc_compat_htile_enabled(image, level) ||
+          (radv_htile_enabled(image, level) &&
            !(image->vk.usage & (VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT)))) {
          /* Keep HTILE compressed if the image is only going to
           * be used as a depth/stencil read-only attachment.
@@ -1561,7 +1561,7 @@ radv_layout_is_htile_compressed(const struct radv_device *device, const struct r
       }
       break;
    default:
-      return radv_image_is_tc_compat_htile(image);
+      return radv_tc_compat_htile_enabled(image, level);
    }
 }
 

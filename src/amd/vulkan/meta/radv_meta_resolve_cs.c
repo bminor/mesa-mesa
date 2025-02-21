@@ -470,7 +470,7 @@ radv_depth_stencil_resolve_rendering_cs(struct radv_cmd_buffer *cmd_buffer, VkIm
 
    uint32_t queue_mask = radv_image_queue_family_mask(dst_image, cmd_buffer->qf, cmd_buffer->qf);
 
-   if (radv_layout_is_htile_compressed(device, dst_image, dst_layout, queue_mask)) {
+   if (radv_layout_is_htile_compressed(device, dst_image, dst_iview->vk.base_mip_level, dst_layout, queue_mask)) {
       VkImageSubresourceRange range = {0};
       range.aspectMask = aspects;
       range.baseMipLevel = dst_iview->vk.base_mip_level;
