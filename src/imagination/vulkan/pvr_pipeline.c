@@ -1814,8 +1814,6 @@ pvr_setup_fs_outputs(pco_data *data,
       unsigned idx = subpass->color_attachments[u];
       const struct usc_mrt_resource *mrt_resource;
       ASSERTED bool output_reg;
-      enum pipe_format format;
-      unsigned format_bits;
       nir_variable *var;
 
       if (idx == VK_ATTACHMENT_UNUSED)
@@ -1830,14 +1828,10 @@ pvr_setup_fs_outputs(pco_data *data,
       var = nir_find_variable_with_location(nir, nir_var_shader_out, location);
       assert(var);
 
-      format = data->fs.output_formats[location];
-      format_bits = util_format_get_blocksizebits(format);
-      /* TODO: other sized formats. */
-
       set_var(data->fs.outputs,
               mrt_resource->reg.output_reg,
               var,
-              DIV_ROUND_UP(format_bits, 32));
+              DIV_ROUND_UP(mrt_resource->intermediate_size, sizeof(uint32_t)));
       data->fs.output_reg[location] = output_reg;
 
       outputs_written &= ~BITFIELD64_BIT(location);
@@ -1880,12 +1874,10 @@ static void pvr_init_fs_input_attachments(
       assert(output_reg);
       /* TODO: tile buffer support. */
 
-      unsigned format_bits =
-         util_format_get_blocksizebits(data->fs.ia_formats[u]);
-
       data->fs.ias_onchip[u] = (pco_range){
          .start = mrt_resource->reg.output_reg,
-         .count = DIV_ROUND_UP(format_bits, 32),
+         .count =
+            DIV_ROUND_UP(mrt_resource->intermediate_size, sizeof(uint32_t)),
       };
    }
 }
