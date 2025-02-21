@@ -831,9 +831,6 @@ size_t VkDecoder::Impl::decode(void* buf, size_t len, IOStream* ioStream,
         self.cgen.stmt("unsigned char *ptr = (unsigned char *)buf")
         self.cgen.stmt("const unsigned char* const end = (const unsigned char*)buf + len")
 
-        self.cgen.beginIf("m_forSnapshotLoad")
-        self.cgen.stmt("ptr += m_state->setCreatedHandlesForSnapshotLoad(ptr)");
-        self.cgen.endIf()
         self.cgen.line("while (end - ptr >= 8)")
         self.cgen.beginBlock() # while loop
 
@@ -981,10 +978,6 @@ size_t VkDecoder::Impl::decode(void* buf, size_t len, IOStream* ioStream,
         self.cgen.stmt("ptr += packetLen")
         self.cgen.stmt("vkStream->clearPool()")
         self.cgen.endBlock() # while loop
-
-        self.cgen.beginIf("m_forSnapshotLoad")
-        self.cgen.stmt("m_state->clearCreatedHandlesForSnapshotLoad()");
-        self.cgen.endIf()
 
         self.cgen.stmt("m_pool.freeAll()")
         self.cgen.stmt("return ptr - (unsigned char*)buf;")
