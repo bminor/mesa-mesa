@@ -953,6 +953,17 @@ dest(FILE *file, const struct brw_isa_info *isa, const brw_eu_inst *inst)
    return 0;
 }
 
+static enum brw_horizontal_stride
+hstride_from_align1_3src_dst_hstride(enum gfx10_align1_3src_dst_horizontal_stride hstride)
+{
+   switch (hstride) {
+   case BRW_ALIGN1_3SRC_DST_HORIZONTAL_STRIDE_1: return BRW_HORIZONTAL_STRIDE_1;
+   case BRW_ALIGN1_3SRC_DST_HORIZONTAL_STRIDE_2: return BRW_HORIZONTAL_STRIDE_2;
+   default:
+      unreachable("not reached");
+   }
+}
+
 static int
 dest_3src(FILE *file, const struct intel_device_info *devinfo,
           const brw_eu_inst *inst)
@@ -988,7 +999,11 @@ dest_3src(FILE *file, const struct intel_device_info *devinfo,
 
    if (subreg_nr)
       format(file, ".%u", subreg_nr);
-   string(file, "<1>");
+   string(file, "<");
+   unsigned _horiz_stride =
+      hstride_from_align1_3src_dst_hstride(brw_eu_inst_3src_a1_dst_hstride(devinfo, inst));
+   err |= control(file, "horiz_stride", horiz_stride, _horiz_stride, NULL);
+   string(file, ">");
 
    if (!is_align1) {
       err |= control(file, "writemask", writemask,

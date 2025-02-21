@@ -531,6 +531,18 @@ to_3src_align1_vstride(const struct intel_device_info *devinfo,
    }
 }
 
+static enum gfx10_align1_3src_dst_horizontal_stride
+to_3src_align1_dst_hstride(enum brw_horizontal_stride hstride)
+{
+   switch (hstride) {
+   case BRW_HORIZONTAL_STRIDE_1:
+      return BRW_ALIGN1_3SRC_DST_HORIZONTAL_STRIDE_1;
+   case BRW_HORIZONTAL_STRIDE_2:
+      return BRW_ALIGN1_3SRC_DST_HORIZONTAL_STRIDE_2;
+   default:
+      unreachable("invalid hstride");
+   }
+}
 
 static enum gfx10_align1_3src_src_horizontal_stride
 to_3src_align1_hstride(enum brw_horizontal_stride hstride)
@@ -596,7 +608,8 @@ brw_alu3(struct brw_codegen *p, unsigned opcode, struct brw_reg dest,
       brw_eu_inst_set_3src_a1_dst_reg_file(devinfo, inst, phys_file(dest));
       brw_eu_inst_set_3src_dst_reg_nr(devinfo, inst, phys_nr(devinfo, dest));
       brw_eu_inst_set_3src_a1_dst_subreg_nr(devinfo, inst, phys_subnr(devinfo, dest) / 8);
-      brw_eu_inst_set_3src_a1_dst_hstride(devinfo, inst, BRW_ALIGN1_3SRC_DST_HORIZONTAL_STRIDE_1);
+      brw_eu_inst_set_3src_a1_dst_hstride(devinfo, inst,
+                                          to_3src_align1_dst_hstride(dest.hstride));
 
       if (brw_type_is_float(dest.type)) {
          brw_eu_inst_set_3src_a1_exec_type(devinfo, inst,
