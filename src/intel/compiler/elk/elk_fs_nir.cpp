@@ -3920,13 +3920,7 @@ fs_nir_emit_fs_intrinsic(nir_to_elk_state &ntb,
       break;
 
    case nir_intrinsic_load_frag_coord_z:
-      if (devinfo->ver >= 6) {
-         bld.MOV(dest, s.pixel_z);
-      } else {
-         bld.emit(ELK_FS_OPCODE_LINTERP, dest,
-                  s.delta_xy[ELK_BARYCENTRIC_PERSPECTIVE_PIXEL],
-                  s.interp_reg(bld, VARYING_SLOT_POS, 2, 0));
-      }
+      bld.MOV(dest, s.pixel_z);
       break;
 
    case nir_intrinsic_load_frag_coord_w:
