@@ -1724,45 +1724,6 @@ __indirect_glVertexAttribPointer(GLuint index, GLint size,
 }
 
 
-/**
- * I don't have 100% confidence that this is correct.  The different rules
- * about whether or not generic vertex attributes alias "classic" vertex
- * attributes (i.e., attrib1 ?= primary color) between ARB_vertex_program,
- * ARB_vertex_shader, and NV_vertex_program are a bit confusing.  My
- * feeling is that the client-side doesn't have to worry about it.  The
- * client just sends all the data to the server and lets the server deal
- * with it.
- */
-void
-__indirect_glVertexAttribPointerNV(GLuint index, GLint size,
-                                   GLenum type, GLsizei stride,
-                                   const GLvoid * pointer)
-{
-   struct glx_context *gc = __glXGetCurrentContext();
-   GLboolean normalized = GL_FALSE;
-
-
-   switch (type) {
-   case GL_UNSIGNED_BYTE:
-      if (size != 4) {
-         __glXSetError(gc, GL_INVALID_VALUE);
-         return;
-      }
-      normalized = GL_TRUE;
-      FALLTHROUGH;
-   case GL_SHORT:
-   case GL_FLOAT:
-   case GL_DOUBLE:
-      __indirect_glVertexAttribPointer(index, size, type,
-                                          normalized, stride, pointer);
-      return;
-   default:
-      __glXSetError(gc, GL_INVALID_ENUM);
-      return;
-   }
-}
-
-
 void
 __indirect_glClientActiveTexture(GLenum texture)
 {
