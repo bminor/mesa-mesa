@@ -1307,14 +1307,12 @@ anv_descriptor_pool_heap_init(struct anv_device *device,
 
       heap->size = align(size, 4096);
 
+      enum anv_bo_alloc_flags alloc_flags;
+      alloc_flags = samplers ? ANV_BO_ALLOC_DYNAMIC_VISIBLE_POOL_FLAGS :
+                               ANV_BO_ALLOC_DESCRIPTOR_POOL_FLAGS;
       VkResult result = anv_device_alloc_bo(device,
                                             bo_name, heap->size,
-                                            ANV_BO_ALLOC_CAPTURE |
-                                            ANV_BO_ALLOC_MAPPED |
-                                            ANV_BO_ALLOC_HOST_CACHED_COHERENT |
-                                            (samplers ?
-                                             ANV_BO_ALLOC_DYNAMIC_VISIBLE_POOL :
-                                             ANV_BO_ALLOC_DESCRIPTOR_POOL),
+                                            alloc_flags,
                                             0 /* explicit_address */,
                                             &heap->bo);
       ANV_DMR_BO_ALLOC(&pool->base, heap->bo, result);

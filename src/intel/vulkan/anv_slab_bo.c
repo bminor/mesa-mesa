@@ -5,6 +5,7 @@
 #include "anv_slab_bo.h"
 
 enum anv_bo_slab_heap {
+   ANV_BO_SLAB_HEAP_DESCRIPTOR_POOL,
    ANV_BO_SLAB_HEAP_SMEM_CACHED_COHERENT,
    ANV_BO_SLAB_HEAP_SMEM_CACHED_INCOHERENT,
    ANV_BO_SLAB_HEAP_SMEM_COHERENT,
@@ -45,6 +46,9 @@ anv_bo_alloc_flags_to_slab_heap(struct anv_device *device,
       not_supported |= (ANV_BO_ALLOC_IMPLICIT_SYNC |
                         ANV_BO_ALLOC_IMPLICIT_WRITE);
    }
+
+   if (alloc_flags == ANV_BO_ALLOC_DESCRIPTOR_POOL_FLAGS)
+      return ANV_BO_SLAB_HEAP_DESCRIPTOR_POOL;
 
    if (alloc_flags & not_supported)
       return ANV_BO_SLAB_NOT_SUPPORTED;
@@ -224,6 +228,9 @@ anv_slab_alloc(void *priv,
       alloc_flags |= ANV_BO_ALLOC_MAPPED;
       break;
    case ANV_BO_SLAB_HEAP_LMEM_ONLY:
+      break;
+   case ANV_BO_SLAB_HEAP_DESCRIPTOR_POOL:
+      alloc_flags |= ANV_BO_ALLOC_DESCRIPTOR_POOL_FLAGS;
       break;
    default:
       unreachable("Missing");

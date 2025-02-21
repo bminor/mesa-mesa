@@ -465,6 +465,15 @@ enum anv_bo_alloc_flags {
 #define ANV_BO_ALLOC_HOST_CACHED_COHERENT (ANV_BO_ALLOC_HOST_COHERENT | \
                                            ANV_BO_ALLOC_HOST_CACHED)
 
+#define ANV_BO_ALLOC_DYNAMIC_VISIBLE_POOL_FLAGS (ANV_BO_ALLOC_CAPTURE |              \
+                                                 ANV_BO_ALLOC_MAPPED |               \
+                                                 ANV_BO_ALLOC_HOST_CACHED_COHERENT | \
+                                                 ANV_BO_ALLOC_DYNAMIC_VISIBLE_POOL)
+
+#define ANV_BO_ALLOC_DESCRIPTOR_POOL_FLAGS (ANV_BO_ALLOC_CAPTURE |              \
+                                            ANV_BO_ALLOC_MAPPED |               \
+                                            ANV_BO_ALLOC_HOST_CACHED_COHERENT | \
+                                            ANV_BO_ALLOC_DESCRIPTOR_POOL)
 
 struct anv_bo {
    const char *name;
