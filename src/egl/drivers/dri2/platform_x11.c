@@ -1533,7 +1533,6 @@ static const struct dri2_egl_display_vtbl dri2_x11_display_vtbl = {
    .create_image = dri2_x11_create_image_khr,
    .swap_interval = dri2_x11_swap_interval,
    .swap_buffers = dri2_x11_swap_buffers,
-   .post_sub_buffer = dri2_x11_post_sub_buffer,
    .copy_buffers = dri2_x11_copy_buffers,
    .query_surface = dri2_query_surface,
    .get_sync_values = dri2_x11_get_sync_values,
@@ -1984,9 +1983,7 @@ dri2_initialize_x11_dri2(_EGLDisplay *disp)
    dri2_x11_setup_swap_interval(disp);
 
    disp->Extensions.KHR_image_pixmap = EGL_TRUE;
-   disp->Extensions.NOK_swap_region = EGL_TRUE;
    disp->Extensions.NOK_texture_from_pixmap = EGL_TRUE;
-   disp->Extensions.NV_post_sub_buffer = EGL_TRUE;
    disp->Extensions.CHROMIUM_sync_control = EGL_TRUE;
    disp->Extensions.ANGLE_sync_control_rate = EGL_TRUE;
 
