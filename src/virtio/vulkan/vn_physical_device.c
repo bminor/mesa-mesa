@@ -728,12 +728,24 @@ vn_physical_device_init_queue_family_properties(
     */
    static const bool require_second_queue = true;
 #else
-   const bool require_second_queue = VN_DEBUG(SECOND_QUEUE);
+   /* Per 1.4 spec of VK_EXT_host_image_copy promotion:
+    *
+    * A Vulkan 1.4 implementation that has a VK_QUEUE_GRAPHICS_BIT queue must
+    * support either:
+    * - the hostImageCopy feature; or
+    * - an additional queue that supports VK_QUEUE_TRANSFER_BIT.
+    *
+    * Additionally, all queues supporting VK_QUEUE_GRAPHICS_BIT or
+    * VK_QUEUE_COMPUTE_BIT must also advertise VK_QUEUE_TRANSFER_BIT.
+    */
+   const bool require_second_queue =
+      physical_dev->base.base.properties.apiVersion >= VK_API_VERSION_1_4 &&
+      !physical_dev->base.base.supported_extensions.EXT_host_image_copy;
 #endif
    physical_dev->emulate_second_queue = -1;
    for (uint32_t i = 0; i < count; i++) {
       if (props[i].queueFamilyProperties.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-         if (require_second_queue &&
+         if (require_second_queue && !VN_DEBUG(NO_SECOND_QUEUE) &&
              props[i].queueFamilyProperties.queueCount < 2) {
             props[i].queueFamilyProperties.queueCount = 2;
             physical_dev->emulate_second_queue = i;
@@ -1135,6 +1147,17 @@ vn_physical_device_get_passthrough_extensions(
       .KHR_shader_float_controls2 = true,
       .KHR_shader_subgroup_rotate = true,
       .KHR_vertex_attribute_divisor = true,
+      /* The implementation would be inefficient via venus due to too many
+       * memcpy and roundtrips. Venus favors device side copy and blit so that
+       * they can be batched for optimal performance. Meanwhile, supporting
+       * this extension requires new venus protocol level support to handle
+       * implicitly sized host pointers as well as filling returned blob
+       * inside "in" structs. e.g. info structs are usually "in" structs while
+       * properties structs are usually "out" structs. So venus won't
+       * implement host copy but will always emulate an additional queue that
+       * supports VK_QUEUE_TRANSFER_BIT to satisfy Vulkan 1.4 requirements.
+       */
+      .EXT_host_image_copy = false,
       .EXT_pipeline_protected_access = true,
       .EXT_pipeline_robustness = true,
 
