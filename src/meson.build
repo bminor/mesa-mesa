@@ -102,7 +102,7 @@ endif
 if with_gfxstream_vk
   subdir('gfxstream')
 endif
-if with_gallium_asahi or with_tools.contains('asahi')
+if with_gallium_asahi or with_asahi_vk or with_tools.contains('asahi')
   subdir('asahi')
 endif
 if with_gallium
