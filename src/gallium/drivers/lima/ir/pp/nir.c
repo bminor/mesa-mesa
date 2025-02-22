@@ -293,6 +293,7 @@ static bool ppir_emit_discard_block(ppir_compiler *comp)
 
    comp->discard_block = block;
    block->comp  = comp;
+   block->index = INT_MAX;
 
    discard = ppir_node_create(block, ppir_op_discard, -1, 0);
    if (discard)
