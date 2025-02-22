@@ -721,7 +721,7 @@ static void *virgl_shader_encoder(struct pipe_context *ctx,
             .lower_offset_filter = lower_gles_arrayshadow_offset_filter,
          };
 
-         NIR_PASS_V(shader->ir.nir, nir_lower_tex, &lower_tex_options);
+         NIR_PASS(_, shader->ir.nir, nir_lower_tex, &lower_tex_options);
       }
 
       nir_shader *s = nir_shader_clone(NULL, shader->ir.nir);
