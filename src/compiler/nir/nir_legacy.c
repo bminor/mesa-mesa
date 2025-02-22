@@ -321,9 +321,10 @@ fuse_mods_with_registers(nir_builder *b, nir_instr *instr, void *fuse_fabs_)
    return false;
 }
 
-void
+bool
 nir_legacy_trivialize(nir_shader *s, bool fuse_fabs)
 {
+   bool progress = false;
    /* First, fuse modifiers with registers. This ensures that the helpers do not
     * chase registers recursively, allowing registers to be trivialized easier.
     */
@@ -332,8 +333,10 @@ nir_legacy_trivialize(nir_shader *s, bool fuse_fabs)
                                     &fuse_fabs)) {
       /* If we made progress, we likely left dead loads. Clean them up. */
       NIR_PASS(_, s, nir_opt_dce);
+      progress = true;
    }
 
    /* Now that modifiers are dealt with, we can trivialize the regular way. */
-   NIR_PASS(_, s, nir_trivialize_registers);
+   NIR_PASS(progress, s, nir_trivialize_registers);
+   return progress;
 }
