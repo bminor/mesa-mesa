@@ -5172,6 +5172,12 @@ visit_intrinsic(struct lp_build_nir_soa_context *bld,
       result[0] = load_ubo_base_addr(bld, get_src(bld, &instr->src[0], 0));
       break;
    }
+   case nir_intrinsic_begin_invocation_interlock:
+   case nir_intrinsic_end_invocation_interlock:
+      /* There is no need to do any synchronization here since llvmpipe rasterizes
+       * geometry using tiles and each tile is handled by only one thread at once.
+       */
+      break;
    default:
       fprintf(stderr, "Unsupported intrinsic: ");
       nir_print_instr(&instr->instr, stderr);
