@@ -167,6 +167,7 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
       VkPhysicalDeviceIndexTypeUint8Features index_type_uint8;
       VkPhysicalDeviceLineRasterizationFeatures line_rasterization;
       VkPhysicalDeviceMaintenance5Features maintenance_5;
+      VkPhysicalDeviceMaintenance6Features maintenance_6;
       VkPhysicalDevicePipelineProtectedAccessFeatures
          pipeline_protected_access;
       VkPhysicalDevicePipelineRobustnessFeatures pipeline_robustness;
@@ -283,6 +284,7 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
    VN_ADD_PNEXT_EXT(feats2, INDEX_TYPE_UINT8_FEATURES, local_feats.index_type_uint8, exts->KHR_index_type_uint8 || exts->EXT_index_type_uint8);
    VN_ADD_PNEXT_EXT(feats2, LINE_RASTERIZATION_FEATURES, local_feats.line_rasterization, exts->KHR_line_rasterization || exts->EXT_line_rasterization);
    VN_ADD_PNEXT_EXT(feats2, MAINTENANCE_5_FEATURES, local_feats.maintenance_5, exts->KHR_maintenance5);
+   VN_ADD_PNEXT_EXT(feats2, MAINTENANCE_6_FEATURES, local_feats.maintenance_6, exts->KHR_maintenance6);
    VN_ADD_PNEXT_EXT(feats2, PIPELINE_PROTECTED_ACCESS_FEATURES, local_feats.pipeline_protected_access, exts->EXT_pipeline_protected_access);
    VN_ADD_PNEXT_EXT(feats2, PIPELINE_ROBUSTNESS_FEATURES, local_feats.pipeline_robustness, exts->EXT_pipeline_robustness);
    VN_ADD_PNEXT_EXT(feats2, SHADER_EXPECT_ASSUME_FEATURES, local_feats.shader_expect_assume, exts->KHR_shader_expect_assume);
@@ -499,6 +501,7 @@ vn_physical_device_init_properties(struct vn_physical_device *physical_dev)
       /* Vulkan 1.4 */
       VkPhysicalDeviceLineRasterizationProperties line_rasterization;
       VkPhysicalDeviceMaintenance5Properties maintenance_5;
+      VkPhysicalDeviceMaintenance6Properties maintenance_6;
       VkPhysicalDevicePipelineRobustnessProperties pipeline_robustness;
       VkPhysicalDevicePushDescriptorProperties push_descriptor;
       VkPhysicalDeviceVertexAttributeDivisorProperties
@@ -568,6 +571,7 @@ vn_physical_device_init_properties(struct vn_physical_device *physical_dev)
    /* Vulkan 1.4 */
    VN_ADD_PNEXT_EXT(props2, LINE_RASTERIZATION_PROPERTIES, local_props.line_rasterization, exts->KHR_line_rasterization || exts->EXT_line_rasterization);
    VN_ADD_PNEXT_EXT(props2, MAINTENANCE_5_PROPERTIES, local_props.maintenance_5, exts->KHR_maintenance5);
+   VN_ADD_PNEXT_EXT(props2, MAINTENANCE_6_PROPERTIES, local_props.maintenance_6, exts->KHR_maintenance6);
    VN_ADD_PNEXT_EXT(props2, PIPELINE_ROBUSTNESS_PROPERTIES, local_props.pipeline_robustness, exts->EXT_pipeline_robustness);
    VN_ADD_PNEXT_EXT(props2, PUSH_DESCRIPTOR_PROPERTIES, local_props.push_descriptor, exts->KHR_push_descriptor);
    VN_ADD_PNEXT_EXT(props2, VERTEX_ATTRIBUTE_DIVISOR_PROPERTIES, local_props.vertex_attribute_divisor, exts->KHR_vertex_attribute_divisor);
@@ -636,6 +640,7 @@ vn_physical_device_init_properties(struct vn_physical_device *physical_dev)
    /* Vulkan 1.4 */
    VN_SET_VK_PROPS_EXT(props, &local_props.line_rasterization, exts->KHR_line_rasterization || exts->EXT_line_rasterization);
    VN_SET_VK_PROPS_EXT(props, &local_props.maintenance_5, exts->KHR_maintenance5);
+   VN_SET_VK_PROPS_EXT(props, &local_props.maintenance_6, exts->KHR_maintenance6);
    VN_SET_VK_PROPS_EXT(props, &local_props.pipeline_robustness, exts->EXT_pipeline_robustness);
    VN_SET_VK_PROPS_EXT(props, &local_props.push_descriptor, exts->KHR_push_descriptor);
    VN_SET_VK_PROPS_EXT(props, &local_props.vertex_attribute_divisor, exts->KHR_vertex_attribute_divisor);
@@ -1124,6 +1129,7 @@ vn_physical_device_get_passthrough_extensions(
       .KHR_line_rasterization = true,
       .KHR_load_store_op_none = true,
       .KHR_maintenance5 = true,
+      .KHR_maintenance6 = true,
       .KHR_push_descriptor = true,
       .KHR_shader_expect_assume = true,
       .KHR_shader_float_controls2 = true,

@@ -1250,6 +1250,15 @@ vn_CmdBindDescriptorSets(VkCommandBuffer commandBuffer,
 }
 
 void
+vn_CmdBindDescriptorSets2(
+   VkCommandBuffer commandBuffer,
+   const VkBindDescriptorSetsInfo *pBindDescriptorSetsInfo)
+{
+   VN_CMD_ENQUEUE(vkCmdBindDescriptorSets2, commandBuffer,
+                  pBindDescriptorSetsInfo);
+}
+
+void
 vn_CmdBindIndexBuffer(VkCommandBuffer commandBuffer,
                       VkBuffer buffer,
                       VkDeviceSize offset,
@@ -1907,6 +1916,13 @@ vn_CmdPushConstants(VkCommandBuffer commandBuffer,
 }
 
 void
+vn_CmdPushConstants2(VkCommandBuffer commandBuffer,
+                     const VkPushConstantsInfo *pPushConstantsInfo)
+{
+   VN_CMD_ENQUEUE(vkCmdPushConstants2, commandBuffer, pPushConstantsInfo);
+}
+
+void
 vn_CmdBeginRenderPass(VkCommandBuffer commandBuffer,
                       const VkRenderPassBeginInfo *pRenderPassBegin,
                       VkSubpassContents contents)
@@ -2310,6 +2326,33 @@ vn_CmdPushDescriptorSet(VkCommandBuffer commandBuffer,
 }
 
 void
+vkCmdPushDescriptorSet2(VkCommandBuffer commandBuffer,
+                        const VkPushDescriptorSetInfo *pPushDescriptorSetInfo)
+{
+   const uint32_t write_count = pPushDescriptorSetInfo->descriptorWriteCount;
+   const VkWriteDescriptorSet *desc_writes =
+      pPushDescriptorSetInfo->pDescriptorWrites;
+   const uint32_t img_info_count =
+      vn_descriptor_set_count_write_images(write_count, desc_writes);
+
+   STACK_ARRAY(VkWriteDescriptorSet, writes, write_count);
+   STACK_ARRAY(VkDescriptorImageInfo, img_infos, img_info_count);
+   struct vn_descriptor_set_writes local = {
+      .writes = writes,
+      .img_infos = img_infos,
+   };
+   desc_writes = vn_descriptor_set_get_writes(
+      write_count, desc_writes, pPushDescriptorSetInfo->layout, &local);
+
+   VkPushDescriptorSetInfo info = *pPushDescriptorSetInfo;
+   info.pDescriptorWrites = desc_writes;
+   VN_CMD_ENQUEUE(vkCmdPushDescriptorSet2, commandBuffer, &info);
+
+   STACK_ARRAY_FINISH(writes);
+   STACK_ARRAY_FINISH(img_infos);
+}
+
+void
 vn_CmdPushDescriptorSetWithTemplate(
    VkCommandBuffer commandBuffer,
    VkDescriptorUpdateTemplate descriptorUpdateTemplate,
@@ -2339,6 +2382,53 @@ vn_CmdPushDescriptorSetWithTemplate(
    VN_CMD_ENQUEUE(vkCmdPushDescriptorSet, commandBuffer,
                   templ->push.pipeline_bind_point, layout, set,
                   update.write_count, update.writes);
+
+   STACK_ARRAY_FINISH(writes);
+   STACK_ARRAY_FINISH(img_infos);
+   STACK_ARRAY_FINISH(buf_infos);
+   STACK_ARRAY_FINISH(bview_handles);
+   STACK_ARRAY_FINISH(iubs);
+}
+
+void
+vkCmdPushDescriptorSetWithTemplate2(VkCommandBuffer commandBuffer,
+                                    const VkPushDescriptorSetWithTemplateInfo
+                                       *pPushDescriptorSetWithTemplateInfo)
+{
+   struct vn_descriptor_update_template *templ =
+      vn_descriptor_update_template_from_handle(
+         pPushDescriptorSetWithTemplateInfo->descriptorUpdateTemplate);
+
+   STACK_ARRAY(VkWriteDescriptorSet, writes, templ->entry_count);
+   STACK_ARRAY(VkDescriptorImageInfo, img_infos, templ->img_info_count);
+   STACK_ARRAY(VkDescriptorBufferInfo, buf_infos, templ->buf_info_count);
+   STACK_ARRAY(VkBufferView, bview_handles, templ->bview_count);
+   STACK_ARRAY(VkWriteDescriptorSetInlineUniformBlock, iubs,
+               templ->iub_count);
+   struct vn_descriptor_set_update update = {
+      .writes = writes,
+      .img_infos = img_infos,
+      .buf_infos = buf_infos,
+      .bview_handles = bview_handles,
+      .iubs = iubs,
+   };
+   vn_descriptor_set_fill_update_with_template(
+      templ, VK_NULL_HANDLE, pPushDescriptorSetWithTemplateInfo->pData,
+      &update);
+
+   const VkPushDescriptorSetInfo info = {
+      .sType = VK_STRUCTURE_TYPE_PUSH_DESCRIPTOR_SET_INFO,
+      .pNext = pPushDescriptorSetWithTemplateInfo->pNext,
+      .stageFlags =
+         templ->push.pipeline_bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS
+            ? VK_SHADER_STAGE_ALL_GRAPHICS
+            : VK_SHADER_STAGE_COMPUTE_BIT,
+      .layout = pPushDescriptorSetWithTemplateInfo->layout,
+      .set = pPushDescriptorSetWithTemplateInfo->set,
+      .descriptorWriteCount = update.write_count,
+      .pDescriptorWrites = update.writes,
+   };
+   VN_CMD_ENQUEUE(vkCmdPushDescriptorSet2, commandBuffer, &info);
 
    STACK_ARRAY_FINISH(writes);
    STACK_ARRAY_FINISH(img_infos);

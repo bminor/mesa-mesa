@@ -839,6 +839,14 @@ vn_BindImageMemory2(VkDevice device,
 
    vn_async_vkBindImageMemory2(dev->primary_ring, device, bindInfoCount,
                                pBindInfos);
+
+   for (uint32_t i = 0; i < bindInfoCount; i++) {
+      const VkBindMemoryStatus *bind_status =
+         vk_find_struct((void *)pBindInfos[i].pNext, BIND_MEMORY_STATUS);
+      if (bind_status)
+         *bind_status->pResult = VK_SUCCESS;
+   }
+
    return VK_SUCCESS;
 }
 
