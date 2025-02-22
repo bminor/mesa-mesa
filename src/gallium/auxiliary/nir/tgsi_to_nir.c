@@ -2382,7 +2382,7 @@ ttn_optimize_nir(nir_shader *nir)
    do {
       progress = false;
 
-      NIR_PASS_V(nir, nir_lower_vars_to_ssa);
+      NIR_PASS(progress, nir, nir_lower_vars_to_ssa);
 
       /* Linking deals with unused inputs/outputs, but here we can remove
        * things local to the shader in the hopes that we can cleanup other
@@ -2398,13 +2398,13 @@ ttn_optimize_nir(nir_shader *nir)
       NIR_PASS(progress, nir, nir_opt_dead_write_vars);
 
       if (nir->options->lower_to_scalar) {
-         NIR_PASS_V(nir, nir_lower_alu_to_scalar,
+         NIR_PASS(progress, nir, nir_lower_alu_to_scalar,
                     nir->options->lower_to_scalar_filter, NULL);
-         NIR_PASS_V(nir, nir_lower_phis_to_scalar, false);
+         NIR_PASS(progress, nir, nir_lower_phis_to_scalar, false);
       }
 
-      NIR_PASS_V(nir, nir_lower_alu);
-      NIR_PASS_V(nir, nir_lower_pack);
+      NIR_PASS(progress, nir, nir_lower_alu);
+      NIR_PASS(progress, nir, nir_lower_pack);
       NIR_PASS(progress, nir, nir_copy_prop);
       NIR_PASS(progress, nir, nir_opt_remove_phis);
       NIR_PASS(progress, nir, nir_opt_dce);
@@ -2535,35 +2535,35 @@ ttn_finalize_nir(struct ttn_compile *c, struct pipe_screen *screen)
 
    MESA_TRACE_FUNC();
 
-   NIR_PASS_V(nir, nir_lower_vars_to_ssa);
-   NIR_PASS_V(nir, nir_lower_reg_intrinsics_to_ssa);
+   NIR_PASS(_, nir, nir_lower_vars_to_ssa);
+   NIR_PASS(_, nir, nir_lower_reg_intrinsics_to_ssa);
 
-   NIR_PASS_V(nir, nir_lower_global_vars_to_local);
-   NIR_PASS_V(nir, nir_split_var_copies);
-   NIR_PASS_V(nir, nir_lower_var_copies);
-   NIR_PASS_V(nir, nir_lower_system_values);
-   NIR_PASS_V(nir, nir_lower_compute_system_values, NULL);
+   NIR_PASS(_, nir, nir_lower_global_vars_to_local);
+   NIR_PASS(_, nir, nir_split_var_copies);
+   NIR_PASS(_, nir, nir_lower_var_copies);
+   NIR_PASS(_, nir, nir_lower_system_values);
+   NIR_PASS(_, nir, nir_lower_compute_system_values, NULL);
 
    if (!screen->caps.texrect) {
       const struct nir_lower_tex_options opts = { .lower_rect = true, };
-      NIR_PASS_V(nir, nir_lower_tex, &opts);
+      NIR_PASS(_, nir, nir_lower_tex, &opts);
    }
 
    /* driver needs clipdistance as array<float> */
    if ((nir->info.outputs_written &
         (BITFIELD64_BIT(VARYING_SLOT_CLIP_DIST0) | BITFIELD64_BIT(VARYING_SLOT_CLIP_DIST1))) &&
         nir->options->compact_arrays) {
-      NIR_PASS_V(nir, lower_clipdistance_to_array);
+      NIR_PASS(_, nir, lower_clipdistance_to_array);
    }
 
    if (nir->options->lower_uniforms_to_ubo)
-      NIR_PASS_V(nir, nir_lower_uniforms_to_ubo, false, !c->cap_integers);
+      NIR_PASS(_, nir, nir_lower_uniforms_to_ubo, false, !c->cap_integers);
 
    if (nir->options->lower_int64_options)
-      NIR_PASS_V(nir, nir_lower_int64);
+      NIR_PASS(_, nir, nir_lower_int64);
 
    if (!c->cap_samplers_as_deref)
-      NIR_PASS_V(nir, nir_lower_samplers);
+      NIR_PASS(_, nir, nir_lower_samplers);
 
    if (screen->finalize_nir) {
       char *msg = screen->finalize_nir(screen, nir);
