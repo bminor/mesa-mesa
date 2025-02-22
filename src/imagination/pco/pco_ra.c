@@ -141,6 +141,9 @@ static bool pco_ra_func(pco_func *func,
    struct ra_regs *ra_regs =
       ra_alloc_reg_set(func, allocable_temps, !only_32bit);
 
+   BITSET_WORD *comps =
+      rzalloc_array_size(ra_regs, sizeof(*comps), BITSET_WORDS(num_ssas));
+
    /* Overrides for vector coalescing. */
    struct hash_table_u64 *overrides = _mesa_hash_table_u64_create(ra_regs);
    pco_foreach_instr_in_func_rev (instr, func) {
@@ -170,7 +173,10 @@ static bool pco_ra_func(pco_func *func,
 
          if (pco_ref_is_ssa(*psrc)) {
             /* Make sure this hasn't already been overridden somewhere else! */
-            assert(!_mesa_hash_table_u64_search(overrides, psrc->val));
+            if (_mesa_hash_table_u64_search(overrides, psrc->val)) {
+               BITSET_SET(comps, psrc->val);
+               continue;
+            }
 
             struct vec_override *src_override =
                rzalloc_size(overrides, sizeof(*src_override));
@@ -183,9 +189,6 @@ static bool pco_ra_func(pco_func *func,
          offset += pco_ref_get_chans(*psrc);
       }
    }
-
-   BITSET_WORD *comps =
-      rzalloc_array_size(ra_regs, sizeof(*comps), BITSET_WORDS(num_ssas));
 
    /* Overrides for vector component uses. */
    pco_foreach_instr_in_func (instr, func) {
