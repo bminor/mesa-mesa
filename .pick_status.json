@@ -24,7 +24,7 @@
         "description": "panfrost/va: remove swizzle mod from LDEXP",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "316486dd9f6bbd03e7e13655674f1fa91e533b9a",
         "notes": null
