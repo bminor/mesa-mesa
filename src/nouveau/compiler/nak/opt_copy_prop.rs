@@ -41,9 +41,22 @@ struct PrmtEntry {
     srcs: [Src; 2],
 }
 
+/// This entry tracks b2i conversions
+struct ConvBoolToInt {
+    src: Src,
+}
+
+/// This entry tracks i2b conversions
+struct ConvIntToBool {
+    src: Src,
+    inverted: bool,
+}
+
 enum CopyPropEntry {
     Copy(CopyEntry),
     Prmt(PrmtEntry),
+    ConvBoolToInt(ConvBoolToInt),
+    ConvIntToBool(ConvIntToBool),
 }
 
 struct CopyPropPass {
@@ -67,6 +80,22 @@ impl CopyPropPass {
         assert!(src.src_ref.get_reg().is_none());
         self.ssa_map
             .insert(dst, CopyPropEntry::Copy(CopyEntry { bi, src_type, src }));
+    }
+
+    fn add_b2i(&mut self, dst: SSAValue, src: Src) {
+        assert!(src.src_ref.get_reg().is_none());
+        assert!(dst.is_gpr());
+        self.ssa_map
+            .insert(dst, CopyPropEntry::ConvBoolToInt(ConvBoolToInt { src }));
+    }
+
+    fn add_i2b(&mut self, dst: SSAValue, src: Src, inverted: bool) {
+        assert!(src.src_ref.get_reg().is_none());
+        assert!(dst.is_predicate());
+        self.ssa_map.insert(
+            dst,
+            CopyPropEntry::ConvIntToBool(ConvIntToBool { src, inverted }),
+        );
     }
 
     fn add_prmt(
@@ -322,6 +351,30 @@ impl CopyPropPass {
                     src.src_mod = entry_src.src_mod.modify(src.src_mod);
                     src.src_swizzle = new_swizzle;
                 }
+                CopyPropEntry::ConvIntToBool(entry) => {
+                    // Fold i2b(b2i(x))
+                    // Don't worry about CBuf rules, they cannot be used
+                    // in bool-int-bool conversions as they cannot be dsts
+
+                    // entry := i2b(current)
+                    // find parent: parent := b2i(entry)
+                    let parent =
+                        entry.src.as_ssa().and_then(|x| self.get_copy(&x[0]));
+                    let Some(CopyPropEntry::ConvBoolToInt(par_entry)) = parent
+                    else {
+                        return;
+                    };
+
+                    src.src_ref = par_entry.src.src_ref;
+                    src.src_mod = par_entry.src.src_mod.modify(src.src_mod);
+                    if entry.inverted {
+                        src.src_mod = src.src_mod.bnot();
+                    }
+                }
+                CopyPropEntry::ConvBoolToInt(_) => {
+                    // b2i(i2b(x)) can't be easily optimized
+                    return;
+                }
             }
         }
     }
@@ -556,6 +609,43 @@ impl CopyPropPass {
                         }
                     }
                 }
+            }
+            Op::Sel(sel) => {
+                let dst = sel.dst.as_ssa().unwrap();
+                assert!(dst.comps() == 1);
+                let dst = dst[0];
+
+                let src = match (sel.srcs[0], sel.srcs[1]) {
+                    (z, u) if z.is_zero() && u.is_nonzero() => sel.cond.bnot(),
+                    (u, z) if z.is_zero() && u.is_nonzero() => sel.cond,
+                    _ => return,
+                };
+
+                self.add_b2i(dst, src);
+            }
+            Op::ISetP(isetp) if isetp.set_op.is_trivial(&isetp.accum) => {
+                let dst = isetp.dst.as_ssa().unwrap();
+                assert!(dst.comps() == 1);
+                let dst = dst[0];
+
+                let src = match (isetp.srcs[0], isetp.srcs[1]) {
+                    (z, x) | (x, z) if z.is_zero() => x,
+                    _ => return,
+                };
+
+                // -0 = 0
+                // -x != 0 => x != 0
+                if !matches!(src.src_mod, SrcMod::None | SrcMod::INeg) {
+                    return;
+                }
+
+                // x op 0
+                let inverted = match isetp.cmp_op {
+                    IntCmpOp::Eq => true,
+                    IntCmpOp::Ne => false,
+                    _ => return,
+                };
+                self.add_i2b(dst, src, inverted);
             }
             Op::IAdd2(add) => {
                 let dst = add.dst.as_ssa().unwrap();

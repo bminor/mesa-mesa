@@ -1305,6 +1305,10 @@ impl Src {
         }
     }
 
+    pub fn is_nonzero(&self) -> bool {
+        matches!(self.as_u32(), Some(x) if x != 0)
+    }
+
     pub fn is_fneg_zero(&self, src_type: SrcType) -> bool {
         match self.fold_imm(src_type).src_ref {
             SrcRef::Imm32(0x00008000) => src_type == SrcType::F16,
