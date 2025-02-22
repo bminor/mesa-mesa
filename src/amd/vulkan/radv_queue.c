@@ -1338,11 +1338,9 @@ radv_update_preambles(struct radv_queue_state *queue, struct radv_device *device
    return radv_update_preamble_cs(queue, device, &needs);
 }
 
-/* Creates a postamble CS that executes cache flush commands
+/**
+ * Creates a postamble CS that executes cache flush commands
  * that we can use at the end of each submission.
- *
- * GFX6: The kernel flushes L2 before shaders are finished.
- *       Therefore we need to wait for idle at the end of each submission.
  */
 static VkResult
 radv_create_flush_postamble(struct radv_queue *queue)
@@ -1359,10 +1357,18 @@ radv_create_flush_postamble(struct radv_queue *queue)
    radeon_check_space(ws, cs, 256);
 
    const enum amd_gfx_level gfx_level = pdev->info.gfx_level;
-   enum radv_cmd_flush_bits flush_bits = RADV_CMD_FLAG_CS_PARTIAL_FLUSH | RADV_CMD_FLAG_WB_L2;
+   enum radv_cmd_flush_bits flush_bits = 0;
 
-   if (ip == AMD_IP_GFX)
-      flush_bits |= RADV_CMD_FLAG_PS_PARTIAL_FLUSH;
+   if (gfx_level == GFX6) {
+      /* GFX6: The kernel flushes L2 before shaders are finished. */
+      flush_bits = RADV_CMD_FLAG_CS_PARTIAL_FLUSH | RADV_CMD_FLAG_WB_L2;
+      if (ip == AMD_IP_GFX)
+         flush_bits |= RADV_CMD_FLAG_PS_PARTIAL_FLUSH;
+   } else {
+      /* Improves stability on Hawaii. */
+      flush_bits =
+         RADV_CMD_FLAG_INV_ICACHE | RADV_CMD_FLAG_INV_SCACHE | RADV_CMD_FLAG_INV_VCACHE | RADV_CMD_FLAG_INV_L2;
+   }
 
    enum rgp_flush_bits sqtt_flush_bits = 0;
    radv_cs_emit_cache_flush(ws, cs, gfx_level, NULL, 0, queue->state.qf, flush_bits, &sqtt_flush_bits, 0);
@@ -1969,7 +1975,7 @@ radv_queue_init(struct radv_device *device, struct radv_queue *queue, int idx,
          goto fail;
    }
 
-   if (pdev->info.gfx_level == GFX6 &&
+   if (pdev->info.gfx_level <= GFX7 &&
        (queue->state.qf == RADV_QUEUE_GENERAL || queue->state.qf == RADV_QUEUE_COMPUTE)) {
       result = radv_create_flush_postamble(queue);
       if (result != VK_SUCCESS)
