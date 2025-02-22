@@ -2430,9 +2430,26 @@ impl SM70Encoder<'_> {
     }
 }
 
+fn legalize_tex_instr(op: &mut impl SrcsAsSlice, b: &mut LegalizeBuilder) {
+    // Texture instructions have one or two sources.  When they have two, the
+    // second one is optional and we can set rZ instead.
+    let srcs = op.srcs_as_mut_slice();
+    assert!(matches!(&srcs[0].src_ref, SrcRef::SSA(_)));
+    if let SrcRef::SSA(ssa) = &mut srcs[0].src_ref {
+        b.copy_ssa_ref_if_uniform(ssa);
+    }
+    if srcs.len() > 1 {
+        debug_assert!(srcs.len() == 2);
+        assert!(matches!(&srcs[1].src_ref, SrcRef::SSA(_) | SrcRef::Zero));
+        if let SrcRef::SSA(ssa) = &mut srcs[1].src_ref {
+            b.copy_ssa_ref_if_uniform(ssa);
+        }
+    }
+}
+
 impl SM70Op for OpTex {
     fn legalize(&mut self, b: &mut LegalizeBuilder) {
-        legalize_ext_instr(self, b);
+        legalize_tex_instr(self, b);
     }
 
     fn encode(&self, e: &mut SM70Encoder<'_>) {
@@ -2474,7 +2491,7 @@ impl SM70Op for OpTex {
 
 impl SM70Op for OpTld {
     fn legalize(&mut self, b: &mut LegalizeBuilder) {
-        legalize_ext_instr(self, b);
+        legalize_tex_instr(self, b);
     }
 
     fn encode(&self, e: &mut SM70Encoder<'_>) {
@@ -2521,7 +2538,7 @@ impl SM70Op for OpTld {
 
 impl SM70Op for OpTld4 {
     fn legalize(&mut self, b: &mut LegalizeBuilder) {
-        legalize_ext_instr(self, b);
+        legalize_tex_instr(self, b);
     }
 
     fn encode(&self, e: &mut SM70Encoder<'_>) {
@@ -2570,7 +2587,7 @@ impl SM70Op for OpTld4 {
 
 impl SM70Op for OpTmml {
     fn legalize(&mut self, b: &mut LegalizeBuilder) {
-        legalize_ext_instr(self, b);
+        legalize_tex_instr(self, b);
     }
 
     fn encode(&self, e: &mut SM70Encoder<'_>) {
@@ -2607,7 +2624,7 @@ impl SM70Op for OpTmml {
 
 impl SM70Op for OpTxd {
     fn legalize(&mut self, b: &mut LegalizeBuilder) {
-        legalize_ext_instr(self, b);
+        legalize_tex_instr(self, b);
     }
 
     fn encode(&self, e: &mut SM70Encoder<'_>) {
@@ -2647,7 +2664,7 @@ impl SM70Op for OpTxd {
 
 impl SM70Op for OpTxq {
     fn legalize(&mut self, b: &mut LegalizeBuilder) {
-        legalize_ext_instr(self, b);
+        legalize_tex_instr(self, b);
     }
 
     fn encode(&self, e: &mut SM70Encoder<'_>) {

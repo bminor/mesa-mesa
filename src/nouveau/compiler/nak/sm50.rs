@@ -2044,9 +2044,20 @@ impl SM50Encoder<'_> {
     }
 }
 
+fn legalize_tex_instr(op: &mut impl SrcsAsSlice, _b: &mut LegalizeBuilder) {
+    // Texture instructions have one or two sources.  When they have two, the
+    // second one is optional and we can set rZ instead.
+    let srcs = op.srcs_as_mut_slice();
+    assert!(matches!(&srcs[0].src_ref, SrcRef::SSA(_)));
+    if srcs.len() > 1 {
+        debug_assert!(srcs.len() == 2);
+        assert!(matches!(&srcs[1].src_ref, SrcRef::SSA(_) | SrcRef::Zero));
+    }
+}
+
 impl SM50Op for OpTex {
     fn legalize(&mut self, b: &mut LegalizeBuilder) {
-        legalize_ext_instr(self, b);
+        legalize_tex_instr(self, b);
     }
 
     fn encode(&self, e: &mut SM50Encoder<'_>) {
@@ -2083,7 +2094,7 @@ impl SM50Op for OpTex {
 
 impl SM50Op for OpTld {
     fn legalize(&mut self, b: &mut LegalizeBuilder) {
-        legalize_ext_instr(self, b);
+        legalize_tex_instr(self, b);
     }
 
     fn encode(&self, e: &mut SM50Encoder<'_>) {
@@ -2122,7 +2133,7 @@ impl SM50Op for OpTld {
 
 impl SM50Op for OpTld4 {
     fn legalize(&mut self, b: &mut LegalizeBuilder) {
-        legalize_ext_instr(self, b);
+        legalize_tex_instr(self, b);
     }
 
     fn encode(&self, e: &mut SM50Encoder<'_>) {
@@ -2164,7 +2175,7 @@ impl SM50Op for OpTld4 {
 
 impl SM50Op for OpTmml {
     fn legalize(&mut self, b: &mut LegalizeBuilder) {
-        legalize_ext_instr(self, b);
+        legalize_tex_instr(self, b);
     }
 
     fn encode(&self, e: &mut SM50Encoder<'_>) {
@@ -2195,7 +2206,7 @@ impl SM50Op for OpTmml {
 
 impl SM50Op for OpTxd {
     fn legalize(&mut self, b: &mut LegalizeBuilder) {
-        legalize_ext_instr(self, b);
+        legalize_tex_instr(self, b);
     }
 
     fn encode(&self, e: &mut SM50Encoder<'_>) {
@@ -2227,7 +2238,7 @@ impl SM50Op for OpTxd {
 
 impl SM50Op for OpTxq {
     fn legalize(&mut self, b: &mut LegalizeBuilder) {
-        legalize_ext_instr(self, b);
+        legalize_tex_instr(self, b);
     }
 
     fn encode(&self, e: &mut SM50Encoder<'_>) {

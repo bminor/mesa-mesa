@@ -1836,7 +1836,13 @@ impl<'a> ShaderFromNir<'a> {
                 _ => panic!("Invalid offset mode"),
             };
 
-            let srcs = [self.get_src(&srcs[0].src), self.get_src(&srcs[1].src)];
+            let src0 = self.get_src(&srcs[0].src);
+            let src1 = if srcs.len() > 1 {
+                self.get_src(&srcs[1].src)
+            } else {
+                SrcRef::Zero.into()
+            };
+            let srcs = [src0, src1];
 
             if tex.op == nir_texop_txd {
                 assert!(lod_mode == TexLodMode::Auto);
