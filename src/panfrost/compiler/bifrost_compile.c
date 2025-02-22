@@ -2607,6 +2607,23 @@ bi_emit_alu(bi_builder *b, nir_alu_instr *instr)
       return;
    }
 
+   case nir_op_unpack_32_2x16_split_x:
+   case nir_op_unpack_32_2x16_split_y: {
+      assert(comps <= 2);
+
+      bi_index idx = bi_src_index(&instr->src[0].src);
+      bi_index srcs[2] = {idx, idx};
+
+      unsigned offset = instr->op == nir_op_unpack_32_2x16_split_x ? 0 : 1;
+      unsigned channels[2] = {
+         comps > 0 ? instr->src[0].swizzle[0] * 2 + offset : 0,
+         comps > 1 ? instr->src[0].swizzle[1] * 2 + offset : 0,
+      };
+
+      bi_make_vec_to(b, dst, srcs, channels, comps, 16);
+      return;
+   }
+
    case nir_op_unpack_64_2x32_split_x: {
       unsigned chan = (instr->src[0].swizzle[0] * 2) + 0;
       bi_mov_i32_to(b, dst,
@@ -2688,6 +2705,18 @@ bi_emit_alu(bi_builder *b, nir_alu_instr *instr)
                               instr->src[0].swizzle[1]};
 
       bi_make_vec_to(b, dst, unoffset_srcs, channels, 2, 16);
+      return;
+   }
+
+   case nir_op_pack_32_2x16_split: {
+      assert(comps == 1);
+
+      bi_index srcs[2] = {bi_src_index(&instr->src[0].src),
+                          bi_src_index(&instr->src[1].src)};
+      unsigned channels[2] = {instr->src[0].swizzle[0],
+                              instr->src[1].swizzle[0]};
+
+      bi_make_vec_to(b, dst, srcs, channels, 2, 16);
       return;
    }
 
@@ -2988,6 +3017,23 @@ bi_emit_alu(bi_builder *b, nir_alu_instr *instr)
          bi_mkvec_v2i16_to(b, dst, bi_imm_u16(0), bi_half(s0, 0));
       break;
    }
+
+   case nir_op_pack_half_2x16_split:
+      /* On v11+, V2F32_TO_V2F16 is gone. This should be lowered in
+       * bifrost_nir_lower_algebraic_late. */
+      assert(b->shader->arch < 11);
+
+      bi_v2f32_to_v2f16_to(b, dst, s0, s1);
+      break;
+
+   case nir_op_unpack_half_2x16_split_x:
+      assert(comps == 1);
+      bi_f16_to_f32_to(b, dst, bi_half(s0, false));
+      break;
+   case nir_op_unpack_half_2x16_split_y:
+      assert(comps == 1);
+      bi_f16_to_f32_to(b, dst, bi_half(s0, true));
+      break;
 
    case nir_op_ishl:
       bi_lshift_or_to(b, sz, dst, s0, bi_zero(), bi_byte(s1, 0));

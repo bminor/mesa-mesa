@@ -94,6 +94,9 @@ algebraic_late = [
     (('f2i16', 'a@16'), ('f2i16', ('f2f32', a)), 'gpu_arch >= 11'),
     (('f2u16', 'a@16'), ('f2u16', ('f2f32', a)), 'gpu_arch >= 11'),
 
+    # On v11+, V2F32_TO_V2S16 is gone
+    (('pack_half_2x16_split', a, b), ('pack_32_2x16_split', ('f2f16', a), ('f2f16', b)), 'gpu_arch >= 11'),
+
     # On v11+, F16_TO_S32/F16_TO_U32 is gone but we still have F32_TO_S32/F32_TO_U32
     (('f2i32', 'a@16'), ('f2i32', ('f2f32', a)), 'gpu_arch >= 11'),
     (('f2u32', 'a@16'), ('f2u32', ('f2f32', a)), 'gpu_arch >= 11'),

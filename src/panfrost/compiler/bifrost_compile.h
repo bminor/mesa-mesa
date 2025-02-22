@@ -120,7 +120,6 @@ void bifrost_compile_shader_nir(nir_shader *nir,
       .lower_unpack_snorm_2x16 = true,                                         \
       .lower_unpack_unorm_4x8 = true,                                          \
       .lower_unpack_snorm_4x8 = true,                                          \
-      .lower_pack_split = true,                                                \
                                                                                \
       .lower_doubles_options =                                                 \
          nir_lower_dmod, /* TODO: Don't lower supported 64-bit operations */   \
