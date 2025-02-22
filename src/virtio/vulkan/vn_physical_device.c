@@ -22,11 +22,6 @@
 
 #define IMAGE_FORMAT_CACHE_MAX_ENTRIES 100
 
-#define VN_EXTENSION_TABLE_INDEX(tbl, ext)                                   \
-   ((const bool *)((const void *)(&(tbl)) +                                  \
-                   offsetof(__typeof__(tbl), ext)) -                         \
-    (tbl).extensions)
-
 /** Add `elem` to the pNext chain of `head`. */
 #define VN_ADD_PNEXT(head, s_type, elem)                                     \
    do {                                                                      \
@@ -43,28 +38,6 @@
    do {                                                                      \
       if (ext_cond)                                                          \
          VN_ADD_PNEXT((head), s_type, (elem));                               \
-   } while (0)
-
-/**
- * Set member in core feature/property struct to value. (This provides visual
- * parity with VN_SET_CORE_FIELD).
- */
-#define VN_SET_CORE_VALUE(core_struct, member, val)                          \
-   do {                                                                      \
-      (core_struct)->member = (val);                                         \
-   } while (0)
-
-/** Copy member into core feature/property struct from extension struct. */
-#define VN_SET_CORE_FIELD(core_struct, member, ext_struct)                   \
-   VN_SET_CORE_VALUE((core_struct), member, (ext_struct).member)
-
-/**
- * Copy array member into core feature/property struct from extension struct.
- */
-#define VN_SET_CORE_ARRAY(core_struct, member, ext_struct)                   \
-   do {                                                                      \
-      memcpy((core_struct)->member, (ext_struct).member,                     \
-             sizeof((core_struct)->member));                                 \
    } while (0)
 
 /**
@@ -333,30 +306,21 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
    /* Enable features for extensions natively implemented in Venus driver.
     * See vn_physical_device_get_native_extensions.
     */
-   VN_SET_CORE_VALUE(feats, deviceMemoryReport, true);
+   feats->deviceMemoryReport = true;
 
    /* Disable unsupported ExtendedDynamicState3Features */
    if (exts->EXT_extended_dynamic_state3) {
       /* VK_NV_* extensions required */
-      VN_SET_CORE_VALUE(feats, extendedDynamicState3ViewportWScalingEnable,
-                        false);
-      VN_SET_CORE_VALUE(feats, extendedDynamicState3ViewportSwizzle, false);
-      VN_SET_CORE_VALUE(feats, extendedDynamicState3CoverageToColorEnable,
-                        false);
-      VN_SET_CORE_VALUE(feats, extendedDynamicState3CoverageToColorLocation,
-                        false);
-      VN_SET_CORE_VALUE(feats, extendedDynamicState3CoverageModulationMode,
-                        false);
-      VN_SET_CORE_VALUE(
-         feats, extendedDynamicState3CoverageModulationTableEnable, false);
-      VN_SET_CORE_VALUE(feats, extendedDynamicState3CoverageModulationTable,
-                        false);
-      VN_SET_CORE_VALUE(feats, extendedDynamicState3CoverageReductionMode,
-                        false);
-      VN_SET_CORE_VALUE(
-         feats, extendedDynamicState3RepresentativeFragmentTestEnable, false);
-      VN_SET_CORE_VALUE(feats, extendedDynamicState3ShadingRateImageEnable,
-                        false);
+      feats->extendedDynamicState3ViewportWScalingEnable = false;
+      feats->extendedDynamicState3ViewportSwizzle = false;
+      feats->extendedDynamicState3CoverageToColorEnable = false;
+      feats->extendedDynamicState3CoverageToColorLocation = false;
+      feats->extendedDynamicState3CoverageModulationMode = false;
+      feats->extendedDynamicState3CoverageModulationTableEnable = false;
+      feats->extendedDynamicState3CoverageModulationTable = false;
+      feats->extendedDynamicState3CoverageReductionMode = false;
+      feats->extendedDynamicState3RepresentativeFragmentTestEnable = false;
+      feats->extendedDynamicState3ShadingRateImageEnable = false;
    }
 }
 
@@ -444,16 +408,16 @@ vn_physical_device_sanitize_properties(struct vn_physical_device *physical_dev)
 
    /* store renderer VkDriverId for implementation specific workarounds */
    physical_dev->renderer_driver_id = props->driverID;
-   VN_SET_CORE_VALUE(props, driverID, VK_DRIVER_ID_MESA_VENUS);
+   props->driverID = VK_DRIVER_ID_MESA_VENUS;
 
    snprintf(props->driverName, sizeof(props->driverName), "venus");
    snprintf(props->driverInfo, sizeof(props->driverInfo),
             "Mesa " PACKAGE_VERSION MESA_GIT_SHA1);
 
-   VN_SET_CORE_VALUE(props, conformanceVersion.major, 1);
-   VN_SET_CORE_VALUE(props, conformanceVersion.minor, 3);
-   VN_SET_CORE_VALUE(props, conformanceVersion.subminor, 0);
-   VN_SET_CORE_VALUE(props, conformanceVersion.patch, 0);
+   props->conformanceVersion.major = 1;
+   props->conformanceVersion.minor = 3;
+   props->conformanceVersion.subminor = 0;
+   props->conformanceVersion.patch = 0;
 
    vn_physical_device_init_uuids(physical_dev);
 }
@@ -1405,24 +1369,23 @@ vn_physical_device_disable_sparse_binding(
     */
 
    struct vk_features *feats = &physical_dev->base.base.supported_features;
-   VN_SET_CORE_VALUE(feats, sparseBinding, false);
-   VN_SET_CORE_VALUE(feats, sparseResidencyBuffer, false);
-   VN_SET_CORE_VALUE(feats, sparseResidencyImage2D, false);
-   VN_SET_CORE_VALUE(feats, sparseResidencyImage3D, false);
-   VN_SET_CORE_VALUE(feats, sparseResidency2Samples, false);
-   VN_SET_CORE_VALUE(feats, sparseResidency4Samples, false);
-   VN_SET_CORE_VALUE(feats, sparseResidency8Samples, false);
-   VN_SET_CORE_VALUE(feats, sparseResidency16Samples, false);
-   VN_SET_CORE_VALUE(feats, sparseResidencyAliased, false);
+   feats->sparseBinding = false;
+   feats->sparseResidencyBuffer = false;
+   feats->sparseResidencyImage2D = false;
+   feats->sparseResidencyImage3D = false;
+   feats->sparseResidency2Samples = false;
+   feats->sparseResidency4Samples = false;
+   feats->sparseResidency8Samples = false;
+   feats->sparseResidency16Samples = false;
+   feats->sparseResidencyAliased = false;
 
    struct vk_properties *props = &physical_dev->base.base.properties;
-   VN_SET_CORE_VALUE(props, sparseAddressSpaceSize, 0);
-   VN_SET_CORE_VALUE(props, sparseResidencyStandard2DBlockShape, 0);
-   VN_SET_CORE_VALUE(props, sparseResidencyStandard2DMultisampleBlockShape,
-                     0);
-   VN_SET_CORE_VALUE(props, sparseResidencyStandard3DBlockShape, 0);
-   VN_SET_CORE_VALUE(props, sparseResidencyAlignedMipSize, 0);
-   VN_SET_CORE_VALUE(props, sparseResidencyNonResidentStrict, 0);
+   props->sparseAddressSpaceSize = 0;
+   props->sparseResidencyStandard2DBlockShape = 0;
+   props->sparseResidencyStandard2DMultisampleBlockShape = 0;
+   props->sparseResidencyStandard3DBlockShape = 0;
+   props->sparseResidencyAlignedMipSize = 0;
+   props->sparseResidencyNonResidentStrict = 0;
 }
 
 static VkResult
