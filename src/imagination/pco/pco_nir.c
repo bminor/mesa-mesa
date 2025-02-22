@@ -701,10 +701,15 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
    NIR_PASS(_, nir, pco_nir_lower_io);
    NIR_PASS(_, nir, pco_nir_lower_atomics, &uses_usclib);
 
+   NIR_PASS(_, nir, nir_opt_constant_folding);
+
    if (nir->info.stage == MESA_SHADER_VERTEX) {
+      /* TODO: false? */
+      NIR_PASS(_, nir, nir_lower_io_array_vars_to_elements_no_indirects, true);
       NIR_PASS(_, nir, nir_split_struct_vars, nir_var_shader_out);
       NIR_PASS(_, nir, nir_split_struct_vars, nir_var_shader_in);
    } else if (nir->info.stage == MESA_SHADER_FRAGMENT) {
+      NIR_PASS(_, nir, nir_lower_io_array_vars_to_elements_no_indirects, false);
       NIR_PASS(_, nir, nir_split_struct_vars, nir_var_shader_in);
    }
 
