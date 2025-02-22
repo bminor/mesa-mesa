@@ -1170,6 +1170,9 @@ enum ir_intrinsic_id {
    ir_intrinsic_quad_swap_horizontal,
    ir_intrinsic_quad_swap_vertical,
    ir_intrinsic_quad_swap_diagonal,
+
+   ir_intrinsic_emit_mesh_tasks,
+   ir_intrinsic_set_mesh_outputs,
 };
 
 /*@{*/

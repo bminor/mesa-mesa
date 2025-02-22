@@ -118,6 +118,7 @@ private:
                        nir_def *src2);
    nir_alu_instr *emit(nir_op op, unsigned dest_size, nir_def *src1,
                        nir_def *src2, nir_def *src3);
+   void emit(nir_intrinsic_instr *instr, ir_call *ir);
 
    nir_shader *shader;
    nir_function_impl *impl;
@@ -961,6 +962,31 @@ get_reduction_op(enum ir_intrinsic_id id, const glsl_type *type)
 }
 
 void
+nir_visitor::emit(nir_intrinsic_instr *instr, ir_call *ir)
+{
+   if (ir->return_deref) {
+      const glsl_type *type = ir->return_deref->type;
+      nir_def_init(&instr->instr, &instr->def, glsl_get_vector_elements(type),
+                   glsl_get_bit_size(type));
+
+      if (!nir_intrinsic_dest_components(instr))
+         instr->num_components = instr->def.num_components;
+   }
+
+   unsigned index = 0;
+   ir_foreach_in_list(ir_rvalue, param, &ir->actual_parameters) {
+      instr->src[index] = nir_src_for_ssa(evaluate_rvalue(param));
+
+      if (!nir_intrinsic_src_components(instr, index))
+         instr->num_components = nir_src_num_components(instr->src[index]);
+
+      index++;
+   }
+
+   nir_builder_instr_insert(&b, &instr->instr);
+}
+
+void
 nir_visitor::visit(ir_call *ir)
 {
    if (ir->callee->is_intrinsic()) {
@@ -968,6 +994,8 @@ nir_visitor::visit(ir_call *ir)
 
       /* Initialize to something because gcc complains otherwise */
       nir_atomic_op atomic_op = nir_atomic_op_iadd;
+
+      nir_variable *task_payload = NULL;
 
       switch (ir->callee->intrinsic_id) {
       case ir_intrinsic_generic_atomic_add:
@@ -1255,6 +1283,18 @@ nir_visitor::visit(ir_call *ir)
          break;
       case ir_intrinsic_quad_swap_diagonal:
          op = nir_intrinsic_quad_swap_diagonal;
+         break;
+      case ir_intrinsic_emit_mesh_tasks:
+         nir_foreach_variable_with_modes(var, shader, nir_var_mem_task_payload) {
+            task_payload = var;
+            break;
+         }
+         op = task_payload ?
+            nir_intrinsic_launch_mesh_workgroups_with_payload_deref :
+            nir_intrinsic_launch_mesh_workgroups;
+         break;
+      case ir_intrinsic_set_mesh_outputs:
+         op = nir_intrinsic_set_vertex_and_primitive_count;
          break;
       default:
          UNREACHABLE("not reached");
@@ -1695,26 +1735,29 @@ nir_visitor::visit(ir_call *ir)
       case nir_intrinsic_quad_broadcast:
       case nir_intrinsic_quad_swap_horizontal:
       case nir_intrinsic_quad_swap_vertical:
-      case nir_intrinsic_quad_swap_diagonal: {
-         if (ir->return_deref) {
-            const glsl_type *type = ir->return_deref->type;
-            nir_def_init(&instr->instr, &instr->def, glsl_get_vector_elements(type),
-                         glsl_get_bit_size(type));
-
-            if (!nir_intrinsic_dest_components(instr))
-               instr->num_components = instr->def.num_components;
-         }
-
-         unsigned index = 0;
-         ir_foreach_in_list(ir_rvalue, param, &ir->actual_parameters) {
-            instr->src[index] = nir_src_for_ssa(evaluate_rvalue(param));
-
-            if (!nir_intrinsic_src_components(instr, index))
-               instr->num_components = nir_src_num_components(instr->src[index]);
-
-            index++;
-         }
-
+      case nir_intrinsic_quad_swap_diagonal:
+         emit(instr, ir);
+         break;
+      case nir_intrinsic_set_vertex_and_primitive_count: {
+         nir_def *undef = nir_undef(&b, 1, 32);
+         instr->src[2] = nir_src_for_ssa(undef);
+         emit(instr, ir);
+         break;
+      }
+      case nir_intrinsic_launch_mesh_workgroups_with_payload_deref: {
+         nir_def *payload = &nir_build_deref_var(&b, task_payload)->def;
+         instr->src[1] = nir_src_for_ssa(payload);
+      }
+      FALLTHROUGH;
+      case nir_intrinsic_launch_mesh_workgroups: {
+         ir_exec_node *param = ir->actual_parameters.get_head();
+         nir_def *x = evaluate_rvalue(((ir_instruction *)param)->as_rvalue());
+         param = param->get_next();
+         nir_def *y = evaluate_rvalue(((ir_instruction *)param)->as_rvalue());
+         param = param->get_next();
+         nir_def *z = evaluate_rvalue(((ir_instruction *)param)->as_rvalue());
+         nir_def *dimensions = nir_vec3(&b, x, y, z);
+         instr->src[0] = nir_src_for_ssa(dimensions);
          nir_builder_instr_insert(&b, &instr->instr);
          break;
       }
