@@ -611,7 +611,7 @@ nvk_CreateDescriptorPool(VkDevice _device,
    if (mem_size > 0) {
       if (pCreateInfo->flags & VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT) {
          pool->host_mem = vk_zalloc2(&dev->vk.alloc, pAllocator, mem_size,
-                                     16, VK_OBJECT_TYPE_DESCRIPTOR_POOL);
+                                     16, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
          if (pool->host_mem == NULL) {
             nvk_destroy_descriptor_pool(dev, pAllocator, pool);
             return vk_error(dev, VK_ERROR_OUT_OF_HOST_MEMORY);
