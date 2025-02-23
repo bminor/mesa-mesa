@@ -1010,6 +1010,7 @@ enum anv_timestamp_capture_type {
     ANV_TIMESTAMP_CAPTURE_AT_CS_STALL,
     ANV_TIMESTAMP_REWRITE_COMPUTE_WALKER,
     ANV_TIMESTAMP_REWRITE_INDIRECT_DISPATCH,
+    ANV_TIMESTAMP_REPEAT_LAST,
 };
 
 struct anv_physical_device {
@@ -6532,9 +6533,12 @@ struct anv_utrace_submit {
    struct anv_state_stream general_state_stream;
 
    /* Last fully read 64bit timestamp (used to rebuild the upper bits of 32bit
-    * timestamps)
+    * timestamps), the timestamp is not scaled to the CPU time domain.
     */
    uint64_t last_full_timestamp;
+
+   /* Last timestamp, not scaled to the CPU time domain */
+   uint64_t last_timestamp;
 
    /* Memcpy state tracking (only used for timestamp copies on render engine) */
    struct anv_memcpy_state memcpy_state;

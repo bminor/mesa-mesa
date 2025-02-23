@@ -47,7 +47,7 @@ def define_tracepoints(args):
 
     def begin_end_tp(name, tp_args=[], tp_struct=None, tp_print=None,
                      tp_default_enabled=True, end_pipelined=True,
-                     compute=False, maybe_compute=False,
+                     compute=False, repeat_last=False,
                      need_cs_param=False):
         global intel_default_tps
         if tp_default_enabled:
@@ -69,8 +69,8 @@ def define_tracepoints(args):
         if end_pipelined:
             if compute:
                 tp_flags.append('INTEL_DS_TRACEPOINT_FLAG_END_CS')
-            elif maybe_compute:
-                tp_flags.append('INTEL_DS_TRACEPOINT_FLAG_END_CS_OR_NOOP')
+            elif repeat_last:
+                tp_flags.append('INTEL_DS_TRACEPOINT_FLAG_REPEAST_LAST')
             else:
                 tp_flags.append('INTEL_DS_TRACEPOINT_FLAG_END_OF_PIPE')
         Tracepoint('intel_end_{0}'.format(name),
@@ -229,15 +229,14 @@ def define_tracepoints(args):
                  tp_args=[Arg(type='uint32_t', var='count', c_format='%u'),],
                  need_cs_param=True)
 
-    rt_args = [Arg(type='uint32_t', var='cs_hash', c_format='%u')]
-    begin_end_tp('as_build', tp_args=rt_args)
-    begin_end_tp('as_build_leaves', tp_args=rt_args, maybe_compute=True)
-    begin_end_tp('as_morton_generate', tp_args=rt_args, maybe_compute=True)
-    begin_end_tp('as_morton_sort', tp_args=rt_args, maybe_compute=True)
-    begin_end_tp('as_lbvh_build_internal', tp_args=rt_args, maybe_compute=True)
-    begin_end_tp('as_ploc_build_internal', tp_args=rt_args, maybe_compute=True)
-    begin_end_tp('as_encode', tp_args=rt_args, maybe_compute=True)
-    begin_end_tp('as_copy', tp_args=rt_args, maybe_compute=True)
+    begin_end_tp('as_build')
+    begin_end_tp('as_build_leaves', repeat_last=True)
+    begin_end_tp('as_morton_generate', repeat_last=True)
+    begin_end_tp('as_morton_sort', repeat_last=True)
+    begin_end_tp('as_lbvh_build_internal', repeat_last=True)
+    begin_end_tp('as_ploc_build_internal', repeat_last=True)
+    begin_end_tp('as_encode', repeat_last=True)
+    begin_end_tp('as_copy', repeat_last=True)
 
     begin_end_tp('rays',
                  tp_args=[Arg(type='uint32_t', var='group_x', c_format='%u'),

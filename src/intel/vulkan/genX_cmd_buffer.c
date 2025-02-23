@@ -6269,6 +6269,10 @@ void genX(cmd_emit_timestamp)(struct anv_batch *batch,
    }
 #endif
 
+   case ANV_TIMESTAMP_REPEAT_LAST:
+      /* Noop */
+      break;
+
    default:
       unreachable("invalid");
    }

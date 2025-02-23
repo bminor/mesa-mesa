@@ -351,11 +351,10 @@ anv_utrace_record_ts(struct u_trace *ut, void *cs,
    const bool is_end_compute =
       cs == NULL &&
       (flags & INTEL_DS_TRACEPOINT_FLAG_END_CS);
-   const bool is_end_compute_or_noop =
-      cs == NULL &&
-      (flags & INTEL_DS_TRACEPOINT_FLAG_END_CS_OR_NOOP);
    enum anv_timestamp_capture_type capture_type;
-   if (is_end_compute) {
+   if (flags & INTEL_DS_TRACEPOINT_FLAG_REPEAST_LAST) {
+      capture_type = ANV_TIMESTAMP_REPEAT_LAST;
+   } else if (is_end_compute) {
       assert(device->info->verx10 < 125 ||
              !is_end_compute ||
              cmd_buffer->state.last_indirect_dispatch != NULL ||
@@ -366,15 +365,6 @@ anv_utrace_record_ts(struct u_trace *ut, void *cs,
           ANV_TIMESTAMP_REWRITE_INDIRECT_DISPATCH :
           ANV_TIMESTAMP_REWRITE_COMPUTE_WALKER) :
           ANV_TIMESTAMP_CAPTURE_END_OF_PIPE;
-   } else if (is_end_compute_or_noop) {
-      capture_type =
-         device->info->verx10 >= 125 ?
-         (cmd_buffer->state.last_indirect_dispatch != NULL ?
-          ANV_TIMESTAMP_REWRITE_INDIRECT_DISPATCH :
-          (cmd_buffer->state.last_compute_walker != NULL ?
-           ANV_TIMESTAMP_REWRITE_COMPUTE_WALKER :
-           ANV_TIMESTAMP_CAPTURE_TOP_OF_PIPE)) :
-         ANV_TIMESTAMP_CAPTURE_TOP_OF_PIPE;
    } else {
       capture_type = (flags & INTEL_DS_TRACEPOINT_FLAG_END_CS) ?
          ANV_TIMESTAMP_CAPTURE_END_OF_PIPE :
@@ -418,6 +408,11 @@ anv_utrace_read_ts(struct u_trace_context *utctx,
       assert(result == VK_SUCCESS);
    }
 
+   if (flags & INTEL_DS_TRACEPOINT_FLAG_REPEAST_LAST) {
+      return intel_device_info_timebase_scale(device->info,
+                                              submit->last_timestamp);
+   }
+
    assert(offset_B % sizeof(union anv_utrace_timestamp) == 0);
    union anv_utrace_timestamp *ts =
       (union anv_utrace_timestamp *)(bo->map + offset_B);
@@ -426,31 +421,32 @@ anv_utrace_read_ts(struct u_trace_context *utctx,
    if (ts->timestamp == U_TRACE_NO_TIMESTAMP)
       return U_TRACE_NO_TIMESTAMP;
 
+   uint64_t timestamp;
+
    /* Detect a 16/32 bytes timestamp write */
    if (ts->gfx20_postsync_data[1] != 0 ||
        ts->gfx20_postsync_data[2] != 0 ||
        ts->gfx20_postsync_data[3] != 0) {
       if (device->info->ver >= 20) {
-         return intel_device_info_timebase_scale(device->info,
-                                                 ts->gfx20_postsync_data[3]);
+         timestamp = ts->gfx20_postsync_data[3];
+      } else {
+         /* The timestamp written by COMPUTE_WALKER::PostSync only as 32bits.
+          * We need to rebuild the full 64bits using the previous timestamp.
+          * We assume that utrace is reading the timestamp in order. Anyway
+          * timestamp rollover on 32bits in a few minutes so in most cases
+          * that should be correct.
+          */
+         timestamp =
+            (submit->last_full_timestamp & 0xffffffff00000000) |
+            (uint64_t) ts->gfx125_postsync_data[3];
       }
-
-      /* The timestamp written by COMPUTE_WALKER::PostSync only as 32bits. We
-       * need to rebuild the full 64bits using the previous timestamp. We
-       * assume that utrace is reading the timestamp in order. Anyway
-       * timestamp rollover on 32bits in a few minutes so in most cases that
-       * should be correct.
-       */
-      uint64_t timestamp =
-         (submit->last_full_timestamp & 0xffffffff00000000) |
-         (uint64_t) ts->gfx125_postsync_data[3];
-
-      return intel_device_info_timebase_scale(device->info, timestamp);
+   } else {
+      submit->last_full_timestamp = timestamp = ts->timestamp;
    }
 
-   submit->last_full_timestamp = ts->timestamp;
+   submit->last_timestamp = timestamp;
 
-   return intel_device_info_timebase_scale(device->info, ts->timestamp);
+   return intel_device_info_timebase_scale(device->info, timestamp);
 }
 
 static void
