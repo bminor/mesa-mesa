@@ -8,6 +8,7 @@ libteflon = shared_library(
   link_args : ld_args_build_id,
   dependencies : [
     driver_etnaviv,
+    driver_rocket,
     idep_nir,
     idep_mesautil,
   ],
