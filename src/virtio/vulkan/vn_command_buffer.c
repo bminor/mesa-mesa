@@ -2326,8 +2326,8 @@ vn_CmdPushDescriptorSet(VkCommandBuffer commandBuffer,
 }
 
 void
-vkCmdPushDescriptorSet2(VkCommandBuffer commandBuffer,
-                        const VkPushDescriptorSetInfo *pPushDescriptorSetInfo)
+vn_CmdPushDescriptorSet2(VkCommandBuffer commandBuffer,
+                         const VkPushDescriptorSetInfo *pPushDescriptorSetInfo)
 {
    const uint32_t write_count = pPushDescriptorSetInfo->descriptorWriteCount;
    const VkWriteDescriptorSet *desc_writes =
@@ -2391,9 +2391,9 @@ vn_CmdPushDescriptorSetWithTemplate(
 }
 
 void
-vkCmdPushDescriptorSetWithTemplate2(VkCommandBuffer commandBuffer,
-                                    const VkPushDescriptorSetWithTemplateInfo
-                                       *pPushDescriptorSetWithTemplateInfo)
+vn_CmdPushDescriptorSetWithTemplate2(VkCommandBuffer commandBuffer,
+                                     const VkPushDescriptorSetWithTemplateInfo
+                                        *pPushDescriptorSetWithTemplateInfo)
 {
    struct vn_descriptor_update_template *templ =
       vn_descriptor_update_template_from_handle(
