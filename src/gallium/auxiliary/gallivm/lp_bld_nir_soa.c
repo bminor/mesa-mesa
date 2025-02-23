@@ -2884,9 +2884,12 @@ get_src_index(nir_src *src)
    }
 }
 
-static LLVMValueRef *
-get_instr_src_vec(struct lp_build_nir_soa_context *bld, nir_instr *instr, uint32_t src_index)
+static void
+get_instr_src_vec(struct lp_build_nir_soa_context *bld, nir_instr *instr, uint32_t src_index, LLVMValueRef *src_values)
 {
+   struct gallivm_state *gallivm = bld->base.gallivm;
+   LLVMBuilderRef builder = gallivm->builder;
+
    nir_src *src = NULL; 
    switch (instr->type) {
    case nir_instr_type_alu: {
@@ -2919,13 +2922,30 @@ get_instr_src_vec(struct lp_build_nir_soa_context *bld, nir_instr *instr, uint32
    }
 
    bool divergent = lp_nir_instr_src_divergent(instr, src_index);
-   return &bld->ssa_defs[src->ssa->index * NIR_MAX_VEC_COMPONENTS * 2 + divergent * NIR_MAX_VEC_COMPONENTS];
+
+   memcpy(src_values,
+          &bld->ssa_defs[src->ssa->index * NIR_MAX_VEC_COMPONENTS * 2 + divergent * NIR_MAX_VEC_COMPONENTS],
+          sizeof(LLVMValueRef) * nir_src_num_components(*src));
+
+   for (uint32_t c = 0; c < nir_src_num_components(*src); c++) {
+      if (src_values[c])
+         continue;
+
+      /* The value should only be NULL when using a divergent value as a uniform source.
+       * Extracting the first_active_invocation element needs to be done at the consuming
+       * instruction because the exec mask can change.
+       */
+      assert(!divergent);
+      src_values[c] = LLVMBuildExtractElement(
+         builder, bld->ssa_defs[src->ssa->index * NIR_MAX_VEC_COMPONENTS * 2 + NIR_MAX_VEC_COMPONENTS + c],
+         first_active_invocation(bld, true), "");
+   }
 }
 
-static LLVMValueRef *
-get_src_vec(struct lp_build_nir_soa_context *bld, uint32_t src_index)
+static void
+get_src_vec(struct lp_build_nir_soa_context *bld, uint32_t src_index, LLVMValueRef *src_values)
 {
-   return get_instr_src_vec(bld, bld->instr, src_index);
+   get_instr_src_vec(bld, bld->instr, src_index, src_values);
 }
 
 static LLVMValueRef
@@ -2934,7 +2954,9 @@ get_src(struct lp_build_nir_soa_context *bld, nir_src *src, uint32_t component)
    if (nir_src_is_if(src))
       return bld->ssa_defs[src->ssa->index * NIR_MAX_VEC_COMPONENTS * 2 + NIR_MAX_VEC_COMPONENTS + component];
 
-   return get_instr_src_vec(bld, nir_src_parent_instr(src), get_src_index(src))[component];
+   LLVMValueRef result[NIR_MAX_VEC_COMPONENTS] = { NULL };
+   get_instr_src_vec(bld, nir_src_parent_instr(src), get_src_index(src), result);
+   return result[component];
 }
 
 static void
@@ -2984,13 +3006,11 @@ assign_ssa_dest(struct lp_build_nir_soa_context *bld, const nir_def *ssa,
 #endif
    }
 
-   bool used_by_uniform = false;
    bool used_by_divergent = false;
    nir_foreach_use_including_if(use, ssa) {
       bool use_divergent = nir_src_is_if(use);
       if (!use_divergent)
          use_divergent =  lp_nir_instr_src_divergent(nir_src_parent_instr(use), get_src_index(use));
-      used_by_uniform |= !use_divergent;
       used_by_divergent |= use_divergent;
    }
 
@@ -3001,10 +3021,6 @@ assign_ssa_dest(struct lp_build_nir_soa_context *bld, const nir_def *ssa,
 
       if (lp_value_is_divergent(vals[c])) {
          bld->ssa_defs[ssa->index * NIR_MAX_VEC_COMPONENTS * 2 + NIR_MAX_VEC_COMPONENTS + c] = vals[c];
-         if (used_by_uniform) {
-            bld->ssa_defs[ssa->index * NIR_MAX_VEC_COMPONENTS * 2 + c] =
-               LLVMBuildExtractElement(builder, vals[c], first_active_invocation(bld, true), "");
-         }
       } else {
          bld->ssa_defs[ssa->index * NIR_MAX_VEC_COMPONENTS * 2 + c] = vals[c];
          if (used_by_divergent) {
@@ -3805,7 +3821,8 @@ visit_store_output(struct lp_build_nir_soa_context *bld,
    unsigned mask = nir_intrinsic_write_mask(instr);
 
    unsigned bit_size = nir_src_bit_size(instr->src[0]);
-   LLVMValueRef *src = get_src_vec(bld, 0);
+   LLVMValueRef src[NIR_MAX_VEC_COMPONENTS] = { NULL };
+   get_src_vec(bld, 0, src);
 
    nir_src *offset = nir_get_io_offset_src(instr);
    bool indirect = !nir_src_is_const(*offset);
@@ -3884,7 +3901,8 @@ visit_store_reg(struct lp_build_nir_soa_context *bld,
    unsigned writemask = nir_intrinsic_write_mask(instr);
    assert(writemask != 0x0);
 
-   LLVMValueRef *vals = get_src_vec(bld, 0);
+   LLVMValueRef vals[NIR_MAX_VEC_COMPONENTS] = { NULL };
+   get_src_vec(bld, 0, vals);
 
    struct hash_entry *entry = _mesa_hash_table_search(bld->regs, decl);
    LLVMValueRef reg_storage = (LLVMValueRef)entry->data;
@@ -4006,7 +4024,8 @@ visit_store_var(struct lp_build_nir_soa_context *bld,
    nir_variable_mode mode = deref->modes;
    int writemask = instr->const_index[0];
    unsigned bit_size = nir_src_bit_size(instr->src[1]);
-   LLVMValueRef *src = get_src_vec(bld, 1);
+   LLVMValueRef src[NIR_MAX_VEC_COMPONENTS] = { NULL };
+   get_src_vec(bld, 1, src);
    unsigned const_index = 0;
    LLVMValueRef indir_index = NULL, indir_vertex_index = NULL;
    if (var) {
@@ -4137,7 +4156,8 @@ static void
 visit_store_ssbo(struct lp_build_nir_soa_context *bld,
                  nir_intrinsic_instr *instr)
 {
-   LLVMValueRef *val = get_src_vec(bld, 0);
+   LLVMValueRef val[NIR_MAX_VEC_COMPONENTS] = { NULL };
+   get_src_vec(bld, 0, val);
 
    LLVMValueRef idx = get_src(bld, &instr->src[1], 0);
    idx = cast_type(bld, idx, nir_type_uint, nir_src_bit_size(instr->src[1]));
@@ -4227,14 +4247,13 @@ visit_load_image(struct lp_build_nir_soa_context *bld,
                  nir_intrinsic_instr *instr,
                  LLVMValueRef result[NIR_MAX_VEC_COMPONENTS])
 {
-   LLVMValueRef *coords_vec = get_src_vec(bld, 1);
-   LLVMValueRef coords[5];
+   LLVMValueRef coords[NIR_MAX_VEC_COMPONENTS] = { NULL };
+   get_src_vec(bld, 1, coords);
+
    struct lp_img_params params = { 0 };
 
    params.target = glsl_sampler_to_pipe(nir_intrinsic_image_dim(instr),
                                         nir_intrinsic_image_array(instr));
-   for (unsigned i = 0; i < 4; i++)
-      coords[i] = coords_vec[i];
    if (params.target == PIPE_TEXTURE_1D_ARRAY)
       coords[2] = coords[1];
 
@@ -4263,14 +4282,13 @@ visit_store_image(struct lp_build_nir_soa_context *bld,
 {
    struct gallivm_state *gallivm = bld->base.gallivm;
    LLVMBuilderRef builder = gallivm->builder;
-   LLVMValueRef *coords_vec = get_src_vec(bld, 1);
-   LLVMValueRef *in_val = get_src_vec(bld, 3);
-   LLVMValueRef coords[5];
+   LLVMValueRef coords[NIR_MAX_VEC_COMPONENTS] = { NULL };
+   get_src_vec(bld, 1, coords);
+   LLVMValueRef in_val[NIR_MAX_VEC_COMPONENTS] = { NULL };
+   get_src_vec(bld, 3, in_val);
    struct lp_img_params params = { 0 };
 
    params.target = glsl_sampler_to_pipe(nir_intrinsic_image_dim(instr), nir_intrinsic_image_array(instr));
-   for (unsigned i = 0; i < 4; i++)
-      coords[i] = coords_vec[i];
    if (params.target == PIPE_TEXTURE_1D_ARRAY)
       coords[2] = coords[1];
    params.coords = coords;
@@ -4403,15 +4421,12 @@ visit_atomic_image(struct lp_build_nir_soa_context *bld,
    struct gallivm_state *gallivm = bld->base.gallivm;
    LLVMBuilderRef builder = gallivm->builder;
    struct lp_img_params params = { 0 };
-   LLVMValueRef *coords_vec = get_src_vec(bld, 1);
+   LLVMValueRef coords[NIR_MAX_VEC_COMPONENTS] = { NULL };
+   get_src_vec(bld, 1, coords);
    LLVMValueRef in_val = get_src(bld, &instr->src[3], 0);
-   LLVMValueRef coords[5];
 
    params.target = glsl_sampler_to_pipe(nir_intrinsic_image_dim(instr),
                                         nir_intrinsic_image_array(instr));
-   for (unsigned i = 0; i < 4; i++) {
-      coords[i] = coords_vec[i];
-   }
    if (params.target == PIPE_TEXTURE_1D_ARRAY) {
       coords[2] = coords[1];
    }
@@ -4517,7 +4532,8 @@ static void
 visit_shared_store(struct lp_build_nir_soa_context *bld,
                    nir_intrinsic_instr *instr)
 {
-   LLVMValueRef *val = get_src_vec(bld, 0);
+   LLVMValueRef val[NIR_MAX_VEC_COMPONENTS] = { NULL };
+   get_src_vec(bld, 0, val);
    LLVMValueRef offset = get_src(bld, &instr->src[1], 0);
    int writemask = instr->const_index[1];
    int nc = nir_src_num_components(instr->src[0]);
@@ -4636,7 +4652,8 @@ visit_store_global(struct lp_build_nir_soa_context *bld,
    struct gallivm_state *gallivm = bld->base.gallivm;
    LLVMBuilderRef builder = gallivm->builder;
 
-   LLVMValueRef *dst = get_src_vec(bld, 0);
+   LLVMValueRef dst[NIR_MAX_VEC_COMPONENTS] = { NULL };
+   get_src_vec(bld, 0, dst);
    int nc = nir_src_num_components(instr->src[0]);
    int bit_size = nir_src_bit_size(instr->src[0]);
    LLVMValueRef addr = get_src(bld, &instr->src[1], 0);
@@ -4856,7 +4873,8 @@ visit_store_scratch(struct lp_build_nir_soa_context *bld,
    struct gallivm_state * gallivm = bld->base.gallivm;
    LLVMBuilderRef builder = gallivm->builder;
 
-   LLVMValueRef *dst = get_src_vec(bld, 0);
+   LLVMValueRef dst[NIR_MAX_VEC_COMPONENTS] = { NULL };
+   get_src_vec(bld, 0, dst);
    LLVMValueRef offset = get_src(bld, &instr->src[1], 0);
    int writemask = instr->const_index[2];
    int nc = nir_src_num_components(instr->src[0]);
@@ -4905,7 +4923,8 @@ static void
 visit_payload_store(struct lp_build_nir_soa_context *bld,
                     nir_intrinsic_instr *instr)
 {
-   LLVMValueRef *val = get_src_vec(bld, 0);
+   LLVMValueRef val[NIR_MAX_VEC_COMPONENTS] = { NULL };
+   get_src_vec(bld, 0, val);
    LLVMValueRef offset = get_src(bld, &instr->src[1], 0);
    int writemask = instr->const_index[1];
    int nc = nir_src_num_components(instr->src[0]);
@@ -5125,9 +5144,12 @@ visit_intrinsic(struct lp_build_nir_soa_context *bld,
    case nir_intrinsic_shader_clock:
       emit_clock(bld, result);
       break;
-   case nir_intrinsic_launch_mesh_workgroups:
-      emit_launch_mesh_workgroups(bld, get_src_vec(bld, 0));
+   case nir_intrinsic_launch_mesh_workgroups: {
+      LLVMValueRef launch_grid[NIR_MAX_VEC_COMPONENTS] = { NULL };
+      get_src_vec(bld, 0, launch_grid);
+      emit_launch_mesh_workgroups(bld, launch_grid);
       break;
+   }
    case nir_intrinsic_load_task_payload:
       visit_payload_load(bld, instr, result);
       break;
@@ -5356,9 +5378,7 @@ visit_tex(struct lp_build_nir_soa_context *bld, nir_tex_instr *instr)
    for (unsigned i = 0; i < instr->num_srcs; i++) {
       switch (instr->src[i].src_type) {
       case nir_tex_src_coord: {
-         LLVMValueRef *coords_vec = get_src_vec(bld, i);
-         for (unsigned chan = 0; chan < instr->coord_components; ++chan)
-            coords[chan] = coords_vec[chan];
+         get_src_vec(bld, i, coords);
          for (unsigned chan = coord_vals; chan < 5; chan++)
             coords[chan] = coord_undef;
          break;
@@ -5389,7 +5409,8 @@ visit_tex(struct lp_build_nir_soa_context *bld, nir_tex_instr *instr)
          int deriv_cnt = instr->coord_components;
          if (instr->is_array)
             deriv_cnt--;
-         LLVMValueRef *deriv_vec = get_src_vec(bld, i);
+         LLVMValueRef deriv_vec[NIR_MAX_VEC_COMPONENTS] = { NULL };
+         get_src_vec(bld, i, deriv_vec);
          for (unsigned chan = 0; chan < deriv_cnt; ++chan)
             derivs.ddx[chan] = deriv_vec[chan];
          for (unsigned chan = 0; chan < deriv_cnt; ++chan)
@@ -5400,7 +5421,8 @@ visit_tex(struct lp_build_nir_soa_context *bld, nir_tex_instr *instr)
          int deriv_cnt = instr->coord_components;
          if (instr->is_array)
             deriv_cnt--;
-         LLVMValueRef *deriv_vec = get_src_vec(bld, i);
+         LLVMValueRef deriv_vec[NIR_MAX_VEC_COMPONENTS] = { NULL };
+         get_src_vec(bld, i, deriv_vec);
          for (unsigned chan = 0; chan < deriv_cnt; ++chan)
             derivs.ddy[chan] = deriv_vec[chan];
          for (unsigned chan = 0; chan < deriv_cnt; ++chan)
@@ -5411,7 +5433,8 @@ visit_tex(struct lp_build_nir_soa_context *bld, nir_tex_instr *instr)
          int offset_cnt = instr->coord_components;
          if (instr->is_array)
             offset_cnt--;
-         LLVMValueRef *offset_vec = get_src_vec(bld, i);
+         LLVMValueRef offset_vec[NIR_MAX_VEC_COMPONENTS] = { NULL };
+         get_src_vec(bld, i, offset_vec);
          for (unsigned chan = 0; chan < offset_cnt; ++chan) {
             offsets[chan] = offset_vec[chan];
             offsets[chan] = cast_type(bld, offsets[chan], nir_type_int, 32);
@@ -5599,10 +5622,9 @@ visit_call(struct lp_build_nir_soa_context *bld,
 
    args[0] = 0;
    for (unsigned i = 0; i < instr->num_params; i++) {
-      LLVMValueRef *arg_vec = get_src_vec(bld, i);
       LLVMValueRef arg[NIR_MAX_VEC_COMPONENTS];
+      get_src_vec(bld, i, arg);
       for (uint32_t c = 0; c < nir_src_num_components(instr->params[i]); c++) {
-         arg[c] = arg_vec[c];
          if (nir_src_bit_size(instr->params[i]) == 32 && LLVMTypeOf(arg[c]) == bld->base.vec_type)
             arg[c] = cast_type(bld, arg[c], nir_type_int, 32);
       }
