@@ -86,7 +86,7 @@ option(
   value : ['auto'],
   choices : [
     'all', 'auto',
-    'asahi', 'crocus', 'd3d12', 'etnaviv', 'freedreno', 'i915', 'iris',
+    'asahi', 'crocus', 'd3d12', 'ethosu', 'etnaviv', 'freedreno', 'i915', 'iris',
     'lima', 'llvmpipe', 'nouveau', 'panfrost', 'r300', 'r600', 'radeonsi',
     'rocket', 'softpipe', 'svga', 'tegra', 'v3d', 'vc4', 'virgl', 'zink',
   ],

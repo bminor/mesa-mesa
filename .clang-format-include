@@ -1,6 +1,7 @@
 # The following files are opted into `ninja clang-format` and
 # enforcement in the CI.
 
+src/gallium/drivers/ethosu/**/*
 src/gallium/drivers/i915
 src/gallium/drivers/r300/compiler/*
 src/gallium/drivers/rocket/**/*
