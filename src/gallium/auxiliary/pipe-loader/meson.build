@@ -42,6 +42,9 @@ endif
 if with_gallium_rocket
   renderonly_drivers_c_args += '-DGALLIUM_ROCKET'
 endif
+if with_gallium_ethosu
+  renderonly_drivers_c_args += '-DGALLIUM_ETHOSU'
+endif
 
 libpipe_loader_static = static_library(
   'pipe_loader_static',
