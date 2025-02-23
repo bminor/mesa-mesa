@@ -403,7 +403,7 @@ invocation_0_must_be_active(struct lp_build_nir_soa_context *bld)
  * the first_active_invocation (such as in memory loads, texture unit index
  * lookups, etc) will use a valid index
  */
-static LLVMValueRef first_active_invocation(struct lp_build_nir_soa_context *bld)
+static LLVMValueRef first_active_invocation(struct lp_build_nir_soa_context *bld, bool helpers)
 {
    struct gallivm_state *gallivm = bld->base.gallivm;
    LLVMBuilderRef builder = gallivm->builder;
@@ -412,7 +412,7 @@ static LLVMValueRef first_active_invocation(struct lp_build_nir_soa_context *bld
    if (invocation_0_must_be_active(bld))
       return lp_build_const_int32(gallivm, 0);
 
-   LLVMValueRef exec_mask = mask_vec(bld);
+   LLVMValueRef exec_mask = helpers ? mask_vec_with_helpers(bld) : mask_vec(bld);
 
    LLVMValueRef bitmask = LLVMBuildICmp(builder, LLVMIntNE, exec_mask, bld->uint_bld.zero, "exec_bitvec");
    /* Turn it from N x i1 to iN, then extend it up to i32 so we can use a single
@@ -1798,7 +1798,7 @@ static void emit_tex(struct lp_build_nir_soa_context *bld,
 
    if (params->texture_index_offset) {
       params->texture_index_offset = LLVMBuildExtractElement(gallivm->builder, params->texture_index_offset,
-                                                             first_active_invocation(bld), "");
+                                                             first_active_invocation(bld, true), "");
    }
 
    params->type = bld->base.type;
@@ -2574,7 +2574,7 @@ static void emit_read_invocation(struct lp_build_nir_soa_context *bld,
       return;
    }
 
-   LLVMValueRef idx = first_active_invocation(bld);
+   LLVMValueRef idx = first_active_invocation(bld, false);
 
    /* If we're emitting readInvocation() (as opposed to readFirstInvocation),
     * use the first active channel to pull the invocation index number out of
@@ -3003,7 +3003,7 @@ assign_ssa_dest(struct lp_build_nir_soa_context *bld, const nir_def *ssa,
          bld->ssa_defs[ssa->index * NIR_MAX_VEC_COMPONENTS * 2 + NIR_MAX_VEC_COMPONENTS + c] = vals[c];
          if (used_by_uniform) {
             bld->ssa_defs[ssa->index * NIR_MAX_VEC_COMPONENTS * 2 + c] =
-               LLVMBuildExtractElement(builder, vals[c], first_active_invocation(bld), "");
+               LLVMBuildExtractElement(builder, vals[c], first_active_invocation(bld, true), "");
          }
       } else {
          bld->ssa_defs[ssa->index * NIR_MAX_VEC_COMPONENTS * 2 + c] = vals[c];
@@ -4164,7 +4164,7 @@ visit_get_ssbo_size(struct lp_build_nir_soa_context *bld,
    idx = cast_type(bld, idx, nir_type_uint, nir_src_bit_size(instr->src[0]));
 
    LLVMValueRef size;
-   ssbo_base_pointer(bld, 8, idx, lp_value_is_divergent(idx) ? first_active_invocation(bld) : NULL, &size);
+   ssbo_base_pointer(bld, 8, idx, lp_value_is_divergent(idx) ? first_active_invocation(bld, true) : NULL, &size);
 
    result[0] = size;
 }
