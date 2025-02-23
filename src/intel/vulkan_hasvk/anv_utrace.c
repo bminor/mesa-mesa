@@ -245,7 +245,7 @@ anv_utrace_record_ts(struct u_trace *ut, void *cs,
 static uint64_t
 anv_utrace_read_ts(struct u_trace_context *utctx,
                    void *timestamps, uint64_t offset_B,
-                   void *flush_data)
+                   uint32_t flags, void *flush_data)
 {
    struct anv_device *device =
       container_of(utctx, struct anv_device, ds.trace_context);
