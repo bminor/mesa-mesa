@@ -1076,11 +1076,6 @@ vn_graphics_pipeline_state_fill(
    const uint32_t lib_count = lib_info ? lib_info->libraryCount : 0;
 
    const VkPipelineSampleLocationsStateCreateInfoEXT *sl_info = NULL;
-   if (info->pMultisampleState) {
-      sl_info = vk_find_struct_const(
-         info->pMultisampleState->pNext,
-         PIPELINE_SAMPLE_LOCATIONS_STATE_CREATE_INFO_EXT);
-   }
 
    /* This tracks which fields have valid values in the
     * VkGraphicsPipelineCreateInfo pNext chain.
@@ -1249,6 +1244,11 @@ vn_graphics_pipeline_state_fill(
           * VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT dynamic state is used
           * or the static sampleLocationsEnable is true.
           */
+         if (info->pMultisampleState) {
+            sl_info = vk_find_struct_const(
+               info->pMultisampleState->pNext,
+               PIPELINE_SAMPLE_LOCATIONS_STATE_CREATE_INFO_EXT);
+         }
          if (!state->dynamic.sample_locations) {
             if (state->dynamic.sample_locations_enable)
                valid.self.multisample_state_sample_locations = true;
