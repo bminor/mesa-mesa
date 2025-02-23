@@ -855,7 +855,8 @@ find_accel_device()
    pipe_loader_accel_probe(devs, n);
 
    for (int i = 0; i < n; i++) {
-      if (strstr("rocket", devs[i]->driver_name))
+      if (strstr("rocket", devs[i]->driver_name) ||
+          strstr("ethosu", devs[i]->driver_name))
          device = devs[i];
       else
          pipe_loader_release(&devs[i], 1);
