@@ -181,7 +181,7 @@ elif gallium_drivers.contains('all')
    gallium_drivers = [
      'r300', 'r600', 'radeonsi', 'crocus', 'v3d', 'vc4', 'freedreno', 'etnaviv', 'i915',
      'nouveau', 'svga', 'tegra', 'virgl', 'lima', 'panfrost', 'llvmpipe', 'softpipe', 'iris',
-     'zink', 'd3d12', 'asahi'
+     'zink', 'd3d12', 'asahi', 'rocket'
    ]
 endif
 
@@ -208,6 +208,7 @@ with_gallium_lima = gallium_drivers.contains('lima')
 with_gallium_zink = gallium_drivers.contains('zink')
 with_gallium_d3d12 = gallium_drivers.contains('d3d12')
 with_gallium_asahi = gallium_drivers.contains('asahi')
+with_gallium_rocket = gallium_drivers.contains('rocket')
 foreach gallium_driver : gallium_drivers
   pre_args += '-DHAVE_@0@'.format(gallium_driver.to_upper())
 endforeach

@@ -185,6 +185,12 @@ if with_gallium_lima
 else
   driver_lima = declare_dependency()
 endif
+if with_gallium_rocket
+  subdir('winsys/rocket/drm')
+  subdir('drivers/rocket')
+else
+  driver_rocket = declare_dependency()
+endif
 if with_gallium_zink
   subdir('drivers/zink')
 else
