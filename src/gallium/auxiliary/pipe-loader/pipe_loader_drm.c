@@ -246,6 +246,80 @@ pipe_loader_drm_probe(struct pipe_loader_device **devs, int ndev)
    return pipe_loader_drm_probe_internal(devs, ndev, false);
 }
 
+#define DRM_ACCEL_DEV_NAME_FORMAT "%s/accel%d"
+#define DRM_ACCEL_MAX_NODES 63
+#define DRM_ACCEL_MIN_MINOR 0
+#define DRM_ACCEL_MAX_MINOR (DRM_ACCEL_MIN_MINOR + DRM_ACCEL_MAX_NODES)
+#define DRM_ACCEL_DIR_NAME  "/dev/accel"
+
+static int
+open_accel_minor(int minor)
+{
+   char path[PATH_MAX];
+   snprintf(path, sizeof(path), DRM_ACCEL_DEV_NAME_FORMAT, DRM_ACCEL_DIR_NAME,
+            minor);
+   return loader_open_device(path);
+}
+
+static bool
+pipe_loader_accel_probe_fd_nodup(struct pipe_loader_device **dev, int fd)
+{
+   struct pipe_loader_drm_device *ddev = CALLOC_STRUCT(pipe_loader_drm_device);
+
+   if (!ddev)
+      return false;
+
+   ddev->base.type = PIPE_LOADER_DEVICE_PLATFORM;
+   ddev->base.ops = &pipe_loader_drm_ops;
+   ddev->fd = fd;
+
+   ddev->base.driver_name = loader_get_kernel_driver_name(fd);
+   if (!ddev->base.driver_name)
+      goto fail;
+
+   ddev->dd = get_driver_descriptor(ddev->base.driver_name);
+   if (!ddev->dd)
+      goto fail;
+
+   *dev = &ddev->base;
+   return true;
+
+  fail:
+   FREE(ddev->base.driver_name);
+   FREE(ddev);
+   return false;
+}
+
+int
+pipe_loader_accel_probe(struct pipe_loader_device **devs, int ndev)
+{
+   int i, j, fd;
+
+   for (i = DRM_ACCEL_MIN_MINOR, j = 0;
+        i <= DRM_ACCEL_MAX_MINOR; i++) {
+      struct pipe_loader_device *dev;
+
+      fd = open_accel_minor(i);
+      if (fd < 0)
+         continue;
+
+      if (!pipe_loader_accel_probe_fd_nodup(&dev, fd)) {
+         close(fd);
+         continue;
+      }
+
+      if (j < ndev) {
+         devs[j] = dev;
+      } else {
+         close(fd);
+         dev->ops->release(&dev);
+      }
+      j++;
+   }
+
+   return j;
+}
+
 #ifdef HAVE_ZINK
 int
 pipe_loader_drm_zink_probe(struct pipe_loader_device **devs, int ndev)
