@@ -722,21 +722,12 @@ vn_physical_device_init_queue_family_properties(
    /* Starting from Android 14 (Android U), framework HWUI has required a
     * second graphics queue to avoid racing between webview and skiavk.
     */
-   static const bool require_second_queue = true;
-#else
-   /* Per 1.4 spec of VK_EXT_host_image_copy promotion:
-    *
-    * A Vulkan 1.4 implementation that has a VK_QUEUE_GRAPHICS_BIT queue must
-    * support either:
-    * - the hostImageCopy feature; or
-    * - an additional queue that supports VK_QUEUE_TRANSFER_BIT.
-    *
-    * Additionally, all queues supporting VK_QUEUE_GRAPHICS_BIT or
-    * VK_QUEUE_COMPUTE_BIT must also advertise VK_QUEUE_TRANSFER_BIT.
-    */
+   const char *engine_name = instance->base.base.app_info.engine_name;
    const bool require_second_queue =
-      physical_dev->base.base.properties.apiVersion >= VK_API_VERSION_1_4 &&
-      !physical_dev->base.base.supported_extensions.EXT_host_image_copy;
+      engine_name && strcmp(engine_name, "android framework") == 0;
+   ;
+#else
+   static const bool require_second_queue = false;
 #endif
    physical_dev->emulate_second_queue = -1;
    for (uint32_t i = 0; i < count; i++) {

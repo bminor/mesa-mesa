@@ -85,7 +85,8 @@ struct vn_physical_device {
    uint32_t queue_family_count;
    bool sparse_binding_disabled;
    /* Track the queue family index to emulate a second queue. -1 means no
-    * emulation is needed.
+    * emulation is needed. To be noted that the emulation is a workaround for
+    * Android 14+ UI framework and it does not handle wait-before-signal.
     */
    int emulate_second_queue;
 
