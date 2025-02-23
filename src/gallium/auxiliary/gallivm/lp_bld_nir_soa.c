@@ -121,7 +121,7 @@ lp_nir_instr_src_divergent(nir_instr *instr, uint32_t src_index)
          return nir_src_is_divergent(&intr->src[src_index]);
 
       case nir_intrinsic_load_ssbo:
-         /* The offset sozrce should be divergent if the descriptor is divergent. */
+         /* The offset source should be divergent if the descriptor is divergent. */
          if (src_index == 1)
             return nir_src_is_divergent(&intr->src[0]) || nir_src_is_divergent(&intr->src[1]);
          return nir_src_is_divergent(&intr->src[src_index]);
