@@ -35,7 +35,7 @@ lavapipe-vk-asan:
 lavapipe-vkd3d:
   extends:
     - .lavapipe-test
-    - .lavapipe-manual-rules
+    - .lavapipe-rules
     - .test-vkd3d-proton
   timeout: 15m  # base runtime = 8m
   variables:
