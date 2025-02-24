@@ -1061,7 +1061,8 @@ get_fb_descs(struct panvk_cmd_buffer *cmdbuf)
 
    if (copy_fbds) {
       struct cs_index cur_tiler = cs_sr_reg64(b, 38);
-      struct cs_index dst_fbd_ptr = cs_sr_reg64(b, 40);
+      struct cs_index dst_fbd_ptr =
+         cs_sr_reg64(b, MALI_FRAGMENT_SR_FBD_POINTER);
       struct cs_index layer_count = cs_sr_reg32(b, 47);
       struct cs_index src_fbd_ptr = cs_sr_reg64(b, 48);
       struct cs_index remaining_layers_in_td = cs_sr_reg32(b, 50);
@@ -1144,7 +1145,8 @@ get_fb_descs(struct panvk_cmd_buffer *cmdbuf)
       }
    } else {
       cs_update_frag_ctx(b) {
-         cs_move64_to(b, cs_sr_reg64(b, 40), fbds.gpu | fbd_flags);
+         cs_move64_to(b, cs_sr_reg64(b, MALI_FRAGMENT_SR_FBD_POINTER),
+                      fbds.gpu | fbd_flags);
          cs_move64_to(b, cs_sr_reg64(b, 38), cmdbuf->state.gfx.render.tiler);
       }
    }
@@ -2268,17 +2270,17 @@ setup_tiler_oom_ctx(struct panvk_cmd_buffer *cmdbuf)
               TILER_OOM_CTX_FIELD_OFFSET(counter));
 
    struct cs_index fbd_first = cs_scratch_reg64(b, 2);
-   cs_add64(b, fbd_first, cs_sr_reg64(b, 40),
+   cs_add64(b, fbd_first, cs_sr_reg64(b, MALI_FRAGMENT_SR_FBD_POINTER),
             (1 + PANVK_IR_FIRST_PASS) * fbd_ir_pass_offset);
    cs_store64(b, fbd_first, cs_subqueue_ctx_reg(b),
               TILER_OOM_CTX_FBDPTR_OFFSET(FIRST));
    struct cs_index fbd_middle = cs_scratch_reg64(b, 4);
-   cs_add64(b, fbd_middle, cs_sr_reg64(b, 40),
+   cs_add64(b, fbd_middle, cs_sr_reg64(b, MALI_FRAGMENT_SR_FBD_POINTER),
             (1 + PANVK_IR_MIDDLE_PASS) * fbd_ir_pass_offset);
    cs_store64(b, fbd_middle, cs_subqueue_ctx_reg(b),
               TILER_OOM_CTX_FBDPTR_OFFSET(MIDDLE));
    struct cs_index fbd_last = cs_scratch_reg64(b, 6);
-   cs_add64(b, fbd_last, cs_sr_reg64(b, 40),
+   cs_add64(b, fbd_last, cs_sr_reg64(b, MALI_FRAGMENT_SR_FBD_POINTER),
             (1 + PANVK_IR_LAST_PASS) * fbd_ir_pass_offset);
    cs_store64(b, fbd_last, cs_subqueue_ctx_reg(b),
               TILER_OOM_CTX_FBDPTR_OFFSET(LAST));
@@ -2382,7 +2384,8 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
    cs_wait_slot(b, SB_ID(LS), false);
    cs_if(b, MALI_CS_CONDITION_GREATER, counter)
       cs_update_frag_ctx(b)
-         cs_add64(b, cs_sr_reg64(b, 40), cs_sr_reg64(b, 40),
+         cs_add64(b, cs_sr_reg64(b, MALI_FRAGMENT_SR_FBD_POINTER),
+                  cs_sr_reg64(b, MALI_FRAGMENT_SR_FBD_POINTER),
                   (1 + PANVK_IR_LAST_PASS) * fbd_ir_pass_offset);
 
    /* Applications tend to forget to describe subpass dependencies, especially
@@ -2408,7 +2411,8 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
 
          cs_add32(b, layer_count, layer_count, -1);
          cs_update_frag_ctx(b)
-            cs_add64(b, cs_sr_reg64(b, 40), cs_sr_reg64(b, 40), fbd_sz);
+            cs_add64(b, cs_sr_reg64(b, MALI_FRAGMENT_SR_FBD_POINTER),
+                     cs_sr_reg64(b, MALI_FRAGMENT_SR_FBD_POINTER), fbd_sz);
       }
    } else {
       cs_trace_run_fragment(b, tracing_ctx, cs_scratch_reg_tuple(b, 0, 4),

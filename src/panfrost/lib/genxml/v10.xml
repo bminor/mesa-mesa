@@ -907,6 +907,14 @@
     <value name="PRIMITIVE_SIZE" value="60"/>
   </enum>
 
+  <enum name="FRAGMENT SR">
+    <value name="FBD_POINTER" value="40"/>
+    <value name="BBOX_MIN" value="42"/>
+    <value name="BBOX_MAX" value="43"/>
+    <value name="TEM_POINTER" value="44"/>
+    <value name="TEM_ROW_STRIDE" value="46"/>
+  </enum>
+
   <struct name="Attribute" size="8" align="32">
     <field name="Type" size="4" start="0:0" type="Descriptor Type" default="Attribute"/>
     <field name="Attribute type" size="4" start="0:4" type="Attribute Type"/>

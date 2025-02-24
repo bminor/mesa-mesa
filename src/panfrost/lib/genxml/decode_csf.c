@@ -770,11 +770,12 @@ pandecode_run_fragment(struct pandecode_context *ctx, FILE *fp,
 
    ctx->indent++;
 
-   DUMP_CL(ctx, SCISSOR, &qctx->regs[42], "Scissor\n");
+   DUMP_CL(ctx, SCISSOR, &qctx->regs[MALI_FRAGMENT_SR_BBOX_MIN], "Scissor\n");
 
    /* TODO: Tile enable map */
    GENX(pandecode_fbd)
-   (ctx, cs_get_u64(qctx, 40) & ~0x3full, true, qctx->gpu_id);
+   (ctx, cs_get_u64(qctx, MALI_FRAGMENT_SR_FBD_POINTER) & ~0x3full, true,
+    qctx->gpu_id);
 
    ctx->indent--;
 }

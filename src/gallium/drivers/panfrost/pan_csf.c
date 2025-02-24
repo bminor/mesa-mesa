@@ -142,16 +142,20 @@ csf_oom_handler_init(struct panfrost_context *ctx)
       cs_load32_to(&b, counter, tiler_oom_ctx, FIELD_OFFSET(counter));
       cs_wait_slot(&b, 0, false);
       cs_if(&b, MALI_CS_CONDITION_GREATER, counter) {
-         cs_load64_to(&b, cs_reg64(&b, 40), tiler_oom_ctx, FBD_OFFSET(MIDDLE));
+         cs_load64_to(&b, cs_reg64(&b, MALI_FRAGMENT_SR_FBD_POINTER),
+                      tiler_oom_ctx, FBD_OFFSET(MIDDLE));
       }
       cs_else(&b) {
-         cs_load64_to(&b, cs_reg64(&b, 40), tiler_oom_ctx, FBD_OFFSET(FIRST));
+         cs_load64_to(&b, cs_reg64(&b, MALI_FRAGMENT_SR_FBD_POINTER),
+                      tiler_oom_ctx, FBD_OFFSET(FIRST));
       }
 
-      cs_load32_to(&b, cs_reg32(&b, 42), tiler_oom_ctx, FIELD_OFFSET(bbox_min));
-      cs_load32_to(&b, cs_reg32(&b, 43), tiler_oom_ctx, FIELD_OFFSET(bbox_max));
-      cs_move64_to(&b, cs_reg64(&b, 44), 0);
-      cs_move32_to(&b, cs_reg32(&b, 46), 0);
+      cs_load32_to(&b, cs_reg32(&b, MALI_FRAGMENT_SR_BBOX_MIN), tiler_oom_ctx,
+                   FIELD_OFFSET(bbox_min));
+      cs_load32_to(&b, cs_reg32(&b, MALI_FRAGMENT_SR_BBOX_MAX), tiler_oom_ctx,
+                   FIELD_OFFSET(bbox_max));
+      cs_move64_to(&b, cs_reg64(&b, MALI_FRAGMENT_SR_TEM_POINTER), 0);
+      cs_move32_to(&b, cs_reg32(&b, MALI_FRAGMENT_SR_TEM_ROW_STRIDE), 0);
       cs_wait_slot(&b, 0, false);
 
       /* Run the fragment job and wait */
@@ -809,12 +813,14 @@ GENX(csf_emit_fragment_job)(struct panfrost_batch *batch,
    }
 
    /* Set up the fragment job */
-   cs_move64_to(b, cs_reg64(b, 40), batch->framebuffer.gpu);
-   cs_move32_to(b, cs_reg32(b, 42), (batch->miny << 16) | batch->minx);
-   cs_move32_to(b, cs_reg32(b, 43),
+   cs_move64_to(b, cs_reg64(b, MALI_FRAGMENT_SR_FBD_POINTER),
+                batch->framebuffer.gpu);
+   cs_move32_to(b, cs_reg32(b, MALI_FRAGMENT_SR_BBOX_MIN),
+                (batch->miny << 16) | batch->minx);
+   cs_move32_to(b, cs_reg32(b, MALI_FRAGMENT_SR_BBOX_MAX),
                 ((batch->maxy - 1) << 16) | (batch->maxx - 1));
-   cs_move64_to(b, cs_reg64(b, 44), 0);
-   cs_move32_to(b, cs_reg32(b, 46), 0);
+   cs_move64_to(b, cs_reg64(b, MALI_FRAGMENT_SR_TEM_POINTER), 0);
+   cs_move32_to(b, cs_reg32(b, MALI_FRAGMENT_SR_TEM_ROW_STRIDE), 0);
 
    /* Use different framebuffer descriptor if incremental rendering was
     * triggered while tiling */
@@ -823,7 +829,8 @@ GENX(csf_emit_fragment_job)(struct panfrost_batch *batch,
       cs_load32_to(b, counter, cs_reg64(b, TILER_OOM_CTX_REG), 0);
       cs_wait_slot(b, 0, false);
       cs_if(b, MALI_CS_CONDITION_GREATER, counter) {
-         cs_move64_to(b, cs_reg64(b, 40), GET_FBD(oom_ctx, LAST).gpu);
+         cs_move64_to(b, cs_reg64(b, MALI_FRAGMENT_SR_FBD_POINTER),
+                      GET_FBD(oom_ctx, LAST).gpu);
       }
    }
 
