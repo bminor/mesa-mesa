@@ -165,7 +165,7 @@ log_va_bind_mem(struct nvkmd_va *va,
                    "[0x%" PRIx64 ", 0x%" PRIx64 ")\n",
            mem->ops->log_handle(mem),
            mem_offset_B, mem_offset_B + range_B,
-           va->addr, va->addr + range_B);
+           va->addr + va_offset_B, va->addr + va_offset_B + range_B);
 }
 
 static inline void
@@ -174,7 +174,7 @@ log_va_unbind(struct nvkmd_va *va,
               uint64_t range_B)
 {
    fprintf(stderr, "unbind vma [0x%" PRIx64 ", 0x%" PRIx64 ")\n",
-           va->addr, va->addr + range_B);
+           va->addr + va_offset_B, va->addr + va_offset_B + range_B);
 }
 
 VkResult MUST_CHECK
