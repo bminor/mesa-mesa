@@ -629,7 +629,9 @@ class CodeGen(object):
     def generalLengthAccessGuard(self, vulkanType, parentVarName="parent"):
         return self.makeLengthAccess(vulkanType, parentVarName)[1]
 
-    def vkApiCall(self, api, customPrefix="", globalStatePrefix="", customParameters=None, checkForDeviceLost=False, checkForOutOfMemory=False):
+    def vkApiCall(self, api, customPrefix="", globalStatePrefix="",
+                  customParameters=None, checkForDeviceLost=False,
+                  checkForOutOfMemory=False, checkDispatcher=None):
         callLhs = None
 
         retTypeName = api.getRetTypeExpr()
@@ -637,8 +639,21 @@ class CodeGen(object):
 
         if retTypeName != "void":
             retVar = api.getRetVarExpr()
-            self.stmt("%s %s = (%s)0" % (retTypeName, retVar, retTypeName))
+            defaultReturn = "(%s)0" % retTypeName
+            if retTypeName == "VkResult":
+                # TODO: return a valid error code based on the call
+                # This is used to handle invalid dispatcher and snapshot states
+                deviceLostFunctions = ["vkQueueSubmit",
+                                       "vkQueueWaitIdle",
+                                       "vkWaitForFences"]
+                defaultReturn = "VK_ERROR_OUT_OF_HOST_MEMORY"
+                if api in deviceLostFunctions:
+                    defaultReturn = "VK_ERROR_DEVICE_LOST"
+            self.stmt("%s %s = %s" % (retTypeName, retVar, defaultReturn))
             callLhs = retVar
+
+        if (checkDispatcher):
+            self.beginIf(checkDispatcher)
 
         if customParameters is None:
             self.funcCall(
@@ -646,6 +661,9 @@ class CodeGen(object):
         else:
             self.funcCall(
                 callLhs, customPrefix + api.name, customParameters)
+
+        if (checkDispatcher):
+            self.endIf()
 
         if retTypeName == "VkResult" and checkForDeviceLost:
             self.stmt("if ((%s) == VK_ERROR_DEVICE_LOST) %sDeviceLost()" % (callLhs, globalStatePrefix))
