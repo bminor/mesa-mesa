@@ -68,8 +68,10 @@ brw_lower_load_payload(brw_shader &s)
           * instruction.
           */
          const unsigned n =
-            (i + 1 < inst->header_size && inst->src[i].stride == 1 &&
-             inst->src[i + 1].equals(byte_offset(inst->src[i], REG_SIZE))) ?
+            (i + 1 < inst->header_size &&
+             (inst->src[i].file == IMM ||
+              (inst->src[i].is_contiguous() &&
+               inst->src[i + 1].equals(byte_offset(inst->src[i], REG_SIZE))))) ?
             2 : 1;
 
          if (inst->src[i].file != BAD_FILE)
