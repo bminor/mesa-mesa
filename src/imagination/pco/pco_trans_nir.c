@@ -1088,6 +1088,12 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
       instr = lower_alphatst(tctx, dest, src[0], src[1], src[2]);
       break;
 
+   case nir_intrinsic_mutex_pco:
+      instr = pco_mutex(&tctx->b,
+                        pco_ref_imm8(nir_intrinsic_mutex_id_pco(intr)),
+                        .mtx_op = nir_intrinsic_mutex_op_pco(intr));
+      break;
+
    case nir_intrinsic_decl_reg:
    case nir_intrinsic_load_reg:
    case nir_intrinsic_store_reg:

@@ -319,6 +319,13 @@ OM_FRED_PART = op_mod_enum('fred_part', [
    'b',
 ])
 
+OM_MTX_OP = op_mod_enum('mtx_op', [
+   ('release', 'release'),
+   ('release_sleep', 'release.sleep'),
+   ('release_wakeup', 'release.wakeup'),
+   ('lock', 'lock'),
+])
+
 # Ops.
 
 OM_ALU = [OM_OLCHK, OM_EXEC_CND, OM_END, OM_ATOM, OM_RPT]
@@ -415,6 +422,8 @@ O_CNDLT = hw_op('cndlt', [OM_EXEC_CND, OM_CND], 3, 2)
 O_CNDEND = hw_op('cndend', [OM_EXEC_CND], 2, 2)
 
 O_BR = hw_op('br', [OM_EXEC_CND, OM_BRANCH_CND, OM_LINK], has_target_cf_node=True)
+
+O_MUTEX = hw_op('mutex', [OM_MTX_OP], 0, 1)
 
 # Combination (> 1 instructions per group).
 O_SCMP = hw_op('scmp', OM_ALU + [OM_TST_OP_MAIN], 1, 2, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])

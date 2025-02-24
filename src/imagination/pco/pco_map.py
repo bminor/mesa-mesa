@@ -335,6 +335,13 @@ enum_map(OM_SCHEDSWAP.t, F_SCHED_CTRL, [
    ('swap', 'swap'),
 ])
 
+enum_map(OM_MTX_OP.t, F_LR, [
+   ('release', 'release'),
+   ('release_sleep', 'release_sleep'),
+   ('release_wakeup', 'release_wakeup'),
+   ('lock', 'lock'),
+])
+
 class OpRef(object):
    def __init__(self, ref_type, index, mods):
       self.type = ref_type
@@ -1650,6 +1657,16 @@ encode_map(O_BR,
       ])
    ],
    op_ref_maps=[('ctrl', [], [])]
+)
+
+encode_map(O_MUTEX,
+   encodings=[
+      (I_MUTEX, [
+         ('lr', OM_MTX_OP),
+         ('id', ('pco_ref_get_imm', SRC(0))),
+      ])
+   ],
+   op_ref_maps=[('ctrl', [], ['imm'])]
 )
 
 # Group mappings.
@@ -3097,4 +3114,16 @@ group_map(O_BR,
       ('ctrlop', 'b')
    ]),
    enc_ops=[('ctrl', O_BR)]
+)
+
+group_map(O_MUTEX,
+   hdr=(I_IGRP_HDR_CONTROL, [
+      ('olchk', False),
+      ('w1p', False),
+      ('w0p', False),
+      ('cc', 'e1_zx'),
+      ('miscctl', False),
+      ('ctrlop', 'mutex')
+   ]),
+   enc_ops=[('ctrl', O_MUTEX)]
 )

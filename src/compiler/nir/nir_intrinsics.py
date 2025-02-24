@@ -2706,3 +2706,9 @@ intrinsic("smp_coeffs_pco", src_comp=[16, 4, 4], dest_comp=8, indices=[SMP_FLAGS
 # alphatst_pco(data, comparator, comparison op)
 # Performs an alpha test on the given parameters, returning float 0/1 depending on the comparison result.
 intrinsic("alphatst_pco", src_comp=[1, 1, 1], dest_comp=1, flags=[CAN_ELIMINATE, CAN_REORDER], bit_sizes=[32])
+
+index("unsigned", "mutex_id_pco")
+index("unsigned", "mutex_op_pco")
+
+# Perform a mutex operation (slot granularity).
+intrinsic("mutex_pco", indices=[MUTEX_ID_PCO, MUTEX_OP_PCO])
