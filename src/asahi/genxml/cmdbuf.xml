@@ -271,10 +271,10 @@
     -->
     <field name="Level offset (sw)" size="27" start="128" type="uint" modifier="shr(7)"/>
     <field name="Aligned width MSAA (sw)" size="15" start="128" type="uint"/>
+    <field name="Sample count log2 (sw)" size="2" start="143" type="uint"/>
     <field name="Tile width (sw)" size="3" start="155" type="uint" modifier="log2"/>
     <field name="Tile height (sw)" size="3" start="158" type="uint" modifier="log2"/>
     <field name="Layer stride (sw)" size="27" start="161" type="uint" modifier="shr(7)"/>
-    <field name="Sample count log2 (sw)" size="2" start="188" type="uint"/>
     <field name="Buffer offset (sw)" size="32" start="128" type="uint"/>
   </struct>
 

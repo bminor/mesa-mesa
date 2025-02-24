@@ -1303,12 +1303,12 @@ agx_batch_upload_pbe(struct agx_batch *batch, struct agx_pbe_packed *out,
             cfg.aligned_width_msaa_sw =
                align(u_minify(view->resource->width0, level),
                      tex->layout.tilesize_el[level].width_el);
+
+            cfg.sample_count_log2_sw = util_logbase2(tex->base.nr_samples);
          } else {
             cfg.level_offset_sw =
                ail_get_level_offset_B(&tex->layout, cfg.level);
          }
-
-         cfg.sample_count_log2_sw = util_logbase2(tex->base.nr_samples);
 
          if (tex->layout.tiling == AIL_TILING_GPU || emrt) {
             struct ail_tile tile_size = tex->layout.tilesize_el[level];
