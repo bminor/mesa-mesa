@@ -1722,6 +1722,24 @@ static pco_instr *trans_alu(trans_ctx *tctx, nir_alu_instr *alu)
       instr = pco_copysign(&tctx->b, dest, src[0], src[1]);
       break;
 
+   case nir_op_ineg:
+      instr = pco_iadd32(&tctx->b,
+                         dest,
+                         pco_ref_neg(src[0]),
+                         pco_zero,
+                         pco_ref_null(),
+                         .s = true);
+      break;
+
+   case nir_op_iabs:
+      instr = pco_iadd32(&tctx->b,
+                         dest,
+                         pco_ref_abs(src[0]),
+                         pco_zero,
+                         pco_ref_null(),
+                         .s = true);
+      break;
+
    case nir_op_iadd:
       instr = pco_iadd32(&tctx->b, dest, src[0], src[1], pco_ref_null());
       break;
