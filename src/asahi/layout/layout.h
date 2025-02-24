@@ -30,11 +30,6 @@ enum ail_tiling {
     * GPU-tiled. Always allowed.
     */
    AIL_TILING_GPU,
-
-   /**
-    * GPU-tiled with compression.
-    */
-   AIL_TILING_GPU_COMPRESSED,
 };
 
 /*
@@ -69,6 +64,9 @@ struct ail_layout {
 
    /** Tiling mode used */
    enum ail_tiling tiling;
+
+   /** Whether compression is used. Requires a non-linear layout. */
+   bool compressed;
 
    /** Texture format */
    enum pipe_format format;
@@ -267,9 +265,7 @@ static inline uint32_t
 ail_get_twiddled_block_B(const struct ail_layout *layout, unsigned level,
                          uint32_t x_px, uint32_t y_px, uint32_t z_px)
 {
-   assert(layout->tiling == AIL_TILING_GPU ||
-          layout->tiling == AIL_TILING_GPU_COMPRESSED);
-
+   assert(layout->tiling == AIL_TILING_GPU);
    assert(level < layout->levels);
 
    unsigned x_el = util_format_get_nblocksx(layout->format, x_px);
@@ -321,12 +317,6 @@ ail_metadata_height_tl(struct ail_layout *layout, unsigned level)
    return DIV_ROUND_UP(sa, 16);
 }
 
-static inline bool
-ail_is_compressed(const struct ail_layout *layout)
-{
-   return layout->tiling == AIL_TILING_GPU_COMPRESSED;
-}
-
 /*
  * Even when the base mip level is compressed, high levels of the miptree
  * (smaller than 16 pixels on either axis) are not compressed as it would be
@@ -341,7 +331,7 @@ ail_is_level_compressed(const struct ail_layout *layout, unsigned level)
    unsigned height_sa = ALIGN(
       ail_effective_height_sa(layout->height_px, layout->sample_count_sa), 16);
 
-   return ail_is_compressed(layout) &&
+   return layout->compressed &&
           u_minify(MAX2(width_sa, height_sa), level) >= 16;
 }
 
@@ -349,13 +339,10 @@ static inline bool
 ail_is_level_twiddled_uncompressed(const struct ail_layout *layout,
                                    unsigned level)
 {
-   switch (layout->tiling) {
-   case AIL_TILING_GPU:
-      return true;
-   case AIL_TILING_GPU_COMPRESSED:
+   if (layout->compressed) {
       return !ail_is_level_compressed(layout, level);
-   default:
-      return false;
+   } else {
+      return layout->tiling != AIL_TILING_LINEAR;
    }
 }
 
@@ -510,8 +497,7 @@ ail_formats_compatible(enum pipe_format a, enum pipe_format b)
 static inline bool
 ail_is_view_compatible(struct ail_layout *layout, enum pipe_format view)
 {
-   return !ail_is_compressed(layout) ||
-          ail_formats_compatible(layout->format, view);
+   return !layout->compressed || ail_formats_compatible(layout->format, view);
 }
 
 /* Fake values, pending UAPI upstreaming */
@@ -523,7 +509,7 @@ ail_is_view_compatible(struct ail_layout *layout, enum pipe_format view)
 #endif
 
 /*
- * We generally use ail enums instead of DRM format modifiers. This helper
+ * We generally use ail enums instead of DRM format modifiers. These helpers
  * bridges the gap.
  */
 static inline enum ail_tiling
@@ -533,9 +519,22 @@ ail_drm_modifier_to_tiling(uint64_t modifier)
    case DRM_FORMAT_MOD_LINEAR:
       return AIL_TILING_LINEAR;
    case DRM_FORMAT_MOD_APPLE_TWIDDLED:
-      return AIL_TILING_GPU;
    case DRM_FORMAT_MOD_APPLE_TWIDDLED_COMPRESSED:
-      return AIL_TILING_GPU_COMPRESSED;
+      return AIL_TILING_GPU;
+   default:
+      unreachable("Unsupported modifier");
+   }
+}
+
+static inline bool
+ail_is_drm_modifier_compressed(uint64_t modifier)
+{
+   switch (modifier) {
+   case DRM_FORMAT_MOD_LINEAR:
+   case DRM_FORMAT_MOD_APPLE_TWIDDLED:
+      return false;
+   case DRM_FORMAT_MOD_APPLE_TWIDDLED_COMPRESSED:
+      return true;
    default:
       unreachable("Unsupported modifier");
    }

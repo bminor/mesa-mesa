@@ -66,7 +66,8 @@ TEST(Generated, CompTwiddled)
          .depth_px = test.depth,
          .sample_count_sa = 1,
          .levels = test.levels,
-         .tiling = AIL_TILING_GPU_COMPRESSED,
+         .tiling = AIL_TILING_GPU,
+         .compressed = true,
          .format = test.format,
       };
 
@@ -143,8 +144,8 @@ TEST(Generated, MSAA)
          .depth_px = test.depth,
          .sample_count_sa = test.samples,
          .levels = test.levels,
-         .tiling =
-            test.is_compressed ? AIL_TILING_GPU_COMPRESSED : AIL_TILING_GPU,
+         .tiling = AIL_TILING_GPU,
+         .compressed = test.is_compressed,
          .format = test.format,
       };
 

@@ -90,8 +90,7 @@ void agx_init_state_functions(struct pipe_context *ctx);
 
 const static char *s_tiling[] = {
    [AIL_TILING_LINEAR] = "LINR",
-   [AIL_TILING_GPU] = "TWID",
-   [AIL_TILING_GPU_COMPRESSED] = "COMP",
+   [AIL_TILING_GPU] = "GPU",
 };
 
 #define rsrc_debug(res, ...)                                                   \
@@ -114,12 +113,13 @@ agx_resource_debug(struct agx_resource *res, const char *msg)
    }
 
    agx_msg(
-      "%s%s %dx%dx%d %dL %d/%dM %dS M:%llx %s %s%s S:0x%llx LS:0x%llx CS:0x%llx "
+      "%s%s %dx%dx%d %dL %d/%dM %dS M:%llx %s%s %s%s S:0x%llx LS:0x%llx CS:0x%llx "
       "Base=0x%llx Size=0x%llx Meta=0x%llx/0x%llx (%s) %s%s%s%s%s%sfd:%d(%d) B:%x @ %p\n",
       msg ?: "", util_format_short_name(res->base.format), res->base.width0,
       res->base.height0, res->base.depth0, res->base.array_size,
       res->base.last_level, res->layout.levels, res->layout.sample_count_sa,
       (long long)res->modifier, s_tiling[res->layout.tiling],
+      res->layout.compressed ? " COMP" : "",
       res->layout.mipmapped_z ? "MZ " : "",
       res->layout.page_aligned_layers ? "PL " : "",
       (long long)res->layout.linear_stride_B,
@@ -146,6 +146,7 @@ agx_resource_setup(struct agx_device *dev, struct agx_resource *nresource)
 
    nresource->layout = (struct ail_layout){
       .tiling = ail_drm_modifier_to_tiling(nresource->modifier),
+      .compressed = ail_is_drm_modifier_compressed(nresource->modifier),
       .mipmapped_z = templ->target == PIPE_TEXTURE_3D,
       .format = templ->format,
       .width_px = templ->width0,
@@ -1167,7 +1168,7 @@ void
 agx_decompress(struct agx_context *ctx, struct agx_resource *rsrc,
                const char *reason)
 {
-   if (rsrc->layout.tiling == AIL_TILING_GPU_COMPRESSED) {
+   if (rsrc->layout.compressed) {
       perf_debug_ctx(ctx, "Decompressing resource due to %s", reason);
    } else if (!rsrc->layout.writeable_image) {
       perf_debug_ctx(ctx, "Reallocating image due to %s", reason);
@@ -1322,7 +1323,7 @@ agx_cmdbuf(struct agx_device *dev, struct drm_asahi_cmd_render *c,
 
             assert(zres->layout.tiling != AIL_TILING_LINEAR && "must tile");
 
-            if (ail_is_compressed(&zres->layout)) {
+            if (zres->layout.compressed) {
                c->depth_meta_buffer_load =
                   agx_map_texture_gpu(zres, 0) +
                   zres->layout.metadata_offset_B +
@@ -1383,7 +1384,7 @@ agx_cmdbuf(struct agx_device *dev, struct drm_asahi_cmd_render *c,
             c->stencil_buffer_store_stride = c->stencil_buffer_load_stride;
             c->stencil_buffer_partial_stride = c->stencil_buffer_load_stride;
 
-            if (ail_is_compressed(&sres->layout)) {
+            if (sres->layout.compressed) {
                c->stencil_meta_buffer_load =
                   agx_map_texture_gpu(sres, 0) +
                   sres->layout.metadata_offset_B +
