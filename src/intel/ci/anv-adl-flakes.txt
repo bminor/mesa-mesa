@@ -9,3 +9,10 @@ dEQP-VK.pipeline.monolithic.creation_cache_control.compute_pipelines.single_pipe
 # building time, this is out of spec
 dEQP-VK.video.encode.h265.i_p
 dEQP-VK.video.encode.h265.resolution_change_dpb
+
+# Flakes seen in the nightly https://gitlab.freedesktop.org/mesa/mesa/-/jobs/71664021
+dEQP-VK.video.encode.h264.rc_disable
+dEQP-VK.video.encode.h264.resolution_change_dpb
+dEQP-VK.video.encode.h265.query_with_status
+dEQP-VK.video.encode.h265.rc_disable
+dEQP-VK.video.encode.h265.resources_without_profiles
