@@ -1871,8 +1871,6 @@ pvr_setup_fs_outputs(pco_data *data,
       if (idx == VK_ATTACHMENT_UNUSED)
          continue;
 
-      assert(u == idx); /* TODO: not sure if this is true or not... */
-
       mrt_resource = &hw_subpass->setup.mrt_resources[u];
       output_reg = mrt_resource->type == USC_MRT_RESOURCE_TYPE_OUTPUT_REG;
 
@@ -1885,14 +1883,11 @@ pvr_setup_fs_outputs(pco_data *data,
       format = data->fs.output_formats[location];
       format_bits = util_format_get_blocksizebits(format);
       /* TODO: other sized formats. */
-      assert(!(format_bits % 32));
-
-      assert(mrt_resource->intermediate_size == format_bits / 8);
 
       set_var(data->fs.outputs,
               mrt_resource->reg.output_reg,
               var,
-              format_bits / 32);
+              DIV_ROUND_UP(format_bits, 32));
       data->fs.output_reg[location] = output_reg;
 
       outputs_written &= ~BITFIELD64_BIT(location);
