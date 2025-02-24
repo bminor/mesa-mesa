@@ -123,6 +123,21 @@ get_device_descriptor_limits(const struct anv_physical_device *device,
    limits->max_resources = MIN2(limits->max_resources, limits->max_samplers);
 }
 
+
+static const bool
+anv_device_has_bfloat16_cooperative_matrix(const struct anv_physical_device *pdevice)
+{
+   const struct intel_device_info *devinfo = &pdevice->info;
+
+   for (int i = 0; i < ARRAY_SIZE(devinfo->cooperative_matrix_configurations); i++) {
+      const struct intel_cooperative_matrix_configuration *cfg =
+         &devinfo->cooperative_matrix_configurations[i];
+      if (cfg->a == INTEL_CMAT_BFLOAT16 || cfg->b == INTEL_CMAT_BFLOAT16)
+         return true;
+   }
+   return false;
+}
+
 static void
 get_device_extensions(const struct anv_physical_device *device,
                       struct vk_device_extension_table *ext)
@@ -378,6 +393,7 @@ get_device_extensions(const struct anv_physical_device *device,
       .MESA_image_alignment_control          = true,
       .NV_compute_shader_derivatives         = true,
       .VALVE_mutable_descriptor_type         = true,
+      .KHR_shader_bfloat16                   = device->info.has_bfloat16,
    };
 }
 
@@ -935,6 +951,12 @@ get_features(const struct anv_physical_device *pdevice,
 
       /* VK_KHR_maintenance8 */
       .maintenance8 = true,
+
+      /* VK_KHR_shader_bfloat16 */
+      .shaderBFloat16Type = pdevice->info.has_bfloat16,
+      .shaderBFloat16CooperativeMatrix =
+         anv_device_has_bfloat16_cooperative_matrix(pdevice),
+      .shaderBFloat16DotProduct = pdevice->info.has_bfloat16,
    };
 
    /* The new DOOM and Wolfenstein games require depthBounds without
