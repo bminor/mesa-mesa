@@ -84,6 +84,8 @@ agx_translate_layout(enum ail_tiling tiling)
    switch (tiling) {
    case AIL_TILING_GPU:
       return AGX_LAYOUT_GPU;
+   case AIL_TILING_TWIDDLED:
+      return AGX_LAYOUT_TWIDDLED;
    case AIL_TILING_LINEAR:
       return AGX_LAYOUT_LINEAR;
    }

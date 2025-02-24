@@ -30,6 +30,11 @@ enum ail_tiling {
     * GPU-tiled. Always allowed.
     */
    AIL_TILING_GPU,
+
+   /**
+    * Fully twiddled.
+    */
+   AIL_TILING_TWIDDLED,
 };
 
 /*

@@ -4,6 +4,8 @@
  */
 
 #include "layout.h"
+#include "util/format/u_format.h"
+#include "util/u_math.h"
 
 static void
 ail_initialize_linear(struct ail_layout *layout)
@@ -64,7 +66,7 @@ ail_get_block_size_B(struct ail_layout *layout)
 }
 
 static void
-ail_initialize_twiddled(struct ail_layout *layout)
+ail_initialize_gpu_tiled(struct ail_layout *layout)
 {
    unsigned offset_B = 0;
    unsigned blocksize_B = ail_get_block_size_B(layout);
@@ -212,6 +214,57 @@ ail_initialize_twiddled(struct ail_layout *layout)
 }
 
 static void
+ail_initialize_twiddled(struct ail_layout *layout)
+{
+   unsigned offset_B = 0;
+   unsigned blocksize_B = ail_get_block_size_B(layout);
+   unsigned w_el = util_format_get_nblocksx(layout->format, layout->width_px);
+   unsigned h_el = util_format_get_nblocksy(layout->format, layout->height_px);
+   bool compressed = util_format_is_compressed(layout->format);
+
+   for (unsigned l = 0; l < layout->levels; ++l) {
+      unsigned alloc_w_el = u_minify(util_next_power_of_two(w_el), l);
+      unsigned alloc_h_el = u_minify(util_next_power_of_two(h_el), l);
+      unsigned logical_w_el = util_next_power_of_two(u_minify(w_el, l));
+      unsigned logical_h_el = util_next_power_of_two(u_minify(h_el, l));
+
+      /* AGX: Even the exceptions have exceptions */
+      if (compressed) {
+         logical_w_el = alloc_w_el;
+         logical_h_el = alloc_h_el;
+      }
+
+      unsigned size_el = alloc_w_el * alloc_h_el;
+      layout->level_offsets_B[l] = offset_B;
+      offset_B = ALIGN_POT(offset_B + (blocksize_B * size_el), AIL_CACHELINE);
+
+      unsigned minor_el = MIN2(logical_w_el, logical_h_el);
+      layout->stride_el[l] = logical_w_el;
+      layout->tilesize_el[l] = (struct ail_tile){minor_el, minor_el};
+   }
+
+   /* Add the end offset so we can easily recover the size of a level */
+   assert(layout->levels < ARRAY_SIZE(layout->level_offsets_B));
+   layout->level_offsets_B[layout->levels] = offset_B;
+
+   /* Determine the start of the miptail. From that level on, we can no longer
+    * precisely bind at page granularity.
+    */
+   /* XXX TODO */
+   layout->mip_tail_first_lod = 0;
+
+   /* Determine the stride of the miptail. Sparse arrayed images inherently
+    * require page-aligned layers to be able to bind individual layers.
+    */
+   unsigned tail_offset_B = layout->level_offsets_B[layout->mip_tail_first_lod];
+   layout->mip_tail_stride = align(offset_B - tail_offset_B, AIL_PAGESIZE);
+
+   layout->page_aligned_layers = true;
+   layout->layer_stride_B = ALIGN_POT(offset_B, AIL_PAGESIZE);
+   layout->size_B = (uint64_t)layout->layer_stride_B * layout->depth_px;
+}
+
+static void
 ail_initialize_compression(struct ail_layout *layout)
 {
    assert(!util_format_is_compressed(layout->format) &&
@@ -313,6 +366,9 @@ ail_make_miptree(struct ail_layout *layout)
       ail_initialize_linear(layout);
       break;
    case AIL_TILING_GPU:
+      ail_initialize_gpu_tiled(layout);
+      break;
+   case AIL_TILING_TWIDDLED:
       ail_initialize_twiddled(layout);
       break;
    default:
