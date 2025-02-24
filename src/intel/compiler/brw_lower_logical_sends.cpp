@@ -729,6 +729,21 @@ shader_opcode_needs_header(opcode op,
    return false;
 }
 
+static bool
+shader_opcode_uses_sampler(opcode op)
+{
+   switch (op) {
+   case SHADER_OPCODE_SAMPLEINFO_LOGICAL:
+   case SHADER_OPCODE_TXF_LOGICAL:
+   case SHADER_OPCODE_TXS_LOGICAL:
+   case SHADER_OPCODE_IMAGE_SIZE_LOGICAL:
+      return false;
+
+   default:
+      return true;
+   }
+}
+
 static void
 lower_sampler_logical_send(const brw_builder &bld, brw_inst *inst,
                            const brw_reg &coordinate,
@@ -868,7 +883,7 @@ lower_sampler_logical_send(const brw_builder &bld, brw_inst *inst,
             ubld1.SHL(tmp, tmp, brw_imm_ud(4));
             ubld1.ADD(component(header, 3), sampler_state_ptr, tmp);
          }
-      } else if (devinfo->ver >= 11) {
+      } else if (devinfo->ver >= 11 && shader_opcode_uses_sampler(op)) {
          /* Gfx11+ sampler message headers include bits in 4:0 which conflict
           * with the ones included in g0.3 bits 4:0.  Mask them out.
           */
