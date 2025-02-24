@@ -190,7 +190,8 @@ trans_load_input_vs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
    assert(!base);
 
    ASSERTED nir_alu_type type = nir_intrinsic_dest_type(intr);
-   assert(type == nir_type_float32);
+   assert(type == nir_type_float32 || type == nir_type_uint32 ||
+          type == nir_type_int32);
    /* TODO: f16 support. */
 
    ASSERTED const nir_src offset = intr->src[0];
@@ -223,7 +224,8 @@ trans_store_output_vs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref src)
    assert(!base);
 
    ASSERTED nir_alu_type type = nir_intrinsic_src_type(intr);
-   assert(type == nir_type_float32);
+   assert(type == nir_type_float32 || type == nir_type_uint32 ||
+          type == nir_type_int32);
    /* TODO: f16 support. */
 
    ASSERTED const nir_src offset = intr->src[1];
