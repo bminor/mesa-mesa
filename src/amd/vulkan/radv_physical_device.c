@@ -669,6 +669,7 @@ radv_physical_device_get_supported_extensions(const struct radv_physical_device 
       .EXT_device_address_binding_report = true,
       .EXT_device_fault = pdev->info.has_gpuvm_fault_query,
       .EXT_device_generated_commands = pdev->info.gfx_level >= GFX8,
+      .EXT_device_memory_report = true,
       .EXT_discard_rectangles = true,
 #ifdef VK_USE_PLATFORM_DISPLAY_KHR
       .EXT_display_control = true,
@@ -1325,6 +1326,9 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
 
       /* VK_KHR_maintenance8 */
       .maintenance8 = true,
+
+      /* VK_EXT_device_memory_report */
+      .deviceMemoryReport = true,
    };
 }
 
