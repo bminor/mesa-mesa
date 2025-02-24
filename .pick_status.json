@@ -174,7 +174,7 @@
         "description": "amd: use 128B compression for scanout images when drm.minor <63",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8328e575125ff056310d9db81ea09b12187ab222",
         "notes": null
