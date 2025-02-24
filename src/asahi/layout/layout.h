@@ -247,10 +247,18 @@ ail_get_linear_pixel_B(const struct ail_layout *layout, ASSERTED unsigned level,
 static inline uint32_t
 ail_space_bits(unsigned x)
 {
-   assert(x < 128 && "offset must be inside the tile");
+   uint32_t accum = 0;
 
-   return ((x & 1) << 0) | ((x & 2) << 1) | ((x & 4) << 2) | ((x & 8) << 3) |
-          ((x & 16) << 4) | ((x & 32) << 5) | ((x & 64) << 6);
+   /* With fully twiddled images, we can have up to 16384x16384 tiles,
+    * justifying stopping the loop at 14.
+    */
+   assert(x < (1 << 14) && "offset must be inside the tile");
+
+   for (unsigned i = 0; i < 14; ++i) {
+      accum |= (x & (1 << i)) << i;
+   }
+
+   return accum;
 }
 
 #define MOD_POT(x, y) (x) & ((y) - 1)
