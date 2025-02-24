@@ -817,15 +817,6 @@ nir_tex_instr_create(nir_shader *shader, unsigned num_srcs)
    return instr;
 }
 
-static void *
-nir_instr_get_gc_pointer(nir_instr *instr)
-{
-   if (unlikely(instr->has_debug_info))
-      return nir_instr_get_debug_info(instr);
-
-   return instr;
-}
-
 static gc_ctx *
 nir_instr_get_gc_context(nir_instr *instr)
 {
