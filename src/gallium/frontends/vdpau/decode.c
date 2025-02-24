@@ -659,8 +659,6 @@ vlVdpDecoderRenderAV1(struct pipe_av1_picture_desc *picture,
 
    picture->picture_parameter.frame_width = picture_info->width;
    picture->picture_parameter.frame_height = picture_info->height;
-   picture->picture_parameter.max_width = picture_info->width;
-   picture->picture_parameter.max_height = picture_info->height;
 
    for (i = 0; i < AV1_NUM_REF_FRAMES; ++i) {
       if (picture_info->frame_type == AV1_KEY_FRAME && picture_info->show_frame) {
@@ -1149,6 +1147,8 @@ vlVdpDecoderRender(VdpDecoder decoder,
          vlsurf->ref_buffer = NULL;
          mtx_unlock(&vlsurf->device->mutex);
       }
+      desc.av1.picture_parameter.max_width = vlsurf->templat.width;
+      desc.av1.picture_parameter.max_height = vlsurf->templat.height;
    }
 
    mtx_lock(&vldecoder->mutex);
