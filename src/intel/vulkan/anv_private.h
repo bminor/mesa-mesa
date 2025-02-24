@@ -4915,11 +4915,6 @@ struct anv_graphics_base_pipeline {
    /* Robustness flags used shaders
     */
    enum brw_robustness_flags                    robust_flags[ANV_GRAPHICS_SHADER_STAGE_COUNT];
-
-   /* True if at the time the fragment shader was compiled, it didn't have all
-    * the information to avoid INTEL_MSAA_FLAG_ENABLE_DYNAMIC.
-    */
-   bool                                         fragment_dynamic;
 };
 
 /* The library graphics pipeline object has a partial graphic state and

@@ -769,9 +769,7 @@ update_fs_msaa_flags(struct anv_gfx_dynamic_state *hw_state,
    /* If we have any dynamic bits here, we might need to update the value
     * in the push constant for the shader.
     */
-   if (wm_prog_data->coarse_pixel_dispatch != INTEL_SOMETIMES &&
-       wm_prog_data->persample_dispatch != INTEL_SOMETIMES &&
-       wm_prog_data->alpha_to_coverage != INTEL_SOMETIMES)
+   if (!brw_wm_prog_data_is_dynamic(wm_prog_data))
       return;
 
    enum intel_msaa_flags fs_msaa_flags =

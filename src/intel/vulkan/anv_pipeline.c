@@ -594,12 +594,8 @@ anv_stage_write_shader_hash(struct anv_pipeline_stage *stage,
 static bool
 anv_graphics_pipeline_stage_fragment_dynamic(const struct anv_pipeline_stage *stage)
 {
-   if (stage->stage != MESA_SHADER_FRAGMENT)
-      return false;
-
-   return stage->key.wm.persample_interp == INTEL_SOMETIMES ||
-          stage->key.wm.multisample_fbo == INTEL_SOMETIMES ||
-          stage->key.wm.alpha_to_coverage == INTEL_SOMETIMES;
+   return stage->stage == MESA_SHADER_FRAGMENT &&
+          brw_wm_prog_key_is_dynamic(&stage->key.wm);
 }
 
 static void
@@ -2522,12 +2518,6 @@ done:
 
    pipeline_feedback->duration = os_time_get_nano() - pipeline_start;
 
-   if (pipeline->shaders[MESA_SHADER_FRAGMENT]) {
-      pipeline->fragment_dynamic =
-         anv_graphics_pipeline_stage_fragment_dynamic(
-            &stages[MESA_SHADER_FRAGMENT]);
-   }
-
    return VK_SUCCESS;
 
 fail:
@@ -2950,17 +2940,6 @@ anv_graphics_pipeline_import_lib(struct anv_graphics_base_pipeline *pipeline,
    assert(!link_optimize || lib->retain_shaders);
 
    pipeline->base.active_stages |= lib->base.base.active_stages;
-
-   /* Propagate the fragment dynamic flag, unless we're doing link
-    * optimization, in that case we'll have all the state information and this
-    * will never be dynamic.
-    */
-   if (!link_optimize) {
-      if (lib->base.fragment_dynamic) {
-         assert(lib->base.base.active_stages & VK_SHADER_STAGE_FRAGMENT_BIT);
-         pipeline->fragment_dynamic = true;
-      }
-   }
 
    uint32_t shader_count = anv_graphics_pipeline_imported_shader_count(stages);
    for (uint32_t s = 0; s < ARRAY_SIZE(lib->base.shaders); s++) {

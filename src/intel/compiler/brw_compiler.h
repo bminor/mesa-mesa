@@ -388,7 +388,8 @@ brw_wm_prog_key_is_dynamic(const struct brw_wm_prog_key *key)
 {
    return key->alpha_to_coverage == INTEL_SOMETIMES ||
       key->persample_interp == INTEL_SOMETIMES ||
-      key->multisample_fbo == INTEL_SOMETIMES;
+      key->multisample_fbo == INTEL_SOMETIMES ||
+      key->mesh_input == INTEL_SOMETIMES;
 }
 
 struct brw_cs_prog_key {
