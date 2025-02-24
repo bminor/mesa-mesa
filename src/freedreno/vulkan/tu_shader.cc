@@ -121,7 +121,8 @@ tu_spirv_to_nir(struct tu_device *dev,
    NIR_PASS(_, nir, nir_split_var_copies);
    NIR_PASS(_, nir, nir_lower_var_copies);
 
-   NIR_PASS(_, nir, nir_lower_mediump_vars, nir_var_function_temp | nir_var_shader_temp | nir_var_mem_shared);
+   NIR_PASS(_, nir, nir_lower_mediump_vars,
+            nir_var_function_temp | nir_var_shader_temp | nir_var_mem_shared);
    NIR_PASS(_, nir, nir_opt_copy_prop_vars);
    NIR_PASS(_, nir, nir_opt_combine_stores, nir_var_all);
 
@@ -2519,7 +2520,6 @@ tu_shader_create(struct tu_device *dev,
    };
    NIR_PASS(_, nir, tu_nir_lower_fdm, &fdm_options);
 
-
    /* This needs to happen before multiview lowering which rewrites store
     * instructions of the position variable, so that we can just rewrite one
     * store at the end instead of having to rewrite every store specified by
@@ -2539,24 +2539,21 @@ tu_shader_create(struct tu_device *dev,
    }
 
    NIR_PASS(_, nir, nir_lower_explicit_io, nir_var_mem_push_const,
-              nir_address_format_32bit_offset);
+            nir_address_format_32bit_offset);
 
-   NIR_PASS(_, nir, nir_lower_explicit_io,
-              nir_var_mem_ubo | nir_var_mem_ssbo,
-              nir_address_format_vec2_index_32bit_offset);
+   NIR_PASS(_, nir, nir_lower_explicit_io, nir_var_mem_ubo | nir_var_mem_ssbo,
+            nir_address_format_vec2_index_32bit_offset);
 
-   NIR_PASS(_, nir, nir_lower_explicit_io,
-              nir_var_mem_global,
-              nir_address_format_64bit_global);
+   NIR_PASS(_, nir, nir_lower_explicit_io, nir_var_mem_global,
+            nir_address_format_64bit_global);
 
    if (nir->info.stage == MESA_SHADER_COMPUTE) {
       if (!nir->info.shared_memory_explicit_layout) {
          NIR_PASS(_, nir, nir_lower_vars_to_explicit_types,
-                    nir_var_mem_shared, shared_type_info);
+                  nir_var_mem_shared, shared_type_info);
       }
-      NIR_PASS(_, nir, nir_lower_explicit_io,
-                 nir_var_mem_shared,
-                 nir_address_format_32bit_offset);
+      NIR_PASS(_, nir, nir_lower_explicit_io, nir_var_mem_shared,
+               nir_address_format_32bit_offset);
 
       if (nir->info.zero_initialize_shared_memory && nir->info.shared_size > 0) {
          const unsigned chunk_size = 16; /* max single store size */
@@ -2566,13 +2563,15 @@ tu_shader_create(struct tu_device *dev,
           * that accesses are limited to those bounds.
           */
          const unsigned shared_size = ALIGN(nir->info.shared_size, chunk_size);
-         NIR_PASS(_, nir, nir_zero_initialize_shared_memory, shared_size, chunk_size);
+         NIR_PASS(_, nir, nir_zero_initialize_shared_memory, shared_size,
+                  chunk_size);
       }
 
       const struct nir_lower_compute_system_values_options compute_sysval_options = {
          .has_base_workgroup_id = true,
       };
-      NIR_PASS(_, nir, nir_lower_compute_system_values, &compute_sysval_options);
+      NIR_PASS(_, nir, nir_lower_compute_system_values,
+               &compute_sysval_options);
    }
 
    nir_assign_io_var_locations(nir, nir_var_shader_in, &nir->num_inputs, nir->info.stage);
@@ -2611,8 +2610,8 @@ tu_shader_create(struct tu_device *dev,
 
    struct ir3_const_allocations const_allocs = {};
    NIR_PASS(_, nir, tu_lower_io, dev, shader, layout,
-              key->read_only_input_attachments, key->dynamic_renderpass,
-              &const_allocs);
+            key->read_only_input_attachments, key->dynamic_renderpass,
+            &const_allocs);
 
    nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
 
@@ -2745,9 +2744,11 @@ tu_link_shaders(nir_shader **shaders, unsigned shaders_count)
       const nir_remove_dead_variables_options out_var_opts = {
          .can_remove_var = nir_vk_is_not_xfb_output,
       };
-      NIR_PASS(_, producer, nir_remove_dead_variables, nir_var_shader_out, &out_var_opts);
+      NIR_PASS(_, producer, nir_remove_dead_variables, nir_var_shader_out,
+               &out_var_opts);
 
-      NIR_PASS(_, consumer, nir_remove_dead_variables, nir_var_shader_in, NULL);
+      NIR_PASS(_, consumer, nir_remove_dead_variables, nir_var_shader_in,
+               NULL);
 
       bool progress = nir_remove_unused_varyings(producer, consumer);
 
@@ -2755,7 +2756,8 @@ tu_link_shaders(nir_shader **shaders, unsigned shaders_count)
       if (progress) {
          if (nir_lower_global_vars_to_local(producer)) {
             /* Remove dead writes, which can remove input loads */
-            NIR_PASS(_, producer, nir_remove_dead_variables, nir_var_shader_temp, NULL);
+            NIR_PASS(_, producer, nir_remove_dead_variables,
+                     nir_var_shader_temp, NULL);
             NIR_PASS(_, producer, nir_opt_dce);
          }
          nir_lower_global_vars_to_local(consumer);
