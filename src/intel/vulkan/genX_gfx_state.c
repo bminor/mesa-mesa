@@ -1068,12 +1068,26 @@ update_ps_extra_wm(struct anv_gfx_dynamic_state *hw_state,
    if (!wm_prog_data)
       return;
 
+   const bool uses_coarse_pixel =
+      brw_wm_prog_data_is_coarse(wm_prog_data, hw_state->fs_msaa_flags);
+
+   uint32_t InputCoverageMaskState = ICMS_NONE;
+   assert(!wm_prog_data->inner_coverage); /* Not available in SPIR-V */
+   if (!wm_prog_data->uses_sample_mask)
+      InputCoverageMaskState = ICMS_NONE;
+   else if (uses_coarse_pixel)
+      InputCoverageMaskState  = ICMS_NORMAL;
+   else if (wm_prog_data->post_depth_coverage)
+      InputCoverageMaskState = ICMS_DEPTH_COVERAGE;
+   else
+      InputCoverageMaskState = ICMS_NORMAL;
+
+   SET(PS_EXTRA, ps_extra.InputCoverageMaskState, InputCoverageMaskState);
+
    SET(PS_EXTRA, ps_extra.PixelShaderIsPerSample,
                  brw_wm_prog_data_is_persample(wm_prog_data,
                                                hw_state->fs_msaa_flags));
 #if GFX_VER >= 11
-   const bool uses_coarse_pixel =
-      brw_wm_prog_data_is_coarse(wm_prog_data, hw_state->fs_msaa_flags);
    SET(PS_EXTRA, ps_extra.PixelShaderIsPerCoarsePixel, uses_coarse_pixel);
 #endif
 #if GFX_VERx10 >= 125
@@ -3176,6 +3190,7 @@ cmd_buffer_repack_gfx_state(struct anv_gfx_dynamic_state *hw_state,
             SET(pse, ps_extra, PixelShaderIsPerCoarsePixel);
 #endif
             SET(pse, ps_extra, PixelShaderKillsPixel);
+            SET(pse, ps_extra, InputCoverageMaskState);
 
 #if GFX_VERx10 >= 125
             SET(pse, ps_extra, EnablePSDependencyOnCPsizeChange);
@@ -3193,6 +3208,7 @@ cmd_buffer_repack_gfx_state(struct anv_gfx_dynamic_state *hw_state,
             SET(pse, ps_extra, PixelShaderIsPerCoarsePixel);
 #endif
             SET(pse, ps_extra, PixelShaderKillsPixel);
+            SET(pse, ps_extra, InputCoverageMaskState);
 
 #if GFX_VERx10 >= 125 && INTEL_WA_18038825448_GFX_VER
             pse.EnablePSDependencyOnCPsizeChange = true;

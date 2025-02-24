@@ -1738,6 +1738,7 @@ struct anv_gfx_dynamic_state {
       bool PixelShaderKillsPixel;
       bool PixelShaderIsPerCoarsePixel;
       bool EnablePSDependencyOnCPsizeChange;
+      uint32_t InputCoverageMaskState;
    } ps_extra;
 
    /* 3DSTATE_PS_BLEND */
