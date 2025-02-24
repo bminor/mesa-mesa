@@ -840,6 +840,33 @@
     <field name="Opcode" size="8" start="56" type="CS Opcode" default="SYNC_WAIT64"/>
   </struct>
 
+  <enum name="COMPUTE SR">
+    <value name="SRT_0" value="0"/>
+    <value name="SRT_1" value="2"/>
+    <value name="SRT_2" value="4"/>
+    <value name="SRT_3" value="6"/>
+    <value name="FAU_0" value="8"/>
+    <value name="FAU_1" value="10"/>
+    <value name="FAU_2" value="12"/>
+    <value name="FAU_3" value="14"/>
+    <value name="SPD_0" value="16"/>
+    <value name="SPD_1" value="18"/>
+    <value name="SPD_2" value="20"/>
+    <value name="SPD_3" value="22"/>
+    <value name="TSD_0" value="24"/>
+    <value name="TSD_1" value="26"/>
+    <value name="TSD_2" value="28"/>
+    <value name="TSD_3" value="30"/>
+    <value name="GLOBAL_ATTRIBUTE_OFFSET" value="32"/>
+    <value name="WG_SIZE" value="33"/>
+    <value name="JOB_OFFSET_X" value="34"/>
+    <value name="JOB_OFFSET_Y" value="35"/>
+    <value name="JOB_OFFSET_Z" value="36"/>
+    <value name="JOB_SIZE_X" value="37"/>
+    <value name="JOB_SIZE_Y" value="38"/>
+    <value name="JOB_SIZE_Z" value="39"/>
+  </enum>
+
   <enum name="IDVS SR">
     <value name="SRT_0" value="0"/>
     <value name="SRT_1" value="2"/>

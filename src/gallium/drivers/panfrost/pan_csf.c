@@ -881,10 +881,10 @@ GENX(csf_launch_grid)(struct panfrost_batch *batch,
    csf_emit_shader_regs(batch, PIPE_SHADER_COMPUTE,
                         batch->rsd[PIPE_SHADER_COMPUTE]);
 
-   cs_move64_to(b, cs_reg64(b, 24), batch->tls.gpu);
+   cs_move64_to(b, cs_reg64(b, MALI_COMPUTE_SR_TSD_0), batch->tls.gpu);
 
    /* Global attribute offset */
-   cs_move32_to(b, cs_reg32(b, 32), 0);
+   cs_move32_to(b, cs_reg32(b, MALI_COMPUTE_SR_GLOBAL_ATTRIBUTE_OFFSET), 0);
 
    /* Compute workgroup size */
    struct mali_compute_size_workgroup_packed wg_size;
@@ -903,11 +903,11 @@ GENX(csf_launch_grid)(struct panfrost_batch *batch,
                                      (info->variable_shared_mem == 0);
    }
 
-   cs_move32_to(b, cs_reg32(b, 33), wg_size.opaque[0]);
+   cs_move32_to(b, cs_reg32(b, MALI_COMPUTE_SR_WG_SIZE), wg_size.opaque[0]);
 
-   /* Offset */
-   for (unsigned i = 0; i < 3; ++i)
-      cs_move32_to(b, cs_reg32(b, 34 + i), 0);
+   cs_move32_to(b, cs_reg32(b, MALI_COMPUTE_SR_JOB_OFFSET_X), 0);
+   cs_move32_to(b, cs_reg32(b, MALI_COMPUTE_SR_JOB_OFFSET_Y), 0);
+   cs_move32_to(b, cs_reg32(b, MALI_COMPUTE_SR_JOB_OFFSET_Z), 0);
 
    unsigned threads_per_wg = info->block[0] * info->block[1] * info->block[2];
    unsigned max_thread_cnt = panfrost_compute_max_thread_count(
@@ -920,7 +920,7 @@ GENX(csf_launch_grid)(struct panfrost_batch *batch,
          b, address,
          pan_resource(info->indirect)->image.data.base + info->indirect_offset);
 
-      struct cs_index grid_xyz = cs_reg_tuple(b, 37, 3);
+      struct cs_index grid_xyz = cs_reg_tuple(b, MALI_COMPUTE_SR_JOB_SIZE_X, 3);
       cs_load_to(b, grid_xyz, address, BITFIELD_MASK(3), 0);
 
       /* Wait for the load */
@@ -942,8 +942,9 @@ GENX(csf_launch_grid)(struct panfrost_batch *batch,
                               false, cs_shader_res_sel(0, 0, 0, 0));
    } else {
       /* Set size in workgroups per dimension immediately */
-      for (unsigned i = 0; i < 3; ++i)
-         cs_move32_to(b, cs_reg32(b, 37 + i), info->grid[i]);
+      cs_move32_to(b, cs_reg32(b, MALI_COMPUTE_SR_JOB_SIZE_X), info->grid[0]);
+      cs_move32_to(b, cs_reg32(b, MALI_COMPUTE_SR_JOB_SIZE_Y), info->grid[1]);
+      cs_move32_to(b, cs_reg32(b, MALI_COMPUTE_SR_JOB_SIZE_Z), info->grid[2]);
 
       /* Pick the task_axis and task_increment to maximize thread utilization. */
       unsigned task_axis = MALI_TASK_AXIS_X;
@@ -984,10 +985,11 @@ GENX(csf_launch_xfb)(struct panfrost_batch *batch,
 {
    struct cs_builder *b = batch->csf.cs.builder;
 
-   cs_move64_to(b, cs_reg64(b, 24), batch->tls.gpu);
+   cs_move64_to(b, cs_reg64(b, MALI_COMPUTE_SR_TSD_0), batch->tls.gpu);
 
    /* TODO: Indexing. Also, attribute_offset is a legacy feature.. */
-   cs_move32_to(b, cs_reg32(b, 32), batch->ctx->offset_start);
+   cs_move32_to(b, cs_reg32(b, MALI_COMPUTE_SR_GLOBAL_ATTRIBUTE_OFFSET),
+                batch->ctx->offset_start);
 
    /* Compute workgroup size */
    struct mali_compute_size_workgroup_packed wg_size;
@@ -1001,15 +1003,16 @@ GENX(csf_launch_xfb)(struct panfrost_batch *batch,
        */
       cfg.allow_merging_workgroups = true;
    }
-   cs_move32_to(b, cs_reg32(b, 33), wg_size.opaque[0]);
+   cs_move32_to(b, cs_reg32(b, MALI_COMPUTE_SR_WG_SIZE), wg_size.opaque[0]);
 
-   /* Offset */
-   for (unsigned i = 0; i < 3; ++i)
-      cs_move32_to(b, cs_reg32(b, 34 + i), 0);
+   cs_move32_to(b, cs_reg32(b, MALI_COMPUTE_SR_JOB_OFFSET_X), 0);
+   cs_move32_to(b, cs_reg32(b, MALI_COMPUTE_SR_JOB_OFFSET_Y), 0);
+   cs_move32_to(b, cs_reg32(b, MALI_COMPUTE_SR_JOB_OFFSET_Z), 0);
 
-   cs_move32_to(b, cs_reg32(b, 37), count);
-   cs_move32_to(b, cs_reg32(b, 38), info->instance_count);
-   cs_move32_to(b, cs_reg32(b, 39), 1);
+   cs_move32_to(b, cs_reg32(b, MALI_COMPUTE_SR_JOB_SIZE_X), count);
+   cs_move32_to(b, cs_reg32(b, MALI_COMPUTE_SR_JOB_SIZE_Y),
+                info->instance_count);
+   cs_move32_to(b, cs_reg32(b, MALI_COMPUTE_SR_JOB_SIZE_Z), 1);
 
    csf_emit_shader_regs(batch, PIPE_SHADER_VERTEX,
                         batch->rsd[PIPE_SHADER_VERTEX]);
