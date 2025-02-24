@@ -387,6 +387,9 @@ anv_GetPhysicalDeviceVideoFormatPropertiesKHR(VkPhysicalDevice physicalDevice,
       }
    }
 
+   if (*pVideoFormatPropertyCount == 0)
+      return VK_ERROR_VIDEO_PROFILE_FORMAT_NOT_SUPPORTED_KHR;
+
    return vk_outarray_status(&out);
 }
 
