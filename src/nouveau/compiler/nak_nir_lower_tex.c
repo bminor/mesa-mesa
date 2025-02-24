@@ -228,22 +228,18 @@ lower_tex(nir_builder *b, nir_tex_instr *tex, const struct nak_compiler *nak)
       unreachable("Unsupported shader model");
    }
 
-   if (src1_comps == 0)
-      PUSH(src1, nir_imm_int(b, 0));
-
-   nir_def *vec_srcs[2] = {
-      nir_vec(b, src0, src0_comps),
-      nir_vec(b, src1, src1_comps),
-   };
-
+   unsigned num_backend_srcs = 1;
    tex->src[0].src_type = nir_tex_src_backend1;
-   nir_src_rewrite(&tex->src[0].src, vec_srcs[0]);
+   nir_src_rewrite(&tex->src[0].src, nir_vec(b, src0, src0_comps));
 
-   tex->src[1].src_type = nir_tex_src_backend2;
-   nir_src_rewrite(&tex->src[1].src, vec_srcs[1]);
+   if (src1_comps > 0) {
+      num_backend_srcs = 2;
+      tex->src[1].src_type = nir_tex_src_backend2;
+      nir_src_rewrite(&tex->src[1].src, nir_vec(b, src1, src1_comps));
+   }
 
    /* Remove any extras */
-   while (tex->num_srcs > 2)
+   while (tex->num_srcs > num_backend_srcs)
       nir_tex_instr_remove_src(tex, tex->num_srcs - 1);
 
    tex->sampler_dim = remap_sampler_dim(tex->sampler_dim);
