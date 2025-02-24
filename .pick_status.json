@@ -1834,7 +1834,7 @@
         "description": "nvk: Don't bind a fragment shading rate image pre-Turing",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "75bcb656d9c1aee4046e9ba6c4344232000124ad",
         "notes": null
