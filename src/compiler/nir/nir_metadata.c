@@ -66,9 +66,13 @@ nir_metadata_require(nir_function_impl *impl, nir_metadata required, ...)
    impl->valid_metadata |= required;
 }
 
-void
-nir_metadata_preserve(nir_function_impl *impl, nir_metadata preserved)
+bool
+nir_progress(bool progress, nir_function_impl *impl, nir_metadata preserved)
 {
+   /* If we do not make progress, we preserve all metadata. */
+   if (!progress)
+      preserved = nir_metadata_all;
+
    /* If we discard valid liveness information, immediately free the
     * liveness information for each block. For large shaders, it can
     * consume a huge amount of memory, and it's usually not immediately
@@ -83,6 +87,7 @@ nir_metadata_preserve(nir_function_impl *impl, nir_metadata preserved)
    }
 
    impl->valid_metadata &= preserved;
+   return progress;
 }
 
 void
