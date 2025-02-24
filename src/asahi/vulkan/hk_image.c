@@ -743,9 +743,9 @@ hk_map_tiling(struct hk_device *dev, const VkImageCreateInfo *info,
 
    case VK_IMAGE_TILING_OPTIMAL:
       if (hk_can_compress_create_info(dev, plane, info)) {
-         return AIL_TILING_TWIDDLED_COMPRESSED;
+         return AIL_TILING_GPU_COMPRESSED;
       } else {
-         return AIL_TILING_TWIDDLED;
+         return AIL_TILING_GPU;
       }
 
    case VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT:
@@ -907,7 +907,7 @@ hk_image_init(struct hk_device *dev, struct hk_image *image,
 
          .levels = pCreateInfo->mipLevels,
          .sample_count_sa = pCreateInfo->samples,
-         .writeable_image = tiling != AIL_TILING_TWIDDLED_COMPRESSED,
+         .writeable_image = tiling != AIL_TILING_GPU_COMPRESSED,
 
          /* TODO: Maybe optimize this, our GL driver doesn't bother though */
          .renderable = true,

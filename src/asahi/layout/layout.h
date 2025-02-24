@@ -27,14 +27,14 @@ enum ail_tiling {
    AIL_TILING_LINEAR,
 
    /**
-    * Twiddled (Morton order). Always allowed.
+    * GPU-tiled. Always allowed.
     */
-   AIL_TILING_TWIDDLED,
+   AIL_TILING_GPU,
 
    /**
-    * Twiddled (Morton order) with compression.
+    * GPU-tiled with compression.
     */
-   AIL_TILING_TWIDDLED_COMPRESSED,
+   AIL_TILING_GPU_COMPRESSED,
 };
 
 /*
@@ -104,14 +104,14 @@ struct ail_layout {
    uint64_t level_offsets_compressed_B[AIL_MAX_MIP_LEVELS];
 
    /**
-    * If tiling is TWIDDLED, the tile size used for each mip level within a
+    * If tiling is nonlinear, the tile size used for each mip level within a
     * layer. Calculating tile sizes is the sole responsibility of
     * ail_initialized_twiddled.
     */
    struct ail_tile tilesize_el[AIL_MAX_MIP_LEVELS];
 
    /**
-    * If tiling is TWIDDLED, the stride in elements used for each mip level
+    * If tiling is nonlinear, the stride in elements used for each mip level
     * within a layer. Calculating level strides is the sole responsibility of
     * ail_initialized_twiddled. This is necessary because compressed pixel
     * formats may add extra stride padding.
@@ -180,7 +180,7 @@ ail_get_linear_stride_B(const struct ail_layout *layout, ASSERTED uint8_t level)
 /*
  * For WSI purposes, we need to associate a stride with all layouts. In the
  * hardware, only strided linear images have an associated stride, there is no
- * natural stride associated with twiddled images. However, various clients
+ * natural stride associated with nonlinear images. However, various clients
  * assert that the stride is valid for the image if it were linear (even if it
  * is in fact not linear). In those cases, by convention we use the minimum
  * valid such stride.
@@ -267,8 +267,8 @@ static inline uint32_t
 ail_get_twiddled_block_B(const struct ail_layout *layout, unsigned level,
                          uint32_t x_px, uint32_t y_px, uint32_t z_px)
 {
-   assert(layout->tiling == AIL_TILING_TWIDDLED ||
-          layout->tiling == AIL_TILING_TWIDDLED_COMPRESSED);
+   assert(layout->tiling == AIL_TILING_GPU ||
+          layout->tiling == AIL_TILING_GPU_COMPRESSED);
 
    assert(level < layout->levels);
 
@@ -324,7 +324,7 @@ ail_metadata_height_tl(struct ail_layout *layout, unsigned level)
 static inline bool
 ail_is_compressed(const struct ail_layout *layout)
 {
-   return layout->tiling == AIL_TILING_TWIDDLED_COMPRESSED;
+   return layout->tiling == AIL_TILING_GPU_COMPRESSED;
 }
 
 /*
@@ -350,9 +350,9 @@ ail_is_level_twiddled_uncompressed(const struct ail_layout *layout,
                                    unsigned level)
 {
    switch (layout->tiling) {
-   case AIL_TILING_TWIDDLED:
+   case AIL_TILING_GPU:
       return true;
-   case AIL_TILING_TWIDDLED_COMPRESSED:
+   case AIL_TILING_GPU_COMPRESSED:
       return !ail_is_level_compressed(layout, level);
    default:
       return false;
@@ -533,9 +533,9 @@ ail_drm_modifier_to_tiling(uint64_t modifier)
    case DRM_FORMAT_MOD_LINEAR:
       return AIL_TILING_LINEAR;
    case DRM_FORMAT_MOD_APPLE_TWIDDLED:
-      return AIL_TILING_TWIDDLED;
+      return AIL_TILING_GPU;
    case DRM_FORMAT_MOD_APPLE_TWIDDLED_COMPRESSED:
-      return AIL_TILING_TWIDDLED_COMPRESSED;
+      return AIL_TILING_GPU_COMPRESSED;
    default:
       unreachable("Unsupported modifier");
    }

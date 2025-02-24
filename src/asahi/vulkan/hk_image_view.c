@@ -351,9 +351,6 @@ pack_texture(struct hk_image_view *view, unsigned view_plane,
       if (layout->tiling == AIL_TILING_LINEAR) {
          cfg.stride = ail_get_linear_stride_B(layout, 0) - 16;
       } else {
-         assert(layout->tiling == AIL_TILING_TWIDDLED ||
-                layout->tiling == AIL_TILING_TWIDDLED_COMPRESSED);
-
          cfg.page_aligned_layers = layout->page_aligned_layers;
       }
    }

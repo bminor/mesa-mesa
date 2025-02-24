@@ -134,7 +134,7 @@ test(unsigned width, unsigned height, unsigned rx, unsigned ry, unsigned rw,
       .depth_px = 1,
       .sample_count_sa = 1,
       .levels = 1,
-      .tiling = AIL_TILING_TWIDDLED,
+      .tiling = AIL_TILING_GPU,
       .format = format,
    };
 

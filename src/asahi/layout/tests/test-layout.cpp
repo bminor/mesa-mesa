@@ -14,7 +14,7 @@ TEST(Cubemap, Nonmipmapped)
       .depth_px = 6,
       .sample_count_sa = 1,
       .levels = 1,
-      .tiling = AIL_TILING_TWIDDLED,
+      .tiling = AIL_TILING_GPU,
       .format = PIPE_FORMAT_R8G8B8A8_UNORM,
    };
 
@@ -32,7 +32,7 @@ TEST(Cubemap, RoundsToOnePage)
       .depth_px = 6,
       .sample_count_sa = 1,
       .levels = 6,
-      .tiling = AIL_TILING_TWIDDLED,
+      .tiling = AIL_TILING_GPU,
       .format = PIPE_FORMAT_R32_FLOAT,
    };
 
@@ -73,7 +73,7 @@ TEST(Miptree, AllMipLevels)
       .depth_px = 1,
       .sample_count_sa = 1,
       .levels = 11,
-      .tiling = AIL_TILING_TWIDDLED,
+      .tiling = AIL_TILING_GPU,
       .format = PIPE_FORMAT_R8G8B8A8_UINT,
    };
 
@@ -92,7 +92,7 @@ TEST(Miptree, SomeMipLevels)
       .depth_px = 1,
       .sample_count_sa = 1,
       .levels = 4,
-      .tiling = AIL_TILING_TWIDDLED,
+      .tiling = AIL_TILING_GPU,
       .format = PIPE_FORMAT_R8G8B8A8_UINT,
    };
 
@@ -111,7 +111,7 @@ TEST(Miptree, SmallPartialMiptree2DArray)
       .depth_px = 64,
       .sample_count_sa = 1,
       .levels = 4,
-      .tiling = AIL_TILING_TWIDDLED,
+      .tiling = AIL_TILING_GPU,
       .format = PIPE_FORMAT_R32_FLOAT,
    };
 
@@ -132,7 +132,7 @@ TEST(Miptree, SmallPartialMiptree3D)
       .sample_count_sa = 1,
       .levels = 4,
       .mipmapped_z = true,
-      .tiling = AIL_TILING_TWIDDLED,
+      .tiling = AIL_TILING_GPU,
       .format = PIPE_FORMAT_R32_FLOAT,
    };
 

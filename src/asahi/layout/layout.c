@@ -291,7 +291,7 @@ ail_make_miptree(struct ail_layout *layout)
    }
 
    assert(!(layout->writeable_image &&
-            layout->tiling == AIL_TILING_TWIDDLED_COMPRESSED) &&
+            layout->tiling == AIL_TILING_GPU_COMPRESSED) &&
           "Writeable images must not be compressed");
 
    /* Hardware strides are based on the maximum number of levels, so always
@@ -313,10 +313,10 @@ ail_make_miptree(struct ail_layout *layout)
    case AIL_TILING_LINEAR:
       ail_initialize_linear(layout);
       break;
-   case AIL_TILING_TWIDDLED:
+   case AIL_TILING_GPU:
       ail_initialize_twiddled(layout);
       break;
-   case AIL_TILING_TWIDDLED_COMPRESSED:
+   case AIL_TILING_GPU_COMPRESSED:
       ail_initialize_twiddled(layout);
       ail_initialize_compression(layout);
       break;

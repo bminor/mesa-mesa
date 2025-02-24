@@ -90,8 +90,8 @@ void agx_init_state_functions(struct pipe_context *ctx);
 
 const static char *s_tiling[] = {
    [AIL_TILING_LINEAR] = "LINR",
-   [AIL_TILING_TWIDDLED] = "TWID",
-   [AIL_TILING_TWIDDLED_COMPRESSED] = "COMP",
+   [AIL_TILING_GPU] = "TWID",
+   [AIL_TILING_GPU_COMPRESSED] = "COMP",
 };
 
 #define rsrc_debug(res, ...)                                                   \
@@ -1167,7 +1167,7 @@ void
 agx_decompress(struct agx_context *ctx, struct agx_resource *rsrc,
                const char *reason)
 {
-   if (rsrc->layout.tiling == AIL_TILING_TWIDDLED_COMPRESSED) {
+   if (rsrc->layout.tiling == AIL_TILING_GPU_COMPRESSED) {
       perf_debug_ctx(ctx, "Decompressing resource due to %s", reason);
    } else if (!rsrc->layout.writeable_image) {
       perf_debug_ctx(ctx, "Reallocating image due to %s", reason);
