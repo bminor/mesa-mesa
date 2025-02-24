@@ -750,10 +750,6 @@ lvp_get_features(const struct lvp_physical_device *pdevice,
       /* VK_KHR_shader_relaxed_extended_instruction */
       .shaderRelaxedExtendedInstruction = true,
 
-      /* VK_KHR_shader_subgroup_rotate */
-      .shaderSubgroupRotate = true,
-      .shaderSubgroupRotateClustered = true,
-
       /* VK_KHR_compute_shader_derivatives */
       .computeDerivativeGroupQuads = true,
       .computeDerivativeGroupLinear = true,
