@@ -21,8 +21,8 @@
  * IN THE SOFTWARE.
  */
 
-#include "nir.h"
 #include "util/u_printf.h"
+#include "nir.h"
 
 /**
  * \file nir_sweep.c
@@ -60,7 +60,7 @@ sweep_block(nir_shader *nir, nir_block *block)
             gc_mark_live(nir->gctx, src);
          break;
       case nir_instr_type_intrinsic:
-         ralloc_steal(nir, (void*)nir_instr_as_intrinsic(instr)->name);
+         ralloc_steal(nir, (void *)nir_instr_as_intrinsic(instr)->name);
          break;
       default:
          break;

@@ -324,7 +324,7 @@ nir_lower_non_uniform_access_impl(nir_function_impl *impl,
             case nir_intrinsic_demote:
             case nir_intrinsic_barrier:
                handle_barrier(&state, intrin->intrinsic == nir_intrinsic_terminate_if ||
-                                      intrin->intrinsic == nir_intrinsic_terminate);
+                                         intrin->intrinsic == nir_intrinsic_terminate);
                break;
 
             case nir_intrinsic_load_ubo:

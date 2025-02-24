@@ -280,8 +280,8 @@ opt_access_impl(struct access_state *state,
    if (progress) {
       nir_metadata_preserve(impl,
                             nir_metadata_control_flow |
-                            nir_metadata_live_defs |
-                            nir_metadata_loop_analysis);
+                               nir_metadata_live_defs |
+                               nir_metadata_loop_analysis);
    }
 
    return progress;
@@ -326,8 +326,8 @@ nir_opt_access(nir_shader *shader, const nir_opt_access_options *options)
       if (var_progress) {
          nir_metadata_preserve(impl,
                                nir_metadata_control_flow |
-                               nir_metadata_live_defs |
-                               nir_metadata_loop_analysis);
+                                  nir_metadata_live_defs |
+                                  nir_metadata_loop_analysis);
       }
    }
 

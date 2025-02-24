@@ -429,12 +429,13 @@ nir_find_state_variable(nir_shader *s,
    return NULL;
 }
 
-nir_variable *nir_find_sampler_variable_with_tex_index(nir_shader *shader,
-                                                       unsigned texture_index)
+nir_variable *
+nir_find_sampler_variable_with_tex_index(nir_shader *shader,
+                                         unsigned texture_index)
 {
    nir_foreach_variable_with_modes(var, shader, nir_var_uniform) {
       unsigned size =
-          glsl_type_is_array(var->type) ? glsl_array_size(var->type) : 1;
+         glsl_type_is_array(var->type) ? glsl_array_size(var->type) : 1;
       if ((glsl_type_is_texture(glsl_without_array(var->type)) ||
            glsl_type_is_sampler(glsl_without_array(var->type))) &&
           (var->data.binding == texture_index ||
@@ -2903,7 +2904,7 @@ nir_alu_type
 nir_get_nir_type_for_glsl_base_type(enum glsl_base_type base_type)
 {
    switch (base_type) {
-   /* clang-format off */
+      /* clang-format off */
    case GLSL_TYPE_BOOL:    return nir_type_bool1;
    case GLSL_TYPE_UINT:    return nir_type_uint32;
    case GLSL_TYPE_INT:     return nir_type_int32;
@@ -3654,4 +3655,3 @@ nir_atomic_op_to_alu(nir_atomic_op op)
 
    unreachable("Invalid nir_atomic_op");
 }
-

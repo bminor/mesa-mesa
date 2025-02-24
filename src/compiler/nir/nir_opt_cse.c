@@ -21,8 +21,8 @@
  * IN THE SOFTWARE.
  */
 
-#include "nir_instr_set.h"
 #include "nir.h"
+#include "nir_instr_set.h"
 
 /*
  * Implements common subexpression elimination

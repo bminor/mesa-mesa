@@ -259,7 +259,7 @@ lower_vote_eq_to_scalar(nir_builder *b, nir_intrinsic_instr *intrin)
 
    nir_def *result = NULL;
    for (unsigned i = 0; i < intrin->num_components; i++) {
-      nir_def* chan = nir_channel(b, value, i);
+      nir_def *chan = nir_channel(b, value, i);
 
       if (intrin->intrinsic == nir_intrinsic_vote_feq) {
          chan = nir_vote_feq(b, intrin->def.bit_size, chan);
@@ -643,10 +643,7 @@ lower_boolean_reduce(nir_builder *b, nir_intrinsic_instr *intrin,
          else if (op == nir_op_ior)
             return nir_vote_any(b, 1, intrin->src[0].ssa);
          else if (op == nir_op_ixor)
-            return nir_i2b(b, nir_iand_imm(b, vec_bit_count(b, nir_ballot(b,
-                                                                          options->ballot_components,
-                                                                          options->ballot_bit_size,
-                                                                          intrin->src[0].ssa)),
+            return nir_i2b(b, nir_iand_imm(b, vec_bit_count(b, nir_ballot(b, options->ballot_components, options->ballot_bit_size, intrin->src[0].ssa)),
                                            1));
          else
             unreachable("bad boolean reduction op");
@@ -944,8 +941,8 @@ build_quad_vote_any(nir_builder *b, nir_def *src,
                     const nir_lower_subgroups_options *options)
 {
    nir_def *ballot = nir_ballot(b, options->ballot_components,
-                                   options->ballot_bit_size,
-                                   src);
+                                options->ballot_bit_size,
+                                src);
    nir_def *mask = build_subgroup_quad_mask(b, options);
 
    return nir_ine_imm(b, nir_iand(b, ballot, mask), 0);
@@ -992,7 +989,7 @@ lower_dynamic_quad_broadcast(nir_builder *b, nir_intrinsic_instr *intrin,
 
    for (unsigned i = 0; i < 4; ++i) {
       nir_def *qbcst = nir_quad_broadcast(b, intrin->src[0].ssa,
-                                              nir_imm_int(b, i));
+                                          nir_imm_int(b, i));
 
       if (i)
          dst = nir_bcsel(b, nir_ieq_imm(b, intrin->src[1].ssa, i),

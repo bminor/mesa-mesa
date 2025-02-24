@@ -40,7 +40,6 @@ is_array_deref_of_vec(nir_deref_instr *deref)
    return glsl_type_is_vector_or_scalar(parent->type);
 }
 
-
 static struct set *
 get_complex_used_vars(nir_shader *shader, void *mem_ctx)
 {

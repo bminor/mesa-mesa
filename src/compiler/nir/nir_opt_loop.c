@@ -510,9 +510,7 @@ merge_terminators(nir_builder *b, nir_if *dest_if, nir_if *src_if)
     * moves the break later.
     */
    bool then_break = nir_block_ends_in_break(nir_if_last_then_block(src_if));
-   nir_cursor continue_blk_c = then_break ?
-      nir_after_block(nir_if_last_else_block(src_if)) :
-      nir_after_block(nir_if_last_then_block(src_if));
+   nir_cursor continue_blk_c = then_break ? nir_after_block(nir_if_last_else_block(src_if)) : nir_after_block(nir_if_last_then_block(src_if));
 
    nir_cf_list tmp;
    nir_cursor after_src_if = nir_after_cf_node(&src_if->cf_node);
@@ -520,8 +518,7 @@ merge_terminators(nir_builder *b, nir_if *dest_if, nir_if *src_if)
    nir_cf_reinsert(&tmp, continue_blk_c);
 
    /* Remove the break from the src if-statement */
-   nir_block *break_blk = then_break ?
-      nir_if_last_then_block(src_if) : nir_if_last_else_block(src_if);
+   nir_block *break_blk = then_break ? nir_if_last_then_block(src_if) : nir_if_last_else_block(src_if);
    nir_instr_remove(nir_block_last_instr(break_blk));
 
    /* Add phis if needed after we moved instructions to the src if-statements
@@ -568,7 +565,7 @@ is_basic_terminator_if(nir_if *nif)
 
    if (!nir_block_ends_in_break(last_then) &&
        !nir_block_ends_in_break(last_else))
-         return false;
+      return false;
 
    if (nir_block_ends_in_break(last_then)) {
       if (!exec_list_is_empty(&last_else->instr_list) ||

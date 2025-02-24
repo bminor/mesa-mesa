@@ -261,7 +261,7 @@ opt_move_discards_to_top_impl(nir_function_impl *impl)
                   instr->pass_flags = STOP_PROCESSING_INSTR_FLAG;
                   goto break_all;
                }
-            FALLTHROUGH;
+               FALLTHROUGH;
             case nir_intrinsic_demote_if:
                try_move_discard(intrin, &next_discard_id);
                break;

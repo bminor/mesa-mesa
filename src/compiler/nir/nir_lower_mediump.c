@@ -129,12 +129,12 @@ nir_recompute_io_bases(nir_shader *nir, nir_variable_mode modes)
             if (intr->intrinsic == nir_intrinsic_load_per_primitive_input) {
                nir_intrinsic_set_base(intr,
                                       num_normal_inputs +
-                                      BITSET_PREFIX_SUM(per_prim_inputs, sem.location));
+                                         BITSET_PREFIX_SUM(per_prim_inputs, sem.location));
             } else {
                nir_intrinsic_set_base(intr,
                                       BITSET_PREFIX_SUM(inputs, sem.location) +
-                                      BITSET_PREFIX_SUM(dual_slot_inputs, sem.location) +
-                                      (sem.high_dvec2 ? 1 : 0));
+                                         BITSET_PREFIX_SUM(dual_slot_inputs, sem.location) +
+                                         (sem.high_dvec2 ? 1 : 0));
             }
          } else if (sem.dual_source_blend_index) {
             nir_intrinsic_set_base(intr,

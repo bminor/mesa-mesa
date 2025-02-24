@@ -168,7 +168,8 @@ nir_metadata_check_validation_flag(nir_shader *shader)
    }
 }
 
-void nir_metadata_require_all(nir_shader *shader)
+void
+nir_metadata_require_all(nir_shader *shader)
 {
    bool force_unroll_sampler_indirect = shader->options->force_indirect_unrolling_sampler;
    nir_variable_mode indirect_mask = shader->options->force_indirect_unrolling;

@@ -206,7 +206,6 @@ nir_zero_initialize_shared_memory(nir_shader *shader,
    return true;
 }
 
-
 /** Clears all shared memory to zero at the end of the shader
  *
  * To easily get to the end of the shader it relies on all exits
@@ -269,9 +268,7 @@ nir_clear_shared_memory(nir_shader *shader,
       nir_def_init(&offset_phi->instr, &offset_phi->def, 1, 32);
       nir_phi_instr_add_src(offset_phi, nir_cursor_current_block(b.cursor), first_offset);
 
-      nir_def *size_per_iteration_def = shader->info.workgroup_size_variable ?
-                             nir_imul_imm(&b, nir_load_workgroup_size(&b), chunk_size) :
-                             nir_imm_int(&b, size_per_iteration);
+      nir_def *size_per_iteration_def = shader->info.workgroup_size_variable ? nir_imul_imm(&b, nir_load_workgroup_size(&b), chunk_size) : nir_imm_int(&b, size_per_iteration);
       nir_def *value = nir_imm_zero(&b, chunk_comps, 32);
 
       nir_loop *loop = nir_push_loop(&b);

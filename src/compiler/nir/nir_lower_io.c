@@ -51,7 +51,7 @@ add_variable_name(struct lower_io_state *state, const char *name)
    bool found = false;
    struct set_entry *entry = _mesa_set_search_or_add(&state->variable_names, name, &found);
    if (!found)
-      entry->key = (void*)ralloc_strdup(state->builder.shader, name);
+      entry->key = (void *)ralloc_strdup(state->builder.shader, name);
    return entry->key;
 }
 
@@ -3060,7 +3060,7 @@ is_dual_slot(nir_intrinsic_instr *intrin)
    }
 
    return intrin->def.bit_size == 64 &&
-   intrin->def.num_components >= 3;
+          intrin->def.num_components >= 3;
 }
 
 /**
@@ -3340,8 +3340,8 @@ nir_lower_io_passes(nir_shader *nir, bool renumber_vs_inputs)
 
    if (!has_indirect_inputs || !has_indirect_outputs) {
       NIR_PASS(_, nir, nir_lower_io_to_temporaries,
-                 nir_shader_get_entrypoint(nir), !has_indirect_outputs,
-                 !has_indirect_inputs);
+               nir_shader_get_entrypoint(nir), !has_indirect_outputs,
+               !has_indirect_inputs);
 
       /* We need to lower all the copy_deref's introduced by lower_io_to-
        * _temporaries before calling nir_lower_io.
@@ -3356,7 +3356,8 @@ nir_lower_io_passes(nir_shader *nir, bool renumber_vs_inputs)
       if (nir->info.stage == MESA_SHADER_TESS_CTRL) {
          NIR_PASS(_, nir, nir_lower_indirect_derefs,
                   (!has_indirect_inputs ? nir_var_shader_in : 0) |
-                  (!has_indirect_outputs ? nir_var_shader_out : 0), UINT32_MAX);
+                     (!has_indirect_outputs ? nir_var_shader_out : 0),
+                  UINT32_MAX);
       }
    }
 
@@ -3365,10 +3366,9 @@ nir_lower_io_passes(nir_shader *nir, bool renumber_vs_inputs)
     * would break 64-bit vertex attribs for GLSL.
     */
    NIR_PASS(_, nir, nir_lower_io, nir_var_shader_out | nir_var_shader_in,
-              type_size_vec4,
-              (renumber_vs_inputs ? nir_lower_io_lower_64bit_to_32_new :
-                                    nir_lower_io_lower_64bit_to_32) |
-              nir_lower_io_use_interpolated_input_intrinsics);
+            type_size_vec4,
+            (renumber_vs_inputs ? nir_lower_io_lower_64bit_to_32_new : nir_lower_io_lower_64bit_to_32) |
+               nir_lower_io_use_interpolated_input_intrinsics);
 
    /* nir_io_add_const_offset_to_base needs actual constants. */
    NIR_PASS(_, nir, nir_opt_constant_folding);
@@ -3393,8 +3393,7 @@ nir_lower_io_passes(nir_shader *nir, bool renumber_vs_inputs)
     * This must be done after DCE to remove dead load_input intrinsics.
     */
    NIR_PASS(_, nir, nir_recompute_io_bases,
-              (nir->info.stage != MESA_SHADER_VERTEX || renumber_vs_inputs ?
-               nir_var_shader_in : 0) | nir_var_shader_out);
+            (nir->info.stage != MESA_SHADER_VERTEX || renumber_vs_inputs ? nir_var_shader_in : 0) | nir_var_shader_out);
 
    if (nir->xfb_info)
       NIR_PASS(_, nir, nir_io_add_intrinsic_xfb_info);

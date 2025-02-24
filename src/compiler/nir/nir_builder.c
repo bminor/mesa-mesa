@@ -395,7 +395,6 @@ nir_builder_instr_insert(nir_builder *build, nir_instr *instr)
          instr_info->filename = cursor_info->filename;
    }
 
-
    /* Move the cursor forward. */
    build->cursor = nir_after_instr(instr);
 }

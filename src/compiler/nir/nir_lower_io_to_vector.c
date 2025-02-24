@@ -564,11 +564,11 @@ nir_lower_io_to_vector_impl(nir_function_impl *impl, nir_variable_mode modes)
                if (new_frac + c >= old_frac &&
                    (old_wrmask & 1 << (new_frac + c - old_frac))) {
                   comps[c] = nir_get_scalar(old_value,
-                                                new_frac + c - old_frac);
+                                            new_frac + c - old_frac);
                } else {
                   comps[c] = nir_get_scalar(nir_undef(&b, old_value->num_components,
-                                                          old_value->bit_size),
-                                                0);
+                                                      old_value->bit_size),
+                                            0);
                }
             }
             nir_def *new_value = nir_vec_scalars(&b, comps, intrin->num_components);
@@ -619,7 +619,7 @@ static bool
 is_tess_level_variable(nir_variable *var)
 {
    return var->data.location == VARYING_SLOT_TESS_LEVEL_OUTER ||
-      var->data.location == VARYING_SLOT_TESS_LEVEL_INNER;
+          var->data.location == VARYING_SLOT_TESS_LEVEL_INNER;
 }
 
 /* Make the tess factor variables vectors instead of compact arrays, so accesses
@@ -650,9 +650,9 @@ nir_vectorize_tess_levels(nir_shader *shader)
 
       nir_lower_array_deref_of_vec(shader, mode, is_tess_level_variable,
                                    nir_lower_direct_array_deref_of_vec_load |
-                                   nir_lower_indirect_array_deref_of_vec_load |
-                                   nir_lower_direct_array_deref_of_vec_store |
-                                   nir_lower_indirect_array_deref_of_vec_store);
+                                      nir_lower_indirect_array_deref_of_vec_load |
+                                      nir_lower_direct_array_deref_of_vec_store |
+                                      nir_lower_indirect_array_deref_of_vec_store);
 
       /* Remove dead array deref instructions to avoid nir_validate() complain
        * array_deref on vector variable.

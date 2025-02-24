@@ -1447,8 +1447,8 @@ static bool
 nir_opt_remove_respills(nir_shader *shader)
 {
    return nir_shader_intrinsics_pass(shader, opt_remove_respills_instr,
-                                       nir_metadata_control_flow,
-                                       NULL);
+                                     nir_metadata_control_flow,
+                                     NULL);
 }
 
 static void
@@ -1908,8 +1908,8 @@ static bool
 nir_split_stack_components(nir_shader *shader)
 {
    return nir_shader_intrinsics_pass(shader, split_stack_components_instr,
-                                       nir_metadata_control_flow,
-                                       NULL);
+                                     nir_metadata_control_flow,
+                                     NULL);
 }
 
 struct stack_op_vectorizer_state {
@@ -2016,13 +2016,13 @@ nir_lower_shader_calls(nir_shader *shader,
    unsigned start_call_scratch = shader->scratch_size;
 
    NIR_PASS(_, shader, spill_ssa_defs_and_lower_shader_calls,
-              num_calls, options);
+            num_calls, options);
 
    NIR_PASS(_, shader, nir_opt_remove_phis);
 
    NIR_PASS(_, shader, nir_opt_trim_stack_values);
    NIR_PASS(_, shader, nir_opt_sort_and_pack_stack,
-              start_call_scratch, options->stack_alignment, num_calls);
+            start_call_scratch, options->stack_alignment, num_calls);
 
    /* Make N copies of our shader */
    nir_shader **resume_shaders = ralloc_array(mem_ctx, nir_shader *, num_calls);
@@ -2085,7 +2085,7 @@ nir_lower_shader_calls(nir_shader *shader,
          NIR_PASS(_, resume_shaders[i], nir_opt_load_store_vectorize, &vect_opts);
       }
       NIR_PASS(_, resume_shaders[i], nir_lower_stack_to_scratch,
-                 options->address_format);
+               options->address_format);
       nir_opt_cse(resume_shaders[i]);
    }
 

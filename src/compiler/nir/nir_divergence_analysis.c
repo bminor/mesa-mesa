@@ -160,7 +160,6 @@ visit_alu(nir_alu_instr *instr, struct divergence_state *state)
    return false;
 }
 
-
 /* On some HW uniform loads where there is a pending store/atomic from another
  * wave can "tear" so that different invocations see the pre-store value and
  * the post-store value even though they are loading from the same location.

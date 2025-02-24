@@ -125,7 +125,7 @@ all_uses_are_compare_with_zero(const nir_alu_instr *instr)
          return false;
 
       if (!all_uses_are_bcsel(alu))
-          return false;
+         return false;
    }
 
    return true;

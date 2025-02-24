@@ -26,7 +26,7 @@ nir_lower_terminate_cf_list(nir_builder *b, struct exec_list *cf_list)
                /* Everything after the terminate is dead */
                nir_cf_list dead_cf;
                nir_cf_extract(&dead_cf, nir_after_instr(&intrin->instr),
-                                        nir_after_cf_list(cf_list));
+                              nir_after_cf_list(cf_list));
                nir_cf_delete(&dead_cf);
 
                intrin->intrinsic = nir_intrinsic_demote;

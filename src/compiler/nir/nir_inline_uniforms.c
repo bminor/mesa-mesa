@@ -365,7 +365,7 @@ void
 nir_find_inlinable_uniforms(nir_shader *shader)
 {
    uint32_t uni_offsets[MAX_INLINABLE_UNIFORMS];
-   uint8_t num_offsets[MAX_NUM_BO] = {0};
+   uint8_t num_offsets[MAX_NUM_BO] = { 0 };
 
    nir_foreach_function_impl(impl, shader) {
       nir_metadata_require(impl, nir_metadata_loop_analysis,
