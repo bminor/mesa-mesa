@@ -143,7 +143,7 @@ nir_metadata_invalidate(nir_shader *shader)
  * Make sure passes properly invalidate metadata (part 1).
  *
  * Call this before running a pass to set a bogus metadata flag, which will
- * only be preserved if the pass forgets to call nir_metadata_preserve().
+ * only be preserved if the pass forgets to call nir_progress().
  */
 void
 nir_metadata_set_validation_flag(nir_shader *shader)
@@ -158,7 +158,7 @@ nir_metadata_set_validation_flag(nir_shader *shader)
  *
  * Call this after a pass makes progress to verify that the bogus metadata set by
  * the earlier function was properly thrown away.  Note that passes may not call
- * nir_metadata_preserve() if they don't actually make any changes at all.
+ * nir_progress() if they don't actually make any changes at all.
  */
 void
 nir_metadata_check_validation_flag(nir_shader *shader)

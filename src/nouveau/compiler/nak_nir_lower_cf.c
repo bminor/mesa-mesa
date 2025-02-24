@@ -472,7 +472,7 @@ lower_cf_func(nir_function *func)
    /* Now sort by reverse PDFS and restore SSA
     *
     * Note: Since we created a new nir_function_impl, there is no metadata,
-    * dirty or otherwise, so we have no need to call nir_metadata_preserve().
+    * dirty or otherwise, so we have no need to call nir_progress().
     */
    nir_sort_unstructured_blocks(new_impl);
    nir_repair_ssa_impl(new_impl);
