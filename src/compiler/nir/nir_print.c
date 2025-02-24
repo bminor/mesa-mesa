@@ -2046,7 +2046,7 @@ print_instr(const nir_instr *instr, print_state *state, unsigned tabs)
       debug_info->nir_line = (uint32_t)ftell(fp);
    }
 
-   if (state->shader->has_debug_info) {
+   if (state->shader->has_debug_info && !state->gather_debug_info) {
       nir_instr_debug_info *debug_info = nir_instr_get_debug_info((nir_instr *)instr);
 
       bool changed = state->last_debug_info.spirv_offset != debug_info->spirv_offset;
