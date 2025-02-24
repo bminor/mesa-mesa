@@ -1310,7 +1310,7 @@ agx_batch_upload_pbe(struct agx_batch *batch, struct agx_pbe_packed *out,
                ail_get_level_offset_B(&tex->layout, cfg.level);
          }
 
-         if (tex->layout.tiling == AIL_TILING_GPU || emrt) {
+         if (tex->layout.tiling != AIL_TILING_LINEAR || emrt) {
             struct ail_tile tile_size = tex->layout.tilesize_el[level];
             cfg.tile_width_sw = tile_size.width_el;
             cfg.tile_height_sw = tile_size.height_el;
