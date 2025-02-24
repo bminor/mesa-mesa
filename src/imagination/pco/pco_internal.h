@@ -2184,24 +2184,26 @@ static inline pco_ref pco_ref_new_vreg(pco_func *func)
 }
 
 /**
- * \brief Builds and returns a scalar hardware register reference.
+ * \brief Remaps an SSA register to an existing virtual register.
  *
- * \param[in] index Register index.
- * \param[in] reg_class Register class.
- * \return Hardware register reference.
+ * \param[in,out] func The function.
+ * \param[in] ref Base SSA reference.
+ * \param[in] bits New bit width, or 0 if unchanged.
+ * \return Virtual register reference.
  */
-static inline pco_ref pco_ref_hwreg(unsigned index,
-                                    enum pco_reg_class reg_class)
+static inline pco_ref
+pco_ref_ssa_vreg(ASSERTED pco_func *func, pco_ref ref, unsigned bits)
 {
-   assert(index < 256);
-   assert(reg_class != PCO_REG_CLASS_VIRT);
+   assert(pco_ref_is_ssa(ref));
+   assert(ref.val < func->next_vreg);
 
-   return (pco_ref){
-      .val = index,
-      .bits = PCO_BITS_32,
-      .type = PCO_REF_TYPE_REG,
-      .reg_class = reg_class,
-   };
+   ref.type = PCO_REF_TYPE_REG;
+   ref.reg_class = PCO_REG_CLASS_VIRT;
+
+   if (bits)
+      ref.bits = pco_bits(bits);
+
+   return ref;
 }
 
 /**
@@ -2225,6 +2227,19 @@ pco_ref_hwreg_vec(unsigned index, enum pco_reg_class reg_class, unsigned chans)
       .type = PCO_REF_TYPE_REG,
       .reg_class = reg_class,
    };
+}
+
+/**
+ * \brief Builds and returns a scalar hardware register reference.
+ *
+ * \param[in] index Register index.
+ * \param[in] reg_class Register class.
+ * \return Hardware register reference.
+ */
+static inline pco_ref pco_ref_hwreg(unsigned index,
+                                    enum pco_reg_class reg_class)
+{
+   return pco_ref_hwreg_vec(index, reg_class, 1);
 }
 
 /**

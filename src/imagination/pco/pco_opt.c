@@ -258,6 +258,9 @@ static inline bool try_back_prop_instr(struct pco_use *uses, pco_instr *instr)
 
    pco_ref *pdest_from = &use->instr->dest[0];
 
+   if (pco_ref_is_vreg(*pdest_from))
+      return false;
+
    assert(pco_ref_get_bits(*pdest_from) == pco_ref_get_bits(*pdest_to));
    assert(pco_ref_get_chans(*pdest_from) == pco_ref_get_chans(*pdest_to));
    assert(!pco_ref_has_mods_set(*pdest_from) &&

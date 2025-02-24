@@ -27,7 +27,7 @@ static bool lower_bools(pco_func *func)
 
    /* Update to 32-bit. */
    pco_foreach_instr_in_func (instr, func) {
-      pco_foreach_instr_dest_ssa (pdest, instr) {
+      pco_foreach_instr_dest_vreg_ssa (pdest, instr) {
          if (pco_ref_get_bits(*pdest) != 1)
             continue;
 
@@ -36,7 +36,7 @@ static bool lower_bools(pco_func *func)
          progress = true;
       }
 
-      pco_foreach_instr_src_ssa (psrc, instr) {
+      pco_foreach_instr_src_vreg_ssa (psrc, instr) {
          if (pco_ref_get_bits(*psrc) != 1)
             continue;
 

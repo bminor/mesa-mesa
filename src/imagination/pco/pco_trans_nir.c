@@ -909,6 +909,69 @@ static pco_instr *lower_alphatst(trans_ctx *tctx,
                    pco_zero);
 }
 
+static inline unsigned lookup_reg_bits(nir_intrinsic_instr *intr)
+{
+   nir_def *reg;
+   switch (intr->intrinsic) {
+   case nir_intrinsic_load_reg:
+      reg = intr->src[0].ssa;
+      break;
+
+   case nir_intrinsic_store_reg:
+      reg = intr->src[1].ssa;
+      break;
+
+   default:
+      UNREACHABLE("");
+   }
+
+   nir_intrinsic_instr *reg_decl = nir_reg_get_decl(reg);
+   return nir_intrinsic_bit_size(reg_decl);
+}
+
+static pco_instr *trans_reg_intr(trans_ctx *tctx,
+                                 nir_intrinsic_instr *intr,
+                                 pco_ref dest,
+                                 pco_ref src0,
+                                 pco_ref src1)
+{
+   pco_func *func = tctx->func;
+
+   /* Special case; consume and reserve. */
+   if (intr->intrinsic == nir_intrinsic_decl_reg) {
+      assert(nir_intrinsic_num_components(intr) == 1);
+      assert(!nir_intrinsic_num_array_elems(intr));
+
+      /* nir_trivialize_registers puts decl_regs into the start block. */
+      assert(func->next_vreg == dest.val);
+      ++func->next_vreg;
+
+      return NULL;
+   }
+
+   unsigned reg_bits = lookup_reg_bits(intr);
+   switch (intr->intrinsic) {
+   case nir_intrinsic_load_reg:
+      assert(!nir_intrinsic_base(intr));
+      assert(!nir_intrinsic_legacy_fabs(intr));
+      assert(!nir_intrinsic_legacy_fneg(intr));
+
+      return pco_mov(&tctx->b, dest, pco_ref_ssa_vreg(func, src0, reg_bits));
+
+   case nir_intrinsic_store_reg:
+      assert(!nir_intrinsic_base(intr));
+      assert(nir_intrinsic_write_mask(intr) == 1);
+      assert(!nir_intrinsic_legacy_fsat(intr));
+
+      return pco_mov(&tctx->b, pco_ref_ssa_vreg(func, src1, reg_bits), src0);
+
+   default:
+      break;
+   }
+
+   UNREACHABLE("");
+}
+
 /**
  * \brief Translates a NIR intrinsic instruction into PCO.
  *
@@ -1023,6 +1086,12 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
 
    case nir_intrinsic_alphatst_pco:
       instr = lower_alphatst(tctx, dest, src[0], src[1], src[2]);
+      break;
+
+   case nir_intrinsic_decl_reg:
+   case nir_intrinsic_load_reg:
+   case nir_intrinsic_store_reg:
+      instr = trans_reg_intr(tctx, intr, dest, src[0], src[1]);
       break;
 
    default:

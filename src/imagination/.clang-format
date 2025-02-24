@@ -228,6 +228,7 @@ ForEachMacros: [
   'nir_foreach_block',
   'nir_foreach_block_safe',
   'nir_foreach_block_unstructured',
+  'nir_foreach_reg_decl',
   'nir_foreach_entrypoint',
   'nir_foreach_entrypoint_safe',
   'nir_foreach_function',
