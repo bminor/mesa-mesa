@@ -2,6 +2,9 @@
 # Copyright 2019 Collabora, Ltd.
 # SPDX-License-Identifier: MIT
 
+# This is used only for the r/e tooling on macOS
+dep_iokit = dependency('IOKit', required : false)
+
 inc_asahi = include_directories([
    '.', 'layout', 'lib', 'genxml', 'compiler'
 ])

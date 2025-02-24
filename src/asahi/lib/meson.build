@@ -3,8 +3,6 @@
 # Copyright 2017 Intel Corporation
 # SPDX-License-Identifier: MIT
 
-dep_iokit = dependency('IOKit', required : false)
-
 libasahi_lib_files = files(
   'agx_bo.c',
   'agx_border.c',
