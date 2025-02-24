@@ -1934,7 +1934,7 @@
         "description": "aco/insert_exec: fix continue_or_break on gfx6-7",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "115ff5f95b00e76a28b3f4f1622ccc5e2a64230c",
         "notes": null
