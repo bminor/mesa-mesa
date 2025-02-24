@@ -3903,6 +3903,25 @@ void nir_shader_preserve_all_metadata(nir_shader *shader);
 /** dirties all metadata and fills it with obviously wrong information */
 void nir_metadata_invalidate(nir_shader *shader);
 
+static inline bool
+nir_progress(bool progress, nir_function_impl *impl, nir_metadata preserved)
+{
+   if (progress) {
+      nir_metadata_preserve(impl, preserved);
+   } else {
+      nir_metadata_preserve(impl, nir_metadata_all);
+   }
+
+   return progress;
+}
+
+/** Indicate that there is no progress. All metadata is preserved. */
+static inline bool
+nir_no_progress(nir_function_impl *impl)
+{
+   return nir_progress(false, impl, nir_metadata_none /* ignored */);
+}
+
 /** creates an instruction with default swizzle/writemask/etc. with NULL registers */
 nir_alu_instr *nir_alu_instr_create(nir_shader *shader, nir_op op);
 
