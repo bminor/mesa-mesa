@@ -383,6 +383,14 @@ struct brw_wm_prog_key {
    uint64_t padding:35;
 };
 
+static inline bool
+brw_wm_prog_key_is_dynamic(const struct brw_wm_prog_key *key)
+{
+   return key->alpha_to_coverage == INTEL_SOMETIMES ||
+      key->persample_interp == INTEL_SOMETIMES ||
+      key->multisample_fbo == INTEL_SOMETIMES;
+}
+
 struct brw_cs_prog_key {
    struct brw_base_prog_key base;
 };
@@ -781,6 +789,14 @@ struct brw_wm_prog_data {
    uint8_t urb_setup_attribs[VARYING_SLOT_MAX];
    uint8_t urb_setup_attribs_count;
 };
+
+static inline bool
+brw_wm_prog_data_is_dynamic(const struct brw_wm_prog_data *prog_data)
+{
+   return prog_data->alpha_to_coverage == INTEL_SOMETIMES ||
+      prog_data->coarse_pixel_dispatch == INTEL_SOMETIMES ||
+      prog_data->persample_dispatch == INTEL_SOMETIMES;
+}
 
 #ifdef GFX_VERx10
 
