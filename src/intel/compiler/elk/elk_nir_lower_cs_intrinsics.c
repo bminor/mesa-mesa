@@ -289,8 +289,7 @@ lower_cs_intrinsics_convert_impl(struct lower_intrinsics_state *state)
       lower_cs_intrinsics_convert_block(state, block);
    }
 
-   nir_metadata_preserve(state->impl,
-                         nir_metadata_control_flow);
+   nir_progress(true, state->impl, nir_metadata_control_flow);
 }
 
 bool

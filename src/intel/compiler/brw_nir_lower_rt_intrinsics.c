@@ -386,10 +386,8 @@ lower_rt_intrinsics_impl(nir_function_impl *impl,
       }
    }
 
-   nir_metadata_preserve(impl,
-                         progress ?
-                         nir_metadata_none :
-                         (nir_metadata_control_flow));
+   nir_progress(true, impl,
+                progress ? nir_metadata_none : (nir_metadata_control_flow));
 }
 
 /** Lower ray-tracing system values and intrinsics

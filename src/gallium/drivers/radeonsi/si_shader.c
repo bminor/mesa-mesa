@@ -1654,8 +1654,7 @@ static bool si_nir_kill_outputs(nir_shader *nir, const union si_shader_key *key)
        !key->ge.opt.kill_layer &&
        !key->ge.opt.kill_clip_distances &&
        !(nir->info.outputs_written & BITFIELD64_BIT(VARYING_SLOT_LAYER))) {
-      nir_metadata_preserve(impl, nir_metadata_all);
-      return false;
+      return nir_no_progress(impl);
    }
 
    bool progress = false;
@@ -1719,13 +1718,7 @@ static bool si_nir_kill_outputs(nir_shader *nir, const union si_shader_key *key)
       }
    }
 
-   if (progress) {
-      nir_metadata_preserve(impl, nir_metadata_control_flow);
-   } else {
-      nir_metadata_preserve(impl, nir_metadata_all);
-   }
-
-   return progress;
+   return nir_progress(progress, impl, nir_metadata_control_flow);
 }
 
 static unsigned si_map_io_driver_location(unsigned semantic)
@@ -2122,8 +2115,7 @@ static bool si_nir_emit_polygon_stipple(nir_shader *nir)
    nir_def *pass = nir_i2b(b, bit);
    nir_discard_if(b, nir_inot(b, pass));
 
-   nir_metadata_preserve(impl, nir_metadata_control_flow);
-   return true;
+   return nir_progress(true, impl, nir_metadata_control_flow);
 }
 
 bool si_should_clear_lds(struct si_screen *sscreen, const struct nir_shader *shader)

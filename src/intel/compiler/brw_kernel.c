@@ -231,13 +231,7 @@ lower_kernel_intrinsics(nir_shader *nir)
       }
    }
 
-   if (progress) {
-      nir_metadata_preserve(impl, nir_metadata_control_flow);
-   } else {
-      nir_metadata_preserve(impl, nir_metadata_all);
-   }
-
-   return progress;
+   return nir_progress(progress, impl, nir_metadata_control_flow);
 }
 
 static const struct spirv_capabilities spirv_caps = {

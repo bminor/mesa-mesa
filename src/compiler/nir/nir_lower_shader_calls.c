@@ -57,13 +57,7 @@ move_system_values_to_top(nir_shader *shader)
       }
    }
 
-   if (progress) {
-      nir_metadata_preserve(impl, nir_metadata_control_flow);
-   } else {
-      nir_metadata_preserve(impl, nir_metadata_all);
-   }
-
-   return progress;
+   return nir_progress(progress, impl, nir_metadata_control_flow);
 }
 
 static bool
@@ -894,7 +888,7 @@ duplicate_loop_bodies(nir_function_impl *impl, nir_instr *resume_instr)
    }
 
    if (resume_reg != NULL)
-      nir_metadata_preserve(impl, nir_metadata_none);
+      nir_progress(true, impl, nir_metadata_none);
 
    return resume_reg != NULL;
 }
@@ -1289,7 +1283,7 @@ lower_resume(nir_shader *shader, int call_idx)
 
    ralloc_free(mem_ctx);
 
-   nir_metadata_preserve(impl, nir_metadata_none);
+   nir_progress(true, impl, nir_metadata_none);
 
    nir_validate_shader(shader, "after flatten_resume_if_ladder in "
                                "nir_lower_shader_calls");
@@ -1589,10 +1583,8 @@ nir_opt_trim_stack_values(nir_shader *shader)
       }
    }
 
-   nir_metadata_preserve(impl,
-                         progress ? (nir_metadata_control_flow |
-                                     nir_metadata_loop_analysis)
-                                  : nir_metadata_all);
+   nir_progress(progress, impl,
+                nir_metadata_control_flow | nir_metadata_loop_analysis);
 
    _mesa_hash_table_u64_destroy(value_id_to_mask);
 
@@ -1834,10 +1826,8 @@ nir_opt_stack_loads(nir_shader *shader)
          }
       }
 
-      nir_metadata_preserve(impl,
-                            func_progress ? (nir_metadata_control_flow |
-                                             nir_metadata_loop_analysis)
-                                          : nir_metadata_all);
+      nir_progress(func_progress, impl,
+                   nir_metadata_control_flow | nir_metadata_loop_analysis);
 
       progress |= func_progress;
    }

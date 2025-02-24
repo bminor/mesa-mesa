@@ -591,7 +591,7 @@ radv_nir_apply_pipeline_layout(nir_shader *shader, struct radv_device *device, c
 
    if (progress) {
       nir_foreach_function (function, shader) {
-         nir_metadata_preserve(function->impl, nir_metadata_control_flow);
+         nir_progress(true, function->impl, nir_metadata_control_flow);
       }
    }
 

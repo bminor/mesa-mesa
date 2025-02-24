@@ -528,7 +528,7 @@ lower_ray_query_impl(nir_function_impl *impl, struct lowering_state *state)
       }
    }
 
-   nir_metadata_preserve(impl, nir_metadata_none);
+   nir_progress(true, impl, nir_metadata_none);
 }
 
 bool
@@ -562,7 +562,7 @@ brw_nir_lower_ray_queries(nir_shader *shader,
                                 nir_var_shader_temp | nir_var_function_temp,
                                 NULL);
 
-      nir_metadata_preserve(state.impl, nir_metadata_none);
+      nir_progress(true, state.impl, nir_metadata_none);
    }
 
    ralloc_free(state.queries);

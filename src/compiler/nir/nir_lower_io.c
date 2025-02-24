@@ -876,7 +876,7 @@ nir_lower_io_impl(nir_function_impl *impl,
 
    ralloc_free(state.dead_ctx);
 
-   nir_metadata_preserve(impl, nir_metadata_none);
+   nir_progress(true, impl, nir_metadata_none);
 
    return progress;
 }
@@ -2473,13 +2473,7 @@ nir_lower_explicit_io_impl(nir_function_impl *impl, nir_variable_mode modes,
       }
    }
 
-   if (progress) {
-      nir_metadata_preserve(impl, nir_metadata_none);
-   } else {
-      nir_metadata_preserve(impl, nir_metadata_all);
-   }
-
-   return progress;
+   return nir_progress(progress, impl, nir_metadata_none);
 }
 
 /** Lower explicitly laid out I/O access to byte offset/address intrinsics
@@ -2564,15 +2558,8 @@ nir_lower_vars_to_explicit_types_impl(nir_function_impl *impl,
       }
    }
 
-   if (progress) {
-      nir_metadata_preserve(impl, nir_metadata_control_flow |
-                                     nir_metadata_live_defs |
-                                     nir_metadata_loop_analysis);
-   } else {
-      nir_metadata_preserve(impl, nir_metadata_all);
-   }
-
-   return progress;
+   return nir_progress(progress, impl,
+                       nir_metadata_control_flow | nir_metadata_live_defs | nir_metadata_loop_analysis);
 }
 
 static bool
@@ -3131,10 +3118,7 @@ nir_io_add_const_offset_to_base(nir_shader *nir, nir_variable_mode modes)
          impl_progress |= add_const_offset_to_base_block(block, &b, modes);
       }
       progress |= impl_progress;
-      if (impl_progress)
-         nir_metadata_preserve(impl, nir_metadata_control_flow);
-      else
-         nir_metadata_preserve(impl, nir_metadata_all);
+      nir_progress(impl_progress, impl, nir_metadata_control_flow);
    }
 
    return progress;
@@ -3211,12 +3195,7 @@ nir_lower_color_inputs(nir_shader *nir)
       }
    }
 
-   if (progress) {
-      nir_metadata_preserve(impl, nir_metadata_control_flow);
-   } else {
-      nir_metadata_preserve(impl, nir_metadata_all);
-   }
-   return progress;
+   return nir_progress(progress, impl, nir_metadata_control_flow);
 }
 
 bool
@@ -3290,7 +3269,7 @@ nir_io_add_intrinsic_xfb_info(nir_shader *nir)
       }
    }
 
-   nir_metadata_preserve(impl, nir_metadata_all);
+   nir_no_progress(impl);
    return progress;
 }
 

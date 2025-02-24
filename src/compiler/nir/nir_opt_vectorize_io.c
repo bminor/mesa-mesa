@@ -572,9 +572,8 @@ nir_opt_vectorize_io(nir_shader *shader, nir_variable_mode modes)
          progress |= vectorize_batch(&io_instructions);
       }
 
-      nir_metadata_preserve(impl, progress ? (nir_metadata_block_index |
-                                              nir_metadata_dominance)
-                                           : nir_metadata_all);
+      nir_progress(progress, impl,
+                   nir_metadata_block_index | nir_metadata_dominance);
       global_progress |= progress;
    }
    util_dynarray_fini(&io_instructions);

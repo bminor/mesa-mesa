@@ -125,7 +125,7 @@ sweep_impl(nir_shader *nir, nir_function_impl *impl)
    sweep_block(nir, impl->end_block);
 
    /* Wipe out all the metadata, if any. */
-   nir_metadata_preserve(impl, nir_metadata_none);
+   nir_progress(true, impl, nir_metadata_none);
 }
 
 static void

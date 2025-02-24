@@ -2571,7 +2571,7 @@ clamp_layer_output(nir_shader *vs, nir_shader *fs, unsigned *next_location)
       b = nir_builder_at(nir_after_impl(impl));
       assert(impl->end_block->predecessors->entries == 1);
       clamp_layer_output_emit(&b, &state);
-      nir_metadata_preserve(impl, nir_metadata_dominance);
+      nir_progress(true, impl, nir_metadata_dominance);
    }
    optimize_nir(vs, NULL, true);
    NIR_PASS_V(vs, nir_remove_dead_variables, nir_var_shader_temp, NULL);
@@ -3251,8 +3251,7 @@ lower_64bit_vars_function(nir_shader *shader, nir_function_impl *impl, nir_varia
          }
       }
    }
-   if (func_progress)
-      nir_metadata_preserve(impl, nir_metadata_none);
+   nir_progress(func_progress, impl, nir_metadata_none);
    /* derefs must be queued for deletion to avoid deleting the same deref repeatedly */
    set_foreach_remove(deletes, he)
       nir_instr_remove((void*)he->key);

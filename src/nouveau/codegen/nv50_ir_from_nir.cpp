@@ -3296,8 +3296,7 @@ nv_nir_move_stores_to_end(nir_shader *s)
             first_store = instr;
       }
    }
-   nir_metadata_preserve(impl,
-                         nir_metadata_control_flow);
+   nir_progress(true, impl, nir_metadata_control_flow);
 }
 
 unsigned

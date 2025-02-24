@@ -379,10 +379,9 @@ nir_split_struct_vars(nir_shader *shader, nir_variable_mode modes)
          split_struct_derefs_impl(impl, var_field_map,
                                   modes, mem_ctx);
 
-         nir_metadata_preserve(impl, nir_metadata_control_flow);
-         progress = true;
+         progress = nir_progress(true, impl, nir_metadata_control_flow);
       } else {
-         nir_metadata_preserve(impl, nir_metadata_all);
+         nir_no_progress(impl);
       }
    }
 
@@ -970,10 +969,9 @@ nir_split_array_vars(nir_shader *shader, nir_variable_mode modes)
          split_array_copies_impl(impl, var_info_map, modes, mem_ctx);
          split_array_access_impl(impl, var_info_map, modes, mem_ctx);
 
-         nir_metadata_preserve(impl, nir_metadata_control_flow);
-         progress = true;
+         progress = nir_progress(true, impl, nir_metadata_control_flow);
       } else {
-         nir_metadata_preserve(impl, nir_metadata_all);
+         nir_no_progress(impl);
       }
    }
 
@@ -1729,10 +1727,9 @@ nir_shrink_vec_array_vars(nir_shader *shader, nir_variable_mode modes)
       if (globals_shrunk || locals_shrunk) {
          shrink_vec_var_access_impl(impl, var_usage_map, modes);
 
-         nir_metadata_preserve(impl, nir_metadata_control_flow);
-         progress = true;
+         progress = nir_progress(true, impl, nir_metadata_control_flow);
       } else {
-         nir_metadata_preserve(impl, nir_metadata_all);
+         nir_no_progress(impl);
       }
    }
 

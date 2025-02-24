@@ -106,7 +106,7 @@ lower_bitmap_impl(nir_function_impl *impl,
 
    lower_bitmap(impl->function->shader, &b, options);
 
-   nir_metadata_preserve(impl, nir_metadata_control_flow);
+   nir_progress(true, impl, nir_metadata_control_flow);
 }
 
 bool

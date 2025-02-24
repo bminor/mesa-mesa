@@ -2448,8 +2448,7 @@ brw_nir_move_interpolation_to_top(nir_shader *nir)
 
       progress = progress || impl_progress;
 
-      nir_metadata_preserve(impl, impl_progress ? nir_metadata_control_flow
-                                                : nir_metadata_all);
+      nir_progress(impl_progress, impl, nir_metadata_control_flow);
    }
 
    return progress;

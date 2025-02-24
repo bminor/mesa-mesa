@@ -117,7 +117,7 @@ brw_nir_lower_shader_returns(nir_shader *shader)
       }
    }
 
-   nir_metadata_preserve(impl, nir_metadata_control_flow);
+   nir_progress(true, impl, nir_metadata_control_flow);
 }
 
 static void

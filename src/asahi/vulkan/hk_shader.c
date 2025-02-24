@@ -431,8 +431,7 @@ hk_nir_insert_psiz_write(nir_shader *nir)
    nir_function_impl *impl = nir_shader_get_entrypoint(nir);
 
    if (nir->info.outputs_written & VARYING_BIT_PSIZ) {
-      nir_metadata_preserve(impl, nir_metadata_all);
-      return false;
+      return nir_no_progress(impl);
    }
 
    nir_builder b = nir_builder_at(nir_after_impl(impl));
@@ -443,8 +442,7 @@ hk_nir_insert_psiz_write(nir_shader *nir)
                     .io_semantics.num_slots = 1, .src_type = nir_type_float32);
 
    nir->info.outputs_written |= VARYING_BIT_PSIZ;
-   nir_metadata_preserve(b.impl, nir_metadata_control_flow);
-   return true;
+   return nir_progress(true, b.impl, nir_metadata_control_flow);
 }
 
 static nir_def *

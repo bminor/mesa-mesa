@@ -131,5 +131,5 @@ intel_nir_apply_tcs_quads_workaround(nir_shader *nir)
       emit_quads_workaround(&b, end_preds[i]);
    }
 
-   nir_metadata_preserve(impl, nir_metadata_none);
+   nir_progress(true, impl, nir_metadata_none);
 }

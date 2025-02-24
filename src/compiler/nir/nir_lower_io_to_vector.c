@@ -596,11 +596,7 @@ nir_lower_io_to_vector_impl(nir_function_impl *impl, nir_variable_mode modes)
    nir_fixup_deref_modes(b.shader);
    util_dynarray_fini(&demote_vars);
 
-   if (progress) {
-      nir_metadata_preserve(impl, nir_metadata_control_flow);
-   }
-
-   return progress;
+   return nir_progress(progress, impl, nir_metadata_control_flow);
 }
 
 bool

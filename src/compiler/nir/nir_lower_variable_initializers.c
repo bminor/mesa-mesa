@@ -120,13 +120,8 @@ nir_lower_variable_initializers(nir_shader *shader, nir_variable_mode modes)
                                                   nir_var_function_temp);
       }
 
-      if (impl_progress) {
-         progress = true;
-         nir_metadata_preserve(impl, nir_metadata_control_flow |
-                                        nir_metadata_live_defs);
-      } else {
-         nir_metadata_preserve(impl, nir_metadata_all);
-      }
+      progress |= nir_progress(impl_progress, impl,
+                               nir_metadata_control_flow | nir_metadata_live_defs);
    }
 
    return progress;
@@ -201,9 +196,8 @@ nir_zero_initialize_shared_memory(nir_shader *shader,
    nir_barrier(&b, SCOPE_WORKGROUP, SCOPE_WORKGROUP, NIR_MEMORY_ACQ_REL,
                nir_var_mem_shared);
 
-   nir_metadata_preserve(nir_shader_get_entrypoint(shader), nir_metadata_none);
-
-   return true;
+   return nir_progress(true, nir_shader_get_entrypoint(shader),
+                       nir_metadata_none);
 }
 
 /** Clears all shared memory to zero at the end of the shader
@@ -294,7 +288,6 @@ nir_clear_shared_memory(nir_shader *shader,
       nir_builder_instr_insert(&b, &offset_phi->instr);
    }
 
-   nir_metadata_preserve(nir_shader_get_entrypoint(shader), nir_metadata_none);
-
-   return true;
+   return nir_progress(true, nir_shader_get_entrypoint(shader),
+                       nir_metadata_none);
 }

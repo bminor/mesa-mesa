@@ -682,7 +682,7 @@ nir_call_serialized(nir_builder *b, const uint32_t *serialized,
 
    /* Indices & metadata are completely messed up now */
    nir_index_ssa_defs(b->impl);
-   nir_metadata_preserve(b->impl, nir_metadata_none);
+   nir_progress(true, b->impl, nir_metadata_none);
    ralloc_free(memctx);
    return ret;
 }

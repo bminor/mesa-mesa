@@ -92,6 +92,5 @@ nir_move_output_stores_to_end(nir_shader *nir)
       progress = true;
    }
 
-   nir_metadata_preserve(impl, progress ? nir_metadata_control_flow : nir_metadata_all);
-   return progress;
+   return nir_progress(progress, impl, nir_metadata_control_flow);
 }

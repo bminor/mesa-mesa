@@ -269,7 +269,7 @@ lower_phis_to_scalar_impl(nir_function_impl *impl, bool lower_all)
       progress = lower_phis_to_scalar_block(block, &state) || progress;
    }
 
-   nir_metadata_preserve(impl, nir_metadata_control_flow);
+   nir_progress(true, impl, nir_metadata_control_flow);
 
    nir_instr_free_list(&state.dead_instrs);
 

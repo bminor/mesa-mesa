@@ -717,13 +717,13 @@ nir_opt_loop(nir_shader *shader)
 
       /* First we run the simple pass to get rid of pesky continues */
       if (opt_loop_cf_list(&b, &impl->body, NULL)) {
-         nir_metadata_preserve(impl, nir_metadata_none);
+         nir_progress(true, impl, nir_metadata_none);
 
          /* If that made progress, we're no longer really in SSA form. */
          nir_lower_reg_intrinsics_to_ssa_impl(impl);
          progress = true;
       } else {
-         nir_metadata_preserve(impl, nir_metadata_all);
+         nir_no_progress(impl);
       }
    }
 

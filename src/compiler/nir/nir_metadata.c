@@ -89,7 +89,7 @@ void
 nir_shader_preserve_all_metadata(nir_shader *shader)
 {
    nir_foreach_function_impl(impl, shader) {
-      nir_metadata_preserve(impl, nir_metadata_all);
+      nir_no_progress(impl);
    }
 }
 

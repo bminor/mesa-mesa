@@ -436,8 +436,7 @@ lower_cf_func(nir_function *func)
       return false;
 
    if (exec_list_is_singular(&func->impl->body)) {
-      nir_metadata_preserve(func->impl, nir_metadata_all);
-      return false;
+      return nir_no_progress(func->impl);
    }
 
    nir_function_impl *old_impl = func->impl;

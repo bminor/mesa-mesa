@@ -119,7 +119,7 @@ nak_nir_lower_gs_intrinsics(nir_shader *nir)
 
    append_final_primitive_nv(impl->end_block, &state);
 
-   nir_metadata_preserve(impl, nir_metadata_none);
+   nir_progress(true, impl, nir_metadata_none);
 
    return state.progress;
 }

@@ -183,10 +183,8 @@ brw_nir_lower_alpha_to_coverage(nir_shader *shader,
 
    nir_src_rewrite(&sample_mask_write->src[0], dither_mask);
 
-   nir_metadata_preserve(impl, nir_metadata_control_flow);
-   return true;
+   return nir_progress(true, impl, nir_metadata_control_flow);
 
 skip:
-   nir_metadata_preserve(impl, nir_metadata_all);
-   return false;
+   return nir_no_progress(impl);
 }

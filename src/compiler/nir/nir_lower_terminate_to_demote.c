@@ -85,13 +85,7 @@ nir_lower_terminate_impl(nir_function_impl *impl)
    nir_builder b = nir_builder_create(impl);
    bool progress = nir_lower_terminate_cf_list(&b, &impl->body);
 
-   if (progress) {
-      nir_metadata_preserve(impl, nir_metadata_none);
-   } else {
-      nir_metadata_preserve(impl, nir_metadata_all);
-   }
-
-   return progress;
+   return nir_progress(progress, impl, nir_metadata_none);
 }
 
 /** Lowers nir_intrinsic_terminate to demote + halt

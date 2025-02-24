@@ -279,7 +279,7 @@ brw_nir_lower_mesh_primitive_count(nir_shader *nir)
    }
    nir_pop_if(b, NULL);
 
-   nir_metadata_preserve(impl, nir_metadata_none);
+   nir_progress(true, impl, nir_metadata_none);
 
    nir->info.outputs_written |= VARYING_BIT_PRIMITIVE_COUNT;
 
@@ -1338,9 +1338,9 @@ brw_nir_initialize_mue(nir_shader *nir,
    }
 
    if (remaining) {
-      nir_metadata_preserve(entrypoint, nir_metadata_none);
+      nir_progress(true, entrypoint, nir_metadata_none);
    } else {
-      nir_metadata_preserve(entrypoint, nir_metadata_control_flow);
+      nir_progress(true, entrypoint, nir_metadata_control_flow);
    }
 }
 

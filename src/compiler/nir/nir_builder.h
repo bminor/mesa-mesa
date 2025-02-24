@@ -109,13 +109,7 @@ nir_function_instructions_pass(nir_function_impl *impl,
       }
    }
 
-   if (progress) {
-      nir_metadata_preserve(impl, preserved);
-   } else {
-      nir_metadata_preserve(impl, nir_metadata_all);
-   }
-
-   return progress;
+   return nir_progress(progress, impl, preserved);
 }
 
 /**
@@ -172,13 +166,7 @@ nir_function_intrinsics_pass(nir_function_impl *impl,
       }
    }
 
-   if (progress) {
-      nir_metadata_preserve(impl, preserved);
-   } else {
-      nir_metadata_preserve(impl, nir_metadata_all);
-   }
-
-   return progress;
+   return nir_progress(progress, impl, preserved);
 }
 
 /**
@@ -228,12 +216,7 @@ nir_shader_alu_pass(nir_shader *shader,
          }
       }
 
-      if (func_progress) {
-         nir_metadata_preserve(impl, preserved);
-         progress = true;
-      } else {
-         nir_metadata_preserve(impl, nir_metadata_all);
-      }
+      progress |= nir_progress(func_progress, impl, preserved);
    }
 
    return progress;
@@ -259,12 +242,7 @@ nir_shader_tex_pass(nir_shader *shader, nir_tex_pass_cb pass,
          }
       }
 
-      if (func_progress) {
-         nir_metadata_preserve(impl, preserved);
-         progress = true;
-      } else {
-         nir_metadata_preserve(impl, nir_metadata_all);
-      }
+      progress |= nir_progress(func_progress, impl, preserved);
    }
 
    return progress;
@@ -289,12 +267,7 @@ nir_shader_phi_pass(nir_shader *shader,
          }
       }
 
-      if (func_progress) {
-         nir_metadata_preserve(impl, preserved);
-         progress = true;
-      } else {
-         nir_metadata_preserve(impl, nir_metadata_all);
-      }
+      progress |= nir_progress(func_progress, impl, preserved);
    }
 
    return progress;

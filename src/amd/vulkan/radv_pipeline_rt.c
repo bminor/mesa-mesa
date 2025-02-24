@@ -353,10 +353,7 @@ move_rt_instructions(nir_shader *shader)
       }
    }
 
-   if (progress)
-      nir_metadata_preserve(nir_shader_get_entrypoint(shader), nir_metadata_control_flow);
-
-   return progress;
+   return nir_progress(progress, nir_shader_get_entrypoint(shader), nir_metadata_control_flow);
 }
 
 static VkResult

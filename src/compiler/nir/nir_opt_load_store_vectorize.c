@@ -1626,9 +1626,8 @@ nir_opt_load_store_vectorize(nir_shader *shader, const nir_load_store_vectorize_
       nir_foreach_block(block, impl)
          progress |= process_block(impl, ctx, block);
 
-      nir_metadata_preserve(impl,
-                            nir_metadata_control_flow |
-                               nir_metadata_live_defs);
+      nir_progress(true, impl,
+                   nir_metadata_control_flow | nir_metadata_live_defs);
    }
 
    ralloc_free(ctx);

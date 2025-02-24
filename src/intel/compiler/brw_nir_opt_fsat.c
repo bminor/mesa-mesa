@@ -242,12 +242,8 @@ brw_nir_opt_fsat(nir_shader *shader)
          }
       }
 
-      if (progress_impl) {
-         nir_metadata_preserve(impl, nir_metadata_control_flow);
-         progress = true;
-      } else {
-         nir_metadata_preserve(impl, nir_metadata_all);
-      }
+      progress |= nir_progress(progress_impl, impl,
+                                         nir_metadata_control_flow);
    }
 
    if (sources != NULL)
