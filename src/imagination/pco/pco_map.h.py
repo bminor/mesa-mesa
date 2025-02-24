@@ -73,8 +73,11 @@ ${enum_map.type_to} ${enum_map.name}(${enum_map.type_from} val)
 static inline
 enum pco_regbank pco_map_reg_bank(pco_ref ref)
 {
-   enum pco_regbank regbank = pco_map_reg_class_to_regbank(pco_ref_get_reg_class(ref));
-   return pco_ref_is_idx_reg(ref) ? regbank + ref.idx_reg.num : regbank;
+   if (pco_ref_is_idx_reg(ref)) {
+      return PCO_REGBANK_IDX0 + ref.idx_reg.num;
+   }
+
+   return pco_map_reg_class_to_regbank(pco_ref_get_reg_class(ref));
 }
 
 static inline
