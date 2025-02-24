@@ -797,9 +797,7 @@ spill_ssa_defs_and_lower_shader_calls(nir_shader *shader, uint32_t num_calls,
 
    ralloc_free(mem_ctx);
 
-   nir_metadata_preserve(impl, nir_metadata_control_flow);
-
-   return true;
+   return nir_progress(true, impl, nir_metadata_control_flow);
 }
 
 static nir_instr *
