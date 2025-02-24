@@ -1100,6 +1100,7 @@ si_vpe_processor_process_frame(struct pipe_video_codec *codec,
    uint32_t idx;
    float scaling_ratio[2];
    float *pHrSr, *pVtSr;
+   enum vpe_status result;
 
    /* Variables for allocating temp working buffer */
    struct pipe_surface **tmp_geo_scaling_surf_1;
@@ -1121,11 +1122,189 @@ si_vpe_processor_process_frame(struct pipe_video_codec *codec,
    scaling_ratio[0] = src_rect_width  / dst_rect_width;
    scaling_ratio[1] = src_rect_height / dst_rect_height;
 
-   /* Check if the reduction ratio is within capability */
+   /* Perform general processing */
    if ((scaling_ratio[0] <= VPE_MAX_GEOMETRIC_DOWNSCALE) && (scaling_ratio[1] <= VPE_MAX_GEOMETRIC_DOWNSCALE))
       return si_vpe_construct_blt(vpeproc, process_properties, vpeproc->src_surfaces, vpeproc->dst_surfaces);
 
-   return 1;
+   /* If fast scaling is required, the geometric scaling should not be performed */
+   if (process_properties->filter_flags & PIPE_VIDEO_VPP_FILTER_FLAG_SCALING_FAST)
+      return 1;
+
+   /* Perform geometric scaling */
+   SIVPE_INFO(vpeproc->log_level, "Geometric Scaling\n");
+   SIVPE_DBG(vpeproc->log_level, "\tRect  Src: (%d, %d, %d, %d) Dst: (%d, %d, %d, %d)\n",
+               process_properties->src_region.x0,
+               process_properties->src_region.y0,
+               process_properties->src_region.x1,
+               process_properties->src_region.y1,
+               process_properties->dst_region.x0,
+               process_properties->dst_region.y0,
+               process_properties->dst_region.x1,
+               process_properties->dst_region.y1);
+   SIVPE_DBG(vpeproc->log_level, "\tscaling_ratio[0] = %f\n", scaling_ratio[0]);
+   SIVPE_DBG(vpeproc->log_level, "\tscaling_ratio[1] = %f\n", scaling_ratio[1]);
+
+   /* Geometric Scaling #1: decide how many passes and scaling ratios in each pass */
+   result = si_vpe_decide_substage_scal_ratios(vpeproc, scaling_ratio);
+   if (VPE_STATUS_OK != result) {
+      SIVPE_ERR("Failed in deciding geometric scaling ratios\n");
+      return result;
+   }
+   pHrSr = vpeproc->geometric_scaling_ratios;
+   pVtSr = pHrSr + vpeproc->geometric_passes;
+
+   /* Geometric Scaling #2: Allocate working frame buffer of geometric scaling */
+   if (!vpeproc->geometric_buf[0] || !vpeproc->geometric_buf[1]) {
+      struct si_texture *dst_tex = (struct si_texture *)vpeproc->dst_surfaces[0]->texture;
+      struct pipe_video_buffer templat;
+
+      if (vpeproc->geometric_buf[0])
+         vpeproc->geometric_buf[0]->destroy(vpeproc->geometric_buf[0]);
+      if (vpeproc->geometric_buf[1])
+         vpeproc->geometric_buf[1]->destroy(vpeproc->geometric_buf[1]);
+
+      memset(&templat, 0, sizeof(templat));
+      templat.buffer_format = dst_tex->buffer.b.b.format;
+      templat.width  = (int)(src_rect_width  / pHrSr[0]);
+      templat.height = (int)(src_rect_height / pVtSr[0]);
+      vpeproc->geometric_buf[0] = vpeproc->base.context->create_video_buffer(vpeproc->base.context, &templat);
+      if (!vpeproc->geometric_buf[0]) {
+         SIVPE_ERR("Failed in allocating geometric scaling frame buffer[0]]\n");
+         return VPE_STATUS_NO_MEMORY;
+      }
+
+      templat.width  = (int)(templat.width  / pHrSr[1]);
+      templat.height = (int)(templat.height / pVtSr[1]);
+      vpeproc->geometric_buf[1] = vpeproc->base.context->create_video_buffer(vpeproc->base.context, &templat);
+      if (!vpeproc->geometric_buf[1]) {
+         vpeproc->geometric_buf[0]->destroy(vpeproc->geometric_buf[0]);
+         SIVPE_ERR("Failed in allocating temp geometric scaling frame buffer[1]]\n");
+         return VPE_STATUS_NO_MEMORY;
+      }
+   }
+   tmp_geo_scaling_surf_1 = vpeproc->geometric_buf[0]->get_surfaces(vpeproc->geometric_buf[0]);
+   tmp_geo_scaling_surf_2 = vpeproc->geometric_buf[1]->get_surfaces(vpeproc->geometric_buf[1]);
+
+   /* Geometric Scaling #3: Process scaling passes */
+   if (vpeproc->geometric_passes > 1) {
+      struct pipe_vpp_desc process_geoscl;
+      struct u_rect *src_region, *dst_region;
+      struct pipe_surface **src_surfaces;
+      struct pipe_surface **dst_surfaces;
+      struct pipe_surface **tmp_surfaces;
+
+      src_region = &process_geoscl.src_region;
+      dst_region = &process_geoscl.dst_region;
+
+      /* First Round:
+       * Sould copy the source setting and destination setting from original command.
+       * Complete the CSC at the first round.
+       */
+      process_geoscl.base.input_format            = process_properties->base.input_format;
+      process_geoscl.base.output_format           = process_properties->base.output_format;
+      process_geoscl.orientation                  = process_properties->orientation;
+      process_geoscl.blend.mode                   = process_properties->blend.mode;
+      process_geoscl.blend.global_alpha           = process_properties->blend.global_alpha;
+      process_geoscl.background_color             = process_properties->background_color;
+
+      process_geoscl.in_colors_standard           = process_properties->in_colors_standard;
+      process_geoscl.in_color_range               = process_properties->in_color_range;
+      process_geoscl.in_chroma_siting             = process_properties->in_chroma_siting;
+      process_geoscl.out_colors_standard          = process_properties->out_colors_standard;
+      process_geoscl.out_color_range              = process_properties->out_color_range;
+      process_geoscl.out_chroma_siting            = process_properties->out_chroma_siting;
+
+      process_geoscl.in_color_primaries           = process_properties->in_color_primaries;
+      process_geoscl.in_transfer_characteristics  = process_properties->in_transfer_characteristics;
+      process_geoscl.in_matrix_coefficients       = process_properties->in_matrix_coefficients;
+
+      process_geoscl.out_color_primaries          = process_properties->out_color_primaries;
+      process_geoscl.out_transfer_characteristics = process_properties->out_transfer_characteristics;
+      process_geoscl.out_matrix_coefficients      = process_properties->out_matrix_coefficients;
+
+      /* Setup the scaling size of first round */
+      src_region->x0 = process_properties->src_region.x0;
+      src_region->y0 = process_properties->src_region.y0;
+      src_region->x1 = process_properties->src_region.x1;
+      src_region->y1 = process_properties->src_region.y1;
+
+      dst_region->x0 = 0;
+      dst_region->y0 = 0;
+      dst_region->x1 = (int)(src_rect_width  / pHrSr[0]);
+      dst_region->y1 = (int)(src_rect_height / pVtSr[0]);
+
+      src_surfaces = vpeproc->src_surfaces;
+      dst_surfaces = tmp_geo_scaling_surf_1;
+
+      result = si_vpe_construct_blt(vpeproc, &process_geoscl, src_surfaces, dst_surfaces);
+      if (VPE_STATUS_OK != result) {
+         pipe_surface_reference(tmp_geo_scaling_surf_1, NULL);
+         pipe_surface_reference(tmp_geo_scaling_surf_2, NULL);
+         SIVPE_ERR("Failed in Geometric Scaling first blt command\n");
+         return result;
+      }
+      vpeproc->ws->cs_flush(&vpeproc->cs, PIPE_FLUSH_ASYNC, NULL);
+      next_buffer(vpeproc);
+
+      /* Second to Final Round:
+       * The source format should be reset to the format of DstFormat.
+       * And other option should be cleaned.
+       */
+      process_geoscl.base.input_format            = process_properties->base.output_format;
+      process_geoscl.orientation                  = PIPE_VIDEO_VPP_ORIENTATION_DEFAULT;
+      process_geoscl.blend.global_alpha           = 1.0f;
+      process_geoscl.in_colors_standard           = process_properties->out_colors_standard;
+      process_geoscl.in_color_range               = process_properties->out_color_range;
+      process_geoscl.in_chroma_siting             = process_properties->out_chroma_siting;
+      process_geoscl.in_color_primaries           = process_properties->out_color_primaries;
+      process_geoscl.in_transfer_characteristics  = process_properties->out_transfer_characteristics;
+      process_geoscl.in_matrix_coefficients       = process_properties->out_matrix_coefficients;
+
+      src_surfaces = tmp_geo_scaling_surf_2;
+      for (idx = 1; idx < vpeproc->geometric_passes - 1; idx++) {
+         src_region->x1 = dst_region->x1;
+         src_region->y1 = dst_region->y1;
+         dst_region->x1 = (int)(dst_region->x1  / pHrSr[idx]);
+         dst_region->y1 = (int)(dst_region->y1  / pVtSr[idx]);
+
+         /* Swap the source and destination buffer */
+         tmp_surfaces = src_surfaces;
+         src_surfaces = dst_surfaces;
+         dst_surfaces = tmp_surfaces;
+
+         result = si_vpe_construct_blt(vpeproc, &process_geoscl, src_surfaces, dst_surfaces);
+         if (VPE_STATUS_OK != result) {
+            pipe_surface_reference(tmp_geo_scaling_surf_1, NULL);
+            pipe_surface_reference(tmp_geo_scaling_surf_2, NULL);
+            SIVPE_ERR("Failed in Geometric Scaling first blt command\n");
+            return result;
+         }
+         vpeproc->ws->cs_flush(&vpeproc->cs, PIPE_FLUSH_ASYNC, NULL);
+         next_buffer(vpeproc);
+      }
+
+      /* Final Round:
+       * Will be flushed in normal flow when end_frame() is called
+       */
+      src_region->x1 = dst_region->x1;
+      src_region->y1 = dst_region->y1;
+      dst_region->x0 = process_properties->dst_region.x0;
+      dst_region->y0 = process_properties->dst_region.y0;
+      dst_region->x1 = process_properties->dst_region.x1;
+      dst_region->y1 = process_properties->dst_region.y1;
+
+      src_surfaces = dst_surfaces;
+      dst_surfaces = vpeproc->dst_surfaces;
+      result = si_vpe_construct_blt(vpeproc, &process_geoscl, src_surfaces, dst_surfaces);
+      if (VPE_STATUS_OK != result) {
+         pipe_surface_reference(tmp_geo_scaling_surf_1, NULL);
+         pipe_surface_reference(tmp_geo_scaling_surf_2, NULL);
+         SIVPE_ERR("Failed in Geometric Scaling first blt command\n");
+         return result;
+      }
+   }
+
+   return result;
 }
 
 static int
