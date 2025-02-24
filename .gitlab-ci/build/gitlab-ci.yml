@@ -316,7 +316,7 @@ alpine-build-testing:
       -D microsoft-clc=disabled
       -D shared-llvm=enabled
     UNWIND: "disabled"
-    VULKAN_DRIVERS: "amd,asahi,broadcom,freedreno,intel,imagination-experimental"
+    VULKAN_DRIVERS: "amd,broadcom,freedreno,intel,imagination-experimental"
 
 fedora-release:
   extends:
