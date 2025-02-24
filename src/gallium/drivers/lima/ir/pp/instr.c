@@ -220,8 +220,22 @@ bool ppir_instr_insert_node(ppir_instr *instr, ppir_node *node)
             /* node already in this instr, i.e. load_uniform */
             if (instr->slots[pos] == node)
                return true;
-            else
+            else {
+               if (pos == PPIR_INSTR_SLOT_UNIFORM && node->op == ppir_op_load_uniform) {
+                  ppir_load_node *load = ppir_node_to_load(node);
+                  ppir_load_node *existing = ppir_node_to_load(instr->slots[PPIR_INSTR_SLOT_UNIFORM]);
+
+                  if (!load->num_src && !existing->num_src &&
+                      load->index == existing->index &&
+                      load->num_components == existing->num_components) {
+                     ppir_debug("Re-using uniform slot of instr %d with node %d for node %d\n",
+                                 instr->index, node->index, existing->node.index);
+                     node->instr = instr;
+                     return true;
+                  }
+               }
                continue;
+            }
          }
 
          if (pos == PPIR_INSTR_SLOT_ALU_VEC_MUL) {
