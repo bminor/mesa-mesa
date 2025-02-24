@@ -1274,7 +1274,7 @@
         "description": "anv: fix missing 3DSTATE_PS:Kernel0MaximumPolysperThread programming",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "815d2e3e8b182d62eb1b1eef3af6fd4397cf6f8f",
         "notes": null
