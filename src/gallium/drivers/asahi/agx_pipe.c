@@ -54,14 +54,6 @@
 #include "agx_tilebuffer.h"
 #include "shader_enums.h"
 
-/* Fake values, pending UAPI upstreaming */
-#ifndef DRM_FORMAT_MOD_APPLE_GPU_TILED
-#define DRM_FORMAT_MOD_APPLE_GPU_TILED (2)
-#endif
-#ifndef DRM_FORMAT_MOD_APPLE_GPU_TILED_COMPRESSED
-#define DRM_FORMAT_MOD_APPLE_GPU_TILED_COMPRESSED (3)
-#endif
-
 uint64_t agx_best_modifiers[] = {
    DRM_FORMAT_MOD_APPLE_GPU_TILED_COMPRESSED,
    DRM_FORMAT_MOD_APPLE_GPU_TILED,
