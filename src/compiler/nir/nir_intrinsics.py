@@ -2707,6 +2707,9 @@ intrinsic("smp_coeffs_pco", src_comp=[16, 4, 4], dest_comp=8, indices=[SMP_FLAGS
 # Performs an alpha test on the given parameters, returning float 0/1 depending on the comparison result.
 intrinsic("alphatst_pco", src_comp=[1, 1, 1], dest_comp=1, flags=[CAN_ELIMINATE, CAN_REORDER], bit_sizes=[32])
 
+# Load the current instance's number/id within its slot.
+intrinsic("load_instance_num_pco", dest_comp=1, flags=[CAN_ELIMINATE, CAN_REORDER], bit_sizes=[32])
+
 index("unsigned", "mutex_id_pco")
 index("unsigned", "mutex_op_pco")
 

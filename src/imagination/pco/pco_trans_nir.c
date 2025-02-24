@@ -1094,6 +1094,12 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
                         .mtx_op = nir_intrinsic_mutex_op_pco(intr));
       break;
 
+   case nir_intrinsic_load_instance_num_pco:
+      instr = pco_mov(&tctx->b,
+                      dest,
+                      pco_ref_hwreg(PCO_SR_INST_NUM, PCO_REG_CLASS_SPEC));
+      break;
+
    case nir_intrinsic_decl_reg:
    case nir_intrinsic_load_reg:
    case nir_intrinsic_store_reg:
