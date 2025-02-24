@@ -2476,6 +2476,7 @@ tu_CreateDevice(VkPhysicalDevice physicalDevice,
    mtx_init(&device->pipeline_mutex, mtx_plain);
    mtx_init(&device->autotune_mutex, mtx_plain);
    mtx_init(&device->kgsl_profiling_mutex, mtx_plain);
+   mtx_init(&device->event_mutex, mtx_plain);
    u_rwlock_init(&device->dma_bo_lock);
    pthread_mutex_init(&device->submit_mutex, NULL);
 
@@ -2591,6 +2592,10 @@ tu_CreateDevice(VkPhysicalDevice physicalDevice,
                               128 * 1024, TU_BO_ALLOC_INTERNAL_RESOURCE,
                               "kgsl_profiling_suballoc");
    }
+
+   tu_bo_suballocator_init(&device->event_suballoc, device,
+      getpagesize(), TU_BO_ALLOC_INTERNAL_RESOURCE,
+      "event_suballoc");
 
    result = tu_bo_init_new(
       device, NULL, &device->global_bo, global_size,
@@ -2901,6 +2906,7 @@ tu_DestroyDevice(VkDevice _device, const VkAllocationCallbacks *pAllocator)
    tu_bo_suballocator_finish(&device->pipeline_suballoc);
    tu_bo_suballocator_finish(&device->autotune_suballoc);
    tu_bo_suballocator_finish(&device->kgsl_profiling_suballoc);
+   tu_bo_suballocator_finish(&device->event_suballoc);
 
    tu_bo_finish(device, device->global_bo);
 
