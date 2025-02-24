@@ -108,7 +108,7 @@ tu_nir_lower_multiview(nir_shader *nir, uint32_t mask, struct tu_device *dev)
        */
       NIR_PASS(progress, nir, lower_multiview_mask, &options.view_mask);
 
-      NIR_PASS_V(nir, nir_lower_multiview, options);
+      NIR_PASS(_, nir, nir_lower_multiview, options);
       progress = true;
    }
 
