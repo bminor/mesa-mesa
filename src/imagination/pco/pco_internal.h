@@ -2153,6 +2153,48 @@ static inline void pco_ref_hwreg_addr_comps(unsigned index,
 }
 
 /**
+ * \brief Builds and returns an indexed vector hardware register reference.
+ *
+ * \param[in] offset Pointee offset.
+ * \param[in] reg_class Register class.
+ * \param[in] chans Number of channels.
+ * \return Hardware register reference.
+ */
+static inline pco_ref pco_ref_hwreg_idx_vec(unsigned num,
+                                            unsigned offset,
+                                            enum pco_reg_class reg_class,
+                                            unsigned chans)
+{
+   assert(offset < 256);
+   assert(reg_class != PCO_REG_CLASS_VIRT);
+
+   return (pco_ref){
+      .idx_reg = {
+         .num = num,
+         .offset = offset,
+      },
+      .chans = chans - 1,
+      .bits = PCO_BITS_32,
+      .type = PCO_REF_TYPE_IDX_REG,
+      .reg_class = reg_class,
+   };
+}
+
+/**
+ * \brief Builds and returns an indexed scalar hardware register reference.
+ *
+ * \param[in] offset Pointee offset.
+ * \param[in] reg_class Register class.
+ * \param[in] chans Number of channels.
+ * \return Hardware register reference.
+ */
+static inline pco_ref
+pco_ref_hwreg_idx(unsigned num, unsigned offset, enum pco_reg_class reg_class)
+{
+   return pco_ref_hwreg_idx_vec(num, offset, reg_class, 1);
+}
+
+/**
  * \brief Builds and returns an immediate reference.
  *
  * \param[in] val Immediate value.
@@ -2519,6 +2561,11 @@ ref_src_map_valid(pco_ref ref, enum pco_io mapped_src, bool *needs_s124)
    /* Restrictions only apply to hardware registers. */
    if (!pco_ref_is_idx_reg(ref) && !pco_ref_is_reg(ref))
       return true;
+
+   if (pco_ref_is_idx_reg(ref)) {
+      return (mapped_src == PCO_IO_S0) || (mapped_src == PCO_IO_S2) ||
+             (mapped_src == PCO_IO_S3);
+   }
 
    switch (pco_ref_get_reg_class(ref)) {
    case PCO_REG_CLASS_COEFF:
