@@ -1011,6 +1011,8 @@ nvk_CmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer,
    VK_FROM_HANDLE(nvk_cmd_buffer, cmd, commandBuffer);
    VK_FROM_HANDLE(nvk_indirect_commands_layout, layout,
                   info->indirectCommandsLayout);
+   struct nvk_device *dev = nvk_cmd_buffer_device(cmd);
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
 
    if (!isPreprocessed) {
       nvk_cmd_flush_process_state(cmd, info);
@@ -1022,7 +1024,8 @@ nvk_CmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer,
          .constant = CONSTANT_TRUE,
          .flush_data = FLUSH_DATA_TRUE,
       });
-      P_IMMD(p, NVB1C0, INVALIDATE_SKED_CACHES, 0);
+      if (pdev->info.cls_eng3d >= MAXWELL_COMPUTE_B)
+         P_IMMD(p, NVB1C0, INVALIDATE_SKED_CACHES, 0);
       __push_immd(p, SUBC_NV9097, NV906F_SET_REFERENCE, 0);
    }
 
