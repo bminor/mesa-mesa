@@ -645,8 +645,10 @@ add_branch_code(exec_ctx& ctx, Block* block)
       while (!(ctx.info[idx].exec.back().type & mask_type_loop))
          ctx.info[idx].exec.pop_back();
 
-      Temp cond = bld.sopc(Builder::s_cmp_lg, bld.def(s1, scc), ctx.info[idx].exec.back().op,
-                           Operand::zero(bld.lm.bytes()));
+      Temp cond = bld.sop2(Builder::s_or, bld.def(bld.lm), bld.def(s1, scc),
+                           ctx.info[idx].exec.back().op, Operand::zero(bld.lm.bytes()))
+                     .def(1)
+                     .getTemp();
       bld.branch(aco_opcode::p_cbranch_nz, Operand(cond, scc), block->linear_succs[1],
                  block->linear_succs[0]);
    } else if (block->kind & block_kind_uniform) {
