@@ -854,6 +854,7 @@ radv_device_init_cache_key(struct radv_device *device)
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const struct radv_instance *instance = radv_physical_device_instance(pdev);
    struct radv_device_cache_key *key = &device->cache_key;
+   struct mesa_blake3 ctx;
 
    key->keep_shader_info = device->keep_shader_info;
    key->trap_excp_flags = device->trap_handler_shader && instance->trap_excp_flags;
@@ -875,7 +876,10 @@ radv_device_init_cache_key(struct radv_device *device)
       key->primitives_generated_query = true;
    }
 
-   _mesa_blake3_compute(key, sizeof(*key), device->cache_hash);
+   _mesa_blake3_init(&ctx);
+   _mesa_blake3_update(&ctx, &pdev->cache_key, sizeof(pdev->cache_key));
+   _mesa_blake3_update(&ctx, &device->cache_key, sizeof(device->cache_key));
+   _mesa_blake3_final(&ctx, device->cache_hash);
 }
 
 static void
