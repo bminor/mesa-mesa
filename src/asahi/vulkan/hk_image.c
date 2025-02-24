@@ -775,10 +775,10 @@ static uint32_t
 modifier_get_score(uint64_t mod)
 {
    switch (mod) {
-   case DRM_FORMAT_MOD_APPLE_TWIDDLED_COMPRESSED:
+   case DRM_FORMAT_MOD_APPLE_GPU_TILED_COMPRESSED:
       return 10;
 
-   case DRM_FORMAT_MOD_APPLE_TWIDDLED:
+   case DRM_FORMAT_MOD_APPLE_GPU_TILED:
       return 5;
 
    case DRM_FORMAT_MOD_LINEAR:
@@ -805,7 +805,7 @@ choose_drm_format_mod(struct hk_device *dev, uint8_t plane_count,
 
    for (uint32_t i = 0; i < modifier_count; ++i) {
       if (!can_compress &&
-          modifiers[i] == DRM_FORMAT_MOD_APPLE_TWIDDLED_COMPRESSED)
+          modifiers[i] == DRM_FORMAT_MOD_APPLE_GPU_TILED_COMPRESSED)
          continue;
 
       uint32_t score = modifier_get_score(modifiers[i]);

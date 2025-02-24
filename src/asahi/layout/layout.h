@@ -501,11 +501,11 @@ ail_is_view_compatible(struct ail_layout *layout, enum pipe_format view)
 }
 
 /* Fake values, pending UAPI upstreaming */
-#ifndef DRM_FORMAT_MOD_APPLE_TWIDDLED
-#define DRM_FORMAT_MOD_APPLE_TWIDDLED (2)
+#ifndef DRM_FORMAT_MOD_APPLE_GPU_TILED
+#define DRM_FORMAT_MOD_APPLE_GPU_TILED (2)
 #endif
-#ifndef DRM_FORMAT_MOD_APPLE_TWIDDLED_COMPRESSED
-#define DRM_FORMAT_MOD_APPLE_TWIDDLED_COMPRESSED (3)
+#ifndef DRM_FORMAT_MOD_APPLE_GPU_TILED_COMPRESSED
+#define DRM_FORMAT_MOD_APPLE_GPU_TILED_COMPRESSED (3)
 #endif
 
 /*
@@ -518,8 +518,8 @@ ail_drm_modifier_to_tiling(uint64_t modifier)
    switch (modifier) {
    case DRM_FORMAT_MOD_LINEAR:
       return AIL_TILING_LINEAR;
-   case DRM_FORMAT_MOD_APPLE_TWIDDLED:
-   case DRM_FORMAT_MOD_APPLE_TWIDDLED_COMPRESSED:
+   case DRM_FORMAT_MOD_APPLE_GPU_TILED:
+   case DRM_FORMAT_MOD_APPLE_GPU_TILED_COMPRESSED:
       return AIL_TILING_GPU;
    default:
       unreachable("Unsupported modifier");
@@ -531,9 +531,9 @@ ail_is_drm_modifier_compressed(uint64_t modifier)
 {
    switch (modifier) {
    case DRM_FORMAT_MOD_LINEAR:
-   case DRM_FORMAT_MOD_APPLE_TWIDDLED:
+   case DRM_FORMAT_MOD_APPLE_GPU_TILED:
       return false;
-   case DRM_FORMAT_MOD_APPLE_TWIDDLED_COMPRESSED:
+   case DRM_FORMAT_MOD_APPLE_GPU_TILED_COMPRESSED:
       return true;
    default:
       unreachable("Unsupported modifier");

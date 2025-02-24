@@ -55,16 +55,16 @@
 #include "shader_enums.h"
 
 /* Fake values, pending UAPI upstreaming */
-#ifndef DRM_FORMAT_MOD_APPLE_TWIDDLED
-#define DRM_FORMAT_MOD_APPLE_TWIDDLED (2)
+#ifndef DRM_FORMAT_MOD_APPLE_GPU_TILED
+#define DRM_FORMAT_MOD_APPLE_GPU_TILED (2)
 #endif
-#ifndef DRM_FORMAT_MOD_APPLE_TWIDDLED_COMPRESSED
-#define DRM_FORMAT_MOD_APPLE_TWIDDLED_COMPRESSED (3)
+#ifndef DRM_FORMAT_MOD_APPLE_GPU_TILED_COMPRESSED
+#define DRM_FORMAT_MOD_APPLE_GPU_TILED_COMPRESSED (3)
 #endif
 
 uint64_t agx_best_modifiers[] = {
-   DRM_FORMAT_MOD_APPLE_TWIDDLED_COMPRESSED,
-   DRM_FORMAT_MOD_APPLE_TWIDDLED,
+   DRM_FORMAT_MOD_APPLE_GPU_TILED_COMPRESSED,
+   DRM_FORMAT_MOD_APPLE_GPU_TILED,
    DRM_FORMAT_MOD_LINEAR,
 };
 
@@ -432,13 +432,13 @@ agx_select_modifier_from_list(const struct agx_resource *pres,
                               const uint64_t *modifiers, int count)
 {
    if (agx_twiddled_allowed(pres) && agx_compression_allowed(pres) &&
-       drm_find_modifier(DRM_FORMAT_MOD_APPLE_TWIDDLED_COMPRESSED, modifiers,
+       drm_find_modifier(DRM_FORMAT_MOD_APPLE_GPU_TILED_COMPRESSED, modifiers,
                          count))
-      return DRM_FORMAT_MOD_APPLE_TWIDDLED_COMPRESSED;
+      return DRM_FORMAT_MOD_APPLE_GPU_TILED_COMPRESSED;
 
    if (agx_twiddled_allowed(pres) &&
-       drm_find_modifier(DRM_FORMAT_MOD_APPLE_TWIDDLED, modifiers, count))
-      return DRM_FORMAT_MOD_APPLE_TWIDDLED;
+       drm_find_modifier(DRM_FORMAT_MOD_APPLE_GPU_TILED, modifiers, count))
+      return DRM_FORMAT_MOD_APPLE_GPU_TILED;
 
    if (agx_linear_allowed(pres) &&
        drm_find_modifier(DRM_FORMAT_MOD_LINEAR, modifiers, count))
@@ -468,9 +468,9 @@ agx_select_best_modifier(const struct agx_resource *pres)
 
    if (agx_twiddled_allowed(pres)) {
       if (agx_compression_allowed(pres))
-         return DRM_FORMAT_MOD_APPLE_TWIDDLED_COMPRESSED;
+         return DRM_FORMAT_MOD_APPLE_GPU_TILED_COMPRESSED;
       else
-         return DRM_FORMAT_MOD_APPLE_TWIDDLED;
+         return DRM_FORMAT_MOD_APPLE_GPU_TILED;
    }
 
    if (agx_linear_allowed(pres))
@@ -511,7 +511,7 @@ agx_resource_create_with_modifiers(struct pipe_screen *screen,
     * inferring the shader image flag. Do so to avoid reallocation in case the
     * resource is later used as an image.
     */
-   if (nresource->modifier != DRM_FORMAT_MOD_APPLE_TWIDDLED_COMPRESSED &&
+   if (nresource->modifier != DRM_FORMAT_MOD_APPLE_GPU_TILED_COMPRESSED &&
        templ->depth0 == 1) {
 
       nresource->base.bind |= PIPE_BIND_SHADER_IMAGE;
