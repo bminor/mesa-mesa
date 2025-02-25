@@ -118,8 +118,8 @@ agx_pack_zls_control(struct agx_zls_control_packed *packed,
 {
    agx_pack(packed, ZLS_CONTROL, cfg) {
       if (z) {
-         cfg.z_store_enable = args->z_store;
-         cfg.z_load_enable = args->z_load;
+         cfg.z_store = args->z_store;
+         cfg.z_load = args->z_load;
          cfg.z_load_compress = cfg.z_store_compress = z->compressed;
          cfg.z_load_tiling = cfg.z_store_tiling =
             agx_translate_zls_tiling(z->tiling);
@@ -132,8 +132,8 @@ agx_pack_zls_control(struct agx_zls_control_packed *packed,
       }
 
       if (s) {
-         cfg.s_load_enable = args->s_load;
-         cfg.s_store_enable = args->s_store;
+         cfg.s_load = args->s_load;
+         cfg.s_store = args->s_store;
          cfg.s_load_compress = cfg.s_store_compress = s->compressed;
          cfg.s_load_tiling = cfg.s_store_tiling =
             agx_translate_zls_tiling(s->tiling);

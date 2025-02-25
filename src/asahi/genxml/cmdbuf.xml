@@ -1115,10 +1115,10 @@
     <field name="Z Store Compress" start="6" size="1" type="bool"/>
     <field name="S Store Tiling" start="7" size="1" type="ZLS Tiling"/>
     <field name="S Store Compress" start="8" size="1" type="bool"/>
-    <field name="S Load Enable" start="14" size="1" type="bool"/>
-    <field name="Z Load Enable" start="15" size="1" type="bool"/>
-    <field name="S Store Enable" start="18" size="1" type="bool"/>
-    <field name="Z Store Enable" start="19" size="1" type="bool"/>
+    <field name="S Load" start="14" size="1" type="bool"/>
+    <field name="Z Load" start="15" size="1" type="bool"/>
+    <field name="S Store" start="18" size="1" type="bool"/>
+    <field name="Z Store" start="19" size="1" type="bool"/>
     <field name="Z Format" start="25" size="2" type="ZLS Format"/>
     <field name="Z Resolve" start="56" size="1" type="bool"/>
     <field name="S Resolve" start="58" size="1" type="bool"/>
