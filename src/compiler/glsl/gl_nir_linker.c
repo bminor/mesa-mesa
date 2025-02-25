@@ -2814,7 +2814,7 @@ link_intrastage_shaders(void *mem_ctx,
    link_cs_input_layout_qualifiers(prog, gl_prog, shader_list, num_shaders);
    link_ms_inout_layout_qualifiers(prog, gl_prog, shader_list, num_shaders);
 
-   if (linked->Stage != MESA_SHADER_FRAGMENT)
+   if (linked->Stage < MESA_SHADER_FRAGMENT)
       link_xfb_stride_layout_qualifiers(&ctx->Const, prog, shader_list, num_shaders);
 
    link_bindless_layout_qualifiers(prog, shader_list, num_shaders);
@@ -3810,6 +3810,12 @@ gl_nir_link_glsl(struct gl_context *ctx, struct gl_shader_program *prog)
             goto done;
          }
       }
+
+      if (num_shaders[MESA_SHADER_TASK] > 0 &&
+          num_shaders[MESA_SHADER_MESH] == 0) {
+         linker_error(prog, "Task shader must be linked with mesh shader\n");
+         goto done;
+      }
    }
 
    /* Compute shaders have additional restrictions. */
@@ -3817,6 +3823,14 @@ gl_nir_link_glsl(struct gl_context *ctx, struct gl_shader_program *prog)
        num_shaders[MESA_SHADER_COMPUTE] != prog->NumShaders) {
       linker_error(prog, "Compute shaders may not be linked with any other "
                    "type of shader\n");
+   }
+
+   if ((num_shaders[MESA_SHADER_TASK] > 0 || num_shaders[MESA_SHADER_MESH] > 0) &&
+       num_shaders[MESA_SHADER_TASK] +
+       num_shaders[MESA_SHADER_MESH] +
+       num_shaders[MESA_SHADER_FRAGMENT] != prog->NumShaders) {
+      linker_error(prog, "Task and mesh shader can only be linked with "
+                   "each other and fragment shader\n");
    }
 
    /* Link all shaders for a particular stage and validate the result.
@@ -3911,22 +3925,34 @@ gl_nir_link_glsl(struct gl_context *ctx, struct gl_shader_program *prog)
    /* Validate the inputs of each stage with the output of the preceding
     * stage.
     */
-   unsigned prev = MESA_SHADER_MESH_STAGES;
-   for (unsigned i = 0; i <= MESA_SHADER_FRAGMENT; i++) {
-      if (prog->_LinkedShaders[i] == NULL)
-         continue;
-
-      if (prev == MESA_SHADER_MESH_STAGES) {
-         prev = i;
-         continue;
+   if (prog->_LinkedShaders[MESA_SHADER_TASK] ||
+       prog->_LinkedShaders[MESA_SHADER_MESH]) {
+      if (prog->_LinkedShaders[MESA_SHADER_MESH] &&
+          prog->_LinkedShaders[MESA_SHADER_FRAGMENT]) {
+         gl_nir_validate_interstage_inout_blocks(
+            prog, prog->_LinkedShaders[MESA_SHADER_MESH],
+            prog->_LinkedShaders[MESA_SHADER_FRAGMENT]);
+         if (!prog->data->LinkStatus)
+            goto done;
       }
+   } else {
+      unsigned prev = MESA_SHADER_MESH_STAGES;
+      for (unsigned i = 0; i <= MESA_SHADER_FRAGMENT; i++) {
+         if (prog->_LinkedShaders[i] == NULL)
+            continue;
 
-      gl_nir_validate_interstage_inout_blocks(prog, prog->_LinkedShaders[prev],
-                                              prog->_LinkedShaders[i]);
-      if (!prog->data->LinkStatus)
-         goto done;
+         if (prev == MESA_SHADER_MESH_STAGES) {
+            prev = i;
+            continue;
+         }
 
-      prev = i;
+         gl_nir_validate_interstage_inout_blocks(prog, prog->_LinkedShaders[prev],
+                                                 prog->_LinkedShaders[i]);
+         if (!prog->data->LinkStatus)
+            goto done;
+
+         prev = i;
+      }
    }
 
    /* Cross-validate uniform blocks between shader stages */
@@ -3952,18 +3978,6 @@ gl_nir_link_glsl(struct gl_context *ctx, struct gl_shader_program *prog)
       break;
    }
 
-   unsigned first = MESA_SHADER_MESH_STAGES;
-   unsigned last = 0;
-
-   /* Determine first and last stage. */
-   for (unsigned i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
-      if (!prog->_LinkedShaders[i])
-         continue;
-      if (first == MESA_SHADER_MESH_STAGES)
-         first = i;
-      last = i;
-   }
-
    /* Implement the GLSL 1.30+ rule for discard vs infinite loops.
     * This rule also applies to GLSL ES 3.00.
     */
@@ -3975,21 +3989,38 @@ gl_nir_link_glsl(struct gl_context *ctx, struct gl_shader_program *prog)
 
    gl_nir_lower_named_interface_blocks(prog);
 
+   /* Determine first and last stage. */
+   unsigned first, last;
+   find_first_and_last_stage(prog, &first, &last);
+
    /* Validate the inputs of each stage with the output of the preceding
     * stage.
     */
-   prev = first;
-   for (unsigned i = prev + 1; i <= MESA_SHADER_FRAGMENT; i++) {
-      if (prog->_LinkedShaders[i] == NULL)
-         continue;
+   if (prog->_LinkedShaders[MESA_SHADER_TASK] ||
+       prog->_LinkedShaders[MESA_SHADER_MESH]) {
+      if (prog->_LinkedShaders[MESA_SHADER_MESH] &&
+          prog->_LinkedShaders[MESA_SHADER_FRAGMENT]) {
+         gl_nir_cross_validate_outputs_to_inputs(
+            consts, prog,
+            prog->_LinkedShaders[MESA_SHADER_MESH],
+            prog->_LinkedShaders[MESA_SHADER_FRAGMENT]);
+         if (!prog->data->LinkStatus)
+            goto done;
+      }
+   } else {
+      unsigned prev = first;
+      for (unsigned i = prev + 1; i <= MESA_SHADER_FRAGMENT; i++) {
+         if (prog->_LinkedShaders[i] == NULL)
+            continue;
 
-      gl_nir_cross_validate_outputs_to_inputs(consts, prog,
-                                              prog->_LinkedShaders[prev],
-                                              prog->_LinkedShaders[i]);
-      if (!prog->data->LinkStatus)
-         goto done;
+         gl_nir_cross_validate_outputs_to_inputs(consts, prog,
+                                                 prog->_LinkedShaders[prev],
+                                                 prog->_LinkedShaders[i]);
+         if (!prog->data->LinkStatus)
+            goto done;
 
-      prev = i;
+         prev = i;
+      }
    }
 
    /* The cross validation of outputs/inputs above validates interstage
@@ -4138,8 +4169,9 @@ gl_nir_link_glsl(struct gl_context *ctx, struct gl_shader_program *prog)
     */
    if (!prog->SeparateShader && _mesa_is_api_gles2(api) &&
        !prog->_LinkedShaders[MESA_SHADER_COMPUTE]) {
-      if (prog->_LinkedShaders[MESA_SHADER_VERTEX] == NULL) {
-         linker_error(prog, "program lacks a vertex shader\n");
+      if (prog->_LinkedShaders[MESA_SHADER_VERTEX] == NULL &&
+          prog->_LinkedShaders[MESA_SHADER_MESH] == NULL) {
+         linker_error(prog, "program lacks a vertex or mesh shader\n");
       } else if (prog->_LinkedShaders[MESA_SHADER_FRAGMENT] == NULL) {
          linker_error(prog, "program lacks a fragment shader\n");
       }

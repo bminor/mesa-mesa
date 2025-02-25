@@ -748,9 +748,16 @@ gl_nir_validate_first_and_last_interface_explicit_locations(const struct gl_cons
 {
    /* VS inputs and FS outputs are validated in
     * assign_attribute_or_color_locations()
+    *
+    * TS and MS has no inputs, TS has no outputs.
     */
-   bool validate_first_stage = first_stage != MESA_SHADER_VERTEX;
-   bool validate_last_stage = last_stage != MESA_SHADER_FRAGMENT;
+   bool validate_first_stage =
+      first_stage != MESA_SHADER_VERTEX &&
+      first_stage != MESA_SHADER_TASK &&
+      first_stage != MESA_SHADER_MESH;
+   bool validate_last_stage =
+      last_stage != MESA_SHADER_FRAGMENT &&
+      last_stage != MESA_SHADER_TASK;
    if (!validate_first_stage && !validate_last_stage)
       return true;
 
