@@ -48,7 +48,7 @@ isl_gfx4_filter_tiling(const struct isl_device *dev,
       *flags &= (1 << dev->shader_tiling) | ISL_TILING_LINEAR_BIT;
 
    if (isl_surf_usage_is_depth_or_stencil(info->usage)) {
-      assert(!ISL_DEV_USE_SEPARATE_STENCIL(dev));
+      assert(!dev->use_separate_stencil);
 
       /* From the g35 PRM Vol. 2, 3DSTATE_DEPTH_BUFFER::Tile Walk:
        *

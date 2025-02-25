@@ -194,7 +194,7 @@ isl_gfx6_filter_tiling(const struct isl_device *dev,
                        isl_tiling_flags_t *flags)
 {
    /* IVB+ requires separate stencil */
-   assert(ISL_DEV_USE_SEPARATE_STENCIL(dev));
+   assert(dev->use_separate_stencil);
 
    /* Clear flags unsupported on this hardware */
    assert(ISL_GFX_VERX10(dev) < 125);

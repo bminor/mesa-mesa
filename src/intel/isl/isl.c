@@ -330,13 +330,12 @@ isl_device_init(struct isl_device *dev,
     * properties chosen during runtime.
     */
    ISL_GFX_VER_SANITIZE(dev);
-   ISL_DEV_USE_SEPARATE_STENCIL_SANITIZE(dev);
 
    /* Did we break hiz or stencil? */
-   if (ISL_DEV_USE_SEPARATE_STENCIL(dev))
+   if (dev->use_separate_stencil)
       assert(info->has_hiz_and_separate_stencil);
    if (info->must_use_separate_stencil)
-      assert(ISL_DEV_USE_SEPARATE_STENCIL(dev));
+      assert(dev->use_separate_stencil);
 
    dev->ss.size = RENDER_SURFACE_STATE_length(info) * 4;
    dev->ss.align = isl_align(dev->ss.size, 32);
@@ -1846,7 +1845,7 @@ isl_choose_array_pitch_span(const struct isl_device *dev,
 
          return ISL_ARRAY_PITCH_SPAN_FULL;
       } else if ((ISL_GFX_VER(dev) == 5 || ISL_GFX_VER(dev) == 6) &&
-                 ISL_DEV_USE_SEPARATE_STENCIL(dev) &&
+                 dev->use_separate_stencil &&
                  isl_surf_usage_is_stencil(info->usage)) {
          /* [ILK-SNB] Errata from the Sandy Bridge PRM >> Volume 4 Part 1:
           * Graphics Core >> Section 7.18.3.7: Surface Arrays:

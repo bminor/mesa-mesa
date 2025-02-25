@@ -87,18 +87,6 @@ struct intel_device_info;
 #define ISL_DEV_IS_BAYTRAIL(__dev) ((__dev)->info->platform == INTEL_PLATFORM_BYT)
 #endif
 
-#ifndef ISL_DEV_USE_SEPARATE_STENCIL
-/**
- * You can define this as a compile-time constant in the CFLAGS. For example,
- * ``gcc -DISL_DEV_USE_SEPARATE_STENCIL(dev)=1 ...``.
- */
-#define ISL_DEV_USE_SEPARATE_STENCIL(__dev) ((__dev)->use_separate_stencil)
-#define ISL_DEV_USE_SEPARATE_STENCIL_SANITIZE(__dev)
-#else
-#define ISL_DEV_USE_SEPARATE_STENCIL_SANITIZE(__dev) \
-   (assert(ISL_DEV_USE_SEPARATE_STENCIL(__dev) == (__dev)->use_separate_stencil))
-#endif
-
 /**
  * Hardware enumeration SURFACE_FORMAT.
  *
