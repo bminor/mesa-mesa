@@ -301,10 +301,8 @@ ir3_nir_lower_to_explicit_output(nir_shader *shader,
    nir_foreach_block_safe (block, impl)
       progress |= lower_block_to_explicit_output(block, &b, &state);
 
-   nir_progress(progress, impl, nir_metadata_control_flow);
-
    v->output_size = state.map.stride;
-   return progress;
+   return nir_progress(progress, impl, nir_metadata_control_flow);
 }
 
 static bool
@@ -382,10 +380,8 @@ ir3_nir_lower_to_explicit_input(nir_shader *shader,
    nir_foreach_block_safe (block, impl)
       progress |= lower_block_to_explicit_input(block, &b, &state);
 
-   nir_progress(progress, impl, nir_metadata_control_flow);
-
    v->input_size = calc_primitive_map_size(shader);
-   return progress;
+   return nir_progress(progress, impl, nir_metadata_control_flow);
 }
 
 static nir_def *
@@ -803,7 +799,6 @@ ir3_nir_lower_tess_eval(nir_shader *shader, struct ir3_shader_variant *v,
       lower_tess_eval_block(block, &b, &state);
 
    v->input_size = calc_primitive_map_size(shader);
-
    return nir_progress(true, impl, nir_metadata_none);
 }
 
