@@ -29,6 +29,7 @@ struct vn_image_format_properties {
    VkResult cached_result;
 
    VkExternalImageFormatProperties ext_image;
+   VkHostImageCopyDevicePerformanceQuery host_copy;
    VkImageCompressionPropertiesEXT compression;
    VkSamplerYcbcrConversionImageFormatProperties ycbcr_conversion;
 };

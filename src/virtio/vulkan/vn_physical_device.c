@@ -2233,14 +2233,13 @@ vn_image_get_image_format_key(
     *
     * VkAndroidHardwareBufferUsageANDROID is handled outside of the cache.
     * VkFilterCubicImageViewImageFormatPropertiesEXT,
-    * VkHostImageCopyDevicePerformanceQueryEXT,
-    * VkHostImageCopyDevicePerformanceQueryEXT,
     * VkTextureLODGatherFormatPropertiesAMD are not supported
     */
    if (format_props->pNext) {
       vk_foreach_struct_const(src, format_props->pNext) {
          switch (src->sType) {
          case VK_STRUCTURE_TYPE_EXTERNAL_IMAGE_FORMAT_PROPERTIES:
+         case VK_STRUCTURE_TYPE_HOST_IMAGE_COPY_DEVICE_PERFORMANCE_QUERY:
          case VK_STRUCTURE_TYPE_IMAGE_COMPRESSION_PROPERTIES_EXT:
          case VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_IMAGE_FORMAT_PROPERTIES:
             _mesa_sha1_update(&sha1_ctx, &src->sType,
@@ -2302,6 +2301,15 @@ vn_image_init_format_from_cache(
                   (VkExternalImageFormatProperties *)src;
                ext_image->externalMemoryProperties =
                   cache_entry->properties.ext_image.externalMemoryProperties;
+               break;
+            }
+            case VK_STRUCTURE_TYPE_HOST_IMAGE_COPY_DEVICE_PERFORMANCE_QUERY: {
+               VkHostImageCopyDevicePerformanceQuery *host_copy =
+                  (VkHostImageCopyDevicePerformanceQuery *)src;
+               host_copy->optimalDeviceAccess =
+                  cache_entry->properties.host_copy.optimalDeviceAccess;
+               host_copy->identicalMemoryLayout =
+                  cache_entry->properties.host_copy.identicalMemoryLayout;
                break;
             }
             case VK_STRUCTURE_TYPE_IMAGE_COMPRESSION_PROPERTIES_EXT: {
@@ -2384,6 +2392,11 @@ vn_image_store_format_in_cache(
          case VK_STRUCTURE_TYPE_EXTERNAL_IMAGE_FORMAT_PROPERTIES: {
             cache_entry->properties.ext_image =
                *((VkExternalImageFormatProperties *)src);
+            break;
+         }
+         case VK_STRUCTURE_TYPE_HOST_IMAGE_COPY_DEVICE_PERFORMANCE_QUERY: {
+            cache_entry->properties.host_copy =
+               *((VkHostImageCopyDevicePerformanceQuery *)src);
             break;
          }
          case VK_STRUCTURE_TYPE_IMAGE_COMPRESSION_PROPERTIES_EXT: {
