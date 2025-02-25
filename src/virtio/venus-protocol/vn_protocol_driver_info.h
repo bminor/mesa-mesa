@@ -156,7 +156,7 @@ static const struct vn_info_extension _vn_info_extensions[137] = {
    { "VK_KHR_vertex_attribute_divisor", 526, 1 },
    { "VK_KHR_vulkan_memory_model", 212, 3 },
    { "VK_KHR_zero_initialize_workgroup_memory", 326, 1 },
-   { "VK_MESA_venus_protocol", 385, 2 },
+   { "VK_MESA_venus_protocol", 385, 3 },
    { "VK_VALVE_mutable_descriptor_type", 352, 1 },
 };
 
