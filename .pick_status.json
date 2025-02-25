@@ -1174,7 +1174,7 @@
         "description": "anv/bvh: Fix encoder handling sparse buffer",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2fe57947e378e3feb8e46069175a7243d4e296e8",
         "notes": null
