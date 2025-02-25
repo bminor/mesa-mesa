@@ -521,61 +521,41 @@ hk_merge_render_iview(struct hk_rendering_state *render,
 static void
 hk_pack_zls_control(struct agx_zls_control_packed *packed,
                     struct ail_layout *z_layout, struct ail_layout *s_layout,
-                    const VkRenderingAttachmentInfo *attach_z,
-                    const VkRenderingAttachmentInfo *attach_s,
+                    const VkRenderingAttachmentInfo *z,
+                    const VkRenderingAttachmentInfo *s,
                     bool incomplete_render_area, bool partial_render)
 {
-   agx_pack(packed, ZLS_CONTROL, zls_control) {
-      if (z_layout) {
-         /* XXX: Dropping Z stores is wrong if the render pass gets split into
-          * multiple control streams (can that ever happen?) We need more ZLS
-          * variants. Force || true for now.
-          */
-         zls_control.z_store_enable =
-            attach_z->storeOp == VK_ATTACHMENT_STORE_OP_STORE ||
-            attach_z->resolveMode != VK_RESOLVE_MODE_NONE || partial_render ||
-            true;
+   struct agx_zls zls = {0};
 
-         zls_control.z_load_enable =
-            attach_z->loadOp == VK_ATTACHMENT_LOAD_OP_LOAD || partial_render ||
-            incomplete_render_area;
+   if (z) {
+      /* XXX: Dropping Z stores is wrong if the render pass gets split into
+       * multiple control streams (can that ever happen?) We need more ZLS
+       * variants. Force || true for now.
+       */
+      zls.z_store = z->storeOp == VK_ATTACHMENT_STORE_OP_STORE ||
+                    z->resolveMode != VK_RESOLVE_MODE_NONE || partial_render ||
+                    true;
 
-         zls_control.z_load_tiling = zls_control.z_store_tiling =
-            agx_translate_zls_tiling(z_layout->tiling);
-
-         zls_control.z_load_compress = zls_control.z_store_compress =
-            z_layout->compressed;
-
-         if (z_layout->format == PIPE_FORMAT_Z16_UNORM) {
-            zls_control.z_format = AGX_ZLS_FORMAT_16;
-         } else {
-            zls_control.z_format = AGX_ZLS_FORMAT_32F;
-         }
-      }
-
-      if (s_layout) {
-         /* TODO:
-          * Fail
-          * dEQP-VK.renderpass.dedicated_allocation.formats.d32_sfloat_s8_uint.input.dont_care.store.self_dep_clear_draw_use_input_aspect
-          * without the force
-          * .. maybe a VkRenderPass emulation bug.
-          */
-         zls_control.s_store_enable =
-            attach_s->storeOp == VK_ATTACHMENT_STORE_OP_STORE ||
-            attach_s->resolveMode != VK_RESOLVE_MODE_NONE || partial_render ||
-            true;
-
-         zls_control.s_load_enable =
-            attach_s->loadOp == VK_ATTACHMENT_LOAD_OP_LOAD || partial_render ||
-            incomplete_render_area;
-
-         zls_control.s_load_tiling = zls_control.s_store_tiling =
-            agx_translate_zls_tiling(s_layout->tiling);
-
-         zls_control.s_load_compress = zls_control.s_store_compress =
-            s_layout->compressed;
-      }
+      zls.z_load = z->loadOp == VK_ATTACHMENT_LOAD_OP_LOAD || partial_render ||
+                   incomplete_render_area;
    }
+
+   if (s) {
+      /* TODO:
+       * Fail
+       * dEQP-VK.renderpass.dedicated_allocation.formats.d32_sfloat_s8_uint.input.dont_care.store.self_dep_clear_draw_use_input_aspect
+       * without the force
+       * .. maybe a VkRenderPass emulation bug.
+       */
+      zls.s_store = s->storeOp == VK_ATTACHMENT_STORE_OP_STORE ||
+                    s->resolveMode != VK_RESOLVE_MODE_NONE || partial_render ||
+                    true;
+
+      zls.s_load = s->loadOp == VK_ATTACHMENT_LOAD_OP_LOAD || partial_render ||
+                   incomplete_render_area;
+   }
+
+   agx_pack_zls_control(packed, z_layout, s_layout, &zls);
 }
 
 VKAPI_ATTR void VKAPI_CALL
