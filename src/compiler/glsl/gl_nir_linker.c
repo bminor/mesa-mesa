@@ -555,11 +555,18 @@ set_always_active_io(nir_shader *shader, nir_variable_mode io_mode)
 static void
 disable_varying_optimizations_for_sso(struct gl_shader_program *prog)
 {
-   unsigned first, last;
    assert(prog->SeparateShader);
 
-   first = MESA_SHADER_MESH_STAGES;
-   last = 0;
+   if (prog->_LinkedShaders[MESA_SHADER_MESH]) {
+      if (!prog->_LinkedShaders[MESA_SHADER_FRAGMENT]) {
+         set_always_active_io(prog->_LinkedShaders[MESA_SHADER_MESH]->Program->nir,
+                              nir_var_shader_out);
+      }
+      return;
+   }
+
+   unsigned first = MESA_SHADER_MESH_STAGES;
+   unsigned last = 0;
 
    /* Determine first and last stage. Excluding the compute stage */
    for (unsigned i = 0; i < MESA_SHADER_COMPUTE; i++) {
@@ -573,7 +580,7 @@ disable_varying_optimizations_for_sso(struct gl_shader_program *prog)
    if (first == MESA_SHADER_MESH_STAGES)
       return;
 
-   for (unsigned stage = 0; stage < MESA_SHADER_MESH_STAGES; stage++) {
+   for (unsigned stage = 0; stage < MESA_SHADER_STAGES; stage++) {
       if (!prog->_LinkedShaders[stage])
          continue;
 
