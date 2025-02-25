@@ -81,6 +81,10 @@ struct vn_physical_device {
 
    VkDriverId renderer_driver_id;
 
+   /* Static storage so that host copy properties query can be done once. */
+   VkImageLayout copy_src_layouts[64];
+   VkImageLayout copy_dst_layouts[64];
+
    VkQueueFamilyProperties2 *queue_family_properties;
    VkQueueFamilyGlobalPriorityProperties *global_priority_properties;
    uint32_t queue_family_count;

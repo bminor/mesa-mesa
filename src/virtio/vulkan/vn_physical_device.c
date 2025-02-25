@@ -138,6 +138,7 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
       VkPhysicalDeviceDynamicRenderingLocalReadFeatures
          dynamic_rendering_local_read;
       VkPhysicalDeviceGlobalPriorityQueryFeatures global_priority_query;
+      VkPhysicalDeviceHostImageCopyFeatures host_image_copy;
       VkPhysicalDeviceIndexTypeUint8Features index_type_uint8;
       VkPhysicalDeviceLineRasterizationFeatures line_rasterization;
       VkPhysicalDeviceMaintenance5Features maintenance_5;
@@ -257,6 +258,7 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
       VN_ADD_PNEXT(feats2, VULKAN_1_4_FEATURES, local_feats.vulkan_1_4);
    } else {
       VN_ADD_PNEXT_EXT(feats2, GLOBAL_PRIORITY_QUERY_FEATURES, local_feats.global_priority_query, exts->KHR_global_priority || exts->EXT_global_priority_query);
+      VN_ADD_PNEXT_EXT(feats2, HOST_IMAGE_COPY_FEATURES, local_feats.host_image_copy, exts->EXT_host_image_copy);
       VN_ADD_PNEXT_EXT(feats2, INDEX_TYPE_UINT8_FEATURES, local_feats.index_type_uint8, exts->KHR_index_type_uint8 || exts->EXT_index_type_uint8);
       VN_ADD_PNEXT_EXT(feats2, LINE_RASTERIZATION_FEATURES, local_feats.line_rasterization, exts->KHR_line_rasterization || exts->EXT_line_rasterization);
       VN_ADD_PNEXT_EXT(feats2, MAINTENANCE_5_FEATURES, local_feats.maintenance_5, exts->KHR_maintenance5);
@@ -310,10 +312,6 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
 
    struct vk_features *feats = &physical_dev->base.base.supported_features;
    vk_set_physical_device_features(feats, &feats2);
-
-   if (renderer_version >= VK_API_VERSION_1_4 &&
-       !physical_dev->base.base.supported_extensions.EXT_host_image_copy)
-      feats->hostImageCopy = false;
 
    /* Enable features for extensions natively implemented in Venus driver.
     * See vn_physical_device_get_native_extensions.
@@ -432,17 +430,6 @@ vn_physical_device_sanitize_properties(struct vn_physical_device *physical_dev)
    props->conformanceVersion.patch = 0;
 
    vn_physical_device_init_uuids(physical_dev);
-
-   if (physical_dev->renderer_version >= VK_API_VERSION_1_4 &&
-       !physical_dev->base.base.supported_extensions.EXT_host_image_copy) {
-      props->copySrcLayoutCount = 0;
-      props->pCopySrcLayouts = NULL;
-      props->copyDstLayoutCount = 0;
-      props->pCopyDstLayouts = NULL;
-      memset(props->optimalTilingLayoutUUID, 0,
-             sizeof(props->optimalTilingLayoutUUID));
-      props->identicalMemoryTypeRequirements = false;
-   }
 }
 
 static void
@@ -487,6 +474,7 @@ vn_physical_device_init_properties(struct vn_physical_device *physical_dev)
 
       /* Vulkan 1.4 */
       VkPhysicalDeviceVulkan14Properties vulkan_1_4;
+      VkPhysicalDeviceHostImageCopyProperties host_image_copy;
       VkPhysicalDeviceLineRasterizationProperties line_rasterization;
       VkPhysicalDeviceMaintenance5Properties maintenance_5;
       VkPhysicalDeviceMaintenance6Properties maintenance_6;
@@ -558,8 +546,21 @@ vn_physical_device_init_properties(struct vn_physical_device *physical_dev)
 
    /* Vulkan 1.4 */
    if (renderer_version >= VK_API_VERSION_1_4) {
+      local_props.vulkan_1_4.copySrcLayoutCount = ARRAY_SIZE(physical_dev->copy_src_layouts);
+      local_props.vulkan_1_4.pCopySrcLayouts = physical_dev->copy_src_layouts;
+      local_props.vulkan_1_4.copyDstLayoutCount = ARRAY_SIZE(physical_dev->copy_dst_layouts);
+      local_props.vulkan_1_4.pCopyDstLayouts = physical_dev->copy_dst_layouts;
+
       VN_ADD_PNEXT(props2, VULKAN_1_4_PROPERTIES, local_props.vulkan_1_4);
    } else {
+      if (exts->EXT_host_image_copy) {
+         local_props.host_image_copy.copySrcLayoutCount = ARRAY_SIZE(physical_dev->copy_src_layouts);
+         local_props.host_image_copy.pCopySrcLayouts = physical_dev->copy_src_layouts;
+         local_props.host_image_copy.copyDstLayoutCount = ARRAY_SIZE(physical_dev->copy_dst_layouts);
+         local_props.host_image_copy.pCopyDstLayouts = physical_dev->copy_dst_layouts;
+      }
+
+      VN_ADD_PNEXT_EXT(props2, HOST_IMAGE_COPY_PROPERTIES, local_props.host_image_copy, exts->EXT_host_image_copy);
       VN_ADD_PNEXT_EXT(props2, LINE_RASTERIZATION_PROPERTIES, local_props.line_rasterization, exts->KHR_line_rasterization || exts->EXT_line_rasterization);
       VN_ADD_PNEXT_EXT(props2, MAINTENANCE_5_PROPERTIES, local_props.maintenance_5, exts->KHR_maintenance5);
       VN_ADD_PNEXT_EXT(props2, MAINTENANCE_6_PROPERTIES, local_props.maintenance_6, exts->KHR_maintenance6);
@@ -633,6 +634,7 @@ vn_physical_device_init_properties(struct vn_physical_device *physical_dev)
    if (renderer_version >= VK_API_VERSION_1_4) {
       VN_SET_VK_PROPS(props, &local_props.vulkan_1_4);
    } else {
+      VN_SET_VK_PROPS_EXT(props, &local_props.host_image_copy, exts->EXT_host_image_copy);
       VN_SET_VK_PROPS_EXT(props, &local_props.line_rasterization, exts->KHR_line_rasterization || exts->EXT_line_rasterization);
       VN_SET_VK_PROPS_EXT(props, &local_props.maintenance_5, exts->KHR_maintenance5);
       VN_SET_VK_PROPS_EXT(props, &local_props.maintenance_6, exts->KHR_maintenance6);
@@ -1044,6 +1046,8 @@ vn_physical_device_get_passthrough_extensions(
    const struct vn_physical_device *physical_dev,
    struct vk_device_extension_table *exts)
 {
+   struct vn_renderer *renderer = physical_dev->instance->renderer;
+
    *exts = (struct vk_device_extension_table){
       /* promoted to VK_VERSION_1_1 */
       .KHR_16bit_storage = true,
@@ -1134,17 +1138,8 @@ vn_physical_device_get_passthrough_extensions(
       .KHR_shader_float_controls2 = true,
       .KHR_shader_subgroup_rotate = true,
       .KHR_vertex_attribute_divisor = true,
-      /* The implementation would be inefficient via venus due to too many
-       * memcpy and roundtrips. Venus favors device side copy and blit so that
-       * they can be batched for optimal performance. Meanwhile, supporting
-       * this extension requires new venus protocol level support to handle
-       * implicitly sized host pointers as well as filling returned blob
-       * inside "in" structs. e.g. info structs are usually "in" structs while
-       * properties structs are usually "out" structs. So venus won't
-       * implement host copy but will always emulate an additional queue that
-       * supports VK_QUEUE_TRANSFER_BIT to satisfy Vulkan 1.4 requirements.
-       */
-      .EXT_host_image_copy = false,
+      .EXT_host_image_copy =
+         renderer->info.vk_mesa_venus_protocol_spec_version >= 3,
       .EXT_pipeline_protected_access = true,
       .EXT_pipeline_robustness = true,
 
