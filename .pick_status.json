@@ -1164,7 +1164,7 @@
         "description": "anv/bvh: Fix copy shader handling sparse buffer",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "692b5fa9f22d69f5761f44f3b62c587c45becdc4",
         "notes": null
