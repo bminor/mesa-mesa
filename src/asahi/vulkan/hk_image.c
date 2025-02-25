@@ -1696,8 +1696,15 @@ hk_copy_image_to_image_cpu(struct hk_device *device, struct hk_image *src_image,
          unsigned dst_level = info->dstSubresource.mipLevel;
          uint32_t block_width = src_layout->tilesize_el[src_level].width_el;
          uint32_t block_height = src_layout->tilesize_el[src_level].height_el;
+
+         /* Twiddled images have a single "tile" sized to the entire image, so
+          * break it up so we'll fit.
+          */
+         if (src_layout->tiling == AIL_TILING_TWIDDLED) {
+            block_width = block_height = MIN2(block_width, 32);
+         }
+
          uint32_t temp_pitch = block_width * src_block_B;
-         ;
 
          for (unsigned by = src_offset.y / block_height;
               by * block_height < src_offset.y + extent.height; by++) {
@@ -1713,6 +1720,8 @@ hk_copy_image_to_image_cpu(struct hk_device *device, struct hk_image *src_image,
                uint32_t width =
                   MIN2((bx + 1) * block_width, src_offset.x + extent.width) -
                   src_x_start;
+
+               assert(height * temp_pitch <= ARRAY_SIZE(temp_tile));
 
                ail_detile((void *)src, temp_tile, src_layout, src_level,
                           temp_pitch, src_x_start, src_y_start, width, height);
