@@ -143,7 +143,7 @@ static void clip_and_emit_line( struct elk_clip_compile *c )
    elk_clip_init_clipmask(c);
 
    /* -ve rhw workaround */
-   if (p->devinfo->has_negative_rhw_bug) {
+   if (c->has_negative_rhw_bug) {
       elk_AND(p, elk_null_reg(), get_element_ud(c->reg.R0, 2),
               elk_imm_ud(1<<20));
       elk_inst_set_cond_modifier(p->devinfo, elk_last_inst, ELK_CONDITIONAL_NZ);
@@ -201,7 +201,7 @@ static void clip_and_emit_line( struct elk_clip_compile *c )
               * Both can be negative on GM965/G965 due to RHW workaround
               * if so, this object should be rejected.
               */
-             if (p->devinfo->has_negative_rhw_bug) {
+             if (c->has_negative_rhw_bug) {
                  elk_CMP(p, vec1(elk_null_reg()), ELK_CONDITIONAL_LE, c->reg.dp0, elk_imm_f(0.0));
                  elk_IF(p, ELK_EXECUTE_1);
                  {
@@ -227,7 +227,7 @@ static void clip_and_emit_line( struct elk_clip_compile *c )
 
              /* If both are positive, do nothing */
              /* Only on GM965/G965 */
-             if (p->devinfo->has_negative_rhw_bug) {
+             if (c->has_negative_rhw_bug) {
                  elk_CMP(p, vec1(elk_null_reg()), ELK_CONDITIONAL_L, c->reg.dp0, elk_imm_f(0.0));
                  elk_IF(p, ELK_EXECUTE_1);
              }
@@ -243,7 +243,7 @@ static void clip_and_emit_line( struct elk_clip_compile *c )
                                            ELK_PREDICATE_NORMAL);
              }
 
-             if (p->devinfo->has_negative_rhw_bug) {
+             if (c->has_negative_rhw_bug) {
                  elk_ENDIF(p);
              }
          }

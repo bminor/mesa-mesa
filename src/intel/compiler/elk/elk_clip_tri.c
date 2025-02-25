@@ -628,7 +628,7 @@ void elk_emit_tri_clip( struct elk_clip_compile *c )
 
    /* if -ve rhw workaround bit is set,
       do cliptest */
-   if (p->devinfo->has_negative_rhw_bug) {
+   if (c->has_negative_rhw_bug) {
       elk_AND(p, elk_null_reg(), get_element_ud(c->reg.R0, 2),
               elk_imm_ud(1<<20));
       elk_inst_set_cond_modifier(p->devinfo, elk_last_inst, ELK_CONDITIONAL_NZ);

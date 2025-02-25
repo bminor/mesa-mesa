@@ -111,7 +111,6 @@ static const struct intel_device_info intel_device_info_gfx3 = {
 static const struct intel_device_info intel_device_info_i965 = {
    .ver = 4,
    .platform = INTEL_PLATFORM_I965,
-   .has_negative_rhw_bug = true,
    .num_slices = 1,
    .num_subslices = { 1, },
    .max_eus_per_subslice = 8,

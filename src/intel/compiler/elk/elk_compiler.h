@@ -116,6 +116,9 @@ struct elk_compiler {
     */
    bool indirect_ubos_use_sampler;
 
+   /** Whether we have an original 965G/GM clipping bug */
+   bool has_negative_rhw_bug;
+
    /**
     * Calling the ra_allocate function after each register spill can take
     * several minutes. This option speeds up shader compilation by spilling

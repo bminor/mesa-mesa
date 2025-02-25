@@ -47,6 +47,8 @@ elk_compiler_create(void *mem_ctx, const struct intel_device_info *devinfo)
 
    compiler->precise_trig = debug_get_bool_option("INTEL_PRECISE_TRIG", false);
 
+   compiler->has_negative_rhw_bug = devinfo->verx10 == 40;
+
    /* Default to the sampler since that's what we've done since forever */
    compiler->indirect_ubos_use_sampler = true;
 

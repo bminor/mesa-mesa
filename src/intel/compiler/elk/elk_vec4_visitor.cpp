@@ -834,7 +834,7 @@ vec4_visitor::emit_psiz_and_flags(dst_reg reg)
    if (devinfo->ver < 6 &&
        ((prog_data->vue_map.slots_valid & VARYING_BIT_PSIZ) ||
         output_reg[VARYING_SLOT_CLIP_DIST0][0].file != BAD_FILE ||
-        devinfo->has_negative_rhw_bug)) {
+        compiler->has_negative_rhw_bug)) {
       dst_reg header1 = dst_reg(this, glsl_uvec4_type());
       dst_reg header1_w = header1;
       header1_w.writemask = WRITEMASK_W;
@@ -875,7 +875,7 @@ vec4_visitor::emit_psiz_and_flags(dst_reg reg)
        * Later, clipping will detect ucp[6] and ensure the primitive is
        * clipped against all fixed planes.
        */
-      if (devinfo->has_negative_rhw_bug &&
+      if (compiler->has_negative_rhw_bug &&
           output_reg[ELK_VARYING_SLOT_NDC][0].file != BAD_FILE) {
          src_reg ndc_w = src_reg(output_reg[ELK_VARYING_SLOT_NDC][0]);
          ndc_w.swizzle = ELK_SWIZZLE_WWWW;

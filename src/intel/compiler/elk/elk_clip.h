@@ -94,6 +94,7 @@ struct elk_clip_compile {
    GLuint last_tmp;
 
    bool need_direction;
+   bool has_negative_rhw_bug;
 
    struct intel_vue_map vue_map;
 };

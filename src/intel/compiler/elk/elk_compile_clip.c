@@ -42,6 +42,7 @@ elk_compile_clip(const struct elk_compiler *compiler,
    elk_init_codegen(&compiler->isa, &c.func, mem_ctx);
 
    c.func.single_program_flow = 1;
+   c.has_negative_rhw_bug = compiler->has_negative_rhw_bug;
 
    c.key = *key;
    c.vue_map = *vue_map;
