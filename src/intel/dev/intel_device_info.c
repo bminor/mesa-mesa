@@ -439,7 +439,6 @@ static const struct intel_device_info intel_device_info_hsw_gt3 = {
 #define GFX8_URB_MIN_ENTRIES                          \
    .min_entries = {                                   \
       [MESA_SHADER_VERTEX]    = 64,                   \
-      [MESA_SHADER_TESS_CTRL] = 1,                    \
       [MESA_SHADER_TESS_EVAL] = 34,                   \
       [MESA_SHADER_GEOMETRY]  = 2,                    \
    }
