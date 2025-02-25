@@ -406,8 +406,7 @@ nir_convert_to_lcssa(nir_shader *shader, bool skip_invariants, bool skip_bool_in
       foreach_list_typed(nir_cf_node, node, node, &impl->body)
          convert_to_lcssa(node, state);
 
-      bool impl_progress = state->progress;
-      progress |= nir_progress(impl_progress, impl,
+      progress |= nir_progress(state->progress, impl,
                                nir_metadata_control_flow);
    }
 

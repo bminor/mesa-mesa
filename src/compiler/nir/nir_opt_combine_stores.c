@@ -401,10 +401,7 @@ combine_stores_impl(struct combine_stores_state *state, nir_function_impl *impl)
    nir_foreach_block(block, impl)
       combine_stores_block(state, block);
 
-   bool impl_progress = state->progress;
-   nir_progress(impl_progress, impl, nir_metadata_control_flow);
-
-   return state->progress;
+   return nir_progress(state->progress, impl, nir_metadata_control_flow);
 }
 
 bool
