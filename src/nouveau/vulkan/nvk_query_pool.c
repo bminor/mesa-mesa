@@ -451,13 +451,13 @@ nvk_cmd_begin_end_query(struct nvk_cmd_buffer *cmd,
          P_NV9097_SET_REPORT_SEMAPHORE_B(p, report_addr);
          P_NV9097_SET_REPORT_SEMAPHORE_C(p, 0);
          P_NV9097_SET_REPORT_SEMAPHORE_D(p, {
-               .operation = OPERATION_REPORT_ONLY,
-               .pipeline_location = PIPELINE_LOCATION_STREAMING_OUTPUT,
-               .report = xfb_reports[i],
-               .structure_size = STRUCTURE_SIZE_FOUR_WORDS,
-               .sub_report = index,
-               .flush_disable = true,
-               });
+            .operation = OPERATION_REPORT_ONLY,
+            .pipeline_location = PIPELINE_LOCATION_STREAMING_OUTPUT,
+            .report = xfb_reports[i],
+            .structure_size = STRUCTURE_SIZE_FOUR_WORDS,
+            .sub_report = index,
+            .flush_disable = true,
+         });
          report_addr += 2 * sizeof(struct nvk_query_report);
       }
       break;
