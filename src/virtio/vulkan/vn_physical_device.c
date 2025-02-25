@@ -2117,7 +2117,7 @@ vn_modifier_plane_count(struct vn_physical_device *physical_dev,
 
    uint32_t plane_count = 0;
    for (uint32_t i = 0; i < modifier_list.drmFormatModifierCount; i++) {
-      const struct VkDrmFormatModifierPropertiesEXT *props =
+      const VkDrmFormatModifierPropertiesEXT *props =
          &modifier_list.pDrmFormatModifierProperties[i];
       if (modifier == props->drmFormatModifier) {
          plane_count = props->drmFormatModifierPlaneCount;
@@ -2158,8 +2158,8 @@ vn_image_get_image_format_key(
       vk_foreach_struct_const(src, format_info->pNext) {
          switch (src->sType) {
          case VK_STRUCTURE_TYPE_IMAGE_COMPRESSION_CONTROL_EXT: {
-            struct VkImageCompressionControlEXT *compression_control =
-               (struct VkImageCompressionControlEXT *)src;
+            VkImageCompressionControlEXT *compression_control =
+               (VkImageCompressionControlEXT *)src;
             _mesa_sha1_update(&sha1_ctx, &compression_control->flags,
                               sizeof(VkImageCompressionFlagsEXT));
             _mesa_sha1_update(
@@ -2169,8 +2169,8 @@ vn_image_get_image_format_key(
             break;
          }
          case VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO: {
-            struct VkImageFormatListCreateInfo *format_list =
-               (struct VkImageFormatListCreateInfo *)src;
+            VkImageFormatListCreateInfo *format_list =
+               (VkImageFormatListCreateInfo *)src;
             _mesa_sha1_update(
                &sha1_ctx, format_list->pViewFormats,
                sizeof(VkFormat) * format_list->viewFormatCount);
@@ -2178,23 +2178,22 @@ vn_image_get_image_format_key(
             break;
          }
          case VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_CREATE_INFO: {
-            struct VkImageStencilUsageCreateInfo *stencil_usage =
-               (struct VkImageStencilUsageCreateInfo *)src;
+            VkImageStencilUsageCreateInfo *stencil_usage =
+               (VkImageStencilUsageCreateInfo *)src;
             _mesa_sha1_update(&sha1_ctx, &stencil_usage->stencilUsage,
                               sizeof(VkImageUsageFlags));
             break;
          }
          case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_IMAGE_FORMAT_INFO: {
-            struct VkPhysicalDeviceExternalImageFormatInfo *ext_image =
-               (struct VkPhysicalDeviceExternalImageFormatInfo *)src;
+            VkPhysicalDeviceExternalImageFormatInfo *ext_image =
+               (VkPhysicalDeviceExternalImageFormatInfo *)src;
             _mesa_sha1_update(&sha1_ctx, &ext_image->handleType,
                               sizeof(VkExternalMemoryHandleTypeFlagBits));
             break;
          }
          case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_DRM_FORMAT_MODIFIER_INFO_EXT: {
-            struct VkPhysicalDeviceImageDrmFormatModifierInfoEXT
-               *modifier_info =
-                  (struct VkPhysicalDeviceImageDrmFormatModifierInfoEXT *)src;
+            VkPhysicalDeviceImageDrmFormatModifierInfoEXT *modifier_info =
+               (VkPhysicalDeviceImageDrmFormatModifierInfoEXT *)src;
             _mesa_sha1_update(&sha1_ctx, &modifier_info->drmFormatModifier,
                               sizeof(uint64_t));
             if (modifier_info->sharingMode == VK_SHARING_MODE_CONCURRENT) {
@@ -2205,8 +2204,8 @@ vn_image_get_image_format_key(
             break;
          }
          case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_VIEW_IMAGE_FORMAT_INFO_EXT: {
-            struct VkPhysicalDeviceImageViewImageFormatInfoEXT *view_image =
-               (struct VkPhysicalDeviceImageViewImageFormatInfoEXT *)src;
+            VkPhysicalDeviceImageViewImageFormatInfoEXT *view_image =
+               (VkPhysicalDeviceImageViewImageFormatInfoEXT *)src;
             _mesa_sha1_update(&sha1_ctx, &view_image->imageViewType,
                               sizeof(VkImageViewType));
             break;
@@ -2268,7 +2267,7 @@ vn_image_get_image_format_key(
 static bool
 vn_image_init_format_from_cache(
    struct vn_physical_device *physical_dev,
-   struct VkImageFormatProperties2 *pImageFormatProperties,
+   VkImageFormatProperties2 *pImageFormatProperties,
    VkResult *cached_result,
    uint8_t *key)
 {
@@ -2296,15 +2295,15 @@ vn_image_init_format_from_cache(
          vk_foreach_struct_const(src, pImageFormatProperties->pNext) {
             switch (src->sType) {
             case VK_STRUCTURE_TYPE_EXTERNAL_IMAGE_FORMAT_PROPERTIES: {
-               struct VkExternalImageFormatProperties *ext_image =
-                  (struct VkExternalImageFormatProperties *)src;
+               VkExternalImageFormatProperties *ext_image =
+                  (VkExternalImageFormatProperties *)src;
                ext_image->externalMemoryProperties =
                   cache_entry->properties.ext_image.externalMemoryProperties;
                break;
             }
             case VK_STRUCTURE_TYPE_IMAGE_COMPRESSION_PROPERTIES_EXT: {
-               struct VkImageCompressionPropertiesEXT *compression =
-                  (struct VkImageCompressionPropertiesEXT *)src;
+               VkImageCompressionPropertiesEXT *compression =
+                  (VkImageCompressionPropertiesEXT *)src;
                compression->imageCompressionFlags =
                   cache_entry->properties.compression.imageCompressionFlags;
                compression->imageCompressionFixedRateFlags =
@@ -2313,10 +2312,8 @@ vn_image_init_format_from_cache(
                break;
             }
             case VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_IMAGE_FORMAT_PROPERTIES: {
-               struct VkSamplerYcbcrConversionImageFormatProperties
-                  *ycbcr_conversion =
-                     (struct VkSamplerYcbcrConversionImageFormatProperties *)
-                        src;
+               VkSamplerYcbcrConversionImageFormatProperties *ycbcr_conversion =
+                  (VkSamplerYcbcrConversionImageFormatProperties *)src;
                ycbcr_conversion->combinedImageSamplerDescriptorCount =
                   cache_entry->properties.ycbcr_conversion
                      .combinedImageSamplerDescriptorCount;
@@ -2342,7 +2339,7 @@ static void
 vn_image_store_format_in_cache(
    struct vn_physical_device *physical_dev,
    uint8_t *key,
-   struct VkImageFormatProperties2 *pImageFormatProperties,
+   VkImageFormatProperties2 *pImageFormatProperties,
    VkResult cached_result)
 {
    const VkAllocationCallbacks *alloc =
@@ -2383,17 +2380,17 @@ vn_image_store_format_in_cache(
          switch (src->sType) {
          case VK_STRUCTURE_TYPE_EXTERNAL_IMAGE_FORMAT_PROPERTIES: {
             cache_entry->properties.ext_image =
-               *((struct VkExternalImageFormatProperties *)src);
+               *((VkExternalImageFormatProperties *)src);
             break;
          }
          case VK_STRUCTURE_TYPE_IMAGE_COMPRESSION_PROPERTIES_EXT: {
             cache_entry->properties.compression =
-               *((struct VkImageCompressionPropertiesEXT *)src);
+               *((VkImageCompressionPropertiesEXT *)src);
             break;
          }
          case VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_IMAGE_FORMAT_PROPERTIES: {
             cache_entry->properties.ycbcr_conversion =
-               *((struct VkSamplerYcbcrConversionImageFormatProperties *)src);
+               *((VkSamplerYcbcrConversionImageFormatProperties *)src);
             break;
          }
          default:

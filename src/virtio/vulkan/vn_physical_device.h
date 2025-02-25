@@ -25,7 +25,7 @@ struct vn_format_properties_entry {
 };
 
 struct vn_image_format_properties {
-   struct VkImageFormatProperties2 format;
+   VkImageFormatProperties2 format;
    VkResult cached_result;
 
    VkExternalImageFormatProperties ext_image;
