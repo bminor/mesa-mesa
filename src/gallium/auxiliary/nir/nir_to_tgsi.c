@@ -548,7 +548,7 @@ ntt_allocate_regs_unoptimized(struct ntt_compile *c, nir_function_impl *impl)
  * nir_src's first component, returning the constant offset and replacing *src
  * with the non-constant component.
  */
-static const uint32_t
+static uint32_t
 ntt_extract_const_src_offset(nir_src *src)
 {
    nir_scalar s = nir_get_scalar(src->ssa, 0);
