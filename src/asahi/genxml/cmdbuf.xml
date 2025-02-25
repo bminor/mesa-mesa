@@ -1100,15 +1100,20 @@
     <value name="16" value="2"/>
   </enum>
 
+  <enum name="ZLS Tiling">
+    <value name="GPU" value="0"/>
+    <value name="Twiddled" value="1"/>
+  </enum>
+
   <struct name="ZLS Control" size="8">
     <field name="Unknown 0" start="0" size="1" type="bool"/>
-    <field name="Unknown 1" start="1" size="1" type="bool"/>
+    <field name="Z Load Tiling" start="1" size="1" type="ZLS Tiling"/>
     <field name="Z Compress 1" start="2" size="1" type="bool"/>
-    <field name="Unknown 3" start="3" size="1" type="bool"/>
+    <field name="S Load Tiling" start="3" size="1" type="ZLS Tiling"/>
     <field name="S Compress 1" start="4" size="1" type="bool"/>
-    <field name="Unknown 5" start="5" size="1" type="bool"/>
+    <field name="Z Store Tiling" start="5" size="1" type="ZLS Tiling"/>
     <field name="Z Compress 2" start="6" size="1" type="bool"/>
-    <field name="Unknown 7" start="7" size="1" type="bool"/>
+    <field name="S Store Tiling" start="7" size="1" type="ZLS Tiling"/>
     <field name="S Compress 2" start="8" size="1" type="bool"/>
     <field name="S Load Enable" start="14" size="1" type="bool"/>
     <field name="Z Load Enable" start="15" size="1" type="bool"/>
