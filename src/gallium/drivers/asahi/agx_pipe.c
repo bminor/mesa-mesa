@@ -503,7 +503,7 @@ agx_resource_create_with_modifiers(struct pipe_screen *screen,
     * inferring the shader image flag. Do so to avoid reallocation in case the
     * resource is later used as an image.
     */
-   if (nresource->modifier != DRM_FORMAT_MOD_APPLE_GPU_TILED_COMPRESSED &&
+   if (!ail_is_drm_modifier_compressed(nresource->modifier) &&
        templ->depth0 == 1) {
 
       nresource->base.bind |= PIPE_BIND_SHADER_IMAGE;
