@@ -1856,28 +1856,12 @@ isl_choose_array_pitch_span(const struct isl_device *dev,
           */
          assert(info->levels == 1);
          return ISL_ARRAY_PITCH_SPAN_COMPACT;
+      } else if (phys_level0_sa->array_len == 1) {
+         /* The hardware will never use the QPitch. So choose the most
+          * compact QPitch possible in order to conserve memory.
+          */
+         return ISL_ARRAY_PITCH_SPAN_COMPACT;
       } else {
-         if ((ISL_GFX_VER(dev) == 5 || ISL_GFX_VER(dev) == 6) &&
-             ISL_DEV_USE_SEPARATE_STENCIL(dev) &&
-             isl_surf_usage_is_stencil(info->usage)) {
-            /* [ILK-SNB] Errata from the Sandy Bridge PRM >> Volume 4 Part 1:
-             * Graphics Core >> Section 7.18.3.7: Surface Arrays:
-             *
-             *    The separate stencil buffer does not support mip mapping,
-             *    thus the storage for LODs other than LOD 0 is not needed.
-             */
-            assert(info->levels == 1);
-            assert(phys_level0_sa->array_len == 1);
-            return ISL_ARRAY_PITCH_SPAN_COMPACT;
-         }
-
-         if (phys_level0_sa->array_len == 1) {
-            /* The hardware will never use the QPitch. So choose the most
-             * compact QPitch possible in order to conserve memory.
-             */
-            return ISL_ARRAY_PITCH_SPAN_COMPACT;
-         }
-
          return ISL_ARRAY_PITCH_SPAN_FULL;
       }
 
