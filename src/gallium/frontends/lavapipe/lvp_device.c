@@ -802,7 +802,7 @@ lvp_get_properties(const struct lvp_physical_device *device, struct vk_propertie
    *p = (struct vk_properties) {
       /* Vulkan 1.0 */
       .apiVersion = LVP_API_VERSION,
-      .driverVersion = 1,
+      .driverVersion = vk_get_driver_version(),
       .vendorID = VK_VENDOR_ID_MESA,
       .deviceID = 0,
       .deviceType = VK_PHYSICAL_DEVICE_TYPE_CPU,
