@@ -279,7 +279,6 @@ Struct("intel_device_info",
         Member("bool", "has_64bit_int", compiler_field=True),
         Member("bool", "has_integer_dword_mul", compiler_field=True),
         Member("bool", "has_compr4", compiler_field=True),
-        Member("bool", "has_surface_tile_offset"),
         Member("bool", "supports_simd16_3src", compiler_field=True),
         Member("bool", "disable_ccs_repack"),
 

@@ -2907,8 +2907,7 @@ crocus_create_surface(struct pipe_context *ctx,
                                           res->base.b.target == PIPE_TEXTURE_3D ? 0 : tmpl->u.tex.first_layer,
                                           res->base.b.target == PIPE_TEXTURE_3D ? tmpl->u.tex.first_layer : 0,
                                           &temp_offset, &temp_x, &temp_y);
-      if (!devinfo->has_surface_tile_offset &&
-          (temp_x || temp_y)) {
+      if (devinfo->verx10 == 40 && (temp_x || temp_y)) {
          /* Original gfx4 hardware couldn't draw to a non-tile-aligned
           * destination.
           */
