@@ -93,6 +93,19 @@ agx_translate_layout(enum ail_tiling tiling)
    unreachable("Invalid tiling");
 }
 
+static inline enum agx_zls_tiling
+agx_translate_zls_tiling(enum ail_tiling tiling)
+{
+   switch (tiling) {
+   case AIL_TILING_GPU:
+      return AGX_ZLS_TILING_GPU;
+   case AIL_TILING_TWIDDLED:
+      return AGX_ZLS_TILING_TWIDDLED;
+   default:
+      unreachable("Invalid ZLS tiling");
+   }
+}
+
 static enum agx_sample_count
 agx_translate_sample_count(unsigned samples)
 {

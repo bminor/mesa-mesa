@@ -1280,6 +1280,8 @@ agx_cmdbuf(struct agx_device *dev, struct drm_asahi_cmd_render *c,
 
             zls_control.z_store_enable = (batch->resolve & PIPE_CLEAR_DEPTH);
             zls_control.z_load_enable = !clear && load;
+            zls_control.z_load_tiling = zls_control.z_store_tiling =
+               agx_translate_zls_tiling(zres->layout.tiling);
 
             c->depth.base = agx_map_texture_gpu(zres, first_layer) +
                             ail_get_level_offset_B(&zres->layout, level);
@@ -1291,8 +1293,6 @@ agx_cmdbuf(struct agx_device *dev, struct drm_asahi_cmd_render *c,
 
             unsigned stride_pages = zres->layout.layer_stride_B / AIL_PAGESIZE;
             c->depth.stride = ((stride_pages - 1) << 14) | 1;
-
-            assert(zres->layout.tiling != AIL_TILING_LINEAR && "must tile");
 
             if (zres->layout.compressed) {
                c->depth.comp_base =
@@ -1331,6 +1331,8 @@ agx_cmdbuf(struct agx_device *dev, struct drm_asahi_cmd_render *c,
 
             zls_control.s_store_enable = (batch->resolve & PIPE_CLEAR_STENCIL);
             zls_control.s_load_enable = !clear && load;
+            zls_control.s_load_tiling = zls_control.s_store_tiling =
+               agx_translate_zls_tiling(sres->layout.tiling);
 
             c->stencil.base = agx_map_texture_gpu(sres, first_layer) +
                               ail_get_level_offset_B(&sres->layout, level);
