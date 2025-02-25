@@ -254,7 +254,7 @@ radv_use_dcc_for_image_early(struct radv_device *device, struct radv_image *imag
       return false;
    }
 
-   if (image->shareable && image->vk.tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT)
+   if (image->vk.external_handle_types && image->vk.tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT)
       return false;
 
    /*
@@ -408,7 +408,7 @@ radv_use_htile_for_image(const struct radv_device *device, const struct radv_ima
        !(gfx_level == GFX10_3 && device->vk.enabled_features.attachmentFragmentShadingRate))
       return false;
 
-   return (image->vk.mip_levels == 1 || use_htile_for_mips) && !image->shareable;
+   return (image->vk.mip_levels == 1 || use_htile_for_mips) && !image->vk.external_handle_types;
 }
 
 static bool
@@ -1046,7 +1046,7 @@ radv_get_ac_surf_info(struct radv_device *device, const struct radv_image *image
    info.levels = image->vk.mip_levels;
    info.num_channels = vk_format_get_nr_components(image->vk.format);
 
-   if (!vk_format_is_depth_or_stencil(image->vk.format) && !image->shareable &&
+   if (!vk_format_is_depth_or_stencil(image->vk.format) && !image->vk.external_handle_types &&
        !(image->vk.create_flags & (VK_IMAGE_CREATE_SPARSE_ALIASED_BIT | VK_IMAGE_CREATE_ALIAS_BIT |
                                    VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) &&
        image->vk.tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
@@ -1408,11 +1408,6 @@ radv_image_create(VkDevice _device, const struct radv_image_create_info *create_
       /* This queue never really accesses the image. */
       image->queue_family_mask &= ~(1u << RADV_QUEUE_SPARSE);
    }
-
-   const VkExternalMemoryImageCreateInfo *external_info =
-      vk_find_struct_const(pCreateInfo->pNext, EXTERNAL_MEMORY_IMAGE_CREATE_INFO);
-
-   image->shareable = external_info;
 
    if (mod_list)
       modifier = radv_select_modifier(device, format, mod_list);

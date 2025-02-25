@@ -45,7 +45,6 @@ struct radv_image {
 
    unsigned queue_family_mask;
    bool exclusive;
-   bool shareable;
    bool dcc_sign_reinterpret;
    bool support_comp_to_single;
 
