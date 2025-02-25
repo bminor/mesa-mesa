@@ -1532,11 +1532,10 @@ static void try_allocate_var(pco_range *allocation_list,
                              int location,
                              unsigned dwords_each)
 {
-   nir_variable *var = nir_find_variable_with_location(nir, mode, location);
-
    if (!(bitset & BITFIELD64_BIT(location)))
       return;
 
+   nir_variable *var = nir_find_variable_with_location(nir, mode, location);
    assert(var);
 
    allocate_var(allocation_list, counter, var, dwords_each);
@@ -1640,11 +1639,6 @@ static void pvr_alloc_vs_varyings(pco_data *data, nir_shader *nir)
 {
    uint64_t vars_mask = nir->info.outputs_written &
                         BITFIELD64_RANGE(VARYING_SLOT_VAR0, MAX_VARYING);
-
-   /* Output position must be present. */
-   assert(nir_find_variable_with_location(nir,
-                                          nir_var_shader_out,
-                                          VARYING_SLOT_POS));
 
    /* Varying ordering is specific. */
    try_allocate_var(data->vs.varyings,
