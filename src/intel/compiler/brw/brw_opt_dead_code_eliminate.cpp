@@ -51,12 +51,18 @@ can_eliminate(const intel_device_info *devinfo, const brw_inst *inst,
  * Is it safe to omit the write, making the destination ARF null?
  */
 static bool
-can_omit_write(const brw_inst *inst)
+can_omit_write(const brw_compiler *compiler, const brw_inst *inst, bool late)
 {
    switch (inst->opcode) {
    case SHADER_OPCODE_MEMORY_ATOMIC_LOGICAL:
       return true;
    default:
+      /* Dead code elimination that occurs once after brw_lower_3src_null_dest
+       * should not generate more NULL destinations.
+       */
+      if (inst->is_3src(compiler) && late)
+         return false;
+
       /* We can eliminate the destination write for ordinary instructions,
        * but not most SENDs.
        */
@@ -100,6 +106,7 @@ bool
 brw_opt_dead_code_eliminate(brw_shader &s)
 {
    const intel_device_info *devinfo = s.devinfo;
+   const bool late = s.phase >= BRW_SHADER_PHASE_AFTER_LATE_LOWERING;
 
    bool progress = false;
 
@@ -123,7 +130,8 @@ brw_opt_dead_code_eliminate(brw_shader &s)
                result_live |= BITSET_TEST(live, var + i);
 
             if (!result_live &&
-                (can_omit_write(inst) || can_eliminate(devinfo, inst, flag_live))) {
+                (can_omit_write(s.compiler, inst, late) ||
+                 can_eliminate(devinfo, inst, flag_live))) {
                inst->dst = brw_reg(spread(retype(brw_null_reg(), inst->dst.type),
                                           inst->dst.stride));
                progress = true;
