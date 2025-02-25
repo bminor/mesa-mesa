@@ -428,16 +428,16 @@ try_optimize_scc_nocompare(pr_opt_ctx& ctx, aco_ptr<Instruction>& instr)
     * s_cbranch_scc1 BB3  ; inverted branch
     */
 
-   if ((instr->format != Format::PSEUDO_BRANCH || instr->operands.size() != 1 ||
-        instr->operands[0].physReg() != scc) &&
-       instr->opcode != aco_opcode::s_cselect_b32 && instr->opcode != aco_opcode::s_cselect_b64)
-      return;
-
-   /* For cselect, operand 2 is the SCC condition */
-   unsigned scc_op_idx = 0;
-   if (instr->opcode == aco_opcode::s_cselect_b32 || instr->opcode == aco_opcode::s_cselect_b64) {
-      scc_op_idx = 2;
+   int scc_op_idx = -1;
+   for (unsigned i = 0; i < instr->operands.size(); i++) {
+      if (instr->operands[i].isTemp() && instr->operands[i].physReg() == scc) {
+         scc_op_idx = i;
+         break;
+      }
    }
+
+   if (scc_op_idx < 0)
+      return;
 
    Idx wr_idx = last_writer_idx(ctx, instr->operands[scc_op_idx]);
    if (!wr_idx.found())
@@ -466,7 +466,7 @@ try_optimize_scc_nocompare(pr_opt_ctx& ctx, aco_ptr<Instruction>& instr)
                instr->opcode == aco_opcode::s_cselect_b64)
          std::swap(instr->operands[0], instr->operands[1]);
       else
-         unreachable("scc_nocompare optimization is only implemented for p_cbranch and s_cselect");
+         return;
    }
 
    /* Use the SCC def from the original instruction, not the comparison */
