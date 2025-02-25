@@ -1284,7 +1284,7 @@
         "description": "panfrost: remove NIR_PASS_V usage for noperspective lowering",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "081438ad3974d797c6248ccd76eba3d7ede72d1c",
         "notes": null
