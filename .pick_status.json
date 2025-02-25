@@ -4204,7 +4204,7 @@
         "description": "brw: Fix decoding of 3-src destination stride in EU validation",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f1036da345420ca94582a793b952cd6e3ccf3450",
         "notes": null
