@@ -459,14 +459,32 @@ try_optimize_scc_nocompare(pr_opt_ctx& ctx, aco_ptr<Instruction>& instr)
          return;
 
       /* Flip the meaning of the instruction to correctly use the SCC. */
-      if (instr->format == Format::PSEUDO_BRANCH)
+      if (instr->format == Format::PSEUDO_BRANCH) {
          instr->opcode = instr->opcode == aco_opcode::p_cbranch_z ? aco_opcode::p_cbranch_nz
                                                                   : aco_opcode::p_cbranch_z;
-      else if (instr->opcode == aco_opcode::s_cselect_b32 ||
-               instr->opcode == aco_opcode::s_cselect_b64)
+      } else if (instr->opcode == aco_opcode::s_cselect_b32 ||
+                 instr->opcode == aco_opcode::s_cselect_b64) {
          std::swap(instr->operands[0], instr->operands[1]);
-      else
+      } else if (instr->opcode == aco_opcode::s_cmovk_i32 ||
+                 instr->opcode == aco_opcode::s_mul_i32) {
+         /* Convert to s_cselect_b32 and swap the operands. */
+         Instruction* cselect = create_instruction(aco_opcode::s_cselect_b32, Format::SOP2, 3, 1);
+         cselect->definitions[0] = instr->definitions[0];
+         cselect->operands[2] = instr->operands[scc_op_idx];
+         if (instr->opcode == aco_opcode::s_cmovk_i32) {
+            cselect->operands[0] = instr->operands[0];
+            cselect->operands[1] = Operand::c32((int32_t)(int16_t)instr->salu().imm);
+         } else if (instr->opcode == aco_opcode::s_mul_i32) {
+            cselect->operands[0] = Operand::c32(0);
+            cselect->operands[1] = instr->operands[!scc_op_idx];
+         } else {
+            unreachable("invalid op");
+         }
+         scc_op_idx = 2;
+         instr.reset(cselect);
+      } else {
          return;
+      }
    }
 
    /* Use the SCC def from the original instruction, not the comparison */
