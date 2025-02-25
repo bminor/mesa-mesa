@@ -448,16 +448,16 @@ try_optimize_scc_nocompare(pr_opt_ctx& ctx, aco_ptr<Instruction>& instr)
    /* Check if we found the pattern above. */
    if (wr_instr->opcode != aco_opcode::s_cmp_eq_u32 && wr_instr->opcode != aco_opcode::s_cmp_lg_u32)
       return;
-   if (wr_instr->operands[0].physReg() != scc)
+   if (wr_instr->operands[0].physReg() != scc || !wr_instr->operands[0].isTemp())
       return;
    if (!wr_instr->operands[1].constantEquals(0))
       return;
 
-   /* The optimization can be unsafe when there are other users. */
-   if (ctx.uses[instr->operands[scc_op_idx].tempId()] > 1)
-      return;
-
    if (wr_instr->opcode == aco_opcode::s_cmp_eq_u32) {
+      /* The optimization can be unsafe when there are other users. */
+      if (ctx.uses[instr->operands[scc_op_idx].tempId()] > 1)
+         return;
+
       /* Flip the meaning of the instruction to correctly use the SCC. */
       if (instr->format == Format::PSEUDO_BRANCH)
          instr->opcode = instr->opcode == aco_opcode::p_cbranch_z ? aco_opcode::p_cbranch_nz
@@ -471,6 +471,8 @@ try_optimize_scc_nocompare(pr_opt_ctx& ctx, aco_ptr<Instruction>& instr)
 
    /* Use the SCC def from the original instruction, not the comparison */
    ctx.uses[instr->operands[scc_op_idx].tempId()]--;
+   if (ctx.uses[instr->operands[scc_op_idx].tempId()])
+      ctx.uses[wr_instr->operands[0].tempId()]++;
    instr->operands[scc_op_idx] = wr_instr->operands[0];
 }
 
