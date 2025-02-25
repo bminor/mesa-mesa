@@ -264,6 +264,18 @@ cross_validate_types_and_qualifiers(const struct gl_constants *consts,
       return;
    }
 
+   if (input->data.per_primitive != output->data.per_primitive) {
+      linker_error(prog,
+                   "%s shader output `%s' %s perprimitiveEXT qualifier, "
+                   "but %s shader input %s perprimitiveEXT qualifier\n",
+                   _mesa_shader_stage_to_string(producer_stage),
+                   output->name,
+                   (output->data.per_primitive) ? "has" : "lacks",
+                   _mesa_shader_stage_to_string(consumer_stage),
+                   (input->data.per_primitive) ? "has" : "lacks");
+      return;
+   }
+
    /* The GLSL 4.20 and GLSL ES 3.00 specifications say:
     *
     *    "As only outputs need be declared with invariant, an output from
@@ -403,6 +415,7 @@ struct explicit_location_info {
    bool centroid;
    bool sample;
    bool patch;
+   bool per_primitive;
 };
 
 static bool
@@ -416,6 +429,7 @@ check_location_aliasing(struct explicit_location_info explicit_locations[][4],
                         bool centroid,
                         bool sample,
                         bool patch,
+                        bool per_primitive,
                         struct gl_shader_program *prog,
                         mesa_shader_stage stage)
 {
@@ -522,7 +536,8 @@ check_location_aliasing(struct explicit_location_info explicit_locations[][4],
 
                if (info->centroid != centroid ||
                    info->sample != sample ||
-                   info->patch != patch) {
+                   info->patch != patch ||
+                   info->per_primitive != per_primitive) {
                   linker_error(prog,
                                "%s shader has multiple %sputs sharing the "
                                "same location that don't have the same "
@@ -542,6 +557,7 @@ check_location_aliasing(struct explicit_location_info explicit_locations[][4],
             info->centroid = centroid;
             info->sample = sample;
             info->patch = patch;
+            info->per_primitive = per_primitive;
          }
 
          comp++;
@@ -717,6 +733,7 @@ validate_explicit_variable_location(const struct gl_constants *consts,
                                       field->centroid,
                                       field->sample,
                                       field->patch,
+                                      field->per_primitive,
                                       prog, sh->Stage)) {
             return false;
          }
@@ -728,6 +745,7 @@ validate_explicit_variable_location(const struct gl_constants *consts,
                                        var->data.centroid,
                                        var->data.sample,
                                        var->data.patch,
+                                       var->data.per_primitive,
                                        prog, sh->Stage)) {
       return false;
    }
@@ -2655,7 +2673,8 @@ varying_matches_compute_packing_class(const nir_variable *var)
                                   (var->data.centroid << 3) |
                                   (var->data.sample << 4) |
                                   (var->data.patch << 5) |
-                                  (var->data.must_be_shader_input << 6);
+                                  (var->data.must_be_shader_input << 6) |
+                                  (var->data.per_primitive << 7);
 
    return packing_class;
 }
