@@ -3124,6 +3124,7 @@ uint32_t
 tu6_rast_size(struct tu_device *dev,
               const struct vk_rasterization_state *rs,
               const struct vk_viewport_state *vp,
+              const struct tu_shader *fs,
               bool multiview,
               bool per_view_viewport)
 {
@@ -3139,6 +3140,7 @@ void
 tu6_emit_rast(struct tu_cs *cs,
               const struct vk_rasterization_state *rs,
               const struct vk_viewport_state *vp,
+              const struct tu_shader *fs,
               bool multiview,
               bool per_view_viewport)
 {
@@ -3195,12 +3197,22 @@ tu6_emit_rast(struct tu_cs *cs,
       bool conservative_ras_en =
          rs->conservative_mode ==
          VK_CONSERVATIVE_RASTERIZATION_MODE_OVERESTIMATE_EXT;
+      /* This is important to get D/S only draw calls to bypass invoking
+       * the fragment shader. The public documentation for Adreno states:
+       *  "Hint the driver to engage Fast-Z by using an empty fragment
+       *   shader and disabling frame buffer write masks for renderpasses
+       *   that modify Z values only."
+       *  "The GPU has a special mode that writes Z-only pixels at twice
+       *   the normal rate."
+       */
+      bool disable_fs = !fs || fs->variant->empty;
 
       tu_cs_emit_regs(cs, RB_RENDER_CNTL(CHIP,
+            .fs_disable = disable_fs,
             .raster_mode = TYPE_TILED,
             .raster_direction = LR_TB,
             .conservativerasen = conservative_ras_en));
-      tu_cs_emit_regs(cs, A7XX_GRAS_SU_RENDER_CNTL());
+      tu_cs_emit_regs(cs, A7XX_GRAS_SU_RENDER_CNTL(.fs_disable = disable_fs));
       tu_cs_emit_regs(cs,
                       A6XX_PC_DGEN_SU_CONSERVATIVE_RAS_CNTL(conservative_ras_en));
 
@@ -3637,6 +3649,7 @@ tu_pipeline_builder_emit_state(struct tu_pipeline_builder *builder,
                    pipeline_contains_all_shader_state(pipeline),
                    builder->graphics_state.rs,
                    builder->graphics_state.vp,
+                   pipeline->shaders[MESA_SHADER_FRAGMENT],
                    builder->graphics_state.rp->view_mask != 0,
                    pipeline->program.per_view_viewport);
    DRAW_STATE_COND(ds, TU_DYNAMIC_STATE_DS,
@@ -3868,9 +3881,11 @@ tu_emit_draw_state(struct tu_cmd_buffer *cmd)
    }
    DRAW_STATE_COND(rast, TU_DYNAMIC_STATE_RAST,
                    cmd->state.dirty & (TU_CMD_DIRTY_SUBPASS |
-                                       TU_CMD_DIRTY_PER_VIEW_VIEWPORT),
+                                       TU_CMD_DIRTY_PER_VIEW_VIEWPORT |
+                                       TU_CMD_DIRTY_FS),
                    &cmd->vk.dynamic_graphics_state.rs,
                    &cmd->vk.dynamic_graphics_state.vp,
+                   cmd->state.shaders[MESA_SHADER_FRAGMENT],
                    cmd->state.vk_rp.view_mask != 0,
                    cmd->state.per_view_viewport);
    DRAW_STATE_COND(ds, TU_DYNAMIC_STATE_DS,

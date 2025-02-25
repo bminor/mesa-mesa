@@ -5803,6 +5803,10 @@ tu6_build_depth_plane_z_mode(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
    if (fs->variant->fs.early_fragment_tests)
       zmode = A6XX_EARLY_Z;
 
+   /* FS bypass requires early Z */
+   if (fs->variant->empty)
+      zmode = A6XX_EARLY_Z;
+
    tu_cs_emit_pkt4(cs, REG_A6XX_GRAS_SU_DEPTH_PLANE_CNTL, 1);
    tu_cs_emit(cs, A6XX_GRAS_SU_DEPTH_PLANE_CNTL_Z_MODE(zmode));
 
