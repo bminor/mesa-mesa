@@ -3408,6 +3408,12 @@ elk_fs_visitor::workaround_source_arf_before_eot()
    return progress;
 }
 
+static bool
+has_compr4(const struct intel_device_info *devinfo)
+{
+   return devinfo->verx10 > 40 && devinfo->verx10 < 60;
+}
+
 bool
 elk_fs_visitor::lower_load_payload()
 {
@@ -3467,7 +3473,7 @@ elk_fs_visitor::lower_load_payload()
          assert(inst->header_size + 4 <= inst->sources);
          for (uint8_t i = inst->header_size; i < inst->header_size + 4; i++) {
             if (inst->src[i].file != BAD_FILE) {
-               if (devinfo->has_compr4) {
+               if (has_compr4(devinfo)) {
                   elk_fs_reg compr4_dst = retype(dst, inst->src[i].type);
                   compr4_dst.nr |= ELK_MRF_COMPR4;
                   ibld.MOV(compr4_dst, inst->src[i]);
