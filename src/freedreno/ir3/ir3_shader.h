@@ -853,6 +853,8 @@ struct ir3_shader_variant {
 
    bool post_depth_coverage;
 
+   bool empty;
+
    /* Are we using split or merged register file? */
    bool mergedregs;
 

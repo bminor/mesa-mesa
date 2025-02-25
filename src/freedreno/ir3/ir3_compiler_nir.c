@@ -5483,6 +5483,17 @@ fixup_tg4(struct ir3_context *ctx)
    }
 }
 
+static bool
+is_empty(struct ir3 *ir)
+{
+   foreach_block (block, &ir->block_list) {
+      foreach_instr (instr, &block->instr_list) {
+         return instr->opc == OPC_END;
+      }
+   }
+   return true;
+}
+
 static void
 collect_tex_prefetches(struct ir3_context *ctx, struct ir3 *ir)
 {
@@ -6028,6 +6039,10 @@ ir3_compile_shader_nir(struct ir3_compiler *compiler,
 
    if (ctx->so->type == MESA_SHADER_VERTEX && ctx->compiler->gen >= 6) {
       so->constlen = MAX2(so->constlen, 8);
+   }
+
+   if (so->type == MESA_SHADER_FRAGMENT) {
+      so->empty = is_empty(ir) && so->num_sampler_prefetch == 0;
    }
 
    if (gl_shader_stage_is_compute(so->type)) {
