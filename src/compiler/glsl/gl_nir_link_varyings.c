@@ -153,25 +153,34 @@ cross_validate_types_and_qualifiers(const struct gl_constants *consts,
 {
    /* Check that the types match between stages.
     */
-   const struct glsl_type *type_to_match = input->type;
+   const struct glsl_type *input_type_to_match = input->type;
+   const struct glsl_type *output_type_to_match = output->type;
 
    /* VS -> GS, VS -> TCS, VS -> TES, TES -> GS */
-   const bool extra_array_level = (producer_stage == MESA_SHADER_VERTEX &&
-                                   consumer_stage != MESA_SHADER_FRAGMENT) ||
-                                  consumer_stage == MESA_SHADER_GEOMETRY;
-   if (extra_array_level) {
-      assert(glsl_type_is_array(type_to_match));
-      type_to_match = glsl_get_array_element(type_to_match);
+   const bool input_extra_array_level =
+      (producer_stage == MESA_SHADER_VERTEX &&
+       consumer_stage != MESA_SHADER_FRAGMENT) ||
+      consumer_stage == MESA_SHADER_GEOMETRY;
+   if (input_extra_array_level) {
+      assert(glsl_type_is_array(input_type_to_match));
+      input_type_to_match = glsl_get_array_element(input_type_to_match);
    }
 
-   if (type_to_match != output->type) {
-      if (glsl_type_is_struct(output->type)) {
+   /* MS -> FS */
+   const bool output_extra_array_level = producer_stage == MESA_SHADER_MESH;
+   if (output_extra_array_level) {
+      assert(glsl_type_is_array(output_type_to_match));
+      output_type_to_match = glsl_get_array_element(output_type_to_match);
+   }
+
+   if (input_type_to_match != output_type_to_match) {
+      if (glsl_type_is_struct(output_type_to_match)) {
          /* Structures across shader stages can have different name
           * and considered to match in type if and only if structure
           * members match in name, type, qualification, and declaration
           * order. The precision doesn’t need to match.
           */
-         if (!glsl_record_compare(output->type, type_to_match,
+         if (!glsl_record_compare(output_type_to_match, input_type_to_match,
                                   false, /* match_name */
                                   true, /* match_locations */
                                   false /* match_precision */)) {
@@ -185,7 +194,7 @@ cross_validate_types_and_qualifiers(const struct gl_constants *consts,
                   _mesa_shader_stage_to_string(consumer_stage),
                   glsl_get_type_name(input->type));
          }
-      } else if (!glsl_type_is_array(output->type) ||
+      } else if (!glsl_type_is_array(output_type_to_match) ||
                  !is_gl_identifier(output->name)) {
          /* There is a bit of a special case for gl_TexCoord.  This
           * built-in is unsized by default.  Applications that variable
