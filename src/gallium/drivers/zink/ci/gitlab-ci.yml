@@ -103,7 +103,7 @@ zink-anv-tgl-traces:
 
 zink-anv-tgl-traces-restricted:
   extends:
-    - zink-anv-tgl-traces
+    - .zink-anv-tgl-trace-test
     - .zink-anv-rules-restricted
   variables:
     PIGLIT_TRACES_FILE: traces-zink-restricted.yml
