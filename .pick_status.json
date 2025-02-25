@@ -594,7 +594,7 @@
         "description": "venus: fix image format cache miss with AHB usage query",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e48645250c6fd0f021878a2f50bf028f61cf50ad",
         "notes": null
