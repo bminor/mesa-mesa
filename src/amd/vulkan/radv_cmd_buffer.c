@@ -11722,6 +11722,10 @@ radv_emit_dispatch_packets(struct radv_cmd_buffer *cmd_buffer, const struct radv
          dispatch_initiator |= S_00B800_USE_THREAD_DIMENSIONS(1);
       }
 
+      /* Indirect CS does not support offsets in the API. Must program this in case there have been
+       * preceding 1D RT dispatch or vkCmdDispatchBase. */
+      dispatch_initiator |= S_00B800_FORCE_START_AT_000(1);
+
       if (grid_size_offset) {
          if (device->load_grid_size_from_user_sgpr) {
             assert(pdev->info.gfx_level >= GFX10_3);
