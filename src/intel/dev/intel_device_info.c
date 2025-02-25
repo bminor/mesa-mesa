@@ -438,12 +438,18 @@ static const struct intel_device_info intel_device_info_hsw_gt3 = {
    .max_wm_threads = 384,                           \
    .max_threads_per_psd = 64
 
+/* We always use SIMD8 geometry shaders on GFX8+.  The Broadwell
+ * 3DSTATE_GS docs include a note:
+ *
+ *   "At least 8 URB entries must be allocated in order to use
+ *    SIMD8 DispatchMode."
+ */
 #define GFX8_URB_MIN_MAX_ENTRIES                      \
    .urb = {                                           \
       .min_entries = {                                \
          [MESA_SHADER_VERTEX]    = 64,                \
          [MESA_SHADER_TESS_EVAL] = 34,                \
-         [MESA_SHADER_GEOMETRY]  = 2,                 \
+         [MESA_SHADER_GEOMETRY]  = 8,                 \
       },                                              \
       .max_entries = {                                \
          [MESA_SHADER_VERTEX]    = 2560,              \
@@ -538,12 +544,21 @@ static const struct intel_device_info intel_device_info_chv = {
    .max_threads_per_psd = 64,                       \
    .max_cs_threads = 56                             \
 
+/* On Skylake through Xe, the 3DSTATE_GS_BODY docs include a note:
+ *
+ *   "The driver must send pipe control with a cs stall after a
+ *    3dstate_gs state change and the Dispatch Mode is simd8 and
+ *    the number of handles allocated to gs is less than 16."
+ *
+ * We don't implement this PIPE_CONTROL, so instead we always allocate
+ * at least 16 URB handles for GS when it's enabled.
+ */
 #define GFX9_URB_MIN_MAX_ENTRIES                    \
    .urb = {                                         \
       .min_entries = {                              \
          [MESA_SHADER_VERTEX]    = 64,              \
          [MESA_SHADER_TESS_EVAL] = 34,              \
-         [MESA_SHADER_GEOMETRY]  = 2,               \
+         [MESA_SHADER_GEOMETRY]  = 16,              \
       },                                            \
       .max_entries = {                              \
          [MESA_SHADER_VERTEX]    = 1856,            \
@@ -808,12 +823,13 @@ static const struct intel_device_info intel_device_info_cfl_gt3 = {
    .max_threads_per_psd = 64,                       \
    .max_cs_threads = 56
 
+/* See GFX9_URB_MIN_MAX_ENTRIES comment */
 #define GFX11_URB_MIN_MAX_ENTRIES                   \
    .urb = {                                         \
       .min_entries = {                              \
          [MESA_SHADER_VERTEX]    = 64,              \
          [MESA_SHADER_TESS_EVAL] = 34,              \
-         [MESA_SHADER_GEOMETRY]  = 2,               \
+         [MESA_SHADER_GEOMETRY]  = 16,              \
       },                                            \
       .max_entries = {                              \
          [MESA_SHADER_VERTEX]    = 2384,            \
@@ -893,13 +909,14 @@ static const struct intel_device_info intel_device_info_ehl_2x4 = {
    .max_threads_per_psd = 64,                       \
    .max_cs_threads = 112 /* threads per DSS */
 
+/* See GFX9_URB_MIN_MAX_ENTRIES comment */
 #define GFX12_URB_MIN_MAX_ENTRIES                   \
    .urb = {                                         \
       .size = 512, /* For intel_stub_gpu */         \
       .min_entries = {                              \
          [MESA_SHADER_VERTEX]    = 64,              \
          [MESA_SHADER_TESS_EVAL] = 34,              \
-         [MESA_SHADER_GEOMETRY]  = 2,               \
+         [MESA_SHADER_GEOMETRY]  = 16,              \
       },                                            \
       .max_entries = {                              \
          [MESA_SHADER_VERTEX]    = 3576,            \
@@ -1780,6 +1797,29 @@ intel_device_info_update_after_hwconfig(struct intel_device_info *devinfo)
       devinfo->max_eus_per_subslice * devinfo->num_thread_per_eu;
 
    intel_device_info_update_cs_workgroup_threads(devinfo);
+
+   /* On Skylake through Xe, the 3DSTATE_GS_BODY docs include a note:
+    *
+    *   "The driver must send pipe control with a cs stall after a
+    *    3dstate_gs state change and the Dispatch Mode is simd8 and
+    *    the number of handles allocated to gs is less than 16."
+    *
+    * We don't implement such a PIPE_CONTROL, so instead we set the minimum
+    * number of GS URB entries to 16.  The Xe2+ docs don't have such a note,
+    * but considering they use SIMD16 GS threads, retaining 16 as the minimum
+    * likely makes sense there as well.
+    *
+    * Assuming we did implement that flush, the 3DSTATE_GS docs also note:
+    *
+    *   "At least 8 URB entries must be allocated in order to use SIMD8
+    *    DispatchMode."
+    *
+    * The hardware config tables instead have the limit set as 2, which is
+    * likely an older limit from the SIMD4x2 dual-object/instance era which
+    * is no longer accurate.
+    */
+   devinfo->urb.min_entries[MESA_SHADER_GEOMETRY] =
+      MAX2(16, devinfo->urb.min_entries[MESA_SHADER_GEOMETRY]);
 }
 
 bool
