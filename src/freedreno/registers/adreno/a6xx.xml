@@ -3543,8 +3543,7 @@ to upconvert to 32b float internally?
 	<reg32 offset="0x8801" name="RB_RENDER_CNTL" variants="A6XX" usage="rp_blit">
 		<bitfield name="CCUSINGLECACHELINESIZE" low="3" high="5"/>
 		<bitfield name="EARLYVIZOUTEN" pos="6" type="boolean"/>
-		<!-- set during binning pass: -->
-		<bitfield name="BINNING" pos="7" type="boolean"/>
+		<bitfield name="FS_DISABLE" pos="7" type="boolean"/>
 		<bitfield name="UNK8" low="8" high="10"/>
 		<bitfield name="RASTER_MODE" pos="8" type="a6xx_raster_mode"/>
 		<bitfield name="RASTER_DIRECTION" low="9" high="10" type="a6xx_raster_direction"/>
@@ -3557,15 +3556,14 @@ to upconvert to 32b float internally?
 	</reg32>
 	<reg32 offset="0x8801" name="RB_RENDER_CNTL" variants="A7XX-" usage="rp_blit">
 		<bitfield name="EARLYVIZOUTEN" pos="6" type="boolean"/>
-		<!-- set during binning pass: -->
-		<bitfield name="BINNING" pos="7" type="boolean"/>
+		<bitfield name="FS_DISABLE" pos="7" type="boolean"/>
 		<bitfield name="RASTER_MODE" pos="8" type="a6xx_raster_mode"/>
 		<bitfield name="RASTER_DIRECTION" low="9" high="10" type="a6xx_raster_direction"/>
 		<bitfield name="CONSERVATIVERASEN" pos="11" type="boolean"/>
 		<bitfield name="INNERCONSERVATIVERASEN" pos="12" type="boolean"/>
 	</reg32>
 	<reg32 offset="0x8116" name="GRAS_SU_RENDER_CNTL" variants="A7XX-" usage="rp_blit">
-		<bitfield name="BINNING" pos="7" type="boolean"/>
+		<bitfield name="FS_DISABLE" pos="7" type="boolean"/>
 	</reg32>
 
 	<reg32 offset="0x8802" name="RB_RAS_MSAA_CNTL" usage="rp_blit">
@@ -5525,8 +5523,7 @@ to upconvert to 32b float internally?
 	<reg32 offset="0xa898" name="HLSQ_GS_CNTL" type="a6xx_hlsq_xs_cntl" variants="A7XX-" usage="rp_blit"/>
 
 	<reg32 offset="0xa9aa" name="HLSQ_FS_UNKNOWN_A9AA" variants="A7XX-" usage="rp_blit">
-		<!-- Tentatively named, appears to disable consts being loaded via CP_LOAD_STATE6_FRAG -->
-		<bitfield name="CONSTS_LOAD_DISABLE" pos="0" type="boolean"/>
+		<bitfield name="FS_DISABLE" pos="0" type="boolean"/>
 	</reg32>
 
 	<reg32 offset="0xa9ac" name="SP_DITHER_CNTL" variants="A7XX-" usage="cmd">

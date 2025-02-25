@@ -2079,7 +2079,7 @@ tu6_emit_fs(struct tu_cs *cs,
 
    if (CHIP >= A7XX) {
       tu_cs_emit_regs(cs, A6XX_GRAS_UNKNOWN_8110(0x2));
-      tu_cs_emit_regs(cs, A7XX_HLSQ_FS_UNKNOWN_A9AA(.consts_load_disable = false));
+      tu_cs_emit_regs(cs, A7XX_HLSQ_FS_UNKNOWN_A9AA(.fs_disable = false));
    }
 
    if (fs) {

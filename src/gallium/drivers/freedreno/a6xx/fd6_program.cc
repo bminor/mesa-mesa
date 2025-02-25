@@ -836,7 +836,7 @@ emit_vpc(struct fd_ringbuffer *ring, const struct program_builder *b)
 
    if (CHIP >= A7XX) {
       OUT_REG(ring, A6XX_GRAS_UNKNOWN_8110(0x2));
-      OUT_REG(ring, A7XX_HLSQ_FS_UNKNOWN_A9AA(.consts_load_disable = false));
+      OUT_REG(ring, A7XX_HLSQ_FS_UNKNOWN_A9AA(.fs_disable = false));
    }
 
    OUT_PKT4(ring, REG_A6XX_VPC_CNTL_0, 1);

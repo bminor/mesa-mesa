@@ -496,14 +496,14 @@ update_render_cntl(struct fd_batch *batch, struct pipe_framebuffer_state *pfb,
       OUT_REG(ring,
          RB_RENDER_CNTL(
             CHIP,
-            .binning = binning,
+            .fs_disable = binning,
             .raster_mode = TYPE_TILED,
             .raster_direction = LR_TB
          )
       );
       OUT_REG(ring,
          A7XX_GRAS_SU_RENDER_CNTL(
-            .binning = binning,
+            .fs_disable = binning,
          )
       );
       return;
@@ -534,7 +534,7 @@ update_render_cntl(struct fd_batch *batch, struct pipe_framebuffer_state *pfb,
    struct fd_reg_pair rb_render_cntl = RB_RENDER_CNTL(
          CHIP,
          .ccusinglecachelinesize = 2,
-         .binning = binning,
+         .fs_disable = binning,
          .flag_depth = depth_ubwc_enable,
          .flag_mrts = mrts_ubwc_enable,
    );

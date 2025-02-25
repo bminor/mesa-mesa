@@ -929,7 +929,7 @@ r3d_common(struct tu_cmd_buffer *cmd, struct tu_cs *cs, enum r3d_type type,
    if (CHIP >= A7XX) {
       tu_cs_emit_regs(cs, A6XX_GRAS_UNKNOWN_8110(0x2));
 
-      tu_cs_emit_regs(cs, A7XX_HLSQ_FS_UNKNOWN_A9AA(.consts_load_disable = false));
+      tu_cs_emit_regs(cs, A7XX_HLSQ_FS_UNKNOWN_A9AA(.fs_disable = false));
    }
 
    /* REPL_MODE for varying with RECTLIST (2 vertices only) */

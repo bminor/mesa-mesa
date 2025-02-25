@@ -642,7 +642,7 @@ tu6_emit_render_cntl<A6XX>(struct tu_cmd_buffer *cmd,
    if (binning) {
       if (no_track)
          return;
-      cntl |= A6XX_RB_RENDER_CNTL_BINNING;
+      cntl |= A6XX_RB_RENDER_CNTL_FS_DISABLE;
    } else {
       uint32_t mrts_ubwc_enable = 0;
       for (uint32_t i = 0; i < subpass->color_count; ++i) {
