@@ -41,293 +41,292 @@ void yyerror (char *);
 #define YYLTYPE YYLTYPE
 typedef struct YYLTYPE
 {
-	int first_line;
-	int first_column;
-	int last_line;
-	int last_column;
+   int first_line;
+   int first_column;
+   int last_line;
+   int last_column;
 } YYLTYPE;
 
 enum message_level {
-	WARN,
-	ERROR,
+   WARN,
+   ERROR,
 };
 
 int yydebug = 1;
 
 static void
 message(enum message_level level, YYLTYPE *location,
-	const char *fmt, ...)
+        const char *fmt, ...)
 {
-	static const char *level_str[] = { "warning", "error" };
-	va_list args;
+   static const char *level_str[] = { "warning", "error" };
+   va_list args;
 
-	if (location)
-		fprintf(stderr, "%s:%d:%d: %s: ", input_filename,
-		        location->first_line,
-		        location->first_column, level_str[level]);
-	else
-		fprintf(stderr, "%s:%s: ", input_filename, level_str[level]);
+   if (location)
+      fprintf(stderr, "%s:%d:%d: %s: ", input_filename,
+              location->first_line,
+              location->first_column, level_str[level]);
+   else
+      fprintf(stderr, "%s:%s: ", input_filename, level_str[level]);
 
-	va_start(args, fmt);
-	vfprintf(stderr, fmt, args);
-	va_end(args);
+   va_start(args, fmt);
+   vfprintf(stderr, fmt, args);
+   va_end(args);
 }
 
-#define warn(flag, l, fmt, ...) 				 \
-	do {							 \
-		if (warning_flags & WARN_ ## flag)		 \
-			message(WARN, l, fmt, ## __VA_ARGS__);	 \
-	} while (0)
+#define warn(flag, l, fmt, ...)                 \
+   do {                                         \
+      if (warning_flags & WARN_ ## flag)        \
+         message(WARN, l, fmt, ## __VA_ARGS__); \
+   } while (0)
 
-#define error(l, fmt, ...)				   	 \
-	do {						   	 \
-		message(ERROR, l, fmt, ## __VA_ARGS__);	   	 \
-	} while (0)
+#define error(l, fmt, ...)                      \
+   do {                                         \
+      message(ERROR, l, fmt, ## __VA_ARGS__);   \
+   } while (0)
 
 static bool
 isPowerofTwo(unsigned int x)
 {
-	return x && (!(x & (x - 1)));
+   return x && (!(x & (x - 1)));
 }
 
 static struct brw_reg
 set_direct_src_operand(struct brw_reg *reg, int type)
 {
-	return brw_make_reg(reg->file,
-                            reg->nr,
-                            reg->subnr,
-                            0,		// negate
-                            0,		// abs
-                            type,
-                            0,		// vstride
-                            0,		// width
-                            0,		// hstride
-                            BRW_SWIZZLE_NOOP,
-                            WRITEMASK_XYZW);
+   return brw_make_reg(reg->file,
+                       reg->nr,
+                       reg->subnr,
+                       0,      // negate
+                       0,      // abs
+                       type,
+                       0,      // vstride
+                       0,      // width
+                       0,      // hstride
+                       BRW_SWIZZLE_NOOP,
+                       WRITEMASK_XYZW);
 }
 
 static void
 i965_asm_unary_instruction(int opcode, struct brw_codegen *p,
-		           struct brw_reg dest, struct brw_reg src0)
+                           struct brw_reg dest, struct brw_reg src0)
 {
-	switch (opcode) {
-	case BRW_OPCODE_BFREV:
-		brw_BFREV(p, dest, src0);
-		break;
-	case BRW_OPCODE_CBIT:
-		brw_CBIT(p, dest, src0);
-		break;
-	case BRW_OPCODE_MOV:
-		brw_MOV(p, dest, src0);
-		break;
-	case BRW_OPCODE_FBL:
-		brw_FBL(p, dest, src0);
-		break;
-	case BRW_OPCODE_FRC:
-		brw_FRC(p, dest, src0);
-		break;
-	case BRW_OPCODE_FBH:
-		brw_FBH(p, dest, src0);
-		break;
-	case BRW_OPCODE_NOT:
-		brw_NOT(p, dest, src0);
-		break;
-	case BRW_OPCODE_RNDE:
-		brw_RNDE(p, dest, src0);
-		break;
-	case BRW_OPCODE_RNDZ:
-		brw_RNDZ(p, dest, src0);
-		break;
-	case BRW_OPCODE_RNDD:
-		brw_RNDD(p, dest, src0);
-		break;
-	case BRW_OPCODE_LZD:
-		brw_LZD(p, dest, src0);
-		break;
-	case BRW_OPCODE_RNDU:
-		fprintf(stderr, "Opcode BRW_OPCODE_RNDU unhandled\n");
-		break;
-	default:
-		fprintf(stderr, "Unsupported unary opcode\n");
-	}
+   switch (opcode) {
+   case BRW_OPCODE_BFREV:
+      brw_BFREV(p, dest, src0);
+      break;
+   case BRW_OPCODE_CBIT:
+      brw_CBIT(p, dest, src0);
+      break;
+   case BRW_OPCODE_MOV:
+      brw_MOV(p, dest, src0);
+      break;
+   case BRW_OPCODE_FBL:
+      brw_FBL(p, dest, src0);
+      break;
+   case BRW_OPCODE_FRC:
+      brw_FRC(p, dest, src0);
+      break;
+   case BRW_OPCODE_FBH:
+      brw_FBH(p, dest, src0);
+      break;
+   case BRW_OPCODE_NOT:
+      brw_NOT(p, dest, src0);
+      break;
+   case BRW_OPCODE_RNDE:
+      brw_RNDE(p, dest, src0);
+      break;
+   case BRW_OPCODE_RNDZ:
+      brw_RNDZ(p, dest, src0);
+      break;
+   case BRW_OPCODE_RNDD:
+      brw_RNDD(p, dest, src0);
+      break;
+   case BRW_OPCODE_LZD:
+      brw_LZD(p, dest, src0);
+      break;
+   case BRW_OPCODE_RNDU:
+      fprintf(stderr, "Opcode BRW_OPCODE_RNDU unhandled\n");
+      break;
+   default:
+      fprintf(stderr, "Unsupported unary opcode\n");
+   }
 }
 
 static void
 i965_asm_binary_instruction(int opcode,
-			    struct brw_codegen *p,
-			    struct brw_reg dest,
-			    struct brw_reg src0,
-			    struct brw_reg src1)
+                            struct brw_codegen *p,
+                            struct brw_reg dest,
+                            struct brw_reg src0,
+                            struct brw_reg src1)
 {
-	switch (opcode) {
-	case BRW_OPCODE_ADDC:
-		brw_ADDC(p, dest, src0, src1);
-		break;
-	case BRW_OPCODE_BFI1:
-		brw_BFI1(p, dest, src0, src1);
-		break;
-	case BRW_OPCODE_DP2:
-		brw_DP2(p, dest, src0, src1);
-		break;
-	case BRW_OPCODE_DP3:
-		brw_DP3(p, dest, src0, src1);
-		break;
-	case BRW_OPCODE_DP4:
-		brw_DP4(p, dest, src0, src1);
-		break;
-	case BRW_OPCODE_DPH:
-		brw_DPH(p, dest, src0, src1);
-		break;
-	case BRW_OPCODE_LINE:
-		brw_LINE(p, dest, src0, src1);
-		break;
-	case BRW_OPCODE_MAC:
-		brw_MAC(p, dest, src0, src1);
-		break;
-	case BRW_OPCODE_MACH:
-		brw_MACH(p, dest, src0, src1);
-		break;
-	case BRW_OPCODE_PLN:
-		brw_PLN(p, dest, src0, src1);
-		break;
-	case BRW_OPCODE_ROL:
-		brw_ROL(p, dest, src0, src1);
-		break;
-	case BRW_OPCODE_ROR:
-		brw_ROR(p, dest, src0, src1);
-		break;
-	case BRW_OPCODE_SUBB:
-		brw_SUBB(p, dest, src0, src1);
-		break;
-	case BRW_OPCODE_ADD:
-		brw_ADD(p, dest, src0, src1);
-		break;
-	case BRW_OPCODE_CMP:
-		/* Third parameter is conditional modifier
-		 * which gets updated later
-		 */
-		brw_CMP(p, dest, 0, src0, src1);
-		break;
-	case BRW_OPCODE_AND:
-		brw_AND(p, dest, src0, src1);
-		break;
-	case BRW_OPCODE_ASR:
-		brw_ASR(p, dest, src0, src1);
-		break;
-	case BRW_OPCODE_AVG:
-		brw_AVG(p, dest, src0, src1);
-		break;
-	case BRW_OPCODE_OR:
-		brw_OR(p, dest, src0, src1);
-		break;
-	case BRW_OPCODE_SEL:
-		brw_SEL(p, dest, src0, src1);
-		break;
-	case BRW_OPCODE_SHL:
-		brw_SHL(p, dest, src0, src1);
-		break;
-	case BRW_OPCODE_SHR:
-		brw_SHR(p, dest, src0, src1);
-		break;
-	case BRW_OPCODE_XOR:
-		brw_XOR(p, dest, src0, src1);
-		break;
-	case BRW_OPCODE_MUL:
-		brw_MUL(p, dest, src0, src1);
-		break;
-	default:
-		fprintf(stderr, "Unsupported binary opcode\n");
-	}
+   switch (opcode) {
+   case BRW_OPCODE_ADDC:
+      brw_ADDC(p, dest, src0, src1);
+      break;
+   case BRW_OPCODE_BFI1:
+      brw_BFI1(p, dest, src0, src1);
+      break;
+   case BRW_OPCODE_DP2:
+      brw_DP2(p, dest, src0, src1);
+      break;
+   case BRW_OPCODE_DP3:
+      brw_DP3(p, dest, src0, src1);
+      break;
+   case BRW_OPCODE_DP4:
+      brw_DP4(p, dest, src0, src1);
+      break;
+   case BRW_OPCODE_DPH:
+      brw_DPH(p, dest, src0, src1);
+      break;
+   case BRW_OPCODE_LINE:
+      brw_LINE(p, dest, src0, src1);
+      break;
+   case BRW_OPCODE_MAC:
+      brw_MAC(p, dest, src0, src1);
+      break;
+   case BRW_OPCODE_MACH:
+      brw_MACH(p, dest, src0, src1);
+      break;
+   case BRW_OPCODE_PLN:
+      brw_PLN(p, dest, src0, src1);
+      break;
+   case BRW_OPCODE_ROL:
+      brw_ROL(p, dest, src0, src1);
+      break;
+   case BRW_OPCODE_ROR:
+      brw_ROR(p, dest, src0, src1);
+      break;
+   case BRW_OPCODE_SUBB:
+      brw_SUBB(p, dest, src0, src1);
+      break;
+   case BRW_OPCODE_ADD:
+      brw_ADD(p, dest, src0, src1);
+      break;
+   case BRW_OPCODE_CMP:
+      /* Third parameter is conditional modifier
+       * which gets updated later
+       */
+      brw_CMP(p, dest, 0, src0, src1);
+      break;
+   case BRW_OPCODE_AND:
+      brw_AND(p, dest, src0, src1);
+      break;
+   case BRW_OPCODE_ASR:
+      brw_ASR(p, dest, src0, src1);
+      break;
+   case BRW_OPCODE_AVG:
+      brw_AVG(p, dest, src0, src1);
+      break;
+   case BRW_OPCODE_OR:
+      brw_OR(p, dest, src0, src1);
+      break;
+   case BRW_OPCODE_SEL:
+      brw_SEL(p, dest, src0, src1);
+      break;
+   case BRW_OPCODE_SHL:
+      brw_SHL(p, dest, src0, src1);
+      break;
+   case BRW_OPCODE_SHR:
+      brw_SHR(p, dest, src0, src1);
+      break;
+   case BRW_OPCODE_XOR:
+      brw_XOR(p, dest, src0, src1);
+      break;
+   case BRW_OPCODE_MUL:
+      brw_MUL(p, dest, src0, src1);
+      break;
+   default:
+      fprintf(stderr, "Unsupported binary opcode\n");
+   }
 }
 
 static void
 i965_asm_ternary_instruction(int opcode,
-			     struct brw_codegen *p,
-			     struct brw_reg dest,
-			     struct brw_reg src0,
-			     struct brw_reg src1,
-			     struct brw_reg src2)
+                             struct brw_codegen *p,
+                             struct brw_reg dest,
+                             struct brw_reg src0,
+                             struct brw_reg src1,
+                             struct brw_reg src2)
 {
-	switch (opcode) {
-	case BRW_OPCODE_MAD:
-		brw_MAD(p, dest, src0, src1, src2);
-		break;
-	case BRW_OPCODE_CSEL:
-		brw_CSEL(p, dest, src0, src1, src2);
-		break;
-	case BRW_OPCODE_LRP:
-		brw_LRP(p, dest, src0, src1, src2);
-		break;
-	case BRW_OPCODE_BFE:
-		brw_BFE(p, dest, src0, src1, src2);
-		break;
-	case BRW_OPCODE_BFI2:
-		brw_BFI2(p, dest, src0, src1, src2);
-		break;
-	case BRW_OPCODE_DP4A:
-		brw_DP4A(p, dest, src0, src1, src2);
-		break;
-	case BRW_OPCODE_ADD3:
-		brw_ADD3(p, dest, src0, src1, src2);
-		break;
-	default:
-		fprintf(stderr, "Unsupported ternary opcode\n");
-	}
+   switch (opcode) {
+   case BRW_OPCODE_MAD:
+      brw_MAD(p, dest, src0, src1, src2);
+      break;
+   case BRW_OPCODE_CSEL:
+      brw_CSEL(p, dest, src0, src1, src2);
+      break;
+   case BRW_OPCODE_LRP:
+      brw_LRP(p, dest, src0, src1, src2);
+      break;
+   case BRW_OPCODE_BFE:
+      brw_BFE(p, dest, src0, src1, src2);
+      break;
+   case BRW_OPCODE_BFI2:
+      brw_BFI2(p, dest, src0, src1, src2);
+      break;
+   case BRW_OPCODE_DP4A:
+      brw_DP4A(p, dest, src0, src1, src2);
+      break;
+   case BRW_OPCODE_ADD3:
+      brw_ADD3(p, dest, src0, src1, src2);
+      break;
+   default:
+      fprintf(stderr, "Unsupported ternary opcode\n");
+   }
 }
 
 static void
 i965_asm_set_instruction_options(struct brw_codegen *p,
-				 struct options options)
+                                 struct options options)
 {
-	brw_eu_inst_set_access_mode(p->devinfo, brw_last_inst,
-			         options.access_mode);
-	brw_eu_inst_set_mask_control(p->devinfo, brw_last_inst,
-				  options.mask_control);
-	if (p->devinfo->ver < 12) {
-		brw_eu_inst_set_thread_control(p->devinfo, brw_last_inst,
-					    options.thread_control);
-		brw_eu_inst_set_no_dd_check(p->devinfo, brw_last_inst,
-					 options.no_dd_check);
-		brw_eu_inst_set_no_dd_clear(p->devinfo, brw_last_inst,
-					 options.no_dd_clear);
-	} else {
-		enum opcode opcode = brw_eu_inst_opcode(p->isa, brw_last_inst);
-		brw_eu_inst_set_swsb(p->devinfo, brw_last_inst,
-		                  tgl_swsb_encode(p->devinfo, options.depinfo,
-						  opcode));
-	}
-	brw_eu_inst_set_debug_control(p->devinfo, brw_last_inst,
-			           options.debug_control);
-	if (brw_has_branch_ctrl(p->devinfo, brw_eu_inst_opcode(p->isa, brw_last_inst))) {
-		if (options.acc_wr_control)
-			error(NULL, "Instruction does not support AccWrEnable\n");
+   brw_eu_inst_set_access_mode(p->devinfo, brw_last_inst,
+                               options.access_mode);
+   brw_eu_inst_set_mask_control(p->devinfo, brw_last_inst,
+                                options.mask_control);
+   if (p->devinfo->ver < 12) {
+      brw_eu_inst_set_thread_control(p->devinfo, brw_last_inst,
+                                     options.thread_control);
+      brw_eu_inst_set_no_dd_check(p->devinfo, brw_last_inst,
+                                  options.no_dd_check);
+      brw_eu_inst_set_no_dd_clear(p->devinfo, brw_last_inst,
+                                  options.no_dd_clear);
+   } else {
+      enum opcode opcode = brw_eu_inst_opcode(p->isa, brw_last_inst);
+      brw_eu_inst_set_swsb(p->devinfo, brw_last_inst,
+                           tgl_swsb_encode(p->devinfo, options.depinfo, opcode));
+   }
+   brw_eu_inst_set_debug_control(p->devinfo, brw_last_inst,
+                                 options.debug_control);
+   if (brw_has_branch_ctrl(p->devinfo, brw_eu_inst_opcode(p->isa, brw_last_inst))) {
+      if (options.acc_wr_control)
+         error(NULL, "Instruction does not support AccWrEnable\n");
 
-		brw_eu_inst_set_branch_control(p->devinfo, brw_last_inst,
-		                            options.branch_control);
-	} else if (options.branch_control) {
-		error(NULL, "Instruction does not support BranchCtrl\n");
-	} else if (p->devinfo->ver < 20) {
-		brw_eu_inst_set_acc_wr_control(p->devinfo, brw_last_inst,
-					    options.acc_wr_control);
-	}
-	brw_eu_inst_set_cmpt_control(p->devinfo, brw_last_inst,
-				  options.compaction);
+      brw_eu_inst_set_branch_control(p->devinfo, brw_last_inst,
+                                     options.branch_control);
+   } else if (options.branch_control) {
+      error(NULL, "Instruction does not support BranchCtrl\n");
+   } else if (p->devinfo->ver < 20) {
+      brw_eu_inst_set_acc_wr_control(p->devinfo, brw_last_inst,
+                                     options.acc_wr_control);
+   }
+   brw_eu_inst_set_cmpt_control(p->devinfo, brw_last_inst,
+                                options.compaction);
 }
 
 static void
 add_label(struct brw_codegen *p, const char* label_name, enum instr_label_type type)
 {
-	if (!label_name) {
-		return;
-	}
+   if (!label_name) {
+      return;
+   }
 
-	struct instr_label *label = rzalloc(p->mem_ctx, struct instr_label);
+   struct instr_label *label = rzalloc(p->mem_ctx, struct instr_label);
 
-	label->name = ralloc_strdup(p->mem_ctx, label_name);
-	label->offset = p->next_insn_offset;
-	label->type = type;
+   label->name = ralloc_strdup(p->mem_ctx, label_name);
+   label->offset = p->next_insn_offset;
+   label->type = type;
 
-	list_addtail(&label->link, &instr_labels);
+   list_addtail(&label->link, &instr_labels);
 }
 
 %}
@@ -337,20 +336,20 @@ add_label(struct brw_codegen *p, const char* label_name, enum instr_label_type t
 %start ROOT
 
 %union {
-	char *string;
-	double number;
-	int integer;
-	unsigned long long int llint;
-	struct brw_reg reg;
-	enum brw_reg_type reg_type;
-	struct brw_codegen *program;
-	struct predicate predicate;
-	struct condition condition;
-	struct options options;
-	struct instoption instoption;
-	struct msgdesc msgdesc;
-	struct tgl_swsb depinfo;
-	brw_eu_inst *instruction;
+   char *string;
+   double number;
+   int integer;
+   unsigned long long int llint;
+   struct brw_reg reg;
+   enum brw_reg_type reg_type;
+   struct brw_codegen *program;
+   struct predicate predicate;
+   struct condition condition;
+   struct options options;
+   struct instoption instoption;
+   struct msgdesc msgdesc;
+   struct tgl_swsb depinfo;
+   brw_eu_inst *instruction;
 }
 
 %token ABS
@@ -564,1663 +563,1653 @@ add_label(struct brw_codegen *p, const char* label_name, enum instr_label_type t
 static void
 add_instruction_option(struct options *options, struct instoption opt)
 {
-	if (opt.type == INSTOPTION_DEP_INFO) {
-		if (opt.depinfo_value.regdist) {
-			options->depinfo.regdist = opt.depinfo_value.regdist;
-			options->depinfo.pipe = opt.depinfo_value.pipe;
-		} else {
-			options->depinfo.sbid = opt.depinfo_value.sbid;
-			options->depinfo.mode = opt.depinfo_value.mode;
-		}
-		return;
-	}
-	if (opt.type == INSTOPTION_CHAN_OFFSET) {
-		options->chan_offset = opt.uint_value;
-		return;
-	}
-	switch (opt.uint_value) {
-	case ALIGN1:
-		options->access_mode = BRW_ALIGN_1;
-		break;
-	case ALIGN16:
-		options->access_mode = BRW_ALIGN_16;
-		break;
-	case SWITCH:
-		options->thread_control |= BRW_THREAD_SWITCH;
-		break;
-	case ATOMIC:
-		options->thread_control |= BRW_THREAD_ATOMIC;
-		break;
-	case BRANCH_CTRL:
-		options->branch_control = true;
-		break;
-	case NODDCHK:
-		options->no_dd_check = true;
-		break;
-	case NODDCLR:
-		options->no_dd_clear = true;
-		break;
-	case MASK_DISABLE:
-		options->mask_control |= BRW_MASK_DISABLE;
-		break;
-	case BREAKPOINT:
-		options->debug_control = BRW_DEBUG_BREAKPOINT;
-		break;
-	case WECTRL:
-		options->mask_control |= BRW_WE_ALL;
-		break;
-	case CMPTCTRL:
-		/* Don't set the compaction flag to true, we're just reading
-		 * text assembly, not instruction bits. The code that will
-		 * assemble things later will set the flag if it decides to
-		 * compact instructions.
-		 */
-		if (!compaction_warning_given) {
-			compaction_warning_given = true;
-			fprintf(stderr, "%s: ignoring 'compacted' "
-			        "annotations for text assembly "
-				"instructions\n", input_filename);
-		}
-		break;
-	case ACCWREN:
-		options->acc_wr_control = true;
-		break;
-	case EOT:
-		options->end_of_thread = true;
-		break;
-	}
+   if (opt.type == INSTOPTION_DEP_INFO) {
+      if (opt.depinfo_value.regdist) {
+         options->depinfo.regdist = opt.depinfo_value.regdist;
+         options->depinfo.pipe = opt.depinfo_value.pipe;
+      } else {
+         options->depinfo.sbid = opt.depinfo_value.sbid;
+         options->depinfo.mode = opt.depinfo_value.mode;
+      }
+      return;
+   }
+   if (opt.type == INSTOPTION_CHAN_OFFSET) {
+      options->chan_offset = opt.uint_value;
+      return;
+   }
+   switch (opt.uint_value) {
+   case ALIGN1:
+      options->access_mode = BRW_ALIGN_1;
+      break;
+   case ALIGN16:
+      options->access_mode = BRW_ALIGN_16;
+      break;
+   case SWITCH:
+      options->thread_control |= BRW_THREAD_SWITCH;
+      break;
+   case ATOMIC:
+      options->thread_control |= BRW_THREAD_ATOMIC;
+      break;
+   case BRANCH_CTRL:
+      options->branch_control = true;
+      break;
+   case NODDCHK:
+      options->no_dd_check = true;
+      break;
+   case NODDCLR:
+      options->no_dd_clear = true;
+      break;
+   case MASK_DISABLE:
+      options->mask_control |= BRW_MASK_DISABLE;
+      break;
+   case BREAKPOINT:
+      options->debug_control = BRW_DEBUG_BREAKPOINT;
+      break;
+   case WECTRL:
+      options->mask_control |= BRW_WE_ALL;
+      break;
+   case CMPTCTRL:
+      /* Don't set the compaction flag to true, we're just reading
+       * text assembly, not instruction bits. The code that will
+       * assemble things later will set the flag if it decides to
+       * compact instructions.
+       */
+      if (!compaction_warning_given) {
+         compaction_warning_given = true;
+         fprintf(stderr, "%s: ignoring 'compacted' "
+                 "annotations for text assembly "
+                 "instructions\n", input_filename);
+      }
+      break;
+   case ACCWREN:
+      options->acc_wr_control = true;
+      break;
+   case EOT:
+      options->end_of_thread = true;
+      break;
+   }
 }
 }
 %%
 
 ROOT:
-	instrseq
-	;
+   instrseq
+   ;
 
 instrseq:
-	instrseq instruction SEMICOLON
-	| instrseq relocatableinstruction SEMICOLON
-	| instruction SEMICOLON
-	| relocatableinstruction SEMICOLON
-	| instrseq jumplabeltarget
-	| jumplabeltarget
-	;
+   instrseq instruction SEMICOLON
+   | instrseq relocatableinstruction SEMICOLON
+   | instruction SEMICOLON
+   | relocatableinstruction SEMICOLON
+   | instrseq jumplabeltarget
+   | jumplabeltarget
+   ;
 
 /* Instruction Group */
 instruction:
-	unaryinstruction
-	| binaryinstruction
-	| binaryaccinstruction
-	| mathinstruction
-	| nopinstruction
-	| waitinstruction
-	| ternaryinstruction
-	| sendinstruction
-	| illegalinstruction
-	| syncinstruction
-	;
+   unaryinstruction
+   | binaryinstruction
+   | binaryaccinstruction
+   | mathinstruction
+   | nopinstruction
+   | waitinstruction
+   | ternaryinstruction
+   | sendinstruction
+   | illegalinstruction
+   | syncinstruction
+   ;
 
 relocatableinstruction:
-	jumpinstruction
-	| branchinstruction
-	| breakinstruction
-	| loopinstruction
-	;
+   jumpinstruction
+   | branchinstruction
+   | breakinstruction
+   | loopinstruction
+   ;
 
 illegalinstruction:
-	ILLEGAL execsize instoptions
-	{
-		brw_next_insn(p, $1);
-		brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $2);
-		i965_asm_set_instruction_options(p, $3);
-	}
-	;
+   ILLEGAL execsize instoptions
+   {
+      brw_next_insn(p, $1);
+      brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $2);
+      i965_asm_set_instruction_options(p, $3);
+   }
+   ;
 
 /* Unary instruction */
 unaryinstruction:
-	predicate unaryopcodes saturate cond_mod execsize dst srcaccimm	instoptions
-	{
-		brw_set_default_access_mode(p, $8.access_mode);
-		i965_asm_unary_instruction($2, p, $6, $7);
-		brw_pop_insn_state(p);
-		i965_asm_set_instruction_options(p, $8);
-		if ($4.cond_modifier) {
-			brw_eu_inst_set_cond_modifier(p->devinfo,
-						      brw_last_inst,
-						      $4.cond_modifier);
-		}
+   predicate unaryopcodes saturate cond_mod execsize dst srcaccimm   instoptions
+   {
+      brw_set_default_access_mode(p, $8.access_mode);
+      i965_asm_unary_instruction($2, p, $6, $7);
+      brw_pop_insn_state(p);
+      i965_asm_set_instruction_options(p, $8);
+      if ($4.cond_modifier) {
+         brw_eu_inst_set_cond_modifier(p->devinfo,
+                                       brw_last_inst,
+                                       $4.cond_modifier);
+      }
 
-		if (!brw_eu_inst_flag_reg_nr(p->devinfo, brw_last_inst)) {
-			brw_eu_inst_set_flag_reg_nr(p->devinfo,
-						 brw_last_inst,
-						 $4.flag_reg_nr);
-			brw_eu_inst_set_flag_subreg_nr(p->devinfo,
-						    brw_last_inst,
-						    $4.flag_subreg_nr);
-		}
+      if (!brw_eu_inst_flag_reg_nr(p->devinfo, brw_last_inst)) {
+         brw_eu_inst_set_flag_reg_nr(p->devinfo,
+                                     brw_last_inst,
+                                     $4.flag_reg_nr);
+         brw_eu_inst_set_flag_subreg_nr(p->devinfo,
+                                        brw_last_inst,
+                                        $4.flag_subreg_nr);
+      }
 
-		if ($7.file != IMM) {
-			brw_eu_inst_set_src0_vstride(p->devinfo, brw_last_inst,
-						  $7.vstride);
-		}
-		brw_eu_inst_set_saturate(p->devinfo, brw_last_inst, $3);
-		brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $5);
-		brw_eu_inst_set_group(p->devinfo, brw_last_inst, $8.chan_offset);
-	}
-	;
+      if ($7.file != IMM) {
+         brw_eu_inst_set_src0_vstride(p->devinfo, brw_last_inst,
+                                      $7.vstride);
+      }
+      brw_eu_inst_set_saturate(p->devinfo, brw_last_inst, $3);
+      brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $5);
+      brw_eu_inst_set_group(p->devinfo, brw_last_inst, $8.chan_offset);
+   }
+   ;
 
 unaryopcodes:
-	BFREV
-	| CBIT
-	| DIM
-	| FBH
-	| FBL
-	| FRC
-	| LZD
-	| MOV
-	| NOT
-	| RNDD
-	| RNDE
-	| RNDU
-	| RNDZ
-	;
+   BFREV
+   | CBIT
+   | DIM
+   | FBH
+   | FBL
+   | FRC
+   | LZD
+   | MOV
+   | NOT
+   | RNDD
+   | RNDE
+   | RNDU
+   | RNDZ
+   ;
 
 /* Binary instruction */
 binaryinstruction:
-	predicate binaryopcodes saturate cond_mod execsize dst srcimm srcimm instoptions
-	{
-		brw_set_default_access_mode(p, $9.access_mode);
-		i965_asm_binary_instruction($2, p, $6, $7, $8);
-		i965_asm_set_instruction_options(p, $9);
-		if ($4.cond_modifier) {
-			brw_eu_inst_set_cond_modifier(p->devinfo,
-						      brw_last_inst,
-						      $4.cond_modifier);
-		}
+   predicate binaryopcodes saturate cond_mod execsize dst srcimm srcimm instoptions
+   {
+      brw_set_default_access_mode(p, $9.access_mode);
+      i965_asm_binary_instruction($2, p, $6, $7, $8);
+      i965_asm_set_instruction_options(p, $9);
+      if ($4.cond_modifier) {
+         brw_eu_inst_set_cond_modifier(p->devinfo,
+                                       brw_last_inst,
+                                       $4.cond_modifier);
+      }
 
-		if (!brw_eu_inst_flag_reg_nr(p->devinfo, brw_last_inst)) {
-			brw_eu_inst_set_flag_reg_nr(p->devinfo, brw_last_inst,
-					         $4.flag_reg_nr);
-			brw_eu_inst_set_flag_subreg_nr(p->devinfo, brw_last_inst,
-						    $4.flag_subreg_nr);
-		}
+      if (!brw_eu_inst_flag_reg_nr(p->devinfo, brw_last_inst)) {
+         brw_eu_inst_set_flag_reg_nr(p->devinfo, brw_last_inst,
+                                     $4.flag_reg_nr);
+         brw_eu_inst_set_flag_subreg_nr(p->devinfo, brw_last_inst,
+                                        $4.flag_subreg_nr);
+      }
 
-		brw_eu_inst_set_saturate(p->devinfo, brw_last_inst, $3);
-		brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $5);
-		brw_eu_inst_set_group(p->devinfo, brw_last_inst, $9.chan_offset);
+      brw_eu_inst_set_saturate(p->devinfo, brw_last_inst, $3);
+      brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $5);
+      brw_eu_inst_set_group(p->devinfo, brw_last_inst, $9.chan_offset);
 
-		brw_pop_insn_state(p);
-	}
-	;
+      brw_pop_insn_state(p);
+   }
+   ;
 
 binaryopcodes:
-	ADDC
-	| BFI1
-	| DP2
-	| DP3
-	| DP4
-	| DPH
-	| LINE
-	| MAC
-	| MACH
-	| MUL
-	| PLN
-	| ROL
-	| ROR
-	| SUBB
-	;
+   ADDC
+   | BFI1
+   | DP2
+   | DP3
+   | DP4
+   | DPH
+   | LINE
+   | MAC
+   | MACH
+   | MUL
+   | PLN
+   | ROL
+   | ROR
+   | SUBB
+   ;
 
 /* Binary acc instruction */
 binaryaccinstruction:
-	predicate binaryaccopcodes saturate cond_mod execsize dst srcacc srcimm instoptions
-	{
-		brw_set_default_access_mode(p, $9.access_mode);
-		i965_asm_binary_instruction($2, p, $6, $7, $8);
-		brw_pop_insn_state(p);
-		i965_asm_set_instruction_options(p, $9);
-		if ($4.cond_modifier) {
-			brw_eu_inst_set_cond_modifier(p->devinfo,
-						      brw_last_inst,
-						      $4.cond_modifier);
-		}
+   predicate binaryaccopcodes saturate cond_mod execsize dst srcacc srcimm instoptions
+   {
+      brw_set_default_access_mode(p, $9.access_mode);
+      i965_asm_binary_instruction($2, p, $6, $7, $8);
+      brw_pop_insn_state(p);
+      i965_asm_set_instruction_options(p, $9);
+      if ($4.cond_modifier) {
+         brw_eu_inst_set_cond_modifier(p->devinfo,
+                                       brw_last_inst,
+                                       $4.cond_modifier);
+      }
 
-		if (!brw_eu_inst_flag_reg_nr(p->devinfo, brw_last_inst)) {
-			brw_eu_inst_set_flag_reg_nr(p->devinfo,
-						 brw_last_inst,
-						 $4.flag_reg_nr);
-			brw_eu_inst_set_flag_subreg_nr(p->devinfo,
-						    brw_last_inst,
-						    $4.flag_subreg_nr);
-		}
+      if (!brw_eu_inst_flag_reg_nr(p->devinfo, brw_last_inst)) {
+         brw_eu_inst_set_flag_reg_nr(p->devinfo,
+                                     brw_last_inst,
+                                     $4.flag_reg_nr);
+         brw_eu_inst_set_flag_subreg_nr(p->devinfo,
+                                        brw_last_inst,
+                                        $4.flag_subreg_nr);
+      }
 
-		brw_eu_inst_set_saturate(p->devinfo, brw_last_inst, $3);
-		brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $5);
-		brw_eu_inst_set_group(p->devinfo, brw_last_inst, $9.chan_offset);
-	}
-	;
+      brw_eu_inst_set_saturate(p->devinfo, brw_last_inst, $3);
+      brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $5);
+      brw_eu_inst_set_group(p->devinfo, brw_last_inst, $9.chan_offset);
+   }
+   ;
 
 binaryaccopcodes:
-	ADD
-	| AND
-	| ASR
-	| AVG
-	| CMP
-	| CMPN
-	| OR
-	| SEL
-	| SHL
-	| SHR
-	| XOR
-	;
+   ADD
+   | AND
+   | ASR
+   | AVG
+   | CMP
+   | CMPN
+   | OR
+   | SEL
+   | SHL
+   | SHR
+   | XOR
+   ;
 
 /* Math instruction */
 mathinstruction:
-	predicate MATH saturate math_function execsize dst src srcimm instoptions
-	{
-		brw_set_default_access_mode(p, $9.access_mode);
-		gfx6_math(p, $6, $4, $7, $8);
-		i965_asm_set_instruction_options(p, $9);
-		brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $5);
-		brw_eu_inst_set_saturate(p->devinfo, brw_last_inst, $3);
-		brw_eu_inst_set_group(p->devinfo, brw_last_inst, $9.chan_offset);
-		brw_pop_insn_state(p);
-	}
-	;
+   predicate MATH saturate math_function execsize dst src srcimm instoptions
+   {
+      brw_set_default_access_mode(p, $9.access_mode);
+      gfx6_math(p, $6, $4, $7, $8);
+      i965_asm_set_instruction_options(p, $9);
+      brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $5);
+      brw_eu_inst_set_saturate(p->devinfo, brw_last_inst, $3);
+      brw_eu_inst_set_group(p->devinfo, brw_last_inst, $9.chan_offset);
+      brw_pop_insn_state(p);
+   }
+   ;
 
 math_function:
-	COS
-	| EXP
-	| FDIV
-	| INV
-	| INVM
-	| INTDIV
-	| INTDIVMOD
-	| INTMOD
-	| LOG
-	| POW
-	| RSQ
-	| RSQRTM
-	| SIN
-	| SQRT
-	| SINCOS
-	;
+   COS
+   | EXP
+   | FDIV
+   | INV
+   | INVM
+   | INTDIV
+   | INTDIVMOD
+   | INTMOD
+   | LOG
+   | POW
+   | RSQ
+   | RSQRTM
+   | SIN
+   | SQRT
+   | SINCOS
+   ;
 
 /* NOP instruction */
 nopinstruction:
-	NOP
-	{
-		brw_NOP(p);
-	}
-	;
+   NOP
+   {
+      brw_NOP(p);
+   }
+   ;
 
 /* Ternary operand instruction */
 ternaryinstruction:
-	predicate ternaryopcodes saturate cond_mod execsize dst srcimm src srcimm instoptions
-	{
-		brw_set_default_access_mode(p, $10.access_mode);
-		i965_asm_ternary_instruction($2, p, $6, $7, $8, $9);
-		brw_pop_insn_state(p);
-		i965_asm_set_instruction_options(p, $10);
-		if ($4.cond_modifier) {
-			brw_eu_inst_set_cond_modifier(p->devinfo,
-						      brw_last_inst,
-						      $4.cond_modifier);
-		}
+   predicate ternaryopcodes saturate cond_mod execsize dst srcimm src srcimm instoptions
+   {
+      brw_set_default_access_mode(p, $10.access_mode);
+      i965_asm_ternary_instruction($2, p, $6, $7, $8, $9);
+      brw_pop_insn_state(p);
+      i965_asm_set_instruction_options(p, $10);
+      if ($4.cond_modifier) {
+         brw_eu_inst_set_cond_modifier(p->devinfo,
+                                       brw_last_inst,
+                                       $4.cond_modifier);
+      }
 
-		if (p->devinfo->ver < 12) {
-			brw_eu_inst_set_3src_a16_flag_reg_nr(p->devinfo, brw_last_inst,
-					         $4.flag_reg_nr);
-			brw_eu_inst_set_3src_a16_flag_subreg_nr(p->devinfo, brw_last_inst,
-						    $4.flag_subreg_nr);
-		}
+      if (p->devinfo->ver < 12) {
+         brw_eu_inst_set_3src_a16_flag_reg_nr(p->devinfo, brw_last_inst,
+                                              $4.flag_reg_nr);
+         brw_eu_inst_set_3src_a16_flag_subreg_nr(p->devinfo, brw_last_inst,
+                                                 $4.flag_subreg_nr);
+      }
 
-		brw_eu_inst_set_saturate(p->devinfo, brw_last_inst, $3);
-		brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $5);
-		brw_eu_inst_set_group(p->devinfo, brw_last_inst, $10.chan_offset);
-	}
-	;
+      brw_eu_inst_set_saturate(p->devinfo, brw_last_inst, $3);
+      brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $5);
+      brw_eu_inst_set_group(p->devinfo, brw_last_inst, $10.chan_offset);
+   }
+   ;
 
 ternaryopcodes:
-	CSEL
-	| BFE
-	| BFI2
-	| LRP
-	| MAD
-	| DP4A
-	| ADD3
-	;
+   CSEL
+   | BFE
+   | BFI2
+   | LRP
+   | MAD
+   | DP4A
+   | ADD3
+   ;
 
 /* Wait instruction */
 waitinstruction:
-	WAIT execsize dst instoptions
-	{
-		brw_next_insn(p, $1);
-		i965_asm_set_instruction_options(p, $4);
-		brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $2);
-		brw_set_default_access_mode(p, $4.access_mode);
-		struct brw_reg dest = $3;
-		dest.swizzle = brw_swizzle_for_mask(dest.writemask);
-		if (dest.file != ARF || dest.nr != BRW_ARF_NOTIFICATION_COUNT)
-			error(&@1, "WAIT must use the notification register\n");
-		brw_set_dest(p, brw_last_inst, dest);
-		brw_set_src0(p, brw_last_inst, dest);
-		brw_set_src1(p, brw_last_inst, brw_null_reg());
-		brw_eu_inst_set_mask_control(p->devinfo, brw_last_inst, BRW_MASK_DISABLE);
-	}
-	;
+   WAIT execsize dst instoptions
+   {
+      brw_next_insn(p, $1);
+      i965_asm_set_instruction_options(p, $4);
+      brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $2);
+      brw_set_default_access_mode(p, $4.access_mode);
+      struct brw_reg dest = $3;
+      dest.swizzle = brw_swizzle_for_mask(dest.writemask);
+      if (dest.file != ARF || dest.nr != BRW_ARF_NOTIFICATION_COUNT)
+         error(&@1, "WAIT must use the notification register\n");
+      brw_set_dest(p, brw_last_inst, dest);
+      brw_set_src0(p, brw_last_inst, dest);
+      brw_set_src1(p, brw_last_inst, brw_null_reg());
+      brw_eu_inst_set_mask_control(p->devinfo, brw_last_inst, BRW_MASK_DISABLE);
+   }
+   ;
 
 /* Send instruction */
 sendinstruction:
-	predicate sendopcode execsize dst payload exp2 sharedfunction msgdesc instoptions
-	{
-		i965_asm_set_instruction_options(p, $9);
-		brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $3);
-		brw_set_dest(p, brw_last_inst, $4);
-		brw_set_src0(p, brw_last_inst, $5);
-		brw_eu_inst_set_bits(brw_last_inst, 127, 96, $6);
-		brw_eu_inst_set_src1_file_type(p->devinfo, brw_last_inst,
-				            IMM,
-					    BRW_TYPE_UD);
-		brw_eu_inst_set_sfid(p->devinfo, brw_last_inst, $7);
-		brw_eu_inst_set_eot(p->devinfo, brw_last_inst, $9.end_of_thread);
-		brw_eu_inst_set_group(p->devinfo, brw_last_inst, $9.chan_offset);
+   predicate sendopcode execsize dst payload exp2 sharedfunction msgdesc instoptions
+   {
+      i965_asm_set_instruction_options(p, $9);
+      brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $3);
+      brw_set_dest(p, brw_last_inst, $4);
+      brw_set_src0(p, brw_last_inst, $5);
+      brw_eu_inst_set_bits(brw_last_inst, 127, 96, $6);
+      brw_eu_inst_set_src1_file_type(p->devinfo, brw_last_inst,
+                                     IMM, BRW_TYPE_UD);
+      brw_eu_inst_set_sfid(p->devinfo, brw_last_inst, $7);
+      brw_eu_inst_set_eot(p->devinfo, brw_last_inst, $9.end_of_thread);
+      brw_eu_inst_set_group(p->devinfo, brw_last_inst, $9.chan_offset);
 
-		brw_pop_insn_state(p);
-	}
-	| predicate sendopcode execsize dst payload payload exp2 sharedfunction msgdesc instoptions
-	{
-		assert(p->devinfo->ver < 12);
+      brw_pop_insn_state(p);
+   }
+   | predicate sendopcode execsize dst payload payload exp2 sharedfunction msgdesc instoptions
+   {
+      assert(p->devinfo->ver < 12);
 
-		i965_asm_set_instruction_options(p, $10);
-		brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $3);
-		brw_set_dest(p, brw_last_inst, $4);
-		brw_set_src0(p, brw_last_inst, $5);
-		brw_eu_inst_set_bits(brw_last_inst, 127, 96, $7);
-		brw_eu_inst_set_sfid(p->devinfo, brw_last_inst, $8);
-		brw_eu_inst_set_eot(p->devinfo, brw_last_inst, $10.end_of_thread);
-		brw_eu_inst_set_group(p->devinfo, brw_last_inst, $10.chan_offset);
+      i965_asm_set_instruction_options(p, $10);
+      brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $3);
+      brw_set_dest(p, brw_last_inst, $4);
+      brw_set_src0(p, brw_last_inst, $5);
+      brw_eu_inst_set_bits(brw_last_inst, 127, 96, $7);
+      brw_eu_inst_set_sfid(p->devinfo, brw_last_inst, $8);
+      brw_eu_inst_set_eot(p->devinfo, brw_last_inst, $10.end_of_thread);
+      brw_eu_inst_set_group(p->devinfo, brw_last_inst, $10.chan_offset);
 
-		brw_pop_insn_state(p);
-	}
-	| predicate sendsopcode execsize dst payload payload desc ex_desc sharedfunction msgdesc instoptions
-	{
-		i965_asm_set_instruction_options(p, $11);
-		brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $3);
-		brw_set_dest(p, brw_last_inst, $4);
-		brw_set_src0(p, brw_last_inst, $5);
-		brw_set_src1(p, brw_last_inst, $6);
+      brw_pop_insn_state(p);
+   }
+   | predicate sendsopcode execsize dst payload payload desc ex_desc sharedfunction msgdesc instoptions
+   {
+      i965_asm_set_instruction_options(p, $11);
+      brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $3);
+      brw_set_dest(p, brw_last_inst, $4);
+      brw_set_src0(p, brw_last_inst, $5);
+      brw_set_src1(p, brw_last_inst, $6);
 
-		if ($7.file == IMM) {
-			brw_eu_inst_set_send_sel_reg32_desc(p->devinfo, brw_last_inst, 0);
-			brw_eu_inst_set_send_desc(p->devinfo, brw_last_inst, $7.ud);
-		} else {
-			brw_eu_inst_set_send_sel_reg32_desc(p->devinfo, brw_last_inst, 1);
-		}
+      if ($7.file == IMM) {
+         brw_eu_inst_set_send_sel_reg32_desc(p->devinfo, brw_last_inst, 0);
+         brw_eu_inst_set_send_desc(p->devinfo, brw_last_inst, $7.ud);
+      } else {
+         brw_eu_inst_set_send_sel_reg32_desc(p->devinfo, brw_last_inst, 1);
+      }
 
-		if ($8.file == IMM) {
-			brw_eu_inst_set_send_sel_reg32_ex_desc(p->devinfo, brw_last_inst, 0);
-			brw_eu_inst_set_sends_ex_desc(p->devinfo, brw_last_inst, $8.ud, false);
-		} else {
-			brw_eu_inst_set_send_sel_reg32_ex_desc(p->devinfo, brw_last_inst, 1);
-			brw_eu_inst_set_send_ex_desc_ia_subreg_nr(p->devinfo, brw_last_inst, $8.subnr >> 2);
-		}
+      if ($8.file == IMM) {
+         brw_eu_inst_set_send_sel_reg32_ex_desc(p->devinfo, brw_last_inst, 0);
+         brw_eu_inst_set_sends_ex_desc(p->devinfo, brw_last_inst, $8.ud, false);
+      } else {
+         brw_eu_inst_set_send_sel_reg32_ex_desc(p->devinfo, brw_last_inst, 1);
+         brw_eu_inst_set_send_ex_desc_ia_subreg_nr(p->devinfo, brw_last_inst, $8.subnr >> 2);
+      }
 
-		brw_eu_inst_set_sfid(p->devinfo, brw_last_inst, $9);
-		brw_eu_inst_set_eot(p->devinfo, brw_last_inst, $11.end_of_thread);
-		brw_eu_inst_set_group(p->devinfo, brw_last_inst, $11.chan_offset);
+      brw_eu_inst_set_sfid(p->devinfo, brw_last_inst, $9);
+      brw_eu_inst_set_eot(p->devinfo, brw_last_inst, $11.end_of_thread);
+      brw_eu_inst_set_group(p->devinfo, brw_last_inst, $11.chan_offset);
 
-		if (p->devinfo->verx10 >= 125 && $10.ex_bso) {
-			brw_eu_inst_set_send_ex_bso(p->devinfo, brw_last_inst, 1);
-			brw_eu_inst_set_send_src1_len(p->devinfo, brw_last_inst,
-						   $10.src1_len);
-		}
+      if (p->devinfo->verx10 >= 125 && $10.ex_bso) {
+         brw_eu_inst_set_send_ex_bso(p->devinfo, brw_last_inst, 1);
+         brw_eu_inst_set_send_src1_len(p->devinfo, brw_last_inst, $10.src1_len);
+      }
 
-		brw_pop_insn_state(p);
-	}
-	| predicate sendsopcode execsize dst GENREGFILE LSQUARE scalarreg RSQUARE desc ex_desc sharedfunction msgdesc instoptions
-	{
+      brw_pop_insn_state(p);
+   }
+   | predicate sendsopcode execsize dst GENREGFILE LSQUARE scalarreg RSQUARE desc ex_desc sharedfunction msgdesc instoptions
+   {
                 assert(p->devinfo->ver >= 30);
 
-		i965_asm_set_instruction_options(p, $13);
-		brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $3);
-		brw_set_dest(p, brw_last_inst, $4);
-		brw_set_src0(p, brw_last_inst, $7);
-		brw_set_src1(p, brw_last_inst, brw_null_reg());
+      i965_asm_set_instruction_options(p, $13);
+      brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $3);
+      brw_set_dest(p, brw_last_inst, $4);
+      brw_set_src0(p, brw_last_inst, $7);
+      brw_set_src1(p, brw_last_inst, brw_null_reg());
 
-		if ($9.file == IMM) {
-			brw_eu_inst_set_send_sel_reg32_desc(p->devinfo, brw_last_inst, 0);
-			brw_eu_inst_set_send_desc(p->devinfo, brw_last_inst, $9.ud);
-		} else {
-			brw_eu_inst_set_send_sel_reg32_desc(p->devinfo, brw_last_inst, 1);
-		}
+      if ($9.file == IMM) {
+         brw_eu_inst_set_send_sel_reg32_desc(p->devinfo, brw_last_inst, 0);
+         brw_eu_inst_set_send_desc(p->devinfo, brw_last_inst, $9.ud);
+      } else {
+         brw_eu_inst_set_send_sel_reg32_desc(p->devinfo, brw_last_inst, 1);
+      }
 
-		if ($10.file == IMM) {
-			brw_eu_inst_set_send_sel_reg32_ex_desc(p->devinfo, brw_last_inst, 0);
-			brw_eu_inst_set_sends_ex_desc(p->devinfo, brw_last_inst, $10.ud, true);
-		} else {
-			brw_eu_inst_set_send_sel_reg32_ex_desc(p->devinfo, brw_last_inst, 1);
-			brw_eu_inst_set_send_ex_desc_ia_subreg_nr(p->devinfo, brw_last_inst, $10.subnr >> 2);
-		}
+      if ($10.file == IMM) {
+         brw_eu_inst_set_send_sel_reg32_ex_desc(p->devinfo, brw_last_inst, 0);
+         brw_eu_inst_set_sends_ex_desc(p->devinfo, brw_last_inst, $10.ud, true);
+      } else {
+         brw_eu_inst_set_send_sel_reg32_ex_desc(p->devinfo, brw_last_inst, 1);
+         brw_eu_inst_set_send_ex_desc_ia_subreg_nr(p->devinfo, brw_last_inst, $10.subnr >> 2);
+      }
 
-		brw_eu_inst_set_sfid(p->devinfo, brw_last_inst, $11);
-		brw_eu_inst_set_eot(p->devinfo, brw_last_inst, $13.end_of_thread);
-		brw_eu_inst_set_group(p->devinfo, brw_last_inst, $13.chan_offset);
+      brw_eu_inst_set_sfid(p->devinfo, brw_last_inst, $11);
+      brw_eu_inst_set_eot(p->devinfo, brw_last_inst, $13.end_of_thread);
+      brw_eu_inst_set_group(p->devinfo, brw_last_inst, $13.chan_offset);
 
-		if ($12.ex_bso) {
-			brw_eu_inst_set_send_ex_bso(p->devinfo, brw_last_inst, 1);
-                        /* Not settings src1 length, as its implied zero. */
-		}
+      if ($12.ex_bso) {
+         brw_eu_inst_set_send_ex_bso(p->devinfo, brw_last_inst, 1);
+         /* Not settings src1 length, as its implied zero. */
+      }
 
-		brw_pop_insn_state(p);
-	}
-	;
+      brw_pop_insn_state(p);
+   }
+   ;
 
 sendop:
-	SEND_GFX4
-	| SENDC_GFX4
-	;
+   SEND_GFX4
+   | SENDC_GFX4
+   ;
 
 sendsop:
-	SEND_GFX12
-	| SENDC_GFX12
-	| SENDS
-	| SENDSC
-	;
+   SEND_GFX12
+   | SENDC_GFX12
+   | SENDS
+   | SENDSC
+   ;
 
 sendopcode:
-	sendop   { $$ = brw_next_insn(p, $1); }
-	;
+   sendop   { $$ = brw_next_insn(p, $1); }
+   ;
 
 sendsopcode:
-	sendsop  { $$ = brw_next_insn(p, $1); }
-	;
+   sendsop  { $$ = brw_next_insn(p, $1); }
+   ;
 
 sharedfunction:
-	NULL_TOKEN 	        { $$ = BRW_SFID_NULL; }
-	| GATEWAY 	        { $$ = BRW_SFID_MESSAGE_GATEWAY; }
-	| URB 		        { $$ = BRW_SFID_URB; }
-	| THREAD_SPAWNER 	{ $$ = BRW_SFID_THREAD_SPAWNER; }
-	| VME 		        { $$ = BRW_SFID_VME; }
-	| RENDER 	        { $$ = GFX6_SFID_DATAPORT_RENDER_CACHE; }
-	| CONST 	        { $$ = GFX6_SFID_DATAPORT_CONSTANT_CACHE; }
-	| DATA 		        { $$ = GFX7_SFID_DATAPORT_DATA_CACHE; }
-	| PIXEL_INTERP 	        { $$ = GFX7_SFID_PIXEL_INTERPOLATOR; }
-	| DP_DATA_1 	        { $$ = HSW_SFID_DATAPORT_DATA_CACHE_1; }
-	| CRE 		        { $$ = HSW_SFID_CRE; }
-	| SAMPLER	        { $$ = BRW_SFID_SAMPLER; }
-	| DP_SAMPLER	        { $$ = GFX6_SFID_DATAPORT_SAMPLER_CACHE; }
-	| RT_ACCEL		{ $$ = GEN_RT_SFID_RAY_TRACE_ACCELERATOR; }
-	| SLM			{ $$ = GFX12_SFID_SLM; }
-	| TGM			{ $$ = GFX12_SFID_TGM; }
-	| UGM			{ $$ = GFX12_SFID_UGM; }
-	;
+   NULL_TOKEN          { $$ = BRW_SFID_NULL; }
+   | GATEWAY           { $$ = BRW_SFID_MESSAGE_GATEWAY; }
+   | URB               { $$ = BRW_SFID_URB; }
+   | THREAD_SPAWNER    { $$ = BRW_SFID_THREAD_SPAWNER; }
+   | VME               { $$ = BRW_SFID_VME; }
+   | RENDER            { $$ = GFX6_SFID_DATAPORT_RENDER_CACHE; }
+   | CONST             { $$ = GFX6_SFID_DATAPORT_CONSTANT_CACHE; }
+   | DATA              { $$ = GFX7_SFID_DATAPORT_DATA_CACHE; }
+   | PIXEL_INTERP      { $$ = GFX7_SFID_PIXEL_INTERPOLATOR; }
+   | DP_DATA_1         { $$ = HSW_SFID_DATAPORT_DATA_CACHE_1; }
+   | CRE               { $$ = HSW_SFID_CRE; }
+   | SAMPLER           { $$ = BRW_SFID_SAMPLER; }
+   | DP_SAMPLER        { $$ = GFX6_SFID_DATAPORT_SAMPLER_CACHE; }
+   | RT_ACCEL          { $$ = GEN_RT_SFID_RAY_TRACE_ACCELERATOR; }
+   | SLM               { $$ = GFX12_SFID_SLM; }
+   | TGM               { $$ = GFX12_SFID_TGM; }
+   | UGM               { $$ = GFX12_SFID_UGM; }
+   ;
 
 exp2:
-	LONG 		{ $$ = $1; }
-	| MINUS LONG 	{ $$ = -$2; }
-	;
+   LONG       { $$ = $1; }
+   | MINUS LONG    { $$ = -$2; }
+   ;
 
 desc:
-	reg32a
-	| exp2
-	{
-		$$ = brw_imm_ud($1);
-	}
-	;
+   reg32a
+   | exp2
+   {
+      $$ = brw_imm_ud($1);
+   }
+   ;
 
 ex_desc:
-	reg32a
-	| exp2
-	{
-		$$ = brw_imm_ud($1);
-	}
-	;
+   reg32a
+   | exp2
+   {
+      $$ = brw_imm_ud($1);
+   }
+   ;
 
 reg32a:
-	addrreg region reg_type
-	{
-		$$ = set_direct_src_operand(&$1, $3);
-		$$ = stride($$, $2.vstride, $2.width, $2.hstride);
-	}
-	;
+   addrreg region reg_type
+   {
+      $$ = set_direct_src_operand(&$1, $3);
+      $$ = stride($$, $2.vstride, $2.width, $2.hstride);
+   }
+   ;
 
 
 /* Jump instruction */
 jumpinstruction:
-	predicate JMPI execsize relativelocation2 instoptions
-	{
-		brw_next_insn(p, $2);
-		i965_asm_set_instruction_options(p, $5);
-		brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $3);
-		brw_set_dest(p, brw_last_inst, brw_ip_reg());
-		brw_set_src0(p, brw_last_inst, brw_ip_reg());
-		brw_set_src1(p, brw_last_inst, $4);
-		brw_eu_inst_set_pred_control(p->devinfo, brw_last_inst,
-					  brw_eu_inst_pred_control(p->devinfo,
-								brw_last_inst));
-		brw_pop_insn_state(p);
-	}
-	;
+   predicate JMPI execsize relativelocation2 instoptions
+   {
+      brw_next_insn(p, $2);
+      i965_asm_set_instruction_options(p, $5);
+      brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $3);
+      brw_set_dest(p, brw_last_inst, brw_ip_reg());
+      brw_set_src0(p, brw_last_inst, brw_ip_reg());
+      brw_set_src1(p, brw_last_inst, $4);
+      brw_eu_inst_set_pred_control(p->devinfo, brw_last_inst,
+                                   brw_eu_inst_pred_control(p->devinfo, brw_last_inst));
+      brw_pop_insn_state(p);
+   }
+   ;
 
 /* branch instruction */
 branchinstruction:
-	predicate ENDIF execsize JUMP_LABEL instoptions
-	{
-		add_label(p, $4, INSTR_LABEL_JIP);
+   predicate ENDIF execsize JUMP_LABEL instoptions
+   {
+      add_label(p, $4, INSTR_LABEL_JIP);
 
-		brw_next_insn(p, $2);
-		i965_asm_set_instruction_options(p, $5);
-		brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $3);
+      brw_next_insn(p, $2);
+      i965_asm_set_instruction_options(p, $5);
+      brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $3);
 
-		brw_set_src0(p, brw_last_inst, brw_imm_d(0x0));
+      brw_set_src0(p, brw_last_inst, brw_imm_d(0x0));
 
-		brw_pop_insn_state(p);
-	}
-	| ELSE execsize JUMP_LABEL jumplabel instoptions
-	{
-		add_label(p, $3, INSTR_LABEL_JIP);
-		add_label(p, $4, INSTR_LABEL_UIP);
+      brw_pop_insn_state(p);
+   }
+   | ELSE execsize JUMP_LABEL jumplabel instoptions
+   {
+      add_label(p, $3, INSTR_LABEL_JIP);
+      add_label(p, $4, INSTR_LABEL_UIP);
 
-		brw_next_insn(p, $1);
-		i965_asm_set_instruction_options(p, $5);
-		brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $2);
+      brw_next_insn(p, $1);
+      i965_asm_set_instruction_options(p, $5);
+      brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $2);
 
-		brw_set_dest(p, brw_last_inst, retype(brw_null_reg(),
-			     BRW_TYPE_D));
-		if (p->devinfo->ver < 12)
-			brw_set_src0(p, brw_last_inst, brw_imm_d(0));
-	}
-	| predicate IF execsize JUMP_LABEL jumplabel instoptions
-	{
-		add_label(p, $4, INSTR_LABEL_JIP);
-		add_label(p, $5, INSTR_LABEL_UIP);
+      brw_set_dest(p, brw_last_inst, retype(brw_null_reg(), BRW_TYPE_D));
+      if (p->devinfo->ver < 12)
+         brw_set_src0(p, brw_last_inst, brw_imm_d(0));
+   }
+   | predicate IF execsize JUMP_LABEL jumplabel instoptions
+   {
+      add_label(p, $4, INSTR_LABEL_JIP);
+      add_label(p, $5, INSTR_LABEL_UIP);
 
-		brw_next_insn(p, $2);
-		i965_asm_set_instruction_options(p, $6);
-		brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $3);
+      brw_next_insn(p, $2);
+      i965_asm_set_instruction_options(p, $6);
+      brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $3);
 
-		brw_set_dest(p, brw_last_inst,
-			     vec1(retype(brw_null_reg(),
-			     BRW_TYPE_D)));
-		if (p->devinfo->ver < 12)
-			brw_set_src0(p, brw_last_inst, brw_imm_d(0x0));
+      brw_set_dest(p, brw_last_inst, vec1(retype(brw_null_reg(), BRW_TYPE_D)));
+      if (p->devinfo->ver < 12)
+         brw_set_src0(p, brw_last_inst, brw_imm_d(0x0));
 
-		brw_pop_insn_state(p);
-	}
-	;
+      brw_pop_insn_state(p);
+   }
+   ;
 
 /* break instruction */
 breakinstruction:
-	predicate BREAK execsize JUMP_LABEL JUMP_LABEL instoptions
-	{
-		add_label(p, $4, INSTR_LABEL_JIP);
-		add_label(p, $5, INSTR_LABEL_UIP);
+   predicate BREAK execsize JUMP_LABEL JUMP_LABEL instoptions
+   {
+      add_label(p, $4, INSTR_LABEL_JIP);
+      add_label(p, $5, INSTR_LABEL_UIP);
 
-		brw_next_insn(p, $2);
-		i965_asm_set_instruction_options(p, $6);
-		brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $3);
+      brw_next_insn(p, $2);
+      i965_asm_set_instruction_options(p, $6);
+      brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $3);
 
-		brw_set_dest(p, brw_last_inst, retype(brw_null_reg(),
-			     BRW_TYPE_D));
-		brw_set_src0(p, brw_last_inst, brw_imm_d(0x0));
+      brw_set_dest(p, brw_last_inst, retype(brw_null_reg(), BRW_TYPE_D));
+      brw_set_src0(p, brw_last_inst, brw_imm_d(0x0));
 
-		brw_pop_insn_state(p);
-	}
-	| predicate HALT execsize JUMP_LABEL JUMP_LABEL instoptions
-	{
-		add_label(p, $4, INSTR_LABEL_JIP);
-		add_label(p, $5, INSTR_LABEL_UIP);
+      brw_pop_insn_state(p);
+   }
+   | predicate HALT execsize JUMP_LABEL JUMP_LABEL instoptions
+   {
+      add_label(p, $4, INSTR_LABEL_JIP);
+      add_label(p, $5, INSTR_LABEL_UIP);
 
-		brw_next_insn(p, $2);
-		i965_asm_set_instruction_options(p, $6);
-		brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $3);
+      brw_next_insn(p, $2);
+      i965_asm_set_instruction_options(p, $6);
+      brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $3);
 
-		brw_set_dest(p, brw_last_inst, retype(brw_null_reg(),
-			     BRW_TYPE_D));
+      brw_set_dest(p, brw_last_inst, retype(brw_null_reg(), BRW_TYPE_D));
 
-		if (p->devinfo->ver < 12) {
-			brw_set_src0(p, brw_last_inst, brw_imm_d(0x0));
-		}
+      if (p->devinfo->ver < 12) {
+         brw_set_src0(p, brw_last_inst, brw_imm_d(0x0));
+      }
 
-		brw_pop_insn_state(p);
-	}
-	| predicate CONT execsize JUMP_LABEL JUMP_LABEL instoptions
-	{
-		add_label(p, $4, INSTR_LABEL_JIP);
-		add_label(p, $5, INSTR_LABEL_UIP);
+      brw_pop_insn_state(p);
+   }
+   | predicate CONT execsize JUMP_LABEL JUMP_LABEL instoptions
+   {
+      add_label(p, $4, INSTR_LABEL_JIP);
+      add_label(p, $5, INSTR_LABEL_UIP);
 
-		brw_next_insn(p, $2);
-		i965_asm_set_instruction_options(p, $6);
-		brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $3);
-		brw_set_dest(p, brw_last_inst, brw_ip_reg());
+      brw_next_insn(p, $2);
+      i965_asm_set_instruction_options(p, $6);
+      brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $3);
+      brw_set_dest(p, brw_last_inst, brw_ip_reg());
 
-		brw_set_src0(p, brw_last_inst, brw_imm_d(0x0));
+      brw_set_src0(p, brw_last_inst, brw_imm_d(0x0));
 
-		brw_pop_insn_state(p);
-	}
-	;
+      brw_pop_insn_state(p);
+   }
+   ;
 
 /* loop instruction */
 loopinstruction:
-	predicate WHILE execsize JUMP_LABEL instoptions
-	{
-		add_label(p, $4, INSTR_LABEL_JIP);
+   predicate WHILE execsize JUMP_LABEL instoptions
+   {
+      add_label(p, $4, INSTR_LABEL_JIP);
 
-		brw_next_insn(p, $2);
-		i965_asm_set_instruction_options(p, $5);
-		brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $3);
+      brw_next_insn(p, $2);
+      i965_asm_set_instruction_options(p, $5);
+      brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $3);
 
-		brw_set_dest(p, brw_last_inst,
-					retype(brw_null_reg(),
-					BRW_TYPE_D));
-		if (p->devinfo->ver < 12)
-			brw_set_src0(p, brw_last_inst, brw_imm_d(0x0));
+      brw_set_dest(p, brw_last_inst, retype(brw_null_reg(), BRW_TYPE_D));
+      if (p->devinfo->ver < 12)
+         brw_set_src0(p, brw_last_inst, brw_imm_d(0x0));
 
-		brw_pop_insn_state(p);
-	}
-	| DO execsize instoptions
-	{
-		brw_next_insn(p, $1);
-	}
-	;
+      brw_pop_insn_state(p);
+   }
+   | DO execsize instoptions
+   {
+      brw_next_insn(p, $1);
+   }
+   ;
 
 /* sync instruction */
 syncinstruction:
-	predicate SYNC sync_function execsize sync_arg instoptions
-	{
-		if (p->devinfo->ver < 12) {
-			error(&@2, "sync instruction is supported only on gfx12+\n");
-		}
+   predicate SYNC sync_function execsize sync_arg instoptions
+   {
+      if (p->devinfo->ver < 12) {
+         error(&@2, "sync instruction is supported only on gfx12+\n");
+      }
 
-		if ($5.file == IMM &&
-		    $3 != TGL_SYNC_ALLRD &&
-		    $3 != TGL_SYNC_ALLWR) {
-			error(&@2, "Only allrd and allwr support immediate argument\n");
-		}
+      if ($5.file == IMM &&
+          $3 != TGL_SYNC_ALLRD &&
+          $3 != TGL_SYNC_ALLWR) {
+         error(&@2, "Only allrd and allwr support immediate argument\n");
+      }
 
-		brw_set_default_access_mode(p, $6.access_mode);
-		brw_SYNC(p, $3);
-		i965_asm_set_instruction_options(p, $6);
-		brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $4);
-		brw_set_src0(p, brw_last_inst, $5);
-		brw_eu_inst_set_eot(p->devinfo, brw_last_inst, $6.end_of_thread);
-		brw_eu_inst_set_group(p->devinfo, brw_last_inst, $6.chan_offset);
+      brw_set_default_access_mode(p, $6.access_mode);
+      brw_SYNC(p, $3);
+      i965_asm_set_instruction_options(p, $6);
+      brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $4);
+      brw_set_src0(p, brw_last_inst, $5);
+      brw_eu_inst_set_eot(p->devinfo, brw_last_inst, $6.end_of_thread);
+      brw_eu_inst_set_group(p->devinfo, brw_last_inst, $6.chan_offset);
 
-		brw_pop_insn_state(p);
-	}
-	;
+      brw_pop_insn_state(p);
+   }
+   ;
 
 sync_function:
-	NOP		{ $$ = TGL_SYNC_NOP; }
-	| ALLRD
-	| ALLWR
-	| FENCE
-	| BAR
-	| HOST
-	;
+   NOP      { $$ = TGL_SYNC_NOP; }
+   | ALLRD
+   | ALLWR
+   | FENCE
+   | BAR
+   | HOST
+   ;
 
 sync_arg:
-	nullreg region reg_type
-	{
-		$$ = $1;
-		$$.vstride = $2.vstride;
-		$$.width = $2.width;
-		$$.hstride = $2.hstride;
-		$$.type = $3;
-	}
-	| immreg
-	;
+   nullreg region reg_type
+   {
+      $$ = $1;
+      $$.vstride = $2.vstride;
+      $$.width = $2.width;
+      $$.hstride = $2.hstride;
+      $$.type = $3;
+   }
+   | immreg
+   ;
 
 /* Relative location */
 relativelocation2:
-	immreg
-	| reg32
-	;
+   immreg
+   | reg32
+   ;
 
 jumplabel:
-	JUMP_LABEL	{ $$ = $1; }
-	| /* empty */	{ $$ = NULL; }
-	;
+   JUMP_LABEL   { $$ = $1; }
+   | /* empty */   { $$ = NULL; }
+   ;
 
 jumplabeltarget:
-	JUMP_LABEL_TARGET
-	{
-		struct target_label *label = rzalloc(p->mem_ctx, struct target_label);
+   JUMP_LABEL_TARGET
+   {
+      struct target_label *label = rzalloc(p->mem_ctx, struct target_label);
 
-		label->name = ralloc_strdup(p->mem_ctx, $1);
-		label->offset = p->next_insn_offset;
+      label->name = ralloc_strdup(p->mem_ctx, $1);
+      label->offset = p->next_insn_offset;
 
-		list_addtail(&label->link, &target_labels);
-	}
-	;
+      list_addtail(&label->link, &target_labels);
+   }
+   ;
 
 /* Destination register */
 dst:
-	dstoperand
-	| dstoperandex
-	;
+   dstoperand
+   | dstoperandex
+   ;
 
 dstoperand:
-	dstreg dstregion writemask reg_type
-	{
-		$$ = $1;
-		$$.vstride = BRW_VERTICAL_STRIDE_1;
-		$$.width = BRW_WIDTH_1;
-		$$.hstride = $2;
-		$$.type = $4;
-		$$.writemask = $3;
-		$$.swizzle = BRW_SWIZZLE_NOOP;
-		$$.subnr = $$.subnr * brw_type_size_bytes($4);
-	}
-	;
+   dstreg dstregion writemask reg_type
+   {
+      $$ = $1;
+      $$.vstride = BRW_VERTICAL_STRIDE_1;
+      $$.width = BRW_WIDTH_1;
+      $$.hstride = $2;
+      $$.type = $4;
+      $$.writemask = $3;
+      $$.swizzle = BRW_SWIZZLE_NOOP;
+      $$.subnr = $$.subnr * brw_type_size_bytes($4);
+   }
+   ;
 
 dstoperandex:
-	dstoperandex_typed dstregion writemask reg_type
-	{
-		$$ = $1;
-		$$.hstride = $2;
-		$$.type = $4;
-		$$.writemask = $3;
-		$$.subnr = $$.subnr * brw_type_size_bytes($4);
-	}
-	/* BSpec says "When the conditional modifier is present, updates
-	 * to the selected flag register also occur. In this case, the
-	 * register region fields of the ‘null’ operand are valid."
-	 */
-	| nullreg dstregion writemask reg_type
-	{
-		$$ = $1;
-		$$.vstride = BRW_VERTICAL_STRIDE_1;
-		$$.width = BRW_WIDTH_1;
-		$$.hstride = $2;
-		$$.writemask = $3;
-		$$.type = $4;
-	}
-	| threadcontrolreg
-	{
-		$$ = $1;
-		$$.hstride = 1;
-		$$.type = BRW_TYPE_UW;
-	}
-	;
+   dstoperandex_typed dstregion writemask reg_type
+   {
+      $$ = $1;
+      $$.hstride = $2;
+      $$.type = $4;
+      $$.writemask = $3;
+      $$.subnr = $$.subnr * brw_type_size_bytes($4);
+   }
+   /* BSpec says "When the conditional modifier is present, updates
+    * to the selected flag register also occur. In this case, the
+    * register region fields of the ‘null’ operand are valid."
+    */
+   | nullreg dstregion writemask reg_type
+   {
+      $$ = $1;
+      $$.vstride = BRW_VERTICAL_STRIDE_1;
+      $$.width = BRW_WIDTH_1;
+      $$.hstride = $2;
+      $$.writemask = $3;
+      $$.type = $4;
+   }
+   | threadcontrolreg
+   {
+      $$ = $1;
+      $$.hstride = 1;
+      $$.type = BRW_TYPE_UW;
+   }
+   ;
 
 dstoperandex_typed:
-	accreg
-	| addrreg
-	| channelenablereg
-	| controlreg
-	| flagreg
-	| ipreg
-	| maskreg
-	| notifyreg
-	| performancereg
-	| statereg
-	| scalarreg
-	;
+   accreg
+   | addrreg
+   | channelenablereg
+   | controlreg
+   | flagreg
+   | ipreg
+   | maskreg
+   | notifyreg
+   | performancereg
+   | statereg
+   | scalarreg
+   ;
 
 dstreg:
-	directgenreg
-	{
-		$$ = $1;
-		$$.address_mode = BRW_ADDRESS_DIRECT;
-	}
-	| indirectgenreg
-	{
-		$$ = $1;
-		$$.address_mode = BRW_ADDRESS_REGISTER_INDIRECT_REGISTER;
-	}
-	;
+   directgenreg
+   {
+      $$ = $1;
+      $$.address_mode = BRW_ADDRESS_DIRECT;
+   }
+   | indirectgenreg
+   {
+      $$ = $1;
+      $$.address_mode = BRW_ADDRESS_REGISTER_INDIRECT_REGISTER;
+   }
+   ;
 
 /* Source register */
 srcaccimm:
-	srcacc
-	| immreg
-	;
+   srcacc
+   | immreg
+   ;
 
 immreg:
-	immval imm_type
-	{
-		switch ($2) {
-		case BRW_TYPE_UD:
-			$$ = brw_imm_ud($1);
-			break;
-		case BRW_TYPE_D:
-			$$ = brw_imm_d($1);
-			break;
-		case BRW_TYPE_UW:
-			$$ = brw_imm_uw($1 | ($1 << 16));
-			break;
-		case BRW_TYPE_W:
-			$$ = brw_imm_w($1);
-			break;
-		case BRW_TYPE_F:
-			$$ = brw_imm_reg(BRW_TYPE_F);
-			/* Set u64 instead of ud since DIM uses a 64-bit F-typed imm */
-			$$.u64 = $1;
-			break;
-		case BRW_TYPE_V:
-			$$ = brw_imm_v($1);
-			break;
-		case BRW_TYPE_UV:
-			$$ = brw_imm_uv($1);
-			break;
-		case BRW_TYPE_VF:
-			$$ = brw_imm_vf($1);
-			break;
-		case BRW_TYPE_Q:
-			$$ = brw_imm_q($1);
-			break;
-		case BRW_TYPE_UQ:
-			$$ = brw_imm_uq($1);
-			break;
-		case BRW_TYPE_DF:
-			$$ = brw_imm_reg(BRW_TYPE_DF);
-			$$.d64 = $1;
-			break;
-		case BRW_TYPE_HF:
-			$$ = brw_imm_reg(BRW_TYPE_HF);
-			$$.ud = $1 | ($1 << 16);
-			break;
-		default:
-			error(&@2, "Unknown immediate type %s\n",
-			      brw_reg_type_to_letters($2));
-		}
-	}
-	;
+   immval imm_type
+   {
+      switch ($2) {
+      case BRW_TYPE_UD:
+         $$ = brw_imm_ud($1);
+         break;
+      case BRW_TYPE_D:
+         $$ = brw_imm_d($1);
+         break;
+      case BRW_TYPE_UW:
+         $$ = brw_imm_uw($1 | ($1 << 16));
+         break;
+      case BRW_TYPE_W:
+         $$ = brw_imm_w($1);
+         break;
+      case BRW_TYPE_F:
+         $$ = brw_imm_reg(BRW_TYPE_F);
+         /* Set u64 instead of ud since DIM uses a 64-bit F-typed imm */
+         $$.u64 = $1;
+         break;
+      case BRW_TYPE_V:
+         $$ = brw_imm_v($1);
+         break;
+      case BRW_TYPE_UV:
+         $$ = brw_imm_uv($1);
+         break;
+      case BRW_TYPE_VF:
+         $$ = brw_imm_vf($1);
+         break;
+      case BRW_TYPE_Q:
+         $$ = brw_imm_q($1);
+         break;
+      case BRW_TYPE_UQ:
+         $$ = brw_imm_uq($1);
+         break;
+      case BRW_TYPE_DF:
+         $$ = brw_imm_reg(BRW_TYPE_DF);
+         $$.d64 = $1;
+         break;
+      case BRW_TYPE_HF:
+         $$ = brw_imm_reg(BRW_TYPE_HF);
+         $$.ud = $1 | ($1 << 16);
+         break;
+      default:
+         error(&@2, "Unknown immediate type %s\n",
+               brw_reg_type_to_letters($2));
+      }
+   }
+   ;
 
 reg32:
-	directgenreg region reg_type
-	{
-		$$ = set_direct_src_operand(&$1, $3);
-		$$ = stride($$, $2.vstride, $2.width, $2.hstride);
-	}
-	;
+   directgenreg region reg_type
+   {
+      $$ = set_direct_src_operand(&$1, $3);
+      $$ = stride($$, $2.vstride, $2.width, $2.hstride);
+   }
+   ;
 
 payload:
-	directsrcoperand
-	;
+   directsrcoperand
+   ;
 
 src:
-	directsrcoperand
-	| indirectsrcoperand
-	;
+   directsrcoperand
+   | indirectsrcoperand
+   ;
 
 srcacc:
-	directsrcaccoperand
-	| indirectsrcoperand
-	;
+   directsrcaccoperand
+   | indirectsrcoperand
+   ;
 
 srcimm:
-	directsrcoperand
-	| indirectsrcoperand
-	| immreg
-	;
+   directsrcoperand
+   | indirectsrcoperand
+   | immreg
+   ;
 
 directsrcaccoperand:
-	directsrcoperand
-	| negate abs accreg region reg_type
-	{
-		$$ = set_direct_src_operand(&$3, $5);
-		$$.negate = $1;
-		$$.abs = $2;
-		$$.vstride = $4.vstride;
-		$$.width = $4.width;
-		$$.hstride = $4.hstride;
-	}
-	;
+   directsrcoperand
+   | negate abs accreg region reg_type
+   {
+      $$ = set_direct_src_operand(&$3, $5);
+      $$.negate = $1;
+      $$.abs = $2;
+      $$.vstride = $4.vstride;
+      $$.width = $4.width;
+      $$.hstride = $4.hstride;
+   }
+   ;
 
 srcarcoperandex:
-	srcarcoperandex_typed region reg_type
-	{
-		$$ = brw_make_reg($1.file,
-			          $1.nr,
-			          $1.subnr,
-			          0,
-			          0,
-			          $3,
-			          $2.vstride,
-			          $2.width,
-			          $2.hstride,
-			          BRW_SWIZZLE_NOOP,
-			          WRITEMASK_XYZW);
-	}
-	| nullreg region reg_type
-	{
-		$$ = set_direct_src_operand(&$1, $3);
-		$$.vstride = $2.vstride;
-		$$.width = $2.width;
-		$$.hstride = $2.hstride;
-	}
-	| threadcontrolreg
-	{
-		$$ = set_direct_src_operand(&$1, BRW_TYPE_UW);
-	}
-	;
+   srcarcoperandex_typed region reg_type
+   {
+      $$ = brw_make_reg($1.file,
+                        $1.nr,
+                        $1.subnr,
+                        0,
+                        0,
+                        $3,
+                        $2.vstride,
+                        $2.width,
+                        $2.hstride,
+                        BRW_SWIZZLE_NOOP,
+                        WRITEMASK_XYZW);
+   }
+   | nullreg region reg_type
+   {
+      $$ = set_direct_src_operand(&$1, $3);
+      $$.vstride = $2.vstride;
+      $$.width = $2.width;
+      $$.hstride = $2.hstride;
+   }
+   | threadcontrolreg
+   {
+      $$ = set_direct_src_operand(&$1, BRW_TYPE_UW);
+   }
+   ;
 
 srcarcoperandex_typed:
-	channelenablereg
-	| controlreg
-	| flagreg
-	| ipreg
-	| maskreg
-	| statereg
-	| scalarreg
-	;
+   channelenablereg
+   | controlreg
+   | flagreg
+   | ipreg
+   | maskreg
+   | statereg
+   | scalarreg
+   ;
 
 indirectsrcoperand:
-	negate abs indirectgenreg indirectregion swizzle reg_type
-	{
-		$$ = brw_make_reg($3.file,
-			          0,
-			          $3.subnr,
-			          $1,  // negate
-			          $2,  // abs
-			          $6,
-			          $4.vstride,
-			          $4.width,
-			          $4.hstride,
-			          $5,
-			          WRITEMASK_X);
+   negate abs indirectgenreg indirectregion swizzle reg_type
+   {
+      $$ = brw_make_reg($3.file,
+                        0,
+                        $3.subnr,
+                        $1,  // negate
+                        $2,  // abs
+                        $6,
+                        $4.vstride,
+                        $4.width,
+                        $4.hstride,
+                        $5,
+                        WRITEMASK_X);
 
-		$$.address_mode = BRW_ADDRESS_REGISTER_INDIRECT_REGISTER;
-		// brw_reg set indirect_offset to 0 so set it to valid value
-		$$.indirect_offset = $3.indirect_offset;
-	}
-	;
+      $$.address_mode = BRW_ADDRESS_REGISTER_INDIRECT_REGISTER;
+      // brw_reg set indirect_offset to 0 so set it to valid value
+      $$.indirect_offset = $3.indirect_offset;
+   }
+   ;
 
 directgenreg_list:
-	directgenreg
-	| notifyreg
-	| addrreg
-	| performancereg
-	;
+   directgenreg
+   | notifyreg
+   | addrreg
+   | performancereg
+   ;
 
 directsrcoperand:
-	negate abs directgenreg_list region swizzle reg_type
-	{
-		$$ = brw_make_reg($3.file,
-			          $3.nr,
-			          $3.subnr,
-			          $1,
-			          $2,
-			          $6,
-			          $4.vstride,
-			          $4.width,
-			          $4.hstride,
-			          $5,
-			          WRITEMASK_X);
-	}
-	| srcarcoperandex
-	;
+   negate abs directgenreg_list region swizzle reg_type
+   {
+      $$ = brw_make_reg($3.file,
+                        $3.nr,
+                        $3.subnr,
+                        $1,
+                        $2,
+                        $6,
+                        $4.vstride,
+                        $4.width,
+                        $4.hstride,
+                        $5,
+                        WRITEMASK_X);
+   }
+   | srcarcoperandex
+   ;
 
 /* Address register */
 addrparam:
-	addrreg exp
-	{
-		memset(&$$, '\0', sizeof($$));
-		$$.subnr = $1.subnr;
-		$$.indirect_offset = $2;
-	}
-	| addrreg
-	;
+   addrreg exp
+   {
+      memset(&$$, '\0', sizeof($$));
+      $$.subnr = $1.subnr;
+      $$.indirect_offset = $2;
+   }
+   | addrreg
+   ;
 
 /* Register files and register numbers */
 exp:
-	INTEGER 	{ $$ = $1; }
-	| LONG 	        { $$ = $1; }
-	;
+   INTEGER    { $$ = $1; }
+   | LONG     { $$ = $1; }
+   ;
 
 subregnum:
-	DOT exp 		        { $$ = $2; }
-	| /* empty */ %prec SUBREGNUM 	{ $$ = 0; }
-	;
+   DOT exp                          { $$ = $2; }
+   | /* empty */ %prec SUBREGNUM    { $$ = 0; }
+   ;
 
 directgenreg:
-	GENREG subregnum
-	{
-		memset(&$$, '\0', sizeof($$));
-		$$.file = FIXED_GRF;
-		$$.nr = $1 * reg_unit(p->devinfo);
-		$$.subnr = $2;
-	}
-	;
+   GENREG subregnum
+   {
+      memset(&$$, '\0', sizeof($$));
+      $$.file = FIXED_GRF;
+      $$.nr = $1 * reg_unit(p->devinfo);
+      $$.subnr = $2;
+   }
+   ;
 
 indirectgenreg:
-	GENREGFILE LSQUARE addrparam RSQUARE
-	{
-		memset(&$$, '\0', sizeof($$));
-		$$.file = FIXED_GRF;
-		$$.subnr = $3.subnr;
-		$$.indirect_offset = $3.indirect_offset;
-	}
-	;
+   GENREGFILE LSQUARE addrparam RSQUARE
+   {
+      memset(&$$, '\0', sizeof($$));
+      $$.file = FIXED_GRF;
+      $$.subnr = $3.subnr;
+      $$.indirect_offset = $3.indirect_offset;
+   }
+   ;
 
 addrreg:
-	ADDRREG subregnum
-	{
-		int subnr = 16;
+   ADDRREG subregnum
+   {
+      int subnr = 16;
 
-		if ($2 > subnr)
-			error(&@2, "Address sub register number %d"
-				   "out of range\n", $2);
+      if ($2 > subnr)
+         error(&@2, "Address sub register number %d"
+               "out of range\n", $2);
 
-		$$.file = ARF;
-		$$.nr = BRW_ARF_ADDRESS;
-		$$.subnr = $2;
-	}
-	;
+      $$.file = ARF;
+      $$.nr = BRW_ARF_ADDRESS;
+      $$.subnr = $2;
+   }
+   ;
 
 accreg:
-	ACCREG subregnum
-	{
-		int nr_reg = 10;
+   ACCREG subregnum
+   {
+      int nr_reg = 10;
 
-		if ($1 > nr_reg)
-			error(&@1, "Accumulator register number %d"
-				   " out of range\n", $1);
+      if ($1 > nr_reg)
+         error(&@1, "Accumulator register number %d"
+               " out of range\n", $1);
 
-		memset(&$$, '\0', sizeof($$));
-		$$.file = ARF;
-		$$.nr = BRW_ARF_ACCUMULATOR;
-		$$.subnr = $2;
-	}
-	;
+      memset(&$$, '\0', sizeof($$));
+      $$.file = ARF;
+      $$.nr = BRW_ARF_ACCUMULATOR;
+      $$.subnr = $2;
+   }
+   ;
 
 flagreg:
-	FLAGREG subregnum
-	{
-		// 2 flag reg
-		int nr_reg = 2;
-		int subnr = nr_reg;
+   FLAGREG subregnum
+   {
+      // 2 flag reg
+      int nr_reg = 2;
+      int subnr = nr_reg;
 
-		if ($1 > nr_reg)
-			error(&@1, "Flag register number %d"
-				   " out of range \n", $1);
-		if ($2 > subnr)
-			error(&@2, "Flag subregister number %d"
-				   " out of range\n", $2);
+      if ($1 > nr_reg)
+         error(&@1, "Flag register number %d"
+               " out of range \n", $1);
+      if ($2 > subnr)
+         error(&@2, "Flag subregister number %d"
+               " out of range\n", $2);
 
-		$$.file = ARF;
-		$$.nr = BRW_ARF_FLAG | $1;
-		$$.subnr = $2;
-	}
-	;
+      $$.file = ARF;
+      $$.nr = BRW_ARF_FLAG | $1;
+      $$.subnr = $2;
+   }
+   ;
 
 maskreg:
-	MASKREG subregnum
-	{
-		if ($1 > 0)
-			error(&@1, "Mask register number %d"
-				   " out of range\n", $1);
+   MASKREG subregnum
+   {
+      if ($1 > 0)
+         error(&@1, "Mask register number %d"
+               " out of range\n", $1);
 
-		$$.file = ARF;
-		$$.nr = BRW_ARF_MASK;
-		$$.subnr = $2;
-	}
-	;
+      $$.file = ARF;
+      $$.nr = BRW_ARF_MASK;
+      $$.subnr = $2;
+   }
+   ;
 
 notifyreg:
-	NOTIFYREG subregnum
-	{
-		int subnr = (p->devinfo->ver >= 11) ? 2 : 3;
-		if ($2 > subnr)
-			error(&@2, "Notification sub register number %d"
-				   " out of range\n", $2);
+   NOTIFYREG subregnum
+   {
+      int subnr = (p->devinfo->ver >= 11) ? 2 : 3;
+      if ($2 > subnr)
+         error(&@2, "Notification sub register number %d"
+               " out of range\n", $2);
 
-		$$.file = ARF;
-		$$.nr = BRW_ARF_NOTIFICATION_COUNT;
-		$$.subnr = $2;
-	}
-	;
+      $$.file = ARF;
+      $$.nr = BRW_ARF_NOTIFICATION_COUNT;
+      $$.subnr = $2;
+   }
+   ;
 
 scalarreg:
-	SCALARREG subregnum
-	{
-		if ($2 > 31)
-			error(&@2, "Scalar sub register number %d"
-			           " out of range\n", $2);
+   SCALARREG subregnum
+   {
+      if ($2 > 31)
+         error(&@2, "Scalar sub register number %d"
+                    " out of range\n", $2);
 
-		$$.file = ARF;
-		$$.nr = BRW_ARF_SCALAR;
-		$$.subnr = $2;
-	}
+      $$.file = ARF;
+      $$.nr = BRW_ARF_SCALAR;
+      $$.subnr = $2;
+   }
 
 statereg:
-	STATEREG subregnum
-	{
-		if ($1 > 2)
-			error(&@1, "State register number %d"
-				   " out of range\n", $1);
+   STATEREG subregnum
+   {
+      if ($1 > 2)
+         error(&@1, "State register number %d"
+               " out of range\n", $1);
 
-		if ($2 > 4)
-			error(&@2, "State sub register number %d"
-				   " out of range\n", $2);
+      if ($2 > 4)
+         error(&@2, "State sub register number %d"
+               " out of range\n", $2);
 
-		$$.file = ARF;
-		$$.nr = BRW_ARF_STATE;
-		$$.subnr = $2;
-	}
-	;
+      $$.file = ARF;
+      $$.nr = BRW_ARF_STATE;
+      $$.subnr = $2;
+   }
+   ;
 
 controlreg:
-	CONTROLREG subregnum
-	{
-		if ($2 > 3)
-			error(&@2, "control sub register number %d"
-				   " out of range\n", $2);
+   CONTROLREG subregnum
+   {
+      if ($2 > 3)
+         error(&@2, "control sub register number %d"
+               " out of range\n", $2);
 
-		$$.file = ARF;
-		$$.nr = BRW_ARF_CONTROL;
-		$$.subnr = $2;
-	}
-	;
+      $$.file = ARF;
+      $$.nr = BRW_ARF_CONTROL;
+      $$.subnr = $2;
+   }
+   ;
 
 ipreg:
-	IPREG		{ $$ = brw_ip_reg(); }
-	;
+   IPREG      { $$ = brw_ip_reg(); }
+   ;
 
 nullreg:
-	NULL_TOKEN 	{ $$ = brw_null_reg(); }
-	;
+   NULL_TOKEN    { $$ = brw_null_reg(); }
+   ;
 
 threadcontrolreg:
-	THREADREG subregnum
-	{
-		if ($2 > 7)
-			error(&@2, "Thread control sub register number %d"
-				   " out of range\n", $2);
+   THREADREG subregnum
+   {
+      if ($2 > 7)
+         error(&@2, "Thread control sub register number %d"
+               " out of range\n", $2);
 
-		$$.file = ARF;
-		$$.nr = BRW_ARF_TDR;
-		$$.subnr = $2;
-	}
-	;
+      $$.file = ARF;
+      $$.nr = BRW_ARF_TDR;
+      $$.subnr = $2;
+   }
+   ;
 
 performancereg:
-	PERFORMANCEREG subregnum
-	{
-		int subnr;
-		if (p->devinfo->ver >= 10)
-			subnr = 5;
-		else
-			subnr = 4;
+   PERFORMANCEREG subregnum
+   {
+      int subnr;
+      if (p->devinfo->ver >= 10)
+         subnr = 5;
+      else
+         subnr = 4;
 
-		if ($2 > subnr)
-			error(&@2, "Performance sub register number %d"
-				   " out of range\n", $2);
+      if ($2 > subnr)
+         error(&@2, "Performance sub register number %d"
+               " out of range\n", $2);
 
-		$$.file = ARF;
-		$$.nr = BRW_ARF_TIMESTAMP;
-		$$.subnr = $2;
-	}
-	;
+      $$.file = ARF;
+      $$.nr = BRW_ARF_TIMESTAMP;
+      $$.subnr = $2;
+   }
+   ;
 
 channelenablereg:
-	CHANNELENABLEREG subregnum
-	{
-		if ($1 > 0)
-			error(&@1, "Channel enable register number %d"
-				   " out of range\n", $1);
+   CHANNELENABLEREG subregnum
+   {
+      if ($1 > 0)
+         error(&@1, "Channel enable register number %d"
+               " out of range\n", $1);
 
-		$$.file = ARF;
-		$$.nr = BRW_ARF_MASK;
-		$$.subnr = $2;
-	}
-	;
+      $$.file = ARF;
+      $$.nr = BRW_ARF_MASK;
+      $$.subnr = $2;
+   }
+   ;
 
 /* Immediate values */
 immval:
-	exp2
-	{
-		$$ = $1;
-	}
-	| LSQUARE exp2 COMMA exp2 COMMA exp2 COMMA exp2 RSQUARE
-	{
-		$$ = ($2 << 0) | ($4 << 8) | ($6 << 16) | ($8 << 24);
-	}
-	;
+   exp2
+   {
+      $$ = $1;
+   }
+   | LSQUARE exp2 COMMA exp2 COMMA exp2 COMMA exp2 RSQUARE
+   {
+      $$ = ($2 << 0) | ($4 << 8) | ($6 << 16) | ($8 << 24);
+   }
+   ;
 
 /* Regions */
 dstregion:
-	/* empty */
-	{
-		$$ = BRW_HORIZONTAL_STRIDE_1;
-	}
-	| LANGLE exp RANGLE
-	{
-		if ($2 != 0 && ($2 > 4 || !isPowerofTwo($2)))
-			error(&@2, "Invalid Horizontal stride %d\n", $2);
+   /* empty */
+   {
+      $$ = BRW_HORIZONTAL_STRIDE_1;
+   }
+   | LANGLE exp RANGLE
+   {
+      if ($2 != 0 && ($2 > 4 || !isPowerofTwo($2)))
+         error(&@2, "Invalid Horizontal stride %d\n", $2);
 
-		$$ = ffs($2);
-	}
-	;
+      $$ = ffs($2);
+   }
+   ;
 
 indirectregion:
-	region
-	| region_wh
-	;
+   region
+   | region_wh
+   ;
 
 region:
-	/* empty */
-	{
-		$$ = stride($$, 0, 1, 0);
-	}
-	| LANGLE exp RANGLE
-	{
-		if ($2 != 0 && ($2 > 32 || !isPowerofTwo($2)))
-			error(&@2, "Invalid VertStride %d\n", $2);
+   /* empty */
+   {
+      $$ = stride($$, 0, 1, 0);
+   }
+   | LANGLE exp RANGLE
+   {
+      if ($2 != 0 && ($2 > 32 || !isPowerofTwo($2)))
+         error(&@2, "Invalid VertStride %d\n", $2);
 
-		$$ = stride($$, $2, 1, 0);
-	}
-	| LANGLE exp COMMA exp COMMA exp RANGLE
-	{
+      $$ = stride($$, $2, 1, 0);
+   }
+   | LANGLE exp COMMA exp COMMA exp RANGLE
+   {
 
-		if ($2 != 0 && ($2 > 32 || !isPowerofTwo($2)))
-			error(&@2, "Invalid VertStride %d\n", $2);
+      if ($2 != 0 && ($2 > 32 || !isPowerofTwo($2)))
+         error(&@2, "Invalid VertStride %d\n", $2);
 
-		if ($4 > 16 || !isPowerofTwo($4))
-			error(&@4, "Invalid width %d\n", $4);
+      if ($4 > 16 || !isPowerofTwo($4))
+         error(&@4, "Invalid width %d\n", $4);
 
-		if ($6 != 0 && ($6 > 4 || !isPowerofTwo($6)))
-			error(&@6, "Invalid Horizontal stride in"
-				   "  region_wh %d\n", $6);
+      if ($6 != 0 && ($6 > 4 || !isPowerofTwo($6)))
+         error(&@6, "Invalid Horizontal stride in"
+               "  region_wh %d\n", $6);
 
-		$$ = stride($$, $2, $4, $6);
-	}
-	| LANGLE exp SEMICOLON exp COMMA exp RANGLE
-	{
-		if ($2 != 0 && ($2 > 32 || !isPowerofTwo($2)))
-			error(&@2, "Invalid VertStride %d\n", $2);
+      $$ = stride($$, $2, $4, $6);
+   }
+   | LANGLE exp SEMICOLON exp COMMA exp RANGLE
+   {
+      if ($2 != 0 && ($2 > 32 || !isPowerofTwo($2)))
+         error(&@2, "Invalid VertStride %d\n", $2);
 
-		if ($4 > 16 || !isPowerofTwo($4))
-			error(&@4, "Invalid width %d\n", $4);
+      if ($4 > 16 || !isPowerofTwo($4))
+         error(&@4, "Invalid width %d\n", $4);
 
-		if ($6 != 0 && ($6 > 4 || !isPowerofTwo($6)))
-			error(&@6, "Invalid Horizontal stride in"
-				   " region_wh %d\n", $6);
+      if ($6 != 0 && ($6 > 4 || !isPowerofTwo($6)))
+         error(&@6, "Invalid Horizontal stride in"
+               " region_wh %d\n", $6);
 
-		$$ = stride($$, $2, $4, $6);
-	}
-	| LANGLE VxH COMMA exp COMMA exp RANGLE
-	{
-		if ($4 > 16 || !isPowerofTwo($4))
-			error(&@4, "Invalid width %d\n", $4);
+      $$ = stride($$, $2, $4, $6);
+   }
+   | LANGLE VxH COMMA exp COMMA exp RANGLE
+   {
+      if ($4 > 16 || !isPowerofTwo($4))
+         error(&@4, "Invalid width %d\n", $4);
 
-		if ($6 != 0 && ($6 > 4 || !isPowerofTwo($6)))
-			error(&@6, "Invalid Horizontal stride in"
-				   " region_wh %d\n", $6);
+      if ($6 != 0 && ($6 > 4 || !isPowerofTwo($6)))
+         error(&@6, "Invalid Horizontal stride in"
+               " region_wh %d\n", $6);
 
-		$$ = brw_VxH_indirect(0, 0);
-	}
-	;
+      $$ = brw_VxH_indirect(0, 0);
+   }
+   ;
 
 region_wh:
-	LANGLE exp COMMA exp RANGLE
-	{
-		if ($2 > 16 || !isPowerofTwo($2))
-			error(&@2, "Invalid width %d\n", $2);
+   LANGLE exp COMMA exp RANGLE
+   {
+      if ($2 > 16 || !isPowerofTwo($2))
+         error(&@2, "Invalid width %d\n", $2);
 
-		if ($4 != 0 && ($4 > 4 || !isPowerofTwo($4)))
-			error(&@4, "Invalid Horizontal stride in"
-				   " region_wh %d\n", $4);
+      if ($4 != 0 && ($4 > 4 || !isPowerofTwo($4)))
+         error(&@4, "Invalid Horizontal stride in"
+               " region_wh %d\n", $4);
 
-		$$ = stride($$, 0, $2, $4);
-		$$.vstride = BRW_VERTICAL_STRIDE_ONE_DIMENSIONAL;
-	}
-	;
+      $$ = stride($$, 0, $2, $4);
+      $$.vstride = BRW_VERTICAL_STRIDE_ONE_DIMENSIONAL;
+   }
+   ;
 
 reg_type:
-	  TYPE_F 	{ $$ = BRW_TYPE_F;  }
-	| TYPE_UD 	{ $$ = BRW_TYPE_UD; }
-	| TYPE_D 	{ $$ = BRW_TYPE_D;  }
-	| TYPE_UW 	{ $$ = BRW_TYPE_UW; }
-	| TYPE_W 	{ $$ = BRW_TYPE_W;  }
-	| TYPE_UB 	{ $$ = BRW_TYPE_UB; }
-	| TYPE_B 	{ $$ = BRW_TYPE_B;  }
-	| TYPE_DF 	{ $$ = BRW_TYPE_DF; }
-	| TYPE_UQ 	{ $$ = BRW_TYPE_UQ; }
-	| TYPE_Q 	{ $$ = BRW_TYPE_Q;  }
-	| TYPE_HF 	{ $$ = BRW_TYPE_HF; }
-	;
+     TYPE_F    { $$ = BRW_TYPE_F;  }
+   | TYPE_UD   { $$ = BRW_TYPE_UD; }
+   | TYPE_D    { $$ = BRW_TYPE_D;  }
+   | TYPE_UW   { $$ = BRW_TYPE_UW; }
+   | TYPE_W    { $$ = BRW_TYPE_W;  }
+   | TYPE_UB   { $$ = BRW_TYPE_UB; }
+   | TYPE_B    { $$ = BRW_TYPE_B;  }
+   | TYPE_DF   { $$ = BRW_TYPE_DF; }
+   | TYPE_UQ   { $$ = BRW_TYPE_UQ; }
+   | TYPE_Q    { $$ = BRW_TYPE_Q;  }
+   | TYPE_HF   { $$ = BRW_TYPE_HF; }
+   ;
 
 imm_type:
-	reg_type 	{ $$ = $1; }
-	| TYPE_V 	{ $$ = BRW_TYPE_V;  }
-	| TYPE_VF 	{ $$ = BRW_TYPE_VF; }
-	| TYPE_UV 	{ $$ = BRW_TYPE_UV; }
-	;
+   reg_type    { $$ = $1; }
+   | TYPE_V    { $$ = BRW_TYPE_V;  }
+   | TYPE_VF   { $$ = BRW_TYPE_VF; }
+   | TYPE_UV   { $$ = BRW_TYPE_UV; }
+   ;
 
 writemask:
-	/* empty */
-	{
-		$$ = WRITEMASK_XYZW;
-	}
-	| DOT writemask_x writemask_y writemask_z writemask_w
-	{
-		$$ = $2 | $3 | $4 | $5;
-	}
-	;
+   /* empty */
+   {
+      $$ = WRITEMASK_XYZW;
+   }
+   | DOT writemask_x writemask_y writemask_z writemask_w
+   {
+      $$ = $2 | $3 | $4 | $5;
+   }
+   ;
 
 writemask_x:
-	/* empty */ 	{ $$ = 0; }
-	| X 	{ $$ = 1 << BRW_CHANNEL_X; }
-	;
+   /* empty */    { $$ = 0; }
+   | X            { $$ = 1 << BRW_CHANNEL_X; }
+   ;
 
 writemask_y:
-	/* empty */ 	{ $$ = 0; }
-	| Y 	{ $$ = 1 << BRW_CHANNEL_Y; }
-	;
+   /* empty */    { $$ = 0; }
+   | Y            { $$ = 1 << BRW_CHANNEL_Y; }
+   ;
 
 writemask_z:
-	/* empty */ 	{ $$ = 0; }
-	| Z 	{ $$ = 1 << BRW_CHANNEL_Z; }
-	;
+   /* empty */    { $$ = 0; }
+   | Z            { $$ = 1 << BRW_CHANNEL_Z; }
+   ;
 
 writemask_w:
-	/* empty */ 	{ $$ = 0; }
-	| W 	{ $$ = 1 << BRW_CHANNEL_W; }
-	;
+   /* empty */    { $$ = 0; }
+   | W            { $$ = 1 << BRW_CHANNEL_W; }
+   ;
 
 swizzle:
-	/* empty */
-	{
-		$$ = BRW_SWIZZLE_NOOP;
-	}
-	| DOT chansel
-	{
-		$$ = BRW_SWIZZLE4($2, $2, $2, $2);
-	}
-	| DOT chansel chansel chansel chansel
-	{
-		$$ = BRW_SWIZZLE4($2, $3, $4, $5);
-	}
-	;
+   /* empty */
+   {
+      $$ = BRW_SWIZZLE_NOOP;
+   }
+   | DOT chansel
+   {
+      $$ = BRW_SWIZZLE4($2, $2, $2, $2);
+   }
+   | DOT chansel chansel chansel chansel
+   {
+      $$ = BRW_SWIZZLE4($2, $3, $4, $5);
+   }
+   ;
 
 chansel:
-	X
-	| Y
-	| Z
-	| W
-	;
+   X
+   | Y
+   | Z
+   | W
+   ;
 
 /* Instruction prediction and modifiers */
 predicate:
-	/* empty */
-	{
-		brw_push_insn_state(p);
-		brw_set_default_predicate_control(p, BRW_PREDICATE_NONE);
-		brw_set_default_flag_reg(p, 0, 0);
-		brw_set_default_predicate_inverse(p, false);
-	}
-	| LPAREN predstate flagreg predctrl RPAREN
-	{
-		brw_push_insn_state(p);
-		brw_set_default_predicate_inverse(p, $2);
-		brw_set_default_flag_reg(p, $3.nr, $3.subnr);
-		brw_set_default_predicate_control(p, $4);
-	}
-	;
+   /* empty */
+   {
+      brw_push_insn_state(p);
+      brw_set_default_predicate_control(p, BRW_PREDICATE_NONE);
+      brw_set_default_flag_reg(p, 0, 0);
+      brw_set_default_predicate_inverse(p, false);
+   }
+   | LPAREN predstate flagreg predctrl RPAREN
+   {
+      brw_push_insn_state(p);
+      brw_set_default_predicate_inverse(p, $2);
+      brw_set_default_flag_reg(p, $3.nr, $3.subnr);
+      brw_set_default_predicate_control(p, $4);
+   }
+   ;
 
 predstate:
-	/* empty */     { $$ = 0; }
-	| PLUS 	        { $$ = 0; }
-	| MINUS 	{ $$ = 1; }
-	;
+   /* empty */     { $$ = 0; }
+   | PLUS          { $$ = 0; }
+   | MINUS         { $$ = 1; }
+   ;
 
 predctrl:
-	/* empty */ 	{ $$ = BRW_PREDICATE_NORMAL; }
-	| DOT X 	{ $$ = BRW_PREDICATE_ALIGN16_REPLICATE_X; }
-	| DOT Y 	{ $$ = BRW_PREDICATE_ALIGN16_REPLICATE_Y; }
-	| DOT Z 	{ $$ = BRW_PREDICATE_ALIGN16_REPLICATE_Z; }
-	| DOT W 	{ $$ = BRW_PREDICATE_ALIGN16_REPLICATE_W; }
-	| ANYV
-	| ALLV
-	| ANY2H
-	| ALL2H
-	| ANY4H
-	| ALL4H
-	| ANY8H
-	| ALL8H
-	| ANY16H
-	| ALL16H
-	| ANY32H
-	| ALL32H
-	;
+   /* empty */    { $$ = BRW_PREDICATE_NORMAL; }
+   | DOT X        { $$ = BRW_PREDICATE_ALIGN16_REPLICATE_X; }
+   | DOT Y        { $$ = BRW_PREDICATE_ALIGN16_REPLICATE_Y; }
+   | DOT Z        { $$ = BRW_PREDICATE_ALIGN16_REPLICATE_Z; }
+   | DOT W        { $$ = BRW_PREDICATE_ALIGN16_REPLICATE_W; }
+   | ANYV
+   | ALLV
+   | ANY2H
+   | ALL2H
+   | ANY4H
+   | ALL4H
+   | ANY8H
+   | ALL8H
+   | ANY16H
+   | ALL16H
+   | ANY32H
+   | ALL32H
+   ;
 
 /* Source Modification */
 negate:
-	/* empty */	{ $$ = 0; }
-	| MINUS 	{ $$ = 1; }
-	;
+   /* empty */   { $$ = 0; }
+   | MINUS       { $$ = 1; }
+   ;
 
 abs:
-	/* empty */ 	{ $$ = 0; }
-	| ABS 	{ $$ = 1; }
-	;
+   /* empty */   { $$ = 0; }
+   | ABS         { $$ = 1; }
+   ;
 
 /* Flag (Conditional) Modifier */
 cond_mod:
-	condModifiers
-	{
-		$$.cond_modifier = $1;
-		$$.flag_reg_nr = 0;
-		$$.flag_subreg_nr = 0;
-	}
-	| condModifiers DOT flagreg
-	{
-		$$.cond_modifier = $1;
-		$$.flag_reg_nr = $3.nr;
-		$$.flag_subreg_nr = $3.subnr;
-	}
-	;
+   condModifiers
+   {
+      $$.cond_modifier = $1;
+      $$.flag_reg_nr = 0;
+      $$.flag_subreg_nr = 0;
+   }
+   | condModifiers DOT flagreg
+   {
+      $$.cond_modifier = $1;
+      $$.flag_reg_nr = $3.nr;
+      $$.flag_subreg_nr = $3.subnr;
+   }
+   ;
 
 condModifiers:
-	/* empty */ 	{ $$ = BRW_CONDITIONAL_NONE; }
-	| ZERO
-	| EQUAL
-	| NOT_ZERO
-	| NOT_EQUAL
-	| GREATER
-	| GREATER_EQUAL
-	| LESS
-	| LESS_EQUAL
-	| OVERFLOW
-	| ROUND_INCREMENT
-	| UNORDERED
-	;
+   /* empty */    { $$ = BRW_CONDITIONAL_NONE; }
+   | ZERO
+   | EQUAL
+   | NOT_ZERO
+   | NOT_EQUAL
+   | GREATER
+   | GREATER_EQUAL
+   | LESS
+   | LESS_EQUAL
+   | OVERFLOW
+   | ROUND_INCREMENT
+   | UNORDERED
+   ;
 
 /* message details for send */
 msgdesc:
-	MSGDESC_BEGIN msgdesc_parts MSGDESC_END { $$ = $2; }
-	;
+   MSGDESC_BEGIN msgdesc_parts MSGDESC_END { $$ = $2; }
+   ;
 
 msgdesc_parts:
-	SRC1_LEN ASSIGN INTEGER msgdesc_parts
-	{
-		$$ = $4;
-		$$.src1_len = $3;
-	}
-	| EX_BSO msgdesc_parts
-	{
-		$$ = $2;
-		$$.ex_bso = 1;
-	}
-	| INTEGER msgdesc_parts { $$ = $2; }
-	| ASSIGN msgdesc_parts { $$ = $2; }
-	| /* empty */
-	{
-		memset(&$$, 0, sizeof($$));
-	}
-	;
+   SRC1_LEN ASSIGN INTEGER msgdesc_parts
+   {
+      $$ = $4;
+      $$.src1_len = $3;
+   }
+   | EX_BSO msgdesc_parts
+   {
+      $$ = $2;
+      $$.ex_bso = 1;
+   }
+   | INTEGER msgdesc_parts { $$ = $2; }
+   | ASSIGN msgdesc_parts { $$ = $2; }
+   | /* empty */
+   {
+      memset(&$$, 0, sizeof($$));
+   }
+   ;
 
 saturate:
-	/* empty */ 	{ $$ = BRW_INSTRUCTION_NORMAL; }
-	| SATURATE 	{ $$ = BRW_INSTRUCTION_SATURATE; }
-	;
+   /* empty */   { $$ = BRW_INSTRUCTION_NORMAL; }
+   | SATURATE    { $$ = BRW_INSTRUCTION_SATURATE; }
+   ;
 
 /* Execution size */
 execsize:
-	/* empty */ %prec EMPTYEXECSIZE
-	{
-		$$ = 0;
-	}
-	| LPAREN exp2 RPAREN
-	{
-		if ($2 > 32 || !isPowerofTwo($2))
-			error(&@2, "Invalid execution size %llu\n", $2);
+   /* empty */ %prec EMPTYEXECSIZE
+   {
+      $$ = 0;
+   }
+   | LPAREN exp2 RPAREN
+   {
+      if ($2 > 32 || !isPowerofTwo($2))
+         error(&@2, "Invalid execution size %llu\n", $2);
 
-		$$ = cvt($2) - 1;
-	}
-	;
+      $$ = cvt($2) - 1;
+   }
+   ;
 
 /* Instruction options */
 instoptions:
-	/* empty */
-	{
-		memset(&$$, 0, sizeof($$));
-	}
-	| LCURLY instoption_list RCURLY
-	{
-		memset(&$$, 0, sizeof($$));
-		$$ = $2;
-	}
-	;
+   /* empty */
+   {
+      memset(&$$, 0, sizeof($$));
+   }
+   | LCURLY instoption_list RCURLY
+   {
+      memset(&$$, 0, sizeof($$));
+      $$ = $2;
+   }
+   ;
 
 instoption_list:
-	instoption_list COMMA instoption
-	{
-		memset(&$$, 0, sizeof($$));
-		$$ = $1;
-		add_instruction_option(&$$, $3);
-	}
-	| instoption_list instoption
-	{
-		memset(&$$, 0, sizeof($$));
-		$$ = $1;
-		add_instruction_option(&$$, $2);
-	}
-	| /* empty */
-	{
-		memset(&$$, 0, sizeof($$));
-	}
-	;
+   instoption_list COMMA instoption
+   {
+      memset(&$$, 0, sizeof($$));
+      $$ = $1;
+      add_instruction_option(&$$, $3);
+   }
+   | instoption_list instoption
+   {
+      memset(&$$, 0, sizeof($$));
+      $$ = $1;
+      add_instruction_option(&$$, $2);
+   }
+   | /* empty */
+   {
+      memset(&$$, 0, sizeof($$));
+   }
+   ;
 
 depinfo:
-	REG_DIST_CURRENT
-	{
-		memset(&$$, 0, sizeof($$));
-		$$.regdist = $1;
-		$$.pipe = TGL_PIPE_NONE;
-	}
-	| REG_DIST_FLOAT
-	{
-		memset(&$$, 0, sizeof($$));
-		$$.regdist = $1;
-		$$.pipe = TGL_PIPE_FLOAT;
-	}
-	| REG_DIST_INT
-	{
-		memset(&$$, 0, sizeof($$));
-		$$.regdist = $1;
-		$$.pipe = TGL_PIPE_INT;
-	}
-	| REG_DIST_LONG
-	{
-		memset(&$$, 0, sizeof($$));
-		$$.regdist = $1;
-		$$.pipe = TGL_PIPE_LONG;
-	}
-	| REG_DIST_ALL
-	{
-		memset(&$$, 0, sizeof($$));
-		$$.regdist = $1;
-		$$.pipe = TGL_PIPE_ALL;
-	}
-	| REG_DIST_MATH
-	{
-		memset(&$$, 0, sizeof($$));
-		$$.regdist = $1;
-		$$.pipe = TGL_PIPE_MATH;
-	}
-	| REG_DIST_SCALAR
-	{
-		memset(&$$, 0, sizeof($$));
-		$$.regdist = $1;
-		$$.pipe = TGL_PIPE_SCALAR;
-	}
-	| SBID_ALLOC
-	{
-		memset(&$$, 0, sizeof($$));
-		$$.sbid = $1;
-		$$.mode = TGL_SBID_SET;
-	}
-	| SBID_WAIT_SRC
-	{
-		memset(&$$, 0, sizeof($$));
-		$$.sbid = $1;
-		$$.mode = TGL_SBID_SRC;
-	}
-	| SBID_WAIT_DST
-	{
-		memset(&$$, 0, sizeof($$));
-		$$.sbid = $1;
-		$$.mode = TGL_SBID_DST;
-	}
+   REG_DIST_CURRENT
+   {
+      memset(&$$, 0, sizeof($$));
+      $$.regdist = $1;
+      $$.pipe = TGL_PIPE_NONE;
+   }
+   | REG_DIST_FLOAT
+   {
+      memset(&$$, 0, sizeof($$));
+      $$.regdist = $1;
+      $$.pipe = TGL_PIPE_FLOAT;
+   }
+   | REG_DIST_INT
+   {
+      memset(&$$, 0, sizeof($$));
+      $$.regdist = $1;
+      $$.pipe = TGL_PIPE_INT;
+   }
+   | REG_DIST_LONG
+   {
+      memset(&$$, 0, sizeof($$));
+      $$.regdist = $1;
+      $$.pipe = TGL_PIPE_LONG;
+   }
+   | REG_DIST_ALL
+   {
+      memset(&$$, 0, sizeof($$));
+      $$.regdist = $1;
+      $$.pipe = TGL_PIPE_ALL;
+   }
+   | REG_DIST_MATH
+   {
+      memset(&$$, 0, sizeof($$));
+      $$.regdist = $1;
+      $$.pipe = TGL_PIPE_MATH;
+   }
+   | REG_DIST_SCALAR
+   {
+      memset(&$$, 0, sizeof($$));
+      $$.regdist = $1;
+      $$.pipe = TGL_PIPE_SCALAR;
+   }
+   | SBID_ALLOC
+   {
+      memset(&$$, 0, sizeof($$));
+      $$.sbid = $1;
+      $$.mode = TGL_SBID_SET;
+   }
+   | SBID_WAIT_SRC
+   {
+      memset(&$$, 0, sizeof($$));
+      $$.sbid = $1;
+      $$.mode = TGL_SBID_SRC;
+   }
+   | SBID_WAIT_DST
+   {
+      memset(&$$, 0, sizeof($$));
+      $$.sbid = $1;
+      $$.mode = TGL_SBID_DST;
+   }
 
 instoption:
-	ALIGN1 	        { $$.type = INSTOPTION_FLAG; $$.uint_value = ALIGN1;}
-	| ALIGN16 	{ $$.type = INSTOPTION_FLAG; $$.uint_value = ALIGN16; }
-	| ACCWREN
-	{
-		if (p->devinfo->ver >= 20)
-			error(&@1, "AccWrEnable not supported in Xe2+\n");
-		$$.type = INSTOPTION_FLAG;
-		$$.uint_value = ACCWREN;
-	}
-	| BREAKPOINT 	{ $$.type = INSTOPTION_FLAG; $$.uint_value = BREAKPOINT; }
-	| NODDCLR 	{ $$.type = INSTOPTION_FLAG; $$.uint_value = NODDCLR; }
-	| NODDCHK 	{ $$.type = INSTOPTION_FLAG; $$.uint_value = NODDCHK; }
-	| MASK_DISABLE 	{ $$.type = INSTOPTION_FLAG; $$.uint_value = MASK_DISABLE; }
-	| EOT 	        { $$.type = INSTOPTION_FLAG; $$.uint_value = EOT; }
-	| SWITCH 	{ $$.type = INSTOPTION_FLAG; $$.uint_value = SWITCH; }
-	| ATOMIC 	{ $$.type = INSTOPTION_FLAG; $$.uint_value = ATOMIC; }
-	| BRANCH_CTRL 	{ $$.type = INSTOPTION_FLAG; $$.uint_value = BRANCH_CTRL; }
-	| CMPTCTRL 	{ $$.type = INSTOPTION_FLAG; $$.uint_value = CMPTCTRL; }
-	| WECTRL 	{ $$.type = INSTOPTION_FLAG; $$.uint_value = WECTRL; }
-	| QTR_2Q 	{ $$.type = INSTOPTION_CHAN_OFFSET; $$.uint_value = 8; }
-	| QTR_3Q 	{ $$.type = INSTOPTION_CHAN_OFFSET; $$.uint_value = 16; }
-	| QTR_4Q 	{ $$.type = INSTOPTION_CHAN_OFFSET; $$.uint_value = 24; }
-	| QTR_2H 	{ $$.type = INSTOPTION_CHAN_OFFSET; $$.uint_value = 16; }
-	| QTR_2N
-        {
-		if (p->devinfo->ver >= 20)
-			error(&@1, "Channel offset must be multiple of 8 in Xe2+\n");
-		$$.type = INSTOPTION_CHAN_OFFSET;
-		$$.uint_value = 4;
-	}
-	| QTR_3N 	{ $$.type = INSTOPTION_CHAN_OFFSET; $$.uint_value = 8; }
-	| QTR_4N
-	{
-		if (p->devinfo->ver >= 20)
-			error(&@1, "Channel offset must be multiple of 8 in Xe2+\n");
-		$$.type = INSTOPTION_CHAN_OFFSET; $$.uint_value = 12;
-	}
-	| QTR_5N 	{ $$.type = INSTOPTION_CHAN_OFFSET; $$.uint_value = 16; }
-	| QTR_6N
-	{
-		if (p->devinfo->ver >= 20)
-			error(&@1, "Channel offset must be multiple of 8 in Xe2+\n");
-		$$.type = INSTOPTION_CHAN_OFFSET; $$.uint_value = 20;
-	}
-	| QTR_7N 	{ $$.type = INSTOPTION_CHAN_OFFSET; $$.uint_value = 24; }
-	| QTR_8N
-	{
-		if (p->devinfo->ver >= 20)
-			error(&@1, "Channel offset must be multiple of 8 in Xe2+\n");
-		$$.type = INSTOPTION_CHAN_OFFSET; $$.uint_value = 28;
-	}
-	| depinfo	{ $$.type = INSTOPTION_DEP_INFO; $$.depinfo_value = $1; }
-	;
+   ALIGN1          { $$.type = INSTOPTION_FLAG; $$.uint_value = ALIGN1;}
+   | ALIGN16       { $$.type = INSTOPTION_FLAG; $$.uint_value = ALIGN16; }
+   | ACCWREN
+   {
+      if (p->devinfo->ver >= 20)
+         error(&@1, "AccWrEnable not supported in Xe2+\n");
+      $$.type = INSTOPTION_FLAG;
+      $$.uint_value = ACCWREN;
+   }
+   | BREAKPOINT    { $$.type = INSTOPTION_FLAG; $$.uint_value = BREAKPOINT; }
+   | NODDCLR       { $$.type = INSTOPTION_FLAG; $$.uint_value = NODDCLR; }
+   | NODDCHK       { $$.type = INSTOPTION_FLAG; $$.uint_value = NODDCHK; }
+   | MASK_DISABLE  { $$.type = INSTOPTION_FLAG; $$.uint_value = MASK_DISABLE; }
+   | EOT           { $$.type = INSTOPTION_FLAG; $$.uint_value = EOT; }
+   | SWITCH        { $$.type = INSTOPTION_FLAG; $$.uint_value = SWITCH; }
+   | ATOMIC        { $$.type = INSTOPTION_FLAG; $$.uint_value = ATOMIC; }
+   | BRANCH_CTRL   { $$.type = INSTOPTION_FLAG; $$.uint_value = BRANCH_CTRL; }
+   | CMPTCTRL      { $$.type = INSTOPTION_FLAG; $$.uint_value = CMPTCTRL; }
+   | WECTRL        { $$.type = INSTOPTION_FLAG; $$.uint_value = WECTRL; }
+   | QTR_2Q        { $$.type = INSTOPTION_CHAN_OFFSET; $$.uint_value = 8; }
+   | QTR_3Q        { $$.type = INSTOPTION_CHAN_OFFSET; $$.uint_value = 16; }
+   | QTR_4Q        { $$.type = INSTOPTION_CHAN_OFFSET; $$.uint_value = 24; }
+   | QTR_2H        { $$.type = INSTOPTION_CHAN_OFFSET; $$.uint_value = 16; }
+   | QTR_2N
+   {
+      if (p->devinfo->ver >= 20)
+         error(&@1, "Channel offset must be multiple of 8 in Xe2+\n");
+      $$.type = INSTOPTION_CHAN_OFFSET;
+      $$.uint_value = 4;
+   }
+   | QTR_3N        { $$.type = INSTOPTION_CHAN_OFFSET; $$.uint_value = 8; }
+   | QTR_4N
+   {
+      if (p->devinfo->ver >= 20)
+         error(&@1, "Channel offset must be multiple of 8 in Xe2+\n");
+      $$.type = INSTOPTION_CHAN_OFFSET; $$.uint_value = 12;
+   }
+   | QTR_5N        { $$.type = INSTOPTION_CHAN_OFFSET; $$.uint_value = 16; }
+   | QTR_6N
+   {
+      if (p->devinfo->ver >= 20)
+         error(&@1, "Channel offset must be multiple of 8 in Xe2+\n");
+      $$.type = INSTOPTION_CHAN_OFFSET; $$.uint_value = 20;
+   }
+   | QTR_7N        { $$.type = INSTOPTION_CHAN_OFFSET; $$.uint_value = 24; }
+   | QTR_8N
+   {
+      if (p->devinfo->ver >= 20)
+         error(&@1, "Channel offset must be multiple of 8 in Xe2+\n");
+      $$.type = INSTOPTION_CHAN_OFFSET; $$.uint_value = 28;
+   }
+   | depinfo       { $$.type = INSTOPTION_DEP_INFO; $$.depinfo_value = $1; }
+   ;
 
 %%
 
@@ -2234,7 +2223,7 @@ void
 yyerror(char *msg)
 #endif
 {
-	fprintf(stderr, "%s: %d: %s at \"%s\"\n",
-	        input_filename, yylineno, msg, lex_text());
-	++errors;
+   fprintf(stderr, "%s: %d: %s at \"%s\"\n",
+           input_filename, yylineno, msg, lex_text());
+   ++errors;
 }
