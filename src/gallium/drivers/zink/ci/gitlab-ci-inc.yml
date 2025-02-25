@@ -187,6 +187,21 @@
     VK_DRIVER: intel
     GPU_VERSION: zink-anv-adl
 
+.zink-anv-adl-trace-test:
+  extends:
+    - .lava-piglit-traces:x86_64
+    - .anv-test
+    - .lava-acer-n20q11-r856ltn-p1s2-nissa:x86_64
+    - .zink-anv-rules
+    - .zink-trace-test
+    # Add .lava-traces-base again to override .anv-test setting the
+    # HWCI_TEST_SCRIPT, but .lava-piglit-traces having to come first to get
+    # dependencies right.
+    - .lava-traces-base
+  variables:
+    VK_DRIVER: intel
+    GPU_VERSION: zink-anv-adl
+
 .zink-anv-tgl-test:
   extends:
     - .anv-test
