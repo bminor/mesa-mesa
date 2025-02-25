@@ -1327,12 +1327,13 @@ radv_image_print_info(struct radv_device *device, struct radv_image *image)
    }
 }
 
-static uint64_t
+static VkResult
 radv_select_modifier(const struct radv_device *dev, VkFormat format,
-                     const struct VkImageDrmFormatModifierListCreateInfoEXT *mod_list)
+                     const struct VkImageDrmFormatModifierListCreateInfoEXT *mod_list, uint64_t *modifier)
 {
    const struct radv_physical_device *pdev = radv_device_physical(dev);
    unsigned mod_count;
+   uint64_t *mods;
 
    assert(mod_list->drmFormatModifierCount);
 
@@ -1345,11 +1346,9 @@ radv_select_modifier(const struct radv_device *dev, VkFormat format,
 
    ac_get_supported_modifiers(&pdev->info, &modifier_options, radv_format_to_pipe_format(format), &mod_count, NULL);
 
-   uint64_t *mods = calloc(mod_count, sizeof(*mods));
-
-   /* If allocations fail, fall back to a dumber solution. */
+   mods = calloc(mod_count, sizeof(*mods));
    if (!mods)
-      return mod_list->pDrmFormatModifiers[0];
+      return VK_ERROR_OUT_OF_HOST_MEMORY;
 
    ac_get_supported_modifiers(&pdev->info, &modifier_options, radv_format_to_pipe_format(format), &mod_count, mods);
 
@@ -1357,7 +1356,8 @@ radv_select_modifier(const struct radv_device *dev, VkFormat format,
       for (uint32_t j = 0; j < mod_list->drmFormatModifierCount; ++j) {
          if (mods[i] == mod_list->pDrmFormatModifiers[j]) {
             free(mods);
-            return mod_list->pDrmFormatModifiers[j];
+            *modifier = mod_list->pDrmFormatModifiers[j];
+            return VK_SUCCESS;
          }
       }
    }
@@ -1382,6 +1382,7 @@ radv_image_create(VkDevice _device, const struct radv_image_create_info *create_
    assert(pCreateInfo->sType == VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO);
    const struct VkVideoProfileListInfoKHR *profile_list =
       vk_find_struct_const(pCreateInfo->pNext, VIDEO_PROFILE_LIST_INFO_KHR);
+   VkResult result;
 
    unsigned plane_count = radv_get_internal_plane_count(pdev, format);
 
@@ -1409,10 +1410,15 @@ radv_image_create(VkDevice _device, const struct radv_image_create_info *create_
       image->queue_family_mask &= ~(1u << RADV_QUEUE_SPARSE);
    }
 
-   if (mod_list)
-      modifier = radv_select_modifier(device, format, mod_list);
-   else if (explicit_mod)
+   if (mod_list) {
+      result = radv_select_modifier(device, format, mod_list, &modifier);
+      if (result != VK_SUCCESS) {
+         radv_destroy_image(device, alloc, image);
+         return vk_error(device, result);
+      }
+   } else if (explicit_mod) {
       modifier = explicit_mod->drmFormatModifier;
+   }
 
    for (unsigned plane = 0; plane < plane_count; ++plane) {
       image->planes[plane].surface.flags = radv_get_surface_flags(device, image, plane, pCreateInfo, format);
@@ -1429,7 +1435,7 @@ radv_image_create(VkDevice _device, const struct radv_image_create_info *create_
       return VK_SUCCESS;
    }
 
-   VkResult result = radv_image_create_layout(device, *create_info, explicit_mod, profile_list, image);
+   result = radv_image_create_layout(device, *create_info, explicit_mod, profile_list, image);
    if (result != VK_SUCCESS) {
       radv_destroy_image(device, alloc, image);
       return result;
