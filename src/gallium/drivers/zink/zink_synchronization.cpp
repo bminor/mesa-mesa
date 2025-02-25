@@ -698,11 +698,12 @@ zink_resource_buffer_barrier(struct zink_context *ctx, struct zink_resource *res
 
    bool is_write = zink_resource_access_is_write(flags);
    enum zink_resource_access rw = is_write ? ZINK_RESOURCE_ACCESS_RW : ZINK_RESOURCE_ACCESS_WRITE;
-   bool completed = zink_resource_usage_check_completion_fast(zink_screen(ctx->base.screen), res, rw);
+   bool has_usage = zink_resource_has_usage(res);
+   bool completed = !has_usage || zink_resource_usage_check_completion_fast(zink_screen(ctx->base.screen), res, rw);
    bool usage_matches = !completed && zink_resource_usage_matches(res, ctx->bs);
    if (!usage_matches) {
       res->obj->unordered_write = true;
-      if (is_write || zink_resource_usage_check_completion_fast(zink_screen(ctx->base.screen), res, ZINK_RESOURCE_ACCESS_RW))
+      if (is_write || !has_usage || zink_resource_usage_check_completion_fast(zink_screen(ctx->base.screen), res, ZINK_RESOURCE_ACCESS_RW))
          res->obj->unordered_read = true;
    }
    bool unordered_usage_matches = res->obj->unordered_access && usage_matches;
