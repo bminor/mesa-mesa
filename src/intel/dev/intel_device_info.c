@@ -235,7 +235,6 @@ static const struct intel_device_info intel_device_info_snb_gt2 = {
 #define GFX7_FEATURES                               \
    .ver = 7,                                        \
    .has_hiz_and_separate_stencil = true,            \
-   .must_use_separate_stencil = true,               \
    .has_llc = true,                                 \
    .has_pln = true,                                 \
    .has_64bit_float = true,                         \
@@ -427,7 +426,6 @@ static const struct intel_device_info intel_device_info_hsw_gt3 = {
 #define GFX8_FEATURES                               \
    .ver = 8,                                        \
    .has_hiz_and_separate_stencil = true,            \
-   .must_use_separate_stencil = true,               \
    .has_llc = true,                                 \
    .has_sample_with_hiz = false,                    \
    .has_pln = true,                                 \

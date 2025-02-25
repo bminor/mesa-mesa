@@ -320,6 +320,7 @@ isl_device_init(struct isl_device *dev,
    assert(!(info->has_bit6_swizzle && info->ver >= 8));
 
    dev->info = info;
+   /* A must on Gfx7+, preferred on Gfx6, first possible on Gfx5 */
    dev->use_separate_stencil = ISL_GFX_VER(dev) >= 6;
    dev->has_bit6_swizzling = info->has_bit6_swizzle;
    dev->buffer_length_in_aux_addr = false;
@@ -334,8 +335,6 @@ isl_device_init(struct isl_device *dev,
    /* Did we break hiz or stencil? */
    if (dev->use_separate_stencil)
       assert(info->has_hiz_and_separate_stencil);
-   if (info->must_use_separate_stencil)
-      assert(dev->use_separate_stencil);
 
    dev->ss.size = RENDER_SURFACE_STATE_length(info) * 4;
    dev->ss.align = isl_align(dev->ss.size, 32);
