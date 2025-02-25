@@ -32,6 +32,7 @@
 #include <pipe/p_state.h>
 #include <si_pipe.h>
 #include "si_vpe.h"
+#include "gmlib/tonemap_adaptor.h"
 
 #define SI_VPE_LOG_LEVEL_DEFAULT     0
 #define SI_VPE_LOG_LEVEL_INFO        1
@@ -351,6 +352,31 @@ si_vpe_maps_vpp_to_vpe_transfer_function(
 
    SIVPE_PRINT("WARNING: map VA-API transfer_characteristics(%d) to BT709/SRGB\n", transfer_characteristics);
    return (matrix_coefficients == PIPE_VIDEO_VPP_MCF_RGB)? VPE_TF_SRGB : VPE_TF_BT709;
+}
+
+static enum ToneMapTransferFunction
+si_vpe_maps_vpe_to_gm_transfer_function(const enum vpe_transfer_function vpe_tf)
+{
+   switch(vpe_tf) {
+   case VPE_TF_G22:
+   case VPE_TF_G24:
+      return TMG_TF_G24;
+   case VPE_TF_G10:
+      return TMG_TF_Linear;
+   case VPE_TF_PQ:
+      return TMG_TF_PQ;
+   case VPE_TF_PQ_NORMALIZED:
+      return TMG_TF_NormalizedPQ;
+   case VPE_TF_HLG:
+      return TMG_TF_HLG;
+   case VPE_TF_SRGB:
+      return TMG_TF_SRGB;
+   case VPE_TF_BT709:
+      return TMG_TF_BT709;
+   default:
+      SIVPE_PRINT("[FIXIT] No GMLIB TF mapped\n");
+      return TMG_TF_BT709;
+   }
 }
 
 static void
@@ -686,6 +712,101 @@ si_vpe_set_stream_out_param(struct vpe_video_processor *vpeproc,
    si_vpe_load_default_primaries(&build_param->hdr_metadata, build_param->dst_surface.cs.primaries);
 }
 
+static inline int
+si_vpe_is_tonemappingstream(enum vpe_transfer_function tf)
+{
+   return (tf == VPE_TF_HLG || tf == VPE_TF_G10 || tf == VPE_TF_PQ);
+}
+
+static void
+si_vpe_set_tonemap(struct vpe_video_processor *vpeproc,
+                   const struct pipe_vpp_desc *process_properties,
+                   struct vpe_build_param *build_param)
+{
+   if (!debug_get_bool_option("AMDGPU_SIVPE_HDR_TONEMAPPING", false))
+      return;
+
+   /* Check if source is tone mapping stream */
+   if (si_vpe_is_tonemappingstream(build_param->streams[0].surface_info.cs.tf)) {
+
+      if (!vpeproc->gm_handle) {
+         vpeproc->gm_handle = tm_create();
+         if (!vpeproc->gm_handle) {
+            SIVPE_WARN(vpeproc->log_level, "Allocate GMLib resource faied, skip tonemapping\n");
+            build_param->streams[0].flags.hdr_metadata = 0;
+            return;
+         }
+      }
+
+      if (!vpeproc->lut_data) {
+         struct tonemap_param tm_par;
+
+         vpeproc->lut_data = (uint16_t *)CALLOC(VPE_LUT_DIM * VPE_LUT_DIM * VPE_LUT_DIM * 3, sizeof(uint16_t));
+         if (!vpeproc->lut_data) {
+            SIVPE_WARN(vpeproc->log_level, "Allocate lut resource faied, skip tonemapping\n");
+            build_param->streams[0].flags.hdr_metadata = 0;
+            return;
+         }
+
+         /* Fill all parametters that GMLib needs to calculate tone mapping 3DLut */
+         tm_par.tm_handle = vpeproc->gm_handle;
+         tm_par.lutDim = VPE_LUT_DIM;
+         /* In */
+         tm_par.streamMetaData.redPrimaryX               = build_param->streams[0].hdr_metadata.redX;
+         tm_par.streamMetaData.redPrimaryY               = build_param->streams[0].hdr_metadata.redY;
+         tm_par.streamMetaData.greenPrimaryX             = build_param->streams[0].hdr_metadata.greenX;
+         tm_par.streamMetaData.greenPrimaryY             = build_param->streams[0].hdr_metadata.greenY;
+         tm_par.streamMetaData.bluePrimaryX              = build_param->streams[0].hdr_metadata.blueX;
+         tm_par.streamMetaData.bluePrimaryY              = build_param->streams[0].hdr_metadata.blueY;
+         tm_par.streamMetaData.whitePointX               = build_param->streams[0].hdr_metadata.whiteX;
+         tm_par.streamMetaData.whitePointY               = build_param->streams[0].hdr_metadata.whiteY;
+         tm_par.streamMetaData.maxMasteringLuminance     = build_param->streams[0].hdr_metadata.max_mastering;
+         tm_par.streamMetaData.minMasteringLuminance     = build_param->streams[0].hdr_metadata.min_mastering;
+         tm_par.streamMetaData.maxContentLightLevel      = build_param->streams[0].hdr_metadata.max_content;
+         tm_par.streamMetaData.maxFrameAverageLightLevel = build_param->streams[0].hdr_metadata.avg_content;
+         tm_par.inputContainerGamma                      = si_vpe_maps_vpe_to_gm_transfer_function(build_param->streams[0].surface_info.cs.tf);
+         /* Out */
+         tm_par.dstMetaData.redPrimaryX                  = build_param->hdr_metadata.redX;
+         tm_par.dstMetaData.redPrimaryY                  = build_param->hdr_metadata.redY;
+         tm_par.dstMetaData.greenPrimaryX                = build_param->hdr_metadata.greenX;
+         tm_par.dstMetaData.greenPrimaryY                = build_param->hdr_metadata.greenY;
+         tm_par.dstMetaData.bluePrimaryX                 = build_param->hdr_metadata.blueX;
+         tm_par.dstMetaData.bluePrimaryY                 = build_param->hdr_metadata.blueY;
+         tm_par.dstMetaData.whitePointX                  = build_param->hdr_metadata.whiteX;
+         tm_par.dstMetaData.whitePointY                  = build_param->hdr_metadata.whiteY;
+         tm_par.dstMetaData.maxMasteringLuminance        = build_param->hdr_metadata.max_mastering;
+         tm_par.dstMetaData.minMasteringLuminance        = build_param->hdr_metadata.min_mastering;
+         tm_par.dstMetaData.maxContentLightLevel         = build_param->hdr_metadata.max_content;
+         tm_par.dstMetaData.maxFrameAverageLightLevel    = build_param->hdr_metadata.avg_content;
+         tm_par.outputContainerGamma                     = si_vpe_maps_vpe_to_gm_transfer_function(build_param->dst_surface.cs.tf);
+
+         /* If the tone mapping of source is changed during playback, it must be recalculated.
+          * Now assume that the tone mapping is fixed.
+          */
+         if (tm_generate3DLut(&tm_par, vpeproc->lut_data)) {
+            SIVPE_WARN(vpeproc->log_level, "Generate lut data faied, skip tonemapping\n");
+            FREE(vpeproc->lut_data);
+            build_param->streams[0].flags.hdr_metadata = 0;
+            return;
+         }
+      }
+      build_param->streams[0].flags.hdr_metadata             = 1;
+      build_param->streams[0].tm_params.enable_3dlut         = 1;
+      build_param->streams[0].tm_params.UID                  = 1;
+   } else {
+      build_param->streams[0].flags.hdr_metadata             = 0;
+      build_param->streams[0].tm_params.enable_3dlut         = 0;
+      build_param->streams[0].tm_params.UID                  = 0;
+   }
+   build_param->streams[0].tm_params.lut_data                = vpeproc->lut_data;
+   build_param->streams[0].tm_params.lut_dim                 = VPE_LUT_DIM;
+   build_param->streams[0].tm_params.input_pq_norm_factor    = 0;
+   build_param->streams[0].tm_params.lut_in_gamut            = build_param->streams[0].surface_info.cs.primaries;
+   build_param->streams[0].tm_params.lut_out_gamut           = build_param->dst_surface.cs.primaries;
+   build_param->streams[0].tm_params.lut_out_tf              = build_param->streams[0].surface_info.cs.tf;
+   build_param->streams[0].tm_params.shaper_tf               = build_param->dst_surface.cs.tf;
+}
+
 static void
 si_vpe_processor_destroy(struct pipe_video_codec *codec)
 {
@@ -711,6 +832,12 @@ si_vpe_processor_destroy(struct pipe_video_codec *codec)
             si_vid_destroy_buffer(&vpeproc->emb_buffers[i]);
       FREE(vpeproc->emb_buffers);
    }
+
+   if (vpeproc->gm_handle)
+      tm_destroy(&vpeproc->gm_handle);
+   
+   if (vpeproc->lut_data)
+      FREE(vpeproc->lut_data);
 
    if (vpeproc->geometric_scaling_ratios)
       FREE(vpeproc->geometric_scaling_ratios);
@@ -896,6 +1023,13 @@ si_vpe_processor_check_and_build_settins(struct vpe_video_processor *vpeproc,
                vpeproc,
                process_properties,
                build_param);
+
+   /* Init Tonemap setting */
+   si_vpe_set_tonemap(
+               vpeproc,
+               process_properties,
+               build_param
+   );
 
    /* Shows details of current processing. */
    si_vpe_show_process_settings(vpeproc, build_param);
