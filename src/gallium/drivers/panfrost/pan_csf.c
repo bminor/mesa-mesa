@@ -1081,7 +1081,6 @@ csf_emit_draw_state(struct panfrost_batch *batch,
    }
 
    cs_move64_to(b, cs_reg64(b, MALI_IDVS_SR_TSD_0), batch->tls.gpu);
-   cs_move64_to(b, cs_reg64(b, MALI_IDVS_SR_TSD_3), batch->tls.gpu);
    cs_move32_to(b, cs_reg32(b, MALI_IDVS_SR_GLOBAL_ATTRIBUTE_OFFSET), 0);
    cs_move32_to(b, cs_reg32(b, MALI_IDVS_SR_INSTANCE_OFFSET), 0);
    cs_move32_to(b, cs_reg32(b, MALI_IDVS_SR_DCD2), 0);
