@@ -543,10 +543,8 @@ hk_pack_zls_control(struct agx_zls_control_packed *packed,
          zls_control.z_load_tiling = zls_control.z_store_tiling =
             agx_translate_zls_tiling(z_layout->tiling);
 
-         if (z_layout->compressed) {
-            zls_control.z_compress_1 = true;
-            zls_control.z_compress_2 = true;
-         }
+         zls_control.z_load_compress = zls_control.z_store_compress =
+            z_layout->compressed;
 
          if (z_layout->format == PIPE_FORMAT_Z16_UNORM) {
             zls_control.z_format = AGX_ZLS_FORMAT_16;
@@ -574,10 +572,8 @@ hk_pack_zls_control(struct agx_zls_control_packed *packed,
          zls_control.s_load_tiling = zls_control.s_store_tiling =
             agx_translate_zls_tiling(s_layout->tiling);
 
-         if (s_layout->compressed) {
-            zls_control.s_compress_1 = true;
-            zls_control.s_compress_2 = true;
-         }
+         zls_control.s_load_compress = zls_control.s_store_compress =
+            s_layout->compressed;
       }
    }
 }

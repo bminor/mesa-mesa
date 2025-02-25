@@ -1280,8 +1280,12 @@ agx_cmdbuf(struct agx_device *dev, struct drm_asahi_cmd_render *c,
 
             zls_control.z_store_enable = (batch->resolve & PIPE_CLEAR_DEPTH);
             zls_control.z_load_enable = !clear && load;
+
             zls_control.z_load_tiling = zls_control.z_store_tiling =
                agx_translate_zls_tiling(zres->layout.tiling);
+
+            zls_control.z_load_compress = zls_control.z_store_compress =
+               zres->layout.compressed;
 
             c->depth.base = agx_map_texture_gpu(zres, first_layer) +
                             ail_get_level_offset_B(&zres->layout, level);
@@ -1308,9 +1312,6 @@ agx_cmdbuf(struct agx_device *dev, struct drm_asahi_cmd_render *c,
                unsigned stride_lines =
                   zres->layout.compression_layer_stride_B / AIL_CACHELINE;
                c->depth.comp_stride = (stride_lines - 1) << 14;
-
-               zls_control.z_compress_1 = true;
-               zls_control.z_compress_2 = true;
             }
 
             if (zres->base.format == PIPE_FORMAT_Z16_UNORM) {
@@ -1331,8 +1332,12 @@ agx_cmdbuf(struct agx_device *dev, struct drm_asahi_cmd_render *c,
 
             zls_control.s_store_enable = (batch->resolve & PIPE_CLEAR_STENCIL);
             zls_control.s_load_enable = !clear && load;
+
             zls_control.s_load_tiling = zls_control.s_store_tiling =
                agx_translate_zls_tiling(sres->layout.tiling);
+
+            zls_control.s_load_compress = zls_control.s_store_compress =
+               sres->layout.compressed;
 
             c->stencil.base = agx_map_texture_gpu(sres, first_layer) +
                               ail_get_level_offset_B(&sres->layout, level);
@@ -1358,9 +1363,6 @@ agx_cmdbuf(struct agx_device *dev, struct drm_asahi_cmd_render *c,
                unsigned stride_lines =
                   sres->layout.compression_layer_stride_B / AIL_CACHELINE;
                c->stencil.comp_stride = (stride_lines - 1) << 14;
-
-               zls_control.s_compress_1 = true;
-               zls_control.s_compress_2 = true;
             }
 
             c->isp_bgobjvals |= clear_stencil;
