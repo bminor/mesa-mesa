@@ -1236,6 +1236,7 @@ get_image_plane_format_features(struct panvk_physical_device *physical_device,
          features |= VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT;
 
       features |= VK_FORMAT_FEATURE_BLIT_SRC_BIT;
+      features |= VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT;
    }
 
    if (fmt.bind & PAN_BIND_RENDER_TARGET) {
