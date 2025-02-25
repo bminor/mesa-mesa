@@ -2246,6 +2246,9 @@ vn_image_get_image_format_key(
             _mesa_sha1_update(&sha1_ctx, &src->sType,
                               sizeof(VkStructureType));
             break;
+         case VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_USAGE_ANDROID:
+            /* no need to update cache key since handled outside the cache */
+            break;
          default:
             physical_dev->image_format_cache.debug.cache_skip_count++;
             return false;
