@@ -1211,6 +1211,9 @@ bool v3d_nir_lower_image_load_store(nir_shader *s, struct v3d_compile *c);
 bool v3d_nir_lower_global_2x32(nir_shader *s);
 bool v3d_nir_lower_load_store_bitsize(nir_shader *s);
 bool v3d_nir_lower_algebraic(struct nir_shader *shader, const struct v3d_compile *c);
+bool v3d_nir_lower_load_output(nir_shader *s, struct v3d_compile *c);
+
+nir_def *v3d_nir_get_tlb_color(nir_builder *b, struct v3d_compile *c, int rt, int sample);
 
 void v3d_vir_emit_tex(struct v3d_compile *c, nir_tex_instr *instr);
 void v3d_vir_emit_image_load_store(struct v3d_compile *c,

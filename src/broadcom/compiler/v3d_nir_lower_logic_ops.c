@@ -202,28 +202,6 @@ v3d_get_format_swizzle_for_rt(struct v3d_compile *c, int rt)
 }
 
 static nir_def *
-v3d_nir_get_tlb_color(nir_builder *b, struct v3d_compile *c, int rt, int sample)
-{
-        uint32_t num_components =
-                util_format_get_nr_components(c->fs_key->color_fmt[rt].format);
-
-        nir_def *color[4];
-        for (int i = 0; i < 4; i++) {
-                if (i < num_components) {
-                        color[i] =
-                                nir_load_tlb_color_brcm(b, 1, 32,
-                                                        nir_imm_int(b, rt),
-                                                        .base = sample,
-                                                        .component = i);
-                } else {
-                        /* These will be DCEd */
-                        color[i] = nir_imm_int(b, 0);
-                }
-        }
-        return nir_vec4(b, color[0], color[1], color[2], color[3]);
-}
-
-static nir_def *
 v3d_emit_logic_op_raw(struct v3d_compile *c, nir_builder *b,
                       nir_def **src_chans, nir_def **dst_chans,
                       int rt, int sample)
