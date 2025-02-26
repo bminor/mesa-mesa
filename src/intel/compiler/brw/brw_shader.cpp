@@ -1321,6 +1321,14 @@ brw_allocate_registers(brw_shader &s, bool allow_spilling)
     */
    OPT_V(brw_lower_vgrfs_to_fixed_grfs);
 
+   /* brw_opt_dead_code_eliminate cannot be run after
+    * brw_lower_vgrfs_to_fixed_grfs as it depends on VGRFs. cmod propagation
+    * mostly cleans up after itself. The only thing DCE could do would be to
+    * eliminate writes to registers that are unread. Since register allocation
+    * and final scheduling has already happend, this won't help.
+    */
+   OPT(brw_opt_cmod_propagation);
+
    if (s.devinfo->ver >= 30)
       OPT(brw_lower_send_gather);
 
