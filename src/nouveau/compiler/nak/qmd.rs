@@ -425,13 +425,13 @@ pub extern "C" fn nak_get_qmd_dispatch_size_layout(
     dev: &nv_device_info,
 ) -> nak_qmd_dispatch_size_layout {
     if dev.cls_compute >= clc6c0::AMPERE_COMPUTE_A {
-        Qmd3_0::GLOBAL_SIZE_LAYOUT.try_into().unwrap()
+        Qmd3_0::GLOBAL_SIZE_LAYOUT
     } else if dev.cls_compute >= clc3c0::VOLTA_COMPUTE_A {
-        Qmd2_2::GLOBAL_SIZE_LAYOUT.try_into().unwrap()
+        Qmd2_2::GLOBAL_SIZE_LAYOUT
     } else if dev.cls_compute >= clc0c0::PASCAL_COMPUTE_A {
-        Qmd2_1::GLOBAL_SIZE_LAYOUT.try_into().unwrap()
+        Qmd2_1::GLOBAL_SIZE_LAYOUT
     } else if dev.cls_compute >= cla0c0::KEPLER_COMPUTE_A {
-        Qmd0_6::GLOBAL_SIZE_LAYOUT.try_into().unwrap()
+        Qmd0_6::GLOBAL_SIZE_LAYOUT
     } else {
         panic!("Unsupported shader model");
     }
