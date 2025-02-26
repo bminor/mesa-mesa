@@ -4,6 +4,7 @@
 #![allow(unstable_name_collisions)]
 
 use crate::api::{GetDebugFlags, DEBUG};
+use crate::const_tracker::ConstTracker;
 use crate::ir::*;
 use crate::liveness::{
     BlockLiveness, LiveSet, Liveness, NextUseBlockLiveness, NextUseLiveness,
@@ -231,10 +232,18 @@ impl Spill for SpillGPR<'_> {
     fn spill(&mut self, dst: SSAValue, src: Src) -> Box<Instr> {
         assert!(dst.file() == RegFile::Mem);
         self.info.num_spills_to_mem += 1;
-        Instr::new_boxed(OpCopy {
-            dst: dst.into(),
-            src: src,
-        })
+        if let Some(ssa) = src.as_ssa() {
+            assert!(ssa.file() == Some(RegFile::GPR));
+            Instr::new_boxed(OpCopy {
+                dst: dst.into(),
+                src: src,
+            })
+        } else {
+            // We use parallel copies for spilling non-GPR things to Mem
+            let mut pcopy = OpParCopy::new();
+            pcopy.push(dst.into(), src);
+            Instr::new_boxed(pcopy)
+        }
     }
 
     fn fill(&mut self, dst: Dst, src: SSAValue) -> Box<Instr> {
@@ -279,6 +288,7 @@ impl PartialOrd for SSANextUse {
 struct SpillCache<'a, S: Spill> {
     alloc: &'a mut SSAValueAllocator,
     spill: S,
+    const_tracker: ConstTracker,
     val_spill: HashMap<SSAValue, SSAValue>,
 }
 
@@ -287,8 +297,17 @@ impl<'a, S: Spill> SpillCache<'a, S> {
         SpillCache {
             alloc: alloc,
             spill: spill,
+            const_tracker: ConstTracker::new(),
             val_spill: HashMap::new(),
         }
+    }
+
+    fn add_copy_if_const(&mut self, op: &OpCopy) {
+        self.const_tracker.add_copy(op);
+    }
+
+    fn is_const(&self, ssa: &SSAValue) -> bool {
+        self.const_tracker.contains(ssa)
     }
 
     fn spill_file(&self, file: RegFile) -> RegFile {
@@ -307,7 +326,11 @@ impl<'a, S: Spill> SpillCache<'a, S> {
     }
 
     fn spill(&mut self, ssa: SSAValue) -> Box<Instr> {
-        self.spill_src(ssa, ssa.into())
+        if let Some(c) = self.const_tracker.get(&ssa) {
+            self.spill_src(ssa, (*c).into())
+        } else {
+            self.spill_src(ssa, ssa.into())
+        }
     }
 
     fn fill_dst(&mut self, dst: Dst, ssa: SSAValue) -> Box<Instr> {
@@ -316,7 +339,14 @@ impl<'a, S: Spill> SpillCache<'a, S> {
     }
 
     fn fill(&mut self, ssa: SSAValue) -> Box<Instr> {
-        self.fill_dst(ssa.into(), ssa)
+        if let Some(c) = self.const_tracker.get(&ssa) {
+            Instr::new_boxed(OpCopy {
+                dst: ssa.into(),
+                src: (*c).into(),
+            })
+        } else {
+            self.fill_dst(ssa.into(), ssa)
+        }
     }
 }
 
@@ -661,7 +691,9 @@ fn spill_values<S: Spill>(
         }
 
         for ssa in bl.iter_live_in() {
-            debug_assert!(w.contains(ssa) || s.contains(ssa));
+            debug_assert!(
+                w.contains(ssa) || s.contains(ssa) || spill.is_const(ssa)
+            );
         }
 
         let mut b = SSAState { w: w, s: s, p: p };
@@ -673,6 +705,10 @@ fn spill_values<S: Spill>(
 
         let mut instrs = Vec::new();
         for (ip, mut instr) in bb.instrs.drain(..).enumerate() {
+            if let Op::Copy(op) = &instr.op {
+                spill.add_copy_if_const(op);
+            }
+
             match &mut instr.op {
                 Op::PhiDsts(phi) => {
                     // For phis, anything that is not in W needs to be spilled
@@ -717,7 +753,10 @@ fn spill_values<S: Spill>(
                         if b.w.contains(src_ssa) {
                             num_w_dsts += 1;
                         } else {
-                            debug_assert!(b.s.contains(src_ssa));
+                            if b.s.insert(*src_ssa) {
+                                assert!(spill.is_const(src_ssa));
+                                instrs.push(spill.spill(*src_ssa));
+                            }
                             b.s.insert(*dst_ssa);
                             *src = spill.get_spill(*src_ssa).into();
                             *dst = spill.get_spill(*dst_ssa).into();
@@ -800,6 +839,10 @@ fn spill_values<S: Spill>(
                         debug_assert!(spill.spill_file(file) == RegFile::GPR);
                         instr.for_each_ssa_use_mut(|ssa| {
                             if ssa.file() == file && !b.w.contains(ssa) {
+                                if b.s.insert(*ssa) {
+                                    assert!(spill.is_const(ssa));
+                                    instrs.push(spill.spill(*ssa));
+                                }
                                 *ssa = spill.get_spill(*ssa).into();
                             }
                         });
@@ -837,7 +880,9 @@ fn spill_values<S: Spill>(
                         let mut fills = Vec::new();
                         instr.for_each_ssa_use(|ssa| {
                             if ssa.file() == file && !b.w.contains(ssa) {
-                                debug_assert!(b.s.contains(ssa));
+                                debug_assert!(
+                                    b.s.contains(ssa) || spill.is_const(ssa)
+                                );
                                 debug_assert!(bb.uniform || !ssa.is_uniform());
                                 fills.push(spill.fill(*ssa));
                                 b.w.insert(*ssa);
@@ -862,14 +907,19 @@ fn spill_values<S: Spill>(
                             for ssa in spills {
                                 debug_assert!(ssa.file() == file);
                                 b.w.remove(&ssa);
-                                if DEBUG.annotate() {
-                                    instrs.push(Instr::new_boxed(OpAnnotate {
-                                        annotation: "generated by spill_values"
-                                            .into(),
-                                    }));
+                                if !spill.is_const(&ssa) {
+                                    if DEBUG.annotate() {
+                                        instrs.push(Instr::new_boxed(
+                                            OpAnnotate {
+                                                annotation:
+                                                    "generated by spill_values"
+                                                        .into(),
+                                            },
+                                        ));
+                                    }
+                                    instrs.push(spill.spill(ssa));
+                                    b.s.insert(ssa);
                                 }
-                                instrs.push(spill.spill(ssa));
-                                b.s.insert(ssa);
                             }
                         }
 
