@@ -387,6 +387,13 @@ vn_physical_device_sanitize_properties(struct vn_physical_device *physical_dev)
             ver - VK_VERSION_PATCH(ver) + VK_VERSION_PATCH(props->apiVersion);
       }
 
+      /* Clamp to 1.3 if proper passthrough for VK_EXT_host_image_copy is not
+       * supported at the protocol level. It requires venus protocol v3.
+       * See vn_physical_device_get_passthrough_extensions()
+       */
+      if (instance->renderer->info.vk_mesa_venus_protocol_spec_version < 3)
+         ver = MIN2(VK_API_VERSION_1_3, ver);
+
       /* Clamp to 1.2 if we disabled VK_KHR_synchronization2 since it
        * is required for 1.3.
        * See vn_physical_device_get_passthrough_extensions()
