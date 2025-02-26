@@ -20,3 +20,7 @@ VK_KHR_shader_subgroup_extended_types on panvk/v10+
 shaderStorageImageExtendedFormats on panvk
 VK_KHR_display on panvk
 VK_EXT_display_control on panvk
+EXT_shader_framebuffer_image_fetch on v3d
+EXT_shader_framebuffer_image_fetch_coherent on v3d
+KHR_blend_equation_advanced on v3d
+KHR_blend_equation_advanced_coherent on v3d

@@ -560,6 +560,9 @@ emit_shader_state_record(struct v3d_context *v3d,
                 shader.fragment_shader_does_z_writes =
                         v3d->prog.fs->prog_data.fs->writes_z;
 
+                shader.enable_sample_rate_shading =
+                        job->msaa && v3d->prog.fs->prog_data.fs->force_per_sample_msaa;
+
                 /* Set if the EZ test must be disabled (due to shader side
                  * effects and the early_z flag not being present in the
                  * shader).

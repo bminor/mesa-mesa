@@ -690,11 +690,13 @@ v3d_update_compiled_fs(struct v3d_context *v3d, uint8_t prim_mode)
                  */
                 key->cbufs |= 1 << i;
 
-                /* If logic operations are enabled then we might emit color
-                 * reads and we need to know the color buffer format and
-                 * swizzle for that.
+                /* When emitting color reads (in the case of logic ops and
+                 * load_output) we need to know the color buffer format and
+                 * swizzle.
                  */
-                if (key->logicop_func != PIPE_LOGICOP_COPY) {
+                if (key->logicop_func != PIPE_LOGICOP_COPY ||
+                    s->info.fs.uses_fbfetch_output) {
+
                         key->color_fmt[i].format = cbuf->format;
                         memcpy(key->color_fmt[i].swizzle,
                                v3d_get_format_swizzle(&v3d->screen->devinfo,

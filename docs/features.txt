@@ -271,7 +271,7 @@ GLES3.1, GLSL ES 3.1 -- all DONE: freedreno/a5xx+, nvc0, r600, radeonsi, virgl, 
 GLES3.2, GLSL ES 3.2 -- all DONE: freedreno/a6xx, radeonsi, virgl, llvmpipe, zink, iris, crocus/gen7.5+, asahi
 
   GL_EXT_color_buffer_float                             DONE (all drivers)
-  GL_KHR_blend_equation_advanced                        DONE (freedreno/a6xx, nvc0, panfrost, crocus/gen4.5+)
+  GL_KHR_blend_equation_advanced                        DONE (freedreno/a6xx, nvc0, panfrost, crocus/gen4.5+, v3d)
   GL_KHR_debug                                          DONE (all drivers)
   GL_KHR_robustness                                     DONE (freedreno, nvc0, r600)
   GL_KHR_texture_compression_astc_ldr                   DONE (freedreno, r600, v3d, vc4, panfrost, softpipe, lima, crocus/gen6+)
@@ -317,8 +317,8 @@ Khronos, ARB, and OES extensions that are not part of any OpenGL or OpenGL ES ve
   GL_ARB_sparse_texture_clamp                           DONE (radeonsi/gfx9+, zink)
   GL_ARB_texture_filter_minmax                          DONE (freedreno/a6xx, nvc0/gm200+, zink)
   GL_ARM_shader_framebuffer_fetch_depth_stencil         DONE (llvmpipe)
-  GL_EXT_shader_framebuffer_fetch                       DONE (freedreno/a6xx, iris/gen9+, llvmpipe, panfrost, virgl, zink, asahi)
-  GL_EXT_shader_framebuffer_fetch_non_coherent          DONE (freedreno/a6xx, iris, llvmpipe, panfrost, virgl, zink, asahi)
+  GL_EXT_shader_framebuffer_fetch                       DONE (freedreno/a6xx, iris/gen9+, llvmpipe, panfrost, virgl, zink, asahi, v3d)
+  GL_EXT_shader_framebuffer_fetch_non_coherent          DONE (freedreno/a6xx, iris, llvmpipe, panfrost, virgl, zink, asahi, v3d)
   GL_EXT_clear_texture                                  DONE (all drivers)
   GL_EXT_color_buffer_half_float                        DONE (freedreno, iris, llvmpipe, nv50, nvc0, radeonsi, zink, crocus, asahi)
   GL_EXT_conservative_depth                             DONE (all drivers that support GLES 3.0+)
@@ -338,7 +338,7 @@ Khronos, ARB, and OES extensions that are not part of any OpenGL or OpenGL ES ve
   GL_EXT_texture_norm16                                 DONE (freedreno, r600, radeonsi, nvc0i, softpipe, zink, iris, crocus)
   GL_EXT_texture_sRGB_R8                                DONE (all drivers that support GLES 3.0+)
   GL_EXT_texture_view                                   DONE (all drivers that support GL_OES_texture_view)
-  GL_KHR_blend_equation_advanced_coherent               DONE (freedreno/a6xx, panfrost, zink, asahi, iris/gen9+)
+  GL_KHR_blend_equation_advanced_coherent               DONE (freedreno/a6xx, panfrost, zink, asahi, iris/gen9+, v3d)
   GL_KHR_shader_subgroup                                DONE (radeonsi, zink)
   GL_KHR_texture_compression_astc_hdr                   DONE (core only)
   GL_KHR_texture_compression_astc_sliced_3d             DONE (freedreno/a4xx+, r600, radeonsi, panfrost, softpipe, v3d, zink, lima, asahi, iris/gen9+)

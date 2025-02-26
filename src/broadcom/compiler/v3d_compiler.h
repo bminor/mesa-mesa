@@ -439,7 +439,7 @@ struct v3d_fs_key {
         uint8_t uint_color_rb;
 
         /* Color format information per render target. Only set when logic
-         * operations are enabled.
+         * operations are enabled or when fbfetch is in use.
          */
         struct {
                 enum pipe_format format;
