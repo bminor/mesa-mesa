@@ -317,6 +317,7 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
     * See vn_physical_device_get_native_extensions.
     */
    feats->deviceMemoryReport = true;
+   feats->swapchainMaintenance1 = true;
 
    /* Disable unsupported ExtendedDynamicState3Features */
    if (exts->EXT_extended_dynamic_state3) {
@@ -1027,6 +1028,7 @@ vn_physical_device_get_native_extensions(
       exts->KHR_incremental_present = true;
       exts->KHR_swapchain = true;
       exts->KHR_swapchain_mutable_format = true;
+      exts->EXT_swapchain_maintenance1 = true;
    }
 
    /* VK_EXT_pci_bus_info is required by common wsi to decide whether native
