@@ -63,7 +63,7 @@
     - $B2C_MARS_SETUP_TAGS
 
 
-# 0 devices (2025-01-30)
+# 1 devices (2025-02-26)
 .austriancoder-imx8mq-nitrogen:arm64:
   variables:
     FDO_CI_CONCURRENT: 4
@@ -114,8 +114,7 @@ gc2000-piglit:
   parallel: 2
   timeout: 30m
 
-# Disabled until DUTs appear
-.gc7000-gles2:
+gc7000-gles2:
   extends:
     - .b2c-arm64-test-gl
     - .austriancoder-imx8mq-nitrogen:arm64
