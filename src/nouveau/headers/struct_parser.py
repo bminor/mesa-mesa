@@ -25,7 +25,7 @@ use std::ops::Range;
     % for f in s.fields:
         % if f.stride:
 #[inline]
-pub fn ${s.name}_${f.name}(i: usize) -> Range<usize> {
+pub const fn ${s.name}_${f.name}(i: usize) -> Range<usize> {
     (i * ${f.stride} + ${f.lo})..(i * ${f.stride} + ${f.hi + 1})
 }
         % else:
