@@ -2906,6 +2906,22 @@ tu6_calc_blend_lrz(const struct vk_color_blend_state *cb,
    if (cb->logic_op_enable && tu_logic_op_reads_dst((VkLogicOp)cb->logic_op))
       return true;
 
+   bool has_enabled_attachments = false;
+   for (unsigned i = 0; i < cb->attachment_count; i++) {
+      if (rp->color_attachment_formats[i] == VK_FORMAT_UNDEFINED)
+         continue;
+
+      const struct vk_color_blend_attachment_state *att = &cb->attachments[i];
+      if ((cb->color_write_enables & (1u << i)) && att->write_mask != 0) {
+         has_enabled_attachments = true;
+         break;
+      }
+   }
+
+   /* There is no partial write if there is no writes at all. */
+   if (!has_enabled_attachments)
+      return false;
+
    for (unsigned i = 0; i < cb->attachment_count; i++) {
       if (rp->color_attachment_formats[i] == VK_FORMAT_UNDEFINED)
          continue;
