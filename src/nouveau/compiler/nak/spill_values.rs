@@ -81,8 +81,8 @@ impl PhiSrcMap {
 
 trait Spill {
     fn spill_file(&self, file: RegFile) -> RegFile;
-    fn spill(&self, dst: SSAValue, src: Src) -> Box<Instr>;
-    fn fill(&self, dst: Dst, src: SSAValue) -> Box<Instr>;
+    fn spill(&mut self, dst: SSAValue, src: Src) -> Box<Instr>;
+    fn fill(&mut self, dst: Dst, src: SSAValue) -> Box<Instr>;
 }
 
 struct SpillUniform {}
@@ -99,14 +99,14 @@ impl Spill for SpillUniform {
         file.to_warp()
     }
 
-    fn spill(&self, dst: SSAValue, src: Src) -> Box<Instr> {
+    fn spill(&mut self, dst: SSAValue, src: Src) -> Box<Instr> {
         Instr::new_boxed(OpCopy {
             dst: dst.into(),
             src: src,
         })
     }
 
-    fn fill(&self, dst: Dst, src: SSAValue) -> Box<Instr> {
+    fn fill(&mut self, dst: Dst, src: SSAValue) -> Box<Instr> {
         Instr::new_boxed(OpR2UR {
             dst: dst,
             src: src.into(),
@@ -131,7 +131,7 @@ impl Spill for SpillPred {
         }
     }
 
-    fn spill(&self, dst: SSAValue, src: Src) -> Box<Instr> {
+    fn spill(&mut self, dst: SSAValue, src: Src) -> Box<Instr> {
         assert!(matches!(dst.file(), RegFile::GPR | RegFile::UGPR));
         if let Some(b) = src.as_bool() {
             let u32_src = if b {
@@ -152,7 +152,7 @@ impl Spill for SpillPred {
         }
     }
 
-    fn fill(&self, dst: Dst, src: SSAValue) -> Box<Instr> {
+    fn fill(&mut self, dst: Dst, src: SSAValue) -> Box<Instr> {
         assert!(matches!(src.file(), RegFile::GPR | RegFile::UGPR));
         Instr::new_boxed(OpISetP {
             dst: dst,
@@ -181,7 +181,7 @@ impl Spill for SpillBar {
         RegFile::GPR
     }
 
-    fn spill(&self, dst: SSAValue, src: Src) -> Box<Instr> {
+    fn spill(&mut self, dst: SSAValue, src: Src) -> Box<Instr> {
         assert!(dst.file() == RegFile::GPR);
         Instr::new_boxed(OpBMov {
             dst: dst.into(),
@@ -190,7 +190,7 @@ impl Spill for SpillBar {
         })
     }
 
-    fn fill(&self, dst: Dst, src: SSAValue) -> Box<Instr> {
+    fn fill(&mut self, dst: Dst, src: SSAValue) -> Box<Instr> {
         assert!(src.file() == RegFile::GPR);
         Instr::new_boxed(OpBMov {
             dst: dst,
@@ -214,7 +214,7 @@ impl Spill for SpillGPR {
         RegFile::Mem
     }
 
-    fn spill(&self, dst: SSAValue, src: Src) -> Box<Instr> {
+    fn spill(&mut self, dst: SSAValue, src: Src) -> Box<Instr> {
         assert!(dst.file() == RegFile::Mem);
         Instr::new_boxed(OpCopy {
             dst: dst.into(),
@@ -222,7 +222,7 @@ impl Spill for SpillGPR {
         })
     }
 
-    fn fill(&self, dst: Dst, src: SSAValue) -> Box<Instr> {
+    fn fill(&mut self, dst: Dst, src: SSAValue) -> Box<Instr> {
         assert!(src.file() == RegFile::Mem);
         Instr::new_boxed(OpCopy {
             dst: dst,
