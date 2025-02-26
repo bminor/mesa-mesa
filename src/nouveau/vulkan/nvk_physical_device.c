@@ -106,7 +106,8 @@ nvk_get_device_extensions(const struct nvk_instance *instance,
       .KHR_bind_memory2 = true,
       .KHR_buffer_device_address = true,
       .KHR_calibrated_timestamps = true,
-      .KHR_compute_shader_derivatives = nvk_use_nak(info),
+      .KHR_compute_shader_derivatives = nvk_use_nak(info) &&
+                                        info->cls_eng3d >= TURING_A,
       .KHR_copy_commands2 = true,
       .KHR_create_renderpass2 = true,
       .KHR_dedicated_allocation = true,
@@ -289,7 +290,8 @@ nvk_get_device_extensions(const struct nvk_instance *instance,
       .GOOGLE_hlsl_functionality1 = true,
       .GOOGLE_user_type = true,
       .MESA_image_alignment_control = true,
-      .NV_compute_shader_derivatives = nvk_use_nak(info),
+      .NV_compute_shader_derivatives = nvk_use_nak(info) &&
+                                       info->cls_eng3d >= TURING_A,
       .NV_shader_sm_builtins = true,
       .VALVE_mutable_descriptor_type = true,
    };
@@ -459,8 +461,8 @@ nvk_get_device_features(const struct nv_device_info *info,
       .pushDescriptor = true,
 
       /* VK_KHR_compute_shader_derivatives */
-      .computeDerivativeGroupQuads = true,
-      .computeDerivativeGroupLinear = true,
+      .computeDerivativeGroupQuads = info->cls_eng3d >= TURING_A,
+      .computeDerivativeGroupLinear = info->cls_eng3d >= TURING_A,
 
       /* VK_KHR_fragment_shader_barycentric */
       .fragmentShaderBarycentric = info->cls_eng3d >= TURING_A &&
