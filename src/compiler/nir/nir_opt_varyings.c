@@ -5279,10 +5279,10 @@ nir_opt_varyings(nir_shader *producer, nir_shader *consumer, bool spirv,
    /* Part 4: Do compaction. */
    compact_varyings(linkage, &progress);
 
-   nir_progress(true, linkage->producer_builder.impl,
-                progress & nir_progress_producer ? (nir_metadata_control_flow) : nir_metadata_all);
-   nir_progress(true, linkage->consumer_builder.impl,
-                progress & nir_progress_consumer ? (nir_metadata_control_flow) : nir_metadata_all);
+   nir_progress(progress & nir_progress_producer, linkage->producer_builder.impl,
+                nir_metadata_control_flow);
+   nir_progress(progress & nir_progress_consumer, linkage->consumer_builder.impl,
+                nir_metadata_control_flow);
    free_linkage(linkage);
    FREE(linkage);
 
