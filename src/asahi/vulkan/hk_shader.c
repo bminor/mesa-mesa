@@ -1419,13 +1419,6 @@ hk_api_shader_serialize(struct vk_device *vk_dev,
    return !blob->out_of_memory;
 }
 
-#define WRITE_STR(field, ...)                                                  \
-   ({                                                                          \
-      memset(field, 0, sizeof(field));                                         \
-      UNUSED int i = snprintf(field, sizeof(field), __VA_ARGS__);              \
-      assert(i > 0 && i < sizeof(field));                                      \
-   })
-
 static VkResult
 hk_shader_get_executable_properties(
    UNUSED struct vk_device *device, const struct vk_shader *vk_shader,
@@ -1441,9 +1434,9 @@ hk_shader_get_executable_properties(
    {
       props->stages = mesa_to_vk_shader_stage(obj->vk.stage);
       props->subgroupSize = 32;
-      WRITE_STR(props->name, "%s", _mesa_shader_stage_to_string(obj->vk.stage));
-      WRITE_STR(props->description, "%s shader",
-                _mesa_shader_stage_to_string(obj->vk.stage));
+      VK_COPY_STR(props->name, _mesa_shader_stage_to_string(obj->vk.stage));
+      VK_PRINT_STR(props->description, "%s shader",
+                   _mesa_shader_stage_to_string(obj->vk.stage));
    }
 
    return vk_outarray_status(&out);
@@ -1470,17 +1463,17 @@ hk_shader_get_executable_statistics(
 
    vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat)
    {
-      WRITE_STR(stat->name, "Code Size");
-      WRITE_STR(stat->description,
-                "Size of the compiled shader binary, in bytes");
+      VK_COPY_STR(stat->name, "Code Size");
+      VK_COPY_STR(stat->description,
+                  "Size of the compiled shader binary, in bytes");
       stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
       stat->value.u64 = shader->code_size;
    }
 
    vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat)
    {
-      WRITE_STR(stat->name, "Number of GPRs");
-      WRITE_STR(stat->description, "Number of GPRs used by this pipeline");
+      VK_COPY_STR(stat->name, "Number of GPRs");
+      VK_COPY_STR(stat->description, "Number of GPRs used by this pipeline");
       stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
       stat->value.u64 = shader->b.info.nr_gprs;
    }
@@ -1525,8 +1518,8 @@ hk_shader_get_executable_internal_representations(
    /* TODO */
 #if 0
    vk_outarray_append_typed(VkPipelineExecutableInternalRepresentationKHR, &out, ir) {
-      WRITE_STR(ir->name, "AGX assembly");
-      WRITE_STR(ir->description, "AGX assembly");
+      VK_COPY_STR(ir->name, "AGX assembly");
+      VK_COPY_STR(ir->description, "AGX assembly");
       if (!write_ir_text(ir, TODO))
          incomplete_text = true;
    }
