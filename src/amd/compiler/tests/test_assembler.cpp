@@ -85,6 +85,124 @@ BEGIN_TEST(assembler.long_jump.unconditional_forwards)
    finish_assembler_test();
 END_TEST
 
+BEGIN_TEST(assembler.long_jump.many_blocks.branches)
+   if (!setup_cs(NULL, (amd_gfx_level)GFX10))
+      return;
+
+   //! BB0:
+   //! s_branch 16416                                              ; bf824020
+   bld.sopp(aco_opcode::s_branch, 65);
+
+   //! BB1:
+   //! s_nop 0                                                     ; bf800000
+   //! (then repeated 511 times)
+   //! s_branch BB2                                                ; bf820000
+   for (unsigned i = 0; i < 64; i++) {
+      bld.reset(program->create_and_insert_block());
+      program->blocks[i + 1].linear_preds.push_back(i);
+
+      for (unsigned j = 0; j < 512; j++)
+         bld.sopp(aco_opcode::s_nop, 0);
+      bld.sopp(aco_opcode::s_branch, i + 2);
+   }
+   //>> BB32:
+   //! s_nop 0                                                     ; bf800000
+   //! (then repeated 511 times)
+   //! s_branch BB33                                               ; bf820001
+   //! s_branch BB65                                               ; bf824020
+   //! BB33:
+   //>> BB65:
+   //! s_endpgm                                                    ; bf810000
+   bld.reset(program->create_and_insert_block());
+
+   program->blocks[65].linear_preds.push_back(0u);
+   program->blocks[65].linear_preds.push_back(64u);
+
+   finish_assembler_test();
+END_TEST
+
+BEGIN_TEST(assembler.long_jump.many_blocks.no_branches)
+   if (!setup_cs(NULL, (amd_gfx_level)GFX10))
+      return;
+
+   //! BB0:
+   //! s_branch 32002                                              ; bf827d02
+   bld.sopp(aco_opcode::s_branch, 65);
+
+   //! BB1:
+   //! s_nop 0                                                     ; bf800000
+   //! (then repeated 799 times)
+   for (unsigned i = 0; i < 64; i++) {
+      bld.reset(program->create_and_insert_block());
+      program->blocks[i + 1].linear_preds.push_back(i);
+
+      for (unsigned j = 0; j < 800; j++)
+         bld.sopp(aco_opcode::s_nop, 0);
+   }
+   //>> BB40:
+   //! s_nop 0                                                     ; bf800000
+   //! (then repeated 799 times)
+   //! s_waitcnt_vscnt null, 0x0                                   ; bbfd0000
+   //! s_branch BB41                                               ; bf820001
+   //! s_branch BB65                                               ; bf824b00
+   //! BB41:
+   //>> BB65:
+   //! s_endpgm                                                    ; bf810000
+   bld.reset(program->create_and_insert_block());
+
+   program->blocks[65].linear_preds.push_back(0u);
+   program->blocks[65].linear_preds.push_back(64u);
+
+   finish_assembler_test();
+END_TEST
+
+BEGIN_TEST(assembler.long_jump.many_blocks.two_chained_branches)
+   if (!setup_cs(NULL, (amd_gfx_level)GFX10))
+      return;
+
+   //! BB0:
+   //! s_branch 32013                                              ; bf827d0d
+   bld.sopp(aco_opcode::s_branch, 65);
+
+   //! BB1:
+   //! s_nop 0                                                     ; bf800000
+   //! (then repeated 9 times)
+   //! s_branch 32003                                              ; bf827d03
+   bld.reset(program->create_and_insert_block());
+   program->blocks[1].linear_preds.push_back(0);
+   for (unsigned j = 0; j < 10; j++)
+      bld.sopp(aco_opcode::s_nop, 0);
+   bld.sopp(aco_opcode::s_branch, 65);
+
+   //! BB2:
+   //! s_nop 0                                                     ; bf800000
+   //! (then repeated 799 times)
+   for (unsigned i = 1; i < 64; i++) {
+      bld.reset(program->create_and_insert_block());
+      program->blocks[i + 1].linear_preds.push_back(i);
+
+      for (unsigned j = 0; j < 800; j++)
+         bld.sopp(aco_opcode::s_nop, 0);
+   }
+   //>> BB41:
+   //! s_nop 0                                                     ; bf800000
+   //! (then repeated 799 times)
+   //! s_waitcnt_vscnt null, 0x0                                   ; bbfd0000
+   //! s_branch BB42                                               ; bf820002
+   //! s_branch BB65                                               ; bf8247e1
+   //! s_branch BB65                                               ; bf8247e0
+   //! BB42:
+   //>> BB65:
+   //! s_endpgm                                                    ; bf810000
+   bld.reset(program->create_and_insert_block());
+
+   program->blocks[65].linear_preds.push_back(0u);
+   program->blocks[65].linear_preds.push_back(1u);
+   program->blocks[65].linear_preds.push_back(64u);
+
+   finish_assembler_test();
+END_TEST
+
 BEGIN_TEST(assembler.long_jump.conditional_forwards)
    for (amd_gfx_level gfx : filter_gfx_levels({GFX10, GFX12})) {
       if (!setup_cs(NULL, gfx))
