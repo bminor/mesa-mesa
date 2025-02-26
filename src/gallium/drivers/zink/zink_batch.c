@@ -1116,9 +1116,12 @@ zink_batch_usage_check_completion(struct zink_context *ctx, const struct zink_ba
 }
 
 static void
-batch_usage_wait(struct zink_context *ctx, struct zink_batch_usage *u, bool trywait)
+batch_usage_wait(struct zink_context *ctx, struct zink_batch_usage *u, unsigned submit_count, bool trywait)
 {
    if (!zink_batch_usage_exists(u))
+      return;
+   /* this batch state was already completed and reset */
+   if (u->submit_count - submit_count > 1)
       return;
    if (zink_batch_usage_is_unflushed(u)) {
       if (likely(u == &ctx->bs->usage))
@@ -1137,13 +1140,13 @@ batch_usage_wait(struct zink_context *ctx, struct zink_batch_usage *u, bool tryw
 }
 
 void
-zink_batch_usage_wait(struct zink_context *ctx, struct zink_batch_usage *u)
+zink_batch_usage_wait(struct zink_context *ctx, struct zink_batch_usage *u, unsigned submit_count)
 {
-   batch_usage_wait(ctx, u, false);
+   batch_usage_wait(ctx, u, submit_count, false);
 }
 
 void
-zink_batch_usage_try_wait(struct zink_context *ctx, struct zink_batch_usage *u)
+zink_batch_usage_try_wait(struct zink_context *ctx, struct zink_batch_usage *u, unsigned submit_count)
 {
-   batch_usage_wait(ctx, u, true);
+   batch_usage_wait(ctx, u, submit_count, true);
 }

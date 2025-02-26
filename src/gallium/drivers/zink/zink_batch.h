@@ -119,10 +119,10 @@ bool
 zink_batch_usage_check_completion(struct zink_context *ctx, const struct zink_batch_usage *u);
 
 void
-zink_batch_usage_wait(struct zink_context *ctx, struct zink_batch_usage *u);
+zink_batch_usage_wait(struct zink_context *ctx, struct zink_batch_usage *u, unsigned submit_count);
 
 void
-zink_batch_usage_try_wait(struct zink_context *ctx, struct zink_batch_usage *u);
+zink_batch_usage_try_wait(struct zink_context *ctx, struct zink_batch_usage *u, unsigned submit_count);
 
 #ifdef __cplusplus
 }
