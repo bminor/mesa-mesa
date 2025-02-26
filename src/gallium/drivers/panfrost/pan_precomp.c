@@ -320,18 +320,18 @@ GENX(panfrost_launch_precomp)(struct panfrost_batch *batch,
    struct cs_builder *b = batch->csf.cs.builder;
 
    /* No resource table */
-   cs_move64_to(b, cs_reg64(b, MALI_COMPUTE_SR_SRT_0), 0);
+   cs_move64_to(b, cs_sr_reg64(b, COMPUTE, SRT_0), 0);
 
    uint64_t fau_count =
       DIV_ROUND_UP(BIFROST_PRECOMPILED_KERNEL_SYSVALS_SIZE + data_size, 8);
    uint64_t fau_ptr = push_uniforms.gpu | (fau_count << 56);
-   cs_move64_to(b, cs_reg64(b, MALI_COMPUTE_SR_FAU_0), fau_ptr);
+   cs_move64_to(b, cs_sr_reg64(b, COMPUTE, FAU_0), fau_ptr);
 
-   cs_move64_to(b, cs_reg64(b, MALI_COMPUTE_SR_SPD_0), shader->state_ptr);
-   cs_move64_to(b, cs_reg64(b, MALI_COMPUTE_SR_TSD_0), tsd);
+   cs_move64_to(b, cs_sr_reg64(b, COMPUTE, SPD_0), shader->state_ptr);
+   cs_move64_to(b, cs_sr_reg64(b, COMPUTE, TSD_0), tsd);
 
    /* Global attribute offset */
-   cs_move32_to(b, cs_reg32(b, MALI_COMPUTE_SR_GLOBAL_ATTRIBUTE_OFFSET), 0);
+   cs_move32_to(b, cs_sr_reg32(b, COMPUTE, GLOBAL_ATTRIBUTE_OFFSET), 0);
 
    /* Compute workgroup size */
    struct mali_compute_size_workgroup_packed wg_size;
@@ -341,17 +341,17 @@ GENX(panfrost_launch_precomp)(struct panfrost_batch *batch,
       cfg.workgroup_size_z = shader->local_size.z;
       cfg.allow_merging_workgroups = false;
    }
-   cs_move32_to(b, cs_reg32(b, MALI_COMPUTE_SR_WG_SIZE), wg_size.opaque[0]);
+   cs_move32_to(b, cs_sr_reg32(b, COMPUTE, WG_SIZE), wg_size.opaque[0]);
 
    /* Job offset */
-   cs_move32_to(b, cs_reg32(b, MALI_COMPUTE_SR_JOB_OFFSET_X), 0);
-   cs_move32_to(b, cs_reg32(b, MALI_COMPUTE_SR_JOB_OFFSET_Y), 0);
-   cs_move32_to(b, cs_reg32(b, MALI_COMPUTE_SR_JOB_OFFSET_Z), 0);
+   cs_move32_to(b, cs_sr_reg32(b, COMPUTE, JOB_OFFSET_X), 0);
+   cs_move32_to(b, cs_sr_reg32(b, COMPUTE, JOB_OFFSET_Y), 0);
+   cs_move32_to(b, cs_sr_reg32(b, COMPUTE, JOB_OFFSET_Z), 0);
 
    /* Job size */
-   cs_move32_to(b, cs_reg32(b, MALI_COMPUTE_SR_JOB_SIZE_X), grid.count[0]);
-   cs_move32_to(b, cs_reg32(b, MALI_COMPUTE_SR_JOB_SIZE_Y), grid.count[1]);
-   cs_move32_to(b, cs_reg32(b, MALI_COMPUTE_SR_JOB_SIZE_Z), grid.count[2]);
+   cs_move32_to(b, cs_sr_reg32(b, COMPUTE, JOB_SIZE_X), grid.count[0]);
+   cs_move32_to(b, cs_sr_reg32(b, COMPUTE, JOB_SIZE_Y), grid.count[1]);
+   cs_move32_to(b, cs_sr_reg32(b, COMPUTE, JOB_SIZE_Z), grid.count[2]);
 
    unsigned threads_per_wg =
       shader->local_size.x * shader->local_size.y * shader->local_size.z;
