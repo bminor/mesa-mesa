@@ -314,7 +314,7 @@
         "description": "nvk: Only support deviceGeneratedCommandsMultiDrawIndirectCount on Turing+",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "83b220f83342b1a645465307fb624cdedf0687b6",
         "notes": null
