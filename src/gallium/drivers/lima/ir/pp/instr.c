@@ -238,6 +238,13 @@ bool ppir_instr_insert_node(ppir_instr *instr, ppir_node *node)
             }
          }
 
+         if (pos == PPIR_INSTR_SLOT_BRANCH) {
+            /* Branch and combiner run in parallel, they cannot be inserted
+             * into the same instruction */
+            if (instr->slots[PPIR_INSTR_SLOT_ALU_COMBINE])
+               return false;
+         }
+
          if (pos == PPIR_INSTR_SLOT_ALU_VEC_MUL) {
             if (dest && dest->type == ppir_target_pipeline) {
                ppir_node *add = ppir_node_first_succ(node);

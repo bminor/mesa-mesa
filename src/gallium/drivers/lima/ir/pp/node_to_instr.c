@@ -121,6 +121,17 @@ static bool ppir_do_one_node_to_instr(ppir_block *block, ppir_node *node)
 
       }
 
+      if (!node->instr &&
+          ppir_node_has_single_succ(node)) {
+         ppir_node *succ = ppir_node_first_succ(node);
+         if (succ->op == ppir_op_branch &&
+             ppir_node_get_src_num(succ) == 0 &&
+             succ->instr) {
+            /* Unconditional branch. Likely a loop */
+            ppir_instr_insert_node(succ->instr, node);
+         }
+      }
+
       /* can't inserted to any existing instr, create one */
       if (!node->instr && !create_new_instr(block, node))
          return false;
