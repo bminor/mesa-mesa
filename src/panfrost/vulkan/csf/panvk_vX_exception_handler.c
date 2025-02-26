@@ -65,8 +65,8 @@ generate_tiler_oom_handler(struct cs_buffer handler_mem, bool has_zs_ext,
       struct cs_index layer_count = cs_scratch_reg32(&b, 7);
 
       /* The tiler pointer is pre-filled. */
-      struct cs_index tiler_ptr = cs_sr_reg64(&b, 38);
-      struct cs_index fbd_ptr = cs_sr_reg64(&b, MALI_FRAGMENT_SR_FBD_POINTER);
+      struct cs_index tiler_ptr = cs_reg64(&b, 38);
+      struct cs_index fbd_ptr = cs_sr_reg64(&b, FRAGMENT, FBD_POINTER);
 
       /* Use different framebuffer descriptor depending on whether incremental
        * rendering has already been triggered */

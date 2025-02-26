@@ -236,23 +236,23 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
    cs_update_compute_ctx(b) {
       if (compute_state_dirty(cmdbuf, CS) ||
           compute_state_dirty(cmdbuf, DESC_STATE))
-         cs_move64_to(b, cs_sr_reg64(b, MALI_COMPUTE_SR_SRT_0),
+         cs_move64_to(b, cs_sr_reg64(b, COMPUTE, SRT_0),
                       cs_desc_state->res_table);
 
       if (compute_state_dirty(cmdbuf, PUSH_UNIFORMS)) {
          uint64_t fau_ptr = cmdbuf->state.compute.push_uniforms |
                             ((uint64_t)shader->fau.total_count << 56);
-         cs_move64_to(b, cs_sr_reg64(b, MALI_COMPUTE_SR_FAU_0), fau_ptr);
+         cs_move64_to(b, cs_sr_reg64(b, COMPUTE, FAU_0), fau_ptr);
       }
 
       if (compute_state_dirty(cmdbuf, CS))
-         cs_move64_to(b, cs_sr_reg64(b, MALI_COMPUTE_SR_SPD_0),
+         cs_move64_to(b, cs_sr_reg64(b, COMPUTE, SPD_0),
                       panvk_priv_mem_dev_addr(shader->spd));
 
-      cs_move64_to(b, cs_sr_reg64(b, MALI_COMPUTE_SR_TSD_0), tsd);
+      cs_move64_to(b, cs_sr_reg64(b, COMPUTE, TSD_0), tsd);
 
       /* Global attribute offset */
-      cs_move32_to(b, cs_sr_reg32(b, MALI_COMPUTE_SR_GLOBAL_ATTRIBUTE_OFFSET),
+      cs_move32_to(b, cs_sr_reg32(b, COMPUTE, GLOBAL_ATTRIBUTE_OFFSET),
                    0);
 
       struct mali_compute_size_workgroup_packed wg_size;
@@ -262,41 +262,41 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
          cfg.workgroup_size_z = shader->local_size.z;
          cfg.allow_merging_workgroups = false;
       }
-      cs_move32_to(b, cs_sr_reg32(b, MALI_COMPUTE_SR_WG_SIZE),
+      cs_move32_to(b, cs_sr_reg32(b, COMPUTE, WG_SIZE),
                    wg_size.opaque[0]);
-      cs_move32_to(b, cs_sr_reg32(b, MALI_COMPUTE_SR_JOB_OFFSET_X),
+      cs_move32_to(b, cs_sr_reg32(b, COMPUTE, JOB_OFFSET_X),
                    info->wg_base.x * shader->local_size.x);
-      cs_move32_to(b, cs_sr_reg32(b, MALI_COMPUTE_SR_JOB_OFFSET_Y),
+      cs_move32_to(b, cs_sr_reg32(b, COMPUTE, JOB_OFFSET_Y),
                    info->wg_base.y * shader->local_size.y);
-      cs_move32_to(b, cs_sr_reg32(b, MALI_COMPUTE_SR_JOB_OFFSET_Z),
+      cs_move32_to(b, cs_sr_reg32(b, COMPUTE, JOB_OFFSET_Z),
                    info->wg_base.z * shader->local_size.z);
       if (indirect) {
          /* Load parameters from indirect buffer and update workgroup count
           * registers and sysvals */
          cs_move64_to(b, cs_scratch_reg64(b, 0),
                       info->indirect.buffer_dev_addr);
-         cs_load_to(b, cs_sr_reg_tuple(b, MALI_COMPUTE_SR_JOB_SIZE_X, 3),
+         cs_load_to(b, cs_sr_reg_tuple(b, COMPUTE, JOB_SIZE_X, 3),
                     cs_scratch_reg64(b, 0), BITFIELD_MASK(3), 0);
          cs_move64_to(b, cs_scratch_reg64(b, 0),
                       cmdbuf->state.compute.push_uniforms);
          cs_wait_slot(b, SB_ID(LS), false);
 
          if (shader_uses_sysval(shader, compute, num_work_groups.x)) {
-            cs_store32(b, cs_sr_reg32(b, MALI_COMPUTE_SR_JOB_SIZE_X),
+            cs_store32(b, cs_sr_reg32(b, COMPUTE, JOB_SIZE_X),
                        cs_scratch_reg64(b, 0),
                        shader_remapped_sysval_offset(
                           shader, sysval_offset(compute, num_work_groups.x)));
          }
 
          if (shader_uses_sysval(shader, compute, num_work_groups.y)) {
-            cs_store32(b, cs_sr_reg32(b, MALI_COMPUTE_SR_JOB_SIZE_Y),
+            cs_store32(b, cs_sr_reg32(b, COMPUTE, JOB_SIZE_Y),
                        cs_scratch_reg64(b, 0),
                        shader_remapped_sysval_offset(
                           shader, sysval_offset(compute, num_work_groups.y)));
          }
 
          if (shader_uses_sysval(shader, compute, num_work_groups.z)) {
-            cs_store32(b, cs_sr_reg32(b, MALI_COMPUTE_SR_JOB_SIZE_Z),
+            cs_store32(b, cs_sr_reg32(b, COMPUTE, JOB_SIZE_Z),
                        cs_scratch_reg64(b, 0),
                        shader_remapped_sysval_offset(
                           shader, sysval_offset(compute, num_work_groups.z)));
@@ -304,11 +304,11 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
 
          cs_wait_slot(b, SB_ID(LS), false);
       } else {
-         cs_move32_to(b, cs_sr_reg32(b, MALI_COMPUTE_SR_JOB_SIZE_X),
+         cs_move32_to(b, cs_sr_reg32(b, COMPUTE, JOB_SIZE_X),
                       info->direct.wg_count.x);
-         cs_move32_to(b, cs_sr_reg32(b, MALI_COMPUTE_SR_JOB_SIZE_Y),
+         cs_move32_to(b, cs_sr_reg32(b, COMPUTE, JOB_SIZE_Y),
                       info->direct.wg_count.y);
-         cs_move32_to(b, cs_sr_reg32(b, MALI_COMPUTE_SR_JOB_SIZE_Z),
+         cs_move32_to(b, cs_sr_reg32(b, COMPUTE, JOB_SIZE_Z),
                       info->direct.wg_count.z);
       }
    }

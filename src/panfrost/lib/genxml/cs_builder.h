@@ -429,6 +429,13 @@ cs_reg64(struct cs_builder *b, unsigned reg)
    return cs_reg_tuple(b, reg, 2);
 }
 
+#define cs_sr_reg_tuple(__b, __cmd, __name, __size)                            \
+   cs_reg_tuple((__b), MALI_##__cmd##_SR_##__name, (__size))
+#define cs_sr_reg32(__b, __cmd, __name)                                        \
+   cs_reg32((__b), MALI_##__cmd##_SR_##__name)
+#define cs_sr_reg64(__b, __cmd, __name)                                        \
+   cs_reg64((__b), MALI_##__cmd##_SR_##__name)
+
 /*
  * The top of the register file is reserved for cs_builder internal use. We
  * need 3 spare registers for handling command queue overflow. These are

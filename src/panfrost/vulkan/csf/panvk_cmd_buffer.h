@@ -211,26 +211,6 @@ cs_scratch_reg64(struct cs_builder *b, unsigned reg)
 }
 
 static inline struct cs_index
-cs_sr_reg_tuple(struct cs_builder *b, unsigned start, unsigned count)
-{
-   assert(start + count - 1 < PANVK_CS_REG_SCRATCH_START);
-   return cs_reg_tuple(b, start, count);
-}
-
-static inline struct cs_index
-cs_sr_reg32(struct cs_builder *b, unsigned reg)
-{
-   return cs_sr_reg_tuple(b, reg, 1);
-}
-
-static inline struct cs_index
-cs_sr_reg64(struct cs_builder *b, unsigned reg)
-{
-   assert(reg % 2 == 0);
-   return cs_sr_reg_tuple(b, reg, 2);
-}
-
-static inline struct cs_index
 cs_subqueue_ctx_reg(struct cs_builder *b)
 {
    return cs_reg64(b, PANVK_CS_REG_SUBQUEUE_CTX_START);
