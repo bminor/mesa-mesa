@@ -296,7 +296,8 @@ radv_meta_resolve_compute_image(struct radv_cmd_buffer *cmd_buffer, struct radv_
    assert(vk_image_subresource_layer_count(&src_image->vk, &region->srcSubresource) ==
           vk_image_subresource_layer_count(&dst_image->vk, &region->dstSubresource));
 
-   const uint32_t dst_base_layer = radv_meta_get_iview_layer(dst_image, &region->dstSubresource, &region->dstOffset);
+   const uint32_t dst_base_layer =
+      dst_image->vk.image_type == VK_IMAGE_TYPE_3D ? region->dstOffset.z : region->dstSubresource.baseArrayLayer;
 
    const struct VkExtent3D extent = vk_image_sanitize_extent(&src_image->vk, region->extent);
    const struct VkOffset3D srcOffset = vk_image_sanitize_offset(&src_image->vk, region->srcOffset);
