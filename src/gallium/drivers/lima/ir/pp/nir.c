@@ -293,7 +293,6 @@ static bool ppir_emit_discard_block(ppir_compiler *comp)
 
    comp->discard_block = block;
    block->comp  = comp;
-   block->index = INT_MAX;
 
    discard = ppir_node_create(block, ppir_op_discard, -1, 0);
    if (discard)
@@ -1062,8 +1061,10 @@ bool ppir_compile_nir(struct lima_fs_compiled_shader *prog, struct nir_shader *n
       goto err_out0;
 
    /* If we have discard block add it to the very end */
-   if (comp->discard_block)
+   if (comp->discard_block) {
+      comp->discard_block->index = list_length(&comp->block_list);
       list_addtail(&comp->discard_block->list, &comp->block_list);
+   }
 
    ppir_node_print_prog(comp);
 
