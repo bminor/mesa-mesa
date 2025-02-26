@@ -100,7 +100,10 @@ def job_duration(job: gitlab.v4.objects.ProjectPipelineJob) -> float:
     if job.duration:
         return job.duration
     elif job.started_at:
-        return time.perf_counter() - time.mktime(job.started_at.timetuple())
+        # Convert both times to UTC timestamps for consistent comparison
+        current_time = time.time()
+        start_time = job.started_at.timestamp()
+        return current_time - start_time
     return 0.0
 
 
