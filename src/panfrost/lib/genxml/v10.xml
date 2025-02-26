@@ -513,7 +513,7 @@
     <value name="FINISH_FRAGMENT" value="11"/>
     <value name="ADD_IMMEDIATE32" value="16"/>
     <value name="ADD_IMMEDIATE64" value="17"/>
-    <value name="UMIN32" value="18"/>
+    <value name="COMPARE_SELECT32" value="18"/>
     <value name="LOAD_MULTIPLE" value="20"/>
     <value name="STORE_MULTIPLE" value="21"/>
     <value name="BRANCH" value="22"/>
@@ -650,7 +650,7 @@
     <field name="Source 1" size="8" start="32" type="uint"/>
     <field name="Source 0" size="8" start="40" type="uint"/>
     <field name="Destination" size="8" start="48" type="uint"/>
-    <field name="Opcode" size="8" start="56" type="CS Opcode" default="UMIN32"/>
+    <field name="Opcode" size="8" start="56" type="CS Opcode" default="COMPARE_SELECT32"/>
   </struct>
 
   <struct name="CS LOAD_MULTIPLE" size="2">
