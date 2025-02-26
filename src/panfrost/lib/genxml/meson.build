@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 pan_packers = []
-foreach packer : ['common', 'v4', 'v5', 'v6', 'v7', 'v9', 'v10']
+foreach packer : ['common', 'v4', 'v5', 'v6', 'v7', 'v9', 'v10', 'v12']
   pan_packers += custom_target(
     packer + '_pack.h',
     input : ['gen_pack.py', packer + '.xml'],

@@ -73,6 +73,9 @@
 #elif (PAN_ARCH == 10)
 #define GENX(X) X##_v10
 #include "genxml/v10_pack.h"
+#elif (PAN_ARCH == 12)
+#define GENX(X) X##_v12
+#include "genxml/v12_pack.h"
 #else
 #error "Need to add suffixing macro for this architecture"
 #endif
