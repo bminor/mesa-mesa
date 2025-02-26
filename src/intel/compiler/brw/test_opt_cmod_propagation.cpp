@@ -2609,3 +2609,32 @@ TEST_F(cmod_propagation_test, different_group)
 
    EXPECT_NO_PROGRESS(brw_opt_cmod_propagation, bld);
 }
+
+TEST_F(cmod_propagation_test, fixed_grf_partial_overlap)
+{
+   brw_builder bld = make_shader();
+
+   brw_reg src0 = brw_make_reg(FIXED_GRF, 92, 0, 0, 0, BRW_TYPE_D,
+                               BRW_VERTICAL_STRIDE_8,
+                               BRW_WIDTH_4,
+                               BRW_HORIZONTAL_STRIDE_2,
+                               BRW_SWIZZLE_XYZW,
+                               WRITEMASK_XYZW);
+   brw_reg src1 = brw_make_reg(FIXED_GRF, 92, 4, 0, 0, BRW_TYPE_D,
+                               BRW_VERTICAL_STRIDE_8,
+                               BRW_WIDTH_4,
+                               BRW_HORIZONTAL_STRIDE_2,
+                               BRW_SWIZZLE_XYZW,
+                               WRITEMASK_XYZW);
+   brw_reg dst = brw_make_reg(FIXED_GRF, 94, 0, 0, 0, BRW_TYPE_D,
+                              BRW_VERTICAL_STRIDE_8,
+                              BRW_WIDTH_8,
+                              BRW_HORIZONTAL_STRIDE_1,
+                              BRW_SWIZZLE_XYZW,
+                              WRITEMASK_XYZW);
+
+   bld.CMP(dst, src0, brw_imm_d(0), BRW_CONDITIONAL_NZ);
+   bld.CMP(bld.null_reg_d(), src1, brw_imm_d(0), BRW_CONDITIONAL_L);
+
+   EXPECT_NO_PROGRESS(brw_opt_cmod_propagation, bld);
+}

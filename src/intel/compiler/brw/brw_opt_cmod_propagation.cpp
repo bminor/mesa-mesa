@@ -244,8 +244,7 @@ opt_cmod_propagation_local(const intel_device_info *devinfo, bblock_t *block)
            inst->opcode != BRW_OPCODE_MOV) ||
           inst->predicate != BRW_PREDICATE_NONE ||
           !inst->dst.is_null() ||
-          (inst->src[0].file != VGRF && inst->src[0].file != ATTR &&
-           inst->src[0].file != UNIFORM))
+          !inst->src[0].is_grf())
          continue;
 
       /* An ABS source modifier can only be handled when processing a compare
@@ -295,7 +294,10 @@ opt_cmod_propagation_local(const intel_device_info *devinfo, bblock_t *block)
 
             if (scan_inst->predicate ||
                 !scan_inst->dst.is_contiguous() ||
-                scan_inst->dst.offset != inst->src[0].offset ||
+                (scan_inst->dst.file != FIXED_GRF &&
+                 scan_inst->dst.offset != inst->src[0].offset) ||
+                (scan_inst->dst.file == FIXED_GRF &&
+                 scan_inst->dst.subnr != inst->src[0].subnr) ||
                 scan_inst->exec_size != inst->exec_size ||
                 scan_inst->group != inst->group)
                break;
