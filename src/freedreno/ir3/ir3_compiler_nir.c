@@ -5775,6 +5775,10 @@ ir3_compile_shader_nir(struct ir3_compiler *compiler,
    if (so->type == MESA_SHADER_FRAGMENT &&
        ctx->s->info.fs.needs_quad_helper_invocations) {
       so->need_pixlod = true;
+   }
+
+   if (so->type == MESA_SHADER_FRAGMENT &&
+       ctx->s->info.fs.require_full_quads) {
       so->need_full_quad = true;
    }
 
