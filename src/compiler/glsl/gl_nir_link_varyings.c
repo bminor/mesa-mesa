@@ -4361,25 +4361,15 @@ gl_assign_attribute_or_color_locations(const struct gl_constants *consts,
    return true;
 }
 
-bool
-gl_nir_link_varyings(const struct pipe_screen *screen,
-                     const struct gl_constants *consts,
-                     const struct gl_extensions *exts,
-                     gl_api api, struct gl_shader_program *prog)
+static bool
+link_vertex_pipeline_varyings(const struct pipe_screen *screen,
+                              const struct gl_constants *consts,
+                              const struct gl_extensions *exts,
+                              gl_api api, struct gl_shader_program *prog,
+                              void *mem_ctx)
 {
-   void *mem_ctx = ralloc_context(NULL);
-
-   unsigned first, last;
-
-   MESA_TRACE_FUNC();
-
-   first = MESA_SHADER_MESH_STAGES;
-   last = 0;
-
-   /* We need to initialise the program resource list because the varying
-    * packing pass my start inserting varyings onto the list.
-    */
-   init_program_resource_list(prog);
+   unsigned first = MESA_SHADER_MESH_STAGES;
+   unsigned last = 0;
 
    /* Determine first and last stage. */
    for (unsigned i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
@@ -4391,6 +4381,26 @@ gl_nir_link_varyings(const struct pipe_screen *screen,
    }
 
    bool r = link_varyings(screen, prog, first, last, consts, exts, api, mem_ctx);
+
+   return r;
+}
+
+bool
+gl_nir_link_varyings(const struct pipe_screen *screen,
+                     const struct gl_constants *consts,
+                     const struct gl_extensions *exts,
+                     gl_api api, struct gl_shader_program *prog)
+{
+   void *mem_ctx = ralloc_context(NULL);
+
+   MESA_TRACE_FUNC();
+
+   /* We need to initialise the program resource list because the varying
+    * packing pass my start inserting varyings onto the list.
+    */
+   init_program_resource_list(prog);
+
+   bool r = link_vertex_pipeline_varyings(screen, consts, exts, api, prog, mem_ctx);
 
    ralloc_free(mem_ctx);
    return r;
