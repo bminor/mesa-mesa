@@ -1039,7 +1039,7 @@ nvk_get_device_properties(const struct nvk_instance *instance,
       .supportedIndirectCommandsShaderStagesShaderBinding =
          NVK_SHADER_STAGE_GRAPHICS_BITS | VK_SHADER_STAGE_COMPUTE_BIT,
       .deviceGeneratedCommandsTransformFeedback = true,
-      .deviceGeneratedCommandsMultiDrawIndirectCount = true,
+      .deviceGeneratedCommandsMultiDrawIndirectCount = info->cls_eng3d >= TURING_A,
 
       /* VK_EXT_extended_dynamic_state3 */
       .dynamicPrimitiveTopologyUnrestricted = true,
