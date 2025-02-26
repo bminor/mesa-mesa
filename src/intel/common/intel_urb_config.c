@@ -122,17 +122,11 @@ intel_get_urb_config(const struct intel_device_info *devinfo,
       [MESA_SHADER_VERTEX] = tess_present && devinfo->ver == 8 ?
          192 : devinfo->urb.min_entries[MESA_SHADER_VERTEX],
 
-      /* There are two constraints on the minimum amount of URB space we can
-       * allocate:
-       *
-       * (1) We need room for at least 2 URB entries, since we always operate
-       * the GS in DUAL_OBJECT mode.
-       *
-       * (2) We can't allocate less than nr_gs_entries_granularity.
-       */
-      [MESA_SHADER_GEOMETRY] = gs_present ? 2 : 0,
+      [MESA_SHADER_GEOMETRY] = gs_present ?
+         devinfo->urb.min_entries[MESA_SHADER_GEOMETRY] : 0,
 
-      [MESA_SHADER_TESS_CTRL] = tess_present ? 1 : 0,
+      [MESA_SHADER_TESS_CTRL] = tess_present ?
+         MAX2(devinfo->urb.min_entries[MESA_SHADER_TESS_CTRL], 1) : 0,
 
       [MESA_SHADER_TESS_EVAL] = tess_present ?
          devinfo->urb.min_entries[MESA_SHADER_TESS_EVAL] : 0,
