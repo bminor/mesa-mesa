@@ -1721,6 +1721,9 @@ enum PACKED xe2_lsc_cache_store {
    XE2_LSC_CACHE_STORE_L1UC_L3UC = 2,
    /* Override to L1 uncached and L3 cached */
    XE2_LSC_CACHE_STORE_L1UC_L3WB = 4,
+   /* From BSpec: 71167 for L1WT_L3UC and L1WT_L3WB:
+    * "L1 will be uncached rather than write-through."
+    */
    /* Override to L1 write-through and L3 uncached */
    XE2_LSC_CACHE_STORE_L1WT_L3UC = 6,
    /* Override to L1 write-through and L3 cached */
