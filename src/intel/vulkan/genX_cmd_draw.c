@@ -681,28 +681,25 @@ cmd_buffer_flush_vertex_buffers(struct anv_cmd_buffer *cmd_buffer,
                                  GENX(3DSTATE_VERTEX_BUFFERS));
    uint32_t i = 0;
    u_foreach_bit(vb, vb_emit) {
-      struct anv_buffer *buffer = cmd_buffer->state.vertex_bindings[vb].buffer;
-      uint32_t offset = cmd_buffer->state.vertex_bindings[vb].offset;
+      const struct anv_vertex_binding *binding =
+         &cmd_buffer->state.vertex_bindings[vb];
 
       struct GENX(VERTEX_BUFFER_STATE) state;
-      if (buffer) {
+      if (binding->size > 0) {
          uint32_t stride = dyn->vi_binding_strides[vb];
-         UNUSED uint32_t size = cmd_buffer->state.vertex_bindings[vb].size;
 
          state = (struct GENX(VERTEX_BUFFER_STATE)) {
             .VertexBufferIndex = vb,
 
-            .MOCS = anv_mocs(cmd_buffer->device, buffer->address.bo,
-                             ISL_SURF_USAGE_VERTEX_BUFFER_BIT),
+            .MOCS = binding->mocs,
             .AddressModifyEnable = true,
             .BufferPitch = stride,
-            .BufferStartingAddress = anv_address_add(buffer->address, offset),
-            .NullVertexBuffer = offset >= buffer->vk.size,
+            .BufferStartingAddress = anv_address_from_u64(binding->addr),
 #if GFX_VER >= 12
             .L3BypassDisable = true,
 #endif
 
-            .BufferSize = size,
+            .BufferSize = binding->size,
          };
       } else {
          state = (struct GENX(VERTEX_BUFFER_STATE)) {

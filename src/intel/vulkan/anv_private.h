@@ -3679,9 +3679,9 @@ anv_pipe_flush_bit_to_ds_stall_flag(enum anv_pipe_bits bits);
    VK_IMAGE_ASPECT_PLANES_BITS_ANV)
 
 struct anv_vertex_binding {
-   struct anv_buffer *                          buffer;
-   VkDeviceSize                                 offset;
-   VkDeviceSize                                 size;
+   uint64_t      addr;
+   uint32_t      mocs;
+   VkDeviceSize  size;
 };
 
 struct anv_xfb_binding {

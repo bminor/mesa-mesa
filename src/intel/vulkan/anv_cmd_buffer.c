@@ -1088,15 +1088,15 @@ void anv_CmdBindVertexBuffers2(
       ANV_FROM_HANDLE(anv_buffer, buffer, pBuffers[i]);
 
       if (buffer == NULL) {
-         vb[firstBinding + i] = (struct anv_vertex_binding) {
-            .buffer = NULL,
-         };
+         vb[firstBinding + i] = (struct anv_vertex_binding) { 0 };
       } else {
          vb[firstBinding + i] = (struct anv_vertex_binding) {
-            .buffer = buffer,
-            .offset = pOffsets[i],
+            .addr = anv_address_physical(
+               anv_address_add(buffer->address, pOffsets[i])),
             .size = vk_buffer_range(&buffer->vk, pOffsets[i],
                                     pSizes ? pSizes[i] : VK_WHOLE_SIZE),
+            .mocs = anv_mocs(cmd_buffer->device, buffer->address.bo,
+                             ISL_SURF_USAGE_VERTEX_BUFFER_BIT),
          };
       }
       cmd_buffer->state.gfx.vb_dirty |= 1 << (firstBinding + i);
