@@ -33,6 +33,7 @@ libnak_c_files = files(
   'nak_nir_lower_tex.c',
   'nak_nir_lower_vtg_io.c',
   'nak_nir_mark_lcssa_invariants.c',
+  'nak_nir_rematerialize_load_const.c',
   'nak_nir_split_64bit_conversions.c',
 )
 

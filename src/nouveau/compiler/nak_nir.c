@@ -1058,6 +1058,15 @@ nak_postprocess_nir(nir_shader *nir,
    if (nak->sm < 70)
       OPT(nir, nak_nir_split_64bit_conversions);
 
+   /* Re-materialize load_const instructions in the blocks that use them.
+    * This is both a register pressure optimization and a ensures correctness
+    * in the presence of all of the control flow modifications we're about to
+    * do.  Without this, we can't rely on anything to be constant in NIR to
+    * NAK translation.
+    */
+   if (OPT(nir, nak_nir_rematerialize_load_const))
+      OPT(nir, nir_opt_dce);
+
    bool lcssa_progress = nir_convert_to_lcssa(nir, false, false);
 
    if (nak->sm >= 75) {
