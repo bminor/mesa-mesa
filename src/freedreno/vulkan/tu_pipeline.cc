@@ -18,6 +18,7 @@
 #include "spirv/nir_spirv.h"
 #include "util/u_debug.h"
 #include "util/mesa-sha1.h"
+#include "util/shader_stats.h"
 #include "vk_nir.h"
 #include "vk_pipeline.h"
 #include "vk_render_pass.h"
@@ -4663,12 +4664,6 @@ tu_DestroyPipeline(VkDevice _device,
    vk_object_free(&dev->vk, pAllocator, pipeline);
 }
 
-#define WRITE_STR(field, ...) ({                                \
-   memset(field, 0, sizeof(field));                             \
-   UNUSED int _i = snprintf(field, sizeof(field), __VA_ARGS__); \
-   assert(_i > 0 && _i < sizeof(field));                        \
-})
-
 static const struct tu_pipeline_executable *
 tu_pipeline_get_executable(struct tu_pipeline *pipeline, uint32_t index)
 {
@@ -4696,11 +4691,11 @@ tu_GetPipelineExecutablePropertiesKHR(
          props->stages = mesa_to_vk_shader_stage(stage);
 
          if (!exe->is_binning)
-            WRITE_STR(props->name, "%s", _mesa_shader_stage_to_abbrev(stage));
+            VK_COPY_STR(props->name, _mesa_shader_stage_to_abbrev(stage));
          else
-            WRITE_STR(props->name, "Binning VS");
+            VK_COPY_STR(props->name, "Binning VS");
 
-         WRITE_STR(props->description, "%s", _mesa_shader_stage_to_string(stage));
+         VK_COPY_STR(props->description, _mesa_shader_stage_to_string(stage));
 
          props->subgroupSize =
             dev->compiler->threadsize_base * (exe->stats.double_threadsize ? 2 : 1);
@@ -4724,171 +4719,31 @@ tu_GetPipelineExecutableStatisticsKHR(
    const struct tu_pipeline_executable *exe =
       tu_pipeline_get_executable(pipeline, pExecutableInfo->executableIndex);
 
-   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-      WRITE_STR(stat->name, "Max Waves Per Core");
-      WRITE_STR(stat->description,
-                "Maximum number of simultaneous waves per core.");
-      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-      stat->value.u64 = exe->stats.max_waves;
+   struct adreno_stats stats;
+   stats.maxwaves = exe->stats.max_waves;
+   stats.inst = exe->stats.instrs_count;
+   stats.code_size = exe->stats.sizedwords;
+   stats.nops = exe->stats.nops_count;
+   stats.mov = exe->stats.mov_count;
+   stats.cov = exe->stats.cov_count;
+   stats.full = exe->stats.max_reg + 1;
+   stats.half = exe->stats.max_half_reg + 1;
+   stats.last_baryf = exe->stats.last_baryf;
+   stats.last_helper = exe->stats.last_helper;
+   stats.ss = exe->stats.ss;
+   stats.sy = exe->stats.sy;
+   stats.ss_stall = exe->stats.sstall;
+   stats.sy_stall = exe->stats.systall;
+   stats.stps = exe->stats.stp_count;
+   stats.ldps = exe->stats.ldp_count;
+   stats.preamble_inst = exe->stats.preamble_instrs_count;
+   stats.early_preamble = exe->stats.early_preamble;
+
+   for (unsigned i = 0; i < ARRAY_SIZE(exe->stats.instrs_per_cat); ++i) {
+      stats.cat[i] = exe->stats.instrs_per_cat[i];
    }
 
-   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-      WRITE_STR(stat->name, "Instruction Count");
-      WRITE_STR(stat->description,
-                "Total number of IR3 instructions in the final generated "
-                "shader executable.");
-      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-      stat->value.u64 = exe->stats.instrs_count;
-   }
-
-   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-      WRITE_STR(stat->name, "Code size");
-      WRITE_STR(stat->description,
-                "Total number of dwords in the final generated "
-                "shader executable.");
-      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-      stat->value.u64 = exe->stats.sizedwords;
-   }
-
-   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-      WRITE_STR(stat->name, "NOPs Count");
-      WRITE_STR(stat->description,
-                "Number of NOP instructions in the final generated "
-                "shader executable.");
-      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-      stat->value.u64 = exe->stats.nops_count;
-   }
-
-   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-      WRITE_STR(stat->name, "MOV Count");
-      WRITE_STR(stat->description,
-                "Number of MOV instructions in the final generated "
-                "shader executable.");
-      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-      stat->value.u64 = exe->stats.mov_count;
-   }
-
-   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-      WRITE_STR(stat->name, "COV Count");
-      WRITE_STR(stat->description,
-                "Number of COV instructions in the final generated "
-                "shader executable.");
-      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-      stat->value.u64 = exe->stats.cov_count;
-   }
-
-   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-      WRITE_STR(stat->name, "Registers used");
-      WRITE_STR(stat->description,
-                "Number of registers used in the final generated "
-                "shader executable.");
-      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-      stat->value.u64 = exe->stats.max_reg + 1;
-   }
-
-   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-      WRITE_STR(stat->name, "Half-registers used");
-      WRITE_STR(stat->description,
-                "Number of half-registers used in the final generated "
-                "shader executable.");
-      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-      stat->value.u64 = exe->stats.max_half_reg + 1;
-   }
-
-   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-      WRITE_STR(stat->name, "Last interpolation instruction");
-      WRITE_STR(stat->description,
-                "The instruction where varying storage in Local Memory is released");
-      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-      stat->value.u64 = exe->stats.last_baryf;
-   }
-
-   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-      WRITE_STR(stat->name, "Last helper instruction");
-      WRITE_STR(stat->description,
-                "The instruction where helper invocations are killed");
-      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-      stat->value.u64 = exe->stats.last_helper;
-   }
-
-   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-      WRITE_STR(stat->name, "Instructions with SS sync bit");
-      WRITE_STR(stat->description,
-                "SS bit is set for instructions which depend on a result "
-                "of \"long\" instructions to prevent RAW hazard.");
-      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-      stat->value.u64 = exe->stats.ss;
-   }
-
-   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-      WRITE_STR(stat->name, "Instructions with SY sync bit");
-      WRITE_STR(stat->description,
-                "SY bit is set for instructions which depend on a result "
-                "of loads from global memory to prevent RAW hazard.");
-      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-      stat->value.u64 = exe->stats.sy;
-   }
-
-   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-      WRITE_STR(stat->name, "Estimated cycles stalled on SS");
-      WRITE_STR(stat->description,
-                "A better metric to estimate the impact of SS syncs.");
-      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-      stat->value.u64 = exe->stats.sstall;
-   }
-
-   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-      WRITE_STR(stat->name, "Estimated cycles stalled on SY");
-      WRITE_STR(stat->description,
-                "A better metric to estimate the impact of SY syncs.");
-      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-      stat->value.u64 = exe->stats.systall;
-   }
-
-   for (int i = 0; i < ARRAY_SIZE(exe->stats.instrs_per_cat); i++) {
-      vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-         WRITE_STR(stat->name, "cat%d instructions", i);
-         WRITE_STR(stat->description,
-                  "Number of cat%d instructions.", i);
-         stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-         stat->value.u64 = exe->stats.instrs_per_cat[i];
-      }
-   }
-
-   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-      WRITE_STR(stat->name, "STP Count");
-      WRITE_STR(stat->description,
-                "Number of STore Private instructions in the final generated "
-                "shader executable.");
-      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-      stat->value.u64 = exe->stats.stp_count;
-   }
-
-   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-      WRITE_STR(stat->name, "LDP Count");
-      WRITE_STR(stat->description,
-                "Number of LoaD Private instructions in the final generated "
-                "shader executable.");
-      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-      stat->value.u64 = exe->stats.ldp_count;
-   }
-
-   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-      WRITE_STR(stat->name, "Preamble Instruction Count");
-      WRITE_STR(stat->description,
-                "Total number of IR3 instructions in the preamble.");
-      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-      stat->value.u64 = exe->stats.preamble_instrs_count;
-   }
-
-   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-      WRITE_STR(stat->name, "Early preamble");
-      WRITE_STR(stat->description,
-                "Whether the preamble will be executed early.");
-      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_BOOL32_KHR;
-      stat->value.b32 = exe->stats.early_preamble;
-   }
-
+   vk_add_adreno_stats(out, &stats);
    return vk_outarray_status(&out);
 }
 
@@ -4930,9 +4785,8 @@ tu_GetPipelineExecutableInternalRepresentationsKHR(
 
    if (exe->nir_from_spirv) {
       vk_outarray_append_typed(VkPipelineExecutableInternalRepresentationKHR, &out, ir) {
-         WRITE_STR(ir->name, "NIR from SPIRV");
-         WRITE_STR(ir->description,
-                   "Initial NIR before any optimizations");
+         VK_COPY_STR(ir->name, "NIR from SPIRV");
+         VK_COPY_STR(ir->description, "Initial NIR before any optimizations");
 
          if (!write_ir_text(ir, exe->nir_from_spirv))
             incomplete_text = true;
@@ -4941,9 +4795,9 @@ tu_GetPipelineExecutableInternalRepresentationsKHR(
 
    if (exe->nir_final) {
       vk_outarray_append_typed(VkPipelineExecutableInternalRepresentationKHR, &out, ir) {
-         WRITE_STR(ir->name, "Final NIR");
-         WRITE_STR(ir->description,
-                   "Final NIR before going into the back-end compiler");
+         VK_COPY_STR(ir->name, "Final NIR");
+         VK_COPY_STR(ir->description,
+                     "Final NIR before going into the back-end compiler");
 
          if (!write_ir_text(ir, exe->nir_final))
             incomplete_text = true;
@@ -4952,9 +4806,9 @@ tu_GetPipelineExecutableInternalRepresentationsKHR(
 
    if (exe->disasm) {
       vk_outarray_append_typed(VkPipelineExecutableInternalRepresentationKHR, &out, ir) {
-         WRITE_STR(ir->name, "IR3 Assembly");
-         WRITE_STR(ir->description,
-                   "Final IR3 assembly for the generated shader binary");
+         VK_COPY_STR(ir->name, "IR3 Assembly");
+         VK_COPY_STR(ir->description,
+                     "Final IR3 assembly for the generated shader binary");
 
          if (!write_ir_text(ir, exe->disasm))
             incomplete_text = true;

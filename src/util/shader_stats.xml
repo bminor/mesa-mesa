@@ -1,4 +1,26 @@
 <shaderdb>
+   <isa name="Adreno">
+      <stat name="Max Waves Per Core" display="MaxWaves" more="better" type="u16">Maximum number of simultaneous waves per core.</stat>
+      <stat name="Instruction Count" display="Inst">Total number of IR3 instructions in the final generated shader executable.</stat>
+      <stat name="Code size">Total number of dwords in the final generated shader executable.</stat>
+      <stat name="NOPs Count" display="NOPs">Number of NOP instructions in the final generated shader executable.</stat>
+      <stat name="MOV Count" display="MOV">Number of MOV instructions in the final generated shader executable.</stat>
+      <stat name="COV Count" display="COV">Number of COV instructions in the final generated shader executable.</stat>
+      <stat name="Registers used" display="Full" type="u16">Number of registers used in the final generated shader executable.</stat>
+      <stat name="Half-registers used" display="Half" type="u16">Number of half-registers used in the final generated shader executable.</stat>
+      <stat name="Last interpolation instruction" display="Last-baryf">The instruction where varying storage in Local Memory is released</stat>
+      <stat name="Last helper instruction" display="Last-helper">The instruction where helper invocations are killed</stat>
+      <stat name="Instructions with SS sync bit" display="(ss)">SS bit is set for instructions which depend on a result of long instructions to prevent RAW hazard.</stat>
+      <stat name="Instructions with SY sync bit" display="(sy)">SY bit is set for instructions which depend on a result of loads from global memory to prevent RAW hazard.</stat>
+      <stat name="Estimated cycles stalled on SS" display="(ss)-stall">A better metric to estimate the impact of SS syncs.</stat>
+      <stat name="Estimated cycles stalled on SY" display="(sy)-stall">A better metric to estimate the impact of SY syncs.</stat>
+      <stat name="cat# instructions" display="cat#" count="8">Number of cat# instructions.</stat>
+      <stat name="STP Count" display="STPs">Number of STore Private instructions in the final generated shader executable.</stat>
+      <stat name="LDP Count" display="LDPs">Number of LoaD Private instructions in the final generated shader executable.</stat>
+      <stat name="Preamble Instruction Count" display="Preamble inst">Total number of IR3 instructions in the preamble.</stat>
+      <stat name="Early preamble" display="Early-preamble" type="bool">Whether the preamble will be executed early.</stat>
+   </isa>
+
    <isa name="AGX2">
       <stat name="Instructions" display="Instrs">Instruction count</stat>
       <stat name="ALU">Estimated ALU cycle count</stat>
