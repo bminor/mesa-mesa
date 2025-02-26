@@ -27,6 +27,7 @@
 #include <stdint.h>
 #include "compiler/nir/nir.h"
 #include "util/hash_table.h"
+#include "util/shader_stats.h"
 #include "util/u_dynarray.h"
 
 /* Indices for named (non-XFB) varyings that are present. These are packed
@@ -95,8 +96,6 @@ unsigned pan_lookup_pushed_ubo(struct panfrost_ubo_push *push, unsigned ubo,
                                unsigned offs);
 
 struct panfrost_compile_inputs {
-   struct util_debug_callback *debug;
-
    unsigned gpu_id;
    bool is_blend, is_blit;
    struct {
@@ -195,6 +194,8 @@ struct pan_shader_info {
    unsigned work_reg_count;
    unsigned tls_size;
    unsigned wls_size;
+
+   struct panfrost_stats stats, stats_idvs_varying;
 
    /* Bit mask of preloaded registers */
    uint64_t preload;

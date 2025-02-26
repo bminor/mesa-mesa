@@ -28,6 +28,7 @@
 #include "compiler/glsl/glsl_to_nir.h"
 #include "compiler/glsl_types.h"
 #include "compiler/nir/nir_builder.h"
+#include "panfrost/util/pan_ir.h"
 #include "util/u_debug.h"
 
 #include "bifrost/disassemble.h"
@@ -4737,10 +4738,10 @@ bi_shader_stage_name(bi_context *ctx)
       return gl_shader_stage_name(ctx->stage);
 }
 
-static char *
-bi_print_stats(bi_context *ctx, unsigned size)
+static void
+bi_gather_stats(bi_context *ctx, unsigned size, struct bifrost_stats *out)
 {
-   struct bi_stats stats = {0};
+   struct bi_stats counts = {0};
 
    /* Count instructions, clauses, and tuples. Also attempt to construct
     * normalized execution engine cycle counts, using the following ratio:
@@ -4756,57 +4757,46 @@ bi_print_stats(bi_context *ctx, unsigned size)
 
    bi_foreach_block(ctx, block) {
       bi_foreach_clause_in_block(block, clause) {
-         stats.nr_clauses++;
-         stats.nr_tuples += clause->tuple_count;
+         counts.nr_clauses++;
+         counts.nr_tuples += clause->tuple_count;
 
          for (unsigned i = 0; i < clause->tuple_count; ++i)
-            bi_count_tuple_stats(clause, &clause->tuples[i], &stats);
+            bi_count_tuple_stats(clause, &clause->tuples[i], &counts);
       }
    }
 
-   float cycles_arith = ((float)stats.nr_arith) / 24.0;
-   float cycles_texture = ((float)stats.nr_texture) / 2.0;
-   float cycles_varying = ((float)stats.nr_varying) / 16.0;
-   float cycles_ldst = ((float)stats.nr_ldst) / 1.0;
-
-   float cycles_message = MAX3(cycles_texture, cycles_varying, cycles_ldst);
-   float cycles_bound = MAX2(cycles_arith, cycles_message);
-
    /* Thread count and register pressure are traded off only on v7 */
    bool full_threads = (ctx->arch == 7 && ctx->info.work_reg_count <= 32);
-   unsigned nr_threads = full_threads ? 2 : 1;
 
-   /* Dump stats */
-   char *str = ralloc_asprintf(
-      NULL,
-      "%s shader: "
-      "%u inst, %u tuples, %u clauses, "
-      "%f cycles, %f arith, %f texture, %f vary, %f ldst, "
-      "%u quadwords, %u threads",
-      bi_shader_stage_name(ctx), stats.nr_ins, stats.nr_tuples,
-      stats.nr_clauses, cycles_bound, cycles_arith, cycles_texture,
-      cycles_varying, cycles_ldst, size / 16, nr_threads);
+   *out = (struct bifrost_stats){
+      .instrs = counts.nr_ins,
+      .tuples = counts.nr_tuples,
+      .clauses = counts.nr_clauses,
+      .arith = ((float)counts.nr_arith) / 24.0,
+      .t = ((float)counts.nr_texture) / 2.0,
+      .v = ((float)counts.nr_varying) / 16.0,
+      .ldst = ((float)counts.nr_ldst) / 1.0,
+      .code_size = size,
+      .preloads = ctx->arch == 7 ? bi_count_preload_cost(ctx) : 0,
+      .threads = full_threads ? 2 : 1,
+      .loops = ctx->loop_count,
+      .spills = ctx->spills,
+      .fills = ctx->fills,
+   };
 
-   if (ctx->arch == 7) {
-      ralloc_asprintf_append(&str, ", %u preloads", bi_count_preload_cost(ctx));
-   }
-
-   ralloc_asprintf_append(&str, ", %u loops, %u:%u spills:fills",
-                          ctx->loop_count, ctx->spills, ctx->fills);
-
-   return str;
+   out->cycles = MAX2(out->arith, MAX3(out->t, out->v, out->ldst));
 }
 
-static char *
-va_print_stats(bi_context *ctx, unsigned size)
+static void
+va_gather_stats(bi_context *ctx, unsigned size, struct valhall_stats *out)
 {
    unsigned nr_ins = 0;
-   struct va_stats stats = {0};
+   struct va_stats counts = {0};
 
    /* Count instructions */
    bi_foreach_instr_global(ctx, I) {
       nr_ins++;
-      va_count_instr_stats(I, &stats);
+      va_count_instr_stats(I, &counts);
    }
 
    /* Mali G78 peak performance:
@@ -4818,31 +4808,24 @@ va_print_stats(bi_context *ctx, unsigned size)
     * 4 texture instructions per cycle
     * 1 load/store operation per cycle
     */
-
-   float cycles_fma = ((float)stats.fma) / 64.0;
-   float cycles_cvt = ((float)stats.cvt) / 64.0;
-   float cycles_sfu = ((float)stats.sfu) / 16.0;
-   float cycles_v = ((float)stats.v) / 16.0;
-   float cycles_t = ((float)stats.t) / 4.0;
-   float cycles_ls = ((float)stats.ls) / 1.0;
+   *out = (struct valhall_stats){
+      .instrs = nr_ins,
+      .code_size = size,
+      .fma = ((float)counts.fma) / 64.0,
+      .cvt = ((float)counts.cvt) / 64.0,
+      .sfu = ((float)counts.sfu) / 16.0,
+      .v = ((float)counts.v) / 16.0,
+      .t = ((float)counts.t) / 4.0,
+      .ls = ((float)counts.ls) / 1.0,
+      .threads = (ctx->info.work_reg_count <= 32) ? 2 : 1,
+      .loops = ctx->loop_count,
+      .spills = ctx->spills,
+      .fills = ctx->fills,
+   };
 
    /* Calculate the bound */
-   float cycles = MAX2(MAX3(cycles_fma, cycles_cvt, cycles_sfu),
-                       MAX3(cycles_v, cycles_t, cycles_ls));
-
-   /* Thread count and register pressure are traded off */
-   unsigned nr_threads = (ctx->info.work_reg_count <= 32) ? 2 : 1;
-
-   /* Dump stats */
-   return ralloc_asprintf(NULL,
-                          "%s shader: "
-                          "%u inst, %f cycles, %f fma, %f cvt, %f sfu, %f v, "
-                          "%f t, %f ls, %u quadwords, %u threads, %u loops, "
-                          "%u:%u spills:fills",
-                          bi_shader_stage_name(ctx), nr_ins, cycles, cycles_fma,
-                          cycles_cvt, cycles_sfu, cycles_v, cycles_t, cycles_ls,
-                          size / 16, nr_threads, ctx->loop_count, ctx->spills,
-                          ctx->fills);
+   out->cycles =
+      MAX2(MAX3(out->fma, out->cvt, out->sfu), MAX3(out->v, out->t, out->ls));
 }
 
 static int
@@ -5748,7 +5731,7 @@ static bi_context *
 bi_compile_variant_nir(nir_shader *nir,
                        const struct panfrost_compile_inputs *inputs,
                        struct util_dynarray *binary, struct bi_shader_info info,
-                       enum bi_idvs_mode idvs)
+                       struct panfrost_stats *stats, enum bi_idvs_mode idvs)
 {
    bi_context *ctx = rzalloc(NULL, bi_context);
 
@@ -5985,23 +5968,17 @@ bi_compile_variant_nir(nir_shader *nir,
       fflush(stdout);
    }
 
-   if (!skip_internal &&
-       ((bifrost_debug & BIFROST_DBG_SHADERDB) || inputs->debug)) {
-      char *shaderdb;
+   if (ctx->arch >= 9) {
+      stats->isa = PANFROST_STAT_VALHALL;
+      va_gather_stats(ctx, binary->size - offset, &stats->valhall);
+   } else {
+      stats->isa = PANFROST_STAT_BIFROST;
+      bi_gather_stats(ctx, binary->size - offset, &stats->bifrost);
+   }
 
-      if (ctx->arch >= 9) {
-         shaderdb = va_print_stats(ctx, binary->size - offset);
-      } else {
-         shaderdb = bi_print_stats(ctx, binary->size - offset);
-      }
-
-      if (bifrost_debug & BIFROST_DBG_SHADERDB)
-         fprintf(stderr, "SHADER-DB: %s\n", shaderdb);
-
-      if (inputs->debug)
-         util_debug_message(inputs->debug, SHADER_INFO, "%s", shaderdb);
-
-      ralloc_free(shaderdb);
+   if ((bifrost_debug & BIFROST_DBG_SHADERDB) && !skip_internal) {
+      const char *prefix = bi_shader_stage_name(ctx);
+      panfrost_stats_fprintf(stderr, prefix, stats);
    }
 
    return ctx;
@@ -6034,8 +6011,11 @@ bi_compile_variant(nir_shader *nir,
     * offset, to keep the ABI simple. */
    assert((offset == 0) ^ (idvs == BI_IDVS_VARYING));
 
+   struct panfrost_stats *stats =
+      idvs == BI_IDVS_VARYING ? &info->stats_idvs_varying : &info->stats;
+
    bi_context *ctx =
-      bi_compile_variant_nir(nir, inputs, binary, local_info, idvs);
+      bi_compile_variant_nir(nir, inputs, binary, local_info, stats, idvs);
 
    /* A register is preloaded <==> it is live before the first block */
    bi_block *first_block = list_first_entry(&ctx->blocks, bi_block, link);

@@ -36,6 +36,7 @@
 #include "nir_serialize.h"
 #include "pan_bo.h"
 #include "pan_context.h"
+#include "shader_enums.h"
 
 static struct panfrost_uncompiled_shader *
 panfrost_alloc_shader(const nir_shader *nir)
@@ -128,7 +129,6 @@ panfrost_shader_compile(struct panfrost_screen *screen, const nir_shader *ir,
       pan_shader_preprocess(s, panfrost_device_gpu_id(dev));
 
    struct panfrost_compile_inputs inputs = {
-      .debug = dbg,
       .gpu_id = panfrost_device_gpu_id(dev),
    };
 
@@ -200,6 +200,14 @@ panfrost_shader_compile(struct panfrost_screen *screen, const nir_shader *ir,
    NIR_PASS(_, s, panfrost_nir_lower_res_indices, &inputs);
 
    screen->vtbl.compile_shader(s, &inputs, &out->binary, &out->info);
+
+   panfrost_stats_util_debug(dbg, gl_shader_stage_name(s->info.stage),
+                             &out->info.stats);
+
+   if (s->info.stage == MESA_SHADER_VERTEX && out->info.vs.idvs) {
+      panfrost_stats_util_debug(dbg, "MESA_SHADER_POSITION",
+                                &out->info.stats_idvs_varying);
+   }
 
    assert(req_local_mem >= out->info.wls_size);
    out->info.wls_size = req_local_mem;

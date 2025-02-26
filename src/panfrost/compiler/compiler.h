@@ -30,6 +30,7 @@
 #include "compiler/nir/nir.h"
 #include "panfrost/util/pan_ir.h"
 #include "util/half_float.h"
+#include "util/shader_stats.h"
 #include "util/u_math.h"
 #include "util/u_worklist.h"
 #include "bi_opcodes.h"
@@ -834,6 +835,7 @@ bi_block_add_successor(bi_block *block, bi_block *successor)
 struct bi_shader_info {
    struct panfrost_ubo_push *push;
    struct bifrost_shader_info *bifrost;
+   struct panfrost_stats stats;
    unsigned tls_size;
    unsigned work_reg_count;
    unsigned push_offset;

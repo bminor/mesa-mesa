@@ -36,6 +36,7 @@
 #include "compiler/nir/nir_builder.h"
 #include "util/half_float.h"
 #include "util/list.h"
+#include "util/shader_stats.h"
 #include "util/u_debug.h"
 #include "util/u_dynarray.h"
 #include "util/u_math.h"
@@ -49,6 +50,7 @@
 #include "midgard_quirks.h"
 
 #include "disassemble.h"
+#include "shader_enums.h"
 
 static const struct debug_named_value midgard_debug_options[] = {
    {"shaders", MIDGARD_DBG_SHADERS, "Dump shaders in NIR and MIR"},
@@ -3155,51 +3157,34 @@ midgard_compile_shader_nir(nir_shader *nir,
    if (binary->size)
       memset(util_dynarray_grow(binary, uint8_t, 16), 0, 16);
 
-   if ((midgard_debug & MIDGARD_DBG_SHADERDB || inputs->debug) &&
-       !nir->info.internal) {
-      unsigned nr_bundles = 0, nr_ins = 0;
+   struct midgard_stats stats = {
+      .quadwords = ctx->quadword_count,
+      .registers = info->work_reg_count,
+      .loops = ctx->loop_count,
+      .spills = ctx->spills,
+      .fills = ctx->fills,
+   };
 
-      /* Count instructions and bundles */
+   /* Count instructions and bundles */
+   mir_foreach_block(ctx, _block) {
+      midgard_block *block = (midgard_block *)_block;
+      stats.bundles +=
+         util_dynarray_num_elements(&block->bundles, midgard_bundle);
 
-      mir_foreach_block(ctx, _block) {
-         midgard_block *block = (midgard_block *)_block;
-         nr_bundles +=
-            util_dynarray_num_elements(&block->bundles, midgard_bundle);
+      mir_foreach_bundle_in_block(block, bun)
+         stats.inst += bun->instruction_count;
+   }
 
-         mir_foreach_bundle_in_block(block, bun)
-            nr_ins += bun->instruction_count;
-      }
+   /* Calculate thread count. There are certain cutoffs by
+    * register count for thread count */
+   stats.threads = (stats.registers <= 4) ? 4 : (stats.registers <= 8) ? 2 : 1;
 
-      /* Calculate thread count. There are certain cutoffs by
-       * register count for thread count */
+   info->stats.isa = PANFROST_STAT_MIDGARD;
+   info->stats.midgard = stats;
 
-      unsigned nr_registers = info->work_reg_count;
-
-      unsigned nr_threads = (nr_registers <= 4)   ? 4
-                            : (nr_registers <= 8) ? 2
-                                                  : 1;
-
-      char *shaderdb = NULL;
-
-      /* Dump stats */
-
-      asprintf(&shaderdb,
-               "%s shader: "
-               "%u inst, %u bundles, %u quadwords, "
-               "%u registers, %u threads, %u loops, "
-               "%u:%u spills:fills",
-               ctx->inputs->is_blend ? "PAN_SHADER_BLEND"
-                                     : gl_shader_stage_name(ctx->stage),
-               nr_ins, nr_bundles, ctx->quadword_count, nr_registers,
-               nr_threads, ctx->loop_count, ctx->spills, ctx->fills);
-
-      if (midgard_debug & MIDGARD_DBG_SHADERDB)
-         fprintf(stderr, "SHADER-DB: %s\n", shaderdb);
-
-      if (inputs->debug)
-         util_debug_message(inputs->debug, SHADER_INFO, "%s", shaderdb);
-
-      free(shaderdb);
+   if ((midgard_debug & MIDGARD_DBG_SHADERDB) && !nir->info.internal) {
+      const char *prefix = _mesa_shader_stage_to_abbrev(ctx->stage);
+      midgard_stats_fprintf(stderr, prefix, &stats);
    }
 
    _mesa_hash_table_u64_destroy(ctx->ssa_constants);

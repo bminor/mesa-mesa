@@ -41,11 +41,13 @@
 #include "spirv/nir_spirv.h"
 #include "util/memstream.h"
 #include "util/mesa-sha1.h"
+#include "util/shader_stats.h"
 #include "util/u_dynarray.h"
 #include "nir_builder.h"
 #include "nir_conversion_builder.h"
 #include "nir_deref.h"
 
+#include "shader_enums.h"
 #include "vk_graphics_state.h"
 #include "vk_nir_convert_ycbcr.h"
 #include "vk_shader_module.h"
@@ -1416,13 +1418,6 @@ panvk_shader_serialize(struct vk_device *vk_dev,
    return !blob->out_of_memory;
 }
 
-#define WRITE_STR(field, ...)                                                  \
-   ({                                                                          \
-      memset(field, 0, sizeof(field));                                         \
-      UNUSED int i = snprintf(field, sizeof(field), __VA_ARGS__);              \
-      assert(i > 0 && i < sizeof(field));                                      \
-   })
-
 static VkResult
 panvk_shader_get_executable_properties(
    UNUSED struct vk_device *device, const struct vk_shader *vk_shader,
@@ -1438,10 +1433,20 @@ panvk_shader_get_executable_properties(
    {
       props->stages = mesa_to_vk_shader_stage(shader->info.stage);
       props->subgroupSize = 8;
-      WRITE_STR(props->name, "%s",
-                _mesa_shader_stage_to_string(shader->info.stage));
-      WRITE_STR(props->description, "%s shader",
-                _mesa_shader_stage_to_string(shader->info.stage));
+      VK_COPY_STR(props->name,
+                  _mesa_shader_stage_to_string(shader->info.stage));
+      VK_PRINT_STR(props->description, "%s shader",
+                   _mesa_shader_stage_to_string(shader->info.stage));
+   }
+
+   if (shader->info.stage == MESA_SHADER_VERTEX && shader->info.vs.idvs) {
+      vk_outarray_append_typed(VkPipelineExecutablePropertiesKHR, &out, props)
+      {
+         props->stages = mesa_to_vk_shader_stage(shader->info.stage);
+         props->subgroupSize = 8;
+         VK_COPY_STR(props->name, "varying");
+         VK_COPY_STR(props->description, "Varying shader");
+      }
    }
 
    return vk_outarray_status(&out);
@@ -1459,19 +1464,11 @@ panvk_shader_get_executable_statistics(
    VK_OUTARRAY_MAKE_TYPED(VkPipelineExecutableStatisticKHR, out, statistics,
                           statistic_count);
 
-   assert(executable_index == 0);
+   assert(executable_index == 0 || executable_index == 1);
+   struct panfrost_stats *stats =
+      executable_index ? &shader->info.stats_idvs_varying : &shader->info.stats;
 
-   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat)
-   {
-      WRITE_STR(stat->name, "Code Size");
-      WRITE_STR(stat->description,
-                "Size of the compiled shader binary, in bytes");
-      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-      stat->value.u64 = shader->bin_size;
-   }
-
-   /* TODO: more executable statistics (VK_KHR_pipeline_executable_properties) */
-
+   vk_add_panfrost_stats(out, stats);
    return vk_outarray_status(&out);
 }
 
@@ -1513,8 +1510,8 @@ panvk_shader_get_executable_internal_representations(
       vk_outarray_append_typed(VkPipelineExecutableInternalRepresentationKHR,
                                &out, ir)
       {
-         WRITE_STR(ir->name, "NIR shader");
-         WRITE_STR(ir->description,
+         VK_COPY_STR(ir->name, "NIR shader");
+         VK_COPY_STR(ir->description,
                    "NIR shader before sending to the back-end compiler");
          if (!write_ir_text(ir, shader->nir_str))
             incomplete_text = true;
@@ -1525,8 +1522,8 @@ panvk_shader_get_executable_internal_representations(
       vk_outarray_append_typed(VkPipelineExecutableInternalRepresentationKHR,
                                &out, ir)
       {
-         WRITE_STR(ir->name, "Assembly");
-         WRITE_STR(ir->description, "Final Assembly");
+         VK_COPY_STR(ir->name, "Assembly");
+         VK_COPY_STR(ir->description, "Final Assembly");
          if (!write_ir_text(ir, shader->asm_str))
             incomplete_text = true;
       }
