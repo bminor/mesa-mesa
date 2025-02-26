@@ -3468,7 +3468,7 @@ enum anv_cmd_dirty_bits {
    ANV_CMD_DIRTY_RENDER_AREA                         = 1 << 2,
    ANV_CMD_DIRTY_RENDER_TARGETS                      = 1 << 3,
    ANV_CMD_DIRTY_XFB_ENABLE                          = 1 << 4,
-   ANV_CMD_DIRTY_RESTART_INDEX                       = 1 << 5,
+   ANV_CMD_DIRTY_INDEX_TYPE                          = 1 << 5,
    ANV_CMD_DIRTY_OCCLUSION_QUERY_ACTIVE              = 1 << 6,
    ANV_CMD_DIRTY_INDIRECT_DATA_STRIDE                = 1 << 7,
 };
@@ -4009,9 +4009,9 @@ struct anv_cmd_graphics_state {
 
    bool used_task_shader;
 
-   struct anv_buffer *index_buffer;
-   uint32_t index_type; /**< 3DSTATE_INDEX_BUFFER.IndexFormat */
-   uint32_t index_offset;
+   uint64_t index_addr;
+   uint32_t index_mocs;
+   VkIndexType index_type;
    uint32_t index_size;
 
    uint32_t indirect_data_stride;

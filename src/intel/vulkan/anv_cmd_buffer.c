@@ -1108,6 +1108,36 @@ void anv_CmdBindVertexBuffers2(
    }
 }
 
+void anv_CmdBindIndexBuffer2KHR(
+    VkCommandBuffer                             commandBuffer,
+    VkBuffer                                    _buffer,
+    VkDeviceSize                                offset,
+    VkDeviceSize                                size,
+    VkIndexType                                 indexType)
+{
+   ANV_FROM_HANDLE(anv_cmd_buffer, cmd_buffer, commandBuffer);
+   ANV_FROM_HANDLE(anv_buffer, buffer, _buffer);
+
+   if (cmd_buffer->state.gfx.index_type != indexType) {
+      cmd_buffer->state.gfx.index_type = indexType;
+      cmd_buffer->state.gfx.dirty |= ANV_CMD_DIRTY_INDEX_TYPE;
+   }
+
+   uint64_t index_addr = buffer ?
+      anv_address_physical(anv_address_add(buffer->address, offset)) : 0;
+   uint32_t index_size = buffer ? vk_buffer_range(&buffer->vk, offset, size) : 0;
+   if (cmd_buffer->state.gfx.index_addr != index_addr ||
+       cmd_buffer->state.gfx.index_size != index_size) {
+      cmd_buffer->state.gfx.index_addr = index_addr;
+      cmd_buffer->state.gfx.index_size = index_size;
+      cmd_buffer->state.gfx.index_mocs =
+         anv_mocs(cmd_buffer->device, buffer->address.bo,
+                  ISL_SURF_USAGE_INDEX_BUFFER_BIT);
+      cmd_buffer->state.gfx.dirty |= ANV_CMD_DIRTY_INDEX_BUFFER;
+   }
+}
+
+
 void anv_CmdBindTransformFeedbackBuffersEXT(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    firstBinding,

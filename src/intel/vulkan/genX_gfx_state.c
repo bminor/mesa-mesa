@@ -138,6 +138,20 @@ static const uint32_t vk_to_intel_primitive_type[] = {
    [VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY] = _3DPRIM_TRISTRIP_ADJ,
 };
 
+static uint32_t vk_to_intel_index_type(VkIndexType type)
+{
+   switch (type) {
+   case VK_INDEX_TYPE_UINT8_KHR:
+      return INDEX_BYTE;
+   case VK_INDEX_TYPE_UINT16:
+      return INDEX_WORD;
+   case VK_INDEX_TYPE_UINT32:
+      return INDEX_DWORD;
+   default:
+      unreachable("invalid index type");
+   }
+}
+
 void
 genX(batch_emit_wa_16014912113)(struct anv_batch *batch,
                                 const struct intel_urb_config *urb_cfg)
@@ -1305,7 +1319,7 @@ update_vf_restart(struct anv_gfx_dynamic_state *hw_state,
                   const struct anv_cmd_graphics_state *gfx)
 {
    SET(VF, vf.IndexedDrawCutIndexEnable, dyn->ia.primitive_restart_enable);
-   SET(VF, vf.CutIndex, gfx->restart_index);
+   SET(VF, vf.CutIndex, vk_index_to_restart(gfx->index_type));
 }
 
 ALWAYS_INLINE static void
@@ -1929,11 +1943,12 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_gfx_dynamic_state *hw_state,
        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_RS_LINE_STIPPLE_ENABLE))
       update_line_stipple(hw_state, dyn);
 
-   if ((gfx->dirty & ANV_CMD_DIRTY_RESTART_INDEX) ||
+   if ((gfx->dirty & ANV_CMD_DIRTY_INDEX_TYPE) ||
        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_IA_PRIMITIVE_RESTART_ENABLE))
       update_vf_restart(hw_state, dyn, gfx);
 
-   if (gfx->dirty & ANV_CMD_DIRTY_INDEX_BUFFER)
+   if ((gfx->dirty & ANV_CMD_DIRTY_INDEX_BUFFER) ||
+       (gfx->dirty & ANV_CMD_DIRTY_INDEX_TYPE))
       BITSET_SET(hw_state->dirty, ANV_GFX_STATE_INDEX_BUFFER);
 
 #if GFX_VERx10 >= 125
@@ -2698,20 +2713,16 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
    }
 
    if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_INDEX_BUFFER)) {
-      struct anv_buffer *buffer = gfx->index_buffer;
-      uint32_t offset = gfx->index_offset;
       anv_batch_emit(&cmd_buffer->batch, GENX(3DSTATE_INDEX_BUFFER), ib) {
-         ib.IndexFormat           = gfx->index_type;
-         ib.MOCS                  = anv_mocs(device,
-                                             buffer ? buffer->address.bo : NULL,
-                                             ISL_SURF_USAGE_INDEX_BUFFER_BIT);
+         ib.IndexFormat           = vk_to_intel_index_type(gfx->index_type);
+         ib.MOCS                  = gfx->index_addr == 0 ?
+            anv_mocs(cmd_buffer->device, NULL, ISL_SURF_USAGE_INDEX_BUFFER_BIT) :
+            gfx->index_mocs;
 #if GFX_VER >= 12
          ib.L3BypassDisable       = true;
 #endif
-         if (buffer) {
-            ib.BufferStartingAddress = anv_address_add(buffer->address, offset);
-            ib.BufferSize            = gfx->index_size;
-         }
+         ib.BufferStartingAddress = anv_address_from_u64(gfx->index_addr);
+         ib.BufferSize            = gfx->index_size;
       }
    }
 
