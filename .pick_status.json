@@ -334,7 +334,7 @@
         "description": "nak/qmd: Add a nak_get_qmd_cbuf_desc_layout() helper",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "976f22a5da30c503b05e2873e4d265fb0d4ecb07",
         "notes": null
