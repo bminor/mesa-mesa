@@ -33,6 +33,10 @@ struct tu_lrz_state
    VkClearValue depth_clear_value;
    /* If LRZ is in invalid state we cannot use it until depth is cleared */
    bool valid : 1;
+
+   /* Sticky for the RP duration */
+   bool disable_write_for_rp : 1;
+
    bool disable_for_rp : 1;
    /* Allows to temporary disable LRZ */
    bool enabled : 1;

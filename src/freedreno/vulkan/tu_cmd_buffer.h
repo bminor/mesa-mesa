@@ -322,6 +322,7 @@ struct tu_render_pass_state
 
    const char *lrz_disable_reason;
    uint32_t lrz_disabled_at_draw;
+   uint32_t lrz_write_disabled_at_draw;
 
    const char *gmem_disable_reason;
 };

@@ -99,7 +99,8 @@ begin_end_tp('render_pass',
               Arg(type='uint32_t',                              var='avgPerSampleBandwidth',                                c_format='%u'),
               Arg(type='bool',                                  var='lrz',                                                  c_format='%s', to_prim_type='({} ? "true" : "false")'),
               Arg(type='const char *',                          var='lrzDisableReason',                                     c_format='%s'),
-              Arg(type='uint32_t',                              var='lrzDisabledAtDraw',                                    c_format='%u'),
+              Arg(type='int32_t',                               var='lrzDisabledAtDraw',                                    c_format='%d'),
+              Arg(type='int32_t',                               var='lrzWriteDisabledAtDraw',                               c_format='%d'),
               Arg(type='uint32_t',                              var='lrzStatus', c_format='%s', to_prim_type='(fd_lrz_gpu_dir_to_str((enum fd_lrz_gpu_dir)({} & 0xff)))', is_indirect=True),])
 
 

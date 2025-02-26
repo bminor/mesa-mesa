@@ -237,7 +237,7 @@ build_lrz(struct fd6_emit *emit) assert_dt
             .enable = lrz.enable,
             .lrz_write = lrz.write,
             .greater = lrz.direction == FD_LRZ_GREATER,
-            .z_test_enable = lrz.test,
+            .z_write_enable = lrz.test,
             .z_bounds_enable = lrz.z_bounds_enable,
          )
       );
@@ -254,7 +254,7 @@ build_lrz(struct fd6_emit *emit) assert_dt
             .lrz_write = lrz.write,
             .greater = lrz.direction == FD_LRZ_GREATER,
             .fc_enable = false,
-            .z_test_enable = lrz.test,
+            .z_write_enable = lrz.test,
             .z_bounds_enable = lrz.z_bounds_enable,
             .disable_on_wrong_dir = false,
          )
