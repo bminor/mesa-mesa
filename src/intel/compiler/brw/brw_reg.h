@@ -233,6 +233,17 @@ typedef struct brw_reg {
    bool is_ip() const { return brw_reg_is_arf(*this, BRW_ARF_IP); }
    bool is_address() const;
 
+   /**
+    * These are all the things that will eventually become FIXED_GRF. The
+    * things that will live in regular registers can, for the most part, be
+    * treated the same by optimization passes.
+    */
+   bool is_grf() const
+   {
+      return file == FIXED_GRF || file == VGRF || file == ATTR ||
+             file == UNIFORM;
+   }
+
    unsigned address_slot(unsigned byte_offset) const;
 
    /**

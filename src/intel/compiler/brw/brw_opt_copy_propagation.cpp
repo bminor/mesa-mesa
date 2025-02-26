@@ -704,8 +704,7 @@ try_copy_propagate(brw_shader &s, brw_inst *inst,
 
    const struct intel_device_info *devinfo = s.devinfo;
 
-   assert(entry->src.file == VGRF || entry->src.file == UNIFORM ||
-          entry->src.file == ATTR || entry->src.file == FIXED_GRF);
+   assert(entry->src.is_grf());
 
    /* Avoid propagating a LOAD_PAYLOAD instruction into another if there is a
     * good chance that we'll be able to eliminate the latter through register
