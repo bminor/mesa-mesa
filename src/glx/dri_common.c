@@ -762,10 +762,6 @@ const __DRIbackgroundCallableExtension driBackgroundCallable = {
    .isThreadSafe            = driIsThreadSafe,
 };
 
-const __DRIuseInvalidateExtension dri2UseInvalidate = {
-   .base = { __DRI_USE_INVALIDATE, 1 }
-};
-
 Bool
 dri_bind_context(struct glx_context *context, GLXDrawable draw, GLXDrawable read)
 {

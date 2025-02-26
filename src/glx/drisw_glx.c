@@ -410,7 +410,6 @@ static const __DRIextension *loader_extensions_noshm[] = {
 static const __DRIextension *kopper_extensions_noshm[] = {
    &swrastLoaderExtension.base,
    &kopperLoaderExtension.base,
-   &dri2UseInvalidate.base,
    &driBackgroundCallable.base,
    NULL
 };

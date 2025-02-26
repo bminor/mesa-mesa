@@ -1006,7 +1006,6 @@ static const __DRImutableRenderBufferLoaderExtension
 static const __DRIextension *droid_image_loader_extensions[] = {
    &droid_image_loader_extension.base,
    &image_lookup_extension.base,
-   &use_invalidate.base,
    &droid_mutable_render_buffer_extension.base,
    NULL,
 };
@@ -1014,7 +1013,6 @@ static const __DRIextension *droid_image_loader_extensions[] = {
 static const __DRIextension *droid_swrast_image_loader_extensions[] = {
    &droid_image_loader_extension.base,
    &image_lookup_extension.base,
-   &use_invalidate.base,
    &droid_mutable_render_buffer_extension.base,
    &swrast_loader_extension.base,
    NULL,

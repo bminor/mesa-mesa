@@ -442,7 +442,6 @@ dri2_egl_error_unlock(struct dri2_egl_display *dri2_dpy, EGLint err,
 }
 
 extern const __DRIimageLookupExtension image_lookup_extension;
-extern const __DRIuseInvalidateExtension use_invalidate;
 extern const __DRIbackgroundCallableExtension background_callable_extension;
 extern const __DRIswrastLoaderExtension swrast_pbuffer_loader_extension;
 

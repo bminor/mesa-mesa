@@ -366,10 +366,6 @@ static const __DRIimageLoaderExtension imageLoaderExtension = {
    .flushSwapBuffers    = dri3_flush_swap_buffers,
 };
 
-const __DRIuseInvalidateExtension dri3UseInvalidate = {
-   .base = { __DRI_USE_INVALIDATE, 1 }
-};
-
 static const __DRIbackgroundCallableExtension dri3BackgroundCallable = {
    .base = { __DRI_BACKGROUND_CALLABLE, 2 },
 
@@ -379,7 +375,6 @@ static const __DRIbackgroundCallableExtension dri3BackgroundCallable = {
 
 static const __DRIextension *loader_extensions[] = {
    &imageLoaderExtension.base,
-   &dri3UseInvalidate.base,
    &dri3BackgroundCallable.base,
    NULL
 };

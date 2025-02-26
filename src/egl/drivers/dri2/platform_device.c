@@ -211,7 +211,6 @@ static const __DRIkopperLoaderExtension kopper_loader_extension = {
 static const __DRIextension *image_loader_extensions[] = {
    &image_loader_extension.base,
    &image_lookup_extension.base,
-   &use_invalidate.base,
    &kopper_loader_extension.base,
    NULL,
 };
@@ -219,7 +218,6 @@ static const __DRIextension *image_loader_extensions[] = {
 static const __DRIextension *swrast_loader_extensions[] = {
    &swrast_pbuffer_loader_extension.base,
    &image_lookup_extension.base,
-   &use_invalidate.base,
    &kopper_loader_extension.base,
    NULL,
 };

@@ -1595,7 +1595,6 @@ static const __DRIextension *kopper_loader_extensions[] = {
    &swrast_loader_extension.base,
    &image_lookup_extension.base,
    &kopper_loader_extension.base,
-   &use_invalidate.base,
    NULL,
 };
 
@@ -1836,7 +1835,6 @@ cleanup:
 static const __DRIextension *dri3_image_loader_extensions[] = {
    &dri3_image_loader_extension.base,
    &image_lookup_extension.base,
-   &use_invalidate.base,
    &background_callable_extension.base,
    NULL,
 };
@@ -1938,7 +1936,6 @@ static const __DRIextension *dri2_loader_extensions_old[] = {
 static const __DRIextension *dri2_loader_extensions[] = {
    &dri2_loader_extension.base,
    &image_lookup_extension.base,
-   &use_invalidate.base,
    &background_callable_extension.base,
    NULL,
 };

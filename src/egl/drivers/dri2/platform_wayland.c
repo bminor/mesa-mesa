@@ -2138,7 +2138,6 @@ static const struct dri2_egl_display_vtbl dri2_wl_display_vtbl = {
 static const __DRIextension *dri2_loader_extensions[] = {
    &image_loader_extension.base,
    &image_lookup_extension.base,
-   &use_invalidate.base,
    NULL,
 };
 
@@ -2981,7 +2980,6 @@ static const __DRIextension *kopper_swrast_loader_extensions[] = {
    &kopper_swrast_loader_extension.base,
    &image_lookup_extension.base,
    &kopper_loader_extension.base,
-   &use_invalidate.base,
    NULL,
 };
 

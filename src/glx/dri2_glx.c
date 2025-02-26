@@ -641,7 +641,6 @@ static const struct glx_context_vtable dri2_context_vtable = {
 
 static const __DRIextension *loader_extensions[] = {
    &dri2LoaderExtension.base,
-   &dri2UseInvalidate.base,
    &driBackgroundCallable.base,
    NULL
 };

@@ -212,13 +212,13 @@ static const __DRIimageLoaderExtension image_loader_extension = {
 
 static const __DRIextension *image_loader_extensions[] = {
    &image_loader_extension.base,  &image_lookup_extension.base,
-   &use_invalidate.base,          &background_callable_extension.base,
+   &background_callable_extension.base,
    &kopper_loader_extension.base, NULL,
 };
 
 static const __DRIextension *swrast_loader_extensions[] = {
    &swrast_pbuffer_loader_extension.base, &image_loader_extension.base,
-   &image_lookup_extension.base,          &use_invalidate.base,
+   &image_lookup_extension.base,
    &kopper_loader_extension.base,         NULL,
 };
 

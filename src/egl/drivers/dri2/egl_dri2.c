@@ -157,10 +157,6 @@ const __DRIbackgroundCallableExtension background_callable_extension = {
    .isThreadSafe = dri_is_thread_safe,
 };
 
-const __DRIuseInvalidateExtension use_invalidate = {
-   .base = {__DRI_USE_INVALIDATE, 1},
-};
-
 static void
 dri2_get_pbuffer_drawable_info(struct dri_drawable *draw, int *x, int *y, int *w,
                                int *h, void *loaderPrivate)
