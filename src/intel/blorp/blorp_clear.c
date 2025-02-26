@@ -519,12 +519,6 @@ blorp_fast_clear(struct blorp_batch *batch,
    else
       params.op = BLORP_OP_MCS_COLOR_CLEAR;
 
-   /* If a swizzle was provided, we need to swizzle the clear color so that
-    * the hardware color format conversion will work properly.
-    */
-   params.dst.clear_color =
-      isl_color_value_swizzle_inv(params.dst.clear_color, swizzle);
-
    batch->blorp->exec(batch, &params);
 }
 
