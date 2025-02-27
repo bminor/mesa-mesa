@@ -44,6 +44,7 @@ if TYPE_CHECKING:
 
 REFRESH_WAIT_LOG = 10
 REFRESH_WAIT_JOBS = 6
+MAX_ENABLE_JOB_ATTEMPTS = 3
 
 URL_START = "\033]8;;"
 URL_END = "\033]8;;\a"
@@ -126,10 +127,12 @@ def run_target_job(
         ):
             stress_status_counter[job.name][job.status] += 1
             execution_times[job.name][job.id] = (job_duration(job), job.status, job.web_url)
-            job = enable_job_fn(job=job, action_type="retry")
+            enable_job_fn(job=job, action_type="retry")
+            # Wait for the next loop to get the updated job object
+            return
     else:
         execution_times[job.name][job.id] = (job_duration(job), job.status, job.web_url)
-        job = enable_job_fn(job=job, action_type="target")
+        enable_job_fn(job=job, action_type="target")
 
     print_job_status(job, job.status not in target_statuses[job.name], name_field_pad)
     target_statuses[job.name] = job.status
@@ -168,11 +171,13 @@ def monitor_pipeline(
     # jobs_waiting is a list of job names that are waiting for status update.
     # It occurs when a job that we want to run depends on another job that is not yet finished.
     jobs_waiting = []
+    # Dictionary to track the number of attempts made for each job
+    enable_attempts: dict[int, int] = {}
     # FIXME: This function has too many parameters, consider refactoring.
     enable_job_fn = partial(
         enable_job,
         project=project,
-        pipeline=pipeline,
+        enable_attempts=enable_attempts,
         job_name_field_pad=name_field_pad,
         jobs_waiting=jobs_waiting,
     )
@@ -203,7 +208,9 @@ def monitor_pipeline(
 
             # run dependencies and cancel the rest
             if job.name in dependencies:
-                job = enable_job_fn(job=job, action_type="dep")
+                if not enable_job_fn(job=job, action_type="dep"):
+                    # Wait for the next loop to get the updated job object
+                    continue
                 if job.status == "failed":
                     deps_failed.append(job.name)
             else:
@@ -265,42 +272,58 @@ def monitor_pipeline(
         pretty_wait(REFRESH_WAIT_JOBS)
 
 
-def get_pipeline_job(
-    pipeline: gitlab.v4.objects.ProjectPipeline,
-    job_id: int,
-) -> gitlab.v4.objects.ProjectPipelineJob:
-    pipeline_jobs = pipeline.jobs.list(all=True)
-    return [j for j in pipeline_jobs if j.id == job_id][0]
-
-
 def enable_job(
     project: gitlab.v4.objects.Project,
-    pipeline: gitlab.v4.objects.ProjectPipeline,
     job: gitlab.v4.objects.ProjectPipelineJob,
+    enable_attempts: dict[int, int],
     action_type: Literal["target", "dep", "retry"],
     job_name_field_pad: int = 0,
     jobs_waiting: list[str] = [],
-) -> gitlab.v4.objects.ProjectPipelineJob:
+) -> bool:
+    """
+    Enable a job to run.
+    :param project: The GitLab project.
+    :param job: The job to enable.
+    :param enable_attempts: A dictionary to track the number of attempts made for each job.
+    :param action_type: The type of action to perform.
+    :return: True if the job was enabled, False otherwise.
+    """
     # We want to run this job, but it is not ready to run yet, so let's try again in the next
     # iteration.
     if job.status == "created":
         jobs_waiting.append(job.name)
-        return job
+        return False
 
     if (
         (job.status in COMPLETED_STATUSES and action_type != "retry")
         or job.status in {"skipped"} | RUNNING_STATUSES
     ):
-        return job
+        return False
+
+    # Get current attempt number
+    attempt_count = enable_attempts.get(job.id, 0)
+    # Check if we've exceeded max attempts to avoid infinite loop
+    if attempt_count >= MAX_ENABLE_JOB_ATTEMPTS:
+        raise RuntimeError(
+            f"Maximum enabling attempts ({MAX_ENABLE_JOB_ATTEMPTS}) reached for job {job.name} "
+            f"({link2print(job.web_url, job.id)}). Giving up."
+        )
+    enable_attempts[job.id] = attempt_count + 1
 
     pjob = project.jobs.get(job.id, lazy=True)
 
     if job.status in {"success", "failed", "canceled", "canceling"}:
-        new_job = pjob.retry()
-        job = get_pipeline_job(pipeline, new_job["id"])
+        try:
+            pjob.retry()
+        except Exception as e:
+            print(f"Error retrying job {job.name}: {e}")
+            return False
     else:
-        pjob.play()
-        job = get_pipeline_job(pipeline, pjob.id)
+        try:
+            pjob.play()
+        except Exception as e:
+            print(f"Error playing job {job.name}: {e}")
+            return False
 
     if action_type == "target":
         jtype = "🞋 target"  # U+1F78B Round target
@@ -312,7 +335,7 @@ def enable_job(
     job_name_field_pad = len(job.name) if job_name_field_pad < 1 else job_name_field_pad
     print(Fore.MAGENTA + f"{jtype} job {job.name:{job_name_field_pad}}manually enabled" + Style.RESET_ALL)
 
-    return job
+    return True
 
 
 def cancel_job(
