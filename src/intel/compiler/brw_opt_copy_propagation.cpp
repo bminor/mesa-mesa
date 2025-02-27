@@ -862,7 +862,11 @@ try_copy_propagate(brw_shader &s, brw_inst *inst,
          return false;
 
       if (is_logic_op(inst->opcode)) {
-         return false;
+         /* For any value of X, X & 1 = -X & 1. In this case, source modifiers
+          * from entry will not be applied to inst (far below).
+          */
+         if (inst->opcode != BRW_OPCODE_AND || !inst->src[1 - arg].is_one())
+            return false;
       } else if (entry->dst.type != inst->src[arg].type &&
                  !inst->can_change_types()) {
          /* Since semantics of source modifiers are type-dependent we need to
@@ -921,7 +925,7 @@ try_copy_propagate(brw_shader &s, brw_inst *inst,
    inst->src[arg] = byte_offset(inst->src[arg],
       component * entry_stride * brw_type_size_bytes(entry->src.type) + suboffset);
 
-   if (has_source_modifiers) {
+   if (has_source_modifiers && !is_logic_op(inst->opcode)) {
       if (entry->dst.type != inst->src[arg].type) {
          /* We are propagating source modifiers from a MOV with a different
           * type.  If we got here, then we can just change the source and
@@ -1599,7 +1603,11 @@ try_copy_propagate_def(brw_shader &s,
       }
 
       if (is_logic_op(inst->opcode)) {
-         return false;
+         /* For any value of X, X & 1 = -X & 1. In this case, source modifiers
+          * from entry will not be applied to inst (far below).
+          */
+         if (inst->opcode != BRW_OPCODE_AND || !inst->src[1 - arg].is_one())
+            return false;
       } else if (def->dst.type != inst->src[arg].type &&
                  !inst->can_change_types()) {
          /* Since semantics of source modifiers are type-dependent we need to
@@ -1790,7 +1798,7 @@ try_copy_propagate_def(brw_shader &s,
       inst->exec_size = def->exec_size;
    }
 
-   if (has_source_modifiers) {
+   if (has_source_modifiers && !is_logic_op(inst->opcode)) {
       if (def->dst.type != inst->src[arg].type) {
          /* We are propagating source modifiers from a MOV with a different
           * type.  If we got here, then we can just change the source and
