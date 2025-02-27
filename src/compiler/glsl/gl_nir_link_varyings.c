@@ -4009,7 +4009,8 @@ check_against_output_limit(struct gl_shader_program *prog,
 
    if (nir->info.stage == MESA_SHADER_VERTEX ||
        nir->info.stage == MESA_SHADER_TESS_EVAL ||
-       nir->info.stage == MESA_SHADER_GEOMETRY) {
+       nir->info.stage == MESA_SHADER_GEOMETRY ||
+       nir->info.stage == MESA_SHADER_MESH) {
       /* The FS cannot or might not read the following.
        * We could make it more accurate if needed.
        */
@@ -4025,7 +4026,8 @@ check_against_output_limit(struct gl_shader_program *prog,
                            VARYING_BIT_CULL_DIST1 |
                            VARYING_BIT_LAYER |
                            VARYING_BIT_VIEWPORT |
-                           VARYING_BIT_VIEWPORT_MASK);
+                           VARYING_BIT_VIEWPORT_MASK |
+                           VARYING_BIT_PRIMITIVE_INDICES);
    } else if (nir->info.stage == MESA_SHADER_TESS_CTRL) {
       /* These don't count against the limit. */
       outputs_written &= ~(VARYING_BIT_TESS_LEVEL_INNER |
@@ -4403,6 +4405,114 @@ link_vertex_pipeline_varyings(const struct pipe_screen *screen,
    return r;
 }
 
+static bool
+link_mesh_pipeline_varyings(const struct pipe_screen *screen,
+                            const struct gl_constants *consts,
+                            const struct gl_extensions *exts,
+                            gl_api api, struct gl_shader_program *prog,
+                            void *mem_ctx)
+{
+   /* Task shader does not have varying to link. */
+   if (!prog->_LinkedShaders[MESA_SHADER_MESH])
+      return true;
+
+   struct varying_matches vm;
+
+   if (prog->_LinkedShaders[MESA_SHADER_FRAGMENT]) {
+      if (!prog->SeparateShader) {
+         remove_unused_shader_inputs_and_outputs(prog, MESA_SHADER_FRAGMENT,
+                                                 nir_var_shader_out);
+      }
+
+      if (!assign_initial_varying_locations(screen, consts, exts, mem_ctx, prog,
+                                            prog->_LinkedShaders[MESA_SHADER_MESH],
+                                            prog->_LinkedShaders[MESA_SHADER_FRAGMENT],
+                                            0, NULL, &vm))
+         return false;
+
+      nir_shader *mesh_nir = prog->_LinkedShaders[MESA_SHADER_MESH]->Program->nir;
+      nir_shader *frag_nir = prog->_LinkedShaders[MESA_SHADER_FRAGMENT]->Program->nir;
+
+      gl_nir_opts(mesh_nir);
+      gl_nir_opts(frag_nir);
+
+      nir_link_varying_precision(mesh_nir, frag_nir);
+
+      remove_unused_shader_inputs_and_outputs(prog, MESA_SHADER_MESH,
+                                              nir_var_shader_out);
+      remove_unused_shader_inputs_and_outputs(prog, MESA_SHADER_FRAGMENT,
+                                              nir_var_shader_in);
+
+      if (!prog->SeparateShader) {
+         NIR_PASS(_, prog->_LinkedShaders[MESA_SHADER_FRAGMENT]->Program->nir,
+                  nir_remove_dead_variables, nir_var_shader_out, NULL);
+      }
+
+      const uint64_t reserved_out_slots =
+         reserved_varying_slot(prog->_LinkedShaders[MESA_SHADER_MESH],
+                               nir_var_shader_out);
+      const uint64_t reserved_in_slots =
+         reserved_varying_slot(prog->_LinkedShaders[MESA_SHADER_FRAGMENT],
+                               nir_var_shader_in);
+
+      if (!assign_final_varying_locations(consts, exts, mem_ctx, prog,
+                                          prog->_LinkedShaders[MESA_SHADER_MESH],
+                                          prog->_LinkedShaders[MESA_SHADER_FRAGMENT],
+                                          0, NULL,
+                                          reserved_out_slots | reserved_in_slots, &vm))
+         return false;
+   } else {
+      if (prog->SeparateShader) {
+         if (!assign_initial_varying_locations(screen, consts, exts, mem_ctx, prog,
+                                               prog->_LinkedShaders[MESA_SHADER_MESH],
+                                               NULL, 0, NULL, &vm))
+            return false;
+      } else {
+         remove_unused_shader_inputs_and_outputs(prog, MESA_SHADER_MESH,
+                                                 nir_var_shader_out);
+      }
+
+      /* Still optimize shader if no linking is required. */
+      gl_nir_opts(prog->_LinkedShaders[MESA_SHADER_MESH]->Program->nir);
+
+      if (prog->SeparateShader) {
+         /* Sort inputs / outputs into a canonical order.  This is necessary so
+          * that inputs / outputs of separable shaders will be assigned
+          * predictable locations regardless of the order in which declarations
+          * appeared in the shader source.
+          */
+         canonicalize_shader_io(prog->_LinkedShaders[MESA_SHADER_MESH]->Program->nir,
+                                nir_var_shader_out);
+
+         const uint64_t reserved_out_slots =
+            reserved_varying_slot(prog->_LinkedShaders[MESA_SHADER_MESH],
+                                  nir_var_shader_out);
+         if (!assign_final_varying_locations(consts, exts, mem_ctx, prog,
+                                             prog->_LinkedShaders[MESA_SHADER_MESH],
+                                             NULL, 0, NULL, reserved_out_slots, &vm))
+            return false;
+      }
+   }
+
+   assert(prog->data->LinkStatus != LINKING_FAILURE);
+
+   gl_nir_lower_optimize_varyings(consts, prog, false);
+
+   /* Check IO limits after linkage. */
+   if (prog->_LinkedShaders[MESA_SHADER_FRAGMENT]) {
+      nir_shader *mesh_nir = prog->_LinkedShaders[MESA_SHADER_MESH]->Program->nir;
+      nir_shader *frag_nir = prog->_LinkedShaders[MESA_SHADER_FRAGMENT]->Program->nir;
+      nir_shader_gather_info(mesh_nir, nir_shader_get_entrypoint(mesh_nir));
+      nir_shader_gather_info(frag_nir, nir_shader_get_entrypoint(frag_nir));
+
+      if (!check_against_input_limit(prog, consts, api, frag_nir) ||
+          !check_against_output_limit(prog, consts, api, mesh_nir))
+         return false;
+   }
+
+   return true;
+}
+
 bool
 gl_nir_link_varyings(const struct pipe_screen *screen,
                      const struct gl_constants *consts,
@@ -4418,7 +4528,10 @@ gl_nir_link_varyings(const struct pipe_screen *screen,
     */
    init_program_resource_list(prog);
 
-   bool r = link_vertex_pipeline_varyings(screen, consts, exts, api, prog, mem_ctx);
+   bool r =
+      prog->_LinkedShaders[MESA_SHADER_TASK] || prog->_LinkedShaders[MESA_SHADER_MESH] ?
+      link_mesh_pipeline_varyings(screen, consts, exts, api, prog, mem_ctx) :
+      link_vertex_pipeline_varyings(screen, consts, exts, api, prog, mem_ctx);
 
    ralloc_free(mem_ctx);
    return r;
