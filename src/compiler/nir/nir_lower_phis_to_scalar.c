@@ -208,10 +208,21 @@ lower_phis_to_scalar_block(nir_block *block,
          vec_srcs[i] = &new_phi->def;
 
          nir_foreach_phi_src(src, phi) {
-            /* We need to insert a mov to grab the i'th component of src */
+            nir_def *def;
             state->builder.cursor = nir_after_block_before_jump(src->pred);
-            nir_def *mov = nir_channel(&state->builder, src->src.ssa, i);
-            nir_phi_instr_add_src(new_phi, src->pred, mov);
+
+            if (nir_src_is_undef(src->src)) {
+               /* Just create a 1-component undef instead of moving out of the
+                * original one. This makes it easier for other passes to
+                * detect undefs without having to chase moves.
+                */
+               def = nir_undef(&state->builder, 1, phi->def.bit_size);
+            } else {
+               /* We need to insert a mov to grab the i'th component of src */
+               def = nir_channel(&state->builder, src->src.ssa, i);
+            }
+
+            nir_phi_instr_add_src(new_phi, src->pred, def);
          }
 
          nir_instr_insert_before(&phi->instr, &new_phi->instr);
