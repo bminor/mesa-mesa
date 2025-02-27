@@ -107,7 +107,7 @@ def job_duration(job: gitlab.v4.objects.ProjectPipelineJob) -> float:
 def pretty_wait(sec: int) -> None:
     """shows progressbar in dots"""
     for val in range(sec, 0, -1):
-        print(f"⏲  {val} seconds", end="\r")  # U+23F2 Timer clock
+        print(f"⏲  {val:2d} seconds", end="\r")  # U+23F2 Timer clock
         time.sleep(1)
 
 
