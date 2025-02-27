@@ -21,7 +21,7 @@ from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from itertools import chain
 from subprocess import check_output, CalledProcessError
-from typing import Dict, TYPE_CHECKING, Iterable, Literal, Optional, Tuple
+from typing import Callable, Dict, TYPE_CHECKING, Iterable, Literal, Optional, Tuple, cast
 
 import gitlab
 import gitlab.v4.objects
@@ -110,6 +110,31 @@ def pretty_wait(sec: int) -> None:
         time.sleep(1)
 
 
+def run_target_job(
+    job: gitlab.v4.objects.ProjectPipelineJob,
+    enable_job_fn: Callable,
+    stress: int,
+    stress_status_counter: dict,
+    execution_times: dict,
+    target_statuses: dict,
+    name_field_pad: int,
+) -> None:
+    if stress and job.status in COMPLETED_STATUSES:
+        if (
+            stress < 0
+            or sum(stress_status_counter[job.name].values()) < stress
+        ):
+            stress_status_counter[job.name][job.status] += 1
+            execution_times[job.name][job.id] = (job_duration(job), job.status, job.web_url)
+            job = enable_job_fn(job=job, action_type="retry")
+    else:
+        execution_times[job.name][job.id] = (job_duration(job), job.status, job.web_url)
+        job = enable_job_fn(job=job, action_type="target")
+
+    print_job_status(job, job.status not in target_statuses[job.name], name_field_pad)
+    target_statuses[job.name] = job.status
+
+
 def monitor_pipeline(
     project: gitlab.v4.objects.Project,
     pipeline: gitlab.v4.objects.ProjectPipeline,
@@ -156,28 +181,21 @@ def monitor_pipeline(
         to_cancel = []
         jobs_waiting.clear()
         for job in sorted(pipeline.jobs.list(all=True), key=lambda j: j.name):
+            job = cast(gitlab.v4.objects.ProjectPipelineJob, job)
             if target_jobs_regex.fullmatch(job.name) and \
                include_stage_regex.fullmatch(job.stage) and \
                not exclude_stage_regex.fullmatch(job.stage):
+                run_target_job(
+                    job,
+                    enable_job_fn,
+                    stress,
+                    stress_status_counter,
+                    execution_times,
+                    target_statuses,
+                    name_field_pad,
+                )
                 target_id = job.id
-                target_status = job.status
-
-                if stress and target_status in COMPLETED_STATUSES:
-                    if (
-                        stress < 0
-                        or sum(stress_status_counter[job.name].values()) < stress
-                    ):
-                        stress_status_counter[job.name][target_status] += 1
-                        execution_times[job.name][job.id] = (job_duration(job), target_status, job.web_url)
-                        job = enable_job_fn(job=job, action_type="retry")
-                else:
-                    execution_times[job.name][job.id] = (job_duration(job), target_status, job.web_url)
-                    job = enable_job_fn(job=job, action_type="target")
-
-                print_job_status(job, target_status not in target_statuses[job.name], name_field_pad)
-                target_statuses[job.name] = target_status
                 continue
-
             # all other non-target jobs
             if job.status != statuses[job.name]:
                 print_job_status(job, True, name_field_pad)
