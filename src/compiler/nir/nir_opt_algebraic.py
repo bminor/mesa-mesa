@@ -696,6 +696,9 @@ optimizations.extend([
    (('ieq', ('iabs', a), 0),  ('ieq', a, 0)),
    (('ine', ('iabs', a), 0),  ('ine', a, 0)),
 
+   (('ieq', ('bit_count(is_used_once)', a), 0),  ('ieq', a, 0)),
+   (('ine', ('bit_count(is_used_once)', a), 0),  ('ine', a, 0)),
+
    (('ieq', ('ineg', a), ('ineg', b)), ('ieq', a, b)),
    (('ine', ('ineg', a), ('ineg', b)), ('ine', a, b)),
 
