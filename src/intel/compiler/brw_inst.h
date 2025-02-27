@@ -234,6 +234,8 @@ public:
    const char *annotation;
    /** @} */
 #endif
+
+   bblock_t *block;
 };
 
 /**

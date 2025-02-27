@@ -187,6 +187,14 @@ bblock_t::unlink_list(exec_list *list)
    }
 }
 
+static void
+append_inst(bblock_t *block, brw_inst *inst)
+{
+   assert(inst->block == NULL);
+   inst->block = block;
+   block->instructions.push_tail(inst);
+}
+
 cfg_t::cfg_t(const brw_shader *s, exec_list *instructions) :
    s(s)
 {
@@ -216,14 +224,14 @@ cfg_t::cfg_t(const brw_shader *s, exec_list *instructions) :
 
       switch (inst->opcode) {
       case SHADER_OPCODE_FLOW:
-         cur->instructions.push_tail(inst);
+         append_inst(cur, inst);
          next = new_block();
          cur->add_successor(mem_ctx, next, bblock_link_logical);
          set_next_block(&cur, next, ip);
          break;
 
       case BRW_OPCODE_IF:
-         cur->instructions.push_tail(inst);
+         append_inst(cur, inst);
 
 	 /* Push our information onto a stack so we can recover from
 	  * nested ifs.
@@ -244,7 +252,7 @@ cfg_t::cfg_t(const brw_shader *s, exec_list *instructions) :
 	 break;
 
       case BRW_OPCODE_ELSE:
-         cur->instructions.push_tail(inst);
+         append_inst(cur, inst);
 
          cur_else = cur;
 
@@ -270,7 +278,7 @@ cfg_t::cfg_t(const brw_shader *s, exec_list *instructions) :
             set_next_block(&cur, cur_endif, ip - 1);
          }
 
-         cur->instructions.push_tail(inst);
+         append_inst(cur, inst);
 
          if (cur_else) {
             cur_else->add_successor(mem_ctx, cur_endif, bblock_link_logical);
@@ -310,7 +318,7 @@ cfg_t::cfg_t(const brw_shader *s, exec_list *instructions) :
             set_next_block(&cur, cur_do, ip - 1);
          }
 
-         cur->instructions.push_tail(inst);
+         append_inst(cur, inst);
 
          /* Represent divergent execution of the loop as a pair of alternative
           * edges coming out of the DO instruction: For any physical iteration
@@ -345,7 +353,7 @@ cfg_t::cfg_t(const brw_shader *s, exec_list *instructions) :
 	 break;
 
       case BRW_OPCODE_CONTINUE:
-         cur->instructions.push_tail(inst);
+         append_inst(cur, inst);
 
          /* A conditional CONTINUE may start a region of divergent control
           * flow until the start of the next loop iteration (*not* until the
@@ -373,7 +381,7 @@ cfg_t::cfg_t(const brw_shader *s, exec_list *instructions) :
 	 break;
 
       case BRW_OPCODE_BREAK:
-         cur->instructions.push_tail(inst);
+         append_inst(cur, inst);
 
          /* A conditional BREAK instruction may start a region of divergent
           * control flow until the end of the loop if the condition is
@@ -399,7 +407,7 @@ cfg_t::cfg_t(const brw_shader *s, exec_list *instructions) :
 	 break;
 
       case BRW_OPCODE_WHILE:
-         cur->instructions.push_tail(inst);
+         append_inst(cur, inst);
 
          assert(cur_do != NULL && cur_while != NULL);
 
@@ -426,7 +434,7 @@ cfg_t::cfg_t(const brw_shader *s, exec_list *instructions) :
 	 break;
 
       default:
-         cur->instructions.push_tail(inst);
+         append_inst(cur, inst);
 	 break;
       }
    }
@@ -744,6 +752,10 @@ cfg_t::validate(const char *stage_abbrev)
       }
 
       cfgv_assert(!block->instructions.is_empty());
+
+      foreach_inst_in_block(brw_inst, inst, block) {
+         cfgv_assert(block == inst->block);
+      }
 
       brw_inst *first_inst = block->start();
       if (first_inst->opcode == BRW_OPCODE_DO) {

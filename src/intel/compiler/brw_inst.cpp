@@ -956,23 +956,6 @@ brw_inst::is_volatile() const
             opcode == SHADER_OPCODE_SEND_GATHER) && send_is_volatile);
 }
 
-#ifndef NDEBUG
-static bool
-inst_is_in_block(const bblock_t *block, const brw_inst *inst)
-{
-   const exec_node *n = inst;
-
-   /* Find the tail sentinel. If the tail sentinel is the sentinel from the
-    * list header in the bblock_t, then this instruction is in that basic
-    * block.
-    */
-   while (!n->is_tail_sentinel())
-      n = n->get_next();
-
-   return n == &block->instructions.tail_sentinel;
-}
-#endif
-
 static void
 adjust_later_block_ips(bblock_t *start_block, int ip_adjustment)
 {
@@ -990,20 +973,21 @@ brw_inst::insert_before(bblock_t *block, brw_inst *inst)
    assert(this != inst);
    assert(block->end_ip_delta == 0);
 
-   if (!this->is_tail_sentinel())
-      assert(inst_is_in_block(block, this) || !"Instruction not in block");
+   assert(!inst->block || inst->block == block);
 
    block->end_ip++;
 
    adjust_later_block_ips(block, 1);
 
    exec_node::insert_before(inst);
+
+   inst->block = block;
 }
 
 void
 brw_inst::remove(bblock_t *block, bool defer_later_block_ip_updates)
 {
-   assert(inst_is_in_block(block, this) || !"Instruction not in block");
+   assert(this->block == block);
 
    if (exec_list_is_singular(&block->instructions)) {
       this->opcode = BRW_OPCODE_NOP;
@@ -1032,6 +1016,7 @@ brw_inst::remove(bblock_t *block, bool defer_later_block_ip_updates)
    }
 
    exec_node::remove();
+   this->block = NULL;
 }
 
 enum brw_reg_type
