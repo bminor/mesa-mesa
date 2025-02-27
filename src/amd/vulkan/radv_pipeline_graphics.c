@@ -2928,6 +2928,30 @@ radv_graphics_shaders_compile(struct radv_device *device, struct vk_pipeline_cac
                                 nir_shader_get_entrypoint(stages[MESA_SHADER_FRAGMENT].nir));
    }
 
+   /* Remove all varyings when the fragment shader is a noop. */
+   if (noop_fs) {
+      radv_foreach_stage (i, active_nir_stages) {
+         if (!radv_is_last_vgt_stage(&stages[i]))
+            continue;
+
+         bool progress = false;
+
+         /* Remove all output varyings. */
+         NIR_PASS(progress, stages[i].nir, nir_remove_outputs, MESA_SHADER_FRAGMENT, ~0ull, 0);
+
+         if (progress) {
+            /* Remove dead code resulting from removed output varyings. */
+            do {
+               progress = false;
+               NIR_PASS(progress, stages[i].nir, nir_opt_dce);
+               NIR_PASS(progress, stages[i].nir, nir_opt_dead_cf);
+            } while (progress);
+         }
+
+         break;
+      }
+   }
+
    /* Optimize varyings on lowered shader I/O (more efficient than optimizing I/O derefs). */
    radv_graphics_shaders_link_varyings(stages, pdev->info.gfx_level);
 
