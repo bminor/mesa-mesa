@@ -240,7 +240,7 @@ impl BarAlloc {
 }
 
 fn assign_barriers(f: &mut Function, sm: &dyn ShaderModel) {
-    let mut uses = RegTracker::new_with(&|| RegUse::None);
+    let mut uses = Box::new(RegTracker::new_with(&|| RegUse::None));
     let mut deps = DepGraph::new();
 
     for (bi, b) in f.blocks.iter().enumerate() {
@@ -351,8 +351,8 @@ fn calc_delays(f: &mut Function, sm: &dyn ShaderModel) {
 
         // Maps registers to RegUse<ip, src_dst_idx>.  Predicates are
         // represented by  src_idx = usize::MAX.
-        let mut uses: RegTracker<RegUse<(usize, usize)>> =
-            RegTracker::new_with(&|| RegUse::None);
+        let mut uses: Box<RegTracker<RegUse<(usize, usize)>>> =
+            Box::new(RegTracker::new_with(&|| RegUse::None));
 
         // Map from barrier to last waited cycle
         let mut bars = [0_u32; 6];
