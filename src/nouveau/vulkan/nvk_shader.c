@@ -1296,7 +1296,7 @@ nvk_shader_get_executable_statistics(
    }
 
    vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-      WRITE_STR(stat->name, "Code Size");
+      WRITE_STR(stat->name, "Code size");
       WRITE_STR(stat->description,
                 "Size of the compiled shader binary, in bytes");
       stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
@@ -1311,7 +1311,7 @@ nvk_shader_get_executable_statistics(
    }
 
    vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-      WRITE_STR(stat->name, "SLM Size");
+      WRITE_STR(stat->name, "SLM size");
       WRITE_STR(stat->description,
                 "Size of shader local (scratch) memory, in bytes");
       stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
