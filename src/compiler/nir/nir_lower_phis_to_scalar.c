@@ -30,7 +30,6 @@
 
 struct lower_phis_to_scalar_state {
    nir_shader *shader;
-   void *mem_ctx;
    struct exec_list dead_instrs;
 
    bool lower_all;
@@ -260,7 +259,6 @@ lower_phis_to_scalar_impl(nir_function_impl *impl, bool lower_all)
    bool progress = false;
 
    state.shader = impl->function->shader;
-   state.mem_ctx = ralloc_parent(impl);
    exec_list_make_empty(&state.dead_instrs);
    state.phi_table = _mesa_pointer_hash_table_create(NULL);
    state.lower_all = lower_all;
