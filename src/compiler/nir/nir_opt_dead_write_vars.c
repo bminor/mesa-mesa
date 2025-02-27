@@ -115,6 +115,10 @@ ends_program(nir_block *block)
    if (block->cf_node.parent->type == nir_cf_node_loop)
       return false;
 
+   /* Avoid called functions */
+   if (!nir_cf_node_get_function(&block->cf_node)->function->is_entrypoint)
+      return false;
+
    if (block->successors[0] == NULL) {
       /* This is the end block */
       assert(block->successors[1] == NULL);
