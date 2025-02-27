@@ -550,9 +550,9 @@ impl Program {
 
     pub fn active_kernels(&self) -> bool {
         self.build_info()
-            .builds
+            .kernel_info
             .values()
-            .any(|b| b.kernels.values().any(|b| Arc::strong_count(b) > 1))
+            .any(|k| Arc::strong_count(k) > 1)
     }
 
     pub fn build(&self, devs: &[&'static Device], options: &str) -> bool {
