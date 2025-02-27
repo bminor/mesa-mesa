@@ -10,7 +10,6 @@ clover_opencl_cpp_args = [
   '-DCL_USE_DEPRECATED_OPENCL_2_0_APIS',
   '-DCL_USE_DEPRECATED_OPENCL_2_1_APIS',
   '-DCL_USE_DEPRECATED_OPENCL_2_2_APIS',
-  '-DLIBCLC_INCLUDEDIR="@0@/"'.format(dep_clc.get_variable(pkgconfig : 'includedir')),
   '-DLIBCLC_LIBEXECDIR="@0@/"'.format(dep_clc.get_variable(pkgconfig : 'libexecdir'))
 ]
 clover_incs = [inc_include, inc_src, inc_gallium, inc_gallium_aux]
@@ -43,9 +42,9 @@ libclllvm = static_library(
   cpp_args : [
     clover_cpp_args,
     clover_opencl_cpp_args,
-    '-DCLANG_RESOURCE_DIR="@0@"'.format(join_paths(
+    '-DFALLBACK_CLANG_RESOURCE_DIR="@0@"'.format(join_paths(
       dep_llvm.get_variable(cmake : 'LLVM_LIBRARY_DIR', configtool: 'libdir'), 'clang',
-      dep_llvm.version(), 'include',
+      dep_llvm.version()
     )),
   ],
   gnu_symbol_visibility : 'hidden',

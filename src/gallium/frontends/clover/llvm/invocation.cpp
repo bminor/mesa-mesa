@@ -24,6 +24,8 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 //
 
+#include <dlfcn.h>
+
 #include <llvm/IR/DiagnosticPrinter.h>
 #include <llvm/IR/DiagnosticInfo.h>
 #include <llvm/IR/LLVMContext.h>
@@ -39,6 +41,8 @@
 #include <clang/Frontend/TextDiagnosticBuffer.h>
 #include <clang/Frontend/TextDiagnosticPrinter.h>
 #include <clang/Basic/TargetInfo.h>
+#include <clang/Config/config.h>
+#include <clang/Driver/Driver.h>
 
 #if LLVM_VERSION_MAJOR >= 20
 #include <llvm/Support/VirtualFileSystem.h>
@@ -323,6 +327,30 @@ namespace {
       return c;
    }
 
+   std::string getResourceDirectory() {
+      Dl_info info;
+      if (dladdr((void *)clang::CompilerInvocation::CreateFromArgs, &info) == 0) {
+         return FALLBACK_CLANG_RESOURCE_DIR;
+      }
+
+      char *libclang_path = realpath(info.dli_fname, NULL);
+      if (libclang_path == nullptr) {
+         return FALLBACK_CLANG_RESOURCE_DIR;
+      }
+
+      // GetResourcePath is a way to retrieve the actual libclang resource dir based on a given
+      // binary or library.
+      std::string clang_resource_dir =
+#if LLVM_VERSION_MAJOR >= 20
+         clang::driver::Driver::GetResourcesPath(std::string(libclang_path));
+#else
+         clang::driver::Driver::GetResourcesPath(std::string(libclang_path), CLANG_RESOURCE_DIR);
+#endif
+      free(libclang_path);
+
+      return clang_resource_dir;
+   }
+
    std::unique_ptr<Module>
    compile(LLVMContext &ctx, clang::CompilerInstance &c,
            const std::string &name, const std::string &source,
@@ -331,25 +359,18 @@ namespace {
       c.getFrontendOpts().ProgramAction = clang::frontend::EmitLLVMOnly;
       c.getHeaderSearchOpts().UseBuiltinIncludes = true;
       c.getHeaderSearchOpts().UseStandardSystemIncludes = true;
-      c.getHeaderSearchOpts().ResourceDir = CLANG_RESOURCE_DIR;
 
-      if (use_libclc) {
-         // Add libclc generic search path
-         c.getHeaderSearchOpts().AddPath(LIBCLC_INCLUDEDIR,
-                                         clang::frontend::Angled,
-                                         false, false);
+      std::string clang_resource_dir = getResourceDirectory();
+      c.getHeaderSearchOpts().ResourceDir = clang_resource_dir;
 
-         // Add libclc include
-         c.getPreprocessorOpts().Includes.push_back("clc/clc.h");
-      } else {
-         // Add opencl-c generic search path
-         c.getHeaderSearchOpts().AddPath(CLANG_RESOURCE_DIR,
-                                         clang::frontend::Angled,
-                                         false, false);
+      // Add opencl-c generic search path
+      std::string clang_include_path = clang_resource_dir + "/include";
+      c.getHeaderSearchOpts().AddPath(clang_include_path,
+                                      clang::frontend::Angled,
+                                      false, false);
 
-         // Add opencl include
-         c.getPreprocessorOpts().Includes.push_back("opencl-c.h");
-      }
+      // Add opencl include
+      c.getPreprocessorOpts().Includes.push_back("opencl-c.h");
 
       // Add definition for the OpenCL version
       const auto dev_version = dev.device_version();
