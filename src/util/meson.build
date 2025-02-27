@@ -211,6 +211,13 @@ format_srgb = custom_target(
   capture : true,
 )
 
+files_mesa_util += custom_target(
+  input : ['process_shader_stats.py', 'shader_stats.rnc', 'shader_stats.xml'],
+  output : 'shader_stats.h',
+  command : [prog_python, '@INPUT@'],
+  capture : true,
+)
+
 # subdir format provide files_mesa_format
 subdir('format')
 files_mesa_util += files_mesa_format
