@@ -290,6 +290,9 @@ _mesa_validate_shader_target(const struct gl_context *ctx, GLenum type)
       return ctx == NULL || _mesa_has_tessellation(ctx);
    case GL_COMPUTE_SHADER:
       return ctx == NULL || _mesa_has_compute_shaders(ctx);
+   case GL_TASK_SHADER_EXT:
+   case GL_MESH_SHADER_EXT:
+      return ctx == NULL || ctx->Extensions.EXT_mesh_shader;
    default:
       return false;
    }

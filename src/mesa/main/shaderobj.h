@@ -137,6 +137,10 @@ _mesa_shader_enum_to_shader_stage(GLenum v)
       return MESA_SHADER_TESS_EVAL;
    case GL_COMPUTE_SHADER:
       return MESA_SHADER_COMPUTE;
+   case GL_TASK_SHADER_EXT:
+      return MESA_SHADER_TASK;
+   case GL_MESH_SHADER_EXT:
+      return MESA_SHADER_MESH;
    default:
       UNREACHABLE("bad value in _mesa_shader_enum_to_shader_stage()");
    }
