@@ -894,7 +894,7 @@
         "description": "ir3/ra: prevent reusing parent interval of reloaded sources",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "fa22b0901af548d5e1433ad4cdbda314182137c5",
         "notes": null
