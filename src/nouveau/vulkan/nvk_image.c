@@ -860,8 +860,6 @@ nvk_image_init(struct nvk_device *dev,
             .levels = image->vk.mip_levels,
             .samples = image->vk.samples,
             .usage = usage & ~NIL_IMAGE_USAGE_LINEAR_BIT,
-            .explicit_row_stride_B = 0,
-            .max_alignment_B = 0,
          };
          image->linear_tiled_shadow.nil =
             nil_image_new(&pdev->info, &tiled_shadow_nil_info);
@@ -929,8 +927,6 @@ nvk_image_init(struct nvk_device *dev,
          .levels = image->vk.mip_levels,
          .samples = image->vk.samples,
          .usage = usage,
-         .explicit_row_stride_B = 0,
-         .max_alignment_B = 0,
       };
 
       image->stencil_copy_temp.nil =
