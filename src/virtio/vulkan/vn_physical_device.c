@@ -157,6 +157,9 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
       VkPhysicalDeviceDepthClampZeroOneFeaturesKHR depth_clamp_zero_one;
       VkPhysicalDeviceFragmentShadingRateFeaturesKHR fragment_shading_rate;
       VkPhysicalDeviceShaderClockFeaturesKHR shader_clock;
+      VkPhysicalDeviceShaderMaximalReconvergenceFeaturesKHR shader_maximal_reconvergence;
+      VkPhysicalDeviceShaderQuadControlFeaturesKHR shader_quad_control;
+      VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR shader_subgroup_uniform_control_flow;
       VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR
          workgroup_memory_explicit_layout;
 
@@ -285,6 +288,9 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
    VN_ADD_PNEXT_EXT(feats2, DEPTH_CLAMP_ZERO_ONE_FEATURES_KHR, local_feats.depth_clamp_zero_one, exts->KHR_depth_clamp_zero_one || exts->EXT_depth_clamp_zero_one);
    VN_ADD_PNEXT_EXT(feats2, FRAGMENT_SHADING_RATE_FEATURES_KHR, local_feats.fragment_shading_rate, exts->KHR_fragment_shading_rate);
    VN_ADD_PNEXT_EXT(feats2, SHADER_CLOCK_FEATURES_KHR, local_feats.shader_clock, exts->KHR_shader_clock);
+   VN_ADD_PNEXT_EXT(feats2, SHADER_MAXIMAL_RECONVERGENCE_FEATURES_KHR, local_feats.shader_maximal_reconvergence, exts->KHR_shader_maximal_reconvergence);
+   VN_ADD_PNEXT_EXT(feats2, SHADER_SUBGROUP_UNIFORM_CONTROL_FLOW_FEATURES_KHR, local_feats.shader_subgroup_uniform_control_flow, exts->KHR_shader_subgroup_uniform_control_flow);
+   VN_ADD_PNEXT_EXT(feats2, SHADER_QUAD_CONTROL_FEATURES_KHR, local_feats.shader_quad_control, exts->KHR_shader_quad_control);
    VN_ADD_PNEXT_EXT(feats2, WORKGROUP_MEMORY_EXPLICIT_LAYOUT_FEATURES_KHR, local_feats.workgroup_memory_explicit_layout, exts->KHR_workgroup_memory_explicit_layout);
 
    /* EXT */
@@ -1171,6 +1177,9 @@ vn_physical_device_get_passthrough_extensions(
       .KHR_fragment_shading_rate = true,
       .KHR_pipeline_library = true,
       .KHR_shader_clock = true,
+      .KHR_shader_maximal_reconvergence = true,
+      .KHR_shader_quad_control = true,
+      .KHR_shader_subgroup_uniform_control_flow = true,
       .KHR_workgroup_memory_explicit_layout = true,
 
       /* EXT */
@@ -1214,6 +1223,7 @@ vn_physical_device_get_passthrough_extensions(
       .EXT_sample_locations = true,
       .EXT_shader_stencil_export = true,
       .EXT_shader_subgroup_ballot = true,
+      .EXT_shader_subgroup_vote = true,
       .EXT_transform_feedback = true,
       .EXT_vertex_attribute_divisor = true,
       .EXT_vertex_input_dynamic_state = true,
