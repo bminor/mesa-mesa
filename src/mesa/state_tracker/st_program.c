@@ -192,6 +192,33 @@ st_set_prog_affected_state_flags(struct gl_program *prog)
                                ST_NEW_CS_ATOMICS);
       break;
 
+   case MESA_SHADER_TASK:
+      ST_SET_STATE(prog->affected_states, ST_NEW_TS_STATE);
+
+      set_affected_state_flags(prog,
+                               ST_NEW_TS_CONSTANTS,
+                               ST_NEW_TS_SAMPLER_VIEWS,
+                               ST_NEW_TS_SAMPLERS,
+                               ST_NEW_TS_IMAGES,
+                               ST_NEW_TS_UBOS,
+                               ST_NEW_TS_SSBOS,
+                               ST_NEW_TS_ATOMICS);
+      break;
+
+   case MESA_SHADER_MESH:
+      ST_SET_STATE2(prog->affected_states, ST_NEW_MS_STATE,
+                    ST_NEW_RASTERIZER);
+
+      set_affected_state_flags(prog,
+                               ST_NEW_MS_CONSTANTS,
+                               ST_NEW_MS_SAMPLER_VIEWS,
+                               ST_NEW_MS_SAMPLERS,
+                               ST_NEW_MS_IMAGES,
+                               ST_NEW_MS_UBOS,
+                               ST_NEW_MS_SSBOS,
+                               ST_NEW_MS_ATOMICS);
+      break;
+
    default:
       UNREACHABLE("unhandled shader stage");
    }
@@ -1465,18 +1492,34 @@ st_finalize_program(struct st_context *st, struct gl_program *prog,
 
    MESA_TRACE_FUNC();
 
-   if (prog->info.stage == MESA_SHADER_VERTEX)
+   switch (prog->info.stage) {
+   case MESA_SHADER_VERTEX:
       is_bound = prog == ctx->VertexProgram._Current;
-   else if (prog->info.stage == MESA_SHADER_TESS_CTRL)
+      break;
+   case MESA_SHADER_TESS_CTRL:
       is_bound = prog == ctx->TessCtrlProgram._Current;
-   else if (prog->info.stage == MESA_SHADER_TESS_EVAL)
+      break;
+   case MESA_SHADER_TESS_EVAL:
       is_bound = prog == ctx->TessEvalProgram._Current;
-   else if (prog->info.stage == MESA_SHADER_GEOMETRY)
+      break;
+   case MESA_SHADER_GEOMETRY:
       is_bound = prog == ctx->GeometryProgram._Current;
-   else if (prog->info.stage == MESA_SHADER_FRAGMENT)
+      break;
+   case MESA_SHADER_FRAGMENT:
       is_bound = prog == ctx->FragmentProgram._Current;
-   else if (prog->info.stage == MESA_SHADER_COMPUTE)
+      break;
+   case MESA_SHADER_COMPUTE:
       is_bound = prog == ctx->ComputeProgram._Current;
+      break;
+   case MESA_SHADER_TASK:
+      is_bound = prog == ctx->TaskProgram._Current;
+      break;
+   case MESA_SHADER_MESH:
+      is_bound = prog == ctx->MeshProgram._Current;
+      break;
+   default:
+      UNREACHABLE("invalid program");
+   }
 
    if (is_bound) {
       if (prog->info.stage == MESA_SHADER_VERTEX) {

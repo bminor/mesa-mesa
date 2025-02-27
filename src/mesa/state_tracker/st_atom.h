@@ -112,6 +112,7 @@ typedef BITSET_DECLARE(st_state_bitset, ST_NUM_ATOMS);
    do { \
       ST_SET_STATE3(bitset, ST_NEW_VS_##state, ST_NEW_TCS_##state, ST_NEW_TES_##state); \
       ST_SET_STATE3(bitset, ST_NEW_GS_##state, ST_NEW_FS_##state, ST_NEW_CS_##state); \
+      ST_SET_STATE2(bitset, ST_NEW_TS_##state, ST_NEW_MS_##state); \
    } while (0)
 
 #define ST_SET_FRAMEBUFFER_STATES(bitset) \
