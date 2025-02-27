@@ -681,10 +681,20 @@ si_vpe_set_stream_out_param(struct vpe_video_processor *vpeproc,
 {
    uint32_t background_color = process_properties->background_color;
 
-   build_param->target_rect.x      = process_properties->dst_region.x0;
-   build_param->target_rect.y      = process_properties->dst_region.y0;
-   build_param->target_rect.width  = process_properties->dst_region.x1 - process_properties->dst_region.x0;
-   build_param->target_rect.height = process_properties->dst_region.y1 - process_properties->dst_region.y0;
+   /* To set the target rectangle is "FINAL TARGET SURFACE" in the final round of Germetric scaling.
+    * In other rounds, the background should be 0.
+    */
+   if (process_properties->background_color) {
+      build_param->target_rect.x      = 0;
+      build_param->target_rect.y      = 0;
+      build_param->target_rect.width  = vpeproc->dst_surfaces[0]->width;
+      build_param->target_rect.height = vpeproc->dst_surfaces[0]->height;
+   } else {
+      build_param->target_rect.x      = process_properties->dst_region.x0;
+      build_param->target_rect.y      = process_properties->dst_region.y0;
+      build_param->target_rect.width  = process_properties->dst_region.x1 - process_properties->dst_region.x0;
+      build_param->target_rect.height = process_properties->dst_region.y1 - process_properties->dst_region.y0;
+   }
 
    build_param->bg_color.is_ycbcr  = false;
    build_param->bg_color.rgba.r    = 0;
@@ -1339,13 +1349,13 @@ si_vpe_processor_process_frame(struct pipe_video_codec *codec,
       process_geoscl.orientation                  = process_properties->orientation;
       process_geoscl.blend.mode                   = process_properties->blend.mode;
       process_geoscl.blend.global_alpha           = process_properties->blend.global_alpha;
-      process_geoscl.background_color             = process_properties->background_color;
+      process_geoscl.background_color             = 0;
 
       process_geoscl.in_colors_standard           = process_properties->in_colors_standard;
       process_geoscl.in_color_range               = process_properties->in_color_range;
       process_geoscl.in_chroma_siting             = process_properties->in_chroma_siting;
       process_geoscl.out_colors_standard          = process_properties->out_colors_standard;
-      process_geoscl.out_color_range              = process_properties->out_color_range;
+      process_geoscl.out_color_range              = PIPE_VIDEO_VPP_CHROMA_COLOR_RANGE_FULL;
       process_geoscl.out_chroma_siting            = process_properties->out_chroma_siting;
 
       process_geoscl.in_color_primaries           = process_properties->in_color_primaries;
@@ -1388,7 +1398,7 @@ si_vpe_processor_process_frame(struct pipe_video_codec *codec,
       process_geoscl.orientation                  = PIPE_VIDEO_VPP_ORIENTATION_DEFAULT;
       process_geoscl.blend.global_alpha           = 1.0f;
       process_geoscl.in_colors_standard           = process_properties->out_colors_standard;
-      process_geoscl.in_color_range               = process_properties->out_color_range;
+      process_geoscl.in_color_range               = PIPE_VIDEO_VPP_CHROMA_COLOR_RANGE_FULL;
       process_geoscl.in_chroma_siting             = process_properties->out_chroma_siting;
       process_geoscl.in_color_primaries           = process_properties->out_color_primaries;
       process_geoscl.in_transfer_characteristics  = process_properties->out_transfer_characteristics;
@@ -1420,6 +1430,9 @@ si_vpe_processor_process_frame(struct pipe_video_codec *codec,
       /* Final Round:
        * Will be flushed in normal flow when end_frame() is called
        */
+      process_geoscl.background_color = process_properties->background_color;
+      process_geoscl.out_color_range  = process_properties->out_color_range;
+
       src_region->x1 = dst_region->x1;
       src_region->y1 = dst_region->y1;
       dst_region->x0 = process_properties->dst_region.x0;
