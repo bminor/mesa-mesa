@@ -668,7 +668,6 @@ debian-clang:
       -D llvm=enabled
       -D microsoft-clc=disabled
       -D shared-llvm=enabled
-      -D shared-glapi=enabled
     GALLIUM_DRIVERS: "iris,nouveau,r300,r600,freedreno,llvmpipe,softpipe,svga,v3d,vc4,virgl,etnaviv,panfrost,lima,zink,radeonsi,tegra,d3d12,crocus,i915,asahi"
     VULKAN_DRIVERS: intel,amd,freedreno,broadcom,virtio,swrast,panfrost,imagination-experimental,microsoft-experimental,nouveau
     EXTRA_OPTION:
@@ -706,7 +705,6 @@ debian-clang-release:
       -D llvm=enabled
       -D microsoft-clc=disabled
       -D shared-llvm=enabled
-      -D shared-glapi=disabled
 
 windows-msvc:
   extends:

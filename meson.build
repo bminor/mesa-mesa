@@ -119,10 +119,8 @@ if gbm_backends_path == ''
   gbm_backends_path = join_paths(get_option('prefix'), get_option('libdir'), 'gbm')
 endif
 
-# Default shared glapi disabled for windows, enabled elsewhere.
-with_shared_glapi = get_option('shared-glapi') \
-  .disable_auto_if(host_machine.system() == 'windows') \
-  .allowed()
+# TODO: Remove this and the old static glapi along with it.
+with_shared_glapi = true
 
 with_opengl = get_option('opengl')
 

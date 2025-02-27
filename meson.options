@@ -297,9 +297,8 @@ option(
 option(
   'shared-glapi',
   type : 'feature',
-  deprecated: {'true': 'enabled', 'false': 'disabled'},
-  description : 'Whether to build a shared or static glapi. Defaults to ' +
-                'disabled on Windows, enabled elsewhere'
+  deprecated: true,
+  description : 'Does nothing, left here for a while to avoid build breakages.',
 )
 
 option(

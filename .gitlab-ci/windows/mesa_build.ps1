@@ -51,7 +51,6 @@ meson setup `
 -Dgallium-drivers="swrast,d3d12,zink" `
 -Dgallium-va=enabled `
 -Dvideo-codecs="all" `
--Dshared-glapi=enabled `
 -Dgles1=enabled `
 -Dgles2=enabled `
 -Dgallium-opencl=icd `
