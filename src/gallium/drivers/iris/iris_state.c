@@ -5249,13 +5249,6 @@ iris_store_tes_state(const struct intel_device_info *devinfo,
       te.MaximumTessellationFactorNotOdd = 64.0;
 #if GFX_VERx10 >= 125
       STATIC_ASSERT(TEDMODE_OFF == 0);
-      if (intel_needs_workaround(devinfo, 14015055625)) {
-         te.TessellationDistributionMode = TEDMODE_OFF;
-      } else if (intel_needs_workaround(devinfo, 22012699309)) {
-         te.TessellationDistributionMode = TEDMODE_RR_STRICT;
-      } else {
-         te.TessellationDistributionMode = TEDMODE_RR_FREE;
-      }
 
    #if GFX_VER >= 20
       te.TessellationDistributionLevel = TEDLEVEL_REGION;
