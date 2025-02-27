@@ -1464,6 +1464,7 @@ prepare_dcd(struct panvk_cmd_buffer *cmdbuf)
    bool dcd0_dirty =
       dyn_gfx_state_dirty(cmdbuf, RS_RASTERIZER_DISCARD_ENABLE) ||
       dyn_gfx_state_dirty(cmdbuf, RS_CULL_MODE) ||
+      dyn_gfx_state_dirty(cmdbuf, RS_LINE_MODE) ||
       dyn_gfx_state_dirty(cmdbuf, RS_FRONT_FACE) ||
       dyn_gfx_state_dirty(cmdbuf, MS_RASTERIZATION_SAMPLES) ||
       dyn_gfx_state_dirty(cmdbuf, MS_SAMPLE_MASK) ||
@@ -1477,10 +1478,15 @@ prepare_dcd(struct panvk_cmd_buffer *cmdbuf)
       dyn_gfx_state_dirty(cmdbuf, DS_STENCIL_TEST_ENABLE) ||
       dyn_gfx_state_dirty(cmdbuf, DS_STENCIL_OP) ||
       dyn_gfx_state_dirty(cmdbuf, DS_STENCIL_WRITE_MASK) ||
+      /* line mode needs primitive topology */
+      dyn_gfx_state_dirty(cmdbuf, IA_PRIMITIVE_TOPOLOGY) ||
       fs_user_dirty(cmdbuf) || gfx_state_dirty(cmdbuf, RENDER_STATE) ||
       gfx_state_dirty(cmdbuf, OQ);
    bool dcd1_dirty = dyn_gfx_state_dirty(cmdbuf, MS_RASTERIZATION_SAMPLES) ||
                      dyn_gfx_state_dirty(cmdbuf, MS_SAMPLE_MASK) ||
+                     /* line mode needs primitive topology */
+                     dyn_gfx_state_dirty(cmdbuf, RS_LINE_MODE) ||
+                     dyn_gfx_state_dirty(cmdbuf, IA_PRIMITIVE_TOPOLOGY) ||
                      fs_user_dirty(cmdbuf) ||
                      gfx_state_dirty(cmdbuf, RENDER_STATE);
 
@@ -1488,9 +1494,26 @@ prepare_dcd(struct panvk_cmd_buffer *cmdbuf)
       &cmdbuf->vk.dynamic_graphics_state;
    const struct vk_rasterization_state *rs =
       &cmdbuf->vk.dynamic_graphics_state.rs;
+   const struct vk_input_assembly_state *ia =
+      &cmdbuf->vk.dynamic_graphics_state.ia;
+
    bool alpha_to_coverage = dyns->ms.alpha_to_coverage_enable;
    bool writes_z = writes_depth(cmdbuf);
    bool writes_s = writes_stencil(cmdbuf);
+
+   bool msaa = dyns->ms.rasterization_samples > 1;
+   if ((ia->primitive_topology == VK_PRIMITIVE_TOPOLOGY_LINE_LIST ||
+        ia->primitive_topology == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP) &&
+       rs->line.mode == VK_LINE_RASTERIZATION_MODE_BRESENHAM) {
+      /* we need to disable MSAA when rendering bresenham lines.
+       *
+       * From the Vulkan spec:
+       *   "When Bresenham lines are being rasterized, sample locations may
+       *    all be treated as being at the pixel center (this may affect
+       *    attribute and depth interpolation).""
+       */
+       msaa = false;
+   }
 
    if (dcd0_dirty) {
       struct mali_dcd_flags_0_packed dcd0;
@@ -1530,11 +1553,14 @@ prepare_dcd(struct panvk_cmd_buffer *cmdbuf)
             cfg.overdraw_alpha1 = true;
          }
 
+         if (rs->line.mode == VK_LINE_RASTERIZATION_MODE_BRESENHAM)
+            cfg.aligned_line_ends = true;
+
          cfg.front_face_ccw = rs->front_face == VK_FRONT_FACE_COUNTER_CLOCKWISE;
          cfg.cull_front_face = (rs->cull_mode & VK_CULL_MODE_FRONT_BIT) != 0;
          cfg.cull_back_face = (rs->cull_mode & VK_CULL_MODE_BACK_BIT) != 0;
 
-         cfg.multisample_enable = dyns->ms.rasterization_samples > 1;
+         cfg.multisample_enable = msaa;
          cfg.occlusion_query = cmdbuf->state.gfx.occlusion_query.mode;
          cfg.alpha_to_coverage = alpha_to_coverage;
       }
@@ -1546,9 +1572,7 @@ prepare_dcd(struct panvk_cmd_buffer *cmdbuf)
    if (dcd1_dirty) {
       struct mali_dcd_flags_1_packed dcd1;
       pan_pack(&dcd1, DCD_FLAGS_1, cfg) {
-         cfg.sample_mask = dyns->ms.rasterization_samples > 1
-                              ? dyns->ms.sample_mask
-                              : UINT16_MAX;
+         cfg.sample_mask = msaa ? dyns->ms.sample_mask : UINT16_MAX;
 
          if (fs) {
             cfg.render_target_mask =

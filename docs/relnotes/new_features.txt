@@ -25,3 +25,4 @@ EXT_shader_framebuffer_image_fetch_coherent on v3d
 KHR_blend_equation_advanced on v3d
 KHR_blend_equation_advanced_coherent on v3d
 KHR_partial_update on etnaviv
+VK_KHR_line_rasterization on panvk

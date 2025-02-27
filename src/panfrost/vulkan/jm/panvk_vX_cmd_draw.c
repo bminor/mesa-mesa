@@ -185,6 +185,9 @@ panvk_draw_prepare_fs_rsd(struct panvk_cmd_buffer *cmdbuf,
                 dyn_gfx_state_dirty(cmdbuf, RS_DEPTH_CLIP_ENABLE) ||
                 dyn_gfx_state_dirty(cmdbuf, RS_DEPTH_BIAS_ENABLE) ||
                 dyn_gfx_state_dirty(cmdbuf, RS_DEPTH_BIAS_FACTORS) ||
+                dyn_gfx_state_dirty(cmdbuf, RS_LINE_MODE) ||
+                /* line mode needs primitive topology */
+                dyn_gfx_state_dirty(cmdbuf, IA_PRIMITIVE_TOPOLOGY) ||
                 dyn_gfx_state_dirty(cmdbuf, CB_LOGIC_OP_ENABLE) ||
                 dyn_gfx_state_dirty(cmdbuf, CB_LOGIC_OP) ||
                 dyn_gfx_state_dirty(cmdbuf, CB_ATTACHMENT_COUNT) ||
@@ -219,6 +222,7 @@ panvk_draw_prepare_fs_rsd(struct panvk_cmd_buffer *cmdbuf,
    const struct vk_rasterization_state *rs = &dyns->rs;
    const struct vk_color_blend_state *cb = &dyns->cb;
    const struct vk_depth_stencil_state *ds = &dyns->ds;
+   const struct vk_input_assembly_state *ia = &dyns->ia;
    const struct panvk_shader *fs = get_fs(cmdbuf);
    const struct pan_shader_info *fs_info = fs ? &fs->info : NULL;
    unsigned bd_count = MAX2(cb->attachment_count, 1);
@@ -226,6 +230,20 @@ panvk_draw_prepare_fs_rsd(struct panvk_cmd_buffer *cmdbuf,
    bool test_z = has_depth_att(cmdbuf) && ds->depth.test_enable;
    bool writes_z = writes_depth(cmdbuf);
    bool writes_s = writes_stencil(cmdbuf);
+
+   bool msaa = dyns->ms.rasterization_samples > 1;
+   if ((ia->primitive_topology == VK_PRIMITIVE_TOPOLOGY_LINE_LIST ||
+        ia->primitive_topology == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP) &&
+       rs->line.mode == VK_LINE_RASTERIZATION_MODE_BRESENHAM) {
+      /* we need to disable MSAA when rendering bresenham lines.
+       *
+       * From the Vulkan spec:
+       *   "When Bresenham lines are being rasterized, sample locations may
+       *    all be treated as being at the pixel center (this may affect
+       *    attribute and depth interpolation).""
+       */
+      msaa = false;
+   }
 
    struct panfrost_ptr ptr = panvk_cmd_alloc_desc_aggregate(
       cmdbuf, PAN_DESC(RENDERER_STATE), PAN_DESC_ARRAY(bd_count, BLEND));
@@ -251,7 +269,6 @@ panvk_draw_prepare_fs_rsd(struct panvk_cmd_buffer *cmdbuf,
 
    pan_pack(rsd, RENDERER_STATE, cfg) {
       bool alpha_to_coverage = dyns->ms.alpha_to_coverage_enable;
-      bool msaa = dyns->ms.rasterization_samples > 1;
 
       if (fs) {
          pan_shader_prepare_rsd(fs_info, fs_code, &cfg);
@@ -284,7 +301,7 @@ panvk_draw_prepare_fs_rsd(struct panvk_cmd_buffer *cmdbuf,
          cfg.properties.pixel_kill_operation = earlyzs.kill;
          cfg.properties.zs_update_operation = earlyzs.update;
          cfg.multisample_misc.evaluate_per_sample =
-            (fs->info.fs.sample_shading && msaa);
+            (fs->info.fs.sample_shading && dyns->ms.rasterization_samples > 1);
       } else {
          cfg.properties.depth_source = MALI_DEPTH_SOURCE_FIXED_FUNCTION;
          cfg.properties.allow_forward_pixel_to_kill = true;
@@ -313,6 +330,9 @@ panvk_draw_prepare_fs_rsd(struct panvk_cmd_buffer *cmdbuf,
       cfg.stencil_mask_misc.alpha_test_compare_function = MALI_FUNC_ALWAYS;
       cfg.stencil_mask_misc.front_facing_depth_bias = rs->depth_bias.enable;
       cfg.stencil_mask_misc.back_facing_depth_bias = rs->depth_bias.enable;
+
+      if (rs->line.mode == VK_LINE_RASTERIZATION_MODE_BRESENHAM)
+         cfg.stencil_mask_misc.aligned_line_ends = true;
 
       cfg.depth_units = rs->depth_bias.constant_factor;
       cfg.depth_factor = rs->depth_bias.slope_factor;

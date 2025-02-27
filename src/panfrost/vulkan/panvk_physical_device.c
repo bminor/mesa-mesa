@@ -202,6 +202,7 @@ get_device_extensions(const struct panvk_physical_device *device,
       .KHR_image_format_list = true,
       .KHR_imageless_framebuffer = true,
       .KHR_index_type_uint8 = true,
+      .KHR_line_rasterization = true,
       .KHR_maintenance1 = true,
       .KHR_maintenance2 = true,
       .KHR_maintenance3 = true,
@@ -251,6 +252,7 @@ get_device_extensions(const struct panvk_physical_device *device,
       .EXT_image_drm_format_modifier = true,
       .EXT_image_robustness = true,
       .EXT_index_type_uint8 = true,
+      .EXT_line_rasterization = true,
       .EXT_physical_device_drm = true,
       .EXT_pipeline_creation_cache_control = true,
       .EXT_pipeline_creation_feedback = true,
@@ -389,6 +391,10 @@ get_features(const struct panvk_physical_device *device,
       /* Vulkan 1.4 */
       .shaderSubgroupRotate = true,
       .shaderSubgroupRotateClustered = true,
+
+      /* VK_KHR_line_rasterization */
+      .rectangularLines = true,
+      .bresenhamLines = true,
 
       /* VK_EXT_graphics_pipeline_library */
       .graphicsPipelineLibrary = true,
@@ -853,6 +859,9 @@ get_device_properties(const struct panvk_instance *instance,
       .uniformTexelBufferOffsetSingleTexelAlignment = true,
       /* XXX: VK_KHR_maintenance4 */
       .maxBufferSize = 1 << 30,
+
+      /* VK_KHR_line_rasterization */
+      .lineSubPixelPrecisionBits = 8,
 
       /* VK_EXT_custom_border_color */
       .maxCustomBorderColorSamplers = 32768,
