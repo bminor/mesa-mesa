@@ -213,8 +213,7 @@ anv_shader_bin_create(struct anv_device *device,
                       const struct brw_compile_stats *stats, uint32_t num_stats,
                       const nir_xfb_info *xfb_info_in,
                       const struct anv_pipeline_bind_map *bind_map,
-                      const struct anv_push_descriptor_info *push_desc_info,
-                      enum anv_dynamic_push_bits dynamic_push_values)
+                      const struct anv_push_descriptor_info *push_desc_info)
 {
    VK_MULTIALLOC(ma);
    VK_MULTIALLOC_DECL(&ma, struct anv_shader_bin, shader, 1);
@@ -367,8 +366,6 @@ anv_shader_bin_create(struct anv_device *device,
       shader->xfb_info = NULL;
    }
 
-   shader->dynamic_push_values = dynamic_push_values;
-
    typed_memcpy(&shader->push_desc_info, push_desc_info, 1);
 
    shader->bind_map = *bind_map;
@@ -433,8 +430,6 @@ anv_shader_bin_serialize(struct vk_pipeline_cache_object *object,
    } else {
       blob_write_uint32(blob, 0);
    }
-
-   blob_write_uint32(blob, shader->dynamic_push_values);
 
    blob_write_uint32(blob, shader->push_desc_info.used_descriptors);
    blob_write_uint32(blob, shader->push_desc_info.fully_promoted_ubo_descriptors);
@@ -509,8 +504,6 @@ anv_shader_bin_deserialize(struct vk_pipeline_cache *cache,
    if (xfb_size)
       xfb_info = blob_read_bytes(blob, xfb_size);
 
-   enum anv_dynamic_push_bits dynamic_push_values = blob_read_uint32(blob);
-
    struct anv_push_descriptor_info push_desc_info = {};
    push_desc_info.used_descriptors = blob_read_uint32(blob);
    push_desc_info.fully_promoted_ubo_descriptors = blob_read_uint32(blob);
@@ -555,8 +548,7 @@ anv_shader_bin_deserialize(struct vk_pipeline_cache *cache,
                             kernel_data, kernel_size,
                             &prog_data.base, prog_data_size,
                             stats, num_stats, xfb_info, &bind_map,
-                            &push_desc_info,
-                            dynamic_push_values);
+                            &push_desc_info);
 
    ralloc_free(mem_ctx);
 
@@ -613,8 +605,7 @@ anv_device_upload_kernel(struct anv_device *device,
                             params->num_stats,
                             params->xfb_info,
                             params->bind_map,
-                            params->push_desc_info,
-                            params->dynamic_push_values);
+                            params->push_desc_info);
    if (shader == NULL)
       return NULL;
 

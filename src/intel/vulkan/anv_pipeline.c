@@ -265,8 +265,6 @@ struct anv_pipeline_stage {
 
    bool uses_bt_for_push_descs;
 
-   enum anv_dynamic_push_bits dynamic_push_values;
-
    union brw_any_prog_data prog_data;
 
    uint32_t num_stats;
@@ -798,36 +796,6 @@ shared_type_info(const struct glsl_type *type, unsigned *size, unsigned *align)
    *align = comp_size * (length == 3 ? 4 : length);
 }
 
-static enum anv_dynamic_push_bits
-anv_nir_compute_dynamic_push_bits(nir_shader *shader)
-{
-   enum anv_dynamic_push_bits ret = 0;
-
-   nir_foreach_function_impl(impl, shader) {
-      nir_foreach_block(block, impl) {
-         nir_foreach_instr(instr, block) {
-            if (instr->type != nir_instr_type_intrinsic)
-               continue;
-
-            nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
-            if (intrin->intrinsic != nir_intrinsic_load_push_constant)
-               continue;
-
-            switch (nir_intrinsic_base(intrin)) {
-            case anv_drv_const_offset(gfx.tcs_input_vertices):
-               ret |= ANV_DYNAMIC_PUSH_INPUT_VERTICES;
-               break;
-
-            default:
-               break;
-            }
-         }
-      }
-   }
-
-   return ret;
-}
-
 static void
 anv_fixup_subgroup_size(struct anv_device *device, struct shader_info *info)
 {
@@ -1112,8 +1080,6 @@ anv_pipeline_lower_nir(struct anv_pipeline *pipeline,
    }
 
    NIR_PASS_V(nir, anv_nir_update_resource_intel_block);
-
-   stage->dynamic_push_values = anv_nir_compute_dynamic_push_bits(nir);
 
    NIR_PASS_V(nir, anv_nir_compute_push_layout,
               pdevice, stage->key.base.robust_flags,
@@ -2500,7 +2466,6 @@ anv_graphics_pipeline_compile(struct anv_graphics_base_pipeline *pipeline,
          .xfb_info            = stage->nir->xfb_info,
          .bind_map            = &stage->bind_map,
          .push_desc_info      = &stage->push_desc_info,
-         .dynamic_push_values = stage->dynamic_push_values,
       };
 
       stage->bin =
@@ -2688,7 +2653,6 @@ anv_pipeline_compile_cs(struct anv_compute_pipeline *pipeline,
          .num_stats           = stage.num_stats,
          .bind_map            = &stage.bind_map,
          .push_desc_info      = &stage.push_desc_info,
-         .dynamic_push_values = stage.dynamic_push_values,
       };
 
       stage.bin = anv_device_upload_kernel(device, cache, &upload_params);
@@ -2894,13 +2858,6 @@ anv_graphics_pipeline_emit(struct anv_graphics_pipeline *pipeline,
       assert(anv_pipeline_is_mesh(pipeline));
       /* TODO(mesh): Mesh vs. Multiview with Instancing. */
    }
-
-
-   pipeline->dynamic_patch_control_points =
-      anv_pipeline_has_stage(pipeline, MESA_SHADER_TESS_CTRL) &&
-      BITSET_TEST(state->dynamic, MESA_VK_DYNAMIC_TS_PATCH_CONTROL_POINTS) &&
-      (pipeline->base.shaders[MESA_SHADER_TESS_CTRL]->dynamic_push_values &
-       ANV_DYNAMIC_PUSH_INPUT_VERTICES);
 
    if (pipeline->base.shaders[MESA_SHADER_FRAGMENT] && state->ms) {
       pipeline->sample_shading_enable = state->ms->sample_shading_enable;
@@ -3434,7 +3391,6 @@ compile_upload_rt_shader(struct anv_ray_tracing_pipeline *pipeline,
       .num_stats           = 1,
       .bind_map            = &stage->bind_map,
       .push_desc_info      = &stage->push_desc_info,
-      .dynamic_push_values = stage->dynamic_push_values,
    };
 
    stage->bin =

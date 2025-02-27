@@ -2020,7 +2020,8 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_gfx_dynamic_state *hw_state,
     * the pipeline change or the dynamic value change, check the value and
     * reemit if needed.
     */
-   if (pipeline->dynamic_patch_control_points &&
+   const struct brw_tcs_prog_data *tcs_prog_data = get_tcs_prog_data(pipeline);
+   if (tcs_prog_data && tcs_prog_data->input_vertices == 0 &&
        ((gfx->dirty & ANV_CMD_DIRTY_PIPELINE) ||
         BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_TS_PATCH_CONTROL_POINTS)))
       SET(TCS_INPUT_VERTICES, tcs_input_vertices, dyn->ts.patch_control_points);

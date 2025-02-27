@@ -1452,7 +1452,6 @@ struct nir_xfb_info;
 struct anv_pipeline_bind_map;
 struct anv_pipeline_sets_layout;
 struct anv_push_descriptor_info;
-enum anv_dynamic_push_bits;
 
 void anv_device_init_embedded_samplers(struct anv_device *device);
 void anv_device_finish_embedded_samplers(struct anv_device *device);
@@ -4768,11 +4767,6 @@ struct anv_push_descriptor_info {
    uint8_t used_set_buffer;
 };
 
-/* A list of values we push to implement some of the dynamic states */
-enum anv_dynamic_push_bits {
-   ANV_DYNAMIC_PUSH_INPUT_VERTICES = BITFIELD_BIT(0),
-};
-
 struct anv_shader_upload_params {
    gl_shader_stage stage;
 
@@ -4793,8 +4787,6 @@ struct anv_shader_upload_params {
    const struct anv_pipeline_bind_map *bind_map;
 
    const struct anv_push_descriptor_info *push_desc_info;
-
-   enum anv_dynamic_push_bits dynamic_push_values;
 };
 
 struct anv_embedded_sampler {
@@ -4825,8 +4817,6 @@ struct anv_shader_bin {
    struct anv_push_descriptor_info push_desc_info;
 
    struct anv_pipeline_bind_map bind_map;
-
-   enum anv_dynamic_push_bits dynamic_push_values;
 
    /* Not saved in the pipeline cache.
     *
@@ -4987,11 +4977,6 @@ struct anv_graphics_pipeline {
    struct vk_vertex_input_state                 vertex_input;
    struct vk_sample_locations_state             sample_locations;
    struct vk_dynamic_graphics_state             dynamic_state;
-
-   /* If true, the patch control points are passed through push constants
-    * (anv_push_constants::gfx::tcs_input_vertices)
-    */
-   bool                                         dynamic_patch_control_points;
 
    uint32_t                                     view_mask;
    uint32_t                                     instance_multiplier;
