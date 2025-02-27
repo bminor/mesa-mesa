@@ -1505,37 +1505,6 @@ radv_pipeline_needs_noop_fs(struct radv_graphics_pipeline *pipeline, const struc
 }
 
 static void
-radv_remove_varyings(nir_shader *nir)
-{
-   /* We can't demote mesh outputs to nir_var_shader_temp yet, because
-    * they don't support array derefs of vectors.
-    */
-   if (nir->info.stage == MESA_SHADER_MESH)
-      return;
-
-   bool fixup_derefs = false;
-
-   nir_foreach_shader_out_variable (var, nir) {
-      if (var->data.always_active_io)
-         continue;
-
-      if (var->data.location < VARYING_SLOT_VAR0)
-         continue;
-
-      nir->info.outputs_written &= ~BITFIELD64_BIT(var->data.location);
-      var->data.location = 0;
-      var->data.mode = nir_var_shader_temp;
-      fixup_derefs = true;
-   }
-
-   if (fixup_derefs) {
-      NIR_PASS(_, nir, nir_fixup_deref_modes);
-      NIR_PASS(_, nir, nir_remove_dead_variables, nir_var_shader_temp, NULL);
-      NIR_PASS(_, nir, nir_opt_dce);
-   }
-}
-
-static void
 radv_graphics_shaders_link(const struct radv_device *device, const struct radv_graphics_state_key *gfx_state,
                            struct radv_shader_stage *stages)
 {
@@ -2851,16 +2820,6 @@ radv_graphics_shaders_compile(struct radv_device *device, struct vk_pipeline_cac
 
       NIR_PASS(_, stages[MESA_SHADER_GEOMETRY].nir, nir_lower_gs_intrinsics, nir_gs_flags);
       NIR_PASS(_, stages[MESA_SHADER_GEOMETRY].nir, nir_lower_vars_to_ssa);
-   }
-
-   /* Remove all varyings when the fragment shader is a noop. */
-   if (noop_fs) {
-      radv_foreach_stage (i, active_nir_stages) {
-         if (radv_is_last_vgt_stage(&stages[i])) {
-            radv_remove_varyings(stages[i].nir);
-            break;
-         }
-      }
    }
 
    radv_graphics_shaders_link(device, gfx_state, stages);
