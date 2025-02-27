@@ -1437,13 +1437,32 @@ impl Shader<'_> {
         let mut gpr_limit = max(max_live[RegFile::GPR], 16);
         let mut total_gprs = gpr_limit + u32::from(tmp_gprs);
 
-        let mut max_gprs = if DEBUG.spill() {
-            // We need at least 16 registers to satisfy RA constraints for
-            // texture ops and another 2 for parallel copy lowering
-            18
-        } else {
-            self.sm.num_regs(RegFile::GPR)
-        };
+        let mut max_gprs = self.sm.num_regs(RegFile::GPR);
+
+        if DEBUG.spill() {
+            // To test spilling, reduce the number of registers to the minimum
+            // practical for RA.  We need at least 16 registers to satisfy RA
+            // constraints for texture ops.
+            max_gprs = 16;
+
+            // OpRegOut can use arbitrarily many GPRs
+            for b in &f.blocks {
+                for instr in b.instrs.iter().rev() {
+                    match &instr.op {
+                        Op::Exit(_) => (),
+                        Op::RegOut(op) => {
+                            let out_gprs =
+                                u32::try_from(op.srcs.len()).unwrap();
+                            max_gprs = max(max_gprs, out_gprs);
+                        }
+                        _ => break,
+                    }
+                }
+            }
+
+            // and another 2 for parallel copy
+            max_gprs += 2;
+        }
 
         if let ShaderStageInfo::Compute(cs_info) = &self.info.stage {
             max_gprs = min(
