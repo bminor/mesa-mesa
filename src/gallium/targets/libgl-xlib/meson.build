@@ -27,9 +27,9 @@ libgl = shared_library(
   gnu_symbol_visibility : 'hidden',
   link_args : [ld_args_bsymbolic, ld_args_gc_sections, gallium_xlib_ld_args],
   link_depends : gallium_xlib_link_depends,
-  link_whole : [libxlib, (with_shared_glapi ? libglapi_bridge : libglapi_static)],
+  link_whole : [libxlib, libglapi_bridge],
   link_with : [
-    libgalliumvl_stub, libws_xlib,
+    libgalliumvl_stub, libws_xlib, libglapi,
     libgallium, libmesa, gallium_xlib_link_with,
   ],
   dependencies : [dep_x11, idep_mesautil, dep_thread, dep_clock, dep_unwind, driver_swrast, driver_virgl, driver_asahi],

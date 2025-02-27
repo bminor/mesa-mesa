@@ -10,6 +10,8 @@ main_dispatch_h = custom_target(
   capture : true,
 )
 
+idep_dispatch_h = declare_dependency(sources : [main_dispatch_h])
+
 main_marshal_generated_h = custom_target(
   'marshal_generated.h',
   input : ['../../mapi/glapi/gen/marshal_generated_h.py', '../../mapi/glapi/gen/gl_and_es_API.xml'],
