@@ -4,7 +4,7 @@
         "description": "llvmpipe: Skip draw_mesh if the ms did not write gl_Position",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
