@@ -963,7 +963,7 @@ hk_compile_nir(struct hk_device *dev, const VkAllocationCallbacks *pAllocator,
    if (lock)
       simple_mtx_lock(lock);
 
-   agx_compile_shader_nir(nir, &backend_key, NULL, &shader->b);
+   agx_compile_shader_nir(nir, &backend_key, &shader->b);
 
    if (lock)
       simple_mtx_unlock(lock);
@@ -1460,24 +1460,7 @@ hk_shader_get_executable_statistics(
     * with zink.
     */
    struct hk_shader *shader = hk_any_variant(obj);
-
-   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat)
-   {
-      VK_COPY_STR(stat->name, "Code Size");
-      VK_COPY_STR(stat->description,
-                  "Size of the compiled shader binary, in bytes");
-      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-      stat->value.u64 = shader->code_size;
-   }
-
-   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat)
-   {
-      VK_COPY_STR(stat->name, "Number of GPRs");
-      VK_COPY_STR(stat->description, "Number of GPRs used by this pipeline");
-      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-      stat->value.u64 = shader->b.info.nr_gprs;
-   }
-
+   vk_add_agx2_stats(out, &shader->b.info.stats);
    return vk_outarray_status(&out);
 }
 

@@ -353,7 +353,7 @@ main(int argc, char **argv)
             }
 
             nir_shader *clone = nir_shader_clone(NULL, s);
-            agx_compile_shader_nir(clone, &key, NULL, &compiled);
+            agx_compile_shader_nir(clone, &key, &compiled);
             print_shader(fp_c, libfunc->name, *target, v, &compiled);
             free(compiled.binary);
             ralloc_free(clone);

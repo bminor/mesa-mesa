@@ -52,7 +52,7 @@ agx_compile_bg_eot_shader(struct agx_bg_eot_cache *cache, nir_shader *shader,
 
    struct agx_bg_eot_shader *res = rzalloc(cache->ht, struct agx_bg_eot_shader);
    struct agx_shader_part bin;
-   agx_compile_shader_nir(shader, key, NULL, &bin);
+   agx_compile_shader_nir(shader, key, &bin);
 
    res->info = bin.info;
    res->ptr = agx_pool_upload_aligned_with_bo(

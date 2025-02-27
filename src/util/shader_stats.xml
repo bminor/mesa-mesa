@@ -1,2 +1,16 @@
 <shaderdb>
+   <isa name="AGX2">
+      <stat name="Instructions" display="Instrs">Instruction count</stat>
+      <stat name="ALU">Estimated ALU cycle count</stat>
+      <stat name="FSCIB">Estimated F16/F32/SCIB cycle count</stat>
+      <stat name="IC">Estimated IC cycle count</stat>
+      <stat name="Code size">Binary size in bytes</stat>
+      <stat name="GPRs" type="u16">Number of 16-bit GPRs</stat>
+      <stat name="Uniforms" type="u16">Number of 16-bit uniform registers</stat>
+      <stat name="Scratch">Scratch size per thread in bytes</stat>
+      <stat name="Threads" more="better" type="u16">Maximum number of threads in flight on a compute unit</stat>
+      <stat name="Loops">Number of hardware loops</stat>
+      <stat name="Spills">Number of spill (stack store) instructions</stat>
+      <stat name="Fills">Number of fill (stack load) instructions</stat>
+    </isa>
 </shaderdb>

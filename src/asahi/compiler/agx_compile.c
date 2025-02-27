@@ -2744,34 +2744,32 @@ agx_set_st_vary_final(agx_context *ctx)
    agx_no_varyings(&_b);
 }
 
-static int
-agx_dump_stats(agx_context *ctx, unsigned size, char **out)
+static void
+agx_calc_stats(agx_context *ctx, unsigned size, struct agx2_stats *stats)
 {
-   unsigned nr_ins = 0, spills = 0, fills = 0;
+   struct agx_cycle_estimate cycles = agx_estimate_cycles(ctx);
+
+   *stats = (struct agx2_stats){
+      .alu = cycles.alu,
+      .fscib = cycles.f_scib,
+      .ic = cycles.ic,
+      .code_size = size,
+      .gprs = ctx->max_reg,
+      .uniforms = ctx->out->push_count,
+      .scratch = ctx->scratch_size_B,
+      .threads = agx_occupancy_for_register_count(ctx->max_reg).max_threads,
+      .loops = ctx->loop_count,
+   };
 
    /* Count instructions */
    agx_foreach_instr_global(ctx, I) {
-      nr_ins++;
+      stats->instrs++;
 
       if (I->op == AGX_OPCODE_STACK_STORE)
-         spills++;
+         stats->spills++;
       else if (I->op == AGX_OPCODE_STACK_LOAD)
-         fills++;
+         stats->fills++;
    }
-
-   struct agx_cycle_estimate cycles = agx_estimate_cycles(ctx);
-
-   unsigned nr_threads =
-      agx_occupancy_for_register_count(ctx->max_reg).max_threads;
-
-   return asprintf(
-      out,
-      "%s shader: %u inst, %u alu, %u fscib, %u ic, %u bytes, %u regs, "
-      "%u uniforms, %u scratch, %u threads, %u loops, "
-      "%u:%u spills:fills",
-      gl_shader_stage_name(ctx->stage), nr_ins, cycles.alu, cycles.f_scib,
-      cycles.ic, size, ctx->max_reg, ctx->out->push_count, ctx->scratch_size_B,
-      nr_threads, ctx->loop_count, spills, fills);
 }
 
 static bool
@@ -3461,7 +3459,6 @@ agx_should_dump(nir_shader *nir, unsigned agx_dbg_bit)
 static unsigned
 agx_compile_function_nir(nir_shader *nir, nir_function_impl *impl,
                          struct agx_shader_key *key,
-                         struct util_debug_callback *debug,
                          struct util_dynarray *binary,
                          struct agx_shader_info *out)
 {
@@ -3629,19 +3626,12 @@ agx_compile_function_nir(nir_shader *nir, nir_function_impl *impl,
 
    /* Don't dump statistics for preambles, since they're not worth optimizing */
    if (!impl->function->is_preamble) {
-      char *stats;
-      int ret = agx_dump_stats(ctx, binary->size, &stats);
+      agx_calc_stats(ctx, binary->size, &ctx->out->stats);
 
-      if (ret >= 0) {
-         if (agx_should_dump(nir, AGX_DBG_SHADERDB)) {
-            fprintf(stderr, "SHADER-DB: %s - %s\n", nir->info.label ?: "",
-                    stats);
-         }
-
-         if (debug)
-            util_debug_message(debug, SHADER_INFO, "%s", stats);
-
-         free(stats);
+      if (agx_should_dump(nir, AGX_DBG_SHADERDB)) {
+         agx2_stats_fprintf(stderr,
+                            _mesa_shader_stage_to_abbrev(nir->info.stage),
+                            &ctx->out->stats);
       }
    }
 
@@ -3769,7 +3759,6 @@ agx_preprocess_nir(nir_shader *nir)
 
 void
 agx_compile_shader_nir(nir_shader *nir, struct agx_shader_key *key,
-                       struct util_debug_callback *debug,
                        struct agx_shader_part *out)
 {
    agx_compiler_debug = agx_get_compiler_debug();
@@ -3849,7 +3838,7 @@ agx_compile_shader_nir(nir_shader *nir, struct agx_shader_key *key,
 
    nir_foreach_function_with_impl(func, impl, nir) {
       unsigned offset =
-         agx_compile_function_nir(nir, impl, key, debug, &binary, &out->info);
+         agx_compile_function_nir(nir, impl, key, &binary, &out->info);
 
       if (func->is_preamble) {
          info->preamble_offset = offset;

@@ -1672,7 +1672,7 @@ hk_get_prolog_epilog_locked(struct hk_device *dev, struct hk_internal_key *key,
    struct agx_shader_part *part =
       rzalloc(dev->prolog_epilog.ht, struct agx_shader_part);
 
-   agx_compile_shader_nir(b.shader, &backend_key, NULL, part);
+   agx_compile_shader_nir(b.shader, &backend_key, part);
 
    ralloc_free(b.shader);
 
