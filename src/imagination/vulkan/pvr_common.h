@@ -40,6 +40,7 @@
  */
 
 #include "hwdef/rogue_hw_defs.h"
+#include "pco/pco_data.h"
 #include "pvr_limits.h"
 #include "pvr_types.h"
 #include "util/list.h"
@@ -198,27 +199,32 @@ static_assert(sizeof(struct pvr_buffer_descriptor) == 2 * sizeof(uint32_t),
 
 struct pvr_sampler_descriptor {
    uint64_t words[ROGUE_NUM_TEXSTATE_SAMPLER_WORDS];
+   uint32_t meta[PCO_SAMPLER_META_COUNT];
 } PACKED;
 static_assert(sizeof(struct pvr_sampler_descriptor) ==
-                 ROGUE_NUM_TEXSTATE_SAMPLER_WORDS * sizeof(uint64_t),
+                 ROGUE_NUM_TEXSTATE_SAMPLER_WORDS * sizeof(uint64_t) +
+                    PCO_SAMPLER_META_COUNT * sizeof(uint32_t),
               "pvr_sampler_descriptor size is invalid.");
 
 struct pvr_image_descriptor {
    uint64_t words[ROGUE_NUM_TEXSTATE_IMAGE_WORDS];
+   uint32_t meta[PCO_IMAGE_META_COUNT];
 } PACKED;
 static_assert(sizeof(struct pvr_image_descriptor) ==
-                 ROGUE_NUM_TEXSTATE_IMAGE_WORDS * sizeof(uint64_t),
+                 ROGUE_NUM_TEXSTATE_IMAGE_WORDS * sizeof(uint64_t) +
+                    PCO_IMAGE_META_COUNT * sizeof(uint32_t),
               "pvr_image_descriptor size is invalid.");
 
 struct pvr_combined_image_sampler_descriptor {
    struct pvr_image_descriptor image;
    struct pvr_sampler_descriptor sampler;
 } PACKED;
-static_assert(sizeof(struct pvr_combined_image_sampler_descriptor) ==
-                 (ROGUE_NUM_TEXSTATE_IMAGE_WORDS +
-                  ROGUE_NUM_TEXSTATE_SAMPLER_WORDS) *
-                    sizeof(uint64_t),
-              "pvr_combined_image_sampler_descriptor size is invalid.");
+static_assert(
+   sizeof(struct pvr_combined_image_sampler_descriptor) ==
+      (ROGUE_NUM_TEXSTATE_IMAGE_WORDS + ROGUE_NUM_TEXSTATE_SAMPLER_WORDS) *
+            sizeof(uint64_t) +
+         (PCO_IMAGE_META_COUNT + PCO_SAMPLER_META_COUNT) * sizeof(uint32_t),
+   "pvr_combined_image_sampler_descriptor size is invalid.");
 
 struct pvr_sampler {
    struct vk_sampler vk;

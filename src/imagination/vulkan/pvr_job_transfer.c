@@ -1612,7 +1612,7 @@ static inline VkResult pvr_image_state_set_codegen_defaults(
    if (result != VK_SUCCESS)
       return result;
 
-   memcpy(mem_ptr, &image_state, sizeof(image_state));
+   memcpy(mem_ptr, &image_state, sizeof(image_state) - (4 * sizeof(uint32_t)));
 
    return VK_SUCCESS;
 }

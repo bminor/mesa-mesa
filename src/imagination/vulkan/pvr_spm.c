@@ -1007,8 +1007,8 @@ pvr_spm_init_bgobj_state(struct pvr_device *device,
       uint64_t *mem_ptr_u64 = (uint64_t *)mem_ptr;
       uint64_t mem_used = 0;
 
-      STATIC_ASSERT((sizeof(struct pvr_image_descriptor) / sizeof(uint32_t)) ==
-                    PVR_IMAGE_DESCRIPTOR_SIZE);
+      assert((sizeof(struct pvr_image_descriptor) / sizeof(uint32_t)) ==
+             PVR_IMAGE_DESCRIPTOR_SIZE);
       mem_ptr_u64 +=
          i * (sizeof(struct pvr_image_descriptor) / sizeof(uint64_t));
 

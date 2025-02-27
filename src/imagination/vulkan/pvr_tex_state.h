@@ -103,6 +103,8 @@ struct pvr_texture_state_info {
 
    /** Address of texture, which must be aligned to at least 32bits. */
    pvr_dev_addr_t addr;
+
+   uint32_t layer_size;
 };
 
 VkResult pvr_pack_tex_state(struct pvr_device *device,

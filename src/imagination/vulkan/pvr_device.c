@@ -3136,7 +3136,13 @@ VkResult pvr_CreateSampler(VkDevice _device,
       }
    }
 
-   assert(!pCreateInfo->compareEnable);
+   if (pCreateInfo->compareEnable) {
+      sampler->descriptor.meta[PCO_SAMPLER_META_COMPARE_OP] =
+         pCreateInfo->compareOp;
+   } else {
+      sampler->descriptor.meta[PCO_SAMPLER_META_COMPARE_OP] =
+         VK_COMPARE_OP_NEVER;
+   }
 
    pvr_csb_pack (&sampler->descriptor.words[0], TEXSTATE_SAMPLER_WORD0, word) {
       const struct pvr_device_info *dev_info = &device->pdevice->dev_info;

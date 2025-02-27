@@ -245,5 +245,10 @@ VkResult pvr_pack_tex_state(struct pvr_device *device,
       }
    }
 
+   state->meta[PCO_IMAGE_META_LAYER_SIZE] = info->layer_size;
+   state->meta[PCO_IMAGE_META_RSVD0] = 0;
+   state->meta[PCO_IMAGE_META_RSVD1] = 0;
+   state->meta[PCO_IMAGE_META_RSVD2] = 0;
+
    return VK_SUCCESS;
 }

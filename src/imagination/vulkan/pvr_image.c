@@ -336,6 +336,7 @@ VkResult pvr_CreateImageView(VkDevice _device,
    info.addr = image->dev_addr;
 
    info.format = pCreateInfo->format;
+   info.layer_size = image->layer_size;
 
    pvr_adjust_non_compressed_view(image, &info);
 
