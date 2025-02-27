@@ -1691,8 +1691,7 @@ dgc_emit_push_constant(struct dgc_cmdbuf *cs, nir_def *stream_addr, nir_def *seq
    nir_builder *b = cs->b;
 
    nir_def *push_constant_stages = dgc_get_push_constant_stages(cs);
-   radv_foreach_stage(s, stages)
-   {
+   radv_foreach_stage (s, stages) {
       nir_push_if(b, nir_test_mask(b, push_constant_stages, mesa_to_vk_shader_stage(s)));
       {
          dgc_emit_push_constant_for_stage(cs, stream_addr, sequence_id, &params, s);

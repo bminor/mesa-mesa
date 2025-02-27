@@ -2911,8 +2911,7 @@ radv_emit_graphics_shaders(struct radv_cmd_buffer *cmd_buffer)
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
 
-   radv_foreach_stage(s, cmd_buffer->state.active_stages & RADV_GRAPHICS_STAGE_BITS)
-   {
+   radv_foreach_stage (s, cmd_buffer->state.active_stages & RADV_GRAPHICS_STAGE_BITS) {
       switch (s) {
       case MESA_SHADER_VERTEX:
          radv_emit_vertex_shader(cmd_buffer);
@@ -5593,8 +5592,7 @@ radv_flush_descriptors(struct radv_cmd_buffer *cmd_buffer, VkShaderStageFlags st
 
       radv_emit_descriptors_per_stage(device, cs, compute_shader, descriptors_state);
    } else {
-      radv_foreach_stage(stage, stages & ~VK_SHADER_STAGE_TASK_BIT_EXT)
-      {
+      radv_foreach_stage (stage, stages & ~VK_SHADER_STAGE_TASK_BIT_EXT) {
          if (!cmd_buffer->state.shaders[stage])
             continue;
 
@@ -5689,8 +5687,7 @@ radv_flush_constants(struct radv_cmd_buffer *cmd_buffer, VkShaderStageFlags stag
       radv_emit_all_inline_push_consts(device, cs, compute_shader, (uint32_t *)cmd_buffer->push_constants,
                                        &need_push_constants);
    } else {
-      radv_foreach_stage(stage, internal_stages & ~VK_SHADER_STAGE_TASK_BIT_EXT)
-      {
+      radv_foreach_stage (stage, internal_stages & ~VK_SHADER_STAGE_TASK_BIT_EXT) {
          shader = radv_get_shader(cmd_buffer->state.shaders, stage);
 
          if (!shader)
@@ -5728,8 +5725,7 @@ radv_flush_constants(struct radv_cmd_buffer *cmd_buffer, VkShaderStageFlags stag
          radv_emit_userdata_address(device, cs, compute_shader, AC_UD_PUSH_CONSTANTS, va);
       } else {
          prev_shader = NULL;
-         radv_foreach_stage(stage, internal_stages & ~VK_SHADER_STAGE_TASK_BIT_EXT)
-         {
+         radv_foreach_stage (stage, internal_stages & ~VK_SHADER_STAGE_TASK_BIT_EXT) {
             shader = radv_get_shader(cmd_buffer->state.shaders, stage);
 
             /* Avoid redundantly emitting the address for merged stages. */
@@ -7782,8 +7778,7 @@ radv_reset_shader_object_state(struct radv_cmd_buffer *cmd_buffer, VkPipelineBin
       }
       break;
    case VK_PIPELINE_BIND_POINT_GRAPHICS:
-      radv_foreach_stage(s, RADV_GRAPHICS_STAGE_BITS)
-      {
+      radv_foreach_stage (s, RADV_GRAPHICS_STAGE_BITS) {
          if (cmd_buffer->state.shader_objs[s]) {
             radv_bind_shader(cmd_buffer, NULL, s);
             cmd_buffer->state.shader_objs[s] = NULL;
@@ -7858,9 +7853,8 @@ radv_CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipeline
          return;
       radv_mark_descriptor_sets_dirty(cmd_buffer, pipelineBindPoint);
 
-      radv_foreach_stage(
-         stage, (cmd_buffer->state.active_stages | graphics_pipeline->active_stages) & RADV_GRAPHICS_STAGE_BITS)
-      {
+      radv_foreach_stage (
+         stage, (cmd_buffer->state.active_stages | graphics_pipeline->active_stages) & RADV_GRAPHICS_STAGE_BITS) {
          radv_bind_shader(cmd_buffer, graphics_pipeline->base.shaders[stage], stage);
       }
 
@@ -9426,8 +9420,7 @@ radv_emit_view_index_per_stage(struct radeon_cmdbuf *cs, const struct radv_shade
 static void
 radv_emit_view_index(const struct radv_cmd_state *cmd_state, struct radeon_cmdbuf *cs, unsigned index)
 {
-   radv_foreach_stage(stage, cmd_state->active_stages & ~VK_SHADER_STAGE_TASK_BIT_EXT)
-   {
+   radv_foreach_stage (stage, cmd_state->active_stages & ~VK_SHADER_STAGE_TASK_BIT_EXT) {
       const struct radv_shader *shader = radv_get_shader(cmd_state->shaders, stage);
 
       radv_emit_view_index_per_stage(cs, shader, shader->info.user_data_0, index);
@@ -14173,8 +14166,7 @@ radv_reset_pipeline_state(struct radv_cmd_buffer *cmd_buffer, VkPipelineBindPoin
       break;
    case VK_PIPELINE_BIND_POINT_GRAPHICS:
       if (cmd_buffer->state.graphics_pipeline) {
-         radv_foreach_stage(s, cmd_buffer->state.graphics_pipeline->active_stages)
-         {
+         radv_foreach_stage (s, cmd_buffer->state.graphics_pipeline->active_stages) {
             radv_bind_shader(cmd_buffer, NULL, s);
          }
          cmd_buffer->state.graphics_pipeline = NULL;

@@ -175,8 +175,7 @@ radv_shader_object_init_graphics(struct radv_shader_object *shader_obj, struct r
       if (stage == MESA_SHADER_VERTEX || stage == MESA_SHADER_TESS_EVAL || stage == MESA_SHADER_GEOMETRY)
          next_stages |= VK_SHADER_STAGE_FRAGMENT_BIT;
 
-      radv_foreach_stage(next_stage, next_stages)
-      {
+      radv_foreach_stage (next_stage, next_stages) {
          struct radv_shader *shaders[MESA_VULKAN_SHADER_STAGES] = {NULL};
          struct radv_shader_binary *binaries[MESA_VULKAN_SHADER_STAGES] = {NULL};
 

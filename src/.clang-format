@@ -232,6 +232,7 @@ ForEachMacros:
 
 # radv
   - PHASE
+  - radv_foreach_stage
 
 # Disable clang formatting by default. Drivers that use clang-format
 # inherit from this .clang-format file and re-enable formatting:

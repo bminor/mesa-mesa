@@ -2064,8 +2064,7 @@ radv_fill_shader_info_ngg(struct radv_device *device, struct radv_shader_stage *
       }
 
       struct radv_shader_stage *last_vgt_stage = NULL;
-      radv_foreach_stage(i, active_nir_stages)
-      {
+      radv_foreach_stage (i, active_nir_stages) {
          if (radv_is_last_vgt_stage(&stages[i])) {
             last_vgt_stage = &stages[i];
          }
@@ -2186,8 +2185,7 @@ radv_fill_shader_info(struct radv_device *device, const enum radv_pipeline_type 
                       const struct radv_graphics_state_key *gfx_state, struct radv_shader_stage *stages,
                       VkShaderStageFlagBits active_nir_stages)
 {
-   radv_foreach_stage(i, active_nir_stages)
-   {
+   radv_foreach_stage (i, active_nir_stages) {
       bool consider_force_vrs = false;
 
       if (radv_is_last_vgt_stage(&stages[i])) {
@@ -2669,8 +2667,7 @@ radv_graphics_shaders_compile(struct radv_device *device, struct vk_pipeline_cac
       NIR_PASS(_, mesh, nir_lower_compute_system_values, &o);
    }
 
-   radv_foreach_stage(i, active_nir_stages)
-   {
+   radv_foreach_stage (i, active_nir_stages) {
       gl_shader_stage next_stage;
 
       if (stages[i].next_stage != MESA_SHADER_NONE) {
@@ -2699,8 +2696,7 @@ radv_graphics_shaders_compile(struct radv_device *device, struct vk_pipeline_cac
 
    /* Remove all varyings when the fragment shader is a noop. */
    if (noop_fs) {
-      radv_foreach_stage(i, active_nir_stages)
-      {
+      radv_foreach_stage (i, active_nir_stages) {
          if (radv_is_last_vgt_stage(&stages[i])) {
             radv_remove_varyings(stages[i].nir);
             break;
@@ -2732,8 +2728,7 @@ radv_graphics_shaders_compile(struct radv_device *device, struct vk_pipeline_cac
    if (stages[MESA_SHADER_VERTEX].nir && !gfx_state->vs.has_prolog)
       NIR_PASS(_, stages[MESA_SHADER_VERTEX].nir, radv_nir_optimize_vs_inputs_to_const, gfx_state);
 
-   radv_foreach_stage(i, active_nir_stages)
-   {
+   radv_foreach_stage (i, active_nir_stages) {
       int64_t stage_start = os_time_get_nano();
 
       radv_optimize_nir(stages[i].nir, stages[i].key.optimisations_disabled);
@@ -2766,8 +2761,8 @@ radv_graphics_shaders_compile(struct radv_device *device, struct vk_pipeline_cac
    /* Optimize constant clip/cull distance after linking to operate on scalar io in the last
     * pre raster stage.
     */
-   radv_foreach_stage(i, active_nir_stages & (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT))
-   {
+   radv_foreach_stage (i,
+                       active_nir_stages & (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)) {
       if (stages[i].key.optimisations_disabled)
          continue;
 
@@ -2782,8 +2777,7 @@ radv_graphics_shaders_compile(struct radv_device *device, struct vk_pipeline_cac
 
    radv_declare_pipeline_args(device, stages, gfx_state, active_nir_stages);
 
-   radv_foreach_stage(i, active_nir_stages)
-   {
+   radv_foreach_stage (i, active_nir_stages) {
       int64_t stage_start = os_time_get_nano();
 
       radv_postprocess_nir(device, gfx_state, &stages[i]);
@@ -3080,8 +3074,7 @@ done:
                if (!gfx_pipeline_lib->base.active_stages)
                   continue;
 
-               radv_foreach_stage(s, gfx_pipeline_lib->base.active_stages)
-               {
+               radv_foreach_stage (s, gfx_pipeline_lib->base.active_stages) {
                   creation_feedback->pPipelineStageCreationFeedbacks[num_feedbacks++] = stages[s].feedback;
                }
             }
