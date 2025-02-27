@@ -204,7 +204,7 @@
         "description": "anv: Do not support the tiling of DRM modifier if DECODE_DST",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "04709e4f7d7eaae8671b634834036d0da05938c1",
         "notes": null
