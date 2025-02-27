@@ -1102,6 +1102,9 @@ struct brw_tcs_prog_data
 {
    struct brw_vue_prog_data base;
 
+   /** Number of input vertices, 0 means dynamic */
+   unsigned input_vertices;
+
    /** Should the non-SINGLE_PATCH payload provide primitive ID? */
    bool include_primitive_id;
 
