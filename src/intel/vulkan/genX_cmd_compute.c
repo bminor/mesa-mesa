@@ -174,10 +174,11 @@ cmd_buffer_flush_compute_state(struct anv_cmd_buffer *cmd_buffer)
 
    if ((cmd_buffer->state.descriptors_dirty & VK_SHADER_STAGE_COMPUTE_BIT) ||
        cmd_buffer->state.compute.pipeline_dirty) {
-      genX(cmd_buffer_flush_descriptor_sets)(cmd_buffer,
-                                             &cmd_buffer->state.compute.base,
-                                             VK_SHADER_STAGE_COMPUTE_BIT,
-                                             &pipeline->cs, 1);
+      genX(cmd_buffer_flush_descriptor_sets)(
+         cmd_buffer,
+         &cmd_buffer->state.compute.base,
+         VK_SHADER_STAGE_COMPUTE_BIT,
+         (const struct anv_shader_bin **)&pipeline->cs, 1);
       cmd_buffer->state.descriptors_dirty &= ~VK_SHADER_STAGE_COMPUTE_BIT;
 
 #if GFX_VERx10 < 125

@@ -919,7 +919,7 @@ cmd_buffer_flush_gfx_state(struct anv_cmd_buffer *cmd_buffer)
          cmd_buffer,
          &cmd_buffer->state.gfx.base,
          descriptors_dirty,
-         pipeline->base.shaders,
+         (const struct anv_shader_bin **)pipeline->base.shaders,
          ARRAY_SIZE(pipeline->base.shaders));
       cmd_buffer->state.descriptors_dirty &= ~dirty;
    }

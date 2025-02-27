@@ -3165,7 +3165,7 @@ struct anv_descriptor_set {
 };
 
 static inline bool
-anv_descriptor_set_is_push(struct anv_descriptor_set *set)
+anv_descriptor_set_is_push(const struct anv_descriptor_set *set)
 {
    return set->pool == NULL;
 }
