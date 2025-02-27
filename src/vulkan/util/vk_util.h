@@ -412,6 +412,29 @@ vk_descriptor_type_is_dynamic(VkDescriptorType type)
    memset(field + len, 0, sizeof(field) - len);                \
 } while(0)
 
+#define vk_add_exec_statistic(out, name_, description_, format_enum,           \
+                              format_member, value_)                           \
+   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &(out), stat)    \
+   {                                                                           \
+      VK_COPY_STR(stat->name, name_);                                          \
+      VK_COPY_STR(stat->description, description_);                            \
+      stat->format =                                                           \
+         VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_##format_enum##_KHR;          \
+      stat->value.format_member = (value_);                                    \
+   }
+
+#define vk_add_exec_statistic_i64(out, name, description, value)               \
+   vk_add_exec_statistic(out, name, description, INT64, i64, value)
+
+#define vk_add_exec_statistic_u64(out, name, description, value)               \
+   vk_add_exec_statistic(out, name, description, UINT64, u64, value)
+
+#define vk_add_exec_statistic_f64(out, name, description, value)               \
+   vk_add_exec_statistic(out, name, description, FLOAT64, f64, value)
+
+#define vk_add_exec_statistic_bool(out, name, description, value)               \
+   vk_add_exec_statistic(out, name, description, BOOL32, b32, value)
+
 #ifdef __cplusplus
 }
 #endif
