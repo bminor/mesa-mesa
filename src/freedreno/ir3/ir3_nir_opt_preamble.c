@@ -764,8 +764,12 @@ ir3_nir_opt_prefetch_descriptors(nir_shader *nir, struct ir3_shader_variant *v)
 
 finished:
    nir_no_progress(main);
-   nir_progress(preamble, preamble,
-                nir_metadata_block_index | nir_metadata_dominance);
+
+   if (preamble) {
+      nir_progress(true, preamble,
+                   nir_metadata_block_index | nir_metadata_dominance);
+   }
+
    nir_instr_set_destroy(instr_set);
    free(preamble_defs);
    return progress;
