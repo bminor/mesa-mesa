@@ -27,7 +27,7 @@ rustup component add clippy rustfmt
 
 # Set up a config script for cross compiling -- cargo needs your system cc for
 # linking in cross builds, but doesn't know what you want to use for system cc.
-cat > /root/.cargo/config <<EOF
+cat > "$HOME/.cargo/config" <<EOF
 [target.armv7-unknown-linux-gnueabihf]
 linker = "arm-linux-gnueabihf-gcc"
 

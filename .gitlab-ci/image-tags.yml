@@ -20,7 +20,7 @@ include:
 
 variables:
    DEBIAN_X86_64_BUILD_BASE_IMAGE: "debian/x86_64_build-base"
-   DEBIAN_BASE_TAG: "20250223-way-prot"
+   DEBIAN_BASE_TAG: "20250304-virglcrosvm"
 
    DEBIAN_X86_64_BUILD_IMAGE_PATH: "debian/x86_64_build"
    DEBIAN_BUILD_TAG: "20250217-wrappers"
@@ -38,9 +38,9 @@ variables:
    DEBIAN_X86_64_TEST_ANDROID_IMAGE_PATH: "debian/x86_64_test-android"
 
    DEBIAN_TEST_ANDROID_TAG: "20250217-wrappers"
-   DEBIAN_TEST_GL_TAG: "20250223-way-prot"
-   DEBIAN_TEST_VK_TAG: "20250223-way-prot"
-   KERNEL_ROOTFS_TAG: "20250228-imx8mp"
+   DEBIAN_TEST_GL_TAG: "20250304-virglcrosvm"
+   DEBIAN_TEST_VK_TAG: "20250304-virglcrosvm"
+   KERNEL_ROOTFS_TAG: "20250304-virglcrosvm"
 
    DEBIAN_PYUTILS_IMAGE: "debian/x86_64_pyutils"
    DEBIAN_PYUTILS_TAG: "20250129-lavacli"

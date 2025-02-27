@@ -152,3 +152,5 @@ spec@arb_clip_control@arb_clip_control-depth-precision,Crash
 spec@nv_texture_barrier@blending-in-shader,Crash
 
 spec@arb_viewport_array@display-list,Fail
+# Fails since uprev in https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/33796
+KHR-GL46.texture_view.coherency,Fail
