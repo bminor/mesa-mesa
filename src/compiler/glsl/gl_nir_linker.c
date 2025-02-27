@@ -1481,16 +1481,27 @@ gl_nir_lower_optimize_varyings(const struct gl_constants *consts,
       if (!shader)
          continue;
 
-      nir_shader *nir = shader->Program->nir;
-
-      if (nir->info.stage == MESA_SHADER_COMPUTE)
+      if (i == MESA_SHADER_COMPUTE)
          return;
+      /* task shader does not have varying */
+      else if (i == MESA_SHADER_TASK)
+         continue;
 
-      shaders[num_shaders] = nir;
+      shaders[num_shaders++] = shader->Program->nir;
       max_uniform_comps = MIN2(max_uniform_comps,
                                consts->Program[i].MaxUniformComponents);
       max_ubos = MIN2(max_ubos, consts->Program[i].MaxUniformBlocks);
-      num_shaders++;
+   }
+
+   /* task shader only */
+   if (!num_shaders)
+      return;
+
+   /* reorder mesh and fragment shader */
+   if (prog->_LinkedShaders[MESA_SHADER_MESH]) {
+      shaders[0] = prog->_LinkedShaders[MESA_SHADER_MESH]->Program->nir;
+      if (prog->_LinkedShaders[MESA_SHADER_FRAGMENT])
+         shaders[1] = prog->_LinkedShaders[MESA_SHADER_FRAGMENT]->Program->nir;
    }
 
    /* Lower IO derefs to load and store intrinsics. */
