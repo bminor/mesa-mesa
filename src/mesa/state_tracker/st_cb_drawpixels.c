@@ -867,9 +867,6 @@ draw_textured_quad(struct gl_context *ctx, GLint x, GLint y, GLfloat z,
                               0, false, sv);
       st->state.num_sampler_views[PIPE_SHADER_FRAGMENT] =
          MAX2(st->state.num_sampler_views[PIPE_SHADER_FRAGMENT], num_sampler_view);
-
-      for (unsigned i = 0; i < num_sampler_view; i++)
-         pipe_sampler_view_reference(&sv[i], NULL);
    }
 
    /* viewport state: viewport matching window dims */
@@ -1377,6 +1374,10 @@ st_DrawPixels(struct gl_context *ctx, GLint x, GLint y,
                       driver_fp, fpv,
                       ctx->Current.RasterColor,
                       GL_FALSE, write_depth, write_stencil);
+
+
+   for (unsigned i = 0; i < num_sampler_view; i++)
+      pipe_sampler_view_reference(&sv[i], NULL);
 
    /* free the texture (but may persist in the cache) */
    pipe_resource_reference(&pt, NULL);
@@ -1903,6 +1904,9 @@ st_CopyPixels(struct gl_context *ctx, GLint srcx, GLint srcy,
                       driver_fp, fpv,
                       ctx->Current.Attrib[VERT_ATTRIB_COLOR0],
                       invertTex, write_depth, write_stencil);
+
+   for (unsigned i = 0; i < num_sampler_view; i++)
+      pipe_sampler_view_reference(&sv[i], NULL);
 
    pipe_resource_reference(&pt, NULL);
 }
