@@ -5791,6 +5791,7 @@ tu6_build_depth_plane_z_mode(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
 {
    enum a6xx_ztest_mode zmode = A6XX_EARLY_Z;
    bool depth_test_enable = cmd->vk.dynamic_graphics_state.ds.depth.test_enable;
+   bool stencil_test_enable = cmd->vk.dynamic_graphics_state.ds.stencil.test_enable;
    bool depth_write = tu6_writes_depth(cmd, depth_test_enable);
    bool stencil_write = tu6_writes_stencil(cmd);
    const struct tu_shader *fs = cmd->state.shaders[MESA_SHADER_FRAGMENT];
@@ -5808,6 +5809,7 @@ tu6_build_depth_plane_z_mode(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
                  : A6XX_LATE_Z;
    }
 
+   bool ds_test_enable = depth_test_enable || stencil_test_enable;
    bool force_late_z = 
       (subpass->depth_stencil_attachment.attachment != VK_ATTACHMENT_UNUSED &&
        pass->attachments[subpass->depth_stencil_attachment.attachment].format
@@ -5816,7 +5818,7 @@ tu6_build_depth_plane_z_mode(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
       /* alpha-to-coverage can behave like a discard. */
       cmd->vk.dynamic_graphics_state.ms.alpha_to_coverage_enable;
    if ((force_late_z && !fs->variant->fs.early_fragment_tests) ||
-       !depth_test_enable)
+       !ds_test_enable)
       zmode = A6XX_LATE_Z;
 
    /* User defined early tests take precedence above all else */
