@@ -40,7 +40,7 @@ variables:
    DEBIAN_TEST_ANDROID_TAG: "20250217-wrappers"
    DEBIAN_TEST_GL_TAG: "20250223-way-prot"
    DEBIAN_TEST_VK_TAG: "20250223-way-prot"
-   KERNEL_ROOTFS_TAG: "20250215-buildtags"
+   KERNEL_ROOTFS_TAG: "20250228-imx8mp"
 
    DEBIAN_PYUTILS_IMAGE: "debian/x86_64_pyutils"
    DEBIAN_PYUTILS_TAG: "20250129-lavacli"
@@ -49,7 +49,7 @@ variables:
    ALPINE_X86_64_LAVA_SSH_TAG: "20250124-spirv-tools"
    FEDORA_X86_64_BUILD_TAG: "20250223-way-prot"
 
-   KERNEL_TAG: "v6.13-rc4-mesa-50ca"
+   KERNEL_TAG: "v6.13-rc4-mesa-a34d"
    KERNEL_REPO: "gfx-ci/linux"
    PKG_REPO_REV: "95bf62c"
 
