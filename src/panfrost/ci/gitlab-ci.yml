@@ -362,7 +362,7 @@ panfrost-g52-vk-full:arm64:
   variables:
     DEQP_FRACTION: 1
 
-panfrost-g52-piglit-gles2:arm64:
+panfrost-g52-piglit:arm64:
   extends:
     - .lava-test-deqp:arm64
     - .panfrost-bifrost-gl-manual-rules
@@ -419,7 +419,7 @@ panfrost-g610-gl:arm64:
     PAN_MESA_DEBUG: "deqp,sync,indirect"
 
 # Disable this for now until it gets more stable
-.panfrost-g610-gl-piglit:arm64:
+.panfrost-g610-piglit:arm64:
   extends:
     - panfrost-g610-gl:arm64
     - .panfrost-valhall-gl-manual-rules
