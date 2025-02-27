@@ -210,6 +210,9 @@ st_pbo_draw(struct st_context *st, const struct st_pbo_addresses *addr,
 
    cso_set_tesseval_shader_handle(cso, NULL);
 
+   cso_set_task_shader_handle(cso, NULL);
+   cso_set_mesh_shader_handle(cso, NULL);
+
    /* Upload vertices */
    {
       struct pipe_vertex_buffer vbo = {0};

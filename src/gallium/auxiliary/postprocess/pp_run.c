@@ -119,11 +119,7 @@ pp_run(struct pp_queue_t *ppq, struct pipe_resource *in,
    /* save state (restored below) */
    cso_save_state(cso, (CSO_BIT_BLEND |
                         CSO_BIT_DEPTH_STENCIL_ALPHA |
-                        CSO_BIT_FRAGMENT_SHADER |
                         CSO_BIT_FRAMEBUFFER |
-                        CSO_BIT_TESSCTRL_SHADER |
-                        CSO_BIT_TESSEVAL_SHADER |
-                        CSO_BIT_GEOMETRY_SHADER |
                         CSO_BIT_RASTERIZER |
                         CSO_BIT_SAMPLE_MASK |
                         CSO_BIT_MIN_SAMPLES |
@@ -131,7 +127,7 @@ pp_run(struct pp_queue_t *ppq, struct pipe_resource *in,
                         CSO_BIT_STENCIL_REF |
                         CSO_BIT_STREAM_OUTPUTS |
                         CSO_BIT_VERTEX_ELEMENTS |
-                        CSO_BIT_VERTEX_SHADER |
+                        CSO_BITS_ALL_SHADERS |
                         CSO_BIT_VIEWPORT |
                         CSO_BIT_PAUSE_QUERIES |
                         CSO_BIT_RENDER_CONDITION));
@@ -143,6 +139,8 @@ pp_run(struct pp_queue_t *ppq, struct pipe_resource *in,
    cso_set_tessctrl_shader_handle(cso, NULL);
    cso_set_tesseval_shader_handle(cso, NULL);
    cso_set_geometry_shader_handle(cso, NULL);
+   cso_set_task_shader_handle(cso, NULL);
+   cso_set_mesh_shader_handle(cso, NULL);
    cso_set_render_condition(cso, NULL, false, 0);
 
    // Kept only for this frame.

@@ -110,6 +110,8 @@ struct cso_context_priv {
    void *tessctrl_shader, *tessctrl_shader_saved;
    void *tesseval_shader, *tesseval_shader_saved;
    void *compute_shader, *compute_shader_saved;
+   void *task_shader, *task_shader_saved;
+   void *mesh_shader, *mesh_shader_saved;
    void *velements, *velements_saved;
    struct pipe_query *render_condition, *render_condition_saved;
    enum pipe_render_cond_flag render_condition_mode, render_condition_mode_saved;
@@ -1171,6 +1173,82 @@ cso_restore_compute_samplers(struct cso_context_priv *ctx)
 }
 
 
+void
+cso_set_task_shader_handle(struct cso_context *cso, void *handle)
+{
+   struct cso_context_priv *ctx = (struct cso_context_priv *)cso;
+   assert(ctx->has_task_mesh_shader || !handle);
+
+   if (ctx->has_task_mesh_shader && ctx->task_shader != handle) {
+      ctx->task_shader = handle;
+      ctx->base.pipe->bind_ts_state(ctx->base.pipe, handle);
+   }
+}
+
+
+static void
+cso_save_task_shader(struct cso_context_priv *ctx)
+{
+   if (!ctx->has_task_mesh_shader)
+      return;
+
+   assert(!ctx->task_shader_saved);
+   ctx->task_shader_saved = ctx->task_shader;
+}
+
+
+static void
+cso_restore_task_shader(struct cso_context_priv *ctx)
+{
+   if (!ctx->has_task_mesh_shader)
+      return;
+
+   if (ctx->task_shader_saved != ctx->task_shader) {
+      ctx->base.pipe->bind_ts_state(ctx->base.pipe, ctx->task_shader_saved);
+      ctx->task_shader = ctx->task_shader_saved;
+   }
+   ctx->task_shader_saved = NULL;
+}
+
+
+void
+cso_set_mesh_shader_handle(struct cso_context *cso, void *handle)
+{
+   struct cso_context_priv *ctx = (struct cso_context_priv *)cso;
+   assert(ctx->has_task_mesh_shader || !handle);
+
+   if (ctx->has_task_mesh_shader && ctx->mesh_shader != handle) {
+      ctx->mesh_shader = handle;
+      ctx->base.pipe->bind_ms_state(ctx->base.pipe, handle);
+   }
+}
+
+
+static void
+cso_save_mesh_shader(struct cso_context_priv *ctx)
+{
+   if (!ctx->has_task_mesh_shader)
+      return;
+
+   assert(!ctx->mesh_shader_saved);
+   ctx->mesh_shader_saved = ctx->mesh_shader;
+}
+
+
+static void
+cso_restore_mesh_shader(struct cso_context_priv *ctx)
+{
+   if (!ctx->has_task_mesh_shader)
+      return;
+
+   if (ctx->mesh_shader_saved != ctx->mesh_shader) {
+      ctx->base.pipe->bind_ms_state(ctx->base.pipe, ctx->mesh_shader_saved);
+      ctx->mesh_shader = ctx->mesh_shader_saved;
+   }
+   ctx->mesh_shader_saved = NULL;
+}
+
+
 static void *
 cso_get_vertex_elements(struct cso_context_priv *ctx,
                         const struct cso_velems_state *velems)
@@ -1697,6 +1775,10 @@ cso_save_state(struct cso_context *ctx, unsigned state_mask)
       cso_save_viewport(cso);
    if (state_mask & CSO_BIT_PAUSE_QUERIES)
       cso->base.pipe->set_active_query_state(cso->base.pipe, false);
+   if (state_mask & CSO_BIT_TASK_SHADER)
+      cso_save_task_shader(cso);
+   if (state_mask & CSO_BIT_MESH_SHADER)
+      cso_save_mesh_shader(cso);
 }
 
 
@@ -1759,6 +1841,10 @@ cso_restore_state(struct cso_context *ctx, unsigned unbind)
       cso_restore_stream_outputs(cso);
    if (state_mask & CSO_BIT_PAUSE_QUERIES)
       cso->base.pipe->set_active_query_state(cso->base.pipe, true);
+   if (state_mask & CSO_BIT_TASK_SHADER)
+      cso_restore_task_shader(cso);
+   if (state_mask & CSO_BIT_MESH_SHADER)
+      cso_restore_mesh_shader(cso);
 
    cso->saved_state = 0;
 }
