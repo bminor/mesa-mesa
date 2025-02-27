@@ -155,6 +155,8 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
       VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR
          compute_shader_derivatives;
       VkPhysicalDeviceDepthClampZeroOneFeaturesKHR depth_clamp_zero_one;
+      VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR
+         fragment_shader_barycentric;
       VkPhysicalDeviceFragmentShadingRateFeaturesKHR fragment_shading_rate;
       VkPhysicalDeviceShaderClockFeaturesKHR shader_clock;
       VkPhysicalDeviceShaderMaximalReconvergenceFeaturesKHR shader_maximal_reconvergence;
@@ -183,6 +185,8 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
          graphics_pipeline_library;
       VkPhysicalDeviceImage2DViewOf3DFeaturesEXT image_2d_view_of_3d;
       VkPhysicalDeviceImageViewMinLodFeaturesEXT image_view_min_lod;
+      VkPhysicalDeviceLegacyVertexAttributesFeaturesEXT
+         legacy_vertex_attributes;
       VkPhysicalDeviceMultiDrawFeaturesEXT multi_draw;
       VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT mutable_descriptor_type;
       VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT non_seamless_cube_map;
@@ -203,6 +207,7 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
       VkPhysicalDeviceTransformFeedbackFeaturesEXT transform_feedback;
       VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT
          vertex_input_dynamic_state;
+      VkPhysicalDeviceYcbcrImageArraysFeaturesEXT ycbcr_image_arrays;
    } local_feats;
 
    /* Clear the struct so that all unqueried features will be VK_FALSE. */
@@ -292,6 +297,7 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
    /* KHR */
    VN_ADD_PNEXT_EXT(feats2, COMPUTE_SHADER_DERIVATIVES_FEATURES_KHR, local_feats.compute_shader_derivatives, exts->KHR_compute_shader_derivatives || exts->NV_compute_shader_derivatives);
    VN_ADD_PNEXT_EXT(feats2, DEPTH_CLAMP_ZERO_ONE_FEATURES_KHR, local_feats.depth_clamp_zero_one, exts->KHR_depth_clamp_zero_one || exts->EXT_depth_clamp_zero_one);
+   VN_ADD_PNEXT_EXT(feats2, FRAGMENT_SHADER_BARYCENTRIC_FEATURES_KHR, local_feats.fragment_shader_barycentric, exts->KHR_fragment_shader_barycentric);
    VN_ADD_PNEXT_EXT(feats2, FRAGMENT_SHADING_RATE_FEATURES_KHR, local_feats.fragment_shading_rate, exts->KHR_fragment_shading_rate);
    VN_ADD_PNEXT_EXT(feats2, SHADER_CLOCK_FEATURES_KHR, local_feats.shader_clock, exts->KHR_shader_clock);
    VN_ADD_PNEXT_EXT(feats2, SHADER_MAXIMAL_RECONVERGENCE_FEATURES_KHR, local_feats.shader_maximal_reconvergence, exts->KHR_shader_maximal_reconvergence);
@@ -312,6 +318,7 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
    VN_ADD_PNEXT_EXT(feats2, EXTENDED_DYNAMIC_STATE_3_FEATURES_EXT, local_feats.extended_dynamic_state_3, exts->EXT_extended_dynamic_state3);
    VN_ADD_PNEXT_EXT(feats2, FRAGMENT_SHADER_INTERLOCK_FEATURES_EXT, local_feats.fragment_shader_interlock, exts->EXT_fragment_shader_interlock);
    VN_ADD_PNEXT_EXT(feats2, GRAPHICS_PIPELINE_LIBRARY_FEATURES_EXT, local_feats.graphics_pipeline_library, exts->EXT_graphics_pipeline_library);
+   VN_ADD_PNEXT_EXT(feats2, LEGACY_VERTEX_ATTRIBUTES_FEATURES_EXT, local_feats.legacy_vertex_attributes, exts->EXT_legacy_vertex_attributes);
    VN_ADD_PNEXT_EXT(feats2, IMAGE_2D_VIEW_OF_3D_FEATURES_EXT, local_feats.image_2d_view_of_3d, exts->EXT_image_2d_view_of_3d);
    VN_ADD_PNEXT_EXT(feats2, IMAGE_VIEW_MIN_LOD_FEATURES_EXT, local_feats.image_view_min_lod, exts->EXT_image_view_min_lod);
    VN_ADD_PNEXT_EXT(feats2, MULTI_DRAW_FEATURES_EXT, local_feats.multi_draw, exts->EXT_multi_draw);
@@ -328,6 +335,7 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
    VN_ADD_PNEXT_EXT(feats2, SHADER_REPLICATED_COMPOSITES_FEATURES_EXT, local_feats.shader_replicated_composites, exts->EXT_shader_replicated_composites);
    VN_ADD_PNEXT_EXT(feats2, TRANSFORM_FEEDBACK_FEATURES_EXT, local_feats.transform_feedback, exts->EXT_transform_feedback);
    VN_ADD_PNEXT_EXT(feats2, VERTEX_INPUT_DYNAMIC_STATE_FEATURES_EXT, local_feats.vertex_input_dynamic_state, exts->EXT_vertex_input_dynamic_state);
+   VN_ADD_PNEXT_EXT(feats2, YCBCR_IMAGE_ARRAYS_FEATURES_EXT, local_feats.ycbcr_image_arrays, exts->EXT_ycbcr_image_arrays);
 
    /* clang-format on */
 
@@ -518,6 +526,8 @@ vn_physical_device_init_properties(struct vn_physical_device *physical_dev)
       /* KHR */
       VkPhysicalDeviceComputeShaderDerivativesPropertiesKHR
          compute_shader_derivatives;
+      VkPhysicalDeviceFragmentShaderBarycentricPropertiesKHR
+         fragment_shader_barycentric;
       VkPhysicalDeviceFragmentShadingRatePropertiesKHR fragment_shading_rate;
 
       /* EXT */
@@ -530,6 +540,8 @@ vn_physical_device_init_properties(struct vn_physical_device *physical_dev)
          extended_dynamic_state_3;
       VkPhysicalDeviceGraphicsPipelineLibraryPropertiesEXT
          graphics_pipeline_library;
+      VkPhysicalDeviceLegacyVertexAttributesPropertiesEXT
+         legacy_vertex_attributes;
       VkPhysicalDeviceMultiDrawPropertiesEXT multi_draw;
       VkPhysicalDevicePCIBusInfoPropertiesEXT pci_bus_info;
       VkPhysicalDeviceProvokingVertexPropertiesEXT provoking_vertex;
@@ -605,6 +617,7 @@ vn_physical_device_init_properties(struct vn_physical_device *physical_dev)
 
    /* KHR */
    VN_ADD_PNEXT_EXT(props2, COMPUTE_SHADER_DERIVATIVES_PROPERTIES_KHR, local_props.compute_shader_derivatives, exts->KHR_compute_shader_derivatives);
+   VN_ADD_PNEXT_EXT(props2, FRAGMENT_SHADER_BARYCENTRIC_PROPERTIES_KHR, local_props.fragment_shader_barycentric, exts->KHR_fragment_shader_barycentric);
    VN_ADD_PNEXT_EXT(props2, FRAGMENT_SHADING_RATE_PROPERTIES_KHR, local_props.fragment_shading_rate, exts->KHR_fragment_shading_rate);
 
    /* EXT */
@@ -613,6 +626,7 @@ vn_physical_device_init_properties(struct vn_physical_device *physical_dev)
    VN_ADD_PNEXT_EXT(props2, CUSTOM_BORDER_COLOR_PROPERTIES_EXT, local_props.custom_border_color, exts->EXT_custom_border_color);
    VN_ADD_PNEXT_EXT(props2, EXTENDED_DYNAMIC_STATE_3_PROPERTIES_EXT, local_props.extended_dynamic_state_3, exts->EXT_extended_dynamic_state3);
    VN_ADD_PNEXT_EXT(props2, GRAPHICS_PIPELINE_LIBRARY_PROPERTIES_EXT, local_props.graphics_pipeline_library, exts->EXT_graphics_pipeline_library);
+   VN_ADD_PNEXT_EXT(props2, LEGACY_VERTEX_ATTRIBUTES_PROPERTIES_EXT, local_props.legacy_vertex_attributes, exts->EXT_legacy_vertex_attributes);
    VN_ADD_PNEXT_EXT(props2, MULTI_DRAW_PROPERTIES_EXT, local_props.multi_draw, exts->EXT_multi_draw);
    VN_ADD_PNEXT_EXT(props2, PCI_BUS_INFO_PROPERTIES_EXT, local_props.pci_bus_info, exts->EXT_pci_bus_info);
    VN_ADD_PNEXT_EXT(props2, PROVOKING_VERTEX_PROPERTIES_EXT, local_props.provoking_vertex, exts->EXT_provoking_vertex);
@@ -680,6 +694,7 @@ vn_physical_device_init_properties(struct vn_physical_device *physical_dev)
 
    /* KHR */
    VN_SET_VK_PROPS_EXT(props, &local_props.compute_shader_derivatives, exts->KHR_compute_shader_derivatives);
+   VN_SET_VK_PROPS_EXT(props, &local_props.fragment_shader_barycentric, exts->KHR_fragment_shader_barycentric);
    VN_SET_VK_PROPS_EXT(props, &local_props.fragment_shading_rate, exts->KHR_fragment_shading_rate);
 
    /* EXT */
@@ -688,6 +703,7 @@ vn_physical_device_init_properties(struct vn_physical_device *physical_dev)
    VN_SET_VK_PROPS_EXT(props, &local_props.custom_border_color, exts->EXT_custom_border_color);
    VN_SET_VK_PROPS_EXT(props, &local_props.extended_dynamic_state_3, exts->EXT_extended_dynamic_state3);
    VN_SET_VK_PROPS_EXT(props, &local_props.graphics_pipeline_library, exts->EXT_graphics_pipeline_library);
+   VN_SET_VK_PROPS_EXT(props, &local_props.legacy_vertex_attributes, exts->EXT_legacy_vertex_attributes);
    VN_SET_VK_PROPS_EXT(props, &local_props.multi_draw, exts->EXT_multi_draw);
    VN_SET_VK_PROPS_EXT(props, &local_props.pci_bus_info, exts->EXT_pci_bus_info);
    VN_SET_VK_PROPS_EXT(props, &local_props.provoking_vertex, exts->EXT_provoking_vertex);
@@ -1184,6 +1200,7 @@ vn_physical_device_get_passthrough_extensions(
       .KHR_calibrated_timestamps = true,
       .KHR_compute_shader_derivatives = true,
       .KHR_depth_clamp_zero_one = true,
+      .KHR_fragment_shader_barycentric = true,
       .KHR_fragment_shading_rate = true,
       .KHR_pipeline_library = true,
       .KHR_shader_clock = true,
@@ -1216,6 +1233,7 @@ vn_physical_device_get_passthrough_extensions(
       .EXT_image_drm_format_modifier = true,
       .EXT_image_view_min_lod = true,
       .EXT_index_type_uint8 = true,
+      .EXT_legacy_vertex_attributes = true,
       .EXT_line_rasterization = true,
       .EXT_load_store_op_none = true,
       /* TODO: re-enable after generic app compat issues are resolved */
