@@ -985,22 +985,6 @@ adjust_later_block_ips(bblock_t *start_block, int ip_adjustment)
 }
 
 void
-brw_inst::insert_after(bblock_t *block, brw_inst *inst)
-{
-   assert(this != inst);
-   assert(block->end_ip_delta == 0);
-
-   if (!this->is_head_sentinel())
-      assert(inst_is_in_block(block, this) || !"Instruction not in block");
-
-   block->end_ip++;
-
-   adjust_later_block_ips(block, 1);
-
-   exec_node::insert_after(inst);
-}
-
-void
 brw_inst::insert_before(bblock_t *block, brw_inst *inst)
 {
    assert(this != inst);
