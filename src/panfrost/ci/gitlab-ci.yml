@@ -394,6 +394,19 @@ panfrost-g57-gl:arm64:
     # Oversubscribing by one thread helps deqp, but hurts piglit
     FDO_CI_CONCURRENT: 9
 
+panfrost-g57-piglit:arm64:
+  extends:
+    - .lava-test-deqp:arm64
+    - .panfrost-bifrost-gl-rules
+    - .panfrost-test
+    - .lava-mt8195-cherry-tomato-r2:arm64
+  variables:
+    HWCI_START_WESTON: 1
+    DEQP_SUITE: panfrost-g57-piglit
+    # Undersubscribing by one thread prevents test timeouts and speeds up
+    # the piglit job overall
+    FDO_CI_CONCURRENT: 7
+
 panfrost-g610-gl:arm64:
   parallel: 2
   extends:

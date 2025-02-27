@@ -21,3 +21,8 @@ namespace pollution@renderbuffer with glgetteximage-compressed
 
 # first seen 2023-05-13
 spec@egl 1.4@largest possible eglcreatepbuffersurface and then glclear
+
+# Initial flakes on mt8195-cherry-tomato-r2
+glx@glx-visuals-stencil
+spec@arb_texture_float@texwrap formats bordercolor
+spec@arb_texture_float@texwrap formats bordercolor@GL_INTENSITY16F_ARB- border color only
