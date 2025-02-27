@@ -32,7 +32,7 @@ static const driOptionDescription anv_dri_options[] = {
       DRI_CONF_ANV_QUERY_COPY_WITH_SHADER_THRESHOLD(6)
       DRI_CONF_ANV_FORCE_INDIRECT_DESCRIPTORS(false)
       DRI_CONF_SHADER_SPILLING_RATE(11)
-      DRI_CONF_OPT_B(intel_tbimr, true, "Enable TBIMR tiled rendering")
+      DRI_CONFIG_INTEL_TBIMR(true)
       DRI_CONF_ANV_COMPRESSION_CONTROL_ENABLED(false)
       DRI_CONF_ANV_FAKE_NONLOCAL_MEMORY(false)
       DRI_CONF_OPT_E(intel_stack_id, 512, 256, 2048,
