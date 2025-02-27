@@ -6809,7 +6809,8 @@ emit_wa_18020335297_dummy_draw(struct iris_batch *batch)
       vfg.DistributionMode = RR_STRICT;
    }
    iris_emit_cmd(batch, GENX(3DSTATE_VF), vf) {
-      vf.GeometryDistributionEnable = true;
+      vf.GeometryDistributionEnable =
+         batch->screen->driconf.enable_vf_distribution;
    }
 #endif
 
@@ -7478,6 +7479,9 @@ iris_upload_dirty_render_state(struct iris_context *ice,
                   te.TessellationDistributionMode = TEDMODE_RR_STRICT;
                else
                   te.TessellationDistributionMode = TEDMODE_RR_FREE;
+
+               if (!screen->driconf.enable_te_distribution)
+                  te.TessellationDistributionMode = TEDMODE_OFF;
             }
 
             uint32_t ds_state[GENX(3DSTATE_DS_length)] = { 0 };
@@ -8268,7 +8272,7 @@ iris_upload_dirty_render_state(struct iris_context *ice,
 
       iris_emit_cmd(batch, GENX(3DSTATE_VF), vf) {
 #if GFX_VERx10 >= 125
-         vf.GeometryDistributionEnable = true;
+         vf.GeometryDistributionEnable = screen->driconf.enable_vf_distribution;
 #endif
          if (draw->primitive_restart) {
             vf.IndexedDrawCutIndexEnable = true;

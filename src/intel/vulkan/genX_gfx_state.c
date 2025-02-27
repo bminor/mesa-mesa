@@ -2026,7 +2026,8 @@ emit_wa_18020335297_dummy_draw(struct anv_cmd_buffer *cmd_buffer)
       vfg.DistributionMode = RR_STRICT;
    }
    anv_batch_emit(&cmd_buffer->batch, GENX(3DSTATE_VF), vf) {
-      vf.GeometryDistributionEnable = true;
+      vf.GeometryDistributionEnable =
+         cmd_buffer->device->physical->instance->enable_vf_distribution;
    }
 #endif
 
@@ -2667,7 +2668,8 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
    if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_VF)) {
       anv_batch_emit(&cmd_buffer->batch, GENX(3DSTATE_VF), vf) {
 #if GFX_VERx10 >= 125
-         vf.GeometryDistributionEnable = true;
+         vf.GeometryDistributionEnable =
+            device->physical->instance->enable_vf_distribution;
 #endif
          vf.ComponentPackingEnable =
             device->physical->instance->vf_component_packing;

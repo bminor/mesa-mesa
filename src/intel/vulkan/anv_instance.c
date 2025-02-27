@@ -33,6 +33,8 @@ static const driOptionDescription anv_dri_options[] = {
       DRI_CONF_ANV_FORCE_INDIRECT_DESCRIPTORS(false)
       DRI_CONF_SHADER_SPILLING_RATE(11)
       DRI_CONFIG_INTEL_TBIMR(true)
+      DRI_CONFIG_INTEL_VF_DISTRIBUTION(true)
+      DRI_CONFIG_INTEL_TE_DISTRIBUTION(true)
       DRI_CONF_ANV_COMPRESSION_CONTROL_ENABLED(false)
       DRI_CONF_ANV_FAKE_NONLOCAL_MEMORY(false)
       DRI_CONF_OPT_E(intel_stack_id, 512, 256, 2048,
@@ -171,6 +173,10 @@ anv_init_dri_options(struct anv_instance *instance)
     instance->has_fake_sparse =
        driQueryOptionb(&instance->dri_options, "fake_sparse");
     instance->enable_tbimr = driQueryOptionb(&instance->dri_options, "intel_tbimr");
+    instance->enable_vf_distribution =
+       driQueryOptionb(&instance->dri_options, "intel_vf_distribution");
+    instance->enable_te_distribution =
+       driQueryOptionb(&instance->dri_options, "intel_te_distribution");
     instance->disable_fcv =
        driQueryOptionb(&instance->dri_options, "anv_disable_fcv");
     instance->enable_buffer_comp =

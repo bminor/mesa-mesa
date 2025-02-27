@@ -164,6 +164,9 @@ anv_blorp_batch_init(struct anv_cmd_buffer *cmd_buffer,
     */
    flags |= BLORP_BATCH_EMIT_3DSTATE_VF;
 
+   if (!cmd_buffer->device->physical->instance->enable_vf_distribution)
+      flags |= BLORP_BATCH_DISABLE_VF_DISTRIBUTION;
+
    blorp_batch_init(&cmd_buffer->device->blorp.context, batch, cmd_buffer, flags);
 }
 

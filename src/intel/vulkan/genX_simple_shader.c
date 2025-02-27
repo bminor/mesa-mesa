@@ -83,7 +83,8 @@ genX(emit_simpler_shader_init_fragment)(struct anv_simple_shader *state)
       /* Simple shaders have no requirement that we need to disable geometry
        * distribution.
        */
-      vf.GeometryDistributionEnable = true;
+      vf.GeometryDistributionEnable =
+         device->physical->instance->enable_vf_distribution;
 #endif
    }
    anv_batch_emit(batch, GENX(3DSTATE_VF_SGVS), sgvs) {

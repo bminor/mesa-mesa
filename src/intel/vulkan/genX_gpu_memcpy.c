@@ -83,7 +83,8 @@ emit_common_so_memcpy(struct anv_memcpy_state *state,
       /* Memcpy has no requirement that we need to disable geometry
        * distribution.
        */
-      vf.GeometryDistributionEnable = true;
+      vf.GeometryDistributionEnable =
+         device->physical->instance->enable_vf_distribution;
 #endif
    }
    anv_batch_emit(batch, GENX(3DSTATE_VF_SGVS), sgvs);

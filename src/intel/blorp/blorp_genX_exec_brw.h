@@ -599,7 +599,8 @@ blorp_emit_vertex_elements(struct blorp_batch *batch,
          /* Blorp shaders have no requirements that we need to disable geometry
           * distribution.
           */
-         vf.GeometryDistributionEnable = true;
+         vf.GeometryDistributionEnable =
+            (batch->flags & BLORP_BATCH_DISABLE_VF_DISTRIBUTION) ? false : true;
 #endif
       }
    }

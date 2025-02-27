@@ -139,6 +139,12 @@ enum blorp_batch_flags {
     * Might be needed by the driver it enabled VF component packing
     */
    BLORP_BATCH_EMIT_3DSTATE_VF       = BITFIELD_BIT(5),
+
+   /** Disable geometry distribution
+    *
+    * Mostly for debug
+    */
+   BLORP_BATCH_DISABLE_VF_DISTRIBUTION = BITFIELD_BIT(6),
 };
 
 struct blorp_batch {
