@@ -700,7 +700,9 @@ fn spill_values<S: Spill>(
                         let dst_ssa = &dst_vec[0];
 
                         debug_assert!(src.src_mod.is_none());
-                        let src_vec = src.src_ref.as_ssa().unwrap();
+                        let Some(src_vec) = src.src_ref.as_ssa() else {
+                            continue;
+                        };
                         debug_assert!(src_vec.comps() == 1);
                         let src_ssa = &src_vec[0];
 
@@ -725,7 +727,10 @@ fn spill_values<S: Spill>(
                     // We can now assume that a source is in W if and only if
                     // the file matches.  Remove all killed sources from W.
                     for (_, src) in pcopy.dsts_srcs.iter() {
-                        let src_ssa = &src.src_ref.as_ssa().unwrap()[0];
+                        let Some(src_vec) = src.src_ref.as_ssa() else {
+                            continue;
+                        };
+                        let src_ssa = &src_vec[0];
                         if !bl.is_live_after_ip(src_ssa, ip) {
                             b.w.remove(src_ssa);
                         }

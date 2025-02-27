@@ -63,10 +63,11 @@ impl CopyGraph {
 
 fn copy_needs_tmp(dst: &RegRef, src: &SrcRef) -> bool {
     if let Some(src_reg) = src.as_reg() {
-        (dst.file() == RegFile::Mem && src_reg.file() == RegFile::Mem)
+        (dst.file() == RegFile::Mem && src_reg.file() != RegFile::GPR)
             || (dst.file() == RegFile::Bar && src_reg.file() == RegFile::Bar)
     } else {
-        false
+        // Non-GPR to Mem copies need a temporary
+        dst.file() == RegFile::Mem
     }
 }
 
