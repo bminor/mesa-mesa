@@ -1879,7 +1879,7 @@ brw_opt_copy_propagation_defs(brw_shader &s)
                   progress = true;
                   ++uses_deleted[def->dst.nr];
                   if (defs.get_use_count(def->dst) == uses_deleted[def->dst.nr])
-                     def->remove(defs.get_block(def->dst), true);
+                     def->remove(def->block, true);
                }
 
                continue;
@@ -1913,7 +1913,7 @@ brw_opt_copy_propagation_defs(brw_shader &s)
              */
             if (def->conditional_mod == BRW_CONDITIONAL_NONE &&
                 defs.get_use_count(def->dst) == uses_deleted[def->dst.nr]) {
-               def->remove(defs.get_block(def->dst), true);
+               def->remove(def->block, true);
             }
          }
       }

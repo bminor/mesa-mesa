@@ -129,7 +129,7 @@ opt_saturate_propagation_local(brw_shader &s, bblock_t *block)
          /* If the def is in a different block the liveness based pass will
           * not be able to make progress, so skip it.
           */
-         if (block != defs.get_block(inst->src[0]))
+         if (block != def->block)
             continue;
       }
 

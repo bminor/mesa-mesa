@@ -270,13 +270,6 @@ public:
              def_insts[reg.nr] : NULL;
    }
 
-   bblock_t *
-   get_block(const brw_reg &reg) const
-   {
-      return reg.file == VGRF && reg.nr < def_count ?
-             def_blocks[reg.nr] : NULL;
-   }
-
    uint32_t
    get_use_count(const brw_reg &reg) const
    {
@@ -303,11 +296,10 @@ public:
 private:
    void mark_invalid(int);
    bool fully_defines(const brw_shader *v, brw_inst *);
-   void update_for_reads(const brw_idom_tree &idom, bblock_t *block, brw_inst *);
-   void update_for_write(const brw_shader *v, bblock_t *block, brw_inst *);
+   void update_for_reads(const brw_idom_tree &idom, brw_inst *);
+   void update_for_write(const brw_shader *v, brw_inst *);
 
    brw_inst **def_insts;
-   bblock_t **def_blocks;
    uint32_t *def_use_counts;
    unsigned def_count;
 };

@@ -30,7 +30,6 @@
  *
  *    const def_analysis &defs = s.def_analysis.require();
  *    brw_inst *def = defs.get(inst->src[i]); // returns NULL if non-SSA
- *    bblock_t *block = defs.get_block(inst->src[i]); // block containing def
  *
  * Def analysis requires the dominator tree, but not liveness information.
  */
@@ -40,13 +39,11 @@ static brw_inst *const UNSEEN = (brw_inst *) (uintptr_t) 1;
 void
 brw_def_analysis::mark_invalid(int nr)
 {
-   def_blocks[nr] = NULL;
    def_insts[nr] = NULL;
 }
 
 void
 brw_def_analysis::update_for_reads(const brw_idom_tree &idom,
-                                   bblock_t *block,
                                    brw_inst *inst)
 {
    /* We don't track accumulator use for def analysis, so if an instruction
@@ -81,7 +78,7 @@ brw_def_analysis::update_for_reads(const brw_idom_tree &idom,
           *
           */
          if (def_insts[nr] == UNSEEN ||
-             !idom.dominates(def_blocks[nr], block))
+             !idom.dominates(def_insts[nr]->block, inst->block))
             mark_invalid(nr);
       }
 
@@ -102,7 +99,6 @@ brw_def_analysis::fully_defines(const brw_shader *v, brw_inst *inst)
 
 void
 brw_def_analysis::update_for_write(const brw_shader *v,
-                                   bblock_t *block,
                                    brw_inst *inst)
 {
    const int nr = inst->dst.nr;
@@ -115,7 +111,6 @@ brw_def_analysis::update_for_write(const brw_shader *v,
     */
    if (def_insts[nr] == UNSEEN && fully_defines(v, inst)) {
       def_insts[nr] = inst;
-      def_blocks[nr] = block;
    } else {
       /* Otherwise this is a second write or a partial write, in which
        * case we know with certainty that this isn't an SSA def.
@@ -131,7 +126,6 @@ brw_def_analysis::brw_def_analysis(const brw_shader *v)
    def_count = v->alloc.count;
 
    def_insts      = new brw_inst*[def_count]();
-   def_blocks     = new bblock_t*[def_count]();
    def_use_counts = new uint32_t[def_count]();
 
    for (unsigned i = 0; i < def_count; i++)
@@ -139,8 +133,8 @@ brw_def_analysis::brw_def_analysis(const brw_shader *v)
 
    foreach_block_and_inst(block, brw_inst, inst, v->cfg) {
       if (inst->opcode != SHADER_OPCODE_UNDEF) {
-         update_for_reads(idom, block, inst);
-         update_for_write(v, block, inst);
+         update_for_reads(idom, inst);
+         update_for_write(v, inst);
       }
    }
 
@@ -177,17 +171,12 @@ brw_def_analysis::brw_def_analysis(const brw_shader *v)
 brw_def_analysis::~brw_def_analysis()
 {
    delete[] def_insts;
-   delete[] def_blocks;
    delete[] def_use_counts;
 }
 
 bool
 brw_def_analysis::validate(const brw_shader *v) const
 {
-   for (unsigned i = 0; i < def_count; i++) {
-      assert(!def_insts[i] == !def_blocks[i]);
-   }
-
    return true;
 }
 

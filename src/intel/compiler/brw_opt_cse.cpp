@@ -450,7 +450,7 @@ brw_opt_cse_defs(brw_shader &s)
             if (match == inst)
                continue;
 
-            bblock_t *def_block = defs.get_block(match->dst);
+            bblock_t *def_block = match->block;
             if (block != def_block && (local_only(inst) ||
                 !idom.dominates(def_block, block))) {
                /* If `match` doesn't dominate `inst` then remove it from
