@@ -1,7 +1,7 @@
 include:
   - local: 'src/intel/ci/gitlab-ci-inc.yml'
 
-anv-jsl:
+anv-jsl-vk:
   extends:
     - .anv-test
     - .lava-acer-cb317-1h-c3z6-dedede:x86_64
@@ -12,16 +12,16 @@ anv-jsl:
     EXTERNAL_KERNEL_TAG: "v6.6.21-mesa-f8ea"
   parallel: 5
 
-anv-jsl-full:
+anv-jsl-vk-full:
   extends:
-    - anv-jsl
+    - anv-jsl-vk
     - .anv-manual-rules
   variables:
     DEQP_SUITE: anv-jsl-full
   parallel: 4
   timeout: 2h
 
-anv-adl:
+anv-adl-vk:
   extends:
     - .anv-test
     - .lava-acer-cbv514-1h-34uz-brya:x86_64
@@ -31,16 +31,16 @@ anv-adl:
   timeout: 30m
   parallel: 4
 
-anv-adl-full:
+anv-adl-vk-full:
   extends:
-    - anv-adl
+    - anv-adl-vk
     - .anv-manual-rules
   variables:
     DEQP_SUITE: anv-adl-full
   timeout: 1h 40m
   parallel: 3
 
-anv-tgl:
+anv-tgl-vk:
   extends:
     - .anv-test
     - .lava-acer-cp514-2h-1160g7-volteer:x86_64
@@ -49,9 +49,9 @@ anv-tgl:
     VK_DRIVER: intel
   parallel: 5  # 5 - 5 # -1 for zink, but it's disabled now
 
-anv-tgl-full:
+anv-tgl-vk-full:
   extends:
-    - anv-tgl
+    - anv-tgl-vk
     - .anv-manual-rules
   variables:
     DEQP_SUITE: anv-tgl-full
