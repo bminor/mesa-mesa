@@ -378,7 +378,7 @@ reg_count_callback(void *userdata, struct rc_instruction *inst, rc_register_file
                    unsigned int index, unsigned int mask)
 {
    struct rc_program_stats *s = userdata;
-   if (file == RC_FILE_TEMPORARY)
+   if (file == RC_FILE_TEMPORARY || (s->type == RC_FRAGMENT_PROGRAM && file == RC_FILE_INPUT))
       (int)index > s->num_temp_regs ? s->num_temp_regs = index : 0;
    if (file == RC_FILE_INLINE)
       s->num_inline_literals++;
@@ -391,6 +391,7 @@ rc_get_stats(struct radeon_compiler *c, struct rc_program_stats *s)
 {
    struct rc_instruction *tmp;
    memset(s, 0, sizeof(*s));
+   s->type = c->type;
    unsigned ip = 0;
    int last_begintex = -1;
 

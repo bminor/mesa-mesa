@@ -130,6 +130,7 @@ struct radeon_compiler_pass {
 };
 
 struct rc_program_stats {
+   enum rc_program_type type;
    unsigned num_cycles;
    unsigned num_consts;
    unsigned num_insts;
