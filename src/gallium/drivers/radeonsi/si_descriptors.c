@@ -2042,12 +2042,7 @@ void si_shader_pointers_mark_dirty(struct si_context *sctx)
 {
    sctx->shader_pointers_dirty =
       u_bit_consecutive(SI_DESCS_FIRST_SHADER, SI_NUM_DESCS - SI_DESCS_FIRST_SHADER);
-   sctx->vertex_buffers_dirty = sctx->num_vertex_elements > 0 &&
-                                /* si_draw_rectangle doesn't bind vertex elements, so we shouldn't
-                                 * mark vertex buffers as dirty. We can get here due to
-                                 * si_need_gfx_cs_space. */
-                                (!sctx->shader.vs.cso ||
-                                 !sctx->shader.vs.cso->info.base.vs.blit_sgprs_amd);
+   sctx->vertex_buffers_dirty = sctx->num_vertex_elements > 0;
    si_mark_atom_dirty(sctx, &sctx->atoms.s.gfx_shader_pointers);
    sctx->graphics_internal_bindings_pointer_dirty = sctx->descriptors[SI_DESCS_INTERNAL].buffer != NULL;
    sctx->compute_internal_bindings_pointer_dirty = sctx->descriptors[SI_DESCS_INTERNAL].buffer != NULL;

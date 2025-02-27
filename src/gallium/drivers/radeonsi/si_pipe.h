@@ -1084,7 +1084,7 @@ struct si_context {
    /* shader information */
    uint64_t ps_inputs_read_or_disabled;
    struct si_vertex_elements *vertex_elements;
-   unsigned num_vertex_elements;
+   unsigned num_vertex_elements;  /* 0 if the VS uses blit SGPRs to compute VS inputs */
    unsigned cs_max_waves_per_sh;
    uint32_t compute_tmpring_size;
    bool vertex_elements_but_no_buffers;
@@ -2222,6 +2222,11 @@ static inline bool si_is_buffer_idle(struct si_context *sctx, struct si_resource
 {
    return !si_cs_is_buffer_referenced(sctx, buf->buf, usage) &&
           sctx->ws->buffer_wait(sctx->ws, buf->buf, 0, usage | RADEON_USAGE_DISALLOW_SLOW_REPLY);
+}
+
+static inline bool si_vs_uses_vbos(struct si_shader_selector *sel)
+{
+   return !sel || !sel->info.base.vs.blit_sgprs_amd;
 }
 
 #define PRINT_ERR(fmt, args...)                                                                    \
