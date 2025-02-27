@@ -927,23 +927,13 @@ build_subgroup_gt_mask(nir_builder *b,
 }
 
 static nir_def *
-build_subgroup_quad_mask(nir_builder *b,
-                         const nir_lower_subgroups_options *options)
-{
-   nir_def *subgroup_idx = nir_load_subgroup_invocation(b);
-   nir_def *quad_first_idx = nir_iand_imm(b, subgroup_idx, ~0x3);
-
-   return build_ballot_imm_ishl(b, 0xf, quad_first_idx, options);
-}
-
-static nir_def *
 build_quad_vote_any(nir_builder *b, nir_def *src,
                     const nir_lower_subgroups_options *options)
 {
    nir_def *ballot = nir_ballot(b, options->ballot_components,
                                 options->ballot_bit_size,
                                 src);
-   nir_def *mask = build_subgroup_quad_mask(b, options);
+   nir_def *mask = build_cluster_mask(b, 4, options);
 
    return nir_ine_imm(b, nir_iand(b, ballot, mask), 0);
 }
