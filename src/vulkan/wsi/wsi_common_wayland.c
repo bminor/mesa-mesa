@@ -1139,8 +1139,14 @@ static const struct wp_image_description_v1_listener image_description_listener 
 };
 
 static bool
-needs_color_surface(VkColorSpaceKHR colorspace)
+needs_color_surface(struct wsi_wl_display *display, VkColorSpaceKHR colorspace)
 {
+   if (colorspace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+      /* we want to use a color surface to set sRGB if possible, but
+       * only if the compositor actually supports sRGB */
+      return vector_contains(&display->color_primaries, WP_COLOR_MANAGER_V1_PRIMARIES_SRGB)
+          && vector_contains(&display->color_transfer_funcs, WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_SRGB);
+   }
    return colorspace != VK_COLOR_SPACE_PASS_THROUGH_EXT;
 }
 
@@ -1199,8 +1205,8 @@ wsi_wl_swapchain_update_colorspace(struct wsi_wl_swapchain *chain)
    }
 
    bool new_color_surface = !surface->color.color_surface;
-   bool needs_color_surface_new = needs_color_surface(chain->color.colorspace);
-   bool needs_color_surface_old = needs_color_surface(surface->color.colorspace);
+   bool needs_color_surface_new = needs_color_surface(display, chain->color.colorspace);
+   bool needs_color_surface_old = needs_color_surface(display, surface->color.colorspace);
    if ((new_color_surface || !needs_color_surface_old) && needs_color_surface_new) {
       wsi_wl_surface_add_color_refcount(surface);
    } else if (needs_color_surface_old && !needs_color_surface_new) {
@@ -3293,7 +3299,8 @@ wsi_wl_swapchain_chain_free(struct wsi_wl_swapchain *chain,
       wl_callback_destroy(chain->frame);
    if (chain->tearing_control)
       wp_tearing_control_v1_destroy(chain->tearing_control);
-   if (needs_color_surface(chain->color.colorspace) && wsi_wl_surface->color.color_surface) {
+   if (needs_color_surface(wsi_wl_surface->display, chain->color.colorspace) &&
+       wsi_wl_surface->color.color_surface) {
       wsi_wl_surface_remove_color_refcount(wsi_wl_surface);
    }
 
