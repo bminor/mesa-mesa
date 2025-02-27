@@ -533,7 +533,7 @@ Khronos extensions that are not part of any Vulkan version:
   VK_KHR_acceleration_structure                         DONE (anv/gfx12.5+, lvp, radv/gfx10.3+, tu/a740+)
   VK_KHR_android_surface                                not started
   VK_KHR_calibrated_timestamps                          DONE (anv, nvk, radv, tu/a750+, vn)
-  VK_KHR_compute_shader_derivatives                     DONE (anv, nvk, radv, tu/a7xx+)
+  VK_KHR_compute_shader_derivatives                     DONE (anv, nvk, radv, tu/a7xx+, vn)
   VK_KHR_cooperative_matrix                             DONE (anv, radv/gfx11+)
   VK_KHR_depth_clamp_zero_one                           DONE (vn)
   VK_KHR_deferred_host_operations                       DONE (anv, hasvk, lvp, radv)
@@ -570,7 +570,7 @@ Khronos extensions that are not part of any Vulkan version:
   VK_KHR_swapchain                                      DONE (anv, dzn, hasvk, lvp, nvk, panvk, pvr, radv, tu, v3dv, vn)
   VK_KHR_swapchain_mutable_format                       DONE (anv, hasvk, lvp, nvk, radv, tu, v3dv, vn)
   VK_KHR_wayland_surface                                DONE (anv, dzn, lvp, nvk, panvk, radv, tu, v3dv, vn)
-  VK_KHR_workgroup_memory_explicit_layout               DONE (anv, nvk, hasvk, radv, tu, v3dv)
+  VK_KHR_workgroup_memory_explicit_layout               DONE (anv, nvk, hasvk, radv, tu, v3dv, vn)
   VK_KHR_win32_keyed_mutex                              not started
   VK_KHR_win32_surface                                  DONE (dzn, lvp)
   VK_KHR_xcb_surface                                    DONE (anv, dzn, hasvk, lvp, nvk, panvk, radv, tu, v3dv, vn)
@@ -664,7 +664,7 @@ Khronos extensions that are not part of any Vulkan version:
   VK_GOOGLE_hlsl_functionality1                         DONE (anv, hasvk, lvp, nvk, panvk, radv, tu)
   VK_GOOGLE_user_type                                   DONE (anv, hasvk, nvk, panvk, radv, tu)
   VK_IMG_filter_cubic                                   DONE (tu/a650+)
-  VK_NV_compute_shader_derivatives                      DONE (anv, hasvk, nvk, radv)
+  VK_NV_compute_shader_derivatives                      DONE (anv, hasvk, nvk, radv, vn)
   VK_EXT_acquire_drm_display                            DONE (anv, nvk, radv, tu, v3dv, vn)
   VK_VALVE_mutable_descriptor_type                      DONE (anv, hasvk, nvk, radv, tu, vn)
   VK_AMD_buffer_marker                                  DONE (anv, radv, tu)
