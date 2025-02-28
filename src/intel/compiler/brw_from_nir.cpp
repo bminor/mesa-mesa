@@ -1842,6 +1842,31 @@ brw_from_nir_emit_alu(nir_to_brw_state &ntb, nir_alu_instr *instr,
       break;
    }
 
+   /* BFloat16 values in NIR are represented by uint16_t,
+    * but BRW can handle them natively.
+    */
+
+   case nir_op_bf2f:
+      bld.MOV(result, retype(op[0], BRW_TYPE_BF));
+      break;
+
+   case nir_op_f2bf:
+      bld.MOV(retype(result, BRW_TYPE_BF), op[0]);
+      break;
+
+   case nir_op_bfmul:
+      bld.MUL(retype(result, BRW_TYPE_BF),
+              retype(op[0], BRW_TYPE_BF),
+              retype(op[1], BRW_TYPE_BF));
+      break;
+
+   case nir_op_bffma:
+      bld.MAD(retype(result, BRW_TYPE_BF),
+              retype(op[2], BRW_TYPE_BF),
+              retype(op[1], BRW_TYPE_BF),
+              retype(op[0], BRW_TYPE_BF));
+      break;
+
    default:
       unreachable("unhandled instruction");
    }

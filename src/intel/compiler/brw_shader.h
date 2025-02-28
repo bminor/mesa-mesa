@@ -295,6 +295,7 @@ void brw_assign_regs_trivial(brw_shader &s);
 bool brw_lower_3src_null_dest(brw_shader &s);
 bool brw_lower_alu_restrictions(brw_shader &s);
 bool brw_lower_barycentrics(brw_shader &s);
+bool brw_lower_bfloat_conversion(brw_shader &s, brw_inst *inst);
 bool brw_lower_constant_loads(brw_shader &s);
 bool brw_lower_csel(brw_shader &s);
 bool brw_lower_derivatives(brw_shader &s);

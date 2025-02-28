@@ -591,6 +591,46 @@ unsupported_64bit_type(const intel_device_info *devinfo,
                                        type == BRW_TYPE_Q));
 }
 
+bool
+brw_lower_bfloat_conversion(brw_shader &s, brw_inst *inst)
+{
+   assert(s.devinfo->has_bfloat16);
+   assert(inst->dst.type == BRW_TYPE_BF || inst->src[0].type == BRW_TYPE_BF);
+
+   if (inst->dst.type == inst->src[0].type) {
+      /* Except for DPAS, instructions with only bfloat operands are
+       * not supported, so just move the bits using UW.
+       */
+      inst->dst    = retype(inst->dst, BRW_TYPE_UW);
+      inst->src[0] = retype(inst->src[0], BRW_TYPE_UW);
+      return true;
+
+   } else if (inst->dst.type == BRW_TYPE_BF &&
+              byte_stride(inst->dst) == 2) {
+      /* Converting to packed BF is not supported natively.  Using
+       * ADD with -0.0f preserves NaN correctly.  Note +0.0f would
+       * not work since it doesn't preserve -0.0f!
+       */
+      assert(inst->src[0].type == BRW_TYPE_F);
+      inst->resize_sources(2);
+      inst->opcode = BRW_OPCODE_ADD;
+      inst->src[1] = brw_imm_f(-0.0f);
+      return true;
+
+   } else if (inst->dst.type == BRW_TYPE_F &&
+              byte_stride(inst->src[0]) != 2) {
+      /* Converting from a unpacked BF is not supported natively. */
+      const brw_builder ibld(inst);
+      ibld.SHL(retype(inst->dst, BRW_TYPE_UD),
+               retype(inst->src[0], BRW_TYPE_UW),
+               brw_imm_uw(16));
+      inst->remove();
+      return true;
+   }
+
+   return false;
+}
+
 /**
  * Perform lowering to legalize the IR for various ALU restrictions.
  *
@@ -626,7 +666,38 @@ brw_lower_alu_restrictions(brw_shader &s)
             inst->remove();
             progress = true;
          }
+
+         if (inst->dst.type == BRW_TYPE_BF || inst->src[0].type == BRW_TYPE_BF)
+            progress |= brw_lower_bfloat_conversion(s, inst);
+
          break;
+
+      case BRW_OPCODE_MUL:
+      case BRW_OPCODE_MAD: {
+         /* BFloat16 restrictions:
+          *
+          *   "Bfloat16 not in Src1 of 2-source instructions involving
+          *    multiplier."
+          *
+          * and
+          *
+          *   "Bfloat16 not allowed in Src2 of 3-source instructions
+          *   involving multiplier."
+          */
+         brw_reg &last_src = inst->src[inst->sources - 1];
+         if (last_src.type == BRW_TYPE_BF) {
+            assert(devinfo->has_bfloat16);
+            const brw_builder ibld = brw_builder(inst);
+
+            brw_reg src2_as_f = ibld.vgrf(BRW_TYPE_F);
+            brw_inst *conv = ibld.MOV(src2_as_f, last_src);
+            brw_lower_bfloat_conversion(s, conv);
+            last_src = src2_as_f;
+
+            progress = true;
+         }
+         break;
+      }
 
       case BRW_OPCODE_SEL:
          if (unsupported_64bit_type(devinfo, inst->dst.type)) {
@@ -662,8 +733,8 @@ brw_lower_alu_restrictions(brw_shader &s)
    }
 
    if (progress) {
-      s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTION_DATA_FLOW |
-                            BRW_DEPENDENCY_INSTRUCTION_IDENTITY);
+      s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTIONS |
+                            BRW_DEPENDENCY_VARIABLES);
    }
 
    return progress;
@@ -958,3 +1029,4 @@ brw_lower_indirect_mov(brw_shader &s)
 
    return progress;
 }
+
