@@ -1066,7 +1066,6 @@ spec@glsl-1.10@execution@glsl-fs-if-nested-loop,Fail
 spec@glsl-1.10@execution@glsl-vs-if-nested-loop,Fail
 spec@glsl-1.10@execution@glsl-vs-vectorize-between-basic-blocks-loop,Fail
 spec@glsl-1.10@execution@loops@glsl-fs-continue-inside-do-while,Fail
-spec@glsl-1.10@execution@loops@glsl-fs-loop-shadow-variables,Fail
 spec@glsl-1.10@execution@loops@glsl-fs-loop-vec4-counter,Fail
 spec@glsl-1.10@execution@loops@glsl-vs-continue-inside-do-while,Fail
 spec@glsl-1.10@execution@loops@glsl-vs-loop-break,Fail

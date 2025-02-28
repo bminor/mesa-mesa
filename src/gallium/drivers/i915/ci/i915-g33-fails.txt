@@ -776,8 +776,6 @@ spec@glsl-1.10@execution@interpolation@interpolation-none-gl_frontsecondarycolor
 spec@glsl-1.10@execution@loops@glsl-fs-continue-inside-do-while,Fail
 spec@glsl-1.10@execution@loops@glsl-fs-loop-300,Fail
 
-spec@glsl-1.10@execution@loops@glsl-fs-loop-shadow-variables,Fail
-
 # Failed to link: error: looping not supported i915 fragment shaders, all loops must be statically unrollable.
 spec@glsl-1.10@execution@loops@glsl-fs-loop-vec4-counter,Fail
 
