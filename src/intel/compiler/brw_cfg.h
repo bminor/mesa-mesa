@@ -319,7 +319,7 @@ bblock_t::last_non_control_flow_inst()
 struct cfg_t {
    DECLARE_RALLOC_CXX_OPERATORS(cfg_t)
 
-   cfg_t(const brw_shader *s, exec_list *instructions);
+   cfg_t(brw_shader *s, exec_list *instructions);
    ~cfg_t();
 
    void remove_block(bblock_t *block);
@@ -347,7 +347,7 @@ struct cfg_t {
     */
    inline void adjust_block_ips();
 
-   const struct brw_shader *s;
+   struct brw_shader *s;
    void *mem_ctx;
 
    /** Ordered list (by ip) of basic blocks */

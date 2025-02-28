@@ -195,7 +195,7 @@ append_inst(bblock_t *block, brw_inst *inst)
    block->instructions.push_tail(inst);
 }
 
-cfg_t::cfg_t(const brw_shader *s, exec_list *instructions) :
+cfg_t::cfg_t(brw_shader *s, exec_list *instructions) :
    s(s)
 {
    mem_ctx = ralloc_context(NULL);

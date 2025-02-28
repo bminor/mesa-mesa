@@ -278,7 +278,7 @@ brw_lower_dpas(brw_shader &v)
          continue;
 
       const unsigned exec_size = v.devinfo->ver >= 20 ? 16 : 8;
-      const brw_builder bld = brw_builder(&v, block, inst).group(exec_size, 0).exec_all();
+      const brw_builder bld = brw_builder(inst).group(exec_size, 0).exec_all();
 
       if (brw_type_is_float(inst->dst.type)) {
          f16_using_mac(bld, inst);

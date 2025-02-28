@@ -140,7 +140,7 @@ static void
 brw_lower_mul_dword_inst(brw_shader &s, brw_inst *inst, bblock_t *block)
 {
    const intel_device_info *devinfo = s.devinfo;
-   const brw_builder ibld(&s, block, inst);
+   const brw_builder ibld(inst);
 
    /* It is correct to use inst->src[1].d in both end of the comparison.
     * Using .ud in the UINT16_MAX comparison would cause any negative value to
@@ -301,7 +301,7 @@ static void
 brw_lower_mul_qword_inst(brw_shader &s, brw_inst *inst, bblock_t *block)
 {
    const intel_device_info *devinfo = s.devinfo;
-   const brw_builder ibld(&s, block, inst);
+   const brw_builder ibld(inst);
 
    /* Considering two 64-bit integers ab and cd where each letter        ab
     * corresponds to 32 bits, we get a 128-bit result WXYZ. We         * cd
@@ -370,7 +370,7 @@ static void
 brw_lower_mulh_inst(brw_shader &s, brw_inst *inst, bblock_t *block)
 {
    const intel_device_info *devinfo = s.devinfo;
-   const brw_builder ibld(&s, block, inst);
+   const brw_builder ibld(inst);
 
    /* According to the BDW+ BSpec page for the "Multiply Accumulate
     * High" instruction:

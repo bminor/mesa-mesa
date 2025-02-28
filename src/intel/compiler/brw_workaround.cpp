@@ -28,8 +28,7 @@ brw_workaround_emit_dummy_mov_instruction(brw_shader &s)
       return false;
 
    /* Insert dummy mov as first instruction. */
-   const brw_builder ubld =
-      brw_builder(&s, s.cfg->first_block(), (brw_inst *)first_inst).exec_all().group(8, 0);
+   const brw_builder ubld = brw_builder(first_inst).exec_all().group(8, 0);
    ubld.MOV(ubld.null_reg_ud(), brw_imm_ud(0u));
 
    s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTIONS |
@@ -99,7 +98,7 @@ brw_workaround_memory_fence_before_eot(brw_shader &s)
       if (!has_ugm_write_or_atomic)
          break;
 
-      const brw_builder ibld(&s, block, inst);
+      const brw_builder ibld(inst);
       const brw_builder ubld = ibld.exec_all().group(1, 0);
 
       brw_reg dst = ubld.vgrf(BRW_TYPE_UD);
@@ -227,7 +226,7 @@ brw_workaround_nomask_control_flow(brw_shader &s)
                 * instruction), in order to avoid getting a right-shifted
                 * value.
                 */
-               const brw_builder ubld = brw_builder(&s, block, inst)
+               const brw_builder ubld = brw_builder(inst)
                                        .exec_all().group(s.dispatch_width, 0);
                const brw_reg flag = retype(brw_flag_reg(0, 0),
                                           BRW_TYPE_UD);
@@ -343,7 +342,7 @@ brw_workaround_source_arf_before_eot(brw_shader &s)
           */
          assert(++eot_count == 1);
 
-         const brw_builder ibld(&s, block, inst);
+         const brw_builder ibld(inst);
          const brw_builder ubld = ibld.exec_all().group(1, 0);
 
          if (flags_unread & 0x0f)

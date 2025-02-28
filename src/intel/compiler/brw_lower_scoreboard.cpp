@@ -1321,8 +1321,7 @@ namespace {
                   /* Emit dependency into the SWSB of an extra SYNC
                    * instruction.
                    */
-                  const brw_builder ibld = brw_builder(shader, block, inst)
-                                           .exec_all().group(1, 0);
+                  const brw_builder ibld = brw_builder(inst).exec_all().group(1, 0);
                   brw_inst *sync = ibld.SYNC(TGL_SYNC_NOP);
                   sync->sched.sbid = dep.id;
                   sync->sched.mode = dep.unordered;
@@ -1344,7 +1343,7 @@ namespace {
                 * scenario with unordered dependencies should have been
                 * handled above.
                 */
-               const brw_builder ibld = brw_builder(shader, block, inst)
+               const brw_builder ibld = brw_builder(inst)
                                         .exec_all().group(1, 0);
                brw_inst *sync = ibld.SYNC(TGL_SYNC_NOP);
                sync->sched = ordered_dependency_swsb(deps[ip], jps[ip], true);

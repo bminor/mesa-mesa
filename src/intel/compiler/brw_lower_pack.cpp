@@ -40,7 +40,7 @@ brw_lower_pack(brw_shader &s)
       assert(inst->saturate == false);
       brw_reg dst = inst->dst;
 
-      const brw_builder ibld(&s, block, inst);
+      const brw_builder ibld(inst);
       /* The lowering generates 2 instructions for what was previously 1. This
        * can trick the IR to believe we're doing partial writes, but the
        * register is actually fully written. Mark it as undef to help the IR

@@ -351,7 +351,7 @@ brw_opt_split_sends(brw_shader &s)
       if (end <= mid)
          continue;
 
-      const brw_builder ibld(&s, block, lp);
+      const brw_builder ibld(lp);
       brw_inst *lp1 = ibld.LOAD_PAYLOAD(lp->dst, &lp->src[0], mid, lp->header_size);
       brw_inst *lp2 = ibld.LOAD_PAYLOAD(lp->dst, &lp->src[mid], end - mid, 0);
 

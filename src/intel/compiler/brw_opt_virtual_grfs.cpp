@@ -143,7 +143,7 @@ brw_opt_split_virtual_grfs(brw_shader &s)
       if (inst->opcode == SHADER_OPCODE_UNDEF) {
          assert(inst->dst.file == VGRF);
          if (vgrf_has_split[inst->dst.nr]) {
-            const brw_builder ibld(&s, block, inst);
+            const brw_builder ibld(inst);
             assert(inst->size_written % REG_SIZE == 0);
             unsigned reg_offset = inst->dst.offset / REG_SIZE;
             unsigned size_written = 0;

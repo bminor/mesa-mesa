@@ -2535,7 +2535,7 @@ brw_lower_logical_sends(brw_shader &s)
    bool progress = false;
 
    foreach_block_and_inst_safe(block, brw_inst, inst, s.cfg) {
-      const brw_builder ibld(&s, block, inst);
+      const brw_builder ibld(inst);
 
       switch (inst->opcode) {
       case FS_OPCODE_FB_WRITE_LOGICAL:
@@ -2683,8 +2683,7 @@ brw_lower_uniform_pull_constant_loads(brw_shader &s)
       assert(size_B.file == IMM);
 
       if (devinfo->has_lsc) {
-         const brw_builder ubld =
-            brw_builder(&s, block, inst).group(8, 0).exec_all();
+         const brw_builder ubld = brw_builder(inst).group(8, 0).exec_all();
 
          const brw_reg payload = ubld.vgrf(BRW_TYPE_UD);
          ubld.MOV(payload, offset_B);
@@ -2722,7 +2721,7 @@ brw_lower_uniform_pull_constant_loads(brw_shader &s)
          s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTIONS |
                                BRW_DEPENDENCY_VARIABLES);
       } else {
-         const brw_builder ubld = brw_builder(&s, block, inst).exec_all();
+         const brw_builder ubld = brw_builder(inst).exec_all();
          brw_reg header = brw_builder(&s, 8).exec_all().vgrf(BRW_TYPE_UD);
 
          ubld.group(8, 0).MOV(header,
@@ -2767,7 +2766,7 @@ brw_lower_send_descriptors(brw_shader &s)
           inst->opcode != SHADER_OPCODE_SEND_GATHER)
          continue;
 
-      const brw_builder ubld = brw_builder(&s, block, inst).exec_all().group(1, 0);
+      const brw_builder ubld = brw_builder(inst).exec_all().group(1, 0);
 
       /* Descriptor */
       const unsigned rlen = inst->dst.is_null() ? 0 : inst->size_written / REG_SIZE;

@@ -53,13 +53,13 @@ public:
    explicit brw_builder(brw_shader *s) : brw_builder(s, s->dispatch_width) {}
 
    /**
-    * Construct an brw_builder that inserts instructions into \p shader
-    * before instruction \p inst in basic block \p block.  The default
+    * Construct an brw_builder that inserts instructions before
+    * instruction \p inst in the same basic block.  The default
     * execution controls and debug annotation are initialized from the
     * instruction passed as argument.
     */
-   brw_builder(brw_shader *shader, bblock_t *block, brw_inst *inst) :
-      shader(shader), block(block), cursor(inst),
+   explicit brw_builder(brw_inst *inst) :
+      shader(inst->block->cfg->s), block(inst->block), cursor(inst),
       _dispatch_width(inst->exec_size),
       _group(inst->group),
       force_writemask_all(inst->force_writemask_all)

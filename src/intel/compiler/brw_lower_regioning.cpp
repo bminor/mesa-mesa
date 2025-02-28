@@ -475,7 +475,7 @@ brw_lower_src_modifiers(brw_shader &s, bblock_t *block, brw_inst *inst, unsigned
           MIN2(brw_type_size_bytes(inst->src[0].type), brw_type_size_bytes(inst->src[1].type)) >= 4 ||
           brw_type_size_bytes(inst->src[i].type) == get_exec_type_size(inst));
 
-   const brw_builder ibld(&s, block, inst);
+   const brw_builder ibld(inst);
    const brw_reg tmp = ibld.vgrf(get_exec_type(inst));
 
    lower_instruction(&s, block, ibld.MOV(tmp, inst->src[i]));
@@ -495,7 +495,7 @@ namespace {
    bool
    lower_dst_modifiers(brw_shader *v, bblock_t *block, brw_inst *inst)
    {
-      const brw_builder ibld(v, block, inst);
+      const brw_builder ibld(inst);
       const brw_reg_type type = get_exec_type(inst);
       /* Not strictly necessary, but if possible use a temporary with the same
        * channel alignment as the current destination in order to avoid
@@ -546,7 +546,7 @@ namespace {
    {
       assert(inst->components_read(i) == 1);
       const intel_device_info *devinfo = v->devinfo;
-      const brw_builder ibld(v, block, inst);
+      const brw_builder ibld(inst);
       const unsigned stride = required_src_byte_stride(devinfo, inst, i) /
                               brw_type_size_bytes(inst->src[i].type);
       assert(stride > 0);
@@ -614,7 +614,7 @@ namespace {
       assert(inst->opcode != BRW_OPCODE_MUL || !inst->dst.is_accumulator() ||
              brw_type_is_float(inst->dst.type));
 
-      const brw_builder ibld(v, block, inst);
+      const brw_builder ibld(inst);
       const unsigned stride = required_dst_byte_stride(inst) /
                               brw_type_size_bytes(inst->dst.type);
       assert(stride > 0);
@@ -685,7 +685,7 @@ namespace {
       const unsigned mask = has_invalid_exec_type(v->devinfo, inst);
       const brw_reg_type raw_type = required_exec_type(v->devinfo, inst);
       const unsigned n = get_exec_type_size(inst) / brw_type_size_bytes(raw_type);
-      const brw_builder ibld(v, block, inst);
+      const brw_builder ibld(inst);
 
       brw_reg tmp = ibld.vgrf(inst->dst.type, inst->dst.stride);
       ibld.UNDEF(tmp);
@@ -732,7 +732,7 @@ namespace {
    lower_src_conversion(brw_shader *v, bblock_t *block, brw_inst *inst)
    {
       const intel_device_info *devinfo = v->devinfo;
-      const brw_builder ibld = brw_builder(v, block, inst).scalar_group();
+      const brw_builder ibld = brw_builder(inst).scalar_group();
 
       /* We only handle scalar conversions from small types for now. */
       assert(is_uniform(inst->src[0]));
