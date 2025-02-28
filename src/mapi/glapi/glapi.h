@@ -54,21 +54,13 @@ extern "C" {
 #endif
 
 
-#ifdef _GLAPI_NO_EXPORTS
+#ifdef _WIN32
 #  define _GLAPI_EXPORT
-#else /* _GLAPI_NO_EXPORTS */
-#  ifdef _WIN32
-#    ifdef _GLAPI_DLL_EXPORTS
-#      define _GLAPI_EXPORT __declspec(dllexport)
-#    else
-#      define _GLAPI_EXPORT __declspec(dllimport)
-#    endif
-#  elif defined(__GNUC__)
-#    define _GLAPI_EXPORT __attribute__((visibility("default")))
-#  else
-#    define _GLAPI_EXPORT
-#  endif
-#endif /* _GLAPI_NO_EXPORTS */
+#elif defined(__GNUC__)
+#  define _GLAPI_EXPORT __attribute__((visibility("default")))
+#else
+#  define _GLAPI_EXPORT
+#endif
 
 
 typedef void (*_glapi_proc)(void);

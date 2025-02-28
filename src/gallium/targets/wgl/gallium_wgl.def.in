@@ -50,3 +50,6 @@ stw_get_config_xml
 stw_interop_query_device_info
 stw_interop_export_object
 stw_interop_flush_objects
+
+_mesa_glapi_get_proc_address
+_mesa_glapi_get_dispatch

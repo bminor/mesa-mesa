@@ -443,7 +443,6 @@ endif
 _mesa_windows_args = []
 if with_platform_windows
   _mesa_windows_args += [
-    '-D_GLAPI_NO_EXPORTS',
     '-D_GDI32_',    # prevent gl* being declared __declspec(dllimport) in MS headers
   ]
 endif

@@ -18,7 +18,7 @@ libopengl32 = shared_library(
     inc_include, inc_wgl, inc_src, inc_gallium,
   ],
   link_with : [
-    libgallium_wgl, libglapi_bridge, libglapi
+    libgallium_wgl, libglapi_bridge
   ],
   dependencies : [
     idep_mesautil
