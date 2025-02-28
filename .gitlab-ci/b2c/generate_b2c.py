@@ -25,20 +25,16 @@ from jinja2 import Environment, FileSystemLoader
 from os import environ, path
 
 
-# Pass through all the B2C environment variables
+# Pass through all the CI and B2C environment variables
 values = {
     key: environ[key]
-    for key in environ if key.startswith("B2C_")
+    for key in environ if key.startswith("B2C_") or key.startswith("CI_")
 }
 
 env = Environment(loader=FileSystemLoader(path.dirname(environ['B2C_JOB_TEMPLATE'])),
                   trim_blocks=True, lstrip_blocks=True)
 
 template = env.get_template(path.basename(environ['B2C_JOB_TEMPLATE']))
-
-values['ci_job_id'] = environ['CI_JOB_ID']
-values['ci_runner_description'] = environ['CI_RUNNER_DESCRIPTION']
-values['working_dir'] = environ['CI_PROJECT_DIR']
 
 # Pull all our images through our proxy registry
 for image in ['B2C_IMAGE_UNDER_TEST', 'B2C_MACHINE_REGISTRATION_IMAGE', 'B2C_TELEGRAF_IMAGE']:
