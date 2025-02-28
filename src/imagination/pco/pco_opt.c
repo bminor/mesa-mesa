@@ -393,6 +393,12 @@ static inline bool try_fwd_prop_instr(pco_instr **writes, pco_instr *instr)
       /* TODO: types? */
       *psrc = repl;
 
+      if (pco_instr_has_olchk(parent_instr) &&
+          pco_instr_get_olchk(parent_instr)) {
+         assert(pco_instr_has_olchk(instr));
+         pco_instr_set_olchk(instr, true);
+      }
+
       progress = true;
    }
 
