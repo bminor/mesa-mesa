@@ -1087,6 +1087,13 @@ vn_physical_device_get_native_extensions(
       physical_dev->renderer_extensions.EXT_pci_bus_info;
 #endif
 
+   /* Use common implementation but enable only when the renderer supports
+    * VK_KHR_acceleration_structure because VK_KHR_deferred_host_operations is
+    * not passthrough from the renderer side.
+    */
+   exts->KHR_deferred_host_operations =
+      physical_dev->ray_tracing &&
+      physical_dev->renderer_extensions.KHR_acceleration_structure;
    exts->KHR_map_memory2 = true;
    exts->EXT_physical_device_drm = true;
    /* use common implementation */
