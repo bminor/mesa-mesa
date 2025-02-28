@@ -290,7 +290,7 @@ brw_lower_dpas(brw_shader &v)
          }
       }
 
-      inst->remove(block);
+      inst->remove();
       progress = true;
    }
 

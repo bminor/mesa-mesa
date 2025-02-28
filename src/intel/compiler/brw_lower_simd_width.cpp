@@ -749,7 +749,7 @@ brw_lower_simd_width(brw_shader &s)
          lbld.at(block, inst->next).emit(split_inst);
       }
 
-      inst->remove(block);
+      inst->remove();
       progress = true;
    }
 

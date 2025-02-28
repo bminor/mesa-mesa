@@ -135,7 +135,7 @@ cmod_propagate_cmp_to_add(const intel_device_info *devinfo, bblock_t *block,
               scan_inst->conditional_mod == cond)) {
             scan_inst->conditional_mod = cond;
             scan_inst->flag_subreg = inst->flag_subreg;
-            inst->remove(block, true);
+            inst->remove(true);
             return true;
          }
          break;
@@ -205,7 +205,7 @@ cmod_propagate_not(const intel_device_info *devinfo, bblock_t *block,
               scan_inst->conditional_mod == cond)) {
             scan_inst->conditional_mod = cond;
             scan_inst->flag_subreg = inst->flag_subreg;
-            inst->remove(block, true);
+            inst->remove(true);
             return true;
          }
          break;
@@ -312,7 +312,7 @@ opt_cmod_propagation_local(const intel_device_info *devinfo, bblock_t *block)
             if (inst->conditional_mod == BRW_CONDITIONAL_NZ &&
                 scan_inst->opcode == BRW_OPCODE_CMP &&
                 brw_type_is_int(inst->dst.type)) {
-               inst->remove(block, true);
+               inst->remove(true);
                progress = true;
                break;
             }
@@ -460,20 +460,20 @@ opt_cmod_propagation_local(const intel_device_info *devinfo, bblock_t *block)
                        inst->src[0].type == BRW_TYPE_UD) ||
                       (inst->conditional_mod == BRW_CONDITIONAL_L &&
                        inst->src[0].type == BRW_TYPE_D)) {
-                     inst->remove(block, true);
+                     inst->remove(true);
                      progress = true;
                      break;
                   }
                } else if (scan_inst->conditional_mod == inst->conditional_mod) {
                   /* sel.cond will not write the flags. */
                   assert(scan_inst->opcode != BRW_OPCODE_SEL);
-                  inst->remove(block, true);
+                  inst->remove(true);
                   progress = true;
                   break;
                } else if (!read_flag && scan_inst->can_do_cmod()) {
                   scan_inst->conditional_mod = inst->conditional_mod;
                   scan_inst->flag_subreg = inst->flag_subreg;
-                  inst->remove(block, true);
+                  inst->remove(true);
                   progress = true;
                   break;
                }
@@ -535,7 +535,7 @@ opt_cmod_propagation_local(const intel_device_info *devinfo, bblock_t *block)
                  scan_inst->conditional_mod == cond)) {
                scan_inst->conditional_mod = cond;
                scan_inst->flag_subreg = inst->flag_subreg;
-               inst->remove(block, true);
+               inst->remove(true);
                progress = true;
             }
             break;

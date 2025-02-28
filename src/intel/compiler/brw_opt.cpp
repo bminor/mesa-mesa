@@ -394,14 +394,12 @@ brw_opt_remove_redundant_halts(brw_shader &s)
 
    unsigned halt_count = 0;
    brw_inst *halt_target = NULL;
-   bblock_t *halt_target_block = NULL;
    foreach_block_and_inst(block, brw_inst, inst, s.cfg) {
       if (inst->opcode == BRW_OPCODE_HALT)
          halt_count++;
 
       if (inst->opcode == SHADER_OPCODE_HALT_TARGET) {
          halt_target = inst;
-         halt_target_block = block;
          break;
       }
    }
@@ -415,13 +413,13 @@ brw_opt_remove_redundant_halts(brw_shader &s)
    for (brw_inst *prev = (brw_inst *) halt_target->prev;
         !prev->is_head_sentinel() && prev->opcode == BRW_OPCODE_HALT;
         prev = (brw_inst *) halt_target->prev) {
-      prev->remove(halt_target_block);
+      prev->remove();
       halt_count--;
       progress = true;
    }
 
    if (halt_count == 0) {
-      halt_target->remove(halt_target_block);
+      halt_target->remove();
       progress = true;
    }
 
@@ -556,7 +554,7 @@ brw_opt_remove_extra_rounding_modes(brw_shader &s)
             assert(inst->src[0].file == IMM);
             const brw_rnd_mode mode = (brw_rnd_mode) inst->src[0].d;
             if (mode == prev_mode) {
-               inst->remove(block);
+               inst->remove();
                progress = true;
             } else {
                prev_mode = mode;

@@ -151,7 +151,7 @@ brw_opt_dead_code_eliminate(brw_shader &s)
             flag_live[0] &= ~inst->flags_written(devinfo);
 
          if (inst->opcode == BRW_OPCODE_NOP) {
-            inst->remove(block, true);
+            inst->remove(true);
             continue;
          }
 

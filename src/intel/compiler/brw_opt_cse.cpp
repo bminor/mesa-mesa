@@ -426,7 +426,7 @@ brw_opt_cse_defs(brw_shader &s)
                 * which is redundant with the previous flag write in our
                 * basic block.  So we can simply remove it.
                 */
-               inst->remove(block, true);
+               inst->remove(true);
                last = NULL;
                progress = true;
             }
@@ -497,7 +497,7 @@ brw_opt_cse_defs(brw_shader &s)
          continue;
 
       if (!remap_table[i].still_used) {
-         remap_table[i].inst->remove(remap_table[i].inst->block, true);
+         remap_table[i].inst->remove(true);
          progress = true;
       }
    }

@@ -220,7 +220,7 @@ brw_opt_combine_convergent_txf(brw_shader &s)
                v[c] = component(offset(div, ubld, c), i);
             ibld.VEC(retype(txf->dst, BRW_TYPE_UD), v, dest_comps);
 
-            txf->remove(block);
+            txf->remove();
          }
 
          progress = true;

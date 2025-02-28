@@ -44,7 +44,7 @@ opt_address_reg_load_local(brw_shader &s, bblock_t *block, const brw_def_analysi
       }
       ubld.emit(src_inst->opcode, inst->dst, sources, src_inst->sources);
 
-      inst->remove(block);
+      inst->remove();
 
       progress = true;
    }

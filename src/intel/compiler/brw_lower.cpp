@@ -90,7 +90,7 @@ brw_lower_load_payload(brw_shader &s)
          dst = offset(dst, ibld, 1);
       }
 
-      inst->remove(block);
+      inst->remove();
       progress = true;
    }
 
@@ -254,7 +254,7 @@ brw_lower_sub_sat(brw_shader &s)
                ->predicate = BRW_PREDICATE_NORMAL;
          }
 
-         inst->remove(block);
+         inst->remove();
          progress = true;
       }
    }
@@ -494,7 +494,7 @@ brw_lower_find_live_channel(brw_shader &s)
          unreachable("Impossible.");
       }
 
-      inst->remove(block);
+      inst->remove();
       progress = true;
    }
 
@@ -622,7 +622,7 @@ brw_lower_alu_restrictions(brw_shader &s)
             ibld.MOV(subscript(inst->dst, type, 0),
                      subscript(inst->src[0], type, 0));
 
-            inst->remove(block);
+            inst->remove();
             progress = true;
          }
          break;
@@ -650,7 +650,7 @@ brw_lower_alu_restrictions(brw_shader &s)
                                    subscript(inst->src[0], type, 1),
                                    subscript(inst->src[1], type, 1)));
 
-            inst->remove(block);
+            inst->remove();
             progress = true;
          }
          break;
@@ -876,7 +876,7 @@ brw_lower_load_subgroup_invocation(brw_shader &s)
          }
       }
 
-      inst->remove(block);
+      inst->remove();
       progress = true;
    }
 
@@ -945,7 +945,7 @@ brw_lower_indirect_mov(brw_shader &s)
          /* Extra MOV needed here to convert back to the corresponding B type */
          ibld.MOV(inst->dst, result);
 
-         inst->remove(block);
+         inst->remove();
          progress = true;
       }
    }

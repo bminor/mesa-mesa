@@ -91,7 +91,7 @@ public:
     */
    bool uses_indirect_addressing() const;
 
-   void remove(bblock_t *block, bool defer_later_block_ip_updates = false);
+   void remove(bool defer_later_block_ip_updates = false);
    void insert_before(bblock_t *block, brw_inst *inst);
 
    /**

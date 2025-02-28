@@ -296,7 +296,7 @@ brw_lower_reduce(brw_shader &s, bblock_t *block, brw_inst *inst)
       bld.emit(SHADER_OPCODE_CLUSTER_BROADCAST, dst, scan,
                brw_imm_ud(cluster_size - 1), brw_imm_ud(cluster_size));
    }
-   inst->remove(block);
+   inst->remove();
    return true;
 }
 
@@ -345,7 +345,7 @@ brw_lower_scan(brw_shader &s, bblock_t *block, brw_inst *inst)
 
    bld.MOV(dst, scan);
 
-   inst->remove(block);
+   inst->remove();
    return true;
 }
 
@@ -511,7 +511,7 @@ brw_lower_vote(brw_shader &s, bblock_t *block, brw_inst *inst)
          brw_lower_quad_vote_gfx20(bld, inst->opcode, dst, src);
    }
 
-   inst->remove(block);
+   inst->remove();
    return true;
 }
 
@@ -541,7 +541,7 @@ brw_lower_ballot(brw_shader &s, bblock_t *block, brw_inst *inst)
       xbld.MOV(dst, flag);
    }
 
-   inst->remove(block);
+   inst->remove();
    return true;
 }
 
@@ -597,7 +597,7 @@ brw_lower_quad_swap(brw_shader &s, bblock_t *block, brw_inst *inst)
    }
    }
 
-   inst->remove(block);
+   inst->remove();
    return true;
 }
 
@@ -613,7 +613,7 @@ brw_lower_read_from_live_channel(brw_shader &s, bblock_t *block, brw_inst *inst)
 
    bld.MOV(dst, bld.emit_uniformize(value));
 
-   inst->remove(block);
+   inst->remove();
    return true;
 }
 
@@ -646,7 +646,7 @@ brw_lower_read_from_channel(brw_shader &s, bblock_t *block, brw_inst *inst)
       bld.MOV(dst, tmp);
    }
 
-   inst->remove(block);
+   inst->remove();
    return true;
 }
 

@@ -158,7 +158,7 @@ brw_opt_split_virtual_grfs(brw_shader &s)
                assert(undef->size_written % REG_SIZE == 0);
                size_written += undef->size_written;
             }
-            inst->remove(block);
+            inst->remove();
          } else {
             reg = vgrf_to_reg[inst->dst.nr];
             assert(new_reg_offset[reg] == 0);

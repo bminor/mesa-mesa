@@ -431,7 +431,7 @@ brw_lower_integer_multiplication(brw_shader &s)
              (inst->src[1].type == BRW_TYPE_Q ||
               inst->src[1].type == BRW_TYPE_UQ)) {
             brw_lower_mul_qword_inst(s, inst, block);
-            inst->remove(block);
+            inst->remove();
             progress = true;
          } else if (!inst->dst.is_accumulator() &&
                     (inst->dst.type == BRW_TYPE_D ||
@@ -439,12 +439,12 @@ brw_lower_integer_multiplication(brw_shader &s)
                     (!devinfo->has_integer_dword_mul ||
                      devinfo->verx10 >= 125)) {
             brw_lower_mul_dword_inst(s, inst, block);
-            inst->remove(block);
+            inst->remove();
             progress = true;
          }
       } else if (inst->opcode == SHADER_OPCODE_MULH) {
          brw_lower_mulh_inst(s, inst, block);
-         inst->remove(block);
+         inst->remove();
          progress = true;
       }
 

@@ -72,7 +72,7 @@ brw_lower_pack(brw_shader &s)
          unreachable("skipped above");
       }
 
-      inst->remove(block);
+      inst->remove();
       progress = true;
    }
 

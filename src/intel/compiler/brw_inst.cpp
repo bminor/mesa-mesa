@@ -985,9 +985,9 @@ brw_inst::insert_before(bblock_t *block, brw_inst *inst)
 }
 
 void
-brw_inst::remove(bblock_t *block, bool defer_later_block_ip_updates)
+brw_inst::remove(bool defer_later_block_ip_updates)
 {
-   assert(this->block == block);
+   assert(block);
 
    if (exec_list_is_singular(&block->instructions)) {
       this->opcode = BRW_OPCODE_NOP;
@@ -1016,7 +1016,7 @@ brw_inst::remove(bblock_t *block, bool defer_later_block_ip_updates)
    }
 
    exec_node::remove();
-   this->block = NULL;
+   block = NULL;
 }
 
 enum brw_reg_type

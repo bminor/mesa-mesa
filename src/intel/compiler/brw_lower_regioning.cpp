@@ -716,7 +716,7 @@ namespace {
          lower_instruction(v, block, mov);
       }
 
-      inst->remove(block);
+      inst->remove();
 
       return true;
    }
