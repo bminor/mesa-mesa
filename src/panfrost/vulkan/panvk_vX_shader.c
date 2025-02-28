@@ -361,6 +361,7 @@ panvk_preprocess_nir(UNUSED struct vk_physical_device *vk_pdev,
    nir_lower_tex_options lower_tex_options = {
       .lower_txs_lod = true,
       .lower_txp = ~0,
+      .lower_tg4_offsets = true,
       .lower_txd_cube_map = true,
       .lower_invalid_implicit_lod = true,
    };
