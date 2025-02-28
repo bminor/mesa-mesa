@@ -31,10 +31,10 @@ values = {
     for key in environ if key.startswith("B2C_")
 }
 
-env = Environment(loader=FileSystemLoader(path.dirname(values['job_template'])),
+env = Environment(loader=FileSystemLoader(path.dirname(environ['B2C_JOB_TEMPLATE'])),
                   trim_blocks=True, lstrip_blocks=True)
 
-template = env.get_template(path.basename(values['job_template']))
+template = env.get_template(path.basename(environ['B2C_JOB_TEMPLATE']))
 
 values['ci_job_id'] = environ['CI_JOB_ID']
 values['ci_runner_description'] = environ['CI_RUNNER_DESCRIPTION']
@@ -55,5 +55,5 @@ for image in ['image_under_test', 'machine_registration_image', 'telegraf_image'
 if 'kernel_cmdline_extras' not in values:
     values['kernel_cmdline_extras'] = ''
 
-with open(path.splitext(path.basename(values['job_template']))[0], "w") as f:
+with open(path.splitext(path.basename(environ['B2C_JOB_TEMPLATE']))[0], "w") as f:
     f.write(template.render(values))
