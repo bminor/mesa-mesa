@@ -2371,15 +2371,14 @@ brw_compact_instructions(struct brw_codegen *p, int start_offset,
       if (try_compact_instruction(&c, dst, &inst)) {
          compacted_count++;
 
-         if (INTEL_DEBUG(DEBUG_VS | DEBUG_GS | DEBUG_TCS | DEBUG_TASK |
-                         DEBUG_WM | DEBUG_CS | DEBUG_TES | DEBUG_MESH |
-                         DEBUG_RT)) {
-            brw_eu_inst uncompacted;
-            uncompact_instruction(&c, &uncompacted, dst);
-            if (memcmp(&saved, &uncompacted, sizeof(uncompacted))) {
-               brw_debug_compact_uncompact(p->isa, &saved, &uncompacted);
-            }
+#ifndef NDEBUG
+         brw_eu_inst uncompacted;
+         uncompact_instruction(&c, &uncompacted, dst);
+         if (memcmp(&saved, &uncompacted, sizeof(uncompacted))) {
+            brw_debug_compact_uncompact(p->isa, &saved, &uncompacted);
+            assert(false);
          }
+#endif
 
          offset += sizeof(brw_eu_compact_inst);
       } else {
