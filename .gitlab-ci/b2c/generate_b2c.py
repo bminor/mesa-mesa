@@ -38,7 +38,6 @@ template = env.get_template(path.basename(environ['B2C_JOB_TEMPLATE']))
 
 values['ci_job_id'] = environ['CI_JOB_ID']
 values['ci_runner_description'] = environ['CI_RUNNER_DESCRIPTION']
-values['job_volume_exclusions'] = [excl for excl in values['job_volume_exclusions'].split(",") if excl]
 values['working_dir'] = environ['CI_PROJECT_DIR']
 
 values['image_under_test'] = environ['IMAGE_UNDER_TEST']
