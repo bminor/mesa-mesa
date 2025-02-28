@@ -80,6 +80,8 @@ struct ir3_sched_ctx {
    struct ir3_instruction *scheduled; /* last scheduled instr */
    struct ir3_instruction *addr0;     /* current a0.x user, if any */
    struct ir3_instruction *addr1;     /* current a1.x user, if any */
+   unsigned addr0_uses;               /* number of unscheduled uses of addr0 */
+   unsigned addr1_uses;               /* number of unscheduled uses of addr1 */
 
    struct ir3_instruction *split; /* most-recently-split a0/a1 producer */
 
@@ -256,11 +258,31 @@ schedule(struct ir3_sched_ctx *ctx, struct ir3_instruction *instr)
    if (writes_addr0(instr)) {
       assert(ctx->addr0 == NULL);
       ctx->addr0 = instr;
+      ctx->addr0_uses = instr->uses->entries;
    }
 
    if (writes_addr1(instr)) {
       assert(ctx->addr1 == NULL);
       ctx->addr1 = instr;
+      ctx->addr1_uses = instr->uses->entries;
+   }
+
+   if (reads_addr0(instr)) {
+      assert(instr->address->def->instr == ctx->addr0);
+      assert(ctx->addr0_uses > 0);
+
+      if (--ctx->addr0_uses == 0) {
+         ctx->addr0 = NULL;
+      }
+   }
+
+   if (reads_addr1(instr)) {
+      assert(instr->address->def->instr == ctx->addr1);
+      assert(ctx->addr1_uses > 0);
+
+      if (--ctx->addr1_uses == 0) {
+         ctx->addr1 = NULL;
+      }
    }
 
    instr->flags |= IR3_INSTR_MARK;
@@ -914,8 +936,10 @@ split_addr(struct ir3_sched_ctx *ctx, struct ir3_instruction **addr,
             new_addr = split_instr(ctx, *addr);
             /* original addr is scheduled, but new one isn't: */
             new_addr->flags &= ~IR3_INSTR_MARK;
+            new_addr->uses = _mesa_pointer_set_create(ctx);
          }
          indirect->address->def = new_addr->dsts[0];
+         _mesa_set_add(new_addr->uses, indirect);
          /* don't need to remove old dag edge since old addr is
           * already scheduled:
           */

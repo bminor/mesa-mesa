@@ -1513,6 +1513,18 @@ writes_addr1(struct ir3_instruction *instr)
 }
 
 static inline bool
+reads_addr0(struct ir3_instruction *instr)
+{
+   return instr->address && instr->address->num == regid(REG_A0, 0);
+}
+
+static inline bool
+reads_addr1(struct ir3_instruction *instr)
+{
+   return instr->address && instr->address->num == regid(REG_A0, 1);
+}
+
+static inline bool
 writes_pred(struct ir3_instruction *instr)
 {
    /* Note: only the first dest can write to p0 */
