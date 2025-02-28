@@ -1025,10 +1025,24 @@ vk_cmd_build_acceleration_structures(VkCommandBuffer commandBuffer,
    struct bvh_state *bvh_states = calloc(infoCount, sizeof(struct bvh_state));
 
    if (args->emit_markers) {
-      device->as_build_ops->begin_debug_marker(commandBuffer,
-                                               VK_ACCELERATION_STRUCTURE_BUILD_STEP_TOP,
-                                               "vkCmdBuildAccelerationStructuresKHR(%u)",
-                                               infoCount);
+      uint32_t num_of_blas = 0;
+      uint32_t num_of_tlas = 0;
+      for (uint32_t i = 0; i < infoCount; ++i) {
+         switch (pInfos[i].type) {
+         case VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR:
+            num_of_tlas++;
+            break;
+         case VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR:
+            num_of_blas++;
+            break;
+         default:
+            break;
+         }
+      }
+      ops->begin_debug_marker(commandBuffer,
+                              VK_ACCELERATION_STRUCTURE_BUILD_STEP_TOP,
+                              "vkCmdBuildAccelerationStructuresKHR() TLAS(%u) BLAS(%u)",
+                              num_of_tlas, num_of_blas);
    }
 
    for (uint32_t i = 0; i < infoCount; ++i) {
