@@ -21,7 +21,6 @@
  * IN THE SOFTWARE.
  */
 
-#include <lvp_private.h>
 #include <hardware/gralloc.h>
 
 #if ANDROID_API_LEVEL >= 26
@@ -40,6 +39,8 @@
 #include "vk_fence.h"
 #include "vk_semaphore.h"
 #include "vk_android.h"
+
+#include "lvp_private.h"
 
 static int
 lvp_hal_open(const struct hw_module_t *mod,
