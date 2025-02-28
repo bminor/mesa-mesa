@@ -8,7 +8,7 @@
 
 uncollapsed_section_start bindgen "Building bindgen"
 
-BINDGEN_VER=0.65.1
+BINDGEN_VER=0.71.1
 CBINDGEN_VER=0.26.0
 
 # bindgen

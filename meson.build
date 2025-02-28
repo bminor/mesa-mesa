@@ -737,16 +737,9 @@ if with_gallium_rusticl
 endif
 
 if with_gallium_rusticl or with_nouveau_vk or with_tools.contains('etnaviv')
-  if with_gallium_rusticl
-    # uses rust.bindgen.output_inline_wrapper needing 1.4.0
-    if meson.version().version_compare('< 1.4.0')
-      error('Rusticl requires meson 1.4.0 or newer')
-    endif
-  else
-    # see https://github.com/mesonbuild/meson/issues/12758 (backported to 1.3.2)
-    if meson.version().version_compare('< 1.3.2')
-      error('Mesa Rust support requires meson 1.3.2 or newer')
-    endif
+  # rust.bindgen() does not pass `--rust-target` to bindgen until 1.7.0.
+  if meson.version().version_compare('< 1.7.0')
+    error('Mesa Rust support requires Meson 1.7.0 or newer')
   endif
 
   add_languages('rust', required: true)
@@ -757,15 +750,11 @@ if with_gallium_rusticl or with_nouveau_vk or with_tools.contains('etnaviv')
     error('Mesa requires Rust 1.78.0 or newer')
   endif
 
+  # bindgen 0.71 is the first version that knows about `editions`
   bindgen_version = find_program('bindgen').version()
-  if bindgen_version == 'unknown'
-    error('Failed to detect bindgen version. If you are using bindgen 0.69.0, ' +
-          'please either update to 0.69.1 or downgrade to 0.68.1. ' +
-          'You can install the latest version for your user with `cargo install bindgen-cli`.')
-  endif
-
-  if bindgen_version.version_compare('< 0.65')
-    error('Mesa requires bindgen 0.65 or newer. ' +
+  # unknown covers buggy 0.69.0, 0.71.0
+  if bindgen_version == 'unknown' or bindgen_version.version_compare('< 0.71.1')
+    error('Mesa requires bindgen 0.71.1 or newer. ' +
           'If your distribution does not ship a recent enough version, ' +
           'you can install the latest version for your user with `cargo install bindgen-cli`.')
   endif
