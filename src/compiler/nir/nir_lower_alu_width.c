@@ -143,6 +143,12 @@ will_lower_ffma(nir_shader *shader, unsigned bit_size)
 static nir_def *
 lower_fdot(nir_alu_instr *alu, nir_builder *builder)
 {
+   const bool is_bfloat16 = alu->op == nir_op_bfdot2 ||
+                            alu->op == nir_op_bfdot3 ||
+                            alu->op == nir_op_bfdot4 ||
+                            alu->op == nir_op_bfdot8 ||
+                            alu->op == nir_op_bfdot16;
+
    /* Reversed order can result in lower instruction count because it
     * creates more MAD/FMA in the case of fdot(a, vec4(b, 1.0)).
     * Some games expect xyzw order, so only reverse the order for imprecise fdot.
@@ -152,16 +158,19 @@ lower_fdot(nir_alu_instr *alu, nir_builder *builder)
    /* If we don't want to lower ffma, create several ffma instead of fmul+fadd
     * and fusing later because fusing is not possible for exact fdot instructions.
     */
-   if (will_lower_ffma(builder->shader, alu->def.bit_size))
+   if (!is_bfloat16 && will_lower_ffma(builder->shader, alu->def.bit_size))
       return lower_reduction(alu, nir_op_fmul, nir_op_fadd, builder, reverse_order);
 
    unsigned num_components = nir_op_infos[alu->op].input_sizes[0];
+
+   const nir_op fma_op = is_bfloat16 ? nir_op_bffma : nir_op_ffma;
+   const nir_op mul_op = is_bfloat16 ? nir_op_bfmul : nir_op_fmul;
 
    nir_def *prev = NULL;
    for (int i = 0; i < num_components; i++) {
       int channel = reverse_order ? num_components - 1 - i : i;
       nir_alu_instr *instr = nir_alu_instr_create(
-         builder->shader, prev ? nir_op_ffma : nir_op_fmul);
+         builder->shader, prev ? fma_op : mul_op);
       nir_alu_ssa_dest_init(instr, 1, alu->def.bit_size);
       for (unsigned j = 0; j < 2; j++) {
          nir_alu_src_copy(&instr->src[j], &alu->src[j]);
@@ -344,6 +353,11 @@ lower_alu_instr_width(nir_builder *b, nir_instr *instr, void *_data)
    case nir_op_fdot4:
    case nir_op_fdot8:
    case nir_op_fdot16:
+   case nir_op_bfdot2:
+   case nir_op_bfdot3:
+   case nir_op_bfdot4:
+   case nir_op_bfdot8:
+   case nir_op_bfdot16:
       return lower_fdot(alu, b);
 
       LOWER_REDUCTION(nir_op_ball_fequal, nir_op_feq, nir_op_iand);

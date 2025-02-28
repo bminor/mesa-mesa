@@ -1727,3 +1727,26 @@ opcode("udot_2x16_uadd_sat", 0, tint32, [0, 0, 0], [tuint32, tuint32, tint32],
 
    dst = tmp >= UINT32_MAX ? UINT32_MAX : tmp;
 """)
+
+# Bfloat16 operations.
+
+unop_numeric_convert("bf2f", tfloat32, tuint16, "_mesa_bfloat16_bits_to_float(src0)")
+unop_numeric_convert("f2bf", tuint16, tfloat32, "_mesa_float_to_bfloat16_bits_rte(src0)")
+
+binop("bfmul", tuint16, _2src_commutative + associative, """
+   const float a = _mesa_bfloat16_bits_to_float(src0);
+   const float b = _mesa_bfloat16_bits_to_float(src1);
+   dst = _mesa_float_to_bfloat16_bits_rte(a * b);
+""")
+
+triop("bffma", tuint16, _2src_commutative, """
+    const float a = _mesa_bfloat16_bits_to_float(src0);
+    const float b = _mesa_bfloat16_bits_to_float(src1);
+    const float c = _mesa_bfloat16_bits_to_float(src2);
+    dst = _mesa_float_to_bfloat16_bits_rte(fmaf(a, b, c));
+""")
+
+binop_reduce("bfdot", 1, tuint16, tuint16,
+             "_mesa_bfloat16_bits_to_float({src0}) * _mesa_bfloat16_bits_to_float({src1})",
+             "_mesa_bfloat16_bits_to_float({src0}) + _mesa_bfloat16_bits_to_float({src1})",
+             "_mesa_float_to_bfloat16_bits_rte({src})")
