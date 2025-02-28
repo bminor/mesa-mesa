@@ -2258,6 +2258,39 @@ static pco_instr *trans_const(trans_ctx *tctx, nir_load_const_instr *nconst)
    return instr;
 }
 
+static pco_instr *trans_undef(trans_ctx *tctx, nir_undef_instr *undef)
+{
+   unsigned num_bits = undef->def.bit_size;
+   unsigned chans = undef->def.num_components;
+
+   pco_ref dest = pco_ref_nir_def_t(&undef->def, tctx);
+
+   if (num_bits == 1) {
+      assert(chans == 1);
+      return pco_mov(&tctx->b, dest, pco_ref_bits(pco_zero, 1));
+   }
+
+   assert(num_bits == 32);
+
+   if (pco_ref_is_scalar(dest)) {
+      assert(chans == 1);
+
+      pco_ref imm = pco_ref_imm(0, pco_bits(num_bits), pco_ref_get_dtype(dest));
+
+      return pco_movi32(&tctx->b, dest, imm);
+   }
+
+   pco_ref comps[NIR_MAX_VEC_COMPONENTS];
+   for (unsigned c = 0; c < chans; ++c)
+      comps[c] = pco_zero;
+
+   pco_instr *instr = pco_vec(&tctx->b, dest, chans, comps);
+
+   split_dest_comps(tctx, instr, dest);
+
+   return instr;
+}
+
 /**
  * \brief Translates a NIR jump instruction into PCO.
  *
@@ -2302,6 +2335,9 @@ static pco_instr *trans_instr(trans_ctx *tctx, nir_instr *ninstr)
 
    case nir_instr_type_jump:
       return trans_jump(tctx, nir_instr_as_jump(ninstr));
+
+   case nir_instr_type_undef:
+      return trans_undef(tctx, nir_instr_as_undef(ninstr));
 
    default:
       break;
