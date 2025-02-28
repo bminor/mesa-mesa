@@ -43,16 +43,6 @@ void r300_shader_read_fs_inputs(struct tgsi_shader_info* info,
                 fs_inputs->color[index] = i;
                 break;
 
-            case TGSI_SEMANTIC_PCOORD:
-                fs_inputs->pcoord = i;
-                break;
-
-            case TGSI_SEMANTIC_TEXCOORD:
-                assert(index < ATTR_TEXCOORD_COUNT);
-                fs_inputs->texcoord[index] = i;
-                fs_inputs->num_texcoord++;
-                break;
-
             case TGSI_SEMANTIC_GENERIC:
                 assert(index < ATTR_GENERIC_COUNT);
                 fs_inputs->generic[index] = i;
@@ -128,14 +118,6 @@ static void allocate_hardware_inputs(
         if (inputs->generic[i] != ATTR_UNUSED) {
             allocate(mydata, inputs->generic[i], reg++);
         }
-    }
-    for (i = 0; i < ATTR_TEXCOORD_COUNT; i++) {
-        if (inputs->texcoord[i] != ATTR_UNUSED) {
-            allocate(mydata, inputs->texcoord[i], reg++);
-        }
-    }
-    if (inputs->pcoord != ATTR_UNUSED) {
-        allocate(mydata, inputs->pcoord, reg++);
     }
     if (inputs->fog != ATTR_UNUSED) {
         allocate(mydata, inputs->fog, reg++);

@@ -541,7 +541,6 @@ static void r300_init_screen_caps(struct r300_screen* r300screen)
    caps->clip_halfz = true;
    caps->allow_mapped_buffers_during_execution = true;
    caps->legacy_math_rules = true;
-   caps->tgsi_texcoord = true;
 
    caps->texture_transfer_modes = PIPE_TEXTURE_TRANSFER_BLIT;
 

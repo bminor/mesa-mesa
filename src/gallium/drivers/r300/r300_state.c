@@ -1307,15 +1307,17 @@ static void* r300_create_rs_state(struct pipe_context* pipe,
     clip_rule = state->scissor ? 0xAAAA : 0xFFFF;
 
     /* Point sprites coord mode */
-    switch (state->sprite_coord_mode) {
-        case PIPE_SPRITE_COORD_UPPER_LEFT:
-            point_texcoord_top = 0.0f;
-            point_texcoord_bottom = 1.0f;
-            break;
-        case PIPE_SPRITE_COORD_LOWER_LEFT:
-            point_texcoord_top = 1.0f;
-            point_texcoord_bottom = 0.0f;
-            break;
+    if (rs->rs.sprite_coord_enable) {
+        switch (state->sprite_coord_mode) {
+            case PIPE_SPRITE_COORD_UPPER_LEFT:
+                point_texcoord_top = 0.0f;
+                point_texcoord_bottom = 1.0f;
+                break;
+            case PIPE_SPRITE_COORD_LOWER_LEFT:
+                point_texcoord_top = 1.0f;
+                point_texcoord_bottom = 0.0f;
+                break;
+        }
     }
 
     if (r300_screen(pipe->screen)->caps.has_tcl) {
