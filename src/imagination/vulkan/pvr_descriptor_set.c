@@ -82,6 +82,9 @@ static unsigned pvr_descriptor_size(VkDescriptorType type)
    case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
       return sizeof(struct pvr_combined_image_sampler_descriptor);
 
+   case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+      return sizeof(struct pvr_image_descriptor);
+
    default:
       mesa_loge("Unsupported descriptor type %s.\n",
                 vk_DescriptorType_to_str(type));
@@ -505,6 +508,27 @@ write_image_sampler(const struct pvr_descriptor_set *set,
    memcpy(desc_mapping, &image_sampler_desc, sizeof(image_sampler_desc));
 }
 
+static void
+write_storage_image(const struct pvr_descriptor_set *set,
+                    const VkDescriptorImageInfo *image_info,
+                    const struct pvr_descriptor_set_layout_binding *binding,
+                    uint32_t elem)
+{
+   PVR_FROM_HANDLE(pvr_image_view, image_view, image_info->imageView);
+
+   bool is_cube = image_view->vk.view_type == VK_IMAGE_VIEW_TYPE_CUBE ||
+                  image_view->vk.view_type == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+
+   const unsigned desc_offset = binding->offset + (elem * binding->stride);
+   void *desc_mapping = (uint8_t *)set->mapping + desc_offset;
+
+   struct pvr_image_descriptor storage_image_desc =
+      image_view->image_state[is_cube ? PVR_TEXTURE_STATE_STORAGE
+                                      : PVR_TEXTURE_STATE_SAMPLE];
+
+   memcpy(desc_mapping, &storage_image_desc, sizeof(storage_image_desc));
+}
+
 void pvr_UpdateDescriptorSets(VkDevice _device,
                               uint32_t descriptorWriteCount,
                               const VkWriteDescriptorSet *pDescriptorWrites,
@@ -541,6 +565,15 @@ void pvr_UpdateDescriptorSets(VkDevice _device,
       case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
          for (uint32_t j = 0; j < write->descriptorCount; j++) {
             write_image_sampler(set,
+                                &write->pImageInfo[j],
+                                binding,
+                                write->dstArrayElement + j);
+         }
+         break;
+
+      case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+         for (uint32_t j = 0; j < write->descriptorCount; j++) {
+            write_storage_image(set,
                                 &write->pImageInfo[j],
                                 binding,
                                 write->dstArrayElement + j);
