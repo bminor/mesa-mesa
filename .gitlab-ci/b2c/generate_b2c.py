@@ -43,7 +43,7 @@ values['working_dir'] = environ['CI_PROJECT_DIR']
 
 values['image_under_test'] = environ['IMAGE_UNDER_TEST']
 values['machine_registration_image'] = environ['B2C_MACHINE_REGISTRATION_IMAGE']
-values['telegraf_image'] = environ.get('TELEGRAF_IMAGE', "registry.freedesktop.org/gfx-ci/ci-tron/telegraf:latest")
+values['telegraf_image'] = environ['B2C_TELEGRAF_IMAGE']
 
 # Pull all our images through our proxy registry
 for image in ['image_under_test', 'machine_registration_image', 'telegraf_image']:
