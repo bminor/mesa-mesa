@@ -52,8 +52,5 @@ for image in ['image_under_test', 'machine_registration_image', 'telegraf_image'
         '{{ fdo_proxy_registry }}'
     )
 
-if 'kernel_cmdline_extras' not in values:
-    values['kernel_cmdline_extras'] = ''
-
 with open(path.splitext(path.basename(environ['B2C_JOB_TEMPLATE']))[0], "w") as f:
     f.write(template.render(values))
