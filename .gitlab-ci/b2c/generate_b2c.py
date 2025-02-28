@@ -40,7 +40,7 @@ values['ci_job_id'] = environ['CI_JOB_ID']
 values['ci_runner_description'] = environ['CI_RUNNER_DESCRIPTION']
 values['working_dir'] = environ['CI_PROJECT_DIR']
 
-values['image_under_test'] = environ['IMAGE_UNDER_TEST']
+values['image_under_test'] = environ['B2C_IMAGE_UNDER_TEST']
 values['machine_registration_image'] = environ['B2C_MACHINE_REGISTRATION_IMAGE']
 values['telegraf_image'] = environ['B2C_TELEGRAF_IMAGE']
 

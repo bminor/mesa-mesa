@@ -366,8 +366,8 @@ yaml-toml-shell-py-test:
     # As noted in the top description, we make a distinction between the
     # container used by gitlab-runner to queue the work, and the container
     # used by the DUTs/test machines. To make this distinction quite clear,
-    # we rename the MESA_IMAGE variable into IMAGE_UNDER_TEST.
-    IMAGE_UNDER_TEST: "$MESA_IMAGE"
+    # we rename the variable.
+    B2C_IMAGE_UNDER_TEST: "$MESA_IMAGE"
 
     B2C_INSTALL_TARBALL_URL: "https://${PIPELINE_ARTIFACTS_BASE}/${S3_ARTIFACT_NAME}.tar.zst"
     B2C_CONTAINER_CMD: "./install/common/init-stage2.sh"
