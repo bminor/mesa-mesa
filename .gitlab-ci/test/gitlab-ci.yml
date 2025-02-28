@@ -439,8 +439,13 @@ yaml-toml-shell-py-test:
 
       # Submit the job to Valve's CI gateway service with the CI
       # provisioned job_folder.
-      env PYTHONUNBUFFERED=1 executorctl \
-          run -w b2c.yml.jinja2 -j $(slugify "$CI_JOB_NAME") -s ${JOB_FOLDER} -i "$CI_RUNNER_DESCRIPTION"
+      PYTHONUNBUFFERED=1 \
+      executorctl run \
+          --machine-id "$CI_RUNNER_DESCRIPTION" \
+          --job-id $(slugify "$CI_JOB_NAME") \
+          --share-directory "$JOB_FOLDER" \
+          --wait \
+          b2c.yml.jinja2
 
   after_script:
     # Keep the results path the same as baremetal and LAVA
