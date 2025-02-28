@@ -842,6 +842,7 @@ ir3_instr_clone(struct ir3_instruction *instr)
    *new_instr = *instr;
    new_instr->dsts = dsts;
    new_instr->srcs = srcs;
+   new_instr->uses = NULL;
    list_inithead(&new_instr->rpt_node);
 
    insert_instr(ir3_before_terminator(instr->block), new_instr);
