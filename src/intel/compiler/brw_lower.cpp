@@ -354,7 +354,7 @@ brw_lower_barycentrics(brw_shader &s)
  * swizzles of the source, specified as \p swz0 and \p swz1.
  */
 static bool
-lower_derivative(brw_shader &s, bblock_t *block, brw_inst *inst,
+lower_derivative(brw_shader &s, brw_inst *inst,
                  unsigned swz0, unsigned swz1)
 {
    const brw_builder ubld = brw_builder(inst).exec_all();
@@ -386,19 +386,19 @@ brw_lower_derivatives(brw_shader &s)
 
    foreach_block_and_inst(block, brw_inst, inst, s.cfg) {
       if (inst->opcode == FS_OPCODE_DDX_COARSE)
-         progress |= lower_derivative(s, block, inst,
+         progress |= lower_derivative(s, inst,
                                       BRW_SWIZZLE_XXXX, BRW_SWIZZLE_YYYY);
 
       else if (inst->opcode == FS_OPCODE_DDX_FINE)
-         progress |= lower_derivative(s, block, inst,
+         progress |= lower_derivative(s, inst,
                                       BRW_SWIZZLE_XXZZ, BRW_SWIZZLE_YYWW);
 
       else if (inst->opcode == FS_OPCODE_DDY_COARSE)
-         progress |= lower_derivative(s, block, inst,
+         progress |= lower_derivative(s, inst,
                                       BRW_SWIZZLE_XXXX, BRW_SWIZZLE_ZZZZ);
 
       else if (inst->opcode == FS_OPCODE_DDY_FINE)
-         progress |= lower_derivative(s, block, inst,
+         progress |= lower_derivative(s, inst,
                                       BRW_SWIZZLE_XYXY, BRW_SWIZZLE_ZWZW);
    }
 
@@ -778,7 +778,7 @@ brw_s0(enum brw_reg_type type, unsigned subnr)
 }
 
 static bool
-brw_lower_send_gather_inst(brw_shader &s, bblock_t *block, brw_inst *inst)
+brw_lower_send_gather_inst(brw_shader &s, brw_inst *inst)
 {
    const intel_device_info *devinfo = s.devinfo;
    assert(devinfo->ver >= 30);
@@ -837,7 +837,7 @@ brw_lower_send_gather(brw_shader &s)
 
    foreach_block_and_inst(block, brw_inst, inst, s.cfg) {
       if (inst->opcode == SHADER_OPCODE_SEND_GATHER)
-         progress |= brw_lower_send_gather_inst(s, block, inst);
+         progress |= brw_lower_send_gather_inst(s, inst);
    }
 
    if (progress)

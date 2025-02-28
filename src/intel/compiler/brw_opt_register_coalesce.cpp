@@ -97,7 +97,7 @@ is_coalesce_candidate(const brw_shader *v, const brw_inst *inst)
 static bool
 can_coalesce_vars(const intel_device_info *devinfo,
                   const brw_live_variables &live, const cfg_t *cfg,
-                  const bblock_t *block, const brw_inst *inst,
+                  const brw_inst *inst,
                   int dst_var, int src_var)
 {
    if (!live.vars_interfere(src_var, dst_var))
@@ -176,7 +176,7 @@ can_coalesce_vars(const intel_device_info *devinfo,
          /* See the big comment above */
          if (regions_overlap(scan_inst->dst, scan_inst->size_written,
                              inst->src[0], inst->size_read(devinfo, 0))) {
-            if (seen_copy || scan_block != block ||
+            if (seen_copy || scan_block != inst->block ||
                 (scan_inst->force_writemask_all && !inst->force_writemask_all))
                return false;
             seen_src_write = true;
@@ -302,7 +302,7 @@ brw_opt_register_coalesce(brw_shader &s)
          dst_var[i] = live.var_from_vgrf[dst_reg] + dst_reg_offset[i];
          src_var[i] = live.var_from_vgrf[src_reg] + i;
 
-         if (!can_coalesce_vars(devinfo, live, s.cfg, block, inst, dst_var[i], src_var[i]) ||
+         if (!can_coalesce_vars(devinfo, live, s.cfg, inst, dst_var[i], src_var[i]) ||
              would_violate_eot_restriction(s, s.cfg, dst_reg, src_reg)) {
             can_coalesce = false;
             src_reg = ~0u;

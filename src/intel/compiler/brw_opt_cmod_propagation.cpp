@@ -49,8 +49,7 @@
  */
 
 static bool
-cmod_propagate_cmp_to_add(const intel_device_info *devinfo, bblock_t *block,
-                          brw_inst *inst)
+cmod_propagate_cmp_to_add(const intel_device_info *devinfo, brw_inst *inst)
 {
    bool read_flag = false;
    const unsigned flags_written = inst->flags_written(devinfo);
@@ -166,8 +165,7 @@ cmod_propagate_cmp_to_add(const intel_device_info *devinfo, bblock_t *block,
  *    or.z.f0(8)      g78<8,8,1>      g76<8,8,1>UD    g77<8,8,1>UD
  */
 static bool
-cmod_propagate_not(const intel_device_info *devinfo, bblock_t *block,
-                   brw_inst *inst)
+cmod_propagate_not(const intel_device_info *devinfo, brw_inst *inst)
 {
    const enum brw_conditional_mod cond = brw_negate_cmod(inst->conditional_mod);
    bool read_flag = false;
@@ -271,14 +269,14 @@ opt_cmod_propagation_local(const intel_device_info *devinfo, bblock_t *block)
        */
       if (inst->opcode == BRW_OPCODE_CMP && !inst->src[1].is_zero()) {
          if (brw_type_is_float(inst->src[0].type) &&
-             cmod_propagate_cmp_to_add(devinfo, block, inst))
+             cmod_propagate_cmp_to_add(devinfo, inst))
             progress = true;
 
          continue;
       }
 
       if (inst->opcode == BRW_OPCODE_NOT) {
-         progress = cmod_propagate_not(devinfo, block, inst) || progress;
+         progress = cmod_propagate_not(devinfo, inst) || progress;
          continue;
       }
 

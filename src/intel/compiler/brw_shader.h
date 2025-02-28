@@ -312,7 +312,7 @@ bool brw_lower_send_descriptors(brw_shader &s);
 bool brw_lower_send_gather(brw_shader &s);
 bool brw_lower_sends_overlapping_payload(brw_shader &s);
 bool brw_lower_simd_width(brw_shader &s);
-bool brw_lower_src_modifiers(brw_shader &s, bblock_t *block, brw_inst *inst, unsigned i);
+bool brw_lower_src_modifiers(brw_shader &s, brw_inst *inst, unsigned i);
 bool brw_lower_sub_sat(brw_shader &s);
 bool brw_lower_subgroup_ops(brw_shader &s);
 bool brw_lower_uniform_pull_constant_loads(brw_shader &s);

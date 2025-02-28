@@ -137,7 +137,7 @@ factor_uint32(uint32_t x, unsigned *result_a, unsigned *result_b)
 }
 
 static void
-brw_lower_mul_dword_inst(brw_shader &s, brw_inst *inst, bblock_t *block)
+brw_lower_mul_dword_inst(brw_shader &s, brw_inst *inst)
 {
    const intel_device_info *devinfo = s.devinfo;
    const brw_builder ibld(inst);
@@ -244,7 +244,7 @@ brw_lower_mul_dword_inst(brw_shader &s, brw_inst *inst, bblock_t *block)
 
          if (inst->src[1].abs || (inst->src[1].negate &&
                                   source_mods_unsupported))
-            brw_lower_src_modifiers(s, block, inst, 1);
+            brw_lower_src_modifiers(s, inst, 1);
 
          if (inst->src[1].file == IMM) {
             unsigned a;
@@ -298,7 +298,7 @@ brw_lower_mul_dword_inst(brw_shader &s, brw_inst *inst, bblock_t *block)
 }
 
 static void
-brw_lower_mul_qword_inst(brw_shader &s, brw_inst *inst, bblock_t *block)
+brw_lower_mul_qword_inst(brw_shader &s, brw_inst *inst)
 {
    const intel_device_info *devinfo = s.devinfo;
    const brw_builder ibld(inst);
@@ -367,7 +367,7 @@ brw_lower_mul_qword_inst(brw_shader &s, brw_inst *inst, bblock_t *block)
 }
 
 static void
-brw_lower_mulh_inst(brw_shader &s, brw_inst *inst, bblock_t *block)
+brw_lower_mulh_inst(brw_shader &s, brw_inst *inst)
 {
    const intel_device_info *devinfo = s.devinfo;
    const brw_builder ibld(inst);
@@ -382,7 +382,7 @@ brw_lower_mulh_inst(brw_shader &s, brw_inst *inst, bblock_t *block)
     *      mach (8) r5.0<1>:d r2.0<8;8,1>:d r3.0<8;8,1>:d"
     */
    if (inst->src[1].negate || inst->src[1].abs)
-      brw_lower_src_modifiers(s, block, inst, 1);
+      brw_lower_src_modifiers(s, inst, 1);
 
    /* Should have been lowered to 8-wide. */
    assert(inst->exec_size <= brw_get_lowered_simd_width(&s, inst));
@@ -430,7 +430,7 @@ brw_lower_integer_multiplication(brw_shader &s)
               inst->src[0].type == BRW_TYPE_UQ) &&
              (inst->src[1].type == BRW_TYPE_Q ||
               inst->src[1].type == BRW_TYPE_UQ)) {
-            brw_lower_mul_qword_inst(s, inst, block);
+            brw_lower_mul_qword_inst(s, inst);
             inst->remove();
             progress = true;
          } else if (!inst->dst.is_accumulator() &&
@@ -438,12 +438,12 @@ brw_lower_integer_multiplication(brw_shader &s)
                      inst->dst.type == BRW_TYPE_UD) &&
                     (!devinfo->has_integer_dword_mul ||
                      devinfo->verx10 >= 125)) {
-            brw_lower_mul_dword_inst(s, inst, block);
+            brw_lower_mul_dword_inst(s, inst);
             inst->remove();
             progress = true;
          }
       } else if (inst->opcode == SHADER_OPCODE_MULH) {
-         brw_lower_mulh_inst(s, inst, block);
+         brw_lower_mulh_inst(s, inst);
          inst->remove();
          progress = true;
       }
