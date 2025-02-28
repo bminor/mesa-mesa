@@ -62,7 +62,7 @@ scoreboard_test::scoreboard_test()
    v = new brw_shader(compiler, &params, NULL, &prog_data->base, shader, 8,
                       false, false);
 
-   bld = brw_builder(v).at_end();
+   bld = brw_builder(v);
 }
 
 scoreboard_test::~scoreboard_test()

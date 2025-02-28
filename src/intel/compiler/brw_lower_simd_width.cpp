@@ -658,7 +658,7 @@ brw_lower_simd_width(brw_shader &s)
       assert(lower_width < inst->exec_size);
 
       /* Builder matching the original instruction. */
-      const brw_builder bld = brw_builder(&s).at_end();
+      const brw_builder bld = brw_builder(&s);
       const brw_builder ibld =
          bld.at(block, inst).exec_all(inst->force_writemask_all)
             .group(inst->exec_size, inst->group / inst->exec_size);

@@ -47,7 +47,7 @@ brw_set_tcs_invocation_id(brw_shader &s)
    const struct intel_device_info *devinfo = s.devinfo;
    struct brw_tcs_prog_data *tcs_prog_data = brw_tcs_prog_data(s.prog_data);
    struct brw_vue_prog_data *vue_prog_data = &tcs_prog_data->base;
-   const brw_builder bld = brw_builder(&s).at_end();
+   const brw_builder bld = brw_builder(&s);
 
    const unsigned instance_id_mask =
       (devinfo->verx10 >= 125) ? INTEL_MASK(7, 0) :
@@ -97,7 +97,7 @@ brw_emit_tcs_thread_end(brw_shader &s)
    if (s.mark_last_urb_write_with_eot())
       return;
 
-   const brw_builder bld = brw_builder(&s).at_end();
+   const brw_builder bld = brw_builder(&s);
 
    /* Emit a URB write to end the thread.  On Broadwell, we use this to write
     * zero to the "TR DS Cache Disable" bit (we haven't implemented a fancy
@@ -131,7 +131,7 @@ run_tcs(brw_shader &s)
    assert(s.stage == MESA_SHADER_TESS_CTRL);
 
    struct brw_vue_prog_data *vue_prog_data = brw_vue_prog_data(s.prog_data);
-   const brw_builder bld = brw_builder(&s).at_end();
+   const brw_builder bld = brw_builder(&s);
 
    assert(vue_prog_data->dispatch_mode == INTEL_DISPATCH_MODE_TCS_SINGLE_PATCH ||
           vue_prog_data->dispatch_mode == INTEL_DISPATCH_MODE_TCS_MULTI_PATCH);

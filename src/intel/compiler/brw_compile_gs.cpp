@@ -40,7 +40,7 @@ brw_emit_gs_thread_end(brw_shader &s)
       s.emit_gs_control_data_bits(s.final_gs_vertex_count);
    }
 
-   const brw_builder abld = brw_builder(&s).at_end().annotate("thread end");
+   const brw_builder abld = brw_builder(&s).annotate("thread end");
    brw_inst *inst;
 
    if (gs_prog_data->static_vertex_count != -1) {
@@ -90,7 +90,7 @@ run_gs(brw_shader &s)
 
    s.payload_ = new brw_gs_thread_payload(s);
 
-   const brw_builder bld = brw_builder(&s).at_end();
+   const brw_builder bld = brw_builder(&s);
 
    s.final_gs_vertex_count = bld.vgrf(BRW_TYPE_UD);
 

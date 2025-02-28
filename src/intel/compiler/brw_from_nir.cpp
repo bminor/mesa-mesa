@@ -2438,7 +2438,7 @@ brw_shader::gs_urb_per_slot_dword_index(const brw_reg &vertex_count)
     *    Similarly, if the control data header is <= 32 bits, there is only one
     *    DWord, so we can skip channel masks.
     */
-   const brw_builder bld = brw_builder(this).at_end();
+   const brw_builder bld = brw_builder(this);
    const brw_builder abld = bld.annotate("urb per slot offset");
 
    /* Figure out which DWord we're trying to write to using the formula:
@@ -2483,7 +2483,7 @@ brw_shader::gs_urb_channel_mask(const brw_reg &dword_index)
    if (gs.control_data_header_size_bits <= 32)
       return channel_mask;
 
-   const brw_builder bld = brw_builder(this).at_end();
+   const brw_builder bld = brw_builder(this);
    const brw_builder ubld = bld.exec_all();
 
    /* Set the channel masks to 1 << (dword_index % 4), so that we'll
@@ -2502,7 +2502,7 @@ brw_shader::emit_gs_control_data_bits(const brw_reg &vertex_count)
 
    const struct brw_gs_prog_data *gs_prog_data = brw_gs_prog_data(prog_data);
 
-   const brw_builder bld = brw_builder(this).at_end();
+   const brw_builder bld = brw_builder(this);
    const brw_builder abld = bld.annotate("emit control data bits");
 
    brw_reg dword_index = gs_urb_per_slot_dword_index(vertex_count);
@@ -7833,7 +7833,7 @@ brw_from_nir(brw_shader *s)
       .nir     = s->nir,
       .devinfo = s->devinfo,
       .mem_ctx = ralloc_context(NULL),
-      .bld     = brw_builder(s).at_end(),
+      .bld     = brw_builder(s),
    };
 
    if (INTEL_DEBUG(DEBUG_ANNOTATION))

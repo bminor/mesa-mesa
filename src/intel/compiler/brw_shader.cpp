@@ -65,7 +65,7 @@ brw_shader::emit_urb_writes(const brw_reg &gs_vertex_count)
       unreachable("invalid stage");
    }
 
-   const brw_builder bld = brw_builder(this).at_end();
+   const brw_builder bld = brw_builder(this);
 
    brw_reg per_slot_offsets;
 
@@ -330,7 +330,7 @@ brw_shader::emit_urb_writes(const brw_reg &gs_vertex_count)
 void
 brw_shader::emit_cs_terminate()
 {
-   const brw_builder ubld = brw_builder(this).at_end().exec_all();
+   const brw_builder ubld = brw_builder(this).exec_all();
 
    /* We can't directly send from g0, since sends with EOT have to use
     * g112-127. So, copy it to a virtual register, The register allocator will

@@ -40,7 +40,7 @@ cse_test::cse_test()
    v = new brw_shader(compiler, &params, NULL, &prog_data->base, shader,
                       16, false, false);
 
-   bld = brw_builder(v).at_end();
+   bld = brw_builder(v);
 
    devinfo->verx10 = 125;
    devinfo->ver = devinfo->verx10 / 10;
