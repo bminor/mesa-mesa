@@ -3034,9 +3034,15 @@ static void handle_clear_color_image(struct vk_cmd_queue_entry *cmd,
                                      struct rendering_state *state)
 {
    LVP_FROM_HANDLE(lvp_image, image, cmd->u.clear_color_image.image);
+
+   enum pipe_format format = image->planes[0].bo->format;
+   const struct util_format_description *desc = util_format_description(format);
+   if (util_format_is_int64(desc))
+      format = util_format_get_array(desc->channel[0].type, 32, desc->nr_channels * 2, false, true);
+
    union util_color uc;
    uint32_t *col_val = uc.ui;
-   util_pack_color_union(image->planes[0].bo->format, &uc, (void*)cmd->u.clear_color_image.color);
+   util_pack_color_union(format, &uc, (void*)cmd->u.clear_color_image.color);
    for (unsigned i = 0; i < cmd->u.clear_color_image.range_count; i++) {
       VkImageSubresourceRange *range = &cmd->u.clear_color_image.ranges[i];
       struct pipe_box box;
