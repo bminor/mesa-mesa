@@ -2917,21 +2917,19 @@ anv_get_image_subresource_layout(struct anv_device *device,
    }
 
    const uint32_t level = subresource->imageSubresource.mipLevel;
+   bool subresource_has_unique_tiles = false;
    if (isl_surf) {
       /* ISL tries to give us a single layer but the Vulkan API expect the
        * entire 3D size.
        */
       const uint32_t layer = subresource->imageSubresource.arrayLayer;
-      const uint32_t z = u_minify(isl_surf->logical_level0_px.d, level) - 1;
-      uint64_t z0_start_tile_B, z0_end_tile_B;
-      uint64_t zX_start_tile_B, zX_end_tile_B;
-      isl_surf_get_image_range_B_tile(isl_surf, level, layer, 0,
-                                      &z0_start_tile_B, &z0_end_tile_B);
-      isl_surf_get_image_range_B_tile(isl_surf, level, layer, z,
-                                      &zX_start_tile_B, &zX_end_tile_B);
-
-      layout->subresourceLayout.offset = mem_range->offset + z0_start_tile_B;
-      layout->subresourceLayout.size = zX_end_tile_B - z0_start_tile_B;
+      const uint32_t layers = u_minify(isl_surf->logical_level0_px.d, level);
+      uint64_t start_tile_B, end_tile_B;
+      subresource_has_unique_tiles =
+         isl_surf_image_has_unique_tiles(isl_surf, level, layer, layers,
+                                         &start_tile_B, &end_tile_B);
+      layout->subresourceLayout.offset = mem_range->offset + start_tile_B;
+      layout->subresourceLayout.size = end_tile_B - start_tile_B;
       layout->subresourceLayout.rowPitch = row_pitch_B;
       layout->subresourceLayout.depthPitch =
          isl_surf_get_array_pitch(isl_surf);
@@ -2951,7 +2949,7 @@ anv_get_image_subresource_layout(struct anv_device *device,
    if (host_memcpy_size) {
       if (!isl_surf) {
          host_memcpy_size->size = 0;
-      } else if (anv_image_can_host_memcpy(image)) {
+      } else if (subresource_has_unique_tiles) {
          host_memcpy_size->size = layout->subresourceLayout.size;
       } else {
          /* If we cannot do straight memcpy of the image, compute a linear

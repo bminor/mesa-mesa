@@ -3041,6 +3041,17 @@ isl_surf_get_image_offset_B_tile_el(const struct isl_surf *surf,
                                     uint32_t *x_offset_el,
                                     uint32_t *y_offset_el);
 
+/* Returns whether or not a subresource range maps to a tile-aligned memory
+ * range which doesn't overlap other subresources.
+ */
+bool
+isl_surf_image_has_unique_tiles(const struct isl_surf *surf,
+                                uint32_t level,
+                                uint32_t start_layer,
+                                uint32_t num_layers,
+                                uint64_t *start_tile_B,
+                                uint64_t *end_tile_B);
+
 /**
  * Calculate the range in bytes occupied by a subimage, to the nearest tile.
  *

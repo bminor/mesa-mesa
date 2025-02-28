@@ -4376,6 +4376,69 @@ isl_surf_get_image_offset_B_tile_el(const struct isl_surf *surf,
    }
 }
 
+bool
+isl_surf_image_has_unique_tiles(const struct isl_surf *surf,
+                                uint32_t level,
+                                uint32_t start_layer,
+                                uint32_t num_layers,
+                                uint64_t *start_tile_B,
+                                uint64_t *end_tile_B)
+{
+   /* Get the memory range of the specified subresource range. */
+   bool dim_is_3d = surf->dim == ISL_SURF_DIM_3D;
+   uint32_t end_layer = start_layer + num_layers - 1;
+   isl_surf_get_image_range_B_tile(surf, level,
+                                   dim_is_3d ? 0 : start_layer,
+                                   dim_is_3d ? start_layer : 0,
+                                   start_tile_B, end_tile_B);
+   if (num_layers > 1) {
+      /* end_tile_B may be incorrect, recompute it with end_layer. */
+      UNUSED uint64_t unused_start_tile_B;
+      isl_surf_get_image_range_B_tile(surf, level,
+                                      dim_is_3d ? 0 : end_layer,
+                                      dim_is_3d ? end_layer : 0,
+                                      &unused_start_tile_B, end_tile_B);
+   }
+
+   /* Check if the memory range of other subresource ranges overlap. */
+   for (int lod = 0; lod < surf->levels; lod++) {
+      int surf_layers = dim_is_3d ? u_minify(surf->logical_level0_px.d, lod) :
+                        surf->logical_level0_px.a;
+      for (int layer = 0; layer < surf_layers; layer++) {
+
+         /* Skip the subresource range of interest. */
+         if (level == lod && layer >= start_layer && layer <= end_layer)
+            continue;
+
+         uint64_t start_tile_B_i, end_tile_B_i;
+         isl_surf_get_image_range_B_tile(surf, level,
+                                         dim_is_3d ? 0 : layer,
+                                         dim_is_3d ? layer : 0,
+                                         &start_tile_B_i, &end_tile_B_i);
+
+         /* Check if the specified range is in this subresource. */
+         if (*start_tile_B >= start_tile_B_i &&
+             *start_tile_B <= end_tile_B_i)
+            return false;
+
+         if (*end_tile_B >= start_tile_B_i &&
+             *end_tile_B <= end_tile_B_i)
+            return false;
+
+         /* Check if this subresource is in the specified range. */
+         if (start_tile_B_i >= *start_tile_B &&
+             start_tile_B_i <= *end_tile_B)
+            return false;
+
+         if (end_tile_B_i >= *start_tile_B &&
+             end_tile_B_i <= *end_tile_B)
+            return false;
+      }
+   }
+
+   return true;
+}
+
 void
 isl_surf_get_image_range_B_tile(const struct isl_surf *surf,
                                 uint32_t level,
