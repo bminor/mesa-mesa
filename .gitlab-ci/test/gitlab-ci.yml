@@ -359,6 +359,7 @@ yaml-toml-shell-py-test:
     B2C_TIMEOUT_OVERALL_MINUTES: 90
     B2C_TIMEOUT_CONSOLE_ACTIVITY_RETRIES: 0
     B2C_JOB_VOLUME_EXCLUSIONS: "*.shader_cache,install/*,*/install/*,*/vkd3d-proton.cache*,vkd3d-proton.cache*,*.qpa"
+    B2C_MACHINE_REGISTRATION_IMAGE: "registry.freedesktop.org/gfx-ci/ci-tron/machine-registration:latest"
 
     # As noted in the top description, we make a distinction between the
     # container used by gitlab-runner to queue the work, and the container
