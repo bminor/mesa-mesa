@@ -36,12 +36,5 @@ env = Environment(loader=FileSystemLoader(path.dirname(environ['B2C_JOB_TEMPLATE
 
 template = env.get_template(path.basename(environ['B2C_JOB_TEMPLATE']))
 
-# Pull all our images through our proxy registry
-for image in ['B2C_IMAGE_UNDER_TEST', 'B2C_MACHINE_REGISTRATION_IMAGE', 'B2C_TELEGRAF_IMAGE']:
-    values[image] = values[image].replace(
-        'registry.freedesktop.org',
-        '{{ fdo_proxy_registry }}'
-    )
-
 with open(path.splitext(path.basename(environ['B2C_JOB_TEMPLATE']))[0], "w") as f:
     f.write(template.render(values))

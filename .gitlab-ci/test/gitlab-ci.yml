@@ -409,6 +409,11 @@ yaml-toml-shell-py-test:
       [ -d "$CI_B2C_ARTIFACTS" ] || exit 1
       [ -d "$CI_COMMON_SCRIPTS" ] || exit 1
 
+      # Pull all our images through our proxy registry
+      B2C_IMAGE_UNDER_TEST=${B2C_IMAGE_UNDER_TEST//registry.freedesktop.org/{{ fdo_proxy_registry \}\}}
+      B2C_MACHINE_REGISTRATION_IMAGE=${B2C_MACHINE_REGISTRATION_IMAGE//registry.freedesktop.org/{{ fdo_proxy_registry \}\}}
+      B2C_TELEGRAF_IMAGE=${B2C_TELEGRAF_IMAGE//registry.freedesktop.org/{{ fdo_proxy_registry \}\}}
+
       # The Valve CI gateway receives jobs in a YAML format. Create a
       # job description from the CI environment.
       python3 "$CI_B2C_ARTIFACTS"/generate_b2c.py
