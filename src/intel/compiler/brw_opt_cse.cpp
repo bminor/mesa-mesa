@@ -35,7 +35,6 @@
 
 struct remap_entry {
    brw_inst *inst;
-   bblock_t *block;
    enum brw_reg_type type;
    unsigned nr;
    bool negate;
@@ -484,7 +483,6 @@ brw_opt_cse_defs(brw_shader &s)
 
             need_remaps = true;
             remap_table[inst->dst.nr].inst = inst;
-            remap_table[inst->dst.nr].block = block;
             remap_table[inst->dst.nr].type = match->dst.type;
             remap_table[inst->dst.nr].nr = match->dst.nr;
             remap_table[inst->dst.nr].negate = negate;
@@ -499,7 +497,7 @@ brw_opt_cse_defs(brw_shader &s)
          continue;
 
       if (!remap_table[i].still_used) {
-         remap_table[i].inst->remove(remap_table[i].block, true);
+         remap_table[i].inst->remove(remap_table[i].inst->block, true);
          progress = true;
       }
    }
