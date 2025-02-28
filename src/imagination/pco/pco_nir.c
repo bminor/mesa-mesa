@@ -434,7 +434,6 @@ static void pco_nir_opt(pco_ctx *ctx, nir_shader *nir)
       NIR_PASS(progress, nir, nir_opt_loop);
       NIR_PASS(progress, nir, nir_lower_alu_to_scalar, NULL, NULL);
       NIR_PASS(progress, nir, nir_opt_undef);
-      NIR_PASS(progress, nir, nir_lower_undef_to_zero);
       NIR_PASS(progress, nir, nir_opt_loop_unroll);
    } while (progress);
 }
@@ -712,6 +711,7 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
             nir_io_add_const_offset_to_base,
             nir_var_shader_in | nir_var_shader_out);
 
+   NIR_PASS(_, nir, pco_nir_lower_images);
    NIR_PASS(_, nir, nir_lower_tex, &(nir_lower_tex_options){});
    NIR_PASS(_, nir, pco_nir_lower_tex);
 

@@ -7,7 +7,7 @@
 /**
  * \file pco_nir_tex.c
  *
- * \brief PCO NIR texture/sampler lowering passes.
+ * \brief PCO NIR texture/image/sampler lowering passes.
  */
 
 #include "hwdef/rogue_hw_defs.h"
@@ -172,7 +172,6 @@ lower_tex_query_lod(nir_builder *b, nir_def *coords, nir_def *smp_coeffs)
 
 static inline unsigned process_coords(nir_builder *b,
                                       bool is_array,
-                                      bool is_query_lod,
                                       bool coords_are_float,
                                       nir_def *coords,
                                       nir_def **float_coords,
@@ -187,7 +186,7 @@ static inline unsigned process_coords(nir_builder *b,
    *float_array_index = NULL;
    *int_array_index = NULL;
 
-   if (!is_array || is_query_lod)
+   if (!is_array)
       return num_comps;
 
    *float_array_index = nir_channel(b, *float_coords, num_comps - 1);
@@ -225,6 +224,221 @@ static inline void unpack_base_addr(nir_builder *b,
 
    /* addr_hi[7..0] */
    *base_addr_hi = STATE_UNPACK(b, tex_state_word, 3, 14, 8);
+}
+
+typedef struct _pco_smp_params {
+   nir_def *tex_state;
+   nir_def *smp_state;
+
+   nir_alu_type dest_type;
+
+   enum glsl_sampler_dim sampler_dim;
+
+   bool nncoords;
+   nir_def *coords;
+   nir_def *array_index;
+
+   nir_def *proj;
+
+   nir_def *lod_bias;
+   nir_def *lod_replace;
+   nir_def *lod_ddx;
+   nir_def *lod_ddy;
+
+   nir_def *addr_lo;
+   nir_def *addr_hi;
+
+   nir_def *offset;
+   nir_def *ms_index;
+
+   nir_def *write_data;
+
+   bool sample_coeffs;
+   bool sample_raw;
+   unsigned sample_components;
+
+   bool int_mode;
+} pco_smp_params;
+
+static nir_intrinsic_instr *pco_emit_nir_smp(nir_builder *b,
+                                             pco_smp_params *params)
+{
+   nir_def *comps[NIR_MAX_VEC_COMPONENTS];
+   unsigned count = 0;
+   pco_smp_flags smp_flags = {
+      .dim = to_pco_dim(params->sampler_dim),
+      .fcnorm = nir_alu_type_get_base_type(params->dest_type) == nir_type_float,
+      .nncoords = params->nncoords,
+      .lod_mode = PCO_LOD_MODE_NORMAL,
+      .integer = params->int_mode,
+   };
+
+   /* Emit coords (excluding array component if present). */
+   for (unsigned c = 0; c < params->coords->num_components; ++c)
+      comps[count++] = nir_channel(b, params->coords, c);
+
+   /* Emit projector (if present). */
+   if (params->proj) {
+      comps[count++] = params->proj;
+      smp_flags.proj = true;
+   }
+
+   /* Emit hardware array component (if present). */
+   if (params->array_index) {
+      comps[count++] = params->array_index;
+      smp_flags.array = true;
+   }
+
+   /* Emit LOD (if present). */
+   bool lod_present = false;
+   assert(!!params->lod_ddx == !!params->lod_ddy);
+   assert((!!params->lod_bias + !!params->lod_replace + !!params->lod_ddx) < 2);
+   if (params->lod_bias) {
+      lod_present = true;
+      comps[count++] = params->lod_bias;
+
+      smp_flags.pplod = true;
+      smp_flags.lod_mode = PCO_LOD_MODE_BIAS;
+   } else if (params->lod_replace) {
+      lod_present = true;
+      comps[count++] = params->lod_replace;
+
+      smp_flags.pplod = true;
+      smp_flags.lod_mode = PCO_LOD_MODE_REPLACE;
+   } else if (params->lod_ddx) {
+      lod_present = true;
+
+      for (unsigned c = 0; c < params->lod_ddx->num_components; ++c) {
+         comps[count++] = nir_channel(b, params->lod_ddx, c);
+         comps[count++] = nir_channel(b, params->lod_ddy, c);
+      }
+
+      smp_flags.lod_mode = PCO_LOD_MODE_GRADIENTS;
+   }
+
+   /* Emit address override (if present). */
+   assert(!!params->addr_lo == !!params->addr_hi);
+   if (params->addr_lo) {
+      /* Set a per-pixel lod bias of 0 if none has been set yet. */
+      if (!lod_present) {
+         comps[count++] = nir_imm_int(b, 0);
+         smp_flags.pplod = true;
+         smp_flags.lod_mode = PCO_LOD_MODE_BIAS;
+         lod_present = true;
+      }
+
+      comps[count++] = params->addr_lo;
+      comps[count++] = params->addr_hi;
+
+      smp_flags.tao = true;
+   }
+
+   /* Emit lookup options (if present). */
+   if (params->offset || params->ms_index) {
+      nir_def *lookup = nir_imm_int(b, 0);
+
+      if (params->offset) {
+         const unsigned packed_offset_start[] = { 0, 6, 12 };
+         const unsigned packed_offset_size[] = { 6, 6, 4 };
+
+         for (unsigned c = 0; c < params->offset->num_components; ++c) {
+            lookup = nir_bitfield_insert(b,
+                                         lookup,
+                                         nir_channel(b, params->offset, c),
+                                         nir_imm_int(b, packed_offset_start[c]),
+                                         nir_imm_int(b, packed_offset_size[c]));
+         }
+
+         smp_flags.soo = true;
+      }
+
+      if (params->ms_index) {
+         lookup = nir_bitfield_insert(b,
+                                      lookup,
+                                      params->ms_index,
+                                      nir_imm_int(b, 16),
+                                      nir_imm_int(b, 3));
+
+         smp_flags.sno = true;
+      }
+
+      comps[count++] = lookup;
+   }
+
+   /* Emit write data (if present). */
+   if (params->write_data) {
+      for (unsigned c = 0; c < params->write_data->num_components; ++c)
+         comps[count++] = nir_channel(b, params->write_data, c);
+
+      smp_flags.wrt = true;
+   }
+
+   /* Pad out the rest of the data words. */
+   assert(count <= NIR_MAX_VEC_COMPONENTS);
+
+   nir_def *undef = nir_undef(b, 1, 32);
+   for (unsigned c = count; c < ARRAY_SIZE(comps); ++c)
+      comps[c] = undef;
+
+   nir_def *smp_data = nir_vec(b, comps, ARRAY_SIZE(comps));
+
+   if (params->sample_coeffs) {
+      assert(!params->sample_raw);
+      assert(!params->sample_components);
+      assert(!params->write_data);
+
+      nir_def *def = nir_smp_coeffs_pco(b,
+                                        smp_data,
+                                        params->tex_state,
+                                        params->smp_state,
+                                        .smp_flags_pco = smp_flags._,
+                                        .range = count);
+
+      return nir_instr_as_intrinsic(def->parent_instr);
+   }
+
+   if (params->sample_raw) {
+      assert(!params->sample_coeffs);
+      assert(!params->sample_components);
+      assert(!params->write_data);
+
+      nir_def *def = nir_smp_raw_pco(b,
+                                     smp_data,
+                                     params->tex_state,
+                                     params->smp_state,
+                                     .smp_flags_pco = smp_flags._,
+                                     .range = count);
+
+      return nir_instr_as_intrinsic(def->parent_instr);
+   }
+
+   if (params->write_data) {
+      assert(!params->sample_coeffs);
+      assert(!params->sample_raw);
+      assert(!params->sample_components);
+
+      return nir_smp_write_pco(b,
+                               smp_data,
+                               params->tex_state,
+                               params->smp_state,
+                               .smp_flags_pco = smp_flags._,
+                               .range = count);
+   }
+
+   assert(!params->sample_coeffs);
+   assert(!params->sample_raw);
+   assert(params->sample_components > 0);
+   assert(!params->write_data);
+
+   nir_def *def = nir_smp_pco(b,
+                              params->sample_components,
+                              smp_data,
+                              params->tex_state,
+                              params->smp_state,
+                              .smp_flags_pco = smp_flags._,
+                              .range = count);
+
+   return nir_instr_as_intrinsic(def->parent_instr);
 }
 
 /**
@@ -300,8 +514,7 @@ lower_tex(nir_builder *b, nir_instr *instr, UNUSED void *cb_data)
    nir_def *int_array_index;
    unsigned num_coord_comps =
       process_coords(b,
-                     tex->is_array,
-                     tex->op == nir_texop_lod,
+                     tex->is_array && tex->op != nir_texop_lod,
                      tex_src_is_float(tex, nir_tex_src_coord),
                      tex_srcs[nir_tex_src_coord],
                      &float_coords,
@@ -569,4 +782,191 @@ static bool is_tex(const nir_instr *instr, UNUSED const void *cb_data)
 bool pco_nir_lower_tex(nir_shader *shader)
 {
    return nir_shader_lower_instructions(shader, is_tex, lower_tex, NULL);
+}
+
+static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
+{
+   nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
+
+   bool hw_array_support = false;
+   bool hw_int_support = false;
+
+   enum glsl_sampler_dim image_dim = nir_intrinsic_image_dim(intr);
+   bool is_array = nir_intrinsic_image_array(intr);
+   enum pipe_format format = nir_intrinsic_format(intr);
+   nir_alu_type dest_type = nir_intrinsic_dest_type(intr);
+
+   unsigned desc_set = nir_src_comp_as_uint(intr->src[0], 0);
+   unsigned binding = nir_src_comp_as_uint(intr->src[0], 1);
+   nir_def *elem = nir_channel(b, intr->src[0].ssa, 2);
+
+   nir_def *coords = !nir_src_is_undef(intr->src[1]) ? intr->src[1].ssa : NULL;
+   nir_def *sample_index = !nir_src_is_undef(intr->src[2]) ? intr->src[2].ssa
+                                                           : NULL;
+   nir_def *lod = !nir_src_is_undef(intr->src[3]) ? intr->src[3].ssa : NULL;
+
+   ASSERTED bool msaa = image_dim == GLSL_SAMPLER_DIM_MS ||
+                        image_dim == GLSL_SAMPLER_DIM_SUBPASS_MS;
+   assert(!!sample_index == msaa);
+
+   nir_def *tex_state = nir_load_tex_state_pco(b,
+                                               ROGUE_NUM_TEXSTATE_DWORDS,
+                                               elem,
+                                               .desc_set = desc_set,
+                                               .binding = binding);
+
+   nir_def *smp_state = nir_load_smp_state_pco(b,
+                                               ROGUE_NUM_TEXSTATE_DWORDS,
+                                               nir_imm_int(b, 0),
+                                               .desc_set = PCO_POINT_SAMPLER,
+                                               .binding = PCO_POINT_SAMPLER);
+
+   unsigned num_coord_comps =
+      glsl_get_sampler_dim_coordinate_components(image_dim) + !!is_array;
+
+   if (coords)
+      coords = nir_trim_vector(b, coords, num_coord_comps);
+
+   nir_def *float_coords;
+   nir_def *int_coords;
+   nir_def *float_array_index;
+   nir_def *int_array_index;
+   num_coord_comps = process_coords(b,
+                                    is_array,
+                                    false,
+                                    coords,
+                                    &float_coords,
+                                    &int_coords,
+                                    &float_array_index,
+                                    &int_array_index);
+
+   nir_def *smp_data_comps[NIR_MAX_VEC_COMPONENTS];
+   unsigned smp_data_comp_count = 0;
+   pco_smp_flags smp_flags = {
+      .dim = to_pco_dim(image_dim),
+      .lod_mode = PCO_LOD_MODE_NORMAL,
+   };
+
+   for (unsigned c = 0; c < num_coord_comps; ++c) {
+      smp_data_comps[smp_data_comp_count++] =
+         nir_channel(b, hw_int_support ? int_coords : float_coords, c);
+   }
+
+   if (hw_array_support && int_array_index) {
+      smp_data_comps[smp_data_comp_count++] =
+         hw_int_support ? int_array_index : float_array_index;
+
+      smp_flags.array = true;
+   }
+
+   bool lod_set = false;
+   if (lod) {
+      lod = nir_i2f32(b, lod);
+
+      smp_data_comps[smp_data_comp_count++] = lod;
+
+      smp_flags.pplod = true;
+      smp_flags.lod_mode = PCO_LOD_MODE_REPLACE;
+
+      lod_set = true;
+   }
+
+   if (!hw_array_support && int_array_index) {
+      /* Set a per-pixel lod bias of 0 if none has been set yet. */
+      if (!lod_set) {
+         smp_data_comps[smp_data_comp_count++] = nir_imm_int(b, 0);
+         smp_flags.pplod = true;
+         smp_flags.lod_mode = PCO_LOD_MODE_BIAS;
+         lod_set = true;
+      }
+
+      nir_def *tex_state_word[] = {
+         [0] = nir_channel(b, tex_state, 0),
+         [1] = nir_channel(b, tex_state, 1),
+         [2] = nir_channel(b, tex_state, 2),
+         [3] = nir_channel(b, tex_state, 3),
+      };
+
+      nir_def *base_addr_lo;
+      nir_def *base_addr_hi;
+      unpack_base_addr(b, tex_state_word, &base_addr_lo, &base_addr_hi);
+
+      nir_def *array_index = int_array_index;
+      assert(array_index);
+
+      nir_def *array_size = STATE_UNPACK_ADD(b, tex_state_word, 2, 4, 11, 1);
+      array_index = nir_uclamp(b, array_index, nir_imm_int(b, 0), array_size);
+
+      nir_def *tex_meta = nir_load_tex_meta_pco(b,
+                                                PCO_IMAGE_META_COUNT,
+                                                elem,
+                                                .desc_set = desc_set,
+                                                .binding = binding);
+
+      nir_def *array_stride =
+         nir_channel(b, tex_meta, PCO_IMAGE_META_LAYER_SIZE);
+
+      nir_def *array_offset = nir_imul(b, array_index, array_stride);
+
+      nir_def *addr =
+         nir_uadd64_2x32_lo(b, base_addr_lo, base_addr_hi, array_offset);
+
+      smp_data_comps[smp_data_comp_count++] = nir_channel(b, addr, 0);
+      smp_data_comps[smp_data_comp_count++] = nir_channel(b, addr, 1);
+
+      smp_flags.tao = true;
+   }
+
+   if (sample_index) {
+      nir_def *lookup = nir_bitfield_insert(b,
+                                            nir_imm_int(b, 0),
+                                            sample_index,
+                                            nir_imm_int(b, 16),
+                                            nir_imm_int(b, 3));
+
+      smp_data_comps[smp_data_comp_count++] = lookup;
+      smp_flags.sno = true;
+   }
+
+   /* Pad out the rest of the data words. */
+   assert(smp_data_comp_count <= NIR_MAX_VEC_COMPONENTS);
+   for (unsigned c = smp_data_comp_count; c < ARRAY_SIZE(smp_data_comps); ++c)
+      smp_data_comps[c] = nir_imm_int(b, 0);
+
+   nir_def *smp_data = nir_vec(b, smp_data_comps, ARRAY_SIZE(smp_data_comps));
+
+   smp_flags.nncoords = true;
+
+   smp_flags.integer = hw_int_support;
+   smp_flags.fcnorm = nir_alu_type_get_base_type(dest_type) == nir_type_float;
+
+   return nir_smp_pco(b,
+                      intr->def.num_components,
+                      smp_data,
+                      tex_state,
+                      smp_state,
+                      .smp_flags_pco = smp_flags._,
+                      .range = smp_data_comp_count);
+}
+
+static bool is_image(const nir_instr *instr, UNUSED const void *cb_data)
+{
+   if (instr->type != nir_instr_type_intrinsic)
+      return false;
+
+   nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
+   switch (intr->intrinsic) {
+   case nir_intrinsic_image_deref_load:
+      return true;
+
+   default:
+      break;
+   }
+
+   return false;
+}
+
+bool pco_nir_lower_images(nir_shader *shader)
+{
+   return nir_shader_lower_instructions(shader, is_image, lower_image, NULL);
 }

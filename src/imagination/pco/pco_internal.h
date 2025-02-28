@@ -1626,7 +1626,8 @@ typedef union PACKED _pco_smp_flags {
       bool sno : 1;
       bool array : 1;
       bool integer : 1;
-      unsigned pad : 3;
+      bool wrt : 1;
+      unsigned pad : 2;
    };
 
    uint16_t _;
@@ -1648,6 +1649,7 @@ bool pco_nir_lower_algebraic(nir_shader *shader);
 bool pco_nir_lower_algebraic_late(nir_shader *shader);
 bool pco_nir_lower_atomics(nir_shader *shader, bool *uses_usclib);
 bool pco_nir_lower_barriers(nir_shader *shader, bool *uses_usclib);
+bool pco_nir_lower_images(nir_shader *shader);
 bool pco_nir_lower_io(nir_shader *shader);
 bool pco_nir_lower_tex(nir_shader *shader);
 bool pco_nir_lower_vk(nir_shader *shader, pco_common_data *common);

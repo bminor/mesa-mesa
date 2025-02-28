@@ -62,6 +62,21 @@ static nir_def *lower_load_vulkan_descriptor(nir_builder *b,
    return nir_imm_ivec3(b, desc_set_binding, elem, 0);
 }
 
+static nir_def *array_elem_from_deref(nir_builder *b, nir_deref_instr *deref)
+{
+   unsigned array_elem = 0;
+   if (deref->deref_type != nir_deref_type_var) {
+      assert(deref->deref_type == nir_deref_type_array);
+
+      array_elem = nir_src_as_uint(deref->arr.index);
+
+      deref = nir_deref_instr_parent(deref);
+   }
+
+   assert(deref->deref_type == nir_deref_type_var);
+   return nir_imm_int(b, array_elem);
+}
+
 static void lower_tex_deref_to_binding(nir_builder *b,
                                        nir_tex_instr *tex,
                                        unsigned deref_index,
@@ -73,20 +88,11 @@ static void lower_tex_deref_to_binding(nir_builder *b,
 
    b->cursor = nir_before_instr(&tex->instr);
 
-   unsigned array_elem = 0;
-   if (deref->deref_type != nir_deref_type_var) {
-      assert(deref->deref_type == nir_deref_type_array);
-
-      array_elem = nir_src_as_uint(deref->arr.index);
-
-      deref = nir_deref_instr_parent(deref);
-   }
-
-   nir_def *elem = nir_imm_int(b, array_elem);
-   assert(deref->deref_type == nir_deref_type_var);
-
-   unsigned desc_set = deref->var->data.descriptor_set;
-   unsigned binding = deref->var->data.binding;
+   nir_variable *var = nir_deref_instr_get_variable(deref);
+   assert(var);
+   unsigned desc_set = var->data.descriptor_set;
+   unsigned binding = var->data.binding;
+   nir_def *elem = array_elem_from_deref(b, deref);
 
    set_resource_used(common, desc_set, binding);
 
@@ -116,6 +122,34 @@ lower_tex_derefs(nir_builder *b, nir_tex_instr *tex, pco_common_data *common)
       lower_tex_deref_to_binding(b, tex, deref_index, common);
 }
 
+static nir_def *lower_image_derefs(nir_builder *b,
+                                   nir_intrinsic_instr *intr,
+                                   pco_common_data *common)
+{
+   nir_src *deref_src = &intr->src[0];
+   nir_deref_instr *deref = nir_src_as_deref(*deref_src);
+   b->cursor = nir_before_instr(&intr->instr);
+
+   nir_variable *var = nir_deref_instr_get_variable(deref);
+   assert(var);
+   unsigned desc_set = var->data.descriptor_set;
+   unsigned binding = var->data.binding;
+   nir_def *elem = array_elem_from_deref(b, deref);
+
+   set_resource_used(common, desc_set, binding);
+   common->uses.point_sampler = true;
+
+   if (nir_intrinsic_format(intr) == PIPE_FORMAT_NONE)
+      nir_intrinsic_set_format(intr, var->data.image.format);
+
+   nir_def *index =
+      nir_vec3(b, nir_imm_int(b, desc_set), nir_imm_int(b, binding), elem);
+
+   nir_src_rewrite(deref_src, index);
+
+   return NIR_LOWER_INSTR_PROGRESS;
+}
+
 /**
  * \brief Lowers a Vulkan-related instruction.
  *
@@ -134,6 +168,9 @@ static nir_def *lower_vk(nir_builder *b, nir_instr *instr, void *cb_data)
       switch (intr->intrinsic) {
       case nir_intrinsic_load_vulkan_descriptor:
          return lower_load_vulkan_descriptor(b, intr, common);
+
+      case nir_intrinsic_image_deref_load:
+         return lower_image_derefs(b, intr, common);
 
       default:
          break;
@@ -169,6 +206,7 @@ static bool is_vk(const nir_instr *instr, UNUSED const void *cb_data)
       nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
       switch (intr->intrinsic) {
       case nir_intrinsic_load_vulkan_descriptor:
+      case nir_intrinsic_image_deref_load:
          return true;
 
       default:

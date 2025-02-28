@@ -428,21 +428,33 @@ static unsigned fetch_resource_base_reg(const pco_common_data *common,
                                         unsigned elem,
                                         bool *is_img_smp)
 {
-   assert(desc_set < ARRAY_SIZE(common->desc_sets));
-   const pco_descriptor_set_data *desc_set_data = &common->desc_sets[desc_set];
-   assert(desc_set_data->used);
-   assert(desc_set_data->bindings && binding < desc_set_data->binding_count);
+   const pco_range *range;
+   if (desc_set == PCO_POINT_SAMPLER && binding == PCO_POINT_SAMPLER) {
+      assert(common->uses.point_sampler);
+      range = &common->point_sampler;
 
-   const pco_binding_data *binding_data = &desc_set_data->bindings[binding];
-   assert(binding_data->used);
+      if (is_img_smp)
+         *is_img_smp = false;
+   } else {
+      assert(desc_set < ARRAY_SIZE(common->desc_sets));
+      const pco_descriptor_set_data *desc_set_data =
+         &common->desc_sets[desc_set];
+      assert(desc_set_data->used);
+      assert(desc_set_data->bindings && binding < desc_set_data->binding_count);
 
-   if (is_img_smp)
-      *is_img_smp = binding_data->is_img_smp;
+      const pco_binding_data *binding_data = &desc_set_data->bindings[binding];
+      assert(binding_data->used);
 
-   unsigned reg_offset = elem * binding_data->range.stride;
-   assert(reg_offset < binding_data->range.count);
+      range = &binding_data->range;
 
-   unsigned reg_index = binding_data->range.start + reg_offset;
+      if (is_img_smp)
+         *is_img_smp = binding_data->is_img_smp;
+   }
+
+   unsigned reg_offset = elem * range->stride;
+   assert(reg_offset < range->count);
+
+   unsigned reg_index = range->start + reg_offset;
    return reg_index;
 }
 
