@@ -83,6 +83,8 @@ static unsigned pvr_descriptor_size(VkDescriptorType type)
       return sizeof(struct pvr_combined_image_sampler_descriptor);
 
    case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+   case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+   case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
       return sizeof(struct pvr_image_descriptor);
 
    default:
@@ -516,7 +518,8 @@ static void
 write_storage_image(const struct pvr_descriptor_set *set,
                     const VkDescriptorImageInfo *image_info,
                     const struct pvr_descriptor_set_layout_binding *binding,
-                    uint32_t elem)
+                    uint32_t elem,
+                    const struct pvr_device_info *dev_info)
 {
    PVR_FROM_HANDLE(pvr_image_view, image_view, image_info->imageView);
 
@@ -530,7 +533,46 @@ write_storage_image(const struct pvr_descriptor_set *set,
       image_view->image_state[is_cube ? PVR_TEXTURE_STATE_STORAGE
                                       : PVR_TEXTURE_STATE_SAMPLE];
 
+   if (!PVR_HAS_FEATURE(dev_info, tpu_extended_integer_lookup)) {
+      struct ROGUE_TEXSTATE_STRIDE_IMAGE_WORD1 word1;
+      ROGUE_TEXSTATE_STRIDE_IMAGE_WORD1_unpack(&storage_image_desc.words[1],
+                                               &word1);
+
+      word1.index_lookup = true;
+      ROGUE_TEXSTATE_STRIDE_IMAGE_WORD1_pack(&storage_image_desc.words[1],
+                                             &word1);
+   }
+
    memcpy(desc_mapping, &storage_image_desc, sizeof(storage_image_desc));
+}
+
+static void
+write_buffer_view(const struct pvr_descriptor_set *set,
+                  const VkBufferView _buffer_view,
+                  const struct pvr_descriptor_set_layout_binding *binding,
+                  uint32_t elem,
+                  bool is_texel_buffer,
+                  const struct pvr_device_info *dev_info)
+{
+   PVR_FROM_HANDLE(pvr_buffer_view, buffer_view, _buffer_view);
+
+   const unsigned desc_offset = binding->offset + (elem * binding->stride);
+   void *desc_mapping = (uint8_t *)set->mapping + desc_offset;
+
+   struct pvr_image_descriptor buffer_view_state = buffer_view->image_state;
+
+   if (is_texel_buffer &&
+       !PVR_HAS_FEATURE(dev_info, tpu_extended_integer_lookup)) {
+      struct ROGUE_TEXSTATE_STRIDE_IMAGE_WORD1 word1;
+      ROGUE_TEXSTATE_STRIDE_IMAGE_WORD1_unpack(&buffer_view_state.words[1],
+                                               &word1);
+
+      word1.index_lookup = true;
+      ROGUE_TEXSTATE_STRIDE_IMAGE_WORD1_pack(&buffer_view_state.words[1],
+                                             &word1);
+   }
+
+   memcpy(desc_mapping, &buffer_view_state, sizeof(buffer_view_state));
 }
 
 void pvr_UpdateDescriptorSets(VkDevice _device,
@@ -539,6 +581,9 @@ void pvr_UpdateDescriptorSets(VkDevice _device,
                               uint32_t descriptorCopyCount,
                               const VkCopyDescriptorSet *pDescriptorCopies)
 {
+   PVR_FROM_HANDLE(pvr_device, device, _device);
+   const struct pvr_device_info *dev_info = &device->pdevice->dev_info;
+
    for (uint32_t i = 0; i < descriptorWriteCount; i++) {
       const VkWriteDescriptorSet *write = &pDescriptorWrites[i];
       PVR_FROM_HANDLE(pvr_descriptor_set, set, write->dstSet);
@@ -580,7 +625,21 @@ void pvr_UpdateDescriptorSets(VkDevice _device,
             write_storage_image(set,
                                 &write->pImageInfo[j],
                                 binding,
-                                write->dstArrayElement + j);
+                                write->dstArrayElement + j,
+                                dev_info);
+         }
+         break;
+
+      case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+      case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+         for (uint32_t j = 0; j < write->descriptorCount; j++) {
+            write_buffer_view(set,
+                              write->pTexelBufferView[j],
+                              binding,
+                              write->dstArrayElement + j,
+                              write->descriptorType ==
+                                 VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,
+                              dev_info);
          }
          break;
 
