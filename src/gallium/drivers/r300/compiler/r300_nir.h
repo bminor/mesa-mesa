@@ -10,6 +10,7 @@
 
 #include "compiler/nir/nir.h"
 #include "pipe/p_screen.h"
+#include "r300_screen.h"
 
 static inline bool
 is_ubo_or_input(UNUSED struct hash_table *ht, const nir_alu_instr *instr, unsigned src,
@@ -133,7 +134,7 @@ bool r300_is_only_used_as_float(const nir_alu_instr *instr);
 
 char *r300_check_control_flow(nir_shader *s);
 
-char *r300_finalize_nir(struct pipe_screen *pscreen, struct nir_shader *nir);
+void r300_optimize_nir(struct nir_shader *s, struct r300_screen *screen);
 
 extern bool r300_transform_vs_trig_input(struct nir_shader *shader);
 

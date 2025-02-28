@@ -137,12 +137,12 @@ remove_clip_vertex(nir_builder *b, nir_instr *instr, UNUSED void *_)
    return false;
 }
 
-static void
-r300_optimize_nir(struct nir_shader *s, struct pipe_screen *screen)
+void
+r300_optimize_nir(struct nir_shader *s, struct r300_screen *screen)
 {
-   bool is_r500 = r300_screen(screen)->caps.is_r500;
+   bool is_r500 = screen->caps.is_r500;
 
-   if (s->info.stage == MESA_SHADER_VERTEX && r300_screen(screen)->caps.has_tcl) {
+   if (s->info.stage == MESA_SHADER_VERTEX && screen->caps.has_tcl) {
       /* There is no HW support for gl_ClipVertex, so we just remove it early. */
       if (nir_shader_instructions_pass(s, remove_clip_vertex,
                                        nir_metadata_control_flow, NULL)) {
@@ -257,31 +257,6 @@ r300_check_control_flow(nir_shader *s)
          return "Unknown control flow type";
       }
    }
-
-   return NULL;
-}
-
-char *
-r300_finalize_nir(struct pipe_screen *pscreen, struct nir_shader *s)
-{
-   r300_optimize_nir(s, pscreen);
-
-   /* st_program.c's parameter list optimization requires that future nir
-    * variants don't reallocate the uniform storage, so we have to remove
-    * uniforms that occupy storage.  But we don't want to remove samplers,
-    * because they're needed for YUV variant lowering.
-    */
-   nir_remove_dead_derefs(s);
-   nir_foreach_uniform_variable_safe (var, s) {
-      if (var->data.mode == nir_var_uniform &&
-          (glsl_type_get_image_count(var->type) || glsl_type_get_sampler_count(var->type)))
-         continue;
-
-      exec_node_remove(&var->node);
-   }
-   nir_validate_shader(s, "after uniform var removal");
-
-   nir_sweep(s);
 
    return NULL;
 }

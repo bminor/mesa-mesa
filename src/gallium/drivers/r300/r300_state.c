@@ -1033,6 +1033,8 @@ static void* r300_create_fs_state(struct pipe_context* pipe,
     fs->state = *shader;
 
     if (fs->state.type == PIPE_SHADER_IR_NIR) {
+        r300_optimize_nir(shader->ir.nir, r300->screen);
+
         /* R300/R400 can not do any kind of control flow, so abort early here. */
         if (!r300->screen->caps.is_r500) {
             char *msg = r300_check_control_flow(shader->ir.nir);
@@ -1949,6 +1951,8 @@ static void* r300_create_vs_state(struct pipe_context* pipe,
     vs->state = *shader;
 
     if (vs->state.type == PIPE_SHADER_IR_NIR) {
+        r300_optimize_nir(shader->ir.nir, r300->screen);
+
         /* R300/R400 can not do any kind of control flow, so abort early here. */
         if (!r300->screen->caps.is_r500 && r300->screen->caps.has_tcl) {
             char *msg = r300_check_control_flow(shader->ir.nir);
