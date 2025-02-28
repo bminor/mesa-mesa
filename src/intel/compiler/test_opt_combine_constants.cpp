@@ -68,7 +68,7 @@ struct FSCombineConstantsTest : public ::testing::Test {
 static brw_builder
 make_builder(brw_shader *s)
 {
-   return brw_builder(s, s->dispatch_width).at_end();
+   return brw_builder(s).at_end();
 }
 
 TEST_F(FSCombineConstantsTest, Simple)

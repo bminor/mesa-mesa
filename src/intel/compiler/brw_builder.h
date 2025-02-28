@@ -50,7 +50,14 @@ public:
    {
    }
 
-   explicit brw_builder(brw_shader *s) : brw_builder(s, s->dispatch_width) {}
+   /**
+    * Construct an brw_builder that inserts instructions into \p shader,
+    * using its dispatch width.
+    */
+   explicit brw_builder(brw_shader *s = NULL) :
+      brw_builder(s, s ? s->dispatch_width : 0)
+   {
+   }
 
    /**
     * Construct an brw_builder that inserts instructions before

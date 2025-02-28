@@ -24,7 +24,6 @@ protected:
 };
 
 cse_test::cse_test()
-   : bld(NULL, 0)
 {
    ctx = ralloc_context(NULL);
    compiler = rzalloc(ctx, struct brw_compiler);

@@ -53,7 +53,6 @@ protected:
 };
 
 cmod_propagation_test::cmod_propagation_test()
-   : bld(NULL, 0)
 {
    ctx = ralloc_context(NULL);
    compiler = rzalloc(ctx, struct brw_compiler);

@@ -42,7 +42,6 @@ protected:
 };
 
 saturate_propagation_test::saturate_propagation_test()
-   : bld(NULL, 0)
 {
    ctx = ralloc_context(NULL);
    compiler = rzalloc(ctx, struct brw_compiler);
