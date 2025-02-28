@@ -74,7 +74,6 @@ struct plane_desc_writer {
      */
     uint64_t        base_gpu_va;
     uint64_t        base_cpu_va;
-
     int32_t         num_src;
     int32_t         num_dst;
     enum vpe_status status;
@@ -85,7 +84,6 @@ struct plane_desc_writer {
         struct plane_desc_writer *writer, struct plane_desc_src *source, bool is_plane0);
     void (*add_destination)(
         struct plane_desc_writer *writer, struct plane_desc_dst *destination, bool is_plane0);
-    void (*add_meta)(struct plane_desc_writer *writer, struct plane_desc_src *src);
 };
 
 #ifdef __cplusplus

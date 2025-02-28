@@ -101,7 +101,7 @@ struct vpe_cmd_output {
 
 struct vpe_cmd_info {
     enum vpe_cmd_ops ops;
-    uint8_t          cd; // count down value
+    uint16_t          cd; // count down value
 
     // input
     uint16_t             num_inputs;

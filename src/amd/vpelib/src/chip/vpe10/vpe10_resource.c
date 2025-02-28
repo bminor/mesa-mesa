@@ -970,7 +970,7 @@ enum vpe_status vpe10_populate_cmd_info(struct vpe_priv *vpe_priv)
         for (segment_idx = 0; segment_idx < stream_ctx->num_segments; segment_idx++) {
 
             cmd_info.inputs[0].stream_idx  = stream_idx;
-            cmd_info.cd                    = (uint8_t)(stream_ctx->num_segments - segment_idx - 1);
+            cmd_info.cd                    = (uint16_t)(stream_ctx->num_segments - segment_idx - 1);
             cmd_info.inputs[0].scaler_data = stream_ctx->segment_ctx[segment_idx].scaler_data;
             cmd_info.num_outputs           = 1;
 
