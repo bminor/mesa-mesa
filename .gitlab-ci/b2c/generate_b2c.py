@@ -25,9 +25,9 @@ from jinja2 import Environment, FileSystemLoader
 from os import environ, path
 
 
-# Pass all the environment variables prefixed by B2C_
+# Pass through all the B2C environment variables
 values = {
-    key.removeprefix("B2C_").lower(): environ[key]
+    key: environ[key]
     for key in environ if key.startswith("B2C_")
 }
 
@@ -40,12 +40,8 @@ values['ci_job_id'] = environ['CI_JOB_ID']
 values['ci_runner_description'] = environ['CI_RUNNER_DESCRIPTION']
 values['working_dir'] = environ['CI_PROJECT_DIR']
 
-values['image_under_test'] = environ['B2C_IMAGE_UNDER_TEST']
-values['machine_registration_image'] = environ['B2C_MACHINE_REGISTRATION_IMAGE']
-values['telegraf_image'] = environ['B2C_TELEGRAF_IMAGE']
-
 # Pull all our images through our proxy registry
-for image in ['image_under_test', 'machine_registration_image', 'telegraf_image']:
+for image in ['B2C_IMAGE_UNDER_TEST', 'B2C_MACHINE_REGISTRATION_IMAGE', 'B2C_TELEGRAF_IMAGE']:
     values[image] = values[image].replace(
         'registry.freedesktop.org',
         '{{ fdo_proxy_registry }}'
