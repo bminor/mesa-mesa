@@ -4469,6 +4469,10 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       }
    } else if (info.opcode == aco_opcode::v_sub_u32 && !info.clamp) {
       assert(ctx.program->gfx_level >= GFX9);
+      /* v_sub_u32(0, v_cndmask_b32(0, 1, cond)) -> v_cndmask_b32(0, -1, cond) */
+      add_opt(v_cndmask_b32, v_cndmask_b32, 0x2, "0312",
+              and_cb<and_cb<and_cb<check_const_cb<0, 0>, remove_const_cb<1>>, remove_const_cb<0>>,
+                     insert_const_cb<1, UINT32_MAX>>);
       /* v_sub_u32(a, v_cndmask_b32(0, 1, cond)) -> v_subb_co_u32(a, 0, cond) */
       add_opt(v_cndmask_b32, v_subb_co_u32, 0x2, "0132",
               and_cb<and_cb<check_const_cb<1, 0>, remove_const_cb<1>>, add_lm_def_cb>);
@@ -4479,6 +4483,13 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
    } else if ((info.opcode == aco_opcode::v_sub_co_u32 ||
                info.opcode == aco_opcode::v_sub_co_u32_e64) &&
               !info.clamp) {
+      /* v_sub_co_u32(0, v_cndmask_b32(0, 1, cond)) -> v_cndmask_b32(0, -1, cond) */
+      if (ctx.uses[info.defs[1].tempId()] == 0) {
+         add_opt(
+            v_cndmask_b32, v_cndmask_b32, 0x2, "0312",
+            and_cb<and_cb<and_cb<check_const_cb<0, 0>, remove_const_cb<1>>, remove_const_cb<0>>,
+                   and_cb<insert_const_cb<1, UINT32_MAX>, pop_def_cb>>);
+      }
       /* v_sub_co_u32(a, v_cndmask_b32(0, 1, cond)) -> v_subb_co_u32(a, 0, cond) */
       add_opt(v_cndmask_b32, v_subb_co_u32, 0x2, "0132",
               and_cb<check_const_cb<1, 0>, remove_const_cb<1>>);
