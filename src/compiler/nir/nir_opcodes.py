@@ -328,6 +328,8 @@ unop_numeric_convert_mp("f2u", tuint16, tfloat32)
 unop_numeric_convert_mp("i2f", tfloat16, tint32)
 unop_numeric_convert_mp("u2f", tfloat16, tuint32)
 
+unop_numeric_convert("f2i32_rtne", tint32, tfloat32, "(int32_t)_mesa_roundevenf(src0)")
+
 # Unary floating-point rounding operations.
 
 

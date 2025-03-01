@@ -190,7 +190,9 @@ static inline unsigned process_coords(nir_builder *b,
       return num_comps;
 
    *float_array_index = nir_channel(b, *float_coords, num_comps - 1);
-   *int_array_index = nir_channel(b, *int_coords, num_comps - 1);
+   *int_array_index = coords_are_float
+                         ? nir_f2i32_rtne(b, *float_array_index)
+                         : nir_channel(b, *int_coords, num_comps - 1);
 
    *float_coords = nir_trim_vector(b, *float_coords, num_comps - 1);
    *int_coords = nir_trim_vector(b, *int_coords, num_comps - 1);

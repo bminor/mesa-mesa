@@ -2242,6 +2242,10 @@ static pco_instr *trans_alu(trans_ctx *tctx, nir_alu_instr *alu)
                       .roundzero = true);
       break;
 
+   case nir_op_f2i32_rtne:
+      instr = pco_pck(&tctx->b, dest, src[0], .pck_fmt = PCO_PCK_FMT_S32);
+      break;
+
    case nir_op_f2u32:
       instr = pco_pck(&tctx->b,
                       dest,
