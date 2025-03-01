@@ -614,7 +614,7 @@
         "description": "gfxstream: Use proper log format for 32-bit Vulkan",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7fb31361f443b8a968ec3f6a9fd2fa59f3b3ceb7",
         "notes": null
