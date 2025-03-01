@@ -4428,6 +4428,9 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
    } else if (info.opcode == aco_opcode::v_add_u32 && !info.clamp) {
       assert(ctx.program->gfx_level >= GFX9);
       add_opt(v_bcnt_u32_b32, v_bcnt_u32_b32, 0x3, "102", remove_const_cb<0>, true);
+      add_opt(s_bcnt1_i32_b32, v_bcnt_u32_b32, 0x3, "10", nullptr, true);
+      add_opt(v_mbcnt_lo_u32_b32, v_mbcnt_lo_u32_b32, 0x3, "102", remove_const_cb<0>, true);
+      add_opt(v_mbcnt_hi_u32_b32_e64, v_mbcnt_hi_u32_b32_e64, 0x3, "102", remove_const_cb<0>, true);
       add_opt(v_mad_u32_u16, v_mad_u32_u16, 0x3, "1203", remove_const_cb<0>, true);
       add_opt(v_mul_u32_u24, v_mad_u32_u24, 0x3, "120", nullptr, true);
       add_opt(v_mul_i32_i24, v_mad_i32_i24, 0x3, "120", nullptr, true);
@@ -4449,6 +4452,13 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
               and_cb<check_const_cb<1, 0>, remove_const_cb<1>>);
       if (ctx.uses[info.defs[1].tempId()] == 0) {
          add_opt(v_bcnt_u32_b32, v_bcnt_u32_b32, 0x3, "102",
+                 and_cb<remove_const_cb<0>, pop_def_cb>);
+         add_opt(s_bcnt1_i32_b32, v_bcnt_u32_b32, 0x3, "10", pop_def_cb);
+         add_opt(v_mbcnt_lo_u32_b32, v_mbcnt_lo_u32_b32, 0x3, "102",
+                 and_cb<remove_const_cb<0>, pop_def_cb>);
+         add_opt(v_mbcnt_hi_u32_b32, v_mbcnt_hi_u32_b32, 0x3, "102",
+                 and_cb<remove_const_cb<0>, pop_def_cb>);
+         add_opt(v_mbcnt_hi_u32_b32_e64, v_mbcnt_hi_u32_b32_e64, 0x3, "102",
                  and_cb<remove_const_cb<0>, pop_def_cb>);
          add_opt(v_mul_u32_u24, v_mad_u32_u24, 0x3, "120", pop_def_cb);
          add_opt(v_mul_i32_i24, v_mad_i32_i24, 0x3, "120", pop_def_cb);
