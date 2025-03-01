@@ -418,7 +418,6 @@ spec@arb_tessellation_shader@execution@barrier-patch,Fail
 spec@arb_tessellation_shader@execution@invocation-counting-even,Fail
 spec@arb_tessellation_shader@execution@invocation-counting-odd,Fail
 spec@arb_tessellation_shader@execution@tcs-primitiveid,Fail
-spec@arb_tessellation_shader@execution@tcs-tes-max-in-out-patch-components,Fail
 spec@arb_tessellation_shader@execution@tesslevels-indirect,Fail
 spec@arb_tessellation_shader@execution@variable-indexing@tcs-output-array-float-index-rd-after-barrier,Fail
 spec@arb_tessellation_shader@execution@variable-indexing@tcs-output-array-float-index-wr,Fail
@@ -746,7 +745,6 @@ spec@ext_packed_depth_stencil@texwrap formats bordercolor-swizzled,Fail
 spec@ext_packed_depth_stencil@texwrap formats bordercolor-swizzled@GL_DEPTH24_STENCIL8- swizzled- border color only,Fail
 spec@ext_packed_float@fbo-generatemipmap-formats,Fail
 spec@ext_packed_float@fbo-generatemipmap-formats@GL_R11F_G11F_B10F NPOT,Fail
-spec@ext_packed_float@query-rgba-signed-components,Fail
 spec@ext_packed_float@texwrap formats bordercolor,Fail
 spec@ext_packed_float@texwrap formats bordercolor@GL_R11F_G11F_B10F- border color only,Fail
 spec@ext_packed_float@texwrap formats bordercolor-swizzled,Fail
@@ -1081,5 +1079,8 @@ spec@arb_copy_image@arb_copy_image-formats --samples=8@Source: GL_RGB32I/Destina
 spec@arb_copy_image@arb_copy_image-formats --samples=8@Source: GL_RGB32UI/Destination: GL_RGB32I,Fail
 spec@arb_copy_image@arb_copy_image-formats --samples=8@Source: GL_RGB32UI/Destination: GL_RGB32UI,Fail
 spec@arb_framebuffer_object@execution@msaa-alpha-to-coverage_alpha-to-one,Fail
+spec@arb_framebuffer_object@execution@msaa-alpha-to-coverage_alpha-to-one_write-z,Fail
 spec@egl_chromium_sync_control@conformance,Fail
 spec@egl_chromium_sync_control@conformance@eglGetSyncValuesCHROMIUM_msc_and_sbc_test,Fail
+spec@glsl-1.50@execution@primitive-id-no-gs-line,Fail
+

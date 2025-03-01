@@ -146,3 +146,8 @@ spec@arb_fragment_layer_viewport@layer-gs-writes-out-of-range,Fail
 # glcts update
 KHR-GLES3.clip_distance.coverage,Fail
 KHR-GLES3.cull_distance.functional,Fail
+
+# uprev Piglit in Mesa
+spec@ext_external_objects@vk-ping-pong-multi-sem,Fail
+spec@ext_external_objects@vk-ping-pong-single-sem,Crash
+

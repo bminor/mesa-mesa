@@ -97,7 +97,6 @@ spec@!opengl 1.1@polygon-mode-offset@config 4: Expected white pixel on bottom ed
 spec@!opengl 1.1@polygon-mode-offset@config 4: Expected white pixel on left edge,Fail
 spec@!opengl 1.1@polygon-mode-offset@config 4: Expected white pixel on right edge,Fail
 spec@!opengl 1.1@polygon-mode-offset@config 4: Expected white pixel on top edge,Fail
-spec@!opengl 3.2@layered-rendering@clear-color-mismatched-layer-count,Fail
 
 # Seen in https://gitlab.freedesktop.org/mesa/mesa/-/pipelines/1364513
 dEQP-GLES31.functional.shaders.framebuffer_fetch.basic.last_frag_data,Fail
