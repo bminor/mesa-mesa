@@ -24,6 +24,7 @@
 #include <vndk/hardware_buffer.h>
 #endif
 #include <stdlib.h>
+#include <stdint.h>
 
 #include <algorithm>
 #include <chrono>
@@ -4938,7 +4939,11 @@ VkResult ResourceTracker::on_vkGetFenceStatus(void* context, VkResult input_resu
 
         auto fenceInfoIt = info_VkFence.find(fence);
         if (fenceInfoIt == info_VkFence.end()) {
+#if VK_USE_64_BIT_PTR_DEFINES
             mesa_loge("Failed to find VkFence:%p", fence);
+#else
+            mesa_loge("Failed to find VkFence:0x%" PRIx64, fence);
+#endif
             return VK_NOT_READY;
         }
         auto& fenceInfo = fenceInfoIt->second;
