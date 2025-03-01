@@ -28,9 +28,7 @@ EPHEMERAL=(
 )
 
 DEPS=(
-    bindgen
     bison
-    cbindgen
     ccache
     clang-devel
     flex
@@ -106,6 +104,8 @@ cd $XORGMACROS_VERSION; ./configure; make install; cd ..
 rm -rf $XORGMACROS_VERSION
 
 . .gitlab-ci/container/install-meson.sh
+
+. .gitlab-ci/container/build-bindgen.sh
 
 . .gitlab-ci/container/build-mold.sh
 
