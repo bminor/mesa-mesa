@@ -191,6 +191,9 @@ struct lp_build_nir_soa_context
    nir_shader *shader;
    nir_instr *instr;
 
+   /* A variable that contains the value of mask_vec so it shows up inside the debugger. */
+   LLVMValueRef debug_exec_mask;
+
    struct lp_build_if_state if_stack[LP_MAX_TGSI_NESTING];
    uint32_t if_stack_size;
 
@@ -5598,6 +5601,8 @@ visit_block(struct lp_build_nir_soa_context *bld, nir_block *block)
          LLVMMetadataRef di_loc = LLVMDIBuilderCreateDebugLocation(
             gallivm->context, debug_info->nir_line, 1, gallivm->di_function, NULL);
          LLVMSetCurrentDebugLocation2(gallivm->builder, di_loc);
+
+         LLVMBuildStore(gallivm->builder, mask_vec(bld), bld->debug_exec_mask);
       }
 
       switch (instr->type) {
@@ -5996,6 +6001,28 @@ void lp_build_nir_soa_func(struct gallivm_state *gallivm,
 
          ralloc_free(shader_src);
       }
+
+      LLVMValueRef exec_mask = mask_vec(&bld);
+      bld.debug_exec_mask = lp_build_alloca_undef(gallivm, LLVMTypeOf(exec_mask), "exec_mask");
+      LLVMBuildStore(gallivm->builder, exec_mask, bld.debug_exec_mask);
+
+      LLVMMetadataRef di_type = lp_bld_debug_info_type(gallivm, LLVMTypeOf(exec_mask));
+      LLVMMetadataRef di_var = LLVMDIBuilderCreateAutoVariable(
+         gallivm->di_builder, gallivm->di_function, "exec_mask", strlen("exec_mask"),
+         gallivm->file, 0, di_type, true, LLVMDIFlagZero, 0);
+
+      LLVMMetadataRef di_expr = LLVMDIBuilderCreateExpression(gallivm->di_builder, NULL, 0);
+
+      LLVMMetadataRef di_loc = LLVMDIBuilderCreateDebugLocation(
+         gallivm->context, 0, 0, gallivm->di_function, NULL);
+
+#if LLVM_VERSION_MAJOR >= 19
+      LLVMDIBuilderInsertDeclareRecordAtEnd(gallivm->di_builder, bld.debug_exec_mask, di_var, di_expr, di_loc,
+                                            LLVMGetInsertBlock(gallivm->builder));
+#else
+      LLVMDIBuilderInsertDeclareAtEnd(gallivm->di_builder, bld.debug_exec_mask, di_var, di_expr, di_loc,
+                                      LLVMGetInsertBlock(gallivm->builder));
+#endif
    }
 
    nir_foreach_reg_decl(reg, impl) {
