@@ -410,10 +410,7 @@ lower_calls_vars_instr(struct nir_builder *b,
       if (intrin->intrinsic != nir_intrinsic_printf)
          return false;
 
-      b->cursor = nir_before_instr(instr);
-      nir_src_rewrite(&intrin->src[0],
-                      nir_iadd_imm(b, intrin->src[0].ssa,
-                                   state->printf_index_offset));
+      nir_intrinsic_set_fmt_idx(intrin, nir_intrinsic_fmt_idx(intrin) + state->printf_index_offset);
       break;
    }
    default:

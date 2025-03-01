@@ -68,20 +68,19 @@ lower_printf_intrin(nir_builder *b, nir_intrinsic_instr *prntf, void *_options)
       return true;
    }
 
-   nir_def *fmt_str_id = prntf->src[0].ssa;
+   uint32_t fmt_str_id = nir_intrinsic_fmt_idx(prntf);
    if (options->hash_format_strings) {
       /* Rather than store the index of the format string, instead store the
        * hash of the format string itself. This is invariant across shaders
        * which may be more convenient.
        */
-      unsigned idx = nir_src_as_uint(prntf->src[0]) - 1;
-      assert(idx < b->shader->printf_info_count && "must be in-bounds");
+      assert(fmt_str_id - 1 < b->shader->printf_info_count && "must be in-bounds");
 
-      uint32_t hash = u_printf_hash(&b->shader->printf_info[idx]);
-      fmt_str_id = nir_imm_int(b, hash);
+      uint32_t hash = u_printf_hash(&b->shader->printf_info[fmt_str_id - 1]);
+      fmt_str_id = hash;
    }
 
-   nir_deref_instr *args = nir_src_as_deref(prntf->src[1]);
+   nir_deref_instr *args = nir_src_as_deref(prntf->src[0]);
    assert(args->deref_type == nir_deref_type_var);
 
    /* Atomic add a buffer size counter to determine where to write.  If
@@ -94,7 +93,6 @@ lower_printf_intrin(nir_builder *b, nir_intrinsic_instr *prntf, void *_options)
    /* Align the struct size to 4 */
    assert(glsl_type_is_struct_or_ifc(args->type));
    int args_size = align(glsl_get_cl_size(args->type), 4);
-   assert(fmt_str_id->bit_size == 32);
    int fmt_str_id_size = 4;
 
    /* Increment the counter at the beginning of the buffer */
@@ -130,7 +128,7 @@ lower_printf_intrin(nir_builder *b, nir_intrinsic_instr *prntf, void *_options)
                                            nir_var_mem_global,
                                            glsl_uint_type(), 0);
    fmt_str_id_deref->cast.align_mul = 4;
-   nir_store_deref(b, fmt_str_id_deref, fmt_str_id, ~0);
+   nir_store_deref(b, fmt_str_id_deref, nir_imm_int(b, fmt_str_id), ~0);
 
    /* Write the format args */
    for (unsigned i = 0; i < glsl_get_length(args->type); ++i) {

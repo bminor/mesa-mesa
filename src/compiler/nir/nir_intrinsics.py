@@ -332,6 +332,9 @@ index("unsigned", "repeat_count")
 # coordinates in compute.
 index("bool", "explicit_coord")
 
+# The index of the format string used by a printf. (u_printf_info element of the shader)
+index("unsigned", "fmt_idx")
+
 intrinsic("nop", flags=[CAN_ELIMINATE])
 
 # Uses a value and cannot be eliminated.
@@ -1283,10 +1286,9 @@ intrinsic("load_frag_shading_rate", dest_comp=1, bit_sizes=[32],
 system_value("fully_covered", dest_comp=1, bit_sizes=[1])
 
 # OpenCL printf instruction
-# First source is an index to the format string (u_printf_info element of the shader)
 # Second source is a deref to a struct containing the args
 # Dest is success or failure
-intrinsic("printf", src_comp=[1, 1], dest_comp=1, bit_sizes=[32])
+intrinsic("printf", src_comp=[1], dest_comp=1, bit_sizes=[32], indices=[FMT_IDX])
 # Since most drivers will want to lower to just dumping args
 # in a buffer, nir_lower_printf will do that, but requires
 # the driver to at least provide a base location and size
