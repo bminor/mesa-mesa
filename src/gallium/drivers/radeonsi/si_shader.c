@@ -294,15 +294,7 @@ static void declare_vs_blit_inputs(struct si_shader *shader, struct si_shader_ar
    ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_FLOAT, NULL);                /* depth */
 
    if (info->vs.blit_sgprs_amd ==
-       SI_VS_BLIT_SGPRS_POS_COLOR + has_attribute_ring_address) {
-      ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_FLOAT, NULL); /* color0 */
-      ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_FLOAT, NULL); /* color1 */
-      ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_FLOAT, NULL); /* color2 */
-      ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_FLOAT, NULL); /* color3 */
-      if (has_attribute_ring_address)
-         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, NULL); /* attribute ring address */
-   } else if (info->vs.blit_sgprs_amd ==
-              SI_VS_BLIT_SGPRS_POS_TEXCOORD + has_attribute_ring_address) {
+       SI_VS_BLIT_SGPRS_POS_TEXCOORD + has_attribute_ring_address) {
       ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_FLOAT, NULL); /* texcoord.x1 */
       ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_FLOAT, NULL); /* texcoord.y1 */
       ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_FLOAT, NULL); /* texcoord.x2 */

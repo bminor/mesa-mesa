@@ -251,10 +251,6 @@ static void si_destroy_context(struct pipe_context *context)
       sctx->b.delete_vs_state(&sctx->b, sctx->vs_blit_pos);
    if (sctx->vs_blit_pos_layered)
       sctx->b.delete_vs_state(&sctx->b, sctx->vs_blit_pos_layered);
-   if (sctx->vs_blit_color)
-      sctx->b.delete_vs_state(&sctx->b, sctx->vs_blit_color);
-   if (sctx->vs_blit_color_layered)
-      sctx->b.delete_vs_state(&sctx->b, sctx->vs_blit_color_layered);
    if (sctx->vs_blit_texcoord)
       sctx->b.delete_vs_state(&sctx->b, sctx->vs_blit_texcoord);
    if (sctx->cs_clear_buffer_rmw)

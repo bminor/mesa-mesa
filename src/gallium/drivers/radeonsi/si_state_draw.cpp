@@ -2498,10 +2498,6 @@ static void si_draw_rectangle(struct blitter_context *blitter, void *vertex_elem
    sctx->vs_blit_sh_data[2] = fui(depth);
 
    switch (type) {
-   case UTIL_BLITTER_ATTRIB_COLOR:
-      memcpy(&sctx->vs_blit_sh_data[3], attrib->color, sizeof(float) * 4);
-      sctx->vs_blit_sh_data[7] = attribute_ring_address_lo;
-      break;
    case UTIL_BLITTER_ATTRIB_TEXCOORD_XY:
    case UTIL_BLITTER_ATTRIB_TEXCOORD_XYZW:
       memcpy(&sctx->vs_blit_sh_data[3], &attrib->texcoord, sizeof(attrib->texcoord));

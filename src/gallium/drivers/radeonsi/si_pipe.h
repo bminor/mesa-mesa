@@ -973,8 +973,6 @@ struct si_context {
    void *custom_blend_dcc_decompress;
    void *vs_blit_pos;
    void *vs_blit_pos_layered;
-   void *vs_blit_color;
-   void *vs_blit_color_layered;
    void *vs_blit_texcoord;
    void *cs_clear_buffer_rmw;
    void *cs_ubyte_to_ushort;

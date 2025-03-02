@@ -300,10 +300,6 @@ void *si_get_blitter_vs(struct si_context *sctx, enum blitter_attrib_type type, 
       vs = num_layers > 1 ? &sctx->vs_blit_pos_layered : &sctx->vs_blit_pos;
       vs_blit_property = SI_VS_BLIT_SGPRS_POS;
       break;
-   case UTIL_BLITTER_ATTRIB_COLOR:
-      vs = num_layers > 1 ? &sctx->vs_blit_color_layered : &sctx->vs_blit_color;
-      vs_blit_property = SI_VS_BLIT_SGPRS_POS_COLOR;
-      break;
    case UTIL_BLITTER_ATTRIB_TEXCOORD_XY:
    case UTIL_BLITTER_ATTRIB_TEXCOORD_XYZW:
       assert(num_layers == 1);

@@ -1313,16 +1313,19 @@ util_make_fs_stencil_blit(struct pipe_context *pipe, bool msaa_src, bool has_txq
 }
 
 void *
-util_make_fs_clear_all_cbufs(struct pipe_context *pipe)
+util_make_fs_clear_color(struct pipe_context *pipe, bool write_all_cbufs)
 {
-   static const char text[] =
+   static const char text_templ[] =
       "FRAG\n"
-      "PROPERTY FS_COLOR0_WRITES_ALL_CBUFS 1\n"
+      "PROPERTY FS_COLOR0_WRITES_ALL_CBUFS %u\n"
       "DCL OUT[0], COLOR[0]\n"
       "DCL CONST[0][0]\n"
 
       "MOV OUT[0], CONST[0][0]\n"
       "END\n";
+   char text[1000];
+
+   snprintf(text, ARRAY_SIZE(text), text_templ, write_all_cbufs);
 
    struct tgsi_token tokens[1000];
    struct pipe_shader_state state = { 0 };

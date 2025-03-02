@@ -326,7 +326,6 @@ enum
 {
    /* These represent the number of SGPRs the shader uses. */
    SI_VS_BLIT_SGPRS_POS = 3,
-   SI_VS_BLIT_SGPRS_POS_COLOR = 7,
    SI_VS_BLIT_SGPRS_POS_TEXCOORD = 9,
 
    MAX_SI_VS_BLIT_SGPRS = 10, /* +1 for the attribute ring address */

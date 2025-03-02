@@ -1161,11 +1161,9 @@ void r300_blitter_draw_rectangle(struct blitter_context *blitter,
     unsigned last_is_point = r300->is_point;
     unsigned width = x2 - x1;
     unsigned height = y2 - y1;
-    unsigned vertex_size =
-            type == UTIL_BLITTER_ATTRIB_COLOR || !r300->draw ? 8 : 4;
+    unsigned vertex_size = !r300->draw ? 8 : 4;
     unsigned dwords = 13 + vertex_size +
                       (type == UTIL_BLITTER_ATTRIB_TEXCOORD_XY ? 7 : 0);
-    static const union blitter_attrib zeros;
     CS_LOCALS(r300);
 
     /* XXX workaround for a lockup in MSAA resolve on SWTCL chipsets, this
@@ -1234,9 +1232,8 @@ void r300_blitter_draw_rectangle(struct blitter_context *blitter,
     OUT_CS_32F(1);
 
     if (vertex_size == 8) {
-        if (!attrib)
-            attrib = &zeros;
-        OUT_CS_TABLE(attrib->color, 4);
+        static const float zeros[4];
+        OUT_CS_TABLE(zeros, 4);
     }
     END_CS;
 

@@ -85,7 +85,7 @@ panfrost_clear_render_target(struct pipe_context *pipe,
       return;
 
    panfrost_blitter_save(
-      ctx, render_condition_enabled ? PAN_RENDER_COND : PAN_RENDER_BASE);
+      ctx, (render_condition_enabled ? PAN_RENDER_COND : PAN_RENDER_BASE) | PAN_SAVE_FRAGMENT_CONSTANT);
    util_blitter_clear_render_target(ctx->blitter, dst, color, dstx, dsty, width,
                                     height);
 }

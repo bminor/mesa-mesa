@@ -161,7 +161,7 @@ void *
 util_make_fs_stencil_blit(struct pipe_context *pipe, bool msaa_src, bool has_txq);
 
 void *
-util_make_fs_clear_all_cbufs(struct pipe_context *pipe);
+util_make_fs_clear_color(struct pipe_context *pipe, bool write_all_cbufs);
 
 #ifdef __cplusplus
 }
