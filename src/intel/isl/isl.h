@@ -2732,6 +2732,14 @@ isl_surf_init_s(const struct isl_device *dev,
                 struct isl_surf *surf,
                 const struct isl_surf_init_info *restrict info);
 
+/* Return the largest surface possible for the specified memory range. */
+void
+isl_surf_from_mem(const struct isl_device *isl_dev,
+                  struct isl_surf *surf,
+                  int64_t offset,
+                  int64_t mem_size_B,
+                  enum isl_tiling tiling);
+
 void
 isl_surf_get_tile_info(const struct isl_surf *surf,
                        struct isl_tile_info *tile_info);

@@ -723,24 +723,6 @@ void anv_CmdCopyImage2(
       end_main_rcs_cmd_buffer_done(main_cmd_buffer, rcs_done);
 }
 
-static enum isl_format
-isl_format_for_size(unsigned size_B)
-{
-   /* Prefer 32-bit per component formats for CmdFillBuffer */
-   switch (size_B) {
-   case 1:  return ISL_FORMAT_R8_UINT;
-   case 2:  return ISL_FORMAT_R16_UINT;
-   case 3:  return ISL_FORMAT_R8G8B8_UINT;
-   case 4:  return ISL_FORMAT_R32_UINT;
-   case 6:  return ISL_FORMAT_R16G16B16_UINT;
-   case 8:  return ISL_FORMAT_R32G32_UINT;
-   case 12: return ISL_FORMAT_R32G32B32_UINT;
-   case 16: return ISL_FORMAT_R32G32B32A32_UINT;
-   default:
-      unreachable("Unknown format size");
-   }
-}
-
 static void
 copy_buffer_to_image(struct anv_cmd_buffer *cmd_buffer,
                      struct blorp_batch *batch,
@@ -1150,24 +1132,6 @@ void anv_CmdBlitImage2(
    anv_blorp_batch_finish(&batch);
 }
 
-/**
- * Returns the greatest common divisor of a and b that is a power of two.
- */
-static uint64_t
-gcd_pow2_u64(uint64_t a, uint64_t b)
-{
-   assert(a > 0 || b > 0);
-
-   unsigned a_log2 = ffsll(a) - 1;
-   unsigned b_log2 = ffsll(b) - 1;
-
-   /* If either a or b is 0, then a_log2 or b_log2 till be UINT_MAX in which
-    * case, the MIN2() will take the other one.  If both are 0 then we will
-    * hit the assert above.
-    */
-   return 1 << MIN2(a_log2, b_log2);
-}
-
 /* This is maximum possible width/height our HW can handle */
 #define MAX_SURFACE_DIM (1ull << 14)
 
@@ -1335,79 +1299,43 @@ anv_cmd_buffer_fill_area(struct anv_cmd_buffer *cmd_buffer,
                          VkDeviceSize size,
                          uint32_t data)
 {
-   struct blorp_surf surf;
-   struct isl_surf isl_surf;
-
    struct blorp_batch batch;
    anv_blorp_batch_init(cmd_buffer, &batch,
                         cmd_buffer->state.current_pipeline ==
                         cmd_buffer->device->physical->gpgpu_pipeline_value ?
                         BLORP_BATCH_USE_COMPUTE : 0);
 
-   /* First, we compute the biggest format that can be used with the
-    * given offsets and size.
-    */
-   int bs = 16;
-   uint64_t offset = address.offset;
-   bs = gcd_pow2_u64(bs, offset);
-   bs = gcd_pow2_u64(bs, size);
-   enum isl_format isl_format = isl_format_for_size(bs);
-
    union isl_color_value color = {
       .u32 = { data, data, data, data },
    };
 
-   const uint64_t max_fill_size = MAX_SURFACE_DIM * MAX_SURFACE_DIM * bs;
-   while (size >= max_fill_size) {
-      get_blorp_surf_for_anv_address(cmd_buffer,
-                                     (struct anv_address) {
-                                        .bo = address.bo, .offset = offset,
-                                     },
-                                     MAX_SURFACE_DIM, MAX_SURFACE_DIM,
-                                     MAX_SURFACE_DIM * bs, isl_format,
-                                     true /* is_dest */,
-                                     &surf, &isl_surf);
+   isl_surf_usage_flags_t usage =
+      get_usage_flag_for_cmd_buffer(cmd_buffer, true /* is_dest */,
+                                    false /* is_depth */, address.protected);
 
-      blorp_clear(&batch, &surf, isl_format, ISL_SWIZZLE_IDENTITY,
-                  0, 0, 1, 0, 0, MAX_SURFACE_DIM, MAX_SURFACE_DIM,
+   struct isl_surf isl_surf;
+   struct blorp_surf surf = {
+      .addr = {
+         .buffer = address.bo,
+         .offset = address.offset,
+         .mocs = anv_mocs(cmd_buffer->device, address.bo, usage),
+      },
+      .surf = &isl_surf,
+   };
+
+   do {
+      isl_surf_from_mem(&cmd_buffer->device->isl_dev, &isl_surf,
+                        surf.addr.offset, size, ISL_TILING_LINEAR);
+
+      blorp_clear(&batch, &surf, isl_surf.format, ISL_SWIZZLE_IDENTITY, 0, 0,
+                  isl_surf.logical_level0_px.a, 0, 0,
+                  isl_surf.logical_level0_px.w,
+                  isl_surf.logical_level0_px.h,
                   color, 0 /* color_write_disable */);
-      size -= max_fill_size;
-      offset += max_fill_size;
-   }
 
-   uint64_t height = size / (MAX_SURFACE_DIM * bs);
-   assert(height < MAX_SURFACE_DIM);
-   if (height != 0) {
-      const uint64_t rect_fill_size = height * MAX_SURFACE_DIM * bs;
-      get_blorp_surf_for_anv_address(cmd_buffer,
-                                     (struct anv_address) {
-                                        .bo = address.bo, .offset = offset,
-                                     },
-                                     MAX_SURFACE_DIM, height,
-                                     MAX_SURFACE_DIM * bs, isl_format,
-                                     true /* is_dest */,
-                                     &surf, &isl_surf);
-
-      blorp_clear(&batch, &surf, isl_format, ISL_SWIZZLE_IDENTITY,
-                  0, 0, 1, 0, 0, MAX_SURFACE_DIM, height,
-                  color, 0 /* color_write_disable */);
-      size -= rect_fill_size;
-      offset += rect_fill_size;
-   }
-
-   if (size != 0) {
-      const uint32_t width = size / bs;
-      get_blorp_surf_for_anv_address(cmd_buffer,
-                                     (struct anv_address) {
-                                        .bo = address.bo, .offset = offset,
-                                     },
-                                     width, 1, width * bs, isl_format,
-                                     true /* is_dest */, &surf, &isl_surf);
-
-      blorp_clear(&batch, &surf, isl_format, ISL_SWIZZLE_IDENTITY,
-                  0, 0, 1, 0, 0, width, 1,
-                  color, 0 /* color_write_disable */);
-   }
+      size -= isl_surf.size_B;
+      surf.addr.offset += isl_surf.size_B;
+   } while (size != 0);
 
    anv_blorp_batch_finish(&batch);
 }

@@ -3468,6 +3468,105 @@ isl_surf_init_s(const struct isl_device *dev,
    return true;
 }
 
+/* Returns divisor+1 if divisor >= num. */
+static int64_t
+find_next_divisor(int64_t divisor, int64_t num)
+{
+   if (divisor >= num) {
+      return divisor + 1;
+   } else {
+      while (num % ++divisor != 0);
+      return divisor;
+   }
+}
+
+/* Return an extent which holds at most the given number of tiles and has a
+ * minimum array length.
+ */
+static struct isl_extent4d
+get_2d_array_extent(const struct isl_device *isl_dev,
+                    const struct isl_tile_info *tile_info, int64_t max_tiles)
+{
+   int max_surface_dim = 1 << (ISL_GFX_VER(isl_dev) >= 7 ? 14 : 13);
+   int max_array_len = 2048;
+
+   for (int64_t tiles = max_tiles; tiles > 0; tiles--) {
+      for (int array_len = 1; array_len <= MIN2(tiles, max_array_len);
+            array_len = find_next_divisor(array_len, tiles)) {
+         int64_t layer_tiles = tiles / array_len;
+         for (int64_t h_tl = 1; h_tl <= layer_tiles;
+               h_tl = find_next_divisor(h_tl, layer_tiles))  {
+            int64_t w_tl = layer_tiles / h_tl;
+            int64_t w_el = w_tl * tile_info->logical_extent_el.w;
+            int64_t h_el = h_tl * tile_info->logical_extent_el.h;
+
+            if (w_el > max_surface_dim)
+               continue;
+
+            if (h_el > max_surface_dim)
+               continue;
+
+            /* SurfaceQPitch must be multiple of 4. */
+            if (array_len > 1 && h_el % 4 != 0)
+               continue;
+
+            return isl_extent4d(w_el, h_el, 1, array_len);
+         }
+      }
+   }
+
+   unreachable("extent not found for given number of tiles.");
+}
+
+void
+isl_surf_from_mem(const struct isl_device *isl_dev,
+                  struct isl_surf *surf,
+                  int64_t offset,
+                  int64_t mem_size_B,
+                  enum isl_tiling tiling)
+{
+   /* Get the surface format. */
+   const struct isl_format_layout *fmtl;
+   switch (ffs(offset | mem_size_B)) {
+   default: fmtl = isl_format_get_layout(ISL_FORMAT_R32G32B32A32_UINT); break;
+   case  4: fmtl = isl_format_get_layout(ISL_FORMAT_R32G32_UINT); break;
+   case  3: fmtl = isl_format_get_layout(ISL_FORMAT_R32_UINT); break;
+   case  2: fmtl = isl_format_get_layout(ISL_FORMAT_R16_UINT); break;
+   case  1: fmtl = isl_format_get_layout(ISL_FORMAT_R8_UINT); break;
+   }
+
+   /* Get the surface extent. */
+   struct isl_tile_info tile_info;
+   isl_tiling_get_info(tiling, ISL_SURF_DIM_2D, ISL_MSAA_LAYOUT_NONE,
+                       fmtl->bpb, 1 /* samples */, &tile_info);
+   int tile_size_B = tile_info.phys_extent_B.w * tile_info.phys_extent_B.h;
+   int64_t max_tiles = mem_size_B / tile_size_B;
+   struct isl_extent4d extent =
+      get_2d_array_extent(isl_dev, &tile_info, max_tiles);
+
+   /* Create the surface. */
+   isl_surf_usage_flags_t usage = ISL_SURF_USAGE_TEXTURE_BIT |
+                                  ISL_SURF_USAGE_RENDER_TARGET_BIT |
+                                  ISL_SURF_USAGE_NO_AUX_TT_ALIGNMENT_BIT;
+   ASSERTED bool ok = isl_surf_init(isl_dev, surf,
+                                    .dim = ISL_SURF_DIM_2D,
+                                    .format = fmtl->format,
+                                    .width = extent.w,
+                                    .height = extent.h,
+                                    .depth = extent.d,
+                                    .levels = 1,
+                                    .array_len = extent.a,
+                                    .samples = 1,
+                                    .row_pitch_B = extent.w * fmtl->bpb / 8,
+                                    .usage = usage,
+                                    .tiling_flags = 1 << tiling);
+   assert(ok);
+   if (extent.a > 1)
+      assert(surf->array_pitch_el_rows == extent.h);
+   assert(surf->size_B == surf->row_pitch_B * extent.h * extent.a);
+   assert(surf->size_B <= max_tiles * tile_size_B);
+}
+
 void
 isl_surf_get_tile_info(const struct isl_surf *surf,
                        struct isl_tile_info *tile_info)
