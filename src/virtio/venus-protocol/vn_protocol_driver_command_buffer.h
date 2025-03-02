@@ -654,8 +654,9 @@ vn_encode_VkClearDepthStencilValue(struct vn_cs_encoder *enc, const VkClearDepth
 /* union VkClearValue */
 
 static inline size_t
-vn_sizeof_VkClearValue_tag(const VkClearValue *val, uint32_t tag)
+vn_sizeof_VkClearValue(const VkClearValue *val)
 {
+    static const uint32_t tag = 0; /* union with default tag */
     size_t size = vn_sizeof_uint32_t(&tag);
     switch (tag) {
     case 0:
@@ -671,15 +672,10 @@ vn_sizeof_VkClearValue_tag(const VkClearValue *val, uint32_t tag)
     return size;
 }
 
-static inline size_t
-vn_sizeof_VkClearValue(const VkClearValue *val)
-{
-    return vn_sizeof_VkClearValue_tag(val, 0);
-}
-
 static inline void
-vn_encode_VkClearValue_tag(struct vn_cs_encoder *enc, const VkClearValue *val, uint32_t tag)
+vn_encode_VkClearValue(struct vn_cs_encoder *enc, const VkClearValue *val)
 {
+    static const uint32_t tag = 0; /* union with default tag */
     vn_encode_uint32_t(enc, &tag);
     switch (tag) {
     case 0:
@@ -692,12 +688,6 @@ vn_encode_VkClearValue_tag(struct vn_cs_encoder *enc, const VkClearValue *val, u
         assert(false);
         break;
     }
-}
-
-static inline void
-vn_encode_VkClearValue(struct vn_cs_encoder *enc, const VkClearValue *val)
-{
-    vn_encode_VkClearValue_tag(enc, val, 0); /* union with default tag */
 }
 
 /* struct VkClearAttachment */
@@ -1642,6 +1632,26 @@ vn_encode_VkSubpassEndInfo(struct vn_cs_encoder *enc, const VkSubpassEndInfo *va
     vn_encode_VkStructureType(enc, &(VkStructureType){ VK_STRUCTURE_TYPE_SUBPASS_END_INFO });
     vn_encode_VkSubpassEndInfo_pnext(enc, val->pNext);
     vn_encode_VkSubpassEndInfo_self(enc, val);
+}
+
+/* struct VkStridedDeviceAddressRegionKHR */
+
+static inline size_t
+vn_sizeof_VkStridedDeviceAddressRegionKHR(const VkStridedDeviceAddressRegionKHR *val)
+{
+    size_t size = 0;
+    size += vn_sizeof_VkDeviceAddress(&val->deviceAddress);
+    size += vn_sizeof_VkDeviceSize(&val->stride);
+    size += vn_sizeof_VkDeviceSize(&val->size);
+    return size;
+}
+
+static inline void
+vn_encode_VkStridedDeviceAddressRegionKHR(struct vn_cs_encoder *enc, const VkStridedDeviceAddressRegionKHR *val)
+{
+    vn_encode_VkDeviceAddress(enc, &val->deviceAddress);
+    vn_encode_VkDeviceSize(enc, &val->stride);
+    vn_encode_VkDeviceSize(enc, &val->size);
 }
 
 /* struct VkColorBlendEquationEXT */
@@ -7615,6 +7625,459 @@ static inline void vn_decode_vkCmdDrawIndirectByteCountEXT_reply(struct vn_cs_de
     /* skip vertexStride */
 }
 
+static inline size_t vn_sizeof_vkCmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer, const VkCopyAccelerationStructureInfoKHR* pInfo)
+{
+    const VkCommandTypeEXT cmd_type = VK_COMMAND_TYPE_vkCmdCopyAccelerationStructureKHR_EXT;
+    const VkFlags cmd_flags = 0;
+    size_t cmd_size = vn_sizeof_VkCommandTypeEXT(&cmd_type) + vn_sizeof_VkFlags(&cmd_flags);
+
+    cmd_size += vn_sizeof_VkCommandBuffer(&commandBuffer);
+    cmd_size += vn_sizeof_simple_pointer(pInfo);
+    if (pInfo)
+        cmd_size += vn_sizeof_VkCopyAccelerationStructureInfoKHR(pInfo);
+
+    return cmd_size;
+}
+
+static inline void vn_encode_vkCmdCopyAccelerationStructureKHR(struct vn_cs_encoder *enc, VkCommandFlagsEXT cmd_flags, VkCommandBuffer commandBuffer, const VkCopyAccelerationStructureInfoKHR* pInfo)
+{
+    const VkCommandTypeEXT cmd_type = VK_COMMAND_TYPE_vkCmdCopyAccelerationStructureKHR_EXT;
+
+    vn_encode_VkCommandTypeEXT(enc, &cmd_type);
+    vn_encode_VkFlags(enc, &cmd_flags);
+
+    vn_encode_VkCommandBuffer(enc, &commandBuffer);
+    if (vn_encode_simple_pointer(enc, pInfo))
+        vn_encode_VkCopyAccelerationStructureInfoKHR(enc, pInfo);
+}
+
+static inline size_t vn_sizeof_vkCmdCopyAccelerationStructureKHR_reply(VkCommandBuffer commandBuffer, const VkCopyAccelerationStructureInfoKHR* pInfo)
+{
+    const VkCommandTypeEXT cmd_type = VK_COMMAND_TYPE_vkCmdCopyAccelerationStructureKHR_EXT;
+    size_t cmd_size = vn_sizeof_VkCommandTypeEXT(&cmd_type);
+
+    /* skip commandBuffer */
+    /* skip pInfo */
+
+    return cmd_size;
+}
+
+static inline void vn_decode_vkCmdCopyAccelerationStructureKHR_reply(struct vn_cs_decoder *dec, VkCommandBuffer commandBuffer, const VkCopyAccelerationStructureInfoKHR* pInfo)
+{
+    VkCommandTypeEXT command_type;
+    vn_decode_VkCommandTypeEXT(dec, &command_type);
+    assert(command_type == VK_COMMAND_TYPE_vkCmdCopyAccelerationStructureKHR_EXT);
+
+    /* skip commandBuffer */
+    /* skip pInfo */
+}
+
+static inline size_t vn_sizeof_vkCmdCopyAccelerationStructureToMemoryKHR(VkCommandBuffer commandBuffer, const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo)
+{
+    const VkCommandTypeEXT cmd_type = VK_COMMAND_TYPE_vkCmdCopyAccelerationStructureToMemoryKHR_EXT;
+    const VkFlags cmd_flags = 0;
+    size_t cmd_size = vn_sizeof_VkCommandTypeEXT(&cmd_type) + vn_sizeof_VkFlags(&cmd_flags);
+
+    cmd_size += vn_sizeof_VkCommandBuffer(&commandBuffer);
+    cmd_size += vn_sizeof_simple_pointer(pInfo);
+    if (pInfo)
+        cmd_size += vn_sizeof_VkCopyAccelerationStructureToMemoryInfoKHR(pInfo);
+
+    return cmd_size;
+}
+
+static inline void vn_encode_vkCmdCopyAccelerationStructureToMemoryKHR(struct vn_cs_encoder *enc, VkCommandFlagsEXT cmd_flags, VkCommandBuffer commandBuffer, const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo)
+{
+    const VkCommandTypeEXT cmd_type = VK_COMMAND_TYPE_vkCmdCopyAccelerationStructureToMemoryKHR_EXT;
+
+    vn_encode_VkCommandTypeEXT(enc, &cmd_type);
+    vn_encode_VkFlags(enc, &cmd_flags);
+
+    vn_encode_VkCommandBuffer(enc, &commandBuffer);
+    if (vn_encode_simple_pointer(enc, pInfo))
+        vn_encode_VkCopyAccelerationStructureToMemoryInfoKHR(enc, pInfo);
+}
+
+static inline size_t vn_sizeof_vkCmdCopyAccelerationStructureToMemoryKHR_reply(VkCommandBuffer commandBuffer, const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo)
+{
+    const VkCommandTypeEXT cmd_type = VK_COMMAND_TYPE_vkCmdCopyAccelerationStructureToMemoryKHR_EXT;
+    size_t cmd_size = vn_sizeof_VkCommandTypeEXT(&cmd_type);
+
+    /* skip commandBuffer */
+    /* skip pInfo */
+
+    return cmd_size;
+}
+
+static inline void vn_decode_vkCmdCopyAccelerationStructureToMemoryKHR_reply(struct vn_cs_decoder *dec, VkCommandBuffer commandBuffer, const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo)
+{
+    VkCommandTypeEXT command_type;
+    vn_decode_VkCommandTypeEXT(dec, &command_type);
+    assert(command_type == VK_COMMAND_TYPE_vkCmdCopyAccelerationStructureToMemoryKHR_EXT);
+
+    /* skip commandBuffer */
+    /* skip pInfo */
+}
+
+static inline size_t vn_sizeof_vkCmdCopyMemoryToAccelerationStructureKHR(VkCommandBuffer commandBuffer, const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo)
+{
+    const VkCommandTypeEXT cmd_type = VK_COMMAND_TYPE_vkCmdCopyMemoryToAccelerationStructureKHR_EXT;
+    const VkFlags cmd_flags = 0;
+    size_t cmd_size = vn_sizeof_VkCommandTypeEXT(&cmd_type) + vn_sizeof_VkFlags(&cmd_flags);
+
+    cmd_size += vn_sizeof_VkCommandBuffer(&commandBuffer);
+    cmd_size += vn_sizeof_simple_pointer(pInfo);
+    if (pInfo)
+        cmd_size += vn_sizeof_VkCopyMemoryToAccelerationStructureInfoKHR(pInfo);
+
+    return cmd_size;
+}
+
+static inline void vn_encode_vkCmdCopyMemoryToAccelerationStructureKHR(struct vn_cs_encoder *enc, VkCommandFlagsEXT cmd_flags, VkCommandBuffer commandBuffer, const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo)
+{
+    const VkCommandTypeEXT cmd_type = VK_COMMAND_TYPE_vkCmdCopyMemoryToAccelerationStructureKHR_EXT;
+
+    vn_encode_VkCommandTypeEXT(enc, &cmd_type);
+    vn_encode_VkFlags(enc, &cmd_flags);
+
+    vn_encode_VkCommandBuffer(enc, &commandBuffer);
+    if (vn_encode_simple_pointer(enc, pInfo))
+        vn_encode_VkCopyMemoryToAccelerationStructureInfoKHR(enc, pInfo);
+}
+
+static inline size_t vn_sizeof_vkCmdCopyMemoryToAccelerationStructureKHR_reply(VkCommandBuffer commandBuffer, const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo)
+{
+    const VkCommandTypeEXT cmd_type = VK_COMMAND_TYPE_vkCmdCopyMemoryToAccelerationStructureKHR_EXT;
+    size_t cmd_size = vn_sizeof_VkCommandTypeEXT(&cmd_type);
+
+    /* skip commandBuffer */
+    /* skip pInfo */
+
+    return cmd_size;
+}
+
+static inline void vn_decode_vkCmdCopyMemoryToAccelerationStructureKHR_reply(struct vn_cs_decoder *dec, VkCommandBuffer commandBuffer, const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo)
+{
+    VkCommandTypeEXT command_type;
+    vn_decode_VkCommandTypeEXT(dec, &command_type);
+    assert(command_type == VK_COMMAND_TYPE_vkCmdCopyMemoryToAccelerationStructureKHR_EXT);
+
+    /* skip commandBuffer */
+    /* skip pInfo */
+}
+
+static inline size_t vn_sizeof_vkCmdWriteAccelerationStructuresPropertiesKHR(VkCommandBuffer commandBuffer, uint32_t accelerationStructureCount, const VkAccelerationStructureKHR* pAccelerationStructures, VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery)
+{
+    const VkCommandTypeEXT cmd_type = VK_COMMAND_TYPE_vkCmdWriteAccelerationStructuresPropertiesKHR_EXT;
+    const VkFlags cmd_flags = 0;
+    size_t cmd_size = vn_sizeof_VkCommandTypeEXT(&cmd_type) + vn_sizeof_VkFlags(&cmd_flags);
+
+    cmd_size += vn_sizeof_VkCommandBuffer(&commandBuffer);
+    cmd_size += vn_sizeof_uint32_t(&accelerationStructureCount);
+    if (pAccelerationStructures) {
+        cmd_size += vn_sizeof_array_size(accelerationStructureCount);
+        for (uint32_t i = 0; i < accelerationStructureCount; i++)
+            cmd_size += vn_sizeof_VkAccelerationStructureKHR(&pAccelerationStructures[i]);
+    } else {
+        cmd_size += vn_sizeof_array_size(0);
+    }
+    cmd_size += vn_sizeof_VkQueryType(&queryType);
+    cmd_size += vn_sizeof_VkQueryPool(&queryPool);
+    cmd_size += vn_sizeof_uint32_t(&firstQuery);
+
+    return cmd_size;
+}
+
+static inline void vn_encode_vkCmdWriteAccelerationStructuresPropertiesKHR(struct vn_cs_encoder *enc, VkCommandFlagsEXT cmd_flags, VkCommandBuffer commandBuffer, uint32_t accelerationStructureCount, const VkAccelerationStructureKHR* pAccelerationStructures, VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery)
+{
+    const VkCommandTypeEXT cmd_type = VK_COMMAND_TYPE_vkCmdWriteAccelerationStructuresPropertiesKHR_EXT;
+
+    vn_encode_VkCommandTypeEXT(enc, &cmd_type);
+    vn_encode_VkFlags(enc, &cmd_flags);
+
+    vn_encode_VkCommandBuffer(enc, &commandBuffer);
+    vn_encode_uint32_t(enc, &accelerationStructureCount);
+    if (pAccelerationStructures) {
+        vn_encode_array_size(enc, accelerationStructureCount);
+        for (uint32_t i = 0; i < accelerationStructureCount; i++)
+            vn_encode_VkAccelerationStructureKHR(enc, &pAccelerationStructures[i]);
+    } else {
+        vn_encode_array_size(enc, 0);
+    }
+    vn_encode_VkQueryType(enc, &queryType);
+    vn_encode_VkQueryPool(enc, &queryPool);
+    vn_encode_uint32_t(enc, &firstQuery);
+}
+
+static inline size_t vn_sizeof_vkCmdWriteAccelerationStructuresPropertiesKHR_reply(VkCommandBuffer commandBuffer, uint32_t accelerationStructureCount, const VkAccelerationStructureKHR* pAccelerationStructures, VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery)
+{
+    const VkCommandTypeEXT cmd_type = VK_COMMAND_TYPE_vkCmdWriteAccelerationStructuresPropertiesKHR_EXT;
+    size_t cmd_size = vn_sizeof_VkCommandTypeEXT(&cmd_type);
+
+    /* skip commandBuffer */
+    /* skip accelerationStructureCount */
+    /* skip pAccelerationStructures */
+    /* skip queryType */
+    /* skip queryPool */
+    /* skip firstQuery */
+
+    return cmd_size;
+}
+
+static inline void vn_decode_vkCmdWriteAccelerationStructuresPropertiesKHR_reply(struct vn_cs_decoder *dec, VkCommandBuffer commandBuffer, uint32_t accelerationStructureCount, const VkAccelerationStructureKHR* pAccelerationStructures, VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery)
+{
+    VkCommandTypeEXT command_type;
+    vn_decode_VkCommandTypeEXT(dec, &command_type);
+    assert(command_type == VK_COMMAND_TYPE_vkCmdWriteAccelerationStructuresPropertiesKHR_EXT);
+
+    /* skip commandBuffer */
+    /* skip accelerationStructureCount */
+    /* skip pAccelerationStructures */
+    /* skip queryType */
+    /* skip queryPool */
+    /* skip firstQuery */
+}
+
+static inline size_t vn_sizeof_vkCmdTraceRaysKHR(VkCommandBuffer commandBuffer, const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable, uint32_t width, uint32_t height, uint32_t depth)
+{
+    const VkCommandTypeEXT cmd_type = VK_COMMAND_TYPE_vkCmdTraceRaysKHR_EXT;
+    const VkFlags cmd_flags = 0;
+    size_t cmd_size = vn_sizeof_VkCommandTypeEXT(&cmd_type) + vn_sizeof_VkFlags(&cmd_flags);
+
+    cmd_size += vn_sizeof_VkCommandBuffer(&commandBuffer);
+    cmd_size += vn_sizeof_simple_pointer(pRaygenShaderBindingTable);
+    if (pRaygenShaderBindingTable)
+        cmd_size += vn_sizeof_VkStridedDeviceAddressRegionKHR(pRaygenShaderBindingTable);
+    cmd_size += vn_sizeof_simple_pointer(pMissShaderBindingTable);
+    if (pMissShaderBindingTable)
+        cmd_size += vn_sizeof_VkStridedDeviceAddressRegionKHR(pMissShaderBindingTable);
+    cmd_size += vn_sizeof_simple_pointer(pHitShaderBindingTable);
+    if (pHitShaderBindingTable)
+        cmd_size += vn_sizeof_VkStridedDeviceAddressRegionKHR(pHitShaderBindingTable);
+    cmd_size += vn_sizeof_simple_pointer(pCallableShaderBindingTable);
+    if (pCallableShaderBindingTable)
+        cmd_size += vn_sizeof_VkStridedDeviceAddressRegionKHR(pCallableShaderBindingTable);
+    cmd_size += vn_sizeof_uint32_t(&width);
+    cmd_size += vn_sizeof_uint32_t(&height);
+    cmd_size += vn_sizeof_uint32_t(&depth);
+
+    return cmd_size;
+}
+
+static inline void vn_encode_vkCmdTraceRaysKHR(struct vn_cs_encoder *enc, VkCommandFlagsEXT cmd_flags, VkCommandBuffer commandBuffer, const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable, uint32_t width, uint32_t height, uint32_t depth)
+{
+    const VkCommandTypeEXT cmd_type = VK_COMMAND_TYPE_vkCmdTraceRaysKHR_EXT;
+
+    vn_encode_VkCommandTypeEXT(enc, &cmd_type);
+    vn_encode_VkFlags(enc, &cmd_flags);
+
+    vn_encode_VkCommandBuffer(enc, &commandBuffer);
+    if (vn_encode_simple_pointer(enc, pRaygenShaderBindingTable))
+        vn_encode_VkStridedDeviceAddressRegionKHR(enc, pRaygenShaderBindingTable);
+    if (vn_encode_simple_pointer(enc, pMissShaderBindingTable))
+        vn_encode_VkStridedDeviceAddressRegionKHR(enc, pMissShaderBindingTable);
+    if (vn_encode_simple_pointer(enc, pHitShaderBindingTable))
+        vn_encode_VkStridedDeviceAddressRegionKHR(enc, pHitShaderBindingTable);
+    if (vn_encode_simple_pointer(enc, pCallableShaderBindingTable))
+        vn_encode_VkStridedDeviceAddressRegionKHR(enc, pCallableShaderBindingTable);
+    vn_encode_uint32_t(enc, &width);
+    vn_encode_uint32_t(enc, &height);
+    vn_encode_uint32_t(enc, &depth);
+}
+
+static inline size_t vn_sizeof_vkCmdTraceRaysKHR_reply(VkCommandBuffer commandBuffer, const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable, uint32_t width, uint32_t height, uint32_t depth)
+{
+    const VkCommandTypeEXT cmd_type = VK_COMMAND_TYPE_vkCmdTraceRaysKHR_EXT;
+    size_t cmd_size = vn_sizeof_VkCommandTypeEXT(&cmd_type);
+
+    /* skip commandBuffer */
+    /* skip pRaygenShaderBindingTable */
+    /* skip pMissShaderBindingTable */
+    /* skip pHitShaderBindingTable */
+    /* skip pCallableShaderBindingTable */
+    /* skip width */
+    /* skip height */
+    /* skip depth */
+
+    return cmd_size;
+}
+
+static inline void vn_decode_vkCmdTraceRaysKHR_reply(struct vn_cs_decoder *dec, VkCommandBuffer commandBuffer, const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable, uint32_t width, uint32_t height, uint32_t depth)
+{
+    VkCommandTypeEXT command_type;
+    vn_decode_VkCommandTypeEXT(dec, &command_type);
+    assert(command_type == VK_COMMAND_TYPE_vkCmdTraceRaysKHR_EXT);
+
+    /* skip commandBuffer */
+    /* skip pRaygenShaderBindingTable */
+    /* skip pMissShaderBindingTable */
+    /* skip pHitShaderBindingTable */
+    /* skip pCallableShaderBindingTable */
+    /* skip width */
+    /* skip height */
+    /* skip depth */
+}
+
+static inline size_t vn_sizeof_vkCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer, const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable, VkDeviceAddress indirectDeviceAddress)
+{
+    const VkCommandTypeEXT cmd_type = VK_COMMAND_TYPE_vkCmdTraceRaysIndirectKHR_EXT;
+    const VkFlags cmd_flags = 0;
+    size_t cmd_size = vn_sizeof_VkCommandTypeEXT(&cmd_type) + vn_sizeof_VkFlags(&cmd_flags);
+
+    cmd_size += vn_sizeof_VkCommandBuffer(&commandBuffer);
+    cmd_size += vn_sizeof_simple_pointer(pRaygenShaderBindingTable);
+    if (pRaygenShaderBindingTable)
+        cmd_size += vn_sizeof_VkStridedDeviceAddressRegionKHR(pRaygenShaderBindingTable);
+    cmd_size += vn_sizeof_simple_pointer(pMissShaderBindingTable);
+    if (pMissShaderBindingTable)
+        cmd_size += vn_sizeof_VkStridedDeviceAddressRegionKHR(pMissShaderBindingTable);
+    cmd_size += vn_sizeof_simple_pointer(pHitShaderBindingTable);
+    if (pHitShaderBindingTable)
+        cmd_size += vn_sizeof_VkStridedDeviceAddressRegionKHR(pHitShaderBindingTable);
+    cmd_size += vn_sizeof_simple_pointer(pCallableShaderBindingTable);
+    if (pCallableShaderBindingTable)
+        cmd_size += vn_sizeof_VkStridedDeviceAddressRegionKHR(pCallableShaderBindingTable);
+    cmd_size += vn_sizeof_VkDeviceAddress(&indirectDeviceAddress);
+
+    return cmd_size;
+}
+
+static inline void vn_encode_vkCmdTraceRaysIndirectKHR(struct vn_cs_encoder *enc, VkCommandFlagsEXT cmd_flags, VkCommandBuffer commandBuffer, const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable, VkDeviceAddress indirectDeviceAddress)
+{
+    const VkCommandTypeEXT cmd_type = VK_COMMAND_TYPE_vkCmdTraceRaysIndirectKHR_EXT;
+
+    vn_encode_VkCommandTypeEXT(enc, &cmd_type);
+    vn_encode_VkFlags(enc, &cmd_flags);
+
+    vn_encode_VkCommandBuffer(enc, &commandBuffer);
+    if (vn_encode_simple_pointer(enc, pRaygenShaderBindingTable))
+        vn_encode_VkStridedDeviceAddressRegionKHR(enc, pRaygenShaderBindingTable);
+    if (vn_encode_simple_pointer(enc, pMissShaderBindingTable))
+        vn_encode_VkStridedDeviceAddressRegionKHR(enc, pMissShaderBindingTable);
+    if (vn_encode_simple_pointer(enc, pHitShaderBindingTable))
+        vn_encode_VkStridedDeviceAddressRegionKHR(enc, pHitShaderBindingTable);
+    if (vn_encode_simple_pointer(enc, pCallableShaderBindingTable))
+        vn_encode_VkStridedDeviceAddressRegionKHR(enc, pCallableShaderBindingTable);
+    vn_encode_VkDeviceAddress(enc, &indirectDeviceAddress);
+}
+
+static inline size_t vn_sizeof_vkCmdTraceRaysIndirectKHR_reply(VkCommandBuffer commandBuffer, const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable, VkDeviceAddress indirectDeviceAddress)
+{
+    const VkCommandTypeEXT cmd_type = VK_COMMAND_TYPE_vkCmdTraceRaysIndirectKHR_EXT;
+    size_t cmd_size = vn_sizeof_VkCommandTypeEXT(&cmd_type);
+
+    /* skip commandBuffer */
+    /* skip pRaygenShaderBindingTable */
+    /* skip pMissShaderBindingTable */
+    /* skip pHitShaderBindingTable */
+    /* skip pCallableShaderBindingTable */
+    /* skip indirectDeviceAddress */
+
+    return cmd_size;
+}
+
+static inline void vn_decode_vkCmdTraceRaysIndirectKHR_reply(struct vn_cs_decoder *dec, VkCommandBuffer commandBuffer, const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable, VkDeviceAddress indirectDeviceAddress)
+{
+    VkCommandTypeEXT command_type;
+    vn_decode_VkCommandTypeEXT(dec, &command_type);
+    assert(command_type == VK_COMMAND_TYPE_vkCmdTraceRaysIndirectKHR_EXT);
+
+    /* skip commandBuffer */
+    /* skip pRaygenShaderBindingTable */
+    /* skip pMissShaderBindingTable */
+    /* skip pHitShaderBindingTable */
+    /* skip pCallableShaderBindingTable */
+    /* skip indirectDeviceAddress */
+}
+
+static inline size_t vn_sizeof_vkCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer, VkDeviceAddress indirectDeviceAddress)
+{
+    const VkCommandTypeEXT cmd_type = VK_COMMAND_TYPE_vkCmdTraceRaysIndirect2KHR_EXT;
+    const VkFlags cmd_flags = 0;
+    size_t cmd_size = vn_sizeof_VkCommandTypeEXT(&cmd_type) + vn_sizeof_VkFlags(&cmd_flags);
+
+    cmd_size += vn_sizeof_VkCommandBuffer(&commandBuffer);
+    cmd_size += vn_sizeof_VkDeviceAddress(&indirectDeviceAddress);
+
+    return cmd_size;
+}
+
+static inline void vn_encode_vkCmdTraceRaysIndirect2KHR(struct vn_cs_encoder *enc, VkCommandFlagsEXT cmd_flags, VkCommandBuffer commandBuffer, VkDeviceAddress indirectDeviceAddress)
+{
+    const VkCommandTypeEXT cmd_type = VK_COMMAND_TYPE_vkCmdTraceRaysIndirect2KHR_EXT;
+
+    vn_encode_VkCommandTypeEXT(enc, &cmd_type);
+    vn_encode_VkFlags(enc, &cmd_flags);
+
+    vn_encode_VkCommandBuffer(enc, &commandBuffer);
+    vn_encode_VkDeviceAddress(enc, &indirectDeviceAddress);
+}
+
+static inline size_t vn_sizeof_vkCmdTraceRaysIndirect2KHR_reply(VkCommandBuffer commandBuffer, VkDeviceAddress indirectDeviceAddress)
+{
+    const VkCommandTypeEXT cmd_type = VK_COMMAND_TYPE_vkCmdTraceRaysIndirect2KHR_EXT;
+    size_t cmd_size = vn_sizeof_VkCommandTypeEXT(&cmd_type);
+
+    /* skip commandBuffer */
+    /* skip indirectDeviceAddress */
+
+    return cmd_size;
+}
+
+static inline void vn_decode_vkCmdTraceRaysIndirect2KHR_reply(struct vn_cs_decoder *dec, VkCommandBuffer commandBuffer, VkDeviceAddress indirectDeviceAddress)
+{
+    VkCommandTypeEXT command_type;
+    vn_decode_VkCommandTypeEXT(dec, &command_type);
+    assert(command_type == VK_COMMAND_TYPE_vkCmdTraceRaysIndirect2KHR_EXT);
+
+    /* skip commandBuffer */
+    /* skip indirectDeviceAddress */
+}
+
+static inline size_t vn_sizeof_vkCmdSetRayTracingPipelineStackSizeKHR(VkCommandBuffer commandBuffer, uint32_t pipelineStackSize)
+{
+    const VkCommandTypeEXT cmd_type = VK_COMMAND_TYPE_vkCmdSetRayTracingPipelineStackSizeKHR_EXT;
+    const VkFlags cmd_flags = 0;
+    size_t cmd_size = vn_sizeof_VkCommandTypeEXT(&cmd_type) + vn_sizeof_VkFlags(&cmd_flags);
+
+    cmd_size += vn_sizeof_VkCommandBuffer(&commandBuffer);
+    cmd_size += vn_sizeof_uint32_t(&pipelineStackSize);
+
+    return cmd_size;
+}
+
+static inline void vn_encode_vkCmdSetRayTracingPipelineStackSizeKHR(struct vn_cs_encoder *enc, VkCommandFlagsEXT cmd_flags, VkCommandBuffer commandBuffer, uint32_t pipelineStackSize)
+{
+    const VkCommandTypeEXT cmd_type = VK_COMMAND_TYPE_vkCmdSetRayTracingPipelineStackSizeKHR_EXT;
+
+    vn_encode_VkCommandTypeEXT(enc, &cmd_type);
+    vn_encode_VkFlags(enc, &cmd_flags);
+
+    vn_encode_VkCommandBuffer(enc, &commandBuffer);
+    vn_encode_uint32_t(enc, &pipelineStackSize);
+}
+
+static inline size_t vn_sizeof_vkCmdSetRayTracingPipelineStackSizeKHR_reply(VkCommandBuffer commandBuffer, uint32_t pipelineStackSize)
+{
+    const VkCommandTypeEXT cmd_type = VK_COMMAND_TYPE_vkCmdSetRayTracingPipelineStackSizeKHR_EXT;
+    size_t cmd_size = vn_sizeof_VkCommandTypeEXT(&cmd_type);
+
+    /* skip commandBuffer */
+    /* skip pipelineStackSize */
+
+    return cmd_size;
+}
+
+static inline void vn_decode_vkCmdSetRayTracingPipelineStackSizeKHR_reply(struct vn_cs_decoder *dec, VkCommandBuffer commandBuffer, uint32_t pipelineStackSize)
+{
+    VkCommandTypeEXT command_type;
+    vn_decode_VkCommandTypeEXT(dec, &command_type);
+    assert(command_type == VK_COMMAND_TYPE_vkCmdSetRayTracingPipelineStackSizeKHR_EXT);
+
+    /* skip commandBuffer */
+    /* skip pipelineStackSize */
+}
+
 static inline size_t vn_sizeof_vkCmdSetLineStipple(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern)
 {
     const VkCommandTypeEXT cmd_type = VK_COMMAND_TYPE_vkCmdSetLineStipple_EXT;
@@ -7661,6 +8124,190 @@ static inline void vn_decode_vkCmdSetLineStipple_reply(struct vn_cs_decoder *dec
     /* skip commandBuffer */
     /* skip lineStippleFactor */
     /* skip lineStipplePattern */
+}
+
+static inline size_t vn_sizeof_vkCmdBuildAccelerationStructuresKHR(VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos)
+{
+    const VkCommandTypeEXT cmd_type = VK_COMMAND_TYPE_vkCmdBuildAccelerationStructuresKHR_EXT;
+    const VkFlags cmd_flags = 0;
+    size_t cmd_size = vn_sizeof_VkCommandTypeEXT(&cmd_type) + vn_sizeof_VkFlags(&cmd_flags);
+
+    cmd_size += vn_sizeof_VkCommandBuffer(&commandBuffer);
+    cmd_size += vn_sizeof_uint32_t(&infoCount);
+    if (pInfos) {
+        cmd_size += vn_sizeof_array_size(infoCount);
+        for (uint32_t i = 0; i < infoCount; i++)
+            cmd_size += vn_sizeof_VkAccelerationStructureBuildGeometryInfoKHR(&pInfos[i]);
+    } else {
+        cmd_size += vn_sizeof_array_size(0);
+    }
+    if (ppBuildRangeInfos) {
+        cmd_size += vn_sizeof_array_size(infoCount);
+        for (uint32_t i = 0; i < infoCount; i++) {
+            cmd_size += vn_sizeof_array_size(pInfos[i].geometryCount);
+            for (uint32_t j = 0; j < pInfos[i].geometryCount; j++)
+                cmd_size += vn_sizeof_VkAccelerationStructureBuildRangeInfoKHR(&ppBuildRangeInfos[i][j]);
+        }
+    } else {
+        cmd_size += vn_sizeof_array_size(0);
+    }
+
+    return cmd_size;
+}
+
+static inline void vn_encode_vkCmdBuildAccelerationStructuresKHR(struct vn_cs_encoder *enc, VkCommandFlagsEXT cmd_flags, VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos)
+{
+    const VkCommandTypeEXT cmd_type = VK_COMMAND_TYPE_vkCmdBuildAccelerationStructuresKHR_EXT;
+
+    vn_encode_VkCommandTypeEXT(enc, &cmd_type);
+    vn_encode_VkFlags(enc, &cmd_flags);
+
+    vn_encode_VkCommandBuffer(enc, &commandBuffer);
+    vn_encode_uint32_t(enc, &infoCount);
+    if (pInfos) {
+        vn_encode_array_size(enc, infoCount);
+        for (uint32_t i = 0; i < infoCount; i++)
+            vn_encode_VkAccelerationStructureBuildGeometryInfoKHR(enc, &pInfos[i]);
+    } else {
+        vn_encode_array_size(enc, 0);
+    }
+    if (ppBuildRangeInfos) {
+        vn_encode_array_size(enc, infoCount);
+        for (uint32_t i = 0; i < infoCount; i++) {
+            vn_encode_array_size(enc, pInfos[i].geometryCount);
+            for (uint32_t j = 0; j < pInfos[i].geometryCount; j++)
+                vn_encode_VkAccelerationStructureBuildRangeInfoKHR(enc, &ppBuildRangeInfos[i][j]);
+        }
+    } else {
+        vn_encode_array_size(enc, 0);
+    }
+}
+
+static inline size_t vn_sizeof_vkCmdBuildAccelerationStructuresKHR_reply(VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos)
+{
+    const VkCommandTypeEXT cmd_type = VK_COMMAND_TYPE_vkCmdBuildAccelerationStructuresKHR_EXT;
+    size_t cmd_size = vn_sizeof_VkCommandTypeEXT(&cmd_type);
+
+    /* skip commandBuffer */
+    /* skip infoCount */
+    /* skip pInfos */
+    /* skip ppBuildRangeInfos */
+
+    return cmd_size;
+}
+
+static inline void vn_decode_vkCmdBuildAccelerationStructuresKHR_reply(struct vn_cs_decoder *dec, VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos)
+{
+    VkCommandTypeEXT command_type;
+    vn_decode_VkCommandTypeEXT(dec, &command_type);
+    assert(command_type == VK_COMMAND_TYPE_vkCmdBuildAccelerationStructuresKHR_EXT);
+
+    /* skip commandBuffer */
+    /* skip infoCount */
+    /* skip pInfos */
+    /* skip ppBuildRangeInfos */
+}
+
+static inline size_t vn_sizeof_vkCmdBuildAccelerationStructuresIndirectKHR(VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, const VkDeviceAddress* pIndirectDeviceAddresses, const uint32_t* pIndirectStrides, const uint32_t* const* ppMaxPrimitiveCounts)
+{
+    const VkCommandTypeEXT cmd_type = VK_COMMAND_TYPE_vkCmdBuildAccelerationStructuresIndirectKHR_EXT;
+    const VkFlags cmd_flags = 0;
+    size_t cmd_size = vn_sizeof_VkCommandTypeEXT(&cmd_type) + vn_sizeof_VkFlags(&cmd_flags);
+
+    cmd_size += vn_sizeof_VkCommandBuffer(&commandBuffer);
+    cmd_size += vn_sizeof_uint32_t(&infoCount);
+    if (pInfos) {
+        cmd_size += vn_sizeof_array_size(infoCount);
+        for (uint32_t i = 0; i < infoCount; i++)
+            cmd_size += vn_sizeof_VkAccelerationStructureBuildGeometryInfoKHR(&pInfos[i]);
+    } else {
+        cmd_size += vn_sizeof_array_size(0);
+    }
+    if (pIndirectDeviceAddresses) {
+        cmd_size += vn_sizeof_array_size(infoCount);
+        cmd_size += vn_sizeof_VkDeviceAddress_array(pIndirectDeviceAddresses, infoCount);
+    } else {
+        cmd_size += vn_sizeof_array_size(0);
+    }
+    if (pIndirectStrides) {
+        cmd_size += vn_sizeof_array_size(infoCount);
+        cmd_size += vn_sizeof_uint32_t_array(pIndirectStrides, infoCount);
+    } else {
+        cmd_size += vn_sizeof_array_size(0);
+    }
+    if (ppMaxPrimitiveCounts) {
+        cmd_size += vn_sizeof_array_size(infoCount);
+        cmd_size += vn_sizeof_uint32_t_array(*ppMaxPrimitiveCounts, infoCount);
+    } else {
+        cmd_size += vn_sizeof_array_size(0);
+    }
+
+    return cmd_size;
+}
+
+static inline void vn_encode_vkCmdBuildAccelerationStructuresIndirectKHR(struct vn_cs_encoder *enc, VkCommandFlagsEXT cmd_flags, VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, const VkDeviceAddress* pIndirectDeviceAddresses, const uint32_t* pIndirectStrides, const uint32_t* const* ppMaxPrimitiveCounts)
+{
+    const VkCommandTypeEXT cmd_type = VK_COMMAND_TYPE_vkCmdBuildAccelerationStructuresIndirectKHR_EXT;
+
+    vn_encode_VkCommandTypeEXT(enc, &cmd_type);
+    vn_encode_VkFlags(enc, &cmd_flags);
+
+    vn_encode_VkCommandBuffer(enc, &commandBuffer);
+    vn_encode_uint32_t(enc, &infoCount);
+    if (pInfos) {
+        vn_encode_array_size(enc, infoCount);
+        for (uint32_t i = 0; i < infoCount; i++)
+            vn_encode_VkAccelerationStructureBuildGeometryInfoKHR(enc, &pInfos[i]);
+    } else {
+        vn_encode_array_size(enc, 0);
+    }
+    if (pIndirectDeviceAddresses) {
+        vn_encode_array_size(enc, infoCount);
+        vn_encode_VkDeviceAddress_array(enc, pIndirectDeviceAddresses, infoCount);
+    } else {
+        vn_encode_array_size(enc, 0);
+    }
+    if (pIndirectStrides) {
+        vn_encode_array_size(enc, infoCount);
+        vn_encode_uint32_t_array(enc, pIndirectStrides, infoCount);
+    } else {
+        vn_encode_array_size(enc, 0);
+    }
+    if (ppMaxPrimitiveCounts) {
+        vn_encode_array_size(enc, infoCount);
+        vn_encode_uint32_t_array(enc, *ppMaxPrimitiveCounts, infoCount);
+    } else {
+        vn_encode_array_size(enc, 0);
+    }
+}
+
+static inline size_t vn_sizeof_vkCmdBuildAccelerationStructuresIndirectKHR_reply(VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, const VkDeviceAddress* pIndirectDeviceAddresses, const uint32_t* pIndirectStrides, const uint32_t* const* ppMaxPrimitiveCounts)
+{
+    const VkCommandTypeEXT cmd_type = VK_COMMAND_TYPE_vkCmdBuildAccelerationStructuresIndirectKHR_EXT;
+    size_t cmd_size = vn_sizeof_VkCommandTypeEXT(&cmd_type);
+
+    /* skip commandBuffer */
+    /* skip infoCount */
+    /* skip pInfos */
+    /* skip pIndirectDeviceAddresses */
+    /* skip pIndirectStrides */
+    /* skip ppMaxPrimitiveCounts */
+
+    return cmd_size;
+}
+
+static inline void vn_decode_vkCmdBuildAccelerationStructuresIndirectKHR_reply(struct vn_cs_decoder *dec, VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, const VkDeviceAddress* pIndirectDeviceAddresses, const uint32_t* pIndirectStrides, const uint32_t* const* ppMaxPrimitiveCounts)
+{
+    VkCommandTypeEXT command_type;
+    vn_decode_VkCommandTypeEXT(dec, &command_type);
+    assert(command_type == VK_COMMAND_TYPE_vkCmdBuildAccelerationStructuresIndirectKHR_EXT);
+
+    /* skip commandBuffer */
+    /* skip infoCount */
+    /* skip pInfos */
+    /* skip pIndirectDeviceAddresses */
+    /* skip pIndirectStrides */
+    /* skip ppMaxPrimitiveCounts */
 }
 
 static inline size_t vn_sizeof_vkCmdSetCullMode(VkCommandBuffer commandBuffer, VkCullModeFlags cullMode)
@@ -12090,6 +12737,174 @@ static inline void vn_submit_vkCmdDrawIndirectByteCountEXT(struct vn_ring *vn_ri
     }
 }
 
+static inline void vn_submit_vkCmdCopyAccelerationStructureKHR(struct vn_ring *vn_ring, VkCommandFlagsEXT cmd_flags, VkCommandBuffer commandBuffer, const VkCopyAccelerationStructureInfoKHR* pInfo, struct vn_ring_submit_command *submit)
+{
+    uint8_t local_cmd_data[VN_SUBMIT_LOCAL_CMD_SIZE];
+    void *cmd_data = local_cmd_data;
+    size_t cmd_size = vn_sizeof_vkCmdCopyAccelerationStructureKHR(commandBuffer, pInfo);
+    if (cmd_size > sizeof(local_cmd_data)) {
+        cmd_data = malloc(cmd_size);
+        if (!cmd_data)
+            cmd_size = 0;
+    }
+    const size_t reply_size = cmd_flags & VK_COMMAND_GENERATE_REPLY_BIT_EXT ? vn_sizeof_vkCmdCopyAccelerationStructureKHR_reply(commandBuffer, pInfo) : 0;
+
+    struct vn_cs_encoder *enc = vn_ring_submit_command_init(vn_ring, submit, cmd_data, cmd_size, reply_size);
+    if (cmd_size) {
+        vn_encode_vkCmdCopyAccelerationStructureKHR(enc, cmd_flags, commandBuffer, pInfo);
+        vn_ring_submit_command(vn_ring, submit);
+        if (cmd_data != local_cmd_data)
+            free(cmd_data);
+    }
+}
+
+static inline void vn_submit_vkCmdCopyAccelerationStructureToMemoryKHR(struct vn_ring *vn_ring, VkCommandFlagsEXT cmd_flags, VkCommandBuffer commandBuffer, const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo, struct vn_ring_submit_command *submit)
+{
+    uint8_t local_cmd_data[VN_SUBMIT_LOCAL_CMD_SIZE];
+    void *cmd_data = local_cmd_data;
+    size_t cmd_size = vn_sizeof_vkCmdCopyAccelerationStructureToMemoryKHR(commandBuffer, pInfo);
+    if (cmd_size > sizeof(local_cmd_data)) {
+        cmd_data = malloc(cmd_size);
+        if (!cmd_data)
+            cmd_size = 0;
+    }
+    const size_t reply_size = cmd_flags & VK_COMMAND_GENERATE_REPLY_BIT_EXT ? vn_sizeof_vkCmdCopyAccelerationStructureToMemoryKHR_reply(commandBuffer, pInfo) : 0;
+
+    struct vn_cs_encoder *enc = vn_ring_submit_command_init(vn_ring, submit, cmd_data, cmd_size, reply_size);
+    if (cmd_size) {
+        vn_encode_vkCmdCopyAccelerationStructureToMemoryKHR(enc, cmd_flags, commandBuffer, pInfo);
+        vn_ring_submit_command(vn_ring, submit);
+        if (cmd_data != local_cmd_data)
+            free(cmd_data);
+    }
+}
+
+static inline void vn_submit_vkCmdCopyMemoryToAccelerationStructureKHR(struct vn_ring *vn_ring, VkCommandFlagsEXT cmd_flags, VkCommandBuffer commandBuffer, const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo, struct vn_ring_submit_command *submit)
+{
+    uint8_t local_cmd_data[VN_SUBMIT_LOCAL_CMD_SIZE];
+    void *cmd_data = local_cmd_data;
+    size_t cmd_size = vn_sizeof_vkCmdCopyMemoryToAccelerationStructureKHR(commandBuffer, pInfo);
+    if (cmd_size > sizeof(local_cmd_data)) {
+        cmd_data = malloc(cmd_size);
+        if (!cmd_data)
+            cmd_size = 0;
+    }
+    const size_t reply_size = cmd_flags & VK_COMMAND_GENERATE_REPLY_BIT_EXT ? vn_sizeof_vkCmdCopyMemoryToAccelerationStructureKHR_reply(commandBuffer, pInfo) : 0;
+
+    struct vn_cs_encoder *enc = vn_ring_submit_command_init(vn_ring, submit, cmd_data, cmd_size, reply_size);
+    if (cmd_size) {
+        vn_encode_vkCmdCopyMemoryToAccelerationStructureKHR(enc, cmd_flags, commandBuffer, pInfo);
+        vn_ring_submit_command(vn_ring, submit);
+        if (cmd_data != local_cmd_data)
+            free(cmd_data);
+    }
+}
+
+static inline void vn_submit_vkCmdWriteAccelerationStructuresPropertiesKHR(struct vn_ring *vn_ring, VkCommandFlagsEXT cmd_flags, VkCommandBuffer commandBuffer, uint32_t accelerationStructureCount, const VkAccelerationStructureKHR* pAccelerationStructures, VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery, struct vn_ring_submit_command *submit)
+{
+    uint8_t local_cmd_data[VN_SUBMIT_LOCAL_CMD_SIZE];
+    void *cmd_data = local_cmd_data;
+    size_t cmd_size = vn_sizeof_vkCmdWriteAccelerationStructuresPropertiesKHR(commandBuffer, accelerationStructureCount, pAccelerationStructures, queryType, queryPool, firstQuery);
+    if (cmd_size > sizeof(local_cmd_data)) {
+        cmd_data = malloc(cmd_size);
+        if (!cmd_data)
+            cmd_size = 0;
+    }
+    const size_t reply_size = cmd_flags & VK_COMMAND_GENERATE_REPLY_BIT_EXT ? vn_sizeof_vkCmdWriteAccelerationStructuresPropertiesKHR_reply(commandBuffer, accelerationStructureCount, pAccelerationStructures, queryType, queryPool, firstQuery) : 0;
+
+    struct vn_cs_encoder *enc = vn_ring_submit_command_init(vn_ring, submit, cmd_data, cmd_size, reply_size);
+    if (cmd_size) {
+        vn_encode_vkCmdWriteAccelerationStructuresPropertiesKHR(enc, cmd_flags, commandBuffer, accelerationStructureCount, pAccelerationStructures, queryType, queryPool, firstQuery);
+        vn_ring_submit_command(vn_ring, submit);
+        if (cmd_data != local_cmd_data)
+            free(cmd_data);
+    }
+}
+
+static inline void vn_submit_vkCmdTraceRaysKHR(struct vn_ring *vn_ring, VkCommandFlagsEXT cmd_flags, VkCommandBuffer commandBuffer, const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable, uint32_t width, uint32_t height, uint32_t depth, struct vn_ring_submit_command *submit)
+{
+    uint8_t local_cmd_data[VN_SUBMIT_LOCAL_CMD_SIZE];
+    void *cmd_data = local_cmd_data;
+    size_t cmd_size = vn_sizeof_vkCmdTraceRaysKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, width, height, depth);
+    if (cmd_size > sizeof(local_cmd_data)) {
+        cmd_data = malloc(cmd_size);
+        if (!cmd_data)
+            cmd_size = 0;
+    }
+    const size_t reply_size = cmd_flags & VK_COMMAND_GENERATE_REPLY_BIT_EXT ? vn_sizeof_vkCmdTraceRaysKHR_reply(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, width, height, depth) : 0;
+
+    struct vn_cs_encoder *enc = vn_ring_submit_command_init(vn_ring, submit, cmd_data, cmd_size, reply_size);
+    if (cmd_size) {
+        vn_encode_vkCmdTraceRaysKHR(enc, cmd_flags, commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, width, height, depth);
+        vn_ring_submit_command(vn_ring, submit);
+        if (cmd_data != local_cmd_data)
+            free(cmd_data);
+    }
+}
+
+static inline void vn_submit_vkCmdTraceRaysIndirectKHR(struct vn_ring *vn_ring, VkCommandFlagsEXT cmd_flags, VkCommandBuffer commandBuffer, const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable, VkDeviceAddress indirectDeviceAddress, struct vn_ring_submit_command *submit)
+{
+    uint8_t local_cmd_data[VN_SUBMIT_LOCAL_CMD_SIZE];
+    void *cmd_data = local_cmd_data;
+    size_t cmd_size = vn_sizeof_vkCmdTraceRaysIndirectKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, indirectDeviceAddress);
+    if (cmd_size > sizeof(local_cmd_data)) {
+        cmd_data = malloc(cmd_size);
+        if (!cmd_data)
+            cmd_size = 0;
+    }
+    const size_t reply_size = cmd_flags & VK_COMMAND_GENERATE_REPLY_BIT_EXT ? vn_sizeof_vkCmdTraceRaysIndirectKHR_reply(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, indirectDeviceAddress) : 0;
+
+    struct vn_cs_encoder *enc = vn_ring_submit_command_init(vn_ring, submit, cmd_data, cmd_size, reply_size);
+    if (cmd_size) {
+        vn_encode_vkCmdTraceRaysIndirectKHR(enc, cmd_flags, commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, indirectDeviceAddress);
+        vn_ring_submit_command(vn_ring, submit);
+        if (cmd_data != local_cmd_data)
+            free(cmd_data);
+    }
+}
+
+static inline void vn_submit_vkCmdTraceRaysIndirect2KHR(struct vn_ring *vn_ring, VkCommandFlagsEXT cmd_flags, VkCommandBuffer commandBuffer, VkDeviceAddress indirectDeviceAddress, struct vn_ring_submit_command *submit)
+{
+    uint8_t local_cmd_data[VN_SUBMIT_LOCAL_CMD_SIZE];
+    void *cmd_data = local_cmd_data;
+    size_t cmd_size = vn_sizeof_vkCmdTraceRaysIndirect2KHR(commandBuffer, indirectDeviceAddress);
+    if (cmd_size > sizeof(local_cmd_data)) {
+        cmd_data = malloc(cmd_size);
+        if (!cmd_data)
+            cmd_size = 0;
+    }
+    const size_t reply_size = cmd_flags & VK_COMMAND_GENERATE_REPLY_BIT_EXT ? vn_sizeof_vkCmdTraceRaysIndirect2KHR_reply(commandBuffer, indirectDeviceAddress) : 0;
+
+    struct vn_cs_encoder *enc = vn_ring_submit_command_init(vn_ring, submit, cmd_data, cmd_size, reply_size);
+    if (cmd_size) {
+        vn_encode_vkCmdTraceRaysIndirect2KHR(enc, cmd_flags, commandBuffer, indirectDeviceAddress);
+        vn_ring_submit_command(vn_ring, submit);
+        if (cmd_data != local_cmd_data)
+            free(cmd_data);
+    }
+}
+
+static inline void vn_submit_vkCmdSetRayTracingPipelineStackSizeKHR(struct vn_ring *vn_ring, VkCommandFlagsEXT cmd_flags, VkCommandBuffer commandBuffer, uint32_t pipelineStackSize, struct vn_ring_submit_command *submit)
+{
+    uint8_t local_cmd_data[VN_SUBMIT_LOCAL_CMD_SIZE];
+    void *cmd_data = local_cmd_data;
+    size_t cmd_size = vn_sizeof_vkCmdSetRayTracingPipelineStackSizeKHR(commandBuffer, pipelineStackSize);
+    if (cmd_size > sizeof(local_cmd_data)) {
+        cmd_data = malloc(cmd_size);
+        if (!cmd_data)
+            cmd_size = 0;
+    }
+    const size_t reply_size = cmd_flags & VK_COMMAND_GENERATE_REPLY_BIT_EXT ? vn_sizeof_vkCmdSetRayTracingPipelineStackSizeKHR_reply(commandBuffer, pipelineStackSize) : 0;
+
+    struct vn_cs_encoder *enc = vn_ring_submit_command_init(vn_ring, submit, cmd_data, cmd_size, reply_size);
+    if (cmd_size) {
+        vn_encode_vkCmdSetRayTracingPipelineStackSizeKHR(enc, cmd_flags, commandBuffer, pipelineStackSize);
+        vn_ring_submit_command(vn_ring, submit);
+        if (cmd_data != local_cmd_data)
+            free(cmd_data);
+    }
+}
+
 static inline void vn_submit_vkCmdSetLineStipple(struct vn_ring *vn_ring, VkCommandFlagsEXT cmd_flags, VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern, struct vn_ring_submit_command *submit)
 {
     uint8_t local_cmd_data[VN_SUBMIT_LOCAL_CMD_SIZE];
@@ -12105,6 +12920,48 @@ static inline void vn_submit_vkCmdSetLineStipple(struct vn_ring *vn_ring, VkComm
     struct vn_cs_encoder *enc = vn_ring_submit_command_init(vn_ring, submit, cmd_data, cmd_size, reply_size);
     if (cmd_size) {
         vn_encode_vkCmdSetLineStipple(enc, cmd_flags, commandBuffer, lineStippleFactor, lineStipplePattern);
+        vn_ring_submit_command(vn_ring, submit);
+        if (cmd_data != local_cmd_data)
+            free(cmd_data);
+    }
+}
+
+static inline void vn_submit_vkCmdBuildAccelerationStructuresKHR(struct vn_ring *vn_ring, VkCommandFlagsEXT cmd_flags, VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos, struct vn_ring_submit_command *submit)
+{
+    uint8_t local_cmd_data[VN_SUBMIT_LOCAL_CMD_SIZE];
+    void *cmd_data = local_cmd_data;
+    size_t cmd_size = vn_sizeof_vkCmdBuildAccelerationStructuresKHR(commandBuffer, infoCount, pInfos, ppBuildRangeInfos);
+    if (cmd_size > sizeof(local_cmd_data)) {
+        cmd_data = malloc(cmd_size);
+        if (!cmd_data)
+            cmd_size = 0;
+    }
+    const size_t reply_size = cmd_flags & VK_COMMAND_GENERATE_REPLY_BIT_EXT ? vn_sizeof_vkCmdBuildAccelerationStructuresKHR_reply(commandBuffer, infoCount, pInfos, ppBuildRangeInfos) : 0;
+
+    struct vn_cs_encoder *enc = vn_ring_submit_command_init(vn_ring, submit, cmd_data, cmd_size, reply_size);
+    if (cmd_size) {
+        vn_encode_vkCmdBuildAccelerationStructuresKHR(enc, cmd_flags, commandBuffer, infoCount, pInfos, ppBuildRangeInfos);
+        vn_ring_submit_command(vn_ring, submit);
+        if (cmd_data != local_cmd_data)
+            free(cmd_data);
+    }
+}
+
+static inline void vn_submit_vkCmdBuildAccelerationStructuresIndirectKHR(struct vn_ring *vn_ring, VkCommandFlagsEXT cmd_flags, VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, const VkDeviceAddress* pIndirectDeviceAddresses, const uint32_t* pIndirectStrides, const uint32_t* const* ppMaxPrimitiveCounts, struct vn_ring_submit_command *submit)
+{
+    uint8_t local_cmd_data[VN_SUBMIT_LOCAL_CMD_SIZE];
+    void *cmd_data = local_cmd_data;
+    size_t cmd_size = vn_sizeof_vkCmdBuildAccelerationStructuresIndirectKHR(commandBuffer, infoCount, pInfos, pIndirectDeviceAddresses, pIndirectStrides, ppMaxPrimitiveCounts);
+    if (cmd_size > sizeof(local_cmd_data)) {
+        cmd_data = malloc(cmd_size);
+        if (!cmd_data)
+            cmd_size = 0;
+    }
+    const size_t reply_size = cmd_flags & VK_COMMAND_GENERATE_REPLY_BIT_EXT ? vn_sizeof_vkCmdBuildAccelerationStructuresIndirectKHR_reply(commandBuffer, infoCount, pInfos, pIndirectDeviceAddresses, pIndirectStrides, ppMaxPrimitiveCounts) : 0;
+
+    struct vn_cs_encoder *enc = vn_ring_submit_command_init(vn_ring, submit, cmd_data, cmd_size, reply_size);
+    if (cmd_size) {
+        vn_encode_vkCmdBuildAccelerationStructuresIndirectKHR(enc, cmd_flags, commandBuffer, infoCount, pInfos, pIndirectDeviceAddresses, pIndirectStrides, ppMaxPrimitiveCounts);
         vn_ring_submit_command(vn_ring, submit);
         if (cmd_data != local_cmd_data)
             free(cmd_data);
@@ -14675,6 +15532,158 @@ static inline void vn_async_vkCmdDrawIndirectByteCountEXT(struct vn_ring *vn_rin
     vn_submit_vkCmdDrawIndirectByteCountEXT(vn_ring, 0, commandBuffer, instanceCount, firstInstance, counterBuffer, counterBufferOffset, counterOffset, vertexStride, &submit);
 }
 
+static inline void vn_call_vkCmdCopyAccelerationStructureKHR(struct vn_ring *vn_ring, VkCommandBuffer commandBuffer, const VkCopyAccelerationStructureInfoKHR* pInfo)
+{
+    VN_TRACE_FUNC();
+
+    struct vn_ring_submit_command submit;
+    vn_submit_vkCmdCopyAccelerationStructureKHR(vn_ring, VK_COMMAND_GENERATE_REPLY_BIT_EXT, commandBuffer, pInfo, &submit);
+    struct vn_cs_decoder *dec = vn_ring_get_command_reply(vn_ring, &submit);
+    if (dec) {
+        vn_decode_vkCmdCopyAccelerationStructureKHR_reply(dec, commandBuffer, pInfo);
+        vn_ring_free_command_reply(vn_ring, &submit);
+    }
+}
+
+static inline void vn_async_vkCmdCopyAccelerationStructureKHR(struct vn_ring *vn_ring, VkCommandBuffer commandBuffer, const VkCopyAccelerationStructureInfoKHR* pInfo)
+{
+    struct vn_ring_submit_command submit;
+    vn_submit_vkCmdCopyAccelerationStructureKHR(vn_ring, 0, commandBuffer, pInfo, &submit);
+}
+
+static inline void vn_call_vkCmdCopyAccelerationStructureToMemoryKHR(struct vn_ring *vn_ring, VkCommandBuffer commandBuffer, const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo)
+{
+    VN_TRACE_FUNC();
+
+    struct vn_ring_submit_command submit;
+    vn_submit_vkCmdCopyAccelerationStructureToMemoryKHR(vn_ring, VK_COMMAND_GENERATE_REPLY_BIT_EXT, commandBuffer, pInfo, &submit);
+    struct vn_cs_decoder *dec = vn_ring_get_command_reply(vn_ring, &submit);
+    if (dec) {
+        vn_decode_vkCmdCopyAccelerationStructureToMemoryKHR_reply(dec, commandBuffer, pInfo);
+        vn_ring_free_command_reply(vn_ring, &submit);
+    }
+}
+
+static inline void vn_async_vkCmdCopyAccelerationStructureToMemoryKHR(struct vn_ring *vn_ring, VkCommandBuffer commandBuffer, const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo)
+{
+    struct vn_ring_submit_command submit;
+    vn_submit_vkCmdCopyAccelerationStructureToMemoryKHR(vn_ring, 0, commandBuffer, pInfo, &submit);
+}
+
+static inline void vn_call_vkCmdCopyMemoryToAccelerationStructureKHR(struct vn_ring *vn_ring, VkCommandBuffer commandBuffer, const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo)
+{
+    VN_TRACE_FUNC();
+
+    struct vn_ring_submit_command submit;
+    vn_submit_vkCmdCopyMemoryToAccelerationStructureKHR(vn_ring, VK_COMMAND_GENERATE_REPLY_BIT_EXT, commandBuffer, pInfo, &submit);
+    struct vn_cs_decoder *dec = vn_ring_get_command_reply(vn_ring, &submit);
+    if (dec) {
+        vn_decode_vkCmdCopyMemoryToAccelerationStructureKHR_reply(dec, commandBuffer, pInfo);
+        vn_ring_free_command_reply(vn_ring, &submit);
+    }
+}
+
+static inline void vn_async_vkCmdCopyMemoryToAccelerationStructureKHR(struct vn_ring *vn_ring, VkCommandBuffer commandBuffer, const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo)
+{
+    struct vn_ring_submit_command submit;
+    vn_submit_vkCmdCopyMemoryToAccelerationStructureKHR(vn_ring, 0, commandBuffer, pInfo, &submit);
+}
+
+static inline void vn_call_vkCmdWriteAccelerationStructuresPropertiesKHR(struct vn_ring *vn_ring, VkCommandBuffer commandBuffer, uint32_t accelerationStructureCount, const VkAccelerationStructureKHR* pAccelerationStructures, VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery)
+{
+    VN_TRACE_FUNC();
+
+    struct vn_ring_submit_command submit;
+    vn_submit_vkCmdWriteAccelerationStructuresPropertiesKHR(vn_ring, VK_COMMAND_GENERATE_REPLY_BIT_EXT, commandBuffer, accelerationStructureCount, pAccelerationStructures, queryType, queryPool, firstQuery, &submit);
+    struct vn_cs_decoder *dec = vn_ring_get_command_reply(vn_ring, &submit);
+    if (dec) {
+        vn_decode_vkCmdWriteAccelerationStructuresPropertiesKHR_reply(dec, commandBuffer, accelerationStructureCount, pAccelerationStructures, queryType, queryPool, firstQuery);
+        vn_ring_free_command_reply(vn_ring, &submit);
+    }
+}
+
+static inline void vn_async_vkCmdWriteAccelerationStructuresPropertiesKHR(struct vn_ring *vn_ring, VkCommandBuffer commandBuffer, uint32_t accelerationStructureCount, const VkAccelerationStructureKHR* pAccelerationStructures, VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery)
+{
+    struct vn_ring_submit_command submit;
+    vn_submit_vkCmdWriteAccelerationStructuresPropertiesKHR(vn_ring, 0, commandBuffer, accelerationStructureCount, pAccelerationStructures, queryType, queryPool, firstQuery, &submit);
+}
+
+static inline void vn_call_vkCmdTraceRaysKHR(struct vn_ring *vn_ring, VkCommandBuffer commandBuffer, const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable, uint32_t width, uint32_t height, uint32_t depth)
+{
+    VN_TRACE_FUNC();
+
+    struct vn_ring_submit_command submit;
+    vn_submit_vkCmdTraceRaysKHR(vn_ring, VK_COMMAND_GENERATE_REPLY_BIT_EXT, commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, width, height, depth, &submit);
+    struct vn_cs_decoder *dec = vn_ring_get_command_reply(vn_ring, &submit);
+    if (dec) {
+        vn_decode_vkCmdTraceRaysKHR_reply(dec, commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, width, height, depth);
+        vn_ring_free_command_reply(vn_ring, &submit);
+    }
+}
+
+static inline void vn_async_vkCmdTraceRaysKHR(struct vn_ring *vn_ring, VkCommandBuffer commandBuffer, const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable, uint32_t width, uint32_t height, uint32_t depth)
+{
+    struct vn_ring_submit_command submit;
+    vn_submit_vkCmdTraceRaysKHR(vn_ring, 0, commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, width, height, depth, &submit);
+}
+
+static inline void vn_call_vkCmdTraceRaysIndirectKHR(struct vn_ring *vn_ring, VkCommandBuffer commandBuffer, const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable, VkDeviceAddress indirectDeviceAddress)
+{
+    VN_TRACE_FUNC();
+
+    struct vn_ring_submit_command submit;
+    vn_submit_vkCmdTraceRaysIndirectKHR(vn_ring, VK_COMMAND_GENERATE_REPLY_BIT_EXT, commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, indirectDeviceAddress, &submit);
+    struct vn_cs_decoder *dec = vn_ring_get_command_reply(vn_ring, &submit);
+    if (dec) {
+        vn_decode_vkCmdTraceRaysIndirectKHR_reply(dec, commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, indirectDeviceAddress);
+        vn_ring_free_command_reply(vn_ring, &submit);
+    }
+}
+
+static inline void vn_async_vkCmdTraceRaysIndirectKHR(struct vn_ring *vn_ring, VkCommandBuffer commandBuffer, const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable, VkDeviceAddress indirectDeviceAddress)
+{
+    struct vn_ring_submit_command submit;
+    vn_submit_vkCmdTraceRaysIndirectKHR(vn_ring, 0, commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, indirectDeviceAddress, &submit);
+}
+
+static inline void vn_call_vkCmdTraceRaysIndirect2KHR(struct vn_ring *vn_ring, VkCommandBuffer commandBuffer, VkDeviceAddress indirectDeviceAddress)
+{
+    VN_TRACE_FUNC();
+
+    struct vn_ring_submit_command submit;
+    vn_submit_vkCmdTraceRaysIndirect2KHR(vn_ring, VK_COMMAND_GENERATE_REPLY_BIT_EXT, commandBuffer, indirectDeviceAddress, &submit);
+    struct vn_cs_decoder *dec = vn_ring_get_command_reply(vn_ring, &submit);
+    if (dec) {
+        vn_decode_vkCmdTraceRaysIndirect2KHR_reply(dec, commandBuffer, indirectDeviceAddress);
+        vn_ring_free_command_reply(vn_ring, &submit);
+    }
+}
+
+static inline void vn_async_vkCmdTraceRaysIndirect2KHR(struct vn_ring *vn_ring, VkCommandBuffer commandBuffer, VkDeviceAddress indirectDeviceAddress)
+{
+    struct vn_ring_submit_command submit;
+    vn_submit_vkCmdTraceRaysIndirect2KHR(vn_ring, 0, commandBuffer, indirectDeviceAddress, &submit);
+}
+
+static inline void vn_call_vkCmdSetRayTracingPipelineStackSizeKHR(struct vn_ring *vn_ring, VkCommandBuffer commandBuffer, uint32_t pipelineStackSize)
+{
+    VN_TRACE_FUNC();
+
+    struct vn_ring_submit_command submit;
+    vn_submit_vkCmdSetRayTracingPipelineStackSizeKHR(vn_ring, VK_COMMAND_GENERATE_REPLY_BIT_EXT, commandBuffer, pipelineStackSize, &submit);
+    struct vn_cs_decoder *dec = vn_ring_get_command_reply(vn_ring, &submit);
+    if (dec) {
+        vn_decode_vkCmdSetRayTracingPipelineStackSizeKHR_reply(dec, commandBuffer, pipelineStackSize);
+        vn_ring_free_command_reply(vn_ring, &submit);
+    }
+}
+
+static inline void vn_async_vkCmdSetRayTracingPipelineStackSizeKHR(struct vn_ring *vn_ring, VkCommandBuffer commandBuffer, uint32_t pipelineStackSize)
+{
+    struct vn_ring_submit_command submit;
+    vn_submit_vkCmdSetRayTracingPipelineStackSizeKHR(vn_ring, 0, commandBuffer, pipelineStackSize, &submit);
+}
+
 static inline void vn_call_vkCmdSetLineStipple(struct vn_ring *vn_ring, VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern)
 {
     VN_TRACE_FUNC();
@@ -14692,6 +15701,44 @@ static inline void vn_async_vkCmdSetLineStipple(struct vn_ring *vn_ring, VkComma
 {
     struct vn_ring_submit_command submit;
     vn_submit_vkCmdSetLineStipple(vn_ring, 0, commandBuffer, lineStippleFactor, lineStipplePattern, &submit);
+}
+
+static inline void vn_call_vkCmdBuildAccelerationStructuresKHR(struct vn_ring *vn_ring, VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos)
+{
+    VN_TRACE_FUNC();
+
+    struct vn_ring_submit_command submit;
+    vn_submit_vkCmdBuildAccelerationStructuresKHR(vn_ring, VK_COMMAND_GENERATE_REPLY_BIT_EXT, commandBuffer, infoCount, pInfos, ppBuildRangeInfos, &submit);
+    struct vn_cs_decoder *dec = vn_ring_get_command_reply(vn_ring, &submit);
+    if (dec) {
+        vn_decode_vkCmdBuildAccelerationStructuresKHR_reply(dec, commandBuffer, infoCount, pInfos, ppBuildRangeInfos);
+        vn_ring_free_command_reply(vn_ring, &submit);
+    }
+}
+
+static inline void vn_async_vkCmdBuildAccelerationStructuresKHR(struct vn_ring *vn_ring, VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos)
+{
+    struct vn_ring_submit_command submit;
+    vn_submit_vkCmdBuildAccelerationStructuresKHR(vn_ring, 0, commandBuffer, infoCount, pInfos, ppBuildRangeInfos, &submit);
+}
+
+static inline void vn_call_vkCmdBuildAccelerationStructuresIndirectKHR(struct vn_ring *vn_ring, VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, const VkDeviceAddress* pIndirectDeviceAddresses, const uint32_t* pIndirectStrides, const uint32_t* const* ppMaxPrimitiveCounts)
+{
+    VN_TRACE_FUNC();
+
+    struct vn_ring_submit_command submit;
+    vn_submit_vkCmdBuildAccelerationStructuresIndirectKHR(vn_ring, VK_COMMAND_GENERATE_REPLY_BIT_EXT, commandBuffer, infoCount, pInfos, pIndirectDeviceAddresses, pIndirectStrides, ppMaxPrimitiveCounts, &submit);
+    struct vn_cs_decoder *dec = vn_ring_get_command_reply(vn_ring, &submit);
+    if (dec) {
+        vn_decode_vkCmdBuildAccelerationStructuresIndirectKHR_reply(dec, commandBuffer, infoCount, pInfos, pIndirectDeviceAddresses, pIndirectStrides, ppMaxPrimitiveCounts);
+        vn_ring_free_command_reply(vn_ring, &submit);
+    }
+}
+
+static inline void vn_async_vkCmdBuildAccelerationStructuresIndirectKHR(struct vn_ring *vn_ring, VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, const VkDeviceAddress* pIndirectDeviceAddresses, const uint32_t* pIndirectStrides, const uint32_t* const* ppMaxPrimitiveCounts)
+{
+    struct vn_ring_submit_command submit;
+    vn_submit_vkCmdBuildAccelerationStructuresIndirectKHR(vn_ring, 0, commandBuffer, infoCount, pInfos, pIndirectDeviceAddresses, pIndirectStrides, ppMaxPrimitiveCounts, &submit);
 }
 
 static inline void vn_call_vkCmdSetCullMode(struct vn_ring *vn_ring, VkCommandBuffer commandBuffer, VkCullModeFlags cullMode)

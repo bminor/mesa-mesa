@@ -631,6 +631,52 @@ vn_decode_VkSamplerYcbcrConversion(struct vn_cs_decoder *dec, VkSamplerYcbcrConv
     vn_cs_handle_store_id((void **)val, id, VK_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION);
 }
 
+/* VK_DEFINE_NON_DISPATCHABLE_HANDLE(VkAccelerationStructureKHR) */
+
+static inline size_t
+vn_sizeof_VkAccelerationStructureKHR(const VkAccelerationStructureKHR *val)
+{
+    return sizeof(uint64_t);
+}
+
+static inline void
+vn_encode_VkAccelerationStructureKHR(struct vn_cs_encoder *enc, const VkAccelerationStructureKHR *val)
+{
+    const uint64_t id = vn_cs_handle_load_id((const void **)val, VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR);
+    vn_encode_uint64_t(enc, &id);
+}
+
+static inline void
+vn_decode_VkAccelerationStructureKHR(struct vn_cs_decoder *dec, VkAccelerationStructureKHR *val)
+{
+    uint64_t id;
+    vn_decode_uint64_t(dec, &id);
+    vn_cs_handle_store_id((void **)val, id, VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR);
+}
+
+/* VK_DEFINE_NON_DISPATCHABLE_HANDLE(VkDeferredOperationKHR) */
+
+static inline size_t
+vn_sizeof_VkDeferredOperationKHR(const VkDeferredOperationKHR *val)
+{
+    return sizeof(uint64_t);
+}
+
+static inline void
+vn_encode_VkDeferredOperationKHR(struct vn_cs_encoder *enc, const VkDeferredOperationKHR *val)
+{
+    const uint64_t id = vn_cs_handle_load_id((const void **)val, VK_OBJECT_TYPE_DEFERRED_OPERATION_KHR);
+    vn_encode_uint64_t(enc, &id);
+}
+
+static inline void
+vn_decode_VkDeferredOperationKHR(struct vn_cs_decoder *dec, VkDeferredOperationKHR *val)
+{
+    uint64_t id;
+    vn_decode_uint64_t(dec, &id);
+    vn_cs_handle_store_id((void **)val, id, VK_OBJECT_TYPE_DEFERRED_OPERATION_KHR);
+}
+
 /* VK_DEFINE_NON_DISPATCHABLE_HANDLE(VkPrivateDataSlot) */
 
 static inline size_t

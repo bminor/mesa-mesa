@@ -19,8 +19,8 @@ struct vn_info_extension {
 };
 
 /* sorted by extension names for bsearch */
-static const uint32_t _vn_info_extension_count = 156;
-static const struct vn_info_extension _vn_info_extensions[156] = {
+static const uint32_t _vn_info_extension_count = 162;
+static const struct vn_info_extension _vn_info_extensions[162] = {
    { "VK_ARM_rasterization_order_attachment_access", 343, 1 },
    { "VK_EXT_4444_formats", 341, 1 },
    { "VK_EXT_attachment_feedback_loop_layout", 340, 2 },
@@ -99,6 +99,7 @@ static const struct vn_info_extension _vn_info_extensions[156] = {
    { "VK_EXT_ycbcr_image_arrays", 253, 1 },
    { "VK_KHR_16bit_storage", 84, 1 },
    { "VK_KHR_8bit_storage", 178, 1 },
+   { "VK_KHR_acceleration_structure", 151, 13 },
    { "VK_KHR_bind_memory2", 158, 1 },
    { "VK_KHR_buffer_device_address", 258, 1 },
    { "VK_KHR_calibrated_timestamps", 544, 1 },
@@ -106,6 +107,7 @@ static const struct vn_info_extension _vn_info_extensions[156] = {
    { "VK_KHR_copy_commands2", 338, 1 },
    { "VK_KHR_create_renderpass2", 110, 1 },
    { "VK_KHR_dedicated_allocation", 128, 3 },
+   { "VK_KHR_deferred_host_operations", 269, 4 },
    { "VK_KHR_depth_clamp_zero_one", 605, 1 },
    { "VK_KHR_depth_stencil_resolve", 200, 1 },
    { "VK_KHR_descriptor_update_template", 86, 1 },
@@ -145,6 +147,10 @@ static const struct vn_info_extension _vn_info_extensions[156] = {
    { "VK_KHR_multiview", 54, 1 },
    { "VK_KHR_pipeline_library", 291, 1 },
    { "VK_KHR_push_descriptor", 81, 2 },
+   { "VK_KHR_ray_query", 349, 1 },
+   { "VK_KHR_ray_tracing_maintenance1", 387, 1 },
+   { "VK_KHR_ray_tracing_pipeline", 348, 1 },
+   { "VK_KHR_ray_tracing_position_fetch", 482, 1 },
    { "VK_KHR_relaxed_block_layout", 145, 1 },
    { "VK_KHR_sampler_mirror_clamp_to_edge", 15, 3 },
    { "VK_KHR_sampler_ycbcr_conversion", 157, 14 },
