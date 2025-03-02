@@ -152,6 +152,7 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
       VkPhysicalDeviceVertexAttributeDivisorFeatures vertex_attribute_divisor;
 
       /* KHR */
+      VkPhysicalDeviceAccelerationStructureFeaturesKHR acceleration_structure;
       VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR
          compute_shader_derivatives;
       VkPhysicalDeviceDepthClampZeroOneFeaturesKHR depth_clamp_zero_one;
@@ -295,6 +296,7 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
    VN_ADD_PNEXT_EXT(feats2, DYNAMIC_RENDERING_LOCAL_READ_FEATURES, local_feats.dynamic_rendering_local_read, exts->KHR_dynamic_rendering_local_read);
 
    /* KHR */
+   VN_ADD_PNEXT_EXT(feats2, ACCELERATION_STRUCTURE_FEATURES_KHR, local_feats.acceleration_structure, exts->KHR_acceleration_structure);
    VN_ADD_PNEXT_EXT(feats2, COMPUTE_SHADER_DERIVATIVES_FEATURES_KHR, local_feats.compute_shader_derivatives, exts->KHR_compute_shader_derivatives || exts->NV_compute_shader_derivatives);
    VN_ADD_PNEXT_EXT(feats2, DEPTH_CLAMP_ZERO_ONE_FEATURES_KHR, local_feats.depth_clamp_zero_one, exts->KHR_depth_clamp_zero_one || exts->EXT_depth_clamp_zero_one);
    VN_ADD_PNEXT_EXT(feats2, FRAGMENT_SHADER_BARYCENTRIC_FEATURES_KHR, local_feats.fragment_shader_barycentric, exts->KHR_fragment_shader_barycentric);
@@ -350,6 +352,12 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
     */
    feats->deviceMemoryReport = true;
    feats->swapchainMaintenance1 = true;
+
+   /* Host commands require custom protocol level support. Disable it
+    * since it'd be non-trivial to make it performant.
+    */
+   if (exts->KHR_acceleration_structure)
+      feats->accelerationStructureHostCommands = false;
 
    /* Disable unsupported ExtendedDynamicState3Features */
    if (exts->EXT_extended_dynamic_state3) {
@@ -524,6 +532,8 @@ vn_physical_device_init_properties(struct vn_physical_device *physical_dev)
          vertex_attribute_divisor;
 
       /* KHR */
+      VkPhysicalDeviceAccelerationStructurePropertiesKHR
+         acceleration_structure;
       VkPhysicalDeviceComputeShaderDerivativesPropertiesKHR
          compute_shader_derivatives;
       VkPhysicalDeviceFragmentShaderBarycentricPropertiesKHR
@@ -616,6 +626,7 @@ vn_physical_device_init_properties(struct vn_physical_device *physical_dev)
    }
 
    /* KHR */
+   VN_ADD_PNEXT_EXT(props2, ACCELERATION_STRUCTURE_PROPERTIES_KHR, local_props.acceleration_structure, exts->KHR_acceleration_structure);
    VN_ADD_PNEXT_EXT(props2, COMPUTE_SHADER_DERIVATIVES_PROPERTIES_KHR, local_props.compute_shader_derivatives, exts->KHR_compute_shader_derivatives);
    VN_ADD_PNEXT_EXT(props2, FRAGMENT_SHADER_BARYCENTRIC_PROPERTIES_KHR, local_props.fragment_shader_barycentric, exts->KHR_fragment_shader_barycentric);
    VN_ADD_PNEXT_EXT(props2, FRAGMENT_SHADING_RATE_PROPERTIES_KHR, local_props.fragment_shading_rate, exts->KHR_fragment_shading_rate);
@@ -693,6 +704,7 @@ vn_physical_device_init_properties(struct vn_physical_device *physical_dev)
    }
 
    /* KHR */
+   VN_SET_VK_PROPS_EXT(props, &local_props.acceleration_structure, exts->KHR_acceleration_structure);
    VN_SET_VK_PROPS_EXT(props, &local_props.compute_shader_derivatives, exts->KHR_compute_shader_derivatives);
    VN_SET_VK_PROPS_EXT(props, &local_props.fragment_shader_barycentric, exts->KHR_fragment_shader_barycentric);
    VN_SET_VK_PROPS_EXT(props, &local_props.fragment_shading_rate, exts->KHR_fragment_shading_rate);
@@ -1211,6 +1223,7 @@ vn_physical_device_get_passthrough_extensions(
       .EXT_pipeline_robustness = true,
 
       /* KHR */
+      .KHR_acceleration_structure = physical_dev->ray_tracing,
       .KHR_calibrated_timestamps = true,
       .KHR_compute_shader_derivatives = true,
       .KHR_depth_clamp_zero_one = true,
