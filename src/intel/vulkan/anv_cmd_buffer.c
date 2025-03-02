@@ -1155,14 +1155,17 @@ void anv_CmdBindTransformFeedbackBuffersEXT(
    assert(firstBinding + bindingCount <= MAX_XFB_BUFFERS);
    for (uint32_t i = 0; i < bindingCount; i++) {
       if (pBuffers[i] == VK_NULL_HANDLE) {
-         xfb[firstBinding + i].buffer = NULL;
+         xfb[firstBinding + i] = (struct anv_xfb_binding) { 0 };
       } else {
          ANV_FROM_HANDLE(anv_buffer, buffer, pBuffers[i]);
-         xfb[firstBinding + i].buffer = buffer;
-         xfb[firstBinding + i].offset = pOffsets[i];
-         xfb[firstBinding + i].size =
-            vk_buffer_range(&buffer->vk, pOffsets[i],
-                            pSizes ? pSizes[i] : VK_WHOLE_SIZE);
+         xfb[firstBinding + i] = (struct anv_xfb_binding) {
+            .addr = anv_address_physical(
+               anv_address_add(buffer->address, pOffsets[i])),
+            .size = vk_buffer_range(&buffer->vk, pOffsets[i],
+                                    pSizes ? pSizes[i] : VK_WHOLE_SIZE),
+            .mocs = anv_mocs(cmd_buffer->device, buffer->address.bo,
+                             ISL_SURF_USAGE_STREAM_OUT_BIT),
+         };
       }
    }
 }
