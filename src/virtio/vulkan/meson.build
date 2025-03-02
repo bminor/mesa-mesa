@@ -51,6 +51,7 @@ devenv.append('VK_DRIVER_FILES', _dev_icd.full_path())
 devenv.append('VK_ICD_FILENAMES', _dev_icd.full_path())
 
 libvn_files = files(
+  'vn_acceleration_structure.c',
   'vn_buffer.c',
   'vn_command_buffer.c',
   'vn_common.c',
