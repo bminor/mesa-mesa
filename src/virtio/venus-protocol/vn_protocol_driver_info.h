@@ -19,17 +19,8 @@ struct vn_info_extension {
 };
 
 /* sorted by extension names for bsearch */
-static const uint32_t _vn_info_extension_count = 168;
-static const struct vn_info_extension _vn_info_extensions[168] = {
-   { "VK_AMD_shader_ballot", 38, 1 },
-   { "VK_AMD_shader_core_properties", 186, 2 },
-   { "VK_AMD_shader_core_properties2", 228, 1 },
-   { "VK_AMD_shader_early_and_late_fragment_tests", 322, 1 },
-   { "VK_AMD_shader_explicit_vertex_parameter", 22, 1 },
-   { "VK_AMD_shader_fragment_mask", 138, 1 },
-   { "VK_AMD_shader_image_load_store_lod", 47, 1 },
-   { "VK_AMD_shader_trinary_minmax", 21, 1 },
-   { "VK_AMD_texture_gather_bias_lod", 42, 1 },
+static const uint32_t _vn_info_extension_count = 156;
+static const struct vn_info_extension _vn_info_extensions[156] = {
    { "VK_ARM_rasterization_order_attachment_access", 343, 1 },
    { "VK_EXT_4444_formats", 341, 1 },
    { "VK_EXT_attachment_feedback_loop_layout", 340, 2 },
@@ -106,9 +97,6 @@ static const struct vn_info_extension _vn_info_extensions[168] = {
    { "VK_EXT_vertex_input_dynamic_state", 353, 2 },
    { "VK_EXT_ycbcr_2plane_444_formats", 331, 1 },
    { "VK_EXT_ycbcr_image_arrays", 253, 1 },
-   { "VK_GOOGLE_decorate_string", 225, 1 },
-   { "VK_GOOGLE_hlsl_functionality1", 224, 1 },
-   { "VK_GOOGLE_user_type", 290, 1 },
    { "VK_KHR_16bit_storage", 84, 1 },
    { "VK_KHR_8bit_storage", 178, 1 },
    { "VK_KHR_bind_memory2", 158, 1 },
