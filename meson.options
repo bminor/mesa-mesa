@@ -513,7 +513,8 @@ option(
   'osmesa',
   type : 'boolean',
   value : false,
-  description : 'Build OSmesa.'
+  deprecated : true,
+  description : 'Does nothing, left here for a while to avoid build breakages.',
 )
 
 option(

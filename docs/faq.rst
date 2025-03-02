@@ -167,8 +167,6 @@ Basically you'll want the following:
    the OpenGL extensions header
 ``/usr/include/GL/glxext.h``
    the OpenGL GLX extensions header
-``/usr/include/GL/osmesa.h``
-   the Mesa off-screen rendering header
 ``/usr/lib/libGL.so``
    a symlink to ``libGL.so.1``
 ``/usr/lib/libGL.so.1``

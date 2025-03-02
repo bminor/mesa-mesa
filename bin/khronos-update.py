@@ -124,7 +124,6 @@ SOURCES = [
             Source('include/GL/glx.h',               None),  # FIXME: I don't know what the canonical source is
             Source('include/GL/internal/',           None),
             Source('include/GL/mesa_glinterop.h',    None),
-            Source('include/GL/osmesa.h',            None),
         ],
     },
 

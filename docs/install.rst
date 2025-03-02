@@ -217,12 +217,8 @@ this:
    lrwxrwxrwx    1 brian    users          10 Mar 26 07:53 libGL.so -> libGL.so.1*
    lrwxrwxrwx    1 brian    users          19 Mar 26 07:53 libGL.so.1 -> libGL.so.1.5.060100*
    -rwxr-xr-x    1 brian    users     3375861 Mar 26 07:53 libGL.so.1.5.060100*
-   lrwxrwxrwx    1 brian    users          14 Mar 26 07:53 libOSMesa.so -> libOSMesa.so.6*
-   lrwxrwxrwx    1 brian    users          23 Mar 26 07:53 libOSMesa.so.6 -> libOSMesa.so.6.1.060100*
-   -rwxr-xr-x    1 brian    users       23871 Mar 26 07:53 libOSMesa.so.6.1.060100*
 
-**libGL** is the main OpenGL library (i.e. Mesa), while **libOSMesa** is
-the OSMesa (Off-Screen) interface library.
+**libGL** is the main OpenGL library (i.e. Mesa).
 
 If you built the DRI hardware drivers, you'll also see the DRI drivers:
 

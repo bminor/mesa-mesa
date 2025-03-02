@@ -74,9 +74,6 @@ def gen_vs_module_def(in_file: str, out_file: str, compiler_abi: str, compiler_i
 python ./bin/gen_vs_module_defs.py --in_file src/gallium/targets/libgl-gdi/opengl32.def.in --out_file src/gallium/targets/libgl-gdi/opengl32.def --compiler_abi gcc --cpu_family x86_64
 python ./bin/gen_vs_module_defs.py --in_file src/gallium/targets/libgl-gdi/opengl32.def.in --out_file src/gallium/targets/libgl-gdi/opengl32.mingw.def --compiler_abi gcc --cpu_family x86
 
-python ./bin/gen_vs_module_defs.py --in_file src/gallium/targets/osmesa/osmesa.def.in --out_file src/gallium/targets/osmesa/osmesa.def --compiler_abi gcc --cpu_family x86_64
-python ./bin/gen_vs_module_defs.py --in_file src/gallium/targets/osmesa/osmesa.def.in --out_file src/gallium/targets/osmesa/osmesa.mingw.def --compiler_abi gcc --cpu_family x86
-
 python ./bin/gen_vs_module_defs.py --in_file src/gallium/targets/wgl/gallium_wgl.def.in --out_file src/gallium/targets/wgl/gallium_wgl.def --compiler_abi gcc --cpu_family x86_64
 python ./bin/gen_vs_module_defs.py --in_file src/gallium/targets/wgl/gallium_wgl.def.in --out_file src/gallium/targets/wgl/gallium_wgl.mingw.def --compiler_abi gcc --cpu_family x86
 

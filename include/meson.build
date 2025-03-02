@@ -79,10 +79,6 @@ if with_egl
   )
 endif
 
-if with_osmesa
-  install_headers('GL/osmesa.h', subdir : 'GL')
-endif
-
 if with_dri
   install_headers('GL/internal/dri_interface.h', subdir : 'GL/internal')
 endif

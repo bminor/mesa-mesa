@@ -67,7 +67,6 @@ with_glcpp_tests = get_option('enable-glcpp-tests')
 with_aco_tests = get_option('build-aco-tests')
 with_glx_read_only_text = get_option('glx-read-only-text')
 with_glx_direct = get_option('glx-direct')
-with_osmesa = get_option('osmesa')
 with_vulkan_overlay_layer = get_option('vulkan-layers').contains('overlay')
 with_vulkan_device_select_layer = get_option('vulkan-layers').contains('device-select')
 with_vulkan_screenshot_layer = get_option('vulkan-layers').contains('screenshot')
@@ -2043,17 +2042,6 @@ if dep_unwind.found()
   pre_args += '-DHAVE_LIBUNWIND'
 endif
 
-if with_osmesa
-  if not with_gallium_swrast
-    error('OSMesa gallium requires gallium softpipe or llvmpipe.')
-  endif
-  if host_machine.system() == 'windows'
-    osmesa_lib_name = 'osmesa'
-  else
-    osmesa_lib_name = 'OSMesa'
-  endif
-endif
-
 # TODO: symbol mangling
 
 if with_platform_wayland
@@ -2456,7 +2444,6 @@ if with_gallium
     gallium_frontends += 'rusticl'
   endif
   gallium_summary += {'Frontends': gallium_frontends}
-  gallium_summary += {'Off-screen rendering (OSMesa)': with_osmesa ? 'lib' + osmesa_lib_name : false}
   gallium_summary += {'HUD lm-sensors': dep_lmsensors.found()}
 endif
 summary(gallium_summary, section: 'Gallium', bool_yn: true, list_sep: ' ')
