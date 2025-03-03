@@ -704,7 +704,7 @@
         "description": "pan/bi: Disallow FAU special page 3 and WARP_ID on message instructions",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "fd1906afea59073780939810e0e46094264677d3",
         "notes": null
