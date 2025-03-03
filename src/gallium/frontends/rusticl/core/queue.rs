@@ -24,24 +24,13 @@ use std::thread::JoinHandle;
 /// State tracking wrapper for [PipeContext]
 ///
 /// Used for tracking bound GPU state to lower CPU overhead and centralize state tracking
-pub struct QueueContext {
-    // need to use ManuallyDrop so we can recycle the context without cloning
-    ctx: ManuallyDrop<PipeContext>,
+pub struct QueueContext<'a> {
+    ctx: &'a PipeContext,
     pub dev: &'static Device,
     use_stream: bool,
 }
 
-impl QueueContext {
-    fn new_for(device: &'static Device) -> CLResult<Self> {
-        let ctx = device.create_context().ok_or(CL_OUT_OF_HOST_MEMORY)?;
-
-        Ok(Self {
-            ctx: ManuallyDrop::new(ctx),
-            dev: device,
-            use_stream: device.prefers_real_buffer_in_cb0(),
-        })
-    }
-
+impl QueueContext<'_> {
     pub fn update_cb0(&self, data: &[u8]) -> CLResult<()> {
         // only update if we actually bind data
         if !data.is_empty() {
@@ -58,18 +47,49 @@ impl QueueContext {
 }
 
 // This should go once we moved all state tracking into QueueContext
-impl Deref for QueueContext {
+impl Deref for QueueContext<'_> {
     type Target = PipeContext;
 
     fn deref(&self) -> &Self::Target {
-        &self.ctx
+        self.ctx
     }
 }
 
-impl Drop for QueueContext {
+impl Drop for QueueContext<'_> {
+    fn drop(&mut self) {
+        self.set_constant_buffer(0, &[]);
+    }
+}
+
+/// The main purpose of this type is to be able to create the context outside of the worker thread
+/// to report back any sort of allocation failures early.
+struct SendableQueueContext {
+    // need to use ManuallyDrop so we can recycle the context without cloning
+    ctx: ManuallyDrop<PipeContext>,
+    dev: &'static Device,
+}
+
+impl SendableQueueContext {
+    fn new(device: &'static Device) -> CLResult<Self> {
+        Ok(Self {
+            ctx: ManuallyDrop::new(device.create_context().ok_or(CL_OUT_OF_HOST_MEMORY)?),
+            dev: device,
+        })
+    }
+
+    /// The returned value can be used to execute operation on the wrapped context in a safe manner.
+    fn ctx(&self) -> QueueContext {
+        QueueContext {
+            ctx: &self.ctx,
+            dev: self.dev,
+            use_stream: self.dev.prefers_real_buffer_in_cb0(),
+        }
+    }
+}
+
+impl Drop for SendableQueueContext {
     fn drop(&mut self) {
         let ctx = unsafe { ManuallyDrop::take(&mut self.ctx) };
-        ctx.set_constant_buffer(0, &[]);
         self.dev.recycle_context(ctx);
     }
 }
@@ -119,7 +139,7 @@ impl Queue {
     ) -> CLResult<Arc<Queue>> {
         // we assume that memory allocation is the only possible failure. Any other failure reason
         // should be detected earlier (e.g.: checking for CAPs).
-        let ctx = QueueContext::new_for(device)?;
+        let ctx = SendableQueueContext::new(device)?;
         let (tx_q, rx_t) = mpsc::channel::<Vec<Arc<Event>>>();
         Ok(Arc::new(Self {
             base: CLObjectBase::new(RusticlTypes::Queue),
@@ -149,6 +169,7 @@ impl Queue {
                     // TODO: use pipe_context::set_device_reset_callback to get notified about gone
                     //       GPU contexts
                     let mut last_err = CL_SUCCESS as cl_int;
+                    let ctx = ctx.ctx();
                     loop {
                         let r = rx_t.recv();
                         if r.is_err() {
