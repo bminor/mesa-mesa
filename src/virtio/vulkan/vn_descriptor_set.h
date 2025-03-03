@@ -27,6 +27,7 @@ enum vn_descriptor_type {
    VN_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
    VN_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK,
    VN_DESCRIPTOR_TYPE_MUTABLE_EXT,
+   VN_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR,
 
    /* add new enum types before this line */
    VN_NUM_DESCRIPTOR_TYPES,
@@ -112,6 +113,7 @@ struct vn_descriptor_update_template {
    uint32_t buf_info_count;
    uint32_t bview_count;
    uint32_t iub_count;
+   uint32_t accel_count;
    VkDescriptorUpdateTemplateEntry entries[];
 };
 VK_DEFINE_NONDISP_HANDLE_CASTS(vn_descriptor_update_template,
@@ -131,6 +133,7 @@ struct vn_descriptor_set_update {
    VkDescriptorBufferInfo *buf_infos;
    VkBufferView *bview_handles;
    VkWriteDescriptorSetInlineUniformBlock *iubs;
+   VkWriteDescriptorSetAccelerationStructureKHR *accels;
 };
 
 uint32_t

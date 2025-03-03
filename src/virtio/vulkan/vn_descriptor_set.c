@@ -76,6 +76,8 @@ vn_descriptor_type(VkDescriptorType type)
       return VN_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
    case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK:
       return VN_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK;
+   case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
+      return VN_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
    case VK_DESCRIPTOR_TYPE_MUTABLE_EXT:
       return VN_DESCRIPTOR_TYPE_MUTABLE_EXT;
    default:
@@ -807,6 +809,7 @@ vn_descriptor_set_get_writes(uint32_t write_count,
          write->pTexelBufferView = NULL;
          break;
       case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK:
+      case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
       case VK_DESCRIPTOR_TYPE_MUTABLE_EXT:
       default:
          write->pImageInfo = NULL;
@@ -878,6 +881,9 @@ vn_descriptor_update_template_init(
          break;
       case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK:
          templ->iub_count += 1;
+         break;
+      case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
+         templ->accel_count += 1;
          break;
       case VK_DESCRIPTOR_TYPE_MUTABLE_EXT:
          break;
@@ -966,15 +972,20 @@ vn_descriptor_set_fill_update_with_template(
    uint32_t buf_info_offset = 0;
    uint32_t bview_offset = 0;
    uint32_t iub_offset = 0;
+   uint32_t accel_offset = 0;
+
    for (uint32_t i = 0; i < templ->entry_count; i++) {
       const VkDescriptorUpdateTemplateEntry *entry = &templ->entries[i];
       const uint8_t *ptr = data + entry->offset;
+      const void *pnext = NULL;
       bool ignore_sampler = true;
       bool ignore_iview = false;
       VkDescriptorImageInfo *img_infos = NULL;
       VkDescriptorBufferInfo *buf_infos = NULL;
       VkBufferView *bview_handles = NULL;
       VkWriteDescriptorSetInlineUniformBlock *iub = NULL;
+      VkWriteDescriptorSetAccelerationStructureKHR *accel = NULL;
+
       switch (entry->descriptorType) {
       case VK_DESCRIPTOR_TYPE_SAMPLER:
          ignore_iview = true;
@@ -1026,7 +1037,20 @@ vn_descriptor_set_fill_update_with_template(
             .dataSize = entry->descriptorCount,
             .pData = (const void *)ptr,
          };
+         pnext = iub;
          iub_offset++;
+         break;
+      case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
+         accel = &update->accels[accel_offset];
+         *accel = (VkWriteDescriptorSetAccelerationStructureKHR){
+            .sType =
+               VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR,
+            .accelerationStructureCount = entry->descriptorCount,
+            .pAccelerationStructures =
+               (const VkAccelerationStructureKHR *)ptr,
+         };
+         pnext = accel;
+         accel_offset++;
          break;
       case VK_DESCRIPTOR_TYPE_MUTABLE_EXT:
          break;
@@ -1036,7 +1060,7 @@ vn_descriptor_set_fill_update_with_template(
       }
       update->writes[i] = (VkWriteDescriptorSet){
          .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-         .pNext = iub,
+         .pNext = pnext,
          .dstSet = set_handle,
          .dstBinding = entry->dstBinding,
          .dstArrayElement = entry->dstArrayElement,
@@ -1066,12 +1090,15 @@ vn_UpdateDescriptorSetWithTemplate(
    STACK_ARRAY(VkBufferView, bview_handles, templ->bview_count);
    STACK_ARRAY(VkWriteDescriptorSetInlineUniformBlock, iubs,
                templ->iub_count);
+   STACK_ARRAY(VkWriteDescriptorSetAccelerationStructureKHR, accels,
+               templ->accel_count);
    struct vn_descriptor_set_update update = {
       .writes = writes,
       .img_infos = img_infos,
       .buf_infos = buf_infos,
       .bview_handles = bview_handles,
       .iubs = iubs,
+      .accels = accels,
    };
    vn_descriptor_set_fill_update_with_template(templ, descriptorSet, pData,
                                                &update);
@@ -1084,4 +1111,5 @@ vn_UpdateDescriptorSetWithTemplate(
    STACK_ARRAY_FINISH(buf_infos);
    STACK_ARRAY_FINISH(bview_handles);
    STACK_ARRAY_FINISH(iubs);
+   STACK_ARRAY_FINISH(accels);
 }

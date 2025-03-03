@@ -2371,12 +2371,15 @@ vn_CmdPushDescriptorSetWithTemplate(
    STACK_ARRAY(VkBufferView, bview_handles, templ->bview_count);
    STACK_ARRAY(VkWriteDescriptorSetInlineUniformBlock, iubs,
                templ->iub_count);
+   STACK_ARRAY(VkWriteDescriptorSetAccelerationStructureKHR, accels,
+               templ->accel_count);
    struct vn_descriptor_set_update update = {
       .writes = writes,
       .img_infos = img_infos,
       .buf_infos = buf_infos,
       .bview_handles = bview_handles,
       .iubs = iubs,
+      .accels = accels,
    };
    vn_descriptor_set_fill_update_with_template(templ, VK_NULL_HANDLE, pData,
                                                &update);
@@ -2390,6 +2393,7 @@ vn_CmdPushDescriptorSetWithTemplate(
    STACK_ARRAY_FINISH(buf_infos);
    STACK_ARRAY_FINISH(bview_handles);
    STACK_ARRAY_FINISH(iubs);
+   STACK_ARRAY_FINISH(accels);
 }
 
 void
@@ -2407,12 +2411,15 @@ vn_CmdPushDescriptorSetWithTemplate2(VkCommandBuffer commandBuffer,
    STACK_ARRAY(VkBufferView, bview_handles, templ->bview_count);
    STACK_ARRAY(VkWriteDescriptorSetInlineUniformBlock, iubs,
                templ->iub_count);
+   STACK_ARRAY(VkWriteDescriptorSetAccelerationStructureKHR, accels,
+               templ->accel_count);
    struct vn_descriptor_set_update update = {
       .writes = writes,
       .img_infos = img_infos,
       .buf_infos = buf_infos,
       .bview_handles = bview_handles,
       .iubs = iubs,
+      .accels = accels,
    };
    vn_descriptor_set_fill_update_with_template(
       templ, VK_NULL_HANDLE, pPushDescriptorSetWithTemplateInfo->pData,
@@ -2437,6 +2444,7 @@ vn_CmdPushDescriptorSetWithTemplate2(VkCommandBuffer commandBuffer,
    STACK_ARRAY_FINISH(buf_infos);
    STACK_ARRAY_FINISH(bview_handles);
    STACK_ARRAY_FINISH(iubs);
+   STACK_ARRAY_FINISH(accels);
 }
 
 void
