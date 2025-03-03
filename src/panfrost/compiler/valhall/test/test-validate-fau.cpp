@@ -54,7 +54,9 @@ class ValidateFau : public testing::Test {
       unif_hi = bi_fau((enum bir_fau)(BIR_FAU_UNIFORM | 5), true);
       unif2 = bi_fau((enum bir_fau)(BIR_FAU_UNIFORM | 6), false);
       core_id = bi_fau(BIR_FAU_CORE_ID, false);
+      warp_id = bi_fau(BIR_FAU_WARP_ID, false);
       lane_id = bi_fau(BIR_FAU_LANE_ID, false);
+      fb_extend_max_x = bi_fau(BIR_FAU_FB_EXTENT, false);
    }
 
    ~ValidateFau()
@@ -64,7 +66,8 @@ class ValidateFau : public testing::Test {
 
    void *mem_ctx;
    bi_builder *b;
-   bi_index zero, imm1, imm2, unif, unif_hi, unif2, core_id, lane_id;
+   bi_index zero, imm1, imm2, unif, unif_hi, unif2, core_id, lane_id, warp_id,
+      fb_extend_max_x;
 };
 
 TEST_F(ValidateFau, One64BitUniformSlot)
@@ -114,4 +117,14 @@ TEST_F(ValidateFau, SmokeTests)
    VALID(bi_mov_i32_to(b, bi_register(1), unif));
    VALID(bi_fma_f32_to(b, bi_register(1), bi_discard(bi_register(1)), unif,
                        bi_neg(zero)));
+   VALID(
+      bi_ld_buffer_to(b, 32, bi_register(1), bi_register(2), bi_register(3)));
+}
+
+TEST_F(ValidateFau, MessageInstructionConstraints)
+{
+   VALID(
+      bi_ld_buffer_to(b, 32, bi_register(1), bi_register(2), fb_extend_max_x));
+   INVALID(bi_ld_buffer_to(b, 32, bi_register(1), bi_register(2), warp_id));
+   INVALID(bi_ld_buffer_to(b, 32, bi_register(1), bi_register(2), core_id));
 }
