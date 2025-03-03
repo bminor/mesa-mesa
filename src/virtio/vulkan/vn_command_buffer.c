@@ -2666,3 +2666,54 @@ vn_CmdSetRenderingInputAttachmentIndices(
    VN_CMD_ENQUEUE(vkCmdSetRenderingInputAttachmentIndices, commandBuffer,
                   pInputAttachmentIndexInfo);
 }
+
+void
+vn_CmdBuildAccelerationStructuresIndirectKHR(
+   VkCommandBuffer commandBuffer,
+   uint32_t infoCount,
+   const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
+   const VkDeviceAddress *pIndirectDeviceAddresses,
+   const uint32_t *pIndirectStrides,
+   const uint32_t *const *ppMaxPrimitiveCounts)
+{
+   VN_CMD_ENQUEUE(vkCmdBuildAccelerationStructuresIndirectKHR, commandBuffer,
+                  infoCount, pInfos, pIndirectDeviceAddresses,
+                  pIndirectStrides, ppMaxPrimitiveCounts);
+}
+
+void
+vn_CmdBuildAccelerationStructuresKHR(
+   VkCommandBuffer commandBuffer,
+   uint32_t infoCount,
+   const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
+   const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos)
+{
+   VN_CMD_ENQUEUE(vkCmdBuildAccelerationStructuresKHR, commandBuffer,
+                  infoCount, pInfos, ppBuildRangeInfos);
+}
+
+void
+vn_CmdCopyAccelerationStructureKHR(
+   VkCommandBuffer commandBuffer,
+   const VkCopyAccelerationStructureInfoKHR *pInfo)
+{
+   VN_CMD_ENQUEUE(vkCmdCopyAccelerationStructureKHR, commandBuffer, pInfo);
+}
+
+void
+vn_CmdCopyAccelerationStructureToMemoryKHR(
+   VkCommandBuffer commandBuffer,
+   const VkCopyAccelerationStructureToMemoryInfoKHR *pInfo)
+{
+   VN_CMD_ENQUEUE(vkCmdCopyAccelerationStructureToMemoryKHR, commandBuffer,
+                  pInfo);
+}
+
+void
+vn_CmdCopyMemoryToAccelerationStructureKHR(
+   VkCommandBuffer commandBuffer,
+   const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo)
+{
+   VN_CMD_ENQUEUE(vkCmdCopyMemoryToAccelerationStructureKHR, commandBuffer,
+                  pInfo);
+}
