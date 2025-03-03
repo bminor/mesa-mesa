@@ -1372,6 +1372,29 @@ add_barrier_deps(struct ir3_block *block, struct ir3_instruction *instr)
    }
 }
 
+static bool
+add_const_deps(struct ir3_block *block, struct ir3_instruction *stc)
+{
+   bool progress = false;
+   unsigned const_start = stc->cat6.dst_offset;
+   unsigned const_end = const_start + stc->cat6.iim_val;
+
+   foreach_instr_from (instr, stc, &block->instr_list) {
+      foreach_src (src, instr) {
+         if (!(src->flags & IR3_REG_CONST)) {
+            continue;
+         }
+
+         if (src->num >= const_start && src->num < const_end) {
+            ir3_instr_add_dep(instr, stc);
+            progress = true;
+         }
+      }
+   }
+
+   return progress;
+}
+
 /* before scheduling a block, we need to add any necessary false-dependencies
  * to ensure that:
  *
@@ -1391,6 +1414,10 @@ ir3_sched_add_deps(struct ir3 *ir)
          if (instr->barrier_class) {
             add_barrier_deps(block, instr);
             progress = true;
+         }
+
+         if (instr->opc == OPC_STC) {
+            progress |= add_const_deps(block, instr);
          }
       }
    }

@@ -1029,6 +1029,11 @@ ir3_store_const(struct ir3_shader_variant *so, struct ir3_builder *build,
    stc->cat6.type = TYPE_U32;
    stc->barrier_conflict = IR3_BARRIER_CONST_W;
 
+   /* This isn't necessary for instruction encoding but is used by ir3_sched to
+    * set up dependencies between stc and const reads.
+    */
+   stc->cat6.dst_offset = dst;
+
    if (a1) {
       ir3_instr_set_address(stc, a1);
       stc->flags |= IR3_INSTR_A1EN;
