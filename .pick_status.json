@@ -5124,7 +5124,7 @@
         "description": "util/box: Add a intersect_2d helper",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3d38c9597ff3b687026fa4c664f8b4aa20b97f53",
         "notes": null
