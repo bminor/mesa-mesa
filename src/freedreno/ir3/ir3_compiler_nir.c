@@ -1192,7 +1192,7 @@ emit_intrinsic_copy_ubo_to_uniform(struct ir3_context *ctx,
    unsigned base = nir_intrinsic_base(intr);
    unsigned size = nir_intrinsic_range(intr);
 
-   struct ir3_instruction *addr1 = ir3_get_addr1(ctx, base);
+   struct ir3_instruction *addr1 = ir3_create_addr1(&ctx->build, base);
 
    struct ir3_instruction *offset = ir3_get_src(ctx, &intr->src[1])[0];
    struct ir3_instruction *idx = ir3_get_src(ctx, &intr->src[0])[0];
@@ -1229,7 +1229,7 @@ emit_intrinsic_copy_global_to_uniform(struct ir3_context *ctx,
 
    struct ir3_instruction *a1 = NULL;
    if (dst_hi)
-      a1 = ir3_get_addr1(ctx, dst_hi << 8);
+      a1 = ir3_create_addr1(&ctx->build, dst_hi << 8);
 
    struct ir3_instruction *addr_lo = ir3_get_src(ctx, &intr->src[0])[0];
    struct ir3_instruction *addr_hi = ir3_get_src(ctx, &intr->src[0])[1];
@@ -1742,7 +1742,7 @@ emit_sam(struct ir3_context *ctx, opc_t opc, struct tex_src_info info,
 {
    struct ir3_instruction *sam, *addr;
    if (info.flags & IR3_INSTR_A1EN) {
-      addr = ir3_get_addr1(ctx, info.a1_val);
+      addr = ir3_create_addr1(&ctx->build, info.a1_val);
    }
    sam = ir3_SAM(&ctx->build, opc, type, wrmask, info.flags, info.samp_tex,
                  src0, src1);
@@ -3371,7 +3371,7 @@ emit_intrinsic(struct ir3_context *ctx, nir_intrinsic_instr *intr)
           * chance that we can reuse the a1.x value in subsequent stc
           * instructions.
           */
-         a1 = ir3_get_addr1(ctx, dst_hi << 8);
+         a1 = ir3_create_addr1(&ctx->build, dst_hi << 8);
       }
 
       struct ir3_instruction *stc =
@@ -4352,9 +4352,6 @@ emit_block(struct ir3_context *ctx, nir_block *nblock)
       _mesa_hash_table_destroy(ctx->addr0_ht[i], NULL);
       ctx->addr0_ht[i] = NULL;
    }
-
-   _mesa_hash_table_u64_destroy(ctx->addr1_ht);
-   ctx->addr1_ht = NULL;
 
    nir_foreach_instr (instr, nblock) {
       ctx->cur_instr = instr;

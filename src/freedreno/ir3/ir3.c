@@ -996,6 +996,16 @@ ir3_instr_set_address(struct ir3_instruction *instr,
    }
 }
 
+struct ir3_instruction *
+ir3_create_addr1(struct ir3_builder *build, unsigned const_val)
+{
+   struct ir3_instruction *immed =
+      create_immed_typed(build, const_val, TYPE_U16);
+   struct ir3_instruction *instr = ir3_MOV(build, immed, TYPE_U16);
+   instr->dsts[0]->num = regid(REG_A0, 1);
+   return instr;
+}
+
 /* Does this instruction use the scalar ALU?
  */
 bool

@@ -898,6 +898,9 @@ void ir3_reg_set_last_array(struct ir3_instruction *instr,
 void ir3_instr_set_address(struct ir3_instruction *instr,
                            struct ir3_instruction *addr);
 
+struct ir3_instruction *ir3_create_addr1(struct ir3_builder *build,
+                                         unsigned const_val);
+
 static inline bool
 ir3_instr_check_mark(struct ir3_instruction *instr)
 {

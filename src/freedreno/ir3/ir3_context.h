@@ -106,11 +106,6 @@ struct ir3_context {
     */
    struct hash_table *addr0_ht[4];
 
-   /* The same for a1.x. We only support immediate values for a1.x, as this
-    * is the only use so far.
-    */
-   struct hash_table_u64 *addr1_ht;
-
    struct hash_table *sel_cond_conversions;
    struct hash_table *predicate_conversions;
 
@@ -239,8 +234,6 @@ NORETURN void ir3_context_error(struct ir3_context *ctx, const char *format,
 
 struct ir3_instruction *ir3_get_addr0(struct ir3_context *ctx,
                                       struct ir3_instruction *src, int align);
-struct ir3_instruction *ir3_get_addr1(struct ir3_context *ctx,
-                                      unsigned const_val);
 struct ir3_instruction *ir3_get_predicate(struct ir3_context *ctx,
                                           struct ir3_instruction *src);
 

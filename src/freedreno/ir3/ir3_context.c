@@ -483,16 +483,6 @@ create_addr0(struct ir3_builder *build, struct ir3_instruction *src, int align)
    return instr;
 }
 
-static struct ir3_instruction *
-create_addr1(struct ir3_builder *build, unsigned const_val)
-{
-   struct ir3_instruction *immed =
-      create_immed_typed(build, const_val, TYPE_U16);
-   struct ir3_instruction *instr = ir3_MOV(build, immed, TYPE_U16);
-   instr->dsts[0]->num = regid(REG_A0, 1);
-   return instr;
-}
-
 /* caches addr values to avoid generating multiple cov/shl/mova
  * sequences for each use of a given NIR level src as address
  */
@@ -516,26 +506,6 @@ ir3_get_addr0(struct ir3_context *ctx, struct ir3_instruction *src, int align)
 
    addr = create_addr0(&ctx->build, src, align);
    _mesa_hash_table_insert(ctx->addr0_ht[idx], src, addr);
-
-   return addr;
-}
-
-/* Similar to ir3_get_addr0, but for a1.x. */
-struct ir3_instruction *
-ir3_get_addr1(struct ir3_context *ctx, unsigned const_val)
-{
-   struct ir3_instruction *addr;
-
-   if (!ctx->addr1_ht) {
-      ctx->addr1_ht = _mesa_hash_table_u64_create(ctx);
-   } else {
-      addr = _mesa_hash_table_u64_search(ctx->addr1_ht, const_val);
-      if (addr)
-         return addr;
-   }
-
-   addr = create_addr1(&ctx->build, const_val);
-   _mesa_hash_table_u64_insert(ctx->addr1_ht, const_val, addr);
 
    return addr;
 }
