@@ -134,7 +134,7 @@
         "description": "panvk: Use RUN_COMPUTE over RUN_COMPUTE_INDIRECT",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2ffc05d8d2c9353e0392c15c1b4f14000742aff3",
         "notes": null
