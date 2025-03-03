@@ -1054,6 +1054,10 @@ ir3_const_state_mut(const struct ir3_shader_variant *v)
 static inline unsigned
 _ir3_max_const(const struct ir3_shader_variant *v, bool safe_constlen)
 {
+   if (v->binning_pass) {
+      return v->nonbinning->constlen;
+   }
+
    const struct ir3_compiler *compiler = v->compiler;
    bool shared_consts_enable =
       ir3_const_state(v)->push_consts_type == IR3_PUSH_CONSTS_SHARED;
