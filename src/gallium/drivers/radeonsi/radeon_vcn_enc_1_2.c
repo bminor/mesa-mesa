@@ -440,7 +440,7 @@ unsigned int radeon_enc_write_pps(struct radeon_encoder *enc, uint8_t nal_byte, 
    radeon_bs_code_ue(&bs, enc->enc_pic.h264.desc->pic_ctrl.num_ref_idx_l0_default_active_minus1);
    radeon_bs_code_ue(&bs, enc->enc_pic.h264.desc->pic_ctrl.num_ref_idx_l1_default_active_minus1);
    radeon_bs_code_fixed_bits(&bs, 0x0, 1); /* weighted_pred_flag */
-   radeon_bs_code_fixed_bits(&bs, 0x0, 2); /* weighted_bipred_idc */
+   radeon_bs_code_fixed_bits(&bs, enc->enc_pic.spec_misc.weighted_bipred_idc, 2);
    radeon_bs_code_se(&bs, 0x0); /* pic_init_qp_minus26 */
    radeon_bs_code_se(&bs, 0x0); /* pic_init_qs_minus26 */
    radeon_bs_code_se(&bs, enc->enc_pic.h264_deblock.cb_qp_offset); /* chroma_qp_index_offset */
