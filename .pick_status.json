@@ -4214,7 +4214,7 @@
         "description": "tc: Add missing tc_set_driver_thread()",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
