@@ -198,7 +198,7 @@ get_device_extensions(const struct tu_physical_device *device,
       .KHR_maintenance6 = true,
       .KHR_map_memory2 = true,
       .KHR_multiview = TU_DEBUG(NOCONFORM) ? true : device->info->a6xx.has_hw_multiview,
-      .KHR_performance_query = TU_DEBUG(PERFC),
+      .KHR_performance_query = TU_DEBUG(PERFC) || TU_DEBUG(PERFCRAW),
       .KHR_pipeline_executable_properties = true,
       .KHR_pipeline_library = true,
 #ifdef TU_USE_WSI_PLATFORM

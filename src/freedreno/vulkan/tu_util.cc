@@ -48,6 +48,7 @@ static const struct debug_control tu_debug_options[] = {
    { "noconcurrentunresolves", TU_DEBUG_NO_CONCURRENT_UNRESOLVES },
    { "dumpas", TU_DEBUG_DUMPAS },
    { "nobinmerging", TU_DEBUG_NO_BIN_MERGING },
+   { "perfcraw", TU_DEBUG_PERFCRAW },
    { NULL, 0 }
 };
 
