@@ -75,8 +75,8 @@ lower_to_bindgen_return(nir_shader *nir)
        * parameters.
        */
       libfunc->num_params--;
-      memcpy(libfunc->params, libfunc->params + 1,
-             sizeof(libfunc->params[0]) * libfunc->num_params);
+      memmove(libfunc->params, libfunc->params + 1,
+              sizeof(libfunc->params[0]) * libfunc->num_params);
    }
 }
 
