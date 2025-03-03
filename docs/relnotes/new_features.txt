@@ -16,3 +16,4 @@ VK_KHR_shader_subgroup_uniform_control_flow on panvk/v10+
 VK_KHR_shader_maximal_reconvergence on panvk/v10+
 VK_KHR_shader_quad_control on panvk/v10+
 VK_EXT_device_memory_report on RADV
+VK_KHR_shader_subgroup_extended_types on panvk/v10+
