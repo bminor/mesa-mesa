@@ -161,26 +161,6 @@ class gl_print_base(object):
         return
 
 
-    def printVisibility(self, S, s):
-        """Conditionally define visibility function attribute.
-
-        Conditionally defines a preprocessor macro name S that wraps
-        GCC's visibility function attribute.  The visibility used is
-        the parameter s.  The conditional code can be easilly adapted
-        to other compilers that support a similar feature.
-
-        The name is also added to the file's undef_list.
-        """
-
-        self.undef_list.append(S)
-        print("""#  if defined(__GNUC__) && !defined(__CYGWIN__) && !defined(__MINGW32__)
-#    define %s  __attribute__((visibility("%s")))
-#  else
-#    define %s
-#  endif""" % (S, s, S))
-        return
-
-
     def printNoinline(self):
         """Conditionally define `NOINLINE' function attribute.
 
@@ -391,7 +371,6 @@ class gl_parameter(object):
         #	print '/* stack size -> %s = %u (after) */' % (self.name, self.type_expr.get_stack_size())
 
         self.is_client_only = is_attr_true( element, 'client_only' )
-        self.is_counter     = is_attr_true( element, 'counter' )
         self.is_output      = is_attr_true( element, 'output' )
 
 
@@ -742,12 +721,6 @@ class gl_function( gl_item ):
 
         return p_string
 
-    def dispatch_name(self):
-        if self.name in static_data.libgl_public_functions:
-            return self.name
-        else:
-            return "_dispatch_stub_%u" % (self.offset)
-
     def static_name(self, name):
         if name in static_data.libgl_public_functions:
             return name
@@ -927,13 +900,6 @@ class gl_api(object):
                 list.append(self.categories[cat_type][key])
 
         return iter(list)
-
-
-    def get_category_for_name( self, name ):
-        if name in self.category_dict:
-            return self.category_dict[name]
-        else:
-            return ["<unknown category>", None]
 
 
     def find_type( self, type_name ):

@@ -10,24 +10,6 @@ glapi_mapi_tmp_h = custom_target(
   capture : true,
 )
 
-glprocs_h = custom_target(
-  'glprocs.h',
-  input : ['gl_procs.py', 'gl_and_es_API.xml'],
-  output : 'glprocs.h',
-  command : [prog_python, '@INPUT0@', '-c', '-f', '@INPUT1@'],
-  depend_files : glapi_xml_py_deps,
-  capture : true,
-)
-
-glapitemp_h = custom_target(
-  'glapitemp.h',
-  input : ['gl_apitemp.py', 'gl_and_es_API.xml'],
-  output : 'glapitemp.h',
-  command : [prog_python, '@INPUT0@', '-f', '@INPUT1@'],
-  depend_files : glapi_xml_py_deps,
-  capture : true,
-)
-
 glapitable_h = custom_target(
   'glapitable.h',
   input : ['gl_table.py', 'gl_and_es_API.xml'],
@@ -154,30 +136,3 @@ foreach x : [['indirect_size.h', ['-m', 'size_h', '--header-tag', '_INDIRECT_SIZ
   )
 endforeach
 glx_indirect_size_h = glx_generated[3]
-
-glapi_x86_s = custom_target(
-  'glapi_x86.S',
-  input : ['gl_x86_asm.py', 'gl_and_es_API.xml'],
-  output : 'glapi_x86.S',
-  command : [prog_python, '@INPUT0@', '-f', '@INPUT1@'],
-  depend_files : glapi_xml_py_deps,
-  capture : true,
-)
-
-glapi_x86_64_s = custom_target(
-  'glapi_x86-64.S',
-  input : ['gl_x86-64_asm.py', 'gl_and_es_API.xml'],
-  output : 'glapi_x86-64.S',
-  command : [prog_python, '@INPUT0@', '-f', '@INPUT1@'],
-  depend_files : glapi_xml_py_deps,
-  capture : true,
-)
-
-glapi_sparc_s = custom_target(
-  'glapi_sparc.S',
-  input : ['gl_SPARC_asm.py', 'gl_and_es_API.xml'],
-  output : 'glapi_sparc.S',
-  command : [prog_python, '@INPUT0@', '-f', '@INPUT1@'],
-  depend_files : glapi_xml_py_deps,
-  capture : true,
-)
