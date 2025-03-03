@@ -73,6 +73,7 @@ vk_emit_device_memory_report(struct vk_device* device,
                              VkDeviceMemoryReportEventTypeEXT type,
                              uint64_t mem_obj_id,
                              VkDeviceSize size,
+                             VkObjectType obj_type,
                              uint64_t obj_handle,
                              uint32_t heap_index);
 

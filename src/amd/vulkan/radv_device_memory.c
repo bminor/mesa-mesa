@@ -42,7 +42,7 @@ radv_device_memory_emit_report(struct radv_device *device,
    }
 
    vk_emit_device_memory_report(&device->vk, type, mem->bo->obj_id, mem->bo->size,
-                                (uintptr_t)(mem), mem->heap_index);
+                                VK_OBJECT_TYPE_DEVICE_MEMORY, (uintptr_t)(mem), mem->heap_index);
 }
 
 void
