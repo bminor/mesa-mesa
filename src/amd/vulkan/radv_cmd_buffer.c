@@ -13731,9 +13731,6 @@ radv_reset_pipeline_state(struct radv_cmd_buffer *cmd_buffer, VkPipelineBindPoin
          cmd_buffer->state.gs_copy_shader = NULL;
          cmd_buffer->state.last_vgt_shader = NULL;
          cmd_buffer->state.emitted_vs_prolog = NULL;
-         cmd_buffer->state.spi_shader_col_format = 0;
-         cmd_buffer->state.spi_shader_z_format = 0;
-         cmd_buffer->state.cb_shader_mask = 0;
          cmd_buffer->state.ms.sample_shading_enable = false;
          cmd_buffer->state.ms.min_sample_shading = 1.0f;
          cmd_buffer->state.rast_prim = 0;
@@ -13746,6 +13743,14 @@ radv_reset_pipeline_state(struct radv_cmd_buffer *cmd_buffer, VkPipelineBindPoin
          if (cmd_buffer->state.db_render_control) {
             cmd_buffer->state.db_render_control = 0;
             cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FRAMEBUFFER;
+         }
+
+         if (cmd_buffer->state.spi_shader_col_format || cmd_buffer->state.spi_shader_z_format ||
+             cmd_buffer->state.cb_shader_mask) {
+            cmd_buffer->state.spi_shader_col_format = 0;
+            cmd_buffer->state.spi_shader_z_format = 0;
+            cmd_buffer->state.cb_shader_mask = 0;
+            cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FRAGMENT_OUTPUT;
          }
 
          cmd_buffer->state.uses_vrs = false;
