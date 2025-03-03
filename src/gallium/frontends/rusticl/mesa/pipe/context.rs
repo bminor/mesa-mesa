@@ -309,7 +309,10 @@ impl PipeContext {
         unsafe { self.pipe.as_ref().create_compute_state.unwrap()(self.pipe.as_ptr(), &state) }
     }
 
-    pub fn bind_compute_state(&self, state: *mut c_void) {
+    /// # Safety
+    ///
+    /// The state pointer needs to point to valid memory until a new one is set.
+    pub unsafe fn bind_compute_state(&self, state: *mut c_void) {
         unsafe { self.pipe.as_ref().bind_compute_state.unwrap()(self.pipe.as_ptr(), state) }
     }
 

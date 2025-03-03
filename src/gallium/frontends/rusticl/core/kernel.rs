@@ -10,6 +10,7 @@ use crate::impl_cl_type_trait;
 use mesa_rust::compiler::clc::*;
 use mesa_rust::compiler::nir::*;
 use mesa_rust::nir_pass;
+use mesa_rust::pipe::context::PipeContext;
 use mesa_rust::pipe::context::RWFlags;
 use mesa_rust::pipe::resource::*;
 use mesa_rust::pipe::screen::ResourceType;
@@ -343,7 +344,7 @@ pub struct KernelInfo {
 }
 
 /// Wraps around a compute state object which is safe to share between pipe_contexts.
-struct SharedCSOWrapper {
+pub struct SharedCSOWrapper {
     cso_ptr: *mut c_void,
     dev: &'static Device,
 }
@@ -364,6 +365,16 @@ impl SharedCSOWrapper {
         }
     }
 
+    /// # Safety
+    ///
+    /// `self` needs to live until another CSOWrapper is bound to `ctx`
+    pub unsafe fn bind_to_ctx(&self, ctx: &PipeContext) {
+        // SAFETY: We make it the callers responsibility to uphold the safety requirements.
+        unsafe {
+            ctx.bind_compute_state(self.cso_ptr);
+        }
+    }
+
     fn get_cso_info(&self) -> pipe_compute_state_object_info {
         self.dev.helper_ctx().compute_state_info(self.cso_ptr)
     }
@@ -375,13 +386,13 @@ impl Drop for SharedCSOWrapper {
     }
 }
 
-enum KernelDevStateVariant {
+pub enum KernelDevStateVariant {
     Cso(SharedCSOWrapper),
     Nir(NirShader),
 }
 
-#[derive(Debug, PartialEq)]
-enum NirKernelVariant {
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum NirKernelVariant {
     /// Can be used under any circumstance.
     Default,
 
@@ -436,7 +447,7 @@ impl NirKernelBuilds {
     }
 }
 
-struct NirKernelBuild {
+pub struct NirKernelBuild {
     nir_or_cso: KernelDevStateVariant,
     constant_buffer: Option<Arc<PipeResource>>,
     info: pipe_compute_state_object_info,
@@ -495,6 +506,10 @@ impl NirKernelBuild {
         } else {
             None
         }
+    }
+
+    pub fn nir_or_cso(&self) -> &KernelDevStateVariant {
+        &self.nir_or_cso
     }
 }
 
@@ -1558,18 +1573,8 @@ impl Kernel {
                 globals.push(unsafe { input.as_mut_ptr().byte_add(offset) }.cast());
             }
 
-            let temp_cso;
-            let cso = match &nir_kernel_build.nir_or_cso {
-                KernelDevStateVariant::Cso(cso) => cso,
-                KernelDevStateVariant::Nir(nir) => {
-                    // SAFETY: this isn't safe at all, but we'll fix this in a later commit.
-                    temp_cso = unsafe { SharedCSOWrapper::new(q.device, nir) };
-                    &temp_cso
-                }
-            };
-
             let sviews_len = sviews.len();
-            ctx.bind_compute_state(cso.cso_ptr);
+            ctx.bind_kernel(&nir_kernel_builds, variant)?;
             ctx.bind_sampler_states(&samplers);
             ctx.set_sampler_views(sviews);
             ctx.set_shader_images(&iviews);
@@ -1612,8 +1617,6 @@ impl Kernel {
             ctx.clear_global_binding(globals.len() as u32);
             ctx.clear_sampler_views(sviews_len as u32);
             ctx.clear_sampler_states(samplers.len() as u32);
-
-            ctx.bind_compute_state(ptr::null_mut());
 
             ctx.memory_barrier(PIPE_BARRIER_GLOBAL_BUFFER);
 

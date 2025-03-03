@@ -2,24 +2,56 @@ use crate::api::icd::*;
 use crate::core::context::*;
 use crate::core::device::*;
 use crate::core::event::*;
+use crate::core::kernel::*;
 use crate::core::platform::*;
 use crate::impl_cl_type_trait;
 
+use mesa_rust::compiler::nir::NirShader;
 use mesa_rust::pipe::context::PipeContext;
 use mesa_rust_gen::*;
 use mesa_rust_util::properties::*;
 use rusticl_opencl_gen::*;
 
+use std::cell::RefCell;
 use std::cmp;
+use std::ffi::c_void;
 use std::mem;
 use std::mem::ManuallyDrop;
 use std::ops::Deref;
+use std::ptr;
+use std::ptr::NonNull;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::Weak;
 use std::thread;
 use std::thread::JoinHandle;
+
+struct CSOWrapper<'a> {
+    ctx: &'a PipeContext,
+    cso: NonNull<c_void>,
+}
+
+impl<'a> CSOWrapper<'a> {
+    fn new(ctx: &QueueContext<'a>, nir: &NirShader) -> Option<CSOWrapper<'a>> {
+        Some(Self {
+            ctx: ctx.ctx,
+            cso: NonNull::new(ctx.create_compute_state(nir, nir.shared_size()))?,
+        })
+    }
+}
+
+impl Drop for CSOWrapper<'_> {
+    fn drop(&mut self) {
+        self.ctx.delete_compute_state(self.cso.as_ptr());
+    }
+}
+
+struct QueueKernelState<'a> {
+    builds: Option<Arc<NirKernelBuilds>>,
+    variant: NirKernelVariant,
+    cso: Option<CSOWrapper<'a>>,
+}
 
 /// State tracking wrapper for [PipeContext]
 ///
@@ -28,9 +60,50 @@ pub struct QueueContext<'a> {
     ctx: &'a PipeContext,
     pub dev: &'static Device,
     use_stream: bool,
+    kernel_state: RefCell<QueueKernelState<'a>>,
 }
 
 impl QueueContext<'_> {
+    // TODO: figure out how to make it &mut self without causing tons of borrowing issues.
+    pub fn bind_kernel(
+        &self,
+        builds: &Arc<NirKernelBuilds>,
+        variant: NirKernelVariant,
+    ) -> CLResult<()> {
+        // this should never panic, but you never know.
+        let mut state = self.kernel_state.borrow_mut();
+
+        // If we already set the CSO then we don't have to bind again.
+        if let Some(stored_builds) = &state.builds {
+            if Arc::ptr_eq(stored_builds, builds) && state.variant == variant {
+                return Ok(());
+            }
+        }
+
+        let nir_kernel_build = &builds[variant];
+        match nir_kernel_build.nir_or_cso() {
+            // SAFETY: We keep the cso alive until a new one is set.
+            KernelDevStateVariant::Cso(cso) => unsafe {
+                cso.bind_to_ctx(self);
+            },
+            // TODO: We could cache the cso here.
+            KernelDevStateVariant::Nir(nir) => {
+                let cso = CSOWrapper::new(self, nir).ok_or(CL_OUT_OF_HOST_MEMORY)?;
+                unsafe {
+                    self.bind_compute_state(cso.cso.as_ptr());
+                }
+                state.cso.replace(cso);
+            }
+        };
+
+        // We can only store the new builds after we bound the new cso otherwise we might drop it
+        // too early.
+        state.builds = Some(Arc::clone(builds));
+        state.variant = variant;
+
+        Ok(())
+    }
+
     pub fn update_cb0(&self, data: &[u8]) -> CLResult<()> {
         // only update if we actually bind data
         if !data.is_empty() {
@@ -58,6 +131,13 @@ impl Deref for QueueContext<'_> {
 impl Drop for QueueContext<'_> {
     fn drop(&mut self) {
         self.set_constant_buffer(0, &[]);
+        if self.kernel_state.get_mut().builds.is_some() {
+            // SAFETY: We simply unbind here. The bound cso will only be dropped at the end of this
+            //         drop handler.
+            unsafe {
+                self.ctx.bind_compute_state(ptr::null_mut());
+            }
+        }
     }
 }
 
@@ -81,6 +161,11 @@ impl SendableQueueContext {
     fn ctx(&self) -> QueueContext {
         QueueContext {
             ctx: &self.ctx,
+            kernel_state: RefCell::new(QueueKernelState {
+                builds: None,
+                variant: NirKernelVariant::Default,
+                cso: None,
+            }),
             dev: self.dev,
             use_stream: self.dev.prefers_real_buffer_in_cb0(),
         }
