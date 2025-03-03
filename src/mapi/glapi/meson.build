@@ -16,7 +16,7 @@ bridge_glapi_files = files(
 bridge_glapi_files += glapi_mapi_tmp_h
 
 if with_dri and ['apple', 'windows'].contains(with_dri_platform)
-  bridge_glapi_files += [glapi_gentable_c, glapitable_h]
+  bridge_glapi_files += [glapi_gentable_c, main_dispatch_h]
 endif
 
 bridge_glapi_args = [

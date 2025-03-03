@@ -10,15 +10,6 @@ glapi_mapi_tmp_h = custom_target(
   capture : true,
 )
 
-glapitable_h = custom_target(
-  'glapitable.h',
-  input : ['gl_table.py', 'gl_and_es_API.xml'],
-  output : 'glapitable.h',
-  command : [prog_python, '@INPUT0@', '-f', '@INPUT1@'],
-  depend_files : glapi_xml_py_deps,
-  capture : true,
-)
-
 glapi_gentable_c = custom_target(
   'glapi_gentable.c',
   input : ['gl_gentable.py', 'gl_and_es_API.xml'],
