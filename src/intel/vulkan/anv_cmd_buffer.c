@@ -1453,7 +1453,7 @@ void anv_CmdSetRayTracingPipelineStackSizeKHR(
 
       bo = p_atomic_cmpxchg(&device->rt_scratch_bos[bucket], NULL, new_bo);
       if (bo != NULL) {
-         anv_device_release_bo(device, bo);
+         anv_device_release_bo(device, new_bo);
       } else {
          bo = new_bo;
       }
