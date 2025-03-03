@@ -2,11 +2,6 @@
 # SPDX-License-Identifier: MIT
 
 inc_wgl = include_directories('.')
-_c_args_wgl = []
-if not with_shared_glapi
-  # prevent _glapi_* from being declared __declspec(dllimport)
-  _c_args_wgl += '-D_GLAPI_NO_EXPORTS'
-endif
 
 _wgl_deps = [idep_xmlconfig, driver_zink, idep_mesautilformat]
 if with_gallium_zink
@@ -42,7 +37,6 @@ libwgl = static_library(
   files_libwgl,
   c_args : [
     '-D_GDI32_',             # prevent wgl* being declared __declspec(dllimport)
-    _c_args_wgl
   ],
   include_directories : [
     inc_include, inc_src, inc_gallium, inc_gallium_aux, inc_mapi, inc_mesa,

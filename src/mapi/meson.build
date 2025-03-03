@@ -147,8 +147,4 @@ glapi_xml_py_deps = files(
 )
 
 subdir('glapi')
-if with_shared_glapi
-  subdir('shared-glapi')
-else
-  libglapi = []
-endif
+subdir('shared-glapi')

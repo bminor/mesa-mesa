@@ -6,15 +6,11 @@
 # configure.ac)
 
 gallium_xlib_ld_args = []
-gallium_xlib_link_with = []
 gallium_xlib_link_depends = []
 
 if with_ld_version_script
   gallium_xlib_ld_args += ['-Wl,--version-script', join_paths(meson.current_source_dir(), 'libgl-xlib.sym')]
   gallium_xlib_link_depends += files('libgl-xlib.sym')
-endif
-if with_shared_glapi
-  gallium_xlib_link_with += libglapi
 endif
 
 libgl = shared_library(
@@ -28,10 +24,7 @@ libgl = shared_library(
   link_args : [ld_args_bsymbolic, ld_args_gc_sections, gallium_xlib_ld_args],
   link_depends : gallium_xlib_link_depends,
   link_whole : [libxlib, libglapi_bridge],
-  link_with : [
-    libgalliumvl_stub, libws_xlib, libglapi,
-    libgallium, libmesa, gallium_xlib_link_with,
-  ],
+  link_with : [libgalliumvl_stub, libws_xlib, libglapi, libgallium, libmesa],
   dependencies : [dep_x11, idep_mesautil, dep_thread, dep_clock, dep_unwind, driver_swrast, driver_virgl, driver_asahi],
   install : true,
   version : '1.5.0',

@@ -50,9 +50,7 @@ if with_tests
 
   wgl_test_env = environment()
   wgl_test_env.append('PATH', libgallium_wgl_build_dir)
-  if with_shared_glapi
-    wgl_test_env.append('PATH', libglapi_build_dir)
-  endif
+  wgl_test_env.append('PATH', libglapi_build_dir)
 
   test(
     'wgl',

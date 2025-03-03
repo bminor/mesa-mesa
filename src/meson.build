@@ -119,7 +119,7 @@ if with_gallium and (with_glx != 'disabled' or with_egl)
   if with_gles2 and not with_glvnd
     subdir('mapi/es2api')
   endif
-  if with_tests and with_shared_glapi
+  if with_tests
     subdir('mesa/main/tests')
     subdir('mesa/state_tracker/tests')
   endif

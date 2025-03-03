@@ -67,7 +67,7 @@ libglapi_bridge = static_library(
   build_by_default : false,
 )
 
-if not with_shared_glapi
+if false
   libglapi_static = static_library(
     'glapi_static',
     static_glapi_files,
