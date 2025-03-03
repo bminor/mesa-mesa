@@ -4424,7 +4424,7 @@
         "description": "ir3: fix false dependencies of rpt instructions",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4c4366179bfb76a84c58e247d8d0df84202c4cdf",
         "notes": null
