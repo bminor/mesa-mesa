@@ -6068,6 +6068,9 @@ lp_build_nir_soa_prepasses(struct nir_shader *nir)
    NIR_PASS(_, nir, nir_lower_vars_to_ssa);
    NIR_PASS(_, nir, nir_remove_dead_derefs);
    NIR_PASS(_, nir, nir_remove_dead_variables, nir_var_function_temp, NULL);
+
+   NIR_PASS(_, nir, nir_lower_load_const_to_scalar);
+
    NIR_PASS(_, nir, nir_convert_to_lcssa, false, false);
    NIR_PASS(_, nir, nir_lower_phis_to_scalar, true);
 
