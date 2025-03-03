@@ -105,6 +105,7 @@ if with_tests
         'tests/volatile.cpp',
         'tests/control_flow_tests.cpp',
         'tests/non_semantic.cpp',
+        'tests/workarounds.cpp',
       ),
       c_args : [c_msvc_compat_args, no_override_init_args],
       gnu_symbol_visibility : 'hidden',
