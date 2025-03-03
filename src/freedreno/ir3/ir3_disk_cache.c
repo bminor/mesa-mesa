@@ -117,10 +117,14 @@ retrieve_variant(struct blob_reader *blob, struct ir3_shader_variant *v)
 
    if (!v->binning_pass) {
       blob_copy_bytes(blob, v->const_state, sizeof(*v->const_state));
-      unsigned immeds_sz = v->const_state->immediates_size *
-                           sizeof(v->const_state->immediates[0]);
-      v->const_state->immediates = ralloc_size(v->const_state, immeds_sz);
-      blob_copy_bytes(blob, v->const_state->immediates, immeds_sz);
+   }
+
+   if (!v->compiler->load_shader_consts_via_preamble) {
+      v->imm_state.size = blob_read_uint32(blob);
+      v->imm_state.count = v->imm_state.size;
+      uint32_t immeds_sz = v->imm_state.size * sizeof(v->imm_state.values[0]);
+      v->imm_state.values = ralloc_size(v, immeds_sz);
+      blob_copy_bytes(blob, v->imm_state.values, immeds_sz);
    }
 }
 
@@ -139,9 +143,15 @@ store_variant(struct blob *blob, const struct ir3_shader_variant *v)
 
    if (!v->binning_pass) {
       blob_write_bytes(blob, v->const_state, sizeof(*v->const_state));
-      unsigned immeds_sz = v->const_state->immediates_size *
-                           sizeof(v->const_state->immediates[0]);
-      blob_write_bytes(blob, v->const_state->immediates, immeds_sz);
+   }
+
+   /* When load_shader_consts_via_preamble, immediates are loaded in the
+    * preamble and hence part of bin.
+    */
+   if (!v->compiler->load_shader_consts_via_preamble) {
+      blob_write_uint32(blob, v->imm_state.size);
+      uint32_t immeds_sz = v->imm_state.size * sizeof(v->imm_state.values[0]);
+      blob_write_bytes(blob, v->imm_state.values, immeds_sz);
    }
 }
 

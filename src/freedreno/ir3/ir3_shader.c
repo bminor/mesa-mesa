@@ -25,6 +25,45 @@
 
 #include "disasm.h"
 
+bool
+ir3_const_ensure_imm_size(struct ir3_shader_variant *v, unsigned size)
+{
+   struct ir3_imm_const_state *imm_state = &v->imm_state;
+
+   if (size <= imm_state->size) {
+      return true;
+   }
+
+   /* Immediates are uploaded in units of vec4 so make sure our buffer is large
+    * enough.
+    */
+   size = ALIGN(size, 4);
+
+   /* Pre-a7xx, the immediates that get lowered to const registers are
+    * emitted as part of the const state so the total size of immediates
+    * should be the same for the binning and non-binning variants. Make sure
+    * we don't increase the size beyond that of the non-binning variant.
+    */
+   if (v->binning_pass && !v->compiler->load_shader_consts_via_preamble &&
+       size > v->nonbinning->imm_state.size) {
+      return false;
+   }
+
+   imm_state->values =
+      rerzalloc(v, imm_state->values, __typeof__(imm_state->values[0]),
+                imm_state->size, size);
+   imm_state->size = size;
+
+   /* Note that ir3 printing relies on having groups of 4 dwords, so we fill the
+    * unused slots with a dummy value.
+    */
+   for (int i = imm_state->count; i < imm_state->size; i++) {
+      imm_state->values[i] = 0xd0d0d0d0;
+   }
+
+   return true;
+}
+
 static uint16_t
 const_imm_index_to_reg(const struct ir3_const_state *const_state, unsigned i)
 {
@@ -35,9 +74,10 @@ uint16_t
 ir3_const_find_imm(struct ir3_shader_variant *v, uint32_t imm)
 {
    const struct ir3_const_state *const_state = ir3_const_state(v);
+   const struct ir3_imm_const_state *imm_state = &v->imm_state;
 
-   for (unsigned i = 0; i < const_state->immediates_count; i++) {
-      if (const_state->immediates[i] == imm)
+   for (unsigned i = 0; i < imm_state->count; i++) {
+      if (imm_state->values[i] == imm)
          return const_imm_index_to_reg(const_state, i);
    }
 
@@ -47,36 +87,26 @@ ir3_const_find_imm(struct ir3_shader_variant *v, uint32_t imm)
 uint16_t
 ir3_const_add_imm(struct ir3_shader_variant *v, uint32_t imm)
 {
-   struct ir3_const_state *const_state = ir3_const_state_mut(v);
+   const struct ir3_const_state *const_state = ir3_const_state(v);
+   struct ir3_imm_const_state *imm_state = &v->imm_state;
 
-   /* Reallocate for 4 more elements whenever it's necessary.  Note that ir3
-    * printing relies on having groups of 4 dwords, so we fill the unused
-    * slots with a dummy value.
-    */
-   if (const_state->immediates_count == const_state->immediates_size) {
-      const_state->immediates = rerzalloc(
-         const_state, const_state->immediates,
-         __typeof__(const_state->immediates[0]), const_state->immediates_size,
-         const_state->immediates_size + 4);
-      const_state->immediates_size += 4;
-
-      for (int i = const_state->immediates_count;
-           i < const_state->immediates_size; i++) {
-         const_state->immediates[i] = 0xd0d0d0d0;
+   /* Reallocate for 4 more elements whenever it's necessary. */
+   if (imm_state->count == imm_state->size) {
+      if (!ir3_const_ensure_imm_size(v, imm_state->size + 4)) {
+         return INVALID_CONST_REG;
       }
    }
 
    /* Add on a new immediate to be pushed, if we have space left in the
     * constbuf.
     */
-   if (const_state->allocs.max_const_offset_vec4 +
-          const_state->immediates_count / 4 >=
+   if (const_state->allocs.max_const_offset_vec4 + imm_state->count / 4 >=
        ir3_max_const(v)) {
       return INVALID_CONST_REG;
    }
 
-   const_state->immediates[const_state->immediates_count] = imm;
-   return const_imm_index_to_reg(const_state, const_state->immediates_count++);
+   imm_state->values[imm_state->count] = imm;
+   return const_imm_index_to_reg(const_state, imm_state->count++);
 }
 
 int
@@ -912,14 +942,15 @@ ir3_shader_disasm(struct ir3_shader_variant *so, uint32_t *bin, FILE *out)
    }
 
    const struct ir3_const_state *const_state = ir3_const_state(so);
-   for (i = 0; i < DIV_ROUND_UP(const_state->immediates_count, 4); i++) {
+   const struct ir3_imm_const_state *imm_state = &so->imm_state;
+   for (i = 0; i < DIV_ROUND_UP(imm_state->count, 4); i++) {
       fprintf(out, "@const(c%d.x)\t",
               const_state->allocs.max_const_offset_vec4 + i);
       fprintf(out, "0x%08x, 0x%08x, 0x%08x, 0x%08x\n",
-              const_state->immediates[i * 4 + 0],
-              const_state->immediates[i * 4 + 1],
-              const_state->immediates[i * 4 + 2],
-              const_state->immediates[i * 4 + 3]);
+              imm_state->values[i * 4 + 0],
+              imm_state->values[i * 4 + 1],
+              imm_state->values[i * 4 + 2],
+              imm_state->values[i * 4 + 3]);
    }
 
    ir3_isa_disasm(bin, so->info.sizedwords * 4, out,

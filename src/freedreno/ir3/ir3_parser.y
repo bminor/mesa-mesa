@@ -243,23 +243,23 @@ static void fixup_cat5_s2en(void)
 
 static void add_const(unsigned reg, unsigned c0, unsigned c1, unsigned c2, unsigned c3)
 {
-	struct ir3_const_state *const_state = ir3_const_state_mut(variant);
+	struct ir3_imm_const_state *imm_state = &variant->imm_state;
 	assert((reg & 0x7) == 0);
 	int idx = reg >> (1 + 2); /* low bit is half vs full, next two bits are swiz */
-	if (idx * 4 + 4 > const_state->immediates_size) {
-		const_state->immediates = rerzalloc(const_state,
-				const_state->immediates,
-				__typeof__(const_state->immediates[0]),
-				const_state->immediates_size,
+	if (idx * 4 + 4 > imm_state->size) {
+		imm_state->values = rerzalloc(imm_state,
+				imm_state->values,
+				__typeof__(imm_state->values[0]),
+				imm_state->size,
 				idx * 4 + 4);
-		for (unsigned i = const_state->immediates_size; i < idx * 4; i++)
-			const_state->immediates[i] = 0xd0d0d0d0;
-		const_state->immediates_size = const_state->immediates_count = idx * 4 + 4;
+		for (unsigned i = imm_state->size; i < idx * 4; i++)
+			imm_state->values[i] = 0xd0d0d0d0;
+		imm_state->size = imm_state->count = idx * 4 + 4;
 	}
-	const_state->immediates[idx * 4 + 0] = c0;
-	const_state->immediates[idx * 4 + 1] = c1;
-	const_state->immediates[idx * 4 + 2] = c2;
-	const_state->immediates[idx * 4 + 3] = c3;
+	imm_state->values[idx * 4 + 0] = c0;
+	imm_state->values[idx * 4 + 1] = c1;
+	imm_state->values[idx * 4 + 2] = c2;
+	imm_state->values[idx * 4 + 3] = c3;
 }
 
 static void add_buf_init_val(uint32_t val)

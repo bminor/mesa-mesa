@@ -300,7 +300,7 @@ ir3_emit_immediates(const struct ir3_shader_variant *v,
 {
    const struct ir3_const_state *const_state = ir3_const_state(v);
    uint32_t base = const_state->allocs.max_const_offset_vec4;
-   int size = DIV_ROUND_UP(const_state->immediates_count, 4);
+   int size = DIV_ROUND_UP(v->imm_state.count, 4);
 
    /* truncate size to avoid writing constants that shader
     * does not use:
@@ -312,7 +312,7 @@ ir3_emit_immediates(const struct ir3_shader_variant *v,
    size *= 4;
 
    if (size > 0)
-      emit_const_user(ring, v, base, size, const_state->immediates);
+      emit_const_user(ring, v, base, size, v->imm_state.values);
 
    /* NIR constant data has the same lifetime as immediates, so upload it
     * now, too.

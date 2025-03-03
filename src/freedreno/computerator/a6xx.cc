@@ -317,14 +317,15 @@ cs_const_emit(struct fd_ringbuffer *ring, struct kernel *kernel,
 
    const struct ir3_const_state *const_state = ir3_const_state(v);
    uint32_t base = const_state->allocs.max_const_offset_vec4;
-   int size = DIV_ROUND_UP(const_state->immediates_count, 4);
+   const struct ir3_imm_const_state *imm_state = &v->imm_state;
+   int size = DIV_ROUND_UP(imm_state->count, 4);
 
    if (ir3_kernel->info.numwg != INVALID_REG) {
       assert((ir3_kernel->info.numwg & 0x3) == 0);
       int idx = ir3_kernel->info.numwg >> 2;
-      const_state->immediates[idx * 4 + 0] = grid[0];
-      const_state->immediates[idx * 4 + 1] = grid[1];
-      const_state->immediates[idx * 4 + 2] = grid[2];
+      imm_state->values[idx * 4 + 0] = grid[0];
+      imm_state->values[idx * 4 + 1] = grid[1];
+      imm_state->values[idx * 4 + 2] = grid[2];
    }
 
    for (int i = 0; i < MAX_BUFS; i++) {
@@ -334,8 +335,8 @@ cs_const_emit(struct fd_ringbuffer *ring, struct kernel *kernel,
 
          uint64_t iova = fd_bo_get_iova(kernel->bufs[i]);
 
-         const_state->immediates[idx * 4 + 1] = iova >> 32;
-         const_state->immediates[idx * 4 + 0] = (iova << 32) >> 32;
+         imm_state->values[idx * 4 + 1] = iova >> 32;
+         imm_state->values[idx * 4 + 0] = (iova << 32) >> 32;
       }
    }
 
@@ -349,7 +350,7 @@ cs_const_emit(struct fd_ringbuffer *ring, struct kernel *kernel,
    size *= 4;
 
    if (size > 0) {
-      emit_const<CHIP>(ring, base, size, const_state->immediates);
+      emit_const<CHIP>(ring, base, size, imm_state->values);
    }
 }
 

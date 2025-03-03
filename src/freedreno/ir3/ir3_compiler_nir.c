@@ -5754,6 +5754,18 @@ ir3_compile_shader_nir(struct ir3_compiler *compiler,
       so->need_full_quad = true;
    }
 
+   /* If we're uploading immediates as part of the const state, we need to make
+    * sure the binning and non-binning variants have the same size. Pre-allocate
+    * for the binning variant, ir3_const_add_imm will ensure we don't add more
+    * immediates than allowed.
+    */
+   if (so->binning_pass && !compiler->load_shader_consts_via_preamble &&
+       so->nonbinning->imm_state.size) {
+      ASSERTED bool success =
+         ir3_const_ensure_imm_size(so, so->nonbinning->imm_state.size);
+      assert(success);
+   }
+
    ir3_debug_print(ir, "AFTER: nir->ir3");
    ir3_validate(ir);
 
