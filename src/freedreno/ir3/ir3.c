@@ -770,25 +770,10 @@ add_to_address_users(struct ir3_instruction *instr)
    }
 }
 
-static struct ir3_block *
-get_block(struct ir3_cursor cursor)
-{
-   switch (cursor.option) {
-   case IR3_CURSOR_BEFORE_BLOCK:
-   case IR3_CURSOR_AFTER_BLOCK:
-      return cursor.block;
-   case IR3_CURSOR_BEFORE_INSTR:
-   case IR3_CURSOR_AFTER_INSTR:
-      return cursor.instr->block;
-   }
-
-   unreachable("illegal cursor option");
-}
-
 struct ir3_instruction *
 ir3_instr_create_at(struct ir3_cursor cursor, opc_t opc, int ndst, int nsrc)
 {
-   struct ir3_block *block = get_block(cursor);
+   struct ir3_block *block = ir3_cursor_current_block(cursor);
    struct ir3_instruction *instr = instr_create(block, opc, ndst, nsrc);
    instr->block = block;
    instr->opc = opc;

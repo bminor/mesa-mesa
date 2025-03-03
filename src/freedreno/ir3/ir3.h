@@ -2379,6 +2379,21 @@ ir3_instr_move_after_phis(struct ir3_instruction *instr,
       ir3_instr_move_before_block(instr, block);
 }
 
+static inline struct ir3_block *
+ir3_cursor_current_block(struct ir3_cursor cursor)
+{
+   switch (cursor.option) {
+   case IR3_CURSOR_BEFORE_BLOCK:
+   case IR3_CURSOR_AFTER_BLOCK:
+      return cursor.block;
+   case IR3_CURSOR_BEFORE_INSTR:
+   case IR3_CURSOR_AFTER_INSTR:
+      return cursor.instr->block;
+   }
+
+   unreachable("illegal cursor option");
+}
+
 static inline struct ir3_cursor
 ir3_before_block(struct ir3_block *block)
 {
