@@ -1269,9 +1269,12 @@ emit_begin_perf_query_derived(struct tu_cmd_buffer *cmdbuf,
    tu_cs_emit_wfi(cs);
 
    /* Collect the enabled perfcntrs. Emit CP_ALWAYS_COUNT collection last, if necessary. */
-   for (uint32_t i = 1; i < perf_query->collection->num_enabled_perfcntrs; ++i) {
+   for (uint32_t i = 0; i < perf_query->collection->num_enabled_perfcntrs; ++i) {
       const struct fd_perfcntr_counter *counter = perf_query->collection->enabled_perfcntrs[i].counter;
       uint64_t begin_iova = perf_query_derived_perfcntr_iova(pool, query, begin, i);
+
+      if (i == 0 && perf_query->collection->cp_always_count_enabled)
+         continue;
 
       tu_cs_emit_pkt7(cs, CP_REG_TO_MEM, 3);
       tu_cs_emit(cs, CP_REG_TO_MEM_0_REG(counter->counter_reg_lo) |
@@ -1739,9 +1742,12 @@ emit_end_perf_query_derived(struct tu_cmd_buffer *cmdbuf,
       tu_cs_emit_qw(cs, end_iova);
    }
 
-   for (uint32_t i = 1; i < perf_query->collection->num_enabled_perfcntrs; ++i) {
+   for (uint32_t i = 0; i < perf_query->collection->num_enabled_perfcntrs; ++i) {
       const struct fd_perfcntr_counter *counter = perf_query->collection->enabled_perfcntrs[i].counter;
       uint64_t end_iova = perf_query_derived_perfcntr_iova(pool, query, end, i);
+
+      if (i == 0 && perf_query->collection->cp_always_count_enabled)
+         continue;
 
       tu_cs_emit_pkt7(cs, CP_REG_TO_MEM, 3);
       tu_cs_emit(cs, CP_REG_TO_MEM_0_REG(counter->counter_reg_lo) |
