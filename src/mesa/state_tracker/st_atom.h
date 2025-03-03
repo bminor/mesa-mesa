@@ -34,8 +34,7 @@
 #ifndef ST_ATOM_H
 #define ST_ATOM_H
 
-#include "util/glheader.h"
-#include "main/mtypes.h"
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,6 +46,9 @@ struct st_common_variant;
 struct pipe_vertex_buffer;
 struct pipe_vertex_element;
 struct cso_velems_state;
+struct gl_context;
+struct gl_vertex_array_object;
+struct gl_buffer_object;
 
 void
 st_setup_arrays(struct st_context *st,
