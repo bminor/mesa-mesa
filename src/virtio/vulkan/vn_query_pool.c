@@ -84,6 +84,15 @@ vn_CreateQueryPool(VkDevice device,
        */
       pool->result_array_size = 1;
       break;
+   case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR:
+   case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR:
+      /*
+       * The value written out is the number of bytes required by a compacted
+       * or a serialized acceleration structure correspondingly. So the query
+       * writes one integer value.
+       */
+      pool->result_array_size = 1;
+      break;
    default:
       unreachable("bad query type");
       break;

@@ -2717,3 +2717,27 @@ vn_CmdCopyMemoryToAccelerationStructureKHR(
    VN_CMD_ENQUEUE(vkCmdCopyMemoryToAccelerationStructureKHR, commandBuffer,
                   pInfo);
 }
+
+void
+vn_CmdWriteAccelerationStructuresPropertiesKHR(
+   VkCommandBuffer commandBuffer,
+   uint32_t accelerationStructureCount,
+   const VkAccelerationStructureKHR *pAccelerationStructures,
+   VkQueryType queryType,
+   VkQueryPool queryPool,
+   uint32_t firstQuery)
+{
+   /* Per spec:
+    *
+    * VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-renderpass
+    * This command must only be called outside of a render pass instance
+    *
+    * So no need to consider view mask impact on query count.
+    */
+   VN_CMD_ENQUEUE(vkCmdWriteAccelerationStructuresPropertiesKHR,
+                  commandBuffer, accelerationStructureCount,
+                  pAccelerationStructures, queryType, queryPool, firstQuery);
+
+   vn_cmd_record_query(commandBuffer, queryPool, firstQuery,
+                       accelerationStructureCount, true);
+}
