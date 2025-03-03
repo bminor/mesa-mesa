@@ -1006,6 +1006,43 @@ ir3_create_addr1(struct ir3_builder *build, unsigned const_val)
    return instr;
 }
 
+struct ir3_instruction *
+ir3_store_const(struct ir3_shader_variant *so, struct ir3_builder *build,
+                struct ir3_instruction *src, unsigned dst)
+{
+   unsigned dst_lo = dst & 0xff;
+   unsigned dst_hi = dst >> 8;
+   unsigned components = util_last_bit(src->dsts[0]->wrmask);
+
+   struct ir3_instruction *a1 = NULL;
+   if (dst_hi) {
+      /* Encode only the high part of the destination in a1.x to increase the
+       * chance that we can reuse the a1.x value in subsequent stc
+       * instructions.
+       */
+      a1 = ir3_create_addr1(build, dst_hi << 8);
+   }
+
+   struct ir3_instruction *stc =
+      ir3_STC(build, create_immed(build, dst_lo), 0, src, 0);
+   stc->cat6.iim_val = components;
+   stc->cat6.type = TYPE_U32;
+   stc->barrier_conflict = IR3_BARRIER_CONST_W;
+
+   if (a1) {
+      ir3_instr_set_address(stc, a1);
+      stc->flags |= IR3_INSTR_A1EN;
+   }
+
+   /* The assembler isn't aware of what value a1.x has, so make sure that
+    * constlen includes the stc here.
+    */
+   so->constlen = MAX2(so->constlen, DIV_ROUND_UP(dst + components, 4));
+   struct ir3_block *block = ir3_cursor_current_block(build->cursor);
+   array_insert(block, block->keeps, stc);
+   return stc;
+}
+
 /* Does this instruction use the scalar ALU?
  */
 bool

@@ -2676,6 +2676,11 @@ ir3_BALLOT_MACRO(struct ir3_builder *build, struct ir3_instruction *src,
    return instr;
 }
 
+struct ir3_instruction *ir3_store_const(struct ir3_shader_variant *so,
+                                        struct ir3_builder *build,
+                                        struct ir3_instruction *src,
+                                        unsigned dst);
+
 /* clang-format off */
 #define __INSTR0(flag, name, opc)                                              \
 static inline struct ir3_instruction *ir3_##name(struct ir3_builder *build)    \
