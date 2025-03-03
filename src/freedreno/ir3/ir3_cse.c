@@ -24,6 +24,7 @@ hash_instr(const void *data)
 
    hash = HASH(hash, instr->opc);
    hash = HASH(hash, instr->dsts[0]->flags);
+   hash = HASH(hash, instr->dsts[0]->num);
    foreach_src (src, (struct ir3_instruction *)instr) {
       if (src->flags & IR3_REG_CONST) {
          if (src->flags & IR3_REG_RELATIV)
@@ -61,6 +62,9 @@ instrs_equal(const struct ir3_instruction *i1, const struct ir3_instruction *i2)
       return false;
 
    if (i1->dsts[0]->flags != i2->dsts[0]->flags)
+      return false;
+
+   if (i1->dsts[0]->num != i2->dsts[0]->num)
       return false;
 
    for (unsigned i = 0; i < i1->srcs_count; i++) {
@@ -105,6 +109,9 @@ instr_can_cse(const struct ir3_instruction *instr)
 {
    if (instr->opc != OPC_META_COLLECT && instr->opc != OPC_MOV)
       return false;
+
+   if (reg_num(instr->dsts[0]) == REG_A0)
+      return true;
 
    if (!is_dest_gpr(instr->dsts[0]) || (instr->dsts[0]->flags & IR3_REG_ARRAY))
       return false;
