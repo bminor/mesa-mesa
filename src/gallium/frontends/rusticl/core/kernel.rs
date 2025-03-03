@@ -342,13 +342,18 @@ pub struct KernelInfo {
     num_subgroups: usize,
 }
 
-struct CSOWrapper {
+/// Wraps around a compute state object which is safe to share between pipe_contexts.
+struct SharedCSOWrapper {
     cso_ptr: *mut c_void,
     dev: &'static Device,
 }
 
-impl CSOWrapper {
-    fn new(dev: &'static Device, nir: &NirShader) -> Self {
+impl SharedCSOWrapper {
+    /// # Safety
+    ///
+    /// The returned value is only safe to be executed on a pipe_context when the device supports
+    /// shareable shaders.
+    unsafe fn new(dev: &'static Device, nir: &NirShader) -> Self {
         let cso_ptr = dev
             .helper_ctx()
             .create_compute_state(nir, nir.shared_size());
@@ -364,14 +369,14 @@ impl CSOWrapper {
     }
 }
 
-impl Drop for CSOWrapper {
+impl Drop for SharedCSOWrapper {
     fn drop(&mut self) {
         self.dev.helper_ctx().delete_compute_state(self.cso_ptr);
     }
 }
 
 enum KernelDevStateVariant {
-    Cso(CSOWrapper),
+    Cso(SharedCSOWrapper),
     Nir(NirShader),
 }
 
@@ -447,7 +452,9 @@ unsafe impl Sync for NirKernelBuild {}
 
 impl NirKernelBuild {
     fn new(dev: &'static Device, mut out: CompilationResult) -> Self {
-        let cso = CSOWrapper::new(dev, &out.nir);
+        // SAFETY: we only use the cso when dev supports shareable shaders, otherwise we just
+        //         extract some info and throw it away, which is safe.
+        let cso = unsafe { SharedCSOWrapper::new(dev, &out.nir) };
         let info = cso.get_cso_info();
         let cb = Self::create_nir_constant_buffer(dev, &out.nir);
         let shared_size = out.nir.shared_size() as u64;
@@ -1555,7 +1562,8 @@ impl Kernel {
             let cso = match &nir_kernel_build.nir_or_cso {
                 KernelDevStateVariant::Cso(cso) => cso,
                 KernelDevStateVariant::Nir(nir) => {
-                    temp_cso = CSOWrapper::new(q.device, nir);
+                    // SAFETY: this isn't safe at all, but we'll fix this in a later commit.
+                    temp_cso = unsafe { SharedCSOWrapper::new(q.device, nir) };
                     &temp_cso
                 }
             };
