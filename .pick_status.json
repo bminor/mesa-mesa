@@ -144,7 +144,7 @@
         "description": "panfrost: Use RUN_COMPUTE over RUN_COMPUTE_INDIRECT",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "447075eeeef8a9fd91f42ae869fd2e0246513356",
         "notes": null
