@@ -104,7 +104,7 @@
         "description": "egl/wayland: Pass the original wl_surface to kopper",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8ade5588e39d736bdeab9bdd8ffa7cbfb6a5191e",
         "notes": null

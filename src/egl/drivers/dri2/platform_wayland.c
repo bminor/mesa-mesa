@@ -2936,7 +2936,13 @@ kopperSetSurfaceCreateInfo(void *_draw, struct kopper_loader_info *out)
    wlsci->pNext = NULL;
    wlsci->flags = 0;
    wlsci->display = dri2_dpy->wl_dpy;
-   wlsci->surface = dri2_surf->wl_surface_wrapper;
+   /* Pass the original wl_surface through to Vulkan WSI.  If we pass the
+    * proxy wrapper, kopper won't be able to properly de-duplicate surfaces
+    * and we may end up creating two VkSurfaceKHRs for the same underlying
+    * wl_surface.  Vulkan WSI (which kopper calls into) will make its own
+    * queues and proxy wrappers.
+    */
+   wlsci->surface = get_wl_surface(dri2_surf->base.NativeSurface);
    out->present_opaque = dri2_surf->base.PresentOpaque;
    /* convert to vulkan constants */
    switch (dri2_surf->base.CompressionRate) {
