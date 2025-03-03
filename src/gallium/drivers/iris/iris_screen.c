@@ -628,32 +628,30 @@ iris_set_damage_region(struct pipe_screen *pscreen, struct pipe_resource *pres,
 {
    struct iris_resource *res = (struct iris_resource *)pres;
 
-   res->use_damage = nrects > 0;
-   if (!res->use_damage)
+   if (nrects == 0) {
+      res->use_damage = false;
       return;
-
-   res->damage.x = INT32_MAX;
-   res->damage.y = INT32_MAX;
-   res->damage.width = 0;
-   res->damage.height = 0;
-
-   for (unsigned i = 0; i < nrects; i++) {
-      res->damage.x = MIN2(res->damage.x, rects[i].x);
-      res->damage.y = MIN2(res->damage.y, rects[i].y);
-      res->damage.width = MAX2(res->damage.width, rects[i].width + rects[i].x);
-      res->damage.height = MAX2(res->damage.height, rects[i].height + rects[i].y);
-
-      if (unlikely(res->damage.x == 0 &&
-                   res->damage.y == 0 &&
-                   res->damage.width == res->base.b.width0 &&
-                   res->damage.height == res->base.b.height0))
-         break;
    }
 
-   res->damage.x = MAX2(res->damage.x, 0);
-   res->damage.y = MAX2(res->damage.y, 0);
-   res->damage.width = MIN2(res->damage.width, res->base.b.width0);
-   res->damage.height = MIN2(res->damage.height, res->base.b.height0);
+   struct pipe_box damage = rects[0];
+   for (unsigned i = 1; i < nrects; i++)
+      u_box_union_2d(&damage, &damage, &rects[i]);
+
+   /* The damage we get from EGL uses a lower-left origin but the hardware
+    * uses upper-left so we need to flip it.
+    */
+   damage.y = res->base.b.height0 - (damage.y + damage.height);
+
+   /* Intersect with the area of the resource */
+   struct pipe_box res_area;
+   u_box_origin_2d(res->base.b.width0, res->base.b.height0, &res_area);
+   u_box_intersect_2d(&damage, &damage, &res_area);
+
+   res->damage = damage;
+   res->use_damage = damage.x != 0 ||
+                     damage.y != 0 ||
+                     damage.width != res->base.b.width0 ||
+                     damage.height != res->base.b.height0;
 }
 
 struct pipe_screen *
