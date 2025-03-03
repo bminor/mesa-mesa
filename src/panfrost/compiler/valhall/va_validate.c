@@ -73,6 +73,13 @@ can_use_two_fau_indices(enum bi_opcode op)
 }
 
 static bool
+can_run_on_message_unit(enum bi_opcode op)
+{
+   return bi_opcode_props[op].message != BIFROST_MESSAGE_NONE ||
+          op == BI_OPCODE_ATEST || op == BI_OPCODE_BLEND;
+}
+
+static bool
 fau_is_special(enum bir_fau fau)
 {
    return !(fau & (BIR_FAU_UNIFORM | BIR_FAU_IMMEDIATE));
@@ -113,6 +120,12 @@ fau_state_special(struct fau_state *fau, bi_index idx, enum bi_opcode op)
       if (special && !bi_is_equiv(buf, idx))
          return false;
    }
+
+   /* Instructions executed by the messaging unit should not encode WARP_ID or
+    * anything from special page 3. */
+   if (can_run_on_message_unit(op) &&
+       (va_fau_page(idx.value) == 3 || idx.value == BIR_FAU_WARP_ID))
+      return false;
 
    return fau->uniform_slot == -1 || can_use_two_fau_indices(op);
 }
