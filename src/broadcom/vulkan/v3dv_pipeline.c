@@ -31,6 +31,7 @@
 #include "compiler/nir/nir_builder.h"
 #include "nir/nir_serialize.h"
 
+#include "util/shader_stats.h"
 #include "util/u_atomic.h"
 #include "util/os_time.h"
 #include "util/perf/cpu_trace.h"
@@ -3567,57 +3568,20 @@ v3dv_GetPipelineExecutableStatisticsKHR(
                           pStatistics, pStatisticCount);
 
    if (qpu_inst_count > 0) {
-      vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-         VK_COPY_STR(stat->name, "Compile Strategy");
-         VK_COPY_STR(stat->description, "Chosen compile strategy index");
-         stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-         stat->value.u64 = prog_data->compile_strategy_idx;
-      }
+      vk_add_exec_statistic_u64(out, "Compile Strategy",
+                                "Chosen compile strategy index",
+                                prog_data->compile_strategy_idx);
 
-      vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-         VK_COPY_STR(stat->name, "Instruction Count");
-         VK_COPY_STR(stat->description, "Number of QPU instructions");
-         stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-         stat->value.u64 = qpu_inst_count;
-      }
+      struct videocore_vi_stats stats = {
+         .instrs = qpu_inst_count,
+         .thread_count = prog_data->threads,
+         .spill_size = prog_data->spill_size,
+         .spills = prog_data->spill_size,
+         .fills = prog_data->spill_size,
+         .read_stalls = prog_data->qpu_read_stalls,
+      };
 
-      vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-         VK_COPY_STR(stat->name, "Thread Count");
-         VK_COPY_STR(stat->description, "Number of QPU threads dispatched");
-         stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-         stat->value.u64 = prog_data->threads;
-      }
-
-      vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-         VK_COPY_STR(stat->name, "Spill Size");
-         VK_COPY_STR(stat->description, "Size of the spill buffer in bytes");
-         stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-         stat->value.u64 = prog_data->spill_size;
-      }
-
-      vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-         VK_COPY_STR(stat->name, "TMU Spills");
-         VK_COPY_STR(stat->description, "Number of times a register was spilled "
-                                      "to memory");
-         stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-         stat->value.u64 = prog_data->spill_size;
-      }
-
-      vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-         VK_COPY_STR(stat->name, "TMU Fills");
-         VK_COPY_STR(stat->description, "Number of times a register was filled "
-                                      "from memory");
-         stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-         stat->value.u64 = prog_data->spill_size;
-      }
-
-      vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-         VK_COPY_STR(stat->name, "QPU Read Stalls");
-         VK_COPY_STR(stat->description, "Number of cycles the QPU stalls for a "
-                                      "register read dependency");
-         stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-         stat->value.u64 = prog_data->qpu_read_stalls;
-      }
+      vk_add_videocore_vi_stats(out, &stats);
    }
 
    return vk_outarray_status(&out);

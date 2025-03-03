@@ -81,4 +81,13 @@
         <stat name="Fills">Number of fill instructions</stat>
      </isa>
    </family>
+
+   <isa name="VideoCore VI">
+      <stat name="Instruction Count" display="Instrs">Number of QPU instructions</stat>
+      <stat name="Thread Count" more="better">Number of QPU threads dispatched</stat>
+      <stat name="Spill Size">Size of the spill buffer in bytes</stat>
+      <stat name="TMU Spills" display="Spills">Number of times a register was spilled to memory</stat>
+      <stat name="TMU Fills" display="Fills">Number of times a register was filled from memory</stat>
+      <stat name="QPU Read Stalls" display="Read Stalls">Number of cycles the QPU stalls for a register read dependency</stat>
+   </isa>
 </shaderdb>
