@@ -189,11 +189,11 @@ try_pbo_readpixels(struct st_context *st, struct gl_renderbuffer *rb,
          goto fail;
 
       pipe->set_sampler_views(pipe, PIPE_SHADER_FRAGMENT, 0, 1, 0,
-                              false, &sampler_view);
+                              &sampler_view);
       st->state.num_sampler_views[PIPE_SHADER_FRAGMENT] =
          MAX2(st->state.num_sampler_views[PIPE_SHADER_FRAGMENT], 1);
 
-      pipe_sampler_view_reference(&sampler_view, NULL);
+      pipe_sampler_view_release(sampler_view);
 
       cso_set_samplers(cso, PIPE_SHADER_FRAGMENT, 1, samplers);
    }

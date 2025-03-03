@@ -243,15 +243,19 @@ setup_render_state(struct gl_context *ctx,
 
    /* user textures, plus the bitmap texture */
    {
+      unsigned num_owned_views = 0;
       struct pipe_sampler_view *sampler_views[PIPE_MAX_SAMPLERS];
       unsigned num_views =
-         st_get_sampler_views(st, PIPE_SHADER_FRAGMENT, fp, sampler_views);
+         st_get_sampler_views(st, PIPE_SHADER_FRAGMENT, fp, sampler_views, &num_owned_views);
 
       num_views = MAX2(fpv->bitmap_sampler + 1, num_views);
       sampler_views[fpv->bitmap_sampler] = sv;
       pipe->set_sampler_views(pipe, PIPE_SHADER_FRAGMENT, 0, num_views, 0,
-                              true, sampler_views);
+                              sampler_views);
       st->state.num_sampler_views[PIPE_SHADER_FRAGMENT] = num_views;
+
+      for (unsigned i = 0; i < num_views; i++)
+         pipe->sampler_view_release(pipe, sampler_views[i]);
    }
 
    /* viewport state: viewport matching window dims */

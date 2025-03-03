@@ -4079,6 +4079,7 @@ context_populate_vtbl(struct pipe_context *pipe)
    pipe->create_depth_stencil_alpha_state = panfrost_create_depth_stencil_state;
    pipe->create_sampler_view = panfrost_create_sampler_view;
    pipe->sampler_view_destroy = panfrost_sampler_view_destroy;
+   pipe->sampler_view_release = u_default_sampler_view_release;
    pipe->create_sampler_state = panfrost_create_sampler_state;
    pipe->create_blend_state = panfrost_create_blend_state;
 

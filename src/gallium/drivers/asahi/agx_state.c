@@ -814,7 +814,7 @@ agx_create_sampler_view(struct pipe_context *pctx,
 static void
 agx_set_sampler_views(struct pipe_context *pctx, enum pipe_shader_type shader,
                       unsigned start, unsigned count,
-                      unsigned unbind_num_trailing_slots, bool take_ownership,
+                      unsigned unbind_num_trailing_slots,
                       struct pipe_sampler_view **views)
 {
    struct agx_context *ctx = agx_context(pctx);
@@ -827,15 +827,9 @@ agx_set_sampler_views(struct pipe_context *pctx, enum pipe_shader_type shader,
       count = 0;
 
    for (i = 0; i < count; ++i) {
-      if (take_ownership) {
-         pipe_sampler_view_reference(
-            (struct pipe_sampler_view **)&ctx->stage[shader].textures[i], NULL);
-         ctx->stage[shader].textures[i] = (struct agx_sampler_view *)views[i];
-      } else {
-         pipe_sampler_view_reference(
-            (struct pipe_sampler_view **)&ctx->stage[shader].textures[i],
-            views[i]);
-      }
+      pipe_sampler_view_reference(
+         (struct pipe_sampler_view **)&ctx->stage[shader].textures[i],
+         views[i]);
    }
 
    for (; i < count + unbind_num_trailing_slots; i++) {
@@ -5551,6 +5545,7 @@ agx_init_state_functions(struct pipe_context *ctx)
    ctx->set_vertex_buffers = agx_set_vertex_buffers;
    ctx->set_viewport_states = agx_set_viewport_states;
    ctx->sampler_view_destroy = agx_sampler_view_destroy;
+   ctx->sampler_view_release = u_default_sampler_view_release;
    ctx->surface_destroy = agx_surface_destroy;
    ctx->draw_vbo = agx_draw_vbo;
    ctx->launch_grid = agx_launch_grid;

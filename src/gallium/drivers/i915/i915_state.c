@@ -767,7 +767,7 @@ i915_set_constant_buffer(struct pipe_context *pipe,
 static void
 i915_set_sampler_views(struct pipe_context *pipe, enum pipe_shader_type shader,
                        unsigned start, unsigned num,
-                       unsigned unbind_num_trailing_slots, bool take_ownership,
+                       unsigned unbind_num_trailing_slots,
                        struct pipe_sampler_view **views)
 {
    if (shader != PIPE_SHADER_FRAGMENT) {
@@ -787,23 +787,12 @@ i915_set_sampler_views(struct pipe_context *pipe, enum pipe_shader_type shader,
    if (views && num == i915->num_fragment_sampler_views &&
        !memcmp(i915->fragment_sampler_views, views,
                num * sizeof(struct pipe_sampler_view *))) {
-      if (take_ownership) {
-         for (unsigned i = 0; i < num; i++) {
-            struct pipe_sampler_view *view = views[i];
-            pipe_sampler_view_reference(&view, NULL);
-         }
-      }
       return;
    }
 
    for (i = 0; i < num; i++) {
-      if (take_ownership) {
-         pipe_sampler_view_reference(&i915->fragment_sampler_views[i], NULL);
-         i915->fragment_sampler_views[i] = views[i];
-      } else {
-         pipe_sampler_view_reference(&i915->fragment_sampler_views[i],
-                                     views[i]);
-      }
+      pipe_sampler_view_reference(&i915->fragment_sampler_views[i],
+                                    views[i]);
    }
 
    for (i = num; i < i915->num_fragment_sampler_views; i++)
@@ -1105,6 +1094,7 @@ i915_init_state_functions(struct i915_context *i915)
    i915->base.set_sampler_views = i915_set_sampler_views;
    i915->base.create_sampler_view = i915_create_sampler_view;
    i915->base.sampler_view_destroy = i915_sampler_view_destroy;
+   i915->base.sampler_view_release = u_default_sampler_view_release;
    i915->base.set_viewport_states = i915_set_viewport_states;
    i915->base.set_vertex_buffers = i915_set_vertex_buffers;
 }

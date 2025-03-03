@@ -416,7 +416,7 @@ VdpStatus vlVdpVideoMixerRender(VdpVideoMixer mixer,
          vl_median_filter_render(vmixer->noise_reduction.filter,
                                  sampler_view, surface_temp);
 
-         pipe_sampler_view_reference(&sampler_view, NULL);
+         pipe->sampler_view_release(pipe, sampler_view);
          pipe_surface_reference(&surface, NULL);
 
          sampler_view = sampler_view_temp;
@@ -437,7 +437,7 @@ VdpStatus vlVdpVideoMixerRender(VdpVideoMixer mixer,
          vl_matrix_filter_render(vmixer->sharpness.filter,
                                  sampler_view, surface_temp);
 
-         pipe_sampler_view_reference(&sampler_view, NULL);
+         pipe->sampler_view_release(pipe, sampler_view);
          pipe_surface_reference(&surface, NULL);
 
          sampler_view = sampler_view_temp;
@@ -452,7 +452,7 @@ VdpStatus vlVdpVideoMixerRender(VdpVideoMixer mixer,
                                RectToPipe(destination_rect, &clip));
 
    if(surface != dst->surface) {
-      pipe_sampler_view_reference(&sampler_view, NULL);
+      pipe->sampler_view_release(pipe, sampler_view);
       pipe_surface_reference(&surface, NULL);
    }
    mtx_unlock(&vmixer->device->mutex);

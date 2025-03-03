@@ -532,7 +532,7 @@ vl_deint_filter_render(struct vl_deint_filter *filter,
       sampler_views[2] = cur_sv[k];
       sampler_views[3] = next_sv[k];
       filter->pipe->set_sampler_views(filter->pipe, PIPE_SHADER_FRAGMENT,
-                                      0, 4, 0, false, sampler_views);
+                                      0, 4, 0, sampler_views);
 
       /* blit current field */
       fb_state.cbufs[0] = blit_surf;

@@ -562,7 +562,6 @@ static void
 tegra_set_sampler_views(struct pipe_context *pcontext, enum pipe_shader_type shader,
                         unsigned start_slot, unsigned num_views,
                         unsigned unbind_num_trailing_slots,
-                        bool take_ownership,
                         struct pipe_sampler_view **pviews)
 {
    struct pipe_sampler_view *views[PIPE_MAX_SHADER_SAMPLER_VIEWS];
@@ -586,7 +585,7 @@ tegra_set_sampler_views(struct pipe_context *pcontext, enum pipe_shader_type sha
 
    context->gpu->set_sampler_views(context->gpu, shader, start_slot,
                                    num_views, unbind_num_trailing_slots,
-                                   take_ownership, views);
+                                   views);
 }
 
 static void
@@ -1381,6 +1380,7 @@ tegra_screen_context_create(struct pipe_screen *pscreen, void *priv,
 
    context->base.create_sampler_view = tegra_create_sampler_view;
    context->base.sampler_view_destroy = tegra_sampler_view_destroy;
+   context->base.sampler_view_release = u_default_sampler_view_release;
 
    context->base.create_surface = tegra_create_surface;
    context->base.surface_destroy = tegra_surface_destroy;

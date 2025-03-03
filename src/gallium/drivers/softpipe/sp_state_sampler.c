@@ -101,7 +101,6 @@ softpipe_set_sampler_views(struct pipe_context *pipe,
                            unsigned start,
                            unsigned num,
                            unsigned unbind_num_trailing_slots,
-                           bool take_ownership,
                            struct pipe_sampler_view **views)
 {
    struct softpipe_context *softpipe = softpipe_context(pipe);
@@ -119,12 +118,7 @@ softpipe_set_sampler_views(struct pipe_context *pipe,
          &softpipe->tgsi.sampler[shader]->sp_sview[start + i];
       struct pipe_sampler_view **pview = &softpipe->sampler_views[shader][start + i];
 
-      if (take_ownership) {
-         pipe_sampler_view_reference(pview, NULL);
-         *pview = views[i];
-      } else {
-         pipe_sampler_view_reference(pview, views[i]);
-      }
+      pipe_sampler_view_reference(pview, views[i]);
       sp_tex_tile_cache_set_sampler_view(softpipe->tex_cache[shader][start + i],
                                          views[i]);
       /*
@@ -355,5 +349,5 @@ softpipe_init_sampler_funcs(struct pipe_context *pipe)
    pipe->create_sampler_view = softpipe_create_sampler_view;
    pipe->set_sampler_views = softpipe_set_sampler_views;
    pipe->sampler_view_destroy = softpipe_sampler_view_destroy;
+   pipe->sampler_view_release = u_default_sampler_view_release;
 }
-

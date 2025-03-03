@@ -364,7 +364,7 @@ etna_texture_desc_init(struct pipe_context *pctx)
    ctx->base.delete_sampler_state = etna_delete_sampler_state_desc;
    ctx->base.create_sampler_view = etna_create_sampler_view_desc;
    ctx->base.sampler_view_destroy = etna_sampler_view_desc_destroy;
+   ctx->base.sampler_view_release = u_default_sampler_view_release;
    ctx->emit_texture_state = etna_emit_texture_desc;
    ctx->ts_for_sampler_view = etna_ts_for_sampler_view_state;
 }
-

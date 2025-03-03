@@ -2247,11 +2247,9 @@ zink_set_sampler_views(struct pipe_context *pctx,
                        unsigned start_slot,
                        unsigned num_views,
                        unsigned unbind_num_trailing_slots,
-                       bool take_ownership,
                        struct pipe_sampler_view **views)
 {
    struct zink_context *ctx = zink_context(pctx);
-
    const uint32_t mask = BITFIELD_RANGE(start_slot, num_views);
    uint32_t shadow_mask = ctx->di.zs_swizzle[shader_type].mask;
    ctx->di.cubes[shader_type] &= ~mask;
@@ -2265,10 +2263,6 @@ zink_set_sampler_views(struct pipe_context *pctx,
          struct zink_sampler_view *b = zink_sampler_view(pview);
 
          if (a == b) {
-            if (take_ownership) {
-               struct pipe_sampler_view *view = views[i];
-               pipe_sampler_view_reference(&view, NULL);
-            }
             continue;
          }
 
@@ -2353,12 +2347,7 @@ zink_set_sampler_views(struct pipe_context *pctx,
             unbind_samplerview(ctx, shader_type, start_slot + i);
             update = true;
          }
-         if (take_ownership) {
-            pipe_sampler_view_reference(&ctx->sampler_views[shader_type][start_slot + i], NULL);
-            ctx->sampler_views[shader_type][start_slot + i] = pview;
-         } else {
-            pipe_sampler_view_reference(&ctx->sampler_views[shader_type][start_slot + i], pview);
-         }
+         pipe_sampler_view_reference(&ctx->sampler_views[shader_type][start_slot + i], pview);
          update_descriptor_state_sampler(ctx, shader_type, start_slot + i, res);
       }
    } else {
@@ -2369,9 +2358,7 @@ zink_set_sampler_views(struct pipe_context *pctx,
       unsigned slot = start_slot + num_views + i;
       update |= !!ctx->sampler_views[shader_type][slot];
       unbind_samplerview(ctx, shader_type, slot);
-      pipe_sampler_view_reference(
-         &ctx->sampler_views[shader_type][slot],
-         NULL);
+      pipe_sampler_view_reference(&ctx->sampler_views[shader_type][slot], NULL);
       update_descriptor_state_sampler(ctx, shader_type, slot, NULL);
    }
    ctx->di.num_sampler_views[shader_type] = start_slot + num_views;
@@ -5449,6 +5436,7 @@ zink_context_create(struct pipe_screen *pscreen, void *priv, unsigned flags)
    ctx->base.create_sampler_view = zink_create_sampler_view;
    ctx->base.set_sampler_views = zink_set_sampler_views;
    ctx->base.sampler_view_destroy = zink_sampler_view_destroy;
+   ctx->base.sampler_view_release = u_default_sampler_view_release;
    ctx->base.get_sample_position = zink_get_sample_position;
    ctx->base.set_sample_locations = zink_set_sample_locations;
 

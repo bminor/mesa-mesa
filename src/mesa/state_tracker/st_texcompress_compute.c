@@ -162,7 +162,7 @@ bind_compute_state(struct st_context *st,
 
    if (prog->affected_states & ST_NEW_CS_SAMPLER_VIEWS) {
       st->pipe->set_sampler_views(st->pipe, prog->info.stage, 0,
-                                  prog->info.num_textures, 0, false,
+                                  prog->info.num_textures, 0,
                                   sampler_views);
    }
 
@@ -310,7 +310,7 @@ cs_encode_bc1(struct st_context *st,
                           DIV_ROUND_UP(rgba8_tex->height0, 32), 1);
 
 release_sampler_views:
-   pipe_sampler_view_reference(&rgba8_view, NULL);
+   st->pipe->sampler_view_release(st->pipe, rgba8_view);
 
    return bc1_tex;
 }
@@ -371,7 +371,7 @@ cs_encode_bc4(struct st_context *st,
                           DIV_ROUND_UP(rgba8_tex->height0, 16));
 
 release_sampler_views:
-   pipe_sampler_view_reference(&rgba8_view, NULL);
+   st->pipe->sampler_view_release(st->pipe, rgba8_view);
 
    return bc4_tex;
 }
@@ -433,8 +433,8 @@ cs_stitch_64bpb_textures(struct st_context *st,
                           DIV_ROUND_UP(tex_hi->height0, 8), 1);
 
 release_sampler_views:
-   pipe_sampler_view_reference(&rg32_views[0], NULL);
-   pipe_sampler_view_reference(&rg32_views[1], NULL);
+   st->pipe->sampler_view_release(st->pipe, rg32_views[0]);
+   st->pipe->sampler_view_release(st->pipe, rg32_views[1]);
 
    return stitched_tex;
 }
@@ -678,7 +678,7 @@ cs_decode_astc(struct st_context *st,
                           1);
 
 release_payload_view:
-   pipe_sampler_view_reference(&payload_view, NULL);
+   st->pipe->sampler_view_release(st->pipe, payload_view);
 
    return rgba8_tex;
 }
@@ -773,13 +773,12 @@ static void
 destroy_astc_decoder(struct st_context *st)
 {
    for (unsigned i = 0; i < ARRAY_SIZE(st->texcompress_compute.astc_luts); i++)
-      pipe_sampler_view_reference(&st->texcompress_compute.astc_luts[i], NULL);
+      st->pipe->sampler_view_release(st->pipe, st->texcompress_compute.astc_luts[i]);
 
    if (st->texcompress_compute.astc_partition_tables) {
       hash_table_foreach(st->texcompress_compute.astc_partition_tables,
                          entry) {
-         pipe_sampler_view_reference(
-            (struct pipe_sampler_view **)&entry->data, NULL);
+         st->pipe->sampler_view_release(st->pipe, entry->data);
       }
    }
 

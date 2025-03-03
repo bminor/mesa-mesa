@@ -3139,7 +3139,6 @@ crocus_set_sampler_views(struct pipe_context *ctx,
                          enum pipe_shader_type p_stage,
                          unsigned start, unsigned count,
                          unsigned unbind_num_trailing_slots,
-                         bool take_ownership,
                          struct pipe_sampler_view **views)
 {
    struct crocus_context *ice = (struct crocus_context *) ctx;
@@ -3151,14 +3150,8 @@ crocus_set_sampler_views(struct pipe_context *ctx,
    for (unsigned i = 0; i < count; i++) {
       struct pipe_sampler_view *pview = views ? views[i] : NULL;
 
-      if (take_ownership) {
-         pipe_sampler_view_reference((struct pipe_sampler_view **)
-                                     &shs->textures[start + i], NULL);
-         shs->textures[start + i] = (struct crocus_sampler_view *)pview;
-      } else {
-         pipe_sampler_view_reference((struct pipe_sampler_view **)
-                                     &shs->textures[start + i], pview);
-      }
+      pipe_sampler_view_reference((struct pipe_sampler_view **)
+                                    &shs->textures[start + i], pview);
 
       struct crocus_sampler_view *view = (void *) pview;
       if (view) {
@@ -9273,6 +9266,7 @@ genX(crocus_init_state)(struct crocus_context *ice)
    ctx->set_vertex_buffers = crocus_set_vertex_buffers;
    ctx->set_viewport_states = crocus_set_viewport_states;
    ctx->sampler_view_destroy = crocus_sampler_view_destroy;
+   ctx->sampler_view_release = u_default_sampler_view_release;
    ctx->surface_destroy = crocus_surface_destroy;
    ctx->draw_vbo = crocus_draw_vbo;
    ctx->launch_grid = crocus_launch_grid;

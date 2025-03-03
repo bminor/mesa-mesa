@@ -125,15 +125,8 @@ static void noop_set_sampler_views(struct pipe_context *ctx,
                                    enum pipe_shader_type shader,
                                    unsigned start, unsigned count,
                                    unsigned unbind_num_trailing_slots,
-                                   bool take_ownership,
                                    struct pipe_sampler_view **views)
 {
-   if (take_ownership && views) {
-      for (unsigned i = 0; i < count; i++) {
-         struct pipe_sampler_view *view = views[i];
-         pipe_sampler_view_reference(&view, NULL);
-      }
-   }
 }
 
 static void noop_bind_sampler_states(struct pipe_context *ctx,
@@ -204,6 +197,13 @@ static void noop_sampler_view_destroy(struct pipe_context *ctx,
 {
    pipe_resource_reference(&state->texture, NULL);
    FREE(state);
+}
+
+
+static void noop_sampler_view_release(struct pipe_context *ctx,
+                                      struct pipe_sampler_view *state)
+{
+   noop_sampler_view_destroy(ctx, state);
 }
 
 
@@ -481,6 +481,7 @@ void noop_init_state_functions(struct pipe_context *ctx)
    ctx->set_viewport_states = noop_set_viewport_states;
    ctx->set_window_rectangles = noop_set_window_rectangles;
    ctx->sampler_view_destroy = noop_sampler_view_destroy;
+   ctx->sampler_view_release = noop_sampler_view_release;
    ctx->surface_destroy = noop_surface_destroy;
    ctx->draw_vbo = noop_draw_vbo;
    ctx->draw_vertex_state = noop_draw_vertex_state;

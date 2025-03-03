@@ -150,7 +150,7 @@ vdp_imp_device_create_x11(Display *display, int screen, VdpDevice *device,
 no_compositor:
    vlRemoveDataHTAB(*device);
 no_handle:
-   pipe_sampler_view_reference(&dev->dummy_sv, NULL);
+   dev->context->sampler_view_release(dev->context, dev->dummy_sv);
 no_resource:
    dev->context->destroy(dev->context);
 no_context:
@@ -243,7 +243,7 @@ vlVdpDeviceFree(vlVdpDevice *dev)
 {
    mtx_destroy(&dev->mutex);
    vl_compositor_cleanup(&dev->compositor);
-   pipe_sampler_view_reference(&dev->dummy_sv, NULL);
+   dev->context->sampler_view_release(dev->context, dev->dummy_sv);
    dev->context->destroy(dev->context);
    dev->vscreen->destroy(dev->vscreen);
    FREE(dev);

@@ -287,7 +287,8 @@ vlVaDeassociateSubpicture(VADriverContextP ctx, VASubpictureID subpicture,
       while (surf->subpics.size && util_dynarray_top(&surf->subpics, vlVaSubpicture *) == NULL)
          (void)util_dynarray_pop(&surf->subpics, vlVaSubpicture *);
    }
-   pipe_sampler_view_reference(&sub->sampler,NULL);
+   sub->sampler->context->sampler_view_release(sub->sampler->context, sub->sampler);
+   sub->sampler = NULL;
    mtx_unlock(&drv->mutex);
 
    return VA_STATUS_SUCCESS;

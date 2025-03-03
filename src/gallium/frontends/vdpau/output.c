@@ -128,7 +128,7 @@ vlVdpOutputSurfaceCreate(VdpDevice device,
    return VDP_STATUS_OK;
 
 err_resource:
-   pipe_sampler_view_reference(&vlsurface->sampler_view, NULL);
+   pipe->sampler_view_release(pipe, vlsurface->sampler_view);
    pipe_surface_reference(&vlsurface->surface, NULL);
    pipe_resource_reference(&res, NULL);
 err_unlock:
@@ -156,7 +156,7 @@ vlVdpOutputSurfaceDestroy(VdpOutputSurface surface)
    mtx_lock(&vlsurface->device->mutex);
 
    pipe_surface_reference(&vlsurface->surface, NULL);
-   pipe_sampler_view_reference(&vlsurface->sampler_view, NULL);
+   pipe->sampler_view_release(pipe, vlsurface->sampler_view);
    pipe->screen->fence_reference(pipe->screen, &vlsurface->fence, NULL);
    vl_compositor_cleanup_state(&vlsurface->cstate);
    mtx_unlock(&vlsurface->device->mutex);
@@ -412,15 +412,15 @@ vlVdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface,
    vl_compositor_set_layer_dst_area(cstate, 0, RectToPipe(destination_rect, &dst_rect));
    vl_compositor_render(cstate, compositor, vlsurface->surface, &vlsurface->dirty_area, false);
 
-   pipe_sampler_view_reference(&sv_idx, NULL);
-   pipe_sampler_view_reference(&sv_tbl, NULL);
+   context->sampler_view_release(context, sv_idx);
+   context->sampler_view_release(context, sv_tbl);
    mtx_unlock(&vlsurface->device->mutex);
 
    return VDP_STATUS_OK;
 
 error_resource:
-   pipe_sampler_view_reference(&sv_idx, NULL);
-   pipe_sampler_view_reference(&sv_tbl, NULL);
+   context->sampler_view_release(context, sv_idx);
+   context->sampler_view_release(context, sv_tbl);
    mtx_unlock(&vlsurface->device->mutex);
    return VDP_STATUS_RESOURCES;
 }

@@ -1571,7 +1571,6 @@ static void r300_set_sampler_views(struct pipe_context* pipe,
                                    enum pipe_shader_type shader,
                                    unsigned start, unsigned count,
                                    unsigned unbind_num_trailing_slots,
-                                   bool take_ownership,
                                    struct pipe_sampler_view** views)
 {
     struct r300_context* r300 = r300_context(pipe);
@@ -1585,12 +1584,6 @@ static void r300_set_sampler_views(struct pipe_context* pipe,
     assert(start == 0);  /* non-zero not handled yet */
 
     if (shader != PIPE_SHADER_FRAGMENT || count > tex_units) {
-       if (take_ownership) {
-          for (unsigned i = 0; i < count; i++) {
-             struct pipe_sampler_view *view = views[i];
-             pipe_sampler_view_reference(&view, NULL);
-          }
-       }
        return;
     }
 
@@ -1601,15 +1594,9 @@ static void r300_set_sampler_views(struct pipe_context* pipe,
     }
 
     for (i = 0; i < count; i++) {
-        if (take_ownership) {
-            pipe_sampler_view_reference(
-                    (struct pipe_sampler_view**)&state->sampler_views[i], NULL);
-            state->sampler_views[i] = (struct r300_sampler_view*)views[i];
-        } else {
-            pipe_sampler_view_reference(
-                    (struct pipe_sampler_view**)&state->sampler_views[i],
-                    views[i]);
-        }
+        pipe_sampler_view_reference(
+                (struct pipe_sampler_view**)&state->sampler_views[i],
+                views[i]);
 
         if (!views[i]) {
             continue;
@@ -2183,6 +2170,7 @@ void r300_init_state_functions(struct r300_context* r300)
     r300->context.set_sampler_views = r300_set_sampler_views;
     r300->context.create_sampler_view = r300_create_sampler_view;
     r300->context.sampler_view_destroy = r300_sampler_view_destroy;
+    r300->context.sampler_view_release = u_default_sampler_view_release;
 
     r300->context.set_scissor_states = r300_set_scissor_states;
 

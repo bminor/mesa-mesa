@@ -4855,6 +4855,7 @@ void si_init_state_compute_functions(struct si_context *sctx)
    sctx->b.delete_sampler_state = si_delete_sampler_state;
    sctx->b.create_sampler_view = si_create_sampler_view;
    sctx->b.sampler_view_destroy = si_sampler_view_destroy;
+   sctx->b.sampler_view_release = u_default_sampler_view_release;
 }
 
 void si_init_state_functions(struct si_context *sctx)

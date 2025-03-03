@@ -579,7 +579,7 @@ hud_draw_results(struct hud_context *hud, struct pipe_resource *tex)
    cso_set_vertex_shader_handle(cso, hud->vs_color);
    cso_set_vertex_elements(cso, &hud->velems);
    cso_set_render_condition(cso, NULL, false, 0);
-   pipe->set_sampler_views(pipe, PIPE_SHADER_FRAGMENT, 0, 1, 0, false,
+   pipe->set_sampler_views(pipe, PIPE_SHADER_FRAGMENT, 0, 1, 0,
                            &hud->font_sampler_view);
    cso_set_samplers(cso, PIPE_SHADER_FRAGMENT, 1, sampler_states);
    pipe->set_constant_buffer(pipe, PIPE_SHADER_VERTEX, 0, false, &hud->constbuf);
@@ -1698,7 +1698,7 @@ hud_unset_draw_context(struct hud_context *hud)
    if (!pipe)
       return;
 
-   pipe_sampler_view_reference(&hud->font_sampler_view, NULL);
+   pipe->sampler_view_release(pipe, hud->font_sampler_view);
 
    if (hud->fs_color) {
       pipe->delete_fs_state(pipe, hud->fs_color);

@@ -538,7 +538,6 @@ struct pipe_context {
                              enum pipe_shader_type shader,
                              unsigned start_slot, unsigned num_views,
                              unsigned unbind_num_trailing_slots,
-                             bool take_ownership,
                              struct pipe_sampler_view **views);
 
    void (*set_tess_state)(struct pipe_context *,
@@ -838,6 +837,19 @@ struct pipe_context {
     *       the context which created the view is still alive.
     */
    void (*sampler_view_destroy)(struct pipe_context *ctx,
+                                struct pipe_sampler_view *view);
+
+   /**
+    * Signal the driver that the frontend has released a view on a texture.
+    *
+    * \param ctx the current context
+    * \param view the view to be released
+    *
+    * \note The current context may not be the context in which the view was
+    *       created (view->context). Following this call, the driver has full
+    *       ownership of the view.
+    */
+   void (*sampler_view_release)(struct pipe_context *ctx,
                                 struct pipe_sampler_view *view);
 
 

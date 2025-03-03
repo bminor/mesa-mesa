@@ -1060,7 +1060,7 @@ update_textures_and_samplers(struct NineDevice9 *device)
 
     pipe->set_sampler_views(pipe, PIPE_SHADER_FRAGMENT, 0, num_textures,
                             num_textures < context->enabled_sampler_count_ps ? context->enabled_sampler_count_ps - num_textures : 0,
-                            false, view);
+                            view);
     context->enabled_sampler_count_ps = num_textures;
 
     if (commit_samplers)
@@ -1105,7 +1105,7 @@ update_textures_and_samplers(struct NineDevice9 *device)
 
     pipe->set_sampler_views(pipe, PIPE_SHADER_VERTEX, 0, num_textures,
                             num_textures < context->enabled_sampler_count_vs ? context->enabled_sampler_count_vs - num_textures : 0,
-                            false, view);
+                            view);
     context->enabled_sampler_count_vs = num_textures;
 
     if (commit_samplers)
@@ -1526,8 +1526,8 @@ CSMT_ITEM_NO_WAIT(nine_context_set_texture_apply,
     context->texture[stage].type = type;
     context->texture[stage].pstype = pstype;
     pipe_resource_reference(&context->texture[stage].resource, res);
-    pipe_sampler_view_reference(&context->texture[stage].view[0], view0);
-    pipe_sampler_view_reference(&context->texture[stage].view[1], view1);
+    context->texture[stage].view[0] = view0;
+    context->texture[stage].view[1] = view1;
 
     context->changed.group |= NINE_STATE_TEXTURE;
 }
@@ -3051,9 +3051,9 @@ nine_context_clear(struct NineDevice9 *device)
     context->enabled_sampler_count_ps = 0;
 
     pipe->set_sampler_views(pipe, PIPE_SHADER_VERTEX, 0, 0,
-                            NINE_MAX_SAMPLERS_VS, false, NULL);
+                            NINE_MAX_SAMPLERS_VS, NULL);
     pipe->set_sampler_views(pipe, PIPE_SHADER_FRAGMENT, 0, 0,
-                            NINE_MAX_SAMPLERS_PS, false, NULL);
+                            NINE_MAX_SAMPLERS_PS, NULL);
 
     pipe->set_vertex_buffers(pipe, 0, NULL);
 
@@ -3073,10 +3073,8 @@ nine_context_clear(struct NineDevice9 *device)
         context->texture[i].enabled = false;
         pipe_resource_reference(&context->texture[i].resource,
                                 NULL);
-        pipe_sampler_view_reference(&context->texture[i].view[0],
-                                    NULL);
-        pipe_sampler_view_reference(&context->texture[i].view[1],
-                                    NULL);
+        context->texture[i].view[0] = NULL;
+        context->texture[i].view[1] = NULL;
     }
 }
 

@@ -58,7 +58,7 @@
 struct pipe_sampler_view *
 st_update_single_texture(struct st_context *st,
                          GLuint texUnit, bool glsl130_or_later,
-                         bool ignore_srgb_decode, bool get_reference)
+                         bool ignore_srgb_decode)
 {
    struct gl_context *ctx = st->ctx;
    struct gl_texture_object *texObj;
@@ -69,7 +69,7 @@ st_update_single_texture(struct st_context *st,
    GLenum target = texObj->Target;
 
    if (unlikely(target == GL_TEXTURE_BUFFER))
-      return st_get_buffer_sampler_view_from_stobj(st, texObj, get_reference);
+      return st_get_buffer_sampler_view_from_stobj(st, texObj);
 
    if (!st_finalize_texture(ctx, st->pipe, texObj, 0) || !texObj->pt)
       return NULL; /* out of mem */
@@ -81,7 +81,7 @@ st_update_single_texture(struct st_context *st,
    return st_get_texture_sampler_view_from_stobj(st, texObj,
                                                  _mesa_get_samplerobj(ctx, texUnit),
                                                  glsl130_or_later,
-                                                 ignore_srgb_decode, get_reference);
+                                                 ignore_srgb_decode);
 }
 
 
@@ -90,7 +90,8 @@ unsigned
 st_get_sampler_views(struct st_context *st,
                      enum pipe_shader_type shader_stage,
                      const struct gl_program *prog,
-                     struct pipe_sampler_view **sampler_views)
+                     struct pipe_sampler_view **sampler_views,
+                     unsigned *num_owned_views)
 {
    struct pipe_context *pipe = st->pipe;
    const GLuint old_max = st->state.num_sampler_views[shader_stage];
@@ -99,6 +100,7 @@ st_get_sampler_views(struct st_context *st,
    GLbitfield free_slots = ~prog->SamplersUsed;
    GLbitfield external_samplers_used = prog->ExternalSamplersUsed;
    GLuint unit;
+   *num_owned_views = 0;
 
    if (samplers_used == 0x0 && old_max == 0)
       return 0;
@@ -145,7 +147,7 @@ st_get_sampler_views(struct st_context *st,
        */
       sampler_views[unit] =
          st_update_single_texture(st, prog->SamplerUnits[unit], glsl130,
-                                  texel_fetch_samplers & bit, true);
+                                  texel_fetch_samplers & bit);
    }
 
    /* For any external samplers with multiplaner YUV, stuff the additional
@@ -281,6 +283,9 @@ st_get_sampler_views(struct st_context *st,
          break;
       }
 
+      if (extra)
+         (*num_owned_views) = extra;
+
       num_textures = MAX2(num_textures, extra + 1);
    }
 
@@ -294,16 +299,24 @@ update_textures(struct st_context *st,
 {
    struct pipe_sampler_view *sampler_views[PIPE_MAX_SAMPLERS];
    struct pipe_context *pipe = st->pipe;
+   unsigned num_owned_views = 0;
    unsigned num_textures =
-      st_get_sampler_views(st, shader_stage, prog, sampler_views);
+      st_get_sampler_views(st, shader_stage, prog, sampler_views, &num_owned_views);
 
    unsigned old_num_textures = st->state.num_sampler_views[shader_stage];
    unsigned num_unbind = old_num_textures > num_textures ?
                             old_num_textures - num_textures : 0;
 
    pipe->set_sampler_views(pipe, shader_stage, 0, num_textures, num_unbind,
-                           true, sampler_views);
+                           sampler_views);
    st->state.num_sampler_views[shader_stage] = num_textures;
+
+   /* release YUV views back to driver */
+   if (pipe->sampler_view_release) {
+      unsigned base_idx = num_textures - num_owned_views;
+      for (unsigned i = 0; i < num_owned_views; i++)
+         pipe->sampler_view_release(pipe, sampler_views[base_idx + i]);
+   }
 }
 
 void

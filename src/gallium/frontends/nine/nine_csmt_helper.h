@@ -418,11 +418,10 @@ name##_priv( struct NineDevice9 *device ARGS_FOR_DECLARATION( __VA_ARGS__ ) )
         x * _##y ,\
         args->_##y = NULL; \
         if (y) \
-            pipe_sampler_view_reference(&args->_##y, y); ,\
+            args->_##y = y;,\
         x *y ,\
         args->_##y ,\
         if (args->_##y) \
-            pipe_sampler_view_reference(&args->_##y, NULL); ,\
+            args->_##y = NULL;,\
         ,\
         y
-

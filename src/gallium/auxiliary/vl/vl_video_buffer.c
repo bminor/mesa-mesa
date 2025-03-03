@@ -221,8 +221,9 @@ vl_video_buffer_destroy(struct pipe_video_buffer *buffer)
    assert(buf);
 
    for (i = 0; i < VL_NUM_COMPONENTS; ++i) {
-      pipe_sampler_view_reference(&buf->sampler_view_planes[i], NULL);
-      pipe_sampler_view_reference(&buf->sampler_view_components[i], NULL);
+      buf->base.context->sampler_view_release(buf->base.context, buf->sampler_view_planes[i]);
+      if (i < buf->num_sampler_view_components)
+         buf->base.context->sampler_view_release(buf->base.context, buf->sampler_view_components[i]);
       pipe_resource_reference(&buf->resources[i], NULL);
    }
 
@@ -279,8 +280,8 @@ vl_video_buffer_sampler_view_planes(struct pipe_video_buffer *buffer)
    return buf->sampler_view_planes;
 
 error:
-   for (i = 0; i < num_planes; ++i )
-      pipe_sampler_view_reference(&buf->sampler_view_planes[i], NULL);
+   for (i = 0; i < num_planes; ++i)
+      pipe->sampler_view_release(pipe, buf->sampler_view_planes[i]);
 
    return NULL;
 }
@@ -333,13 +334,15 @@ vl_video_buffer_sampler_view_components(struct pipe_video_buffer *buffer)
    assert(component != 0);
 
    for (i = component; i < VL_NUM_COMPONENTS; ++i)
-      pipe_sampler_view_reference(&buf->sampler_view_components[i], buf->sampler_view_components[component - 1]);
+      buf->sampler_view_components[i] = buf->sampler_view_components[component - 1];
+
+   buf->num_sampler_view_components = component;
 
    return buf->sampler_view_components;
 
 error:
-   for (i = 0; i < VL_NUM_COMPONENTS; ++i )
-      pipe_sampler_view_reference(&buf->sampler_view_components[i], NULL);
+   for (i = 0; i < buf->num_sampler_view_components; ++i)
+      pipe->sampler_view_release(pipe, buf->sampler_view_components[i]);
 
    return NULL;
 }

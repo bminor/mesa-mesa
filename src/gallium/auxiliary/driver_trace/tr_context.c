@@ -1136,19 +1136,26 @@ static void
 trace_context_sampler_view_destroy(struct pipe_context *_pipe,
                                    struct pipe_sampler_view *_view)
 {
+   unreachable("Trace should never hit this!");
+}
+
+static void
+trace_context_sampler_view_release(struct pipe_context *_pipe,
+                                   struct pipe_sampler_view *_view)
+{
    struct trace_context *tr_ctx = trace_context(_pipe);
    struct trace_sampler_view *tr_view = trace_sampler_view(_view);
    struct pipe_context *pipe = tr_ctx->pipe;
    struct pipe_sampler_view *view = tr_view->sampler_view;
 
-   trace_dump_call_begin("pipe_context", "sampler_view_destroy");
+   trace_dump_call_begin("pipe_context", "sampler_view_release");
 
    trace_dump_arg(ptr, pipe);
    trace_dump_arg(ptr, view);
 
-   trace_sampler_view_destroy(tr_view);
-
    trace_dump_call_end();
+
+   trace_sampler_view_destroy(tr_view);
 }
 
 /********************************************************************
@@ -1213,7 +1220,6 @@ trace_context_set_sampler_views(struct pipe_context *_pipe,
                                 unsigned start,
                                 unsigned num,
                                 unsigned unbind_num_trailing_slots,
-                                bool take_ownership,
                                 struct pipe_sampler_view **views)
 {
    struct trace_context *tr_ctx = trace_context(_pipe);
@@ -1234,7 +1240,7 @@ trace_context_set_sampler_views(struct pipe_context *_pipe,
    }
    views = unwrapped_views;
    pipe->set_sampler_views(pipe, shader, start, num,
-                           unbind_num_trailing_slots, take_ownership, views);
+                           unbind_num_trailing_slots, views);
 
    trace_dump_call_begin("pipe_context", "set_sampler_views");
 
@@ -1244,7 +1250,6 @@ trace_context_set_sampler_views(struct pipe_context *_pipe,
       start = 0;
    trace_dump_arg(uint, start);
    trace_dump_arg(uint, unbind_num_trailing_slots);
-   trace_dump_arg(bool, take_ownership);
    if (found)
       trace_dump_arg_array(ptr, views, num);
    else {

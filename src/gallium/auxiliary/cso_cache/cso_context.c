@@ -402,7 +402,7 @@ cso_unbind_context(struct cso_context *cso)
                ctx->base.pipe->bind_sampler_states(ctx->base.pipe, sh, 0, maxsam, zeros);
             }
             if (maxview > 0) {
-               ctx->base.pipe->set_sampler_views(ctx->base.pipe, sh, 0, maxview, 0, false, views);
+               ctx->base.pipe->set_sampler_views(ctx->base.pipe, sh, 0, maxview, 0, views);
             }
             if (maxssbo > 0) {
                ctx->base.pipe->set_shader_buffers(ctx->base.pipe, sh, 0, maxssbo, ssbos, 0);
@@ -1727,10 +1727,10 @@ cso_restore_state(struct cso_context *ctx, unsigned unbind)
       cso_restore_vertex_shader(cso);
    if (unbind & CSO_UNBIND_FS_SAMPLERVIEWS)
       cso->base.pipe->set_sampler_views(cso->base.pipe, PIPE_SHADER_FRAGMENT, 0, 0,
-                                   cso->max_fs_samplerviews, false, NULL);
+                                   cso->max_fs_samplerviews, NULL);
    if (unbind & CSO_UNBIND_FS_SAMPLERVIEW0)
       cso->base.pipe->set_sampler_views(cso->base.pipe, PIPE_SHADER_FRAGMENT, 0, 0,
-                                   1, false, NULL);
+                                   1, NULL);
    if (state_mask & CSO_BIT_FRAGMENT_SAMPLERS)
       cso_restore_fragment_samplers(cso);
    if (unbind & CSO_UNBIND_FS_IMAGE0)

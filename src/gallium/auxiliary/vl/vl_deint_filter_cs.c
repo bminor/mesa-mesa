@@ -225,7 +225,7 @@ vl_deint_filter_cs_render(struct vl_deint_filter *filter,
       sampler_views[2] = cur_sv[i];
       sampler_views[3] = next_sv[i];
       filter->pipe->set_sampler_views(filter->pipe, PIPE_SHADER_COMPUTE,
-                                      0, 4, 0, false, sampler_views);
+                                      0, 4, 0, sampler_views);
 
       /* Bind the image */
       struct pipe_image_view image = {

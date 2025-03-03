@@ -328,7 +328,7 @@ xa_solid_prepare(struct xa_context *ctx, struct xa_surface *dst,
     bind_solid_blend_state(ctx);
     cso_set_samplers(ctx->cso, PIPE_SHADER_FRAGMENT, 0, NULL);
     ctx->pipe->set_sampler_views(ctx->pipe, PIPE_SHADER_FRAGMENT, 0, 0,
-                                 XA_MAX_SAMPLERS, false, NULL);
+                                 XA_MAX_SAMPLERS, NULL);
 
     shader = xa_shaders_get(ctx->shaders, vs_traits, fs_traits);
     cso_set_vertex_shader_handle(ctx->cso, shader.vs);
@@ -415,6 +415,7 @@ xa_ctx_sampler_views_destroy(struct xa_context *ctx)
     int i;
 
     for (i = 0; i < ctx->num_bound_samplers; ++i)
-	pipe_sampler_view_reference(&ctx->bound_sampler_views[i], NULL);
+	    ctx->pipe->sampler_view_release(ctx->pipe, ctx->bound_sampler_views[i]);
+    memset(ctx->bound_sampler_views, 0, sizeof(ctx->bound_sampler_views));
     ctx->num_bound_samplers = 0;
 }

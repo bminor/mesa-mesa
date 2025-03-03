@@ -1793,7 +1793,7 @@ tc_call_set_sampler_views(struct pipe_context *pipe, void *call)
    struct tc_sampler_views *p = (struct tc_sampler_views *)call;
 
    pipe->set_sampler_views(pipe, p->shader, p->start, p->count,
-                           p->unbind_num_trailing_slots, true, p->slot);
+                           p->unbind_num_trailing_slots, p->slot);
    return p->base.num_slots;
 }
 
@@ -1801,7 +1801,7 @@ static void
 tc_set_sampler_views(struct pipe_context *_pipe,
                      enum pipe_shader_type shader,
                      unsigned start, unsigned count,
-                     unsigned unbind_num_trailing_slots, bool take_ownership,
+                     unsigned unbind_num_trailing_slots,
                      struct pipe_sampler_view **views)
 {
    if (!count && !unbind_num_trailing_slots)
@@ -1821,34 +1821,17 @@ tc_set_sampler_views(struct pipe_context *_pipe,
       p->count = count;
       p->unbind_num_trailing_slots = unbind_num_trailing_slots;
 
-      if (take_ownership) {
-         memcpy(p->slot, views, sizeof(*views) * count);
+      memcpy(p->slot, views, sizeof(*views) * count);
 
-         for (unsigned i = 0; i < count; i++) {
-            if (views[i]) {
-               if (views[i]->target == PIPE_BUFFER)
-                  tc_bind_buffer(&tc->sampler_buffers[shader][start + i], next,
-                                 views[i]->texture);
-               else
-                  tc_set_resource_batch_usage(tc, views[i]->texture);
-            } else {
-               tc_unbind_buffer(&tc->sampler_buffers[shader][start + i]);
-            }
-         }
-      } else {
-         for (unsigned i = 0; i < count; i++) {
-            p->slot[i] = NULL;
-            pipe_sampler_view_reference(&p->slot[i], views[i]);
-
-            if (views[i]) {
-               if (views[i]->target == PIPE_BUFFER)
-                  tc_bind_buffer(&tc->sampler_buffers[shader][start + i], next,
-                                 views[i]->texture);
-               else
-                  tc_set_resource_batch_usage(tc, views[i]->texture);
-            } else {
-               tc_unbind_buffer(&tc->sampler_buffers[shader][start + i]);
-            }
+      for (unsigned i = 0; i < count; i++) {
+         if (views[i]) {
+            if (views[i]->target == PIPE_BUFFER)
+               tc_bind_buffer(&tc->sampler_buffers[shader][start + i], next,
+                              views[i]->texture);
+            else
+               tc_set_resource_batch_usage(tc, views[i]->texture);
+         } else {
+            tc_unbind_buffer(&tc->sampler_buffers[shader][start + i]);
          }
       }
 
@@ -1862,6 +1845,33 @@ tc_set_sampler_views(struct pipe_context *_pipe,
       tc_unbind_buffers(&tc->sampler_buffers[shader][start],
                         count + unbind_num_trailing_slots);
    }
+}
+
+struct tc_sampler_view_release {
+   struct tc_call_base base;
+   struct pipe_sampler_view *view;
+};
+
+static uint16_t ALWAYS_INLINE
+tc_call_sampler_view_release(struct pipe_context *pipe, void *call)
+{
+   struct tc_sampler_view_release *p = (struct tc_sampler_view_release *)call;
+
+   pipe->sampler_view_release(pipe, p->view);
+   return call_size(tc_sampler_view_release);
+}
+
+static void
+tc_sampler_view_release(struct pipe_context *_pipe, struct pipe_sampler_view *view)
+{
+   if (!view)
+      return;
+
+   struct threaded_context *tc = threaded_context(_pipe);
+   struct tc_sampler_view_release *p =
+      tc_add_call(tc, TC_CALL_sampler_view_release, tc_sampler_view_release);
+
+   p->view = view;
 }
 
 struct tc_shader_images {
@@ -5458,6 +5468,7 @@ threaded_context_create(struct pipe_context *pipe,
    CTX_INIT(set_stream_output_targets);
    CTX_INIT(create_sampler_view);
    CTX_INIT(sampler_view_destroy);
+   CTX_INIT(sampler_view_release);
    CTX_INIT(create_surface);
    CTX_INIT(surface_destroy);
    CTX_INIT(buffer_map);

@@ -109,7 +109,6 @@ struct pstip_stage
                                     enum pipe_shader_type shader,
                                     unsigned start, unsigned count,
                                     unsigned unbind_num_trailing_slots,
-                                    bool take_ownership,
                                     struct pipe_sampler_view **);
 
    void (*driver_set_polygon_stipple)(struct pipe_context *,
@@ -215,8 +214,7 @@ pstip_first_tri(struct draw_stage *stage, struct prim_header *header)
 
    /* plug in our sampler, texture */
    pstip->state.samplers[pstip->fs->sampler_unit] = pstip->sampler_cso;
-   pipe_sampler_view_reference(&pstip->state.sampler_views[pstip->fs->sampler_unit],
-                               pstip->sampler_view);
+   pstip->state.sampler_views[pstip->fs->sampler_unit] = pstip->sampler_view;
 
    assert(num_samplers <= PIPE_MAX_SAMPLERS);
 
@@ -226,7 +224,7 @@ pstip_first_tri(struct draw_stage *stage, struct prim_header *header)
                                      num_samplers, pstip->state.samplers);
 
    pstip->driver_set_sampler_views(pipe, PIPE_SHADER_FRAGMENT, 0,
-                                   num_sampler_views, 0, false,
+                                   num_sampler_views, 0,
                                    pstip->state.sampler_views);
 
    draw->suspend_flushing = false;
@@ -256,7 +254,7 @@ pstip_flush(struct draw_stage *stage, unsigned flags)
                                      pstip->state.samplers);
 
    pstip->driver_set_sampler_views(pipe, PIPE_SHADER_FRAGMENT, 0,
-                                   pstip->num_sampler_views, 0, false,
+                                   pstip->num_sampler_views, 0,
                                    pstip->state.sampler_views);
 
    draw->suspend_flushing = false;
@@ -283,9 +281,7 @@ pstip_destroy(struct draw_stage *stage)
 
    pipe_resource_reference(&pstip->texture, NULL);
 
-   if (pstip->sampler_view) {
-      pipe_sampler_view_reference(&pstip->sampler_view, NULL);
-   }
+   pipe_sampler_view_release_ptr(&pstip->sampler_view);
 
    draw_free_temp_verts(stage);
    FREE(stage);
@@ -419,7 +415,6 @@ pstip_set_sampler_views(struct pipe_context *pipe,
                         enum pipe_shader_type shader,
                         unsigned start, unsigned num,
                         unsigned unbind_num_trailing_slots,
-                        bool take_ownership,
                         struct pipe_sampler_view **views)
 {
    struct pstip_stage *pstip = pstip_stage_from_pipe(pipe);
@@ -428,19 +423,17 @@ pstip_set_sampler_views(struct pipe_context *pipe,
       /* save current */
       unsigned i;
       for (i = 0; i < num; i++) {
-         pipe_sampler_view_reference(&pstip->state.sampler_views[start + i],
-                                     views[i]);
+         pstip->state.sampler_views[start + i] =  views[i];
       }
       for (; i < num + unbind_num_trailing_slots; i++) {
-         pipe_sampler_view_reference(&pstip->state.sampler_views[start + i],
-                                     NULL);
+         pstip->state.sampler_views[start + i] = NULL;
       }
       pstip->num_sampler_views = num;
    }
 
    /* pass-through */
    pstip->driver_set_sampler_views(pstip->pipe, shader, start, num,
-                                   unbind_num_trailing_slots, take_ownership, views);
+                                   unbind_num_trailing_slots, views);
 }
 
 

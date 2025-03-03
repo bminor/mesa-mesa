@@ -661,7 +661,7 @@ nv50_sampler_view_destroy(struct pipe_context *pipe,
 
 static inline void
 nv50_stage_set_sampler_views(struct nv50_context *nv50, int s,
-                             unsigned nr, bool take_ownership,
+                             unsigned nr,
                              struct pipe_sampler_view **views)
 {
    unsigned i;
@@ -684,12 +684,7 @@ nv50_stage_set_sampler_views(struct nv50_context *nv50, int s,
          nv50->textures_coherent[s] &= ~(1 << i);
       }
 
-      if (take_ownership) {
-         pipe_sampler_view_reference(&nv50->textures[s][i], NULL);
-         nv50->textures[s][i] = view;
-      } else {
-         pipe_sampler_view_reference(&nv50->textures[s][i], view);
-      }
+      pipe_sampler_view_reference(&nv50->textures[s][i], view);
    }
 
    assert(nv50->num_textures[s] <= PIPE_MAX_SAMPLERS);
@@ -709,14 +704,13 @@ static void
 nv50_set_sampler_views(struct pipe_context *pipe, enum pipe_shader_type shader,
                        unsigned start, unsigned nr,
                        unsigned unbind_num_trailing_slots,
-                       bool take_ownership,
                        struct pipe_sampler_view **views)
 {
    struct nv50_context *nv50 = nv50_context(pipe);
    unsigned s = nv50_context_shader_stage(shader);
 
    assert(start == 0);
-   nv50_stage_set_sampler_views(nv50, s, nr, take_ownership, views);
+   nv50_stage_set_sampler_views(nv50, s, nr, views);
 
    if (unlikely(s == NV50_SHADER_STAGE_COMPUTE)) {
       nouveau_bufctx_reset(nv50->bufctx_cp, NV50_BIND_CP_TEXTURES);
@@ -1488,6 +1482,7 @@ nv50_init_state_functions(struct nv50_context *nv50)
 
    pipe->create_sampler_view = nv50_create_sampler_view;
    pipe->sampler_view_destroy = nv50_sampler_view_destroy;
+   pipe->sampler_view_release = u_default_sampler_view_release;
    pipe->set_sampler_views = nv50_set_sampler_views;
 
    pipe->create_vs_state = nv50_vp_state_create;

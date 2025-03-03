@@ -113,7 +113,7 @@ resource::bind_sampler_view(command_queue &q) {
 void
 resource::unbind_sampler_view(command_queue &q,
                               pipe_sampler_view *st) {
-   q.pipe->sampler_view_destroy(q.pipe, st);
+   q.pipe->sampler_view_release(q.pipe, st);
 }
 
 pipe_image_view

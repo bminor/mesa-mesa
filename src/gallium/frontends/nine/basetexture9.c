@@ -83,8 +83,10 @@ NineBaseTexture9_dtor( struct NineBaseTexture9 *This )
 {
     DBG("This=%p\n", This);
 
-    pipe_sampler_view_reference(&This->view[0], NULL);
-    pipe_sampler_view_reference(&This->view[1], NULL);
+    nine_context_get_pipe_acquire(This->base.base.device);
+    pipe_sampler_view_release_ptr(&This->view[0]);
+    pipe_sampler_view_release_ptr(&This->view[1]);
+    nine_context_get_pipe_release(This->base.base.device);
 
     if (list_is_linked(&This->list))
         list_del(&This->list);
@@ -177,8 +179,10 @@ NineBaseTexture9_UploadSelf( struct NineBaseTexture9 *This )
 
         DBG("updating LOD from %u to %u ...\n", This->managed.lod_resident, This->managed.lod);
 
-        pipe_sampler_view_reference(&This->view[0], NULL);
-        pipe_sampler_view_reference(&This->view[1], NULL);
+        nine_context_get_pipe_acquire(This->base.base.device);
+        pipe_sampler_view_release_ptr(&This->view[0]);
+        pipe_sampler_view_release_ptr(&This->view[1]);
+        nine_context_get_pipe_release(This->base.base.device);
 
         /* Allocate a new resource */
         hr = NineBaseTexture9_CreatePipeResource(This, This->managed.lod_resident != -1);
@@ -487,7 +491,10 @@ NineBaseTexture9_UpdateSamplerView( struct NineBaseTexture9 *This,
     }
     assert(resource);
 
-    pipe_sampler_view_reference(&This->view[sRGB], NULL);
+    pipe = nine_context_get_pipe_acquire(This->base.base.device);
+    pipe->sampler_view_release(pipe, This->view[sRGB]);
+    This->view[sRGB] = NULL;
+    nine_context_get_pipe_release(This->base.base.device);
 
     swizzle[0] = PIPE_SWIZZLE_X;
     swizzle[1] = PIPE_SWIZZLE_Y;

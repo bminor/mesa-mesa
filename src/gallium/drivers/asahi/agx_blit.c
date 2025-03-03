@@ -299,7 +299,7 @@ asahi_compute_restore(struct agx_context *ctx)
    blitter->saved_cb.buffer = NULL;
 
    if (blitter->saved_sampler_view) {
-      pctx->set_sampler_views(pctx, PIPE_SHADER_COMPUTE, 0, 1, 0, true,
+      pctx->set_sampler_views(pctx, PIPE_SHADER_COMPUTE, 0, 1, 0,
                               &blitter->saved_sampler_view);
 
       blitter->saved_sampler_view = NULL;
@@ -422,7 +422,8 @@ asahi_compute_blit(struct pipe_context *ctx, const struct pipe_blit_info *info,
    src_templ.u.tex.first_level = info->src.level;
    src_templ.u.tex.last_level = info->src.level;
    src_view = ctx->create_sampler_view(ctx, src, &src_templ);
-   ctx->set_sampler_views(ctx, PIPE_SHADER_COMPUTE, 0, 1, 0, true, &src_view);
+   ctx->set_sampler_views(ctx, PIPE_SHADER_COMPUTE, 0, 1, 0, &src_view);
+   ctx->sampler_view_release(ctx, src_view);
 
    struct asahi_blit_key key = {
       .src_format = info->src.format,
@@ -458,7 +459,7 @@ asahi_compute_blit(struct pipe_context *ctx, const struct pipe_blit_info *info,
    ctx->launch_grid(ctx, &grid_info);
    ctx->set_shader_images(ctx, PIPE_SHADER_COMPUTE, 0, 0, 1, NULL);
    ctx->set_constant_buffer(ctx, PIPE_SHADER_COMPUTE, 0, false, NULL);
-   ctx->set_sampler_views(ctx, PIPE_SHADER_COMPUTE, 0, 0, 1, false, NULL);
+   ctx->set_sampler_views(ctx, PIPE_SHADER_COMPUTE, 0, 0, 1, NULL);
 
    asahi_compute_restore(agx_context(ctx));
 }

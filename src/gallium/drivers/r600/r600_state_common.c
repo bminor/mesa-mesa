@@ -620,7 +620,6 @@ static void r600_set_sampler_views(struct pipe_context *pipe,
 				   enum pipe_shader_type shader,
 				   unsigned start, unsigned count,
 				   unsigned unbind_num_trailing_slots,
-				   bool take_ownership,
 				   struct pipe_sampler_view **views)
 {
 	struct r600_context *rctx = (struct r600_context *) pipe;
@@ -654,10 +653,6 @@ static void r600_set_sampler_views(struct pipe_context *pipe,
 
 	for (i = 0; i < count; i++) {
 		if (rviews[i] == dst->views.views[i]) {
-			if (take_ownership) {
-				struct pipe_sampler_view *view = views[i];
-				pipe_sampler_view_reference(&view, NULL);
-			}
 			continue;
 		}
 
@@ -688,12 +683,7 @@ static void r600_set_sampler_views(struct pipe_context *pipe,
 				dirty_sampler_states_mask |= 1 << i;
 			}
 
-			if (take_ownership) {
-				pipe_sampler_view_reference((struct pipe_sampler_view **)&dst->views.views[i], NULL);
-				dst->views.views[i] = (struct r600_pipe_sampler_view*)views[i];
-			} else {
-				pipe_sampler_view_reference((struct pipe_sampler_view **)&dst->views.views[i], views[i]);
-			}
+			pipe_sampler_view_reference((struct pipe_sampler_view **)&dst->views.views[i], views[i]);
 			new_mask |= 1 << i;
 			r600_context_add_resource_size(pipe, views[i]->texture);
 		} else {
@@ -3462,6 +3452,7 @@ void r600_init_common_state_functions(struct r600_context *rctx)
 	rctx->b.b.set_vertex_buffers = r600_set_vertex_buffers;
 	rctx->b.b.set_sampler_views = r600_set_sampler_views;
 	rctx->b.b.sampler_view_destroy = r600_sampler_view_destroy;
+	rctx->b.b.sampler_view_release = u_default_sampler_view_release;
 	rctx->b.b.memory_barrier = r600_memory_barrier;
 	rctx->b.b.texture_barrier = r600_texture_barrier;
 	rctx->b.b.set_stream_output_targets = r600_set_streamout_targets;

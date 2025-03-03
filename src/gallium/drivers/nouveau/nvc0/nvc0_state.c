@@ -516,7 +516,7 @@ nvc0_sampler_view_destroy(struct pipe_context *pipe,
 
 static inline void
 nvc0_stage_set_sampler_views(struct nvc0_context *nvc0, int s,
-                             unsigned nr, bool take_ownership,
+                             unsigned nr,
                              struct pipe_sampler_view **views)
 {
    unsigned i;
@@ -526,8 +526,6 @@ nvc0_stage_set_sampler_views(struct nvc0_context *nvc0, int s,
       struct nv50_tic_entry *old = nv50_tic_entry(nvc0->textures[s][i]);
 
       if (view == nvc0->textures[s][i]) {
-         if (take_ownership)
-            pipe_sampler_view_reference(&view, NULL);
          continue;
       }
       nvc0->textures_dirty[s] |= 1 << i;
@@ -551,12 +549,7 @@ nvc0_stage_set_sampler_views(struct nvc0_context *nvc0, int s,
          nvc0_screen_tic_unlock(nvc0->screen, old);
       }
 
-      if (take_ownership) {
-         pipe_sampler_view_reference(&nvc0->textures[s][i], NULL);
-         nvc0->textures[s][i] = view;
-      } else {
-         pipe_sampler_view_reference(&nvc0->textures[s][i], view);
-      }
+      pipe_sampler_view_reference(&nvc0->textures[s][i], view);
    }
 
    for (i = nr; i < nvc0->num_textures[s]; ++i) {
@@ -578,13 +571,12 @@ static void
 nvc0_set_sampler_views(struct pipe_context *pipe, enum pipe_shader_type shader,
                        unsigned start, unsigned nr,
                        unsigned unbind_num_trailing_slots,
-                       bool take_ownership,
                        struct pipe_sampler_view **views)
 {
    const unsigned s = nvc0_shader_stage(shader);
 
    assert(start == 0);
-   nvc0_stage_set_sampler_views(nvc0_context(pipe), s, nr, take_ownership, views);
+   nvc0_stage_set_sampler_views(nvc0_context(pipe), s, nr, views);
 
    if (s == 5)
       nvc0_context(pipe)->dirty_cp |= NVC0_NEW_CP_TEXTURES;
@@ -1482,6 +1474,7 @@ nvc0_init_state_functions(struct nvc0_context *nvc0)
 
    pipe->create_sampler_view = nvc0_create_sampler_view;
    pipe->sampler_view_destroy = nvc0_sampler_view_destroy;
+   pipe->sampler_view_release = u_default_sampler_view_release;
    pipe->set_sampler_views = nvc0_set_sampler_views;
 
    pipe->create_vs_state = nvc0_vp_state_create;

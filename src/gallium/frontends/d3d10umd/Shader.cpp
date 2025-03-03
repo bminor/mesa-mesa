@@ -251,7 +251,7 @@ SetShaderResources(enum pipe_shader_type shader_type,                  // IN
     * probably think about not updating all always... It should just work.
     */
    pipe->set_sampler_views(pipe, shader_type, 0, PIPE_MAX_SHADER_SAMPLER_VIEWS,
-                           0, false, sampler_views);
+                           0, sampler_views);
 }
 
 
@@ -1358,7 +1358,11 @@ DestroyShaderResourceView(D3D10DDI_HDEVICE hDevice,                           //
 
    ShaderResourceView *pSRView = CastShaderResourceView(hShaderResourceView);
 
-   pipe_sampler_view_reference(&pSRView->handle, NULL);
+   Device *pDevice = CastDevice(hDevice);
+   struct pipe_context *pipe = pDevice->pipe;
+
+   pipe->sampler_view_release(pipe, pSRView->handle);
+   pSRView->handle = NULL;
 }
 
 

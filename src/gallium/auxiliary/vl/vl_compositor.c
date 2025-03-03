@@ -348,7 +348,7 @@ set_yuv_layer(struct vl_compositor_state *s, struct vl_compositor *c,
    sampler_views = buffer->get_sampler_view_components(buffer);
    for (i = 0; i < 3; ++i) {
       s->layers[layer].samplers[i] = c->sampler_linear;
-      pipe_sampler_view_reference(&s->layers[layer].sampler_views[i], sampler_views[i]);
+      s->layers[layer].sampler_views[i] = sampler_views[i];
    }
 
    calc_src_and_dst(&s->layers[layer], buffer->width, buffer->height,
@@ -433,9 +433,9 @@ set_rgb_to_yuv_layer(struct vl_compositor_state *s, struct vl_compositor *c,
    s->layers[layer].samplers[1] = NULL;
    s->layers[layer].samplers[2] = NULL;
 
-   pipe_sampler_view_reference(&s->layers[layer].sampler_views[0], v);
-   pipe_sampler_view_reference(&s->layers[layer].sampler_views[1], NULL);
-   pipe_sampler_view_reference(&s->layers[layer].sampler_views[2], NULL);
+   s->layers[layer].sampler_views[0] = v;
+   s->layers[layer].sampler_views[1] = NULL;
+   s->layers[layer].sampler_views[2] = NULL;
 
    calc_src_and_dst(&s->layers[layer], v->texture->width0, v->texture->height0,
                     src_rect ? *src_rect : default_rect(&s->layers[layer]),
@@ -492,7 +492,7 @@ vl_compositor_clear_layers(struct vl_compositor_state *s)
       s->layers[i].mirror = VL_COMPOSITOR_MIRROR_NONE;
 
       for ( j = 0; j < 3; j++)
-         pipe_sampler_view_reference(&s->layers[i].sampler_views[j], NULL);
+         s->layers[i].sampler_views[j] = NULL;
       for ( j = 0; j < 4; ++j)
          s->layers[i].colors[j] = v_one;
    }
@@ -589,7 +589,7 @@ vl_compositor_set_buffer_layer(struct vl_compositor_state *s,
    sampler_views = buffer->get_sampler_view_components(buffer);
    for (i = 0; i < 3; ++i) {
       s->layers[layer].samplers[i] = c->sampler_linear;
-      pipe_sampler_view_reference(&s->layers[layer].sampler_views[i], sampler_views[i]);
+      s->layers[layer].sampler_views[i] = sampler_views[i];
    }
 
    calc_src_and_dst(&s->layers[layer], buffer->width, buffer->height,
@@ -662,9 +662,9 @@ vl_compositor_set_palette_layer(struct vl_compositor_state *s,
    s->layers[layer].samplers[0] = c->sampler_linear;
    s->layers[layer].samplers[1] = c->sampler_nearest;
    s->layers[layer].samplers[2] = NULL;
-   pipe_sampler_view_reference(&s->layers[layer].sampler_views[0], indexes);
-   pipe_sampler_view_reference(&s->layers[layer].sampler_views[1], palette);
-   pipe_sampler_view_reference(&s->layers[layer].sampler_views[2], NULL);
+   s->layers[layer].sampler_views[0] = indexes;
+   s->layers[layer].sampler_views[1] = palette;
+   s->layers[layer].sampler_views[2] = NULL;
    calc_src_and_dst(&s->layers[layer], indexes->texture->width0, indexes->texture->height0,
                     src_rect ? *src_rect : default_rect(&s->layers[layer]),
                     dst_rect ? *dst_rect : default_rect(&s->layers[layer]));
@@ -696,9 +696,9 @@ vl_compositor_set_rgba_layer(struct vl_compositor_state *s,
    s->layers[layer].samplers[0] = c->sampler_linear;
    s->layers[layer].samplers[1] = NULL;
    s->layers[layer].samplers[2] = NULL;
-   pipe_sampler_view_reference(&s->layers[layer].sampler_views[0], rgba);
-   pipe_sampler_view_reference(&s->layers[layer].sampler_views[1], NULL);
-   pipe_sampler_view_reference(&s->layers[layer].sampler_views[2], NULL);
+   s->layers[layer].sampler_views[0] = rgba;
+   s->layers[layer].sampler_views[1] = NULL;
+   s->layers[layer].sampler_views[2] = NULL;
    calc_src_and_dst(&s->layers[layer], rgba->texture->width0, rgba->texture->height0,
                     src_rect ? *src_rect : default_rect(&s->layers[layer]),
                     dst_rect ? *dst_rect : default_rect(&s->layers[layer]));
@@ -818,7 +818,7 @@ vl_compositor_convert_rgb_to_yuv(struct vl_compositor_state *s,
       }
    }
 
-   pipe_sampler_view_reference(&sv, NULL);
+   s->pipe->sampler_view_release(s->pipe, sv);
 }
 
 void

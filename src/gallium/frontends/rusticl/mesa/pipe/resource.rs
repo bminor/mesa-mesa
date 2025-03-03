@@ -324,7 +324,8 @@ impl<'c, 'r> PipeSamplerView<'c, 'r> {
 impl Drop for PipeSamplerView<'_, '_> {
     fn drop(&mut self) {
         unsafe {
-            pipe_sampler_view_reference(&mut ptr::null_mut(), self.view.as_ptr());
+            let ctx = self.view.as_ref().context;
+            (*ctx).sampler_view_release.unwrap()(ctx, self.view.as_ptr())
         }
     }
 }

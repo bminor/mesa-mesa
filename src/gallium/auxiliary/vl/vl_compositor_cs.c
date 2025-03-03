@@ -861,7 +861,7 @@ draw_layers(struct vl_compositor       *c,
          c->pipe->bind_sampler_states(c->pipe, PIPE_SHADER_COMPUTE, 0,
                         num_sampler_views, layer->samplers);
          c->pipe->set_sampler_views(c->pipe, PIPE_SHADER_COMPUTE, 0,
-                        num_sampler_views, 0, false, samplers);
+                        num_sampler_views, 0, samplers);
 
          cs_launch(c, layer->cs, &(drawn.area));
 
@@ -869,7 +869,7 @@ draw_layers(struct vl_compositor       *c,
          c->pipe->set_shader_images(c->pipe, PIPE_SHADER_COMPUTE, 0, 0, 1, NULL);
          c->pipe->set_constant_buffer(c->pipe, PIPE_SHADER_COMPUTE, 0, false, NULL);
          c->pipe->set_sampler_views(c->pipe, PIPE_SHADER_COMPUTE, 0, 0,
-                        num_sampler_views, false, NULL);
+                        num_sampler_views, NULL);
          c->pipe->bind_compute_state(c->pipe, NULL);
          c->pipe->bind_sampler_states(c->pipe, PIPE_SHADER_COMPUTE, 0,
                         num_sampler_views, NULL);

@@ -75,13 +75,11 @@ st_get_texture_sampler_view_from_stobj(struct st_context *st,
                                        struct gl_texture_object *stObj,
                                        const struct gl_sampler_object *samp,
                                        bool glsl130_or_later,
-                                       bool ignore_srgb_decode,
-                                       bool get_reference);
+                                       bool ignore_srgb_decode);
 
 struct pipe_sampler_view *
 st_get_buffer_sampler_view_from_stobj(struct st_context *st,
-                                      struct gl_texture_object *stObj,
-                                      bool get_reference);
+                                      struct gl_texture_object *stObj);
 
 enum pipe_format
 st_get_sampler_view_format(const struct st_context *st,

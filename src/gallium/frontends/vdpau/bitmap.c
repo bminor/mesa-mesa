@@ -114,7 +114,7 @@ vlVdpBitmapSurfaceCreate(VdpDevice device,
    return VDP_STATUS_OK;
 
 err_sampler:
-   pipe_sampler_view_reference(&vlsurface->sampler_view, NULL);
+   pipe->sampler_view_release(pipe, vlsurface->sampler_view);
 err_unlock:
    mtx_unlock(&dev->mutex);
    DeviceReference(&vlsurface->device, NULL);
@@ -134,8 +134,9 @@ vlVdpBitmapSurfaceDestroy(VdpBitmapSurface surface)
    if (!vlsurface)
       return VDP_STATUS_INVALID_HANDLE;
 
+   struct pipe_context *pipe = vlsurface->sampler_view->context;
    mtx_lock(&vlsurface->device->mutex);
-   pipe_sampler_view_reference(&vlsurface->sampler_view, NULL);
+   pipe->sampler_view_release(pipe, vlsurface->sampler_view);
    mtx_unlock(&vlsurface->device->mutex);
 
    vlRemoveDataHTAB(surface);

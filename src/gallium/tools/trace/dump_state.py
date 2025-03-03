@@ -454,7 +454,7 @@ class Context(Dispatcher):
     def sampler_view_destroy(self, view):
         pass
 
-    def set_sampler_views(self, shader, start, num, unbind_num_trailing_slots, take_ownership, views):
+    def set_sampler_views(self, shader, start, num, unbind_num_trailing_slots, views):
         # FIXME: Handle non-zero start
         assert start == 0
         self._get_stage_state(shader).sampler_views = views

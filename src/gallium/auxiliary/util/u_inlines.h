@@ -219,6 +219,38 @@ pipe_sampler_view_reference(struct pipe_sampler_view **dst,
 }
 
 static inline void
+pipe_sampler_view_release(struct pipe_sampler_view *view)
+{
+   if (view)
+      view->context->sampler_view_release(view->context, view);
+}
+
+static inline void
+pipe_sampler_view_release_ptr(struct pipe_sampler_view **view_ptr)
+{
+   struct pipe_sampler_view *view = *view_ptr;
+   *view_ptr = NULL;
+   if (view)
+      view->context->sampler_view_release(view->context, view);
+}
+
+static inline void
+pipe_sampler_view_set_release(struct pipe_sampler_view **dst,
+                              struct pipe_sampler_view *src)
+{
+   struct pipe_sampler_view *old_dst = *dst;
+   *dst = src;
+   if (old_dst)
+      old_dst->context->sampler_view_release(old_dst->context, old_dst);
+}
+
+static inline void
+u_default_sampler_view_release(struct pipe_context *pctx, struct pipe_sampler_view *view)
+{
+   pipe_sampler_view_reference(&view, NULL);
+}
+
+static inline void
 pipe_so_target_reference(struct pipe_stream_output_target **dst,
                          struct pipe_stream_output_target *src)
 {

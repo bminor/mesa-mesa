@@ -1009,9 +1009,9 @@ download_texture_compute(struct st_context *st,
    cso_set_compute_shader_handle(cso, cs);
 
    /* Set up the sampler_view */
+   struct pipe_sampler_view *sampler_view = NULL;
    {
       struct pipe_sampler_view templ;
-      struct pipe_sampler_view *sampler_view;
       struct pipe_sampler_state sampler = {0};
       const struct pipe_sampler_state *samplers[1] = {&sampler};
       const struct util_format_description *desc = util_format_description(dst_format);
@@ -1111,12 +1111,10 @@ download_texture_compute(struct st_context *st,
       if (sampler_view == NULL)
          goto fail;
 
-      pipe->set_sampler_views(pipe, PIPE_SHADER_COMPUTE, 0, 1, 0, false,
+      pipe->set_sampler_views(pipe, PIPE_SHADER_COMPUTE, 0, 1, 0,
                               &sampler_view);
       st->state.num_sampler_views[PIPE_SHADER_COMPUTE] =
          MAX2(st->state.num_sampler_views[PIPE_SHADER_COMPUTE], 1);
-
-      pipe_sampler_view_reference(&sampler_view, NULL);
 
       cso_set_samplers(cso, PIPE_SHADER_COMPUTE, 1, samplers);
    }
@@ -1159,6 +1157,7 @@ download_texture_compute(struct st_context *st,
 
    pipe->launch_grid(pipe, &info);
 
+   st->pipe->sampler_view_release(st->pipe, sampler_view);
 fail:
    cso_restore_compute_state(cso);
 
@@ -1167,7 +1166,7 @@ fail:
     */
    pipe->set_sampler_views(pipe, PIPE_SHADER_COMPUTE, 0, 0,
                            st->state.num_sampler_views[PIPE_SHADER_COMPUTE],
-                           false, NULL);
+                           NULL);
    st->state.num_sampler_views[PIPE_SHADER_COMPUTE] = 0;
    pipe->set_shader_buffers(pipe, PIPE_SHADER_COMPUTE, 0, 1, NULL, 0);
 

@@ -131,7 +131,6 @@ llvmpipe_set_sampler_views(struct pipe_context *pipe,
                            unsigned start,
                            unsigned num,
                            unsigned unbind_num_trailing_slots,
-                           bool take_ownership,
                            struct pipe_sampler_view **views)
 {
    struct llvmpipe_context *llvmpipe = llvmpipe_context(pipe);
@@ -164,14 +163,7 @@ llvmpipe_set_sampler_views(struct pipe_context *pipe,
       if (view)
          llvmpipe_flush_resource(pipe, view->texture, 0, true, false, false, "sampler_view");
 
-      if (take_ownership) {
-         pipe_sampler_view_reference(&llvmpipe->sampler_views[shader][start + i],
-                                     NULL);
-         llvmpipe->sampler_views[shader][start + i] = view;
-      } else {
-         pipe_sampler_view_reference(&llvmpipe->sampler_views[shader][start + i],
-                                     view);
-      }
+      pipe_sampler_view_reference(&llvmpipe->sampler_views[shader][start + i], view);
    }
 
    for (; i < num + unbind_num_trailing_slots; i++) {
@@ -629,5 +621,6 @@ llvmpipe_init_sampler_funcs(struct llvmpipe_context *llvmpipe)
    llvmpipe->pipe.create_sampler_view = llvmpipe_create_sampler_view;
    llvmpipe->pipe.set_sampler_views = llvmpipe_set_sampler_views;
    llvmpipe->pipe.sampler_view_destroy = llvmpipe_sampler_view_destroy;
+   llvmpipe->pipe.sampler_view_release = u_default_sampler_view_release;
    llvmpipe->pipe.delete_sampler_state = llvmpipe_delete_sampler_state;
 }

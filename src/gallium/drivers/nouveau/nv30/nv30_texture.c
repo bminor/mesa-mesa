@@ -324,4 +324,5 @@ nv30_texture_init(struct pipe_context *pipe)
 
    pipe->create_sampler_view = nv30_sampler_view_create;
    pipe->sampler_view_destroy = nv30_sampler_view_destroy;
+   pipe->sampler_view_release = u_default_sampler_view_release;
 }

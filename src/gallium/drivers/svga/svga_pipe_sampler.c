@@ -396,7 +396,6 @@ svga_set_sampler_views(struct pipe_context *pipe,
                        unsigned start,
                        unsigned num,
                        unsigned unbind_num_trailing_slots,
-                       bool take_ownership,
                        struct pipe_sampler_view **views)
 {
    struct svga_context *svga = svga_context(pipe);
@@ -437,11 +436,7 @@ svga_set_sampler_views(struct pipe_context *pipe,
 
       any_change |= svga->curr.sampler_views[shader][start + i] != views[i];
 
-      if (take_ownership) {
-         pipe_sampler_view_reference(&svga->curr.sampler_views[shader][start + i],
-               NULL);
-         svga->curr.sampler_views[shader][start + i] = views[i];
-      } else if (svga->curr.sampler_views[shader][start + i] != views[i]) {
+      if (svga->curr.sampler_views[shader][start + i] != views[i]) {
          pipe_sampler_view_reference(&svga->curr.sampler_views[shader][start + i],
                                      views[i]);
       }
@@ -548,4 +543,5 @@ svga_init_sampler_functions( struct svga_context *svga )
    svga->pipe.set_sampler_views = svga_set_sampler_views;
    svga->pipe.create_sampler_view = svga_create_sampler_view;
    svga->pipe.sampler_view_destroy = svga_sampler_view_destroy;
+   svga->pipe.sampler_view_release = u_default_sampler_view_release;
 }

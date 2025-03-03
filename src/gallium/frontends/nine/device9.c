@@ -636,7 +636,7 @@ NineDevice9_dtor( struct NineDevice9 *This )
 
     nine_bind(&This->record, NULL);
 
-    pipe_sampler_view_reference(&This->dummy_sampler_view, NULL);
+    This->context.pipe->sampler_view_release(This->context.pipe, This->dummy_sampler_view);
     pipe_resource_reference(&This->dummy_texture, NULL);
     pipe_resource_reference(&This->dummy_vbo, NULL);
     if (This->screen != This->screen_sw)

@@ -545,7 +545,7 @@ st_create_texture_handle_from_unit(struct st_context *st,
       (prog->shader_program ? prog->shader_program->GLSL_Version : 0) >= 130;
 
    /* TODO: Clarify the interaction of ARB_bindless_texture and EXT_texture_sRGB_decode */
-   view = st_update_single_texture(st, texUnit, glsl130, true, false);
+   view = st_update_single_texture(st, texUnit, glsl130, true);
    if (!view)
       return 0;
 

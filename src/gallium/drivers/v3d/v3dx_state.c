@@ -1168,7 +1168,6 @@ v3d_set_sampler_views(struct pipe_context *pctx,
                       enum pipe_shader_type shader,
                       unsigned start, unsigned nr,
                       unsigned unbind_num_trailing_slots,
-                      bool take_ownership,
                       struct pipe_sampler_view **views)
 {
         struct v3d_context *v3d = v3d_context(pctx);
@@ -1181,12 +1180,7 @@ v3d_set_sampler_views(struct pipe_context *pctx,
         for (i = 0; i < nr; i++) {
                 if (views[i])
                         new_nr = i + 1;
-                if (take_ownership) {
-                        pipe_sampler_view_reference(&stage_tex->textures[i], NULL);
-                        stage_tex->textures[i] = views[i];
-                } else {
-                        pipe_sampler_view_reference(&stage_tex->textures[i], views[i]);
-                }
+                pipe_sampler_view_reference(&stage_tex->textures[i], views[i]);
                 /* If our sampler serial doesn't match our texture serial it
                  * means the texture has been updated with a new BO, in which
                  * case we need to update the sampler state to point to the
@@ -1459,6 +1453,7 @@ v3dX(state_init)(struct pipe_context *pctx)
 
         pctx->create_sampler_view = v3d_create_sampler_view;
         pctx->sampler_view_destroy = v3d_sampler_view_destroy;
+        pctx->sampler_view_release = u_default_sampler_view_release;
         pctx->set_sampler_views = v3d_set_sampler_views;
 
         pctx->set_shader_buffers = v3d_set_shader_buffers;

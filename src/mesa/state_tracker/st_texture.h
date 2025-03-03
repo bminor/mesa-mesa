@@ -268,13 +268,14 @@ st_convert_sampler_from_unit(const struct st_context *st,
 struct pipe_sampler_view *
 st_update_single_texture(struct st_context *st,
                          GLuint texUnit, bool glsl130_or_later,
-                         bool ignore_srgb_decode, bool get_reference);
+                         bool ignore_srgb_decode);
 
 unsigned
 st_get_sampler_views(struct st_context *st,
                      enum pipe_shader_type shader_stage,
                      const struct gl_program *prog,
-                     struct pipe_sampler_view **sampler_views);
+                     struct pipe_sampler_view **sampler_views,
+                     unsigned *num_owned_views);
 
 void
 st_make_bound_samplers_resident(struct st_context *st,
