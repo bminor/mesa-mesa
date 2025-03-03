@@ -68,7 +68,7 @@ EOF
 ping -c 5 -w 60 $(lava-target-ip)
 
 lava_ssh_test_case() {
-    set -x
+    set -ex
     local test_case="${1}"
     shift
     lava-test-case \"${test_case}\" --shell \\
