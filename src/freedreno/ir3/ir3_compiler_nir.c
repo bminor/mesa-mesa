@@ -5793,6 +5793,13 @@ ir3_compile_shader_nir(struct ir3_compiler *compiler,
    progress = IR3_PASS(ir, ir3_create_alias_tex_regs);
    progress |= IR3_PASS(ir, ir3_create_alias_rt, so);
 
+   if (IR3_PASS(ir, ir3_imm_const_to_preamble, so)) {
+      progress = true;
+
+      /* ir3_imm_const_to_preamble might create duplicate a1.x movs. */
+      IR3_PASS(ir, ir3_cse);
+   }
+
    if (progress) {
       IR3_PASS(ir, ir3_dce, so);
    }

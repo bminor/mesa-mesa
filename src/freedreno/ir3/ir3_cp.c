@@ -124,9 +124,6 @@ static bool
 lower_immed(struct ir3_cp_ctx *ctx, struct ir3_instruction *instr, unsigned n,
             struct ir3_register *reg, unsigned new_flags)
 {
-   if (ctx->shader->compiler->load_shader_consts_via_preamble)
-      return false;
-
    if (!(new_flags & IR3_REG_IMMED))
       return false;
 
@@ -172,10 +169,6 @@ lower_immed(struct ir3_cp_ctx *ctx, struct ir3_instruction *instr, unsigned n,
    reg->num = ir3_const_find_imm(ctx->so, reg->uim_val);
 
    if (reg->num == INVALID_CONST_REG) {
-      /* Don't modify the const state for the binning variant. */
-      if (ctx->so->binning_pass)
-         return false;
-
       reg->num = ir3_const_add_imm(ctx->so, reg->uim_val);
 
       if (reg->num == INVALID_CONST_REG)

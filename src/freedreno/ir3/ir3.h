@@ -2319,6 +2319,9 @@ bool ir3_cse(struct ir3 *ir);
 /* Make arrays SSA */
 bool ir3_array_to_ssa(struct ir3 *ir);
 
+/* Initialize immediates lowered to consts by ir3_cp in the preamble. */
+bool ir3_imm_const_to_preamble(struct ir3 *ir, struct ir3_shader_variant *so);
+
 /* scheduling: */
 bool ir3_sched_add_deps(struct ir3 *ir);
 int ir3_sched(struct ir3 *ir);

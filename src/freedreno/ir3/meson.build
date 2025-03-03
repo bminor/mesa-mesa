@@ -113,6 +113,7 @@ libfreedreno_ir3_files = files(
   'ir3_nir_opt_preamble.c',
   'ir3_opt_predicates.c',
   'ir3_postsched.c',
+  'ir3_preamble.c',
   'ir3_print.c',
   'ir3_ra.c',
   'ir3_ra.h',
