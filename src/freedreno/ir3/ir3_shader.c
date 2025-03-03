@@ -64,8 +64,9 @@ ir3_const_ensure_imm_size(struct ir3_shader_variant *v, unsigned size)
    return true;
 }
 
-static uint16_t
-const_imm_index_to_reg(const struct ir3_const_state *const_state, unsigned i)
+uint16_t
+ir3_const_imm_index_to_reg(const struct ir3_const_state *const_state,
+                           unsigned i)
 {
    return i + (4 * const_state->allocs.max_const_offset_vec4);
 }
@@ -78,7 +79,7 @@ ir3_const_find_imm(struct ir3_shader_variant *v, uint32_t imm)
 
    for (unsigned i = 0; i < imm_state->count; i++) {
       if (imm_state->values[i] == imm)
-         return const_imm_index_to_reg(const_state, i);
+         return ir3_const_imm_index_to_reg(const_state, i);
    }
 
    return INVALID_CONST_REG;
@@ -106,7 +107,7 @@ ir3_const_add_imm(struct ir3_shader_variant *v, uint32_t imm)
    }
 
    imm_state->values[imm_state->count] = imm;
-   return const_imm_index_to_reg(const_state, imm_state->count++);
+   return ir3_const_imm_index_to_reg(const_state, imm_state->count++);
 }
 
 int
