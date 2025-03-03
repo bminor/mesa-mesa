@@ -417,6 +417,7 @@ panfrost-g610-gl:arm64:
   variables:
     DEQP_SUITE: panfrost-g610
     PAN_MESA_DEBUG: "deqp,sync,indirect"
+    LAVA_TAGS: 4gb
 
 # Disable this for now until it gets more stable
 .panfrost-g610-piglit:arm64:
