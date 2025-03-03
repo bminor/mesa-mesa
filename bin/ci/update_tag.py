@@ -205,7 +205,7 @@ def run_build_script(component: str, check_only: bool = False) -> Optional[str]:
 
     # Run the build script
     result = subprocess.run(
-        ["bash", "-c", f"source {setup_env_script} && bash -x {build_script}"],
+        ["bash", "-c", f"source {setup_env_script} && source {build_script}"],
         env=os.environ | child_env,
         capture_output=True,
         text=True,

@@ -23,7 +23,7 @@ variables:
    DEBIAN_BASE_TAG: "20250304-virglcrosvm"
 
    DEBIAN_X86_64_BUILD_IMAGE_PATH: "debian/x86_64_build"
-   DEBIAN_BUILD_TAG: "20250217-wrappers"
+   DEBIAN_BUILD_TAG: "20250303-setup-env"
 
    DEBIAN_X86_64_TEST_BASE_IMAGE: "debian/x86_64_test-base"
    DEBIAN_ARM32_TEST_BASE_IMAGE: "debian/arm32_test-base"

@@ -13,15 +13,25 @@ function _x_store_state {
     fi
 }
 _x_store_state
+alias x_store_state='{ _x_store_state; } >/dev/null 2>/dev/null'
 
 function _x_off {
     x_store_state
     set +x
 }
+alias x_off='{ _x_off; } >/dev/null 2>/dev/null'
 
 function _x_restore {
   [ $previous_state_x -eq 0 ] || set -x
 }
+alias x_restore='{ _x_restore; } >/dev/null 2>/dev/null'
+
+function _error_msg() (
+    x_off
+    RED="\e[0;31m"
+    ENDCOLOR="\e[0m"
+    echo -e "${RED}$*${ENDCOLOR}"
+)
 
 export JOB_START_S=$(date -u +"%s" -d "${CI_JOB_STARTED_AT:?}")
 
@@ -44,27 +54,32 @@ function _build_section_start {
     echo -e "\n\e[0Ksection_start:$(date +%s):$section_name$section_params\r\e[0K${CYAN}[${CURR_MINSEC}] $*${ENDCOLOR}\n"
     x_restore
 }
+alias build_section_start="x_off; _build_section_start"
 
 function _section_start {
     build_section_start "[collapsed=true]" $*
     x_restore
 }
+alias section_start="x_off; _section_start"
 
 function _uncollapsed_section_start {
     build_section_start "" $*
     x_restore
 }
+alias uncollapsed_section_start="x_off; _uncollapsed_section_start"
 
 function _build_section_end {
     echo -e "\e[0Ksection_end:$(date +%s):$1\r\e[0K"
     CURRENT_SECTION=""
     x_restore
 }
+alias build_section_end="x_off; _build_section_end"
 
 function _section_end {
     build_section_end $*
     x_restore
 }
+alias section_end="x_off; _section_end"
 
 function _section_switch {
     if [ -n "$CURRENT_SECTION" ]
@@ -75,6 +90,7 @@ function _section_switch {
     build_section_start "[collapsed=true]" $*
     x_restore
 }
+alias section_switch="x_off; _section_switch"
 
 function _uncollapsed_section_switch {
     if [ -n "$CURRENT_SECTION" ]
@@ -85,79 +101,20 @@ function _uncollapsed_section_switch {
     build_section_start "" $*
     x_restore
 }
+alias uncollapsed_section_switch="x_off; _uncollapsed_section_switch"
 
-_error_msg() (
-    x_off
-    RED="\e[0;31m"
-    ENDCOLOR="\e[0m"
-    echo -e "${RED}$*${ENDCOLOR}"
-)
-
-function x_store_state {
-    _x_store_state >/dev/null 2>/dev/null
-}
-
-function x_off {
-    _x_off >/dev/null 2>/dev/null
-}
-
-function x_restore {
-    _x_restore >/dev/null 2>/dev/null
-}
-
-function build_section_start {
-    x_off; _build_section_start "$@"
-}
-
-function section_start {
-    x_off; _section_start "$@"
-}
-
-function uncollapsed_section_start {
-    x_off; _uncollapsed_section_start "$@"
-}
-
-function build_section_end {
-    x_off; _build_section_end "$@"
-}
-
-function section_end {
-    x_off; _section_end "$@"
-}
-
-function section_switch {
-    x_off; _section_switch "$@"
-}
-
-function uncollapsed_section_switch {
-    x_off; _uncollapsed_section_switch "$@"
-}
-
-# Export all functions
-# Prefer functions over aliases, since aliases are not exportable
-export -f build_section_end
-export -f build_section_start
-export -f section_end
-export -f section_start
-export -f section_switch
-export -f uncollapsed_section_start
-export -f uncollapsed_section_switch
-export -f x_off
-export -f x_restore
-export -f x_store_state
-
-export -f _build_section_end
-export -f _build_section_start
-export -f _error_msg
-export -f _section_end
-export -f _section_start
-export -f _section_switch
-export -f _uncollapsed_section_start
-export -f _uncollapsed_section_switch
+export -f _x_store_state
 export -f _x_off
 export -f _x_restore
-export -f _x_store_state
 export -f get_current_minsec
+export -f _build_section_start
+export -f _section_start
+export -f _build_section_end
+export -f _section_end
+export -f _section_switch
+export -f _uncollapsed_section_switch
+export -f _error_msg
+
 # Freedesktop requirement (needed for Wayland)
 [ -n "${XDG_RUNTIME_DIR:-}" ] || export XDG_RUNTIME_DIR="$(mktemp -p "$PWD" -d xdg-runtime-XXXXXX)"
 
