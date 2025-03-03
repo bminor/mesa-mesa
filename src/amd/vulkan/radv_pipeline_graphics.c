@@ -3484,6 +3484,8 @@ radv_graphics_pipeline_create(VkDevice _device, VkPipelineCache _cache, const Vk
       return result;
    }
 
+   radv_pipeline_report_pso_history(device, &pipeline->base);
+
    *pPipeline = radv_pipeline_to_handle(&pipeline->base);
    radv_rmv_log_graphics_pipeline_create(device, &pipeline->base, pipeline->base.is_internal);
    return VK_SUCCESS;
@@ -3591,6 +3593,8 @@ radv_graphics_lib_pipeline_create(VkDevice _device, VkPipelineCache _cache,
       radv_pipeline_destroy(device, &pipeline->base.base, pAllocator);
       return result;
    }
+
+   radv_pipeline_report_pso_history(device, &pipeline->base.base);
 
    *pPipeline = radv_pipeline_to_handle(&pipeline->base.base);
 

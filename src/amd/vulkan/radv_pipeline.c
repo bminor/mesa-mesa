@@ -61,8 +61,8 @@ radv_pipeline_capture_shader_stats(const struct radv_device *device, VkPipelineC
 
    /* Capture shader statistics when RGP is enabled to correlate shader hashes with Fossilize. */
    return (flags & VK_PIPELINE_CREATE_2_CAPTURE_STATISTICS_BIT_KHR) ||
-          (instance->debug_flags & RADV_DEBUG_DUMP_SHADER_STATS) || device->keep_shader_info ||
-          (instance->vk.trace_mode & RADV_TRACE_MODE_RGP);
+          (instance->debug_flags & (RADV_DEBUG_DUMP_SHADER_STATS | RADV_DEBUG_PSO_HISTORY)) ||
+          device->keep_shader_info || (instance->vk.trace_mode & RADV_TRACE_MODE_RGP);
 }
 
 bool
@@ -1237,4 +1237,62 @@ radv_pipeline_hash_shader_stage(VkPipelineCreateFlags2 pipeline_flags, const VkP
 
    _mesa_sha1_update(ctx, shader_sha1, sizeof(shader_sha1));
    _mesa_sha1_update(ctx, stage_key, sizeof(*stage_key));
+}
+
+static void
+radv_print_pso_history(const struct radv_pipeline *pipeline, const struct radv_shader *shader, FILE *output)
+{
+   const uint64_t start_addr = radv_shader_get_va(shader) & ((1ull << 48) - 1);
+   const uint64_t end_addr = start_addr + shader->code_size;
+
+   fprintf(output, "pipeline_hash=%.16llx, VA=%.16llx-%.16llx, stage=%s\n", (long long)pipeline->pipeline_hash,
+           (long long)start_addr, (long long)end_addr, _mesa_shader_stage_to_string(shader->info.stage));
+   fflush(output);
+}
+
+void
+radv_pipeline_report_pso_history(const struct radv_device *device, struct radv_pipeline *pipeline)
+{
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+   const struct radv_instance *instance = radv_physical_device_instance(pdev);
+   FILE *output = instance->pso_history_logfile ? instance->pso_history_logfile : stderr;
+
+   if (!(instance->debug_flags & RADV_DEBUG_PSO_HISTORY))
+      return;
+
+   /* Only report PSO history for application pipelines. */
+   if (pipeline->is_internal)
+      return;
+
+   switch (pipeline->type) {
+   case RADV_PIPELINE_GRAPHICS:
+      for (uint32_t i = 0; i < MESA_VULKAN_SHADER_STAGES; i++) {
+         const struct radv_shader *shader = pipeline->shaders[i];
+
+         if (shader)
+            radv_print_pso_history(pipeline, shader, output);
+      }
+
+      if (pipeline->gs_copy_shader)
+         radv_print_pso_history(pipeline, pipeline->gs_copy_shader, output);
+      break;
+   case RADV_PIPELINE_COMPUTE:
+      radv_print_pso_history(pipeline, pipeline->shaders[MESA_SHADER_COMPUTE], output);
+      break;
+   case RADV_PIPELINE_RAY_TRACING: {
+      struct radv_ray_tracing_pipeline *rt_pipeline = radv_pipeline_to_ray_tracing(pipeline);
+
+      radv_print_pso_history(pipeline, rt_pipeline->prolog, output);
+
+      for (uint32_t i = 0; i < rt_pipeline->stage_count; i++) {
+         const struct radv_shader *shader = rt_pipeline->stages[i].shader;
+
+         if (shader)
+            radv_print_pso_history(pipeline, shader, output);
+      }
+      break;
+   }
+   default:
+      break;
+   }
 }

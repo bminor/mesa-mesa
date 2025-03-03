@@ -85,6 +85,7 @@ static const struct debug_control radv_debug_options[] = {{"nofastclears", RADV_
                                                           {"nir", RADV_DEBUG_DUMP_NIR},
                                                           {"asm", RADV_DEBUG_DUMP_ASM},
                                                           {"ir", RADV_DEBUG_DUMP_BACKEND_IR},
+                                                          {"pso_history", RADV_DEBUG_PSO_HISTORY},
                                                           {NULL, 0}};
 
 const char *
@@ -400,6 +401,14 @@ radv_CreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationC
       instance->debug_flags |= shader_stage_flags;
    }
 
+   if (instance->debug_flags & RADV_DEBUG_PSO_HISTORY) {
+      const char *filename = "/tmp/radv_pso_history.log";
+
+      instance->pso_history_logfile = fopen(filename, "w");
+      if (!instance->pso_history_logfile)
+         fprintf(stderr, "radv: Failed to open log file: %s.\n", filename);
+   }
+
    /* When RADV_FORCE_FAMILY is set, the driver creates a null
     * device that allows to test the compiler without having an
     * AMDGPU instance.
@@ -432,6 +441,9 @@ radv_DestroyInstance(VkInstance _instance, const VkAllocationCallbacks *pAllocat
       return;
 
    VG(VALGRIND_DESTROY_MEMPOOL(instance));
+
+   if (instance->pso_history_logfile)
+      fclose(instance->pso_history_logfile);
 
    simple_mtx_destroy(&instance->shader_dump_mtx);
 

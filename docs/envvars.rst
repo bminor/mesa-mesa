@@ -1402,6 +1402,9 @@ RADV driver environment variables
       dump vertex shader prologs
    ``psocachestats``
      dump PSO cache stats (hits/misses) to verify precompilation of shaders
+   ``pso_history``
+     dump PSO history (pipeline hash + shader VA) to /tmp/radv_pso_history.log.
+     Useful for debugging GPU hangs with UMR and Fossilize.
    ``shaders``
       dump shaders
    ``shaderstats``

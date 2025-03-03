@@ -1157,6 +1157,8 @@ radv_rt_pipeline_create(VkDevice _device, VkPipelineCache _cache, const VkRayTra
       }
    }
 
+   radv_pipeline_report_pso_history(device, &pipeline->base.base);
+
    *pPipeline = radv_pipeline_to_handle(&pipeline->base.base);
    radv_rmv_log_rt_pipeline_create(device, pipeline);
 

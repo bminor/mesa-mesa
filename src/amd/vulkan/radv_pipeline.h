@@ -110,4 +110,6 @@ void radv_pipeline_hash_shader_stage(VkPipelineCreateFlags2 pipeline_flags,
                                      const VkPipelineShaderStageCreateInfo *sinfo,
                                      const struct radv_shader_stage_key *stage_key, struct mesa_sha1 *ctx);
 
+void radv_pipeline_report_pso_history(const struct radv_device *device, struct radv_pipeline *pipeline);
+
 #endif /* RADV_PIPELINE_H */

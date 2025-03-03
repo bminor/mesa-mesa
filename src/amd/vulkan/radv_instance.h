@@ -80,6 +80,8 @@ struct radv_instance {
       int override_vram_size;
       int override_uniform_offset_alignment;
    } drirc;
+
+   FILE *pso_history_logfile;
 };
 
 VK_DEFINE_HANDLE_CASTS(radv_instance, vk.base, VkInstance, VK_OBJECT_TYPE_INSTANCE)
