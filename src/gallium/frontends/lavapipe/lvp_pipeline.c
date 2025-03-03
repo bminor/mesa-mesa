@@ -36,6 +36,8 @@
 #include "pipe/p_context.h"
 #include "nir/nir_xfb_info.h"
 
+#include "gallivm/lp_bld_debug.h"
+
 #define SPIR_V_MAGIC_NUMBER 0x07230203
 
 #define MAX_DYNAMIC_STATES 72
@@ -318,6 +320,7 @@ compile_spirv(struct lvp_device *pdevice,
 #ifdef VK_ENABLE_BETA_EXTENSIONS
       .shader_index = node_info ? node_info->index : 0,
 #endif
+      .debug_info = gallivm_debug & GALLIVM_DEBUG_SYMBOLS,
    };
 
    result = vk_pipeline_shader_stage_to_nir(&pdevice->vk, pipeline_flags, sinfo,
