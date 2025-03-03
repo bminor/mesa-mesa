@@ -50,50 +50,16 @@ static void radeon_enc_spec_misc(struct radeon_encoder *enc)
 
 static void radeon_enc_encode_params(struct radeon_encoder *enc)
 {
-
-   bool is_av1 = u_reduce_video_profile(enc->base.profile)
-                             == PIPE_VIDEO_FORMAT_AV1;
-   if ( !is_av1 ) {
-      switch (enc->enc_pic.picture_type) {
-         case PIPE_H2645_ENC_PICTURE_TYPE_I:
-         case PIPE_H2645_ENC_PICTURE_TYPE_IDR:
-            enc->enc_pic.enc_params.pic_type = RENCODE_PICTURE_TYPE_I;
-            break;
-         case PIPE_H2645_ENC_PICTURE_TYPE_P:
-            enc->enc_pic.enc_params.pic_type = RENCODE_PICTURE_TYPE_P;
-            break;
-         case PIPE_H2645_ENC_PICTURE_TYPE_SKIP:
-            enc->enc_pic.enc_params.pic_type = RENCODE_PICTURE_TYPE_P_SKIP;
-            break;
-         case PIPE_H2645_ENC_PICTURE_TYPE_B:
-            enc->enc_pic.enc_params.pic_type = RENCODE_PICTURE_TYPE_B;
-            break;
-         default:
-            enc->enc_pic.enc_params.pic_type = RENCODE_PICTURE_TYPE_I;
-      }
-   } else {
-      switch (enc->enc_pic.frame_type) {
-         case PIPE_AV1_ENC_FRAME_TYPE_KEY:
-            enc->enc_pic.enc_params.pic_type = RENCODE_PICTURE_TYPE_I;
-            break;
-         case PIPE_AV1_ENC_FRAME_TYPE_INTRA_ONLY:
-            enc->enc_pic.enc_params.pic_type = RENCODE_PICTURE_TYPE_I;
-            break;
-         case PIPE_AV1_ENC_FRAME_TYPE_INTER:
-         case PIPE_AV1_ENC_FRAME_TYPE_SWITCH:
-            if (enc->enc_pic.av1.compound)
-               enc->enc_pic.enc_params.pic_type = RENCODE_PICTURE_TYPE_B;
-            else
-               enc->enc_pic.enc_params.pic_type = RENCODE_PICTURE_TYPE_P;
-            break;
-         default:
-            assert(0); /* never come to this condition */
-      }
-   }
-
    if (enc->luma->meta_offset)
       RADEON_ENC_ERR("DCC surfaces not supported.\n");
 
+   if (u_reduce_video_profile(enc->base.profile) == PIPE_VIDEO_FORMAT_AV1) {
+      enc->enc_pic.enc_params.pic_type = radeon_enc_av1_picture_type(enc->enc_pic.frame_type);
+      if (enc->enc_pic.enc_params.pic_type == RENCODE_PICTURE_TYPE_P && enc->enc_pic.av1.compound)
+         enc->enc_pic.enc_params.pic_type = RENCODE_PICTURE_TYPE_B;
+   } else {
+      enc->enc_pic.enc_params.pic_type = radeon_enc_h2645_picture_type(enc->enc_pic.picture_type);
+   }
    enc->enc_pic.enc_params.input_pic_luma_pitch = enc->luma->u.gfx9.surf_pitch;
    enc->enc_pic.enc_params.input_pic_chroma_pitch = enc->chroma ?
       enc->chroma->u.gfx9.surf_pitch : enc->luma->u.gfx9.surf_pitch;

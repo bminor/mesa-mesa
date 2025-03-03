@@ -345,6 +345,8 @@ unsigned int radeon_enc_av1_tile_log2(unsigned int blk_size, unsigned int max);
 
 unsigned int radeon_enc_h2645_picture_type(enum pipe_h2645_enc_picture_type type);
 
+unsigned int radeon_enc_av1_picture_type(enum pipe_av1_enc_frame_type type);
+
 bool radeon_enc_is_av1_uniform_tile (uint32_t nb_sb, uint32_t nb_tiles,
                                      uint32_t min_nb_sb, struct tile_1d_layout *p);
 

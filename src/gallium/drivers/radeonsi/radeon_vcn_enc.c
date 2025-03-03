@@ -2123,6 +2123,21 @@ unsigned int radeon_enc_h2645_picture_type(enum pipe_h2645_enc_picture_type type
    }
 }
 
+unsigned int radeon_enc_av1_picture_type(enum pipe_av1_enc_frame_type type)
+{
+   switch (type) {
+   case PIPE_AV1_ENC_FRAME_TYPE_KEY:
+   case PIPE_AV1_ENC_FRAME_TYPE_INTRA_ONLY:
+      return RENCODE_PICTURE_TYPE_I;
+   case PIPE_AV1_ENC_FRAME_TYPE_INTER:
+   case PIPE_AV1_ENC_FRAME_TYPE_SWITCH:
+      return RENCODE_PICTURE_TYPE_P;
+   default:
+      assert(false);
+      return 0;
+   }
+}
+
 /* dummy function for re-using the same pipeline */
 void radeon_enc_dummy(struct radeon_encoder *enc) {}
 

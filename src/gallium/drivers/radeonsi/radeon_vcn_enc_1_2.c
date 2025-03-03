@@ -1030,27 +1030,10 @@ static void radeon_enc_rc_per_pic_ex(struct radeon_encoder *enc)
 
 static void radeon_enc_encode_params(struct radeon_encoder *enc)
 {
-   switch (enc->enc_pic.picture_type) {
-   case PIPE_H2645_ENC_PICTURE_TYPE_I:
-   case PIPE_H2645_ENC_PICTURE_TYPE_IDR:
-      enc->enc_pic.enc_params.pic_type = RENCODE_PICTURE_TYPE_I;
-      break;
-   case PIPE_H2645_ENC_PICTURE_TYPE_P:
-      enc->enc_pic.enc_params.pic_type = RENCODE_PICTURE_TYPE_P;
-      break;
-   case PIPE_H2645_ENC_PICTURE_TYPE_SKIP:
-      enc->enc_pic.enc_params.pic_type = RENCODE_PICTURE_TYPE_P_SKIP;
-      break;
-   case PIPE_H2645_ENC_PICTURE_TYPE_B:
-      enc->enc_pic.enc_params.pic_type = RENCODE_PICTURE_TYPE_B;
-      break;
-   default:
-      enc->enc_pic.enc_params.pic_type = RENCODE_PICTURE_TYPE_I;
-   }
-
    if (enc->luma->meta_offset)
       RADEON_ENC_ERR("DCC surfaces not supported.\n");
 
+   enc->enc_pic.enc_params.pic_type = radeon_enc_h2645_picture_type(enc->enc_pic.picture_type);
    enc->enc_pic.enc_params.input_pic_luma_pitch = enc->luma->u.gfx9.surf_pitch;
    enc->enc_pic.enc_params.input_pic_chroma_pitch = enc->chroma ?
       enc->chroma->u.gfx9.surf_pitch : enc->luma->u.gfx9.surf_pitch;
