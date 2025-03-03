@@ -184,7 +184,7 @@
         "description": "iris: remove dead code that cannot get hit anymore",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c33ebf09f5e6638481b28db3ec3bb3f73d1537ea",
         "notes": null
