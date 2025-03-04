@@ -389,13 +389,25 @@
 
 #define SDMA_NOP_PAD SDMA_PACKET(SDMA_OPCODE_NOP, 0, 0) /* header-only version */
 
-/* SDMA DCC tilings for GFX12+ */
-#define SDMA_DCC_DATA_FORMAT(x) ((x) & 0x3f)
-#define SDMA_DCC_NUM_TYPE(x)    (((x) & 0x7) << 9)
-#define SDMA_DCC_READ_CM(x)     (((x) & 0x3) << 16) /* 0: bypass DCC, 2: decompress reads if PTE.D */
-#define SDMA_DCC_WRITE_CM(x)    (((x) & 0x3) << 18) /* 0: bypass DCC, 1: write compressed if PTE.D, 2: write uncompressed if PTE.D */
-#define SDMA_DCC_MAX_COM(x)     (((x) & 0x3) << 24)
-#define SDMA_DCC_MAX_UCOM(x)    (((x) & 0x1) << 26) /* 1: max uncompressed block size 256B */
+/* SDMA DCC settings for GFX10+ */
+#define SDMA5_DCC_DATA_FORMAT(x)       ((x) & 0x7f)
+#define SDMA5_DCC_ALPHA_IS_ON_MSB(x)   (((x) & 0x1) << 8)
+#define SDMA5_DCC_NUM_TYPE(x)          (((x) & 0x7) << 9)
+#define SDMA5_DCC_SURF_TYPE(x)         (((x) & 0x3) << 12) /* 0: color, 1: Z, 2: stencil, 3: FMASK */
+#define SDMA5_DCC_LLC_NOALLOC(x)       (((x) & 0x1) << 14) /* don't cache in MALL */
+#define SDMA5_DCC_MAX_COM(x)           (((x) & 0x3) << 24) /* max compressed block size, 0: 64B, 1: 128B, 2: 256B */
+#define SDMA5_DCC_MAX_UCOM(x)          (((x) & 0x3) << 26) /* max uncompressed block size, 0: 64B, 1: 128B, 2: 256B */
+#define SDMA5_DCC_WRITE_COMPRESS(x)    (((x) & 0x1) << 28) /* DCC write compression enabled, dst must be tiled */
+#define SDMA5_DCC_TMZ(x)               (((x) & 0x1) << 29) /* metadata is TMZ */
+#define SDMA5_DCC_PIPE_ALIGNED(x)      (((x) & 0x1) << 31)
+
+/* SDMA DCC settings for GFX12+ */
+#define SDMA7_DCC_DATA_FORMAT(x)       ((x) & 0x3f)
+#define SDMA7_DCC_NUM_TYPE(x)          (((x) & 0x7) << 9)
+#define SDMA7_DCC_READ_CM(x)           (((x) & 0x3) << 16) /* 0: bypass DCC, 2: decompress reads if PTE.D */
+#define SDMA7_DCC_WRITE_CM(x)          (((x) & 0x3) << 18) /* 0: bypass DCC, 1: write compressed if PTE.D, 2: write uncompressed if PTE.D */
+#define SDMA7_DCC_MAX_COM(x)           (((x) & 0x3) << 24)
+#define SDMA7_DCC_MAX_UCOM(x)          (((x) & 0x1) << 26) /* 1: max uncompressed block size 256B */
 
 enum amd_cmp_class_flags
 {
