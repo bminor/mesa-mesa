@@ -16,6 +16,61 @@
       }
     }
   },
+  "220856683": {
+    "mesa_platforms": {
+      "INTEL_PLATFORM_ADL": {
+        "ids": [
+          14010698192,
+          14010801404,
+          14013824274
+        ],
+        "steppings": "all"
+      },
+      "INTEL_PLATFORM_DG1": {
+        "ids": [
+          1406499725,
+          1409101237,
+          14010679587
+        ],
+        "steppings": "all"
+      },
+      "INTEL_PLATFORM_EHL": {
+        "ids": [
+          1406990723
+        ],
+        "steppings": "all"
+      },
+      "INTEL_PLATFORM_ICL": {
+        "ids": [
+          220856683,
+          1406499909,
+          1406499910
+        ],
+        "steppings": "all"
+      },
+      "INTEL_PLATFORM_RKL": {
+        "ids": [
+          14010680656
+        ],
+        "steppings": "all"
+      },
+      "INTEL_PLATFORM_RPL": {
+        "ids": [
+          14010698192,
+          14010801404,
+          14013824274
+        ],
+        "steppings": "all"
+      },
+      "INTEL_PLATFORM_TGL": {
+        "ids": [
+          1406499725,
+          14010679587
+        ],
+        "steppings": "all"
+      }
+    }
+  },
   "220981846": {
     "mesa_platforms": {
       "INTEL_PLATFORM_EHL": {
@@ -4348,6 +4403,17 @@
       }
     }
   },
+  "16025857284": {
+    "mesa_platforms": {
+      "INTEL_PLATFORM_BMG": {
+        "ids": [
+          14024111900,
+          14024549516
+        ],
+        "steppings": "all"
+      }
+    }
+  },
   "18012201914": {
     "mesa_platforms": {
       "INTEL_PLATFORM_ATSM_G10": {
@@ -5139,11 +5205,29 @@
   },
   "18040209780": {
     "mesa_platforms": {
+      "INTEL_PLATFORM_ARL_U": {
+        "ids": [
+          14023765946
+        ],
+        "steppings": "all"
+      },
       "INTEL_PLATFORM_BMG": {
         "ids": [
           14023674512,
           14023843092,
           18040209780
+        ],
+        "steppings": "all"
+      },
+      "INTEL_PLATFORM_MTL_H": {
+        "ids": [
+          14023767450
+        ],
+        "steppings": "all"
+      },
+      "INTEL_PLATFORM_MTL_U": {
+        "ids": [
+          14023765946
         ],
         "steppings": "all"
       },
@@ -5673,6 +5757,16 @@
       "INTEL_PLATFORM_LNL": {
         "ids": [
           14022668102
+        ],
+        "steppings": "all"
+      }
+    }
+  },
+  "22020521218": {
+    "mesa_platforms": {
+      "INTEL_PLATFORM_PTL": {
+        "ids": [
+          14024518042
         ],
         "steppings": "all"
       }
