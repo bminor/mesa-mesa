@@ -5174,7 +5174,7 @@
         "description": "pan/bi: Fix out of range access in bi_instr_replicates",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f7d44a46cd424e797a38ef732360e546f093f0ae",
         "notes": null
