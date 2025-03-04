@@ -43,7 +43,7 @@ variables:
    KERNEL_ROOTFS_TAG: "20250305-vkcts-main"
 
    DEBIAN_PYUTILS_IMAGE: "debian/x86_64_pyutils"
-   DEBIAN_PYUTILS_TAG: "20250129-lavacli"
+   DEBIAN_PYUTILS_TAG: "20250303-hypothesis"
 
    ALPINE_X86_64_BUILD_TAG: "20250223-way-prot"
    ALPINE_X86_64_LAVA_SSH_TAG: "20250124-spirv-tools"

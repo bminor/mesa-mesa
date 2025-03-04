@@ -3,9 +3,9 @@ from typing import TYPE_CHECKING, Any
 
 from ruamel.yaml import YAML
 
-from os import environ, getenv
+from os import getenv
 
-from lava.utils.lava_farm import LavaFarm, get_lava_farm
+from lava.utils.lava_farm import get_lava_farm
 from lava.utils.ssh_job_definition import (
     generate_docker_test,
     generate_dut_test,
@@ -52,7 +52,7 @@ class LAVAJobDefinition:
         # which is required to follow the job in a SSH section
         current_farm = get_lava_farm()
 
-        return current_farm == LavaFarm.COLLABORA
+        return current_farm == "collabora"
 
     def generate_lava_yaml_payload(self) -> dict[str, Any]:
         """

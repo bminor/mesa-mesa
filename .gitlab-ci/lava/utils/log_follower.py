@@ -20,7 +20,7 @@ from typing import Optional, Union
 from lava.exceptions import MesaCITimeoutError
 from lava.utils.console_format import CONSOLE_LOG
 from lava.utils.gitlab_section import GitlabSection
-from lava.utils.lava_farm import LavaFarm, get_lava_farm
+from lava.utils.lava_farm import get_lava_farm
 from lava.utils.lava_log_hints import LAVALogHints
 from lava.utils.log_section import (
     DEFAULT_GITLAB_SECTION_TIMEOUTS,
@@ -43,7 +43,7 @@ class LogFollower:
     fallback_timeout: timedelta = FALLBACK_GITLAB_SECTION_TIMEOUT
     _buffer: list[str] = field(default_factory=list, init=False)
     log_hints: LAVALogHints = field(init=False)
-    lava_farm: LavaFarm = field(init=False, default=get_lava_farm())
+    lava_farm: str = field(init=False, default=get_lava_farm())
     _merge_next_line: str = field(default_factory=str, init=False)
 
     def __post_init__(self):
@@ -261,7 +261,7 @@ class LogFollower:
         elif line["lvl"] == "input":
             prefix = "$ "
             suffix = ""
-        elif line["lvl"] == "target" and self.lava_farm != LavaFarm.COLLABORA:
+        elif line["lvl"] == "target" and self.lava_farm != "collabora":
             # gl_section_fix_gen will output the stored line if it can't find a
             # match for the first split line
             # So we can recover it and put it back to the buffer
