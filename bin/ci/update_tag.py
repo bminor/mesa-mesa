@@ -7,18 +7,11 @@ import argparse
 import subprocess
 import yaml
 from typing import Optional, Set, Any
+from dataclasses import dataclass, field
 
 from datetime import datetime, timezone
 from pathlib import Path
 
-CI_PROJECT_DIR: str | None = os.environ.get("CI_PROJECT_DIR", None)
-GIT_REPO_ROOT: str = CI_PROJECT_DIR or str(Path(__file__).resolve().parent.parent.parent)
-SETUP_TEST_ENV_PATH: Path = Path(GIT_REPO_ROOT) / ".gitlab-ci" / "setup-test-env.sh"
-CONDITIONAL_TAGS_FILE: Path = (
-    Path(GIT_REPO_ROOT) / ".gitlab-ci" / "conditional-build-image-tags.yml"
-)
-CONTAINER_DIR: Path = Path(GIT_REPO_ROOT) / ".gitlab-ci" / "container"
-CONTAINER_CI_FILE: Path = CONTAINER_DIR / "gitlab-ci.yml"
 
 # Very simple type alias for GitLab YAML data structure
 # It is composed by a dictionary of job names, each with a dictionary of fields
@@ -34,6 +27,49 @@ DUMMY_ENV_VARS: dict[str, str] = {
     "DEQP_API": "dummy",
     "DEQP_TARGET": "dummy",
 }
+
+
+@dataclass
+class ProjectPaths:
+    """Manages all project-related paths"""
+
+    root: Path = field(default_factory=lambda: Path(), init=False)
+    setup_test_env: Path = field(default_factory=lambda: Path(), init=False)
+    conditional_tags: Path = field(default_factory=lambda: Path(), init=False)
+    container_dir: Path = field(default_factory=lambda: Path(), init=False)
+    container_ci: Path = field(default_factory=lambda: Path(), init=False)
+
+    def __post_init__(self):
+        self.root = self.find_root()
+        self.setup_test_env = self.root / ".gitlab-ci" / "setup-test-env.sh"
+        self.conditional_tags = self.root / ".gitlab-ci" / "conditional-build-image-tags.yml"
+        self.container_dir = self.root / ".gitlab-ci" / "container"
+        self.container_ci = self.container_dir / "gitlab-ci.yml"
+
+    def find_root(self) -> Path:
+        """Find git repository root or fallback to other methods"""
+        try:
+            logging.debug("Getting git repo root using git rev-parse")
+            return Path(
+                subprocess.check_output(
+                    ["git", "rev-parse", "--show-toplevel"],
+                    text=True,
+                    stderr=subprocess.PIPE,
+                ).strip()
+            )
+        # FileNotFoundError is raised if git is not installed
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            # Fallback to CI_PROJECT_DIR or path-based method
+            if ci_dir := os.environ.get("CI_PROJECT_DIR"):
+                logging.debug(f"Getting git repo root using CI_PROJECT_DIR: {ci_dir}")
+                return Path(ci_dir)
+
+            # Last resort, use the path to this script
+            logging.debug("Getting git repo root using path to this script")
+            return Path(__file__).resolve().parent.parent.parent
+
+
+PATHS: ProjectPaths = ProjectPaths()
 
 
 def from_component_to_build_tag(component: str) -> str:
@@ -65,23 +101,24 @@ def prepare_setup_env_script() -> Path:
     Sets up dummy environment variables to mimic the script in the CI repo.
     Returns the path to the setup-test-env.sh script.
     """
-    if not SETUP_TEST_ENV_PATH.exists():
-        sys.exit(".gitlab-ci/setup-test-env.sh not found. Exiting.")
+    if not PATHS.setup_test_env.exists():
+        logging.error(".gitlab-ci/setup-test-env.sh not found. Exiting.")
+        sys.exit(1)
 
     # Dummy environment vars to mimic the script
     for key, value in DUMMY_ENV_VARS.items():
         os.environ[key] = value
 
-    os.environ["CI_PROJECT_DIR"] = GIT_REPO_ROOT
+    os.environ["CI_PROJECT_DIR"] = str(PATHS.root)
 
-    return SETUP_TEST_ENV_PATH
+    return PATHS.setup_test_env
 
 
 def validate_build_script(script_filename: str) -> bool:
     """
     Returns True if the build script for the given component uses the structured tag variable.
     """
-    build_script = CONTAINER_DIR / script_filename
+    build_script = PATHS.container_dir / script_filename
     with open(build_script, "r", encoding="utf-8") as f:
         script_content = f.read()
 
@@ -95,14 +132,14 @@ def validate_build_script(script_filename: str) -> bool:
 
 
 def load_container_yaml() -> YamlData:
-    if not os.path.isfile(CONTAINER_CI_FILE):
-        sys.exit(f"File not found: {CONTAINER_CI_FILE}")
+    if not PATHS.container_ci.is_file():
+        logging.error(f"File not found: {PATHS.container_ci}")
+        sys.exit(1)
 
     # Ignore !reference and other custom GitLab tags, we just want to know the
     # job names and fields
-    yaml.SafeLoader.add_multi_constructor('', lambda loader, suffix, node: None)
-    with open(CONTAINER_CI_FILE, "r", encoding="utf-8") as f:
-
+    yaml.SafeLoader.add_multi_constructor("", lambda loader, suffix, node: None)
+    with open(str(PATHS.container_ci), "r", encoding="utf-8") as f:
         data = yaml.load(f, Loader=yaml.SafeLoader)
         if not isinstance(data, dict):
             return {"variables": {}}
@@ -125,7 +162,7 @@ def find_candidate_components() -> list[str]:
 
     if not candidates:
         logging.error(
-            f"No viable build components found in {CONTAINER_CI_FILE}. "
+            f"No viable build components found in {PATHS.container_ci}. "
             "Please check the file for valid component names. "
             "They should be named like '.container-builds-<component>'."
         )
@@ -133,7 +170,7 @@ def find_candidate_components() -> list[str]:
 
     # Find build scripts named build-<component>.sh
     build_scripts: list[str] = []
-    for path in CONTAINER_DIR.glob("build-*.sh"):
+    for path in PATHS.container_dir.glob("build-*.sh"):
         if validate_build_script(path.name):
             logging.info(f"Found build script: {path.name}")
             component = from_script_name_to_component(path.name)
@@ -176,8 +213,8 @@ def run_build_script(component: str, check_only: bool = False) -> Optional[str]:
     # 1) Set up environment
     setup_env_script = prepare_setup_env_script()
 
-    build_script = os.path.join(CONTAINER_DIR, f"build-{component}.sh")
-    if not os.path.isfile(build_script):
+    build_script = PATHS.container_dir / f"build-{component}.sh"
+    if not build_script.is_file():
         logging.error(f"Build script not found for {component}: {build_script}")
         return None
 
@@ -244,24 +281,33 @@ def run_build_script(component: str, check_only: bool = False) -> Optional[str]:
 
 
 def load_image_tags_yaml() -> YamlData:
-    try:
-        with open(CONDITIONAL_TAGS_FILE, "r", encoding="utf-8") as f:
-            data = yaml.safe_load(f)
-            if not isinstance(data, dict):
-                return {"variables": {}}
-            if "variables" not in data:
-                data["variables"] = {}
-            return data
-    except FileNotFoundError:
-        return {"variables": {}}
+    # 0) Check if the YAML file exists
+    if not os.path.isfile(CONDITIONAL_TAGS_FILE):
+        raise FileNotFoundError(f"Conditional build image tags file not found: {CONDITIONAL_TAGS_FILE}")
+
+    with open(str(PATHS.conditional_tags), "r", encoding="utf-8") as f:
+        data = yaml.safe_load(f)
+        if not isinstance(data, dict):
+            return {"variables": {}}
+        if "variables" not in data:
+            data["variables"] = {}
+        return data
 
 
 def get_current_tag_value(component: str) -> Optional[str]:
+    # If the CI job already set the tag, use it
+    tag_var = from_component_to_tag_var(component)
+    if os.getenv(tag_var):
+        logging.debug(f"Using tag from environment variable {tag_var}")
+        return os.getenv(tag_var)
+
+    # Otherwise, look in the YAML file, which normally occurs when updating tags locally
     full_tag_var = from_component_to_build_tag(component)
     data = load_image_tags_yaml()
     variables = data.get("variables", {})
     if not isinstance(variables, dict):
         return None
+    logging.debug(f"Using tag from YAML file {full_tag_var}")
     return variables.get(full_tag_var)
 
 
@@ -286,7 +332,7 @@ def update_image_tag_in_yaml(component: str, tag_value: str) -> None:
     data["variables"] = dict(sorted(data["variables"].items()))
 
     # Write back to file
-    with open(CONDITIONAL_TAGS_FILE, "w", encoding="utf-8") as f:
+    with open(str(PATHS.conditional_tags), "w", encoding="utf-8") as f:
         yaml.dump(data, f, sort_keys=False)  # Don't sort top-level keys
 
 
@@ -363,13 +409,6 @@ def main():
 
     logging.basicConfig(level=log_level, format="%(levelname)s: %(message)s")
 
-    # 0) Check if the YAML file exists
-    if not os.path.isfile(CONDITIONAL_TAGS_FILE):
-        logging.fatal(
-            f"Conditional build image tags file not found: {CONDITIONAL_TAGS_FILE}"
-        )
-        return
-
     # 1) If checking, just run build scripts in check mode and propagate errors
     if args.check:
         tag_mismatch = False
@@ -383,7 +422,7 @@ def main():
                 raise e
             except Exception as e:
                 logging.error(f"Internal error: {e}")
-                sys.exit(3)
+                sys.exit(1)
         # If any component failed, exit with code 1
         if tag_mismatch:
             sys.exit(2)
