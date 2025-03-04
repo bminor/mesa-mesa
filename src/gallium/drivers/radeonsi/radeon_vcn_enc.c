@@ -160,7 +160,8 @@ static void radeon_vcn_enc_get_roi_param(struct radeon_encoder *enc,
    else {
       uint32_t width_in_block, height_in_block;
       uint32_t block_length;
-      int32_t i, j, pa_format = 0;
+      int32_t i, j;
+      bool pa_format = false;
 
       qp_map->version = sscreen->info.vcn_ip_version >= VCN_5_0_0
                         ? RENCODE_QP_MAP_VCN5 : RENCODE_QP_MAP_LEGACY;
@@ -170,7 +171,7 @@ static void radeon_vcn_enc_get_roi_param(struct radeon_encoder *enc,
       if (enc->enc_pic.rc_session_init.rate_control_method &&
             (qp_map->version ==  RENCODE_QP_MAP_LEGACY)) {
          enc->enc_pic.enc_qp_map.qp_map_type = RENCODE_QP_MAP_TYPE_MAP_PA;
-         pa_format = 1;
+         pa_format = true;
       }
       else
          enc->enc_pic.enc_qp_map.qp_map_type = RENCODE_QP_MAP_TYPE_DELTA;
@@ -194,7 +195,7 @@ static void radeon_vcn_enc_get_roi_param(struct radeon_encoder *enc,
             /* mapped av1 qi into the legacy qp range by dividing by 5 and
              * rounding up in any rate control mode.
              */
-            if (is_av1 && (pa_format || (qp_map->version ==  RENCODE_QP_MAP_VCN5))) {
+            if (is_av1 && pa_format) {
                if (region->qp_value > 0)
                   av1_qi_value = (region->qp_value + 2) / 5;
                else if (region->qp_value < 0)
