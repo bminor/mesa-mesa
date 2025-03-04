@@ -84,6 +84,24 @@ protected:
       return NULL;
    }
 
+   nir_tex_instr *find_tex_instr(nir_texop op, unsigned index=0)
+   {
+      nir_function_impl *impl = nir_shader_get_entrypoint(shader);
+      nir_foreach_block(block, impl) {
+         nir_foreach_instr(instr, block) {
+            if (instr->type != nir_instr_type_tex ||
+                nir_instr_as_tex(instr)->op != op)
+               continue;
+            if (index == 0)
+               return nir_instr_as_tex(instr);
+            else
+               index--;
+         }
+      }
+
+      return NULL;
+   }
+
    spirv_capabilities spirv_caps;
    spirv_to_nir_options spirv_options;
    nir_shader_compiler_options nir_options;
