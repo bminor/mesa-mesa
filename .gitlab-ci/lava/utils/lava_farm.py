@@ -8,13 +8,13 @@ class LavaFarm(Enum):
 
     LIMA = 1
     COLLABORA = 2
-    UNKNOWN = 3
-
+    VMWARE = 3
+    UNKNOWN = 4
 
 LAVA_FARM_RUNNER_PATTERNS: dict[LavaFarm, str] = {
-    # Lima pattern comes first, since it has the same prefix as the
-    # Collabora pattern.
+    # Lima and VMware patterns come first, since they have the same prefix as the Collabora pattern.
     LavaFarm.LIMA: r"^mesa-ci-[\x01-\x7F]+-lava-lima$",
+    LavaFarm.VMWARE: r"^mesa-ci-[\x01-\x7F]+-lava-vmware$",
     LavaFarm.COLLABORA: r"^mesa-ci-[\x01-\x7F]+-lava-[\x01-\x7F]+$",
     LavaFarm.UNKNOWN: r"^[\x01-\x7F]+",
 }
