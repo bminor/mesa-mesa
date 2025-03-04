@@ -83,6 +83,7 @@ if with_dri
     'drivers/dri2/egl_dri2.h',
   )
   files_egl += sha1_h
+  files_egl += main_dispatch_h
   deps_for_egl += idep_xmlconfig
   link_for_egl += libloader
   incs_for_egl += inc_loader
@@ -140,6 +141,7 @@ elif with_platform_windows
     '-DEGLAPI=', '-DPUBLIC='
   ]
   files_egl += files('drivers/wgl/egl_wgl.c')
+  files_egl += main_dispatch_h
   incs_for_egl += [inc_wgl, inc_gallium, inc_gallium_aux, inc_mesa, inc_mapi]
   link_for_egl += libgallium_wgl
 

@@ -74,6 +74,8 @@
 #include "util/u_vector.h"
 #include "egl_dri2.h"
 #include "egldefines.h"
+#include "mapi/glapi/glapi.h"
+#include "mesa/main/dispatch.h"
 
 #define NUM_ATTRIBS 16
 
@@ -97,27 +99,9 @@ dri_set_background_context(void *loaderPrivate)
 }
 
 static void
-dri2_gl_flush_get(_glapi_proc *glFlush)
-{
-   *glFlush = _mesa_glapi_get_proc_address("glFlush");
-}
-
-static void
 dri2_gl_flush()
 {
-   static void (*glFlush)(void);
-   static util_once_flag once = UTIL_ONCE_FLAG_INIT;
-
-   util_call_once_data(&once, (util_call_once_data_func)dri2_gl_flush_get,
-                       &glFlush);
-
-   /* if glFlush is not available things are horribly broken */
-   if (!glFlush) {
-      _eglLog(_EGL_WARNING, "DRI2: failed to find glFlush entry point");
-      return;
-   }
-
-   glFlush();
+   CALL_Flush(GET_DISPATCH(), ());
 }
 
 static GLboolean
