@@ -154,3 +154,91 @@ TEST_F(Workarounds, force_tex_non_uniform)
 
    ASSERT_TRUE(tex_instr->texture_non_uniform);
 }
+
+TEST_F(Workarounds, lower_terminate_to_discard)
+{
+   /*
+               OpCapability Shader
+               OpExtension "SPV_KHR_terminate_invocation"
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %coord %color
+               OpExecutionMode %main OriginUpperLeft
+               OpSource GLSL 460
+               OpSourceExtension "GL_EXT_terminate_invocation"
+               OpName %main "main"
+               OpName %coord "coord"
+               OpName %color "color"
+               OpDecorate %coord Location 0
+               OpDecorate %color Location 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v2float = OpTypeVector %float 2
+%_ptr_Input_v2float = OpTypePointer Input %v2float
+      %coord = OpVariable %_ptr_Input_v2float Input
+       %uint = OpTypeInt 32 0
+     %uint_0 = OpConstant %uint 0
+%_ptr_Input_float = OpTypePointer Input %float
+    %float_0 = OpConstant %float 0
+       %bool = OpTypeBool
+    %v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+      %color = OpVariable %_ptr_Output_v4float Output
+         %24 = OpConstantComposite %v4float %float_0 %float_0 %float_0 %float_0
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %13 = OpAccessChain %_ptr_Input_float %coord %uint_0
+         %14 = OpLoad %float %13
+         %17 = OpFOrdEqual %bool %14 %float_0
+               OpSelectionMerge %19 None
+               OpBranchConditional %17 %18 %19
+         %18 = OpLabel
+               OpTerminateInvocation
+         %19 = OpLabel
+               OpStore %color %24
+               OpReturn
+               OpFunctionEnd
+   */
+   static const uint32_t words[] = {
+      0x07230203, 0x00010000, 0x0008000b, 0x00000019, 0x00000000, 0x00020011,
+      0x00000001, 0x0009000a, 0x5f565053, 0x5f52484b, 0x6d726574, 0x74616e69,
+      0x6e695f65, 0x61636f76, 0x6e6f6974, 0x00000000, 0x0006000b, 0x00000001,
+      0x4c534c47, 0x6474732e, 0x3035342e, 0x00000000, 0x0003000e, 0x00000000,
+      0x00000001, 0x0007000f, 0x00000004, 0x00000004, 0x6e69616d, 0x00000000,
+      0x00000009, 0x00000017, 0x00030010, 0x00000004, 0x00000007, 0x00030003,
+      0x00000002, 0x000001cc, 0x00080004, 0x455f4c47, 0x745f5458, 0x696d7265,
+      0x6574616e, 0x766e695f, 0x7461636f, 0x006e6f69, 0x00040005, 0x00000004,
+      0x6e69616d, 0x00000000, 0x00040005, 0x00000009, 0x726f6f63, 0x00000064,
+      0x00040005, 0x00000017, 0x6f6c6f63, 0x00000072, 0x00040047, 0x00000009,
+      0x0000001e, 0x00000000, 0x00040047, 0x00000017, 0x0000001e, 0x00000000,
+      0x00020013, 0x00000002, 0x00030021, 0x00000003, 0x00000002, 0x00030016,
+      0x00000006, 0x00000020, 0x00040017, 0x00000007, 0x00000006, 0x00000002,
+      0x00040020, 0x00000008, 0x00000001, 0x00000007, 0x0004003b, 0x00000008,
+      0x00000009, 0x00000001, 0x00040015, 0x0000000a, 0x00000020, 0x00000000,
+      0x0004002b, 0x0000000a, 0x0000000b, 0x00000000, 0x00040020, 0x0000000c,
+      0x00000001, 0x00000006, 0x0004002b, 0x00000006, 0x0000000f, 0x00000000,
+      0x00020014, 0x00000010, 0x00040017, 0x00000015, 0x00000006, 0x00000004,
+      0x00040020, 0x00000016, 0x00000003, 0x00000015, 0x0004003b, 0x00000016,
+      0x00000017, 0x00000003, 0x0007002c, 0x00000015, 0x00000018, 0x0000000f,
+      0x0000000f, 0x0000000f, 0x0000000f, 0x00050036, 0x00000002, 0x00000004,
+      0x00000000, 0x00000003, 0x000200f8, 0x00000005, 0x00050041, 0x0000000c,
+      0x0000000d, 0x00000009, 0x0000000b, 0x0004003d, 0x00000006, 0x0000000e,
+      0x0000000d, 0x000500b4, 0x00000010, 0x00000011, 0x0000000e, 0x0000000f,
+      0x000300f7, 0x00000013, 0x00000000, 0x000400fa, 0x00000011, 0x00000012,
+      0x00000013, 0x000200f8, 0x00000012, 0x00011140, 0x000200f8, 0x00000013,
+      0x0003003e, 0x00000017, 0x00000018, 0x000100fd, 0x00010038,
+   };
+
+   spirv_options.workarounds.lower_terminate_to_discard = true;
+
+   /* Emitting demote instead of terminate is needed to verify the SPIR-V
+    * workaround, otherwise terminate is always used.
+    */
+   nir_options.discard_is_demote = true;
+
+   get_nir(sizeof(words) / sizeof(words[0]), words, MESA_SHADER_FRAGMENT);
+
+   nir_intrinsic_instr *intrinsic = find_intrinsic(nir_intrinsic_demote, 0);
+   ASSERT_NE(intrinsic, nullptr);
+}
