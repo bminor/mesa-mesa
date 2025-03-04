@@ -839,3 +839,5 @@ python-artifacts:
   timeout: 10m
   script:
     - .gitlab-ci/prepare-artifacts-python.sh
+  # Nothing uses the gitlab artifacts from this job anymore, stop uploading it
+  artifacts: null
