@@ -100,7 +100,7 @@ nvkcl_spv = custom_target(
     prog_mesa_clc, '-o', '@OUTPUT@', '--depfile', '@DEPFILE@', nvkcl_files, '--',
     '-I' + join_paths(meson.current_source_dir(), '.'),
     '-I' + join_paths(meson.project_source_root(), 'src'),
-    '-fmacro-prefix-map=@0@/='.format(relative_dir),
+    cl_args,
     ],
   depfile : '@PLAINNAME@.d',
 )

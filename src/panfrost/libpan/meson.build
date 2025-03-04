@@ -6,10 +6,6 @@ libpan_shader_files = files(
   'query_pool.cl',
 )
 
-# We need to set -fmacro-prefix-map properly for reproducability.
-fs = import('fs')
-relative_dir = fs.relative_to(meson.global_source_root(), meson.global_build_root()) + '/'
-
 idep_libpan_per_arch = {}
 
 foreach ver : ['4', '5', '6', '7', '9', '10']
@@ -25,7 +21,7 @@ foreach ver : ['4', '5', '6', '7', '9', '10']
         '-I' + join_paths(meson.current_source_dir(), '../../'),
         '-I' + join_paths(meson.current_source_dir(), '../lib/'),
         '-I' + join_paths(meson.current_build_dir(), '../lib/'),
-        '-fmacro-prefix-map=@0@='.format(relative_dir),
+        cl_args,
         ],
     env: ['MESA_SHADER_CACHE_DISABLE=true'],
     depends : [pan_packers],
