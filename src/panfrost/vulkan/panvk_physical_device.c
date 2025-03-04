@@ -319,7 +319,7 @@ get_features(const struct panvk_physical_device *device,
       .storagePushConstant8 = false,
       .shaderBufferInt64Atomics = false,
       .shaderSharedInt64Atomics = false,
-      .shaderFloat16 = true,
+      .shaderFloat16 = arch >= 10,
       .shaderInt8 = true,
 
       .descriptorIndexing = false,
