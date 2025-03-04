@@ -321,6 +321,8 @@ if with_radv_tests
       files(
         'nir/radv_nir_lower_hit_attrib_derefs.c',
         'tests/radv_nir_lower_hit_attrib_derefs_tests.cpp',
+        'tests/helpers.cpp',
+        'tests/helpers.h',
       ),
       cpp_args : [cpp_msvc_compat_args],
       gnu_symbol_visibility : 'hidden',
@@ -333,7 +335,8 @@ if with_radv_tests
         inc_util,
         include_directories('.'),
       ],
-      dependencies : [dep_thread, idep_gtest, idep_nir, idep_mesautil],
+      link_with  : [ libvulkan_radeon ],
+      dependencies : [dep_thread, idep_gtest, idep_nir, idep_mesautil, idep_vulkan_util_headers],
     ),
     suite : ['compiler', 'nir'],
     protocol : 'gtest',
