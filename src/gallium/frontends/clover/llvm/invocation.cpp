@@ -24,7 +24,9 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 //
 
+#ifdef HAVE_DLFCN_H
 #include <dlfcn.h>
+#endif
 
 #include <llvm/IR/DiagnosticPrinter.h>
 #include <llvm/IR/DiagnosticInfo.h>
@@ -328,6 +330,7 @@ namespace {
    }
 
    std::string getResourceDirectory() {
+#ifdef HAVE_DLFCN_H
       Dl_info info;
       if (dladdr((void *)clang::CompilerInvocation::CreateFromArgs, &info) == 0) {
          return FALLBACK_CLANG_RESOURCE_DIR;
@@ -349,6 +352,9 @@ namespace {
       free(libclang_path);
 
       return clang_resource_dir;
+#else
+      return FALLBACK_CLANG_RESOURCE_DIR;
+#endif
    }
 
    std::unique_ptr<Module>
