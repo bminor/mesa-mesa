@@ -386,9 +386,12 @@ radv_shader_spirv_to_nir(struct radv_device *device, const struct radv_shader_st
                .func = radv_spirv_nir_debug,
                .private_data = &spirv_debug_data,
             },
-         .force_tex_non_uniform = pdev->cache_key.tex_non_uniform,
-         .force_ssbo_non_uniform = pdev->cache_key.ssbo_non_uniform,
-         .lower_terminate_to_discard = pdev->cache_key.lower_terminate_to_discard,
+         .workarounds =
+            {
+               .force_tex_non_uniform = pdev->cache_key.tex_non_uniform,
+               .force_ssbo_non_uniform = pdev->cache_key.ssbo_non_uniform,
+               .lower_terminate_to_discard = pdev->cache_key.lower_terminate_to_discard,
+            },
          .emit_debug_break = !!device->trap_handler_shader,
          .debug_info = !!(instance->debug_flags & RADV_DEBUG_NIR_DEBUG_INFO),
       };

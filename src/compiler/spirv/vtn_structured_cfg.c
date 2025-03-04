@@ -976,7 +976,7 @@ branch_type_for_terminator(struct vtn_builder *b, struct vtn_block *block)
    case SpvOpKill:
       return vtn_branch_type_discard;
    case SpvOpTerminateInvocation:
-      if (b->options->lower_terminate_to_discard)
+      if (b->options->workarounds.lower_terminate_to_discard)
          return vtn_branch_type_discard;
       else
          return vtn_branch_type_terminate_invocation;

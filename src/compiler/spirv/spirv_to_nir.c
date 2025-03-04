@@ -3598,7 +3598,7 @@ vtn_handle_texture(struct vtn_builder *b, SpvOp opcode,
    if (operands & SpvImageOperandsNontemporalMask)
       access |= ACCESS_NON_TEMPORAL;
 
-   if (sampler && b->options->force_tex_non_uniform)
+   if (sampler && b->options->workarounds.force_tex_non_uniform)
       access |= ACCESS_NON_UNIFORM;
 
    if (sampled_val->propagated_non_uniform)
