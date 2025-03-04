@@ -366,6 +366,15 @@ typedef struct shader_info {
          bool needs_coarse_quad_helper_invocations:1;
 
          /**
+          * True if this fragment shader requires helper invocations for all
+          * four fragments in the quad. This can be caused by all the same
+          * things as needs_coarse_quad_helper_invocations, except that coarse
+          * derivatives don't count as they usually only use 3 out of the 4
+          * fragments in a quad.
+          */
+         bool needs_full_quad_helper_invocations:1;
+
+         /**
           * Whether any inputs are declared with the "sample" qualifier.
           */
          bool uses_sample_qualifier:1;

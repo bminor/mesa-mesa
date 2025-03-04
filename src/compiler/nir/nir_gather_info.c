@@ -827,14 +827,26 @@ gather_intrinsic_info(nir_intrinsic_instr *instr, nir_shader *shader,
          shader->info.writes_memory = true;
 
       if (nir_intrinsic_has_semantic(instr, NIR_INTRINSIC_QUADGROUP)) {
-         if (shader->info.stage == MESA_SHADER_FRAGMENT)
+         if (shader->info.stage == MESA_SHADER_FRAGMENT) {
             shader->info.fs.needs_coarse_quad_helper_invocations = true;
+            /* For now assume that plain ddx/ddy are always coarse. This is
+             * true for most backends.
+             * TODO: Switch ddx to ddx_coarse for remaining backends.
+             */
+            if (instr->intrinsic != nir_intrinsic_ddx &&
+                instr->intrinsic != nir_intrinsic_ddy &&
+                instr->intrinsic != nir_intrinsic_ddx_coarse &&
+                instr->intrinsic != nir_intrinsic_ddy_coarse)
+               shader->info.fs.needs_full_quad_helper_invocations = true;
+         }
       } else if (nir_intrinsic_has_semantic(instr, NIR_INTRINSIC_SUBGROUP)) {
          shader->info.uses_wide_subgroup_intrinsics = true;
 
          if (shader->info.stage == MESA_SHADER_FRAGMENT &&
-             shader->info.fs.require_full_quads)
+             shader->info.fs.require_full_quads) {
             shader->info.fs.needs_coarse_quad_helper_invocations = true;
+            shader->info.fs.needs_full_quad_helper_invocations = true;
+         }
       }
 
       if (instr->intrinsic == nir_intrinsic_image_levels ||
@@ -854,6 +866,10 @@ gather_intrinsic_info(nir_intrinsic_instr *instr, nir_shader *shader,
 static void
 gather_tex_info(nir_tex_instr *instr, nir_shader *shader)
 {
+   /* For now we assume that implicit derivatives use coarse derivatives.
+    * Drivers that need to assume otherwise might have to plumb through a
+    * property.
+    */
    if (shader->info.stage == MESA_SHADER_FRAGMENT &&
        nir_tex_instr_has_implicit_derivative(instr))
       shader->info.fs.needs_coarse_quad_helper_invocations = true;
@@ -998,6 +1014,7 @@ nir_shader_gather_info(nir_shader *shader, nir_function_impl *entrypoint)
       shader->info.fs.color_is_dual_source = false;
       shader->info.fs.uses_fbfetch_output = false;
       shader->info.fs.needs_coarse_quad_helper_invocations = false;
+      shader->info.fs.needs_full_quad_helper_invocations = false;
    }
    if (shader->info.stage == MESA_SHADER_TESS_CTRL) {
       shader->info.tess.tcs_same_invocation_inputs_read = 0;
