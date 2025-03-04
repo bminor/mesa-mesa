@@ -229,7 +229,9 @@ def define_tracepoints(args):
                  tp_args=[Arg(type='uint32_t', var='count', c_format='%u'),],
                  need_cs_param=True)
 
-    begin_end_tp('as_build')
+    begin_end_tp('as_build',
+                 tp_args=[Arg(type='uint32_t', var='n_tlas', c_format='%u'),
+                          Arg(type='uint32_t', var='n_blas', c_format='%u'),])
     begin_end_tp('as_build_leaves', repeat_last=True)
     begin_end_tp('as_morton_generate', repeat_last=True)
     begin_end_tp('as_morton_sort', repeat_last=True)

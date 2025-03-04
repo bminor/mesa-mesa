@@ -43,8 +43,15 @@ begin_debug_marker(VkCommandBuffer commandBuffer,
       step;
    switch (step) {
    case VK_ACCELERATION_STRUCTURE_BUILD_STEP_TOP:
+   {
+      va_list args;
+      va_start(args, format);
+      cmd_buffer->state.rt.num_tlas = va_arg(args, uint32_t);
+      cmd_buffer->state.rt.num_blas = va_arg(args, uint32_t);
+      va_end(args);
       trace_intel_begin_as_build(&cmd_buffer->trace);
       break;
+   }
    case VK_ACCELERATION_STRUCTURE_BUILD_STEP_BUILD_LEAVES:
       trace_intel_begin_as_build_leaves(&cmd_buffer->trace);
       break;
@@ -76,7 +83,9 @@ end_debug_marker(VkCommandBuffer commandBuffer)
    cmd_buffer->state.rt.debug_marker_count--;
    switch (cmd_buffer->state.rt.debug_markers[cmd_buffer->state.rt.debug_marker_count]) {
    case VK_ACCELERATION_STRUCTURE_BUILD_STEP_TOP:
-      trace_intel_end_as_build(&cmd_buffer->trace);
+      trace_intel_end_as_build(&cmd_buffer->trace,
+                               cmd_buffer->state.rt.num_tlas,
+                               cmd_buffer->state.rt.num_blas);
       break;
    case VK_ACCELERATION_STRUCTURE_BUILD_STEP_BUILD_LEAVES:
       trace_intel_end_as_build_leaves(&cmd_buffer->trace);
