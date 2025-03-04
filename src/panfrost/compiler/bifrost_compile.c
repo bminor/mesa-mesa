@@ -5152,6 +5152,9 @@ bi_optimize_nir(nir_shader *nir, unsigned gpu_id, bool is_blend)
     * KHR-GLES31.core.shader_image_load_store.basic-allTargets-atomicFS */
    NIR_PASS(progress, nir, nir_lower_int64);
 
+   /* Algebraic can materialize instructions with a bit_size that we need to lower */
+   NIR_PASS(progress, nir, nir_lower_bit_size, bi_lower_bit_size, &gpu_id);
+
    /* We need to cleanup after each iteration of late algebraic
     * optimizations, since otherwise NIR can produce weird edge cases
     * (like fneg of a constant) which we don't handle */
