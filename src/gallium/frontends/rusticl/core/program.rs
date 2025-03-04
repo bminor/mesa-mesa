@@ -552,7 +552,7 @@ impl Program {
             .any(|b| b.kernels.values().any(|b| Arc::strong_count(b) > 1))
     }
 
-    pub fn build(&self, dev: &Device, options: String) -> bool {
+    pub fn build(&self, dev: &Device, options: &str) -> bool {
         let lib = options.contains("-create-library");
         let mut info = self.build_info();
         if !self.do_compile(dev, options, &Vec::new(), &mut info) {
@@ -596,7 +596,7 @@ impl Program {
     fn do_compile(
         &self,
         dev: &Device,
-        options: String,
+        options: &str,
         headers: &[spirv::CLCHeader],
         info: &mut MutexGuard<ProgramBuild>,
     ) -> bool {
@@ -612,7 +612,7 @@ impl Program {
                 }
             }
             ProgramSourceType::Src(src) => {
-                let args = prepare_options(&options, dev);
+                let args = prepare_options(options, dev);
 
                 if Platform::dbg().clc {
                     let src = src.to_string_lossy();
@@ -653,7 +653,7 @@ impl Program {
 
         d.spirv = spirv;
         d.log = log;
-        d.options = options;
+        options.clone_into(&mut d.options);
 
         if d.spirv.is_some() {
             d.status = CL_BUILD_SUCCESS as cl_build_status;
@@ -665,7 +665,7 @@ impl Program {
         }
     }
 
-    pub fn compile(&self, dev: &Device, options: String, headers: &[spirv::CLCHeader]) -> bool {
+    pub fn compile(&self, dev: &Device, options: &str, headers: &[spirv::CLCHeader]) -> bool {
         self.do_compile(dev, options, headers, &mut self.build_info())
     }
 
