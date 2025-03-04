@@ -1727,27 +1727,16 @@ add_resource_bind(struct zink_context *ctx, struct zink_resource *res, unsigned 
    assert((res->base.b.bind & bind) == 0);
    res->base.b.bind |= bind;
    struct zink_resource_object *old_obj = res->obj;
-   ASSERTED uint64_t check_mod = false;
+   ASSERTED uint64_t mod = DRM_FORMAT_MOD_INVALID;
    if (bind & ZINK_BIND_DMABUF && !res->modifiers_count && !res->obj->is_buffer && screen->info.have_EXT_image_drm_format_modifier) {
-      /* it's improbable that drivers support non-linear modifiers for anything but 2D */
-      bool use_modifiers = res->base.b.target == PIPE_TEXTURE_2D;
-      res->modifiers_count = use_modifiers ? screen->modifier_props[res->base.b.format].drmFormatModifierCount : 1;
+      res->modifiers_count = 1;
       res->modifiers = malloc(res->modifiers_count * sizeof(uint64_t));
       if (!res->modifiers) {
          mesa_loge("ZINK: failed to allocate res->modifiers!");
          return false;
       }
-      if (use_modifiers) {
-         int idx = 0;
-         for (unsigned i = 0; i < screen->modifier_props[res->base.b.format].drmFormatModifierCount; i++) {
-            if (screen->modifier_props[res->base.b.format].pDrmFormatModifierProperties[i].drmFormatModifierPlaneCount == 1)
-               res->modifiers[idx++] = screen->modifier_props[res->base.b.format].pDrmFormatModifierProperties[i].drmFormatModifier;
-         }
-         res->modifiers_count = idx;
-      } else {
-         res->modifiers[0] = DRM_FORMAT_MOD_LINEAR;
-      }
-      check_mod = true;
+
+      mod = res->modifiers[0] = DRM_FORMAT_MOD_LINEAR;
    }
    struct zink_resource_object *new_obj = resource_object_create(screen, &res->base.b, NULL, &res->linear, res->modifiers, res->modifiers_count, NULL, NULL);
    if (!new_obj) {
@@ -1755,7 +1744,7 @@ add_resource_bind(struct zink_context *ctx, struct zink_resource *res, unsigned 
       res->base.b.bind &= ~bind;
       return false;
    }
-   assert(!check_mod || new_obj->modifier != DRM_FORMAT_MOD_INVALID);
+   assert(mod == DRM_FORMAT_MOD_INVALID || new_obj->modifier == DRM_FORMAT_MOD_LINEAR);
    struct zink_resource staging = *res;
    staging.obj = old_obj;
    staging.all_binds = 0;
