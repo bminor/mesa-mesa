@@ -253,7 +253,7 @@ print_cache_flags(enum amd_gfx_level gfx_level, const T& instr, FILE* output)
             fprintf(output, " non_temporal");
          if (instr.cache.gfx12.temporal_hint & gfx12_atomic_accum_deferred_scope)
             fprintf(output, " accum_deferred_scope");
-      } else if (instr.definitions.empty()) {
+      } else if (!instr.definitions.empty()) {
          switch (instr.cache.gfx12.temporal_hint) {
          case gfx12_load_regular_temporal: break;
          case gfx12_load_non_temporal: fprintf(output, " non_temporal"); break;
