@@ -132,6 +132,8 @@ traces:
 
   humus/AmbientAperture-v2.trace:
     broadcom-rpi4:
+      label: [skip, flakes]
+      text: "Often fails when running on xwayland, with what looks like an incorrect resolution"
       checksum: a2d2a0141384a23e91ed30a27ed46bfe
     broadcom-rpi5:
       label: [skip, flakes]
@@ -150,6 +152,8 @@ traces:
 
   humus/DynamicBranching3-v2.trace:
     broadcom-rpi4:
+      label: [skip, flakes]
+      text: "Often fails when running on xwayland, with what looks like an incorrect resolution"
       checksum: 68011c66cfd83aa8a6b568de7c726d49
     broadcom-rpi5:
       label: [skip, flakes]
@@ -158,6 +162,8 @@ traces:
 
   humus/HDR-v2.trace:
     broadcom-rpi4:
+      label: [skip, flakes]
+      text: "Often fails when running on xwayland, with what looks like an incorrect resolution"
       checksum: de024f342418b578841f98ce697de8b5
     broadcom-rpi5:
       label: [skip, flakes]
@@ -166,6 +172,8 @@ traces:
 
   humus/Portals-v2.trace:
     broadcom-rpi4:
+      label: [skip, flakes]
+      text: "Often fails when running on xwayland, with what looks like an incorrect resolution"
       checksum: 269b9572113d6991cf58c96a833502bf
     broadcom-rpi5:
       label: [skip, flakes]
@@ -174,6 +182,8 @@ traces:
 
   humus/RaytracedShadows-v2.trace:
     broadcom-rpi4:
+      label: [skip, flakes]
+      text: "Often fails when running on xwayland, with what looks like an incorrect resolution"
       checksum: 6b572f241f4f9ee001ef849d10d03cc5
     broadcom-rpi5:
       label: [skip, flakes]
@@ -182,6 +192,8 @@ traces:
 
   humus/VolumetricFogging2-v2.trace:
     broadcom-rpi4:
+      label: [skip, flakes]
+      text: "Often fails when running on xwayland, with what looks like an incorrect resolution"
       checksum: d3b89dfaff0277be4b4b2ad2cf055d54
     broadcom-rpi5:
       label: [skip, flakes]
@@ -190,6 +202,8 @@ traces:
 
   jvgs/jvgs-d27fb67-v2.trace:
     broadcom-rpi4:
+      label: [skip, flakes]
+      text: "Often fails when running on xwayland, with what looks like an incorrect resolution"
       checksum: 831138a408cc9557528ef68381b080f2
     broadcom-rpi5:
       label: [skip, flakes]
