@@ -182,7 +182,7 @@ GENX(pan_shader_compile)(nir_shader *s, struct panfrost_compile_inputs *inputs,
       /* Requires the same hardware guarantees, so grouped as one bit
        * in the hardware.
        */
-      info->contains_barrier |= s->info.fs.needs_quad_helper_invocations;
+      info->contains_barrier |= s->info.fs.needs_coarse_quad_helper_invocations;
 
       info->fs.reads_frag_coord =
          (s->info.inputs_read & (1 << VARYING_SLOT_POS)) ||

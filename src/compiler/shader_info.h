@@ -357,12 +357,13 @@ typedef struct shader_info {
          bool quad_derivatives:1;
 
          /**
-          * True if this fragment shader requires helper invocations.  This
-          * can be caused by the use of ALU derivative ops, texture
-          * instructions which do implicit derivatives, the use of quad
-          * subgroup operations or if the shader requires full quads.
+          * True if this fragment shader requires helper invocations used by
+          * coarse derivatives. This can be caused by the use of ALU
+          * derivative ops, texture instructions which do implicit
+          * derivatives, the use of quad subgroup operations or if the shader
+          * requires full quads.
           */
-         bool needs_quad_helper_invocations:1;
+         bool needs_coarse_quad_helper_invocations:1;
 
          /**
           * Whether any inputs are declared with the "sample" qualifier.

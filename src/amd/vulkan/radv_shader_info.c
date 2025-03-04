@@ -973,7 +973,7 @@ gather_shader_info_fs(const struct radv_device *device, const nir_shader *nir,
 
    info->ps.allow_flat_shading =
       !(uses_persp_or_linear_interp || info->ps.needs_sample_positions || info->ps.reads_frag_shading_rate ||
-        info->ps.writes_memory || nir->info.fs.needs_quad_helper_invocations ||
+        info->ps.writes_memory || nir->info.fs.needs_coarse_quad_helper_invocations ||
         BITSET_TEST(nir->info.system_values_read, SYSTEM_VALUE_FRAG_COORD) ||
         BITSET_TEST(nir->info.system_values_read, SYSTEM_VALUE_PIXEL_COORD) ||
         BITSET_TEST(nir->info.system_values_read, SYSTEM_VALUE_POINT_COORD) ||

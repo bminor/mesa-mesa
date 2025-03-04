@@ -828,13 +828,13 @@ gather_intrinsic_info(nir_intrinsic_instr *instr, nir_shader *shader,
 
       if (nir_intrinsic_has_semantic(instr, NIR_INTRINSIC_QUADGROUP)) {
          if (shader->info.stage == MESA_SHADER_FRAGMENT)
-            shader->info.fs.needs_quad_helper_invocations = true;
+            shader->info.fs.needs_coarse_quad_helper_invocations = true;
       } else if (nir_intrinsic_has_semantic(instr, NIR_INTRINSIC_SUBGROUP)) {
          shader->info.uses_wide_subgroup_intrinsics = true;
 
          if (shader->info.stage == MESA_SHADER_FRAGMENT &&
              shader->info.fs.require_full_quads)
-            shader->info.fs.needs_quad_helper_invocations = true;
+            shader->info.fs.needs_coarse_quad_helper_invocations = true;
       }
 
       if (instr->intrinsic == nir_intrinsic_image_levels ||
@@ -856,7 +856,7 @@ gather_tex_info(nir_tex_instr *instr, nir_shader *shader)
 {
    if (shader->info.stage == MESA_SHADER_FRAGMENT &&
        nir_tex_instr_has_implicit_derivative(instr))
-      shader->info.fs.needs_quad_helper_invocations = true;
+      shader->info.fs.needs_coarse_quad_helper_invocations = true;
 
    if (nir_tex_instr_src_index(instr, nir_tex_src_texture_handle) != -1 ||
        nir_tex_instr_src_index(instr, nir_tex_src_sampler_handle) != -1)
@@ -997,7 +997,7 @@ nir_shader_gather_info(nir_shader *shader, nir_function_impl *entrypoint)
       shader->info.fs.uses_discard = false;
       shader->info.fs.color_is_dual_source = false;
       shader->info.fs.uses_fbfetch_output = false;
-      shader->info.fs.needs_quad_helper_invocations = false;
+      shader->info.fs.needs_coarse_quad_helper_invocations = false;
    }
    if (shader->info.stage == MESA_SHADER_TESS_CTRL) {
       shader->info.tess.tcs_same_invocation_inputs_read = 0;

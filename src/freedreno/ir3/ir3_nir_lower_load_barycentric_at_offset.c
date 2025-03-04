@@ -26,7 +26,7 @@ ir3_nir_lower_load_barycentric_at_offset_instr(nir_builder *b, nir_instr *instr,
 
    /* Need helper invocations for our ddx/ddys to work. */
    if (b->shader->info.stage == MESA_SHADER_FRAGMENT)
-      b->shader->info.fs.needs_quad_helper_invocations = true;
+      b->shader->info.fs.needs_coarse_quad_helper_invocations = true;
 
    if (interp_mode != INTERP_MODE_SMOOTH) {
       /* Offset our pixel center ij by the offset argument (units of pixels)

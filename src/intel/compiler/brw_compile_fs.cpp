@@ -1167,7 +1167,7 @@ brw_nir_populate_wm_prog_data(nir_shader *shader,
     * us to lose out on the eliminate_find_live_channel() optimization.
     */
    prog_data->uses_vmask = devinfo->verx10 < 125 ||
-                           shader->info.fs.needs_quad_helper_invocations ||
+                           shader->info.fs.needs_coarse_quad_helper_invocations ||
                            shader->info.uses_wide_subgroup_intrinsics ||
                            prog_data->coarse_pixel_dispatch != INTEL_NEVER;
 

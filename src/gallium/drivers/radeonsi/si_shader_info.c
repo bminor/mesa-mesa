@@ -629,7 +629,7 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
                                    info->uses_linear_centroid || info->uses_linear_sample ||
                                    info->uses_interp_at_sample || nir->info.writes_memory ||
                                    nir->info.fs.uses_fbfetch_output ||
-                                   nir->info.fs.needs_quad_helper_invocations ||
+                                   nir->info.fs.needs_coarse_quad_helper_invocations ||
                                    BITSET_TEST(nir->info.system_values_read, SYSTEM_VALUE_FRAG_COORD) ||
                                    BITSET_TEST(nir->info.system_values_read, SYSTEM_VALUE_POINT_COORD) ||
                                    BITSET_TEST(nir->info.system_values_read, SYSTEM_VALUE_SAMPLE_ID) ||
