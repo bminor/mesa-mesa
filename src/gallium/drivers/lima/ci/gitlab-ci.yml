@@ -17,6 +17,7 @@
     DTB: meson-gxl-s805x-libretech-ac
     FDO_CI_CONCURRENT: 4
     GPU_VERSION: lima
+    FARM: lima
     RUNNER_TAG: mesa-ci-x86-64-lava-lima
     FDO_HTTP_CACHE_URI: "http://caching-proxy/cache/?uri="
 
