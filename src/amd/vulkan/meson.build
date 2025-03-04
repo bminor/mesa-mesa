@@ -323,6 +323,7 @@ if with_radv_tests
         'tests/radv_nir_lower_hit_attrib_derefs_tests.cpp',
         'tests/helpers.cpp',
         'tests/helpers.h',
+        'tests/misc.cpp',
       ),
       cpp_args : [cpp_msvc_compat_args],
       gnu_symbol_visibility : 'hidden',
