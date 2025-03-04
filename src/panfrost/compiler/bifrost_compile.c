@@ -5177,8 +5177,13 @@ bi_optimize_nir(nir_shader *nir, unsigned gpu_id, bool is_blend)
    NIR_PASS(progress, nir, nir_lower_bool_to_bitsize);
 
    /* Prepass to simplify instruction selection */
-   late_algebraic = false;
-   NIR_PASS(late_algebraic, nir, bifrost_nir_lower_algebraic_late, pan_arch(gpu_id));
+   bool late_algebraic_progress = true;
+   while (late_algebraic_progress) {
+      late_algebraic_progress = false;
+      NIR_PASS(late_algebraic_progress, nir, bifrost_nir_lower_algebraic_late,
+               pan_arch(gpu_id));
+      late_algebraic |= late_algebraic_progress;
+   }
 
    while (late_algebraic) {
       late_algebraic = false;
