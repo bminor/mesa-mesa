@@ -613,6 +613,8 @@ static bool visit_alu(struct ac_nir_context *ctx, const nir_alu_instr *instr)
          result = LLVMBuildSub(ctx->ac.builder, src[0], src[1], "");
       break;
    case nir_op_imul:
+   case nir_op_imul24_relaxed:
+   case nir_op_umul24_relaxed:
       if (instr->no_unsigned_wrap)
          result = LLVMBuildNUWMul(ctx->ac.builder, src[0], src[1], "");
       else if (instr->no_signed_wrap)
