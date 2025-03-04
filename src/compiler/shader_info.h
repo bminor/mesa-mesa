@@ -343,7 +343,11 @@ typedef struct shader_info {
          bool color_is_dual_source:1;
 
          /**
-          * True if this fragment shader requires full quad invocations.
+          * True if this fragment shader requires full quad invocations. This
+          * forces the shader to always behave as-if quad groups start with
+          * four active invocations, even if there are no derivatives or quad
+          * operations. Because helper invocations cannot have side effects,
+          * this mainly impacts subgroup operations such as ballot().
           */
          bool require_full_quads:1;
 
