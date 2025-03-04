@@ -218,7 +218,7 @@ radv_physical_device_init_cache_key(struct radv_physical_device *pdev)
    key->disable_aniso_single_level = instance->drirc.disable_aniso_single_level && pdev->info.gfx_level < GFX8;
    key->disable_shrink_image_store = instance->drirc.disable_shrink_image_store;
    key->disable_sinking_load_input_fs = instance->drirc.disable_sinking_load_input_fs;
-   key->emulate_rt = !!(instance->perftest_flags & RADV_PERFTEST_EMULATE_RT);
+   key->emulate_rt = radv_emulate_rt(pdev);
    key->ge_wave32 = pdev->ge_wave_size == 32;
    key->invariant_geom = !!(instance->debug_flags & RADV_DEBUG_INVARIANT_GEOM);
    key->no_fmask = !!(instance->debug_flags & RADV_DEBUG_NO_FMASK);
