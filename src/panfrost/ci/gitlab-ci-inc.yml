@@ -179,6 +179,19 @@
 #   FDO_CI_CONCURRENT: ?
     RUNNER_TAG: mesa-ci-x86-64-lava-mt8183-kukui-jacuzzi-juniper-sku16
 
+# Status: https://lava.collabora.dev/scheduler/device_type/mt8186-corsola-steelix-sku131072
+.lava-mt8186-corsola-steelix-sku131072:arm64:
+  variables:
+    BOOT_METHOD: depthcharge
+    DEVICE_TYPE: mt8186-corsola-steelix-sku131072
+    DTB: $DEVICE_TYPE
+    FDO_CI_CONCURRENT: 8
+    FARM: collabora
+    GPU_VERSION: panfrost-g52
+    KERNEL_IMAGE_TYPE: ""
+    RUNNER_TAG: mesa-ci-x86-64-lava-mt8186-corsola-steelix-sku131072
+    VK_DRIVER: panfrost
+
 # Status: https://lava.collabora.dev/scheduler/device_type/mt8192-asurada-spherion-r0
 .lava-mt8192-asurada-spherion-r0:arm64:
   variables:

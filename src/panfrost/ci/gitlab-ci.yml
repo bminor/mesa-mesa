@@ -80,25 +80,25 @@ panfrost-g52-gl:arm64:
     PAN_MESA_DEBUG: "deqp,sync,indirect"
 
 panfrost-g52-vk:arm64:
-  parallel: 2
+  parallel: 7
   extends:
     - .lava-test-deqp:arm64
     - .panfrost-test
-    - .lava-meson-g12b-a311d-khadas-vim3:arm64
+    - .lava-mt8186-corsola-steelix-sku131072:arm64
     - .panfrost-vk-rules
   variables:
     DRIVER_NAME: panvk
-    # Using more than 4 cores cause instabilities
-    FDO_CI_CONCURRENT: 4
+    # Oversubscribing by one thread speeds up deqp
+    FDO_CI_CONCURRENT: 9
     MESA_VK_IGNORE_CONFORMANCE_WARNING: 1
     PAN_I_WANT_A_BROKEN_VULKAN_DRIVER: 1
     PANVK_DEBUG: "no_known_warn,sync"
     DEQP_SUITE: panfrost-g52-vk
-    DEQP_FRACTION: 16
+    DEQP_FRACTION: 2
     HWCI_START_WESTON: 1
 
 panfrost-g52-vk-full:arm64:
-  parallel: 4
+  parallel: 2
   extends:
     - panfrost-g52-vk:arm64
     - .panfrost-vk-manual-rules
