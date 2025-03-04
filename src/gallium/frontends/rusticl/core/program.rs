@@ -219,6 +219,10 @@ impl ProgramBuild {
 
         nir.unwrap()
     }
+
+    pub fn has_successful_build(&self) -> bool {
+        self.builds.values().any(|b| b.is_success())
+    }
 }
 
 #[derive(Default)]
@@ -229,6 +233,12 @@ pub struct ProgramDevBuild {
     log: String,
     bin_type: cl_program_binary_type,
     pub kernels: HashMap<String, Arc<NirKernelBuilds>>,
+}
+
+impl ProgramDevBuild {
+    fn is_success(&self) -> bool {
+        self.status == CL_BUILD_SUCCESS as cl_build_status
+    }
 }
 
 fn prepare_options(options: &str, dev: &Device) -> Vec<CString> {

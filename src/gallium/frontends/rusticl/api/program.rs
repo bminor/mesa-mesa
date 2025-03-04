@@ -25,6 +25,22 @@ use std::sync::Arc;
 unsafe impl CLInfo<cl_program_info> for cl_program {
     fn query(&self, q: cl_program_info, v: CLInfoValue) -> CLResult<CLInfoRes> {
         let prog = Program::ref_from_raw(*self)?;
+
+        // CL_INVALID_PROGRAM_EXECUTABLE if param_name is CL_PROGRAM_NUM_KERNELS,
+        // CL_PROGRAM_KERNEL_NAMES, CL_PROGRAM_SCOPE_GLOBAL_CTORS_PRESENT, or
+        // CL_PROGRAM_SCOPE_GLOBAL_DTORS_PRESENT and a successful program executable has not been
+        // built for at least one device in the list of devices associated with program.
+        if matches!(
+            q,
+            CL_PROGRAM_NUM_KERNELS
+                | CL_PROGRAM_KERNEL_NAMES
+                | CL_PROGRAM_SCOPE_GLOBAL_CTORS_PRESENT
+                | CL_PROGRAM_SCOPE_GLOBAL_DTORS_PRESENT
+        ) && !prog.build_info().has_successful_build()
+        {
+            return Err(CL_INVALID_PROGRAM_EXECUTABLE);
+        }
+
         match q {
             CL_PROGRAM_BINARIES => {
                 let input = v.input::<*mut u8>()?;
