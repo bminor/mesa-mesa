@@ -14,7 +14,7 @@
         "description": "Revert \"radeonsi/vcn: Limit size to target size in AV1 decode\"",
         "nominated": true,
         "nomination_type": 3,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "3a6513d7c4deb0cdd44c439d73b59176953a50a8",
         "notes": null
