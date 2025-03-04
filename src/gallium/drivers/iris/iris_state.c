@@ -5251,7 +5251,10 @@ iris_store_tes_state(const struct intel_device_info *devinfo,
       STATIC_ASSERT(TEDMODE_OFF == 0);
 
    #if GFX_VER >= 20
-      te.TessellationDistributionLevel = TEDLEVEL_REGION;
+      if (intel_needs_workaround(devinfo, 16025857284))
+         te.TessellationDistributionLevel = TEDLEVEL_PATCH;
+      else
+         te.TessellationDistributionLevel = TEDLEVEL_REGION;
    #else
       te.TessellationDistributionLevel = TEDLEVEL_PATCH;
    #endif
