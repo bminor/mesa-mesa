@@ -2578,7 +2578,8 @@ panvk_per_arch(cmd_flush_draws)(struct panvk_cmd_buffer *cmdbuf)
 
       /* We inherited the render context, and need to let the primary command
        * buffer know that it's changed. */
-      cmdbuf->state.gfx.render.invalidate_inherited_ctx = true;
+      cmdbuf->state.gfx.render.invalidate_inherited_ctx =
+         inherits_render_ctx(cmdbuf);
 
       /* Re-emit the FB/Tiler descs if we inherited them. */
       if (inherits_render_ctx(cmdbuf))
