@@ -266,50 +266,6 @@
     <enum name="TEXTURE_MATRIX_FLOAT_AS_INT_BITS_OES"	  value="0x898F"/>
 </category>
 
-<!-- optional for es1.1 -->
-<category name="GL_OES_matrix_palette" number="12">
-    <enum name="MAX_VERTEX_UNITS_OES"                     value="0x86A4"/>
-    <enum name="WEIGHT_ARRAY_TYPE_OES"                    value="0x86A9"/>
-    <enum name="WEIGHT_ARRAY_STRIDE_OES"                  value="0x86AA"/>
-    <enum name="WEIGHT_ARRAY_SIZE_OES"                    value="0x86AB"/>
-    <enum name="WEIGHT_ARRAY_POINTER_OES"                 value="0x86AC"/>
-    <enum name="WEIGHT_ARRAY_OES"                         value="0x86AD"/>
-    <enum name="MATRIX_PALETTE_OES"                       value="0x8840"/>
-    <enum name="MAX_PALETTE_MATRICES_OES"                 value="0x8842"/>
-    <enum name="CURRENT_PALETTE_MATRIX_OES"               value="0x8843"/>
-    <enum name="MATRIX_INDEX_ARRAY_OES"                   value="0x8844"/>
-    <enum name="MATRIX_INDEX_ARRAY_SIZE_OES"              value="0x8846"/>
-    <enum name="MATRIX_INDEX_ARRAY_TYPE_OES"              value="0x8847"/>
-    <enum name="MATRIX_INDEX_ARRAY_STRIDE_OES"            value="0x8848"/>
-    <enum name="MATRIX_INDEX_ARRAY_POINTER_OES"           value="0x8849"/>
-    <enum name="WEIGHT_ARRAY_BUFFER_BINDING_OES"          value="0x889E"/>
-    <enum name="MATRIX_INDEX_ARRAY_BUFFER_BINDING_OES"    value="0x8B9E"/>
-
-    <function name="CurrentPaletteMatrixOES" alias="CurrentPaletteMatrixARB"
-	      exec="skip">
-        <param name="matrixpaletteindex" type="GLuint"/>
-    </function>
-
-    <!-- no offset -->
-    <function name="LoadPaletteFromModelViewMatrixOES" exec="skip">
-    </function>
-
-    <function name="MatrixIndexPointerOES" alias="MatrixIndexPointerARB"
-	      exec="skip">
-        <param name="size" type="GLint"/>
-        <param name="type" type="GLenum"/>
-        <param name="stride" type="GLsizei"/>
-        <param name="pointer" type="const GLvoid *"/>
-    </function>
-
-    <function name="WeightPointerOES" alias="WeightPointerARB" exec="skip">
-        <param name="size" type="GLint"/>
-        <param name="type" type="GLenum"/>
-        <param name="stride" type="GLsizei"/>
-        <param name="pointer" type="const GLvoid *"/>
-    </function>
-</category>
-
 <!-- required for es1.1 -->
 <category name="GL_OES_point_size_array" number="14">
     <enum name="POINT_SIZE_ARRAY_TYPE_OES"                value="0x898A"/>

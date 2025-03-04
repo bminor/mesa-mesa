@@ -89,8 +89,6 @@ glapi_xml_py_deps = files(
   'glapi/gen/AMD_gpu_shader_int64.xml',
   'glapi/gen/AMD_performance_monitor.xml',
   'glapi/gen/ARB_vertex_type_2_10_10_10_rev.xml',
-  'glapi/gen/APPLE_object_purgeable.xml',
-  'glapi/gen/APPLE_vertex_array_object.xml',
   'glapi/gen/EXT_direct_state_access.xml',
   'glapi/gen/EXT_draw_buffers2.xml',
   'glapi/gen/EXT_external_objects.xml',

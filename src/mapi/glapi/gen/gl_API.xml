@@ -6584,120 +6584,6 @@
     <enum name="MODELVIEW31_ARB"               count="16" value="0x873F">
         <size name="Get" mode="get"/>
     </enum>
-
-    <function name="WeightbvARB" exec="skip">
-        <param name="size" type="GLint"/>
-        <param name="weights" type="const GLbyte *"/>
-    </function>
-
-    <function name="WeightsvARB" exec="skip">
-        <param name="size" type="GLint"/>
-        <param name="weights" type="const GLshort *"/>
-    </function>
-
-    <function name="WeightivARB" exec="skip">
-        <param name="size" type="GLint"/>
-        <param name="weights" type="const GLint *"/>
-    </function>
-
-    <function name="WeightfvARB" exec="skip">
-        <param name="size" type="GLint"/>
-        <param name="weights" type="const GLfloat *"/>
-    </function>
-
-    <function name="WeightdvARB" exec="skip">
-        <param name="size" type="GLint"/>
-        <param name="weights" type="const GLdouble *"/>
-    </function>
-
-    <function name="WeightubvARB" exec="skip">
-        <param name="size" type="GLint"/>
-        <param name="weights" type="const GLubyte *"/>
-    </function>
-
-    <function name="WeightusvARB" exec="skip">
-        <param name="size" type="GLint"/>
-        <param name="weights" type="const GLushort *"/>
-    </function>
-
-    <function name="WeightuivARB" exec="skip">
-        <param name="size" type="GLint"/>
-        <param name="weights" type="const GLuint *"/>
-    </function>
-
-    <function name="WeightPointerARB" exec="skip">
-        <param name="size" type="GLint"/>
-        <param name="type" type="GLenum"/>
-        <param name="stride" type="GLsizei"/>
-        <param name="pointer" type="const GLvoid *"/>
-        <glx ignore="true" handcode="true"/>
-    </function>
-
-    <function name="VertexBlendARB" exec="skip">
-        <param name="count" type="GLint"/>
-    </function>
-</category>
-
-<category name="GL_ARB_matrix_palette" number="16">
-    <enum name="MATRIX_PALETTE_ARB"            count="1"  value="0x8840">
-        <size name="Get" mode="get"/>
-    </enum>
-    <enum name="MAX_MATRIX_PALETTE_STACK_DEPTH_ARB" count="1" value="0x8841">
-        <size name="Get" mode="get"/>
-    </enum>
-    <enum name="MAX_PALETTE_MATRICES_ARB"      count="1"  value="0x8842">
-        <size name="Get" mode="get"/>
-    </enum>
-    <enum name="CURRENT_PALETTE_MATRIX_ARB"    count="1"  value="0x8843">
-        <size name="Get" mode="get"/>
-    </enum>
-    <enum name="MATRIX_INDEX_ARRAY_ARB"        count="1"  value="0x8844">
-        <size name="Get" mode="get"/>
-    </enum>
-    <enum name="CURRENT_MATRIX_INDEX_ARB"      count="1"  value="0x8845">
-        <size name="Get" mode="get"/>
-    </enum>
-    <enum name="MATRIX_INDEX_ARRAY_SIZE_ARB"   count="1"  value="0x8846">
-        <size name="Get" mode="get"/>
-    </enum>
-    <enum name="MATRIX_INDEX_ARRAY_TYPE_ARB"   count="1"  value="0x8847">
-        <size name="Get" mode="get"/>
-    </enum>
-    <enum name="MATRIX_INDEX_ARRAY_STRIDE_ARB" count="1"  value="0x8848">
-        <size name="Get" mode="get"/>
-    </enum>
-    <enum name="MATRIX_INDEX_ARRAY_POINTER_ARB"           value="0x8849"/>
-
-    <function name="CurrentPaletteMatrixARB" exec="skip">
-        <param name="index" type="GLint"/>
-        <glx ignore="true" rop="4329"/>
-    </function>
-
-    <function name="MatrixIndexubvARB" exec="skip">
-        <param name="size" type="GLint" counter="true"/>
-        <param name="indices" type="const GLubyte *" count="size"/>
-        <glx ignore="true" rop="4326"/>
-    </function>
-
-    <function name="MatrixIndexusvARB" exec="skip">
-        <param name="size" type="GLint" counter="true"/>
-        <param name="indices" type="const GLushort *" count="size"/>
-        <glx ignore="true" rop="4327"/>
-    </function>
-
-    <function name="MatrixIndexuivARB" exec="skip">
-        <param name="size" type="GLint" counter="true"/>
-        <param name="indices" type="const GLuint *" count="size"/>
-        <glx ignore="true" rop="4328"/>
-    </function>
-
-    <function name="MatrixIndexPointerARB" exec="skip">
-        <param name="size" type="GLint"/>
-        <param name="type" type="GLenum"/>
-        <param name="stride" type="GLsizei"/>
-        <param name="pointer" type="const GLvoid *"/>
-        <glx ignore="true" handcode="true"/>
-    </function>
 </category>
 
 <category name="GL_ARB_texture_env_combine" number="17">
@@ -8614,23 +8500,6 @@
     </function>
 </category>
 
-<category name="GL_SGIS_texture_filter4" number="7">
-    <function name="GetTexFilterFuncSGIS" exec="skip">
-        <param name="target" type="GLenum"/>
-        <param name="filter" type="GLenum"/>
-        <param name="weights" type="GLfloat *" output="true"/>
-        <glx vendorpriv="4101" ignore="true"/>
-    </function>
-
-    <function name="TexFilterFuncSGIS" exec="skip">
-        <param name="target" type="GLenum"/>
-        <param name="filter" type="GLenum"/>
-        <param name="n" type="GLsizei" counter="true"/>
-        <param name="weights" type="const GLfloat *" count="n"/>
-        <glx rop="2064" ignore="true"/>
-    </function>
-</category>
-
 <!-- Extension number 8 is not listed in the extension registry. -->
 
 <category name="GL_EXT_subtexture" number="9">
@@ -8714,84 +8583,6 @@
     </function>
 </category>
 
-<category name="GL_SGIS_pixel_texture" number="15">
-    <function name="PixelTexGenParameteriSGIS" exec="skip">
-        <param name="pname" type="GLenum"/>
-        <param name="param" type="GLint"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="PixelTexGenParameterivSGIS" exec="skip">
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="const GLint *"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="PixelTexGenParameterfSGIS" exec="skip">
-        <param name="pname" type="GLenum"/>
-        <param name="param" type="GLfloat"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="PixelTexGenParameterfvSGIS" exec="skip">
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="const GLfloat *"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="GetPixelTexGenParameterivSGIS" exec="skip">
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="GLint *" output="true" variable_param="pname"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="GetPixelTexGenParameterfvSGIS" exec="skip">
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="GLfloat *" output="true" variable_param="pname"/>
-        <glx ignore="true"/>
-    </function>
-</category>
-
-<category name="GL_SGIS_texture4D" number="16">
-    <function name="TexImage4DSGIS" exec="skip">
-        <param name="target" type="GLenum"/>
-        <param name="level" type="GLint"/>
-        <param name="internalformat" type="GLenum"/>
-        <param name="width" type="GLsizei"/>
-        <param name="height" type="GLsizei"/>
-        <param name="depth" type="GLsizei"/>
-        <param name="size4d" type="GLsizei"/>
-        <param name="border" type="GLint"/>
-        <param name="format" type="GLenum"/>
-        <param name="type" type="GLenum"/>
-        <param name="pixels" type="const GLvoid *" img_width="width" img_height="height" img_depth="depth" img_extent="size4d" img_format="format" img_type="type" img_target="target" img_null_flag="true" img_pad_dimensions="true"/>
-        <glx rop="2057" ignore="true"/>
-    </function>
-
-    <function name="TexSubImage4DSGIS" exec="skip">
-        <param name="target" type="GLenum"/>
-        <param name="level" type="GLint"/>
-        <param name="xoffset" type="GLint"/>
-        <param name="yoffset" type="GLint"/>
-        <param name="zoffset" type="GLint"/>
-        <param name="woffset" type="GLint"/>
-        <param name="width" type="GLsizei"/>
-        <param name="height" type="GLsizei"/>
-        <param name="depth" type="GLsizei"/>
-        <param name="size4d" type="GLsizei"/>
-        <param name="format" type="GLenum"/>
-        <param name="type" type="GLenum"/>
-        <param name="UNUSED" type="GLuint" padding="true"/>
-        <param name="pixels" type="const GLvoid *" img_width="width" img_height="height" img_depth="depth" img_extent="size4d" img_xoff="xoffset" img_yoff="yoffset" img_zoff="zoffset" img_woff="woffset" img_format="format" img_type="type" img_target="target" img_pad_dimensions="true"/>
-        <glx rop="2058" ignore="true"/>
-    </function>
-</category>
-
-<category name="GL_SGI_texture_color_table" number="17">
-    <enum name="TEXTURE_COLOR_TABLE_SGI"                  value="0x80BC"/>
-    <enum name="PROXY_TEXTURE_COLOR_TABLE_SGI"            value="0x80BD"/>
-</category>
-
 <!-- Extension number 19 is not listed in the extension registry. -->
 
 <category name="GL_EXT_texture_object" number="20">
@@ -8830,49 +8621,6 @@
         <param name="n" type="GLsizei"/>
         <param name="textures" type="const GLuint *"/>
         <param name="priorities" type="const GLclampf *"/>
-    </function>
-</category>
-
-<category name="GL_SGIS_detail_texture" number="21">
-    <function name="DetailTexFuncSGIS" exec="skip">
-        <param name="target" type="GLenum"/>
-        <param name="n" type="GLsizei" counter="true"/>
-        <param name="points" type="const GLfloat *" count="n"/>
-        <glx rop="2051" ignore="true"/>
-    </function>
-
-    <function name="GetDetailTexFuncSGIS" exec="skip">
-        <param name="target" type="GLenum"/>
-        <param name="points" type="GLfloat *" output="true"/>
-        <glx vendorpriv="4096" ignore="true"/>
-    </function>
-</category>
-
-<category name="GL_SGIS_sharpen_texture" number="22">
-    <function name="SharpenTexFuncSGIS" exec="skip">
-        <param name="target" type="GLenum"/>
-        <param name="n" type="GLsizei" counter="true"/>
-        <param name="points" type="const GLfloat *" count="n" count_scale="2"/>
-        <glx rop="2052" ignore="true"/>
-    </function>
-
-    <function name="GetSharpenTexFuncSGIS" exec="skip">
-        <param name="target" type="GLenum"/>
-        <param name="points" type="GLfloat *" output="true"/>
-        <glx vendorpriv="4097" ignore="true"/>
-    </function>
-</category>
-
-<category name="GL_SGIS_multisample" number="25">
-    <function name="SampleMaskSGIS" exec="skip">
-        <param name="value" type="GLclampf"/>
-        <param name="invert" type="GLboolean"/>
-        <glx rop="2048"/>
-    </function>
-
-    <function name="SamplePatternSGIS" exec="skip">
-        <param name="pattern" type="GLenum"/>
-        <glx rop="2049"/>
     </function>
 </category>
 
@@ -9072,32 +8820,6 @@
 <!-- Extension number 49 is a GLX extension. -->
 <!-- Extension number 50 is a GLX extension. -->
 
-<category name="GL_SGIX_sprite" number="52">
-    <function name="SpriteParameterfSGIX" exec="skip">
-        <param name="pname" type="GLenum"/>
-        <param name="param" type="GLfloat"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="SpriteParameterfvSGIX" exec="skip">
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="const GLfloat *"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="SpriteParameteriSGIX" exec="skip">
-        <param name="pname" type="GLenum"/>
-        <param name="param" type="GLint"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="SpriteParameterivSGIX" exec="skip">
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="const GLint *"/>
-        <glx ignore="true"/>
-    </function>
-</category>
-
 <category name="GL_EXT_point_parameters" number="54">
     <enum name="POINT_SIZE_MIN_EXT"            count="1"  value="0x8126">
         <size name="PointParameterfv"/>
@@ -9123,163 +8845,8 @@
     </function>
 </category>
 
-<category name="GL_SGIX_instruments" number="55">
-    <function name="GetInstrumentsSGIX" exec="skip">
-        <return type="GLint"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="InstrumentsBufferSGIX" exec="skip">
-        <param name="size" type="GLsizei"/>
-        <param name="buffer" type="GLint *" output="true"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="PollInstrumentsSGIX" exec="skip">
-        <param name="marker_p" type="GLint *" output="true"/>
-        <return type="GLint"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="ReadInstrumentsSGIX" exec="skip">
-        <param name="marker" type="GLint"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="StartInstrumentsSGIX" exec="skip">
-        <glx ignore="true"/>
-    </function>
-
-    <function name="StopInstrumentsSGIX" exec="skip">
-        <param name="marker" type="GLint"/>
-        <glx ignore="true"/>
-    </function>
-</category>
-
-<category name="GL_SGIX_texture_scale_bias" number="56">
-    <enum name="POST_TEXTURE_FILTER_BIAS_SGIX"  count="4" value="0x8179">
-        <size name="TexParameterfv"/>
-        <size name="TexParameteriv"/>
-        <size name="GetTexParameterfv" mode="get"/>
-        <size name="GetTexParameteriv" mode="get"/>
-    </enum>
-    <enum name="POST_TEXTURE_FILTER_SCALE_SGIX" count="4" value="0x817A">
-        <size name="TexParameterfv"/>
-        <size name="TexParameteriv"/>
-        <size name="GetTexParameterfv" mode="get"/>
-        <size name="GetTexParameteriv" mode="get"/>
-    </enum>
-    <enum name="POST_TEXTURE_FILTER_BIAS_RANGE_SGIX"      value="0x817B"/>
-    <enum name="POST_TEXTURE_FILTER_SCALE_RANGE_SGIX"     value="0x817C"/>
-</category>
-
-<category name="GL_SGIX_framezoom" number="57">
-    <function name="FrameZoomSGIX" exec="skip">
-        <param name="factor" type="GLint"/>
-        <glx rop="2072" ignore="true"/>
-    </function>
-</category>
-
-<category name="GL_SGIX_tag_sample_buffer" number="58">
-    <function name="TagSampleBufferSGIX" exec="skip">
-        <glx rop="2050" ignore="true"/>
-    </function>
-</category>
-
 <!-- Extension number 59 is not listed in the extension registry. -->
-
-<category name="GL_SGIX_reference_plane" number="60">
-    <function name="ReferencePlaneSGIX" exec="skip">
-        <param name="equation" type="const GLdouble *" count="4"/>
-        <glx rop="2071" ignore="true"/>
-    </function>
-</category>
-
-<category name="GL_SGIX_flush_raster" number="61">
-    <function name="FlushRasterSGIX" exec="skip">
-        <glx vendorpriv="4105" ignore="true"/>
-    </function>
-</category>
-
 <!-- Extension number 62 is a GLX extension. -->
-
-<category name="GL_SGIX_depth_texture" number="63">
-    <enum name="DEPTH_COMPONENT16_SGIX"                   value="0x81A5"/>
-    <enum name="DEPTH_COMPONENT24_SGIX"                   value="0x81A6"/>
-    <enum name="DEPTH_COMPONENT32_SGIX"                   value="0x81A7"/>
-</category>
-
-<category name="GL_SGIS_fog_function" number="64">
-    <function name="FogFuncSGIS" exec="skip">
-        <param name="n" type="GLsizei" counter="true"/>
-        <param name="points" type="const GLfloat *" count="n" count_scale="2"/>
-        <glx rop="2067" ignore="true"/>
-    </function>
-
-    <function name="GetFogFuncSGIS" exec="skip">
-        <param name="points" type="GLfloat *" output="true"/>
-        <!-- GLX protocol for this function is unknown. -->
-    </function>
-</category>
-
-<category name="GL_SGIX_fog_offset" number="65">
-    <enum name="FOG_OFFSET_SGIX"                          value="0x8198"/>
-    <enum name="FOG_OFFSET_VALUE_SGIX"         count="1"  value="0x8199">
-        <size name="Fogfv"/>
-        <size name="Fogiv"/>
-    </enum>
-</category>
-
-<category name="GL_HP_image_transform" number="66">
-    <function name="ImageTransformParameteriHP" exec="skip">
-        <param name="target" type="GLenum"/>
-        <param name="pname" type="GLenum"/>
-        <param name="param" type="GLint"/>
-    </function>
-
-    <function name="ImageTransformParameterfHP" exec="skip">
-        <param name="target" type="GLenum"/>
-        <param name="pname" type="GLenum"/>
-        <param name="param" type="GLfloat"/>
-    </function>
-
-    <function name="ImageTransformParameterivHP" exec="skip">
-        <param name="target" type="GLenum"/>
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="const GLint *"/>
-    </function>
-
-    <function name="ImageTransformParameterfvHP" exec="skip">
-        <param name="target" type="GLenum"/>
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="const GLfloat *"/>
-    </function>
-
-    <function name="GetImageTransformParameterivHP" exec="skip">
-        <param name="target" type="GLenum"/>
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="GLint *" output="true" variable_param="pname"/>
-    </function>
-
-    <function name="GetImageTransformParameterfvHP" exec="skip">
-        <param name="target" type="GLenum"/>
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="GLfloat *" output="true" variable_param="pname"/>
-    </function>
-</category>
-
-<category name="GL_HP_convolution_border_modes" number="67">
-    <enum name="IGNORE_BORDER_HP"                         value="0x8150"/>
-    <enum name="CONSTANT_BORDER_HP"                       value="0x8151"/>
-    <enum name="REPLICATE_BORDER_HP"                      value="0x8153"/>
-    <enum name="CONVOLUTION_BORDER_COLOR_HP"   count="4"  value="0x8154">
-        <size name="ConvolutionParameterfv"/>
-        <size name="ConvolutionParameteriv"/>
-        <size name="GetConvolutionParameterfv" mode="get"/>
-        <size name="GetConvolutionParameteriv" mode="get"/>
-    </enum>
-</category>
-
 <!-- Extension number 68 is not listed in the extension registry. -->
 <!-- Extension number 70 is not listed in the extension registry. -->
 <!-- Extension number 71 is not listed in the extension registry. -->
@@ -9307,62 +8874,10 @@
 
 <!-- Extension number 75 is a GLU extension. -->
 
-<category name="GL_PGI_misc_hints" number="77">
-    <function name="HintPGI" exec="skip">
-        <param name="target" type="GLenum"/>
-        <param name="mode" type="GLint"/>
-        <glx ignore="true"/>
-    </function>
-</category>
-
 <category name="GL_EXT_clip_volume_hint" number="79">
     <enum name="CLIP_VOLUME_CLIPPING_HINT_EXT" count="1"  value="0x80F0">
         <size name="Get" mode="get"/>
     </enum>
-</category>
-
-<category name="GL_SGIX_list_priority" number="80">
-    <function name="GetListParameterfvSGIX" exec="skip">
-        <param name="list" type="GLuint"/>
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="GLfloat *" output="true" variable_param="pname"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="GetListParameterivSGIX" exec="skip">
-        <param name="list" type="GLuint"/>
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="GLint *" output="true" variable_param="pname"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="ListParameterfSGIX" exec="skip">
-        <param name="list" type="GLuint"/>
-        <param name="pname" type="GLenum"/>
-        <param name="param" type="GLfloat"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="ListParameterfvSGIX" exec="skip">
-        <param name="list" type="GLuint"/>
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="const GLfloat *"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="ListParameteriSGIX" exec="skip">
-        <param name="list" type="GLuint"/>
-        <param name="pname" type="GLenum"/>
-        <param name="param" type="GLint"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="ListParameterivSGIX" exec="skip">
-        <param name="list" type="GLuint"/>
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="const GLint *"/>
-        <glx ignore="true"/>
-    </function>
 </category>
 
 <!-- Extension number 82 is not listed in the extension registry. -->
@@ -9408,22 +8923,6 @@
 <!-- Extension number 91 is a GLX extension. -->
 <!-- Extension number 92 is a GLX extension. -->
 
-<category name="GL_EXT_index_material" number="94">
-    <function name="IndexMaterialEXT" exec="skip">
-        <param name="face" type="GLenum"/>
-        <param name="mode" type="GLenum"/>
-        <glx ignore="true"/>
-    </function>
-</category>
-
-<category name="GL_EXT_index_func" number="95">
-    <function name="IndexFuncEXT" exec="skip">
-        <param name="func" type="GLenum"/>
-        <param name="ref" type="GLclampf"/>
-        <glx ignore="true"/>
-    </function>
-</category>
-
 <category name="GL_EXT_compiled_vertex_array" number="97">
     <enum name="ARRAY_ELEMENT_LOCK_FIRST_EXT"             value="0x81A8"/>
     <enum name="ARRAY_ELEMENT_LOCK_COUNT_EXT"             value="0x81A9"/>
@@ -9439,155 +8938,8 @@
     </function>
 </category>
 
-<category name="GL_EXT_cull_vertex" number="98">
-    <enum name="CULL_VERTEX_EXT"                          value="0x81AA"/>
-    <enum name="CULL_VERTEX_EYE_POSITION_EXT"  count="4"  value="0x81AB">
-        <size name="CullParameterfv"/>
-        <size name="CullParameterdv"/>
-    </enum>
-    <enum name="CULL_VERTEX_OBJECT_POSITION_EXT" count="4" value="0x81AC">
-        <size name="CullParameterfv"/>
-        <size name="CullParameterdv"/>
-    </enum>
-
-    <function name="CullParameterdvEXT" exec="skip">
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="GLdouble *"/> <!-- Spec bug. Should be const. -->
-        <glx ignore="true"/>
-    </function>
-
-    <function name="CullParameterfvEXT" exec="skip">
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="GLfloat *"/> <!-- Spec bug. Should be const. -->
-        <glx ignore="true"/>
-    </function>
-</category>
-
 <!-- Extension number 99 is not listed in the extension registry. -->
 <xi:include href="ARB_viewport_array.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-
-<!-- Shouldn't this be EXT_fragment_lighting? -->
-<category name="GL_SGIX_fragment_lighting" number="102">
-    <function name="FragmentColorMaterialSGIX" exec="skip">
-        <param name="face" type="GLenum"/>
-        <param name="mode" type="GLenum"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="FragmentLightfSGIX" exec="skip">
-        <param name="light" type="GLenum"/>
-        <param name="pname" type="GLenum"/>
-        <param name="param" type="GLfloat"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="FragmentLightfvSGIX" exec="skip">
-        <param name="light" type="GLenum"/>
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="const GLfloat *"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="FragmentLightiSGIX" exec="skip">
-        <param name="light" type="GLenum"/>
-        <param name="pname" type="GLenum"/>
-        <param name="param" type="GLint"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="FragmentLightivSGIX" exec="skip">
-        <param name="light" type="GLenum"/>
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="const GLint *"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="FragmentLightModelfSGIX" exec="skip">
-        <param name="pname" type="GLenum"/>
-        <param name="param" type="GLfloat"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="FragmentLightModelfvSGIX" exec="skip">
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="const GLfloat *"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="FragmentLightModeliSGIX" exec="skip">
-        <param name="pname" type="GLenum"/>
-        <param name="param" type="GLint"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="FragmentLightModelivSGIX" exec="skip">
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="const GLint *"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="FragmentMaterialfSGIX" exec="skip">
-        <param name="face" type="GLenum"/>
-        <param name="pname" type="GLenum"/>
-        <param name="param" type="GLfloat"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="FragmentMaterialfvSGIX" exec="skip">
-        <param name="face" type="GLenum"/>
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="const GLfloat *"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="FragmentMaterialiSGIX" exec="skip">
-        <param name="face" type="GLenum"/>
-        <param name="pname" type="GLenum"/>
-        <param name="param" type="GLint"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="FragmentMaterialivSGIX" exec="skip">
-        <param name="face" type="GLenum"/>
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="const GLint *"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="GetFragmentLightfvSGIX" exec="skip">
-        <param name="light" type="GLenum"/>
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="GLfloat *" output="true" variable_param="pname"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="GetFragmentLightivSGIX" exec="skip">
-        <param name="light" type="GLenum"/>
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="GLint *" output="true" variable_param="pname"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="GetFragmentMaterialfvSGIX" exec="skip">
-        <param name="face" type="GLenum"/>
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="GLfloat *" output="true" variable_param="pname"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="GetFragmentMaterialivSGIX" exec="skip">
-        <param name="face" type="GLenum"/>
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="GLint *" output="true" variable_param="pname"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="LightEnviSGIX" exec="skip">
-        <param name="pname" type="GLenum"/>
-        <param name="param" type="GLint"/>
-        <glx ignore="true"/>
-    </function>
-</category>
 
 <!-- Extension number 103 is not listed in the extension registry. -->
 <!-- Extension number 104 is not listed in the extension registry. -->
@@ -9617,22 +8969,6 @@
 
 <!-- Extension number 115 is a GLX extension. -->
 <!-- Extension number 116 is not listed in the extension registry. -->
-
-<category name="GL_EXT_light_texture" number="117">
-    <function name="ApplyTextureEXT" exec="skip">
-        <param name="mode" type="GLenum"/>
-    </function>
-
-    <function name="TextureLightEXT" exec="skip">
-        <param name="pname" type="GLenum"/>
-    </function>
-
-    <function name="TextureMaterialEXT" exec="skip">
-        <param name="face" type="GLenum"/>
-        <param name="mode" type="GLenum"/>
-    </function>
-</category>
-
 <!-- Extension number 118 is not listed in the extension registry. -->
 <!-- Extension number 121 is not listed in the extension registry. -->
 <!-- Extension number 122 is not listed in the extension registry. -->
@@ -9644,62 +8980,6 @@
 <!-- Extension number 130 is not listed in the extension registry. -->
 <!-- Extension number 131 is not listed in the extension registry. -->
 
-<category name="GL_SGIX_async" number="132">
-    <function name="AsyncMarkerSGIX" exec="skip">
-        <param name="marker" type="GLuint"/>
-    </function>
-
-    <function name="FinishAsyncSGIX" exec="skip">
-        <param name="markerp" type="GLuint *"/> <!-- Spec bug. Should be const. -->
-        <return type="GLint"/>
-    </function>
-
-    <function name="PollAsyncSGIX" exec="skip">
-        <param name="markerp" type="GLuint *"/> <!-- Spec bug. Should be const. -->
-        <return type="GLint"/>
-    </function>
-
-    <function name="GenAsyncMarkersSGIX" exec="skip">
-        <param name="range" type="GLsizei"/>
-        <return type="GLuint"/>
-    </function>
-
-    <function name="DeleteAsyncMarkersSGIX" exec="skip">
-        <param name="marker" type="GLuint"/>
-        <param name="range" type="GLsizei"/>
-    </function>
-
-    <function name="IsAsyncMarkerSGIX" exec="skip">
-        <param name="marker" type="GLuint"/>
-        <return type="GLboolean"/>
-    </function>
-</category>
-
-<category name="GL_INTEL_parallel_arrays" number="136">
-    <function name="VertexPointervINTEL" exec="skip">
-        <param name="size" type="GLint"/>
-        <param name="type" type="GLenum"/>
-        <param name="pointer" type="const GLvoid **"/>
-    </function>
-
-    <function name="NormalPointervINTEL" exec="skip">
-        <param name="type" type="GLenum"/>
-        <param name="pointer" type="const GLvoid **"/>
-    </function>
-
-    <function name="ColorPointervINTEL" exec="skip">
-        <param name="size" type="GLint"/>
-        <param name="type" type="GLenum"/>
-        <param name="pointer" type="const GLvoid **"/>
-    </function>
-
-    <function name="TexCoordPointervINTEL" exec="skip">
-        <param name="size" type="GLint"/>
-        <param name="type" type="GLenum"/>
-        <param name="pointer" type="const GLvoid **"/>
-    </function>
-</category>
-
 <category name="GL_HP_occlusion_test" number="137">
     <enum name="OCCLUSION_TEST_HP"             count="1"  value="0x8165">
         <size name="Get" mode="get"/>
@@ -9707,32 +8987,6 @@
     <enum name="OCCLUSION_TEST_RESULT_HP"      count="1"  value="0x8166">
         <size name="Get" mode="get"/>
     </enum>
-</category>
-
-<category name="GL_EXT_pixel_transform" number="138">
-    <function name="PixelTransformParameteriEXT" exec="skip">
-        <param name="target" type="GLenum"/>
-        <param name="pname" type="GLenum"/>
-        <param name="param" type="GLint"/>
-    </function>
-
-    <function name="PixelTransformParameterfEXT" exec="skip">
-        <param name="target" type="GLenum"/>
-        <param name="pname" type="GLenum"/>
-        <param name="param" type="GLfloat"/>
-    </function>
-
-    <function name="PixelTransformParameterivEXT" exec="skip">
-        <param name="target" type="GLenum"/>
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="const GLint *"/>
-    </function>
-
-    <function name="PixelTransformParameterfvEXT" exec="skip">
-        <param name="target" type="GLenum"/>
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="const GLfloat *"/>
-    </function>
 </category>
 
 <!-- Extension number 140 is not listed in the extension registry. -->
@@ -9850,12 +9104,6 @@
     </function>
 </category>
 
-<category name="GL_EXT_texture_perturb_normal" number="147">
-    <function name="TextureNormalEXT" exec="skip">
-        <param name="mode" type="GLenum"/>
-    </function>
-</category>
-
 <category name="GL_EXT_multi_draw_arrays" number="148">
     <function name="MultiDrawArraysEXT" es1="1.0" es2="2.0" alias="MultiDrawArrays">
         <param name="mode" type="GLenum"/>
@@ -9904,121 +9152,6 @@
 <!-- Extension number 152 is not listed in the extension registry. -->
 <!-- Extension number 153 is not listed in the extension registry. -->
 <!-- Extension number 154 is not listed in the extension registry. -->
-
-<category name="GL_EXT_coordinate_frame" number="156">
-    <function name="Tangent3bEXT" exec="skip">
-        <param name="tx" type="GLbyte"/>
-        <param name="ty" type="GLbyte"/>
-        <param name="tz" type="GLbyte"/>
-    </function>
-
-    <function name="Tangent3bvEXT" exec="skip">
-        <param name="v" type="const GLbyte *"/>
-    </function>
-
-    <function name="Tangent3dEXT" exec="skip">
-        <param name="tx" type="GLdouble"/>
-        <param name="ty" type="GLdouble"/>
-        <param name="tz" type="GLdouble"/>
-    </function>
-
-    <function name="Tangent3dvEXT" exec="skip">
-        <param name="v" type="const GLdouble *"/>
-    </function>
-
-    <function name="Tangent3fEXT" exec="skip">
-        <param name="tx" type="GLfloat"/>
-        <param name="ty" type="GLfloat"/>
-        <param name="tz" type="GLfloat"/>
-    </function>
-
-    <function name="Tangent3fvEXT" exec="skip">
-        <param name="v" type="const GLfloat *"/>
-    </function>
-
-    <function name="Tangent3iEXT" exec="skip">
-        <param name="tx" type="GLint"/>
-        <param name="ty" type="GLint"/>
-        <param name="tz" type="GLint"/>
-    </function>
-
-    <function name="Tangent3ivEXT" exec="skip">
-        <param name="v" type="const GLint *"/>
-    </function>
-
-    <function name="Tangent3sEXT" exec="skip">
-        <param name="tx" type="GLshort"/>
-        <param name="ty" type="GLshort"/>
-        <param name="tz" type="GLshort"/>
-    </function>
-
-    <function name="Tangent3svEXT" exec="skip">
-        <param name="v" type="const GLshort *"/>
-    </function>
-
-    <function name="Binormal3bEXT" exec="skip">
-        <param name="bx" type="GLbyte"/>
-        <param name="by" type="GLbyte"/>
-        <param name="bz" type="GLbyte"/>
-    </function>
-
-    <function name="Binormal3bvEXT" exec="skip">
-        <param name="v" type="const GLbyte *"/>
-    </function>
-
-    <function name="Binormal3dEXT" exec="skip">
-        <param name="bx" type="GLdouble"/>
-        <param name="by" type="GLdouble"/>
-        <param name="bz" type="GLdouble"/>
-    </function>
-
-    <function name="Binormal3dvEXT" exec="skip">
-        <param name="v" type="const GLdouble *"/>
-    </function>
-
-    <function name="Binormal3fEXT" exec="skip">
-        <param name="bx" type="GLfloat"/>
-        <param name="by" type="GLfloat"/>
-        <param name="bz" type="GLfloat"/>
-    </function>
-
-    <function name="Binormal3fvEXT" exec="skip">
-        <param name="v" type="const GLfloat *"/>
-    </function>
-
-    <function name="Binormal3iEXT" exec="skip">
-        <param name="bx" type="GLint"/>
-        <param name="by" type="GLint"/>
-        <param name="bz" type="GLint"/>
-    </function>
-
-    <function name="Binormal3ivEXT" exec="skip">
-        <param name="v" type="const GLint *"/>
-    </function>
-
-    <function name="Binormal3sEXT" exec="skip">
-        <param name="bx" type="GLshort"/>
-        <param name="by" type="GLshort"/>
-        <param name="bz" type="GLshort"/>
-    </function>
-
-    <function name="Binormal3svEXT" exec="skip">
-        <param name="v" type="const GLshort *"/>
-    </function>
-
-    <function name="TangentPointerEXT" exec="skip">
-        <param name="type" type="GLenum"/>
-        <param name="stride" type="GLsizei"/>
-        <param name="pointer" type="const GLvoid *"/>
-    </function>
-
-    <function name="BinormalPointerEXT" exec="skip">
-        <param name="type" type="GLenum"/>
-        <param name="stride" type="GLsizei"/>
-        <param name="pointer" type="const GLvoid *"/>
-    </function>
-</category>
-
 <!-- Extension number 157 is not listed in the extension registry. -->
 
 <category name="GL_EXT_texture_env_combine" number="158">
@@ -10045,439 +9178,8 @@
     <enum name="OPERAND2_ALPHA_EXT"            count="1"  value="0x859A"/>
 </category>
 
-<category name="GL_SGIX_pixel_texture" number="160">
-    <function name="PixelTexGenSGIX" exec="skip">
-        <param name="mode" type="GLenum"/>
-        <glx rop="2059" ignore="true"/>
-    </function>
-</category>
-
 <!-- Extension number 161 is not listed in the extension registry. -->
 <!-- Extension number 162 is not listed in the extension registry. -->
-
-<category name="GL_SUNX_constant_data" number="163">
-    <function name="FinishTextureSUNX" exec="skip">
-    </function>
-</category>
-
-<category name="GL_SUN_global_alpha" number="164">
-    <function name="GlobalAlphaFactorbSUN" exec="skip">
-        <param name="factor" type="GLbyte"/>
-    </function>
-
-    <function name="GlobalAlphaFactorsSUN" exec="skip">
-        <param name="factor" type="GLshort"/>
-    </function>
-
-    <function name="GlobalAlphaFactoriSUN" exec="skip">
-        <param name="factor" type="GLint"/>
-    </function>
-
-    <function name="GlobalAlphaFactorfSUN" exec="skip">
-        <param name="factor" type="GLfloat"/>
-    </function>
-
-    <function name="GlobalAlphaFactordSUN" exec="skip">
-        <param name="factor" type="GLdouble"/>
-    </function>
-
-    <function name="GlobalAlphaFactorubSUN" exec="skip">
-        <param name="factor" type="GLubyte"/>
-    </function>
-
-    <function name="GlobalAlphaFactorusSUN" exec="skip">
-        <param name="factor" type="GLushort"/>
-    </function>
-
-    <function name="GlobalAlphaFactoruiSUN" exec="skip">
-        <param name="factor" type="GLuint"/>
-    </function>
-</category>
-
-<category name="GL_SUN_triangle_list" number="165">
-    <function name="ReplacementCodeuiSUN" exec="skip">
-        <param name="code" type="GLuint"/>
-    </function>
-
-    <function name="ReplacementCodeusSUN" exec="skip">
-        <param name="code" type="GLushort"/>
-    </function>
-
-    <function name="ReplacementCodeubSUN" exec="skip">
-        <param name="code" type="GLubyte"/>
-    </function>
-
-    <function name="ReplacementCodeuivSUN" exec="skip">
-        <param name="code" type="const GLuint *"/>
-    </function>
-
-    <function name="ReplacementCodeusvSUN" exec="skip">
-        <param name="code" type="const GLushort *"/>
-    </function>
-
-    <function name="ReplacementCodeubvSUN" exec="skip">
-        <param name="code" type="const GLubyte *"/>
-    </function>
-
-    <function name="ReplacementCodePointerSUN" exec="skip">
-        <param name="type" type="GLenum"/>
-        <param name="stride" type="GLsizei"/>
-        <param name="pointer" type="const GLvoid *"/>
-    </function>
-</category>
-
-<category name="GL_SUN_vertex" number="166">
-    <function name="Color4ubVertex2fSUN" exec="skip">
-        <param name="r" type="GLubyte"/>
-        <param name="g" type="GLubyte"/>
-        <param name="b" type="GLubyte"/>
-        <param name="a" type="GLubyte"/>
-        <param name="x" type="GLfloat"/>
-        <param name="y" type="GLfloat"/>
-    </function>
-
-    <function name="Color4ubVertex2fvSUN" exec="skip">
-        <param name="c" type="const GLubyte *"/>
-        <param name="v" type="const GLfloat *"/>
-    </function>
-
-    <function name="Color4ubVertex3fSUN" exec="skip">
-        <param name="r" type="GLubyte"/>
-        <param name="g" type="GLubyte"/>
-        <param name="b" type="GLubyte"/>
-        <param name="a" type="GLubyte"/>
-        <param name="x" type="GLfloat"/>
-        <param name="y" type="GLfloat"/>
-        <param name="z" type="GLfloat"/>
-    </function>
-
-    <function name="Color4ubVertex3fvSUN" exec="skip">
-        <param name="c" type="const GLubyte *"/>
-        <param name="v" type="const GLfloat *"/>
-    </function>
-
-    <function name="Color3fVertex3fSUN" exec="skip">
-        <param name="r" type="GLfloat"/>
-        <param name="g" type="GLfloat"/>
-        <param name="b" type="GLfloat"/>
-        <param name="x" type="GLfloat"/>
-        <param name="y" type="GLfloat"/>
-        <param name="z" type="GLfloat"/>
-    </function>
-
-    <function name="Color3fVertex3fvSUN" exec="skip">
-        <param name="c" type="const GLfloat *"/>
-        <param name="v" type="const GLfloat *"/>
-    </function>
-
-    <function name="Normal3fVertex3fSUN" exec="skip">
-        <param name="nx" type="GLfloat"/>
-        <param name="ny" type="GLfloat"/>
-        <param name="nz" type="GLfloat"/>
-        <param name="x" type="GLfloat"/>
-        <param name="y" type="GLfloat"/>
-        <param name="z" type="GLfloat"/>
-    </function>
-
-    <function name="Normal3fVertex3fvSUN" exec="skip">
-        <param name="n" type="const GLfloat *"/>
-        <param name="v" type="const GLfloat *"/>
-    </function>
-
-    <function name="Color4fNormal3fVertex3fSUN" exec="skip">
-        <param name="r" type="GLfloat"/>
-        <param name="g" type="GLfloat"/>
-        <param name="b" type="GLfloat"/>
-        <param name="a" type="GLfloat"/>
-        <param name="nx" type="GLfloat"/>
-        <param name="ny" type="GLfloat"/>
-        <param name="nz" type="GLfloat"/>
-        <param name="x" type="GLfloat"/>
-        <param name="y" type="GLfloat"/>
-        <param name="z" type="GLfloat"/>
-    </function>
-
-    <function name="Color4fNormal3fVertex3fvSUN" exec="skip">
-        <param name="c" type="const GLfloat *"/>
-        <param name="n" type="const GLfloat *"/>
-        <param name="v" type="const GLfloat *"/>
-    </function>
-
-    <function name="TexCoord2fVertex3fSUN" exec="skip">
-        <param name="s" type="GLfloat"/>
-        <param name="t" type="GLfloat"/>
-        <param name="x" type="GLfloat"/>
-        <param name="y" type="GLfloat"/>
-        <param name="z" type="GLfloat"/>
-    </function>
-
-    <function name="TexCoord2fVertex3fvSUN" exec="skip">
-        <param name="tc" type="const GLfloat *"/>
-        <param name="v" type="const GLfloat *"/>
-    </function>
-
-    <function name="TexCoord4fVertex4fSUN" exec="skip">
-        <param name="s" type="GLfloat"/>
-        <param name="t" type="GLfloat"/>
-        <param name="p" type="GLfloat"/>
-        <param name="q" type="GLfloat"/>
-        <param name="x" type="GLfloat"/>
-        <param name="y" type="GLfloat"/>
-        <param name="z" type="GLfloat"/>
-        <param name="w" type="GLfloat"/>
-    </function>
-
-    <function name="TexCoord4fVertex4fvSUN" exec="skip">
-        <param name="tc" type="const GLfloat *"/>
-        <param name="v" type="const GLfloat *"/>
-    </function>
-
-    <function name="TexCoord2fColor4ubVertex3fSUN" exec="skip">
-        <param name="s" type="GLfloat"/>
-        <param name="t" type="GLfloat"/>
-        <param name="r" type="GLubyte"/>
-        <param name="g" type="GLubyte"/>
-        <param name="b" type="GLubyte"/>
-        <param name="a" type="GLubyte"/>
-        <param name="x" type="GLfloat"/>
-        <param name="y" type="GLfloat"/>
-        <param name="z" type="GLfloat"/>
-    </function>
-
-    <function name="TexCoord2fColor4ubVertex3fvSUN" exec="skip">
-        <param name="tc" type="const GLfloat *"/>
-        <param name="c" type="const GLubyte *"/>
-        <param name="v" type="const GLfloat *"/>
-    </function>
-
-    <function name="TexCoord2fColor3fVertex3fSUN" exec="skip">
-        <param name="s" type="GLfloat"/>
-        <param name="t" type="GLfloat"/>
-        <param name="r" type="GLfloat"/>
-        <param name="g" type="GLfloat"/>
-        <param name="b" type="GLfloat"/>
-        <param name="x" type="GLfloat"/>
-        <param name="y" type="GLfloat"/>
-        <param name="z" type="GLfloat"/>
-    </function>
-
-    <function name="TexCoord2fColor3fVertex3fvSUN" exec="skip">
-        <param name="tc" type="const GLfloat *"/>
-        <param name="c" type="const GLfloat *"/>
-        <param name="v" type="const GLfloat *"/>
-    </function>
-
-    <function name="TexCoord2fNormal3fVertex3fSUN" exec="skip">
-        <param name="s" type="GLfloat"/>
-        <param name="t" type="GLfloat"/>
-        <param name="nx" type="GLfloat"/>
-        <param name="ny" type="GLfloat"/>
-        <param name="nz" type="GLfloat"/>
-        <param name="x" type="GLfloat"/>
-        <param name="y" type="GLfloat"/>
-        <param name="z" type="GLfloat"/>
-    </function>
-
-    <function name="TexCoord2fNormal3fVertex3fvSUN" exec="skip">
-        <param name="tc" type="const GLfloat *"/>
-        <param name="n" type="const GLfloat *"/>
-        <param name="v" type="const GLfloat *"/>
-    </function>
-
-    <function name="TexCoord2fColor4fNormal3fVertex3fSUN" exec="skip">
-        <param name="s" type="GLfloat"/>
-        <param name="t" type="GLfloat"/>
-        <param name="r" type="GLfloat"/>
-        <param name="g" type="GLfloat"/>
-        <param name="b" type="GLfloat"/>
-        <param name="a" type="GLfloat"/>
-        <param name="nx" type="GLfloat"/>
-        <param name="ny" type="GLfloat"/>
-        <param name="nz" type="GLfloat"/>
-        <param name="x" type="GLfloat"/>
-        <param name="y" type="GLfloat"/>
-        <param name="z" type="GLfloat"/>
-    </function>
-
-    <function name="TexCoord2fColor4fNormal3fVertex3fvSUN" exec="skip">
-        <param name="tc" type="const GLfloat *"/>
-        <param name="c" type="const GLfloat *"/>
-        <param name="n" type="const GLfloat *"/>
-        <param name="v" type="const GLfloat *"/>
-    </function>
-
-    <function name="TexCoord4fColor4fNormal3fVertex4fSUN" exec="skip">
-        <param name="s" type="GLfloat"/>
-        <param name="t" type="GLfloat"/>
-        <param name="p" type="GLfloat"/>
-        <param name="q" type="GLfloat"/>
-        <param name="r" type="GLfloat"/>
-        <param name="g" type="GLfloat"/>
-        <param name="b" type="GLfloat"/>
-        <param name="a" type="GLfloat"/>
-        <param name="nx" type="GLfloat"/>
-        <param name="ny" type="GLfloat"/>
-        <param name="nz" type="GLfloat"/>
-        <param name="x" type="GLfloat"/>
-        <param name="y" type="GLfloat"/>
-        <param name="z" type="GLfloat"/>
-        <param name="w" type="GLfloat"/>
-    </function>
-
-    <function name="TexCoord4fColor4fNormal3fVertex4fvSUN" exec="skip">
-        <param name="tc" type="const GLfloat *"/>
-        <param name="c" type="const GLfloat *"/>
-        <param name="n" type="const GLfloat *"/>
-        <param name="v" type="const GLfloat *"/>
-    </function>
-
-    <function name="ReplacementCodeuiVertex3fSUN" exec="skip">
-        <param name="rc" type="GLuint"/>
-        <param name="x" type="GLfloat"/>
-        <param name="y" type="GLfloat"/>
-        <param name="z" type="GLfloat"/>
-    </function>
-
-    <function name="ReplacementCodeuiVertex3fvSUN" exec="skip">
-        <param name="rc" type="const GLuint *"/>
-        <param name="v" type="const GLfloat *"/>
-    </function>
-
-    <function name="ReplacementCodeuiColor4ubVertex3fSUN" exec="skip">
-        <param name="rc" type="GLuint"/>
-        <param name="r" type="GLubyte"/>
-        <param name="g" type="GLubyte"/>
-        <param name="b" type="GLubyte"/>
-        <param name="a" type="GLubyte"/>
-        <param name="x" type="GLfloat"/>
-        <param name="y" type="GLfloat"/>
-        <param name="z" type="GLfloat"/>
-    </function>
-
-    <function name="ReplacementCodeuiColor4ubVertex3fvSUN" exec="skip">
-        <param name="rc" type="const GLuint *"/>
-        <param name="c" type="const GLubyte *"/>
-        <param name="v" type="const GLfloat *"/>
-    </function>
-
-    <function name="ReplacementCodeuiColor3fVertex3fSUN" exec="skip">
-        <param name="rc" type="GLuint"/>
-        <param name="r" type="GLfloat"/>
-        <param name="g" type="GLfloat"/>
-        <param name="b" type="GLfloat"/>
-        <param name="x" type="GLfloat"/>
-        <param name="y" type="GLfloat"/>
-        <param name="z" type="GLfloat"/>
-    </function>
-
-    <function name="ReplacementCodeuiColor3fVertex3fvSUN" exec="skip">
-        <param name="rc" type="const GLuint *"/>
-        <param name="c" type="const GLfloat *"/>
-        <param name="v" type="const GLfloat *"/>
-    </function>
-
-    <function name="ReplacementCodeuiNormal3fVertex3fSUN" exec="skip">
-        <param name="rc" type="GLuint"/>
-        <param name="nx" type="GLfloat"/>
-        <param name="ny" type="GLfloat"/>
-        <param name="nz" type="GLfloat"/>
-        <param name="x" type="GLfloat"/>
-        <param name="y" type="GLfloat"/>
-        <param name="z" type="GLfloat"/>
-    </function>
-
-    <function name="ReplacementCodeuiNormal3fVertex3fvSUN" exec="skip">
-        <param name="rc" type="const GLuint *"/>
-        <param name="n" type="const GLfloat *"/>
-        <param name="v" type="const GLfloat *"/>
-    </function>
-
-    <function name="ReplacementCodeuiColor4fNormal3fVertex3fSUN"
-              exec="skip">
-        <param name="rc" type="GLuint"/>
-        <param name="r" type="GLfloat"/>
-        <param name="g" type="GLfloat"/>
-        <param name="b" type="GLfloat"/>
-        <param name="a" type="GLfloat"/>
-        <param name="nx" type="GLfloat"/>
-        <param name="ny" type="GLfloat"/>
-        <param name="nz" type="GLfloat"/>
-        <param name="x" type="GLfloat"/>
-        <param name="y" type="GLfloat"/>
-        <param name="z" type="GLfloat"/>
-    </function>
-
-    <function name="ReplacementCodeuiColor4fNormal3fVertex3fvSUN"
-              exec="skip">
-        <param name="rc" type="const GLuint *"/>
-        <param name="c" type="const GLfloat *"/>
-        <param name="n" type="const GLfloat *"/>
-        <param name="v" type="const GLfloat *"/>
-    </function>
-
-    <function name="ReplacementCodeuiTexCoord2fVertex3fSUN" exec="skip">
-        <param name="rc" type="GLuint"/>
-        <param name="s" type="GLfloat"/>
-        <param name="t" type="GLfloat"/>
-        <param name="x" type="GLfloat"/>
-        <param name="y" type="GLfloat"/>
-        <param name="z" type="GLfloat"/>
-    </function>
-
-    <function name="ReplacementCodeuiTexCoord2fVertex3fvSUN" exec="skip">
-        <param name="rc" type="const GLuint *"/>
-        <param name="tc" type="const GLfloat *"/>
-        <param name="v" type="const GLfloat *"/>
-    </function>
-
-    <function name="ReplacementCodeuiTexCoord2fNormal3fVertex3fSUN"
-              exec="skip">
-        <param name="rc" type="GLuint"/>
-        <param name="s" type="GLfloat"/>
-        <param name="t" type="GLfloat"/>
-        <param name="nx" type="GLfloat"/>
-        <param name="ny" type="GLfloat"/>
-        <param name="nz" type="GLfloat"/>
-        <param name="x" type="GLfloat"/>
-        <param name="y" type="GLfloat"/>
-        <param name="z" type="GLfloat"/>
-    </function>
-
-    <function name="ReplacementCodeuiTexCoord2fNormal3fVertex3fvSUN"
-              exec="skip">
-        <param name="rc" type="const GLuint *"/>
-        <param name="tc" type="const GLfloat *"/>
-        <param name="n" type="const GLfloat *"/>
-        <param name="v" type="const GLfloat *"/>
-    </function>
-
-    <function name="ReplacementCodeuiTexCoord2fColor4fNormal3fVertex3fSUN"
-              exec="skip">
-        <param name="rc" type="GLuint"/>
-        <param name="s" type="GLfloat"/>
-        <param name="t" type="GLfloat"/>
-        <param name="r" type="GLfloat"/>
-        <param name="g" type="GLfloat"/>
-        <param name="b" type="GLfloat"/>
-        <param name="a" type="GLfloat"/>
-        <param name="nx" type="GLfloat"/>
-        <param name="ny" type="GLfloat"/>
-        <param name="nz" type="GLfloat"/>
-        <param name="x" type="GLfloat"/>
-        <param name="y" type="GLfloat"/>
-        <param name="z" type="GLfloat"/>
-    </function>
-
-    <function name="ReplacementCodeuiTexCoord2fColor4fNormal3fVertex3fvSUN"
-              exec="skip">
-        <param name="rc" type="const GLuint *"/>
-        <param name="tc" type="const GLfloat *"/>
-        <param name="c" type="const GLfloat *"/>
-        <param name="n" type="const GLfloat *"/>
-        <param name="v" type="const GLfloat *"/>
-    </function>
-</category>
-
 <!-- Extension number 167 is a WGL extension. -->
 <!-- Extension number 168 is a WGL extension. -->
 <!-- Extension number 169 is a WGL extension. -->
@@ -10644,27 +9346,6 @@
     </enum>
 </category>
 
-<category name="GL_EXT_vertex_weighting" number="188">
-    <function name="VertexWeightfEXT" vectorequiv="VertexWeightfvEXT"
-              exec="skip">
-        <param name="weight" type="GLfloat"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="VertexWeightfvEXT" exec="skip">
-        <param name="weight" type="const GLfloat *" count="1"/>
-        <glx rop="4135" ignore="true"/>
-    </function>
-
-    <function name="VertexWeightPointerEXT" exec="skip">
-        <param name="size" type="GLsizei"/>
-        <param name="type" type="GLenum"/>
-        <param name="stride" type="GLsizei"/>
-        <param name="pointer" type="const GLvoid *"/>
-        <glx handcode="true" ignore="true"/>
-    </function>
-</category>
-
 <category name="GL_NV_light_max_exponent" number="189">
     <enum name="MAX_SHININESS_NV"              count="1"  value="0x8504">
         <size name="Get" mode="get"/>
@@ -10672,124 +9353,6 @@
     <enum name="MAX_SPOT_EXPONENT_NV"          count="1"  value="0x8505">
         <size name="Get" mode="get"/>
     </enum>
-</category>
-
-<category name="GL_NV_vertex_array_range" number="190">
-    <function name="FlushVertexArrayRangeNV" exec="skip">
-        <glx ignore="true"/>
-    </function>
-
-    <function name="VertexArrayRangeNV" exec="skip">
-        <param name="length" type="GLsizei"/>
-        <param name="pointer" type="const GLvoid *"/>
-        <glx ignore="true"/>
-    </function>
-</category>
-
-<category name="GL_NV_register_combiners" number="191">
-    <function name="CombinerParameterfvNV" exec="skip">
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="const GLfloat *" variable_param="pname"/>
-        <glx rop="4137" ignore="true"/>
-    </function>
-
-    <function name="CombinerParameterfNV" exec="skip">
-        <param name="pname" type="GLenum"/>
-        <param name="param" type="GLfloat"/>
-        <glx rop="4136" ignore="true"/>
-    </function>
-
-    <function name="CombinerParameterivNV" exec="skip">
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="const GLint *" variable_param="pname"/>
-        <glx rop="4139" ignore="true"/>
-    </function>
-
-    <function name="CombinerParameteriNV" exec="skip">
-        <param name="pname" type="GLenum"/>
-        <param name="param" type="GLint"/>
-        <glx rop="4138" ignore="true"/>
-    </function>
-
-    <function name="CombinerInputNV" exec="skip">
-        <param name="stage" type="GLenum"/>
-        <param name="portion" type="GLenum"/>
-        <param name="variable" type="GLenum"/>
-        <param name="input" type="GLenum"/>
-        <param name="mapping" type="GLenum"/>
-        <param name="componentUsage" type="GLenum"/>
-        <glx rop="4140" ignore="true"/>
-    </function>
-
-    <function name="CombinerOutputNV" exec="skip">
-        <param name="stage" type="GLenum"/>
-        <param name="portion" type="GLenum"/>
-        <param name="abOutput" type="GLenum"/>
-        <param name="cdOutput" type="GLenum"/>
-        <param name="sumOutput" type="GLenum"/>
-        <param name="scale" type="GLenum"/>
-        <param name="bias" type="GLenum"/>
-        <param name="abDotProduct" type="GLboolean"/>
-        <param name="cdDotProduct" type="GLboolean"/>
-        <param name="muxSum" type="GLboolean"/>
-        <glx rop="4141" ignore="true"/>
-    </function>
-
-    <function name="FinalCombinerInputNV" exec="skip">
-        <param name="variable" type="GLenum"/>
-        <param name="input" type="GLenum"/>
-        <param name="mapping" type="GLenum"/>
-        <param name="componentUsage" type="GLenum"/>
-        <glx rop="4142" ignore="true"/>
-    </function>
-
-    <function name="GetCombinerInputParameterfvNV" exec="skip">
-        <param name="stage" type="GLenum"/>
-        <param name="portion" type="GLenum"/>
-        <param name="variable" type="GLenum"/>
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="GLfloat *" output="true"/>
-        <glx vendorpriv="1270" ignore="true"/>
-    </function>
-
-    <function name="GetCombinerInputParameterivNV" exec="skip">
-        <param name="stage" type="GLenum"/>
-        <param name="portion" type="GLenum"/>
-        <param name="variable" type="GLenum"/>
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="GLint *" output="true"/>
-        <glx vendorpriv="1271" ignore="true"/>
-    </function>
-
-    <function name="GetCombinerOutputParameterfvNV" exec="skip">
-        <param name="stage" type="GLenum"/>
-        <param name="portion" type="GLenum"/>
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="GLfloat *" output="true"/>
-        <glx vendorpriv="1272" ignore="true"/>
-    </function>
-
-    <function name="GetCombinerOutputParameterivNV" exec="skip">
-        <param name="stage" type="GLenum"/>
-        <param name="portion" type="GLenum"/>
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="GLint *" output="true"/>
-        <glx vendorpriv="1273" ignore="true"/>
-    </function>
-
-    <function name="GetFinalCombinerInputParameterfvNV" exec="skip">
-        <param name="variable" type="GLenum"/>
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="GLfloat *" output="true"/>
-        <glx vendorpriv="1274" ignore="true"/>
-    </function>
-
-    <function name="GetFinalCombinerInputParameterivNV" exec="skip">
-        <param name="variable" type="GLenum"/>
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="GLint *" output="true"/>
-        <glx vendorpriv="1275" ignore="true"/>
-    </function>
 </category>
 
 <category name="GL_NV_fog_distance" number="192">
@@ -10832,12 +9395,6 @@
         <size name="GetTexEnvfv" mode="get"/>
         <size name="GetTexEnviv" mode="get"/>
     </enum>
-</category>
-
-<category name="GL_MESA_resize_buffers" number="196">
-    <function name="ResizeBuffersMESA" exec="skip">
-        <glx ignore="true"/>
-    </function>
 </category>
 
 <category name="GL_MESA_window_pos" number="197">
@@ -10998,67 +9555,6 @@
     </function>
 </category>
 
-<category name="GL_IBM_vertex_array_lists" number="201">
-    <function name="ColorPointerListIBM" exec="skip">
-        <param name="size" type="GLint"/>
-        <param name="type" type="GLenum"/>
-        <param name="stride" type="GLint"/>
-        <param name="pointer" type="const GLvoid **"/>
-        <param name="ptrstride" type="GLint"/>
-    </function>
-
-    <function name="SecondaryColorPointerListIBM" exec="skip">
-        <param name="size" type="GLint"/>
-        <param name="type" type="GLenum"/>
-        <param name="stride" type="GLint"/>
-        <param name="pointer" type="const GLvoid **"/>
-        <param name="ptrstride" type="GLint"/>
-    </function>
-
-    <function name="EdgeFlagPointerListIBM" exec="skip">
-        <param name="stride" type="GLint"/>
-        <param name="pointer" type="const GLboolean **"/>
-        <param name="ptrstride" type="GLint"/>
-    </function>
-
-    <function name="FogCoordPointerListIBM" exec="skip">
-        <param name="type" type="GLenum"/>
-        <param name="stride" type="GLint"/>
-        <param name="pointer" type="const GLvoid **"/>
-        <param name="ptrstride" type="GLint"/>
-    </function>
-
-    <function name="IndexPointerListIBM" exec="skip">
-        <param name="type" type="GLenum"/>
-        <param name="stride" type="GLint"/>
-        <param name="pointer" type="const GLvoid **"/>
-        <param name="ptrstride" type="GLint"/>
-    </function>
-
-    <function name="NormalPointerListIBM" exec="skip">
-        <param name="type" type="GLenum"/>
-        <param name="stride" type="GLint"/>
-        <param name="pointer" type="const GLvoid **"/>
-        <param name="ptrstride" type="GLint"/>
-    </function>
-
-    <function name="TexCoordPointerListIBM" exec="skip">
-        <param name="size" type="GLint"/>
-        <param name="type" type="GLenum"/>
-        <param name="stride" type="GLint"/>
-        <param name="pointer" type="const GLvoid **"/>
-        <param name="ptrstride" type="GLint"/>
-    </function>
-
-    <function name="VertexPointerListIBM" exec="skip">
-        <param name="size" type="GLint"/>
-        <param name="type" type="GLenum"/>
-        <param name="stride" type="GLint"/>
-        <param name="pointer" type="const GLvoid **"/>
-        <param name="ptrstride" type="GLint"/>
-    </function>
-</category>
-
 <!-- Extension number 202 is not listed in the extension registry. -->
 <!-- Extension number 203 is not listed in the extension registry. -->
 <!-- Extension number 204 is not listed in the extension registry. -->
@@ -11076,39 +9572,8 @@
     <enum name="MULTISAMPLE_BIT_3DFX"                     value="0x20000000"/>
 </category>
 
-<category name="GL_3DFX_tbuffer" number="208">
-    <function name="TbufferMask3DFX" exec="skip">
-        <param name="mask" type="GLuint"/>
-        <glx ignore="true"/>
-    </function>
-</category>
-
-<category name="GL_EXT_multisample" number="209">
-    <function name="SampleMaskEXT" alias="SampleMaskSGIS">
-        <param name="value" type="GLclampf"/>
-        <param name="invert" type="GLboolean"/>
-    </function>
-
-    <function name="SamplePatternEXT" alias="SamplePatternSGIS">
-        <param name="pattern" type="GLenum"/>
-    </function>
-</category>
-
 <!-- Extension number 211 is not listed in the extension registry. -->
 <!-- Extension number 213 is not listed in the extension registry. -->
-
-<category name="GL_SGIS_texture_color_mask" number="214">
-    <enum name="TEXTURE_COLOR_WRITEMASK_SGIS"             value="0x81EF"/>
-
-    <function name="TextureColorMaskSGIS" exec="skip">
-        <param name="red" type="GLboolean"/>
-        <param name="green" type="GLboolean"/>
-        <param name="blue" type="GLboolean"/>
-        <param name="alpha" type="GLboolean"/>
-        <glx rop="2082" ignore="true"/>
-    </function>
-</category>
-
 <!-- Extension number 215 is a GLX extension. -->
 <!-- Extension number 216 is a GLX extension. -->
 <!-- Extension number 217 is a GLX extension. -->
@@ -11125,138 +9590,13 @@
     <enum name="MIRROR_CLAMP_TO_EDGE_ATI"                 value="0x8743"/>
 </category>
 
-<category name="GL_NV_fence" number="222">
-    <function name="DeleteFencesNV" exec="skip">
-        <param name="n" type="GLsizei"/>
-        <param name="fences" type="const GLuint *"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="GenFencesNV" exec="skip">
-        <param name="n" type="GLsizei" counter="true"/>
-        <param name="fences" type="GLuint *" output="true" count="n"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="IsFenceNV" exec="skip">
-        <param name="fence" type="GLuint"/>
-        <return type="GLboolean"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="TestFenceNV" exec="skip">
-        <param name="fence" type="GLuint"/>
-        <return type="GLboolean"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="GetFenceivNV" exec="skip">
-        <param name="fence" type="GLuint"/>
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="GLint *" output="true"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="FinishFenceNV" exec="skip">
-        <param name="fence" type="GLuint"/>
-        <glx ignore="true"/>
-    </function>
-
-    <function name="SetFenceNV" exec="skip">
-        <param name="fence" type="GLuint"/>
-        <param name="condition" type="GLenum"/>
-        <glx ignore="true"/>
-    </function>
-</category>
-
 <category name="GL_IBM_texture_mirrored_repeat" number="224">
     <enum name="MIRRORED_REPEAT_IBM"                      value="0x8370"/>
-</category>
-
-<category name="GL_NV_evaluators" number="225">
-    <function name="MapControlPointsNV" exec="skip">
-        <param name="target" type="GLenum"/>
-        <param name="index" type="GLuint"/>
-        <param name="type" type="GLenum"/>
-        <param name="ustride" type="GLsizei"/>
-        <param name="vstride" type="GLsizei"/>
-        <param name="uorder" type="GLint"/>
-        <param name="vorder" type="GLint"/>
-        <param name="packed" type="GLboolean"/>
-        <param name="points" type="const GLvoid *"/>
-    </function>
-
-    <function name="MapParameterivNV" exec="skip">
-        <param name="target" type="GLenum"/>
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="const GLint *"/>
-    </function>
-
-    <function name="MapParameterfvNV" exec="skip">
-        <param name="target" type="GLenum"/>
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="const GLfloat *"/>
-    </function>
-
-    <function name="GetMapControlPointsNV" exec="skip">
-        <param name="target" type="GLenum"/>
-        <param name="index" type="GLuint"/>
-        <param name="type" type="GLenum"/>
-        <param name="ustride" type="GLsizei"/>
-        <param name="vstride" type="GLsizei"/>
-        <param name="packed" type="GLboolean"/>
-        <param name="points" type="GLvoid *" output="true"/>
-    </function>
-
-    <function name="GetMapParameterivNV" exec="skip">
-        <param name="target" type="GLenum"/>
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="GLint *" output="true"/>
-    </function>
-
-    <function name="GetMapParameterfvNV" exec="skip">
-        <param name="target" type="GLenum"/>
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="GLfloat *" output="true"/>
-    </function>
-
-    <function name="GetMapAttribParameterivNV" exec="skip">
-        <param name="target" type="GLenum"/>
-        <param name="index" type="GLuint"/>
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="GLint *" output="true"/>
-    </function>
-
-    <function name="GetMapAttribParameterfvNV" exec="skip">
-        <param name="target" type="GLenum"/>
-        <param name="index" type="GLuint"/>
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="GLfloat *" output="true"/>
-    </function>
-
-    <function name="EvalMapsNV" exec="skip">
-        <param name="target" type="GLenum"/>
-        <param name="mode" type="GLenum"/>
-    </function>
 </category>
 
 <category name="GL_NV_packed_depth_stencil" number="226">
     <enum name="DEPTH_STENCIL_NV"                         value="0x84F9"/>
     <enum name="UNSIGNED_INT_24_8_NV"                     value="0x84FA"/>
-</category>
-
-<category name="GL_NV_register_combiners2" number="227">
-    <function name="CombinerStageParameterfvNV" exec="skip">
-        <param name="stage" type="GLenum"/>
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="const GLfloat *"/>
-    </function>
-
-    <function name="GetCombinerStageParameterfvNV" exec="skip">
-        <param name="stage" type="GLenum"/>
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="GLfloat *" output="true"/>
-    </function>
 </category>
 
 <category name="GL_NV_texture_compression_vtc" number="228">
@@ -11871,56 +10211,6 @@
     <enum name="DEPTH_STENCIL_TO_BGRA_NV"                 value="0x886F"/>
 </category>
 
-<category name="GL_ATI_envmap_bumpmap" number="244">
-    <enum name="BUMP_ROT_MATRIX_ATI"          count="4"   value="0x8775">
-        <size name="TexBumpParameterfv"/>
-        <size name="TexBumpParameteriv"/>
-        <size name="GetTexBumpParameterfv" mode="get"/>
-        <size name="GetTexBumpParameteriv" mode="get"/>
-    </enum>
-    <enum name="BUMP_ROT_MATRIX_SIZE_ATI"     count="1"   value="0x8776">
-        <size name="GetTexBumpParameterfv" mode="get"/>
-        <size name="GetTexBumpParameteriv" mode="get"/>
-    </enum>
-    <enum name="BUMP_NUM_TEX_UNITS_ATI"       count="1"   value="0x8777">
-        <size name="GetTexBumpParameterfv" mode="get"/>
-        <size name="GetTexBumpParameteriv" mode="get"/>
-    </enum>
-    <enum name="BUMP_TEX_UNITS_ATI"           count="-1"  value="0x8778">
-        <size name="GetTexBumpParameterfv" mode="get"/>
-        <size name="GetTexBumpParameteriv" mode="get"/>
-    </enum>
-    <enum name="DUDV_ATI"                                 value="0x8779"/>
-    <enum name="DU8DV8_ATI"                               value="0x877A"/>
-    <enum name="BUMP_ENVMAP_ATI"                          value="0x877B"/>
-    <enum name="BUMP_TARGET_ATI"              count="1"   value="0x877C">
-        <size name="TexEnviv"/>
-        <size name="TexEnvfv"/>
-        <size name="GetTexEnviv" mode="get"/>
-        <size name="GetTexEnvfv" mode="get"/>
-    </enum>
-    <function name="TexBumpParameterfvATI" deprecated="3.1" exec="skip">
-      <param name="pname" type="GLenum"/>
-      <param name="param" type="const GLfloat *" variable_param="pname"/>
-      <glx ignore="true"/>
-    </function>
-    <function name="TexBumpParameterivATI" deprecated="3.1" exec="skip">
-      <param name="pname" type="GLenum"/>
-      <param name="param" type="const GLint *" variable_param="pname"/>
-      <glx ignore="true"/>
-    </function>
-    <function name="GetTexBumpParameterfvATI" deprecated="3.1" exec="skip">
-      <param name="pname" type="GLenum"/>
-      <param name="param" type="GLfloat *" variable_param="pname"/>
-      <glx ignore="true"/>
-    </function>
-    <function name="GetTexBumpParameterivATI" deprecated="3.1" exec="skip">
-      <param name="pname" type="GLenum"/>
-      <param name="param" type="GLint *" variable_param="pname"/>
-      <glx ignore="true"/>
-    </function>
-</category>
-
 <category name="GL_ATI_fragment_shader" number="245">
     <enum name="FRAGMENT_SHADER_ATI"                      value="0x8920"/>
     <enum name="REG_0_ATI"                                value="0x8921"/>
@@ -12166,18 +10456,6 @@
 <!-- Extension number 254 is a WGL extension. -->
 <!-- Extension number 255 is a WGL extension. -->
 
-<category name="GL_SUN_mesh_array" number="257">
-    <enum name="QUAD_MESH_SUN"                            value="0x8614"/>
-    <enum name="TRIANGLE_MESH_SUN"                        value="0x8615"/>
-
-    <function name="DrawMeshArraysSUN" exec="skip">
-        <param name="mode" type="GLenum"/>
-        <param name="first" type="GLint"/>
-        <param name="count" type="GLsizei"/>
-        <param name="width" type="GLsizei"/>
-    </function>
-</category>
-
 <category name="GL_SUN_slice_accum" number="258">
     <enum name="SLICE_ACCUM_SUN"                          value="0x85CC"/>
 </category>
@@ -12258,9 +10536,6 @@
     </function>
 </category>
 
-<xi:include href="APPLE_object_purgeable.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-<xi:include href="APPLE_vertex_array_object.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-
 <category name="GL_APPLE_ycbcr_422" number="275">
     <enum name="YCBCR_422_APPLE"                          value="0x85B9"/>
     <enum name="UNSIGNED_SHORT_8_8_APPLE"                 value="0x85BA"/>
@@ -12282,71 +10557,6 @@
     <enum name="MODULATE_ADD_ATI"                         value="0x8744"/>
     <enum name="MODULATE_SIGNED_ADD_ATI"                  value="0x8745"/>
     <enum name="MODULATE_SUBTRACT_ATI"                    value="0x8746"/>
-</category>
-
-<category name="GL_NV_fragment_program" number="282">
-    <enum name="FRAGMENT_PROGRAM_NV"                      value="0x8870"/>
-    <enum name="MAX_TEXTURE_COORDS_NV"                    value="0x8871"/>
-    <enum name="MAX_TEXTURE_IMAGE_UNITS_NV"               value="0x8872"/>
-    <enum name="FRAGMENT_PROGRAM_BINDING_NV"              value="0x8873"/>
-    <enum name="MAX_FRAGMENT_PROGRAM_LOCAL_PARAMETERS_NV" value="0x8868"/>
-    <enum name="PROGRAM_ERROR_STRING_NV"                  value="0x8874"/>
-
-    <function name="ProgramNamedParameter4fNV"
-              vectorequiv="ProgramNamedParameter4fvNV" deprecated="3.1"
-              exec="skip">
-        <param name="id" type="GLuint"/>
-        <param name="len" type="GLsizei" counter="true"/>
-        <param name="name" type="const GLubyte *" count="len"/>
-        <param name="x" type="GLfloat"/>
-        <param name="y" type="GLfloat"/>
-        <param name="z" type="GLfloat"/>
-        <param name="w" type="GLfloat"/>
-    </function>
-
-    <function name="ProgramNamedParameter4dNV"
-              vectorequiv="ProgramNamedParameter4dvNV" deprecated="3.1"
-              exec="skip">
-        <param name="id" type="GLuint"/>
-        <param name="len" type="GLsizei" counter="true"/>
-        <param name="name" type="const GLubyte *" count="len"/>
-        <param name="x" type="GLdouble"/>
-        <param name="y" type="GLdouble"/>
-        <param name="z" type="GLdouble"/>
-        <param name="w" type="GLdouble"/>
-    </function>
-
-    <function name="ProgramNamedParameter4fvNV" deprecated="3.1" exec="skip">
-        <param name="id" type="GLuint"/>
-        <param name="len" type="GLsizei" counter="true"/>
-        <param name="name" type="const GLubyte *" count="len"/>
-        <param name="v" type="const GLfloat *" count="4"/>
-        <glx rop="4218"/>
-    </function>
-
-    <function name="ProgramNamedParameter4dvNV" deprecated="3.1" exec="skip">
-        <param name="id" type="GLuint"/>
-        <param name="len" type="GLsizei" counter="true"/>
-        <param name="name" type="const GLubyte *" count="len"/>
-        <param name="v" type="const GLdouble *" count="4"/>
-        <glx rop="4219"/>
-    </function>
-
-    <function name="GetProgramNamedParameterfvNV" deprecated="3.1" exec="skip">
-        <param name="id" type="GLuint"/>
-        <param name="len" type="GLsizei" counter="true"/>
-        <param name="name" type="const GLubyte *" count="len"/>
-        <param name="params" type="GLfloat *" output="true" count="4"/>
-        <glx vendorpriv="1310" always_array="true"/>
-    </function>
-
-    <function name="GetProgramNamedParameterdvNV" deprecated="3.1" exec="skip">
-        <param name="id" type="GLuint"/>
-        <param name="len" type="GLsizei" counter="true"/>
-        <param name="name" type="const GLubyte *" count="len"/>
-        <param name="params" type="GLdouble *" output="true" count="4"/>
-        <glx vendorpriv="1311" always_array="true"/>
-    </function>
 </category>
 
 <category name="GL_NV_texture_expand_normal" number="286">
@@ -12483,26 +10693,6 @@
 
 <xi:include href="EXT_draw_buffers2.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
 
-
-<category name="GL_APPLE_flush_buffer_range" number="321">
-    <enum name="BUFFER_SERIALIZED_MODIFY_APPLE" count="1" value="0x8A12">
-        <size name="GetBufferParameteriv" mode="get"/>
-    </enum>
-    <enum name="BUFFER_FLUSHING_UNMAP_APPLE" count="1" value="0x8A13">
-        <size name="GetBufferParameteriv" mode="get"/>
-    </enum>
-    <function name="BufferParameteriAPPLE" exec="skip">
-        <param name="target" type="GLenum"/>
-        <param name="pname" type="GLenum"/>
-        <param name="param" type="GLint"/>
-    </function>
-    <function name="FlushMappedBufferRangeAPPLE" exec="skip">
-        <param name="target" type="GLenum"/>
-        <param name="offset" type="GLintptr"/>
-        <param name="size" type="GLsizeiptr"/>
-    </function>
-</category>
-
 <category name="GL_EXT_packed_float" number="328">
     <enum name="R11F_G11F_B10F_EXT"                value="0x8C3A"/>
     <enum name="UNSIGNED_INT_10F_11F_11F_REV"      value="0x8C3B"/>
@@ -12523,44 +10713,6 @@
 </category>
 
 <xi:include href="AMD_performance_monitor.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-
-<category name="GL_APPLE_texture_range" number="367">
-    <enum name="TEXTURE_STORAGE_HINT_APPLE" count="1" value="0x85BC">
-        <size name="TexParameteriv"/>
-        <size name="TexParameterfv"/>
-        <size name="GetTexParameteriv" mode="get"/>
-        <size name="GetTexParameterfv" mode="get"/>
-    </enum>
-    <enum name="STORAGE_PRIVATE_APPLE" count="1" value="0x85BD">
-        <size name="TexParameteriv"/>
-        <size name="TexParameterfv"/>
-    </enum>
-    <enum name="STORAGE_CACHED_APPLE" count="1" value="0x85BE">
-        <size name="TexParameteriv"/>
-        <size name="TexParameterfv"/>
-    </enum>
-    <enum name="STORAGE_SHARED_APPLE" count="1" value="0x85BF">
-        <size name="TexParameteriv"/>
-        <size name="TexParameterfv"/>
-    </enum>
-    <enum name="TEXTURE_RANGE_LENGTH_APPLE" count="1" value="0x85B7">
-        <size name="GetTexParameteriv" mode="get"/>
-        <size name="GetTexParameterfv" mode="get"/>
-    </enum>
-    <enum name="TEXTURE_RANGE_POINTER_APPLE" count="1" value="0x85B8">
-        <size name="GetTexParameterPointervAPPLE" mode="get"/>
-    </enum>
-    <function name="TextureRangeAPPLE" exec="skip">
-        <param name="target" type="GLenum"/>
-        <param name="length" type="GLsizei"/>
-        <param name="pointer" type="GLvoid *"/>
-    </function>
-    <function name="GetTexParameterPointervAPPLE" exec="skip">
-        <param name="target" type="GLenum"/>
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="GLvoid **"/>
-    </function>
-</category>
 
 <xi:include href="EXT_separate_shader_objects.xml"
 	    xmlns:xi="http://www.w3.org/2001/XInclude"/>
@@ -12830,57 +10982,6 @@
     <function name="PointParameterfvSGIS" alias="PointParameterfv">
         <param name="pname" type="GLenum"/>
         <param name="params" type="const GLfloat *"/>
-    </function>
-</category>
-
-<category name="GL_SGIX_igloo_interface">
-    <function name="IglooInterfaceSGIX" exec="skip">
-        <param name="pname" type="GLenum"/>
-        <param name="params" type="const GLvoid *"/>
-    </function>
-</category>
-
-<category name="GL_SGIX_polynomial_ffd">
-    <function name="DeformationMap3dSGIX" exec="skip">
-        <param name="target" type="GLenum"/>
-        <param name="u1" type="GLdouble"/>
-        <param name="u2" type="GLdouble"/>
-        <param name="ustride" type="GLint"/>
-        <param name="uorder" type="GLint"/>
-        <param name="v1" type="GLdouble"/>
-        <param name="v2" type="GLdouble"/>
-        <param name="vstride" type="GLint"/>
-        <param name="vorder" type="GLint"/>
-        <param name="w1" type="GLdouble"/>
-        <param name="w2" type="GLdouble"/>
-        <param name="wstride" type="GLint"/>
-        <param name="worder" type="GLint"/>
-        <param name="points" type="const GLdouble *"/>
-    </function>
-
-    <function name="DeformationMap3fSGIX" exec="skip">
-        <param name="target" type="GLenum"/>
-        <param name="u1" type="GLfloat"/>
-        <param name="u2" type="GLfloat"/>
-        <param name="ustride" type="GLint"/>
-        <param name="uorder" type="GLint"/>
-        <param name="v1" type="GLfloat"/>
-        <param name="v2" type="GLfloat"/>
-        <param name="vstride" type="GLint"/>
-        <param name="vorder" type="GLint"/>
-        <param name="w1" type="GLfloat"/>
-        <param name="w2" type="GLfloat"/>
-        <param name="wstride" type="GLint"/>
-        <param name="worder" type="GLint"/>
-        <param name="points" type="const GLfloat *"/>
-    </function>
-
-    <function name="DeformSGIX" exec="skip">
-        <param name="mask" type="GLenum"/>
-    </function>
-
-    <function name="LoadIdentityDeformationMapSGIX" exec="skip">
-        <param name="mask" type="GLenum"/>
     </function>
 </category>
 
