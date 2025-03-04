@@ -5164,7 +5164,7 @@
         "description": "pan/bi: Ensure we select b0 with halfswizzle in va_lower_constants",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7d07fb9a679e8879663f4bb44cfca7a60470177e",
         "notes": null
