@@ -700,3 +700,65 @@ bool pco_shrink_vecs(pco_shader *shader)
 
    return progress;
 }
+
+bool pco_opt_comp_only_vecs(pco_shader *shader)
+{
+   bool progress = false;
+
+   pco_foreach_func_in_shader (func, shader) {
+      pco_foreach_instr_in_func_safe (vec, func) {
+         if (vec->op != PCO_OP_VEC)
+            continue;
+
+         bool used_by_noncomps = false;
+         pco_ref dest = vec->dest[0];
+
+         struct util_dynarray comps;
+         util_dynarray_init(&comps, NULL);
+
+         pco_foreach_instr_in_func_from (instr, vec) {
+            if (instr->op == PCO_OP_COMP) {
+               if (instr->src[0].val == dest.val)
+                  util_dynarray_append(&comps, pco_instr *, instr);
+
+               continue;
+            }
+
+            pco_foreach_instr_src_ssa (psrc, instr) {
+               if (psrc->val == dest.val) {
+                  used_by_noncomps = true;
+                  break;
+               }
+            }
+
+            if (used_by_noncomps)
+               break;
+         }
+
+         if (used_by_noncomps) {
+            util_dynarray_fini(&comps);
+            continue;
+         }
+
+         util_dynarray_foreach (&comps, pco_instr *, _comp) {
+            pco_instr *comp = *_comp;
+            pco_ref dest = comp->dest[0];
+            assert(pco_ref_is_ssa(dest));
+
+            unsigned offset = pco_ref_get_imm(comp->src[1]);
+            assert(offset < vec->num_srcs);
+
+            pco_builder b =
+               pco_builder_create(func, pco_cursor_before_instr(comp));
+            pco_mov(&b, comp->dest[0], vec->src[offset]);
+
+            pco_instr_delete(comp);
+         }
+
+         util_dynarray_fini(&comps);
+         progress = true;
+      }
+   }
+
+   return progress;
+}

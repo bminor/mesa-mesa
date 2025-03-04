@@ -41,6 +41,7 @@ void pco_process_ir(pco_ctx *ctx, pco_shader *shader)
    PCO_PASS(_, shader, pco_shrink_vecs);
 
    PCO_PASS(_, shader, pco_const_imms);
+   PCO_PASS(_, shader, pco_opt_comp_only_vecs);
    PCO_PASS(_, shader, pco_opt);
 
    do {
