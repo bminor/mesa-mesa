@@ -2903,10 +2903,14 @@ bi_emit_alu(bi_builder *b, nir_alu_instr *instr)
       break;
 
    case nir_op_frexp_exp:
+      /* v11 removed FREXPE.v2f16 */
+      assert(src_sz == 32 || (b->shader->arch < 11 && src_sz == 16));
       bi_frexpe_to(b, sz, dst, s0, false, false);
       break;
 
    case nir_op_frexp_sig:
+      /* v11 removed FREXPM.v2f16 */
+      assert(src_sz == 32 || (b->shader->arch < 11 && src_sz == 16));
       bi_frexpm_to(b, sz, dst, s0, false, false);
       break;
 
@@ -4892,6 +4896,8 @@ bi_lower_bit_size(const nir_instr *instr, void *data)
    case nir_op_fceil:
    case nir_op_ffloor:
    case nir_op_ftrunc:
+   case nir_op_frexp_sig:
+   case nir_op_frexp_exp:
       if (pan_arch(gpu_id) < 11)
          return 0;
       /* On v11+, FROUND.v2s16 is gone */
@@ -4937,6 +4943,8 @@ bi_vectorize_filter(const nir_instr *instr, const void *data)
    case nir_op_f2f16_rtne:
    case nir_op_u2f16:
    case nir_op_i2f16:
+   case nir_op_frexp_sig:
+   case nir_op_frexp_exp:
       if (pan_arch(gpu_id) >= 11)
          return 1;
 
