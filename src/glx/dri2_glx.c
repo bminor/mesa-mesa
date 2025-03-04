@@ -51,6 +51,8 @@
 #include "loader.h"
 #include "loader_dri_helper.h"
 #include "dri_util.h"
+#include "mapi/glapi/glapi.h"
+#include "mesa/main/dispatch.h"
 
 #undef DRI2_MINOR
 #define DRI2_MINOR 1
@@ -285,7 +287,7 @@ dri2Flush(struct dri2_screen *psc,
       dri_flush(ctx, draw->base.dri_drawable, flags, throttle_reason);
    } else {
       if (flags & __DRI2_FLUSH_CONTEXT)
-         glFlush();
+         CALL_Flush(GET_DISPATCH(), ());
 
       dri_flush_drawable(draw->base.dri_drawable);
 
