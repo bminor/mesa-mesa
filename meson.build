@@ -48,6 +48,10 @@ with_mesa_ndebug = get_option('b_ndebug') == 'true' or (get_option('buildtype') 
 relative_dir = fs.relative_to(meson.global_source_root(), meson.global_build_root())
 cl_args = ['-fmacro-prefix-map=@0@/='.format(relative_dir)]
 
+if with_mesa_ndebug
+  cl_args += ['-DNDEBUG']
+endif
+
 # Arguments for the preprocessor, put these in a separate array from the C and
 # C++ (cpp in meson terminology) arguments since they need to be added to the
 # default arguments for both C and C++.
