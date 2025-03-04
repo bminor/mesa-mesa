@@ -44,7 +44,7 @@ enum blitter_attrib_type {
    UTIL_BLITTER_ATTRIB_TEXCOORD_XYZW,
 };
 
-union blitter_attrib {
+struct blitter_attrib {
    struct {
       float x1, y1, x2, y2, z, w;
    } texcoord;
@@ -92,7 +92,7 @@ struct blitter_context
                           int x1, int y1, int x2, int y2,
                           float depth, unsigned num_instances,
                           enum blitter_attrib_type type,
-                          const union blitter_attrib *attrib);
+                          const struct blitter_attrib *attrib);
 
    /* Whether the blitter is running. */
    bool running;
@@ -181,7 +181,7 @@ void util_blitter_draw_rectangle(struct blitter_context *blitter,
                                  int x1, int y1, int x2, int y2,
                                  float depth, unsigned num_instances,
                                  enum blitter_attrib_type type,
-                                 const union blitter_attrib *attrib);
+                                 const struct blitter_attrib *attrib);
 
 
 /*

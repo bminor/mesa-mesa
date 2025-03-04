@@ -645,11 +645,11 @@ void
 zink_draw_rectangle(struct blitter_context *blitter, void *vertex_elements_cso,
                     blitter_get_vs_func get_vs, int x1, int y1, int x2, int y2,
                     float depth, unsigned num_instances, enum blitter_attrib_type type,
-                    const union blitter_attrib *attrib)
+                    const struct blitter_attrib *attrib)
 {
    struct zink_context *ctx = zink_context(blitter->pipe);
 
-   union blitter_attrib new_attrib = *attrib;
+   struct blitter_attrib new_attrib = *attrib;
 
    /* Avoid inconsistencies in rounding between both triangles which can show with
     * nearest filtering by expanding the rect so only one triangle is effectively drawn.

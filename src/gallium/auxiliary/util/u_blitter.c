@@ -855,7 +855,7 @@ static void get_texcoords(struct pipe_sampler_view *src,
                           unsigned src_width0, unsigned src_height0,
                           int x1, int y1, int x2, int y2,
                           float layer, unsigned sample,
-                          bool uses_txf, union blitter_attrib *out)
+                          bool uses_txf, struct blitter_attrib *out)
 {
    unsigned level = src->u.tex.first_level;
    bool normalized = !uses_txf &&
@@ -918,7 +918,7 @@ static void blitter_set_dst_dimensions(struct blitter_context_priv *ctx,
    ctx->dst_height = height;
 }
 
-static void set_texcoords_in_vertices(const union blitter_attrib *attrib,
+static void set_texcoords_in_vertices(const struct blitter_attrib *attrib,
                                       float *out, unsigned stride)
 {
    out[0] = attrib->texcoord.x1;
@@ -1396,7 +1396,7 @@ void util_blitter_draw_rectangle(struct blitter_context *blitter,
                                  int x1, int y1, int x2, int y2,
                                  float depth, unsigned num_instances,
                                  enum blitter_attrib_type type,
-                                 const union blitter_attrib *attrib)
+                                 const struct blitter_attrib *attrib)
 {
    struct blitter_context_priv *ctx = (struct blitter_context_priv*)blitter;
    unsigned i;
@@ -1772,7 +1772,7 @@ blitter_draw_tex(struct blitter_context_priv *ctx,
                  float layer, unsigned sample,
                  bool uses_txf, enum blitter_attrib_type type)
 {
-   union blitter_attrib coord;
+   struct blitter_attrib coord;
    blitter_get_vs_func get_vs = get_vs_passthrough_pos_generic;
 
    get_texcoords(src, src_width0, src_height0,
@@ -2920,7 +2920,7 @@ util_blitter_stencil_fallback(struct blitter_context *blitter,
 
    for (unsigned i = 0; i <= util_res_sample_count(dst) - 1; i++) {
       pipe->set_sample_mask(pipe, 1 << i);
-      union blitter_attrib coord;
+      struct blitter_attrib coord;
       get_texcoords(src_view, src->width0, src->height0,
                   srcbox->x, srcbox->y,
                   srcbox->x + srcbox->width, srcbox->y + srcbox->height,
