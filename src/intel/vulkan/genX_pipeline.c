@@ -1427,7 +1427,10 @@ emit_3dstate_te(struct anv_graphics_pipeline *pipeline)
             te.TessellationDistributionMode = TEDMODE_OFF;
 
 #if GFX_VER >= 20
-         te.TessellationDistributionLevel = TEDLEVEL_REGION;
+         if (intel_needs_workaround(device->info, 16025857284))
+            te.TessellationDistributionLevel = TEDLEVEL_PATCH;
+         else
+            te.TessellationDistributionLevel = TEDLEVEL_REGION;
 #else
          te.TessellationDistributionLevel = TEDLEVEL_PATCH;
 #endif
