@@ -46,7 +46,15 @@ with_mesa_ndebug = get_option('b_ndebug') == 'true' or (get_option('buildtype') 
 
 # We need to set -fmacro-prefix-map properly for driver CL reproducability.
 relative_dir = fs.relative_to(meson.global_source_root(), meson.global_build_root())
-cl_args = ['-fmacro-prefix-map=@0@/='.format(relative_dir)]
+
+cl_args = [
+  '-fmacro-prefix-map=@0@/='.format(relative_dir),
+
+  # Set the OpenCL standard to CL 2.0, enabling everything at a frontend.
+  # Drivers may not actually support everything but that's ok.
+  '-cl-std=cl2.0',
+  '-D__OPENCL_VERSION__=200'
+]
 
 if with_mesa_ndebug
   cl_args += ['-DNDEBUG']
