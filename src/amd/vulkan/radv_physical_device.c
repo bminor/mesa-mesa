@@ -2199,7 +2199,7 @@ radv_physical_device_try_create(struct radv_instance *instance, drmDevicePtr drm
       if (instance->perftest_flags & RADV_PERFTEST_RT_WAVE_32 || pdev->info.gfx_level < GFX11)
          pdev->rt_wave_size = 32;
 
-      if (instance->perftest_flags & RADV_PERFTEST_RT_WAVE_64 || instance->drirc.force_rt_wave64)
+      if (instance->perftest_flags & RADV_PERFTEST_RT_WAVE_64)
          pdev->rt_wave_size = 64;
    }
 

@@ -256,7 +256,8 @@ radv_init_dri_options(struct radv_instance *instance)
    instance->drirc.flush_before_timestamp_write =
       driQueryOptionb(&instance->drirc.options, "radv_flush_before_timestamp_write");
 
-   instance->drirc.force_rt_wave64 = driQueryOptionb(&instance->drirc.options, "radv_rt_wave64");
+   if (driQueryOptionb(&instance->drirc.options, "radv_rt_wave64"))
+      instance->perftest_flags |= RADV_PERFTEST_RT_WAVE_64;
 
    instance->drirc.disable_dedicated_sparse_queue = driQueryOptionb(&instance->drirc.options, "radv_disable_dedicated_sparse_queue");
 
