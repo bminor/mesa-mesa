@@ -2158,6 +2158,31 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
       }
       break;
    }
+   case nir_op_imul24_relaxed: {
+      if (dst.regClass() == s1) {
+         emit_sop2_instruction(ctx, instr, aco_opcode::s_mul_i32, dst, false);
+      } else if (dst.regClass() == v1) {
+         emit_vop2_instruction(ctx, instr, aco_opcode::v_mul_i32_i24, dst, true);
+      } else {
+         isel_err(&instr->instr, "Unimplemented NIR instr bit size");
+      }
+      break;
+   }
+   case nir_op_umul24_relaxed: {
+      if (dst.regClass() == s1) {
+         Operand op1(get_alu_src(ctx, instr->src[0]));
+         Operand op2(get_alu_src(ctx, instr->src[1]));
+         op1.set24bit(true);
+         op2.set24bit(true);
+         bld.sop2(aco_opcode::s_mul_i32, Definition(dst), op1, op2);
+      } else if (dst.regClass() == v1) {
+         emit_vop2_instruction(ctx, instr, aco_opcode::v_mul_u32_u24, dst, true /* commutative */,
+                               false, false, false, 0x3);
+      } else {
+         isel_err(&instr->instr, "Unimplemented NIR instr bit size");
+      }
+      break;
+   }
    case nir_op_umul_high: {
       if (dst.regClass() == s1 && ctx->options->gfx_level >= GFX9) {
          emit_sop2_instruction(ctx, instr, aco_opcode::s_mul_hi_u32, dst, false);
