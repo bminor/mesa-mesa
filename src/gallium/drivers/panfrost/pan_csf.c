@@ -1210,8 +1210,8 @@ csf_emit_draw_state(struct panfrost_batch *batch,
             ctx->blend->base.alpha_to_coverage,
             ctx->depth_stencil->zs_always_passes);
 
-         cfg.pixel_kill_operation = earlyzs.kill;
-         cfg.zs_update_operation = earlyzs.update;
+         cfg.pixel_kill_operation = (enum mali_pixel_kill)earlyzs.kill;
+         cfg.zs_update_operation = (enum mali_pixel_kill)earlyzs.update;
 
          cfg.allow_forward_pixel_to_kill =
             pan_allow_forward_pixel_to_kill(ctx, fs);
@@ -1491,7 +1491,6 @@ GENX(csf_init_context)(struct panfrost_context *ctx)
    const struct cs_builder_conf bconf = {
       .nr_registers = csif_info->cs_reg_count,
       .nr_kernel_registers = MAX2(csif_info->unpreserved_cs_reg_count, 4),
-      .nr_kernel_registers = 4,
    };
    struct cs_builder b;
    cs_builder_init(&b, &bconf, init_buffer);

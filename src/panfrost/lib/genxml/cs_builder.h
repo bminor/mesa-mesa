@@ -1590,7 +1590,7 @@ cs_trace_point(struct cs_builder *b, struct cs_index regs,
 {
    cs_emit(b, TRACE_POINT, I) {
       I.base_register =
-         cs_src_tuple(b, regs, regs.size, BITFIELD_MASK(regs.size));
+         cs_src_tuple(b, regs, regs.size, (uint16_t)BITFIELD_MASK(regs.size));
       I.register_count = regs.size;
       cs_apply_async(I, async);
    }

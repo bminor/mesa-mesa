@@ -1513,8 +1513,8 @@ prepare_dcd(struct panvk_cmd_buffer *cmdbuf)
                pan_earlyzs_get(pan_earlyzs_analyze(&fs->info), writes_zs || oq,
                                alpha_to_coverage, zs_always_passes);
 
-            cfg.pixel_kill_operation = earlyzs.kill;
-            cfg.zs_update_operation = earlyzs.update;
+            cfg.pixel_kill_operation = (enum mali_pixel_kill)earlyzs.kill;
+            cfg.zs_update_operation = (enum mali_pixel_kill)earlyzs.update;
             cfg.evaluate_per_sample = fs->info.fs.sample_shading &&
                                       (dyns->ms.rasterization_samples > 1);
 
