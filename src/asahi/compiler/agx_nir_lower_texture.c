@@ -677,8 +677,9 @@ lower_images(nir_builder *b, nir_intrinsic_instr *intr, UNUSED void *data)
       return true;
 
    case nir_intrinsic_sparse_residency_code_and:
+      /* ior because residency codes are inverted from NIR */
       nir_def_replace(&intr->def,
-                      nir_iand(b, intr->src[0].ssa, intr->src[1].ssa));
+                      nir_ior(b, intr->src[0].ssa, intr->src[1].ssa));
       return true;
 
    case nir_intrinsic_image_size:
