@@ -337,8 +337,9 @@ fn build_program(
 
     // CL_BUILD_PROGRAM_FAILURE if there is a failure to build the program executable. This error
     // will be returned if clBuildProgram does not return until the build has completed.
+    let options = c_string_to_string(options);
     for dev in &devs {
-        res &= p.build(dev, c_string_to_string(options));
+        res &= p.build(dev, &options);
     }
 
     if let Some(cb) = cb_opt {
@@ -419,8 +420,9 @@ fn compile_program(
 
     // CL_COMPILE_PROGRAM_FAILURE if there is a failure to compile the program source. This error
     // will be returned if clCompileProgram does not return until the compile has completed.
+    let options = c_string_to_string(options);
     for dev in &devs {
-        res &= p.compile(dev, c_string_to_string(options), &headers);
+        res &= p.compile(dev, &options, &headers);
     }
 
     if let Some(cb) = cb_opt {
