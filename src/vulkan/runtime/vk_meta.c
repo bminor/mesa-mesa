@@ -563,20 +563,14 @@ vk_meta_create_buffer_view(struct vk_command_buffer *cmd,
 }
 
 VkDeviceAddress
-vk_meta_buffer_address(struct vk_device *device, VkBuffer buffer,
+vk_meta_buffer_address(struct vk_device *device, VkBuffer _buffer,
                        uint64_t offset, uint64_t range)
 {
-   const VkBufferDeviceAddressInfo info = {
-      .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
-      .buffer = buffer,
-   };
-   VkDeviceAddress base = device->dispatch_table.GetBufferDeviceAddress(
-      vk_device_to_handle(device), &info);
+   VK_FROM_HANDLE(vk_buffer, buffer, _buffer);
 
    /* Only called for the assert()s in vk_buffer_range(), we don't care about
     * the result.
     */
-   vk_buffer_range(vk_buffer_from_handle(buffer), offset, range);
-
-   return base + offset;
+   vk_buffer_range(buffer, offset, range);
+   return vk_buffer_address(buffer, offset);
 }
