@@ -157,10 +157,6 @@ class LAVAJobDefinition:
                         # Could take between 1 and 1.5 min in slower boots
                         "minutes": 4
                     },
-                    "depthcharge-start": {
-                        # Should take less than 1 min.
-                        "minutes": 1,
-                    },
                     "depthcharge-action": {
                         # This timeout englobes the entire depthcharge timing,
                         # including retries
