@@ -654,11 +654,14 @@ isl_format_for_size(unsigned size_B)
 static void
 copy_buffer_to_image(struct anv_cmd_buffer *cmd_buffer,
                      struct blorp_batch *batch,
-                     struct anv_buffer *anv_buffer,
+                     struct anv_address mem_addr,
+                     const struct vk_image_buffer_layout *mem_layout,
                      struct anv_image *anv_image,
                      VkImageLayout image_layout,
-                     const VkBufferImageCopy2* region,
-                     bool buffer_to_image)
+                     VkImageSubresourceLayers sub_resource,
+                     VkOffset3D image_offset,
+                     VkExtent3D image_extent,
+                     bool memory_to_image)
 {
    struct {
       struct blorp_surf surf;
@@ -666,56 +669,51 @@ copy_buffer_to_image(struct anv_cmd_buffer *cmd_buffer,
       enum isl_format copy_format;
       uint32_t level;
       VkOffset3D offset;
-   } image, buffer, *src, *dst;
+   } image, memory, *src, *dst;
 
-   struct isl_surf buffer_isl_surf;
-   buffer.isl_surf = &buffer_isl_surf;
-   buffer.level = 0;
-   buffer.offset = (VkOffset3D) { 0, 0, 0 };
+   struct isl_surf memory_isl_surf;
+   memory.isl_surf = &memory_isl_surf;
+   memory.level = 0;
+   memory.offset = (VkOffset3D) { 0, 0, 0 };
 
-   if (buffer_to_image) {
-      src = &buffer;
+   if (memory_to_image) {
+      src = &memory;
       dst = &image;
    } else {
       src = &image;
-      dst = &buffer;
+      dst = &memory;
    }
 
-   const VkImageAspectFlags aspect = region->imageSubresource.aspectMask;
-   const unsigned plane = anv_image_aspect_to_plane(anv_image, aspect);
+   const unsigned plane = anv_image_aspect_to_plane(anv_image,
+                                                    sub_resource.aspectMask);
    image.isl_surf = &anv_image->planes[plane].primary_surface.isl;
    image.offset =
-      vk_image_sanitize_offset(&anv_image->vk, region->imageOffset);
-   image.level = region->imageSubresource.mipLevel;
+      vk_image_sanitize_offset(&anv_image->vk, image_offset);
+   image.level = sub_resource.mipLevel;
 
    VkExtent3D extent =
-      vk_image_sanitize_extent(&anv_image->vk, region->imageExtent);
+      vk_image_sanitize_extent(&anv_image->vk, image_extent);
    if (anv_image->vk.image_type != VK_IMAGE_TYPE_3D) {
-      image.offset.z = region->imageSubresource.baseArrayLayer;
+      image.offset.z = sub_resource.baseArrayLayer;
       extent.depth =
-         vk_image_subresource_layer_count(&anv_image->vk,
-                                          &region->imageSubresource);
+         vk_image_subresource_layer_count(&anv_image->vk, &sub_resource);
    }
 
    const enum isl_format linear_format =
       anv_get_isl_format(cmd_buffer->device->physical, anv_image->vk.format,
-                         aspect, VK_IMAGE_TILING_LINEAR);
+                         sub_resource.aspectMask, VK_IMAGE_TILING_LINEAR);
 
-   const struct vk_image_buffer_layout buffer_layout =
-      vk_image_buffer_copy_layout(&anv_image->vk, region);
-
-   get_blorp_surf_for_anv_buffer(cmd_buffer,
-                                 anv_buffer, region->bufferOffset,
-                                 extent.width, extent.height,
-                                 buffer_layout.row_stride_B, linear_format,
-                                 false, &buffer.surf, &buffer_isl_surf);
+   get_blorp_surf_for_anv_address(cmd_buffer, mem_addr,
+                                  extent.width, extent.height,
+                                  mem_layout->row_stride_B, linear_format,
+                                  false, &memory.surf, &memory_isl_surf);
 
    blorp_copy_get_formats(&cmd_buffer->device->isl_dev,
                           src->isl_surf, dst->isl_surf,
                           &src->copy_format, &dst->copy_format);
 
-   get_blorp_surf_for_anv_image(cmd_buffer, anv_image, aspect,
-                                buffer_to_image ?
+   get_blorp_surf_for_anv_image(cmd_buffer, anv_image, sub_resource.aspectMask,
+                                memory_to_image ?
                                 VK_IMAGE_USAGE_TRANSFER_DST_BIT :
                                 VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
                                 image_layout, ISL_AUX_USAGE_NONE,
@@ -723,7 +721,8 @@ copy_buffer_to_image(struct anv_cmd_buffer *cmd_buffer,
 
    if (&image == dst) {
       anv_cmd_buffer_mark_image_written(cmd_buffer, anv_image,
-                                        aspect, dst->surf.aux_usage,
+                                        sub_resource.aspectMask,
+                                        dst->surf.aux_usage,
                                         dst->level,
                                         dst->offset.z, extent.depth);
    }
@@ -735,7 +734,7 @@ copy_buffer_to_image(struct anv_cmd_buffer *cmd_buffer,
                  extent.width, extent.height);
 
       image.offset.z++;
-      buffer.surf.addr.offset += buffer_layout.image_stride_B;
+      memory.surf.addr.offset += mem_layout->image_stride_B;
    }
 }
 
@@ -770,9 +769,18 @@ void anv_CmdCopyBufferToImage2(
    anv_blorp_batch_init(cmd_buffer, &batch, 0);
 
    for (unsigned r = 0; r < pCopyBufferToImageInfo->regionCount; r++) {
-      copy_buffer_to_image(cmd_buffer, &batch, src_buffer, dst_image,
-                           pCopyBufferToImageInfo->dstImageLayout,
-                           &pCopyBufferToImageInfo->pRegions[r], true);
+      const VkBufferImageCopy2 *region = &pCopyBufferToImageInfo->pRegions[r];
+      const struct vk_image_buffer_layout buffer_layout =
+         vk_image_buffer_copy_layout(&dst_image->vk, region);
+
+      copy_buffer_to_image(cmd_buffer, &batch,
+                           anv_address_add(src_buffer->address,
+                                           region->bufferOffset),
+                           &buffer_layout,
+                           dst_image, pCopyBufferToImageInfo->dstImageLayout,
+                           region->imageSubresource,
+                           region->imageOffset, region->imageExtent,
+                           true);
    }
 
    anv_blorp_batch_finish(&batch);
@@ -851,9 +859,18 @@ void anv_CmdCopyImageToBuffer2(
    anv_blorp_batch_init(cmd_buffer, &batch, 0);
 
    for (unsigned r = 0; r < pCopyImageToBufferInfo->regionCount; r++) {
-      copy_buffer_to_image(cmd_buffer, &batch, dst_buffer, src_image,
-                           pCopyImageToBufferInfo->srcImageLayout,
-                           &pCopyImageToBufferInfo->pRegions[r], false);
+      const VkBufferImageCopy2 *region = &pCopyImageToBufferInfo->pRegions[r];
+      const struct vk_image_buffer_layout buffer_layout =
+         vk_image_buffer_copy_layout(&src_image->vk, region);
+
+      copy_buffer_to_image(cmd_buffer, &batch,
+                           anv_address_add(dst_buffer->address,
+                                           region->bufferOffset),
+                           &buffer_layout,
+                           src_image, pCopyImageToBufferInfo->srcImageLayout,
+                           region->imageSubresource,
+                           region->imageOffset, region->imageExtent,
+                           false);
    }
 
    anv_add_buffer_write_pending_bits(cmd_buffer, "after copy image to buffer");
