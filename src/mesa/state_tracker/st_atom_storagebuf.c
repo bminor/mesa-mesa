@@ -138,3 +138,19 @@ void st_bind_cs_ssbos(struct st_context *st)
 
    st_bind_ssbos(st, prog, MESA_SHADER_COMPUTE);
 }
+
+void st_bind_ts_ssbos(struct st_context *st)
+{
+   struct gl_program *prog =
+      st->ctx->_Shader->CurrentProgram[MESA_SHADER_TASK];
+
+   st_bind_ssbos(st, prog, MESA_SHADER_TASK);
+}
+
+void st_bind_ms_ssbos(struct st_context *st)
+{
+   struct gl_program *prog =
+      st->ctx->_Shader->CurrentProgram[MESA_SHADER_MESH];
+
+   st_bind_ssbos(st, prog, MESA_SHADER_MESH);
+}

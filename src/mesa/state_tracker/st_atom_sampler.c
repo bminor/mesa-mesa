@@ -431,3 +431,27 @@ st_update_compute_samplers(struct st_context *st)
                              ctx->ComputeProgram._Current, NULL, NULL);
    }
 }
+
+
+void
+st_update_task_samplers(struct st_context *st)
+{
+   const struct gl_context *ctx = st->ctx;
+
+   if (ctx->TaskProgram._Current) {
+      update_shader_samplers(st, MESA_SHADER_TASK,
+                             ctx->TaskProgram._Current, NULL, NULL);
+   }
+}
+
+
+void
+st_update_mesh_samplers(struct st_context *st)
+{
+   const struct gl_context *ctx = st->ctx;
+
+   if (ctx->MeshProgram._Current) {
+      update_shader_samplers(st, MESA_SHADER_MESH,
+                             ctx->MeshProgram._Current, NULL, NULL);
+   }
+}

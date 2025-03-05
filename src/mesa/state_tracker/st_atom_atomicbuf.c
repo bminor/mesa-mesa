@@ -152,6 +152,24 @@ st_bind_cs_atomics(struct st_context *st)
 }
 
 void
+st_bind_ts_atomics(struct st_context *st)
+{
+   struct gl_program *prog =
+      st->ctx->_Shader->CurrentProgram[MESA_SHADER_TASK];
+
+   st_bind_atomics(st, prog, MESA_SHADER_TASK);
+}
+
+void
+st_bind_ms_atomics(struct st_context *st)
+{
+   struct gl_program *prog =
+      st->ctx->_Shader->CurrentProgram[MESA_SHADER_MESH];
+
+   st_bind_atomics(st, prog, MESA_SHADER_MESH);
+}
+
+void
 st_bind_hw_atomic_buffers(struct st_context *st)
 {
    struct pipe_shader_buffer buffers[PIPE_MAX_HW_ATOMIC_BUFFERS];

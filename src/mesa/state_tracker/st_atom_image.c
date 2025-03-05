@@ -222,3 +222,19 @@ void st_bind_cs_images(struct st_context *st)
 
    st_bind_images(st, prog, MESA_SHADER_COMPUTE);
 }
+
+void st_bind_ts_images(struct st_context *st)
+{
+   struct gl_program *prog =
+      st->ctx->_Shader->CurrentProgram[MESA_SHADER_TASK];
+
+   st_bind_images(st, prog, MESA_SHADER_TASK);
+}
+
+void st_bind_ms_images(struct st_context *st)
+{
+   struct gl_program *prog =
+      st->ctx->_Shader->CurrentProgram[MESA_SHADER_MESH];
+
+   st_bind_images(st, prog, MESA_SHADER_MESH);
+}

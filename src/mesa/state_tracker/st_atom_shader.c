@@ -347,3 +347,21 @@ st_update_cp(struct st_context *st)
                                            MESA_SHADER_COMPUTE, &st->cp);
    cso_set_compute_shader_handle(st->cso_context, shader);
 }
+
+void
+st_update_tp(struct st_context *st)
+{
+   void *shader = st_update_common_program(st,
+                                           st->ctx->TaskProgram._Current,
+                                           MESA_SHADER_TASK, &st->tp);
+   cso_set_task_shader_handle(st->cso_context, shader);
+}
+
+void
+st_update_mp(struct st_context *st)
+{
+   void *shader = st_update_common_program(st,
+                                           st->ctx->MeshProgram._Current,
+                                           MESA_SHADER_MESH, &st->mp);
+   cso_set_mesh_shader_handle(st->cso_context, shader);
+}

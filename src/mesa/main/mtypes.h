@@ -2203,6 +2203,30 @@ struct gl_compute_program_state
 
 
 /**
+ * Context state for task programs.
+ */
+struct gl_task_program_state
+{
+   /** Currently enabled and valid program (including internal programs
+    * and compiled shader programs).
+    */
+   struct gl_program *_Current;
+};
+
+
+/**
+ * Context state for mesh programs.
+ */
+struct gl_mesh_program_state
+{
+   /** Currently enabled and valid program (including internal programs
+    * and compiled shader programs).
+    */
+   struct gl_program *_Current;
+};
+
+
+/**
  * ATI_fragment_shader runtime state
  */
 
@@ -3415,6 +3439,8 @@ struct gl_context
    struct gl_tess_ctrl_program_state TessCtrlProgram;
    struct gl_tess_eval_program_state TessEvalProgram;
    struct gl_ati_fragment_shader_state ATIFragmentShader;
+   struct gl_task_program_state TaskProgram;
+   struct gl_mesh_program_state MeshProgram;
 
    struct gl_pipeline_shader_state Pipeline; /**< GLSL pipeline shader object state */
    struct gl_pipeline_object Shader; /**< GLSL shader object state */

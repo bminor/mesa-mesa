@@ -273,6 +273,8 @@ struct st_context
          struct gl_program *gp;  /**< Currently bound geometry program */
          struct gl_program *fp;  /**< Currently bound fragment program */
          struct gl_program *cp;   /**< Currently bound compute program */
+         struct gl_program *tp; /**< Currently bound task program */
+         struct gl_program *mp; /**< Currently bound mesh program */
       };
       struct gl_program *current_program[MESA_SHADER_MESH_STAGES];
    };

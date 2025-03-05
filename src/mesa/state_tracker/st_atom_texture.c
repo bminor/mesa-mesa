@@ -424,3 +424,21 @@ st_update_compute_textures(struct st_context *st)
                             ctx->ComputeProgram._Current);
    }
 }
+
+void
+st_update_task_textures(struct st_context *st)
+{
+   const struct gl_context *ctx = st->ctx;
+
+   if (ctx->TaskProgram._Current)
+      update_textures(st, MESA_SHADER_TASK, ctx->TaskProgram._Current);
+}
+
+void
+st_update_mesh_textures(struct st_context *st)
+{
+   const struct gl_context *ctx = st->ctx;
+
+   if (ctx->MeshProgram._Current)
+      update_textures(st, MESA_SHADER_MESH, ctx->MeshProgram._Current);
+}

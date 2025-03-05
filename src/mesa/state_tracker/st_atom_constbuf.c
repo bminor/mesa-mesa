@@ -81,7 +81,9 @@ st_upload_constants(struct st_context *st, struct gl_program *prog, mesa_shader_
           stage == MESA_SHADER_GEOMETRY ||
           stage == MESA_SHADER_TESS_CTRL ||
           stage == MESA_SHADER_TESS_EVAL ||
-          stage == MESA_SHADER_COMPUTE);
+          stage == MESA_SHADER_COMPUTE ||
+          stage == MESA_SHADER_TASK ||
+          stage == MESA_SHADER_MESH);
 
    /* update the ATI constants before rendering */
    if (stage == MESA_SHADER_FRAGMENT && prog->ati_fs) {
@@ -264,6 +266,24 @@ st_update_cs_constants(struct st_context *st)
                        MESA_SHADER_COMPUTE);
 }
 
+/* Task shader:
+ */
+void
+st_update_ts_constants(struct st_context *st)
+{
+   st_upload_constants(st, st->ctx->TaskProgram._Current,
+                       MESA_SHADER_TASK);
+}
+
+/* Mesh shader:
+ */
+void
+st_update_ms_constants(struct st_context *st)
+{
+   st_upload_constants(st, st->ctx->MeshProgram._Current,
+                       MESA_SHADER_MESH);
+}
+
 static void
 st_bind_ubos(struct st_context *st, struct gl_program *prog,
              mesa_shader_stage shader_type)
@@ -360,4 +380,22 @@ st_bind_cs_ubos(struct st_context *st)
       st->ctx->_Shader->CurrentProgram[MESA_SHADER_COMPUTE];
 
    st_bind_ubos(st, prog, MESA_SHADER_COMPUTE);
+}
+
+void
+st_bind_ts_ubos(struct st_context *st)
+{
+   struct gl_program *prog =
+      st->ctx->_Shader->CurrentProgram[MESA_SHADER_TASK];
+
+   st_bind_ubos(st, prog, MESA_SHADER_TASK);
+}
+
+void
+st_bind_ms_ubos(struct st_context *st)
+{
+   struct gl_program *prog =
+      st->ctx->_Shader->CurrentProgram[MESA_SHADER_MESH];
+
+   st_bind_ubos(st, prog, MESA_SHADER_MESH);
 }
