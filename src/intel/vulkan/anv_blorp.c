@@ -587,14 +587,17 @@ anv_blorp_execute_on_companion(struct anv_cmd_buffer *cmd_buffer,
    if (anv_cmd_buffer_is_render_queue(cmd_buffer))
       return false;
 
-   /* MSAA images have to be dealt with on the companion RCS command buffer
-    * for both CCS && BCS engines.
-    *
-    * TODO: relax this for Xe3+ on CCS when we have Blorp MSAA copies.
-    */
    if ((src_image && is_image_multisampled(src_image)) ||
-       (dst_image && is_image_multisampled(dst_image)))
-      return true;
+       (dst_image && is_image_multisampled(dst_image))) {
+      /* MSAA images have to be dealt with on the companion RCS command buffer
+       * for both CCS && BCS engines pre-Xe3.
+       */
+      if (devinfo->ver < 30)
+         return true;
+      /* Even on Xe3, no support for MSAA on BCS. */
+      if (anv_cmd_buffer_is_compute_queue(cmd_buffer))
+         return true;
+   }
 
    if (anv_cmd_buffer_is_blitter_queue(cmd_buffer)) {
       /* Emulation of formats is done through a compute shader, so we need the
