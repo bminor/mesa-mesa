@@ -747,6 +747,8 @@ iris_screen_create(int fd, const struct pipe_screen_config *config)
 
    screen->isl_dev.sampler_route_to_lsc =
       driQueryOptionb(config->options, "intel_sampler_route_to_lsc");
+   screen->isl_dev.l1_storage_wt =
+      driQueryOptionb(config->options, "intel_storage_cache_policy_wt");
 
    iris_compiler_init(screen);
 

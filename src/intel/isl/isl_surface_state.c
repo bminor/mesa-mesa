@@ -488,8 +488,10 @@ isl_genX(surf_fill_state_s)(const struct isl_device *dev, void *state,
 #endif
 
 #if GFX_VERx10 >= 125
-   /* Setting L1 caching policy to Write-back mode. */
-   s.L1CacheControl = L1CC_WB;
+   /* Setting L1 caching policy to Write-back or Write-through mode. */
+   s.L1CacheControl =
+      (dev->l1_storage_wt && (info->view->usage & ISL_SURF_USAGE_STORAGE_BIT)) ?
+      L1CC_WT : L1CC_WB;
 #endif
 
 #if GFX_VER >= 6
@@ -1095,8 +1097,10 @@ isl_genX(buffer_fill_state_s)(const struct isl_device *dev, void *state,
 #endif
 
 #if GFX_VERx10 >= 125
-   /* Setting L1 caching policy to Write-back mode. */
-   s.L1CacheControl = L1CC_WB;
+   /* Setting L1 caching policy to Write-back or Write-through mode. */
+   s.L1CacheControl =
+      (dev->l1_storage_wt && (info->usage & ISL_SURF_USAGE_STORAGE_BIT)) ?
+      L1CC_WT : L1CC_WB;
 #endif
 
 #if (GFX_VERx10 >= 75)

@@ -2649,6 +2649,8 @@ anv_physical_device_try_create(struct vk_instance *vk_instance,
    device->isl_dev.buffer_length_in_aux_addr = !intel_needs_workaround(device->isl_dev.info, 14019708328);
    device->isl_dev.sampler_route_to_lsc =
       driQueryOptionb(&instance->dri_options, "intel_sampler_route_to_lsc");
+   device->isl_dev.l1_storage_wt =
+      driQueryOptionb(&instance->dri_options, "intel_storage_cache_policy_wt");
 
    result = anv_physical_device_init_uuids(device);
    if (result != VK_SUCCESS)

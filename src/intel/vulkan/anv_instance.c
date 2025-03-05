@@ -36,6 +36,7 @@ static const driOptionDescription anv_dri_options[] = {
       DRI_CONFIG_INTEL_TBIMR(true)
       DRI_CONFIG_INTEL_VF_DISTRIBUTION(true)
       DRI_CONFIG_INTEL_TE_DISTRIBUTION(true)
+      DRI_CONFIG_INTEL_STORAGE_CACHE_POLICY_WT(false)
       DRI_CONF_ANV_COMPRESSION_CONTROL_ENABLED(false)
       DRI_CONF_ANV_FAKE_NONLOCAL_MEMORY(false)
       DRI_CONF_OPT_E(intel_stack_id, 512, 256, 2048,

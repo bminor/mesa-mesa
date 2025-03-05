@@ -15,6 +15,7 @@ DRI_CONF_SECTION_PERFORMANCE
    DRI_CONFIG_INTEL_TBIMR(true)
    DRI_CONFIG_INTEL_VF_DISTRIBUTION(true)
    DRI_CONFIG_INTEL_TE_DISTRIBUTION(true)
+   DRI_CONFIG_INTEL_STORAGE_CACHE_POLICY_WT(false)
    DRI_CONF_OPT_E(bo_reuse, 1, 0, 1, "Buffer object reuse",)
    DRI_CONF_OPT_I(generated_indirect_threshold, 100, 0, INT32_MAX, "Generated indirect draw threshold")
 DRI_CONF_SECTION_END

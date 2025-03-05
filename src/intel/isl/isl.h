@@ -1342,6 +1342,7 @@ struct isl_device {
 
    /* Options to configure by the driver: */
    bool sampler_route_to_lsc;
+   bool l1_storage_wt;
 
    /**
     * Write buffer length in the upper dword of the
