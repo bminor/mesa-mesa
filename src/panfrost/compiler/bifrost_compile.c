@@ -4879,31 +4879,48 @@ should_split_wrmask(const nir_instr *instr, UNUSED const void *data)
 static unsigned
 bi_lower_bit_size(const nir_instr *instr, void *data)
 {
-   if (instr->type != nir_instr_type_alu)
-      return 0;
+   switch (instr->type) {
+   case nir_instr_type_alu: {
+      nir_alu_instr *alu = nir_instr_as_alu(instr);
+      unsigned gpu_id = *((unsigned *)data);
 
-   unsigned gpu_id = *((unsigned *)data);
-   nir_alu_instr *alu = nir_instr_as_alu(instr);
-
-   switch (alu->op) {
-   case nir_op_fexp2:
-   case nir_op_flog2:
-   case nir_op_fpow:
-   case nir_op_fsin:
-   case nir_op_fcos:
-   case nir_op_bit_count:
-   case nir_op_bitfield_reverse:
-      return (nir_src_bit_size(alu->src[0].src) == 32) ? 0 : 32;
-   case nir_op_fround_even:
-   case nir_op_fceil:
-   case nir_op_ffloor:
-   case nir_op_ftrunc:
-   case nir_op_frexp_sig:
-   case nir_op_frexp_exp:
-      if (pan_arch(gpu_id) < 11)
+      switch (alu->op) {
+      case nir_op_fexp2:
+      case nir_op_flog2:
+      case nir_op_fpow:
+      case nir_op_fsin:
+      case nir_op_fcos:
+      case nir_op_bit_count:
+      case nir_op_bitfield_reverse:
+         return (nir_src_bit_size(alu->src[0].src) == 32) ? 0 : 32;
+      case nir_op_fround_even:
+      case nir_op_fceil:
+      case nir_op_ffloor:
+      case nir_op_ftrunc:
+      case nir_op_frexp_sig:
+      case nir_op_frexp_exp:
+         /* On v11+, FROUND.v2s16 is gone */
+         if (pan_arch(gpu_id) < 11)
+            return 0;
+         return (nir_src_bit_size(alu->src[0].src) == 32) ? 0 : 32;
+      default:
          return 0;
-      /* On v11+, FROUND.v2s16 is gone */
-      return (nir_src_bit_size(alu->src[0].src) == 32) ? 0 : 32;
+      }
+   }
+
+   case nir_instr_type_intrinsic: {
+      nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
+
+      /* We only support ballot on 32-bit types. */
+      switch (intr->intrinsic) {
+      case nir_intrinsic_ballot:
+      case nir_intrinsic_ballot_relaxed:
+         return (nir_src_bit_size(intr->src[0]) == 32) ? 0 : 32;
+      default:
+         return 0;
+      }
+   }
+
    default:
       return 0;
    }
@@ -5708,7 +5725,8 @@ bifrost_preprocess_nir(nir_shader *nir, unsigned gpu_id)
       NIR_PASS(_, nir, nir_lower_vars_to_ssa);
 
    NIR_PASS(_, nir, nir_shader_intrinsics_pass, bi_lower_subgroups,
-            nir_metadata_control_flow, &gpu_id);
+      nir_metadata_control_flow, &gpu_id);
+
    NIR_PASS(_, nir, nir_shader_alu_pass, bi_lower_ldexp16,
             nir_metadata_control_flow, NULL);
 
