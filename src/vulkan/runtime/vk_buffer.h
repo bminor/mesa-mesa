@@ -40,6 +40,13 @@ struct vk_buffer {
 
    /** VkBufferCreateInfo::usage or VkBufferUsageFlags2CreateInfoKHR::usage */
    VkBufferUsageFlags2KHR usage;
+
+   /** Set by the implementation
+    *
+    * The implementation must set this at creation for sparse buffers or can
+    * delay as far as the bind for non-sparse buffers.
+    */
+   VkDeviceAddress device_address;
 };
 VK_DEFINE_NONDISP_HANDLE_CASTS(vk_buffer, base, VkBuffer,
                                VK_OBJECT_TYPE_BUFFER);
@@ -56,6 +63,14 @@ void *vk_buffer_create(struct vk_device *device,
 void vk_buffer_destroy(struct vk_device *device,
                        const VkAllocationCallbacks *alloc,
                        struct vk_buffer *buffer);
+
+static inline VkDeviceAddress
+vk_buffer_address(const struct vk_buffer *buffer,
+                  VkDeviceSize offset)
+{
+   assert(buffer->device_address != 0);
+   return buffer->device_address + offset;
+}
 
 static inline uint64_t
 vk_buffer_range(const struct vk_buffer *buffer,
