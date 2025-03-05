@@ -322,7 +322,6 @@ fn build_program(
     pfn_notify: Option<FuncProgramCB>,
     user_data: *mut ::std::os::raw::c_void,
 ) -> CLResult<()> {
-    let mut res = true;
     let p = Program::ref_from_raw(program)?;
     let devs = validate_devices(device_list, num_devices, &p.devs)?;
 
@@ -338,9 +337,7 @@ fn build_program(
     // CL_BUILD_PROGRAM_FAILURE if there is a failure to build the program executable. This error
     // will be returned if clBuildProgram does not return until the build has completed.
     let options = c_string_to_string(options);
-    for dev in &devs {
-        res &= p.build(dev, &options);
-    }
+    let res = p.build(&devs, &options);
 
     if let Some(cb) = cb_opt {
         cb.call(p);
