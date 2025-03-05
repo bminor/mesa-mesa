@@ -13,15 +13,44 @@ import tempfile
 import textwrap
 from pathlib import Path
 
-class TestFileChange:
-    def __init__(self, line, result):
-        self.line = line
-        self.result = result
+def trim_blank_lines(string, trailing):
+    lines = string.split('\n')
+    string = ''
+    empty_line = True
+    for i in range(len(lines)):
+        line_index = len(lines) - 1 - i if trailing else i
+        if empty_line and lines[line_index].strip() == '':
+            continue
 
-class TestFileChanges:
-    def __init__(self, name):
-        self.name = name
-        self.changes = []
+        write_newline = not empty_line if trailing else line_index < len(lines) - 1
+        newline = '\n' if write_newline else ''
+        if trailing:
+            string = lines[line_index] + newline + string
+        else:
+            string += lines[line_index] + newline
+
+        empty_line = False
+
+    return string
+
+class TestFileChange:
+    def __init__(self, expected, result):
+        self.expected = expected
+
+        # Apply the indentation of the expectation to the result
+        indentation = 1000
+        for expected_line in expected.split('\n'):
+            if match := re.match(r'^(\s*)\S', expected_line):
+                line_indentation = len(match.group(1))
+                if indentation > line_indentation:
+                    indentation = line_indentation
+
+        self.result = ''
+        result = result.split('\n')
+        for i in range(len(result)):
+            result_line = result[i]
+            indentation_str = '' if result_line.strip() == '' else ' '*indentation
+            self.result += indentation_str + result_line + ('\n' if i < len(result) - 1 else '')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -53,31 +82,52 @@ if __name__ == '__main__':
 
     output = subprocess.run(test_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True, env=env)
 
-    expected_pattern = re.compile(r'Expected \(([\d\w\W/.-_]+):(\d+)\):')
+    expected_pattern = re.compile(r'BEGIN EXPECTED\(([\d\w\W/.-_]+)\)')
 
-    test_result = None
     expectations = collections.defaultdict(list)
+
+    current_file = None
+    current_result = None
+    current_expected = None
+    inside_result = False
+    inside_expected = False
 
     # Parse the output of the test binary and gather the changed shaders.
     for output_line in output.stdout.split('\n'):
-        if output_line.startswith('Got:'):
-            test_result = ''
-
+        if output_line.startswith('BEGIN RESULT'):
+            inside_result = True
+            current_result = ''
             continue
 
-        if output_line.startswith('Expected ('):
+        if output_line.startswith('BEGIN EXPECTED'):
             match = expected_pattern.match(output_line)
-            file = match.group(1).removeprefix('../')
-            line = int(match.group(2))
-
-            expectations[file].append(TestFileChange(line, test_result.strip()))
-
-            test_result = None
-
+            current_file = match.group(1).removeprefix('../')
+            inside_expected = True
+            current_expected = ''
             continue
 
-        if test_result is not None:
-            test_result += output_line + '\n'
+        if output_line.startswith('END'):
+            if current_result is not None and current_expected is not None:
+                # remove trailing and leading blank lines
+                current_result = trim_blank_lines(current_result, True)
+                current_result = trim_blank_lines(current_result, False)
+                current_expected = trim_blank_lines(current_expected, True)
+                current_expected = trim_blank_lines(current_expected, False)
+
+                expectations[current_file].append(TestFileChange(current_expected, current_result))
+
+                current_result = None
+                current_expected = None
+
+            inside_result = False
+            inside_expected = False
+            continue
+
+        if inside_result:
+            current_result += output_line + '\n'
+
+        if inside_expected:
+            current_expected += output_line + '\n'
 
     patches = []
 
@@ -86,25 +136,17 @@ if __name__ == '__main__':
         changes = expectations[file]
 
         updated_test_file = ''
-        change_index = 0
-        line_index = 1
-        inside_expectation = False
 
         with open(file) as test_file:
-            for test_line in test_file:
-                if test_line.strip().startswith(')\"'):
-                    inside_expectation = False
+            updated_test_file = str(test_file.read())
 
-                if not inside_expectation:
-                    updated_test_file += test_line
+            for change in changes:
+                updated_test_file = updated_test_file.replace(change.expected, change.result)
 
-                if change_index < len(changes) and line_index == changes[change_index].line:
-                    inside_expectation = True
-                    indentation = len(test_line) - len(test_line.lstrip()) + 3
-                    updated_test_file += textwrap.indent(changes[change_index].result, " " * indentation) + '\n'
-                    change_index += 1
-
-                line_index += 1
+                # change.expected == change.result can be the case when using NIR_TEST_DUMP_SHADERS.
+                if change.expected in updated_test_file and change.expected != change.result:
+                    print(f'Duplicate test case in {file}!')
+                    exit(1)
 
         with tempfile.NamedTemporaryFile(delete_on_close=False) as tmp:
             tmp.write(bytes(updated_test_file, encoding="utf-8"))

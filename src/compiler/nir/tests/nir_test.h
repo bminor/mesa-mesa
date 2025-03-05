@@ -16,7 +16,6 @@
 struct nir_reference_shader {
    const char *string;
    const char *file;
-   uint32_t line;
 };
 
 class nir_test : public ::testing::Test {
@@ -121,7 +120,7 @@ class nir_test : public ::testing::Test {
       }
 
       if (failed || debug_get_bool_option("NIR_TEST_DUMP_SHADERS", false))
-         printf("Got:\n%s\nExpected (%s:%u):\n%s\n", result, reference.file, reference.line, expected);
+         printf("BEGIN RESULT\n%s\nEND\nBEGIN EXPECTED(%s)\n%s\nEND\n", result, reference.file, expected);
 
       free(result);
    }
@@ -131,6 +130,6 @@ class nir_test : public ::testing::Test {
    nir_builder *b;
 };
 
-#define NIR_REFERENCE_SHADER(expected) nir_reference_shader{.string = expected, .file = __FILE__, .line = __LINE__}
+#define NIR_REFERENCE_SHADER(expected) nir_reference_shader{.string = expected, .file = __FILE__}
 
 #endif
