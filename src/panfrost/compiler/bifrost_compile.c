@@ -853,20 +853,27 @@ bi_load_sample_id(bi_builder *b)
 }
 
 static bi_index
-bi_pixel_indices(bi_builder *b, unsigned rt)
+bi_pixel_indices(bi_builder *b, unsigned rt, unsigned sample)
 {
    /* We want to load the current pixel. */
-   struct bifrost_pixel_indices pix = {.y = BIFROST_CURRENT_PIXEL, .rt = rt};
+   struct bifrost_pixel_indices pix = {
+      .y = BIFROST_CURRENT_PIXEL,
+      .rt = rt,
+      .sample = sample,
+   };
 
    uint32_t indices_u32 = 0;
    memcpy(&indices_u32, &pix, sizeof(indices_u32));
    bi_index indices = bi_imm_u32(indices_u32);
 
-   /* Sample index above is left as zero. For multisampling, we need to
-    * fill in the actual sample ID in the lower byte */
+   /* Implicit sample_id assignment only happens in blend shaders,
+    * and we don't expect an explicit sample to be passed in that
+    * case, hence the assert(sample == 0). */
 
-   if (b->shader->inputs->blend.nr_samples > 1)
+   if (b->shader->inputs->blend.nr_samples > 1) {
+      assert(sample == 0);
       indices = bi_iadd_u32(b, indices, bi_load_sample_id(b), false);
+   }
 
    return indices;
 }
@@ -908,7 +915,7 @@ bi_emit_blend_op(bi_builder *b, bi_index rgba, nir_alu_type T, bi_index rgba2,
    if (inputs->is_blend && inputs->blend.nr_samples > 1) {
       /* Conversion descriptor comes from the compile inputs, pixel
        * indices derived at run time based on sample ID */
-      bi_st_tile(b, rgba, bi_pixel_indices(b, rt), bi_coverage(b),
+      bi_st_tile(b, rgba, bi_pixel_indices(b, rt, 0), bi_coverage(b),
                  bi_imm_u32(blend_desc >> 32), regfmt, BI_VECSIZE_V4);
    } else if (b->shader->inputs->is_blend) {
       uint64_t blend_desc = b->shader->inputs->blend.bifrost_blend_desc;
@@ -1803,7 +1810,7 @@ bi_emit_ld_tile(bi_builder *b, nir_intrinsic_instr *instr)
    enum bi_register_format regfmt = bi_reg_fmt_for_nir(T);
    unsigned size = instr->def.bit_size;
    unsigned nr = instr->num_components;
-   unsigned target = 0;
+   unsigned target = 0, sample = 0;
 
    if (sem.location == FRAG_RESULT_DEPTH) {
       target = 255;
@@ -1814,13 +1821,23 @@ bi_emit_ld_tile(bi_builder *b, nir_intrinsic_instr *instr)
       assert(target < 8);
    }
 
-   bi_index pi = bi_pixel_indices(b, target);
+   if (nir_src_is_const(instr->src[1]))
+      sample = nir_src_as_uint(instr->src[1]);
+
+   bi_index pi = bi_pixel_indices(b, target, sample);
 
    if (!is_zs && !nir_src_is_const(instr->src[0]))
       pi = bi_lshift_or(b, 32, bi_src_index(&instr->src[0]), pi, bi_imm_u8(8));
 
+   if (!nir_src_is_const(instr->src[1])) {
+      bi_index sample = bi_lshift_and(b, 32, bi_src_index(&instr->src[1]),
+                                      bi_imm_u32(0x1f), bi_imm_u8(0));
+
+      pi = bi_lshift_or(b, 32, sample, pi, bi_imm_u8(0));
+   }
+
    bi_instr *I = bi_ld_tile_to(b, dest, pi, bi_coverage(b),
-                               bi_src_index(&instr->src[1]), regfmt, nr - 1);
+                               bi_src_index(&instr->src[2]), regfmt, nr - 1);
    if (is_zs)
       I->z_stencil = true;
 
@@ -5514,7 +5531,7 @@ bi_lower_load_output(nir_builder *b, nir_intrinsic_instr *intr,
 
    nir_def *lowered = nir_load_converted_output_pan(
       b, intr->def.num_components, intr->def.bit_size, nir_imm_int(b, rt),
-      conversion, .dest_type = nir_intrinsic_dest_type(intr),
+      nir_imm_int(b, 0), conversion, .dest_type = nir_intrinsic_dest_type(intr),
       .io_semantics = nir_intrinsic_io_semantics(intr));
 
    nir_def_rewrite_uses(&intr->def, lowered);
