@@ -2109,6 +2109,9 @@ tu_pipeline_builder_parse_libraries(struct tu_pipeline_builder *builder,
          pipeline->prim_order = library->base.prim_order;
       }
 
+      if (library->base.bandwidth.valid)
+         pipeline->bandwidth = library->base.bandwidth;
+
       pipeline->set_state_mask |= library->base.set_state_mask;
 
       u_foreach_bit (i, library->base.set_state_mask) {
@@ -2896,6 +2899,8 @@ tu_calc_bandwidth(struct tu_bandwidth *bandwidth,
             vk_format_to_pipe_format(rp->stencil_attachment_format),
             UTIL_FORMAT_COLORSPACE_ZS, 1) / 8;
    }
+
+   bandwidth->valid = true;
 }
 
 /* Return true if the blend state reads the color attachments. */
