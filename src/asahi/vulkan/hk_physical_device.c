@@ -68,11 +68,8 @@ hk_get_device_extensions(const struct hk_instance *instance,
       .KHR_external_fence_fd = true,
       .KHR_external_memory = true,
       .KHR_external_memory_fd = true,
-      /* XXX: External timeline semaphores maybe broken in kernel, see
-       * dEQP-VK.synchronization.signal_order.shared_timeline_semaphore.write_copy_buffer_to_image_read_image_compute.image_128_r32_uint_opaque_fd
-       */
-      .KHR_external_semaphore = false,
-      .KHR_external_semaphore_fd = false,
+      .KHR_external_semaphore = true,
+      .KHR_external_semaphore_fd = true,
       .KHR_format_feature_flags2 = true,
       .KHR_fragment_shader_barycentric = false,
       .KHR_get_memory_requirements2 = true,
