@@ -12,7 +12,6 @@
 #include "util/hex.h"
 #include "util/os_time.h"
 #include "util/xmlconfig.h"
-#include "vl/vl_decoder.h"
 #include "vl/vl_video_buffer.h"
 
 #include "r300_context.h"
@@ -102,30 +101,6 @@ static struct disk_cache* r300_get_disk_shader_cache(struct pipe_screen* pscreen
 {
 	struct r300_screen* r300screen = r300_screen(pscreen);
 	return r300screen->disk_shader_cache;
-}
-
-static int r300_get_video_param(struct pipe_screen *screen,
-				enum pipe_video_profile profile,
-				enum pipe_video_entrypoint entrypoint,
-				enum pipe_video_cap param)
-{
-   switch (param) {
-      case PIPE_VIDEO_CAP_SUPPORTED:
-         return vl_profile_supported(screen, profile, entrypoint);
-      case PIPE_VIDEO_CAP_NPOT_TEXTURES:
-         return 0;
-      case PIPE_VIDEO_CAP_MAX_WIDTH:
-      case PIPE_VIDEO_CAP_MAX_HEIGHT:
-         return vl_video_buffer_max_size(screen);
-      case PIPE_VIDEO_CAP_PREFERRED_FORMAT:
-         return PIPE_FORMAT_NV12;
-      case PIPE_VIDEO_CAP_SUPPORTS_PROGRESSIVE:
-         return true;
-      case PIPE_VIDEO_CAP_MAX_LEVEL:
-         return vl_level_supported(screen, profile);
-      default:
-         return 0;
-   }
 }
 
 #define COMMON_NIR_OPTIONS                    \
@@ -710,9 +685,7 @@ struct pipe_screen* r300_screen_create(struct radeon_winsys *rws,
     r300screen->screen.get_device_vendor = r300_get_device_vendor;
     r300screen->screen.get_disk_shader_cache = r300_get_disk_shader_cache;
     r300screen->screen.get_screen_fd = r300_screen_get_fd;
-    r300screen->screen.get_video_param = r300_get_video_param;
     r300screen->screen.is_format_supported = r300_is_format_supported;
-    r300screen->screen.is_video_format_supported = vl_video_buffer_is_format_supported;
     r300screen->screen.context_create = r300_create_context;
     r300screen->screen.fence_reference = r300_fence_reference;
     r300screen->screen.fence_finish = r300_fence_finish;
