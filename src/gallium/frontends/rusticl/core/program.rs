@@ -552,45 +552,51 @@ impl Program {
             .any(|b| b.kernels.values().any(|b| Arc::strong_count(b) > 1))
     }
 
-    pub fn build(&self, dev: &Device, options: &str) -> bool {
+    pub fn build(&self, devs: &[&Device], options: &str) -> bool {
         let lib = options.contains("-create-library");
         let mut info = self.build_info();
-        if !self.do_compile(dev, options, &Vec::new(), &mut info) {
-            return false;
-        }
 
-        let d = info.dev_build_mut(dev);
+        let mut res = true;
+        for dev in devs {
+            if !self.do_compile(dev, options, &Vec::new(), &mut info) {
+                res = false;
+                continue;
+            }
 
-        // skip compilation if we already have the right thing.
-        if self.is_bin() {
-            if d.bin_type == CL_PROGRAM_BINARY_TYPE_EXECUTABLE && !lib
-                || d.bin_type == CL_PROGRAM_BINARY_TYPE_LIBRARY && lib
-            {
-                return true;
+            // skip compilation if we already have the right thing.
+            let d = info.dev_build_mut(dev);
+            if self.is_bin() {
+                if d.bin_type == CL_PROGRAM_BINARY_TYPE_EXECUTABLE && !lib
+                    || d.bin_type == CL_PROGRAM_BINARY_TYPE_LIBRARY && lib
+                {
+                    continue;
+                }
+            }
+
+            let spirvs = [d.spirv.as_ref().unwrap()];
+            let (spirv, log) = spirv::SPIRVBin::link(&spirvs, lib);
+
+            d.log.push_str(&log);
+            d.spirv = spirv;
+
+            if let Some(spirv) = &d.spirv {
+                d.bin_type = if lib {
+                    CL_PROGRAM_BINARY_TYPE_LIBRARY
+                } else {
+                    CL_PROGRAM_BINARY_TYPE_EXECUTABLE
+                };
+                d.status = CL_BUILD_SUCCESS as cl_build_status;
+                let mut kernels = spirv.kernels();
+                info.kernels.append(&mut kernels);
+                info.build_nirs(self.is_src());
+            } else {
+                d.status = CL_BUILD_ERROR;
+                d.bin_type = CL_PROGRAM_BINARY_TYPE_NONE;
+                res = false;
             }
         }
 
-        let spirvs = [d.spirv.as_ref().unwrap()];
-        let (spirv, log) = spirv::SPIRVBin::link(&spirvs, lib);
-
-        d.log.push_str(&log);
-        d.spirv = spirv;
-        if let Some(spirv) = &d.spirv {
-            d.bin_type = if lib {
-                CL_PROGRAM_BINARY_TYPE_LIBRARY
-            } else {
-                CL_PROGRAM_BINARY_TYPE_EXECUTABLE
-            };
-            d.status = CL_BUILD_SUCCESS as cl_build_status;
-            let mut kernels = spirv.kernels();
-            info.kernels.append(&mut kernels);
-            info.build_nirs(self.is_src());
-            true
-        } else {
-            d.status = CL_BUILD_ERROR;
-            d.bin_type = CL_PROGRAM_BINARY_TYPE_NONE;
-            false
-        }
+        res
     }
 
     fn do_compile(
