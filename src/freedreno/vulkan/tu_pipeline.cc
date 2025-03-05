@@ -2099,7 +2099,6 @@ tu_pipeline_builder_parse_libraries(struct tu_pipeline_builder *builder,
          pipeline->output = library->base.output;
          pipeline->lrz_blend.reads_dest |= library->base.lrz_blend.reads_dest;
          pipeline->lrz_blend.valid |= library->base.lrz_blend.valid;
-         pipeline->prim_order = library->base.prim_order;
       }
 
       if ((library->state &
