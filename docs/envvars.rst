@@ -1383,7 +1383,7 @@ RADV driver environment variables
    ``nongg``
       disable NGG for GFX10 and GFX10.3
    ``nonggc``
-      disable NGG culling on GPUs where it's enabled by default (GFX10.3 only).
+      disable NGG culling for GFX10 and GFX10.3
    ``nongg_gs``
       disable NGG GS for GFX10 and GFX10.3
    ``nort``
@@ -1476,7 +1476,7 @@ RADV driver environment variables
    ``localbos``
       enable local BOs
    ``nggc``
-      enable NGG culling on GPUs where it's not enabled by default (GFX10.1 only).
+      enable NGG culling for GFX11+
    ``nircache``
       cache per-stage NIR for graphics pipelines
    ``nosam``
