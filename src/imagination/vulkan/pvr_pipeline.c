@@ -69,12 +69,12 @@
 static VkResult pvr_pds_coeff_program_create_and_upload(
    struct pvr_device *device,
    const VkAllocationCallbacks *allocator,
-   struct pvr_pds_coeff_loading_program *program,
    struct pvr_fragment_shader_state *fragment_state)
 {
+   struct pvr_pds_coeff_loading_program *program =
+      &fragment_state->pds_coeff_program;
    uint32_t staging_buffer_size;
    uint32_t *staging_buffer;
-   VkResult result;
 
    assert(program->num_fpu_iterators < PVR_MAXIMUM_ITERATIONS);
 
@@ -82,9 +82,7 @@ static VkResult pvr_pds_coeff_program_create_and_upload(
    pvr_pds_coefficient_loading(program, NULL, PDS_GENERATE_SIZES);
 
    if (!program->code_size) {
-      fragment_state->pds_coeff_program.pvr_bo = NULL;
-      fragment_state->pds_coeff_program.code_size = 0;
-      fragment_state->pds_coeff_program.data_size = 0;
+      fragment_state->pds_coeff_program_buffer = NULL;
       fragment_state->stage_state.pds_temps_count = 0;
 
       return VK_SUCCESS;
@@ -106,23 +104,7 @@ static VkResult pvr_pds_coeff_program_create_and_upload(
                                staging_buffer,
                                PDS_GENERATE_CODEDATA_SEGMENTS);
 
-   /* FIXME: Figure out the define for alignment of 16. */
-   result = pvr_gpu_upload_pds(device,
-                               &staging_buffer[0],
-                               program->data_size,
-                               16,
-                               &staging_buffer[program->data_size],
-                               program->code_size,
-                               16,
-                               16,
-                               &fragment_state->pds_coeff_program);
-   if (result != VK_SUCCESS) {
-      vk_free2(&device->vk.alloc, allocator, staging_buffer);
-      return result;
-   }
-
-   vk_free2(&device->vk.alloc, allocator, staging_buffer);
-
+   fragment_state->pds_coeff_program_buffer = staging_buffer;
    fragment_state->stage_state.pds_temps_count = program->temps_used;
 
    return VK_SUCCESS;
@@ -1178,6 +1160,8 @@ pvr_graphics_pipeline_destroy(struct pvr_device *const device,
 {
    const uint32_t num_vertex_attrib_programs =
       ARRAY_SIZE(gfx_pipeline->shader_state.vertex.pds_attrib_programs);
+   struct pvr_fragment_shader_state *fragment_state =
+      &gfx_pipeline->shader_state.fragment;
 
    pvr_pds_descriptor_program_destroy(
       device,
@@ -1198,8 +1182,9 @@ pvr_graphics_pipeline_destroy(struct pvr_device *const device,
 
    pvr_bo_suballoc_free(
       gfx_pipeline->shader_state.fragment.pds_fragment_program.pvr_bo);
-   pvr_bo_suballoc_free(
-      gfx_pipeline->shader_state.fragment.pds_coeff_program.pvr_bo);
+   vk_free2(&device->vk.alloc,
+            allocator,
+            fragment_state->pds_coeff_program_buffer);
 
    pvr_bo_suballoc_free(gfx_pipeline->shader_state.fragment.shader_bo);
    pvr_bo_suballoc_free(gfx_pipeline->shader_state.vertex.shader_bo);
@@ -1384,9 +1369,13 @@ static void pvr_graphics_pipeline_setup_vertex_dma(
 
 static void pvr_graphics_pipeline_setup_fragment_coeff_program(
    struct pvr_graphics_pipeline *gfx_pipeline,
-   nir_shader *fs,
-   struct pvr_pds_coeff_loading_program *frag_coeff_program)
+   nir_shader *fs)
 {
+   struct pvr_fragment_shader_state *fragment_state =
+      &gfx_pipeline->shader_state.fragment;
+   struct pvr_pds_coeff_loading_program *frag_coeff_program =
+      &fragment_state->pds_coeff_program;
+
    uint64_t varyings_used = fs->info.inputs_read &
                             BITFIELD64_RANGE(VARYING_SLOT_VAR0, MAX_VARYING);
    pco_vs_data *vs_data = &gfx_pipeline->vs_data.vs;
@@ -1478,17 +1467,16 @@ static void pvr_graphics_pipeline_setup_fragment_coeff_program(
 
          switch (var->data.interpolation) {
          case INTERP_MODE_SMOOTH:
-            douti_src.shademodel = ROGUE_PDSINST_DOUTI_SHADEMODEL_GOURUAD;
             douti_src.perspective = true;
-            break;
+            FALLTHROUGH;
 
          case INTERP_MODE_NOPERSPECTIVE:
             douti_src.shademodel = ROGUE_PDSINST_DOUTI_SHADEMODEL_GOURUAD;
             break;
 
          case INTERP_MODE_FLAT:
-            /* TODO: triangle fan, provoking vertex last. */
-            douti_src.shademodel = ROGUE_PDSINST_DOUTI_SHADEMODEL_FLAT_VERTEX0;
+            /* Shademodel will be set up later for flat. */
+            BITSET_SET(frag_coeff_program->flat_iter_mask, fpu);
             break;
 
          default:
@@ -2294,8 +2282,6 @@ pvr_graphics_pipeline_compile(struct pvr_device *const device,
    struct pvr_pds_vertex_dma vtx_dma_descriptions[PVR_MAX_VERTEX_ATTRIB_DMAS];
    uint32_t vtx_dma_count = 0;
 
-   struct pvr_pds_coeff_loading_program frag_coeff_program = { 0 };
-
    for (mesa_shader_stage stage = 0; stage < MESA_SHADER_STAGES; ++stage) {
       size_t stage_index = gfx_pipeline->stage_indices[stage];
 
@@ -2398,8 +2384,7 @@ pvr_graphics_pipeline_compile(struct pvr_device *const device,
 
       pvr_graphics_pipeline_setup_fragment_coeff_program(
          gfx_pipeline,
-         nir_shaders[MESA_SHADER_FRAGMENT],
-         &frag_coeff_program);
+         nir_shaders[MESA_SHADER_FRAGMENT]);
 
       result = pvr_gpu_upload_usc(device,
                                   pco_shader_binary_data(*fs),
@@ -2411,7 +2396,6 @@ pvr_graphics_pipeline_compile(struct pvr_device *const device,
 
       result = pvr_pds_coeff_program_create_and_upload(device,
                                                        allocator,
-                                                       &frag_coeff_program,
                                                        fragment_state);
       if (result != VK_SUCCESS)
          goto err_free_fragment_bo;
@@ -2485,7 +2469,9 @@ err_free_frag_descriptor_program:
 err_free_frag_program:
    pvr_bo_suballoc_free(fragment_state->pds_fragment_program.pvr_bo);
 err_free_coeff_program:
-   pvr_bo_suballoc_free(fragment_state->pds_coeff_program.pvr_bo);
+   vk_free2(&device->vk.alloc,
+            allocator,
+            fragment_state->pds_coeff_program_buffer);
 err_free_fragment_bo:
    pvr_bo_suballoc_free(fragment_state->shader_bo);
 err_free_vertex_bo:

@@ -29,6 +29,7 @@
 #include "pvr_device_info.h"
 #include "pvr_limits.h"
 #include "pds/pvr_rogue_pds_defs.h"
+#include "util/bitset.h"
 #include "util/macros.h"
 
 #ifdef __cplusplus
@@ -267,6 +268,9 @@ struct pvr_pds_coeff_loading_program {
    uint32_t num_fpu_iterators;
    uint32_t FPU_iterators[PVR_MAXIMUM_ITERATIONS];
    uint32_t destination[PVR_MAXIMUM_ITERATIONS];
+
+   BITSET_DECLARE(flat_iter_mask, PVR_MAXIMUM_ITERATIONS);
+   uint32_t dout_src_offsets[PVR_MAXIMUM_ITERATIONS];
 
    uint32_t data_size;
    uint32_t code_size;

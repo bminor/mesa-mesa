@@ -4925,7 +4925,58 @@ pvr_setup_triangle_merging_flag(struct pvr_cmd_buffer *const cmd_buffer,
    }
 }
 
-static void
+static VkResult
+setup_pds_coeff_program(struct pvr_cmd_buffer *const cmd_buffer,
+                        struct pvr_pds_upload *pds_coeff_program)
+{
+   struct pvr_cmd_buffer_state *const state = &cmd_buffer->state;
+   const struct pvr_fragment_shader_state *const fragment_shader_state =
+      &state->gfx_pipeline->shader_state.fragment;
+   const struct vk_dynamic_graphics_state *const dynamic_state =
+      &cmd_buffer->vk.dynamic_graphics_state;
+   const VkPrimitiveTopology topology = dynamic_state->ia.primitive_topology;
+   const struct pvr_pds_coeff_loading_program *program =
+      &fragment_shader_state->pds_coeff_program;
+   uint32_t *pds_coeff_program_buffer =
+      fragment_shader_state->pds_coeff_program_buffer;
+   unsigned i;
+
+   memset(pds_coeff_program, 0, sizeof(*pds_coeff_program));
+
+   if (!pds_coeff_program_buffer)
+      return VK_SUCCESS;
+
+   BITSET_FOREACH_SET (i, program->flat_iter_mask, PVR_MAXIMUM_ITERATIONS) {
+      uint32_t off = program->dout_src_offsets[i];
+      assert(off != ~0u);
+
+      struct ROGUE_PDSINST_DOUT_FIELDS_DOUTI_SRC douti_src;
+      ROGUE_PDSINST_DOUT_FIELDS_DOUTI_SRC_unpack(&pds_coeff_program_buffer[off],
+                                                 &douti_src);
+
+      if (topology == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN)
+         douti_src.shademodel = ROGUE_PDSINST_DOUTI_SHADEMODEL_FLAT_VERTEX1;
+      else
+         douti_src.shademodel = ROGUE_PDSINST_DOUTI_SHADEMODEL_FLAT_VERTEX0;
+
+      ROGUE_PDSINST_DOUT_FIELDS_DOUTI_SRC_pack(&pds_coeff_program_buffer[off],
+                                               &douti_src);
+   }
+
+   /* FIXME: Figure out the define for alignment of 16. */
+   return pvr_cmd_buffer_upload_pds(
+      cmd_buffer,
+      &pds_coeff_program_buffer[0],
+      program->data_size,
+      16,
+      &pds_coeff_program_buffer[program->data_size],
+      program->code_size,
+      16,
+      16,
+      pds_coeff_program);
+}
+
+static VkResult
 pvr_setup_fragment_state_pointers(struct pvr_cmd_buffer *const cmd_buffer,
                                   struct pvr_sub_cmd_gfx *const sub_cmd)
 {
@@ -4938,8 +4989,12 @@ pvr_setup_fragment_state_pointers(struct pvr_cmd_buffer *const cmd_buffer,
       &fragment_shader_state->descriptor_state;
    const struct pvr_pipeline_stage_state *fragment_state =
       &fragment_shader_state->stage_state;
-   const struct pvr_pds_upload *pds_coeff_program =
-      &fragment_shader_state->pds_coeff_program;
+   struct pvr_pds_upload pds_coeff_program;
+   VkResult result;
+
+   result = setup_pds_coeff_program(cmd_buffer, &pds_coeff_program);
+   if (result != VK_SUCCESS)
+      return result;
 
    const struct pvr_physical_device *pdevice = cmd_buffer->device->pdevice;
    struct ROGUE_TA_STATE_HEADER *const header = &state->emit_header;
@@ -4950,7 +5005,7 @@ pvr_setup_fragment_state_pointers(struct pvr_cmd_buffer *const cmd_buffer,
                    ROGUE_TA_STATE_PDS_SIZEINFO1_PDS_UNIFORMSIZE_UNIT_SIZE);
 
    const uint32_t pds_varying_state_size =
-      DIV_ROUND_UP(pds_coeff_program->data_size,
+      DIV_ROUND_UP(pds_coeff_program.data_size,
                    ROGUE_TA_STATE_PDS_SIZEINFO1_PDS_VARYINGSIZE_UNIT_SIZE);
 
    const uint32_t usc_varying_size =
@@ -5018,13 +5073,13 @@ pvr_setup_fragment_state_pointers(struct pvr_cmd_buffer *const cmd_buffer,
 
    ppp_state->pds.size_info2 |= size_info2;
 
-   if (pds_coeff_program->pvr_bo) {
+   if (pds_coeff_program.pvr_bo) {
       header->pres_pds_state_ptr1 = true;
 
       pvr_csb_pack (&ppp_state->pds.varying_base,
                     TA_STATE_PDS_VARYINGBASE,
                     base) {
-         base.addr = PVR_DEV_ADDR(pds_coeff_program->data_offset);
+         base.addr = PVR_DEV_ADDR(pds_coeff_program.data_offset);
       }
    } else {
       ppp_state->pds.varying_base = 0U;
@@ -5038,6 +5093,8 @@ pvr_setup_fragment_state_pointers(struct pvr_cmd_buffer *const cmd_buffer,
 
    header->pres_pds_state_ptr0 = true;
    header->pres_pds_state_ptr3 = true;
+
+   return result;
 }
 
 static void pvr_setup_viewport(struct pvr_cmd_buffer *const cmd_buffer)
@@ -5540,7 +5597,9 @@ pvr_emit_dirty_ppp_state(struct pvr_cmd_buffer *const cmd_buffer,
        state->dirty.fragment_descriptors &&
        state->gfx_pipeline->shader_state.fragment.shader_bo &&
        !state->gfx_pipeline->fs_data.common.uses.empty) {
-      pvr_setup_fragment_state_pointers(cmd_buffer, sub_cmd);
+      result = pvr_setup_fragment_state_pointers(cmd_buffer, sub_cmd);
+      if (result != VK_SUCCESS)
+         return result;
    }
 
    pvr_setup_isp_depth_bias_scissor_state(cmd_buffer);

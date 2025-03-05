@@ -886,7 +886,9 @@ struct pvr_fragment_shader_state {
    enum ROGUE_TA_PASSTYPE pass_type;
    enum ROGUE_PDSINST_DOUTU_SAMPLE_RATE sample_rate;
 
-   struct pvr_pds_upload pds_coeff_program;
+   struct pvr_pds_coeff_loading_program pds_coeff_program;
+   uint32_t *pds_coeff_program_buffer;
+
    struct pvr_pds_upload pds_fragment_program;
 };
 

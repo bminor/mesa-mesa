@@ -4151,6 +4151,11 @@ uint32_t *pvr_pds_coefficient_loading(
          /* Copy the USC task control words to constants. */
          constant = pvr_pds_get_constants(&next_constant, 2, &data_size);
 
+         if (BITSET_TEST(program->flat_iter_mask, iterator))
+            program->dout_src_offsets[iterator] = constant;
+         else
+            program->dout_src_offsets[iterator] = ~0u;
+
          /* Write the first iterator. */
          iterator_word =
             (uint64_t)program->FPU_iterators[iterator]
