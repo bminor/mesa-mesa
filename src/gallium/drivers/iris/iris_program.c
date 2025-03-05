@@ -732,6 +732,7 @@ iris_upload_ubo_ssbo_surf_state(struct iris_context *ice,
                                             : ISL_FORMAT_R32G32B32A32_FLOAT,
                          .swizzle = ISL_SWIZZLE_IDENTITY,
                          .stride_B = 1,
+                         .usage = usage,
                          .mocs = iris_mocs(res->bo, &screen->isl_dev, usage));
 }
 
@@ -3224,6 +3225,7 @@ iris_get_scratch_surf(struct iris_context *ice,
                          .size_B = scratch_bo->size,
                          .format = ISL_FORMAT_RAW,
                          .swizzle = ISL_SWIZZLE_IDENTITY,
+                         .usage = 0,
                          .mocs = iris_mocs(scratch_bo, &screen->isl_dev, 0),
                          .stride_B = per_thread_scratch,
                          .is_scratch = true);

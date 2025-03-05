@@ -2801,6 +2801,7 @@ fill_buffer_surface_state(struct isl_device *isl_dev,
                          .format = format,
                          .swizzle = swizzle,
                          .stride_B = cpp,
+                         .usage = usage,
                          .mocs = iris_mocs(res->bo, isl_dev, usage));
 }
 
