@@ -1090,7 +1090,7 @@ write_buffer_descriptor_impl(struct radv_device *device, struct radv_cmd_buffer 
    uint64_t va = 0, range = 0;
 
    if (buffer) {
-      va = buffer->addr + buffer_info->offset;
+      va = vk_buffer_address(&buffer->vk, buffer_info->offset);
 
       range = vk_buffer_range(&buffer->vk, buffer_info->offset, buffer_info->range);
       assert(buffer->vk.size > 0 && range > 0);
@@ -1145,7 +1145,7 @@ write_dynamic_buffer_descriptor(struct radv_device *device, struct radv_descript
     * buffer accesses. */
    size = align(size, 4);
 
-   range->va = buffer->addr + buffer_info->offset;
+   range->va = vk_buffer_address(&buffer->vk, buffer_info->offset);
    range->size = size;
 
    *buffer_list = buffer->bo;

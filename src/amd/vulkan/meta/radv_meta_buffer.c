@@ -242,7 +242,7 @@ radv_CmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSi
 
    fillSize = vk_buffer_range(&dst_buffer->vk, dstOffset, fillSize) & ~3ull;
 
-   radv_fill_buffer(cmd_buffer, NULL, dst_buffer->bo, dst_buffer->addr + dstOffset, fillSize, data);
+   radv_fill_buffer(cmd_buffer, NULL, dst_buffer->bo, vk_buffer_address(&dst_buffer->vk, dstOffset), fillSize, data);
 
    /* Restore conditional rendering. */
    cmd_buffer->state.predicating = old_predicating;
@@ -283,8 +283,8 @@ radv_CmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2 *pCop
 
    for (unsigned r = 0; r < pCopyBufferInfo->regionCount; r++) {
       const VkBufferCopy2 *region = &pCopyBufferInfo->pRegions[r];
-      const uint64_t src_va = src_buffer->addr + region->srcOffset;
-      const uint64_t dst_va = dst_buffer->addr + region->dstOffset;
+      const uint64_t src_va = vk_buffer_address(&src_buffer->vk, region->srcOffset);
+      const uint64_t dst_va = vk_buffer_address(&dst_buffer->vk, region->dstOffset);
 
       radv_copy_memory(cmd_buffer, src_va, dst_va, region->size);
    }
@@ -345,7 +345,7 @@ radv_CmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDevice
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
    VK_FROM_HANDLE(radv_buffer, dst_buffer, dstBuffer);
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   const uint64_t dst_va = dst_buffer->addr + dstOffset;
+   const uint64_t dst_va = vk_buffer_address(&dst_buffer->vk, dstOffset);
    bool old_predicating;
 
    /* VK_EXT_conditional_rendering says that copy commands should not be

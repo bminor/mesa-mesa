@@ -2671,7 +2671,7 @@ radv_uvd_decode_video(struct radv_cmd_buffer *cmd_buffer, const VkVideoDecodeInf
                radv_buffer_get_va(vid->ctx.mem->bo) + vid->ctx.offset);
 
    send_cmd(cmd_buffer, RDECODE_CMD_BITSTREAM_BUFFER, src_buffer->bo,
-            src_buffer->addr + frame_info->srcBufferOffset + slice_offset);
+            vk_buffer_address(&src_buffer->vk, frame_info->srcBufferOffset + slice_offset));
 
    struct radv_image_view *dst_iv = radv_image_view_from_handle(frame_info->dstPictureResource.imageViewBinding);
    struct radv_image *img = dst_iv->image;
@@ -2754,7 +2754,7 @@ radv_vcn_decode_video(struct radv_cmd_buffer *cmd_buffer, const VkVideoDecodeInf
                radv_buffer_get_va(vid->ctx.mem->bo) + vid->ctx.offset);
 
    send_cmd(cmd_buffer, RDECODE_CMD_BITSTREAM_BUFFER, src_buffer->bo,
-            src_buffer->addr + frame_info->srcBufferOffset + slice_offset);
+            vk_buffer_address(&src_buffer->vk, frame_info->srcBufferOffset + slice_offset));
 
    struct radv_image_view *dst_iv = radv_image_view_from_handle(frame_info->dstPictureResource.imageViewBinding);
    struct radv_image *img = dst_iv->image;

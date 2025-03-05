@@ -23,7 +23,6 @@ struct radv_buffer {
 
    /* Set when bound */
    struct radeon_winsys_bo *bo;
-   uint64_t addr;
    uint64_t range;
 };
 

@@ -2454,7 +2454,7 @@ radv_CmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPoo
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const struct radv_instance *instance = radv_physical_device_instance(pdev);
-   const uint64_t dst_va = dst_buffer->addr + dstOffset;
+   const uint64_t dst_va = vk_buffer_address(&dst_buffer->vk, dstOffset);
 
    if (!queryCount)
       return;

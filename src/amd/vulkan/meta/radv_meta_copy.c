@@ -233,7 +233,7 @@ radv_CmdCopyBufferToImage2(VkCommandBuffer commandBuffer, const VkCopyBufferToIm
 
       radv_cs_add_buffer(device->ws, cmd_buffer->cs, dst_image->bindings[bind_idx].bo);
 
-      copy_memory_to_image(cmd_buffer, src_buffer->addr, src_buffer->vk.size, dst_image,
+      copy_memory_to_image(cmd_buffer, src_buffer->vk.device_address, src_buffer->vk.size, dst_image,
                            pCopyBufferToImageInfo->dstImageLayout, region);
    }
 
@@ -382,7 +382,7 @@ radv_CmdCopyImageToBuffer2(VkCommandBuffer commandBuffer, const VkCopyImageToBuf
 
       radv_cs_add_buffer(device->ws, cmd_buffer->cs, src_image->bindings[bind_idx].bo);
 
-      copy_image_to_memory(cmd_buffer, dst_buffer->addr, dst_buffer->vk.size, src_image,
+      copy_image_to_memory(cmd_buffer, dst_buffer->vk.device_address, dst_buffer->vk.size, src_image,
                            pCopyImageToBufferInfo->srcImageLayout, region);
    }
 }

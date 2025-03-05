@@ -73,8 +73,8 @@ radv_CreateBufferView(VkDevice _device, const VkBufferViewCreateInfo *pCreateInf
 
    view->bo = buffer->bo;
 
-   radv_make_texel_buffer_descriptor(device, buffer->addr, view->vk.format, view->vk.offset, view->vk.range,
-                                     view->state);
+   radv_make_texel_buffer_descriptor(device, buffer->vk.device_address, view->vk.format, view->vk.offset,
+                                     view->vk.range, view->state);
 
    *pView = radv_buffer_view_to_handle(view);
 
