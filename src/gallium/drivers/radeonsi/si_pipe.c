@@ -22,7 +22,6 @@
 #include "util/u_tests.h"
 #include "util/u_upload_mgr.h"
 #include "util/xmlconfig.h"
-#include "vl/vl_decoder.h"
 #include "si_utrace.h"
 
 #include "aco_interface.h"
@@ -744,9 +743,6 @@ static struct pipe_context *si_create_context(struct pipe_screen *screen, unsign
       sctx->b.create_video_buffer = si_video_buffer_create;
       if (screen->resource_create_with_modifiers)
          sctx->b.create_video_buffer_with_modifiers = si_video_buffer_create_with_modifiers;
-   } else {
-      sctx->b.create_video_codec = vl_create_decoder;
-      sctx->b.create_video_buffer = vl_video_buffer_create;
    }
 
    /* GFX7 cannot unbind a constant buffer (S_BUFFER_LOAD doesn't skip loads

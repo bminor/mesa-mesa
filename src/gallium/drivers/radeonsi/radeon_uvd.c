@@ -13,8 +13,8 @@
 #include "radeonsi/si_pipe.h"
 #include "util/u_memory.h"
 #include "util/u_video.h"
+#include "util/vl_zscan_data.h"
 #include "vl/vl_defines.h"
-#include "vl/vl_mpeg12_decoder.h"
 #include <sys/types.h>
 
 #include <assert.h>
@@ -1220,10 +1220,6 @@ struct pipe_video_codec *si_common_uvd_create_decoder(struct pipe_context *conte
 
    switch (u_reduce_video_profile(templ->profile)) {
    case PIPE_VIDEO_FORMAT_MPEG12:
-      if (templ->entrypoint > PIPE_VIDEO_ENTRYPOINT_BITSTREAM)
-         return vl_create_mpeg12_decoder(context, templ);
-
-      FALLTHROUGH;
    case PIPE_VIDEO_FORMAT_MPEG4:
       width = align(width, VL_MACROBLOCK_WIDTH);
       height = align(height, VL_MACROBLOCK_HEIGHT);

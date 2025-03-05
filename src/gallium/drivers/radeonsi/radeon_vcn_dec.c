@@ -12,7 +12,7 @@
 #include "radeonsi/si_pipe.h"
 #include "util/u_memory.h"
 #include "util/u_video.h"
-#include "vl/vl_mpeg12_decoder.h"
+#include "util/vl_zscan_data.h"
 #include "vl/vl_probs_table.h"
 #include "pspdecryptionparam.h"
 
@@ -2737,8 +2737,6 @@ struct pipe_video_codec *radeon_create_decoder(struct pipe_context *context,
 
    switch (u_reduce_video_profile(templ->profile)) {
    case PIPE_VIDEO_FORMAT_MPEG12:
-      if (templ->entrypoint > PIPE_VIDEO_ENTRYPOINT_BITSTREAM)
-         return vl_create_mpeg12_decoder(context, templ);
       stream_type = RDECODE_CODEC_MPEG2_VLD;
       break;
    case PIPE_VIDEO_FORMAT_MPEG4:
