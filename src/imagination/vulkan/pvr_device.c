@@ -214,7 +214,7 @@ static void pvr_physical_device_get_supported_features(
       .tessellationShader = false,
       .sampleRateShading = false,
       .dualSrcBlend = false,
-      .logicOp = false,
+      .logicOp = true,
       .multiDrawIndirect = false,
       .drawIndirectFirstInstance = false,
       .depthClamp = false,

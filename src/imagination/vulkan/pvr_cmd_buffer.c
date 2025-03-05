@@ -4318,6 +4318,10 @@ pvr_setup_isp_faces_and_control(struct pvr_cmd_buffer *const cmd_buffer,
 
       ispa.passtype = fragment_shader_state->pass_type;
 
+      if (dynamic_state->cb.logic_op_enable &&
+          fragment_shader_state->pass_type == ROGUE_TA_PASSTYPE_OPAQUE)
+         ispa.passtype = ROGUE_TA_PASSTYPE_TRANSLUCENT;
+
       ispa.objtype = obj_type;
 
       /* Return unpacked ispa structure. dcmpmode, dwritedisable, passtype and
