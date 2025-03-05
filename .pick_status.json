@@ -1,5 +1,395 @@
 [
     {
+        "sha": "45e771f4fbe4245b252c6360e55776080f0bf458",
+        "description": "ci: Update CrosVM and Virglrenderer",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "288f932b78b5c724c5b8eccaea6f76366b5c0670",
+        "description": "iris: restrict TessellationDistributionLevel for Wa_16025857284",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1674cb3665546e5299c60493c7f10934089fc2ff",
+        "description": "anv: restrict TessellationDistributionLevel for Wa_16025857284",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1a5cbbeb47c1c2f87079f91ae0f24116264e68a0",
+        "description": "intel/dev: update mesa_defs.json from internal database",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3f7b0c39516ae6a110629585c374412db9c4fc6e",
+        "description": "mesa: avoid creating incomplete surfaces when multiview goes out of range",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "89c2639227ea7f184fef5bf620ae07d30aa8dd1a",
+        "description": "mesa: add error handling for OVR_multiview",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2b37f233143275d5d11fc0a5f392b8d99c7bad29",
+        "description": "gallium: fix pipe_framebuffer_state::view_mask",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5ef60aef630c1dd54400da8e60b07d9e26dd64e2",
+        "description": "llvmpipe: pass layer count to rast clear",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e19f4c043da287ac29a7342e86cef006dad05d1e",
+        "description": "gallium/u_blitter: change blitter_attrib from union to struct",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ca09c173f6e0dfdcf4da59d741a3d58bfc3c982e",
+        "description": "gallium/u_blitter: remove UTIL_BLITTER_ATTRIB_COLOR, use a constant buffer",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "99b5970eb246955335c6161bc1f80fc0bef6e6a1",
+        "description": "egl/wayland: Pass the original wl_surface to kopper",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "8ade5588e39d736bdeab9bdd8ffa7cbfb6a5191e",
+        "notes": null
+    },
+    {
+        "sha": "fddff0d1b8d1130109ae58b58b911eb684526b51",
+        "description": "egl/dri2: Rework get_wl_surface_proxy()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "71d949a8c58f3cba4e2c4700948cad572bbe7437",
+        "description": "svga/ci: disable vmware farm",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "534436f8635e63a30e4d7af4837dad35cfa361ad",
+        "description": "zink: explicitly check usage in buffer barriers",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c83d459225a24ce36fe245474137bc14b06d3a6c",
+        "description": "zink: alloc bo ids for non-slab bos too",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4d0f79a3989aff8ec98c74687d83b8e2f79b3c81",
+        "description": "zink: don't reset all batch states when stalling",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "61b0955308d720a6fa065e7a414d16999f7ffd03",
+        "description": "zink: always check submit_count to disambiguate when checking/waiting",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "78a80b9bf192eff82249e26e3edaf0982bc617c1",
+        "description": "zink: Revert \"zink: enable single-plane modifiers for generic 2D exports\"",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "df1ff3c711459467432fcd48f7348a8aa78de814",
+        "notes": null
+    },
+    {
+        "sha": "bcff33ff93b5e5104addafe2e7d58c2ab7141aa7",
+        "description": "panvk: disable shaderFloat16 on bifrost",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "55c476efed01121b3a64a58c304aae8ef9a79475",
+        "notes": null
+    },
+    {
+        "sha": "bf4ba66dbb04e0e574550ad42579448d5ae6acd2",
+        "description": "panfrost,panvk: fix clang warnings",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fdeabf416235af3c76c01e33070cbb55df136209",
+        "description": "lima: ppir: reuse uniform load in instruction if possible",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "20dd6dfa1251158c22671a032d3bd87496d14389",
+        "description": "aco/isel: use s_mul_i32 instead of s_cselect_b32 for a ? b : 0",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2d68efd9f37a1896f0881920ac97c34c0390df35",
+        "description": "aco/opt_postRA: remove scc == 0 for more opcodes",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "83247ffa302a277af7097ac4588e36e71b109224",
+        "description": "aco/opt_postRA: remove scc != 0 with multiple uses",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6445ba0f05aeba369946c52debce3d617bec2390",
+        "description": "aco/opt_postRA: allow try_optimize_scc_nocompare for all instructions",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3386ea09d4ec0e2d357e5ec1b795c191015f84fb",
+        "description": "aco/opt_postRA: split try_optimize_scc_nocompare in two functions",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9d020826cae808675aa9cf42707993882176479e",
+        "description": "radeonsi/vcn: Add radeon_enc_av1_picture_type",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d92781508bf217b0702f6602fde9b3655beacc90",
+        "description": "radeonsi/vcn: Set all pic params for H264 encode references",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "24cbc4bfcb4fce109bd6bc9f72450148e502aefd",
+        "description": "pipe: Remove PIPE_AV1_ENC_FRAME_TYPE_SHOW_EXISTING",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5c1f61d900cd24d685b9dca0341f45117199226b",
+        "description": "nir: Do not eliminate dead writes to shared memory in called functions.",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "e65c1473ded8e278b2253b7939af7a2fbfc72714",
+        "notes": null
+    },
+    {
+        "sha": "44110fe004f238c7da45f4eb4fb156aaf242e083",
+        "description": "lavapipe: Enable debug information if GALLIVM_DEBUG=symbols is set",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3b857064b63614d87e242b1acd06688f9c5491f7",
+        "description": "gallivm: Run nir_lower_load_const_to_scalar",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "83cac4e7e94ba988bea86ac8528d7e8d1df284b7",
+        "description": "gallivm: Add a debug variable for the exec mask",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3f5a576c9e9be8378fd9c4b90a0853b8489615cc",
+        "description": "gallivm: Emit debug info for definitions",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "77e84aba5c1a166009b498d577066e7b7d9ffb63",
+        "description": "gallivm: Handle nir_instr_debug_info",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d6ca378f1bedd3391470e6b24d1b25ffe22ee0ec",
+        "description": "llvmpipe: Annotate functions with debug information",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "95a68076a7b9e8d6d52a8c6f52ed1af359d77efc",
+        "description": "gallivm: Create a debug builder and add GALLIVM_DEBUG=symbols",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3aeab4ce40550c3a340a7ed6fd59365ee3fcb8c0",
+        "description": "nir/print: Do not print debug information when gathering it",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a04b5ebd3c9292df4e87c1146447f49718bbd29c",
+        "description": "nir/sweep: Fix handling instructions with debug info",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "fbc55afbdfc93a82c69f1cd6a1f4abbed96cfd19",
         "description": "ci/lava: Properly detect VMWARE farm",
         "nominated": false,
