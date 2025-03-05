@@ -195,6 +195,7 @@ static void pvr_physical_device_get_supported_extensions(
       .EXT_image_2d_view_of_3d = true,
       .EXT_index_type_uint8 = false,
       .EXT_private_data = true,
+      .EXT_provoking_vertex = true,
       .EXT_scalar_block_layout = true,
       .EXT_texel_buffer_alignment = false,
       .EXT_tooling_info = true,
@@ -281,6 +282,10 @@ static void pvr_physical_device_get_supported_features(
 
       /* Vulkan 1.3 / VK_EXT_private_data */
       .privateData = true,
+
+      /* VK_EXT_provoking_vertex */
+      .provokingVertexLast = true,
+      .transformFeedbackPreservesProvokingVertex = false,
 
       /* Vulkan 1.2 / VK_EXT_scalar_block_layout */
       .scalarBlockLayout = true,
@@ -516,6 +521,10 @@ static bool pvr_physical_device_get_properties(
          .subminor = 8,
          .patch = 4,
       },
+
+      /* VK_EXT_provoking_vertex */
+      .provokingVertexModePerPipeline = true,
+      .transformFeedbackPreservesTriangleFanProvokingVertex = false,
 
       /* Vulkan 1.2 / VK_KHR_timeline_semaphore */
       .maxTimelineSemaphoreValueDifference = UINT64_MAX,

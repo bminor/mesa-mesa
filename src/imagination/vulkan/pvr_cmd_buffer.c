@@ -5226,6 +5226,8 @@ setup_pds_coeff_program(struct pvr_cmd_buffer *const cmd_buffer,
       &state->gfx_pipeline->shader_state.fragment;
    const struct vk_dynamic_graphics_state *const dynamic_state =
       &cmd_buffer->vk.dynamic_graphics_state;
+   const VkProvokingVertexModeEXT provoking_vertex =
+      dynamic_state->rs.provoking_vertex;
    const VkPrimitiveTopology topology = dynamic_state->ia.primitive_topology;
    const struct pvr_pds_coeff_loading_program *program =
       &fragment_shader_state->pds_coeff_program;
@@ -5246,7 +5248,9 @@ setup_pds_coeff_program(struct pvr_cmd_buffer *const cmd_buffer,
       ROGUE_PDSINST_DOUT_FIELDS_DOUTI_SRC_unpack(&pds_coeff_program_buffer[off],
                                                  &douti_src);
 
-      if (topology == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN)
+      if (provoking_vertex == VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT)
+         douti_src.shademodel = ROGUE_PDSINST_DOUTI_SHADEMODEL_FLAT_VERTEX2;
+      else if (topology == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN)
          douti_src.shademodel = ROGUE_PDSINST_DOUTI_SHADEMODEL_FLAT_VERTEX1;
       else
          douti_src.shademodel = ROGUE_PDSINST_DOUTI_SHADEMODEL_FLAT_VERTEX0;
@@ -5456,6 +5460,8 @@ static void pvr_setup_ppp_control(struct pvr_cmd_buffer *const cmd_buffer)
 {
    struct vk_dynamic_graphics_state *const dynamic_state =
       &cmd_buffer->vk.dynamic_graphics_state;
+   const VkProvokingVertexModeEXT provoking_vertex =
+      dynamic_state->rs.provoking_vertex;
    const VkPrimitiveTopology topology = dynamic_state->ia.primitive_topology;
    struct pvr_cmd_buffer_state *const state = &cmd_buffer->state;
    struct ROGUE_TA_STATE_HEADER *const header = &state->emit_header;
@@ -5466,7 +5472,9 @@ static void pvr_setup_ppp_control(struct pvr_cmd_buffer *const cmd_buffer)
       control.drawclippededges = true;
       control.wclampen = true;
 
-      if (topology == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN)
+      if (provoking_vertex == VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT)
+         control.flatshade_vtx = ROGUE_TA_FLATSHADE_VTX_VERTEX_2;
+      else if (topology == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN)
          control.flatshade_vtx = ROGUE_TA_FLATSHADE_VTX_VERTEX_1;
       else
          control.flatshade_vtx = ROGUE_TA_FLATSHADE_VTX_VERTEX_0;
@@ -6027,6 +6035,9 @@ static void pvr_emit_dirty_vdm_state(struct pvr_cmd_buffer *const cmd_buffer,
       VDMCTRL_VDM_STATE0) };
    struct vk_dynamic_graphics_state *const dynamic_state =
       &cmd_buffer->vk.dynamic_graphics_state;
+   const VkProvokingVertexModeEXT provoking_vertex =
+      dynamic_state->rs.provoking_vertex;
+   const VkPrimitiveTopology topology = dynamic_state->ia.primitive_topology;
    const struct pvr_cmd_buffer_state *const state = &cmd_buffer->state;
    const pco_data *const vs_data = &state->gfx_pipeline->vs_data;
    struct pvr_csb *const csb = &sub_cmd->control_stream;
@@ -6052,15 +6063,12 @@ static void pvr_emit_dirty_vdm_state(struct pvr_cmd_buffer *const cmd_buffer,
          state0.cut_index_present = true;
       }
 
-      switch (dynamic_state->ia.primitive_topology) {
-      case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN:
+      if (provoking_vertex == VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT)
+         state0.flatshade_control = ROGUE_VDMCTRL_FLATSHADE_CONTROL_VERTEX_2;
+      else if (topology == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN)
          state0.flatshade_control = ROGUE_VDMCTRL_FLATSHADE_CONTROL_VERTEX_1;
-         break;
-
-      default:
+      else
          state0.flatshade_control = ROGUE_VDMCTRL_FLATSHADE_CONTROL_VERTEX_0;
-         break;
-      }
 
       /* If we've bound a different vertex buffer, or this draw-call requires
        * a different PDS attrib data-section from the last draw call (changed
