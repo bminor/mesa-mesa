@@ -166,6 +166,12 @@ typedef BITSET_DECLARE(st_state_bitset, ST_NUM_ATOMS);
    ST_SHADER_STATE_MASK(bitset, CS); \
    ST_SET_STATE(bitset, ST_NEW_FB_STATE);
 
+#define ST_PIPELINE_MESH_STATE_MASK(bitset) \
+   ST_PIPELINE_RENDER_STATE_MASK(bitset); \
+   BITSET_CLEAR(bitset, ST_NEW_VERTEX_ARRAYS); \
+   BITSET_CLEAR(bitset, ST_NEW_TESS_STATE); \
+   BITSET_CLEAR(bitset, ST_NEW_PIXEL_TRANSFER);
+
 #ifdef __cplusplus
 }
 #endif
