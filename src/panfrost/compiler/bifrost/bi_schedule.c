@@ -1019,13 +1019,7 @@ bi_write_count(bi_instr *instr, uint64_t live_after_temp)
    return count;
 }
 
-/*
- * Test if an instruction requires a specific flush-to-zero mode.
- *
- * This could be optimized to allow pairing integer instructions with
- * instructions with differently-sized float instructions regardless of float
- * controls, but punting on this until we have a workload that cares.
- */
+/* Test if an instruction requires a specific flush-to-zero mode. */
 static enum bi_ftz_state
 bi_instr_ftz(bi_instr *I)
 {
@@ -1033,8 +1027,12 @@ bi_instr_ftz(bi_instr *I)
    if ((I->op == BI_OPCODE_F16_TO_F32 || I->op == BI_OPCODE_V2F32_TO_V2F16) &&
        I->ftz)
       return BI_FTZ_STATE_ENABLE;
-   else
-      return BI_FTZ_STATE_DISABLE;
+
+   struct bi_op_props props = bi_opcode_props[I->op];
+   if (!props.is_float)
+      return BI_FTZ_STATE_NONE;
+
+   return BI_FTZ_STATE_DISABLE;
 }
 
 /*

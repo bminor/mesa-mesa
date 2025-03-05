@@ -89,6 +89,7 @@ struct bi_op_props {
         bool table : 1;
         bool fma : 1;
         bool add : 1;
+        bool is_float : 1;
 
         /* Supported propagable modifiers */
         bool clamp : 1;

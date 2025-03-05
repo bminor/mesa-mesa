@@ -39,6 +39,7 @@ struct bi_op_props bi_opcode_props[BI_NUM_OPCODES] = {
         branch = int(opcode.startswith('BRANCH'))
         has_fma = int("*" + opcode in instructions)
         has_add = int("+" + opcode in instructions)
+        is_float = int(opcode.endswith("f32") or opcode.endswith("f16"))
         mods = ops[opcode]['modifiers']
         clamp = hasmod(mods, 'clamp')
         not_result = hasmod(mods, 'not_result')
@@ -49,8 +50,8 @@ struct bi_op_props bi_opcode_props[BI_NUM_OPCODES] = {
     [BI_OPCODE_${opcode.replace('.', '_').upper()}] = {
         "${opcode}", BIFROST_MESSAGE_${message}, BI_SIZE_${size},
         BI_SR_COUNT_${sr_count}, ${sr_read}, ${sr_write}, ${last}, ${branch},
-        ${table}, ${has_fma}, ${has_add}, ${clamp}, ${not_result}, ${abs},
-        ${neg}, ${m_not},
+        ${table}, ${has_fma}, ${has_add}, ${is_float}, ${clamp}, ${not_result},
+        ${abs}, ${neg}, ${m_not},
     },
 % endfor
 };"""
