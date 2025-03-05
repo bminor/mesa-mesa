@@ -128,7 +128,7 @@ nvk_CreateBuffer(VkDevice device,
          return result;
       }
 
-      buffer->addr = buffer->va->addr;
+      buffer->vk.device_address = buffer->va->addr;
    }
 
    *pBuffer = nvk_buffer_to_handle(buffer);
@@ -253,7 +253,8 @@ nvk_bind_buffer_memory(struct nvk_device *dev,
                                  mem->mem, info->memoryOffset,
                                  buffer->va->size_B);
    } else {
-      buffer->addr = mem->mem->va->addr + info->memoryOffset;
+      assert(buffer->vk.device_address == 0);
+      buffer->vk.device_address = mem->mem->va->addr + info->memoryOffset;
    }
 
    return result;
@@ -280,15 +281,6 @@ nvk_BindBufferMemory2(VkDevice device,
    }
 
    return first_error_or_success;
-}
-
-VKAPI_ATTR VkDeviceAddress VKAPI_CALL
-nvk_GetBufferDeviceAddress(UNUSED VkDevice device,
-                           const VkBufferDeviceAddressInfo *pInfo)
-{
-   VK_FROM_HANDLE(nvk_buffer, buffer, pInfo->buffer);
-
-   return nvk_buffer_address(buffer, 0);
 }
 
 VKAPI_ATTR uint64_t VKAPI_CALL

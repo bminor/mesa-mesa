@@ -30,7 +30,8 @@ nvk_cmd_bind_map_buffer(struct vk_command_buffer *vk_cmd,
    if (unlikely(result != VK_SUCCESS))
       return result;
 
-   buffer->addr = addr;
+   assert(buffer->vk.device_address == 0);
+   buffer->vk.device_address = addr;
 
    return VK_SUCCESS;
 }
