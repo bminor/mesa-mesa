@@ -1089,45 +1089,6 @@ kgsl_queue_submit(struct tu_queue *queue, void *_submit,
    uint64_t start_ts = tu_perfetto_begin_submit();
 #endif
 
-   if (submit->commands.size == 0) {
-      const struct kgsl_syncobj *wait_semaphores[wait_count + 1];
-      for (uint32_t i = 0; i < wait_count; i++) {
-         wait_semaphores[i] = &container_of(waits[i].sync,
-                                            struct vk_kgsl_syncobj, vk)
-                                  ->syncobj;
-      }
-
-      struct kgsl_syncobj last_submit_sync;
-      if (queue->fence >= 0)
-         last_submit_sync = (struct kgsl_syncobj) {
-            .state = KGSL_SYNCOBJ_STATE_TS,
-            .queue = queue,
-            .timestamp = queue->fence,
-         };
-      else
-         last_submit_sync = (struct kgsl_syncobj) {
-            .state = KGSL_SYNCOBJ_STATE_SIGNALED,
-         };
-
-      wait_semaphores[wait_count] = &last_submit_sync;
-
-      struct kgsl_syncobj wait_sync =
-         kgsl_syncobj_merge(wait_semaphores, wait_count + 1);
-      assert(wait_sync.state !=
-             KGSL_SYNCOBJ_STATE_UNSIGNALED); // Would wait forever
-
-      for (uint32_t i = 0; i < signal_count; i++) {
-         struct kgsl_syncobj *signal_sync =
-            &container_of(signals[i].sync, struct vk_kgsl_syncobj, vk)
-                ->syncobj;
-
-         kgsl_syncobj_reset(signal_sync);
-         *signal_sync = wait_sync;
-      }
-
-      return VK_SUCCESS;
-   }
-
    VkResult result = VK_SUCCESS;
 
    if (u_trace_submission_data) {
