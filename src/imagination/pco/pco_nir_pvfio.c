@@ -911,7 +911,7 @@ static nir_def *lower_pfo(nir_builder *b, nir_instr *instr, void *cb_data)
 
       if (sem.location == FRAG_RESULT_DEPTH) {
          assert(!state->depth_feedback_src);
-         state->depth_feedback_src = nir_mov(b, intr->src[0].ssa);
+         state->depth_feedback_src = nir_fsat(b, intr->src[0].ssa);
 
          return NIR_LOWER_INSTR_PROGRESS_REPLACE;
       }

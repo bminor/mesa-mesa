@@ -705,7 +705,7 @@ Khronos extensions that are not part of any Vulkan version:
   VK_ARM_shader_core_properties                         DONE (panvk/v10+)
   VK_EXT_mutable_descriptor_type                        DONE (anv, hk, lvp, nvk, panvk/v9+, radv, tu, vn)
   VK_EXT_swapchain_colorspace                           DONE (anv, hk, lvp, nvk, radv, tu, v3dv, vn)
-  VK_EXT_depth_clamp_zero_one                           DONE (anv, nvk, panvk, radv, tu, v3dv/vc7+, vn)
+  VK_EXT_depth_clamp_zero_one                           DONE (anv, nvk, panvk, pvr, radv, tu, v3dv/vc7+, vn)
   VK_INTEL_shader_integer_functions2                    DONE (anv, hasvk, radv)
   VK_EXT_map_memory_placed                              DONE (anv, hk, nvk, radv, tu)
   VK_MESA_image_alignment_control                       DONE (anv, nvk, radv)

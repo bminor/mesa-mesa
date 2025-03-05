@@ -190,6 +190,7 @@ static void pvr_physical_device_get_supported_extensions(
       .KHR_timeline_semaphore = true,
       .KHR_uniform_buffer_standard_layout = true,
       .KHR_zero_initialize_workgroup_memory = false,
+      .EXT_depth_clamp_zero_one = true,
       .EXT_external_memory_dma_buf = true,
       .EXT_host_query_reset = true,
       .EXT_image_2d_view_of_3d = true,
@@ -263,6 +264,9 @@ static void pvr_physical_device_get_supported_features(
       .sparseResidencyAliased = false,
       .variableMultisampleRate = false,
       .inheritedQueries = false,
+
+      /* VK_EXT_depth_clamp_zero_one */
+      .depthClampZeroOne = true,
 
       /* VK_KHR_index_type_uint8 */
       .indexTypeUint8 = true,
