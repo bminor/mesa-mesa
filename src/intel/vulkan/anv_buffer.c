@@ -23,6 +23,7 @@ anv_bind_buffer_memory(struct anv_device *device,
       buffer->address = (struct anv_address) {
          .bo = mem->bo,
          .offset = pBindInfo->memoryOffset,
+         .protected = anv_buffer_is_protected(buffer),
       };
    } else {
       buffer->address = ANV_NULL_ADDRESS;

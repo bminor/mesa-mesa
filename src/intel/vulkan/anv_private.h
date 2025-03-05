@@ -555,6 +555,7 @@ anv_bo_needs_host_cache_flush(enum anv_bo_alloc_flags alloc_flags)
 struct anv_address {
    struct anv_bo *bo;
    int64_t offset;
+   bool protected;
 };
 
 #define ANV_NULL_ADDRESS ((struct anv_address) { NULL, 0 })
@@ -6027,8 +6028,7 @@ void
 anv_cmd_buffer_fill_area(struct anv_cmd_buffer *cmd_buffer,
                          struct anv_address address,
                          VkDeviceSize size,
-                         uint32_t data,
-                         bool protected);
+                         uint32_t data);
 void
 anv_cmd_fill_buffer_addr(VkCommandBuffer cmd_buffer,
                          VkDeviceAddress dstAddr,
@@ -6037,10 +6037,8 @@ anv_cmd_fill_buffer_addr(VkCommandBuffer cmd_buffer,
 void
 anv_cmd_buffer_update_addr(struct anv_cmd_buffer *cmd_buffer,
                            struct anv_address address,
-                           VkDeviceSize dstOffset,
                            VkDeviceSize dataSize,
-                           const void* pData,
-                           bool is_protected);
+                           const void* pData);
 void
 anv_cmd_write_buffer_cp(VkCommandBuffer cmd_buffer,
                         VkDeviceAddress dstAddr,

@@ -841,8 +841,7 @@ void genX(CmdResetQueryPool)(
 
       anv_cmd_buffer_fill_area(cmd_buffer,
                                anv_query_address(pool, firstQuery),
-                               queryCount * pool->stride,
-                               0, false);
+                               queryCount * pool->stride, 0);
 
       /* The pending clearing writes are in compute if we're in gpgpu mode on
        * the render engine or on the compute engine.
