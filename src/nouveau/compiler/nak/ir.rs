@@ -2595,14 +2595,6 @@ impl fmt::Display for InterpLoc {
     }
 }
 
-pub struct AttrAccess {
-    pub addr: u16,
-    pub comps: u8,
-    pub patch: bool,
-    pub output: bool,
-    pub phys: bool,
-}
-
 #[repr(C)]
 #[derive(SrcsAsSlice, DstsAsSlice)]
 pub struct OpFAdd {
@@ -5296,19 +5288,18 @@ pub struct OpAL2P {
     #[src_type(GPR)]
     pub offset: Src,
 
-    pub access: AttrAccess,
+    pub addr: u16,
+    pub comps: u8,
+    pub output: bool,
 }
 
 impl DisplayOp for OpAL2P {
     fn fmt_op(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "al2p")?;
-        if self.access.output {
+        if self.output {
             write!(f, ".o")?;
         }
-        if self.access.patch {
-            write!(f, ".p")?;
-        }
-        write!(f, " a[{:#x}", self.access.addr)?;
+        write!(f, " a[{:#x}", self.addr)?;
         if !self.offset.is_zero() {
             write!(f, "+{}", self.offset)?;
         }
@@ -5328,26 +5319,30 @@ pub struct OpALd {
     #[src_type(GPR)]
     pub offset: Src,
 
-    pub access: AttrAccess,
+    pub addr: u16,
+    pub comps: u8,
+    pub patch: bool,
+    pub output: bool,
+    pub phys: bool,
 }
 
 impl DisplayOp for OpALd {
     fn fmt_op(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "ald")?;
-        if self.access.output {
+        if self.output {
             write!(f, ".o")?;
         }
-        if self.access.patch {
+        if self.patch {
             write!(f, ".p")?;
         }
-        if self.access.phys {
+        if self.phys {
             write!(f, ".phys")?;
         }
         write!(f, " a")?;
         if !self.vtx.is_zero() {
             write!(f, "[{}]", self.vtx)?;
         }
-        write!(f, "[{:#x}", self.access.addr)?;
+        write!(f, "[{:#x}", self.addr)?;
         if !self.offset.is_zero() {
             write!(f, "+{}", self.offset)?;
         }
@@ -5368,23 +5363,26 @@ pub struct OpASt {
     #[src_type(SSA)]
     pub data: Src,
 
-    pub access: AttrAccess,
+    pub addr: u16,
+    pub comps: u8,
+    pub patch: bool,
+    pub phys: bool,
 }
 
 impl DisplayOp for OpASt {
     fn fmt_op(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "ast")?;
-        if self.access.patch {
+        if self.patch {
             write!(f, ".p")?;
         }
-        if self.access.phys {
+        if self.phys {
             write!(f, ".phys")?;
         }
         write!(f, " a")?;
         if !self.vtx.is_zero() {
             write!(f, "[{}]", self.vtx)?;
         }
-        write!(f, "[{:#x}", self.access.addr)?;
+        write!(f, "[{:#x}", self.addr)?;
         if !self.offset.is_zero() {
             write!(f, "+{}", self.offset)?;
         }

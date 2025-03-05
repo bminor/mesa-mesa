@@ -2692,9 +2692,8 @@ impl SM50Op for OpAL2P {
         e.set_dst(self.dst);
         e.set_reg_src(8..16, self.offset);
 
-        e.set_field(20..31, self.access.addr);
-        assert!(!self.access.patch);
-        e.set_bit(32, self.access.output);
+        e.set_field(20..31, self.addr);
+        e.set_bit(32, self.output);
 
         e.set_field(47..49, 0_u8); // comps
         e.set_pred_dst(44..47, Dst::None);
@@ -2710,19 +2709,19 @@ impl SM50Op for OpALd {
         e.set_opcode(0xefd8);
 
         e.set_dst(self.dst);
-        if self.access.phys {
-            assert!(!self.access.patch);
+        if self.phys {
+            assert!(!self.patch);
             assert!(self.offset.src_ref.as_reg().is_some());
-        } else if !self.access.patch {
+        } else if !self.patch {
             assert!(self.offset.is_zero());
         }
         e.set_reg_src(8..16, self.offset);
         e.set_reg_src(39..47, self.vtx);
 
-        e.set_field(20..30, self.access.addr);
-        e.set_bit(31, self.access.patch);
-        e.set_bit(32, self.access.output);
-        e.set_field(47..49, self.access.comps - 1);
+        e.set_field(20..30, self.addr);
+        e.set_bit(31, self.patch);
+        e.set_bit(32, self.output);
+        e.set_field(47..49, self.comps - 1);
     }
 }
 
@@ -2738,12 +2737,11 @@ impl SM50Op for OpASt {
         e.set_reg_src(8..16, self.offset);
         e.set_reg_src(39..47, self.vtx);
 
-        assert!(!self.access.phys);
-        assert!(self.access.output);
-        e.set_field(20..30, self.access.addr);
-        e.set_bit(31, self.access.patch);
-        e.set_bit(32, self.access.output);
-        e.set_field(47..49, self.access.comps - 1);
+        assert!(!self.phys);
+        e.set_field(20..30, self.addr);
+        e.set_bit(31, self.patch);
+        e.set_bit(32, true); // output
+        e.set_field(47..49, self.comps - 1);
     }
 }
 
