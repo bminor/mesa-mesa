@@ -70,11 +70,11 @@ static void
 delete_renderbuffer(struct gl_context *ctx, struct gl_renderbuffer *rb)
 {
    if (ctx) {
-      pipe_surface_release(ctx->pipe, &rb->surface_srgb);
-      pipe_surface_release(ctx->pipe, &rb->surface_linear);
+      pipe_surface_unref(ctx->pipe, &rb->surface_srgb);
+      pipe_surface_unref(ctx->pipe, &rb->surface_linear);
    } else {
-      pipe_surface_release_no_context(&rb->surface_srgb);
-      pipe_surface_release_no_context(&rb->surface_linear);
+      pipe_surface_unref_no_context(&rb->surface_srgb);
+      pipe_surface_unref_no_context(&rb->surface_linear);
    }
    rb->surface = NULL;
    pipe_resource_reference(&rb->texture, NULL);
@@ -548,7 +548,7 @@ _mesa_regen_renderbuffer_surface(struct gl_context *ctx,
 
    /* create -> destroy to avoid blowing up cached surfaces */
    surf = pipe->create_surface(pipe, resource, &surf_tmpl);
-   pipe_surface_release(pipe, psurf);
+   pipe_surface_unref(pipe, psurf);
    *psurf = surf;
 
    rb->surface = *psurf;
@@ -678,7 +678,7 @@ _mesa_update_renderbuffer_surface(struct gl_context *ctx,
 
       /* create -> destroy to avoid blowing up cached surfaces */
       struct pipe_surface *surf = pipe->create_surface(pipe, resource, &surf_tmpl);
-      pipe_surface_release(pipe, psurf);
+      pipe_surface_unref(pipe, psurf);
       *psurf = surf;
    }
    rb->surface = *psurf;

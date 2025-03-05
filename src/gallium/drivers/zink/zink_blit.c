@@ -465,7 +465,7 @@ zink_blit(struct pipe_context *pctx,
                                     &info->src.box,
                                     info->scissor_enable ? &info->scissor : NULL);
 
-      pipe_surface_release(pctx, &dst_view);
+      pipe_surface_unref(pctx, &dst_view);
    } else {
       struct pipe_blit_info new_info = *info;
       new_info.src.resource = &use_src->base.b;

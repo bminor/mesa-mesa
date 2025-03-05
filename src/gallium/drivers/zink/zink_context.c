@@ -146,14 +146,14 @@ zink_context_destroy(struct pipe_context *pctx)
    if (ctx->blitter)
       util_blitter_destroy(ctx->blitter);
    for (unsigned i = 0; i < ctx->fb_state.nr_cbufs; i++)
-      pipe_surface_release(&ctx->base, &ctx->fb_state.cbufs[i]);
-   pipe_surface_release(&ctx->base, &ctx->fb_state.zsbuf);
+      pipe_surface_unref(&ctx->base, &ctx->fb_state.cbufs[i]);
+   pipe_surface_unref(&ctx->base, &ctx->fb_state.zsbuf);
 
    pipe_resource_reference(&ctx->dummy_vertex_buffer, NULL);
    pipe_resource_reference(&ctx->dummy_xfb_buffer, NULL);
 
    for (unsigned i = 0; i < ARRAY_SIZE(ctx->dummy_surface); i++)
-      pipe_surface_release(&ctx->base, &ctx->dummy_surface[i]);
+      pipe_surface_unref(&ctx->base, &ctx->dummy_surface[i]);
    zink_buffer_view_reference(screen, &ctx->dummy_bufferview, NULL);
 
    zink_descriptors_deinit_bindless(ctx);
@@ -5340,7 +5340,7 @@ zink_get_dummy_pipe_surface(struct zink_context *ctx, int samples_index)
       /* delete old surface if ETOOSMALL */
       struct zink_resource *res = zink_resource(ctx->dummy_surface[samples_index]->texture);
       if (res->base.b.width0 < size || res->base.b.height0 < size) {
-         pipe_surface_release(&ctx->base, &ctx->dummy_surface[samples_index]);
+         pipe_surface_unref(&ctx->base, &ctx->dummy_surface[samples_index]);
          needs_null_init = !samples_index && ctx->di.null_fbfetch_init;
          if (!samples_index)
             ctx->di.null_fbfetch_init = false;

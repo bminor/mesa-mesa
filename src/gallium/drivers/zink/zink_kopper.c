@@ -1140,7 +1140,7 @@ zink_kopper_fixup_depth_buffer(struct zink_context *ctx)
 
    /* oh god why */
    zink_surface_reference(screen, &csurf->surf, cz->surf);
-   pipe_surface_release(&ctx->base, &psurf);
+   pipe_surface_unref(&ctx->base, &psurf);
 }
 
 bool

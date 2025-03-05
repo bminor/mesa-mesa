@@ -634,7 +634,7 @@ blit_replicate_stencil(struct d3d12_context *ctx,
                                  &info->src.box,
                                  info->scissor_enable ? &info->scissor : NULL);
 
-   pipe_surface_release(pctx, &dst_view);
+   pipe_surface_unref(pctx, &dst_view);
 }
 
 void

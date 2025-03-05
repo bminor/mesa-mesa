@@ -327,7 +327,7 @@ fd_blit_stencil_fallback(struct fd_context *ctx, const struct pipe_blit_info *in
       info->src.resource, info->src.level, &info->src.box,
       info->scissor_enable ? &info->scissor : NULL);
 
-   pipe_surface_release(pctx, &dst_view);
+   pipe_surface_unref(pctx, &dst_view);
 }
 
 /**

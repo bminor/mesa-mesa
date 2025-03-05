@@ -295,7 +295,7 @@ zink_surface_destroy(struct pipe_context *pctx,
       /* this has an extra resource ref */
       pipe_resource_reference(&csurf->base.texture, NULL);
    zink_surface_reference(zink_screen(pctx->screen), &csurf->surf, NULL);
-   pipe_surface_release(pctx, (struct pipe_surface**)&csurf->transient);
+   pipe_surface_unref(pctx, (struct pipe_surface**)&csurf->transient);
    FREE(csurf);
 }
 

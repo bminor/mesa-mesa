@@ -432,7 +432,7 @@ crocus_blit(struct pipe_context *ctx, const struct pipe_blit_info *info)
                                              info->src.level,
                                              &info->src.box, NULL);
 
-               pipe_surface_release(ctx, &dst_view);
+               pipe_surface_unref(ctx, &dst_view);
             }
             return;
          }

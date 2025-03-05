@@ -154,7 +154,7 @@ pipe_surface_reference(struct pipe_surface **dst, struct pipe_surface *src)
  * that's shared by multiple contexts.
  */
 static inline void
-pipe_surface_release(struct pipe_context *pipe, struct pipe_surface **ptr)
+pipe_surface_unref(struct pipe_context *pipe, struct pipe_surface **ptr)
 {
    struct pipe_surface *old = *ptr;
 
@@ -210,11 +210,11 @@ pipe_drop_resource_references(struct pipe_resource *dst, int num_refs)
 }
 
 /**
- * Same as pipe_surface_release, but used when pipe_context doesn't exist
+ * Same as pipe_surface_unref, but used when pipe_context doesn't exist
  * anymore.
  */
 static inline void
-pipe_surface_release_no_context(struct pipe_surface **ptr)
+pipe_surface_unref_no_context(struct pipe_surface **ptr)
 {
    struct pipe_surface *surf = *ptr;
 
