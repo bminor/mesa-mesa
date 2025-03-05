@@ -54,6 +54,7 @@
 #include "util/simple_mtx.h"
 #include "util/u_dynarray.h"
 #include "vbo/vbo.h"
+#include "state_tracker/st_atom.h"
 
 #include "pipe/p_state.h"
 
@@ -2890,28 +2891,28 @@ struct gl_driver_flags
    /**
     * gl_context::AtomicBufferBindings
     */
-   uint64_t NewAtomicBuffer;
+   st_state_bitset NewAtomicBuffer;
 
    /** gl_context::Color::Alpha* */
-   uint64_t NewAlphaTest;
+   st_state_bitset NewAlphaTest;
 
    /** gl_context::Multisample::Enabled */
-   uint64_t NewMultisampleEnable;
+   st_state_bitset NewMultisampleEnable;
 
    /** gl_context::Multisample::(Min)SampleShading */
-   uint64_t NewSampleShading;
+   st_state_bitset NewSampleShading;
 
    /** gl_context::Transform::ClipPlanesEnabled */
-   uint64_t NewClipPlaneEnable;
+   st_state_bitset NewClipPlaneEnable;
 
    /** gl_context::Color::ClampFragmentColor */
-   uint64_t NewFragClamp;
+   st_state_bitset NewFragClamp;
 
    /** Shader constants (uniforms, program parameters, state constants) */
-   uint64_t NewShaderConstants[MESA_SHADER_MESH_STAGES];
+   st_state_bitset NewShaderConstants[MESA_SHADER_MESH_STAGES];
 
    /** For GL_CLAMP emulation */
-   uint64_t NewSamplersWithClamp;
+   st_state_bitset NewSamplersWithClamp;
 };
 
 struct gl_buffer_binding
@@ -3534,7 +3535,7 @@ struct gl_context
    GLenum16 RenderMode;      /**< either GL_RENDER, GL_SELECT, GL_FEEDBACK */
    GLbitfield NewState;      /**< bitwise-or of _NEW_* flags */
    GLbitfield PopAttribState; /**< Updated state since glPushAttrib */
-   uint64_t NewDriverState;  /**< bitwise-or of flags from DriverFlags */
+   st_state_bitset NewDriverState;  /**< bitwise-or of flags from DriverFlags */
 
    struct gl_driver_flags DriverFlags;
 

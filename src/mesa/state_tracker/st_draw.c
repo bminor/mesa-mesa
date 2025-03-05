@@ -72,7 +72,7 @@ static_assert(GL_TRIANGLE_STRIP_ADJACENCY == MESA_PRIM_TRIANGLE_STRIP_ADJACENCY,
 static_assert(GL_PATCHES == MESA_PRIM_PATCHES, "enum mismatch");
 
 void
-st_prepare_draw(struct gl_context *ctx, uint64_t state_mask)
+st_prepare_draw(struct gl_context *ctx, const st_state_bitset state_mask)
 {
    struct st_context *st = ctx->st;
 
@@ -165,7 +165,8 @@ st_indirect_draw_vbo(struct gl_context *ctx,
       return;
 
    assert(stride);
-   st_prepare_draw(ctx, ST_PIPELINE_RENDER_STATE_MASK);
+   ST_PIPELINE_RENDER_STATE_MASK(mask);
+   st_prepare_draw(ctx, mask);
 
    memset(&indirect, 0, sizeof(indirect));
    util_draw_init_info(&info);

@@ -40,6 +40,7 @@
 #include "compiler/shader_info.h"
 #include "compiler/list.h"
 #include "compiler/glsl/ir_list.h"
+#include "state_tracker/st_atom.h"
 
 #include "pipe/p_state.h"
 
@@ -530,7 +531,7 @@ struct gl_program
 
    struct pipe_shader_state state;
    struct ati_fragment_shader *ati_fs;
-   uint64_t affected_states; /**< ST_NEW_* flags to mark dirty when binding */
+   st_state_bitset affected_states; /**< ST_NEW_* flags to mark dirty when binding */
 
    void *serialized_nir;
    unsigned serialized_nir_size;

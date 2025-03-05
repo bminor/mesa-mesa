@@ -236,7 +236,7 @@ _mesa_vertex_attrib_binding(struct gl_context *ctx,
       array->BufferBindingIndex = bindingIndex;
 
       if (vao->Enabled & array_bit) {
-         ctx->NewDriverState |= ST_NEW_VERTEX_ARRAYS;
+         ST_SET_STATE(ctx->NewDriverState, ST_NEW_VERTEX_ARRAYS);
          ctx->Array.NewVertexElements = true;
       }
 
@@ -303,7 +303,7 @@ _mesa_bind_vertex_buffer(struct gl_context *ctx,
       }
 
       if (vao->Enabled & binding->_BoundArrays) {
-         ctx->NewDriverState |= ST_NEW_VERTEX_ARRAYS;
+         ST_SET_STATE(ctx->NewDriverState, ST_NEW_VERTEX_ARRAYS);
          /* The slow path merges vertex buffers, which affects vertex elements.
           * Stride changes also require new vertex elements.
           */
@@ -345,7 +345,7 @@ vertex_binding_divisor(struct gl_context *ctx,
          vao->NonZeroDivisorMask &= ~binding->_BoundArrays;
 
       if (vao->Enabled & binding->_BoundArrays) {
-         ctx->NewDriverState |= ST_NEW_VERTEX_ARRAYS;
+         ST_SET_STATE(ctx->NewDriverState, ST_NEW_VERTEX_ARRAYS);
          ctx->Array.NewVertexElements = true;
       }
 
@@ -857,7 +857,7 @@ _mesa_update_array_format(struct gl_context *ctx,
                                   normalized, integer, doubles);
 
    if (vao->Enabled & VERT_BIT(attrib)) {
-      ctx->NewDriverState |= ST_NEW_VERTEX_ARRAYS;
+      ST_SET_STATE(ctx->NewDriverState, ST_NEW_VERTEX_ARRAYS);
       ctx->Array.NewVertexElements = true;
    }
 
@@ -1122,7 +1122,7 @@ update_array(struct gl_context *ctx,
       array->Ptr = ptr;
 
       if (vao->Enabled & VERT_BIT(attrib)) {
-         ctx->NewDriverState |= ST_NEW_VERTEX_ARRAYS;
+         ST_SET_STATE(ctx->NewDriverState, ST_NEW_VERTEX_ARRAYS);
          /* The slow path merges vertex buffers, which affects vertex
           * elements.
           */
@@ -2113,8 +2113,7 @@ _mesa_update_edgeflag_state_explicit(struct gl_context *ctx,
 
       struct gl_program *vp = ctx->VertexProgram._Current;
       if (vp) {
-         ctx->NewDriverState |= ST_NEW_VS_STATE |
-                                ST_NEW_VERTEX_ARRAYS;
+         ST_SET_STATE2(ctx->NewDriverState, ST_NEW_VS_STATE, ST_NEW_VERTEX_ARRAYS);
          ctx->Array.NewVertexElements = true;
       }
    }
@@ -2128,7 +2127,7 @@ _mesa_update_edgeflag_state_explicit(struct gl_context *ctx,
                                     !ctx->Current.Attrib[VERT_ATTRIB_EDGEFLAG][0];
    if (polygon_mode_always_culls != ctx->Array._PolygonModeAlwaysCulls) {
       ctx->Array._PolygonModeAlwaysCulls = polygon_mode_always_culls;
-      ctx->NewDriverState |= ST_NEW_RASTERIZER;
+      ST_SET_STATE(ctx->NewDriverState, ST_NEW_RASTERIZER);
    }
 }
 
@@ -2157,7 +2156,7 @@ _mesa_enable_vertex_array_attribs(struct gl_context *ctx,
       /* was disabled, now being enabled */
       vao->Enabled |= attrib_bits;
       vao->NonDefaultStateMask |= attrib_bits;
-      ctx->NewDriverState |= ST_NEW_VERTEX_ARRAYS;
+      ST_SET_STATE(ctx->NewDriverState, ST_NEW_VERTEX_ARRAYS);
       ctx->Array.NewVertexElements = true;
 
       /* Update the map mode if needed */
@@ -2260,7 +2259,7 @@ _mesa_disable_vertex_array_attribs(struct gl_context *ctx,
    if (attrib_bits) {
       /* was enabled, now being disabled */
       vao->Enabled &= ~attrib_bits;
-      ctx->NewDriverState |= ST_NEW_VERTEX_ARRAYS;
+      ST_SET_STATE(ctx->NewDriverState, ST_NEW_VERTEX_ARRAYS);
       ctx->Array.NewVertexElements = true;
 
       /* Update the map mode if needed */

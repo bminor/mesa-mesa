@@ -1171,9 +1171,8 @@ fail:
    st->state.num_sampler_views[MESA_SHADER_COMPUTE] = 0;
    pipe->set_shader_buffers(pipe, MESA_SHADER_COMPUTE, 0, 1, NULL, 0);
 
-   st->ctx->NewDriverState |= ST_NEW_CS_CONSTANTS |
-                              ST_NEW_CS_SSBOS |
-                              ST_NEW_CS_SAMPLER_VIEWS;
+   ST_SET_STATE3(st->ctx->NewDriverState, ST_NEW_CS_CONSTANTS,
+                 ST_NEW_CS_SSBOS, ST_NEW_CS_SAMPLER_VIEWS);
 
    return dst;
 }

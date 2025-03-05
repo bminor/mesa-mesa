@@ -983,7 +983,9 @@ read_buffer(struct gl_context *ctx, struct gl_framebuffer *fb,
          /* add the buffer */
          st_manager_add_color_renderbuffer(ctx, fb, fb->_ColorReadBufferIndex);
          _mesa_update_state(ctx);
-         st_validate_state(st_context(ctx), ST_PIPELINE_UPDATE_FB_STATE_MASK);
+
+         ST_PIPELINE_UPDATE_FB_STATE_MASK(mask);
+         st_validate_state(st_context(ctx), mask);
       }
    }
 }

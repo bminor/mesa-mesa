@@ -154,19 +154,19 @@ bind_compute_state(struct st_context *st,
 
    /* Set compute states in the same order as defined in st_atom_list.h */
 
-   assert(prog->affected_states & ST_NEW_CS_STATE);
+   assert(BITSET_TEST(prog->affected_states, ST_NEW_CS_STATE));
    assert(st->shader_has_one_variant[MESA_SHADER_COMPUTE]);
    cso_set_compute_shader_handle(st->cso_context,
                                  cs_handle_from_prog ?
                                  prog->variants->driver_shader : NULL);
 
-   if (prog->affected_states & ST_NEW_CS_SAMPLER_VIEWS) {
+   if (BITSET_TEST(prog->affected_states, ST_NEW_CS_SAMPLER_VIEWS)) {
       st->pipe->set_sampler_views(st->pipe, prog->info.stage, 0,
                                   prog->info.num_textures, 0,
                                   sampler_views);
    }
 
-   if (prog->affected_states & ST_NEW_CS_SAMPLERS) {
+   if (BITSET_TEST(prog->affected_states, ST_NEW_CS_SAMPLERS)) {
       /* Programs seem to set this bit more often than needed. For example, if
        * a program only uses texelFetch, this shouldn't be needed. Section
        * "11.1.3.2 Texel Fetches", of the GL 4.6 spec says:
@@ -182,26 +182,26 @@ bind_compute_state(struct st_context *st,
        */
    }
 
-   if (prog->affected_states & ST_NEW_CS_CONSTANTS) {
+   if (BITSET_TEST(prog->affected_states, ST_NEW_CS_CONSTANTS)) {
       st_upload_constants(st, constbuf0_from_prog ? prog : NULL,
                           prog->info.stage);
    }
 
-   if (prog->affected_states & ST_NEW_CS_UBOS) {
+   if (BITSET_TEST(prog->affected_states, ST_NEW_CS_UBOS)) {
       UNREACHABLE("Uniform buffer objects not handled");
    }
 
-   if (prog->affected_states & ST_NEW_CS_ATOMICS) {
+   if (BITSET_TEST(prog->affected_states, ST_NEW_CS_ATOMICS)) {
       UNREACHABLE("Atomic buffer objects not handled");
    }
 
-   if (prog->affected_states & ST_NEW_CS_SSBOS) {
+   if (BITSET_TEST(prog->affected_states, ST_NEW_CS_SSBOS)) {
       st->pipe->set_shader_buffers(st->pipe, prog->info.stage, 0,
                                    prog->info.num_ssbos, shader_buffers,
                                    prog->sh.ShaderStorageBlocksWriteAccess);
    }
 
-   if (prog->affected_states & ST_NEW_CS_IMAGES) {
+   if (BITSET_TEST(prog->affected_states, ST_NEW_CS_IMAGES)) {
       st->pipe->set_shader_images(st->pipe, prog->info.stage, 0,
                                   prog->info.num_images, 0, image_views);
    }
@@ -242,8 +242,9 @@ dispatch_compute_state(struct st_context *st,
     * trampled on by these state changes, dirty the relevant flags.
     */
    if (st->cp) {
-      st->ctx->NewDriverState |=
-         st->cp->affected_states & prog->affected_states;
+      st_state_bitset state;
+      BITSET_AND(state, st->cp->affected_states, prog->affected_states);
+      ST_SET_STATES(st->ctx->NewDriverState, state);
    }
 }
 

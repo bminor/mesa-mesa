@@ -258,7 +258,7 @@ _vbo_set_attrib_format(struct gl_context *ctx,
                              GL_FALSE, integer, doubles, offset);
 
    if (vao->Enabled & VERT_BIT(attr)) {
-      ctx->NewDriverState |= ST_NEW_VERTEX_ARRAYS;
+      ST_SET_STATE(ctx->NewDriverState, ST_NEW_VERTEX_ARRAYS);
       ctx->Array.NewVertexElements = true;
    }
 

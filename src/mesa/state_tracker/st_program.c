@@ -72,33 +72,32 @@ static void
 destroy_program_variants(struct st_context *st, struct gl_program *target);
 
 static void
-set_affected_state_flags(uint64_t *states,
-                         struct gl_program *prog,
-                         uint64_t new_constants,
-                         uint64_t new_sampler_views,
-                         uint64_t new_samplers,
-                         uint64_t new_images,
-                         uint64_t new_ubos,
-                         uint64_t new_ssbos,
-                         uint64_t new_atomics)
+set_affected_state_flags(struct gl_program *prog,
+                         unsigned new_constants,
+                         unsigned new_sampler_views,
+                         unsigned new_samplers,
+                         unsigned new_images,
+                         unsigned new_ubos,
+                         unsigned new_ssbos,
+                         unsigned new_atomics)
 {
    if (prog->Parameters->NumParameters)
-      *states |= new_constants;
+      ST_SET_STATE(prog->affected_states, new_constants);
 
    if (prog->info.num_textures)
-      *states |= new_sampler_views | new_samplers;
+      ST_SET_STATE2(prog->affected_states, new_sampler_views, new_samplers);
 
    if (prog->info.num_images)
-      *states |= new_images;
+      ST_SET_STATE(prog->affected_states, new_images);
 
    if (prog->info.num_ubos)
-      *states |= new_ubos;
+      ST_SET_STATE(prog->affected_states, new_ubos);
 
    if (prog->info.num_ssbos)
-      *states |= new_ssbos;
+      ST_SET_STATE(prog->affected_states, new_ssbos);
 
    if (prog->info.num_abos)
-      *states |= new_atomics;
+      ST_SET_STATE(prog->affected_states, new_atomics);
 }
 
 /**
@@ -107,17 +106,14 @@ set_affected_state_flags(uint64_t *states,
 void
 st_set_prog_affected_state_flags(struct gl_program *prog)
 {
-   uint64_t *states;
+   BITSET_ZERO(prog->affected_states);
 
    switch (prog->info.stage) {
    case MESA_SHADER_VERTEX:
-      states = &prog->affected_states;
+      ST_SET_STATE3(prog->affected_states, ST_NEW_VS_STATE,
+                    ST_NEW_RASTERIZER, ST_NEW_VERTEX_ARRAYS);
 
-      *states = ST_NEW_VS_STATE |
-                ST_NEW_RASTERIZER |
-                ST_NEW_VERTEX_ARRAYS;
-
-      set_affected_state_flags(states, prog,
+      set_affected_state_flags(prog,
                                ST_NEW_VS_CONSTANTS,
                                ST_NEW_VS_SAMPLER_VIEWS,
                                ST_NEW_VS_SAMPLERS,
@@ -128,11 +124,9 @@ st_set_prog_affected_state_flags(struct gl_program *prog)
       break;
 
    case MESA_SHADER_TESS_CTRL:
-      states = &prog->affected_states;
+      ST_SET_STATE(prog->affected_states, ST_NEW_TCS_STATE);
 
-      *states = ST_NEW_TCS_STATE;
-
-      set_affected_state_flags(states, prog,
+      set_affected_state_flags(prog,
                                ST_NEW_TCS_CONSTANTS,
                                ST_NEW_TCS_SAMPLER_VIEWS,
                                ST_NEW_TCS_SAMPLERS,
@@ -143,12 +137,10 @@ st_set_prog_affected_state_flags(struct gl_program *prog)
       break;
 
    case MESA_SHADER_TESS_EVAL:
-      states = &prog->affected_states;
+      ST_SET_STATE2(prog->affected_states, ST_NEW_TES_STATE,
+                    ST_NEW_RASTERIZER);
 
-      *states = ST_NEW_TES_STATE |
-                ST_NEW_RASTERIZER;
-
-      set_affected_state_flags(states, prog,
+      set_affected_state_flags(prog,
                                ST_NEW_TES_CONSTANTS,
                                ST_NEW_TES_SAMPLER_VIEWS,
                                ST_NEW_TES_SAMPLERS,
@@ -159,12 +151,10 @@ st_set_prog_affected_state_flags(struct gl_program *prog)
       break;
 
    case MESA_SHADER_GEOMETRY:
-      states = &prog->affected_states;
+      ST_SET_STATE2(prog->affected_states, ST_NEW_GS_STATE,
+                    ST_NEW_RASTERIZER);
 
-      *states = ST_NEW_GS_STATE |
-                ST_NEW_RASTERIZER;
-
-      set_affected_state_flags(states, prog,
+      set_affected_state_flags(prog,
                                ST_NEW_GS_CONSTANTS,
                                ST_NEW_GS_SAMPLER_VIEWS,
                                ST_NEW_GS_SAMPLERS,
@@ -175,14 +165,11 @@ st_set_prog_affected_state_flags(struct gl_program *prog)
       break;
 
    case MESA_SHADER_FRAGMENT:
-      states = &prog->affected_states;
-
       /* gl_FragCoord and glDrawPixels always use constants. */
-      *states = ST_NEW_FS_STATE |
-                ST_NEW_SAMPLE_SHADING |
-                ST_NEW_FS_CONSTANTS;
+      ST_SET_STATE3(prog->affected_states, ST_NEW_FS_STATE,
+                    ST_NEW_SAMPLE_SHADING, ST_NEW_FS_CONSTANTS);
 
-      set_affected_state_flags(states, prog,
+      set_affected_state_flags(prog,
                                ST_NEW_FS_CONSTANTS,
                                ST_NEW_FS_SAMPLER_VIEWS,
                                ST_NEW_FS_SAMPLERS,
@@ -193,11 +180,9 @@ st_set_prog_affected_state_flags(struct gl_program *prog)
       break;
 
    case MESA_SHADER_COMPUTE:
-      states = &prog->affected_states;
+      ST_SET_STATE(prog->affected_states, ST_NEW_CS_STATE);
 
-      *states = ST_NEW_CS_STATE;
-
-      set_affected_state_flags(states, prog,
+      set_affected_state_flags(prog,
                                ST_NEW_CS_CONSTANTS,
                                ST_NEW_CS_SAMPLER_VIEWS,
                                ST_NEW_CS_SAMPLERS,
@@ -271,27 +256,27 @@ st_unbind_program(struct st_context *st, struct gl_program *p)
    switch (p->info.stage) {
    case MESA_SHADER_VERTEX:
       cso_set_vertex_shader_handle(st->cso_context, NULL);
-      ctx->NewDriverState |= ST_NEW_VS_STATE;
+      ST_SET_STATE(ctx->NewDriverState, ST_NEW_VS_STATE);
       break;
    case MESA_SHADER_TESS_CTRL:
       cso_set_tessctrl_shader_handle(st->cso_context, NULL);
-      ctx->NewDriverState |= ST_NEW_TCS_STATE;
+      ST_SET_STATE(ctx->NewDriverState, ST_NEW_TCS_STATE);
       break;
    case MESA_SHADER_TESS_EVAL:
       cso_set_tesseval_shader_handle(st->cso_context, NULL);
-      ctx->NewDriverState |= ST_NEW_TES_STATE;
+      ST_SET_STATE(ctx->NewDriverState, ST_NEW_TES_STATE);
       break;
    case MESA_SHADER_GEOMETRY:
       cso_set_geometry_shader_handle(st->cso_context, NULL);
-      ctx->NewDriverState |= ST_NEW_GS_STATE;
+      ST_SET_STATE(ctx->NewDriverState, ST_NEW_GS_STATE);
       break;
    case MESA_SHADER_FRAGMENT:
       cso_set_fragment_shader_handle(st->cso_context, NULL);
-      ctx->NewDriverState |= ST_NEW_FS_STATE;
+      ST_SET_STATE(ctx->NewDriverState, ST_NEW_FS_STATE);
       break;
    case MESA_SHADER_COMPUTE:
       cso_set_compute_shader_handle(st->cso_context, NULL);
-      ctx->NewDriverState |= ST_NEW_CS_STATE;
+      ST_SET_STATE(ctx->NewDriverState, ST_NEW_CS_STATE);
       break;
    default:
       UNREACHABLE("invalid shader type");
@@ -552,12 +537,12 @@ st_translate_vertex_program(struct st_context *st,
    /* This determines which states will be updated when the assembly
       * shader is bound.
       */
-   prog->affected_states = ST_NEW_VS_STATE |
-                           ST_NEW_RASTERIZER |
-                           ST_NEW_VERTEX_ARRAYS;
+   BITSET_ZERO(prog->affected_states);
+   ST_SET_STATE3(prog->affected_states, ST_NEW_VS_STATE,
+                 ST_NEW_RASTERIZER, ST_NEW_VERTEX_ARRAYS);
 
    if (prog->Parameters->NumParameters)
-      prog->affected_states |= ST_NEW_VS_CONSTANTS;
+      ST_SET_STATE(prog->affected_states, ST_NEW_VS_CONSTANTS);
 
    if (prog->arb.Instructions && prog->nir)
       ralloc_free(prog->nir);
@@ -948,19 +933,19 @@ st_translate_fragment_program(struct st_context *st,
     *
     * fragment.position and glDrawPixels always use constants.
     */
-   prog->affected_states = ST_NEW_FS_STATE |
-                           ST_NEW_SAMPLE_SHADING |
-                           ST_NEW_FS_CONSTANTS;
+   BITSET_ZERO(prog->affected_states);
+   ST_SET_STATE3(prog->affected_states, ST_NEW_FS_STATE,
+                 ST_NEW_SAMPLE_SHADING, ST_NEW_FS_CONSTANTS);
 
    if (prog->ati_fs) {
       /* Just set them for ATI_fs unconditionally. */
-      prog->affected_states |= ST_NEW_FS_SAMPLER_VIEWS |
-                               ST_NEW_FS_SAMPLERS;
+      ST_SET_STATE2(prog->affected_states, ST_NEW_FS_SAMPLER_VIEWS,
+                    ST_NEW_FS_SAMPLERS);
    } else {
       /* ARB_fp */
       if (prog->SamplersUsed)
-         prog->affected_states |= ST_NEW_FS_SAMPLER_VIEWS |
-                                  ST_NEW_FS_SAMPLERS;
+         ST_SET_STATE2(prog->affected_states, ST_NEW_FS_SAMPLER_VIEWS,
+                       ST_NEW_FS_SAMPLERS);
    }
 
    /* Translate to NIR. */
@@ -1496,9 +1481,9 @@ st_finalize_program(struct st_context *st, struct gl_program *prog,
    if (is_bound) {
       if (prog->info.stage == MESA_SHADER_VERTEX) {
          ctx->Array.NewVertexElements = true;
-         ctx->NewDriverState |= ST_NEW_VERTEX_PROGRAM(ctx, prog);
+         ST_SET_VERTEX_PROGRAM_STATES(ctx->NewDriverState, ctx, prog);
       } else {
-         ctx->NewDriverState |= prog->affected_states;
+         ST_SET_STATES(ctx->NewDriverState, prog->affected_states);
       }
    }
 

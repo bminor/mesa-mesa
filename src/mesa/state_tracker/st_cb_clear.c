@@ -321,8 +321,7 @@ clear_with_quad(struct gl_context *ctx, unsigned clear_buffers)
    /* Restore pipe state */
    cso_restore_state(cso, 0);
    ctx->Array.NewVertexElements = true;
-   ctx->NewDriverState |= ST_NEW_VERTEX_ARRAYS |
-                          ST_NEW_FS_CONSTANTS;
+   ST_SET_STATE2(ctx->NewDriverState, ST_NEW_VERTEX_ARRAYS, ST_NEW_FS_CONSTANTS);
 }
 
 
@@ -396,7 +395,8 @@ st_Clear(struct gl_context *ctx, GLbitfield mask)
    st_invalidate_readpix_cache(st);
 
    /* This makes sure the pipe has the latest scissor, etc values */
-   st_validate_state(st, ST_PIPELINE_CLEAR_STATE_MASK);
+   ST_PIPELINE_CLEAR_STATE_MASK(pipeline_mask);
+   st_validate_state(st, pipeline_mask);
 
    if (mask & BUFFER_BITS_COLOR) {
       for (i = 0; i < ctx->DrawBuffer->_NumColorDrawBuffers; i++) {

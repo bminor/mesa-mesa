@@ -1267,18 +1267,18 @@ _mesa_flush_vertices_for_uniforms(struct gl_context *ctx,
       return;
    }
 
-   uint64_t new_driver_state = 0;
+   st_state_bitset new_driver_state = {0};
    unsigned mask = uni->active_shader_mask;
 
    while (mask) {
       unsigned index = u_bit_scan(&mask);
 
       assert(index < MESA_SHADER_MESH_STAGES);
-      new_driver_state |= ctx->DriverFlags.NewShaderConstants[index];
+      ST_SET_STATES(new_driver_state, ctx->DriverFlags.NewShaderConstants[index]);
    }
 
-   FLUSH_VERTICES(ctx, new_driver_state ? 0 : _NEW_PROGRAM_CONSTANTS, 0);
-   ctx->NewDriverState |= new_driver_state;
+   FLUSH_VERTICES(ctx, BITSET_IS_EMPTY(new_driver_state) ? _NEW_PROGRAM_CONSTANTS : 0, 0);
+   ST_SET_STATES(ctx->NewDriverState, new_driver_state);
 }
 
 static bool
@@ -1615,7 +1615,7 @@ _mesa_uniform(GLint location, GLsizei count, const GLvoid *values,
          }
       }
 
-      ctx->NewDriverState |= ST_NEW_IMAGE_UNITS;
+      ST_SET_SHADER_STATES(ctx->NewDriverState, IMAGES);
    }
 }
 

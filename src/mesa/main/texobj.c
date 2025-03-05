@@ -1710,7 +1710,7 @@ bind_texture_object(struct gl_context *ctx, unsigned unit,
    if (texUnit->CurrentTex[targetIndex] &&
        texUnit->CurrentTex[targetIndex]->Sampler.glclamp_mask !=
        texObj->Sampler.glclamp_mask)
-      ctx->NewDriverState |= ctx->DriverFlags.NewSamplersWithClamp;
+      ST_SET_STATES(ctx->NewDriverState, ctx->DriverFlags.NewSamplersWithClamp);
 
    /* If the refcount on the previously bound texture is decremented to
     * zero, it'll be deleted here.

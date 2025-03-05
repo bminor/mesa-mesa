@@ -928,8 +928,7 @@ draw_textured_quad(struct gl_context *ctx, GLint x, GLint y, GLfloat z,
    st->state.num_sampler_views[MESA_SHADER_FRAGMENT] = 0;
 
    ctx->Array.NewVertexElements = true;
-   ctx->NewDriverState |= ST_NEW_VERTEX_ARRAYS |
-                          ST_NEW_FS_SAMPLER_VIEWS;
+   ST_SET_STATE2(ctx->NewDriverState, ST_NEW_VERTEX_ARRAYS, ST_NEW_FS_SAMPLER_VIEWS);
 }
 
 
@@ -1273,7 +1272,8 @@ st_DrawPixels(struct gl_context *ctx, GLint x, GLint y,
    st_flush_bitmap_cache(st);
    st_invalidate_readpix_cache(st);
 
-   st_validate_state(st, ST_PIPELINE_META_STATE_MASK);
+   ST_PIPELINE_META_STATE_MASK(mask);
+   st_validate_state(st, mask);
 
    clippedUnpack = *unpack;
    unpack = &clippedUnpack;
@@ -1676,7 +1676,8 @@ st_CopyPixels(struct gl_context *ctx, GLint srcx, GLint srcy,
    st_flush_bitmap_cache(st);
    st_invalidate_readpix_cache(st);
 
-   st_validate_state(st, ST_PIPELINE_META_STATE_MASK);
+   ST_PIPELINE_META_STATE_MASK(mask);
+   st_validate_state(st, mask);
 
    if (blit_copy_pixels(ctx, srcx, srcy, width, height, dstx, dsty, type))
       return;

@@ -115,7 +115,7 @@ _mesa_set_draw_vao(struct gl_context *ctx, struct gl_vertex_array_object *vao)
    if (*ptr != vao) {
       _mesa_reference_vao_(ctx, ptr, vao);
       _mesa_update_edgeflag_state_vao(ctx);
-      ctx->NewDriverState |= ST_NEW_VERTEX_ARRAYS;
+      ST_SET_STATE(ctx->NewDriverState, ST_NEW_VERTEX_ARRAYS);
       ctx->Array.NewVertexElements = true;
    }
 }
@@ -163,7 +163,7 @@ _mesa_restore_draw_vao(struct gl_context *ctx,
    ctx->VertexProgram._VPModeInputFilter = saved_vp_input_filter;
 
    /* Update states. */
-   ctx->NewDriverState |= ST_NEW_VERTEX_ARRAYS;
+   ST_SET_STATE(ctx->NewDriverState, ST_NEW_VERTEX_ARRAYS);
    ctx->Array.NewVertexElements = true;
 
    /* Restore original states. */
@@ -1173,7 +1173,8 @@ _mesa_draw_arrays(struct gl_context *ctx, GLenum mode, GLint start,
    draw.start = start;
    draw.count = count;
 
-   st_prepare_draw(ctx, ST_PIPELINE_RENDER_STATE_MASK);
+   ST_PIPELINE_RENDER_STATE_MASK(mask);
+   st_prepare_draw(ctx, mask);
 
    ctx->Driver.DrawGallium(ctx, &info, ctx->DrawID, NULL, &draw, 1);
 
@@ -1479,7 +1480,8 @@ _mesa_MultiDrawArrays(GLenum mode, const GLint *first,
       draw[i].count = count[i];
    }
 
-   st_prepare_draw(ctx, ST_PIPELINE_RENDER_STATE_MASK);
+   ST_PIPELINE_RENDER_STATE_MASK(mask);
+   st_prepare_draw(ctx, mask);
 
    ctx->Driver.DrawGallium(ctx, &info, 0, NULL, draw, primcount);
 
@@ -1611,7 +1613,8 @@ _mesa_validated_drawrangeelements(struct gl_context *ctx,
       }
    }
 
-   st_prepare_draw(ctx, ST_PIPELINE_RENDER_STATE_MASK);
+   ST_PIPELINE_RENDER_STATE_MASK(mask);
+   st_prepare_draw(ctx, mask);
 
    /* Fast path for a very common DrawElements case:
     * - there are no user indices here (always true with glthread)
@@ -2115,7 +2118,8 @@ _mesa_validated_multidrawelements(struct gl_context *ctx,
          }
       }
 
-      st_prepare_draw(ctx, ST_PIPELINE_RENDER_STATE_MASK);
+      ST_PIPELINE_RENDER_STATE_MASK(mask);
+      st_prepare_draw(ctx, mask);
       if (!validate_index_bounds(ctx, &info, draw, primcount))
          return;
 
@@ -2125,7 +2129,8 @@ _mesa_validated_multidrawelements(struct gl_context *ctx,
       assert(info.has_user_indices);
       info.increment_draw_id = false;
 
-      st_prepare_draw(ctx, ST_PIPELINE_RENDER_STATE_MASK);
+      ST_PIPELINE_RENDER_STATE_MASK(mask);
+      st_prepare_draw(ctx, mask);
 
       for (int i = 0; i < primcount; i++) {
          struct pipe_draw_start_count_bias draw;
@@ -2288,7 +2293,8 @@ _mesa_DrawTransformFeedbackStreamInstanced(GLenum mode, GLuint name,
                                              primcount))
       return;
 
-   st_prepare_draw(ctx, ST_PIPELINE_RENDER_STATE_MASK);
+   ST_PIPELINE_RENDER_STATE_MASK(mask);
+   st_prepare_draw(ctx, mask);
 
    struct pipe_draw_indirect_info indirect;
    memset(&indirect, 0, sizeof(indirect));
@@ -2455,7 +2461,8 @@ _mesa_MultiDrawArraysIndirect(GLenum mode, const GLvoid *indirect,
       info.index_bias_varies = false;
       /* Packed section end. */
 
-      st_prepare_draw(ctx, ST_PIPELINE_RENDER_STATE_MASK);
+      ST_PIPELINE_RENDER_STATE_MASK(mask);
+      st_prepare_draw(ctx, mask);
 
       const uint8_t *ptr = (const uint8_t *) indirect;
       for (unsigned i = 0; i < primcount; i++) {
@@ -2569,7 +2576,8 @@ _mesa_MultiDrawElementsIndirect(GLenum mode, GLenum type,
       if (!info.index.resource)
          return;
 
-      st_prepare_draw(ctx, ST_PIPELINE_RENDER_STATE_MASK);
+      ST_PIPELINE_RENDER_STATE_MASK(mask);
+      st_prepare_draw(ctx, mask);
 
       const uint8_t *ptr = (const uint8_t *) indirect;
       for (unsigned i = 0; i < primcount; i++) {

@@ -135,7 +135,8 @@ st_DrawTex(struct gl_context *ctx, GLfloat x, GLfloat y, GLfloat z,
    st_flush_bitmap_cache(st);
    st_invalidate_readpix_cache(st);
 
-   st_validate_state(st, ST_PIPELINE_META_STATE_MASK);
+   ST_PIPELINE_META_STATE_MASK(mask);
+   st_validate_state(st, mask);
 
    /* determine if we need vertex color */
    if (ctx->FragmentProgram._Current->info.inputs_read & VARYING_BIT_COL0)
@@ -302,7 +303,7 @@ st_DrawTex(struct gl_context *ctx, GLfloat x, GLfloat y, GLfloat z,
    /* restore state */
    cso_restore_state(cso, 0);
    ctx->Array.NewVertexElements = true;
-   ctx->NewDriverState |= ST_NEW_VERTEX_ARRAYS;
+   ST_SET_STATE(ctx->NewDriverState, ST_NEW_VERTEX_ARRAYS);
 }
 
 /**

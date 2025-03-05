@@ -257,7 +257,7 @@ struct st_context
    } state;
 
    /** This masks out unused shader resources. Only valid in draw calls. */
-   uint64_t active_states;
+   st_state_bitset active_states;
 
    /**
     * The number of currently active queries (excluding timer queries).

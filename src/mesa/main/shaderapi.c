@@ -2745,7 +2745,7 @@ set_patch_vertices(struct gl_context *ctx, GLint value)
 {
    if (ctx->TessCtrlProgram.patch_vertices != value) {
       FLUSH_VERTICES(ctx, 0, GL_CURRENT_BIT);
-      ctx->NewDriverState |= ST_NEW_TESS_STATE;
+      ST_SET_STATE(ctx->NewDriverState, ST_NEW_TESS_STATE);
       ctx->TessCtrlProgram.patch_vertices = value;
    }
 }
@@ -2801,13 +2801,13 @@ _mesa_PatchParameterfv(GLenum pname, const GLfloat *values)
       FLUSH_VERTICES(ctx, 0, 0);
       memcpy(ctx->TessCtrlProgram.patch_default_outer_level, values,
              4 * sizeof(GLfloat));
-      ctx->NewDriverState |= ST_NEW_TESS_STATE;
+      ST_SET_STATE(ctx->NewDriverState, ST_NEW_TESS_STATE);
       return;
    case GL_PATCH_DEFAULT_INNER_LEVEL:
       FLUSH_VERTICES(ctx, 0, 0);
       memcpy(ctx->TessCtrlProgram.patch_default_inner_level, values,
              2 * sizeof(GLfloat));
-      ctx->NewDriverState |= ST_NEW_TESS_STATE;
+      ST_SET_STATE(ctx->NewDriverState, ST_NEW_TESS_STATE);
       return;
    default:
       _mesa_error(ctx, GL_INVALID_ENUM, "glPatchParameterfv");

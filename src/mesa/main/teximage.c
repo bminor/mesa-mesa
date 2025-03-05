@@ -6700,7 +6700,7 @@ texture_buffer_range(struct gl_context *ctx,
       }
    }
 
-   ctx->NewDriverState |= ST_NEW_SAMPLER_VIEWS;
+   ST_SET_SHADER_STATES(ctx->NewDriverState, SAMPLER_VIEWS);
 
    if (bufObj) {
       bufObj->UsageHistory |= USAGE_TEXTURE_BUFFER;

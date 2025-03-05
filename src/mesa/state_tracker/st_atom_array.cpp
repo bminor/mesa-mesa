@@ -652,7 +652,7 @@ st_update_array(struct st_context *st)
 void
 st_init_update_array(struct st_context *st)
 {
-   st_update_func_t *func = &st->update_functions[ST_NEW_VERTEX_ARRAYS_INDEX];
+   st_update_func_t *func = &st->update_functions[ST_NEW_VERTEX_ARRAYS];
 
    if (util_get_cpu_caps()->has_popcnt) {
       if (st->ctx->Const.UseVAOFastPath)

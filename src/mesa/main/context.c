@@ -697,7 +697,7 @@ init_attrib_groups(struct gl_context *ctx)
    ctx->TileRasterOrderIncreasingX = GL_TRUE;
    ctx->TileRasterOrderIncreasingY = GL_TRUE;
    ctx->NewState = _NEW_ALL;
-   ctx->NewDriverState = ST_ALL_STATES_MASK;
+   ST_SET_ALL_STATES(ctx->NewDriverState);
    ctx->ErrorValue = GL_NO_ERROR;
    ctx->ShareGroupReset = false;
    ctx->IntelBlackholeRender = debug_get_bool_option("INTEL_BLACKHOLE_DEFAULT", false);
@@ -1255,7 +1255,7 @@ _mesa_copy_context( const struct gl_context *src, struct gl_context *dst,
    /* XXX FIXME:  Call callbacks?
     */
    dst->NewState = _NEW_ALL;
-   dst->NewDriverState = ST_ALL_STATES_MASK;
+   ST_SET_ALL_STATES(dst->NewDriverState);
 }
 
 
