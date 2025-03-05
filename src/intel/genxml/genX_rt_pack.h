@@ -28,26 +28,8 @@
 #  error "The GFX_VERx10 macro must be defined"
 #endif
 
-#if (GFX_VERx10 == 40)
-/* No RT support for this gfx ver */
-#elif (GFX_VERx10 == 45)
-/* No RT support for this gfx ver */
-#elif (GFX_VERx10 == 50)
-/* No RT support for this gfx ver */
-#elif (GFX_VERx10 == 60)
-/* No RT support for this gfx ver */
-#elif (GFX_VERx10 == 70)
-/* No RT support for this gfx ver */
-#elif (GFX_VERx10 == 75)
-/* No RT support for this gfx ver */
-#elif (GFX_VERx10 == 80)
-/* No RT support for this gfx ver */
-#elif (GFX_VERx10 == 90)
-/* No RT support for this gfx ver */
-#elif (GFX_VERx10 == 110)
-/* No RT support for this gfx ver */
-#elif (GFX_VERx10 == 120)
-/* No RT support for this gfx ver */
+#if (GFX_VERx10 < 125)
+/* No RT support for those gfx ver */
 #elif (GFX_VERx10 == 125)
 #  include "genxml/gen125_rt_pack.h"
 #elif (GFX_VERx10 == 200)
