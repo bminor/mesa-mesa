@@ -26,7 +26,12 @@ from lava.utils.uart_job_definition import (
 if TYPE_CHECKING:
     from lava.lava_job_submitter import LAVAJobSubmitter
 
-from .constants import FORCE_UART, JOB_PRIORITY
+from .constants import (
+    FORCE_UART,
+    JOB_PRIORITY,
+    NUMBER_OF_ATTEMPTS_LAVA_BOOT,
+    NUMBER_OF_ATTEMPTS_LAVA_DEPLOY,
+)
 
 
 class LAVAJobDefinition:
@@ -155,8 +160,10 @@ class LAVAJobDefinition:
                 "job": {"minutes": self.job_submitter.job_timeout_min},
                 "actions": {
                     "depthcharge-retry": {
-                        # Could take between 1 and 1.5 min in slower boots
-                        "minutes": 4
+                        # Setting higher values here, to affect the subactions, namely
+                        # `bootloader-commands` and `login-action`
+                        # So this value can be higher than `depthcharge-action` timeout.
+                        "minutes": 3 * NUMBER_OF_ATTEMPTS_LAVA_DEPLOY
                     },
                     "depthcharge-action": {
                         # This timeout englobes the entire depthcharge timing,
@@ -169,9 +176,10 @@ class LAVAJobDefinition:
                         # The LAVA action that wraps it is `uboot-commands`, but we can't set a
                         # timeout for it directly, it is overridden by one third of `uboot-action`
                         # timeout.
-                        # So actually, this timeout is here to enforce that `uboot-commands`
-                        # timeout to be 100 seconds (300 sec / 3), which is more than enough.
-                        "minutes": 5
+                        # So actually, this timeout is here to enforce that `uboot-action`
+                        # timeout to be 100 seconds (uboot-action timeout /
+                        # NUMBER_OF_ATTEMPTS_LAVA_BOOT), which is more than enough.
+                        "seconds": 100 * NUMBER_OF_ATTEMPTS_LAVA_BOOT
                     },
                 },
             },

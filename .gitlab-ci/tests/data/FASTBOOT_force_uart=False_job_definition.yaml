@@ -11,13 +11,11 @@ timeouts:
     minutes: 10
   actions:
     depthcharge-retry:
-      minutes: 4
-    depthcharge-start:
-      minutes: 1
+      minutes: 6
     depthcharge-action:
-      minutes: 15
-    uboot-action:
       minutes: 5
+    uboot-action:
+      seconds: 200
 actions:
 - deploy:
     timeout:
@@ -58,13 +56,13 @@ actions:
       boot:
         url: downloads://boot.img
     namespace: dut
-    failure_retry: 3
+    failure_retry: 2
 - boot:
     timeout:
       minutes: 2
     docker:
       image: registry.gitlab.collabora.com/lava/health-check-docker
-    failure_retry: 3
+    failure_retry: 2
     method: fastboot
     prompts:
     - 'lava-shell:'

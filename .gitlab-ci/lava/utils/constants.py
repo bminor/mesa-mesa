@@ -1,7 +1,10 @@
 from os import getenv
 
 # How many attempts should be made when a timeout happen during LAVA device boot.
-NUMBER_OF_ATTEMPTS_LAVA_BOOT = int(getenv("LAVA_NUMBER_OF_ATTEMPTS_LAVA_BOOT", 3))
+NUMBER_OF_ATTEMPTS_LAVA_BOOT = int(getenv("LAVA_NUMBER_OF_ATTEMPTS_LAVA_BOOT", 2))
+# The deploy involves downloading and decompressing the kernel, modules, dtb and the overlays.
+# We should retry, to overcome network issues.
+NUMBER_OF_ATTEMPTS_LAVA_DEPLOY = int(getenv("LAVA_NUMBER_OF_ATTEMPTS_LAVA_DEPLOY", 2))
 
 
 # Supports any integers in [0, 100].

@@ -11,13 +11,11 @@ timeouts:
     minutes: 10
   actions:
     depthcharge-retry:
-      minutes: 4
-    depthcharge-start:
-      minutes: 1
+      minutes: 6
     depthcharge-action:
-      minutes: 15
-    uboot-action:
       minutes: 5
+    uboot-action:
+      seconds: 200
 actions:
 - deploy:
     timeout:
@@ -34,9 +32,9 @@ actions:
     dtb:
       url: None/my_dtb_filename.dtb
     namespace: dut
-    failure_retry: 3
+    failure_retry: 2
 - boot:
-    failure_retry: 3
+    failure_retry: 2
     method: u-boot
     prompts:
     - 'lava-shell:'
