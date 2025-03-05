@@ -613,6 +613,14 @@ static VkResult pvr_pds_descriptor_program_create_and_upload(
       };
    }
 
+   if (stage == MESA_SHADER_FRAGMENT && data->fs.meta.count > 0) {
+      program.buffers[program.buffer_count++] = (struct pvr_pds_buffer){
+         .type = PVR_BUFFER_TYPE_FS_META,
+         .size_in_dwords = data->fs.meta.count,
+         .destination = data->fs.meta.start,
+      };
+   }
+
    pds_info->entries_size_in_bytes = const_entries_size_in_bytes;
 
    pvr_pds_generate_descriptor_upload_program(&program, NULL, pds_info);
@@ -1738,6 +1746,8 @@ static void pvr_alloc_vs_varyings(pco_data *data, nir_shader *nir)
 static void pvr_alloc_fs_sysvals(pco_data *data, nir_shader *nir)
 {
    BITSET_DECLARE(system_values_read, SYSTEM_VALUE_MAX);
+   bool has_meta = false;
+
    BITSET_COPY(system_values_read, nir->info.system_values_read);
 
    gl_system_value sys_vals[] = {
@@ -1769,6 +1779,16 @@ static void pvr_alloc_fs_sysvals(pco_data *data, nir_shader *nir)
       BITSET_CLEAR(system_values_read, builtin_sys_vals[u]);
 
    assert(BITSET_IS_EMPTY(system_values_read));
+
+   if (!has_meta)
+      return;
+
+   data->fs.meta = (pco_range){
+      .start = data->common.shareds,
+      .count = 1,
+   };
+
+   ++data->common.shareds;
 }
 
 static void pvr_alloc_fs_varyings(pco_data *data, nir_shader *nir)

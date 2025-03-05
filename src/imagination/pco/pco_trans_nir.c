@@ -1381,6 +1381,13 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
       instr = trans_load_sysval(tctx, intr, dest);
       break;
 
+   case nir_intrinsic_load_fs_meta_pco:
+      return pco_mov(&tctx->b,
+                     dest,
+                     pco_ref_hwreg(tctx->shader->data.fs.meta.start,
+                                   PCO_REG_CLASS_SHARED));
+      break;
+
    case nir_intrinsic_ddx:
    case nir_intrinsic_ddx_fine:
    case nir_intrinsic_ddx_coarse:

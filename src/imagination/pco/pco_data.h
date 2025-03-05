@@ -83,6 +83,8 @@ typedef struct _pco_fs_data {
    /** On-chip input attachment formats. */
    enum pipe_format ia_formats[4];
 
+   pco_range meta;
+
    gl_frag_result z_replicate;
 
    /* Blend options. */
@@ -101,6 +103,9 @@ typedef struct _pco_fs_data {
       bool early_frag;
       bool sample_shading;
    } uses;
+
+   struct {
+   } meta_present;
 } pco_fs_data;
 
 /** PCO compute shader-specific data. */

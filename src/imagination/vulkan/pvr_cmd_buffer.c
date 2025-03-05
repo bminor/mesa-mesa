@@ -3848,6 +3848,25 @@ static VkResult pvr_setup_descriptor_mappings(
             break;
          }
 
+         case PVR_BUFFER_TYPE_FS_META: {
+            uint32_t fs_meta = 0;
+
+            struct pvr_suballoc_bo *fs_meta_bo;
+            result = pvr_cmd_buffer_upload_general(cmd_buffer,
+                                                   &fs_meta,
+                                                   sizeof(fs_meta),
+                                                   &fs_meta_bo);
+
+            if (result != VK_SUCCESS)
+               return result;
+
+            PVR_WRITE(qword_buffer,
+                      fs_meta_bo->dev_addr.addr,
+                      special_buff_entry->const_offset,
+                      pds_info->data_size_in_dwords);
+            break;
+         }
+
          default:
             UNREACHABLE("Unsupported special buffer type.");
          }

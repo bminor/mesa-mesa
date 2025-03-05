@@ -899,6 +899,7 @@ struct pvr_pds_descriptor_set {
 #define PVR_BUFFER_TYPE_POINT_SAMPLER (7)
 #define PVR_BUFFER_TYPE_IA_SAMPLER (8)
 #define PVR_BUFFER_TYPE_FRONT_FACE_OP (9)
+#define PVR_BUFFER_TYPE_FS_META (10)
 #define PVR_BUFFER_TYPE_INVALID (~0)
 
 struct pvr_pds_buffer {
