@@ -106,7 +106,7 @@ impl ProgramBuild {
         self.dev_build(dev).spirv.as_ref().unwrap().args(kernel)
     }
 
-    fn build_nirs(&mut self, is_src: bool) {
+    fn build_nirs(&mut self, devs: &[&'static Device], is_src: bool) {
         for kernel_name in &self.kernels.clone() {
             let kernel_args: HashSet<_> = self
                 .devs_with_build()
@@ -118,7 +118,7 @@ impl ProgramBuild {
             let mut kernel_info_set = HashSet::new();
 
             // TODO: we could run this in parallel?
-            for dev in self.devs_with_build() {
+            for dev in devs {
                 let build_result = convert_spirv_to_nir(self, kernel_name, &args, dev);
                 kernel_info_set.insert(build_result.kernel_info);
 
@@ -426,7 +426,7 @@ impl Program {
             kernels: kernels.into_iter().collect(),
             kernel_info: HashMap::new(),
         };
-        build.build_nirs(false);
+        build.build_nirs(&devs, false);
 
         Ok(Arc::new(Self {
             base: CLObjectBase::new(RusticlTypes::Program),
@@ -552,7 +552,7 @@ impl Program {
             .any(|b| b.kernels.values().any(|b| Arc::strong_count(b) > 1))
     }
 
-    pub fn build(&self, devs: &[&Device], options: &str) -> bool {
+    pub fn build(&self, devs: &[&'static Device], options: &str) -> bool {
         let lib = options.contains("-create-library");
         let mut info = self.build_info();
 
@@ -588,7 +588,7 @@ impl Program {
                 d.status = CL_BUILD_SUCCESS as cl_build_status;
                 let mut kernels = spirv.kernels();
                 info.kernels.append(&mut kernels);
-                info.build_nirs(self.is_src());
+                info.build_nirs(devs, self.is_src());
             } else {
                 d.status = CL_BUILD_ERROR;
                 d.bin_type = CL_PROGRAM_BINARY_TYPE_NONE;
@@ -742,7 +742,7 @@ impl Program {
         };
 
         // Pre build nir kernels
-        build.build_nirs(false);
+        build.build_nirs(devs, false);
 
         Arc::new(Self {
             base: CLObjectBase::new(RusticlTypes::Program),
