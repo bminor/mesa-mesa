@@ -32,7 +32,6 @@
 #include "pipe/p_defines.h"
 #include "pipe/p_screen.h"
 #include "nir/nir_to_tgsi.h"
-#include "vl/vl_decoder.h"
 #include "vl/vl_video_buffer.h"
 
 #include "virgl_screen.h"

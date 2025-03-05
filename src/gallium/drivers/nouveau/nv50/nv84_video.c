@@ -28,7 +28,7 @@
 #include "util/format/u_format.h"
 #include "util/u_sampler.h"
 #include "util/u_surface.h"
-#include "vl/vl_zscan.h"
+#include "util/vl_zscan_data.h"
 
 #include "nv50/nv84_video.h"
 
