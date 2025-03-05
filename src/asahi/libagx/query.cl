@@ -5,26 +5,14 @@
  * SPDX-License-Identifier: MIT
  */
 #include "compiler/libcl/libcl.h"
+#include "compiler/libcl/libcl_vk.h"
 #include "query.h"
-
-static inline void
-write_query_result(uintptr_t dst_addr, int32_t idx, bool is_64, uint64_t result)
-{
-   if (is_64) {
-      global uint64_t *out = (global uint64_t *)dst_addr;
-      out[idx] = result;
-   } else {
-      global uint32_t *out = (global uint32_t *)dst_addr;
-      out[idx] = result;
-   }
-}
 
 KERNEL(32)
 libagx_copy_query(global uint32_t *availability, global uint64_t *results,
                   global uint16_t *oq_index, uint64_t dst_addr,
-                  uint64_t dst_stride, uint32_t first_query, uint16_t partial,
-                  uint16_t _64, uint16_t with_availability,
-                  uint16_t reports_per_query)
+                  uint64_t dst_stride, uint32_t first_query,
+                  VkQueryResultFlagBits flags, uint16_t reports_per_query)
 {
    uint i = cl_global_id.x;
    uint64_t dst = dst_addr + (((uint64_t)i) * dst_stride);
@@ -36,7 +24,7 @@ libagx_copy_query(global uint32_t *availability, global uint64_t *results,
    else
       available = (results[query] != LIBAGX_QUERY_UNAVAILABLE);
 
-   if (available || partial) {
+   if (available || (flags & VK_QUERY_RESULT_PARTIAL_BIT)) {
       /* For occlusion queries, results[] points to the device global heap. We
        * need to remap indices according to the query pool's allocation.
        */
@@ -44,12 +32,12 @@ libagx_copy_query(global uint32_t *availability, global uint64_t *results,
       uint idx = result_index * reports_per_query;
 
       for (unsigned i = 0; i < reports_per_query; ++i) {
-         write_query_result(dst, i, _64, results[idx + i]);
+         vk_write_query(dst, i, flags, results[idx + i]);
       }
    }
 
-   if (with_availability) {
-      write_query_result(dst, reports_per_query, _64, available);
+   if (flags & VK_QUERY_RESULT_WITH_AVAILABILITY_BIT) {
+      vk_write_query(dst, reports_per_query, flags, available);
    }
 }
 

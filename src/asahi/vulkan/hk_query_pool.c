@@ -679,10 +679,7 @@ hk_CmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool,
       .dst_addr = hk_buffer_address(dst_buffer, dstOffset),
       .dst_stride = stride,
       .reports_per_query = hk_reports_per_query(pool),
-
-      .partial = flags & VK_QUERY_RESULT_WITH_AVAILABILITY_BIT,
-      ._64 = flags & VK_QUERY_RESULT_64_BIT,
-      .with_availability = flags & VK_QUERY_RESULT_WITH_AVAILABILITY_BIT,
+      .flags = flags,
    };
 
    libagx_copy_query_struct(cmd, agx_1d(queryCount), AGX_BARRIER_ALL, info);
