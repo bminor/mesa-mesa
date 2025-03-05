@@ -338,5 +338,6 @@ anv_fill_buffer_surface_state(struct anv_device *device,
                          .size_B = range,
                          .format = format,
                          .swizzle = swizzle,
-                         .stride_B = stride);
+                         .stride_B = stride,
+                         .usage = usage);
 }

@@ -2524,7 +2524,8 @@ anv_descriptor_set_write_buffer(struct anv_device *device,
                             .size_B = desc->bind_range,
                             .format = format,
                             .swizzle = ISL_SWIZZLE_IDENTITY,
-                            .stride_B = 1);
+                            .stride_B = 1,
+                            .usage = usage);
    }
 
    if (vk_descriptor_type_is_dynamic(type))
@@ -3092,7 +3093,8 @@ void anv_GetDescriptorEXT(
                                .size_B = range,
                                .format = format,
                                .swizzle = ISL_SWIZZLE_IDENTITY,
-                               .stride_B = 1);
+                               .stride_B = 1,
+                               .usage = usage);
       } else {
          memcpy(pDescriptor, device->host_null_surface_state,
                 ANV_SURFACE_STATE_SIZE);

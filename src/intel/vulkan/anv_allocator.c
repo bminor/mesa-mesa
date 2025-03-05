@@ -1435,7 +1435,8 @@ anv_scratch_pool_get_surf(struct anv_device *device,
                          .format = ISL_FORMAT_RAW,
                          .swizzle = ISL_SWIZZLE_IDENTITY,
                          .stride_B = per_thread_scratch,
-                         .is_scratch = true);
+                         .is_scratch = true,
+                         .usage = usage);
 
    uint32_t current = p_atomic_cmpxchg(&pool->surfs[scratch_size_log2],
                                        0, state.offset);
