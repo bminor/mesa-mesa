@@ -19,7 +19,6 @@
 #include "util/u_simple_shaders.h"
 #include "util/u_upload_mgr.h"
 #include "util/u_math.h"
-#include "vl/vl_decoder.h"
 #include "vl/vl_video_buffer.h"
 #include "radeon_video.h"
 #include "radeon_uvd.h"
@@ -160,9 +159,6 @@ static struct pipe_context *r600_create_context(struct pipe_screen *screen,
 	if (rscreen->b.info.ip[AMD_IP_UVD].num_queues) {
 		rctx->b.b.create_video_codec = r600_uvd_create_decoder;
 		rctx->b.b.create_video_buffer = r600_video_buffer_create;
-	} else {
-		rctx->b.b.create_video_codec = vl_create_decoder;
-		rctx->b.b.create_video_buffer = vl_video_buffer_create;
 	}
 
 	if (getenv("R600_TRACE"))

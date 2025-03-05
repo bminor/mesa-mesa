@@ -16,7 +16,6 @@
 #include "util/u_video.h"
 
 #include "vl/vl_defines.h"
-#include "vl/vl_mpeg12_decoder.h"
 
 #include "r600_pipe.h"
 #include "radeon_video.h"
