@@ -2112,6 +2112,9 @@ tu_pipeline_builder_parse_libraries(struct tu_pipeline_builder *builder,
       if (library->base.bandwidth.valid)
          pipeline->bandwidth = library->base.bandwidth;
 
+      if (library->base.disable_fs.valid)
+         pipeline->disable_fs = library->base.disable_fs;
+
       pipeline->set_state_mask |= library->base.set_state_mask;
 
       u_foreach_bit (i, library->base.set_state_mask) {
@@ -2903,6 +2906,52 @@ tu_calc_bandwidth(struct tu_bandwidth *bandwidth,
    bandwidth->valid = true;
 }
 
+static const enum mesa_vk_dynamic_graphics_state tu_disable_fs_state[] = {
+   MESA_VK_DYNAMIC_CB_ATTACHMENT_COUNT,
+   MESA_VK_DYNAMIC_CB_COLOR_WRITE_ENABLES,
+   MESA_VK_DYNAMIC_CB_WRITE_MASKS,
+   MESA_VK_DYNAMIC_MS_ALPHA_TO_COVERAGE_ENABLE,
+};
+
+static bool
+tu_calc_disable_fs(const struct vk_color_blend_state *cb,
+                   const struct vk_render_pass_state *rp,
+                   bool alpha_to_coverage_enable,
+                   const struct tu_shader *fs)
+{
+   if (alpha_to_coverage_enable)
+      return false;
+   if (fs && !fs->variant->writes_only_color)
+      return false;
+
+   bool has_enabled_attachments = false;
+   for (unsigned i = 0; i < cb->attachment_count; i++) {
+      if (rp->color_attachment_formats[i] == VK_FORMAT_UNDEFINED)
+         continue;
+
+      const struct vk_color_blend_attachment_state *att = &cb->attachments[i];
+      if ((cb->color_write_enables & (1u << i)) && att->write_mask != 0) {
+         has_enabled_attachments = true;
+         break;
+      }
+   }
+
+   return !fs || fs->variant->empty ||
+          (fs->variant->writes_only_color && !has_enabled_attachments);
+}
+
+static void
+tu_emit_disable_fs(struct tu_disable_fs *disable_fs,
+                   const struct vk_color_blend_state *cb,
+                   const struct vk_render_pass_state *rp,
+                   bool alpha_to_coverage_enable,
+                   const struct tu_shader *fs)
+{
+   disable_fs->disable_fs =
+      tu_calc_disable_fs(cb, rp, alpha_to_coverage_enable, fs);
+   disable_fs->valid = true;
+}
+
 /* Return true if the blend state reads the color attachments. */
 static bool
 tu6_calc_blend_lrz(const struct vk_color_blend_state *cb,
@@ -3124,14 +3173,14 @@ uint32_t
 tu6_rast_size(struct tu_device *dev,
               const struct vk_rasterization_state *rs,
               const struct vk_viewport_state *vp,
-              const struct tu_shader *fs,
               bool multiview,
-              bool per_view_viewport)
+              bool per_view_viewport,
+              bool disable_fs)
 {
    if (CHIP == A6XX) {
       return 15 + (dev->physical_device->info->a6xx.has_legacy_pipeline_shading_rate ? 8 : 0);
    } else {
-      return 25;
+      return 27;
    }
 }
 
@@ -3140,9 +3189,9 @@ void
 tu6_emit_rast(struct tu_cs *cs,
               const struct vk_rasterization_state *rs,
               const struct vk_viewport_state *vp,
-              const struct tu_shader *fs,
               bool multiview,
-              bool per_view_viewport)
+              bool per_view_viewport,
+              bool disable_fs)
 {
    enum a5xx_line_mode line_mode =
       rs->line.mode == VK_LINE_RASTERIZATION_MODE_BRESENHAM_KHR ?
@@ -3205,14 +3254,14 @@ tu6_emit_rast(struct tu_cs *cs,
        *  "The GPU has a special mode that writes Z-only pixels at twice
        *   the normal rate."
        */
-      bool disable_fs = !fs || fs->variant->empty;
-
       tu_cs_emit_regs(cs, RB_RENDER_CNTL(CHIP,
             .fs_disable = disable_fs,
             .raster_mode = TYPE_TILED,
             .raster_direction = LR_TB,
             .conservativerasen = conservative_ras_en));
       tu_cs_emit_regs(cs, A7XX_GRAS_SU_RENDER_CNTL(.fs_disable = disable_fs));
+      tu_cs_emit_regs(cs, A7XX_HLSQ_FS_UNKNOWN_A9AA(.fs_disable = disable_fs));
+
       tu_cs_emit_regs(cs,
                       A6XX_PC_DGEN_SU_CONSERVATIVE_RAS_CNTL(conservative_ras_en));
 
@@ -3628,6 +3677,13 @@ tu_pipeline_builder_emit_state(struct tu_pipeline_builder *builder,
    if (EMIT_STATE(bandwidth, attachments_valid))
       tu_calc_bandwidth(&pipeline->bandwidth, cb,
                         builder->graphics_state.rp);
+   if (EMIT_STATE(
+          disable_fs,
+          attachments_valid && pipeline_contains_all_shader_state(pipeline)))
+      tu_emit_disable_fs(&pipeline->disable_fs, cb,
+                         builder->graphics_state.rp,
+                         builder->graphics_state.ms->alpha_to_coverage_enable,
+                         pipeline->shaders[MESA_SHADER_FRAGMENT]);
    DRAW_STATE(blend_constants, TU_DYNAMIC_STATE_BLEND_CONSTANTS, cb);
 
    if (attachments_valid &&
@@ -3646,12 +3702,12 @@ tu_pipeline_builder_emit_state(struct tu_pipeline_builder *builder,
       BITSET_CLEAR(remove, MESA_VK_DYNAMIC_CB_BLEND_CONSTANTS);
    }
    DRAW_STATE_COND(rast, TU_DYNAMIC_STATE_RAST,
-                   pipeline_contains_all_shader_state(pipeline),
-                   builder->graphics_state.rs,
-                   builder->graphics_state.vp,
-                   pipeline->shaders[MESA_SHADER_FRAGMENT],
+                   pipeline_contains_all_shader_state(pipeline) &&
+                      pipeline->disable_fs.valid,
+                   builder->graphics_state.rs, builder->graphics_state.vp,
                    builder->graphics_state.rp->view_mask != 0,
-                   pipeline->program.per_view_viewport);
+                   pipeline->program.per_view_viewport,
+                   pipeline->disable_fs.disable_fs);
    DRAW_STATE_COND(ds, TU_DYNAMIC_STATE_DS,
               attachments_valid,
               builder->graphics_state.ds,
@@ -3866,6 +3922,21 @@ tu_emit_draw_state(struct tu_cmd_buffer *cmd)
        (EMIT_STATE(bandwidth) || (cmd->state.dirty & TU_CMD_DIRTY_SUBPASS)))
       tu_calc_bandwidth(&cmd->state.bandwidth, &cmd->vk.dynamic_graphics_state.cb,
                         &cmd->state.vk_rp);
+
+   if (!cmd->state.pipeline_disable_fs &&
+       (EMIT_STATE(disable_fs) ||
+        (cmd->state.dirty & TU_CMD_DIRTY_SUBPASS))) {
+      bool disable_fs = tu_calc_disable_fs(
+         &cmd->vk.dynamic_graphics_state.cb, &cmd->state.vk_rp,
+         cmd->vk.dynamic_graphics_state.ms.alpha_to_coverage_enable,
+         cmd->state.shaders[MESA_SHADER_FRAGMENT]);
+
+      if (disable_fs != cmd->state.disable_fs) {
+         cmd->state.disable_fs = disable_fs;
+         cmd->state.dirty |= TU_CMD_DIRTY_DISABLE_FS;
+      }
+   }
+
    DRAW_STATE(blend_constants, VK_DYNAMIC_STATE_BLEND_CONSTANTS,
               &cmd->vk.dynamic_graphics_state.cb);
 
@@ -3882,12 +3953,12 @@ tu_emit_draw_state(struct tu_cmd_buffer *cmd)
    DRAW_STATE_COND(rast, TU_DYNAMIC_STATE_RAST,
                    cmd->state.dirty & (TU_CMD_DIRTY_SUBPASS |
                                        TU_CMD_DIRTY_PER_VIEW_VIEWPORT |
-                                       TU_CMD_DIRTY_FS),
+                                       TU_CMD_DIRTY_DISABLE_FS),
                    &cmd->vk.dynamic_graphics_state.rs,
                    &cmd->vk.dynamic_graphics_state.vp,
-                   cmd->state.shaders[MESA_SHADER_FRAGMENT],
                    cmd->state.vk_rp.view_mask != 0,
-                   cmd->state.per_view_viewport);
+                   cmd->state.per_view_viewport,
+                   cmd->state.disable_fs);
    DRAW_STATE_COND(ds, TU_DYNAMIC_STATE_DS,
               cmd->state.dirty & TU_CMD_DIRTY_SUBPASS,
               &cmd->vk.dynamic_graphics_state.ds,

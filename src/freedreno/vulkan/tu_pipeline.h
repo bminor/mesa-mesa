@@ -52,6 +52,12 @@ struct tu_bandwidth
    bool valid;
 };
 
+struct tu_disable_fs
+{
+   bool disable_fs;
+   bool valid;
+};
+
 struct tu_nir_shaders
 {
    struct vk_pipeline_cache_object base;
@@ -171,6 +177,7 @@ struct tu_pipeline
 
    struct tu_lrz_blend lrz_blend;
    struct tu_bandwidth bandwidth;
+   struct tu_disable_fs disable_fs;
 
    void *executables_mem_ctx;
    /* tu_pipeline_executable */

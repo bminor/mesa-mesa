@@ -3946,6 +3946,14 @@ tu_CmdBindPipeline(VkCommandBuffer commandBuffer,
    }
    cmd->state.pipeline_blend_lrz = pipeline->lrz_blend.valid;
 
+   if (pipeline->disable_fs.valid) {
+      if (cmd->state.disable_fs != pipeline->disable_fs.disable_fs) {
+         cmd->state.disable_fs = pipeline->disable_fs.disable_fs;
+         cmd->state.dirty |= TU_CMD_DIRTY_DISABLE_FS;
+      }
+   }
+   cmd->state.pipeline_disable_fs = pipeline->disable_fs.valid;
+
    if (pipeline->bandwidth.valid)
       cmd->state.bandwidth = pipeline->bandwidth;
    cmd->state.pipeline_bandwidth = pipeline->bandwidth.valid;
@@ -5804,7 +5812,7 @@ tu6_build_depth_plane_z_mode(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
       zmode = A6XX_EARLY_Z;
 
    /* FS bypass requires early Z */
-   if (fs->variant->empty)
+   if (cmd->state.disable_fs)
       zmode = A6XX_EARLY_Z;
 
    tu_cs_emit_pkt4(cs, REG_A6XX_GRAS_SU_DEPTH_PLANE_CNTL, 1);
