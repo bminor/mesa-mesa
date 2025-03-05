@@ -122,7 +122,8 @@ panvk_meta_cmd_bind_map_buffer(struct vk_command_buffer *cmd,
    if (!mem.gpu)
       return VK_ERROR_OUT_OF_DEVICE_MEMORY;
 
-   buffer->dev_addr = mem.gpu;
+   assert(buffer->vk.device_address == 0);
+   buffer->vk.device_address = mem.gpu;
    *map_out = mem.cpu;
    return VK_SUCCESS;
 }

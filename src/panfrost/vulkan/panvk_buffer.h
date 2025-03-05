@@ -15,8 +15,6 @@ struct panvk_priv_bo;
 struct panvk_buffer {
    struct vk_buffer vk;
 
-   uint64_t dev_addr;
-
    /* TODO: See if we can rework the synchronization logic so we don't need to
     * pass BOs around.
     */
@@ -38,17 +36,17 @@ VK_DEFINE_NONDISP_HANDLE_CASTS(panvk_buffer, vk.base, VkBuffer,
 static inline uint64_t
 panvk_buffer_gpu_ptr(const struct panvk_buffer *buffer, uint64_t offset)
 {
-   if (!buffer->dev_addr)
+   if (!buffer->vk.device_address)
       return 0;
 
-   return buffer->dev_addr + offset;
+   return vk_buffer_address(&buffer->vk, offset);
 }
 
 static inline uint64_t
 panvk_buffer_range(const struct panvk_buffer *buffer, uint64_t offset,
                    uint64_t range)
 {
-   if (!buffer->dev_addr)
+   if (!buffer->vk.device_address)
       return 0;
 
    return vk_buffer_range(&buffer->vk, offset, range);
