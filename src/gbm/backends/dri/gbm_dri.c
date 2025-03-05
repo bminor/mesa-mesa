@@ -43,7 +43,7 @@
 
 #include "mesa_interface.h"
 #include "gbm_driint.h"
-#include "gbmint.h"
+#include <gbm_backend_abi.h>
 #include "loader_dri_helper.h"
 #include "kopper_interface.h"
 #include "loader.h"

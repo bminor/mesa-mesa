@@ -25,7 +25,7 @@
 #include <dlfcn.h>
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
-#include "gbm/main/gbm.h"
+#include <gbm.h>
 #include "drm-uapi/drm_fourcc.h"
 
 #define EGL_PLATFORM_GBM_MESA             0x31D7

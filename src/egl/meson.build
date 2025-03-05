@@ -108,9 +108,8 @@ if with_dri
   endif
   if with_gbm and not with_platform_android
     files_egl += files('drivers/dri2/platform_drm.c')
-    link_for_egl += libgbm
-    incs_for_egl += [inc_gbm, include_directories('../gbm/main')]
-    deps_for_egl += dep_libdrm
+    incs_for_egl += [include_directories('../gbm/backends/dri')]
+    deps_for_egl += [dep_libdrm, dep_gbm]
   endif
   if with_platform_wayland
     deps_for_egl += [dep_wayland_client, dep_wayland_server, dep_wayland_egl_headers]

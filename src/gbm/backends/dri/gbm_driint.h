@@ -31,7 +31,7 @@
 #include <xf86drm.h>
 #include <string.h>
 #include <sys/mman.h>
-#include "gbmint.h"
+#include <gbm_backend_abi.h>
 #include "c11/threads.h"
 
 #include <GL/gl.h> /* mesa_interface needs GL types */

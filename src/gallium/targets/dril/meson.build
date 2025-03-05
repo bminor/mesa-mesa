@@ -51,10 +51,10 @@ dril_dri = shared_library(
   link_depends : dril_link_depends,
   link_with : [
     libgallium,
-    libgbm,
   ],
   dependencies : [
     idep_mesautil,
+    dep_gbm,
   ],
   # Will be deleted during installation, see install_megadrivers.py
   install : true,

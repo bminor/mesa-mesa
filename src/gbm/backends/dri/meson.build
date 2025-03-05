@@ -11,10 +11,10 @@ endif
 shared_library(
   'dri_gbm',
   files('gbm_dri.c', 'gbm_driint.h'),
-  include_directories : [incs_gbm, incs_gbm_dri, inc_st_dri, inc_gallium_aux],
+  include_directories : [inc_gallium, incs_gbm_dri, inc_loader, inc_st_dri, inc_gallium_aux],
   link_args : [ld_args_gc_sections],
   link_with : [libloader, libgallium_dri],
-  dependencies : [deps_gbm_dri, dep_dl, dep_libdrm, idep_mesautil, idep_xmlconfig],
+  dependencies : [deps_gbm_dri, dep_dl, dep_gbm, dep_libdrm, idep_mesautil, idep_xmlconfig],
   gnu_symbol_visibility : 'hidden',
   install : true,
   install_dir: join_paths(get_option('libdir'), 'gbm'),

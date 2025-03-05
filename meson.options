@@ -331,6 +331,13 @@ option(
 )
 
 option(
+  'libgbm-external',
+  type: 'boolean',
+  value: false,
+  description: 'Whether to use external libgbm (default: use in-tree copy)'
+)
+
+option(
   'gbm-backends-path',
   type : 'string',
   value : '',

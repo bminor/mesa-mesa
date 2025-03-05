@@ -2365,7 +2365,7 @@ summary(egl_summary, section: 'EGL', bool_yn: true, list_sep: ' ')
 
 gbm_summary = {'Enabled': with_gbm}
 if with_gbm
-  gbm_summary += {'Backends path': gbm_backends_path}
+  gbm_summary += {'External libgbm': get_option('libgbm-external'), 'Backends path': gbm_backends_path}
 endif
 summary(gbm_summary, section: 'GBM', bool_yn: true, list_sep: ' ')
 
