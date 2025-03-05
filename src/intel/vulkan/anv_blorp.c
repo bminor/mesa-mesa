@@ -494,30 +494,16 @@ end_main_rcs_cmd_buffer_done(struct anv_cmd_buffer *cmd_buffer,
 static bool
 anv_blorp_blitter_execute_on_companion(struct anv_cmd_buffer *cmd_buffer,
                                        struct anv_image *image,
-                                       const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo,
-                                       const VkCopyImageToBufferInfo2* pCopyImageToBufferInfo)
+                                       uint32_t region_count,
+                                       const VkBufferImageCopy2* regions)
 {
    if (!anv_cmd_buffer_is_blitter_queue(cmd_buffer))
       return false;
 
-   assert((pCopyBufferToImageInfo && !pCopyImageToBufferInfo) ||
-          (pCopyImageToBufferInfo && !pCopyBufferToImageInfo));
-
    bool blorp_execute_on_companion = false;
-   VkImageAspectFlags aspect_mask = VK_IMAGE_ASPECT_NONE;
-   const uint32_t region_count = pCopyBufferToImageInfo ?
-                                 pCopyBufferToImageInfo->regionCount :
-                                 pCopyImageToBufferInfo->regionCount;
 
-   for (unsigned r = 0; r < region_count &&
-                            !blorp_execute_on_companion; r++) {
-      if (pCopyBufferToImageInfo) {
-         aspect_mask =
-            pCopyBufferToImageInfo->pRegions[r].imageSubresource.aspectMask;
-      } else {
-         aspect_mask =
-            pCopyImageToBufferInfo->pRegions[r].imageSubresource.aspectMask;
-      }
+   for (unsigned r = 0; r < region_count && !blorp_execute_on_companion; r++) {
+      VkImageAspectFlags aspect_mask = regions[r].imageSubresource.aspectMask;
 
       enum isl_format linear_format =
          anv_get_isl_format(cmd_buffer->device->physical, image->vk.format,
@@ -758,7 +744,8 @@ void anv_CmdCopyBufferToImage2(
     */
    blorp_execute_on_companion |=
       anv_blorp_blitter_execute_on_companion(cmd_buffer, dst_image,
-                                             pCopyBufferToImageInfo, NULL);
+                                             pCopyBufferToImageInfo->regionCount,
+                                             pCopyBufferToImageInfo->pRegions);
 
    if (blorp_execute_on_companion) {
       rcs_done = record_main_rcs_cmd_buffer_done(cmd_buffer);
@@ -847,8 +834,9 @@ void anv_CmdCopyImageToBuffer2(
     * component formats are not supported natively except 96bpb on the blitter.
     */
    blorp_execute_on_companion |=
-      anv_blorp_blitter_execute_on_companion(cmd_buffer, src_image, NULL,
-                                             pCopyImageToBufferInfo);
+      anv_blorp_blitter_execute_on_companion(cmd_buffer, src_image,
+                                             pCopyImageToBufferInfo->regionCount,
+                                             pCopyImageToBufferInfo->pRegions);
 
    if (blorp_execute_on_companion) {
       rcs_done = record_main_rcs_cmd_buffer_done(cmd_buffer);
