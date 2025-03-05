@@ -12,6 +12,7 @@ class LogSectionType(Enum):
     UNKNOWN = auto()
     LAVA_SUBMIT = auto()
     LAVA_QUEUE = auto()
+    LAVA_DEPLOY = auto()
     LAVA_BOOT = auto()
     TEST_DUT_SUITE = auto()
     TEST_SUITE = auto()
@@ -27,13 +28,17 @@ LAVA_SUBMIT_TIMEOUT = int(getenv("LAVA_SUBMIT_TIMEOUT", 5))
 # aggressively for pre-merge.
 LAVA_QUEUE_TIMEOUT = int(getenv("LAVA_QUEUE_TIMEOUT", 60))
 
-# Empirically, successful device boot in LAVA time takes less than 3
-# minutes.
-# LAVA itself is configured to attempt thrice to boot the device,
-# summing up to 9 minutes.
+# How long should we wait for a device to be deployed?
+# The deploy involves downloading and decompressing the kernel, modules, dtb and the overlays.
+# We should retry, to overcome network issues.
+LAVA_DEPLOY_TIMEOUT = int(getenv("LAVA_DEPLOY_TIMEOUT", 5))
+
+# Empirically, successful device deploy+boot in LAVA time takes less than 3 minutes.
+# LAVA itself is configured to attempt `failure_retry` times (NUMBER_OF_ATTEMPTS_LAVA_BOOT) to boot
+# the device.
 # It is better to retry the boot than cancel the job and re-submit to avoid
 # the enqueue delay.
-LAVA_BOOT_TIMEOUT = int(getenv("LAVA_BOOT_TIMEOUT", 9))
+LAVA_BOOT_TIMEOUT = int(getenv("LAVA_BOOT_TIMEOUT", 5))
 
 # Estimated overhead in minutes for a job from GitLab to reach the test phase,
 # including LAVA scheduling and boot duration
@@ -59,6 +64,7 @@ FALLBACK_GITLAB_SECTION_TIMEOUT = timedelta(minutes=10)
 DEFAULT_GITLAB_SECTION_TIMEOUTS = {
     LogSectionType.LAVA_SUBMIT: timedelta(minutes=LAVA_SUBMIT_TIMEOUT),
     LogSectionType.LAVA_QUEUE: timedelta(minutes=LAVA_QUEUE_TIMEOUT),
+    LogSectionType.LAVA_DEPLOY: timedelta(minutes=LAVA_DEPLOY_TIMEOUT),
     LogSectionType.LAVA_BOOT: timedelta(minutes=LAVA_BOOT_TIMEOUT),
     LogSectionType.TEST_DUT_SUITE: timedelta(minutes=LAVA_TEST_DUT_SUITE_TIMEOUT),
     LogSectionType.TEST_SUITE: timedelta(minutes=LAVA_TEST_SUITE_TIMEOUT),
@@ -102,6 +108,14 @@ class LogSection:
 
 
 LOG_SECTIONS = (
+    LogSection(
+        regex=re.compile(r"start: 2 (\S+) \(timeout ([^)]+)\).*"),
+        levels=("info"),
+        section_id="{}",
+        section_header="Booting via {}",
+        section_type=LogSectionType.LAVA_BOOT,
+        collapsed=True,
+    ),
     LogSection(
         regex=re.compile(r"<?STARTTC>? ([^>]*)"),
         levels=("target", "debug"),

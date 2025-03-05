@@ -6,6 +6,7 @@ from ruamel.yaml import YAML
 from os import getenv
 
 from lava.utils.lava_farm import get_lava_farm
+from lava.utils.log_section import LAVA_DEPLOY_TIMEOUT
 from lava.utils.ssh_job_definition import (
     generate_docker_test,
     generate_dut_test,
@@ -25,7 +26,7 @@ from lava.utils.uart_job_definition import (
 if TYPE_CHECKING:
     from lava.lava_job_submitter import LAVAJobSubmitter
 
-from .constants import FORCE_UART, JOB_PRIORITY, NUMBER_OF_ATTEMPTS_LAVA_BOOT
+from .constants import FORCE_UART, JOB_PRIORITY
 
 
 class LAVAJobDefinition:
@@ -160,8 +161,7 @@ class LAVAJobDefinition:
                     "depthcharge-action": {
                         # This timeout englobes the entire depthcharge timing,
                         # including retries
-                        "minutes": 5
-                        * NUMBER_OF_ATTEMPTS_LAVA_BOOT,
+                        "minutes": LAVA_DEPLOY_TIMEOUT
                     },
                     "uboot-action": {
                         # For rockchip DUTs, U-Boot auto-login action downloads the kernel and
