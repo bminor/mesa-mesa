@@ -35,6 +35,9 @@
 extern "C" {
 #endif
 
+
+#define BLORP_INLINE_PARAM_THREAD_GROUP_ID_Z_DIMENSION (0)
+
 void blorp_init(struct blorp_context *blorp, void *driver_ctx,
                 struct isl_device *isl_dev, const struct blorp_config *config);
 

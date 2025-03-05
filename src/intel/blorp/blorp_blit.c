@@ -110,7 +110,7 @@ blorp_blit_get_cs_dst_coords(nir_builder *b,
       coord = nir_isub(b, coord, nir_load_var(b, v->v_dst_offset));
 
    assert(!key->persample_msaa_dispatch);
-   return nir_trim_vector(b, coord, 2);
+   return nir_trim_vector(b, coord, key->dst_samples > 1 ? 3 : 2);
 }
 
 /**
@@ -1183,6 +1183,11 @@ blorp_build_nir_shader(struct blorp_context *blorp,
                            const struct blorp_blit_prog_key *key)
 {
    const struct intel_device_info *devinfo = blorp->isl_dev->info;
+
+   /* Compute MSAA is only available on Gfx30+ */
+   if (key->base.shader_pipeline == BLORP_SHADER_PIPELINE_COMPUTE)
+      assert(key->dst_samples == 1 || devinfo->ver >= 30);
+
    nir_def *src_pos, *dst_pos, *color;
 
    /* Sanity checks */
@@ -1479,12 +1484,30 @@ blorp_build_nir_shader(struct blorp_context *blorp,
 
    if (compute) {
       nir_def *store_pos = nir_load_global_invocation_id(&b, 32);
+
+      /* Load sample index for MSAA image store */
+      nir_def *sample_idx = nir_imm_int(&b, 0);
+
+      if (key->dst_samples > 1) {
+         nir_def *num_layers_data =
+            nir_load_inline_data_intel(&b, 1, 32,
+               .base = BLORP_INLINE_PARAM_THREAD_GROUP_ID_Z_DIMENSION);
+
+         nir_def *z_pos = nir_umod(&b, nir_channel(&b, store_pos, 2),
+                                   num_layers_data);
+         sample_idx = nir_idiv(&b, nir_channel(&b, store_pos, 2),
+                               num_layers_data);
+
+         store_pos = nir_vector_insert_imm(&b, store_pos, z_pos, 2);
+      }
       nir_image_store(&b, nir_imm_int(&b, 0),
                       nir_pad_vector_imm_int(&b, store_pos, 0, 4),
-                      nir_imm_int(&b, 0),
+                      sample_idx,
                       nir_pad_vector_imm_int(&b, color, 0, 4),
                       nir_imm_int(&b, 0),
-                      .image_dim = GLSL_SAMPLER_DIM_2D,
+                      .image_dim = key->dst_samples > 1 ?
+                                   GLSL_SAMPLER_DIM_MS:
+                                   GLSL_SAMPLER_DIM_2D,
                       .image_array = true,
                       .access = ACCESS_NON_READABLE);
    } else if (key->dst_usage == ISL_SURF_USAGE_RENDER_TARGET_BIT) {
@@ -1566,7 +1589,7 @@ blorp_get_blit_kernel_cs(struct blorp_batch *batch,
    nir->info.name = ralloc_strdup(nir, "BLORP-gpgpu-blit");
    blorp_set_cs_dims(nir, prog_key->local_y);
 
-   assert(prog_key->rt_samples == 1);
+   assert(batch->blorp->isl_dev->info->ver >= 30 || prog_key->rt_samples == 1);
 
    const struct blorp_program p =
       blorp_compile_cs(blorp, mem_ctx, nir);
@@ -2436,10 +2459,8 @@ blorp_blit_supports_compute(struct blorp_context *blorp,
                             const struct isl_surf *dst_surf,
                             enum isl_aux_usage dst_aux_usage)
 {
-   /* Our compiler doesn't currently support typed image writes with MSAA.
-    * Also, our BLORP compute shaders don't handle multisampling cases.
-    */
-   if (dst_surf->samples > 1 || src_surf->samples > 1)
+   /* Platforms < Xe3 doesn't support typed image writes with MSAA. */
+   if (blorp->isl_dev->info->ver < 30 && dst_surf->samples > 1)
       return false;
 
    if (blorp->isl_dev->info->ver >= 12) {

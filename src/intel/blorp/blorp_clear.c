@@ -169,12 +169,27 @@ blorp_params_get_clear_kernel_cs(struct blorp_batch *batch,
 
    nir_push_if(&b, in_bounds);
 
+   nir_def *sample_idx = nir_imm_int(&b, 0);
+
+   /* Strip sample index from the coord since we are going to send it
+    * separately and include that later in coord as 4th component in
+    * lower_image_sample_index_in_coord lowering pass.
+    */
+   if (blorp->isl_dev->info->ver >= 30 && params->num_samples > 1) {
+      sample_idx = nir_channel(&b, dst_pos, 2);
+      dst_pos = nir_vec3(&b, nir_channel(&b, dst_pos, 0),
+                         nir_channel(&b, dst_pos, 1),
+                         nir_imm_int(&b, 0));
+   }
+
    nir_image_store(&b, nir_imm_int(&b, 0),
                    nir_pad_vector_imm_int(&b, dst_pos, 0, 4),
-                   nir_imm_int(&b, 0),
+                   sample_idx,
                    nir_pad_vector_imm_int(&b, color, 0, 4),
                    nir_imm_int(&b, 0),
-                   .image_dim = GLSL_SAMPLER_DIM_2D,
+                   .image_dim = params->num_samples > 1 ?
+                                GLSL_SAMPLER_DIM_MS :
+                                GLSL_SAMPLER_DIM_2D,
                    .image_array = true,
                    .access = ACCESS_NON_READABLE);
 

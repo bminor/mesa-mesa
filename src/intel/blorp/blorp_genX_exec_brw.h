@@ -1727,7 +1727,7 @@ blorp_exec_compute(struct blorp_batch *batch, const struct blorp_params *params)
    uint32_t group_x1 = DIV_ROUND_UP(params->x1, cs_prog_data->local_size[0]);
    uint32_t group_y1 = DIV_ROUND_UP(params->y1, cs_prog_data->local_size[1]);
    assert(params->num_layers >= 1);
-   uint32_t group_z1 = params->dst.z_offset + params->num_layers;
+   uint32_t group_z1 = params->num_samples * params->num_layers;
    assert(cs_prog_data->local_size[2] == 1);
 
 #if GFX_VERx10 >= 125
@@ -1790,6 +1790,14 @@ blorp_exec_compute(struct blorp_batch *batch, const struct blorp_params *params)
 
       .IndirectDataStartAddress       = push_const_offset,
       .IndirectDataLength             = push_const_size,
+
+      /* Send number of layers as inline register parameter to copy 2D MSAA
+       * array image/texture properly.
+       */
+      .EmitInlineParameter            = true,
+      .InlineData                     = {
+         [BLORP_INLINE_PARAM_THREAD_GROUP_ID_Z_DIMENSION / 4 + 0] = params->num_layers,
+      },
 
 #if GFX_VERx10 >= 125
       .GenerateLocalID                = cs_prog_data->generate_local_id != 0,
