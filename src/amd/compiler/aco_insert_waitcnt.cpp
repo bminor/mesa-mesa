@@ -575,16 +575,6 @@ kill(wait_imm& imm, depctr_wait& depctr, Instruction* instr, wait_ctx& ctx,
       force_waitcnt(ctx, imm);
    }
 
-   /* sendmsg(dealloc_vgprs) releases scratch, so this isn't safe if there is a in-progress
-    * scratch store.
-    */
-   if (ctx.gfx_level >= GFX11 && instr->opcode == aco_opcode::s_sendmsg &&
-       instr->salu().imm == sendmsg_dealloc_vgprs) {
-      barrier_info& bar = ctx.bar[barrier_info_release_dep];
-      imm.combine(bar.imm[ffs(storage_scratch) - 1]);
-      imm.combine(bar.imm[ffs(storage_vgpr_spill) - 1]);
-   }
-
    check_instr(ctx, imm, instr);
 
    if (instr->opcode == aco_opcode::ds_ordered_count &&

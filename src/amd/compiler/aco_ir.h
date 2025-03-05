@@ -2440,7 +2440,6 @@ void spill(Program* program);
 void insert_waitcnt(Program* program);
 void insert_delay_alu(Program* program);
 void combine_delay_alu(Program* program);
-bool dealloc_vgprs(Program* program);
 void insert_NOPs(Program* program);
 void form_hard_clauses(Program* program);
 unsigned emit_program(Program* program, std::vector<uint32_t>& code,

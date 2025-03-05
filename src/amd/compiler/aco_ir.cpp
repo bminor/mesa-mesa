@@ -1658,32 +1658,6 @@ depctr_wait::pack() const
 }
 
 bool
-dealloc_vgprs(Program* program)
-{
-   if (program->gfx_level < GFX11)
-      return false;
-
-   /* If we insert the sendmsg on GFX11.5, the export priority workaround will require us to insert
-    * a wait after exports. There might still be pending VMEM stores for PS parameter exports,
-    * except NGG lowering usually inserts a memory barrier. This means there is unlikely to be any
-    * pending VMEM stores or exports if we insert the sendmsg for these stages. */
-   if (program->gfx_level == GFX11_5 && (program->stage.hw == AC_HW_NEXT_GEN_GEOMETRY_SHADER ||
-                                         program->stage.hw == AC_HW_PIXEL_SHADER))
-      return false;
-
-   Block& block = program->blocks.back();
-
-   /* don't bother checking if there is a pending VMEM store or export: there almost always is */
-   Builder bld(program);
-   if (!block.instructions.empty() && block.instructions.back()->opcode == aco_opcode::s_endpgm) {
-      bld.reset(&block.instructions, block.instructions.begin() + (block.instructions.size() - 1));
-      bld.sopp(aco_opcode::s_sendmsg, sendmsg_dealloc_vgprs);
-   }
-
-   return true;
-}
-
-bool
 Instruction::isTrans() const noexcept
 {
    return instr_info.classes[(int)opcode] == instr_class::valu_transcendental32 ||
