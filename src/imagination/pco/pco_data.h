@@ -54,6 +54,12 @@ typedef struct _pco_vs_data {
    unsigned vtxouts; /** How many vertex outputs are written to. */
 } pco_vs_data;
 
+enum pco_front_face_op {
+   PCO_FRONT_FACE_OP_NOP,
+   PCO_FRONT_FACE_OP_SWAP,
+   PCO_FRONT_FACE_OP_TRUE,
+};
+
 /** PCO fragment shader-specific data. */
 typedef struct _pco_fs_data {
    /** Varyings/input mappings. */

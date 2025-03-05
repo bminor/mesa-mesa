@@ -1209,3 +1209,60 @@ bool pco_nir_point_size(nir_shader *shader)
 
    return true;
 }
+
+static bool is_fs_intr(const nir_instr *instr, UNUSED const void *cb_data)
+{
+   if (instr->type != nir_instr_type_intrinsic)
+      return false;
+
+   nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
+   switch (intr->intrinsic) {
+   case nir_intrinsic_load_front_face:
+      return true;
+
+   default:
+      break;
+   }
+
+   return false;
+}
+
+static nir_def *lower_front_face(nir_builder *b, nir_intrinsic_instr *intr)
+{
+   nir_def *face_ccw = nir_load_face_ccw_pco(b);
+   nir_def *front_face = nir_ieq_imm(b, face_ccw, 0);
+
+   nir_def *ff_op = nir_load_front_face_op_pco(b);
+   nir_def *ff_elems[] = {
+      [PCO_FRONT_FACE_OP_NOP] = front_face,
+      [PCO_FRONT_FACE_OP_SWAP] = nir_inot(b, front_face),
+      [PCO_FRONT_FACE_OP_TRUE] = nir_imm_true(b),
+   };
+
+   return nir_select_from_ssa_def_array(b,
+                                        ff_elems,
+                                        ARRAY_SIZE(ff_elems),
+                                        ff_op);
+}
+
+static nir_def *
+lower_fs_intr(nir_builder *b, nir_instr *instr, UNUSED void *cb_data)
+{
+   nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
+   switch (intr->intrinsic) {
+   case nir_intrinsic_load_front_face:
+      return lower_front_face(b, intr);
+
+   default:
+      break;
+   }
+
+   UNREACHABLE("");
+}
+
+bool pco_nir_lower_fs_intrinsics(nir_shader *shader)
+{
+   assert(shader->info.stage == MESA_SHADER_FRAGMENT);
+
+   return nir_shader_lower_instructions(shader, is_fs_intr, lower_fs_intr, NULL);
+}

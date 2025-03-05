@@ -612,6 +612,15 @@ static VkResult pvr_pds_descriptor_program_create_and_upload(
       };
    }
 
+   if (stage == MESA_SHADER_FRAGMENT &&
+       data->common.sys_vals[SYSTEM_VALUE_FRONT_FACE].count > 0) {
+      program.buffers[program.buffer_count++] = (struct pvr_pds_buffer){
+         .type = PVR_BUFFER_TYPE_FRONT_FACE_OP,
+         .size_in_dwords = data->common.sys_vals[SYSTEM_VALUE_FRONT_FACE].count,
+         .destination = data->common.sys_vals[SYSTEM_VALUE_FRONT_FACE].start,
+      };
+   }
+
    pds_info->entries_size_in_bytes = const_entries_size_in_bytes;
 
    pvr_pds_generate_descriptor_upload_program(&program, NULL, pds_info);
@@ -1731,7 +1740,32 @@ static void pvr_alloc_vs_varyings(pco_data *data, nir_shader *nir)
 
 static void pvr_alloc_fs_sysvals(pco_data *data, nir_shader *nir)
 {
-   /* TODO */
+   BITSET_DECLARE(system_values_read, SYSTEM_VALUE_MAX);
+   BITSET_COPY(system_values_read, nir->info.system_values_read);
+
+   gl_system_value sys_vals[] = {
+      SYSTEM_VALUE_FRONT_FACE,
+   };
+
+   for (unsigned u = 0; u < ARRAY_SIZE(sys_vals); ++u) {
+      if (BITSET_TEST(system_values_read, sys_vals[u])) {
+         nir_intrinsic_op op = nir_intrinsic_from_system_value(sys_vals[u]);
+         unsigned dwords = nir_intrinsic_infos[op].dest_components;
+         assert(dwords > 0);
+
+         allocate_val(data->common.sys_vals,
+                      &data->common.shareds,
+                      sys_vals[u],
+                      dwords);
+
+         BITSET_CLEAR(system_values_read, sys_vals[u]);
+      }
+   }
+
+   /* Clear built-in sysvals. */
+   BITSET_CLEAR(system_values_read, SYSTEM_VALUE_SAMPLE_ID);
+
+   assert(BITSET_IS_EMPTY(system_values_read));
 }
 
 static void pvr_alloc_fs_varyings(pco_data *data, nir_shader *nir)

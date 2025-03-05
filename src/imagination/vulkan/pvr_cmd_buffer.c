@@ -3768,6 +3768,43 @@ static VkResult pvr_setup_descriptor_mappings(
             break;
          }
 
+         case PVR_BUFFER_TYPE_FRONT_FACE_OP: {
+            VkFrontFace front_face =
+               cmd_buffer->vk.dynamic_graphics_state.rs.front_face;
+            VkPrimitiveTopology primitive_topology =
+               cmd_buffer->vk.dynamic_graphics_state.ia.primitive_topology;
+
+            uint32_t ff_op;
+            switch (primitive_topology) {
+            case VK_PRIMITIVE_TOPOLOGY_POINT_LIST:
+            case VK_PRIMITIVE_TOPOLOGY_LINE_LIST:
+            case VK_PRIMITIVE_TOPOLOGY_LINE_STRIP:
+               ff_op = PCO_FRONT_FACE_OP_TRUE;
+               break;
+
+            default:
+               ff_op = front_face == VK_FRONT_FACE_COUNTER_CLOCKWISE
+                          ? PCO_FRONT_FACE_OP_SWAP
+                          : PCO_FRONT_FACE_OP_NOP;
+               break;
+            }
+
+            struct pvr_suballoc_bo *ff_op_bo;
+            result = pvr_cmd_buffer_upload_general(cmd_buffer,
+                                                   &ff_op,
+                                                   sizeof(ff_op),
+                                                   &ff_op_bo);
+
+            if (result != VK_SUCCESS)
+               return result;
+
+            PVR_WRITE(qword_buffer,
+                      ff_op_bo->dev_addr.addr,
+                      special_buff_entry->const_offset,
+                      pds_info->data_size_in_dwords);
+            break;
+         }
+
          default:
             UNREACHABLE("Unsupported special buffer type.");
          }
@@ -5854,8 +5891,10 @@ static VkResult pvr_validate_draw_state(struct pvr_cmd_buffer *cmd_buffer)
    state->dirty.vertex_descriptors |= state->dirty.gfx_desc_dirty;
    state->dirty.fragment_descriptors |= state->dirty.gfx_desc_dirty;
 
-   if (BITSET_TEST(dynamic_state->dirty, MESA_VK_DYNAMIC_CB_BLEND_CONSTANTS))
+   if (BITSET_TEST(dynamic_state->dirty, MESA_VK_DYNAMIC_CB_BLEND_CONSTANTS) ||
+       BITSET_TEST(dynamic_state->dirty, MESA_VK_DYNAMIC_RS_FRONT_FACE)) {
       state->dirty.fragment_descriptors = true;
+   }
 
    if (state->dirty.fragment_descriptors) {
       result = pvr_setup_descriptor_mappings(

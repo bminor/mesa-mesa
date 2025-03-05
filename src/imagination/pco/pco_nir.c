@@ -182,7 +182,7 @@ static bool varyings_match(nir_variable *out_var, nir_variable *in_var)
  * \param[in,out] cb_data Callback data.
  * \return True if the shader was modified (always return false).
  */
-static bool gather_fs_data_pass(UNUSED struct nir_builder *b,
+static bool gather_fs_data_pass(struct nir_builder *b,
                                 nir_intrinsic_instr *intr,
                                 void *cb_data)
 {
@@ -206,6 +206,10 @@ static bool gather_fs_data_pass(UNUSED struct nir_builder *b,
 
    case nir_intrinsic_load_blend_const_color_rgba:
       data->fs.blend_consts_needed |= PIPE_MASK_RGBA;
+      break;
+
+   case nir_intrinsic_load_front_face_op_pco:
+      BITSET_SET(b->shader->info.system_values_read, SYSTEM_VALUE_FRONT_FACE);
       break;
 
    default:
@@ -752,6 +756,7 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
       };
       NIR_PASS(_, nir, nir_opt_peephole_select, &peep_opts);
       NIR_PASS(_, nir, pco_nir_pfo, &data->fs);
+      NIR_PASS(_, nir, pco_nir_lower_fs_intrinsics);
    } else if (nir->info.stage == MESA_SHADER_VERTEX) {
       NIR_PASS(_,
                nir,

@@ -2735,3 +2735,6 @@ intrinsic("load_savmsk_vm_pco", src_comp=[], dest_comp=1, indices=[], flags=[CAN
 index("bool", "freep")
 intrinsic("emitpix_pco", src_comp=[1, 1], indices=[FREEP], bit_sizes=[32])
 intrinsic("wop_pco")
+
+system_value("face_ccw_pco", 1, bit_sizes=[32])
+system_value("front_face_op_pco", 1, bit_sizes=[32])

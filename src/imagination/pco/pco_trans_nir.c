@@ -902,6 +902,9 @@ static inline enum pco_reg_class sys_val_to_reg_class(gl_system_value sys_val,
                                                       mesa_shader_stage stage)
 {
    switch (stage) {
+   case MESA_SHADER_FRAGMENT:
+      return PCO_REG_CLASS_SHARED;
+
    case MESA_SHADER_VERTEX:
       return PCO_REG_CLASS_VTXIN;
 
@@ -937,7 +940,18 @@ static inline enum pco_reg_class sys_val_to_reg_class(gl_system_value sys_val,
 static pco_instr *
 trans_load_sysval(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
 {
-   gl_system_value sys_val = nir_system_value_from_intrinsic(intr->intrinsic);
+   gl_system_value sys_val;
+   /* Overrides. */
+   switch (intr->intrinsic) {
+   case nir_intrinsic_load_front_face_op_pco:
+      sys_val = SYSTEM_VALUE_FRONT_FACE;
+      break;
+
+   default:
+      sys_val = nir_system_value_from_intrinsic(intr->intrinsic);
+      break;
+   }
+
    const pco_range *range = &tctx->shader->data.common.sys_vals[sys_val];
 
    unsigned chans = pco_ref_get_chans(dest);
@@ -1310,6 +1324,9 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
    case nir_intrinsic_load_local_invocation_index:
    case nir_intrinsic_load_workgroup_id:
    case nir_intrinsic_load_num_workgroups:
+
+   /* Fragment sysvals. */
+   case nir_intrinsic_load_front_face_op_pco:
       instr = trans_load_sysval(tctx, intr, dest);
       break;
 
@@ -1407,6 +1424,12 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
       instr = pco_mov(&tctx->b,
                       dest,
                       pco_ref_hwreg(PCO_SR_SAMP_NUM, PCO_REG_CLASS_SPEC));
+      break;
+
+   case nir_intrinsic_load_face_ccw_pco:
+      instr = pco_mov(&tctx->b,
+                      dest,
+                      pco_ref_hwreg(PCO_SR_FACE_ORIENT, PCO_REG_CLASS_SPEC));
       break;
 
    case nir_intrinsic_load_savmsk_vm_pco:
