@@ -10,6 +10,7 @@
  */
 
 #include "util/build_id.h"
+#include "util/driconf.h"
 #include "util/mesa-sha1.h"
 
 #include "vk_alloc.h"
@@ -146,6 +147,35 @@ panvk_kmod_free(const struct pan_kmod_allocator *allocator, void *data)
    return vk_free(vkalloc, data);
 }
 
+static const driOptionDescription panvk_dri_options[] = {
+   DRI_CONF_SECTION_PERFORMANCE
+      DRI_CONF_ADAPTIVE_SYNC(true)
+      DRI_CONF_VK_X11_OVERRIDE_MIN_IMAGE_COUNT(0)
+      DRI_CONF_VK_X11_STRICT_IMAGE_COUNT(false)
+      DRI_CONF_VK_X11_ENSURE_MIN_IMAGE_COUNT(false)
+      DRI_CONF_VK_KHR_PRESENT_WAIT(false)
+      DRI_CONF_VK_XWAYLAND_WAIT_READY(false)
+   DRI_CONF_SECTION_END
+
+   DRI_CONF_SECTION_DEBUG
+      DRI_CONF_FORCE_VK_VENDOR()
+      DRI_CONF_VK_WSI_FORCE_SWAPCHAIN_TO_CURRENT_EXTENT(false)
+      DRI_CONF_VK_X11_IGNORE_SUBOPTIMAL(false)
+   DRI_CONF_SECTION_END
+};
+
+static void
+panvk_init_dri_options(struct panvk_instance *instance)
+{
+   driParseOptionInfo(&instance->available_dri_options, panvk_dri_options, ARRAY_SIZE(panvk_dri_options));
+   driParseConfigFiles(&instance->dri_options, &instance->available_dri_options, 0, "panvk", NULL, NULL,
+                       instance->vk.app_info.app_name, instance->vk.app_info.app_version,
+                       instance->vk.app_info.engine_name, instance->vk.app_info.engine_version);
+
+   instance->force_vk_vendor =
+      driQueryOptioni(&instance->dri_options, "force_vk_vendor");
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL
 panvk_CreateInstance(const VkInstanceCreateInfo *pCreateInfo,
                      const VkAllocationCallbacks *pAllocator,
@@ -187,6 +217,8 @@ panvk_CreateInstance(const VkInstanceCreateInfo *pCreateInfo,
       vk_free(pAllocator, instance);
       return panvk_error(NULL, result);
    }
+
+   panvk_init_dri_options(instance);
 
    instance->kmod.allocator = (struct pan_kmod_allocator){
       .zalloc = panvk_kmod_zalloc,

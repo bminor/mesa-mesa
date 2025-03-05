@@ -508,7 +508,8 @@ get_device_properties(const struct panvk_instance *instance,
    *properties = (struct vk_properties){
       .apiVersion = get_api_version(arch),
       .driverVersion = vk_get_driver_version(),
-      .vendorID = ARM_VENDOR_ID,
+      .vendorID = instance->force_vk_vendor ? instance->force_vk_vendor :
+                                              ARM_VENDOR_ID,
 
       /* Collect arch_major, arch_minor, arch_rev and product_major,
        * as done by the Arm driver.

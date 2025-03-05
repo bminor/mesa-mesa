@@ -9,6 +9,7 @@
 #include <stdint.h>
 
 #include "vk_instance.h"
+#include "util/xmlconfig.h"
 
 #include "lib/kmod/pan_kmod.h"
 
@@ -41,7 +42,11 @@ struct panvk_instance {
 
    enum panvk_debug_flags debug_flags;
 
+   struct driOptionCache dri_options;
+   struct driOptionCache available_dri_options;
+
    uint8_t driver_build_sha[20];
+   uint32_t force_vk_vendor;
 
    struct {
       struct pan_kmod_allocator allocator;
