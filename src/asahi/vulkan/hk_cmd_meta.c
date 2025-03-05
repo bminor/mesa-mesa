@@ -48,7 +48,8 @@ hk_cmd_bind_map_buffer(struct vk_command_buffer *vk_cmd,
    if (unlikely(T.cpu == NULL))
       return VK_ERROR_OUT_OF_POOL_MEMORY;
 
-   buffer->addr = T.gpu;
+   assert(buffer->vk.device_address == 0);
+   buffer->vk.device_address = T.gpu;
    *map_out = T.cpu;
    return VK_SUCCESS;
 }

@@ -139,7 +139,7 @@ hk_CreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
          return vk_errorf(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY,
                           "Sparse VMA allocation failed");
       }
-      buffer->addr = buffer->va->addr;
+      buffer->vk.device_address = buffer->va->addr;
    }
 
    *pBuffer = hk_buffer_to_handle(buffer);
@@ -254,13 +254,16 @@ hk_BindBufferMemory2(VkDevice device, uint32_t bindInfoCount,
          VK_FROM_HANDLE(hk_device, dev, device);
          size_t size = MIN2(mem->bo->size, buffer->va->size_B);
          int ret = dev->dev.ops.bo_bind(
-            &dev->dev, mem->bo, buffer->addr, size, pBindInfos[i].memoryOffset,
+            &dev->dev, mem->bo, buffer->vk.device_address, size,
+            pBindInfos[i].memoryOffset,
             ASAHI_BIND_READ | ASAHI_BIND_WRITE, false);
 
          if (ret)
             return VK_ERROR_UNKNOWN;
       } else {
-         buffer->addr = mem->bo->va->addr + pBindInfos[i].memoryOffset;
+         assert(buffer->vk.device_address == 0);
+         buffer->vk.device_address =
+            mem->bo->va->addr + pBindInfos[i].memoryOffset;
       }
 
       const VkBindMemoryStatusKHR *status =
@@ -269,15 +272,6 @@ hk_BindBufferMemory2(VkDevice device, uint32_t bindInfoCount,
          *status->pResult = VK_SUCCESS;
    }
    return VK_SUCCESS;
-}
-
-VKAPI_ATTR VkDeviceAddress VKAPI_CALL
-hk_GetBufferDeviceAddress(UNUSED VkDevice device,
-                          const VkBufferDeviceAddressInfo *pInfo)
-{
-   VK_FROM_HANDLE(hk_buffer, buffer, pInfo->buffer);
-
-   return hk_buffer_address(buffer, 0);
 }
 
 VKAPI_ATTR uint64_t VKAPI_CALL

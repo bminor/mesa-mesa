@@ -16,7 +16,6 @@ struct hk_physical_device;
 
 struct hk_buffer {
    struct vk_buffer vk;
-   uint64_t addr;
 
    /** Reserved VA for sparse buffers, NULL otherwise. */
    struct agx_va *va;
@@ -28,7 +27,7 @@ VK_DEFINE_NONDISP_HANDLE_CASTS(hk_buffer, vk.base, VkBuffer,
 static inline uint64_t
 hk_buffer_address(const struct hk_buffer *buffer, uint64_t offset)
 {
-   return buffer->addr + offset;
+   return vk_buffer_address(&buffer->vk, offset);
 }
 
 static inline struct hk_addr_range
