@@ -1884,6 +1884,11 @@ struct isl_buffer_fill_state_info {
    uint32_t stride_B;
 
    bool is_scratch;
+
+   /**
+    * Indicates the usage of the buffer
+    */
+   isl_surf_usage_flags_t usage;
 };
 
 struct isl_depth_stencil_hiz_emit_info {
