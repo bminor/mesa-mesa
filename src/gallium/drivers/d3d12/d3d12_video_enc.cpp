@@ -4108,7 +4108,7 @@ d3d12_video_encoder_get_feedback(struct pipe_video_codec *codec,
          unpadded_frame_size += unpadded_slice_size;
          opt_metadata.codec_unit_metadata[opt_metadata.codec_unit_metadata_count].flags = PIPE_VIDEO_CODEC_UNIT_LOCATION_FLAG_SINGLE_NALU;
          opt_metadata.codec_unit_metadata[opt_metadata.codec_unit_metadata_count].size = unpadded_slice_size;
-         opt_metadata.codec_unit_metadata[opt_metadata.codec_unit_metadata_count].offset = *output_buffer_size;
+         opt_metadata.codec_unit_metadata[opt_metadata.codec_unit_metadata_count].offset = (*output_buffer_size) + static_cast<unsigned int>(pSubregionsMetadata[i].bStartOffset);
          *output_buffer_size += static_cast<unsigned int>(pSubregionsMetadata[i].bSize);
          if ((pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].expected_max_slice_size > 0) &&
              (unpadded_slice_size > pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].expected_max_slice_size))
