@@ -74,6 +74,9 @@ struct vn_physical_device {
    struct vk_device_extension_table renderer_extensions;
    uint32_t *extension_spec_versions;
 
+   /* passthrough ray tracing support */
+   bool ray_tracing;
+
    /* Venus feedback encounters cacheline overflush issue on Intel JSL, and
     * has to workaround by further aligning up the feedback buffer alignment.
     */

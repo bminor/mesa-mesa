@@ -113,6 +113,7 @@ enum vn_debug {
    VN_DEBUG_NO_SPARSE = 1ull << 7,
    VN_DEBUG_NO_GPL = 1ull << 8,
    VN_DEBUG_NO_SECOND_QUEUE = 1ull << 9,
+   VN_DEBUG_RAY_TRACING = 1ull << 10,
 };
 
 enum vn_perf {

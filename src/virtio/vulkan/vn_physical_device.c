@@ -1280,6 +1280,9 @@ vn_physical_device_init_supported_extensions(
 {
    struct vk_device_extension_table native;
    struct vk_device_extension_table passthrough;
+
+   physical_dev->ray_tracing = VN_DEBUG(RAY_TRACING);
+
    vn_physical_device_get_native_extensions(physical_dev, &native);
    vn_physical_device_get_passthrough_extensions(physical_dev, &passthrough);
 
