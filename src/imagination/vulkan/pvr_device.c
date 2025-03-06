@@ -230,7 +230,7 @@ static void pvr_physical_device_get_supported_features(
       .robustBufferAccess = true,
       .fullDrawIndexUint32 = false,
       .imageCubeArray = false,
-      .independentBlend = false,
+      .independentBlend = true,
       .geometryShader = false,
       .tessellationShader = false,
       .sampleRateShading = true,
