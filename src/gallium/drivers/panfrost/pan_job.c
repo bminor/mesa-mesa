@@ -32,6 +32,7 @@
 #include "util/rounding.h"
 #include "util/u_framebuffer.h"
 #include "util/u_pack_color.h"
+#include "util/perf/cpu_trace.h"
 #include "pan_bo.h"
 #include "pan_context.h"
 #include "pan_util.h"
@@ -656,6 +657,8 @@ static void
 panfrost_batch_submit(struct panfrost_context *ctx,
                       struct panfrost_batch *batch)
 {
+   MESA_TRACE_FUNC();
+
    struct pipe_screen *pscreen = ctx->base.screen;
    struct panfrost_screen *screen = pan_screen(pscreen);
    bool has_frag = panfrost_has_fragment_job(batch);
@@ -724,8 +727,9 @@ out:
 void
 panfrost_flush_all_batches(struct panfrost_context *ctx, const char *reason)
 {
-   if (reason)
-      perf_debug(ctx, "Flushing everything due to: %s", reason);
+   assert(reason);
+   MESA_TRACE_SCOPE("%s reason=\"%s\"", __func__, reason);
+   perf_debug(ctx, "Flushing everything due to: %s", reason);
 
    struct panfrost_batch *batch = panfrost_get_batch_for_fbo(ctx);
    if (!batch)
@@ -743,6 +747,9 @@ void
 panfrost_flush_writer(struct panfrost_context *ctx,
                       struct panfrost_resource *rsrc, const char *reason)
 {
+   assert(reason);
+   MESA_TRACE_SCOPE("%s reason=\"%s\"", __func__, reason);
+
    struct hash_entry *entry = _mesa_hash_table_search(ctx->writers, rsrc);
 
    if (entry) {
@@ -756,6 +763,9 @@ panfrost_flush_batches_accessing_rsrc(struct panfrost_context *ctx,
                                       struct panfrost_resource *rsrc,
                                       const char *reason)
 {
+   assert(reason);
+   MESA_TRACE_SCOPE("%s reason=\"%s\"", __func__, reason);
+
    unsigned i;
    foreach_batch(ctx, i) {
       struct panfrost_batch *batch = &ctx->batches.slots[i];

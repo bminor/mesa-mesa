@@ -28,6 +28,7 @@
  */
 
 #include "util/format/u_format.h"
+#include "util/perf/cpu_trace.h"
 #include "pan_context.h"
 #include "pan_resource.h"
 #include "pan_util.h"
@@ -85,6 +86,8 @@ void
 panfrost_blit_no_afbc_legalization(struct pipe_context *pipe,
                                    const struct pipe_blit_info *info)
 {
+   MESA_TRACE_FUNC();
+
    struct panfrost_context *ctx = pan_context(pipe);
 
    panfrost_blitter_save(ctx, info->render_condition_enable
@@ -96,6 +99,8 @@ panfrost_blit_no_afbc_legalization(struct pipe_context *pipe,
 void
 panfrost_blit(struct pipe_context *pipe, const struct pipe_blit_info *info)
 {
+   MESA_TRACE_FUNC();
+
    struct panfrost_context *ctx = pan_context(pipe);
 
    if (info->render_condition_enable && !panfrost_render_condition_check(ctx))

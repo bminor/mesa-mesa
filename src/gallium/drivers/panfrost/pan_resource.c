@@ -45,6 +45,7 @@
 #include "util/u_surface.h"
 #include "util/u_transfer.h"
 #include "util/u_transfer_helper.h"
+#include "util/perf/cpu_trace.h"
 
 #include "decode.h"
 #include "pan_bo.h"
@@ -722,6 +723,8 @@ panfrost_resource_create_with_modifier(struct pipe_screen *screen,
                                        const struct pipe_resource *template,
                                        uint64_t modifier)
 {
+   MESA_TRACE_FUNC();
+
    struct panfrost_device *dev = pan_device(screen);
 
    struct panfrost_resource *so = CALLOC_STRUCT(panfrost_resource);
@@ -900,6 +903,8 @@ panfrost_resource_create_with_modifiers(struct pipe_screen *screen,
 static void
 panfrost_resource_destroy(struct pipe_screen *screen, struct pipe_resource *pt)
 {
+   MESA_TRACE_FUNC();
+
    struct panfrost_device *dev = pan_device(screen);
    struct panfrost_resource *rsrc = (struct panfrost_resource *)pt;
 
@@ -1212,6 +1217,8 @@ panfrost_ptr_map(struct pipe_context *pctx, struct pipe_resource *resource,
                  const struct pipe_box *box,
                  struct pipe_transfer **out_transfer)
 {
+   MESA_TRACE_FUNC();
+
    struct panfrost_context *ctx = pan_context(pctx);
    struct panfrost_device *dev = pan_device(pctx->screen);
    struct panfrost_resource *rsrc = pan_resource(resource);
@@ -1448,6 +1455,8 @@ pan_resource_modifier_convert(struct panfrost_context *ctx,
                               struct panfrost_resource *rsrc, uint64_t modifier,
                               bool copy_resource, const char *reason)
 {
+   MESA_TRACE_FUNC();
+
    bool need_shadow = rsrc->modifier_constant;
 
    assert(!rsrc->modifier_constant || copy_resource);
@@ -1683,6 +1692,8 @@ void
 panfrost_pack_afbc(struct panfrost_context *ctx,
                    struct panfrost_resource *prsrc)
 {
+   MESA_TRACE_FUNC();
+
    struct panfrost_screen *screen = pan_screen(ctx->base.screen);
    struct panfrost_device *dev = pan_device(ctx->base.screen);
    struct panfrost_bo *metadata_bo;
@@ -1811,6 +1822,8 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
 static void
 panfrost_ptr_unmap(struct pipe_context *pctx, struct pipe_transfer *transfer)
 {
+   MESA_TRACE_FUNC();
+
    /* Gallium expects writeback here, so we tile */
 
    struct panfrost_context *ctx = pan_context(pctx);

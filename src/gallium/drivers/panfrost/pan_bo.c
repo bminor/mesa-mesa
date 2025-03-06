@@ -38,6 +38,7 @@
 
 #include "util/u_inlines.h"
 #include "util/u_math.h"
+#include "util/perf/cpu_trace.h"
 
 /* This file implements a userspace BO cache. Allocating and freeing
  * GPU-visible buffers is very expensive, and even the extra kernel roundtrips
@@ -124,6 +125,8 @@ err_alloc:
 static void
 panfrost_bo_free(struct panfrost_bo *bo)
 {
+   MESA_TRACE_FUNC();
+
    struct pan_kmod_bo *kmod_bo = bo->kmod_bo;
    struct pan_kmod_vm *vm = bo->dev->kmod.vm;
    uint64_t gpu_va = bo->ptr.gpu;
@@ -155,6 +158,8 @@ panfrost_bo_free(struct panfrost_bo *bo)
 bool
 panfrost_bo_wait(struct panfrost_bo *bo, int64_t timeout_ns, bool wait_readers)
 {
+   MESA_TRACE_FUNC();
+
    /* If the BO has been exported or imported we can't rely on the cached
     * state, we need to call the WAIT_BO ioctl.
     */
@@ -336,6 +341,8 @@ panfrost_bo_cache_evict_all(struct panfrost_device *dev)
 int
 panfrost_bo_mmap(struct panfrost_bo *bo)
 {
+   MESA_TRACE_FUNC();
+
    if (bo->ptr.cpu)
       return 0;
 
@@ -352,6 +359,8 @@ panfrost_bo_mmap(struct panfrost_bo *bo)
 static void
 panfrost_bo_munmap(struct panfrost_bo *bo)
 {
+   MESA_TRACE_FUNC();
+
    if (!bo->ptr.cpu)
       return;
 
@@ -367,6 +376,9 @@ struct panfrost_bo *
 panfrost_bo_create(struct panfrost_device *dev, size_t size, uint32_t flags,
                    const char *label)
 {
+   assert(label);
+   MESA_TRACE_SCOPE("%s size=%zu label=\"%s\"", __func__, size, label);
+
    struct panfrost_bo *bo;
 
    if (dev->debug & PAN_DBG_DUMP) {

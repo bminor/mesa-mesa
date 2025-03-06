@@ -35,6 +35,7 @@
 #include "util/u_sample_positions.h"
 #include "util/u_vbuf.h"
 #include "util/u_viewport.h"
+#include "util/perf/cpu_trace.h"
 
 #include "decode.h"
 
@@ -3291,6 +3292,8 @@ panfrost_draw_vbo(struct pipe_context *pipe, const struct pipe_draw_info *info,
                   const struct pipe_draw_start_count_bias *draws,
                   unsigned num_draws)
 {
+   MESA_TRACE_FUNC();
+
    struct panfrost_context *ctx = pan_context(pipe);
 
    if (!panfrost_render_condition_check(ctx))
@@ -3431,6 +3434,8 @@ panfrost_afbc_size(struct panfrost_batch *batch, struct panfrost_resource *src,
                    struct panfrost_bo *metadata, unsigned offset,
                    unsigned level)
 {
+   MESA_TRACE_FUNC();
+
    struct pan_image_slice_layout *slice = &src->image.layout.slices[level];
    struct panfrost_afbc_size_info consts = {
       .src =
@@ -3451,6 +3456,8 @@ panfrost_afbc_pack(struct panfrost_batch *batch, struct panfrost_resource *src,
                    struct panfrost_bo *metadata, unsigned metadata_offset,
                    unsigned level)
 {
+   MESA_TRACE_FUNC();
+
    struct pan_image_slice_layout *src_slice = &src->image.layout.slices[level];
    struct panfrost_afbc_pack_info consts = {
       .src = src->image.data.base + src->image.data.offset +
@@ -3472,6 +3479,8 @@ panfrost_afbc_pack(struct panfrost_batch *batch, struct panfrost_resource *src,
 static void
 panfrost_mtk_detile_compute(struct panfrost_context *ctx, struct pipe_blit_info *info)
 {
+   MESA_TRACE_FUNC();
+
    struct pipe_context *pipe = &ctx->base;
    struct pipe_resource *y_src = info->src.resource;
    struct pipe_resource *uv_src = y_src->next;

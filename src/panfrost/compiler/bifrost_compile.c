@@ -29,6 +29,7 @@
 #include "compiler/glsl_types.h"
 #include "compiler/nir/nir_builder.h"
 #include "panfrost/util/pan_ir.h"
+#include "util/perf/cpu_trace.h"
 #include "util/u_debug.h"
 
 #include "bifrost/disassemble.h"
@@ -5684,6 +5685,8 @@ bi_lower_ldexp16(nir_builder *b, nir_alu_instr *alu, UNUSED void *data)
 void
 bifrost_preprocess_nir(nir_shader *nir, unsigned gpu_id)
 {
+   MESA_TRACE_FUNC();
+
    /* Ensure that halt are translated to returns and get ride of them */
    NIR_PASS(_, nir, nir_shader_instructions_pass, bi_lower_halt_to_return,
             nir_metadata_all, NULL);
@@ -6254,6 +6257,8 @@ bifrost_compile_shader_nir(nir_shader *nir,
                            struct util_dynarray *binary,
                            struct pan_shader_info *info)
 {
+   MESA_TRACE_FUNC();
+
    bifrost_debug = debug_get_option_bifrost_debug();
 
    /* Combine stores late, to give the driver a chance to lower dual-source

@@ -47,6 +47,7 @@
 #include "util/u_surface.h"
 #include "util/u_upload_mgr.h"
 #include "util/u_vbuf.h"
+#include "util/perf/cpu_trace.h"
 
 #include "clc/panfrost_compile.h"
 #include "compiler/nir/nir_serialize.h"
@@ -63,6 +64,8 @@ panfrost_clear(struct pipe_context *pipe, unsigned buffers,
                const union pipe_color_union *color, double depth,
                unsigned stencil)
 {
+   MESA_TRACE_FUNC();
+
    if (!panfrost_render_condition_check(pan_context(pipe)))
       return;
 
@@ -106,11 +109,13 @@ void
 panfrost_flush(struct pipe_context *pipe, struct pipe_fence_handle **fence,
                unsigned flags)
 {
+   MESA_TRACE_FUNC();
+
    struct panfrost_context *ctx = pan_context(pipe);
    struct panfrost_device *dev = pan_device(pipe->screen);
 
    /* Submit all pending jobs */
-   panfrost_flush_all_batches(ctx, NULL);
+   panfrost_flush_all_batches(ctx, "Gallium flush");
 
    if (fence) {
       struct pipe_fence_handle *f = panfrost_fence_create(ctx);
