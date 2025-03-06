@@ -1071,8 +1071,8 @@ vk_input_attachment_location_state_init(struct vk_input_attachment_location_stat
    *ial = (struct vk_input_attachment_location_state) {
       .color_map = { 0, 1, 2, 3, 4, 5, 6, 7 },
       .color_attachment_count = MESA_VK_COLOR_ATTACHMENT_COUNT_UNKNOWN,
-      .depth_att = MESA_VK_ATTACHMENT_UNUSED,
-      .stencil_att = MESA_VK_ATTACHMENT_UNUSED,
+      .depth_att = MESA_VK_ATTACHMENT_NO_INDEX,
+      .stencil_att = MESA_VK_ATTACHMENT_NO_INDEX,
    };
    if (!ial_info)
       return;
@@ -1939,8 +1939,9 @@ static const struct vk_dynamic_graphics_state vk_default_dynamic_graphics_state 
    },
    .ial = {
       .color_map = { 0, 1, 2, 3, 4, 5, 6, 7 },
-      .depth_att = MESA_VK_ATTACHMENT_UNUSED,
-      .stencil_att = MESA_VK_ATTACHMENT_UNUSED,
+      .color_attachment_count = MESA_VK_COLOR_ATTACHMENT_COUNT_UNKNOWN,
+      .depth_att = MESA_VK_ATTACHMENT_NO_INDEX,
+      .stencil_att = MESA_VK_ATTACHMENT_NO_INDEX,
    },
    .cal = {
       .color_map = { 0, 1, 2, 3, 4, 5, 6, 7 },
