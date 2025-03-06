@@ -260,6 +260,12 @@ delete_variant(struct st_context *st, struct st_variant *v, unsigned stage)
          case MESA_SHADER_COMPUTE:
             st->pipe->delete_compute_state(st->pipe, v->driver_shader);
             break;
+         case MESA_SHADER_TASK:
+            st->pipe->delete_ts_state(st->pipe, v->driver_shader);
+            break;
+         case MESA_SHADER_MESH:
+            st->pipe->delete_ms_state(st->pipe, v->driver_shader);
+            break;
          default:
             UNREACHABLE("bad shader type in delete_basic_variant");
          }
@@ -304,6 +310,14 @@ st_unbind_program(struct st_context *st, struct gl_program *p)
    case MESA_SHADER_COMPUTE:
       cso_set_compute_shader_handle(st->cso_context, NULL);
       ST_SET_STATE(ctx->NewDriverState, ST_NEW_CS_STATE);
+      break;
+   case MESA_SHADER_TASK:
+      cso_set_task_shader_handle(st->cso_context, NULL);
+      ST_SET_STATE(ctx->NewDriverState, ST_NEW_TS_STATE);
+      break;
+   case MESA_SHADER_MESH:
+      cso_set_mesh_shader_handle(st->cso_context, NULL);
+      ST_SET_STATE(ctx->NewDriverState, ST_NEW_MS_STATE);
       break;
    default:
       UNREACHABLE("invalid shader type");
@@ -538,6 +552,12 @@ st_create_nir_shader(struct st_context *st, struct pipe_shader_state *state)
       break;
    case MESA_SHADER_FRAGMENT:
       shader = pipe->create_fs_state(pipe, state);
+      break;
+   case MESA_SHADER_TASK:
+      shader = pipe->create_ts_state(pipe, state);
+      break;
+   case MESA_SHADER_MESH:
+      shader = pipe->create_ms_state(pipe, state);
       break;
    case MESA_SHADER_COMPUTE: {
       /* We'd like to use this for all stages but we need to rework streamout in
@@ -1351,6 +1371,8 @@ destroy_shader_program_variants_cb(void *data, void *userData)
    case GL_TESS_CONTROL_SHADER:
    case GL_TESS_EVALUATION_SHADER:
    case GL_COMPUTE_SHADER:
+   case GL_TASK_SHADER_EXT:
+   case GL_MESH_SHADER_EXT:
       break;
    default:
       assert(0);
@@ -1409,7 +1431,9 @@ st_precompile_shader_variant(struct st_context *st,
    case MESA_SHADER_TESS_CTRL:
    case MESA_SHADER_TESS_EVAL:
    case MESA_SHADER_GEOMETRY:
-   case MESA_SHADER_COMPUTE: {
+   case MESA_SHADER_COMPUTE:
+   case MESA_SHADER_TASK:
+   case MESA_SHADER_MESH: {
       struct st_common_variant_key key;
 
       memset(&key, 0, sizeof(key));

@@ -305,6 +305,14 @@ free_zombie_shaders(struct st_context *st)
          ST_SET_STATE(st->ctx->NewDriverState, ST_NEW_CS_STATE);
          st->pipe->delete_compute_state(st->pipe, entry->shader);
          break;
+      case MESA_SHADER_TASK:
+         ST_SET_STATE(st->ctx->NewDriverState, ST_NEW_TS_STATE);
+         st->pipe->delete_ts_state(st->pipe, entry->shader);
+         break;
+      case MESA_SHADER_MESH:
+         ST_SET_STATE(st->ctx->NewDriverState, ST_NEW_MS_STATE);
+         st->pipe->delete_ms_state(st->pipe, entry->shader);
+         break;
       default:
          UNREACHABLE("invalid shader type in free_zombie_shaders()");
       }
