@@ -1303,18 +1303,10 @@ panvk_deserialize_shader(struct vk_device *vk_dev, struct blob_reader *blob,
 {
    struct panvk_device *device = to_panvk_device(vk_dev);
    struct panvk_shader *shader;
+   struct pan_shader_info info;
    VkResult result;
 
-   struct pan_shader_info info;
    blob_copy_bytes(blob, &info, sizeof(info));
-
-   struct panvk_shader_fau_info fau;
-   blob_copy_bytes(blob, &fau, sizeof(fau));
-
-   struct pan_compute_dim local_size;
-   blob_copy_bytes(blob, &local_size, sizeof(local_size));
-
-   const uint32_t bin_size = blob_read_uint32(blob);
 
    if (blob->overrun)
       return panvk_error(device, VK_ERROR_INCOMPATIBLE_SHADER_BINARY_EXT);
@@ -1325,11 +1317,16 @@ panvk_deserialize_shader(struct vk_device *vk_dev, struct blob_reader *blob,
       return panvk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
 
    shader->info = info;
-   shader->fau = fau;
-   shader->local_size = local_size;
-   shader->bin_size = bin_size;
+   blob_copy_bytes(blob, &shader->fau, sizeof(shader->fau));
+   blob_copy_bytes(blob, &shader->local_size, sizeof(shader->local_size));
+   shader->bin_size = blob_read_uint32(blob);
 
-   shader->bin_ptr = malloc(bin_size);
+   if (blob->overrun) {
+      panvk_shader_destroy(vk_dev, &shader->vk, pAllocator);
+      return panvk_error(device, VK_ERROR_INCOMPATIBLE_SHADER_BINARY_EXT);
+   }
+
+   shader->bin_ptr = malloc(shader->bin_size);
    if (shader->bin_ptr == NULL) {
       panvk_shader_destroy(vk_dev, &shader->vk, pAllocator);
       return panvk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
