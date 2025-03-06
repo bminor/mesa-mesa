@@ -1533,7 +1533,7 @@ prepare_dcd(struct panvk_cmd_buffer *cmdbuf)
                       MALI_OCCLUSION_MODE_DISABLED;
 
             struct pan_earlyzs_state earlyzs =
-               pan_earlyzs_get(pan_earlyzs_analyze(&fs->info), writes_zs || oq,
+               pan_earlyzs_get(fs->fs.earlyzs_lut, writes_zs || oq,
                                alpha_to_coverage, zs_always_passes);
 
             cfg.pixel_kill_operation = (enum mali_pixel_kill)earlyzs.kill;

@@ -13,6 +13,7 @@
 #include "util/pan_ir.h"
 
 #include "pan_desc.h"
+#include "pan_earlyzs.h"
 
 #include "panvk_cmd_push_constant.h"
 #include "panvk_descriptor_set.h"
@@ -261,6 +262,10 @@ struct panvk_shader {
       struct {
          struct pan_compute_dim local_size;
       } cs;
+
+      struct {
+         struct pan_earlyzs_lut earlyzs_lut;
+      } fs;
    };
 
    struct {

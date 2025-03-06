@@ -921,6 +921,10 @@ panvk_compile_nir(struct panvk_device *dev, nir_shader *nir,
       shader->cs.local_size.z = nir->info.workgroup_size[2];
       break;
 
+   case MESA_SHADER_FRAGMENT:
+      shader->fs.earlyzs_lut = pan_earlyzs_analyze(&shader->info);
+      break;
+
    default:
       break;
    }
@@ -1332,6 +1336,10 @@ panvk_deserialize_shader(struct vk_device *vk_dev, struct blob_reader *blob,
    case MESA_SHADER_KERNEL:
       blob_copy_bytes(blob, &shader->cs.local_size,
                       sizeof(shader->cs.local_size));
+      break;
+
+   case MESA_SHADER_FRAGMENT:
+      shader->fs.earlyzs_lut = pan_earlyzs_analyze(&shader->info);
       break;
 
    default:
