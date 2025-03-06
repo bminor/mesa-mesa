@@ -60,6 +60,18 @@ inline bool elk_simd_any_compiled(const elk_simd_selection_state &state)
    return elk_simd_first_compiled(state) >= 0;
 }
 
+inline bool
+elk_needs_unlit_centroid_workaround(const struct intel_device_info *devinfo)
+{
+   /* Sandybridge doesn't do centroid interpolation correctly on unlit pixels,
+    * causing incorrect values for derivatives near triangle edges.  Enabling
+    * this flag causes the fragment shader to use non-centroid interpolation
+    * for unlit pixels, at the expense of two extra fragment shader
+    * instructions."
+    */
+   return devinfo->ver == 6;
+}
+
 bool elk_simd_should_compile(elk_simd_selection_state &state, unsigned simd);
 
 void elk_simd_mark_compiled(elk_simd_selection_state &state, unsigned simd, bool spilled);

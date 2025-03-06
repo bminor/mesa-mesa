@@ -310,14 +310,6 @@ Struct("intel_device_info",
 
         Member("bool", "has_compute_engine", comment="Whether this platform has compute engine"),
 
-        Member("bool", "needs_unlit_centroid_workaround", compiler_field=True,
-               comment=dedent("""\
-               Some versions of Gen hardware don't do centroid interpolation correctly
-               on unlit pixels, causing incorrect values for derivatives near triangle
-               edges.  Enabling this flag causes the fragment shader to use
-               non-centroid interpolation for unlit pixels, at the expense of two extra
-               fragment shader instructions.""")),
-
         Member("bool", "needs_null_push_constant_tbimr_workaround",
                comment=dedent("""\
                Whether the platform needs an undocumented workaround for a hardware bug

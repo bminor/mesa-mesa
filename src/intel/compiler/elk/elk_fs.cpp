@@ -6415,7 +6415,7 @@ elk_compute_barycentric_interp_modes(const struct intel_device_info *devinfo,
 
             barycentric_interp_modes |= 1 << bary;
 
-            if (devinfo->needs_unlit_centroid_workaround &&
+            if (elk_needs_unlit_centroid_workaround(devinfo) &&
                 bary_op == nir_intrinsic_load_barycentric_centroid)
                barycentric_interp_modes |= 1 << centroid_to_pixel(bary);
          }

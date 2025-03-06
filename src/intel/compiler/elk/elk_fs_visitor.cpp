@@ -31,6 +31,7 @@
 #include "elk_fs.h"
 #include "elk_fs_builder.h"
 #include "elk_nir.h"
+#include "elk_private.h"
 #include "compiler/glsl_types.h"
 
 using namespace elk;
@@ -289,7 +290,7 @@ elk_fs_visitor::emit_interpolation_setup_gfx6()
    }
 
    if (wm_key->persample_interp == ELK_SOMETIMES) {
-      assert(!devinfo->needs_unlit_centroid_workaround);
+      assert(!elk_needs_unlit_centroid_workaround(devinfo));
 
       const fs_builder ubld = bld.exec_all().group(16, 0);
       bool loaded_flag = false;
@@ -346,7 +347,7 @@ elk_fs_visitor::emit_interpolation_setup_gfx6()
       (1 << ELK_BARYCENTRIC_PERSPECTIVE_CENTROID |
        1 << ELK_BARYCENTRIC_NONPERSPECTIVE_CENTROID);
 
-   if (devinfo->needs_unlit_centroid_workaround && centroid_modes) {
+   if (elk_needs_unlit_centroid_workaround(devinfo) && centroid_modes) {
       /* Get the pixel/sample mask into f0 so that we know which
        * pixels are lit.  Then, for each channel that is unlit,
        * replace the centroid data with non-centroid data.
