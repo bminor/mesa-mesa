@@ -272,25 +272,24 @@ try_merge_break_with_continue(branch_ctx& ctx, Block& block)
 void
 eliminate_useless_exec_writes_in_block(branch_ctx& ctx, Block& block)
 {
-   /* Check if any successor needs the outgoing exec mask from the current block. */
-   bool exec_write_used;
+   bool exec_write_used = false;
    if (block.kind & block_kind_end_with_regs) {
       /* Last block of a program with succeed shader part should respect final exec write. */
       exec_write_used = true;
-   } else if (block.linear_succs.empty() && !block.instructions.empty() &&
-              block.instructions.back()->opcode == aco_opcode::s_setpc_b64) {
-      /* This block ends in a long jump and exec might be needed for the next shader part. */
-      exec_write_used = true;
-   } else {
-      /* blocks_incoming_exec_used is initialized to true, so this is correct even for loops. */
-      exec_write_used =
-         std::any_of(block.linear_succs.begin(), block.linear_succs.end(),
-                     [&ctx](int succ_idx) { return ctx.blocks_incoming_exec_used[succ_idx]; });
+   } else if (!block.linear_succs.empty()) {
+      /* Check if the successor needs the outgoing exec mask from the current block. */
+      exec_write_used = ctx.blocks_incoming_exec_used[block.linear_succs[0]];
    }
 
    /* Go through all instructions and eliminate useless exec writes. */
    for (int i = block.instructions.size() - 1; i >= 0; --i) {
       aco_ptr<Instruction>& instr = block.instructions[i];
+
+      /* blocks_incoming_exec_used is initialized to true, so this is correct even for loops. */
+      if (instr->opcode == aco_opcode::s_cbranch_scc0 ||
+          instr->opcode == aco_opcode::s_cbranch_scc1) {
+         exec_write_used |= ctx.blocks_incoming_exec_used[instr->salu().imm];
+      }
 
       /* See if the current instruction needs or writes exec. */
       bool needs_exec = needs_exec_mask(instr.get());
