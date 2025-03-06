@@ -155,10 +155,14 @@ by a particular renderpass/blit.
 	<value value="0xb3" name="FMT6_DXT1"/>
 	<value value="0xb4" name="FMT6_DXT3"/>
 	<value value="0xb5" name="FMT6_DXT5"/>
-	<value value="0xb7" name="FMT6_RGTC1_UNORM"/>
+	<value value="0xb6" name="FMT6_RGTC1_UNORM"/>
+	<value value="0xb7" name="FMT6_RGTC1_UNORM_FAST"/>
 	<value value="0xb8" name="FMT6_RGTC1_SNORM"/>
-	<value value="0xbb" name="FMT6_RGTC2_UNORM"/>
+	<value value="0xb9" name="FMT6_RGTC1_SNORM_FAST"/>
+	<value value="0xba" name="FMT6_RGTC2_UNORM"/>
+	<value value="0xbb" name="FMT6_RGTC2_UNORM_FAST"/>
 	<value value="0xbc" name="FMT6_RGTC2_SNORM"/>
+	<value value="0xbd" name="FMT6_RGTC2_SNORM_FAST"/>
 	<value value="0xbe" name="FMT6_BPTC_UFLOAT"/>
 	<value value="0xbf" name="FMT6_BPTC_FLOAT"/>
 	<value value="0xc0" name="FMT6_BPTC"/>
