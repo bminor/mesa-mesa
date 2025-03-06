@@ -40,6 +40,7 @@
 #include "main/framebuffer.h"
 #include "main/macros.h"
 #include "main/glformats.h"
+#include "main/renderbuffer.h"
 #include "program/prog_instruction.h"
 #include "st_context.h"
 #include "st_atom.h"
@@ -405,9 +406,10 @@ st_Clear(struct gl_context *ctx, GLbitfield mask)
          if (b != BUFFER_NONE && mask & (1 << b)) {
             struct gl_renderbuffer *rb
                = ctx->DrawBuffer->Attachment[b].Renderbuffer;
+            struct pipe_surface *surface = _mesa_renderbuffer_get_surface(ctx, rb);
             int colormask_index = ctx->Extensions.EXT_draw_buffers2 ? i : 0;
 
-            if (!rb || !rb->surface)
+            if (!rb || !surface)
                continue;
 
             unsigned colormask =
@@ -417,7 +419,7 @@ st_Clear(struct gl_context *ctx, GLbitfield mask)
                continue;
 
             unsigned surf_colormask =
-               util_format_colormask(util_format_description(rb->surface->format));
+               util_format_colormask(util_format_description(surface->format));
 
             bool scissor = is_scissor_enabled(ctx, rb);
             if ((scissor && !st->can_scissor_clear) ||
@@ -432,7 +434,8 @@ st_Clear(struct gl_context *ctx, GLbitfield mask)
    }
 
    if (mask & BUFFER_BIT_DEPTH) {
-      if (depthRb->surface && ctx->Depth.Mask) {
+      struct pipe_surface *surface = _mesa_renderbuffer_get_surface(ctx, depthRb);
+      if (surface && ctx->Depth.Mask) {
          bool scissor = is_scissor_enabled(ctx, depthRb);
          if ((scissor && !st->can_scissor_clear) ||
              is_window_rectangle_enabled(ctx))
@@ -443,7 +446,8 @@ st_Clear(struct gl_context *ctx, GLbitfield mask)
       }
    }
    if (mask & BUFFER_BIT_STENCIL) {
-      if (stencilRb->surface && !is_stencil_disabled(ctx, stencilRb)) {
+      struct pipe_surface *surface = _mesa_renderbuffer_get_surface(ctx, stencilRb);
+      if (surface && !is_stencil_disabled(ctx, stencilRb)) {
          bool scissor = is_scissor_enabled(ctx, stencilRb);
          if ((scissor && !st->can_scissor_clear) ||
              is_window_rectangle_enabled(ctx) ||
@@ -511,4 +515,3 @@ st_Clear(struct gl_context *ctx, GLbitfield mask)
    if (mask & BUFFER_BIT_ACCUM)
       _mesa_clear_accum_buffer(ctx);
 }
-

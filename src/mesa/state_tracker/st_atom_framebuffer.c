@@ -163,12 +163,13 @@ st_update_framebuffer_state( struct st_context *st )
             num_multiview_layer = MAX2(num_multiview_layer, rb->rtt_numviews);
          }
 
-         if (rb->surface) {
-            if (rb->surface->context != st->pipe) {
+         struct pipe_surface *surface = _mesa_renderbuffer_get_surface(ctx, rb);
+         if (surface) {
+            if (surface->context != st->pipe) {
                _mesa_regen_renderbuffer_surface(ctx, rb);
             }
-            framebuffer.cbufs[i] = rb->surface;
-            update_framebuffer_size(&framebuffer, rb->surface);
+            framebuffer.cbufs[i] = surface;
+            update_framebuffer_size(&framebuffer, surface);
          }
          rb->defined = GL_TRUE; /* we'll be drawing something */
       }
@@ -197,12 +198,13 @@ st_update_framebuffer_state( struct st_context *st )
          _mesa_update_renderbuffer_surface(ctx, rb);
          num_multiview_layer = MAX2(num_multiview_layer, rb->rtt_numviews);
       }
-      if (rb->surface && rb->surface->context != ctx->pipe) {
+      struct pipe_surface *surface = _mesa_renderbuffer_get_surface(ctx, rb);
+      if (surface && surface->context != ctx->pipe) {
          _mesa_regen_renderbuffer_surface(ctx, rb);
       }
-      framebuffer.zsbuf = rb->surface;
-      if (rb->surface)
-         update_framebuffer_size(&framebuffer, rb->surface);
+      framebuffer.zsbuf = surface;
+      if (surface)
+         update_framebuffer_size(&framebuffer, surface);
    }
    else
       framebuffer.zsbuf = NULL;

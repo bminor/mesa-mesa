@@ -531,10 +531,10 @@ do_blit_framebuffer(struct gl_context *ctx,
 
          _mesa_update_renderbuffer_surface(ctx, srcRb);
 
-         if (!srcRb->surface)
+         srcSurf = _mesa_renderbuffer_get_surface(ctx, srcRb);
+         if (!srcSurf)
             return;
 
-         srcSurf = srcRb->surface;
          src_base_fmt = srcRb->_BaseFormat;
          blit.src.resource = srcSurf->texture;
          blit.src.level = srcSurf->u.tex.level;
@@ -551,7 +551,7 @@ do_blit_framebuffer(struct gl_context *ctx,
             dst_base_fmt = dstRb->_BaseFormat;
             _mesa_update_renderbuffer_surface(ctx, dstRb);
 
-            dstSurf = dstRb->surface;
+            dstSurf = _mesa_renderbuffer_get_surface(ctx, dstRb);
 
             if (dstSurf) {
                blit.dst.resource = dstSurf->texture;
@@ -591,14 +591,14 @@ do_blit_framebuffer(struct gl_context *ctx,
       struct gl_renderbuffer *dstDepthRb =
          drawFB->Attachment[BUFFER_DEPTH].Renderbuffer;
       struct pipe_surface *dstDepthSurf =
-         dstDepthRb ? dstDepthRb->surface : NULL;
+         dstDepthRb ? _mesa_renderbuffer_get_surface(ctx, dstDepthRb) : NULL;
 
       struct gl_renderbuffer *srcStencilRb =
          readFB->Attachment[BUFFER_STENCIL].Renderbuffer;
       struct gl_renderbuffer *dstStencilRb =
          drawFB->Attachment[BUFFER_STENCIL].Renderbuffer;
       struct pipe_surface *dstStencilSurf =
-         dstStencilRb ? dstStencilRb->surface : NULL;
+         dstStencilRb ? _mesa_renderbuffer_get_surface(ctx, dstStencilRb) : NULL;
 
       if (_mesa_has_depthstencil_combined(readFB) &&
           _mesa_has_depthstencil_combined(drawFB)) {
@@ -613,10 +613,11 @@ do_blit_framebuffer(struct gl_context *ctx,
          blit.dst.box.z = dstDepthSurf->u.tex.first_layer;
          blit.dst.format = dstDepthSurf->format;
 
+         struct pipe_surface *srcDepthSurface = _mesa_renderbuffer_get_surface(ctx, srcDepthRb);
          blit.src.resource = srcDepthRb->texture;
-         blit.src.level = srcDepthRb->surface->u.tex.level;
-         blit.src.box.z = srcDepthRb->surface->u.tex.first_layer;
-         blit.src.format = srcDepthRb->surface->format;
+         blit.src.level = srcDepthSurface->u.tex.level;
+         blit.src.box.z = srcDepthSurface->u.tex.first_layer;
+         blit.src.format = srcDepthSurface->format;
 
          ctx->pipe->blit(ctx->pipe, &blit);
       }
@@ -631,10 +632,11 @@ do_blit_framebuffer(struct gl_context *ctx,
             blit.dst.box.z = dstDepthSurf->u.tex.first_layer;
             blit.dst.format = dstDepthSurf->format;
 
+            struct pipe_surface *srcDepthSurface = _mesa_renderbuffer_get_surface(ctx, srcDepthRb);
             blit.src.resource = srcDepthRb->texture;
-            blit.src.level = srcDepthRb->surface->u.tex.level;
-            blit.src.box.z = srcDepthRb->surface->u.tex.first_layer;
-            blit.src.format = srcDepthRb->surface->format;
+            blit.src.level = srcDepthSurface->u.tex.level;
+            blit.src.box.z = srcDepthSurface->u.tex.first_layer;
+            blit.src.format = srcDepthSurface->format;
 
             ctx->pipe->blit(ctx->pipe, &blit);
          }
@@ -647,10 +649,11 @@ do_blit_framebuffer(struct gl_context *ctx,
             blit.dst.box.z = dstStencilSurf->u.tex.first_layer;
             blit.dst.format = dstStencilSurf->format;
 
+            struct pipe_surface *srcStencilSurface = _mesa_renderbuffer_get_surface(ctx, srcStencilRb);
             blit.src.resource = srcStencilRb->texture;
-            blit.src.level = srcStencilRb->surface->u.tex.level;
-            blit.src.box.z = srcStencilRb->surface->u.tex.first_layer;
-            blit.src.format = srcStencilRb->surface->format;
+            blit.src.level = srcStencilSurface->u.tex.level;
+            blit.src.box.z = srcStencilSurface->u.tex.first_layer;
+            blit.src.format = srcStencilSurface->format;
 
             ctx->pipe->blit(ctx->pipe, &blit);
          }

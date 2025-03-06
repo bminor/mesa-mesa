@@ -2551,10 +2551,6 @@ struct gl_renderbuffer
                              GLuint width, GLuint height);
 
    struct pipe_resource *texture;
-   /* This points to either "surface_linear" or "surface_srgb".
-    * It doesn't hold the pipe_surface reference. The other two do.
-    */
-   struct pipe_surface *surface;
    struct pipe_surface *surface_linear;
    struct pipe_surface *surface_srgb;
    GLboolean defined;        /**< defined contents? */

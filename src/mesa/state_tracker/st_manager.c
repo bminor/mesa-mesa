@@ -201,7 +201,6 @@ st_set_ws_renderbuffer_surface(struct gl_renderbuffer *rb,
    else
       pipe_surface_reference(&rb->surface_linear, surf);
 
-   rb->surface = surf; /* just assign, don't ref */
    pipe_resource_reference(&rb->texture, surf->texture);
    rb->Width = pipe_surface_width(surf);
    rb->Height = pipe_surface_height(surf);
@@ -454,8 +453,6 @@ st_new_renderbuffer_fb(enum pipe_format format, unsigned samples, bool sw)
       FREE(rb);
       return NULL;
    }
-
-   rb->surface = NULL;
 
    return rb;
 }

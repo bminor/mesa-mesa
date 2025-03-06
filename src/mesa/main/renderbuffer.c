@@ -76,7 +76,6 @@ delete_renderbuffer(struct gl_context *ctx, struct gl_renderbuffer *rb)
       pipe_surface_unref_no_context(&rb->surface_srgb);
       pipe_surface_unref_no_context(&rb->surface_linear);
    }
-   rb->surface = NULL;
    pipe_resource_reference(&rb->texture, NULL);
    free(rb->data);
    free(rb->Label);
@@ -153,7 +152,6 @@ renderbuffer_alloc_storage(struct gl_context * ctx,
     */
    pipe_surface_reference(&rb->surface_srgb, NULL);
    pipe_surface_reference(&rb->surface_linear, NULL);
-   rb->surface = NULL;
    pipe_resource_reference(&rb->texture, NULL);
 
    /* If an sRGB framebuffer is unsupported, sRGB formats behave like linear
@@ -290,7 +288,7 @@ renderbuffer_alloc_storage(struct gl_context * ctx,
       return false;
 
    _mesa_update_renderbuffer_surface(ctx, rb);
-   return rb->surface != NULL;
+   return _mesa_renderbuffer_get_surface(ctx, rb) != NULL;
 }
 
 /**
@@ -491,11 +489,13 @@ _mesa_map_renderbuffer(struct gl_context *ctx,
    else
       y2 = y;
 
-    map = pipe_texture_map(pipe,
-                            rb->texture,
-                            rb->surface->u.tex.level,
-                            rb->surface->u.tex.first_layer,
-                            transfer_flags, x, y2, w, h, &rb->transfer);
+   _mesa_update_renderbuffer_surface(ctx, rb);
+   const struct pipe_surface *surface = _mesa_renderbuffer_get_surface(ctx, rb);
+   map = pipe_texture_map(pipe,
+                           rb->texture,
+                           surface->u.tex.level,
+                           surface->u.tex.first_layer,
+                           transfer_flags, x, y2, w, h, &rb->transfer);
    if (map) {
       if (invert) {
          *rowStrideOut = -(int) rb->transfer->stride;
@@ -549,9 +549,43 @@ _mesa_regen_renderbuffer_surface(struct gl_context *ctx,
    /* create -> destroy to avoid blowing up cached surfaces */
    surf = pipe->create_surface(pipe, resource, &surf_tmpl);
    pipe_surface_unref(pipe, psurf);
-   *psurf = surf;
+}
 
-   rb->surface = *psurf;
+static void
+update_renderbuffer_surface(struct gl_context *ctx, struct gl_renderbuffer *rb, struct pipe_surface *surf, bool enable_srgb)
+{
+   if (enable_srgb)
+      rb->surface_srgb = surf;
+   else
+      rb->surface_linear = surf;
+}
+
+struct pipe_surface *
+_mesa_renderbuffer_get_surface(struct gl_context *ctx, struct gl_renderbuffer *rb)
+{
+   bool enable_srgb = ctx->Color.sRGBEnabled && _mesa_is_format_srgb(rb->Format);
+   return enable_srgb ? rb->surface_srgb : rb->surface_linear;
+}
+
+enum pipe_format
+_mesa_renderbuffer_get_format(struct gl_context *ctx, struct gl_renderbuffer *rb)
+{
+   /*
+    * For winsys fbo, it is possible that the renderbuffer is sRGB-capable but
+    * the format of rb->texture is linear (because we have no control over
+    * the format).  Check rb->Format instead of rb->texture->format
+    * to determine if the rb is sRGB-capable.
+    */
+   bool enable_srgb = ctx->Color.sRGBEnabled && _mesa_is_format_srgb(rb->Format);
+   enum pipe_format format = rb->texture->format;
+
+   if (rb->is_rtt) {
+      const struct gl_texture_object *stTexObj = rb->TexImage->TexObject;
+      if (stTexObj->surface_based)
+         format = stTexObj->surface_format;
+   }
+
+   return enable_srgb ? util_format_srgb(format) : util_format_linear(format);
 }
 
 /**
@@ -569,23 +603,14 @@ _mesa_update_renderbuffer_surface(struct gl_context *ctx,
    unsigned rtt_height = rb->Height;
    unsigned rtt_depth = rb->Depth;
 
-   /*
-    * For winsys fbo, it is possible that the renderbuffer is sRGB-capable but
-    * the format of rb->texture is linear (because we have no control over
-    * the format).  Check rb->Format instead of rb->texture->format
-    * to determine if the rb is sRGB-capable.
-    */
+
    bool enable_srgb = ctx->Color.sRGBEnabled &&
       _mesa_is_format_srgb(rb->Format);
-   enum pipe_format format = resource->format;
+   enum pipe_format format = _mesa_renderbuffer_get_format(ctx, rb);
 
    if (rb->is_rtt) {
       stTexObj = rb->TexImage->TexObject;
-      if (stTexObj->surface_based)
-         format = stTexObj->surface_format;
    }
-
-   format = enable_srgb ? util_format_srgb(format) : util_format_linear(format);
 
    if (resource->target == PIPE_TEXTURE_1D_ARRAY) {
       rtt_depth = rtt_height;
@@ -654,9 +679,7 @@ _mesa_update_renderbuffer_surface(struct gl_context *ctx,
       }
    }
 
-   struct pipe_surface **psurf =
-      enable_srgb ? &rb->surface_srgb : &rb->surface_linear;
-   struct pipe_surface *surf = *psurf;
+   struct pipe_surface *surf = _mesa_renderbuffer_get_surface(ctx, rb);
 
    if (!surf ||
        surf->texture->nr_samples != rb->NumSamples ||
@@ -677,9 +700,8 @@ _mesa_update_renderbuffer_surface(struct gl_context *ctx,
       surf_tmpl.u.tex.last_layer = last_layer;
 
       /* create -> destroy to avoid blowing up cached surfaces */
-      struct pipe_surface *surf = pipe->create_surface(pipe, resource, &surf_tmpl);
-      pipe_surface_unref(pipe, psurf);
-      *psurf = surf;
+      struct pipe_surface *psurf = pipe->create_surface(pipe, resource, &surf_tmpl);
+      pipe_surface_unref(pipe, &surf);
+      update_renderbuffer_surface(ctx, rb, psurf, enable_srgb);
    }
-   rb->surface = *psurf;
 }

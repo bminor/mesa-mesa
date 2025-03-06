@@ -1265,7 +1265,7 @@ do_validate_framebuffer(struct gl_context *ctx, struct gl_framebuffer *fb)
       if (!mixed_formats) {
          /* Disallow mixed formats. */
          if (att->Type != GL_NONE) {
-            format = att->Renderbuffer->surface->format;
+            format = _mesa_renderbuffer_get_format(ctx, att->Renderbuffer);
          } else {
             continue;
          }
@@ -5566,7 +5566,7 @@ do_discard_framebuffer(struct gl_context *ctx, struct gl_framebuffer *fb,
    if (!att->Renderbuffer || !att->Complete)
       return;
 
-   prsc = att->Renderbuffer->surface->texture;
+   prsc = att->Renderbuffer->texture;
 
    /* using invalidate_resource will only work for simple 2D resources */
    if (prsc->depth0 != 1 || prsc->array_size != 1 || prsc->last_level != 0)

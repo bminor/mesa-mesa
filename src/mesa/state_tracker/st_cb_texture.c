@@ -43,6 +43,7 @@
 #include "main/pack.h"
 #include "main/pbo.h"
 #include "main/pixeltransfer.h"
+#include "main/renderbuffer.h"
 #include "main/texcompress.h"
 #include "main/texcompress_astc.h"
 #include "main/texcompress_bptc.h"
@@ -2824,10 +2825,11 @@ fallback_copy_texsubimage(struct gl_context *ctx,
       srcY = rb->Height - srcY - height;
    }
 
+   struct pipe_surface *surface = _mesa_renderbuffer_get_surface(ctx, rb);
    map = pipe_texture_map(pipe,
                            rb->texture,
-                           rb->surface->u.tex.level,
-                           rb->surface->u.tex.first_layer,
+                           surface->u.tex.level,
+                           surface->u.tex.first_layer,
                            PIPE_MAP_READ,
                            srcX, srcY,
                            width, height, &src_trans);
@@ -3010,7 +3012,7 @@ st_CopyTexSubImage(struct gl_context *ctx, GLuint dims,
           !_mesa_is_format_astc_2d(texImage->TexFormat) &&
           texImage->TexFormat != MESA_FORMAT_ETC1_RGB8);
 
-   if (!rb || !rb->surface || !stImage->pt) {
+   if (!rb || !_mesa_renderbuffer_get_surface(ctx, rb) || !stImage->pt) {
       debug_printf("%s: null rb or stImage\n", __func__);
       return;
    }
@@ -3058,13 +3060,14 @@ st_CopyTexSubImage(struct gl_context *ctx, GLuint dims,
    /* Blit the texture.
     * This supports flipping, format conversions, and downsampling.
     */
+   struct pipe_surface *surface = _mesa_renderbuffer_get_surface(ctx, rb);
    memset(&blit, 0, sizeof(blit));
    blit.src.resource = rb->texture;
-   blit.src.format = util_format_linear(rb->surface->format);
-   blit.src.level = rb->surface->u.tex.level;
+   blit.src.format = util_format_linear(surface->format);
+   blit.src.level = surface->u.tex.level;
    blit.src.box.x = srcX;
    blit.src.box.y = srcY0;
-   blit.src.box.z = rb->surface->u.tex.first_layer;
+   blit.src.box.z = surface->u.tex.first_layer;
    blit.src.box.width = width;
    blit.src.box.height = srcY1 - srcY0;
    blit.src.box.depth = 1;
