@@ -29,7 +29,8 @@ enum panvk_debug_flags {
 
 #if defined(VK_USE_PLATFORM_WAYLAND_KHR) || \
     defined(VK_USE_PLATFORM_XCB_KHR) || \
-    defined(VK_USE_PLATFORM_XLIB_KHR)
+    defined(VK_USE_PLATFORM_XLIB_KHR) || \
+    defined(VK_USE_PLATFORM_DISPLAY_KHR)
 #define PANVK_USE_WSI_PLATFORM
 #endif
 
