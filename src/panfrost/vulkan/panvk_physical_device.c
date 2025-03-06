@@ -567,19 +567,42 @@ get_conformance_version(unsigned arch)
    return (VkConformanceVersion){0, 0, 0, 0};
 }
 
+static VkSampleCountFlags
+get_sample_counts(unsigned arch, unsigned max_tib_size,
+                  unsigned max_cbuf_atts, unsigned format_size)
+{
+   VkSampleCountFlags sample_counts =
+      VK_SAMPLE_COUNT_1_BIT | VK_SAMPLE_COUNT_4_BIT;
+
+   unsigned max_msaa =
+      pan_get_max_msaa(arch, max_tib_size, max_cbuf_atts, format_size);
+
+   assert(max_msaa >= 4);
+
+   if (max_msaa >= 8)
+      sample_counts |= VK_SAMPLE_COUNT_8_BIT;
+
+   if (max_msaa >= 16)
+      sample_counts |= VK_SAMPLE_COUNT_16_BIT;
+
+   return sample_counts;
+}
+
 static void
 get_device_properties(const struct panvk_instance *instance,
                       const struct panvk_physical_device *device,
                       struct vk_properties *properties)
 {
-   /* HW supports MSAA 4, 8 and 16, but we limit ourselves to MSAA 4 for now. */
+   unsigned arch = pan_arch(device->kmod.props.gpu_prod_id);
+   unsigned max_tib_size = pan_get_max_tib_size(arch, device->model);
+   const unsigned max_cbuf_format = 16; /* R32G32B32A32 */
+
+   unsigned max_cbuf_atts = pan_get_max_cbufs(arch, max_tib_size);
    VkSampleCountFlags sample_counts =
-      VK_SAMPLE_COUNT_1_BIT | VK_SAMPLE_COUNT_4_BIT;
+      get_sample_counts(arch, max_tib_size, max_cbuf_atts, max_cbuf_format);
 
    uint64_t os_page_size = 4096;
    os_get_page_size(&os_page_size);
-
-   unsigned arch = pan_arch(device->kmod.props.gpu_prod_id);
 
    /* Ensure that the max threads count per workgroup is valid for Bifrost */
    assert(arch > 8 || device->kmod.props.max_threads_per_wg <= 1024);
@@ -784,7 +807,7 @@ get_device_properties(const struct panvk_instance *instance,
       .framebufferDepthSampleCounts = sample_counts,
       .framebufferStencilSampleCounts = sample_counts,
       .framebufferNoAttachmentsSampleCounts = sample_counts,
-      .maxColorAttachments = 8,
+      .maxColorAttachments = max_cbuf_atts,
       .sampledImageColorSampleCounts = sample_counts,
       .sampledImageIntegerSampleCounts = VK_SAMPLE_COUNT_1_BIT,
       .sampledImageDepthSampleCounts = sample_counts,
@@ -1432,6 +1455,20 @@ get_image_format_features(struct panvk_physical_device *physical_device,
 }
 
 static VkFormatFeatureFlags
+get_image_format_sample_counts(struct panvk_physical_device *physical_device,
+                               VkFormat format)
+{
+   unsigned arch = pan_arch(physical_device->kmod.props.gpu_prod_id);
+   unsigned max_tib_size = pan_get_max_tib_size(arch, physical_device->model);
+   unsigned max_cbuf_atts = pan_get_max_cbufs(arch, max_tib_size);
+
+   assert(!vk_format_is_compressed(format));
+   unsigned format_size = vk_format_get_blocksize(format);
+
+   return get_sample_counts(arch, max_tib_size, max_cbuf_atts, format_size);
+}
+
+static VkFormatFeatureFlags
 get_buffer_format_features(struct panvk_physical_device *physical_device,
                            VkFormat format)
 {
@@ -1604,7 +1641,8 @@ get_image_format_properties(struct panvk_physical_device *physical_device,
          VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)) &&
        !(info->flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) &&
        !(all_usage & VK_IMAGE_USAGE_STORAGE_BIT)) {
-      sampleCounts |= VK_SAMPLE_COUNT_4_BIT;
+      sampleCounts |=
+         get_image_format_sample_counts(physical_device, info->format);
    }
 
    /* From the Vulkan 1.2.199 spec:

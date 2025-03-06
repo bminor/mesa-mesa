@@ -34,3 +34,4 @@ VK_KHR_float_controls on panvk
 VK_KHR_float_controls2 on panvk
 storageBuffer8BitAccess on panvk
 uniformAndStorageBuffer8BitAccess on panvk
+MSAA with 8 and 16 sample counts on panvk
