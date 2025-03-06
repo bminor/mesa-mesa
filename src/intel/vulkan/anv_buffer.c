@@ -28,6 +28,8 @@ anv_bind_buffer_memory(struct anv_device *device,
       buffer->address = ANV_NULL_ADDRESS;
    }
 
+   buffer->vk.device_address = anv_address_physical(buffer->address);
+
    ANV_RMV(buffer_bind, device, buffer);
 
    if (bind_status)
@@ -242,6 +244,8 @@ VkResult anv_CreateBuffer(
          vk_buffer_destroy(&device->vk, pAllocator, &buffer->vk);
          return result;
       }
+
+      buffer->vk.device_address = anv_address_physical(buffer->address);
    }
 
    ANV_RMV(buffer_create, device, false, buffer);
