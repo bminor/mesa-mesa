@@ -730,112 +730,11 @@ lima_parse_render_state(FILE *fp, uint32_t *data, int size, uint32_t start)
    fprintf(fp, "/* ============ RSW END =========================== */\n");
 }
 
-static void
-parse_texture(FILE *fp, uint32_t *data, uint32_t start, uint32_t offset)
-{
-   uint32_t i = 0;
-   offset /= 4;
-   lima_tex_desc *desc = (lima_tex_desc *)&data[offset];
-
-   /* Word 0 */
-   fprintf(fp, "/* 0x%08x (0x%08x) */\t0x%08x\n",
-           start + i * 4, i * 4, *(&data[i + offset]));
-   i++;
-   fprintf(fp, "\t format: 0x%x (%d)\n", desc->format, desc->format);
-   fprintf(fp, "\t flag1: 0x%x (%d)\n", desc->flag1, desc->flag1);
-   fprintf(fp, "\t swap_r_b: 0x%x (%d)\n", desc->swap_r_b, desc->swap_r_b);
-   fprintf(fp, "\t unknown_0_1: 0x%x (%d)\n", desc->unknown_0_1, desc->unknown_0_1);
-   fprintf(fp, "\t stride: 0x%x (%d)\n", desc->stride, desc->stride);
-   fprintf(fp, "\t unknown_0_2: 0x%x (%d)\n", desc->unknown_0_2, desc->unknown_0_2);
-
-   /* Word 1 - 5 */
-   fprintf(fp, "/* 0x%08x (0x%08x) */\t0x%08x 0x%08x 0x%08x 0x%08x 0x%08x\n",
-           start + i * 4, i * 4, *(&data[i + offset]), *(&data[i + 1 + offset]),
-           *(&data[i + 2 + offset]), *(&data[i + 3 + offset]), *(&data[i + 4 + offset]));
-   i += 5;
-   fprintf(fp, "\t unknown_1_1: 0x%x (%d)\n", desc->unknown_1_1, desc->unknown_1_1);
-   fprintf(fp, "\t unnorm_coords: 0x%x (%d)\n", desc->unnorm_coords, desc->unnorm_coords);
-   fprintf(fp, "\t unknown_1_2: 0x%x (%d)\n", desc->unknown_1_2, desc->unknown_1_2);
-   fprintf(fp, "\t cube_map: 0x%x (%d)\n", desc->cube_map, desc->cube_map);
-   fprintf(fp, "\t sampler_dim: 0x%x (%d)\n", desc->sampler_dim, desc->sampler_dim);
-   fprintf(fp, "\t min_lod: 0x%x (%d) (%f)\n", desc->min_lod, desc->min_lod, lima_fixed8_to_float(desc->min_lod));
-   fprintf(fp, "\t max_lod: 0x%x (%d) (%f)\n", desc->max_lod, desc->max_lod, lima_fixed8_to_float(desc->max_lod));
-   fprintf(fp, "\t lod_bias: 0x%x (%d) (%f)\n", desc->lod_bias, desc->lod_bias, lima_fixed8_to_float(desc->lod_bias));
-   fprintf(fp, "\t unknown_2_1: 0x%x (%d)\n", desc->unknown_2_1, desc->unknown_2_1);
-   fprintf(fp, "\t has_stride: 0x%x (%d)\n", desc->has_stride, desc->has_stride);
-   fprintf(fp, "\t min_mipfilter_2: 0x%x (%d)\n", desc->min_mipfilter_2, desc->min_mipfilter_2);
-   fprintf(fp, "\t min_img_filter_nearest: 0x%x (%d)\n", desc->min_img_filter_nearest, desc->min_img_filter_nearest);
-   fprintf(fp, "\t mag_img_filter_nearest: 0x%x (%d)\n", desc->mag_img_filter_nearest, desc->mag_img_filter_nearest);
-   fprintf(fp, "\t wrap_s: %d (%s)\n", desc->wrap_s,
-           lima_get_wrap_mode_string(desc->wrap_s));
-   fprintf(fp, "\t wrap_t: %d (%s)\n", desc->wrap_t,
-           lima_get_wrap_mode_string(desc->wrap_t));
-   fprintf(fp, "\t wrap_r: %d (%s)\n", desc->wrap_r,
-           lima_get_wrap_mode_string(desc->wrap_r));
-   fprintf(fp, "\t width: 0x%x (%d)\n", desc->width, desc->width);
-   fprintf(fp, "\t height: 0x%x (%d)\n", desc->height, desc->height);
-   fprintf(fp, "\t depth: 0x%x (%d)\n", desc->depth, desc->depth);
-   fprintf(fp, "\t border_red: 0x%x (%d)\n", desc->border_red, desc->border_red);
-   fprintf(fp, "\t border_green: 0x%x (%d)\n", desc->border_green, desc->border_green);
-   fprintf(fp, "\t border_blue: 0x%x (%d)\n", desc->border_blue, desc->border_blue);
-   fprintf(fp, "\t border_alpha: 0x%x (%d)\n", desc->border_alpha, desc->border_alpha);
-   fprintf(fp, "\t unknown_5_1: 0x%x (%d)\n", desc->unknown_5_1, desc->unknown_5_1);
-
-   /* Word 6 - */
-   fprintf(fp, "/* 0x%08x (0x%08x) */",
-           start + i * 4, i * 4);
-   fprintf(fp, "\t");
-
-   int miplevels = (int)lima_fixed8_to_float(desc->max_lod);
-   for (int k = 0; k < ((((miplevels + 1) * 26) + 64) / 32); k++)
-      fprintf(fp, "0x%08x ", *(&data[i + offset + k]));
-   fprintf(fp, "\n");
-
-   i++;
-   fprintf(fp, "\t unknown_6_1: 0x%x (%d)\n", desc->va_s.unknown_6_1, desc->va_s.unknown_6_1);
-   fprintf(fp, "\t layout: 0x%x (%d)\n", desc->va_s.layout, desc->va_s.layout);
-   fprintf(fp, "\t unknown_6_2: 0x%x (%d)\n", desc->va_s.unknown_6_2, desc->va_s.unknown_6_2);
-   fprintf(fp, "\t unknown_6_3: 0x%x (%d)\n", desc->va_s.unknown_6_3, desc->va_s.unknown_6_3);
-
-   /* first level */
-   fprintf(fp, "\t va_0: 0x%x \n", desc->va_s.va_0 << 6);
-
-   /* second level up to desc->miplevels */
-   int j;
-   unsigned va_bit_idx;
-   unsigned va_idx;
-   uint32_t va;
-   uint32_t va_1;
-   uint32_t va_2;
-   for (j = 1; j <= miplevels; j++) {
-      va = 0;
-      va_1 = 0;
-      va_2 = 0;
-
-      va_bit_idx = VA_BIT_OFFSET + (VA_BIT_SIZE * j);
-      va_idx = va_bit_idx / 32;
-      va_bit_idx %= 32;
-
-      /* the first (32 - va_bit_idx) bits */
-      va_1 |= (*(&data[i + offset + va_idx - 1]) >> va_bit_idx);
-
-      /* do we need some bits from the following word? */
-      if (va_bit_idx > 6) {
-         /* shift left and right again to erase the unneeded bits, keep space for va1 */
-         va_2 |= (*(&data[i + offset + va_idx]) << (2 * 32 - VA_BIT_SIZE - va_bit_idx));
-         va_2 >>= ((2 * 32 - VA_BIT_SIZE - va_bit_idx) - (32 - va_bit_idx));
-         va |= va_2;
-      }
-      va |= va_1;
-      va <<= 6;
-      fprintf(fp, "\t va_%d: 0x%x \n", j, va);
-   }
-}
-
 void
 lima_parse_texture_descriptor(FILE *fp, uint32_t *data, int size, uint32_t start, uint32_t offset)
 {
    fprintf(fp, "/* ============ TEXTURE BEGIN ===================== */\n");
-   parse_texture(fp, data, start, offset);
+   lima_unpack(fp, data + offset / sizeof(uint32_t), TEXTURE_DESCRIPTOR, temp);
+   lima_print(fp, TEXTURE_DESCRIPTOR, temp, 8);
    fprintf(fp, "/* ============ TEXTURE END ======================= */\n");
 }

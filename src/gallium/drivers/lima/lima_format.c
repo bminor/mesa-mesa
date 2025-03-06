@@ -30,30 +30,7 @@
 #include <util/macros.h>
 
 #include "lima_format.h"
-
-#define LIMA_TEXEL_FORMAT_L8           0x09
-#define LIMA_TEXEL_FORMAT_A8           0x0a
-#define LIMA_TEXEL_FORMAT_I8           0x0b
-#define LIMA_TEXEL_FORMAT_BGR_565      0x0e
-#define LIMA_TEXEL_FORMAT_BGRA_5551    0x0f
-#define LIMA_TEXEL_FORMAT_BGRA_4444    0x10
-#define LIMA_TEXEL_FORMAT_L8A8         0x11
-#define LIMA_TEXEL_FORMAT_L16          0x12
-#define LIMA_TEXEL_FORMAT_A16          0x13
-#define LIMA_TEXEL_FORMAT_I16          0x14
-#define LIMA_TEXEL_FORMAT_RGB_888      0x15
-#define LIMA_TEXEL_FORMAT_RGBA_8888    0x16
-#define LIMA_TEXEL_FORMAT_RGBX_8888    0x17
-#define LIMA_TEXEL_FORMAT_ETC1_RGB8    0x20
-#define LIMA_TEXEL_FORMAT_L16_FLOAT    0x22
-#define LIMA_TEXEL_FORMAT_A16_FLOAT    0x23
-#define LIMA_TEXEL_FORMAT_I16_FLOAT    0x24
-#define LIMA_TEXEL_FORMAT_L16A16_FLOAT 0x25
-#define LIMA_TEXEL_FORMAT_R16G16B16A16_FLOAT 0x26
-#define LIMA_TEXEL_FORMAT_R16G16B16_FLOAT 0x2f
-#define LIMA_TEXEL_FORMAT_Z24X8        0x2c
-/* This format is only used for depth/stencil reload */
-#define LIMA_TEXEL_FORMAT_Z24S8_RLD    0x32
+#include "genxml/lima_pack.h"
 
 #define LIMA_PIXEL_FORMAT_B5G6R5       0x00
 #define LIMA_PIXEL_FORMAT_B5G5R5A1     0x01

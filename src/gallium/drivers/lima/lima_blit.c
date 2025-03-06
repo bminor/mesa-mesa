@@ -100,22 +100,22 @@ lima_pack_blit_cmd(struct lima_job *job,
    memcpy(cpu + lima_blit_render_state_offset, &reload_render_state,
           sizeof(reload_render_state));
 
-   lima_tex_desc *td = cpu + lima_blit_tex_desc_offset;
-   memset(td, 0, lima_min_tex_desc_size);
-   lima_texture_desc_set_res(ctx, td, psurf->texture, level, level,
-                             first_layer, mrt_idx);
-   td->format = lima_format_get_texel_reload(psurf->format);
-   td->unnorm_coords = 1;
-   td->sampler_dim = LIMA_SAMPLER_DIM_2D;
-   td->min_img_filter_nearest = 1;
-   td->mag_img_filter_nearest = 1;
-   td->wrap_s = LIMA_TEX_WRAP_CLAMP_TO_EDGE;
-   td->wrap_t = LIMA_TEX_WRAP_CLAMP_TO_EDGE;
-   td->wrap_r = LIMA_TEX_WRAP_CLAMP_TO_EDGE;
+   lima_pack(cpu + lima_blit_tex_desc_offset, TEXTURE_DESCRIPTOR, desc) {
+      lima_texture_desc_set_res(ctx, &desc, psurf->texture, level, level,
+                                first_layer, mrt_idx);
+      desc.texel_format = lima_format_get_texel_reload(psurf->format);
+      desc.unnorm_coords = true;
+      desc.sampler_dim = LIMA_SAMPLER_DIMENSION_2D;
+      desc.min_img_filter_nearest = true;
+      desc.mag_img_filter_nearest = true;
+      desc.wrap_s = LIMA_TEX_WRAP_CLAMP_TO_EDGE;
+      desc.wrap_t = LIMA_TEX_WRAP_CLAMP_TO_EDGE;
+      desc.wrap_r = LIMA_TEX_WRAP_CLAMP_TO_EDGE;
 
-   if (filter != PIPE_TEX_FILTER_NEAREST) {
-      td->min_img_filter_nearest = 0;
-      td->mag_img_filter_nearest = 0;
+      if (filter != PIPE_TEX_FILTER_NEAREST) {
+         desc.min_img_filter_nearest = false;
+         desc.mag_img_filter_nearest = false;
+      }
    }
 
    uint32_t *ta = cpu + lima_blit_tex_array_offset;
