@@ -44,6 +44,7 @@ VK_DEFINE_NONDISP_HANDLE_CASTS(vn_pipeline_cache,
 enum vn_pipeline_type {
    VN_PIPELINE_TYPE_GRAPHICS,
    VN_PIPELINE_TYPE_COMPUTE,
+   VN_PIPELINE_TYPE_RAY_TRACING,
 };
 
 struct vn_pipeline {

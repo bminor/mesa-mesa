@@ -2771,3 +2771,42 @@ vn_CmdWriteAccelerationStructuresPropertiesKHR(
    vn_cmd_record_query(commandBuffer, queryPool, firstQuery,
                        accelerationStructureCount, true);
 }
+
+void
+vn_CmdSetRayTracingPipelineStackSizeKHR(VkCommandBuffer commandBuffer,
+                                        uint32_t pipelineStackSize)
+{
+   VN_CMD_ENQUEUE(vkCmdSetRayTracingPipelineStackSizeKHR, commandBuffer,
+                  pipelineStackSize);
+}
+
+void
+vn_CmdTraceRaysIndirectKHR(
+   VkCommandBuffer commandBuffer,
+   const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
+   const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
+   const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
+   const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable,
+   VkDeviceAddress indirectDeviceAddress)
+{
+   VN_CMD_ENQUEUE(vkCmdTraceRaysIndirectKHR, commandBuffer,
+                  pRaygenShaderBindingTable, pMissShaderBindingTable,
+                  pHitShaderBindingTable, pCallableShaderBindingTable,
+                  indirectDeviceAddress);
+}
+
+void
+vn_CmdTraceRaysKHR(
+   VkCommandBuffer commandBuffer,
+   const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
+   const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
+   const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
+   const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable,
+   uint32_t width,
+   uint32_t height,
+   uint32_t depth)
+{
+   VN_CMD_ENQUEUE(vkCmdTraceRaysKHR, commandBuffer, pRaygenShaderBindingTable,
+                  pMissShaderBindingTable, pHitShaderBindingTable,
+                  pCallableShaderBindingTable, width, height, depth);
+}

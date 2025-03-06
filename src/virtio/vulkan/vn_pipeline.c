@@ -564,6 +564,7 @@ vn_create_pipeline_handles(struct vn_device *dev,
       pipeline_size = sizeof(struct vn_graphics_pipeline);
       break;
    case VN_PIPELINE_TYPE_COMPUTE:
+   case VN_PIPELINE_TYPE_RAY_TRACING:
       pipeline_size = sizeof(struct vn_pipeline);
       break;
    }
@@ -1841,4 +1842,117 @@ vn_DestroyPipeline(VkDevice device,
 
    vn_object_base_fini(&pipeline->base);
    vk_free(alloc, pipeline);
+}
+
+VkResult
+vn_CreateRayTracingPipelinesKHR(
+   VkDevice device,
+   VkDeferredOperationKHR deferredOperation,
+   VkPipelineCache pipelineCache,
+   uint32_t createInfoCount,
+   const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
+   const VkAllocationCallbacks *pAllocator,
+   VkPipeline *pPipelines)
+{
+   struct vn_device *dev = vn_device_from_handle(device);
+   const VkAllocationCallbacks *alloc =
+      pAllocator ? pAllocator : &dev->base.base.alloc;
+   bool want_sync = false;
+   VkResult result = VK_SUCCESS;
+
+   memset(pPipelines, 0, sizeof(*pPipelines) * createInfoCount);
+
+   if (!vn_create_pipeline_handles(dev, VN_PIPELINE_TYPE_RAY_TRACING,
+                                   createInfoCount, pPipelines, alloc))
+      return vn_error(dev->instance, VK_ERROR_OUT_OF_HOST_MEMORY);
+
+   for (uint32_t i = 0; i < createInfoCount; i++) {
+      struct vn_pipeline *pipeline = vn_pipeline_from_handle(pPipelines[i]);
+      struct vn_pipeline_layout *layout =
+         vn_pipeline_layout_from_handle(pCreateInfos[i].layout);
+      if (layout->push_descriptor_set_layout ||
+          layout->has_push_constant_ranges) {
+         pipeline->layout = vn_pipeline_layout_ref(dev, layout);
+      }
+
+      if (vn_pipeline_create_flags2(pCreateInfos[i].pNext,
+                                    pCreateInfos[i].flags) &
+          VN_PIPELINE_CREATE_SYNC_MASK)
+         want_sync = true;
+
+      vn_invalidate_pipeline_creation_feedback(
+         (const VkBaseInStructure *)pCreateInfos[i].pNext);
+   }
+
+   /* TODO take deferredOperation into consideration */
+   struct vn_ring *target_ring = vn_get_target_ring(dev);
+   if (!target_ring) {
+      vn_destroy_pipeline_handles(dev, createInfoCount, pPipelines, alloc);
+      return vn_error(dev->instance, VK_ERROR_OUT_OF_HOST_MEMORY);
+   }
+
+   /* The VUID-VkRayTracingPipelineCreateInfoKHR-* set of VUs have well
+    * validated the create info here. Nothing needs to be done.
+    */
+   if (want_sync || target_ring != dev->primary_ring) {
+      result = vn_call_vkCreateRayTracingPipelinesKHR(
+         target_ring, device, VK_NULL_HANDLE, pipelineCache, createInfoCount,
+         pCreateInfos, NULL, pPipelines);
+      if (result != VK_SUCCESS)
+         vn_destroy_failed_pipeline_handles(dev, createInfoCount, pPipelines,
+                                            alloc);
+   } else {
+      vn_async_vkCreateRayTracingPipelinesKHR(
+         target_ring, device, VK_NULL_HANDLE, pipelineCache, createInfoCount,
+         pCreateInfos, NULL, pPipelines);
+      result = VK_SUCCESS;
+   }
+
+   if (deferredOperation != VK_NULL_HANDLE)
+      return VK_OPERATION_DEFERRED_KHR;
+
+   return vn_result(dev->instance, result);
+}
+
+VkResult
+vn_GetRayTracingCaptureReplayShaderGroupHandlesKHR(VkDevice device,
+                                                   VkPipeline pipeline,
+                                                   uint32_t firstGroup,
+                                                   uint32_t groupCount,
+                                                   size_t dataSize,
+                                                   void *pData)
+{
+   struct vn_device *dev = vn_device_from_handle(device);
+
+   return vn_call_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR(
+      dev->primary_ring, device, pipeline, firstGroup, groupCount, dataSize,
+      pData);
+}
+
+VkResult
+vn_GetRayTracingShaderGroupHandlesKHR(VkDevice device,
+                                      VkPipeline pipeline,
+                                      uint32_t firstGroup,
+                                      uint32_t groupCount,
+                                      size_t dataSize,
+                                      void *pData)
+{
+   struct vn_device *dev = vn_device_from_handle(device);
+
+   return vn_call_vkGetRayTracingShaderGroupHandlesKHR(
+      dev->primary_ring, device, pipeline, firstGroup, groupCount, dataSize,
+      pData);
+}
+
+VkDeviceSize
+vn_GetRayTracingShaderGroupStackSizeKHR(VkDevice device,
+                                        VkPipeline pipeline,
+                                        uint32_t group,
+                                        VkShaderGroupShaderKHR groupShader)
+{
+   struct vn_device *dev = vn_device_from_handle(device);
+
+   /* TODO per background/deferred rt pipeline cache for its shader groups */
+   return vn_call_vkGetRayTracingShaderGroupStackSizeKHR(
+      dev->primary_ring, device, pipeline, group, groupShader);
 }
