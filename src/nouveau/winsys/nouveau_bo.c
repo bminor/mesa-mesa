@@ -206,12 +206,6 @@ nouveau_ws_bo_from_dma_buf_locked(struct nouveau_ws_device *dev, int fd)
    bo->flags = flags;
    bo->refcnt = 1;
 
-   uint64_t align = (1ULL << 12);
-   if (info.domain & NOUVEAU_GEM_DOMAIN_VRAM)
-      align = (1ULL << 16);
-
-   assert(bo->size == align64(bo->size, align));
-
    _mesa_hash_table_insert(dev->bos, (void *)(uintptr_t)handle, bo);
 
    return bo;
