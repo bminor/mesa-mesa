@@ -75,3 +75,9 @@ spec@arb_point_parameters@arb_point_parameters-point-attenuation
 spec@arb_point_parameters@arb_point_parameters-point-attenuation@Aliased combinations
 spec@arb_point_parameters@arb_point_parameters-point-attenuation@Antialiased combinations
 spec@ext_framebuffer_multisample@accuracy 2 stencil_draw small depthstencil
+
+spec@!opengl 1.0@depth-clear-precision-check
+spec@!opengl 1.0@depth-clear-precision-check@depth16
+spec@!opengl 1.0@depth-clear-precision-check@depth24
+spec@!opengl 1.0@depth-clear-precision-check@depth24_stencil8
+spec@!opengl 1.0@depth-clear-precision-check@depth32

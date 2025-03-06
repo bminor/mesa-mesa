@@ -4,6 +4,7 @@ dEQP-GLES31.functional.ssbo.layout.instance_array_basic_type.std430.ivec4
 glx@glx-visuals-depth
 glx@glx-visuals-stencil
 glx@glx_arb_sync_control@waitformsc
+spec@!opengl 1.0@gl-1.0-front-invalidate-back
 spec@!opengl 1.1@depthstencil-default_fb-drawpixels-24_8 samples=2
 spec@!opengl 1.1@depthstencil-default_fb-drawpixels-24_8 samples=4
 spec@!opengl 1.1@depthstencil-default_fb-drawpixels-32f_24_8_rev samples=2

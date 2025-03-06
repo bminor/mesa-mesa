@@ -528,13 +528,6 @@ program@execute@builtin@builtin-float-nextafter-1.0.generated@nextafter float16,
 program@execute@builtin@builtin-float-nextafter-1.0.generated@nextafter float2,Fail
 program@execute@builtin@builtin-float-nextafter-1.0.generated@nextafter float4,Fail
 program@execute@builtin@builtin-float-nextafter-1.0.generated@nextafter float8,Fail
-program@execute@builtin@builtin-float-pow-1.0.generated,Fail
-program@execute@builtin@builtin-float-pow-1.0.generated@pow float16,Fail
-program@execute@builtin@builtin-float-pow-1.0.generated@pow float4,Fail
-program@execute@builtin@builtin-float-pow-1.0.generated@pow float8,Fail
-program@execute@builtin@builtin-float-powr-1.0.generated,Fail
-program@execute@builtin@builtin-float-powr-1.0.generated@powr float16,Fail
-program@execute@builtin@builtin-float-powr-1.0.generated@powr float4,Fail
 program@execute@builtin@builtin-float-sign-1.0.generated,Fail
 program@execute@builtin@builtin-float-sign-1.0.generated@sign float1,Fail
 program@execute@builtin@builtin-float-sign-1.0.generated@sign float16,Fail
