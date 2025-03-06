@@ -1200,6 +1200,7 @@ blorp_build_nir_shader(struct blorp_context *blorp,
       /* It only makes sense to do persample dispatch if the render target is
        * configured as multisampled.
        */
+      assert(key->base.shader_pipeline == BLORP_SHADER_PIPELINE_RENDER);
       assert(key->rt_samples > 0);
    }
 
@@ -2055,7 +2056,8 @@ try_blorp_blit(struct blorp_batch *batch,
       key->use_kill = true;
       key->need_dst_offset = true;
 
-      if (params->dst.surf.samples > 1) {
+      if (key->base.shader_pipeline == BLORP_SHADER_PIPELINE_RENDER &&
+          params->dst.surf.samples > 1) {
          /* If the destination surface is a W-tiled multisampled stencil
           * buffer that we're mapping as Y tiled, then we need to arrange for
           * the WM program to run once per sample rather than once per pixel,
