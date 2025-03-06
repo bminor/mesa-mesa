@@ -2425,13 +2425,35 @@ vn_CmdPushDescriptorSetWithTemplate2(VkCommandBuffer commandBuffer,
       templ, VK_NULL_HANDLE, pPushDescriptorSetWithTemplateInfo->pData,
       &update);
 
+   /* Per spec:
+    *
+    * If stageFlags specifies a subset of all stages corresponding to one or
+    * more pipeline bind points, the binding operation still affects all
+    * stages corresponding to the given pipeline bind point(s) as if the
+    * equivalent original version of this command had been called with the
+    * same parameters.
+    *
+    * So we just need to pick a single stage belonging to the pipeline type.
+    */
+   VkShaderStageFlags stage_flags;
+   switch (templ->push.pipeline_bind_point) {
+   case VK_PIPELINE_BIND_POINT_GRAPHICS:
+      stage_flags = VK_SHADER_STAGE_ALL_GRAPHICS;
+      break;
+   case VK_PIPELINE_BIND_POINT_COMPUTE:
+      stage_flags = VK_SHADER_STAGE_COMPUTE_BIT;
+      break;
+   case VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR:
+      stage_flags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+      break;
+   default:
+      unreachable("bad pipeline bind point in the template");
+      break;
+   }
    const VkPushDescriptorSetInfo info = {
       .sType = VK_STRUCTURE_TYPE_PUSH_DESCRIPTOR_SET_INFO,
       .pNext = pPushDescriptorSetWithTemplateInfo->pNext,
-      .stageFlags =
-         templ->push.pipeline_bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS
-            ? VK_SHADER_STAGE_ALL_GRAPHICS
-            : VK_SHADER_STAGE_COMPUTE_BIT,
+      .stageFlags = stage_flags,
       .layout = pPushDescriptorSetWithTemplateInfo->layout,
       .set = pPushDescriptorSetWithTemplateInfo->set,
       .descriptorWriteCount = update.write_count,
