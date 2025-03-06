@@ -137,12 +137,20 @@ static std::vector<const char*> filteredInstanceExtensionNames(uint32_t count,
     return retList;
 }
 
-static std::vector<const char*> filteredDeviceExtensionNames(uint32_t count,
-                                                             const char* const* extNames) {
+static std::vector<const char*> filteredDeviceExtensionNames(
+    gfxstream_vk_physical_device* physical_device, uint32_t count, const char* const* extNames) {
     std::vector<const char*> retList;
     for (uint32_t i = 0; i < count; ++i) {
         auto extName = extNames[i];
-        if (!isGuestOnlyDeviceExtension(extName)) {
+        // VK_EXT_image_drm_format_modifier
+        if (!strncmp(extName, VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME,
+                     VK_MAX_EXTENSION_NAME_SIZE)) {
+            if (physical_device->doImageDrmFormatModifierEmulation) {
+                // If emulated, drop this exension from the filtered list
+            } else {
+                retList.push_back(extName);
+            }
+        } else if (!isGuestOnlyDeviceExtension(extName)) {
             retList.push_back(extName);
         }
     }
@@ -162,7 +170,7 @@ static void get_device_extensions(VkPhysicalDevice physDevInternal,
         result = resources->on_vkEnumerateDeviceExtensionProperties(
             vkEnc, VK_SUCCESS, physDevInternal, NULL, &numDeviceExts, extProps.data());
         if (VK_SUCCESS == result) {
-            // device extensions from gfxstream
+            // device extensions from the host's physical device
             for (uint32_t i = 0; i < numDeviceExts; i++) {
                 for (uint32_t j = 0; j < VK_DEVICE_EXTENSION_COUNT; j++) {
                     if (0 == strncmp(extProps[i].extensionName,
@@ -189,6 +197,15 @@ static VkResult gfxstream_vk_physical_device_init(
     VkPhysicalDevice internal_object) {
     struct vk_device_extension_table supported_extensions = {};
     get_device_extensions(internal_object, &supported_extensions);
+
+    // VK_EXT_image_drm_format_modifier support is either emulated, or passthrough using
+    // host functionality
+    if (!supported_extensions.EXT_image_drm_format_modifier) {
+        physical_device->doImageDrmFormatModifierEmulation = true;
+        supported_extensions.EXT_image_drm_format_modifier = true;
+    } else {
+        physical_device->doImageDrmFormatModifierEmulation = false;
+    }
 
     struct vk_physical_device_dispatch_table dispatch_table;
     memset(&dispatch_table, 0, sizeof(struct vk_physical_device_dispatch_table));
@@ -461,7 +478,8 @@ VkResult gfxstream_vk_CreateDevice(VkPhysicalDevice physicalDevice,
         VkDeviceCreateInfo localCreateInfo = *pCreateInfo;
 
         std::vector<const char*> filteredExts = filteredDeviceExtensionNames(
-            localCreateInfo.enabledExtensionCount, localCreateInfo.ppEnabledExtensionNames);
+            gfxstream_physicalDevice, localCreateInfo.enabledExtensionCount,
+            localCreateInfo.ppEnabledExtensionNames);
         localCreateInfo.enabledExtensionCount = static_cast<uint32_t>(filteredExts.size());
         localCreateInfo.ppEnabledExtensionNames = filteredExts.data();
 
@@ -743,31 +761,5 @@ void gfxstream_vk_UpdateDescriptorSets(VkDevice device, uint32_t descriptorWrite
         resources->on_vkUpdateDescriptorSets(
             vkEnc, gfxstream_device->internal_object, descriptorWriteCount,
             internal_pDescriptorWrites.data(), descriptorCopyCount, pDescriptorCopies);
-    }
-}
-
-void gfxstream_vk_GetPhysicalDeviceFormatProperties2(VkPhysicalDevice physicalDevice,
-                                                     VkFormat format,
-                                                     VkFormatProperties2* pFormatProperties) {
-    MESA_TRACE_SCOPE("vkGetPhysicalDeviceFormatProperties2");
-    VK_FROM_HANDLE(gfxstream_vk_physical_device, gfxstream_physicalDevice, physicalDevice);
-    {
-        auto vkEnc = gfxstream::vk::ResourceTracker::getThreadLocalEncoder();
-        vkEnc->vkGetPhysicalDeviceFormatProperties2(gfxstream_physicalDevice->internal_object,
-                                                    format, pFormatProperties, true /* do lock */);
-    }
-    VkDrmFormatModifierPropertiesListEXT* drmFmtMod =
-        vk_find_struct(pFormatProperties, DRM_FORMAT_MODIFIER_PROPERTIES_LIST_EXT);
-    if (drmFmtMod) {
-        drmFmtMod->drmFormatModifierCount = 1;
-        if (drmFmtMod->pDrmFormatModifierProperties) {
-            drmFmtMod->pDrmFormatModifierProperties[0] = {
-                .drmFormatModifier = 0,
-                .drmFormatModifierPlaneCount = 1,
-                .drmFormatModifierTilingFeatures =
-                    VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT |
-                    VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT |
-                    VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT};
-        }
     }
 }

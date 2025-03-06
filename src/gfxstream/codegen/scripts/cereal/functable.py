@@ -18,6 +18,7 @@ RESOURCE_TRACKER_ENTRIES = [
     "vkGetImageMemoryRequirements",
     "vkGetImageMemoryRequirements2",
     "vkGetImageMemoryRequirements2KHR",
+    "vkGetImageDrmFormatModifierPropertiesEXT",
     "vkBindImageMemory",
     "vkBindImageMemory2",
     "vkBindImageMemory2KHR",
@@ -52,6 +53,8 @@ RESOURCE_TRACKER_ENTRIES = [
     "vkDestroySamplerYcbcrConversionKHR",
     "vkUpdateDescriptorSetWithTemplate",
     "vkUpdateDescriptorSetWithTemplateKHR",
+    "vkGetPhysicalDeviceFormatProperties2",
+    "vkGetPhysicalDeviceFormatProperties2KHR",
     "vkGetPhysicalDeviceImageFormatProperties2",
     "vkGetPhysicalDeviceImageFormatProperties2KHR",
     "vkBeginCommandBuffer",
@@ -128,7 +131,6 @@ HANDWRITTEN_ENTRY_POINTS = [
     # TODO: Make a codegen module (use deepcopy as reference) to make this more robust
     "vkAllocateMemory",
     "vkUpdateDescriptorSets",
-    "vkGetPhysicalDeviceFormatProperties2",
 ]
 
 # Handles that need to be translated to/from their corresponding gfxstream object types
