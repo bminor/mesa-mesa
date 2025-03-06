@@ -30,9 +30,9 @@
  * force early.
  */
 static enum pan_earlyzs
-best_early_mode(bool zs_always_passes)
+best_early_mode(bool zs_always_passes, bool force_early)
 {
-   if (zs_always_passes)
+   if (zs_always_passes && !force_early)
       return PAN_EARLYZS_WEAK_EARLY;
    else
       return PAN_EARLYZS_FORCE_EARLY;
@@ -45,7 +45,8 @@ best_early_mode(bool zs_always_passes)
  */
 static struct pan_earlyzs_state
 analyze(const struct pan_shader_info *s, bool writes_zs_or_oq,
-        bool alpha_to_coverage, bool zs_always_passes)
+        bool alpha_to_coverage, bool zs_always_passes,
+        bool shader_reads_zs, bool can_optimize_shader_readonly_zs)
 {
    /* If the shader writes depth or stencil, all depth/stencil tests must
     * be deferred until the value is known after the ZS_EMIT instruction,
@@ -62,6 +63,8 @@ analyze(const struct pan_shader_info *s, bool writes_zs_or_oq,
    bool shader_writes_zs = (s->fs.writes_depth || s->fs.writes_stencil);
    bool late_update = shader_writes_zs || alpha_to_coverage;
    bool late_kill = shader_writes_zs;
+   bool force_early_update = s->fs.early_fragment_tests;
+   bool force_early_kill = s->fs.early_fragment_tests;
 
    /* Late coverage updates are required if the coverage mask depends on
     * the results of the shader. Discards are implemented as coverage mask
@@ -90,16 +93,37 @@ analyze(const struct pan_shader_info *s, bool writes_zs_or_oq,
     */
    late_kill |= s->writes_global;
 
+   /* Shader reads require late depth/stencil tests to ensure the shader
+    * isn't killed before the side effects execute, unless the HW supports
+    * read-only ZS optimization, in which case it can be lowered to
+    * force-early. */
+   bool optimize_shader_read_only_zs = false;
+   if (shader_reads_zs) {
+      if (!late_update && can_optimize_shader_readonly_zs) {
+         optimize_shader_read_only_zs = true;
+         force_early_update |= true;
+      } else {
+         late_update |= true;
+      }
+
+      if (!late_kill && can_optimize_shader_readonly_zs) {
+         optimize_shader_read_only_zs = true;
+         force_early_kill |= true;
+      }
+   }
+
    /* Finally, the shader may override and force early fragment tests */
    late_update &= !s->fs.early_fragment_tests;
    late_kill &= !s->fs.early_fragment_tests;
 
    /* Collect results */
-   enum pan_earlyzs early_mode = best_early_mode(zs_always_passes);
-
    return (struct pan_earlyzs_state){
-      .update = late_update ? PAN_EARLYZS_FORCE_LATE : early_mode,
-      .kill = late_kill ? PAN_EARLYZS_FORCE_LATE : early_mode,
+      .update = late_update
+                   ? PAN_EARLYZS_FORCE_LATE
+                   : best_early_mode(zs_always_passes, force_early_update),
+      .kill = late_kill ? PAN_EARLYZS_FORCE_LATE
+                        : best_early_mode(zs_always_passes, force_early_kill),
+      .shader_readonly_zs = optimize_shader_read_only_zs,
    };
 }
 
@@ -108,14 +132,20 @@ analyze(const struct pan_shader_info *s, bool writes_zs_or_oq,
  * Returns a lookup table of configurations indexed by the API state.
  */
 struct pan_earlyzs_lut
-pan_earlyzs_analyze(const struct pan_shader_info *s)
+pan_earlyzs_analyze(const struct pan_shader_info *s, unsigned arch)
 {
+   /* Shader read-only ZS optimization appeared in v10. */
+   bool can_optimize_shader_readonly_zs = arch >= 10;
    struct pan_earlyzs_lut lut;
 
    for (unsigned v0 = 0; v0 < 2; ++v0) {
       for (unsigned v1 = 0; v1 < 2; ++v1) {
-         for (unsigned v2 = 0; v2 < 2; ++v2)
-            lut.states[v0][v1][v2] = analyze(s, v0, v1, v2);
+         for (unsigned v2 = 0; v2 < 2; ++v2) {
+            for (unsigned v3 = 0; v3 < 2; ++v3) {
+               lut.states[v0][v1][v2][v3] =
+                  analyze(s, v0, v1, v2, v3, can_optimize_shader_readonly_zs);
+            }
+         }
       }
    }
 

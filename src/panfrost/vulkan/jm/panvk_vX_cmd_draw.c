@@ -296,7 +296,7 @@ panvk_draw_prepare_fs_rsd(struct panvk_cmd_buffer *cmdbuf,
 
          struct pan_earlyzs_state earlyzs =
             pan_earlyzs_get(fs->fs.earlyzs_lut, writes_zs || oq,
-                            alpha_to_coverage, zs_always_passes);
+                            alpha_to_coverage, zs_always_passes, false);
 
          cfg.properties.pixel_kill_operation = earlyzs.kill;
          cfg.properties.zs_update_operation = earlyzs.update;

@@ -1208,7 +1208,7 @@ csf_emit_draw_state(struct panfrost_batch *batch,
          struct pan_earlyzs_state earlyzs = pan_earlyzs_get(
             fs->earlyzs, ctx->depth_stencil->writes_zs || has_oq,
             ctx->blend->base.alpha_to_coverage,
-            ctx->depth_stencil->zs_always_passes);
+            ctx->depth_stencil->zs_always_passes, false);
 
          cfg.pixel_kill_operation = (enum mali_pixel_kill)earlyzs.kill;
          cfg.zs_update_operation = (enum mali_pixel_kill)earlyzs.update;

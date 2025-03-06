@@ -1534,7 +1534,7 @@ prepare_dcd(struct panvk_cmd_buffer *cmdbuf)
 
             struct pan_earlyzs_state earlyzs =
                pan_earlyzs_get(fs->fs.earlyzs_lut, writes_zs || oq,
-                               alpha_to_coverage, zs_always_passes);
+                               alpha_to_coverage, zs_always_passes, false);
 
             cfg.pixel_kill_operation = (enum mali_pixel_kill)earlyzs.kill;
             cfg.zs_update_operation = (enum mali_pixel_kill)earlyzs.update;

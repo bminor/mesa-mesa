@@ -34,15 +34,17 @@
  * under test, only the external API. So we test only the composition.
  */
 
-#define ZS_WRITEMASK     BITFIELD_BIT(0)
-#define ALPHA2COV        BITFIELD_BIT(1)
-#define ZS_ALWAYS_PASSES BITFIELD_BIT(2)
-#define DISCARD          BITFIELD_BIT(3)
-#define WRITES_Z         BITFIELD_BIT(4)
-#define WRITES_S         BITFIELD_BIT(5)
-#define WRITES_COV       BITFIELD_BIT(6)
-#define SIDEFX           BITFIELD_BIT(7)
-#define API_EARLY        BITFIELD_BIT(8)
+#define ZS_WRITEMASK             BITFIELD_BIT(0)
+#define ALPHA2COV                BITFIELD_BIT(1)
+#define ZS_ALWAYS_PASSES         BITFIELD_BIT(2)
+#define DISCARD                  BITFIELD_BIT(3)
+#define WRITES_Z                 BITFIELD_BIT(4)
+#define WRITES_S                 BITFIELD_BIT(5)
+#define WRITES_COV               BITFIELD_BIT(6)
+#define SIDEFX                   BITFIELD_BIT(7)
+#define API_EARLY                BITFIELD_BIT(8)
+#define SHADER_READS_ZS          BITFIELD_BIT(9)
+#define ARCH_HAS_READONLY_ZS_OPT BITFIELD_BIT(10)
 
 static void
 test(enum pan_earlyzs expected_update, enum pan_earlyzs expected_kill,
@@ -56,9 +58,10 @@ test(enum pan_earlyzs expected_update, enum pan_earlyzs expected_kill,
    info.fs.early_fragment_tests = !!(flags & API_EARLY);
    info.writes_global = !!(flags & SIDEFX);
 
-   struct pan_earlyzs_state result =
-      pan_earlyzs_get(pan_earlyzs_analyze(&info), !!(flags & ZS_WRITEMASK),
-                      !!(flags & ALPHA2COV), !!(flags & ZS_ALWAYS_PASSES));
+   struct pan_earlyzs_state result = pan_earlyzs_get(
+      pan_earlyzs_analyze(&info, flags & ARCH_HAS_READONLY_ZS_OPT ? 10 : 9),
+      !!(flags & ZS_WRITEMASK), !!(flags & ALPHA2COV),
+      !!(flags & ZS_ALWAYS_PASSES), !!(flags & SHADER_READS_ZS));
 
    ASSERT_EQ(result.update, expected_update);
    ASSERT_EQ(result.kill, expected_kill);
@@ -132,6 +135,15 @@ TEST(EarlyZS, NoSideFXNoShaderZS)
    CASE(FORCE_EARLY, FORCE_EARLY, 0);
    CASE(FORCE_LATE, FORCE_EARLY, ALPHA2COV | DISCARD | WRITES_COV);
    CASE(FORCE_EARLY, FORCE_EARLY, ZS_WRITEMASK);
+}
+
+TEST(EarlyZS, ShaderReadOnlyZS)
+{
+   CASE(FORCE_LATE, FORCE_LATE, SIDEFX | SHADER_READS_ZS);
+   CASE(FORCE_EARLY, FORCE_LATE, SIDEFX | SHADER_READS_ZS | ARCH_HAS_READONLY_ZS_OPT);
+   CASE(FORCE_EARLY, FORCE_EARLY, SHADER_READS_ZS | ARCH_HAS_READONLY_ZS_OPT);
+   CASE(FORCE_LATE, WEAK_EARLY, SHADER_READS_ZS | ZS_ALWAYS_PASSES);
+   CASE(FORCE_LATE, FORCE_EARLY, SHADER_READS_ZS);
 }
 
 TEST(EarlyZS, NoSideFXNoShaderZSAlt)

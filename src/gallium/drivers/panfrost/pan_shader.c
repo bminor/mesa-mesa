@@ -355,6 +355,7 @@ panfrost_new_variant_locked(struct panfrost_context *ctx,
                             struct panfrost_uncompiled_shader *uncompiled,
                             struct panfrost_shader_key *key)
 {
+   struct panfrost_device *dev = pan_device(ctx->base.screen);
    struct panfrost_compiled_shader *prog = panfrost_alloc_variant(uncompiled);
 
    *prog = (struct panfrost_compiled_shader){
@@ -365,7 +366,7 @@ panfrost_new_variant_locked(struct panfrost_context *ctx,
    panfrost_shader_get(ctx->base.screen, &ctx->shaders, &ctx->descs, uncompiled,
                        &ctx->base.debug, prog, 0);
 
-   prog->earlyzs = pan_earlyzs_analyze(&prog->info);
+   prog->earlyzs = pan_earlyzs_analyze(&prog->info, dev->arch);
 
    return prog;
 }

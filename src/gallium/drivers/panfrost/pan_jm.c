@@ -581,7 +581,7 @@ jm_emit_tiler_draw(struct mali_draw_packed *out, struct panfrost_batch *batch,
          struct pan_earlyzs_state earlyzs = pan_earlyzs_get(
             fs->earlyzs, ctx->depth_stencil->writes_zs || has_oq,
             ctx->blend->base.alpha_to_coverage,
-            ctx->depth_stencil->zs_always_passes);
+            ctx->depth_stencil->zs_always_passes, false);
 
          cfg.flags_0.pixel_kill_operation = earlyzs.kill;
          cfg.flags_0.zs_update_operation = earlyzs.update;

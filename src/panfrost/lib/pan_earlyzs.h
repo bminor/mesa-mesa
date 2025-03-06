@@ -45,8 +45,11 @@ struct pan_earlyzs_state {
    /* Pixel kill */
    enum pan_earlyzs kill : 2;
 
+   /* True if the shader read-only ZS optimization should be enabled */
+   bool shader_readonly_zs : 1;
+
    /* So it fits in a byte */
-   unsigned padding : 4;
+   unsigned padding : 3;
 };
 
 /* Internal lookup table. Users should treat as an opaque structure and only
@@ -54,7 +57,7 @@ struct pan_earlyzs_state {
  * for definition of the arrays.
  */
 struct pan_earlyzs_lut {
-   struct pan_earlyzs_state states[2][2][2];
+   struct pan_earlyzs_state states[2][2][2][2];
 };
 
 /*
@@ -63,14 +66,17 @@ struct pan_earlyzs_lut {
  */
 static inline struct pan_earlyzs_state
 pan_earlyzs_get(struct pan_earlyzs_lut lut, bool writes_zs_or_oq,
-                bool alpha_to_coverage, bool zs_always_passes)
+                bool alpha_to_coverage, bool zs_always_passes,
+                bool shader_reads_zs)
 {
-   return lut.states[writes_zs_or_oq][alpha_to_coverage][zs_always_passes];
+   return lut.states[writes_zs_or_oq][alpha_to_coverage][zs_always_passes]
+                    [shader_reads_zs];
 }
 
 struct pan_shader_info;
 
-struct pan_earlyzs_lut pan_earlyzs_analyze(const struct pan_shader_info *s);
+struct pan_earlyzs_lut pan_earlyzs_analyze(const struct pan_shader_info *s,
+                                           unsigned arch);
 
 #ifdef __cplusplus
 } /* extern C */

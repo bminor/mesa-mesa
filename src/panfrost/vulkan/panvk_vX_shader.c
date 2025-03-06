@@ -922,7 +922,7 @@ panvk_compile_nir(struct panvk_device *dev, nir_shader *nir,
       break;
 
    case MESA_SHADER_FRAGMENT:
-      shader->fs.earlyzs_lut = pan_earlyzs_analyze(&shader->info);
+      shader->fs.earlyzs_lut = pan_earlyzs_analyze(&shader->info, PAN_ARCH);
       break;
 
    default:
@@ -1339,7 +1339,7 @@ panvk_deserialize_shader(struct vk_device *vk_dev, struct blob_reader *blob,
       break;
 
    case MESA_SHADER_FRAGMENT:
-      shader->fs.earlyzs_lut = pan_earlyzs_analyze(&shader->info);
+      shader->fs.earlyzs_lut = pan_earlyzs_analyze(&shader->info, PAN_ARCH);
       break;
 
    default:
