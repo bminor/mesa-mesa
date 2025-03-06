@@ -3974,7 +3974,7 @@
         "description": "venus: fix a memory corruption in query records recycle",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e2c4bafccc7c363d21ec43614b9ba8b0c65fcc87",
         "notes": null
