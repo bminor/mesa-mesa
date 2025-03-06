@@ -93,6 +93,20 @@ vn_CreateQueryPool(VkDevice device,
        */
       pool->result_array_size = 1;
       break;
+   case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SIZE_KHR:
+   case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_BOTTOM_LEVEL_POINTERS_KHR:
+      /*
+       * The VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SIZE_KHR is to query the
+       * acceleration structure size on the device timeline.
+       *
+       * SERIALIZATION_BOTTOM_LEVEL_POINTERS is to query the number of bottom
+       * level acceleration structure pointers for serialization.
+       *
+       * So either of these queries only writes one integer value.
+       *
+       */
+      pool->result_array_size = 1;
+      break;
    default:
       unreachable("bad query type");
       break;

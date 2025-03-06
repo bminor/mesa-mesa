@@ -160,6 +160,8 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
          fragment_shader_barycentric;
       VkPhysicalDeviceFragmentShadingRateFeaturesKHR fragment_shading_rate;
       VkPhysicalDeviceRayQueryFeaturesKHR ray_query;
+      VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR
+         ray_tracing_maintenance_1;
       VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_pipeline;
       VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR
          ray_tracing_position_fetch;
@@ -306,6 +308,7 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
    VN_ADD_PNEXT_EXT(feats2, FRAGMENT_SHADER_BARYCENTRIC_FEATURES_KHR, local_feats.fragment_shader_barycentric, exts->KHR_fragment_shader_barycentric);
    VN_ADD_PNEXT_EXT(feats2, FRAGMENT_SHADING_RATE_FEATURES_KHR, local_feats.fragment_shading_rate, exts->KHR_fragment_shading_rate);
    VN_ADD_PNEXT_EXT(feats2, RAY_QUERY_FEATURES_KHR, local_feats.ray_query, exts->KHR_ray_query);
+   VN_ADD_PNEXT_EXT(feats2, RAY_TRACING_MAINTENANCE_1_FEATURES_KHR, local_feats.ray_tracing_maintenance_1, exts->KHR_ray_tracing_maintenance1);
    VN_ADD_PNEXT_EXT(feats2, RAY_TRACING_PIPELINE_FEATURES_KHR, local_feats.ray_tracing_pipeline, exts->KHR_ray_tracing_pipeline);
    VN_ADD_PNEXT_EXT(feats2, RAY_TRACING_POSITION_FETCH_FEATURES_KHR, local_feats.ray_tracing_position_fetch, exts->KHR_ray_tracing_position_fetch);
    VN_ADD_PNEXT_EXT(feats2, SHADER_CLOCK_FEATURES_KHR, local_feats.shader_clock, exts->KHR_shader_clock);
@@ -1241,6 +1244,7 @@ vn_physical_device_get_passthrough_extensions(
       .KHR_fragment_shading_rate = true,
       .KHR_pipeline_library = true,
       .KHR_ray_query = physical_dev->ray_tracing,
+      .KHR_ray_tracing_maintenance1 = physical_dev->ray_tracing,
       .KHR_ray_tracing_pipeline = physical_dev->ray_tracing,
       .KHR_ray_tracing_position_fetch = physical_dev->ray_tracing,
       .KHR_shader_clock = true,

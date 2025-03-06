@@ -2810,3 +2810,11 @@ vn_CmdTraceRaysKHR(
                   pMissShaderBindingTable, pHitShaderBindingTable,
                   pCallableShaderBindingTable, width, height, depth);
 }
+
+void
+vn_CmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer,
+                            VkDeviceAddress indirectDeviceAddress)
+{
+   VN_CMD_ENQUEUE(vkCmdTraceRaysIndirect2KHR, commandBuffer,
+                  indirectDeviceAddress);
+}
