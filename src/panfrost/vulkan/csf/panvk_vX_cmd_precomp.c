@@ -120,9 +120,9 @@ panvk_per_arch(dispatch_precomp)(struct panvk_precomp_ctx *ctx,
 
       struct mali_compute_size_workgroup_packed wg_size;
       pan_pack(&wg_size, COMPUTE_SIZE_WORKGROUP, cfg) {
-         cfg.workgroup_size_x = shader->local_size.x;
-         cfg.workgroup_size_y = shader->local_size.y;
-         cfg.workgroup_size_z = shader->local_size.z;
+         cfg.workgroup_size_x = shader->cs.local_size.x;
+         cfg.workgroup_size_y = shader->cs.local_size.y;
+         cfg.workgroup_size_z = shader->cs.local_size.z;
          cfg.allow_merging_workgroups = false;
       }
       cs_move32_to(b, cs_sr_reg32(b, COMPUTE, WG_SIZE), wg_size.opaque[0]);

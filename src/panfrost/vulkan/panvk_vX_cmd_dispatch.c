@@ -37,11 +37,11 @@ panvk_per_arch(cmd_prepare_dispatch_sysvals)(
    set_compute_sysval(cmdbuf, dirty_sysvals, base.y, info->wg_base.y);
    set_compute_sysval(cmdbuf, dirty_sysvals, base.z, info->wg_base.z);
    set_compute_sysval(cmdbuf, dirty_sysvals, local_group_size.x,
-                      shader->local_size.x);
+                      shader->cs.local_size.x);
    set_compute_sysval(cmdbuf, dirty_sysvals, local_group_size.y,
-                      shader->local_size.y);
+                      shader->cs.local_size.y);
    set_compute_sysval(cmdbuf, dirty_sysvals, local_group_size.z,
-                      shader->local_size.z);
+                      shader->cs.local_size.z);
    set_compute_sysval(cmdbuf, dirty_sysvals, printf_buffer_address,
                       dev->printf.bo->addr.dev);
 

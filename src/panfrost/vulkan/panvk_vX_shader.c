@@ -913,9 +913,17 @@ panvk_compile_nir(struct panvk_device *dev, nir_shader *nir,
          (nir->info.stage == MESA_SHADER_VERTEX ? MAX_VS_ATTRIBS : 0);
 #endif
 
-   shader->local_size.x = nir->info.workgroup_size[0];
-   shader->local_size.y = nir->info.workgroup_size[1];
-   shader->local_size.z = nir->info.workgroup_size[2];
+   switch (shader->info.stage) {
+   case MESA_SHADER_COMPUTE:
+   case MESA_SHADER_KERNEL:
+      shader->cs.local_size.x = nir->info.workgroup_size[0];
+      shader->cs.local_size.y = nir->info.workgroup_size[1];
+      shader->cs.local_size.z = nir->info.workgroup_size[2];
+      break;
+
+   default:
+      break;
+   }
 
    return VK_SUCCESS;
 }
@@ -1169,7 +1177,7 @@ panvk_per_arch(create_shader_from_binary)(struct panvk_device *dev,
       return panvk_error(dev, VK_ERROR_OUT_OF_HOST_MEMORY);
 
    shader->info = *info;
-   shader->local_size = local_size;
+   shader->cs.local_size = local_size;
    shader->bin_ptr = bin_ptr;
    shader->bin_size = bin_size;
    shader->own_bin = false;
@@ -1318,7 +1326,18 @@ panvk_deserialize_shader(struct vk_device *vk_dev, struct blob_reader *blob,
 
    shader->info = info;
    blob_copy_bytes(blob, &shader->fau, sizeof(shader->fau));
-   blob_copy_bytes(blob, &shader->local_size, sizeof(shader->local_size));
+
+   switch (shader->info.stage) {
+   case MESA_SHADER_COMPUTE:
+   case MESA_SHADER_KERNEL:
+      blob_copy_bytes(blob, &shader->cs.local_size,
+                      sizeof(shader->cs.local_size));
+      break;
+
+   default:
+      break;
+   }
+
    shader->bin_size = blob_read_uint32(blob);
 
    if (blob->overrun) {
@@ -1406,7 +1425,18 @@ panvk_shader_serialize(struct vk_device *vk_dev,
 
    blob_write_bytes(blob, &shader->info, sizeof(shader->info));
    blob_write_bytes(blob, &shader->fau, sizeof(shader->fau));
-   blob_write_bytes(blob, &shader->local_size, sizeof(shader->local_size));
+
+   switch (shader->info.stage) {
+   case MESA_SHADER_COMPUTE:
+   case MESA_SHADER_KERNEL:
+      blob_write_bytes(blob, &shader->cs.local_size,
+                       sizeof(shader->cs.local_size));
+      break;
+
+   default:
+      break;
+   }
+
    blob_write_uint32(blob, shader->bin_size);
    blob_write_bytes(blob, shader->bin_ptr, shader->bin_size);
    shader_desc_info_serialize(blob, shader);

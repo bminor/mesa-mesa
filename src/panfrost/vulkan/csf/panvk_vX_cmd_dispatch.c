@@ -76,8 +76,8 @@ calculate_workgroups_per_task(const struct panvk_shader *shader,
 
    /* To achieve the best utilization, we should aim for as many workgroups
     * per tasks as we can fit without exceeding the above thread limit */
-   unsigned threads_per_wg =
-      shader->local_size.x * shader->local_size.y * shader->local_size.z;
+   unsigned threads_per_wg = shader->cs.local_size.x * shader->cs.local_size.y *
+                             shader->cs.local_size.z;
    assert(threads_per_wg > 0 &&
           threads_per_wg <= phys_dev->kmod.props.max_threads_per_wg);
    unsigned wg_per_task = DIV_ROUND_UP(max_threads_per_task, threads_per_wg);
@@ -257,19 +257,19 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
 
       struct mali_compute_size_workgroup_packed wg_size;
       pan_pack(&wg_size, COMPUTE_SIZE_WORKGROUP, cfg) {
-         cfg.workgroup_size_x = shader->local_size.x;
-         cfg.workgroup_size_y = shader->local_size.y;
-         cfg.workgroup_size_z = shader->local_size.z;
+         cfg.workgroup_size_x = shader->cs.local_size.x;
+         cfg.workgroup_size_y = shader->cs.local_size.y;
+         cfg.workgroup_size_z = shader->cs.local_size.z;
          cfg.allow_merging_workgroups = false;
       }
       cs_move32_to(b, cs_sr_reg32(b, COMPUTE, WG_SIZE),
                    wg_size.opaque[0]);
       cs_move32_to(b, cs_sr_reg32(b, COMPUTE, JOB_OFFSET_X),
-                   info->wg_base.x * shader->local_size.x);
+                   info->wg_base.x * shader->cs.local_size.x);
       cs_move32_to(b, cs_sr_reg32(b, COMPUTE, JOB_OFFSET_Y),
-                   info->wg_base.y * shader->local_size.y);
+                   info->wg_base.y * shader->cs.local_size.y);
       cs_move32_to(b, cs_sr_reg32(b, COMPUTE, JOB_OFFSET_Z),
-                   info->wg_base.z * shader->local_size.z);
+                   info->wg_base.z * shader->cs.local_size.z);
       if (indirect) {
          /* Load parameters from indirect buffer and update workgroup count
           * registers and sysvals */

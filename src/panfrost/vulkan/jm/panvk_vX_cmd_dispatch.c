@@ -136,13 +136,13 @@ panvk_per_arch(CmdDispatchBase)(VkCommandBuffer commandBuffer,
 
    panfrost_pack_work_groups_compute(
       pan_section_ptr(job.cpu, COMPUTE_JOB, INVOCATION), wg_count.x, wg_count.y,
-      wg_count.z, shader->local_size.x, shader->local_size.y,
-      shader->local_size.z, false, false);
+      wg_count.z, shader->cs.local_size.x, shader->cs.local_size.y,
+      shader->cs.local_size.z, false, false);
 
    pan_section_pack(job.cpu, COMPUTE_JOB, PARAMETERS, cfg) {
-      cfg.job_task_split = util_logbase2_ceil(shader->local_size.x + 1) +
-                           util_logbase2_ceil(shader->local_size.y + 1) +
-                           util_logbase2_ceil(shader->local_size.z + 1);
+      cfg.job_task_split = util_logbase2_ceil(shader->cs.local_size.x + 1) +
+                           util_logbase2_ceil(shader->cs.local_size.y + 1) +
+                           util_logbase2_ceil(shader->cs.local_size.z + 1);
    }
 
    pan_section_pack(job.cpu, COMPUTE_JOB, DRAW, cfg) {

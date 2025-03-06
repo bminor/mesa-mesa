@@ -434,15 +434,15 @@ panvk_per_arch(calculate_task_axis_and_increment)(
 {
    /* Pick the task_axis and task_increment to maximize thread
     * utilization. */
-   unsigned threads_per_wg =
-      shader->local_size.x * shader->local_size.y * shader->local_size.z;
+   unsigned threads_per_wg = shader->cs.local_size.x * shader->cs.local_size.y *
+                             shader->cs.local_size.z;
    unsigned max_thread_cnt = panfrost_compute_max_thread_count(
       &phys_dev->kmod.props, shader->info.work_reg_count);
    unsigned threads_per_task = threads_per_wg;
    unsigned local_size[3] = {
-      shader->local_size.x,
-      shader->local_size.y,
-      shader->local_size.z,
+      shader->cs.local_size.x,
+      shader->cs.local_size.y,
+      shader->cs.local_size.z,
    };
 
    for (unsigned i = 0; i < 3; i++) {

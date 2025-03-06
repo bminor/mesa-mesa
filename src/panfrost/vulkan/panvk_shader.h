@@ -256,7 +256,12 @@ struct panvk_shader_fau_info {
 struct panvk_shader {
    struct vk_shader vk;
    struct pan_shader_info info;
-   struct pan_compute_dim local_size;
+
+   union {
+      struct {
+         struct pan_compute_dim local_size;
+      } cs;
+   };
 
    struct {
       uint32_t used_set_mask;
