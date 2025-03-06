@@ -61,7 +61,6 @@ static void _apple_glapi_create_table(void) {
 
     _glapi_table_patch(__applegl_api, "ReadPixels", __applegl_glReadPixels);
     _glapi_table_patch(__applegl_api, "CopyPixels", __applegl_glCopyPixels);
-    _glapi_table_patch(__applegl_api, "CopyColorTable", __applegl_glCopyColorTable);
     _glapi_table_patch(__applegl_api, "DrawBuffers", __applegl_glDrawBuffer);
     _glapi_table_patch(__applegl_api, "Viewport", __applegl_glViewport);
 }

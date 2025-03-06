@@ -32,9 +32,6 @@
 void __applegl_glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height,
                             GLenum format, GLenum type, void *pixels);
 void __applegl_glCopyPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum type);
-void __applegl_glCopyColorTable(GLenum target, GLenum internalformat, GLint x, GLint y,
-                                GLsizei width);
-
 void __applegl_glDrawBuffer(GLenum mode);
 void __applegl_glDrawBuffers(GLsizei n, const GLenum * bufs);
 

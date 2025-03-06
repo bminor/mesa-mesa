@@ -469,7 +469,9 @@ class glx_function(gl_XML.gl_function):
         """Returns true if the function is supported on the client
         side for indirect rendering."""
 
-        return not self.ignore and (self.offset != -1) and (self.glx_rop or self.glx_sop or self.glx_vendorpriv or self.vectorequiv or self.client_handcode)
+        return (not self.ignore and self.exec_flavor != 'skip' and (self.offset != -1) and
+                (self.glx_rop or self.glx_sop or self.glx_vendorpriv or self.vectorequiv or
+                 self.client_handcode))
 
 
 class glx_function_iterator(object):

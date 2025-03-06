@@ -50,7 +50,6 @@ files_libglx = files(
   'render2.c',
   'renderpix.c',
   'single2.c',
-  'singlepix.c',
   'vertarr.c',
   'xfont.c',
 )

@@ -119,16 +119,3 @@ __applegl_glCopyPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum t
 
    UnsetRead(&saved);
 }
-
-void
-__applegl_glCopyColorTable(GLenum target, GLenum internalformat, GLint x, GLint y,
-                 GLsizei width)
-{
-   struct apple_xgl_saved_state saved;
-
-   SetRead(&saved);
-
-   __ogl_framework_api->CopyColorTable(target, internalformat, x, y, width);
-
-   UnsetRead(&saved);
-}
