@@ -37,7 +37,7 @@ console_patterns:
     session_end:
         regex: >-
           {{ B2C_SESSION_END_REGEX }}
-{% if SESSIONB2C__REBOOT_REGEX %}
+{% if B2C_SESSION_REBOOT_REGEX %}
     session_reboot:
         regex: >-
           {{ B2C_SESSION_REBOOT_REGEX }}
@@ -45,7 +45,7 @@ console_patterns:
     job_success:
         regex: >-
           {{ B2C_JOB_SUCCESS_REGEX }}
-{% if JOB_WARB2C_N_REGEX %}
+{% if B2C_JOB_WARN_REGEX %}
     job_warn:
         regex: >-
           {{ B2C_JOB_WARN_REGEX }}
