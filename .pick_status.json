@@ -2874,7 +2874,7 @@
         "description": "gallium/vl: Fix video buffer supported format check",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c3ceec6cd8533a5a5f3ccaf687308dee2f097a99",
         "notes": null

@@ -123,6 +123,8 @@ vl_video_buffer_is_format_supported(struct pipe_screen *screen,
    enum pipe_format resource_formats[VL_NUM_COMPONENTS];
    unsigned i;
 
+   assert(format != PIPE_FORMAT_NONE);
+
    if (entrypoint == PIPE_VIDEO_ENTRYPOINT_PROCESSING && format == PIPE_FORMAT_R8_G8_B8_UNORM)
       return false;
 
@@ -136,14 +138,14 @@ vl_video_buffer_is_format_supported(struct pipe_screen *screen,
 
       /* we at least need to sample from it */
       if (!screen->is_format_supported(screen, fmt, PIPE_TEXTURE_2D, 0, 0, PIPE_BIND_SAMPLER_VIEW))
-         continue;
+         return false;
 
       fmt = vl_video_buffer_surface_format(fmt);
-      if (screen->is_format_supported(screen, fmt, PIPE_TEXTURE_2D, 0, 0, PIPE_BIND_RENDER_TARGET))
-         return true;
+      if (!screen->is_format_supported(screen, fmt, PIPE_TEXTURE_2D, 0, 0, PIPE_BIND_RENDER_TARGET))
+         return false;
    }
 
-   return false;
+   return true;
 }
 
 unsigned
