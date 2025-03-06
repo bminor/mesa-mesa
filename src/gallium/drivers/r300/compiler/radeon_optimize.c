@@ -439,7 +439,8 @@ is_presub_candidate(struct radeon_compiler *c, struct rc_instruction *inst)
          return 0;
 
       src.File = RC_FILE_PRESUB;
-      if (!c->SwizzleCaps->IsNative(inst->U.I.Opcode, src))
+      if (!c->SwizzleCaps->IsNative(inst->U.I.Opcode, src) &&
+          inst->U.I.SrcReg[i].File != RC_FILE_NONE)
          return 0;
    }
    return 1;
