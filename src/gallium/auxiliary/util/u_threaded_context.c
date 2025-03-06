@@ -512,6 +512,7 @@ tc_begin_next_buffer_list(struct threaded_context *tc)
 
    tc->add_all_gfx_bindings_to_buffer_list = true;
    tc->add_all_compute_bindings_to_buffer_list = true;
+   tc->add_all_mesh_bindings_to_buffer_list = true;
 }
 
 static void
@@ -934,6 +935,24 @@ tc_add_all_compute_bindings_to_buffer_list(struct threaded_context *tc)
 
    tc_add_shader_bindings_to_buffer_list(tc, buffer_list, MESA_SHADER_COMPUTE);
    tc->add_all_compute_bindings_to_buffer_list = false;
+}
+
+/* Add all bound buffers used by TS/MS/FS to the buffer list.
+ * This is called by the first draw mesh tasks call in a batch when we want
+ * to inherit all bindings set by the previous batch.
+ */
+static void
+tc_add_all_mesh_bindings_to_buffer_list(struct threaded_context *tc)
+{
+   BITSET_WORD *buffer_list = tc->buffer_lists[tc->next_buf_list].buffer_list;
+
+   tc_add_shader_bindings_to_buffer_list(tc, buffer_list, MESA_SHADER_MESH);
+   tc_add_shader_bindings_to_buffer_list(tc, buffer_list, MESA_SHADER_FRAGMENT);
+
+   if (tc->seen_ts)
+      tc_add_shader_bindings_to_buffer_list(tc, buffer_list, MESA_SHADER_TASK);
+
+   tc->add_all_mesh_bindings_to_buffer_list = false;
 }
 
 static unsigned
@@ -1422,6 +1441,8 @@ TC_CSO_CREATE(sampler, sampler)
 TC_CSO_DELETE(sampler)
 TC_CSO_BIND(vertex_elements)
 TC_CSO_DELETE(vertex_elements)
+TC_CSO_SHADER(ms)
+TC_CSO_SHADER_TRACK(ts);
 
 static void *
 tc_create_vertex_elements_state(struct pipe_context *_pipe, unsigned count,
@@ -5187,6 +5208,45 @@ tc_get_intel_perf_query_data(struct pipe_context *_pipe,
    return pipe->get_intel_perf_query_data(pipe, q, data_size, data, bytes_written);
 }
 
+struct tc_draw_mesh_tasks {
+   struct tc_call_base base;
+   struct pipe_grid_info info;
+};
+
+static uint16_t ALWAYS_INLINE
+tc_call_draw_mesh_tasks(struct pipe_context *pipe, void *call)
+{
+   struct tc_draw_mesh_tasks *p = to_call(call, tc_draw_mesh_tasks);
+
+   pipe->draw_mesh_tasks(pipe, &p->info);
+   tc_drop_resource_reference(p->info.indirect);
+   tc_drop_resource_reference(p->info.indirect_draw_count);
+   return call_size(tc_draw_mesh_tasks);
+}
+
+static void
+tc_draw_mesh_tasks(struct pipe_context *_pipe,
+                   const struct pipe_grid_info *info)
+{
+   struct threaded_context *tc = threaded_context(_pipe);
+   struct tc_draw_mesh_tasks *p = tc_add_call(tc, TC_CALL_draw_mesh_tasks,
+                                              tc_draw_mesh_tasks);
+
+   tc_set_resource_reference(&p->info.indirect, info->indirect);
+   tc_set_resource_reference(&p->info.indirect_draw_count, info->indirect_draw_count);
+   memcpy(&p->info, info, sizeof(*info));
+
+   if (info->indirect)
+      tc_add_to_buffer_list(&tc->buffer_lists[tc->next_buf_list], info->indirect);
+   if (info->indirect_draw_count)
+      tc_add_to_buffer_list(&tc->buffer_lists[tc->next_buf_list],
+                            info->indirect_draw_count);
+
+   /* This must be after tc_add_*call, which can flush the batch. */
+   if (unlikely(tc->add_all_mesh_bindings_to_buffer_list))
+      tc_add_all_mesh_bindings_to_buffer_list(tc);
+}
+
 /********************************************************************
  * callback
  */
@@ -5644,6 +5704,13 @@ threaded_context_create(struct pipe_context *pipe,
    CTX_INIT(wait_intel_perf_query);
    CTX_INIT(is_intel_perf_query_ready);
    CTX_INIT(get_intel_perf_query_data);
+   CTX_INIT(create_ts_state);
+   CTX_INIT(bind_ts_state);
+   CTX_INIT(delete_ts_state);
+   CTX_INIT(create_ms_state);
+   CTX_INIT(bind_ms_state);
+   CTX_INIT(delete_ms_state);
+   CTX_INIT(draw_mesh_tasks);
 #undef CTX_INIT
 
    if (out)

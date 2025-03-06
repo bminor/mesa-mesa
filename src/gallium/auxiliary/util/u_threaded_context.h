@@ -597,6 +597,7 @@ struct threaded_context {
    bool use_forced_staging_uploads;
    bool add_all_gfx_bindings_to_buffer_list;
    bool add_all_compute_bindings_to_buffer_list;
+   bool add_all_mesh_bindings_to_buffer_list;
    uint8_t num_queries_active;
 
    /* Estimation of how much vram/gtt bytes are mmap'd in
@@ -626,6 +627,7 @@ struct threaded_context {
    bool seen_tcs;
    bool seen_tes;
    bool seen_gs;
+   bool seen_ts;
    /* whether the current renderpass has seen a set_framebuffer_state call */
    bool seen_fb_state;
    /* whether a renderpass is currently active */
