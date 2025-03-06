@@ -210,6 +210,8 @@ if with_tests
       files(
         'test_eu_compact.cpp',
         'test_eu_validate.cpp',
+        'test_helpers.cpp',
+        'test_helpers.h',
         'test_lower_scoreboard.cpp',
         'test_opt_cmod_propagation.cpp',
         'test_opt_combine_constants.cpp',

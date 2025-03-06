@@ -3,101 +3,41 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include <gtest/gtest.h>
-#include "brw_shader.h"
+#include "test_helpers.h"
 #include "brw_builder.h"
-#include "brw_cfg.h"
 
-struct FSCombineConstantsTest : public ::testing::Test {
-   FSCombineConstantsTest() {
-      mem_ctx = ralloc_context(NULL);
+class CombineConstantsTest : public brw_shader_pass_test {};
 
-      devinfo = {};
-      devinfo.ver = 9;
-      devinfo.verx10 = 90;
-
-      compiler = {};
-      compiler.devinfo = &devinfo;
-      brw_init_isa_info(&compiler.isa, &devinfo);
-
-      params = {};
-      params.mem_ctx = mem_ctx;
-
-      prog_data = {};
-      nir_shader *nir =
-         nir_shader_create(mem_ctx, MESA_SHADER_COMPUTE, NULL, NULL);
-
-      shader = new brw_shader(&compiler, &params, NULL,
-                              &prog_data.base, nir, 8, false, false);
-   }
-
-   ~FSCombineConstantsTest() override {
-      delete shader;
-      ralloc_free(mem_ctx);
-      mem_ctx = NULL;
-   }
-
-   void *mem_ctx;
-   brw_compiler compiler;
-   brw_compile_params params;
-   intel_device_info devinfo;
-   struct brw_wm_prog_data prog_data;
-   struct gl_shader_program *shader_prog;
-
-   brw_shader *shader;
-
-   bool opt_combine_constants(brw_shader *s) {
-      const bool print = getenv("TEST_DEBUG");
-
-      if (print) {
-         fprintf(stderr, "= Before =\n");
-         s->cfg->dump();
-      }
-
-      bool ret = brw_opt_combine_constants(*s);
-
-      if (print) {
-         fprintf(stderr, "\n= After =\n");
-         s->cfg->dump();
-      }
-
-      return ret;
-   }
-};
-
-TEST_F(FSCombineConstantsTest, Simple)
+TEST_F(CombineConstantsTest, Simple)
 {
-   brw_builder bld = brw_builder(shader);
+   brw_builder bld = make_shader(MESA_SHADER_COMPUTE);
+   brw_builder exp = make_shader(MESA_SHADER_COMPUTE);
 
    brw_reg r = brw_vec8_grf(1, 0);
-   brw_reg imm_a = brw_imm_ud(1);
-   brw_reg imm_b = brw_imm_ud(2);
+   brw_reg imm_a = brw_imm_d(1);
+   brw_reg imm_b = brw_imm_d(2);
 
    bld.SEL(r, imm_a, imm_b);
-   brw_calculate_cfg(*shader);
 
-   bool progress = opt_combine_constants(shader);
-   ASSERT_TRUE(progress);
+   EXPECT_PROGRESS(brw_opt_combine_constants, bld);
 
-   ASSERT_EQ(shader->cfg->num_blocks, 1);
-   bblock_t *block = shader->cfg->first_block();
-   ASSERT_NE(block, nullptr);
+   brw_reg tmp = component(exp.vgrf(BRW_TYPE_D), 0);
 
-   /* We can do better but for now sanity check that
-    * there's a MOV and a SEL.
-    */
-   ASSERT_EQ(block->start()->opcode, BRW_OPCODE_MOV);
-   ASSERT_EQ(block->end()->opcode, BRW_OPCODE_SEL);
+   exp.group(1, 0).exec_all().MOV(tmp, imm_a);
+   exp                       .SEL(r, tmp, imm_b);
+
+   EXPECT_SHADERS_MATCH(bld, exp);
 }
 
-TEST_F(FSCombineConstantsTest, DoContainingDo)
+TEST_F(CombineConstantsTest, DoContainingDo)
 {
-   brw_builder bld = brw_builder(shader);
+   brw_builder bld = make_shader(MESA_SHADER_COMPUTE);
+   brw_builder exp = make_shader(MESA_SHADER_COMPUTE);
 
    brw_reg r1 = brw_vec8_grf(1, 0);
    brw_reg r2 = brw_vec8_grf(2, 0);
-   brw_reg imm_a = brw_imm_ud(1);
-   brw_reg imm_b = brw_imm_ud(2);
+   brw_reg imm_a = brw_imm_d(1);
+   brw_reg imm_b = brw_imm_d(2);
 
    bld.DO();
    bld.DO();
@@ -105,18 +45,19 @@ TEST_F(FSCombineConstantsTest, DoContainingDo)
    bld.WHILE();
    bld.WHILE();
    bld.SEL(r2, imm_a, imm_b);
-   brw_calculate_cfg(*shader);
 
-   unsigned original_num_blocks = shader->cfg->num_blocks;
+   EXPECT_PROGRESS(brw_opt_combine_constants, bld);
 
-   bool progress = opt_combine_constants(shader);
-   ASSERT_TRUE(progress);
+   /* Explicit emit the expected FLOW instruction. */
+   exp.emit(BRW_OPCODE_DO);
+   brw_reg tmp = component(exp.vgrf(BRW_TYPE_D), 0);
+   exp.group(1, 0).exec_all().MOV(tmp, imm_a);
+   exp.emit(SHADER_OPCODE_FLOW);
+   exp.DO();
+   exp.SEL(r1, tmp, imm_b);
+   exp.WHILE();
+   exp.WHILE();
+   exp.SEL(r2, tmp, imm_b);
 
-   /* We can do better but for now sanity check there's
-    * enough blocks, since the original issue motivating this
-    * test is that the shader would be empty.
-    */
-   ASSERT_GE(shader->cfg->num_blocks, original_num_blocks);
-   brw_validate(*shader);
+   EXPECT_SHADERS_MATCH(bld, exp);
 }
-
