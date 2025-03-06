@@ -171,6 +171,8 @@ struct panvk_cmd_graphics_state {
 
    struct panvk_rendering_state render;
 
+   bool vk_meta;
+
 #if PAN_ARCH <= 7
    uint64_t vpd;
 #endif
