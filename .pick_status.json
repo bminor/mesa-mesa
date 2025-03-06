@@ -3064,7 +3064,7 @@
         "description": "util/u_idalloc: fix util_idalloc_sparse_alloc_range()",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d4085aaf569bba2543b04031697842534d5a534b",
         "notes": null
