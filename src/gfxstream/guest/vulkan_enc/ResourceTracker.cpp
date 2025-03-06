@@ -1784,7 +1784,7 @@ VkResult ResourceTracker::on_vkEnumerateDeviceExtensionProperties(
 #ifdef LINUX_GUEST_BUILD
         // Required by Zink
         "VK_KHR_imageless_framebuffer",
-        // Will be emulated on guest if not available on host
+        // Passthrough if available on host. Will otherwise be emulated by guest
         "VK_EXT_image_drm_format_modifier",
 #endif
         // Vulkan 1.3
@@ -1887,9 +1887,16 @@ VkResult ResourceTracker::on_vkEnumerateDeviceExtensionProperties(
         filteredExts.push_back(VkExtensionProperties{"VK_FUCHSIA_external_memory", 1});
         filteredExts.push_back(VkExtensionProperties{"VK_FUCHSIA_buffer_collection", 1});
 #endif
+    } else {
 #ifdef LINUX_GUEST_BUILD
-        filteredExts.push_back(VkExtensionProperties{"VK_KHR_external_memory_fd", 1});
-        filteredExts.push_back(VkExtensionProperties{"VK_EXT_external_memory_dma_buf", 1});
+        // Note: Linux gfxstream-vulkan driver automatically assumes some form of external memory
+        // support on the host, and advertises VK_KHR_external_memory_fd and
+        // VK_EXT_external_memory_dma_buf unconditionally.
+        mesa_logw(
+            "%s: Did not recognize any form of external memory support on the host device/driver. "
+            "This may result in some unexpected functionality, "
+            "specifically when using external memory Vulkan extensions.",
+            __func__);
 #endif
     }
 

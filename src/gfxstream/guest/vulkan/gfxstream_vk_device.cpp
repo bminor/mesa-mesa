@@ -57,8 +57,8 @@ namespace {
 static bool instance_extension_table_initialized = false;
 static struct vk_instance_extension_table gfxstream_vk_instance_extensions_supported = {};
 
-// Provided by Mesa components only; never encoded/decoded through gfxstream
-static const char* const kGuestOnlyInstanceExtension[] = {
+// Always provided by guest driver only; never encoded/decoded to/from host
+static const char* const kGuestEmulatedInstanceExtensions[] = {
     VK_KHR_SURFACE_EXTENSION_NAME,
 #if defined(GFXSTREAM_VK_WAYLAND)
     VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME,
@@ -69,11 +69,12 @@ static const char* const kGuestOnlyInstanceExtension[] = {
     VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
 };
 
-static const char* const kGuestOnlyDeviceExtensions[] = {
-    VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-    VK_EXT_EXTERNAL_MEMORY_DMA_BUF_EXTENSION_NAME,
-    VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME,
-};
+static bool isGuestEmulatedInstanceExtension(const char* name) {
+    for (auto mesaExt : kGuestEmulatedInstanceExtensions) {
+        if (!strncmp(mesaExt, name, VK_MAX_EXTENSION_NAME_SIZE)) return true;
+    }
+    return false;
+}
 
 static VkResult SetupInstanceForProcess(void) {
     auto mgr = getConnectionManager();
@@ -110,31 +111,31 @@ static VkResult SetupInstanceForProcess(void) {
     return VK_SUCCESS;
 }
 
-static bool isGuestOnlyInstanceExtension(const char* name) {
-    for (auto mesaExt : kGuestOnlyInstanceExtension) {
-        if (!strncmp(mesaExt, name, VK_MAX_EXTENSION_NAME_SIZE)) return true;
-    }
-    return false;
-}
-
-static bool isGuestOnlyDeviceExtension(const char* name) {
-    for (auto mesaExt : kGuestOnlyDeviceExtensions) {
-        if (!strncmp(mesaExt, name, VK_MAX_EXTENSION_NAME_SIZE)) return true;
-    }
-    return false;
-}
-
 // Filtered extension names for encoding
 static std::vector<const char*> filteredInstanceExtensionNames(uint32_t count,
                                                                const char* const* extNames) {
     std::vector<const char*> retList;
     for (uint32_t i = 0; i < count; ++i) {
         auto extName = extNames[i];
-        if (!isGuestOnlyInstanceExtension(extName)) {
+        if (!isGuestEmulatedInstanceExtension(extName)) {
             retList.push_back(extName);
         }
     }
     return retList;
+}
+
+// Always provided by guest driver only; never encoded/decoded to/from host
+static const char* const kGuestEmulatedDeviceExtensions[] = {
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+    VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME,
+    VK_EXT_EXTERNAL_MEMORY_DMA_BUF_EXTENSION_NAME,
+};
+
+static bool isGuestEmulatedDeviceExtension(const char* name) {
+    for (auto mesaExt : kGuestEmulatedDeviceExtensions) {
+        if (!strncmp(mesaExt, name, VK_MAX_EXTENSION_NAME_SIZE)) return true;
+    }
+    return false;
 }
 
 static std::vector<const char*> filteredDeviceExtensionNames(
@@ -150,7 +151,7 @@ static std::vector<const char*> filteredDeviceExtensionNames(
             } else {
                 retList.push_back(extName);
             }
-        } else if (!isGuestOnlyDeviceExtension(extName)) {
+        } else if (!isGuestEmulatedDeviceExtension(extName)) {
             retList.push_back(extName);
         }
     }
@@ -170,7 +171,7 @@ static void get_device_extensions(VkPhysicalDevice physDevInternal,
         result = resources->on_vkEnumerateDeviceExtensionProperties(
             vkEnc, VK_SUCCESS, physDevInternal, NULL, &numDeviceExts, extProps.data());
         if (VK_SUCCESS == result) {
-            // device extensions from the host's physical device
+            // Enable device extensions from the host's physical device
             for (uint32_t i = 0; i < numDeviceExts; i++) {
                 for (uint32_t j = 0; j < VK_DEVICE_EXTENSION_COUNT; j++) {
                     if (0 == strncmp(extProps[i].extensionName,
@@ -181,11 +182,10 @@ static void get_device_extensions(VkPhysicalDevice physDevInternal,
                     }
                 }
             }
-            // device extensions from Mesa
+            // Make sure all guest-emulated device extensions are enabled
             for (uint32_t j = 0; j < VK_DEVICE_EXTENSION_COUNT; j++) {
-                if (isGuestOnlyDeviceExtension(vk_device_extensions[j].extensionName)) {
+                if (isGuestEmulatedDeviceExtension(vk_device_extensions[j].extensionName)) {
                     deviceExts->extensions[j] = true;
-                    break;
                 }
             }
         }
@@ -301,7 +301,7 @@ static struct vk_instance_extension_table* get_instance_extensions() {
                 result = resources->on_vkEnumerateInstanceExtensionProperties(
                     vkEnc, VK_SUCCESS, NULL, &numInstanceExts, extProps.data());
                 if (VK_SUCCESS == result) {
-                    // instance extensions from gfxstream
+                    // Enable instance extensions from gfxstream
                     for (uint32_t i = 0; i < numInstanceExts; i++) {
                         for (uint32_t j = 0; j < VK_INSTANCE_EXTENSION_COUNT; j++) {
                             if (0 == strncmp(extProps[i].extensionName,
@@ -312,9 +312,10 @@ static struct vk_instance_extension_table* get_instance_extensions() {
                             }
                         }
                     }
-                    // instance extensions from Mesa
+                    // Make sure all guest-emulated instance extensions are enabled
                     for (uint32_t j = 0; j < VK_INSTANCE_EXTENSION_COUNT; j++) {
-                        if (isGuestOnlyInstanceExtension(vk_instance_extensions[j].extensionName)) {
+                        if (isGuestEmulatedInstanceExtension(
+                                vk_instance_extensions[j].extensionName)) {
                             gfxstream_vk_instance_extensions_supported.extensions[j] = true;
                         }
                     }
