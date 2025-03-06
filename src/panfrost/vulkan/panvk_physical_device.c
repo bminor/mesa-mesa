@@ -239,6 +239,9 @@ get_device_extensions(const struct panvk_physical_device *device,
       .EXT_buffer_device_address = true,
       .EXT_custom_border_color = true,
       .EXT_depth_clip_enable = true,
+#ifdef VK_USE_PLATFORM_DISPLAY_KHR
+      .EXT_display_control = true,
+#endif
       .EXT_external_memory_dma_buf = true,
       .EXT_global_priority = true,
       .EXT_global_priority_query = true,
