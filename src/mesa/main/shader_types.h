@@ -480,8 +480,6 @@ struct gl_program
    GLint RefCount;
    GLubyte *String;  /**< Null-terminated program text */
 
-   /** GL_VERTEX/FRAGMENT_PROGRAM_ARB, GL_GEOMETRY_PROGRAM_NV */
-   GLenum16 Target;
    GLenum16 Format;    /**< String encoding format */
 
    GLboolean _Used;        /**< Ever used for drawing? Used for debugging */

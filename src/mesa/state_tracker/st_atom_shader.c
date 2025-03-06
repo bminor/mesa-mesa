@@ -118,7 +118,7 @@ st_update_fp( struct st_context *st )
 
    assert(st->ctx->FragmentProgram._Current);
    fp = st->ctx->FragmentProgram._Current;
-   assert(fp->Target == GL_FRAGMENT_PROGRAM_ARB);
+   assert(fp->info.stage == MESA_SHADER_FRAGMENT);
 
    void *shader;
 
@@ -207,7 +207,7 @@ st_update_vp( struct st_context *st )
     */
    assert(st->ctx->VertexProgram._Current);
    vp = st->ctx->VertexProgram._Current;
-   assert(vp->Target == GL_VERTEX_PROGRAM_ARB);
+   assert(vp->info.stage == MESA_SHADER_VERTEX);
 
    if (st->shader_has_one_variant[MESA_SHADER_VERTEX] &&
        !st->ctx->Array._PerVertexEdgeFlagsEnabled) {

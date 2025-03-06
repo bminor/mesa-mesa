@@ -302,7 +302,7 @@ program: language optionSequence statementSequence END
 
 language: ARBvp_10
    {
-      if (state->prog->Target != GL_VERTEX_PROGRAM_ARB) {
+      if (state->prog->info.stage != MESA_SHADER_VERTEX) {
          yyerror(& @1, state, "invalid fragment program header");
 
       }
@@ -310,7 +310,7 @@ language: ARBvp_10
    }
    | ARBfp_10
    {
-      if (state->prog->Target != GL_FRAGMENT_PROGRAM_ARB) {
+      if (state->prog->info.stage != MESA_SHADER_FRAGMENT) {
          yyerror(& @1, state, "invalid vertex program header");
       }
       state->mode = ARB_fragment;
@@ -2546,9 +2546,10 @@ _mesa_parse_arb_program(struct gl_context *ctx, GLenum target, const GLubyte *st
    GLboolean result = GL_FALSE;
    void *temp;
    struct asm_symbol *sym;
+   unsigned stage = _mesa_program_enum_to_shader_stage(target);
 
    state->ctx = ctx;
-   state->prog->Target = target;
+   state->prog->info.stage = stage;
    state->prog->Parameters = _mesa_new_parameter_list();
 
    /* Make a copy of the program string and force it to be newline and NUL-terminated.
@@ -2570,9 +2571,7 @@ _mesa_parse_arb_program(struct gl_context *ctx, GLenum target, const GLubyte *st
 
    state->st = _mesa_symbol_table_ctor();
 
-   state->limits = (target == GL_VERTEX_PROGRAM_ARB)
-      ? & ctx->Const.Program[MESA_SHADER_VERTEX]
-      : & ctx->Const.Program[MESA_SHADER_FRAGMENT];
+   state->limits = &ctx->Const.Program[stage];
 
    state->MaxTextureImageUnits = ctx->Const.Program[MESA_SHADER_FRAGMENT].MaxTextureImageUnits;
    state->MaxTextureCoordUnits = ctx->Const.MaxTextureCoordUnits;

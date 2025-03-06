@@ -77,12 +77,12 @@ lookup_or_create_program(GLuint id, GLenum target, const char* caller)
    }
    else {
       /* Bind a user program */
+      unsigned stage = _mesa_program_enum_to_shader_stage(target);
       _mesa_HashLockMutex(&ctx->Shared->Programs);
       newProg = _mesa_lookup_program_locked(ctx, id);
       if (!newProg || newProg == &_mesa_DummyProgram) {
          /* allocate a new program now */
-         newProg = ctx->Driver.NewProgram(ctx, _mesa_program_enum_to_shader_stage(target),
-                                          id, true);
+         newProg = ctx->Driver.NewProgram(ctx, stage, id, true);
          if (!newProg) {
             _mesa_error(ctx, GL_OUT_OF_MEMORY, "%s", caller);
             _mesa_HashUnlockMutex(&ctx->Shared->Programs);
@@ -90,7 +90,7 @@ lookup_or_create_program(GLuint id, GLenum target, const char* caller)
          }
          _mesa_HashInsertLocked(&ctx->Shared->Programs, id, newProg);
       }
-      else if (newProg->Target != target) {
+      else if (newProg->info.stage != stage) {
          _mesa_error(ctx, GL_INVALID_OPERATION,
                      "%s(target mismatch)", caller);
          _mesa_HashUnlockMutex(&ctx->Shared->Programs);
@@ -188,19 +188,19 @@ _mesa_DeleteProgramsARB(GLsizei n, const GLuint *ids)
          }
          else if (prog) {
             /* Unbind program if necessary */
-            switch (prog->Target) {
-            case GL_VERTEX_PROGRAM_ARB:
+            switch (prog->info.stage) {
+            case MESA_SHADER_VERTEX:
                if (ctx->VertexProgram.Current &&
                    ctx->VertexProgram.Current->Id == ids[i]) {
                   /* unbind this currently bound program */
-                  _mesa_BindProgramARB(prog->Target, 0);
+                  _mesa_BindProgramARB(GL_VERTEX_PROGRAM_ARB, 0);
                }
                break;
-            case GL_FRAGMENT_PROGRAM_ARB:
+            case MESA_SHADER_FRAGMENT:
                if (ctx->FragmentProgram.Current &&
                    ctx->FragmentProgram.Current->Id == ids[i]) {
                   /* unbind this currently bound program */
-                  _mesa_BindProgramARB(prog->Target, 0);
+                  _mesa_BindProgramARB(GL_FRAGMENT_PROGRAM_ARB, 0);
                }
                break;
             default:
@@ -305,6 +305,7 @@ get_local_param_pointer(struct gl_context *ctx, const char *func,
             max = ctx->Const.Program[MESA_SHADER_VERTEX].MaxLocalParams;
          else
             max = ctx->Const.Program[MESA_SHADER_FRAGMENT].MaxLocalParams;
+
 
          /* Allocate LocalParams. */
          if (!prog->arb.LocalParams) {
@@ -718,14 +719,16 @@ program_local_parameters4fv(struct gl_program* prog, GLuint index, GLsizei count
 {
    GET_CURRENT_CONTEXT(ctx);
    GLfloat *dest;
-   flush_vertices_for_program_constants(ctx, prog->Target);
+   flush_vertices_for_program_constants(
+      ctx, _mesa_shader_stage_to_program(prog->info.stage));
 
    if (count <= 0) {
       _mesa_error(ctx, GL_INVALID_VALUE, "%s(count)", caller);
    }
 
    if (get_local_param_pointer(ctx, caller,
-                               prog, prog->Target, index, count, &dest))
+                               prog, _mesa_shader_stage_to_program(prog->info.stage),
+                               index, count, &dest))
       memcpy(dest, params, count * 4 * sizeof(GLfloat));
 }
 

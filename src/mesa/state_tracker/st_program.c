@@ -218,10 +218,10 @@ st_set_prog_affected_state_flags(struct gl_program *prog)
  * the linked list.
  */
 static void
-delete_variant(struct st_context *st, struct st_variant *v, GLenum target)
+delete_variant(struct st_context *st, struct st_variant *v, unsigned stage)
 {
    if (v->driver_shader) {
-      if (target == GL_VERTEX_PROGRAM_ARB &&
+      if (stage == MESA_SHADER_VERTEX &&
           ((struct st_common_variant*)v)->key.is_draw_shader) {
          /* Draw shader. */
          draw_delete_vertex_shader(st->draw, v->driver_shader);
@@ -229,23 +229,23 @@ delete_variant(struct st_context *st, struct st_variant *v, GLenum target)
          /* The shader's context matches the calling context, or we
           * don't care.
           */
-         switch (target) {
-         case GL_VERTEX_PROGRAM_ARB:
+         switch (stage) {
+         case MESA_SHADER_VERTEX:
             st->pipe->delete_vs_state(st->pipe, v->driver_shader);
             break;
-         case GL_TESS_CONTROL_PROGRAM_NV:
+         case MESA_SHADER_TESS_CTRL:
             st->pipe->delete_tcs_state(st->pipe, v->driver_shader);
             break;
-         case GL_TESS_EVALUATION_PROGRAM_NV:
+         case MESA_SHADER_TESS_EVAL:
             st->pipe->delete_tes_state(st->pipe, v->driver_shader);
             break;
-         case GL_GEOMETRY_PROGRAM_NV:
+         case MESA_SHADER_GEOMETRY:
             st->pipe->delete_gs_state(st->pipe, v->driver_shader);
             break;
-         case GL_FRAGMENT_PROGRAM_ARB:
+         case MESA_SHADER_FRAGMENT:
             st->pipe->delete_fs_state(st->pipe, v->driver_shader);
             break;
-         case GL_COMPUTE_PROGRAM_NV:
+         case MESA_SHADER_COMPUTE:
             st->pipe->delete_compute_state(st->pipe, v->driver_shader);
             break;
          default:
@@ -255,10 +255,7 @@ delete_variant(struct st_context *st, struct st_variant *v, GLenum target)
          /* We can't delete a shader with a context different from the one
           * that created it.  Add it to the creating context's zombie list.
           */
-         enum pipe_shader_type type =
-            pipe_shader_type_from_mesa(_mesa_program_enum_to_shader_stage(target));
-
-         st_save_zombie_shader(v->st, type, v->driver_shader);
+         st_save_zombie_shader(v->st, stage, v->driver_shader);
       }
    }
 
@@ -317,7 +314,7 @@ st_release_variants(struct st_context *st, struct gl_program *p)
 
    for (v = p->variants; v; ) {
       struct st_variant *next = v->next;
-      delete_variant(st, v, p->Target);
+      delete_variant(st, v, p->info.stage);
       v = next;
    }
 
@@ -1330,7 +1327,7 @@ destroy_program_variants(struct st_context *st, struct gl_program *p)
          /* unlink from list */
          *prevPtr = next;
          /* destroy this variant */
-         delete_variant(st, v, p->Target);
+         delete_variant(st, v, p->info.stage);
       }
       else {
          prevPtr = &v->next;
@@ -1421,12 +1418,12 @@ st_precompile_shader_variant(struct st_context *st,
 {
    char *error = NULL;
 
-   switch (prog->Target) {
-   case GL_VERTEX_PROGRAM_ARB:
-   case GL_TESS_CONTROL_PROGRAM_NV:
-   case GL_TESS_EVALUATION_PROGRAM_NV:
-   case GL_GEOMETRY_PROGRAM_NV:
-   case GL_COMPUTE_PROGRAM_NV: {
+   switch (prog->info.stage) {
+   case MESA_SHADER_VERTEX:
+   case MESA_SHADER_TESS_CTRL:
+   case MESA_SHADER_TESS_EVAL:
+   case MESA_SHADER_GEOMETRY:
+   case MESA_SHADER_COMPUTE: {
       struct st_common_variant_key key;
 
       memset(&key, 0, sizeof(key));
@@ -1445,7 +1442,7 @@ st_precompile_shader_variant(struct st_context *st,
       return error;
    }
 
-   case GL_FRAGMENT_PROGRAM_ARB: {
+   case MESA_SHADER_FRAGMENT: {
       struct st_fp_variant_key key;
 
       memset(&key, 0, sizeof(key));

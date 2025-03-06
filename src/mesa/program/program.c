@@ -193,7 +193,6 @@ _mesa_init_gl_program(struct gl_program *prog, gl_shader_stage stage,
 
    memset(prog, 0, sizeof(*prog));
    prog->Id = id;
-   prog->Target = _mesa_shader_stage_to_program(stage);
    prog->RefCount = 1;
    prog->Format = GL_PROGRAM_FORMAT_ASCII_ARB;
    prog->info.stage = stage;
@@ -317,13 +316,7 @@ _mesa_reference_program_(struct gl_context *ctx,
    assert(ptr);
    if (*ptr && prog) {
       /* sanity check */
-      if ((*ptr)->Target == GL_VERTEX_PROGRAM_ARB)
-         assert(prog->Target == GL_VERTEX_PROGRAM_ARB);
-      else if ((*ptr)->Target == GL_FRAGMENT_PROGRAM_ARB)
-         assert(prog->Target == GL_FRAGMENT_PROGRAM_ARB ||
-                prog->Target == GL_FRAGMENT_PROGRAM_NV);
-      else if ((*ptr)->Target == GL_GEOMETRY_PROGRAM_NV)
-         assert(prog->Target == GL_GEOMETRY_PROGRAM_NV);
+      assert((*ptr)->info.stage == prog->info.stage);
    }
 #endif
 

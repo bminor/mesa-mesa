@@ -89,7 +89,7 @@ ptn_get_src(struct ptn_compile *c, const struct prog_src_register *prog_src)
       unsigned slot = prog_src->Index;
       nir_def *input;
 
-      if (c->prog->Target == GL_FRAGMENT_PROGRAM_ARB) {
+      if (c->prog->info.stage == MESA_SHADER_FRAGMENT) {
          if (slot == VARYING_SLOT_POS && c->ctx->Const.GLSLFragCoordIsSysVal) {
             nir_variable *pos =
                nir_get_variable_with_location(b->shader, nir_var_system_value,
@@ -749,7 +749,7 @@ ptn_add_output_stores(struct ptn_compile *c)
 
    u_foreach_bit64(slot, b->shader->info.outputs_written) {
       nir_def *src = nir_load_reg(b, c->output_regs[slot]);
-      if (c->prog->Target == GL_FRAGMENT_PROGRAM_ARB &&
+      if (c->prog->info.stage == MESA_SHADER_FRAGMENT &&
           slot == FRAG_RESULT_DEPTH) {
          /* result.depth has this strange convention of being the .z component of
           * a vec4 with undefined .xyw components.  We resolve it to a scalar, to
@@ -757,7 +757,7 @@ ptn_add_output_stores(struct ptn_compile *c)
           */
          src = nir_channel(b, src, 2);
       }
-      if (c->prog->Target == GL_VERTEX_PROGRAM_ARB &&
+      if (c->prog->info.stage == MESA_SHADER_VERTEX &&
           (slot == VARYING_SLOT_FOGC || slot == VARYING_SLOT_PSIZ)) {
          /* result.{fogcoord,psiz} is a single component value */
          src = nir_channel(b, src, 0);
@@ -806,7 +806,7 @@ prog_to_nir(const struct gl_context *ctx, const struct gl_program *prog)
       st_get_nir_compiler_options(ctx->st, prog->info.stage);
    struct ptn_compile *c;
    struct nir_shader *s;
-   gl_shader_stage stage = _mesa_program_enum_to_shader_stage(prog->Target);
+   gl_shader_stage stage = prog->info.stage;
 
    c = rzalloc(NULL, struct ptn_compile);
    if (!c)
