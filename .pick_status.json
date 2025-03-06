@@ -3444,7 +3444,7 @@
         "description": "docs/features: add missing panvk feature",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ac05c2a2b8f854bdb94d9552cc2da10bbce00ff0",
         "notes": null
