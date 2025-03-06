@@ -191,6 +191,7 @@ static void pvr_physical_device_get_supported_extensions(
       .KHR_uniform_buffer_standard_layout = true,
       .KHR_vertex_attribute_divisor = true,
       .KHR_zero_initialize_workgroup_memory = false,
+      .EXT_color_write_enable = true,
       .EXT_depth_clamp_zero_one = true,
       .EXT_external_memory_dma_buf = true,
       .EXT_host_query_reset = true,
@@ -278,6 +279,9 @@ static void pvr_physical_device_get_supported_features(
 
       /* Vulkan 1.2 / VK_KHR_uniform_buffer_standard_layout */
       .uniformBufferStandardLayout = true,
+
+      /* VK_EXT_color_write_enable */
+      .colorWriteEnable = true,
 
       /* Vulkan 1.2 / VK_EXT_host_query_reset */
       .hostQueryReset = true,

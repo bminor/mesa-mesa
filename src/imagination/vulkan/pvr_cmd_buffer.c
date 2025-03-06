@@ -3935,6 +3935,9 @@ static VkResult pvr_setup_descriptor_mappings(
 
             fs_meta |= cmd_buffer->vk.dynamic_graphics_state.ms.sample_mask
                        << 9;
+            fs_meta |=
+               cmd_buffer->vk.dynamic_graphics_state.cb.color_write_enables
+               << 1;
 
             struct pvr_suballoc_bo *fs_meta_bo;
             result = pvr_cmd_buffer_upload_general(cmd_buffer,
@@ -6275,7 +6278,9 @@ static VkResult pvr_validate_draw_state(struct pvr_cmd_buffer *cmd_buffer)
    state->dirty.fragment_descriptors |= state->dirty.gfx_desc_dirty;
 
    if (BITSET_TEST(dynamic_state->dirty, MESA_VK_DYNAMIC_CB_BLEND_CONSTANTS) ||
-       BITSET_TEST(dynamic_state->dirty, MESA_VK_DYNAMIC_RS_FRONT_FACE)) {
+       BITSET_TEST(dynamic_state->dirty, MESA_VK_DYNAMIC_RS_FRONT_FACE) ||
+       BITSET_TEST(dynamic_state->dirty,
+                   MESA_VK_DYNAMIC_CB_COLOR_WRITE_ENABLES)) {
       state->dirty.fragment_descriptors = true;
    }
 

@@ -1848,6 +1848,7 @@ static void pvr_alloc_fs_sysvals(pco_data *data, nir_shader *nir)
 
    has_meta |= data->fs.meta_present.alpha_to_one;
    has_meta |= data->fs.meta_present.sample_mask;
+   has_meta |= data->fs.meta_present.color_write_enable;
    if (!has_meta)
       return;
 
@@ -2493,6 +2494,11 @@ pvr_preprocess_shader_data(pco_data *data,
       data->fs.rasterization_samples = state->ms->rasterization_samples;
       nir->info.fs.uses_sample_shading = state->ms->rasterization_samples >
                                          VK_SAMPLE_COUNT_1_BIT;
+      if (BITSET_TEST(state->dynamic, MESA_VK_DYNAMIC_CB_COLOR_WRITE_ENABLES) ||
+          (state->cb && state->cb->color_write_enables !=
+                           BITFIELD_MASK(MESA_VK_MAX_COLOR_ATTACHMENTS))) {
+         data->fs.meta_present.color_write_enable = true;
+      }
 
       /* TODO: push consts, dynamic state, etc. */
       break;

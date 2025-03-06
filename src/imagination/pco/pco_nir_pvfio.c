@@ -1196,6 +1196,48 @@ lower_load_sample_mask(nir_builder *b, nir_instr *instr, void *cb_data)
    return smp_msk;
 }
 
+static nir_def *
+lower_color_write_enable(nir_builder *b, nir_instr *instr, UNUSED void *cb_data)
+{
+   nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
+
+   nir_src *input_src = &intr->src[0];
+   nir_def *input = input_src->ssa;
+   nir_def *offset = intr->src[1].ssa;
+
+   struct nir_io_semantics io_semantics = nir_intrinsic_io_semantics(intr);
+   unsigned color_write_index = io_semantics.location - FRAG_RESULT_DATA0;
+   io_semantics.fb_fetch_output = true;
+
+   b->cursor = nir_before_instr(&intr->instr);
+
+   /* TODO: nir op that returns bool based on whether a bit is set. */
+   /* TODO: define for 1 */
+   nir_def *color_write_enabled =
+      nir_ine_imm(b,
+                  nir_ubitfield_extract_imm(b,
+                                            nir_load_fs_meta_pco(b),
+                                            1 + color_write_index,
+                                            1),
+                  0);
+
+   nir_def *prev_input =
+      nir_load_output(b,
+                      input->num_components,
+                      input->bit_size,
+                      offset,
+                      .base = nir_intrinsic_base(intr),
+                      .range = nir_intrinsic_range(intr),
+                      .component = nir_intrinsic_component(intr),
+                      .dest_type = nir_intrinsic_src_type(intr),
+                      .io_semantics = io_semantics);
+
+   nir_src_rewrite(input_src,
+                   nir_bcsel(b, color_write_enabled, input, prev_input));
+
+   return NIR_LOWER_INSTR_PROGRESS;
+}
+
 /**
  * \brief Per-fragment output pass.
  *
@@ -1223,11 +1265,20 @@ bool pco_nir_pfo(nir_shader *shader, pco_fs_data *fs)
 
    bool progress = false;
 
+   /* TODO: instead of doing multiple passes, probably better to just cache all
+    * the stores
+    */
    if (fs->meta_present.alpha_to_one)
       progress |= nir_shader_lower_instructions(shader,
                                                 is_frag_color_out,
                                                 lower_alpha_to_one,
                                                 &state);
+
+   if (fs->meta_present.color_write_enable)
+      progress |= nir_shader_lower_instructions(shader,
+                                                is_frag_color_out,
+                                                lower_color_write_enable,
+                                                NULL);
 
    progress |= nir_shader_lower_instructions(shader, is_pfo, lower_pfo, &state);
    progress |= lower_isp_fb(&b, &state);
