@@ -1745,11 +1745,11 @@ x11_set_present_mode(struct wsi_swapchain *wsi_chain,
  * image has been released by the X server to be used again by the consumer.
  */
 static VkResult
-x11_acquire_next_image(struct wsi_swapchain *anv_chain,
+x11_acquire_next_image(struct wsi_swapchain *wsi_chain,
                        const VkAcquireNextImageInfoKHR *info,
                        uint32_t *image_index)
 {
-   struct x11_swapchain *chain = (struct x11_swapchain *)anv_chain;
+   struct x11_swapchain *chain = (struct x11_swapchain *)wsi_chain;
    uint64_t timeout = info->timeout;
 
    /* If the swapchain is in an error state, don't go any further. */
@@ -1797,12 +1797,12 @@ x11_acquire_next_image(struct wsi_swapchain *anv_chain,
  * presentation but directly asks the X server to show it.
  */
 static VkResult
-x11_queue_present(struct wsi_swapchain *anv_chain,
+x11_queue_present(struct wsi_swapchain *wsi_chain,
                   uint32_t image_index,
                   uint64_t present_id,
                   const VkPresentRegionKHR *damage)
 {
-   struct x11_swapchain *chain = (struct x11_swapchain *)anv_chain;
+   struct x11_swapchain *chain = (struct x11_swapchain *)wsi_chain;
    xcb_xfixes_region_t update_area = 0;
 
    /* If the swapchain is in an error state, don't go any further. */
@@ -2402,10 +2402,10 @@ wsi_x11_swapchain_query_dri3_modifiers_changed(struct x11_swapchain *chain)
 }
 #endif
 static VkResult
-x11_swapchain_destroy(struct wsi_swapchain *anv_chain,
+x11_swapchain_destroy(struct wsi_swapchain *wsi_chain,
                       const VkAllocationCallbacks *pAllocator)
 {
-   struct x11_swapchain *chain = (struct x11_swapchain *)anv_chain;
+   struct x11_swapchain *chain = (struct x11_swapchain *)wsi_chain;
 
    mtx_lock(&chain->thread_state_lock);
    chain->status = VK_ERROR_OUT_OF_DATE_KHR;
