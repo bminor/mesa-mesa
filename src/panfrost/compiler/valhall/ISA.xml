@@ -95,7 +95,7 @@
     <value name="Wait on slots 0, 1, 2, 6, 7">wait</value>
     <value name="Perform branch reconverge">reconverge</value>
     <reserved/>
-    <reserved/>
+    <value name="Wait for resource read">wait_resource</value>
     <value name="Terminate discarded threads">discard</value>
     <reserved/>
     <value name="Return from shader">end</value>

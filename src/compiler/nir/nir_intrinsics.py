@@ -1554,6 +1554,13 @@ load("sampler_lod_parameters_pan", [1], flags=[CAN_ELIMINATE, CAN_REORDER])
 # and is ignored otherwise
 load("converted_output_pan", [1, 1, 1], indices=[DEST_TYPE, IO_SEMANTICS], flags=[CAN_ELIMINATE])
 
+# Like converted_output_pan but for case where the output is never written by the shader
+# This is used to relax waits on tile-buffer accesses and the target is read-only
+# src[] = { target, sample, conversion }
+# target must be in the [0..7] range when io_semantics.location is FRAG_RESULT_DATA0
+# and is ignored otherwise
+load("readonly_output_pan", [1, 1, 1], indices=[DEST_TYPE, IO_SEMANTICS], flags=[CAN_ELIMINATE])
+
 # Load input attachment target
 # src[] = { input_attachment_index }
 # valid targets are:

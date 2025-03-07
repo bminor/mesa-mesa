@@ -21,6 +21,8 @@
  * SOFTWARE.
  */
 
+#include "panfrost/lib/pan_props.h"
+
 #include "bi_builder.h"
 #include "va_compiler.h"
 #include "valhall_enums.h"
@@ -441,11 +443,21 @@ va_insert_flow_control_nops(bi_context *ctx)
           * instructions. Wait for slot 0 immediately after the ATEST.
           */
          case BI_OPCODE_BLEND:
-         case BI_OPCODE_LD_TILE:
          case BI_OPCODE_ST_TILE:
             if (!ctx->inputs->is_blend)
                bi_flow(ctx, bi_before_instr(I), VA_FLOW_WAIT);
             break;
+
+         case BI_OPCODE_LD_TILE: {
+            if (ctx->inputs->is_blend)
+               break;
+
+            assert(!I->wait_resource || pan_arch(ctx->inputs->gpu_id) >= 10);
+            bi_flow(ctx, bi_before_instr(I),
+                    I->wait_resource ? VA_FLOW_WAIT_RESOURCE : VA_FLOW_WAIT);
+            break;
+	 }
+
          case BI_OPCODE_ATEST:
             bi_flow(ctx, bi_before_instr(I), VA_FLOW_WAIT0126);
             bi_flow(ctx, bi_after_instr(I), VA_FLOW_WAIT0);

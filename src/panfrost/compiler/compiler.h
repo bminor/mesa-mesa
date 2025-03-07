@@ -402,6 +402,9 @@ typedef struct {
    /* Flow control associated with a Valhall instruction */
    uint8_t flow;
 
+   /* Valhall-only property to relax waits on read-only resources */
+   bool wait_resource;
+
    /* Slot associated with a message-passing instruction */
    uint8_t slot;
 

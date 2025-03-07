@@ -1841,6 +1841,9 @@ bi_emit_ld_tile(bi_builder *b, nir_intrinsic_instr *instr)
    if (is_zs)
       I->z_stencil = true;
 
+   if (instr->intrinsic == nir_intrinsic_load_readonly_output_pan)
+      I->wait_resource = true;
+
    bi_emit_cached_split(b, dest, size * nr);
 }
 
@@ -2103,6 +2106,7 @@ bi_emit_intrinsic(bi_builder *b, nir_intrinsic_instr *instr)
       break;
 
    case nir_intrinsic_load_converted_output_pan:
+   case nir_intrinsic_load_readonly_output_pan:
       bi_emit_ld_tile(b, instr);
       break;
 
