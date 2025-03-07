@@ -1818,7 +1818,7 @@ radv_pipeline_generate_ps_epilog_key(const struct radv_device *device, const str
 
 static struct radv_graphics_state_key
 radv_generate_graphics_state_key(const struct radv_device *device, const struct vk_graphics_pipeline_state *state,
-                                 VkGraphicsPipelineLibraryFlagBitsEXT lib_flags)
+                                 VkGraphicsPipelineLibraryFlagBitsEXT lib_flags, uint32_t custom_blend_mode)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
    struct radv_graphics_state_key key;
@@ -1989,6 +1989,8 @@ radv_generate_graphics_state_key(const struct radv_device *device, const struct 
                                     !(lib_flags & VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT);
    }
 
+   key.dcc_decompress_gfx11 = pdev->info.gfx_level >= GFX11 && custom_blend_mode == V_028808_CB_DCC_DECOMPRESS_GFX11;
+
    return key;
 }
 
@@ -1999,8 +2001,15 @@ radv_generate_graphics_pipeline_key(const struct radv_device *device, const VkGr
 {
    VkPipelineCreateFlags2 create_flags = vk_graphics_pipeline_create_flags(pCreateInfo);
    struct radv_graphics_pipeline_key key = {0};
+   uint32_t custom_blend_mode = 0;
 
-   key.gfx_state = radv_generate_graphics_state_key(device, state, lib_flags);
+   const VkGraphicsPipelineCreateInfoRADV *radv_info =
+      vk_find_struct_const(pCreateInfo->pNext, GRAPHICS_PIPELINE_CREATE_INFO_RADV);
+   if (radv_info) {
+      custom_blend_mode = radv_info->custom_blend_mode;
+   }
+
+   key.gfx_state = radv_generate_graphics_state_key(device, state, lib_flags, custom_blend_mode);
 
    for (uint32_t i = 0; i < pCreateInfo->stageCount; i++) {
       const VkPipelineShaderStageCreateInfo *stage = &pCreateInfo->pStages[i];
