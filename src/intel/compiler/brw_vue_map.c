@@ -286,18 +286,19 @@ brw_print_vue_map(FILE *fp, const struct intel_vue_map *vue_map,
               vue_map->separate ? "SSO" : "non-SSO");
       for (int i = 0; i < vue_map->num_slots; i++) {
          if (vue_map->slot_to_varying[i] >= VARYING_SLOT_PATCH0) {
-            fprintf(fp, "  [%d] VARYING_SLOT_PATCH%d\n", i,
+            fprintf(fp, "  [%02d] VARYING_SLOT_PATCH%d\n", i,
                     vue_map->slot_to_varying[i] - VARYING_SLOT_PATCH0);
          } else {
-            fprintf(fp, "  [%d] %s\n", i,
+            fprintf(fp, "  [%02d] %s\n", i,
                     varying_name(vue_map->slot_to_varying[i], stage));
          }
       }
    } else {
-      fprintf(fp, "VUE map (%d slots, %s)\n",
+      fprintf(fp, "%s VUE map (%d slots, %s)\n",
+              gl_shader_stage_name(stage),
               vue_map->num_slots, vue_map->separate ? "SSO" : "non-SSO");
       for (int i = 0; i < vue_map->num_slots; i++) {
-         fprintf(fp, "  [%d] %s\n", i,
+         fprintf(fp, "  [%02d] %s\n", i,
                  varying_name(vue_map->slot_to_varying[i], stage));
       }
    }
