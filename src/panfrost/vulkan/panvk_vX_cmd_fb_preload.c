@@ -561,6 +561,14 @@ cmd_emit_dcd(struct panvk_cmd_buffer *cmdbuf, struct pan_fb_info *fbinfo,
 
    fill_textures(cmdbuf, fbinfo, key, descs.cpu + PANVK_DESCRIPTOR_SIZE);
 
+   uint32_t rt_written = 0;
+   if (key->aspects == VK_IMAGE_ASPECT_COLOR_BIT) {
+      for (unsigned i = 0; i < fbinfo->rt_count; i++) {
+         if (fbinfo->rts[i].preload)
+            rt_written |= BITFIELD_BIT(i);
+      }
+   }
+
    if (key->aspects == VK_IMAGE_ASPECT_COLOR_BIT)
       fill_bds(fbinfo, key, bds.cpu);
 
@@ -646,6 +654,7 @@ cmd_emit_dcd(struct panvk_cmd_buffer *cmdbuf, struct pan_fb_info *fbinfo,
       cfg.shader.resources = res_table.gpu | 1;
       cfg.shader.shader = panvk_priv_mem_dev_addr(shader->spd);
       cfg.shader.thread_storage = cmdbuf->state.gfx.tsd;
+      cfg.flags_2.write_mask = rt_written;
    }
 
    if (key->aspects == VK_IMAGE_ASPECT_COLOR_BIT) {

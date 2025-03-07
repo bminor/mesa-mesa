@@ -1465,6 +1465,10 @@ prepare_dcd(struct panvk_cmd_buffer *cmdbuf,
    struct cs_builder *b =
       panvk_get_cs_builder(cmdbuf, PANVK_SUBQUEUE_VERTEX_TILER);
    const struct panvk_shader *fs = get_fs(cmdbuf);
+   bool dcd2_dirty =
+      fs_user_dirty(cmdbuf) ||
+      dyn_gfx_state_dirty(cmdbuf, INPUT_ATTACHMENT_MAP) ||
+      dyn_gfx_state_dirty(cmdbuf, COLOR_ATTACHMENT_MAP);
    bool dcd0_dirty =
       dyn_gfx_state_dirty(cmdbuf, RS_RASTERIZER_DISCARD_ENABLE) ||
       dyn_gfx_state_dirty(cmdbuf, RS_CULL_MODE) ||
@@ -1486,7 +1490,7 @@ prepare_dcd(struct panvk_cmd_buffer *cmdbuf,
       dyn_gfx_state_dirty(cmdbuf, IA_PRIMITIVE_TOPOLOGY) ||
       dyn_gfx_state_dirty(cmdbuf, INPUT_ATTACHMENT_MAP) ||
       fs_user_dirty(cmdbuf) || gfx_state_dirty(cmdbuf, RENDER_STATE) ||
-      gfx_state_dirty(cmdbuf, OQ);
+      gfx_state_dirty(cmdbuf, OQ) || dcd2_dirty;
    bool dcd1_dirty = dyn_gfx_state_dirty(cmdbuf, MS_RASTERIZATION_SAMPLES) ||
                      dyn_gfx_state_dirty(cmdbuf, MS_SAMPLE_MASK) ||
                      /* line mode needs primitive topology */
@@ -1505,6 +1509,14 @@ prepare_dcd(struct panvk_cmd_buffer *cmdbuf,
    bool alpha_to_coverage = dyns->ms.alpha_to_coverage_enable;
    bool writes_z = writes_depth(cmdbuf);
    bool writes_s = writes_stencil(cmdbuf);
+   uint8_t rt_mask = cmdbuf->state.gfx.render.bound_attachments &
+                     MESA_VK_RP_ATTACHMENT_ANY_COLOR_BITS;
+   uint8_t rt_written = 0, rt_read = 0;
+
+   if (fs) {
+      rt_written = color_attachment_written_mask(fs, &dyns->cal);
+      rt_read = color_attachment_read_mask(fs, &dyns->ial, rt_mask);
+   }
 
    bool msaa = dyns->ms.rasterization_samples > 1;
    if ((ia->primitive_topology == VK_PRIMITIVE_TOPOLOGY_LINE_LIST ||
@@ -1524,12 +1536,6 @@ prepare_dcd(struct panvk_cmd_buffer *cmdbuf,
       struct mali_dcd_flags_0_packed dcd0;
       pan_pack(&dcd0, DCD_FLAGS_0, cfg) {
          if (fs) {
-            uint8_t rt_mask = cmdbuf->state.gfx.render.bound_attachments &
-                              MESA_VK_RP_ATTACHMENT_ANY_COLOR_BITS;
-            uint8_t rt_written = color_attachment_written_mask(
-               fs, &cmdbuf->vk.dynamic_graphics_state.cal);
-            uint8_t rt_read =
-               color_attachment_read_mask(fs, &dyns->ial, rt_mask);
             bool zs_read = zs_attachment_read(fs, &dyns->ial);
 
             cfg.allow_forward_pixel_to_kill =
@@ -1593,6 +1599,17 @@ prepare_dcd(struct panvk_cmd_buffer *cmdbuf,
 
       cs_update_vt_ctx(b)
          cs_move32_to(b, cs_sr_reg32(b, IDVS, DCD1), dcd1.opaque[0]);
+   }
+
+   if (dcd2_dirty) {
+      struct mali_dcd_flags_2_packed dcd2;
+      pan_pack(&dcd2, DCD_FLAGS_2, cfg) {
+         cfg.read_mask = rt_read;
+         cfg.write_mask = rt_written;
+      }
+
+      cs_update_vt_ctx(b)
+         cs_move32_to(b, cs_sr_reg32(b, IDVS, DCD2), dcd2.opaque[0]);
    }
 }
 
@@ -1750,9 +1767,6 @@ prepare_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
    uint32_t varying_size = get_varying_slots(cmdbuf) * 16;
 
    cs_update_vt_ctx(b) {
-      /* We don't use the resource dep system yet. */
-      cs_move32_to(b, cs_sr_reg32(b, IDVS, DCD2), 0);
-
       prepare_index_buffer(cmdbuf, draw);
 
       set_tiler_idvs_flags(b, cmdbuf, draw);

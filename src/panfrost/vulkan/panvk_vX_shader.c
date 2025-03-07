@@ -769,7 +769,7 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
 #endif
 
    panvk_per_arch(nir_lower_descriptors)(nir, dev, rs, set_layout_count,
-                                         set_layouts, shader);
+                                         set_layouts, state, shader);
 
    NIR_PASS(_, nir, nir_split_var_copies);
    NIR_PASS(_, nir, nir_lower_var_copies);

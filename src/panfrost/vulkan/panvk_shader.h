@@ -364,7 +364,7 @@ void panvk_per_arch(nir_lower_descriptors)(
    nir_shader *nir, struct panvk_device *dev,
    const struct vk_pipeline_robustness_state *rs, uint32_t set_layout_count,
    struct vk_descriptor_set_layout *const *set_layouts,
-   struct panvk_shader *shader);
+   const struct vk_graphics_pipeline_state *state, struct panvk_shader *shader);
 
 /* This a stripped-down version of panvk_shader for internal shaders that
  * are managed by vk_meta (blend and preload shaders). Those don't need the
