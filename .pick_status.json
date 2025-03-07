@@ -3184,7 +3184,7 @@
         "description": "lavapipe: set availability bit for accel struct host queries",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "897ccbd180ae2e0e6a60173e0511bc25a4f5a118",
         "notes": null
