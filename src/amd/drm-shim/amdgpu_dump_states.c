@@ -151,6 +151,7 @@ amdgpu_dump_dev_info(int fd)
       FAMILY(GC_10_3_6),
       FAMILY(GC_10_3_7),
       FAMILY(GC_11_5_0),
+      FAMILY(GC_12_0_0),
    /* clang-format on */
 #undef FAMILY
    };
