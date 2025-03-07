@@ -308,11 +308,6 @@ ac_nir_cull_triangle(nir_builder *b,
    accepted = nir_iand(b, accepted, nir_inot(b, w_info->all_w_negative_or_zero_or_nan));
    accepted = nir_iand(b, accepted, nir_inot(b, cull_face_triangle(b, pos, w_info)));
 
-   if (skip_viewport_state_culling) {
-      call_accept_func(b, accepted, accept_func, state);
-      return accepted;
-   }
-
    nir_def *bbox_accepted = NULL;
 
    nir_if *if_accepted = nir_push_if(b, accepted);
@@ -323,17 +318,19 @@ ac_nir_cull_triangle(nir_builder *b,
       nir_def *prim_outside_view = cull_frustrum(b, bbox_min, bbox_max);
       nir_def *bbox_rejected = prim_outside_view;
 
-      nir_if *if_cull_small_prims = nir_push_if(b, nir_load_cull_small_triangles_enabled_amd(b));
-      {
-         nir_def *small_prim_rejected = cull_small_primitive_triangle(b, use_point_tri_intersection,
-                                                                      bbox_min, bbox_max, pos);
-         bbox_rejected = nir_ior(b, bbox_rejected, small_prim_rejected);
+      if (!skip_viewport_state_culling) {
+         nir_if *if_cull_small_prims = nir_push_if(b, nir_load_cull_small_triangles_enabled_amd(b));
+         {
+            nir_def *small_prim_rejected = cull_small_primitive_triangle(b, use_point_tri_intersection,
+                                                                         bbox_min, bbox_max, pos);
+            bbox_rejected = nir_ior(b, bbox_rejected, small_prim_rejected);
+         }
+         nir_pop_if(b, if_cull_small_prims);
+
+         bbox_rejected = nir_if_phi(b, bbox_rejected, prim_outside_view);
       }
-      nir_pop_if(b, if_cull_small_prims);
 
-      bbox_rejected = nir_if_phi(b, bbox_rejected, prim_outside_view);
       bbox_accepted = nir_ior(b, nir_inot(b, bbox_rejected), w_info->any_w_negative);
-
       call_accept_func(b, bbox_accepted, accept_func, state);
    }
    nir_pop_if(b, if_accepted);
