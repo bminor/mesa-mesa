@@ -189,7 +189,9 @@ nvk_AllocateMemory(VkDevice device,
          goto fail_alloc;
    }
 
-   if ((pdev->debug_flags & NVK_DEBUG_ZERO_MEMORY) && !is_import) {
+   if (!is_import && (pdev->debug_flags & (NVK_DEBUG_ZERO_MEMORY |
+                                           NVK_DEBUG_TRASH_MEMORY))) {
+      bool use_zero = (pdev->debug_flags & NVK_DEBUG_ZERO_MEMORY) != 0;
       if (type->propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
          void *map;
          result = nvkmd_mem_map(mem->mem, &dev->vk.base,
@@ -197,12 +199,13 @@ nvk_AllocateMemory(VkDevice device,
          if (result != VK_SUCCESS)
             goto fail_mem;
 
-         memset(map, 0, mem->mem->size_B);
+         memset(map, use_zero ? 0 : 0xF1, mem->mem->size_B);
          nvkmd_mem_unmap(mem->mem, 0);
       } else {
          result = nvk_upload_queue_fill(dev, &dev->upload,
                                         mem->mem->va->addr,
-                                        0, mem->mem->size_B);
+                                        use_zero ? 0 : 0xCAFEF00D,
+                                        mem->mem->size_B);
          if (result != VK_SUCCESS)
             goto fail_mem;
 

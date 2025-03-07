@@ -89,6 +89,7 @@ nvk_init_debug_flags(struct nvk_instance *instance)
       { "push", NVK_DEBUG_PUSH_DUMP },
       { "push_sync", NVK_DEBUG_PUSH_SYNC },
       { "zero_memory", NVK_DEBUG_ZERO_MEMORY },
+      { "trash_memory", NVK_DEBUG_TRASH_MEMORY },
       { "vm", NVK_DEBUG_VM },
       { "no_cbuf", NVK_DEBUG_NO_CBUF },
       { "edb_bview", NVK_DEBUG_FORCE_EDB_BVIEW },

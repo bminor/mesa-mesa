@@ -20,9 +20,13 @@ enum nvk_debug {
     */
    NVK_DEBUG_ZERO_MEMORY = 1ull << 2,
 
+   /* Write repeating nonzero patterns to client memory allocations
+    */
+   NVK_DEBUG_TRASH_MEMORY = 1ull << 3,
+
    /* Dump VM bind/unbinds
     */
-   NVK_DEBUG_VM = 1ull << 3,
+   NVK_DEBUG_VM = 1ull << 4,
 
    /* Disable most cbufs
     *
