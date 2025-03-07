@@ -471,8 +471,6 @@ brw_from_nir_emit_loop(nir_to_brw_state &ntb, nir_loop *loop)
    assert(!nir_loop_has_continue_construct(loop));
    bld.DO();
 
-   bld.emit(SHADER_OPCODE_FLOW);
-
    brw_from_nir_emit_cf_list(ntb, &loop->body);
 
    brw_inst *peep_while = bld.emit(BRW_OPCODE_WHILE);
