@@ -168,13 +168,18 @@ util_framebuffer_min_size(const struct pipe_framebuffer_state *fb,
       if (!fb->cbufs[i])
          continue;
 
-      w = MIN2(w, fb->cbufs[i]->width);
-      h = MIN2(h, fb->cbufs[i]->height);
+      uint16_t width, height;
+      pipe_surface_size(fb->cbufs[i], &width, &height);
+
+      w = MIN2(w, width);
+      h = MIN2(h, height);
    }
 
    if (fb->zsbuf) {
-      w = MIN2(w, fb->zsbuf->width);
-      h = MIN2(h, fb->zsbuf->height);
+      uint16_t width, height;
+      pipe_surface_size(fb->zsbuf, &width, &height);
+      w = MIN2(w, width);
+      h = MIN2(h, height);
    }
 
    if (w == ~0u) {

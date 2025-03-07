@@ -486,10 +486,6 @@ nv50_surface_from_miptree(struct nv50_miptree *mt,
    ns->depth = ps->u.tex.last_layer - ps->u.tex.first_layer + 1;
    ns->offset = mt->level[templ->u.tex.level].offset;
 
-   /* comment says there are going to be removed, but they're used by the st */
-   ps->width = ns->width;
-   ps->height = ns->height;
-
    ns->width <<= mt->ms_x;
    ns->height <<= mt->ms_y;
 

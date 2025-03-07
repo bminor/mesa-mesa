@@ -283,8 +283,8 @@ vl_matrix_filter_render(struct vl_matrix_filter *filter,
    assert(filter && src && dst);
 
    memset(&viewport, 0, sizeof(viewport));
-   viewport.scale[0] = dst->width;
-   viewport.scale[1] = dst->height;
+   viewport.scale[0] = pipe_surface_width(dst);
+   viewport.scale[1] = pipe_surface_height(dst);
    viewport.scale[2] = 1;
    viewport.swizzle_x = PIPE_VIEWPORT_SWIZZLE_POSITIVE_X;
    viewport.swizzle_y = PIPE_VIEWPORT_SWIZZLE_POSITIVE_Y;
@@ -292,8 +292,8 @@ vl_matrix_filter_render(struct vl_matrix_filter *filter,
    viewport.swizzle_w = PIPE_VIEWPORT_SWIZZLE_POSITIVE_W;
 
    memset(&fb_state, 0, sizeof(fb_state));
-   fb_state.width = dst->width;
-   fb_state.height = dst->height;
+   fb_state.width = pipe_surface_width(dst);
+   fb_state.height = pipe_surface_height(dst);
    fb_state.nr_cbufs = 1;
    fb_state.cbufs[0] = dst;
 

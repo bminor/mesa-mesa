@@ -424,8 +424,8 @@ vl_zscan_init_buffer(struct vl_zscan *zscan, struct vl_zscan_buffer *buffer,
 
    pipe_sampler_view_reference(&buffer->src, src);
 
-   buffer->viewport.scale[0] = dst->width;
-   buffer->viewport.scale[1] = dst->height;
+   buffer->viewport.scale[0] = pipe_surface_width(dst);
+   buffer->viewport.scale[1] = pipe_surface_height(dst);
    buffer->viewport.scale[2] = 1;
    buffer->viewport.translate[0] = 0;
    buffer->viewport.translate[1] = 0;
@@ -435,8 +435,8 @@ vl_zscan_init_buffer(struct vl_zscan *zscan, struct vl_zscan_buffer *buffer,
    buffer->viewport.swizzle_z = PIPE_VIEWPORT_SWIZZLE_POSITIVE_Z;
    buffer->viewport.swizzle_w = PIPE_VIEWPORT_SWIZZLE_POSITIVE_W;
 
-   buffer->fb_state.width = dst->width;
-   buffer->fb_state.height = dst->height;
+   buffer->fb_state.width = pipe_surface_width(dst);
+   buffer->fb_state.height = pipe_surface_height(dst);
    buffer->fb_state.nr_cbufs = 1;
    pipe_surface_reference(&buffer->fb_state.cbufs[0], dst);
 

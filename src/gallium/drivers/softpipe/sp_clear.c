@@ -80,7 +80,8 @@ softpipe_clear(struct pipe_context *pipe, unsigned buffers,
        zs_buffers != PIPE_CLEAR_DEPTHSTENCIL) {
       /* Clearing only depth or stencil in a combined depth-stencil buffer. */
       util_clear_depth_stencil(pipe, zsbuf, zs_buffers, depth, stencil,
-                               0, 0, zsbuf->width, zsbuf->height);
+                               0, 0, pipe_surface_width(zsbuf),
+                               pipe_surface_height(zsbuf));
    }
    else if (zs_buffers) {
       static const union pipe_color_union zero;

@@ -509,6 +509,8 @@ resolve_stencil_to_temp(struct d3d12_context *ctx,
    pctx->set_sampler_views(pctx, PIPE_SHADER_FRAGMENT, 0, 1, 0, &src_view);
    pctx->bind_sampler_states(pctx, PIPE_SHADER_FRAGMENT, 0, 1, &sampler_state);
    util_blitter_custom_shader(ctx->blitter, dst_surf,
+                              (uint16_t)pipe_surface_width(dst_surf),
+                              (uint16_t)pipe_surface_height(dst_surf),
                               get_stencil_resolve_vs(ctx),
                               get_stencil_resolve_fs(ctx, info->src.box.height == info->dst.box.height));
    util_blitter_restore_textures(ctx->blitter);

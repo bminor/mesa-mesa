@@ -586,11 +586,11 @@ vl_mc_set_surface(struct vl_mc_buffer *buffer, struct pipe_surface *surface)
 
    buffer->surface_cleared = false;
 
-   buffer->viewport.scale[0] = surface->width;
-   buffer->viewport.scale[1] = surface->height;
+   buffer->viewport.scale[0] = pipe_surface_width(surface);
+   buffer->viewport.scale[1] = pipe_surface_height(surface);
 
-   buffer->fb_state.width = surface->width;
-   buffer->fb_state.height = surface->height;
+   buffer->fb_state.width = pipe_surface_width(surface);
+   buffer->fb_state.height = pipe_surface_height(surface);
    buffer->fb_state.cbufs[0] = surface;
 }
 

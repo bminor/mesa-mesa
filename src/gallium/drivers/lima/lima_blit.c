@@ -75,13 +75,14 @@ lima_pack_blit_cmd(struct lima_job *job,
 
    reload_render_state.multi_sample |= (sample_mask << 12);
 
+   uint16_t width, height;
    if (job->key.cbuf) {
-      fb_width = job->key.cbuf->width;
-      fb_height = job->key.cbuf->height;
+      pipe_surface_size(job->key.cbuf, &width, &height);
    } else {
-      fb_width = job->key.zsbuf->width;
-      fb_height = job->key.zsbuf->height;
+      pipe_surface_size(job->key.zsbuf, &width, &height);
    }
+   fb_width = width;
+   fb_height = height;
 
    if (util_format_is_depth_or_stencil(psurf->format)) {
       reload_render_state.alpha_blend &= 0x0fffffff;
@@ -295,10 +296,9 @@ lima_do_blit(struct pipe_context *pctx,
    }
 
    bool tile_aligned = false;
-
    if (info->dst.box.x == 0 && info->dst.box.y == 0 &&
-       info->dst.box.width == lima_dst_surf->base.width &&
-       info->dst.box.height == lima_dst_surf->base.height)
+       info->dst.box.width == pipe_surface_width(&lima_dst_surf->base) &&
+       info->dst.box.height == pipe_surface_height(&lima_dst_surf->base))
       tile_aligned = true;
 
    if (info->dst.box.x % 16 == 0 && info->dst.box.y % 16 == 0 &&

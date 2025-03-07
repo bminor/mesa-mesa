@@ -162,8 +162,8 @@ vc4_tile_blit(struct pipe_context *pctx, struct pipe_blit_info *info)
         job->draw_min_y = info->dst.box.y;
         job->draw_max_x = info->dst.box.x + info->dst.box.width;
         job->draw_max_y = info->dst.box.y + info->dst.box.height;
-        job->draw_width = dst_surf->width;
-        job->draw_height = dst_surf->height;
+        job->draw_width = pipe_surface_width(dst_surf);
+        job->draw_height = pipe_surface_height(dst_surf);
 
         job->tile_width = tile_width;
         job->tile_height = tile_height;
@@ -385,9 +385,11 @@ vc4_yuv_blit(struct pipe_context *pctx, struct pipe_blit_info *info)
                 util_blitter_unset_running_flag(vc4->blitter);
                 return;
         }
-        dst_surf->width = align(dst_surf->width, 8) / 2;
+        uint16_t width, height;
+        pipe_surface_size(dst_surf, &width, &height);
+        width = align(width, 8) / 2;
         if (dst->cpp == 1)
-                dst_surf->height /= 2;
+                height /= 2;
 
         /* Set the constant buffer. */
         uint32_t stride = src->slices[info->src.level].stride;
@@ -410,7 +412,7 @@ vc4_yuv_blit(struct pipe_context *pctx, struct pipe_blit_info *info)
         pctx->set_sampler_views(pctx, PIPE_SHADER_FRAGMENT, 0, 0, 0, NULL);
         pctx->bind_sampler_states(pctx, PIPE_SHADER_FRAGMENT, 0, 0, NULL);
 
-        util_blitter_custom_shader(vc4->blitter, dst_surf,
+        util_blitter_custom_shader(vc4->blitter, dst_surf, width, height,
                                    vc4_get_yuv_vs(pctx),
                                    vc4_get_yuv_fs(pctx, src->cpp));
 

@@ -50,13 +50,9 @@ Header('util/format/u_format.h')
 
 Tracepoint('surface',
     args=[ArgStruct(type='const struct pipe_surface *', var='psurf')],
-    tp_struct=[Arg(type='uint16_t',     name='width',      var='psurf->width',                          c_format='%u'),
-               Arg(type='uint16_t',     name='height',     var='psurf->height',                         c_format='%u'),
-               Arg(type='uint8_t',      name='nr_samples', var='psurf->nr_samples',                     c_format='%u'),
+    tp_struct=[Arg(type='uint8_t',      name='nr_samples', var='psurf->nr_samples',                     c_format='%u'),
                Arg(type='const char *', name='format',     var='util_format_short_name(psurf->format)', c_format='%s')],
-    tp_print=['%ux%u@%u, fmt=%s',
-        '__entry->width',
-        '__entry->height',
+    tp_print=['%u samples, fmt=%s',
         '__entry->nr_samples',
         '__entry->format'],
 )

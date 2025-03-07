@@ -1220,8 +1220,6 @@ static struct pipe_surface *create_img_surface_bo(struct rendering_state *state,
                                                   VkImageSubresourceRange *range,
                                                   struct pipe_resource *bo,
                                                   enum pipe_format pformat,
-                                                  int width,
-                                                  int height,
                                                   int base_layer, int layer_count,
                                                   int level)
 {
@@ -1230,8 +1228,6 @@ static struct pipe_surface *create_img_surface_bo(struct rendering_state *state,
 
    const struct pipe_surface template = {
       .format = pformat,
-      .width = width,
-      .height = height,
       .u.tex.first_layer = range->baseArrayLayer + base_layer,
       .u.tex.last_layer = range->baseArrayLayer + base_layer + layer_count - 1,
       .u.tex.level = range->baseMipLevel + level,
@@ -1243,8 +1239,7 @@ static struct pipe_surface *create_img_surface_bo(struct rendering_state *state,
 }
 static struct pipe_surface *create_img_surface(struct rendering_state *state,
                                                struct lvp_image_view *imgv,
-                                               VkFormat format, int width,
-                                               int height,
+                                               VkFormat format,
                                                int base_layer, int layer_count)
 {
    VkImageSubresourceRange imgv_subres =
@@ -1252,11 +1247,11 @@ static struct pipe_surface *create_img_surface(struct rendering_state *state,
 
    return create_img_surface_bo(state, &imgv_subres, imgv->image->planes[0].bo,
                                 lvp_vk_format_to_pipe_format(format),
-                                width, height, base_layer, layer_count, 0);
+                                base_layer, layer_count, 0);
 }
 
 static void add_img_view_surface(struct rendering_state *state,
-                                 struct lvp_image_view *imgv, int width, int height,
+                                 struct lvp_image_view *imgv,
                                  int layer_count)
 {
    if (imgv->surface) {
@@ -1266,7 +1261,6 @@ static void add_img_view_surface(struct rendering_state *state,
 
    if (!imgv->surface) {
       imgv->surface = create_img_surface(state, imgv, imgv->vk.format,
-                                         width, height,
                                          0, layer_count);
    }
 }
@@ -1296,8 +1290,6 @@ static void clear_attachment_layers(struct rendering_state *state,
    struct pipe_surface *clear_surf = create_img_surface(state,
                                                         imgv,
                                                         imgv->vk.format,
-                                                        state->framebuffer.width,
-                                                        state->framebuffer.height,
                                                         base_layer,
                                                         layer_count);
 
@@ -1731,7 +1723,6 @@ handle_begin_rendering(struct vk_cmd_queue_entry *cmd,
       if (state->color_att[i].imgv) {
          struct lvp_image_view *imgv = state->color_att[i].imgv;
          add_img_view_surface(state, imgv,
-                              state->framebuffer.width, state->framebuffer.height,
                               state->framebuffer.layers);
          if (state->forced_sample_count && imgv->image->vk.samples == 1)
             state->color_att[i].imgv = create_multisample_surface(state, imgv, state->forced_sample_count,
@@ -1756,7 +1747,6 @@ handle_begin_rendering(struct vk_cmd_queue_entry *cmd,
                                                state->stencil_att.imgv;
       struct lvp_image_view *imgv = state->ds_imgv;
       add_img_view_surface(state, imgv,
-                           state->framebuffer.width, state->framebuffer.height,
                            state->framebuffer.layers);
       if (state->forced_sample_count && imgv->image->vk.samples == 1) {
          VkAttachmentLoadOp load_op;
@@ -3103,7 +3093,6 @@ static void handle_clear_ds_image(struct vk_cmd_queue_entry *cmd,
 
          surf = create_img_surface_bo(state, range,
                                       image->planes[0].bo, image->planes[0].bo->format,
-                                      width, height,
                                       0, depth, j);
 
          state->pctx->clear_depth_stencil(state->pctx,

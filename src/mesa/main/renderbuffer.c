@@ -663,8 +663,6 @@ _mesa_update_renderbuffer_surface(struct gl_context *ctx,
        surf->texture->nr_storage_samples != rb->NumStorageSamples ||
        surf->format != format ||
        surf->texture != resource ||
-       surf->width != rtt_width ||
-       surf->height != rtt_height ||
        surf->nr_samples != nr_samples ||
        surf->u.tex.level != level ||
        surf->u.tex.first_layer != first_layer ||

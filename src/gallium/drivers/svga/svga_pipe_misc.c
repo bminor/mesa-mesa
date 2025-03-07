@@ -108,23 +108,23 @@ svga_set_framebuffer_state(struct pipe_context *pipe,
     * different size, depending on the host API and driver,
     */
    {
-      int width = 0, height = 0;
+      uint16_t width = 0, height = 0;
       if (fb->zsbuf) {
-         width = fb->zsbuf->width;
-         height = fb->zsbuf->height;
+         pipe_surface_size(fb->zsbuf, &width, &height);
       }
       for (i = 0; i < fb->nr_cbufs; ++i) {
          if (fb->cbufs[i]) {
             if (width && height) {
-               if (fb->cbufs[i]->width != width ||
-                   fb->cbufs[i]->height != height) {
+               uint16_t cwidth, cheight;
+               pipe_surface_size(fb->cbufs[i], &cwidth, &cheight);
+               if (cwidth != width ||
+                   cheight != height) {
                   debug_warning("Mixed-size color and depth/stencil surfaces "
                                 "may not work properly");
                }
             }
             else {
-               width = fb->cbufs[i]->width;
-               height = fb->cbufs[i]->height;
+               pipe_surface_size(fb->cbufs[i], &width, &height);
             }
          }
       }

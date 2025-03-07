@@ -219,7 +219,6 @@ emit_mem2gmem_surf(struct fd_batch *batch, uint32_t base,
    uint32_t offset =
       fd_resource_offset(rsc, psurf->u.tex.level, psurf->u.tex.first_layer);
    enum pipe_format format = fd_gmem_restore_format(psurf->format);
-
    OUT_PKT3(ring, CP_SET_CONSTANT, 2);
    OUT_RING(ring, CP_REG(REG_A2XX_RB_COLOR_INFO));
    OUT_RING(ring, A2XX_RB_COLOR_INFO_BASE(base) |
@@ -237,8 +236,8 @@ emit_mem2gmem_surf(struct fd_batch *batch, uint32_t base,
              A2XX_SQ_TEX_1_FORMAT(fd2_pipe2surface(format).format) |
                 A2XX_SQ_TEX_1_CLAMP_POLICY(SQ_TEX_CLAMP_POLICY_OGL),
              0);
-   OUT_RING(ring, A2XX_SQ_TEX_2_WIDTH(psurf->width - 1) |
-                     A2XX_SQ_TEX_2_HEIGHT(psurf->height - 1));
+   OUT_RING(ring, A2XX_SQ_TEX_2_WIDTH(pipe_surface_width(psurf) - 1) |
+                     A2XX_SQ_TEX_2_HEIGHT(pipe_surface_height(psurf) - 1));
    OUT_RING(ring, A2XX_SQ_TEX_3_MIP_FILTER(SQ_TEX_FILTER_BASEMAP) |
                      A2XX_SQ_TEX_3_SWIZ_X(0) | A2XX_SQ_TEX_3_SWIZ_Y(1) |
                      A2XX_SQ_TEX_3_SWIZ_Z(2) | A2XX_SQ_TEX_3_SWIZ_W(3) |

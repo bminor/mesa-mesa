@@ -373,8 +373,6 @@ static struct pipe_surface *virgl_create_surface(struct pipe_context *ctx,
    surf->base.context = ctx;
    surf->base.format = templ->format;
 
-   surf->base.width = u_minify(resource->width0, templ->u.tex.level);
-   surf->base.height = u_minify(resource->height0, templ->u.tex.level);
    surf->base.u.tex.level = templ->u.tex.level;
    surf->base.u.tex.first_layer = templ->u.tex.first_layer;
    surf->base.u.tex.last_layer = templ->u.tex.last_layer;

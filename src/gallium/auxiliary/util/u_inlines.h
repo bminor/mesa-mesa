@@ -345,8 +345,6 @@ pipe_surface_reset(struct pipe_context *ctx, struct pipe_surface* ps,
 {
    pipe_resource_reference(&ps->texture, pt);
    ps->format = pt->format;
-   ps->width = (uint16_t)u_minify(pt->width0, level);
-   ps->height = (uint16_t)u_minify(pt->height0, level);
    ps->u.tex.level = level;
    ps->u.tex.first_layer = ps->u.tex.last_layer = layer;
    ps->context = ctx;
@@ -359,6 +357,67 @@ pipe_surface_init(struct pipe_context *ctx, struct pipe_surface* ps,
    ps->texture = 0;
    pipe_reference_init(&ps->reference, 1);
    pipe_surface_reset(ctx, ps, pt, level, layer);
+}
+
+static inline unsigned
+pipe_surface_width(const struct pipe_surface *ps)
+{
+   if (ps->texture->target == PIPE_BUFFER) {
+      /* TODO: delete clover */
+      return ps->u.buf.last_element - ps->u.buf.first_element + 1;
+   }
+
+   unsigned width = (uint16_t)u_minify(ps->texture->width0, ps->u.tex.level);
+
+   /* adjust texture view size to get full blocksize on compressed formats */
+   if (!util_format_is_depth_or_stencil(ps->texture->format) && ps->format != ps->texture->format) {
+      const struct util_format_description *res_desc = util_format_description(ps->texture->format);
+      const struct util_format_description *surf_desc = util_format_description(ps->format);
+
+      if (res_desc->block.width != surf_desc->block.width ||
+          res_desc->block.height != surf_desc->block.height) {
+         unsigned nblks_x = util_format_get_nblocksx(ps->texture->format, width);
+         width = nblks_x * surf_desc->block.width;
+      }
+   }
+
+   return width;
+}
+
+static inline unsigned
+pipe_surface_height(const struct pipe_surface *ps)
+{
+   if (ps->texture->target == PIPE_BUFFER) {
+      /* TODO: delete clover */
+      return ps->texture->height0;
+   }
+
+   unsigned height = u_minify(ps->texture->height0, ps->u.tex.level);
+
+   /* adjust texture view size to get full blocksize on compressed formats */
+   if (!util_format_is_depth_or_stencil(ps->texture->format) && ps->format != ps->texture->format) {
+      const struct util_format_description *res_desc = util_format_description(ps->texture->format);
+      const struct util_format_description *surf_desc = util_format_description(ps->format);
+
+      if (res_desc->block.width != surf_desc->block.width ||
+          res_desc->block.height != surf_desc->block.height) {
+
+         unsigned nblks_y = util_format_get_nblocksy(ps->texture->format, height);
+         height = nblks_y * surf_desc->block.height;
+      }
+   }
+
+   return height;
+}
+
+static inline void
+pipe_surface_size(const struct pipe_surface *ps, uint16_t *width, uint16_t *height)
+{
+   if (width)
+      *width = (uint16_t)pipe_surface_width(ps);
+
+   if (height)
+      *height = (uint16_t)pipe_surface_height(ps);
 }
 
 /* Return true if the surfaces are equal. */

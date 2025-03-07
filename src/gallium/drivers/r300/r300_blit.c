@@ -491,8 +491,7 @@ void r300_decompress_zmask_locked_unsafe(struct r300_context *r300)
     struct pipe_framebuffer_state fb;
 
     memset(&fb, 0, sizeof(fb));
-    fb.width = r300->locked_zbuffer->width;
-    fb.height = r300->locked_zbuffer->height;
+    pipe_surface_size(r300->locked_zbuffer, &fb.width, &fb.height);
     fb.zsbuf = r300->locked_zbuffer;
 
     r300->context.set_framebuffer_state(&r300->context, &fb);

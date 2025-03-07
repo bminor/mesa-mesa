@@ -2859,8 +2859,6 @@ crocus_create_surface(struct pipe_context *ctx,
    pipe_resource_reference(&psurf->texture, tex);
    psurf->context = ctx;
    psurf->format = tmpl->format;
-   psurf->width = tex->width0;
-   psurf->height = tex->height0;
    psurf->u.tex.first_layer = tmpl->u.tex.first_layer;
    psurf->u.tex.last_layer = tmpl->u.tex.last_layer;
    psurf->u.tex.level = tmpl->u.tex.level;
@@ -2999,9 +2997,6 @@ crocus_create_surface(struct pipe_context *ctx,
    surf->surf.phys_level0_sa = isl_surf_get_phys_level0_el(&surf->surf);
    tile_x_sa /= fmtl->bw;
    tile_y_sa /= fmtl->bh;
-
-   psurf->width = surf->surf.logical_level0_px.width;
-   psurf->height = surf->surf.logical_level0_px.height;
 
    return psurf;
 }
@@ -4948,8 +4943,8 @@ emit_null_fb_surface(struct crocus_batch *batch,
    layer = 0;
 
    if (cso->nr_cbufs == 0 && cso->zsbuf) {
-      width = cso->zsbuf->width;
-      height = cso->zsbuf->height;
+      width = ((struct crocus_surface*)cso->zsbuf)->surf.logical_level0_px.width;
+      height = ((struct crocus_surface*)cso->zsbuf)->surf.logical_level0_px.height;
       level = cso->zsbuf->u.tex.level;
       layer = cso->zsbuf->u.tex.first_layer;
    }

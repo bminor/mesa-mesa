@@ -450,8 +450,10 @@ vlVdpVideoSurfaceClear(vlVdpSurface *vlsurf)
       if (i > !!vlsurf->templat.interlaced)
          c.f[0] = c.f[1] = c.f[2] = c.f[3] = 0.5f;
 
+      uint16_t width, height;
+      pipe_surface_size(surfaces[i], &width, &height);
       pipe->clear_render_target(pipe, surfaces[i], &c, 0, 0,
-                                surfaces[i]->width, surfaces[i]->height, false);
+                                width, height, false);
    }
    pipe->flush(pipe, NULL, 0);
 }
@@ -534,10 +536,9 @@ VdpStatus vlVdpVideoSurfaceDMABuf(VdpVideoSurface surface,
    }
 
    mtx_unlock(&p_surf->device->mutex);
-
    result->handle = whandle.handle;
-   result->width = surf->width;
-   result->height = surf->height;
+   result->width = pipe_surface_width(surf);
+   result->height = pipe_surface_height(surf);
    result->offset = whandle.offset;
    result->stride = whandle.stride;
 

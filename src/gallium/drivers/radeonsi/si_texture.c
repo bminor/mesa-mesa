@@ -2300,8 +2300,6 @@ static struct pipe_surface *si_create_surface(struct pipe_context *pipe, struct 
    pipe_resource_reference(&surface->base.texture, tex);
    surface->base.context = pipe;
    surface->base.format = templ->format;
-   surface->base.width = width;
-   surface->base.height = height;
    surface->base.u = templ->u;
 
    surface->width0 = width0;

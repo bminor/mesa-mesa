@@ -778,8 +778,6 @@ vc4_create_surface(struct pipe_context *pctx,
 
         psurf->context = pctx;
         psurf->format = surf_tmpl->format;
-        psurf->width = u_minify(ptex->width0, level);
-        psurf->height = u_minify(ptex->height0, level);
         psurf->u.tex.level = level;
         psurf->u.tex.first_layer = surf_tmpl->u.tex.first_layer;
         psurf->u.tex.last_layer = surf_tmpl->u.tex.last_layer;
@@ -804,8 +802,8 @@ vc4_dump_surface_non_msaa(struct pipe_surface *psurf)
         struct vc4_resource *rsc = vc4_resource(prsc);
         uint32_t *map = vc4_bo_map(rsc->bo);
         uint32_t stride = rsc->slices[0].stride / 4;
-        uint32_t width = psurf->width;
-        uint32_t height = psurf->height;
+        uint16_t width, height;
+        pipe_surface_size(psurf, &width, &height);
         uint32_t chunk_w = width / 79;
         uint32_t chunk_h = height / 40;
         uint32_t found_colors[10] = { 0 };
@@ -899,8 +897,10 @@ vc4_surface_msaa_get_sample(struct pipe_surface *psurf,
 {
         struct pipe_resource *prsc = psurf->texture;
         struct vc4_resource *rsc = vc4_resource(prsc);
+        uint16_t width, height;
+        pipe_surface_size(psurf, &width, &height);
         uint32_t tile_w = 32, tile_h = 32;
-        uint32_t tiles_w = DIV_ROUND_UP(psurf->width, 32);
+        uint32_t tiles_w = DIV_ROUND_UP(width, 32);
 
         uint32_t tile_x = x / tile_w;
         uint32_t tile_y = y / tile_h;
@@ -971,23 +971,25 @@ static void
 vc4_dump_surface_msaa(struct pipe_surface *psurf)
 {
         uint32_t tile_w = 32, tile_h = 32;
-        uint32_t tiles_w = DIV_ROUND_UP(psurf->width, tile_w);
-        uint32_t tiles_h = DIV_ROUND_UP(psurf->height, tile_h);
+        uint16_t width, height;
+        pipe_surface_size(psurf, &width, &height);
+        uint32_t tiles_w = DIV_ROUND_UP(width, tile_w);
+        uint32_t tiles_h = DIV_ROUND_UP(height, tile_h);
         uint32_t char_w = 140, char_h = 60;
         uint32_t char_w_per_tile = char_w / tiles_w - 1;
         uint32_t char_h_per_tile = char_h / tiles_h - 1;
 
         fprintf(stderr, "Surface: %dx%d (%dx MSAA)\n",
-                psurf->width, psurf->height, psurf->texture->nr_samples);
+                width, height, psurf->texture->nr_samples);
 
         for (int x = 0; x < (char_w_per_tile + 1) * tiles_w; x++)
                 fprintf(stderr, "-");
         fprintf(stderr, "\n");
 
-        for (int ty = 0; ty < psurf->height; ty += tile_h) {
+        for (int ty = 0; ty < height; ty += tile_h) {
                 for (int y = 0; y < char_h_per_tile; y++) {
 
-                        for (int tx = 0; tx < psurf->width; tx += tile_w) {
+                        for (int tx = 0; tx < width; tx += tile_w) {
                                 for (int x = 0; x < char_w_per_tile; x++) {
                                         uint32_t bx1 = (x * tile_w /
                                                         char_w_per_tile);

@@ -356,8 +356,8 @@ VdpStatus vlVdpVideoMixerRender(VdpVideoMixer mixer,
       res_tmpl.usage = PIPE_USAGE_DEFAULT;
 
       if (!vmixer->bicubic.filter) {
-         res_tmpl.width0 = dst->surface->width;
-         res_tmpl.height0 = dst->surface->height;
+         res_tmpl.width0 = pipe_surface_width(dst->surface);
+         res_tmpl.height0 = pipe_surface_height(dst->surface);
       } else {
          res_tmpl.width0 = surf->templat.width;
          res_tmpl.height0 = surf->templat.height;

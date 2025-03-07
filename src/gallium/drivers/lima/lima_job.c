@@ -65,8 +65,10 @@ lima_get_fb_info(struct lima_job *job)
       fb->width = ctx->framebuffer.base.width;
       fb->height =  ctx->framebuffer.base.height;
    } else {
-      fb->width = surf->base.width;
-      fb->height = surf->base.height;
+      uint16_t width, height;
+      pipe_surface_size(&surf->base, &width, &height);
+      fb->width = width;
+      fb->height = height;
    }
 
    int width = align(fb->width, 16) >> 4;

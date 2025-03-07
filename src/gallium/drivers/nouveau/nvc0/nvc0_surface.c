@@ -980,8 +980,7 @@ nvc0_blit_set_dst(struct nvc0_blitctx *ctx,
    nvc0->framebuffer.cbufs[0] = nvc0_miptree_surface_new(pipe, res, &templ);
    nvc0->framebuffer.nr_cbufs = 1;
    nvc0->framebuffer.zsbuf = NULL;
-   nvc0->framebuffer.width = nvc0->framebuffer.cbufs[0]->width;
-   nvc0->framebuffer.height = nvc0->framebuffer.cbufs[0]->height;
+   pipe_surface_size(nvc0->framebuffer.cbufs[0], &nvc0->framebuffer.width, &nvc0->framebuffer.height);
 }
 
 static void

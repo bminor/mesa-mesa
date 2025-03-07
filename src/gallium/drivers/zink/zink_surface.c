@@ -115,8 +115,9 @@ init_surface_info(struct zink_screen *screen, struct zink_surface *surface, stru
    VkImageViewUsageCreateInfo *usage_info = (VkImageViewUsageCreateInfo *)ivci->pNext;
    surface->info.flags = res->obj->vkflags;
    surface->info.usage = usage_info ? usage_info->usage : res->obj->vkusage;
-   surface->info.width = surface->base.width;
-   surface->info.height = surface->base.height;
+
+   surface->info.width = pipe_surface_width(&surface->base);
+   surface->info.height = pipe_surface_height(&surface->base);
    surface->info.layerCount = ivci->subresourceRange.layerCount;
    surface->info.format[0] = ivci->format;
    if (res->obj->dt) {
@@ -141,22 +142,6 @@ init_pipe_surface_info(struct pipe_context *pctx, struct pipe_surface *psurf, co
    unsigned int level = templ->u.tex.level;
    psurf->context = pctx;
    psurf->format = templ->format;
-   psurf->width = u_minify(pres->width0, level);
-   assert(psurf->width);
-   psurf->height = u_minify(pres->height0, level);
-   assert(psurf->height);
-
-   if (util_format_is_compressed(pres->format) &&
-       !util_format_is_compressed(psurf->format)) {
-      assert(util_format_get_blockwidth(psurf->format) == 1);
-      assert(util_format_get_blockheight(psurf->format) == 1);
-
-      psurf->width = DIV_ROUND_UP(psurf->width,
-                                  util_format_get_blockwidth(pres->format));
-      psurf->height = DIV_ROUND_UP(psurf->height,
-                                   util_format_get_blockheight(pres->format));
-   }
-
    psurf->nr_samples = templ->nr_samples;
    psurf->u.tex.level = level;
    psurf->u.tex.first_layer = templ->u.tex.first_layer;
@@ -557,8 +542,6 @@ zink_surface_swapchain_update(struct zink_context *ctx, struct zink_surface *sur
          mesa_loge("ZINK: failed to allocate surface->swapchain!");
          return;
       }
-      surface->base.width = res->base.b.width0;
-      surface->base.height = res->base.b.height0;
       init_surface_info(screen, surface, res, &surface->ivci);
       surface->dt_swapchain = cdt->swapchain;
    }

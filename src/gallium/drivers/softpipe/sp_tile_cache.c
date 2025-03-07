@@ -203,7 +203,9 @@ sp_tile_cache_set_surface(struct softpipe_tile_cache *tc,
                                                     ps->u.tex.level, ps->u.tex.first_layer + i,
                                                     PIPE_MAP_READ_WRITE |
                                                     PIPE_MAP_UNSYNCHRONIZED,
-                                                    0, 0, ps->width, ps->height,
+                                                    0, 0,
+                                                    pipe_surface_width(ps),
+                                                    pipe_surface_height(ps),
                                                     &tc->transfer[i]);
          }
       }

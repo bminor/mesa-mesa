@@ -259,22 +259,14 @@ panfrost_create_surface(struct pipe_context *pipe, struct pipe_resource *pt,
 
       if (pt->target != PIPE_BUFFER) {
          assert(surf_tmpl->u.tex.level <= pt->last_level);
-         ps->width = u_minify(pt->width0, surf_tmpl->u.tex.level);
-         ps->height = u_minify(pt->height0, surf_tmpl->u.tex.level);
          ps->nr_samples = surf_tmpl->nr_samples;
          ps->u.tex.level = surf_tmpl->u.tex.level;
          ps->u.tex.first_layer = surf_tmpl->u.tex.first_layer;
          ps->u.tex.last_layer = surf_tmpl->u.tex.last_layer;
       } else {
-         /* setting width as number of elements should get us correct
-          * renderbuffer width */
-         ps->width =
-            surf_tmpl->u.buf.last_element - surf_tmpl->u.buf.first_element + 1;
-         ps->height = pt->height0;
          ps->u.buf.first_element = surf_tmpl->u.buf.first_element;
          ps->u.buf.last_element = surf_tmpl->u.buf.last_element;
          assert(ps->u.buf.first_element <= ps->u.buf.last_element);
-         assert(ps->u.buf.last_element < ps->width);
       }
    }
 

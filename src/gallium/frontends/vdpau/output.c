@@ -823,8 +823,8 @@ VdpStatus vlVdpOutputSurfaceDMABuf(VdpOutputSurface surface,
    mtx_unlock(&vlsurface->device->mutex);
 
    result->handle = whandle.handle;
-   result->width = vlsurface->surface->width;
-   result->height = vlsurface->surface->height;
+   result->width = pipe_surface_width(vlsurface->surface);
+   result->height = pipe_surface_height(vlsurface->surface);
    result->offset = whandle.offset;
    result->stride = whandle.stride;
    result->format = PipeToFormatRGBA(vlsurface->surface->format);

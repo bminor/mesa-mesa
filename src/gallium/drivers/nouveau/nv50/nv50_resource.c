@@ -66,9 +66,6 @@ nv50_surface_from_buffer(struct pipe_context *pipe,
    sf->height = 1;
    sf->depth = 1;
 
-   sf->base.width = sf->width;
-   sf->base.height = sf->height;
-
    sf->base.context = pipe;
    return &sf->base;
 }

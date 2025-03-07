@@ -248,8 +248,6 @@ d3d12_create_surface(struct pipe_context *pctx,
    pipe_reference_init(&surface->base.reference, 1);
    surface->base.context = pctx;
    surface->base.format = tpl->format;
-   surface->base.width = static_cast<uint16_t>(u_minify(pres->width0, tpl->u.tex.level));
-   surface->base.height = static_cast<uint16_t>(u_minify(pres->height0, tpl->u.tex.level));
    surface->base.u.tex.level = tpl->u.tex.level;
    surface->base.u.tex.first_layer = tpl->u.tex.first_layer;
    surface->base.u.tex.last_layer = tpl->u.tex.last_layer;
@@ -294,8 +292,8 @@ blit_surface(struct pipe_context *pctx, struct d3d12_surface *surface, bool pre)
    info.src.box.x = info.dst.box.x = 0;
    info.src.box.y = info.dst.box.y = 0;
    info.src.box.z = info.dst.box.z = 0;
-   info.src.box.width = info.dst.box.width = surface->base.width;
-   info.src.box.height = info.dst.box.height = surface->base.height;
+   info.src.box.width = info.dst.box.width = pipe_surface_width(&surface->base);
+   info.src.box.height = info.dst.box.height = pipe_surface_height(&surface->base);
    info.src.box.depth = info.dst.box.depth = 0;
    info.mask = PIPE_MASK_RGBA;
 

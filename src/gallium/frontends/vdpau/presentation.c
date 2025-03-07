@@ -248,13 +248,13 @@ vlVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue,
 
       dst_clip.x0 = 0;
       dst_clip.y0 = 0;
-      dst_clip.x1 = clip_width ? clip_width : surf_draw->width;
-      dst_clip.y1 = clip_height ? clip_height : surf_draw->height;
+      dst_clip.x1 = clip_width ? clip_width : pipe_surface_width(surf_draw);
+      dst_clip.y1 = clip_height ? clip_height : pipe_surface_height(surf_draw);
 
       src_rect.x0 = 0;
       src_rect.y0 = 0;
-      src_rect.x1 = surf_draw->width;
-      src_rect.y1 = surf_draw->height;
+      src_rect.x1 = pipe_surface_width(surf_draw);
+      src_rect.y1 = pipe_surface_height(surf_draw);
 
       vl_compositor_clear_layers(cstate);
       vl_compositor_set_rgba_layer(cstate, compositor, 0, surf->sampler_view, &src_rect, NULL, NULL);

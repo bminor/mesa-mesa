@@ -1117,17 +1117,19 @@ fd6_resolve_tile(struct fd_batch *batch, struct fd_ringbuffer *ring,
    uint64_t gmem_base = batch->ctx->screen->gmem_base + base;
    uint32_t gmem_pitch = gmem->bin_w * batch->framebuffer.samples *
                          util_format_get_blocksize(psurf->format);
+   unsigned width = pipe_surface_width(psurf);
+   unsigned height = pipe_surface_height(psurf);
 
    OUT_PKT4(ring, REG_A6XX_GRAS_2D_DST_TL, 2);
    OUT_RING(ring, A6XX_GRAS_2D_DST_TL_X(0) | A6XX_GRAS_2D_DST_TL_Y(0));
-   OUT_RING(ring, A6XX_GRAS_2D_DST_BR_X(psurf->width - 1) |
-                     A6XX_GRAS_2D_DST_BR_Y(psurf->height - 1));
+   OUT_RING(ring, A6XX_GRAS_2D_DST_BR_X(width - 1) |
+                     A6XX_GRAS_2D_DST_BR_Y(height - 1));
 
    OUT_REG(ring,
            A6XX_GRAS_2D_SRC_TL_X(0),
-           A6XX_GRAS_2D_SRC_BR_X(psurf->width - 1),
+           A6XX_GRAS_2D_SRC_BR_X(width - 1),
            A6XX_GRAS_2D_SRC_TL_Y(0),
-           A6XX_GRAS_2D_SRC_BR_Y(psurf->height - 1),
+           A6XX_GRAS_2D_SRC_BR_Y(height - 1),
    );
 
    /* Enable scissor bit, which will take into account the window scissor
@@ -1158,8 +1160,8 @@ fd6_resolve_tile(struct fd_batch *batch, struct fd_ringbuffer *ring,
            ),
            SP_PS_2D_SRC_SIZE(
                  CHIP,
-                 .width = psurf->width,
-                 .height = psurf->height,
+                 .width = width,
+                 .height = height,
            ),
            SP_PS_2D_SRC(
                  CHIP,

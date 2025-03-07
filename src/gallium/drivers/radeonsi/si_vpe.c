@@ -546,21 +546,24 @@ si_vpe_set_plane_info(struct vpe_video_processor *vpeproc,
       return VPE_STATUS_NOT_SUPPORTED;
 
    /* 1st plane ret setting */
+   uint16_t width, height;
+   pipe_surface_size(surfaces[0], &width, &height);
    plane_size->surface_size.x         = 0;
    plane_size->surface_size.y         = 0;
-   plane_size->surface_size.width     = surfaces[0]->width;
-   plane_size->surface_size.height    = surfaces[0]->height;
+   plane_size->surface_size.width     = width;
+   plane_size->surface_size.height    = height;
    plane_size->surface_pitch          = si_tex_0->surface.u.gfx9.surf_pitch;
-   plane_size->surface_aligned_height = surfaces[0]->height;
+   plane_size->surface_aligned_height = height;
 
    /* YUV 2nd plane ret setting */
    if (util_format_get_num_planes(format) == 2) {
+      pipe_surface_size(surfaces[1], &width, &height);
       plane_size->chroma_size.x         = 0;
       plane_size->chroma_size.y         = 0;
-      plane_size->chroma_size.width     = surfaces[1]->width;
-      plane_size->chroma_size.height    = surfaces[1]->height;
+      plane_size->chroma_size.width     = width;
+      plane_size->chroma_size.height    = height;
       plane_size->chroma_pitch          = si_tex_1->surface.u.gfx9.surf_pitch;
-      plane_size->chrome_aligned_height = surfaces[1]->height;
+      plane_size->chrome_aligned_height = height;
    }
 
    /* Color space setting */
@@ -687,8 +690,8 @@ si_vpe_set_stream_out_param(struct vpe_video_processor *vpeproc,
    if (process_properties->background_color) {
       build_param->target_rect.x      = 0;
       build_param->target_rect.y      = 0;
-      build_param->target_rect.width  = vpeproc->dst_surfaces[0]->width;
-      build_param->target_rect.height = vpeproc->dst_surfaces[0]->height;
+      build_param->target_rect.width  = pipe_surface_width(vpeproc->dst_surfaces[0]);
+      build_param->target_rect.height = pipe_surface_height(vpeproc->dst_surfaces[0]);
    } else {
       build_param->target_rect.x      = process_properties->dst_region.x0;
       build_param->target_rect.y      = process_properties->dst_region.y0;

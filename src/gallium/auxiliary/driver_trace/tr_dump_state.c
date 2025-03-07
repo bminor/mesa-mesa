@@ -697,8 +697,6 @@ void trace_dump_surface_template(const struct pipe_surface *state,
 
    trace_dump_member(format, state, format);
    trace_dump_member(ptr, state, texture);
-   trace_dump_member(uint, state, width);
-   trace_dump_member(uint, state, height);
 
    trace_dump_member_begin("target");
    trace_dump_enum(tr_util_pipe_texture_target_name(target));

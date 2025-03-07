@@ -112,19 +112,19 @@ debug_dump_surface(struct pipe_context *pipe,
     * to be done here:
     */
    texture = surface->texture;
-
    data = pipe_texture_map(pipe, texture, surface->u.tex.level,
                            surface->u.tex.first_layer,
                            PIPE_MAP_READ,
-                           0, 0, surface->width, surface->height, &transfer);
+                           0, 0, pipe_surface_width(surface),
+                           pipe_surface_height(surface), &transfer);
    if (!data)
       return;
 
    debug_dump_image(prefix,
                     texture->format,
                     util_format_get_blocksize(texture->format),
-                    util_format_get_nblocksx(texture->format, surface->width),
-                    util_format_get_nblocksy(texture->format, surface->height),
+                    util_format_get_nblocksx(texture->format, pipe_surface_width(surface)),
+                    util_format_get_nblocksy(texture->format, pipe_surface_height(surface)),
                     transfer->stride,
                     data);
 
@@ -194,7 +194,8 @@ debug_dump_surface_bmp(struct pipe_context *pipe,
 
    ptr = pipe_texture_map(pipe, texture, surface->u.tex.level,
                           surface->u.tex.first_layer, PIPE_MAP_READ,
-                          0, 0, surface->width, surface->height, &transfer);
+                          0, 0, pipe_surface_width(surface),
+                          pipe_surface_height(surface), &transfer);
 
    debug_dump_transfer_bmp(pipe, filename, transfer, ptr);
 

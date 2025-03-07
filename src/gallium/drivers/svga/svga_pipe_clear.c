@@ -143,9 +143,8 @@ try_clear(struct svga_context *svga,
 
       if (buffers & PIPE_CLEAR_STENCIL)
          flags |= SVGA3D_CLEAR_STENCIL;
-
-      rect.w = MAX2(rect.w, fb->zsbuf->width);
-      rect.h = MAX2(rect.h, fb->zsbuf->height);
+      rect.w = MAX2(rect.w, pipe_surface_width(fb->zsbuf));
+      rect.h = MAX2(rect.h, pipe_surface_height(fb->zsbuf));
    }
 
    if (!svga_have_vgpu10(svga) &&
@@ -321,8 +320,9 @@ svga_clear_texture(struct pipe_context *pipe,
          return;
       }
 
-      if (box->x == 0 && box->y == 0 && box->width == surface->width &&
-          box->height == surface->height) {
+
+      if (box->x == 0 && box->y == 0 && box->width == pipe_surface_width(surface) &&
+          box->height == pipe_surface_height(surface)) {
          /* clearing whole surface, use direct VGPU10 command */
          assert(svga_surface(dsv)->view_id != SVGA3D_INVALID_ID);
 
@@ -363,8 +363,8 @@ svga_clear_texture(struct pipe_context *pipe,
          return;
       }
 
-      if (box->x == 0 && box->y == 0 && box->width == surface->width &&
-          box->height == surface->height) {
+      if (box->x == 0 && box->y == 0 && box->width == pipe_surface_width(surface) &&
+          box->height == pipe_surface_height(surface)) {
          struct pipe_framebuffer_state *curr =  &svga->curr.framebuffer;
          bool int_target = is_integer_target(curr, PIPE_CLEAR_COLOR);
 
@@ -509,16 +509,16 @@ svga_clear_render_target(struct pipe_context *pipe,
                          struct pipe_surface *dst,
                          const union pipe_color_union *color,
                          unsigned dstx, unsigned dsty,
-                         unsigned width, unsigned height,
+                         unsigned dst_width, unsigned dst_height,
                          bool render_condition_enabled)
 {
     struct svga_context *svga = svga_context( pipe );
 
     svga_toggle_render_condition(svga, render_condition_enabled, false);
     if (!svga_have_vgpu10(svga) || dstx != 0 || dsty != 0 ||
-        width != dst->width || height != dst->height) {
-       svga_blitter_clear_render_target(svga, dst, color, dstx, dsty, width,
-                                        height);
+        dst_width != pipe_surface_width(dst) || dst_height != pipe_surface_height(dst)) {
+       svga_blitter_clear_render_target(svga, dst, color, dstx, dsty, dst_width,
+                                        dst_height);
     } else {
        enum pipe_error ret;
 

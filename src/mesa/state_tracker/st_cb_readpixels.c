@@ -216,8 +216,7 @@ try_pbo_readpixels(struct st_context *st, struct gl_renderbuffer *rb,
 
    /* Set up no-attachment framebuffer */
    memset(&fb, 0, sizeof(fb));
-   fb.width = surface->width;
-   fb.height = surface->height;
+   pipe_surface_size(surface, &fb.width, &fb.height);
    fb.samples = 1;
    fb.layers = addr.depth;
    cso_set_framebuffer(cso, &fb);

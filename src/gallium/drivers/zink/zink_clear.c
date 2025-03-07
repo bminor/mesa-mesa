@@ -188,7 +188,7 @@ zink_clear(struct pipe_context *pctx,
                color.f[3] = 1.0;
                pctx->clear_render_target(pctx, ctx->fb_state.cbufs[i], &color,
                                          0, 0,
-                                         ctx->fb_state.cbufs[i]->width, ctx->fb_state.cbufs[i]->height,
+                                         ctx->fb_state.width, ctx->fb_state.height,
                                          ctx->render_condition_active);
             }
             pctx->clear_render_target(pctx, ctx->fb_state.cbufs[i], pcolor,
@@ -417,8 +417,13 @@ static void
 set_clear_fb(struct pipe_context *pctx, struct pipe_surface *psurf, struct pipe_surface *zsurf)
 {
    struct pipe_framebuffer_state fb_state = {0};
-   fb_state.width = psurf ? psurf->width : zsurf->width;
-   fb_state.height = psurf ? psurf->height : zsurf->height;
+   uint16_t width, height;
+   if (psurf)
+      pipe_surface_size(psurf, &width, &height);
+   else
+      pipe_surface_size(zsurf, &width, &height);
+   fb_state.width = width;
+   fb_state.height = height;
    fb_state.nr_cbufs = !!psurf;
    fb_state.cbufs[0] = psurf;
    fb_state.zsbuf = zsurf;

@@ -203,9 +203,8 @@ st_set_ws_renderbuffer_surface(struct gl_renderbuffer *rb,
 
    rb->surface = surf; /* just assign, don't ref */
    pipe_resource_reference(&rb->texture, surf->texture);
-
-   rb->Width = surf->width;
-   rb->Height = surf->height;
+   rb->Width = pipe_surface_width(surf);
+   rb->Height = pipe_surface_height(surf);
 }
 
 

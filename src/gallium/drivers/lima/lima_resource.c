@@ -580,15 +580,13 @@ lima_surface_create(struct pipe_context *pctx,
 
    psurf->context = pctx;
    psurf->format = surf_tmpl->format;
-   psurf->width = u_minify(pres->width0, level);
-   psurf->height = u_minify(pres->height0, level);
    psurf->nr_samples = surf_tmpl->nr_samples;
    psurf->u.tex.level = level;
    psurf->u.tex.first_layer = surf_tmpl->u.tex.first_layer;
    psurf->u.tex.last_layer = surf_tmpl->u.tex.last_layer;
 
-   surf->tiled_w = align(psurf->width, 16) >> 4;
-   surf->tiled_h = align(psurf->height, 16) >> 4;
+   surf->tiled_w = align(u_minify(pres->width0, level), 16) >> 4;
+   surf->tiled_h = align(u_minify(pres->height0, level), 16) >> 4;
 
    surf->reload = 0;
    if (util_format_has_stencil(util_format_description(psurf->format)))

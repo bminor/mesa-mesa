@@ -1076,12 +1076,14 @@ static void si_fb_clear_via_compute(struct si_context *sctx, unsigned *buffers,
       if (vi_dcc_enabled(tex, surf->u.tex.level))
          continue;
 
+      uint16_t width, height;
+      pipe_surface_size(surf, &width, &height);
       /* Clears of thick and linear layouts are fastest with compute. */
       if (tex->surface.thick_tiling ||
-          (tex->surface.is_linear && (surf->height > 1 || depth > 1 || surf->width >= 8192))) {
+          (tex->surface.is_linear && (height > 1 || depth > 1 || width >= 8192))) {
          struct pipe_box box;
 
-         u_box_3d(0, 0, surf->u.tex.first_layer, surf->width, surf->height, depth, &box);
+         u_box_3d(0, 0, surf->u.tex.first_layer, width, height, depth, &box);
 
          if (si_compute_clear_image(sctx, &tex->buffer.b.b, surf->format, surf->u.tex.level, &box,
                                     color, sctx->render_cond_enabled, true))
@@ -1257,10 +1259,12 @@ static bool si_try_normal_clear(struct si_context *sctx, struct pipe_surface *ds
                                 const union pipe_color_union *color,
                                 float depth, unsigned stencil)
 {
+   uint16_t surf_width, surf_height;
+   pipe_surface_size(dst, &surf_width, &surf_height);
    /* This is worth it only if it's a whole image clear. */
    if (dstx == 0 && dsty == 0 &&
-       width == dst->width &&
-       height == dst->height &&
+       width == surf_width &&
+       height == surf_height &&
        dst->u.tex.first_layer == 0 &&
        dst->u.tex.last_layer == util_max_layer(dst->texture, dst->u.tex.level) &&
        /* pipe->clear honors render_condition, so only use it if it's unset or if it's set and enabled. */
@@ -1278,8 +1282,8 @@ static bool si_try_normal_clear(struct si_context *sctx, struct pipe_surface *ds
          fb.zsbuf = dst;
       }
 
-      fb.width = dst->width;
-      fb.height = dst->height;
+      fb.width = surf_width;
+      fb.height = surf_height;
 
       ctx->set_framebuffer_state(ctx, &fb);
       ctx->clear(ctx, buffers, NULL, color, depth, stencil);

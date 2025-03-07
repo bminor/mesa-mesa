@@ -472,10 +472,6 @@ struct pipe_surface
    struct pipe_resource *texture; /**< resource into which this is a view  */
    struct pipe_context *context; /**< context this surface belongs to */
 
-   /* XXX width/height should be removed */
-   uint16_t width;               /**< logical width in pixels */
-   uint16_t height;              /**< logical height in pixels */
-
    /**
     * Number of samples for the surface.  This will be 0 if rendering
     * should use the resource's nr_samples, or another value if the resource

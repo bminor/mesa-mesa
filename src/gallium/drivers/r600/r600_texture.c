@@ -1497,8 +1497,7 @@ void r600_texture_transfer_unmap(struct pipe_context *ctx,
 struct pipe_surface *r600_create_surface_custom(struct pipe_context *pipe,
 						struct pipe_resource *texture,
 						const struct pipe_surface *templ,
-						unsigned width0, unsigned height0,
-						unsigned width, unsigned height)
+						unsigned width0, unsigned height0)
 {
 	struct r600_surface *surface = CALLOC_STRUCT(r600_surface);
 
@@ -1512,8 +1511,6 @@ struct pipe_surface *r600_create_surface_custom(struct pipe_context *pipe,
 	pipe_resource_reference(&surface->base.texture, texture);
 	surface->base.context = pipe;
 	surface->base.format = templ->format;
-	surface->base.width = width;
-	surface->base.height = height;
 	surface->base.u = templ->u;
 
 	surface->width0 = width0;
@@ -1526,9 +1523,6 @@ static struct pipe_surface *r600_create_surface(struct pipe_context *pipe,
 						struct pipe_resource *tex,
 						const struct pipe_surface *templ)
 {
-	unsigned level = templ->u.tex.level;
-	unsigned width = u_minify(tex->width0, level);
-	unsigned height = u_minify(tex->height0, level);
 	unsigned width0 = tex->width0;
 	unsigned height0 = tex->height0;
 
@@ -1544,20 +1538,13 @@ static struct pipe_surface *r600_create_surface(struct pipe_context *pipe,
 		 * height is changed. */
 		if (tex_desc->block.width != templ_desc->block.width ||
 		    tex_desc->block.height != templ_desc->block.height) {
-			unsigned nblks_x = util_format_get_nblocksx(tex->format, width);
-			unsigned nblks_y = util_format_get_nblocksy(tex->format, height);
-
-			width = nblks_x * templ_desc->block.width;
-			height = nblks_y * templ_desc->block.height;
-
 			width0 = util_format_get_nblocksx(tex->format, width0);
 			height0 = util_format_get_nblocksy(tex->format, height0);
 		}
 	}
 
 	return r600_create_surface_custom(pipe, tex, templ,
-					  width0, height0,
-					  width, height);
+					  width0, height0);
 }
 
 static void r600_surface_destroy(struct pipe_context *pipe,

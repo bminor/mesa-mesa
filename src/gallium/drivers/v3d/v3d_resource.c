@@ -1095,8 +1095,6 @@ v3d_create_surface(struct pipe_context *pctx,
 
         psurf->context = pctx;
         psurf->format = surf_tmpl->format;
-        psurf->width = u_minify(ptex->width0, level);
-        psurf->height = u_minify(ptex->height0, level);
         psurf->u.tex.level = level;
         psurf->u.tex.first_layer = surf_tmpl->u.tex.first_layer;
         psurf->u.tex.last_layer = surf_tmpl->u.tex.last_layer;

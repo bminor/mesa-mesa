@@ -545,8 +545,12 @@ v3d_tlb_blit(struct pipe_context *pctx, struct pipe_blit_info *info)
          * This should be fine because we only get here if the src and dst boxes
          * match, so we know the blit involves the same tiles on both surfaces.
          */
-        job->draw_width = MIN2(dst_surf->width, src_surf->width);
-        job->draw_height = MIN2(dst_surf->height, src_surf->height);
+        uint16_t dst_width, dst_height;
+        pipe_surface_size(dst_surf, &dst_width, &dst_height);
+        uint16_t src_width, src_height;
+        pipe_surface_size(src_surf, &src_width, &src_height);
+        job->draw_width = MIN2(dst_width, src_width);
+        job->draw_height = MIN2(dst_height, src_height);
 
         job->tile_desc.width = tile_width;
         job->tile_desc.height = tile_height;
@@ -818,9 +822,11 @@ v3d_sand8_blit(struct pipe_context *pctx, struct pipe_blit_info *info)
          * size now we are using a cpp=4 format. Next dimension take into
          * account the UIF microtile layouts.
          */
-        dst_surf->width = align(dst_surf->width, 8) / 2;
+        uint16_t width, height;
+        pipe_surface_size(dst_surf, &width, &height);
+        width = align(width, 8) / 2;
         if (src->cpp == 1)
-                dst_surf->height /= 2;
+                height /= 2;
 
         /* Set the constant buffer. */
         struct pipe_constant_buffer cb_uniforms = {
@@ -849,7 +855,7 @@ v3d_sand8_blit(struct pipe_context *pctx, struct pipe_blit_info *info)
         pctx->set_sampler_views(pctx, PIPE_SHADER_FRAGMENT, 0, 0, 0, NULL);
         pctx->bind_sampler_states(pctx, PIPE_SHADER_FRAGMENT, 0, 0, NULL);
 
-        util_blitter_custom_shader(v3d->blitter, dst_surf,
+        util_blitter_custom_shader(v3d->blitter, dst_surf, width, height,
                                    v3d_get_sand8_vs(pctx),
                                    v3d_get_sand8_fs(pctx, src->cpp));
 
@@ -1137,10 +1143,12 @@ v3d_sand30_blit(struct pipe_context *pctx, struct pipe_blit_info *info)
          * size now we are using a cpp=8 format. Next dimension take into
          * account the UIF microtile layouts.
          */
-        dst_surf->height /= 2;
-        dst_surf->width = align(dst_surf->width, 8);
+        uint16_t width, height;
+        pipe_surface_size(dst_surf, &width, &height);
+        height /= 2;
+        width = align(width, 8);
         if (src->cpp == 2)
-                dst_surf->width /= 2;
+                width /= 2;
         /* Set the constant buffer. */
         struct pipe_constant_buffer cb_uniforms = {
                 .user_buffer = &sand30_stride,
@@ -1170,7 +1178,7 @@ v3d_sand30_blit(struct pipe_context *pctx, struct pipe_blit_info *info)
                                 NULL);
         pctx->bind_sampler_states(pctx, PIPE_SHADER_FRAGMENT, 0, 0, NULL);
 
-        util_blitter_custom_shader(v3d->blitter, dst_surf,
+        util_blitter_custom_shader(v3d->blitter, dst_surf, width, height,
                                    v3d_get_sand30_vs(pctx),
                                    v3d_get_sand30_fs(pctx));
 

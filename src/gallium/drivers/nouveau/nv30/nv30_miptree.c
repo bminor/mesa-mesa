@@ -573,9 +573,6 @@ nv30_miptree_surface_new(struct pipe_context *pipe,
    else
       ns->pitch = lvl->pitch;
 
-   /* comment says there are going to be removed, but they're used by the st */
-   ps->width = ns->width;
-   ps->height = ns->height;
    return ps;
 }
 

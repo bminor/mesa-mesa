@@ -829,7 +829,8 @@ static void r300_print_fb_surf_info(struct pipe_surface *surf, unsigned index,
             "r300:     TEX: Macro: %s, Micro: %s, "
             "Dim: %ix%ix%i, LastLevel: %i, Format: %s\n",
 
-            binding, index, surf->width, surf->height,
+            binding, index, pipe_surface_width(surf),
+            pipe_surface_height(surf),
             surf->u.tex.first_layer, surf->u.tex.last_layer, surf->u.tex.level,
             util_format_short_name(surf->format),
 
