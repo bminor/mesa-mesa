@@ -447,21 +447,6 @@ yaml-toml-shell-py-test:
 
       section_start b2c_kernel_boot "Booting hardware device"
 
-      # Useful as a hook point for runner admins. You may edit the
-      # config.toml for the Gitlab runner and use a bind-mount to
-      # populate the hook script with some executable commands. This
-      # allows quicker feedback than resubmitting pipelines and
-      # potentially having to wait for a debug build of Mesa to
-      # complete.
-      if [ -x /runner-before-script.sh ]; then
-         echo "Executing runner before-script hook..."
-         sh /runner-before-script.sh
-         if [ $? -ne 0 ]; then
-            echo "Runner hook failed, goodbye"
-            exit $?
-         fi
-      fi
-
       [ -d "$CI_B2C_ARTIFACTS" ] || exit 1
       [ -d "$CI_COMMON_SCRIPTS" ] || exit 1
 
