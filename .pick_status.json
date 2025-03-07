@@ -2494,7 +2494,7 @@
         "description": "gallium/radeon: Make sure radeonsi PCI IDs are also included",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1299f5c50a490fadeb60b61677596f13399ee136",
         "notes": null
