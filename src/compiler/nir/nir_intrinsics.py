@@ -1554,6 +1554,18 @@ load("sampler_lod_parameters_pan", [1], flags=[CAN_ELIMINATE, CAN_REORDER])
 # and is ignored otherwise
 load("converted_output_pan", [1, 1, 1], indices=[DEST_TYPE, IO_SEMANTICS], flags=[CAN_ELIMINATE])
 
+# Load input attachment target
+# src[] = { input_attachment_index }
+# valid targets are:
+# 0..7: Color[0..7]
+# 255:  Depth or stencil (the actual target is known based on the nir_alu_type)
+# ~0:   No target (input attachment load must be lowered to texture load in that case)
+intrinsic("load_input_attachment_target_pan", [1], dest_comp=1, flags=[CAN_ELIMINATE, CAN_REORDER], bit_sizes=[32])
+
+# Load input attachment conversion descriptor
+# src[] = { input_attachment_index }
+intrinsic("load_input_attachment_conv_pan", [1], dest_comp=1, flags=[CAN_ELIMINATE, CAN_REORDER], bit_sizes=[32])
+
 # Load the render target conversion descriptor for a given render target given
 # in the BASE index. Converts to a type with size given by the source type.
 # Valid in fragment and blend stages.
