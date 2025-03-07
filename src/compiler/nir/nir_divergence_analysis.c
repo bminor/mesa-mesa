@@ -960,6 +960,7 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
    case nir_intrinsic_load_shared_lock_nv:
    case nir_intrinsic_store_shared_unlock_nv:
    case nir_intrinsic_bvh_stack_rtn_amd:
+   case nir_intrinsic_cmat_load_shared_nv:
       is_divergent = true;
       break;
 

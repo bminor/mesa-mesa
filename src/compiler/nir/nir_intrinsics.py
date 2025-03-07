@@ -360,6 +360,8 @@ index("bool", "explicit_coord")
 
 # The index of the format string used by a printf. (u_printf_info element of the shader)
 index("unsigned", "fmt_idx")
+# for NV coop matrix - num of matrix in load 1/2/4
+index("unsigned", "num_matrices")
 
 # Register class for load/store_preamble
 index("nir_preamble_class", "preamble_class")
@@ -2629,6 +2631,8 @@ intrinsic("ssa_bar_nv", src_comp=[1])
 # src[] = { a, b, c}
 intrinsic("cmat_muladd_nv", src_comp=[-1, -1, -1], dest_comp=0, bit_sizes=src2,
           indices=[FLAGS], flags=[CAN_ELIMINATE])
+
+intrinsic("cmat_load_shared_nv", src_comp=[1], dest_comp=0, indices=[NUM_MATRICES, MATRIX_LAYOUT, BASE])
 
 # NVIDIA-specific system values
 system_value("warps_per_sm_nv", 1, bit_sizes=[32])
