@@ -3084,7 +3084,7 @@
         "description": "nir/lower_helper_writes: fix stores after discard",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "586da7b32908eb6cb4282a58339689b6d23c224b",
         "notes": null
