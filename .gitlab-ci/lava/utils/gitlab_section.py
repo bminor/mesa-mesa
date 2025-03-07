@@ -83,11 +83,13 @@ class GitlabSection:
         )
 
     def __enter__(self):
-        print(self.start())
+        if start_log_line := self.start():
+            print(start_log_line)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        print(self.end())
+        if end_log_line := self.end():
+            print(end_log_line)
 
     def start(self) -> str:
         assert not self.has_finished, "Starting an already finished section"

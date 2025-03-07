@@ -305,8 +305,12 @@ def fix_lava_gitlab_section_log():
             yield first_line
 
 
-
 def print_log(msg: str, *args) -> None:
+    is_section_header = msg.startswith("\x1b[0Ksection_")
+    if is_section_header:
+        print(msg, *args)
+        return
+
     # Reset color from timestamp, since `msg` can tint the terminal color
     ts = datetime.now(tz=UTC)
     ts_str = f"{ts.hour:02}:{ts.minute:02}:{ts.second:02}.{int(ts.microsecond / 1000):03}"

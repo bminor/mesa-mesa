@@ -182,7 +182,8 @@ class LAVAJob:
         return lava_lines[:last_line]
 
     def handle_exception(self, exception: Exception):
-        print_log(exception)
+        # Print the exception type and message
+        print_log(f"{type(exception).__name__}: {str(exception)}")
         self.cancel()
         self.exception = exception
 
