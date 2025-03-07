@@ -337,6 +337,7 @@ typedef struct {
 
    /* Exports. */
    bool uses_discard;
+   bool dcc_decompress_gfx11;
    bool alpha_to_coverage_via_mrtz;
    bool dual_src_blend_swizzle;
    unsigned spi_shader_col_format;
