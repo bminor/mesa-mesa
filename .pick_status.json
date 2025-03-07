@@ -3144,7 +3144,7 @@
         "description": "nvk: Don't zero imported memory",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0399999decd309a9096094911734159dfb07ab62",
         "notes": null
