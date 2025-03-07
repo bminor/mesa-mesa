@@ -100,7 +100,7 @@ amdgpu_fence_import_sync_file(struct radeon_winsys *rws, int fd)
    /* fence->ctx == NULL means that the fence is syncobj-based. */
 
    /* Convert sync_file into syncobj. */
-   int r = ac_drm_cs_create_syncobj(aws->fd, &fence->syncobj);
+   int r = ac_drm_cs_create_syncobj2(aws->fd, 0, &fence->syncobj);
    if (r) {
       FREE(fence);
       return NULL;

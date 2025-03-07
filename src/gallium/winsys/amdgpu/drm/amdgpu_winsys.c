@@ -456,7 +456,7 @@ amdgpu_winsys_create(int fd, const struct pipe_screen_config *config,
       aws->info.drm_major = drm_major;
       aws->info.drm_minor = drm_minor;
 
-      if (ac_drm_cs_create_syncobj(aws->fd, &aws->vm_timeline_syncobj))
+      if (ac_drm_cs_create_syncobj2(aws->fd, 0, &aws->vm_timeline_syncobj))
          goto fail_alloc;
       simple_mtx_init(&aws->vm_ioctl_lock, mtx_plain);
 

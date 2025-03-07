@@ -434,11 +434,6 @@ int ac_drm_cs_create_syncobj2(int device_fd, uint32_t flags, uint32_t *handle)
    return drmSyncobjCreate(device_fd, flags, handle);
 }
 
-int ac_drm_cs_create_syncobj(int device_fd, uint32_t *handle)
-{
-   return drmSyncobjCreate(device_fd, 0, handle);
-}
-
 int ac_drm_cs_destroy_syncobj(int device_fd, uint32_t handle)
 {
    return drmSyncobjDestroy(device_fd, handle);

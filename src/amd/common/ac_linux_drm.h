@@ -88,7 +88,6 @@ PROC int ac_drm_cs_query_fence_status(ac_drm_device *dev, uint32_t ctx_id, uint3
                                       uint32_t ip_instance, uint32_t ring, uint64_t fence_seq_no,
                                       uint64_t timeout_ns, uint64_t flags, uint32_t *expired) TAIL;
 PROC int ac_drm_cs_create_syncobj2(int device_fd, uint32_t flags, uint32_t *handle) TAIL;
-PROC int ac_drm_cs_create_syncobj(int device_fd, uint32_t *handle) TAIL;
 PROC int ac_drm_cs_destroy_syncobj(int device_fd, uint32_t handle) TAIL;
 PROC int ac_drm_cs_syncobj_wait(int device_fd, uint32_t *handles, unsigned num_handles,
                                 int64_t timeout_nsec, unsigned flags,
