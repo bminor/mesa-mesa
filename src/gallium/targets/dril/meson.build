@@ -63,6 +63,7 @@ dril_dri = shared_library(
 )
 
 foreach d : [[with_gallium_kmsro, [
+               'apple_dri.so',
                'armada-drm_dri.so',
                'exynos_dri.so',
                'gm12u320_dri.so',
