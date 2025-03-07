@@ -3784,7 +3784,7 @@
         "description": "anv: disable replication when we don't have both VS/FS stages",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
