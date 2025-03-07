@@ -3705,6 +3705,7 @@ agx_preprocess_nir(nir_shader *nir)
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       NIR_PASS(_, nir, agx_nir_lower_frag_sidefx);
+      NIR_PASS(_, nir, nir_lower_is_helper_invocation);
    }
 
    /* Clean up deref gunk after lowering I/O */
