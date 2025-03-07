@@ -3174,7 +3174,7 @@
         "description": "lavapipe: fix accel struct device query copy",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a26f96ed3de63c113f0c30a243ec410b9f5be235",
         "notes": null
