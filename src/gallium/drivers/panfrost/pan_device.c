@@ -89,6 +89,7 @@ panfrost_open_device(void *memctx, int fd, struct panfrost_device *dev)
       panfrost_query_core_count(&dev->kmod.props, &dev->core_id_range);
    dev->thread_tls_alloc = panfrost_query_thread_tls_alloc(&dev->kmod.props);
    dev->optimal_tib_size = panfrost_query_optimal_tib_size(dev->model);
+   dev->optimal_z_tib_size = panfrost_query_optimal_z_tib_size(dev->model);
    dev->compressed_formats =
       panfrost_query_compressed_formats(&dev->kmod.props);
    dev->tiler_features = panfrost_query_tiler_features(&dev->kmod.props);

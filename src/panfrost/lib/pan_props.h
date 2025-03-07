@@ -66,6 +66,9 @@ struct panfrost_model {
    /* Default tilebuffer size in bytes for the model. */
    unsigned tilebuffer_size;
 
+   /* Default tilebuffer depth size in bytes for the model. */
+   unsigned tilebuffer_z_size;
+
    struct {
       /* The GPU lacks the capability for hierarchical tiling, without
        * an "Advanced Tiling Unit", instead requiring a single bin
@@ -97,6 +100,8 @@ bool panfrost_query_afbc(const struct pan_kmod_dev_props *props);
 bool panfrost_query_afrc(const struct pan_kmod_dev_props *props);
 
 unsigned panfrost_query_optimal_tib_size(const struct panfrost_model *model);
+
+unsigned panfrost_query_optimal_z_tib_size(const struct panfrost_model *model);
 
 uint64_t panfrost_clamp_to_usable_va_range(const struct pan_kmod_dev *dev,
                                            uint64_t va);

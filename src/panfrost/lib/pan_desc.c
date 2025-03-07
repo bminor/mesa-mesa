@@ -376,6 +376,26 @@ pan_cbuf_bytes_per_pixel(const struct pan_fb_info *fb)
    return sum;
 }
 
+static unsigned
+pan_zsbuf_bytes_per_pixel(const struct pan_fb_info *fb)
+{
+   unsigned samples = fb->nr_samples;
+
+   const struct pan_image_view *zs_view = fb->zs.view.zs;
+   if (zs_view)
+      samples = zs_view->nr_samples;
+
+   const struct pan_image_view *s_view = fb->zs.view.s;
+   if (s_view)
+      samples = MAX2(samples, s_view->nr_samples);
+
+   /* Depth is always stored in a 32-bit float. Stencil requires depth to
+    * be allocated, but doesn't have it's own budget; it's tied to the
+    * depth buffer.
+    */
+   return sizeof(float) * samples;
+}
+
 /*
  * Select the largest tile size that fits within the tilebuffer budget.
  * Formally, maximize (pixels per tile) such that it is a power of two and
@@ -396,6 +416,16 @@ GENX(pan_select_tile_size)(struct pan_fb_info *fb)
 
    bytes_per_pixel = pan_cbuf_bytes_per_pixel(fb);
    fb->tile_size = fb->tile_buf_budget >> util_logbase2_ceil(bytes_per_pixel);
+
+   unsigned zs_bytes_per_pixel = pan_zsbuf_bytes_per_pixel(fb);
+   if (zs_bytes_per_pixel > 0) {
+      assert(util_is_power_of_two_nonzero(fb->z_tile_buf_budget));
+      assert(fb->z_tile_buf_budget >= 1024);
+
+      fb->tile_size =
+         MIN2(fb->tile_size,
+              fb->z_tile_buf_budget >> util_logbase2_ceil(zs_bytes_per_pixel));
+   }
 
    /* Clamp tile size to hardware limits */
    fb->tile_size =

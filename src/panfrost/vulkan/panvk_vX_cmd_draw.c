@@ -233,6 +233,7 @@ panvk_per_arch(cmd_init_render_state)(struct panvk_cmd_buffer *cmdbuf,
    cmdbuf->state.gfx.render.view_mask = pRenderingInfo->viewMask;
    *fbinfo = (struct pan_fb_info){
       .tile_buf_budget = panfrost_query_optimal_tib_size(phys_dev->model),
+      .z_tile_buf_budget = panfrost_query_optimal_z_tib_size(phys_dev->model),
       .nr_samples = 1,
       .rt_count = pRenderingInfo->colorAttachmentCount,
    };

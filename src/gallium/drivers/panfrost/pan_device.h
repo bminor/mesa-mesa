@@ -113,6 +113,7 @@ struct panfrost_device {
 
    /* Maximum tilebuffer size in bytes for optimal performance. */
    unsigned optimal_tib_size;
+   unsigned optimal_z_tib_size;
 
    unsigned thread_tls_alloc;
    struct panfrost_tiler_features tiler_features;

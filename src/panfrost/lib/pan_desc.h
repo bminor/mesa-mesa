@@ -140,6 +140,7 @@ struct pan_fb_info {
 
    /* Optimal tile buffer size. */
    unsigned tile_buf_budget;
+   unsigned z_tile_buf_budget;
    unsigned tile_size;
    unsigned cbuf_allocation;
 

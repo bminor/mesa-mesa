@@ -478,6 +478,7 @@ panfrost_batch_to_fb_info(const struct panfrost_batch *batch,
    memset(s, 0, sizeof(*s));
 
    fb->tile_buf_budget = dev->optimal_tib_size;
+   fb->z_tile_buf_budget = dev->optimal_z_tib_size;
    fb->width = batch->key.width;
    fb->height = batch->key.height;
    fb->extent.minx = batch->minx;
