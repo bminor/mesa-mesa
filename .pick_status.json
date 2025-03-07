@@ -1384,7 +1384,7 @@
         "description": "radeonsi: work around a primitive restart bug on gfx10-10.3",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
