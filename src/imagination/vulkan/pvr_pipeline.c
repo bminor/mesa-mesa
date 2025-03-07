@@ -1819,14 +1819,15 @@ pvr_setup_fs_outputs(pco_data *data,
       if (idx == VK_ATTACHMENT_UNUSED)
          continue;
 
+      var = nir_find_variable_with_location(nir, nir_var_shader_out, location);
+      if (!var)
+         continue;
+
       mrt_resource = &hw_subpass->setup.mrt_resources[u];
       output_reg = mrt_resource->type == USC_MRT_RESOURCE_TYPE_OUTPUT_REG;
 
       assert(output_reg);
       /* TODO: tile buffer support. */
-
-      var = nir_find_variable_with_location(nir, nir_var_shader_out, location);
-      assert(var);
 
       set_var(data->fs.outputs,
               mrt_resource->reg.output_reg,
