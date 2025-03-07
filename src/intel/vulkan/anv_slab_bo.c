@@ -49,10 +49,8 @@ anv_bo_alloc_flags_to_slab_heap(struct anv_device *device,
                         ANV_BO_ALLOC_IMPLICIT_WRITE);
    }
 
-   /* TODO: add i915 support  */
-   if ((alloc_flags == ANV_BO_ALLOC_BATCH_BUFFER_FLAGS ||
-        alloc_flags == ANV_BO_ALLOC_BATCH_BUFFER_INTERNAL_FLAGS) &&
-       (device->info->kmd_type == INTEL_KMD_TYPE_XE))
+   if (alloc_flags == ANV_BO_ALLOC_BATCH_BUFFER_FLAGS ||
+       alloc_flags == ANV_BO_ALLOC_BATCH_BUFFER_INTERNAL_FLAGS)
       return ANV_BO_SLAB_HEAP_CACHED_COHERENT_CAPTURE;
 
    if (alloc_flags == ANV_BO_ALLOC_DYNAMIC_VISIBLE_POOL_FLAGS)

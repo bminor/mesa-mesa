@@ -362,6 +362,14 @@ out:
    return result;
 }
 
+static uint32_t
+calc_batch_start_offset(struct anv_bo *bo)
+{
+   struct anv_bo *real = anv_bo_get_real(bo);
+
+   return bo->offset - real->offset;
+}
+
 static VkResult
 setup_execbuf_for_cmd_buffers(struct anv_execbuf *execbuf,
                               struct anv_queue *queue,
@@ -464,28 +472,29 @@ setup_execbuf_for_cmd_buffers(struct anv_execbuf *execbuf,
    }
 
    struct list_head *batch_bo = &cmd_buffers[0]->batch_bos;
-   struct anv_batch_bo *first_batch_bo =
-      list_first_entry(batch_bo, struct anv_batch_bo, link);
+   struct anv_bo *first_batch_bo =
+      list_first_entry(batch_bo, struct anv_batch_bo, link)->bo;
+   struct anv_bo *first_batch_bo_real = anv_bo_get_real(first_batch_bo);
 
    /* The kernel requires that the last entry in the validation list be the
     * batch buffer to execute.  We can simply swap the element
     * corresponding to the first batch_bo in the chain with the last
     * element in the list.
     */
-   if (first_batch_bo->bo->exec_obj_index != execbuf->bo_count - 1) {
-      uint32_t idx = first_batch_bo->bo->exec_obj_index;
+   if (first_batch_bo_real->exec_obj_index != execbuf->bo_count - 1) {
+      uint32_t idx = first_batch_bo_real->exec_obj_index;
       uint32_t last_idx = execbuf->bo_count - 1;
 
       struct drm_i915_gem_exec_object2 tmp_obj = execbuf->objects[idx];
-      assert(execbuf->bos[idx] == first_batch_bo->bo);
+      assert(execbuf->bos[idx] == first_batch_bo_real);
 
       execbuf->objects[idx] = execbuf->objects[last_idx];
       execbuf->bos[idx] = execbuf->bos[last_idx];
       execbuf->bos[idx]->exec_obj_index = idx;
 
       execbuf->objects[last_idx] = tmp_obj;
-      execbuf->bos[last_idx] = first_batch_bo->bo;
-      first_batch_bo->bo->exec_obj_index = last_idx;
+      execbuf->bos[last_idx] = first_batch_bo_real;
+      first_batch_bo_real->exec_obj_index = last_idx;
    }
 
 #ifdef SUPPORT_INTEL_INTEGRATED_GPUS
@@ -503,7 +512,7 @@ setup_execbuf_for_cmd_buffers(struct anv_execbuf *execbuf,
    execbuf->execbuf = (struct drm_i915_gem_execbuffer2) {
       .buffers_ptr = (uintptr_t) execbuf->objects,
       .buffer_count = execbuf->bo_count,
-      .batch_start_offset = 0,
+      .batch_start_offset = calc_batch_start_offset(first_batch_bo),
       .batch_len = 0,
       .cliprects_ptr = 0,
       .num_cliprects = 0,
@@ -536,7 +545,7 @@ setup_empty_execbuf(struct anv_execbuf *execbuf, struct anv_queue *queue)
    execbuf->execbuf = (struct drm_i915_gem_execbuffer2) {
       .buffers_ptr = (uintptr_t) execbuf->objects,
       .buffer_count = execbuf->bo_count,
-      .batch_start_offset = 0,
+      .batch_start_offset = calc_batch_start_offset(device->trivial_batch_bo),
       .batch_len = 8, /* GFX7_MI_BATCH_BUFFER_END and NOOP */
       .flags = I915_EXEC_HANDLE_LUT | exec_flags | I915_EXEC_NO_RELOC,
       .rsvd1 = context_id,
@@ -633,20 +642,21 @@ setup_async_execbuf(struct anv_execbuf *execbuf,
 
    struct anv_bo *batch_bo =
       *util_dynarray_element(&submit->batch_bos, struct anv_bo *, 0);
-   if (batch_bo->exec_obj_index != execbuf->bo_count - 1) {
-      uint32_t idx = batch_bo->exec_obj_index;
+   struct anv_bo *batch_bo_real = anv_bo_get_real(batch_bo);
+   if (batch_bo_real->exec_obj_index != execbuf->bo_count - 1) {
+      uint32_t idx = batch_bo_real->exec_obj_index;
       uint32_t last_idx = execbuf->bo_count - 1;
 
       struct drm_i915_gem_exec_object2 tmp_obj = execbuf->objects[idx];
-      assert(execbuf->bos[idx] == batch_bo);
+      assert(execbuf->bos[idx] == batch_bo_real);
 
       execbuf->objects[idx] = execbuf->objects[last_idx];
       execbuf->bos[idx] = execbuf->bos[last_idx];
       execbuf->bos[idx]->exec_obj_index = idx;
 
       execbuf->objects[last_idx] = tmp_obj;
-      execbuf->bos[last_idx] = batch_bo;
-      batch_bo->exec_obj_index = last_idx;
+      execbuf->bos[last_idx] = batch_bo_real;
+      batch_bo_real->exec_obj_index = last_idx;
    }
 
    uint64_t exec_flags = 0;
@@ -657,7 +667,7 @@ setup_async_execbuf(struct anv_execbuf *execbuf,
    execbuf->execbuf = (struct drm_i915_gem_execbuffer2) {
       .buffers_ptr = (uintptr_t) execbuf->objects,
       .buffer_count = execbuf->bo_count,
-      .batch_start_offset = 0,
+      .batch_start_offset = calc_batch_start_offset(batch_bo),
       .flags = I915_EXEC_NO_RELOC |
                I915_EXEC_HANDLE_LUT |
                exec_flags,
@@ -961,6 +971,7 @@ i915_queue_exec_locked(struct anv_queue *queue,
          .flags = I915_EXEC_HANDLE_LUT | exec_flags,
          .rsvd1 = context_id,
       };
+      query_pass_execbuf.batch_start_offset += calc_batch_start_offset(pass_batch_bo);
 
       int ret = queue->device->info->no_hw ? 0 :
          anv_gem_execbuffer(queue->device, &query_pass_execbuf);
