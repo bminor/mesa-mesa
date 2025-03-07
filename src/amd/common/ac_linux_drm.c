@@ -441,76 +441,76 @@ int ac_drm_cs_query_fence_status(ac_drm_device *dev, uint32_t ctx_id, uint32_t i
    return r;
 }
 
-int ac_drm_cs_create_syncobj2(int device_fd, uint32_t flags, uint32_t *handle)
+int ac_drm_cs_create_syncobj2(ac_drm_device *dev, uint32_t flags, uint32_t *handle)
 {
-   return drmSyncobjCreate(device_fd, flags, handle);
+   return dev->p->create(dev->p, flags, handle);
 }
 
-int ac_drm_cs_destroy_syncobj(int device_fd, uint32_t handle)
+int ac_drm_cs_destroy_syncobj(ac_drm_device *dev, uint32_t handle)
 {
-   return drmSyncobjDestroy(device_fd, handle);
+   return dev->p->destroy(dev->p, handle);
 }
 
-int ac_drm_cs_syncobj_wait(int device_fd, uint32_t *handles, unsigned num_handles,
+int ac_drm_cs_syncobj_wait(ac_drm_device *dev, uint32_t *handles, unsigned num_handles,
                            int64_t timeout_nsec, unsigned flags, uint32_t *first_signaled)
 {
-   return drmSyncobjWait(device_fd, handles, num_handles, timeout_nsec, flags, first_signaled);
+   return dev->p->wait(dev->p, handles, num_handles, timeout_nsec, flags, first_signaled);
 }
 
-int ac_drm_cs_syncobj_query2(int device_fd, uint32_t *handles, uint64_t *points,
+int ac_drm_cs_syncobj_query2(ac_drm_device *dev, uint32_t *handles, uint64_t *points,
                              unsigned num_handles, uint32_t flags)
 {
-   return drmSyncobjQuery2(device_fd, handles, points, num_handles, flags);
+   return dev->p->query(dev->p, handles, points, num_handles, flags);
 }
 
-int ac_drm_cs_import_syncobj(int device_fd, int shared_fd, uint32_t *handle)
+int ac_drm_cs_import_syncobj(ac_drm_device *dev, int shared_fd, uint32_t *handle)
 {
-   return drmSyncobjFDToHandle(device_fd, shared_fd, handle);
+   return dev->p->fd_to_handle(dev->p, shared_fd, handle);
 }
 
-int ac_drm_cs_syncobj_export_sync_file(int device_fd, uint32_t syncobj, int *sync_file_fd)
+int ac_drm_cs_syncobj_export_sync_file(ac_drm_device *dev, uint32_t syncobj, int *sync_file_fd)
 {
-   return drmSyncobjExportSyncFile(device_fd, syncobj, sync_file_fd);
+   return dev->p->export_sync_file(dev->p, syncobj, sync_file_fd);
 }
 
-int ac_drm_cs_syncobj_import_sync_file(int device_fd, uint32_t syncobj, int sync_file_fd)
+int ac_drm_cs_syncobj_import_sync_file(ac_drm_device *dev, uint32_t syncobj, int sync_file_fd)
 {
-   return drmSyncobjImportSyncFile(device_fd, syncobj, sync_file_fd);
+   return dev->p->import_sync_file(dev->p, syncobj, sync_file_fd);
 }
 
-int ac_drm_cs_syncobj_export_sync_file2(int device_fd, uint32_t syncobj, uint64_t point,
+int ac_drm_cs_syncobj_export_sync_file2(ac_drm_device *dev, uint32_t syncobj, uint64_t point,
                                         uint32_t flags, int *sync_file_fd)
 {
    uint32_t binary_handle;
    int ret;
 
    if (!point)
-      return drmSyncobjExportSyncFile(device_fd, syncobj, sync_file_fd);
+      return dev->p->export_sync_file(dev->p, syncobj, sync_file_fd);
 
-   ret = drmSyncobjCreate(device_fd, 0, &binary_handle);
+   ret = dev->p->create(dev->p, 0, &binary_handle);
    if (ret)
       return ret;
 
-   ret = drmSyncobjTransfer(device_fd, binary_handle, 0, syncobj, point, flags);
+   ret = dev->p->transfer(dev->p, binary_handle, 0, syncobj, point, flags);
    if (ret)
       goto out;
-   ret = drmSyncobjExportSyncFile(device_fd, binary_handle, sync_file_fd);
+   ret = dev->p->export_sync_file(dev->p, binary_handle, sync_file_fd);
 out:
-   drmSyncobjDestroy(device_fd, binary_handle);
+   dev->p->destroy(dev->p, binary_handle);
    return ret;
 }
 
-int ac_drm_cs_syncobj_transfer(int device_fd, uint32_t dst_handle, uint64_t dst_point,
+int ac_drm_cs_syncobj_transfer(ac_drm_device *dev, uint32_t dst_handle, uint64_t dst_point,
                                uint32_t src_handle, uint64_t src_point, uint32_t flags)
 {
-   return drmSyncobjTransfer(device_fd, dst_handle, dst_point, src_handle, src_point, flags);
+   return dev->p->transfer(dev->p, dst_handle, dst_point, src_handle, src_point, flags);
 }
 
-int ac_drm_cs_syncobj_timeline_wait(int device_fd, uint32_t *handles, uint64_t *points,
+int ac_drm_cs_syncobj_timeline_wait(ac_drm_device *dev, uint32_t *handles, uint64_t *points,
                                     unsigned num_handles, int64_t timeout_nsec, unsigned flags,
                                     uint32_t *first_signaled)
 {
-   return drmSyncobjTimelineWait(device_fd, handles, points, num_handles, timeout_nsec, flags,
+   return dev->p->timeline_wait(dev->p, handles, points, num_handles, timeout_nsec, flags,
                                  first_signaled);
 }
 

@@ -101,8 +101,8 @@ static void do_winsys_deinit(struct amdgpu_winsys *aws)
    simple_mtx_destroy(&aws->bo_export_table_lock);
 
    ac_addrlib_destroy(aws->addrlib);
+   ac_drm_cs_destroy_syncobj(aws->dev, aws->vm_timeline_syncobj);
    ac_drm_device_deinitialize(aws->dev);
-   ac_drm_cs_destroy_syncobj(aws->fd, aws->vm_timeline_syncobj);
    simple_mtx_destroy(&aws->bo_fence_lock);
 
    FREE(aws);
@@ -456,7 +456,7 @@ amdgpu_winsys_create(int fd, const struct pipe_screen_config *config,
       aws->info.drm_major = drm_major;
       aws->info.drm_minor = drm_minor;
 
-      if (ac_drm_cs_create_syncobj2(aws->fd, 0, &aws->vm_timeline_syncobj))
+      if (ac_drm_cs_create_syncobj2(aws->dev, 0, &aws->vm_timeline_syncobj))
          goto fail_alloc;
       simple_mtx_init(&aws->vm_ioctl_lock, mtx_plain);
 

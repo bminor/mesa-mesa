@@ -29,7 +29,7 @@
 
 void amdgpu_fence_destroy(struct amdgpu_fence *fence)
 {
-   ac_drm_cs_destroy_syncobj(fence->aws->fd, fence->syncobj);
+   ac_drm_cs_destroy_syncobj(fence->aws->dev, fence->syncobj);
 
    if (fence->ctx)
       amdgpu_ctx_reference(&fence->ctx, NULL);
@@ -49,7 +49,7 @@ amdgpu_fence_create(struct amdgpu_cs *acs)
    amdgpu_ctx_reference(&fence->ctx, ctx);
    fence->ctx = ctx;
    fence->ip_type = acs->ip_type;
-   if (ac_drm_cs_create_syncobj2(ctx->aws->fd, 0, &fence->syncobj)) {
+   if (ac_drm_cs_create_syncobj2(ctx->aws->dev, 0, &fence->syncobj)) {
       free(fence);
       return NULL;
    }
@@ -74,7 +74,7 @@ amdgpu_fence_import_syncobj(struct radeon_winsys *rws, int fd)
    fence->aws = aws;
    fence->ip_type = 0xffffffff;
 
-   r = ac_drm_cs_import_syncobj(aws->fd, fd, &fence->syncobj);
+   r = ac_drm_cs_import_syncobj(aws->dev, fd, &fence->syncobj);
    if (r) {
       FREE(fence);
       return NULL;
@@ -100,15 +100,15 @@ amdgpu_fence_import_sync_file(struct radeon_winsys *rws, int fd)
    /* fence->ctx == NULL means that the fence is syncobj-based. */
 
    /* Convert sync_file into syncobj. */
-   int r = ac_drm_cs_create_syncobj2(aws->fd, 0, &fence->syncobj);
+   int r = ac_drm_cs_create_syncobj2(aws->dev, 0, &fence->syncobj);
    if (r) {
       FREE(fence);
       return NULL;
    }
 
-   r = ac_drm_cs_syncobj_import_sync_file(aws->fd, fence->syncobj, fd);
+   r = ac_drm_cs_syncobj_import_sync_file(aws->dev, fence->syncobj, fd);
    if (r) {
-      ac_drm_cs_destroy_syncobj(aws->fd, fence->syncobj);
+      ac_drm_cs_destroy_syncobj(aws->dev, fence->syncobj);
       FREE(fence);
       return NULL;
    }
@@ -129,7 +129,7 @@ static int amdgpu_fence_export_sync_file(struct radeon_winsys *rws,
    util_queue_fence_wait(&fence->submitted);
 
    /* Convert syncobj into sync_file. */
-   r = ac_drm_cs_syncobj_export_sync_file(aws->fd, fence->syncobj, &fd);
+   r = ac_drm_cs_syncobj_export_sync_file(aws->dev, fence->syncobj, &fd);
    return r ? -1 : fd;
 }
 
@@ -139,18 +139,18 @@ static int amdgpu_export_signalled_sync_file(struct radeon_winsys *rws)
    uint32_t syncobj;
    int fd = -1;
 
-   int r = ac_drm_cs_create_syncobj2(aws->fd, DRM_SYNCOBJ_CREATE_SIGNALED,
+   int r = ac_drm_cs_create_syncobj2(aws->dev, DRM_SYNCOBJ_CREATE_SIGNALED,
                                      &syncobj);
    if (r) {
       return -1;
    }
 
-   r = ac_drm_cs_syncobj_export_sync_file(aws->fd, syncobj, &fd);
+   r = ac_drm_cs_syncobj_export_sync_file(aws->dev, syncobj, &fd);
    if (r) {
       fd = -1;
    }
 
-   ac_drm_cs_destroy_syncobj(aws->fd, syncobj);
+   ac_drm_cs_destroy_syncobj(aws->dev, syncobj);
    return fd;
 }
 
@@ -209,7 +209,7 @@ bool amdgpu_fence_wait(struct pipe_fence_handle *fence, uint64_t timeout,
    if ((uint64_t)abs_timeout == OS_TIMEOUT_INFINITE)
       abs_timeout = INT64_MAX;
 
-   if (ac_drm_cs_syncobj_wait(afence->aws->fd, &afence->syncobj, 1,
+   if (ac_drm_cs_syncobj_wait(afence->aws->dev, &afence->syncobj, 1,
                               abs_timeout, 0, NULL))
       return false;
 

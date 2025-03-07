@@ -90,27 +90,27 @@ PROC int ac_drm_cs_query_reset_state2(ac_drm_device *dev, uint32_t ctx_id, uint6
 PROC int ac_drm_cs_query_fence_status(ac_drm_device *dev, uint32_t ctx_id, uint32_t ip_type,
                                       uint32_t ip_instance, uint32_t ring, uint64_t fence_seq_no,
                                       uint64_t timeout_ns, uint64_t flags, uint32_t *expired) TAIL;
-PROC int ac_drm_cs_create_syncobj2(int device_fd, uint32_t flags, uint32_t *handle) TAIL;
-PROC int ac_drm_cs_destroy_syncobj(int device_fd, uint32_t handle) TAIL;
-PROC int ac_drm_cs_syncobj_wait(int device_fd, uint32_t *handles, unsigned num_handles,
+PROC int ac_drm_cs_create_syncobj2(ac_drm_device *dev, uint32_t flags, uint32_t *handle) TAIL;
+PROC int ac_drm_cs_destroy_syncobj(ac_drm_device *dev, uint32_t handle) TAIL;
+PROC int ac_drm_cs_syncobj_wait(ac_drm_device *dev, uint32_t *handles, unsigned num_handles,
                                 int64_t timeout_nsec, unsigned flags,
                                 uint32_t *first_signaled) TAIL;
-PROC int ac_drm_cs_syncobj_query2(int device_fd, uint32_t *handles, uint64_t *points,
+PROC int ac_drm_cs_syncobj_query2(ac_drm_device *dev, uint32_t *handles, uint64_t *points,
                                   unsigned num_handles, uint32_t flags) TAIL;
-PROC int ac_drm_cs_import_syncobj(int device_fd, int shared_fd, uint32_t *handle) TAIL;
-PROC int ac_drm_cs_syncobj_export_sync_file(int device_fd, uint32_t syncobj,
+PROC int ac_drm_cs_import_syncobj(ac_drm_device *dev, int shared_fd, uint32_t *handle) TAIL;
+PROC int ac_drm_cs_syncobj_export_sync_file(ac_drm_device *dev, uint32_t syncobj,
                                             int *sync_file_fd) TAIL;
-PROC int ac_drm_cs_syncobj_import_sync_file(int device_fd, uint32_t syncobj, int sync_file_fd) TAIL;
-PROC int ac_drm_cs_syncobj_export_sync_file2(int device_fd, uint32_t syncobj, uint64_t point,
+PROC int ac_drm_cs_syncobj_import_sync_file(ac_drm_device *dev, uint32_t syncobj, int sync_file_fd) TAIL;
+PROC int ac_drm_cs_syncobj_export_sync_file2(ac_drm_device *dev, uint32_t syncobj, uint64_t point,
                                              uint32_t flags, int *sync_file_fd) TAIL;
-PROC int ac_drm_cs_syncobj_transfer(int device_fd, uint32_t dst_handle, uint64_t dst_point,
+PROC int ac_drm_cs_syncobj_transfer(ac_drm_device *dev, uint32_t dst_handle, uint64_t dst_point,
                                     uint32_t src_handle, uint64_t src_point, uint32_t flags) TAIL;
 PROC int ac_drm_cs_submit_raw2(ac_drm_device *dev, uint32_t ctx_id, uint32_t bo_list_handle,
                                int num_chunks, struct drm_amdgpu_cs_chunk *chunks,
                                uint64_t *seq_no) TAIL;
 PROC void ac_drm_cs_chunk_fence_info_to_data(uint32_t bo_handle, uint64_t offset,
                                              struct drm_amdgpu_cs_chunk_data *data) TAILV;
-PROC int ac_drm_cs_syncobj_timeline_wait(int device_fd, uint32_t *handles, uint64_t *points,
+PROC int ac_drm_cs_syncobj_timeline_wait(ac_drm_device *dev, uint32_t *handles, uint64_t *points,
                                          unsigned num_handles, int64_t timeout_nsec, unsigned flags,
                                          uint32_t *first_signaled) TAIL;
 PROC int ac_drm_query_info(ac_drm_device *dev, unsigned info_id, unsigned size, void *value) TAIL;
