@@ -994,7 +994,7 @@
         "description": "r600: fix cayman main non-deterministic behavior problem",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d51dbe048afd2131eb3675e9cd868ce73325a61d",
         "notes": null
