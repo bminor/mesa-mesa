@@ -356,6 +356,7 @@ intel_device_info_xe_get_info_from_fd(int fd, struct intel_device_info *devinfo)
 
    devinfo->has_context_isolation = true;
    devinfo->has_mmap_offset = true;
+   devinfo->has_partial_mmap_offset = true;
    devinfo->has_caching_uapi = false;
    devinfo->has_set_pat_uapi = true;
 

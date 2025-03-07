@@ -605,8 +605,10 @@ bool intel_device_info_i915_get_info_from_fd(int fd, struct intel_device_info *d
    if (devinfo->ver > 12 || intel_device_info_is_mtl_or_arl(devinfo))
       devinfo->has_set_pat_uapi = true;
 
-   if (getparam(fd, I915_PARAM_MMAP_GTT_VERSION, &val))
+   if (getparam(fd, I915_PARAM_MMAP_GTT_VERSION, &val)) {
       devinfo->has_mmap_offset = val >= 4;
+      devinfo->has_partial_mmap_offset = val >= 5;
+   }
    if (getparam(fd, I915_PARAM_HAS_USERPTR_PROBE, &val))
       devinfo->has_userptr_probe = val;
    if (getparam(fd, I915_PARAM_HAS_CONTEXT_ISOLATION, &val))
