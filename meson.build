@@ -386,13 +386,7 @@ all_codecs = patent_codecs + free_codecs
 if _codecs.contains('all')
   _codecs = all_codecs
 elif _codecs.contains('all_free')
-  selected_codecs = _codecs
-  _codecs = free_codecs
-  foreach c : patent_codecs
-    if selected_codecs.contains(c)
-      _codecs += c
-    endif
-  endforeach
+  _codecs += free_codecs
 endif
 foreach c : all_codecs
    pre_args += '-DVIDEO_CODEC_@0@=@1@'.format(c.to_upper(), _codecs.contains(c).to_int())
