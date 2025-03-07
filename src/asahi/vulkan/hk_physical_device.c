@@ -440,7 +440,7 @@ hk_get_device_features(
       .borderColorSwizzleFromImage = false,
 
       /* VK_EXT_buffer_device_address */
-      .bufferDeviceAddressCaptureReplayEXT = false,
+      .bufferDeviceAddressCaptureReplayEXT = true,
 
       /* VK_EXT_color_write_enable */
       .colorWriteEnable = true,
