@@ -1806,7 +1806,7 @@ static void si_lower_ngg(struct si_shader *shader, nir_shader *nir)
       .kill_layer = key->ge.opt.kill_layer,
       .force_vrs = sel->screen->options.vrs2x2,
       .use_gfx12_xfb_intrinsic = !nir->info.use_aco_amd,
-      .skip_viewport_culling = sel->info.writes_viewport_index,
+      .skip_viewport_state_culling = sel->info.writes_viewport_index,
       .use_point_tri_intersection = sel->screen->info.num_cu / sel->screen->info.num_se >= 12,
    };
 

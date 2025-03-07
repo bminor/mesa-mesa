@@ -1193,7 +1193,7 @@ add_deferred_attribute_culling(nir_builder *b, nir_cf_list *original_extracted_c
          }
 
          /* See if the current primitive is accepted */
-         ac_nir_cull_primitive(b, s->options->skip_viewport_culling, s->options->use_point_tri_intersection,
+         ac_nir_cull_primitive(b, s->options->skip_viewport_state_culling, s->options->use_point_tri_intersection,
                                accepted_by_clipdist, pos, s->options->num_vertices_per_primitive,
                                cull_primitive_accepted, s);
       }

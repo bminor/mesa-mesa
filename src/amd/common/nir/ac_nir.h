@@ -163,7 +163,7 @@ typedef struct {
    /* Skip culling dependent on the viewport state, which is frustum culling and small prim
     * culling. Set this when the shader writes the viewport index.
     */
-   bool skip_viewport_culling;
+   bool skip_viewport_state_culling;
    /* Use the point-triangle intersection to cull small triangles. */
    bool use_point_tri_intersection;
 
