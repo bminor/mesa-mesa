@@ -66,13 +66,7 @@ static
 void destroy_host_blob(amdvgpu_device_handle dev, struct amdvgpu_host_blob *hb) {
    simple_mtx_destroy(&hb->cpu_access_mutex);
 
-   struct drm_gem_close req = {
-      .handle = hb->handle,
-   };
-   int r = drmIoctl(dev->fd, DRM_IOCTL_GEM_CLOSE, &req);
-   if (r != 0) {
-      mesa_loge("DRM_IOCTL_GEM_CLOSE failed for res_id: %d\n", hb->res_id);
-   }
+   vdrm_bo_close(dev->vdev, hb->handle);
    free(hb);
 }
 
@@ -116,8 +110,8 @@ int amdvgpu_bo_export(amdvgpu_device_handle dev, amdvgpu_bo_handle bo,
       return 0;
 
    case amdgpu_bo_handle_type_dma_buf_fd:
-      return drmPrimeHandleToFD(dev->fd, bo->host_blob->handle, DRM_CLOEXEC | DRM_RDWR,
-                                (int*)shared_handle);
+      *shared_handle = vdrm_bo_export_dmabuf(dev->vdev, bo->host_blob->handle);
+      return 0;
 
    case amdgpu_bo_handle_type_kms_noimport:
       /* Treat this deprecated type as _type_kms and return the GEM handle. */
@@ -239,10 +233,10 @@ int amdvgpu_bo_import(amdvgpu_device_handle dev, enum amdgpu_bo_handle_type type
       return -1;
 
    uint32_t kms_handle;
-   int r = drmPrimeFDToHandle(dev->fd, handle, &kms_handle);
-   if (r) {
+   kms_handle = vdrm_dmabuf_to_handle(dev->vdev, handle);
+   if (kms_handle == 0) {
       mesa_loge("drmPrimeFDToHandle failed for dmabuf fd: %u\n", handle);
-      return r;
+      return -1;
    }
 
    /* Look up existing bo. */
@@ -260,15 +254,9 @@ int amdvgpu_bo_import(amdvgpu_device_handle dev, enum amdgpu_bo_handle_type type
    }
    simple_mtx_unlock(&dev->handle_to_vbo_mutex);
 
-   struct drm_virtgpu_resource_info args = {
-         .bo_handle = kms_handle,
-   };
-   r = virtio_ioctl(dev->fd, VIRTGPU_RESOURCE_INFO, &args);
-
-   if (r) {
-      mesa_loge("VIRTGPU_RESOURCE_INFO failed (%s)\n", strerror(errno));
-      return r;
-   }
+   uint32_t res_id = vdrm_handle_to_res_id(dev->vdev, kms_handle);
+   if (res_id == 0)
+      return -1;
 
    off_t size = lseek(handle, 0, SEEK_END);
    if (size == (off_t) -1) {
@@ -280,7 +268,7 @@ int amdvgpu_bo_import(amdvgpu_device_handle dev, enum amdgpu_bo_handle_type type
    struct amdvgpu_bo *bo = calloc(1, sizeof(struct amdvgpu_bo));
    bo->dev = dev;
    bo->size = size;
-   bo->host_blob = create_host_blob(kms_handle, args.res_handle, size, NULL);
+   bo->host_blob = create_host_blob(kms_handle, res_id, size, NULL);
    p_atomic_set(&bo->refcount, 1);
 
    result->buf_handle = bo;
@@ -293,54 +281,24 @@ int amdvgpu_bo_import(amdvgpu_device_handle dev, enum amdgpu_bo_handle_type type
    return 0;
 }
 
-static int amdvgpu_get_offset(amdvgpu_bo_handle bo_handle)
-{
-   if (bo_handle->host_blob->offset)
-      return 0;
-
-   struct drm_virtgpu_map req = {
-      .handle = bo_handle->host_blob->handle,
-   };
-   int ret = virtio_ioctl(bo_handle->dev->fd, VIRTGPU_MAP, &req);
-   if (ret) {
-      mesa_loge("amdvgpu_bo_map failed (%s) handle: %d\n",
-              strerror(errno), bo_handle->host_blob->handle);
-      return ret;
-   }
-   bo_handle->host_blob->offset = req.offset;
-
-   return 0;
-}
-
 int amdvgpu_bo_cpu_map(amdvgpu_device_handle dev, amdvgpu_bo_handle bo_handle,
                        void **cpu) {
-   int r;
-
    simple_mtx_lock(&bo_handle->host_blob->cpu_access_mutex);
 
    if (bo_handle->host_blob->cpu_addr == NULL) {
       assert(bo_handle->host_blob->cpu_addr == NULL);
-      r = amdvgpu_get_offset(bo_handle);
-      if (r) {
-         mesa_loge("get_offset failed\n");
-         simple_mtx_unlock(&bo_handle->host_blob->cpu_access_mutex);
-         return r;
-      }
-
       /* Use *cpu as a fixed address hint from the caller. */
-      bo_handle->host_blob->cpu_addr = os_mmap(*cpu, bo_handle->host_blob->alloc_size,
-                                               PROT_READ | PROT_WRITE, MAP_SHARED,
-                                               dev->fd,
-                                               bo_handle->host_blob->offset);
+      bo_handle->host_blob->cpu_addr = vdrm_bo_map(dev->vdev, bo_handle->host_blob->handle,
+                                                   bo_handle->host_blob->alloc_size, *cpu);
    }
 
-   assert(bo_handle->host_blob->cpu_addr != MAP_FAILED);
+   assert(bo_handle->host_blob->cpu_addr != NULL);
    *cpu = bo_handle->host_blob->cpu_addr;
    p_atomic_inc(&bo_handle->host_blob->map_count);
 
    simple_mtx_unlock(&bo_handle->host_blob->cpu_access_mutex);
 
-   return *cpu == MAP_FAILED;
+   return *cpu == NULL;
 }
 
 int amdvgpu_bo_cpu_unmap(amdvgpu_device_handle dev, amdvgpu_bo_handle bo) {
