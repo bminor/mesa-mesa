@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 files_shared_glapi = files(
-  '../entry.c',
+  'core.c',
   '../u_current.c',
   'glapi.c',
   'stub.c',

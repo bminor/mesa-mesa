@@ -6,7 +6,7 @@ subdir('gen')
 inc_glapi = include_directories('.')
 
 bridge_glapi_files = files(
-  '../entry.c',
+  'libgl_public.c',
   '../entry.h',
   '../entry_x86-64_tls.h',
   '../entry_x86_tls.h',

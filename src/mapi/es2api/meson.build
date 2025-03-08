@@ -24,7 +24,7 @@ gles2_def = custom_target(
 
 libgles2 = shared_library(
   'GLESv2' + get_option('gles-lib-suffix'),
-  ['../entry.c', es2_glapi_mapi_tmp_h],
+  ['libgles2_public.c', es2_glapi_mapi_tmp_h],
   vs_module_defs : gles2_def,
   c_args : [
     c_msvc_compat_args,

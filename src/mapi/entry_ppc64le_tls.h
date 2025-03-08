@@ -31,6 +31,9 @@
 #define HIDDEN
 #endif
 
+#define _U_STRINGIFY(x) #x
+#define U_STRINGIFY(x) _U_STRINGIFY(x)
+
 // NOTE: These must be powers of two:
 #define PPC64LE_ENTRY_SIZE 64
 #define PPC64LE_PAGE_ALIGN 65536

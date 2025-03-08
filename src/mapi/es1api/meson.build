@@ -24,7 +24,7 @@ gles1_def = custom_target(
 
 libglesv1_cm = shared_library(
   'GLESv1_CM' + get_option('gles-lib-suffix'),
-  ['../entry.c', es1_glapi_mapi_tmp_h],
+  ['libgles1_public.c', es1_glapi_mapi_tmp_h],
   vs_module_defs : gles1_def,
   c_args : [
     c_msvc_compat_args,
