@@ -1,16 +1,6 @@
 # Copyright © 2017 Intel Corporation
 # SPDX-License-Identifier: MIT
 
-files_shared_glapi = files(
-  'core.c',
-  '../u_current.c',
-  'glapi.c',
-  'stub.c',
-  'stub.h',
-  'table.c',
-  'table.h',
-)
-
 shared_glapi_mapi_tmp_h = custom_target(
   'shared_glapi_mapi_tmp.h',
   input : ['../mapi_abi.py', '../glapi/gen/gl_and_es_API.xml'],
@@ -22,7 +12,7 @@ shared_glapi_mapi_tmp_h = custom_target(
 
 libglapi = static_library(
   'glapi',
-  [files_shared_glapi, shared_glapi_mapi_tmp_h],
+  ['core.c', shared_glapi_mapi_tmp_h],
   c_args : [
     c_msvc_compat_args,
     '-DMAPI_MODE_SHARED_GLAPI',

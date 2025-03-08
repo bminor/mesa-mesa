@@ -6,8 +6,47 @@
  */
 
 #include "glapi/glapi.h"
-#include "stub.h"
-#include "entry.h"
+
+struct mapi_stub {
+   size_t name_offset;
+   int slot;
+};
+
+static bool log_noop;
+static _glapi_nop_handler_proc nop_handler = NULL;
+
+static void check_debug_env(void)
+{
+   const char *debug = getenv("MESA_DEBUG");
+   if (!debug)
+      debug = getenv("LIBGL_DEBUG");
+   if (debug && strcmp(debug, "silent") != 0)
+      log_noop = true;
+}
+
+static void
+noop_warn(const char *name)
+{
+   if (nop_handler) {
+      nop_handler(name);
+   } else {
+      static once_flag flag = ONCE_FLAG_INIT;
+      call_once(&flag, check_debug_env);
+
+      if (log_noop)
+         fprintf(stderr, "%s is no-op\n", name);
+   }
+}
+
+static int
+noop_generic(void)
+{
+   noop_warn("function");
+   return 0;
+}
+
+#define MAPI_TMP_NOOP_ARRAY
+#define MAPI_TMP_PUBLIC_STUBS
 
 /* REALLY_INITIAL_EXEC implies __GLIBC__ */
 #if defined(USE_X86_ASM) && defined(REALLY_INITIAL_EXEC)
@@ -24,7 +63,7 @@ extern char x86_entry_end[] HIDDEN;
 static inline _glapi_proc
 entry_generate_or_patch(int, char *, size_t);
 
-void
+static void
 entry_patch_public(void)
 {
 #ifndef GLX_X86_READONLY_TEXT
@@ -36,7 +75,7 @@ entry_patch_public(void)
 #endif
 }
 
-_glapi_proc
+static _glapi_proc
 entry_get_public(int slot)
 {
    return (_glapi_proc) (x86_entry_start + slot * X86_ENTRY_SIZE);
@@ -78,7 +117,7 @@ entry_generate_or_patch(int slot, char *code, size_t size)
 
 #include <string.h>
 
-void
+static void
 entry_patch_public(void)
 {
 }
@@ -86,7 +125,7 @@ entry_patch_public(void)
 extern char
 x86_64_entry_start[] HIDDEN;
 
-_glapi_proc
+static _glapi_proc
 entry_get_public(int slot)
 {
    return (_glapi_proc) (x86_64_entry_start + slot * 32);
@@ -99,7 +138,7 @@ entry_get_public(int slot)
 
 #include <string.h>
 
-void
+static void
 entry_patch_public(void)
 {
 }
@@ -107,7 +146,7 @@ entry_patch_public(void)
 extern char
 ppc64le_entry_start[] HIDDEN;
 
-_glapi_proc
+static _glapi_proc
 entry_get_public(int slot)
 {
    return (_glapi_proc) (ppc64le_entry_start + slot * PPC64LE_ENTRY_SIZE);
@@ -120,15 +159,170 @@ entry_get_public(int slot)
 #define MAPI_TMP_PUBLIC_ENTRIES
 #include "shared_glapi_mapi_tmp.h"
 
-_glapi_proc
+static void
+entry_patch_public(void)
+{
+}
+
+static _glapi_proc
 entry_get_public(int slot)
 {
-   /* pubic_entries are defined by MAPI_TMP_PUBLIC_ENTRIES */
    return public_entries[slot];
+}
+
+#endif /* asm */
+
+/**
+ * \name Current dispatch and current context control variables
+ *
+ * Depending on whether or not multithreading is support, and the type of
+ * support available, several variables are used to store the current context
+ * pointer and the current dispatch table pointer. In the non-threaded case,
+ * the variables \c _mesa_glapi_Dispatch and \c _glapi_Context are used for this
+ * purpose.
+ *
+ * In multi threaded case, The TLS variables \c _mesa_glapi_tls_Dispatch and
+ * \c _mesa_glapi_tls_Context are used. Having \c _mesa_glapi_Dispatch
+ * be hardcoded to \c NULL maintains binary compatability between TLS enabled
+ * loaders and non-TLS DRI drivers. When \c _mesa_glapi_Dispatch
+ * are \c NULL, the thread state data \c ContextTSD are used.
+ */
+
+__THREAD_INITIAL_EXEC struct _glapi_table *_mesa_glapi_tls_Dispatch
+   = (struct _glapi_table *)table_noop_array;
+__THREAD_INITIAL_EXEC void *_mesa_glapi_tls_Context;
+const struct _glapi_table *_mesa_glapi_Dispatch;
+
+static int
+stub_compare(const void *key, const void *elem)
+{
+   const char *name = (const char *)key;
+   const struct mapi_stub *stub = (const struct mapi_stub *)elem;
+
+   return strcmp(name, &public_string_pool[stub->name_offset]);
+}
+
+/**
+ * Return size of dispatch table struct as number of functions (or
+ * slots).
+ */
+unsigned
+_mesa_glapi_get_dispatch_table_size(void)
+{
+   return _gloffset_COUNT;
+}
+
+static const struct mapi_stub *
+_glapi_get_stub(const char *name)
+{
+   if (!name || name[0] != 'g' || name[1] != 'l')
+      return NULL;
+
+   return (const struct mapi_stub *)
+          bsearch(name + 2, public_stubs, ARRAY_SIZE(public_stubs),
+                  sizeof(public_stubs[0]), stub_compare);
+}
+
+/**
+ * Return offset of entrypoint for named function within dispatch table.
+ */
+int
+_mesa_glapi_get_proc_offset(const char *funcName)
+{
+   const struct mapi_stub *stub = _glapi_get_stub(funcName);
+   return stub ? stub->slot : -1;
+}
+
+/**
+ * Return pointer to the named function.  If the function name isn't found
+ * in the name of static functions, try generating a new API entrypoint on
+ * the fly with assembly language.
+ */
+_glapi_proc
+_mesa_glapi_get_proc_address(const char *funcName)
+{
+   const struct mapi_stub *stub = _glapi_get_stub(funcName);
+   return stub ? entry_get_public(stub->slot) : NULL;
+}
+
+/**
+ * Return the name of the function at the given dispatch offset.
+ * This is only intended for debugging.
+ */
+const char *
+_glapi_get_proc_name(unsigned offset)
+{
+   for (unsigned i = 0; i < ARRAY_SIZE(public_stubs); ++i) {
+      if (public_stubs[i].slot == offset)
+         return &public_string_pool[public_stubs[i].name_offset];
+   }
+
+   return NULL;
+}
+
+/** Return pointer to new dispatch table filled with no-op functions */
+struct _glapi_table *
+_glapi_new_nop_table(void)
+{
+   struct _glapi_table *table = malloc(_gloffset_COUNT * sizeof(_glapi_proc));
+
+   if (table)
+      memcpy(table, table_noop_array, _gloffset_COUNT * sizeof(_glapi_proc));
+   return table;
+}
+
+void
+_glapi_set_nop_handler(_glapi_nop_handler_proc func)
+{
+   nop_handler = func;
+}
+
+/**
+ * Set the current context pointer for this thread.
+ * The context pointer is an opaque type which should be cast to
+ * void from the real context pointer type.
+ */
+void
+_mesa_glapi_set_context(void *ptr)
+{
+   _mesa_glapi_tls_Context = ptr;
+}
+
+/**
+ * Get the current context pointer for this thread.
+ * The context pointer is an opaque type which should be cast from
+ * void to the real context pointer type.
+ */
+void *
+_mesa_glapi_get_context(void)
+{
+   return _mesa_glapi_tls_Context;
+}
+
+/**
+ * Set the global or per-thread dispatch table pointer.
+ * If the dispatch parameter is NULL we'll plug in the no-op dispatch
+ * table (__glapi_noop_table).
+ */
+void
+_mesa_glapi_set_dispatch(struct _glapi_table *tbl)
+{
+   static once_flag flag = ONCE_FLAG_INIT;
+   call_once(&flag, entry_patch_public);
+
+   _mesa_glapi_tls_Dispatch =
+      tbl ? tbl : (struct _glapi_table *)table_noop_array;
+}
+
+/**
+ * Return pointer to current dispatch table for calling thread.
+ */
+struct _glapi_table *
+_mesa_glapi_get_dispatch(void)
+{
+   return _mesa_glapi_tls_Dispatch;
 }
 
 #if defined(_WIN32) && defined(_WINDOWS_)
 #error "Should not include <windows.h> here"
 #endif
-
-#endif /* asm */
