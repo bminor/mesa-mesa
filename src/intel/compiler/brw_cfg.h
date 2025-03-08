@@ -79,12 +79,6 @@ struct bblock_t {
 
    void add_successor(void *mem_ctx, bblock_t *successor,
                       enum bblock_link_kind kind);
-   bool is_predecessor_of(const bblock_t *block,
-                          enum bblock_link_kind kind) const;
-   bool is_successor_of(const bblock_t *block,
-                        enum bblock_link_kind kind) const;
-   bool can_combine_with(const bblock_t *that) const;
-   void combine_with(bblock_t *that);
    void dump(FILE *file = stderr) const;
 
    brw_inst *start();
@@ -97,28 +91,9 @@ struct bblock_t {
    bblock_t *prev();
    const bblock_t *prev() const;
 
-   bool starts_with_control_flow() const;
    bool ends_with_control_flow() const;
 
-   brw_inst *first_non_control_flow_inst();
    brw_inst *last_non_control_flow_inst();
-
-private:
-   /**
-    * \sa unlink_parents, unlink_children
-    */
-   void unlink_list(exec_list *);
-
-public:
-   void unlink_parents()
-   {
-      unlink_list(&parents);
-   }
-
-   void unlink_children()
-   {
-      unlink_list(&children);
-   }
 
    struct exec_node link;
    struct cfg_t *cfg;
@@ -198,13 +173,6 @@ bblock_t::prev() const
 }
 
 inline bool
-bblock_t::starts_with_control_flow() const
-{
-   enum opcode op = start()->opcode;
-   return op == BRW_OPCODE_DO || op == BRW_OPCODE_ENDIF;
-}
-
-inline bool
 bblock_t::ends_with_control_flow() const
 {
    enum opcode op = end()->opcode;
@@ -214,15 +182,6 @@ bblock_t::ends_with_control_flow() const
           op == BRW_OPCODE_BREAK ||
           op == BRW_OPCODE_CONTINUE ||
           op == SHADER_OPCODE_FLOW;
-}
-
-inline brw_inst *
-bblock_t::first_non_control_flow_inst()
-{
-   brw_inst *inst = start();
-   if (starts_with_control_flow())
-      inst = (brw_inst *)inst->next;
-   return inst;
 }
 
 inline brw_inst *

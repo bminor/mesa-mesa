@@ -77,81 +77,6 @@ bblock_t::add_successor(void *mem_ctx, bblock_t *successor,
    children.push_tail(::link(mem_ctx, successor, kind));
 }
 
-bool
-bblock_t::is_predecessor_of(const bblock_t *block,
-                            enum bblock_link_kind kind) const
-{
-   foreach_list_typed_safe (bblock_link, parent, link, &block->parents) {
-      if (parent->block == this && parent->kind <= kind) {
-         return true;
-      }
-   }
-
-   return false;
-}
-
-bool
-bblock_t::is_successor_of(const bblock_t *block,
-                          enum bblock_link_kind kind) const
-{
-   foreach_list_typed_safe (bblock_link, child, link, &block->children) {
-      if (child->block == this && child->kind <= kind) {
-         return true;
-      }
-   }
-
-   return false;
-}
-
-static bool
-ends_block(const brw_inst *inst)
-{
-   enum opcode op = inst->opcode;
-
-   return op == BRW_OPCODE_IF ||
-          op == BRW_OPCODE_ELSE ||
-          op == BRW_OPCODE_CONTINUE ||
-          op == BRW_OPCODE_BREAK ||
-          op == BRW_OPCODE_DO ||
-          op == BRW_OPCODE_WHILE;
-}
-
-static bool
-starts_block(const brw_inst *inst)
-{
-   enum opcode op = inst->opcode;
-
-   return op == BRW_OPCODE_DO ||
-          op == BRW_OPCODE_ENDIF;
-}
-
-bool
-bblock_t::can_combine_with(const bblock_t *that) const
-{
-   if ((const bblock_t *)this->link.next != that)
-      return false;
-
-   if (ends_block(this->end()) ||
-       starts_block(that->start()))
-      return false;
-
-   return true;
-}
-
-void
-bblock_t::combine_with(bblock_t *that)
-{
-   assert(this->can_combine_with(that));
-   foreach_list_typed (bblock_link, link, link, &that->parents) {
-      assert(link->block == this);
-   }
-
-   this->end_ip = that->end_ip;
-   this->instructions.append_list(&that->instructions);
-
-   this->cfg->remove_block(that);
-}
-
 void
 bblock_t::dump(FILE *file) const
 {
@@ -162,28 +87,6 @@ bblock_t::dump(FILE *file) const
       fprintf(file, "%5d: ", ip);
       brw_print_instruction(*s, inst, file);
       ip++;
-   }
-}
-
-void
-bblock_t::unlink_list(exec_list *list)
-{
-   assert(list == &parents || list == &children);
-   const bool remove_parent = list == &children;
-
-   foreach_list_typed_safe(bblock_link, link, link, list) {
-      /* Also break the links from the other block back to this block. */
-      exec_list *sub_list = remove_parent ? &link->block->parents : &link->block->children;
-
-      foreach_list_typed_safe(bblock_link, sub_link, link, sub_list) {
-         if (sub_link->block == this) {
-            sub_link->link.remove();
-            ralloc_free(sub_link);
-         }
-      }
-
-      link->link.remove();
-      ralloc_free(link);
    }
 }
 
