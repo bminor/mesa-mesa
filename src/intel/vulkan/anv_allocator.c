@@ -1601,7 +1601,7 @@ anv_bo_get_mmap_mode(struct anv_device *device, struct anv_bo *bo)
 VkResult
 anv_device_alloc_bo(struct anv_device *device,
                     const char *name,
-                    uint64_t size,
+                    const uint64_t base_size,
                     enum anv_bo_alloc_flags alloc_flags,
                     uint64_t explicit_address,
                     struct anv_bo **bo_out)
@@ -1618,20 +1618,33 @@ anv_device_alloc_bo(struct anv_device *device,
    if (device->info->has_llc && ((alloc_flags & not_allowed_promotion) == 0))
       alloc_flags |= ANV_BO_ALLOC_HOST_COHERENT;
 
+   uint64_t ccs_offset = 0;
+   uint64_t size = base_size;
+
+   if (alloc_flags & ANV_BO_ALLOC_AUX_CCS) {
+      assert(device->info->has_aux_map);
+      size = align64(size, 4096);
+      ccs_offset = size;
+      size += (size / INTEL_AUX_MAP_MAIN_SIZE_SCALEDOWN);
+   }
+
    uint32_t alignment = anv_bo_vma_calc_alignment_requirement(device, alloc_flags, size);
-
-   /* calling in here to avoid the 4k size promotion but we can only do that
-    * because ANV_BO_ALLOC_AUX_CCS is not supported by slab
-    */
+   /* calling in here to avoid the 4k size promotion */
    *bo_out = anv_slab_bo_alloc(device, name, size, alignment, alloc_flags);
-   if (*bo_out)
-      return VK_SUCCESS;
+   if (*bo_out) {
+      if (alloc_flags & ANV_BO_ALLOC_AUX_CCS)
+         (*bo_out)->ccs_offset = ccs_offset;
 
+      return VK_SUCCESS;
+   }
+
+   /* bo was not allocated in slab, so reset size again to base_size */
+   size = base_size;
    /* The kernel is going to give us whole pages anyway. */
    size = align64(size, 4096);
 
-   const uint64_t ccs_offset = size;
    if (alloc_flags & ANV_BO_ALLOC_AUX_CCS) {
+      ccs_offset = size;
       assert(device->info->has_aux_map);
       size += size / INTEL_AUX_MAP_MAIN_SIZE_SCALEDOWN;
       size = align64(size, 4096);
