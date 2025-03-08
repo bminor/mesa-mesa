@@ -172,26 +172,10 @@ entry_get_public(int slot)
 
 #endif /* asm */
 
-/**
- * \name Current dispatch and current context control variables
- *
- * Depending on whether or not multithreading is support, and the type of
- * support available, several variables are used to store the current context
- * pointer and the current dispatch table pointer. In the non-threaded case,
- * the variables \c _mesa_glapi_Dispatch and \c _glapi_Context are used for this
- * purpose.
- *
- * In multi threaded case, The TLS variables \c _mesa_glapi_tls_Dispatch and
- * \c _mesa_glapi_tls_Context are used. Having \c _mesa_glapi_Dispatch
- * be hardcoded to \c NULL maintains binary compatability between TLS enabled
- * loaders and non-TLS DRI drivers. When \c _mesa_glapi_Dispatch
- * are \c NULL, the thread state data \c ContextTSD are used.
- */
-
+/* Current dispatch and current context variables */
 __THREAD_INITIAL_EXEC struct _glapi_table *_mesa_glapi_tls_Dispatch
    = (struct _glapi_table *)table_noop_array;
 __THREAD_INITIAL_EXEC void *_mesa_glapi_tls_Context;
-const struct _glapi_table *_mesa_glapi_Dispatch;
 
 static int
 stub_compare(const void *key, const void *elem)

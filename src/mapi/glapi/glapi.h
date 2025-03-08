@@ -77,8 +77,6 @@ _GLAPI_EXPORT extern __THREAD_INITIAL_EXEC struct _glapi_table * _mesa_glapi_tls
 _GLAPI_EXPORT extern __THREAD_INITIAL_EXEC void * _mesa_glapi_tls_Context;
 #endif
 
-_GLAPI_EXPORT extern const struct _glapi_table *_mesa_glapi_Dispatch;
-
 #if DETECT_OS_WINDOWS && !defined(MAPI_MODE_SHARED_GLAPI)
 # define GET_DISPATCH() _mesa_glapi_get_dispatch()
 # define GET_CURRENT_CONTEXT(C)  struct gl_context *C = (struct gl_context *) _mesa_glapi_get_context()
