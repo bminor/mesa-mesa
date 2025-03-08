@@ -62,6 +62,7 @@
 #include "util/u_draw.h"
 #include "util/u_upload_mgr.h"
 #include "util/u_threaded_context.h"
+#include "util/perf/cpu_trace.h"
 #include "draw/draw_context.h"
 #include "cso_cache/cso_context.h"
 
@@ -117,6 +118,8 @@ st_draw_gallium(struct gl_context *ctx,
                 const struct pipe_draw_start_count_bias *draws,
                 unsigned num_draws)
 {
+   MESA_TRACE_FUNC();
+
    struct st_context *st = st_context(ctx);
 
    cso_draw_vbo(st->cso_context, info, drawid_offset, indirect, draws, num_draws);

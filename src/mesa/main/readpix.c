@@ -23,6 +23,7 @@
  */
 
 #include "util/glheader.h"
+#include "util/perf/cpu_trace.h"
 
 #include "blend.h"
 #include "bufferobj.h"
@@ -1045,6 +1046,8 @@ read_pixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format,
    GLenum err = GL_NO_ERROR;
    struct gl_renderbuffer *rb;
    struct gl_pixelstore_attrib clippedPacking;
+
+   MESA_TRACE_FUNC();
 
    GET_CURRENT_CONTEXT(ctx);
 

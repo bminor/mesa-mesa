@@ -37,6 +37,7 @@
 #include "util/format/u_format.h"
 #include "util/format/u_format_s3tc.h"
 #include "util/u_math.h"
+#include "util/perf/cpu_trace.h"
 
 /**
  * Copy 2D rect from one place to another.
@@ -56,6 +57,8 @@ util_copy_rect(void * dst_in,
                unsigned src_x,
                unsigned src_y)
 {
+   MESA_TRACE_SCOPE("%s width=%u height=%u", __func__, width, height);
+
    uint8_t *dst = dst_in;
    const uint8_t *src = src_in;
    unsigned i;

@@ -1225,6 +1225,8 @@ _mesa_compile_shader(struct gl_context *ctx, struct gl_shader *sh)
          _mesa_log_direct(sh->Source);
       }
 
+      MESA_TRACE_FUNC();
+
       ensure_builtin_types(ctx);
 
       /* this call will set the shader->CompileStatus field to indicate if

@@ -28,6 +28,7 @@
  */
 
 #include "util/glheader.h"
+#include "util/perf/cpu_trace.h"
 #include "context.h"
 #include "enums.h"
 
@@ -534,6 +535,8 @@ texture_storage(struct gl_context *ctx, GLuint dims,
    const char* suffix = dsa ? (memObj ? "tureMem" : "ture") :
                               (memObj ? "Mem" : "");
    const char* suffix2 = attribs ? "Attribs" : "";
+
+   MESA_TRACE_FUNC();
 
    assert(texObj);
 

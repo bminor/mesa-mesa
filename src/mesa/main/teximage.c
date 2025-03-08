@@ -31,6 +31,7 @@
 
 #include <stdbool.h>
 #include "util/glheader.h"
+#include "util/perf/cpu_trace.h"
 #include "bufferobj.h"
 #include "context.h"
 #include "enums.h"
@@ -3164,6 +3165,8 @@ teximage(struct gl_context *ctx, GLboolean compressed, GLuint dims,
    mesa_format texFormat;
    bool dimensionsOK = true, sizeOK = true;
 
+   MESA_TRACE_FUNC();
+
    FLUSH_VERTICES(ctx, 0, 0);
 
    if (MESA_VERBOSE & (VERBOSE_API|VERBOSE_TEXTURE)) {
@@ -3828,6 +3831,8 @@ texture_sub_image(struct gl_context *ctx, GLuint dims,
                   GLsizei width, GLsizei height, GLsizei depth,
                   GLenum format, GLenum type, const GLvoid *pixels)
 {
+   MESA_TRACE_FUNC();
+
    FLUSH_VERTICES(ctx, 0, 0);
 
    _mesa_update_pixel(ctx);
@@ -4460,6 +4465,8 @@ copy_texture_sub_image(struct gl_context *ctx, GLuint dims,
 {
    struct gl_texture_image *texImage;
 
+   MESA_TRACE_FUNC();
+
    _mesa_lock_texture(ctx, texObj);
 
    texImage = _mesa_select_tex_image(texObj, target, level);
@@ -4559,6 +4566,8 @@ copyteximage(struct gl_context *ctx, GLuint dims, struct gl_texture_object *texO
 {
    struct gl_texture_image *texImage;
    mesa_format texFormat;
+
+   MESA_TRACE_FUNC();
 
    FLUSH_VERTICES(ctx, 0, 0);
 
