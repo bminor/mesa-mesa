@@ -4531,6 +4531,18 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       add_opt(s_not_b32, s_xnor_b32, 0x3, "01");
    } else if (info.opcode == aco_opcode::s_xor_b64) {
       add_opt(s_not_b64, s_xnor_b64, 0x3, "01");
+   } else if ((info.opcode == aco_opcode::s_sub_u32 || info.opcode == aco_opcode::s_sub_i32) &&
+              !ctx.uses[info.defs[1].tempId()]) {
+      add_opt(s_bcnt1_i32_b32, s_bcnt0_i32_b32, 0x2, "10", remove_const_cb<32>);
+      add_opt(s_bcnt1_i32_b64, s_bcnt0_i32_b64, 0x2, "10", remove_const_cb<64>);
+   } else if (info.opcode == aco_opcode::s_bcnt1_i32_b32) {
+      add_opt(s_not_b32, s_bcnt0_i32_b32, 0x1, "0");
+   } else if (info.opcode == aco_opcode::s_bcnt1_i32_b64) {
+      add_opt(s_not_b64, s_bcnt0_i32_b64, 0x1, "0");
+   } else if (info.opcode == aco_opcode::s_ff1_i32_b32 && ctx.program->gfx_level < GFX11) {
+      add_opt(s_not_b32, s_ff0_i32_b32, 0x1, "0");
+   } else if (info.opcode == aco_opcode::s_ff1_i32_b64 && ctx.program->gfx_level < GFX11) {
+      add_opt(s_not_b64, s_ff0_i32_b64, 0x1, "0");
    }
 
    if (match_and_apply_patterns(ctx, info, patterns)) {
