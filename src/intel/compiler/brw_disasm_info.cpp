@@ -135,7 +135,7 @@ disasm_annotate(struct disasm_info *disasm,
    }
 #endif
 
-   if (bblock_start(cfg->blocks[disasm->cur_block]) == inst) {
+   if (cfg->blocks[disasm->cur_block]->start() == inst) {
       group->block_start = cfg->blocks[disasm->cur_block];
    }
 
@@ -151,7 +151,7 @@ disasm_annotate(struct disasm_info *disasm,
       disasm->use_tail = true;
    }
 
-   if (bblock_end(cfg->blocks[disasm->cur_block]) == inst) {
+   if (cfg->blocks[disasm->cur_block]->end() == inst) {
       group->block_end = cfg->blocks[disasm->cur_block];
       disasm->cur_block++;
    }

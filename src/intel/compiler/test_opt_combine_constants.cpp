@@ -80,14 +80,14 @@ TEST_F(FSCombineConstantsTest, Simple)
    ASSERT_TRUE(progress);
 
    ASSERT_EQ(shader->cfg->num_blocks, 1);
-   bblock_t *block = cfg_first_block(shader->cfg);
+   bblock_t *block = shader->cfg->first_block();
    ASSERT_NE(block, nullptr);
 
    /* We can do better but for now sanity check that
     * there's a MOV and a SEL.
     */
-   ASSERT_EQ(bblock_start(block)->opcode, BRW_OPCODE_MOV);
-   ASSERT_EQ(bblock_end(block)->opcode, BRW_OPCODE_SEL);
+   ASSERT_EQ(block->start()->opcode, BRW_OPCODE_MOV);
+   ASSERT_EQ(block->end()->opcode, BRW_OPCODE_SEL);
 }
 
 TEST_F(FSCombineConstantsTest, DoContainingDo)
