@@ -514,10 +514,8 @@ vn_queue_submission_prepare(struct vn_queue_submission *submit)
        submit->batch_type != VK_STRUCTURE_TYPE_BIND_SPARSE_INFO) {
       const struct wsi_memory_signal_submit_info *info = vk_find_struct_const(
          submit->submit_batches[0].pNext, WSI_MEMORY_SIGNAL_SUBMIT_INFO_MESA);
-      if (info) {
+      if (info)
          submit->wsi_mem = vn_device_memory_from_handle(info->memory);
-         assert(submit->wsi_mem->base_bo);
-      }
    }
 
    for (uint32_t i = 0; i < submit->batch_count; i++) {
@@ -988,7 +986,8 @@ vn_queue_wsi_present(struct vn_queue_submission *submit)
    struct vk_queue *queue_vk = vk_queue_from_handle(submit->queue_handle);
    struct vn_device *dev = (void *)queue_vk->base.device;
 
-   if (!submit->wsi_mem)
+   /* base_bo can be NULL for prime blit src */
+   if (!submit->wsi_mem || !submit->wsi_mem->base_bo)
       return;
 
    if (dev->renderer->info.has_implicit_fencing) {

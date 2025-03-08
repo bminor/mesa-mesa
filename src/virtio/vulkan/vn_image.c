@@ -673,7 +673,8 @@ vn_CreateImage(VkDevice device,
     * Will have to fix more when renderer handle type is no longer dma_buf.
     */
    if (wsi_info) {
-      assert(external_info->handleTypes == renderer_handle_type);
+      assert(wsi_info->blit_src ||
+             external_info->handleTypes == renderer_handle_type);
       result = vn_wsi_create_image(dev, pCreateInfo, wsi_info, alloc, &img);
    } else if (anb_info) {
       result =
