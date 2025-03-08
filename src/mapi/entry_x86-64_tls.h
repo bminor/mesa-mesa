@@ -65,27 +65,3 @@ __asm__(".text\n"
    "jmp *%r11"
 
 #endif
-
-#define MAPI_TMP_STUB_ASM_GCC
-#include "mapi_tmp.h"
-
-#ifndef MAPI_MODE_BRIDGE
-
-#include <string.h>
-
-void
-entry_patch_public(void)
-{
-}
-
-extern char
-x86_64_entry_start[] HIDDEN;
-
-_glapi_proc
-entry_get_public(int slot)
-{
-   return (_glapi_proc) (x86_64_entry_start + slot * 32);
-}
-
-
-#endif /* MAPI_MODE_BRIDGE */

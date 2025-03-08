@@ -65,26 +65,3 @@ __asm__(".text\n"
    "  ld     12, " slot "*8(11)\n\t"                            \
    "  mtctr  12\n\t"                                            \
    "  bctr\n"                                                   \
-
-#define MAPI_TMP_STUB_ASM_GCC
-#include "mapi_tmp.h"
-
-#ifndef MAPI_MODE_BRIDGE
-
-#include <string.h>
-
-void
-entry_patch_public(void)
-{
-}
-
-extern char
-ppc64le_entry_start[] HIDDEN;
-
-_glapi_proc
-entry_get_public(int slot)
-{
-   return (_glapi_proc) (ppc64le_entry_start + slot * PPC64LE_ENTRY_SIZE);
-}
-
-#endif /* MAPI_MODE_BRIDGE */

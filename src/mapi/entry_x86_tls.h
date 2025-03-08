@@ -74,71 +74,8 @@ __asm__(".balign 16\n"
    "movl %gs:(%eax), %eax\n\t"                              \
    "jmp *(4 * " slot ")(%eax)"
 
-#define MAPI_TMP_STUB_ASM_GCC
-#include "mapi_tmp.h"
-
 #ifndef GLX_X86_READONLY_TEXT
 __asm__(".balign 16\n"
         "x86_entry_end:");
 __asm__(".text");
 #endif /* GLX_X86_READONLY_TEXT */
-
-#ifndef MAPI_MODE_BRIDGE
-
-extern unsigned long
-x86_current_tls();
-
-extern char x86_entry_start[] HIDDEN;
-extern char x86_entry_end[] HIDDEN;
-
-static inline _glapi_proc
-entry_generate_or_patch(int, char *, size_t);
-
-void
-entry_patch_public(void)
-{
-#ifndef GLX_X86_READONLY_TEXT
-   char *entry;
-   int slot = 0;
-   for (entry = x86_entry_start; entry < x86_entry_end;
-        entry += X86_ENTRY_SIZE, ++slot)
-      entry_generate_or_patch(slot, entry, X86_ENTRY_SIZE);
-#endif
-}
-
-_glapi_proc
-entry_get_public(int slot)
-{
-   return (_glapi_proc) (x86_entry_start + slot * X86_ENTRY_SIZE);
-}
-
-static void
-entry_patch(_glapi_proc entry, int slot)
-{
-   char *code = (char *) entry;
-   *((unsigned long *) (code + 8)) = slot * sizeof(_glapi_proc);
-}
-
-static inline _glapi_proc
-entry_generate_or_patch(int slot, char *code, size_t size)
-{
-   const char code_templ[16] = {
-      0x65, 0xa1, 0x00, 0x00, 0x00, 0x00, /* movl %gs:0x0, %eax */
-      0xff, 0xa0, 0x34, 0x12, 0x00, 0x00, /* jmp *0x1234(%eax) */
-      0x90, 0x90, 0x90, 0x90              /* nop's */
-   };
-   _glapi_proc entry;
-
-   if (size < sizeof(code_templ))
-      return NULL;
-
-   memcpy(code, code_templ, sizeof(code_templ));
-
-   *((unsigned long *) (code + 2)) = x86_current_tls();
-   entry = (_glapi_proc) code;
-   entry_patch(entry, slot);
-
-   return entry;
-}
-
-#endif /* MAPI_MODE_BRIDGE */

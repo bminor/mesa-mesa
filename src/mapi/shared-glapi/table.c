@@ -31,6 +31,7 @@
 #include <string.h>
 
 #include "c11/threads.h"
+#include "glapi/glapi.h"
 #include "table.h"
 
 static nop_handler_proc nop_handler = NULL;
@@ -77,4 +78,4 @@ noop_generic(void)
 /* define noop_array */
 #define MAPI_TMP_DEFINES
 #define MAPI_TMP_NOOP_ARRAY
-#include "mapi_tmp.h"
+#include "shared_glapi_mapi_tmp.h"

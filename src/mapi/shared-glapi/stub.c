@@ -35,6 +35,7 @@
 #include "glapi/glapi.h"
 #include "stub.h"
 #include "table.h"
+#include "entry.h"
 
 
 struct mapi_stub {
@@ -44,7 +45,7 @@ struct mapi_stub {
 
 /* define public_string_pool and public_stubs */
 #define MAPI_TMP_PUBLIC_STUBS
-#include "mapi_tmp.h"
+#include "shared_glapi_mapi_tmp.h"
 
 void
 stub_init_once(void)

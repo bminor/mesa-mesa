@@ -7,11 +7,9 @@ inc_glapi = include_directories('.')
 
 bridge_glapi_files = files(
   'libgl_public.c',
-  '../entry.h',
   '../entry_x86-64_tls.h',
   '../entry_x86_tls.h',
   '../entry_ppc64le_tls.h',
-  '../mapi_tmp.h',
 )
 bridge_glapi_files += glapi_mapi_tmp_h
 
@@ -19,11 +17,7 @@ if with_dri and ['apple', 'windows'].contains(with_dri_platform)
   bridge_glapi_files += [glapi_gentable_c, main_dispatch_h]
 endif
 
-bridge_glapi_args = [
-  '-DMAPI_MODE_BRIDGE',
-  '-DMAPI_ABI_HEADER="@0@"'.format(glapi_mapi_tmp_h.full_path()),
-  gcc_lto_quirk,
-]
+bridge_glapi_args = [gcc_lto_quirk]
 if with_platform_windows
   bridge_glapi_args += ['-D_GDI32_']
 endif

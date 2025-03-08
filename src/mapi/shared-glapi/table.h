@@ -28,9 +28,7 @@
 #ifndef _TABLE_H_
 #define _TABLE_H_
 
-#include "glapi/glapi.h"
-#include "mapi_tmp.h"
-#include "entry.h"
+#include "shared_glapi_mapi_tmp.h"
 
 struct _glapi_table;
 

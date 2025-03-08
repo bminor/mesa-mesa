@@ -4,7 +4,7 @@
 es1_glapi_mapi_tmp_h = custom_target(
   'es1_glapi_mapi_tmp.h',
   input : ['../new/gen_gldispatch_mapi.py', '../glapi/registry/gl.xml'],
-  output : 'glapi_mapi_tmp.h',
+  output : 'es1_glapi_mapi_tmp.h',
   command : [prog_python, '@INPUT0@', 'glesv1', '@INPUT1@'],
   depend_files : glapi_xml_py_deps,
   capture : true,
@@ -29,8 +29,6 @@ libglesv1_cm = shared_library(
   c_args : [
     c_msvc_compat_args,
     _es1_c_args,
-    '-DMAPI_MODE_BRIDGE',
-    '-DMAPI_ABI_HEADER="@0@"'.format(es1_glapi_mapi_tmp_h.full_path()),
     gcc_lto_quirk,
   ],
   gnu_symbol_visibility : 'hidden',
