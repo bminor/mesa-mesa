@@ -77,6 +77,49 @@ brw_idom_tree::dump(FILE *file) const
    fprintf(file, "}\n");
 }
 
+brw_ip_ranges::brw_ip_ranges(const brw_shader *shader)
+{
+   num_blocks = shader->cfg->num_blocks;
+   start_ip   = new int[num_blocks];
+
+   unsigned next_ip = 0;
+   for (int i = 0; i < num_blocks; i++) {
+      start_ip[i] = next_ip;
+
+      bblock_t *block = shader->cfg->blocks[i];
+      next_ip += block->num_instructions;
+   }
+}
+
+brw_ip_ranges::~brw_ip_ranges()
+{
+   delete[] start_ip;
+}
+
+bool
+brw_ip_ranges::validate(const brw_shader *s) const
+{
+   if (s->cfg->num_blocks != num_blocks)
+      return false;
+
+   int ip = 0;
+   for (int i = 0; i < num_blocks; i++) {
+      bblock_t *block = s->cfg->blocks[i];
+      if (start_ip[i] != ip)
+         return false;
+      ip += block->num_instructions;
+   }
+
+   if (num_blocks) {
+      bblock_t *last_block = s->cfg->blocks[num_blocks - 1];
+      unsigned last_ip = end(last_block);
+      if (last_ip + 1 != s->cfg->total_instructions)
+         return false;
+   }
+
+   return true;
+}
+
 brw_register_pressure::brw_register_pressure(const brw_shader *v)
 {
    const brw_live_variables &live = v->live_analysis.require();

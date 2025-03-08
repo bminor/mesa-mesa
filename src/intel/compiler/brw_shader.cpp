@@ -409,6 +409,7 @@ brw_shader::brw_shader(const struct brw_compiler *compiler,
      key(key), prog_data(prog_data),
      live_analysis(this), regpressure_analysis(this),
      performance_analysis(this), idom_analysis(this), def_analysis(this),
+     ip_ranges_analysis(this),
      needs_register_pressure(needs_register_pressure),
      dispatch_width(dispatch_width),
      max_polygons(0),
@@ -433,6 +434,7 @@ brw_shader::brw_shader(const struct brw_compiler *compiler,
      key(&key->base), prog_data(&prog_data->base),
      live_analysis(this), regpressure_analysis(this),
      performance_analysis(this), idom_analysis(this), def_analysis(this),
+     ip_ranges_analysis(this),
      needs_register_pressure(needs_register_pressure),
      dispatch_width(dispatch_width),
      max_polygons(max_polygons),
@@ -957,6 +959,7 @@ brw_shader::invalidate_analysis(brw_analysis_dependency_class c)
    performance_analysis.invalidate(c);
    idom_analysis.invalidate(c);
    def_analysis.invalidate(c);
+   ip_ranges_analysis.invalidate(c);
 }
 
 void

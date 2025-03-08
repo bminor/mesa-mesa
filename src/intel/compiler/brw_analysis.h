@@ -232,6 +232,38 @@ private:
    bblock_t **parents;
 };
 
+struct brw_ip_ranges {
+   brw_ip_ranges(const brw_shader *s);
+   ~brw_ip_ranges();
+
+   bool validate(const brw_shader *) const;
+
+   brw_analysis_dependency_class
+   dependency_class() const
+   {
+      return BRW_DEPENDENCY_INSTRUCTION_IDENTITY |
+             BRW_DEPENDENCY_BLOCKS;
+   }
+
+   int
+   start(const bblock_t *block) const
+   {
+      assert(block->num < num_blocks);
+      return start_ip[block->num];
+   }
+
+   int
+   end(const bblock_t *block) const
+   {
+      assert(block->num < num_blocks);
+      return start_ip[block->num] + block->num_instructions - 1;
+   }
+
+private:
+   int num_blocks;
+   int *start_ip;
+};
+
 /**
  * Register pressure analysis of a shader.  Estimates how many registers
  * are live at any point of the program in GRF units.

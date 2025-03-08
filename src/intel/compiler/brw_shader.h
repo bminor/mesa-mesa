@@ -139,6 +139,7 @@ public:
    brw_analysis<brw_performance, brw_shader> performance_analysis;
    brw_analysis<brw_idom_tree, brw_shader> idom_analysis;
    brw_analysis<brw_def_analysis, brw_shader> def_analysis;
+   brw_analysis<brw_ip_ranges, brw_shader> ip_ranges_analysis;
 
    /** Number of uniform variable components visited. */
    unsigned uniforms;
