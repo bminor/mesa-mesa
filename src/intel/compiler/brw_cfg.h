@@ -105,6 +105,8 @@ struct bblock_t {
     */
    int end_ip_delta;
 
+   unsigned num_instructions;
+
    struct exec_list instructions;
    struct exec_list parents;
    struct exec_list children;

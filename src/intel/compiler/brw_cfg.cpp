@@ -62,7 +62,8 @@ push_stack(exec_list *list, void *mem_ctx, bblock_t *block)
 }
 
 bblock_t::bblock_t(cfg_t *cfg) :
-   cfg(cfg), start_ip(0), end_ip(0), end_ip_delta(0), num(0)
+   cfg(cfg), start_ip(0), end_ip(0), end_ip_delta(0),
+   num_instructions(0), num(0)
 {
    instructions.make_empty();
    parents.make_empty();
@@ -83,6 +84,7 @@ append_inst(bblock_t *block, brw_inst *inst)
    assert(inst->block == NULL);
    inst->block = block;
    block->instructions.push_tail(inst);
+   block->num_instructions++;
 }
 
 cfg_t::cfg_t(brw_shader *s, exec_list *instructions) :
@@ -571,9 +573,12 @@ cfg_t::validate(const char *stage_abbrev)
 
       cfgv_assert(!block->instructions.is_empty());
 
+      unsigned num_instructions = 0;
       foreach_inst_in_block(brw_inst, inst, block) {
          cfgv_assert(block == inst->block);
+         num_instructions++;
       }
+      cfgv_assert(num_instructions == block->num_instructions);
 
       brw_inst *first_inst = block->start();
       if (first_inst->opcode == BRW_OPCODE_DO) {

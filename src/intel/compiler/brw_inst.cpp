@@ -982,6 +982,7 @@ brw_inst::insert_before(bblock_t *block, brw_inst *inst)
    exec_node::insert_before(inst);
 
    inst->block = block;
+   inst->block->num_instructions++;
 }
 
 void
@@ -997,6 +998,9 @@ brw_inst::remove(bool defer_later_block_ip_updates)
       return;
    }
 
+   assert(block->num_instructions > 0);
+   block->num_instructions--;
+
    if (defer_later_block_ip_updates) {
       block->end_ip_delta--;
    } else {
@@ -1004,7 +1008,7 @@ brw_inst::remove(bool defer_later_block_ip_updates)
       adjust_later_block_ips(block, -1);
    }
 
-   if (block->start_ip == block->end_ip) {
+   if (block->num_instructions == 0) {
       if (block->end_ip_delta != 0) {
          adjust_later_block_ips(block, block->end_ip_delta);
          block->end_ip_delta = 0;
