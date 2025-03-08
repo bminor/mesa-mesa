@@ -12,6 +12,7 @@
 
 #include "venus-protocol/vn_protocol_driver_device_memory.h"
 #include "venus-protocol/vn_protocol_driver_transport.h"
+#include "vk_debug_utils.h"
 
 #include "vn_android.h"
 #include "vn_buffer.h"
@@ -323,7 +324,9 @@ vn_device_memory_emit_report(struct vn_device *dev,
                              bool is_alloc,
                              VkResult result)
 {
-   if (likely(!dev->memory_reports))
+   struct vk_device *dev_vk = &dev->base.base;
+
+   if (likely(!dev_vk->memory_reports))
       return;
 
    const struct vk_device_memory *mem_vk = &mem->base.base;
@@ -345,9 +348,9 @@ vn_device_memory_emit_report(struct vn_device *dev,
          : mem->base.id;
    const VkMemoryType *mem_type = &dev->physical_device->memory_properties
                                       .memoryTypes[mem_vk->memory_type_index];
-   vn_device_emit_device_memory_report(dev, type, mem_obj_id, mem_vk->size,
-                                       VK_OBJECT_TYPE_DEVICE_MEMORY,
-                                       (uintptr_t)mem, mem_type->heapIndex);
+   vk_emit_device_memory_report(dev_vk, type, mem_obj_id, mem_vk->size,
+                                VK_OBJECT_TYPE_DEVICE_MEMORY, (uintptr_t)mem,
+                                mem_type->heapIndex);
 }
 
 VkResult
