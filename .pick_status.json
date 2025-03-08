@@ -2124,7 +2124,7 @@
         "description": "v3dv: don't overwrite the primary fd if it's already set",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "188f1c6cbe79ca777188718a017482ab6362c425",
         "notes": null
