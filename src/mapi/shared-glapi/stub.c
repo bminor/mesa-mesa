@@ -33,7 +33,6 @@
 #include "util/macros.h"
 #include "util/simple_mtx.h"
 #include "glapi/glapi.h"
-#include "entry.h"
 #include "stub.h"
 #include "table.h"
 
@@ -118,7 +117,7 @@ stub_get_slot(const struct mapi_stub *stub)
 /**
  * Return the address of a stub.
  */
-mapi_func
+_glapi_proc
 stub_get_addr(const struct mapi_stub *stub)
 {
    return entry_get_public(stub->slot);

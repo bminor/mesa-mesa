@@ -28,12 +28,13 @@
 #ifndef _TABLE_H_
 #define _TABLE_H_
 
-#include "entry.h"
+#include "glapi/glapi.h"
 #include "mapi_tmp.h"
+#include "entry.h"
 
 struct _glapi_table;
 
-extern const mapi_func table_noop_array[];
+extern const _glapi_proc table_noop_array[];
 
 typedef void (*nop_handler_proc)(const char *name);
 

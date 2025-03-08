@@ -8,8 +8,8 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#include "entry.h"
 #include "glapi/glapi.h"
+#include "entry.h"
 #include "util/u_endian.h"
 #include "util/u_thread.h"
 
@@ -29,7 +29,7 @@
 
 #ifndef MAPI_MODE_BRIDGE
 
-mapi_func
+_glapi_proc
 entry_get_public(int slot)
 {
    /* pubic_entries are defined by MAPI_TMP_PUBLIC_ENTRIES */

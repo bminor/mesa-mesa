@@ -81,10 +81,10 @@ entry_patch_public(void)
 extern char
 x86_64_entry_start[] HIDDEN;
 
-mapi_func
+_glapi_proc
 entry_get_public(int slot)
 {
-   return (mapi_func) (x86_64_entry_start + slot * 32);
+   return (_glapi_proc) (x86_64_entry_start + slot * 32);
 }
 
 

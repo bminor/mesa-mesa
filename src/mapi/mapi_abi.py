@@ -328,7 +328,7 @@ class ABIPrinter(object):
             stmt1 = self.indent
             stmt1 += 'const struct _glapi_table *_tbl = GET_DISPATCH();'
             stmt2 = self.indent
-            stmt2 += 'mapi_func _func = ((const mapi_func *) _tbl)[%d];' % (
+            stmt2 += '_glapi_proc _func = ((const _glapi_proc *) _tbl)[%d];' % (
                     ent.slot)
             stmt3 = self.indent
             stmt3 += '%s((%s) _func)(%s);' % (ret, cast, ent.c_args())
@@ -349,7 +349,7 @@ class ABIPrinter(object):
             if ent.alias:
                 continue
 
-            name = '%s(mapi_func) %s' % (self.indent,
+            name = '%s(_glapi_proc) %s' % (self.indent,
                     self._c_function_call(ent, prefix))
             names.append(name)
 
@@ -419,7 +419,7 @@ class ABIPrinter(object):
         if use_generic:
             entries = [self.noop_generic] * len(entries)
 
-        pre = self.indent + '(mapi_func) '
+        pre = self.indent + '(_glapi_proc) '
         return pre + (',\n' + pre).join(entries)
 
     def c_asm_gcc(self, prefix, no_hidden):
@@ -481,13 +481,13 @@ class ABIPrinter(object):
             print()
             print(self.c_noop_functions(self.prefix_noop, self.prefix_warn))
             print()
-            print('const mapi_func table_%s_array[] = {' % (self.prefix_noop))
+            print('const _glapi_proc table_%s_array[] = {' % (self.prefix_noop))
             print(self.c_noop_initializer(self.prefix_noop, False))
             print('};')
             print()
             print('#else /* !MESA_DEBUG */')
             print()
-            print('const mapi_func table_%s_array[] = {' % (self.prefix_noop))
+            print('const _glapi_proc table_%s_array[] = {' % (self.prefix_noop))
             print(self.c_noop_initializer(self.prefix_noop, True))
             print('};')
             print()
@@ -513,7 +513,7 @@ class ABIPrinter(object):
             print('#ifdef MAPI_TMP_PUBLIC_ENTRIES')
             print(self.c_public_dispatches(self.prefix_lib, False))
             print()
-            print('static const mapi_func public_entries[] = {')
+            print('static const _glapi_proc public_entries[] = {')
             print(self.c_public_initializer(self.prefix_lib))
             print('};')
             print('#undef MAPI_TMP_PUBLIC_ENTRIES')

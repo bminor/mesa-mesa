@@ -98,9 +98,9 @@ _glapi_new_nop_table(void)
 {
    struct _glapi_table *table;
 
-   table = malloc(_gloffset_COUNT * sizeof(mapi_func));
+   table = malloc(_gloffset_COUNT * sizeof(_glapi_proc));
    if (table) {
-      memcpy(table, table_noop_array, _gloffset_COUNT * sizeof(mapi_func));
+      memcpy(table, table_noop_array, _gloffset_COUNT * sizeof(_glapi_proc));
    }
    return table;
 }

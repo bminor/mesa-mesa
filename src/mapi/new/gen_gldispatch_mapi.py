@@ -99,14 +99,14 @@ def generate_noop_array(functions):
             text += "   return ({f.rt}) 0;\n".format(f=func)
         text += "}\n\n"
 
-    text += "const mapi_func table_noop_array[] = {\n"
+    text += "const _glapi_proc table_noop_array[] = {\n"
     for func in functions:
-        text += "   (mapi_func) noop{f.basename},\n".format(f=func)
+        text += "   (_glapi_proc) noop{f.basename},\n".format(f=func)
     text += "};\n\n"
     text += "#else /* !MESA_DEBUG */\n\n"
-    text += "const mapi_func table_noop_array[] = {\n"
+    text += "const _glapi_proc table_noop_array[] = {\n"
     for i in range(len(functions)):
-        text += "   (mapi_func) noop_generic,\n"
+        text += "   (_glapi_proc) noop_generic,\n"
 
     text += "};\n\n"
     text += "#endif /* MESA_DEBUG */\n"
@@ -134,7 +134,7 @@ def generate_public_entries(functions):
 GLAPI {f.rt} GLAPIENTRY {f.name}({f.decArgs})
 {{
    const struct _glapi_table *_tbl = GET_DISPATCH();
-   mapi_func _func = ((const mapi_func *) _tbl)[{f.slot}];
+   _glapi_proc _func = ((const _glapi_proc *) _tbl)[{f.slot}];
    {retStr}(({f.rt} (GLAPIENTRY *)({f.decArgs})) _func)({f.callArgs});
 }}
 
@@ -146,9 +146,9 @@ GLAPI {f.rt} GLAPIENTRY {f.name}({f.decArgs})
 
 def generate_public_entries_table(functions):
     text = "#ifdef MAPI_TMP_PUBLIC_ENTRIES_NO_HIDDEN\n"
-    text += "static const mapi_func public_entries[] = {\n"
+    text += "static const _glapi_proc public_entries[] = {\n"
     for func in functions:
-        text += "   (mapi_func) %s,\n" % (func.name,)
+        text += "   (_glapi_proc) %s,\n" % (func.name,)
     text += "};\n"
     text += "#endif /* MAPI_TMP_PUBLIC_ENTRIES_NO_HIDDEN */\n"
     return text

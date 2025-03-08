@@ -81,10 +81,10 @@ entry_patch_public(void)
 extern char
 ppc64le_entry_start[] HIDDEN;
 
-mapi_func
+_glapi_proc
 entry_get_public(int slot)
 {
-   return (mapi_func) (ppc64le_entry_start + slot * PPC64LE_ENTRY_SIZE);
+   return (_glapi_proc) (ppc64le_entry_start + slot * PPC64LE_ENTRY_SIZE);
 }
 
 #endif /* MAPI_MODE_BRIDGE */

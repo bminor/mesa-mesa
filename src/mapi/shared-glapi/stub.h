@@ -47,7 +47,7 @@ stub_get_name(const struct mapi_stub *stub);
 int
 stub_get_slot(const struct mapi_stub *stub);
 
-mapi_func
+_glapi_proc
 stub_get_addr(const struct mapi_stub *stub);
 
 #endif /* _STUB_H_ */

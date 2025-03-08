@@ -28,13 +28,10 @@
 #ifndef _ENTRY_H_
 #define _ENTRY_H_
 
-
-typedef void (*mapi_func)(void);
-
 void
 entry_patch_public(void);
 
-mapi_func
+_glapi_proc
 entry_get_public(int slot);
 
 #endif /* _ENTRY_H_ */

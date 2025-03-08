@@ -91,7 +91,7 @@ x86_current_tls();
 extern char x86_entry_start[] HIDDEN;
 extern char x86_entry_end[] HIDDEN;
 
-static inline mapi_func
+static inline _glapi_proc
 entry_generate_or_patch(int, char *, size_t);
 
 void
@@ -106,20 +106,20 @@ entry_patch_public(void)
 #endif
 }
 
-mapi_func
+_glapi_proc
 entry_get_public(int slot)
 {
-   return (mapi_func) (x86_entry_start + slot * X86_ENTRY_SIZE);
+   return (_glapi_proc) (x86_entry_start + slot * X86_ENTRY_SIZE);
 }
 
 static void
-entry_patch(mapi_func entry, int slot)
+entry_patch(_glapi_proc entry, int slot)
 {
    char *code = (char *) entry;
-   *((unsigned long *) (code + 8)) = slot * sizeof(mapi_func);
+   *((unsigned long *) (code + 8)) = slot * sizeof(_glapi_proc);
 }
 
-static inline mapi_func
+static inline _glapi_proc
 entry_generate_or_patch(int slot, char *code, size_t size)
 {
    const char code_templ[16] = {
@@ -127,7 +127,7 @@ entry_generate_or_patch(int slot, char *code, size_t size)
       0xff, 0xa0, 0x34, 0x12, 0x00, 0x00, /* jmp *0x1234(%eax) */
       0x90, 0x90, 0x90, 0x90              /* nop's */
    };
-   mapi_func entry;
+   _glapi_proc entry;
 
    if (size < sizeof(code_templ))
       return NULL;
@@ -135,7 +135,7 @@ entry_generate_or_patch(int slot, char *code, size_t size)
    memcpy(code, code_templ, sizeof(code_templ));
 
    *((unsigned long *) (code + 2)) = x86_current_tls();
-   entry = (mapi_func) code;
+   entry = (_glapi_proc) code;
    entry_patch(entry, slot);
 
    return entry;
