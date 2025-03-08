@@ -91,14 +91,14 @@ lower_scoreboard(brw_shader *v)
 
    if (print) {
       fprintf(stderr, "= Before =\n");
-      v->cfg->dump();
+      brw_print_instructions(*v, stderr);
    }
 
    brw_lower_scoreboard(*v);
 
    if (print) {
       fprintf(stderr, "\n= After =\n");
-      v->cfg->dump();
+      brw_print_instructions(*v, stderr);
    }
 }
 

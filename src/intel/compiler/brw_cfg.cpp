@@ -77,19 +77,6 @@ bblock_t::add_successor(void *mem_ctx, bblock_t *successor,
    children.push_tail(::link(mem_ctx, successor, kind));
 }
 
-void
-bblock_t::dump(FILE *file) const
-{
-   const brw_shader *s = this->cfg->s;
-
-   int ip = this->start_ip;
-   foreach_inst_in_block(brw_inst, inst, this) {
-      fprintf(file, "%5d: ", ip);
-      brw_print_instruction(*s, inst, file);
-      ip++;
-   }
-}
-
 static void
 append_inst(bblock_t *block, brw_inst *inst)
 {
@@ -492,78 +479,6 @@ cfg_t::make_block_array()
       blocks[i++] = block;
    }
    assert(i == num_blocks);
-}
-
-namespace {
-
-struct link_desc {
-   char kind;
-   int num;
-};
-
-int
-compare_link_desc(const void *a, const void *b)
-{
-   const link_desc *la = (const link_desc *)a;
-   const link_desc *lb = (const link_desc *)b;
-
-   return la->num < lb->num ? -1 :
-          la->num > lb->num ? +1 :
-          la->kind < lb->kind ? -1 :
-          la->kind > lb->kind ? +1 :
-          0;
-}
-
-void
-sort_links(util_dynarray *scratch, exec_list *list)
-{
-   util_dynarray_clear(scratch);
-   foreach_list_typed(bblock_link, link, link, list) {
-      link_desc l;
-      l.kind = link->kind == bblock_link_logical ? '-' : '~';
-      l.num = link->block->num;
-      util_dynarray_append(scratch, link_desc, l);
-   }
-   qsort(scratch->data, util_dynarray_num_elements(scratch, link_desc),
-         sizeof(link_desc), compare_link_desc);
-}
-
-} /* namespace */
-
-void
-cfg_t::dump(FILE *file)
-{
-   const brw_idom_tree *idom = (s ? &s->idom_analysis.require() : NULL);
-
-   /* Temporary storage to sort the lists of blocks.  This normalizes the
-    * output, making it possible to use it for certain tests.
-    */
-   util_dynarray scratch;
-   util_dynarray_init(&scratch, NULL);
-
-   foreach_block (block, this) {
-      if (idom && idom->parent(block))
-         fprintf(file, "START B%d IDOM(B%d)", block->num,
-                 idom->parent(block)->num);
-      else
-         fprintf(file, "START B%d IDOM(none)", block->num);
-
-      sort_links(&scratch, &block->parents);
-      util_dynarray_foreach(&scratch, link_desc, l)
-         fprintf(file, " <%cB%d", l->kind, l->num);
-      fprintf(file, "\n");
-
-      if (s != NULL)
-         block->dump(file);
-      fprintf(file, "END B%d", block->num);
-
-      sort_links(&scratch, &block->children);
-      util_dynarray_foreach(&scratch, link_desc, l)
-         fprintf(file, " %c>B%d", l->kind, l->num);
-      fprintf(file, "\n");
-   }
-
-   util_dynarray_fini(&scratch);
 }
 
 void

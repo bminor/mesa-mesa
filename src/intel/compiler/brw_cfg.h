@@ -79,7 +79,6 @@ struct bblock_t {
 
    void add_successor(void *mem_ctx, bblock_t *successor,
                       enum bblock_link_kind kind);
-   void dump(FILE *file = stderr) const;
 
    brw_inst *start();
    const brw_inst *start() const;
@@ -210,7 +209,6 @@ struct cfg_t {
    void set_next_block(bblock_t **cur, bblock_t *block, int ip);
    void make_block_array();
 
-   void dump(FILE *file = stderr);
    void dump_cfg();
 
 #ifdef NDEBUG
