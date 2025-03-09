@@ -136,8 +136,7 @@ libgl_link = with_glvnd ? [] : [libglapi_bridge]
 libgl = shared_library(
   gl_lib_name,
   [],
-  link_with : libgl_link,
-  link_whole : libglx,
+  link_whole : [libglx, libgl_link],
   link_args : [ld_args_bsymbolic, ld_args_gc_sections, extra_ld_args_libgl],
   dependencies : [
     dep_libdrm, dep_dl, dep_m, dep_thread, dep_x11, dep_xcb_glx, dep_xcb,
