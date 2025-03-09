@@ -305,6 +305,8 @@ nvk_CreateIndirectExecutionSetEXT(VkDevice _device,
       UNREACHABLE("Unknown indirect execution set info type");
    }
 
+   ies->stride_B = align(ies->stride_B, pdev->info.nc_atom_size_B);
+
    size_t size = ies->count * (size_t)ies->stride_B;
    result = nvkmd_dev_alloc_mapped_mem(dev->nvkmd, &dev->vk.base,
                                        size, 0, NVKMD_MEM_LOCAL,
@@ -319,6 +321,7 @@ nvk_CreateIndirectExecutionSetEXT(VkDevice _device,
       VK_FROM_HANDLE(vk_pipeline, pipeline,
                      pCreateInfo->info.pPipelineInfo->initialPipeline);
       nvk_ies_set_pipeline(dev, ies, 0, pipeline);
+      nvkmd_mem_sync_map_to_gpu(ies->mem, 0, ies->stride_B);
       break;
    }
 
@@ -330,6 +333,7 @@ nvk_CreateIndirectExecutionSetEXT(VkDevice _device,
          VK_FROM_HANDLE(nvk_shader, shader, info->pInitialShaders[i]);
          nvk_ies_set_shader(dev, ies, i, shader);
       }
+      nvkmd_mem_sync_map_to_gpu(ies->mem, 0, ies->stride_B * info->shaderCount);
       break;
    }
 
@@ -368,10 +372,21 @@ nvk_UpdateIndirectExecutionSetPipelineEXT(
    VK_FROM_HANDLE(nvk_device, dev, _device);
    VK_FROM_HANDLE(nvk_indirect_execution_set, ies, indirectExecutionSet);
 
+   if (executionSetWriteCount == 0)
+      return;
+
+   uint32_t min_idx = UINT32_MAX, max_idx = 0;
    for (uint32_t i = 0; i < executionSetWriteCount; i++) {
       VK_FROM_HANDLE(vk_pipeline, pipeline, pExecutionSetWrites[i].pipeline);
+
+      min_idx = MIN2(min_idx, pExecutionSetWrites[i].index);
+      max_idx = MAX2(max_idx, pExecutionSetWrites[i].index);
+
       nvk_ies_set_pipeline(dev, ies, pExecutionSetWrites[i].index, pipeline);
    }
+
+   nvkmd_mem_sync_map_to_gpu(ies->mem, min_idx * (uint64_t)ies->stride_B,
+                             (max_idx + 1) * (uint64_t)ies->stride_B);
 }
 
 VKAPI_ATTR void VKAPI_CALL
@@ -384,8 +399,19 @@ nvk_UpdateIndirectExecutionSetShaderEXT(
    VK_FROM_HANDLE(nvk_device, dev, _device);
    VK_FROM_HANDLE(nvk_indirect_execution_set, ies, indirectExecutionSet);
 
+   if (executionSetWriteCount == 0)
+      return;
+
+   uint32_t min_idx = UINT32_MAX, max_idx = 0;
    for (uint32_t i = 0; i < executionSetWriteCount; i++) {
       VK_FROM_HANDLE(nvk_shader, shader, pExecutionSetWrites[i].shader);
+
+      min_idx = MIN2(min_idx, pExecutionSetWrites[i].index);
+      max_idx = MAX2(max_idx, pExecutionSetWrites[i].index);
+
       nvk_ies_set_shader(dev, ies, pExecutionSetWrites[i].index, shader);
    }
+
+   nvkmd_mem_sync_map_to_gpu(ies->mem, min_idx * (uint64_t)ies->stride_B,
+                             (max_idx + 1) * (uint64_t)ies->stride_B);
 }
