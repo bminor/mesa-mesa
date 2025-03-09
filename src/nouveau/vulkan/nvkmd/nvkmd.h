@@ -53,6 +53,9 @@ enum nvkmd_mem_flags {
 
    /** This memory object may be shared with other processes */
    NVKMD_MEM_SHARED     = 1 << 4,
+
+   /** This memory object has coherent CPU maps */
+   NVKMD_MEM_COHERENT   = 1 << 5,
 };
 
 #define NVKMD_MEM_PLACEMENT_FLAGS \

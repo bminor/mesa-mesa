@@ -134,6 +134,19 @@ nvkmd_nouveau_alloc_tiled_mem(struct nvkmd_dev *_dev,
    if (!(flags & NVKMD_MEM_SHARED))
       nouveau_flags |= NOUVEAU_WS_BO_NO_SHARE;
 
+   if (dev->base.pdev->dev_info.type == NV_DEVICE_TYPE_SOC) {
+      /* On Tegra, we have to explicitly request coherent maps by putting the
+       * BO in NOUVEAU_GEM_DOMAIN_COHERENT.
+       */
+      if (flags & NVKMD_MEM_COHERENT)
+         nouveau_flags |= NOUVEAU_WS_BO_COHERENT;
+   } else {
+      /* We assume that all discrete GPU maps are coherent.  They're either
+       * CPU memory or WB VRAM maps.
+       */
+      flags |= NVKMD_MEM_COHERENT;
+   }
+
    struct nouveau_ws_bo *bo = nouveau_ws_bo_new_tiled(dev->ws_dev,
                                                       size_B, mem_align_B,
                                                       pte_kind, tile_mode,
@@ -170,6 +183,14 @@ nvkmd_nouveau_import_dma_buf(struct nvkmd_dev *_dev,
 
    if (bo->flags & NOUVEAU_WS_BO_MAP)
       flags |= NVKMD_MEM_CAN_MAP;
+
+   /* We assume that all discrete GPU maps are coherent.  They're either CPU
+    * memory or WB VRAM maps.  On Tegra, maps are only coherent if the BO is
+    * in NOUVEAU_GEM_DOMAIN_COHERENT.
+    */
+   if ((bo->flags & NOUVEAU_WS_BO_COHERENT) ||
+       dev->base.pdev->dev_info.type != NV_DEVICE_TYPE_SOC)
+      flags |= NVKMD_MEM_COHERENT;
 
    return create_mem_or_close_bo(dev, log_obj, flags, bo,
                                  0 /* va_flags */,
