@@ -262,6 +262,8 @@ class LogFollower:
             prefix = "$ "
             suffix = ""
         elif line["lvl"] == "target" and self.lava_farm != "collabora":
+            if self.lava_farm == "lima":
+                fix_lava_color_log(line)
             # gl_section_fix_gen will output the stored line if it can't find a
             # match for the first split line
             # So we can recover it and put it back to the buffer
@@ -269,6 +271,24 @@ class LogFollower:
                 self._buffer.append(recovered_first_line)
 
         return f'{prefix}{line["msg"]}{suffix}'
+
+
+def fix_lava_color_log(line):
+    """This function is a temporary solution for the color escape codes mangling
+    problem. There is some problem in message passing between the LAVA
+    dispatcher and the device under test (DUT). Here \x1b character is missing
+    before `[:digit::digit:?m` ANSI TTY color codes. When this problem is fixed
+    on the LAVA side, one should remove this function.
+
+    Note: most LAVA farms don't have this problem, except for Lima, which uses
+    an older version of LAVA.
+    """
+    line["msg"] = re.sub(r"(\[\d{1,2}m)", "\x1b" + r"\1", line["msg"])
+    # Also fix ANSI escape codes mangling
+    line["msg"] = re.sub(r"(\[0K)", "\x1b" + r"\1", line["msg"])
+    # Also fix ANSI color codes mangling
+    line["msg"] = re.sub(r"(\[0;3\d{1,2}m)", "\r\x1b" + r"\1", line["msg"])
+
 
 def fix_lava_gitlab_section_log():
     """This function is a temporary solution for the Gitlab section markers
