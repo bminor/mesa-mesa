@@ -249,7 +249,8 @@ nvk_CreateDevice(VkPhysicalDevice physicalDevice,
          goto fail_edb_bview_cache;
 
       result = nvk_heap_init(dev, &dev->event_heap,
-                             NVKMD_MEM_LOCAL, NVKMD_MEM_MAP_WR,
+                             NVKMD_MEM_LOCAL | NVKMD_MEM_COHERENT,
+                             NVKMD_MEM_MAP_WR,
                              0 /* overalloc */, false /* contiguous */);
       if (result != VK_SUCCESS)
          goto fail_shader_heap;
