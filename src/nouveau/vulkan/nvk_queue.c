@@ -213,6 +213,11 @@ nvk_queue_submit_exec(struct nvk_queue *queue,
    VkResult result;
 
    if (submit->command_buffer_count > 0) {
+      nvk_descriptor_table_flush_map(dev, &dev->images);
+      nvk_descriptor_table_flush_map(dev, &dev->samplers);
+      nvk_heap_flush_maps(dev, &dev->shader_heap);
+      assert(dev->event_heap.arena.mem_flags & NVKMD_MEM_COHERENT);
+
       result = nvk_queue_state_update(queue, &queue->state);
       if (result != VK_SUCCESS)
          return result;
