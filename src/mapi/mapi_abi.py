@@ -244,7 +244,7 @@ class ABIPrinter(object):
         fmt = formats[stringify]
         name = ent.name
         if mangle and ent.hidden:
-            name = '_dispatch_stub_' + str(ent.slot)
+            name = '_dispatch_stub_' + str(ent.name)
         return fmt % (prefix, name)
 
     def _c_function_call(self, ent):
@@ -522,7 +522,7 @@ class SharedGLAPIPrinter(GLAPIPrinter):
     def __init__(self, entries):
         super(SharedGLAPIPrinter, self).__init__(entries)
         self.is_shared = True
-        self.prefix = 'shared'
+        self.prefix = ''
 
     def _override_for_api(self, ent):
         ent.hidden = True
