@@ -368,13 +368,9 @@ class ABIPrinter(object):
 
         return '\n\n'.join(noops)
 
-    def c_noop_initializer(self, use_generic):
+    def c_noop_initializer(self):
         """Return an initializer for the noop dispatch table."""
-        entries = [self._c_function(ent, 'noop')
-                for ent in self.entries if not ent.alias]
-        if use_generic:
-            entries = ['noop_generic'] * len(entries)
-
+        entries = [self._c_function(ent, 'noop') for ent in self.entries if not ent.alias]
         pre = self.indent + '(_glapi_proc) '
         return pre + (',\n' + pre).join(entries)
 
@@ -430,21 +426,13 @@ class ABIPrinter(object):
         if self.is_shared:
             print()
             print('#ifdef MAPI_TMP_NOOP_ARRAY')
-            print('#if MESA_DEBUG')
             print()
             print(self.c_noop_functions())
             print()
             print('const _glapi_proc table_noop_array[] = {')
-            print(self.c_noop_initializer(False))
+            print(self.c_noop_initializer())
             print('};')
             print()
-            print('#else /* !MESA_DEBUG */')
-            print()
-            print('const _glapi_proc table_noop_array[] = {')
-            print(self.c_noop_initializer(True))
-            print('};')
-            print()
-            print('#endif /* MESA_DEBUG */')
             print('#undef MAPI_TMP_NOOP_ARRAY')
             print('#endif /* MAPI_TMP_NOOP_ARRAY */')
 

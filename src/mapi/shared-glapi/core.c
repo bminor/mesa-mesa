@@ -38,13 +38,6 @@ noop_warn(const char *name)
    }
 }
 
-static int
-noop_generic(void)
-{
-   noop_warn("function");
-   return 0;
-}
-
 #define MAPI_TMP_NOOP_ARRAY
 #define MAPI_TMP_PUBLIC_STUBS
 

@@ -77,8 +77,7 @@ def generate_defines(functions):
     return text
 
 def generate_noop_array(functions):
-    text = "#ifdef MAPI_TMP_NOOP_ARRAY\n"
-    text += "#if MESA_DEBUG\n\n"
+    text = "#ifdef MAPI_TMP_NOOP_ARRAY\n\n"
 
     for func in functions:
         text += "static {f.rt} GLAPIENTRY noop{f.basename}({f.decArgs})\n".format(f=func)
@@ -97,13 +96,6 @@ def generate_noop_array(functions):
     for func in functions:
         text += "   (_glapi_proc) noop{f.basename},\n".format(f=func)
     text += "};\n\n"
-    text += "#else /* !MESA_DEBUG */\n\n"
-    text += "const _glapi_proc table_noop_array[] = {\n"
-    for i in range(len(functions)):
-        text += "   (_glapi_proc) noop_generic,\n"
-
-    text += "};\n\n"
-    text += "#endif /* MESA_DEBUG */\n"
     text += "#undef MAPI_TMP_NOOP_ARRAY\n"
     text += "#endif /* MAPI_TMP_NOOP_ARRAY */\n"
     return text
