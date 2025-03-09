@@ -1356,7 +1356,7 @@ radv_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCr
       }
    }
 
-   if (!(instance->debug_flags & RADV_DEBUG_NO_IBS))
+   if (pdev->info.has_graphics && !(instance->debug_flags & RADV_DEBUG_NO_IBS))
       radv_create_gfx_preamble(device);
 
    if (!device->vk.disable_internal_cache) {
