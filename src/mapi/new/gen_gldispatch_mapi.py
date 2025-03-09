@@ -87,7 +87,7 @@ def generate_noop_array(functions):
             for arg in func.args:
                 text += " (void) {a.name};".format(a=arg)
             text += "\n"
-        text += "   noop_warn(\"{f.name}\");\n".format(f=func)
+        text += "   _mesa_noop_entrypoint(\"{f.name}\");\n".format(f=func)
         if (func.hasReturn()):
             text += "   return ({f.rt}) 0;\n".format(f=func)
         text += "}\n\n"

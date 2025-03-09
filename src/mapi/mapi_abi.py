@@ -355,7 +355,7 @@ class ABIPrinter(object):
             if ent.params:
                 stmt1 += '\n';
 
-            stmt1 += self.indent + 'noop_warn(%s);' % (
+            stmt1 += self.indent + '_mesa_noop_entrypoint(%s);' % (
                     self._c_function(ent, 'gl', False, True))
 
             if ent.ret:

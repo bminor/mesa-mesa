@@ -735,8 +735,8 @@ update_default_objects(struct gl_context *ctx)
  *
  * \param name  the name of the OpenGL function
  */
-static void
-nop_handler(const char *name)
+void
+_mesa_noop_entrypoint(const char *name)
 {
    GET_CURRENT_CONTEXT(ctx);
    if (ctx) {
@@ -829,7 +829,6 @@ _mesa_alloc_dispatch_table(bool glthread)
    }
 #endif
 
-   _glapi_set_nop_handler(nop_handler);
    return table;
 }
 

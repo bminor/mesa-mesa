@@ -110,6 +110,9 @@ _mesa_share_state(struct gl_context *ctx, struct gl_context *ctxToShare);
 extern struct gl_context *
 _mesa_get_current_context(void);
 
+extern void
+_mesa_noop_entrypoint(const char *name);
+
 /*@}*/
 
 extern void

@@ -12,31 +12,9 @@ struct mapi_stub {
    int slot;
 };
 
-static bool log_noop;
-static _glapi_nop_handler_proc nop_handler = NULL;
-
-static void check_debug_env(void)
-{
-   const char *debug = getenv("MESA_DEBUG");
-   if (!debug)
-      debug = getenv("LIBGL_DEBUG");
-   if (debug && strcmp(debug, "silent") != 0)
-      log_noop = true;
-}
-
-static void
-noop_warn(const char *name)
-{
-   if (nop_handler) {
-      nop_handler(name);
-   } else {
-      static once_flag flag = ONCE_FLAG_INIT;
-      call_once(&flag, check_debug_env);
-
-      if (log_noop)
-         fprintf(stderr, "%s is no-op\n", name);
-   }
-}
+/* Implemented in mesa/main/context.c. */
+void
+_mesa_noop_entrypoint(const char *name);
 
 #define MAPI_TMP_NOOP_ARRAY
 #define MAPI_TMP_PUBLIC_STUBS
@@ -246,12 +224,6 @@ _glapi_new_nop_table(void)
    if (table)
       memcpy(table, table_noop_array, _gloffset_COUNT * sizeof(_glapi_proc));
    return table;
-}
-
-void
-_glapi_set_nop_handler(_glapi_nop_handler_proc func)
-{
-   nop_handler = func;
 }
 
 /**

@@ -127,9 +127,6 @@ _glapi_table_patch(struct _glapi_table *, const char *name, void *wrapper);
 #endif
 
 
-void
-_glapi_set_nop_handler(_glapi_nop_handler_proc func);
-
 /** Return pointer to new dispatch table filled with no-op functions */
 struct _glapi_table *
 _glapi_new_nop_table(void);
