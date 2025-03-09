@@ -577,13 +577,7 @@ class GLAPIPrinter(ABIPrinter):
         pass
 
     def _get_c_header(self):
-        header = """#ifndef _GLAPI_TMP_H_
-#define _GLAPI_TMP_H_
-
-#include "util/glheader.h"
-#endif /* _GLAPI_TMP_H_ */"""
-
-        return header
+        return '#include "util/glheader.h"\n'
 
 class SharedGLAPIPrinter(GLAPIPrinter):
     """Shared GLAPI API Printer"""
@@ -604,12 +598,7 @@ class SharedGLAPIPrinter(GLAPIPrinter):
         ent.handcode = False
 
     def _get_c_header(self):
-        header = """#ifndef _GLAPI_TMP_H_
-#define _GLAPI_TMP_H_
-#include "util/glheader.h"
-#endif /* _GLAPI_TMP_H_ */"""
-
-        return header
+        return '#include "util/glheader.h"\n'
 
 def parse_args():
     printers = ['glapi', 'es1api', 'es2api', 'shared-glapi']
