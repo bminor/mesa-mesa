@@ -535,7 +535,7 @@ nvk_push_descriptor_set_update(struct nvk_device *dev,
 
 static void
 nvk_descriptor_pool_free(struct nvk_descriptor_pool *pool,
-                         uint64_t addr, uint64_t size);
+                         uint64_t offset_B, uint64_t size_B);
 
 static void
 nvk_descriptor_set_destroy(struct nvk_device *dev,
@@ -544,7 +544,7 @@ nvk_descriptor_set_destroy(struct nvk_device *dev,
 {
    list_del(&set->link);
    if (set->size_B > 0)
-      nvk_descriptor_pool_free(pool, set->addr, set->size_B);
+      nvk_descriptor_pool_free(pool, set->mem_offset_B, set->size_B);
    vk_descriptor_set_layout_unref(&dev->vk, &set->layout->vk);
 
    vk_object_free(&dev->vk, NULL, set);
@@ -569,7 +569,7 @@ nvk_destroy_descriptor_pool(struct nvk_device *dev,
    vk_object_free(&dev->vk, pAllocator, pool);
 }
 
-#define HOST_ONLY_ADDR 0xc0ffee0000000000ull
+#define HEAP_START 0xc0ffee0000000000ull
 
 VKAPI_ATTR VkResult VKAPI_CALL
 nvk_CreateDescriptorPool(VkDevice _device,
@@ -640,8 +640,6 @@ nvk_CreateDescriptorPool(VkDevice _device,
             nvk_destroy_descriptor_pool(dev, pAllocator, pool);
             return vk_error(dev, VK_ERROR_OUT_OF_HOST_MEMORY);
          }
-
-         util_vma_heap_init(&pool->heap, HOST_ONLY_ADDR, mem_size);
       } else {
          result = nvkmd_dev_alloc_mapped_mem(dev->nvkmd, &dev->vk.base,
                                              mem_size, 0, NVKMD_MEM_LOCAL,
@@ -656,9 +654,9 @@ nvk_CreateDescriptorPool(VkDevice _device,
           */
          assert(pool->mem->size_B >= mem_size);
          mem_size = pool->mem->size_B;
-
-         util_vma_heap_init(&pool->heap, pool->mem->va->addr, mem_size);
       }
+
+      util_vma_heap_init(&pool->heap, HEAP_START, mem_size);
    } else {
       util_vma_heap_init(&pool->heap, 0, 0);
    }
@@ -672,7 +670,7 @@ nvk_CreateDescriptorPool(VkDevice _device,
 static VkResult
 nvk_descriptor_pool_alloc(struct nvk_descriptor_pool *pool,
                           uint64_t size_B, uint64_t align_B,
-                          uint64_t *addr_out, void **map_out)
+                          uint64_t *offset_B_out)
 {
    assert(size_B > 0);
    assert(size_B % align_B == 0);
@@ -684,39 +682,20 @@ nvk_descriptor_pool_alloc(struct nvk_descriptor_pool *pool,
    if (addr == 0)
       return VK_ERROR_FRAGMENTED_POOL;
 
-   if (pool->host_mem != NULL) {
-      /* In this case, the address is a host address */
-      assert(addr >= HOST_ONLY_ADDR);
-      assert(addr + size_B <= HOST_ONLY_ADDR + pool->mem_size_B);
-      uint64_t offset = addr - HOST_ONLY_ADDR;
-
-      *addr_out = addr;
-      *map_out = pool->host_mem + offset;
-   } else {
-      assert(addr >= pool->mem->va->addr);
-      assert(addr + size_B <= pool->mem->va->addr + pool->mem_size_B);
-      uint64_t offset = addr - pool->mem->va->addr;
-
-      *addr_out = addr;
-      *map_out = pool->mem->map + offset;
-   }
+   assert(addr >= HEAP_START);
+   assert(addr + size_B <= HEAP_START + pool->mem_size_B);
+   *offset_B_out = addr - HEAP_START;
 
    return VK_SUCCESS;
 }
 
 static void
 nvk_descriptor_pool_free(struct nvk_descriptor_pool *pool,
-                         uint64_t addr, uint64_t size_B)
+                         uint64_t offset_B, uint64_t size_B)
 {
    assert(size_B > 0);
-   if (pool->host_mem != NULL) {
-      assert(addr >= HOST_ONLY_ADDR);
-      assert(addr + size_B <= HOST_ONLY_ADDR + pool->mem_size_B);
-   } else {
-      assert(addr >= pool->mem->va->addr);
-      assert(addr + size_B <= pool->mem->va->addr + pool->mem_size_B);
-   }
-   util_vma_heap_free(&pool->heap, addr, size_B);
+   assert(offset_B + size_B <= pool->mem_size_B);
+   util_vma_heap_free(&pool->heap, HEAP_START + offset_B, size_B);
 }
 
 static VkResult
@@ -738,6 +717,7 @@ nvk_descriptor_set_create(struct nvk_device *dev,
    if (!set)
       return vk_error(dev, VK_ERROR_OUT_OF_HOST_MEMORY);
 
+   set->pool = pool;
    set->size_B = layout->non_variable_descriptor_buffer_size;
 
    if (layout->binding_count > 0 &&
@@ -752,10 +732,16 @@ nvk_descriptor_set_create(struct nvk_device *dev,
 
    if (set->size_B > 0) {
       result = nvk_descriptor_pool_alloc(pool, set->size_B, align_B,
-                                         &set->addr, &set->map);
+                                         &set->mem_offset_B);
       if (result != VK_SUCCESS) {
          vk_object_free(&dev->vk, NULL, set);
          return result;
+      }
+
+      if (pool->host_mem != NULL) {
+         set->map = pool->host_mem + set->mem_offset_B;
+      } else {
+         set->map = pool->mem->map + set->mem_offset_B;
       }
    }
 
