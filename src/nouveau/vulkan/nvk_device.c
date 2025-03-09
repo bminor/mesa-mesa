@@ -183,6 +183,7 @@ nvk_CreateDevice(VkPhysicalDevice physicalDevice,
          goto fail_upload;
 
       memset(dev->zero_page->map, 0, 0x1000);
+      nvkmd_mem_sync_map_to_gpu(dev->zero_page, 0, 0x1000);
       nvkmd_mem_unmap(dev->zero_page, 0);
 
       result = nvk_descriptor_table_init(dev, &dev->images,
