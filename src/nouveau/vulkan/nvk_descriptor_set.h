@@ -42,7 +42,7 @@ struct nvk_descriptor_set {
    struct nvk_descriptor_set_layout *layout;
    void *map;
    uint64_t addr;
-   uint32_t size;
+   uint32_t size_B;
 
    union nvk_buffer_descriptor dynamic_buffers[];
 };
@@ -55,7 +55,7 @@ nvk_descriptor_set_addr(const struct nvk_descriptor_set *set)
 {
    return (struct nvk_buffer_address) {
       .base_addr = set->addr,
-      .size = set->size,
+      .size = set->size_B,
    };
 }
 

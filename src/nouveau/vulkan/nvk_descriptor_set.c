@@ -28,16 +28,16 @@ align_u32(uint32_t v, uint32_t a)
 
 static inline void *
 desc_ubo_data(struct nvk_descriptor_set *set, uint32_t binding,
-              uint32_t elem, uint32_t *size_out)
+              uint32_t elem, uint32_t *size_B_out)
 {
    const struct nvk_descriptor_set_binding_layout *binding_layout =
       &set->layout->binding[binding];
 
    uint32_t offset = binding_layout->offset + elem * binding_layout->stride;
-   assert(offset < set->size);
+   assert(offset < set->size_B);
 
-   if (size_out != NULL)
-      *size_out = set->size - offset;
+   if (size_B_out != NULL)
+      *size_B_out = set->size_B - offset;
 
    return (char *)set->map + offset;
 }
@@ -473,7 +473,7 @@ nvk_push_descriptor_set_update(struct nvk_device *dev,
    assert(layout->non_variable_descriptor_buffer_size < sizeof(push_set->data));
    struct nvk_descriptor_set set = {
       .layout = layout,
-      .size = sizeof(push_set->data),
+      .size_B = sizeof(push_set->data),
       .map = push_set->data,
    };
 
@@ -543,8 +543,8 @@ nvk_descriptor_set_destroy(struct nvk_device *dev,
                            struct nvk_descriptor_set *set)
 {
    list_del(&set->link);
-   if (set->size > 0)
-      nvk_descriptor_pool_free(pool, set->addr, set->size);
+   if (set->size_B > 0)
+      nvk_descriptor_pool_free(pool, set->addr, set->size_B);
    vk_descriptor_set_layout_unref(&dev->vk, &set->layout->vk);
 
    vk_object_free(&dev->vk, NULL, set);
@@ -671,30 +671,30 @@ nvk_CreateDescriptorPool(VkDevice _device,
 
 static VkResult
 nvk_descriptor_pool_alloc(struct nvk_descriptor_pool *pool,
-                          uint64_t size, uint64_t alignment,
+                          uint64_t size_B, uint64_t align_B,
                           uint64_t *addr_out, void **map_out)
 {
-   assert(size > 0);
-   assert(size % alignment == 0);
+   assert(size_B > 0);
+   assert(size_B % align_B == 0);
 
-   if (size > pool->heap.free_size)
+   if (size_B > pool->heap.free_size)
       return VK_ERROR_OUT_OF_POOL_MEMORY;
 
-   uint64_t addr = util_vma_heap_alloc(&pool->heap, size, alignment);
+   uint64_t addr = util_vma_heap_alloc(&pool->heap, size_B, align_B);
    if (addr == 0)
       return VK_ERROR_FRAGMENTED_POOL;
 
    if (pool->host_mem != NULL) {
       /* In this case, the address is a host address */
       assert(addr >= HOST_ONLY_ADDR);
-      assert(addr + size <= HOST_ONLY_ADDR + pool->mem_size_B);
+      assert(addr + size_B <= HOST_ONLY_ADDR + pool->mem_size_B);
       uint64_t offset = addr - HOST_ONLY_ADDR;
 
       *addr_out = addr;
       *map_out = pool->host_mem + offset;
    } else {
       assert(addr >= pool->mem->va->addr);
-      assert(addr + size <= pool->mem->va->addr + pool->mem_size_B);
+      assert(addr + size_B <= pool->mem->va->addr + pool->mem_size_B);
       uint64_t offset = addr - pool->mem->va->addr;
 
       *addr_out = addr;
@@ -706,17 +706,17 @@ nvk_descriptor_pool_alloc(struct nvk_descriptor_pool *pool,
 
 static void
 nvk_descriptor_pool_free(struct nvk_descriptor_pool *pool,
-                         uint64_t addr, uint64_t size)
+                         uint64_t addr, uint64_t size_B)
 {
-   assert(size > 0);
+   assert(size_B > 0);
    if (pool->host_mem != NULL) {
       assert(addr >= HOST_ONLY_ADDR);
-      assert(addr + size <= HOST_ONLY_ADDR + pool->mem_size_B);
+      assert(addr + size_B <= HOST_ONLY_ADDR + pool->mem_size_B);
    } else {
       assert(addr >= pool->mem->va->addr);
-      assert(addr + size <= pool->mem->va->addr + pool->mem_size_B);
+      assert(addr + size_B <= pool->mem->va->addr + pool->mem_size_B);
    }
-   util_vma_heap_free(&pool->heap, addr, size);
+   util_vma_heap_free(&pool->heap, addr, size_B);
 }
 
 static VkResult
@@ -738,20 +738,20 @@ nvk_descriptor_set_create(struct nvk_device *dev,
    if (!set)
       return vk_error(dev, VK_ERROR_OUT_OF_HOST_MEMORY);
 
-   set->size = layout->non_variable_descriptor_buffer_size;
+   set->size_B = layout->non_variable_descriptor_buffer_size;
 
    if (layout->binding_count > 0 &&
        (layout->binding[layout->binding_count - 1].flags &
         VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT)) {
       uint32_t stride = layout->binding[layout->binding_count-1].stride;
-      set->size += stride * variable_count;
+      set->size_B += stride * variable_count;
    }
 
-   uint32_t alignment = nvk_min_cbuf_alignment(&pdev->info);
-   set->size = align64(set->size, alignment);
+   uint32_t align_B = nvk_min_cbuf_alignment(&pdev->info);
+   set->size_B = align64(set->size_B, align_B);
 
-   if (set->size > 0) {
-      result = nvk_descriptor_pool_alloc(pool, set->size, alignment,
+   if (set->size_B > 0) {
+      result = nvk_descriptor_pool_alloc(pool, set->size_B, align_B,
                                          &set->addr, &set->map);
       if (result != VK_SUCCESS) {
          vk_object_free(&dev->vk, NULL, set);
@@ -1013,7 +1013,7 @@ nvk_push_descriptor_set_update_template(
 {
    struct nvk_descriptor_set tmp_set = {
       .layout = layout,
-      .size = sizeof(push_set->data),
+      .size_B = sizeof(push_set->data),
       .map = push_set->data,
    };
    nvk_descriptor_set_write_template(dev, &tmp_set, template, data);
