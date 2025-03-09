@@ -148,3 +148,18 @@ libgl = shared_library(
   darwin_versions : '4.0.0',
   install : true,
 )
+
+if with_symbols_check
+  libgl_symbols_file = with_glvnd ? 'glvnd-symbols.txt' : 'libgl-symbols.txt'
+
+  test(
+    'libGL-ABI-check',
+    symbols_check,
+    args : [
+      '--lib', libgl,
+      '--symbols-file', files(libgl_symbols_file),
+      symbols_check_args,
+    ],
+    suite : ['glx'],
+  )
+endif
