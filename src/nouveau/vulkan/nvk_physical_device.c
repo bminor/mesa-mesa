@@ -873,7 +873,8 @@ nvk_get_device_properties(const struct nvk_instance *instance,
       .standardSampleLocations = true,
       .optimalBufferCopyOffsetAlignment = 1,
       .optimalBufferCopyRowPitchAlignment = 1,
-      .nonCoherentAtomSize = 64,
+      /* Default to 64 if we don't know the atom size */
+      .nonCoherentAtomSize = info->nc_atom_size_B ? info->nc_atom_size_B : 64,
 
       /* Vulkan 1.0 sparse properties */
       .sparseResidencyNonResidentStrict = true,

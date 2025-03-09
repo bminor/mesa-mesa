@@ -389,6 +389,45 @@ nvk_FlushMappedMemoryRanges(VkDevice device,
                             uint32_t memoryRangeCount,
                             const VkMappedMemoryRange *pMemoryRanges)
 {
+   VK_FROM_HANDLE(nvk_device, dev, device);
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
+   const uint32_t nc_atom_size_B = pdev->info.nc_atom_size_B;
+
+   for (uint32_t i = 0; i < memoryRangeCount; i++) {
+      const VkMappedMemoryRange *range = &pMemoryRanges[i];
+      VK_FROM_HANDLE(nvk_device_memory, mem, range->memory);
+
+      /* From the Vulkan 1.4.305 spec:
+       *
+       *    "offset must be a multiple of
+       *    VkPhysicalDeviceLimits::nonCoherentAtomSize"
+       */
+      assert(range->offset % nc_atom_size_B == 0);
+
+      /* From the Vulkan 1.4.305 spec:
+       *
+       *    "If size is equal to VK_WHOLE_SIZE, the end of the current mapping
+       *    of memory must either be a multiple of
+       *    VkPhysicalDeviceLimits::nonCoherentAtomSize bytes from the
+       *    beginning of the memory object, or be equal to the end of the
+       *    memory object"
+       *
+       *    "If size is not equal to VK_WHOLE_SIZE, size must either be a
+       *    multiple of VkPhysicalDeviceLimits::nonCoherentAtomSize, or offset
+       *    plus size must equal the size of memory"
+       *
+       * Ensure that either the size is aligned or the range is the full
+       * object.
+       */
+      VkDeviceSize size =
+         vk_device_memory_range(&mem->vk, range->offset, range->size);
+      assert(size % nc_atom_size_B == 0 ||
+             (range->offset + size) == mem->vk.size);
+      size = ALIGN_POT(size, mem->mem->dev->pdev->dev_info.nc_atom_size_B);
+
+      nvkmd_mem_sync_client_map_to_gpu(mem->mem, range->offset, size);
+   }
+
    return VK_SUCCESS;
 }
 
@@ -397,6 +436,45 @@ nvk_InvalidateMappedMemoryRanges(VkDevice device,
                                  uint32_t memoryRangeCount,
                                  const VkMappedMemoryRange *pMemoryRanges)
 {
+   VK_FROM_HANDLE(nvk_device, dev, device);
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
+   const uint32_t nc_atom_size_B = pdev->info.nc_atom_size_B;
+
+   for (uint32_t i = 0; i < memoryRangeCount; i++) {
+      const VkMappedMemoryRange *range = &pMemoryRanges[i];
+      VK_FROM_HANDLE(nvk_device_memory, mem, range->memory);
+
+      /* From the Vulkan 1.4.305 spec:
+       *
+       *    "offset must be a multiple of
+       *    VkPhysicalDeviceLimits::nonCoherentAtomSize"
+       */
+      assert(range->offset % nc_atom_size_B == 0);
+
+      /* From the Vulkan 1.4.305 spec:
+       *
+       *    "If size is equal to VK_WHOLE_SIZE, the end of the current mapping
+       *    of memory must either be a multiple of
+       *    VkPhysicalDeviceLimits::nonCoherentAtomSize bytes from the
+       *    beginning of the memory object, or be equal to the end of the
+       *    memory object"
+       *
+       *    "If size is not equal to VK_WHOLE_SIZE, size must either be a
+       *    multiple of VkPhysicalDeviceLimits::nonCoherentAtomSize, or offset
+       *    plus size must equal the size of memory"
+       *
+       * Ensure that either the size is aligned or the range is the full
+       * object.
+       */
+      VkDeviceSize size =
+         vk_device_memory_range(&mem->vk, range->offset, range->size);
+      assert(size % nc_atom_size_B == 0 ||
+             (range->offset + size) == mem->vk.size);
+      size = ALIGN_POT(size, mem->mem->dev->pdev->dev_info.nc_atom_size_B);
+
+      nvkmd_mem_sync_client_map_from_gpu(mem->mem, range->offset, size);
+   }
+
    return VK_SUCCESS;
 }
 
