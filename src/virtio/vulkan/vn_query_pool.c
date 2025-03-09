@@ -121,17 +121,20 @@ vn_CreateQueryPool(VkDevice device,
     * value may either wrap or saturate.
     *
     * We detect the renderer side implementation to align with the
-    * implementation specific behavior.
+    * implementation specific behavior when maintenance7 is not enabled.
     */
-   switch (dev->physical_device->renderer_driver_id) {
-   case VK_DRIVER_ID_ARM_PROPRIETARY:
-   case VK_DRIVER_ID_MESA_LLVMPIPE:
-   case VK_DRIVER_ID_MESA_TURNIP:
-      pool->saturate_on_overflow = true;
-      break;
-   default:
-      break;
-   };
+   const struct vk_features *app_feats = &dev->base.vk.enabled_features;
+   if (!app_feats->maintenance7) {
+      switch (dev->physical_device->renderer_driver_id) {
+      case VK_DRIVER_ID_ARM_PROPRIETARY:
+      case VK_DRIVER_ID_MESA_LLVMPIPE:
+      case VK_DRIVER_ID_MESA_TURNIP:
+         pool->saturate_on_overflow = true;
+         break;
+      default:
+         break;
+      };
+   }
 
    VkQueryPool pool_handle = vn_query_pool_to_handle(pool);
    vn_async_vkCreateQueryPool(dev->primary_ring, device, pCreateInfo, NULL,

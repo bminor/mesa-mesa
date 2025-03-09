@@ -53,6 +53,13 @@ struct vn_image_format_properties_cache {
    } debug;
 };
 
+struct vn_layered_api_properties {
+   VkPhysicalDeviceLayeredApiPropertiesKHR api;
+   VkPhysicalDeviceLayeredApiVulkanPropertiesKHR vk;
+   VkPhysicalDeviceDriverProperties driver;
+   VkPhysicalDeviceIDProperties id;
+};
+
 struct vn_physical_device {
    struct vn_physical_device_base base;
 
@@ -65,6 +72,9 @@ struct vn_physical_device {
     * version we can use internally.
     */
    uint32_t renderer_version;
+
+   /* For maintenance7 layered api properties. */
+   struct vn_layered_api_properties layered_properties;
 
    /* Between the driver and the app, base.base.supported_extensions is what
     * we advertise.

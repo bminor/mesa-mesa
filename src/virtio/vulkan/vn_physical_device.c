@@ -16,6 +16,7 @@
 #include "util/mesa-sha1.h"
 #include "venus-protocol/vn_protocol_driver_device.h"
 #include "vk_android.h"
+#include "vk_common_entrypoints.h"
 
 #include "vn_android.h"
 #include "vn_instance.h"
@@ -56,6 +57,25 @@
    do {                                                                      \
       if (ext_cond)                                                          \
          VN_SET_VK_PROPS(vk_props, vk_struct);                               \
+   } while (0)
+
+/**
+ * Copy vk struct without sType or pNext.
+ */
+static inline void
+_vn_copy_struct_guts(VkBaseOutStructure *dst,
+                     const VkBaseInStructure *src,
+                     size_t struct_size)
+{
+   STATIC_ASSERT(sizeof(*dst) == sizeof(*src));
+   memcpy(dst + 1, src + 1, struct_size - sizeof(VkBaseOutStructure));
+}
+
+#define VN_COPY_STRUCT_GUTS(_dst, _src, _struct_size)                        \
+   do {                                                                      \
+      _vn_copy_struct_guts((VkBaseOutStructure *)(_dst),                     \
+                           (const VkBaseInStructure *)(_src),                \
+                           (_struct_size));                                  \
    } while (0)
 
 static void
@@ -159,6 +179,7 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
       VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR
          fragment_shader_barycentric;
       VkPhysicalDeviceFragmentShadingRateFeaturesKHR fragment_shading_rate;
+      VkPhysicalDeviceMaintenance7FeaturesKHR maintenance_7;
       VkPhysicalDeviceRayQueryFeaturesKHR ray_query;
       VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR
          ray_tracing_maintenance_1;
@@ -315,6 +336,7 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
    VN_ADD_PNEXT_EXT(feats2, DEPTH_CLAMP_ZERO_ONE_FEATURES_KHR, local_feats.depth_clamp_zero_one, exts->KHR_depth_clamp_zero_one || exts->EXT_depth_clamp_zero_one);
    VN_ADD_PNEXT_EXT(feats2, FRAGMENT_SHADER_BARYCENTRIC_FEATURES_KHR, local_feats.fragment_shader_barycentric, exts->KHR_fragment_shader_barycentric);
    VN_ADD_PNEXT_EXT(feats2, FRAGMENT_SHADING_RATE_FEATURES_KHR, local_feats.fragment_shading_rate, exts->KHR_fragment_shading_rate);
+   VN_ADD_PNEXT_EXT(feats2, MAINTENANCE_7_FEATURES_KHR, local_feats.maintenance_7, exts->KHR_maintenance7);
    VN_ADD_PNEXT_EXT(feats2, RAY_QUERY_FEATURES_KHR, local_feats.ray_query, exts->KHR_ray_query);
    VN_ADD_PNEXT_EXT(feats2, RAY_TRACING_MAINTENANCE_1_FEATURES_KHR, local_feats.ray_tracing_maintenance_1, exts->KHR_ray_tracing_maintenance1);
    VN_ADD_PNEXT_EXT(feats2, RAY_TRACING_PIPELINE_FEATURES_KHR, local_feats.ray_tracing_pipeline, exts->KHR_ray_tracing_pipeline);
@@ -564,6 +586,7 @@ vn_physical_device_init_properties(struct vn_physical_device *physical_dev)
       VkPhysicalDeviceFragmentShaderBarycentricPropertiesKHR
          fragment_shader_barycentric;
       VkPhysicalDeviceFragmentShadingRatePropertiesKHR fragment_shading_rate;
+      VkPhysicalDeviceMaintenance7PropertiesKHR maintenance_7;
       VkPhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_pipeline;
 
       /* EXT */
@@ -657,6 +680,7 @@ vn_physical_device_init_properties(struct vn_physical_device *physical_dev)
    VN_ADD_PNEXT_EXT(props2, COMPUTE_SHADER_DERIVATIVES_PROPERTIES_KHR, local_props.compute_shader_derivatives, exts->KHR_compute_shader_derivatives);
    VN_ADD_PNEXT_EXT(props2, FRAGMENT_SHADER_BARYCENTRIC_PROPERTIES_KHR, local_props.fragment_shader_barycentric, exts->KHR_fragment_shader_barycentric);
    VN_ADD_PNEXT_EXT(props2, FRAGMENT_SHADING_RATE_PROPERTIES_KHR, local_props.fragment_shading_rate, exts->KHR_fragment_shading_rate);
+   VN_ADD_PNEXT_EXT(props2, MAINTENANCE_7_PROPERTIES_KHR, local_props.maintenance_7, exts->KHR_maintenance7);
    VN_ADD_PNEXT_EXT(props2, RAY_TRACING_PIPELINE_PROPERTIES_KHR, local_props.ray_tracing_pipeline, exts->KHR_ray_tracing_pipeline);
 
    /* EXT */
@@ -737,6 +761,7 @@ vn_physical_device_init_properties(struct vn_physical_device *physical_dev)
    VN_SET_VK_PROPS_EXT(props, &local_props.compute_shader_derivatives, exts->KHR_compute_shader_derivatives);
    VN_SET_VK_PROPS_EXT(props, &local_props.fragment_shader_barycentric, exts->KHR_fragment_shader_barycentric);
    VN_SET_VK_PROPS_EXT(props, &local_props.fragment_shading_rate, exts->KHR_fragment_shading_rate);
+   VN_SET_VK_PROPS_EXT(props, &local_props.maintenance_7, exts->KHR_maintenance7);
    VN_SET_VK_PROPS_EXT(props, &local_props.ray_tracing_pipeline, exts->KHR_ray_tracing_pipeline);
 
    /* EXT */
@@ -756,6 +781,41 @@ vn_physical_device_init_properties(struct vn_physical_device *physical_dev)
    VN_SET_VK_PROPS_EXT(props, &local_props.vertex_attribute_divisor_ext, !exts->KHR_vertex_attribute_divisor && exts->EXT_vertex_attribute_divisor);
 
    /* clang-format on */
+
+   /* maint7 layered api props will be filled upon query time */
+   if (exts->KHR_maintenance7) {
+      struct vn_layered_api_properties *layer =
+         &physical_dev->layered_properties;
+
+      /* VkPhysicalDeviceLayeredApiPropertiesKHR */
+      layer->api.vendorID = props->vendorID;
+      layer->api.deviceID = props->deviceID;
+      layer->api.layeredAPI = VK_PHYSICAL_DEVICE_LAYERED_API_VULKAN_KHR;
+      strcpy(layer->api.deviceName, props->deviceName);
+
+      /* VkPhysicalDeviceLayeredApiVulkanPropertiesKHR */
+      layer->vk.properties.properties = props2.properties;
+      memset(&layer->vk.properties.properties.limits, 0,
+             sizeof(layer->vk.properties.properties.limits));
+      memset(&layer->vk.properties.properties.sparseProperties, 0,
+             sizeof(layer->vk.properties.properties.sparseProperties));
+
+      /* VkPhysicalDeviceDriverProperties */
+      layer->driver.driverID = props->driverID;
+      strcpy(layer->driver.driverName, props->driverName);
+      strcpy(layer->driver.driverInfo, props->driverInfo);
+      layer->driver.conformanceVersion = props->conformanceVersion;
+
+      /* VkPhysicalDeviceIDProperties */
+      memcpy(layer->id.deviceUUID, props->deviceUUID,
+             sizeof(props->deviceUUID));
+      memcpy(layer->id.driverUUID, props->driverUUID,
+             sizeof(props->driverUUID));
+      memcpy(layer->id.deviceLUID, props->deviceLUID,
+             sizeof(props->deviceLUID));
+      layer->id.deviceNodeMask = props->deviceNodeMask;
+      layer->id.deviceLUIDValid = props->deviceLUIDValid;
+   }
 
    /* initialize native properties */
 
@@ -1261,6 +1321,9 @@ vn_physical_device_get_passthrough_extensions(
       .KHR_depth_clamp_zero_one = true,
       .KHR_fragment_shader_barycentric = true,
       .KHR_fragment_shading_rate = true,
+      .KHR_maintenance7 =
+         physical_dev->renderer_version >= VK_API_VERSION_1_2 ||
+         physical_dev->renderer_extensions.KHR_driver_properties,
       .KHR_pipeline_library = true,
       .KHR_ray_query = physical_dev->ray_tracing,
       .KHR_ray_tracing_maintenance1 = physical_dev->ray_tracing,
@@ -1958,6 +2021,55 @@ vn_EnumerateDeviceLayerProperties(VkPhysicalDevice physicalDevice,
 {
    *pPropertyCount = 0;
    return VK_SUCCESS;
+}
+
+void
+vn_GetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
+                                VkPhysicalDeviceProperties2 *pProperties)
+{
+   struct vn_physical_device *physical_dev =
+      vn_physical_device_from_handle(physicalDevice);
+   const struct vn_layered_api_properties *layered_props =
+      &physical_dev->layered_properties;
+
+   vk_common_GetPhysicalDeviceProperties2(physicalDevice, pProperties);
+
+   /* Properly fill maint7 layered api properties. */
+   VkPhysicalDeviceLayeredApiPropertiesListKHR *layered_props_list =
+      vk_find_struct(pProperties->pNext,
+                     PHYSICAL_DEVICE_LAYERED_API_PROPERTIES_LIST_KHR);
+   if (!layered_props_list)
+      return;
+
+   layered_props_list->layeredApiCount = 1;
+   if (!layered_props_list->pLayeredApis)
+      return;
+
+   VN_COPY_STRUCT_GUTS(layered_props_list->pLayeredApis, &layered_props->api,
+                       sizeof(layered_props->api));
+
+   VkPhysicalDeviceLayeredApiVulkanPropertiesKHR *layered_vk_props =
+      vk_find_struct(layered_props_list->pLayeredApis->pNext,
+                     PHYSICAL_DEVICE_LAYERED_API_VULKAN_PROPERTIES_KHR);
+   if (!layered_vk_props)
+      return;
+
+   VN_COPY_STRUCT_GUTS(layered_vk_props, &layered_props->vk,
+                       sizeof(layered_props->vk));
+   vk_foreach_struct(layered_vk_pnext, layered_vk_props->properties.pNext) {
+      switch (layered_vk_pnext->sType) {
+      case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES:
+         VN_COPY_STRUCT_GUTS(layered_vk_pnext, &layered_props->driver,
+                             sizeof(layered_props->driver));
+         break;
+      case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES:
+         VN_COPY_STRUCT_GUTS(layered_vk_pnext, &layered_props->id,
+                             sizeof(layered_props->id));
+         break;
+      default:
+         break;
+      }
+   }
 }
 
 static struct vn_format_properties_entry *
