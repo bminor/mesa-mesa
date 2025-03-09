@@ -32,6 +32,8 @@ struct nvk_descriptor_writer {
    struct nvk_descriptor_set *set;
    void *set_map;
    uint32_t set_size_B;
+   uint32_t dirty_start;
+   uint32_t dirty_end;
 };
 
 static void
@@ -40,6 +42,8 @@ nvk_descriptor_writer_init(const struct nvk_physical_device *pdev,
 {
    *w = (struct nvk_descriptor_writer) {
       .pdev = pdev,
+      .dirty_start = UINT32_MAX,
+      .dirty_end = 0,
    };
 }
 
@@ -69,7 +73,32 @@ nvk_descriptor_writer_init_set(const struct nvk_physical_device *pdev,
 
 static void
 nvk_descriptor_writer_finish(struct nvk_descriptor_writer *w)
-{ }
+{
+   if (w->set != NULL && w->set->pool->mem != NULL &&
+       w->dirty_start < w->dirty_end) {
+
+      /* Our flush needs to be aligned */
+      uint32_t align_B = w->pdev->info.nc_atom_size_B;
+      w->dirty_start = ROUND_DOWN_TO(w->dirty_start, align_B);
+      w->dirty_end = align(w->dirty_end, align_B);
+
+      nvkmd_mem_sync_map_to_gpu(w->set->pool->mem,
+                                w->set->mem_offset_B + w->dirty_start,
+                                w->dirty_end - w->dirty_start);
+   }
+}
+
+static void
+nvk_descriptor_writer_next_set(struct nvk_descriptor_writer *w,
+                               struct nvk_descriptor_set *set)
+{
+   const struct nvk_physical_device *pdev = w->pdev;
+
+   if (w->set != NULL && w->set != set)
+      nvk_descriptor_writer_finish(w);
+
+   nvk_descriptor_writer_init_set(pdev, w, set);
+}
 
 static inline void *
 desc_ubo_data(struct nvk_descriptor_writer *w, uint32_t binding,
@@ -80,6 +109,9 @@ desc_ubo_data(struct nvk_descriptor_writer *w, uint32_t binding,
 
    uint32_t offset = binding_layout->offset + elem * binding_layout->stride;
    assert(offset + elem_size_B <= w->set_size_B);
+
+   w->dirty_start = MIN2(w->dirty_start, offset);
+   w->dirty_end = MAX2(w->dirty_end, offset + elem_size_B);
 
    return (char *)w->set_map + offset;
 }
@@ -382,12 +414,14 @@ nvk_UpdateDescriptorSets(VkDevice device,
    VK_FROM_HANDLE(nvk_device, dev, device);
    const struct nvk_physical_device *pdev = nvk_device_physical(dev);
 
+   struct nvk_descriptor_writer w;
+   nvk_descriptor_writer_init(pdev, &w);
+
    for (uint32_t i = 0; i < descriptorWriteCount; i++) {
       const VkWriteDescriptorSet *write = &pDescriptorWrites[i];
       VK_FROM_HANDLE(nvk_descriptor_set, set, write->dstSet);
 
-      struct nvk_descriptor_writer w;
-      nvk_descriptor_writer_init_set(pdev, &w, set);
+      nvk_descriptor_writer_next_set(&w, set);
 
       switch (write->descriptorType) {
       case VK_DESCRIPTOR_TYPE_SAMPLER:
@@ -473,10 +507,11 @@ nvk_UpdateDescriptorSets(VkDevice device,
       VK_FROM_HANDLE(nvk_descriptor_set, src, copy->srcSet);
       VK_FROM_HANDLE(nvk_descriptor_set, dst, copy->dstSet);
 
-      /* One of these is actually a reader */
-      struct nvk_descriptor_writer r, w;
+      nvk_descriptor_writer_next_set(&w, dst);
+
+      /* This one is actually a reader */
+      struct nvk_descriptor_writer r;
       nvk_descriptor_writer_init_set(pdev, &r, src);
-      nvk_descriptor_writer_init_set(pdev, &w, dst);
 
       const struct nvk_descriptor_set_binding_layout *src_binding_layout =
          &src->layout->binding[copy->srcBinding];
@@ -505,9 +540,9 @@ nvk_UpdateDescriptorSets(VkDevice device,
                       &src->dynamic_buffers[src_dyn_start],
                       copy->descriptorCount);
       }
-
-      nvk_descriptor_writer_finish(&w);
    }
+
+   nvk_descriptor_writer_finish(&w);
 }
 
 void
@@ -619,6 +654,13 @@ nvk_destroy_descriptor_pool(struct nvk_device *dev,
 
 #define HEAP_START 0xc0ffee0000000000ull
 
+static uint32_t
+min_set_align_B(const struct nvk_physical_device *pdev)
+{
+   const uint32_t min_cbuf_alignment = nvk_min_cbuf_alignment(&pdev->info);
+   return MAX2(min_cbuf_alignment, pdev->info.nc_atom_size_B);
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL
 nvk_CreateDescriptorPool(VkDevice _device,
                          const VkDescriptorPoolCreateInfo *pCreateInfo,
@@ -678,7 +720,7 @@ nvk_CreateDescriptorPool(VkDevice _device,
     * conservative here.)  Allocate enough extra space that we can chop it
     * into maxSets pieces and align each one of them to 32B.
     */
-   mem_size += nvk_min_cbuf_alignment(&pdev->info) * pCreateInfo->maxSets;
+   mem_size += min_set_align_B(pdev) * pCreateInfo->maxSets;
 
    if (mem_size > 0) {
       if (pCreateInfo->flags & VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT) {
@@ -775,7 +817,7 @@ nvk_descriptor_set_create(struct nvk_device *dev,
       set->size_B += stride * variable_count;
    }
 
-   uint32_t align_B = nvk_min_cbuf_alignment(&pdev->info);
+   uint32_t align_B = min_set_align_B(pdev);
    set->size_B = align64(set->size_B, align_B);
 
    if (set->size_B > 0) {
