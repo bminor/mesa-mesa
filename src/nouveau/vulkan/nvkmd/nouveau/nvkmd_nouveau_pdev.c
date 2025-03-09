@@ -6,6 +6,7 @@
 #include "nvkmd_nouveau.h"
 
 #include "nouveau_device.h"
+#include "util/cache_ops.h"
 #include "util/os_misc.h"
 #include "util/drm_is_nouveau.h"
 #include "vk_log.h"
@@ -99,6 +100,9 @@ nvkmd_nouveau_try_create_pdev(struct _drmDevice *drm_device,
       .has_map_fixed = true,
       .has_overmap = true,
    };
+
+   /* We get this ourselves */
+   pdev->base.dev_info.nc_atom_size_B = util_cache_granularity();
 
    /* Nouveau uses the OS page size for all pages, regardless of whether they
     * come from VRAM or system RAM.

@@ -6,8 +6,11 @@
 #include "nvkmd.h"
 #include "nouveau/nvkmd_nouveau.h"
 #include "nv_push.h"
+#include "util/cache_ops.h"
+#include "util/u_math.h"
 
 #include <inttypes.h>
+#include <unistd.h>
 
 static void
 nvkmd_dev_add_mem(struct nvkmd_dev *dev,
@@ -442,5 +445,43 @@ nvkmd_mem_unmap(struct nvkmd_mem *mem, enum nvkmd_mem_map_flags flags)
          mem->map = NULL;
       }
       simple_mtx_unlock(&mem->map_mutex);
+   }
+}
+
+void
+nvkmd_mem_sync_to_gpu(struct nvkmd_mem *mem, bool client_map,
+                      uint64_t offset_B, uint64_t range_B)
+{
+   if (mem->flags & NVKMD_MEM_COHERENT)
+      return;
+
+   const uint32_t atom_size_B = mem->dev->pdev->dev_info.nc_atom_size_B;
+   assert(util_is_aligned(offset_B, atom_size_B));
+   assert(util_is_aligned(range_B, atom_size_B));
+
+   if (util_has_cache_ops()) {
+      void *map = client_map ? mem->client_map : mem->map;
+      util_flush_range(map + offset_B, range_B);
+   } else {
+      mem->ops->sync_to_gpu(mem, offset_B, range_B);
+   }
+}
+
+void
+nvkmd_mem_sync_from_gpu(struct nvkmd_mem *mem, bool client_map,
+                        uint64_t offset_B, uint64_t range_B)
+{
+   if (mem->flags & NVKMD_MEM_COHERENT)
+      return;
+
+   const uint32_t atom_size_B = mem->dev->pdev->dev_info.nc_atom_size_B;
+   assert(util_is_aligned(offset_B, atom_size_B));
+   assert(util_is_aligned(range_B, atom_size_B));
+
+   if (util_has_cache_ops()) {
+      void *map = client_map ? mem->client_map : mem->map;
+      util_flush_inval_range(map + offset_B, range_B);
+   } else {
+      mem->ops->sync_from_gpu(mem, offset_B, range_B);
    }
 }

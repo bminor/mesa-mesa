@@ -224,6 +224,12 @@ struct nvkmd_mem_ops {
                        enum nvkmd_mem_map_flags flags,
                        void *map);
 
+   void (*sync_to_gpu)(struct nvkmd_mem *mem,
+                       uint64_t offset_B, uint64_t range_B);
+
+   void (*sync_from_gpu)(struct nvkmd_mem *mem,
+                         uint64_t offset_B, uint64_t range_B);
+
    VkResult (*export_dma_buf)(struct nvkmd_mem *mem,
                               struct vk_object_base *log_obj,
                               int *fd_out);
@@ -505,6 +511,39 @@ nvkmd_mem_overmap(struct nvkmd_mem *mem, struct vk_object_base *log_obj,
       mem->client_map = NULL;
 
    return result;
+}
+
+void nvkmd_mem_sync_to_gpu(struct nvkmd_mem *mem, bool client_map,
+                           uint64_t offset_B, uint64_t range_B);
+void nvkmd_mem_sync_from_gpu(struct nvkmd_mem *mem, bool client_map,
+                             uint64_t offset_B, uint64_t range_B);
+
+static inline void
+nvkmd_mem_sync_map_to_gpu(struct nvkmd_mem *mem,
+                          uint64_t offset_B, uint64_t range_B)
+{
+   nvkmd_mem_sync_to_gpu(mem, false, offset_B, range_B);
+}
+
+static inline void
+nvkmd_mem_sync_client_map_to_gpu(struct nvkmd_mem *mem,
+                                 uint64_t offset_B, uint64_t range_B)
+{
+   nvkmd_mem_sync_to_gpu(mem, true, offset_B, range_B);
+}
+
+static inline void
+nvkmd_mem_sync_map_from_gpu(struct nvkmd_mem *mem,
+                            uint64_t offset_B, uint64_t range_B)
+{
+   nvkmd_mem_sync_from_gpu(mem, false, offset_B, range_B);
+}
+
+static inline void
+nvkmd_mem_sync_client_map_from_gpu(struct nvkmd_mem *mem,
+                                   uint64_t offset_B, uint64_t range_B)
+{
+   nvkmd_mem_sync_from_gpu(mem, true, offset_B, range_B);
 }
 
 static inline VkResult MUST_CHECK
