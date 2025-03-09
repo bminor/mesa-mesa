@@ -237,6 +237,7 @@ nvk_AllocateMemory(VkDevice device,
             goto fail_mem;
 
          memset(map, use_zero ? 0 : 0xF1, mem->mem->size_B);
+         nvkmd_mem_sync_map_to_gpu(mem->mem, 0, mem->mem->size_B);
          nvkmd_mem_unmap(mem->mem, 0);
       } else {
          result = nvk_upload_queue_fill(dev, &dev->upload,
