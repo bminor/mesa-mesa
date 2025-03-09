@@ -620,7 +620,7 @@ declare_shader_args(const struct radv_device *device, const struct radv_graphics
          ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.scratch_offset);
       }
 
-      if (gfx_level >= GFX11) {
+      if (gfx_level >= GFX11 || (!pdev->info.has_graphics && pdev->info.family >= CHIP_MI200)) {
          ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.local_invocation_ids_packed);
       } else {
          ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.local_invocation_id_x);
