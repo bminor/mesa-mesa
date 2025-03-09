@@ -274,19 +274,26 @@ class LogFollower:
 
 
 def fix_lava_color_log(line):
-    """This function is a temporary solution for the color escape codes mangling
-    problem. There is some problem in message passing between the LAVA
-    dispatcher and the device under test (DUT). Here \x1b character is missing
-    before `[:digit::digit:?m` ANSI TTY color codes. When this problem is fixed
-    on the LAVA side, one should remove this function.
+    """This function is a temporary solution for the color escape codes mangling problem. There is
+    some problem in message passing between the LAVA dispatcher and the device under test (DUT).
+    Here \x1b or \\e character is missing before `[:digit::digit:?m` ANSI TTY color codes.
+    When this problem is fixed on the LAVA side, one should remove this function.
+
+    For example, instead of receiving "\x1b[31m" (red text), we receive "[31m".
+
+    The function fixes three types of mangled ANSI sequences:
+    1. Standard color codes like [31m → \x1b[31m
+    2. Line erase codes [0K → \x1b[0K
+    3. Specific color formatting codes with carriage return [0;3xm → \r\x1b[0;3xm
 
     Note: most LAVA farms don't have this problem, except for Lima, which uses
     an older version of LAVA.
     """
+    # Fix standard ANSI color codes (e.g., [31m → \x1b[31m)
     line["msg"] = re.sub(r"(\[\d{1,2}m)", "\x1b" + r"\1", line["msg"])
-    # Also fix ANSI escape codes mangling
+    # Fix ANSI line erase codes (e.g., [0K → \x1b[0K)
     line["msg"] = re.sub(r"(\[0K)", "\x1b" + r"\1", line["msg"])
-    # Also fix ANSI color codes mangling
+    # Fix ANSI color codes with formatting and carriage return (e.g., [0;31m → \r\x1b[0;31m)
     line["msg"] = re.sub(r"(\[0;3\d{1,2}m)", "\r\x1b" + r"\1", line["msg"])
 
 
