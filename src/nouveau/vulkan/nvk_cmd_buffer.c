@@ -370,12 +370,26 @@ nvk_BeginCommandBuffer(VkCommandBuffer commandBuffer,
    return VK_SUCCESS;
 }
 
+static void
+flush_mem_list(struct nvk_cmd_buffer *cmd, struct list_head *mem_list)
+{
+   list_for_each_entry_safe(struct nvk_cmd_mem, mem, mem_list, link)
+      nvkmd_mem_sync_map_to_gpu(mem->mem, 0, mem->mem->size_B);
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL
 nvk_EndCommandBuffer(VkCommandBuffer commandBuffer)
 {
    VK_FROM_HANDLE(nvk_cmd_buffer, cmd, commandBuffer);
 
    nvk_cmd_buffer_flush_push(cmd, false);
+
+   /* We only need to flush the memory objects we own because, if there are
+    * secondaries, they will have been flushed in their EndCommandBuffer()
+    * call.
+    */
+   flush_mem_list(cmd, &cmd->owned_mem);
+   flush_mem_list(cmd, &cmd->owned_gart_mem);
 
    return vk_command_buffer_get_record_result(&cmd->vk);
 }
