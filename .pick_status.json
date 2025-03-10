@@ -1814,7 +1814,7 @@
         "description": "panfrost: fixup typo in 16x sample-pattern",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a61fb6296657a0eb1f36ec2b591474ff69fc200b",
         "notes": null
