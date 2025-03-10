@@ -550,6 +550,7 @@ brw_opt_algebraic(brw_shader &s)
             inst->opcode = BRW_OPCODE_MOV;
             inst->predicate = BRW_PREDICATE_NONE;
             inst->predicate_inverse = false;
+            inst->conditional_mod = BRW_CONDITIONAL_NONE;
             inst->resize_sources(1);
             progress = true;
          } else if (inst->saturate && inst->src[1].file == IMM) {
