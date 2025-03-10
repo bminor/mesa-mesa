@@ -68,7 +68,7 @@ static inline VkDeviceAddress
 vk_buffer_address(const struct vk_buffer *buffer,
                   VkDeviceSize offset)
 {
-   assert(buffer->device_address != 0);
+   assert(buffer->size == 0 || buffer->device_address != 0);
    return buffer->device_address + offset;
 }
 
