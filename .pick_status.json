@@ -4,7 +4,7 @@
         "description": "radv: Move support check out of winsys.",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c942d957b00429aedc65226e29ff2dfe441fc801",
         "notes": null
