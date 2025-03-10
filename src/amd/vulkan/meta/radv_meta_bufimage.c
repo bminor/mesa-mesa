@@ -583,7 +583,7 @@ create_iview(struct radv_cmd_buffer *cmd_buffer, struct radv_meta_blit2d_surf *s
                         });
 }
 
-static VkResult
+static VkFormat
 get_r32g32b32_format(VkFormat format)
 {
    switch (format) {
