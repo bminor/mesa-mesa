@@ -279,7 +279,7 @@ tu_rmv_log_buffer_bind(struct tu_device *device, struct tu_buffer *buffer)
 
    tu_rmv_emit_resource_bind_locked(device,
                                     tu_rmv_get_resource_id_locked(device, buffer),
-                                    buffer->bo ? buffer->iova : 0,
+                                    buffer->bo ? buffer->vk.device_address : 0,
                                     buffer->vk.size);
 
    simple_mtx_unlock(&device->vk.memory_trace_data.token_mtx);

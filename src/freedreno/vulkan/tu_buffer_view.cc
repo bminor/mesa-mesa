@@ -30,7 +30,7 @@ tu_CreateBufferView(VkDevice _device,
 
    fdl6_buffer_view_init(
       view->descriptor, vk_format_to_pipe_format(view->vk.format),
-      swiz, buffer->iova + view->vk.offset, view->vk.range);
+      swiz, vk_buffer_address(&buffer->vk, view->vk.offset), view->vk.range);
 
    *pView = tu_buffer_view_to_handle(view);
 

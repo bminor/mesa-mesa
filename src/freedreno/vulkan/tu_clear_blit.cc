@@ -2461,7 +2461,7 @@ tu_copy_buffer_to_image(struct tu_cmd_buffer *cmd,
    for (uint32_t i = 0; i < layers; i++) {
       ops->dst(cs, &dst, i, src_format);
 
-      uint64_t src_va = src_buffer->iova + info->bufferOffset + layer_size * i;
+      uint64_t src_va = vk_buffer_address(&src_buffer->vk, info->bufferOffset) + layer_size * i;
       bool unaligned = (src_va & 63) || (pitch & 63);
       if (!has_unaligned && unaligned) {
          for (uint32_t y = 0; y < extent.height; y++) {
@@ -2647,7 +2647,7 @@ tu_copy_image_to_buffer(struct tu_cmd_buffer *cmd,
    uint32_t layer_size = pitch * dst_height;
 
    handle_buffer_unaligned_store<CHIP>(cmd,
-                                       dst_buffer->iova + info->bufferOffset,
+                                       vk_buffer_address(&dst_buffer->vk, info->bufferOffset),
                                        layer_size * layers, unaligned_store);
 
    ops->setup(cmd, cs, src_format, dst_format, VK_IMAGE_ASPECT_COLOR_BIT, blit_param, false, false,
@@ -2660,7 +2660,7 @@ tu_copy_image_to_buffer(struct tu_cmd_buffer *cmd,
    for (uint32_t i = 0; i < layers; i++) {
       ops->src(cmd, cs, &src, i, VK_FILTER_NEAREST, dst_format);
 
-      uint64_t dst_va = dst_buffer->iova + info->bufferOffset + layer_size * i;
+      uint64_t dst_va = vk_buffer_address(&dst_buffer->vk, info->bufferOffset) + layer_size * i;
       if ((dst_va & 63) || (pitch & 63)) {
          for (uint32_t y = 0; y < extent.height; y++) {
             uint32_t x = (dst_va & 63) / util_format_get_blocksize(dst_format);
@@ -3287,9 +3287,9 @@ tu_CmdCopyBuffer2(VkCommandBuffer commandBuffer,
    for (unsigned i = 0; i < pCopyBufferInfo->regionCount; ++i) {
       const VkBufferCopy2 *region = &pCopyBufferInfo->pRegions[i];
       copy_buffer<CHIP>(cmd,
-                  dst_buffer->iova + region->dstOffset,
-                  src_buffer->iova + region->srcOffset,
-                  region->size, 1, &unaligned_store);
+                        vk_buffer_address(&dst_buffer->vk, region->dstOffset),
+                        vk_buffer_address(&src_buffer->vk, region->srcOffset),
+                        region->size, 1, &unaligned_store);
    }
 
    after_buffer_unaligned_buffer_store<CHIP>(cmd, unaligned_store);
@@ -3316,7 +3316,8 @@ tu_CmdUpdateBuffer(VkCommandBuffer commandBuffer,
 
    bool unaligned_store = false;
    memcpy(tmp.map, pData, dataSize);
-   copy_buffer<CHIP>(cmd, buffer->iova + dstOffset, tmp.iova, dataSize, 4, &unaligned_store);
+   copy_buffer<CHIP>(cmd, vk_buffer_address(&buffer->vk, dstOffset),
+                     tmp.iova, dataSize, 4, &unaligned_store);
 
    after_buffer_unaligned_buffer_store<CHIP>(cmd, unaligned_store);
 }
@@ -3387,7 +3388,7 @@ tu_CmdFillBuffer(VkCommandBuffer commandBuffer,
 
    fillSize = vk_buffer_range(&buffer->vk, dstOffset, fillSize);
 
-   VkDeviceAddress dst_va = buffer->iova + dstOffset;
+   VkDeviceAddress dst_va = vk_buffer_address(&buffer->vk, dstOffset);
 
    tu_cmd_fill_buffer<CHIP>(commandBuffer, dst_va, fillSize, data);
 }

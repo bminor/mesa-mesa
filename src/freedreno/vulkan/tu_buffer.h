@@ -19,7 +19,6 @@ struct tu_buffer
    struct vk_buffer vk;
 
    struct tu_bo *bo;
-   uint64_t iova;
    uint64_t bo_size;
 };
 

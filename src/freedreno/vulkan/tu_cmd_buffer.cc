@@ -3037,7 +3037,7 @@ tu_CmdBindVertexBuffers2(VkCommandBuffer commandBuffer,
          cmd->state.vb[firstBinding + i].size = 0;
       } else {
          struct tu_buffer *buf = tu_buffer_from_handle(pBuffers[i]);
-         cmd->state.vb[firstBinding + i].base = buf->iova + pOffsets[i];
+         cmd->state.vb[firstBinding + i].base = vk_buffer_address(&buf->vk, pOffsets[i]);
          cmd->state.vb[firstBinding + i].size =
             vk_buffer_range(&buf->vk, pOffsets[i], pSizes ? pSizes[i] : VK_WHOLE_SIZE);
       }
@@ -3089,7 +3089,7 @@ tu_CmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer,
       if (cmd->state.index_size != index_size)
          tu_cs_emit_regs(&cmd->draw_cs, A6XX_PC_RESTART_INDEX(restart_index));
 
-      cmd->state.index_va = buf->iova + offset;
+      cmd->state.index_va = vk_buffer_address(&buf->vk, offset);
       cmd->state.max_index_count = size >> index_shift;
       cmd->state.index_size = index_size;
    } else {
@@ -3600,7 +3600,7 @@ tu_CmdBindTransformFeedbackBuffersEXT(VkCommandBuffer commandBuffer,
 
    for (uint32_t i = 0; i < bindingCount; i++) {
       VK_FROM_HANDLE(tu_buffer, buf, pBuffers[i]);
-      uint64_t iova = buf->iova + pOffsets[i];
+      uint64_t iova = vk_buffer_address(&buf->vk, pOffsets[i]);
       uint32_t size = buf->bo->size - (iova - buf->bo->iova);
       uint32_t idx = i + firstBinding;
 
@@ -3655,7 +3655,7 @@ tu_CmdBeginTransformFeedbackEXT(VkCommandBuffer commandBuffer,
       tu_cs_emit(cs, CP_MEM_TO_REG_0_REG(REG_A6XX_VPC_SO_BUFFER_OFFSET(idx)) |
                      CP_MEM_TO_REG_0_UNK31 |
                      CP_MEM_TO_REG_0_CNT(1));
-      tu_cs_emit_qw(cs, buf->iova + counter_buffer_offset);
+      tu_cs_emit_qw(cs, vk_buffer_address(&buf->vk, counter_buffer_offset));
 
       if (offset) {
          tu_cs_emit_pkt7(cs, CP_REG_RMW, 3);
@@ -3724,7 +3724,7 @@ tu_CmdEndTransformFeedbackEXT(VkCommandBuffer commandBuffer,
       tu_cs_emit_pkt7(cs, CP_REG_TO_MEM, 3);
       tu_cs_emit(cs, CP_REG_TO_MEM_0_REG(REG_A6XX_CP_SCRATCH_REG(0)) |
                      CP_REG_TO_MEM_0_CNT(1));
-      tu_cs_emit_qw(cs, buf->iova + counter_buffer_offset);
+      tu_cs_emit_qw(cs, vk_buffer_address(&buf->vk, counter_buffer_offset));
    }
 
    tu_cond_exec_end(cs);
@@ -6638,7 +6638,7 @@ tu_CmdDrawIndirect(VkCommandBuffer commandBuffer,
    tu_cs_emit(cs, A6XX_CP_DRAW_INDIRECT_MULTI_1_OPCODE(INDIRECT_OP_NORMAL) |
                   A6XX_CP_DRAW_INDIRECT_MULTI_1_DST_OFF(vs_params_offset(cmd)));
    tu_cs_emit(cs, drawCount);
-   tu_cs_emit_qw(cs, buf->iova + offset);
+   tu_cs_emit_qw(cs, vk_buffer_address(&buf->vk, offset));
    tu_cs_emit(cs, stride);
 }
 TU_GENX(tu_CmdDrawIndirect);
@@ -6669,7 +6669,7 @@ tu_CmdDrawIndexedIndirect(VkCommandBuffer commandBuffer,
    tu_cs_emit(cs, drawCount);
    tu_cs_emit_qw(cs, cmd->state.index_va);
    tu_cs_emit(cs, cmd->state.max_index_count);
-   tu_cs_emit_qw(cs, buf->iova + offset);
+   tu_cs_emit_qw(cs, vk_buffer_address(&buf->vk, offset));
    tu_cs_emit(cs, stride);
 }
 TU_GENX(tu_CmdDrawIndexedIndirect);
@@ -6705,8 +6705,8 @@ tu_CmdDrawIndirectCount(VkCommandBuffer commandBuffer,
    tu_cs_emit(cs, A6XX_CP_DRAW_INDIRECT_MULTI_1_OPCODE(INDIRECT_OP_INDIRECT_COUNT) |
                   A6XX_CP_DRAW_INDIRECT_MULTI_1_DST_OFF(vs_params_offset(cmd)));
    tu_cs_emit(cs, drawCount);
-   tu_cs_emit_qw(cs, buf->iova + offset);
-   tu_cs_emit_qw(cs, count_buf->iova + countBufferOffset);
+   tu_cs_emit_qw(cs, vk_buffer_address(&buf->vk, offset));
+   tu_cs_emit_qw(cs, vk_buffer_address(&count_buf->vk, countBufferOffset));
    tu_cs_emit(cs, stride);
 }
 TU_GENX(tu_CmdDrawIndirectCount);
@@ -6739,8 +6739,8 @@ tu_CmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer,
    tu_cs_emit(cs, drawCount);
    tu_cs_emit_qw(cs, cmd->state.index_va);
    tu_cs_emit(cs, cmd->state.max_index_count);
-   tu_cs_emit_qw(cs, buf->iova + offset);
-   tu_cs_emit_qw(cs, count_buf->iova + countBufferOffset);
+   tu_cs_emit_qw(cs, vk_buffer_address(&buf->vk, offset));
+   tu_cs_emit_qw(cs, vk_buffer_address(&count_buf->vk, countBufferOffset));
    tu_cs_emit(cs, stride);
 }
 TU_GENX(tu_CmdDrawIndexedIndirectCount);
@@ -6781,7 +6781,7 @@ tu_CmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer,
       vertexStride = vertexStride >> 2;
    }
    tu_cs_emit(cs, instanceCount);
-   tu_cs_emit_qw(cs, buf->iova + counterBufferOffset);
+   tu_cs_emit_qw(cs, vk_buffer_address(&buf->vk, counterBufferOffset));
    tu_cs_emit(cs, counterOffset);
    tu_cs_emit(cs, vertexStride);
 }
@@ -7336,7 +7336,7 @@ tu_CmdDispatchIndirect(VkCommandBuffer commandBuffer,
    VK_FROM_HANDLE(tu_buffer, buffer, _buffer);
    struct tu_dispatch_info info = {};
 
-   info.indirect = buffer->iova + offset;
+   info.indirect = vk_buffer_address(&buffer->vk, offset);
 
    tu_dispatch<CHIP>(cmd_buffer, &info);
 }
@@ -7663,7 +7663,7 @@ tu_CmdBeginConditionalRenderingEXT(VkCommandBuffer commandBuffer,
       tu_emit_cache_flush<CHIP>(cmd);
 
    VK_FROM_HANDLE(tu_buffer, buf, pConditionalRenderingBegin->buffer);
-   uint64_t iova = buf->iova + pConditionalRenderingBegin->offset;
+   uint64_t iova = vk_buffer_address(&buf->vk, pConditionalRenderingBegin->offset);
 
    /* qcom doesn't support 32-bit reference values, only 64-bit, but Vulkan
     * mandates 32-bit comparisons. Our workaround is to copy the the reference
@@ -7711,7 +7711,7 @@ tu_CmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer,
    VK_FROM_HANDLE(tu_cmd_buffer, cmd, commandBuffer);
    VK_FROM_HANDLE(tu_buffer, buffer, dstBuffer);
 
-   uint64_t va = buffer->iova + dstOffset;
+   uint64_t va = vk_buffer_address(&buffer->vk, dstOffset);
 
    struct tu_cs *cs = cmd->state.pass ? &cmd->draw_cs : &cmd->cs;
    struct tu_cache_state *cache =

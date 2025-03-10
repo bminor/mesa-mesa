@@ -713,10 +713,11 @@ dump_as(struct vk_acceleration_structure *as)
    struct tu_accel_struct_header *hdr =
       (struct tu_accel_struct_header *)((char *)buf->bo->map + as->offset);
    
-   fprintf(stderr, "dumping AS at %" PRIx64 "\n", buf->iova + as->offset);
+   fprintf(stderr, "dumping AS at %" PRIx64 "\n",
+           vk_buffer_address(&buf->vk, as->offset));
    u_hexdump(stderr, (uint8_t *)hdr, sizeof(*hdr), false);
 
-   char *base = ((char *)buf->bo->map + (hdr->bvh_ptr - buf->iova));
+   char *base = ((char *)buf->bo->map + (hdr->bvh_ptr - buf->vk.device_address));
    struct tu_node *node = (struct tu_node *)base;
 
    fprintf(stderr, "dumping nodes at %" PRIx64 "\n", hdr->bvh_ptr);
@@ -746,7 +747,7 @@ as_finished(struct tu_device *dev, struct vk_acceleration_structure *as)
 
    struct tu_accel_struct_header *hdr =
       (struct tu_accel_struct_header *)((char *)buf->bo->map + as->offset);
-   return hdr->self_ptr == buf->iova + as->offset;
+   return hdr->self_ptr == vk_buffer_address(&buf->vk, as->offset);
 }
 
 VKAPI_ATTR void VKAPI_CALL

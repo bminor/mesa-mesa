@@ -1007,7 +1007,7 @@ buffer_info_to_address(const VkDescriptorBufferInfo *buffer_info)
    VK_FROM_HANDLE(tu_buffer, buffer, buffer_info->buffer);
 
    uint32_t range = buffer ? vk_buffer_range(&buffer->vk, buffer_info->offset, buffer_info->range) : 0;
-   uint64_t va = buffer ? buffer->iova + buffer_info->offset : 0;
+   uint64_t va = buffer ? vk_buffer_address(&buffer->vk, buffer_info->offset) : 0;
 
    return (VkDescriptorAddressInfoEXT) {
       .address = va,

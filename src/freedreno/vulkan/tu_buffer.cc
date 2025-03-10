@@ -57,9 +57,9 @@ tu_DestroyBuffer(VkDevice _device,
    tu_perfetto_log_destroy_buffer(device, buffer);
 #endif
 
-   if (buffer->iova)
+   if (buffer->vk.device_address)
       vk_address_binding_report(&instance->vk, &buffer->vk.base,
-                                buffer->iova, buffer->bo_size,
+                                buffer->vk.device_address, buffer->bo_size,
                                 VK_DEVICE_ADDRESS_BINDING_TYPE_UNBIND_EXT);
 
 
@@ -148,7 +148,7 @@ tu_BindBufferMemory2(VkDevice device,
 
       if (mem) {
          buffer->bo = mem->bo;
-         buffer->iova = mem->bo->iova + pBindInfos[i].memoryOffset;
+         buffer->vk.device_address = mem->bo->iova + pBindInfos[i].memoryOffset;
          if (buffer->vk.usage &
              (VK_BUFFER_USAGE_2_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT |
               VK_BUFFER_USAGE_2_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT))
@@ -168,15 +168,6 @@ tu_BindBufferMemory2(VkDevice device,
                                 VK_DEVICE_ADDRESS_BINDING_TYPE_BIND_EXT);
    }
    return VK_SUCCESS;
-}
-
-VkDeviceAddress
-tu_GetBufferDeviceAddress(VkDevice _device,
-                          const VkBufferDeviceAddressInfo* pInfo)
-{
-   VK_FROM_HANDLE(tu_buffer, buffer, pInfo->buffer);
-
-   return buffer->iova;
 }
 
 uint64_t tu_GetBufferOpaqueCaptureAddress(
