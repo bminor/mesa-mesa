@@ -99,7 +99,7 @@ const struct mali_sample_positions sample_position_lut[] = {
          SAMPLE16(-5,  5),
          SAMPLE16(-7, -1),
          SAMPLE16( 3,  7),
-         SAMPLE16( 7,  -7),
+         SAMPLE16( 7, -7),
       },
       .origin = SAMPLE16(0, 0)
    },
