@@ -69,15 +69,39 @@ struct vn_descriptor_pool_state_mutable {
    BITSET_DECLARE(types, VN_NUM_DESCRIPTOR_TYPES);
 };
 
+enum vn_async_set_alloc_state {
+   /* Must do synchronous set alloc. It comes from either no_async_set_alloc
+    * perf option or transition from below conditional states.
+    */
+   VN_ASYNC_SET_ALLOC_NONE,
+   /* Can still do async set alloc, but the pool might become fragmented after
+    * freeing up any descriptor set and that will change the state to NONE.
+    */
+   VN_ASYNC_SET_ALLOC_BEFORE_FREE,
+   /* Can still do async set alloc, and the sets allocated are with the same
+    * number of descriptors and types. Allocating a set with different number
+    * of descriptors or types will change the state to BEFORE_FREE.
+    */
+   VN_ASYNC_SET_ALLOC_SAME_ALLOC,
+   /* Will always do async set alloc, since the pool is not created with
+    * VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT.
+    */
+   VN_ASYNC_SET_ALLOC_ALWAYS,
+};
+
 struct vn_descriptor_pool {
    struct vn_object_base base;
 
    VkAllocationCallbacks allocator;
-   bool async_set_allocation;
+   struct list_head descriptor_sets;
+
+   enum vn_async_set_alloc_state initial_state;
+   enum vn_async_set_alloc_state current_state;
+
+   struct vn_descriptor_set_layout *last_layout;
+
    struct vn_descriptor_pool_state max;
    struct vn_descriptor_pool_state used;
-
-   struct list_head descriptor_sets;
 
    uint32_t mutable_states_count;
    struct vn_descriptor_pool_state_mutable *mutable_states;

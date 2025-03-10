@@ -316,15 +316,25 @@ vn_CreateDescriptorPool(VkDevice device,
       vk_find_struct_const(pCreateInfo->pNext,
                            MUTABLE_DESCRIPTOR_TYPE_CREATE_INFO_EXT);
 
-   /* Without VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT, the set
-    * allocation must not fail due to a fragmented pool per spec. In this
-    * case, set allocation can be asynchronous with pool resource tracking.
+   /* Per spec:
+    *
+    * If a descriptor pool has not had any descriptor sets freed since it was
+    * created or most recently reset then fragmentation must not cause an
+    * allocation failure (note that this is always the case for a pool created
+    * without the VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT bit set).
+    *
+    * Additionally, if all sets allocated from the pool since it was created
+    * or most recently reset use the same number of descriptors (of each type)
+    * and the requested allocation also uses that same number of descriptors
+    * (of each type), then fragmentation must not cause an allocation failure.
     */
-   pool->async_set_allocation =
-      !VN_PERF(NO_ASYNC_SET_ALLOC) &&
-      !(pCreateInfo->flags &
-        VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT);
+   pool->initial_state = pool->current_state =
+      VN_PERF(NO_ASYNC_SET_ALLOC) ? VN_ASYNC_SET_ALLOC_NONE
+      : pCreateInfo->flags & VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT
+         ? VN_ASYNC_SET_ALLOC_SAME_ALLOC
+         : VN_ASYNC_SET_ALLOC_ALWAYS;
 
+   pool->last_layout = VK_NULL_HANDLE;
    pool->max.set_count = pCreateInfo->maxSets;
 
    if (iub_info)
@@ -411,6 +421,11 @@ vn_DestroyDescriptorPool(VkDevice device,
                             &pool->descriptor_sets, head)
       vn_descriptor_set_destroy(dev, set, alloc);
 
+   if (pool->last_layout != VK_NULL_HANDLE) {
+      assert(pool->current_state == VN_ASYNC_SET_ALLOC_SAME_ALLOC);
+      vn_descriptor_set_layout_unref(dev, pool->last_layout);
+   }
+
    vn_object_base_fini(&pool->base);
    vk_free(alloc, pool);
 }
@@ -456,7 +471,7 @@ vn_descriptor_pool_alloc_descriptors(
    const struct vn_descriptor_set_layout *layout,
    uint32_t last_binding_descriptor_count)
 {
-   assert(pool->async_set_allocation);
+   assert(pool->current_state != VN_ASYNC_SET_ALLOC_NONE);
 
    if (pool->used.set_count == pool->max.set_count)
       return false;
@@ -525,7 +540,7 @@ vn_descriptor_pool_free_descriptors(
    const struct vn_descriptor_set_layout *layout,
    uint32_t last_binding_descriptor_count)
 {
-   assert(pool->async_set_allocation);
+   assert(pool->current_state != VN_ASYNC_SET_ALLOC_NONE);
 
    for (uint32_t i = 0; i <= layout->last_binding; i++) {
       const uint32_t count = i == layout->last_binding
@@ -551,7 +566,7 @@ vn_descriptor_pool_free_descriptors(
 static inline void
 vn_descriptor_pool_reset_descriptors(struct vn_descriptor_pool *pool)
 {
-   assert(pool->async_set_allocation);
+   assert(pool->current_state != VN_ASYNC_SET_ALLOC_NONE);
 
    memset(&pool->used, 0, sizeof(pool->used));
 
@@ -577,7 +592,15 @@ vn_ResetDescriptorPool(VkDevice device,
                             &pool->descriptor_sets, head)
       vn_descriptor_set_destroy(dev, set, alloc);
 
-   if (pool->async_set_allocation)
+   if (pool->last_layout != VK_NULL_HANDLE) {
+      assert(pool->current_state == VN_ASYNC_SET_ALLOC_SAME_ALLOC);
+      vn_descriptor_set_layout_unref(dev, pool->last_layout);
+      pool->last_layout = VK_NULL_HANDLE;
+   }
+
+   pool->current_state = pool->initial_state;
+
+   if (pool->current_state != VN_ASYNC_SET_ALLOC_NONE)
       vn_descriptor_pool_reset_descriptors(pool);
 
    return VK_SUCCESS;
@@ -612,6 +635,19 @@ vn_AllocateDescriptorSets(VkDevice device,
    for (; i < pAllocateInfo->descriptorSetCount; i++) {
       struct vn_descriptor_set_layout *layout =
          vn_descriptor_set_layout_from_handle(pAllocateInfo->pSetLayouts[i]);
+      bool same_alloc = true;
+
+      if (pool->current_state == VN_ASYNC_SET_ALLOC_SAME_ALLOC) {
+         if (pool->last_layout == VK_NULL_HANDLE)
+            pool->last_layout = vn_descriptor_set_layout_ref(dev, layout);
+
+         /* If a different set layout is used, set allocations are not
+          * considered to be the same alloc for simplicity, though we could
+          * also compare the exact descriptor types and counts.
+          */
+         if (pool->last_layout != layout)
+            same_alloc = false;
+      }
 
       /* 14.2.3. Allocation of Descriptor Sets
        *
@@ -625,9 +661,25 @@ vn_AllocateDescriptorSets(VkDevice device,
             layout->bindings[layout->last_binding].count;
       } else if (variable_info) {
          last_binding_descriptor_count = variable_info->pDescriptorCounts[i];
+
+         /* If variable descriptor count is used, set allocations are not
+          * considered to be the same alloc for simplicity, though we could
+          * also track the last_binding_descriptor_count used.
+          */
+         if (pool->current_state == VN_ASYNC_SET_ALLOC_SAME_ALLOC)
+            same_alloc = false;
       }
 
-      if (pool->async_set_allocation &&
+      if (!same_alloc) {
+         assert(pool->current_state == VN_ASYNC_SET_ALLOC_SAME_ALLOC &&
+                pool->last_layout != VK_NULL_HANDLE);
+
+         pool->current_state = VN_ASYNC_SET_ALLOC_BEFORE_FREE;
+         vn_descriptor_set_layout_unref(dev, pool->last_layout);
+         pool->last_layout = VK_NULL_HANDLE;
+      }
+
+      if (pool->current_state != VN_ASYNC_SET_ALLOC_NONE &&
           !vn_descriptor_pool_alloc_descriptors(
              pool, layout, last_binding_descriptor_count)) {
          result = VK_ERROR_OUT_OF_POOL_MEMORY;
@@ -638,7 +690,7 @@ vn_AllocateDescriptorSets(VkDevice device,
          vk_zalloc(alloc, sizeof(*set), VN_DEFAULT_ALIGN,
                    VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
       if (!set) {
-         if (pool->async_set_allocation) {
+         if (pool->current_state != VN_ASYNC_SET_ALLOC_NONE) {
             vn_descriptor_pool_free_descriptors(
                pool, layout, last_binding_descriptor_count);
          }
@@ -670,7 +722,7 @@ vn_AllocateDescriptorSets(VkDevice device,
       pDescriptorSets[i] = vn_descriptor_set_to_handle(set);
    }
 
-   if (pool->async_set_allocation) {
+   if (pool->current_state != VN_ASYNC_SET_ALLOC_NONE) {
       vn_async_vkAllocateDescriptorSets(dev->primary_ring, device,
                                         pAllocateInfo, pDescriptorSets);
    } else {
@@ -687,7 +739,7 @@ fail:
       struct vn_descriptor_set *set =
          vn_descriptor_set_from_handle(pDescriptorSets[j]);
 
-      if (pool->async_set_allocation) {
+      if (pool->current_state != VN_ASYNC_SET_ALLOC_NONE) {
          vn_descriptor_pool_free_descriptors(
             pool, set->layout, set->last_binding_descriptor_count);
       }
@@ -712,7 +764,7 @@ vn_FreeDescriptorSets(VkDevice device,
       vn_descriptor_pool_from_handle(descriptorPool);
    const VkAllocationCallbacks *alloc = &pool->allocator;
 
-   assert(!pool->async_set_allocation);
+   assert(pool->current_state != VN_ASYNC_SET_ALLOC_ALWAYS);
 
    vn_async_vkFreeDescriptorSets(dev->primary_ring, device, descriptorPool,
                                  descriptorSetCount, pDescriptorSets);
@@ -723,6 +775,14 @@ vn_FreeDescriptorSets(VkDevice device,
 
       if (!set)
          continue;
+
+      if (pool->current_state == VN_ASYNC_SET_ALLOC_SAME_ALLOC) {
+         vn_descriptor_pool_free_descriptors(
+            pool, set->layout, set->last_binding_descriptor_count);
+      } else if (pool->current_state == VN_ASYNC_SET_ALLOC_BEFORE_FREE) {
+         assert(pool->last_layout == VK_NULL_HANDLE);
+         pool->current_state = VN_ASYNC_SET_ALLOC_NONE;
+      }
 
       vn_descriptor_set_destroy(dev, set, alloc);
    }
