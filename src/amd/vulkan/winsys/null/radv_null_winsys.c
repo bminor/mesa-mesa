@@ -159,6 +159,8 @@ radv_null_winsys_query_info(struct radeon_winsys *rws, struct radeon_info *gpu_i
 
    gpu_info->has_scheduled_fence_dependency = true;
    gpu_info->has_gang_submit = true;
+
+   gpu_info->gart_page_size = 4096;
 }
 
 static const char *
