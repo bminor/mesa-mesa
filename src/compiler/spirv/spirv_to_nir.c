@@ -189,6 +189,7 @@ static const struct spirv_capabilities implemented_capabilities = {
    .UniformAndStorageBuffer8BitAccess = true,
    .UniformBufferArrayDynamicIndexing = true,
    .UniformBufferArrayNonUniformIndexingEXT = true,
+   .UniformDecoration = true,
    .UniformTexelBufferArrayDynamicIndexingEXT = true,
    .UniformTexelBufferArrayNonUniformIndexingEXT = true,
    .VariablePointers = true,
