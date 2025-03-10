@@ -1884,3 +1884,26 @@ brw_compile_fs(const struct brw_compiler *compiler,
    g.add_const_data(nir->constant_data, nir->constant_data_size);
    return g.get_assembly();
 }
+
+extern "C" void
+brw_print_fs_urb_setup(FILE *fp, const struct brw_wm_prog_data *prog_data)
+{
+   fprintf(fp, "FS URB (inputs=0x%016lx, flat_inputs=0x%08x):\n",
+           prog_data->inputs, prog_data->flat_inputs);
+   fprintf(fp, "  URB setup:\n");
+   for (uint32_t i = 0; i < ARRAY_SIZE(prog_data->urb_setup); i++) {
+      if (prog_data->urb_setup[i] >= 0) {
+         fprintf(fp, "   [%02d]: %i channel=%u (%s)\n",
+                 i, prog_data->urb_setup[i], prog_data->urb_setup_channel[i],
+                 gl_varying_slot_name_for_stage((gl_varying_slot)i,
+                                                MESA_SHADER_FRAGMENT));
+      }
+   }
+   fprintf(fp, "  URB setup attributes:\n");
+   for (uint32_t i = 0; i < prog_data->urb_setup_attribs_count; i++) {
+      fprintf(fp, "   [%02d]: %i (%s)\n",
+              i, prog_data->urb_setup_attribs[i],
+              gl_varying_slot_name_for_stage((gl_varying_slot)i,
+                                             MESA_SHADER_FRAGMENT));
+   }
+}
