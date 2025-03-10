@@ -2818,3 +2818,10 @@ vn_CmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer,
    VN_CMD_ENQUEUE(vkCmdTraceRaysIndirect2KHR, commandBuffer,
                   indirectDeviceAddress);
 }
+
+void
+vn_CmdSetDepthBias2EXT(VkCommandBuffer commandBuffer,
+                       const VkDepthBiasInfoEXT *pDepthBiasInfo)
+{
+   VN_CMD_ENQUEUE(vkCmdSetDepthBias2EXT, commandBuffer, pDepthBiasInfo);
+}
