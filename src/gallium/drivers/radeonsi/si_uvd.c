@@ -47,9 +47,16 @@ struct pipe_video_buffer *si_video_buffer_create_with_modifiers(struct pipe_cont
             continue;
       }
 
-      /* Linear only for UVD/VCE and VCN 1.0 */
-      if (sscreen->info.vcn_ip_version < VCN_2_0_0 && mod != DRM_FORMAT_MOD_LINEAR)
-         continue;
+      if (mod != DRM_FORMAT_MOD_LINEAR) {
+         /* Linear only for UVD/VCE and VCN 1.0 */
+         if (sscreen->info.vcn_ip_version < VCN_2_0_0)
+            continue;
+
+         /* Only "S" swizzle modes supported */
+         if (sscreen->info.vcn_ip_version < VCN_2_2_0 &&
+             AMD_FMT_MOD_GET(TILE, mod) != AMD_FMT_MOD_TILE_GFX9_64K_S)
+            continue;
+      }
 
       allowed_modifiers[allowed_modifiers_count++] = mod;
    }
