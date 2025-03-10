@@ -97,8 +97,8 @@ radv_null_winsys_query_info(struct radeon_winsys *rws, struct radeon_info *gpu_i
    }
 
    gpu_info->pci_id = pci_ids[gpu_info->family].pci_id;
-   gpu_info->max_se = 4;
-   gpu_info->num_se = 4;
+   gpu_info->max_se = pci_ids[gpu_info->family].has_dedicated_vram ? 4 : 1;
+   gpu_info->num_se = gpu_info->max_se;
    if (gpu_info->gfx_level >= GFX10_3)
       gpu_info->max_waves_per_simd = 16;
    else if (gpu_info->gfx_level >= GFX10)
@@ -141,6 +141,9 @@ radv_null_winsys_query_info(struct radeon_winsys *rws, struct radeon_info *gpu_i
    gpu_info->has_packed_math_16bit = gpu_info->gfx_level >= GFX9;
 
    gpu_info->has_image_load_dcc_bug = gpu_info->family == CHIP_NAVI23 || gpu_info->family == CHIP_VANGOGH;
+
+   gpu_info->has_distributed_tess =
+      gpu_info->gfx_level >= GFX10 || (gpu_info->gfx_level >= GFX8 && gpu_info->max_se >= 2);
 
    gpu_info->has_accelerated_dot_product =
       gpu_info->family == CHIP_VEGA20 ||
