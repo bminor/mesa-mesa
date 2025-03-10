@@ -558,6 +558,12 @@ anv_init_header(VkCommandBuffer commandBuffer,
 
       header.size = header.compacted_size;
 
+#if GFX_VERx10 >= 300
+      header.enable_64b_rt = 1;
+#else
+      header.enable_64b_rt = 0;
+#endif
+
       size_t header_size = sizeof(struct anv_accel_struct_header) - base;
       assert(base % sizeof(uint32_t) == 0);
       assert(header_size % sizeof(uint32_t) == 0);

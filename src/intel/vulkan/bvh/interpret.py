@@ -22,6 +22,7 @@ def get_header_properties(header):
         'size': header.size,
         'instance_count': header.instance_count,
         'self_ptr': header.self_ptr,
+        'enable_64b_rt': header.enable_64b_rt,
         'padding': f"{len(header.padding)} uint32_t paddings",
     }
 
@@ -118,20 +119,38 @@ def get_internal_node_properties(node):
         'actual_coords': actual_coords
     }
 
-def get_instance_leaf_properties(node):
+def get_instance_leaf_properties(node, enable_64b_rt):
+    if enable_64b_rt:
+        part0 = {
+            'instanceContribution': node.part0.DW0 & 0xFFFFFF,
+            'geomMask': (node.part0.DW0 >> 24) & 0xFF,
+            'insFlags': node.part0.DW1 & 0xFF,
+            'ComparisonMode': (node.part0.DW1 >> 8) & 0x1,
+            'ComparisonValue': (node.part0.DW1 >> 9) & 0x7F,
+            'pad0': (node.part0.DW1 >> 16) & 0xFF,
+            'subType': (node.part0.DW1 >> 24) & 0xF,
+            'pad1': (node.part0.DW1 >> 28) & 0x1,
+            'DisableOpacityCull': (node.part0.DW1 >> 29) & 0x1,
+            'OpaqueGeometry': (node.part0.DW1 >> 30) & 0x1,
+            'IgnoreRayMultiplier': (node.part0.DW1 >> 31) & 0x1,
+            'startNodePtr': node.part0.QW_startNodePtr,
+        }
+    else:
+        part0 = {
+            'shaderIndex': node.part0.DW0 & 0xFFFFFF,
+            'geomMask': (node.part0.DW0 >> 24) & 0xFF,
+            'instanceContribution': node.part0.DW1 & 0xFFFFFF,
+            'pad0': (node.part0.DW1 >> 24) & 0x1F,
+            'DisableOpacityCull': (node.part0.DW1 >> 29) & 0x1,
+            'OpaqueGeometry': (node.part0.DW1 >> 30) & 0x1,
+            'pad1': (node.part0.DW1 >> 31) & 0x1,
+            'startNodePtr': node.part0.QW_startNodePtr & 0xFFFFFFFFFFFF,
+            'instFlags': (node.part0.QW_startNodePtr >> 48) & 0xFF,
+        }
+
     return {
         'part0': {
-            'shaderIndex': node.part0.shader_index_and_geom_mask & 0xFFFFFF,
-            'geomMask': (node.part0.shader_index_and_geom_mask >> 24) & 0xFF,
-            'instanceContribution': node.part0.instance_contribution_and_geom_flags & 0xFFFFFF,
-            'pad0': (node.part0.instance_contribution_and_geom_flags >> 24) & 0x1F,
-            'DisableOpacityCull': (node.part0.instance_contribution_and_geom_flags >> 29) & 0x1,
-            'OpaqueGeometry': (node.part0.instance_contribution_and_geom_flags >> 30) & 0x1,
-            'pad1': (node.part0.instance_contribution_and_geom_flags >> 31) & 0x1,
-            'startNodePtr': node.part0.start_node_ptr_and_inst_flags & 0xFFFFFFFFFFFF,
-            'instFlags': (node.part0.start_node_ptr_and_inst_flags >> 48) & 0xFF,
-            'ComparisonMode': (node.part0.start_node_ptr_and_inst_flags >> 56) & 0x1,
-            'ComparisonValue': (node.part0.start_node_ptr_and_inst_flags >> 57) & 0x7F,
+            **part0,
             'world2obj_vx': [node.part0.world2obj_vx_x, node.part0.world2obj_vx_y, node.part0.world2obj_vx_z],
             'world2obj_vy': [node.part0.world2obj_vy_x, node.part0.world2obj_vy_y, node.part0.world2obj_vy_z],
             'world2obj_vz': [node.part0.world2obj_vz_x, node.part0.world2obj_vz_y, node.part0.world2obj_vz_z],
@@ -180,7 +199,8 @@ class AnvAccelStructHeader(ctypes.Structure):
         ('size', ctypes.c_uint64),
         ('instance_count', ctypes.c_uint64),
         ('self_ptr', ctypes.c_uint64),
-        ('padding', ctypes.c_uint32 * 42),
+        ('enable_64b_rt', ctypes.c_uint32),
+        ('padding', ctypes.c_uint32 * 41),
     )
 
 class ChildData(ctypes.Structure):
@@ -230,9 +250,9 @@ class AnvProceduralLeafNode(ctypes.Structure):
 
 class InstanceLeafPart0(ctypes.Structure):
     _fields_ = (
-        ('shader_index_and_geom_mask', ctypes.c_uint32),
-        ('instance_contribution_and_geom_flags', ctypes.c_uint32),
-        ('start_node_ptr_and_inst_flags', ctypes.c_uint64),
+        ('DW0', ctypes.c_uint32),
+        ('DW1', ctypes.c_uint32),
+        ('QW_startNodePtr', ctypes.c_uint64),
         ('world2obj_vx_x', ctypes.c_float),
         ('world2obj_vx_y', ctypes.c_float),
         ('world2obj_vx_z', ctypes.c_float),
@@ -274,6 +294,7 @@ class AnvInstanceLeaf(ctypes.Structure):
 
 class BVHInterpreter:
     def __init__(self, data):
+        self.enable_64b_rt = False;
         self.data = data
         self.nodes = []
         self.relationships = {}
@@ -282,7 +303,10 @@ class BVHInterpreter:
     def interpret_structure(self, offset, structure):
         size = ctypes.sizeof(structure)
         if(offset + size > len(self.data)):
-            raise ValueError("Not enought data to interpret this structure.")
+            raise ValueError(
+                f"Not enough data to interpret structure: {structure.__name__}, "
+                f"required {size} bytes but only {len(self.data) - offset} bytes available."
+            )
         buffer = self.data[offset:offset + size]
         return structure.from_buffer_copy(buffer)
 
@@ -290,6 +314,7 @@ class BVHInterpreter:
         offset = 0
         # Interpret the header
         header = self.interpret_structure(offset, AnvAccelStructHeader)
+        self.enable_64b_rt = header.enable_64b_rt
         offset += header.rootNodeOffset
 
         # Interpret the rootNode
@@ -324,7 +349,7 @@ class BVHInterpreter:
             node_properties = get_internal_node_properties(node)
         elif structure == AnvInstanceLeaf:
             node_type_str = "AnvInstanceLeaf"
-            node_properties = get_instance_leaf_properties(node)
+            node_properties = get_instance_leaf_properties(node, self.enable_64b_rt)
         elif structure == AnvQuadLeafNode:
             node_type_str = "AnvQuadLeafNode"
             node_properties = get_quad_leaf_properties(node)

@@ -74,7 +74,13 @@ struct anv_accel_struct_header {
 
    uint64_t self_ptr;
 
-   uint32_t padding[42];
+   /* A boolean indicating if the bvh is built with 64b_rt data structures.
+    * This is for INTEL_DEBUG=bvh_* to make the decision how to decode the
+    * dump.
+    */
+   uint32_t enable_64b_rt;
+
+   uint32_t padding[41];
 };
 
 /* Mixed internal node with type per child */

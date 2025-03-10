@@ -47,4 +47,9 @@ main(void)
    DEREF(args.dst).copy_dispatch_size[0] = DIV_ROUND_UP(compacted_size, 8 * 128);
    DEREF(args.dst).copy_dispatch_size[1] = 1;
    DEREF(args.dst).copy_dispatch_size[2] = 1;
+#if GFX_VERx10 >= 300
+   DEREF(args.dst).enable_64b_rt = 1;
+#else
+   DEREF(args.dst).enable_64b_rt = 0;
+#endif
 }
