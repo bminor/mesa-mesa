@@ -111,8 +111,6 @@ dEQP-VK.compute.pipeline.zero_initialize_workgroup_memory.types.f32mat4x4
 
 # Job timeout
 dEQP-VK.graphicsfuzz.spv-composites
-dEQP-VK.rasterization.rasterization_order_attachment_access.depth.samples_4.multi_draw_barriers
-dEQP-VK.rasterization.rasterization_order_attachment_access.stencil.samples_1.multi_draw_barriers
 
 # Slow tests (>= 30s)
 dEQP-VK.api.external.fence.sync_fd.export_multiple_times_temporary
