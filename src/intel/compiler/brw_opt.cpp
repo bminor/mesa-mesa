@@ -515,7 +515,8 @@ brw_opt_eliminate_find_live_channel(brw_shader &s)
 
 out:
    if (progress)
-      s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTION_DETAIL);
+      s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTION_DATA_FLOW |
+                            BRW_DEPENDENCY_INSTRUCTION_DETAIL);
 
    return progress;
 }

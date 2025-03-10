@@ -196,7 +196,8 @@ brw_opt_saturate_propagation(brw_shader &s)
       progress = opt_saturate_propagation_local(s, block) || progress;
    }
 
-   /* Live intervals are still valid. */
+   if (progress)
+      s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTION_DETAIL);
 
    return progress;
 }

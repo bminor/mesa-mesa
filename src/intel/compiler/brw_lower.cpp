@@ -575,7 +575,8 @@ brw_lower_3src_null_dest(brw_shader &s)
    }
 
    if (progress)
-      s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTION_DETAIL |
+      s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTION_DATA_FLOW |
+                            BRW_DEPENDENCY_INSTRUCTION_DETAIL |
                             BRW_DEPENDENCY_VARIABLES);
 
    return progress;
@@ -662,7 +663,7 @@ brw_lower_alu_restrictions(brw_shader &s)
 
    if (progress) {
       s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTION_DATA_FLOW |
-                            BRW_DEPENDENCY_INSTRUCTION_DETAIL);
+                            BRW_DEPENDENCY_INSTRUCTION_IDENTITY);
    }
 
    return progress;
@@ -758,6 +759,7 @@ brw_lower_vgrfs_to_fixed_grfs(brw_shader &s)
    }
 
    s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTION_DATA_FLOW |
+                         BRW_DEPENDENCY_INSTRUCTION_DETAIL |
                          BRW_DEPENDENCY_VARIABLES);
 }
 
@@ -841,7 +843,7 @@ brw_lower_send_gather(brw_shader &s)
    }
 
    if (progress)
-      s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTION_DATA_FLOW |
+      s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTIONS |
                             BRW_DEPENDENCY_VARIABLES);
 
    return progress;
