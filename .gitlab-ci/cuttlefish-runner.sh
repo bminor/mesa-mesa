@@ -56,6 +56,7 @@ HOME=/cuttlefish launch_cvd \
   -enable_audio=false \
   -enable_bootanimation=false \
   -enable_minimal_mode=true \
+  -enable_modem_simulator=false \
   -guest_enforce_security=false \
   -report_anonymous_usage_stats=no \
   -gpu_mode="$ANDROID_GPU_MODE" \
