@@ -2744,7 +2744,7 @@
         "description": "ir3: keep inputs at start block when creating empty preamble",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f3026b3d3e6331b05a821b45896810969315c906",
         "notes": null
