@@ -3625,6 +3625,7 @@ radv_emit_rasterization_samples(struct radv_cmd_buffer *cmd_buffer)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
+   const struct radv_instance *instance = radv_physical_device_instance(pdev);
    unsigned rasterization_samples = radv_get_rasterization_samples(cmd_buffer);
    unsigned ps_iter_samples = radv_get_ps_iter_samples(cmd_buffer);
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
@@ -3639,6 +3640,12 @@ radv_emit_rasterization_samples(struct radv_cmd_buffer *cmd_buffer)
       if (render->ds_att.iview) {
          const struct radeon_surf *surf = &render->ds_att.iview->image->planes[0].surface;
          has_hiz_his = surf->u.gfx9.zs.hiz.offset || surf->u.gfx9.zs.his.offset;
+      } else if (render->ds_att.format && !(instance->debug_flags & RADV_DEBUG_NO_HIZ)) {
+         /* For inherited rendering with secondary commands buffers, assume HiZ/HiS is enabled if
+          * there is a depth/stencil attachment. This shouldn't hurt and it's required to disable
+          * WALK_ALIGN8 to avoid GPU hangs.
+          */
+         has_hiz_his = true;
       }
 
       walk_align8 = !has_hiz_his && !cmd_buffer->state.uses_vrs_attachment;
