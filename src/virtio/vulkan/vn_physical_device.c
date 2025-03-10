@@ -1097,7 +1097,11 @@ vn_physical_device_get_native_extensions(
       exts->KHR_incremental_present = true;
       exts->KHR_swapchain = true;
       exts->KHR_swapchain_mutable_format = true;
+      exts->EXT_hdr_metadata = true;
       exts->EXT_swapchain_maintenance1 = true;
+#ifdef VK_USE_PLATFORM_DISPLAY_KHR
+      exts->EXT_display_control = true;
+#endif
    }
 
    /* VK_EXT_pci_bus_info is required by common wsi to decide whether native
@@ -1306,6 +1310,9 @@ vn_physical_device_get_passthrough_extensions(
 
       /* vendor */
       .ARM_rasterization_order_attachment_access = true,
+      .GOOGLE_decorate_string = true,
+      .GOOGLE_hlsl_functionality1 = true,
+      .GOOGLE_user_type = true,
       .NV_compute_shader_derivatives = true,
       .VALVE_mutable_descriptor_type = true,
    };
