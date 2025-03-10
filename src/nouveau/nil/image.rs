@@ -206,46 +206,90 @@ impl Image {
         Self::new(dev, infos, plane)
     }
 
-    pub fn new(
+    fn new_linear(
+        _dev: &nil_rs_bindings::nv_device_info,
+        info: &ImageInitInfo,
+    ) -> Self {
+        // Linear images need to be 2D
+        assert!(info.dim == ImageDim::_2D);
+        // Linear images can't be arrays
+        assert!(info.extent_px.array_len == 1);
+        // NVIDIA can't do linear and mipmapping
+        assert!(info.levels == 1);
+        // NVIDIA can't do linear and multisampling
+        assert!(info.samples == 1);
+        let sample_layout = SampleLayout::_1x1;
+
+        let align_B = if info.explicit_row_stride_B > 0 {
+            // If we're importing an image, allow smaller stride and offset
+            // alignments.  The texture headers can handle as low as 32B-aligned
+            // and NVK has workarounds for rendering if needed.
+            assert!(info.modifier == DRM_FORMAT_MOD_LINEAR);
+            debug_assert!(info.explicit_row_stride_B % 32 == 0);
+            32
+        } else {
+            // If we get to pick the alignment, require 128B so that we can
+            // render to the image without workarounds.
+            128
+        };
+
+        let extent_B = info.extent_px.to_B(info.format, sample_layout);
+        let row_stride_B = if info.explicit_row_stride_B > 0 {
+            debug_assert!(info.explicit_row_stride_B % align_B == 0);
+            info.explicit_row_stride_B
+        } else {
+            extent_B.width.next_multiple_of(128)
+        };
+        let level0 = ImageLevel {
+            offset_B: 0,
+            tiling: Tiling::default(),
+            row_stride_B,
+        };
+        let size_B = u64::from(row_stride_B) * u64::from(extent_B.height);
+
+        let mut image = Self {
+            dim: info.dim,
+            format: info.format,
+            extent_px: info.extent_px,
+            sample_layout,
+            num_levels: info.levels,
+            levels: [ImageLevel::default(); MAX_LEVELS as usize],
+            array_stride_B: 0,
+            align_B,
+            size_B,
+            compressed: false,
+            tile_mode: 0,
+            pte_kind: 0,
+            mip_tail_first_lod: 0,
+        };
+        image.levels[0] = level0;
+        image
+    }
+
+    fn new_tiled(
         dev: &nil_rs_bindings::nv_device_info,
         infos: &[ImageInitInfo],
         plane: usize,
     ) -> Self {
         let info = &infos[plane];
-        match info.dim {
-            ImageDim::_1D => {
-                assert!(info.extent_px.height == 1);
-                assert!(info.extent_px.depth == 1);
-                assert!(info.samples == 1);
-            }
-            ImageDim::_2D => {
-                assert!(info.extent_px.depth == 1);
-            }
-            ImageDim::_3D => {
-                assert!(info.extent_px.array_len == 1);
-                assert!(info.samples == 1);
-            }
-        }
-
         let sample_layout = SampleLayout::choose_sample_layout(info.samples);
 
         let tiling = if info.modifier != DRM_FORMAT_MOD_INVALID {
             assert!((info.usage & IMAGE_USAGE_SPARSE_RESIDENCY_BIT) == 0);
             assert!(info.dim == ImageDim::_2D);
             assert!(sample_layout == SampleLayout::_1x1);
-            if info.modifier == DRM_FORMAT_MOD_LINEAR {
-                Tiling::default()
-            } else {
-                let bl_mod =
-                    BlockLinearModifier::try_from(info.modifier).unwrap();
 
-                // We don't support compression yet
-                assert!(bl_mod.compression_type() == CompressionType::None);
+            // This should be handled by new_linear()
+            assert!(info.modifier != DRM_FORMAT_MOD_LINEAR);
 
-                bl_mod
-                    .tiling()
-                    .clamp(info.extent_px.to_B(info.format, sample_layout))
-            }
+            let bl_mod = BlockLinearModifier::try_from(info.modifier).unwrap();
+
+            // We don't support compression yet
+            assert!(bl_mod.compression_type() == CompressionType::None);
+
+            bl_mod
+                .tiling()
+                .clamp(info.extent_px.to_B(info.format, sample_layout))
         } else if (info.usage & IMAGE_USAGE_SPARSE_RESIDENCY_BIT) != 0 {
             assert!((info.usage & IMAGE_USAGE_VIDEO_BIT) == 0);
             Tiling::sparse(info.format, info.dim)
@@ -313,59 +357,28 @@ impl Image {
             // the size of a miplevel, we don't care about arrays.
             lvl_ext_B.array_len = 1;
 
-            if tiling.is_tiled() {
-                let lvl_tiling = tiling.clamp(lvl_ext_B);
+            let lvl_tiling = tiling.clamp(lvl_ext_B);
 
-                if tiling != lvl_tiling {
-                    image.mip_tail_first_lod =
-                        std::cmp::min(image.mip_tail_first_lod, level);
-                }
-
-                // Align the size to tiles
-                let lvl_tiling_ext_B = lvl_tiling.extent_B();
-                lvl_ext_B = lvl_ext_B.align(&lvl_tiling_ext_B);
-                assert!(
-                    info.explicit_row_stride_B == 0
-                        || info.explicit_row_stride_B == lvl_ext_B.width
-                );
-
-                image.levels[level as usize] = ImageLevel {
-                    offset_B: layer_size_B,
-                    tiling: lvl_tiling,
-                    row_stride_B: lvl_ext_B.width,
-                };
-
-                layer_size_B += lvl_ext_B.size_B();
-            } else {
-                // Linear images need to be 2D
-                assert!(image.dim == ImageDim::_2D);
-                // Linear images can't be arrays
-                assert!(image.extent_px.array_len == 1);
-                // NVIDIA can't do linear and mipmapping
-                assert!(image.num_levels == 1);
-                // NVIDIA can't do linear and multisampling
-                assert!(image.sample_layout == SampleLayout::_1x1);
-
-                let row_stride_B = if info.explicit_row_stride_B > 0 {
-                    assert!(info.modifier == DRM_FORMAT_MOD_LINEAR);
-                    // Texture headers require strides to be 32B-aligned
-                    debug_assert!(info.explicit_row_stride_B % 32 == 0);
-                    info.explicit_row_stride_B.next_multiple_of(32)
-                } else {
-                    // If we get to pick the alignment, require 128B so that we
-                    // can render to the image without workarounds.
-                    lvl_ext_B.width.next_multiple_of(128)
-                };
-
-                image.levels[level as usize] = ImageLevel {
-                    offset_B: layer_size_B,
-                    tiling,
-                    row_stride_B,
-                };
-
-                layer_size_B +=
-                    u64::from(row_stride_B) * u64::from(lvl_ext_B.height);
+            if tiling != lvl_tiling {
+                image.mip_tail_first_lod =
+                    std::cmp::min(image.mip_tail_first_lod, level);
             }
+
+            // Align the size to tiles
+            let lvl_tiling_ext_B = lvl_tiling.extent_B();
+            lvl_ext_B = lvl_ext_B.align(&lvl_tiling_ext_B);
+            assert!(
+                info.explicit_row_stride_B == 0
+                    || info.explicit_row_stride_B == lvl_ext_B.width
+            );
+
+            image.levels[level as usize] = ImageLevel {
+                offset_B: layer_size_B,
+                tiling: lvl_tiling,
+                row_stride_B: lvl_ext_B.width,
+            };
+
+            layer_size_B += lvl_ext_B.size_B();
         }
 
         // We use the tiling for level 0 instead of the tiling selected above
@@ -391,43 +404,59 @@ impl Image {
             image.align_B = std::cmp::max(image.align_B, 1 << 16);
         }
 
-        if image.levels[0].tiling.is_tiled() {
-            image.pte_kind = Self::choose_pte_kind(
-                dev,
-                info.format,
-                info.samples,
-                image.compressed,
-            );
+        image.pte_kind = Self::choose_pte_kind(
+            dev,
+            info.format,
+            info.samples,
+            image.compressed,
+        );
 
-            if info.modifier != DRM_FORMAT_MOD_INVALID {
-                let bl_mod =
-                    BlockLinearModifier::try_from(info.modifier).unwrap();
-                assert!(bl_mod.pte_kind() == image.pte_kind);
-            }
+        if info.modifier != DRM_FORMAT_MOD_INVALID {
+            let bl_mod = BlockLinearModifier::try_from(info.modifier).unwrap();
+            assert!(bl_mod.pte_kind() == image.pte_kind);
         }
 
-        if image.levels[0].tiling.is_tiled() {
-            image.tile_mode = u16::from(image.levels[0].tiling.y_log2) << 4
-                | u16::from(image.levels[0].tiling.z_log2) << 8;
+        image.tile_mode = u16::from(image.levels[0].tiling.y_log2) << 4
+            | u16::from(image.levels[0].tiling.z_log2) << 8;
 
-            image.align_B = std::cmp::max(image.align_B, 4096);
-            if image.pte_kind >= 0xb && image.pte_kind <= 0xe {
-                image.align_B = std::cmp::max(image.align_B, 1 << 16);
-            }
-        } else {
-            if info.explicit_row_stride_B > 0 {
-                // Linear images need to be aligned to 32B
-                image.align_B = std::cmp::max(image.align_B, 32);
-            } else {
-                // If we get to pick the alignment, require 128B so that we
-                // can render to the image without workarounds.
-                image.align_B = std::cmp::max(image.align_B, 128);
-            }
+        image.align_B = std::cmp::max(image.align_B, 4096);
+        if image.pte_kind >= 0xb && image.pte_kind <= 0xe {
+            image.align_B = std::cmp::max(image.align_B, 1 << 16);
         }
 
         image.size_B = image.size_B.next_multiple_of(image.align_B.into());
 
         image
+    }
+
+    pub fn new(
+        dev: &nil_rs_bindings::nv_device_info,
+        infos: &[ImageInitInfo],
+        plane: usize,
+    ) -> Self {
+        let info = &infos[plane];
+        match info.dim {
+            ImageDim::_1D => {
+                assert!(info.extent_px.height == 1);
+                assert!(info.extent_px.depth == 1);
+                assert!(info.samples == 1);
+            }
+            ImageDim::_2D => {
+                assert!(info.extent_px.depth == 1);
+            }
+            ImageDim::_3D => {
+                assert!(info.extent_px.array_len == 1);
+                assert!(info.samples == 1);
+            }
+        }
+
+        if (info.usage & IMAGE_USAGE_LINEAR_BIT) != 0
+            || info.modifier == DRM_FORMAT_MOD_LINEAR
+        {
+            Self::new_linear(dev, info)
+        } else {
+            Self::new_tiled(dev, infos, plane)
+        }
     }
 
     /// The size in bytes of an extent at a given level.

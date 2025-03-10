@@ -177,9 +177,7 @@ impl Tiling {
         usage: ImageUsageFlags,
         max_tile_size_B: u32,
     ) -> Tiling {
-        if (usage & IMAGE_USAGE_LINEAR_BIT) != 0 {
-            return Default::default();
-        }
+        assert!((usage & IMAGE_USAGE_LINEAR_BIT) == 0);
 
         let mut tiling = Tiling {
             gob_type: GOBType::Fermi8,
