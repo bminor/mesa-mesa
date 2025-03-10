@@ -142,7 +142,6 @@ r300_optimize_nir(struct nir_shader *s, struct pipe_screen *screen)
 {
    bool is_r500 = r300_screen(screen)->caps.is_r500;
 
-   bool progress;
    if (s->info.stage == MESA_SHADER_VERTEX && r300_screen(screen)->caps.has_tcl) {
       /* There is no HW support for gl_ClipVertex, so we just remove it early. */
       if (nir_shader_instructions_pass(s, remove_clip_vertex,
@@ -158,16 +157,16 @@ r300_optimize_nir(struct nir_shader *s, struct pipe_screen *screen)
                var->data.driver_location--;
             }
          }
-         NIR_PASS_V(s, nir_remove_dead_variables, nir_var_shader_out, NULL);
+         NIR_PASS(_, s, nir_remove_dead_variables, nir_var_shader_out, NULL);
          fprintf(stderr, "r300: no HW support for clip vertex, expect misrendering.\n");
          fprintf(stderr, "r300: software emulation can be enabled with RADEON_DEBUG=notcl.\n");
       }
    }
 
+   bool progress;
    do {
       progress = false;
-
-      NIR_PASS_V(s, nir_lower_vars_to_ssa);
+      NIR_PASS(_, s, nir_lower_vars_to_ssa);
 
       NIR_PASS(progress, s, nir_copy_prop);
       NIR_PASS(progress, s, r300_nir_lower_flrp);
@@ -235,8 +234,8 @@ r300_optimize_nir(struct nir_shader *s, struct pipe_screen *screen)
       NIR_PASS(progress, s, nir_opt_offsets, &offset_options);
    } while (progress);
 
-   NIR_PASS_V(s, nir_lower_var_copies);
-   NIR_PASS(progress, s, nir_remove_dead_variables, nir_var_function_temp, NULL);
+   NIR_PASS(_, s, nir_lower_var_copies);
+   NIR_PASS(_, s, nir_remove_dead_variables, nir_var_function_temp, NULL);
 }
 
 char *
