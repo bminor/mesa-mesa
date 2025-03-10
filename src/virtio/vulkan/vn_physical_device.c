@@ -1273,6 +1273,7 @@ vn_physical_device_get_passthrough_extensions(
       .EXT_extended_dynamic_state3 = true,
       .EXT_dynamic_rendering_unused_attachments = true,
       .EXT_external_memory_acquire_unmodified = true,
+      .EXT_filter_cubic = true,
       .EXT_fragment_shader_interlock = true,
       .EXT_global_priority = true,
       .EXT_global_priority_query = true,
@@ -1313,6 +1314,7 @@ vn_physical_device_get_passthrough_extensions(
       .GOOGLE_decorate_string = true,
       .GOOGLE_hlsl_functionality1 = true,
       .GOOGLE_user_type = true,
+      .IMG_filter_cubic = true,
       .NV_compute_shader_derivatives = true,
       .VALVE_mutable_descriptor_type = true,
    };
@@ -2112,6 +2114,7 @@ struct vn_physical_device_image_format_info {
    VkImageFormatListCreateInfo list;
    VkImageStencilUsageCreateInfo stencil_usage;
    VkPhysicalDeviceImageDrmFormatModifierInfoEXT modifier;
+   VkPhysicalDeviceImageViewImageFormatInfoEXT filter_cubic;
 };
 
 static const VkPhysicalDeviceImageFormatInfo2 *
@@ -2150,6 +2153,11 @@ vn_physical_device_fix_image_format_info(
       case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_DRM_FORMAT_MODIFIER_INFO_EXT:
          memcpy(&local_info->modifier, src, sizeof(local_info->modifier));
          pnext = &local_info->modifier;
+         break;
+      case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_VIEW_IMAGE_FORMAT_INFO_EXT:
+         memcpy(&local_info->filter_cubic, src,
+                sizeof(local_info->filter_cubic));
+         pnext = &local_info->filter_cubic;
          break;
       default:
          break;
@@ -2362,6 +2370,7 @@ vn_image_get_image_format_key(
          case VK_STRUCTURE_TYPE_HOST_IMAGE_COPY_DEVICE_PERFORMANCE_QUERY:
          case VK_STRUCTURE_TYPE_IMAGE_COMPRESSION_PROPERTIES_EXT:
          case VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_IMAGE_FORMAT_PROPERTIES:
+         case VK_STRUCTURE_TYPE_FILTER_CUBIC_IMAGE_VIEW_IMAGE_FORMAT_PROPERTIES_EXT:
             _mesa_sha1_update(&sha1_ctx, &src->sType,
                               sizeof(VkStructureType));
             break;
@@ -2450,6 +2459,15 @@ vn_image_init_format_from_cache(
                      .combinedImageSamplerDescriptorCount;
                break;
             }
+            case VK_STRUCTURE_TYPE_FILTER_CUBIC_IMAGE_VIEW_IMAGE_FORMAT_PROPERTIES_EXT: {
+               VkFilterCubicImageViewImageFormatPropertiesEXT *filter_cubic =
+                  (VkFilterCubicImageViewImageFormatPropertiesEXT *)src;
+               filter_cubic->filterCubic =
+                  cache_entry->properties.filter_cubic.filterCubic;
+               filter_cubic->filterCubicMinmax =
+                  cache_entry->properties.filter_cubic.filterCubicMinmax;
+               break;
+            }
             default:
                unreachable("unexpected format props pNext");
             }
@@ -2527,6 +2545,11 @@ vn_image_store_format_in_cache(
          case VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_IMAGE_FORMAT_PROPERTIES: {
             cache_entry->properties.ycbcr_conversion =
                *((VkSamplerYcbcrConversionImageFormatProperties *)src);
+            break;
+         }
+         case VK_STRUCTURE_TYPE_FILTER_CUBIC_IMAGE_VIEW_IMAGE_FORMAT_PROPERTIES_EXT: {
+            cache_entry->properties.filter_cubic =
+               *((VkFilterCubicImageViewImageFormatPropertiesEXT *)src);
             break;
          }
          default:
