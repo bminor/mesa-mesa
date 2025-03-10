@@ -10,6 +10,8 @@ use crate::Minify;
 use nil_rs_bindings::*;
 use nvidia_headers::classes::{cl9097, clc597};
 
+use std::panic;
+
 pub const MAX_LEVELS: usize = 16;
 
 pub type ImageUsageFlags = u8;
@@ -186,24 +188,40 @@ pub struct Image {
 
 impl Image {
     #[no_mangle]
-    pub extern "C" fn nil_image_new(
+    pub extern "C" fn nil_image_init(
         dev: &nil_rs_bindings::nv_device_info,
+        image_out: *mut Self,
         info: &ImageInitInfo,
-    ) -> Self {
-        Self::new(dev, std::slice::from_ref(info), 0)
+    ) -> bool {
+        panic::catch_unwind(|| {
+            let image = Self::new(dev, std::slice::from_ref(info), 0);
+            unsafe {
+                assert!(!image_out.is_null());
+                image_out.write(image);
+            }
+        })
+        .is_ok()
     }
 
     #[no_mangle]
-    pub extern "C" fn nil_image_new_planar(
+    pub extern "C" fn nil_image_init_planar(
         dev: &nil_rs_bindings::nv_device_info,
+        image_out: *mut Self,
         info: *const ImageInitInfo,
         plane: usize,
         plane_count: usize,
-    ) -> Self {
-        assert!(plane < plane_count);
-        let infos = unsafe { std::slice::from_raw_parts(info, plane_count) };
-
-        Self::new(dev, infos, plane)
+    ) -> bool {
+        panic::catch_unwind(|| {
+            assert!(plane < plane_count);
+            let infos =
+                unsafe { std::slice::from_raw_parts(info, plane_count) };
+            let image = Self::new(dev, infos, plane);
+            unsafe {
+                assert!(!image_out.is_null());
+                image_out.write(image);
+            }
+        })
+        .is_ok()
     }
 
     fn new_linear(

@@ -861,8 +861,12 @@ nvk_image_init(struct nvk_device *dev,
             .samples = image->vk.samples,
             .usage = usage & ~NIL_IMAGE_USAGE_LINEAR_BIT,
          };
-         image->linear_tiled_shadow.nil =
-            nil_image_new(&pdev->info, &tiled_shadow_nil_info);
+         bool ok = nil_image_init(&pdev->info,
+                                  &image->linear_tiled_shadow.nil,
+                                  &tiled_shadow_nil_info);
+         if (!ok)
+            return vk_errorf(dev, VK_ERROR_UNKNOWN,
+                             "Invalid image creation parameters");
       }
    }
 
@@ -903,13 +907,22 @@ nvk_image_init(struct nvk_device *dev,
    if (usage & NIL_IMAGE_USAGE_VIDEO_BIT) {
       assert(!image->disjoint);
       for (uint8_t plane = 0; plane < image->plane_count; plane++) {
-         image->planes[plane].nil =
-            nil_image_new_planar(&pdev->info, nil_info, plane, image->plane_count);
+         bool ok = nil_image_init_planar(&pdev->info,
+                                         &image->planes[plane].nil,
+                                         nil_info, plane,
+                                         image->plane_count);
+         if (!ok)
+            return vk_errorf(dev, VK_ERROR_UNKNOWN,
+                             "Invalid image creation parameters");
       }
    } else {
       for (uint8_t plane = 0; plane < image->plane_count; plane++) {
-         image->planes[plane].nil =
-            nil_image_new(&pdev->info, &nil_info[plane]);
+         bool ok = nil_image_init(&pdev->info,
+                                  &image->planes[plane].nil,
+                                  &nil_info[plane]);
+         if (!ok)
+            return vk_errorf(dev, VK_ERROR_UNKNOWN,
+                             "Invalid image creation parameters");
       }
    }
 
@@ -929,8 +942,12 @@ nvk_image_init(struct nvk_device *dev,
          .usage = usage,
       };
 
-      image->stencil_copy_temp.nil =
-         nil_image_new(&pdev->info, &stencil_nil_info);
+      bool ok = nil_image_init(&pdev->info,
+                               &image->stencil_copy_temp.nil,
+                               &stencil_nil_info);
+      if (!ok)
+         return vk_errorf(dev, VK_ERROR_UNKNOWN,
+                          "Invalid image creation parameters");
    }
 
    return VK_SUCCESS;
