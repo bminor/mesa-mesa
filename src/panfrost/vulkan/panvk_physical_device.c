@@ -219,7 +219,7 @@ get_device_extensions(const struct panvk_physical_device *device,
       .KHR_shader_non_semantic_info = true,
       .KHR_shader_quad_control = arch >= 10, /* requires vk1.1 */
       .KHR_shader_relaxed_extended_instruction = true,
-      .KHR_shader_subgroup_extended_types = true,
+      .KHR_shader_subgroup_extended_types = arch >= 10, /* requires v1.1 */
       .KHR_shader_subgroup_rotate = true,
       .KHR_shader_subgroup_uniform_control_flow = arch >= 10, /* requires vk1.1 */
       .KHR_storage_buffer_storage_class = true,
