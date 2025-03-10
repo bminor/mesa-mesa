@@ -89,11 +89,7 @@ def from_script_name_to_component(script_name: str) -> str:
 
 def from_script_name_to_tag_var(script_name: str) -> str:
     # e.g., "build-angle.sh" -> "ANGLE_TAG"
-    return (
-        re.sub(r"^build-([a-z0-9_-]+)\.sh$", r"\1_TAG", script_name)
-        .replace("-", "_")
-        .upper()
-    )
+    return re.sub(r"^build-([a-z0-9_-]+)\.sh$", r"\1_TAG", script_name).replace("-", "_").upper()
 
 
 def prepare_setup_env_script() -> Path:
@@ -180,9 +176,7 @@ def find_candidate_components() -> list[str]:
     return sorted(candidates.intersection(build_scripts))
 
 
-def filter_components(
-    components: list[str], includes: list[str], excludes: list[str]
-) -> list[str]:
+def filter_components(components: list[str], includes: list[str], excludes: list[str]) -> list[str]:
     """
     Returns components that match at least one `includes` regex and none of the `excludes` regex.
     If includes is empty, returns an empty list (unless user explicitly does --all or --include).
@@ -258,9 +252,7 @@ def run_build_script(component: str, check_only: bool = False) -> Optional[str]:
     # Tag check failed, let's dissect the error
 
     if result.returncode == 2:
-        logging.error(
-            f"Tag mismatch for {component}."
-        )
+        logging.error(f"Tag mismatch for {component}.")
         logging.error(result.stdout)
         return None
 
@@ -273,17 +265,16 @@ def run_build_script(component: str, check_only: bool = False) -> Optional[str]:
         sys.exit(3)
 
     # Unexpected error in the build script, propagate the exit code
-    logging.fatal(
-        f"Build script for {component} failed with return code {result.returncode}"
-    )
+    logging.fatal(f"Build script for {component} failed with return code {result.returncode}")
     logging.error(result.stdout)
     sys.exit(result.returncode)
 
 
 def load_image_tags_yaml() -> YamlData:
-    # 0) Check if the YAML file exists
-    if not os.path.isfile(CONDITIONAL_TAGS_FILE):
-        raise FileNotFoundError(f"Conditional build image tags file not found: {CONDITIONAL_TAGS_FILE}")
+    if not PATHS.conditional_tags.is_file():
+        raise FileNotFoundError(
+            f"Conditional build image tags file not found: {PATHS.conditional_tags}"
+        )
 
     with open(str(PATHS.conditional_tags), "r", encoding="utf-8") as f:
         data = yaml.safe_load(f)
@@ -364,9 +355,7 @@ Exit codes:
         default=[],
         help="Full match regex pattern for components to exclude.",
     )
-    parser.add_argument(
-        "--all", action="store_true", help="Equivalent to --include '.*'"
-    )
+    parser.add_argument("--all", action="store_true", help="Equivalent to --include '.*'")
     parser.add_argument(
         "--check",
         "-c",

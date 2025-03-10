@@ -1,4 +1,3 @@
-import os
 import sys
 import subprocess
 import yaml
@@ -295,9 +294,7 @@ def test_main_list(monkeypatch, capsys, mock_container_dir, temp_container_ci_fi
     """
     # Monkeypatch find_components to return a known list.
     for comp in ["comp-a", "comp-b"]:
-        setup_build_script_and_container_ci_file(
-            mock_container_dir, temp_container_ci_file, comp
-        )
+        setup_build_script_and_container_ci_file(mock_container_dir, temp_container_ci_file, comp)
     # Set sys.argv to simulate passing --list.
     monkeypatch.setattr(sys, "argv", ["bin/ci/update_tag.py", "--list"])
 
@@ -379,9 +376,7 @@ def test_build_script_error_exit_codes(
     )
     monkeypatch.setattr(subprocess, "run", lambda *args, **kwargs: fake_result)
     monkeypatch.setattr(sys, "argv", ["bin/ci/update_tag.py", "--check", "foo"])
-    monkeypatch.setattr(
-        "bin.ci.update_tag.get_current_tag_value", lambda *args: "current_tag"
-    )
+    monkeypatch.setattr("bin.ci.update_tag.get_current_tag_value", lambda *args: "current_tag")
 
     # Mock sys.exit to capture the exit code instead of exiting the test
     with pytest.raises(SystemExit) as e:
