@@ -421,7 +421,7 @@ pipe_surface_size(const struct pipe_surface *ps, uint16_t *width, uint16_t *heig
 
 /* Return true if the surfaces are equal. */
 static inline bool
-pipe_surface_equal(struct pipe_surface *s1, struct pipe_surface *s2)
+pipe_surface_equal(const struct pipe_surface *s1, const struct pipe_surface *s2)
 {
    return s1->texture == s2->texture &&
           s1->format == s2->format &&
