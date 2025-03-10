@@ -18,6 +18,7 @@
 #include "vn_instance.h"
 #include "vn_physical_device.h"
 #include "vn_queue.h"
+#include "vn_ring.h"
 
 /* device commands */
 
@@ -506,7 +507,14 @@ out_queue_family_fini:
    vn_device_queue_family_fini(dev);
 
 out_destroy_device:
-   vn_call_vkDestroyDevice(dev->primary_ring, dev_handle, NULL);
+   /* surpress -Wc23-extensions */
+   {
+      struct vn_ring_submit_command ring_submit;
+      vn_submit_vkDestroyDevice(dev->primary_ring, 0, dev_handle, NULL,
+                                &ring_submit);
+      if (ring_submit.ring_seqno_valid)
+         vn_ring_wait_seqno(dev->primary_ring, ring_submit.ring_seqno);
+   }
 
    return result;
 }
@@ -587,9 +595,9 @@ vn_DestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator)
 
    vn_async_vkDestroyDevice(dev->primary_ring, device, NULL);
 
-   /* We must emit vn_call_vkDestroyDevice before releasing bound ring_idx.
-    * Otherwise, another thread might reuse their ring_idx while they
-    * are still bound to the queues in the renderer.
+   /* We must emit vkDestroyDevice before releasing bound ring_idx. Otherwise,
+    * another thread might reuse their ring_idx while they are still bound to
+    * the queues in the renderer.
     */
    for (uint32_t i = 0; i < dev->queue_count; i++) {
       if (!dev->queues[i].emulated)

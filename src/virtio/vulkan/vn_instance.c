@@ -424,7 +424,11 @@ vn_DestroyInstance(VkInstance _instance,
    mtx_destroy(&instance->ring_idx_mutex);
 
    if (instance->renderer) {
-      vn_call_vkDestroyInstance(instance->ring.ring, _instance, NULL);
+      struct vn_ring_submit_command ring_submit;
+      vn_submit_vkDestroyInstance(instance->ring.ring, 0, _instance, NULL,
+                                  &ring_submit);
+      if (ring_submit.ring_seqno_valid)
+         vn_ring_wait_seqno(instance->ring.ring, ring_submit.ring_seqno);
 
       vn_instance_fini_ring(instance);
 

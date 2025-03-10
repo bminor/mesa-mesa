@@ -171,7 +171,7 @@ vn_ring_get_seqno_status(struct vn_ring *ring, uint32_t seqno)
    return vn_ring_ge_seqno(ring, vn_ring_load_head(ring), seqno);
 }
 
-static void
+void
 vn_ring_wait_seqno(struct vn_ring *ring, uint32_t seqno)
 {
    /* A renderer wait incurs several hops and the renderer might poll
