@@ -2834,3 +2834,11 @@ vn_CmdSetDepthClampRangeEXT(VkCommandBuffer commandBuffer,
    VN_CMD_ENQUEUE(vkCmdSetDepthClampRangeEXT, commandBuffer, depthClampMode,
                   pDepthClampRange);
 }
+
+void
+vn_CmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer commandBuffer,
+                                         VkImageAspectFlags aspectMask)
+{
+   VN_CMD_ENQUEUE(vkCmdSetAttachmentFeedbackLoopEnableEXT, commandBuffer,
+                  aspectMask);
+}
