@@ -60,11 +60,11 @@ const struct panfrost_model panfrost_model_list[] = {
 
         MODEL(0x6000, 0, "G71",    "TMIx", NO_ANISO,          8192, {}),
         MODEL(0x6221, 0, "G72",    "THEx", 0x0030 /* r0p3 */, 16384, {}),
-        MODEL(0x7090, 0, "G51",    "TSIx", 0x1010 /* r1p1 */, 16384, {}),
-        MODEL(0x7093, 0, "G31",    "TDVx", HAS_ANISO,         16384, {}),
+        MODEL(0x7090, 0, "G51",    "TSIx", 0x1010 /* r1p1 */, 8192, {}),
+        MODEL(0x7093, 0, "G31",    "TDVx", HAS_ANISO,         8192, {}),
         MODEL(0x7211, 0, "G76",    "TNOx", HAS_ANISO,         16384, {}),
         MODEL(0x7212, 0, "G52",    "TGOx", HAS_ANISO,         16384, {}),
-        MODEL(0x7402, 0, "G52 r1", "TGOx", HAS_ANISO,         16384, {}),
+        MODEL(0x7402, 0, "G52 r1", "TGOx", HAS_ANISO,         8192, {}),
         MODEL(0x9091, 0, "G57",    "TNAx", HAS_ANISO,         16384, {}),
         MODEL(0x9093, 0, "G57",    "TNAx", HAS_ANISO,         16384, {}),
 
