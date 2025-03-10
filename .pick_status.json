@@ -2144,7 +2144,7 @@
         "description": "radv: fix a GPU hang with inherited rendering and HiZ/HiS on GFX1201",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
