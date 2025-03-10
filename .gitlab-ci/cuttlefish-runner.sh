@@ -15,7 +15,6 @@ fi
 
 export PATH=/cuttlefish/bin:/android-tools/platform-tools:$PATH
 export LD_LIBRARY_PATH=/cuttlefish/lib64:${CI_PROJECT_DIR}/install/lib:$LD_LIBRARY_PATH
-export EGL_PLATFORM=surfaceless
 
 # Pick up a vulkan driver
 ARCH=$(uname -m)
