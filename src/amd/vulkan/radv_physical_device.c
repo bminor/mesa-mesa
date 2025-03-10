@@ -1953,6 +1953,20 @@ radv_get_physical_device_properties(struct radv_physical_device *pdev)
    p->shaderBinaryVersion = 1;
 }
 
+static bool
+radv_is_gpu_supported(const struct radeon_info *info)
+{
+   /* AMD CDNA isn't supported. */
+   if (info->gfx_level == GFX9 && !info->has_graphics)
+      return false;
+
+   /* Unknown GPU generations aren't supported. */
+   if (info->gfx_level > GFX12)
+      return false;
+
+   return true;
+}
+
 static VkResult
 radv_physical_device_try_create(struct radv_instance *instance, drmDevicePtr drm_device,
                                 struct radv_physical_device **pdev_out)
@@ -2000,7 +2014,7 @@ radv_physical_device_try_create(struct radv_instance *instance, drmDevicePtr drm
       drmFreeVersion(version);
 
       if (instance->debug_flags & RADV_DEBUG_STARTUP)
-         fprintf(stderr, "radv: info: Found compatible device '%s'.\n", path);
+         fprintf(stderr, "radv: info: Found device '%s'.\n", path);
    }
 #endif
 
@@ -2062,6 +2076,14 @@ radv_physical_device_try_create(struct radv_instance *instance, drmDevicePtr drm
    pdev->local_fd = fd;
    pdev->ws->query_info(pdev->ws, &pdev->info);
    pdev->info.family_overridden = drm_device == NULL;
+
+   /* Allow all devices on a virtual winsys, otherwise do a basic support check. */
+   if (!radv_is_gpu_supported(&pdev->info) && drm_device) {
+      if (instance->debug_flags & RADV_DEBUG_STARTUP)
+         fprintf(stderr, "radv: info: device '%s' is not supported by RADV.\n", pdev->info.name);
+      result = VK_ERROR_INCOMPATIBLE_DRIVER;
+      goto fail_wsi;
+   }
 
    if (drm_device) {
       pdev->addrlib = ac_addrlib_create(&pdev->info, &pdev->info.max_alignment);
