@@ -1303,8 +1303,7 @@ vn_physical_device_get_passthrough_extensions(
       .EXT_legacy_vertex_attributes = true,
       .EXT_line_rasterization = true,
       .EXT_load_store_op_none = true,
-      /* TODO: re-enable after generic app compat issues are resolved */
-      .EXT_memory_budget = false,
+      .EXT_memory_budget = VN_DEBUG(MEM_BUDGET),
       .EXT_multi_draw = true,
       .EXT_mutable_descriptor_type = true,
       .EXT_nested_command_buffer = true,
