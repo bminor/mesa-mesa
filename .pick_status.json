@@ -3014,7 +3014,7 @@
         "description": "brw/algebraic: Clear condition modifier on optimized SEL instruction",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "fab92fa1cba4196a4947731e7105bd1494dfffc4",
         "notes": null
