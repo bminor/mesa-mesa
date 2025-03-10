@@ -658,11 +658,75 @@ lower_barycentric_at_offset(nir_builder *b, nir_intrinsic_instr *intrin,
    return true;
 }
 
+static bool
+lower_indirect_primitive_id(nir_builder *b,
+                            nir_intrinsic_instr *intrin,
+                            void *data)
+{
+   if (intrin->intrinsic != nir_intrinsic_load_per_primitive_input)
+      return false;
+
+   if (nir_intrinsic_io_semantics(intrin).location != VARYING_SLOT_PRIMITIVE_ID)
+      return false;
+
+   nir_def *indirect_primitive_id = data;
+   nir_def_replace(&intrin->def, indirect_primitive_id);
+
+   return true;
+}
+
 void
 brw_nir_lower_fs_inputs(nir_shader *nir,
                         const struct intel_device_info *devinfo,
                         const struct brw_wm_prog_key *key)
 {
+   nir_def *indirect_primitive_id = NULL;
+   if (key->base.vue_layout == INTEL_VUE_LAYOUT_SEPARATE_MESH &&
+       (nir->info.inputs_read & VARYING_BIT_PRIMITIVE_ID)) {
+      nir_builder _b = nir_builder_at(nir_before_impl(nir_shader_get_entrypoint(nir))), *b = &_b;
+      nir_def *index = nir_ushr_imm(b,
+                                    nir_load_fs_msaa_intel(b),
+                                    INTEL_MSAA_FLAG_PRIMITIVE_ID_INDEX_OFFSET);
+      nir_def *max_poly = nir_load_max_polygon_intel(b);
+      /* Build the per-vertex offset into the attribute section of the thread
+       * payload. There is always one GRF of padding in front.
+       *
+       * The computation is fairly complicated due to the layout of the
+       * payload. You can find a description of the layout in
+       * brw_compile_fs.cpp brw_assign_urb_setup().
+       *
+       * Gfx < 20 packs 2 slots per GRF (hence the %/ 2 in the formula)
+       * Gfx >= 20 pack 5 slots per GRF (hence the %/ 5 in the formula)
+       *
+       * Then an additional offset needs to added to handle how multiple
+       * polygon data is interleaved.
+       */
+      nir_def *per_vertex_offset = nir_iadd_imm(
+         b,
+         devinfo->ver >= 20 ?
+         nir_iadd(b,
+                  nir_imul(b, nir_udiv_imm(b, index, 5), nir_imul_imm(b, max_poly, 64)),
+                  nir_imul_imm(b, nir_umod_imm(b, index, 5), 12)) :
+         nir_iadd_imm(
+            b,
+            nir_iadd(
+               b,
+               nir_imul(b, nir_udiv_imm(b, index, 2), nir_imul_imm(b, max_poly, 32)),
+               nir_imul_imm(b, nir_umod_imm(b, index, 2), 16)),
+            12),
+         devinfo->grf_size);
+      /* When the attribute index is INTEL_MSAA_FLAG_PRIMITIVE_ID_MESH_INDEX,
+       * it means the value is coming from the per-primitive block. We always
+       * lay out PrimitiveID at offset 0 in the per-primitive block.
+       */
+      nir_def *attribute_offset = nir_bcsel(
+         b,
+         nir_ieq_imm(b, index, INTEL_MSAA_FLAG_PRIMITIVE_ID_INDEX_MESH),
+         nir_imm_int(b, 0), per_vertex_offset);
+      indirect_primitive_id =
+         nir_read_attribute_payload_intel(b, attribute_offset);
+   }
+
    nir_foreach_shader_in_variable(var, nir) {
       var->data.driver_location = var->data.location;
 
@@ -678,6 +742,14 @@ brw_nir_lower_fs_inputs(nir_shader *nir,
 
          var->data.interpolation = flat ? INTERP_MODE_FLAT
                                         : INTERP_MODE_SMOOTH;
+      }
+
+      /* Always pull the PrimitiveID from the per-primitive block if mesh can be involved.
+       */
+      if (var->data.location == VARYING_SLOT_PRIMITIVE_ID &&
+         key->mesh_input != INTEL_NEVER) {
+         var->data.per_primitive = true;
+         nir->info.per_primitive_inputs |= VARYING_BIT_PRIMITIVE_ID;
       }
    }
 
@@ -702,6 +774,13 @@ brw_nir_lower_fs_inputs(nir_shader *nir,
                lower_barycentric_at_offset,
                nir_metadata_control_flow,
                NULL);
+   }
+
+   if (indirect_primitive_id != NULL) {
+      NIR_PASS(_, nir, nir_shader_intrinsics_pass,
+               lower_indirect_primitive_id,
+               nir_metadata_control_flow,
+               indirect_primitive_id);
    }
 
    /* This pass needs actual constants */

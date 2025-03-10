@@ -630,223 +630,138 @@ static void
 calculate_urb_setup(const struct intel_device_info *devinfo,
                     const struct brw_wm_prog_key *key,
                     struct brw_wm_prog_data *prog_data,
-                    const nir_shader *nir,
-                    const struct brw_mue_map *mue_map)
+                    nir_shader *nir,
+                    const struct brw_mue_map *mue_map,
+                    int *per_primitive_offsets)
 {
    memset(prog_data->urb_setup, -1, sizeof(prog_data->urb_setup));
    memset(prog_data->urb_setup_channel, 0, sizeof(prog_data->urb_setup_channel));
 
    int urb_next = 0; /* in vec4s */
 
+   /* Figure out where the PrimitiveID lives, either in the per-vertex block
+    * or in the per-primitive block or both.
+    */
+   const uint64_t per_vert_primitive_id =
+      key->mesh_input == INTEL_ALWAYS ? 0 : VARYING_BIT_PRIMITIVE_ID;
+   const uint64_t per_prim_primitive_id =
+      key->mesh_input == INTEL_NEVER ? 0 : VARYING_BIT_PRIMITIVE_ID;
    const uint64_t inputs_read =
-      nir->info.inputs_read & ~nir->info.per_primitive_inputs;
+      nir->info.inputs_read &
+      (~nir->info.per_primitive_inputs | per_vert_primitive_id);
+   const uint64_t per_primitive_header_bits =
+      VARYING_BIT_PRIMITIVE_SHADING_RATE |
+      VARYING_BIT_LAYER |
+      VARYING_BIT_VIEWPORT |
+      VARYING_BIT_CULL_PRIMITIVE;
+   const uint64_t per_primitive_inputs =
+      nir->info.inputs_read &
+      (nir->info.per_primitive_inputs | per_prim_primitive_id) &
+      ~per_primitive_header_bits;
+   uint64_t unique_fs_attrs =
+      inputs_read & BRW_FS_VARYING_INPUT_MASK;
+   struct intel_vue_map vue_map;
+   uint32_t per_primitive_stride = 0, first_read_offset = UINT32_MAX;
 
-   /* Figure out where each of the incoming setup attributes lands. */
-   if (key->mesh_input != INTEL_NEVER) {
-      /* Per-Primitive Attributes are laid out by Hardware before the regular
-       * attributes, so order them like this to make easy later to map setup
-       * into real HW registers.
+   if (mue_map != NULL) {
+      memcpy(&vue_map, &mue_map->vue_map, sizeof(vue_map));
+
+      memcpy(per_primitive_offsets,
+             mue_map->per_primitive_offsets,
+             sizeof(mue_map->per_primitive_offsets));
+
+      u_foreach_bit64(location, per_primitive_inputs) {
+         assert(per_primitive_offsets[location] != -1);
+
+         first_read_offset = MIN2(first_read_offset,
+                                  (uint32_t)per_primitive_offsets[location]);
+         per_primitive_stride =
+            MAX2((uint32_t)per_primitive_offsets[location] + 16,
+                 per_primitive_stride);
+      }
+   } else {
+      brw_compute_vue_map(devinfo, &vue_map, inputs_read,
+                          key->base.vue_layout,
+                          1 /* pos_slots, TODO */);
+      brw_compute_per_primitive_map(per_primitive_offsets,
+                                    &per_primitive_stride,
+                                    &first_read_offset,
+                                    0, nir, nir_var_shader_in,
+                                    per_primitive_inputs,
+                                    true /* separate_shader */);
+   }
+
+   if (per_primitive_stride > first_read_offset) {
+      first_read_offset = ROUND_DOWN_TO(first_read_offset, 32);
+
+      /* Remove the first few unused registers */
+      for (uint32_t i = 0; i < VARYING_SLOT_MAX; i++) {
+         if (per_primitive_offsets[i] == -1)
+            continue;
+         per_primitive_offsets[i] -= first_read_offset;
+      }
+
+      prog_data->num_per_primitive_inputs =
+         2 * DIV_ROUND_UP(per_primitive_stride - first_read_offset, 32);
+   } else {
+      prog_data->num_per_primitive_inputs = 0;
+   }
+
+   /* Now do the per-vertex stuff (what used to be legacy pipeline) */
+   const uint64_t vue_header_bits = BRW_VUE_HEADER_VARYING_MASK;
+
+   unique_fs_attrs &= ~vue_header_bits;
+
+   /* If Mesh is involved, we cannot do any packing. Documentation doesn't say
+    * anything about this but 3DSTATE_SBE_SWIZ does not appear to work when
+    * using Mesh.
+    */
+   if (util_bitcount64(unique_fs_attrs) <= 16 && key->mesh_input == INTEL_NEVER) {
+      /* When not in Mesh pipeline mode, the SF/SBE pipeline stage can do
+       * arbitrary rearrangement of the first 16 varying inputs, so we can put
+       * them wherever we want. Just put them in order.
+       *
+       * This is useful because it means that (a) inputs not used by the
+       * fragment shader won't take up valuable register space, and (b) we
+       * won't have to recompile the fragment shader if it gets paired with a
+       * different vertex (or geometry) shader.
        */
-      if (nir->info.per_primitive_inputs) {
-         uint64_t per_prim_inputs_read =
-               nir->info.inputs_read & nir->info.per_primitive_inputs;
-
-         /* In Mesh, PRIMITIVE_SHADING_RATE, VIEWPORT and LAYER slots
-          * are always at the beginning, because they come from MUE
-          * Primitive Header, not Per-Primitive Attributes.
-          */
-         const uint64_t primitive_header_bits = VARYING_BIT_VIEWPORT |
-                                                VARYING_BIT_LAYER |
-                                                VARYING_BIT_PRIMITIVE_SHADING_RATE;
-
-         if (mue_map) {
-            unsigned per_prim_start_dw = mue_map->per_primitive_start_dw;
-            unsigned per_prim_size_dw = mue_map->per_primitive_pitch_dw;
-
-            bool reads_header = (per_prim_inputs_read & primitive_header_bits) != 0;
-
-            if (reads_header || mue_map->user_data_in_primitive_header) {
-               /* Primitive Shading Rate, Layer and Viewport live in the same
-                * 4-dwords slot (psr is dword 0, layer is dword 1, and viewport
-                * is dword 2).
-                */
-               if (per_prim_inputs_read & VARYING_BIT_PRIMITIVE_SHADING_RATE)
-                  prog_data->urb_setup[VARYING_SLOT_PRIMITIVE_SHADING_RATE] = 0;
-
-               if (per_prim_inputs_read & VARYING_BIT_LAYER)
-                  prog_data->urb_setup[VARYING_SLOT_LAYER] = 0;
-
-               if (per_prim_inputs_read & VARYING_BIT_VIEWPORT)
-                  prog_data->urb_setup[VARYING_SLOT_VIEWPORT] = 0;
-
-               per_prim_inputs_read &= ~primitive_header_bits;
-            } else {
-               /* If fs doesn't need primitive header, then it won't be made
-                * available through SBE_MESH, so we have to skip them when
-                * calculating offset from start of per-prim data.
-                */
-               per_prim_start_dw += mue_map->per_primitive_header_size_dw;
-               per_prim_size_dw -= mue_map->per_primitive_header_size_dw;
-            }
-
-            u_foreach_bit64(i, per_prim_inputs_read) {
-               int start = mue_map->start_dw[i];
-
-               assert(start >= 0);
-               assert(mue_map->len_dw[i] > 0);
-
-               assert(unsigned(start) >= per_prim_start_dw);
-               unsigned pos_dw = unsigned(start) - per_prim_start_dw;
-
-               prog_data->urb_setup[i] = urb_next + pos_dw / 4;
-               prog_data->urb_setup_channel[i] = pos_dw % 4;
-            }
-
-            urb_next = per_prim_size_dw / 4;
-         } else {
-            /* With no MUE map, we never read the primitive header, and
-             * per-primitive attributes won't be packed either, so just lay
-             * them in varying order.
-             */
-            per_prim_inputs_read &= ~primitive_header_bits;
-
-            for (unsigned i = 0; i < VARYING_SLOT_MAX; i++) {
-               if (per_prim_inputs_read & BITFIELD64_BIT(i)) {
-                  prog_data->urb_setup[i] = urb_next++;
-               }
-            }
-
-            /* The actual setup attributes later must be aligned to a full GRF. */
-            urb_next = ALIGN(urb_next, 2);
-         }
-
-         prog_data->num_per_primitive_inputs = urb_next;
-      }
-
-      const uint64_t clip_dist_bits = VARYING_BIT_CLIP_DIST0 |
-                                      VARYING_BIT_CLIP_DIST1;
-
-      uint64_t unique_fs_attrs = inputs_read & BRW_FS_VARYING_INPUT_MASK;
-
-      if (inputs_read & clip_dist_bits) {
-         assert(!mue_map || mue_map->per_vertex_header_size_dw > 8);
-         unique_fs_attrs &= ~clip_dist_bits;
-      }
-
-      if (mue_map) {
-         unsigned per_vertex_start_dw = mue_map->per_vertex_start_dw;
-         unsigned per_vertex_size_dw = mue_map->per_vertex_pitch_dw;
-
-         /* Per-Vertex header is available to fragment shader only if there's
-          * user data there.
-          */
-         if (!mue_map->user_data_in_vertex_header) {
-            per_vertex_start_dw += 8;
-            per_vertex_size_dw -= 8;
-         }
-
-         /* In Mesh, CLIP_DIST slots are always at the beginning, because
-          * they come from MUE Vertex Header, not Per-Vertex Attributes.
-          */
-         if (inputs_read & clip_dist_bits) {
-            prog_data->urb_setup[VARYING_SLOT_CLIP_DIST0] = urb_next;
-            prog_data->urb_setup[VARYING_SLOT_CLIP_DIST1] = urb_next + 1;
-         } else if (mue_map && mue_map->per_vertex_header_size_dw > 8) {
-            /* Clip distances are in MUE, but we are not reading them in FS. */
-            per_vertex_start_dw += 8;
-            per_vertex_size_dw -= 8;
-         }
-
-         /* Per-Vertex attributes are laid out ordered.  Because we always link
-          * Mesh and Fragment shaders, the which slots are written and read by
-          * each of them will match. */
-         u_foreach_bit64(i, unique_fs_attrs) {
-            int start = mue_map->start_dw[i];
-
-            assert(start >= 0);
-            assert(mue_map->len_dw[i] > 0);
-
-            assert(unsigned(start) >= per_vertex_start_dw);
-            unsigned pos_dw = unsigned(start) - per_vertex_start_dw;
-
-            prog_data->urb_setup[i] = urb_next + pos_dw / 4;
-            prog_data->urb_setup_channel[i] = pos_dw % 4;
-         }
-
-         urb_next += per_vertex_size_dw / 4;
-      } else {
-         /* If we don't have an MUE map, just lay down the inputs the FS reads
-          * in varying order, as we do for the legacy pipeline.
-          */
-         if (inputs_read & clip_dist_bits) {
-            prog_data->urb_setup[VARYING_SLOT_CLIP_DIST0] = urb_next++;
-            prog_data->urb_setup[VARYING_SLOT_CLIP_DIST1] = urb_next++;
-         }
-
-         for (unsigned int i = 0; i < VARYING_SLOT_MAX; i++) {
-            if (unique_fs_attrs & BITFIELD64_BIT(i))
-               prog_data->urb_setup[i] = urb_next++;
+      for (unsigned int i = 0; i < VARYING_SLOT_MAX; i++) {
+         if (inputs_read & BRW_FS_VARYING_INPUT_MASK & ~vue_header_bits &
+             BITFIELD64_BIT(i)) {
+            prog_data->urb_setup[i] = urb_next++;
          }
       }
    } else {
-      assert(!nir->info.per_primitive_inputs);
-
-      const uint64_t vue_header_bits = BRW_VUE_HEADER_VARYING_MASK;
-
-      uint64_t unique_fs_attrs = inputs_read & BRW_FS_VARYING_INPUT_MASK & ~vue_header_bits;
-
-      if (util_bitcount64(unique_fs_attrs) <= 16) {
-         /* The SF/SBE pipeline stage can do arbitrary rearrangement of the
-          * first 16 varying inputs, so we can put them wherever we want.
-          * Just put them in order.
-          *
-          * This is useful because it means that (a) inputs not used by the
-          * fragment shader won't take up valuable register space, and (b) we
-          * won't have to recompile the fragment shader if it gets paired with
-          * a different vertex (or geometry) shader.
-          */
-         for (unsigned int i = 0; i < VARYING_SLOT_MAX; i++) {
-            if (inputs_read & BRW_FS_VARYING_INPUT_MASK & ~vue_header_bits &
-                BITFIELD64_BIT(i)) {
-               prog_data->urb_setup[i] = urb_next++;
-            }
+      /* We have enough input varyings that the SF/SBE pipeline stage can't
+       * arbitrarily rearrange them to suit our whim; we have to put them in
+       * an order that matches the output of the previous pipeline stage
+       * (geometry or vertex shader).
+       */
+      int first_slot = 0;
+      for (int i = 0; i < vue_map.num_slots; i++) {
+         int varying = vue_map.slot_to_varying[i];
+         if (varying != BRW_VARYING_SLOT_PAD && varying > 0 &&
+             (inputs_read & BITFIELD64_BIT(varying)) != 0) {
+            first_slot = ROUND_DOWN_TO(i, 2);
+            break;
          }
-      } else {
-         /* We have enough input varyings that the SF/SBE pipeline stage can't
-          * arbitrarily rearrange them to suit our whim; we have to put them
-          * in an order that matches the output of the previous pipeline stage
-          * (geometry or vertex shader).
-          */
-
-         /* Re-compute the VUE map here in the case that the one coming from
-          * geometry has more than one position slot (used for Primitive
-          * Replication).
-          */
-         struct intel_vue_map prev_stage_vue_map;
-         brw_compute_vue_map(devinfo, &prev_stage_vue_map,
-                             key->input_slots_valid,
-                             key->base.vue_layout, 1);
-
-         int first_slot =
-            brw_compute_first_fs_urb_slot_required(unique_fs_attrs,
-                                                   &prev_stage_vue_map);
-
-         assert(prev_stage_vue_map.num_slots <= first_slot + 32);
-         for (int slot = first_slot; slot < prev_stage_vue_map.num_slots;
-              slot++) {
-            int varying = prev_stage_vue_map.slot_to_varying[slot];
-            if (varying != BRW_VARYING_SLOT_PAD &&
-                (inputs_read & BRW_FS_VARYING_INPUT_MASK &
-                 BITFIELD64_BIT(varying))) {
-               prog_data->urb_setup[varying] = slot - first_slot;
-            }
-         }
-         urb_next = prev_stage_vue_map.num_slots - first_slot;
       }
+
+      for (int slot = first_slot; slot < vue_map.num_slots; slot++) {
+         int varying = vue_map.slot_to_varying[slot];
+         if (varying != BRW_VARYING_SLOT_PAD &&
+             (inputs_read & BRW_FS_VARYING_INPUT_MASK &
+              BITFIELD64_BIT(varying))) {
+            prog_data->urb_setup[varying] = slot - first_slot;
+         }
+      }
+      urb_next = vue_map.num_slots - first_slot;
    }
 
-   prog_data->num_varying_inputs = urb_next - prog_data->num_per_primitive_inputs;
+   prog_data->num_varying_inputs = urb_next;
    prog_data->inputs = inputs_read;
+   prog_data->per_primitive_inputs = per_primitive_inputs;
 
    brw_compute_urb_setup_index(prog_data);
 }
@@ -951,8 +866,6 @@ brw_compute_flat_inputs(struct brw_wm_prog_data *prog_data,
 {
    prog_data->flat_inputs = 0;
 
-   const unsigned per_vertex_start = prog_data->num_per_primitive_inputs;
-
    nir_foreach_shader_in_variable(var, shader) {
       /* flat shading */
       if (var->data.interpolation != INTERP_MODE_FLAT)
@@ -963,7 +876,7 @@ brw_compute_flat_inputs(struct brw_wm_prog_data *prog_data,
 
       unsigned slots = glsl_count_attribute_slots(var->type, false);
       for (unsigned s = 0; s < slots; s++) {
-         int input_index = prog_data->urb_setup[var->data.location + s] - per_vertex_start;
+         int input_index = prog_data->urb_setup[var->data.location + s];
 
          if (input_index >= 0)
             prog_data->flat_inputs |= 1 << input_index;
@@ -1005,7 +918,8 @@ brw_nir_populate_wm_prog_data(nir_shader *shader,
                               const struct intel_device_info *devinfo,
                               const struct brw_wm_prog_key *key,
                               struct brw_wm_prog_data *prog_data,
-                              const struct brw_mue_map *mue_map)
+                              const struct brw_mue_map *mue_map,
+                              int *per_primitive_offsets)
 {
    prog_data->uses_kill = shader->info.fs.uses_discard;
    prog_data->uses_omask = !key->ignore_sample_mask_out &&
@@ -1158,7 +1072,7 @@ brw_nir_populate_wm_prog_data(nir_shader *shader,
       (BITSET_TEST(shader->info.system_values_read, SYSTEM_VALUE_FRAG_COORD) &&
        prog_data->coarse_pixel_dispatch != INTEL_NEVER);
 
-   calculate_urb_setup(devinfo, key, prog_data, shader, mue_map);
+   calculate_urb_setup(devinfo, key, prog_data, shader, mue_map, per_primitive_offsets);
    brw_compute_flat_inputs(prog_data, shader);
 }
 
@@ -1479,6 +1393,44 @@ run_fs(brw_shader &s, bool allow_spilling, bool do_rep_send)
    return !s.failed;
 }
 
+static void
+brw_print_fs_urb_setup(FILE *fp, const struct brw_wm_prog_data *prog_data,
+                       int *per_primitive_offsets)
+{
+   fprintf(fp, "FS URB (inputs=0x%016" PRIx64 ", flat_inputs=0x%08x):\n",
+           prog_data->inputs, prog_data->flat_inputs);
+   fprintf(fp, "  URB setup:\n");
+   for (uint32_t i = 0; i < ARRAY_SIZE(prog_data->urb_setup); i++) {
+      if (prog_data->urb_setup[i] >= 0) {
+         fprintf(fp, "   [%02d]: %i channel=%u (%s)\n",
+                 i, prog_data->urb_setup[i], prog_data->urb_setup_channel[i],
+                 gl_varying_slot_name_for_stage((gl_varying_slot)i,
+                                                MESA_SHADER_FRAGMENT));
+      }
+   }
+   fprintf(fp, "  URB setup attributes:\n");
+   for (uint32_t i = 0; i < prog_data->urb_setup_attribs_count; i++) {
+      fprintf(fp, "   [%02d]: %i (%s)\n",
+              i, prog_data->urb_setup_attribs[i],
+              gl_varying_slot_name_for_stage(
+                 (gl_varying_slot)prog_data->urb_setup_attribs[i],
+                 MESA_SHADER_FRAGMENT));
+   }
+   if (per_primitive_offsets) {
+      fprintf(fp, "  Per Primitive URB setup:\n");
+      for (uint32_t i = 0; i < VARYING_SLOT_MAX; i++) {
+         if (per_primitive_offsets[i] == -1 ||
+             i == VARYING_SLOT_PRIMITIVE_COUNT ||
+             i == VARYING_SLOT_PRIMITIVE_INDICES)
+            continue;
+         fprintf(fp, "   [%02d]: %i (%s)\n",
+                 i, per_primitive_offsets[i],
+                 gl_varying_slot_name_for_stage((gl_varying_slot)i,
+                                                MESA_SHADER_FRAGMENT));
+      }
+   }
+}
+
 const unsigned *
 brw_compile_fs(const struct brw_compiler *compiler,
                struct brw_compile_fs_params *params)
@@ -1518,8 +1470,15 @@ brw_compile_fs(const struct brw_compiler *compiler,
    brw_postprocess_nir(nir, compiler, debug_enabled,
                        key->base.robust_flags);
 
+   int per_primitive_offsets[VARYING_SLOT_MAX];
+   memset(per_primitive_offsets, -1, sizeof(per_primitive_offsets));
+
    brw_nir_populate_wm_prog_data(nir, compiler->devinfo, key, prog_data,
-                                 params->mue_map);
+                                 params->mue_map,
+                                 per_primitive_offsets);
+
+   if (unlikely(debug_enabled))
+      brw_print_fs_urb_setup(stderr, prog_data, per_primitive_offsets);
 
    /* Either an unrestricted or a fixed SIMD16 subgroup size are
     * allowed -- The latter is needed for fast clear and replicated
@@ -1540,6 +1499,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
                                         prog_data, nir, 8, 1,
                                         params->base.stats != NULL,
                                         debug_enabled);
+      v8->import_per_primitive_offsets(per_primitive_offsets);
       if (!run_fs(*v8, allow_spilling, false /* do_rep_send */)) {
          params->base.error_str = ralloc_strdup(params->base.mem_ctx,
                                                 v8->fail_msg);
@@ -1645,6 +1605,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
                                             prog_data, nir, 32, 1,
                                             params->base.stats != NULL,
                                             debug_enabled);
+         v32->import_per_primitive_offsets(per_primitive_offsets);
          if (vbase)
             v32->import_uniforms(vbase);
 
@@ -1670,6 +1631,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
                                             prog_data, nir, 16, 1,
                                             params->base.stats != NULL,
                                             debug_enabled);
+         v16->import_per_primitive_offsets(per_primitive_offsets);
 
          if (!run_fs(*v16, allow_spilling, params->use_rep_send)) {
             brw_shader_perf_log(compiler, params->base.log_data,
@@ -1694,6 +1656,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
                                             prog_data, nir, 16, 1,
                                             params->base.stats != NULL,
                                             debug_enabled);
+         v16->import_per_primitive_offsets(per_primitive_offsets);
          if (v8)
             v16->import_uniforms(v8.get());
          if (!run_fs(*v16, allow_spilling, params->use_rep_send)) {
@@ -1728,6 +1691,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
                                             prog_data, nir, 32, 1,
                                             params->base.stats != NULL,
                                             debug_enabled);
+         v32->import_per_primitive_offsets(per_primitive_offsets);
          if (v8)
             v32->import_uniforms(v8.get());
          else if (v16)
@@ -1772,6 +1736,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
                                                   prog_data, nir, 32, 4,
                                                   params->base.stats != NULL,
                                                   debug_enabled);
+            vmulti->import_per_primitive_offsets(per_primitive_offsets);
             vmulti->import_uniforms(vbase);
             if (!run_fs(*vmulti, false, params->use_rep_send)) {
                brw_shader_perf_log(compiler, params->base.log_data,
@@ -1792,6 +1757,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
                                                   prog_data, nir, 32, 2,
                                                   params->base.stats != NULL,
                                                   debug_enabled);
+            vmulti->import_per_primitive_offsets(per_primitive_offsets);
             vmulti->import_uniforms(vbase);
             if (!run_fs(*vmulti, false, params->use_rep_send)) {
                brw_shader_perf_log(compiler, params->base.log_data,
@@ -1811,6 +1777,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
                                                   prog_data, nir, 16, 2,
                                                   params->base.stats != NULL,
                                                   debug_enabled);
+            vmulti->import_per_primitive_offsets(per_primitive_offsets);
             vmulti->import_uniforms(vbase);
             if (!run_fs(*vmulti, allow_spilling, params->use_rep_send)) {
                brw_shader_perf_log(compiler, params->base.log_data,
@@ -1893,31 +1860,110 @@ brw_compile_fs(const struct brw_compiler *compiler,
 }
 
 extern "C" void
-brw_print_fs_urb_setup(FILE *fp, const struct brw_wm_prog_data *prog_data)
+brw_compute_sbe_per_vertex_urb_read(const struct intel_vue_map *prev_stage_vue_map,
+                                    bool mesh,
+                                    const struct brw_wm_prog_data *wm_prog_data,
+                                    uint32_t *out_read_offset,
+                                    uint32_t *out_read_length,
+                                    uint32_t *out_num_varyings,
+                                    uint32_t *out_primitive_id_offset)
 {
-   fprintf(fp, "FS URB (inputs=0x%016lx, flat_inputs=0x%08x):\n",
-           prog_data->inputs, prog_data->flat_inputs);
-   fprintf(fp, "  URB setup:\n");
-   for (uint32_t i = 0; i < ARRAY_SIZE(prog_data->urb_setup); i++) {
-      if (prog_data->urb_setup[i] >= 0) {
-         fprintf(fp, "   [%02d]: %i channel=%u (%s)\n",
-                 i, prog_data->urb_setup[i], prog_data->urb_setup_channel[i],
-                 gl_varying_slot_name_for_stage((gl_varying_slot)i,
-                                                MESA_SHADER_FRAGMENT));
+   int first_slot = INT32_MAX, last_slot = -1;
+
+   /* Ignore PrimitiveID in mesh pipelines, this value is coming from the
+    * per-primitive block.
+    */
+   uint64_t inputs_read = wm_prog_data->inputs;
+   if (mesh)
+      inputs_read &= ~VARYING_BIT_PRIMITIVE_ID;
+
+   for (int _i = 0; _i < prev_stage_vue_map->num_slots; _i++) {
+      uint32_t i = prev_stage_vue_map->num_slots - 1 - _i;
+      int varying = prev_stage_vue_map->slot_to_varying[i];
+      if (varying < 0)
+         continue;
+
+      if (varying == BRW_VARYING_SLOT_PAD ||
+          (inputs_read & BITFIELD64_BIT(varying)) == 0)
+         continue;
+
+      last_slot = i;
+      break;
+   }
+
+   for (int i = 0; i < prev_stage_vue_map->num_slots; i++) {
+      int varying = prev_stage_vue_map->slot_to_varying[i];
+      if (varying != BRW_VARYING_SLOT_PAD && varying > 0 &&
+          (inputs_read & BITFIELD64_BIT(varying)) != 0) {
+         first_slot = i;
+         break;
       }
    }
-   fprintf(fp, "  URB setup attributes:\n");
-   for (uint32_t i = 0; i < prog_data->urb_setup_attribs_count; i++) {
-      fprintf(fp, "   [%02d]: %i (%s)\n",
-              i, prog_data->urb_setup_attribs[i],
-              gl_varying_slot_name_for_stage((gl_varying_slot)i,
-                                             MESA_SHADER_FRAGMENT));
+
+   assert((first_slot == INT32_MAX && last_slot == -1) ||
+          (first_slot >= 0 && last_slot >= 0 && last_slot >= first_slot));
+
+   uint32_t num_varyings = wm_prog_data->num_varying_inputs;
+
+   /* When using INTEL_VUE_LAYOUT_SEPARATE_MESH, the location of the
+    * PrimitiveID is unknown at compile time, here we compute the offset
+    * inside the attribute registers which will be read with MOV_INDIRECT in
+    * the shader.
+    */
+   *out_primitive_id_offset = 0;
+   if (prev_stage_vue_map->layout == INTEL_VUE_LAYOUT_SEPARATE_MESH) {
+      if (mesh) {
+         /* When using Mesh, the PrimitiveID is in the per-primitive block. */
+         if (wm_prog_data->urb_setup[VARYING_SLOT_PRIMITIVE_ID] >= 0)
+            num_varyings--;
+         *out_primitive_id_offset = INTEL_MSAA_FLAG_PRIMITIVE_ID_INDEX_MESH;
+      } else if (inputs_read & VARYING_BIT_PRIMITIVE_ID) {
+         int primitive_id_slot;
+         if (prev_stage_vue_map->varying_to_slot[VARYING_SLOT_PRIMITIVE_ID] < 0) {
+            /* If the previous stage doesn't write PrimitiveID, we can have
+             * the HW generate a value (except if GS is enabled but in that
+             * case that's undefined).
+             *
+             * If the FS shader already has a slot of the PrimitiveID value,
+             * use that.
+             */
+            if (wm_prog_data->urb_setup[VARYING_SLOT_PRIMITIVE_ID] >= 0) {
+               if (first_slot == INT32_MAX)
+                  first_slot = 0;
+               primitive_id_slot =
+                  first_slot + wm_prog_data->urb_setup[VARYING_SLOT_PRIMITIVE_ID];
+            } else {
+               primitive_id_slot = ++last_slot;
+            }
+         } else {
+            primitive_id_slot =
+               prev_stage_vue_map->varying_to_slot[VARYING_SLOT_PRIMITIVE_ID];
+         }
+         last_slot = MAX2(primitive_id_slot, last_slot);
+
+         *out_primitive_id_offset = 4 * (primitive_id_slot - first_slot);
+      }
+   }
+
+   /* Compute the read parameters for SBE (those have to be 32B aligned) */
+   if (last_slot == -1) {
+      *out_read_offset = 0;
+      *out_read_length = DIV_ROUND_UP(num_varyings, 2);
+      *out_num_varyings = num_varyings;
+   } else {
+      first_slot = ROUND_DOWN_TO(first_slot, 2);
+      *out_read_offset = first_slot / 2;
+      *out_read_length = DIV_ROUND_UP(last_slot - first_slot + 1, 2);
+      *out_num_varyings = num_varyings;
    }
 }
 
-extern "C" int
-brw_compute_first_fs_urb_slot_required(uint64_t inputs_read,
-                                       const struct intel_vue_map *prev_stage_vue_map)
+extern "C" void
+brw_compute_sbe_per_primitive_urb_read(uint64_t inputs_read,
+                                       uint32_t num_varyings,
+                                       const struct brw_mue_map *mue_map,
+                                       uint32_t *out_read_offset,
+                                       uint32_t *out_read_length)
 {
    /* The header slots are irrelevant for the URB varying slots. They are
     * delivered somewhere else in the thread payload.
@@ -1927,16 +1973,19 @@ brw_compute_first_fs_urb_slot_required(uint64_t inputs_read,
     *   - LAYER                  : R1.1, Render Target Array Index
     *   - VIEWPORT               : R1.1, Viewport Index
     *   - PSIZ                   : not available in fragment shaders
+    *   - FACE                   : R1.1, Front/Back Facing
     */
-   inputs_read &= ~BRW_VUE_HEADER_VARYING_MASK;
+   inputs_read &= ~(BRW_VUE_HEADER_VARYING_MASK | VARYING_BIT_FACE);
 
-   for (int i = 0; i < prev_stage_vue_map->num_slots; i++) {
-      int varying = prev_stage_vue_map->slot_to_varying[i];
-      if (varying != BRW_VARYING_SLOT_PAD && varying > 0 &&
-          (inputs_read & BITFIELD64_BIT(varying)) != 0) {
-         return ROUND_DOWN_TO(i, 2);
-      }
+   uint32_t first_read = UINT32_MAX;
+   u_foreach_bit64(varying, inputs_read) {
+      if (mue_map->per_primitive_offsets[varying] < 0)
+         continue;
+
+      first_read = mue_map->per_primitive_offsets[varying];
+      break;
    }
 
-   return 0;
+   *out_read_offset = DIV_ROUND_UP(first_read, 32);
+   *out_read_length = DIV_ROUND_UP(num_varyings, 2);
 }

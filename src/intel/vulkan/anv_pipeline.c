@@ -1757,7 +1757,10 @@ anv_graphics_pipeline_init_keys(struct anv_graphics_base_pipeline *pipeline,
        !device->vk.enabled_extensions.EXT_graphics_pipeline_library) {
       vue_layout = INTEL_VUE_LAYOUT_FIXED;
    } else {
-      vue_layout = INTEL_VUE_LAYOUT_SEPARATE;
+      vue_layout =
+         (pipeline->base.type == ANV_PIPELINE_GRAPHICS_LIB &&
+          device->vk.enabled_extensions.EXT_mesh_shader) ?
+         INTEL_VUE_LAYOUT_SEPARATE_MESH : INTEL_VUE_LAYOUT_SEPARATE;
    }
 
    for (uint32_t s = 0; s < ANV_GRAPHICS_SHADER_STAGE_COUNT; s++) {

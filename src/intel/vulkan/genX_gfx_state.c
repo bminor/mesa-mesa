@@ -780,6 +780,7 @@ update_fs_msaa_flags(struct anv_gfx_dynamic_state *hw_state,
             .rasterization_samples     = dyn->ms.rasterization_samples,
             .coarse_pixel              = !vk_fragment_shading_rate_is_disabled(&dyn->fsr),
             .alpha_to_coverage         = dyn->ms.alpha_to_coverage_enable,
+            .primitive_id_index        = pipeline->primitive_id_index,
          });
 
    SET(FS_MSAA_FLAGS, fs_msaa_flags, fs_msaa_flags);

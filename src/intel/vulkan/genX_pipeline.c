@@ -531,7 +531,7 @@ emit_urb_setup_mesh(struct anv_graphics_pipeline *pipeline,
    const struct intel_mesh_urb_allocation alloc =
       intel_get_mesh_urb_config(devinfo, pipeline->base.base.l3_config,
                                 task_prog_data ? task_prog_data->map.size_dw : 0,
-                                mesh_prog_data->map.size_dw);
+                                mesh_prog_data->map.size / 4);
 
    /* Zero out the primitive pipeline URB allocations. */
    for (int i = 0; i <= MESA_SHADER_GEOMETRY; i++) {
@@ -641,14 +641,14 @@ sbe_primitive_id_override(struct anv_graphics_pipeline *pipeline)
          get_mesh_prog_data(pipeline);
       const struct brw_mue_map *mue = &mesh_prog_data->map;
       return (wm_prog_data->inputs & VARYING_BIT_PRIMITIVE_ID) &&
-              mue->start_dw[VARYING_SLOT_PRIMITIVE_ID] == -1;
+              mue->per_primitive_offsets[VARYING_SLOT_PRIMITIVE_ID] == -1;
    }
 
    const struct intel_vue_map *fs_input_map =
       &anv_pipeline_get_last_vue_prog_data(pipeline)->vue_map;
 
    return (wm_prog_data->inputs & VARYING_BIT_PRIMITIVE_ID) &&
-          fs_input_map->varying_to_slot[VARYING_SLOT_PRIMITIVE_ID] == -1;
+          (fs_input_map->slots_valid & VARYING_BIT_PRIMITIVE_ID) == 0;
 }
 
 static void
@@ -667,30 +667,34 @@ emit_3dstate_sbe(struct anv_graphics_pipeline *pipeline)
       return;
    }
 
+   const struct intel_vue_map *vue_map =
+      anv_pipeline_is_mesh(pipeline) ?
+      &get_mesh_prog_data(pipeline)->map.vue_map :
+      &anv_pipeline_get_last_vue_prog_data(pipeline)->vue_map;
+
    anv_pipeline_emit(pipeline, final.sbe, GENX(3DSTATE_SBE), sbe) {
    anv_pipeline_emit(pipeline, final.sbe_swiz, GENX(3DSTATE_SBE_SWIZ), swiz) {
+      int max_source_attr = 0;
+      uint32_t vertex_read_offset, vertex_read_length, vertex_varyings;
+      brw_compute_sbe_per_vertex_urb_read(
+         vue_map, anv_pipeline_is_mesh(pipeline), wm_prog_data,
+         &vertex_read_offset, &vertex_read_length, &vertex_varyings,
+         &pipeline->primitive_id_index);
 
-      /* TODO(mesh): Figure out cases where we need attribute swizzling.  See also
-       * calculate_urb_setup() and related functions.
-       */
       sbe.AttributeSwizzleEnable = anv_pipeline_is_primitive(pipeline);
       sbe.PointSpriteTextureCoordinateOrigin = UPPERLEFT;
-      sbe.NumberofSFOutputAttributes = wm_prog_data->num_varying_inputs;
-      sbe.ConstantInterpolationEnable = wm_prog_data->flat_inputs;
+      sbe.ConstantInterpolationEnable = wm_prog_data->flat_inputs &
+                                        ((1u << vertex_varyings) - 1);
+      sbe.NumberofSFOutputAttributes = vertex_varyings;
 
       for (unsigned i = 0; i < 32; i++)
          sbe.AttributeActiveComponentFormat[i] = ACF_XYZW;
 
+      /* As far as we can test, some of the fields in 3DSTATE_SBE & all of
+       * 3DSTATE_SBE_SWIZ has no effect when the pipeline is using Mesh so
+       * don't bother filling those fields.
+       */
       if (anv_pipeline_is_primitive(pipeline)) {
-         const struct intel_vue_map *fs_input_map =
-            &anv_pipeline_get_last_vue_prog_data(pipeline)->vue_map;
-
-         int first_slot =
-            brw_compute_first_fs_urb_slot_required(wm_prog_data->inputs,
-                                                   fs_input_map);
-         assert(first_slot % 2 == 0);
-         unsigned urb_entry_read_offset = first_slot / 2;
-         int max_source_attr = 0;
          for (uint8_t idx = 0; idx < wm_prog_data->urb_setup_attribs_count; idx++) {
             uint8_t attr = wm_prog_data->urb_setup_attribs[idx];
             int input_index = wm_prog_data->urb_setup[attr];
@@ -702,7 +706,7 @@ emit_3dstate_sbe(struct anv_graphics_pipeline *pipeline)
                continue;
             }
 
-            const int slot = fs_input_map->varying_to_slot[attr];
+            const int slot = vue_map->varying_to_slot[attr];
 
             if (slot == -1) {
                /* This attribute does not exist in the VUE--that means that
@@ -723,7 +727,7 @@ emit_3dstate_sbe(struct anv_graphics_pipeline *pipeline)
             /* We have to subtract two slots to account for the URB entry
              * output read offset in the VS and GS stages.
              */
-            const int source_attr = slot - 2 * urb_entry_read_offset;
+            const int source_attr = slot - 2 * vertex_read_offset;
             assert(source_attr >= 0 && source_attr < 32);
             max_source_attr = MAX2(max_source_attr, source_attr);
             /* The hardware can only do overrides on 16 overrides at a time,
@@ -737,83 +741,51 @@ emit_3dstate_sbe(struct anv_graphics_pipeline *pipeline)
                assert(source_attr == input_index);
          }
 
-         sbe.VertexURBEntryReadOffset = urb_entry_read_offset;
-         sbe.VertexURBEntryReadLength = DIV_ROUND_UP(max_source_attr + 1, 2);
+         sbe.VertexURBEntryReadOffset = vertex_read_offset;
+         sbe.VertexURBEntryReadLength = vertex_read_length;
          sbe.ForceVertexURBEntryReadOffset = true;
          sbe.ForceVertexURBEntryReadLength = true;
-
-         /* Ask the hardware to supply PrimitiveID if the fragment shader
-          * reads it but a previous stage didn't write one.
-          */
-         if (sbe_primitive_id_override(pipeline)) {
-            sbe.PrimitiveIDOverrideAttributeSelect =
-               wm_prog_data->urb_setup[VARYING_SLOT_PRIMITIVE_ID];
-            sbe.PrimitiveIDOverrideComponentX = true;
-            sbe.PrimitiveIDOverrideComponentY = true;
-            sbe.PrimitiveIDOverrideComponentZ = true;
-            sbe.PrimitiveIDOverrideComponentW = true;
-         }
       }
-   }
-   }
+
+      /* Ask the hardware to supply PrimitiveID if the fragment shader reads
+       * it but a previous stage didn't write one.
+       */
+      if (sbe_primitive_id_override(pipeline)) {
+         sbe.PrimitiveIDOverrideAttributeSelect =
+            wm_prog_data->urb_setup[VARYING_SLOT_PRIMITIVE_ID];
+         sbe.PrimitiveIDOverrideComponentX = true;
+         sbe.PrimitiveIDOverrideComponentY = true;
+         sbe.PrimitiveIDOverrideComponentZ = true;
+         sbe.PrimitiveIDOverrideComponentW = true;
+      }
 
 #if GFX_VERx10 >= 125
-   if (device->vk.enabled_extensions.EXT_mesh_shader) {
-      anv_pipeline_emit(pipeline, final.sbe_mesh,
-                        GENX(3DSTATE_SBE_MESH), sbe_mesh) {
-         if (!anv_pipeline_is_mesh(pipeline))
-            continue;
+      if (device->vk.enabled_extensions.EXT_mesh_shader) {
+         anv_pipeline_emit(pipeline, final.sbe_mesh,
+                           GENX(3DSTATE_SBE_MESH), sbe_mesh) {
+            if (!anv_pipeline_is_mesh(pipeline))
+               continue;
 
-         const struct brw_mesh_prog_data *mesh_prog_data = get_mesh_prog_data(pipeline);
-         const struct brw_mue_map *mue = &mesh_prog_data->map;
+            const struct brw_mesh_prog_data *mesh_prog_data =
+               get_mesh_prog_data(pipeline);
 
-         assert(mue->per_vertex_header_size_dw % 8 == 0);
-         sbe_mesh.PerVertexURBEntryOutputReadOffset = mue->per_vertex_header_size_dw / 8;
-         sbe_mesh.PerVertexURBEntryOutputReadLength = DIV_ROUND_UP(mue->per_vertex_data_size_dw, 8);
+            sbe_mesh.PerVertexURBEntryOutputReadOffset = vertex_read_offset;
+            sbe_mesh.PerVertexURBEntryOutputReadLength = vertex_read_length;
 
-         /* Clip distance array is passed in the per-vertex header so that it
-          * can be consumed by the HW. If user wants to read it in the FS,
-          * adjust the offset and length to cover it. Conveniently it is at
-          * the end of the per-vertex header, right before per-vertex
-          * attributes.
-          *
-          * Note that FS attribute reading must be aware that the clip
-          * distances have fixed position.
-          */
-         if (mue->per_vertex_header_size_dw > 8 &&
-             (wm_prog_data->urb_setup[VARYING_SLOT_CLIP_DIST0] >= 0 ||
-              wm_prog_data->urb_setup[VARYING_SLOT_CLIP_DIST1] >= 0)) {
-            sbe_mesh.PerVertexURBEntryOutputReadOffset -= 1;
-            sbe_mesh.PerVertexURBEntryOutputReadLength += 1;
-         }
+            uint32_t prim_read_offset, prim_read_length;
+            brw_compute_sbe_per_primitive_urb_read(wm_prog_data->per_primitive_inputs,
+                                                   wm_prog_data->num_per_primitive_inputs,
+                                                   &mesh_prog_data->map,
+                                                   &prim_read_offset,
+                                                   &prim_read_length);
 
-         if (mue->user_data_in_vertex_header) {
-            sbe_mesh.PerVertexURBEntryOutputReadOffset -= 1;
-            sbe_mesh.PerVertexURBEntryOutputReadLength += 1;
-         }
-
-         assert(mue->per_primitive_header_size_dw % 8 == 0);
-         sbe_mesh.PerPrimitiveURBEntryOutputReadOffset =
-            mue->per_primitive_header_size_dw / 8;
-         sbe_mesh.PerPrimitiveURBEntryOutputReadLength =
-            DIV_ROUND_UP(mue->per_primitive_data_size_dw, 8);
-
-         /* Just like with clip distances, if Primitive Shading Rate, Viewport
-          * Index or Layer is read back in the FS, adjust the offset and
-          * length to cover the Primitive Header, where PSR, Viewport Index &
-          * Layer are stored.
-          */
-         if (wm_prog_data->urb_setup[VARYING_SLOT_VIEWPORT] >= 0 ||
-             wm_prog_data->urb_setup[VARYING_SLOT_PRIMITIVE_SHADING_RATE] >= 0 ||
-             wm_prog_data->urb_setup[VARYING_SLOT_LAYER] >= 0 ||
-             mue->user_data_in_primitive_header) {
-            assert(sbe_mesh.PerPrimitiveURBEntryOutputReadOffset > 0);
-            sbe_mesh.PerPrimitiveURBEntryOutputReadOffset -= 1;
-            sbe_mesh.PerPrimitiveURBEntryOutputReadLength += 1;
+            sbe_mesh.PerPrimitiveURBEntryOutputReadOffset = prim_read_offset;
+            sbe_mesh.PerPrimitiveURBEntryOutputReadLength = prim_read_length;
          }
       }
-   }
 #endif
+   }
+   }
 }
 
 static void
@@ -842,7 +814,7 @@ emit_rs_state(struct anv_graphics_pipeline *pipeline,
       } else {
          assert(anv_pipeline_is_mesh(pipeline));
          const struct brw_mesh_prog_data *mesh_prog_data = get_mesh_prog_data(pipeline);
-         point_from_shader = mesh_prog_data->map.start_dw[VARYING_SLOT_PSIZ] >= 0;
+         point_from_shader = mesh_prog_data->map.vue_map.slots_valid & VARYING_BIT_PSIZ;
       }
 
       if (point_from_shader) {
@@ -893,7 +865,7 @@ emit_3dstate_clip(struct anv_graphics_pipeline *pipeline,
          const struct brw_mesh_prog_data *mesh_prog_data = get_mesh_prog_data(pipeline);
 
          clip.ForceZeroRTAIndexEnable =
-            mesh_prog_data->map.start_dw[VARYING_SLOT_LAYER] < 0;
+            mesh_prog_data->map.per_primitive_offsets[VARYING_SLOT_LAYER] < 0;
       }
 
       clip.NonPerspectiveBarycentricEnable = wm_prog_data ?
@@ -905,12 +877,13 @@ emit_3dstate_clip(struct anv_graphics_pipeline *pipeline,
    if (device->vk.enabled_extensions.EXT_mesh_shader) {
       anv_pipeline_emit(pipeline, final.clip_mesh,
                         GENX(3DSTATE_CLIP_MESH), clip_mesh) {
-         if (anv_pipeline_is_mesh(pipeline)) {
-            const struct brw_mesh_prog_data *mesh_prog_data = get_mesh_prog_data(pipeline);
-            clip_mesh.PrimitiveHeaderEnable = mesh_prog_data->map.per_primitive_header_size_dw > 0;
-            clip_mesh.UserClipDistanceClipTestEnableBitmask = mesh_prog_data->clip_distance_mask;
-            clip_mesh.UserClipDistanceCullTestEnableBitmask = mesh_prog_data->cull_distance_mask;
-         }
+         if (!anv_pipeline_is_mesh(pipeline))
+            continue;
+
+         const struct brw_mesh_prog_data *mesh_prog_data = get_mesh_prog_data(pipeline);
+         clip_mesh.PrimitiveHeaderEnable = mesh_prog_data->map.has_per_primitive_header;
+         clip_mesh.UserClipDistanceClipTestEnableBitmask = mesh_prog_data->clip_distance_mask;
+         clip_mesh.UserClipDistanceCullTestEnableBitmask = mesh_prog_data->cull_distance_mask;
       }
    }
 #endif
@@ -1903,9 +1876,9 @@ emit_mesh_state(struct anv_graphics_pipeline *pipeline)
 
       mesh.MaximumPrimitiveCount             = MAX2(mesh_prog_data->map.max_primitives, 1) - 1;
       mesh.OutputTopology                    = output_topology;
-      mesh.PerVertexDataPitch                = mesh_prog_data->map.per_vertex_pitch_dw / 8;
-      mesh.PerPrimitiveDataPresent           = mesh_prog_data->map.per_primitive_pitch_dw > 0;
-      mesh.PerPrimitiveDataPitch             = mesh_prog_data->map.per_primitive_pitch_dw / 8;
+      mesh.PerVertexDataPitch                = mesh_prog_data->map.per_vertex_stride / 32;
+      mesh.PerPrimitiveDataPresent           = mesh_prog_data->map.per_primitive_stride > 0;
+      mesh.PerPrimitiveDataPitch             = mesh_prog_data->map.per_primitive_stride / 32;
       mesh.IndexFormat                       = index_format;
 
       mesh.NumberofBarriers                  = mesh_prog_data->base.uses_barrier;

@@ -83,6 +83,7 @@ public:
    ~brw_shader();
 
    void import_uniforms(brw_shader *v);
+   void import_per_primitive_offsets(const int *per_primitive_offsets);
 
    void assign_curb_setup();
    void convert_attr_sources_to_hw_regs(brw_inst *inst);
@@ -201,6 +202,11 @@ public:
       unsigned control_data_bits_per_vertex;
       unsigned control_data_header_size_bits;
    } gs;
+
+   struct {
+      /* Offset of per-primitive locations in bytes */
+      int per_primitive_offsets[VARYING_SLOT_MAX];
+   } fs;
 
    unsigned grf_used;
    bool spilled_any_registers;

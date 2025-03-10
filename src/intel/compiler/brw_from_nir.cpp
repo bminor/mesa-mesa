@@ -4153,17 +4153,14 @@ brw_interp_reg(const brw_builder &bld, unsigned location,
 {
    brw_shader &s = *bld.shader;
    assert(s.stage == MESA_SHADER_FRAGMENT);
-   assert(BITFIELD64_BIT(location) & ~s.nir->info.per_primitive_inputs);
+   assert((BITFIELD64_BIT(location) & ~s.nir->info.per_primitive_inputs) ||
+          location == VARYING_SLOT_PRIMITIVE_ID);
 
    const struct brw_wm_prog_data *prog_data = brw_wm_prog_data(s.prog_data);
 
    assert(prog_data->urb_setup[location] >= 0);
    unsigned nr = prog_data->urb_setup[location];
    channel += prog_data->urb_setup_channel[location];
-
-   /* Adjust so we start counting from the first per_vertex input. */
-   assert(nr >= prog_data->num_per_primitive_inputs);
-   nr -= prog_data->num_per_primitive_inputs;
 
    const unsigned per_vertex_start = prog_data->num_per_primitive_inputs;
    const unsigned regnr = per_vertex_start + (nr * 4) + channel;
@@ -4196,13 +4193,14 @@ brw_per_primitive_reg(const brw_builder &bld, int location, unsigned comp)
 
    const struct brw_wm_prog_data *prog_data = brw_wm_prog_data(s.prog_data);
 
-   comp += prog_data->urb_setup_channel[location];
+   comp += (s.fs.per_primitive_offsets[location] % 16) / 4;
 
-   assert(prog_data->urb_setup[location] >= 0);
+   const unsigned regnr = s.fs.per_primitive_offsets[location] / 16 + comp / 4;
 
-   const unsigned regnr = prog_data->urb_setup[location] + comp / 4;
-
+   assert(s.fs.per_primitive_offsets[location] >= 0);
    assert(regnr < prog_data->num_per_primitive_inputs);
+
+   brw_reg loc_reg = brw_attr_reg(regnr, BRW_TYPE_UD);
 
    if (s.max_polygons > 1) {
       /* In multipolygon dispatch each primitive constant is a
@@ -4211,11 +4209,10 @@ brw_per_primitive_reg(const brw_builder &bld, int location, unsigned comp)
        * component() to select the specified parameter.
        */
       const brw_reg tmp = bld.vgrf(BRW_TYPE_UD);
-      bld.MOV(tmp, offset(brw_attr_reg(regnr, BRW_TYPE_UD),
-                          s.dispatch_width, comp % 4));
+      bld.MOV(tmp, offset(loc_reg, s.dispatch_width, comp % 4));
       return retype(tmp, BRW_TYPE_F);
    } else {
-      return component(brw_attr_reg(regnr, BRW_TYPE_F), comp % 4);
+      return component(loc_reg, comp % 4);
    }
 }
 
@@ -4419,7 +4416,7 @@ brw_from_nir_emit_fs_intrinsic(nir_to_brw_state &ntb,
          break;
       }
 
-      if (BITFIELD64_BIT(base) & s.nir->info.per_primitive_inputs) {
+      if (instr->intrinsic == nir_intrinsic_load_per_primitive_input) {
          assert(base != VARYING_SLOT_PRIMITIVE_INDICES);
          for (unsigned int i = 0; i < num_components; i++) {
             bld.MOV(offset(dest, bld, i),

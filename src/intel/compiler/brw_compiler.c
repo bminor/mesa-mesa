@@ -194,11 +194,6 @@ brw_compiler_create(void *mem_ctx, const struct intel_device_info *devinfo)
       compiler->nir_options[i] = nir_options;
    }
 
-   compiler->mesh.mue_header_packing =
-         (unsigned)debug_get_num_option("INTEL_MESH_HEADER_PACKING", 3);
-   compiler->mesh.mue_compaction =
-         debug_get_bool_option("INTEL_MESH_COMPACTION", true);
-
    return compiler;
 }
 
@@ -217,8 +212,6 @@ brw_get_compiler_config_value(const struct brw_compiler *compiler)
    insert_u64_bit(&config, compiler->precise_trig);
    bits++;
    insert_u64_bit(&config, compiler->lower_dpas);
-   bits++;
-   insert_u64_bit(&config, compiler->mesh.mue_compaction);
    bits++;
 
    enum intel_debug_flag debug_bits[] = {
@@ -243,9 +236,6 @@ brw_get_compiler_config_value(const struct brw_compiler *compiler)
 
    mask = 3;
    bits += util_bitcount64(mask);
-
-   u_foreach_bit64(bit, mask)
-      insert_u64_bit(&config, (compiler->mesh.mue_header_packing & (1ULL << bit)) != 0);
 
    assert(bits <= util_bitcount64(UINT64_MAX));
 

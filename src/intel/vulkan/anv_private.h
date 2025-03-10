@@ -4976,6 +4976,9 @@ struct anv_graphics_pipeline {
    uint32_t                                     view_mask;
    uint32_t                                     instance_multiplier;
 
+   /* Attribute index of the PrimitiveID in the delivered attributes */
+   uint32_t                                     primitive_id_index;
+
    bool                                         kill_pixel;
    bool                                         uses_xfb;
    bool                                         sample_shading_enable;
