@@ -2284,7 +2284,7 @@
         "description": "st/mesa: fix nir_load_per_vertex_input parameter",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ec68f0492b7540b374837dab6f4968cdbbfee7ef",
         "notes": null
