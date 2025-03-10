@@ -2825,3 +2825,12 @@ vn_CmdSetDepthBias2EXT(VkCommandBuffer commandBuffer,
 {
    VN_CMD_ENQUEUE(vkCmdSetDepthBias2EXT, commandBuffer, pDepthBiasInfo);
 }
+
+void
+vn_CmdSetDepthClampRangeEXT(VkCommandBuffer commandBuffer,
+                            VkDepthClampModeEXT depthClampMode,
+                            const VkDepthClampRangeEXT *pDepthClampRange)
+{
+   VN_CMD_ENQUEUE(vkCmdSetDepthClampRangeEXT, commandBuffer, depthClampMode,
+                  pDepthClampRange);
+}
