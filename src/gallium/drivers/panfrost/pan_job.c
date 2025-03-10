@@ -626,6 +626,13 @@ panfrost_batch_to_fb_info(const struct panfrost_batch *batch,
    }
 
    screen->vtbl.select_tile_size(fb);
+
+#if PAN_ARCH != 6
+   if (fb->cbuf_allocation > fb->tile_buf_budget) {
+      perf_debug(batch->ctx,
+                 "Using too much tile-memory, disabling pipelining");
+   }
+#endif
 }
 
 static void

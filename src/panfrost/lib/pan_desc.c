@@ -427,6 +427,17 @@ GENX(pan_select_tile_size)(struct pan_fb_info *fb)
               fb->z_tile_buf_budget >> util_logbase2_ceil(zs_bytes_per_pixel));
    }
 
+#if PAN_ARCH != 6
+   /* Check if we're using too much tile-memory; if we are, try disabling
+    * pipelining. This works because we're starting with an optimistic half
+    * of the tile-budget, so we actually have another half that can be used.
+    *
+    * On v6 GPUs, doing this is not allowed; they *have* to pipeline.
+    */
+    if (fb->tile_size < 4 * 4)
+       fb->tile_size *= 2;
+#endif
+
    /* Clamp tile size to hardware limits */
    fb->tile_size =
       MIN2(fb->tile_size, panfrost_max_effective_tile_size(PAN_ARCH));
@@ -434,7 +445,11 @@ GENX(pan_select_tile_size)(struct pan_fb_info *fb)
 
    /* Colour buffer allocations must be 1K aligned. */
    fb->cbuf_allocation = ALIGN_POT(bytes_per_pixel * fb->tile_size, 1024);
+#if PAN_ARCH == 6
    assert(fb->cbuf_allocation <= fb->tile_buf_budget && "tile too big");
+#else
+   assert(fb->cbuf_allocation <= fb->tile_buf_budget * 2 && "tile too big");
+#endif
 }
 
 static enum mali_color_format

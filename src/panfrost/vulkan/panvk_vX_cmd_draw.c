@@ -297,6 +297,13 @@ panvk_per_arch(cmd_init_render_state)(struct panvk_cmd_buffer *cmdbuf,
    assert(fbinfo->width && fbinfo->height);
 
    GENX(pan_select_tile_size)(fbinfo);
+
+#if PAN_ARCH != 6
+   if (fbinfo->cbuf_allocation > fbinfo->tile_buf_budget) {
+      vk_perf(VK_LOG_OBJS(&cmdbuf->vk.base),
+              "Using too much tile-memory, disabling pipelining");
+   }
+#endif
 }
 
 void
