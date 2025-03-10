@@ -53,7 +53,7 @@ static const struct {
    [CHIP_NAVI22] = {0x73C0, 8, true},
    [CHIP_NAVI23] = {0x73E0, 8, true},
    [CHIP_NAVI31] = {0x744C, 24, true},
-   [CHIP_GFX1200] = {0x0000, 4, true}, /* TODO: Fill with real info. */
+   [CHIP_GFX1201] = {0x7550, 16, true},
    /* clang-format on */
 };
 
