@@ -33,7 +33,7 @@ static const struct debug_control vn_debug_options[] = {
    { "no_sparse", VN_DEBUG_NO_SPARSE },
    { "no_gpl", VN_DEBUG_NO_GPL },
    { "no_second_queue", VN_DEBUG_NO_SECOND_QUEUE },
-   { "ray_tracing", VN_DEBUG_RAY_TRACING },
+   { "no_ray_tracing", VN_DEBUG_NO_RAY_TRACING },
    { NULL, 0 },
    /* clang-format on */
 };
