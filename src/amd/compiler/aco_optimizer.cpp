@@ -1651,7 +1651,7 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       return;
    }
 
-   if (instr->isVALU() || instr->isVINTRP()) {
+   if (instr->isVALU() || (instr->isVINTRP() && instr->opcode != aco_opcode::v_interp_mov_f32)) {
       if (instr_info.can_use_output_modifiers[(int)instr->opcode] || instr->isVINTRP() ||
           instr->opcode == aco_opcode::v_cndmask_b32) {
          bool canonicalized = true;
