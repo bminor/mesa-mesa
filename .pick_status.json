@@ -1874,7 +1874,7 @@
         "description": "tu: Fix reported FDM fragment size with multiview",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6f2be52487bf2f84f1b4d12b27275847ff6facf0",
         "notes": null
