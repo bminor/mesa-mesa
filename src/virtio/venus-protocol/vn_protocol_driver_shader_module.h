@@ -199,19 +199,6 @@ static inline void vn_async_vkCreateShaderModule(struct vn_ring *vn_ring, VkDevi
     vn_submit_vkCreateShaderModule(vn_ring, 0, device, pCreateInfo, pAllocator, pShaderModule, &submit);
 }
 
-static inline void vn_call_vkDestroyShaderModule(struct vn_ring *vn_ring, VkDevice device, VkShaderModule shaderModule, const VkAllocationCallbacks* pAllocator)
-{
-    VN_TRACE_FUNC();
-
-    struct vn_ring_submit_command submit;
-    vn_submit_vkDestroyShaderModule(vn_ring, VK_COMMAND_GENERATE_REPLY_BIT_EXT, device, shaderModule, pAllocator, &submit);
-    struct vn_cs_decoder *dec = vn_ring_get_command_reply(vn_ring, &submit);
-    if (dec) {
-        vn_decode_vkDestroyShaderModule_reply(dec, device, shaderModule, pAllocator);
-        vn_ring_free_command_reply(vn_ring, &submit);
-    }
-}
-
 static inline void vn_async_vkDestroyShaderModule(struct vn_ring *vn_ring, VkDevice device, VkShaderModule shaderModule, const VkAllocationCallbacks* pAllocator)
 {
     struct vn_ring_submit_command submit;

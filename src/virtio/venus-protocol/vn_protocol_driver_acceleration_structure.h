@@ -923,19 +923,6 @@ static inline void vn_submit_vkGetAccelerationStructureBuildSizesKHR(struct vn_r
     }
 }
 
-static inline void vn_call_vkDestroyAccelerationStructureKHR(struct vn_ring *vn_ring, VkDevice device, VkAccelerationStructureKHR accelerationStructure, const VkAllocationCallbacks* pAllocator)
-{
-    VN_TRACE_FUNC();
-
-    struct vn_ring_submit_command submit;
-    vn_submit_vkDestroyAccelerationStructureKHR(vn_ring, VK_COMMAND_GENERATE_REPLY_BIT_EXT, device, accelerationStructure, pAllocator, &submit);
-    struct vn_cs_decoder *dec = vn_ring_get_command_reply(vn_ring, &submit);
-    if (dec) {
-        vn_decode_vkDestroyAccelerationStructureKHR_reply(dec, device, accelerationStructure, pAllocator);
-        vn_ring_free_command_reply(vn_ring, &submit);
-    }
-}
-
 static inline void vn_async_vkDestroyAccelerationStructureKHR(struct vn_ring *vn_ring, VkDevice device, VkAccelerationStructureKHR accelerationStructure, const VkAllocationCallbacks* pAllocator)
 {
     struct vn_ring_submit_command submit;

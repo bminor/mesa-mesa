@@ -456,19 +456,6 @@ static inline void vn_async_vkCreatePipelineCache(struct vn_ring *vn_ring, VkDev
     vn_submit_vkCreatePipelineCache(vn_ring, 0, device, pCreateInfo, pAllocator, pPipelineCache, &submit);
 }
 
-static inline void vn_call_vkDestroyPipelineCache(struct vn_ring *vn_ring, VkDevice device, VkPipelineCache pipelineCache, const VkAllocationCallbacks* pAllocator)
-{
-    VN_TRACE_FUNC();
-
-    struct vn_ring_submit_command submit;
-    vn_submit_vkDestroyPipelineCache(vn_ring, VK_COMMAND_GENERATE_REPLY_BIT_EXT, device, pipelineCache, pAllocator, &submit);
-    struct vn_cs_decoder *dec = vn_ring_get_command_reply(vn_ring, &submit);
-    if (dec) {
-        vn_decode_vkDestroyPipelineCache_reply(dec, device, pipelineCache, pAllocator);
-        vn_ring_free_command_reply(vn_ring, &submit);
-    }
-}
-
 static inline void vn_async_vkDestroyPipelineCache(struct vn_ring *vn_ring, VkDevice device, VkPipelineCache pipelineCache, const VkAllocationCallbacks* pAllocator)
 {
     struct vn_ring_submit_command submit;

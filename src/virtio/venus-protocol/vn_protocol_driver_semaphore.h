@@ -914,19 +914,6 @@ static inline void vn_async_vkCreateSemaphore(struct vn_ring *vn_ring, VkDevice 
     vn_submit_vkCreateSemaphore(vn_ring, 0, device, pCreateInfo, pAllocator, pSemaphore, &submit);
 }
 
-static inline void vn_call_vkDestroySemaphore(struct vn_ring *vn_ring, VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks* pAllocator)
-{
-    VN_TRACE_FUNC();
-
-    struct vn_ring_submit_command submit;
-    vn_submit_vkDestroySemaphore(vn_ring, VK_COMMAND_GENERATE_REPLY_BIT_EXT, device, semaphore, pAllocator, &submit);
-    struct vn_cs_decoder *dec = vn_ring_get_command_reply(vn_ring, &submit);
-    if (dec) {
-        vn_decode_vkDestroySemaphore_reply(dec, device, semaphore, pAllocator);
-        vn_ring_free_command_reply(vn_ring, &submit);
-    }
-}
-
 static inline void vn_async_vkDestroySemaphore(struct vn_ring *vn_ring, VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks* pAllocator)
 {
     struct vn_ring_submit_command submit;
@@ -999,36 +986,10 @@ static inline void vn_async_vkSignalSemaphore(struct vn_ring *vn_ring, VkDevice 
     vn_submit_vkSignalSemaphore(vn_ring, 0, device, pSignalInfo, &submit);
 }
 
-static inline void vn_call_vkWaitSemaphoreResourceMESA(struct vn_ring *vn_ring, VkDevice device, VkSemaphore semaphore)
-{
-    VN_TRACE_FUNC();
-
-    struct vn_ring_submit_command submit;
-    vn_submit_vkWaitSemaphoreResourceMESA(vn_ring, VK_COMMAND_GENERATE_REPLY_BIT_EXT, device, semaphore, &submit);
-    struct vn_cs_decoder *dec = vn_ring_get_command_reply(vn_ring, &submit);
-    if (dec) {
-        vn_decode_vkWaitSemaphoreResourceMESA_reply(dec, device, semaphore);
-        vn_ring_free_command_reply(vn_ring, &submit);
-    }
-}
-
 static inline void vn_async_vkWaitSemaphoreResourceMESA(struct vn_ring *vn_ring, VkDevice device, VkSemaphore semaphore)
 {
     struct vn_ring_submit_command submit;
     vn_submit_vkWaitSemaphoreResourceMESA(vn_ring, 0, device, semaphore, &submit);
-}
-
-static inline void vn_call_vkImportSemaphoreResourceMESA(struct vn_ring *vn_ring, VkDevice device, const VkImportSemaphoreResourceInfoMESA* pImportSemaphoreResourceInfo)
-{
-    VN_TRACE_FUNC();
-
-    struct vn_ring_submit_command submit;
-    vn_submit_vkImportSemaphoreResourceMESA(vn_ring, VK_COMMAND_GENERATE_REPLY_BIT_EXT, device, pImportSemaphoreResourceInfo, &submit);
-    struct vn_cs_decoder *dec = vn_ring_get_command_reply(vn_ring, &submit);
-    if (dec) {
-        vn_decode_vkImportSemaphoreResourceMESA_reply(dec, device, pImportSemaphoreResourceInfo);
-        vn_ring_free_command_reply(vn_ring, &submit);
-    }
 }
 
 static inline void vn_async_vkImportSemaphoreResourceMESA(struct vn_ring *vn_ring, VkDevice device, const VkImportSemaphoreResourceInfoMESA* pImportSemaphoreResourceInfo)

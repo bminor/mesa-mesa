@@ -266,19 +266,6 @@ static inline void vn_async_vkCreateSamplerYcbcrConversion(struct vn_ring *vn_ri
     vn_submit_vkCreateSamplerYcbcrConversion(vn_ring, 0, device, pCreateInfo, pAllocator, pYcbcrConversion, &submit);
 }
 
-static inline void vn_call_vkDestroySamplerYcbcrConversion(struct vn_ring *vn_ring, VkDevice device, VkSamplerYcbcrConversion ycbcrConversion, const VkAllocationCallbacks* pAllocator)
-{
-    VN_TRACE_FUNC();
-
-    struct vn_ring_submit_command submit;
-    vn_submit_vkDestroySamplerYcbcrConversion(vn_ring, VK_COMMAND_GENERATE_REPLY_BIT_EXT, device, ycbcrConversion, pAllocator, &submit);
-    struct vn_cs_decoder *dec = vn_ring_get_command_reply(vn_ring, &submit);
-    if (dec) {
-        vn_decode_vkDestroySamplerYcbcrConversion_reply(dec, device, ycbcrConversion, pAllocator);
-        vn_ring_free_command_reply(vn_ring, &submit);
-    }
-}
-
 static inline void vn_async_vkDestroySamplerYcbcrConversion(struct vn_ring *vn_ring, VkDevice device, VkSamplerYcbcrConversion ycbcrConversion, const VkAllocationCallbacks* pAllocator)
 {
     struct vn_ring_submit_command submit;

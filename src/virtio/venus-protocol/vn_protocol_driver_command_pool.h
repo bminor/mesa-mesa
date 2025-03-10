@@ -398,19 +398,6 @@ static inline void vn_async_vkCreateCommandPool(struct vn_ring *vn_ring, VkDevic
     vn_submit_vkCreateCommandPool(vn_ring, 0, device, pCreateInfo, pAllocator, pCommandPool, &submit);
 }
 
-static inline void vn_call_vkDestroyCommandPool(struct vn_ring *vn_ring, VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks* pAllocator)
-{
-    VN_TRACE_FUNC();
-
-    struct vn_ring_submit_command submit;
-    vn_submit_vkDestroyCommandPool(vn_ring, VK_COMMAND_GENERATE_REPLY_BIT_EXT, device, commandPool, pAllocator, &submit);
-    struct vn_cs_decoder *dec = vn_ring_get_command_reply(vn_ring, &submit);
-    if (dec) {
-        vn_decode_vkDestroyCommandPool_reply(dec, device, commandPool, pAllocator);
-        vn_ring_free_command_reply(vn_ring, &submit);
-    }
-}
-
 static inline void vn_async_vkDestroyCommandPool(struct vn_ring *vn_ring, VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks* pAllocator)
 {
     struct vn_ring_submit_command submit;
@@ -437,19 +424,6 @@ static inline void vn_async_vkResetCommandPool(struct vn_ring *vn_ring, VkDevice
 {
     struct vn_ring_submit_command submit;
     vn_submit_vkResetCommandPool(vn_ring, 0, device, commandPool, flags, &submit);
-}
-
-static inline void vn_call_vkTrimCommandPool(struct vn_ring *vn_ring, VkDevice device, VkCommandPool commandPool, VkCommandPoolTrimFlags flags)
-{
-    VN_TRACE_FUNC();
-
-    struct vn_ring_submit_command submit;
-    vn_submit_vkTrimCommandPool(vn_ring, VK_COMMAND_GENERATE_REPLY_BIT_EXT, device, commandPool, flags, &submit);
-    struct vn_cs_decoder *dec = vn_ring_get_command_reply(vn_ring, &submit);
-    if (dec) {
-        vn_decode_vkTrimCommandPool_reply(dec, device, commandPool, flags);
-        vn_ring_free_command_reply(vn_ring, &submit);
-    }
 }
 
 static inline void vn_async_vkTrimCommandPool(struct vn_ring *vn_ring, VkDevice device, VkCommandPool commandPool, VkCommandPoolTrimFlags flags)

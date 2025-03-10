@@ -451,19 +451,6 @@ static inline void vn_async_vkCreateFramebuffer(struct vn_ring *vn_ring, VkDevic
     vn_submit_vkCreateFramebuffer(vn_ring, 0, device, pCreateInfo, pAllocator, pFramebuffer, &submit);
 }
 
-static inline void vn_call_vkDestroyFramebuffer(struct vn_ring *vn_ring, VkDevice device, VkFramebuffer framebuffer, const VkAllocationCallbacks* pAllocator)
-{
-    VN_TRACE_FUNC();
-
-    struct vn_ring_submit_command submit;
-    vn_submit_vkDestroyFramebuffer(vn_ring, VK_COMMAND_GENERATE_REPLY_BIT_EXT, device, framebuffer, pAllocator, &submit);
-    struct vn_cs_decoder *dec = vn_ring_get_command_reply(vn_ring, &submit);
-    if (dec) {
-        vn_decode_vkDestroyFramebuffer_reply(dec, device, framebuffer, pAllocator);
-        vn_ring_free_command_reply(vn_ring, &submit);
-    }
-}
-
 static inline void vn_async_vkDestroyFramebuffer(struct vn_ring *vn_ring, VkDevice device, VkFramebuffer framebuffer, const VkAllocationCallbacks* pAllocator)
 {
     struct vn_ring_submit_command submit;

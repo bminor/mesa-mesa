@@ -1614,36 +1614,10 @@ static inline void vn_async_vkAllocateMemory(struct vn_ring *vn_ring, VkDevice d
     vn_submit_vkAllocateMemory(vn_ring, 0, device, pAllocateInfo, pAllocator, pMemory, &submit);
 }
 
-static inline void vn_call_vkFreeMemory(struct vn_ring *vn_ring, VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator)
-{
-    VN_TRACE_FUNC();
-
-    struct vn_ring_submit_command submit;
-    vn_submit_vkFreeMemory(vn_ring, VK_COMMAND_GENERATE_REPLY_BIT_EXT, device, memory, pAllocator, &submit);
-    struct vn_cs_decoder *dec = vn_ring_get_command_reply(vn_ring, &submit);
-    if (dec) {
-        vn_decode_vkFreeMemory_reply(dec, device, memory, pAllocator);
-        vn_ring_free_command_reply(vn_ring, &submit);
-    }
-}
-
 static inline void vn_async_vkFreeMemory(struct vn_ring *vn_ring, VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator)
 {
     struct vn_ring_submit_command submit;
     vn_submit_vkFreeMemory(vn_ring, 0, device, memory, pAllocator, &submit);
-}
-
-static inline void vn_call_vkUnmapMemory(struct vn_ring *vn_ring, VkDevice device, VkDeviceMemory memory)
-{
-    VN_TRACE_FUNC();
-
-    struct vn_ring_submit_command submit;
-    vn_submit_vkUnmapMemory(vn_ring, VK_COMMAND_GENERATE_REPLY_BIT_EXT, device, memory, &submit);
-    struct vn_cs_decoder *dec = vn_ring_get_command_reply(vn_ring, &submit);
-    if (dec) {
-        vn_decode_vkUnmapMemory_reply(dec, device, memory);
-        vn_ring_free_command_reply(vn_ring, &submit);
-    }
 }
 
 static inline void vn_async_vkUnmapMemory(struct vn_ring *vn_ring, VkDevice device, VkDeviceMemory memory)

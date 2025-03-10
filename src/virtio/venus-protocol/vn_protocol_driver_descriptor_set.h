@@ -588,19 +588,6 @@ static inline void vn_async_vkFreeDescriptorSets(struct vn_ring *vn_ring, VkDevi
     vn_submit_vkFreeDescriptorSets(vn_ring, 0, device, descriptorPool, descriptorSetCount, pDescriptorSets, &submit);
 }
 
-static inline void vn_call_vkUpdateDescriptorSets(struct vn_ring *vn_ring, VkDevice device, uint32_t descriptorWriteCount, const VkWriteDescriptorSet* pDescriptorWrites, uint32_t descriptorCopyCount, const VkCopyDescriptorSet* pDescriptorCopies)
-{
-    VN_TRACE_FUNC();
-
-    struct vn_ring_submit_command submit;
-    vn_submit_vkUpdateDescriptorSets(vn_ring, VK_COMMAND_GENERATE_REPLY_BIT_EXT, device, descriptorWriteCount, pDescriptorWrites, descriptorCopyCount, pDescriptorCopies, &submit);
-    struct vn_cs_decoder *dec = vn_ring_get_command_reply(vn_ring, &submit);
-    if (dec) {
-        vn_decode_vkUpdateDescriptorSets_reply(dec, device, descriptorWriteCount, pDescriptorWrites, descriptorCopyCount, pDescriptorCopies);
-        vn_ring_free_command_reply(vn_ring, &submit);
-    }
-}
-
 static inline void vn_async_vkUpdateDescriptorSets(struct vn_ring *vn_ring, VkDevice device, uint32_t descriptorWriteCount, const VkWriteDescriptorSet* pDescriptorWrites, uint32_t descriptorCopyCount, const VkCopyDescriptorSet* pDescriptorCopies)
 {
     struct vn_ring_submit_command submit;

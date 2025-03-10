@@ -469,19 +469,6 @@ static inline void vn_async_vkCreateDescriptorPool(struct vn_ring *vn_ring, VkDe
     vn_submit_vkCreateDescriptorPool(vn_ring, 0, device, pCreateInfo, pAllocator, pDescriptorPool, &submit);
 }
 
-static inline void vn_call_vkDestroyDescriptorPool(struct vn_ring *vn_ring, VkDevice device, VkDescriptorPool descriptorPool, const VkAllocationCallbacks* pAllocator)
-{
-    VN_TRACE_FUNC();
-
-    struct vn_ring_submit_command submit;
-    vn_submit_vkDestroyDescriptorPool(vn_ring, VK_COMMAND_GENERATE_REPLY_BIT_EXT, device, descriptorPool, pAllocator, &submit);
-    struct vn_cs_decoder *dec = vn_ring_get_command_reply(vn_ring, &submit);
-    if (dec) {
-        vn_decode_vkDestroyDescriptorPool_reply(dec, device, descriptorPool, pAllocator);
-        vn_ring_free_command_reply(vn_ring, &submit);
-    }
-}
-
 static inline void vn_async_vkDestroyDescriptorPool(struct vn_ring *vn_ring, VkDevice device, VkDescriptorPool descriptorPool, const VkAllocationCallbacks* pAllocator)
 {
     struct vn_ring_submit_command submit;

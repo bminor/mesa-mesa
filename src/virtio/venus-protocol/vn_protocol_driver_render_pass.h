@@ -1818,19 +1818,6 @@ static inline void vn_async_vkCreateRenderPass(struct vn_ring *vn_ring, VkDevice
     vn_submit_vkCreateRenderPass(vn_ring, 0, device, pCreateInfo, pAllocator, pRenderPass, &submit);
 }
 
-static inline void vn_call_vkDestroyRenderPass(struct vn_ring *vn_ring, VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks* pAllocator)
-{
-    VN_TRACE_FUNC();
-
-    struct vn_ring_submit_command submit;
-    vn_submit_vkDestroyRenderPass(vn_ring, VK_COMMAND_GENERATE_REPLY_BIT_EXT, device, renderPass, pAllocator, &submit);
-    struct vn_cs_decoder *dec = vn_ring_get_command_reply(vn_ring, &submit);
-    if (dec) {
-        vn_decode_vkDestroyRenderPass_reply(dec, device, renderPass, pAllocator);
-        vn_ring_free_command_reply(vn_ring, &submit);
-    }
-}
-
 static inline void vn_async_vkDestroyRenderPass(struct vn_ring *vn_ring, VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks* pAllocator)
 {
     struct vn_ring_submit_command submit;

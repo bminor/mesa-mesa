@@ -418,19 +418,6 @@ static inline void vn_async_vkCreatePrivateDataSlot(struct vn_ring *vn_ring, VkD
     vn_submit_vkCreatePrivateDataSlot(vn_ring, 0, device, pCreateInfo, pAllocator, pPrivateDataSlot, &submit);
 }
 
-static inline void vn_call_vkDestroyPrivateDataSlot(struct vn_ring *vn_ring, VkDevice device, VkPrivateDataSlot privateDataSlot, const VkAllocationCallbacks* pAllocator)
-{
-    VN_TRACE_FUNC();
-
-    struct vn_ring_submit_command submit;
-    vn_submit_vkDestroyPrivateDataSlot(vn_ring, VK_COMMAND_GENERATE_REPLY_BIT_EXT, device, privateDataSlot, pAllocator, &submit);
-    struct vn_cs_decoder *dec = vn_ring_get_command_reply(vn_ring, &submit);
-    if (dec) {
-        vn_decode_vkDestroyPrivateDataSlot_reply(dec, device, privateDataSlot, pAllocator);
-        vn_ring_free_command_reply(vn_ring, &submit);
-    }
-}
-
 static inline void vn_async_vkDestroyPrivateDataSlot(struct vn_ring *vn_ring, VkDevice device, VkPrivateDataSlot privateDataSlot, const VkAllocationCallbacks* pAllocator)
 {
     struct vn_ring_submit_command submit;

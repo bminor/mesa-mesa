@@ -297,19 +297,6 @@ static inline void vn_async_vkCreateBufferView(struct vn_ring *vn_ring, VkDevice
     vn_submit_vkCreateBufferView(vn_ring, 0, device, pCreateInfo, pAllocator, pView, &submit);
 }
 
-static inline void vn_call_vkDestroyBufferView(struct vn_ring *vn_ring, VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks* pAllocator)
-{
-    VN_TRACE_FUNC();
-
-    struct vn_ring_submit_command submit;
-    vn_submit_vkDestroyBufferView(vn_ring, VK_COMMAND_GENERATE_REPLY_BIT_EXT, device, bufferView, pAllocator, &submit);
-    struct vn_cs_decoder *dec = vn_ring_get_command_reply(vn_ring, &submit);
-    if (dec) {
-        vn_decode_vkDestroyBufferView_reply(dec, device, bufferView, pAllocator);
-        vn_ring_free_command_reply(vn_ring, &submit);
-    }
-}
-
 static inline void vn_async_vkDestroyBufferView(struct vn_ring *vn_ring, VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks* pAllocator)
 {
     struct vn_ring_submit_command submit;

@@ -2917,19 +2917,6 @@ static inline void vn_async_vkCreateImage(struct vn_ring *vn_ring, VkDevice devi
     vn_submit_vkCreateImage(vn_ring, 0, device, pCreateInfo, pAllocator, pImage, &submit);
 }
 
-static inline void vn_call_vkDestroyImage(struct vn_ring *vn_ring, VkDevice device, VkImage image, const VkAllocationCallbacks* pAllocator)
-{
-    VN_TRACE_FUNC();
-
-    struct vn_ring_submit_command submit;
-    vn_submit_vkDestroyImage(vn_ring, VK_COMMAND_GENERATE_REPLY_BIT_EXT, device, image, pAllocator, &submit);
-    struct vn_cs_decoder *dec = vn_ring_get_command_reply(vn_ring, &submit);
-    if (dec) {
-        vn_decode_vkDestroyImage_reply(dec, device, image, pAllocator);
-        vn_ring_free_command_reply(vn_ring, &submit);
-    }
-}
-
 static inline void vn_async_vkDestroyImage(struct vn_ring *vn_ring, VkDevice device, VkImage image, const VkAllocationCallbacks* pAllocator)
 {
     struct vn_ring_submit_command submit;

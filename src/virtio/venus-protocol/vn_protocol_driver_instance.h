@@ -683,19 +683,6 @@ static inline void vn_async_vkCreateInstance(struct vn_ring *vn_ring, const VkIn
     vn_submit_vkCreateInstance(vn_ring, 0, pCreateInfo, pAllocator, pInstance, &submit);
 }
 
-static inline void vn_call_vkDestroyInstance(struct vn_ring *vn_ring, VkInstance instance, const VkAllocationCallbacks* pAllocator)
-{
-    VN_TRACE_FUNC();
-
-    struct vn_ring_submit_command submit;
-    vn_submit_vkDestroyInstance(vn_ring, VK_COMMAND_GENERATE_REPLY_BIT_EXT, instance, pAllocator, &submit);
-    struct vn_cs_decoder *dec = vn_ring_get_command_reply(vn_ring, &submit);
-    if (dec) {
-        vn_decode_vkDestroyInstance_reply(dec, instance, pAllocator);
-        vn_ring_free_command_reply(vn_ring, &submit);
-    }
-}
-
 static inline void vn_async_vkDestroyInstance(struct vn_ring *vn_ring, VkInstance instance, const VkAllocationCallbacks* pAllocator)
 {
     struct vn_ring_submit_command submit;

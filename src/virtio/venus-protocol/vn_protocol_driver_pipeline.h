@@ -828,6 +828,64 @@ vn_encode_VkPipelineViewportDepthClipControlCreateInfoEXT(struct vn_cs_encoder *
     vn_encode_VkPipelineViewportDepthClipControlCreateInfoEXT_self(enc, val);
 }
 
+/* struct VkPipelineViewportDepthClampControlCreateInfoEXT chain */
+
+static inline size_t
+vn_sizeof_VkPipelineViewportDepthClampControlCreateInfoEXT_pnext(const void *val)
+{
+    /* no known/supported struct */
+    return vn_sizeof_simple_pointer(NULL);
+}
+
+static inline size_t
+vn_sizeof_VkPipelineViewportDepthClampControlCreateInfoEXT_self(const VkPipelineViewportDepthClampControlCreateInfoEXT *val)
+{
+    size_t size = 0;
+    /* skip val->{sType,pNext} */
+    size += vn_sizeof_VkDepthClampModeEXT(&val->depthClampMode);
+    size += vn_sizeof_simple_pointer(val->pDepthClampRange);
+    if (val->pDepthClampRange)
+        size += vn_sizeof_VkDepthClampRangeEXT(val->pDepthClampRange);
+    return size;
+}
+
+static inline size_t
+vn_sizeof_VkPipelineViewportDepthClampControlCreateInfoEXT(const VkPipelineViewportDepthClampControlCreateInfoEXT *val)
+{
+    size_t size = 0;
+
+    size += vn_sizeof_VkStructureType(&val->sType);
+    size += vn_sizeof_VkPipelineViewportDepthClampControlCreateInfoEXT_pnext(val->pNext);
+    size += vn_sizeof_VkPipelineViewportDepthClampControlCreateInfoEXT_self(val);
+
+    return size;
+}
+
+static inline void
+vn_encode_VkPipelineViewportDepthClampControlCreateInfoEXT_pnext(struct vn_cs_encoder *enc, const void *val)
+{
+    /* no known/supported struct */
+    vn_encode_simple_pointer(enc, NULL);
+}
+
+static inline void
+vn_encode_VkPipelineViewportDepthClampControlCreateInfoEXT_self(struct vn_cs_encoder *enc, const VkPipelineViewportDepthClampControlCreateInfoEXT *val)
+{
+    /* skip val->{sType,pNext} */
+    vn_encode_VkDepthClampModeEXT(enc, &val->depthClampMode);
+    if (vn_encode_simple_pointer(enc, val->pDepthClampRange))
+        vn_encode_VkDepthClampRangeEXT(enc, val->pDepthClampRange);
+}
+
+static inline void
+vn_encode_VkPipelineViewportDepthClampControlCreateInfoEXT(struct vn_cs_encoder *enc, const VkPipelineViewportDepthClampControlCreateInfoEXT *val)
+{
+    assert(val->sType == VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_DEPTH_CLAMP_CONTROL_CREATE_INFO_EXT);
+    vn_encode_VkStructureType(enc, &(VkStructureType){ VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_DEPTH_CLAMP_CONTROL_CREATE_INFO_EXT });
+    vn_encode_VkPipelineViewportDepthClampControlCreateInfoEXT_pnext(enc, val->pNext);
+    vn_encode_VkPipelineViewportDepthClampControlCreateInfoEXT_self(enc, val);
+}
+
 /* struct VkPipelineViewportStateCreateInfo chain */
 
 static inline size_t
@@ -845,6 +903,14 @@ vn_sizeof_VkPipelineViewportStateCreateInfo_pnext(const void *val)
             size += vn_sizeof_VkStructureType(&pnext->sType);
             size += vn_sizeof_VkPipelineViewportStateCreateInfo_pnext(pnext->pNext);
             size += vn_sizeof_VkPipelineViewportDepthClipControlCreateInfoEXT_self((const VkPipelineViewportDepthClipControlCreateInfoEXT *)pnext);
+            return size;
+        case VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_DEPTH_CLAMP_CONTROL_CREATE_INFO_EXT:
+            if (!vn_cs_renderer_protocol_has_extension(583 /* VK_EXT_depth_clamp_control */))
+                break;
+            size += vn_sizeof_simple_pointer(pnext);
+            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkPipelineViewportStateCreateInfo_pnext(pnext->pNext);
+            size += vn_sizeof_VkPipelineViewportDepthClampControlCreateInfoEXT_self((const VkPipelineViewportDepthClampControlCreateInfoEXT *)pnext);
             return size;
         default:
             /* ignore unknown/unsupported struct */
@@ -907,6 +973,14 @@ vn_encode_VkPipelineViewportStateCreateInfo_pnext(struct vn_cs_encoder *enc, con
             vn_encode_VkStructureType(enc, &pnext->sType);
             vn_encode_VkPipelineViewportStateCreateInfo_pnext(enc, pnext->pNext);
             vn_encode_VkPipelineViewportDepthClipControlCreateInfoEXT_self(enc, (const VkPipelineViewportDepthClipControlCreateInfoEXT *)pnext);
+            return;
+        case VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_DEPTH_CLAMP_CONTROL_CREATE_INFO_EXT:
+            if (!vn_cs_renderer_protocol_has_extension(583 /* VK_EXT_depth_clamp_control */))
+                break;
+            vn_encode_simple_pointer(enc, pnext);
+            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkPipelineViewportStateCreateInfo_pnext(enc, pnext->pNext);
+            vn_encode_VkPipelineViewportDepthClampControlCreateInfoEXT_self(enc, (const VkPipelineViewportDepthClampControlCreateInfoEXT *)pnext);
             return;
         default:
             /* ignore unknown/unsupported struct */
@@ -1279,6 +1353,14 @@ vn_sizeof_VkPipelineRasterizationStateCreateInfo_pnext(const void *val)
             size += vn_sizeof_VkPipelineRasterizationStateCreateInfo_pnext(pnext->pNext);
             size += vn_sizeof_VkPipelineRasterizationProvokingVertexStateCreateInfoEXT_self((const VkPipelineRasterizationProvokingVertexStateCreateInfoEXT *)pnext);
             return size;
+        case VK_STRUCTURE_TYPE_DEPTH_BIAS_REPRESENTATION_INFO_EXT:
+            if (!vn_cs_renderer_protocol_has_extension(284 /* VK_EXT_depth_bias_control */))
+                break;
+            size += vn_sizeof_simple_pointer(pnext);
+            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkPipelineRasterizationStateCreateInfo_pnext(pnext->pNext);
+            size += vn_sizeof_VkDepthBiasRepresentationInfoEXT_self((const VkDepthBiasRepresentationInfoEXT *)pnext);
+            return size;
         default:
             /* ignore unknown/unsupported struct */
             break;
@@ -1366,6 +1448,14 @@ vn_encode_VkPipelineRasterizationStateCreateInfo_pnext(struct vn_cs_encoder *enc
             vn_encode_VkStructureType(enc, &pnext->sType);
             vn_encode_VkPipelineRasterizationStateCreateInfo_pnext(enc, pnext->pNext);
             vn_encode_VkPipelineRasterizationProvokingVertexStateCreateInfoEXT_self(enc, (const VkPipelineRasterizationProvokingVertexStateCreateInfoEXT *)pnext);
+            return;
+        case VK_STRUCTURE_TYPE_DEPTH_BIAS_REPRESENTATION_INFO_EXT:
+            if (!vn_cs_renderer_protocol_has_extension(284 /* VK_EXT_depth_bias_control */))
+                break;
+            vn_encode_simple_pointer(enc, pnext);
+            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkPipelineRasterizationStateCreateInfo_pnext(enc, pnext->pNext);
+            vn_encode_VkDepthBiasRepresentationInfoEXT_self(enc, (const VkDepthBiasRepresentationInfoEXT *)pnext);
             return;
         default:
             /* ignore unknown/unsupported struct */
@@ -3900,19 +3990,6 @@ static inline void vn_async_vkCreateComputePipelines(struct vn_ring *vn_ring, Vk
 {
     struct vn_ring_submit_command submit;
     vn_submit_vkCreateComputePipelines(vn_ring, 0, device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, &submit);
-}
-
-static inline void vn_call_vkDestroyPipeline(struct vn_ring *vn_ring, VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks* pAllocator)
-{
-    VN_TRACE_FUNC();
-
-    struct vn_ring_submit_command submit;
-    vn_submit_vkDestroyPipeline(vn_ring, VK_COMMAND_GENERATE_REPLY_BIT_EXT, device, pipeline, pAllocator, &submit);
-    struct vn_cs_decoder *dec = vn_ring_get_command_reply(vn_ring, &submit);
-    if (dec) {
-        vn_decode_vkDestroyPipeline_reply(dec, device, pipeline, pAllocator);
-        vn_ring_free_command_reply(vn_ring, &submit);
-    }
 }
 
 static inline void vn_async_vkDestroyPipeline(struct vn_ring *vn_ring, VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks* pAllocator)

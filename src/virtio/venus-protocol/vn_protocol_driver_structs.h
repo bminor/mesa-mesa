@@ -844,6 +844,79 @@ vn_encode_VkRect2D_partial(struct vn_cs_encoder *enc, const VkRect2D *val)
     vn_encode_VkExtent2D_partial(enc, &val->extent);
 }
 
+/* struct VkDepthClampRangeEXT */
+
+static inline size_t
+vn_sizeof_VkDepthClampRangeEXT(const VkDepthClampRangeEXT *val)
+{
+    size_t size = 0;
+    size += vn_sizeof_float(&val->minDepthClamp);
+    size += vn_sizeof_float(&val->maxDepthClamp);
+    return size;
+}
+
+static inline void
+vn_encode_VkDepthClampRangeEXT(struct vn_cs_encoder *enc, const VkDepthClampRangeEXT *val)
+{
+    vn_encode_float(enc, &val->minDepthClamp);
+    vn_encode_float(enc, &val->maxDepthClamp);
+}
+
+/* struct VkDepthBiasRepresentationInfoEXT chain */
+
+static inline size_t
+vn_sizeof_VkDepthBiasRepresentationInfoEXT_pnext(const void *val)
+{
+    /* no known/supported struct */
+    return vn_sizeof_simple_pointer(NULL);
+}
+
+static inline size_t
+vn_sizeof_VkDepthBiasRepresentationInfoEXT_self(const VkDepthBiasRepresentationInfoEXT *val)
+{
+    size_t size = 0;
+    /* skip val->{sType,pNext} */
+    size += vn_sizeof_VkDepthBiasRepresentationEXT(&val->depthBiasRepresentation);
+    size += vn_sizeof_VkBool32(&val->depthBiasExact);
+    return size;
+}
+
+static inline size_t
+vn_sizeof_VkDepthBiasRepresentationInfoEXT(const VkDepthBiasRepresentationInfoEXT *val)
+{
+    size_t size = 0;
+
+    size += vn_sizeof_VkStructureType(&val->sType);
+    size += vn_sizeof_VkDepthBiasRepresentationInfoEXT_pnext(val->pNext);
+    size += vn_sizeof_VkDepthBiasRepresentationInfoEXT_self(val);
+
+    return size;
+}
+
+static inline void
+vn_encode_VkDepthBiasRepresentationInfoEXT_pnext(struct vn_cs_encoder *enc, const void *val)
+{
+    /* no known/supported struct */
+    vn_encode_simple_pointer(enc, NULL);
+}
+
+static inline void
+vn_encode_VkDepthBiasRepresentationInfoEXT_self(struct vn_cs_encoder *enc, const VkDepthBiasRepresentationInfoEXT *val)
+{
+    /* skip val->{sType,pNext} */
+    vn_encode_VkDepthBiasRepresentationEXT(enc, &val->depthBiasRepresentation);
+    vn_encode_VkBool32(enc, &val->depthBiasExact);
+}
+
+static inline void
+vn_encode_VkDepthBiasRepresentationInfoEXT(struct vn_cs_encoder *enc, const VkDepthBiasRepresentationInfoEXT *val)
+{
+    assert(val->sType == VK_STRUCTURE_TYPE_DEPTH_BIAS_REPRESENTATION_INFO_EXT);
+    vn_encode_VkStructureType(enc, &(VkStructureType){ VK_STRUCTURE_TYPE_DEPTH_BIAS_REPRESENTATION_INFO_EXT });
+    vn_encode_VkDepthBiasRepresentationInfoEXT_pnext(enc, val->pNext);
+    vn_encode_VkDepthBiasRepresentationInfoEXT_self(enc, val);
+}
+
 /* struct VkSampleLocationEXT */
 
 static inline size_t

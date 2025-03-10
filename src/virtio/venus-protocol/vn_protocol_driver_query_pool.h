@@ -437,19 +437,6 @@ static inline void vn_async_vkCreateQueryPool(struct vn_ring *vn_ring, VkDevice 
     vn_submit_vkCreateQueryPool(vn_ring, 0, device, pCreateInfo, pAllocator, pQueryPool, &submit);
 }
 
-static inline void vn_call_vkDestroyQueryPool(struct vn_ring *vn_ring, VkDevice device, VkQueryPool queryPool, const VkAllocationCallbacks* pAllocator)
-{
-    VN_TRACE_FUNC();
-
-    struct vn_ring_submit_command submit;
-    vn_submit_vkDestroyQueryPool(vn_ring, VK_COMMAND_GENERATE_REPLY_BIT_EXT, device, queryPool, pAllocator, &submit);
-    struct vn_cs_decoder *dec = vn_ring_get_command_reply(vn_ring, &submit);
-    if (dec) {
-        vn_decode_vkDestroyQueryPool_reply(dec, device, queryPool, pAllocator);
-        vn_ring_free_command_reply(vn_ring, &submit);
-    }
-}
-
 static inline void vn_async_vkDestroyQueryPool(struct vn_ring *vn_ring, VkDevice device, VkQueryPool queryPool, const VkAllocationCallbacks* pAllocator)
 {
     struct vn_ring_submit_command submit;
@@ -476,19 +463,6 @@ static inline void vn_async_vkGetQueryPoolResults(struct vn_ring *vn_ring, VkDev
 {
     struct vn_ring_submit_command submit;
     vn_submit_vkGetQueryPoolResults(vn_ring, 0, device, queryPool, firstQuery, queryCount, dataSize, pData, stride, flags, &submit);
-}
-
-static inline void vn_call_vkResetQueryPool(struct vn_ring *vn_ring, VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount)
-{
-    VN_TRACE_FUNC();
-
-    struct vn_ring_submit_command submit;
-    vn_submit_vkResetQueryPool(vn_ring, VK_COMMAND_GENERATE_REPLY_BIT_EXT, device, queryPool, firstQuery, queryCount, &submit);
-    struct vn_cs_decoder *dec = vn_ring_get_command_reply(vn_ring, &submit);
-    if (dec) {
-        vn_decode_vkResetQueryPool_reply(dec, device, queryPool, firstQuery, queryCount);
-        vn_ring_free_command_reply(vn_ring, &submit);
-    }
 }
 
 static inline void vn_async_vkResetQueryPool(struct vn_ring *vn_ring, VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount)

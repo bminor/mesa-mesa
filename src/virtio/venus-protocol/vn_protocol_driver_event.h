@@ -465,19 +465,6 @@ static inline void vn_async_vkCreateEvent(struct vn_ring *vn_ring, VkDevice devi
     vn_submit_vkCreateEvent(vn_ring, 0, device, pCreateInfo, pAllocator, pEvent, &submit);
 }
 
-static inline void vn_call_vkDestroyEvent(struct vn_ring *vn_ring, VkDevice device, VkEvent event, const VkAllocationCallbacks* pAllocator)
-{
-    VN_TRACE_FUNC();
-
-    struct vn_ring_submit_command submit;
-    vn_submit_vkDestroyEvent(vn_ring, VK_COMMAND_GENERATE_REPLY_BIT_EXT, device, event, pAllocator, &submit);
-    struct vn_cs_decoder *dec = vn_ring_get_command_reply(vn_ring, &submit);
-    if (dec) {
-        vn_decode_vkDestroyEvent_reply(dec, device, event, pAllocator);
-        vn_ring_free_command_reply(vn_ring, &submit);
-    }
-}
-
 static inline void vn_async_vkDestroyEvent(struct vn_ring *vn_ring, VkDevice device, VkEvent event, const VkAllocationCallbacks* pAllocator)
 {
     struct vn_ring_submit_command submit;

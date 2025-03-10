@@ -3577,6 +3577,48 @@ vn_decode_VkPipelineRobustnessImageBehavior(struct vn_cs_decoder *dec, VkPipelin
     vn_decode_int32_t(dec, (int32_t *)val);
 }
 
+/* enum VkDepthBiasRepresentationEXT */
+
+static inline size_t
+vn_sizeof_VkDepthBiasRepresentationEXT(const VkDepthBiasRepresentationEXT *val)
+{
+    assert(sizeof(*val) == sizeof(int32_t));
+    return vn_sizeof_int32_t((const int32_t *)val);
+}
+
+static inline void
+vn_encode_VkDepthBiasRepresentationEXT(struct vn_cs_encoder *enc, const VkDepthBiasRepresentationEXT *val)
+{
+    vn_encode_int32_t(enc, (const int32_t *)val);
+}
+
+static inline void
+vn_decode_VkDepthBiasRepresentationEXT(struct vn_cs_decoder *dec, VkDepthBiasRepresentationEXT *val)
+{
+    vn_decode_int32_t(dec, (int32_t *)val);
+}
+
+/* enum VkDepthClampModeEXT */
+
+static inline size_t
+vn_sizeof_VkDepthClampModeEXT(const VkDepthClampModeEXT *val)
+{
+    assert(sizeof(*val) == sizeof(int32_t));
+    return vn_sizeof_int32_t((const int32_t *)val);
+}
+
+static inline void
+vn_encode_VkDepthClampModeEXT(struct vn_cs_encoder *enc, const VkDepthClampModeEXT *val)
+{
+    vn_encode_int32_t(enc, (const int32_t *)val);
+}
+
+static inline void
+vn_decode_VkDepthClampModeEXT(struct vn_cs_decoder *dec, VkDepthClampModeEXT *val)
+{
+    vn_decode_int32_t(dec, (int32_t *)val);
+}
+
 /* enum VkTessellationDomainOrigin */
 
 static inline size_t

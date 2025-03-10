@@ -304,19 +304,6 @@ static inline void vn_async_vkCreateDescriptorUpdateTemplate(struct vn_ring *vn_
     vn_submit_vkCreateDescriptorUpdateTemplate(vn_ring, 0, device, pCreateInfo, pAllocator, pDescriptorUpdateTemplate, &submit);
 }
 
-static inline void vn_call_vkDestroyDescriptorUpdateTemplate(struct vn_ring *vn_ring, VkDevice device, VkDescriptorUpdateTemplate descriptorUpdateTemplate, const VkAllocationCallbacks* pAllocator)
-{
-    VN_TRACE_FUNC();
-
-    struct vn_ring_submit_command submit;
-    vn_submit_vkDestroyDescriptorUpdateTemplate(vn_ring, VK_COMMAND_GENERATE_REPLY_BIT_EXT, device, descriptorUpdateTemplate, pAllocator, &submit);
-    struct vn_cs_decoder *dec = vn_ring_get_command_reply(vn_ring, &submit);
-    if (dec) {
-        vn_decode_vkDestroyDescriptorUpdateTemplate_reply(dec, device, descriptorUpdateTemplate, pAllocator);
-        vn_ring_free_command_reply(vn_ring, &submit);
-    }
-}
-
 static inline void vn_async_vkDestroyDescriptorUpdateTemplate(struct vn_ring *vn_ring, VkDevice device, VkDescriptorUpdateTemplate descriptorUpdateTemplate, const VkAllocationCallbacks* pAllocator)
 {
     struct vn_ring_submit_command submit;
