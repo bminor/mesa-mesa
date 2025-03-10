@@ -175,7 +175,7 @@ static struct vpe_caps caps = {
                     .p010            = 1, /**< planar 4:2:0 10-bit */
                     .p016            = 0, /**< planar 4:2:0 16-bit */
                     .ayuv            = 0, /**< packed 4:4:4 */
-                    .yuy2 = 0
+                    .yuy2            = 0, /**< packed 4:2:2 */
                 },
             .output_pixel_format_support =
                 {
@@ -185,7 +185,7 @@ static struct vpe_caps caps = {
                     .p010            = 0, /**< planar 4:2:0 10-bit */
                     .p016            = 0, /**< planar 4:2:0 16-bit */
                     .ayuv            = 0, /**< packed 4:4:4 */
-                    .yuy2 = 0
+                    .yuy2            = 0, /**< packed 4:2:2 */
                 },
             .max_upscale_factor = 64000,
 
