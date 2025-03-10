@@ -176,6 +176,8 @@ get_device_extensions(const struct panvk_physical_device *device,
 {
    const unsigned arch = pan_arch(device->kmod.props.gpu_prod_id);
 
+   bool has_vk1_1 = arch >= 10;
+
    *ext = (struct vk_device_extension_table){
       .KHR_8bit_storage = true,
       .KHR_16bit_storage = true,
@@ -215,13 +217,13 @@ get_device_extensions(const struct panvk_physical_device *device,
       .KHR_shader_draw_parameters = true,
       .KHR_shader_expect_assume = true,
       .KHR_shader_float16_int8 = true,
-      .KHR_shader_maximal_reconvergence = arch >= 10, /* requires vk1.1 */
+      .KHR_shader_maximal_reconvergence = has_vk1_1,
       .KHR_shader_non_semantic_info = true,
-      .KHR_shader_quad_control = arch >= 10, /* requires vk1.1 */
+      .KHR_shader_quad_control = has_vk1_1,
       .KHR_shader_relaxed_extended_instruction = true,
-      .KHR_shader_subgroup_extended_types = arch >= 10, /* requires v1.1 */
+      .KHR_shader_subgroup_extended_types = has_vk1_1,
       .KHR_shader_subgroup_rotate = true,
-      .KHR_shader_subgroup_uniform_control_flow = arch >= 10, /* requires vk1.1 */
+      .KHR_shader_subgroup_uniform_control_flow = has_vk1_1,
       .KHR_storage_buffer_storage_class = true,
 #ifdef PANVK_USE_WSI_PLATFORM
       .KHR_swapchain = true,
@@ -257,7 +259,7 @@ get_device_extensions(const struct panvk_physical_device *device,
       .EXT_scalar_block_layout = true,
       .EXT_separate_stencil_usage = true,
       .EXT_shader_module_identifier = true,
-      .EXT_subgroup_size_control = arch >= 10, /* requires vk1.1 */
+      .EXT_subgroup_size_control = has_vk1_1,
       .EXT_tooling_info = true,
       .EXT_ycbcr_2plane_444_formats = arch >= 10,
       .EXT_ycbcr_image_arrays = arch >= 10,
