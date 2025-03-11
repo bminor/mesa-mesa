@@ -1382,13 +1382,23 @@ hk_meta_resolve_rendering(struct hk_cmd_buffer *cmd,
 static void
 hk_cmd_copy(struct hk_cmd_buffer *cmd, uint64_t dst, uint64_t src, size_t size)
 {
-   if (size / 16) {
-      libagx_copy_uint4(cmd, agx_1d(size / 16), AGX_BARRIER_ALL, dst, src);
+   /* Use vectorized copies for as much of the buffer as possible. This requires
+    * that dst, src, and size are all properly aligned. Failing to check for
+    * alignment on the buffers causes subtle and hard-to-debug issues!
+    */
+   if (size >= 16 && (dst & 0xf) == 0 && (src & 0xf) == 0) {
+      unsigned uint4s = size / 16;
+      unsigned bytes = uint4s * 16;
+
+      libagx_copy_uint4(cmd, agx_1d(uint4s), AGX_BARRIER_ALL, dst, src);
+
+      dst += bytes;
+      src += bytes;
+      size -= bytes;
    }
 
-   if (size % 16) {
-      libagx_copy_uchar(cmd, agx_1d(size % 16), AGX_BARRIER_ALL,
-                        dst + (size & ~15), src + (size & ~15));
+   if (size) {
+      libagx_copy_uchar(cmd, agx_1d(size), AGX_BARRIER_ALL, dst, src);
    }
 }
 
