@@ -19,8 +19,8 @@ struct vn_info_extension {
 };
 
 /* sorted by extension names for bsearch */
-static const uint32_t _vn_info_extension_count = 162;
-static const struct vn_info_extension _vn_info_extensions[162] = {
+static const uint32_t _vn_info_extension_count = 163;
+static const struct vn_info_extension _vn_info_extensions[163] = {
    { "VK_ARM_rasterization_order_attachment_access", 343, 1 },
    { "VK_EXT_4444_formats", 341, 1 },
    { "VK_EXT_attachment_feedback_loop_layout", 340, 2 },
@@ -143,6 +143,7 @@ static const struct vn_info_extension _vn_info_extensions[162] = {
    { "VK_KHR_maintenance4", 414, 2 },
    { "VK_KHR_maintenance5", 471, 1 },
    { "VK_KHR_maintenance6", 546, 1 },
+   { "VK_KHR_maintenance7", 563, 1 },
    { "VK_KHR_map_memory2", 272, 1 },
    { "VK_KHR_multiview", 54, 1 },
    { "VK_KHR_pipeline_library", 291, 1 },
