@@ -64,6 +64,61 @@ vn_encode_VkImageViewUsageCreateInfo(struct vn_cs_encoder *enc, const VkImageVie
     vn_encode_VkImageViewUsageCreateInfo_self(enc, val);
 }
 
+/* struct VkImageViewSlicedCreateInfoEXT chain */
+
+static inline size_t
+vn_sizeof_VkImageViewSlicedCreateInfoEXT_pnext(const void *val)
+{
+    /* no known/supported struct */
+    return vn_sizeof_simple_pointer(NULL);
+}
+
+static inline size_t
+vn_sizeof_VkImageViewSlicedCreateInfoEXT_self(const VkImageViewSlicedCreateInfoEXT *val)
+{
+    size_t size = 0;
+    /* skip val->{sType,pNext} */
+    size += vn_sizeof_uint32_t(&val->sliceOffset);
+    size += vn_sizeof_uint32_t(&val->sliceCount);
+    return size;
+}
+
+static inline size_t
+vn_sizeof_VkImageViewSlicedCreateInfoEXT(const VkImageViewSlicedCreateInfoEXT *val)
+{
+    size_t size = 0;
+
+    size += vn_sizeof_VkStructureType(&val->sType);
+    size += vn_sizeof_VkImageViewSlicedCreateInfoEXT_pnext(val->pNext);
+    size += vn_sizeof_VkImageViewSlicedCreateInfoEXT_self(val);
+
+    return size;
+}
+
+static inline void
+vn_encode_VkImageViewSlicedCreateInfoEXT_pnext(struct vn_cs_encoder *enc, const void *val)
+{
+    /* no known/supported struct */
+    vn_encode_simple_pointer(enc, NULL);
+}
+
+static inline void
+vn_encode_VkImageViewSlicedCreateInfoEXT_self(struct vn_cs_encoder *enc, const VkImageViewSlicedCreateInfoEXT *val)
+{
+    /* skip val->{sType,pNext} */
+    vn_encode_uint32_t(enc, &val->sliceOffset);
+    vn_encode_uint32_t(enc, &val->sliceCount);
+}
+
+static inline void
+vn_encode_VkImageViewSlicedCreateInfoEXT(struct vn_cs_encoder *enc, const VkImageViewSlicedCreateInfoEXT *val)
+{
+    assert(val->sType == VK_STRUCTURE_TYPE_IMAGE_VIEW_SLICED_CREATE_INFO_EXT);
+    vn_encode_VkStructureType(enc, &(VkStructureType){ VK_STRUCTURE_TYPE_IMAGE_VIEW_SLICED_CREATE_INFO_EXT });
+    vn_encode_VkImageViewSlicedCreateInfoEXT_pnext(enc, val->pNext);
+    vn_encode_VkImageViewSlicedCreateInfoEXT_self(enc, val);
+}
+
 /* struct VkImageViewMinLodCreateInfoEXT chain */
 
 static inline size_t
@@ -133,6 +188,14 @@ vn_sizeof_VkImageViewCreateInfo_pnext(const void *val)
             size += vn_sizeof_VkImageViewCreateInfo_pnext(pnext->pNext);
             size += vn_sizeof_VkImageViewUsageCreateInfo_self((const VkImageViewUsageCreateInfo *)pnext);
             return size;
+        case VK_STRUCTURE_TYPE_IMAGE_VIEW_SLICED_CREATE_INFO_EXT:
+            if (!vn_cs_renderer_protocol_has_extension(419 /* VK_EXT_image_sliced_view_of_3d */))
+                break;
+            size += vn_sizeof_simple_pointer(pnext);
+            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkImageViewCreateInfo_pnext(pnext->pNext);
+            size += vn_sizeof_VkImageViewSlicedCreateInfoEXT_self((const VkImageViewSlicedCreateInfoEXT *)pnext);
+            return size;
         case VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO:
             size += vn_sizeof_simple_pointer(pnext);
             size += vn_sizeof_VkStructureType(&pnext->sType);
@@ -195,6 +258,14 @@ vn_encode_VkImageViewCreateInfo_pnext(struct vn_cs_encoder *enc, const void *val
             vn_encode_VkStructureType(enc, &pnext->sType);
             vn_encode_VkImageViewCreateInfo_pnext(enc, pnext->pNext);
             vn_encode_VkImageViewUsageCreateInfo_self(enc, (const VkImageViewUsageCreateInfo *)pnext);
+            return;
+        case VK_STRUCTURE_TYPE_IMAGE_VIEW_SLICED_CREATE_INFO_EXT:
+            if (!vn_cs_renderer_protocol_has_extension(419 /* VK_EXT_image_sliced_view_of_3d */))
+                break;
+            vn_encode_simple_pointer(enc, pnext);
+            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkImageViewCreateInfo_pnext(enc, pnext->pNext);
+            vn_encode_VkImageViewSlicedCreateInfoEXT_self(enc, (const VkImageViewSlicedCreateInfoEXT *)pnext);
             return;
         case VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO:
             vn_encode_simple_pointer(enc, pnext);
