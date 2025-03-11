@@ -246,7 +246,7 @@ public:
       /* Stash the number of instructions so we can sanity check that our
        * counts still match liveness.
        */
-      live_instr_count = fs->cfg->last_block()->end_ip + 1;
+      live_instr_count = fs->cfg->total_instructions;
 
       spill_insts = _mesa_pointer_set_create(mem_ctx);
 

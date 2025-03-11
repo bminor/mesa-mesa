@@ -263,7 +263,7 @@ namespace {
    unsigned
    num_instructions(const brw_shader *shader)
    {
-      return shader->cfg->blocks[shader->cfg->num_blocks - 1]->end_ip + 1;
+      return shader->cfg->total_instructions;
    }
 
    /**

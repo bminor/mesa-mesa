@@ -983,6 +983,7 @@ brw_inst::insert_before(bblock_t *block, brw_inst *inst)
 
    inst->block = block;
    inst->block->num_instructions++;
+   inst->block->cfg->total_instructions++;
 }
 
 void
@@ -999,7 +1000,9 @@ brw_inst::remove(bool defer_later_block_ip_updates)
    }
 
    assert(block->num_instructions > 0);
+   assert(block->cfg->total_instructions > 0);
    block->num_instructions--;
+   block->cfg->total_instructions--;
 
    if (defer_later_block_ip_updates) {
       block->end_ip_delta--;

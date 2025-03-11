@@ -716,7 +716,7 @@ brw_instruction_scheduler::brw_instruction_scheduler(void *mem_ctx, const brw_sh
    const unsigned grf_write_scale = MAX_VGRF_SIZE(s->devinfo);
    this->last_grf_write = linear_zalloc_array(lin_ctx, schedule_node *, grf_count * grf_write_scale);
 
-   this->nodes_len = s->cfg->last_block()->end_ip + 1;
+   this->nodes_len = s->cfg->total_instructions;
    this->nodes = linear_zalloc_array(lin_ctx, schedule_node, this->nodes_len);
 
    const struct brw_isa_info *isa = &s->compiler->isa;

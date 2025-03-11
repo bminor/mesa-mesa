@@ -1009,7 +1009,7 @@ save_instruction_order(const struct cfg_t *cfg)
     * of brw_inst *.  This way, we can reset it between scheduling passes to
     * prevent dependencies between the different scheduling modes.
     */
-   int num_insts = cfg->last_block()->end_ip + 1;
+   int num_insts = cfg->total_instructions;
    brw_inst **inst_arr = new brw_inst * [num_insts];
 
    int ip = 0;
@@ -1025,7 +1025,7 @@ save_instruction_order(const struct cfg_t *cfg)
 static void
 restore_instruction_order(struct cfg_t *cfg, brw_inst **inst_arr)
 {
-   ASSERTED int num_insts = cfg->last_block()->end_ip + 1;
+   ASSERTED int num_insts = cfg->total_instructions;
 
    int ip = 0;
    foreach_block (block, cfg) {

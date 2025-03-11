@@ -85,10 +85,11 @@ append_inst(bblock_t *block, brw_inst *inst)
    inst->block = block;
    block->instructions.push_tail(inst);
    block->num_instructions++;
+   block->cfg->total_instructions++;
 }
 
 cfg_t::cfg_t(brw_shader *s, exec_list *instructions) :
-   s(s)
+   s(s), total_instructions(0)
 {
    mem_ctx = ralloc_context(NULL);
    block_list.make_empty();
@@ -518,6 +519,8 @@ brw_calculate_cfg(brw_shader &s)
 void
 cfg_t::validate(const char *stage_abbrev)
 {
+   unsigned counted_total_instructions = 0;
+
    foreach_block(block, this) {
       foreach_list_typed(bblock_link, successor, link, &block->children) {
          /* Each successor of a block must have one predecessor link back to
@@ -580,6 +583,8 @@ cfg_t::validate(const char *stage_abbrev)
       }
       cfgv_assert(num_instructions == block->num_instructions);
 
+      counted_total_instructions += num_instructions;
+
       brw_inst *first_inst = block->start();
       if (first_inst->opcode == BRW_OPCODE_DO) {
          /* DO instructions both begin and end a block, so the DO instruction
@@ -627,5 +632,7 @@ cfg_t::validate(const char *stage_abbrev)
          cfgv_assert(block->children.length() == 1);
       }
    }
+
+   cfgv_assert(counted_total_instructions == total_instructions);
 }
 #endif

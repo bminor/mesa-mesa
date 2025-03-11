@@ -80,8 +80,7 @@ brw_idom_tree::dump(FILE *file) const
 brw_register_pressure::brw_register_pressure(const brw_shader *v)
 {
    const brw_live_variables &live = v->live_analysis.require();
-   const unsigned num_instructions = v->cfg->num_blocks ?
-      v->cfg->blocks[v->cfg->num_blocks - 1]->end_ip + 1 : 0;
+   const unsigned num_instructions = v->cfg->total_instructions;
 
    regs_live_at_ip = new unsigned[num_instructions]();
 

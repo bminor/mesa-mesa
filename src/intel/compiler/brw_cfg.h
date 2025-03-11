@@ -231,6 +231,8 @@ struct cfg_t {
    struct exec_list block_list;
    struct bblock_t **blocks;
    int num_blocks;
+
+   unsigned total_instructions;
 };
 
 inline bblock_t *
