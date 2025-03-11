@@ -676,6 +676,7 @@ debian-clang:
       -D imagination-srv=true
       -D tools=drm-shim,etnaviv,freedreno,glsl,intel,intel-ui,nir,nouveau,lima,panfrost,asahi,imagination
       -D vulkan-layers=device-select,overlay
+      -D build-radv-tests=true
       -D build-aco-tests=true
       -D mesa-clc=enabled
       -D precomp-compiler=enabled
@@ -750,6 +751,7 @@ debian-vulkan:
     VULKAN_DRIVERS: amd,asahi,broadcom,freedreno,intel,intel_hasvk,panfrost,virtio,imagination-experimental,microsoft-experimental,nouveau
     EXTRA_OPTION: >
       -D vulkan-layers=device-select,overlay
+      -D build-radv-tests=true
       -D build-aco-tests=true
       -D intel-rt=disabled
       -D imagination-srv=true
