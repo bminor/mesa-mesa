@@ -1172,6 +1172,36 @@ wsi_wl_surface_remove_color_refcount(struct wsi_wl_surface *wsi_surface)
    }
 }
 
+struct wayland_hdr_metadata {
+   uint32_t min_luminance;
+   uint32_t max_luminance;
+   uint32_t max_fall;
+   uint32_t max_cll;
+};
+
+#define MIN_LUM_FACTOR 10000
+
+static bool
+is_hdr_metadata_legal(struct wayland_hdr_metadata *l)
+{
+   if (l->max_cll != 0) {
+      if (l->max_cll * MIN_LUM_FACTOR < l->min_luminance)
+         return false;
+      if (l->max_cll > l->max_luminance)
+         return false;
+   }
+   if (l->max_fall != 0) {
+      if (l->max_fall * MIN_LUM_FACTOR < l->min_luminance)
+         return false;
+      if (l->max_fall > l->max_luminance)
+         return false;
+      if (l->max_cll != 0 && l->max_fall > l->max_cll) {
+         return false;
+      }
+   }
+   return l->max_luminance * MIN_LUM_FACTOR > l->min_luminance;
+}
+
 static bool
 compare_hdr_metadata(struct VkHdrMetadataEXT *l, struct VkHdrMetadataEXT *r)
 {
@@ -1215,7 +1245,14 @@ wsi_wl_swapchain_update_colorspace(struct wsi_wl_swapchain *chain)
       wsi_wl_surface_remove_color_refcount(surface);
    }
 
-   bool should_use_hdr_metadata = chain->color.has_hdr_metadata;
+   struct wayland_hdr_metadata wayland_hdr_metadata = {
+      .min_luminance = round(MIN_LUM_FACTOR * chain->color.hdr_metadata.minLuminance),
+      .max_luminance = round(chain->color.hdr_metadata.maxLuminance),
+      .max_fall = round(chain->color.hdr_metadata.maxFrameAverageLightLevel),
+      .max_cll = round(chain->color.hdr_metadata.maxContentLightLevel),
+   };
+   bool should_use_hdr_metadata = chain->color.has_hdr_metadata
+                               && is_hdr_metadata_legal(&wayland_hdr_metadata);
    for (int i = 0; i < ARRAY_SIZE(colorspace_mapping); i++) {
       if (colorspace_mapping[i].colorspace == chain->color.colorspace) {
          should_use_hdr_metadata &= colorspace_mapping[i].should_use_hdr_metadata;
@@ -1259,10 +1296,8 @@ wsi_wl_swapchain_update_colorspace(struct wsi_wl_swapchain *chain)
    wp_image_description_creator_params_v1_set_primaries_named(creator, primaries);
    wp_image_description_creator_params_v1_set_tf_named(creator, tf);
    if (should_use_hdr_metadata) {
-      uint32_t max_cll = round(chain->color.hdr_metadata.maxContentLightLevel);
-      uint32_t max_fall = round(chain->color.hdr_metadata.maxFrameAverageLightLevel);
-      wp_image_description_creator_params_v1_set_max_cll(creator, max_cll);
-      wp_image_description_creator_params_v1_set_max_fall(creator, max_fall);
+      wp_image_description_creator_params_v1_set_max_cll(creator, wayland_hdr_metadata.max_cll);
+      wp_image_description_creator_params_v1_set_max_fall(creator, wayland_hdr_metadata.max_fall);
       if (display->color_features.mastering_display_primaries) {
          uint32_t red_x = round(chain->color.hdr_metadata.displayPrimaryRed.x * 1000000);
          uint32_t red_y = round(chain->color.hdr_metadata.displayPrimaryRed.y * 1000000);
@@ -1276,9 +1311,9 @@ wsi_wl_swapchain_update_colorspace(struct wsi_wl_swapchain *chain)
                                                                                 green_x, green_y,
                                                                                 blue_x, blue_y,
                                                                                 white_x, white_y);
-         uint32_t min_lum = round(chain->color.hdr_metadata.minLuminance * 10000);
-         uint32_t max_lum = round(chain->color.hdr_metadata.maxLuminance);
-         wp_image_description_creator_params_v1_set_mastering_luminance(creator, min_lum, max_lum);
+         wp_image_description_creator_params_v1_set_mastering_luminance(creator,
+                                                                        wayland_hdr_metadata.min_luminance,
+                                                                        wayland_hdr_metadata.max_luminance);
       }
    }
 
