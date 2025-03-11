@@ -606,7 +606,7 @@ log_mem(struct tu_device *dev, struct tu_buffer *buffer, struct tu_image *image,
          event->set_source(perfetto::protos::pbzero::perfetto_pbzero_enum_VulkanMemoryEvent::SOURCE_BUFFER);
          event->set_memory_size(buffer->vk.size);
          if (buffer->bo)
-            event->set_memory_address(buffer->iova);
+            event->set_memory_address(buffer->vk.device_address);
       } else {
          assert(image);
          event->set_source(perfetto::protos::pbzero::perfetto_pbzero_enum_VulkanMemoryEvent::SOURCE_IMAGE);
