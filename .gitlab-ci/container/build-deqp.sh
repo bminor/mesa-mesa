@@ -292,6 +292,7 @@ if [ "$DEQP_API" = tools ]; then
 fi
 
 # Remove other mustpass files, since we saved off the ones we wanted to conventient locations above.
+rm -rf assets/**/mustpass/
 rm -rf external/**/mustpass/
 rm -rf external/vulkancts/modules/vulkan/vk-main*
 rm -rf external/vulkancts/modules/vulkan/vk-default
