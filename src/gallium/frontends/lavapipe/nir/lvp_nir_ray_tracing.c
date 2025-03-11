@@ -474,6 +474,8 @@ lvp_build_ray_traversal(nir_builder *b, const struct lvp_ray_traversal_args *arg
       for (uint32_t i = 0; i < ARRAY_SIZE(node_data); i++)
          node_data[i] = nir_build_load_global(b, 1, 32, nir_iadd_imm(b, node_addr, i * 4));
 
+      nir_def *tmax = nir_load_deref(b, args->vars.tmax);
+
       nir_def *node_type = nir_iand_imm(b, bvh_node, 3);
       nir_push_if(b, nir_uge_imm(b, node_type, lvp_bvh_node_internal));
       {
@@ -523,7 +525,7 @@ lvp_build_ray_traversal(nir_builder *b, const struct lvp_ray_traversal_args *arg
          nir_push_else(b, NULL);
          {
             nir_def *result = lvp_build_intersect_ray_box(
-               b, node_data, nir_load_deref(b, args->vars.tmax),
+               b, node_data, tmax,
                nir_load_deref(b, args->vars.origin), nir_load_deref(b, args->vars.dir),
                nir_load_deref(b, args->vars.inv_dir));
 
@@ -540,7 +542,7 @@ lvp_build_ray_traversal(nir_builder *b, const struct lvp_ray_traversal_args *arg
       nir_push_else(b, NULL);
       {
          nir_def *result = lvp_build_intersect_ray_tri(
-            b, node_data, nir_load_deref(b, args->vars.tmax), nir_load_deref(b, args->vars.origin),
+            b, node_data, tmax, nir_load_deref(b, args->vars.origin),
             nir_load_deref(b, args->vars.dir), nir_load_deref(b, args->vars.inv_dir));
 
          lvp_build_triangle_case(b, args, &ray_flags, result, node_addr, node_data);
