@@ -594,7 +594,7 @@ public:
    void add_dep(schedule_node *before, schedule_node *after);
    void add_address_dep(schedule_node *before, schedule_node *after);
 
-   void set_current_block(bblock_t *block);
+   void set_current_block(bblock_t *block, const brw_ip_ranges &ips);
    void compute_delays();
    void compute_exits();
 
@@ -781,8 +781,10 @@ brw_instruction_scheduler::brw_instruction_scheduler(void *mem_ctx, const brw_sh
       this->hw_reads_remaining = NULL;
    }
 
+   const brw_ip_ranges &ips = s->ip_ranges_analysis.require();
+
    foreach_block(block, s->cfg) {
-      set_current_block(block);
+      set_current_block(block, ips);
 
       for (schedule_node *n = current.start; n < current.end; n++)
          n->issue_time = calculate_issue_time(n->inst);
@@ -828,6 +830,7 @@ void
 brw_instruction_scheduler::setup_liveness(cfg_t *cfg)
 {
    const brw_live_variables &live = s->live_analysis.require();
+   const brw_ip_ranges &ips = s->ip_ranges_analysis.require();
 
    /* First, compute liveness on a per-GRF level using the in/out sets from
     * liveness calculation.
@@ -853,8 +856,8 @@ brw_instruction_scheduler::setup_liveness(cfg_t *cfg)
     */
    for (int block = 0; block < cfg->num_blocks - 1; block++) {
       for (int i = 0; i < grf_count; i++) {
-         if (live.vgrf_start[i] <= cfg->blocks[block]->end_ip &&
-             live.vgrf_end[i] >= cfg->blocks[block + 1]->start_ip) {
+         if (live.vgrf_start[i] <= ips.end(cfg->blocks[block]) &&
+             live.vgrf_end[i] >= ips.start(cfg->blocks[block + 1])) {
             if (!BITSET_TEST(livein[block + 1], i)) {
                 reg_pressure_in[block + 1] += s->alloc.sizes[i];
                 BITSET_SET(livein[block + 1], i);
@@ -873,10 +876,10 @@ brw_instruction_scheduler::setup_liveness(cfg_t *cfg)
          continue;
 
       for (int block = 0; block < cfg->num_blocks; block++) {
-         if (cfg->blocks[block]->start_ip <= payload_last_use_ip[i])
+         if (ips.start(cfg->blocks[block]) <= payload_last_use_ip[i])
             reg_pressure_in[block]++;
 
-         if (cfg->blocks[block]->end_ip <= payload_last_use_ip[i])
+         if (ips.end(cfg->blocks[block]) <= payload_last_use_ip[i])
             BITSET_SET(hw_liveout[block], i);
       }
    }
@@ -944,11 +947,11 @@ brw_instruction_scheduler::get_register_pressure_benefit(const brw_inst *inst)
 }
 
 void
-brw_instruction_scheduler::set_current_block(bblock_t *block)
+brw_instruction_scheduler::set_current_block(bblock_t *block, const brw_ip_ranges &ips)
 {
    current.block = block;
-   current.start = nodes + block->start_ip;
-   current.len = block->end_ip - block->start_ip + 1;
+   current.start = nodes + ips.start(block);
+   current.len = block->num_instructions;
    current.end = current.start + current.len;
    current.time = 0;
    current.scheduled = 0;
@@ -1807,8 +1810,10 @@ brw_instruction_scheduler::run(brw_instruction_scheduler_mode mode)
       memset(written, 0, grf_count * sizeof(*written));
    }
 
+   const brw_ip_ranges &ips = s->ip_ranges_analysis.require();
+
    foreach_block(block, s->cfg) {
-      set_current_block(block);
+      set_current_block(block, ips);
 
       if (!post_reg_alloc) {
          for (schedule_node *n = current.start; n < current.end; n++)

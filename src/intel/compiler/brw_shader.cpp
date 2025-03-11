@@ -1017,7 +1017,6 @@ save_instruction_order(const struct cfg_t *cfg)
 
    int ip = 0;
    foreach_block_and_inst(block, brw_inst, inst, cfg) {
-      assert(ip >= block->start_ip && ip <= block->end_ip);
       inst_arr[ip++] = inst;
    }
    assert(ip == num_insts);
@@ -1034,9 +1033,8 @@ restore_instruction_order(struct cfg_t *cfg, brw_inst **inst_arr)
    foreach_block (block, cfg) {
       block->instructions.make_empty();
 
-      assert(ip == block->start_ip);
-      for (; ip <= block->end_ip; ip++)
-         block->instructions.push_tail(inst_arr[ip]);
+      for (unsigned i = 0; i < block->num_instructions; i++)
+         block->instructions.push_tail(inst_arr[ip++]);
    }
    assert(ip == num_insts);
 }
@@ -1134,6 +1132,7 @@ brw_allocate_registers(brw_shader &s, bool allow_spilling)
 
       /* Reset back to the original order before trying the next mode */
       restore_instruction_order(s.cfg, orig_order);
+
       s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTIONS);
    }
 

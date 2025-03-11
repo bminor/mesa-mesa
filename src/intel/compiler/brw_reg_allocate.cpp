@@ -129,10 +129,10 @@ brw_alloc_reg_sets(struct brw_compiler *compiler)
 }
 
 static int
-count_to_loop_end(const bblock_t *block)
+count_to_loop_end(const bblock_t *block, const brw_ip_ranges &ips)
 {
    if (block->end()->opcode == BRW_OPCODE_WHILE)
-      return block->end_ip;
+      return ips.end(block);
 
    int depth = 1;
    /* Skip the first block, since we don't want to count the do the calling
@@ -146,7 +146,7 @@ count_to_loop_end(const bblock_t *block)
       if (block->end()->opcode == BRW_OPCODE_WHILE) {
          depth--;
          if (depth == 0)
-            return block->end_ip;
+            return ips.end(block);
       }
    }
    unreachable("not reached");
@@ -156,6 +156,8 @@ void brw_shader::calculate_payload_ranges(bool allow_spilling,
                                           unsigned payload_node_count,
                                           int *payload_last_use_ip) const
 {
+   const brw_ip_ranges &ips = this->ip_ranges_analysis.require();
+
    int loop_depth = 0;
    int loop_end_ip = 0;
 
@@ -174,7 +176,7 @@ void brw_shader::calculate_payload_ranges(bool allow_spilling,
           * the end now.
           */
          if (loop_depth == 1)
-            loop_end_ip = count_to_loop_end(block);
+            loop_end_ip = count_to_loop_end(block, ips);
          break;
       case BRW_OPCODE_WHILE:
          loop_depth--;
