@@ -574,6 +574,7 @@ vlVaQuerySurfaceAttributes(VADriverContextP ctx, VAConfigID config_id,
       vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_B8G8R8A8_UNORM, attribs, &i);
       vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_R8G8B8X8_UNORM, attribs, &i);
       vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_B8G8R8X8_UNORM, attribs, &i);
+      vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_A8R8G8B8_UNORM, attribs, &i);
    }
 
    if (config->rt_format & VA_RT_FORMAT_RGB32_10) {
@@ -1576,6 +1577,8 @@ static uint32_t pipe_format_to_drm_format(enum pipe_format format)
       return DRM_FORMAT_XRGB8888;
    case PIPE_FORMAT_R8G8B8X8_UNORM:
       return DRM_FORMAT_XBGR8888;
+   case PIPE_FORMAT_A8R8G8B8_UNORM:
+      return DRM_FORMAT_BGRA8888;
    case PIPE_FORMAT_B10G10R10A2_UNORM:
       return DRM_FORMAT_ARGB2101010;
    case PIPE_FORMAT_R10G10B10A2_UNORM:
