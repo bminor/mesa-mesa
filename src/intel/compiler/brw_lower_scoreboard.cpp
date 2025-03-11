@@ -1126,6 +1126,7 @@ namespace {
       const scoreboard *delta_sbs = gather_block_scoreboards(shader, jps);
       scoreboard *in_sbs = new scoreboard[shader->cfg->num_blocks];
       scoreboard *out_sbs = new scoreboard[shader->cfg->num_blocks];
+      const brw_ip_ranges &ips = shader->ip_ranges_analysis.require();
 
       for (bool progress = true; progress;) {
          progress = false;
@@ -1141,8 +1142,8 @@ namespace {
                   int delta[IDX(TGL_PIPE_ALL)];
 
                   for (unsigned p = 0; p < IDX(TGL_PIPE_ALL); p++)
-                     delta[p] = jps[child_link->block->start_ip].jp[p]
-                        - jps[block->end_ip].jp[p]
+                     delta[p] = jps[ips.start(child_link->block)].jp[p]
+                        - jps[ips.end(block)].jp[p]
                         - ordered_unit(shader->devinfo,
                                        static_cast<const brw_inst *>(block->end()), p);
 

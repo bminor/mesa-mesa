@@ -96,7 +96,9 @@ is_coalesce_candidate(const brw_shader *v, const brw_inst *inst)
 
 static bool
 can_coalesce_vars(const intel_device_info *devinfo,
-                  const brw_live_variables &live, const cfg_t *cfg,
+                  const brw_live_variables &live,
+                  const brw_ip_ranges &ips,
+                  const cfg_t *cfg,
                   const brw_inst *inst,
                   int dst_var, int src_var)
 {
@@ -120,10 +122,10 @@ can_coalesce_vars(const intel_device_info *devinfo,
    int end_ip = MIN2(dst_end, src_end);
 
    foreach_block(scan_block, cfg) {
-      if (scan_block->end_ip < start_ip)
+      if (ips.end(scan_block) < start_ip)
          continue;
 
-      int scan_ip = scan_block->start_ip - 1;
+      int scan_ip = ips.start(scan_block) - 1;
 
       bool seen_src_write = false;
       bool seen_copy = false;
@@ -230,6 +232,7 @@ brw_opt_register_coalesce(brw_shader &s)
 
    bool progress = false;
    brw_live_variables &live = s.live_analysis.require();
+   brw_ip_ranges &ips = s.ip_ranges_analysis.require();
    int src_size = 0;
    int channels_remaining = 0;
    unsigned src_reg = ~0u, dst_reg = ~0u;
@@ -302,7 +305,7 @@ brw_opt_register_coalesce(brw_shader &s)
          dst_var[i] = live.var_from_vgrf[dst_reg] + dst_reg_offset[i];
          src_var[i] = live.var_from_vgrf[src_reg] + i;
 
-         if (!can_coalesce_vars(devinfo, live, s.cfg, inst, dst_var[i], src_var[i]) ||
+         if (!can_coalesce_vars(devinfo, live, ips, s.cfg, inst, dst_var[i], src_var[i]) ||
              would_violate_eot_restriction(s, s.cfg, dst_reg, src_reg)) {
             can_coalesce = false;
             src_reg = ~0u;

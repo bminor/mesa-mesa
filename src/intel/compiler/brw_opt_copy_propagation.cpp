@@ -267,6 +267,7 @@ class brw_copy_prop_dataflow
 public:
    brw_copy_prop_dataflow(linear_ctx *lin_ctx, cfg_t *cfg,
                           const brw_live_variables &live,
+                          const brw_ip_ranges &ips,
                           struct acp *out_acp);
 
    void setup_initial_values();
@@ -276,6 +277,7 @@ public:
 
    cfg_t *cfg;
    const brw_live_variables &live;
+   const brw_ip_ranges &ips;
 
    acp_entry **acp;
    int num_acp;
@@ -287,8 +289,9 @@ public:
 
 brw_copy_prop_dataflow::brw_copy_prop_dataflow(linear_ctx *lin_ctx, cfg_t *cfg,
                                               const brw_live_variables &live,
+                                              const brw_ip_ranges &ips,
                                               struct acp *out_acp)
-   : cfg(cfg), live(live)
+   : cfg(cfg), live(live), ips(ips)
 {
    bd = linear_zalloc_array(lin_ctx, struct block_data, cfg->num_blocks);
 
@@ -545,7 +548,7 @@ brw_copy_prop_dataflow::dump_block_data() const
 {
    foreach_block (block, cfg) {
       fprintf(stderr, "Block %d [%d, %d] (parents ", block->num,
-             block->start_ip, block->end_ip);
+             ips.start(block), ips.end(block));
       foreach_list_typed(bblock_link, link, link, &block->parents) {
          bblock_t *parent = link->block;
          fprintf(stderr, "%d ", parent->num);
@@ -1485,6 +1488,7 @@ brw_opt_copy_propagation(brw_shader &s)
    struct acp *out_acp = new (lin_ctx) acp[s.cfg->num_blocks];
 
    const brw_live_variables &live = s.live_analysis.require();
+   const brw_ip_ranges &ips = s.ip_ranges_analysis.require();
 
    /* First, walk through each block doing local copy propagation and getting
     * the set of copies available at the end of the block.
@@ -1507,15 +1511,15 @@ brw_opt_copy_propagation(brw_shader &s)
       for (auto iter = out_acp[block->num].begin();
            iter != out_acp[block->num].end(); ++iter) {
          assert((*iter)->dst.file == VGRF);
-         if (block->start_ip <= live.vgrf_start[(*iter)->dst.nr] &&
-             live.vgrf_end[(*iter)->dst.nr] <= block->end_ip) {
+         if (ips.start(block) <= live.vgrf_start[(*iter)->dst.nr] &&
+             live.vgrf_end[(*iter)->dst.nr] <= ips.end(block)) {
             out_acp[block->num].remove(*iter);
          }
       }
    }
 
    /* Do dataflow analysis for those available copies. */
-   brw_copy_prop_dataflow dataflow(lin_ctx, s.cfg, live, out_acp);
+   brw_copy_prop_dataflow dataflow(lin_ctx, s.cfg, live, ips, out_acp);
 
    /* Next, re-run local copy propagation, this time with the set of copies
     * provided by the dataflow analysis available at the start of a block.
