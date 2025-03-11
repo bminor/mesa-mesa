@@ -146,7 +146,12 @@ nouveau_zink_predicate(int fd, const char *driver)
 
    bool prefer_zink = false;
 
-   /* enable this once zink is up to speed. */
+   /* Enable Zink by default on Turing and later GPUs
+    *
+    * We only use Zink if if the kernel supports VMA_TILEMODE, which is needed
+    * for DRM format modifiers.  This also doubles as a check for a new enough
+    * kernel to run NVK in general.
+    */
    struct drm_nouveau_getparam r = { .param = NOUVEAU_GETPARAM_HAS_VMA_TILEMODE };
    int ret = drmCommandWriteRead(fd, DRM_NOUVEAU_GETPARAM, &r, sizeof(r));
    if (ret == 0 && r.value == 1) {
