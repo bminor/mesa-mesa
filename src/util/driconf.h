@@ -642,6 +642,18 @@
                   "Disable conservative LRZ")
 
 /**
+ * \brief panfrost specific configuration options
+ */
+
+#define DRI_CONF_PAN_COMPUTE_CORE_MASK(def) \
+   DRI_CONF_OPT_U64(pan_compute_core_mask, def, 0, UINT64_MAX, \
+                    "Bitmask of shader cores that may be used for compute jobs. If unset, defaults to scheduling across all available cores.")
+
+#define DRI_CONF_PAN_FRAGMENT_CORE_MASK(def) \
+   DRI_CONF_OPT_U64(pan_fragment_core_mask, def, 0, UINT64_MAX, \
+                    "Bitmask of shader cores that may be used for fragment jobs. If unset, defaults to scheduling across all available cores.")
+
+/**
  * \brief Turnip specific configuration options
  */
 

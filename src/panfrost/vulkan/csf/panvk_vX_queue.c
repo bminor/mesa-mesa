@@ -598,12 +598,11 @@ create_group(struct panvk_queue *queue,
    };
 
    struct drm_panthor_group_create gc = {
-      .compute_core_mask = phys_dev->kmod.props.shader_present,
-      .fragment_core_mask = phys_dev->kmod.props.shader_present,
+      .compute_core_mask = phys_dev->compute_core_mask,
+      .fragment_core_mask = phys_dev->fragment_core_mask,
       .tiler_core_mask = 1,
-      .max_compute_cores = util_bitcount64(phys_dev->kmod.props.shader_present),
-      .max_fragment_cores =
-         util_bitcount64(phys_dev->kmod.props.shader_present),
+      .max_compute_cores = util_bitcount64(phys_dev->compute_core_mask),
+      .max_fragment_cores = util_bitcount64(phys_dev->fragment_core_mask),
       .max_tiler_cores = 1,
       .priority = group_priority,
       .queues = DRM_PANTHOR_OBJ_ARRAY(ARRAY_SIZE(qc), qc),

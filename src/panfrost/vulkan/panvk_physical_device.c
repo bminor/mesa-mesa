@@ -131,6 +131,39 @@ get_cache_uuid(uint16_t family, void *uuid)
 }
 
 static VkResult
+get_core_mask(struct panvk_physical_device *device,
+              const struct panvk_instance *instance, const char *option_name,
+              uint64_t *mask)
+{
+   uint64_t present = device->kmod.props.shader_present;
+   *mask = driQueryOptionu64(&instance->dri_options, option_name) & present;
+
+   if (!*mask)
+      return panvk_errorf(instance, VK_ERROR_INITIALIZATION_FAILED,
+                          "None of the cores specified in %s are present. "
+                          "Available shader cores are 0x%" PRIx64 ".\n",
+                          option_name, present);
+
+   return VK_SUCCESS;
+}
+
+static VkResult
+get_core_masks(struct panvk_physical_device *device,
+               const struct panvk_instance *instance)
+{
+   VkResult result;
+
+   result = get_core_mask(device, instance, "pan_compute_core_mask",
+                          &device->compute_core_mask);
+   if (result != VK_SUCCESS)
+      return result;
+   result = get_core_mask(device, instance, "pan_fragment_core_mask",
+                          &device->fragment_core_mask);
+
+   return result;
+}
+
+static VkResult
 get_device_sync_types(struct panvk_physical_device *device,
                       const struct panvk_instance *instance)
 {
@@ -1048,6 +1081,10 @@ panvk_physical_device_init(struct panvk_physical_device *device,
                             "cannot generate UUID");
       goto fail;
    }
+
+   result = get_core_masks(device, instance);
+   if (result != VK_SUCCESS)
+      goto fail;
 
    result = get_device_sync_types(device, instance);
    if (result != VK_SUCCESS)
