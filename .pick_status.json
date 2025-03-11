@@ -2984,7 +2984,7 @@
         "description": "elk/algebraic: Don't optimize float SEL.CMOD to MOV",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "fab92fa1cba4196a4947731e7105bd1494dfffc4",
         "notes": null

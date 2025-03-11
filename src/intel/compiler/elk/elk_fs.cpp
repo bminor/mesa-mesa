@@ -2397,7 +2397,9 @@ elk_fs_visitor::opt_algebraic()
             inst->remove(block);
             progress = true;
          }
-         if (inst->src[0].equals(inst->src[1])) {
+         if (inst->src[0].equals(inst->src[1]) &&
+             (!elk_reg_type_is_floating_point(inst->dst.type) ||
+              inst->conditional_mod == ELK_CONDITIONAL_NONE)) {
             inst->opcode = ELK_OPCODE_MOV;
             inst->sources = 1;
             inst->src[1] = reg_undef;
