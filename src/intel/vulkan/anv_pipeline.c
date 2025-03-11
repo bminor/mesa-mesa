@@ -467,6 +467,7 @@ populate_wm_prog_key(struct anv_pipeline_stage *stage,
                      const struct anv_graphics_base_pipeline *pipeline,
                      const BITSET_WORD *dynamic,
                      const struct vk_multisample_state *ms,
+                     const struct vk_rasterization_state *rs,
                      const struct vk_fragment_shading_rate_state *fsr,
                      const struct vk_render_pass_state *rp,
                      const enum intel_sometimes is_mesh,
@@ -540,6 +541,23 @@ populate_wm_prog_key(struct anv_pipeline_stage *stage,
       key->alpha_to_coverage = INTEL_SOMETIMES;
       key->multisample_fbo = INTEL_SOMETIMES;
       key->persample_interp = INTEL_SOMETIMES;
+   }
+
+   if (device->info->verx10 >= 200) {
+      if (rs != NULL) {
+         key->provoking_vertex_last =
+            BITSET_TEST(dynamic, MESA_VK_DYNAMIC_RS_PROVOKING_VERTEX) ?
+            INTEL_SOMETIMES :
+            rs->provoking_vertex == VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT ?
+            INTEL_ALWAYS : INTEL_NEVER;
+      } else {
+         key->provoking_vertex_last = INTEL_SOMETIMES;
+      }
+   } else {
+      /* Pre-Xe2 we don't care about this at all, make sure it's always set to
+       * NEVER to avoid it influencing the push constant.
+       */
+      key->provoking_vertex_last = INTEL_NEVER;
    }
 
    key->mesh_input = is_mesh;
@@ -1824,6 +1842,7 @@ anv_graphics_pipeline_init_keys(struct anv_graphics_base_pipeline *pipeline,
                               pipeline,
                               state->dynamic,
                               raster_enabled ? state->ms : NULL,
+                              raster_enabled ? state->rs : NULL,
                               state->fsr, state->rp, is_mesh,
                               vue_layout);
          break;

@@ -1627,6 +1627,7 @@ struct anv_gfx_dynamic_state {
       uint32_t TriangleStripListProvokingVertexSelect;
       uint32_t LineStripListProvokingVertexSelect;
       uint32_t TriangleFanProvokingVertexSelect;
+      uint32_t TriangleStripOddProvokingVertexSelect;
    } clip;
 
    /* 3DSTATE_COARSE_PIXEL */
@@ -1738,6 +1739,7 @@ struct anv_gfx_dynamic_state {
       bool     ViewportZFarClipTestEnable;
       bool     ViewportZNearClipTestEnable;
       bool     ConservativeRasterizationEnable;
+      bool     LegacyBaryAssignmentDisable;
    } raster;
 
    /* 3DSTATE_SCISSOR_STATE_POINTERS */
@@ -1757,6 +1759,7 @@ struct anv_gfx_dynamic_state {
       uint32_t TriangleStripListProvokingVertexSelect;
       uint32_t LineStripListProvokingVertexSelect;
       uint32_t TriangleFanProvokingVertexSelect;
+      uint32_t TriangleStripOddProvokingVertexSelect;
       bool     LegacyGlobalDepthBiasEnable;
    } sf;
 

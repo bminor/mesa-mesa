@@ -686,6 +686,9 @@ emit_3dstate_sbe(struct anv_graphics_pipeline *pipeline)
       sbe.ConstantInterpolationEnable = wm_prog_data->flat_inputs &
                                         ((1u << vertex_varyings) - 1);
       sbe.NumberofSFOutputAttributes = vertex_varyings;
+#if GFX_VERx10 >= 200
+      sbe.VertexAttributesBypass = wm_prog_data->vertex_attributes_bypass;
+#endif
 
       for (unsigned i = 0; i < 32; i++)
          sbe.AttributeActiveComponentFormat[i] = ACF_XYZW;

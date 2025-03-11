@@ -752,6 +752,24 @@ calculate_tile_dimensions(const struct anv_device *device,
       unreachable("Invalid provoking vertex mode");                    \
    }                                                                   \
 
+#define SETUP_PROVOKING_VERTEX_FSB(bit, cmd, mode)                  \
+   switch (mode) {                                                  \
+   case VK_PROVOKING_VERTEX_MODE_FIRST_VERTEX_EXT:                  \
+      SET(bit, cmd.TriangleStripListProvokingVertexSelect, 0);      \
+      SET(bit, cmd.LineStripListProvokingVertexSelect,     0);      \
+      SET(bit, cmd.TriangleFanProvokingVertexSelect,       1);      \
+      SET(bit, cmd.TriangleStripOddProvokingVertexSelect,  0);      \
+      break;                                                        \
+   case VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT:                   \
+      SET(bit, cmd.TriangleStripListProvokingVertexSelect, 0);      \
+      SET(bit, cmd.LineStripListProvokingVertexSelect,     0);      \
+      SET(bit, cmd.TriangleFanProvokingVertexSelect,       0);      \
+      SET(bit, cmd.TriangleStripOddProvokingVertexSelect,  1);      \
+      break;                                                        \
+   default:                                                         \
+      unreachable("Invalid provoking vertex mode");                 \
+   }                                                                \
+
 ALWAYS_INLINE static void
 update_fs_msaa_flags(struct anv_gfx_dynamic_state *hw_state,
                      const struct vk_dynamic_graphics_state *dyn,
@@ -972,8 +990,32 @@ update_provoking_vertex(struct anv_gfx_dynamic_state *hw_state,
                         const struct vk_dynamic_graphics_state *dyn,
                         const struct anv_graphics_pipeline *pipeline)
 {
+#if GFX_VERx10 >= 200
+   const struct brw_wm_prog_data *wm_prog_data = get_wm_prog_data(pipeline);
+
+   /* In order to respect the table indicated by Vulkan 1.4.312,
+    * 28.9. Barycentric Interpolation, we need to program the provoking
+    * vertex state differently depending on whether we need to set
+    * vertex_attributes_bypass or not.
+    * At this point we only deal with full pipelines, so if we don't have
+    * a wm_prog_data, there is no fragment shader and none of this matters.
+    */
+   if (wm_prog_data && wm_prog_data->vertex_attributes_bypass) {
+      SETUP_PROVOKING_VERTEX_FSB(SF, sf, dyn->rs.provoking_vertex);
+      SETUP_PROVOKING_VERTEX_FSB(CLIP, clip, dyn->rs.provoking_vertex);
+   } else {
+      /* If we are not setting vertex attributes bypass, we can just use
+       * the same macro as older generations. There's one bit missing from
+       * it, but that one is only used for the case above and ignored
+       * otherwise, so we can pretend it doesn't exist here.
+       */
+      SETUP_PROVOKING_VERTEX(SF, sf, dyn->rs.provoking_vertex);
+      SETUP_PROVOKING_VERTEX(CLIP, clip, dyn->rs.provoking_vertex);
+   }
+#else
    SETUP_PROVOKING_VERTEX(SF, sf, dyn->rs.provoking_vertex);
    SETUP_PROVOKING_VERTEX(CLIP, clip, dyn->rs.provoking_vertex);
+#endif
 
    switch (dyn->rs.provoking_vertex) {
    case VK_PROVOKING_VERTEX_MODE_FIRST_VERTEX_EXT:
@@ -1194,6 +1236,12 @@ update_clip_raster(struct anv_gfx_dynamic_state *hw_state,
    SET(RASTER, raster.ConservativeRasterizationEnable,
                dyn->rs.conservative_mode !=
                VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT);
+
+#if GFX_VERx10 >= 200
+   const struct brw_wm_prog_data *wm_prog_data = get_wm_prog_data(pipeline);
+   SET(RASTER, raster.LegacyBaryAssignmentDisable,
+       wm_prog_data && wm_prog_data->vertex_attributes_bypass);
+#endif
 }
 
 ALWAYS_INLINE static void
@@ -1864,7 +1912,12 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_gfx_dynamic_state *hw_state,
        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_RS_RASTERIZATION_STREAM))
       update_streamout(hw_state, dyn, gfx, pipeline);
 
-   if (BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_RS_PROVOKING_VERTEX))
+   if (
+#if GFX_VERx10 >= 200
+      /* Xe2+ might need to update this if the FS changed */
+      (gfx->dirty & ANV_CMD_DIRTY_PIPELINE) ||
+#endif
+       BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_RS_PROVOKING_VERTEX))
       update_provoking_vertex(hw_state, dyn, pipeline);
 
    if ((gfx->dirty & ANV_CMD_DIRTY_PIPELINE) ||
@@ -2404,6 +2457,9 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
          SET(clip, clip, TriangleStripListProvokingVertexSelect);
          SET(clip, clip, LineStripListProvokingVertexSelect);
          SET(clip, clip, TriangleFanProvokingVertexSelect);
+#if GFX_VERx10 >= 200
+         SET(clip, clip, TriangleStripOddProvokingVertexSelect);
+#endif
          SET(clip, clip, MaximumVPIndex);
       }
    }
@@ -2589,6 +2645,9 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
          SET(sf, sf, TriangleStripListProvokingVertexSelect);
          SET(sf, sf, LineStripListProvokingVertexSelect);
          SET(sf, sf, TriangleFanProvokingVertexSelect);
+#if GFX_VERx10 >= 200
+         SET(sf, sf, TriangleStripOddProvokingVertexSelect);
+#endif
          SET(sf, sf, LegacyGlobalDepthBiasEnable);
       }
    }
@@ -2622,6 +2681,9 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
          SET(raster, raster, ViewportZFarClipTestEnable);
          SET(raster, raster, ViewportZNearClipTestEnable);
          SET(raster, raster, ConservativeRasterizationEnable);
+#if GFX_VERx10 >= 200
+         SET(raster, raster, LegacyBaryAssignmentDisable);
+#endif
       }
    }
 
