@@ -4505,7 +4505,11 @@ const EmitLoadParameters lds_load_params{lds_load_callback, UINT32_MAX};
 std::pair<aco_opcode, unsigned>
 get_smem_opcode(amd_gfx_level level, unsigned bytes, bool buffer, bool round_down)
 {
-   if (bytes <= (round_down ? 7 : 4))
+   if (bytes <= 1 && level >= GFX12)
+      return {buffer ? aco_opcode::s_buffer_load_ubyte : aco_opcode::s_load_ubyte, 1};
+   else if (bytes <= (round_down ? 3 : 2) && level >= GFX12)
+      return {buffer ? aco_opcode::s_buffer_load_ushort : aco_opcode::s_load_ushort, 2};
+   else if (bytes <= (round_down ? 7 : 4))
       return {buffer ? aco_opcode::s_buffer_load_dword : aco_opcode::s_load_dword, 4};
    else if (bytes <= (round_down ? (level >= GFX12 ? 11 : 15) : 8))
       return {buffer ? aco_opcode::s_buffer_load_dwordx2 : aco_opcode::s_load_dwordx2, 8};
@@ -4523,7 +4527,9 @@ Temp
 smem_load_callback(Builder& bld, const LoadEmitInfo& info, Temp offset, unsigned bytes_needed,
                    unsigned align, unsigned const_offset, Temp dst_hint)
 {
-   assert(align >= 4u);
+   /* Only scalar sub-dword loads are supported. */
+   assert(bytes_needed % 4 == 0 || bytes_needed <= 2);
+   assert(align >= MIN2(bytes_needed, 4));
 
    bld.program->has_smem_buffer_or_global_loads = true;
 
@@ -5767,12 +5773,12 @@ load_buffer(isel_context* ctx, unsigned num_components, unsigned component_size,
             Temp rsrc, Temp offset, unsigned align_mul, unsigned align_offset,
             unsigned access = ACCESS_CAN_REORDER, memory_sync_info sync = memory_sync_info())
 {
-   assert(!(access & ACCESS_SMEM_AMD) || (component_size >= 4));
-
    Builder bld(ctx->program, ctx->block);
 
    bool use_smem = access & ACCESS_SMEM_AMD;
    if (use_smem) {
+      assert(component_size >= 4 ||
+             (num_components * component_size <= 2 && ctx->program->gfx_level >= GFX12));
       offset = bld.as_uniform(offset);
    } else {
       /* GFX6-7 are affected by a hw bug that prevents address clamping to
@@ -6694,7 +6700,8 @@ visit_load_global(isel_context* ctx, nir_intrinsic_instr* instr)
 
    unsigned access = nir_intrinsic_access(instr) | ACCESS_TYPE_LOAD;
    if (access & ACCESS_SMEM_AMD) {
-      assert(component_size >= 4);
+      assert(component_size >= 4 ||
+             (num_components * component_size <= 2 && ctx->program->gfx_level >= GFX12));
       if (info.resource.id())
          info.resource = bld.as_uniform(info.resource);
       info.offset = Operand(bld.as_uniform(info.offset));
