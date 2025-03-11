@@ -12600,10 +12600,16 @@ select_rt_prolog(Program* program, ac_shader_config* config,
             Operand(tmp_raygen_sbt, s2), Operand::c32(0u));
 
    /* load ray launch sizes */
-   bld.smem(aco_opcode::s_load_dword, Definition(out_launch_size_z, s1),
-            Operand(in_launch_size_addr, s2), Operand::c32(8u));
-   bld.smem(aco_opcode::s_load_dwordx2, Definition(out_launch_size_x, s2),
-            Operand(in_launch_size_addr, s2), Operand::c32(0u));
+   assert(out_launch_size_x.reg() % 4 == 0);
+   if (options->gfx_level >= GFX12) {
+      bld.smem(aco_opcode::s_load_dwordx3, Definition(out_launch_size_x, s3),
+               Operand(in_launch_size_addr, s2), Operand::c32(0u));
+   } else {
+      bld.smem(aco_opcode::s_load_dword, Definition(out_launch_size_z, s1),
+               Operand(in_launch_size_addr, s2), Operand::c32(8u));
+      bld.smem(aco_opcode::s_load_dwordx2, Definition(out_launch_size_x, s2),
+               Operand(in_launch_size_addr, s2), Operand::c32(0u));
+   }
 
    /* calculate ray launch ids */
    if (options->gfx_level >= GFX11) {
