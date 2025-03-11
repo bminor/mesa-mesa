@@ -434,7 +434,7 @@ panfrost-g610-vk:arm64:
     - .lava-test-deqp:arm64
     - .panfrost-test
     - .lava-rk3588-rock-5b:arm64
-    - .panfrost-vk-manual-rules
+    - .panfrost-vk-rules
   variables:
     DRIVER_NAME: panvk
     # Using more than 4 cores cause instabilities
