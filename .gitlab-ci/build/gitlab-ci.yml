@@ -631,6 +631,7 @@ debian-no-libdrm:
       -D glx=disabled
       -D gbm=disabled
       -D egl=disabled
+      -D perfetto=true
 
 debian-clang:
   extends:
