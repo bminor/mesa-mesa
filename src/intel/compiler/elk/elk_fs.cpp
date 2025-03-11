@@ -2403,6 +2403,7 @@ elk_fs_visitor::opt_algebraic()
             inst->src[1] = reg_undef;
             inst->predicate = ELK_PREDICATE_NONE;
             inst->predicate_inverse = false;
+            inst->conditional_mod = ELK_CONDITIONAL_NONE;
             progress = true;
          } else if (inst->saturate && inst->src[1].file == IMM) {
             switch (inst->conditional_mod) {
