@@ -2195,7 +2195,6 @@ get_texel_buffer_copy_pipeline_cache_key(VkFormat format,
 static bool
 create_blit_render_pass(struct v3dv_device *device,
                         VkFormat dst_format,
-                        VkFormat src_format,
                         VkRenderPass *pass_load,
                         VkRenderPass *pass_no_load);
 
@@ -2519,7 +2518,7 @@ get_copy_texel_buffer_pipeline(
       goto fail;
 
    /* The blit render pass is compatible */
-   ok = create_blit_render_pass(device, format, format,
+   ok = create_blit_render_pass(device, format,
                                 &(*pipeline)->pass,
                                 &(*pipeline)->pass_no_load);
    if (!ok)
@@ -3573,7 +3572,6 @@ get_blit_pipeline_cache_key(VkFormat dst_format,
 static bool
 create_blit_render_pass(struct v3dv_device *device,
                         VkFormat dst_format,
-                        VkFormat src_format,
                         VkRenderPass *pass_load,
                         VkRenderPass *pass_no_load)
 {
@@ -4186,7 +4184,7 @@ get_blit_pipeline(struct v3dv_cmd_buffer *cmd_buffer,
    if (*pipeline == NULL)
       goto fail;
 
-   ok = create_blit_render_pass(device, dst_format, src_format,
+   ok = create_blit_render_pass(device, dst_format,
                                 &(*pipeline)->pass,
                                 &(*pipeline)->pass_no_load);
    if (!ok)
