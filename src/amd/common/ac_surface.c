@@ -557,13 +557,10 @@ bool ac_get_supported_modifiers(const struct radeon_info *info,
                           AMD_FMT_MOD_SET(DCC_MAX_COMPRESSED_BLOCK, AMD_FMT_MOD_DCC_BLOCK_256B);
       uint64_t dcc_128B = AMD_FMT_MOD_SET(DCC, 1) |
                           AMD_FMT_MOD_SET(DCC_MAX_COMPRESSED_BLOCK, AMD_FMT_MOD_DCC_BLOCK_128B);
-      uint64_t dcc_64B = AMD_FMT_MOD_SET(DCC, 1) |
-                         AMD_FMT_MOD_SET(DCC_MAX_COMPRESSED_BLOCK, AMD_FMT_MOD_DCC_BLOCK_64B);
 
       /* Modifiers must be sorted from best to worst. */
       ADD_MOD(mod_64K_2D | dcc_256B)      /* 64K with DCC and 256B compressed blocks */
       ADD_MOD(mod_64K_2D | dcc_128B)      /* 64K with DCC and 128B compressed blocks */
-      ADD_MOD(mod_64K_2D | dcc_64B)       /* 64K with DCC and 64B compressed blocks */
       ADD_MOD(mod_256K_2D | dcc_256B)     /* OpenGL exported modifier */
       ADD_MOD(mod_4K_2D | dcc_256B)       /* OpenGL exported modifier */
       ADD_MOD(mod_256B_2D | dcc_256B)     /* OpenGL exported modifier */
