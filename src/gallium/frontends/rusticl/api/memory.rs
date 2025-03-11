@@ -917,8 +917,17 @@ fn get_supported_image_formats(
     res.sort();
     res.dedup();
 
+    // `num_image_formats` should be the full count of supported formats,
+    // regardless of the value of `num_entries`. It may be null, in which case
+    // it is ignored.
     num_image_formats.write_checked(res.len() as cl_uint);
-    unsafe { image_formats.copy_checked(res.as_ptr(), res.len()) };
+
+    // `image_formats` may be null, in which case it is ignored.
+    let num_entries_to_write = cmp::min(res.len(), num_entries as usize);
+    // SAFETY: Callers are responsible for providing either a null pointer or
+    // one for which a write of `num_entries * size_of::<cl_image_format>()` is
+    // valid. The validity of reading from `res` is guaranteed by the compiler.
+    unsafe { image_formats.copy_checked(res.as_ptr(), num_entries_to_write) };
 
     Ok(())
 }
