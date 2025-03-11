@@ -637,9 +637,12 @@ llvmpipe_is_format_supported(struct pipe_screen *_screen,
           format_desc->block.bits != 96) {
          return false;
       }
+   }
 
+   if (bind & (PIPE_BIND_RENDER_TARGET | PIPE_BIND_SAMPLER_VIEW | PIPE_BIND_VERTEX_BUFFER)) {
       /* Disable 64-bit integer formats for RT/samplers.
        * VK CTS crashes with these and they don't make much sense.
+       * Vertex fetch also does not handle them correctly.
        */
       if (util_format_is_int64(format_desc))
          return false;
