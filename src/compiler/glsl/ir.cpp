@@ -22,6 +22,7 @@
  */
 #include <string.h>
 #include "ir.h"
+#include "util/compiler.h"
 #include "util/half_float.h"
 #include "util/bitscan.h"
 #include "compiler/glsl_types.h"
@@ -1793,18 +1794,21 @@ ir_swizzle::init_mask(const unsigned *comp, unsigned count)
       dup_mask |= (1U << comp[3])
 	 & ((1U << comp[0]) | (1U << comp[1]) | (1U << comp[2]));
       this->mask.w = comp[3];
+      FALLTHROUGH;
 
    case 3:
       assert(comp[2] <= 3);
       dup_mask |= (1U << comp[2])
 	 & ((1U << comp[0]) | (1U << comp[1]));
       this->mask.z = comp[2];
+      FALLTHROUGH;
 
    case 2:
       assert(comp[1] <= 3);
       dup_mask |= (1U << comp[1])
 	 & ((1U << comp[0]));
       this->mask.y = comp[1];
+      FALLTHROUGH;
 
    case 1:
       assert(comp[0] <= 3);
