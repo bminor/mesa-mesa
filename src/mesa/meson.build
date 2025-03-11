@@ -2,7 +2,16 @@
 # SPDX-License-Identifier: MIT
 
 subdir('program')
-subdir('main')
+
+if _shader_replacement != ''
+  shader_replacement_h = custom_target(
+    'shader_replacement.h',
+    input: [files(_shader_replacement + '/process_shaders.py')],
+    output: 'shader_replacement.h',
+    command: [prog_python, '@INPUT0@', _shader_replacement, '@OUTPUT@'],
+    build_always: true,
+  )
+endif
 
 # files shared between classic mesa and gallium mesa
 files_libmesa = files(
