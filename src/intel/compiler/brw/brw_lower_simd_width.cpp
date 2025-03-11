@@ -208,6 +208,31 @@ is_half_float_src_dst(const brw_inst *inst)
 }
 
 /**
+ * Send instructions are writing physical registers so it's important to
+ * allocate physically aligned register size when lowering. With types >=
+ * 4bytes this is always the case but with fp16 sampler loads it's not.
+ */
+static bool
+is_send_inst(const brw_inst *inst)
+{
+   switch (inst->opcode) {
+   case FS_OPCODE_UNIFORM_PULL_CONSTANT_LOAD:
+   case FS_OPCODE_FB_WRITE_LOGICAL:
+   case FS_OPCODE_FB_READ_LOGICAL:
+   case SHADER_OPCODE_SAMPLER:
+   case SHADER_OPCODE_MEMORY_LOAD_LOGICAL:
+   case SHADER_OPCODE_MEMORY_STORE_LOGICAL:
+   case SHADER_OPCODE_MEMORY_ATOMIC_LOGICAL:
+   case SHADER_OPCODE_URB_READ_LOGICAL:
+   case SHADER_OPCODE_URB_WRITE_LOGICAL:
+      return true;
+
+   default:
+      return false;
+   }
+}
+
+/**
  * Get the closest native SIMD width supported by the hardware for instruction
  * \p inst.  The instruction will be left untouched by
  * brw_shader::lower_simd_width() if the returned value is equal to the
@@ -493,6 +518,23 @@ needs_dst_copy(const brw_builder &lbld, const brw_inst *inst)
    if (inst->dst.is_null())
       return false;
 
+   /* If we have a SIMD16 SEND message with a destination format like this :
+    *
+    *   g0 : |hf15|hf14|hf13|       ...      |hf7|hf6|hf5|hf4|hf3|hf2|hf1|hf0|
+    *
+    * and we have to lower to SIMD8, the lowered format will be this :
+    *
+    *   g0 : |           unused              |hf7|hf6|hf5|hf4|hf3|hf2|hf1|hf0|
+    *
+    * Since SEND messages operate on physical register, we need a copy of the
+    * destination because the second lowered SIMD8 message cannot write to the
+    * upper unused part of the register.
+    */
+   if (is_send_inst(inst) &&
+       (inst->dst.component_size(lbld.dispatch_width()) %
+        (reg_unit(lbld.shader->devinfo) * REG_SIZE)) != 0)
+      return true;
+
    /* If the instruction writes more than one component we'll have to shuffle
     * the results of multiple lowered instructions in order to make sure that
     * they end up arranged correctly in the original destination region.
@@ -556,8 +598,11 @@ emit_zip(const brw_builder &lbld_before, const brw_builder &lbld_after,
    const unsigned dst_size = (inst->size_written - residency_size) /
       inst->dst.component_size(inst->exec_size);
 
-   const brw_reg tmp = lbld_after.vgrf(inst->dst.type,
-                                      dst_size + inst->has_sampler_residency());
+   /* For SEND messages, align the allocation to physical registers */
+   const brw_reg tmp = lbld_after.vgrf(
+      inst->dst.type,
+      (is_send_inst(inst) ? align(dst_size, reg_unit(devinfo)) : dst_size) +
+      inst->has_sampler_residency() * reg_unit(devinfo));
 
    if (inst->predicate) {
       /* Handle predication by copying the original contents of the
@@ -585,7 +630,8 @@ emit_zip(const brw_builder &lbld_before, const brw_builder &lbld_after,
        */
       const brw_builder rbld = lbld_after.uniform();
       brw_reg local_res_reg = component(
-         retype(offset(tmp, lbld_before, dst_size), BRW_TYPE_UW), 0);
+         retype(offset(tmp, lbld_before, dst_size),
+                BRW_TYPE_UW), 0);
       brw_reg final_res_reg =
          retype(byte_offset(inst->dst,
                             inst->size_written - residency_size +
@@ -699,9 +745,13 @@ brw_lower_simd_width(brw_shader &s)
 
          split_inst->dst = emit_zip(lbld.before(inst),
                                    lbld_after, inst);
-         split_inst->size_written =
-            split_inst->dst.component_size(lower_width) * dst_size +
-            residency_size;
+         /* For SEND messages, align the data size to physical registers */
+         unsigned data_size =
+            split_inst->dst.component_size(lower_width) * dst_size;
+         if (is_send_inst(split_inst))
+            data_size = align(data_size, REG_SIZE * reg_unit(s.devinfo));
+
+         split_inst->size_written = data_size + residency_size;
 
          lbld.after(inst).emit(split_inst);
       }
