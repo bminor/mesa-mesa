@@ -2844,8 +2844,6 @@ static void si_emit_gfx_resources_add_all_to_bo_list(struct si_context *sctx, un
 
 void si_init_all_descriptors(struct si_context *sctx)
 {
-   int i;
-   unsigned first_shader = sctx->is_gfx_queue ? 0 : MESA_SHADER_COMPUTE;
    unsigned hs_sgpr0, gs_sgpr0;
 
    if (sctx->gfx_level >= GFX12) {
@@ -2859,7 +2857,10 @@ void si_init_all_descriptors(struct si_context *sctx)
       gs_sgpr0 = R_00B208_SPI_SHADER_USER_DATA_ADDR_LO_GS;
    }
 
-   for (i = first_shader; i < SI_NUM_SHADERS; i++) {
+   for (unsigned i = 0; i < SI_NUM_SHADERS; i++) {
+      if (!sctx->is_gfx_queue && i != MESA_SHADER_COMPUTE)
+         continue;
+
       bool is_2nd =
          sctx->gfx_level >= GFX9 && (i == MESA_SHADER_TESS_CTRL || i == MESA_SHADER_GEOMETRY);
       unsigned num_sampler_slots = SI_NUM_IMAGE_SLOTS / 2 + SI_NUM_SAMPLERS;

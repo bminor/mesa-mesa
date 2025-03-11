@@ -16,7 +16,7 @@ extern "C" {
 #endif
 
 #define SI_NUM_GRAPHICS_SHADERS (MESA_SHADER_FRAGMENT + 1)
-#define SI_NUM_SHADERS          (MESA_SHADER_COMPUTE + 1)
+#define SI_NUM_SHADERS          (MESA_SHADER_MESH + 1)
 
 #define SI_NUM_VERTEX_BUFFERS SI_MAX_ATTRIBS
 #define SI_NUM_SAMPLERS       32 /* OpenGL textures units per shader */

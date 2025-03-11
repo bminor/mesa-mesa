@@ -519,7 +519,6 @@ static struct pipe_context *si_create_context(struct pipe_screen *screen, unsign
 
    struct si_context *sctx = CALLOC_STRUCT(si_context);
    struct radeon_winsys *ws = sscreen->ws;
-   int shader, i;
 
    if (!sctx) {
       mesa_loge("can't allocate a context");
@@ -770,9 +769,11 @@ static struct pipe_context *si_create_context(struct pipe_screen *screen, unsign
       }
       sctx->null_const_buf.buffer_size = sctx->null_const_buf.buffer->width0;
 
-      unsigned start_shader = sctx->is_gfx_queue ? 0 : MESA_SHADER_COMPUTE;
-      for (shader = start_shader; shader < SI_NUM_SHADERS; shader++) {
-         for (i = 0; i < SI_NUM_CONST_BUFFERS; i++) {
+      for (unsigned shader = 0; shader < SI_NUM_SHADERS; shader++) {
+         if (!sctx->is_gfx_queue && shader != MESA_SHADER_COMPUTE)
+            continue;
+
+         for (unsigned i = 0; i < SI_NUM_CONST_BUFFERS; i++) {
             sctx->b.set_constant_buffer(&sctx->b, shader, i, &sctx->null_const_buf);
          }
       }
