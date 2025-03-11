@@ -204,6 +204,9 @@ struct tu_instance
     * UBWC to be enabled.
     */
    bool disable_d24s8_border_color_workaround;
+
+   /* D3D emulation requires texture coordinates to be rounded to nearest even value. */
+   bool use_tex_coord_round_nearest_even_mode;
 };
 VK_DEFINE_HANDLE_CASTS(tu_instance, vk.base, VkInstance,
                        VK_OBJECT_TYPE_INSTANCE)

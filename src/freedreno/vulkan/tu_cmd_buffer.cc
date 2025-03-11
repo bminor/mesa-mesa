@@ -1528,7 +1528,9 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
    tu_cs_emit_write_reg(cs, REG_A6XX_VPC_UNKNOWN_9602, 0);
    tu_cs_emit_write_reg(cs, REG_A6XX_PC_UNKNOWN_9E72, 0);
    tu_cs_emit_regs(cs, A6XX_SP_TP_MODE_CNTL(.isammode = ISAMMODE_GL,
-                                            .texcoordroundmode = COORD_TRUNCATE,
+                                            .texcoordroundmode = dev->instance->use_tex_coord_round_nearest_even_mode
+                                               ? COORD_ROUND_NEAREST_EVEN
+                                               : COORD_TRUNCATE,
                                             .nearestmipsnap = CLAMP_ROUND_TRUNCATE,
                                             .destdatatypeoverride = true));
    tu_cs_emit_regs(cs, HLSQ_CONTROL_5_REG(CHIP, .dword = 0xfc));

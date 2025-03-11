@@ -641,6 +641,10 @@
    DRI_CONF_OPT_B(tu_disable_d24s8_border_color_workaround, def, \
                   "Use UBWC for D24S8 images with VK_IMAGE_USAGE_SAMPLED_BIT when customBorderColorWithoutFormat is enabled")
 
+#define DRI_CONF_TU_USE_TEX_COORD_ROUND_NEAREST_EVEN_MODE(def) \
+   DRI_CONF_OPT_B(tu_use_tex_coord_round_nearest_even_mode, def, \
+                  "Use D3D-compliant round-to-nearest-even mode for texture coordinates")
+
 /**
  * \brief Honeykrisp specific configuration options
  */

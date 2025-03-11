@@ -1635,6 +1635,7 @@ static const driOptionDescription tu_dri_options[] = {
       DRI_CONF_TU_DONT_RESERVE_DESCRIPTOR_SET(false)
       DRI_CONF_TU_ALLOW_OOB_INDIRECT_UBO_LOADS(false)
       DRI_CONF_TU_DISABLE_D24S8_BORDER_COLOR_WORKAROUND(false)
+      DRI_CONF_TU_USE_TEX_COORD_ROUND_NEAREST_EVEN_MODE(false)
    DRI_CONF_SECTION_END
 };
 
@@ -1657,6 +1658,8 @@ tu_init_dri_options(struct tu_instance *instance)
          driQueryOptionb(&instance->dri_options, "tu_allow_oob_indirect_ubo_loads");
    instance->disable_d24s8_border_color_workaround =
          driQueryOptionb(&instance->dri_options, "tu_disable_d24s8_border_color_workaround");
+   instance->use_tex_coord_round_nearest_even_mode =
+         driQueryOptionb(&instance->dri_options, "tu_use_tex_coord_round_nearest_even_mode");
 }
 
 static uint32_t instance_count = 0;
