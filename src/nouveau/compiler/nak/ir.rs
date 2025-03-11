@@ -7574,13 +7574,11 @@ impl Shader<'_> {
 
     pub fn gather_info(&mut self) {
         let mut num_instrs = 0;
-        let mut num_static_cycles = 0;
         let mut uses_global_mem = false;
         let mut writes_global_mem = false;
 
         self.for_each_instr(&mut |instr| {
             num_instrs += 1;
-            num_static_cycles += instr.deps.delay as u32;
 
             if !uses_global_mem {
                 uses_global_mem = instr.uses_global_mem();
@@ -7592,7 +7590,6 @@ impl Shader<'_> {
         });
 
         self.info.num_instrs = num_instrs;
-        self.info.num_static_cycles = num_static_cycles;
         self.info.uses_global_mem = uses_global_mem;
         self.info.writes_global_mem = writes_global_mem;
 

@@ -147,7 +147,10 @@ fn generate_dep_graph(
     g
 }
 
-fn generate_order(g: &mut DepGraph, init_ready_list: Vec<usize>) -> Vec<usize> {
+fn generate_order(
+    g: &mut DepGraph,
+    init_ready_list: Vec<usize>,
+) -> (Vec<usize>, u32) {
     let mut ready_instrs: BinaryHeap<ReadyInstr> = BinaryHeap::new();
     let mut future_ready_instrs: BinaryHeap<FutureReadyInstr> = init_ready_list
         .into_iter()
@@ -203,35 +206,40 @@ fn generate_order(g: &mut DepGraph, init_ready_list: Vec<usize>) -> Vec<usize> {
             }
         }
     }
-    return instr_order;
+    return (instr_order, current_cycle);
 }
 
 fn sched_buffer(
     sm: &dyn ShaderModel,
     instrs: Vec<Box<Instr>>,
-) -> impl Iterator<Item = Box<Instr>> {
+) -> (impl Iterator<Item = Box<Instr>>, u32) {
     let mut g = generate_dep_graph(sm, &instrs);
     let init_ready_list = calc_statistics(&mut g);
     // save_graphviz(&instrs, &g).unwrap();
     g.reverse();
-    let new_order = generate_order(&mut g, init_ready_list);
+    let (new_order, cycle_count) = generate_order(&mut g, init_ready_list);
 
     // Apply the new instruction order
     let mut instrs: Vec<Option<Box<Instr>>> =
         instrs.into_iter().map(|instr| Some(instr)).collect();
-    new_order.into_iter().rev().map(move |i| {
+    let instrs = new_order.into_iter().rev().map(move |i| {
         std::mem::take(&mut instrs[i]).expect("Instruction scheduled twice")
-    })
+    });
+    (instrs, cycle_count)
 }
 
 impl Function {
-    pub fn opt_instr_sched_postpass(&mut self, sm: &dyn ShaderModel) {
+    pub fn opt_instr_sched_postpass(&mut self, sm: &dyn ShaderModel) -> u32 {
+        let mut num_static_cycles = 0;
         for block in &mut self.blocks {
             let orig_instr_count = block.instrs.len();
             let instrs = std::mem::take(&mut block.instrs);
-            block.instrs = sched_buffer(sm, instrs).collect();
+            let (instrs, cycle_count) = sched_buffer(sm, instrs);
+            block.instrs = instrs.collect();
+            num_static_cycles += cycle_count;
             assert_eq!(orig_instr_count, block.instrs.len());
         }
+        num_static_cycles
     }
 }
 
@@ -242,8 +250,9 @@ impl Shader<'_> {
     /// See eg. Cooper & Torczon's "Engineering A Compiler", 3rd ed.
     /// Chapter 12.3 "Local scheduling"
     pub fn opt_instr_sched_postpass(&mut self) {
+        self.info.num_static_cycles = 0;
         for f in &mut self.functions {
-            f.opt_instr_sched_postpass(self.sm);
+            self.info.num_static_cycles += f.opt_instr_sched_postpass(self.sm);
         }
     }
 }
