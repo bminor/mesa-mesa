@@ -382,6 +382,18 @@ impl<T> CLProp for *mut T {
     }
 }
 
+impl<T> CLProp for *const T {
+    type Output = Self;
+
+    fn count(&self) -> usize {
+        1
+    }
+
+    fn write_to(&self, out: &mut [MaybeUninit<Self>]) {
+        out[0].write(*self);
+    }
+}
+
 impl<T> CLProp for &Properties<T>
 where
     T: CLProp + Copy + Default,

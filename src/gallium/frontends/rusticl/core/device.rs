@@ -45,6 +45,8 @@ pub struct DeviceBase {
     pub embedded: bool,
     pub extension_string: String,
     pub extensions: Vec<cl_name_version>,
+    pub spirv_caps: spirv_capabilities,
+    pub spirv_caps_vec: Vec<SpvCapability>,
     pub spirv_extensions: Vec<&'static CStr>,
     pub clc_features: Vec<cl_name_version>,
     pub formats: HashMap<cl_image_format, HashMap<cl_mem_object_type, cl_mem_flags>>,
@@ -575,6 +577,8 @@ impl DeviceBase {
         let mut exts_str: Vec<String> = Vec::new();
         let mut exts = Vec::new();
         let mut feats = Vec::new();
+        let mut spirv_caps = spirv_capabilities::default();
+        let mut spirv_caps_vec = Vec::new();
         let mut spirv_exts = Vec::new();
         let mut add_ext = |major, minor, patch, ext: &str| {
             exts.push(mk_cl_version_ext(major, minor, patch, ext));
@@ -585,6 +589,12 @@ impl DeviceBase {
         };
         let mut add_spirv = |ext| {
             spirv_exts.push(ext);
+        };
+        let mut add_cap = |cap: SpvCapability| {
+            unsafe {
+                spirv_capabilities_set(&mut spirv_caps, cap, true);
+            }
+            spirv_caps_vec.push(cap);
         };
 
         // add extensions all drivers support for now
@@ -599,6 +609,7 @@ impl DeviceBase {
         add_ext(1, 0, 0, "cl_khr_local_int32_extended_atomics");
         add_ext(2, 0, 0, "cl_khr_integer_dot_product");
         add_ext(1, 0, 0, "cl_khr_spirv_no_integer_wrap_decoration");
+        add_ext(1, 0, 0, "cl_khr_spirv_queries");
         add_ext(1, 0, 0, "cl_khr_suggested_local_work_size");
 
         add_feat(2, 0, 0, "__opencl_c_integer_dot_product_input_4x8bit");
@@ -614,16 +625,31 @@ impl DeviceBase {
         add_spirv(c"SPV_KHR_integer_dot_product");
         add_spirv(c"SPV_KHR_no_integer_wrap_decoration");
 
+        add_cap(SpvCapability::SpvCapabilityAddresses);
+        add_cap(SpvCapability::SpvCapabilityDotProduct);
+        add_cap(SpvCapability::SpvCapabilityDotProductInput4x8Bit);
+        add_cap(SpvCapability::SpvCapabilityDotProductInput4x8BitPacked);
+        add_cap(SpvCapability::SpvCapabilityExpectAssumeKHR);
+        add_cap(SpvCapability::SpvCapabilityFloat16Buffer);
+        add_cap(SpvCapability::SpvCapabilityInt8);
+        add_cap(SpvCapability::SpvCapabilityInt16);
+        add_cap(SpvCapability::SpvCapabilityLinkage);
+        add_cap(SpvCapability::SpvCapabilityKernel);
+        add_cap(SpvCapability::SpvCapabilityUniformDecoration);
+        add_cap(SpvCapability::SpvCapabilityVector16);
+
         if self.linkonce_supported() {
             add_ext(1, 0, 0, "cl_khr_spirv_linkonce_odr");
             add_spirv(c"SPV_KHR_linkonce_odr");
         }
 
         if self.fp16_supported() {
+            add_cap(SpvCapability::SpvCapabilityFloat16);
             add_ext(1, 0, 0, "cl_khr_fp16");
         }
 
         if self.fp64_supported() {
+            add_cap(SpvCapability::SpvCapabilityFloat64);
             add_ext(1, 0, 0, "cl_khr_fp64");
             add_feat(1, 0, 0, "__opencl_c_fp64");
         }
@@ -637,10 +663,12 @@ impl DeviceBase {
                 add_ext(1, 0, 0, "cles_khr_int64");
             };
 
+            add_cap(SpvCapability::SpvCapabilityInt64);
             add_feat(1, 0, 0, "__opencl_c_int64");
         }
 
         if self.kernel_clock_supported() {
+            add_cap(SpvCapability::SpvCapabilityShaderClockKHR);
             add_ext(1, 0, 0, "cl_khr_kernel_clock");
             add_feat(1, 0, 0, "__opencl_c_kernel_clock_scope_device");
             add_feat(1, 0, 0, "__opencl_c_kernel_clock_scope_sub_group");
@@ -648,6 +676,12 @@ impl DeviceBase {
         }
 
         if self.caps.has_images {
+            add_cap(SpvCapability::SpvCapabilityImage1D);
+            add_cap(SpvCapability::SpvCapabilityImageBasic);
+            add_cap(SpvCapability::SpvCapabilityImageBuffer);
+            add_cap(SpvCapability::SpvCapabilityLiteralSampler);
+            add_cap(SpvCapability::SpvCapabilitySampled1D);
+            add_cap(SpvCapability::SpvCapabilitySampledBuffer);
             add_feat(1, 0, 0, "__opencl_c_images");
 
             if self.image2d_from_buffer_supported() {
@@ -655,6 +689,7 @@ impl DeviceBase {
             }
 
             if self.caps.has_rw_images {
+                add_cap(SpvCapability::SpvCapabilityImageReadWrite);
                 add_feat(1, 0, 0, "__opencl_c_read_write_images");
             }
 
@@ -680,6 +715,10 @@ impl DeviceBase {
         }
 
         if self.subgroups_supported() {
+            add_cap(SpvCapability::SpvCapabilityGroupNonUniformShuffle);
+            add_cap(SpvCapability::SpvCapabilityGroupNonUniformShuffleRelative);
+            add_cap(SpvCapability::SpvCapabilityGroups);
+            add_cap(SpvCapability::SpvCapabilitySubgroupDispatch);
             // requires CL_DEVICE_SUB_GROUP_INDEPENDENT_FORWARD_PROGRESS
             //add_ext(1, 0, 0, "cl_khr_subgroups");
             add_feat(1, 0, 0, "__opencl_c_subgroups");
@@ -688,6 +727,9 @@ impl DeviceBase {
             add_ext(1, 0, 0, "cl_khr_subgroup_shuffle");
             add_ext(1, 0, 0, "cl_khr_subgroup_shuffle_relative");
             if self.intel_subgroups_supported() {
+                // add_cap(SpvCapability::SpvCapabilitySubgroupBufferBlockIOINTEL);
+                // add_cap(SpvCapability::SpvCapabilitySubgroupImageBlockIOINTEL);
+                add_cap(SpvCapability::SpvCapabilitySubgroupShuffleINTEL);
                 add_ext(1, 0, 0, "cl_intel_required_subgroup_size");
                 add_ext(1, 0, 0, "cl_intel_subgroups");
                 add_spirv(c"SPV_INTEL_subgroups");
@@ -705,6 +747,8 @@ impl DeviceBase {
         self.extensions = exts;
         self.clc_features = feats;
         self.extension_string = exts_str.join(" ");
+        self.spirv_caps = spirv_caps;
+        self.spirv_caps_vec = spirv_caps_vec;
         self.spirv_extensions = spirv_exts;
     }
 
@@ -1168,11 +1212,6 @@ impl Device {
         // Create before loading libclc as llvmpipe only creates the shader cache with the first
         // context being created.
         let helper_ctx = screen.create_context()?;
-        let lib_clc = spirv::SPIRVBin::get_lib_clc(&screen);
-        if lib_clc.is_none() {
-            eprintln!("Libclc failed to load. Please make sure it is installed and provides spirv-mesa3d-.spv and/or spirv64-mesa3d-.spv");
-        }
-
         let mut dev_base = DeviceBase {
             caps: DeviceCaps::new(&screen),
             helper_ctx: Mutex::new(helper_ctx),
@@ -1184,6 +1223,8 @@ impl Device {
             embedded: false,
             extension_string: String::from(""),
             extensions: Vec::new(),
+            spirv_caps: spirv_capabilities::default(),
+            spirv_caps_vec: Vec::new(),
             spirv_extensions: Vec::new(),
             clc_features: Vec::new(),
             formats: HashMap::new(),
@@ -1202,6 +1243,17 @@ impl Device {
 
         // now figure out what version we are
         dev_base.check_version();
+
+        // Libclc depends on a few caps which must always be enabled. At runtime we should never
+        // actually pass relevant functionality down to drivers, so this should be fine.
+        let mut spirv_caps = dev_base.spirv_caps;
+        spirv_caps.Float64 = true;
+        spirv_caps.Int64 = true;
+
+        let lib_clc = spirv::SPIRVBin::get_lib_clc(dev_base.screen(), &spirv_caps);
+        if lib_clc.is_none() {
+            eprintln!("Libclc failed to load. Please make sure it is installed and provides spirv-mesa3d-.spv and/or spirv64-mesa3d-.spv");
+        }
 
         Some(Device {
             base: CLObjectBase::new(RusticlTypes::Device),

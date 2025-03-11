@@ -12,6 +12,7 @@ use rusticl_proc_macros::cl_entrypoint;
 use rusticl_proc_macros::cl_info_entrypoint;
 
 use std::cmp::min;
+use std::ffi::c_char;
 use std::ffi::CStr;
 use std::mem::size_of;
 use std::ptr;
@@ -279,6 +280,17 @@ unsafe impl CLInfo<cl_device_info> for cl_device_id {
             CL_DEVICE_SINGLE_FP_CONFIG => v.write::<cl_device_fp_config>(
                 (CL_FP_ROUND_TO_NEAREST | CL_FP_INF_NAN) as cl_device_fp_config,
             ),
+            CL_DEVICE_SPIRV_CAPABILITIES_KHR => {
+                v.write_iter::<cl_uint>(dev.spirv_caps_vec.iter().map(|&cap| cap as _))
+            }
+            CL_DEVICE_SPIRV_EXTENDED_INSTRUCTION_SETS_KHR => {
+                // use static memory as we hand out pointers to the values here.
+                static instr_sets: [&CStr; 1] = [c"OpenCL.std"];
+                v.write_iter::<*const c_char>(instr_sets.iter().map(|str| str.as_ptr()))
+            }
+            CL_DEVICE_SPIRV_EXTENSIONS_KHR => {
+                v.write_iter::<*const c_char>(dev.spirv_extensions.iter().map(|str| str.as_ptr()))
+            }
             CL_DEVICE_SUB_GROUP_INDEPENDENT_FORWARD_PROGRESS => v.write::<bool>(false),
             CL_DEVICE_SUB_GROUP_SIZES_INTEL => {
                 if dev.subgroups_supported() {

@@ -216,6 +216,7 @@ impl ProgramBuild {
             kernel,
             d.screen
                 .nir_shader_compiler_options(pipe_shader_type::PIPE_SHADER_COMPUTE),
+            &d.spirv_caps,
             &d.lib_clc,
             &mut spec_constants,
             d.address_bits(),
