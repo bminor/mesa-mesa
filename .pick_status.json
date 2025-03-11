@@ -1994,7 +1994,7 @@
         "description": "radv/amdgpu: fix device deduplication",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a565f2994fec38e20cce46589698dd5487e3ea61",
         "notes": null
