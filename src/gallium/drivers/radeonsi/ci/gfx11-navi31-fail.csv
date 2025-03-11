@@ -27,8 +27,15 @@ spec@khr_texture_compression_astc@miptree-gles srgb-fp,Fail
 spec@khr_texture_compression_astc@miptree-gles srgb-fp@sRGB decode full precision,Fail
 spec@khr_texture_compression_astc@sliced-3d-miptree-gles srgb-fp,Fail
 spec@khr_texture_compression_astc@sliced-3d-miptree-gles srgb-fp@sRGB decode full precision,Fail
+# This is caused by lowering mediump before linking:
+spec@glsl-es-1.00@linker@glsl-mismatched-uniform-precision-unused,Fail
 
 # glcts failures
+# glGetUniform returns mediump uniforms rounded to FP16 precision because we only store them as FP16.
+# The test could be changed to allow this behavior because there is no point in storing FP32 values
+# in the driver only for glGetUniform.
+GTF-GL46.gtf21.GL2Tests.glGetUniform.glGetUniform,Fail
+
 KHR-GL46.shaders.uniform_block.random.nested_structs_instance_arrays.0,Fail
 ## Fail because GFX10+ removed MS texture support (see si_get_sparse_texture_virtual_page_size)
 KHR-GL46.sparse_texture2_tests.SparseTexture2Allocation_texture_2d_multisample_array_r11f_g11f_b10f,Fail
