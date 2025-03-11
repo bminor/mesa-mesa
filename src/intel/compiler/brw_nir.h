@@ -182,6 +182,7 @@ bool brw_nir_lower_cs_intrinsics(nir_shader *nir,
                                  struct brw_cs_prog_data *prog_data);
 bool brw_nir_lower_alpha_to_coverage(nir_shader *shader);
 bool brw_needs_vertex_attributes_bypass(const nir_shader *shader);
+void brw_nir_lower_fs_barycentrics(nir_shader *shader);
 bool brw_nir_lower_fs_msaa(nir_shader *shader,
                            const struct brw_wm_prog_key *key);
 

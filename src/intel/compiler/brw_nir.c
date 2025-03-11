@@ -779,6 +779,9 @@ brw_nir_lower_fs_inputs(nir_shader *nir,
    if (devinfo->ver >= 11)
       NIR_PASS(_, nir, nir_lower_interpolation, ~0);
 
+   if (brw_needs_vertex_attributes_bypass(nir))
+      brw_nir_lower_fs_barycentrics(nir);
+
    if (key->multisample_fbo == INTEL_NEVER) {
       NIR_PASS(_, nir, nir_lower_single_sampled);
    } else if (key->persample_interp == INTEL_ALWAYS) {
