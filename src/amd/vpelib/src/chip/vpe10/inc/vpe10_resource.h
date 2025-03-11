@@ -78,6 +78,9 @@ enum vpe_status vpe10_update_blnd_gamma(struct vpe_priv *vpe_priv,
     const struct vpe_build_param *param, const struct vpe_stream *stream,
     struct transfer_func *blnd_tf);
 
+enum vpe_status vpe10_update_output_gamma(struct vpe_priv *vpe_priv,
+    const struct vpe_build_param *param, struct transfer_func *output_tf, bool geometric_scaling);
+
 struct opp *vpe10_opp_create(struct vpe_priv *vpe_priv, int inst);
 
 struct mpc *vpe10_mpc_create(struct vpe_priv *vpe_priv, int inst);

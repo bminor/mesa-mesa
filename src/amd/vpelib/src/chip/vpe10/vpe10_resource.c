@@ -422,6 +422,7 @@ enum vpe_status vpe10_construct_resource(struct vpe_priv *vpe_priv, struct resou
     res->check_bg_color_support            = vpe10_check_bg_color_support;
     res->check_mirror_rotation_support     = vpe10_check_mirror_rotation_support;
     res->update_blnd_gamma                 = vpe10_update_blnd_gamma;
+    res->update_output_gamma               = vpe10_update_output_gamma;
     res->validate_cached_param             = vpe10_validate_cached_param;
 
     return VPE_STATUS_OK;
@@ -1269,6 +1270,50 @@ enum vpe_status vpe10_update_blnd_gamma(struct vpe_priv *vpe_priv,
                 vpe_priv, tf, x_scale, y_scale, y_bias, can_bypass, blnd_tf);
         }
     }
+    return status;
+}
+
+/* This function generates software points for the ogam gamma programming block.
+   The logic for the blndgam/ogam programming sequence is a function of:
+   1. Output Range (Studio Full)
+   2. 3DLUT usage
+   3. Output format (HDR SDR)
+   SDR Out or studio range out
+      TM Case
+         BLNDGAM : NL -> NL*S + B
+         OGAM    : Bypass
+      Non TM Case
+         BLNDGAM : L -> NL*S + B
+         OGAM    : Bypass
+   Full range HDR Out
+      TM Case
+         BLNDGAM : NL -> L
+         OGAM    : L -> NL
+      Non TM Case
+         BLNDGAM : Bypass
+         OGAM    : L -> NL
+*/
+enum vpe_status vpe10_update_output_gamma(struct vpe_priv *vpe_priv,
+    const struct vpe_build_param *param, struct transfer_func *output_tf, bool geometric_scaling)
+{
+    bool               can_bypass = false;
+    struct output_ctx *output_ctx = &vpe_priv->output_ctx;
+    bool               is_studio  = (param->dst_surface.cs.range == VPE_COLOR_RANGE_STUDIO);
+    enum vpe_status    status     = VPE_STATUS_OK;
+    struct fixed31_32  y_scale    = vpe_fixpt_one;
+
+    if (vpe_is_fp16(param->dst_surface.format)) {
+        y_scale = vpe_fixpt_mul_int(y_scale, CCCS_NORM);
+    }
+
+    if (!geometric_scaling && vpe_is_HDR(output_ctx->tf) && !is_studio)
+        can_bypass = false; // Blending is done in linear light so ogam needs to handle the regam
+    else
+        can_bypass = true;
+
+    vpe_color_update_regamma_tf(
+        vpe_priv, output_ctx->tf, vpe_fixpt_one, y_scale, vpe_fixpt_zero, can_bypass, output_tf);
+
     return status;
 }
 

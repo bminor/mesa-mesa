@@ -108,6 +108,10 @@ struct resource {
         const struct vpe_build_param *param, const struct vpe_stream *stream,
         struct transfer_func *blnd_tf);
 
+    enum vpe_status (*update_output_gamma)(struct vpe_priv *vpe_priv,
+        const struct vpe_build_param *param, struct transfer_func *output_tf,
+        bool geometric_scaling);
+
     bool (*validate_cached_param)(struct vpe_priv *vpe_priv, const struct vpe_build_param *param);
     // Indicates the nominal range hdr input content should be in during processing.
     int internal_hdr_normalization;
