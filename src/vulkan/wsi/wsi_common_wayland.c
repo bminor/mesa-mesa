@@ -1251,8 +1251,12 @@ wsi_wl_swapchain_update_colorspace(struct wsi_wl_swapchain *chain)
       .max_fall = round(chain->color.hdr_metadata.maxFrameAverageLightLevel),
       .max_cll = round(chain->color.hdr_metadata.maxContentLightLevel),
    };
-   bool should_use_hdr_metadata = chain->color.has_hdr_metadata
-                               && is_hdr_metadata_legal(&wayland_hdr_metadata);
+   bool should_use_hdr_metadata = chain->color.has_hdr_metadata;
+   if (should_use_hdr_metadata) {
+      should_use_hdr_metadata &= is_hdr_metadata_legal(&wayland_hdr_metadata);
+      if (!should_use_hdr_metadata)
+         mesa_log_once(MESA_LOG_WARN, "Not using HDR metadata to avoid protocol errors");
+   }
    for (int i = 0; i < ARRAY_SIZE(colorspace_mapping); i++) {
       if (colorspace_mapping[i].colorspace == chain->color.colorspace) {
          should_use_hdr_metadata &= colorspace_mapping[i].should_use_hdr_metadata;
