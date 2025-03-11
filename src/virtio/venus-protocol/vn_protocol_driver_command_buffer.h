@@ -8237,7 +8237,10 @@ static inline size_t vn_sizeof_vkCmdBuildAccelerationStructuresIndirectKHR(VkCom
     }
     if (ppMaxPrimitiveCounts) {
         cmd_size += vn_sizeof_array_size(infoCount);
-        cmd_size += vn_sizeof_uint32_t_array(*ppMaxPrimitiveCounts, infoCount);
+        for (uint32_t i = 0; i < infoCount; i++) {
+            cmd_size += vn_sizeof_array_size((pInfos ? pInfos[i].geometryCount : 0));
+            cmd_size += vn_sizeof_uint32_t_array(ppMaxPrimitiveCounts[i], (pInfos ? pInfos[i].geometryCount : 0));
+        }
     } else {
         cmd_size += vn_sizeof_array_size(0);
     }
@@ -8275,7 +8278,10 @@ static inline void vn_encode_vkCmdBuildAccelerationStructuresIndirectKHR(struct 
     }
     if (ppMaxPrimitiveCounts) {
         vn_encode_array_size(enc, infoCount);
-        vn_encode_uint32_t_array(enc, *ppMaxPrimitiveCounts, infoCount);
+        for (uint32_t i = 0; i < infoCount; i++) {
+            vn_encode_array_size(enc, (pInfos ? pInfos[i].geometryCount : 0));
+            vn_encode_uint32_t_array(enc, ppMaxPrimitiveCounts[i], (pInfos ? pInfos[i].geometryCount : 0));
+        }
     } else {
         vn_encode_array_size(enc, 0);
     }
