@@ -991,8 +991,7 @@ lower_bit_size_callback(const nir_instr *instr, UNUSED void *data)
       case nir_op_fcos:
          return 0;
       case nir_op_isign:
-         assert(!"Should have been lowered by nir_opt_algebraic.");
-         return 0;
+         unreachable("Should have been lowered by nir_opt_algebraic.");
       default:
          if (nir_op_infos[alu->op].num_inputs >= 2 &&
              alu->def.bit_size == 8)

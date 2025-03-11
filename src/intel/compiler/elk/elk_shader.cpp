@@ -615,7 +615,7 @@ elk_negate_immediate(enum elk_reg_type type, struct elk_reg *reg)
       unreachable("no UB/B immediates");
    case ELK_REGISTER_TYPE_UV:
    case ELK_REGISTER_TYPE_V:
-      assert(!"unimplemented: negate UV/V immediate");
+      unreachable("unimplemented: negate UV/V immediate");
    case ELK_REGISTER_TYPE_HF:
       reg->ud ^= 0x80008000;
       return true;
@@ -660,9 +660,9 @@ elk_abs_immediate(enum elk_reg_type type, struct elk_reg *reg)
       /* Presumably the absolute value modifier on an unsigned source is a
        * nop, but it would be nice to confirm.
        */
-      assert(!"unimplemented: abs unsigned immediate");
+      unreachable("unimplemented: abs unsigned immediate");
    case ELK_REGISTER_TYPE_V:
-      assert(!"unimplemented: abs V immediate");
+      unreachable("unimplemented: abs V immediate");
    case ELK_REGISTER_TYPE_HF:
       reg->ud &= ~0x80008000;
       return true;

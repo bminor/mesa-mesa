@@ -419,7 +419,7 @@ brw_opt_algebraic(brw_shader &s)
             if (inst->dst.type != inst->src[0].type &&
                 inst->dst.type != BRW_TYPE_DF &&
                 inst->src[0].type != BRW_TYPE_F)
-               assert(!"unimplemented: saturate mixed types");
+               unreachable("unimplemented: saturate mixed types");
 
             if (brw_reg_saturate_immediate(&inst->src[0])) {
                inst->saturate = false;

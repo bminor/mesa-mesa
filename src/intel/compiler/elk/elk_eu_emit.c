@@ -2578,8 +2578,7 @@ elk_find_loop_end(struct elk_codegen *p, int start_offset)
 	    return offset;
       }
    }
-   assert(!"not reached");
-   return start_offset;
+   unreachable("not reached");
 }
 
 /* After program generation, go back and update the UIP and JIP of

@@ -103,7 +103,7 @@ brw_reg_negate_immediate(brw_reg *reg)
       unreachable("no UB/B immediates");
    case BRW_TYPE_UV:
    case BRW_TYPE_V:
-      assert(!"unimplemented: negate UV/V immediate");
+      unreachable("unimplemented: negate UV/V immediate");
    case BRW_TYPE_HF:
       reg->ud ^= 0x80008000;
       return true;
@@ -148,9 +148,9 @@ brw_reg_abs_immediate(brw_reg *reg)
       /* Presumably the absolute value modifier on an unsigned source is a
        * nop, but it would be nice to confirm.
        */
-      assert(!"unimplemented: abs unsigned immediate");
+      unreachable("unimplemented: abs unsigned immediate");
    case BRW_TYPE_V:
-      assert(!"unimplemented: abs V immediate");
+      unreachable("unimplemented: abs V immediate");
    case BRW_TYPE_HF:
       reg->ud &= ~0x80008000;
       return true;
