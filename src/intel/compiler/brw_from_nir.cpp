@@ -4437,6 +4437,19 @@ brw_from_nir_emit_fs_intrinsic(nir_to_brw_state &ntb,
       break;
    }
 
+   case nir_intrinsic_load_input_vertex: {
+      unsigned base = nir_intrinsic_base(instr);
+      unsigned comp = nir_intrinsic_component(instr);
+      unsigned vtx = nir_src_as_uint(instr->src[0]);
+      unsigned num_components = instr->num_components;
+
+      for (unsigned int i = 0; i < num_components; i++) {
+         bld.MOV(offset(dest, bld, i),
+                 retype(brw_interp_reg(bld, base, comp + i, vtx), dest.type));
+      }
+      break;
+   }
+
    case nir_intrinsic_load_fs_input_interp_deltas: {
       assert(s.stage == MESA_SHADER_FRAGMENT);
       assert(nir_src_as_uint(instr->src[0]) == 0);
